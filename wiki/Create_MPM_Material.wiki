@@ -1,0 +1,75 @@
+#summary Creating a New Material Type for NairnMPM
+
+= Introduction =
+
+These notes explain how to create a new material class for use in NairnMPM.
+
+= Details =
+
+== Getting Started ==
+
+Duplicate the `NewMaterial.cpp` and `NewMaterial.hpp` files, which are templates for a new material class. Edit the files and change `NewMaterial` to the new material's class name. The template is a subclass of `MaterialBase`. Normally the new material will be a subclass of another class. If so, change `MaterialBase` references, as needed, to the actual parent class.
+
+The header file defines a constant for the new material type. Change this tag to a unique tag and a unique number. The current material tags are
+
+<blockquote>
+<code>ISOTROPIC=1,TRANSISO1=2,TRANSISO2=3,ORTHO=4,
+INTERFACEPARAMS=5 (used in FEA), (6 UNUSED)
+VISCOELASTIC=7, MOONEYRIVLIN=8, VONMISESHARDENING=9,
+BISTABLEISO=10, RIGIDMATERIAL=11, COHESIVEZONEMATERIAL=12,
+LINEARTRACTIONMATERIAL=13, CUBICTRACTIONLAW=14,
+HILLPLASTIC=15,JOHNSONCOOK=16,MGSCGLMATERIAL=17,
+SLMATERIAL=18</code>
+</blockquote>
+
+Be sure to add this number to Material command in the DTD file.
+
+== Editing the Code ==
+
+Almost all coding will be done in the new material class files, but a few places in the core code need to be edited to recognize the new material:
+
+  # In `MaterialController::AddMaterial(int matID,char ``*``matName)`- - add a new case in the `switch(matID)` section to call the default constructor of the new material when `matID` matches the tag created above.
+  # Include the new material's header file at the top of `MaterialController.hpp`
+  # Edit the makefile and add the new material's header file to the header file's needed to compile `MaterialController.hpp`
+  # Edit the makefile to compile the new material's file too (see a similar material for example of what is needed).
+  # Add any newly defined material properties to the DTD file
+
+== Editing the Material Class ==
+
+Edit the template files. Change all occuranced of `NewMaterial` to the new material's class name. Similarly, if the new material subclasses some other material, edit all occurances of `MaterialBase` and change to the actual parent class.
+
+Finally, go through each method and keep, edit, or delete. Any method that is deleted from source should be removed from header file as well. See comments in the template file for the function of each method.
+
+== Traction Law Materials (only for traction law materials) ==
+
+There is currently no template code for traction law materials. One should be created the next time a new traction law is needed. Here are some notes on traction law methods
+
+  * The base class for all traction laws in `TractionLaw.cpp`. It handles some things:
+    # Overrides `MPMConstLaw()` with empty methods because not needed for traction laws
+    # Blocks transport law printing (not needed) and no other transport stuff is needed either
+  * `VerifyProperties()` - This method should check properties, but do not call `MaterialBase` class method. It is OK to fall up to `TractionLaw` because that class will block further calls.
+  * `InitialLoadMechProps()` - Never called for traction laws
+  * `CrackTractionLaw()` - Calculate tractions for current opening and shear cod and will be the core coding needed for new traction laws.
+  * `CrackTractionEnergy()` - Calculate full energy or released energy for current COD.
+
+== Material Methods - Calculations called during MPM steps ==
+
+  * `virtual void LoadTransportProps(MPMBase ``*``)`
+  *  `virtual void MPMConstLaw(MPMBase ``*``,double,double,double,double,double,int)`
+  * `virtual void MPMConstLaw(MPMBase ``*``,double,double,double,double,double,double,double,double,double,double,int)`
+		
+
+== Fracture Methods ==
+
+The methods deal with fracture and are currently handled for all materials in the base class.
+
+  * virtual MaterialBase `*`SetFinalPropagate(void) - hould be enough in default method to set up fracture criterion
+  * virtual Vector ConvertJToK(Vector,Vector,Vector,int) - Convert J Integral to K or stress intensity factor. Default returns zero.
+  * virtual int CriterionNeeds(void) - Determines if J and/or K is needed.
+  * virtual int ShouldPropagate(CrackSegment `*`,Vector &,CrackHeader `*`,int np) - Determine if crack chould grow.
+  * virtual bool ControlCrackSpeed(CrackSegment `*`,double &) - Adjust crack speed
+  * virtual bool SelectDirection(CrackSegment `*`,Vector &,CrackHeader `*`) - 
+  * virtual void HoopDirection(double,double,Vector `*`) - 
+  * void RotateDirection(Vector `*`,double,double) - 
+  * virtual double CrackPropagationAngleFromStrainEnergyDensityCriterion(double,double,double) -  - Used in one fracture criterion
+  * static const char `*`PreferredDirection(int) - 
