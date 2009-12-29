@@ -1,4 +1,5 @@
 #summary Creating a New Material Type for NairnMPM
+#labels NairnMPM
 
 = Introduction =
 
