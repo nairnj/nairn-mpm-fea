@@ -1,0 +1,22 @@
+#summary Setting up cygwin to download and and use nairn-mpm-fea.
+#labels Featured
+
+= Introduction =
+
+The `nairn-mpm-fea` projects runs well in Windows by using the `cygwin` system. You can download the code, compile ir, run calculations, and visualize the results. This process has been tested in Windows XP, Vista, and 7. This page explains how to set up `cygwin` to download the project. Once the project is downloaded, consult its documentation for further instructions on compiling, running, and visualizing.
+
+= Setting up `cygwin` =
+
+The recommended approach to using `nairn-mpm-fea` in windows is to use `cygwin` and the setup is described in the following ste-by-step process. This process has bene verified in Windows XP, Windows Vista and Windows 7 (although you may need the latest `cygwin 1.7` for Windows 7).
+
+  # Download the <a href="http://www.cygwin.com">cygwin setup.exe</a> application and run it (to install `cygwin` or, if you already have `cygwin` installed, you still might need to install plug-ins listed below).
+  # Follow the default options until you reach the "Packages" step of the `cygwin` Setup wizard. In that step, expand the "Devel" category and select:
+    * `g++` - the gnu c++ compiler
+    * `gdb` - the gnu debugger (optional)
+    * `make` - program for making files (the NairnMPM and NairnFEA binaries)
+    * `Subversion` - the version control system needed to download code from `google code'.
+  # Next, expand the "Net" category and select:
+    * openssh - ssh command for secure remote connections (optional).
+  # Finally, if you would like a command-line editor, you can optionally expand the "Editors" section and select the one you want (_e.g._, `vim`). Similarly, you can select any other packages in any section that interests you. You can also return to this setup and select them later.
+
+The basic `cygwin` should now be set up. You can run it open a `cygwin` command-line window and browse your files. By the default, all `cygwin` files will be in the folder `C:\cygwin`.
