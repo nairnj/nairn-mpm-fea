@@ -5,11 +5,11 @@
 
 You must use `Subversion` (or `svn`) on your local computer to download the entire `nairn-mpm-fea` project from `google code`. This `svn` package is available for Mac and Linux as a command-line tool (see <a href="http://subversion.tigris.org/">tigris.org</a> if you need to install it). For Windows, one solution is to [Windows_Setup set up `cygwin`] and use its version of `svn`. In each platform there may by other `svn` options as well, but this page is based on the command-line approach.
 
-Once you have `svn` you can either do an [Download_Project#Anonymous_Checkout anonymous checkout] or a [Download_Project#Password_Enabled_Checkout password enabled checkout].
+Once you have `svn` you can either do an [Download_Project#Anonymous_Checkout] or a [Download_Project#Password_Enabled_Checkout].
 
 #labels Anonymous Checkout,Password Enabled Checkout
 
-= Anonymous Checkout =
+=Anonymous Checkout=
 
 For a public, anonymous checkout of `nairn-mpm-fea`, use the command line:
 
@@ -19,7 +19,7 @@ Here `nairn-mpm-fea-read-only` is the name of the folder that will be created wi
 
 Once you have the code, open the `index.html` file in the Documentation folder to learn how to compile all code, run calculations, and visualize the results.
 
-= Password Enabled Checkout =
+=Password Enabled Checkout=
 
 If you might want to contribute changes to the nairn-mpm-fea project, including changes to documentation or the project's wiki pages, or if you just want to have a visible presence in use of the code, you should checkout with a username and password. But first, you need a password. The process is:
 
