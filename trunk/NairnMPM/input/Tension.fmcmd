@@ -1,0 +1,131 @@
+<?xml version='1.0'?>
+<!DOCTYPE JANFEAInput SYSTEM "/Users/dnairn/Desktop/John/NairnCode/NairnMPM/input/NairnMPM.dtd"
+[
+ <!ENTITY fileroot 'Tension/iso.'>
+ <!ENTITY matnum '1'>
+ <!ENTITY angle '0'>
+ <!ENTITY cs '5'>
+]>
+<JANFEAInput version='3'>
+
+<!-- MPM analysis simple tension under a ramp load. Several different
+     material types are in the file by changing matnum entity
+
+    1. Isotropic
+    2. Transversly Isotropic (in plane) (can set angle)
+    3. Transversly Isotropic (can set angle)
+    4. Orthotropic (can set angle)
+    5. Von Mises with Hardening
+
+    All have low moduli, originally for time scale reasons
+    TensionFEA.fmcmd in NairnFEA/input has same first 4 materials
+
+    cs: cell size in mm
+-->
+
+  <Header>
+    <Description>
+Title: MPM Analysis
+User Name: User Name
+  Simple tensile loading with variety of material types
+    </Description>
+    <Analysis>11</Analysis>
+  </Header>
+
+  <MPMHeader>
+    <ArchiveTime>2e-02</ArchiveTime>
+    <MaxTime>1.0</MaxTime>
+    <ArchiveRoot>&fileroot;</ArchiveRoot>
+    <MPMArchiveOrder>mYYYYYNYYYNNY</MPMArchiveOrder>
+    <CrackArchiveOrder>mYNN</CrackArchiveOrder>
+    <!--<Damping>50</Damping>-->
+    <FeedbackDamping>1</FeedbackDamping >
+    <GlobalArchiveTime>1e-2</GlobalArchiveTime>
+    <GlobalArchive type='syy'/>
+    <GlobalArchive type='eyy'/>
+    <GlobalArchive type='exx'/>
+    <GIMP/>
+   </MPMHeader>
+
+  <Mesh>
+    <Grid xmin="-5" xmax="55" ymin="0" ymax="120">
+      <Horiz cellsize="&cs;"/>
+      <Vert cellsize="&cs;"/>
+    </Grid>
+  </Mesh>
+
+  <MaterialPoints>
+    <Body mat="&matnum;" angle="&angle;" thick="1" vx="0" vy="0">
+      <Rect xmin="0" xmax="50" ymin="0" ymax="100"/>     
+    </Body>
+  </MaterialPoints>
+
+  <Material Type="1" Name="Isotropic Material">
+    <rho>1.5</rho>
+    <E>1e-02</E>
+    <nu>0.33</nu>
+    <alpha>60</alpha>
+  </Material>
+
+  <Material Type="2" Name="In-Plane Transversely Isotropic Material">
+    <rho>1.5</rho>
+    <EA>0.1</EA>
+    <ET>1e-02</ET>
+    <GA>1e-02</GA>
+    <nuA>0.2</nuA>
+    <nuT>0.33</nuT>
+    <alphaA>20</alphaA>
+    <alphaT>60</alphaT>
+  </Material>
+
+  <Material Type="3" Name="Transversely Isotropic Material">
+    <rho>1.5</rho>
+    <EA>0.1</EA>
+    <ET>1e-02</ET>
+    <GA>1e-02</GA>
+    <nuA>0.2</nuA>
+    <nuT>0.33</nuT>
+    <alphaA>20</alphaA>
+    <alphaT>60</alphaT>
+  </Material>
+
+  <Material Type="4" Name="Orthotropic Material">
+    <rho>1.5</rho>
+    <Ex>0.1</Ex>
+    <Ey>5e-02</Ey>
+    <Ez>1</Ez>
+    <Gxy>3e-03</Gxy>
+    <Gxz>4e-03</Gxz>
+    <Gyz>5e-03</Gyz>
+    <nuxy>0.33</nuxy>
+    <nuxz>2e-02</nuxz>
+    <nuyz>0.125</nuyz>
+    <alphax>20</alphax>
+    <alphay>40</alphay>
+    <alphaz>60</alphaz>
+  </Material>
+
+  <Material Type="9" Name="Von Mises Linear Hardening Material">
+    <rho>1.5</rho>
+    <E>1.0</E>
+    <nu>0.33</nu>
+    <alpha>60</alpha>
+    <yield>0.00002</yield>
+    <Ep>.2</Ep>
+  </Material>
+ 
+  <GridBCs>
+    <BCLine x1="min" y1="min-" x2="max" y2="min-" tolerance="*1">
+      <DisBC dir="2" disp="0"/>
+    </BCLine>
+  </GridBCs>
+
+  <ParticleBCs>                            
+    <BCLine x1="min" x2="max" y1="100" y2="100" tolerance="*.3">
+      <net/>
+      <LoadBC dir="2" style="2" load="1e-4" ftime="0.0"/> 
+      <LoadBC dir="2" style="2" load="-1e-4" ftime="250.0"/>
+    </BCLine>
+  </ParticleBCs> 
+
+</JANFEAInput>

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# The following lines compile java code with javac, put the classes
+#   and the graphics into NairnFEAMPMViz.jar with jar, and then removes
+#   all compiled classes.
+#
+# If javac and jar (version 1.5 or newer) are not in the default path,
+#   edit those lines to have the paths to the commands or add them
+#   to the start of $PATH in your .bashrc log in file. It should
+#   be added to start in case older version of java is installed
+#   at another searched path.
+#
+# For carbon/hedera cluster at OSU, the commands should be set to
+#      /usr/local/jdk1.5.0_06/bin/javac
+#      /usr/local/jdk1.5.0_06/bin/jar
+
+# compile all classes in Document and Interface folders
+javac -Xlint:none -d . -classpath ../src/lib/JNPlot2D.jar ../src/Document/*.java ../src/Interface/*.java
+
+# add to jar along with all .png graphics and html help
+mkdir Resources
+cp ../src/Resources/*.* Resources
+jar xf ../src/lib/JNPlot2D.jar
+jar cvmf Manifest NairnFEAMPMViz.jar *.class geditcom -C Resources .
+
+# delete compiled files (or comment out to retain them)
+rm -r Resources
+rm *.class
+rm -r geditcom
+rm -r META-INF

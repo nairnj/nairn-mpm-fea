@@ -1,0 +1,88 @@
+<?xml version='1.0'?>
+<!DOCTYPE JANFEAInput SYSTEM "/Users/dnairn/Desktop/John/NairnCode/NairnMPM/input/NairnMPM.dtd"
+[
+ <!ENTITY modulus "1.0">
+ <!ENTITY vel "5000">
+ <!ENTITY maxtime "0.015">
+ <!ENTITY atime "10e-04">
+ <!ENTITY cs "4">
+]>
+<JANFEAInput version='3'>
+
+<!-- MPM analysis of two disks that impact an bounce off. It is a
+     small analysis to complete rapidly and test the code
+
+     The entities above can change some parameters:
+        modulus: modulus of the spheres
+            vel: velocity of the approach
+        maxtime: time to stop calculation
+          atime: archive time
+             cs: cell size in grid (disks have diameter 15mm)
+-->
+
+  <Header>
+    <Description>
+Title: MPM Analysis
+User Name: User Name
+    Two disks colliding
+    </Description>
+    <Analysis>10</Analysis>
+  </Header>
+
+  <MPMHeader>
+    <ArchiveTime>&atime;</ArchiveTime>
+    <MaxTime>&maxtime;</MaxTime>
+    <ArchiveRoot>TwoDisks/USAVG.</ArchiveRoot>
+    <MPMArchiveOrder>mYYYYNNNNNNNN</MPMArchiveOrder>
+    <GlobalArchiveTime>&atime;</GlobalArchiveTime>
+    <GlobalArchive type="sxx" material="1"/>
+    <GlobalArchive type="Kinetic Energy"/>
+    <GIMP/>
+  </MPMHeader>
+
+  <Mesh output="file">
+    <Grid xmin="0" xmax="100" ymin="0" ymax="50">
+      <Horiz cellsize="&cs;" rx="1.0"/>
+      <Vert cellsize="&cs;" ry="1.0"/>
+    </Grid>
+  </Mesh>
+
+  <MaterialPoints>
+    <Body mat="1" angle="0" thick="1" vx="&vel;" vy="0">
+      <Oval xmin="10" xmax="40" ymin="10" ymax="40"/>     
+    </Body>
+    <Body mat="2" angle="0" thick="1" vx="-&vel;" vy="0">
+      <Oval xmin="60" xmax="90" ymin="10" ymax="40"/>     
+    </Body>
+  </MaterialPoints>
+
+  <Material Type="1" Name="Polymer 1">
+    <rho>1.5</rho>
+    <E>&modulus;</E>
+    <nu>0.33</nu>
+    <alpha>60</alpha>
+  </Material>
+
+  <Material Type="1" Name="Polymer 1">
+    <rho>1.5</rho>
+    <E>&modulus;</E>
+    <nu>0.33</nu>
+    <alpha>60</alpha>
+  </Material>
+
+  <GridBCs>
+    <BCLine x1="min-" y1="min-" x2="max+" y2="min-" tolerance="&cs;">
+      <DisBC dir="2" disp="0"/>
+    </BCLine>
+    <BCLine x1="max+" y1="min-" x2="max+" y2="max+" tolerance="&cs;">
+      <DisBC dir="1" disp="0"/>
+    </BCLine>
+    <BCLine x1="min-" y1="max+" x2="max+" y2="max+" tolerance="&cs;">
+      <DisBC dir="2" disp="0"/>
+    </BCLine>
+    <BCLine x1="min-" y1="min-" x2="min=" y2="max+" tolerance="&cs;">
+      <DisBC dir="1" disp="0"/>
+    </BCLine>
+  </GridBCs>
+
+</JANFEAInput>
