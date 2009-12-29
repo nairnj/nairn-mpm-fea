@@ -3,17 +3,17 @@
 
 = Introduction =
 
-You must use `Subversion` (or `svn`) on your local computer to download the entire `nairn-mpm-fea` project from `google code`. This `svn` package is available for Mac and Linux as a command-line tool (see <a href="http://subversion.tigris.org/">tigris.org</a> if you need to install it). For Windows, one solution is to [Windows_Setup set up `cygwin`] and use its version of `svn`. In each platform there may by other `svn` options as well, but this page is based on the command-line approach.
+You must use `Subversion` (or `svn`) on your local computer to download the entire `nairn-mpm-fea` project from `GoogleCode.com`. The `svn` package is available for Mac and Linux as a command-line tool (see <a href="http://subversion.tigris.org/">tigris.org</a> if you need to install it). For Windows, one solution is to [Windows_Setup set up `cygwin`] and use its version of `svn`. In each platform there may by other `svn` options as well, but this page is based on the command-line approach.
 
-Once you have `svn` you can either do an [#Anonymous_Checkout anonymous checkout] or a [#Password_Enabled_Checkout password enabled check].
-
-#labels Anonymous Checkout,Password Enabled Checkout
+Once you have `svn` installed, you can either do an [#Anonymous_Checkout anonymous checkout] or a [#Password_Enabled_Checkout password enabled check].
 
 =Anonymous Checkout=
 
 For a public, anonymous checkout of `nairn-mpm-fea`, use the command line:
 
-  `svn checkout http://nairn-mpm-fea.googlecode.com/svn/trunk/ nairn-mpm-fea-read-only`
+{{{
+svn checkout http://nairn-mpm-fea.googlecode.com/svn/trunk/ nairn-mpm-fea-read-only
+}}}
 
 Here `nairn-mpm-fea-read-only` is the name of the folder that will be created with the checked out code. You can use any name you want.
 
@@ -23,13 +23,15 @@ Once you have the code, open the `index.html` file in the Documentation folder t
 
 If you might want to contribute changes to the `nairn-mpm-fea` project, including changes to documentation or the project's wiki pages, or if you just want to have a visible presence in use of the code, you should checkout with a username and password. But first, you need a password. The process is:
 
-  # Participating in any `googlecode.com` project requires a google account and a gmail email addess. If you do not have one, you can create one for free at <a href="http://www.google.com">`google.com`</a>. If you already have a google account, you can easily add an email address, if needed.
+  # Participating in any `GoogleCode.com` project requires a google account and a gmail email addess. If you do not have one, you can create one for free at <a href="http://www.google.com">`google.com`</a>. If you already have a google account, you can easily add an email address, if needed.
   # Email you google gmail address to `<John.Nairn@oregonstate.edu>` with a request to be a committer (ability to make changes) or a contributer (to be added as a visible user of the code). You will be emailed back when you have been added to the project.
   # Once you hear back sign in to your google account and find your profile in the `GoogleCode.com` section. The "My Profile" tab there will show your username (from your gmail address) and the "Settings" tab will show your `GoogleCode.com` password. Make of note of this generated password, because it is needed for the checkout.
 
-These above steps only need to be done once. Once there are done, you can use `svn` to check out a copy of the project with:
+These above steps only need to be done once. Once they are done, you can use `svn` to check out a copy of the project with:
 
-  `svn checkout https://nairn-mpm-fea.googlecode.com/svn/trunk/ nairn-mpm-fea --username YOURUSERNAME`
+{{{
+svn checkout https://nairn-mpm-fea.googlecode.com/svn/trunk/ nairn-mpm-fea --username YOURUSERNAME
+}}}
 
 Here `nairn-mpm-fea` is the name of the folder that will be created with the checked out code. You can use any name you want. Also `YOURUSERNAME` is the username you obtained in step #3 above. After giving this command, you will need to enter the password from step #3 to finish the checkout.
 
