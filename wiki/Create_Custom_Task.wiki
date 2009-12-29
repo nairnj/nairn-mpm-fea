@@ -1,4 +1,5 @@
 #summary Create a new custom task for NairnMPM
+#labels NairnMPM
 
 = Introduction =
 
@@ -61,5 +62,3 @@ CustomTask *MyTask::StepCalculation(void)
 
 CustomTask *MyTask::FinishForStep(void)
     Called when all custom tasks done. Use to free up any memory allocated by the task.
-
-
