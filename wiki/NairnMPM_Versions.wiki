@@ -1,4 +1,4 @@
-#summary Version History for NairnMPM
+#summary NairnMPM Version History
 #labels NairnMPM
 
 = Introduction =
