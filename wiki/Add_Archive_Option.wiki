@@ -2,7 +2,7 @@
 
 = Introduction =
 
-NairnMPM has a customizable archive method. This page explains how to add an option to archive a new quantity from the calculation results. This page also explains how to <a href="#global">archive a new global quantity</a>.
+NairnMPM has a customizable archive method. This page explains how to add an option to archive a new quantity from the calculation results. This page also explains how to [WikiSyntax#Add_Global_Archive_Quantity].
 
 
 = Basic Steps =
@@ -25,7 +25,7 @@ NairnMPM has a customizable archive method. This page explains how to add an opt
        a. Add writing option in ArchiveData::FillArchive()
        b. Add reversing option in ArchiveData::FillArchive()
 
-= <a name="global"></a>Add Global Archive Quantity =
+=Add Global Archive Quantity=
 	
 Method to add global quantity for archiving
 
