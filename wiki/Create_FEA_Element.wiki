@@ -1,0 +1,67 @@
+#summary Creating a new element for NairnFEA
+
+= Introduction =
+
+This page explains how to create a new type of element for NairnFEA.
+
+Creating a New Element Type
+
+INITIALIZATION: Start a new class - coordinate with Code Owner
+--------------------------------------------------------------
+1. Define new class for the element and create cpp and
+	hpp files
+
+2. Define element type constant in ElementBase class header
+    Numbers have to be documented.
+
+3. Basic methods that must override
+  a. ElementName(void) - return code in #2
+  b. NumberNodes(void) - return number of nodes
+  c. NumberSides(void) - return number of sides
+  d. GetArea(void) - element area (only used in MPM to decide on wave speed)
+  e. FaceNodes(void) - return number of nodes on each face
+  f. PtInElement() - if point is in any element return 1 otherwise 0
+  g. ShapeFunction() - define function, write below
+
+CREATION: Reading input file and creating mesh
+--------------------------------------------------------------
+1. Include header for element in ElementsController.cpp.
+
+2. ElementsController code needs attention for each element:
+  a. CreateElement() - create element and write corresponding constructor
+  b. MeshElement() - create element(s) and write corresponding constructor
+  c. ElementsCompatible() - document compatible types
+  d. HasMidsideNodes() - return true if has them
+  e. ElementSides() - return number of sides
+
+3. Will not work in MPM generators unless code is added
+    there too.
+
+4. Test Mesh Creation (but do not run analysis yet)
+
+TASK 0: INITIALIZE
+--------------------------------------------------------------
+1. Support MaxMinNode() - built in to ElementBase.cpp
+
+TASK 1: ALLOCATE R VECTOR
+--------------------------------------------------------------
+1. Support CalcEdgeLoads() which is called by GetConsistentLoads(re,np)
+	called from ForcesOnEdges() is element can have stress boundary
+	conditions
+	
+TASK 2: GET STIFFNESS MATRIX
+--------------------------------------------------------------
+1. Calculate element stiffness matrix in Stiffness() (called
+	in BuildStiffnessMatrix()). If use IsoparametricStiffness()
+	need to set numGauss and gaussSet.
+
+2. Building stiffness matrix requires support for ShapeFunction()
+	MPM as alternative ShapeFunction(), but FEA has just one.
+
+TASK 6: OUTPUT RESULTS
+--------------------------------------------------------------
+1. Support ForceStress() which is called in ForceStressEnergyResults(void).
+
+2. If use IsoparametricForceStress() need to fill in option for
+	extrapolation to nodes for element type. Also need to set numGauss
+	and gaussSet.
