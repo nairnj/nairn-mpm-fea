@@ -1,0 +1,81 @@
+#summary NairnFEA Version History
+#labels NairnFEA
+
+= Introduction =
+
+Version Annotations
+
+  Enter NairnFEA version number in NairnFEA.cpp
+  NairnCode version only set in cvs tags
+
+Setting and getting the Version
+
+  To tag a copy use 'cvs tag (tagname)' (for the new version)
+  To checkout specific version use 'cvs update -r (tagname)' (or which ever you want).
+
+------------------------------------------------------------------------
+
+A new repository was started in 2006. These are the versions available now
+
+CurrentVersion
+  Has NairnFEA 2.7.0
+  Updated code to compile in GNU 4.3.1
+  Convert BMP file and angle file to fill elements in a mesh and remove unused elements and nodes
+  Requence finds connectivity issues and should be on when BMP is used
+
+NairnCode2_0_0 (4 NOV 2008)
+  Has NairnFEA 2.6.0
+  Fixed bug in new BMP commands when thermal stresses were used
+  Add y and z (axisymmetric) direction peridocity
+
+NairnCode1_5_0 (14 MAR 2008)
+  Has NairnFEA 2.5.0
+  Add methods from NairnMPM to interpret BMP files, but not yet used in FEA commands
+
+NairnCode1_4_0 (25 OCT 2007)
+  Has NairnFEA 2.4.0
+  User functions are now allowed to set properties as a function or x and y
+    They have been implemented in Temperature and Area (for angle) commands
+	and in DisBC and LoadBC boundary conditions
+  Some material class reorganization such as printing to output window
+  Periodic in both x and y
+  New FEABoundaryCondition class as base class for all boundary conditions
+  CrackTip command to setup quarter point elements
+
+NairnCode1_3_0 (19 FEB 2007)
+  Has NairnFEA 2.3.0
+  No changes
+
+NairnCode1_2_0 (8 FEB 2007)
+  Has NairnFEA 2.2.0
+  Periodic BCs appear to be done, but for x direction only
+  
+NairnCode1_1_0 (18 JAN 2007)
+  Has NairnFEA 2.1.0
+  Begnning of periodic boundary conditions, but not documented yet
+  Bug in anisotropic CTE with rotated material fixed
+
+NairnCode1_0_0 (22 SEP 2006)
+  Has NairnFEA 2.0.0
+  Code reorganized and NairnFEA and NairnMPM combined in single NairnCode
+
+------------------------------------------------------------------------
+
+The following versions are from a prior reposiotry and no longer available
+
+NairnFEA1_6_0 (14 FEB 2006) - based on NairnMPM5_1_0
+	Imperfect interfaces
+	Bug in 4-node AS with stress BC fixed
+	Code reoroganized. Main calc, reading, and archiving to objects
+
+NairnFEA1_5_1 (15 JUL 2005) - based on NairnMPM5_0_2
+	FEA with keypoints, paths, and areas and BCs with them too
+	Resquence nodes
+	CST elements
+	Anisotropic Materials
+	Prints version number in output
+	Nearly done except interface elements, 1/4 pt elements, and temperature expressions
+
+NairnFEA1_0_1 (15 JUL 2005) - unknown NairnMPM basis
+	Basic building blocks for keypoints, paths, and areas, but not use yet
+	Based on NairnMPM5_0_0
