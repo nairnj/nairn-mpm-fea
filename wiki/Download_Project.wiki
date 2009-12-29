@@ -18,5 +18,16 @@ Here `nairn-mpm-fea-read-only` is the name of the folder that will be created wi
 
 Once you have the code, open the `index.html` file in the Documentation folder to learn how to compile all code, run calculations, and visualize the results.
 
-
 = Password Enabled Checkout =
+
+If you might want to contribute changes to the nairn-mpm-fea project, including changes to documentation or the project's wiki pages, or if you just want to have a visible presence in use of the code, you should checkout with a username and password. But first, you need a password. The process is:
+
+  # Participating in any `googlecode.com` project requires a google account and a gmail email addess. If you do not have one, you can create one for free at <a href="http://www.google.com">`google.com`</a>. If you already have a google account, you can easily add an email address.
+  # Email you google email address to &lt;John.Nairn@oregonstate.edu&gt; with a request to be a committer (ability to make changes) or a contributer (to be added as a visible user of the code). You will be emailed back when you have been added to the project.
+  # Once you hear back sign in to your google account and find your profile in the `GoogleCode.com` section. The "My Profile" tab there will show you username and the "Settings" tab will show your `GoogleCode.com` password. Make of note of this generated password, because it is needed for checkout.
+
+These above steps only need to be done once. Once there are done, you can use `svn` to check out a copy of the project with:
+
+  `svn checkout https://nairn-mpm-fea.googlecode.com/svn/trunk/ nairn-mpm-fea --username YOURUSERNAME`
+
+Here `nairn-mpm-fea` is the name of the folder that will be created with the checked out code. You can use any name you want. Also `YOURUSERNAME` is the username you obtained in setp #3 above. After giving this command, you will need the password from step #3 to finish the checkout.
