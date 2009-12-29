@@ -12,7 +12,8 @@
 
 <p class="links">
 <a href="../index.html">Home</a> &rarr;
-<a href="../startup/index.html">Start Up</a>
+<a href="../startup/index.html">Getting Started</a> &rarr;
+Running
 </p>
 
 <h1>Running NairnFEA and NairnMPM</h1>
@@ -68,25 +69,32 @@ The options for running calculations are:
 <p>You can run and visualize <code>NairnFEA</code> and <code>NairnMPM</code> calculations on any platform using the <b>NairnFEAMPMViz</b> Java application (<b>note</b>: if you are using a Mac (with MacOS 10.4 or newer, Tiger), <b>NairnFEAMPMViz</b> will work, but the recommendation is to use <a href="#macosx"><b>NairnFEAMPM</b></a> because it faster and has more features). <b>NairnFEAMPMViz</b> started out only as a visualization tool, but now it lets you create and edit input XML files, launch calculation tasks, and visualize the results.
 <p>
 
-<p>A prerequisite to running calculations in <b>NairnFEAMPMViz</b> is to <a href="../startup/obtaining.html">download</a> and <a href="../startup/compiling.html">compile</a> the source code for <code>NairnFEA</code> and <code>NairnMPM</code>. On Windows, the compiling stage (no matter how it is done) requires installation of <code>cygwin</code>; <code>cygwin</code> is also needed to run calculations in <b>NairnFEAMPMViz</b>, but the steps taken during compiling are enough for it to be ready for use by <b>NairnFEAMPMViz</b>.
-</p>
+<p><b>NairnFEAMPMViz</b> is a Java application and therefore to run it, you need it's jar file. This file is not included in the <code>Nairn-MPM-FEA</code> package. You have two options:</p>
 
-<p>If you <a href="../startup/obtaining.html">download</a> a posted version of the <code>NairnCode</code> package, the <b>NairnFEAMPMViz</b> jar file will be in the <code>NairnCode/Visualization/info</code> folder. If the jar file is not there, you need to <a href="../startup/nairnviz.html#compile">compile the application</a> first. Once the application is ready, you need to start is using a method to make sure it gets enough memory. The method is described <a href="../startup/nairnviz.html#runningViz">here</a>. Once the application is started, do a test run as follows:
+<ol>
+<li>Compile the <b>NairnFEAMPMViz</b> source code. Click <a href="../startup/nairnviz.html#compiling">here</a> for details on this approach.</li>
+
+<li>Download the jar from the the <a href="http://code.google.com/p/nairn-mpm-fea/downloads/list"><code>Nairn-MPM-FEA</code> project downloads</a> page. Compiling the source code will always get you the latest version, but the download might be good enough (and is easier if you just want to verify with a test run).</li>
+
+</ol>
+
+<p>Once the <b>NairnFEAMPMViz</b> jar file is ready, you need to start is using a method to make sure it gets enough memory. The method is described <a href="../startup/nairnviz.html#runningViz">here</a>. Once the application is started, do a test run as follows:
 
 <ul>
 
 <li>The first time you run <b>NairnFEAMPMViz</b>, you have to tell the application the location of the <code>NairnFEA</code> and <code>NairnMPM</code> code engines and of a Unix shell. The steps are
 <ol class="alpha">
-<li>Choose &quot;Preferences...&quot; menu command or click the &quot;Prefs&quot; button
-<li>Click the &quot;Code&quot; tab
-<li>Click the three &quot;Change...&quot; buttons and locate the <code>NairnMPM</code> executable file, the <code>NairnFEA</code> executable file, and the <code>bash</code> shell command, respectively. In Windows, the <code>bash</code> command will be in the <code>bin</code> folder of the root <code>cygwin</code> folder; in other systems, it will be in the <code>/bin</code> folder.
+<li>Choose &quot;Preferences...&quot; menu command or click the &quot;Prefs&quot; icon</li>
+<li>Click the &quot;Code&quot; tab</li>
+<li>Click the first five &quot;Change...&quot; buttons and locate the <code>NairnMPM</code> executable, the <code>NairnMPM.dtd</code> file, the <code>NairnFEA</code> executable, the <code>NairnFEA.dtd</code> file, and the <code>bash</code> shell command, respectively. In Windows, the <code>bash</code> command will be in the <code>bin</code> folder of the root <code>cygwin</code> folder; in other systems, it will be in the <code>/bin</code> folder.</li>
+<li>Optionally click the last &quot;Change...&quot; button and select a work space directory. When a directory is selected, <b>NairnFEAMPMViz</b> will default to this directory when opening and saving files.
 </ol>
 </li>
 
-<li>To do a test calculation, choose the &quot;File &rarr; New FEA Commands&quot; or &quot;File &rarr; New MPM Commands&quot; menu commands. These will open a file with sample <code>XML</code> commands. Save the new commands to a new file with extension <code>.fmcmd</code>.
+<li>To do a test calculation, choose the &quot;File &rarr; New FEA Commands&quot; or &quot;File &rarr; New MPM Commands&quot; menu commands (or click their icons). These will open a file with sample <code>XML</code> commands. Save the new commands to a new file with extension <code>.fmcmd</code>.
 </li>
 
-<li>To run an analysis, choose the &quot;Analyze &rarr; Run FEA/MPM Analysis&quot; command. You will asked to decide where to save the results (as an <code>.fea</code> or <code>.mpm</code> file). Once you select a name, the calculations will run. When the calculations are done, the results file will open for visualization.</li>
+<li>To run an analysis, choose the &quot;Analyze &rarr; Run FEA/MPM Analysis&quot; command (or click the run arrow icon). You will asked to decide where to save the results (as an <code>.fea</code> or <code>.mpm</code> file). Once you select a name, the calculations will run. When the calculations are done, the results file will open for visualization.</li>
 
 <li>See the <b>NairnFEAMPMViz</b> application help information for more details on running calculations and on visualizing results.
 </li>
@@ -138,11 +146,11 @@ Multiple options can use separate options, such as <code>-v -r</code> , or combi
 
 <a name="trialFEA"></a><h2>Trial FEA Run</h2>
 
-<p>After <a href="../startup/index.html">obtaining and compiling</a> the code, you can do a trial run with the following commands:
+<p>After <a href="../startup/index.html">compiling</a> the code, you can do a trial run with the following commands:
 </p>
 
 <pre>
-cd NairnCode/NairnFEA/input
+cd nairn-mpm-fea/NairnFEA/input
 ./NairnMPM Cantilever.fmcmd > output.fea
 </pre>
 
@@ -202,11 +210,11 @@ Multiple options can use separate options, such as <code>-v -r</code> , or combi
 
 <a name="trialMPM"></a><h2>Trial MPM Run</h2>
 
-<p>After <a href="../startup/index.html">obtaining and compiling</a> the code, you can do a trial run with the following commands:
+<p>After <a href="../startup/index.html">compiling</a> the code, you can do a trial run with the following commands:
 </p>
 
 <pre>
-cd NairnCode/NairnMPM/input
+cd nairn-mpm-fea/NairnMPM/input
 ./NairnMPM TwoDisks.fmcmd > output.mpm
 </pre>
 
@@ -221,7 +229,8 @@ cd NairnCode/NairnMPM/input
 
 <p class="links">
 <a href="../index.html">Home</a> &rarr;
-<a href="../startup/index.html">Start Up</a>
+<a href="../startup/index.html">Getting Started</a> &rarr;
+Running
 </p>
 
 </body>
