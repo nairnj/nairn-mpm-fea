@@ -5,7 +5,7 @@
 
 You can download the entire nairn-mpm-fea project from `google code` by using `Subversion` or `svn` on your local computer. This version control system is available for Mac and Linux as a command-line tool. In Windows, one solution is to set up `cygwin` and use its version of `svn` (see Windows_Setup). In each platform there may by other `svn` options as well.
 
-Once you have `svn` you can either do an [Anonymous_Checkout] or a [Password_Enabled_Checkout].
+Once you have `svn` you can either do an [See#Anonymous_Checkout] or a [See#Password_Enabled_Checkout].
 
 #labels Anonymous Checkout,Password Enabled Checkout
 
