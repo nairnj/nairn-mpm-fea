@@ -3,45 +3,51 @@
 
 = Introduction =
 
-Version Annotations
+This page give s brief history of the main changes in various version of the `NairnFEAMPMViz` Java application.
 
-  Enter NairnFEAMPMViz version number in NairnFEAMPMViz variables
-  NairnCode version only set in cvs tags
+= Version in the Code =
 
-Setting and getting the Version
+The version number is code using a static variable for the `NairnFEAMPMViz` class:
 
-  To tag a copy use 'cvs tag (tagname)' (for the new version)
-  To checkout specific version use 'cvs update -r (tagname)' (or which ever you want).
+{{{
+public static final String versionReadable="Version 3.0.0";
+}}}
 
-Running Eclipse jar file from the lib directory
-  java -Xmx512m -cp NairnFEAMPMViz.jar:JNPlot2D.jar Main
+= Version History =
 
-------------------------------------------------------------------------
+NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The version currently in this project are as follows:
 
-A new repository was started in 2006. These are the versions available now
+  * Current trunk Version
+    * No changes
 
-Current Version
-  Working on NairnFEAMPMViz 3.0.0
-  Organized into windows with no button bar
-  Added dtd validation options
-  Icon tool bars
+  * release-1.0 (29 DEC 2009)
+    * Has NairnFEAMPMViz 3.0.0
+    * Organized into windows with no button bar
+    * Added dtd validation options
+    * Icon tool bars
+    * Two new color options for plots
+
+= Archival Version History =
+
+Prior to being in `GoogleCode.com`, NairnFEAMPMViz was in a local repository. That repository is available if needed. The prior versions are:
+
   
-NairnCode1_5_0 (14 MAR 2008)
-  Has NairnFEAMPMViz 2.1.0
-  Can plot debonded crack length (when using traction laws)
-  Read rotational strains and plot using deformation gradient
-  Export graphic files from all plot windows
+  * NairnCode1_5_0 (14 MAR 2008)
+    * Has NairnFEAMPMViz 2.1.0
+    * Can plot debonded crack length (when using traction laws)
+    * Read rotational strains and plot using deformation gradient
+    * Export graphic files from all plot windows
 
-NairnCode1_5_0 (14 MAR 2008)
-  Has NairnFEAMPMViz 2.0.0
-  Can now load command files and submit jobs
-  Some inspector options in the plotting
+  * NairnCode1_5_0 (14 MAR 2008)
+    * Has NairnFEAMPMViz 2.0.0
+    * Can now load command files and submit jobs
+    * Some inspector options in the plotting
 
-NairnCode1_4_0 (25 OCT 2007)
-  Has NairnFEAMPMViz 1.0.0
-  First full featured version including both MPM and FEA Visualization
+  * NairnCode1_4_0 (25 OCT 2007)
+    * Has NairnFEAMPMViz 1.0.0
+    * First full featured version including both MPM and FEA Visualization
 
-NairnCode1_3_0 (19 FEB 2007)
-  Has NairnFEAMPMViz (preliminary version)
-  Only particle plots and only MPM visualization
-  First NairnCode to include NairnFEAMPMViz tool
+  * NairnCode1_3_0 (19 FEB 2007)
+    * Has NairnFEAMPMViz (preliminary version)
+    * Only particle plots and only MPM visualization
+    * First NairnCode to include NairnFEAMPMViz tool
