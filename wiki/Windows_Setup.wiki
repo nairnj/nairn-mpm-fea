@@ -3,7 +3,7 @@
 
 = Introduction =
 
-The `nairn-mpm-fea` projects runs well in Windows by using the <a href="http://www.cygwin.com">cygwin setup.exe</a> system. You can download this project, compile the code, run calculations, and visualize the results.
+The `nairn-mpm-fea` projects runs well in Windows by using the <a href="http://www.cygwin.com">cygwin</a> system. You can download this project, compile the code, run calculations, and visualize the results.
 
 = Setting up `cygwin` =
 
