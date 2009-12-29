@@ -338,7 +338,6 @@
 		A70A7B11042A50950063AF10 /* MaterialBaseMPM.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = MaterialBaseMPM.cpp; sourceTree = "<group>"; };
 		A70A7B13042A50B10063AF10 /* NodalPointMPM.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = NodalPointMPM.cpp; sourceTree = "<group>"; };
 		A70A7B15042A50D80063AF10 /* MoreNodalPoint.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = MoreNodalPoint.cpp; sourceTree = "<group>"; };
-		A70A7B17042A50E90063AF10 /* CreateElementType.txt */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; path = CreateElementType.txt; sourceTree = "<group>"; };
 		A712FAB00E54ED8500AF8D78 /* JohnsonCook.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = JohnsonCook.hpp; sourceTree = "<group>"; };
 		A712FAB10E54ED8500AF8D78 /* JohnsonCook.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = JohnsonCook.cpp; sourceTree = "<group>"; };
 		A7198C87097810AF00334C4F /* CommonUtilities.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = CommonUtilities.cpp; sourceTree = "<group>"; };
@@ -357,7 +356,6 @@
 		A72498D304FCF5EB0063AF10 /* PropagateTask.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = PropagateTask.hpp; sourceTree = "<group>"; };
 		A72498D404FCF5EB0063AF10 /* ReverseLoad.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = ReverseLoad.cpp; sourceTree = "<group>"; };
 		A72498D504FCF5EB0063AF10 /* ReverseLoad.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = ReverseLoad.hpp; sourceTree = "<group>"; };
-		A72498DE04FCF6050063AF10 /* CreateNewTask.txt */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; path = CreateNewTask.txt; sourceTree = "<group>"; };
 		A727716C03FBEA460063AF10 /* ContourPoint.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ContourPoint.hpp; sourceTree = "<group>"; };
 		A727716D03FBEA460063AF10 /* ContourPoint.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ContourPoint.cpp; sourceTree = "<group>"; };
 		A72A90C90CD2ADA5001DCFA8 /* ExtractMPM */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ExtractMPM; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -421,7 +419,6 @@
 		A767E06808B14E4A004540AB /* Path.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = Path.hpp; sourceTree = "<group>"; };
 		A767E06908B14E4A004540AB /* PathsController.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = PathsController.cpp; sourceTree = "<group>"; };
 		A767E06A08B14E4A004540AB /* PathsController.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = PathsController.hpp; sourceTree = "<group>"; };
-		A767E07508B14E9B004540AB /* FEAVersionHistory.txt */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; path = FEAVersionHistory.txt; sourceTree = "<group>"; };
 		A76F4FE70B7998DE002C61D7 /* Constraint.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Constraint.hpp; sourceTree = "<group>"; };
 		A76F4FE80B7998DE002C61D7 /* Constraint.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Constraint.cpp; sourceTree = "<group>"; };
 		A76F4FEF0B799DFB002C61D7 /* ConstraintController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ConstraintController.hpp; sourceTree = "<group>"; };
@@ -455,7 +452,6 @@
 		A7731E3C05B44C5800294E25 /* ThermalRamp.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = ThermalRamp.hpp; sourceTree = "<group>"; };
 		A777F71D0A704DBA00446CB5 /* EightNodeIsoparamBrick.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = EightNodeIsoparamBrick.hpp; sourceTree = "<group>"; };
 		A777F71E0A704DBA00446CB5 /* EightNodeIsoparamBrick.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = EightNodeIsoparamBrick.cpp; sourceTree = "<group>"; };
-		A77AA9EF03E715780063AF10 /* VersionHistory.txt */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; path = VersionHistory.txt; sourceTree = "<group>"; };
 		A77AA9F003E716420063AF10 /* TransIsotropic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TransIsotropic.hpp; sourceTree = "<group>"; };
 		A77AA9F103E716420063AF10 /* TransIsotropic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TransIsotropic.cpp; sourceTree = "<group>"; };
 		A77AF2B00D59261700D5313A /* BitMapFilesCommon.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BitMapFilesCommon.cpp; sourceTree = "<group>"; };
@@ -568,7 +564,6 @@
 		A7DDE95D0BCBFA01005CC32D /* mathexpr.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = mathexpr.hpp; sourceTree = "<group>"; };
 		A7E037220A6D4639006B5A4E /* TransportTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TransportTask.hpp; sourceTree = "<group>"; };
 		A7E037230A6D4639006B5A4E /* TransportTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TransportTask.cpp; sourceTree = "<group>"; };
-		A7E3873103DC6DFF0063AF2F /* ModifyArchive.txt */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; path = ModifyArchive.txt; sourceTree = "<group>"; };
 		A7EC3A6F0DA91A9B003D43AC /* CubicTraction.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CubicTraction.hpp; sourceTree = "<group>"; };
 		A7EC3A700DA91A9B003D43AC /* CubicTraction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CubicTraction.cpp; sourceTree = "<group>"; };
 		A7F04606060F6C7E0060AE2F /* NairnMPM.dtd */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.xml; path = NairnMPM.dtd; sourceTree = "<group>"; };
@@ -607,7 +602,6 @@
 		F5C19ED8035E042401A80007 /* makefile */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; };
 		F5E5F2B80212DC4A01A80002 /* CommonException.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = CommonException.cpp; sourceTree = "<group>"; };
 		F5E5F2B90212DC4A01A80002 /* CommonException.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = CommonException.hpp; sourceTree = "<group>"; };
-		F5F706920326AE2F0163AF10 /* CreateMaterialNotes.txt */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; path = CreateMaterialNotes.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -673,7 +667,6 @@
 				A7BD09A20618D8B50006BA43 /* Boundary_Conditions */,
 				A7731E2705B44BB900294E25 /* Exceptions */,
 				A72498CD04FCF5C50063AF10 /* Custom_Tasks */,
-				A7901843040416C80063AF10 /* info */,
 				A7901844040416E60063AF10 /* input */,
 				A7A44AF40A111EF200978858 /* build */,
 			);
@@ -1003,7 +996,6 @@
 				A73B097F0605FF760078D29A /* Nodes */,
 				A78BCA52061C74C0009232A2 /* Boundary_Conditions */,
 				A7A75795042249360063AF10 /* Numerical */,
-				A7901848040427930063AF10 /* info */,
 				A7F04623060F78F60060AE2F /* input */,
 				A7A44E680A115FD800978858 /* build */,
 			);
@@ -1022,18 +1014,6 @@
 			path = System;
 			sourceTree = "<group>";
 		};
-		A7901843040416C80063AF10 /* info */ = {
-			isa = PBXGroup;
-			children = (
-				F5F706920326AE2F0163AF10 /* CreateMaterialNotes.txt */,
-				A7E3873103DC6DFF0063AF2F /* ModifyArchive.txt */,
-				A72498DE04FCF6050063AF10 /* CreateNewTask.txt */,
-				A77AA9EF03E715780063AF10 /* VersionHistory.txt */,
-			);
-			name = info;
-			path = ../info;
-			sourceTree = "<group>";
-		};
 		A7901844040416E60063AF10 /* input */ = {
 			isa = PBXGroup;
 			children = (
@@ -1048,16 +1028,6 @@
 			name = input;
 			path = ../../NairnMPM/input;
 			sourceTree = SOURCE_ROOT;
-		};
-		A7901848040427930063AF10 /* info */ = {
-			isa = PBXGroup;
-			children = (
-				A767E07508B14E9B004540AB /* FEAVersionHistory.txt */,
-				A70A7B17042A50E90063AF10 /* CreateElementType.txt */,
-			);
-			name = info;
-			path = ../info;
-			sourceTree = "<group>";
 		};
 		A7A44AF40A111EF200978858 /* build */ = {
 			isa = PBXGroup;

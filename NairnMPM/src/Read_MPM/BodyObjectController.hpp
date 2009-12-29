@@ -25,7 +25,7 @@ class BodyObjectController
 		virtual bool ContainsPoint(Vector &);
 		virtual bool FinishSetup(void);
 		virtual bool Is2DBodyObject(void);
-		virtual void SetProperty(char *,char *);
+		virtual void SetProperty(const char *,char *);
 		virtual void SetParameter(char *,char *);
 		virtual void FinishParameter(void);
 		virtual void SetScaling(double);

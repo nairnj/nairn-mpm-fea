@@ -77,7 +77,7 @@ void BodyObjectController::FinishParameter(void) {	}
 ********************************************************************************/
 
 // set a property
-void BodyObjectController::SetProperty(char *aName,char *value)
+void BodyObjectController::SetProperty(const char *aName,char *value)
 {
 	if(strcmp(aName,"xmin")==0)
 	{	sscanf(value,"%lf",&xmin);

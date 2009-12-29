@@ -57,7 +57,7 @@ bool LineController::PtOnShape(Vector v)
 }
 
 // set a property
-void LineController::SetProperty(char *aName,char *value,CommonReadHandler *reader)
+void LineController::SetProperty(const char *aName,char *value,CommonReadHandler *reader)
 {
 	if(strcmp(aName,"tolerance")==0)
 	{	if(value[0]=='*')

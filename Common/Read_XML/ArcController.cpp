@@ -57,7 +57,7 @@ bool ArcController::PtOnShape(Vector v)
 }
 
 // set a property
-void ArcController::SetProperty(char *aName,char *value,CommonReadHandler *reader)
+void ArcController::SetProperty(const char *aName,char *value,CommonReadHandler *reader)
 {
 	if(strcmp(aName,"start")==0)
 	{	sscanf(value,"%lf",&startAngle);

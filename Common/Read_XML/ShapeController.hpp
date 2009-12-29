@@ -33,8 +33,8 @@ class ShapeController
 		virtual int nextNode(void);
 		virtual char *GetContextInfo(void);
 		virtual void SetScaling(double);
-		virtual void SetProperty(char *,char *,CommonReadHandler *);
-		virtual void SetProperty(char *,double);
+		virtual void SetProperty(const char *,char *,CommonReadHandler *);
+		virtual void SetProperty(const char *,double);
 		virtual void FinishSetup(void);
 #ifdef MPM_CODE
 		void setNetBC(bool);
