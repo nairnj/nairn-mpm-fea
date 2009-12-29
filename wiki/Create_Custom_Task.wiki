@@ -1,0 +1,65 @@
+#summary Create a new custom task for NairnMPM
+
+= Introduction =
+
+This page explains how to create a new custom task and integrate it into NairnMPM. Custom tasks can be used to add many new features to the code
+
+
+= Basic Steps =
+
+  # Create new class that inherits from the `CustomTask` class
+  # Create instance of task in `MPMReadHandler::myStartElement()`
+    * See section for tag 'Schedule'
+    * New instance created on 'name' attribute of the tag (alters main code)
+  # Support methods listed below (as needed) in the new custom task. Call any of the following methods that are needed. All methods return the nextTask because the calling code uses it to loop over tasks. Any that are not needed can be omitted because the `CustomTask` class provides methods that simply returns the nextTask.
+
+== Creation==
+
+If there are parameters, support them reading them with:
+
+  * `char ``*``CustomTask::InputParam(char ``*``pName,int &input)` - Check the parameter name. If it matches an argument set `input` to pointer type and return pointer to the class variable. If no match return `NULL`.
+
+== Initialize ==
+
+This custom task is initialized with the following method:
+
+  * `CustomTask ``*``CustomTask::Initialize()` - Called once at beginning of an MPM analysis. Do any initialization and print info about the task using `cout` - it will be in results file.
+
+== Step 7a: Prepare custom tasks == 
+
+CustomTask *MyTask::PrepareForStep(bool &doExtraps)
+    Called in MPMStep() before custom tasks are done. Use to schedule calculations,
+    request extrapolations (set doExtraps to TRUE, but never set it FALS), or any
+	other task-dependent item.
+
+== Step 7b: Custom extrapolatlions== 
+
+The following methods are in a loop which allows a custom task to extrapolate some
+property to the grid or other calculation requiring loop over all particles:
+
+CustomTask *MyTask::BeginExtrapolations(void)
+    Called before extrapolation loop. Initialize any required variables.
+    
+CustomTask *MyTask::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,double wt)
+    Called for each particle/node pair. vfld is the velocity field and wt is the weight
+    (or mass times shape function)
+
+CustomTask *MyTask::ParticleExtrapolation(MPMBase *mpnt)
+    Called once for each particle. Use to sum any quantity over particles.
+    
+CustomTask *MyTask::EndExtrapolations(void)
+    Called when extrapolations are over. Use to free anything allocated during
+    the extrapolations or to do fine calculations.
+
+== Step 7c: Custom Calculations == 
+
+CustomTask *MyTask::StepCalculation(void)
+    This is the usually the main part of any custom task. Do the desired calculations.
+    The code will have access to all global variables.
+    
+== Step 7c: Custom Calculations== 
+
+CustomTask *MyTask::FinishForStep(void)
+    Called when all custom tasks done. Use to free up any memory allocated by the task.
+
+
