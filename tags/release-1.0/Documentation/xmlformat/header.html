@@ -1,0 +1,86 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>Header</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#feacontents">FEA XML File Contents</a> /
+
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+<h1>Header</h1>
+
+<p>
+This required section defines the type of analysis to be done and allows setting of some optional parameters.
+</p>
+
+<pre>
+&lt;Header&gt;
+   &lt;<a href="#descrip"><code>Description</code></a>&gt;
+Title: MPM Analysis
+Name: User Name
+    Sample MPM problem
+   &lt;/Description&gt;
+   &lt;<a href="#analysis"><code>Analysis</code></a>&gt;11&lt;/Analysis&gt;
+   &lt;<a href="#output"><code>Output</code></a>&gt;YYYYNY&lt;/Output&gt;
+   &lt;<a href="#select"><code>Select</code></a> node='1'/&gt;
+   &lt;Select node='23'/&gt;
+&lt;/Header&gt;
+</pre>
+
+<p>where</p>
+
+<dl>
+  <dt><a name="descrip"></a>&lt;Description&gt;</dt>
+  <dd>Provides an optional free-format, text description of the problem. The description must begin on the line <i>after</i> the tag. All characters
+  up to the ending tag are part of the description.</dd>
+
+  <dt><a name="analysis"></a>&lt;Analysis&gt;</dt>
+  <dd>Defines type of analysis to perform (required). The data is an integer code with the following options:
+  <ul class="lev2args">
+  <li>0 = Plane strain FEA analysis (NairnFEA only)</li>
+  <li>1 = Plane stress FEA analysis (NairnFEA only)</li>
+  <li>2 = Axisymmetric FEA analysis (NairnFEA only)</li>
+  <li>10 = Plane strain MPM analysis (NairnMPM only)</li>
+  <li>11 = Plane stress MPM analysis (NairnMPM only)</li>
+  <li>12 = 3D MPM analysis (NairnMPM only)</li>
+  </ul>
+  </dd>
+  
+  <dt><a name="output"></a>&lt;Output&gt;</dt>
+  <dd>This optional tag is for NairnFEA only. It selects the desired output for the finite element results file. It can be used to reduce output file size to desired results only. The text of the tag has 1 to 6 letters, each of which must be 'Y', 'C', or 'N. A 'Y' means that result is fully included in the file. A 'C' means that result is conditionally included only if it is relevant to one of a set of preselected nodes. A 'N' means that result is not included in the file. The six output result options are:
+  <ul class="lev2args">
+  <li>Byte 1: Displacement of each node</li>
+  <li>Byte 2: Nodal forces within each element</li>
+  <li>Byte 3: Nodal stresses within each element</li>
+  <li>Byte 4: Average nodal stresses at each node</li>
+  <li>Byte 5: Force reactivities at nodes with fixed displacement</li>
+  <li>Byte 6: Strain energy of each element and total strain energy</li>
+  </ul>
+  Note that if certain results are omitted, they will be not be available for plotting in analysis software. Bytes 2 and 3 are element results. If these options are 'C' they will output the full results for any element that has one or more preselected nodes. Bytes 5 and 6 provide full output for both option 'Y' and 'C' (<i>i.e.</i>, there are not sensitive to which nodes are selected). Finally, if no <code>Output</code> tag is used, the default settings are 'YYYYNY'.
+</dd>
+
+  <dt><a name="select"></a>&lt;Select node='23'&gt;</dt>
+  <dd>These optional tags can be used in conjunction with an <code>Output</code> tag (NairnFEA only) to preselect nodes for any output setting of 'C'.  The <code>node</code> attrribute selects which node should be selected. This method of preselecting nodes is typically only used when doing <a href="definefeamesh.html#sec1">explicit definition</a> of an FEA mesh. When <a href="definefeamesh.html#sec2">generating a mesh</a> with higher level commands, it is preferrable to select nodes for conditional output using <a href="feabc.html#sec2">generated boundary condition</a> commands.</dd>
+
+</dl>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#feacontents">FEA XML File Contents</a> /
+
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+</body>
+
+</html>

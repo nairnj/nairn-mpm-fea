@@ -1,0 +1,85 @@
+<?xml version='1.0'?>
+<!DOCTYPE JANFEAInput SYSTEM "/Users/dnairn/Desktop/John/NairnCode/NairnMPM/input/NairnMPM.dtd"
+[
+ <!ENTITY cs "4">
+ <!ENTITY xtip "50.25">
+ <!ENTITY res "25">
+]>
+
+<JANFEAInput version='3'>
+
+<!--
+  MPM analysis of a double cantilever beam
+    Beam dimensions are 100 by 24
+    Settings are:
+      cs: cellsize (mm)
+    xtip: crack tip (between 5 and 95 mm)
+     res: segments in crack
+-->
+
+  <Header>
+    <Description>
+Title: MPM Analysis
+Name: User Name
+    Sample MPM problem
+    </Description>
+    <Analysis>11</Analysis>
+  </Header>
+
+  <MPMHeader>
+    <Cracks>
+      <JContour type="1" size="2"/>
+      <Friction>0</Friction>
+    </Cracks>
+    <MaxTime>0.121</MaxTime>
+    <ArchiveTime>5e-03</ArchiveTime>
+    <ArchiveRoot>FullDCB/root.</ArchiveRoot>
+    <MPMArchiveOrder>mYYYYNNYNNNYYNNNNN</MPMArchiveOrder>
+    <CrackArchiveOrder>mYYYN</CrackArchiveOrder>
+    <Damping>25</Damping>
+    <GIMP/>
+   </MPMHeader>
+
+  <Mesh output="file">
+    <Grid xmin="0" xmax="105" ymin="-16" ymax="16">
+      <Horiz cellsize="&cs;"/>
+      <Vert cellsize="&cs;"/>
+    </Grid>
+  </Mesh>
+
+  <MaterialPoints>
+    <Body mat="1" thick="1" vx="0" vy="0">
+      <Rect xmin="0" xmax="100" ymin="0" ymax="12"/>
+      <Rect xmin="0" xmax="100" ymin="-12" ymax="0"/>
+    </Body>
+  </MaterialPoints>
+
+  <CrackList>
+    <Line xmin="&xtip;" ymin="1e-06" xmax="99.8" ymax="1e-06"
+             start_tip="1" end_tip="-2" resolution="&res;"/>
+  </CrackList>
+
+  <Material Type="1" Name="Polymer">
+    <rho>1.5</rho>
+    <E>0.1</E>
+    <nu>0.33</nu>
+    <alpha>60</alpha>
+  </Material>
+
+  <GridBCs>
+    <BCLine x1="min-" y1="min-" x2="min-" y2="max+" tolerance="*1">
+      <DisBC dir="1" style="1" vel="0"/>
+    </BCLine>
+  </GridBCs>
+
+  <ParticleBCs>
+    <BCLine x1="100" x2="100" y1="0.1" y2="12" tolerance="*.25">
+      <LoadBC dir="2" style="1" load="5e-05"/>
+    </BCLine>
+    <BCLine x1="100" x2="100" y1="-12" y2="-.1" tolerance="*.25">
+      <LoadBC dir="2" style="1" load="-5e-05"/>
+    </BCLine>
+  </ParticleBCs>
+
+</JANFEAInput>
+

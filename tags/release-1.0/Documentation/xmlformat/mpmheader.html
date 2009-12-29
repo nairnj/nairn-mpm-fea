@@ -1,0 +1,333 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>MPMHeader</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+<h1>MPM Header</h1>
+
+<p>
+This section defines many MPM analysis parameters; it is required for NairnMPM and not allowed for NairnFEA. Some options have default values (specified below) and can be omitted if the default value is acceptable. Some parameters (also indicated below) are required.
+</p>
+
+<pre>
+&lt;MPMHeader&gt;
+    &lt;<a href="#matlptsperelement"><code>MatlPtsPerElement</code></a>&gt;4&lt;/MatlPtsPerElement&gt;
+    &lt;<a href="#mpmmethod"><code>MPMMethod</code></a>&gt;2&lt;/MPMMethod&gt;
+    &lt;<a href="#timestep"><code>TimeStep</code></a> units='ms'&gt;1&lt;/TimeStep&gt;
+    &lt;<a href="#timefactor"><code>TimeFactor</code></a>&gt;0.1&lt;/TimeFactor&gt;
+    &lt;<a href="#maxtime"><code>MaxTime</code></a> units='ms'&gt;120&lt;/MaxTime&gt;
+    &lt;<a href="#atime"><code>ArchiveTime</code></a> units='ms'&gt;2&lt;/ArchiveTime&gt;
+    &lt;<a href="#fatime"><code>FirstArchiveTime</code></a> units='ms'&gt;100&lt;/FirstArchiveTime&gt;
+    &lt;<a href="#aroot"><code>ArchiveRoot</code></a>&gt;results/fullDCB/root.&lt;/ArchiveRoot&gt;
+    &lt;<a href="#mpmarchive"><code>MPMArchiveOrder</code></a>&gt;mYYYYNYYYNYYNNNNNY&lt;/MPMArchiveOrder&gt;
+    &lt;<a href="#crackarchive"><code>CrackArchiveOrder</code></a>&gt;mYYYN&lt;/CrackArchiveOrder&gt;
+    &lt;<a href="#globalarchivetime"><code>GlobalArchiveTime</code></a> units='ms'&gt;1&lt;/GlobalArchiveTime&gt;
+    &lt;<a href="#globalarchive"><code>GlobalArchive</code></a> type='sxx' material='1'/&gt;
+    &lt;<a href="#feedbackdamping"><code>FeedbackDamping</code></a> target='3'&gt;10&lt;/FeedbackDamping&gt;
+    &lt;<a href="#damping"><code>Damping</code></a>&gt;25&lt;/Damping&gt;
+    &lt;<a href="#stressfreetemp"><code>StressFreeTemp</code></a>&gt;25&lt;/StressFreeTemp&gt;
+    &lt;<a href="#diffusion"><code>Diffusion</code></a> reference='1'/&gt;
+    &lt;<a href="#mmmode"><code>MultiMaterialMode</code></a> Vmin='1.0' Dcheck='0'&gt;
+        &lt;<a href="#mmfriction"><code>Friction</code></a>&gt;0.3&lt;/Friction&gt;
+        &lt;<a href="#mmcontactposition"><code>ContactPosition</code></a>&gt;0.8&lt;/ContactPosition&gt;
+    &lt;/MultimaterialMode&gt;
+    &lt;<a href="#cracks"><code>Cracks</code></a>&gt;
+        &lt;<a href="#propagate"><code>Propagate</code></a> criterion='1' direction='0' traction='0'/&gt;
+        &lt;<a href="#jcontour"><code>JContour</code></a> type='1' size=&quot;2&quot; terms=&quot;1&quot;/&gt;
+        &lt;<a href="#friction"><code>Friction</code></a>&gt;0.3&lt;/Friction&gt;
+        &lt;<a href="#moveplane"><code>MovePlane</code></a> type='avg'/&gt;
+        &lt;<a href="#contactposition"><code>ContactPosition</code></a>&gt;0.8&lt;/ContactPosition&gt;
+    &lt;/Cracks&gt;
+    &lt;<a href="#gimp"><code>GIMP</code></a>/&gt;
+    &lt;<a href="#leave"><code>LeaveLimit</code></a>&gt;10000&lt;/LeaveLimit&gt;
+&lt;/MPMHeader&gt;
+</pre>
+
+<p>where</p>
+
+<dl>
+  <dt><a name="matlptsperelement"></a>&lt;MatlPtsPerElement&gt;</dt>
+  <dd>Number of material points in each element (only used when input file has commands to generate a mesh; it is ignored when material points are explicitly entered - see <a href="definempm.html">defining material points</a>). The supported options are 1 or 4 per cell in 2D and 1 or 8 per cell in 3D (Default values: 4 for 2D and 8 for 3D). Analysis using <a href="#gimp">GIMP</a> requires 4 (in 2D) or 8 (in 3D).</dd>
+
+  <dt><a name="mpmmethod"></a>&lt;MPMMethod&gt;</dt>
+  <dd>MPM algorithm used. The options, entered by number code, are:
+  <ul class="lev2args">
+  <li>0: update strain first (acceptable)</li>
+  <li>2: update both (most recommended)</li>
+  <li>3: modified update strain last (acceptable)</li>
+  </ul>
+  An option 1 used to be for update strain last corresponding to the original MPM paper. This method has flaws and was replaced by option 3. The original method has been removed from NairnMPM. (Default value: 2)</dd>
+  
+  <dt><a name="timestep"></a>&lt;TimeStep&gt;</dt>
+  <dd>Time for each MPM step. If needed, the time step will automatically be made shorter to insure convergence. A <a href="#units"><code>units</code> attribute</a> specifies the time units. (Default value: 1 sec)</dd>
+  
+  <dt><a name="timefactor"></a>&lt;TimeFactor&gt;</dt>
+  <dd>Safety factor used in checking for allowed time step. It is the fraction of a cell
+  that a particle can move when moving at the wave speed of the material over a single time step. Must be less than 1 for convergence and less the 0.5 is recommended. (Default value: 0.5)</dd>
+
+  <dt><a name="maxtime"></a>&lt;MaxTime&gt;</dt>
+  <dd>Time when the analysis will stop. A <a href="#units"><code>units</code> attribute</a> specifies the time units. (Default value: 1 sec)</dd>
+
+  <dt><a name="atime"></a>&lt;ArchiveTime&gt;</dt>
+  <dd>Time between archiving particle results to files. A <a href="#units"><code>units</code> attribute</a> specifies the time units. (Default value: 1 sec)</dd>
+  
+  <dt><a name="fatime"></a>&lt;FirstArchiveTime&gt;</dt>
+  <dd>This tag lets you set the time at which archiving will start. The data at the start of the calculation will always be archived, but then no archiving will be done until this time is reached. After this time is reached, the archiving will proceed at intervals specified by <a href="#atime"><code>&lt;ArchiveTime&gt;</code></a>. A <a href="#units"><code>units</code> attribute</a> specifies the time units. (Default value: 0 sec)</dd>
+  
+  <dt><a name="aroot"></a>&lt;ArchiveRoot&gt;</dt>
+  <dd>Unix path name to archive files. It is relative to the current working directory. Gives
+  the start of file name. An extension for the step number will be appended as data is archived.
+  For example, the archive root could be '<code>results/root.</code>' and the archived data will be
+  in a series of files beginning with '<code>results/root.1</code>'. (Required)</dd>
+  
+  <dt><a name="mpmarchive"></a>&lt;MPMArchiveOrder&gt;</dt>
+  <dd>A series of 'Y' and'N' flags to determine which particle data will be saved in the archived files. For details on the format of the archived files see <a href="../outformat/index.html">NairnMPM Archive Files.</a> The options are:
+  <ul class="lev2args">
+  <li>Byte 1: Byte order of archived files ('m' for Macintosh order or 'i' for Intel chip order). This parameter is ignored on input but must be supplied for alignment.</li>
+  <li>Byte 2: Default particle properties (particle mass, position, material information, and thickness). This byte must always by 'Y'.</li>
+  <li>Byte 3: Particle velocity</li>
+  <li>Byte 4: Particle stress</li>
+  <li>Byte 5: Particle strain</li>
+  <li>Byte 6: Particle plastic strain</li>
+  <li>Byte 7: Should always be 'N'. Present to support reading old versions of archive files.</li>
+  <li>Byte 8: Particle external work</li>
+  <li>Byte 9: Particle temperature</li>
+  <li>Byte 10: Particle plastic energy</li>
+  <li>Byte 11: Should always be 'N'. Present to support reading old versions of archive files.</li>
+  <li>Byte 12: Particle shear strain components (du/dy and dv/dx)</li>
+  <li>Byte 13: Particle strain energy</li>
+  <li>Byte 14: Setting 'Y' or 'N' refers to particle history variable 1. See <a href="../outformat/index.html#sec1">archive file information</a> for other settings to store more history variables - these history variables are only meaningful for some <a href="definematl.html">material types</a></li>
+  <li>Byte 15: Particle concentration and concentration gradients - only meaningful when doing <a href="#diffusion">diffusion</a> calculations.</li>
+  <li>Byte 16: Approximate particle thermal energy (&rho; C<sub>p</sub> &Delta;T<sup>2</sup>/(2 T<sub>0</sub>) where T<sub>0</sub> is the <a href="#stressfreetemp">stress free temperature</a>) - only meaningful when doing <a href="thermal.html">conduction</a> calculations and only accurate when the temperature changes are small.</li>
+  <li>Byte 17: Number of times this particle crossed an element boundary since the last archive time.</li>
+  <li>Byte 18: Rotational strain; this strain must be archived for visualization tools to be able to plot &quot;transformed&quot; points (<i>i.e.</i>, the stretch and shear plotted points to match the material point deformation state).</li>
+  </ul>
+  
+  (Default value: mYNN... or iYNN... (<i>i.e.</i> one Y and the rest N) depending on computer and reverse byte settings)</dd>
+
+  <dt><a name="crackarchive"></a>&lt;CrackArchiveOrder&gt;</dt>
+  <dd>A series of 'Y' and'N' flags to determine which crack data will be saved in the archived files. For details on the format of the archived files see <a href="../outformat/index.html">NairnMPM Archive Files.</a> The options are:
+  <ul class="lev2args">
+  <li>Byte 1: Byte order of archived files ('m' for Macintosh order or 'i' for Intel chip order). This parameter is ignored on input but must be supplied for alignment.</li>
+  <li>Byte 2: Default crack particle properties (location, surface positions). This byte must always by 'Y'.</li>
+  <li>Byte 3: J Integral at designated crack tips (see <a href="cracks.html">defining cracks</a>).</li>
+  <li>Byte 4: Stress intensity factors at designated crack tips (see <a href="cracks.html">defining cracks</a>).</li>
+  <li>Byte 5: Dynamic energy balancing results (in research, not meant for general use).</li>
+  </ul>
+  
+  (Default value: mYNNNN or iYNNNN depending on computer and reverse byte settings)</dd>
+
+  <dt><a name="globalarchivetime"></a>&lt;GlobalArchiveTime&gt;</dt>
+  <dd>You can optionally save global results (such as average stress or total energies) to a tab delimited file of global results. This file will appear in the same directory as other archive files (see <a href="#aroot">ArchiveRoot</a> command) but have the extension <code>.global</code>. This parameter determines how often global results are written to the global file. An optional <a href="#units"><code>units</code> attribute</a> can specify the time units. The time interval can differ from the <a href="#atime">ArchiveTime</a> setting. If this parameter is omitted, no global results will be saved. The results that are saved are determined by one or more <code>GlobalArchive</code> commands listed next. (Default value: -1 or no global archiving).</dd> 
+  
+  <dt><a name="globalarchive"></a>&lt;GlobalArchive type='sxx' material='0'/&gt;</dt>
+  <dd>Use one or more of these commands to determine what data are calculated and written to the global results file (see <code>GlobalArchiveTime</code> command above). If <code>material</code> is omitted or equal to zero, the calculation will include all material points. If <code>material</code> is non-zero, the calculation will include only particles with that material number (see <a href="definematl.html">Defining Materials</a>). The global results file will be tab-delimited file with time (in msec) in column one and each requested quantity in subsequent columns. The global quantities (or <code>types</code>) that can be archived are:
+<ul class="lev2args">
+	<li><code>sxx</code>, <code>syy</code>, <code>szz</code>, <code>sxy</code>, <code>sxz</code>, or <code>syz</code> - average element of the stress tensor in MPa</li>
+	<li><code>exx</code>, <code>eyy</code>, <code>ezz</code>, <code>exy</code>, <code>exz</code>, or <code>eyz</code> - average element of the total strain tensor in %</li>
+	<li><code>exxe</code>, <code>eyye</code>, <code>ezze</code>, <code>exye</code>, <code>exze</code>, or <code>eyze</code> - average element of the elastic strain tensor in %</li>
+	<li><code>exxp</code>, <code>eyyp</code>, <code>ezzp</code>, <code>exyp</code>, <code>exzp</code>, or <code>eyzp</code> - average element of the plastic strain tensor in %</li>
+	<li><code>velx</code>, <code>vely</code>, or <code>velz</code> - average component of velocity in mm/sec</li>
+	<li><code>dispx</code>, <code>dispy</code>, or <code>dispz</code> - average component of displacement in mm</li>
+	<li><code>history n</code> - material-dependent history variable where <code>n</code> in the variable number. See each <a href="definematl.html">material type</a> for what variables are available for output.</li>
+	<li><code>temp</code> - The average temperature</li>
+	<li><code>concentration</code> - the weight fraction concentration (for <a href="#diffusion">diffusion calculations</a>)</li>
+	<li><code>Strain Energy</code> - total strain energy in J</li>
+	<li><code>Kinetic Energy</code> - total kinetic energy in J</li>
+	<li><code>Energy</code> - sum of total strain and kinetic energies in J</li>
+	<li><code>Interface Energy</code> - total energy associated with cracks having imperfect interfaces in J. You need to add total &quot;Strain Energy&quot; and this total &quot;Interface Energy&quot; to get the total strain energy in an elastic material with imperfect interfaces.</li>
+	<li><code>External Work</code> - total external work in J</li>
+	<li><code>Potential Energy</code> - total energy minus total external work in J</li>
+	<li><code>Plastic Energy</code> - total plastic energy in J</li>
+	<li><code>Thermal Energy</code> - total approximate thermal energy in J (from &rho; C<sub>p</sub> &Delta;T<sup>2</sup>/(2 T<sub>0</sub>) which assumes small temperature changes and T<sub>0</sub> is the <a href="#stressfreetemp">stress free temperature</a>)</li>
+	<li><code>alpha</code> - the evolving damping factor, &alpha;, in <a href="#feedbackdamping">feedback damping</a> (in 1/sec).</li>
+	<li><code>Step number</code> - the current MPM step number</li>
+	<li><code>Elapsed time</code> - elapsed clock time for the current calculation (in secs)</li>
+	<li><code>CPU time</code> - total CPU time for the current calculation (in secs)</li>
+</ul>
+Any invalid quantity will be ignored. (Default value: no global archiving)
+</dd>
+
+  <dt><a name="feedbackdamping"></a>&lt;FeedbackDamping target='5'&gt;</dt>
+  <dd>Adds numerical damping on the update of particle velocity using a Nose-Hoover thermostat. With feedback damping on, the particle velocity update is<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v<sub>p</sub>(t+dt) = v<sub>p</sub>(t) + (a<sub>p</sub><sup>*</sup>
+- &alpha;v<sub>p</sub><sup>*</sup>)dt<br>
+where &alpha; is a global damping coefficient that is initialized to zero and evolves by<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(d&alpha;/dt) = (2K/m<sub>tot</sub>) [ ( &Sigma; (1/2) m<sub>p</sub>|v<sub>p</sub><sup>*</sup>|<sup>2</sup> ) - T<sub>k</sub> ]<br>
+where K is the parameter entered in the <code>FeedbackDamping</code> command (with units of 1/mm<sup>2</sup>), m<sub>tot</sub> is total mass, and T<sub>k</sub> is the target kinetic energy (entered in the <code>target</code> attribute as a <a href="function.html">user-defined function</a> of time that evaulates to kinetic energy in &mu;J; the default value is 0). The (2/m<sub>tot</sub>) is an arbitrary scaling used to make K similar to a different feedback damping method used in earlier versions of this code and an attempt to make K less dependent on problem size.
+<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A Nose-Hoover thermostat works in molecular calculations by tying kinetic energy to temperature. Here the thermostat ties kinetic energy to an expected kinetic energy after vibrations are damped out. When boundary conditions are constant, the target kinetic energy should be zero and feedback damping will help the problem converge to the static solution. For non-constant boundary conditions, you need to estimate the &quot;static&quot; (<i>i.e.</i>, very slow loading) kinetic energy to have this thermostat work correctly. The damping also depends on K; selecting a good value requires trial and error.
+</dd>
+  
+  <dt><a name="damping"></a>&lt;Damping&gt;</dt>
+  
+  <dd>Grid damping constant in units of 1/sec. This type of damping is applied directly to the nodes. It is less sophisticated than <a href="#feedbackdamping">FeedbackDamping Command</a>, but sometimes it is easier is use. Higher values give more damping. Selecting a good value requires trial and error. (Default value: 0)<br>
+  
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;With grid damping on, the nodal velocity update becomes<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v<sub>i</sub>(t+dt) = v<sub>i</sub>(t) + (a<sub>i</sub><sup>*</sup>
+- kv<sub>i</sub><sup>*</sup>)dt<br>
+where  a<sub>i</sub><sup>*</sup> = (f<sub>i</sub><sup>int</sup> + f<sub>i</sub><sup>ext</sup>)/m<sub>i</sub> is nodal acceleration without damping, v<sub>i</sub><sup>*</sup> = p<sub>i</sub>/m<sub>i</sub> in nodal velocity, m<sub>i</sub> is nodal mass, and k is the parameter entered in the <code>Damping</code> command.</dd>
+  
+<dt><a name="stressfreetemp"></a>&lt;StressFreeTemp&gt;</dt>
+<dd>This tags allows you to specify a stress free or reference temperature (in degrees C). The analysis will track absolute particle temperature. For a simple analysis with temperature-independent properties, the final results depend only on temperature difference. This parameter simply allows output temperature to have actual values. It has no influence unless the calculations include <a href="thermal.html">thermal conductivity and/or isothermal temperature differences</a>. (Default value: 0)
+</dd>
+
+  <dt><a name="diffusion"></a>&lt;Diffusion reference='1'/&gt;</dt>
+  <dd>Activates diffusion calculations. Without this element in the MPM Header, no diffusion calculations will be done. When diffusion is activated, you can set <a href=".html">material diffusion and expansion constants</a>, initial <a href="definempm.html#sec2">particle concentrations</a>, and impose <a href="dispbc.html#conc">concentration</a> or <a href="mpmloads.html#flux">flux</a> boundary conditions. All calculations are done in terms of a concentration potential from 0 to 1 where 1 is the saturation concentration of a material type. When concentration and concentration gradients are archived, however, they are converted to actual concentration in weight fraction using the <a href="definematl.html">material's saturation concentration</a> setting. The <code>reference</code> attrbute is used to set a reference concentration potential (between 0 and 1) that corresponds to zero strain. (Default values: diffusion off and <code>reference</code> = 0)
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Concencentration changes are coupled to stress and strains through concentration expansion coefficients <a href="definematl.html">defined for the materials</a>. By default, all moisture expansion coefficients are zero which decouples diffusion and strains. By entering non-zero values, the coupling will occur. Note that setting initial particle concentrations different than the reference concentration will cause strains to immediate evolve toward the changed state. The net effect will be an instantaneous &quot;impact&quot; of concentration change that might cause undesirable dynamic effects.</dd>
+  
+  <dt><a name="mmmode"></a>&lt;MultiMaterialMode Vmin='1.0' Dcheck='0' Normals='0'&gt;</dt>
+  <dd>This command enables multi-material MPM where each material has a separate velocity field. During calculations, nodes that interact with more than one material use multimaterial contact methods to adjust the momenta. The attributes and subordinate commands define the properties of the multimaterial mode calculations.
+  <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Multimaterial contact is detected by various criteria. The first check is on the total undeformed volume from all materials extraplated to the nodal point. If this volume is less than the <code>Vmin</code> attribute, the node is assumed to not be in contact and the materials move in their separate velocity fields. The <b>default value is 0.0</b>, meaning the volume check is skipped. Values around 1.0 gie good results when all contact is within a continuum hanving no voids. If the simulations has empty space and contact occurs near corners, a setting of 1.0 will skip those contact situations. Although this is physically not correct, it is difficult to find normals at corners can therefore be better skip them. You should proceed with caution, however, for simulatins that have lots or corners.<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If the volume check is passed, the second check is on the relative normal direction velocities of the materials. If they are moving apart, they are assumed to not be in contact. If they are moving together, the next check is performed.<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The last check is a calculation of absolute displacement between the surfaces of the two materials. This check can be turned on or off by setting <code>Dcheck</code> attribute to 1 or 0. When the volume check is enabled at 1.0 or higher, this check is normally superfluous and can be skipped. If the volume check is skipped, it is a good idea to turn this check on (hence the <b>default is 1 or enabled</b>). When it is enabled, the displacement calculations can be done using particle displacements (best when surfaces were originally in contact) or positions (best when surface come into contact during the simulation). See <a href="#mmcontactposition"><code>ContactPosition</code></a> command for details.<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Once contact is detected, the required contact calculations depened on the surface normals. The Normals attribute activates two options for finding the normals. A setting of 0 means to take the normal for the material that has the largest magnitude of volume gradient at the node. A setting of 1 means to take the normal for the material that has the largest volume at the node. <b>The default setting is 1</b> and appears to give best performance for the widest range of contact situations. No one methods is perfect.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The possible suboridinate commands are:
+
+<dl>
+
+  <dt><a name="mmfriction"></a>&lt;Friction&gt; </dt>
+  <dd>This command sets friction for contact between all pairs of materials. It is set as explained for the <a href="#friction"><code>friction</code></a> command in the <a href="#cracks">cracks</a> section except that imperfect interface settings are not yet supported and setting less than -10 means to assume materials are always in contact and revert to single material mode (assuming no nodes have three or more materials). This setting is only useful for testing code to verify results are identical to the same calculations done in non-multimaterial mode. 
+  </dd>
+  <dt><a name="mmcontactposition"></a>&lt;ContactPosition&gt;0.8&lt;/ContactPosition&gt;</dt>
+  <dd>If this command is absent, surface displacements are calculated from particle displacements. If this command is present, surface displacements are calculated from particle positions and this command sets the relative position that is considered to be in contact. See <a href="#contactposition"><code>ContactPosition</code></a> command in the <a href="#cracks">cracks</a> section for details, except it applies to contact between two materials rather than contact between crack surfaces.
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;When a multimaterial simulation also has cracks, only one method is allowed for calculating surfaces displacements and that method applies to both material and crack surfaces. The default method is to use particle displacements. If either the <a href="#mmmode"><code>MultiMaterialMode</code></a> section or the <a href="#cracks"><code>Cracks</code></a> section has a <code>ContactPosition</code> command, then both contact algorithms will find displacements from particle positions. If the <code>Dcheck</code> attribute of the <a href="#mmmode"><code>MultiMaterialMode</code></a> command is 0, then displacements are not used for material contact and the <code>ContactPosition</code> command applies only to crack surface contact.
+  </dd>
+</dl>
+
+</dd>
+
+ 
+  <dt><a name="cracks"></a>&lt;Cracks&gt;</dt>
+  <dd>Defines some extra parameters used when the MPM analysis has <a href="cracks.html">cracks</a>. The extra parameters are all contained within the <code>Cracks</code> tag.
+
+<dl>
+  <dt><a name="propagate"></a>&lt;Propagate criterion='1' direction='0' traction='1'/&gt;</dt>
+  <dd>Determines whether or not cracks propagate and the rule (or criterion) used to initiate crack growth. Two optional parameters determine the crack-growth direction and whether or not the new crack surface has a traction law. Crack growth can only occur at designated crack tips (see <a href="cracks.html">defining cracks</a>). The criterion is set in the <code>criterion</code> attribute and has options:
+  
+<ul class="lev2args">
+<li value="0">0: No crack propagation (default value).</li>
+
+<li>1: For crack growth based on stress intensity factors and a single critical stress intensity factor (K<sub>Ic</sub>). The propagation condition is based on the maximum energy release rate (also known as the maximum hoop stress criterion). The default propagation direction is in the directioon of the maximum energy release rate (or the direction of maximum hoop stress).</li>
+
+<li>2: For crack initiation when total energy release rate (J) reaches a critical value (specified by J<sub>Ic</sub>) or when the time reaches a specified time. Once the crack has initiated, the crack grows at a specified constant speed. It may be stopped at any predetermined maximum length. The default propagation direction is self-similar crack growth.</li>
+
+<li>3: For crack growth by a dynamic energy balancing scheme. The research for this option is in progress and it is not yet meant for general use. The default propagation direction is self-similar propagation.</li>
+
+<li>4: For crack growth based on stress intensity factors and a single critical stress intensity factor (K<sub>Ic</sub>). The propagation condition is based on the minimum strain energy density. The default propagation direction is in the direction of minimum strain energy density.</li>
+
+<li>5: For crack growth based on stress intensity factors and two critical stress intensity factors (K<sub>Ic</sub> and K<sub>IIc</sub>). The default propagation direction is the direction of maximum energy release rate (see criterion 1 above). The criterion for crack growth is
+(K<sub>I</sub>/K<sub>Ic</sub>)<sup>p</sup> + (K<sub>II</sub>/K<sub>IIc</sub>)<sup>q</sup>=1</li>
+
+<li>6: For crack growth if the crack tip opening displacement at the crack tip exceeds &delta;<sub>Ic</sub> or &delta;<sub>IIc</sub> if one or both are specified. The default propagation direction is self-similar propagation.</li>
+
+<li>7: For crack growth when energy release rate exceeds J<sub>Ic</sub>. The default propagation direction is self-similar propagation.
+</li>
+
+</ul>
+
+<p>Each criterion above has a default method for determinaton of the crack propagation direction. The optional <code>direction</code> attribute can override the default method with one of the following methods:</p>
+
+<ul class="lev2args">
+
+<li value="0">0: To use the default direction for the above criterion.</li>
+
+<li>1: To grow in the direction of the crack tip crack sepgment.</li>
+
+<li>2: To grow normal to a vector between the top and bottom surface at the crack tip</li>
+
+<li>3: To estimate the direction of maximum energy release rate based on the normal and shear crack opening displacements. This direction is similar to <code>max energy release</code> criterion above, but can be used on any type of material.</li>
+
+<li>4: To grow in the crack tip direction defined by the initial crack geometry.</li>
+
+</ul>
+By default, cracks propagate as new, traction-free crack surfaces. The traction attribute changes this behaviour such that newly created crack segments will be initialized with the specified traction law material. Enter by material number, and the material must be a traction law material.
+<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;See <a href="definematl.html">information on materials</a> to set crack propagation properties such as K<sub>Ic</sub>, K<sub>IIc</sub>, K<sub>I</sub> exponent p, K<sub>II</sub> exponent q, J<sub>Ic</sub>, initiation time, crack speed, maximum crack length, <i>etc.</i>, and to create traction-law materials. Note that all criteria are based on materials with isotropic toughness properties (same toughness in all directions). The material may have anisotropic mechanical properties, but anisotropy in toughness is not yet modeled.</dd>
+  
+  <dt><a name="jcontour"></a>&lt;JContour type='1' size=&quot;2&quot; terms=&quot;1&quot;/&gt;</dt>
+  <dd>Determines the path used for J-Integral calculations. The current code always draws a contour along grid lines of the mesh and all local grid lines must be parallel to x or y axes. In the future the <code>type</code> attribute may allow other types of contours. The <code>size</code> attribute determines size of the contour path. It is the number of elements from the nearest node to the crack tip to the path in all directions. The <code>terms</code> attribute must be 1 or 2 where 1 means contour integral only and 2 means an additional term that integrates over the area within the contour. The extra term is needed for true path independence of J calculations. The second terms of usually small when the <code>size</code> is small (&lt;3), but it can be important if <code>size</code> gets large. (Default values: <code>type</code>=1, <code>size</code>=2, <code>terms</code>=1)</dd>
+  
+  <dt><a name="friction"></a>&lt;Friction Dn='200' Dt='5'&gt; </dt>
+  <dd>Default coefficient of friction for crack contact calculations. Enter the friction coefficient or enter zero for frictionless contact. Enter number less than -10 to ignore crack contact (which is unrealistic analysis when crack surfaces do contact), or enter a number between -1 and -9 to have crack contact by stick conditions. See <a href="cracks.html">crack definitions</a> for a method of having different contact laws on different cracks. (Default value: 0)
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The friction setting also allows the contact to be modeled as an imperfect interface (in which case it is not really a crack, but an imperfect bond line within the specimen). To specify an imperfect interface, set the friction to a value greater than 10 and then use attributes <code>Dn</code>, <code>Dnc</code>, <code>Dnt</code>, and <code>Dt</code> to set interfacial stiffnesses (in MPa/mm). <code>Dn</code> and <code>Dt</code> determine the interfacial normal and tangential traction as this stiffness times the displacement discontinuity in the normal and tangential directions. For the normal direction <code>Dnc</code> and <code>Dnt</code> let you specific different stiffnesses in compression (surfaces in contact) or tension (surfaces sparated). In theory, an infinite stiffness leads to zero discontinuity or a perfect interface, but high stiffnesses make dynamic MPM unstable. Instead, you can get a perfect interface in any direction by setting the stiffness to -1. When imperfect interfaces are present, you can track their energy usin the <a href="#globalarchive">Interface Energy archiving option</a>.
+  </dd>
+  
+  <dt><a name="moveplane"></a>&lt;MovePlane type='avg'&gt;</dt>
+  <dd>This setting determines how the crack planes move. The default setting of '<code>avg</code>' means the two crack surfaces move in their separate velocity fields and the crack plane is defined as the average of the two surfaces. The alternative setting is '<code>cm</code>' which means the crack plane moves in the center of mass velocity field. The crack surfaces still move in their separate velocity fields. In all cases, the crack surfaces are prevented from passing through the crack plane.
+  <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Both methods are valid and usually give equivalent results. For some problems, one method or the other is better. Thus, if crack movement seems to cause a problem, try repeating the analysis with the alternate <code>MovePlane</code> setting. The '<code>avg</code>' method is slightly faster because it does not need to calculate nodal center of mass velocities. (Default value: 'avg')
+  </dd>
+  
+  <dt><a name="contactposition"></a>&lt;ContactPosition&gt;0.8&lt;/ContactPosition&gt;</dt>
+  <dd>The default method for determining contact across a crack surface is to verify both that the surfaces are moving towards each other (<i>i.e.</i>, normal dv &lt; 0) and that the normal crack opening displacement (COD) is less than zero. The question is how is the normal COD calculated? The default method is to calculate it from particle displacements. This approach is accurate provided the two surfaces of the crack are in contact at the start of the analysis (<i>e.g.</i>, the crack's starting COD is zero). Since internal cracks normally start in contact, this default displacement approach is the best one for madeling crack contact and composite material contact.
+  <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Now, cracks in CRAMP can also model surfaces including <a href="cracks.html">imperfect interfaces</a>. If the modeled interface or surface only comes into contact during the calculations (<i>i.e.</i>, one or both sides of the crack has no particles at the start of the calculation), the displacement approach can be unrealistic. An approximate correction is to use this command and specify a critical position to define contact. Use of this command converts contact detection to be based on extrapolated particle positions rather than displacements. The critical position given by the command in the difference between the extrapolated particle positions (as fraction of cell dimensions) for the top and bottom surfaces that should be considered as contact. When using 4 particles per cell in 2D calculations, the critical position difference should be 0.5, but MPM does not precisely locate edge positions. Calculations with 1D shape functions suggest the critical position should about 0.8. This value of 0.8 is probably good for 4 particles per cell and <a href="#gimp">non-GIMP</a> shape functions. It should be changed with one particle per cell (probably &gt; 1.0) and probably need not be changed for <a href="#gimp">GIMP</a> shape functions.
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Only a single contact position can be entered and it applies to cracks regardless of their orientation. To work in problems with cracks in different orientations, the problem should use a regular mesh of square elements. The position method is allowed for non-square meshes, but the result will be contact conditions that depend on crack orientation.
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;When cracks are modeling <a href="cracks.html">imperfect interfaces</a>, this setting affects both detection of contact and calculation of normal COD for finding the normal interfacial force. The most accurate imperfect interface calculations will be for cracks initially in contact with COD found using displacements (<i>i.e.</i>, no <code>&lt;ContactPosition&gt;</code> command). For imperfect interfaces that are not initially in contact, the contact position method can be used. The accuracy of this approach has not been studied.
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;When a multimaterial simulation also has cracks, only one method is allowed for calculating displacements and that method applies to both material and crack contact. The default method is to use particle displacements. If either the <a href="#mmmode"><code>MultiMaterialMode</code></a> section or the <a href="#cracks"><code>Cracks</code></a> section has a <code>ContactPosition</code> command, then both contact algorithms will find displacements from particle positions. If the <code>Dcheck</code> attribute of the <a href="#mmmode"><code>MultiMaterialMode</code></a> command is 0, then displacements are not used for material contacy and the <code>ContactPosition</code> command applies only to crack surface contact.
+</dd>
+
+</dl>
+</dd>
+  
+  <dt><a name="gimp"></a>&lt;GIMP/&gt;</dt>
+  <dd>This command activates GIMP or the generalized interpolation material point method. GIMP is recommended when material points cross element boundaries. The use of GIMP currently requires a regular grid that is generated using the <a href="definemesh.html"><code>Grid</code></a> command. For 2D analyses, it requires the use of <a href="#matlptsperelement">4 material points per element</a>; For 3D analyses, it requires the use of <a href="#matlptsperelement">8 material points per element</a>. When using GIMP, a particle is considered to have left the grid if it moves into any element on the edge of the analysis. Thus, the use of GIMP will cause the <a href="definemesh.html"><code>Grid</code></a> command to automatically add an extra boundary of elements. Any analysis that runs without GIMP, even with particles on the edge of the analysis, should work fine simply by adding the <code>GIMP</code> command to the MPM header. Note that the edge restriction does not apply to particles with <a href="definematl.html#rigid">rigid materials</a>; such particles can be in edge elements.</dd>
+  
+  <dt><a name="leave"></a>&lt;LeaveLimit&gt;10000&lt;/LeaveLimit&gt;</dt>
+  <dd>This command is used to force particles that try to leave the grid back into the grid. The leave limit is the number of analysis steps that will allow a particle to leave the grid. Once the limit is reached the analysis will stop. The default value is 1, which means the first particle to leave the grid will stop the analysis. Normally you should keep particles in the grid by using appropriate boundary conditions on the edges of the grid. In some calculations, numerical artifacts may cause particles to jump beyond the boundary conditions. This command can help those analyses to continue without stopping, but if many particles have to be returned to the grid, the results might be suspect.</dd>
+ </dl>
+
+<a name="units"></a><h2>Units Attribute in Some Commands</h2>
+
+<p>Many commands allow an optional <code>units</code> attribute to specify the units of a numeric value. If no units attribute is used, the value will have default units depending on physical quantity associated with the command. The possible units settings and their default values are:
+</p>
+
+<dl>
+<dt>Time</dt>
+<dd>The possible options are 'sec', 'ms', 'msec', or 'microsec'. The default units are seconds.</dd>
+
+<dt>Length</dt>
+<dd>The possible options are 'mm', 'm', 'cm', 'microns', 'in', or 'ft'. The default units are millimeters.</dd>
+
+<dt>Velocity</dt>
+<dd>The possible options are 'mm/sec', 'mm/msec', 'm/sec', 'cm/sec', 'in/sec', or 'ft/sec'. The default units are millimeters per second.</dd>
+
+<dt>Mass</dt>
+
+<dd>The possible options are 'g', 'kg', 'mg', 'lbs',  or 'oz'. The default units are grams.</dd>
+</dl>
+
+<p>The <code>units</code> attribute is only allowed in commands the specify it is allowed.</p>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+</body>
+
+</html>
