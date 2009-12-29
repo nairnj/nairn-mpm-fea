@@ -1,0 +1,20 @@
+#summary Setting up `cygwin` to download and compile `nairn-mpm-fea`.
+
+= Introduction =
+
+The `nairn-mpm-fea` projects runs well in Windows by using the `cygwin` system. You can download the code, compile ir, run calculations, and visualize the results. This process has been tested in Windows XP, Vista, and 7. This page explains how to set up `cygwin` to download the project. Once the project is downloaded, consult its documentation for further instructions on compiling, running, and visualizing.
+
+= Setting up `cygwin` =
+
+The recommended approach to using `nairn-mpm-fea` in windows is to use `cygwin` and the setup is described in the following ste-by-step process. This process has bene verified in Windows XP, Windows Vista and Windows 7 (although you may need the latest `cygwin 1.7` for Windows 7).
+
+  #Download the cygwin setup.exe application and run it (to install cygwin or to install plug-ins needed below, if you already have cygwin installed).
+
+Follow the default options until you reach the "Packages" step of the Cygwin Setup wizard. In that step, expand the "Devel" category and select:
+cvs - the cvs command for downloading code (optional, but needed if code will be obtained by cvs)
+g++ - the gnu c++ compiler
+gdb - the gnu debugger (optional)
+make - program for making files (the NairnMPM and NairnFEA binaries)
+Next, expand the "Net" category and select:
+openssh - ssh command for secure remote connections (optional, but needed if code will be obtained by cvs).
+Finally, if you would like a command-line editor, you can optionally expand the "Editors" section and select the one you want (e.g., vim). Similarly, you can select any other packages in any section that interests you. You can also return to this setup and select them later.
