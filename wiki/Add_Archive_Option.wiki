@@ -1,4 +1,5 @@
 #summary Add new quantities to NairnMPM archiving options
+#labels NairnMPM
 
 = Introduction =
 
