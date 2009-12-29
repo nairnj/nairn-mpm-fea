@@ -5,7 +5,7 @@
 
 You must use `Subversion` (or `svn`) on your local computer to download the entire `nairn-mpm-fea` project from `google code`. This `svn` package is available for Mac and Linux as a command-line tool (see <a href="http://subversion.tigris.org/">tigris.org</a> if you need to install it). For Windows, one solution is to [Windows_Setup set up `cygwin`] and use its version of `svn`. In each platform there may by other `svn` options as well, but this page is based on the command-line approach.
 
-Once you have `svn` you can either do an [#Anonymous_Checkout anonymous checkout] or a [#Password_Enabled_Checkout].
+Once you have `svn` you can either do an [#Anonymous_Checkout anonymous checkout] or a [#Password_Enabled_Checkout password enabled check].
 
 #labels Anonymous Checkout,Password Enabled Checkout
 
@@ -21,7 +21,7 @@ Once you have the code, open the `index.html` file in the Documentation folder t
 
 =Password Enabled Checkout=
 
-If you might want to contribute changes to the nairn-mpm-fea project, including changes to documentation or the project's wiki pages, or if you just want to have a visible presence in use of the code, you should checkout with a username and password. But first, you need a password. The process is:
+If you might want to contribute changes to the `nairn-mpm-fea` project, including changes to documentation or the project's wiki pages, or if you just want to have a visible presence in use of the code, you should checkout with a username and password. But first, you need a password. The process is:
 
   # Participating in any `googlecode.com` project requires a google account and a gmail email addess. If you do not have one, you can create one for free at <a href="http://www.google.com">`google.com`</a>. If you already have a google account, you can easily add an email address.
   # Email you google email address to &lt;John.Nairn@oregonstate.edu&gt; with a request to be a committer (ability to make changes) or a contributer (to be added as a visible user of the code). You will be emailed back when you have been added to the project.
