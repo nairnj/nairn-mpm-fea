@@ -5,15 +5,17 @@
 
 The main `trunk` of the project contains the working code. Since this code is computation mechanics research software, the main `trunk` may occasionally have issues or incomplete features. To help avoid such issues, various complete releases are `tagged` and can be check out instead of the main `trunk`.
 
-=Tagged Versions=
+=Nairn-MPM-FEA Tagged Releases=
 
 ==Checking Out a Tagged Version==
 
 To check out a tagged release instead of the current development release, simply change the path in the checkout command. For example, an anonymous check out would be
 
-  `svn checkout http://nairn-mpm-fea.googlecode.com/svv/tags/release-1.0'
+{{{
+svn checkout http://nairn-mpm-fea.googlecode.com/svv/tags/release-1.0
+}}}
 
-where the final component is the path is the version you want. See [#Tagged_Version below] for a list of available tag versions.
+where the final component is the path is the version you want. See [#Tagged_Versions below] for a list of available tag versions.
 
 ==Tagging a Version by Committers==
 
@@ -25,9 +27,10 @@ svn copy https://nairn-mpm-fea.googlecode.com/svv/trunk \
       -m "Tagging stable release 2.0"
 }}}
 
-where you enter an unused release number.
+where you enter any unused release number.
 
 
-= Tagged Versions =
+==Tagged Versions==
 
-The project `nairn-mpm-fea` was first imported to `GoogleCode.com` in December 2009. The first version finalized is being tagged now.
+The project `nairn-mpm-fea` was first imported to `GoogleCode.com` in December 2009. The first version was tagged as release 1.0. The following table lists this release and all subsequent tagged releases:
+
