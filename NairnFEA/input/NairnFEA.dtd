@@ -1,0 +1,256 @@
+<!-- ==============================================
+		NairnMPM Input File MPM
+================================================-->
+
+<!ELEMENT	JANFEAInput 
+			( Header, Mesh, BMP*, Material+, GridBCs?, Thermal?)>
+<!ATTLIST	JANFEAInput
+			version (1|2|3) "3">			
+     
+<!-- ==============================================
+		BLOCK ELEMENTS
+================================================-->
+
+<!-- Headers -->
+
+<!ELEMENT	Header
+			( Description | Analysis | Output | Select )+>
+
+<!-- Define the mesh -->
+
+<!ELEMENT	Mesh
+			( ( NodeList, ElementList) | ( Keypoints, Path+, Area+ ) )>
+
+<!ELEMENT	NodeList
+			( pt+ )>
+<!-- No longer used but allowed for compatibility -->
+<!ATTLIST	NodeList
+			number CDATA #IMPLIED>
+
+<!ELEMENT	ElementList
+			( elem+ )>
+<!-- Number no longer used but allowed for compatibility -->
+<!ATTLIST	ElementList
+			number CDATA #IMPLIED
+			form CDATA #IMPLIED>
+
+<!ELEMENT	Keypoints
+			( pt+ )>
+			
+<!ELEMENT	Path
+			( keypt+ )>
+<!ATTLIST	Path
+			id CDATA #REQUIRED
+			intervals CDATA #REQUIRED
+			ratio CDATA #IMPLIED>
+
+<!ELEMENT	Area
+			( path+ )>
+<!ATTLIST	Area
+			mat CDATA #REQUIRED
+			angle CDATA #IMPLIED
+			thick CDATA #IMPLIED
+			type CDATA #IMPLIED
+			flip CDATA #IMPLIED>
+
+<!ELEMENT	BMP
+			( Origin?, Intensity+ )>
+<!ATTLIST	BMP
+			units CDATA "mm"
+			name CDATA #REQUIRED
+			angles CDATA #IMPLIED
+			width CDATA #IMPLIED
+			height CDATA #IMPLIED>
+
+<!ELEMENT	Intensity
+			( Angle | Thickness | Temperature )*>
+<!ATTLIST	Intensity
+			mat CDATA #IMPLIED
+			imin CDATA #REQUIRED
+			imax CDATA #REQUIRED
+			minAngle CDATA #IMPLIED
+			maxAngle CDATA #IMPLIED>
+
+<!ELEMENT	Cracktip EMPTY>
+<!ATTLIST	Cracktip
+			keypt CDATA #IMPLIED
+			x CDATA #IMPLIED
+			y CDATA #IMPLIED>
+
+<!-- Define material properties -->
+
+<!ELEMENT	Material
+			( rho | E | nu | alpha | yield
+				| EA | ET | GA | nuA | nuT | alphaA | alphaT
+				| Ex | Ey | Ez | Gxy | Gxz | Gyz | nuxy | nuxz | nuyz
+				| alphax | alphay | alphaz
+				| Dn | Dt )* >
+<!ATTLIST	Material
+			Type (1|2|3|4|5) #REQUIRED
+			Name CDATA #IMPLIED>
+
+<!-- Boundary conditions all on the grid -->
+
+<!ELEMENT   GridBCs
+			(Cracktip?, ( DisplacementBCs | LoadBCs | EdgeBCs 
+				| BCLine | BCPt | Periodic )*, Resequence?) >
+
+<!ELEMENT	DisplacementBCs
+			( fix | rotate )*>
+			
+<!ELEMENT	LoadBCs
+			( load* )>
+
+<!ELEMENT	EdgeBCs
+			( stress* )>
+			
+<!-- BC Shapes -->
+
+<!ELEMENT	BCLine
+			( DisBC | LoadBC | rotate | StressBC )*>
+<!ATTLIST	BCLine
+			x1 CDATA #IMPLIED
+			x2 CDATA #IMPLIED
+			y1 CDATA #IMPLIED
+			y2 CDATA #IMPLIED
+			tolerance CDATA #IMPLIED
+			path CDATA #IMPLIED
+			select CDATA #IMPLIED>
+			
+<!ELEMENT	BCPt
+			( DisBC | LoadBC | rotate )*>
+<!ATTLIST	BCPt
+			x CDATA #IMPLIED
+			y CDATA #IMPLIED
+			keypt CDATA #IMPLIED
+			select CDATA #IMPLIED>
+
+<!-- Thermal analysis -->
+
+<!ELEMENT	Thermal
+			( Temperature?, StressFreeTemp?) >
+
+<!-- ==============================================
+		BASIC ELEMENTS (with no children)
+================================================-->
+
+<!ELEMENT	Description (#PCDATA)>
+<!ELEMENT	Analysis (#PCDATA)>
+<!ELEMENT	Output (#PCDATA)>
+<!ELEMENT	Select EMPTY>
+<!ATTLIST	Select
+			node CDATA #REQUIRED>
+<!ELEMENT	Temperature (#PCDATA)>
+<!ELEMENT	StressFreeTemp (#PCDATA)>
+
+<!ELEMENT	rho (#PCDATA)>
+<!ELEMENT	E (#PCDATA)>
+<!ELEMENT	nu (#PCDATA)>
+<!ELEMENT	alpha (#PCDATA)>
+<!ELEMENT	yield (#PCDATA)>
+<!ELEMENT	EA (#PCDATA)>
+<!ELEMENT	ET (#PCDATA)>
+<!ELEMENT	GA (#PCDATA)>
+<!ELEMENT	nuA (#PCDATA)>
+<!ELEMENT	nuT (#PCDATA)>
+<!ELEMENT	alphaA (#PCDATA)>
+<!ELEMENT	alphaT (#PCDATA)>
+<!ELEMENT	Ex (#PCDATA)>
+<!ELEMENT	Ey (#PCDATA)>
+<!ELEMENT	Ez (#PCDATA)>
+<!ELEMENT	Gxy (#PCDATA)>
+<!ELEMENT	Gxz (#PCDATA)>
+<!ELEMENT	Gyz (#PCDATA)>
+<!ELEMENT	nuxy (#PCDATA)>
+<!ELEMENT	nuxz (#PCDATA)>
+<!ELEMENT	nuyz (#PCDATA)>
+<!ELEMENT	alphax (#PCDATA)>
+<!ELEMENT	alphay (#PCDATA)>
+<!ELEMENT	alphaz (#PCDATA)>
+<!ELEMENT	Dn (#PCDATA)>
+<!ELEMENT	Dt (#PCDATA)>
+
+<!ELEMENT	pt EMPTY>
+<!ATTLIST	pt
+			x CDATA #REQUIRED
+			y CDATA #REQUIRED
+			id CDATA #IMPLIED
+			temp CDATA #IMPLIED>
+
+<!ELEMENT	keypt EMPTY>
+<!ATTLIST	keypt
+			id CDATA #REQUIRED>
+
+<!ELEMENT	path EMPTY>
+<!ATTLIST	path
+			id CDATA #REQUIRED>
+
+<!ELEMENT	elem (#PCDATA)>
+<!ATTLIST	elem
+			type (2|3|4) #REQUIRED
+			matl CDATA #REQUIRED
+			angle CDATA "0.0"
+			thick CDATA #REQUIRED>
+
+<!ELEMENT	fix (#PCDATA)>
+<!ATTLIST	fix
+			node CDATA #REQUIRED
+			dof CDATA #REQUIRED>
+
+<!ELEMENT	rotate (#PCDATA)>
+<!ATTLIST	rotate
+			node CDATA #IMPLIED
+			axis CDATA #REQUIRED
+			angle CDATA #IMPLIED>
+
+<!ELEMENT	DisBC EMPTY>
+<!ATTLIST	DisBC
+			dof CDATA #REQUIRED
+			disp CDATA #IMPLIED
+			function CDATA #IMPLIED>
+
+<!ELEMENT	StressBC EMPTY>
+<!ATTLIST	StressBC
+			dir CDATA #REQUIRED
+			stress CDATA #IMPLIED>
+
+<!ELEMENT	load (#PCDATA)>
+<!ATTLIST	load
+			node CDATA #IMPLIED
+			dof CDATA #REQUIRED>
+
+<!ELEMENT	LoadBC EMPTY>
+<!ATTLIST	LoadBC
+			dof CDATA #REQUIRED
+			load CDATA #IMPLIED
+			function CDATA #IMPLIED>
+
+<!ELEMENT	stress (#PCDATA)>
+<!ATTLIST	stress
+			elem CDATA #REQUIRED
+			face (1|2|3|4) #REQUIRED
+			dir (1|2) #REQUIRED>
+
+<!ELEMENT	Periodic EMPTY>
+<!ATTLIST	Periodic
+			dof CDATA #REQUIRED
+			delta CDATA #IMPLIED
+			slope CDATA #IMPLIED
+			shear CDATA #IMPLIED>
+			
+<!ELEMENT	Resequence EMPTY>
+<!ATTLIST	Resequence
+			keypt CDATA #IMPLIED
+			x CDATA #IMPLIED
+			y CDATA #IMPLIED>
+
+<!ELEMENT	Origin EMPTY>
+<!ATTLIST	Origin
+			units CDATA "mm"
+			x CDATA #REQUIRED
+			y CDATA #REQUIRED>
+<!ELEMENT	Angle (#PCDATA)>
+<!ELEMENT	Thickness (#PCDATA)>
+<!ATTLIST	Thickness
+			units CDATA "mm">
+

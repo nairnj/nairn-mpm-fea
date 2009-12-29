@@ -1,0 +1,251 @@
+.\"Modified from man(1) of FreeBSD, the NetBSD mdoc.template, and mdoc.samples.
+.\"See Also:
+.\"man mdoc.samples for a complete listing of options
+.\"man mdoc for the short list of editing options
+.\"/usr/share/misc/mdoc.template
+.\"test command line is man ./ExtractMPM.1
+.Dd 10/26/07               \" DATE 
+.Dt ExtractMPM 1      \" Program name and manual section number 
+.Os Darwin
+
+.Sh NAME                 \" Section Header - required - don't modify 
+.Nm ExtractMPM
+.Nd command-line tool for extracting particle data from NairnMPM archive files.
+
+.Sh SYNOPSIS             \" Section Header - required - don't modify
+.Nm
+.Op Fl hdDfFTXVsH23PC       \" [-hdDfFTXH23PC]
+.Op Fl b Ar format      \" [-b format] 
+.Op Fl c Ar format      \" [-c format] 
+.Op Fl m Ar num         \" [-m num] 
+.Op Fl M Ar num         \" [-M num] 
+.Op Fl q Ar data        \" [-q data] 
+.Op Fl n Ar text        \" [-n data] 
+.Op Fl o Ar path        \" [-o path] 
+.Ar archive0
+.Ar archive1 ...
+
+.Sh DESCRIPTION          \" Section Header - required - don't modify
+.Nm ExtractMPM
+reads the NairnMPM binary archive files in
+.Ar archive0 ,
+.Ar archive1 ,
+etc., extracts
+the data selected by the options, and outputs it all to standard output or
+to a file specified in the options.
+.Pp                      \" Inserts a space
+A list of flags and their descriptions:
+.Bl -tag -width -indent 
+.It Fl h
+Include a header at the beginning of the file. The header has text that describes the content of the file.
+Each line begins with a key word. The text after the space is the setting for that keyword. The
+possible keywords are
+.Pp
+ Name - optional title provided in
+.Nm -n
+command
+ Source - name of the input archive file
+ Time - archive time in ms (only for ver5 or newer archive files)
+ Data - space delimited list of columns in the output
+ Included_Materials - space delimited list of included materials
+ Excluded_Materials - space delimited list of omitted materials
+ Format - format of the output (text, xml, double, float)
+ Endian - for binary output will be little or big
+ EndHeader - last line of the header
+.Pp
+The header ends with the line feed character (0x0A) after EndHeader.
+For binary files, the header is padded to be a multiple of 8 bytes long.
+For VTK Legacy files, the name (if provided) and source will always be output on second line of the file.
+.It Fl d
+Output as little Endian binary file with doubles (extension .data)
+.It Fl D
+Output as big Endian binary file with doubles (extension .data)
+.It Fl f
+Output as little Endian binary file with floats (extension .data)
+.It Fl F
+Output as big Endian binary file with floats (extension .data)
+.It Fl T
+Output as tab-delimited text file (extension .txt). This output is the default output mode.
+.It Fl X
+Output as XML file. The format is a list of material points intended for input to new NairnMPM calculations (extension .xml).
+.It Fl V
+Output as VTK Legacy file for input into visualization tools such as ParaView.
+It will have particle data only (extension .vtk).
+.It Fl H
+Print synopsis of
+.Nm ExtractMPM
+with brief description of all options and variables.
+.It Fl 2
+Specify the archive file as having 2D results. This style is the default assumption and thus it is
+normally not needed.
+.It Fl 3
+Specify the archive file as one having 3D results. Only needed for ver3 archive files.
+For ver4 archive files or newer it is overridden by
+the file format specified in the archive file's header.
+.It Fl P
+Specify to export particle data only. Because particle data export is the default assumption,
+this option is normally not needed.
+The selected quantities should be only particle properties.
+.It Fl C
+Specify to export crack particle data only. The selected quantities should be only crack particle properties.
+.It Ic -b Ar format
+Specify the archive format of the file. Only needed for ver3 archive files.
+For ver4 archive files or newer it is overridden by
+the file format specified in the archive file's header.
+.It Ic -c Ar format
+Specify the crack archive format of the file. Only needed for ver3 archive files.
+For ver4 archive files or newer it is overridden by
+the file format specified in the archive file's header.
+.It Ic -m Ar num
+Omit data for particles with material number
+.Ar num .
+More than one use can remove multiple material types.
+.It Ic -M Ar num
+Include data for particles with material number
+.Ar num .
+More than one use can include multiple material types. If no
+.Nm -M
+options are used, then all materials are included. A material that is both included and excluded, will be excluded.
+.It Ic -q Ar data
+When exporting particle
+.Ar data ,
+the output always includes particle position (x, y, and z (for 3D)),
+but can include additional data for each
+.Nm -q
+option. The allowed quantities for particle
+.Ar data
+are:
+.Pp
+.Ar mat
+for material number,
+.Ar mass
+for particle mass (g),
+.Ar velx ,
+.Ar vely ,
+and
+.Ar velz
+for a component of the velocity vector (mm/sec),
+.Ar dispx ,
+.Ar dispy ,
+and
+.Ar dispz
+for a component of the displacement vector (mm),
+.Ar sxx ,
+.Ar syy ,
+.Ar szz ,
+.Ar sxy ,
+.Ar sxz ,
+and
+.Ar syz
+for a component of the stress tensor (Pa),
+.Ar exx ,
+.Ar eyy ,
+.Ar ezz ,
+.Ar exy ,
+.Ar exz ,
+and
+.Ar eyz
+for a component of the strain tensor (absolute),
+.Ar pexx ,
+.Ar peyy ,
+.Ar pezz ,
+.Ar pexy ,
+.Ar pexz ,
+and
+.Ar peyz
+for a component of the plastic strain tensor (absolute),
+.Ar strerg
+for strain energy (J),
+.Ar plerg
+for plastic energy (J),
+.Ar temp
+for temperature (K),
+and
+.Ar conc
+for concentration (wt fraction),
+XML files always include mat and can include mass, velocity, temperature, and concentration;
+they currently cannot include any other quantities. For 2D calculations, they will always include
+material angle and particle thickness.
+.Pp
+When exporting crack particle
+.Ar data ,
+the output always includes the crack number followed by the crack particle position (x, y, and z (for 3D)),
+but can include additional
+.Ar data
+for each
+.Nm -q
+option. The allowed quantities for crack particle
+.Ar data
+are:
+.Pp
+.Ar j1
+and
+.Ar j2 
+for crack tip J integral terms,
+.Ar ki
+and
+.Ar kii
+for crack tip stress intensity factors. XML files only include crack particle positions and tip material ID (if present);
+they currently cannot include J integral or stress intensity factors.
+.Pp
+Any requested particle or crack quantity not in the archive file will be output as zero.
+.It Ic -o Ar path
+The output will be to standard output unless an output file path is
+specified in this option. The output file should not include an extension
+because one will be generated automatically based on the selected file type. 
+When multiple archive files are extracted in a single command, the output
+files will add an index number to this specifed output file name for each additional file (unless
+overridden by the
+.Nm -s
+option).
+.It Ic -s
+Include step number from the extension of the archive file in the name of the extracted file.
+This option overides the default index number when extracting multiple files.
+.It Ic -n Ar text
+Optional text to be included in the header if the
+.Nm -h
+option is used and to be included on second line of all VTK Legacy files.
+.El                      \" Ends the list
+.Pp
+
+.Sh EXAMPLES
+The following examples are shown as given to the shell:
+.Bl -tag -width indent
+.It Li "ExtractMPM -h -o positions arch.57"
+Output particle positions from a ver4 or newer archive file (arch.57) to the text file named
+.Pa positions.txt
+with a header at the beginning of the file.
+.It Li "ExtractMPM -d -b iYYYYNNNNNNNYNNNN -q syy -q szz -o str disks.78"
+Output particle positions and y and z-direction stresses from a ver3 archive file (disks.78)
+to a little Endian file of doubles named
+.Pa str.data .
+.It Li "ExtractMPM -hF -q sxx -M 1 -o strxx disks.*"
+Output particle positions and x-direction normal stress from several
+ver4 or newer archive files (disks.*) to a series big Endian files of floats named
+.Pa strxx.data ,
+.Pa strxx_1.data ,
+etc., including headers. The output file will include only data from particles for material number 1.
+The header will help determine which output file came from which archive file.
+.It Li "ExtractMPM -hC -o cracks disks.1289"
+Output crack number and crack particle particle positions from a ver4 or newer archive file to a text file
+.Pa cracks.txt
+including a header. The output file will include only crack particle data.
+.El
+
+.Sh HISTORY
+You only need to specify file formats (in
+.Nm -b
+and
+.Nm -c
+options) and dimensionality (in
+.Nm -3
+option) for ver3 archive files. These options will be read from the header of ver4 or newer files.
+The version ID of any archive file can be determined by looking at the first 4 bytes of the file.
+The ver4 or newer format took effect 25 OCT 2007.
+.Pp
+Since the archive file format is specified in the command, when extracting from multiple ver3 archive
+files in a single command, they must all have the same format. This restriction does not
+apply when extracting from multiple ver4 or newer files.
+
+.Sh SEE ALSO
+NairnCode documentation files.

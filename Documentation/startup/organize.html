@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
+	<title>NairnMPM and NairnFEA File Organization</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html">Start Up</a> &rarr;
+<a href="obtaining.html">Downloading</a>
+</p>
+
+<h1>NairnCode Source Code Organization</h1>
+
+<p>The recommended organization is to put all source code into a separate folder. Assuming tah folder's name is <code>NairnCode</code>, the NairnMPM,  NairnFEA, and NairnFEAMPM source code is organized into various directories. The contents of the directories are:
+</p>
+
+<dl>
+
+<dt><code>NairnCode/Common</code></dt>
+<dd>This folder has items common to both MPM and FEA code
+
+<dl>
+<dt><code>NairnCode/Projects</code></dt>
+<dd>This folder has project files for editing and compiling the code.</dd>
+
+
+<dt><code>NairnCode/(others)</code></dt>
+<dd>All other folders in <code>Common</code> have various common sections of code.</dd>
+</dl>
+
+</dd>
+
+
+<dt><code>NairnCode/NairnMPM</code></dt>
+<dd>This folder is the root folder for the NairnMPM source code
+
+<dl>
+<dt><code>NairnCode/NairnMPM/src</code></dt>
+<dd>This folder has all MPM-specific source code in various subfolders</dd>
+
+
+<dt><code>NairnCode/NairnMPM/build</code></dt>
+<dd>This folder has the <code>makefile</code> for compiling the code using a <code>make</code> command.</dd>
+
+<dt><code>NairnCode/NairnMPM/input</code></dt>
+<dd>This folder has sample input files and the <code>NairnMPM.dtd</code> file. The compiled code gets installed here ready for running with the input files.</dd>
+
+<dt><code>NairnCode/NairnMPM/info</code></dt>
+<dd>This folder has various text files with additional information.</dd>
+
+<dt><code>NairnCode/NairnMPM/tools</code></dt>
+<dd>This folder has source code for command line tools that can be used with NairnMPM such as for extracting data for archive files.</dd>
+
+</dl>
+
+</dd>
+
+<dt><code>NairnCode/NairnFEA</code></dt>
+<dd>This folder is the root folder for the NairnFEA source code
+
+<dl>
+<dt><code>NairnCode/NairnFEA/src</code></dt>
+<dd>This folder has all FEA-specific source code in various subfolders</dd>
+
+
+<dt><code>NairnCode/NairnFEA/build</code></dt>
+<dd>This folder has the <code>makefile</code> for compiling the code using a <code>make</code> command.</dd>
+
+<dt><code>NairnCode/NairnFEA/input</code></dt>
+<dd>This folder has sample input files and the <code>NairnFEA.dtd</code> file. The compiled code gets installed here ready for running with the input files.</dd>
+
+<dt><code>NairnCode/NairnFEA/info</code></dt>
+<dd>This folder has various text files with additional information.</dd>
+</dl>
+
+</dd>
+
+<dt><code>NairnCode/Visualization</code></dt>
+<dd>This folder is the root folder for the platform-independent, Java-based visualiztion tool.
+
+<dl>
+<dt><code>NairnCode/Visualization/src</code></dt>
+<dd>This folder has the Java source code for the visualization tool called NairnFEAMPMViz.</dd>
+
+
+<dt><code>NairnCode/Visualization/info</code></dt>
+<dd>This folder has a <code>makejar</code> script that can compile the Java source code into a jar file. It also has information on the visualization tool and resource files (images help text, and packages (as jar files)) needed to compile the Java application into a jar file.</dd>
+
+<dt><code>NairnCode/Visualization/Projects</code></dt>
+<dd>This folder has project files for editing and compiling the visualization tool.</dd>
+
+</dl>
+
+</dd>
+
+<dt><code>NairnCode/Documentation</code></dt>
+<dd>This folder has all documentation of the current version. Open the <code>index.html</code> file to view the documentation in any browser.</dd>
+
+</dl>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html">Start Up</a> &rarr;
+<a href="obtaining.html">Downloading</a>
+</p>
+
+</body>
+</html>
