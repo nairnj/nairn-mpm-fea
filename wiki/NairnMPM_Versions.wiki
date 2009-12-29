@@ -11,7 +11,7 @@ This page gives brief history of the main changes in various version of the `Nai
 The version number is coded in the constructor of the `NairnMPM.cpp` class:
 
 {{{
-	version=7;						// main version
+	version=7;					// main version
 	subversion=2;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 }}}
