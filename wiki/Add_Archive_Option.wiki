@@ -1,4 +1,4 @@
-#summary One-sentence summary of this page.
+#summary Add new quantities to NairnMPM archiving options
 
 = Introduction =
 
@@ -25,7 +25,7 @@ NairnMPM has a customizable archive method. This page explains how to add an opt
        a. Add writing option in ArchiveData::FillArchive()
        b. Add reversing option in ArchiveData::FillArchive()
 
-=Add Global Archive Quantity=
+= Add Global Archive Quantity =
 	
 Method to add global quantity for archiving
 
