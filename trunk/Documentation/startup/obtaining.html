@@ -16,97 +16,53 @@
 <h1>Obtaining MPM and FEA Source Code</h1>
 
 <p>
-The source code for the <code>NairnMPM</code> and <code>NairnFEA</code> calculation engines and for the <b>NairnFEAMPMViz</b> java application are publically available, but your method for downloading depends on your location and your computer system:</p>
+The source code for the <code>NairnMPM</code> and <code>NairnFEA</code> calculation engines and for the <b>NairnFEAMPMViz</b> java application are publically available. As of December 2009, the code has be commited to a <code>googlecode</code> project called <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code></a>. You can obtain code from this project one of two ways:</p>
 
 <ul>
-<li>User with an account on the Carbon/Hedera Cluster:
-<ul class="lev2">
-<li><a href="#local">Checkout on the cluster</a>
-</li>
-<li><a href="#ext">External checkout to work station</a>
-</li>
-</ul>
-<li><a href="#down">Downloads for all others</a>
+<li><a href="#anon">Anonymous checkout for anyone</a></li>
+<li><a href="#secure">Secured check with ability to make changes</a></li>
 </ul>
 
-<a name="local"></a><h1>Obtaining Source Code on the Carbon/Hedera Cluster</h1>
+<h1><a name="anon"></a>Anonymous Checkout</h1>
 
-<p>If you have an account on the Carbon/Hedera Cluster (and membership in the <code>nairnj</code> group) in the <a href="http://www.oregonstate.edu/">Oregon State University</a>, <a href="http://woodscience.oregonstate.edu//">Wood Science &amp; Engineering Department</a> you can log on to the cluster and obtain the source code by <code>cvs</code> checkout. A typical <code>bash</code> session is as follows:
+<p>The <code>googlecode</code> project is publically available for anyone to checkout anonymously. First, you need a work station with <code>svn</code> or the subversion system used by <code>googlecode</code>. Versions of <code>svn</code> are available for Mac, Windows, and Linux. Once you have <code>svn</code> installed, you check out the code as follows:
 </p>
 
 <pre>
-mkdir mycopy
-cd mycopy
-export CVSROOT='/home/nairnj/Repository/'
-cvs checkout NairnCode
+svn checkout http://nairn-mpm-fea.googlecode.com/svn/trunk/ nairn-mpm-fea-read-only
 </pre>
 
-<p>The first command makes a new directory to hold the source code; the second command moves into that directory. The <code>export</code> defines a variable that tells <code>cvs</code> the location of the source repository. Finally, the last command copies all NairnMPM, NairnFEA, and NairnFEAMPMViz source code to your directory.
+<p>Here <code>nairn-mpm-fea-read-only</code> is the name of the folder that will be created with the checked out code. You can use any name you want.
 </p>
 
 <p>
 See <a href="organize.html">source code files</a> for information on the contents of the checked out code. The above checkout out will get the current version of the code. See <a href="versions.html">version history</a> to read about other versions and to learn how to get those versions instead.
 </p>
 
-<a name="ext"></a><h1>Obtaining Source Code on Unix or Linux-Compatible Work Station</h1>
+<h1><a name="secure"></a>Secured Checkout</h1>
 
-<p>
-If you have an account on the Carbon/Hedera Cluster (and membership in the <code>nairnj</code> group) in the <a href="http://www.oregonstate.edu/">Oregon State University</a>, <a href="http://woodscience.oregonstate.edu//">Wood Science &amp; Engineering Department</a>, you can alternatively check out the code to any Unix or Linux-compatible work station (such as a MacOS X computer or Windows computer with <a href="http://www.cygwin.com">cygwin</a> and <code>cvs</code> installed) by using password access to <code>cvs</code> checkout on the cluster. A typical <code>bash</code> session is as follows:
-</p>
+<p>If you might want to contribute changes to the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code></a> project, including changes to documentation or the project's <a href="http://code.google.com/p/nairn-mpm-fea/w/list">wiki pages</a>, or if you just want a visible presence in use of the code, you should checkout with a username and password. But first, you need a password. The process is:</p>
+
+<ol>
+<li>Participating in a <code>googlecode</code> project requires a <code>google</code> or <code>gmail</code> account. If you do not have one, you can create one for free at <a href="http://www.google.com">www.google.com</a>. If you already have a <code>google</code> account, you can easily add an email address.</li>
+<li>Email you <code>google</code> email address to <a href="mailto:John.Nairn@oregonstate.edu">John.Nairn@oregonstate.edu</a> with a request to the a committer (ability to make changes) or a contributer (to be added as a visible user of the code). You will be emailed back when you have been added to the project</li>
+<li>Sign in to your <a href="http://code.google.com/">google account</a> and find your profile in the <code>google code</code> section. The &quot;My Profile&quot; tab will show you user name and the &quot;Settings&quot; tab will show the <code>GoogleCode.com</code> password. Make of note of the password, because it is needed for checkout</li>
+<li>Finally, you need <code>svn</code> installed on your computer. Versions of <code>svn</code> are available for Mac, Windows, and Linux.
+</ol>
+
+<p>Once the above steps are down (and they only need to be done once), you can check out the code with:</p>
 
 <pre>
-mkdir mycopy
-cd mycopy
-export CVS_RSH=ssh
-export CVSROOT=':ext:username@carbon.fsl.orst.edu:/home/nairnj/Repository/'
-cvs checkout NairnCode
+svn checkout https://nairn-mpm-fea.googlecode.com/svn/trunk/ nairn-mpm-fea --username YOURUSERNAME
 </pre>
 
-<p>The first command makes a new directory to hold the source code; the second command moves into that directory. The first <code>export</code> command sets connection method (and may not be needed). The second <code>export</code> command defines a variable that tells <code>cvs</code> that the repository is on a particular external server. You should enter your user name for <code>username</code>. Finally, the last command copies all MPM and FEA source code to your directory. Before the checkout occurs, you will have to enter your password.
+<p>Here <code>nairn-mpm-fea</code> is the name of the folder that will be created with the checked out code. You can use any name you want. Also <code>YOURUSERNAME</code> is the username you obtained in setp #3 above. After giving this command, you will need the password from step #3 to finish the checkout
 </p>
 
 <p>
 See <a href="organize.html">source code files</a> for information on the contents of the checked out code. The above checkout out will get the current version of the code. See <a href="versions.html">version history</a> to read about other versions and to learn how to get those versions instead.
 </p>
 
-
-<a name="down"></a><h1>Downloading Source Code for all Other Users</h1>
-
-<p>
-If you do not have access to the code as described above, you can download source code from the following table. This table lags behind the <code>cvs</code> checkout method.
-</p>
-
-<blockquote>
-
-<table summary="Download Source Code">
-<tr>
-<th>Version</th>
-<th>Size</th>
-<th>Date Posted</th>
-</tr>
-
-<tr align="center">
-<td><a href="http://oregonstate.edu/~nairnj/FEAMPM/startup/NairnCode2_0_0.zip">NairnCode 2.0.0</a> containing NairnMPM 6.6.2,<br> NairnFEA 2.6.0,  &amp; NairnFEAMPMViz 2.1</td>
-<td>4000 kB</td>
-<td>4 NOV 2008</td>
-</tr>
-
-<tr align="center">
-<td><a href="http://oregonstate.edu/~nairnj/FEAMPM/startup/NairnCode1_5_0.zip">NairnCode 1.5.0</a> containing NairnMPM 6.5,<br> NairnFEA 2.5,  &amp; NairnFEAMPMViz 2.0</td>
-<td>4000 kB</td>
-<td>14 MAR 2008</td>
-</tr>
-
-<tr align="center">
-<td><a href="http://oregonstate.edu/~nairnj/FEAMPM/startup/NairnCode1_4_0.zip">NairnCode 1.4.0</a> containing NairnMPM 6.4,<br> NairnFEA 2.4,  &amp; NairnFEAMPMViz 1.0</td>
-<td>912 kB</td>
-<td>25 OCT 2007</td>
-</tr>
-
-</table>
-</blockquote>
-
-<p>The downloads are zip files. See <a href="versions.html">version history</a> for information about changes between versions. The downloaded versions will include a copy of documentation for that version of the code.</p>
 
 <p class="links">
 <a href="../index.html">Home</a> &rarr;
