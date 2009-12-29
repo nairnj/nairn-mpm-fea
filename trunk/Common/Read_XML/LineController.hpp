@@ -27,7 +27,7 @@ class LineController : public ShapeController
 	
 		// methods
 		virtual bool PtOnShape(Vector);
-		virtual void SetProperty(char *,char *,CommonReadHandler *);
+		virtual void SetProperty(const char *,char *,CommonReadHandler *);
 		virtual void FinishSetup(void);
 		
 		// line only methods

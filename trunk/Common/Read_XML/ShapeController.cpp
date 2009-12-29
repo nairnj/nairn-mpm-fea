@@ -172,7 +172,7 @@ char *ShapeController::GetContextInfo(void) { return NULL; }
 void ShapeController::SetScaling(double scale) { distScaling=scale; }
 
 // set a property
-void ShapeController::SetProperty(char *aName,char *value,CommonReadHandler *reader)
+void ShapeController::SetProperty(const char *aName,char *value,CommonReadHandler *reader)
 {	if(strcmp(aName,"x1")==0 || strcmp(aName,"xmin")==0)
 	{	xmin=reader->ReadX(value,distScaling);
 	}
@@ -194,7 +194,7 @@ void ShapeController::SetProperty(char *aName,char *value,CommonReadHandler *rea
 }
 
 // set a property
-void ShapeController::SetProperty(char *aName,double value)
+void ShapeController::SetProperty(const char *aName,double value)
 {
 	if(strcmp(aName,"x1")==0 || strcmp(aName,"xmin")==0)
 		xmin=value*distScaling;

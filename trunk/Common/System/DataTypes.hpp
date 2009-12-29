@@ -124,7 +124,7 @@ Vector *SubVector(Vector *,Vector *);
 Vector *AddScaledVector(Vector *,Vector *,double);
 double DotVectors(Vector *,Vector *);
 double DotVectors2D(Vector *,Vector *);
-void PrintVector(char *,Vector *);
+void PrintVector(const char *,Vector *);
 
 Tensor *ZeroTensor(Tensor *t);
 double Tensor_i(Tensor *,int);

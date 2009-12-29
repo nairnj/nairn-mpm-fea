@@ -56,7 +56,7 @@ bool BodyCylinderController::ContainsPoint(Vector& pt)
 ********************************************************************************/
 
 // set a property
-void BodyCylinderController::SetProperty(char *aName,char *value)
+void BodyCylinderController::SetProperty(const char *aName,char *value)
 {
 	if(strcmp(aName,"axis")==0)
 	{	sscanf(value,"%d",&axis);
