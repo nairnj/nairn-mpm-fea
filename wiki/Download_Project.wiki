@@ -2,12 +2,21 @@
 
 = Introduction =
 
-You download the entire nairn-mpm-fea project from `google code` by using `Subversion` or `svn` on your local computer. This version control is available for Mac and Linux as a command-line tool. In Windows, one solution is to set up `cygwin` and use its version of `svn` see Windows_Setup. In each system there many by other tools as well.
+You can download the entire nairn-mpm-fea project from `google code` by using `Subversion` or `svn` on your local computer. This version control system is available for Mac and Linux as a command-line tool. In Windows, one solution is to set up `cygwin` and use its version of `svn` (see Windows_Setup). In each platform there may by other `svn` options as well.
 
-Once you have `svn` you can either check out the code anonymously or obtain a password from nairn-mpm-fea and check out with more options.
+Once you have `svn` you can either do an [Anonymous_Checkout] or a [Password_Enabled_Checkout].
 
 #labels Anonymous Checkout,Password Enabled Checkout
 
 = Anonymous Checkout =
+
+For a public, anonymous checkout of `nairn-mpm-fea`, use the command line:
+
+  `svn checkout http://nairn-mpm-fea.googlecode.com/svn/trunk/ nairn-mpm-fea-read-only`
+
+Here `nairn-mpm-fea-read-only` is the name of the folder that will be created with the checked out code. You can use any name you want.
+
+Once you have the code, open the `index.html` file in the Documentation folder to learn how to compile all code, run calculations, and visualize the results.
+
 
 = Password Enabled Checkout =
