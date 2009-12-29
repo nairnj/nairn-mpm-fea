@@ -1,0 +1,11 @@
+#summary List of available versions for check out
+#labels Featured
+
+= Introduction =
+
+As stable versions are finalized, the code is tagged. A standard checkout will get the latest development code. If you prefer a prior version, you can check that out be referencing its saved tag.
+
+
+= Tagged Versions =
+
+The project `nairn-mpm-fea` was first imported to `GoogleCode.com` in December 2009. The first version finalized is being tagged now.
