@@ -19,4 +19,4 @@ The recommended approach to using `nairn-mpm-fea` in windows is to use `cygwin` 
     * openssh - ssh command for secure remote connections (optional).
   # Finally, if you would like a command-line editor, you can optionally expand the "Editors" section and select the one you want (_e.g._, `vim`). Similarly, you can select any other packages in any section that interests you. You can also return to this setup and select them later.
 
-The basic `cygwin` should now be set up. You can run it open a `cygwin` command-line window and browse your files. By the default, all `cygwin` files will be in the folder `C:\cygwin`.
+The basic `cygwin` should now be set up. You can run it open a `cygwin` command-line window and browse your files. By the default, all `cygwin` files will be in the folder `C:\cygwin`. You are now ready to download the code - see Download_Project.
