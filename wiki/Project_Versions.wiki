@@ -12,7 +12,7 @@ The main `trunk` of the project contains the working code. Since this code is co
 To check out a tagged release instead of the current development release, simply change the path in the checkout command. For example, an anonymous check out would be
 
 {{{
-svn checkout http://nairn-mpm-fea.googlecode.com/svv/tags/release-1.0
+svn checkout http://nairn-mpm-fea.googlecode.com/svv/tags/release-1.0 nairn-mpm-fea-1.0
 }}}
 
 where the final component is the path is the version you want. See [#Tagged_Versions below] for a list of available tag versions.
