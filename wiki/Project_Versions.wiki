@@ -3,7 +3,7 @@
 
 = Introduction =
 
-The main `trunk` of the project contains the working code. Since this code is computation mechanics research software, the main `trunk` may occasionally have issues or incomplete features. To help avoid such issues, various complete releases are `tagged` and can be check out instead of the main `trunk`.
+The main `trunk` of the project contains the working code; a [Download_Project standard check out] gets this version. Since this code is computational mechanics research software, the main `trunk` may occasionally have issues or incomplete features. To help avoid such issues, various complete releases are `tagged` and can be checked out instead while waiting for main `trunk` to reach a stable condition.
 
 =Nairn-MPM-FEA Tagged Releases=
 
@@ -12,18 +12,18 @@ The main `trunk` of the project contains the working code. Since this code is co
 To check out a tagged release instead of the current development release, simply change the path in the checkout command. For example, an anonymous check out would be
 
 {{{
-svn checkout http://nairn-mpm-fea.googlecode.com/svv/tags/release-1.0 nairn-mpm-fea-1.0
+svn checkout http://nairn-mpm-fea.googlecode.com/svn/tags/release-1.0 nairn-mpm-fea-1.0
 }}}
 
-where the final component is the path is the version you want. See [#Tagged_Versions below] for a list of available tag versions.
+where the final component in the path is the version you want. See [#Tagged_Versions below] for a list of available tagged versions.
 
 ==Tagging a Version by Committers==
 
 When the current main `trunk` is stable, you can store a tagged version with the command
 
 {{{
-svn copy https://nairn-mpm-fea.googlecode.com/svv/trunk \
-      https://nairn-mpm-fea.googlecode.com/svv/tags/release-2.2 \
+svn copy https://nairn-mpm-fea.googlecode.com/svn/trunk \
+      https://nairn-mpm-fea.googlecode.com/svn/tags/release-2.2 \
       -m "Tagging stable release 2.2"
 }}}
 
@@ -32,7 +32,7 @@ where you enter any unused release number.
 
 ==Tagged Versions==
 
-The project `nairn-mpm-fea` was first imported to `GoogleCode.com` in December 2009. The first version was tagged as release 1.0. The following table lists tag, dates, and version numbers of subcomponents for all available tagged versions:
+The project `nairn-mpm-fea` was first imported to `GoogleCode.com` in December 2009. The first imported version was tagged as release 1.0. The following table lists tag, dates, and version numbers of subcomponents for all available tagged versions:
 
 || Tag || Date || NairnMPM Version || NairnFEA Version || NairnFEAMPMViz Version ||
-|| 1.0 || 30 DEC 2009 || 7.2.0 || 2.7.0 || 3.0.0 ||
+|| release-1.0 || 30 DEC 2009 || 7.2.0 || 2.7.0 || 3.0.0 ||
