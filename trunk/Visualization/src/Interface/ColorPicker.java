@@ -21,7 +21,7 @@ public class ColorPicker
 	public static final int COOL_DIVERGING=4;
 	
 	private static int spectrum=BLUE_TO_RED;
-	private static int numberContours=1;
+	public static int numberContours=1;
 	private static boolean inverted=false;
 	private static float brightness=1.0f;
 

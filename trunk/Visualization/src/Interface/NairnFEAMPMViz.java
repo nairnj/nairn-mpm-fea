@@ -31,8 +31,8 @@ public class NairnFEAMPMViz implements ActionListener
 	private static final int QUIT_MSG=2;
 	
 	public static final String appNameReadable="NairnFEAMPMViz";
-	public static final String versionReadable="Version 3.0.0";
-	public static final String copyright="Copyright 2004-2008, John A. Nairn, All Rights Reserved";
+	public static final String versionReadable="Version 3.0.1";
+	public static final String copyright="Copyright 2004-209, John A. Nairn, All Rights Reserved";
 	
 	public static NairnFEAMPMViz appCtrl;	// global to application controller
 	private ArrayList<NFMVViewer> ctrls;		// list of active controllers

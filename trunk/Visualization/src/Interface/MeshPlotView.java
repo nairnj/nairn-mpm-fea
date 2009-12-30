@@ -32,11 +32,6 @@ public class MeshPlotView extends JPanel
 	public static final int MPMMESH_PLOTS=1;
 	public static final int FEAMESH_PLOTS=2;
 	
-	static Color backColor=new Color((float)0.329,(float)0.349,(float)0.427);
-	static Color meshLineColor=new Color((float)0.75,(float)0.75,(float)0.75);
-	static Color meshNodesColor=new Color((float)0.83,(float)0.83,(float)0.83);
-	static Color textColor=new Color((float)1.,(float)1.,(float)1.);
-
 	private double xpt,ypt;
 	public Rectangle2D.Double xyBounds;
 	private double scale;
@@ -85,6 +80,11 @@ public class MeshPlotView extends JPanel
 		g2Loc.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
 		getRangeAndScaleView();
 		
+		Color backColor=NFMVPrefs.getPrefColor(NFMVPrefs.backColorKey,NFMVPrefs.backColorDef);
+		Color meshLineColor=NFMVPrefs.getPrefColor(NFMVPrefs.meshLineColorKey,NFMVPrefs.meshLineColorDef);
+		Color meshNodesColor=NFMVPrefs.getPrefColor(NFMVPrefs.meshNodesColorKey,NFMVPrefs.meshNodesColorDef);
+		Color textColor=NFMVPrefs.getPrefColor(NFMVPrefs.textColorKey,NFMVPrefs.textColorDef);
+
 		// fill background (and erase prior view)
 		g2Loc.setColor(backColor);
 		Dimension d=getSize();
@@ -194,7 +194,8 @@ public class MeshPlotView extends JPanel
 		double end=(double)d.width-BORDER-bounds.getWidth()-5.;
 		g2Loc.drawString(plotMax,(float)(end+5.),(float)(d.height-BORDER));
 		
-		int num=20;
+		int num=ColorPicker.numberContours;
+		if(num<2 || num>30) num=30;
 		double segment=(end-begin)/(double)num;
 		for(i=0;i<num;i++)
 		{	g2Loc.setColor(ColorPicker.PickRainbow((double)i/(double)(num-1)));
@@ -339,7 +340,9 @@ public class MeshPlotView extends JPanel
 		{	xpt-=width/2.;
 			ypt+=height/2.;
 			if((option&FILL_FRAME)!=0)
-			{	g2Loc.setColor(backColor);
+			{	Color backColor=NFMVPrefs.getPrefColor(NFMVPrefs.backColorKey,NFMVPrefs.backColorDef);
+				Color textColor=NFMVPrefs.getPrefColor(NFMVPrefs.textColorKey,NFMVPrefs.textColorDef);
+				g2Loc.setColor(backColor);
 				g2Loc.fill(new Rectangle2D.Double(xpt-1.,ypt-height,width+2.,height+1.));
 				g2Loc.setColor(textColor);
 			}
