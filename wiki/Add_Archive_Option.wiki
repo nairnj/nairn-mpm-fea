@@ -3,7 +3,7 @@
 
 = Introduction =
 
-NairnMPM has a customizable archive method. This page explains how to add an option to archive a new quantity from the calculation results. This page also explains how to [WikiSyntax#Add_Global_Archive_Quantity].
+NairnMPM has a customizable archive method. This page explains how to add an option to archive a new quantity from the calculation results. This page also explains how to [#Add_Global_Archive_Quantity and new quantity] to the global archiving optoin.
 
 
 = Basic Steps =
