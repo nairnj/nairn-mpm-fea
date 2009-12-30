@@ -32,22 +32,22 @@ NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The vers
 Prior to being in `GoogleCode.com`, NairnFEAMPMViz was in a local repository. That repository is available if needed. The prior versions are:
 
   
-  * NairnCode1_5_0 (14 MAR 2008)
-    * Has NairnFEAMPMViz 2.1.0
+  * `NairnCode1_5_0` (14 MAR 2008)
+    * Has `NairnFEAMPMViz 2.1.0`
     * Can plot debonded crack length (when using traction laws)
     * Read rotational strains and plot using deformation gradient
     * Export graphic files from all plot windows
 
-  * NairnCode1_5_0 (14 MAR 2008)
-    * Has NairnFEAMPMViz 2.0.0
+  * `NairnCode1_5_0` (14 MAR 2008)
+    * Has `NairnFEAMPMViz 2.0.0`
     * Can now load command files and submit jobs
     * Some inspector options in the plotting
 
-  * NairnCode1_4_0 (25 OCT 2007)
-    * Has NairnFEAMPMViz 1.0.0
+  * `NairnCode1_4_0` (25 OCT 2007)
+    * Has `NairnFEAMPMViz 1.0.0`
     * First full featured version including both MPM and FEA Visualization
 
-  * NairnCode1_3_0 (19 FEB 2007)
-    * Has NairnFEAMPMViz (preliminary version)
+  * `NairnCode1_3_0` (19 FEB 2007)
+    * Has `NairnFEAMPMViz` (preliminary version)
     * Only particle plots and only MPM visualization
     * First NairnCode to include NairnFEAMPMViz tool
