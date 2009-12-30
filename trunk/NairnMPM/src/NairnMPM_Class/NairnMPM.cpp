@@ -683,7 +683,11 @@ void NairnMPM::MPMStep(void)
     bool needExtrapolations=FALSE;
     CustomTask *nextTask=theTasks;
     while(nextTask!=NULL)
-    	nextTask=nextTask->PrepareForStep(needExtrapolations);
+	{	bool taskNeedsExtrapolations=FALSE;
+    	nextTask=nextTask->PrepareForStep(taskNeedsExtrapolations);
+		// if it was set to TRUE, trasfer to to global setting
+		if(taskNeedsExtrapolations) needExtrapolations=TRUE;
+	}
         
 #pragma mark --- TASK 7b: CUSTOM EXTRAPOLATIONS
 #ifdef LOG_PROGRESS
