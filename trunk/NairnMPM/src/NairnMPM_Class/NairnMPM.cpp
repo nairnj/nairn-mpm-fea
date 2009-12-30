@@ -702,13 +702,15 @@ void NairnMPM::MPMStep(void)
         // particle loop
         for(p=0;p<nmpms;p++)
         {   // Load element coordinates
-			if(theMaterials[mpm[p]->MatID()]->Rigid()) continue;
+			matID=theMaterials[mpm[p]->MatID()];
+			if(matID->Rigid()) continue;
+			matfld=matID->GetField();
     
             // find shape functions and derviatives
 			iel=mpm[p]->ElemID();
 			theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv);
             
-            // Add particle property to each node in the element
+			// Add particle property to each node in the element
             for(i=1;i<=numnds;i++)
             {   // global mass matrix
 				vfld=(short)mpm[p]->vfld[i];				// velocity field to use
@@ -717,12 +719,12 @@ void NairnMPM::MPMStep(void)
                 // possible extrapolation to the nodes
                 nextTask=theTasks;
                 while(nextTask!=NULL)
-                    nextTask=nextTask->NodalExtrapolation(nd[nds[i]],mpm[p],vfld,wt);
+                    nextTask=nextTask->NodalExtrapolation(nd[nds[i]],mpm[p],vfld,matfld,wt);
                     
                 // possible extrapolation to the particle
                 nextTask=theTasks;
                 while(nextTask!=NULL)
-                    nextTask=nextTask->ParticleCalculation(nd[nds[i]],mpm[p],vfld,fn[i],xDeriv[i],yDeriv[i]);
+                    nextTask=nextTask->ParticleCalculation(nd[nds[i]],mpm[p],vfld,matfld,fn[i],xDeriv[i],yDeriv[i]);
             }
             
             // possible single calculations for each particle
