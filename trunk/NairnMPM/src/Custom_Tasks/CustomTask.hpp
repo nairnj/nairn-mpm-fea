@@ -34,7 +34,7 @@ class CustomTask
         virtual CustomTask *BeginExtrapolations(void);
         virtual CustomTask *EndExtrapolations(void);
         virtual CustomTask *NodalExtrapolation(NodalPoint *,MPMBase *,short,int,double);
-        virtual CustomTask *ParticleCalculation(NodalPoint *,MPMBase *,short,int,double,double,double);
+        virtual CustomTask *ParticleCalculation(NodalPoint *,MPMBase *,short,int,double,double,double,double);
         virtual CustomTask *ParticleExtrapolation(MPMBase *);
         virtual CustomTask *StepCalculation(void);
         

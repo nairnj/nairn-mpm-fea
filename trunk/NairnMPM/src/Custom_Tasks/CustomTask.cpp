@@ -60,7 +60,7 @@ CustomTask *CustomTask::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 
 // used to extapolate nodal values to particles during extrapolations
 CustomTask *CustomTask::ParticleCalculation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,int matfld,
-                    double fn,double xDeriv,double yDeriv)
+                    double fn,double xDeriv,double yDeriv,double zDeriv)
 { return nextTask; }
 
 // add particle data to some calculation
