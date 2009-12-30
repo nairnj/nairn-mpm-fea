@@ -22,7 +22,7 @@ NairnFEA was first imported to `GoogleCode.com` as version 2.7.0. The versions c
   * Current trunk Version
     * No changes
 
-  * release-1.0 (29 DEC 2009)
+  * release-1.0 (30 DEC 2009)
     * Has NairnFEA 2.7.0
     * Updated code to compile in GNU 4.3.1
     * Convert BMP file and angle file to fill elements in a mesh and remove unused elements and nodes
