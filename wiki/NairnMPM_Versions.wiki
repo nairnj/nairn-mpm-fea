@@ -25,9 +25,9 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
 
   * release-1.0 (29 DEC 2009)
     * Has NairnMPM 7.2.0
-    * MultiMaterialMode is supported with frictional contact
+    * `MultiMaterialMode` is supported with frictional contact
     * Automatically archives input command at (root).fmcmd
-    * ContactPosition applies to both crack and multimaterials because it extrapolates displacement or position and never both
+    * `ContactPosition` applies to both crack and multimaterials because it extrapolates displacement or position and never both
     * Added thickness attribute to grid. Cracks will use it and warn if set differently
     * Track interface energy in MPM with a global archive option
     * Revised material output with utility code methods
@@ -40,7 +40,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Added MGSCGL material (not in NairnFEAMPM yet)
     * Added SL material (not in NairnFEAMPM yet)
     * Horiz, Vert, and Depth for the grid can specify cellsize rather than a number
-    * BCLine, BCArc, BCBox, and LdRect can use min, max in coordinates
+    * `BCLine`, `BCArc`, `BCBox`, and `LdRect` can use `min` and `max` in coordinates
     * tolerance can be `*f` to be `f *` cell minumum size
     * Revisions led to new contact methods for cracks too.
       * Redid contact code - no longer interpret once, but interpret as needed
@@ -53,26 +53,26 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
 
 Prior to being in `GoogleCode.com`, NairnMPM was in a local repository. That repository is available if needed. The prior versions are:
   
-  * NairnCode2_0_0 (4 NOV 2008)
+  * `NairnCode2_0_0` (4 NOV 2008)
     * Has NairnMPM 6.6.2
     * Propagate into a traction material (and documentation of traction laws)
     * Add diffusion, condutions, and residual stress to 3D
     * 3D is all documented
     * Added `<net>` option to spread out total load equally over all found particles
     * Deleted Dugdale material
-    * Improved VonMises Hardening material and made it 3D as well
-    * Added HillPlastic - an anisotropic plastic material
-    * LeaveLimit option to keep running even in particles leave the grid (they are moved back in)
+    * Improved Von Mises Hardening material and made it 3D as well
+    * Added Hill Plastic - an anisotropic plastic material
+    * `LeaveLimit` option to keep running even in particles leave the grid (they are moved back in)
     * Materials can have color, but only role is in programs that read the file
-    * ContactPosition command to allow contact when crack surface were not initially in contact (approximately)
+    * `ContactPosition` command to allow contact when crack surface were not initially in contact (approximately)
 
-  * NairnCode1_5_0 (14 MAR 2008)
+  * `NairnCode1_5_0` (14 MAR 2008)
     * Has NairnMPM 6.5
-    * SettingFunction in rigid materials for time-dependent settings.
+    * `SettingFunction` in rigid materials for time-dependent settings.
     * Feedback damping added target kinetic energy option and global archive can record the feedback alpha
     * Adding option to have traction law between crack surfaces - it is currently undocumented and not completed
 
-  * NairnCode1_4_0 (25 OCT 2007)
+  * `NairnCode1_4_0` (25 OCT 2007)
     * Has NairnMPM 6.4.0
     * Element crossings counted and can be archived
     * All materials now calculate szz and ezz, before elastic only found it when archiving (found error in prior szz and ezz in off axis, anisotropic materials now fixed)
@@ -83,34 +83,34 @@ Prior to being in `GoogleCode.com`, NairnMPM was in a local repository. That rep
     * Concentration flux boundary conditions.
     * Coupled moisture expansion and residual stresses and strains and all materials have moisture expansion coefficients
     * BCArc command for grid and particle BCs
-    * Line and Circle in CrackList to create crack segments
-    * Added MovePlane command for two ways to move crack plane. Also fixed some bugs found in crack surface movement, but only one one side of the crack had no particles
+    * `Line` and `Circle` in `CrackList` to create crack segments
+    * Added `MovePlane` command for two ways to move crack plane. Also fixed some bugs found in crack surface movement, but only one one side of the crack had no particles
     * BMPRegion an have second mask to give orientation of particles too.
     * 3D for isotropic (no res stress, diffusion, conductions, cracks, gravity, custom tasks)
     * Some memory changes to only allocate data that are needed to allow larger calculations)
   
-  * NairnCode1_3_0 (19 FEB 2007)
+  * `NairnCode1_3_0` (19 FEB 2007)
     * Has NairnMPM 6.3.0
-    * LoadMechanicalProperties always called before constitutive law. Can be used to change properties depending on particle state (stress, temperature, etc.). Replaces LoadMechProps(), which only had particle angle (and can still be used if angle is all that matters).
+    * `LoadMechanicalProperties()` always called before constitutive law. Can be used to change properties depending on particle state (stress, temperature, etc.). Replaces `LoadMechProps()`, which only had particle angle (and can still be used if angle is only property that matters).
     * New option to select method to find propagation direction
     * Implementation of spline methods to do crack calculations
 
-  * NairnCode1_2_0 (8 FEB 2007)
+  * `NairnCode1_2_0` (8 FEB 2007)
     * Has NairnFEA 6.2.0
     * Fixed problem in transport calculations when points use same anistropic material but with different angles
     * Imperfect interface may be done - fixed problems that depending on location or orientation of interface
     * Started energy coupling between temperature and dissipated energy, but only in vonMises material and appears to be off by factor of 4
   
-  * NairnCode1_1_0 (18 JAN 2007)
+  * `NairnCode1_1_0` (18 JAN 2007)
     * Has NairnMPM 6.1.0
     * Imperfect interface in place, but not yet done or documented
     * GIMP methods in 2D
     * Removed Update Strain Last option
 
-  * NairnCode1_0_0 (22 DEC 2006)
+  * `NairnCode1_0_0` (22 DEC 2006)
     * Has NairnMPM 6.0.0
     * Beginning of 3D calculations, but not documented
-    * Code reorganized and NairnFEA and NairnMPM combined in single NairnCode
+    * Code reorganized and `NairnFEA` and `NairnMPM` combined into single `NairnCode`
 
 = Additional NairnMPM History =
 
@@ -159,7 +159,7 @@ The following versions are from a prior repository and no longer available:
     * More options for crack propagation
     * Support for linear viscoelastic materials completed
     * Addition of diffusion calculations (but in a preliminary way and not coupled to swelling strains)
-    * These recent changes since NairnCode1_0_0 should be added to versions.html in documentation
+    * These recent changes since `NairnCode1_0_0` should be added to versions.html in documentation
 	
   * NairnMPM3_1 (23 MAR 2004)
     * The XML input format was revised to make it more modular, make it easier to understand,
@@ -168,8 +168,8 @@ The following versions are from a prior repository and no longer available:
   
   * NairnMPM3_0 (18 MAR 2004)
     * Reorganized all headers
-    * Added Mooney, VonMises, Viscoelastic, and Bistable Isotropic materials
-    * CustomTasks defined; some prior tasks moved to custom tasks and new ReverseLoad task to reverse applied load under any simulation-results condition
+    * Added Mooney, Von Mises, Viscoelastic, and Bistable Isotropic materials
+    * Custom tasks defined; some prior tasks moved to custom tasks and new `ReverseLoad` task to reverse applied load under any simulation-results condition
     * J Integral, stress intensity factor, crack propagation, and various other crack options
     * First version of Diffusion calculations (but uncoupled to stresses and only allows zero-flux or variable concentration boundary conditions). An example Diffusion.fmcmd file is provided.
   
