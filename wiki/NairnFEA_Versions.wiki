@@ -32,16 +32,16 @@ NairnFEA was first imported to `GoogleCode.com` as version 2.7.0. The versions c
 
 Prior to being in `GoogleCode.com`, NairnMPM was in a local repository. That repository is available if needed. The prior versions are:
   
-  * NairnCode2_0_0 (4 NOV 2008)
+  * `NairnCode2_0_0` (4 NOV 2008)
     * Has NairnFEA 2.6.0
     * Fixed bug in new BMP commands when thermal stresses were used
     * Add y and z (axisymmetric) direction peridocity
 
-  * NairnCode1_5_0 (14 MAR 2008)
+  * `NairnCode1_5_0` (14 MAR 2008)
     * Has NairnFEA 2.5.0
     * Add methods from NairnMPM to interpret BMP files, but not yet used in FEA commands
 
-  * NairnCode1_4_0 (25 OCT 2007)
+  * `NairnCode1_4_0` (25 OCT 2007)
     * Has NairnFEA 2.4.0
     * User functions are now allowed to set properties as a function or x and y. They have been implemented in Temperature and Area (for angle) commands and in DisBC and LoadBC boundary conditions
     * Some material class reorganization such as printing to output window
@@ -49,20 +49,20 @@ Prior to being in `GoogleCode.com`, NairnMPM was in a local repository. That rep
     * New FEABoundaryCondition class as base class for all boundary conditions
     * CrackTip command to setup quarter point elements
   
-  * NairnCode1_3_0 (19 FEB 2007)
+  * `NairnCode1_3_0` (19 FEB 2007)
     * Has NairnFEA 2.3.0
     * No changes
 
-  * NairnCode1_2_0 (8 FEB 2007)
+  * `NairnCode1_2_0` (8 FEB 2007)
     * Has NairnFEA 2.2.0
     * Periodic BCs appear to be done, but for x direction only
   
-  * NairnCode1_1_0 (18 JAN 2007)
+  * `NairnCode1_1_0` (18 JAN 2007)
     * Has NairnFEA 2.1.0
     * Begnning of periodic boundary conditions, but not documented yet
     * Bug in anisotropic CTE with rotated material fixed
 
-  * NairnCode1_0_0 (22 DEC 2006)
+  * `NairnCode1_0_0` (22 DEC 2006)
     * Has NairnFEA 2.0.0
     * Code reorganized and NairnFEA and NairnMPM combined in single NairnCode
 
