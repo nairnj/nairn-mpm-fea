@@ -26,7 +26,7 @@ If the custom task ha parameters, implement them by reading them with:
 
 == Step 7a: Prepare custom tasks == 
 
-  * `CustomTask *MyTask::PrepareForStep(bool &doExtraps)` -  Called in `MPMStep()` just before custom tasks are done. You can use this to initialize variables. If the task needs extrapolations to the grids or summations over particles, set `doExtraps` to `TRUE`. (setting to `FALSE` does nothing)
+  * `CustomTask *MyTask::PrepareForStep(bool &doExtraps)` -  Called in `MPMStep()` just before custom tasks are done. You can use this to initialize variables. If the task needs extrapolations to the grids or summations over particles, set `doExtraps` to `TRUE` (setting to `FALSE` does nothing).
 
 == Step 7b: Custom extrapolatlions == 
 
@@ -34,11 +34,13 @@ The following methods are in a loop which allows a custom task to extrapolate so
 
   * `CustomTask *MyTask::BeginExtrapolations(void)` - Called once before extrapolation loop begins. Initialize any required variables.
     
-  * `CustomTask *MyTask::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,double wt)` - Called repeatedly in the loop for each particle/node pair. `vfld` is the velocity field and `wt` is the weight (or mass times shape function)
+  * `CustomTask *MyTask::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,int matfld,double wt)` - Called repeatedly in the loop for each particle/node pair. `vfld` is the velocity field, `matfld` is material valocity filed (when in multimaterial mode), and `wt` is the weight (or mass times shape function). Can use to extrapolate particle data to the grid.
 
-  * `CustomTask *MyTask::ParticleExtrapolation(MPMBase *mpnt)` - Called once for each particle. Use to sum any quantity over particles.
+  * `CustomTask *CustomTask::ParticleCalculation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,int matfld, double fn,double xDeriv,double yDeriv,double zDeriv)` - Called repeatedly in the loop for each particle/node pair. `vfld` is the velocity field, `matfld` is material valocity filed (when in multimaterial mode), and `wt` is the weight (or mass times shape function). Can use to extrapolate nodal values to the particles.
+
+  * `CustomTask *MyTask::ParticleExtrapolation(MPMBase *mpnt)` - Called once for each particle. Can use to sum any quantity over the particles.
     
-  * `CustomTask *MyTask::EndExtrapolations(void)` - Called oncewhen extrapolations are over. Use to free anything allocated during the extrapolations or to do some calculations.
+  * `CustomTask *MyTask::EndExtrapolations(void)` - Called once when extrapolations are over. Use to free anything allocated during the extrapolations or to do some calculations.
 
 == Step 7c: Custom Calculations == 
 
@@ -46,4 +48,4 @@ The following methods are in a loop which allows a custom task to extrapolate so
     
 == Step 7d: Custom Finish == 
 
-  * `CustomTask *MyTask::FinishForStep(void)` - Called once when all custom tasks done. Use to free up any memory still allocated by the task.
+  * `CustomTask *MyTask::FinishForStep(void)` - Called once when all custom tasks are done. Use to free up any memory still allocated by the task.
