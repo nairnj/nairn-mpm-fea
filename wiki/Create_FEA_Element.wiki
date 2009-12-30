@@ -3,7 +3,9 @@
 
 = Introduction =
 
-This page explains how to create a new type of element for NairnFEA.
+This page explains how to create a new type of element for NairnFEA. It needs to be formatted for wiki display
+
+= Unformatted Text =
 
 Creating a New Element Type
 
