@@ -21,7 +21,7 @@ The version number is coded in the constructor of the `NairnMPM.cpp` class:
 NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions currently in this project are as follows:
 
   * Current trunk Version
-    * No changes
+    * Blocked custom tasks from turning off extrapolations and added material field to custom task methods
 
   * release-1.0 (29 DEC 2009)
     * Has NairnMPM 7.2.0
