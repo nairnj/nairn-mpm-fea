@@ -18,14 +18,14 @@ public static final String versionReadable="Version 3.0.0";
 NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The version currently in this project are as follows:
 
   * Current trunk Version
-    * No changes
+    * Added color wells for plot elements
 
-  * release-1.0 (29 DEC 2009)
+  * release-1.0 (30 DEC 2009)
     * Has NairnFEAMPMViz 3.0.0
     * Organized into windows with no button bar
     * Added dtd validation options
     * Icon tool bars
-    * Two new color options for plots
+    * Two new color options for plots and discrete spectra option
 
 = Archival Version History =
 
