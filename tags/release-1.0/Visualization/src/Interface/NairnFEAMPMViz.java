@@ -188,7 +188,7 @@ public class NairnFEAMPMViz implements ActionListener
 					docCtrl=new DocViewer(openMesh);
 					ctrls.add(docCtrl);
 					NFMVViewer oldCtrl=emptyDocument();
-					if(docCtrl!=oldCtrl) oldCtrl.windowClosing(null);
+					if(oldCtrl!=null && oldCtrl!=docCtrl) oldCtrl.windowClosing(null);
 				}
 				else
 				{	// is there an unsed one?
@@ -307,7 +307,6 @@ public class NairnFEAMPMViz implements ActionListener
 				break;
 			}
 		}
-		System.out.println("closing window");
 		
 		// other controllers
 		for(i=0;i<ctrls.size();i++) ctrls.get(i).removeWindowMenuItem(docCtrl);
