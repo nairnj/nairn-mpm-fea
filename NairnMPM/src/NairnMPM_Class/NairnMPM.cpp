@@ -728,7 +728,7 @@ void NairnMPM::MPMStep(void)
                 // possible extrapolation to the particle
                 nextTask=theTasks;
                 while(nextTask!=NULL)
-                    nextTask=nextTask->ParticleCalculation(nd[nds[i]],mpm[p],vfld,matfld,fn[i],xDeriv[i],yDeriv[i]);
+                    nextTask=nextTask->ParticleCalculation(nd[nds[i]],mpm[p],vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
             }
             
             // possible single calculations for each particle
