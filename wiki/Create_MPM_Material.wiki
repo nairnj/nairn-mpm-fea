@@ -57,22 +57,22 @@ There is currently no template code for traction law materials. One should be cr
 
 == Material Methods - Calculations called during MPM steps ==
 
-  * `virtual void LoadTransportProps(MPMBase ``*``)`
-  *  `virtual void MPMConstLaw(MPMBase ``*``,double,double,double,double,double,int)`
-  * `virtual void MPMConstLaw(MPMBase ``*``,double,double,double,double,double,double,double,double,double,double,int)`
+  * `virtual void LoadTransportProps(MPMBase *)`
+  *  `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int)`
+  * `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int)`
 		
 
 == Fracture Methods ==
 
 The methods deal with fracture and are currently handled for all materials in the base class.
 
-  * virtual MaterialBase `*`SetFinalPropagate(void) - hould be enough in default method to set up fracture criterion
-  * virtual Vector ConvertJToK(Vector,Vector,Vector,int) - Convert J Integral to K or stress intensity factor. Default returns zero.
-  * virtual int CriterionNeeds(void) - Determines if J and/or K is needed.
-  * virtual int ShouldPropagate(CrackSegment `*`,Vector &,CrackHeader `*`,int np) - Determine if crack chould grow.
-  * virtual bool ControlCrackSpeed(CrackSegment `*`,double &) - Adjust crack speed
-  * virtual bool SelectDirection(CrackSegment `*`,Vector &,CrackHeader `*`) - 
-  * virtual void HoopDirection(double,double,Vector `*`) - 
-  * void RotateDirection(Vector `*`,double,double) - 
-  * virtual double CrackPropagationAngleFromStrainEnergyDensityCriterion(double,double,double) -  - Used in one fracture criterion
-  * static const char `*`PreferredDirection(int) - 
+  * `virtual MaterialBase *SetFinalPropagate(void)` - hould be enough in default method to set up fracture criterion
+  * `virtual Vector ConvertJToK(Vector,Vector,Vector,int)` - Convert J Integral to K or stress intensity factor. Default returns zero.
+  * `virtual int CriterionNeeds(void)` - Determines if J and/or K is needed.
+  * `virtual int ShouldPropagate(CrackSegment *,Vector &,CrackHeader *,int np)` - Determine if crack chould grow.
+  * `virtual bool ControlCrackSpeed(CrackSegment *,double &)` - Adjust crack speed
+  * `virtual bool SelectDirection(CrackSegment *,Vector &,CrackHeader *)` - 
+  * `virtual void HoopDirection(double,double,Vector *)` - 
+  * `void RotateDirection(Vector *,double,double)` - 
+  * `virtual double CrackPropagationAngleFromStrainEnergyDensityCriterion(double,double,double)` -  - Used in one fracture criterion
+  * `static const char *PreferredDirection(int)` - 
