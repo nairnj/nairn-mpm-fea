@@ -8,18 +8,18 @@ NairnMPM has a customizable archive method. This page explains how to add an opt
 
 = Basic Steps =
 
-  # Create new constant and add to archive constants in ArchiveData.hpp
-    * Put particle property before ARCH_MAXMPMITEMS
-    * Put crack property before ARCH_MAXCRACKITEMS
-  # In ArchiveData class
+  # Create new constant and add to archive constants in `ArchiveData.hpp`
+    * Put particle property before `ARCH_MAXMPMITEMS`
+    * Put crack property before `ARCH_MAXCRACKITEMS`
+  # In `ArchiveData` class
     * Add default archiving setting in constructor for new option to default archiving order. This is the order and content used if the XML input file does not specify an order.
-    * Add size calculation in ArchiveData::CalcArchiveSize() for new item
-  # If new option is a material point property then archive Archive class by: 
-    * Add writing option in ArchiveData::ArchiveResults() for new item
-    * Add reversing option in ArchiveData::ArchiveResults() for new item
-  # If new option is a crack property then archive in Archive class by:
-    * Add writing option in ArchiveData::FillArchive()
-    * Add reversing option in ArchiveData::FillArchive()
+    * Add size calculation in `ArchiveData::CalcArchiveSize()` for new item
+  # If new option is a material point property then archive in `ArchiveData` class by: 
+    * Add writing option in `ArchiveData::ArchiveResults()` for new item
+    * Add reversing option in `ArchiveData::ArchiveResults()` for new item
+  # If new option is a crack property then archive in `ArchiveData` class by:
+    * Add writing option in `ArchiveData::FillArchive()`
+    * Add reversing option in `ArchiveData::FillArchive()`
 
 = Add Global Archive Quantity =
 	
