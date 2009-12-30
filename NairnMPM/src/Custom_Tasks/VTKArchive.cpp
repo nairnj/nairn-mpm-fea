@@ -243,7 +243,7 @@ CustomTask *VTKArchive::BeginExtrapolations(void)
 }
 
 // add particle data to a node
-CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,double wt)
+CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,int matfld,double wt)
 {
 	if(!getVTKExtraps) return nextTask;
 	

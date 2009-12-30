@@ -146,7 +146,7 @@ CustomTask *CalcJKTask::BeginExtrapolations(void)
 }
 
 // add particle data to a node
-CustomTask *CalcJKTask::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,double wt)
+CustomTask *CalcJKTask::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,int matfld,double wt)
 {
     // skip if already set up
     if(!getJKThisStep) return nextTask;
