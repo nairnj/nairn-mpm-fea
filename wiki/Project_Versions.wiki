@@ -19,12 +19,12 @@ where the final component is the path is the version you want. See [#Tagged_Vers
 
 ==Tagging a Version by Committers==
 
-When then current main `trunk` is table, you can store a tagged version with the command
+When the current main `trunk` is stable, you can store a tagged version with the command
 
 {{{
 svn copy https://nairn-mpm-fea.googlecode.com/svv/trunk \
       https://nairn-mpm-fea.googlecode.com/svv/tags/release-2.2 \
-      -m "Tagging stable release 2.0"
+      -m "Tagging stable release 2.2"
 }}}
 
 where you enter any unused release number.
