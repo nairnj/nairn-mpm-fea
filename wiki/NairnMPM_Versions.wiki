@@ -22,7 +22,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
 
   * Current trunk Version
     * Blocked custom tasks from turning off extrapolations and added material field to custom task methods
-    * Added *unique* attribute to *ArchiveRoot* command to force create of new results subfolder on each run.
+    * Added `unique` attribute to `ArchiveRoot` command to force create of new results subfolder on each run.
 
   * release-1.0 (30 DEC 2009)
     * Has NairnMPM 7.2.0
