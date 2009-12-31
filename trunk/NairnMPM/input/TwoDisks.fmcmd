@@ -35,7 +35,7 @@ Problem: Two disks colliding
   <MPMHeader>
     <MaxTime units="ms">&maxtime;</MaxTime>
     <ArchiveTime units="ms">&atime;</ArchiveTime>
-    <ArchiveRoot>TwoDisks/USAVG.</ArchiveRoot>
+    <ArchiveRoot>Two_Disks_Results/USAVG.</ArchiveRoot>
     <MPMArchiveOrder>iYYYYNNNNNNNNNNNNY</MPMArchiveOrder>
     <GlobalArchiveTime units="ms">&atime;</GlobalArchiveTime>
     <GlobalArchive type="velx" material="1"/>

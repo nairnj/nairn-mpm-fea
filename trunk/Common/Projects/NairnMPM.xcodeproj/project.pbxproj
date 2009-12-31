@@ -1700,7 +1700,8 @@
 		A7BB15DF09F4555D000A7C91 /* Default */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(NATIVE_ARCH)";
+				ARCHS = "$(ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1)";
+				ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1 = "ppc i386";
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREFIX_HEADER = ../../NairnFEA/src/System/FEAPrefix.hpp;

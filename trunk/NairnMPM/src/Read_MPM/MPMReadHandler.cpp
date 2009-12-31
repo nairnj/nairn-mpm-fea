@@ -225,6 +225,18 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
         input=TEXT_BLOCK;
 		inputID=ARCHIVEROOT_NAME;
+        numAttr=attrs.getLength();
+		int scanInt;
+        for(i=0;i<numAttr;i++)
+        {   aName=XMLString::transcode(attrs.getLocalName(i));
+            if(strcmp(aName,"unique")==0)
+			{	value=XMLString::transcode(attrs.getValue(i));
+				sscanf(value,"%d",&scanInt);
+				if(scanInt==1) inputID=UNIQUE_ARCHIVEROOT_NAME;
+				delete [] value;
+			}
+			delete [] aName;
+        }
     }
     
     else if(strcmp(xName,"MPMArchiveOrder")==0)
@@ -953,7 +965,10 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
 	{	case TEXT_BLOCK:
 			switch(inputID)
 			{	case ARCHIVEROOT_NAME:
-					archiver->SetArchiveRoot(xData);
+					archiver->SetArchiveRoot(xData,false);
+					break;
+				case UNIQUE_ARCHIVEROOT_NAME:
+					archiver->SetArchiveRoot(xData,true);
 					break;
 				default:
 					break;

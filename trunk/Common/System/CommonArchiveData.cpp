@@ -19,8 +19,10 @@
 CommonArchiveData::CommonArchiveData()
 {
 	inputDir=NULL;			// input directory
-	archiveRoot=NULL;		// root file name
+	archiveRoot=NULL;		// root file name (no spaces and does not end in '.')
+	archiveParent=NULL;		// archive parent folder (not ending in '/') or empty for same folder
 	archiveMesh=FALSE;		// list mesh in output file (FALSE) or in files (TRUE)
+	forceUnique=FALSE;		// when TRUE forces unique folder to be created for archiving
 }
 
 CommonArchiveData::~CommonArchiveData()
@@ -154,11 +156,12 @@ char *CommonArchiveData::ExpandInputPath(const char *partialName)
 	return path;
 }
 
-// Set archiveRoot and make sure does not end in period
-void CommonArchiveData::SetArchiveRoot(char *newRoot)
+// Set archiveRoot and make sure does not end in period and remove spaces
+// Find parent folder (without the terminal /) or empty string if no parent
+void CommonArchiveData::SetArchiveRoot(char *newRoot,bool makeUnique)
 {
 	if(archiveRoot!=NULL) delete [] archiveRoot;
-	archiveRoot=new char[strlen(newRoot)+1];
+	archiveRoot=new char[strlen(newRoot)+5];		// 5 saves room for unique folder 1/-999/
 	strcpy(archiveRoot,newRoot);
 	unsigned i=strlen(archiveRoot);
 	if(archiveRoot[i-1]=='.') archiveRoot[i-1]=0;
@@ -167,6 +170,19 @@ void CommonArchiveData::SetArchiveRoot(char *newRoot)
 	for(i=0;i<strlen(archiveRoot);i++)
 	{	if(archiveRoot[i]==' ') archiveRoot[i]='_';
 	}
+	
+	// back up to find parent folder in this relative path
+	if(archiveParent!=NULL) delete [] archiveParent;
+	archiveParent=new char[strlen(archiveRoot)+5];	// 5 saves room for unique folder /1-/999
+	strcpy(archiveParent,archiveRoot);
+    for(i=strlen(archiveParent);i>0;i--)
+    {   if(archiveParent[i]=='/')
+		{   archiveParent[i]=0;
+			break;
+		}
+    }
+	if(i==0) archiveParent[0]=0;		// empty parent
+	forceUnique=makeUnique;	
 }
 char *CommonArchiveData::GetArchiveRoot(void) { return archiveRoot; }
 

@@ -283,6 +283,8 @@
 			type CDATA #REQUIRED
 			material CDATA #IMPLIED>
 <!ELEMENT	ArchiveRoot (#PCDATA)>
+<!ATTLIST	ArchiveRoot
+			unique (0|1) #IMPLIED>
 <!ELEMENT	MPMArchiveOrder (#PCDATA)>
 <!ELEMENT	CrackArchiveOrder (#PCDATA)>
 <!ELEMENT	ProgSteps (#PCDATA)>
