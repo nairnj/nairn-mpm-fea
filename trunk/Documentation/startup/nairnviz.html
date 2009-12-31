@@ -30,7 +30,7 @@ Visualization
 <h1><a name="nairnfeampm"></a>Using NairnFEAMPM on MacOS X Computer
 </h1>
 
-<p>If you are using a Mac (with MacOS 10.4 or newer, Tiger), you can go to the <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html"><b>NairnFEAMPM</b> web site</a> and download a complete package that lets you create input files using a command language or raw <code>XML</code> commands, run calculations, and visualize the results. This package only works in MacOS X</p>
+<p>If you are using a Mac (with MacOS 10.4 or newer, Tiger), you can go to the <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html"><b>NairnFEAMPM</b> web site</a> and download a complete package (or get it from the <a href="http://code.google.com/p/nairn-mpm-fea/downloads/list">downloads page</a> for this project). This package lets you create input files using a command language or raw <code>XML</code> commands, run calculations, and visualize the results. This package only works in MacOS X</p>
 
 <p>To visualize <code>NairnFEA</code> or <code>NairnMPM</code> results using <b>NairnFEAMPM</b>:
 </p>
@@ -50,11 +50,22 @@ Visualization
 <h1><a name="nairnviz"></a>Using <b>NairnFEAMPMViz</b> Java Application
 </h1>
 
-<p>The <code>nairn-mpm-fea</code> package includes a Java application called <b>NairnFEAMPMViz</b> that lets you create <code>XML</code> input files, run calculations, and visualize results for both <code>NairnFEA</code> and <code>NairnMPM</code>. The <code>Nairn-MPM-FEA</code> project checked out does not have the jar file for this application, but it wildoesl have all the source code. You will need to <a href="#compile">compile <b>NairnFEAMPMViz</b></a> before using it. Note that <b>NairnFEAMPMViz</b> requires a system with Java 1.5.0 (<i>a.k.a</i> Java 5) or newer installed.</a>.
+<p>The <code>nairn-mpm-fea</code> package includes source code for a Java application called <b>NairnFEAMPMViz</b> that lets you create <code>XML</code> input files, run calculations, and visualize results for both <code>NairnFEA</code> and <code>NairnFEA</code>. The <code>nairn-mpm-fea</code> check out does not have the jar file for this application; you have two options:</p>
+
+<ol>
+<li>Visit the <a href="http://code.google.com/p/nairn-mpm-fea/downloads/list">download page</a> for this project. Periodically a recent compiled jar file along with a Windows-only clickable <code>exe</code> version will be posted. Simply download and run to start using <b>NairnFEAMPMViz</b>. (Note: that the <a href="http://code.google.com/p/nairn-mpm-fea/downloads/list">downloads page</a> does not have a clickable MacOS version of <b>NairnFEAMPMViz</b> because you should download and <a href="#nairnfeampm">use <b>NairnFEAMPMM</b></a> instead; it is on the download page as well as a <code>dmg</code> or disk image file.)</li>
+
+<li>If you want the latest version (the <a href="http://code.google.com/p/nairn-mpm-fea/downloads/list">download version</a> may lag behind the current version) or if you want to make changes to the code, the other option is to <a href="#compile">compile the <b>NairnFEAMPMViz</b> source code</a> in this project.</li>
+
+</ol>
+
+<p>Note that <b>NairnFEAMPMViz</b> requires a system with Java 1.5.0 (<i>a.k.a</i> Java 5) or newer installed.</a>.
 
 <h2><a name="runningViz"></a>Running <b>NairnFEAMPMViz</b></h2>
 
-<p>You can start a Java application by double clicking on the jar file. Although that works on most computers, the application will start with the default amount of memory for the Java Virtual Machine. The default memory is enough to open small calculations, but not enough for larger calculations. To start <b>NairnFEAMPMViz</b> with more memory, you should launch the Java application from a command line using:</p>
+<p>If you <a href="http://code.google.com/p/nairn-mpm-fea/downloads/list">downloads page</a> the Windows <code>exe</code> version, just double click to start. The rest of this section is about starting the application using the jar file version.</p>
+
+<p>You can start a Java application as a jar file by double clicking on the jar file. Although this works on most computers, the application will start with the default amount of memory for the Java Virtual Machine. The default memory is enough to open small calculations, but not enough for larger calculations. To start <b>NairnFEAMPMViz</b> with more memory, you should launch the Java application from a command line using:</p>
 
 <pre>
 java -Xmx512m -jar NairnFEAMPMViz.jar
@@ -70,10 +81,16 @@ java -Xmx512m -jar NairnFEAMPMViz.jar
 C:\Program Files\Java\jdk1.6.0_03\bin
 </pre>
 
-<p>Note: installation of java will add this path to your Windows environment for you, but you will need to manually add it to the <code>$PATH</code> variable in <code>cygwin</code>, perhaps in one of your login files in <code>cygwin</code>. You should add a path that will be similar to <code>/cygdrive/c/Files/Java/jdk1.6.0_03/bin</code>.
+<p>Installation of java may add this path to your Windows environment for you; if not you will have to edit the system environment variables and add it. For <code>cygwin</code>, its <code>$PATH</code> variable does not use the Windows path; thus you will need to manually add the java path to <code>cygwin</code>'s <code>$PATH</code> variable as well, perhaps in one of your login files (<i>e.g.</i>, <code>.bash_profile</code>). You should add a path that will be similar to:
 </p>
 
-<p>A method in Windows to launch <b>NairnFEAMPMViz</b> correctly is to create a simple batch file. The process is:
+<pre>
+/cygdrive/c/Files/Java/jdk1.6.0_03/bin
+</pre>
+
+<p>Note the use of forward slashes in <code>cygwin</code> instead of Window's back slashes.</p>
+
+<p>Another method in Windows to launch <b>NairnFEAMPMViz</b> correctly is to create a simple batch file. The process is:
 </p>
 
 <ul>
@@ -87,7 +104,7 @@ chdir &quot;C:\Documents and Settings\user\nairn-mpm-fea\Visualization\build&quo
 java -Xmx512m -jar NairnFEAMPMViz.jar
 </pre>
 
-Edit the second line to be the full path to the folder with your <b>NairnFEAMPMViz</b> jar file (quote the path if it includes spaces in some directory names). The last line assumes your Windows environment includes the path to the <code>java</code> command (as it should after a default <code>Java</code> installation).</li>
+Edit the second line to be the full path to the folder with your <b>NairnFEAMPMViz</b> jar file (quote the path if it includes spaces in some directory names). The last line assumes your Windows environment includes the path to the <code>java</code> command. If note, you can replace <code>java</code> by the full path to the <code>java</code> executable.</li>
 <li>Next create a short cut to the batch file (and give it any desired name). Right click on the new shortcut and select &quot;Properties&quot;. In the properties window, click &quot;Change Icon...&quot; and &quot;Browse...&quot; for the <code>NairnFEAMPMViz.ico</code> file (in the <code>nairn-mpm-fea/Visualization/build</code> folder). 
 </li>
 <li>Finally, move the short cut to your desktop (or to any other folder). You can double click the shortcut to launch <b>NairnFEAMPMViz</b> ready for calculations and/or visualization.
@@ -114,7 +131,7 @@ ssh -Y -l username servername
 <li>To edit input files and launch calculations, see the help on <a href="../running/index.html#javaviz">running the code</a>. Results run in <b>NairnFEAMPMViz</b> will automatically open for visualization when done.
 </li>
 
-<li>To open saved results for visualization use the &quot;Open...&quot; menu command ot click the &quot;Folder&quot; icon. Note that &quot;calculation results&quot; are in the file of output text sent by <code>NairnFEA</code> or <code>NairnMPM</code> to standard output, and <i>not</i> one of the associated files written by <code>NairnMPM</code>. Once opened, the text results will appear in the top two sections of a new window. A control panel for visualizing results will appear in the bottom section.
+<li>To open saved results for visualization use the &quot;Open...&quot; menu command or click the &quot;Folder&quot; icon. Note that &quot;calculation results&quot; are in the file of output text sent by <code>NairnFEA</code> or <code>NairnMPM</code> to standard output, and <i>not</i> one of the associated files written by <code>NairnMPM</code>. Once opened, the text results will appear in the top two sections of a new window. A control panel for visualizing results will appear in the bottom section.
 </li>
 
 <li>To plot results, select a plot type in the control panel area and then follow the blue line to select all available options for that type of plot.
@@ -129,7 +146,7 @@ ssh -Y -l username servername
 </ol>
 
 <h2>Performance Issues</h2>
-<p>The nature of Java applications is that they are slower than compiled applications. Thus <b>NairnFEAMPMViz</b> is slower than <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html"><b>NairnFEAMPM</b></a>. The speed of <b>NairnFEAMPMViz</b>, however, is good. All internal calculations run fast. The slowest step is the time required to draw the graphics to the screen. Furthermore, this step is very system dependent. Running in MacOS is the fastest (but if you have MacOS, you may as well use <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html"><b>NairnFEAMPM</b></a> instead). Running in Windows is slower, but still good. 
+<p>The nature of Java applications is that they are slower than compiled applications. Thus <b>NairnFEAMPMViz</b> is slower than <a href="#nairnfeampm"><b>NairnFEAMPM</b></a>. The speed of <b>NairnFEAMPMViz</b>, however, is good. All internal calculations run fast. The slowest step is the time required to draw the graphics to the screen. Furthermore, this step is very system dependent. Running in MacOS is the fastest (but if you have MacOS, you may as well use <a href="#nairnfeampm"><b>NairnFEAMPM</b></a> instead). Running in Windows is slower, but still good. 
 </p>
 
 <p>Running on a Linux machine using an <code>X11</code> terminal is significantly slower, especially when any window with graphics is open. You will want to avoid this option, unless it is the only option available (<i>i.e.</i>, when your only access to the data is through a remote login). The differences are caused by the system dependent Java virtual machines and between <code>X11</code> and non-<code>X11</code> uses by Java.</p>
