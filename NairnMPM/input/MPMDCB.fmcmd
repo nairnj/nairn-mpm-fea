@@ -48,7 +48,7 @@ Problem: DCB specimen
     </Cracks>
     <MaxTime units="ms">&maxtime;</MaxTime>
     <ArchiveTime units="ms">&archive;</ArchiveTime>
-    <ArchiveRoot>FullDCB/root.</ArchiveRoot>
+    <ArchiveRoot>DCB_Results/root.</ArchiveRoot>
     <MPMArchiveOrder>mYYYYNNYNNNYYNNNNN</MPMArchiveOrder>
     <CrackArchiveOrder>mYYYN</CrackArchiveOrder>
     <Damping>&damp;</Damping>

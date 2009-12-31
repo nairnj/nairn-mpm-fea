@@ -28,15 +28,15 @@ class CommonArchiveData
 		void ArchiveElements(int);
 
 		// accessors
-		void SetArchiveRoot(char *);
+		void SetArchiveRoot(char *,bool);
 		char *GetArchiveRoot(void);
 		void SetArchiveMesh(bool);
 		void SetInputDirPath(const char *);
 		char *ExpandInputPath(const char *);
 		
 	protected:
-		char *inputDir,*archiveRoot,*globalFile;
-		bool archiveMesh;
+		char *inputDir,*archiveRoot,*globalFile,*archiveParent;
+		bool archiveMesh,forceUnique;
 };
 
 #endif

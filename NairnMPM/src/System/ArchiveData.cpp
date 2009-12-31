@@ -48,22 +48,54 @@ bool ArchiveData::MakeArchiveFolder(void)
     //---------------------------------------------------
     // Create directory for archived files (if needed)
 	char syscmd[300];
-    strcpy(syscmd,"mkdir -p '");
-	strcat(syscmd,inputDir);
-	int i;
-	bool needDir=FALSE;
-    strcat(syscmd,archiveRoot);
-    for(i=strlen(syscmd);i>0;i--)
-    {   if(syscmd[i]=='/')
-		{   syscmd[i]='\'';
-			syscmd[i+1]=0;
-			needDir=TRUE;
-			break;
+	if(strlen(archiveParent)>0 || forceUnique)
+	{	// find unique archiveParent if requested
+		if(forceUnique)
+		{	int folderID=1;
+			while(folderID<1000)
+			{	if(strlen(archiveParent)>0)
+					sprintf(syscmd,"test -d '%s%s/%d'",inputDir,archiveParent,folderID);
+				else
+					sprintf(syscmd,"test -d '%s%d'",inputDir,folderID);
+				int exists=system(syscmd);
+				if(exists!=0) break;			// zero means it already exists
+				folderID++;
+			}
+			
+			// if not found, an error
+			if(folderID>=1000) return false;
+			
+			// adjust archiveParent and archiveRoot
+			int insertPos=strlen(archiveParent);
+			if(insertPos>0)
+			{	char fldrNum[10];
+				sprintf(fldrNum,"/%d",folderID);			// max length is 4, and space was saved for it
+				int endPos=strlen(archiveRoot);
+				int numLength=strlen(fldrNum);
+				int i;
+				for(i=endPos+numLength;i>=insertPos;i--)
+				{	if(i>=insertPos+numLength)
+						archiveRoot[i]=archiveRoot[i-numLength];
+					else
+						archiveRoot[i]=fldrNum[i-insertPos];
+				}
+				strcat(archiveParent,fldrNum);
+			}
+			else
+			{	sprintf(syscmd,"%d/%s",folderID,archiveRoot);			// space was saved for insertion
+				strcpy(archiveRoot,syscmd);
+				sprintf(syscmd,"%s/%d",archiveParent,folderID);
+				strcpy(archiveParent,syscmd);
+			}
 		}
-    }
-	
-	// if archiveRoot is file name only, no need for extra directory, otherwise create
-    if(needDir) system(syscmd);
+		
+		// now make the folder
+    	strcpy(syscmd,"mkdir -p '");
+		strcat(syscmd,inputDir);
+		strcat(syscmd,archiveParent);
+		strcat(syscmd,"'");
+		system(syscmd);
+	}
 	
 	// copy input commands
 	strcpy(syscmd,"cp '");

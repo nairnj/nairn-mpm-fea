@@ -30,7 +30,7 @@ This section defines many MPM analysis parameters; it is required for NairnMPM a
     &lt;<a href="#maxtime"><code>MaxTime</code></a> units='ms'&gt;120&lt;/MaxTime&gt;
     &lt;<a href="#atime"><code>ArchiveTime</code></a> units='ms'&gt;2&lt;/ArchiveTime&gt;
     &lt;<a href="#fatime"><code>FirstArchiveTime</code></a> units='ms'&gt;100&lt;/FirstArchiveTime&gt;
-    &lt;<a href="#aroot"><code>ArchiveRoot</code></a>&gt;results/fullDCB/root.&lt;/ArchiveRoot&gt;
+    &lt;<a href="#aroot"><code>ArchiveRoot</code></a> unique='0'&gt;results/fullDCB/root.&lt;/ArchiveRoot&gt;
     &lt;<a href="#mpmarchive"><code>MPMArchiveOrder</code></a>&gt;mYYYYNYYYNYYNNNNNY&lt;/MPMArchiveOrder&gt;
     &lt;<a href="#crackarchive"><code>CrackArchiveOrder</code></a>&gt;mYYYN&lt;/CrackArchiveOrder&gt;
     &lt;<a href="#globalarchivetime"><code>GlobalArchiveTime</code></a> units='ms'&gt;1&lt;/GlobalArchiveTime&gt;
@@ -90,7 +90,9 @@ This section defines many MPM analysis parameters; it is required for NairnMPM a
   <dd>Unix path name to archive files. It is relative to the current working directory. Gives
   the start of file name. An extension for the step number will be appended as data is archived.
   For example, the archive root could be '<code>results/root.</code>' and the archived data will be
-  in a series of files beginning with '<code>results/root.1</code>'. (Required)</dd>
+  in a series of files beginning with '<code>results/root.1</code>'. Nested folders are allowed and
+  will automatically be created if needed. (Required)<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;The optional <code>unique</code> attribute (if = 1) will force the creation of a new folder by inserting a folder '1', '2', <i>etc</i>., as needed to get a new folder, within the last folder specified by the relative path in <code>ArchiveRoot</code>.</dd>
   
   <dt><a name="mpmarchive"></a>&lt;MPMArchiveOrder&gt;</dt>
   <dd>A series of 'Y' and'N' flags to determine which particle data will be saved in the archived files. For details on the format of the archived files see <a href="../outformat/index.html">NairnMPM Archive Files.</a> The options are:
