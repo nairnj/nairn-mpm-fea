@@ -293,6 +293,9 @@ public class ControlPanel extends JPanel
 	
 	// get currently selected archive
 	public int getArchiveIndex() { return selectTime.getArchiveIndex(); }
+	public boolean setArchiveIndex(int newIndex)
+	{	System.out.println("set to "+newIndex);
+		return selectTime.setArchiveIndex(newIndex); }
 	
 	// get current plotting type
 	public int getPlotType() { return load.getSelected(); }

@@ -39,9 +39,12 @@ public class AboutWindow extends JFrame implements ActionListener
 		
 		// text and links in the bottom
 		Font small=new Font("Sans Serif",Font.PLAIN,12);
-		JLabel type=new JLabel("   Java Application for NairnFEA and NairnMPM Visualization");
-		type.setFont(small);
-		type.setAlignmentX(Component.LEFT_ALIGNMENT);
+		JLabel type1=new JLabel("   Java Application for running and visualizing NairnFEA");
+		type1.setFont(small);
+		type1.setAlignmentX(Component.LEFT_ALIGNMENT);
+		JLabel type2=new JLabel("             and NairnMPM calculations");
+		type2.setFont(small);
+		type2.setAlignmentX(Component.LEFT_ALIGNMENT);
 		
 		JLabel version=new JLabel("   "+NairnFEAMPMViz.versionReadable);
 		version.setFont(small);
@@ -59,7 +62,9 @@ public class AboutWindow extends JFrame implements ActionListener
 		// vertical box
 		Container vbox=Box.createVerticalBox();
 		vbox.add(Box.createVerticalStrut(LINE_SPACING));
-		vbox.add(type);
+		vbox.add(type1);
+		vbox.add(Box.createVerticalStrut(3));
+		vbox.add(type2);
 		vbox.add(Box.createVerticalStrut(LINE_SPACING));
 		vbox.add(version);
 		vbox.add(Box.createVerticalStrut(LINE_SPACING));

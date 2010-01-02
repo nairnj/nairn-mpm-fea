@@ -21,6 +21,7 @@ public class TimeSelector extends PlotControl
 	private ArrayList<Double> archiveTimes;
 	private int value=-1;
 	private MoviePlotWindow movieCtrl;
+	private DocViewer docCtrl;
 	
 	// initialize
 	TimeSelector(MoviePlotWindow mpc,DocViewer dc)
@@ -28,6 +29,7 @@ public class TimeSelector extends PlotControl
 		setLayout(new GridLayout(2,1));
 
 		// slider bar
+		docCtrl=dc;
 		movieCtrl=mpc;
 		if(movieCtrl==null)
 		{	select.setMajorTickSpacing(10);
@@ -63,6 +65,7 @@ public class TimeSelector extends PlotControl
 					{	value=select.getValue();
 						movieCtrl.changeArchiveIndex(value);
 					}
+					docCtrl.controls.setArchiveIndex(select.getValue());
 				}
 				else
 				{	timeSelected.setText("Time: " + archiveTimes.get(select.getValue()) + " ms");
@@ -100,6 +103,8 @@ public class TimeSelector extends PlotControl
 	public boolean setArchiveIndex(int newIndex)
 	{	if(newIndex!=select.getValue())
 		{	select.setValue(newIndex);
+			if(movieCtrl!=null)
+				docCtrl.controls.setArchiveIndex(newIndex);
 			// state change will reload the data
 			return true;
 		}
@@ -118,6 +123,8 @@ public class TimeSelector extends PlotControl
 	{	int currentIndex=select.getValue();
 		if(currentIndex==select.getMaximum()) return false;
 		select.setValue(currentIndex+1);
+		if(movieCtrl!=null)
+			docCtrl.controls.setArchiveIndex(currentIndex+1);
 		return true;
 	}
 }
