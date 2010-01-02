@@ -18,7 +18,9 @@ public static final String versionReadable="Version 3.0.0";
 NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The version currently in this project are as follows:
 
   * Current trunk Version
+    * Working on NairnFEAMPMViz 3.0.2
     * Added color wells for plot elements
+    * Synchronize time selected between plot and control panel for MPM plots
 
   * release-1.0 (30 DEC 2009)
     * Has NairnFEAMPMViz 3.0.0
