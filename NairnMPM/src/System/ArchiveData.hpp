@@ -33,7 +33,7 @@ enum { ARCH_JIntegral=2,ARCH_StressIntensity,ARCH_BalanceResults,ARCH_MAXCRACKIT
 
 // VTK archiving options
 enum { VTK_MASS=0, VTK_VELOCITY, VTK_STRESS, VTK_STRAIN, VTK_DISPLACEMENT, VTK_PLASTICSTRAIN,
-		VTK_TEMPERATURE, VTK_CONCENTRATION, VTK_STRAINENERGY, VTK_PLASTICENERGY };
+		VTK_TEMPERATURE, VTK_CONCENTRATION, VTK_STRAINENERGY, VTK_PLASTICENERGY,VTK_MATERIAL };
 
 #define HEADER_LENGTH 64
 
@@ -51,7 +51,7 @@ class ArchiveData : public CommonArchiveData
 		bool MakeArchiveFolder(void);
 		void BeginArchives(bool);
 		void ArchiveResults(double);
-		void ArchiveVTKFile(double atime,vector< int >,vector< char * >,double **);
+		void ArchiveVTKFile(double atime,vector< int >,vector< int >,vector< char * >,double **);
 		void FileError(const char *,const char *,const char *);
 		
 		// log file methods

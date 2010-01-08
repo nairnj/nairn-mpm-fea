@@ -35,6 +35,7 @@ class VTKArchive : public CustomTask
         
     private:
 		vector< int > quantity;
+		vector< int > quantitySize;
 		vector< char * > quantityName;
 		double customArchiveTime,nextCustomArchiveTime;
 		int bufferSize;				// if task has quantity that must be extrapolated
