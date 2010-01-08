@@ -950,7 +950,8 @@ void ArchiveData::GlobalArchive(double atime)
 }
 
 // Archive the results if it is time
-void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< char * > quantityName,double **vtk)
+void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int > quantitySize,
+											vector< char * > quantityName,double **vtk)
 {
     char fname[300],fline[300];
 	
@@ -1004,30 +1005,24 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< cha
 	
 	for(q=0;q<quantity.size();q++)
 	{	// header for next quantity
-		switch(quantity[q])
-		{	case VTK_CONCENTRATION:
-			case VTK_STRAINENERGY:
-			case VTK_PLASTICENERGY:
+		switch(quantitySize[q])
+		{	case 1:
 				if(vtk==NULL) break;
-			case VTK_MASS:
-			case VTK_TEMPERATURE:
+			case -1:
 				afile << "SCALARS ";
 				afile << quantityName[q];
 				afile << " double 1" << endl;
 				afile << "LOOKUP_TABLE default" << endl;
 				break;
 			
-			case VTK_DISPLACEMENT:
-			case VTK_VELOCITY:
+			case 3:
 				if(vtk==NULL) break;
 				afile << "VECTORS ";
 				afile << quantityName[q];
 				afile << " double" << endl;
 				break;
 			
-			case VTK_STRESS:
-			case VTK_STRAIN:
-			case VTK_PLASTICSTRAIN:
+			case 6:
 				if(vtk==NULL) break;
 				afile << "TENSORS ";
 				afile << quantityName[q];
@@ -1054,6 +1049,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< cha
 				case VTK_CONCENTRATION:
 				case VTK_STRAINENERGY:
 				case VTK_PLASTICENERGY:
+				case VTK_MATERIAL:
 					afile << vtkquant[offset] << endl;
 					break;
 				
@@ -1083,27 +1079,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< cha
 		}
 		
 		// offset for next quantity
-		switch(quantity[q])
-		{	case VTK_STRESS:
-			case VTK_STRAIN:
-			case VTK_PLASTICSTRAIN:
-				offset+=6;
-				break;
-			
-			case VTK_DISPLACEMENT:
-			case VTK_VELOCITY:
-				offset+=3;
-				break;
-				
-			case VTK_CONCENTRATION:
-			case VTK_STRAINENERGY:
-			case VTK_PLASTICENERGY:
-				offset+=1;
-				break;
-				
-			default:
-				break;
-		}
+		offset+=abs(quantitySize[q]);
 	}
     
     // close the file

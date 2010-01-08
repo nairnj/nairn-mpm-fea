@@ -21,10 +21,10 @@ Visualization
 </p>
 
 <ol>
-<li><a href="#nairnfeampm">Use <b>NairnFEAMPM</b></a> - on MacOS X computers only and the option with the most features.
-<li><a href="#nairnviz">Use <b>NairnFEAMPMViz</b></a> - a Java application for any platform. Note: the <code>Nairn-MPM-FEA</code> package includes the <b>NairnFEAMPMViz</b> source code, which means you can change it and then <a href="#compile">recompile to create your own custom visualization application</a>. <b>NairnFEAMPMViz</b> has fewer features than <a href="#nairnfeampm"><b>NairnFEAMPM</b></a> and cannot visualize 3D simulations.
-<li>Use or write command-line tools to extract data from archive files to be input into your own or third-party visualization packages. This approach is the most difficult, but always an option if you need it. See <code>NairnMPM</code> <a href="tools.html">command line tools</a> for available tools (<i>e.g.</i>  <a href="tools.html#extractmpm"><code>ExtractMPM</code></a>) or to use as sample code for creating new tools.
-<li><code>NairnMPM</code> results can alternatively be output as &quot;VTK Legacy&quot; files which can be input to various third-party visualizations tools. An excellent option is free, multi-platform <a href="http://www.paraview.org">ParaView</a>. See the <code>CustomTasks</code> in <c>NairnMPM</c> for exporting VTK files. This option is must useful for 3D, but only plots results extrapolated to the grid. To plot 3D particle data, you have to use <a href="#nairnfeampm"><b>NairnFEAMPM</b></a> or, if not on a Mac, you can use <a href="tools.html#extractmpm"><code>ExtractMPM</code></a> to get particle-data VTK Legacy files.
+<li><a href="#nairnfeampm">Use <b>NairnFEAMPM</b></a> - on MacOS X computers only and the option with the most features.</li>
+<li><a href="#nairnviz">Use <b>NairnFEAMPMViz</b></a> - a Java application for any platform. Note: the <code>Nairn-MPM-FEA</code> package includes the <b>NairnFEAMPMViz</b> source code, which means you can change it and then <a href="#compile">recompile to create your own custom visualization application</a>. <b>NairnFEAMPMViz</b> has fewer features than <a href="#nairnfeampm"><b>NairnFEAMPM</b></a> and cannot visualize 3D simulations.</li>
+<li>Use or write command-line tools to extract data from archive files to be input into your own or third-party visualization packages. This approach is the most difficult, but always an option if you need it. See <code>NairnMPM</code> <a href="tools.html">command line tools</a> for available tools (<i>e.g.</i>  <a href="tools.html#extractmpm"><code>ExtractMPM</code></a>) or to use as sample code for creating new tools.</li>
+<li><code>NairnMPM</code> results can alternatively be output as &quot;VTK Legacy&quot; files which can be input to various third-party visualizations tools. An excellent option is free, multi-platform <a href="http://www.paraview.org">ParaView</a>. See the <a href="../xmlformat/custom.html#VTKArchive">CustomTasks</a> in <code>NairnMPM</code> for exporting VTK files and see below for <a href="#paraview">ParaView quick start</a>. This option is most useful for 3D, but only plots results extrapolated to the grid. To plot 3D particle data, you have to use <a href="#nairnfeampm"><b>NairnFEAMPM</b></a> or, if not on a Mac, you can use <a href="tools.html#extractmpm"><code>ExtractMPM</code></a> to get particle-data VTK Legacy files.</li>
 </ol>
 
 <h1><a name="nairnfeampm"></a>Using NairnFEAMPM on MacOS X Computer
@@ -36,11 +36,11 @@ Visualization
 </p>
 
 <ol>
-<li>Start <b>NairnFEAMPM</b>
+<li>Start <b>NairnFEAMPM</b></li>
 
-<li>Choose the File &rarr; Open... menu command and select the <code>NairnFEA</code> output file or the master <code>NairnMPM</code> output file.
+<li>Choose the File &rarr; Open... menu command and select the <code>NairnFEA</code> output file or the master <code>NairnMPM</code> output file.</li>
 
-<li>See <b>NairnFEAMPM</b> application help information for all the visualization option.
+<li>See <b>NairnFEAMPM</b> application help information for all the visualization option.</li>
 
 </ol>
 
@@ -59,7 +59,7 @@ Visualization
 
 </ol>
 
-<p>Note that <b>NairnFEAMPMViz</b> requires a system with Java 1.5.0 (<i>a.k.a</i> Java 5) or newer installed.</a>.
+<p>Note that <b>NairnFEAMPMViz</b> requires a system with Java 1.5.0 (<i>a.k.a</i> Java 5) or newer installed.</p>.
 
 <h2><a name="runningViz"></a>Running <b>NairnFEAMPMViz</b></h2>
 
@@ -72,7 +72,7 @@ java -Xmx512m -jar NairnFEAMPMViz.jar
 </pre>
 
 <p>The <code>-Xmx</code> option allocates the desired memory (where &quot;m&quot; means in megabytes). The <code>-jar</code> option gives a path to the compiled jar file (the above assumes you are in the same folder as the jat file).
-<p>
+</p>
 
 <p>When running in Windows, you can launch from a Windows command prompt or from a <code>cygwin</code> shell. In either case, you will need to include the path to the <code>java</code> command in your <code>PATH</code> environment variable. The path to Java executables in Windows will be something like:
 </p>
@@ -96,7 +96,7 @@ C:\Program Files\Java\jdk1.6.0_03\bin
 <ul>
 
 <li>Make a copy of the file <code>nairn-mpm-fea/Visualization/build/NairnFEAMPMVIz.bat</code>
-and edit that copy. This file will contain something like</li>
+and edit that copy. This file will contain something like
 
 <pre>
 C:
@@ -105,6 +105,7 @@ java -Xmx512m -jar NairnFEAMPMViz.jar
 </pre>
 
 Edit the second line to be the full path to the folder with your <b>NairnFEAMPMViz</b> jar file (quote the path if it includes spaces in some directory names). The last line assumes your Windows environment includes the path to the <code>java</code> command. If note, you can replace <code>java</code> by the full path to the <code>java</code> executable.</li>
+
 <li>Next create a short cut to the batch file (and give it any desired name). Right click on the new shortcut and select &quot;Properties&quot;. In the properties window, click &quot;Change Icon...&quot; and &quot;Browse...&quot; for the <code>NairnFEAMPMViz.ico</code> file (in the <code>nairn-mpm-fea/Visualization/build</code> folder). 
 </li>
 <li>Finally, move the short cut to your desktop (or to any other folder). You can double click the shortcut to launch <b>NairnFEAMPMViz</b> ready for calculations and/or visualization.
@@ -158,8 +159,8 @@ ssh -Y -l username servername
 </p>
 
 <ul>
-<li><a href="#unix">Compile using command line script</a>
-<li><a href="#eclipse">Compile using Eclipse on any platform</a>
+<li><a href="#unix">Compile using command line script</a></li>
+<li><a href="#eclipse">Compile using Eclipse on any platform</a></li>
 </ul>
 
 <h2><a name="unix"></a>Command Line Compile</h2>
@@ -189,7 +190,7 @@ path to the java binaries will be something like: </p>
 
 <h2><a name="eclipse"></a>Compiling Using Eclipse</h2>
 
-<p><a href="http://www.eclipse.org" target="new">Eclipse</a> is an open-source and free development system for Java (and for other languages with the appropriate plug ins). This section explains how to import the code into an Eclipse project. This method was done using Eclipse 3.5.1, which is available free for Windows, Mac, and other platforms.<p>
+<p><a href="http://www.eclipse.org" target="new">Eclipse</a> is an open-source and free development system for Java (and for other languages with the appropriate plug ins). This section explains how to import the code into an Eclipse project. This method was done using Eclipse 3.5.1, which is available free for Windows, Mac, and other platforms.</p>
 
 <p>While you could create a new project and manually add files from the <code>nairn-mpm-fea</code> check out, the preferred method is to directly check out from the <code>GoogleCode.com</code> repository using <code>Subversion</code>. Unfortunately, the default installation of <a href="http://www.eclipse.org" target="new">Eclipse</a> does not have <code>Subversion</code>; but it is available as a plug in:
 </p>
@@ -231,13 +232,13 @@ You can increase or decrease the memory as needed).</li>
 <li>Click &quot;Apply&quot;</li>
 <li>Click &quot;Run&quot; to run <b>NairnFEAMPMViz</b></li>
 <li>In the future, you can run using the  &quot;<b>NairnFEAMPMViz with Meomry</b>&quot; item in the Run History menu</li>
-</ol>
+</ol></li>
 </ol>
 
 <p>The above process will create a project in the Eclipse workspace that will have a copy of the
 files needed for the <b>NairnFEAMPMViz</b> project. When you get a new version of the visualization code, simply repeat the above steps. Once the new one is working, you can delete the old one (unless you had changes there you wanted to keep).</p>
 
-<p>The above process will let you compile and run <b>NairnFEAMPMViz</b> within Eclipse. You can also use Eclipse to create a jar file, which can be run outside of Eclipse. The process is:
+<p>The above process will let you compile and run <b>NairnFEAMPMViz</b> within Eclipse. You can also use Eclipse to create a jar file, which can be run outside of Eclipse. The process is:</p>
 
 <ol>
 <li>Expand the &quot;lib&quot; folder in the <b>NairnFEAMPMViz</b> project and double click on the &quot;NairnFEAMPMViz.jardesc&quot; file.</li>
@@ -252,6 +253,16 @@ the external jar file used for x-y plots. Because that jar remains an external j
 
 <p>where the classpath option (<code>-cp</code>) gives the paths to the two required jar files (both of which should not be in the &quot;lib&quot; folder). The <code>-Xmx512m</code> argument is to give the virtual machine sufficent memory
 (as explained <a href="#runningViz">above</a>).</p>
+
+<h1><a name="paraview"></a>ParaView Quick Start</h1>
+
+<p><a href="http://www.paraview.org">ParaView</a> is advanced software with many options and ample documentation on the <a href="http://www.paraview.org">web or in books</a>. This section just gives steps to get one plot from NairnMPM output:</p>
+
+<ol>
+
+<li>Run NairnMPM calculations using the <a href="../xmlformat/custom.html#VTKArchive">VTKArchive custom task</a>.</li>
+
+</ol>
 
 <p class="links">
 <a href="../index.html">Home</a> &rarr;

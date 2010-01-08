@@ -229,6 +229,8 @@
 			<key>Layout</key>
 			<array>
 				<dict>
+					<key>BecomeActive</key>
+					<true/>
 					<key>ContentConfiguration</key>
 					<dict>
 						<key>PBXBottomSmartGroupGIDs</key>
@@ -265,16 +267,15 @@
 							<array>
 								<string>08FB7794FE84155DC02AAC07</string>
 								<string>08FB7795FE84155DC02AAC07</string>
-								<string>A7C77A2909869D7E001BE128</string>
-								<string>A7198C5409780F5200334C4F</string>
-								<string>A7198C6009780F7E00334C4F</string>
+								<string>F5F7068D0326ABA70163AF10</string>
+								<string>A72498CD04FCF5C50063AF10</string>
 								<string>1C37FABC05509CD000000102</string>
 							</array>
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
-									<integer>6</integer>
-									<integer>4</integer>
+									<integer>32</integer>
+									<integer>16</integer>
 									<integer>1</integer>
 									<integer>0</integer>
 								</array>
@@ -310,14 +311,12 @@
 					<key>Dock</key>
 					<array>
 						<dict>
-							<key>BecomeActive</key>
-							<true/>
 							<key>ContentConfiguration</key>
 							<dict>
 								<key>PBXProjectModuleGUID</key>
 								<string>1CE0B20306471E060097A5F4</string>
 								<key>PBXProjectModuleLabel</key>
-								<string>NairnMPM.cpp</string>
+								<string>VTKArchive.cpp</string>
 								<key>PBXSplitModuleInNavigatorKey</key>
 								<dict>
 									<key>Split0</key>
@@ -325,11 +324,11 @@
 										<key>PBXProjectModuleGUID</key>
 										<string>1CE0B20406471E060097A5F4</string>
 										<key>PBXProjectModuleLabel</key>
-										<string>NairnMPM.cpp</string>
+										<string>VTKArchive.cpp</string>
 										<key>_historyCapacity</key>
 										<integer>0</integer>
 										<key>bookmark</key>
-										<string>678AC51C10EC89DF00C6159E</string>
+										<string>67C6F97210F791BA001112F6</string>
 										<key>history</key>
 										<array>
 											<string>67DDD04810C9B4E700E7CF03</string>
@@ -356,11 +355,17 @@
 											<string>6712610310E9EDB000DC1510</string>
 											<string>6712610410E9EDB000DC1510</string>
 											<string>67763D0010EB125500087688</string>
-											<string>67763D0110EB125500087688</string>
 											<string>67763D0210EB125500087688</string>
-											<string>67763D0310EB125500087688</string>
 											<string>67BA2AF010EC01C20093B5BC</string>
-											<string>67BA2AF110EC01C20093B5BC</string>
+											<string>67C6F96510F78E69001112F6</string>
+											<string>67C6F96610F78E69001112F6</string>
+											<string>67C6F96710F78E69001112F6</string>
+											<string>67C6F96810F78E69001112F6</string>
+											<string>67C6F96910F78E69001112F6</string>
+											<string>67C6F96A10F78E69001112F6</string>
+											<string>67C6F96B10F78E69001112F6</string>
+											<string>67C6F96C10F78E69001112F6</string>
+											<string>67C6F97110F791BA001112F6</string>
 										</array>
 									</dict>
 									<key>SplitCount</key>
@@ -372,14 +377,14 @@
 							<key>GeometryConfiguration</key>
 							<dict>
 								<key>Frame</key>
-								<string>{{0, 0}, {881, 482}}</string>
+								<string>{{0, 0}, {881, 475}}</string>
 								<key>RubberWindowFrame</key>
 								<string>106 95 1119 745 0 0 1440 878 </string>
 							</dict>
 							<key>Module</key>
 							<string>PBXNavigatorGroup</string>
 							<key>Proportion</key>
-							<string>482pt</string>
+							<string>475pt</string>
 						</dict>
 						<dict>
 							<key>ContentConfiguration</key>
@@ -392,14 +397,14 @@
 							<key>GeometryConfiguration</key>
 							<dict>
 								<key>Frame</key>
-								<string>{{0, 487}, {881, 217}}</string>
+								<string>{{0, 480}, {881, 224}}</string>
 								<key>RubberWindowFrame</key>
 								<string>106 95 1119 745 0 0 1440 878 </string>
 							</dict>
 							<key>Module</key>
 							<string>XCDetailModule</string>
 							<key>Proportion</key>
-							<string>217pt</string>
+							<string>224pt</string>
 						</dict>
 					</array>
 					<key>Proportion</key>
@@ -418,9 +423,9 @@
 			</array>
 			<key>TableOfContents</key>
 			<array>
-				<string>678AC43210EC60E600C6159E</string>
+				<string>67C6F96F10F78E69001112F6</string>
 				<string>1CE0B1FE06471DED0097A5F4</string>
-				<string>678AC43310EC60E600C6159E</string>
+				<string>67C6F97010F78E69001112F6</string>
 				<string>1CE0B20306471E060097A5F4</string>
 				<string>1CE0B20506471E060097A5F4</string>
 			</array>
@@ -558,6 +563,7 @@
 	<integer>5</integer>
 	<key>WindowOrderList</key>
 	<array>
+		<string>1C530D57069F1CE1000CFCEE</string>
 		<string>67D6F69A10C4E73B00649AAC</string>
 		<string>/Users/nairnj/Programming/Cocoa_Projects/nairn-mpm-fea/Common/Projects/NairnMPM.xcodeproj</string>
 	</array>
@@ -578,12 +584,14 @@
 					<key>Dock</key>
 					<array>
 						<dict>
+							<key>BecomeActive</key>
+							<true/>
 							<key>ContentConfiguration</key>
 							<dict>
 								<key>PBXProjectModuleGUID</key>
 								<string>1CD0528F0623707200166675</string>
 								<key>PBXProjectModuleLabel</key>
-								<string></string>
+								<string>VTKArchive.cpp</string>
 								<key>StatusBarVisibility</key>
 								<true/>
 							</dict>
@@ -639,7 +647,7 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>67D6F69A10C4E73B00649AAC</string>
-				<string>678AC43410EC60E600C6159E</string>
+				<string>67C6F94F10F78E13001112F6</string>
 				<string>1CD0528F0623707200166675</string>
 				<string>XCMainBuildResultsModuleGUID</string>
 			</array>
@@ -652,7 +660,7 @@
 			<key>WindowToolGUID</key>
 			<string>67D6F69A10C4E73B00649AAC</string>
 			<key>WindowToolIsVisible</key>
-			<false/>
+			<true/>
 		</dict>
 		<dict>
 			<key>FirstTimeWindowDisplayed</key>
@@ -794,14 +802,12 @@
 							<key>Dock</key>
 							<array>
 								<dict>
-									<key>BecomeActive</key>
-									<true/>
 									<key>ContentConfiguration</key>
 									<dict>
 										<key>PBXProjectModuleGUID</key>
 										<string>1CDD528C0622207200134675</string>
 										<key>PBXProjectModuleLabel</key>
-										<string>ShapeController.cpp</string>
+										<string>VTKArchive.cpp</string>
 										<key>StatusBarVisibility</key>
 										<true/>
 									</dict>
@@ -810,7 +816,7 @@
 										<key>Frame</key>
 										<string>{{0, 0}, {940, 409}}</string>
 										<key>RubberWindowFrame</key>
-										<string>426 37 940 724 0 0 1440 878 </string>
+										<string>378 63 940 724 0 0 1440 878 </string>
 									</dict>
 									<key>Module</key>
 									<string>PBXNavigatorGroup</string>
@@ -822,6 +828,8 @@
 							<string>409pt</string>
 						</dict>
 						<dict>
+							<key>BecomeActive</key>
+							<true/>
 							<key>ContentConfiguration</key>
 							<dict>
 								<key>PBXProjectModuleGUID</key>
@@ -834,7 +842,7 @@
 								<key>Frame</key>
 								<string>{{0, 414}, {940, 269}}</string>
 								<key>RubberWindowFrame</key>
-								<string>426 37 940 724 0 0 1440 878 </string>
+								<string>378 63 940 724 0 0 1440 878 </string>
 							</dict>
 							<key>Module</key>
 							<string>PBXProjectFindModule</string>
@@ -857,17 +865,17 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>1C530D57069F1CE1000CFCEE</string>
-				<string>671260E010E9EA9F00DC1510</string>
-				<string>671260E110E9EA9F00DC1510</string>
+				<string>67C6F95B10F78E13001112F6</string>
+				<string>67C6F95C10F78E13001112F6</string>
 				<string>1CDD528C0622207200134675</string>
 				<string>1CD0528E0623707200166675</string>
 			</array>
 			<key>WindowString</key>
-			<string>426 37 940 724 0 0 1440 878 </string>
+			<string>378 63 940 724 0 0 1440 878 </string>
 			<key>WindowToolGUID</key>
 			<string>1C530D57069F1CE1000CFCEE</string>
 			<key>WindowToolIsVisible</key>
-			<true/>
+			<false/>
 		</dict>
 		<dict>
 			<key>Identifier</key>

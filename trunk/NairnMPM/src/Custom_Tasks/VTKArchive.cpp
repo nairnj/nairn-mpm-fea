@@ -7,17 +7,14 @@
 	
 	To add new quantity:
 		1. Add enum in ArchiveData.hpp
-		2. Add parameter in InputParam(). If will extraplation add to buffer
-			size for number of doubles to include
+		2. Add parameter in InputParam() and set its size. If will not 
+			extraplate set size to minus actual size (scalars only currently)
 		3. If will extrapolate, add case in NodalExtrapolation()
-		4. Add case for section header in ArchiveVTKFile(), but if extrapolated
-			and vtk is NULL (memory error) skip the header.
-		5. Add case to write the data in ArchiveVTKFile(), but if extrapolated
+		4. Add case to write the data in ArchiveVTKFile(), but if extrapolated
 			and vtk is NULL (memory error) skip writing the data.
-		6. If extrapolated, add case to advance offset in ArchiveVTKFile()
 	
-	Possible Quantities
-		material, material angle(s) or rotation strain, kinetic energy
+	Possible Quantities to Add
+		material angle(s) or rotation strain, kinetic energy
 ********************************************************************************/
 
 #include "Custom_Tasks/VTKArchive.hpp"
@@ -50,57 +47,64 @@ const char *VTKArchive::TaskName(void) { return "Archive grid results to VTK fil
 //    and return pointer to the class variable
 char *VTKArchive::InputParam(char *pName,int &input)
 {
-	int q=-1;
+	int q=-1,thisBuffer=0;
 	
     // check for archiving quantity
     if(strcmp(pName,"mass")==0)
     {	q=VTK_MASS;
 		// no buffer since no need to extrapolate
+		thisBuffer=-1;
     }
     
     else if(strcmp(pName,"velocity")==0)
     {	q=VTK_VELOCITY;
-		bufferSize+=3;		// extrapolate for cm velocity
+		thisBuffer=3;		// extrapolate for cm velocity
     }
 	
     else if(strcmp(pName,"stress")==0)
     {	q=VTK_STRESS;
-		bufferSize+=6;
+		thisBuffer=6;
     }
 	
     else if(strcmp(pName,"strain")==0)
     {	q=VTK_STRAIN;
-		bufferSize+=6;
+		thisBuffer=6;
     }
 	
     else if(strcmp(pName,"displacement")==0)
     {	q=VTK_DISPLACEMENT;
-		bufferSize+=3;
+		thisBuffer=3;
     }
 	
     else if(strcmp(pName,"plasticstrain")==0)
     {	q=VTK_PLASTICSTRAIN;
-		bufferSize+=6;
+		thisBuffer=6;
     }
 	
     else if(strcmp(pName,"temperature")==0)
     {	q=VTK_TEMPERATURE;
 		// no buffer since no need to extrapolate
+		thisBuffer=-1;
     }
 	
     else if(strcmp(pName,"concentration")==0)
     {	q=VTK_CONCENTRATION;
-		bufferSize+=1;
+		thisBuffer=1;
     }
 	
     else if(strcmp(pName,"strainenergy")==0)
     {	q=VTK_STRAINENERGY;
-		bufferSize+=1;
+		thisBuffer=1;
     }
 	
     else if(strcmp(pName,"plasticenergy")==0)
     {	q=VTK_PLASTICENERGY;
-		bufferSize+=1;
+		thisBuffer=1;
+    }
+	
+    else if(strcmp(pName,"material")==0)
+    {	q=VTK_PLASTICENERGY;
+		thisBuffer=1;
     }
 	
     else if(strcmp(pName,"archiveTime")==0)
@@ -116,6 +120,9 @@ char *VTKArchive::InputParam(char *pName,int &input)
 	// if found one, add to arrays
 	if(q>=0)
 	{	quantity.push_back(q);
+		quantitySize.push_back(thisBuffer);				// <0 is size for non-extrapolated quantities
+		if(thisBuffer<0) thisBuffer=-thisBuffer;
+		bufferSize+=thisBuffer;
 		char *qname=new char[strlen(pName)+1];
 		strcpy(qname,pName);
 		quantityName.push_back(qname);
@@ -196,7 +203,7 @@ CustomTask *VTKArchive::PrepareForStep(bool &needExtraps)
 CustomTask *VTKArchive::StepCalculation(void)
 {
 	if(doVTKExport)
-		archiver->ArchiveVTKFile(mtime+timestep,quantity,quantityName,vtk);
+		archiver->ArchiveVTKFile(mtime+timestep,quantity,quantitySize,quantityName,vtk);
     return nextTask;
 }
 
@@ -307,6 +314,11 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 				
 			case VTK_PLASTICENERGY:
 				*vtkquant+=wt*1.0e-6*mpnt->mp*mpnt->GetPlastEnergy();
+				vtkquant++;
+				break;
+				
+			case VTK_MATERIAL:
+				*vtkquant+=wt*(double)(mpnt->MatID()+1);
 				vtkquant++;
 				break;
 				

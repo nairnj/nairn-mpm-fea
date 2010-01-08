@@ -67,6 +67,10 @@
 <dd>Archive nodal mass (in g). This option is useful for creating contours that visualize the boundaries of the object. The surface can then be colored in any other archived result.
 </dd>
 
+<dt>material</dt>
+<dd>The material number to visualize different materials in a composite (it is extrapolated to the grid, which will blur material edges compared to particle plots).
+</dd>
+
 <dt>displacement</dt>
 <dd>Archive displacement vector (in mm).
 </dd>
@@ -113,7 +117,7 @@
 
 </dl>
 
-<p>Archived vectors will include all components of the vector and applications like <a href="http://www.paraview.org">Paraview</a> can use the magnitude or any single component for constructing graphics. Archived tensors will include all components of the tensor. In <a href="http://www.paraview.org">Paraview</a>, the magnitude and components 0 through 8 or tensors will be listed. The numbers correspond to the following tensor components:
+<p>Archived vectors will include all components of the vector and applications like <a href="http://www.paraview.org">Paraview</a> can use the magnitude or any single component for constructing graphics. Archived tensors will include all components of the tensor. In <a href="http://www.paraview.org">Paraview</a>, the magnitude and components 0 through 8 or tensors will be listed. The numbers correspond to the following tensor components:</p>
 <pre>   ( xx   xy   xz )   ( 0  1  2 )
    | yx   yy   yz | = | 3  4  5 |
    ( zx   zy   zz ) = ( 6  7  8 )
