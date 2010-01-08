@@ -1050,6 +1050,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 				case VTK_STRAINENERGY:
 				case VTK_PLASTICENERGY:
 				case VTK_MATERIAL:
+					if(vtk==NULL) break;
 					afile << vtkquant[offset] << endl;
 					break;
 				
@@ -1078,8 +1079,8 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 			}
 		}
 		
-		// offset for next quantity
-		offset+=abs(quantitySize[q]);
+		// offset for next quantity (if in the buffer)
+		if(quantitySize[q]>0) offset+=quantitySize[q];
 	}
     
     // close the file

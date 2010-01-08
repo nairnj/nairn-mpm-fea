@@ -103,7 +103,7 @@ char *VTKArchive::InputParam(char *pName,int &input)
     }
 	
     else if(strcmp(pName,"material")==0)
-    {	q=VTK_PLASTICENERGY;
+    {	q=VTK_MATERIAL;
 		thisBuffer=1;
     }
 	
@@ -286,18 +286,16 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 				break;
 			
 			case VTK_DISPLACEMENT:
-				theWt=wt;
-				vtkquant[0]+=theWt*(mpnt->pos.x-mpnt->origpos.x);
-				vtkquant[1]+=theWt*(mpnt->pos.y-mpnt->origpos.y);
-				vtkquant[2]+=theWt*(mpnt->pos.z-mpnt->origpos.z);
+				vtkquant[0]+=wt*(mpnt->pos.x-mpnt->origpos.x);
+				vtkquant[1]+=wt*(mpnt->pos.y-mpnt->origpos.y);
+				vtkquant[2]+=wt*(mpnt->pos.z-mpnt->origpos.z);
 				vtkquant+=3;
 				break;
 			
 			case VTK_VELOCITY:
-				theWt=wt;
-				vtkquant[0]+=theWt*mpnt->vel.x;
-				vtkquant[1]+=theWt*mpnt->vel.y;
-				vtkquant[2]+=theWt*mpnt->vel.z;
+				vtkquant[0]+=wt*mpnt->vel.x;
+				vtkquant[1]+=wt*mpnt->vel.y;
+				vtkquant[2]+=wt*mpnt->vel.z;
 				vtkquant+=3;
 				break;
 				
@@ -318,11 +316,12 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 				break;
 				
 			case VTK_MATERIAL:
-				*vtkquant+=wt*(double)(mpnt->MatID()+1);
+				*vtkquant+=wt*((double)mpnt->MatID()+1.);
 				vtkquant++;
 				break;
 				
 			default:
+				// skip those not extrapolated
 				break;
 		}
 	}
