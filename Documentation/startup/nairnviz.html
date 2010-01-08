@@ -261,6 +261,17 @@ the external jar file used for x-y plots. Because that jar remains an external j
 <ol>
 
 <li>Run NairnMPM calculations using the <a href="../xmlformat/custom.html#VTKArchive">VTKArchive custom task</a>.</li>
+<li>Run ParaView, choose the open command and select the block of VTK legacy files. The files will be found in the archived results folder with the naming stlye &quot;MPM_#.vtk&quot; where &quot;MPM&quot; is the root name you used for the calculations archived files and &quot;#&quot; is the step number. ParaView will let you select these as a block and open the entire block at once. It will load them in the correct order.</li>
+
+<li>ParaView does not actually read files when they are opened. To read them, click the &quot;Apply&quot; button in the object inspect. When it is done reading, a wire frame of the space should appear in the plot area.</li>
+
+<li>To get a plot, click the &quot;Contour&quot; icon. In the object inspector, set it to countour by mass. In the isosurfaces section, set the contour value to some number less than the maximum mass.</li>
+
+<li>Finally, use the &quot;Color by&quot; menu (in tool bar or in object inspector) to choose archived component to apply color the the mass surface</li>
+
+</ol>
+
+<p>ParaView has many more options for plotting and reading results from <code>NairnMPM</code> run using the <a href="../xmlformat/custom.html#VTKArchive">VTKArchive custom task</a>. The above just get one plot.</p>
 
 </ol>
 
