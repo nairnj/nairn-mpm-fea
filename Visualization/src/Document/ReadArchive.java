@@ -101,7 +101,11 @@ public class ReadArchive
 			byte[] version=new byte[4];
 			bb.get(version);
 			int headerLength=4;
-			int vernum=version[3]-'0';
+			int vernum=0;
+			if(version[2]>='1' && version[2]<='9')
+				vernum+=10*((int)version[2]-'0');
+			if(version[3]>='0' && version[3]<='9')
+				vernum+=(int)(version[3]-'0');
 			if(vernum>=4)
 			{	headerLength=64;
 				bb.position(headerLength);
