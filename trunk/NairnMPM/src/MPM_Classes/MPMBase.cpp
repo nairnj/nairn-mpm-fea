@@ -28,7 +28,9 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
     inElem=elem;
 	mp=-1.;						// calculated in PreliminaryCalcs, unless set in input file
     matnum=theMatl;
-	SetAngle0InDegrees(angin);
+	SetAnglez0InDegrees(angin);
+	SetAngley0InDegrees(0.0);
+	SetAnglex0InDegrees(0.0);
     
     for(i=1;i<MaxShapeNds;i++)
         vfld[i]=NO_CRACK;
@@ -160,11 +162,28 @@ int MPMBase::GetResetElementCrossings(void)
 double MPMBase::GetDuDy(void) { return (ep.xy+eplast.xy-wrot.xy)/2.; }
 double MPMBase::GetDvDx(void) { return (ep.xy+eplast.xy+wrot.xy)/2.; }
 
-// angle0 is initial 2D orientation angle
-double MPMBase::GetRotation(void) { return angle0-0.5*wrot.xy; }
-double MPMBase::GetRotationInDegrees(void) { return 180.*(angle0-0.5*wrot.xy)/PI_CONSTANT; }
-void MPMBase::SetAngle0InDegrees(double angle) { angle0=PI_CONSTANT*angle/180.; }
-double MPMBase::GetAngle0InDegrees(void) { return 180.*angle0/PI_CONSTANT; }
+// anglez0 is initial z cw orientation angle (2D and 3D z,y,x scheme)
+double MPMBase::GetRotationZ(void) { return anglez0-0.5*wrot.xy; }
+double MPMBase::GetRotationZInDegrees(void) { return 180.*(anglez0-0.5*wrot.xy)/PI_CONSTANT; }
+void MPMBase::SetAnglez0(double angle) { anglez0=angle; }
+void MPMBase::SetAnglez0InDegrees(double angle) { anglez0=PI_CONSTANT*angle/180.; }
+double MPMBase::GetAnglez0InDegrees(void) { return 180.*anglez0/PI_CONSTANT; }
+
+// angley0 is initial y cw orientation angle (3D z,y,x scheme)
+double MPMBase::GetRotationY(void) { return angley0+0.5*wrot.xz; }
+double MPMBase::GetRotationYInDegrees(void) { return 180.*(angley0+0.5*wrot.xz)/PI_CONSTANT; }
+void MPMBase::SetAngley0(double angle) { angley0=angle; }
+void MPMBase::SetAngley0InDegrees(double angle) { angley0=PI_CONSTANT*angle/180.; }
+double MPMBase::GetAngley0InDegrees(void) { return 180.*angley0/PI_CONSTANT; }
+
+// anglex0 is initial x cw orientation angle (3D z,y,x scheme)
+double MPMBase::GetRotationX(void) { return anglex0-0.5*wrot.yz; }
+double MPMBase::GetRotationXInDegrees(void) { return 180.*(anglex0+0.5*wrot.yz)/PI_CONSTANT; }
+void MPMBase::SetAnglex0(double angle) { anglex0=angle; }
+void MPMBase::SetAnglex0InDegrees(double angle) { anglex0=PI_CONSTANT*angle/180.; }
+double MPMBase::GetAnglex0InDegrees(void) { return 180.*anglex0/PI_CONSTANT; }
+
+// 2D and 3D rotational strain tensor
 void MPMBase::IncrementRotationStrain(double rotXY) { wrot.xy+=rotXY; }
 void MPMBase::IncrementRotationStrain(double rotXY,double rotXZ,double rotYZ)
 {	wrot.xy+=rotXY;

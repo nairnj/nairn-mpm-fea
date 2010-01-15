@@ -232,7 +232,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 						}
 						totalIntensity/=totalWeight;
 						double matAngle=minAngle+(totalIntensity-minIntensity)*angleScale;
-						newMpt->SetAngle0InDegrees(matAngle);
+						newMpt->SetAnglez0InDegrees(matAngle);
 					}
 				}
 				elem->filled|=ptFlag;

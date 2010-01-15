@@ -36,6 +36,7 @@
 #include "Read_MPM/BodyBoxController.hpp"
 #include "Read_MPM/BodyCylinderController.hpp"
 #include "Read_MPM/BodyPolygonController.hpp"
+#include "Read_XML/mathexpr.hpp"
 
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
@@ -43,6 +44,8 @@ double pConc,pTemp,Angle,Thick;
 long Nhoriz=0,Nvert=0,Ndepth=0,MatID;
 double cellHoriz=-1.,cellVert=-1.,cellDepth=-1.;
 Vector Vel;
+char *angleExpr[3];
+char rotationAxes[4];
 
 enum { LINE_SHAPE=0,CIRCLE_SHAPE };		// shape for generating crack segments, Liping Xue
 
@@ -163,6 +166,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			pConc=0.0;
 			pTemp=thermal.reference;
             numAttr=attrs.getLength();
+			rotationAxes[0]=0;			// no rotations yet
             for(i=0;i<numAttr;i++)
 			{	aName=XMLString::transcode(attrs.getLocalName(i));
                 value=XMLString::transcode(attrs.getValue(i));
@@ -201,6 +205,38 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         }
     }
 
+    //-----------------------------------------------------------
+    // Read into geometry parameters for Body shape objects
+    //-----------------------------------------------------------
+	else if(strcmp(xName,"RotateZ")==0)
+	{	ValidateCommand(xName,BODYPART,ANY_DIM);
+		int rotationNum=strlen(rotationAxes);
+		if(rotationNum>=3)
+			throw SAXException("Maximum of three rotations allowed within a single <Body>.");
+		strcat(rotationAxes,"Z");
+		input=TEXT_BLOCK;
+        inputID=CHAR_ARRAY;
+		inputPtr=NULL;
+	}
+	
+	else if(strcmp(xName,"RotateY")==0 || strcmp(xName,"RotateX")==0)
+	{	ValidateCommand(xName,BODYPART,MUST_BE_3D);
+		int rotationNum=strlen(rotationAxes);
+		if(rotationNum>=3)
+			throw SAXException("Maximum of three rotations allowed within a single <Body>.");
+		rotationAxes[rotationNum]=xName[6];
+		rotationAxes[rotationNum+1]=0;
+		input=TEXT_BLOCK;
+        inputID=CHAR_ARRAY;
+		inputPtr=NULL;
+	}
+	
+	else if(strcmp(xName,"Unrotate")==0)
+	{	int numRotations=strlen(rotationAxes);
+		for(i=0;i<numRotations;i++) delete [] angleExpr[i];
+		rotationAxes[0]=0;
+	}
+		
     //-----------------------------------------------------------
     // Read into geometry parameters for Body shape objects
     //-----------------------------------------------------------
@@ -616,8 +652,19 @@ short MPMReadHandler::EndGenerator(char *xName)
     }
 
     else if(strcmp(xName,"Body")==0)
+	{	int numRotations=strlen(rotationAxes);
+		int i;
+		for(i=0;i<numRotations;i++) delete [] angleExpr[i];
     	block=POINTSBLOCK;
+	}
     
+	else if(strcmp(xName,"RotateZ")==0 || strcmp(xName,"RotateY")==0 || strcmp(xName,"RotateX")==0)
+	{	if(inputPtr==NULL)
+			throw SAXException("No rotation angle or expression was provided in <RotateX(YZ)> command.");
+		int rotationNum=strlen(rotationAxes);
+		angleExpr[rotationNum-1]=inputPtr;
+	}
+	
     else if(strcmp(xName,"Hole")==0)
     	block=POINTSBLOCK;
     
@@ -652,6 +699,18 @@ void MPMReadHandler::MPMPts(void)
 	Vector ppos[MaxElParticles];
     MPMBase *newMpt;
     int ptFlag;
+	int numRotations=strlen(rotationAxes);
+	
+	if(numRotations>0)
+	{	Angle=0.;			// rotations override angle settings
+		for(i=0;i<numRotations;i++)
+		{	char *expr=new char[strlen(angleExpr[i])+1];
+			strcpy(expr,angleExpr[i]);
+			if(!CreateFunction(expr,i+1))
+				throw SAXException("Invalid angle expression was provided in <RotateX(YZ)> command.");
+			delete [] expr;
+		}
+	}
 
     for(i=1;i<=nelems;i++)
 	{	theElements[i-1]->MPMPoints(fmobj->ptsPerElement,ppos);
@@ -667,12 +726,174 @@ void MPMReadHandler::MPMPts(void)
                     newMpt->SetPosition(&ppos[k]);
                     newMpt->SetOrigin(&ppos[k]);
                     newMpt->SetVelocity(&Vel);
+					SetMptAnglesFromFunctions(numRotations,&ppos[k],newMpt);
 					mpCtrl->AddMaterialPoint(newMpt,pConc,pTemp);
                 }
                 theElements[i-1]->filled|=ptFlag;
             }
         }
     }
+}
+
+//------------------------------------------------------------------
+// If just created a GIMP grid, make all border elements as holes
+//------------------------------------------------------------------
+void MPMReadHandler::SetMptAnglesFromFunctions(int numRotations,Vector *mpos,MPMBase *newMpt)
+{
+	if(numRotations==0) return;
+	
+	// evaluate each angle
+	int i;
+	double rotAngle[3];
+	for(i=0;i<numRotations;i++)
+	{	rotAngle[i]=FunctionValue(i+1,mpos->x,mpos->y,mpos->z,0.,0.,0.);
+	}
+	
+	// supported rotation schemes
+	
+	// Singe angle is trivial
+	if(strcmp(rotationAxes,"Z")==0)
+	{	newMpt->SetAnglez0InDegrees(rotAngle[0]);
+	}
+	
+	else if(strcmp(rotationAxes,"Y")==0)
+	{	newMpt->SetAngley0InDegrees(rotAngle[0]);
+	}
+	
+	else if(strcmp(rotationAxes,"X")==0)
+	{	newMpt->SetAnglex0InDegrees(rotAngle[0]);
+	}
+	
+	// all double angle options supported
+	
+	else if(strcmp(rotationAxes,"XY")==0)
+	{	double xx=rotAngle[0]*PI_CONSTANT/180.;
+		double yy=rotAngle[1]*PI_CONSTANT/180.;
+		double R11=cos(yy);
+		double R12=sin(xx)*sin(yy);
+		double R13=cos(xx)*sin(yy);
+		double R21=0.;
+		double R22=cos(xx);
+		double R23=-sin(xx);
+		double R31=-sin(yy);
+		double R33=cos(xx)*cos(yy);
+		ConvertToZYX(newMpt,R11,R12,R13,R21,R22,R23,R31,R33);
+	}
+
+	else if(strcmp(rotationAxes,"XZ")==0)
+	{	double xx=rotAngle[0]*PI_CONSTANT/180.;
+		double zz=rotAngle[1]*PI_CONSTANT/180.;
+		double R11=cos(zz);
+		double R12=-cos(xx)*sin(zz);
+		double R13=sin(xx)*sin(zz);
+		double R21=sin(zz);
+		double R22=cos(xx)*cos(zz);
+		double R23=-cos(zz)*sin(xx);
+		double R31=0.;
+		double R33=cos(xx);
+		ConvertToZYX(newMpt,R11,R12,R13,R21,R22,R23,R31,R33);
+	}
+	
+	else if(strcmp(rotationAxes,"YX")==0)
+	{	newMpt->SetAngley0InDegrees(rotAngle[0]);
+		newMpt->SetAnglex0InDegrees(rotAngle[1]);
+	}
+	
+	else if(strcmp(rotationAxes,"YZ")==0)
+	{	double yy=rotAngle[0]*PI_CONSTANT/180.;
+		double zz=rotAngle[1]*PI_CONSTANT/180.;
+		double R11=cos(yy)*cos(zz);
+		double R12=-sin(zz);
+		double R13=cos(zz)*sin(yy);
+		double R21=cos(yy)*sin(zz);
+		double R22=cos(zz);
+		double R23=sin(zz)*sin(yy);
+		double R31=-sin(yy);
+		double R33=cos(yy);
+		ConvertToZYX(newMpt,R11,R12,R13,R21,R22,R23,R31,R33);
+	}
+	
+	else if(strcmp(rotationAxes,"ZX")==0)
+	{	newMpt->SetAnglez0InDegrees(rotAngle[0]);
+		newMpt->SetAnglex0InDegrees(rotAngle[1]);
+	}
+	
+	else if(strcmp(rotationAxes,"ZY")==0)
+	{	newMpt->SetAnglez0InDegrees(rotAngle[0]);
+		newMpt->SetAngley0InDegrees(rotAngle[1]);
+	}
+	
+	// Triple Angle options
+	
+	else if(strcmp(rotationAxes,"ZYX")==0)
+	{	newMpt->SetAnglez0InDegrees(rotAngle[0]);
+		newMpt->SetAngley0InDegrees(rotAngle[1]);
+		newMpt->SetAnglex0InDegrees(rotAngle[2]);
+	}
+	
+	else if(strcmp(rotationAxes,"ZYZ")==0)
+	{	double z=rotAngle[0]*PI_CONSTANT/180.;
+		double y=rotAngle[1]*PI_CONSTANT/180.;
+		double x=rotAngle[2]*PI_CONSTANT/180.;		// second z
+		double R11 = cos(x)*cos(y)*cos(z) - sin(x)*sin(z);
+		double R12 = -cos(z)*sin(x) - cos(x)*cos(y)*sin(z);
+		double R13 = cos(x)*sin(y);
+		double R21 = cos(y)*cos(z)*sin(x) + cos(x)*sin(z);
+		double R22 = cos(x)*cos(z) - cos(y)*sin(x)*sin(z);
+		double R23 = sin(x)*sin(y);
+		double R31 = -cos(z)*sin(y);
+		double R33 = cos(y);
+		ConvertToZYX(newMpt,R11,R12,R13,R21,R22,R23,R31,R33);
+	}
+}
+
+// Decompone matrix, input most elements (never need R32) but if R13 is 1, only need R12, R21, and R22 (my not be worth a check)
+void MPMReadHandler::ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,double R22,double R23,double R31,double R33)
+{
+	// this as two roots (angle and PI-angle), but either one can be used (i.e., two solutions for
+	//	xyz are x,y,x and -PI+x,PI-y,-PI+z. Here we take the first one
+	double y=asin(R13);
+	double x,z;
+	
+	// Special case for y=±pi/2
+	if(DbleEqual(fabs(R13),1))
+	{	// can only deterimine x+z, set x=0 and find z
+		x=0.;
+		z=asin(R21);
+		if(!DbleEqual(R22,cos(z))) z=PI_CONSTANT-z;
+	}
+	
+	// assume y is not ±pi/2
+	else
+	{	if(!DbleEqual(R11,0))
+		{	z=atan(-R12/R11);
+			if(!DbleEqual(R11,cos(y)*cos(z))) z-=PI_CONSTANT;
+		}
+		else
+		{	// Cos[z]=0, Sin[z]=±1, Cos[y]­0
+			if(DbleEqual(R12,-cos(y)))
+				z=PI_CONSTANT/2.;		// Sin[z]=1
+			else
+				z=-PI_CONSTANT/2.;		// Sin[z]=-1
+		}
+	
+		if(R33!=0)
+		{	x=atan(-R23/R33);
+			if(!DbleEqual(R33,cos(y)*cos(x))) x-=PI_CONSTANT;
+		}
+		else
+		{	// Cos[x]=0, Sin[x]=±1, Cos[y]­0
+			if(DbleEqual(R23,-cos(y)))
+				x=PI_CONSTANT/2.;		// Sin[x]=1
+			else
+				x=-PI_CONSTANT/2.;		// Sin[x]=-1
+		}
+	}
+	
+	// set decomposed angles
+	newMpt->SetAnglez0(z);
+	newMpt->SetAngley0(y);
+	newMpt->SetAnglex0(x);
 }
 
 //------------------------------------------------------------------

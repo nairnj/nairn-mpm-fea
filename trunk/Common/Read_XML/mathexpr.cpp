@@ -82,11 +82,14 @@ Changes by John Nairn, April 2007
 
 #pragma mark USAGE UTILITILES
 
-double xvalue,yvalue,dvalue,thetavalue;
-PRVar vararray[6];
-PROperation op=NULL;
+#define MAX_FUNCTIONS 3
 
-// create function of x and y (or r=x and z=y) or D and T for polar coordinates from x and y
+double xvalue,yvalue,zvalue,dvalue,thetavalue;
+PRVar vararray[7];
+PROperation op=NULL;
+PROperation opex[2];
+
+// create function of x,y,z (or R=x and Z=y in axisymmetric) or D and T for polar coordinates from x and y
 // deletes input string and replaced with formatted expression
 // called should DeleteFunction() when done using it
 bool CreateFunction(char *&eqn)
@@ -94,13 +97,14 @@ bool CreateFunction(char *&eqn)
 	// create variables
 	vararray[0]=new RVar("x",&xvalue);
 	vararray[1]=new RVar("y",&yvalue);
-	vararray[2]=new RVar("r",&xvalue);
-	vararray[3]=new RVar("z",&yvalue);
+	vararray[3]=new RVar("Z",&yvalue);
+	vararray[2]=new RVar("R",&xvalue);
 	vararray[4]=new RVar("D",&dvalue);
 	vararray[5]=new RVar("T",&thetavalue);
+	vararray[6]=new RVar("z",&zvalue);
 	
 	// create the function
-	op=new ROperation(eqn,6,vararray);
+	op=new ROperation(eqn,7,vararray);
 	
 	if(op->HasError())
 	{	DeleteFunction();
@@ -113,6 +117,32 @@ bool CreateFunction(char *&eqn)
 	return true;
 }
 
+// create extra function of x,y,Z (or r=x and z=y) or D and T for polar coordinates from x and y
+// only allowed if CreateFunction(expr) was already called and not deleted
+// called should DeleteFunction(i) when done using it
+// can be 1, 2, or 3
+bool CreateFunction(char *&eqn,int i)
+{
+	// redirect if first on
+	if(op==NULL && i==1) return CreateFunction(eqn);
+	
+	// fails is base not there or index bad
+	if(op==NULL || i>MAX_FUNCTIONS || i<2) return false;
+	
+	// create the function
+	opex[i-2]=new ROperation(eqn,7,vararray);
+	
+	if(opex[i-2]->HasError())
+	{	DeleteFunction(i);
+		return false;
+	}
+	
+	// return interpreted expression
+	delete [] eqn;
+	eqn=opex[i-2]->Expr('#');
+	return true;
+}
+	
 // delete objects allocated for the function
 void DeleteFunction(void)
 {
@@ -123,15 +153,26 @@ void DeleteFunction(void)
 	delete vararray[3];
 	delete vararray[4];
 	delete vararray[5];
+	delete vararray[6];
 	delete op;
 	op=NULL;
 }
 
+// delete extra function
+void DeleteFunction(int i)
+{	// delete base or extra one
+	if(i==1)
+		DeleteFunction();
+	else if(i>=2 && i<=MAX_FUNCTIONS)
+		delete opex[i-2];
+}
+
 // get function value for given x and y and origin
-double FunctionValue(double x,double y,double xorig,double yorig)
+double FunctionValue(int i,double x,double y,double z,double xorig,double yorig,double zorig)
 {
 	xvalue=x;
 	yvalue=y;
+	zvalue=z;
 	
 	// polar coordinates
 	x-=xorig;
@@ -144,7 +185,10 @@ double FunctionValue(double x,double y,double xorig,double yorig)
 	else
 		thetavalue=PI_CONSTANT-asin(y/dvalue);
 	
-	return op->Val();
+	if(i==1)
+		return op->Val();
+	else
+		return opex[i-2]->Val();
 }
 
 #pragma mark STRING UTILITIES

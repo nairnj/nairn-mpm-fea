@@ -30,6 +30,7 @@ class AnisoPlasticity : public Orthotropic
 		virtual void PrintMechanicalProperties(void);
 		virtual void PrintYieldProperties(void);
 		virtual void ValidateUse(int);
+		virtual bool ThreeDMaterial(void);
 			
 		// methods
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);

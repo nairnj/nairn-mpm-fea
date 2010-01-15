@@ -187,9 +187,6 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 // End an element
 void CommonReadHandler::endElement(const XMLCh *const uri,const XMLCh *const localname,const XMLCh *const qname)
 {
-    input=NO_INPUT;
-    inputPtr=NULL;
-    
     char *xName=XMLString::transcode(localname);
     
     if(strcmp(xName,"Material")==0 || strcmp(xName,"Thermal")==0 )
@@ -228,6 +225,8 @@ void CommonReadHandler::endElement(const XMLCh *const uri,const XMLCh *const loc
 		myEndElement(xName);
     
     delete [] xName;
+    input=NO_INPUT;
+    inputPtr=NULL;
 }
 
 // Decode block of characters if input!=NO_INPUT
@@ -245,9 +244,11 @@ void CommonReadHandler::characters(const XMLCh* const chars,const unsigned int l
 					if(inputPtr!=NULL) delete [] inputPtr;
 					inputPtr=new char[strlen(xData)+1];
 					strcpy(inputPtr,xData);
+					// the end element method should assign its pointer to inputPtr
 					break;
 				default:
 					myCharacters(xData,length);
+					break;
 			}
 			break;
         

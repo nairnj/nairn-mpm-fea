@@ -160,6 +160,8 @@ char* DelStr(const char*s,int n);
 
 bool CreateFunction(char *&);
 void DeleteFunction(void);
-double FunctionValue(double,double,double,double);
+bool CreateFunction(char *&,int);
+void DeleteFunction(int);
+double FunctionValue(int,double,double,double,double,double,double);
 
 #endif

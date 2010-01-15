@@ -494,7 +494,7 @@ void MaterialBase::ContactOutput(int thisMatID)
 // The base method assumes angle is only variable and loads possible
 //     rotated meechanical properties (which does nothing unless overridden)
 void MaterialBase::LoadMechanicalProps(MPMBase *mptr,int np)
-{	LoadMechProps(TRUE,mptr->GetRotation(),np);
+{	LoadMechProps(TRUE,mptr->GetRotationZ(),np);
 }
 
 // get transport property tensors (if change with particle state)

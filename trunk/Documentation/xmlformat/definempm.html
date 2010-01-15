@@ -41,7 +41,10 @@ The other uses one or more commands that generate the material points. Both thes
    &lt;/PointList&gt;
   
    &lt;Body mat='1' angle='0' thick='1' vx='1000' vy='0' conc='0' temp='0'&gt;
-      &lt;Oval units='mm' xmin='10' xmax='40' ymin='10' ymax='40'/&gt;     
+      &lt;RotateZ&gt;20&lt;/RotateZ&gt;
+      &lt;RotateY&gt;atan(y/x)*180/3.14159&lt;/RotateY&gt;
+      &lt;Oval units='mm' xmin='10' xmax='40' ymin='10' ymax='40'/&gt;
+      &lt;Unrotate/&gt;
       &lt;Rect units='mm' xmin='10' xmax='40' ymin='10' ymax='40'/&gt;     
    &lt;/Body&gt;
 
@@ -140,6 +143,16 @@ duplication of points at the same location when mixing <code>&lt;PointList&gt;</
 <code>&lt;Body&gt;</code> elements. If not specified, the initial velocity, angle, and concentration
 potential will all be zero, the thickness (if 2D) will be 1 mm, and the temperature will be equal to
 the <a href="mpmheader.html#stressfreetemp">stress-free temperature</a>.</dd>
+
+<dt>&lt;RotateZ&gt;20&lt;/RotateZ&gt;, &lt;RotateY&gt;y-z&lt;/RotateY&gt;, <code>&lt;RotateX&gt;45&lt;/RotateX&gt;</code></dt>
+<dd>These commands are to rotate the material axes in the current <code>&lt;Body&gt;</code> to orient anistropic materials in their initial configuration.
+You apply rotations in order by using one to three commands. There are two physical pictures. First, you can imagine sitting on the material coordinate system and defining a series of clockwise rotations about material axes that transform the <code>x-y-z</code> analysis axes into the material axes. Alternatively (and identically) the transformation can be viewed as counter-clockwise rotations about analysis axes that transform the material axes into the analysis axes. The text for each command is either an angle or a <a href="function.html">user-defined function</a> that evaluates to an angle (both are in degrees).<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;All single and double angle rotations are allowed (<code>x</code>, <code>y</code>, <code>z</code>, <code>xy</code>, <code>xz</code>, <code>yx</code>, <code>yz</code>, <code>zx</code>, and <code>zy</code>). When doing three rotations, the only schemes currently supported are <code>zyx</code> and <code>zyz</code>. It is easy to add more if needed (or to rearrange coordinates to make one of these work).<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2D calculations only allow z axis rotation, which can be done with either an <code>angle</code> attribute on the <code>&lt;Body&gt;</code> command or a single <code>&lt;RotateZ&gt;</code> command (although the <code>&lt;RotateZ&gt;</code> method is needed if you want to use a <a href="function.html">user-defined function</a>). Also note that use of any <code>Rotate</code> command will override any number used in <code>angle</code> (<i>i.e.</i>, <code>angle</code> will be ignored).
+</dd>
+
+<dt><code>&lt;Unrotate/&gt;</code></dt>
+<dd>This command cancels the rotations in the current <code>&lt;Body&gt;</code> section. Each shape command in the body use the current rotation transformation. Interspersing this command with new rotations allows each shape to have its own transformations.</dd>
 
 <dt><code>&lt;Hole&gt;</code></dt>
 <dd>Defines empty space within a body. A single <code>&lt;Hole&gt;</code> group can contain any
