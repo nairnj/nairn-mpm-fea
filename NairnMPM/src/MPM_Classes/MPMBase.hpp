@@ -79,10 +79,21 @@ class MPMBase : public LinkedObject
 		int GetResetElementCrossings(void);
 		double GetDuDy(void);
 		double GetDvDx(void);
-		double GetRotation(void);
-		double GetRotationInDegrees(void);
-		void SetAngle0InDegrees(double);
-		double GetAngle0InDegrees(void);
+		double GetRotationZ(void);
+		double GetRotationY(void);
+		double GetRotationX(void);
+		double GetRotationZInDegrees(void);
+		double GetRotationYInDegrees(void);
+		double GetRotationXInDegrees(void);
+		void SetAnglez0(double);
+		void SetAngley0(double);
+		void SetAnglex0(double);
+		void SetAnglez0InDegrees(double);
+		void SetAngley0InDegrees(double);
+		void SetAnglex0InDegrees(double);
+		double GetAnglez0InDegrees(void);
+		double GetAngley0InDegrees(void);
+		double GetAnglex0InDegrees(void);
 		void IncrementRotationStrain(double);
 		void IncrementRotationStrain(double,double,double);
 		void InitializeMass(double);
@@ -131,7 +142,9 @@ class MPMBase : public LinkedObject
 		double dispEnergy;			// dissipated energy in current step
         double strainEnergy;		// total strain energy
 		double extWork;				// total external work
-		double angle0;				// initial 2D rotation angle (stored in radians)
+		double anglez0;				// initial cw x rotation angle (2D or 3D) (stored in radians)
+		double angley0;				// initial cw y rotation (3D)
+		double anglex0;				// initial cw x rotation (3D)
         
 		// dynamic data
         char *matData;				// material history if needed (init NULL)

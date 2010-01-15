@@ -20,14 +20,14 @@ Output Files
 <p>Finite element calculations using NairnFEA or material point method simulations using NairnMPM are written to one or more files. Visualization of results requires additional software to extract and plot the results. If you have a Macintosh computer with MacOS 10.4 or newer, all reults can be visualized using <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html">NairnFEAMPM</a>. For other systems, you can use the java-based visualization tool (NairnFEAMPMViz) provided with the source code. Finally, you can use information on this page to write your own tools to extract results from output files for analysis and plotting. This page documents:</p>
 
 <ul>
-<li><a href="#feaoutput">NairnFEA output file</a>
+<li><a href="#feaoutput">NairnFEA output file</a></li>
 <li><a href="#mpmoutput">NairnMPM output and archive files</a>.
 <ul class="lev2args">
-<li><a href="#versionid">Archive File Header</a>
-<li><a href="#archsize">Record Size</a>
-<li><a href="#sec1">Archive Format for Material Points</a>
-<li><a href="#sec2">Crack Archive Format</a>
-</ul>
+<li><a href="#versionid">Archive File Header</a></li>
+<li><a href="#archsize">Record Size</a></li>
+<li><a href="#sec1">Archive Format for Material Points</a></li>
+<li><a href="#sec2">Crack Archive Format</a></li>
+</ul></li>
 </ul>
 
 <h1><a name="feaoutput"></a>NairnFEA Output Files</h1>
@@ -35,7 +35,7 @@ Output Files
 <p>The results of FEA calculations are output to a single text file. The text file is human-readable and all analysis results are clearly labeled including information on units.
 </p>
 
-<p>The only unusual result is for <a href="../xmlformat/definefeamesh.html">imperfect interface elements</a>. Since these elements are not solid elements, they can not define all components of the tensor. In stead, there is only a traction vector normal to the interfacial surface. The normal component of the traction vector is output as <code>sigma(xx)</code> (or <code>sigma(rr)</code> for axisymmetric analyses). The tangential component of the traction vector is output as <code>sigma(xy)</code> (or <code>sigma(rz)</code> for axisymmetric analyses).
+<p>The only unusual result is for <a href="../xmlformat/definefeamesh.html">imperfect interface elements</a>. Since these elements are not solid elements, they can not define all components of the tensor. In stead, there is only a traction vector normal to the interfacial surface. The normal component of the traction vector is output as <code>sigma(xx)</code> (or <code>sigma(rr)</code> for axisymmetric analyses). The tangential component of the traction vector is output as <code>sigma(xy)</code> (or <code>sigma(rz)</code> for axisymmetric analyses).</p>
 
 <h1><a name="mpmoutput"></a>NairnMPM Output File</h1>
 
@@ -44,7 +44,7 @@ The results of MPM calculations are output to a master text file and to a series
 </p>
 
 <p>
-The information written to the archive files and the frequency for storing archived results are determined by the <a href="../xmlformat/index.html"><code>XML</code> input file<a>. The commands to select archive settings are in the <a href="../xmlformat/mpmheader.html">MPM Header</a>. Whether the nodes, elements, and boundary conditions are in the text file or in separate files is determined by the <a href="../xmlformat/definemesh.html"><code>&lt;Mesh&gt;</code></a> command
+The information written to the archive files and the frequency for storing archived results are determined by the <a href="../xmlformat/index.html"><code>XML</code> input file</a>. The commands to select archive settings are in the <a href="../xmlformat/mpmheader.html">MPM Header</a>. Whether the nodes, elements, and boundary conditions are in the text file or in separate files is determined by the <a href="../xmlformat/definemesh.html"><code>&lt;Mesh&gt;</code></a> command
 </p>
 
 <h2>Output Text File Formats</h2>
@@ -62,11 +62,11 @@ Archive format: mYYYYNYYYNYYNNNNY
 Crack archive format: mYYYN
 </pre>
 
-<p>The first line is the relative path name from the master text file to the archive files. In the above example, the archive files will be stored as <code>results/root.#</code> where <code>#</code> is the step number when the archive file was written. The &quot;<code>Archive format</code>&quot; defines the information <a href="#sec1">archived for each material point</a>. The &quot;<code>Crack archive format</code>&quot; defines the information <a href="#sec2">archived for each crack point</a>. The following sections defines the format of the binary archive files.
+<p>The first line is the relative path name from the master text file to the archive files. In the above example, the archive files will be stored as <code>results/root.#</code> where <code>#</code> is the step number when the archive file was written. The &quot;<code>Archive format</code>&quot; defines the information <a href="#sec1">archived for each material point</a>. The &quot;<code>Crack archive format</code>&quot; defines the information <a href="#sec2">archived for each crack point</a>. The following sections defines the format of the binary archive files.</p>
 
-<a name="versionid"</a><h3>Archive File Header</h3>
+<h3><a name="versionid"></a>Archive File Header</h3>
 
-<p>The first 4 bytes of a binary archive file has the archive version ID as 4 characters. The current archive versions are:
+<p>The first 4 bytes of a binary archive file has the archive version ID as 4 characters. The current archive versions are:</p>
 
 <dl>
 <dt><code>none</code>, <code>ver1</code>, <code>ver2</code></dt>
@@ -80,29 +80,31 @@ Crack archive format: mYYYN
 <dt><code>ver4</code></dt>
 <dd>This format began at the end of NairnMPM 6.4.0 (October 2007). The difference from <code>ver3</code> is that the file includes a 64 byte header that includes information about the archive file format right in the file. The header information is
 <ul class="lev2args">
-<li> Bytes 1-4: the version ID or <code>ver4</code>
-<li> Byte 5: number of characters in the archive format (A)
-<li> Byte 6 to (5+A): the archive format string
-<li> Byte (6+A): number of characters in the crack archive format (C)
-<li> Byte (7+A) to (6+A+C): the crack archive format
-<li> Byte (7+A+C): '2' or '3' for 2D or 3D analysis results
-<li> Byte (8+A+C) to 64: 0 bytes to fill out the header.
+<li> Bytes 1-4: the version ID or <code>ver4</code></li>
+<li> Byte 5: number of characters in the archive format (A)</li>
+<li> Byte 6 to (5+A): the archive format string</li>
+<li> Byte (6+A): number of characters in the crack archive format (C)</li>
+<li> Byte (7+A) to (6+A+C): the crack archive format</li>
+<li> Byte (7+A+C): '2' or '3' for 2D or 3D analysis results</li>
+<li> Byte (8+A+C) to 64: 0 bytes to fill out the header.</li>
 </ul>
 The <a href="#masterformats">archive format information</a> is still included in the master text file. In fact, if the text file and the archive file have different formats, it means that archive file does not belong to those results, which can be used as optional verification of file data.
-<dd>
+</dd>
 
 <dt><code>ver5</code></dt>
 <dd>This format began in NairnMPM 6.7.0 (December 2008). It tacks on 5 more bytes of header information, still within a 64 byte header. The header information is
 <ul class="lev2args">
-<li> Bytes (8+A+C): '1' if analysis used structured grid (<i>i.e.</i>, grid created with the <code>GRID</code> command); '0' otherwise.
-<li> Byte (9+A+C) to (12+A+C): current time in ms (float using <a href="#endian">Endian style</a> from the archive format).
-<li> Byte (13+A+C) to 64: 0 bytes to fill out the header.
+<li> Bytes (8+A+C): '1' if analysis used structured grid (<i>i.e.</i>, grid created with the <code>GRID</code> command); '0' otherwise.</li>
+<li> Byte (9+A+C) to (12+A+C): current time in ms (float using <a href="#endian">Endian style</a> from the archive format).</li>
+<li> Byte (13+A+C) to 64: 0 bytes to fill out the header.</li>
 </ul>
 </dd>
 
+<dt><code>ver6</code></dt>
+<dd>The format began in NairnMPM 7.2.2 (January 2010). It did not change the header, but added an extra double in the default properties for 3D calculations to track all three rotation angles.</dd>
 </dl>
 
-<p>After the file's 4 or 64-byte header, the remainder of the file is a series of records with archived results for each material point and each crack particle. Programs that read archive files must read the archive and crack formats (either from the master text file or from the <code>ver4</code> file header) and support all <code>Y</code> and <code>N</code> options. If the number of characters in the specified format is less than the total number documented below, all extra characters are assumed to be <code>N</code>. In other words the binary achived file is assumed to be older, but backward compatible with this docmentation. The following sections give the details.
+<p>After the file's 4 or 64-byte header, the remainder of the file is a series of records with archived results for each material point and each crack particle. Programs that read archive files must read the archive and crack formats (either from the master text file or from the <code>ver4</code> file header) and support all <code>Y</code> and <code>N</code> options. If the number of characters in the specified format is less than the total number documented below, all extra characters are assumed to be <code>N</code>. In other words the binary achived file is assumed to be older, but backward compatible with this docmentation. The following sections give the details.</p>
 
 <h3><a name="endian"></a>Byte Order Character</h3>
 
@@ -143,7 +145,7 @@ The information for each particle and each crack segment are stored as a series 
 
 <dt>Archive Order Byte Requirements (3D Analyses)</dt>
 <dd><ul class="lev2args">
-  <li>Byte 2: 80 (cannot be <code>N</code>)</li>
+  <li>Byte 2: 80 (<code>ver5</code> or older) or 88 (<code>ver6</code> or newer) (cannot be <code>N</code>)</li>
   <li>Byte 3: 24</li>
   <li>Byte 4: 48</li>
   <li>Byte 5: 48</li>
@@ -200,8 +202,12 @@ long inElem - element number containing the material point
 double mp - mass (g)
 short matnum - material number
 short unused - not used
-double angle - material angle (for anisotropic materials) (degrees)
-double thickness - thickness (mm) (currently 0 in 3D)
+double anglez - material angle (for anisotropic materials) (degrees)
+2D any version or 3D in ver5 or older has:
+   double thickness - thickness (mm) (or 0 in 3D)
+3D in ver6 or newer replaces thickness with two more angles:
+   double angley - material angle (for anisotropic materials) (degrees)
+   double anglez - material angle (for anisotropic materials) (degrees)
 double x - current x position (mm)
 double y - current y position (mm)
 double z - current z position (mm) (3D only)
@@ -366,22 +372,13 @@ int elemCrossings - cumulative element crossing
 
 
 <dt>Byte 18: Rotational strain</dt>
-<dd>Setting <code>Y</code> stores initial material angle for 2D analyses. The evolving angle is always stored in the material
-angle property
-
+<dd>Setting <code>Y</code> stores <i>initial</i> material angle(s). The evolving angles are always stored in the material angle properties:
 <pre class="near">
-double angle0 - initial material angle
+double anglez0 - initial material angle z (degrees)
+double angley0 - initial material angle y (degrees) (3D Only)
+double anglex0 - initial material angle x (degrees) (3D Only)
 </pre>
-The rotational engineering strain is <code>&omega;<sub>xy</sub> = -&pi;*(angle-angle0)/90</code>. For 3D calculations
-this option archives the entire rotational strain tensor:
-<pre class="near">
-double wrotxy - rotational strain &omega;<sub>xy</sub>
-double wrotxz - rotational strain &omega;<sub>xz</sub>
-double wrotyz - rotational strain &omega;<sub>yz</sub>
-</pre>
-</dd>
-
-
+The rotational engineering strains are <code>&omega;<sub>xy</sub> = -&pi;*(anglez-anglez0)/90</code>, <code>&omega;<sub>xz</sub> = &pi;*(angley-angley0)/90</code>, and <code>&omega;<sub>yz</sub> = -&pi;*(anglex-anglex0)/90</code>, which are twice the tensorial rotational strains.
 </dd>
 
 </dl>

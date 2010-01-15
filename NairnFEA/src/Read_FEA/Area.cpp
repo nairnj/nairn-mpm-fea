@@ -696,7 +696,7 @@ const char *Area::MeshArea(void)
 			{	int imax= theElems->HasMidsideNodes() ? 4 : 8 ;
 				Vector midPt;
 				theNodes->MidPoint(&eNode[1],imax,&midPt);
-				angle=FunctionValue(midPt.x,midPt.y,0.,0.);
+				angle=FunctionValue(1,midPt.x,midPt.y,0.,0.,0.,0.);
 			}
 			
 			if(!theElems->MeshElement(eNode,mat,angle,thick))

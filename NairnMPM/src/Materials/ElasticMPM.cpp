@@ -104,13 +104,21 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doub
 	double dwrotyz=dvzy-dvyz;
 	
     // residual strains (thermal and moisture) (isotropic only)
-	double eres=CTE3*ConductionTask::dTemperature;
+	dvxx-=me0[0]*ConductionTask::dTemperature;
+	dvyy-=me0[1]*ConductionTask::dTemperature;
+	dvzz-=me0[2]*ConductionTask::dTemperature;
+	dgamyz-=me0[3]*ConductionTask::dTemperature;
+	dgamxz-=me0[4]*ConductionTask::dTemperature;
+	dgamxy-=me0[5]*ConductionTask::dTemperature;
 	if(DiffusionTask::active)
-		eres+=CME3*DiffusionTask::dConcentration;
-	dvxx-=eres;
-	dvyy-=eres;
-	dvzz-=eres;
-
+	{	dvxx-=mc0[0]*DiffusionTask::dConcentration;
+		dvyy-=mc0[1]*DiffusionTask::dConcentration;
+		dvzz-=mc0[2]*DiffusionTask::dConcentration;
+		dgamyz-=mc0[3]*DiffusionTask::dConcentration;
+		dgamxz-=mc0[4]*DiffusionTask::dConcentration;
+		dgamxy-=mc0[5]*DiffusionTask::dConcentration;
+	}
+	
     // save initial stresses
 	Tensor *sp=mptr->GetStressTensor();
     Tensor st0=*sp;

@@ -43,7 +43,7 @@ void NairnFEA::MyStartResultsOutput(void)
 	{	if(!CreateFunction(temperatureExpr))
 			throw CommonException("The temperature expression is not a valid function","NairnFEA::MyStartResultsOutput");
 		for(i=1;i<=nnodes;i++)
-		{	nd[i]->gTemperature=FunctionValue(nd[i]->x,nd[i]->y,0.,0.)-stressFreeTemperature;
+		{	nd[i]->gTemperature=FunctionValue(1,nd[i]->x,nd[i]->y,0.,0.,0.,0.)-stressFreeTemperature;
 		}
 		DeleteFunction();
 	}

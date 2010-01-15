@@ -223,9 +223,10 @@ void ArchiveData::CalcArchiveSize(void)
 	/* ARCH_Defaults are
 		2D: elemID (int), mass (double), matId (short) angle (double), thickness (double),
 							pos (Vector), origPos (Vector) (64)
-		3D: thickness replaced by dihedral and Vectors longer (80)
+		3D: thickness replaced by two angles and Vectors longer (88)
 	*/
 	mpmRecSize+=sizeof(int)+3*sizeof(double)+2*vectorSize+sizeof(short)+2;
+	if(threeD) mpmRecSize+=sizeof(double);
 	
     if(mpmOrder[ARCH_Velocity]=='Y')
         mpmRecSize+=vectorSize;
@@ -300,6 +301,7 @@ void ArchiveData::CalcArchiveSize(void)
 		ver5:	next: '0' or '1' for structured grid
 				next 4: archive time in ms (float, using Endian of archive items setting)
 				rest: 0
+		ver6: changed default properties to have 3 angles in 3D results
 	
 	Current length 35 (if mpmOrder is 18 and crackOrder is 5)
 */
@@ -309,7 +311,7 @@ void ArchiveData::SetArchiveHeader(void)
 	for(i=0;i<HEADER_LENGTH;i++) archHeader[i]=0;
 	
 	// version ID
-	strcpy(archHeader,"ver5");
+	strcpy(archHeader,"ver6");
 	
 	// mpmOrder
 	archHeader[strlen(archHeader)]=strlen(mpmOrder);
@@ -492,18 +494,27 @@ void ArchiveData::ArchiveResults(double atime)
 		*app=0;
 		app+=1;
         
-		// material rotation angle in degrees
-        *(double *)app=mpm[p]->GetRotationInDegrees();
-        app+=sizeof(double);
-        
-		// thickness (2D) in mm
+		// 3D has three angles, 2D has one angle and thickness
 		if(threeD)
-			*(double *)app=0.;
+		{	// 3 material rotation angles in degrees
+			*(double *)app=mpm[p]->GetRotationZInDegrees();
+			app+=sizeof(double);
+			*(double *)app=mpm[p]->GetRotationYInDegrees();
+			app+=sizeof(double);
+			*(double *)app=mpm[p]->GetRotationXInDegrees();
+			app+=sizeof(double);
+		}
 		else
+		{	// material rotation angle in degrees
+			*(double *)app=mpm[p]->GetRotationZInDegrees();
+			app+=sizeof(double);
+			
+			// thickness (2D) in mm
 			*(double *)app=mpm[p]->thickness();
-        app+=sizeof(double);
+			app+=sizeof(double);
+		}
         
-		// (x,y,z) positiong (mm)
+		// (x,y,z) position (mm)
         *(double *)app=mpm[p]->pos.x;
         app+=sizeof(double);
         
@@ -515,7 +526,7 @@ void ArchiveData::ArchiveResults(double atime)
 			app+=sizeof(double);
 		}
 
-		// original (x,y,z) positiong (mm)
+		// original (x,y,z) position (mm)
         *(double *)app=mpm[p]->origpos.x;
         app+=sizeof(double);
                 
@@ -727,19 +738,19 @@ void ArchiveData::ArchiveResults(double atime)
 			app+=sizeof(int);
 		}
 		
-		// in 2D, just save initial angle (in degrees), 3D saves rot tensor strain (absolute)
+		// here=initial angle (degrees) angle (from above)=here-0.5*wxy (degrees)
+		//		This engineering wxy = 2(here-angle) (degrees or * PI/180 for radians)
         if(mpmOrder[ARCH_RotStrain]=='Y')
 		{	if(threeD)
-			{	TensorAntisym *wrot=mpm[p]->GetRotationStrainTensor();
-				*(double *)app=wrot->xy;
+			{	*(double *)app=mpm[p]->GetAnglez0InDegrees();
 				app+=sizeof(double);
-        		*(double *)app=wrot->xz;
+				*(double *)app=mpm[p]->GetAngley0InDegrees();
 				app+=sizeof(double);
-        		*(double *)app=wrot->yz;
+				*(double *)app=mpm[p]->GetAnglex0InDegrees();
 				app+=sizeof(double);
 			}
 			else
-        	{	*(double *)app=mpm[p]->GetAngle0InDegrees();
+        	{	*(double *)app=mpm[p]->GetAnglez0InDegrees();
 				app+=sizeof(double);
 			}
 		}

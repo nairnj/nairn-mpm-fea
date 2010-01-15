@@ -83,7 +83,8 @@
 			thick CDATA #IMPLIED>
 
 <!ELEMENT	Body
-			( Oval | Rect | Polygon | Sphere | Box | Cylinder )*>
+			( RotateX | RotateY | RotateZ | Unrotate
+			| Oval | Rect | Polygon | Sphere | Box | Cylinder )*>
 <!ATTLIST	Body
 			mat CDATA #REQUIRED
 			angle CDATA #IMPLIED
@@ -499,6 +500,11 @@
 <!ATTLIST	mass
 			units CDATA #IMPLIED
 			m CDATA #REQUIRED>
+
+<!ELEMENT	RotateX (#PCDATA)>
+<!ELEMENT	RotateY (#PCDATA)>
+<!ELEMENT	RotateZ (#PCDATA)>
+<!ELEMENT	Unrotate EMPTY>
 
 <!ELEMENT	Rect EMPTY>
 <!ATTLIST	Rect

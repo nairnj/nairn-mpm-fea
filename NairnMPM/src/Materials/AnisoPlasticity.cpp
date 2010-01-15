@@ -142,6 +142,9 @@ void AnisoPlasticity::ValidateUse(int np)
 	Orthotropic::ValidateUse(np);
 }
 
+// remove when 3D law written
+bool AnisoPlasticity::ThreeDMaterial(void) { return false; }
+
 #pragma mark VonMisesHardening::Methods
 
 /* For 2D MPM analysis, take increments in strain and calculate new
@@ -181,7 +184,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	}
   
 	// get rotation matrix elements
-	double angle=mptr->GetRotation();
+	double angle=mptr->GetRotationZ();
 	double c=cos(angle);
 	cos2t=c*c;
 	double s=sin(angle);

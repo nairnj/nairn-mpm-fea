@@ -135,8 +135,13 @@ void IsotropicMat::InitialLoadMechProps(int makeSpecific,int np)
 		mdm[5][0]=mdm[5][1]=mdm[5][2]=mdm[5][3]=mdm[5][4]=0.;
 		mdm[5][5]=C66*rrho;
 		
-		// need me0[[] and mc0[] when Elastic class written to allow anisotropic 3D
-		// for now it uses CTE and CME which are already set
+		// need me0[] and mc0[] for thermal and moisture expansion
+		me0[0]=me0[1]=me0[2]=CTE1;
+		me0[3]=me0[4]=me0[5]=0.;
+		
+		mc0[0]=mc0[1]=mc0[2]=CME1;
+		mc0[3]=mc0[4]=mc0[5]=0.;
+		
 		return;
 	}
 #endif

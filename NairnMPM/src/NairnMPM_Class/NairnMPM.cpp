@@ -54,7 +54,7 @@ NairnMPM::NairnMPM()
 {
 	version=7;						// main version
 	subversion=2;					// subversion (must be < 10)
-	buildnumber=1;					// build number
+	buildnumber=2;					// build number
 	mpmApproach=USAVG_METHOD;		// mpm method
 	ptsPerElement=4;				// number of points per element (2D default, 3D changes it to 8)
 	propagate=NO_PROPAGATION;				// default crack propagation type
