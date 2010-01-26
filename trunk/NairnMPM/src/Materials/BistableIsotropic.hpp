@@ -61,7 +61,7 @@ class BistableIsotropic : public IsotropicMat
         virtual const char *CurrentProperties(short,int);
 		
 		// accessors
-        virtual double WaveSpeed(void);
+        virtual double WaveSpeed(bool);
         virtual double MaximumDiffusion(void);
         virtual double MaximumDiffusivity(void);
 		virtual const char *MaterialType(void);

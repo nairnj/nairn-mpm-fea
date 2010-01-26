@@ -397,7 +397,7 @@ int Viscoelastic::MaterialTag(void) { return VISCOELASTIC; }
 	Uses sqrt((K +4Ge/3)/rho) which is probably the maximum
             wave speed possible
 */
-double Viscoelastic::WaveSpeed(void) { return sqrt(1.e3*(Ke + 4.*Ge/3.)/rho); }
+double Viscoelastic::WaveSpeed(bool threeD) { return sqrt(1.e3*(Ke + 4.*Ge/3.)/rho); }
 
 // Should support archiving history - if it is useful
 double Viscoelastic::GetHistory(int num,char *historyPtr) { return (double)0; }

@@ -629,12 +629,12 @@ const char *TransIsotropic::MaterialType(void)
             wave speeds are GT/rho, GA/rho, (KT+GT)/rho, and (EA + 4KT nuA^2)/rho
             return largest (assumes shear ones are not largest)
 */
-double TransIsotropic::WaveSpeed(void)
+double TransIsotropic::WaveSpeed(bool threeD)
 {
-    if(MaterialTag()==TRANSISO1)
+    if(MaterialTag()==TRANSISO1 && !threeD)
         return sqrt(1.e9*(KT+GT)/rho);
     else
-        return sqrt(1.e9*fmax(KT+GT,EA+4.*KT*nuA*nuA)/rho);
+        return sqrt(1.e9*fmax(GA,fmax(KT+GT,EA+4.*KT*nuA*nuA))/rho);
 }
 
 // maximum diffusion coefficient in cm^2/sec

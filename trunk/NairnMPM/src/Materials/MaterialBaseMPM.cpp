@@ -715,7 +715,7 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
 						// (Note that JIc may differ from 2*gamma if desired
 						// but must have JIc >= 2*gamma)
                     	crkTip->steadyState=BEGINPROPAGATING;
-                        crkTip->speed=initSpeed*WaveSpeed();		// fraction of wave speed
+                        crkTip->speed=initSpeed*WaveSpeed(FALSE);		// fraction of wave speed in 2D
                         cout << "# Initiate t:" << 1000.*mtime <<
                                 " s:" << crkTip->speed << endl;
 						SelectDirection(crkTip,crackDir,theCrack);
@@ -763,14 +763,14 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
                     // balance>0 means energy is decreasing. Here we speed up the
                     //    crack to try and use it up, but not above wave speed
                     else
-                    {	adjustSpeed=fmin(adjustSpeed,WaveSpeed()-crkTip->speed);
+                    {	adjustSpeed=fmin(adjustSpeed,WaveSpeed(FALSE)-crkTip->speed);
                         crkTip->steadyState=PROPAGATING;
                     }
                     
                     // adjust speed, but never below minimum
                     crkTip->speed+=adjustSpeed;
-                    if(crkTip->speed<=0.5*initSpeed*WaveSpeed())
-                    {	crkTip->speed=0.5*initSpeed*WaveSpeed();
+                    if(crkTip->speed<=0.5*initSpeed*WaveSpeed(FALSE))
+                    {	crkTip->speed=0.5*initSpeed*WaveSpeed(FALSE);
                         crkTip->steadyState=SLOWLYPROPAGATING;
                     }
 					
@@ -1085,7 +1085,7 @@ bool MaterialBase::ControlCrackSpeed(CrackSegment *crkTip,double &waitTime)
 #pragma mark MaterialBase::Accessors
 
 // Provide something
-double MaterialBase::ShearWaveSpeed(void) { return WaveSpeed()/sqrt(3.); }
+double MaterialBase::ShearWaveSpeed(bool threeD) { return WaveSpeed(threeD)/sqrt(3.); }
 
 // archive material data for this material type when requested.
 double MaterialBase::GetHistory(int num,char *historyPtr) { return (double)0.; }

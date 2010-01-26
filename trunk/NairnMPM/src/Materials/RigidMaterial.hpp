@@ -45,7 +45,7 @@ class RigidMaterial : public MaterialBase
 		
 		// accessors
 		virtual const char *MaterialType(void);
-        virtual double WaveSpeed(void);
+        virtual double WaveSpeed(bool);
 		virtual short Rigid(void);			// override base class to return true
 		virtual int MaterialTag();
 		

@@ -54,8 +54,8 @@ class NewMaterial : public MaterialBase
 		virtual int MaterialTag();
 		virtual bool ThreeDMaterial(void);
 		//virtual double GetHistory(int,char *);
-        virtual double WaveSpeed(void) = 0;
-		//virtual double ShearWaveSpeed(void);
+        virtual double WaveSpeed(bool) = 0;
+		//virtual double ShearWaveSpeed(bool);
 		//virtual double MaximumDiffusion(void);
         //virtual double MaximumDiffusivity(void);
 		

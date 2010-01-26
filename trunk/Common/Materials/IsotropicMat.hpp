@@ -42,8 +42,8 @@ class IsotropicMat : public Elastic
 		virtual int MaterialTag();
 #ifdef MPM_CODE
 		virtual void InitialLoadTransProps(void);
-		virtual double WaveSpeed(void);
-        virtual double ShearWaveSpeed(void);
+		virtual double WaveSpeed(bool);
+        virtual double ShearWaveSpeed(bool);
 #endif
 
     protected:

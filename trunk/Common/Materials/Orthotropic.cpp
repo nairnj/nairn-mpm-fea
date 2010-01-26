@@ -252,12 +252,13 @@ const char *Orthotropic::MaterialType(void) { return "Orthotropic (3 axis normal
 #ifdef MPM_CODE
 /*	calculate maximum wave speed in mm/sec (moduli in MPa, rho in g/cm^3)
 */
-double Orthotropic::WaveSpeed(void)
+double Orthotropic::WaveSpeed(bool threeD)
 {
     double xx,cnorm,cshear;
     
     xx=1.-nuxy*nuyx-nuxz*nuzx-nuyz*nuzy-2.*nuxy*nuyz*nuzx;
     cnorm=fmax(Ex*(1.-nuyz*nuzy),Ey*(1.-nuxz*nuzx))/xx;
+	if(threeD) cnorm=fmax(cnorm,Ez*(1-nuxy*nuyx)/xx);
     cshear=fmax(Gxy,fmax(Gxz,Gyz));
     return sqrt(1.e9*fmax(cnorm,cshear)/rho);
 }

@@ -751,7 +751,7 @@ void MPMReadHandler::SetMptAnglesFromFunctions(int numRotations,Vector *mpos,MPM
 	
 	// supported rotation schemes
 	
-	// Singe angle is trivial
+	// Single angle is trivial
 	if(strcmp(rotationAxes,"Z")==0)
 	{	newMpt->SetAnglez0InDegrees(rotAngle[0]);
 	}
@@ -844,6 +844,14 @@ void MPMReadHandler::SetMptAnglesFromFunctions(int numRotations,Vector *mpos,MPM
 		double R31 = -cos(z)*sin(y);
 		double R33 = cos(y);
 		ConvertToZYX(newMpt,R11,R12,R13,R21,R22,R23,R31,R33);
+	}
+	
+	else
+	{	char badAngles[200];
+		strcpy(badAngles,"'");
+		strcat(badAngles,rotationAxes);
+		strcat(badAngles,"' is an unsupported rotation scheme for <RotateX(Y)(Z)> commands.");
+		throw SAXException(badAngles);
 	}
 }
 

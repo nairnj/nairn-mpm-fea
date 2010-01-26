@@ -160,7 +160,7 @@ int Mooney::MaterialTag(void) { return MOONEYRIVLIN; }
 /*	calculate wave speed in mm/sec (because C1 and C2 in MPa and rho in g/cm^3)
         For undeformed rubber use sqrt((2C1+2C2)/rho)
 */
-double Mooney::WaveSpeed(void) { return sqrt(2.e9*(C1+C2)/rho); }
+double Mooney::WaveSpeed(bool threeD) { return sqrt(2.e9*(C1+C2)/rho); }
 
 // return material type
 const char *Mooney::MaterialType(void) { return "Mooney-Rivlin Rubber"; }

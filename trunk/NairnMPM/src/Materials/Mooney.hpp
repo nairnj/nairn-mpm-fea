@@ -37,7 +37,7 @@ class Mooney : public RubberElastic
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
     
 		// accessors
-		virtual double WaveSpeed(void);
+		virtual double WaveSpeed(bool);
 		virtual bool ThreeDMaterial();
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
