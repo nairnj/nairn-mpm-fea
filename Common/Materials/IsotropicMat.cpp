@@ -303,14 +303,14 @@ const char *IsotropicMat::MaterialType(void) { return "Isotropic"; }
 	Identity also: K + 4G/3 = Lambda + 2G = 2G(1-nu)/(1-2 nu)
 	Another form: E(1-nu)/((1+nu)(1-2*nu)rho)
 */
-double IsotropicMat::WaveSpeed(void)
+double IsotropicMat::WaveSpeed(bool threeD)
 {
     return sqrt(2.e9*G*(1.-nu)/(rho*(1.-2.*nu)));
 }
 
 /*	calculate shear wave speed in mm/sec (because G in MPa and rho in g/cm^3)
 */
-double IsotropicMat::ShearWaveSpeed(void) { return sqrt(1.e9*G/rho); }
+double IsotropicMat::ShearWaveSpeed(bool threeD) { return sqrt(1.e9*G/rho); }
 
 #endif
 

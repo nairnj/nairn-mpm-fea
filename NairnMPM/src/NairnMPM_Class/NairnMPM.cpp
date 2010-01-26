@@ -1152,7 +1152,7 @@ void NairnMPM::PreliminaryCalcs(void)
 		mpm[p]->InitializeMass(rho*volume/((double)ptsPerElement));			// in g
         
         // check time step
-        crot=theMaterials[matid]->WaveSpeed()/10.;		// in cm/sec
+        crot=theMaterials[matid]->WaveSpeed(IsThreeD())/10.;		// in cm/sec
 		tst=FractCellTime*dcell/crot;					// in sec
         if(tst<tmin) tmin=tst;
         

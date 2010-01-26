@@ -209,13 +209,13 @@ bool NewMaterial::ThreeDMaterial(void) { return false; }
 	speed, be conservative and return the maximum possible save speed.
 */
 // wave speed for this material
-double NewMaterial::WaveSpeed(void) { return 1.e-12; }
+double NewMaterial::WaveSpeed(bool threeD) { return 1.e-12; }
 
 /* This method is only used by silent boundary conditions. The MaterialBase base
 	class returns WaveSpeed()/sqrt(3). Override only if have better result
 */
 // shear wave speed for this material
-//double NewMaterial::ShearWaveSpeed(void) { return 1.e-12; }
+//double NewMaterial::ShearWaveSpeed(bool threeD) { return 1.e-12; }
 
 /* Calculate maximum diffusion constant in cm^2/sec. Method called once for each material
 	point at beginning of calculation

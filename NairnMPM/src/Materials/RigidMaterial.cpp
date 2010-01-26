@@ -97,7 +97,7 @@ void RigidMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvz
 #pragma mark RigidMaterial::Accessors
 
 // never called
-double RigidMaterial::WaveSpeed(void) { return 1.e-12; }
+double RigidMaterial::WaveSpeed(bool threeD) { return 1.e-12; }
 
 // Return the material tag
 int RigidMaterial::MaterialTag(void) { return RIGIDMATERIAL; }

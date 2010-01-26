@@ -407,8 +407,8 @@ int BistableIsotropic::MaterialTag(void) { return BISTABLEISO; }
 /*	calculate wave speed in mm/sec (because K,G in MPa and rho in g/cm^3)
 	Uses max sqrt((K +4G/3)/rho) which is dilational wave speed
 */
-double BistableIsotropic::WaveSpeed(void)
-{ return max(sqrt(1.e9*(K0+4.*G0/3.)/rho),sqrt(1.e9*(Kd+4.*Gd/3.)/rho));
+double BistableIsotropic::WaveSpeed(bool threeD)
+{ return fmax(sqrt(1.e9*(K0+4.*G0/3.)/rho),sqrt(1.e9*(Kd+4.*Gd/3.)/rho));
 }
 
 // maximum diffusion coefficient in cm^2/sec

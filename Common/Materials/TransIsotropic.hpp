@@ -55,7 +55,7 @@ class TransIsotropic : public Elastic
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
 #ifdef MPM_CODE
-        virtual double WaveSpeed(void);
+        virtual double WaveSpeed(bool);
         virtual double MaximumDiffusion(void);
         virtual double MaximumDiffusivity(void);
 #endif

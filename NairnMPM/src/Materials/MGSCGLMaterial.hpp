@@ -43,7 +43,7 @@ class MGSCGLMaterial : public IsoPlasticity
 		// accessors
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
-        virtual double WaveSpeed(void);
+        virtual double WaveSpeed(bool);
 		
     protected:
 		double k1,k2,k3,gRhoCv,GPpred,G0red,yldMaxred;

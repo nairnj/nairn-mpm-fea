@@ -178,7 +178,7 @@ double MPMBase::GetAngley0InDegrees(void) { return 180.*angley0/PI_CONSTANT; }
 
 // anglex0 is initial x cw orientation angle (3D z,y,x scheme)
 double MPMBase::GetRotationX(void) { return anglex0-0.5*wrot.yz; }
-double MPMBase::GetRotationXInDegrees(void) { return 180.*(anglex0+0.5*wrot.yz)/PI_CONSTANT; }
+double MPMBase::GetRotationXInDegrees(void) { return 180.*(anglex0-0.5*wrot.yz)/PI_CONSTANT; }
 void MPMBase::SetAnglex0(double angle) { anglex0=angle; }
 void MPMBase::SetAnglex0InDegrees(double angle) { anglex0=PI_CONSTANT*angle/180.; }
 double MPMBase::GetAnglex0InDegrees(void) { return 180.*anglex0/PI_CONSTANT; }
