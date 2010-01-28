@@ -47,7 +47,7 @@ class TransIsotropic : public Elastic
 		// methods
 		virtual void LoadMechProps(int,double,int);
 #ifdef MPM_CODE
-		virtual void TransIsotropic::LoadMechanicalProps(MPMBase *,int);
+		virtual void LoadMechanicalProps(MPMBase *,int);
 		virtual void LoadTransportProps(MPMBase *);
 #endif
        
