@@ -148,7 +148,7 @@
 				| D | DA | DT | Dx | Dy | Dz | D0 | Dd | csat | SettingFunction
 				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration
 				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd
-				| yldxx | yldyy | yldzz | yldxy | Khard | nhard | color | betahard
+				| yldxx | yldyy | yldzz | yldxy | yldxz | yldyz | Khard | nhard | color | betahard
 				| Bjc | njc | Cjc | ep0jc | C0 | S1 | S2 | GPpG0 | GTpG0 | gamma0
 				| Uk | YP | Friction )* >
 <!ATTLIST	Material
@@ -320,6 +320,8 @@
 <!ELEMENT	yldyy (#PCDATA)>
 <!ELEMENT	yldzz (#PCDATA)>
 <!ELEMENT	yldxy (#PCDATA)>
+<!ELEMENT	yldxz (#PCDATA)>
+<!ELEMENT	yldyz (#PCDATA)>
 <!ELEMENT	Ep (#PCDATA)>
 <!ELEMENT	Khard (#PCDATA)>
 <!ELEMENT	nhard (#PCDATA)>

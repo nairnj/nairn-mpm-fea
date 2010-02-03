@@ -50,6 +50,7 @@
 \def\t#1{\tau_{#1}}  
 \def\v#1{\nu_{#1}}  
 \def\vvec#1#2#3{\left(\begin{array}{ccc} #1 \\ #2 \\ #3 \end{array}\right)}
+\def\fvvec#1#2#3#4#5#6{\left(\begin{array}{ccc} #1 \\ #2 \\ #3 \\ #4 \\ #5 \\ #6 \end{array}\right)}
 \def\symmat#1#2#3#4#5#6{\left(\begin{array}{ccc} #1 & #2 & #3 \\ #2 & #4 & #5 \\
                                                       #3 & #5 & #6 \end{array}\right)}
 
@@ -499,23 +500,7 @@ The key terms are
 	\a{zz}\DT + \b{zz}\Delta c \\
 	\code{me0[3]}\DT + \code{mc0[3]}\Delta c  \end{array}\right) 
  \end{eqnarray}
-This formulation is using engineering shear strains. The term that can be expanded is
-\begin{eqnarray}
-        \df\cdot \C\df & = &  df_{xx}\left( \code{mdm[1][1]}df_{xx} + \code{mdm[1][2]}df_{yy} 
-                                                      + 2\thinspace\code{mdm[1][3]}df_{xy} \right)
- \nonumber\\
-&&\ \mbox{}
-                           +df_{yy}\left( \code{mdm[1][2]}df_{xx} + \code{mdm[2][2]}df_{yy} 
-                                                      + 2\thinspace\code{mdm[2][3]}df_{xy} \right)
-\nonumber\\
-&&\ \mbox{}
-                           + df_{xy}\left(\code{mdm[1][3]}df_{xx} + \code{mdm[2][3]}df_{yy} 
-                                                      + 2\thinspace\code{mdm[3][3]}df_{xy} \right)
-\nonumber\\
-&&\ \mbox{}
-                           + df_{zz}\left(\code{mdm[4][1]}df_{xx} + \code{mdm[4][2]}df_{yy} 
-                                                      + 2\thinspace\code{mdm[4][3]}df_{xy}  + \code{mdm[4][4]}df_{zz} \right) 
-\end{eqnarray}
+This formulation is using engineering shear strains. 
  
  The plastic strain increments are:
 \begin{equation}
@@ -617,23 +602,101 @@ For plane stress analysis, $d\sigma_{zz}=0$ and the $\varepsilon_{zz}$ update is
                  + \code{mdm[4][3]}(\g{xy}^{(e)}-\er{xy})  + \er{zz}
 \end{eqnarray}
 
+\subsection{Anisotropic 3D Analysis}
+
+In 3D strain analysis, the matrix equation for update is
+\begin{equation}
+    \dsig = \C \deff 
+\end{equation}
+The key terms are
+\begin{eqnarray}
+      \C & = & \code{mdm[i][j]} \quad {\rm for\ }\code{i}=0,5\ {\rm and\ }\code{j}=0,5 \\
+       \deff & = & \biggl(d\e{xx} - \err{xx}, \thinspace d\e{yy} - \err{yy}, \thinspace  d\e{yy}-  \er{zz}, 
+             \thinspace d\g{yz}-\err{yz},  \nonumber\\
+             && \qquad\mbox{} \thinspace d\g{xz}-\err{xz},  \thinspace d\g{xy}-\err{xy}\biggr) \\
+      \df & = & (df_{xx}, \thinspace df_{yy}, \thinspace df_{zz}, \thinspace df_{yz}, \thinspace df_{xz}, \thinspace df_{xy})
+                  = \left({\partial f\over \sigma_{xx}}, \thinspace {\partial f\over \sigma_{yy}}, \thinspace {\partial f\over \sigma_{zz}},
+                                {\partial f\over \tau_{yz}}, {\partial f\over \tau_{xz}}, {\partial f\over \tau_{xy}}\right)  \\
+\left(\begin{array}{c} \err{xx} \\ \err{yy} \\ \err{zz} \\  \err{yz} \\ \err{xz} \\ \err{xy} \end{array}\right)
+       & = &  \left(\begin{array}{c}
+	\code{me0[0]}\DT + \code{mc0[0]}\Delta c \\
+	\code{me0[1]}\DT + \code{mc0[1]}\Delta c \\
+	\code{me0[2]}\DT + \code{mc0[2]}\Delta c \\
+	\code{me0[3]}\DT + \code{mc0[3]}\Delta c \\
+	\code{me0[4]}\DT + \code{mc0[4]}\Delta c \\
+	\code{me0[5]}\DT + \code{mc0[5]}\Delta c 
+ \end{array}\right) 
+ \end{eqnarray}
+This formulation is using engineering shear strains. 
+ 
+ The plastic strain increments are:
+\begin{equation}
+       d\varepsilon_{xx}^{(p)} = \lambda df_{xx}, \ 
+       d\varepsilon_{yy}^{(p)} = \lambda df_{yy}, \ 
+       d\varepsilon_{zz}^{(p)} = \lambda df_{zz}, \ 
+       d\gamma_{yz}^{(p)} =  \lambda df_{yz}, \ 
+       d\gamma_{xz}^{(p)} =  \lambda df_{xz}, \ 
+       d\gamma_{xy}^{(p)} =  \lambda df_{xy},
+\end{equation}
+The elastic strain increments are:
+\begin{equation}
+       d\varepsilon_{xx}^{(e)} = d\varepsilon_{xx} -\lambda df_{xx}, \quad
+       d\varepsilon_{yy}^{(e)} = d\varepsilon_{yy} -\lambda df_{yy}, \quad
+       d\varepsilon_{zz}^{(e)} =  d\varepsilon_{yy} -\lambda df_{zz}
+\end{equation}
+\begin{equation}
+       d\gamma_{yz}^{(e)} = d\gamma_{yz} -  \lambda df_{yz}, \quad 
+       d\gamma_{xz}^{(e)} = d\gamma_{xz} -  \lambda df_{xz}, \quad  {\rm and} \quad
+       d\gamma_{xy}^{(e)} = d\gamma_{xy} -  \lambda df_{xy}
+\end{equation}
+The specific stress increments are
+\begin{equation}
+      \fvvec{d\s{xx}}{d\s{yy}}{d\s{zz}}{d\t{yz}}{d\t{xz}}{d\t{xy}} = \Biggl(\code{mdm[i][j]} \quad {\rm for\ }\code{i}=0,5\ {\rm and\ }\code{j}=0,5\Biggr)
+          \fvvec{d\varepsilon_{xx}^{(e)}  - \err{xx}}{d\varepsilon_{yy}^{(e)}  -\err{yy}}{d\varepsilon_{zz}^{(e)}  -\err{zz}}
+                             {d\g{yz}^{(e)}-\err{yz}}{d\g{xz}^{(e)}-\err{xz}}{d\g{xy}^{(e)}-\err{xy}}
+ \end{equation}
+
 \subsection{Quadratic Hill Criterion}
 
 The quadratic Hill yield criterion can implement anisotropic plasticity and hardening terms can be added to include aniostropic hardening as well. For 2D plane strain analysis, one version of Hill yield function with arbitraty hardening function (defined later) reduces to:
 \begin{eqnarray}
-          f & = & \sqrt{F\left(\overline{\s{yy}}- \s{zz}\right)^2 + G\left(\overline{\s{xx}}- \s{zz}\right)^2
-               + H\left(\overline{\s{yy}}- \overline{\s{xx}}\right)^2
+          f & = & \sqrt{F\left(\overline{\s{yy}}- \s{zz}\right)^2 + G\left(\overline{\s{xx}}- \overline{\s{zz}}\right)^2
+               + H\left(\overline{\s{yy}}- \overline{\s{xx}}\right)^2 +2L\overline{\t{yz}}^2 +2M\overline{\t{xz}}^2
                  +2N\overline{\t{xy}}^2}
-                  - g(\vec\alpha) \\
+  \nonumber\\
+ &&\qquad\mbox{}
+                 - g(\vec\alpha) \\
              & = & \Bigl[(G+H)\overline{\s{xx}}^2  + (F+H)\overline{\s{yy}}^2 + (F+G)\s{zz}^2
                    -2F \overline{\s{yy}}\s{zz} - 2G \overline{\s{xx}}\s{zz}
  \nonumber\\
  &&\qquad\mbox{}
                     - 2H \overline{\s{xx}}\overline{\s{yy}}
-                   +2N\overline{\t{xy}}^2\Bigr]^{1/2}  - g(\vec\alpha) \\
-             & = & \sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}} - g(\vec\alpha)
+                   +2L\overline{\t{yz}}^2 +2M\overline{\t{xz}}^2+2N\overline{\t{xy}}^2\Bigr]^{1/2}  - g(\vec\alpha) \\
+             & = & \sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}} - g(\vec\alpha)       \label{froteq}
 \end{eqnarray}
-where $\overline{\vec\s{}} = (\overline{\s{xx}}, \overline{\s{yy}}, \s{zz}, \overline{\t{xy}})$, $g(\vec\alpha)$ is some hardening function of internal variables, and
+where $\overline{\vec\s{}} = (\overline{\s{xx}}, \overline{\s{yy}}, \overline{\s{zz}}, \overline{\t{yz}}, \overline{\t{xz}}, \overline{\t{xy}})$, $g(\vec\alpha)$ is some hardening function of internal variables, and
+\begin{equation}
+      \A = \left( \begin{array}{cccccc}
+                       G+H & -H & -G & 0 & 0 & 0 \\
+                       -H & F+H & -F & 0 & 0 & 0\\
+                       -G & -F & F+G & 0 & 0 & 0\\
+                        0 & 0 & 0 & 2L & 0 & 0 \\
+                       0 & 0 & 0 & 0 & 2M & 0 \\
+                      0 & 0 & 0 & 0 & 0 & 2N
+                       \end{array} \right)
+\end{equation}
+An overbar is the stress in the material coordinates. It is found from
+\begin{equation}
+     \overline{\vec\s{}} = \R_x\R_y\R_z\vec\s{} = \R_\sigma\vec\s{}
+\end{equation}
+where $\R_x$, $\R_y$, and $\R_z$ are rotation matrices about each axis for rotation of stress in the clockwise direction.
+The corresponding equation in analysis axis coordinates for the yield function takes the form
+\begin{equation}
+     f = \sqrt{\vec\s{} \R_\sigma^T\cdot \A \R_\sigma\vec\s{}} - g(\vec\alpha) = \sqrt{\vec\s{} \A' \vec\s{}} - g(\vec\alpha)     \label{fanaleq}
+\end{equation}
+where $\A' = \R_\sigma^T\A\R_\sigma$ is the $\A$ matrix rotated in the counter-clockwise direction from the material axes to the analysis axes (the same transformation used for compliance matrices).
+
+For 2D, plane strain, $\overline{\vec\s{}} = (\overline{\s{xx}}, \overline{\s{yy}}, \s{zz}, \overline{\t{xy}})$ ({\em i.e.}, $\s{zz}$ does not rotate) and
 \begin{equation}
       \A = \left( \begin{array}{cccc}
                        G+H & -H & -G & 0 \\
@@ -642,27 +705,28 @@ where $\overline{\vec\s{}} = (\overline{\s{xx}}, \overline{\s{yy}}, \s{zz}, \ove
                        0 & 0 & 0 & 2N
                        \end{array} \right)
 \end{equation}
-An overbar is the stress in the material coordinates, which are found by clockwise rotations around the $z$ axis:
+The only rotation needed is clockwise rotations around the $z$ axis:
 \begin{equation}
-      \overline{\vec\s{}} = \R_z\vec\s{}  \quad{\rm where}\quad \R_z = \left( \begin{array}{cccc}
+      \overline{\vec\s{}} = \R_\sigma\vec\s{} = \R_z\vec\s{}  \quad{\rm where}\quad \R_z = \left( \begin{array}{cccc}
                        \cos^2\theta & \sin^2\theta & 0 & -2\cos\theta\sin\theta \\
                        \sin^2\theta & \cos^2\theta & 0 & 2\cos\theta\sin\theta \\
                        0 & 0 & 1 & 0 \\
                        \sin\theta\cos\theta & -\sin\theta\cos\theta & 0 & \cos^2\theta - \sin^2\theta
                        \end{array} \right)
 \end{equation}
-is the 2D engineering stress tensor, clockwise rotation matrix. The elements of the $\A$ matrix are physically defined by directionally dependent yield stresses prior to any hardening:
+is the 2D engineering stress tensor, clockwise rotation matrix.
+
+The elements of the $\A$ matrix are physically defined by directionally dependent yield stresses prior to any hardening:
 \begin{eqnarray}
        &&(G+H)  =  {1\over (\s{xx}^Y)^2}   \qquad
        (F+H)  =  {1\over (\s{yy}^Y)^2}  \qquad
        (F+G)  =  {1\over (\s{zz}^Y)^2} \\
         F & = & {1\over 2}\left( {1\over (\s{yy}^Y)^2} + {1\over (\s{zz}^Y)^2} - {1\over (\s{xx}^Y)^2}\right) \qquad
        G = {1\over 2}\left( {1\over (\s{zz}^Y)^2} + {1\over (\s{xx}^Y)^2} - {1\over (\s{yy}^Y)^2}\right) \\
-       H & = & {1\over 2}\left( {1\over (\s{xx}^Y)^2} + {1\over (\s{yy}^Y)^2} - {1\over (\s{zz}^Y)^2}\right) \qquad
-       N = {1\over 2(\t{xy}^Y)^2}
+       H & = & {1\over 2}\left( {1\over (\s{xx}^Y)^2} + {1\over (\s{yy}^Y)^2} - {1\over (\s{zz}^Y)^2}\right) \quad
+       L = {1\over 2(\t{yz}^Y)^2} \quad M = {1\over 2(\t{xz}^Y)^2} \quad N = {1\over 2(\t{xy}^Y)^2}
 \end{eqnarray}
-
-To make sense, the $\A$ matrix must be positive semidefinite (so square root will always be of a non-negative number). The determinant of $\A$ is zero, but it can be diagonalized using its eigenvalues and three linearly independent eigenvectors. The calculations were done separately, but show that for $\A$ to be positive semidefinite, requires both:
+To make physical sense, the $\A$ matrix must be positive semidefinite (so square root will always be of a non-negative number). The determinant of $\A$ is zero, but it can be diagonalized using its eigenvalues and three linearly independent eigenvectors. The calculations were done separately, but show that for $\A$ to be positive semidefinite, requires both:
 \begin{eqnarray}
         &&F^2+G^2+H^2-FH-GH-FG \ge 0 \\
         &&F+G+H \ge \sqrt{F^2+G^2+H^2-FH-GH-FG}
@@ -680,26 +744,20 @@ Two special cases are mentioned. If one yield stress is infinite ({\em e.g.}, $\
 For examples: if $R=1$ then $ \s{yy}^Y/2 \le \s{zz}^Y \le \infty$; if $R=0$ or $R=\infty$ then $ \s{yy}^Y= \s{zz}^Y$.
 
 
-Finally, in the analysis axis coordinates, the yield function takes the form
-\begin{equation}
-     f = \sqrt{\vec\s{} \R_z^T\cdot \A \R_z\vec\s{}} - g(\vec\alpha) = \sqrt{\vec\s{} \A' \vec\s{}} - g(\vec\alpha)
-\end{equation}
-where $\A' = \R_z^T\A\R_z$ is the $\A$ matrix rotated in the counter-clockwise direction from the material axes to the analysis axes (the same transformation used for compliance matrices).
-
 For an isotropic material ({\em i.e.}, the Von Mises criterion), the key terms are
 \begin{equation}
-   (G+H) = (F+H) = (F+G) = 2F = 2G = 2H = {1\over \sigma_Y^2}, \quad N = {1\over 2\tau_Y^2} = {3\over 2\sigma_Y^2}
+   (G+H) = (F+H) = (F+G) = 2F = 2G = 2H = {1\over \sigma_Y^2}, \quad L=M=N = {1\over 2\tau_Y^2} = {3\over 2\sigma_Y^2}
 \end{equation}
-leading to
-\begin{equation}
-          f =  {1\over \sigma_Y} \sqrt{3\over2}\sqrt{{2\over 3}\left(\overline{\s{xx}}^2  + \overline{\s{yy}}^2 + \s{zz}^2
-                   - \overline{\s{yy}}\s{zz} -  \overline{\s{xx}}\s{zz}
-                    -  \overline{\s{xx}}\overline{\s{yy}}\right)
-                   +2\overline{\t{xy}}^2 }  - g(\vec\alpha)
-\end{equation}
-This reduces to an isotropic material with $K(\alpha)=\sigma_Y + E_p\alpha$ if $g(\vec\alpha) = 1 + (E_p/\sigma_Y)\alpha$.
+leading to an isotropic material with $K(\alpha)=\sigma_Y + E_p\alpha$ if $g(\vec\alpha) = 1 + (E_p/\sigma_Y)\alpha$.
 
-The derivatives with respect to analyses axes are found by differentiating with respect to rotated stress and then transforming the result by strain rotation in the counter-clockwise direction. The result is
+The derivatives with respect to analyses axes are found by differentiating with respect to rotated stress (see Eq.~\ref{froteq}) and then transforming the result by strain rotation in the counter-clockwise direction back to the analysis axes. The result is
+\begin{equation}
+         \df = {\R_\varepsilon^{-1}\A \overline{\vec\s{}}\over\sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}}} \end{equation}
+where $\R_\varepsilon$ is the rotation matrix for clockwise strain rotation. Alternatively, differentiating in analysis coordinates (see Eq.~\ref{fanaleq}) gives:
+\begin{equation}
+   \df = {\A' \vec\s{}\over\sqrt{\vec\s{} \A' \vec\s{}}}  = {\R_\sigma^T\A \overline{\vec\s{}}\over\sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}}} 
+\end{equation}
+Because $\R_\varepsilon^{-1} = \R_\sigma^T$, the two results are the same. In 2D, the results reduce to
 \begin{equation}
          \df = {\R^{-1}\A \overline{\vec\s{}}\over\sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}}}    \quad{\rm where}\quad
          \R = \left( \begin{array}{cccc}
@@ -709,36 +767,32 @@ The derivatives with respect to analyses axes are found by differentiating with 
                        2\sin\theta\cos\theta & -2\sin\theta\cos\theta & 0 & \cos^2\theta - \sin^2\theta
                        \end{array} \right)
 \end{equation}
-is the 2D engineering strain tensor, clockwise rotation matrix. Note that $\R^{-1} = \R_z^T$ or $\R = \left(\R_z^{-1}\right)^T$ meaning the derivative could be derived from $f$ in analysis coordinates and it gives the same results:
-\begin{equation}
-   \df = {\A' \vec\s{}\over\sqrt{\vec\s{} \A' \vec\s{}}}  = {\R^{-1}\A \overline{\vec\s{}}\over\sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}}} 
-\end{equation}
 
 In the material axis system, the full plastic strain increment is
 \begin{equation}
-       \overline{\dpl} = \lambda \R\df = {\A \overline{\vec\s{}}\over\sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}}}
+       \overline{\dpl} = \lambda \R_\varepsilon\df = {\A \overline{\vec\s{}}\over\sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}}}
 \end{equation}
 This strain results in a traceless tensor ({\em i.e.}, only deviatoric plastic strains):
 \begin{equation}
          \dpl = {\lambda\over \sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}}}
          \left( \begin{array}{ccc}
-                      {\overline{\s{xx}}\over (\s{xx}^Y)^2} - H\overline{\s{yy}} - G\overline{\s{zz}} & N\overline{\t{xy}} & 0  \\
-                       N\overline{\t{xy}} & -H\overline{\s{xx}} + {\overline{\s{yy}}\over (\s{yy}^Y)^2} - F\overline{\s{zz}} & 0  \\
-                       0 & 0 & -G\overline{\s{xx}} -F\overline{\s{yy}} +{\overline{\s{zz}}\over (\s{zz}^Y)^2} 
+                      {\overline{\s{xx}}\over (\s{xx}^Y)^2} - H\overline{\s{yy}} - G\overline{\s{zz}} & N\overline{\t{xy}} & M\overline{\t{xz}} \\
+                       N\overline{\t{xy}} & -H\overline{\s{xx}} + {\overline{\s{yy}}\over (\s{yy}^Y)^2} - F\overline{\s{zz}} & L\overline{\t{yz}}  \\
+                       M\overline{\t{xz}} & L\overline{\t{yz}} & -G\overline{\s{xx}} -F\overline{\s{yy}} +{\overline{\s{zz}}\over (\s{zz}^Y)^2} 
                         \end{array} \right)
 \end{equation}
 
 We assume hardening is a function only of equivalent plastic strain and thus $\alpha$ is cumulative plastic strain. Perhaps a general anisotropic material would have something different, but this assumption is common in metals. The update in alpha is thus
 \begin{equation}
-     d\alpha = \sqrt{2\over 3}\thinspace \| \dpl\| = \lambda \sqrt{{2\over 3}\left(\df_{xx}^2 + \df_{yy}^2 + \df_{zz}^2 + {1\over2}\df_{xy}^2\right)}
+     d\alpha = \sqrt{2\over 3}\thinspace \| \dpl\| = \lambda \sqrt{{2\over 3}\left(\df_{xx}^2 + \df_{yy}^2 + \df_{zz}^2 + {1\over2}\df_{yz}^2+ {1\over2}\df_{xz}^2+ {1\over2}\df_{xy}^2\right)}
 \end{equation}
 Thus the update vector is
 \begin{equation}
-      \vec h = - \sqrt{{2\over 3}\left(\df_{xx}^2 + \df_{yy}^2 + \df_{zz}^2 + {1\over2}\df_{xy}^2\right)}
+      \vec h = - \sqrt{{2\over 3}\left(\df_{xx}^2 + \df_{yy}^2 + \df_{zz}^2 + {1\over2}\df_{yz}^2+ {1\over2}\df_{xz}^2+ {1\over2}\df_{xy}^2\right)}
 \end{equation}
 and
 \begin{equation}
-   \dfa \cdot \vec h =  g'(\alpha)\sqrt{{2\over 3}\left(\df_{xx}^2 + \df_{yy}^2 + \df_{zz}^2 + {1\over2}\df_{xy}^2\right)}
+   \dfa \cdot \vec h =  g'(\alpha)\sqrt{{2\over 3}\left(\df_{xx}^2 + \df_{yy}^2 + \df_{zz}^2 + {1\over2}\df_{yz}^2+ {1\over2}\df_{xz}^2 + {1\over2}\df_{xy}^2\right)}
 \end{equation}
 Some possible hardening laws are
 \begin{eqnarray}
