@@ -25,8 +25,8 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Blocked custom tasks from turning off extrapolations and added material field to custom task methods
     * Added `unique` attribute to `ArchiveRoot` command to force create of new results subfolder on each run.
     * Added `material` option to the `VTKArchive` custom task.
-    * Transversely isotropic and orthotropic materials now do 3D. Rotation methods in `Body` command used to specify initial orientation or particles.
-    * Archive format changed to `ver6` to add archiving of 3 rotation angles of 3D particles.
+    * Transversely isotropic, orthotropic, and Hill plastic materials now do 3D. Rotation methods in `Body` command used to specify initial orientation or particles. All seem to work, but it is difficult to verify off-axis orientations.
+    * Archive format changed to `ver6` to add archiving of 3 rotation angles of 3D particles needed for anisotropic materials.
 
   * release-1.0 (30 DEC 2009)
     * Has NairnMPM 7.2.0
