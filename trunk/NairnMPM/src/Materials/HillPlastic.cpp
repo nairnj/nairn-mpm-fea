@@ -110,24 +110,24 @@ void HillPlastic::UpdateTrialAlpha(MPMBase *mptr,int np,double lambdak)
 }
 
 // return the yield function in a subroutine so sub class can define new yield functions
-// For Von-Mises isotropic linear hardening material, plastic potential 
-// f=s_bar^2-yield^2-2 Ep Wp, where s_bar - equivalent Von-Mises stress,
-// Ep - plastic modulus; Wp - plastic work.
-double HillPlastic::GetF(MPMBase *mptr,double sxx,double syy,double txy,double szz,int np)
-{
+// 2D only. 3D in separate method for speed
+double HillPlastic::GetF(MPMBase *mptr,Tensor *st0,int np)
+{	// special case for 3D
+	if(np==THREED_MPM) return GetF3D(mptr,st0);
+	
 	// clockwise rotation from analysis to material axes
-	sxrot=sxx*cos2t + syy*sin2t - 2.*txy*costsint;
-	syrot=sxx*sin2t + syy*cos2t + 2.*txy*costsint;
-	txyrot=(sxx-syy)*costsint + txy*(cos2t-sin2t);
+	sxrot=st0->xx*cos2t + st0->yy*sin2t - 2.*st0->xy*costsint;
+	syrot=st0->xx*sin2t + st0->yy*cos2t + 2.*st0->xy*costsint;
+	txyrot=(st0->xx-st0->yy)*costsint + st0->xy*(cos2t-sin2t);
 	
 	// the potential
 	//double sAs = sxrot*sxrot*syxxred2 + syrot*syrot*syyyred2 + txyrot*txyrot*tyxyred2 - 2.*hTerm*sxrot*syrot;
 	//if(np==PLANE_STRAIN_MPM)
-	//	sAs += szz*szz*syzzred2 - 2.*fTerm*syrot*szz - 2.*gTerm*sxrot*szz;
+	//	sAs += st0->zz*st0->zz*syzzred2 - 2.*fTerm*syrot*st0->zz - 2.*gTerm*sxrot*st0->zz;
 	double dxy=sxrot-syrot,sAs;
 	if(np==PLANE_STRAIN_MPM)
-	{	double dyz=syrot-szz;
-		double dxz=sxrot-szz;
+	{	double dyz=syrot-st0->zz;
+		double dxz=sxrot-st0->zz;
 		sAs=fTerm*dyz*dyz + gTerm*dxz*dxz + hTerm*dxy*dxy + txyrot*txyrot*tyxyred2;
 	}
 	else
@@ -138,9 +138,38 @@ double HillPlastic::GetF(MPMBase *mptr,double sxx,double syy,double txy,double s
 	return sAs>0. ? sqrt(sAs) - (1. + Khard*pow(aint,nhard)) : -1.; 
 }
 
+// return the yield function in a subroutine so sub class can define new yield functions
+double HillPlastic::GetF3D(MPMBase *mptr,Tensor *st0)
+{
+	// rotation from analysis to material axes
+	Tensor srot;
+	srot.xx = rzyx[0][0]*st0->xx+rzyx[0][1]*st0->yy+rzyx[0][2]*st0->zz+rzyx[0][3]*st0->yz+rzyx[0][4]*st0->xz+rzyx[0][5]*st0->xy;
+	srot.yy = rzyx[1][0]*st0->xx+rzyx[1][1]*st0->yy+rzyx[1][2]*st0->zz+rzyx[1][3]*st0->yz+rzyx[1][4]*st0->xz+rzyx[1][5]*st0->xy;
+	srot.zz = rzyx[2][0]*st0->xx+rzyx[2][1]*st0->yy+rzyx[2][2]*st0->zz+rzyx[2][3]*st0->yz+rzyx[2][4]*st0->xz+rzyx[2][5]*st0->xy;
+	srot.yz = rzyx[3][0]*st0->xx+rzyx[3][1]*st0->yy+rzyx[3][2]*st0->zz+rzyx[3][3]*st0->yz+rzyx[3][4]*st0->xz+rzyx[3][5]*st0->xy;
+	srot.xz = rzyx[4][0]*st0->xx+rzyx[4][1]*st0->yy+rzyx[4][2]*st0->zz+rzyx[4][3]*st0->yz+rzyx[4][4]*st0->xz+rzyx[4][5]*st0->xy;
+	srot.xy = rzyx[5][0]*st0->xx+rzyx[5][1]*st0->yy+rzyx[5][2]*st0->zz+rzyx[5][3]*st0->yz+rzyx[5][4]*st0->xz+rzyx[5][5]*st0->xy;
+
+	// the potential
+	double dyz=srot.yy-srot.zz;
+	double dxz=srot.xx-srot.zz;
+	double dxy=srot.xx-srot.yy;
+	double sAs=fTerm*dyz*dyz + gTerm*dxz*dxz + hTerm*dxy*dxy + srot.xy*srot.xy*tyxyred2
+				 + srot.xz*srot.xz*tyxzred2 + srot.yz*srot.yz*tyyzred2;
+	
+	// return sqrt(sAs) - pow(1. + Khard*aint,nhard);
+	// check on negative sAs can happen due to round-off error when stresses near zero
+	return sAs>0. ? sqrt(sAs) - (1. + Khard*pow(aint,nhard)) : -1.; 
+}
+
 // return derivatives of the yield function in a subroutine so sub class can define new yield functions
 void HillPlastic::GetDfDsigma(MPMBase *mptr,Tensor *st0,int np)
-{
+{	// special case for 3D
+	if(np==THREED_MPM)
+	{	GetDfDsigma3D(mptr,st0);
+		return;
+	}
+	
 	// clockwise rotation from analysis to material axes
 	sxrot = st0->xx*cos2t + st0->yy*sin2t - 2.*st0->xy*costsint;
 	syrot = st0->xx*sin2t + st0->yy*cos2t + 2.*st0->xy*costsint;
@@ -150,7 +179,7 @@ void HillPlastic::GetDfDsigma(MPMBase *mptr,Tensor *st0,int np)
 	double sAs = sxrot*sxrot*syxxred2 + syrot*syrot*syyyred2 + txyrot*txyrot*tyxyred2 - 2.*hTerm*sxrot*syrot;
 	if(np==PLANE_STRAIN_MPM)
 		sAs += st0->zz*st0->zz*syzzred2 - 2.*fTerm*syrot*st0->zz - 2.*gTerm*sxrot*st0->zz;
-	double rootSAS = sqrt(sAs);
+	double rootSAS = sAs>0. ? sqrt(sAs) : 0. ;
 	
 	// the derivatives = dfrot = R df
 	dfdsxxrot = syxxred2*sxrot - hTerm*syrot ;
@@ -179,7 +208,47 @@ void HillPlastic::GetDfDsigma(MPMBase *mptr,Tensor *st0,int np)
 	minush = sqrt(minush/1.5);
 }
 
-// Non-linear hardening - df . h
+// return derivatives of the yield function in a subroutine so sub class can define new yield functions
+void HillPlastic::GetDfDsigma3D(MPMBase *mptr,Tensor *st0)
+{
+	// rotation from analysis to material axes
+	Tensor srot;
+	srot.xx = rzyx[0][0]*st0->xx+rzyx[0][1]*st0->yy+rzyx[0][2]*st0->zz+rzyx[0][3]*st0->yz+rzyx[0][4]*st0->xz+rzyx[0][5]*st0->xy;
+	srot.yy = rzyx[1][0]*st0->xx+rzyx[1][1]*st0->yy+rzyx[1][2]*st0->zz+rzyx[1][3]*st0->yz+rzyx[1][4]*st0->xz+rzyx[1][5]*st0->xy;
+	srot.zz = rzyx[2][0]*st0->xx+rzyx[2][1]*st0->yy+rzyx[2][2]*st0->zz+rzyx[2][3]*st0->yz+rzyx[2][4]*st0->xz+rzyx[2][5]*st0->xy;
+	srot.yz = rzyx[3][0]*st0->xx+rzyx[3][1]*st0->yy+rzyx[3][2]*st0->zz+rzyx[3][3]*st0->yz+rzyx[3][4]*st0->xz+rzyx[3][5]*st0->xy;
+	srot.xz = rzyx[4][0]*st0->xx+rzyx[4][1]*st0->yy+rzyx[4][2]*st0->zz+rzyx[4][3]*st0->yz+rzyx[4][4]*st0->xz+rzyx[4][5]*st0->xy;
+	srot.xy = rzyx[5][0]*st0->xx+rzyx[5][1]*st0->yy+rzyx[5][2]*st0->zz+rzyx[5][3]*st0->yz+rzyx[5][4]*st0->xz+rzyx[5][5]*st0->xy;
+	
+	// sqrt(s.As)
+	double sAs = srot.xx*srot.xx*syxxred2 + srot.yy*srot.yy*syyyred2 + srot.zz*srot.zz*syzzred2  - 2.*hTerm*srot.xx*srot.yy
+					- 2.*fTerm*srot.yy*srot.zz - 2.*gTerm*srot.xx*srot.zz + srot.yz*srot.yz*tyyzred2
+					+ srot.xz*srot.xz*tyxzred2 + srot.xy*srot.xy*tyxyred2;
+	double rootSAS = sAs>0. ? sqrt(sAs) : 0. ;
+	
+	// the derivatives = dfrot = R df
+	dfdsxxrot = (syxxred2*srot.xx - hTerm*srot.yy - gTerm*srot.zz) / rootSAS;
+	dfdsyyrot = (-hTerm*srot.xx + syyyred2*srot.yy - fTerm*srot.zz) / rootSAS;
+	dfdszzrot = (-gTerm*srot.xx - fTerm*srot.yy + syzzred2*srot.zz) / rootSAS;
+	dfdtyzrot = tyyzred2*srot.yz / rootSAS;
+	dfdtxzrot = tyxzred2*srot.xz / rootSAS;
+	dfdtxyrot = tyxyred2*srot.xy / rootSAS;
+	
+	// rotate to analysis coordinates df = R^T dfrot
+	dfdsxx = rzyx[0][0]*dfdsxxrot+rzyx[1][0]*dfdsyyrot+rzyx[2][0]*dfdszzrot+rzyx[3][0]*dfdtyzrot+rzyx[4][0]*dfdtxzrot+rzyx[5][0]*dfdtxyrot;
+	dfdsyy = rzyx[0][1]*dfdsxxrot+rzyx[1][1]*dfdsyyrot+rzyx[2][1]*dfdszzrot+rzyx[3][1]*dfdtyzrot+rzyx[4][1]*dfdtxzrot+rzyx[5][1]*dfdtxyrot;
+	dfdszz = rzyx[0][2]*dfdsxxrot+rzyx[1][2]*dfdsyyrot+rzyx[2][2]*dfdszzrot+rzyx[3][2]*dfdtyzrot+rzyx[4][2]*dfdtxzrot+rzyx[5][2]*dfdtxyrot;
+	dfdtyz = rzyx[0][3]*dfdsxxrot+rzyx[1][3]*dfdsyyrot+rzyx[2][3]*dfdszzrot+rzyx[3][3]*dfdtyzrot+rzyx[4][3]*dfdtxzrot+rzyx[5][3]*dfdtxyrot;
+	dfdtxz = rzyx[0][4]*dfdsxxrot+rzyx[1][4]*dfdsyyrot+rzyx[2][4]*dfdszzrot+rzyx[3][4]*dfdtyzrot+rzyx[4][4]*dfdtxzrot+rzyx[5][4]*dfdtxyrot;
+	dfdtxy = rzyx[0][5]*dfdsxxrot+rzyx[1][5]*dfdsyyrot+rzyx[2][5]*dfdszzrot+rzyx[3][5]*dfdtyzrot+rzyx[4][5]*dfdtxzrot+rzyx[5][5]*dfdtxyrot;
+	
+	// for use in alpha upate
+	minush = dfdsxxrot*dfdsxxrot + dfdsyyrot*dfdsyyrot + dfdszzrot*dfdszzrot 
+					+ 0.5*dfdtyzrot*dfdtyzrot + 0.5*dfdtxzrot*dfdtxzrot + 0.5*dfdtxyrot*dfdtxyrot;
+	minush = sqrt(minush/1.5);
+}
+
+// Non-linear hardening - df^(alpha) . h
 double HillPlastic::GetDfAlphaDotH(MPMBase *mptr,int np,Tensor *st0)
 {	//return DbleEqual(nhard,1.) ? Khard*minush :
 	//			Khard*nhard*pow(1+Khard*aint,nhard-1)*minush ;

@@ -30,27 +30,28 @@ class AnisoPlasticity : public Orthotropic
 		virtual void PrintMechanicalProperties(void);
 		virtual void PrintYieldProperties(void);
 		virtual void ValidateUse(int);
-		virtual bool ThreeDMaterial(void);
 			
 		// methods
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
+		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
 		virtual double SolveForLambda(MPMBase *mptr,int,double,Tensor *);
 		virtual bool LambdaConverged(int,double,double);
  		
 		// subclass must provide platic potential functions
 		virtual void UpdateTrialAlpha(MPMBase *,int) = 0;
 		virtual void UpdateTrialAlpha(MPMBase *,int,double) = 0;
-		virtual double GetF(MPMBase *,double,double,double,double,int) = 0;
+		virtual double GetF(MPMBase *,Tensor *,int) = 0;
 		virtual void GetDfDsigma(MPMBase *,Tensor *,int) = 0;
 		virtual double GetDfAlphaDotH(MPMBase *,int,Tensor *) = 0;
 		virtual void UpdatePlasticInternal(MPMBase *,int) = 0;
 		
    protected:
-		double syxx,syyy,syzz,tyxy;
-		double syxxred2,syyyred2,syzzred2,tyxyred2;		// equal to 1/yield^2 and reduced
-		double dfdsxx,dfdsyy,dfdtxy,dfdszz;
-		double dfdsxxrot,dfdsyyrot,dfdtxyrot,dfdszzrot;
-		double cos2t,sin2t,costsint;					// rotation terms calculated ones per step
+		double syxx,syyy,syzz,tyyz,tyxz,tyxy;
+		double syxxred2,syyyred2,syzzred2,tyyzred2,tyxzred2,tyxyred2;		// equal to 1/yield^2 and reduced
+		double dfdsxx,dfdsyy,dfdszz,dfdtyz,dfdtxz,dfdtxy;
+		double dfdsxxrot,dfdsyyrot,dfdszzrot,dfdtyzrot,dfdtxzrot,dfdtxyrot;
+		double cos2t,sin2t,costsint;										// 2D rotation terms calculated once per step
+		double rzyx[6][6];													// 3D rotation matrix calcualted once per step
 
 };
 

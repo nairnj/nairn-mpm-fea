@@ -98,7 +98,7 @@
 <td><a href="#hill"><code>HillPlastic</code></a></td>
 <td>15</td>
 <td width=50%>Elastic-plastic orthotopic material with a Hill yield criterion and hardening</td>
-<td align="center"></td><td align="center">X</td><td align="center"></td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
@@ -729,6 +729,11 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <dt>&lt;yldxy&gt;10&lt;/yldxy&gt;</dt>
 <dd>Yield stress from pure shear test in the material's <code>x-y</code> plane. Enter in units of MPa.</dd>
 
+<dt>&lt;yldyz&gt;10&lt;/yldyz&gt;</dt>
+<dd>Yield stress from pure shear test in the material's <code>y-z</code> plane. Enter in units of MPa.</dd>
+
+<dt>&lt;yldxz&gt;10&lt;/yldxz&gt;</dt>
+<dd>Yield stress from pure shear test in the material's <code>x-z</code> plane. Enter in units of MPa.</dd>
 
 <dt>&lt;khard&gt;20&lt;/khard&gt;</dt>
 <dd>Hardening term (see below)</dd>
@@ -737,21 +742,27 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <dd>Exponent on cumulative plastic strain in hardening term (see below)</dd>
 </dl>
 
-<p>The anisotropic yield criterion for 2D analysis is
+<p>The anisotropic yield criterion is
 </p>
 
 <blockquote>[ F(&sigma;<sub>yy</sub> - &sigma;<sub>zz</sub>)<sup>2</sup> + G(&sigma;<sub>xx</sub> - &sigma;<sub>zz</sub>)<sup>2</sup>
-    + H(&sigma;<sub>yy</sub> - &sigma;<sub>xx</sub>)<sup>2</sup> + 2N&tau;<sub>xy</sub><sup>2</sup> ]<sup>1/2</sup> - (1 + K&epsilon;<sub>p</sub><sup>n</sup>)
+    + H(&sigma;<sub>yy</sub> - &sigma;<sub>xx</sub>)<sup>2</sup> + 2L&tau;<sub>yz</sub><sup>2</sup>
+    + 2M&tau;<sub>xz</sub><sup>2</sup> + 2N&tau;<sub>xy</sub><sup>2</sup> ]<sup>1/2</sup> - (1 + K&epsilon;<sub>p</sub><sup>n</sup>)
 </blockquote>
-<p>where &sigma;<sub>xx</sub>, &sigma;<sub>yy</sub>, &sigma;<sub>zz</sub>, and &tau;<sub>xy</sub> are stresses in the material axis system after rotation from the anaysis coordinates. The constants are determined by the yield stresses:</p>
+
+<p>where &sigma;<sub>xx</sub>, &sigma;<sub>yy</sub>, &sigma;<sub>zz</sub>, &tau;<sub>yz</sub>, &tau;<sub>xz</sub>, and &tau;<sub>xy</sub> are stresses in the material axis system after rotation from the anaysis coordinates. The constant are determined by the yield stresses:</p>
 
 <blockquote>2F = (1/<code>yldyy</code><sup>2</sup>) + (1/<code>yldzz</code><sup>2</sup>) - (1/<code>yldxx</code><sup>2</sup>)<br>
 2G = (1/<code>yldxx</code><sup>2</sup>) + (1/<code>yldzz</code><sup>2</sup>) - (1/<code>yldyy</code><sup>2</sup>)<br>
 2H = (1/<code>yldxx</code><sup>2</sup>) + (1/<code>yldyy</code><sup>2</sup>) - (1/<code>yldzz</code><sup>2</sup>)<br>
+2L = (1/<code>yldyz</code><sup>2</sup>)<br>
+2M = (1/<code>yldxz</code><sup>2</sup>)<br>
 2N = (1/<code>yldxy</code><sup>2</sup>)
 </blockquote>
 
-<p>The yield stress have to be selected such that the plastic potential is positive semidefinite. Analysis shows that all yield stress must satisfy:</p>
+<p>The &tau;<sub>yz</sub> and &tau;<sub>xz</sub> terms and their yield stresses are not needed for 2D analyses.</p>
+
+<p>The yield stress have to be selected such that the plastic potential is positive semidefinite. Analysis shows that all tensile yield stress must satisfy:</p>
 
 <blockquote>
 ( (1/<code>yldii</code><sup>2</sup>) - (1/<code>yldjj</code><sup>2</sup>) )<sup>2</sup> &le; 1/<code>yldkk</code><sup>2</sup>

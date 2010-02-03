@@ -171,7 +171,7 @@ Tensor *ZeroTensor(Tensor *t)
 	return t;
 }
 
-// get element of congtracted tensor by ID
+// get element of contracted tensor by ID
 double Tensor_i(Tensor *t,int contractedID)
 {
 	switch(contractedID)
@@ -244,6 +244,16 @@ double Tensor_ij(Tensor *t,int row,int col)
 	}
 }
 
+// Print vector to cout when debugging
+void PrintTensor(const char *label,Tensor *t)
+{	int i,lead=strlen(label);
+	for(i=0;i<lead;i++) cout << " ";
+	cout << "(" << t->xx << ", " << t->xy << "," << t->xz << ")" << endl;
+	cout << label << "(" << t->xy << ", " << t->yy << "," << t->yz << ")" << endl;
+	for(i=0;i<lead;i++) cout << " ";
+	cout << "(" << t->xz << ", " << t->yz << "," << t->zz << ")" << endl;
+}
+
 #ifdef MPM_CODE
 
 TensorAntisym *ZeroTensorAntisym(TensorAntisym *a)
@@ -252,5 +262,7 @@ TensorAntisym *ZeroTensorAntisym(TensorAntisym *a)
 }
 
 #endif
+
+
 
 
