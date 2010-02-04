@@ -33,6 +33,8 @@ class MeshInfo
 		void Output(int);
 		bool EdgeElement2D(int);
 		bool EdgeElement3D(int);
+		void ListOfNeighbors2D(int,int *);
+		void ListOfNeighbors3D(int,int *);
 		
 		// Accessors
 		void SetCartesian(int,double,double,double);

@@ -97,6 +97,7 @@ class ElementBase : public LinkedObject
 		virtual void GetShapeFunctionsAndGradients(int *,double *,int *,Vector *,Vector *,double *,double *,double *);
 		virtual void GimpCompact(int *,int *,double *,double *,double *,double *);
 		virtual bool OnTheEdge(void);
+		virtual void GetListOfNeighbors(int *);
 		virtual long NextNode(long);
         virtual int FindEdge(long,long);
         virtual long Neighbor(long);
