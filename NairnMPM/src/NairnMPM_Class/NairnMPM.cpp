@@ -1014,12 +1014,23 @@ void NairnMPM::RemoveRigidBCs(BoundaryCondition **firstBC,BoundaryCondition **la
 
 int NairnMPM::ResetElement(MPMBase *mpt)
 {
-    int i;
-	
     // check current element
     if(theElements[mpt->ElemID()]->PtInElement(mpt->pos)) return TRUE;
+	
+	// check neighbors if possible
+	int i=0,j,elemNeighbors[27];
+	theElements[mpt->ElemID()]->GetListOfNeighbors(elemNeighbors);
+	while(elemNeighbors[i]!=0)
+	{	j=elemNeighbors[i]-1;
+    	if(theElements[j]->PtInElement(mpt->pos))
+		{	if(theElements[j]->OnTheEdge()) return FALSE;
+			mpt->ChangeElemID(j);
+			return TRUE;
+		}
+		i++;
+    }
     
-    // check others
+    // if still not found, check all elements
     for(i=0;i<nelems;i++)
     {	if(theElements[i]->PtInElement(mpt->pos))
 		{	if(theElements[i]->OnTheEdge()) return FALSE;

@@ -30,6 +30,7 @@ class ElementBase3D : public ElementBase
 		virtual double GetDeltaZ(void);
 		virtual bool IntersectsBox(double,double,double,double,double);
 		virtual bool OnTheEdge(void);
+		virtual void GetListOfNeighbors(int *);
 };
 
 #endif

@@ -62,12 +62,14 @@ bool ElementBase3D::IntersectsBox(double xorig,double yorig,double xlength,doubl
 	return ElementBase::IntersectsBox(xorig,yorig,xlength,ylength,zslice);
 }
 
-#pragma mark ElementBase3D::OnTheEdge
-
 // check if this GIMP element is on the edge of the grid
 // assumes a generated 3D structured grid
 bool ElementBase3D::OnTheEdge(void)
 {	if(!useGimp) return FALSE;
 	return mpmgrid.EdgeElement3D(num);
 }
+
+// for structured grid, return 0-terminated list of neighbors
+void ElementBase3D::GetListOfNeighbors(int *theList) { mpmgrid.ListOfNeighbors3D(num,theList); }
+
 

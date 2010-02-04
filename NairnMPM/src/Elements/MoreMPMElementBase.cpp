@@ -425,7 +425,10 @@ long ElementBase::NextNode(long gridNode)
     return 0;
 }
 
-/* If needed, create the neighbors array */
+// for structured grid, return 0-terminated list of neighbors
+void ElementBase::GetListOfNeighbors(int *theList) { mpmgrid.ListOfNeighbors2D(num,theList); }
+
+// If needed, create the neighbors array (only down for 2D with cracks)
 void ElementBase::AllocateNeighborsArray(void)
 {	neighbors = new long[NumberSides()];
 	int i;
