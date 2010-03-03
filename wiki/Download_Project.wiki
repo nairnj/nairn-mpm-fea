@@ -33,6 +33,12 @@ These above steps only need to be done once. Once they are done, you can use `sv
 svn checkout https://nairn-mpm-fea.googlecode.com/svn/trunk/ nairn-mpm-fea --username YOURUSERNAME
 }}}
 
+or if SSL connection is not enabled, you can instead use
+
+{{{
+svn checkout http://nairn-mpm-fea.googlecode.com/svn/trunk/ nairn-mpm-fea --username YOURUSERNAME
+}}}
+
 Here `nairn-mpm-fea` is the name of the folder that will be created with the checked out code. You can use any name you want. Also `YOURUSERNAME` is the username you obtained in step #3 above. After giving this command, you will need to enter the password from step #3 to finish the checkout.
 
 Once you have the code, open the `index.html` file in the Documentation folder to learn how to compile all code, run calculations, and visualize the results.
