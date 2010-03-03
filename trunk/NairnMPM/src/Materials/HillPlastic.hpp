@@ -38,7 +38,7 @@ class HillPlastic : public AnisoPlasticity
 		virtual double GetF(MPMBase *,Tensor *,int);
 		virtual double GetF3D(MPMBase *,Tensor *);
 		virtual void GetDfDsigma(MPMBase *,Tensor *,int);
-		void HillPlastic::GetDfDsigma3D(MPMBase *,Tensor *);
+		virtual void GetDfDsigma3D(MPMBase *,Tensor *);
 		virtual double GetDfAlphaDotH(MPMBase *,int,Tensor *);
 		virtual void UpdatePlasticInternal(MPMBase *,int);
 		
