@@ -1149,7 +1149,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	
 		// element and mp properties
 		if(IsThreeD())
-		{	volume=theElements[mpm[p]->ElemID()]->GetVolume()/1000.;	// in cm^2
+		{	volume=theElements[mpm[p]->ElemID()]->GetVolume()/1000.;	// in cm^3
 			dcell = (minSize>0.) ? minSize : pow(volume,1./3.) ;
 		}
 		else

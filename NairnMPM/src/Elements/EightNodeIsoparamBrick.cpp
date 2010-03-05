@@ -1002,6 +1002,6 @@ int EightNodeIsoparamBrick::NumberNodes(void) { return 8; }
 
 // Get x-y area, z thickness, or volumne - all orthogonal brick
 double EightNodeIsoparamBrick::GetArea(void) { return (xmax-xmin)*(ymax-ymin); }
-double EightNodeIsoparamBrick::GetVolume(void) { return (xmax-xmin)*(ymax-ymin)*(ymax-ymin); }
-double EightNodeIsoparamBrick::GetThickness(void) { return ymax-ymin; }
+double EightNodeIsoparamBrick::GetVolume(void) { return (xmax-xmin)*(ymax-ymin)*(zmax-zmin); }
+double EightNodeIsoparamBrick::GetThickness(void) { return zmax-zmin; }
 
