@@ -14,6 +14,9 @@
 MPMBase **mpm;		// list of material points
 long nmpms=0;		// number of material points
 
+// class statics
+int MPMBase::currentParticleNum=0;
+
 #pragma mark MPMBase::Constructors and Destructors
 
 // Constructors
@@ -251,9 +254,8 @@ void MPMBase::FullStrainUpdate(double strainTime,int secondPass,int np)
     NodalPoint::GetGridVelocitiesForStrainUpdate();			// velocities needed for strain update
 	
 	// loop over particles
-    long p;
-	for(p=0;p<nmpms;p++)
-		mpm[p]->UpdateStrain(strainTime,secondPass,np);
+	for(MPMBase::currentParticleNum=0;MPMBase::currentParticleNum<nmpms;MPMBase::currentParticleNum++)
+		mpm[MPMBase::currentParticleNum]->UpdateStrain(strainTime,secondPass,np);
 }
 
 

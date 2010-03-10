@@ -35,7 +35,9 @@ class AnisoPlasticity : public Orthotropic
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
 		virtual double SolveForLambda(MPMBase *mptr,int,double,Tensor *);
-		virtual bool LambdaConverged(int,double,double);
+		virtual double GetFkFromLambdak(MPMBase *,Tensor *,Tensor *,double,int);
+		virtual void GetDfCdf(MPMBase *,Tensor *,int);
+		virtual void UpdateStress(Tensor *,Tensor *,double,int);
  		
 		// subclass must provide platic potential functions
 		virtual void UpdateTrialAlpha(MPMBase *,int) = 0;
@@ -50,6 +52,7 @@ class AnisoPlasticity : public Orthotropic
 		double syxxred2,syyyred2,syzzred2,tyyzred2,tyxzred2,tyxyred2;		// equal to 1/yield^2 and reduced
 		double dfdsxx,dfdsyy,dfdszz,dfdtyz,dfdtxz,dfdtxy;
 		double dfdsxxrot,dfdsyyrot,dfdszzrot,dfdtyzrot,dfdtxzrot,dfdtxyrot;
+		double Cdfxx,Cdfyy,Cdfzz,Cdfyz,Cdfxz,Cdfxy,dfCdf;
 		double cos2t,sin2t,costsint;										// 2D rotation terms calculated once per step
 		double rzyx[6][6];													// 3D rotation matrix calcualted once per step
 

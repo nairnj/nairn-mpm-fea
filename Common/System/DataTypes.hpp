@@ -126,7 +126,9 @@ double DotVectors(Vector *,Vector *);
 double DotVectors2D(Vector *,Vector *);
 void PrintVector(const char *,Vector *);
 
-Tensor *ZeroTensor(Tensor *t);
+Tensor *ZeroTensor(Tensor *);
+Tensor *AddTensor(Tensor *,Tensor *);
+Tensor *ScaleTensor(Tensor *,double);
 double Tensor_i(Tensor *,int);
 double Tensor_ij(Tensor *,int,int);
 void PrintTensor(const char *,Tensor *);
