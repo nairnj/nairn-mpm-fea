@@ -516,9 +516,9 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	// update internal variables
 	UpdatePlasticInternal(mptr,np);
 	
-	if(MPMBase::currentParticleNum==keyParticle)
-	{	cout << "#   lam = " << lambda << ", cum ep = " << mptr->GetHistoryDble() << endl;
-	}
+	//if(MPMBase::currentParticleNum==keyParticle)
+	//{	cout << "#   lam = " << lambda << ", cum ep = " << mptr->GetHistoryDble() << endl;
+	//}
 }
 
 #pragma mark AnisoPlasticity::Custom Methods
