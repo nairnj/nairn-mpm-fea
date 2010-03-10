@@ -40,6 +40,9 @@ class MPMBase : public LinkedObject
 		// dynamic transport data
 		TemperatureField *pTemp;
 		DiffusionField *pDiffusion;
+	
+		// static variables
+		static int currentParticleNum;			// zero based particle number in some loops
                
         // constructors and destructors and other intializers
         MPMBase();

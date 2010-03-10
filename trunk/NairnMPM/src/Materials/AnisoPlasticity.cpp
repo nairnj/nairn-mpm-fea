@@ -16,7 +16,7 @@
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Exceptions/CommonException.hpp"
 
-static int allElastic=TRUE;
+#include "NairnMPM_Class/NairnMPM.hpp"
 
 #pragma mark AnisoPlasticity::Constructors and Destructors
 
@@ -436,26 +436,10 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 		return; 
     }
     
-	if(allElastic)
-	{	cout << "begin plastic " << ftrial << endl;
-		PrintTensor("stk = ",&stk);
-		allElastic=FALSE;
-		
-		int i,j;
-		cout << endl;
-		for(i=0;i<6;i++)
-		{	for(j=0;j<6;j++)
-				cout << rzyx[i][j] << " ";
-			cout << endl;
-		}
-		cout << endl;
-		for(i=0;i<6;i++)
-		{	for(j=0;j<6;j++)
-			cout << mdm[i][j] << " ";
-			cout << endl;
-		}
-		cout << endl;
-	}
+	//int keyParticle=-1;
+	//if(MPMBase::currentParticleNum==keyParticle)
+	//{	cout << "# STEP " << fmobj->mstep << ", f = " << ftrial << endl;
+	//}
 	
 	// Find  lambda for this plastic state
 	// Base class finds it numerically, subclass can override if solvable
@@ -531,87 +515,190 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	
 	// update internal variables
 	UpdatePlasticInternal(mptr,np);
+	
+	if(MPMBase::currentParticleNum==keyParticle)
+	{	cout << "#   lam = " << lambda << ", cum ep = " << mptr->GetHistoryDble() << endl;
+	}
 }
 
 #pragma mark AnisoPlasticity::Custom Methods
 
 // Solve numerically for lambda
 // Subclasses can override for alternative solution if possible
-// Ouptut is lambdak, final stress, final df, final alpha
-double AnisoPlasticity::SolveForLambda(MPMBase *mptr,int np,double fk,Tensor *stk)
+// Ouptut is lambdak, final df, final alpha
+double AnisoPlasticity::SolveForLambda(MPMBase *mptr,int np,double ftrial,Tensor *strial)
 {
-	double lambdak=0.;
-	int step=1;
-	Tensor strial=*stk;
+	// step 0 = stress is strial, alpha is previous alpha
+	GetDfCdf(mptr,strial,np);								// find df/dsigma
+	double lambda2=ftrial/(dfCdf + GetDfAlphaDotH(mptr,np,strial));
+	double lambdaInitial=lambda2;
 	
-	// cout << "# initial f " << fk << endl;
-	double Cdfxx,Cdfyy,Cdfzz,Cdfyz=0.,Cdfxz=0.,Cdfxy,dfCdf;
+	// find df/dsigma and -h at this initial guessed stress rather than at strial as above
+	Tensor stk;
+	UpdateStress(strial,&stk,lambda2,np);
+	GetDfCdf(mptr,&stk,np);
+	UpdateStress(strial,&stk,lambda2,np);			// second pass might help
+	GetDfCdf(mptr,&stk,np);
+	
+	// Find f using new slopes at lambda1
+	UpdateTrialAlpha(mptr,np,lambda2);
+	double f2=GetF(mptr,&stk,np);
+	
+	// pick second lambda that is lower
+	double lambda1=0.5*lambda2;
+	double f1=GetFkFromLambdak(mptr,strial,&stk,lambda1,np);
+	
+	//if(MPMBase::currentParticleNum==5018) cout << "# initial (lambda1,f1) = (" << lambda1 << "," << f1 << ") and (lambda2,f2) = (" << lambda2 << "," << f2 << ")" << endl;
+	
+	// bracket the solution
+	int step=1;
 	while(true)
-	{	// For current values
-		GetDfDsigma(mptr,stk,np);
-		double dfdAlpha=GetDfAlphaDotH(mptr,np,stk);
-
-		// get df/dlam = - ( df C df + dfa h )
-		if(np==THREED_MPM)
-		{	Cdfxx = mdm[0][0]*dfdsxx+mdm[0][1]*dfdsyy+mdm[0][2]*dfdszz+mdm[0][3]*dfdtyz+mdm[0][4]*dfdtxz+mdm[0][5]*dfdtxy;
-			Cdfyy = mdm[1][0]*dfdsxx+mdm[1][1]*dfdsyy+mdm[1][2]*dfdszz+mdm[1][3]*dfdtyz+mdm[1][4]*dfdtxz+mdm[1][5]*dfdtxy;
-			Cdfzz = mdm[2][0]*dfdsxx+mdm[2][1]*dfdsyy+mdm[2][2]*dfdszz+mdm[2][3]*dfdtyz+mdm[2][4]*dfdtxz+mdm[2][5]*dfdtxy;
-			Cdfyz = mdm[3][0]*dfdsxx+mdm[3][1]*dfdsyy+mdm[3][2]*dfdszz+mdm[3][3]*dfdtyz+mdm[3][4]*dfdtxz+mdm[3][5]*dfdtxy;
-			Cdfxz = mdm[4][0]*dfdsxx+mdm[4][1]*dfdsyy+mdm[4][2]*dfdszz+mdm[4][3]*dfdtyz+mdm[4][4]*dfdtxz+mdm[4][5]*dfdtxy;
-			Cdfxy = mdm[5][0]*dfdsxx+mdm[5][1]*dfdsyy+mdm[5][2]*dfdszz+mdm[5][3]*dfdtyz+mdm[5][4]*dfdtxz+mdm[5][5]*dfdtxy;
-			dfCdf = dfdsxx*Cdfxx + dfdsyy*Cdfyy + dfdszz*Cdfzz + dfdtyz*Cdfyz + dfdtxz*Cdfxz + dfdtxy*Cdfxy;
-		}
-		else
-		{	Cdfxx = mdm[1][1]*dfdsxx + mdm[1][2]*dfdsyy + mdm[1][3]*dfdtxy;
-			Cdfyy = mdm[1][2]*dfdsxx + mdm[2][2]*dfdsyy + mdm[2][3]*dfdtxy;
-			Cdfxy = mdm[1][3]*dfdsxx + mdm[2][3]*dfdsyy + mdm[3][3]*dfdtxy;
-			Cdfzz = 0.;
-			dfCdf = dfdsxx*Cdfxx + dfdsyy*Cdfyy + dfdtxy*Cdfxy;
-			if(np==PLANE_STRAIN_MPM)
-			{	Cdfzz = mdm[4][1]*dfdsxx + mdm[4][2]*dfdsyy + mdm[4][3]*dfdtxy + mdm[4][4]*dfdszz;
-				dfCdf += dfdszz*Cdfzz;
+	{	if(f1*f2<0.) break;
+		if(fabs(f1)<fabs(f2))
+		{	lambda1+=1.6*(lambda1-lambda2);
+			if(lambda1>0.)
+				f1=GetFkFromLambdak(mptr,strial,&stk,lambda1,np);
+			else
+			{	f1=ftrial;
+				lambda1=0.;
 			}
 		}
-		double dfdlam = - (dfCdf + dfdAlpha);
-			
-		// increment lambda and alpha
-		double delLam = -fk/dfdlam;
-		lambdak += delLam;
-		UpdateTrialAlpha(mptr,np,lambdak);
-			
-		// update stk and get new fk
-		stk->xx = strial.xx - lambdak*Cdfxx;
-		stk->yy = strial.yy - lambdak*Cdfyy;
-		stk->xy = strial.xy - lambdak*Cdfxy;
-		if(np==PLANE_STRAIN_MPM)
-			stk->zz = strial.zz - lambdak*Cdfzz;
-		else if(np==THREED_MPM)
-		{	stk->zz = strial.zz - lambdak*Cdfzz;
-			stk->yz = strial.yz - lambdak*Cdfyz;
-			stk->xz = strial.xz - lambdak*Cdfxz;
+		else
+		{	lambda2+=1.6*(lambda2-lambda1);
+			f2=GetFkFromLambdak(mptr,strial,&stk,lambda2,np);
 		}
 		
-		//cout << "# ......" << step << "," << lambdak << "," << GetF(mptr,stk,np) << endl;
-		
-		// check for convergence
-		if(LambdaConverged(step++,lambdak,delLam)) break;
-		
-		// new f
-		fk=GetF(mptr,stk,np);
+		// if fails to bracket in 50 tries, return with single step solution
+		step++;
+		if(step>50)
+		{	//if(MPMBase::currentParticleNum==5018) cout << "# Failed to bracket solution" << endl;
+			GetDfCdf(mptr,strial,np);
+			UpdateStress(strial,&stk,lambdaInitial,np);
+			GetDfCdf(mptr,&stk,np);
+			UpdateTrialAlpha(mptr,np,lambdaInitial);
+			return lambdaInitial;
+		}
 	}
 	
-	// get final derivatives
-	GetDfDsigma(mptr,stk,np);
+	//if(MPMBase::currentParticleNum==5018) cout << "# bracketed (lambda1,f1) = (" << lambda1 << "," << f1 << ") and (lambda2,f2) = (" << lambda2 << "," << f2 << "), steps = " << step << endl;
+	
+	// order solutions so f1<0
+	if(f1>0.)
+	{	double ftemp=f1;
+		double lambdatemp=lambda1;
+		f1=f2;
+		lambda1=lambda2;
+		f2=ftemp;
+		lambda2=lambdatemp;
+	}
+	
+	// set up
+	double lambdak=0.5*(lambda1+lambda2);				// initial guess
+	double dxold=fabs(lambda2-lambda1);					// the step size before last
+	double dx=dxold;									// the last step sie
+	
+	// initial guess
+	double fk=GetFkFromLambdak(mptr,strial,&stk,lambdak,np);
+	double dfkdlam=-(dfCdf + GetDfAlphaDotH(mptr,np,&stk));
+	
+	// Loop
+	step=1;
+	while(true)
+	{	// if out of range, or not decreasing fast enough, use bisection method
+		if((((lambdak-lambda2)*dfkdlam-fk)*((lambdak-lambda1)*dfkdlam-fk) >= 0.0)
+		   || (fabs(2.0*fk) > fabs(dxold*dfkdlam)))
+		{	dxold=dx;
+			dx=0.5*(lambda2-lambda1);
+			lambdak=lambda1+dx;
+		}
+		else
+		{	dxold=dx;
+			dx=fk/dfkdlam;
+			lambdak-=dx;
+		}
+		
+		// convergence check
+		if(step++>20 || fabs(dx/lambdak)<0.001) break;
+		
+		// next value
+		fk=GetFkFromLambdak(mptr,strial,&stk,lambdak,np);
+		dfkdlam=-(dfCdf + GetDfAlphaDotH(mptr,np,&stk));
+		
+		// maintain the bracket
+		if(fk<0.0)
+		{	lambda1=lambdak;
+			f1=fk;
+		}
+		else
+		{	lambda2=lambdak;
+			f2=fk;
+		}
+		
+		//if(MPMBase::currentParticleNum==5018) cout << "# ..." << step << "," << lambdak << "," << fk << endl;
+	}
+	
+	// output df (from initial setting of GetDfCdf()), alpha (here with latest lambda), and lamda (the return vale)
+	UpdateTrialAlpha(mptr,np,lambdak);
+	
+	//UpdateStress(strial,&stk,lambdak,np);
+	//if(MPMBase::currentParticleNum==5018) cout << "# ..." << step << "," << lambdak << "," << GetF(mptr,&stk,np) << endl;
 	
 	return lambdak;
 }
 
-// decide if the numerical solution for lambda had converged
-// subclass can override to change convergence rules
-bool AnisoPlasticity::LambdaConverged(int step,double lambda,double delLam)
+// Find C.df and df.C.df at given stress - stored in material variables active only during the loop
+void AnisoPlasticity::GetDfCdf(MPMBase *mptr,Tensor *stk,int np)
 {
-	if(step>20 || fabs(delLam/lambda)<0.001) return true;
-	return false;
+	// get C df and df C df, which need df/dsig (Function of yield criteria, and normally only current stress in stk)
+	GetDfDsigma(mptr,stk,np);
+	if(np==THREED_MPM)
+	{	Cdfxx = mdm[0][0]*dfdsxx+mdm[0][1]*dfdsyy+mdm[0][2]*dfdszz+mdm[0][3]*dfdtyz+mdm[0][4]*dfdtxz+mdm[0][5]*dfdtxy;
+		Cdfyy = mdm[1][0]*dfdsxx+mdm[1][1]*dfdsyy+mdm[1][2]*dfdszz+mdm[1][3]*dfdtyz+mdm[1][4]*dfdtxz+mdm[1][5]*dfdtxy;
+		Cdfzz = mdm[2][0]*dfdsxx+mdm[2][1]*dfdsyy+mdm[2][2]*dfdszz+mdm[2][3]*dfdtyz+mdm[2][4]*dfdtxz+mdm[2][5]*dfdtxy;
+		Cdfyz = mdm[3][0]*dfdsxx+mdm[3][1]*dfdsyy+mdm[3][2]*dfdszz+mdm[3][3]*dfdtyz+mdm[3][4]*dfdtxz+mdm[3][5]*dfdtxy;
+		Cdfxz = mdm[4][0]*dfdsxx+mdm[4][1]*dfdsyy+mdm[4][2]*dfdszz+mdm[4][3]*dfdtyz+mdm[4][4]*dfdtxz+mdm[4][5]*dfdtxy;
+		Cdfxy = mdm[5][0]*dfdsxx+mdm[5][1]*dfdsyy+mdm[5][2]*dfdszz+mdm[5][3]*dfdtyz+mdm[5][4]*dfdtxz+mdm[5][5]*dfdtxy;
+		dfCdf = dfdsxx*Cdfxx + dfdsyy*Cdfyy + dfdszz*Cdfzz + dfdtyz*Cdfyz + dfdtxz*Cdfxz + dfdtxy*Cdfxy;
+	}
+	else
+	{	Cdfxx = mdm[1][1]*dfdsxx + mdm[1][2]*dfdsyy + mdm[1][3]*dfdtxy;
+		Cdfyy = mdm[1][2]*dfdsxx + mdm[2][2]*dfdsyy + mdm[2][3]*dfdtxy;
+		Cdfxy = mdm[1][3]*dfdsxx + mdm[2][3]*dfdsyy + mdm[3][3]*dfdtxy;
+		dfCdf = dfdsxx*Cdfxx + dfdsyy*Cdfyy + dfdtxy*Cdfxy;
+		if(np==PLANE_STRAIN_MPM)
+		{	Cdfzz = mdm[4][1]*dfdsxx + mdm[4][2]*dfdsyy + mdm[4][3]*dfdtxy + mdm[4][4]*dfdszz;
+			dfCdf += dfdszz*Cdfzz;
+		}
+		else
+			Cdfzz=0.;
+	}
 }
 
+// Update stress (assumes Cdfij calculated before)
+void AnisoPlasticity::UpdateStress(Tensor *strial,Tensor *stk,double lambda,int np)
+{
+	stk->xx = strial->xx - lambda*Cdfxx;
+	stk->yy = strial->yy - lambda*Cdfyy;
+	stk->xy = strial->xy - lambda*Cdfxy;
+	if(np==PLANE_STRAIN_MPM)
+		stk->zz = strial->zz - lambda*Cdfzz;
+	else if(np==THREED_MPM)
+	{	stk->zz = strial->zz - lambda*Cdfzz;
+		stk->yz = strial->yz - lambda*Cdfyz;
+		stk->xz = strial->xz - lambda*Cdfxz;
+	}
+}
+
+// Given stress and lambda, find f (also find the stress and return dfCdf)
+double AnisoPlasticity::GetFkFromLambdak(MPMBase *mptr,Tensor *strial,Tensor *stk,double lambda,int np)
+{
+	// Change stress to new value based on strial, lambda, and previous slope
+	UpdateStress(strial,stk,lambda,np);
+	
+	// update alpha using new lambda and -h from most recent GetDfDsigma()
+	UpdateTrialAlpha(mptr,np,lambda);
+	
+	// update fk using new stress and alpha
+	return GetF(mptr,stk,np);
+}
 

@@ -259,21 +259,52 @@ where
 \end{equation}
 Setting the new $f$ to zero to land on the yield surface, this equation can be solved for $\lambda$ and thus solved to partition the strain increment into elastic and plastic strain. The solution is
 \begin{equation}
-        \lambda = { f_{trial}   \over  \df\cdot \C\df + \dfa \cdot \vec h }
+        \lambda = { f_{trial}   \over  \df\cdot \C\df + \dfa \cdot \vec h }     \label{lambdaInitial}
 \end{equation}
 
-For larger increments or more accurate solution, the problem can be solved iteratively by Newton's method. Initialize with
-\begin{equation}
-        \lambda^{(0)} = 0, \qquad  \da^{0}=0, \qquad f^{(0)}=f_{trial}
-\end{equation}
-and then iterate using:
+For larger increments or more accurate solution, the problem can be solved iteratively by Newton's method with bracketing. The following method is only used in the code for anisotropic materials because special case results that seem to work well for isotropic materials are given below. Here is method used for anisotropic materials.
+
+\begin{enumerate}
+
+\item Find an initial guess for $\lambda^{(2)}=\lambda$ from the Eq.~(\ref{lambdaInitial}) where $\df$ and $\vec h$ are found from ${\vec\s{trial}}$ or stress when $\lambda=0$ and $\dfa$ is found from initial $\alpha$.
+
+\item Update stress at initial guess in two steps
 \begin{eqnarray}
-        f^{(k)} & = &  f(\vec\s{} + \C \deff - \lambda^{(k)}\C\df(\lambda^{(k)}),\vec\alpha^{(k)} -\lambda^{(k)} \vec h,\dots)  \\
-        {df^{(k)}\over d\lambda} & = & -\left( \df(\lambda^{(k)})\cdot \C\df(\lambda^{(k)}) + \dfa(\lambda^{(k)}) \cdot \vec h\right) \\
-        \lambda^{(k+1)} & = & \lambda^{(k)} - {f^{(k)} \over {df^{(k)}/ d\lambda} } \\
-        \vec\alpha^{(k+1)} & = & \vec\alpha^{0} -  \lambda^{(k+1)} \vec h
+      {\vec\s{}}^{(1)} & = & {\vec\s{trial}} - \lambda^{(2)}\C\df({\vec\s{trial}}) \\
+      {\vec\s{}}^{(2)} & = & {\vec\s{trial}} - \lambda^{(2)}\C\df({\vec\s{}}^{(1)}) 
 \end{eqnarray}
-Continue iteration until convergence.
+
+\item Find new $\df$ and $\vec h$ using ${\vec\s{}}^{(2)}$ followed by calculation of $f_2$ corresponding to $\lambda_2$:
+\begin{equation}
+     f^{(2)} =  f({\vec\s{}}^{(2)},\alpha^{(0)} - \lambda^{(2)} \vec h({\vec\s{}}^{(2)}),\dots)
+\end{equation}
+
+\item Pick a lower $\lambda$ and calculate $f$:
+\begin{eqnarray}
+     \lambda^{(1)} & = & {\lambda^{(2)}\over 2} \\
+      {\vec\s{}}^{(1)} & = & {\vec\s{trial}} - \lambda^{(1)}\C\df({\vec\s{}}^{(2)}) \\
+     f^{(1)} & = &  f({\vec\s{}}^{(1)},\alpha^{(0)} - \lambda^{(1)} \vec h({\vec\s{}}^{(2)}),\dots)
+\end{eqnarray}
+
+\item Expand the interval $\lambda^{(1)}$ to $\lambda^{(2)}$ as needed until it brackets a solution for $f=0$. The code follows {\tt zbrac()} in ``Numerical Recipes in C'' (page 260). Whenever need new value for $f$, use:
+\begin{eqnarray}
+      {\vec\s{}}^{(k)} & = & {\vec\s{trial}} - \lambda^{(k)}\C\df({\vec\s{}}^{(2)}) \\
+     f^{(k)} & = &  f({\vec\s{}}^{(k)},\alpha^{(0)} - \lambda^{(k)} \vec h({\vec\s{}}^{(2)}),\dots)
+\end{eqnarray}
+In other words, use the slopes calculated in step 3 above throughout the calculation. Attempts to recalculate the slope on each step tended to cause problems. If the bracketing fails, return the initial $\lambda$ from step 1 as an approximate result.
+
+\item Solve for $\lambda$ using Newton-Raphson method with derivatives and bracketing following {\tt rtsafe()} in ``Numerical Recipes in C'' (page 273). Whenever needed, find $f$ and its derivative from
+\begin{eqnarray}
+      {\vec\s{}}^{(k)} & = & {\vec\s{trial}} - \lambda^{(k)}\C\df({\vec\s{}}^{(2)}) \\
+      \alpha^{(k)} & = & \alpha^{(0)} - \lambda^{(k)} \vec h({\vec\s{}}^{(2)}) \\
+      f^{(k)} & = &  f({\vec\s{}}^{(k)},\alpha^{(k)} ,\dots)  \\
+      {df^{(k)}\over d\lambda} & = & -\left( \df({\vec\s{}}^{(2)})\cdot \C\df({\vec\s{}}^{(2)}) + \dfa(\alpha^{(k)}) \cdot \vec h({\vec\s{}}^{(2)})\right) 
+\end{eqnarray}
+Again, the key slopes are found from the initial stress guess in ${\vec\s{}}^{(2)}$. Attempts to update slopes as solution proceeds were less stable and also slower. It might be possible to update slopes after solution, re-bracket the solution and repeat, but it may not improve accuracy much.
+
+\item Continue until convergence.
+
+\end{enumerate}
 
 \subsection{$J_2$ Flow Theory for Isotropic Materials}
 
@@ -658,9 +689,9 @@ The specific stress increments are
 
 \subsection{Quadratic Hill Criterion}
 
-The quadratic Hill yield criterion can implement anisotropic plasticity and hardening terms can be added to include aniostropic hardening as well. For 2D plane strain analysis, one version of Hill yield function with arbitraty hardening function (defined later) reduces to:
+The quadratic Hill yield criterion can implement anisotropic plasticity and hardening terms can be added to include aniostropic hardening as well. For 2D plane strain analysis, one version of Hill yield function with arbitrary hardening function (defined later) reduces to:
 \begin{eqnarray}
-          f & = & \sqrt{F\left(\overline{\s{yy}}- \s{zz}\right)^2 + G\left(\overline{\s{xx}}- \overline{\s{zz}}\right)^2
+          f & = & \sqrt{F\left(\overline{\s{yy}}- \overline{\s{zz}}\right)^2 + G\left(\overline{\s{xx}}- \overline{\s{zz}}\right)^2
                + H\left(\overline{\s{yy}}- \overline{\s{xx}}\right)^2 +2L\overline{\t{yz}}^2 +2M\overline{\t{xz}}^2
                  +2N\overline{\t{xy}}^2}
   \nonumber\\

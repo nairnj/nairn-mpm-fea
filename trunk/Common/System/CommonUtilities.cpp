@@ -171,6 +171,32 @@ Tensor *ZeroTensor(Tensor *t)
 	return t;
 }
 
+// add tensor toadd to tensor t and return pointer to changed t
+Tensor *AddTensor(Tensor *t,Tensor *toadd)
+{	t->xx+=toadd->xx;
+	t->yy+=toadd->yy;
+	t->zz+=toadd->zz;
+#ifdef MPM_CODE
+	t->yz+=toadd->yz;
+	t->xz+=toadd->xz;
+#endif
+	t->xy+=toadd->xy;
+	return t;
+}
+
+// scale tensor t and return pointer to changed t
+Tensor *ScaleTensor(Tensor *t,double scale)
+{	t->xx*=scale;
+	t->yy*=scale;
+	t->zz*=scale;
+#ifdef MPM_CODE
+	t->yz*=scale;
+	t->xz*=scale;
+#endif
+	t->xy*=scale;
+	return t;
+}
+
 // get element of contracted tensor by ID
 double Tensor_i(Tensor *t,int contractedID)
 {
