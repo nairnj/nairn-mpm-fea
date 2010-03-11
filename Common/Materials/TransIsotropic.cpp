@@ -200,7 +200,9 @@ const char *TransIsotropic::VerifyProperties(int np)
 void TransIsotropic::LoadMechanicalProps(MPMBase *mptr,int np)
 {
 	if(np!=THREED_MPM)
-		LoadMechProps(TRUE,mptr->GetRotationZ(),np);
+	{	LoadMechProps(TRUE,mptr->GetRotationZ(),np);
+		return;
+	}
 	
 	double z=mptr->GetRotationZ();
 	double cz=cos(z);
