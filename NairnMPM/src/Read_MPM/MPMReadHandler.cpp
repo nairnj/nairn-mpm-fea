@@ -36,6 +36,7 @@
 #include "Cracks/CrackSegment.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Materials/RigidMaterial.hpp"
+#include "Custom_Tasks/PropagateTask.hpp"
 
 // Element types
 #include "Elements/FourNodeIsoparam.hpp"
@@ -364,6 +365,12 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             }
             delete [] aName;
         }
+    }
+    
+    else if(strcmp(xName,"PropagateLength")==0)
+	{	ValidateCommand(xName,CRACKHEADER,ANY_DIM);
+    	input=DOUBLE_NUM;
+        inputPtr=(char *)&PropagateTask::cellsPerPropagationStep;
     }
     
     else if(strcmp(xName,"MovePlane")==0)

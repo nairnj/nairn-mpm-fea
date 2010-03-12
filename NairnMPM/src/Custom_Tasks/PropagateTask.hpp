@@ -22,6 +22,9 @@ class PropagateTask : public CustomTask
         int doPropCalcs,theResult;
         double totalPlastic,totalPotential;
         
+		// static variables
+		static double cellsPerPropagationStep;
+	
         // constructors and destructors
         PropagateTask();
                 
@@ -39,6 +42,7 @@ class PropagateTask : public CustomTask
         
     private:
         bool arrested;
+		
 };
 
 extern PropagateTask *propagateTask;

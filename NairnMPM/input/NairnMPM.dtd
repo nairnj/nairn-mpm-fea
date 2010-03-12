@@ -24,7 +24,7 @@
 			| Diffusion | StressFreeTemp | FirstArchiveTime | GIMP | LeaveLimit | MultiMaterialMode )*>
 
 <!ELEMENT	Cracks
-			( Friction | Propagate | JContour | MovePlane | ContactPosition )*>
+			( Friction | Propagate | JContour | MovePlane | ContactPosition | PropagateLength )*>
 			
 <!ELEMENT	MultiMaterialMode
 			( Friction | ContactPosition )*>
@@ -257,6 +257,7 @@
 <!ATTLIST	MovePlane
 			type (cm|CM|avg|Avg|AVG) #IMPLIED>
 <!ELEMENT	ContactPosition (#PCDATA)>
+<!ELEMENT	PropagateLength (#PCDATA)>
 <!ELEMENT	JContour EMPTY>
 <!ATTLIST	JContour
 			type CDATA #REQUIRED

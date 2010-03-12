@@ -16,8 +16,9 @@
 #include "Cracks/CrackSegment.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 
-// global
+// globals
 PropagateTask *propagateTask=NULL;
+double PropagateTask::cellsPerPropagationStep=0.5;
 
 #pragma mark Constructors and Destructors
 
@@ -38,6 +39,7 @@ CustomTask *PropagateTask::Initialize(void)
 {
     nextPropTime=propTime;
     cout << "Crack propagation activated." << endl;
+	cout << "   Crack growth by steps = " << cellsPerPropagationStep <<"*(cell size)" << endl;
     return nextTask;
 }
 
@@ -108,8 +110,8 @@ CustomTask *PropagateTask::StepCalculation(void)
                         cSize=theElements[tipElem]->xmax-theElements[tipElem]->xmin;
                     else
                         cSize=theElements[tipElem]->ymax-theElements[tipElem]->ymin;
-                    grow.x=0.5*cSize*tipDir.x;
-                    grow.y=0.5*cSize*tipDir.y;
+                    grow.x=cellsPerPropagationStep*cSize*tipDir.x;
+                    grow.y=cellsPerPropagationStep*cSize*tipDir.y;
                     growTo.x=crkTip->x+grow.x;
                     growTo.y=crkTip->y+grow.y;
 					cout << "# propagation at t=" << 1000*mtime << " with J=Jtip+Jzone : " << crkTip->Jint.z <<
