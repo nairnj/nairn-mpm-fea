@@ -45,6 +45,7 @@ This section defines many MPM analysis parameters; it is required for NairnMPM a
     &lt;/MultimaterialMode&gt;
     &lt;<a href="#cracks"><code>Cracks</code></a>&gt;
         &lt;<a href="#propagate"><code>Propagate</code></a> criterion='1' direction='0' traction='0'/&gt;
+        &lt;<a href="#propagatelength"><code>PropagateLength</code></a>&gt;2.5&lt;/PropagateLength&gt;
         &lt;<a href="#jcontour"><code>JContour</code></a> type='1' size=&quot;2&quot; terms=&quot;1&quot;/&gt;
         &lt;<a href="#friction"><code>Friction</code></a>&gt;0.3&lt;/Friction&gt;
         &lt;<a href="#moveplane"><code>MovePlane</code></a> type='avg'/&gt;
@@ -265,6 +266,10 @@ By default, cracks propagate as new, traction-free crack surfaces. The traction 
 <br>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;See <a href="definematl.html">information on materials</a> to set crack propagation properties such as K<sub>Ic</sub>, K<sub>IIc</sub>, K<sub>I</sub> exponent p, K<sub>II</sub> exponent q, J<sub>Ic</sub>, initiation time, crack speed, maximum crack length, <i>etc.</i>, and to create traction-law materials. Note that all criteria are based on materials with isotropic toughness properties (same toughness in all directions). The material may have anisotropic mechanical properties, but anisotropy in toughness is not yet modeled.</dd>
+  
+  <dt><a name="propagatelength"></a>&lt;PropagateLength&gt;2.5&lt;/PropagateLength&gt;</dt>
+  <dd>When <a href="#propagate">propagation is activated</a>, the crack tip propagates whenever the current <a href="#propagate">fracture criterion</a> is reached. This command determines how far the crack propagates enter relative to cell dimensions. The default setting is 0.5, or half an element per propagation increment. This setting often works well, but during impact conditions, it may not be enough. If the crack growth is too low, the critical conditions will still be exceeded and may actually grow beyond acceptable limits for the current material (<i>e.g.</i>, <code>J</code> can greatly exceed <code>J<sub>c</sub></code>). Using a higher propagation length can help such problems. It moves the current crack tip out of the current stress concentration and it waits there for stress to build up again resulting in more stable crack growth. This setting should not be too high, however, because it will eventually cause artifacts and erratic crack growth.
+  </dd>
   
   <dt><a name="jcontour"></a>&lt;JContour type='1' size=&quot;2&quot; terms=&quot;1&quot;/&gt;</dt>
   <dd>Determines the path used for J-Integral calculations. The current code always draws a contour along grid lines of the mesh and all local grid lines must be parallel to x or y axes. In the future the <code>type</code> attribute may allow other types of contours. The <code>size</code> attribute determines size of the contour path. It is the number of elements from the nearest node to the crack tip to the path in all directions. The <code>terms</code> attribute must be 1 or 2 where 1 means contour integral only and 2 means an additional term that integrates over the area within the contour. The extra term is needed for true path independence of J calculations. The second terms of usually small when the <code>size</code> is small (&lt;3), but it can be important if <code>size</code> gets large. (Default values: <code>type</code>=1, <code>size</code>=2, <code>terms</code>=1)</dd>
