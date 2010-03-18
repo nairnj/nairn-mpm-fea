@@ -104,7 +104,7 @@
 			np CDATA #REQUIRED>
 
 <!ELEMENT	BMP
-			( Origin?, Intensity+ )>
+			( Origin | Intensity | RotateX | RotateY | RotateZ | Unrotate)*>
 <!ATTLIST	BMP
 			units CDATA #IMPLIED
 			name CDATA #REQUIRED

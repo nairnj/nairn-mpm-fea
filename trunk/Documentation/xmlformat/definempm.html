@@ -78,6 +78,8 @@ The other uses one or more commands that generate the material points. Both thes
          &lt;Concentration&gt;0&lt;/Concentration&gt;
       &lt;/Intensity&gt;
       &lt;Intensity imin='0' imax='255' minAngle='0' maxAngle='90'/&gt;
+      &lt;RotateZ&gt;20&lt;/RotateZ&gt;
+      &lt;RotateY&gt;atan(y/x)*180/3.14159&lt;/RotateY&gt;
    &lt;/BMP&gt;
 &lt;/MaterialPoints&gt;
 </pre>
@@ -144,9 +146,9 @@ duplication of points at the same location when mixing <code>&lt;PointList&gt;</
 potential will all be zero, the thickness (if 2D) will be 1 mm, and the temperature will be equal to
 the <a href="mpmheader.html#stressfreetemp">stress-free temperature</a>.</dd>
 
-<dt>&lt;RotateZ&gt;20&lt;/RotateZ&gt;, &lt;RotateY&gt;y-z&lt;/RotateY&gt;, <code>&lt;RotateX&gt;45&lt;/RotateX&gt;</code></dt>
+<dt><a name="rotatezyx"></a>&lt;RotateZ&gt;20&lt;/RotateZ&gt;, &lt;RotateY&gt;y-z&lt;/RotateY&gt;, <code>&lt;RotateX&gt;45&lt;/RotateX&gt;</code></dt>
 <dd>These commands are to rotate the material axes in the current <code>&lt;Body&gt;</code> to orient anistropic materials in their initial configuration.
-You apply rotations in order by using one to three commands. There are two physical pictures. First, you can imagine sitting on the material coordinate system and defining a series of clockwise rotations about material axes that transform the <code>x-y-z</code> analysis axes into the material axes. Alternatively (and identically) the transformation can be viewed as counter-clockwise rotations about analysis axes that transform the material axes into the analysis axes. The text for each command is either an angle or a <a href="function.html">user-defined function</a> that evaluates to an angle (both are in degrees).<br />
+You apply rotations in order by using one to three commands. There are two physical pictures. First, you can imagine sitting on the material coordinate system and defining a series of clockwise rotations about material axes that transform the <code>x-y-z</code> analysis axes into the material axes. Alternatively (and identically) the transformation can be viewed as counter-clockwise rotations about analysis axes that transform the material axes into the analysis axes. The text for each command is either an angle or a <a href="function.html">user-defined function</a> that evaluates to an angle (either are in degrees).<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;All single and double angle rotations are allowed (<code>x</code>, <code>y</code>, <code>z</code>, <code>xy</code>, <code>xz</code>, <code>yx</code>, <code>yz</code>, <code>zx</code>, and <code>zy</code>). When doing three rotations, the only schemes currently supported are <code>zyx</code> and <code>zyz</code>. It is easy to add more if needed (or to rearrange coordinates to make one of these work).<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2D calculations only allow z axis rotation, which can be done with either an <code>angle</code> attribute on the <code>&lt;Body&gt;</code> command or a single <code>&lt;RotateZ&gt;</code> command (although the <code>&lt;RotateZ&gt;</code> method is needed if you want to use a <a href="function.html">user-defined function</a>). Also note that use of any <code>Rotate</code> command will override any number used in <code>angle</code> (<i>i.e.</i>, <code>angle</code> will be ignored).
 </dd>
@@ -273,6 +275,12 @@ the points (<code>imin</code>, <code>minAngle</code>) and (<code>imax</code>,
 angle = minAngle + ((i-imin)/(imax-imin)) * maxAngle
 </pre>
 where <code>i</code> is intensity of the pixel. This function will be used for any intensity, which means it is not restricted to just <code>imin &lt; i &lt; imax</code>.
+
+<br><br>For MPM calculations, the <code>BMP</code> block can have optional <a href="#rotatezyx"><code>&lt;RotateZ&gt;</code>, <code>&lt;RotateY&gt;</code>, and <code>&lt;RotateX&gt;</code> commands</a> to rotate the material axes for all particles defined by the <code>BMP</code> block for 2D (Z only) or 3D calculations (X, Y, and Z). There are thus three ways to set material angle in a <code>BMP</code> block:
+<ol>
+<li>Use <code>&lt;Angle&gt;</code> command in an <code>&lt;Intensity&gt;</code> block - this option can only use a single constant (<i>i.e.</i>, all angles for that material must be the same), but each material type can have a different angle.</li>
+<li>Use <a href="#rotatezyx"><code>&lt;RotateZ&gt;</code>, <code>&lt;RotateY&gt;</code>, and <code>&lt;RotateX&gt;</code> commands</a> - these can set a constant angle or use a <a href="function.html">user-defined function</a> that evaluates to an angle (in degrees). If any rotate commands are used, all <code>&lt;Angle&gt;</code> commands are ignored. Furthermore, all material types use the same angle settings (<i>i.e.</i>, you cannot use different rotation angles or functions for each <code>&lt;Intensity&gt;</code> block).
+<li>Use an <code>angles</code> attribute on the <code>BMP</code> tag with an angle definition file - if this third option is used, all <code>&lt;Angle&gt;</code> and rotation commands will be ignored.</li>
 </dd>
 
 </dl>

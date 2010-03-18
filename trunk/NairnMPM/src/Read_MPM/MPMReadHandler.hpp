@@ -37,8 +37,6 @@ class MPMReadHandler : public CommonReadHandler
 		short BMPFileInput(char *,const Attributes&);
  		void SetLevelVelocity(double,double,double);
         void MPMPts();							// Generate mpms
-		void SetMptAnglesFromFunctions(int,Vector *,MPMBase *);		// 3D transformation angles
-		void ConvertToZYX(MPMBase *newMpt,double,double,double,double,double,double,double,double);
 		void SetGIMPBorderAsHoles(void);		// implicit block edge GIMP elements from getting particles
 		void MPMCracks(int,int,double,double,int,int);			// Generate cracks segments, Liping Xue
         void DisplacementBCs(void);				// Generate Displacement BCs
@@ -52,6 +50,9 @@ class MPMReadHandler : public CommonReadHandler
         
 		void grid(void);
 };
+
+void SetMptAnglesFromFunctions(int,Vector *,MPMBase *);		// 3D transformation angles
+void ConvertToZYX(MPMBase *newMpt,double,double,double,double,double,double,double,double);
 
 #endif
 
