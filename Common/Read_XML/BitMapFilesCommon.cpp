@@ -12,6 +12,11 @@
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Read_XML/BMPLevel.hpp"
 
+#ifdef MPM_CODE
+extern char rotationAxes[4];
+#endif
+
+
 //-----------------------------------------------------------
 // Check for bmp element, return false if not
 //-----------------------------------------------------------
@@ -34,6 +39,9 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
 		zslice=0.;
 		aScaling=ReadUnits(attrs,LENGTH_UNITS);
         numAttr=attrs.getLength();
+#ifdef MPM_CODE
+		rotationAxes[0]=0;				// no rotations yet
+#endif
         for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));

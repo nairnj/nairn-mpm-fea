@@ -15,6 +15,10 @@
 #include "Elements/ElementBase.hpp"
 #include "Read_MPM/MpsController.hpp"
 #include "System/ArchiveData.hpp"
+#include "Read_XML/mathexpr.hpp"
+
+extern char *angleExpr[3];
+extern char rotationAxes[4];
 
 //-----------------------------------------------------------
 // Check for bmp element, return false if not
@@ -51,13 +55,14 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	unsigned char **rows,**angleRows;
 	BMPInfoHeader info,angleInfo;
 	bool setAngles=FALSE;
+	int numRotations=strlen(rotationAxes);
 	
 	// read image file
 	char *bmpFullPath=archiver->ExpandInputPath(bmpFileName);
 	ReadBMPFile(bmpFullPath,info,&rows);
 	delete [] bmpFullPath;
 	
-	// angle file name
+	// angle file name (overrides other angle settings)
 	if(bmpAngleFileName[0]>0)
 	{	setAngles=TRUE;
 		char *bmpFullAnglePath=archiver->ExpandInputPath(bmpAngleFileName);
@@ -65,6 +70,16 @@ void MPMReadHandler::TranslateBMPFiles(void)
 		if(info.height!=angleInfo.height || info.width!=angleInfo.width)
 			throw SAXException(BMPError("The image file and angle file sizes do not match.",bmpFileName));
 		delete [] bmpFullAnglePath;
+	}
+	else if(numRotations>0)
+	{	int i;
+		for(i=0;i<numRotations;i++)
+		{	char *expr=new char[strlen(angleExpr[i])+1];
+			strcpy(expr,angleExpr[i]);
+			if(!CreateFunction(expr,i+1))
+				throw SAXException("Invalid angle expression was provided in <RotateX(YZ)> command.");
+			delete [] expr;
+		}
 	}
 	
 	// resolutions
@@ -234,6 +249,10 @@ void MPMReadHandler::TranslateBMPFiles(void)
 						double matAngle=minAngle+(totalIntensity-minIntensity)*angleScale;
 						newMpt->SetAnglez0InDegrees(matAngle);
 					}
+					else
+					{	// If had Rotate commands then use them
+						SetMptAnglesFromFunctions(numRotations,&mpos[k],newMpt);
+					}
 				}
 				elem->filled|=ptFlag;
             }
@@ -247,6 +266,10 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	}
 	delete [] rows;
 	if(setAngles) delete [] angleRows;
+	
+	// angles if allocated
+	for(ii=0;ii<numRotations;ii++) delete [] angleExpr[ii];
+		
 }
 
 // set current intensity velocity

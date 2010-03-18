@@ -259,7 +259,7 @@ double Orthotropic::WaveSpeed(bool threeD)
     xx=1.-nuxy*nuyx-nuxz*nuzx-nuyz*nuzy-2.*nuxy*nuyz*nuzx;
     cnorm=fmax(Ex*(1.-nuyz*nuzy),Ey*(1.-nuxz*nuzx))/xx;
 	if(threeD) cnorm=fmax(cnorm,Ez*(1-nuxy*nuyx)/xx);
-    cshear=fmax(Gxy,fmax(Gxz,Gyz));
+	cshear = threeD ? fmax(Gxy,fmax(Gxz,Gyz)) : Gxy;
     return sqrt(1.e9*fmax(cnorm,cshear)/rho);
 }
 #endif
