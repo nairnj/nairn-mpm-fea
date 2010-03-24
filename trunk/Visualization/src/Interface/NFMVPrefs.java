@@ -140,7 +140,7 @@ public class NFMVPrefs extends JFrame implements ActionListener
 		spectrumBag.setConstraints(section,c);
 		spectrumPan.add(section);
 		
-		String [] lines={"Rainbow 1 (Blue to Cyan)","Rainbow 2 (Blue to Red)","Rainbow 3 (Purple to Orange)","Grayscale (Black to White)","Cool Diverging (Blue to Red)"};
+		String [] lines={"Rainbow 1 (Purple to Red)","Rainbow 2 (Blue to Red)","Rainbow 3 (Purple to Orange)","Grayscale (Black to White)","Cool Diverging (Blue to Red)"};
 		spectrumBox=new JComboBox(lines);
 		spectrumBox.setSelectedIndex(ColorPicker.getSpectrumType());
 		spectrumBox.addActionListener(this);
@@ -163,8 +163,8 @@ public class NFMVPrefs extends JFrame implements ActionListener
 		numContours.setEditable(true);
 		numContours.setColumns(5);
 		numContours.setToolTipText("Enter 1 for continuous colors or >1 for number of discrete colors and hit return or enter");
-		numContours.setActionCommand("change contours");
 		numContours.addActionListener(this);
+		numContours.setActionCommand("change contours");
 		c.insets=new Insets(6,3,1,6);			// tlbr
 		c.gridx=1;
 		c.weightx = 1.0;
