@@ -43,8 +43,10 @@ public class ColorPicker
 				theColor=new Color((float)fraction,(float)fraction,(float)fraction);
 				break;
 			case BLUE_TO_CYAN:
-				hue=(float)(0.67+0.83*fraction);
-				if(hue>1.0) hue-=1.0;
+				//hue=(float)(0.67+0.83*fraction);
+				//if(hue>1.0) hue-=1.0;
+				// change to purple (0.777) down to red (0.0)
+				hue=(float)(0.777*(1.-fraction));
 				rgb=Color.HSBtoRGB(hue,(float)1.0,brightness);
 				theColor=new Color(rgb);
 				break;
