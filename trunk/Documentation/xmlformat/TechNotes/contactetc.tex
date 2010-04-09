@@ -174,9 +174,9 @@ The positive normal contact force is thus $f_n = -(\Delta \vec p_a\cdot \hat n)/
 
 The above algorithm never divides by a possibly low mass, but that does not necessarily mean it is not affected by one of the masses being very low. In GIMP calculations it will be common for a node one element away from the contact region to have nearly all mass in one material and a very low mass in the other material. When that occurs:
 \begin{equation}
-         {\rm if\ } m_a << m_b, {\rm\ then\ } \Delta \vec p_a \approx -\vec p_a
+         {\rm if\ } m_a << m_b, {\rm\ then\ } \Delta \vec p_a \approx m_a\vec v_b -\vec p_a
          \quad {\rm or}\quad
-         {\rm if\ } m_b << m_a, {\rm\ then\ } \Delta \vec p_a \approx \vec p_b
+         {\rm if\ } m_b << m_a, {\rm\ then\ } \Delta \vec p_a \approx \vec p_b - m_b \vec v_a
 \end{equation}
 In other words, $\Delta\vec p_a$ will be based on the unreliable nodal momentum (since it is likely to be from one particle on the edge of a material). Since $\Delta\vec p_a$ is used to determine contact and to adjust the momenta, the entire algorithm will be unreliable. Now, since $\Delta\vec p_a$ will also be very small, it might not make a difference, but in one calculation sliding down an incline plane, the calculation stopped when accepting all contact situations and was fixed by screening out those with $m_a/(m_a+m_n)$ or $m_b/(m_a+m_n)$ less than $10^{-6}$. Thus in step one above, if the mass ratio meets these criteria, ignore contact for that node.
 
