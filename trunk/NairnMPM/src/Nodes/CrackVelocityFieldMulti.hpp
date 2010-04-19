@@ -24,6 +24,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void ZeroMatFields(void);
 	
 		// specific task methods
+		virtual void AddMassTask1(int);
 		virtual double GetTotalMassTask1(void);
 		virtual void AddMassGradient(int,double,double,double,double,MPMBase *);
 	
@@ -37,6 +38,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 	
 		virtual void MaterialContact(int,int,bool,double);
 		virtual void GetMassGradient(int,Vector *,double);
+		virtual void RigidMaterialContact(int,int,int,bool,double);
 		virtual void CalcVelocityForStrainUpdate(void);
 	
 		// boundary conditions
@@ -58,6 +60,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void AddSkewFtot(double,double,double);
 	
 		// accessors
+		virtual int GetNumberPointsNonrigid(void);
 		virtual double GetTotalMass(void);
 		virtual double GetMass(int);
 		virtual Vector GetCMatMomentum(void);
@@ -69,6 +72,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 	
 	private:
 		int numberMaterials;		// number of materials in this crack velocity field
+		int numberRigidPoints;		// number of rigid particles in this velocity field
 
 };
 

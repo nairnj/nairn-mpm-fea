@@ -78,6 +78,9 @@ void NodalPoint::ZeroTask0(void)
 // Add mass for selected field
 void NodalPoint::AddMassTask1(short vfld,int matfld,double mnode) { cvf[vfld]->AddMassTask1(matfld,mnode); }
 
+// for rigid particles, adding mass is counting number of rigid particles
+void NodalPoint::AddMassTask1(short vfld,int matfld) { cvf[vfld]->AddMassTask1(matfld); }
+
 // Add to momentum vector (first pass - allocate cvf[] if needed) (both 2D and 3D)
 short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector *vel)
 {	short vfld=0;
@@ -1116,7 +1119,18 @@ int NodalPoint::NumberParticles(void)
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			totalParticles+=cvf[i]->numberPoints;
+			totalParticles+=cvf[i]->GetNumberPoints();
+	}
+	return totalParticles;
+}
+
+// number of particles for this node
+int NodalPoint::NumberNonrigidParticles(void)
+{	int totalParticles=0;
+	int i;
+	for(i=0;i<maxCrackFields;i++)
+	{	if(CrackVelocityField::ActiveField(cvf[i]))
+			totalParticles+=cvf[i]->GetNumberPointsNonrigid();
 	}
 	return totalParticles;
 }
@@ -1132,7 +1146,7 @@ void NodalPoint::Describe(void)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
 		{	cout << "#  " << i << ". ";
 			cvf[i]->Describe();
-			totalParticles+=cvf[i]->numberPoints;
+			totalParticles+=cvf[i]->GetNumberPoints();
 			numFields++;
 		}
 	}

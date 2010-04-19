@@ -41,6 +41,7 @@ class MatVelocityField
 	
 		// class methods
 		static bool ActiveField(MatVelocityField *);
+		static bool ActiveNonrigidField(MatVelocityField *mvf);
 	
 	private:
 };

@@ -1092,6 +1092,7 @@ double MaterialBase::GetHistory(int num,char *historyPtr) { return (double)0.; }
 
 // check if rigid material
 short MaterialBase::Rigid(void) { return FALSE; }
+short MaterialBase::RigidBC(void) { return FALSE; }
 
 // check if traciton law material
 bool MaterialBase::isTractionLaw(void) { return FALSE; }

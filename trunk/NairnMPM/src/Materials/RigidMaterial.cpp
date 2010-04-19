@@ -11,6 +11,7 @@
 #include "Materials/RigidMaterial.hpp"
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Read_XML/mathexpr.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark RigidMaterial::Constructors and Destructors
 
@@ -30,6 +31,7 @@ RigidMaterial::RigidMaterial(char *matName) : MaterialBase(matName)
 	setConcentration=FALSE;
 	setTemperature=FALSE;
 	function=NULL;
+	rho=1000.;
 }
 
 #pragma mark RigidMaterial::Initialization
@@ -37,14 +39,24 @@ RigidMaterial::RigidMaterial(char *matName) : MaterialBase(matName)
 // print to output window
 void RigidMaterial::PrintMechanicalProperties(void)
 {
-	if(setDirection&1 && setDirection&2)
-		cout << "Velocity in skewed x-y direction controlled" << endl;
-	else if(setDirection&1)
-		cout << "Velocity in x direction controlled" << endl;
-	else if(setDirection&2)
-		cout << "Velocity in y direction controlled" << endl;
-	if(setDirection&4)
-		cout << "Velocity in z direction controlled" << endl;
+	if(setDirection&RIGID_MULTIMATERIAL_MODE)
+	{	cout << "Rigid multimaterial with contact" << endl;
+		
+		// in this mode, no boundary conditions can be applied
+		setDirection=RIGID_MULTIMATERIAL_MODE;
+		setConcentration=FALSE;
+		setTemperature=FALSE;
+	}
+	else
+	{	if(setDirection&CONTROL_X_DIRECTION && setDirection&CONTROL_Y_DIRECTION)
+			cout << "Velocity in skewed x-y direction controlled" << endl;
+		else if(setDirection&CONTROL_X_DIRECTION)
+			cout << "Velocity in x direction controlled" << endl;
+		else if(setDirection&CONTROL_Y_DIRECTION)
+			cout << "Velocity in y direction controlled" << endl;
+		if(setDirection&CONTROL_Z_DIRECTION)
+			cout << "Velocity in z direction controlled" << endl;
+	}
 	if(setTemperature) cout << "Temperature controlled" << endl;
 	if(setConcentration) cout << "Concentration controlled" << endl;
 	if(function!=NULL)
@@ -54,7 +66,7 @@ void RigidMaterial::PrintMechanicalProperties(void)
 	}
 }
 
-// no properties to read
+// properties to read
 char *RigidMaterial::InputMat(char *xName,int &input)
 {
     if(strcmp(xName,"SetDirection")==0)
@@ -82,6 +94,26 @@ char *RigidMaterial::InputMat(char *xName,int &input)
     return (char *)NULL;
 }
 
+// Rigid material uses field only set to be contact material and in multimaterial mode
+int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid)
+{	// not used if rigid bpundary condition
+	if(setDirection!=RIGID_MULTIMATERIAL_MODE) return fieldNum;
+	
+	// not allowed unless in multimaterial mode
+	if(!multiMaterials) return -1;
+	
+	// go to superclass
+	return MaterialBase::SetField(fieldNum,multiMaterials,matid);
+}
+
+// preliminary calculations (throw CommonException on problem)
+void RigidMaterial::PreliminaryMatCalcs(void)
+{	// is rigid multimaterial, then nothing else allowed
+	if(setDirection&RIGID_MULTIMATERIAL_MODE && setDirection!=RIGID_MULTIMATERIAL_MODE)
+		throw CommonException("Rigid material for contact in multimaterial mode cannot also set other velocities, temperature, or concentration.","RigidMaterial::PreliminaryMatCalcs");
+	MaterialBase::PreliminaryMatCalcs();
+}
+
 #pragma mark RigidMaterial::Methods
 
 // does not have 2D constutuve law
@@ -107,6 +139,7 @@ const char *RigidMaterial::MaterialType(void) { return "Rigid Material"; }
 
 // check if rigid material
 short RigidMaterial::Rigid(void) { return TRUE; }
+short RigidMaterial::RigidBC(void) { return setDirection>0 && setDirection!=RIGID_MULTIMATERIAL_MODE; }
 
 // check if should set this direction
 bool RigidMaterial::RigidDirection(int aDir) { return (setDirection&aDir)==aDir; }

@@ -558,7 +558,7 @@ SLMaterial.o : $(SLMaterial).cpp $(dprefix) $(SLMaterial).hpp $(MGSCGLMaterial).
 BistableIsotropic.o : $(BistableIsotropic).cpp $(dprefix) $(BistableIsotropic).hpp $(IsotropicMat).hpp \
 			$(MaterialBase).hpp $(CommonReadHandler).hpp $(Elastic).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BistableIsotropic).cpp
-RigidMaterial.o : $(RigidMaterial).cpp $(dprefix) $(RigidMaterial).hpp $(MaterialBase).hpp \
+RigidMaterial.o : $(RigidMaterial).cpp $(dprefix) $(RigidMaterial).hpp $(MaterialBase).hpp $(CommonException).hpp \
 			$(CommonReadHandler).hpp $(mathexpr).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(RigidMaterial).cpp
 TractionLaw.o : $(TractionLaw).cpp $(dprefix) $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp \

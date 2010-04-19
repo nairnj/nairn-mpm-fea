@@ -72,7 +72,7 @@ void ConductionTask::GetValues(double stepTime)
 	// convert to actual temperatires
 	long i;
     for(i=1;i<=nnodes;i++)
-	{   if(nd[i]->NumberParticles()>0)
+	{   if(nd[i]->NumberNonrigidParticles()>0)
 			nd[i]->gTemperature/=nd[i]->gRhoVCp;
 	}
 
@@ -189,7 +189,7 @@ TransportTask *ConductionTask::TransportRates(double deltime)
 	// convert forces to temperature rates
 	long i;
     for(i=1;i<=nnodes;i++)
-	{   if(nd[i]->NumberParticles()>0)
+	{   if(nd[i]->NumberNonrigidParticles()>0)
 			nd[i]->fcond/=nd[i]->gRhoVCp;
 	}
 	return nextTask;
@@ -213,7 +213,7 @@ TransportTask *ConductionTask::UpdateNodalValues(double tempTime)
 	// add for each node
 	long i;
     for(i=1;i<=nnodes;i++)
-	{   if(nd[i]->NumberParticles()>0)
+	{   if(nd[i]->NumberNonrigidParticles()>0)
 			nd[i]->gTemperature+=nd[i]->fcond*tempTime;
 	}
 	return nextTask;

@@ -290,18 +290,30 @@ void NairnMPM::MPMStep(void)
 		
 		// normal materials
 		matID=theMaterials[mpm[p]->MatID()];
-		if(!matID->Rigid())
+		if(!matID->RigidBC())
 		{	mp=mpm[p]->mp;			// in g
 			matfld=matID->GetField();
 		
 			// get nodes and shape function for material point p
 			if(multiMaterialMode)
-				theElements[iel]->GetShapeFunctionsAndGradients(&numnds,fn,nds,&mpm[p]->pos,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv);
+			{	theElements[iel]->GetShapeFunctionsAndGradients(&numnds,fn,nds,&mpm[p]->pos,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv);
+				
+				// new velocity of rigid particles
+				if(matID->Rigid())
+				{	double newvel;
+					if(((RigidMaterial *)matID)->GetSetting(&newvel,mtime))
+					{	double velmag=DotVectors(&mpm[p]->vel,&mpm[p]->vel);
+						if(!DbleEqual(velmag,0.0))
+							ScaleVector(&mpm[p]->vel, fabs(newvel)/sqrt(velmag));
+					}
+				}
+			}
 			else
 				theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&mpm[p]->pos,mpm[p]->GetNcpos());
 			
 			// get deformed particle volume if it will be needed (for transport tasks)
 			if(volumeExtrap) mpm[p]->SetDilatedVolume();
+			
 			
 			// Add particle property to each node in the element
 			for(i=1;i<=numnds;i++)
@@ -334,20 +346,27 @@ void NairnMPM::MPMStep(void)
 				vfld=nd[nds[i]]->AddMomentumTask1(matfld,cfld,fn[i]*mp,&mpm[p]->vel);
 				mpm[p]->vfld[i]=vfld;
 				
-				// add to lumped mass matrix
-				nd[nds[i]]->AddMassTask1(vfld,matfld,mp*fn[i]);
-				
 				// crack contact calculations
 				contact.AddDisplacementVolumeTask1(vfld,matfld,nd[nds[i]],mpm[p],fn[i]);
-				
-				// transport calculations
-				nextTransport=transportTasks;
-				while(nextTransport!=NULL)
-					nextTransport=nextTransport->Task1Extrapolation(nd[nds[i]],mpm[p],fn[i]);
 				
 				// material contact calculations
 				if(multiMaterialMode)
 					nd[nds[i]]->AddMassGradient(vfld,matfld,mp,xDeriv[i],yDeriv[i],zDeriv[i],mpm[p]);
+				
+				// more for non-rigid contact materials
+				if(!matID->Rigid())
+				{	// add to lumped mass matrix
+					nd[nds[i]]->AddMassTask1(vfld,matfld,mp*fn[i]);
+				
+					// transport calculations
+					nextTransport=transportTasks;
+					while(nextTransport!=NULL)
+						nextTransport=nextTransport->Task1Extrapolation(nd[nds[i]],mpm[p],fn[i]);
+				}
+				else
+				{	// for rigid particles, let the crack velocity field know
+					nd[nds[i]]->AddMassTask1(vfld,matfld);
+				}
 			}
 		}
 		
@@ -355,9 +374,9 @@ void NairnMPM::MPMStep(void)
 		else
 		{	numnds=theElements[iel]->NumberNodes();
 			double rvalue;
+			RigidMaterial *rigid=(RigidMaterial *)matID;
 			for(i=1;i<=numnds;i++)
 			{   mi=theElements[iel]->nodes[i-1];		// 1 based node
-				RigidMaterial *rigid=(RigidMaterial *)(theMaterials[mpm[p]->MatID()]);
 				
 				// check skewed, x or y direction velocities
 				if(rigid->RigidDirection(X_DIRECTION+Y_DIRECTION))
@@ -376,7 +395,7 @@ void NairnMPM::MPMStep(void)
 					// toggles back and forth, rather than continuing in same directioon
 					if(rigid->GetSetting(&rvalue,mtime))
 					{	if(!DbleEqual(vel,0.))
-						{	vel=rvalue;
+						{	vel=fabs(rvalue);
 							mpm[p]->vel.x=vel*cos(angle);
 							mpm[p]->vel.y=-vel*sin(angle);
 						}
@@ -564,7 +583,6 @@ void NairnMPM::MPMStep(void)
 	archiver->WriteLogFile("TASK 5: UPDATE PARTICLES",NULL);
 #endif
 
-
     // Update particle position, velocity, temp, and conc
 	Vector delv,*acc;
 	bodyFrc.TrackAlpha();
@@ -583,12 +601,17 @@ void NairnMPM::MPMStep(void)
 			nextTransport=transportTasks;
 			while(nextTransport!=NULL)
 				nextTransport=nextTransport->ZeroTransportRate();
+			//int mpmvfld=mpm[p]->vfld[1];
+			//bool sameField=TRUE;
 			for(i=1;i<=numnds;i++)
 			{	nd[nds[i]]->IncrementDelvaTask5((short)mpm[p]->vfld[i],matfld,fn[i],&delv,acc);
+				//if(mpm[p]->vfld[i]!=mpmvfld) sameField=FALSE;
 				nextTransport=transportTasks;
 				while(nextTransport!=NULL)
 					nextTransport=nextTransport->IncrementTransportRate(nd[nds[i]],fn[i]);
 			}
+			
+			//if(!sameField) cout << "see " << p+1 << endl;
 						
 			// update position in mm and velocity in mm/sec
 			mpm[p]->MovePosition(timestep,&delv);
@@ -631,7 +654,7 @@ void NairnMPM::MPMStep(void)
         // loop over particles
         for(p=0;p<nmpms;p++)
 		{	matID=theMaterials[mpm[p]->MatID()];
-			if(matID->Rigid()) continue;
+			if(matID->RigidBC()) continue;
             mp=mpm[p]->mp;			// in g
 			matfld=matID->GetField();
     
@@ -1144,8 +1167,10 @@ void NairnMPM::PreliminaryCalcs(void)
 			throw CommonException("Material point with an undefined material type","NairnMPM::PreliminaryCalcs");
 		if(theMaterials[matid]->isTractionLaw())
 			throw CommonException("Material point with traction-law material","NairnMPM::PreliminaryCalcs");
-		if(theMaterials[matid]->Rigid()) continue;
 		maxMaterialFields=theMaterials[matid]->SetField(maxMaterialFields,multiMaterialMode,matid);
+		if(maxMaterialFields<0)
+			throw CommonException("Rigid material with contact not allowed in single material mode MPM","NairnMPM::PreliminaryCalcs");
+		if(theMaterials[matid]->RigidBC()) continue;
 	
 		// element and mp properties
 		if(IsThreeD())
@@ -1161,6 +1186,9 @@ void NairnMPM::PreliminaryCalcs(void)
         
         // assumes same number of points for all elements
 		mpm[p]->InitializeMass(rho*volume/((double)ptsPerElement));			// in g
+		
+		// done if rigid contact material in multimaterial mode (mass will be in mm^3 and be be particle volume)
+		if(theMaterials[matid]->Rigid()) continue;
         
         // check time step
         crot=theMaterials[matid]->WaveSpeed(IsThreeD())/10.;		// in cm/sec
@@ -1191,8 +1219,10 @@ void NairnMPM::PreliminaryCalcs(void)
 		while(nextTransport!=NULL)
 			nextTransport=nextTransport->TransportTimeStep(matid,dcell,&tmin);
 	}
+	
+	// multimaterial checks and contact initialization
 	if(maxMaterialFields==0)
-		throw CommonException("No material points found with a non-rigid material","NairnMPM::PreliminaryCalcs");
+		throw CommonException("No material points found with an actual material","NairnMPM::PreliminaryCalcs");
 	else if(maxMaterialFields==1)
 		multiMaterialMode=FALSE;
 	else

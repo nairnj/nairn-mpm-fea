@@ -69,7 +69,7 @@ void DiffusionTask::GetValues(double stepTime)
 	// convert to actual concentrations
 	long i;
     for(i=1;i<=nnodes;i++)
-	{   if(nd[i]->NumberParticles()>0)
+	{   if(nd[i]->NumberNonrigidParticles()>0)
 			nd[i]->gConcentration/=nd[i]->gVolume;
 	}
 
@@ -195,7 +195,7 @@ TransportTask *DiffusionTask::TransportRates(double deltime)
 	// convert forces to concentration rates
 	long i;
     for(i=1;i<=nnodes;i++)
-	{   if(nd[i]->NumberParticles()>0)
+	{   if(nd[i]->NumberNonrigidParticles()>0)
 		{	nd[i]->fdiff/=nd[i]->gVolume;
 			double concTest=nd[i]->gConcentration+nd[i]->fdiff*deltime;
 			if(concTest<0.)
@@ -225,7 +225,7 @@ TransportTask *DiffusionTask::UpdateNodalValues(double concTime)
 	// add for each node
 	long i;
     for(i=1;i<=nnodes;i++)
-	{   if(nd[i]->NumberParticles()>0)
+	{   if(nd[i]->NumberNonrigidParticles()>0)
 			nd[i]->gConcentration+=nd[i]->fdiff*concTime;
 	}
 	return nextTask;

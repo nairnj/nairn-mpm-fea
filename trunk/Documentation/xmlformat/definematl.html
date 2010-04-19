@@ -34,7 +34,7 @@
 
 <p>Certain materials work in NairnFEA and NairnMPM, while others are limited to NairnFEA or NairnMPM. Similarly, not all materials for NairnMPM can be used in 3D calculations (although more will be upgraded in the future). The material types and their supported uses are in the following table:</p>
 
-<table border="1" cellpadding="2" cellspacing="0" width=90% align="center">
+<table border="1" cellpadding="2" cellspacing="0" width="90%" align="center">
 <tr><th>Name</th><th>Type</th><th>Description</th><th>NairnFEA</th><th>2D NairnMPM</th><th>3D NairnMPM</th>
 </tr>
 
@@ -55,98 +55,98 @@
 <tr>
 <td><a href="#trans2"><code>Transverse 2</code></a></td>
 <td>3</td>
-<td width=40%>Linear elastic, transversely isotropic with unique axis in plane of 2D analysis. Unless rotated by &quot;angle&quot; options, the unique material axis is parallel to the <code>y</code> axis for 2D analyses and parallel to the <code>z</code> axis for axisymmetric analyses.</td>
+<td width="50%">Linear elastic, transversely isotropic with unique axis in plane of 2D analysis. Unless rotated by &quot;angle&quot; options, the unique material axis is parallel to the <code>y</code> axis for 2D analyses and parallel to the <code>z</code> axis for axisymmetric analyses.</td>
 <td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
 <td><a href="#ortho"><code>Orthotropic</code></a></td>
 <td>4</td>
-<td width=50%>Linear elastic, orthotopic material</td>
+<td width="50%">Linear elastic, orthotopic material</td>
 <td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
 <td><a href="#interface"><code>Interface</code></a></td>
 <td>5</td>
-<td width=50%>A definition of an imperfect interface</td>
+<td width="50%">A definition of an imperfect interface</td>
 <td align="center">X</td><td align="center"></td><td align="center"></td>
 </tr>
 
 <tr>
 <td><a href="#visc"><code>Viscoelastic</code></a></td>
 <td>6</td>
-<td width=50%>Linear viscoelastic material with sum of relaxation times</td>
+<td width="50%">Linear viscoelastic material with sum of relaxation times</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
 <td><a href="#mooney"><code>Mooney</code></a></td>
 <td>8</td>
-<td width=50%>Mooney-Rivlin non-linear elastic rubbery material</td>
+<td width="50%">Mooney-Rivlin non-linear elastic rubbery material</td>
 <td align="center"></td><td align="center">X</td><td align="center"></td>
 </tr>
 
 <tr>
 <td><a href="#vonmises"><code>VonMises</code></a></td>
 <td>9</td>
-<td width=50%>Elastic-plastic material with a VonMises stress yield criterion and isotropic hardening</td>
+<td width="50%">Elastic-plastic material with a VonMises stress yield criterion and isotropic hardening</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
 <td><a href="#hill"><code>HillPlastic</code></a></td>
 <td>15</td>
-<td width=50%>Elastic-plastic orthotopic material with a Hill yield criterion and hardening</td>
+<td width="50%">Elastic-plastic orthotopic material with a Hill yield criterion and hardening</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
 <td><a href="#MGSCGL"><code>MGSCGLMaterial</code></a></td>
 <td>17</td>
-<td width=50%>Isotropic material using the Mie-Gr&#252;neisen equation of state with shear modulus and yield stress from Steinberg, Cochran, and Guinan.</td>
+<td width="50%">Isotropic material using the Mie-Gr&#252;neisen equation of state with shear modulus and yield stress from Steinberg, Cochran, and Guinan.</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
 <td><a href="#SL"><code>SLMaterial</code></a></td>
 <td>18</td>
-<td width=50%>Isotropic material based on the <a href="#MGSCGL">MGSCGLMaterial</a> but with the addition of a rate-dependent yield stress term from Steinberg and Lund</td>
+<td width="50%">Isotropic material based on the <a href="#MGSCGL">MGSCGLMaterial</a> but with the addition of a rate-dependent yield stress term from Steinberg and Lund</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
 <td><a href="#bistab"><code>Bistable</code></a></td>
 <td>10</td>
-<td width=50%>Elastic, isotropic material with two stable states and reversible or irreversible transitions between the two states</td>
+<td width="50%">Elastic, isotropic material with two stable states and reversible or irreversible transitions between the two states</td>
 <td align="center"></td><td align="center">X</td><td align="center"></td>
 </tr>
 
 <tr>
 <td><a href="#rigid"><code>Rigid</code></a></td>
 <td>11</td>
-<td width=50%>Not really a material, but useful for moving boundary conditions</td>
+<td width="50%">Either a rigid material (infinite mass and stiffness) or a method to apply moving boundary conditions.</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
 <td><a href="#traction"><code>TriangularTraction</code></a></td>
 <td>12</td>
-<td width=50%>A triangular <a href="cracks.html#traction">traction law</a> for use on crack surfaces</td>
+<td width="50%">A triangular <a href="cracks.html#traction">traction law</a> for use on crack surfaces</td>
 <td align="center"></td><td align="center">X</td><td align="center"></td>
 </tr>
 
 <tr>
 <td><a href="#lineart"><code>LinearTraction</code></a></td>
 <td>13</td>
-<td width=50%>A linear elastic <a href="cracks.html#traction">traction law</a> for use on crack surfaces</td>
+<td width="50%">A linear elastic <a href="cracks.html#traction">traction law</a> for use on crack surfaces</td>
 <td align="center"></td><td align="center">X</td><td align="center"></td>
 </tr>
 
 <tr>
 <td><a href="#cubic"><code>CubicTraction</code></a></td>
 <td>14</td>
-<td width=50%>A cubic <a href="cracks.html#traction">traction law</a> for use on crack surfaces</td>
+<td width="50%">A cubic <a href="cracks.html#traction">traction law</a> for use on crack surfaces</td>
 <td align="center"></td><td align="center">X</td><td align="center"></td>
 </tr>
 
@@ -174,7 +174,7 @@
 <dt>&lt;Cv&gt;1.5&lt;/Cv&gt;</dt>
 <dd>The material constant-volume heat capacity (in J/(kg-K)). Only used by some materials.  If only one of <code>Cp</code> and <code>Cv</code> are entered, they will both be set to the one entered value</dd>
     	
-<a name="csat"></a><dt>&lt;csat&gt;0.5&lt;/csat&gt;</dt>
+<dt><a name="csat"></a>&lt;csat&gt;0.5&lt;/csat&gt;</dt>
 <dd>The material's saturation concentration entered as a weight fraction. Only used when doing diffusion calculations.</dd>
 
 
@@ -494,12 +494,12 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <p>The material type is <code>Type=9</code>. The material is isotropic and yields when <code>f=0</code> according to the plastic potential
 </p>
-<pre>f = ||s|| - sqrt(2/3) * &sigma;<sub>Y</sub>
-</pre>
+<blockquote>f = ||s|| - sqrt(2/3) * &sigma;<sub>Y</sub>
+</blockquote>
 <p>where <code>s</code> is deviatoric stress. Since its magnitude, or<code>||s||</code>, is a stress invariant, this yield condition is isotropic or independent of the material orientation angle. The material also allows isotropic work hardening based on cumulative equivalent plastic strain and determined by a non-zero plastic modulus (<code>Ep</code>). When hardening the yield stress is given by
 </p>
-<pre>&sigma;<sub>Y</sub> = &sigma;<sub>Y0</sub> + E<sub>p</sub>&alpha;
-</pre>
+<blockquote>&sigma;<sub>Y</sub> = &sigma;<sub>Y0</sub> + E<sub>p</sub>&alpha;
+</blockquote>
 
 <p>where <code>&sigma;<sub>Y0</sub></code> is the initial yield stress and <code>&alpha;</code> is an internal variable that tracks cummulative, equivalent plastic strain (see history variable below). The input properties are:</p>
 
@@ -518,8 +518,6 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <dt>Other Properties</dt>
 <dd>See <a href="#iso">Linear Elastic, Isotopic</a> material.</dd>
 
-</dd>
-    	
 </dl>
     
 <h3>History Data for Von Mises Plastic, Isotropic</h3>
@@ -537,7 +535,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <dd>Bulk modulus in MPa of initial state.</dd>
 
 <dt>&lt;G0&gt;0.5&lt;/G0&gt;</dt>
-<dd>Shear modulus in MPa of initial state.</ldd>
+<dd>Shear modulus in MPa of initial state.</dd>
 
 <dt>&lt;alpha0&gt;60&lt;/alpha0&gt;</dt>
 <dd>Thermal expansion coefficient in ppm/degree C of initial state.</dd>
@@ -599,34 +597,47 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <p>History variable 1 will be 0 for the initial state and 1 for the deformed state after a transition.</p>
     
-<a name="rigid"></a><h2>Rigid Material</h2>
+<h2><a name="rigid"></a>Rigid Material</h2>
 
-<p>The material type is <code>Type=11</code>. This material is not really a material and points that are rigid materials will not really be part of the MPM analysis. Rigid material points are used to set boundary conditions on the grid that move with the particles. The rigid material points should be initialized to a velocity, temperature, or concentration <a href="definempm.html">when they are created</a>. As the rigid material points move through the grid, all nodes connected to those points will be assigned grid-based boundary conditions for the selected particle properties of velocity, temperature, and/or concentration. To have the boundary condition vary in time, use the the <code>SettingFunction</code> property below to select the value rather than setting the initial particle properties. The rigid material properties determine which boundary conditions are set:</p>
+<p>The material type is <code>Type=11</code> and it is actually two materials in one, depending on the value for its <code>SetDirection</code> property:</p>
+
+<ol>
+<li>If <code>SetDirection</code> is 0, 1, 2, 3, or 4, the material is not really a material and points that are this type of rigid material will not really be part of the MPM analysis. These rigid material points are used to set boundary conditions on the grid that move with the particles. The rigid material points should be initialized to a velocity, temperature, or concentration <a href="definempm.html">when they are created</a>. As the rigid material points move through the grid, all nodes connected to those points will be assigned grid-based boundary conditions for the selected particle properties of velocity, temperature, and/or concentration. To have the boundary condition vary in time, use the the <code>SettingFunction</code> property below to select the value rather than setting the initial particle properties.
+</li>
+<li>If <code>SetDirection</code> is 8, the material will correspond to actual material points that move through the analysis. Since they are rigid, they will move with their prescribed velocity. They will interact with other material points only through multimaterial contact laws and thus this type of rigid material can only be used in <a href="mpmheader.html#mmmode">multimaterial mode MPM</a> calculations. These particles will also ignore grid-based velocity boundary conditions, including those set by rigid particles with <code>SetDirection</code> equal to 0 through 4.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;The advantage of this type of rigid material (unlike the other type) is that you can set frictional properties for contact between rigid materials and non-rigid materials. These rigid materials will move in the direction defined by the initial velocity. They will either move at the magnitude of that velocity or the magnitude can varied by using the <code>SettingFunction</code> property below. If two rigid materials of this type moving at different velocities interact at the same node, however, there is a conflict and the calculation will stop. Finally, this type of rigid material can only set velocity; it cannot set temperature or concentration.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="red"><b>WARNING</b></font>: this type of rigid material does not yet work if they interact with cracks, but the code will not look for such interactions and thus the simulations will be invalid. The plan is to implement them for crack contact too. For now, you must either not combine rigid materials with <code>SetDirection</code>=8 with crack calculations or make sure those rigid particles are always sufficiently far away from cracks (at least two elements away).
+</li>
+</ol>
+
+<p>The rigid material properties determine which boundary conditions are set:</p>
 
 <dl>
 
 <dt>&lt;SetDirection&gt;1&lt;/SetDirection&gt;</dt>
-<dd>Set to 1 to set <code>x</code> direction velocity, 2 to set <code>y</code> direction velocity, or 4 to set <code>z</code> direction velocity. The velocities in the selected direction will be set to that component of constant particle velocity. If the direction is set to 3, the velocity will be set in the direction of the net particle velocity, which may be in any direction in the <code>x</code>-<code>y</code> plane.</dd>
+<dd>Set to 1 to set <code>x</code> direction velocity, 2 to set <code>y</code> direction velocity, or 4 to set <code>z</code> direction velocity. The velocities in the selected direction will be set to that component of constant particle velocity. If the direction is set to 3, the velocity will be set in the direction of the net particle velocity, which may be in any direction in the <code>x</code>-<code>y</code> plane. To create the alternate type of rigid particles that can implement frictional contact, set this value to 8.</dd>
     	    	
 <dt>&lt;SetTemperature/&gt;</dt>
-<dd>Set temperature to the particle temperature. This setting has no affect unless the analysis is doing thermal calculations.</dd>
+<dd>Set temperature to the particle temperature. This setting has no affect unless the analysis is doing thermal calculations. Can only be used if <code>SetDirection</code> is 0 through 4.</dd>
 
 <dt>&lt;SetConcentration/&gt;</dt>
-<dd>Set concentration to the particle concentration entered as a potential from 0 to 1 where 1 is the <a href="#csat">saturation concentration</a> for the particle's material type. This setting has no affect unless the analysis is doing diffusion calculations.</dd>
+<dd>Set concentration to the particle concentration entered as a potential from 0 to 1 where 1 is the <a href="#csat">saturation concentration</a> for the particle's material type. This setting has no affect unless the analysis is doing diffusion calculations. Can only be used if <code>SetDirection</code> is 0 through 4.</dd>
 
 
 <dt>&lt;SettingFunction&gt;50*(1-sign(t-10))&lt;/SettingFunction&gt;</dt>
-<dd>By entering a <a href="function.html">user-defined function</a> of time (<code>t</code> in ms and the function must depend only on time and cannot depend on position), the rigid particle setting can vary with time. When setting a direction, temperature, or concentration, the function should evaluate to the velocity in mm/s, temperature, or concentration potential. The initial velocity, temperature, or concentration assigned to the rigid particles <a href="definempm.html">when they are created</a> will be ignored. The one exception is when <code>SetDirection</code> is 3 for particle velocity set in a skewed <code>x</code>-<code>y</code> direction. For this condition, the initial particle <code>x</code> and <code>y</code> velocities will define the velocity direction and the setting function will determine the magnitude. Note that if the initial particle velocity is zero or the setting function becomes zero when <code>SetDirection</code> is 3, the particle will halt even if the setting function becomes non-zero at later times. Thus, when <code>SetDirection</code> is 3, the setting function must never evaluate to zero.
+<dd>By entering a <a href="function.html">user-defined function</a> of time (<code>t</code> in ms and the function must depend only on time and cannot depend on position), the rigid particle setting can vary with time. When setting a direction, temperature, or concentration, the function should evaluate to the velocity in mm/s, temperature, or concentration potential. The initial velocity, temperature, or concentration assigned to the rigid particles <a href="definempm.html">when they are created</a> will be ignored. The one exception is when <code>SetDirection</code> is 3 (for particle velocity set in a skewed <code>x</code>-<code>y</code> direction) or 8 (for rigid particles that can do contact). For these settings, the initial particle <code>x</code> and <code>y</code> velocities (for <code>SetDirection</code>=3) or complete velocity vector (for <code>SetDirection</code>=8) will define the velocity direction and the setting function will determine the magnitude (absolute value of setting function will be taken so rigid particle cannot reverse directions). Note that if the initial particle velocity is zero or the setting function ever becomes zero when <code>SetDirection</code> is 3 or 8, the particle will halt even if the setting function becomes non-zero at later times. Thus, when <code>SetDirection</code> is 3 or 8, the setting function must never evaluate to zero (unless you want it to stop).
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Since there is only one setting function, a rigid material with a setting function can set only one property and will set all particles of that material type to the same value determined by the function. To have rigid particles move with different values determined by a function, even if in the same direction, thus requires definition of multiple rigid material types.</dd>
 </dl>
 
-<p>Note that creating moving particles but not setting any velocity direction can be used to create a moving temperature or concentration boundary condition that moves over the particles; <i>i.e.</i>, the rigid particles will move through the real particles.</p>
+<p>Note that <a href="mpmheader.html#mmmode">multimaterial mode MPM</a> calculations can combine moving boundary condition rigid particles (<code>SetDirection</code>=0 to 4) with contact rigid particles (<code>SetDirection</code>=8) to provide different functions.
+
+<p>Note that creating moving particles but not setting any velocity direction (<code>SetDirection</code>=3) can be used to create a moving temperature or concentration boundary condition that moves over the particles; <i>i.e.</i>, the rigid particles will move through the real particles. If a rigid particle does not set any velocity, temperature, or concentration, it will have no affect on the calculations. It may plot in visualization software, but it is not part of the analysis.</p>
 
 <a name="traction"></a><h2>Triangular Traction Law Material</h2>
 
 <p>The material type is <code>Type=12</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. It creates two independent traction laws for normal and shear opening displacement. Each relation is a triangle with key properties as illustrated below:
-<p>
-<center><img src = "tritraction.jpg" width = "291" height = "185" alt = "triangular traction law"/>
+</p>
+<center><img src = "tritraction.jpg" width = "291" height = "185" alt = "triangular traction law">
 </center>
 <p>You must enter properties for both normal opening (mode I) and shear opening (mode II) traction laws using the following parameters:
 </p>
@@ -657,8 +668,8 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <a name="lineart"></a><h2>Linear Elastic Law Material</h2>
 
 <p>The material type is <code>Type=13</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. This material creates a linear elastic traction law that never fails and therefore never releases energy. The only properties are the slopes for normal and shear opening:
-<p>
-<center><img src = "linear.jpg" width = "291" height = "185" alt = "linear elastic traction law"/>
+</p>
+<center><img src = "linear.jpg" width = "291" height = "185" alt = "linear elastic traction law">
 </center>
 <p>Enter the slopes using the following propertes. If either slope is left out, it will be set to zero.
 </p>
@@ -677,8 +688,8 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <a name="cubic"></a><h2>Cubic Traction Law Material</h2>
 
 <p>The material type is <code>Type=14</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. It creates two independent traction laws for normal and shear opening displacement. Each relation is a cubic law with zero slope at the end (&delta;<sub>c</sub>) and the peak stress is always at &delta;<sub>c</sub>/3. The key properties are illustrated below:
-<p>
-<center><img src = "cubictraction.jpg" width = "291" height = "185" alt = "cubic traction law"/>
+</p>
+<center><img src = "cubictraction.jpg" width = "291" height = "185" alt = "cubic traction law">
 </center>
 <p>You must enter properties for both normal opening (mode I) and shear opening (mode II) traction laws using the following parameters:
 </p>
@@ -778,7 +789,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 </p>
 
 <p>The hardening terms, K and n, are dimensionless; &epsilon;<sub>p</sub> is cumulative plastic strain.
-<p>
+</p>
 
 
 <h3>History Data for Von Mises Plastic, Isotropic</h3>
@@ -840,35 +851,35 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <p>In this material, the pressure is related to the volumetric compression strain (x = -&Delta;V/V<sub>0</sub>) by the Mie-Gr&#252;neisen equation of state:
 </p>
-<pre>
+<blockquote>
    P = k<sub>1</sub> x + k<sub>2</sub> x<sup>2</sup> + k<sub>3</sub> x<sup>3</sup> + &gamma;<sub>0</sub>&rho;C<sub>V</sub>(T-T<sub>0</sub>)
-</pre>
+</blockquote>
 <p>where k<sub>1</sub>, k<sub>2</sub>, and k<sub>3</sub> are calculated from input parameters:
 </p>
-<pre>
-     k<sub>1</sub> = &rho;C<sub>0</sub><sup>2</sup> - &gamma;<sub>0</sub><sup>2</sup>&rho;C<sub>V</sub>T<sub>0</sub>
-     k<sub>2</sub> = 2&rho;C<sub>0</sub><sup>2</sup>S<sub>1</sub> - (1/2)&gamma;<sub>0</sub><sup>3</sup>&rho;C<sub>V</sub>T<sub>0</sub>
+<blockquote>
+     k<sub>1</sub> = &rho;C<sub>0</sub><sup>2</sup> - &gamma;<sub>0</sub><sup>2</sup>&rho;C<sub>V</sub>T<sub>0</sub><br>
+     k<sub>2</sub> = 2&rho;C<sub>0</sub><sup>2</sup>S<sub>1</sub> - (1/2)&gamma;<sub>0</sub><sup>3</sup>&rho;C<sub>V</sub>T<sub>0</sub><br>
      k<sub>3</sub> = 3&rho;C<sub>0</sub><sup>2</sup>S<sub>1</sub><sup>2</sup> - (1/3)&rho;C<sub>0</sub><sup>2</sup>&gamma;<sub>0</sub>S<sub>1</sub> + 2&rho;C<sub>0</sub><sup>2</sup>S<sub>2</sub>C<sub>0</sub> - (1/6)&gamma;<sub>0</sub><sup>4</sup>&rho;C<sub>V</sub>T<sub>0</sub>
-</pre>
+</blockquote>
 <p>Here T<sub>0</sub> is the reference temperature for the material. The properties depend on the reference temperature, but the reference temperature is set using the <a href="mpmheader.html#stressfreetemp"><code>StressFreeTemp</code></a> command in the <a href="mpmheader.html">MPM header</a> and not in the material. The k<sub>1</sub> term is the low-strain, bulk modulus.
 </p>
 <p>The shear modulus of the material is given by
 </p>
-<pre>
+<blockquote>
      G = G<sub>0</sub> [ 1 + (G<sub>p</sub>'/G<sub>0</sub>)(P/&eta;<sup>1/3</sup>) + (G<sub>T</sub>'/G<sub>0</sub>)(T-T<sub>0</sub>) ]
-</pre>
+</blockquote>
 <p> where &eta; = 1/(1-x).
 </p>
 <p>This material yields when <code>f=0</code> according to the plastic potential
 </p>
-<pre>
+<blockquote>
      f = ||s|| - sqrt(2/3) * &sigma;<sub>Y</sub>
-</pre>
+</blockquote>
 <p>where <code>||s||</code> is the deviatoric or flow stress and the yield stress is given by the hardening law:
 </p>
-<pre>
+<blockquote>
      &sigma;<sub>y</sub> = &sigma;<sub>0</sub> (1 + &beta; &epsilon;<sub>p</sub><sup>n</sup>) [ 1 + (G<sub>p</sub>'/G<sub>0</sub>)(P/&eta;<sup>1/3</sup>) + (G<sub>T</sub>'/G<sub>0</sub>)(T-T<sub>0</sub>) ]
-</pre>
+</blockquote>
 <p>where &epsilon;<sub>p</sub> is the equivalent plastic strain. The yield stress is limited to the maximum yield stress. See D. J. Steinberg S. G. Cochran, and M. W. Guinan, &quot;A constitutive model for metals applicable at high strain rates&quot; (<i>J. Appl. Phys.</i>, <b>51</b>, 1498-1504 (1989)) for details.
 </p>
 
@@ -877,9 +888,9 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <p>This material automatically has thermal expansion. You do not need to enter a thermal expansion coefficient because it is determined by other properties through:
 </p>
-<pre>
+<blockquote>
      &alpha; = (&rho;&gamma;<sub>0</sub>C<sub>V</sub>)/(3k<sub>1</sub>)
-</pre>
+</blockquote>
 <p>This material allows isotropic conduction and diffusion by entering isotropic transport properties (<a href="#iso"><code>kCond</code>, <code>D</code>, and <code>beta</code></a>)  and bulk properties (<a href="#common"><code>Cp</code> and <code>csat</code></a>).
 </p>
 
@@ -922,18 +933,18 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <p>This material yields when <code>f=0</code> according to the plastic potential
 </p>
-<pre>
+<blockquote>
      f = ||s|| - sqrt(2/3) * &sigma;<sub>Y</sub>
-</pre>
+</blockquote>
 <p>where <code>||s||</code> is the deviatoric or flow stress and the yield stress is given by the hardening law:
 </p>
-<pre>
+<blockquote>
      &sigma;<sub>y</sub> = {Y<sub>T</sub>(d&epsilon;<sub>p</sub>/dt,T) + &sigma;<sub>0</sub>(1 + &beta; &epsilon;<sub>p</sub><sup>n</sup>)} [ 1 + (G<sub>p</sub>'/G<sub>0</sub>)(P/&eta;<sup>1/3</sup>) + (G<sub>T</sub>'/G<sub>0</sub>)(T-T<sub>0</sub>) ]
-</pre>
-<p>This equation is identical to the <a href="#MGSCGL">MGSCGLMaterial</a> except for the new rate- and temperature-dependent term Y<sub>T</sub>(d&epsilon;<sub>p</sub>/dt,T), which is only defined in inverse form:
-<pre>
+</blockquote>
+<p>This equation is identical to the <a href="#MGSCGL">MGSCGLMaterial</a> except for the new rate- and temperature-dependent term Y<sub>T</sub>(d&epsilon;<sub>p</sub>/dt,T), which is only defined in inverse form:</p>
+<blockquote>
 d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (1/C<sub>1</sub>)exp[(2U<sub>k</sub>/(kT))(1-(Y<sub>T</sub>/Y<sub>P</sub>))<sup>2</sup>] }<sup>-1</sup>
-</pre>
+</blockquote>
 <p>where &epsilon;<sub>p</sub> is the equivalent plastic strain. This equation is numerically inverted to find Y<sub>T</sub> as a function of strain rate and Y<sub>T</sub> is limited to &le; Y<sub>P</sub>. See D. J. Steinberg and C. M. Lund, &quot;A constitutive model for strain rates from 10<sup>-4</sup> to 10<sup>6</sup>&quot; (<i>J. Appl. Phys.</i>, <b>65</b>, 1528-1533 (1989)) for details.
 </p>
 
