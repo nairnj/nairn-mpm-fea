@@ -1046,12 +1046,12 @@ void CrackHeader::JIntegral(void)
             if(dfld==ABOVE_CRACK)
             {	sfld1=node1->cvf[(int)node1->above]->df;
                 sfld2=node2->cvf[(int)node2->above]->df;
-				count+=node2->cvf[(int)node2->above]->numberPoints;
+				count+=node2->cvf[(int)node2->above]->GetNumberPoints();
             }
             else
             {	sfld1=node1->cvf[(int)node1->below]->df;
                 sfld2=node2->cvf[(int)node2->below]->df;
-				count+=node2->cvf[(int)node2->below]->numberPoints;
+				count+=node2->cvf[(int)node2->below]->GetNumberPoints();
             }
             
             /* Calculate J Integral segment by segment
@@ -1150,9 +1150,9 @@ void CrackHeader::JIntegral(void)
 			{   // J integral node1 to node2 using field dfld
 				NodalPoint *node2=nextPt->nextPoint->node;
 				if(dfld==ABOVE_CRACK)
-					cout << "#  node " << node2->num << " count above " << node2->cvf[(int)node2->above]->numberPoints << endl;
+					cout << "#  node " << node2->num << " count above " << node2->cvf[(int)node2->above]->GetNumberPoints() << endl;
 				else
-					cout << "#  node " << node2->num << " count below " << node2->cvf[(int)node2->below]->numberPoints << endl;
+					cout << "#  node " << node2->num << " count below " << node2->cvf[(int)node2->below]->GetNumberPoints() << endl;
 				numSegs--;
 				if(numSegs<=0)
 					dfld = (dfld==ABOVE_CRACK) ? BELOW_CRACK : ABOVE_CRACK;

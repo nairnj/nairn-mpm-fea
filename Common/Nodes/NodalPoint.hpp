@@ -54,6 +54,7 @@ class NodalPoint : public LinkedObject
 	
 		short AddMomentumTask1(int,CrackField *,double,Vector *);
 		void AddMassTask1(short,int,double);
+		void AddMassTask1(short,int);
 		void AddMassGradient(short,int,double,double,double,double,MPMBase *);
 	
 		void AddFintTask3(short,int,Vector);
@@ -81,6 +82,7 @@ class NodalPoint : public LinkedObject
         void ZeroDisp(void);
         void DeleteDisp(void);
 		int NumberParticles(void);
+		int NumberNonrigidParticles(void);
 		void Describe(void);
 		void AddDisplacement(short,int,double,Vector *);
 		void AddUnscaledVolume(short,double);

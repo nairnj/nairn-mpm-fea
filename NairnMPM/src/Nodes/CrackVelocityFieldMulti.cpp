@@ -9,7 +9,7 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Nodes/CrackVelocityFieldMulti.hpp"
-#include "Exceptions/CommonException.hpp"
+#include "Exceptions/MPMTermination.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
@@ -21,6 +21,7 @@
 // constructor
 CrackVelocityFieldMulti::CrackVelocityFieldMulti(short theLoc,int cnum) : CrackVelocityField(theLoc,cnum)
 {	numberMaterials=0;
+	numberRigidPoints=0;
 }
 
 // zero all active material velocity fiels
@@ -34,6 +35,9 @@ void CrackVelocityFieldMulti::ZeroMatFields(void)
 }
 
 #pragma mark TASK 1 METHODS
+
+// add "mass" for  rigid particle (task 1)
+void CrackVelocityFieldMulti::AddMassTask1(int matfld) { numberRigidPoints++; }
 
 // Add to mass gradient
 void CrackVelocityFieldMulti::AddMassGradient(int matfld,double mp,double dNdx,double dNdy,double dNdz,MPMBase *mptr)
@@ -114,7 +118,7 @@ void CrackVelocityFieldMulti::AddFextSpreadTask3(Vector *f)
 void CrackVelocityFieldMulti::CalcFtotTask3(double extDamping)
 {	int i;
     for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			mvf[i]->CalcFtotTask3(extDamping);
 	}
 }
@@ -127,7 +131,7 @@ void CrackVelocityFieldMulti::UpdateMomentaTask4(double timestep)
 {	// update momenta
 	int i;
     for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			AddScaledVector(&mvf[i]->pk,&mvf[i]->ftot,timestep);
     }
 }
@@ -154,16 +158,28 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 	// exit if no contact
 	if(numberMaterials<=1) return;
 	
-	// get center of mass results
-	int i,j;
+	// get center of mass results and look out for rigid materials
+	int i,j,rigidMat=-1;
 	Vector Pc,dispc;
 	ZeroVector(&Pc);
 	double Mc=0.;
 	for(i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveField(mvf[i]))
-		{	AddVector(&Pc,&mvf[i]->pk);
-			Mc+=mvf[i]->mass;
+		{	double matMass=mvf[i]->mass;
+			if(matMass>0.)
+			{	AddVector(&Pc,&mvf[i]->pk);
+				Mc+=mvf[i]->mass;
+			}
+			else if(rigidMat>0)
+				throw MPMTermination("Two different rigid materials type in contact on name node","CrackVelocityFieldMulti::MaterialContact");
+			else
+				rigidMat=i;
 		}
+	}
+	// if exactly one rigid material, they special case for contact laws
+	if(rigidMat>=0)
+	{	RigidMaterialContact(rigidMat,nodenum,vfld,postUpdate,deltime);
+		return;
 	}
 	if(contact.displacementCheck)
 	{	dispc=GetCMDisplacement();
@@ -245,7 +261,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 					break;
 			}			
 			
-			// get approach direction momentum form delPi.n (actual (vc-vi).n = delPi/mi)
+			// get approach direction momentum form delPi.n (actual (vc-vi) = delPi/mi)
 			dotn=DotVectors(&delPi,&norm);
 			
 			// With this check, any movement apart will be taken as noncontact
@@ -258,12 +274,16 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 				double scaleDisp=(Mc-massi)/Mc;
 				if(scaleDisp<1.e-6) continue;
 				
-				// scale displacements
+				// scale displacements to get delta = (Mc/(Mc-mi))*disp - (Mc/(Mc-mi))*(mvf[i]->disp/mi)
 				Vector dispcScaled,dispi;
 				CopyScaleVector(&dispcScaled,&dispc,1./scaleDisp);
 				scaleDisp*=massi;
 				CopyScaleVector(&dispi,&mvf[i]->disp,1./scaleDisp);
+				
+				// to get normal velocity delta v = (Mc/(Mc-mi)) (delta p/mi)
 				double dvel = dotn/scaleDisp;
+				
+				// check for contact
 				if(contact.MaterialContact(&dispi,&dispcScaled,&norm,dvel,postUpdate,deltime)==SEPARATED) continue;
 			}
 		}
@@ -456,7 +476,153 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 	 */
 }
 
-// retrieve mass gradient
+// Called in multimaterial mode to check contact at nodes with multiple materials
+void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int vfld,bool postUpdate,double deltime)
+{
+	// get rigid material volume by subtracting other materials from the total unscaled volume
+	double rho,rigidVolume=unscaledVolume;
+	int i;
+	for(i=0;i<maxMaterialFields;i++)
+	{	if(i==rigidFld || !MatVelocityField::ActiveField(mvf[i])) continue;
+		rho=theMaterials[MaterialBase::fieldMatIDs[i]]->rho*0.001;	// in g/mm^3
+		rigidVolume-=(mvf[i]->mass/rho);
+	}
+	
+	// loop over each material (skipping the one rigid material
+	for(i=0;i<maxMaterialFields;i++)
+    {	if(!MatVelocityField::ActiveField(mvf[i]) || i==rigidFld) continue;
+		
+		// First determine contact law with rigid material
+		int maxContactLaw=contact.GetMaterialContactLaw(i,rigidFld);
+		double maxFriction=contact.GetMaterialFriction(i,rigidFld);
+		
+		// NOCONTACT with rigid materials means to ignore contact, which it not reversion ot single velocity field
+		if(maxContactLaw==NOCONTACT) continue;
+		
+		// some variables
+		Vector norm,delPi;
+		rho=theMaterials[MaterialBase::fieldMatIDs[i]]->rho*0.001;	// in g/mm^3
+		double dotn,massi=mvf[i]->mass;
+		
+		// check nodal volume
+		if(unscaledVolume/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
+		
+		// ignore very small interactions
+		double volRatio=massi/rho/unscaledVolume;
+		if(volRatio<1.e-6 || volRatio>0.999999) continue;
+		
+		// find -mi(vi-vr) = mi*vr-pi, which is change in momentum to match the rigid particle velocity
+		CopyScaleVector(&delPi,&mvf[i]->pk,-1.);
+		AddScaledVector(&delPi,&mvf[rigidFld]->vk,massi);
+		
+		// Get normal vector by various options
+		switch(contact.materialNormalMethod)
+		{	case MAXIMUM_VOLUME_GRADIENT:
+			{	// Use mat with largest magnitude volume gradient
+				Vector normi,normj;
+				nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
+				nd[nodenum]->GetMassGradient(vfld,rigidFld,&normj,-1.);
+				double magi=DotVectors(&normi,&normi);
+				double magj=DotVectors(&normj,&normj);			// already a volume gradiet
+				if(magi/rho >= magj)
+					CopyScaleVector(&norm,&normi,1./sqrt(magi));
+				else
+					CopyScaleVector(&norm,&normj,1./sqrt(magj));
+				break;
+			}
+			case MAXIMUM_VOLUME:
+				// Use mat with most volume
+				if(massi/rho >= rigidVolume)
+					nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+				else
+					nd[nodenum]->GetMassGradient(vfld,rigidFld,&norm,-1.);
+				CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
+				break;
+			/*
+			case EACH_MATERIALS_MASS_GRADIENT:
+				// Use each mat as is
+				nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+				CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
+				break;
+			 
+			case AVERAGE_MAT_VOLUME_GRADIENTS:
+				// Take an average of the two volume gradients
+				break;
+			*/
+			default:
+				break;
+		}			
+		
+		// get approach direction momentum form delPi.n (actual (vr-vi).n = delPi.n/mi)
+		dotn=DotVectors(&delPi,&norm);
+		
+		// With this check, any movement apart will be taken as noncontact
+		// Also, frictional contact assumes dotn<0
+		if(dotn>=0.) continue;
+		
+		// displacement check
+		if(contact.displacementCheck)
+		{	// rigid material displacement was scaled by volume, while non-rigid was weighted by mass
+			Vector rigidDisp,dispi;
+			CopyScaleVector(&rigidDisp,&mvf[rigidFld]->disp,1./rigidVolume);
+			CopyScaleVector(&dispi,&mvf[i]->disp,1./massi);
+			
+			// convert dotn to velocity of approach
+			double dvel = dotn/massi;
+			
+			// check for contact
+			if(contact.MaterialContact(&dispi,&rigidDisp,&norm,dvel,postUpdate,deltime)==SEPARATED) continue;
+		}
+		
+		// the material is in contact
+		Vector tang;
+		double dott;
+		
+		switch(maxContactLaw)
+		{	case STICK:
+			case NOCONTACT:
+				break;
+				
+			case FRICTIONLESS:
+				CopyScaleVector(&delPi,&norm,dotn);
+				break;
+				
+			case FRICTIONAL:
+				CopyVector(&tang,&delPi);
+				AddScaledVector(&tang,&norm,-dotn);
+				dott=sqrt(DotVectors(&tang,&tang));
+				if(!DbleEqual(dott,0.))
+				{	ScaleVector(&tang,1./dott);
+					dott=DotVectors(&delPi,&tang);
+					if(dott<0.)
+					{	ScaleVector(&tang,-1.);
+						dott=-dott;
+					}
+					if(dott>-maxFriction*dotn)
+					{	AddScaledVector(&norm,&tang,-maxFriction);
+						CopyScaleVector(&delPi,&norm,dotn);
+					}
+				}
+				break;
+				
+			default:
+				break;
+		}
+		
+		// on post update contact, do not change nodes with boundary conditions
+		unsigned char fixedDirection=nd[nodenum]->fixedDirection;
+		if(postUpdate && fixedDirection)
+		{	if(fixedDirection&X_DIRECTION) delPi.x=0.;
+			if(fixedDirection&Y_DIRECTION) delPi.y=0.;
+			if(fixedDirection&Z_DIRECTION) delPi.z=0.;
+		}
+		
+		// change momenta
+		mvf[i]->ChangeMomentum(&delPi,postUpdate,deltime);
+	}
+}
+
+	// retrieve mass gradient
 void CrackVelocityFieldMulti::GetMassGradient(int matfld,Vector *grad,double scale) { CopyScaleVector(grad,mvf[matfld]->massGrad,scale); }
 
 #pragma mark VELOCITY METHODS
@@ -476,7 +642,7 @@ void CrackVelocityFieldMulti::CalcVelocityForStrainUpdate(void)
 void CrackVelocityFieldMulti::SetXMomVel(void)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	mvf[i]->pk.x=0.;
 			mvf[i]->vk.x=0.;
 		}
@@ -487,7 +653,7 @@ void CrackVelocityFieldMulti::SetXMomVel(void)
 void CrackVelocityFieldMulti::SetYMomVel(void)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	mvf[i]->pk.y=0.;
 			mvf[i]->vk.y=0.;
 		}
@@ -498,7 +664,7 @@ void CrackVelocityFieldMulti::SetYMomVel(void)
 void CrackVelocityFieldMulti::SetZMomVel(void)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	mvf[i]->pk.z=0.;
 			mvf[i]->vk.z=0.;
 		}
@@ -511,7 +677,7 @@ void CrackVelocityFieldMulti::SetZMomVel(void)
 void CrackVelocityFieldMulti::SetSkewMomVel(double angle)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	double c=cos(angle),s=sin(angle);
 			Vector *npk=&mvf[i]->pk;
 			double momx=npk->x*s*s + npk->y*c*s;
@@ -528,7 +694,7 @@ void CrackVelocityFieldMulti::SetSkewMomVel(double angle)
 void CrackVelocityFieldMulti::AddXMomVel(double vx)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	mvf[i]->pk.x+=mvf[i]->mass*vx;
 			mvf[i]->vk.x+=vx;
 		}
@@ -539,7 +705,7 @@ void CrackVelocityFieldMulti::AddXMomVel(double vx)
 void CrackVelocityFieldMulti::AddYMomVel(double vy)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	mvf[i]->pk.y+=mvf[i]->mass*vy;
 			mvf[i]->vk.y+=vy;
 		}
@@ -550,7 +716,7 @@ void CrackVelocityFieldMulti::AddYMomVel(double vy)
 void CrackVelocityFieldMulti::AddZMomVel(double vz)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	mvf[i]->pk.z+=mvf[i]->mass*vz;
 			mvf[i]->vk.z+=vz;
 		}
@@ -562,7 +728,7 @@ void CrackVelocityFieldMulti::AddZMomVel(double vz)
 void CrackVelocityFieldMulti::AddSkewMomVel(double vel,double angle)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	double velx=cos(angle)*vel;
 			double vely=-sin(angle)*vel;
 			mvf[i]->pk.x+=mvf[i]->mass*velx;
@@ -578,7 +744,7 @@ void CrackVelocityFieldMulti::AddSkewMomVel(double vel,double angle)
 void CrackVelocityFieldMulti::SetXFtot(double deltime)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			mvf[i]->ftot.x=-mvf[i]->pk.x/deltime;
 	}
 }
@@ -588,7 +754,7 @@ void CrackVelocityFieldMulti::SetXFtot(double deltime)
 void CrackVelocityFieldMulti::SetYFtot(double deltime)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			mvf[i]->ftot.y=-mvf[i]->pk.y/deltime;
 	}
 }
@@ -598,7 +764,7 @@ void CrackVelocityFieldMulti::SetYFtot(double deltime)
 void CrackVelocityFieldMulti::SetZFtot(double deltime)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			mvf[i]->ftot.z=-mvf[i]->pk.z/deltime;
 	}
 }
@@ -613,7 +779,7 @@ void CrackVelocityFieldMulti::SetSkewFtot(double deltime,double angle)
 {	
 	 int i;
 	 for(i=0;i<maxCrackFields;i++)
-	 {   if(MatVelocityField::ActiveField(mvf[i]))
+	 {   if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	double c=cos(angle),s=sin(angle);
 			double dfxdt=-mvf[i]->pk.x*c*c + mvf[i]->pk.y*c*s;	// to get zero skew momentum
 			double dfydt=mvf[i]->pk.x*c*s - mvf[i]->pk.y*s*s;
@@ -629,7 +795,7 @@ void CrackVelocityFieldMulti::SetSkewFtot(double deltime,double angle)
 void CrackVelocityFieldMulti::AddXFtot(double deltime,double velx)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			mvf[i]->ftot.x+=mvf[i]->mass*velx/deltime;
 	}
 }
@@ -638,7 +804,7 @@ void CrackVelocityFieldMulti::AddXFtot(double deltime,double velx)
 void CrackVelocityFieldMulti::AddYFtot(double deltime,double vely)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			mvf[i]->ftot.y+=mvf[i]->mass*vely/deltime;
 	}
 }
@@ -647,7 +813,7 @@ void CrackVelocityFieldMulti::AddYFtot(double deltime,double vely)
 void CrackVelocityFieldMulti::AddZFtot(double deltime,double velz)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			mvf[i]->ftot.z+=mvf[i]->mass*velz/deltime;
 	}
 }
@@ -657,7 +823,7 @@ void CrackVelocityFieldMulti::AddZFtot(double deltime,double velz)
 void CrackVelocityFieldMulti::AddSkewFtot(double deltime,double vel,double angle)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	double velx=cos(angle)*vel;
 			double vely=-sin(angle)*vel;
 			mvf[i]->ftot.x+=mvf[i]->mass*velx/deltime;
@@ -668,13 +834,16 @@ void CrackVelocityFieldMulti::AddSkewFtot(double deltime,double vel,double angle
 
 #pragma mark ACCESSORS
 
+// total number of non-rigid points
+int CrackVelocityFieldMulti::GetNumberPointsNonrigid(void) { return numberPoints-numberRigidPoints; }
+
 // location for crack in this field
 // total mass all velocity fields
 double CrackVelocityFieldMulti::GetTotalMass(void)
 {	int i;
 	double mass=0;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			mass+=mvf[i]->mass;
 	}
 	return mass;
@@ -682,7 +851,7 @@ double CrackVelocityFieldMulti::GetTotalMass(void)
 
 // get one mass
 double CrackVelocityFieldMulti::GetMass(int matfld)
-{	if(MatVelocityField::ActiveField(mvf[matfld]))
+{	if(MatVelocityField::ActiveNonrigidField(mvf[matfld]))
 		return mvf[matfld]->mass;
 	else
 		return 0.;
@@ -760,7 +929,7 @@ void CrackVelocityFieldMulti::ChangeMomentum(Vector *delP,bool postUpdate,double
 int CrackVelocityFieldMulti::CopyFieldMomenta(Vector *holdPk,int offset)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	holdPk[offset]=mvf[i]->pk;
 			offset++;
 		}
@@ -772,7 +941,7 @@ int CrackVelocityFieldMulti::CopyFieldMomenta(Vector *holdPk,int offset)
 int CrackVelocityFieldMulti::PasteFieldMomenta(Vector *holdPk,int offset)
 {	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 		{	mvf[i]->pk=holdPk[offset];
 			offset++;
 		}

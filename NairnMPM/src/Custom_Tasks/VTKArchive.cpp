@@ -337,7 +337,7 @@ CustomTask *VTKArchive::EndExtrapolations(void)
 	// divide all by nodal mass
 	int i,j;
     for(i=1;i<=nnodes;i++)
-	{	if(nd[i]->NumberParticles()==0) continue;
+	{	if(nd[i]->NumberNonrigidParticles()==0) continue;
 		double mnode=1./nd[i]->mass;
 		
 		double *vtkquant=vtk[i];

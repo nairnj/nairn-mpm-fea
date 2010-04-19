@@ -23,8 +23,6 @@ class MPMBase;
 class CrackVelocityField
 {
 	public:
-		int numberPoints;			// total number of materials points in this field/field [0] change to summ of all in task 8
-	
 		short loc[2];				// crack location's
 		int crackNum[2];			// crack number's
 		Vector norm[2];				// crack normal's/norm[0] used for velocity when moving crack planes
@@ -39,7 +37,8 @@ class CrackVelocityField
 		
 		// specific task methods
 		void AddMomentumTask1(int,Vector *,Vector *);
-		void AddMassTask1(int,double);
+		virtual void AddMassTask1(int,double);
+		virtual void AddMassTask1(int);
 		virtual double GetTotalMassTask1(void) = 0;
 		virtual void AddMassGradient(int,double,double,double,double,MPMBase *);
 	
@@ -104,6 +103,8 @@ class CrackVelocityField
 		virtual int CopyFieldMomenta(Vector *,int) = 0;
 		virtual int PasteFieldMomenta(Vector *,int) = 0;
 		Vector GetVelocity(int);
+		virtual int GetNumberPoints(void);
+		virtual int GetNumberPointsNonrigid(void);
 		void Describe(void);
 	
 		// class methods
@@ -111,6 +112,7 @@ class CrackVelocityField
 		static CrackVelocityField *CreateCrackVelocityField(short,int);
 	
 	protected:
+		int numberPoints;			// total number of materials points in this field/field [0] changed to sum of all in task 8
 		MatVelocityField **mvf;		// material velocity fields
 };
 

@@ -62,8 +62,8 @@ void MatVelocityField::ChangeMomentum(Vector *delP,bool postUpdate,double deltim
 
 // Calculate velocity at a node from current momentum and mass matrix in all velocity fields
 void MatVelocityField::CalcVelocityForStrainUpdate(void)
-{	// only 1 point is stored already, 0 will have zero velocity
-	if(numberPoints<=1) return;
+{	// only 1 point or rigid contact material is stored already, 0 will have zero velocity
+	if(numberPoints<=1 || mass==0) return;
 	CopyScaleVector(&vk,&pk,1./mass);
 }
 
@@ -79,3 +79,6 @@ void MatVelocityField::CalcFtotTask3(double extDamping)
 
 // return true if references field is active in this time step
 bool MatVelocityField::ActiveField(MatVelocityField *mvf) { return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0) ; }
+
+// return true if references field that is active and is not for rigid materials
+bool MatVelocityField::ActiveNonrigidField(MatVelocityField *mvf) { return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0 && mvf->mass>0.) ; }

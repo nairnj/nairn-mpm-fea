@@ -74,7 +74,7 @@ class MaterialBase : public LinkedObject
 		// initialization (base class only)
         void PrintMaterial(int);
 		void PrintCommonProperties(void);
-		void PreliminaryMatCalcs(void);
+		virtual void PreliminaryMatCalcs(void);
          
         // Methods (abstract methods must be overridden)
         virtual void LoadMechProps(int,double,int);
@@ -118,6 +118,7 @@ class MaterialBase : public LinkedObject
         virtual double MaximumDiffusivity(void);
         virtual double GetHistory(int,char *);
 		virtual short Rigid(void);
+		virtual short RigidBC(void);
 		virtual bool isTractionLaw(void);
 		virtual void SetFriction(double,int,double,double,double);
 		virtual ContactDetails *GetContactToMaterial(int);
@@ -128,7 +129,7 @@ class MaterialBase : public LinkedObject
 
 		// accessors (base class only)
 #ifdef MPM_CODE
-		int SetField(int,bool,int);
+		virtual int SetField(int,bool,int);
 		int GetField(void);
  		Tensor *GetkCondTensor(void);
 		Tensor *GetDiffusionTensor(void);

@@ -264,7 +264,7 @@ void CrackSurfaceContact::MaterialContactPairs(int maxFields)
 
 // In task 1, track displacements or position and track volume of the entire crack velocity field
 void CrackSurfaceContact::AddDisplacementVolumeTask1(short vfld,int matfld,NodalPoint *ndpt,MPMBase *mptr,double shape)
-{
+{	// exit if has no cracks and is in single material mode (i.e., not contact being done)
 	if(firstCrack==NULL && maxMaterialFields==1) return;
 	
 	// displacement or position for contact calculations
@@ -283,7 +283,7 @@ void CrackSurfaceContact::AddDisplacementVolumeTask1(short vfld,int matfld,Nodal
 
 // In task 6, track displacements or position, but unlike task 1, no need to get volumne again
 void CrackSurfaceContact::AddDisplacementTask6(short vfld,int matfld,NodalPoint *ndpt,MPMBase *mptr,double shape)
-{
+{	// exit if has no cracks and is in single material mode (i.e., not contact being done)
 	if(firstCrack==NULL && maxMaterialFields==1) return;
 	
 	// displacement or position for contact calculations
@@ -316,7 +316,7 @@ short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVe
 	// first determine if there is contact
 	short inContact=IN_CONTACT;
 	
-	// velocities above and beloe
+	// velocities above and below
 	double massa=cva->GetTotalMass();
 	Vector pka=cva->GetCMatMomentum();
 	double massb=cvb->GetTotalMass();
@@ -598,7 +598,7 @@ void CrackSurfaceContact::FrictionalDeltaP(Vector *delP,Vector *norm,int number)
 	delP->y=mdelvn*(norm->y - mu*norm->x);
 }
 	
-// Calculate forces at imperfect interfaces and both CrackVelocityFields are preent and have particles
+// Calculate forces at imperfect interfaces and both CrackVelocityFields are present and have particles
 // Return TRUE if imperfect interface or FALSE if not
 short CrackSurfaceContact::GetInterfaceForce(NodalPoint *np,Vector *fImp,CrackVelocityField *cva,
 				CrackVelocityField *cvb,Vector *norm,int number,double *rawEnergy)

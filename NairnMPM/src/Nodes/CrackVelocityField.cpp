@@ -85,6 +85,9 @@ void CrackVelocityField::AddMomentumTask1(int matfld,Vector *addPk,Vector *vel)
 // add to mass (task 1) and field was allocated (if needed) in AddMomentumTask1()
 void CrackVelocityField::AddMassTask1(int matfld,double mnode) { mvf[matfld]->mass+=mnode; }
 
+// add "mass" for  rigid particle (task 1) (only functions in CrackVelocityFieldMulti)
+void CrackVelocityField::AddMassTask1(int matfld) { }
+
 // Add to mass gradient (overridden in CrackVelocityFieldMulti where it is needed)
 void CrackVelocityField::AddMassGradient(int matfld,double mp,double dNdx,double dNdy,double dNdz,MPMBase *mptr) {}
 
@@ -112,7 +115,7 @@ void CrackVelocityField::AddMomentumTask6(int matfld,double wt,Vector *vel)
 {	// momentum
 	AddScaledVector(&mvf[matfld]->pk,vel,wt);		// in g mm/sec
     
-    // save velocity if only node
+    // save velocity if only one point on this node
     if(numberPoints==1)
 		CopyVector(&mvf[matfld]->vk, vel);
 }
@@ -232,6 +235,12 @@ Vector CrackVelocityField::GetVelocity(int matfld)
 {	return mvf[matfld]->vk;
 }
 
+// total number of points (rigid and nonrigid included)
+int CrackVelocityField::GetNumberPoints(void) { return numberPoints; }
+
+// total number of non-rigid points (override in CrackVelocityFieldMulti)
+int CrackVelocityField::GetNumberPointsNonrigid(void) { return numberPoints; }
+
 // for debugging
 void CrackVelocityField::Describe(void)
 {
@@ -250,7 +259,7 @@ void CrackVelocityField::Describe(void)
 
 #pragma mark CLASS METHODS
 
-// return true if references field is active in this time step
+// return true if referenced field is active in this time step
 bool CrackVelocityField::ActiveField(CrackVelocityField *cvf) { return cvf==NULL ? (bool)FALSE : (cvf->numberPoints>0) ; }
 
 // create single or multi material crack velocity field as needed
