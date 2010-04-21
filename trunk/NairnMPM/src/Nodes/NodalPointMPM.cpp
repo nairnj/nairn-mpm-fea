@@ -317,7 +317,7 @@ void NodalPoint::ZeroDisp(void)
 {	
 	int i;
 	for(i=0;i<maxCrackFields;i++)
-	{	if(CrackVelocityField::ActiveField(cvf[i]))
+	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
 			cvf[i]->CreateStrainField();
 	}
 	 
@@ -325,7 +325,7 @@ void NodalPoint::ZeroDisp(void)
 	//	s is same side of crack, a and b are above and below.
 	// Field [1], if present, tells which is above or below
 	// This calculation assumes only 1 crack
-	if(!CrackVelocityField::ActiveField(cvf[1]))
+	if(!CrackVelocityField::ActiveNonrigidField(cvf[1]))
 	{	// only field [0] so both are zero
 		above=below=0;
 	}
@@ -344,7 +344,7 @@ void NodalPoint::DeleteDisp(void)
 {
 	int i;
 	for(i=0;i<maxCrackFields;i++)
-	{	if(CrackVelocityField::ActiveField(cvf[i]))
+	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
 			cvf[i]->DeleteStrainField();
 	}
 }
@@ -388,7 +388,7 @@ void NodalPoint::CalcStrainField(void)
 
 	// do all strain fields
 	for(j=0;j<maxCrackFields;j++)
-	{	if(!CrackVelocityField::ActiveField(cvf[j])) continue;
+	{	if(!CrackVelocityField::ActiveNonrigidField(cvf[j])) continue;
 		DispField *df=cvf[j]->df;
 		if(df==NULL) continue;
 		
@@ -529,13 +529,13 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	double y1=seg->surfy[side-1];
 	
 	// check in field [1] if it is for crack crackNumber
-	if(CrackVelocityField::ActiveField(cvf[1]))
+	if(CrackVelocityField::ActiveNonrigidField(cvf[1]))
 	{	if(cvf[1]->crackNumber(FIRST_CRACK)==crackNumber)
 		{	if(side==cvf[1]->location(FIRST_CRACK))
 			{	vfld=1;
 				
 				// maybe switch [1] to [3]
-				if(CrackVelocityField::ActiveField(cvf[3]))
+				if(CrackVelocityField::ActiveNonrigidField(cvf[3]))
 				{	// if line crosses second crack in [3], switch to [3]
 					int otherCrack=cvf[3]->OppositeCrackTo(crackNumber,side);
 					if(otherCrack>0)
@@ -550,7 +550,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 			{	vfld=0;
 				
 				// maybe switch [0] to [2]
-				if(CrackVelocityField::ActiveField(cvf[2]))
+				if(CrackVelocityField::ActiveNonrigidField(cvf[2]))
 				{	// if line crosses the crack found in [2], then switch to [2]
 					if(SurfaceCrossesOneCrack(x1,y1,x,y,cvf[2]->crackNumber(FIRST_CRACK))!=NO_CRACK)
 					   vfld=2;
@@ -562,13 +562,13 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	}
 	
 	// if not found in [1], check in [2]
-	if(vfld<0 && CrackVelocityField::ActiveField(cvf[2]))
+	if(vfld<0 && CrackVelocityField::ActiveNonrigidField(cvf[2]))
 	{	if(cvf[2]->crackNumber(FIRST_CRACK)==crackNumber)
 		{	if(side==cvf[2]->location(FIRST_CRACK))
 			{	vfld=2;
 		
 				// maybe switch [2] to [3]
-				if(CrackVelocityField::ActiveField(cvf[3]))
+				if(CrackVelocityField::ActiveNonrigidField(cvf[3]))
 				{	// if line crosses second crack in [3], switch to [3]
 					int otherCrack=cvf[3]->OppositeCrackTo(crackNumber,side);
 					if(otherCrack>0)
@@ -583,7 +583,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 			{	vfld=0;
 				
 				// maybe switch [0] to [1]
-				if(CrackVelocityField::ActiveField(cvf[1]))
+				if(CrackVelocityField::ActiveNonrigidField(cvf[1]))
 				{	// if line crosses the crack in [1], then switch to [1]
 					if(SurfaceCrossesOneCrack(x1,y1,x,y,cvf[1]->crackNumber(FIRST_CRACK))!=NO_CRACK)
 						vfld=1;
@@ -595,7 +595,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	}
 	
 	// if not found in [1] or [2], look in [3]
-	if(vfld<0 && CrackVelocityField::ActiveField(cvf[3]))
+	if(vfld<0 && CrackVelocityField::ActiveNonrigidField(cvf[3]))
 	{	// verify has correct field and retreive other crack
 		int otherCrack=cvf[3]->OppositeCrackTo(crackNumber,side);
 		if(otherCrack>0)
@@ -607,7 +607,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 		{	// when not found, try to see if cross path other crack to [1] or [2]
 			otherCrack=cvf[3]->OppositeCrackTo(crackNumber,ABOVE_CRACK+BELOW_CRACK-side);
 			if(otherCrack>0)
-			{	if(CrackVelocityField::ActiveField(cvf[1]))
+			{	if(CrackVelocityField::ActiveNonrigidField(cvf[1]))
 				{	if(otherCrack=cvf[1]->crackNumber(FIRST_CRACK))
 					{	if(SurfaceCrossesOneCrack(x1,y1,x,y,otherCrack)!=NO_CRACK)
 							vfld=1;
@@ -615,7 +615,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 							vfld=0;
 					}
 				}
-				if(vfld<0 && CrackVelocityField::ActiveField(cvf[2]))
+				if(vfld<0 && CrackVelocityField::ActiveNonrigidField(cvf[2]))
 				{	if(otherCrack=cvf[2]->crackNumber(FIRST_CRACK))
 					{	if(SurfaceCrossesOneCrack(x1,y1,x,y,otherCrack)!=NO_CRACK)
 							vfld=2;
@@ -629,7 +629,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	}
 	
 	// if still not found, see if [0] can be used
-	if(vfld<0 && CrackVelocityField::ActiveField(cvf[0]))
+	if(vfld<0 && CrackVelocityField::ActiveNonrigidField(cvf[0]))
 	{	Vector moved=seg->SlightlyMoved(side);
 		CrackField cfld[2];
 		SurfaceCrossesCracks(moved.x,moved.y,x,y,cfld);
@@ -637,24 +637,24 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 			vfld=0;
 		else if(cfld[1].loc==NO_CRACK)
 		{	// only one crack was found - does it match [1] or [2]
-			if(CrackVelocityField::ActiveField(cvf[1]))
+			if(CrackVelocityField::ActiveNonrigidField(cvf[1]))
 			{	if(cfld[0].crackNum==cvf[1]->crackNumber(FIRST_CRACK))
 				{	if(cfld[0].loc==cvf[1]->location(FIRST_CRACK))
 						vfld=1;
-					else if(CrackVelocityField::ActiveField(cvf[0]))
+					else if(CrackVelocityField::ActiveNonrigidField(cvf[0]))
 						vfld=0;				// if surface particle was on the crack
 				}
 			}
-			if(vfld<0 && CrackVelocityField::ActiveField(cvf[2]))
+			if(vfld<0 && CrackVelocityField::ActiveNonrigidField(cvf[2]))
 			{	if(cfld[0].crackNum==cvf[2]->crackNumber(FIRST_CRACK))
 				{	if(cfld[0].loc==cvf[2]->location(FIRST_CRACK))
 						vfld=2;
-					else if(CrackVelocityField::ActiveField(cvf[0]))
+					else if(CrackVelocityField::ActiveNonrigidField(cvf[0]))
 						vfld=0;				// if surface particle was on the crack
 				}
 			}
 		}
-		else if(CrackVelocityField::ActiveField(cvf[3]))
+		else if(CrackVelocityField::ActiveNonrigidField(cvf[3]))
 		{	// found two cracks, but only use if same two cracks that are in [3]
 			if(cfld[0].crackNum==cvf[3]->crackNumber(FIRST_CRACK) && cfld[1].crackNum==cvf[3]->crackNumber(SECOND_CRACK))
 			{	if(cfld[0].loc==cvf[3]->location(FIRST_CRACK) && cfld[1].loc==cvf[3]->location(SECOND_CRACK))
@@ -669,7 +669,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	
 	// Exit if no field
 	if(vfld<0) return FALSE;
-	if(!CrackVelocityField::ActiveField(cvf[vfld])) return FALSE;
+	if(!CrackVelocityField::ActiveNonrigidField(cvf[vfld])) return FALSE;
 	
 	// increment the velocity if enough mass
 	
@@ -745,7 +745,7 @@ void NodalPoint::CalcCMVelocityTask8(void)
 	ZeroVector(&nodePk);
 	int totalParticles=0;
 	for(i=0;i<maxCrackFields;i++)
-	{	if(CrackVelocityField::ActiveField(cvf[i]))
+	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
 			totalParticles+=cvf[i]->CollectMomentaTask8(&nodePk);
 	}
 	
@@ -870,11 +870,11 @@ void NodalPoint::CrackContact(int makeCopy,bool postUpdate,double deltime)
 	//  3. Never occurs [2], [0]&[2], [2]&[3], [0]&[2]&[3]
 	
 	// exit on no contact
-	bool has1=CrackVelocityField::ActiveField(cvf[1]);
-	bool has2=CrackVelocityField::ActiveField(cvf[2]);
+	bool has1=CrackVelocityField::ActiveNonrigidField(cvf[1]);
+	bool has2=CrackVelocityField::ActiveNonrigidField(cvf[2]);
 	if(!has1 && !has2) return;	// True for [0], [3], and [0]&[3]
-	bool has0=CrackVelocityField::ActiveField(cvf[0]);
-	bool has3=CrackVelocityField::ActiveField(cvf[3]);
+	bool has0=CrackVelocityField::ActiveNonrigidField(cvf[0]);
+	bool has3=CrackVelocityField::ActiveNonrigidField(cvf[3]);
 	if(!has0 && !has3) return;	// True for [1] and [1]&[2]
 	
 	// store references to this node for future use
@@ -1007,11 +1007,11 @@ void NodalPoint::InterfaceForce(void)
 	//  3. Never occurs [2], [0]&[2], [2]&[3], [0]&[2]&[3]
 	
 	// skip those with no contact
-	bool has1=CrackVelocityField::ActiveField(cvf[1]);
-	bool has2=CrackVelocityField::ActiveField(cvf[2]);
+	bool has1=CrackVelocityField::ActiveNonrigidField(cvf[1]);
+	bool has2=CrackVelocityField::ActiveNonrigidField(cvf[2]);
 	if(!has1 && !has2) return;		// True for [0], [3], and [0]&[3]
-	bool has0=CrackVelocityField::ActiveField(cvf[0]);
-	bool has3=CrackVelocityField::ActiveField(cvf[3]);
+	bool has0=CrackVelocityField::ActiveNonrigidField(cvf[0]);
+	bool has3=CrackVelocityField::ActiveNonrigidField(cvf[3]);
 	if(!has0 && !has3) return;	// True for [1] and [1]&[2]
     
 	
@@ -1101,7 +1101,7 @@ void NodalPoint::AddInterfaceForce(short a,short b,Vector *norm,int crackNumber)
 		dist=fabs(mpmgrid.gridx*norm->x/dist);
 	else
 		dist=mpmgrid.gridy*tx;
-	double surfaceArea=2.0*fmin(cvf[a]->unscaledVolume,cvf[b]->unscaledVolume)/dist;
+	double surfaceArea=2.0*fmin(cvf[a]->UnscaledVolumeNonrigid(),cvf[b]->UnscaledVolumeNonrigid())/dist;
 	
 	// add total force (in g mm/sec^2)
 	AddFintSpreadTask3(a,MakeVector(fImpInt.x*surfaceArea,fImpInt.y*surfaceArea,0.));

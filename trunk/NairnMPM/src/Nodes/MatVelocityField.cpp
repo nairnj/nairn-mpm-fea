@@ -54,7 +54,7 @@ void MatVelocityField::AddMomentumTask1(Vector *addPk,Vector *vel)
 // in response to contact, change the momentum
 // for a single point, calculate the velocity
 // if postUpdate is true, then adjust ftot as well to keep in sync with momentum change
-void MatVelocityField::ChangeMomentum(Vector *delP,bool postUpdate,double deltime)
+void MatVelocityField::ChangeMatMomentum(Vector *delP,bool postUpdate,double deltime)
 {	AddVector(&pk,delP);
 	if(numberPoints==1) CopyScaleVector(&vk,&pk,1./mass);
 	if(postUpdate) AddScaledVector(&ftot, delP, 1./deltime);

@@ -161,10 +161,11 @@ short CrackVelocityField::IncrementDelvTask8(double fi,Vector *delV,double nodal
 }
 
 // Collect momenta and add to vector when finding CM velocity to move crack planes
+// return number of nonrigid points
 int CrackVelocityField::CollectMomentaTask8(Vector *totalPk)
 {	Vector fieldPk=GetCMatMomentum();
 	AddVector(totalPk,&fieldPk);
-	return numberPoints;
+	return GetNumberPointsNonrigid();
 }
 
 // Collect momenta and add to vector when finding CM velocity to move crack planes
@@ -257,10 +258,16 @@ void CrackVelocityField::Describe(void)
 	}
 }
 
+// the unscaled volume
+double CrackVelocityField::UnscaledVolumeNonrigid(void) { return unscaledVolume; }
+
 #pragma mark CLASS METHODS
 
 // return true if referenced field is active in this time step
 bool CrackVelocityField::ActiveField(CrackVelocityField *cvf) { return cvf==NULL ? (bool)FALSE : (cvf->numberPoints>0) ; }
+
+// return true if referenced field is active AND has some non-rigid particles
+bool CrackVelocityField::ActiveNonrigidField(CrackVelocityField *cvf) { return cvf==NULL ? (bool)FALSE : (cvf->GetNumberPointsNonrigid()>0) ; }
 
 // create single or multi material crack velocity field as needed
 CrackVelocityField *CrackVelocityField::CreateCrackVelocityField(short theLoc,int cnum)
