@@ -194,7 +194,7 @@ void CrackSegment::AddTractionFext(CrackHeader *theCrack,int side,double sign)
 		if(vfld>0)
 		{	// a crossing field - to use it, must be field there and must have same loc (wrt above or below crack)
 			// tration laws cannot handle multple cracks or interacting fiels
-			if(CrackVelocityField::ActiveField(nd[nds[i]]->cvf[1]))
+			if(CrackVelocityField::ActiveNonrigidField(nd[nds[i]]->cvf[1]))
 			{	if(vfld==nd[nds[i]]->cvf[1]->location(FIRST_CRACK))
 					vfld=1;
 				else

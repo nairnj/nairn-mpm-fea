@@ -32,6 +32,7 @@ void CrackVelocityFieldMulti::ZeroMatFields(void)
 			mvf[i]->Zero();
 	}
 	numberMaterials=0;
+	numberRigidPoints=0;
 }
 
 #pragma mark TASK 1 METHODS
@@ -66,10 +67,11 @@ double CrackVelocityFieldMulti::GetTotalMassTask1(void)
 #pragma mark TASK 3 METHODS
 
 // Add to fint spread out over the materials to each has same extra accerations = f/M
+// only called to add interface force on a crack
 void CrackVelocityFieldMulti::AddFintSpreadTask3(Vector *f)
 {	int i;
 	
-	// special case for only one material
+	// special case for only one material, which must be nonrigid
 	if(numberMaterials==1)
 	{	for(i=0;i<maxMaterialFields;i++)
 		{	if(MatVelocityField::ActiveField(mvf[i]))
@@ -79,21 +81,22 @@ void CrackVelocityFieldMulti::AddFintSpreadTask3(Vector *f)
 		}
 	}
 	
-	// more than one material
+	// more than one material, add to nonrigid materials only
 	else
 	{	double totMass=GetTotalMass();
 		for(i=0;i<maxMaterialFields;i++)
-		{	if(MatVelocityField::ActiveField(mvf[i]))
+		{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 				AddScaledVector(&mvf[i]->fint,f,mvf[i]->mass/totMass);
 		}
 	}
 }
 
 // Add to fext spread out over the materials to each has same extra accerations = f/M
+// Only called for crack traction forces
 void CrackVelocityFieldMulti::AddFextSpreadTask3(Vector *f)
 {	int i;
 	
-	// special case for only one material
+	// special case for only one material, which must be nonrigid
 	if(numberMaterials==1)
 	{	for(i=0;i<maxMaterialFields;i++)
 		{	if(MatVelocityField::ActiveField(mvf[i]))
@@ -107,7 +110,7 @@ void CrackVelocityFieldMulti::AddFextSpreadTask3(Vector *f)
 	else
 	{	double totMass=GetTotalMass();
 		for(i=0;i<maxMaterialFields;i++)
-		{	if(MatVelocityField::ActiveField(mvf[i]))
+		{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 				AddScaledVector(&mvf[i]->fext,f,mvf[i]->mass/totMass);
 		}
 	}
@@ -181,6 +184,8 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 	{	RigidMaterialContact(rigidMat,nodenum,vfld,postUpdate,deltime);
 		return;
 	}
+	
+	// from here on all material in contact are non-rigid
 	if(contact.displacementCheck)
 	{	dispc=GetCMDisplacement();
 		ScaleVector(&dispc,1./Mc);
@@ -337,11 +342,11 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 		}
 		
 		// change momenta
-		mvf[i]->ChangeMomentum(&delPi,postUpdate,deltime);
+		mvf[i]->ChangeMatMomentum(&delPi,postUpdate,deltime);
 		
 		// special case two materials for efficiency (or if both will find normal the same way)
 		if(numberMaterials==2)
-		{	mvf[ipaired]->ChangeMomentum(ScaleVector(&delPi,-1.),postUpdate,deltime);
+		{	mvf[ipaired]->ChangeMatMomentum(ScaleVector(&delPi,-1.),postUpdate,deltime);
 			break;
 		}
 	}
@@ -469,8 +474,8 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 			}
 			
 			// change momenta
-			mvf[i]->ChangeMomentum(&delPa,postUpdate,deltime);
-			mvf[j]->ChangeMomentum(&delPb,postUpdate,deltime);
+			mvf[i]->ChangeMatMomentum(&delPa,postUpdate,deltime);
+			mvf[j]->ChangeMatMomentum(&delPb,postUpdate,deltime);
 		}
 	}
 	 */
@@ -618,7 +623,7 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 		}
 		
 		// change momenta
-		mvf[i]->ChangeMomentum(&delPi,postUpdate,deltime);
+		mvf[i]->ChangeMatMomentum(&delPi,postUpdate,deltime);
 	}
 }
 
@@ -838,7 +843,7 @@ void CrackVelocityFieldMulti::AddSkewFtot(double deltime,double vel,double angle
 int CrackVelocityFieldMulti::GetNumberPointsNonrigid(void) { return numberPoints-numberRigidPoints; }
 
 // location for crack in this field
-// total mass all velocity fields
+// total mass all velocity fields (rigid particles have zero mass)
 double CrackVelocityFieldMulti::GetTotalMass(void)
 {	int i;
 	double mass=0;
@@ -849,7 +854,7 @@ double CrackVelocityFieldMulti::GetTotalMass(void)
 	return mass;
 }
 
-// get one mass
+// get one mass (rigid particles have zero mass
 double CrackVelocityFieldMulti::GetMass(int matfld)
 {	if(MatVelocityField::ActiveNonrigidField(mvf[matfld]))
 		return mvf[matfld]->mass;
@@ -857,44 +862,62 @@ double CrackVelocityFieldMulti::GetMass(int matfld)
 		return 0.;
 }
 
-// get center of mass momentum for all material fields in this crack velocity field
+// get center of mass momentum for all nonrigid material fields in this crack velocity field
 Vector CrackVelocityFieldMulti::GetCMatMomentum(void)
 {	Vector pk;
 	ZeroVector(&pk);
 	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			AddVector(&pk,&mvf[i]->pk);
 	}
 	return pk;
 }
 
-// get center of mass (displacement*mass so displacement is vector/total mass)
+// get center of mass displacement (actually sum of displacement*mass so displacement is vector/total mass)
+// Includes only non-rigid materials
 Vector CrackVelocityFieldMulti::GetCMDisplacement(void)
 {	Vector dk;
 	ZeroVector(&dk);
 	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			AddVector(&dk,&mvf[i]->disp);
 	}
 	return dk;
 }
 
-// get center of mass momentum for all material fields in this crack velocity field
+// get center of mass force for all material fields in this crack velocity field
 Vector CrackVelocityFieldMulti::GetCMatFtot(void)
 {	Vector fk;
 	ZeroVector(&fk);
 	int i;
 	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			AddVector(&fk,&mvf[i]->ftot);
 	}
 	return fk;
 }
 
-/* in response to crack contact, change moment by changing velocity of all materials
-	the same amount
+// get rigid material volume by subtracting other materials from the total unscaled volume
+double CrackVelocityFieldMulti::UnscaledVolumeNonrigid(void)
+{	// total volume if no rigid particles
+	if(numberRigidPoints<=0) return unscaledVolume;
+	
+	// sum each nonrigid material
+	double rho,nonrigidVolume=0.0;
+	int i;
+	for(i=0;i<maxMaterialFields;i++)
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+		{	rho=theMaterials[MaterialBase::fieldMatIDs[i]]->rho*0.001;	// in g/mm^3
+			nonrigidVolume+=(mvf[i]->mass/rho);
+		}
+	}
+	return nonrigidVolume;
+}
+
+/* in response to crack contact, change moment by changing velocity of all 
+	nonrigid materials the same amount
  
    Change velocity by dP/M, where M is total mass
    Material i velocity becomes vi = pi/mi + dP/M
@@ -904,11 +927,11 @@ void CrackVelocityFieldMulti::ChangeMomentum(Vector *delP,bool postUpdate,double
 {
 	int i;
 	
-	// special case for only one material
+	// special case for only one material (and it must be nonrigid
 	if(numberMaterials==1)
 	{	for(i=0;i<maxMaterialFields;i++)
 		{	if(MatVelocityField::ActiveField(mvf[i]))
-			{	mvf[i]->ChangeMomentum(delP,postUpdate,deltime);
+			{	mvf[i]->ChangeMatMomentum(delP,postUpdate,deltime);
 				break;
 			}
 		}
@@ -919,8 +942,8 @@ void CrackVelocityFieldMulti::ChangeMomentum(Vector *delP,bool postUpdate,double
 	{	Vector partialDelP;
 		double totMass=GetTotalMass();
 		for(i=0;i<maxMaterialFields;i++)
-		{	if(MatVelocityField::ActiveField(mvf[i]))
-				mvf[i]->ChangeMomentum(CopyScaleVector(&partialDelP, delP, mvf[i]->mass/totMass),postUpdate,deltime);
+		{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+				mvf[i]->ChangeMatMomentum(CopyScaleVector(&partialDelP, delP, mvf[i]->mass/totMass),postUpdate,deltime);
 		}
 	}
 }

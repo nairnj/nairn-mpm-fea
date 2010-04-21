@@ -26,13 +26,12 @@ class CrackVelocityField
 		short loc[2];				// crack location's
 		int crackNum[2];			// crack number's
 		Vector norm[2];				// crack normal's/norm[0] used for velocity when moving crack planes
-		double unscaledVolume;		// unscaled volume (ignores dilation) only used for imperfect interface forces
 		DispField *df;				// For J and K calculations
 		
         // constructors and destructors
         CrackVelocityField(short,int);
         virtual ~CrackVelocityField();
-		void Zero(short,int,bool);
+		virtual void Zero(short,int,bool);
 		virtual void ZeroMatFields() = 0;
 		
 		// specific task methods
@@ -105,15 +104,18 @@ class CrackVelocityField
 		Vector GetVelocity(int);
 		virtual int GetNumberPoints(void);
 		virtual int GetNumberPointsNonrigid(void);
+		virtual double UnscaledVolumeNonrigid(void);
 		void Describe(void);
 	
 		// class methods
 		static bool ActiveField(CrackVelocityField *);
+		static bool ActiveNonrigidField(CrackVelocityField *cvf);
 		static CrackVelocityField *CreateCrackVelocityField(short,int);
 	
 	protected:
 		int numberPoints;			// total number of materials points in this field/field [0] changed to sum of all in task 8
 		MatVelocityField **mvf;		// material velocity fields
+		double unscaledVolume;		// unscaled volume (ignores dilation) only used for imperfect interface forces
 };
 
 #endif

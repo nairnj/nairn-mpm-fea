@@ -88,7 +88,7 @@ void CubicTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,do
 	{	// is it failed?
 		if(tCod>delIIc)
 		{	cs->SetMatID(0);			// then debonded
-			cout << "# shear debond t,x,y "<< 1000.*mtime << "," << cs->x << "," <<cs-> y << endl;
+			cout << "# shear debond t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
 			Tn=0.;						// turn off normal traciton when failed
 		}
 		else

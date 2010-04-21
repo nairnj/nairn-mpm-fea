@@ -36,12 +36,14 @@ double CrackVelocityFieldSingle::GetTotalMassTask1(void)
 #pragma mark TASK 3 METHODS
 
 // Add to fint spread out over the materials to each has same extra accelerations = f/M_i
+// only called to add interface foces on a crack
 void CrackVelocityFieldSingle::AddFintSpreadTask3(Vector *f)
 {	if(MatVelocityField::ActiveField(mvf[0]))
 		AddVector(&mvf[0]->fint,f);
 }
 
 // Add to fext spread out over the materials to each has same extra accelerations = f/M_i
+// Only called for crack traction forces
 void CrackVelocityFieldSingle::AddFextSpreadTask3(Vector *f)
 {	if(MatVelocityField::ActiveField(mvf[0]))
 		AddVector(&mvf[0]->fext,f);
@@ -249,7 +251,7 @@ Vector CrackVelocityFieldSingle::GetCMatMomentum(void)
 	}
 }
 
-// get center of mass (displacement*mass so displance is vector/total mass)
+// get center of mass displacement (actually sum of displacement*mass so displacement is vector/total mass)
 Vector CrackVelocityFieldSingle::GetCMDisplacement(void)
 {	if(MatVelocityField::ActiveField(mvf[0]))
 		return mvf[0]->disp;
@@ -280,7 +282,7 @@ Vector CrackVelocityFieldSingle::GetCMatFtot(void)
 */
 void CrackVelocityFieldSingle::ChangeMomentum(Vector *delP,bool postUpdate,double deltime)
 {	if(MatVelocityField::ActiveField(mvf[0]))
-		mvf[0]->ChangeMomentum(delP,postUpdate,deltime);
+		mvf[0]->ChangeMatMomentum(delP,postUpdate,deltime);
 }
 
 // copy all material velocity fields for boundary conditions methods, returning new offset into the save array
