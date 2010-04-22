@@ -22,10 +22,11 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
 
   * Current trunk Version
     * Working on NairnMPM 7.2.3
-    * A new type of rigid materials (with `SetDirection=8`) that can do frictional contact in multimaterial mode. It can be used to wedge open cracks.
+    * A new type of rigid materials (with `SetDirection=8`) that can do frictional contact in multimaterial mode. It can also be used to wedge open cracks.
     * Blocked custom tasks from turning off extrapolations and added material field to custom task methods
     * Added `unique` attribute to `ArchiveRoot` command to force creation of new results subfolder on each run.
     * Added `material` option to the `VTKArchive` custom task.
+    * VonMises material has added on nonlinear hardening law; before it only had linear hardening.
     * Transversely isotropic, orthotropic, and Hill plastic materials now do 3D. Rotation methods in `Body` command used to specify initial orientation of particles. All seem to work, but it is difficult to verify off-axis orientations. (Warning: any checkout for 7.2.2 had 3D correct, but broke the 2D version for these materials only. It is fixed when version changed to 7.2.3)
     * Rewrote Newton-Rapheson algorithm in anisotropic plastic materials (Hill plastic) to add bracketing, which should eliminate instabilities that were common with certain values for anisotropic yield stresses.
     * Archive format changed to `ver6` to add archiving of 3 rotation angles of 3D particles needed for anisotropic materials.
