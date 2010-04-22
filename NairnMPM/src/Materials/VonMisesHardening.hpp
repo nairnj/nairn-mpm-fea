@@ -19,8 +19,10 @@ class VonMisesHardening : public IsoPlasticity
 {
     public:
         // Plastic modulus (Ep: slope of unidirectional stress - plastic strain curve) or tangential modulus ET
+		// can enter Ep OR ET for linear hardening or enter beta AND npow for nonlinear hardening
 		// yield stress in IsoPlasticity
         double Ep,ET;
+		double beta,npow;
 
         // constructors and destructors
         VonMisesHardening();
@@ -45,6 +47,7 @@ class VonMisesHardening : public IsoPlasticity
     protected:
         // specific values of yield strength & plastic modulus 
         double Epred;
+		bool linearHardening;
 
 };
 

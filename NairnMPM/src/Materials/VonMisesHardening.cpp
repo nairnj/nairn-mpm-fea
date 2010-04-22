@@ -23,6 +23,9 @@ VonMisesHardening::VonMisesHardening(char *matName) : IsoPlasticity(matName)
     // default value of plastic modulus (ideal elastic-plasticity)
     Ep=Epred=0.0;  
     ET=-1.;
+	linearHardening=TRUE;
+	beta=0.;
+	npow=1.;
 }
 
 #pragma mark VonMisesHardening::Initialization
@@ -38,7 +41,12 @@ void VonMisesHardening::PrintMechanicalProperties(void)
 void VonMisesHardening::PrintYieldProperties(void)
 {
 	PrintProperty("yld",yield,"");
-	PrintProperty("Ep",Ep,"");
+	if(linearHardening)
+		PrintProperty("Ep",Ep,"");
+	else
+	{	PrintProperty("beta",beta,"");
+		PrintProperty("n",npow,"");
+	}
     cout << endl;
 }
 
@@ -57,6 +65,20 @@ char *VonMisesHardening::InputMat(char *xName,int &input)
         return((char *)&ET);
     }
 
+    // Khard: coefficient of plastic strains for non-linear hardening (beta)
+    else if(strcmp(xName,"Khard")==0)
+    {   input=DOUBLE_NUM;
+		linearHardening=FALSE;
+        return((char *)&beta);
+    }
+	
+    // mhard: power in non-linear hardening
+    else if(strcmp(xName,"nhard")==0)
+    {   input=DOUBLE_NUM;
+		linearHardening=FALSE;
+        return((char *)&npow);
+    }
+	
     return(IsoPlasticity::InputMat(xName,input));
 }
 
@@ -67,8 +89,11 @@ void VonMisesHardening::InitialLoadMechProps(int makeSpecific,int np)
 	// if got ET, then override/calculate Ep
     if(ET>=0.) Ep=E*ET/(E-ET);
 	
-	// reduced prooperties
-    Epred=Ep*1.e6/rho; 
+	// reduced properties
+    Epred=Ep*1.e6/rho;
+	
+	// beta and npow (if used) are dimensionless
+	// if either is entered, Ep and ET are ignored
 	
 	IsoPlasticity::InitialLoadMechProps(makeSpecific,np);
 }
@@ -78,7 +103,7 @@ void VonMisesHardening::InitialLoadMechProps(int makeSpecific,int np)
 // Return yield stress for current conditions (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
 double VonMisesHardening::GetYield(MPMBase *mptr,int np,double delTime)
 {
-	return yldred + Epred*alpint;
+	return linearHardening ? yldred + Epred*alpint : yldred*pow(1.+beta*alpint,npow) ;
 }
 
 // Get derivative of sqrt(2./3.)*yield with respect to lambda for plane strain and 3D
@@ -86,7 +111,7 @@ double VonMisesHardening::GetYield(MPMBase *mptr,int np,double delTime)
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)lamda or depdot/dlambda = sqrt(2./3.)/delTime
 double VonMisesHardening::GetKPrime(MPMBase *mptr,int np,double delTime)
 {
-	return 2.*Epred/3.;
+	return linearHardening ? 2.*Epred/3. : 2.*yldred*beta*npow*pow(1.+beta*alpint,npow-1)/3. ;
 }
 
 // Get derivative of (1./3.)*yield^2 with respect to lambda for plane stress only
@@ -94,14 +119,15 @@ double VonMisesHardening::GetKPrime(MPMBase *mptr,int np,double delTime)
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)*lambda*fnp1 or depdot/dlambda = sqrt(2./3.)*fnp1/delTime
 double VonMisesHardening::GetK2Prime(MPMBase *mptr,double fnp1,double delTime)
 {
-	return sqrt(8./27.)*(yldred + Epred*alpint)*Epred*fnp1;
+	return linearHardening ? sqrt(8./27.)*(yldred + Epred*alpint)*Epred*fnp1 : 
+								sqrt(8./27.)*yldred*yldred*beta*npow*pow(1.+beta*alpint,2.*npow-1)*fnp1;
 }
 
 // Solve this linear model in closed form for lambdak and update trial alpha
 double VonMisesHardening::SolveForLambda(MPMBase *mptr,int np,double strial,Tensor *stk,double delTime)
 {
 	// plane strain is numerical
-	if(np==PLANE_STRESS_MPM)
+	if(np==PLANE_STRESS_MPM || !linearHardening)
 		return IsoPlasticity::SolveForLambda(mptr,np,strial,stk,delTime);
 		
 	// closed form for plane strain and 3D
@@ -116,5 +142,5 @@ double VonMisesHardening::SolveForLambda(MPMBase *mptr,int np,double strial,Tens
 int VonMisesHardening::MaterialTag(void) { return VONMISESHARDENING; }
 
 // return material type
-const char *VonMisesHardening::MaterialType(void) { return "Von Mises Linear Hardening Plastic"; }
+const char *VonMisesHardening::MaterialType(void) { return "Von Mises Hardening Plastic"; }
 
