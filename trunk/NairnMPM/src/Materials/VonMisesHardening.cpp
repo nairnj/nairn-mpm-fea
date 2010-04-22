@@ -44,7 +44,7 @@ void VonMisesHardening::PrintYieldProperties(void)
 	if(linearHardening)
 		PrintProperty("Ep",Ep,"");
 	else
-	{	PrintProperty("beta",beta,"");
+	{	PrintProperty("K",beta,"");
 		PrintProperty("n",npow,"");
 	}
     cout << endl;
@@ -130,7 +130,7 @@ double VonMisesHardening::SolveForLambda(MPMBase *mptr,int np,double strial,Tens
 	if(np==PLANE_STRESS_MPM || !linearHardening)
 		return IsoPlasticity::SolveForLambda(mptr,np,strial,stk,delTime);
 		
-	// closed form for plane strain and 3D
+	// closed form for plane strain and 3D and linear hardening
 	double lambdak = (strial - sqrt(2./3.)*(yldred + Epred*alpint))/(2.*(Gred + Epred/3.));
 	UpdateTrialAlpha(mptr,np,lambdak,(double)1.);
 	return lambdak;

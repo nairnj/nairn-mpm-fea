@@ -496,12 +496,20 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 </p>
 <blockquote>f = ||s|| - sqrt(2/3) * &sigma;<sub>Y</sub>
 </blockquote>
-<p>where <code>s</code> is deviatoric stress. Since its magnitude, or<code>||s||</code>, is a stress invariant, this yield condition is isotropic or independent of the material orientation angle. The material also allows isotropic work hardening based on cumulative equivalent plastic strain and determined by a non-zero plastic modulus (<code>Ep</code>). When hardening the yield stress is given by
+<p>where <code>s</code> is deviatoric stress. Since its magnitude, or <code>||s||</code>, is a stress invariant, this yield condition is isotropic or independent of the material orientation angle. The material also allows isotropic work hardening based on cumulative equivalent plastic strain and implements either linear hardening or one non-linear hardening law. For linear hardening the yield stress is given by
 </p>
+
 <blockquote>&sigma;<sub>Y</sub> = &sigma;<sub>Y0</sub> + E<sub>p</sub>&alpha;
 </blockquote>
 
-<p>where <code>&sigma;<sub>Y0</sub></code> is the initial yield stress and <code>&alpha;</code> is an internal variable that tracks cummulative, equivalent plastic strain (see history variable below). The input properties are:</p>
+<p>where <code>&sigma;<sub>Y0</sub></code> is the initial yield stress, <code>Ep</code> is the plastic modulus, and <code>&alpha;</code> is an internal variable that tracks cummulative, equivalent plastic strain (see history variable below). For nonlinear hardening the yield stress is given by</p>
+
+<blockquote>&sigma;<sub>Y</sub> = &sigma;<sub>Y0</sub>(1 + K&alpha;)<sup>n</sup>
+</blockquote>
+
+<p>where <code>K</code> and <code>n</code> are dimensionless hardening parameters. The choice of linear or nonlinear hardening depends on which properties are defined.</p>
+
+<p>The possible input properties are:</p>
 
 <dl>
 
@@ -509,11 +517,13 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <dd>The initial yield stress (in MPa). This stress corresponds to the axial stress at yield during uniaxial, 3D loading.</dd>
     	
 <dt>&lt;Ep&gt;1.5&lt;/Ep&gt;</dt>
-<dd>The plastic modulus (in MPa). This modulus is the slope of total stress as a function of plastic strain during uniaxial, 3D loading. The default is 0.0 which results in an elastic-perfectly plastic material or a material with no work hardening.</dd>
+<dd>The plastic modulus (in MPa) for linear hardening. This modulus is the slope of total stress as a function of plastic strain during uniaxial, 3D loading. The default is 0.0 which results in an elastic-perfectly plastic material or a material with no work hardening.</dd>
 
 <dt>&lt;ET&gt;1.5&lt;/ET&gt;</dt>
-<dd>The tangent modulus (in MPa). This modulus is the slope of total stress as a function of total strain after yielding in uniaxial, 3D loading. The key material property is <code>Ep</code>. Entering <code>ET</code> is provided as a convenience. If you enter it, <code>Ep = E ET/(E-ET)</code> will be calculated for you and override any entry of <code>Ep</code>.</dd>
+<dd>The tangent modulus (in MPa) for linear hardening. This modulus is the slope of total stress as a function of total strain after yielding in uniaxial, 3D loading. The key material property is <code>Ep</code>. Entering <code>ET</code> is provided as a convenience. If you enter it, <code>Ep = E ET/(E-ET)</code> will be calculated for you and override any entry of <code>Ep</code>.</dd>
 
+<dt>&lt;Khard&gt;1500&lt;/Khard&gt; and &lt;nhard&gt;0.29&lt;/nhard&gt;</dt>
+<dd>The dimensionless parameters for nonlinear hardening. If either one of these properties is provided, the material will use nonlinear hardening and any entries for <code>Ep</code> or <code>ET</code> will be ignored; otherwise the material will use linear hardening. Although linear hardening is a subset or nonlinear hardening (<i>i.e.</i>, it is special case for <code>n=1</code> and <code>E<sub>p</sub>=K&sigma;<sub>Y0</sub></code>), it is more efficient to use actual linear hardening whenever <code>n=1</code>.</dd>
 
 <dt>Other Properties</dt>
 <dd>See <a href="#iso">Linear Elastic, Isotopic</a> material.</dd>
@@ -522,8 +532,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
     
 <h3>History Data for Von Mises Plastic, Isotropic</h3>
 
-<p>When the plastic modulus is non-zero, the history variable is the cummulative equivalent plastic strain defined as the sum of
-<code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>. This variable can be archived as history variable 1.</p>
+<p>The one history variable is the cummulative equivalent plastic strain, <code>&alpha;</code>, defined as the sum of <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>. This variable can be archived as history variable 1.</p>
     
 <a name="bistab"></a><h2>Bistable, Isotropic Elastic</h2>
 
