@@ -48,7 +48,7 @@ class CrackSegment
         void MovePosition(void);
         void MovePosition(short,double,double,bool,double);
 		int CheckSurfaces(void);
-		bool MoveToPlane(int,double,double,bool);
+		bool MoveToPlane(int,double,double,bool,double);
 		void StartCrackTipHeating(double,double);
 		double HeatRate(void);
 		double ForwardArea(double,double,int);
