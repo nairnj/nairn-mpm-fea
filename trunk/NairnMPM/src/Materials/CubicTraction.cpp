@@ -89,7 +89,7 @@ void CubicTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,do
 		if(tCod>delIIc)
 		{	cs->SetMatID(0);			// then debonded
 			cout << "# shear debond t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
-			Tn=0.;						// turn off normal traciton when failed
+			Tn=0.;						// turn off normal traction when failed
 		}
 		else
 		{	if(fabs(tCod)>upeak[1]) upeak[1]=fabs(tCod);		// new peak reached in either direction
@@ -98,7 +98,7 @@ void CubicTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,do
 		}
 	}
 	
-	// force is traction time area projected onto x-y plane
+	// force is traction times area projected onto x-y plane
 	cs->tract.x=area*(Tn*dy - Tt*dx);
 	cs->tract.y=area*(-Tn*dx - Tt*dy);
 }

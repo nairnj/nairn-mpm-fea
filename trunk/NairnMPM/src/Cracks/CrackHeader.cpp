@@ -473,6 +473,9 @@ short CrackHeader::MoveCrack(short side)
 			cpos.y=scrk->surfy[js];
 			theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cpos,&cncpos);
             
+			/* CUTTING debugs
+			if(fabs(cpos.x-12.05)<=.1) cout << "# n:";
+			*/
 			// renormalize shape functions in case missing some nodes
 			ZeroVector(&delv);
 			surfaceMass=0;
@@ -488,6 +491,17 @@ short CrackHeader::MoveCrack(short side)
 			
 			// move it
 			scrk->MovePosition(side,timestep*delv.x,timestep*delv.y,(numempty!=numnds),surfaceMass);		// in mm
+			
+			/* CUTTING debugs
+			if(fabs(cpos.x-12.05)<=.1)
+			{	cout << endl;
+				if(side==ABOVE_CRACK)
+					cout << "# A:";
+				else
+					cout << "# B:";
+				cout << numnds << ", " << numnds-numempty << ", " << fnorm << ", " << delv.x << ", " << delv.y << ", " << surfaceMass << ", " << (iel+1) << endl;
+			}
+			*/
 			
 			// did surface move elements
 			if(!scrk->FindElement(side)) return FALSE;

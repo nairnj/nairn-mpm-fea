@@ -633,6 +633,15 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	{	Vector moved=seg->SlightlyMoved(side);
 		CrackField cfld[2];
 		SurfaceCrossesCracks(moved.x,moved.y,x,y,cfld);
+		/* CUTTING debugs
+		if(fabs(x1-12.05)<.1)
+		{	cout << "[" << CrackHeader::Triangle(moved.x,moved.y,x,y,(seg->prevSeg)->x,(seg->prevSeg)->y);
+			cout << "," << CrackHeader::Triangle(moved.x,moved.y,x,y,seg->x,seg->y);
+			cout << "," << CrackHeader::Triangle((seg->prevSeg)->x,(seg->prevSeg)->y,seg->x,seg->y,moved.x,moved.y);
+			cout << "," << CrackHeader::Triangle((seg->prevSeg)->x,(seg->prevSeg)->y,seg->x,seg->y,x,y);
+			cout << ","  << cfld[0].loc << "]";
+		}
+		 */
 		if(cfld[0].loc==NO_CRACK)
 			vfld=0;
 		else if(cfld[1].loc==NO_CRACK)
@@ -671,8 +680,13 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	if(vfld<0) return FALSE;
 	if(!CrackVelocityField::ActiveNonrigidField(cvf[vfld])) return FALSE;
 	
+	/* CUTTING debugs
+	if(fabs(x1-12.05)<.1)
+	{	cout << "(" << num << "," << vfld << ")" ;
+		if(CrackVelocityField::ActiveNonrigidField(cvf[1])) cout <<cvf[1]->location(FIRST_CRACK) ;
+	}
+	*/
 	// increment the velocity if enough mass
-	
 	if(cvf[vfld]->IncrementDelvTask8(fi,delv,mass))
 	{	*surfaceMass+=fi*mass;
 		return TRUE;

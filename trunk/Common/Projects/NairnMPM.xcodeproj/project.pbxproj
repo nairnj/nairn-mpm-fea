@@ -644,6 +644,7 @@
 			children = (
 				08FB7795FE84155DC02AAC07 /* NairnMPM */,
 				A78F829503EF27970063AF10 /* NairnFEA */,
+				A7198C5409780F5200334C4F /* Common */,
 				A72A90CC0CD2ADC0001DCFA8 /* ExtractMPM */,
 				0249A662FF388D9811CA2CEA /* External Frameworks and Libraries */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
@@ -1032,7 +1033,6 @@
 			isa = PBXGroup;
 			children = (
 				F5C19ED8035E042401A80007 /* makefile */,
-				A7198C5409780F5200334C4F /* Common */,
 			);
 			name = build;
 			path = ../build;
