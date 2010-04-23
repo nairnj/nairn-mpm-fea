@@ -597,7 +597,7 @@ int CrackSegment::CheckSurfaces(void)
 }
 
 // Move surface side (ABOVE_CRACK or BELOW_CRACK) to plane
-// See JAN-OSU-4, pg 82
+// See JAN-OSU-4, pg 133-134
 bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool internalSegment,double dir)
 {	
 	int j=side-1;				// index to surface position
@@ -631,7 +631,7 @@ bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool internalSegme
 	
 	return true;
 	
-	/* old method moved along the COD
+	/* old method moved along the COD See JAN-OSU-4, pg 82
 	 
 	 int c1=side-1;
 	 int c2=1-c1;
