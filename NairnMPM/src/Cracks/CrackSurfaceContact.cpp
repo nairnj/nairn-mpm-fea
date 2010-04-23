@@ -35,6 +35,7 @@ CrackSurfaceContact::CrackSurfaceContact()
 	Dt=-1.;						// perfect in shear by default
 	hasImperfectInterface=FALSE;	// flag for any imperfect interfaces
 	moveOnlySurfaces=TRUE;			// move surfaces, plane moves at midpoint of surfaces
+	preventPlaneCrosses=TRUE;		// if true, move surfaces that cross the crack plane back to the crack plane
 	contactByDisplacements=TRUE;	// contact by displacements
 	positionCutoff=0.8;				// element fraction when contact by positions
 	materialFriction=0.;				// material contact friction
@@ -91,6 +92,10 @@ void CrackSurfaceContact::Output(int numberOfCracks)
 		cout << "Crack Plane Updating: Average of the crack surfaces" << endl;
 	else
 		cout << "Crack Plane Updating: Use center of mass velocity" << endl;
+	if(GetPreventPlaneCrosses())
+		cout << "Crack Plane Crosses: surface particles moved back to the current plane" << endl;
+	else
+		cout << "Crack Plane Crosses: ignored" << endl;
 	
 	// allocate memory for custom crack contact laws
 	char *p=new char[(numberOfCracks+1)*sizeof(ContactDetails)];
@@ -696,6 +701,10 @@ short CrackSurfaceContact::MaterialContact(Vector *dispa,Vector *dispb,Vector *n
 // return current setting for moving only surfaces
 bool CrackSurfaceContact::GetMoveOnlySurfaces(void) { return moveOnlySurfaces; }
 void CrackSurfaceContact::SetMoveOnlySurfaces(bool moveSurfaces) { moveOnlySurfaces=moveSurfaces; }
+
+// return current setting for moving only surfaces
+bool CrackSurfaceContact::GetPreventPlaneCrosses(void) { return preventPlaneCrosses; }
+void CrackSurfaceContact::SetPreventPlaneCrosses(bool preventCross) { preventPlaneCrosses=preventCross; }
 
 // return current setting for contact method
 bool CrackSurfaceContact::GetContactByDisplacements(void) { return contactByDisplacements; }

@@ -826,7 +826,7 @@ void NairnMPM::MPMStep(void)
 				nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 			}
 		}
-    }
+   }
 	
 #pragma mark --- TASK 8b: RESET ELEMEMTS
 #ifdef LOG_PROGRESS

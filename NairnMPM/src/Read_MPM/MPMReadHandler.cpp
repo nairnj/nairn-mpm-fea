@@ -378,14 +378,20 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     	numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
+			value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"type")==0)
-			{	value=XMLString::transcode(attrs.getValue(i));
-				if(strcmp(value,"cm")==0 || strcmp(value,"CM")==0)
+			{	if(strcmp(value,"cm")==0 || strcmp(value,"CM")==0)
 					contact.SetMoveOnlySurfaces(FALSE);
 				else
-					contact.SetMoveOnlySurfaces(TRUE);
-				delete [] value;
+					contact.SetMoveOnlySurfaces(TRUE);				
             }
+			else if(strcmp(aName,"prevent")==0)
+			{	if(strcmp(value,"no")==0 || strcmp(value,"No")==0 || strcmp(value,"NO")==0)
+					contact.SetPreventPlaneCrosses(FALSE);
+				else
+					contact.SetPreventPlaneCrosses(TRUE);				
+            }
+			delete [] value;
             delete [] aName;
         }
     }

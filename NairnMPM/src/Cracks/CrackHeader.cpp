@@ -342,8 +342,10 @@ short CrackHeader::MoveCrack(void)
 				// did element move
 				if(!scrk->FindElement()) return FALSE;
 				
-				// make sure surface are on correect side of the crack
-				if(!scrk->CheckSurfaces()) return FALSE;
+				// make sure surface are on correct side of the crack
+				if(contact.GetPreventPlaneCrosses())
+				{	if(!scrk->CheckSurfaces()) return FALSE;
+				}
 			}
 			
 			// track extent
@@ -380,9 +382,9 @@ short CrackHeader::MoveCrack(void)
 	// move crack plane particles by CM velocity
 	else
 	{	long iel;
-		double fnorm,fn[MaxShapeNds];
+		double fn[MaxShapeNds];
 		Vector cncpos;
-		int j,numempty;
+		int j;
 		Vector delv,cpos,vcm;
 		int nds[MaxShapeNds],numnds;
 		
@@ -395,10 +397,13 @@ short CrackHeader::MoveCrack(void)
 				cpos.y=scrk->y;
 				theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cpos,&cncpos);
 				
-				// renormalize shape functions in case missing some nodes
+				// initialize
 				ZeroVector(&delv);
-				fnorm=0.;
-				numempty=0;
+				
+				/*
+				// renormalize shape functions in case missing some nodes
+				double fnorm=0.;
+				int numempty=0;
 				for(j=1;j<=numnds;j++)
 				{	if(nd[nds[j]]->GetCMVelocityTask8(&vcm))
 					{	fnorm+=fn[j];
@@ -408,7 +413,14 @@ short CrackHeader::MoveCrack(void)
 						numempty++;
 				}
 				if(numempty!=0 && numempty!=numnds) ScaleVector(&delv,1./fnorm);
+				*/
 						
+				// extrapolate to particle
+				for(j=1;j<=numnds;j++)
+				{	if(nd[nds[j]]->GetCMVelocityTask8(&vcm))
+						AddScaledVector(&delv,&vcm,fn[j]);
+				}
+				
 				// move it
 				scrk->MovePosition(timestep*delv.x,timestep*delv.y);		// in mm
 				
@@ -416,7 +428,9 @@ short CrackHeader::MoveCrack(void)
 				if(!scrk->FindElement()) return FALSE;
 				
 				// check surfaces
-				if(!scrk->CheckSurfaces()) return FALSE;
+				if(contact.GetPreventPlaneCrosses())
+				{	if(!scrk->CheckSurfaces()) return FALSE;
+				}
 			}
 			
 			// track extent
@@ -458,9 +472,9 @@ short CrackHeader::MoveCrack(short side)
 {
     CrackSegment *scrk=firstSeg;
     long iel;
-    double fn[MaxShapeNds],fnorm,surfaceMass;
+    double fn[MaxShapeNds],surfaceMass;
 	Vector cncpos;
-    short js=side-1,numempty,j;
+    short js=side-1,nodeCounter,j;
 	int numnds,nds[MaxShapeNds];
     Vector delv,cpos;
     
@@ -473,35 +487,34 @@ short CrackHeader::MoveCrack(short side)
 			cpos.y=scrk->surfy[js];
 			theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cpos,&cncpos);
             
-			/* CUTTING debugs
-			if(fabs(cpos.x-12.05)<=.1) cout << "# n:";
-			*/
-			// renormalize shape functions in case missing some nodes
+			// initialize
 			ZeroVector(&delv);
 			surfaceMass=0;
-			fnorm=0.;
-			numempty=0;
+			nodeCounter=0;
+			
+			// renormalize shape functions in case missing some nodes
+			/*
+			double fnorm=0.;
 			for(j=1;j<=numnds;j++)
 			{	if(nd[nds[j]]->IncrementDelvSideTask8(side,number,fn[j],&delv,&surfaceMass,scrk))
 					fnorm+=fn[j];
 				else
-					numempty++;
+					nodeCounter++;
 			}
 			if(numempty!=0 && numempty!=numnds) ScaleVector(&delv,1./fnorm);
 			
 			// move it
-			scrk->MovePosition(side,timestep*delv.x,timestep*delv.y,(numempty!=numnds),surfaceMass);		// in mm
+			scrk->MovePosition(side,timestep*delv.x,timestep*delv.y,(nodeCounter!=numnds),surfaceMass);		// in mm
+			 */
 			
-			/* CUTTING debugs
-			if(fabs(cpos.x-12.05)<=.1)
-			{	cout << endl;
-				if(side==ABOVE_CRACK)
-					cout << "# A:";
-				else
-					cout << "# B:";
-				cout << numnds << ", " << numnds-numempty << ", " << fnorm << ", " << delv.x << ", " << delv.y << ", " << surfaceMass << ", " << (iel+1) << endl;
+			// extrapolate those with velocity to the particle
+			for(j=1;j<=numnds;j++)
+			{	if(nd[nds[j]]->IncrementDelvSideTask8(side,number,fn[j],&delv,&surfaceMass,scrk))
+					nodeCounter++;
 			}
-			*/
+			
+			// move it
+			scrk->MovePosition(side,timestep*delv.x,timestep*delv.y,(nodeCounter>0),surfaceMass);		// in mm
 			
 			// did surface move elements
 			if(!scrk->FindElement(side)) return FALSE;

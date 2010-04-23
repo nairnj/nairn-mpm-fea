@@ -170,15 +170,15 @@ int CrackVelocityField::CollectMomentaTask8(Vector *totalPk)
 
 // Collect momenta and add to vector when finding CM velocity to move crack planes
 void CrackVelocityField::SetCMVelocityTask8(Vector *velCM,int totalParticles)
-{	// store in normal vector to save memory (normal not needed again in this time step)
+{	// store in normal vector and crack number to save memory (normal not needed again in this time step)
 	norm[0]=*velCM;
-	numberPoints=totalParticles;
+	crackNum[0]=totalParticles;
 }
 
 // Return CM velocity for crack updates
 bool CrackVelocityField::GetCMVelocityTask8(Vector *velCM)
-{	// stored in normal vector to save memory (normal not needed again in this time step)
-	if(numberPoints==0) return FALSE;
+{	// stored in normal vector and crack number to save memory (they are not needed again in this time step)
+	if(crackNum[0]==0) return FALSE;
 	*velCM=norm[0];
 	return TRUE;
 }

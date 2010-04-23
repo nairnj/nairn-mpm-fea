@@ -255,6 +255,7 @@
 			traction CDATA #IMPLIED>
 <!ELEMENT	MovePlane EMPTY>
 <!ATTLIST	MovePlane
+			prevent (yes|YES|Yes|no|No|NO) #IMPLIED
 			type (cm|CM|avg|Avg|AVG) #IMPLIED>
 <!ELEMENT	ContactPosition (#PCDATA)>
 <!ELEMENT	PropagateLength (#PCDATA)>
