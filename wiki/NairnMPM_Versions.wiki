@@ -23,18 +23,19 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
   * Current trunk Version
     * Working on NairnMPM 7.2.3
     * A new type of rigid materials (with `SetDirection=8`) that can do frictional contact in multimaterial mode. It can also be used to wedge open cracks.
-    * Revised algorithm for preventing crack surfaces from crossing the crack plane and a new option to turn that feature on or off (see `MovePlane` command)
+    * Revised algorithm for preventing crack surfaces from crossing the crack plane and a new option to turn that feature on or off (see `MovePlane` command).
+    * A minor change in the way crack surface velocities are calculated that should only effect cracks that exit the body, but those cracks are better done now using the `exterior` crack tip define in version 7.2.0.
     * Blocked custom tasks from turning off extrapolations and added material field to custom task methods
     * Added `unique` attribute to `ArchiveRoot` command to force creation of new results subfolder on each run.
     * Added `material` option to the `VTKArchive` custom task.
-    * VonMises material has added on nonlinear hardening law; before it only had linear hardening.
-    * Transversely isotropic, orthotropic, and Hill plastic materials now do 3D. Rotation methods in `Body` command used to specify initial orientation of particles. All seem to work, but it is difficult to verify off-axis orientations. (Warning: any checkout for 7.2.2 had 3D correct, but broke the 2D version for these materials only. It is fixed when version changed to 7.2.3)
+    * Von Mises material has added on nonlinear hardening law; before it only had linear hardening.
+    * Transversely isotropic, orthotropic, and Hill plastic materials can now do 3D. Rotation methods in `Body` command used to specify initial orientation of particles. All seem to work, but it is difficult to verify off-axis orientations. (Warning: any checkout for 7.2.2 had 3D correct, but broke the 2D version for these materials only. It is fixed when version changed to 7.2.3)
     * Rewrote Newton-Rapheson algorithm in anisotropic plastic materials (Hill plastic) to add bracketing, which should eliminate instabilities that were common with certain values for anisotropic yield stresses.
     * Archive format changed to `ver6` to add archiving of 3 rotation angles of 3D particles needed for anisotropic materials.
     * More efficient at finding neighboring element when particles cross boundaries (2D, structured grid only)
     * Fixed error calculating particle mass for 3D grids when the elements were not perfect cubes.
     * Added `PropagateLength` command to select the amount of crack growth each time a crack propagates.
-    * `RotateZ` (and `Y` and `X`) can now be used as alternate way to sent angles for MPM models read in using BMP files.
+    * `RotateZ` (and `Y` and `X`) can now be used as alternate methods to sent angles for MPM models read in using BMP files.
 
   * release-1.0 (30 DEC 2009)
     * Has NairnMPM 7.2.0
@@ -60,7 +61,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
       * Similar changes in imperfect interface forces
       * Similar changes when moving crack surfaces (they may benefit further by looking for boundary condition velocities)
       * The move plave avg method uses a weighted average by mass extrapolated to each surface particle
-      * Crack near edge can be designiated as "exterior" mean crack plane is extrapolated but movement comes from within the body (but using tipmat=-1)
+      * Crack near edge can be designiated as `exterior` to mean crack plane is extrapolated but movement comes from within the body (by using tipmat=-1)
 
 = Archival Version History =
 
