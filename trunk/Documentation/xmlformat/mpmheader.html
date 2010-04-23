@@ -48,7 +48,7 @@ This section defines many MPM analysis parameters; it is required for NairnMPM a
         &lt;<a href="#propagatelength"><code>PropagateLength</code></a>&gt;2.5&lt;/PropagateLength&gt;
         &lt;<a href="#jcontour"><code>JContour</code></a> type='1' size=&quot;2&quot; terms=&quot;1&quot;/&gt;
         &lt;<a href="#friction"><code>Friction</code></a>&gt;0.3&lt;/Friction&gt;
-        &lt;<a href="#moveplane"><code>MovePlane</code></a> type='avg'/&gt;
+        &lt;<a href="#moveplane"><code>MovePlane</code></a> type='avg' prevent='no'/&gt;
         &lt;<a href="#contactposition"><code>ContactPosition</code></a>&gt;0.8&lt;/ContactPosition&gt;
     &lt;/Cracks&gt;
     &lt;<a href="#gimp"><code>GIMP</code></a>/&gt;
@@ -280,10 +280,12 @@ By default, cracks propagate as new, traction-free crack surfaces. The traction 
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The friction setting also allows the contact to be modeled as an imperfect interface (in which case it is not really a crack, but an imperfect bond line within the specimen). To specify an imperfect interface, set the friction to a value greater than 10 and then use attributes <code>Dn</code>, <code>Dnc</code>, <code>Dnt</code>, and <code>Dt</code> to set interfacial stiffnesses (in MPa/mm). <code>Dn</code> and <code>Dt</code> determine the interfacial normal and tangential traction as this stiffness times the displacement discontinuity in the normal and tangential directions. For the normal direction <code>Dnc</code> and <code>Dnt</code> let you specific different stiffnesses in compression (surfaces in contact) or tension (surfaces sparated). In theory, an infinite stiffness leads to zero discontinuity or a perfect interface, but high stiffnesses make dynamic MPM unstable. Instead, you can get a perfect interface in any direction by setting the stiffness to -1. When imperfect interfaces are present, you can track their energy usin the <a href="#globalarchive">Interface Energy archiving option</a>.
   </dd>
   
-  <dt><a name="moveplane"></a>&lt;MovePlane type='avg'&gt;</dt>
-  <dd>This setting determines how the crack planes move. The default setting of '<code>avg</code>' means the two crack surfaces move in their separate velocity fields and the crack plane is defined as the average of the two surfaces. The alternative setting is '<code>cm</code>' which means the crack plane moves in the center of mass velocity field. The crack surfaces still move in their separate velocity fields. In all cases, the crack surfaces are prevented from passing through the crack plane.
+  <dt><a name="moveplane"></a>&lt;MovePlane type='avg' prevent='yes'&gt;</dt>
+  <dd>These settings determine how the crack planes move and whether or not cracks surface are allowed to pass through crack planes. The default settings of  <code>type</code> = '<code>avg</code>' and <code>prevent</code> = '<code>yes</code>' means the two crack surfaces move in their separate velocity fields, the crack plane is defined as the average of the two surfaces, and the crack surfaces are prevented from passing through crack planes. The alternative setting for <code>type</code> is '<code>cm</code>' which means the crack plane moves in the center of mass velocity field. The crack surfaces still move in their separate velocity fields. To allow crack surfaces to pass through the crack plane, change <code>prevent</code> to '<code>no</code>'.
   <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Both methods are valid and usually give equivalent results. For some problems, one method or the other is better. Thus, if crack movement seems to cause a problem, try repeating the analysis with the alternate <code>MovePlane</code> setting. The '<code>avg</code>' method is slightly faster because it does not need to calculate nodal center of mass velocities. (Default value: 'avg')
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Both <code>type</code> methods are valid and usually give equivalent results. For some problems, one method or the other is better. Thus, if crack movement seems to cause a problem, try repeating the analysis with the alternate <code>MovePlane</code> setting for <code>type</code>. The '<code>avg</code>' method is slightly faster because it does not need to calculate nodal center of mass velocities. (Default value: 'avg')
+  <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Similarly, both <code>prevent</code> settings are equivalent for well behaved cracks (because surfaces tend to not pass through crack planes). If a simulation has problems tracking surfaces, you can try setting <code>prevent</code> to '<code>no</code>' to see how it changes. The '<code>no</code>' setting is faster because it does not need to check crack surfaces on each time step. (Default value: 'yes')
   </dd>
   
   <dt><a name="contactposition"></a>&lt;ContactPosition&gt;0.8&lt;/ContactPosition&gt;</dt>

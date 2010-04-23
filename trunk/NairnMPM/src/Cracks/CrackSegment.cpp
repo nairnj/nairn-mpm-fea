@@ -353,162 +353,6 @@ double CrackSegment::SegmentTractionEnergy(bool fullEnergy)
 	return theLaw->CrackTractionEnergy(this,nCod,tCod,fullEnergy);
 }
 
-// After crack plane moves, verify it has not passed either surface.
-// If it has, slide that surface along COD to crack plane
-// See JAN-OSU-4, pg 76 for algorithm. final equation on pg 82
-int CrackSegment::CheckSurfaces(void)
-{	
-	// check top surface
-	if(prevSeg==NULL)
-	{	// first segment only
-		if(CrackHeader::Triangle(surfx[0],surfy[0],x,y,nextSeg->x,nextSeg->y)<0.)
-		{	MoveToPlane(ABOVE_CRACK,nextSeg->x-x,nextSeg->y-y,false,1.);
-			if(!FindElement(ABOVE_CRACK)) return false;
-		}
-	}
-	else if(nextSeg==NULL)
-	{	// last segment only
-		if(CrackHeader::Triangle(surfx[0],surfy[0],prevSeg->x,prevSeg->y,x,y)<0.)
-		{	MoveToPlane(ABOVE_CRACK,prevSeg->x-x,prevSeg->y-y,false,-1.);
-			if(!FindElement(ABOVE_CRACK)) return false;
-		}
-	}
-	else
-	{	// internal segments, check each until path intersects the crack segment
-		bool moved=false;
-		if(CrackHeader::Triangle(surfx[0],surfy[0],prevSeg->x,prevSeg->y,x,y)<0.)
-		{	moved=MoveToPlane(ABOVE_CRACK,prevSeg->x-x,prevSeg->y-y,true,-1.);
-			if(moved)
-			{	if(!FindElement(ABOVE_CRACK)) return false;
-			}
-		}
-		if(!moved)
-		{	if(CrackHeader::Triangle(surfx[0],surfy[0],x,y,nextSeg->x,nextSeg->y)<0.)
-			{	if(MoveToPlane(ABOVE_CRACK,nextSeg->x-x,nextSeg->y-y,false,1.))
-				{	if(!FindElement(ABOVE_CRACK)) return false;
-				}
-			}
-		}
-	}
-		
-	// check bottom surface
-	if(prevSeg==NULL)
-	{	// first segment only
-		if(CrackHeader::Triangle(surfx[1],surfy[1],x,y,nextSeg->x,nextSeg->y)>0.)
-		{	MoveToPlane(BELOW_CRACK,nextSeg->x-x,nextSeg->y-y,false,-1.);
-			if(!FindElement(BELOW_CRACK)) return false;
-		}
-	}
-	else if(nextSeg==NULL)
-	{	// last segment only
-		if(CrackHeader::Triangle(surfx[1],surfy[1],prevSeg->x,prevSeg->y,x,y)>0.)
-		{	MoveToPlane(BELOW_CRACK,prevSeg->x-x,prevSeg->y-y,false,1.);
-			if(!FindElement(BELOW_CRACK)) return false;
-		}
-	}
-	else
-	{	// internal segments
-		bool moved=false;
-		if(CrackHeader::Triangle(surfx[1],surfy[1],prevSeg->x,prevSeg->y,x,y)>0.)
-		{	moved=MoveToPlane(BELOW_CRACK,prevSeg->x-x,prevSeg->y-y,true,1.);
-			if(moved)
-			{	if(!FindElement(BELOW_CRACK)) return false;
-			}
-		}
-		if(!moved)
-		{	if(CrackHeader::Triangle(surfx[1],surfy[1],x,y,nextSeg->x,nextSeg->y)>0.)
-			{	if(MoveToPlane(BELOW_CRACK,nextSeg->x-x,nextSeg->y-y,false,-1.))
-				{	if(!FindElement(BELOW_CRACK)) return false;
-				}
-			}
-		}
-	}
-	
-	return true;
-}
-
-// Move surface side (ABOVE_CRACK or BELOW_CRACK) to plane
-// See JAN-OSU-4, pg 82
-bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool internalSegment,double dir)
-{	/*
-	int j=side-1;	// index to surface position
-	
-	cout << "# move side=" << side << " seg=(" << x << "," << y << ")" ;
-	
-	// magnitude of vector to surface in direction of the segment * segLength
-	double t=(surfx[j]-x)*dxp+(surfy[j]-y)*dyp;
-	
-	// if not in this segment, exit (unless end segment)
-	cout << " t=" << t << endl;
-	if(t<0.)
-	{	if(internalSegment) return false;	// return to try other segment
-		t=0.;	// force to crack particle (may not be great result)
-	}
-	else
-	{	// keep within this segment
-		t=fmin(t,1.0);		// if t>1 bring to this segment (may not be great result)
-	}
-	
-	// move to crack plane and a little more in normal direction
-	surfx[j]=x+t*dxp+1.0e-8*dir*dyp;
-	surfy[j]=y+t*dyp+1.0e-8*dir*dxp;
-	
-	return true;
-	 
-	*/
-	
-	int c1=side-1;
-	int c2=1-c1;
-	double dxc=surfx[c2]-surfx[c1],dyc=surfy[c2]-surfy[c1];
-	double t;
-	
-	// separate cases depending on segment orientation
-	if(fabs(dxp)>fabs(dyp))
-	{	double slopeDiff=dxp*dyc-dyp*dxc;
-		if(fabs(slopeDiff/dxp)<1.e-6)
-		{	// close to parallel
-			double p2=dxp*dxp+dyp*dyp;
-			t=(dxp*(surfx[c1]-x)+dyp*(surfy[c1]-y))/p2;
-		}
-		else if(fabs(dxc)<1.e-8)
-		{	// vertical cod
-			t=(surfx[c1]-x)/dxp;
-		}
-		else
-			t=(dyc*(surfx[c1]-x)-dxc*(surfy[c1]-y))/slopeDiff;
-	}
-	else
-	{	double slopeDiff=dyp*dxc-dxp*dyc;
-		if(fabs(slopeDiff/dyp)<1.e-6)
-		{	// close to parallel
-			double p=dxp*dxp+dyp*dyp;
-			t=(dxp*(surfx[c1]-x)+dyp*(surfy[c1]-y))/p;
-		}
-		else if(fabs(dyc)<1.e-8)
-		{	// horizontal cod
-			t=(surfy[c1]-y)/dyp;
-		}
-		else
-			t=(dxc*(surfy[c1]-y)-dyc*(surfx[c1]-x))/slopeDiff;
-	}
-	
-	// if not in this segment, exit (unless end segment)
-	cout << " t=" << t << endl;
-	if(t<0.)
-	{	if(internalSegment) return false;
-		t=0.;
-	}
-	else
-	{	// keep within this segment
-		t=fmin(t,1.0);
-	}
-	
-	surfx[c1]=x+t*dxp;
-	surfy[c1]=y+t*dyp;
-		
-	return true;
-}
-
 // fill archive with this object values
 void CrackSegment::FillArchive(char *app,long segNum)
 {
@@ -674,6 +518,173 @@ Vector CrackSegment::FTract(double fni)
 	fout.x=fni*tract.x;
 	fout.y=fni*tract.y;
 	return fout;
+}
+
+#pragma mark PREVENT PLANE CROSSES
+
+// After crack plane moves, verify it has not passed either surface.
+// If it has, slide that surface along COD to crack plane
+// See JAN-OSU-4, pg 76 for algorithm. final equation on pg 82
+int CrackSegment::CheckSurfaces(void)
+{	
+	// check top surface
+	if(prevSeg==NULL)
+	{	// first segment only
+		if(CrackHeader::Triangle(surfx[0],surfy[0],x,y,nextSeg->x,nextSeg->y)<0.)
+		{	MoveToPlane(ABOVE_CRACK,nextSeg->x-x,nextSeg->y-y,false,1.);
+			if(!FindElement(ABOVE_CRACK)) return false;
+		}
+	}
+	else if(nextSeg==NULL)
+	{	// last segment only
+		if(CrackHeader::Triangle(surfx[0],surfy[0],prevSeg->x,prevSeg->y,x,y)<0.)
+		{	MoveToPlane(ABOVE_CRACK,prevSeg->x-x,prevSeg->y-y,false,-1.);
+			if(!FindElement(ABOVE_CRACK)) return false;
+		}
+	}
+	else
+	{	// internal segments, check each until path intersects the crack segment
+		bool moved=false;
+		if(CrackHeader::Triangle(surfx[0],surfy[0],prevSeg->x,prevSeg->y,x,y)<0.)
+		{	moved=MoveToPlane(ABOVE_CRACK,prevSeg->x-x,prevSeg->y-y,true,-1.);
+			if(moved)
+			{	if(!FindElement(ABOVE_CRACK)) return false;
+			}
+		}
+		if(!moved)
+		{	if(CrackHeader::Triangle(surfx[0],surfy[0],x,y,nextSeg->x,nextSeg->y)<0.)
+		{	if(MoveToPlane(ABOVE_CRACK,nextSeg->x-x,nextSeg->y-y,false,1.))
+		{	if(!FindElement(ABOVE_CRACK)) return false;
+		}
+		}
+		}
+	}
+	
+	// check bottom surface
+	if(prevSeg==NULL)
+	{	// first segment only
+		if(CrackHeader::Triangle(surfx[1],surfy[1],x,y,nextSeg->x,nextSeg->y)>0.)
+		{	MoveToPlane(BELOW_CRACK,nextSeg->x-x,nextSeg->y-y,false,-1.);
+			if(!FindElement(BELOW_CRACK)) return false;
+		}
+	}
+	else if(nextSeg==NULL)
+	{	// last segment only
+		if(CrackHeader::Triangle(surfx[1],surfy[1],prevSeg->x,prevSeg->y,x,y)>0.)
+		{	MoveToPlane(BELOW_CRACK,prevSeg->x-x,prevSeg->y-y,false,1.);
+			if(!FindElement(BELOW_CRACK)) return false;
+		}
+	}
+	else
+	{	// internal segments
+		bool moved=false;
+		if(CrackHeader::Triangle(surfx[1],surfy[1],prevSeg->x,prevSeg->y,x,y)>0.)
+		{	moved=MoveToPlane(BELOW_CRACK,prevSeg->x-x,prevSeg->y-y,true,1.);
+			if(moved)
+			{	if(!FindElement(BELOW_CRACK)) return false;
+			}
+		}
+		if(!moved)
+		{	if(CrackHeader::Triangle(surfx[1],surfy[1],x,y,nextSeg->x,nextSeg->y)>0.)
+		{	if(MoveToPlane(BELOW_CRACK,nextSeg->x-x,nextSeg->y-y,false,-1.))
+		{	if(!FindElement(BELOW_CRACK)) return false;
+		}
+		}
+		}
+	}
+	
+	return true;
+}
+
+// Move surface side (ABOVE_CRACK or BELOW_CRACK) to plane
+// See JAN-OSU-4, pg 82
+bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool internalSegment,double dir)
+{	
+	int j=side-1;				// index to surface position
+	double dxs=surfx[j]-x,dys=surfy[j]-y;		// vector crack particle to surface particle
+	double segLength=sqrt(dxp*dxp+dyp*dyp);
+	
+	// distance crack particle to intersection place (relative to segment length
+	double t=(dxs*dxp+dys*dyp)/segLength;
+	
+	// if less than 0 and at internal segment, return to try the next segment instead
+	if(t<0. && internalSegment) return false;
+	
+	// distance surface to crack plane (relative to segment length)
+	double n=(dxs*dyp-dys*dxp)*dir/segLength;
+	
+	// if pretty close, then do move to plane and hope velocity fields will resolve on their own
+	if(fabs(n)<1.e-6) return true;
+	
+	// restrict terminal segments
+	if(prevSeg==NULL || nextSeg==NULL)
+	{	if(t<0.) t=0.;
+	}
+	if(t>1.)
+		t=1.;
+	else if(t<-1.)
+		t=-1.;
+	
+	// move to crack plane and a little more in normal direction
+	surfx[j]=x+t*dxp-1.0e-12*dir*dyp;
+	surfy[j]=y+t*dyp+1.0e-12*dir*dxp;
+	
+	return true;
+	
+	/* old method moved along the COD
+	 
+	 int c1=side-1;
+	 int c2=1-c1;
+	 double dxc=surfx[c2]-surfx[c1],dyc=surfy[c2]-surfy[c1];
+	 double t;
+	 
+	 // separate cases depending on segment orientation
+	 if(fabs(dxp)>fabs(dyp))
+	 {	double slopeDiff=dxp*dyc-dyp*dxc;
+	 if(fabs(slopeDiff/dxp)<1.e-6)
+	 {	// close to parallel
+	 double p2=dxp*dxp+dyp*dyp;
+	 t=(dxp*(surfx[c1]-x)+dyp*(surfy[c1]-y))/p2;
+	 }
+	 else if(fabs(dxc)<1.e-8)
+	 {	// vertical cod
+	 t=(surfx[c1]-x)/dxp;
+	 }
+	 else
+	 t=(dyc*(surfx[c1]-x)-dxc*(surfy[c1]-y))/slopeDiff;
+	 }
+	 else
+	 {	double slopeDiff=dyp*dxc-dxp*dyc;
+	 if(fabs(slopeDiff/dyp)<1.e-6)
+	 {	// close to parallel
+	 double p=dxp*dxp+dyp*dyp;
+	 t=(dxp*(surfx[c1]-x)+dyp*(surfy[c1]-y))/p;
+	 }
+	 else if(fabs(dyc)<1.e-8)
+	 {	// horizontal cod
+	 t=(surfy[c1]-y)/dyp;
+	 }
+	 else
+	 t=(dxc*(surfy[c1]-y)-dyc*(surfx[c1]-x))/slopeDiff;
+	 }
+	 
+	 // if not in this segment, exit (unless end segment)
+	 cout << " t=" << t << endl;
+	 if(t<0.)
+	 {	if(internalSegment) return false;
+	 t=0.;
+	 }
+	 else
+	 {	// keep within this segment
+	 t=fmin(t,1.0);
+	 }
+	 
+	 surfx[c1]=x+t*dxp;
+	 surfy[c1]=y+t*dyp;
+	 
+	 return true;
+	 
+	 */
 }
 
 #pragma mark ACCESSORS

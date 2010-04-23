@@ -24,8 +24,8 @@ class CrackVelocityField
 {
 	public:
 		short loc[2];				// crack location's
-		int crackNum[2];			// crack number's
-		Vector norm[2];				// crack normal's/norm[0] used for velocity when moving crack planes
+		int crackNum[2];			// crack number's/crackNum[0] used for total particles when moving crack planes by cm
+		Vector norm[2];				// crack normal's/norm[0] used for velocity when moving crack planes by cm
 		DispField *df;				// For J and K calculations
 		
         // constructors and destructors
