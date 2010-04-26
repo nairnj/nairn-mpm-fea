@@ -8,9 +8,11 @@ h1 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 	font-size: 16pt;
 	background-color: #CCCCCC;
 	font-weight: bold;
-	padding: 6pt; }h2 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	padding: 6pt; }
+h2 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
 	font-size: 14pt;
-	margin-left: 3pt; }h3 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	margin-left: 3pt; }
+h3 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
 	font-size: 12pt;
 	margin-left: 3pt;}
 p { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
@@ -356,13 +358,12 @@ be the limits of all data sets.</li>
 
 <li>Fixed Limits: Enter desired minimum and maximum in the provided fields.</li>
 
-<li> Note: you can change limits options for the current plot without replotting by
-changing the settings and then plotting a new frame in the window.</li>
+<li> Note: you can change limits options for the current plot. The new limits will take effect when you plot a new frame or if you click the &quot;Replot&quot; button.</li>
 </ul>
 </ul>
 
 <p>Once all options are selected, click the &quot;Plot&quot; button
-(or use the "Plot Results" menu command or click the &quot;Image&quot;icon)
+(or use the "Plot Results" menu command or click the &quot;Image&quot; icon)
 and the plot will appear in a new window. A key to the plot colors will appear
 at the bottom of the plot area.
 You can resize the window to scale the plot size to the new window size.
@@ -377,6 +378,8 @@ display the coordinates of the mouse location (x and y),
 the nearest element (el), the nearest node (nd), the nearest material point (mp), and
 the plotting value of the nearest material point (z)
 </p>
+
+<p><a name="exportpng"></a>The &quot;Export Graphics...&quot; command in the &quot;File&quot; menu will export the current frame to a <code>png</code> file using a name you provide. The &quot;Export Movie Frames...&quot; command will export a series of frames (starting from current) to the end of the frames (or until the pause control is clicked). The names of the exported frames will use the base name you enter and append a number (<i>e.g.</i>, 0022) for the frame index number just prior to the <code>.png</code> extension. These saved files will overwrite any files in the target folder with the same name. This naming can be read by other software (such as reading an &quot;Image Sequence&quot; into ImageJ) that can convert the frames to a movie.</p> 
 
 <p>| <a href="#index">index</a> | <a href="#plotting">Back to Plotting Results</a> |</p>
 
@@ -428,17 +431,20 @@ you can change the plot color or style and any curve, change the limits and tick
 on either axis, or change the axis labels (more options will be available in the future).
 </li>
 
-<li>The &quot;Export...&quot; command in the &quot;Plot&quot; menu will export a table of
+<li>The &quot;Export Graphics...&quot; command in the &quot;File&quot; menu will export a <code>png</code> file of the plot.
+</li>
+
+<li>The &quot;Export Data...&quot; command in the &quot;File&quot; menu will export a table of
 all results to a text file. Column one will be the time data. Each plot will appear
 in additional labeled columns.
 </li>
 
-<li>The &quot;Import...&quot; command in the &quot;Plot&quot; menu can import any tab-delimited
+<li>The &quot;Import...&quot; command in the &quot;File&quot; menu can import any tab-delimited
 text file and plot the results. The time data must be in column one and any number of other plots
 can be in additional columns. For example, any exported plot can be imported later.
 </li>
 
-<li>The &quot;Print...&quot; command in the &quot;Plot&quot; menu will print the current plot.
+<li>The &quot;Print...&quot; command in the &quot;File&quot; menu will print the current plot.
 Capturing the printing to a PDF file will give a high-resolution version of the plot.
 </li>
 
@@ -513,6 +519,8 @@ display the coordinates of the mouse location (x and y), that location's plot va
 the nearest element (el), and the nearest node (nd).
 </p>
 
+<p>You can use <a href="#exportpng">menu commands to export</a> the frame to a graphics file or to export a series of frames (for MPM results only).
+
 <p>| <a href="#index">index</a> | <a href="#plotting">Back to Plotting Results</a> |</p>
 
 <h2><a name="mesh2Dplots"></a>Plots Along Mesh Contours<hr></h2>
@@ -574,7 +582,7 @@ new options (while the previous plot window is still open) and then clicking the
 
 <p>This Java application cannot visualize 3D results and will report an error message when
 trying to open a file containing 3D results. You can, however,
-<a href="#start">run 3D calculations</a> using application tool or run 3D calculations on
+<a href="#start">run 3D calculations</a> using this tool or run 3D calculations on
 a standard command line. Your options for visualizing such results are:
 
 <ul>
