@@ -31,7 +31,7 @@ public class NairnFEAMPMViz implements ActionListener
 	private static final int QUIT_MSG=2;
 	
 	public static final String appNameReadable="NairnFEAMPMViz";
-	public static final String versionReadable="Version 3.0.2";
+	public static final String versionReadable="Version 3.0.3";
 	public static final String copyright="Copyright 2004-2010, John A. Nairn, All Rights Reserved";
 	
 	public static NairnFEAMPMViz appCtrl;	// global to application controller
@@ -462,7 +462,7 @@ public class NairnFEAMPMViz implements ActionListener
 				newFile=new File(fileName+"."+ext);
 		}
 		
-		// OK if does not exisit
+		// OK if does not exist
 		if(!newFile.exists()) return newFile;
 		
 		// confirm replacement

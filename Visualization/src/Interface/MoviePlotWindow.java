@@ -14,6 +14,7 @@ import java.awt.event.*;
 import java.util.*;
 import java.awt.image.*;
 import java.io.*;
+
 import javax.imageio.*;
 
 public class MoviePlotWindow extends NFMVFrame implements Runnable
@@ -31,6 +32,7 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable
 	protected boolean runFlag;
 	protected int movieComponent;
 	protected int plotType;
+	protected String frameFileRoot=null;
 	
 	// command file chooser
 	private JFileChooser chooser=new JFileChooser();
@@ -68,6 +70,7 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable
 		menuBar.add(menu);
 		makeMenuItem(menu,"Open...","OpenFile",KeyEvent.VK_O,NairnFEAMPMViz.appCtrl);
 		makeMenuItem(menu,"Export Graphics...","ExportFrame",KeyEvent.VK_E,this);
+		makeMenuItem(menu,"Export Movie Frames...","ExportMovie",KeyEvent.VK_L,this);
 		menu.addSeparator();
 		makeMenuItem(menu,"Close","Close",KeyEvent.VK_W,this);
 		
@@ -116,6 +119,12 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable
 				while(plotView.repainting)
 				{	Thread.sleep(0);
 				}
+				
+				// on movie export, save the frame
+				if(frameFileRoot!=null)
+				{	File saveFile=new File(frameFileRoot+String.format("%04d.png",movieControls.getArchiveIndex()));
+					if(!exportPlotFrame(saveFile)) break;
+				}
 			}
 		}
 		catch(InterruptedException e) {}
@@ -123,6 +132,7 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable
 		// reset flags and buttons before done
 		movieControls.setPlaying(false);
 		runFlag=false;
+		frameFileRoot=null;
 	}
 	
 	// change to new time unless in a movie
@@ -146,16 +156,22 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable
 	
 	// start plot over at new initial index and possibly new component and options
 	public void beginNewIndexNewComponent(int newIndex,int newComponent)
-	{	boolean changedComponent= (movieComponent!=newComponent);
-		movieComponent=newComponent;
+	{	movieComponent=newComponent;
 		ControlPanel controls=resDoc.docCtrl.controls;
 		plotView.setOptions(controls.getOptions(),movieComponent,plotType);
 		
-		if((!movieControls.setArchiveIndex(newIndex) && changedComponent) || resDoc.isFEAAnalysis())
-		{	changeArchiveIndex(newIndex);
+		boolean sameIndex=!movieControls.setArchiveIndex(newIndex);
+		if(sameIndex || resDoc.isFEAAnalysis())
+		{	// means the index is same OR an FEA plot
+			// This will load data and replot (same index reload needed in case other settings changed)
+			changeArchiveIndex(newIndex);
 		}
 		else
+		{	// Means MPM plot where index has changed
+			// The set archive index above will have already loaded the new plot data
+			// but still need to repaint
 			plotView.repaint();
+		}
 	}
 	
 	// load everything needed to plot or replat data - must override
@@ -196,20 +212,55 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable
 			if(saveFile==null) return;
 			
 			// save to png file
-			try
-			{	BufferedImage frameCopy=plotView.frameImage();
-				ImageIO.write(frameCopy,"png",saveFile);
+			exportPlotFrame(saveFile);
+		}
+		
+		else if(theCmd.equals("ExportMovie"))
+		{	if(runFlag || !resDoc.isMPMAnalysis())
+			{	// can't do frames if movie is already running
+				Toolkit.getDefaultToolkit().beep();
+				return;
 			}
-			catch(Exception fe)
-			{	Toolkit.getDefaultToolkit().beep();
-				JOptionPane.showMessageDialog(this,"Error exporting graphic image: " + fe);
+		
+			// get base name without .png extension and not ending in . either
+			int result = chooser.showSaveDialog(this);
+			if(result != JFileChooser.APPROVE_OPTION) return;
+			frameFileRoot=chooser.getSelectedFile().getPath();
+			int offset = frameFileRoot.lastIndexOf(".");
+			if(offset>0)
+			{	String fext=frameFileRoot.substring(offset+1);
+				if(fext.equalsIgnoreCase("png") || offset+1==frameFileRoot.length())
+					frameFileRoot=frameFileRoot.substring(0,offset);
 			}
+			
+			// export current frame to start
+			File saveFile=new File(frameFileRoot+String.format("%04d.png",movieControls.getArchiveIndex()));
+			if(!exportPlotFrame(saveFile)) return;
+			
+			// movie thread
+			runFlag=true;
+			Thread movieThread=new Thread(this);
+			movieThread.start();
 		}
 		
 		else
 			super.actionPerformed(e);
 	}
 
+	// export current frame to saveFile and return true of false if done OK
+	public boolean exportPlotFrame(File saveFile)
+	{	try
+		{	BufferedImage frameCopy=plotView.frameImage();
+			ImageIO.write(frameCopy,"png",saveFile);
+		}
+		catch(Exception fe)
+		{	Toolkit.getDefaultToolkit().beep();
+			JOptionPane.showMessageDialog(this,"Error exporting graphic image: " + fe);
+			return false;
+		}
+		return true;
+	}
+	
 	//----------------------------------------------------------------------------
 	// Window events
 	//----------------------------------------------------------------------------
