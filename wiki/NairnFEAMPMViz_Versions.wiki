@@ -18,8 +18,11 @@ public static final String versionReadable="Version 3.0.0";
 NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The version currently in this project are as follows:
 
   * Current trunk Version
-    * Working on NairnFEAMPMViz 3.0.2
+    * Working on NairnFEAMPMViz 3.0.3
+    * Added menu command to export movie frames (MPM plots)
+    * If change limits and click Replot, plot will now be redrawn with new limits (before had to change frame)
     * Added color wells for plot elements
+    * Added purple to red spectrum
     * Synchronize time selected between plot and control panel for MPM plots
 
   * release-1.0 (30 DEC 2009)
