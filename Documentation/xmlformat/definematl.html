@@ -132,7 +132,7 @@
 <tr>
 <td><a href="#traction"><code>TriangularTraction</code></a></td>
 <td>12</td>
-<td width="50%">A triangular <a href="cracks.html#traction">traction law</a> for use on crack surfaces</td>
+<td width="50%">A mixed-mode cohesive law with triangular <a href="cracks.html#traction">traction law</a> for pure modes</td>
 <td align="center"></td><td align="center">X</td><td align="center"></td>
 </tr>
 
@@ -644,7 +644,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <a name="traction"></a><h2>Triangular Traction Law Material</h2>
 
-<p>The material type is <code>Type=12</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. It creates two independent traction laws for normal and shear opening displacement. Each relation is a triangle with key properties as illustrated below:
+<p>The material type is <code>Type=12</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. It creates mixed-mode traction law surface based on a paper J. L. Hogberg, &quot;Mixed Mode Cohesive Law,&quot; <i>Int. J. Fract.</i>, <b>146</b>, 549-559 (2006). The traction laws in pure mode I or pure mode II each have triangular shape:
 </p>
 <center><img src = "tritraction.jpg" width = "291" height = "185" alt = "triangular traction law">
 </center>
@@ -668,11 +668,24 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <dt>&lt;kIe&gt;200&lt;/kIe&gt; and &lt;kIIe&gt;100&lt;/kIIe&gt;</dt>
 <dd>The slope of the initial elastic portion of the tractional law (k). Enter in units of MPa/mm.</dd>
 
+<dt>&lt;delpkI&gt;0.1&lt;/delpkI&gt; and &lt;delpkII&gt;0.2&lt;/delpkI&gt;</dt>
+<dd>The displacement at the location of the peak in the triangular law. Enter in dimensionless units as fraction of <code>delIc</code> or <code>delIIc</code>.</dd>
 
 </dl>
 
-<p>You must then enter exactly two of the first three properties. These properties are interrelated and the third one will be calculated using J<sub>c</sub> = 500 &sigma;<sub>max</sub> &delta;<sub>c</sub> (in the entered units). The slope parameters (<code>kIe</code> and <code>kIIe</code>) are optional. If they are provided, the peak position will be calculated from the slope, k, and &sigma;<sub>max</sub> using &delta;<sub>peak</sub> = &sigma;<sub>max</sub>/k; furthermore, a valid traction law requires &delta;<sub>peak</sub> &le; &delta;<sub>c</sub>. If the slope is not entered, the peak will be located at &delta;<sub>peak</sub> = 0.225926299 &delta;<sub>c</sub>. This location provides the closest match to the <a href="#cubic">cubic traction law</a> for area under the curve up &delta;.  
+<p>You must then enter exactly two of the first three properties. These properties are interrelated and the third one will be calculated using J<sub>c</sub> = 500 &sigma;<sub>max</sub> &delta;<sub>c</sub> (in the entered units). You must enter zero or one for the last two properties. If one is provided, the other will be calculated from k = &sigma;<sub>max</sub>/(&delta;<sub>peak</sub> &delta;<sub>c</sub>). A valid traction law requires &delta;<sub>peak</sub> &le; 1. If neither k nor &delta;<sub>peak</sub> are entered, the peak will be located at &delta;<sub>peak</sub> = 0.225926299. This location provides the closest match to the <a href="#cubic">cubic traction law</a> for area under the curve up &delta;.  
 </p>
+
+<p>This entered traction laws give mode I or mode II traction law for pure mode I or pure mode II loading. For mixed mode, this traction law provides a smooth transition between mode I and mode II. The mixed-mode traction law will debond when &lambda;=1 where &lambda; is defined by:
+</p>
+<blockquote>&lambda;<sup>2</sup> = (&delta;<sub>I</sub>/&delta;<sub>Ic</sub>)<sup>2</sup> + (&delta;<sub>II</sub>/&delta;<sub>IIc</sub>)<sup>2</sup>
+</blockquote>
+<p>The area under the mixed-mode traction law is:</p>
+<blockquote>J = J<sub>Ic</sub> sin<sup>2</sup>&theta; + J<sub>Ic</sub> cos<sup>2</sup>&theta;
+</blockquote>
+<p>where &theta; is mode mixity defined by</p>
+<blockquote>tan &theta; = (&delta;<sub>I</sub>/&delta;<sub>Ic</sub>) / (&delta;<sub>II</sub>/&delta;<sub>IIc</sub>)</blockquote>
+<p>This definition of mixity and the behavior in mixed mode loading are not universally accept concepts. These are the ones used in the Hogberg paper and certainly give rational behavior in mixed mode. This law can be regarded as clearly defined for pure mode loading and reasonably defined for mixed mode loading. It is possible that traction/energy inconsistencies (probably small) will occur if the mode mixity changes during a calculation. This issue was not address in the Hogberg paper.</p>
 
 <a name="lineart"></a><h2>Linear Elastic Law Material</h2>
 

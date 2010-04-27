@@ -5,7 +5,7 @@
 	This material is based on mixed mode cohesive law with saw tooth traction
 	laws in paper
  
-	J. L. Hogberg, "Mixed Mode Cohesive Law," Int. J. Fract, v146, 549-559
+	J. L. Hogberg, "Mixed Mode Cohesive Law," Int. J. Fract, v146, 549-559 (2006)
  
 	It give total area under the cohesive law as
  
@@ -131,6 +131,7 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
 	double Sfxn=0.;
 	
 	// key terms
+	if(nCod<0.) nCod=0.;
 	double wbar=nCod/delIc;				// dimensionless opening displacement
 	double wwp=nCod/umidI;				// displacement relative to opening peak
 	double vbar=tCod/delIIc;			// dimensionless shear displacement
@@ -167,37 +168,6 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
 	double Tn=Sfxn*wbar*stress1;
 	double Tt=Sfxn*vbar*stress2;
 	
-	/*
-	// normal force (only if open)
-	if(nCod>0.)
-	{	// is it failed?
-		if(nCod>delIc)
-		{	cs->SetMatID(0);			// then debonded
-			cout << "# debond at t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
-		}
-		else
-		{	if(nCod>upeak[0]) upeak[0]=nCod;			// new peak reached
-			double keff=kI1*((delIc-upeak[0])*umidI)/((delIc-umidI)*upeak[0]);
-			Tn=keff*nCod;
-		}
-	}
-	
-	// shear (if still bonded)
-	if(cs->MatID()>=0)
-	{	// is it failed?
-		if(tCod>delIIc)
-		{	cs->SetMatID(0);			// then debonded
-			cout << "# shear debond t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
-			Tn=0.;						// turn off normal traciton when failed
-		}
-		else
-		{	if(fabs(tCod)>upeak[1]) upeak[1]=fabs(tCod);			// new peak reached either direction
-			double keff=kII1*((delIIc-upeak[1])*umidII)/((delIIc-umidII)*upeak[1]);
-			Tt=keff*tCod;
-		}
-	}
-	*/
-	
 	// force is traction time area projected onto x-y plane
 	cs->tract.x=area*(Tn*dy - Tt*dx);
 	cs->tract.y=area*(-Tn*dx - Tt*dy);
@@ -213,23 +183,25 @@ double CohesiveZone::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCo
 	double tEnergy=0.;
 	
 	// key terms
+	if(nCod<0.) nCod=0.;
 	double wbar=nCod/delIc;				// dimensionless opening displacement
 	double wwp=nCod/umidI;					// displacement relative to opening peak
 	double vbar=tCod/delIIc;				// dimensionless shear displacement
 	double vvp=tCod/umidII;				// displacement relative to shear peak
 	double lambda=sqrt(wbar*wbar+vbar*vbar);			// mixed mode displacement
+	if(lambda<=0.) return tEnergy;
 	double lambdap=lambda/sqrt(wwp*wwp+vvp*vvp);		// mixed mode peak
 	
 	// always normalized energy as area under S(lambda) curve divided by lambda^2
 	// it is Jbar/lambda^2 (see Hogberg, Table 1)
 	
-	if(lambda<lambdap)
+	if(lambda<=lambdap)
 	{	// before the peak
 		tEnergy=0.5/lambdap;
 	}
 	else
 	{	// after the peak
-		tEnergy=0.5*(2. - lambda - lambdap/lambda)/(lambda*(1.-lambda));
+		tEnergy=0.5*(2. - lambda - lambdap/lambda)/(lambda*(1.-lambdap));
 	}
 
 	// subtract recoverable energy when want released energy
@@ -241,50 +213,6 @@ double CohesiveZone::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCo
 	// convert to actual units (N/mm)
 	// Eenergy = Jbar*(stress1*delIc*sin^2 q + stress2*delIIc*cos^2 q)
 	tEnergy*=stress1*delIc*wbar*wbar+stress2*delIIc*vbar*vbar;
-	
-	/*
-	// always get entire area under the curve
-	
-	// normal energy only if opened
-	if(nCod>0.)
-	{	if(nCod<umidI)
-		{	double Tn=kI1*nCod*1.e-6;				// now in units of N/mm^2
-			tEnergy=0.5*Tn*nCod;					// N/mm
-		}
-		else
-		{	double s2=(delIc-nCod)*stress1/(delIc-umidI);				// stress in N/mm^2
-			tEnergy=0.5*(umidI*stress1 + (nCod-umidI)*(stress1+s2));	// N/mm
-		}
-	}
-	
-	// shear energy always
-	if(fabs(tCod)<umidII)
-	{	double Tt=kII1*tCod*1.e-6;					// now in units of N/mm^2
-		tEnergy+=0.5*Tt*tCod;						// N/mm
-	}
-	else
-	{	double s2=(delIIc-fabs(tCod))*stress2/(delIIc-umidI);					// stress in N/mm^2
-		tEnergy+=0.5*(umidII*stress2 + (fabs(tCod)-umidII)*(stress2+s2));		// N/mm
-	}
-	
-	// subtract recoverable energy when want released energy
-	if(!fullEnergy)
-	{	double *upeak=(double *)cs->GetHistoryData();
-		double keff;
-		if(nCod>0.)
-		{	double Tn=0.;
-			keff=kI1*((delIc-upeak[0])*umidI)/((delIc-umidI)*upeak[0]);
-			Tn=keff*nCod*1.e-6;
-			tEnergy-=0.5*Tn*nCod;					// N/mm
-		}
-		
-		// shear energy always
-		double Tt=0.;
-		keff=kII1*((delIIc-upeak[1])*umidII)/((delIIc-umidII)*upeak[1]);
-		Tt=keff*tCod*1.e-6;
-		tEnergy-=0.5*Tt*tCod;						// N/mm
-	}
-	*/
 	
 	return tEnergy;
 }
