@@ -20,6 +20,7 @@ public class LimitsSelector extends PlotControl
 	public static final int DYNAMIC_LIMITS=0;
 	public static final int FIXED_LIMITS=1;
 	public static final int GLOBAL_LIMITS=2;
+	private int currentLimits=DYNAMIC_LIMITS;
 
 	private ButtonGroup limitType=new ButtonGroup();
 	private JRadioButton dynamicLimits=new JRadioButton("Dynamic Limits");
@@ -54,10 +55,11 @@ public class LimitsSelector extends PlotControl
 				maxText.setEnabled(false);
 				minLabel.setEnabled(false);
 				maxLabel.setEnabled(false);
+				currentLimits=DYNAMIC_LIMITS;
 			}
 		});
 		
-		// Row 2: Secon radio button
+		// Row 2: Second radio button
 		gridbag.setConstraints(globalLimits, c);
 		limitType.add(globalLimits);
 		add(globalLimits);
@@ -67,6 +69,12 @@ public class LimitsSelector extends PlotControl
 				maxText.setEnabled(false);
 				minLabel.setEnabled(false);
 				maxLabel.setEnabled(false);
+				if(currentLimits==FIXED_LIMITS)
+				{	// when switching to global units from fixed units, must revalidate limits
+					if(docCtrl.movieFrame!=null)
+						docCtrl.movieFrame.plotView.dataLimitsSet=false;
+				}
+				currentLimits=GLOBAL_LIMITS;
 			}
 		});
 		
@@ -80,6 +88,7 @@ public class LimitsSelector extends PlotControl
 				maxText.setEnabled(true);
 				minLabel.setEnabled(true);
 				maxLabel.setEnabled(true);
+				currentLimits=FIXED_LIMITS;
 			}
 		});
 		
@@ -158,7 +167,7 @@ public class LimitsSelector extends PlotControl
 		}
 		catch(Exception pe)
 		{	Toolkit.getDefaultToolkit().beep();
-			JOptionPane.showMessageDialog(docCtrl,"Error: "+pe.getMessage()+" (plot wilil switch to dynamic limits)");
+			JOptionPane.showMessageDialog(docCtrl,"Error: "+pe.getMessage()+" (plot will switch to dynamic limits)");
 			dynamicLimits.setSelected(true);
 			minText.setEnabled(false);
 			maxText.setEnabled(false);
