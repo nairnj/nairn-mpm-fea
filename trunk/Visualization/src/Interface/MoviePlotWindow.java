@@ -16,8 +16,10 @@ import java.awt.image.*;
 import java.io.*;
 
 import javax.imageio.*;
+import javax.imageio.stream.ImageOutputStream;
+import javax.imageio.event.*;
 
-public class MoviePlotWindow extends NFMVFrame implements Runnable
+public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProgressListener
 {
 	static final long serialVersionUID=12L;
 	
@@ -29,7 +31,7 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable
 	protected DocViewer docView;
 	protected MeshPlotView plotView;
 	protected MovieControls movieControls;
-	protected boolean runFlag;
+	protected boolean runFlag,imageStillWriting;
 	protected int movieComponent;
 	protected int plotType;
 	protected String frameFileRoot=null;
@@ -250,8 +252,23 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable
 	// export current frame to saveFile and return true of false if done OK
 	public boolean exportPlotFrame(File saveFile)
 	{	try
-		{	BufferedImage frameCopy=plotView.frameImage();
-			ImageIO.write(frameCopy,"png",saveFile);
+		{	// create my own ImageWriter
+			Iterator<ImageWriter> writers=ImageIO.getImageWritersByFormatName("png");
+			ImageWriter writer=writers.next();
+			ImageOutputStream ios=ImageIO.createImageOutputStream(saveFile);
+			writer.setOutput(ios);
+			BufferedImage frameCopy=plotView.frameImage();
+			writer.addIIOWriteProgressListener(this);
+			imageStillWriting=true;
+			writer.write(frameCopy);
+			while(imageStillWriting)
+			{	Thread.sleep(0);
+			}
+			frameCopy=null;
+		
+			// use and arbitrary ImageWriter
+			//BufferedImage frameCopy=plotView.frameImage();
+			//ImageIO.write(frameCopy,"png",saveFile);
 		}
 		catch(Exception fe)
 		{	Toolkit.getDefaultToolkit().beep();
@@ -260,6 +277,18 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable
 		}
 		return true;
 	}
+	
+	//----------------------------------------------------------------------------
+	// IIOWriteProgressListener interface to verify image is done writing
+	//----------------------------------------------------------------------------
+
+	public void imageComplete(ImageWriter source) { imageStillWriting=false; }
+	public void imageProgress(ImageWriter source, float percentageDone) {}
+	public void imageStarted(ImageWriter source, int imageIndex) {}
+	public void thumbnailComplete(ImageWriter source) {}
+	public void thumbnailProgress(ImageWriter source, float percentageDone) {}
+	public void thumbnailStarted(ImageWriter source, int imageIndex, int thumbnailIndex) {}
+	public void writeAborted(ImageWriter source) {}
 	
 	//----------------------------------------------------------------------------
 	// Window events
