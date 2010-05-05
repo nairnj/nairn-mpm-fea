@@ -38,7 +38,7 @@ class CohesiveZone : public TractionLaw
 		virtual int MaterialTag();
 		
 	protected:
-		double kI1,kII1;
+		double kI1,kII1,sIc,sIIc;
 		double umidI,umidII;
  };
 

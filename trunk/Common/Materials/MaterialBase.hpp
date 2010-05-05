@@ -38,7 +38,7 @@ class MaterialBase : public LinkedObject
         double me0[5];
 #else
 		int criterion;
-        double KIc,KIIc,KIexp,KIIexp,JIc,JIIc,gamma,delIc,delIIc;
+        double KIc,KIIc,KIexp,KIIexp,JIc,JIIc,gamma,delIc,delIIc,nmix;
 		Tensor diffusionTensor;
 		Tensor kCondTensor;
 		double pCrit3,gain,initSpeed;

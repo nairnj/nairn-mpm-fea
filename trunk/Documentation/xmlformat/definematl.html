@@ -200,6 +200,9 @@
 <dt>&lt;JIIc&gt;1.2&lt;/JIIc&gt;</dt>
 <dd>Critical mode II energy release rate (in J/m<sup>2</sup>). Currently only used by <a href="#traction">traction-law</a> materials.</dd>
 
+<dt>&lt;nmix&gt;2&lt;/nmix&gt;</dt>
+<dd>A parameter used in some mixed-mode failure laws (e.g., to implement failure when (G<sub>I</sub>/J<sub>Ic</sub>)<sup>nmix</sup> + (G<sub>II</sub>/J<sub>IIc</sub>)<sup>nmix</sup> = 1 in <a href="#traction"><code>TriangularTraction</code></a> cohesive law).</dd>
+
 <dt>&lt;initTime&gt;3&lt;/initTime&gt;</dt>
 <dd>Time (in ms) to start crack growht. Only used when there is crack propagation with <a href="mpmheader.html#cracks">criteria</a> 2. For criterion 2, <code>initTime</code> takes precidence of a <code>JIc</code> property.</dd>
 
@@ -644,7 +647,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <a name="traction"></a><h2>Triangular Traction Law Material</h2>
 
-<p>The material type is <code>Type=12</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. It creates mixed-mode traction law surface based on a paper J. L. Hogberg, &quot;Mixed Mode Cohesive Law,&quot; <i>Int. J. Fract.</i>, <b>146</b>, 549-559 (2006). The traction laws in pure mode I or pure mode II each have triangular shape:
+<p>The material type is <code>Type=12</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. The traction laws in pure mode I or pure mode II each have the following triangular shape:
 </p>
 <center><img src = "tritraction.jpg" width = "291" height = "185" alt = "triangular traction law">
 </center>
@@ -664,28 +667,27 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <dt>&lt;delIc&gt;10&lt;/delIc&gt; and &lt;delIIc&gt;100&lt;/delIIc&gt;</dt>
 <dd>The maximum opening displacement or critical displacement (&delta;<sub>c</sub>) at which debonding occurs. Enter in units of mm.</dd>
 
+<dt>&lt;nmix&gt;2&lt;/nmix&gt;</dt>
+<dd>The exponent used in the mixed-mode failure criterion (see below). Enter nmix<=0 to choose infinity, which is decoupled failure criterion.</dd>
+
 
 <dt>&lt;kIe&gt;200&lt;/kIe&gt; and &lt;kIIe&gt;100&lt;/kIIe&gt;</dt>
 <dd>The slope of the initial elastic portion of the tractional law (k). Enter in units of MPa/mm.</dd>
 
 <dt>&lt;delpkI&gt;0.1&lt;/delpkI&gt; and &lt;delpkII&gt;0.2&lt;/delpkI&gt;</dt>
-<dd>The displacement at the location of the peak in the triangular law. Enter in dimensionless units as fraction of <code>delIc</code> or <code>delIIc</code>.</dd>
+<dd>The displacement at the location of the peak in the triangular law. Enter in dimensionless units as fraction of <code>delIc</code> or <code>delIIc</code> (0 to 1). You can enter zero to get pure linear softening. Although a pure linear softening law seems to work well, it is possible the effectively infinite stiffess in the beginning might cause issues with dynamic convergence of the results, especially is the cohesive stress is high. If convergence problems occur, you can increase these values to make the initial stiffness finite.</dd>
 
 </dl>
 
-<p>You must then enter exactly two of the first three properties. These properties are interrelated and the third one will be calculated using J<sub>c</sub> = 500 &sigma;<sub>max</sub> &delta;<sub>c</sub> (in the entered units). You must enter zero or one for the last two properties. If one is provided, the other will be calculated from k = &sigma;<sub>max</sub>/(&delta;<sub>peak</sub> &delta;<sub>c</sub>). A valid traction law requires &delta;<sub>peak</sub> &le; 1. If neither k nor &delta;<sub>peak</sub> are entered, the peak will be located at &delta;<sub>peak</sub> = 0.225926299. This location provides the closest match to the <a href="#cubic">cubic traction law</a> for area under the curve up &delta;.  
+<p>You must then enter exactly two of the first three properties. These properties are interrelated and the third one will be calculated using J<sub>c</sub> = 500 &sigma;<sub>max</sub> &delta;<sub>c</sub> (in the entered units). You must enter zero or one for the last two properties. If one is provided, the other will be calculated from k = &sigma;<sub>max</sub>/(&delta;<sub>peak</sub> &delta;<sub>c</sub>). A valid traction law requires &delta;<sub>peak</sub> &le; 1. If neither k nor &delta;<sub>peak</sub> are entered, the peak will be located at &delta;<sub>peak</sub> = 0.225926299. This location provides the closest match to the <a href="#cubic">cubic traction law</a> for area under the curve as a function of &delta;.  
 </p>
 
-<p>This entered traction laws give mode I or mode II traction law for pure mode I or pure mode II loading. For mixed mode, this traction law provides a smooth transition between mode I and mode II. The mixed-mode traction law will debond when &lambda;=1 where &lambda; is defined by:
+<p><a name="mixedmode"></a>These entered traction laws give mode I or mode II traction law for pure mode I or pure mode II loading. For mixed-mode loading, the normal and and shear tractions still depend only on normal and shear displacements, respectively, but the conditions for failure change. Under pure mode loading, failure occurs with the relevent displacement reaches the critical displacement. For mixed-mode loading, failure occurs when:
 </p>
-<blockquote>&lambda;<sup>2</sup> = (&delta;<sub>I</sub>/&delta;<sub>Ic</sub>)<sup>2</sup> + (&delta;<sub>II</sub>/&delta;<sub>IIc</sub>)<sup>2</sup>
+<blockquote>(G<sub>I</sub>/J<sub>Ic</sub>)<sup>nmix</sup> + (G<sub>II</sub>/J<sub>IIc</sub>)<sup>nmix</sup> = 1
 </blockquote>
-<p>The area under the mixed-mode traction law is:</p>
-<blockquote>J = J<sub>Ic</sub> sin<sup>2</sup>&theta; + J<sub>Ic</sub> cos<sup>2</sup>&theta;
-</blockquote>
-<p>where &theta; is mode mixity defined by</p>
-<blockquote>tan &theta; = (&delta;<sub>I</sub>/&delta;<sub>Ic</sub>) / (&delta;<sub>II</sub>/&delta;<sub>IIc</sub>)</blockquote>
-<p>This definition of mixity and the behavior in mixed mode loading are not universally accept concepts. These are the ones used in the Hogberg paper and certainly give rational behavior in mixed mode. This law can be regarded as clearly defined for pure mode loading and reasonably defined for mixed mode loading. It is possible that traction/energy inconsistencies (probably small) will occur if the mode mixity changes during a calculation. This issue was not address in the Hogberg paper.</p>
+<p>where G<sub>I</sub> and G<sub>II</sub> are areas under mode I and mode II traction laws up to current displacements. Now this failure criterion will mean that failure may occur when normal or shear tractions are nonzero and result in a sudden drop to zero traction. This approach is identical to the one adopted by Thouless <i>et. al</i> to handle mixed-mode loading and appears to work well. There has been work to modify the traction laws so they always approach zero at time of failure (<i>e.g.</i>, work of Hogberg (2006) or Tvergaard and Hutchinson (1994)). These approaches were tried, gave poor results for certain problems, led to non-physical coupling between mode I and mode II, and therefore were abandoned.
+</p>
 
 <a name="lineart"></a><h2>Linear Elastic Law Material</h2>
 
@@ -704,12 +706,12 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 </dl>
 
-<p>To create a linear elastic traction law that fails at some critical cod, use a <a href="#traction">triangular traction law material</a> instead and set the properties such that the maximum cod is at the same location as the peak stress (<i>i.e.</i>, &delta;<sub>c</sub> = &sigma;/k)
+<p>To create a linear elastic traction law that fails at some critical cod, use a <a href="#traction">triangular traction law material</a> instead and set the properties such that the maximum cod is at the same location as the peak stress (<i>i.e.</i>, &delta;<sub>c</sub> = &sigma;/k or &delta;<sub>pk</sub>=1)
 </p>
 
 <a name="cubic"></a><h2>Cubic Traction Law Material</h2>
 
-<p>The material type is <code>Type=14</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. It creates two independent traction laws for normal and shear opening displacement. Each relation is a cubic law with zero slope at the end (&delta;<sub>c</sub>) and the peak stress is always at &delta;<sub>c</sub>/3. The key properties are illustrated below:
+<p>The material type is <code>Type=14</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. The traction laws in pure mode I or pure mode II each have cubic shape. These cubic laws have zero slope at the end (&delta;<sub>c</sub>) and the peak stress is always at &delta;<sub>c</sub>/3. The key properties are illustrated below:
 </p>
 <center><img src = "cubictraction.jpg" width = "291" height = "185" alt = "cubic traction law">
 </center>
@@ -729,11 +731,16 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <dt>&lt;delIc&gt;10&lt;/delIc&gt; and &lt;delIIc&gt;100&lt;/delIIc&gt;</dt>
 <dd>The maximum opening displacement or critical displacement (&delta;<sub>c</sub>) at which debonding occurs. Enter in units of mm.</dd>
 
+<dt>&lt;nmix&gt;2&lt;/nmix&gt;</dt>
+<dd>The exponent used in the mixed-mode failure criterion (see below). Enter nmix<=0 to choose infinity, which is decoupled failure criterion.</dd>
 
 </dl>
 
-<p>You must then enter exactly two of the three properties. These properties are interrelated and the third one will be calculated using J<sub>c</sub> = 9000 &sigma;<sub>max</sub> &delta;<sub>c</sub>/16. The full traction law is
+<p>You must then enter exactly two of the first three properties. These properties are interrelated and the third one will be calculated using J<sub>c</sub> = 9000 &sigma;<sub>max</sub> &delta;<sub>c</sub>/16. The full traction law is:</p>
+<blockquote>
 &sigma; = (27/4) &sigma;<sub>max</sub> (&delta;/&delta;<sub>c</sub>)(1-(&delta;/&delta;<sub>c</sub>))<sup>2</sup>.
+</blockquote>
+<p>The failure criterion under possible mixed-mode conditions is identical to the one used in the <a href="#mixedmode"><code>TriangularTraction</code> law</a>.
 </p>
 
 <a name="hill"></a><h2>Hill Plastic, Orthotropic Material</h2>
