@@ -23,7 +23,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
   * Current trunk Version
     * Working on NairnMPM 7.2.3
     * The `TriangularTraction` and `CubicTraction` traction law were changed to provided a mixed-mode cohesive law (by methods used by Thouless) with exponential criterion with user-input exponent.
-    * The TriangularTraction` traction law was improved to allow peak position to be zero, which results in pure linear softening.
+    * The `TriangularTraction` traction law was improved to allow peak position to be zero, which results in pure linear softening.
     * A new type of rigid materials (with `SetDirection=8`) that can do frictional contact in multimaterial mode. It can also be used to wedge open cracks.
     * Revised algorithm for preventing crack surfaces from crossing the crack plane and a new option to turn that feature on or off (see `MovePlane` command).
     * A minor change in the way crack surface velocities are calculated that should only effect cracks that exit the body, but those cracks are better done now using the `exterior` crack tip define in version 7.2.0.
