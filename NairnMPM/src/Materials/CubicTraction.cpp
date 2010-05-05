@@ -46,6 +46,9 @@ void CubicTraction::PrintMechanicalProperties(void)
 	PrintProperty("uII",delIIc,"mm");
 	PrintProperty("kII0",1.e-6*kII1*delIIc*delIIc,"MPa/mm");
     cout <<  endl;
+	
+	PrintProperty("n",nmix,"");
+	cout << endl;
 }
 
 // history variable is the current peak elastic displacement in mode I or mode II
@@ -66,7 +69,7 @@ char *CubicTraction::MaterialData(void)
 // Traction law - assume trianglar shape with unloading from down slope back to the origin
 void CubicTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,double dx,double dy,double area)
 {
-	double Tn=0.,Tt=0.;
+	double Tn=0.,Tt=0.,GI=0.,GII=0.;
 	double *upeak =(double *)cs->GetHistoryData();
 	
 	// normal force (only if open)
@@ -74,27 +77,46 @@ void CubicTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,do
 	{	// is it failed?
 		if(nCod>delIc)
 		{	cs->SetMatID(0);			// then debonded
-			cout << "# debond at t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
+			cout << "# mode I debond: t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
 		}
 		else
 		{	if(nCod>upeak[0]) upeak[0]=nCod;		// new peak reached
 			double keff=kI1*(delIc-upeak[0])*(delIc-upeak[0]);
 			Tn=keff*nCod;
+			
+			// get GI for failure law
+			double d=nCod/delIc;
+			GI=JIc*d*d*(6.-8.*d+3.*d*d);		// N/m
 		}
 	}
 	
 	// shear (if still bonded)
 	if(cs->MatID()>=0)
 	{	// is it failed?
-		if(tCod>delIIc)
+		double absTCod=fabs(tCod);
+		if(absTCod>delIIc)
 		{	cs->SetMatID(0);			// then debonded
-			cout << "# shear debond t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
+			cout << "# mode II debond: t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
 			Tn=0.;						// turn off normal traction when failed
 		}
 		else
-		{	if(fabs(tCod)>upeak[1]) upeak[1]=fabs(tCod);		// new peak reached in either direction
+		{	if(absTCod>upeak[1]) upeak[1]=absTCod;		// new peak reached in either direction
 			double keff=kII1*(delIIc-upeak[1])*(delIIc-upeak[1]);
 			Tt=keff*tCod;
+			
+			// get GII for failure law
+			double d=tCod/delIIc;
+			GII=JIIc*d*d*(6.-8.*d+3.*d*d);		// N/m
+		}
+	}
+	
+	// mixed mode failure? (nmix<=0 uses infinity which means fails when either COD becomes critical)
+	if(cs->MatID()>=0 && nmix>0)
+	{	if(pow(GI/JIc,nmix)+pow(GII/JIIc,nmix) > 1)
+		{	cs->SetMatID(0);				// now debonded
+			cout << "# mixed mode debond: t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
+			Tn=0.;
+			Tt=0.;
 		}
 	}
 	

@@ -55,6 +55,7 @@ MaterialBase::MaterialBase(char *matName)
     rho=1.;
     KIc=KIIc=JIc=JIIc=gamma=-1.;		// traction laws assumes -1
 	delIc=delIIc=-1.;					// traction laws assumes -1
+	nmix=1.;							// mixed mode exponent (if used)
 	pCrit3=1.;
 	maxLength=-1.;
 	gain=1.e5;

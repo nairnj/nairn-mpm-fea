@@ -86,6 +86,11 @@ char *MaterialBase::InputMat(char *xName,int &input)
         return((char *)&JIIc);
     }
 	
+    else if(strcmp(xName,"nmix")==0)
+    {	input=DOUBLE_NUM;
+        return((char *)&nmix);
+    }
+	
 	// speed in crit 2 and 3
     else if(strcmp(xName,"speed")==0)
     {	input=DOUBLE_NUM;

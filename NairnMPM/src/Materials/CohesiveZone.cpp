@@ -92,30 +92,42 @@ void CohesiveZone::PrintMechanicalProperties(void)
 {
 	PrintProperty("GcI",JIc,"J/m^2");
 	PrintProperty("sigI",stress1,"");
-	PrintProperty("uI",delIc,"mm");
-	PrintProperty("kI",1.0e-6*kI1,"MPa/mm");
+	PrintProperty("uIc",delIc,"mm");
+	if(kI1>0.) PrintProperty("kI",1.0e-6*kI1,"MPa/mm");
 	PrintProperty("upkI",umidI,"mm");
     cout <<  endl;
 
 	PrintProperty("GcII",JIIc,"J/m^2");
 	PrintProperty("sigII",stress2,"");
-	PrintProperty("uII",delIIc,"mm");
-	PrintProperty("kII",1.0e-6*kII1,"MPa/mm");
+	PrintProperty("uIIc",delIIc,"mm");
+	if(kII1>0.) PrintProperty("kII",1.0e-6*kII1,"MPa/mm");
 	PrintProperty("upkII",umidII,"mm");
     cout <<  endl;
+	
+	PrintProperty("n",nmix,"");
+	cout << endl;
+	
+	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
+	sIc=stress1*1.e6;
+	sIIc=stress2*1.e6;
 }
 
 // history variables:
-// h[0] is 1-w which is 1 for undamaged and slope*lampk after damage
-// h[1] is lambda max
+// h[0] is max mode I opening (starting at peak location)
+// h[1] is max mode II opening (starting at peak location)
 char *CohesiveZone::MaterialData(void)
 {
     // allocate two doubles
     char *p=new char[2*sizeof(double)];
     double *h=(double *)p;
 	
-	h[0]=1.;
-	h[1]=0.;
+	h[0]=umidI;
+	h[1]=umidII;
+	
+	/*
+	 h[0]=1.;
+	 h[1]=0.;
+	*/
 	
     return p;
 }
@@ -125,50 +137,66 @@ char *CohesiveZone::MaterialData(void)
 // Traction law - assume trianglar shape with unloading from down slope back to the origin
 void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,double dx,double dy,double area)
 {
-	// get history variables
-	double *h =(double *)cs->GetHistoryData();
-	double lambdaMax=h[1];
-	double Sfxn=0.;
+	double Tn=0.,Tt=0.,GI=0.,GII=0.;
+	double *upeak =(double *)cs->GetHistoryData();
 	
-	// key terms
-	if(nCod<0.) nCod=0.;
-	double wbar=nCod/delIc;				// dimensionless opening displacement
-	double wwp=nCod/umidI;				// displacement relative to opening peak
-	double vbar=tCod/delIIc;			// dimensionless shear displacement
-	double vvp=tCod/umidII;				// displacement relative to shear peak
-	double lambda=sqrt(wbar*wbar+vbar*vbar);			// mixed mode displacement
-	double lambdap=lambda/sqrt(wwp*wwp+vvp*vvp);		// mixed mode peak
-	
-	// new peak load
-	if(lambda>lambdaMax)
-	{	if(lambda>=1.0)
-		{	//it is no failed
-			cs->SetMatID(0);			// set it debonded
-			cout << "# debond at t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
-		}
-		else if(lambda<lambdap)
-		{	// below the peak for onset of damage (i.e., softening)
-			Sfxn=1./lambdap;			// S/lambda
-			h[1]=lambda;				// save lambdaMax
+	// normal force (only if open)
+	if(nCod>0.)
+	{	// is it failed?
+		if(nCod>delIc)
+		{	cs->SetMatID(0);                        // then debonded
+			cout << "# mode I debond: t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
 		}
 		else
-		{	// Past the peak into softening regime
-			Sfxn=(1.-lambda)/(lambda*(1.-lambdap));			// S/lambda
-			h[1]=lambda;									// save lambdaMax
-			h[0]=Sfxn*lambdap;								// save unloading stiffness S(lmax)*lp/lmax
+		{	if(nCod>upeak[0]) upeak[0]=nCod;                        // new peak reached
+			double keff=sIc*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
+			Tn=keff*nCod;
+			
+			// get GI for failure law
+			if(nCod<umidI)
+				GI=0.0005*kI1*nCod*nCod;                             // now in units of N/m
+			else
+			{	double s2=(delIc-nCod)*stress1/(delIc-umidI);
+				GI=500.*(umidI*stress1 + (nCod-umidI)*(stress1+s2));        // now in units of N/m
+			}
 		}
 	}
 	
-	// has unloaded, use previous stiffness from history variable
-	else if(lambda>0.)
-	{	Sfxn=h[0]/lambdap;				// S/lambda when unloaded
+	// shear (if still bonded)
+	if(cs->MatID()>=0)
+	{	// is it failed?
+		double absTCod=fabs(tCod);
+		if(absTCod>delIIc)
+		{	cs->SetMatID(0);                        // then debonded
+			cout << "# mode II debond: t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
+			Tn=0.;                                          // turn off normal traction when failed
+		}
+		else if(absTCod>0.)
+		{	if(absTCod>upeak[1]) upeak[1]=absTCod;                    // new peak reached either direction
+			double keff=sIIc*(delIIc-upeak[1])/((delIIc-umidII)*upeak[1]);
+			Tt=keff*tCod;
+			
+			// shear energy always
+			if(absTCod<umidII)
+				GII=0.0005*kII1*tCod*tCod;               // now in units of N/m
+			else
+			{	double s2=(delIIc-absTCod)*stress2/(delIIc-umidI);
+				GII=500.*(umidII*stress2 + (absTCod-umidII)*(stress2+s2));      // now in units of N/m
+			}
+		}
 	}
-
-	// Find normal and tangential forces
-	double Tn=Sfxn*wbar*stress1;
-	double Tt=Sfxn*vbar*stress2;
 	
-	// force is traction time area projected onto x-y plane
+	// mixed mode failure? (nmix<=0 uses infinity which means fails when either COD becomes critical)
+	if(cs->MatID()>=0 && nmix>0)
+	{	if(pow(GI/JIc,nmix)+pow(GII/JIIc,nmix) > 1)
+		{	cs->SetMatID(0);				// now debonded
+			cout << "# mixed mode debond: t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
+			Tn=0.;
+			Tt=0.;
+		}
+	}
+	
+	// force is traction times area projected onto x-y plane
 	cs->tract.x=area*(Tn*dy - Tt*dx);
 	cs->tract.y=area*(-Tn*dx - Tt*dy);
 }
@@ -182,37 +210,45 @@ double CohesiveZone::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCo
 {
 	double tEnergy=0.;
 	
-	// key terms
-	if(nCod<0.) nCod=0.;
-	double wbar=nCod/delIc;				// dimensionless opening displacement
-	double wwp=nCod/umidI;					// displacement relative to opening peak
-	double vbar=tCod/delIIc;				// dimensionless shear displacement
-	double vvp=tCod/umidII;				// displacement relative to shear peak
-	double lambda=sqrt(wbar*wbar+vbar*vbar);			// mixed mode displacement
-	if(lambda<=0.) return tEnergy;
-	double lambdap=lambda/sqrt(wwp*wwp+vvp*vvp);		// mixed mode peak
+	// always get entire area under the curve
 	
-	// always normalized energy as area under S(lambda) curve divided by lambda^2
-	// it is Jbar/lambda^2 (see Hogberg, Table 1)
+	// normal energy only if opened
+	if(nCod>0.)
+	{	if(nCod<umidI)
+		{	double Tn=kI1*nCod;
+			tEnergy=0.5e-6*Tn*nCod;					// now in units of N/mm
+		}
+		else
+		{	double s2=(delIc-nCod)*stress1/(delIc-umidI);                   // stress in N/mm^2
+			tEnergy=0.5*(umidI*stress1 + (nCod-umidI)*(stress1+s2));		// now in units of N/mm
+		}
+	}
 	
-	if(lambda<=lambdap)
-	{	// before the peak
-		tEnergy=0.5/lambdap;
+	// shear energy always
+	if(fabs(tCod)<umidII)
+	{	double Tt=kII1*tCod;
+		tEnergy+=0.5e-6*Tt*tCod;                         // now in units of N/mm
 	}
 	else
-	{	// after the peak
-		tEnergy=0.5*(2. - lambda - lambdap/lambda)/(lambda*(1.-lambdap));
-	}
-
-	// subtract recoverable energy when want released energy
-	if(!fullEnergy)
-	{	double *h=(double *)cs->GetHistoryData();
-		tEnergy-=0.5*h[0]/lambdap;
+	{	double s2=(delIIc-fabs(tCod))*stress2/(delIIc-umidI);                           // stress in N/mm^2
+		tEnergy+=0.5*(umidII*stress2 + (fabs(tCod)-umidII)*(stress2+s2));               // now in units of N/mm
 	}
 	
-	// convert to actual units (N/mm)
-	// Eenergy = Jbar*(stress1*delIc*sin^2 q + stress2*delIIc*cos^2 q)
-	tEnergy*=stress1*delIc*wbar*wbar+stress2*delIIc*vbar*vbar;
+	// subtract recoverable energy when want released energy
+	if(!fullEnergy)
+	{	double *upeak=(double *)cs->GetHistoryData();
+		double keff;
+		if(nCod>0.)
+		{	keff=sIc*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
+			double Tn=keff*nCod;
+			tEnergy-=0.5e-6*Tn*nCod;                                // now in units of N/mm
+		}
+		
+		// shear energy always
+		keff=sIIc*(delIIc-upeak[1])/((delIIc-umidII)*upeak[1]);
+		double Tt=keff*tCod;
+		tEnergy-=0.5e-6*Tt*tCod;									// N/mm
+	}
 	
 	return tEnergy;
 }
@@ -266,8 +302,15 @@ const char *CohesiveZone::SetTractionLaw(double &s1,double &k1,double &u2,double
 	
 	// if only u1 is provided (and it is assumed to be relative to u1)
 	else if(k1<0.)
-	{	u1*=u2;
-		k1=s1/u1;
+	{	if(u1>0.)
+		{	u1*=u2;
+			k1=s1/u1;
+		}
+		else
+		{	// linear softening
+			u1=0.;
+			k1=-1.;
+		}
 	}
 	
 	// if k1 is provided or (both are provided)
