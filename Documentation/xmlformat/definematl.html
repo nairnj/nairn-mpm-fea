@@ -641,9 +641,11 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Since there is only one setting function, a rigid material with a setting function can set only one property and will set all particles of that material type to the same value determined by the function. To have rigid particles move with different values determined by a function, even if in the same direction, thus requires definition of multiple rigid material types.</dd>
 </dl>
 
-<p>Note that <a href="mpmheader.html#mmmode">multimaterial mode MPM</a> calculations can combine moving boundary condition rigid particles (<code>SetDirection</code>=0 to 4) with contact rigid particles (<code>SetDirection</code>=8) to provide different functions.
+<p>Note that <a href="mpmheader.html#mmmode">multimaterial mode MPM</a> calculations can combine moving boundary condition rigid particles (<code>SetDirection</code>=0 to 4) with contact rigid particles (<code>SetDirection</code>=8) to provide different functions, but single-material mode MPM can only use boundary condition rigid particles (<code>SetDirection</code>=0 to 4).</p>
 
-<p>Note that creating moving particles but not setting any velocity direction (<code>SetDirection</code>=3) can be used to create a moving temperature or concentration boundary condition that moves over the particles; <i>i.e.</i>, the rigid particles will move through the real particles. If a rigid particle does not set any velocity, temperature, or concentration, it will have no affect on the calculations. It may plot in visualization software, but it is not part of the analysis.</p>
+<p>Note that creating rigid particles but not setting any velocity direction (<code>SetDirection</code>=0) can be used to create moving temperature or concentration boundary conditions that move over the particles; <i>i.e.</i>, the rigid particles will move through the real particles. Such moving temperature or concentration boundary conditions can only move at a constant velocity defined by the initial particle velocity.</p>
+
+<p>If a rigid particle is added to a problem, but it does not set any velocity, temperature, or concentration (<code>SetDirection</code>=0 or omitted and <code>SetTemperature</code> and <code>SetConcentration</code> omitted), it will have no affect on the calculations. It may plot in visualization software and therefore appear to be part of the simulation, but it will be identical to the results that would be obtained if it had never been added to the problem.</p>
 
 <a name="traction"></a><h2>Triangular Traction Law Material</h2>
 
