@@ -35,7 +35,7 @@ Output Files
 <p>The results of FEA calculations are output to a single text file. The text file is human-readable and all analysis results are clearly labeled including information on units.
 </p>
 
-<p>The only unusual result is for <a href="../xmlformat/definefeamesh.html">imperfect interface elements</a>. Since these elements are not solid elements, they can not define all components of the tensor. In stead, there is only a traction vector normal to the interfacial surface. The normal component of the traction vector is output as <code>sigma(xx)</code> (or <code>sigma(rr)</code> for axisymmetric analyses). The tangential component of the traction vector is output as <code>sigma(xy)</code> (or <code>sigma(rz)</code> for axisymmetric analyses).</p>
+<p>The only unusual result is for <a href="../xmlformat/definefeamesh.html">imperfect interface elements</a>. Since these elements are not solid elements, they cannot define all components of the tensor. Instead, there is only a traction vector normal to the interfacial surface. The normal component of the traction vector is output as <code>sigma(xx)</code> (or <code>sigma(rr)</code> for axisymmetric analyses). The tangential component of the traction vector is output as <code>sigma(xy)</code> (or <code>sigma(rz)</code> for axisymmetric analyses).</p>
 
 <h1><a name="mpmoutput"></a>NairnMPM Output File</h1>
 
@@ -218,7 +218,7 @@ double origy - original z position (mm) (3D only)
 </dd>
 
 <dt>Byte 3: Particle velocity</dt>
-<dd>Setting <code>Y</code> stores two components of particle velocity:
+<dd>Setting <code>Y</code> stores components of particle velocity:
 
 <pre class="near">
 double velx - x direction velocity (mm/sec)
@@ -228,7 +228,7 @@ double vely - z direction velocity (mm/sec) (3D only)
 </dd>
 
 <dt>Byte 4: Particle stress</dt>
-<dd>Setting <code>Y</code> stores four components of particle stress:
+<dd>Setting <code>Y</code> stores components of particle stress:
 
 <pre class="near">
 double stressxx - x direction normal stress (Pa)
@@ -241,7 +241,7 @@ double stressyz - y-z plane shear stress (Pa) (3D only)
 </dd>
 
 <dt>Byte 5: Particle strain</dt>
-<dd>Setting <code>Y</code> stores four components of particle elastic strain:
+<dd>Setting <code>Y</code> stores components of particle strain, which is elastic strain for plasticity materials:
 
 <pre class="near">
 double strainxx - x direction normal strain (dimensionless)
@@ -254,7 +254,7 @@ double strainyz - y-z plane shear strain (dimensionless) (3D only)
 </dd>
 
 <dt>Byte 6: Particle plastic strain</dt>
-<dd>Setting <code>Y</code> stores four components of particle plastic strain:
+<dd>Setting <code>Y</code> stores components of particle plastic strain:
 
 <pre class="near">
 double plstrainxx - x direction plastic normal strain (dimensionless)
@@ -298,8 +298,8 @@ double plastEnergy - cumulative plastic energy (J)
 <dd>This setting should always be <code>N</code> otherwise the archive file has an unsupported or invalid format.
 </dd>
 
-<dt>Byte 12: Particle shear strain components (du/dy and dv/dx)</dt>
-<dd>Setting <code>Y</code> stores two components of strain gradient that combine to give <code>x-y</code> shear strain. Only useful in 2D analysis and can get same information by archiving rotational strain instead:
+<dt>Byte 12: Particle total shear strain components (du/dy and dv/dx)</dt>
+<dd>Setting <code>Y</code> stores two components of total strain gradient that combine to give total <code>x-y</code> shear strain. Only useful in 2D analysis and can get same information by archiving rotational strain instead:
 
 <pre class="near">
 double dudy - Strain gradient term du/dy (dimensionless)

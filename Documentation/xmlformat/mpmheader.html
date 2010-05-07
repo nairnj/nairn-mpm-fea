@@ -102,14 +102,14 @@ This section defines many MPM analysis parameters; it is required for NairnMPM a
   <li>Byte 2: Default particle properties (particle mass, position, material information, and thickness). This byte must always by 'Y'.</li>
   <li>Byte 3: Particle velocity</li>
   <li>Byte 4: Particle stress</li>
-  <li>Byte 5: Particle strain</li>
+  <li>Byte 5: Particle strain (which is elastic strain for plasticity materials)</li>
   <li>Byte 6: Particle plastic strain</li>
   <li>Byte 7: Should always be 'N'. Present to support reading old versions of archive files.</li>
   <li>Byte 8: Particle external work</li>
   <li>Byte 9: Particle temperature</li>
   <li>Byte 10: Particle plastic energy</li>
   <li>Byte 11: Should always be 'N'. Present to support reading old versions of archive files.</li>
-  <li>Byte 12: Particle shear strain components (du/dy and dv/dx)</li>
+  <li>Byte 12: Particle total shear strain components (du/dy and dv/dx)</li>
   <li>Byte 13: Particle strain energy</li>
   <li>Byte 14: Setting 'Y' or 'N' refers to particle history variable 1. See <a href="../outformat/index.html#sec1">archive file information</a> for other settings to store more history variables - these history variables are only meaningful for some <a href="definematl.html">material types</a></li>
   <li>Byte 15: Particle concentration and concentration gradients - only meaningful when doing <a href="#diffusion">diffusion</a> calculations.</li>
@@ -139,7 +139,7 @@ This section defines many MPM analysis parameters; it is required for NairnMPM a
   <dd>Use one or more of these commands to determine what data are calculated and written to the global results file (see <code>GlobalArchiveTime</code> command above). If <code>material</code> is omitted or equal to zero, the calculation will include all material points. If <code>material</code> is non-zero, the calculation will include only particles with that material number (see <a href="definematl.html">Defining Materials</a>). The global results file will be tab-delimited file with time (in msec) in column one and each requested quantity in subsequent columns. The global quantities (or <code>types</code>) that can be archived are:
 <ul class="lev2args">
 	<li><code>sxx</code>, <code>syy</code>, <code>szz</code>, <code>sxy</code>, <code>sxz</code>, or <code>syz</code> - average element of the stress tensor in MPa</li>
-	<li><code>exx</code>, <code>eyy</code>, <code>ezz</code>, <code>exy</code>, <code>exz</code>, or <code>eyz</code> - average element of the total strain tensor in %</li>
+	<li><code>exx</code>, <code>eyy</code>, <code>ezz</code>, <code>exy</code>, <code>exz</code>, or <code>eyz</code> - average element of the total strain tensor in %, which is elastic+plastic strain for plasticity materials</li>
 	<li><code>exxe</code>, <code>eyye</code>, <code>ezze</code>, <code>exye</code>, <code>exze</code>, or <code>eyze</code> - average element of the elastic strain tensor in %</li>
 	<li><code>exxp</code>, <code>eyyp</code>, <code>ezzp</code>, <code>exyp</code>, <code>exzp</code>, or <code>eyzp</code> - average element of the plastic strain tensor in %</li>
 	<li><code>velx</code>, <code>vely</code>, or <code>velz</code> - average component of velocity in mm/sec</li>
