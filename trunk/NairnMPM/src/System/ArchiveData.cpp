@@ -580,7 +580,7 @@ void ArchiveData::ArchiveResults(double atime)
 			}
         }
 
-        // strain (absolute)
+        // elastic strain (absolute)
         if(mpmOrder[ARCH_Strain]=='Y')
 		{	Tensor *ep=mpm[p]->GetStrainTensor();
 			*(double *)app=ep->xx;
