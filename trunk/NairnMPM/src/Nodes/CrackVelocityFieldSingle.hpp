@@ -24,7 +24,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		virtual void ZeroMatFields(void);
 	
 		// specific task methods
-		virtual double GetTotalMassTask1(void);
+		virtual double GetTotalMassAndCount(void);
 	
 		virtual void AddFintSpreadTask3(Vector *);
 		virtual void AddFextSpreadTask3(Vector *);
@@ -63,6 +63,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		virtual void ChangeMomentum(Vector *,bool,double);
 		virtual int CopyFieldMomenta(Vector *,int);
 		virtual int PasteFieldMomenta(Vector *,int);
+		virtual void Describe(void);
 	
 };
 

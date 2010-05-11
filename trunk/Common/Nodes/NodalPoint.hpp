@@ -53,7 +53,7 @@ class NodalPoint : public LinkedObject
 		void ZeroTask0();
 	
 		short AddMomentumTask1(int,CrackField *,double,Vector *);
-		void AddMassTask1(short,int,double);
+		void AddMass(short,int,double);
 		void AddMassTask1(short,int);
 		void AddMassGradient(short,int,double,double,double,double,MPMBase *);
 	
@@ -119,7 +119,8 @@ class NodalPoint : public LinkedObject
         void AddSkewFtot(double,double,double);
 		void SetFixedDirection(int);
 		void UnsetFixedDirection(int);
-		void CalcTotalMassTask1(void);
+		void CalcTotalMassAndCount(void);
+		void CombineRigidParticlesTask1(void);
 #else
         void InitForceField(void);
         void PrintAvgStress(void);
@@ -129,7 +130,8 @@ class NodalPoint : public LinkedObject
 #ifdef MPM_CODE
 		static void PreliminaryCalcs(void);
 		static void ZeroAllNodesTask0(void);
-		static void GetNodalMassesTask1(void);
+		static void GetNodalMasses(void);
+		static void CombineRigidMaterials(void);
 		static void GetGridForcesTask3(double);
 		static void UpdateGridMomentaTask4(double);
 		static void RezeroAllNodesTask6(void);

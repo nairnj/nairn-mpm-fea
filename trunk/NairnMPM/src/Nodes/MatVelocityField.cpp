@@ -4,6 +4,13 @@
     
     Created by John Nairn on 3 April 2009.
     Copyright (c) 2009 John A. Nairn, All rights reserved.
+ 
+	Special case for rigid material
+		pk will be sum of Vp*vel
+		vk will be the rigid material current velocity
+		disp will be sum Vp*disp
+		mass grad will be volume gradient
+		unscaled volume if the volume
 	
 ********************************************************************************/
 
@@ -75,6 +82,14 @@ void MatVelocityField::CalcFtotTask3(double extDamping)
 	ftot.z=fint.z+fext.z-extDamping*pk.z;
 }
 
+#pragma mark ACCESSORS
+
+// for debugging
+void MatVelocityField::Describe(void)
+{
+	cout << "#      - Material Field: n="<<  numberPoints << " mass=" << mass << endl;
+}
+
 #pragma mark CLASS METHODS
 
 // return true if references field is active in this time step
@@ -82,3 +97,7 @@ bool MatVelocityField::ActiveField(MatVelocityField *mvf) { return mvf==NULL ? (
 
 // return true if references field that is active and is not for rigid materials
 bool MatVelocityField::ActiveNonrigidField(MatVelocityField *mvf) { return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0 && mvf->mass>0.) ; }
+
+// return true if references field that is active and is not for rigid materials
+bool MatVelocityField::ActiveRigidField(MatVelocityField *mvf) { return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0 && mvf->mass<=0.) ; }
+

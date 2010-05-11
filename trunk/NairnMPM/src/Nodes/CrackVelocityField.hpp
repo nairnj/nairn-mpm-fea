@@ -36,9 +36,9 @@ class CrackVelocityField
 		
 		// specific task methods
 		void AddMomentumTask1(int,Vector *,Vector *);
-		virtual void AddMassTask1(int,double);
+		virtual void AddMass(int,double);
 		virtual void AddMassTask1(int);
-		virtual double GetTotalMassTask1(void) = 0;
+		virtual double GetTotalMassAndCount(void) = 0;
 		virtual void AddMassGradient(int,double,double,double,double,MPMBase *);
 	
 		void AddFintTask3(int,Vector *);
@@ -105,7 +105,8 @@ class CrackVelocityField
 		virtual int GetNumberPoints(void);
 		virtual int GetNumberPointsNonrigid(void);
 		virtual double UnscaledVolumeNonrigid(void);
-		void Describe(void);
+		virtual double UnscaledVolumeRigid(void);
+		virtual void Describe(void);
 	
 		// class methods
 		static bool ActiveField(CrackVelocityField *);
@@ -115,7 +116,7 @@ class CrackVelocityField
 	protected:
 		int numberPoints;			// total number of materials points in this field/field [0] changed to sum of all in task 8
 		MatVelocityField **mvf;		// material velocity fields
-		double unscaledVolume;		// unscaled volume (ignores dilation) only used for imperfect interface forces
+		double unscaledVolume;		// unscaled volume (ignores dilation) only used for imperfect interface forces and material contact
 };
 
 #endif

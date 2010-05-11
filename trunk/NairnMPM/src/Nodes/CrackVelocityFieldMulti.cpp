@@ -37,7 +37,7 @@ void CrackVelocityFieldMulti::ZeroMatFields(void)
 
 #pragma mark TASK 1 METHODS
 
-// add "mass" for  rigid particle (task 1)
+// add "mass" for rigid particle (task 1) - it counts particles, but mass will be zero
 void CrackVelocityFieldMulti::AddMassTask1(int matfld) { numberRigidPoints++; }
 
 // Add to mass gradient
@@ -52,7 +52,7 @@ void CrackVelocityFieldMulti::AddMassGradient(int matfld,double mp,double dNdx,d
 }
 
 // Delete empty velocity fields, count number of materials, and return total mass
-double CrackVelocityFieldMulti::GetTotalMassTask1(void)
+double CrackVelocityFieldMulti::GetTotalMassAndCount(void)
 {	int i;
 	double mass=0.;
 	for(i=0;i<maxMaterialFields;i++)
@@ -64,6 +64,66 @@ double CrackVelocityFieldMulti::GetTotalMassTask1(void)
 	return mass;
 }
 
+// copy rigid material from another velocity field and add (creating if needed) to this field
+void CrackVelocityFieldMulti::CombineRigidFrom(CrackVelocityFieldMulti *cvfm,int rigidFieldNum)
+{
+	// get other field, exit if none, or error if different one
+	int otherRigidNum;
+	MatVelocityField *rmvf=cvfm->GetRigidMaterialField(&otherRigidNum);
+	if(rmvf==NULL) return;
+	if(otherRigidNum!=rigidFieldNum)
+		throw MPMTermination("Two different rigid materials on the same node","CrackVelocityFieldMulti::MaterialContact");
+	
+	// add number rigid points this crack velocity field
+	numberRigidPoints+=rmvf->numberPoints;
+	numberPoints+=rmvf->numberPoints;
+	
+	// add unscaled volume to this crack velocity field
+	unscaledVolume+=cvfm->UnscaledVolumeRigid();
+	
+	// sum momentum, displacement, and mass grad (velocity is same) into material velocity field
+	mvf[rigidFieldNum]->numberPoints+=rmvf->numberPoints;
+	AddVector(&mvf[rigidFieldNum]->pk,&rmvf->pk);
+	AddVector(&mvf[rigidFieldNum]->disp,&rmvf->disp);
+	AddVector(mvf[rigidFieldNum]->massGrad,rmvf->massGrad);
+}
+
+// copy rigid material from another velocity field and add (creating if needed) to this field
+void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int rigidFieldNum)
+{
+	// create material field if needed
+	int initialRigidPoints;
+	double initialVolume;
+	if(mvf[rigidFieldNum]==NULL)
+	{	mvf[rigidFieldNum]=new MatVelocityField();
+		if(mvf[rigidFieldNum]==NULL) throw CommonException("Memory error allocating material velocity field.",
+													"CrackVelocityFieldMulti::CopyRigidFrom");
+		initialRigidPoints=0;
+		initialVolume=0.;
+		numberMaterials++;					// just added a material to this crack velocity field
+	}
+	else
+	{	initialRigidPoints=mvf[rigidFieldNum]->numberPoints;
+		initialVolume=UnscaledVolumeRigid();
+	}
+	
+	// reference to source field
+	MatVelocityField *rmvf=cvfm->mvf[rigidFieldNum];
+	
+	// add number rigid points this crack velocity field
+	numberRigidPoints+=rmvf->numberPoints-initialRigidPoints;
+	numberPoints+=rmvf->numberPoints-initialRigidPoints;
+	
+	// add unscaled volume to this crack velocity field
+	unscaledVolume+=cvfm->UnscaledVolumeRigid()-initialVolume;
+	
+	// copy momentum, displacement, and mass grad (velocity is same) into material velocity field
+	mvf[rigidFieldNum]->numberPoints=rmvf->numberPoints;
+	CopyVector(&mvf[rigidFieldNum]->pk,&rmvf->pk);
+	CopyVector(&mvf[rigidFieldNum]->disp,&rmvf->disp);
+	CopyVector(mvf[rigidFieldNum]->massGrad,rmvf->massGrad);
+}
+	
 #pragma mark TASK 3 METHODS
 
 // Add to fint spread out over the materials to each has same extra accerations = f/M
@@ -142,13 +202,14 @@ void CrackVelocityFieldMulti::UpdateMomentaTask4(double timestep)
 #pragma mark TASK 6 METHODS
 
 // zero momentum and displacement at a node for new calculations
+// but do not zero momentum for a rigid particle
 void CrackVelocityFieldMulti::RezeroNodeTask6(void)
 {	int i;
     for(i=0;i<maxMaterialFields;i++)
     {	if(MatVelocityField::ActiveField(mvf[i]))
-		{	ZeroVector(&mvf[i]->pk);
-			ZeroVector(&mvf[i]->disp);
-			ZeroVector(mvf[i]->massGrad);
+		{	ZeroVector(&mvf[i]->disp);
+			if(mvf[i]->mass>0.)
+				ZeroVector(&mvf[i]->pk);
 		}
     }
 }
@@ -174,12 +235,14 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 				Mc+=mvf[i]->mass;
 			}
 			else if(rigidMat>0)
-				throw MPMTermination("Two different rigid materials type in contact on name node","CrackVelocityFieldMulti::MaterialContact");
+				throw MPMTermination("Two different rigid materials type in contact on the same node","CrackVelocityFieldMulti::MaterialContact");
 			else
+			{	// rigid particles have zero mass
 				rigidMat=i;
+			}
 		}
 	}
-	// if exactly one rigid material, they special case for contact laws
+	// if exactly one rigid material, then special case for contact laws
 	if(rigidMat>=0)
 	{	RigidMaterialContact(rigidMat,nodenum,vfld,postUpdate,deltime);
 		return;
@@ -481,7 +544,9 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 	 */
 }
 
-// Called in multimaterial mode to check contact at nodes with multiple materials
+// Called in multimaterial mode to check contact at nodes with multiple materials and here
+// means exactly one is a rigid material
+//	(no rigid materials handled in MaterialContact(), two rigid materials is an error)
 void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int vfld,bool postUpdate,double deltime)
 {
 	// get rigid material volume by subtracting other materials from the total unscaled volume
@@ -899,6 +964,24 @@ Vector CrackVelocityFieldMulti::GetCMatFtot(void)
 	return fk;
 }
 
+// get first active rigid field or return numm
+MatVelocityField *CrackVelocityFieldMulti::GetRigidMaterialField(int *rigidFieldNum)
+{
+	// if none return NULL
+	if(numberRigidPoints==0) return NULL;
+	
+	// find the rigid field
+	int i;
+	for(i=0;i<maxMaterialFields;i++)
+	{	if(MatVelocityField::ActiveRigidField(mvf[i]))
+		{	*rigidFieldNum=i;
+			return mvf[i];
+		}
+	}
+	
+	return NULL;
+}
+
 // get rigid material volume by subtracting other materials from the total unscaled volume
 double CrackVelocityFieldMulti::UnscaledVolumeNonrigid(void)
 {	// total volume if no rigid particles
@@ -914,6 +997,14 @@ double CrackVelocityFieldMulti::UnscaledVolumeNonrigid(void)
 		}
 	}
 	return nonrigidVolume;
+}
+
+// get rigid material volume by subtracting nonrigid materials from the total unscaled volume
+// assumes at most one rigid field
+double CrackVelocityFieldMulti::UnscaledVolumeRigid(void)
+{	// total volume if all rigid particles
+	if(numberRigidPoints==numberPoints) return unscaledVolume;
+	return unscaledVolume-UnscaledVolumeNonrigid();
 }
 
 /* in response to crack contact, change moment by changing velocity of all 
@@ -971,4 +1062,17 @@ int CrackVelocityFieldMulti::PasteFieldMomenta(Vector *holdPk,int offset)
 	}
 	return offset;
 }
+
+// for debugging
+void CrackVelocityFieldMulti::Describe(void)
+{	CrackVelocityField::Describe();
+	cout << "#     multimaterial: nmat= " << numberMaterials << " nrigidpts= " << numberRigidPoints << endl;
+	int i;
+	for(i=0;i<maxMaterialFields;i++)
+	{	if(MatVelocityField::ActiveField(mvf[i]))
+			mvf[i]->Describe();
+	}
+}
+
+
 	

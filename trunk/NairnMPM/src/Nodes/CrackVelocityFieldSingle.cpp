@@ -29,7 +29,7 @@ void CrackVelocityFieldSingle::ZeroMatFields(void)
 #pragma mark TASK 1 METHODS
 
 // Delete empty velocity fields, count number of materials, and return total mass
-double CrackVelocityFieldSingle::GetTotalMassTask1(void)
+double CrackVelocityFieldSingle::GetTotalMassAndCount(void)
 {	return MatVelocityField::ActiveField(mvf[0]) ? mvf[0]->mass : 0. ;
 }
 
@@ -302,3 +302,11 @@ int CrackVelocityFieldSingle::PasteFieldMomenta(Vector *holdPk,int offset)
 	}
 	return offset;
 }
+
+// for debugging
+void CrackVelocityFieldSingle::Describe(void)
+{	CrackVelocityField::Describe();
+	cout << "#     single material" << endl;
+	if(MatVelocityField::ActiveField(mvf[0])) mvf[0]->Describe();
+}
+	
