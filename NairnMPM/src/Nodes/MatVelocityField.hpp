@@ -26,7 +26,7 @@ class MatVelocityField
 		Vector fext;				// external force
 		Vector ftot;				// total force
 		Vector disp;				// displacement for contact calculations
-		Vector *massGrad;			// mass gradient allocation in multimaterial mode
+		Vector *massGrad;			// mass gradient allocated in multimaterial mode
 				
         // constructors and destructors
         MatVelocityField();
@@ -39,9 +39,13 @@ class MatVelocityField
 		void CalcVelocityForStrainUpdate(void);
 		void CalcFtotTask3(double);
 	
+		// accessors
+		void Describe(void);
+	
 		// class methods
 		static bool ActiveField(MatVelocityField *);
 		static bool ActiveNonrigidField(MatVelocityField *mvf);
+		static bool ActiveRigidField(MatVelocityField *mvf);
 	
 	private:
 };

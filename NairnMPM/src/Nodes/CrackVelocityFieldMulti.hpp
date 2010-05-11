@@ -25,8 +25,10 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 	
 		// specific task methods
 		virtual void AddMassTask1(int);
-		virtual double GetTotalMassTask1(void);
+		virtual double GetTotalMassAndCount(void);
 		virtual void AddMassGradient(int,double,double,double,double,MPMBase *);
+		virtual void CombineRigidFrom(CrackVelocityFieldMulti *,int);
+		virtual void CopyRigidFrom(CrackVelocityFieldMulti *,int);
 	
 		virtual void AddFintSpreadTask3(Vector *);
 		virtual void AddFextSpreadTask3(Vector *);
@@ -62,14 +64,17 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		// accessors
 		virtual int GetNumberPointsNonrigid(void);
 		virtual double UnscaledVolumeNonrigid(void);
+		virtual double UnscaledVolumeRigid(void);
 		virtual double GetTotalMass(void);
 		virtual double GetMass(int);
 		virtual Vector GetCMatMomentum(void);
 		virtual Vector GetCMDisplacement(void);
 		virtual Vector GetCMatFtot(void);
+		virtual MatVelocityField *GetRigidMaterialField(int *);
 		virtual void ChangeMomentum(Vector *,bool,double);
 		virtual int CopyFieldMomenta(Vector *,int);
 		virtual int PasteFieldMomenta(Vector *,int);
+		virtual void Describe(void);
 	
 	private:
 		int numberMaterials;		// number of materials in this crack velocity field

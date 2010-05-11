@@ -314,7 +314,6 @@ void NairnMPM::MPMStep(void)
 			// get deformed particle volume if it will be needed (for transport tasks)
 			if(volumeExtrap) mpm[p]->SetDilatedVolume();
 			
-			
 			// Add particle property to each node in the element
 			for(i=1;i<=numnds;i++)
 			{	// Look for crack crossing and save until later
@@ -356,7 +355,7 @@ void NairnMPM::MPMStep(void)
 				// more for non-rigid contact materials
 				if(!matID->Rigid())
 				{	// add to lumped mass matrix
-					nd[nds[i]]->AddMassTask1(vfld,matfld,mp*fn[i]);
+					nd[nds[i]]->AddMass(vfld,matfld,mp*fn[i]);
 				
 					// transport calculations
 					nextTransport=transportTasks;
@@ -462,8 +461,12 @@ void NairnMPM::MPMStep(void)
 	RemoveRigidBCs((BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,(BoundaryCondition **)&firstRigidTempBC);
 	RemoveRigidBCs((BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,(BoundaryCondition **)&firstRigidConcBC);
 	
-	// total nodal masses and clear out unused fields - in case needed, e.g. for cracks
-	NodalPoint::GetNodalMassesTask1();
+	// total nodal masses and count materials if multimaterial mode
+	NodalPoint::GetNodalMasses();
+	
+	// combine rigid fields if necessary
+	if(firstCrack!=NULL && multiMaterialMode)
+		NodalPoint::CombineRigidMaterials();
 	
 #pragma mark --- TASK 1b: TRANSPORT EXTRAS
 #ifdef LOG_PROGRESS
@@ -644,8 +647,11 @@ void NairnMPM::MPMStep(void)
 #endif
 
     /* For SZS and USAVG Methods
-            Extrapolate new particle velocities to grid
-            Update stress and strain
+		Extrapolate new particle velocities and displacements to grid
+		Since will reuse initial locations, mass, volume, and mass gradient extrapolate the same
+			and do not need to be redone.
+		For rigid particles, only displacement will change
+		When done, Update stress and strain
     */
     if(mpmApproach==SZS_METHOD || mpmApproach==USAVG_METHOD)
     {	// zero again
@@ -665,20 +671,25 @@ void NairnMPM::MPMStep(void)
 			else
 				theElements[iel]->GetShapeFunctions(&numnds,fn,nds,mpm[p]->GetNcpos());
             
-            // update vector for velocity extrapolation
-            for(i=1;i<=numnds;i++)
-			{	vfld=(short)mpm[p]->vfld[i];
-				
-            	// velocity from updated velocities
-                nd[nds[i]]->AddMomentumTask6(vfld,matfld,fn[i]*mp,&mpm[p]->vel);
-				
-				// add updated displacement (if cracks, not 3D)
-				contact.AddDisplacementTask6(vfld,matfld,nd[nds[i]],mpm[p],fn[i]);
-				
-				// material contact calculations
-				if(multiMaterialMode)
-					nd[nds[i]]->AddMassGradient(vfld,matfld,mp,xDeriv[i],yDeriv[i],zDeriv[i],mpm[p]);
-            }
+			if(!matID->Rigid())
+			{	// update vector for velocity extrapolation
+				for(i=1;i<=numnds;i++)
+				{	vfld=(short)mpm[p]->vfld[i];
+					
+					// velocity from updated velocities
+					nd[nds[i]]->AddMomentumTask6(vfld,matfld,fn[i]*mp,&mpm[p]->vel);
+					
+					// add updated displacement and volume (if cracks, not 3D)
+					contact.AddDisplacementTask6(vfld,matfld,nd[nds[i]],mpm[p],fn[i]);				
+				}
+			}
+			else
+			{	// only displacement changes for rigid particles, but pass to all velocity fields
+				for(i=1;i<=numnds;i++)
+				{	// add updated displacement and volume (if cracks, not 3D)
+					contact.AddDisplacementTask6(-1,matfld,nd[nds[i]],mpm[p],fn[i]);				
+				}
+			}
         }
 		
 		// update nodal values for transport properties (when coupled to strain)

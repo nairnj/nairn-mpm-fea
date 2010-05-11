@@ -83,7 +83,7 @@ void CrackVelocityField::AddMomentumTask1(int matfld,Vector *addPk,Vector *vel)
 }
 
 // add to mass (task 1) and field was allocated (if needed) in AddMomentumTask1()
-void CrackVelocityField::AddMassTask1(int matfld,double mnode) { mvf[matfld]->mass+=mnode; }
+void CrackVelocityField::AddMass(int matfld,double mnode) { mvf[matfld]->mass+=mnode; }
 
 // add "mass" for  rigid particle (task 1) (only functions in CrackVelocityFieldMulti)
 void CrackVelocityField::AddMassTask1(int matfld) { }
@@ -245,14 +245,16 @@ int CrackVelocityField::GetNumberPointsNonrigid(void) { return numberPoints; }
 // for debugging
 void CrackVelocityField::Describe(void)
 {
-	cout << "n="<<  numberPoints << " mass=" << GetTotalMass() << endl;
+	cout << "Crack Field: npts="<<  numberPoints << " mass=" << GetTotalMass() << " unscaled vol=" << unscaledVolume << endl;
 	if(crackNum[0]>0)
-	{	cout << "#   crack 1=" << crackNum[0] << ", loc=" << loc[0];
+	{	cout << "#     crack 1=#" << crackNum[0] << ", loc=";
+		if(loc[0]==ABOVE_CRACK) cout << "above"; else cout << "below";
 		PrintVector(", n=",&norm[0]);
 		cout << endl;
 	}
 	if(crackNum[1]>0)
-	{	cout << "#   crack 2=" << crackNum[1] << ", loc=" << loc[1];
+	{	cout << "#     crack 2=#" << crackNum[1] << ", loc=" << loc[1];
+		if(loc[0]==ABOVE_CRACK) cout << "above"; else cout << "below";
 		PrintVector(", n=",&norm[1]);
 		cout << endl;
 	}
@@ -260,6 +262,7 @@ void CrackVelocityField::Describe(void)
 
 // the unscaled volume
 double CrackVelocityField::UnscaledVolumeNonrigid(void) { return unscaledVolume; }
+double CrackVelocityField::UnscaledVolumeRigid(void) { return 0.; }
 
 #pragma mark CLASS METHODS
 

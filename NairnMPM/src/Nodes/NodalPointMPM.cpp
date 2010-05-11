@@ -20,6 +20,7 @@
 #include "Cracks/CrackSegment.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 
+#include "Nodes/CrackVelocityFieldMulti.hpp"
 #include "Nodes/MatVelocityField.hpp"
 
 // class statics
@@ -76,7 +77,7 @@ void NodalPoint::ZeroTask0(void)
 #pragma mark TASK 1 METHODS
 
 // Add mass for selected field
-void NodalPoint::AddMassTask1(short vfld,int matfld,double mnode) { cvf[vfld]->AddMassTask1(matfld,mnode); }
+void NodalPoint::AddMass(short vfld,int matfld,double mnode) { cvf[vfld]->AddMass(matfld,mnode); }
 
 // for rigid particles, adding mass is counting number of rigid particles
 void NodalPoint::AddMassTask1(short vfld,int matfld) { cvf[vfld]->AddMassTask1(matfld); }
@@ -243,12 +244,48 @@ void NodalPoint::AddMassGradient(short vfld,int matfld,double mp,double dNdx,dou
 
 // Calculate total mass. Calculations might need to exclude nodes whose
 // mass is too small in crack calculations
-void NodalPoint::CalcTotalMassTask1(void)
+void NodalPoint::CalcTotalMassAndCount(void)
 {	int i;
 	mass=0.;
 	for(i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			mass+=cvf[i]->GetTotalMassTask1();
+			mass+=cvf[i]->GetTotalMassAndCount();
+	}
+}
+
+// When has rigid particles, multimaterial mode, and cracks, sum all rigid particles on
+//	this node and transfer copy to all crack velocity fields
+void NodalPoint::CombineRigidParticlesTask1(void)
+{	int i,j;
+	
+	// find first rigid field
+	MatVelocityField *rmvf=NULL;
+	int rigidFieldNum;
+	for(i=0;i<maxCrackFields;i++)
+	{	if(CrackVelocityField::ActiveField(cvf[i]))
+		{	rmvf=((CrackVelocityFieldMulti *)cvf[i])->GetRigidMaterialField(&rigidFieldNum);
+			if(rmvf!=NULL) break;
+		}
+	}
+	
+	// if none, then done
+	if(rmvf==NULL) return;
+	
+	// sum other fields into this one
+	for(j=i+1;j<maxCrackFields;j++)
+	{	if(CrackVelocityField::ActiveField(cvf[j]))
+		{	// copy rigid material from field j to field i
+			((CrackVelocityFieldMulti *)cvf[i])->CombineRigidFrom((CrackVelocityFieldMulti *)cvf[j],rigidFieldNum);
+		}
+	}
+	
+	// transfer to all other field
+	// sum other fields into this one
+	for(j=0;j<maxCrackFields;j++)
+	{	if(j!=i && CrackVelocityField::ActiveField(cvf[j]))
+		{	// copy rigid material from field j to field i
+			((CrackVelocityFieldMulti *)cvf[j])->CopyRigidFrom((CrackVelocityFieldMulti *)cvf[i],rigidFieldNum);
+		}
 	}
 }
 
@@ -763,9 +800,18 @@ bool NodalPoint::GetCMVelocityTask8(Vector *vk)
 
 #pragma mark INCREMENTERS
 
-// Add displacements to selected field
+// Add displacements to selected field, but in task 6, add rigid particle velocity
+// to all crack fields (will have vfld<0)
 void NodalPoint::AddDisplacement(short vfld,int matfld,double wt,Vector *pdisp)
-{	cvf[vfld]->AddDisplacement(matfld,wt,pdisp);
+{	if(vfld<0)
+	{	int i;
+		for(i=0;i<maxCrackFields;i++)
+		{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
+				cvf[i]->AddDisplacement(matfld,wt,pdisp);
+		}
+	}
+	else
+		cvf[vfld]->AddDisplacement(matfld,wt,pdisp);
 }
 
 // Add unscaled volume (mass/rho) to selected field
@@ -1431,10 +1477,10 @@ void NodalPoint::ZeroAllNodesTask0(void)
 }
 
 // get total mass at nodes
-void NodalPoint::GetNodalMassesTask1(void)
+void NodalPoint::GetNodalMasses(void)
 {	int i;
 	for(i=1;i<=nnodes;i++)
-		nd[i]->CalcTotalMassTask1();
+		nd[i]->CalcTotalMassAndCount();
 }
 
 // calculate the total grid forces
@@ -1460,6 +1506,15 @@ void NodalPoint::MaterialContact(bool multiMaterials,bool postUpdate,double delt
 	for(i=1;i<=nnodes;i++)
 		nd[i]->MaterialContactOnNode(postUpdate,deltime);
 }
+
+// adjust momenta at overlaping material velocity fields
+void NodalPoint::CombineRigidMaterials(void)
+{	// combine rigid materials across cracks
+	int i;
+	for(i=1;i<=nnodes;i++)
+		nd[i]->CombineRigidParticlesTask1();
+}
+
 
 // rezero all velocity fields before second extrapolation
 void NodalPoint::RezeroAllNodesTask6(void)
