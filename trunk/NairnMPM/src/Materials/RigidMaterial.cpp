@@ -5,7 +5,9 @@
     Created by John Nairn on Nov 15 2004.
     Copyright (c) 2004 John A. Nairn, All rights reserved.
 
-	Dependencies
+	Rigid material in multimaterial mode
+		rho = 1000 mm^3/cm^3
+		mp = rho * vol (cm^3) / ptsperelement = particle volume in mm^3
 ********************************************************************************/
 
 #include "Materials/RigidMaterial.hpp"
