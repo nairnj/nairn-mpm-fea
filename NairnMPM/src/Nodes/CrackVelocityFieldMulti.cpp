@@ -93,18 +93,17 @@ void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int ri
 {
 	// create material field if needed
 	int initialRigidPoints;
-	double initialVolume;
 	if(mvf[rigidFieldNum]==NULL)
 	{	mvf[rigidFieldNum]=new MatVelocityField();
 		if(mvf[rigidFieldNum]==NULL) throw CommonException("Memory error allocating material velocity field.",
 													"CrackVelocityFieldMulti::CopyRigidFrom");
 		initialRigidPoints=0;
-		initialVolume=0.;
 		numberMaterials++;					// just added a material to this crack velocity field
 	}
 	else
 	{	initialRigidPoints=mvf[rigidFieldNum]->numberPoints;
-		initialVolume=UnscaledVolumeRigid();
+		unscaledVolume-=UnscaledVolumeRigid();
+		if(initialRigidPoints==0) numberMaterials++;
 	}
 	
 	// reference to source field
@@ -115,7 +114,7 @@ void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int ri
 	numberPoints+=rmvf->numberPoints-initialRigidPoints;
 	
 	// add unscaled volume to this crack velocity field
-	unscaledVolume+=cvfm->UnscaledVolumeRigid()-initialVolume;
+	unscaledVolume+=cvfm->UnscaledVolumeRigid();
 	
 	// copy momentum, displacement, and mass grad (velocity is same) into material velocity field
 	mvf[rigidFieldNum]->numberPoints=rmvf->numberPoints;
@@ -550,13 +549,8 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int vfld,bool postUpdate,double deltime)
 {
 	// get rigid material volume by subtracting other materials from the total unscaled volume
-	double rho,rigidVolume=unscaledVolume;
+	double rho,rigidVolume=UnscaledVolumeRigid();
 	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(i==rigidFld || !MatVelocityField::ActiveField(mvf[i])) continue;
-		rho=theMaterials[MaterialBase::fieldMatIDs[i]]->rho*0.001;	// in g/mm^3
-		rigidVolume-=(mvf[i]->mass/rho);
-	}
 	
 	// loop over each material (skipping the one rigid material
 	for(i=0;i<maxMaterialFields;i++)
@@ -593,8 +587,8 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 				nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
 				nd[nodenum]->GetMassGradient(vfld,rigidFld,&normj,-1.);
 				double magi=DotVectors(&normi,&normi);
-				double magj=DotVectors(&normj,&normj);			// already a volume gradiet
-				if(magi/rho >= magj)
+				double magj=DotVectors(&normj,&normj);			// already a volume gradient
+				if(magi/rho/rho >= magj)
 					CopyScaleVector(&norm,&normi,1./sqrt(magi));
 				else
 					CopyScaleVector(&norm,&normj,1./sqrt(magj));

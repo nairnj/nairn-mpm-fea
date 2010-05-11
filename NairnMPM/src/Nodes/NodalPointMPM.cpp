@@ -853,12 +853,12 @@ void NodalPoint::GetMassGradient(short vfld,int matfld,Vector *grad,double scale
 {
 	return cvf[vfld]->GetMassGradient(matfld,grad,scale);
 	
-	// number of nodes each direction (1 more than number of elements
+	/*
+	// number of nodes each direction (1 more than number of elements)
 	int horiz,vert,depth;
 	mpmgrid.GetGridPoints(&horiz,&vert,&depth);
 	
 	// 3D or 2D
-	/*
 	if(fmobj->IsThreeD())
 	{	//int stack=horiz*vert;
 		//int slice=num % stack*depth;
