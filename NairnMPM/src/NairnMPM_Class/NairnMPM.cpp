@@ -33,6 +33,10 @@
 #include "Cracks/CrackSurfaceContact.hpp"
 #include <time.h>
 
+// uncomment to project rigid velocity fields to all crack velocity fields
+// Only does anything when have cracks, in multimaterial mode, and has rigid contact particles
+//#define COMBINE_RIGID_MATERIALS
+
 // global analysis object
 NairnMPM *fmobj=NULL;
 
@@ -67,6 +71,7 @@ NairnMPM::NairnMPM()
 	volumeExtrap=FALSE;				// set if need volume extrapolations
 	warnParticleLeftGrid=1;			// abort when this many leave the grid
 	multiMaterialMode=false;		// multi-material mode
+	hasRigidContactParticles=false;	// rigid contact particles in multimaterial mode
 	
 	// initialize objects
 	archiver=new ArchiveData();		// archiving object
@@ -461,16 +466,18 @@ void NairnMPM::MPMStep(void)
 	RemoveRigidBCs((BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,(BoundaryCondition **)&firstRigidTempBC);
 	RemoveRigidBCs((BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,(BoundaryCondition **)&firstRigidConcBC);
 	
+#pragma mark --- TASK 1b: POST TASK 1 CALCULATIONS
+#ifdef LOG_PROGRESS
+	archiver->WriteLogFile("TASK 1b: POST TASK 1 CALCULATIONS",NULL);
+#endif
+	
 	// total nodal masses and count materials if multimaterial mode
 	NodalPoint::GetNodalMasses();
 	
+#ifdef COMBINE_RIGID_MATERIALS
 	// combine rigid fields if necessary
-	if(firstCrack!=NULL && multiMaterialMode)
+	if(firstCrack!=NULL && multiMaterialMode && hasRigidContactParticles)
 		NodalPoint::CombineRigidMaterials();
-	
-#pragma mark --- TASK 1b: TRANSPORT EXTRAS
-#ifdef LOG_PROGRESS
-	archiver->WriteLogFile("TASK 1b: TRANSPORT EXTRAS",NULL);
 #endif
 
 	// Extra calculations for transport
@@ -650,17 +657,17 @@ void NairnMPM::MPMStep(void)
 		Extrapolate new particle velocities and displacements to grid
 		Since will reuse initial locations, mass, volume, and mass gradient extrapolate the same
 			and do not need to be redone.
-		For rigid particles, only displacement will change
+		For rigid particles, only displacement changed and it is found when node rezeroed
 		When done, Update stress and strain
     */
     if(mpmApproach==SZS_METHOD || mpmApproach==USAVG_METHOD)
     {	// zero again
-		NodalPoint::RezeroAllNodesTask6();
+		NodalPoint::RezeroAllNodesTask6(timestep);
         
-        // loop over particles
+        // loop over non-rigid particles
         for(p=0;p<nmpms;p++)
 		{	matID=theMaterials[mpm[p]->MatID()];
-			if(matID->RigidBC()) continue;
+			if(matID->Rigid()) continue;
             mp=mpm[p]->mp;			// in g
 			matfld=matID->GetField();
     
@@ -671,24 +678,14 @@ void NairnMPM::MPMStep(void)
 			else
 				theElements[iel]->GetShapeFunctions(&numnds,fn,nds,mpm[p]->GetNcpos());
             
-			if(!matID->Rigid())
-			{	// update vector for velocity extrapolation
-				for(i=1;i<=numnds;i++)
-				{	vfld=(short)mpm[p]->vfld[i];
-					
-					// velocity from updated velocities
-					nd[nds[i]]->AddMomentumTask6(vfld,matfld,fn[i]*mp,&mpm[p]->vel);
-					
-					// add updated displacement and volume (if cracks, not 3D)
-					contact.AddDisplacementTask6(vfld,matfld,nd[nds[i]],mpm[p],fn[i]);				
-				}
-			}
-			else
-			{	// only displacement changes for rigid particles, but pass to all velocity fields
-				for(i=1;i<=numnds;i++)
-				{	// add updated displacement and volume (if cracks, not 3D)
-					contact.AddDisplacementTask6(-1,matfld,nd[nds[i]],mpm[p],fn[i]);				
-				}
+			for(i=1;i<=numnds;i++)
+			{	vfld=(short)mpm[p]->vfld[i];
+				
+				// velocity from updated velocities
+				nd[nds[i]]->AddMomentumTask6(vfld,matfld,fn[i]*mp,&mpm[p]->vel);
+				
+				// add updated displacement and volume (if cracks, not 3D)
+				contact.AddDisplacementTask6(vfld,matfld,nd[nds[i]],mpm[p],fn[i]);				
 			}
         }
 		
@@ -1199,7 +1196,10 @@ void NairnMPM::PreliminaryCalcs(void)
 		mpm[p]->InitializeMass(rho*volume/((double)ptsPerElement));			// in g
 		
 		// done if rigid contact material in multimaterial mode (mass will be in mm^3 and be be particle volume)
-		if(theMaterials[matid]->Rigid()) continue;
+		if(theMaterials[matid]->Rigid())
+		{	hasRigidContactParticles=true;
+			continue;
+		}
         
         // check time step
         crot=theMaterials[matid]->WaveSpeed(IsThreeD())/10.;		// in cm/sec

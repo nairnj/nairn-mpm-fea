@@ -38,6 +38,7 @@ class NairnMPM : public CommonAnalysis
 		double FractCellTime;	// fraction of cell crossed at wave speed (<1)
 		int warnParticleLeftGrid;	// warning ID
 		bool multiMaterialMode;		// TRUE to use separate velocity fields for each material
+		bool hasRigidContactParticles;	// TRUE if some particles in multimaterial mode or rigid (direction=8)
 		
         //  Constructors and Destructor
 		NairnMPM();

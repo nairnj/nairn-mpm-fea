@@ -32,7 +32,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 	
 		virtual void UpdateMomentaTask4(double);
 	
-		virtual void RezeroNodeTask6(void);
+		virtual void RezeroNodeTask6(double);
 	
 		virtual void CalcVelocityForStrainUpdate(void);
 	

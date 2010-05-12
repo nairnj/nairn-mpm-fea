@@ -201,14 +201,21 @@ void CrackVelocityFieldMulti::UpdateMomentaTask4(double timestep)
 #pragma mark TASK 6 METHODS
 
 // zero momentum and displacement at a node for new calculations
-// but do not zero momentum for a rigid particle
-void CrackVelocityFieldMulti::RezeroNodeTask6(void)
+// but can do the calculation for rigid particles here
+void CrackVelocityFieldMulti::RezeroNodeTask6(double deltaTime)
 {	int i;
     for(i=0;i<maxMaterialFields;i++)
     {	if(MatVelocityField::ActiveField(mvf[i]))
-		{	ZeroVector(&mvf[i]->disp);
-			if(mvf[i]->mass>0.)
-				ZeroVector(&mvf[i]->pk);
+		{	if(mvf[i]->mass>0.)
+			{	ZeroVector(&mvf[i]->pk);
+				ZeroVector(&mvf[i]->disp);
+			}
+			else
+			{	// for rigid particles, can project displacement using current velocity because
+				// particle mass is its volume
+				// dnew = Sum (Vp*fpi*(d + v dt)) = dold + Sum (Vp*fpi*v*dt) = dold + pk*dt
+				AddScaledVector(&mvf[i]->disp,&mvf[i]->pk,deltaTime);
+			}
 		}
     }
 }

@@ -68,7 +68,7 @@ void CrackVelocityFieldSingle::UpdateMomentaTask4(double timestep)
 #pragma mark TASK 6 METHODS
 
 // zero momentum and displacement at a node for new calculations
-void CrackVelocityFieldSingle::RezeroNodeTask6(void)
+void CrackVelocityFieldSingle::RezeroNodeTask6(double)
 {	if(MatVelocityField::ActiveField(mvf[0]))
 	{	ZeroVector(&mvf[0]->pk);
 		ZeroVector(&mvf[0]->disp);
