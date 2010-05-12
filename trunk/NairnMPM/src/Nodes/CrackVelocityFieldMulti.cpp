@@ -90,7 +90,17 @@ void CrackVelocityFieldMulti::CombineRigidFrom(CrackVelocityFieldMulti *cvfm,int
 
 // copy rigid material from another velocity field and add (creating if needed) to this field
 void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int rigidFieldNum)
-{
+{	
+	/*
+	// create only if already in this field
+	if(mvf[rigidFieldNum]==NULL) return;
+	if(mvf[rigidFieldNum]->numberPoints==0) return;
+	
+	// current valiues
+	int initialRigidPoints=mvf[rigidFieldNum]->numberPoints;
+	unscaledVolume-=UnscaledVolumeRigid();
+	*/
+	
 	// create material field if needed
 	int initialRigidPoints;
 	if(mvf[rigidFieldNum]==NULL)
@@ -119,6 +129,7 @@ void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int ri
 	// copy momentum, displacement, and mass grad (velocity is same) into material velocity field
 	mvf[rigidFieldNum]->numberPoints=rmvf->numberPoints;
 	CopyVector(&mvf[rigidFieldNum]->pk,&rmvf->pk);
+	CopyVector(&mvf[rigidFieldNum]->vk,&rmvf->vk);
 	CopyVector(&mvf[rigidFieldNum]->disp,&rmvf->disp);
 	CopyVector(mvf[rigidFieldNum]->massGrad,rmvf->massGrad);
 }
