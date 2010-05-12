@@ -67,7 +67,7 @@ class NodalPoint : public LinkedObject
 	
 		void IncrementDelvaTask5(short,int,double,Vector *,Vector *);
 	
-		void RezeroNodeTask6(void);
+		void RezeroNodeTask6(double);
 		void AddMomentumTask6(short,int,double,Vector *);
 	
 		short IncrementDelvSideTask8(short,int,double,Vector *,double *,CrackSegment *);
@@ -120,7 +120,7 @@ class NodalPoint : public LinkedObject
 		void SetFixedDirection(int);
 		void UnsetFixedDirection(int);
 		void CalcTotalMassAndCount(void);
-		void CombineRigidParticlesTask1(void);
+		void CombineRigidParticles(void);
 #else
         void InitForceField(void);
         void PrintAvgStress(void);
@@ -134,7 +134,7 @@ class NodalPoint : public LinkedObject
 		static void CombineRigidMaterials(void);
 		static void GetGridForcesTask3(double);
 		static void UpdateGridMomentaTask4(double);
-		static void RezeroAllNodesTask6(void);
+		static void RezeroAllNodesTask6(double);
 		static void MaterialContact(bool,bool,double);
 		static void GetGridVelocitiesForStrainUpdate(void);
 		static void GetGridCMVelocitiesTask8(void);

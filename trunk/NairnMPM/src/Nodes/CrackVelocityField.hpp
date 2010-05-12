@@ -51,7 +51,7 @@ class CrackVelocityField
 	
 		void IncrementDelvaTask5(int,double,Vector *,Vector *);
 	
-		virtual void RezeroNodeTask6(void) = 0;
+		virtual void RezeroNodeTask6(double) = 0;
 		void AddMomentumTask6(int,double,Vector *);
 	
 		void CreateStrainField(void);

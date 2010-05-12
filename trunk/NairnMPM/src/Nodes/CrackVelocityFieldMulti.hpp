@@ -36,7 +36,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 	
 		virtual void UpdateMomentaTask4(double);
 	
-		virtual void RezeroNodeTask6(void);
+		virtual void RezeroNodeTask6(double);
 	
 		virtual void MaterialContact(int,int,bool,double);
 		virtual void GetMassGradient(int,Vector *,double);
