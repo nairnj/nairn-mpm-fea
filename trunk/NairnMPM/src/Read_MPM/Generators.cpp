@@ -209,8 +209,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
     // Read into geometry parameters for Body shape objects
     //-----------------------------------------------------------
 	else if(strcmp(xName,"RotateZ")==0)
-	{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
-    	if(block!=BODYPART && block!=BMPBLOCK)
+	{	if(block!=BODYPART && block!=BMPBLOCK)
             ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
 		int rotationNum=strlen(rotationAxes);
 		if(rotationNum>=3)
@@ -222,7 +221,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	}
 	
 	else if(strcmp(xName,"RotateY")==0 || strcmp(xName,"RotateX")==0)
-	{	if(block!=BODYPART && block!=BMPBLOCK)
+	{	ValidateCommand(xName,NO_BLOCK,MUST_BE_3D);
+		if(block!=BODYPART && block!=BMPBLOCK)
             ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
 		int rotationNum=strlen(rotationAxes);
 		if(rotationNum>=3)
@@ -1091,7 +1091,7 @@ void SetMptAnglesFromFunctions(int numRotations,Vector *mpos,MPMBase *newMpt)
 	}
 }
 
-// Decompone matrix, input most elements (never need R32) but if R13 is 1, only need R12, R21, and R22 (my not be worth a check)
+// Decompose matrix, input most elements (never need R32) but if R13 is 1, only need R12, R21, and R22 (may not be worth a check)
 void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,double R22,double R23,double R31,double R33)
 {
 	// this as two roots (angle and PI-angle), but either one can be used (i.e., two solutions for
@@ -1110,18 +1110,18 @@ void ConvertToZYX(MPMBase *newMpt,double R11,double R12,double R13,double R21,do
 	// assume y is not ±pi/2
 	else
 	{	if(!DbleEqual(R11,0))
-	{	z=atan(-R12/R11);
-		if(!DbleEqual(R11,cos(y)*cos(z))) z-=PI_CONSTANT;
-	}
-	else
-	{	// Cos[z]=0, Sin[z]=±1, Cos[y]­0
-		if(DbleEqual(R12,-cos(y)))
-			z=PI_CONSTANT/2.;		// Sin[z]=1
+		{	z=atan(-R12/R11);
+			if(!DbleEqual(R11,cos(y)*cos(z))) z-=PI_CONSTANT;
+		}
 		else
-			z=-PI_CONSTANT/2.;		// Sin[z]=-1
-	}
+		{	// Cos[z]=0, Sin[z]=±1, Cos[y]­0
+			if(DbleEqual(R12,-cos(y)))
+				z=PI_CONSTANT/2.;		// Sin[z]=1
+			else
+				z=-PI_CONSTANT/2.;		// Sin[z]=-1
+		}
 		
-		if(R33!=0)
+		if(!DbleEqual(R33,0))
 		{	x=atan(-R23/R33);
 			if(!DbleEqual(R33,cos(y)*cos(x))) x-=PI_CONSTANT;
 		}
