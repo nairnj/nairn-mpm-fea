@@ -252,7 +252,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 				Mc+=mvf[i]->mass;
 			}
 			else if(rigidMat>0)
-				throw MPMTermination("Two different rigid materials type in contact on the same node","CrackVelocityFieldMulti::MaterialContact");
+				throw MPMTermination("Two different rigid materials in contact on the same node","CrackVelocityFieldMulti::MaterialContact");
 			else
 			{	// rigid particles have zero mass
 				rigidMat=i;
@@ -424,7 +424,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 		// change momenta
 		mvf[i]->ChangeMatMomentum(&delPi,postUpdate,deltime);
 		
-		// special case two materials for efficiency (or if both will find normal the same way)
+		// special case two materials for efficiency (and if both will find normal the same way)
 		if(numberMaterials==2)
 		{	mvf[ipaired]->ChangeMatMomentum(ScaleVector(&delPi,-1.),postUpdate,deltime);
 			break;

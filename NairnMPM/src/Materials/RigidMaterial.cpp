@@ -63,8 +63,19 @@ void RigidMaterial::PrintMechanicalProperties(void)
 	if(setConcentration) cout << "Concentration controlled" << endl;
 	if(function!=NULL)
 	{	char *expr=function->Expr('#');
-		cout << "Value = " << expr << endl;
+		if(setDirection&RIGID_MULTIMATERIAL_MODE)
+			cout << "Velocity = ";
+		else
+			cout << "Value = ";
+		cout << expr << endl;
 		delete [] expr;
+	}
+	
+	// optional color
+	if(red>=0.)
+	{	char mline[200];
+		sprintf(mline,"color= %g, %g, %g",red,green,blue);
+		cout << mline << endl;
 	}
 }
 
