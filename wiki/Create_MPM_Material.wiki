@@ -57,7 +57,9 @@ There is currently no template code for traction law materials. One should be cr
 
 == Material Methods - Calculations called during MPM steps ==
 
+  * `virtual void LoadMechanicalProps(MPMBase *,int)`
   * `virtual void LoadTransportProps(MPMBase *)`
+  * `virtual double GetHeatCapacity(MPMBase *)`
   *  `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int)`
   * `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int)`
 		
