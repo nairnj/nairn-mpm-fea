@@ -126,12 +126,12 @@ void NewMaterial::PrintMechanicalProperties(void)
 #pragma mark NewMaterial:Methods
 
 /* This method is called just before the constitutive law on each time step. You
-	can set any parameters for that law that depend on the current state of the
+	can set any parameters for that law that depends on the current state of the
 	particle. Things that never change (i.e., independent of particle state) should be
 	put in InitialLoadMechProps() instead.
 	NOTE: For compatibility with FEA materials, some materials override LoadMechProps()
-	instead, but that method only allows properties dependent on angle (e.g., 2D
-	anisotropic materials).
+		instead, but that method only allows properties dependent on one angle (e.g., 2D
+		anisotropic materials rotated about z axis).
 */
 // State dependent material properties
 //void NewMaterial::LoadMechanicalProps(MPMBase *mptr,int np) {}
@@ -148,12 +148,12 @@ void NewMaterial::PrintMechanicalProperties(void)
 /* When conduction is activated, this method is called before calculations that depend
 	on heat capacity. If it changes with particle state, return new result in units
 	of J/(g-K).
-	NOTE: The heatCapacity property in base class is converted to these units when the
-	analysis starts.
-	NOTE: GetHeatCapacityVol() not used my any materials, but could be implemented
-	and called if needed.
+	NOTE: The heatCapacity and heatCapacityVol properties in base class are converted to
+		these units when the analysis starts.
+	NOTE: GetHeatCapacityVol() for Cv not used by any materials, but could be implemented
+		and called if needed.
 */
-// implemented in case heat capacity changes with particle state
+// implemented in case heat capacity (Cp or Cv) changes with particle state
 //double MaterialBase::GetHeatCapacity(MPMBase *mptr) { return heatCapacity; }
 //double MaterialBase::GetHeatCapacityVol(MPMBase *mptr) { return heatCapacityVol; }
 

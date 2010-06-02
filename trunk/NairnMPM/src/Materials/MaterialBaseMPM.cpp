@@ -505,7 +505,7 @@ void MaterialBase::LoadMechanicalProps(MPMBase *mptr,int np)
 // get transport property tensors (if change with particle state)
 void MaterialBase::LoadTransportProps(MPMBase *mptr) { return; }
 
-// implemented in case heat capacity changes with particle state
+// implemented in case heat capacity changes with particle state (Cp and Cv)
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) { return heatCapacity; }
 double MaterialBase::GetHeatCapacityVol(MPMBase *mptr) { return heatCapacityVol; }
 
