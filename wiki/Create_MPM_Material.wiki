@@ -57,11 +57,14 @@ There is currently no template code for traction law materials. One should be cr
 
 == Material Methods - Calculations called during MPM steps ==
 
-  * `virtual void LoadMechanicalProps(MPMBase *,int)`
-  * `virtual void LoadTransportProps(MPMBase *)`
-  * `virtual double GetHeatCapacity(MPMBase *)`
-  *  `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int)`
-  * `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int)`
+See NewMaterial.cpp for latest detais, but here is summary of key methods involved with MPM calculations in each time step:
+
+  * `virtual void LoadMechanicalProps(MPMBase *,int)` - mechanical properties if depends on state
+  * `virtual void LoadTransportProps(MPMBase *)` - diffusion and conductivity if depends on state
+  * `virtual double GetHeatCapacity(MPMBase *)` - C<sub>P</sub> if depends on state
+  * `double MaterialBase::GetHeatCapacityVol(MPMBase *mptr)` - C<sub>V</sub> if depends on state
+  *  `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int)` - 2D law
+  * `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int)` - 3D law
 		
 
 == Fracture Methods ==
