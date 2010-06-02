@@ -57,7 +57,7 @@ There is currently no template code for traction law materials. One should be cr
 
 == Material Methods - Calculations called during MPM steps ==
 
-See NewMaterial.cpp for latest detais, but here is summary of key methods involved with MPM calculations in each time step:
+See `NewMaterial.cpp` for latest detais, but here is summary of key methods involved with MPM calculations in each time step:
 
   * `virtual void LoadMechanicalProps(MPMBase *,int)` - mechanical properties if depends on state
   * `virtual void LoadTransportProps(MPMBase *)` - diffusion and conductivity if depends on state
