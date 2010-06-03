@@ -10,6 +10,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"
 #include "Read_XML/mathexpr.hpp"
 
 // global
@@ -57,7 +58,7 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 	if(style==SILENT)
 	{	// silent assumes isotropic material
 		int matnum=mpm[ptNum-1]->MatID();
-		theMaterials[matnum]->LoadTransportProps(mpm[ptNum-1]);
+		theMaterials[matnum]->LoadTransportProps(mpm[ptNum-1],fmobj->np);
 		Tensor *D=theMaterials[matnum]->GetDiffusionTensor();			// in mm^2/sec
 		
 		// get flux force in pot mm^3/s

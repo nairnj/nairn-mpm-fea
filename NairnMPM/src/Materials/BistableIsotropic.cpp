@@ -292,7 +292,7 @@ void BistableIsotropic::LoadMechanicalProps(MPMBase *mptr,int np)
 }
 
 // fill in transport tensors matrix if needed
-void BistableIsotropic::LoadTransportProps(MPMBase *mptr)
+void BistableIsotropic::LoadTransportProps(MPMBase *mptr,int np)
 {
 	short *state=(short *)(mptr->GetHistoryPtr());     // history pointer is short * with state
 	

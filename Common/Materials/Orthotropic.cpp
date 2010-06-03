@@ -262,6 +262,11 @@ double Orthotropic::WaveSpeed(bool threeD)
 	cshear = threeD ? fmax(Gxy,fmax(Gxz,Gyz)) : Gxy;
     return sqrt(1.e9*fmax(cnorm,cshear)/rho);
 }
+
+// diffusion and conductivity in the z direction
+double Orthotropic::GetDiffZ(void) { return Dz; }
+double Orthotropic::GetKcondZ(void) { return kcondz; }
+
 #endif
 
 

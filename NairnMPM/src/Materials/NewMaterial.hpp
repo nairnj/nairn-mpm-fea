@@ -44,7 +44,7 @@ class NewMaterial : public MaterialBase
 		
 		// methods
         //virtual void LoadMechanicalProps(MPMBase *,int);
-		//virtual void LoadTransportProps(MPMBase *);
+		//virtual void LoadTransportProps(MPMBase *,int);
 		//virtual double GetHeatCapacity(MPMBase *);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);

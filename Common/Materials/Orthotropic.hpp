@@ -22,9 +22,6 @@ class Orthotropic : public TransIsotropic
     public:
         double Ex,Ey,Ez,Gxy,Gyz,Gxz,ax,ay,az,betax,betay,betaz;
         double nuxy,nuyx,nuxz,nuzx,nuzy,nuyz;
-#ifdef MPM_CODE
-		double Dz,kcondz;
-#endif
         
         // constructors and destructors
         Orthotropic();
@@ -43,8 +40,15 @@ class Orthotropic : public TransIsotropic
 		virtual int MaterialTag();
 #ifdef MPM_CODE
         virtual double WaveSpeed(bool);
+		virtual double GetDiffZ(void);
+		virtual double GetKcondZ(void);
 #endif
 
+	protected:
+#ifdef MPM_CODE
+		double Dz,kcondz;
+#endif
+	
 };
 
 #endif
