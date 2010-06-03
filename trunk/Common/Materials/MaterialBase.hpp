@@ -80,7 +80,7 @@ class MaterialBase : public LinkedObject
         virtual void LoadMechProps(int,double,int);
 #ifdef MPM_CODE
         virtual void LoadMechanicalProps(MPMBase *,int);
-		virtual void LoadTransportProps(MPMBase *);
+		virtual void LoadTransportProps(MPMBase *,int);
 		virtual double GetHeatCapacity(MPMBase *);
 		virtual double GetHeatCapacityVol(MPMBase *);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int) = 0;

@@ -48,7 +48,7 @@ class TransIsotropic : public Elastic
 		virtual void LoadMechProps(int,double,int);
 #ifdef MPM_CODE
 		virtual void LoadMechanicalProps(MPMBase *,int);
-		virtual void LoadTransportProps(MPMBase *);
+		virtual void LoadTransportProps(MPMBase *,int);
 #endif
        
 	   // accessors
@@ -58,6 +58,8 @@ class TransIsotropic : public Elastic
         virtual double WaveSpeed(bool);
         virtual double MaximumDiffusion(void);
         virtual double MaximumDiffusivity(void);
+		virtual double GetDiffZ(void);
+		virtual double GetKcondZ(void);
 #endif
 		
 	protected:

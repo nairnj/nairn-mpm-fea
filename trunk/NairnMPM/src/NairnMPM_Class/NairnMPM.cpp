@@ -57,8 +57,8 @@ int maxMaterialFields;		// Maximum velocity fields or number of independent mate
 NairnMPM::NairnMPM()
 {
 	version=7;						// main version
-	subversion=2;					// subversion (must be < 10)
-	buildnumber=3;					// build number
+	subversion=3;					// subversion (must be < 10)
+	buildnumber=0;					// build number
 	mpmApproach=USAVG_METHOD;		// mpm method
 	ptsPerElement=4;				// number of points per element (2D default, 3D changes it to 8)
 	propagate=NO_PROPAGATION;				// default crack propagation type
@@ -512,7 +512,7 @@ void NairnMPM::MPMStep(void)
 	
 		// get transport tensors (if needed)
 		if(transportTasks!=NULL)
-			matID->LoadTransportProps(mpm[p]);
+			matID->LoadTransportProps(mpm[p],np);
 			
         mp=mpm[p]->mp;					// in g
 		matfld=matID->GetField();		// material field

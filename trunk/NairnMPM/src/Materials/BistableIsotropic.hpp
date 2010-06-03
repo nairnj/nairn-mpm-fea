@@ -55,7 +55,7 @@ class BistableIsotropic : public IsotropicMat
         // override methods
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
         virtual void LoadMechanicalProps(MPMBase *,int);
-        virtual void LoadTransportProps(MPMBase *);
+        virtual void LoadTransportProps(MPMBase *,int);
 		
 		// custom methods
         virtual const char *CurrentProperties(short,int);

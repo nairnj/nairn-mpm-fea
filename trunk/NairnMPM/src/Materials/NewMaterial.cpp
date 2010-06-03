@@ -143,7 +143,7 @@ void NewMaterial::PrintMechanicalProperties(void)
 	should be put in InitialLoadTransProps() instead.
 */
 // State dependent material properties
-//void NewMaterial::LoadTransportProps(MPMBase *mptr) {}
+//void NewMaterial::LoadTransportProps(MPMBase *mptr,int np) {}
 
 /* When conduction is activated, this method is called before calculations that depend
 	on heat capacity. If it changes with particle state, return new result in units
