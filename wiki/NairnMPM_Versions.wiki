@@ -21,23 +21,23 @@ The version number is coded in the constructor of the `NairnMPM.cpp` class:
 NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions currently in this project are as follows:
 
   * Current trunk Version
-    * Working on NairnMPM 7.2.3
+    * Working on NairnMPM 7.3.0
     * The `TriangularTraction` and `CubicTraction` traction law were changed to provided a mixed-mode cohesive law (by methods used by Thouless) with exponential criterion with user-input exponent.
     * The `TriangularTraction` traction law was improved to allow peak position to be zero, which results in pure linear softening.
     * A new type of rigid materials (with `SetDirection=8`) that can do frictional contact in multimaterial mode. It can also be used to wedge open cracks.
     * Revised algorithm for preventing crack surfaces from crossing the crack plane and a new option to turn that feature on or off (see `MovePlane` command).
-    * A minor change in the way crack surface velocities are calculated that should only effect cracks that exit the body, but those cracks are better done now using the `exterior` crack tip define in version 7.2.0.
+    * A minor change in the way crack surface velocities are calculated that should only effect cracks that exit the body, but those cracks are better done now using the `exterior` crack tip defined in version 7.2.0.
     * Blocked custom tasks from turning off extrapolations and added material field to custom task methods
     * Added `unique` attribute to `ArchiveRoot` command to force creation of new results subfolder on each run.
     * Added `material` option to the `VTKArchive` custom task.
-    * Von Mises material has added on nonlinear hardening law; before it only had linear hardening.
-    * Transversely isotropic, orthotropic, and Hill plastic materials can now do 3D. Rotation methods in `Body` command used to specify initial orientation of particles. All seem to work, but it is difficult to verify off-axis orientations. (Warning: any checkout for 7.2.2 had 3D correct, but broke the 2D version for these materials only. It is fixed when version changed to 7.2.3)
+    * Von Mises material has added one nonlinear hardening law; before it only had linear hardening.
+    * Transversely isotropic, orthotropic, and Hill plastic materials can now do 3D. Rotation methods in `Body` command used to specify initial orientation of particles. All seem to work, but it is difficult to verify off-axis orientations. (Warning: any checkout for 7.2.2 had 3D working, but broke the 2D version for these materials only. It is fixed when version changed to 7.2.3. Also some rotations and transport rotations were not correct until version 7.3.0)
     * Rewrote Newton-Rapheson algorithm in anisotropic plastic materials (Hill plastic) to add bracketing, which should eliminate instabilities that were common with certain values for anisotropic yield stresses.
     * Archive format changed to `ver6` to add archiving of 3 rotation angles of 3D particles needed for anisotropic materials.
     * More efficient at finding neighboring element when particles cross boundaries (2D, structured grid only)
     * Fixed error calculating particle mass for 3D grids when the elements were not perfect cubes.
     * Added `PropagateLength` command to select the amount of crack growth each time a crack propagates.
-    * `RotateZ` (and `Y` and `X`) can now be used as alternate methods to sent angles for MPM models read in using BMP files.
+    * `RotateZ` (and `Y` and `X`) can now be used as alternate methods to set angles for MPM models read in using BMP files.
 
   * release-1.0 (30 DEC 2009)
     * Has NairnMPM 7.2.0
