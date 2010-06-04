@@ -27,7 +27,7 @@ The following chart shows all materials in `nairn-mpm-fea`. Materials to the rig
 
 When you create a new material, you should fit it into the above hierarchy and define a constant (in UPPERCASE) that will be a unique number for that material. The above table uses numbers 1 through 19 (except for 6). New materials needed a new number. Once the number and constant are determined, define the constant in the new material header file and be sure to add this number as an option  to the `Material` command in the DTD file.
 
-== Editing the Code ==
+== Editing Required in Core Code ==
 
 Almost all coding will be done in the new material class files, but a few places in the core code need to be edited to recognize the new material:
 
@@ -42,6 +42,18 @@ Almost all coding will be done in the new material class files, but a few places
 Edit the template files. Change all occuranced of `NewMaterial` to the new material's class name. Similarly, if the new material subclasses some other material, edit all occurances of `MaterialBase` and change to the actual parent class.
 
 Finally, go through each method and keep, edit, or delete. Any method that is deleted from source should be removed from header file as well. See comments in the template file for the function of each method.
+
+== Creating New Material Properties ==
+
+Usually a newly-created material type will have additional material properties. To create such properties, you need the following steps:
+
+  # Define the property in the `.hpp` file (usually scalars). It is usually desireable to make these properties `protected` in the class definition).
+  # Define a name for the property in the `DTD` file. Allow that property to appear in a `Material` block and define the element as a simple `XML` element (_e.g._, `<!ELEMENT prop (#PCDATA)>`)
+  # Edit the new material's `InputMat()` method and look for that property by name. If found, set pointer type (_e.g._, `DOUBLE_NUM` or `INT_NUM`) and return a pointer to the class variable.
+  # If desired, set default value for the property in the material's constructor method.
+  # If desired, check that the final value is acceptable in the `VerifyProperties()` method. If it is not, return an error message as a string.
+  # Print the property to the output file (usually in the `PrintMechanicalProperties()` method)
+  # Use it as needed in the material response methods
 
 == Traction Law Materials (only for traction law materials) ==
 
