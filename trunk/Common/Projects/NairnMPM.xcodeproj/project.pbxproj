@@ -318,6 +318,8 @@
 		A7DDE95F0BCBFA01005CC32D /* mathexpr.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7DDE95D0BCBFA01005CC32D /* mathexpr.hpp */; };
 		A7DDE9600BCBFA01005CC32D /* mathexpr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7DDE95C0BCBFA01005CC32D /* mathexpr.cpp */; };
 		A7DDE9610BCBFA01005CC32D /* mathexpr.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7DDE95D0BCBFA01005CC32D /* mathexpr.hpp */; };
+		A7DE477C11B97CD400FDEFE6 /* WoodMaterial.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7DE477A11B97CD400FDEFE6 /* WoodMaterial.hpp */; };
+		A7DE477D11B97CD400FDEFE6 /* WoodMaterial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7DE477B11B97CD400FDEFE6 /* WoodMaterial.cpp */; };
 		A7E037240A6D4639006B5A4E /* TransportTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7E037220A6D4639006B5A4E /* TransportTask.hpp */; };
 		A7E037250A6D4639006B5A4E /* TransportTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7E037230A6D4639006B5A4E /* TransportTask.cpp */; };
 		A7EC3A710DA91A9B003D43AC /* CubicTraction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7EC3A6F0DA91A9B003D43AC /* CubicTraction.hpp */; };
@@ -562,6 +564,8 @@
 		A7D66AC30611EAB90096AB29 /* Cantilever.fmcmd */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.xml; path = Cantilever.fmcmd; sourceTree = "<group>"; };
 		A7DDE95C0BCBFA01005CC32D /* mathexpr.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = mathexpr.cpp; sourceTree = "<group>"; };
 		A7DDE95D0BCBFA01005CC32D /* mathexpr.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = mathexpr.hpp; sourceTree = "<group>"; };
+		A7DE477A11B97CD400FDEFE6 /* WoodMaterial.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = WoodMaterial.hpp; sourceTree = "<group>"; };
+		A7DE477B11B97CD400FDEFE6 /* WoodMaterial.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WoodMaterial.cpp; sourceTree = "<group>"; };
 		A7E037220A6D4639006B5A4E /* TransportTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TransportTask.hpp; sourceTree = "<group>"; };
 		A7E037230A6D4639006B5A4E /* TransportTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TransportTask.cpp; sourceTree = "<group>"; };
 		A7EC3A6F0DA91A9B003D43AC /* CubicTraction.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CubicTraction.hpp; sourceTree = "<group>"; };
@@ -1189,6 +1193,8 @@
 				A7EC3A700DA91A9B003D43AC /* CubicTraction.cpp */,
 				A71FC00E0E377F1F001908F8 /* NewMaterial.hpp */,
 				A71FC00D0E377F1F001908F8 /* NewMaterial.cpp */,
+				A7DE477A11B97CD400FDEFE6 /* WoodMaterial.hpp */,
+				A7DE477B11B97CD400FDEFE6 /* WoodMaterial.cpp */,
 			);
 			path = Materials;
 			sourceTree = "<group>";
@@ -1307,6 +1313,7 @@
 				A75FFB801033577F0048082E /* CrackVelocityField.hpp in Headers */,
 				A7721178103F13EA002F99FC /* CrackVelocityFieldMulti.hpp in Headers */,
 				A772117A103F13EA002F99FC /* CrackVelocityFieldSingle.hpp in Headers */,
+				A7DE477C11B97CD400FDEFE6 /* WoodMaterial.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1580,6 +1587,7 @@
 				A75FFB811033577F0048082E /* CrackVelocityField.cpp in Sources */,
 				A7721177103F13EA002F99FC /* CrackVelocityFieldMulti.cpp in Sources */,
 				A7721179103F13EA002F99FC /* CrackVelocityFieldSingle.cpp in Sources */,
+				A7DE477D11B97CD400FDEFE6 /* WoodMaterial.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

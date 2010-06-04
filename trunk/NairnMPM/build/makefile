@@ -190,6 +190,7 @@ TransportTask = $(src)/Custom_Tasks/TransportTask
 Viscoelastic = $(src)/Materials/Viscoelastic
 VonMisesHardening = $(src)/Materials/VonMisesHardening
 VTKArchive = $(src)/Custom_Tasks/VTKArchive
+WoodMaterial = $(src)/Materials/WoodMaterial
 
 # path from 'makefile' to prefix header file
 prefix = $(src)/System/MPMPrefix.hpp
@@ -260,6 +261,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # TransIsotropic.hpp : Elastic.hpp (MaterialBase.hpp)
 # Viscoelastic.hpp : MaterialBase.hpp
 # VonMisesHardening.hpp : IsoPlasticity (IsotropicMat.hpp Elastic.hpp MaterialBase.hpp)
+# WoodMaterial : HillPlastic.hpp (AnisoPlasticity.hpp, Orthotropic.hpp TranIsotropic.hpp Elastic.hpp MaterialBase.hpp)
 
 # Header files with no dependencies
 # BMPLevel.hpp BodyForce.hpp BoundaryCondition.hpp CommonArchiveData.hpp CommonException.hpp
@@ -288,7 +290,8 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		BodyBoxController.o BodyOvalController.o BodyPolygonController.o BodyRectController.o \
 		BodySphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o BodyCylinderController.o \
 		TractionLaw.o CohesiveZone.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
-		HillPlastic.o MGSCGLMaterial.o VTKArchive.o SLMaterial.o CrackVelocityFieldMulti.o CrackVelocityFieldSingle.o
+		HillPlastic.o MGSCGLMaterial.o VTKArchive.o SLMaterial.o CrackVelocityFieldMulti.o CrackVelocityFieldSingle.o \
+		WoodMaterial.o
 
 
 # -------------------------------------------------------------------------
@@ -348,7 +351,7 @@ MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialControlle
 		$(Mooney).hpp $(BistableIsotropic).hpp $(RigidMaterial).hpp $(MaterialBase).hpp $(JohnsonCook).hpp \
 		$(Elastic).hpp $(RubberElastic).hpp $(NairnMPM).hpp $(TractionLaw).hpp $(CohesiveZone).hpp $(LinearTraction).hpp \
 		$(CubicTraction).hpp $(AnisoPlasticity).hpp $(IsoPlasticity.hpp) $(HillPlastic).hpp $(MGSCGLMaterial).hpp \
-		$(SLMaterial).hpp
+		$(SLMaterial).hpp $(WoodMaterial).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialController).cpp
 mathexpr.o : $(mathexpr).cpp $(mathexpr).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(mathexpr).cpp
@@ -544,6 +547,9 @@ VonMisesHardening.o : $(VonMisesHardening).cpp $(dprefix) $(VonMisesHardening).h
 HillPlastic.o : $(HillPlastic).cpp $(dprefix) $(HillPlastic).hpp $(AnisoPlasticity).hpp $(Orthotropic).hpp \
 			$(TransIsotropic).hpp $(MaterialBase).hpp $(Elastic).hpp $(MPMBase).hpp $(CommonReadHandler).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(HillPlastic).cpp
+WoodMaterial.o : $(WoodMaterial).cpp $(dprefix) $(WoodMaterial).hpp $(HillPlastic).hpp $(AnisoPlasticity).hpp $(Orthotropic).hpp \
+			$(TransIsotropic).hpp $(MaterialBase).hpp $(Elastic).hpp $(MPMBase).hpp $(CommonReadHandler).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(WoodMaterial).cpp
 JohnsonCook.o : $(JohnsonCook).cpp $(dprefix) $(JohnsonCook).hpp $(IsoPlasticity).hpp $(IsotropicMat).hpp \
 			$(Elastic).hpp $(MaterialBase).hpp $(MPMBase).hpp $(CommonReadHandler).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(JohnsonCook).cpp

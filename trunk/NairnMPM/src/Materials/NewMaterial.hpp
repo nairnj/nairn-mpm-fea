@@ -7,13 +7,6 @@
 
 	Dependencies
 		MaterialBase.hpp
-	
-	Creating a New Material
-	 1. Replace NEWMATERIAL with unigue tag for this header file
-	     and give it a unique number among all materials
-	 2. Replace "NewMaterial" with class name for the new material
-	 3. Replace MaterialBase with the actual parent class material
-	     (if different)
 ********************************************************************************/
 
 #ifndef NEWMATERIAL
@@ -46,7 +39,8 @@ class NewMaterial : public MaterialBase
         //virtual void LoadMechanicalProps(MPMBase *,int);
 		//virtual void LoadTransportProps(MPMBase *,int);
 		//virtual double GetHeatCapacity(MPMBase *);
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
+		//virtual double GetHeatCapacityVol(MPMBase *);
+		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
 				
 		// accessors
@@ -54,7 +48,7 @@ class NewMaterial : public MaterialBase
 		virtual int MaterialTag();
 		virtual bool ThreeDMaterial(void);
 		//virtual double GetHistory(int,char *);
-        virtual double WaveSpeed(bool) = 0;
+        virtual double WaveSpeed(bool);
 		//virtual double ShearWaveSpeed(bool);
 		//virtual double MaximumDiffusion(void);
         //virtual double MaximumDiffusivity(void);

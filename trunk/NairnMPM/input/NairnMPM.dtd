@@ -150,9 +150,9 @@
 				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd
 				| yldxx | yldyy | yldzz | yldxy | yldxz | yldyz | Khard | nhard | color | betahard
 				| Bjc | njc | Cjc | ep0jc | C0 | S1 | S2 | GPpG0 | GTpG0 | gamma0
-				| Uk | YP | Friction )* >
+				| Uk | YP | Friction | tempC1 | tempC2 )* >
 <!ATTLIST	Material
-			Type (1|2|3|4|6|7|8|9|10|11|12|13|14|15|16|17|18) #REQUIRED
+			Type (1|2|3|4|5|7|8|9|10|11|12|13|14|15|16|17|18|19) #REQUIRED
 			Name CDATA #IMPLIED>
 
 <!-- Displacement Boundary Conditions -->
@@ -435,6 +435,8 @@
 <!ELEMENT	GTpG0 (#PCDATA)>
 <!ELEMENT	yieldMax (#PCDATA)>
 <!ELEMENT	gamma0 (#PCDATA)>
+<!ELEMENT	tempC1 (#PCDATA)>
+<!ELEMENT	tempC2 (#PCDATA)>
 
 <!ELEMENT	pt EMPTY>
 <!ATTLIST	pt

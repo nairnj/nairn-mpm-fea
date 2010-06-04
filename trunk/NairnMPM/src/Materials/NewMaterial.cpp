@@ -154,8 +154,8 @@ void NewMaterial::PrintMechanicalProperties(void)
 		and called if needed.
 */
 // implemented in case heat capacity (Cp or Cv) changes with particle state
-//double MaterialBase::GetHeatCapacity(MPMBase *mptr) { return heatCapacity; }
-//double MaterialBase::GetHeatCapacityVol(MPMBase *mptr) { return heatCapacityVol; }
+//double NewMaterial::GetHeatCapacity(MPMBase *mptr) { return heatCapacity; }
+//double NewMaterial::GetHeatCapacityVol(MPMBase *mptr) { return heatCapacityVol; }
 
 /*	Apply 2D constitutive law updating all needed terms for material type Required updates are:
 		stress, strain, plastic strain (all components) (stress should be a specific stress)
@@ -183,7 +183,7 @@ void NewMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,
 {
 }
 
-#pragma mark NewMaterial::Cutom Methods
+#pragma mark NewMaterial::Custom Methods
 
 #pragma mark NewMaterial::Accessors
 
