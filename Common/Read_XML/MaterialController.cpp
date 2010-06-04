@@ -17,6 +17,7 @@
 	#include "Materials/Viscoelastic.hpp"
 	#include "Materials/VonMisesHardening.hpp"
 	#include "Materials/HillPlastic.hpp"
+	#include "Materials/WoodMaterial.hpp"
 	#include "Materials/JohnsonCook.hpp"
 	#include "Materials/MGSCGLMaterial.hpp"
 	#include "Materials/SLMaterial.hpp"
@@ -85,6 +86,9 @@ int MaterialController::AddMaterial(int matID,char *matName)
 			break;
 		case HILLPLASTIC:
 			newMaterial=new HillPlastic(matName);
+			break;
+		case WOODMATERIAL:
+			newMaterial=new WoodMaterial(matName);
 			break;
 		case JOHNSONCOOK:
 			newMaterial=new JohnsonCook(matName);
