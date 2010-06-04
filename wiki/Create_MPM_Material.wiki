@@ -13,17 +13,17 @@ Duplicate the `NewMaterial.cpp` and `NewMaterial.hpp` files, which are templates
 
 The following chart shows all materials in `nairn-mpm-fea`. Materials to the right are subclasses of materials to the left. If the cell to the left is empty, the material is subclass of the next material above and to the left. Materials in UPPERCASE or actual materials. Materials mixed cases are abstract classes. All material inherit from `MaterialBase` class (which is not shown in the table). Finally, materials in <font color="green">green</font> are in both FEA and MPM; materials in <font color="red">red</font> are only in FEA; all the rest are only in MPM.
 
-|| <font color="green">`Elastic`</font> || <font color="green">`ISOTROPIC=1`</font> || `IsoPlasticity`    || `VONMISESHARDENING=9` ||                                 ||
-||             ||                           ||                              || `MGSCGLMATERIAL=17`       || `SLMATERIAL=18`  ||
-||             ||                           ||                              || `JOHNSONCOOK=16`       ||           ||
-||             ||                           || `BISTABLEISO=10` ||                                              ||                                  ||
-||     || <font color="green">`TRANSISO1(2)=2,3`</font> || <font color="green">`ORTHO=4`</font> ||   `AnisoPlasticity`       || `HILLPLASTIC=15` ||
-|| `VISCOELASTIC=7` ||          ||                           ||                                                  ||                                 ||
-|| `RubberElastic` || `MOONEYRIVLIN=8` ||         ||                                                  ||                                 ||
-|| <font color="red">`INTERFACEPARAMS=5`</font> ||        ||         ||                         ||                                 ||
-|| `RIGIDMATERIAL=11` ||                      ||         ||                                                  ||                                 ||
-|| `TractionLaw`  || `COHESIVEZONEMATERIAL=12` || `LINEARTRACTIONMATERIAL=13` ||           ||                          ||
-||                               || `CUBICTRACTIONLAW=14` ||                      ||           ||                          ||
+|| <font color="green">`Elastic`</font> || <font color="green">`ISOTROPIC=1`</font> || `IsoPlasticity`    || `VONMISESHARDENING=9` ||                                 ||    ||
+||             ||                           ||                              || `MGSCGLMATERIAL=17`       || `SLMATERIAL=18`  ||    ||
+||             ||                           ||                              || `JOHNSONCOOK=16`       ||           ||    ||
+||             ||                           || `BISTABLEISO=10` ||                                              ||                                  ||    ||
+||     || <font color="green">`TRANSISO1(2)=2,3`</font> || <font color="green">`ORTHO=4`</font> ||   `AnisoPlasticity`       || `HILLPLASTIC=15` || `WOODMATERIAL=19' ||
+|| `VISCOELASTIC=7` ||          ||                           ||                                                  ||                                 ||    ||
+|| `RubberElastic` || `MOONEYRIVLIN=8` ||         ||                                                  ||                                 ||    ||
+|| <font color="red">`INTERFACEPARAMS=5`</font> ||        ||         ||                         ||                                 ||    ||
+|| `RIGIDMATERIAL=11` ||                      ||         ||                                                  ||                                 ||    ||
+|| `TractionLaw`  || `COHESIVEZONEMATERIAL=12` || `LINEARTRACTIONMATERIAL=13` ||           ||                          ||    ||
+||                               || `CUBICTRACTIONLAW=14` ||                      ||           ||                          ||    ||
 
 When you create a new material, you should fit it into the above hierarchy and define a constant (in UPPERCASE) that will be a unique number for that material. The above table uses numbers 1 through 18 (except for 6). New materials needed a new number. Once the number and constant are determined, define the constant in the new material header file and be sure to add this number as an option  to the `Materia`l command in the DTD file.
 
