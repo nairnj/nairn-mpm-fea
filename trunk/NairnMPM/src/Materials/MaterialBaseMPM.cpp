@@ -353,7 +353,7 @@ const char *MaterialBase::VerifyProperties(int np)
 
 // Called before analysis, material can fill in things that never change during the analysis
 // Note: no angle, because can not depend on material angle
-// Here fills in isotropic properties, materials with different anisotropic properteis should override
+// Here fills in isotropic properties, materials with different anisotropic properties should override
 void MaterialBase::InitialLoadTransProps(void)
 {
 	// diffusion tensor (xx, yy, xy order)
