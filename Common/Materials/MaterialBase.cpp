@@ -107,9 +107,7 @@ void MaterialBase::PrintMaterial(int num)
 }
 
 // print mechanical properties to output window
-void MaterialBase::PrintMechanicalProperties(void)
-{	cout << "Undocumented mechanical properties" << endl;
-}
+void MaterialBase::PrintMechanicalProperties(void) {}
 
 #define PROP_LABEL_LENGTH 4
 #define PROP_COLUMN 20

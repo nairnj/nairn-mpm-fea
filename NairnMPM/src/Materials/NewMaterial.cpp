@@ -40,18 +40,19 @@ NewMaterial::NewMaterial(char *matName) : MaterialBase(matName)
 // Read material properties
 char *NewMaterial::InputMat(char *xName,int &input)
 {
+	// read properties for this material
     if(strcmp(xName,"newproperty")==0)
     {	input=DOUBLE_NUM;
         return((char *)&newproperty);
     }
-    
+	
     return(MaterialBase::InputMat(xName,input));
 }
 
 /* This method is called after input file is read but before the new
 	material is printed to the results file. If necessary, verify that
 	all new properties are valid. If not return string with a description
-	of the problem. If OK, pass on to a superclass
+	of the problem. If OK, must pass on to a superclass
 	NOTE: np is analysis type in case that is important
 */
 // verify settings and maybe some initial calculations
@@ -59,39 +60,46 @@ const char *NewMaterial::VerifyProperties(int np)
 {
 	// check properties
 
-	// call super class
+	// must call super class
 	return MaterialBase::VerifyProperties(np);
 }
 
 /* This method called before starting, but only if this material is actually
 	assigned to at least one material point. If it cannot be used in the
-	current analysis type, throw CommonException("error message","code"). If OK,
-	call ValidateUse() in a superclass
+	current analysis type, throw an exception. If OK, call ValidateUse()
+	in superclass
 */
 // if cannot be used in current analysis type throw MPMTermination()
-void NewMaterial::ValidateUse(int np)
-{
-	MaterialBase::ValidateUse(np);
-}
+//void NewMaterial::ValidateUse(int np)
+//{
+//	MaterialBase::ValidateUse(np);
+//}
 
-/* Called once at beginning (just after VerifyProperties()). For efficiency, use
-	this code to calculate terms that are independent of the particle state and
-	thus will remain constant throughout the calculation. Check if need to pass
-	on to superclass for it to load too. Note that MaterialBase and Elastic
-	set nothing so can stop if get to one of their subclasses
+/* Called once at beginning (by VerifyProperties() in MaterialBase). For efficiency,
+	use this method to calculate new terms that are independent of the particle
+	state and thus will remain constant throughout the calculation. When done
+	(or before), pass on to super class (but MaterialBase and Elastic do not need it)
 */
 // Constant properties used in constitutive law
-void NewMaterial::InitialLoadMechProps(int makeSpecific,int np) { }
+//void NewMaterial::InitialLoadMechProps(int makeSpecific,int np)
+//{
+//	MaterialBase::InitialLoadMechProps(makeSpecific,np);
+//}
 
 /* Print all mechanical properties or call parent class and print
 	just the new mechanical properties. Use a format compatible with code
 	that will read results file and similar to style of other materials
-	NOTE: MaterialBase has no mechanical properties and should not be called
+	(need not pass on to MaterialBase or Elastic since they print nothing)
 	NOTE: This is called after VerifyProperties() and InitialLoadMechProps()
+	Sometime scaling of properties for internal units is done here after they
+	are printed.
 */
 // print mechanical properties to the results
 void NewMaterial::PrintMechanicalProperties(void)
 {	
+	// call superclass here if it is not Material base
+	
+	// add new properties here
 	PrintProperty("prp",newproperty,"");
     cout << endl;
 }
@@ -105,20 +113,23 @@ void NewMaterial::PrintMechanicalProperties(void)
 //char *NewMaterial::MaterialData(void) { return NULL; }
 
 /* Print all transport properties in format compatible with code that will read
-	results file. Only print if transprot is activated
-	NOTE: Base class prints isotropic properties if transport is activated. If this
-	is enough, no additional printing is needed.
+	results file. Only print if transport is activated (i.e., if(DiffusionTask::active)
+	or if(ConductionTask::active))
+	NOTE: Base class prints isotropic properties, Orthotropic and TransIsotropoic print
+	anisotropic properties. If any of these are enough, no additional printing is needed.
 */
 // Print transport properties
 //void NewMaterial::PrintTransportProperties(void) {}
 
-/* Called once at beginning (just after VerifyProperties()). For efficiency, use
+/* Called once at beginning (by VerifyProperties() in MaterialBase). For efficiency, use
 	this code to calculate transport terms that are independent of the particle state
 	and thus will remain constant throughout the calculation
-	NOTE: The base material class automatically supports isotropic diffusion and conduction
+	NOTE: MaterialBase automatically supports isotropic diffusion and conduction
 	using material properties D (in diffusionCon) for diffusion constant and
 	kCond (in kCond) for thermal conductivity. If this is enough, no additional
-	work is needed.
+	work is needed. TransIsotropic automatically handles anisotropic diffusion
+	as well, but in LoadTransportProps() instead of this method (because particle
+	orientation might change during the analysis.
 	*/
 // Constrant transport properties used in transport calculation
 //void NewMaterial::InitialLoadTransProps(void) {}
@@ -134,7 +145,10 @@ void NewMaterial::PrintMechanicalProperties(void)
 		anisotropic materials rotated about z axis).
 */
 // State dependent material properties
-//void NewMaterial::LoadMechanicalProps(MPMBase *mptr,int np) {}
+//void NewMaterial::LoadMechanicalProps(MPMBase *mptr,int np)
+//{
+//	MaterialBase::LoadMechanicalProps(mptr,np);
+//}
 
 /* Called when looping over material points to store parameters needed in transport calculations (tensors).
 	It is called prior to transport task to AddForces(). Only needed for anistropic materials
@@ -144,6 +158,9 @@ void NewMaterial::PrintMechanicalProperties(void)
 */
 // State dependent material properties
 //void NewMaterial::LoadTransportProps(MPMBase *mptr,int np) {}
+//{
+//	MaterialBase::LoadTransportProps(mptr,np);
+//}
 
 /* When conduction is activated, this method is called before calculations that depend
 	on heat capacity. If it changes with particle state, return new result in units
@@ -196,14 +213,6 @@ const char *NewMaterial::MaterialType(void) { return "Template Material"; }
 // If this material supports 3D MPM, then remove this method
 bool NewMaterial::ThreeDMaterial(void) { return false; }
 
-/* If the material puts history variables on the particle, this method should
-    return history variable number num stored in the material data pointed to by
-    historyPtr. If num is invalid return 0. It is only used to archive history
-	data and the archiving can currently only archive history #1
-*/
-// archive history data for this material type when requested.
-//double NewMaterial::GetHistory(int num,char *historyPtr) { return 0.; }
-
 /* Calculate maximum wave speed for material in mm/sec. WaveSpeed called only
 	once for each material point at beginning of calculation. If variable wave
 	speed, be conservative and return the maximum possible save speed.
@@ -232,4 +241,13 @@ double NewMaterial::WaveSpeed(bool threeD) { return 1.e-12; }
 */
 // maximum diffusivity in cm^2/sec
 //double NewMaterial::MaximumDiffusivity(void) { return 0.; }
+
+/* If the material puts history variables on the particle, this method should
+ return history variable number num stored in the material data pointed to by
+ historyPtr. If num is invalid return 0. It is only used to archive history
+ data and the archiving can currently only archive history #1
+ */
+// archive history data for this material type when requested.
+//double NewMaterial::GetHistory(int num,char *historyPtr) { return 0.; }
+
 
