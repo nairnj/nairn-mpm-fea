@@ -74,7 +74,9 @@ class MaterialBase : public LinkedObject
 		// initialization (base class only)
         void PrintMaterial(int);
 		void PrintCommonProperties(void);
+#ifdef MPM_CODE
 		virtual void PreliminaryMatCalcs(void);
+#endif
          
         // Methods (abstract methods must be overridden)
         virtual void LoadMechProps(int,double,int);

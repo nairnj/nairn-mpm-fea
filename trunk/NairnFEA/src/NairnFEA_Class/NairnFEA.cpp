@@ -31,7 +31,7 @@ NairnFEA::NairnFEA()
 {
 	version=2;					// NairnFEA version number
 	subversion=7;				// subversion number
-	buildnumber=0;				// build number
+	buildnumber=1;				// build number
 	xax='x';					// default axis names
 	yax='y';
 	zax='z';
