@@ -315,12 +315,12 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 					Vector normi,normj;
 					nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
 					nd[nodenum]->GetMassGradient(vfld,ipaired,&normj,-1.);
-					double magi=DotVectors(&normi,&normi);
-					double magj=DotVectors(&normj,&normj);
+					double magi=sqrt(DotVectors(&normi,&normi));
+					double magj=sqrt(DotVectors(&normj,&normj));
 					if(magi/rho >= magj/rhopaired)
-						CopyScaleVector(&norm,&normi,1./sqrt(magi));
+						CopyScaleVector(&norm,&normi,1./magi);
 					else
-						CopyScaleVector(&norm,&normj,1./sqrt(magj));
+						CopyScaleVector(&norm,&normj,1./magj);
 					break;
 				}
 				case MAXIMUM_VOLUME:
@@ -331,20 +331,25 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 						nd[nodenum]->GetMassGradient(vfld,ipaired,&norm,-1.);
 					CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
 					break;
-				/*
-				case EACH_MATERIALS_MASS_GRADIENT:
-					// Use each mat as is
-					nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
-					CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
-					break;
-				
-				case AVERAGE_MAT_VOLUME_GRADIENTS:
-					// Take an average of the two volume gradients
-					break;
-				*/
+
 				default:
 					break;
-			}			
+			}
+			
+			// Development code to try alternative methods
+			if(fmobj->dflag[0]==1)
+			{	// Use each material's own volume gradient
+				nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+				ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
+			}
+			else if(fmobj->dflag[0]==2)
+			{	// get an average volume gradient
+				Vector normj;
+				nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+				nd[nodenum]->GetMassGradient(vfld,ipaired,&normj,-1.);
+				AddVector(&norm,&normj);
+				ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
+			}
 			
 			// get approach direction momentum form delPi.n (actual (vc-vi) = delPi/mi)
 			dotn=DotVectors(&delPi,&norm);
@@ -425,7 +430,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 		mvf[i]->ChangeMatMomentum(&delPi,postUpdate,deltime);
 		
 		// special case two materials for efficiency (and if both will find normal the same way)
-		if(numberMaterials==2)
+		if(numberMaterials==2 && fmobj->dflag[0]!=1)
 		{	mvf[ipaired]->ChangeMatMomentum(ScaleVector(&delPi,-1.),postUpdate,deltime);
 			break;
 		}

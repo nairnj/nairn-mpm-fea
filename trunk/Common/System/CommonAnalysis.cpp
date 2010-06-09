@@ -36,6 +36,9 @@ CommonAnalysis::CommonAnalysis()
 	
 	np=-1;						// analysis method to be set
 	nfree=2;					// 2D analysis
+	
+	int i;
+	for(i=0;i<NUMBER_DEVELOPMENT_FLAGS;i++) dflag[i]=0;
 }
 
 CommonAnalysis::~CommonAnalysis()
@@ -60,6 +63,17 @@ void CommonAnalysis::StartResultsOutput(void)
     // Description
     PrintSection("ANALYSIS DESCRIPTION");
     cout << GetDescription() << endl;
+	
+	// development flags
+	int i;
+	bool hasFlags=FALSE;
+	for(i=0;i<NUMBER_DEVELOPMENT_FLAGS;i++)
+	{	if(dflag[i]!=0)
+		{	cout << "Development Flag #" << i << " = " << dflag[i] << endl;
+			hasFlags=TRUE;
+		}
+	}
+	if(hasFlags) cout << endl;
 	
     //--------------------------------------------------
     // Analysis Type
@@ -124,7 +138,6 @@ void CommonAnalysis::StartResultsOutput(void)
     
     //---------------------------------------------------
     // Defined Materials
-	int i;
 	const char *err;
 #ifdef MPM_CODE
     PrintSection("DEFINED MATERIALS\n       (Note: moduli and stresses in MPa, thermal exp. coeffs in ppm/C)\n       (      density in g/cm^3)");

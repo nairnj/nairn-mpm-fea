@@ -14,7 +14,7 @@
 <!-- Headers -->
 
 <!ELEMENT	Header
-			( Description | Analysis | Output | Select )+>
+			( Description | Analysis | Output | Select | DevelFlag )+>
 
 <!-- Define the mesh -->
 
@@ -140,6 +140,9 @@
 <!ELEMENT	Select EMPTY>
 <!ATTLIST	Select
 			node CDATA #REQUIRED>
+<!ELEMENT	DevelFlag (#PCDATA)>
+<!ATTLIST	DevelFlag
+			Number (0|1|2|3|4) #IMPLIED>
 <!ELEMENT	Temperature (#PCDATA)>
 <!ELEMENT	StressFreeTemp (#PCDATA)>
 

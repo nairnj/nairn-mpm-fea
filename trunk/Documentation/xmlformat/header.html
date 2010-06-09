@@ -34,6 +34,7 @@ Name: User Name
    &lt;<a href="#output"><code>Output</code></a>&gt;YYYYNY&lt;/Output&gt;
    &lt;<a href="#select"><code>Select</code></a> node='1'/&gt;
    &lt;Select node='23'/&gt;
+   &lt;<a href="#dflag"><code>DevelFlag</code></a> Number='0'/&gt;2&lt;/DevelFlag/&gt
 &lt;/Header&gt;
 </pre>
 
@@ -71,6 +72,9 @@ Name: User Name
 
   <dt><a name="select"></a>&lt;Select node='23'&gt;</dt>
   <dd>These optional tags can be used in conjunction with an <code>Output</code> tag (NairnFEA only) to preselect nodes for any output setting of 'C'.  The <code>node</code> attrribute selects which node should be selected. This method of preselecting nodes is typically only used when doing <a href="definefeamesh.html#sec1">explicit definition</a> of an FEA mesh. When <a href="definefeamesh.html#sec2">generating a mesh</a> with higher level commands, it is preferrable to select nodes for conditional output using <a href="feabc.html#sec2">generated boundary condition</a> commands.</dd>
+
+  <dt><a name="dflag"></a>&lt;<code>DevelFlag</code> Number='0'/&gt;2&lt;/DevelFlag/&gt</dt>
+  <dd>This tag sets a development flag. You can set up to 5 flags by using <code>Number</code> from 0 to 4. The default for all flags is zero. Any non-zero flags will be listed in the output file after the description. These flags are for use in development. The code can be modified to alter the calculation depending on a certain flag. They should not be relied upon to mean anything permanent.</dd>
 
 </dl>
 
