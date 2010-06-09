@@ -38,6 +38,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Fixed error calculating particle mass for 3D grids when the elements were not perfect cubes.
     * Added `PropagateLength` command to select the amount of crack growth each time a crack propagates.
     * `RotateZ` (and `Y` and `X`) can now be used as alternate methods to set angles for MPM models read in using BMP files.
+    * Added `<DevelFlag>` option in the `<Header>` for use in development coding.
 
   * release-1.0 (30 DEC 2009)
     * Has NairnMPM 7.2.0
