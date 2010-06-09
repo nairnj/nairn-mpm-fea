@@ -72,6 +72,17 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
     	input=ANALYSIS_NUM;
     }
 	
+	// begin a material
+    else if(strcmp(xName,"DevelFlag")==0)
+    {	if(block!=HEADER)
+			throw SAXException("<DevelFlag> must be within the <Header> element.");
+		double flagNumDble=ReadNumericAttribute("Number",attrs,(double)0.0);
+    	int flagNum=(int)(flagNumDble+0.5);
+		if(!flagNum<0 || flagNum>=NUMBER_DEVELOPMENT_FLAGS)
+			throw SAXException("The <DevelFlag> 'Number' must be from 0 to 4");
+		input=INT_NUM;
+		inputPtr=(char *)&fmobj->dflag[flagNum];
+    }
     //-------------------------------------------------------
     // <Mesh> block
 	

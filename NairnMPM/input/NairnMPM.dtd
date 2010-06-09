@@ -15,7 +15,7 @@
 <!-- Headers -->
 
 <!ELEMENT	Header
-			( Description | Analysis )+>
+			( Description | Analysis | DevelFlag )+>
 
 <!ELEMENT	MPMHeader
 			( MatlPtsPerElement | Cracks | MPMMethod | TimeStep | TimeFactor
@@ -240,6 +240,9 @@
 
 <!ELEMENT	Description (#PCDATA)>
 <!ELEMENT	Analysis (#PCDATA)>
+<!ELEMENT	DevelFlag (#PCDATA)>
+<!ATTLIST	DevelFlag
+			Number (0|1|2|3|4) #IMPLIED>
 <!ELEMENT	MatlPtsPerElement (#PCDATA)>
 <!ELEMENT	Friction (#PCDATA)>
 <!ATTLIST	Friction
