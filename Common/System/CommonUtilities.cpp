@@ -272,12 +272,22 @@ double Tensor_ij(Tensor *t,int row,int col)
 
 // Print vector to cout when debugging
 void PrintTensor(const char *label,Tensor *t)
-{	int i,lead=strlen(label);
+{
+	int i,lead=strlen(label);
 	for(i=0;i<lead;i++) cout << " ";
+#ifdef MPM_CODE
 	cout << "(" << t->xx << ", " << t->xy << "," << t->xz << ")" << endl;
 	cout << label << "(" << t->xy << ", " << t->yy << "," << t->yz << ")" << endl;
+#else
+	cout << "(" << t->xx << ", " << t->xy << ", 0.0)" << endl;
+	cout << label << "(" << t->xy << ", " << t->yy << ", 0.0)" << endl;
+#endif
 	for(i=0;i<lead;i++) cout << " ";
+#ifdef MPM_CODE
 	cout << "(" << t->xz << ", " << t->yz << "," << t->zz << ")" << endl;
+#else
+	cout << "( 0.0, 0.0," << t->zz << ")" << endl;
+#endif
 }
 
 #ifdef MPM_CODE
