@@ -158,10 +158,12 @@ char *CommonArchiveData::ExpandInputPath(const char *partialName)
 
 // Set archiveRoot and make sure does not end in period and remove spaces
 // Find parent folder (without the terminal /) or empty string if no parent
-void CommonArchiveData::SetArchiveRoot(char *newRoot,bool makeUnique)
+bool CommonArchiveData::SetArchiveRoot(char *newRoot,bool makeUnique)
 {
-	if(archiveRoot!=NULL) delete [] archiveRoot;
-	archiveRoot=new char[strlen(newRoot)+5];		// 5 saves room for unique folder 1/-999/
+	// second set not allowed
+	if(archiveRoot!=NULL) return FALSE;
+	
+	archiveRoot=new char[strlen(newRoot)+5];		// 5 saves room for unique folder /1 - /999
 	strcpy(archiveRoot,newRoot);
 	unsigned i=strlen(archiveRoot);
 	if(archiveRoot[i-1]=='.') archiveRoot[i-1]=0;
@@ -173,7 +175,7 @@ void CommonArchiveData::SetArchiveRoot(char *newRoot,bool makeUnique)
 	
 	// back up to find parent folder in this relative path
 	if(archiveParent!=NULL) delete [] archiveParent;
-	archiveParent=new char[strlen(archiveRoot)+5];	// 5 saves room for unique folder /1-/999
+	archiveParent=new char[strlen(archiveRoot)+5];	// 5 saves room for unique folder /1 - /999
 	strcpy(archiveParent,archiveRoot);
     for(i=strlen(archiveParent);i>0;i--)
     {   if(archiveParent[i]=='/')
@@ -183,6 +185,8 @@ void CommonArchiveData::SetArchiveRoot(char *newRoot,bool makeUnique)
     }
 	if(i==0) archiveParent[0]=0;		// empty parent
 	forceUnique=makeUnique;	
+	
+	return TRUE;
 }
 char *CommonArchiveData::GetArchiveRoot(void) { return archiveRoot; }
 
