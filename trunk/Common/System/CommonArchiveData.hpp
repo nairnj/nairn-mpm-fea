@@ -28,7 +28,7 @@ class CommonArchiveData
 		void ArchiveElements(int);
 
 		// accessors
-		void SetArchiveRoot(char *,bool);
+		bool SetArchiveRoot(char *,bool);
 		char *GetArchiveRoot(void);
 		void SetArchiveMesh(bool);
 		void SetInputDirPath(const char *);

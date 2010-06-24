@@ -3,21 +3,16 @@
     NairnMPM
  
 	This material is based on mixed mode cohesive law with saw tooth traction
-	laws in paper
+	laws. For mixed mode behavior, it uses method advocated by Thouless, which
+    is simple method, but appears more effective than methods that try to be more
+    coupled.
  
-	J. L. Hogberg, "Mixed Mode Cohesive Law," Int. J. Fract, v146, 549-559 (2006)
+	Basically, mode I and mode II are decoupled for calculation of GI and GII. If
+    either exceeds its critical COD, that it debonds. If neither does, the criterion
  
-	It give total area under the cohesive law as
+    (GI/GIc)^n + (GII/GIIc)^n = 1
  
-	   J = JIc sin^2 q + JIIc cos^2 q
- 
-    where q is mixity that ranges from 90 for mode I to 0 for mode II. It is
-	defined by
-  
-	   tan q = (deln/delIc) / (delt/delIIc)
- 
-	or ratio of displacement normal and tangential to crack (deln and delt)
-	delative to critical failure displacementin that mode (delIc and delIIc)
+    is used to decide if it fails.
     
     Created by John Nairn on 3/21/08.
     Copyright (c) 2008 John A. Nairn, All rights reserved.
@@ -180,7 +175,7 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
 			if(absTCod<umidII)
 				GII=0.0005*kII1*tCod*tCod;               // now in units of N/m
 			else
-			{	double s2=(delIIc-absTCod)*stress2/(delIIc-umidI);
+			{	double s2=(delIIc-absTCod)*stress2/(delIIc-umidII);
 				GII=500.*(umidII*stress2 + (absTCod-umidII)*(stress2+s2));      // now in units of N/m
 			}
 		}
@@ -230,7 +225,7 @@ double CohesiveZone::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCo
 		tEnergy+=0.5e-6*Tt*tCod;                         // now in units of N/mm
 	}
 	else
-	{	double s2=(delIIc-fabs(tCod))*stress2/(delIIc-umidI);                           // stress in N/mm^2
+	{	double s2=(delIIc-fabs(tCod))*stress2/(delIIc-umidII);                           // stress in N/mm^2
 		tEnergy+=0.5*(umidII*stress2 + (fabs(tCod)-umidII)*(stress2+s2));               // now in units of N/mm
 	}
 	
