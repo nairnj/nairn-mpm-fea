@@ -123,7 +123,7 @@ The information for each particle and each crack segment are stored as a series 
 
 <dt>Archive Order Byte Requirements (2D Analyses)</dt>
 <dd><ul class="lev2args">
-  <li>Byte 2: 64 (cannot be <code>N</code> and <code>O</code> means old format not longer supported)</li>
+  <li>Byte 2: 64 (cannot be <code>N</code> and <code>O</code> means old format which is no longer supported)</li>
   <li>Byte 3: 16</li>
   <li>Byte 4: 32</li>
   <li>Byte 5: 32</li>
@@ -207,7 +207,7 @@ double anglez - material angle (for anisotropic materials) (degrees)
    double thickness - thickness (mm) (or 0 in 3D)
 3D in ver6 or newer replaces thickness with two more angles:
    double angley - material angle (for anisotropic materials) (degrees)
-   double anglez - material angle (for anisotropic materials) (degrees)
+   double anglex - material angle (for anisotropic materials) (degrees)
 double x - current x position (mm)
 double y - current y position (mm)
 double z - current z position (mm) (3D only)
