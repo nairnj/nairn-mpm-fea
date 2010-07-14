@@ -841,7 +841,7 @@ void NodalPoint::MaterialContactOnNode(bool postUpdate,double deltime)
 // retrieve -2*scale*(mass gradient) for material matfld in velocity field vfld
 void NodalPoint::GetMassGradient(short vfld,int matfld,Vector *grad,double scale)
 {
-	return cvf[vfld]->GetMassGradient(matfld,grad,scale);
+	cvf[vfld]->GetMassGradient(matfld,grad,scale);
 	
 	/*
 	// number of nodes each direction (1 more than number of elements)

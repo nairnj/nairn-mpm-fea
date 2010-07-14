@@ -143,7 +143,7 @@ The equations for $\Delta \vec p_a$ and $\Delta \vec v$ are unchanged, but in te
     \Delta \vec p_a = {m_a\over m_c}\vec p_c-\vec p_a  \qquad \Delta \vec v = {m_c\over m_a(m_c-m_a)}\Delta \vec p_a
 \end{equation}
 
-To implement contact conditions, with inclusion of nodes with three or materials, each material is considered relative to the center of mass velocity and $\Delta \vec p_a$ and $\Delta \vec v$ are found. Stick conditions are trival. The momentum change of $\Delta \vec p_a$ is applied to material $a$. These momenta changes correspond to normal and tangential forces of
+To implement contact conditions, with inclusion of nodes with three or more materials, each material is considered relative to the center of mass velocity and $\Delta \vec p_a$ and $\Delta \vec v$ are found. Stick conditions are trival. The momentum change of $\Delta \vec p_a$ is applied to material $a$. These momenta changes correspond to normal and tangential forces of
 \begin{equation}
          \vec f_n = {(\Delta \vec p_a\cdot \hat n)\over \Delta t}\hat n \qquad {\rm and}\qquad \vec f_t={(\Delta \vec p_a\cdot \hat t)\over \Delta t}\hat t
 \end{equation}
@@ -153,16 +153,16 @@ where $\Delta t$ is time step and $\hat t$ is unit vector in the tangential dire
 \end{equation}
 The vector on the left can be calculated from prior results and is seen to be parallel to $\hat t$. There are two solutions for $\hat t$ for the two directions along the parallel. We choose the solution such that  $\Delta \vec v\cdot \hat t>0$ or equivalently that $\Delta \vec p_a\cdot \hat t>0$.
 
-The positive normal contact force is thus $f_n = -(\Delta \vec p_a\cdot \hat n)/\Delta t$ and the positive sliding force is $f_t = (\Delta \vec p_a\cdot \hat t)/\Delta t$. If $f_t<\mu f_n$, the objects will stick using the above stick conditions. Otherwise, the frictional forces is changed to $\mu f_n$. The complete frictional sliding algorithm in an optimized form is
+The positive normal contact force is thus $f_n = -(\Delta \vec p_a\cdot \hat n)/\Delta t$ and the positive sliding force is $f_t = (\Delta \vec p_a\cdot \hat t)/\Delta t$. If $f_t<\mu f_n+s_a$, the objects will stick using the above stick conditions (here $s_a$ is an optional adhesion strength). Otherwise, the frictional force is changed to $\mu f_n+s_a$, but it still sticks in the normal direction. The complete frictional sliding algorithm in an optimized form is
 \begin{enumerate}
 
 \item Determine if contact is occurring. Those calculations will find $\Delta p_a$ and $\hat n$ and will verify that $d_n = \Delta \vec p_a\cdot \hat n<0$. Finding an accurate normal is crucial. The recommended method is to consider the gradient of the volume gradient for the contacting pair of materials (when three or more material are present, the algorithm looks at the volume gradient from material $a$ and the other material with the most volume). The normal is taken as being in the direction of the volume gradient for the material that has the largest magnitude of its volume gradient.
 
 \item Find an unnormalized tangent vector from $\vec t = \Delta p_a - d_n\hat n$. If $\vec t\cdot\vec t=0$, then there is no tangential motion and the momentum change $\Delta p_a$ can be used and the algorithm is done ({\em i.e.}, skip to step 5 with $\Delta \vec {p'}_a =\Delta \vec p_a$). If it is not zero, proceed to next step.
 
-\item Normalize $\hat t$ and find $d_t = \Delta \vec p_a\cdot \hat t$. If $d_t<0$ then change the signs of both $\hat t$ and $d_t$.
+\item Normalize $\hat t$ and find $d_t = \Delta \vec p_a\cdot \hat t$. Since $\hat t$ is defined from the tangential component of $\Delta\vec p_a$, $d_t\ge0$. The zero option is handled in previous step, so now it must be non-zero and positive.
 
-\item If $d_t>-\mu d_n$ (both of which are always positive) then frictional sliding is occurring and the momentum change for material $a$ should be changed to $\Delta \vec {p'}_a= d_n(\hat n - \mu\hat t)$ such that frictional force is $\mu$ times the normal force, all with the correct signs. But, if $d_t<-\mu d_n$, use $\Delta \vec {p'}_a =\Delta \vec p_a$ or use the previous stick-condition momentum change.
+\item If $f_t > \mu f_n+s_a$ (or $d_t>-\mu d_n+s_a\Delta t$), both sides of which are always positive, then frictional sliding is occurring. The force to make material $a$ ``stick'' in normal direction and feel ``frictional'' force in tangential direction is $\vec f_a = (-f_n)\hat n + (\mu f_n+s_a)\hat t$. Thus,  the momentum change for material $a$ becomes $\Delta \vec {p'}_a = \vec f_a\Delta t = d_n(\hat n - \mu\hat t)+s_a\hat t\Delta t $. But, if $d_t<-\mu d_n+s_a\Delta t$, use $\Delta \vec {p'}_a =\Delta \vec p_a$; {\em i.e.}, use the stick-condition momentum change.
 
 \item Change momenta of material $a$ by $\Delta\vec {p'}_a$
 
