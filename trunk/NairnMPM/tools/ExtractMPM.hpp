@@ -51,6 +51,6 @@ void BeginCrack(ostream &);
 void EndCrack(ostream &);
 void BeginMP(ostream &);
 void EndMP(ostream &);
-int CalcArchiveSize(void);
+int CalcArchiveSize(int);
 int Reverse(char *,int);
 

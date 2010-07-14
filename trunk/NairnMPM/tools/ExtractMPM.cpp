@@ -466,7 +466,7 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	reverseFromInput = thisEndian==mpmOrder[0] ? false : true ;
 
 	// get record size
-	if(CalcArchiveSize()!=noErr)
+	if(CalcArchiveSize(vernum)!=noErr)
 	{	cerr << "Input file format too old for this tool (missing current defaults)" << endl;
 		return FileAccessErr;
 	}
@@ -1155,7 +1155,7 @@ void EndCrack(ostream &os)
     get archive record size using current save order
 	and save offsets to possible data
 */
-int CalcArchiveSize(void)
+int CalcArchiveSize(int vernum)
 {
     int i;
     
@@ -1181,9 +1181,11 @@ int CalcArchiveSize(void)
 		return FileAccessErr;
     
 	// sizes
+	int thirdAngle=0;
 	if(threeD)
 	{	vectorSize=3*sizeof(double);
 		tensorSize=6*sizeof(double);
+		if(vernum>=6) thirdAngle=sizeof(double);
 	}
 	else
 	{	vectorSize=2*sizeof(double);
@@ -1194,12 +1196,13 @@ int CalcArchiveSize(void)
 	
 	/* ARCH_Defaults are
 		2D: elemID (int), mass (double), matId (short) angle (double), thickness (double),
-							pos (Vector), origPos (Vector)
-		3D: thickness replaced by dihedral and Vectors longer
+					pos (Vector), origPos (Vector)
+		3D: thickness replaced by second rotation and Vectors longer and add extra double 
+					in vernum==6 or higher for third rotation angle
 	*/
-	int mpmRecSize=sizeof(int)+3*sizeof(double)+2*vectorSize+sizeof(short)+2;
+	int mpmRecSize=sizeof(int)+3*sizeof(double)+thirdAngle+2*vectorSize+sizeof(short)+2;
 	angleOffset=sizeof(int)+sizeof(double)+sizeof(short)+2;
-	posOffset=angleOffset+2*sizeof(double);
+	posOffset=angleOffset+2*sizeof(double)+thirdAngle;
 	origPosOffset=posOffset+vectorSize;
 	
     if(mpmOrder[ARCH_Velocity]=='Y')
