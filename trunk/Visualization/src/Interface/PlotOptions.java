@@ -26,7 +26,8 @@ public class PlotOptions extends PlotControl
 	static final int SHOW_NODES=9;
 	static final int SHOW_DISPLACEDMESH=10;
 	static final int TRANSFORM_PTS=11;
-	static final int NUM_OPTIONS=12;
+	static final int CLIP_TO_PARTICLES=12;
+	static final int NUM_OPTIONS=13;
 	
 	// default on
 	JCheckBox showPts=new JCheckBox("Show Material Pts",true);
@@ -43,11 +44,12 @@ public class PlotOptions extends PlotControl
 	JCheckBox showNodeNums=new JCheckBox("Show Node Numbers",false);
 	JCheckBox showElemNums=new JCheckBox("Show Elem Numbers",false);
 	JCheckBox showNodes=new JCheckBox("Show Nodes",false);
+	JCheckBox clipParticles=new JCheckBox("Clip To Particles",false);
 	
 	// initialize
 	PlotOptions(DocViewer dc)
-	{   super(ControlPanel.WIDTH,120,dc);
-		setLayout(new GridLayout(6,2));
+	{   super(ControlPanel.WIDTH,142,dc);
+		setLayout(new GridLayout(7,2));
 
 		// add check boxes
 		add(showPts);
@@ -62,6 +64,7 @@ public class PlotOptions extends PlotControl
 		add(showPtNums);
 		add(showDispMesh);
 		add(transformPts);
+		add(clipParticles);
 		
 		setEnabled(LoadArchive.NO_PLOT);
 	}
@@ -81,10 +84,10 @@ public class PlotOptions extends PlotControl
 			showPtNums.setEnabled(true);
 			showDispMesh.setEnabled(false);
 			transformPts.setEnabled(true);
+			clipParticles.setEnabled(false);
 		}
 		else if(plotType==LoadArchive.MESH_PLOT)
 		{	showPts.setEnabled(false);
-			showSquarePts.setEnabled(false);
 			showCrackPlanes.setEnabled(false);
 			showMesh.setEnabled(true);
 			showCrackSurf.setEnabled(false);
@@ -93,8 +96,18 @@ public class PlotOptions extends PlotControl
 			showNodeNums.setEnabled(true);
 			showElemNums.setEnabled(true);
 			showPtNums.setEnabled(false);
-			showDispMesh.setEnabled(docCtrl.resDoc.isFEAAnalysis());
-			transformPts.setEnabled(false);
+			if(docCtrl.resDoc.isFEAAnalysis())
+			{	showDispMesh.setEnabled(true);
+				showSquarePts.setEnabled(false);
+				transformPts.setEnabled(false);
+				clipParticles.setEnabled(false);
+			}
+			else
+			{	showDispMesh.setEnabled(false);
+				showSquarePts.setEnabled(true);
+				transformPts.setEnabled(true);
+				clipParticles.setEnabled(true);
+			}
 		}
 		else
 		{	showPts.setEnabled(false);
@@ -109,6 +122,7 @@ public class PlotOptions extends PlotControl
 			showPtNums.setEnabled(false);
 			showDispMesh.setEnabled(false);
 			transformPts.setEnabled(false);
+			clipParticles.setEnabled(false);
 		}
 	}
 
@@ -128,6 +142,7 @@ public class PlotOptions extends PlotControl
 		flags[SHOW_NODES]=showNodes.isSelected();
 		flags[SHOW_DISPLACEDMESH]=showDispMesh.isSelected();
 		flags[TRANSFORM_PTS]=transformPts.isSelected();
+		flags[CLIP_TO_PARTICLES]=clipParticles.isSelected();
 		return flags;
 	}
 }

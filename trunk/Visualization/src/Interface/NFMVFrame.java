@@ -53,7 +53,7 @@ public class NFMVFrame extends JFrame implements ActionListener, WindowListener,
 	protected void makeMenuBar() {}
 
 	// make a menu  item
-	protected void makeMenuItem(JMenu menu,String menuTitle,String menuAction,int mKey,ActionListener target)
+	protected JMenuItem makeMenuItem(JMenu menu,String menuTitle,String menuAction,int mKey,ActionListener target)
 	{	JMenuItem menuItem = new JMenuItem(menuTitle);
 		menuItem.setActionCommand(menuAction);
 		menuItem.addActionListener(target);
@@ -62,8 +62,20 @@ public class NFMVFrame extends JFrame implements ActionListener, WindowListener,
 					NairnFEAMPMViz.appCtrl.menuKeyMask()));
 		}
 		menu.add(menuItem);
+		return menuItem;
 	}
 	
+	protected JCheckBoxMenuItem makeCheckBoxMenuItem(JMenu menu,String menuTitle,String menuAction,int mKey,ActionListener target)
+	{	JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(menuTitle);
+		menuItem.setActionCommand(menuAction);
+		menuItem.addActionListener(target);
+		if(mKey!=0)
+		{	menuItem.setAccelerator(KeyStroke.getKeyStroke(mKey,
+					NairnFEAMPMViz.appCtrl.menuKeyMask()));
+		}
+		menu.add(menuItem);
+		return menuItem;
+	}
 	//----------------------------------------------------------------------------
 	// handle common commands
 	//----------------------------------------------------------------------------
