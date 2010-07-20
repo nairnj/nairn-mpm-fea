@@ -9,6 +9,7 @@
 import java.awt.*;
 
 import javax.swing.*;
+
 import java.text.*;
 import java.awt.event.*;
 import java.util.*;
@@ -35,6 +36,8 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProg
 	protected int movieComponent;
 	protected int plotType;
 	protected String frameFileRoot=null;
+	protected MeshPlotScroll plotScroll;
+	protected JCheckBoxMenuItem checkedZoomItem;
 	
 	// command file chooser
 	private JFileChooser chooser=new JFileChooser();
@@ -52,7 +55,11 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProg
 		// add plot view (entire window for now)
 		Container content=getContentPane();
 		plotView=new MeshPlotView(resDoc);
-		content.add(plotView,BorderLayout.CENTER);
+		//content.add(plotView,BorderLayout.CENTER);
+		
+		// scroll pane
+		plotScroll=new MeshPlotScroll(plotView);
+		content.add(plotScroll,BorderLayout.CENTER);
 		
 		// add controls
 		movieControls=new MovieControls(d.width,resDoc,this);
@@ -80,7 +87,19 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProg
 		menu = new JMenu("Window");
 		menuBar.add(menu);
 		makeMenuItem(menu,"Analysis Results","ShowResults",KeyEvent.VK_D,this);
-	}
+		
+		menu = new JMenu("Zoom");
+		menuBar.add(menu);
+		checkedZoomItem=makeCheckBoxMenuItem(menu,"100%","ZoomPlot",KeyEvent.VK_1,this);
+		makeCheckBoxMenuItem(menu,"150%","ZoomPlot",KeyEvent.VK_2,this);
+		makeCheckBoxMenuItem(menu,"200%","ZoomPlot",KeyEvent.VK_3,this);
+		makeCheckBoxMenuItem(menu,"300%","ZoomPlot",KeyEvent.VK_4,this);
+		makeCheckBoxMenuItem(menu,"400%","ZoomPlot",KeyEvent.VK_5,this);
+		makeCheckBoxMenuItem(menu,"500%","ZoomPlot",KeyEvent.VK_6,this);
+		makeCheckBoxMenuItem(menu,"700%","ZoomPlot",KeyEvent.VK_7,this);
+		makeCheckBoxMenuItem(menu,"1000%","ZoomPlot",KeyEvent.VK_8,this);
+		checkedZoomItem.setSelected(true);
+}
 	
 	//----------------------------------------------------------------------------
 	// detachable thread and methods for controlling movies
@@ -243,6 +262,29 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProg
 			runFlag=true;
 			Thread movieThread=new Thread(this);
 			movieThread.start();
+		}
+		
+		else if(theCmd.equals("ZoomPlot"))
+		{	checkedZoomItem.setSelected(false);
+			checkedZoomItem=(JCheckBoxMenuItem)(e.getSource());
+			checkedZoomItem.setSelected(true);
+			String theZoomCmd=checkedZoomItem.getText();
+			double scale=1.0;
+			if(theZoomCmd.equals("150%"))
+				scale=1.5;
+			else if(theZoomCmd.equals("200%"))
+				scale=2.0;	
+			else if(theZoomCmd.equals("300%"))
+				scale=3.0;	
+			else if(theZoomCmd.equals("400%"))
+				scale=4.0;	
+			else if(theZoomCmd.equals("500%"))
+				scale=7.0;	
+			else if(theZoomCmd.equals("700%"))
+				scale=7.0;	
+			else if(theZoomCmd.equals("1000%"))
+				scale=10.0;
+			plotScroll.setScale(scale);
 		}
 		
 		else

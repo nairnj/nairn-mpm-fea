@@ -37,7 +37,7 @@ public class MeshPlotView extends JPanel
 	private double scale;
 	private boolean showMatPts,showSquarePts,showCrackPlanes,showCrackSurfaces;
 	private boolean showMesh,showMeshBCs,showNodeNums,showElemNums,showMatPtNums;
-	private boolean showNodes,showDisplaced,transformPts;
+	private boolean showNodes,showDisplaced,transformPts,clipToParticles;
 	private double mpDiam=50.;
 	public boolean repainting=false;
 	private ResultsDocument resDoc;
@@ -94,10 +94,23 @@ public class MeshPlotView extends JPanel
 		
 		// fill elements
 		if(plotType!=MPMPARTICLE_PLOTS && plotComponent!=PlotQuantity.MESHONLY)
-		{	setLineWidth(3.f);			// for interfaces
+		{	// clip MPM mesh plots to the current particle settings
+			if(plotType==MPMMESH_PLOTS && clipToParticles)
+			{	// clip to particles
+				Path2D.Double clipPath=new Path2D.Double();
+				for(i=0;i<resDoc.mpmPoints.size();i++)
+				{	resDoc.mpmPoints.get(i).addToClip(this,resDoc,clipPath);
+				}
+				g2Loc.setClip(clipPath);
+			}
+			
+			setLineWidth(3.f);			// for interfaces
 			for(i=0;i<resDoc.elements.size();i++)
 			{	(resDoc.elements.get(i)).fill(this);
 			}
+			
+			if(plotType==MPMMESH_PLOTS && clipToParticles)
+				g2Loc.setClip(null);
 		}
 		
 		// elements
@@ -215,7 +228,7 @@ public class MeshPlotView extends JPanel
 		xyBounds=new Rectangle2D.Double(meshBounds.getX()-bcExtra,meshBounds.getY()-bcExtra,
 							meshBounds.getWidth()+2.*bcExtra,meshBounds.getHeight()+2.*bcExtra);
 		
-		// adjust aspect ratio to match frame aspect ratio and get scalling (pixels/mm)
+		// adjust aspect ratio to match frame aspect ratio and get scaling (pixels/mm)
 		Dimension d=getSize();
 		double xyAspect=xyBounds.getHeight()/xyBounds.getWidth();
 		double pixAspect=(double)(d.height-KEY_HEIGHT-2*BORDER)/(double)(d.width-2*BORDER);
@@ -273,37 +286,20 @@ public class MeshPlotView extends JPanel
 	}
 	
 	// draw material point and fill with plot color
-	public void drawMaterialPoint(Color theColor,double[] eps,double[] eplast,double erot)
+	public void drawMaterialPoint(Color theColor,double[] eps,double[] eplast,double erot,MaterialPoint mpart)
 	{	double diam=0.01*mpDiam*resDoc.cellMinSide*scale;
 		double radiix=resDoc.xscale*diam/2.;
 		double radiiy=resDoc.yscale*diam/2.;
 		g2Loc.setColor(theColor);
-		if(showSquarePts)
-		{	if(transformPts)
-			{	double dgrad00=0.01*(eps[MaterialPoint.XXID]+eplast[MaterialPoint.XXID]);
-				double wrot=Math.PI*erot/180.;
-				double dgrad01=0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID]-wrot);
-				double dgrad10=0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID]+wrot);
-				double dgrad11=0.01*(eps[MaterialPoint.YYID]+eplast[MaterialPoint.YYID]);
-				
-				GeneralPath quad=new GeneralPath();
-				Point2D.Float pathPt0=new Point2D.Float((float)(xpt+radiix*(1.+dgrad00)+radiiy*dgrad01),
-											(float)(ypt+radiix*dgrad10+radiiy*(1.+dgrad11)));
-				quad.moveTo(pathPt0.x,pathPt0.y);
-				quad.lineTo((float)(xpt+radiix*(1.+dgrad00)-radiiy*dgrad01),
-											(float)(ypt+radiix*dgrad10-radiiy*(1.+dgrad11)));
-				quad.lineTo((float)(xpt-radiix*(1.+dgrad00)-radiiy*dgrad01),
-											(float)(ypt-radiix*dgrad10-radiiy*(1.+dgrad11)));
-				quad.lineTo((float)(xpt-radiix*(1.+dgrad00)+radiiy*dgrad01),
-											(float)(ypt-radiix*dgrad10+radiiy*(1.+dgrad11)));
-				quad.lineTo(pathPt0.x,pathPt0.y);
-				g2Loc.fill(quad);
-			}
-			else
-				g2Loc.fill(new Rectangle2D.Double(xpt-radiix,ypt-radiiy,2.*radiix,2.*radiiy));
-		}
-		else
-			g2Loc.fill(new Ellipse2D.Double(xpt-radiix,ypt-radiiy,2.*radiix,2.*radiiy));
+		g2Loc.fill(mpart.particleShape(xpt,ypt,radiix,radiiy,showSquarePts,transformPts));
+	}
+	
+	// draw material point and fill with plot color
+	public void clipMaterialPoint(double[] eps,double[] eplast,double erot,MaterialPoint mpart,Path2D.Double theClip)
+	{	double diam=0.01*mpDiam*resDoc.cellMinSide*scale;
+		double radiix=resDoc.xscale*diam/2.;
+		double radiiy=resDoc.yscale*diam/2.;
+		theClip.append(mpart.particleShape(xpt,ypt,radiix,radiiy,showSquarePts,transformPts),false);
 	}
 	
 	// transform shape to coordinates and fill in current color
@@ -375,6 +371,7 @@ public class MeshPlotView extends JPanel
 		showNodes=options[PlotOptions.SHOW_NODES];
 		showDisplaced=options[PlotOptions.SHOW_DISPLACEDMESH];
 		transformPts=options[PlotOptions.TRANSFORM_PTS];
+		clipToParticles=options[PlotOptions.CLIP_TO_PARTICLES];
 		
 		plotComponent=theComponent;
 		plotType=theType;

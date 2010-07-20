@@ -57,7 +57,46 @@ public class MaterialPoint
 	// draw the material point
 	public void stroke(MeshPlotView pv,ResultsDocument doc)
 	{	pv.moveTo(x,y);
-		pv.drawMaterialPoint(plotColor,eps,eplast,angleZ-erot);
+		pv.drawMaterialPoint(plotColor,eps,eplast,angleZ-erot,this);
+	}
+	
+	// draw the material point
+	public void addToClip(MeshPlotView pv,ResultsDocument doc,Path2D.Double theClip)
+	{	pv.moveTo(x,y);
+		pv.clipMaterialPoint(eps,eplast,angleZ-erot,this,theClip);
+	}
+	
+	// return shape for the particle at current location
+	public Shape particleShape(double xpt,double ypt,double radiix,double radiiy,
+								boolean showSquarePts,boolean transformPts)
+	{	// depends on setting
+		if(showSquarePts)
+		{	if(transformPts)
+			{	double dgrad00=0.01*(eps[MaterialPoint.XXID]+eplast[MaterialPoint.XXID]);
+				double wrot=Math.PI*erot/180.;
+				double dgrad01=0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID]-wrot);
+				double dgrad10=0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID]+wrot);
+				double dgrad11=0.01*(eps[MaterialPoint.YYID]+eplast[MaterialPoint.YYID]);
+				
+				GeneralPath quad=new GeneralPath();
+				Point2D.Float pathPt0=new Point2D.Float((float)(xpt+radiix*(1.+dgrad00)+radiiy*dgrad01),
+											(float)(ypt+radiix*dgrad10+radiiy*(1.+dgrad11)));
+				quad.moveTo(pathPt0.x,pathPt0.y);
+				quad.lineTo((float)(xpt+radiix*(1.+dgrad00)-radiiy*dgrad01),
+											(float)(ypt+radiix*dgrad10-radiiy*(1.+dgrad11)));
+				quad.lineTo((float)(xpt-radiix*(1.+dgrad00)-radiiy*dgrad01),
+											(float)(ypt-radiix*dgrad10-radiiy*(1.+dgrad11)));
+				quad.lineTo((float)(xpt-radiix*(1.+dgrad00)+radiiy*dgrad01),
+											(float)(ypt-radiix*dgrad10+radiiy*(1.+dgrad11)));
+				quad.lineTo(pathPt0.x,pathPt0.y);
+				return quad;
+			}
+			else
+				return new Rectangle2D.Double(xpt-radiix,ypt-radiiy,2.*radiix,2.*radiiy);
+		}
+		else
+			return new Ellipse2D.Double(xpt-radiix,ypt-radiiy,2.*radiix,2.*radiiy);
+
 	}
 	
 	// draw the number
