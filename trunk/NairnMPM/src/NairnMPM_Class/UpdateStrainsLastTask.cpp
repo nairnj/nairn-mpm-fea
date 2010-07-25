@@ -24,6 +24,21 @@
 		rezeroed
  
 	After new extrapolations, update strains on all particles
+ 
+	Input Variables
+		mpm[]->ncpos
+		nd[]->vel,fdiff, fcond
+ 
+	Output Variables
+		mvf[]->pk, disp
+		nd[]->gTemperature, gConcentration
+		theMaterials[]->LoadMechanicalProps() - changes any properties that depend
+			on particle state
+		MPMBase::currentParticleNum - used in strain update loop
+		mpm[]->sp, ep, eplast, wrot, plastEnergy, dispEnergy, strainEnergy,
+			extWork, matData->, pPreviousTemperature, pPreviousConcentration
+		ConductionTask::dTemperature
+		DiffusionTask::dConcentration
 ********************************************************************************/
 
 #include "NairnMPM_Class/UpdateStrainsLastTask.hpp"
