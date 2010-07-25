@@ -23,7 +23,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
   * Current trunk Version
     * Working on NairnMPM 8.0.0
     * Rewrote `MPMStep()` to organize all tasks into task objects. The tasks can be profiled. A future plan is to optimize each task, perhaps for multi-core processors.
-    * Add `AltPropagate` command to allow competing fracture modes. Its initial use is for competition between interface fracture and fracture turing into the bulk.
+    * Added `AltPropagate` command to allow competing fracture modes. Its initial use is for competition between interface fracture and fracture turning into the bulk.
     * The default `Vmin` for multimaterial contact was changed to 0.0.
 
   * release-2.0 (25 JUL 2009)
