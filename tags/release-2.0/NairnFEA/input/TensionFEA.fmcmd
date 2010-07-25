@@ -1,0 +1,127 @@
+<?xml version='1.0'?>
+<!DOCTYPE JANFEAInput SYSTEM '/Users/jnairn/Programming/Cocoa_Projects/NairnCode/NairnFEA/input/NairnFEA.dtd'
+[
+ <!ENTITY matnum '1'>
+ <!ENTITY angle '45'>
+ <!ENTITY elem '3'>
+]>
+<JANFEAInput version="3">
+
+<!-- FEA analysis simple tension under a ramp load. Several different
+     material types are in the file by changing matnum entity
+
+	1. Isotropic
+	2. Transversly Isotropic (in plane) (can set angle)
+	3. Transversly Isotropic (can set angle)
+	4. Orthotropic (can set angle)
+
+	All have low moduli and same as in sample Tension file in MPM input folder
+
+	Element types (in elem) are
+	1. 3-node CST
+	2. 4-node quad
+	3. 8-node quad
+	4. 6-node triangle
+-->
+  <Header>
+    <Description>
+Title: FEA Analysis
+User Name: User Name
+  Simple tensile loading with variety of material types
+    </Description>
+    <Analysis>1</Analysis>
+  </Header>
+
+  <Mesh>
+    <Keypoints>
+      <pt x="0.000000" y="0.000000" id="LL"/>
+      <pt x="0.000000" y="100.000000" id="UL"/>
+      <pt x="50.000000" y="0.000000" id="LR"/>
+      <pt x="50.000000" y="100.000000" id="UR"/>
+    </Keypoints>
+    
+    <Path id="bottom" intervals="4">
+      <keypt id="LL"/>
+      <keypt id="LR"/>
+    </Path>
+    <Path id="right" intervals="8">
+      <keypt id="LR"/>
+      <keypt id="UR"/>
+    </Path>
+    <Path id="top" intervals="4">
+      <keypt id="UR"/>
+      <keypt id="UL"/>
+    </Path>
+    <Path id="left" intervals="8">
+      <keypt id="UL"/>
+      <keypt id="LL"/>
+    </Path>
+    
+    <Area mat="&matnum;" thick="1.0" angle="&angle;" type="&elem;">
+      <path id="bottom"/>
+      <path id="right"/>
+      <path id="top"/>
+      <path id="left"/>
+    </Area>
+  </Mesh>
+
+  <Material Type="1" Name="Isotropic Material">
+    <rho>1.5</rho>
+    <E>1e-02</E>
+    <nu>0.33</nu>
+    <alpha>60</alpha>
+  </Material>
+
+  <Material Type="2" Name="In-Plane Transversely Isotropic Material">
+    <rho>1.5</rho>
+    <EA>0.1</EA>
+    <ET>1e-02</ET>
+    <GA>1e-02</GA>
+    <nuA>0.2</nuA>
+    <nuT>0.33</nuT>
+    <alphaA>20</alphaA>
+    <alphaT>60</alphaT>
+  </Material>
+
+  <Material Type="3" Name="Transversely Isotropic Material">
+    <rho>1.5</rho>
+    <EA>0.1</EA>
+    <ET>1e-02</ET>
+    <GA>1e-02</GA>
+    <nuA>0.2</nuA>
+    <nuT>0.33</nuT>
+    <alphaA>20</alphaA>
+    <alphaT>60</alphaT>
+  </Material>
+
+  <Material Type="4" Name="Orthotropic Material">
+    <rho>1.5</rho>
+    <Ex>0.1</Ex>
+    <Ey>5e-02</Ey>
+    <Ez>1</Ez>
+    <Gxy>3e-03</Gxy>
+    <Gxz>4e-03</Gxz>
+    <Gyz>5e-03</Gyz>
+    <nuxy>0.33</nuxy>
+    <nuxz>2e-02</nuxz>
+    <nuyz>0.125</nuyz>
+    <alphax>20</alphax>
+    <alphay>40</alphay>
+    <alphaz>60</alphaz>
+  </Material>
+
+  <GridBCs>
+    <BCLine path="bottom">
+      <rotate axis="3" angle="0"/>
+      <DisBC dof="2" disp="0"/>
+    </BCLine>
+    <BCPt keypt="LL">
+      <DisBC dof="1" disp="0"/>
+    </BCPt>
+    <BCLine path="top">
+      <StressBC dir="1" stress=".0005"/>
+    </BCLine>
+    <Resequence keypt="LL"/>
+  </GridBCs>
+
+</JANFEAInput>
