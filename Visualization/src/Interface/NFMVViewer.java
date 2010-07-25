@@ -17,6 +17,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 
 public class NFMVViewer extends NFMVFrame
@@ -28,6 +29,7 @@ public class NFMVViewer extends NFMVFrame
 	//----------------------------------------------------------------------------
 	
 	NFMVViewer partnerCtrl=null;			// cmds->viz or viz->cmds
+	protected JMenuItem showPartnerMenuItem;
 	public JMenu windowMenu;
 	protected JPanel buttonBar=new JPanel();
 	
@@ -111,9 +113,10 @@ public class NFMVViewer extends NFMVFrame
 		windowMenu = new JMenu("Window");
 		menuBar.add(windowMenu);
 		if(isCommandViewer())
-			makeMenuItem(windowMenu,"Visualization","ShowPartner",KeyEvent.VK_D,this);
+			showPartnerMenuItem=makeMenuItem(windowMenu,"Visualization","ShowPartner",KeyEvent.VK_D,this);
 		else
-			makeMenuItem(windowMenu,"Input Commands","ShowPartner",KeyEvent.VK_D,this);
+			showPartnerMenuItem=makeMenuItem(windowMenu,"Input Commands","ShowPartner",KeyEvent.VK_D,this);
+		showPartnerMenuItem.setEnabled(false);
 		windowMenu.addSeparator();
 		
 		// add existing windows
@@ -187,10 +190,15 @@ public class NFMVViewer extends NFMVFrame
 	// must override tnad return full path the the associated file
 	public String getFullPath() { return "not_a_viewer"; }
 	
-	public void setPartner(NFMVViewer partner) { partnerCtrl=partner; }
+	public void setPartner(NFMVViewer partner)
+	{	partnerCtrl=partner;
+		showPartnerMenuItem.setEnabled(partnerCtrl!=null);
+	}
 	public void removePartner(NFMVViewer partner)
 	{	if(partner==partnerCtrl)
-			partnerCtrl=null;
+		{	partnerCtrl=null;
+			showPartnerMenuItem.setEnabled(false);
+		}
 	}
 	
 	// type of viewer
