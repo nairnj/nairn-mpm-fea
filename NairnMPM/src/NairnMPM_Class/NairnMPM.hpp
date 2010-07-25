@@ -29,9 +29,9 @@ class NairnMPM : public CommonAnalysis
     public:
 		int mpmApproach;		// mpm method for updating strain
 		int ptsPerElement;		// points per element
-		int propagate;			// progation method
-		int propagateDirection;	// optional crack direction setting
-		int propagateMat;		// optional traction material to create when propagates
+		int propagate[2];		// progation method
+		int propagateDirection[2];	// optional crack direction setting
+		int propagateMat[2];		// optional traction material to create when propagates
 		bool hasTractionCracks;	// TRUE is any crack segment has traction law material
 		long mstep;				// step number
 		double maxtime;			// maximum time for analysis
@@ -39,6 +39,7 @@ class NairnMPM : public CommonAnalysis
 		int warnParticleLeftGrid;	// warning ID
 		bool multiMaterialMode;		// TRUE to use separate velocity fields for each material
 		bool hasRigidContactParticles;	// TRUE if some particles in multimaterial mode or rigid (direction=8)
+		bool volumeExtrap;			// true if need particle volume
 		
         //  Constructors and Destructor
 		NairnMPM();
@@ -51,12 +52,6 @@ class NairnMPM : public CommonAnalysis
 		void MPMStep(void);
 		void PreliminaryCalcs(void);
 		void SetForceBCs(void);
-		void SetRigidBCs(long,int,double,double,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);
-		int ResetElement(MPMBase *);
-		void ReturnToElement(MPMBase *);
-		void UnsetRigidBCs(BoundaryCondition **,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);
-		void RemoveRigidBCs(BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);
-		void CountBCs(BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);
 		void ValidateOptions(void);
 		void Usage(void);
 		double CPUTime();
@@ -70,7 +65,6 @@ class NairnMPM : public CommonAnalysis
 		virtual void SetHasTractionCracks(bool);
 	
 	private:
-		bool volumeExtrap;			// true if need particle volume
 		time_t startTime;			// timers
 		clock_t startCPU;
 };

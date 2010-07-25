@@ -29,9 +29,9 @@ class MaterialController : public ParseController
 		char *InputPointer(char *,int &);
 		void SetMatColor(float,float,float);
 #ifdef MPM_CODE
-		void SetCriterion(int);
-		void SetDirection(int);
-		void SetTractionMat(int);
+		void SetCriterion(int,int);
+		void SetDirection(int,int);
+		void SetTractionMat(int,int);
 		void SetMaterialFriction(void);
 #endif
 };

@@ -9,7 +9,7 @@
 #include "Boundary_Conditions/NodalConcBC.hpp"
 #include "Nodes/NodalPoint.hpp"
 
-// Nodal BC global
+// Nodal concentration BC globals
 NodalConcBC *firstConcBC=NULL;
 NodalConcBC *lastConcBC=NULL;
 NodalConcBC *firstRigidConcBC=NULL;

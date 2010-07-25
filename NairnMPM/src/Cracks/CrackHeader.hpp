@@ -89,6 +89,8 @@ class CrackHeader : public LinkedObject
 		bool GetHasTractionLaws(void);
 		void GetInitialDirection(CrackSegment *,Vector &);
 		void InterpolatePosition(int,CrackSegment **,Vector &,bool);
+		bool GetAllowAlternate(int);
+		void SetAllowAlternate(int,bool);
        
         // propagation
         CrackSegment *Propagate(Vector &,int,int);
@@ -105,6 +107,7 @@ class CrackHeader : public LinkedObject
 		double crackFriction,crackDn,crackDnc,crackDt;
 		bool customContact,hasTractionLaws;
 		Vector initialDirection[2];
+		bool allowAlternate[2];
         
 };
 

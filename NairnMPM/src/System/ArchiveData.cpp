@@ -1156,9 +1156,18 @@ void ArchiveData::WriteLogFile(const char *logLine,double *num)
 		if(!logstream.is_open())
 			FileError("File error opening log file",logFile,"ArchiveData::WriteLogFile");
 		double logWriteTime=fmobj->CPUTime();
-		logstream << logLine << " (time: " << logWriteTime-logStartTime;
-		if(num!=NULL) logstream << ", number: " << *num;
-		logstream << ")" << endl;
+		logstream << logLine;
+		double recentTime=logWriteTime-logStartTime;
+		if(recentTime>1.e-4)
+		{	logstream << " (time: " << logWriteTime-logStartTime;
+			if(num!=NULL) logstream << ", number: " << *num;
+			logstream << ")";
+		}
+		else
+		{	if(num!=NULL)
+				logstream << "(number: " << *num << ")";
+		}
+		logstream << endl;
 		logStartTime=logWriteTime;
 		if(logstream.bad())
 			FileError("File error writing line to log file",logFile,"ArchiveData::WriteLogFile");

@@ -11,6 +11,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
+#include "NairnMPM_Class/ResetElementsTask.hpp"
 
 MpsController *mpCtrl=NULL;
 
@@ -34,7 +35,7 @@ int MpsController::SetPtOrVel(char *xName,Vector *value)
 	if(strcmp(xName,"pt")==0)
 	{	newMpt->SetPosition(value);
 		newMpt->SetOrigin(value);
-		if(!fmobj->ResetElement(newMpt)) return FALSE;
+		if(!ResetElementsTask::ResetElement(newMpt)) return FALSE;
 		newMpt->GetResetElementCrossings();
 		
 	}

@@ -323,43 +323,48 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         }
     }
     
-    else if(strcmp(xName,"Propagate")==0)
+    else if(strcmp(xName,"Propagate")==0 || strcmp(xName,"AltPropagate")==0)
     {	if(block!=CRACKHEADER && block!=MATERIAL)
 			ThrowCompoundErrorMessage(xName," command found at invalid location.","");
 		ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
     	numAttr=attrs.getLength();
+		
+		// get which to set
+		int setIndex = strcmp(xName,"Propagate")==0 ? 0 : 1 ;
+		
+		// read attributes
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"criterion")==0)
             {	value=XMLString::transcode(attrs.getValue(i));
                 if(block==CRACKHEADER)
-                    sscanf(value,"%d",&fmobj->propagate);
+                    sscanf(value,"%d",&fmobj->propagate[setIndex]);
                 else
 				{	int matCriterion;
                     sscanf(value,"%d",&matCriterion);
-					matCtrl->SetCriterion(matCriterion);
+					matCtrl->SetCriterion(matCriterion,setIndex);
 				}
 				delete [] value;
             }
             else if(strcmp(aName,"direction")==0)
             {	value=XMLString::transcode(attrs.getValue(i));
                 if(block==CRACKHEADER)
-                    sscanf(value,"%d",&fmobj->propagateDirection);
+                    sscanf(value,"%d",&fmobj->propagateDirection[setIndex]);
                 else
 				{	int matDirection;
                     sscanf(value,"%d",&matDirection);
-					matCtrl->SetDirection(matDirection);
+					matCtrl->SetDirection(matDirection,setIndex);
 				}
 				delete [] value;
             }
             else if(strcmp(aName,"traction")==0)
             {	value=XMLString::transcode(attrs.getValue(i));
                 if(block==CRACKHEADER)
-                    sscanf(value,"%d",&fmobj->propagateMat);
+                    sscanf(value,"%d",&fmobj->propagateMat[setIndex]);
                 else
 				{	int tractionMat;
                     sscanf(value,"%d",&tractionMat);
-					matCtrl->SetTractionMat(tractionMat);
+					matCtrl->SetTractionMat(tractionMat,setIndex);
 				}
 				delete [] value;
             }

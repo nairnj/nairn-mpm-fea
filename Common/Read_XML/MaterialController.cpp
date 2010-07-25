@@ -143,18 +143,18 @@ void MaterialController::SetMatColor(float red,float green,float blue)
 
 #ifdef MPM_CODE
 // return current material
-void MaterialController::SetCriterion(int matCriterion)
-{	((MaterialBase *)lastObject)->criterion=matCriterion;
+void MaterialController::SetCriterion(int matCriterion,int setIndex)
+{	((MaterialBase *)lastObject)->criterion[setIndex]=matCriterion;
 }
 
 // set propagation direction
-void MaterialController::SetDirection(int matDirection)
-{	((MaterialBase *)lastObject)->matPropagateDirection=matDirection;
+void MaterialController::SetDirection(int matDirection,int setIndex)
+{	((MaterialBase *)lastObject)->matPropagateDirection[setIndex]=matDirection;
 }
 
 // set propagation traction material
-void MaterialController::SetTractionMat(int mat)
-{	((MaterialBase *)lastObject)->tractionMat=mat;
+void MaterialController::SetTractionMat(int mat,int setIndex)
+{	((MaterialBase *)lastObject)->tractionMat[setIndex]=mat;
 }
 
 // when done with Friction command, create new material friction object

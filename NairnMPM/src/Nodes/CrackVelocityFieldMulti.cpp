@@ -41,12 +41,8 @@ void CrackVelocityFieldMulti::ZeroMatFields(void)
 void CrackVelocityFieldMulti::AddMassTask1(int matfld) { numberRigidPoints++; }
 
 // Add to mass gradient
-void CrackVelocityFieldMulti::AddMassGradient(int matfld,double mp,double dNdx,double dNdy,double dNdz,MPMBase *mptr)
-{	//Tensor *ep=mptr->GetStrainTensor();
-	//TensorAntisym *w=mptr->GetRotationStrainTensor();
-	//double dvdx=(ep->xy+w->xy)/2.;
-	//double dudy=(ep->xy-w->xy)/2.;
-	mvf[matfld]->massGrad->x+=mp*dNdx;
+void CrackVelocityFieldMulti::AddMassGradient(int matfld,double mp,double dNdx,double dNdy,double dNdz)
+{	mvf[matfld]->massGrad->x+=mp*dNdx;
 	mvf[matfld]->massGrad->y+=mp*dNdy;
 	mvf[matfld]->massGrad->z+=mp*dNdz;
 }
@@ -233,7 +229,14 @@ void CrackVelocityFieldMulti::RezeroNodeTask6(double deltaTime)
 
 #pragma mark MATERIAL CONTACT
 
-// Called in multimaterial mode to check contact at nodes with multiple materials
+/* Called in multimaterial mode to check contact at nodes with multiple materials
+
+	Input parameters:
+		mvf[]->mass,pk,massGrad,disp (if contact by displacements)
+
+	Output changes
+		mvf[]->pk, vk (if one particle), ftot (if postUpdate is TRUE)
+*/
 void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpdate,double deltime)
 {
 	// exit if no contact
@@ -248,24 +251,29 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 	{	if(MatVelocityField::ActiveField(mvf[i]))
 		{	double matMass=mvf[i]->mass;
 			if(matMass>0.)
-			{	AddVector(&Pc,&mvf[i]->pk);
+			{	// real material has mass
+				AddVector(&Pc,&mvf[i]->pk);
 				Mc+=mvf[i]->mass;
 			}
 			else if(rigidMat>0)
-				throw MPMTermination("Two different rigid materials in contact on the same node","CrackVelocityFieldMulti::MaterialContact");
+			{	// rigid material, but not allowed if already had another rigid material
+				throw MPMTermination("Two different rigid materials in contact on the same node",
+												"CrackVelocityFieldMulti::MaterialContact");
+			}
 			else
-			{	// rigid particles have zero mass
+			{	// first rigid material at this node
 				rigidMat=i;
 			}
 		}
 	}
+	
 	// if exactly one rigid material, then special case for contact laws
 	if(rigidMat>=0)
 	{	RigidMaterialContact(rigidMat,nodenum,vfld,postUpdate,deltime);
 		return;
 	}
 	
-	// from here on all material in contact are non-rigid
+	// from here on all materials in contact are non-rigid
 	if(contact.displacementCheck)
 	{	dispc=GetCMDisplacement();
 		ScaleVector(&dispc,1./Mc);
@@ -435,135 +443,6 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 			break;
 		}
 	}
-	
-	/* This code looks at each pair of materials for contact. This might be good, but it is hard
-	 to know. For instance if the same material changes its momentum twice, the second change
-	 might cause new contact at the first one.
-	 
-	 An alternative used by Unitah is to change all vs center of mass, but this has issues too and
-	 also would make it hard to do displacement-based contact.
-	 
-	 Both methods are the same if only two material interact at the point which will be the
-	 most common contact situation
-	 */
-	
-	/*
-	// Loop over each pair
-	int i,j;
-	for(i=0;i<maxMaterialFields-1;i++)
-    {	if(!MatVelocityField::ActiveField(mvf[i])) continue;
-
-		for(j=i+1;j<maxMaterialFields;j++)
-		{	if(!MatVelocityField::ActiveField(mvf[j])) continue;
-			
-			// handle contact between material i and j
-			Vector norm,norma,normb,delPa,*pka,*pkb;
-			double dotn=0.,mnode,massa,massb;
-			
-			// First determine if there is contact
-			if(contact.GetMaterialContactLaw(i,j)!=NOCONTACT)
-			{	// ignore edge nodes
-				if(unscaledVolume/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
-				
-				// ignore imbalanced nodes
-				massa=mvf[i]->mass;
-				massb=mvf[j]->mass;
-				mnode=1./(massa+massb);
-				double mfraction=massa*mnode;
-				if(mfraction<1.e-6 || 1.-mfraction<1.e-6) continue;
-				
-				// Find -ma(va-vc) which is parallel to (vb-va)
-				pka=&mvf[i]->pk;
-				pkb=&mvf[j]->pk;
-				CopyScaleVector(&delPa,pkb,massa*mnode);
-				AddScaledVector(&delPa,pka,-massb*mnode);
-				
-				// average the two normals from the mass gradient and normalize
-				nd[nodenum]->GetMassGradient(vfld,i,&norma,1.);
-				nd[nodenum]->GetMassGradient(vfld,j,&normb,1.);
-				CopyVector(&norm,&norma);
-				SubVector(&norm,&normb);
-				ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
-				
-				// get approach direction momentum (actual (vb-va).n = dotn*(ma+mb)/(ma*mb)
-				dotn=DotVectors(&delPa,&norm);
-				
-				// With this check, any movement apart will be taken as noncontact
-				// Also, frictional contact assumes dotn<0
-				if(dotn>=0.) continue;
-				
-				// displacement check
-				if(contact.displacementCheck)
-				{	Vector dispa,dispb;
-					CopyScaleVector(&dispa,&mvf[i]->disp,1./massa);
-					CopyScaleVector(&dispb,&mvf[j]->disp,1./massb);
-					double dvel = DbleEqual(massa,0.) || DbleEqual(massb,0.) ? 0 : (massa+massb)*dotn/(massa*massb);
-					if(contact.MaterialContact(&dispa,&dispb,&norm,dvel,postUpdate,deltime)==SEPARATED) continue;
-				}
-			}
-			else
-			{	// for no contact rule only get stick conditions
-				massa=mvf[i]->mass;
-				massb=mvf[j]->mass;
-				pka=&mvf[i]->pk;
-				pkb=&mvf[j]->pk;
-				mnode=1./(massa+massb);
-				mnode=1./(massa+massb);
-				CopyScaleVector(&delPa,pkb,massa*mnode);
-				AddScaledVector(&delPa,pka,-massb*mnode);
-			}
-			
-			// the two materials are in contact
-			Vector delPb,tang;
-			double dott,mu;
-			
-			switch(contact.GetMaterialContactLaw(i,j))
-			{	case STICK:
-				case NOCONTACT:
-					break;
-					
-				case FRICTIONLESS:
-					CopyScaleVector(&delPa,&norm,dotn);
-					break;
-					
-				case FRICTIONAL:
-					CopyVector(&tang,&delPa);
-					AddScaledVector(&tang,&norm,-dotn);
-					dott=sqrt(DotVectors(&tang,&tang));
-					if(!DbleEqual(dott,0.))
-					{	ScaleVector(&tang,1./dott);
-						dott=DotVectors(&delPa,&tang);
-						if(dott<0.)
-						{	ScaleVector(&tang,-1.);
-							dott=-dott;
-						}
-						mu=-contact.GetMaterialFriction(i,j);
-						if(dott>mu*dotn)
-						{	AddScaledVector(&norm,&tang,mu);
-							CopyScaleVector(&delPa,&norm,dotn);
-						}
-					}
-					break;
-					
-				default:
-					break;
-			}
-			CopyScaleVector(&delPb,&delPa,-1.);
-				
-			// on post update contact, do not change nodes with boundary conditions
-			unsigned char fixedDirection=nd[nodenum]->fixedDirection;
-			if(postUpdate && fixedDirection)
-			{	if(fixedDirection&X_DIRECTION) delPa.x=delPb.x=0.;
-				if(fixedDirection&Y_DIRECTION) delPa.y=delPb.y=0.;
-				if(fixedDirection&Z_DIRECTION) delPa.z=delPb.z=0.;
-			}
-			
-			// change momenta
-			mvf[i]->ChangeMatMomentum(&delPa,postUpdate,deltime);
-			mvf[j]->ChangeMatMomentum(&delPb,postUpdate,deltime);
-		}
-	}
-	 */
 }
 
 // Called in multimaterial mode to check contact at nodes with multiple materials and here

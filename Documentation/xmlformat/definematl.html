@@ -178,8 +178,14 @@
 <dd>The material's saturation concentration entered as a weight fraction. Only used when doing diffusion calculations.</dd>
 
 
-<dt>&lt;Propagate criterion='1' direction='0' traction='1'/&gt;</dt>
-<dd>This property lets each material have a different propagation criterion and/or direction than the ones defined in the <a href="mpmheader.html">MPM Header</a>. Set the criterion as described for the <a href="mpmheader.html#propagate"><code>Propagate</code> command in the MPM Header</a>.
+<dt>&lt;Propagate criterion='1' direction='0' traction='1'/&gt;<br>
+&lt;AltPropagate criterion='7' direction='4' traction='1'/&gt;</dt>
+<dd>These properties let each material have a different primary and secondary propagation criterion and/or directions than the ones defined in the <a href="mpmheader.html">MPM Header</a>. Set these criterion as described for the <a href="mpmheader.html#propagate"><code>Propagate</code></a> and <a href="mpmheader.html#altpropagate">AltPropagate</a> commands in the <a href="mpmheader.html">MPM Header</a>. To activate propagation:
+<ol>
+<li>The <a href="mpmheader.html">MPM Header</a> must have a <a href="mpmheader.html#propagate"><code>Propagate</code></a> command.</li>
+<li>The <a href="mpmheader.html">MPM Header</a> can optionally have an <a href="mpmheader.html#altpropagate"><code>AltPropagate</code></a> command.</li>
+<li>Any material can override the default primary and/or secondary criteria by using a <code>Propagate</code> and/or <code>AltPropagate</code> command within its material defintion. Even if the <a href="mpmheader.html">MPM Header</a> does not have an <a href="mpmheader.html#altpropagate"><code>AltPropagate</code></a> command, a material can add a secondary criterion with its own <code>AltPropagate</code> command.</li>
+</ol>
 </dd>
     	
 <dt>&lt;KIc&gt;2.3&lt;/KIc&gt;</dt>

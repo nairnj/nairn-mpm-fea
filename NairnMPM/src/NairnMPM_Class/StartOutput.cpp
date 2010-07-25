@@ -85,42 +85,50 @@ void NairnMPM::MyStartResultsOutput(void)
     // Cracks
     if(firstCrack!=NULL)
     {   PrintSection("CRACKS AND CRACK CONTACT");
-        cout << "Default propagation criterion: ";
-        switch(propagate)
-        {   case NO_PROPAGATION:
-                cout << "No propagation" << endl;
-                break;
-            case MAXHOOPSTRESS:
-                cout << "Maximum hoop stress" << MaterialBase::PreferredDirection(propagateDirection) << endl;
-                break;
-            case STEADYSTATEGROWTH:
-                cout << "Constant crack speed" << MaterialBase::PreferredDirection(propagateDirection) << endl;
-                break;
-			case CRITICALERR:
-                cout << "Critical energy release rate" << MaterialBase::PreferredDirection(propagateDirection) << endl;
-                break;
-            case TOTALENERGYBALANCE:
-                cout << "Total energy balance" << MaterialBase::PreferredDirection(propagateDirection) << endl;
-                break;
-            case STRAINENERGYDENSITY:
-                cout << "Minimum strain energy density" << MaterialBase::PreferredDirection(propagateDirection) << endl;
-                break;
-            case EMPIRICALCRITERION:
-                cout << "Empirical criterion" << MaterialBase::PreferredDirection(propagateDirection) << endl;
-                break;
-			case MAXCTODCRITERION:
-				cout << "Maximum CTOD criterion " << MaterialBase::PreferredDirection(propagateDirection) << endl;
-				break;
-            default:
-                cout << "Unknown criterion" << endl;
-                break;
-        }
-		if(propagate!=NO_PROPAGATION && propagateMat>0)
-		{	cout << "   New crack surface has traction law material " << propagateMat << endl;
-			if(propagateMat>nmat)
-				throw CommonException("Propagation traction law material is not defined","NairnMPM::MyStartResultsOutput");
-			if(!theMaterials[propagateMat-1]->isTractionLaw())
-				throw CommonException("Propagation traction law is not a traction law material","NairnMPM::MyStartResultsOutput");
+		int i;
+		for(i=0;i<=1;i++)
+		{	if(i==0)
+				cout << "Default propagation criterion: ";
+			else
+			{	if(propagate[i]==NO_PROPAGATION) break;
+				cout << "Alternate propagation criterion: ";
+			}
+			switch(propagate[i])
+			{   case NO_PROPAGATION:
+					cout << "No propagation" << endl;
+					break;
+				case MAXHOOPSTRESS:
+					cout << "Maximum hoop stress" << MaterialBase::PreferredDirection(propagateDirection[i]) << endl;
+					break;
+				case STEADYSTATEGROWTH:
+					cout << "Constant crack speed" << MaterialBase::PreferredDirection(propagateDirection[i]) << endl;
+					break;
+				case CRITICALERR:
+					cout << "Critical energy release rate" << MaterialBase::PreferredDirection(propagateDirection[i]) << endl;
+					break;
+				case TOTALENERGYBALANCE:
+					cout << "Total energy balance" << MaterialBase::PreferredDirection(propagateDirection[i]) << endl;
+					break;
+				case STRAINENERGYDENSITY:
+					cout << "Minimum strain energy density" << MaterialBase::PreferredDirection(propagateDirection[i]) << endl;
+					break;
+				case EMPIRICALCRITERION:
+					cout << "Empirical criterion" << MaterialBase::PreferredDirection(propagateDirection[i]) << endl;
+					break;
+				case MAXCTODCRITERION:
+					cout << "Maximum CTOD criterion " << MaterialBase::PreferredDirection(propagateDirection[i]) << endl;
+					break;
+				default:
+					cout << "Unknown criterion" << endl;
+					break;
+			}
+			if(propagate[i]!=NO_PROPAGATION && propagateMat[i]>0)
+			{	cout << "   New crack surface has traction law material " << propagateMat[i] << endl;
+				if(propagateMat[i]>nmat)
+					throw CommonException("Propagation traction law material is not defined","NairnMPM::MyStartResultsOutput");
+				if(!theMaterials[propagateMat[i]-1]->isTractionLaw())
+					throw CommonException("Propagation traction law is not a traction law material","NairnMPM::MyStartResultsOutput");
+			}
 		}
 		
 		// default crack contact loaw

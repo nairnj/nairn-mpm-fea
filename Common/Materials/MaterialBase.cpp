@@ -66,12 +66,12 @@ MaterialBase::MaterialBase(char *matName)
     // (KI/KIc)^KIexp+(KII/KIIc)^KIIexp=1.
     // Set the default values to 2 for elliptical fracture locus.
     KIexp=KIIexp=2.;
-    criterion=UNSPECIFIED;
+    criterion[0]=criterion[1]=UNSPECIFIED;
 	constantDirection=FALSE;
 	growDir.x=0.;
 	growDir.y=0.;
-	matPropagateDirection=UNSPECIFIED;
-	tractionMat=0;
+	matPropagateDirection[0]=matPropagateDirection[1]=UNSPECIFIED;
+	tractionMat[0]=tractionMat[1]=0;
 	field=-1;
 	kCond=0.;
 	heatCapacity=-1.;

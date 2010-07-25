@@ -23,12 +23,15 @@ class MPMBase;
 class CrackVelocityField
 {
 	public:
+		// variables (changed in MPM time step)
 		short loc[2];				// crack location's
 		int crackNum[2];			// crack number's/crackNum[0] used for total particles when moving crack planes by cm
 		Vector norm[2];				// crack normal's/norm[0] used for velocity when moving crack planes by cm
 		DispField *df;				// For J and K calculations
 		
-        // constructors and destructors
+		// constants (not changed in MPM time step)
+	
+		// constructors and destructors
         CrackVelocityField(short,int);
         virtual ~CrackVelocityField();
 		virtual void Zero(short,int,bool);
@@ -39,7 +42,7 @@ class CrackVelocityField
 		virtual void AddMass(int,double);
 		virtual void AddMassTask1(int);
 		virtual double GetTotalMassAndCount(void) = 0;
-		virtual void AddMassGradient(int,double,double,double,double,MPMBase *);
+		virtual void AddMassGradient(int,double,double,double,double);
 	
 		void AddFintTask3(int,Vector *);
 		virtual void AddFintSpreadTask3(Vector *) = 0;
@@ -114,9 +117,12 @@ class CrackVelocityField
 		static CrackVelocityField *CreateCrackVelocityField(short,int);
 	
 	protected:
+		// variables (changed in MPM time step)
 		int numberPoints;			// total number of materials points in this field/field [0] changed to sum of all in task 8
 		MatVelocityField **mvf;		// material velocity fields
 		double unscaledVolume;		// unscaled volume (ignores dilation) only used for imperfect interface forces and material contact
+	
+		// constants (not changed in MPM time step)
 };
 
 #endif

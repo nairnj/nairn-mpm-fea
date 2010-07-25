@@ -25,19 +25,29 @@ class CrackSegment;
 class NodalPoint : public LinkedObject
 {
     public:
+		// variables (changed in MPM time step)
+		double gTemperature;		// absolute T in MPM, delta T in FEA
+#ifdef MPM_CODE
+		double mass;				// total mass
+		CrackVelocityField **cvf;	// material velocity fields
+		double gVolume;
+		double gConcentration;
+		double fdiff;				// diffusion
+		double gRhoVCp;
+		double fcond;				// conduction
+		unsigned char fixedDirection;
+	
+		static double interfaceEnergy;		// total tracked each time step
+#endif
+	
+		// constants (not changed in MPM time step)
         double x,y,z;
         long num;
-		double gTemperature;  // absolute T in MPM, delta T in FEA
 #ifdef MPM_CODE
-		CrackVelocityField **cvf;	// material velocity fields
-		double mass;				// total mass
         char above,below;
-		unsigned char fixedDirection;
-        double gVolume;
-		double gConcentration,fdiff,gRhoVCp,fcond;
-		
-		static double interfaceEnergy;
-#else
+#endif
+
+#ifdef FEA_CODE
         ForceField *fs;
 #endif
        
@@ -50,16 +60,16 @@ class NodalPoint : public LinkedObject
 
 #ifdef MPM_CODE
         // methods - MPM only
-		void ZeroTask0();
+		void InitializeForTimeStep();
 	
 		short AddMomentumTask1(int,CrackField *,double,Vector *);
 		void AddMass(short,int,double);
 		void AddMassTask1(short,int);
-		void AddMassGradient(short,int,double,double,double,double,MPMBase *);
+		void AddMassGradient(short,int,double,double,double,double);
 	
-		void AddFintTask3(short,int,Vector);
+		void AddFintTask3(short,int,Vector *);
 		void AddFintSpreadTask3(short,Vector);
-		void AddFextTask3(short,int,Vector);
+		void AddFextTask3(short,int,Vector *);
 		void AddFextSpreadTask3(short,Vector);
 		void CalcFtotTask3(double);
 	
@@ -129,21 +139,12 @@ class NodalPoint : public LinkedObject
 		// class methods
 #ifdef MPM_CODE
 		static void PreliminaryCalcs(void);
-		static void ZeroAllNodesTask0(void);
-		static void GetNodalMasses(void);
 		static void CombineRigidMaterials(void);
-		static void GetGridForcesTask3(double);
-		static void UpdateGridMomentaTask4(double);
-		static void RezeroAllNodesTask6(double);
 		static void MaterialContact(bool,bool,double);
 		static void GetGridVelocitiesForStrainUpdate(void);
 		static void GetGridCMVelocitiesTask8(void);
 #endif
     
-	protected:
-#ifdef MPM_CODE
-#endif
-		
     private:
 		
 #ifdef MPM_CODE

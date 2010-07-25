@@ -160,41 +160,75 @@ void MaterialBase::PrintCommonProperties(void)
 {
 	if(Rigid() || isTractionLaw()) return;
 	
-	char mline[200];
-	
 	// print density
 	PrintProperty("rho",rho,"");
 	cout << endl;
 	
 	// print growth criterion and relevant material properties for crack growth
 	cout << "Crack Growth Criterion: ";
-	switch(criterion)
+	PrintCriterion(criterion[0],matPropagateDirection[0]);
+	
+	// traction mat
+	if(criterion[0]!=NO_PROPAGATION && tractionMat[0]>0)
+		cout << "   New crack surface has traction material " << tractionMat[0] << endl;
+	
+	if(criterion[0]!=NO_PROPAGATION && criterion[1]!=NO_PROPAGATION)
+	{	cout << "Alternate Crack Growth Criterion: ";
+		PrintCriterion(criterion[1],matPropagateDirection[1]);
+		
+		// traction mat
+		if(tractionMat[1]>0)
+			cout << "   New crack surface has traction material " << tractionMat[1] << endl;
+	}
+	
+	// convert MPa sqrt(m) to MPa sqrt(mm)
+	KIc*=31.62277660168379;
+	KIIc*=31.62277660168379;
+	
+	// convert other crack growth properties
+	JIc*=1.e-3;			// convert J/m^2 to N/mm
+	initTime*=1e-3;		// convert to sec
+	if(criterion[0]==TOTALENERGYBALANCE)
+		initSpeed*=0.01;	// convert % of WaveSpeed() to fraction of WaveSpeed()
+	else
+		initSpeed*=1.e3;	// convert m/sec to mm/sec
+	gamma*=1.e-3;		// convert J/m^2 to N/mm
+	// pCrit3 - dimensionless
+	// gain - no units change
+	
+	// optional color
+	if(red>=0.)
+	{	char mline[200];
+		sprintf(mline,"color= %g, %g, %g",red,green,blue);
+		cout << mline << endl;
+	}
+}
+
+// print fraction criterion
+void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection)
+{
+	char mline[200];
+	
+	switch(thisCriterion)
 	{   case NO_PROPAGATION:
 			cout << "No propagation" << endl;
 			break;
 			
 		case MAXHOOPSTRESS:
-			cout << "Maximum hoop stess" << PreferredDirection(matPropagateDirection) << endl;
+			cout << "Maximum hoop stess" << PreferredDirection(thisDirection) << endl;
 			PrintProperty("KIc",KIc,"MPa-sqrt(m)");
 			PrintProperty("KIIc",KIIc,"MPa-sqrt(m)");
 			cout << endl;
-			
-			// convert MPa sqrt(m) to MPa sqrt(mm)
-			KIc*=31.62277660168379;
-			KIIc*=31.62277660168379;
-		
 			break;
 			
 		case CRITICALERR:
-			cout << "Critical Energy Release Rate" << PreferredDirection(matPropagateDirection) << endl;
+			cout << "Critical Energy Release Rate" << PreferredDirection(thisDirection) << endl;
 			PrintProperty("Jc",JIc,"J/m^2");
 			cout << endl;
-			JIc*=1.e-3;			// convert J/m^2 to N/mm
-			
 			break;
-		
+			
 		case STEADYSTATEGROWTH:
-			cout << "Constant crack speed" << PreferredDirection(matPropagateDirection) << endl;
+			cout << "Constant crack speed" << PreferredDirection(thisDirection) << endl;
 			if(initTime<0.)
 			{	PrintProperty("Jc",JIc,"J/m^2");
 				PrintProperty("initSpeed",initSpeed,"m/s");
@@ -208,85 +242,51 @@ void MaterialBase::PrintCommonProperties(void)
 			{	PrintProperty("max length",maxLength,"mm");
 				cout << endl;
 			}
-			if(constantDirection && matPropagateDirection==DEFAULT_DIRECTION)
+			if(constantDirection && thisDirection==DEFAULT_DIRECTION)
 			{	double norm=sqrt(growDir.x*growDir.x + growDir.y*growDir.y);
 				growDir.x/=norm;
 				growDir.y/=norm;
 				sprintf(mline,"direction = (%9.5f,%9.5f)",growDir.x,growDir.y);
 				cout << mline << endl;
 			}
-		   
-			JIc*=1.e-3;			// convert J/m^2 to N/mm
-			initTime*=1e-3;		// convert to sec
-			initSpeed*=1.e3;	// convert m/sec to mm/sec
-			
 			break;
-		
+			
 		case TOTALENERGYBALANCE:
 			// if gamma not provided or too large, set to JIc/2
 			if(gamma<0. || JIc<2.*gamma) gamma=JIc/2.;
 			
-			cout << "Total energy balance" << PreferredDirection(matPropagateDirection) << endl;
+			cout << "Total energy balance" << PreferredDirection(thisDirection) << endl;
 			sprintf(mline,"Jc =%12.3f J/m^2  vel=%12.3f%c wave speed",JIc,initSpeed,'%');
 			cout << mline << endl;
 			sprintf(mline,"gam=%12.3f J/m^2  p  =%12.3f        gain=%12.3g",gamma,pCrit3,gain);
 			cout << mline << endl;
-			
-			JIc*=1.e-3;			// convert J/m^2 to N/mm
-			gamma*=1.e-3;		// convert J/m^2 to N/mm
-			initSpeed*=0.01;	// convert % of WaveSpeed() to fraction of WaveSpeed()
-			// pCrit3 - dimensionless
-			// gain - no units change
-			
 			break;
 			
 		case STRAINENERGYDENSITY:
-			cout << "Minmum strain energy density" << PreferredDirection(matPropagateDirection) << endl;  
+			cout << "Minmum strain energy density" << PreferredDirection(thisDirection) << endl;  
 			sprintf(mline,"KIc=%12.3f MPa-sqrt(m)  KIIc=%12.3f MPa-sqrt(m)",KIc,KIIc);
 			cout << mline << endl;
-			
-			// convert MPa sqrt(m) to MPa sqrt(mm)
-			KIc*=31.62277660168379;
-			KIIc*=31.62277660168379;
-			
 			break;
-
+			
 		case EMPIRICALCRITERION:
 			// If KIIc not set, set now to a default value
 			if(KIIc<0.) KIIc=0.817*KIc;
-			
-			cout << "Empirical criterion" << PreferredDirection(matPropagateDirection) << endl;  
+			cout << "Empirical criterion" << PreferredDirection(thisDirection) << endl;  
 			sprintf(mline,"KIc=%12.3f MPa-sqrt(m)  KIIc=%12.3f MPa-sqrt(m) KIexp=%12.3f KIIexp=%12.3f",
-						   KIc,KIIc,KIexp,KIIexp);
+					KIc,KIIc,KIexp,KIIexp);
 			cout << mline << endl;
-			
-			// convert MPa sqrt(m) to MPa sqrt(mm)
-			KIc*=31.62277660168379;
-			KIIc*=31.62277660168379;
-			
 			break;
-
+			
 		case MAXCTODCRITERION:
-			cout << "Maximum CTOD" << PreferredDirection(matPropagateDirection) << endl;
+			cout << "Maximum CTOD" << PreferredDirection(thisDirection) << endl;
 			sprintf(mline,"delIc=%12.6f mm  delIIc=%12.6f mm",delIc,delIIc);
 			cout << mline << endl;
-		
 			break;
-
+			
 		default:
 			cout << "Unknown" << endl;
 	}
-	
-	// traction mat
-	if(criterion!=NO_PROPAGATION && tractionMat>0)
-		cout << "   New crack surface has traction material " << tractionMat << endl;
-	
-	// optional color
-	if(red>=0.)
-	{	sprintf(mline,"color= %g, %g, %g",red,green,blue);
-		cout << mline << endl;
-	}
-}
+}	
 
 // print transport properties to output window - default is isotropic properties
 // aniostropic materials must override it
@@ -347,6 +347,12 @@ const char *MaterialBase::VerifyProperties(int np)
 	// in case only need to load some things once, load those mechanical properties now
 	InitialLoadMechProps((int)(np>BEGIN_MPM_TYPES),np);
 	InitialLoadTransProps();
+	
+	// check for unsupported alternate propagation criterion
+	if(criterion[1]==TOTALENERGYBALANCE)
+		return "The alternate propagation criterion cannot be energy balance method.";
+	if(criterion[1]==STEADYSTATEGROWTH)
+		return "The alternate propagation criterion cannot be steady state crack growth.";
 
 	return NULL;
 }
@@ -380,12 +386,16 @@ char *MaterialBase::MaterialData(void) { return NULL; }
 
 // preliminary calculations (throw CommonException on problem)
 void MaterialBase::PreliminaryMatCalcs(void)
-{
-	if(tractionMat>0)
-	{	if(tractionMat>nmat)
-			throw CommonException("Material with undefined traction law material for propagation","MaterialBase::PreliminaryMatCalcs");
-		if(!theMaterials[tractionMat-1]->isTractionLaw())
-			throw CommonException("Material with propagation material that is not a traction law","MaterialBase::PreliminaryMatCalcs");
+{	int i;
+	
+	for(i=0;i<=1;i++)
+	{	if(i==1 && criterion[i]==NO_PROPAGATION) break;		// skip if no alternate criterion
+		if(tractionMat[i]>0)
+		{	if(tractionMat[i]>nmat)
+				throw CommonException("Material with undefined traction law material for propagation","MaterialBase::PreliminaryMatCalcs");
+			if(!theMaterials[tractionMat[i]-1]->isTractionLaw())
+				throw CommonException("Material with propagation material that is not a traction law","MaterialBase::PreliminaryMatCalcs");
+		}
 	}
 }
 
@@ -576,11 +586,14 @@ void MaterialBase::Hypo3DCalculations(MPMBase *mptr,double dwxy,double dwxz,doub
 
 #pragma mark MaterialBase::Fracture Calculations
 
-// set propagate
+// set propagate and alternate propagate
 MaterialBase *MaterialBase::SetFinalPropagate(void)
-{	if(criterion==UNSPECIFIED)	criterion=fmobj->propagate;
-	if(matPropagateDirection==UNSPECIFIED) matPropagateDirection=fmobj->propagateDirection;
-	if(tractionMat<=0) tractionMat=fmobj->propagateMat;
+{	int i;
+	for(i=0;i<=1;i++)
+	{	if(criterion[i]==UNSPECIFIED)	criterion[i]=fmobj->propagate[i];
+		if(matPropagateDirection[i]==UNSPECIFIED) matPropagateDirection[i]=fmobj->propagateDirection[i];
+		if(tractionMat[i]<=0) tractionMat[i]=fmobj->propagateMat[i];
+	}
 	return (MaterialBase *)GetNextObject();
 }
 
@@ -595,9 +608,9 @@ Vector MaterialBase::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 
 // Determine what calculations are needed for the propagation criterion
 // in this material - must match needs in ShouldPropagate() routine
-int MaterialBase::CriterionNeeds(void)
+int MaterialBase::CriterionNeeds(int critIndex)
 {
-	switch(criterion)
+	switch(criterion[critIndex])
 	{	case MAXHOOPSTRESS:
 		case STRAINENERGYDENSITY:
 		case EMPIRICALCRITERION:
@@ -614,6 +627,9 @@ int MaterialBase::CriterionNeeds(void)
 		case MAXCTODCRITERION:
 			return FALSE;
 		
+		case NO_PROPAGATION:
+			return FALSE;
+		
 		default:
 			return NEED_JANDK;		// just to be sure
 	}
@@ -628,7 +644,7 @@ int MaterialBase::CriterionNeeds(void)
 //	If GROWNOW, change crackDir to unit
 //		vector in crack growth direction
 //  If need J or K, must say so in CriterionNeeds() routine
-int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHeader *theCrack,int np)
+int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHeader *theCrack,int np,int critIndex)
 {	
     double KI,KII,fCriterion,cosTheta0,sinTheta0;
     double deltaPotential,deltaPlastic,deltaLength,p;
@@ -637,7 +653,7 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
     //double deltaHPlastic,deltaTime,dUirrda,dUirrdtCona,dUirrdaCont,avgSpeed;
 
     // retrieve fracture parameters
-    switch(criterion)
+    switch(criterion[critIndex])
 	{	// Criterion 1
         case MAXHOOPSTRESS:
             // Maximum hoop stress (or maximum principal stress) criterion only applies to
@@ -652,7 +668,7 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
         
             // growth, return direction (unless overridden)
             if(fCriterion>0.)
-			{	if(!SelectDirection(crkTip,crackDir,theCrack))
+			{	if(!SelectDirection(crkTip,crackDir,theCrack,critIndex))
 					RotateDirection(&crackDir,hoopDir.x,hoopDir.y);
                 return GROWNOW;
             }
@@ -662,7 +678,7 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
 		case CRITICALERR:
             // growth, direction by direction option
             if(crkTip->Jint.x>=JIc)
-			{	SelectDirection(crkTip,crackDir,theCrack);
+			{	SelectDirection(crkTip,crackDir,theCrack,critIndex);
 				return GROWNOW;
             }
 			break;
@@ -704,7 +720,7 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
             }
             
             // if not overriden self similar or a constant direction
-			if(!SelectDirection(crkTip,crackDir,theCrack))
+			if(!SelectDirection(crkTip,crackDir,theCrack,critIndex))
 			{	if(constantDirection) crackDir=growDir;		// if direction specified in material
 			}
             return GROWNOW;
@@ -723,7 +739,7 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
                         crkTip->speed=initSpeed*WaveSpeed(FALSE);		// fraction of wave speed in 2D
                         cout << "# Initiate t:" << 1000.*mtime <<
                                 " s:" << crkTip->speed << endl;
-						SelectDirection(crkTip,crackDir,theCrack);
+						SelectDirection(crkTip,crackDir,theCrack,critIndex);
                         return GROWNOW;
                     }
                     break;
@@ -731,7 +747,7 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
                 case BEGINPROPAGATING:
                     cout << "# First Propagation t:" << 1000.*mtime << endl;
                     crkTip->steadyState=PROPAGATING;
-					SelectDirection(crkTip,crackDir,theCrack);
+					SelectDirection(crkTip,crackDir,theCrack,critIndex);
                     return GROWNOW;
                     break;
                 
@@ -791,7 +807,7 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
                             " -DU:" << balance <<
                             " Ds:" << adjustSpeed <<
                             " s:" << crkTip->speed << endl;
-					SelectDirection(crkTip,crackDir,theCrack);
+					SelectDirection(crkTip,crackDir,theCrack,critIndex);
                     return GROWNOW;
                 
                 default:
@@ -835,7 +851,7 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
 
             // growth, return direction
             if(fCriterion>0.)
-			{	if(!SelectDirection(crkTip,crackDir,theCrack))
+			{	if(!SelectDirection(crkTip,crackDir,theCrack,critIndex))
 					RotateDirection(&crackDir,cosTheta0,sinTheta0);
                 return GROWNOW;
             }
@@ -871,7 +887,7 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
                     
             // growth, return direction
             if(fCriterion>0.)
-			{	if(!SelectDirection(crkTip,crackDir,theCrack))
+			{	if(!SelectDirection(crkTip,crackDir,theCrack,critIndex))
 					RotateDirection(&crackDir,cosTheta0,sinTheta0);
                 return GROWNOW;         
             }
@@ -886,11 +902,11 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
 			cods=fabs(cod.x);
 			codn=fabs(cod.y);
 			if(cods>delIIc && delIIc>0.)
-			{	SelectDirection(crkTip,crackDir,theCrack);
+			{	SelectDirection(crkTip,crackDir,theCrack,critIndex);
 				return GROWNOW;
 			}
 			if(codn>delIc && delIc>0.)
-			{	SelectDirection(crkTip,crackDir,theCrack);
+			{	SelectDirection(crkTip,crackDir,theCrack,critIndex);
 				return GROWNOW;
 			}
 			break;
@@ -907,12 +923,12 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
 	pick its own direction
 */
 
-bool MaterialBase::SelectDirection(CrackSegment *crkTip,Vector &crackDir,CrackHeader *theCrack)
+bool MaterialBase::SelectDirection(CrackSegment *crkTip,Vector &crackDir,CrackHeader *theCrack,int critIndex)
 {
 	Vector cod;
 	double codamp;
 	
-	switch(matPropagateDirection)
+	switch(matPropagateDirection[critIndex])
 	{	case DEFAULT_DIRECTION:
 			return FALSE;
 		
@@ -1065,7 +1081,7 @@ MaterialBase::CrackPropagationAngleFromStrainEnergyDensityCriterion(double k,
 bool MaterialBase::ControlCrackSpeed(CrackSegment *crkTip,double &waitTime)
 {
     // check if crack speed should be controlled
-    switch(fmobj->propagate)
+    switch(fmobj->propagate[0])
     {   case STEADYSTATEGROWTH:
             if(crkTip->steadyState==PROPAGATING)
             {	waitTime=crkTip->theGrowth/crkTip->speed;

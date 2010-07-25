@@ -159,21 +159,17 @@ void MatPoint3D::SetDilatedVolume(void)
 }
 
 // calculate internal force as -mp sigma.deriv * 1000.
-Vector MatPoint3D::Fint(double xDeriv,double yDeriv,double zDeriv)
-{	Vector fout;
-	fout.x=-mp*(sp.xx*xDeriv+sp.xy*yDeriv+sp.xz*zDeriv)*1000.;
+void MatPoint3D::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
+{	fout.x=-mp*(sp.xx*xDeriv+sp.xy*yDeriv+sp.xz*zDeriv)*1000.;
 	fout.y=-mp*(sp.xy*xDeriv+sp.yy*yDeriv+sp.yz*zDeriv)*1000.;
 	fout.z=-mp*(sp.xz*xDeriv+sp.yz*yDeriv+sp.zz*zDeriv)*1000.;
-	return fout;
 }
 
 // external force (times a shape function)
-Vector MatPoint3D::Fext(double fni)
-{	Vector fout;
-	fout.x=fni*pFext.x;
+void MatPoint3D::Fext(Vector &fout,double fni)
+{	fout.x=fni*pFext.x;
 	fout.y=fni*pFext.y;
 	fout.z=fni*pFext.z;
-	return fout;
 }
 
 // zero the temperature gradient
@@ -220,4 +216,9 @@ double MatPoint3D::FDiff(double dshdx,double dshdy,double dshdz)
 	return -volume*((Dten->xx*pDiffusion->Dc.x + Dten->xy*pDiffusion->Dc.y + Dten->xz*pDiffusion->Dc.z)*dshdx
 						+ (Dten->xy*pDiffusion->Dc.x + Dten->yy*pDiffusion->Dc.y + Dten->yz*pDiffusion->Dc.z)*dshdy
 						+ (Dten->xz*pDiffusion->Dc.x + Dten->yz*pDiffusion->Dc.y + Dten->zz*pDiffusion->Dc.z)*dshdz);
+}
+
+// return kinetic energy
+double MatPoint3D::KineticEnergy(void)
+{	return 0.5*mp*(vel.x*vel.x+vel.y*vel.y+vel.z*vel.z);
 }
