@@ -15,10 +15,13 @@ public static final String versionReadable="Version 3.0.0";
 
 = Version History =
 
-NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The version currently in this project are as follows:
+NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The versions currently in this project are as follows:
 
   * Current trunk Version
     * Working on NairnFEAMPMViz 3.1.0
+
+  * release-2.0 (25 JUL 2010)
+    * Has NairnFEAMPMViz 3.1.0
     * Can zoom in on particle and mesh plots
     * MPM mesh plots can clip plot to the particles
     * Added menu command to export movie frames (MPM plots)
