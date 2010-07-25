@@ -19,12 +19,10 @@
 class ThermalRamp
 {
     public:
-		short isoRamp;			// ramps up thermal load
-		double isoTempRate;		// rate when there is a ramp
+		// constants (not changed in MPM time step, but set in XML commands)
 		double isoDeltaT;		// final temperature change
 		double isoRampTime;		// time to reach temperature change
 		double reference;		// reference or stress free temperature
-		double stepDTemp;		// total temperature change in this step
 		double rampStart;		// when to start the ramp
 		
         // constructors and destructors
@@ -36,6 +34,14 @@ class ThermalRamp
 		void SetParameters(double);
 		void CheckDone(double);
 		void Output(void);
+	
+	private:
+		// variables (changed in MPM time step)
+		short isoRamp;			// ramps up thermal load
+		double stepDTemp;		// total temperature change in this step
+	
+		// constants (not changed in MPM time step)
+		double isoTempRate;		// rate when there is a ramp
 };
 
 extern ThermalRamp thermal;

@@ -17,12 +17,15 @@ enum { SILENT_WARNING=0, GAVE_WARNING, REACHED_MAX_WARNINGS };
 
 // WarningsData structure
 typedef struct {
-	short thisStep;		// was there a warning this step yet?
-	long numSteps;		// how many steps had this warning
-	long firstStep;		// first step with this warning
-	long maxIssues;		// abort if reach this number of steps with this warning
+	// variables (changed in MPM time step)
+	short thisStep;				// was there a warning this step yet?
+	long numSteps;				// how many steps had this warning
 	vector< int > issuedIDs;	// list of IDS for this warning
-	char *msg;			// warning message
+	long firstStep;				// first step with this warning
+	
+	// constants (not changed in MPM time step)
+	long maxIssues;				// abort if reach this number of steps with this warning
+	char *msg;					// warning message
 } WarningsData;
 
 class MPMWarnings
@@ -38,6 +41,7 @@ class MPMWarnings
 		void Report(void);
 	
 	private:
+		// constants (not changed in MPM time step)
 		vector< WarningsData * > warningSet;
 };
 

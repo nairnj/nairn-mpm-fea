@@ -273,6 +273,7 @@ void CommonAnalysis::SetDescription(const char *descrip)
     description=new char[strlen(descrip)+1];
     strcpy(description,descrip);
 }
+// point to second character because first is always new line character
 char *CommonAnalysis::GetDescription(void) { return &description[1]; }
 
 // is it 3D analysis

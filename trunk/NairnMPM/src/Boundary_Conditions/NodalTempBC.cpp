@@ -9,7 +9,7 @@
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Nodes/NodalPoint.hpp"
 
-// Nodal BC global
+// Nodal temperature BC global
 NodalTempBC *firstTempBC=NULL;
 NodalTempBC *lastTempBC=NULL;
 NodalTempBC *firstRigidTempBC=NULL;

@@ -42,7 +42,7 @@ CrackSurfaceContact::CrackSurfaceContact()
 	materialDn=-1.;						// prefect in tension by default
 	materialDnc=-101.;					// not set in compression by default
 	materialDt=-1.;						// perfect in shear by default
-	materialContactVmin=1.0;			// cutoff to kick in other contact checks
+	materialContactVmin=0.0;			// cutoff to kick in other contact checks
 	displacementCheck=FALSE;			// if implementing check on displacement or position (last thing)
 	materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// method to find normals in multimaterial contact
 }

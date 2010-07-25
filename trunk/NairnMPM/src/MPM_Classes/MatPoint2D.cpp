@@ -155,19 +155,15 @@ void MatPoint2D::SetDilatedVolume(void)
 }
 
 // return internal force as -mp sigma.deriv * 1000.
-Vector MatPoint2D::Fint(double xDeriv,double yDeriv,double zDeriv)
-{	Vector fout;
-	fout.x=-mp*(sp.xx*xDeriv+sp.xy*yDeriv)*1000.;
+void MatPoint2D::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
+{	fout.x=-mp*(sp.xx*xDeriv+sp.xy*yDeriv)*1000.;
 	fout.y=-mp*(sp.xy*xDeriv+sp.yy*yDeriv)*1000.;
-	return fout;
 }
 
 // return external force (times a shape function)
-Vector MatPoint2D::Fext(double fni)
-{	Vector fout;
-	fout.x=fni*pFext.x;
+void MatPoint2D::Fext(Vector &fout,double fni)
+{	fout.x=fni*pFext.x;
 	fout.y=fni*pFext.y;
-	return fout;
 }
 
 // zero the concentration gradient
@@ -208,6 +204,11 @@ double MatPoint2D::FDiff(double dshdx,double dshdy,double dshdz)
 	Tensor *Dten=theMaterials[MatID()]->GetDiffusionTensor();
 	return -volume*((Dten->xx*pDiffusion->Dc.x + Dten->xy*pDiffusion->Dc.y)*dshdx
 						+ (Dten->xy*pDiffusion->Dc.x + Dten->yy*pDiffusion->Dc.y)*dshdy);
+}
+
+// return kinetic energy
+double MatPoint2D::KineticEnergy(void)
+{	return 0.5*mp*(vel.x*vel.x+vel.y*vel.y);
 }
 	
 

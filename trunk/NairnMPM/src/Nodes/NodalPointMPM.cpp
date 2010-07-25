@@ -58,10 +58,9 @@ void NodalPoint::PrepareForFields()
 
 
 // zero data and reduce to one field at start of a step
-void NodalPoint::ZeroTask0(void)
+void NodalPoint::InitializeForTimeStep(void)
 {	
-	int i;
-	for(i=0;i<maxCrackFields;i++)
+	for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
 			cvf[i]->Zero(0,0,TRUE);
 	}
@@ -237,8 +236,8 @@ short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector 
 }
 
 // Add mass for selected field
-void NodalPoint::AddMassGradient(short vfld,int matfld,double mp,double dNdx,double dNdy,double dNdz,MPMBase *mptr)
-{	cvf[vfld]->AddMassGradient(matfld,mp,dNdx,dNdy,dNdz,mptr);
+void NodalPoint::AddMassGradient(short vfld,int matfld,double mp,double dNdx,double dNdy,double dNdz)
+{	cvf[vfld]->AddMassGradient(matfld,mp,dNdx,dNdy,dNdz);
 }
 
 // Calculate total mass. Calculations might need to exclude nodes whose
@@ -290,13 +289,13 @@ void NodalPoint::CombineRigidParticles(void)
 #pragma mark TASK 3 METHODS
 
 // Add to internal force
-void NodalPoint::AddFintTask3(short vfld,int matfld,Vector f) { cvf[vfld]->AddFintTask3(matfld,&f); }
+void NodalPoint::AddFintTask3(short vfld,int matfld,Vector *f) { cvf[vfld]->AddFintTask3(matfld,f); }
 
 // Add to internal force spread out over materials for same acceleration on each
 void NodalPoint::AddFintSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFintSpreadTask3(&f); }
 
 // Add to external force (g-mm/sec^2)
-void NodalPoint::AddFextTask3(short vfld,int matfld,Vector f) { cvf[vfld]->AddFextTask3(matfld,&f); }
+void NodalPoint::AddFextTask3(short vfld,int matfld,Vector *f) { cvf[vfld]->AddFextTask3(matfld,f); }
 
 // Add to external force spread out over materials for same acceleration on each
 void NodalPoint::AddFextSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFextSpreadTask3(&f); }
@@ -831,8 +830,8 @@ Vector NodalPoint::GetVelocity(short vfld,int matfld)
 // Called in multimaterial mode to check contact at nodes with multiple materials
 void NodalPoint::MaterialContactOnNode(bool postUpdate,double deltime)
 {
-	int i;
-	for(i=0;i<maxCrackFields;i++)
+	// check each crack velocity field on this node
+	for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
 			cvf[i]->MaterialContact(num,i,postUpdate,deltime);
 	}
@@ -1459,34 +1458,6 @@ void NodalPoint::PreliminaryCalcs(void)
         nd[i]->PrepareForFields();
 }
 
-// zero all velocity fields at start of time step
-void NodalPoint::ZeroAllNodesTask0(void)
-{	int i;
-    for(i=1;i<=nnodes;i++)
-        nd[i]->ZeroTask0();
-}
-
-// get total mass at nodes
-void NodalPoint::GetNodalMasses(void)
-{	int i;
-	for(i=1;i<=nnodes;i++)
-		nd[i]->CalcTotalMassAndCount();
-}
-
-// calculate the total grid forces
-void NodalPoint::GetGridForcesTask3(double damping)
-{	int i;
-    for(i=1;i<=nnodes;i++)
-		nd[i]->CalcFtotTask3(damping);
-}
-
-// update grid momenta
-void NodalPoint::UpdateGridMomentaTask4(double deltaTime)
-{	int i;
-    for(i=1;i<=nnodes;i++)
-		nd[i]->UpdateMomentaTask4(deltaTime);
-}
-
 // adjust momenta at overlaping material velocity fields
 void NodalPoint::MaterialContact(bool multiMaterials,bool postUpdate,double deltime)
 {	if(!multiMaterials) return;
@@ -1494,7 +1465,10 @@ void NodalPoint::MaterialContact(bool multiMaterials,bool postUpdate,double delt
 	// implement material contact here
 	int i;
 	for(i=1;i<=nnodes;i++)
+	{	// Each node calls cvf[]->MaterialContact() for each crack velocity
+		//	field on that node
 		nd[i]->MaterialContactOnNode(postUpdate,deltime);
+	}
 }
 
 // adjust momenta at overlaping material velocity fields
@@ -1505,13 +1479,6 @@ void NodalPoint::CombineRigidMaterials(void)
 		nd[i]->CombineRigidParticles();
 }
 
-
-// rezero all velocity fields before second extrapolation
-void NodalPoint::RezeroAllNodesTask6(double deltaTime)
-{	int i;
-	for(i=1;i<=nnodes;i++)
-		nd[i]->RezeroNodeTask6(deltaTime);
-}
 
 // Find Grid point velocities
 void NodalPoint::GetGridVelocitiesForStrainUpdate(void)

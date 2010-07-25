@@ -103,7 +103,17 @@ CustomTask *PropagateTask::StepCalculation(void)
                 crkTip->clength[0]=nextCrack->Length();
             
                 // see if it grows
-                if(theMaterials[inMat-1]->ShouldPropagate(crkTip,tipDir,nextCrack,fmobj->np)==GROWNOW)
+				int shouldGo=theMaterials[inMat-1]->ShouldPropagate(crkTip,tipDir,nextCrack,fmobj->np,0);
+				if(shouldGo==GROWNOW)
+				{	nextCrack->SetAllowAlternate(i,FALSE);
+					cout << "# propagation";
+				}
+				else if(nextCrack->GetAllowAlternate(i))
+				{	shouldGo=theMaterials[inMat-1]->ShouldPropagate(crkTip,tipDir,nextCrack,fmobj->np,1);
+					if(shouldGo==GROWNOW)
+						cout << "# propagation (alt)";
+				}
+				if(shouldGo==GROWNOW)
                 {   theResult=GROWNOW;
                     tipElem=crkTip->planeInElem-1;
                     if(fabs(tipDir.x)>fabs(tipDir.y))
@@ -114,9 +124,9 @@ CustomTask *PropagateTask::StepCalculation(void)
                     grow.y=cellsPerPropagationStep*cSize*tipDir.y;
                     growTo.x=crkTip->x+grow.x;
                     growTo.y=crkTip->y+grow.y;
-					cout << "# propagation at t=" << 1000*mtime << " with J=Jtip+Jzone : " << crkTip->Jint.z <<
+					cout << " at t=" << 1000*mtime << " with J=Jtip+Jzone : " << crkTip->Jint.z <<
 							" = " << crkTip->Jint.x << " + " << crkTip->Jint.z-crkTip->Jint.x << endl;
-                    crkTip=nextCrack->Propagate(growTo,(int)i,theMaterials[inMat-1]->tractionMat);
+                    crkTip=nextCrack->Propagate(growTo,(int)i,theMaterials[inMat-1]->tractionMat[0]);
                     
 					if(crkTip!=NULL)
 					{	// check if crack speed is being controlled

@@ -419,7 +419,7 @@ void CrackSegment::FillArchive(char *app,long segNum)
     if(archiver->CrackArchive(ARCH_JIntegral))
     {	*(double *)app=Jint.x*1000.;	// current crack tip J1
         app+=sizeof(double);
-		if(fmobj->propagate)
+		if(fmobj->propagate[0])
 			*(double *)app=propagationJ*1000.;		// actual energy released last time the crack grew
 		else
 			*(double *)app=Jint.y*1000.;		// current crack tip J2

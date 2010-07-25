@@ -29,8 +29,8 @@ class MatPoint3D : public MPMBase
         virtual double thickness(void);
 		virtual void SetDilatedVolume(void);
 		virtual void UpdateStrain(double,int,int);
-		virtual Vector Fint(double,double,double);
-		virtual Vector Fext(double fni);
+		virtual void Fint(Vector &,double,double,double);
+		virtual void Fext(Vector &,double fni);
 		virtual void MovePosition(double,Vector *);
 		virtual void MoveVelocity(double,double,Vector *);
 		virtual void SetVelocitySpeed(double);
@@ -40,6 +40,7 @@ class MatPoint3D : public MPMBase
 		virtual void AddConcentrationGradient(void);
 		virtual void AddConcentrationGradient(Vector *);
 		virtual double FDiff(double,double,double);
+		virtual double KineticEnergy(void);
 };
 
 #endif

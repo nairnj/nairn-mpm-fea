@@ -37,6 +37,7 @@ ElementBase::~ElementBase()
 
 /* Find dimensionless position first, then get shape functions
 	Load number of nodes into numnds
+	Load dimensionless position into xipos vector
 	Load node numbers into nds[1]...
 	Load shape functions into fn[1]...
 	Input: pointer to material point position and dimensionless position
@@ -126,15 +127,16 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
 	}
 }
 
-/* do several element things at once including find dimensionless position
+/* Do several element things at once including finding dimensionless position of current particle
 	only called in MPM and multimaterial mode at start of time step
 	Load number of nodes into numnds
+	Load dimensionless position of particle into xipos on the particle
 	Load node numbers into nds[1]...
 	Load shape functions into fn[1]...
 	Load shape function derviatives into xDeriv[1]..., yDeriv[1]..., zDeriv[1]...
 	zDeriv may be NULL for 2D
-	Input: pointer to material point dimensionless position
-	See all GetShapeGradients() if need to change
+	Input: pointer to material point dimensionless position, which is changed here
+	See also GetShapeGradients() if need to change
 */
 void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,Vector *pos,Vector *xipos,
 									double *xDeriv,double *yDeriv,double *zDeriv)

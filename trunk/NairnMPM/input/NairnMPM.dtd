@@ -24,7 +24,7 @@
 			| Diffusion | StressFreeTemp | FirstArchiveTime | GIMP | LeaveLimit | MultiMaterialMode )*>
 
 <!ELEMENT	Cracks
-			( Friction | Propagate | JContour | MovePlane | ContactPosition | PropagateLength )*>
+			( Friction | Propagate | AltPropagate | JContour | MovePlane | ContactPosition | PropagateLength )*>
 			
 <!ELEMENT	MultiMaterialMode
 			( Friction | ContactPosition )*>
@@ -141,7 +141,7 @@
 				| Ex | Ey | Ez | Gxy | Gxz | Gyz | nuxy | nuxz | nuyz
 				| alphax | alphay | alphaz | betax | betay | betaz
 				| K | G0 | ntaus | Gk | tauk | xGrow | yGrow
-				| C1 | C2 | speed | gain | p | maxLength | Propagate | initTime
+				| C1 | C2 | speed | gain | p | maxLength | Propagate | AltPropagate | initTime
 				| K0 | Kd | Gd | alpha0 | alphad | transition | critical | DeltaVOffset
 				| reversible | irreversible | beta0 | betad | sigmaI | sigmaII | kIe | kIIe | nmix
 				| KIc | KIIc | JIc | JIIc | gamma | KIexp | KIIexp | delIc | delIIc | delpkI | delpkII
@@ -253,6 +253,11 @@
 			mat CDATA #IMPLIED>
 <!ELEMENT	Propagate EMPTY>
 <!ATTLIST	Propagate
+			criterion (0|1|2|3|4|5|6|7) #IMPLIED
+			direction (0|1|2|3|4) #IMPLIED
+			traction CDATA #IMPLIED>
+<!ELEMENT	AltPropagate EMPTY>
+<!ATTLIST	AltPropagate
 			criterion (0|1|2|3|4|5|6|7) #IMPLIED
 			direction (0|1|2|3|4) #IMPLIED
 			traction CDATA #IMPLIED>

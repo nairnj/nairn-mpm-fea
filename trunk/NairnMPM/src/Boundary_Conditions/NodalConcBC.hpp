@@ -34,6 +34,7 @@ class NodalConcBC: public BoundaryCondition
 
 };
 
+// variables (changed in MPM time step)
 extern NodalConcBC *firstConcBC;
 extern NodalConcBC *lastConcBC;
 extern NodalConcBC *firstRigidConcBC;

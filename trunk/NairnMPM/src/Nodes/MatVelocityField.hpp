@@ -18,6 +18,7 @@
 class MatVelocityField
 {
 	public:
+		// variables (changed in MPM time step)
 		int numberPoints;			// number of material points in this field
 		double mass;				// total mass of this field
 		Vector pk;					// momentum
@@ -27,6 +28,8 @@ class MatVelocityField
 		Vector ftot;				// total force
 		Vector disp;				// displacement for contact calculations
 		Vector *massGrad;			// mass gradient allocated in multimaterial mode
+	
+		// constants (not changed in MPM time step)
 				
         // constructors and destructors
         MatVelocityField();
@@ -46,8 +49,7 @@ class MatVelocityField
 		static bool ActiveField(MatVelocityField *);
 		static bool ActiveNonrigidField(MatVelocityField *mvf);
 		static bool ActiveRigidField(MatVelocityField *mvf);
-	
-	private:
+
 };
 
 #endif

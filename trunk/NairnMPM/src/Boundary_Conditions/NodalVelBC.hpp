@@ -46,6 +46,7 @@ class NodalVelBC : public BoundaryCondition
 		void SetSkewAngle(double);
 };
 
+// variables (changed in MPM time step)
 extern NodalVelBC *firstVelocityBC;
 extern NodalVelBC *lastVelocityBC;
 extern NodalVelBC *firstRigidVelocityBC;

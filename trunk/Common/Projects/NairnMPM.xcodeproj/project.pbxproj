@@ -7,6 +7,32 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		67B213B611F90404007523EE /* CommonTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B213B411F90404007523EE /* CommonTask.hpp */; };
+		67B213B711F90404007523EE /* CommonTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B213B511F90404007523EE /* CommonTask.cpp */; };
+		67B213B811F90404007523EE /* CommonTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B213B411F90404007523EE /* CommonTask.hpp */; };
+		67B213B911F90404007523EE /* CommonTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B213B511F90404007523EE /* CommonTask.cpp */; };
+		67B213C811F90F84007523EE /* MPMTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B213C611F90F84007523EE /* MPMTask.hpp */; };
+		67B213C911F90F84007523EE /* MPMTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B213C711F90F84007523EE /* MPMTask.cpp */; };
+		67B213F011F9149C007523EE /* MassAndMomentumTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B213EE11F9149C007523EE /* MassAndMomentumTask.hpp */; };
+		67B213F111F9149C007523EE /* MassAndMomentumTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B213EF11F9149C007523EE /* MassAndMomentumTask.cpp */; };
+		67B2148A11F93240007523EE /* GridForcesTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B2148811F93240007523EE /* GridForcesTask.hpp */; };
+		67B2148B11F93240007523EE /* GridForcesTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B2148911F93240007523EE /* GridForcesTask.cpp */; };
+		67B214F311F94CC5007523EE /* UpdateParticlesTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B214F111F94CC5007523EE /* UpdateParticlesTask.hpp */; };
+		67B214F411F94CC5007523EE /* UpdateParticlesTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B214F211F94CC5007523EE /* UpdateParticlesTask.cpp */; };
+		67B2152811F950C5007523EE /* UpdateStrainsLastTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B2152611F950C5007523EE /* UpdateStrainsLastTask.hpp */; };
+		67B2152911F950C5007523EE /* UpdateStrainsLastTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B2152711F950C5007523EE /* UpdateStrainsLastTask.cpp */; };
+		67B2156411F95DB6007523EE /* UpdateStrainsFirstTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B2156211F95DB6007523EE /* UpdateStrainsFirstTask.hpp */; };
+		67B2156511F95DB6007523EE /* UpdateStrainsFirstTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B2156311F95DB6007523EE /* UpdateStrainsFirstTask.cpp */; };
+		67B2158511F960FB007523EE /* UpdateMomentaTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B2158311F960FB007523EE /* UpdateMomentaTask.hpp */; };
+		67B2158611F960FB007523EE /* UpdateMomentaTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B2158411F960FB007523EE /* UpdateMomentaTask.cpp */; };
+		67B215B111F96867007523EE /* RunCustomTasksTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B215AF11F96867007523EE /* RunCustomTasksTask.hpp */; };
+		67B215B211F96867007523EE /* RunCustomTasksTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B215B011F96867007523EE /* RunCustomTasksTask.cpp */; };
+		67B215D411F96C0C007523EE /* MoveCracksTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B215D211F96C0C007523EE /* MoveCracksTask.hpp */; };
+		67B215D511F96C0C007523EE /* MoveCracksTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B215D311F96C0C007523EE /* MoveCracksTask.cpp */; };
+		67B215F011F96EC7007523EE /* ResetElementsTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B215EE11F96EC7007523EE /* ResetElementsTask.hpp */; };
+		67B215F111F96EC7007523EE /* ResetElementsTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B215EF11F96EC7007523EE /* ResetElementsTask.cpp */; };
+		67BFA35511FB81B70083F95B /* InitializationTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67BFA35311FB81B70083F95B /* InitializationTask.hpp */; };
+		67BFA35611FB81B70083F95B /* InitializationTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67BFA35411FB81B70083F95B /* InitializationTask.cpp */; };
 		A700094B0F86B75E00FD76C7 /* MatVelocityField.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A70009490F86B75E00FD76C7 /* MatVelocityField.hpp */; };
 		A700094C0F86B75E00FD76C7 /* MatVelocityField.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A700094A0F86B75E00FD76C7 /* MatVelocityField.cpp */; };
 		A70220B60B14C15A00534B35 /* libxerces-c.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A70220B50B14C15A00534B35 /* libxerces-c.dylib */; };
@@ -332,6 +358,30 @@
 
 /* Begin PBXFileReference section */
 		08FB7796FE84155DC02AAC07 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; tabWidth = 4; };
+		67B213B411F90404007523EE /* CommonTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CommonTask.hpp; sourceTree = "<group>"; };
+		67B213B511F90404007523EE /* CommonTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CommonTask.cpp; sourceTree = "<group>"; };
+		67B213C611F90F84007523EE /* MPMTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MPMTask.hpp; sourceTree = "<group>"; };
+		67B213C711F90F84007523EE /* MPMTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MPMTask.cpp; sourceTree = "<group>"; };
+		67B213EE11F9149C007523EE /* MassAndMomentumTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MassAndMomentumTask.hpp; sourceTree = "<group>"; };
+		67B213EF11F9149C007523EE /* MassAndMomentumTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MassAndMomentumTask.cpp; sourceTree = "<group>"; };
+		67B2148811F93240007523EE /* GridForcesTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = GridForcesTask.hpp; sourceTree = "<group>"; };
+		67B2148911F93240007523EE /* GridForcesTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GridForcesTask.cpp; sourceTree = "<group>"; };
+		67B214F111F94CC5007523EE /* UpdateParticlesTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = UpdateParticlesTask.hpp; sourceTree = "<group>"; };
+		67B214F211F94CC5007523EE /* UpdateParticlesTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UpdateParticlesTask.cpp; sourceTree = "<group>"; };
+		67B2152611F950C5007523EE /* UpdateStrainsLastTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = UpdateStrainsLastTask.hpp; sourceTree = "<group>"; };
+		67B2152711F950C5007523EE /* UpdateStrainsLastTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UpdateStrainsLastTask.cpp; sourceTree = "<group>"; };
+		67B2156211F95DB6007523EE /* UpdateStrainsFirstTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = UpdateStrainsFirstTask.hpp; sourceTree = "<group>"; };
+		67B2156311F95DB6007523EE /* UpdateStrainsFirstTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UpdateStrainsFirstTask.cpp; sourceTree = "<group>"; };
+		67B2158311F960FB007523EE /* UpdateMomentaTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = UpdateMomentaTask.hpp; sourceTree = "<group>"; };
+		67B2158411F960FB007523EE /* UpdateMomentaTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UpdateMomentaTask.cpp; sourceTree = "<group>"; };
+		67B215AF11F96867007523EE /* RunCustomTasksTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RunCustomTasksTask.hpp; sourceTree = "<group>"; };
+		67B215B011F96867007523EE /* RunCustomTasksTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RunCustomTasksTask.cpp; sourceTree = "<group>"; };
+		67B215D211F96C0C007523EE /* MoveCracksTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MoveCracksTask.hpp; sourceTree = "<group>"; };
+		67B215D311F96C0C007523EE /* MoveCracksTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MoveCracksTask.cpp; sourceTree = "<group>"; };
+		67B215EE11F96EC7007523EE /* ResetElementsTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ResetElementsTask.hpp; sourceTree = "<group>"; };
+		67B215EF11F96EC7007523EE /* ResetElementsTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ResetElementsTask.cpp; sourceTree = "<group>"; };
+		67BFA35311FB81B70083F95B /* InitializationTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InitializationTask.hpp; sourceTree = "<group>"; };
+		67BFA35411FB81B70083F95B /* InitializationTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InitializationTask.cpp; sourceTree = "<group>"; };
 		A70009490F86B75E00FD76C7 /* MatVelocityField.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatVelocityField.hpp; sourceTree = "<group>"; };
 		A700094A0F86B75E00FD76C7 /* MatVelocityField.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatVelocityField.cpp; sourceTree = "<group>"; };
 		A70220B50B14C15A00534B35 /* libxerces-c.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; name = "libxerces-c.dylib"; path = "/usr/local/lib/libxerces-c.dylib"; sourceTree = "<absolute>"; };
@@ -714,6 +764,8 @@
 				A767E02908B14BFA004540AB /* LinkedObject.hpp */,
 				A767E02808B14BFA004540AB /* LinkedObject.cpp */,
 				A7198C87097810AF00334C4F /* CommonUtilities.cpp */,
+				67B213B411F90404007523EE /* CommonTask.hpp */,
+				67B213B511F90404007523EE /* CommonTask.cpp */,
 			);
 			path = System;
 			sourceTree = "<group>";
@@ -1108,6 +1160,28 @@
 				A7C77A2A09869DFF001BE128 /* StartOutput.cpp */,
 				A79E3D2F0A1A80BE00378F5C /* MeshInfo.hpp */,
 				A79E3D300A1A80BE00378F5C /* MeshInfo.cpp */,
+				67B213C611F90F84007523EE /* MPMTask.hpp */,
+				67B213C711F90F84007523EE /* MPMTask.cpp */,
+				67BFA35311FB81B70083F95B /* InitializationTask.hpp */,
+				67BFA35411FB81B70083F95B /* InitializationTask.cpp */,
+				67B213EE11F9149C007523EE /* MassAndMomentumTask.hpp */,
+				67B213EF11F9149C007523EE /* MassAndMomentumTask.cpp */,
+				67B2156211F95DB6007523EE /* UpdateStrainsFirstTask.hpp */,
+				67B2156311F95DB6007523EE /* UpdateStrainsFirstTask.cpp */,
+				67B2148811F93240007523EE /* GridForcesTask.hpp */,
+				67B2148911F93240007523EE /* GridForcesTask.cpp */,
+				67B2158311F960FB007523EE /* UpdateMomentaTask.hpp */,
+				67B2158411F960FB007523EE /* UpdateMomentaTask.cpp */,
+				67B214F111F94CC5007523EE /* UpdateParticlesTask.hpp */,
+				67B214F211F94CC5007523EE /* UpdateParticlesTask.cpp */,
+				67B2152611F950C5007523EE /* UpdateStrainsLastTask.hpp */,
+				67B2152711F950C5007523EE /* UpdateStrainsLastTask.cpp */,
+				67B215AF11F96867007523EE /* RunCustomTasksTask.hpp */,
+				67B215B011F96867007523EE /* RunCustomTasksTask.cpp */,
+				67B215D211F96C0C007523EE /* MoveCracksTask.hpp */,
+				67B215D311F96C0C007523EE /* MoveCracksTask.cpp */,
+				67B215EE11F96EC7007523EE /* ResetElementsTask.hpp */,
+				67B215EF11F96EC7007523EE /* ResetElementsTask.cpp */,
 			);
 			path = NairnMPM_Class;
 			sourceTree = "<group>";
@@ -1314,6 +1388,18 @@
 				A7721178103F13EA002F99FC /* CrackVelocityFieldMulti.hpp in Headers */,
 				A772117A103F13EA002F99FC /* CrackVelocityFieldSingle.hpp in Headers */,
 				A7DE477C11B97CD400FDEFE6 /* WoodMaterial.hpp in Headers */,
+				67B213B611F90404007523EE /* CommonTask.hpp in Headers */,
+				67B213C811F90F84007523EE /* MPMTask.hpp in Headers */,
+				67B213F011F9149C007523EE /* MassAndMomentumTask.hpp in Headers */,
+				67B2148A11F93240007523EE /* GridForcesTask.hpp in Headers */,
+				67B214F311F94CC5007523EE /* UpdateParticlesTask.hpp in Headers */,
+				67B2152811F950C5007523EE /* UpdateStrainsLastTask.hpp in Headers */,
+				67B2156411F95DB6007523EE /* UpdateStrainsFirstTask.hpp in Headers */,
+				67B2158511F960FB007523EE /* UpdateMomentaTask.hpp in Headers */,
+				67B215B111F96867007523EE /* RunCustomTasksTask.hpp in Headers */,
+				67B215D411F96C0C007523EE /* MoveCracksTask.hpp in Headers */,
+				67B215F011F96EC7007523EE /* ResetElementsTask.hpp in Headers */,
+				67BFA35511FB81B70083F95B /* InitializationTask.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1378,6 +1464,7 @@
 				A7C474620C87459700A3ED03 /* NodalPoint3D.hpp in Headers */,
 				A7C477C50C87806700A3ED03 /* BoxController.hpp in Headers */,
 				A77AF31E0D592F7000D5313A /* BMPLevel.hpp in Headers */,
+				67B213B811F90404007523EE /* CommonTask.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1588,6 +1675,18 @@
 				A7721177103F13EA002F99FC /* CrackVelocityFieldMulti.cpp in Sources */,
 				A7721179103F13EA002F99FC /* CrackVelocityFieldSingle.cpp in Sources */,
 				A7DE477D11B97CD400FDEFE6 /* WoodMaterial.cpp in Sources */,
+				67B213B711F90404007523EE /* CommonTask.cpp in Sources */,
+				67B213C911F90F84007523EE /* MPMTask.cpp in Sources */,
+				67B213F111F9149C007523EE /* MassAndMomentumTask.cpp in Sources */,
+				67B2148B11F93240007523EE /* GridForcesTask.cpp in Sources */,
+				67B214F411F94CC5007523EE /* UpdateParticlesTask.cpp in Sources */,
+				67B2152911F950C5007523EE /* UpdateStrainsLastTask.cpp in Sources */,
+				67B2156511F95DB6007523EE /* UpdateStrainsFirstTask.cpp in Sources */,
+				67B2158611F960FB007523EE /* UpdateMomentaTask.cpp in Sources */,
+				67B215B211F96867007523EE /* RunCustomTasksTask.cpp in Sources */,
+				67B215D511F96C0C007523EE /* MoveCracksTask.cpp in Sources */,
+				67B215F111F96EC7007523EE /* ResetElementsTask.cpp in Sources */,
+				67BFA35611FB81B70083F95B /* InitializationTask.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1659,6 +1758,7 @@
 				A77AF2B20D59261700D5313A /* BitMapFilesCommon.cpp in Sources */,
 				A77AF31D0D592F6700D5313A /* BMPLevel.cpp in Sources */,
 				A77AF3890D59382500D5313A /* BitMapFilesFEA.cpp in Sources */,
+				67B213B911F90404007523EE /* CommonTask.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

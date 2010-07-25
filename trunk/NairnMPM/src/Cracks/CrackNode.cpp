@@ -71,7 +71,6 @@ void CrackNode::RemoveCrackNodes(void)
 	}
 }
 
-#include "System/ArchiveData.hpp"
 // In task 4, have to check if the momentum update caused new contact
 // If yes, change momentum again and change total force
 void CrackNode::CrackContactTask4(double deltime)

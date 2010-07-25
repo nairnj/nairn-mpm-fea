@@ -89,7 +89,7 @@ void CrackVelocityField::AddMass(int matfld,double mnode) { mvf[matfld]->mass+=m
 void CrackVelocityField::AddMassTask1(int matfld) { }
 
 // Add to mass gradient (overridden in CrackVelocityFieldMulti where it is needed)
-void CrackVelocityField::AddMassGradient(int matfld,double mp,double dNdx,double dNdy,double dNdz,MPMBase *mptr) {}
+void CrackVelocityField::AddMassGradient(int matfld,double mp,double dNdx,double dNdy,double dNdz) {}
 
 #pragma mark TASK 3 METHODS
 

@@ -9,6 +9,7 @@
 #include "Global_Quantities/BodyForce.hpp"
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Read_XML/mathexpr.hpp"
+#include "MPM_Classes/MPMBase.hpp"
 
 // Single global object
 // Handles body forces (now only gravity and damping)
@@ -97,13 +98,13 @@ void BodyForce::TrackAlpha(void)
 }
 
 // increment if has damping using grid velocity extrapolated to the particle
-void BodyForce::TrackAlpha(Vector *vstar,double mp)
+void BodyForce::TrackAlpha(MPMBase *mptr)
 {
 	if(!useFeedback) return;
 	
 	// twice particle kinetic energy in g mm^2/sec^2
-	kineticEnergy+=mp*(vstar->x*vstar->x+vstar->y*vstar->y);
-	totalMass+=mp;
+	kineticEnergy+=mptr->KineticEnergy();
+	totalMass+=mptr->mp;
 }
 
 // update alpha normalized to number of particles
@@ -120,10 +121,10 @@ void BodyForce::UpdateAlpha(double delTime,double utime)
 	else
 		targetEnergy=0.;
 
-	// actual kinetic energy in micro J is kineticEnergy*0.5e-3
+	// actual kinetic energy in micro J is kineticEnergy*1.0e-3
 	// this damping factor has units of 1/mm^2 and extra factor of 2.e3 to make same
 	//    magnitude as previous damping method
-	alpha+=dampingCoefficient*(kineticEnergy-2.e3*targetEnergy)*delTime/totalMass;
+	alpha+=dampingCoefficient*(2.*kineticEnergy-2.e3*targetEnergy)*delTime/totalMass;
 	if(alpha<0.) alpha=0.;
 }
 

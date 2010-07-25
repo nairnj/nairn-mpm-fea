@@ -17,6 +17,7 @@
 #define _BODYFORCE_
 
 class ROperation;
+class MPMBase;
 
 class BodyForce
 {
@@ -37,7 +38,7 @@ class BodyForce
 		void Output(void);
 		double GetAlpha(void);
 		void TrackAlpha(void);
-		void TrackAlpha(Vector *,double);
+		void TrackAlpha(MPMBase *);
 		void UpdateAlpha(double,double);
 		void SetTargetFunction(char *);
 	

@@ -51,6 +51,7 @@ CrackHeader::CrackHeader()
 	customContact=FALSE;
 	hasTractionLaws=FALSE;
 	thickness=1.0;				// for crack tip heating and tractions in mm, will default to grid thickness if set
+	allowAlternate[0]=allowAlternate[1]=TRUE;
 }
 
 // Destructor
@@ -1618,13 +1619,19 @@ int CrackHeader::CriterionNeeds(void)
 		// if not tip material, then not propagating there
 		if(tipCrk->tipMatnum<0) continue;
 		
-		// check crack tip material criterion
-		thisCrackNeeds|=theMaterials[tipCrk->tipMatnum-1]->CriterionNeeds();
+		// check crack tip material criterion (and alternate criterion if there)
+		thisCrackNeeds|=theMaterials[tipCrk->tipMatnum-1]->CriterionNeeds(0);
+		if(GetAllowAlternate(crkTipIdx))
+			thisCrackNeeds|=theMaterials[tipCrk->tipMatnum-1]->CriterionNeeds(1);
 	}
 	
 	// return the result
 	return thisCrackNeeds;
 }
+
+// load vector with initial crack tip direction
+bool CrackHeader::GetAllowAlternate(int crkTipIdx) { return allowAlternate[crkTipIdx]; }
+void CrackHeader::SetAllowAlternate(int crkTipIdx,bool setting) { allowAlternate[crkTipIdx]=setting; }
 
 #pragma mark CrackHeader: Class methods
 

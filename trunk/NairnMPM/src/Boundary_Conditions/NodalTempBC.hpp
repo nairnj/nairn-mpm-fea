@@ -34,6 +34,7 @@ class NodalTempBC: public BoundaryCondition
 
 };
 
+// variables (changed in MPM time step)
 extern NodalTempBC *firstTempBC;
 extern NodalTempBC *lastTempBC;
 extern NodalTempBC *firstRigidTempBC;

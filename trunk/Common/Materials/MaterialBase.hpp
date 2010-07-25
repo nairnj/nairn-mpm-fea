@@ -30,6 +30,9 @@ enum { DEFAULT_DIRECTION=0,SELF_SIMILAR,NORMAL_TO_COD,HOOP_FROM_COD,INITIAL_DIRE
 class MaterialBase : public LinkedObject
 {
     public:
+		// variables (changed in MPM time step)
+	
+		// constants (not changed in MPM time step)
         char *name;
         double rho,concSaturation,betaI;
 		float red,green,blue;
@@ -37,7 +40,7 @@ class MaterialBase : public LinkedObject
         double mdm[5][5];
         double me0[5];
 #else
-		int criterion;
+		int criterion[2];
         double KIc,KIIc,KIexp,KIIexp,JIc,JIIc,gamma,delIc,delIIc,nmix;
 		Tensor diffusionTensor;
 		Tensor kCondTensor;
@@ -45,8 +48,8 @@ class MaterialBase : public LinkedObject
 		double initTime,maxLength;
 		int constantDirection;
 		Vector growDir;
-		int matPropagateDirection;
-		int tractionMat;
+		int matPropagateDirection[2];
+		int tractionMat[2];
         double diffusionCon,kCond;			// for isotropic properties
 		ContactDetails *lastFriction;
 		static vector<int> fieldMatIDs;
@@ -75,6 +78,7 @@ class MaterialBase : public LinkedObject
         void PrintMaterial(int);
 		void PrintCommonProperties(void);
 #ifdef MPM_CODE
+		void PrintCriterion(int,int);
 		virtual void PreliminaryMatCalcs(void);
 #endif
          
@@ -99,10 +103,10 @@ class MaterialBase : public LinkedObject
 #ifdef MPM_CODE
 		virtual MaterialBase *SetFinalPropagate(void);
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
-		virtual int CriterionNeeds(void);
-        virtual int ShouldPropagate(CrackSegment *,Vector &,CrackHeader *,int np);
+		virtual int CriterionNeeds(int);
+        virtual int ShouldPropagate(CrackSegment *,Vector &,CrackHeader *,int,int);
         virtual bool ControlCrackSpeed(CrackSegment *,double &);
-		virtual bool SelectDirection(CrackSegment *,Vector &,CrackHeader *);
+		virtual bool SelectDirection(CrackSegment *,Vector &,CrackHeader *,int);
 		virtual void HoopDirection(double,double,Vector *);
 		void RotateDirection(Vector *,double,double);
         virtual double CrackPropagationAngleFromStrainEnergyDensityCriterion(double,double,double);
@@ -138,13 +142,19 @@ class MaterialBase : public LinkedObject
 #endif
 		
 	protected:
+		// variables (changed in MPM time step)
+#ifdef MPM_CODE
+		double heatCapacity;			// changed if depends on particle state
+		double heatCapacityVol;			// changed if depends on particle state
+#endif
+	
+		// constants (changed in MPM time step)
         int hasMatProps;
         double lastMatAngle;
 		double C11,C12,C13,C22,C23,C33,C44,C55,C66;
 		double CTE1,CTE2,CTE3;
 #ifdef MPM_CODE
 		double CME1,CME2,CME3;
-		double heatCapacity,heatCapacityVol;
 		int field;
 #endif
 };

@@ -11,7 +11,7 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Exceptions/CommonException.hpp"
 
-// global pointer to first condition
+// Nodal velocity BC globals
 NodalVelBC *firstVelocityBC=NULL;
 NodalVelBC *lastVelocityBC=NULL;
 NodalVelBC *firstRigidVelocityBC=NULL;

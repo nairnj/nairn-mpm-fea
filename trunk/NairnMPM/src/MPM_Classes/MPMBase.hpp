@@ -27,22 +27,19 @@ typedef struct {
 class MPMBase : public LinkedObject
 {
     public:
-		// properties initialized while reading the input file
-        double mp;
-		Vector pos,vel,origpos;
-        double pTemperature,pPreviousTemperature;
+		//  variables (changed in MPM time step)
+		Vector pos,vel;
+		double pTemperature,pPreviousTemperature;
 		double pConcentration,pPreviousConcentration;	// conc potential (0 to 1) (archived * concSaturation)
-		
-		// properties set during calculations
 		double volume;
-        char vfld[MaxShapeNds];
-		
-		// dynamic transport data
+		char vfld[MaxShapeNds];
 		TemperatureField *pTemp;
 		DiffusionField *pDiffusion;
+		static int currentParticleNum;					// zero based particle number in some loops
 	
-		// static variables
-		static int currentParticleNum;			// zero based particle number in some loops
+		// constants (not changed in MPM time step)
+        double mp;
+		Vector origpos;
                
         // constructors and destructors and other intializers
         MPMBase();
@@ -59,8 +56,8 @@ class MPMBase : public LinkedObject
         virtual void SetVelocity(Vector *) = 0;
 		virtual void SetDilatedVolume(void) = 0;
 		virtual void UpdateStrain(double,int,int) = 0;
-		virtual Vector Fint(double,double,double) = 0;
-		virtual Vector Fext(double fni) = 0;
+		virtual void Fint(Vector &,double,double,double) = 0;
+		virtual void Fext(Vector &,double) = 0;
         virtual void MovePosition(double,Vector *) = 0;
         virtual void MoveVelocity(double,double,Vector *) = 0;
 		virtual void SetVelocitySpeed(double) = 0;
@@ -70,6 +67,7 @@ class MPMBase : public LinkedObject
 		virtual void AddConcentrationGradient(void) = 0;
 		virtual void AddConcentrationGradient(Vector *) = 0;
 		virtual double FDiff(double,double,double) = 0;
+		virtual double KineticEnergy(void) = 0;
        
 		// base only methods (make virtual if need to override)
 		int MatID(void);
@@ -130,35 +128,33 @@ class MPMBase : public LinkedObject
 		static void FullStrainUpdate(double,int,int);
 	
 	protected:
-		// used in calculations
+		// variables (changed in MPM time step)
 		Vector pFext;				// external force
 		Vector ncpos;				// natural coordinates position
- 		Vector acc;					// acceleration
-		
+		Vector acc;					// acceleration
 		Tensor *velGrad;			// used for J Integral only
 		Tensor sp;					// stress tensor (init 0)
-        Tensor ep;					// total strain tensor (init 0)
+		Tensor ep;					// total strain tensor (init 0)
 		Tensor eplast;				// plastic strain tensor (init 0)
-        TensorAntisym wrot;			// rotation strain tensor (init 0)
-		
-        double plastEnergy;			// total plastic energy
+		TensorAntisym wrot;			// rotation strain tensor (init 0)
+		double plastEnergy;			// total plastic energy
 		double dispEnergy;			// dissipated energy in current step
-        double strainEnergy;		// total strain energy
+		double strainEnergy;		// total strain energy
 		double extWork;				// total external work
-		double anglez0;				// initial cw x rotation angle (2D or 3D) (stored in radians)
+		char *matData;				// material history if needed (init NULL)
+	
+		// constants (not changed in MPM time step)
+ 		double anglez0;				// initial cw x rotation angle (2D or 3D) (stored in radians)
 		double angley0;				// initial cw y rotation (3D)
 		double anglex0;				// initial cw x rotation (3D)
         
-		// dynamic data
-        char *matData;				// material history if needed (init NULL)
-		
     private:
-		// used on initialization
-        int inElem;
-        int matnum;
-		
-		// used in calculations
+		// variables (changed in MPM time step)
+		int inElem;
 		int elementCrossings;
+	
+		// constants (not changed in MPM time step)
+        int matnum;
 };
 
 // Lists of material points from mpm[0] to mpm[nmpms-1]

@@ -18,6 +18,7 @@
 class CrackNode
 {
     public:
+		// variables (changed in MPM time step)
 		static CrackNode *currentNode;
 
         // constructors and destructors
@@ -37,6 +38,7 @@ class CrackNode
 		static void InterfaceOnKnownNodes(void);
 		
 	private:
+		// variables (changed in MPM time step)
         Vector pk[MAX_FIELDS_FOR_CRACKS];
 		NodalPoint *theNode;
         CrackNode *prevBC;
