@@ -229,8 +229,6 @@
 			<key>Layout</key>
 			<array>
 				<dict>
-					<key>BecomeActive</key>
-					<true/>
 					<key>ContentConfiguration</key>
 					<dict>
 						<key>PBXBottomSmartGroupGIDs</key>
@@ -266,15 +264,15 @@
 							<key>PBXSmartGroupTreeModuleOutlineStateExpansionKey</key>
 							<array>
 								<string>08FB7794FE84155DC02AAC07</string>
-								<string>08FB7795FE84155DC02AAC07</string>
-								<string>A7C77A2909869D7E001BE128</string>
+								<string>A78F829503EF27970063AF10</string>
+								<string>A7A7578C042249080063AF10</string>
 							</array>
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
-									<integer>31</integer>
-									<integer>4</integer>
-									<integer>1</integer>
+									<integer>18</integer>
+									<integer>7</integer>
+									<integer>2</integer>
 									<integer>0</integer>
 								</array>
 							</array>
@@ -309,12 +307,14 @@
 					<key>Dock</key>
 					<array>
 						<dict>
+							<key>BecomeActive</key>
+							<true/>
 							<key>ContentConfiguration</key>
 							<dict>
 								<key>PBXProjectModuleGUID</key>
 								<string>1CE0B20306471E060097A5F4</string>
 								<key>PBXProjectModuleLabel</key>
-								<string>ResetElementsTask.cpp</string>
+								<string>Interface2D.cpp</string>
 								<key>PBXSplitModuleInNavigatorKey</key>
 								<dict>
 									<key>Split0</key>
@@ -322,11 +322,11 @@
 										<key>PBXProjectModuleGUID</key>
 										<string>1CE0B20406471E060097A5F4</string>
 										<key>PBXProjectModuleLabel</key>
-										<string>ResetElementsTask.cpp</string>
+										<string>Interface2D.cpp</string>
 										<key>_historyCapacity</key>
 										<integer>0</integer>
 										<key>bookmark</key>
-										<string>67E569AF11FC8282007F5ECE</string>
+										<string>67CEFD3C11FCF1FE0070CB88</string>
 										<key>history</key>
 										<array>
 											<string>67DDD04B10C9B4E700E7CF03</string>
@@ -445,7 +445,10 @@
 											<string>67E569AC11FC8282007F5ECE</string>
 											<string>67E569AD11FC8282007F5ECE</string>
 											<string>67E569AE11FC8282007F5ECE</string>
-											<string>6791B16A11FC1B43006166F0</string>
+											<string>67CEFD3811FCF1FE0070CB88</string>
+											<string>67CEFD3911FCF1FE0070CB88</string>
+											<string>67CEFD3A11FCF1FE0070CB88</string>
+											<string>67CEFD3B11FCF1FE0070CB88</string>
 										</array>
 									</dict>
 									<key>SplitCount</key>
@@ -457,14 +460,14 @@
 							<key>GeometryConfiguration</key>
 							<dict>
 								<key>Frame</key>
-								<string>{{0, 0}, {1030, 410}}</string>
+								<string>{{0, 0}, {1030, 401}}</string>
 								<key>RubberWindowFrame</key>
 								<string>29 66 1340 791 0 0 1440 878 </string>
 							</dict>
 							<key>Module</key>
 							<string>PBXNavigatorGroup</string>
 							<key>Proportion</key>
-							<string>410pt</string>
+							<string>401pt</string>
 						</dict>
 						<dict>
 							<key>ContentConfiguration</key>
@@ -477,14 +480,14 @@
 							<key>GeometryConfiguration</key>
 							<dict>
 								<key>Frame</key>
-								<string>{{0, 415}, {1030, 335}}</string>
+								<string>{{0, 406}, {1030, 344}}</string>
 								<key>RubberWindowFrame</key>
 								<string>29 66 1340 791 0 0 1440 878 </string>
 							</dict>
 							<key>Module</key>
 							<string>XCDetailModule</string>
 							<key>Proportion</key>
-							<string>335pt</string>
+							<string>344pt</string>
 						</dict>
 					</array>
 					<key>Proportion</key>
@@ -503,9 +506,9 @@
 			</array>
 			<key>TableOfContents</key>
 			<array>
-				<string>67E569B011FC8282007F5ECE</string>
+				<string>67CEFD3D11FCF1FE0070CB88</string>
 				<string>1CE0B1FE06471DED0097A5F4</string>
-				<string>67E569B111FC8282007F5ECE</string>
+				<string>67CEFD3E11FCF1FE0070CB88</string>
 				<string>1CE0B20306471E060097A5F4</string>
 				<string>1CE0B20506471E060097A5F4</string>
 			</array>
@@ -644,7 +647,6 @@
 	<key>WindowOrderList</key>
 	<array>
 		<string>67D6F69A10C4E73B00649AAC</string>
-		<string>1C530D57069F1CE1000CFCEE</string>
 		<string>/Users/nairnj/Programming/Cocoa_Projects/nairn-mpm-fea/Common/Projects/NairnMPM.xcodeproj</string>
 	</array>
 	<key>WindowString</key>
@@ -725,7 +727,7 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>67D6F69A10C4E73B00649AAC</string>
-				<string>67E569B211FC8282007F5ECE</string>
+				<string>67CEFD3F11FCF1FE0070CB88</string>
 				<string>1CD0528F0623707200166675</string>
 				<string>XCMainBuildResultsModuleGUID</string>
 			</array>
