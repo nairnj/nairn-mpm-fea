@@ -319,6 +319,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 			// Get normal vector by various options
 			switch(contact.materialNormalMethod)
 			{	case MAXIMUM_VOLUME_GRADIENT:
+				case RIGID_OR_MAXIMUM_VOLUME_GRADIENT:
 				{	// Use mat with largest magnitude volume gradient
 					Vector normi,normj;
 					nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
@@ -462,7 +463,7 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 		int maxContactLaw=contact.GetMaterialContactLaw(i,rigidFld);
 		double maxFriction=contact.GetMaterialFriction(i,rigidFld);
 		
-		// NOCONTACT with rigid materials means to ignore contact, which it not reversion ot single velocity field
+		// NOCONTACT with rigid materials means to ignore contact, which it not revert ot single velocity field
 		if(maxContactLaw==NOCONTACT) continue;
 		
 		// some variables
@@ -502,6 +503,10 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 					nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
 				else
 					nd[nodenum]->GetMassGradient(vfld,rigidFld,&norm,-1.);
+				CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
+				break;
+			case RIGID_OR_MAXIMUM_VOLUME_GRADIENT:
+				nd[nodenum]->GetMassGradient(vfld,rigidFld,&norm,-1.);
 				CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
 				break;
 			/*
@@ -585,6 +590,9 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 		
 		// change momenta
 		mvf[i]->ChangeMatMomentum(&delPi,postUpdate,deltime);
+#ifdef TRACK_CONTACT_FORCES
+		mvf[rigidFld]->AddContactForce(&delPi);
+#endif
 	}
 }
 

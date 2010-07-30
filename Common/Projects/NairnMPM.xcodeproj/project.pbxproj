@@ -253,6 +253,8 @@
 		A78BCA67061C76F1009232A2 /* NodalVelBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A78BCA65061C76F1009232A2 /* NodalVelBC.cpp */; };
 		A78BCB6F061CA059009232A2 /* NodalConcBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A78BCB6D061CA059009232A2 /* NodalConcBC.hpp */; };
 		A78BCB70061CA059009232A2 /* NodalConcBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A78BCB6E061CA059009232A2 /* NodalConcBC.cpp */; };
+		A78E7BE212024077002F1F83 /* RigidContactForces.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A78E7BE012024077002F1F83 /* RigidContactForces.hpp */; };
+		A78E7BE312024077002F1F83 /* RigidContactForces.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A78E7BE112024077002F1F83 /* RigidContactForces.cpp */; };
 		A79013060ECB8F8C0000C289 /* MGSCGLMaterial.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A79013040ECB8F8C0000C289 /* MGSCGLMaterial.hpp */; };
 		A79013070ECB8F8C0000C289 /* MGSCGLMaterial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A79013050ECB8F8C0000C289 /* MGSCGLMaterial.cpp */; };
 		A79115C50720554600B81ECA /* ConductionTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A79115C30720554600B81ECA /* ConductionTask.hpp */; };
@@ -524,6 +526,8 @@
 		A78BCA65061C76F1009232A2 /* NodalVelBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NodalVelBC.cpp; sourceTree = "<group>"; };
 		A78BCB6D061CA059009232A2 /* NodalConcBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = NodalConcBC.hpp; sourceTree = "<group>"; };
 		A78BCB6E061CA059009232A2 /* NodalConcBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NodalConcBC.cpp; sourceTree = "<group>"; };
+		A78E7BE012024077002F1F83 /* RigidContactForces.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RigidContactForces.hpp; sourceTree = "<group>"; };
+		A78E7BE112024077002F1F83 /* RigidContactForces.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RigidContactForces.cpp; sourceTree = "<group>"; };
 		A78F829E03EF284B0063AF10 /* NairnFEA.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = NairnFEA.hpp; sourceTree = "<group>"; };
 		A78F82A103EF284B0063AF10 /* FEAReadHandler.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = FEAReadHandler.cpp; sourceTree = "<group>"; };
 		A78F82A203EF284B0063AF10 /* FEAReadHandler.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = FEAReadHandler.hpp; sourceTree = "<group>"; };
@@ -876,6 +880,8 @@
 				A79115C40720554600B81ECA /* ConductionTask.cpp */,
 				A750ED3C0EE9C10E003545A3 /* VTKArchive.hpp */,
 				A750ED3D0EE9C10E003545A3 /* VTKArchive.cpp */,
+				A78E7BE012024077002F1F83 /* RigidContactForces.hpp */,
+				A78E7BE112024077002F1F83 /* RigidContactForces.cpp */,
 			);
 			path = Custom_Tasks;
 			sourceTree = "<group>";
@@ -1400,6 +1406,7 @@
 				67B215D411F96C0C007523EE /* MoveCracksTask.hpp in Headers */,
 				67B215F011F96EC7007523EE /* ResetElementsTask.hpp in Headers */,
 				67BFA35511FB81B70083F95B /* InitializationTask.hpp in Headers */,
+				A78E7BE212024077002F1F83 /* RigidContactForces.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1687,6 +1694,7 @@
 				67B215D511F96C0C007523EE /* MoveCracksTask.cpp in Sources */,
 				67B215F111F96EC7007523EE /* ResetElementsTask.cpp in Sources */,
 				67BFA35611FB81B70083F95B /* InitializationTask.cpp in Sources */,
+				A78E7BE312024077002F1F83 /* RigidContactForces.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

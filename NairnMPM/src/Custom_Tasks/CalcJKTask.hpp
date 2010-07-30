@@ -29,7 +29,7 @@ class CalcJKTask : public CustomTask
         virtual CustomTask *FinishForStep(void);
         virtual CustomTask *BeginExtrapolations(void);
         virtual CustomTask *EndExtrapolations(void);
-        virtual CustomTask *NodalExtrapolation(NodalPoint *,MPMBase *,short,int,double);
+        virtual CustomTask *NodalExtrapolation(NodalPoint *,MPMBase *,short,int,double,short);
         virtual CustomTask *StepCalculation(void);
         
         // other methods

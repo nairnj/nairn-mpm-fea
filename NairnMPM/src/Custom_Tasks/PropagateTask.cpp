@@ -178,12 +178,10 @@ CustomTask *PropagateTask::BeginExtrapolations(void)
 }
 
 // add particle data to some calculation
-CustomTask *PropagateTask::ParticleExtrapolation(MPMBase *mpnt)
+CustomTask *PropagateTask::ParticleExtrapolation(MPMBase *mpnt,short isRigid)
 {
-    double mp;
-    
     // skip if not needed
-    if(!doPropCalcs) return nextTask;
+    if(!doPropCalcs || isRigid) return nextTask;
     
     // track total energies in J = N-m
     //	mp is g, stored energy is N/m^2 cm^3/g, vel is mm/sec
@@ -193,7 +191,7 @@ CustomTask *PropagateTask::ParticleExtrapolation(MPMBase *mpnt)
     // kinetic energy 0.5e-9*mp*(vel.x*vel.x+vel.y*vel.y)
     
     // plastic energy per unit thickness (units of N) (only needed in some crack growth)
-    mp=mpnt->mp;
+    double mp=mpnt->mp;
     totalPlastic+=1.0e-3*mp*mpnt->GetPlastEnergy()/mpnt->thickness();
     totalPotential+=1.0e-3*(mp*mpnt->GetStrainEnergy()
         + 0.5e-3*mp*(mpnt->vel.x*mpnt->vel.x+mpnt->vel.y*mpnt->vel.y)

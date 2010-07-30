@@ -236,6 +236,11 @@ Vector CrackVelocityField::GetVelocity(int matfld)
 {	return mvf[matfld]->vk;
 }
 
+// Get velocity for selected material field
+Vector CrackVelocityField::GetContactForce(int matfld)
+{	return mvf[matfld]->ftot;
+}
+
 // total number of points (rigid and nonrigid included)
 int CrackVelocityField::GetNumberPoints(void) { return numberPoints; }
 

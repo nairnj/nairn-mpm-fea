@@ -39,6 +39,7 @@ class MatVelocityField
 		// methods
 		void AddMomentumTask1(Vector *,Vector *);
 		void ChangeMatMomentum(Vector *,bool,double);
+		void AddContactForce(Vector *);
 		void CalcVelocityForStrainUpdate(void);
 		void CalcFtotTask3(double);
 	

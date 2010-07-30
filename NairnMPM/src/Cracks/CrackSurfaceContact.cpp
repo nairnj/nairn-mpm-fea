@@ -216,6 +216,9 @@ void CrackSurfaceContact::MaterialOutput(void)
 		case MAXIMUM_VOLUME:
 			cout << " gradient of material with maximum volume";
 			break;
+		case RIGID_OR_MAXIMUM_VOLUME_GRADIENT:
+			cout << " gradient of rigid material or material with maximum volume gradient";
+			break;
 		case EACH_MATERIALS_MASS_GRADIENT:
 			cout << " each material's own mass gradient";
 			break;

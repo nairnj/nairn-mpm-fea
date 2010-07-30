@@ -213,9 +213,11 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 				else if(scanInput<1.5)
 					contact.materialNormalMethod=MAXIMUM_VOLUME;		// 1
 				else if(scanInput<2.5)
-					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// 2 (but turned off now, revert to 0)
-				else
+					contact.materialNormalMethod=RIGID_OR_MAXIMUM_VOLUME_GRADIENT;		// 2
+				else if(scanInput<3.5)
 					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// 3 (but turned off now, revert to 0)
+				else
+					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// 4 (but turned off now, revert to 0)
 			}
 			delete [] aName;
             delete [] value;

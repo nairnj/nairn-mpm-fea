@@ -128,7 +128,7 @@ where $\vec p_a$ and $\vec p_b$ are the nodal momenta for the two materials. Not
 \begin{equation}
     \Delta \vec v = \vec v_b - \vec v_a = {\Delta \vec p_a\over m_b} + {\Delta \vec p_a\over m_a} = {\Delta\vec p_a\over m_{red}}
 \end{equation}
-where $m_{red} = m_am_b/(m_a+m_b)$ is the reduced nodal mass. Thus the relative velocity of approach of the two surfaces is proportional to, and in the same direction as, $\Delta \vec p_a$. However contact is detected, one of the criteria should be that the two surfaces are approaching each other. With the above definition for the one normal, this criteria implies $\Delta\vec v\cdot\hat n<0$ or identically that $\Delta\vec p_a\cdot\hat n<0$. We thus assume that under all contact situations that $\Delta\vec p_a\cdot\hat n<0$.
+where $m_{red} = m_a m_b/(m_a+m_b)$ is the reduced nodal mass. Thus the relative velocity of approach of the two surfaces is proportional to, and in the same direction as, $\Delta \vec p_a$. However contact is detected, one of the criteria should be that the two surfaces are approaching each other. With the above definition for the one normal, this criteria implies $\Delta\vec v\cdot\hat n<0$ or identically that $\Delta\vec p_a\cdot\hat n<0$. We thus assume that under all contact situations that $\Delta\vec p_a\cdot\hat n<0$.
 
 In simulations with more than two materials, a single node may have velocity fields from three or more materials. This situation may mean contact is not handled well ({\em i.e.}, that resolution needs to be increased until no nodes see three or more materials, if possible) or may mean an unavoidable situation ({\em e.g.}, meeting at corners of materials). The code needs to proceed as well as it can. The approach is to take the center of mass results
 \begin{equation}
@@ -179,6 +179,17 @@ The above algorithm never divides by a possibly low mass, but that does not nece
          {\rm if\ } m_b << m_a, {\rm\ then\ } \Delta \vec p_a \approx \vec p_b - m_b \vec v_a
 \end{equation}
 In other words, $\Delta\vec p_a$ will be based on the unreliable nodal momentum (since it is likely to be from one particle on the edge of a material). Since $\Delta\vec p_a$ is used to determine contact and to adjust the momenta, the entire algorithm will be unreliable. Now, since $\Delta\vec p_a$ will also be very small, it might not make a difference, but in one calculation sliding down an incline plane, the calculation stopped when accepting all contact situations and was fixed by screening out those with $m_a/(m_a+m_n)$ or $m_b/(m_a+m_n)$ less than $10^{-6}$. Thus in step one above, if the mass ratio meets these criteria, ignore contact for that node.
+
+\subsection{Rigid Material Contact}
+
+If material $b$ is rigid, contact can be handled by a special case of the two-material contact, A rigid material corresponds to $m_b\to\infty$. The basic contact equations change to
+\begin{eqnarray}
+     \vec v_c & = &  \vec v_b \\
+     \Delta \vec p_a & = & -m_a(\vec v_a -\vec v_b) \\
+     \Delta \vec v & = & \vec v_b - \vec v_a  = {\Delta\vec p_a\over m_a} \\
+     m_{red} & = & m_a
+\end{eqnarray}
+After these changes, the contact methods above can be applied the same way except the momentum of the rigid particle is not changed. In {\tt NairnMPM}, the density of rigid materials is set to 1000 g/cm$^3$ such that material point mass found in {\tt NairnMPM::PreliminaryCalcs()} is equal to the volume for the rigid material point in mm$^3$. Thus the mass gradient needed in the contact algorithm is equal to the volume gradient. The nodal mass, however, for material velocity field of rigid particles is set to zero as a way to determine a rigid particle velocity field. The nodal {\tt vk} is always the correct velocity and is calculated when the first rigid particle is extrapolated to that node.
 
 
 \end{document}   
