@@ -37,7 +37,7 @@ void RunCustomTasksTask::Execute(void)
 	int i,p,iel,matfld,numnds,nds[MaxShapeNds];
 	MaterialBase *matID;
 	double wt,fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds];
-	short vfld;
+	short vfld,isRigid;
 	
     /* Step 1: Call all tasks. The tasks can do initializations needed
 			for this step. If any task needs nodal extrapolations
@@ -66,7 +66,7 @@ void RunCustomTasksTask::Execute(void)
         for(p=0;p<nmpms;p++)
         {   // Load element coordinates
 			matID=theMaterials[mpm[p]->MatID()];
-			if(matID->Rigid()) continue;
+			isRigid=matID->Rigid();
 			matfld=matID->GetField();
 			
             // find shape functions and derviatives
@@ -82,18 +82,18 @@ void RunCustomTasksTask::Execute(void)
                 // possible extrapolation to the nodes
                 nextTask=theTasks;
                 while(nextTask!=NULL)
-                    nextTask=nextTask->NodalExtrapolation(nd[nds[i]],mpm[p],vfld,matfld,wt);
+                    nextTask=nextTask->NodalExtrapolation(nd[nds[i]],mpm[p],vfld,matfld,wt,isRigid);
 				
                 // possible extrapolation to the particle
                 nextTask=theTasks;
                 while(nextTask!=NULL)
-                    nextTask=nextTask->ParticleCalculation(nd[nds[i]],mpm[p],vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
+                    nextTask=nextTask->ParticleCalculation(nd[nds[i]],mpm[p],vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],isRigid);
             }
             
             // possible single calculations for each particle
             nextTask=theTasks;
             while(nextTask!=NULL)
-                nextTask=nextTask->ParticleExtrapolation(mpm[p]);
+                nextTask=nextTask->ParticleExtrapolation(mpm[p],isRigid);
         }
         
         // finished with extrapolations

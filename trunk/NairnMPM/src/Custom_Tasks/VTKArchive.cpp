@@ -250,9 +250,9 @@ CustomTask *VTKArchive::BeginExtrapolations(void)
 }
 
 // add particle data to a node
-CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,int matfld,double wt)
+CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,int matfld,double wt,short isRigid)
 {
-	if(!getVTKExtraps) return nextTask;
+	if(!getVTKExtraps || isRigid) return nextTask;
 	
 	unsigned int q;
 	double *vtkquant=vtk[ndmi->num];

@@ -146,10 +146,10 @@ CustomTask *CalcJKTask::BeginExtrapolations(void)
 }
 
 // add particle data to a node
-CustomTask *CalcJKTask::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,int matfld,double wt)
+CustomTask *CalcJKTask::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,int matfld,double wt,short isRigid)
 {
     // skip if already set up
-    if(!getJKThisStep) return nextTask;
+    if(!getJKThisStep || isRigid) return nextTask;
     
 	Tensor *ep=mpnt->GetStrainTensor();
 	Tensor *eplast=mpnt->GetPlasticStrainTensor();

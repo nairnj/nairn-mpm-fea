@@ -532,7 +532,12 @@ GlobalQuantity *GlobalQuantity::AppendColor(char *fline)
 // decide if archiving this material
 bool GlobalQuantity::IncludeThisMaterial(int matid)
 {
-	if(theMaterials[matid]->Rigid()) return (bool)FALSE;
-	return (matid+1==whichMat || whichMat==0);
+	// accept any specifide material
+	if(matid+1==whichMat) return (bool)TRUE;
+	
+	// otherwise only allow non-rigid materials
+	if(whichMat==0 && !theMaterials[matid]->Rigid()) return (bool)TRUE;
+	
+	return (bool)FALSE;
 }
 

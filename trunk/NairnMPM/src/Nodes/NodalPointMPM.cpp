@@ -825,6 +825,11 @@ Vector NodalPoint::GetVelocity(short vfld,int matfld)
 {	return cvf[vfld]->GetVelocity(matfld);
 }
 
+// Get velocity for selected field
+Vector NodalPoint::GetContactForce(short vfld,int matfld)
+{	return cvf[vfld]->GetContactForce(matfld);
+}
+
 #pragma mark MATERIAL CONTACT
 
 // Called in multimaterial mode to check contact at nodes with multiple materials

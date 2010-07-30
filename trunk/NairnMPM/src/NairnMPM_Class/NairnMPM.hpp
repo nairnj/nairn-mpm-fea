@@ -18,7 +18,8 @@
 class MPMBase;
 class BoundaryCondition;
 
-// mpm analysis code
+// activate to track forces on rigid particles (but does not seem correct yet
+//#define TRACK_CONTACT_FORCES
 
 // global variables
 extern double mtime,propTime,timestep,strainTimestep;

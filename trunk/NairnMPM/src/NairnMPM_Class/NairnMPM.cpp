@@ -14,6 +14,7 @@
 #include "Custom_Tasks/PropagateTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
+#include "Custom_Tasks/RigidContactForces.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Exceptions/CommonException.hpp"
@@ -35,8 +36,6 @@
 #include "NairnMPM_Class/MoveCracksTask.hpp"
 #include "NairnMPM_Class/ResetElementsTask.hpp"
 #include <time.h>
-
-#define EXECUTE_TASKS
 
 // global analysis object
 NairnMPM *fmobj=NULL;
@@ -136,6 +135,16 @@ void NairnMPM::MPMAnalysis(bool abort)
 			ElementBase::AllocateNeighbors();
 		}
 	}
+
+#ifdef TRACK_CONTACT_FORCES
+	// rigid material contact forces, but only if has such particles (i.e., in multimaterial mode)
+	//	and will archive stresses. It is inserted at beginning of custom tasks
+	if(hasRigidContactParticles && archiver->PointArchive(ARCH_Stress))
+	{	nextTask=new RigidContactForces();
+		nextTask->nextTask=theTasks;
+		theTasks=nextTask;
+	}
+#endif
 
 	// see if any need initializing
 	if(theTasks!=NULL)
@@ -408,7 +417,7 @@ void NairnMPM::PreliminaryCalcs(void)
         // assumes same number of points for all elements
 		mpm[p]->InitializeMass(rho*volume/((double)ptsPerElement));			// in g
 		
-		// done if rigid contact material in multimaterial mode (mass will be in mm^3 and be be particle volume)
+		// done if rigid contact material in multimaterial mode (mass will be in mm^3 and will be particle volume)
 		if(theMaterials[matid]->Rigid())
 		{	hasRigidContactParticles=true;
 			continue;

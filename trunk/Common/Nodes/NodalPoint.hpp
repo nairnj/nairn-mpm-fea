@@ -100,6 +100,7 @@ class NodalPoint : public LinkedObject
         void AddEnergy(short,double,double,double,double);
         void AddStress(short,double,Tensor *);
         Vector GetVelocity(short,int);
+		Vector GetContactForce(short,int);
 		void CalcVelocityForStrainUpdate(void);
         short GetCMVelocity(Vector *);
         void CalcStrainField(void);

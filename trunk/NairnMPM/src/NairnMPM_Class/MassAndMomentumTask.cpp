@@ -125,7 +125,7 @@ void MassAndMomentumTask::Execute(void)
 			if(fmobj->multiMaterialMode)
 			{	theElements[iel]->GetShapeFunctionsAndGradients(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv);
 				
-				// for particles thatare multimaterial rigid materials, set their velocity
+				// for particles that are multimaterial rigid materials, set their velocity
 				if(matID->Rigid())
 				{	double newvel;
 					if(((RigidMaterial *)matID)->GetSetting(&newvel,mtime))

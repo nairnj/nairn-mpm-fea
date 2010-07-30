@@ -33,7 +33,7 @@ class PropagateTask : public CustomTask
         virtual CustomTask *Initialize(void);
         virtual CustomTask *PrepareForStep(bool &);
         virtual CustomTask *BeginExtrapolations(void);
-        virtual CustomTask *ParticleExtrapolation(MPMBase *);
+        virtual CustomTask *ParticleExtrapolation(MPMBase *,short);
         virtual CustomTask *StepCalculation(void);
         
         // special methods

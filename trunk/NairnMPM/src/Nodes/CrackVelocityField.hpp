@@ -105,6 +105,7 @@ class CrackVelocityField
 		virtual int CopyFieldMomenta(Vector *,int) = 0;
 		virtual int PasteFieldMomenta(Vector *,int) = 0;
 		Vector GetVelocity(int);
+		Vector GetContactForce(int);
 		virtual int GetNumberPoints(void);
 		virtual int GetNumberPointsNonrigid(void);
 		virtual double UnscaledVolumeNonrigid(void);
