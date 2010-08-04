@@ -354,7 +354,7 @@ double CrackSegment::SegmentTractionEnergy(bool fullEnergy)
 }
 
 // fill archive with this object values
-void CrackSegment::FillArchive(char *app,long segNum)
+void CrackSegment::FillArchive(char *app,int segNum)
 {
     char *appInit=app;
     
@@ -366,6 +366,7 @@ void CrackSegment::FillArchive(char *app,long segNum)
 	*(int *)app=tipMatnum;
 	app+=sizeof(double);
     
+	// segNum==0 at start of new crack
     // start new crack by archiving -1
 	//  or continue crack by archiving -2
     if(segNum)

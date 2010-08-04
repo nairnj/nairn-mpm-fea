@@ -41,7 +41,7 @@ class CrackSegment
         CrackSegment(double,double,int,int);
         
         // methods
-        void FillArchive(char *,long);
+        void FillArchive(char *,int);
         int FindElement(void);
         int FindElement(short);
         void MovePosition(double,double);

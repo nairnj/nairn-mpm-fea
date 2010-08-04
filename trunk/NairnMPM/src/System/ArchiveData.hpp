@@ -64,7 +64,7 @@ class ArchiveData : public CommonArchiveData
 		int WillArchiveJK(bool);
 		int WillArchive(void);
 		void ForceArchiving(void);
-		long GetRecordSize(void);
+		int GetRecordSize(void);
 		void SetMPMOrder(const char *);
 		void SetCrackOrder(const char *);
 		bool PointArchive(int);
@@ -73,9 +73,9 @@ class ArchiveData : public CommonArchiveData
 	private:
 		double nextArchTime,nextGlobalTime;
 		char *globalFile;
-		long recSize;							// archive record size
-		long mpmRecSize;						// particle record size
-		long crackRecSize;						// crack particle record size
+		int recSize;							// archive record size
+		int mpmRecSize;						// particle record size
+		int crackRecSize;						// crack particle record size
 		char mpmOrder[50];						// flags for archiving of particles
 		char crackOrder[20];					// flags for archiving of crack particles
 		char archHeader[HEADER_LENGTH+1];		// compiler header information once

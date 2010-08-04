@@ -157,7 +157,7 @@ void ArchiveData::BeginArchives(bool isThreeD)
 	same on all computers then must have following sizes:
 		int: 4 bytes		short: 2 bytes
 		double: 8 bytes
-	also long are 4 bytes (although not cited here)
+	Note: long are 4 bytes in 32 bit but 8 bytes in 64 bit
 */
 void ArchiveData::CalcArchiveSize(void)
 {
@@ -184,7 +184,7 @@ void ArchiveData::CalcArchiveSize(void)
     
     /* byte order marker
 		Intel chips use little endian in which int 1 will have 0x01 in first byte.
-		G5, etc, use big endian in which long 1 will have 0x01 in last byte.
+		G5, etc, use big endian in which int 1 will have 0x01 in last byte.
 		When done, byte order will be set to 'm' if output file is big endian
 			or to 'i' if output file is little endian.
 	*/
@@ -223,7 +223,7 @@ void ArchiveData::CalcArchiveSize(void)
 	/* ARCH_Defaults are
 		2D: elemID (int), mass (double), matId (short) angle (double), thickness (double),
 							pos (Vector), origPos (Vector) (64)
-		3D: thickness replaced by two angles and Vectors longer (88)
+		3D: thickness replaced by two angles and Vectors are longer (88)
 	*/
 	mpmRecSize+=sizeof(int)+3*sizeof(double)+2*vectorSize+sizeof(short)+2;
 	if(threeD) mpmRecSize+=sizeof(double);
@@ -416,11 +416,10 @@ void ArchiveData::ArchiveVelocityBCs(BoundaryCondition *firstBC)
 // Archive the results if it is time
 void ArchiveData::ArchiveResults(double atime)
 {
-    long p,blen;
-    double rho;
+	double rho;
     double sxx,syy,sxy;
     char fname[300],fline[300];
-    int i;
+    int i,p;
     CrackHeader *nextCrack;
 	
 	// test global archiving
@@ -465,7 +464,7 @@ void ArchiveData::ArchiveResults(double atime)
 	}
 		
 	// allocate space for one material point
-	blen=recSize;
+	long blen=recSize;
 	char *aptr=(char *)malloc(blen);
 	if(aptr==NULL)
 		throw CommonException("Out of memory allocating buffer for archive file","ArchiveData::ArchiveResults");
@@ -1210,7 +1209,7 @@ int ArchiveData::WillArchive(void)
 }
 
 // Record size after it is calculated
-long ArchiveData::GetRecordSize(void) { return recSize; }
+int ArchiveData::GetRecordSize(void) { return recSize; }
  
 // set archive orders
 void ArchiveData::SetMPMOrder(const char *xData) { strcpy(mpmOrder,xData); }
