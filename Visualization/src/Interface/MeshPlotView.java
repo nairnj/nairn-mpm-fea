@@ -97,7 +97,7 @@ public class MeshPlotView extends JPanel
 		{	// clip MPM mesh plots to the current particle settings
 			if(plotType==MPMMESH_PLOTS && clipToParticles)
 			{	// clip to particles
-				Path2D.Double clipPath=new Path2D.Double();
+				GeneralPath clipPath=new GeneralPath();
 				for(i=0;i<resDoc.mpmPoints.size();i++)
 				{	resDoc.mpmPoints.get(i).addToClip(this,resDoc,clipPath);
 				}
@@ -295,7 +295,7 @@ public class MeshPlotView extends JPanel
 	}
 	
 	// draw material point and fill with plot color
-	public void clipMaterialPoint(double[] eps,double[] eplast,double erot,MaterialPoint mpart,Path2D.Double theClip)
+	public void clipMaterialPoint(double[] eps,double[] eplast,double erot,MaterialPoint mpart,GeneralPath theClip)
 	{	double diam=0.01*mpDiam*resDoc.cellMinSide*scale;
 		double radiix=resDoc.xscale*diam/2.;
 		double radiiy=resDoc.yscale*diam/2.;

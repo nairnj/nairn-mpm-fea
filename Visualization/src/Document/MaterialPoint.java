@@ -61,7 +61,7 @@ public class MaterialPoint
 	}
 	
 	// draw the material point
-	public void addToClip(MeshPlotView pv,ResultsDocument doc,Path2D.Double theClip)
+	public void addToClip(MeshPlotView pv,ResultsDocument doc,GeneralPath theClip)
 	{	pv.moveTo(x,y);
 		pv.clipMaterialPoint(eps,eplast,angleZ-erot,this,theClip);
 	}
