@@ -72,7 +72,8 @@ CC= g++
 RM= rm
 CP= cp
 
-# 4. Compiler options -c=compile only, -O3=optimize most, -O0=not optimized, -g=debugging info, -pg for profiling
+# 4. Compiler options -c=compile only, -O3=optimize most, -O0=not optimized, -g=debugging info, -pg for profiling,
+#      -m64 for 64 bit, -m32 for 32 bit
 #    If use -pg, must add -pg to end of NairnMPM linking line too
 CFLAGS= -c -O3
 

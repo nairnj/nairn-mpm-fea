@@ -294,12 +294,12 @@ void CrackHeader::Output(void)
 // archive crack to file
 void CrackHeader::Archive(ofstream &afile)
 {
-    long blen,i=0;
+    int i=0;
     CrackSegment *mseg=firstSeg;
     
     // create space for this crack
 	int recSize=archiver->GetRecordSize();
-    blen=recSize;
+    long blen=recSize;
 	char *aptr=(char *)malloc(blen);
     if(aptr==NULL)
         throw CommonException("Memory error writing crack data.","CrackHeader::Archive");
