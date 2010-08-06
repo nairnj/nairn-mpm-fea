@@ -524,6 +524,21 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 				break;
 		}			
 		
+		// Development code to try alternative methods
+		if(fmobj->dflag[0]==1)
+		{	// Use each material's own volume gradient
+			nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+			ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
+		}
+		else if(fmobj->dflag[0]==2)
+		{	// get an average volume gradient
+			Vector normj;
+			nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+			nd[nodenum]->GetMassGradient(vfld,rigidFld,&normj,-1.);
+			AddVector(&norm,&normj);
+			ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
+		}
+		
 		// get approach direction momentum form delPi.n (actual (vr-vi).n = delPi.n/mi)
 		dotn=DotVectors(&delPi,&norm);
 		
