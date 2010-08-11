@@ -211,13 +211,12 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
  			{	if(scanInput<0.5)
 					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// 0
 				else if(scanInput<1.5)
-					contact.materialNormalMethod=MAXIMUM_VOLUME;		// 1
-				else if(scanInput<2.5)
-					contact.materialNormalMethod=RIGID_OR_MAXIMUM_VOLUME_GRADIENT;		// 2
-				else if(scanInput<3.5)
-					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// 3 (but turned off now, revert to 0)
+					contact.materialNormalMethod=MAXIMUM_VOLUME;				// 1
 				else
-					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// 4 (but turned off now, revert to 0)
+					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// other (but turned off now, revert to 0)
+			}
+            if(strcmp(aName,"RigidBias")==0)
+			{	contact.rigidGradientBias=scanInput;
 			}
 			delete [] aName;
             delete [] value;

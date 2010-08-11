@@ -31,7 +31,8 @@
 <!ATTLIST	MultiMaterialMode
 			Vmin CDATA #IMPLIED
 			Dcheck CDATA #IMPLIED
-			Normals CDATA #IMPLIED>
+			Normals CDATA #IMPLIED
+			RigidBias CDATA #IMPLIED>
 
 
 <!-- Define the mesh -->

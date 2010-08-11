@@ -28,8 +28,7 @@ enum { NOCONTACT=0,STICK,FRICTIONLESS,FRICTIONAL,IMPERFECT_INTERFACE};
 enum { IN_CONTACT=0,SEPARATED };
 
 // method to find the normal
-enum { MAXIMUM_VOLUME_GRADIENT=0,MAXIMUM_VOLUME,RIGID_OR_MAXIMUM_VOLUME_GRADIENT,EACH_MATERIALS_MASS_GRADIENT,
-				AVERAGE_MAT_VOLUME_GRADIENTS};
+enum { MAXIMUM_VOLUME_GRADIENT=0,MAXIMUM_VOLUME,EACH_MATERIALS_MASS_GRADIENT,AVERAGE_MAT_VOLUME_GRADIENTS};
 
 class CrackSurfaceContact
 {
@@ -37,7 +36,7 @@ class CrackSurfaceContact
 		double friction,Dn,Dnc,Dt;
 		double materialFriction,materialDn,materialDnc,materialDt;
 		bool hasImperfectInterface,displacementCheck;
-		double positionCutoff,materialContactVmin;
+		double positionCutoff,materialContactVmin,rigidGradientBias;
 		short materialContactLaw;
 		int materialNormalMethod;
 		

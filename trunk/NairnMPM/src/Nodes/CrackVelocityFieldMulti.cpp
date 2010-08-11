@@ -319,17 +319,18 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 			// Get normal vector by various options
 			switch(contact.materialNormalMethod)
 			{	case MAXIMUM_VOLUME_GRADIENT:
-				case RIGID_OR_MAXIMUM_VOLUME_GRADIENT:
 				{	// Use mat with largest magnitude volume gradient
 					Vector normi,normj;
 					nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
 					nd[nodenum]->GetMassGradient(vfld,ipaired,&normj,-1.);
+					
+					// compare magnitude of volume gradients
 					double magi=sqrt(DotVectors(&normi,&normi));
 					double magj=sqrt(DotVectors(&normj,&normj));
 					if(magi/rho >= magj/rhopaired)
-						CopyScaleVector(&norm,&normi,1./magi);
+						CopyScaleVector(&norm,&normi,1./magi);		// use material i
 					else
-						CopyScaleVector(&norm,&normj,1./magj);
+						CopyScaleVector(&norm,&normj,1./magj);		// use material j
 					break;
 				}
 				case MAXIMUM_VOLUME:
@@ -489,12 +490,14 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 				Vector normi,normj;
 				nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
 				nd[nodenum]->GetMassGradient(vfld,rigidFld,&normj,-1.);
+				
+				// compare square of volume gradients (the bias has been squared)
 				double magi=DotVectors(&normi,&normi);
 				double magj=DotVectors(&normj,&normj);			// already a volume gradient
-				if(magi/rho/rho >= magj)
-					CopyScaleVector(&norm,&normi,1./sqrt(magi));
+				if(magi/(rho*rho) >= contact.rigidGradientBias*magj)
+					CopyScaleVector(&norm,&normi,1./sqrt(magi));		// use non-rigid material
 				else
-					CopyScaleVector(&norm,&normj,1./sqrt(magj));
+					CopyScaleVector(&norm,&normj,1./sqrt(magj));		// use rigid material
 				break;
 			}
 			case MAXIMUM_VOLUME:
@@ -503,10 +506,6 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 					nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
 				else
 					nd[nodenum]->GetMassGradient(vfld,rigidFld,&norm,-1.);
-				CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
-				break;
-			case RIGID_OR_MAXIMUM_VOLUME_GRADIENT:
-				nd[nodenum]->GetMassGradient(vfld,rigidFld,&norm,-1.);
 				CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
 				break;
 			/*
