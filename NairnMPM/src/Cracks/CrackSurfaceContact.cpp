@@ -45,6 +45,7 @@ CrackSurfaceContact::CrackSurfaceContact()
 	materialContactVmin=0.0;			// cutoff to kick in other contact checks
 	displacementCheck=FALSE;			// if implementing check on displacement or position (last thing)
 	materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// method to find normals in multimaterial contact
+	rigidGradientBias=1.;				// Use rigid gradient unless material volume gradient is this much higher (only normal method 2)
 }
 
 // Print contact law settings for cracks and finalize variables
@@ -211,13 +212,12 @@ void CrackSurfaceContact::MaterialOutput(void)
 	cout << "Normal Calculation: ";
 	switch(materialNormalMethod)
 	{	case MAXIMUM_VOLUME_GRADIENT:
-			cout << " gradient of material with maximum volume gradient";
+			cout << " gradient of material with maximum volume gradient," << endl;
+			cout << "                        but prefer rigid material with bias factor = " << rigidGradientBias;
+			rigidGradientBias*=rigidGradientBias;
 			break;
 		case MAXIMUM_VOLUME:
 			cout << " gradient of material with maximum volume";
-			break;
-		case RIGID_OR_MAXIMUM_VOLUME_GRADIENT:
-			cout << " gradient of rigid material or material with maximum volume gradient";
 			break;
 		case EACH_MATERIALS_MASS_GRADIENT:
 			cout << " each material's own mass gradient";
