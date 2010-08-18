@@ -138,7 +138,7 @@ CustomTask *CalcJKTask::BeginExtrapolations(void)
     if(!getJKThisStep) return nextTask;
 	
     // set up strain fields for crack extrapolations
-    long i;
+    int i;
     for(i=1;i<=nnodes;i++)
         nd[i]->ZeroDisp();
     

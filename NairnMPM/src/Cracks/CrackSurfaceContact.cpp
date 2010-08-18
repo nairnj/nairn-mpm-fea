@@ -46,6 +46,7 @@ CrackSurfaceContact::CrackSurfaceContact()
 	displacementCheck=FALSE;			// if implementing check on displacement or position (last thing)
 	materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// method to find normals in multimaterial contact
 	rigidGradientBias=1.;				// Use rigid gradient unless material volume gradient is this much higher (only normal method 2)
+	archiveRigidForces=FALSE;			// When TRUE, total force on rigid particles will be archived in those partices (sxx, syy, szz) stress
 }
 
 // Print contact law settings for cracks and finalize variables

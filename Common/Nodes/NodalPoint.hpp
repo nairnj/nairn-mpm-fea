@@ -73,7 +73,7 @@ class NodalPoint : public LinkedObject
 		void AddFextSpreadTask3(short,Vector);
 		void CalcFtotTask3(double);
 	
-		void UpdateMomentaTask4(double);
+		void UpdateMomentaOnNode(double);
 	
 		void IncrementDelvaTask5(short,int,double,Vector *,Vector *);
 	

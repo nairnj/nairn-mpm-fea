@@ -35,12 +35,12 @@ class RigidContactForces : public CustomTask
 		virtual const char *TaskName(void);
         virtual CustomTask *Initialize(void);
         virtual CustomTask *PrepareForStep(bool &);
+	virtual CustomTask *BeginExtrapolations(void);
         virtual CustomTask *ParticleCalculation(NodalPoint *,MPMBase *,short,int,double,double,double,double,short);
         virtual CustomTask *ParticleExtrapolation(MPMBase *,short);
         
     private:
 		int getForcesThisStep;
-		Vector force;
 };
 
 

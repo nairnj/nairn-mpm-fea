@@ -11,6 +11,7 @@
 #include "Nodes/NodalPoint.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
+#include "Materials/MaterialBase.hpp"
 
 #pragma mark INITIALIZE
 
@@ -35,12 +36,34 @@ CustomTask *RigidContactForces::PrepareForStep(bool &doNodalExtraps)
 {	if((getForcesThisStep=archiver->WillArchive()))
 	{	// only need to extrapolate forces when about to archive
 		doNodalExtraps=TRUE;
-		ZeroVector(&force);
 	}
 	return nextTask;
 }
 
 #pragma mark TASK EXTRAPOLATION METHODS
+
+// initialize for crack extrapolations
+CustomTask *RigidContactForces::BeginExtrapolations(void)
+{
+    // skip if already set up
+    if(!getForcesThisStep) return nextTask;
+	
+    // set up strain fields for crack extrapolations
+    int p;
+	MaterialBase *matID;
+    for(p=0;p<nmpms;p++)
+	{	matID=theMaterials[mpm[p]->MatID()];
+		if(matID->RigidBC() || !matID->Rigid()) continue;
+		
+		// forces are stored in normal stress of rigid contact particles
+		Tensor *sp=mpm[p]->GetStressTensor();
+		sp->xx=0.;
+		sp->yy=0.;
+		sp->zz=0.;
+	}
+	
+    return nextTask;
+}
 
 // used to extapolate nodal values to particles during extrapolations
 CustomTask *RigidContactForces::ParticleCalculation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,int matfld,
@@ -48,9 +71,14 @@ CustomTask *RigidContactForces::ParticleCalculation(NodalPoint *ndmi,MPMBase *mp
 {
 	if(!getForcesThisStep || !isRigid) return  nextTask;
 	
-	// extrapolate forces stored in this rigid materials velocity field
+	// extrapolate forces stored in this rigid material's velocity field
 	Vector ftot=ndmi->GetContactForce(vfld,matfld);
-	AddScaledVector(&force,&ftot,fn);
+	
+	// in loop sum momenta, convert to force at the end
+	Tensor *sp=mpnt->GetStressTensor();
+	sp->xx+=fn*ftot.x;
+	sp->yy+=fn*ftot.y;
+	sp->zz+=fn*ftot.z;
 	
 	return nextTask;
 }
@@ -60,14 +88,14 @@ CustomTask *RigidContactForces::ParticleExtrapolation(MPMBase *mpnt,short isRigi
 {
 	if(!getForcesThisStep || !isRigid) return nextTask;
 		
-	// copy to stress as force in units of microN per rho of this material
+	// scale stress to force in units of microN per rho of this material
 	// rho of rigid particles is always 1000
 	// Must multiply by -1/timestep too to get force, since only momenta were tracked by contact code
 	Tensor *sp=mpnt->GetStressTensor();
 	double scale=-0.001/timestep;
-	sp->xx=scale*force.x;
-	sp->yy=scale*force.y;
-	sp->zz=scale*force.z;
+	sp->xx*=scale;
+	sp->yy*=scale;
+	sp->zz*=scale;
 	return nextTask;
 }
 

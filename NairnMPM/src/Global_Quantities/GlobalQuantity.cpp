@@ -42,12 +42,18 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 	// set quantity
 	if(strcmp(quant,"sxx")==0)
 		quantity=AVG_SXX;
+	else if(strcmp(quant,"sxxtot")==0)
+		quantity=TOT_SXX;
 	else if(strcmp(quant,"syy")==0)
 		quantity=AVG_SYY;
+	else if(strcmp(quant,"syytot")==0)
+		quantity=TOT_SYY;
 	else if(strcmp(quant,"sxy")==0)
 		quantity=AVG_SXY;
 	else if(strcmp(quant,"szz")==0)
 		quantity=AVG_SZZ;
+	else if(strcmp(quant,"szztot")==0)
+		quantity=TOT_SZZ;
 	else if(strcmp(quant,"sxz")==0)
 		quantity=AVG_SXZ;
 	else if(strcmp(quant,"syz")==0)
@@ -192,15 +198,18 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 	switch(quantity)
 	{   // stresses in MPa
 		case AVG_SZZ:
+		case TOT_SZZ:
 			qid=ZZ;
 		case AVG_SXZ:
 			if(quantity==AVG_SXZ) qid=XZ;
 		case AVG_SYZ:
 			if(quantity==AVG_SYZ) qid=YZ;
 	    case AVG_SXX:
-			if(quantity==AVG_SXX) qid=XX;
+		case TOT_SXX:
+			if(quantity==AVG_SXX || quantity==TOT_SXX) qid=XX;
 		case AVG_SYY:
-			if(quantity==AVG_SYY) qid=YY;
+		case TOT_SYY:
+			if(quantity==AVG_SYY || quantity==TOT_SYY) qid=YY;
 		case AVG_SXY:
 			if(quantity==AVG_SXY) qid=XY;
 			for(p=0;p<nmpms;p++)
@@ -211,7 +220,8 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 					numAvged++;
 				}
 			}
-			if(numAvged>0) value/=(double)numAvged;
+			if(quantity!=TOT_SXX && quantity!=TOT_SYY && quantity!=TOT_SZZ && numAvged>0)
+				value/=(double)numAvged;
 			value*=1.e-6;
 			break;
 		

@@ -27,7 +27,7 @@
 			( Friction | Propagate | AltPropagate | JContour | MovePlane | ContactPosition | PropagateLength )*>
 			
 <!ELEMENT	MultiMaterialMode
-			( Friction | ContactPosition )*>
+			( Friction | ContactPosition | ArchiveRigidForces )*>
 <!ATTLIST	MultiMaterialMode
 			Vmin CDATA #IMPLIED
 			Dcheck CDATA #IMPLIED
@@ -319,6 +319,7 @@
 <!ELEMENT	Conduction EMPTY>
 <!ELEMENT	CrackTipHeating EMPTY>
 <!ELEMENT	EnergyCoupling EMPTY>
+<!ELEMENT	ArchiveRigidForces EMPTY>
 
 <!ELEMENT	rho (#PCDATA)>
 <!ELEMENT	E (#PCDATA)>

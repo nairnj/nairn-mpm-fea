@@ -53,7 +53,7 @@ void UpdateMomentaTask::Execute(void)
 
 	// Update momenta on all nodes
 	for(int i=1;i<=nnodes;i++)
-		nd[i]->UpdateMomentaTask4(timestep);
+		nd[i]->UpdateMomentaOnNode(timestep);
 
 	// adjust momenta and forces for multimaterial contact
 	NodalPoint::MaterialContact(fmobj->multiMaterialMode,TRUE,timestep);

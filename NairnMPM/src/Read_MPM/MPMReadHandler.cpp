@@ -223,6 +223,12 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         }
     }
 	
+    else if(strcmp(xName,"ArchiveRigidForces")==0)
+    {	if(block!=MULTIMATERIAL)
+			ThrowCompoundErrorMessage(xName," command must be in <MultiMaterialMode> block.","");
+		contact.archiveRigidForces=TRUE;
+	}
+	
     else if(strcmp(xName,"ArchiveRoot")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
         input=TEXT_BLOCK;

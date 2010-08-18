@@ -60,7 +60,7 @@ void CrackVelocityFieldSingle::CalcFtotTask3(double extDamping)
 
 // update momenta for this MPM step
 //  pk(i+1) = pk(i) + ftot * dt
-void CrackVelocityFieldSingle::UpdateMomentaTask4(double timestep)
+void CrackVelocityFieldSingle::UpdateMomentaOnField(double timestep)
 {	if(MatVelocityField::ActiveField(mvf[0]))
 		AddScaledVector(&mvf[0]->pk,&mvf[0]->ftot,timestep);
 }

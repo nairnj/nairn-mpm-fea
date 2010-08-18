@@ -6,7 +6,11 @@
 # and be sure to comment out the MutliMaterialMode command. When done, compare
 # to the Two_Disks.Results/USAVG.global file
 #
-# ----------- Test Runs ------------------------------------------------------
+# These data can also run a check on MultiMaterialMode by including that command
+# and changing the friction to -20 (< -10). This mode is single velocity contact
+# mode and should be identical to calculations run in single material mode.
+#
+# ----------- Test Runs -------------------------------------------------------------
 #
 # Calculations run in nairn-mpm-fea-1.0 (NairnMPM 7.2.0), 6 AUG 2010
 #
@@ -14,9 +18,11 @@
 #
 # nairn-mpm-fea-2.0 (NairnMPM 7.3.0), 6 AUG 2010 - identical
 #
-# NairnMPM 8.0.0, 6 AUG 2010 - all identical
+# NairnMPM 8.0.0, 6 AUG 2010 - identical
 #
-# ----------------------------------------------------------------------------
+# Nairn 8.0.0, 17 AUG 2010 - identical in MultiMaterialMode with Friction<-10
+#
+# -----------------------------------------------------------------------------------
 #
 #setColor	black	blue	red
 #setName	"velx mat 1"	"Kinetic Energy"	"Strain Energy"

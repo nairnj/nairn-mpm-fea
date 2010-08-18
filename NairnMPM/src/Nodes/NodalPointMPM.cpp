@@ -312,12 +312,12 @@ void NodalPoint::CalcFtotTask3(double extDamping)
 #pragma mark TASK 4 METHODS
 
 // update momenta for this MPM step
-void NodalPoint::UpdateMomentaTask4(double timestep)
+void NodalPoint::UpdateMomentaOnNode(double timestep)
 {	// update momenta
 	int i;
     for(i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->UpdateMomentaTask4(timestep);
+			cvf[i]->UpdateMomentaOnField(timestep);
     }
 }
 

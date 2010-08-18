@@ -50,7 +50,7 @@ class CrackVelocityField
 		virtual void AddFextSpreadTask3(Vector *) = 0;
 		virtual void CalcFtotTask3(double) = 0;
 	
-		virtual void UpdateMomentaTask4(double) = 0;
+		virtual void UpdateMomentaOnField(double) = 0;
 	
 		void IncrementDelvaTask5(int,double,Vector *,Vector *);
 	

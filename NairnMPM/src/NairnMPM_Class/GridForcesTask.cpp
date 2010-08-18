@@ -91,7 +91,7 @@ void GridForcesTask::Execute(void)
 		{	vfld=(short)mpmptr->vfld[i];					// crack velocity field to use
 			ndptr=nd[nds[i]];					// nodal point pointer
 			
-            // internal force vector (in g mm/sec^2)
+            // internal force vector (in g mm/sec^2 or micro N)
 			//	(note: stress is specific stress in units N/m^2 cm^3/g
 			//	Multiply by 1000 to make it mm/sec^2)
 			mpmptr->Fint(theFrc,xDeriv[i],yDeriv[i],zDeriv[i]);
