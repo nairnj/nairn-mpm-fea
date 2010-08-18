@@ -9,13 +9,24 @@ The main `trunk` of the project contains the working code; a [Download_Project s
 
 ==Checking Out a Tagged Version==
 
-To check out a tagged release instead of the current development release, simply change the path in the checkout command. For example, an anonymous check out would be
+To check out a tagged release instead of the current development release, simply change the path in the checkout command. For example, an anonymous check out would be:
 
 {{{
 svn checkout http://nairn-mpm-fea.googlecode.com/svn/tags/release-1.0 nairn-mpm-fea-1.0
 }}}
 
 where the final component in the path is the version you want. See [#Tagged_Versions below] for a list of available tagged versions.
+
+==Checking Out by Version Number or Date==
+
+In addition to tagged versions, you can revert to any revision number or to the version on any date with the follow check out commands:
+
+{{{
+svn checkout --revision 185 http://nairn-mpm-fea.googlecode.com/svn/trunk nairn-mpm-fea-185
+svn checkout --revision {2010-05-11} http://nairn-mpm-fea.googlecode.com/svn/trunk nairn-mpm-fea-2010-05-11
+}}}
+
+Every change to the code makes a new revision number. You can look up revision numbers in the "Source" tab. A checkout by date means the revision that was current on that date. You can add a time if several revisions were made that day. When an `svn` checkout by date finishes, it will report the revision number that you received. Using revision number when looking for changes is more efficient because you are sure things changed. Checking out versions on different dates will give identical code if no changes were made between those dates.
 
 ==Tagging a Version by Committers==
 
