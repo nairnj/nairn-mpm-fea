@@ -34,7 +34,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void AddFextSpreadTask3(Vector *);
 		virtual void CalcFtotTask3(double);
 	
-		virtual void UpdateMomentaTask4(double);
+		virtual void UpdateMomentaOnField(double);
 	
 		virtual void RezeroNodeTask6(double);
 	

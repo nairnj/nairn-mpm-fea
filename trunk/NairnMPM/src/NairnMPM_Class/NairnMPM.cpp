@@ -136,15 +136,13 @@ void NairnMPM::MPMAnalysis(bool abort)
 		}
 	}
 
-#ifdef TRACK_CONTACT_FORCES
 	// rigid material contact forces, but only if has such particles (i.e., in multimaterial mode)
-	//	and will archive stresses. It is inserted at beginning of custom tasks
-	if(hasRigidContactParticles && archiver->PointArchive(ARCH_Stress))
+	//	and will archive stresses and feature is activated. It is inserted at beginning of custom tasks
+	if(hasRigidContactParticles && archiver->PointArchive(ARCH_Stress) && contact.archiveRigidForces)
 	{	nextTask=new RigidContactForces();
 		nextTask->nextTask=theTasks;
 		theTasks=nextTask;
 	}
-#endif
 
 	// see if any need initializing
 	if(theTasks!=NULL)

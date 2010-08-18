@@ -18,9 +18,6 @@
 class MPMBase;
 class BoundaryCondition;
 
-// activate to track forces on rigid particles (but does not seem correct yet
-//#define TRACK_CONTACT_FORCES
-
 // global variables
 extern double mtime,propTime,timestep,strainTimestep;
 extern int maxCrackFields,maxMaterialFields;
@@ -28,19 +25,19 @@ extern int maxCrackFields,maxMaterialFields;
 class NairnMPM : public CommonAnalysis
 {
     public:
-		int mpmApproach;		// mpm method for updating strain
-		int ptsPerElement;		// points per element
-		int propagate[2];		// progation method
-		int propagateDirection[2];	// optional crack direction setting
-		int propagateMat[2];		// optional traction material to create when propagates
-		bool hasTractionCracks;	// TRUE is any crack segment has traction law material
-		long mstep;				// step number
-		double maxtime;			// maximum time for analysis
-		double FractCellTime;	// fraction of cell crossed at wave speed (<1)
-		int warnParticleLeftGrid;	// warning ID
-		bool multiMaterialMode;		// TRUE to use separate velocity fields for each material
+		int mpmApproach;				// mpm method for updating strain
+		int ptsPerElement;				// points per element
+		int propagate[2];				// progation method
+		int propagateDirection[2];		// optional crack direction setting
+		int propagateMat[2];			// optional traction material to create when propagates
+		bool hasTractionCracks;			// TRUE is any crack segment has traction law material
+		long mstep;						// step number
+		double maxtime;					// maximum time for analysis
+		double FractCellTime;			// fraction of cell crossed at wave speed (<1)
+		int warnParticleLeftGrid;		// warning ID
+		bool multiMaterialMode;			// TRUE to use separate velocity fields for each material
 		bool hasRigidContactParticles;	// TRUE if some particles in multimaterial mode or rigid (direction=8)
-		bool volumeExtrap;			// true if need particle volume
+		bool volumeExtrap;				// true if need particle volume
 		
         //  Constructors and Destructor
 		NairnMPM();

@@ -196,7 +196,7 @@ void CrackVelocityFieldMulti::CalcFtotTask3(double extDamping)
 
 // update momenta for this MPM step
 //  pk(i+1) = pk(i) + ftot * dt
-void CrackVelocityFieldMulti::UpdateMomentaTask4(double timestep)
+void CrackVelocityFieldMulti::UpdateMomentaOnField(double timestep)
 {	// update momenta
 	int i;
     for(i=0;i<maxMaterialFields;i++)
@@ -604,9 +604,8 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 		
 		// change momenta
 		mvf[i]->ChangeMatMomentum(&delPi,postUpdate,deltime);
-#ifdef TRACK_CONTACT_FORCES
-		mvf[rigidFld]->AddContactForce(&delPi);
-#endif
+		if(contact.archiveRigidForces)
+			mvf[rigidFld]->AddContactForce(&delPi);
 	}
 }
 

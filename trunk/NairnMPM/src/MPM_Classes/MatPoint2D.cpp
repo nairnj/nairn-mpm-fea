@@ -154,7 +154,7 @@ void MatPoint2D::SetDilatedVolume(void)
 	volume=dilate*mp/rho;									// in mm^3
 }
 
-// return internal force as -mp sigma.deriv * 1000.
+// return internal force as -mp sigma.deriv * 1000. which converts to g mm/sec^2 or micro N
 void MatPoint2D::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
 {	fout.x=-mp*(sp.xx*xDeriv+sp.xy*yDeriv)*1000.;
 	fout.y=-mp*(sp.xy*xDeriv+sp.yy*yDeriv)*1000.;

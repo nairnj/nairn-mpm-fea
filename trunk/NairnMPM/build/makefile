@@ -10,6 +10,7 @@
 #       cluster2 - Grant Smith's cluster at U of Utah
 #       inferno - C-SAFE cluster at U of Utah
 #       zia - A Debian linux machine
+#       artemis - for Edward Le on FP Innovations cluster
 # Other options are
 #    make clean - to remove all compiled objects
 #    make install - to copy compiled code to desired installation destination
@@ -46,6 +47,9 @@ endif
 ifeq ($(SYSTEM),zia)
 	xercesSo = /usr/lib/libxerces-c.so
 endif
+ifeq ($(SYSTEM),artemis)
+	xercesSo = /home/edward/xerces/lib/libxerces-c.so
+endif
 
 # 2. Path to outside headers for (Mac & Carbon/Hedera & Windows/cygwin), cluster2, and inferno 
 ifeq ($(SYSTEM),mac)
@@ -65,6 +69,9 @@ ifeq ($(SYSTEM),inferno)
 endif
 ifeq ($(SYSTEM),zia)
 	headersPath = /usr/include/xercesc
+endif
+ifeq ($(SYSTEM),artemis)
+	headersPath = /home/edward/xerces/include
 endif
 
 # 3. Define compiler to use and rm for clean
@@ -703,7 +710,7 @@ VTKArchive.o : $(VTKArchive).cpp $(dprefix) $(VTKArchive).hpp $(CustomTask).hpp 
 			$(MPMBase).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(CommonArchiveData).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(VTKArchive).cpp
 RigidContactForces.o : $(RigidContactForces).cpp $(dprefix) $(RigidContactForces).hpp $(CustomTask).hpp $(NairnMPM).hpp $(NodalPoint).hpp \
-			$(ArchiveData).hpp $(MPMBase).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(CommonArchiveData).hpp
+			$(ArchiveData).hpp $(MPMBase).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(CommonArchiveData).hpp (MaterialBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(RigidContactForces).cpp
 
 # MPM: Elements
