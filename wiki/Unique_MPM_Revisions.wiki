@@ -8,6 +8,8 @@ When the current code seems to be broken, it might be necessary to check out pre
 
 = Known Unique Revisions =
 
+Revisions before the start of the table or after the end of table have not be checked. Revisions between any two numbers should have source code identical to the previous revision number.
+
 || Revision || Date || Change highlights ||
 || r151 || 5 May 2010 || Added `nmix` for mixed mode fracture criteria ||
 || r157 || 10 May 2010 || Tried combining rigid particles between crack velocity fields ||
@@ -16,7 +18,7 @@ When the current code seems to be broken, it might be necessary to check out pre
 || r160 || 11 May 2010 ||  ||
 || r161 || 21 May 2010 || Rotation calculations in `Generators.cpp` ||
 || r168 || 3 Jun 2010 || Work on anisotropic 3D materials ||
-|| r173 || 4 Jun 2010 || Add `WoodMaterial` ||
+|| r173 || 4 Jun 2010 || Added `WoodMaterial` ||
 || r176 || 4 Jun 2010 || Work on `WoodMaterial` ||
 || r177 || 9 Jun 2010 || ||
 || r180 || 9 Jun 2010 || Only change in `PrintTensor()` ||
@@ -29,4 +31,3 @@ When the current code seems to be broken, it might be necessary to check out pre
 || r205 || 6 Aug 2010 || Added development flags to Rigid contact to try other methods ||
 || r206 || 11 Aug 2010 || Removed Normals=2 and replaced with `RigidBias` ||
 || r211 || 18 Aug 2010 || Work on tracking of rigid contact forces ||
-
