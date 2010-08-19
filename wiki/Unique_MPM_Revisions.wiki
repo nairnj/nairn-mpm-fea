@@ -1,0 +1,32 @@
+#summary Development notes on known unique versions.
+#labels NairnMPM
+
+= Introduction =
+
+When the current code seems to be broken, it might be necessary to check out previous revisions to see what changed to cause the problem. This partial list has notes on certain key features put into various versions and on when source code was actually changes. Non-unique versions mean only comments or documentation was changed, but no source code was changed.
+
+
+= Known Unique Revisions =
+
+|| Revision || Date || Change highlights ||
+|| r151 || 5 May 2010 || Added `nmix` for mixed mode fracture criteria ||
+|| r157 || 10 May 2010 || Tried combining rigid particles between crack velocity fields ||
+|| r158 || 10 May 2010 || Corrected volume gradient calculation in rigid contact to divide by rho<sup>2</sup> ||
+|| r159 || 11 May 2010 || Removed combining of rigid particles ||
+|| r160 || 11 May 2010 ||  ||
+|| r161 || 21 May 2010 || Rotation calculations in `Generators.cpp` ||
+|| r168 || 3 Jun 2010 || Work on anisotropic 3D materials ||
+|| r173 || 4 Jun 2010 || Add `WoodMaterial` ||
+|| r176 || 4 Jun 2010 || Work on `WoodMaterial` ||
+|| r177 || 9 Jun 2010 || ||
+|| r180 || 9 Jun 2010 || Only change in `PrintTensor()` ||
+|| r181 || 24 Jun 2010 || ||
+|| r183 || 14 Jul 2010 || Only change in `NodalPoint::GetMassGradient()`, but should have no affect ||
+|| r188 || 25 Jul 2010 || Tagged as release 2.0, but should be same as r181 ||
+|| r189 || 25 Jul 2010 || Converted `MPMStep()` to use task objects ||
+|| r200 || 30 Jul 2010 || Added Normals=2 option ||
+|| r204 || 4 Aug 2010 || ||
+|| r205 || 6 Aug 2010 || Added development flags to Rigid contact to try other methods ||
+|| r206 || 11 Aug 2010 || Removed Normals=2 and replaced with `RigidBias` ||
+|| r211 || 18 Aug 2010 || Work on tracking of rigid contact forces ||
+
