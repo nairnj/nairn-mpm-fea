@@ -1111,9 +1111,14 @@ double MaterialBase::ShearWaveSpeed(bool threeD) { return WaveSpeed(threeD)/sqrt
 // archive material data for this material type when requested.
 double MaterialBase::GetHistory(int num,char *historyPtr) { return (double)0.; }
 
-// check if rigid material
+// return TRUE if rigid particle (for contact or for BC)
 short MaterialBase::Rigid(void) { return FALSE; }
+
+// return TRUE is rigid BC particle (not rigid for contact)
 short MaterialBase::RigidBC(void) { return FALSE; }
+
+// return TRUE is rigid BC particle (not rigid for contact)
+short MaterialBase::RigidContact(void) { return FALSE; }
 
 // check if traciton law material
 bool MaterialBase::isTractionLaw(void) { return FALSE; }

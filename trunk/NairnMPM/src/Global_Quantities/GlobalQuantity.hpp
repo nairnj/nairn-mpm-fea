@@ -37,6 +37,7 @@ class GlobalQuantity
 	
 		// accessors
 		bool IncludeThisMaterial(int);
+		void SetNextGlobal(GlobalQuantity *);
 		
 	private:
 		int whichMat;

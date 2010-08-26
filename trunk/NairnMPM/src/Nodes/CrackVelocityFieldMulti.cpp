@@ -60,7 +60,8 @@ double CrackVelocityFieldMulti::GetTotalMassAndCount(void)
 	return mass;
 }
 
-// copy rigid material from another velocity field and add (creating if needed) to this field
+// copy rigid material from another velocity field (cvfm) and add to mvf[rigidFieldNum] in this cvf
+// This is only called if COMBINE_RIGID_MATERIALS is defined
 void CrackVelocityFieldMulti::CombineRigidFrom(CrackVelocityFieldMulti *cvfm,int rigidFieldNum)
 {
 	// get other field, exit if none, or error if different one
@@ -70,7 +71,7 @@ void CrackVelocityFieldMulti::CombineRigidFrom(CrackVelocityFieldMulti *cvfm,int
 	if(otherRigidNum!=rigidFieldNum)
 		throw MPMTermination("Two different rigid materials on the same node","CrackVelocityFieldMulti::MaterialContact");
 	
-	// add number rigid points this crack velocity field
+	// add number of rigid points and total points this crack velocity field
 	numberRigidPoints+=rmvf->numberPoints;
 	numberPoints+=rmvf->numberPoints;
 	
@@ -84,7 +85,8 @@ void CrackVelocityFieldMulti::CombineRigidFrom(CrackVelocityFieldMulti *cvfm,int
 	AddVector(mvf[rigidFieldNum]->massGrad,rmvf->massGrad);
 }
 
-// copy rigid material from another velocity field and add (creating if needed) to this field
+// Copy rigid material from another velocity field (cvfm) to this field (creating if needed)
+// This is only called if COMBINE_RIGID_MATERIALS is defined
 void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int rigidFieldNum)
 {	
 	/*
@@ -98,17 +100,17 @@ void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int ri
 	*/
 	
 	// create material field if needed
-	int initialRigidPoints;
+	int initialRigidPoints=0;
+	double initialRigidVolume=0.;
 	if(mvf[rigidFieldNum]==NULL)
 	{	mvf[rigidFieldNum]=new MatVelocityField();
 		if(mvf[rigidFieldNum]==NULL) throw CommonException("Memory error allocating material velocity field.",
 													"CrackVelocityFieldMulti::CopyRigidFrom");
-		initialRigidPoints=0;
 		numberMaterials++;					// just added a material to this crack velocity field
 	}
 	else
 	{	initialRigidPoints=mvf[rigidFieldNum]->numberPoints;
-		unscaledVolume-=UnscaledVolumeRigid();
+		initialRigidVolume=UnscaledVolumeRigid();
 		if(initialRigidPoints==0) numberMaterials++;
 	}
 	
@@ -120,7 +122,7 @@ void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int ri
 	numberPoints+=rmvf->numberPoints-initialRigidPoints;
 	
 	// add unscaled volume to this crack velocity field
-	unscaledVolume+=cvfm->UnscaledVolumeRigid();
+	unscaledVolume+=cvfm->UnscaledVolumeRigid()-initialRigidVolume;
 	
 	// copy momentum, displacement, and mass grad (velocity is same) into material velocity field
 	mvf[rigidFieldNum]->numberPoints=rmvf->numberPoints;
@@ -523,19 +525,48 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 				break;
 		}			
 		
-		// Development code to try alternative methods
+		// Development code to try alternative methods to get rigid contact normal
 		if(fmobj->dflag[0]==1)
 		{	// Use each material's own volume gradient
 			nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
 			ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
 		}
 		else if(fmobj->dflag[0]==2)
-		{	// get an average volume gradient
+		{	// get an average volume gradients (not same as averaging mass gradients with non-rigid materials)
 			Vector normj;
-			nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+			nd[nodenum]->GetMassGradient(vfld,i,&norm,1./rho);
 			nd[nodenum]->GetMassGradient(vfld,rigidFld,&normj,-1.);
 			AddVector(&norm,&normj);
 			ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
+		}
+		else if(fmobj->dflag[0]==3)
+		{	// try special normals for cutting simulation
+			Vector dispi;
+			CopyScaleVector(&dispi,&mvf[i]->disp,1./massi);
+			if(dispi.y<=1.90)
+			{	norm.x=0.;
+				norm.y=1.;
+			}
+			else
+			{	norm.x=1./sqrt(2.);
+				norm.y=-1./sqrt(2.);
+			}
+			norm.z=0.;
+		}
+		else if(fmobj->dflag[0]==4)
+		{	// try special normals for cutting simulation with rake angle into dflag[1]
+			Vector dispi;
+			CopyScaleVector(&dispi,&mvf[i]->disp,1./massi);
+			if(dispi.y<=0.0)
+			{	norm.x=0.;
+				norm.y=1.;
+			}
+			else
+			{	double radAngle=(double)fmobj->dflag[1]*PI_CONSTANT/180.;
+				norm.x=cos(radAngle);
+				norm.y=-sin(radAngle);
+			}
+			norm.z=0.;
 		}
 		
 		// get approach direction momentum form delPi.n (actual (vr-vi).n = delPi.n/mi)
@@ -881,7 +912,8 @@ Vector CrackVelocityFieldMulti::GetCMatFtot(void)
 	return fk;
 }
 
-// get first active rigid field or return numm
+// get first active rigid field or return NULL. Also return number in rigidFieldNum
+// This is only called if COMBINE_RIGID_MATERIALS is defined
 MatVelocityField *CrackVelocityFieldMulti::GetRigidMaterialField(int *rigidFieldNum)
 {
 	// if none return NULL

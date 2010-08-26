@@ -253,10 +253,13 @@ void NodalPoint::CalcTotalMassAndCount(void)
 
 // When has rigid particles, multimaterial mode, and cracks, sum all rigid particles on
 //	this node and transfer copy to all crack velocity fields
+// This is only called if COMBINE_RIGID_MATERIALS is defined
 void NodalPoint::CombineRigidParticles(void)
 {	int i,j;
 	
 	// find first material velocity field for rigid particles
+	// a node can only have one rigid material, otherwise the contact algorithm fails
+	// thus finding first is enough
 	MatVelocityField *rmvf=NULL;
 	int rigidFieldNum;
 	for(i=0;i<maxCrackFields;i++)
@@ -269,7 +272,8 @@ void NodalPoint::CombineRigidParticles(void)
 	// if none, then done
 	if(rmvf==NULL) return;
 	
-	// sum other fields into this one
+	// sum other fields with this same rigid material into that materials field in cvf[i]
+	// since 0 to i-1 have not rigid material, only need to look from i+1 to end
 	for(j=i+1;j<maxCrackFields;j++)
 	{	if(CrackVelocityField::ActiveField(cvf[j]))
 		{	// copy rigid material from field j to field i
@@ -277,7 +281,7 @@ void NodalPoint::CombineRigidParticles(void)
 		}
 	}
 	
-	// transfer to all other fields
+	// transfer the summed result to all other fields
 	for(j=0;j<maxCrackFields;j++)
 	{	if(j!=i && CrackVelocityField::ActiveField(cvf[j]))
 		{	// copy rigid material from field i to field ji
@@ -675,7 +679,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 			{	if(cfld[0].crackNum==cvf[1]->crackNumber(FIRST_CRACK))
 				{	if(cfld[0].loc==cvf[1]->location(FIRST_CRACK))
 						vfld=1;
-					else if(CrackVelocityField::ActiveNonrigidField(cvf[0]))
+					else
 						vfld=0;				// if surface particle was on the crack
 				}
 			}
@@ -683,7 +687,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 			{	if(cfld[0].crackNum==cvf[2]->crackNumber(FIRST_CRACK))
 				{	if(cfld[0].loc==cvf[2]->location(FIRST_CRACK))
 						vfld=2;
-					else if(CrackVelocityField::ActiveNonrigidField(cvf[0]))
+					else
 						vfld=0;				// if surface particle was on the crack
 				}
 			}

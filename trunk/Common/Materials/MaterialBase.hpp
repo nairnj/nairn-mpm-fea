@@ -125,6 +125,7 @@ class MaterialBase : public LinkedObject
         virtual double GetHistory(int,char *);
 		virtual short Rigid(void);
 		virtual short RigidBC(void);
+		virtual short RigidContact(void);
 		virtual bool isTractionLaw(void);
 		virtual void SetFriction(double,int,double,double,double);
 		virtual ContactDetails *GetContactToMaterial(int);

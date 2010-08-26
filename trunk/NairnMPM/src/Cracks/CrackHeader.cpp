@@ -505,7 +505,7 @@ short CrackHeader::MoveCrack(short side)
 			if(numempty!=0 && numempty!=numnds) ScaleVector(&delv,1./fnorm);
 			
 			// move it
-			scrk->MovePosition(side,timestep*delv.x,timestep*delv.y,(nodeCounter!=numnds),surfaceMass);		// in mm
+			scrk->MoveSurfacePosition(side,timestep*delv.x,timestep*delv.y,(nodeCounter!=numnds),surfaceMass);		// in mm
 			 */
 			
 			// extrapolate those with velocity to the particle
@@ -514,8 +514,10 @@ short CrackHeader::MoveCrack(short side)
 					nodeCounter++;
 			}
 			
-			// move it
-			scrk->MovePosition(side,timestep*delv.x,timestep*delv.y,(nodeCounter>0),surfaceMass);		// in mm
+			// move it (if returns true, check location of other side)
+			if(scrk->MoveSurfacePosition(side,timestep*delv.x,timestep*delv.y,(nodeCounter>0),surfaceMass))		// in mm
+			{	if(!scrk->FindElement(ABOVE_CRACK)) return FALSE;
+			}
 			
 			// did surface move elements
 			if(!scrk->FindElement(side)) return FALSE;

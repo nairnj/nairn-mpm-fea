@@ -39,7 +39,8 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 	char nameStr[200];
 	whichMat=whichOne;
 	
-	// set quantity
+	// set quantity and subcode
+	subcode=0;
 	if(strcmp(quant,"sxx")==0)
 		quantity=AVG_SXX;
 	else if(strcmp(quant,"sxxtot")==0)
@@ -148,25 +149,28 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 		}
 	}
 	
-	// set name and color ID
+	// set name
 	if(whichMat>0)
 		sprintf(nameStr,"%s mat %d",quant,whichMat);
 	else
 		strcpy(nameStr,quant);
 	name=new char[strlen(nameStr)+1];
 	strcpy(name,nameStr);
+	
+	// set color ID
 	colorID=numGlobal % 10;
 	
-	// set pointers
-	nextGlobal=NULL;
+	// this object is current the last one
+	SetNextGlobal(NULL);
+	
+	// adjust previous global quantity or set firstGlobal if this is the first one
 	if(lastGlobal!=NULL)
-	{   lastGlobal->nextGlobal=this;
-		lastGlobal=this;
-	}
+		lastGlobal->SetNextGlobal(this);
 	else
-	{   firstGlobal=this;
-		lastGlobal=this;
-	}
+		firstGlobal=this;
+	lastGlobal=this;
+	
+	// count the number of objects
 	numGlobal++;
 }
 
@@ -198,33 +202,46 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 	switch(quantity)
 	{   // stresses in MPa
 		case AVG_SZZ:
-		case TOT_SZZ:
 			qid=ZZ;
 		case AVG_SXZ:
 			if(quantity==AVG_SXZ) qid=XZ;
 		case AVG_SYZ:
 			if(quantity==AVG_SYZ) qid=YZ;
 	    case AVG_SXX:
-		case TOT_SXX:
-			if(quantity==AVG_SXX || quantity==TOT_SXX) qid=XX;
+			if(quantity==AVG_SXX) qid=XX;
 		case AVG_SYY:
-		case TOT_SYY:
-			if(quantity==AVG_SYY || quantity==TOT_SYY) qid=YY;
+			if(quantity==AVG_SYY) qid=YY;
 		case AVG_SXY:
 			if(quantity==AVG_SXY) qid=XY;
 			for(p=0;p<nmpms;p++)
 			{   matid=mpm[p]->MatID();
-			    rho=theMaterials[matid]->rho;
 				if(IncludeThisMaterial(matid))
-				{	value+=rho*Tensor_i(mpm[p]->GetStressTensor(),qid);
+				{	rho=theMaterials[matid]->rho;
+					value+=rho*Tensor_i(mpm[p]->GetStressTensor(),qid);
 					numAvged++;
 				}
 			}
-			if(quantity!=TOT_SXX && quantity!=TOT_SYY && quantity!=TOT_SZZ && numAvged>0)
-				value/=(double)numAvged;
+			if(numAvged>0) value/=(double)numAvged;
 			value*=1.e-6;
 			break;
 		
+		// stressed summed in MPa
+		case TOT_SZZ:
+			qid=ZZ;
+		case TOT_SXX:
+			if(quantity==TOT_SXX) qid=XX;
+		case TOT_SYY:
+			if(quantity==TOT_SYY) qid=YY;
+			for(p=0;p<nmpms;p++)
+			{   matid=mpm[p]->MatID();
+				if(IncludeThisMaterial(matid))
+				{	rho=theMaterials[matid]->rho;
+					value+=rho*Tensor_i(mpm[p]->GetStressTensor(),qid);
+				}
+			}
+			value*=1.e-6;
+			break;
+			
 		// elastic strain in %
 		case AVG_EZZE:
 			qid=ZZ;
@@ -550,4 +567,7 @@ bool GlobalQuantity::IncludeThisMaterial(int matid)
 	
 	return (bool)FALSE;
 }
+
+// set the next Global
+void GlobalQuantity::SetNextGlobal(GlobalQuantity *newGlobal) { nextGlobal=newGlobal; }
 

@@ -198,7 +198,7 @@ void MassAndMomentumTask::Execute(void)
 			}
 		}
 		
-		// For Rigid materials create velocity BC on each node in the element
+		// For Rigid BC materials create velocity BC on each node in the element
 		else
 		{	numnds=theElements[iel]->NumberNodes();
 			double rvalue;
@@ -296,7 +296,7 @@ void MassAndMomentumTask::Execute(void)
 	
 #ifdef COMBINE_RIGID_MATERIALS
 	// combine rigid fields if necessary
-	if(firstCrack!=NULL && multiMaterialMode && hasRigidContactParticles)
+	if(firstCrack!=NULL && fmobj->multiMaterialMode && fmobj->hasRigidContactParticles)
 		NodalPoint::CombineRigidMaterials();
 #endif
 	

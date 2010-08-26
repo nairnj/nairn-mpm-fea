@@ -198,7 +198,7 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
 
 // return total energy (which is needed for path independent J) under traction law curve
 //		when fullEnergy is true
-// return released enegery = total energy - recoverable energy (due to elastic unloading)
+// return released energy = total energy - recoverable energy (due to elastic unloading)
 //		when fullEnergy is false
 // units of N/mm
 double CohesiveZone::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod,bool fullEnergy)

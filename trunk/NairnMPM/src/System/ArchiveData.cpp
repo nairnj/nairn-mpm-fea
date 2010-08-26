@@ -337,11 +337,12 @@ void ArchiveData::CreateGlobalFile(void)
 {
     FILE *fp;
 	char fline[1000];
-	GlobalQuantity *nextGlobal;
 	
-	// skip if none
-	if(globalTime<0. || firstGlobal==NULL)
+	// skip if none, but error if tried to define global quantities
+	if(globalTime<0.)
 	{   globalTime=-1.;
+		if(firstGlobal!=NULL)
+			throw CommonException("<GlobalArchive> was used but never activated with a <GlobalArchiveTime> command.","ArchiveData::CreateGlobalFile");
 		return;
 	}
 	
@@ -354,7 +355,7 @@ void ArchiveData::CreateGlobalFile(void)
 	
 	// write color
 	strcpy(fline,"#setColor");
-	nextGlobal=firstGlobal;
+	GlobalQuantity *nextGlobal=firstGlobal;
 	while(nextGlobal!=NULL)
 	    nextGlobal=nextGlobal->AppendColor(fline);
 	strcat(fline,"\n");
