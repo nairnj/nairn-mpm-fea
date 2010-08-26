@@ -710,7 +710,7 @@ VTKArchive.o : $(VTKArchive).cpp $(dprefix) $(VTKArchive).hpp $(CustomTask).hpp 
 			$(MPMBase).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(CommonArchiveData).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(VTKArchive).cpp
 RigidContactForces.o : $(RigidContactForces).cpp $(dprefix) $(RigidContactForces).hpp $(CustomTask).hpp $(NairnMPM).hpp $(NodalPoint).hpp \
-			$(ArchiveData).hpp $(MPMBase).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(CommonArchiveData).hpp (MaterialBase).hpp
+			$(ArchiveData).hpp $(MPMBase).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(CommonArchiveData).hpp $(MaterialBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(RigidContactForces).cpp
 
 # MPM: Elements
