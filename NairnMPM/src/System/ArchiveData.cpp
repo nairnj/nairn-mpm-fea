@@ -337,6 +337,7 @@ void ArchiveData::CreateGlobalFile(void)
 {
     FILE *fp;
 	char fline[1000];
+	GlobalQuantity *nextGlobal;
 	
 	// skip if none, but error if tried to define global quantities
 	if(globalTime<0.)
@@ -355,7 +356,7 @@ void ArchiveData::CreateGlobalFile(void)
 	
 	// write color
 	strcpy(fline,"#setColor");
-	GlobalQuantity *nextGlobal=firstGlobal;
+	nextGlobal=firstGlobal;
 	while(nextGlobal!=NULL)
 	    nextGlobal=nextGlobal->AppendColor(fline);
 	strcat(fline,"\n");
