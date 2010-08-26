@@ -122,7 +122,7 @@ int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid)
 // preliminary calculations (throw CommonException on problem)
 void RigidMaterial::PreliminaryMatCalcs(void)
 {	// is rigid multimaterial, then nothing else allowed
-	if(setDirection&RIGID_MULTIMATERIAL_MODE && setDirection!=RIGID_MULTIMATERIAL_MODE)
+	if(setDirection&RIGID_MULTIMATERIAL_MODE && (setDirection!=RIGID_MULTIMATERIAL_MODE || setTemperature || setConcentration))
 		throw CommonException("Rigid material for contact in multimaterial mode cannot also set other velocities, temperature, or concentration.","RigidMaterial::PreliminaryMatCalcs");
 	MaterialBase::PreliminaryMatCalcs();
 }
@@ -150,9 +150,14 @@ int RigidMaterial::MaterialTag(void) { return RIGIDMATERIAL; }
 // return material type
 const char *RigidMaterial::MaterialType(void) { return "Rigid Material"; }
 
-// check if rigid material
+// return TRUE if rigid particle (for contact or for BC)
 short RigidMaterial::Rigid(void) { return TRUE; }
-short RigidMaterial::RigidBC(void) { return setDirection>0 && setDirection!=RIGID_MULTIMATERIAL_MODE; }
+
+// return TRUE if rigid BC particle (not rigid for contact)
+short RigidMaterial::RigidBC(void) { return setDirection!=RIGID_MULTIMATERIAL_MODE; }
+
+// return TRUE if rigid particle for contact
+short RigidMaterial::RigidContact(void) { return setDirection==RIGID_MULTIMATERIAL_MODE; }
 
 // check if should set this direction
 bool RigidMaterial::RigidDirection(int aDir) { return (setDirection&aDir)==aDir; }

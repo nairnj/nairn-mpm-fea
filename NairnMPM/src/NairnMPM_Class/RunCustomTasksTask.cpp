@@ -66,7 +66,8 @@ void RunCustomTasksTask::Execute(void)
         for(p=0;p<nmpms;p++)
         {   // Load element coordinates
 			matID=theMaterials[mpm[p]->MatID()];
-			isRigid=matID->Rigid();
+			if(matID->RigidBC()) continue;			// skip boundary condition particle always
+			isRigid=matID->Rigid();					// if TRUE, will be rigid contact particle
 			matfld=matID->GetField();
 			
             // find shape functions and derviatives

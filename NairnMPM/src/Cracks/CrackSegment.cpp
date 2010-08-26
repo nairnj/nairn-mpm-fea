@@ -120,9 +120,10 @@ void CrackSegment::MovePosition(double xpt,double ypt)
 }
 
 // Move a surface position (2D) (in mm) - must move ABOVE_CRACK and then BELOW_CRACK
-void CrackSegment::MovePosition(short side,double xpt,double ypt,bool hasNodes,double surfaceMass)
+bool CrackSegment::MoveSurfacePosition(short side,double xpt,double ypt,bool hasNodes,double surfaceMass)
 {
     short j=side-1;
+	bool movedOther=FALSE;
 	
 	if(side==ABOVE_CRACK)
 	{	// above crack is first
@@ -159,6 +160,7 @@ void CrackSegment::MovePosition(short side,double xpt,double ypt,bool hasNodes,d
 				dyPlane=ypt;
 				surfx[ABOVE_CRACK-1]+=xpt;		// move above by (xpt,ypt) too
 				surfy[ABOVE_CRACK-1]+=ypt;
+				movedOther=TRUE;				// in case it moved elements too
 			}
 		}
 		else if(hadAboveNodes)
@@ -166,6 +168,8 @@ void CrackSegment::MovePosition(short side,double xpt,double ypt,bool hasNodes,d
 			surfy[j]+=dyPlane;
 		}
 	}
+	
+	return movedOther;
 }
 
 // calculate tractions due to this segment
@@ -554,10 +558,10 @@ int CrackSegment::CheckSurfaces(void)
 		}
 		if(!moved)
 		{	if(CrackHeader::Triangle(surfx[0],surfy[0],x,y,nextSeg->x,nextSeg->y)<0.)
-		{	if(MoveToPlane(ABOVE_CRACK,nextSeg->x-x,nextSeg->y-y,false,1.))
-		{	if(!FindElement(ABOVE_CRACK)) return false;
-		}
-		}
+			{	if(MoveToPlane(ABOVE_CRACK,nextSeg->x-x,nextSeg->y-y,false,1.))
+				{	if(!FindElement(ABOVE_CRACK)) return false;
+				}
+			}
 		}
 	}
 	
@@ -587,10 +591,10 @@ int CrackSegment::CheckSurfaces(void)
 		}
 		if(!moved)
 		{	if(CrackHeader::Triangle(surfx[1],surfy[1],x,y,nextSeg->x,nextSeg->y)>0.)
-		{	if(MoveToPlane(BELOW_CRACK,nextSeg->x-x,nextSeg->y-y,false,-1.))
-		{	if(!FindElement(BELOW_CRACK)) return false;
-		}
-		}
+			{	if(MoveToPlane(BELOW_CRACK,nextSeg->x-x,nextSeg->y-y,false,-1.))
+				{	if(!FindElement(BELOW_CRACK)) return false;
+				}
+			}
 		}
 	}
 	
@@ -599,23 +603,26 @@ int CrackSegment::CheckSurfaces(void)
 
 // Move surface side (ABOVE_CRACK or BELOW_CRACK) to plane
 // See JAN-OSU-4, pg 133-134
-bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool internalSegment,double dir)
+// thereIsAnotherSegement only true on first of two checks for internal segments
+// vector dir*(-dyp,dxp) should point from surface to back across the crack normal to segment.
+bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool thereIsAnotherSegement,double dir)
 {	
 	int j=side-1;				// index to surface position
-	double dxs=surfx[j]-x,dys=surfy[j]-y;		// vector crack particle to surface particle
+	double dxs=surfx[j]-x,dys=surfy[j]-y;		// vector crack particle to surface particle = xs-x
 	double segLength=sqrt(dxp*dxp+dyp*dyp);
 	
 	// distance crack particle to intersection place (relative to segment length
 	double t=(dxs*dxp+dys*dyp)/segLength;
 	
-	// if less than 0 and at internal segment, return to try the next segment instead
-	if(t<0. && internalSegment) return false;
+	// if less than 0 and at first of two internal segments, return to try the next segment instead
+	if(t<0. && thereIsAnotherSegement) return false;
 	
 	// distance surface to crack plane (relative to segment length)
 	double n=(dxs*dyp-dys*dxp)*dir/segLength;
 	
-	// if pretty close, then do move to plane and hope velocity fields will resolve on their own
-	if(fabs(n)<1.e-6) return true;
+	// if pretty close or negative, then do not move to plane and hope velocity fields will resolve on their own
+	// or if first of two internal segments, try the other one
+	if(n<1.e-6) return !thereIsAnotherSegement;
 	
 	// restrict terminal segments
 	if(prevSeg==NULL || nextSeg==NULL)
@@ -626,9 +633,13 @@ bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool internalSegme
 	else if(t<-1.)
 		t=-1.;
 	
+	//cout << "# move side " << side << " from (" << surfx[j] << "," << surfy[j] << ") to (";
+	
 	// move to crack plane and a little more in normal direction
 	surfx[j]=x+t*dxp-1.0e-12*dir*dyp;
 	surfy[j]=y+t*dyp+1.0e-12*dir*dxp;
+	
+	//cout <<  surfx[j] << "," << surfy[j] << ") with n = " << n << endl;
 	
 	return true;
 	
@@ -672,7 +683,7 @@ bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool internalSegme
 	 // if not in this segment, exit (unless end segment)
 	 cout << " t=" << t << endl;
 	 if(t<0.)
-	 {	if(internalSegment) return false;
+	 {	if(thereIsAnotherSegement) return false;
 	 t=0.;
 	 }
 	 else

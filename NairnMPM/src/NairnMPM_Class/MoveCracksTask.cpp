@@ -5,7 +5,21 @@
 	Created by John Nairn on July 22, 2010
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
  
-	Move cracks and crack surfaces.
+	First move crack surface in their local velocity field.
+ 
+	Next move crack plane by one of two methods
+		1. If !contact.GetMoveOnlySurfaces(), then get CM velocities for particles
+			and move crack plane in the CM field
+		2. Otherwise move to mean for above and below plane positions
+		After moving, optionally verify no surface has crossed a crack plane
+ 
+	Undate crack tractions
+ 
+	Input Variables
+		?
+
+	Output Variables
+		?
 ********************************************************************************/
 
 #include "NairnMPM_Class/MoveCracksTask.hpp"
@@ -29,7 +43,7 @@ void MoveCracksTask::Execute(void)
 	double beginTime=fmobj->CPUTime();
 #endif
 
-	// prepare multimaterial fields for moving cracks
+	// move crack surface in their local velocity fields
 	CrackHeader *nextCrack=firstCrack;
 	while(nextCrack!=NULL)
 	{   if(!nextCrack->MoveCrack(ABOVE_CRACK))
@@ -45,7 +59,12 @@ void MoveCracksTask::Execute(void)
 		nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 	}
 	
+	// if moving crack plane in cm velocity field, get those velocities now
 	if(!contact.GetMoveOnlySurfaces()) NodalPoint::GetGridCMVelocitiesTask8();
+	
+	// Move crack plane by one of two methods. When moving only surfce, the plane will move to average
+	// of the two surfaces
+	// After moving, crack plane is check for crossing, if that option is activated
 	nextCrack=firstCrack;
 	while(nextCrack!=NULL)
 	{   if(!nextCrack->MoveCrack())

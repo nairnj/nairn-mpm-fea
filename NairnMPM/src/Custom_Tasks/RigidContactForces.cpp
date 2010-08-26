@@ -48,12 +48,12 @@ CustomTask *RigidContactForces::BeginExtrapolations(void)
     // skip if already set up
     if(!getForcesThisStep) return nextTask;
 	
-    // set up strain fields for crack extrapolations
+    // zero particle stress to hold contact formces
     int p;
 	MaterialBase *matID;
     for(p=0;p<nmpms;p++)
 	{	matID=theMaterials[mpm[p]->MatID()];
-		if(matID->RigidBC() || !matID->Rigid()) continue;
+		if(!matID->RigidContact()) continue;
 		
 		// forces are stored in normal stress of rigid contact particles
 		Tensor *sp=mpm[p]->GetStressTensor();

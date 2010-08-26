@@ -13,7 +13,7 @@
 
 #define RIGIDMATERIAL 11
 
-// same aas constants without "CONTROL_" defined in boundary conditinos
+// same as constants without "CONTROL_" defined in boundary conditinos
 #define CONTROL_X_DIRECTION 1
 #define CONTROL_Y_DIRECTION 2
 #define CONTROL_Z_DIRECTION 4
@@ -58,6 +58,7 @@ class RigidMaterial : public MaterialBase
         virtual double WaveSpeed(bool);
 		virtual short Rigid(void);			// override base class to return true
 		virtual short RigidBC(void);		// override base class to return true if appropriate
+		virtual short RigidContact(void);	// override base class to return true if appropriate
 		virtual int MaterialTag();
 		
 	protected:
