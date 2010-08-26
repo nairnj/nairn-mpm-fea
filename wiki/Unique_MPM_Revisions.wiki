@@ -31,3 +31,4 @@ Revisions before the start of the table or after the end of table have not be ch
 || r205 || 6 Aug 2010 || Added development flags to Rigid contact to try other methods ||
 || r206 || 11 Aug 2010 || Removed Normals=2 and replaced with `RigidBias` ||
 || r211 || 18 Aug 2010 || Work on tracking of rigid contact forces ||
+|| r218 || 26 Aug 2010 || Added `DevelFlag` for cutting, but rest should be same as r211 ||
