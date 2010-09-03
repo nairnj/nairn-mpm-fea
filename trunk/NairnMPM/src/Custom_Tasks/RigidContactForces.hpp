@@ -1,12 +1,3 @@
-/*
- *  RigidContactForces.h
- *  NairnMPM
- *
- *  Created by John Nairn on 7/29/10.
- *  Copyright 2010 Oregon State University. All rights reserved.
- *
- */
-
 /********************************************************************************
 	RigidContactForces.hpp
 	NairnMPM
@@ -35,7 +26,7 @@ class RigidContactForces : public CustomTask
 		virtual const char *TaskName(void);
         virtual CustomTask *Initialize(void);
         virtual CustomTask *PrepareForStep(bool &);
-	virtual CustomTask *BeginExtrapolations(void);
+		virtual CustomTask *BeginExtrapolations(void);
         virtual CustomTask *ParticleCalculation(NodalPoint *,MPMBase *,short,int,double,double,double,double,short);
         virtual CustomTask *ParticleExtrapolation(MPMBase *,short);
         
