@@ -132,6 +132,7 @@ class NodalPoint : public LinkedObject
 		void UnsetFixedDirection(int);
 		void CalcTotalMassAndCount(void);
 		void CombineRigidParticles(void);
+		Vector GetTotalContactForce(void);
 #else
         void InitForceField(void);
         void PrintAvgStress(void);

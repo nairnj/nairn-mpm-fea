@@ -834,6 +834,18 @@ Vector NodalPoint::GetContactForce(short vfld,int matfld)
 {	return cvf[vfld]->GetContactForce(matfld);
 }
 
+// Some all forces from rigid material velocity fields
+Vector NodalPoint::GetTotalContactForce(void)
+{	int i;
+	Vector fcontact;
+	ZeroVector(&fcontact);
+    for(i=0;i<maxCrackFields;i++)
+	{	if(CrackVelocityField::ActiveField(cvf[i]))
+			cvf[i]->SumRigidContactForces(&fcontact);
+	}
+	return fcontact;
+}
+
 #pragma mark MATERIAL CONTACT
 
 // Called in multimaterial mode to check contact at nodes with multiple materials

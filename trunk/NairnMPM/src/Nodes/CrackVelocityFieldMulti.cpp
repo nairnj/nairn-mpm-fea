@@ -912,6 +912,14 @@ Vector CrackVelocityFieldMulti::GetCMatFtot(void)
 	return fk;
 }
 
+// add contact force on rigid material to the input vector
+void CrackVelocityFieldMulti::SumRigidContactForces(Vector *fcontact)
+{	int rigidFieldNum;
+	MatVelocityField *rigidField=GetRigidMaterialField(&rigidFieldNum);
+	if(rigidField!=NULL)
+		AddVector(fcontact,&rigidField->ftot);
+}
+
 // get first active rigid field or return NULL. Also return number in rigidFieldNum
 // This is only called if COMBINE_RIGID_MATERIALS is defined
 MatVelocityField *CrackVelocityFieldMulti::GetRigidMaterialField(int *rigidFieldNum)
