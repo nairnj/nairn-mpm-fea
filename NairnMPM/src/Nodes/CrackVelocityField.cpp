@@ -269,6 +269,9 @@ void CrackVelocityField::Describe(void)
 double CrackVelocityField::UnscaledVolumeNonrigid(void) { return unscaledVolume; }
 double CrackVelocityField::UnscaledVolumeRigid(void) { return 0.; }
 
+// add contact force on rigid material to the input vector
+void CrackVelocityField::SumRigidContactForces(Vector *fcontact) {}
+
 #pragma mark CLASS METHODS
 
 // return true if referenced field is active in this time step

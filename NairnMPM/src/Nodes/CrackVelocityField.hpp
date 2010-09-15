@@ -111,6 +111,7 @@ class CrackVelocityField
 		virtual double UnscaledVolumeNonrigid(void);
 		virtual double UnscaledVolumeRigid(void);
 		virtual void Describe(void);
+		virtual void SumRigidContactForces(Vector *);
 	
 		// class methods
 		static bool ActiveField(CrackVelocityField *);
