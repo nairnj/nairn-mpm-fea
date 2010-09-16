@@ -42,7 +42,6 @@ This section defines many MPM analysis parameters; it is required for NairnMPM a
     &lt;<a href="#mmmode"><code>MultiMaterialMode</code></a> Vmin='0.0' Dcheck='1'&gt;
         &lt;<a href="#mmfriction"><code>Friction</code></a>&gt;0.3&lt;/Friction&gt;
         &lt;<a href="#mmcontactposition"><code>ContactPosition</code></a>&gt;0.8&lt;/ContactPosition&gt;
-        &lt;<a href="#mmarchive"><code>ArchiveRigidForces</code></a>/&gt;
     &lt;/MultiMaterialMode&gt;
     &lt;<a href="#cracks"><code>Cracks</code></a>&gt;
         &lt;<a href="#propagate"><code>Propagate</code></a> criterion='1' direction='0' traction='0'/&gt;
@@ -141,12 +140,12 @@ This section defines many MPM analysis parameters; it is required for NairnMPM a
   <dd>Use one or more of these commands to determine what data are calculated and written to the global results file (see <code>GlobalArchiveTime</code> command above). If <code>material</code> is omitted or equal to zero, the calculation will include all non-rigid material points. If <code>material</code> is non-zero, the calculation will include only particles with that material number (see <a href="definematl.html">Defining Materials</a>, and it may be a rigid material). The global results file will be tab-delimited file with time (in msec) in column one and each requested quantity in subsequent columns. The global quantities (or <code>types</code>) that can be archived are:
 <ul class="lev2args">
 	<li><code>sxx</code>, <code>syy</code>, <code>szz</code>, <code>sxy</code>, <code>sxz</code>, or <code>syz</code> - average element of the stress tensor in MPa</li>
-	<li><code>sxxtot</code>, <code>syytot</code>, and <code>szztot</code> - sum of a normal element of the stress tensor in MPa. This option only make sense when <a href="#mmarchive">&lt;ArchiveRigidForces/&gt;</a> is used and when the material attribute selects a <a href="definematl.html#rigid">rigid materials (with <code>SetDirection</code>=8)</a>.</li>
 	<li><code>exx</code>, <code>eyy</code>, <code>ezz</code>, <code>exy</code>, <code>exz</code>, or <code>eyz</code> - average element of the total strain tensor in %, which is elastic+plastic strain for plasticity materials</li>
 	<li><code>exxe</code>, <code>eyye</code>, <code>ezze</code>, <code>exye</code>, <code>exze</code>, or <code>eyze</code> - average element of the elastic strain tensor in %</li>
 	<li><code>exxp</code>, <code>eyyp</code>, <code>ezzp</code>, <code>exyp</code>, <code>exzp</code>, or <code>eyzp</code> - average element of the plastic strain tensor in %</li>
 	<li><code>velx</code>, <code>vely</code>, or <code>velz</code> - average component of velocity in mm/sec</li>
 	<li><code>dispx</code>, <code>dispy</code>, or <code>dispz</code> - average component of displacement in mm</li>
+	<li><code>contactx</code>, <code>contacty</code>, or <code>contactz</code> - component of the total contact force on the grid for <a href="#mmmode"><code>MultiMaterialMode</code></a> simulations when they include <a href="definematl.html#rigid">rigid materials</a> that have <code>SetDirection</code>=8. It is a sum of all contact forces for the rigid material on the object in Newtons. If the simulation has activated the <a href="custom.html#VTKArchive">VTKArchive custom task</a>, that task must archive <code>contactforce</code> or else these global archive results might get invalid zero forces.</li>
 	<li><code>history n</code> - material-dependent history variable where <code>n</code> in the variable number. See each <a href="definematl.html">material type</a> for what variables are available for output.</li>
 	<li><code>temp</code> - The average temperature</li>
 	<li><code>concentration</code> - the weight fraction concentration (for <a href="#diffusion">diffusion calculations</a>)</li>
@@ -219,8 +218,6 @@ where  a<sub>i</sub><sup>*</sup> = (f<sub>i</sub><sup>int</sup> + f<sub>i</sub><
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;When a multimaterial simulation also has cracks, only one method is allowed for calculating surfaces displacements and that method applies to both material and crack surfaces. The default method is to use particle displacements. If either the <a href="#mmmode"><code>MultiMaterialMode</code></a> section or the <a href="#cracks"><code>Cracks</code></a> section has a <code>ContactPosition</code> command, then both contact algorithms will find displacements from particle positions. If the <code>Dcheck</code> attribute of the <a href="#mmmode"><code>MultiMaterialMode</code></a> command is 0, then displacements are not used for material contact and the <code>ContactPosition</code> command applies only to crack surface contact.
   </dd>
   
-  <dt><a name="mmarchive"></a>&lt;ArchiveRigidForces/&gt;</dt>
-  <dd>When the simulation includes contact with <a href="definematl.html#rigid">rigid materials (with <code>SetDirection</code>=8)</a>, this command will archive the contact forces experienced by the particles. The forces will be archived in xx, yy, and zz components of the particle stress and will be stored in &mu;N. When visualization software converts archived stress to MPa (by multiplying archived Pa by 1.e6), it will also convert these contact forces to N.
 </dl>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The recommended multimaterial modes settings are <code>Vmin</code>=0.0, <code>Dcheck</code>=1, <code>Normals</code>=0, and <code>ContactPosition</code>=0.8. The defaults for <code>Vmin</code> and <code>Normals</code> match these recommendations. The <code>Dcheck</code>=1 and <code>ContactPosition</code>, however, have to explicitly be set. The final settings you select will be described in the &quot;Multimaterial Contact&quot; section of the output text file.

@@ -18,6 +18,7 @@
 #include "Global_Quantities/BodyForce.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "System/ArchiveData.hpp"
 
 // Single global contact law object
 GlobalQuantity *firstGlobal=NULL;
@@ -43,18 +44,12 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 	subcode=0;
 	if(strcmp(quant,"sxx")==0)
 		quantity=AVG_SXX;
-	else if(strcmp(quant,"sxxtot")==0)
-		quantity=TOT_SXX;
 	else if(strcmp(quant,"syy")==0)
 		quantity=AVG_SYY;
-	else if(strcmp(quant,"syytot")==0)
-		quantity=TOT_SYY;
 	else if(strcmp(quant,"sxy")==0)
 		quantity=AVG_SXY;
 	else if(strcmp(quant,"szz")==0)
 		quantity=AVG_SZZ;
-	else if(strcmp(quant,"szztot")==0)
-		quantity=TOT_SZZ;
 	else if(strcmp(quant,"sxz")==0)
 		quantity=AVG_SXZ;
 	else if(strcmp(quant,"syz")==0)
@@ -135,6 +130,12 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 		quantity=ELAPSED_TIME;
 	else if(strcmp(quant,"alpha")==0)
 		quantity=FEEDBACK_ALPHA;
+	else if(strcmp(quant,"contactx")==0)
+		quantity=TOT_FCONX;
+	else if(strcmp(quant,"contacty")==0)
+		quantity=TOT_FCONY;
+	else if(strcmp(quant,"contactz")==0)
+		quantity=TOT_FCONZ;
 	else
 	{	quantity=UNKNOWN_QUANTITY;
 	
@@ -225,23 +226,6 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 			value*=1.e-6;
 			break;
 		
-		// stressed summed in MPa
-		case TOT_SZZ:
-			qid=ZZ;
-		case TOT_SXX:
-			if(quantity==TOT_SXX) qid=XX;
-		case TOT_SYY:
-			if(quantity==TOT_SYY) qid=YY;
-			for(p=0;p<nmpms;p++)
-			{   matid=mpm[p]->MatID();
-				if(IncludeThisMaterial(matid))
-				{	rho=theMaterials[matid]->rho;
-					value+=rho*Tensor_i(mpm[p]->GetStressTensor(),qid);
-				}
-			}
-			value*=1.e-6;
-			break;
-			
 		// elastic strain in %
 		case AVG_EZZE:
 			qid=ZZ;
@@ -493,6 +477,38 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 			}
 			if(numAvged>0) value/=(double)numAvged;
 			break;
+		
+		case TOT_FCONX:
+		case TOT_FCONY:
+		case TOT_FCONZ:
+		{	int totalSteps=archiver->GetVTKArchiveStepInterval();
+			bool clearForces=!archiver->GetDoingVTKArchive();
+			Vector ftotal;
+			ZeroVector(&ftotal);
+			
+			if(totalSteps>0)
+			{	// non-zero steps, may or may not be doing VTKArchive
+				for(p=1;p<=nnodes;p++)
+				{	Vector fcontact=nd[p]->GetTotalContactForce(clearForces);
+					AddVector(&ftotal,&fcontact);
+				}
+				ScaleVector(&ftotal,-1./(double)totalSteps);		// force of rigid particles on the object
+			}
+			else if(!clearForces)
+			{	// doing VTK archive, but this will fail if it is not archiving contact forces
+				ftotal=archiver->GetLastContactForce();
+			}
+			// if totalSteps==0 and clearForces, then must be zero, as initialized above
+				
+			// divide by time steps
+			if(quantity==TOT_FCONX)
+				value=ftotal.x;
+			else if(quantity=TOT_FCONY)
+				value=ftotal.y;
+			else
+				value=ftotal.z;
+			break;
+		}
 
 		// skip unknown
 		case UNKNOWN_QUANTITY:

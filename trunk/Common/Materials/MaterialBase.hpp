@@ -137,6 +137,8 @@ class MaterialBase : public LinkedObject
 		// accessors (base class only)
 #ifdef MPM_CODE
 		virtual int SetField(int,bool,int);
+		static double GetMVFRho(int matfld);
+		static short GetMVFIsRigid(int matfld);
 		int GetField(void);
  		Tensor *GetkCondTensor(void);
 		Tensor *GetDiffusionTensor(void);

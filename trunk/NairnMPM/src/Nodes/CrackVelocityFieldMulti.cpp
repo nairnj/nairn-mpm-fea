@@ -103,7 +103,7 @@ void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int ri
 	int initialRigidPoints=0;
 	double initialRigidVolume=0.;
 	if(mvf[rigidFieldNum]==NULL)
-	{	mvf[rigidFieldNum]=new MatVelocityField();
+	{	mvf[rigidFieldNum]=new MatVelocityField(TRUE);
 		if(mvf[rigidFieldNum]==NULL) throw CommonException("Memory error allocating material velocity field.",
 													"CrackVelocityFieldMulti::CopyRigidFrom");
 		numberMaterials++;					// just added a material to this crack velocity field
@@ -139,10 +139,10 @@ void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int ri
 void CrackVelocityFieldMulti::AddFintSpreadTask3(Vector *f)
 {	int i;
 	
-	// special case for only one material, which must be nonrigid
+	// special case for only one material
 	if(numberMaterials==1)
 	{	for(i=0;i<maxMaterialFields;i++)
-		{	if(MatVelocityField::ActiveField(mvf[i]))
+		{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			{	AddVector(&mvf[i]->fint,f);
 				break;
 			}
@@ -164,10 +164,10 @@ void CrackVelocityFieldMulti::AddFintSpreadTask3(Vector *f)
 void CrackVelocityFieldMulti::AddFextSpreadTask3(Vector *f)
 {	int i;
 	
-	// special case for only one material, which must be nonrigid
+	// special case for only one material
 	if(numberMaterials==1)
 	{	for(i=0;i<maxMaterialFields;i++)
-		{	if(MatVelocityField::ActiveField(mvf[i]))
+		{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			{	AddVector(&mvf[i]->fext,f);
 				break;
 			}
@@ -287,7 +287,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 		
 		// some variables
 		Vector norm,delPi;
-		double rho=theMaterials[MaterialBase::fieldMatIDs[i]]->rho*0.001;	// in g/mm^3
+		double rho=MaterialBase::GetMVFRho(i);				// in g/mm^3
 		double dotn,massi=mvf[i]->mass,massRatio=massi/Mc;
 		
 		// First determine contact law from other material with most volume
@@ -295,7 +295,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 		int ipaired=0;
 		for(j=0;j<maxMaterialFields;j++)
 		{	if(j==i || !MatVelocityField::ActiveField(mvf[j])) continue;
-			rhoj=theMaterials[MaterialBase::fieldMatIDs[j]]->rho*0.001;	// in g/mm^3
+			rhoj=MaterialBase::GetMVFRho(j);				// in g/mm^3
 			double matUnscaledVolume=mvf[j]->mass/rhoj;
 			if(matUnscaledVolume>maxOtherMaterialVolume)
 			{	maxOtherMaterialVolume=matUnscaledVolume;
@@ -471,7 +471,7 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 		
 		// some variables
 		Vector norm,delPi;
-		rho=theMaterials[MaterialBase::fieldMatIDs[i]]->rho*0.001;	// in g/mm^3
+		rho=MaterialBase::GetMVFRho(i);				// in g/mm^3
 		double dotn,massi=mvf[i]->mass;
 		
 		// check nodal volume
@@ -635,8 +635,9 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 		
 		// change momenta
 		mvf[i]->ChangeMatMomentum(&delPi,postUpdate,deltime);
-		if(contact.archiveRigidForces)
-			mvf[rigidFld]->AddContactForce(&delPi);
+		
+		// store contact force
+		mvf[rigidFld]->AddContactForce(&delPi);
 	}
 }
 
@@ -913,11 +914,13 @@ Vector CrackVelocityFieldMulti::GetCMatFtot(void)
 }
 
 // add contact force on rigid material to the input vector
-void CrackVelocityFieldMulti::SumRigidContactForces(Vector *fcontact)
+void CrackVelocityFieldMulti::SumAndClearRigidContactForces(Vector *fcontact,bool clearForces)
 {	int rigidFieldNum;
 	MatVelocityField *rigidField=GetRigidMaterialField(&rigidFieldNum);
 	if(rigidField!=NULL)
-		AddVector(fcontact,&rigidField->ftot);
+	{	AddVector(fcontact,&rigidField->ftot);
+		if(clearForces) ZeroVector(&rigidField->ftot);
+	}
 }
 
 // get first active rigid field or return NULL. Also return number in rigidFieldNum
@@ -949,7 +952,7 @@ double CrackVelocityFieldMulti::UnscaledVolumeNonrigid(void)
 	int i;
 	for(i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-		{	rho=theMaterials[MaterialBase::fieldMatIDs[i]]->rho*0.001;	// in g/mm^3
+		{	rho=MaterialBase::GetMVFRho(i);				// in g/mm^3
 			nonrigidVolume+=(mvf[i]->mass/rho);
 		}
 	}

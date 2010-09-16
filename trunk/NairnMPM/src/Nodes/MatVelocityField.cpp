@@ -21,12 +21,14 @@
 #pragma mark INITIALIZATION
 
 // Constructors
-MatVelocityField::MatVelocityField()
+MatVelocityField::MatVelocityField(short forRigid)
 {	if(fmobj->multiMaterialMode)
 		massGrad=new Vector;
 	else
 		massGrad=NULL;
+	rigidField=FALSE;
 	Zero();
+	rigidField=forRigid;
 }
 
 // Destructor
@@ -39,10 +41,12 @@ MatVelocityField::~MatVelocityField()
 void MatVelocityField::Zero(void)
 {	mass=0.;
 	ZeroVector(&pk);
-	ZeroVector(&fint);
-	ZeroVector(&fext);
+	if(!rigidField)
+	{	ZeroVector(&fint);
+		ZeroVector(&fext);
+		ZeroVector(&ftot);
+	}
 	ZeroVector(&vk);
-	ZeroVector(&ftot);
 	ZeroVector(&disp);
 	if(massGrad!=NULL) ZeroVector(massGrad);
 	numberPoints=0;
@@ -72,7 +76,7 @@ void MatVelocityField::ChangeMatMomentum(Vector *delP,bool postUpdate,double del
 // in response to contact, and only for rigid materials, add contact force to ftot
 // Contact force is g-mm/sec^2 = micro N (because N is kg-m/sec^2)
 // Here just sum momenta applied to non-rigid materials. To get forces, this result
-//	is multiplied by -1/timestep (done in the RigidContactForces custom task)
+//	is multiplied by -1/timestep
 void MatVelocityField::AddContactForce(Vector *delP)
 {	AddVector(&ftot,delP);
 }
@@ -107,8 +111,8 @@ void MatVelocityField::Describe(void)
 bool MatVelocityField::ActiveField(MatVelocityField *mvf) { return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0) ; }
 
 // return true if references field that is active and is not for rigid materials
-bool MatVelocityField::ActiveNonrigidField(MatVelocityField *mvf) { return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0 && mvf->mass>0.) ; }
+bool MatVelocityField::ActiveNonrigidField(MatVelocityField *mvf) { return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0 && !mvf->rigidField) ; }
 
 // return true if references field that is active and is not for rigid materials
-bool MatVelocityField::ActiveRigidField(MatVelocityField *mvf) { return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0 && mvf->mass<=0.) ; }
+bool MatVelocityField::ActiveRigidField(MatVelocityField *mvf) { return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0 && mvf->rigidField) ; }
 

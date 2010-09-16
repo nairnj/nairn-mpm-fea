@@ -35,7 +35,7 @@ class CrackSurfaceContact
     public:
 		double friction,Dn,Dnc,Dt;
 		double materialFriction,materialDn,materialDnc,materialDt;
-		bool hasImperfectInterface,displacementCheck,archiveRigidForces;
+		bool hasImperfectInterface,displacementCheck;
 		double positionCutoff,materialContactVmin,rigidGradientBias;
 		short materialContactLaw;
 		int materialNormalMethod;

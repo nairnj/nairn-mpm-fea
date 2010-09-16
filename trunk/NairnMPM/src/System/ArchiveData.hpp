@@ -33,7 +33,8 @@ enum { ARCH_JIntegral=2,ARCH_StressIntensity,ARCH_BalanceResults,ARCH_MAXCRACKIT
 
 // VTK archiving options
 enum { VTK_MASS=0, VTK_VELOCITY, VTK_STRESS, VTK_STRAIN, VTK_DISPLACEMENT, VTK_PLASTICSTRAIN,
-		VTK_TEMPERATURE, VTK_CONCENTRATION, VTK_STRAINENERGY, VTK_PLASTICENERGY,VTK_MATERIAL };
+		VTK_TEMPERATURE, VTK_CONCENTRATION, VTK_STRAINENERGY, VTK_PLASTICENERGY,VTK_MATERIAL,
+		VTK_RIGIDCONTACTFORCES };
 
 #define HEADER_LENGTH 64
 
@@ -69,17 +70,24 @@ class ArchiveData : public CommonArchiveData
 		void SetCrackOrder(const char *);
 		bool PointArchive(int);
 		bool CrackArchive(int);
+		void SetDoingVTKArchive(bool);
+		bool GetDoingVTKArchive(void);
+		int GetVTKArchiveStepInterval(void);
+		Vector GetLastContactForce(void);
 	
 	private:
 		double nextArchTime,nextGlobalTime;
 		char *globalFile;
 		int recSize;							// archive record size
-		int mpmRecSize;						// particle record size
+		int mpmRecSize;							// particle record size
 		int crackRecSize;						// crack particle record size
 		char mpmOrder[50];						// flags for archiving of particles
 		char crackOrder[20];					// flags for archiving of crack particles
 		char archHeader[HEADER_LENGTH+1];		// compiler header information once
+		int lastVTKArchiveStep;					// last time VTK archive was written
+		bool doingVTKArchive;					// true if VTK archiving is active
 		float *timeStamp;						// pointer to header location for time
+		Vector lastContactForce;				// last contact force archived
 #ifdef LOG_PROGRESS
 		char *logFile;							// file for tracking progress
 		double logStartTime;
