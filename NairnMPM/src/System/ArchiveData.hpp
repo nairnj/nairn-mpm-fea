@@ -74,6 +74,7 @@ class ArchiveData : public CommonArchiveData
 		bool GetDoingVTKArchive(void);
 		int GetVTKArchiveStepInterval(void);
 		Vector GetLastContactForce(void);
+		void SetLastContactForce(Vector);
 	
 	private:
 		double nextArchTime,nextGlobalTime;

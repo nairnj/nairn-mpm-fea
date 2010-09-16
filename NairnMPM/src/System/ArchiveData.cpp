@@ -1243,7 +1243,9 @@ int ArchiveData::GetVTKArchiveStepInterval(void)
 	return archiveStepInterval;
 }
 
+// store recent contact force in case needed for global archiving
 Vector ArchiveData::GetLastContactForce(void) { return lastContactForce; }
+void ArchiveData::SetLastContactForce(Vector fcontact) { lastContactForce=fcontact; }
 
 
 

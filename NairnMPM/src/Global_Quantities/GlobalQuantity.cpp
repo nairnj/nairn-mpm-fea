@@ -493,17 +493,21 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 					AddVector(&ftotal,&fcontact);
 				}
 				ScaleVector(&ftotal,-1./(double)totalSteps);		// force of rigid particles on the object
+				if(clearForces)
+				{	// store in archiver if VTK archive is not doing it
+					archiver->SetLastContactForce(ftotal);
+				}
 			}
-			else if(!clearForces)
-			{	// doing VTK archive, but this will fail if it is not archiving contact forces
+			else
+			{	// if doing VTK archive, this will fail if it is not archiving contact forces
 				ftotal=archiver->GetLastContactForce();
 			}
 			// if totalSteps==0 and clearForces, then must be zero, as initialized above
 				
-			// divide by time steps
+			// pick the component
 			if(quantity==TOT_FCONX)
 				value=ftotal.x;
-			else if(quantity=TOT_FCONY)
+			else if(quantity==TOT_FCONY)
 				value=ftotal.y;
 			else
 				value=ftotal.z;
