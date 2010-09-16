@@ -14,7 +14,7 @@
 // include this to write tasks to a .log file during the calculation
 // If a crash occurs, the log file can be consulted to see where it
 // crashed in the time step
-//#define LOG_PROGRESS
+#define LOG_PROGRESS
 
 // C includes
 // Used to have <stdio.h>
