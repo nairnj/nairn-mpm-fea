@@ -3,12 +3,12 @@
 
 = Introduction =
 
-When the current code seems to be broken, it might be necessary to check out previous revisions to see what changed to cause the problem. This partial list has notes on certain key features put into various versions and on when source code was actually changes. Non-unique versions mean only comments or documentation was changed, but no source code was changed.
+When the current code seems to be broken, it might be necessary to check out previous revisions to see what changed to cause the problem. This partial list has notes on certain key features put into various versions and on when source code was actually changed. Non-unique versions mean only comments or documentation was changed, but no source code was changed (or a change appear in several commits).
 
 
 = Known Unique Revisions =
 
-Revisions before the start of the table or after the end of table have not be checked. Revisions between any two numbers should have source code identical to the previous revision number.
+Revisions before the start of the table or after the end of table have not been checked. Revisions between any two numbers should be avoided when comparing to older code. Those revisions are either identical or might have a partial commit and should not be used.
 
 || Revision || Date || Change highlights ||
 || r151 || 5 May 2010 || Added `nmix` for mixed mode fracture criteria ||
@@ -32,3 +32,5 @@ Revisions before the start of the table or after the end of table have not be ch
 || r206 || 11 Aug 2010 || Removed Normals=2 and replaced with `RigidBias` ||
 || r211 || 18 Aug 2010 || Work on tracking of rigid contact forces ||
 || r218 || 26 Aug 2010 || Added `DevelFlag` for cutting, but rest should be same as r211 ||
+|| r223 || 15 Sep 2010 || Added `VTKArchive` for contact forces on grid.<br> A global archive option for contact did not work for more than one component ||
+|| r225 || 16 Sep 2010 || Fixed global archiving of more than one component of total contact force on the grid ||
