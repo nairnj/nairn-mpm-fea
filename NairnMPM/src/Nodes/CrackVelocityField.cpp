@@ -14,6 +14,7 @@
 #include "Exceptions/CommonException.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
+#include "Materials/MaterialBase.hpp"
 
 #pragma mark INITIALIZATION
 
@@ -72,7 +73,7 @@ void CrackVelocityField::Zero(short theLoc,int cnum,bool zeroMVFs)
 // If first material point for this velocity field, save the velocity too
 void CrackVelocityField::AddMomentumTask1(int matfld,Vector *addPk,Vector *vel)
 {	if(mvf[matfld]==NULL)
-	{	mvf[matfld]=new MatVelocityField();
+	{	mvf[matfld]=new MatVelocityField(MaterialBase::GetMVFIsRigid(matfld));
 		if(mvf[matfld]==NULL) throw CommonException("Memory error allocating material velocity field.",
 													"CrackVelocityField::AddMomentumTask1");
 	}
@@ -270,7 +271,7 @@ double CrackVelocityField::UnscaledVolumeNonrigid(void) { return unscaledVolume;
 double CrackVelocityField::UnscaledVolumeRigid(void) { return 0.; }
 
 // add contact force on rigid material to the input vector
-void CrackVelocityField::SumRigidContactForces(Vector *fcontact) {}
+void CrackVelocityField::SumAndClearRigidContactForces(Vector *fcontact,bool) {}
 
 #pragma mark CLASS METHODS
 

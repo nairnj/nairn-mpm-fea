@@ -23,16 +23,17 @@ class MatVelocityField
 		double mass;				// total mass of this field
 		Vector pk;					// momentum
 		Vector vk;					// velocity
-		Vector fint;				// internal force
+		Vector fint;				// internal force (fint.x is last time step archived for rigid material)
 		Vector fext;				// external force
-		Vector ftot;				// total force
+		Vector ftot;				// total force or contact force for rigid material
 		Vector disp;				// displacement for contact calculations
 		Vector *massGrad;			// mass gradient allocated in multimaterial mode
+		bool rigidField;			// TRUE or FALSE if for rigid contact particles
 	
 		// constants (not changed in MPM time step)
 				
         // constructors and destructors
-        MatVelocityField();
+        MatVelocityField(short);
 		~MatVelocityField();
 		void Zero(void);
 		

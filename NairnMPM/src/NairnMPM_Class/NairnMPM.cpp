@@ -14,7 +14,6 @@
 #include "Custom_Tasks/PropagateTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
-#include "Custom_Tasks/RigidContactForces.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Exceptions/CommonException.hpp"
@@ -134,14 +133,6 @@ void NairnMPM::MPMAnalysis(bool abort)
 			theTasks=theJKTask;
 			ElementBase::AllocateNeighbors();
 		}
-	}
-
-	// rigid material contact forces, but only if has such particles (i.e., in multimaterial mode)
-	//	and will archive stresses and feature is activated. It is inserted at beginning of custom tasks
-	if(hasRigidContactParticles && archiver->PointArchive(ARCH_Stress) && contact.archiveRigidForces)
-	{	nextTask=new RigidContactForces();
-		nextTask->nextTask=theTasks;
-		theTasks=nextTask;
 	}
 
 	// see if any need initializing

@@ -835,14 +835,18 @@ Vector NodalPoint::GetContactForce(short vfld,int matfld)
 }
 
 // Some all forces from rigid material velocity fields
-Vector NodalPoint::GetTotalContactForce(void)
+Vector NodalPoint::GetTotalContactForce(bool clearForces)
 {	int i;
 	Vector fcontact;
 	ZeroVector(&fcontact);
     for(i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->SumRigidContactForces(&fcontact);
+			cvf[i]->SumAndClearRigidContactForces(&fcontact,clearForces);
 	}
+	double scale=-1.e-6/timestep;
+	fcontact.x*=scale;
+	fcontact.y*=scale;
+	fcontact.z*=scale;
 	return fcontact;
 }
 

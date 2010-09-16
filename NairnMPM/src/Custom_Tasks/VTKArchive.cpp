@@ -87,6 +87,12 @@ char *VTKArchive::InputParam(char *pName,int &input)
 		thisBuffer=-1;
     }
 	
+    else if(strcmp(pName,"contactforce")==0)
+    {	q=VTK_RIGIDCONTACTFORCES;
+		// no buffer since no need to extrapolate
+		thisBuffer=-3;
+    }
+	
     else if(strcmp(pName,"concentration")==0)
     {	q=VTK_CONCENTRATION;
 		thisBuffer=1;
@@ -121,8 +127,8 @@ char *VTKArchive::InputParam(char *pName,int &input)
 	if(q>=0)
 	{	quantity.push_back(q);
 		quantitySize.push_back(thisBuffer);				// <0 is size for non-extrapolated quantities
-		if(thisBuffer<0) thisBuffer=-thisBuffer;
-		bufferSize+=thisBuffer;
+		//if(thisBuffer<0) thisBuffer=-thisBuffer;
+		if(thisBuffer>0) bufferSize+=thisBuffer;
 		char *qname=new char[strlen(pName)+1];
 		strcpy(qname,pName);
 		quantityName.push_back(qname);

@@ -223,12 +223,6 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         }
     }
 	
-    else if(strcmp(xName,"ArchiveRigidForces")==0)
-    {	if(block!=MULTIMATERIAL)
-			ThrowCompoundErrorMessage(xName," command must be in <MultiMaterialMode> block.","");
-		contact.archiveRigidForces=TRUE;
-	}
-	
     else if(strcmp(xName,"ArchiveRoot")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
         input=TEXT_BLOCK;
@@ -860,6 +854,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 				else if(strcmp(value,"VTKArchive")==0)
                 {   nextTask=(CustomTask *)(new VTKArchive());
                     if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
+					archiver->SetDoingVTKArchive(TRUE);
                 }
                 else
                     throw SAXException("Unknown custom task requested for scheduling.");

@@ -107,6 +107,9 @@
 <dd>Archive plastic energy (in J).
 </dd>
 
+<dt>contactforce</dt>
+<dd>Nodal force on the grid for <a href="mpmheader.html#mmmode"><code>MultiMaterialMode</code></a> simulations when they include <a href="definematl.html#rigid">rigid materials</a> that have <code>SetDirection</code>=8. It is force of the rigid material on the object in Newtons.</dd>
+
 <dt>archiveTime</dt>
 <dd>Enter the time interval (in ms) between saving of <code>VTK</code> archives. If this parameter is omitted, the VTK archive files are written on the same steps as the particle archives (see <a href="mpmheader.html#atime">ArchiveTime</a> and <a href="mpmheader.html#fatime">FirstArchiveTime</a> commands). The one exception is that no VTK archive is written on the first step.
 </dd>
