@@ -228,7 +228,7 @@
 <dd>Only used when there is crack propagation with <a href="mpmheader.html#cracks">criterion</a> 3. Still in development and not meant for general use.</dd>
 
 <dt>&lt;xGrow&gt;20&lt;/xGrow&gt; and &lt;yGrow&gt;0&lt;/yGrow&gt;</dt>
-<dd>These properties (one or both with default 0) specify a unit vector for a constant crack growth direction. They only apply for crack propagation with <a href="mpmheader.html#cracks">criterion</a> 2 and result in constant crack growth direction regardless of stress state. Any input vector will be normalized to a unit vector. If constant crack growth directions with a <a href="cracks.html">fixed crack</a> are located precisely on grid lines, it is possible for the crack algorithm to not recognize the crack plane. Is it better to move such a crack sligthly off grid lines.
+<dd>These properties (one or both with default 0) specify a unit vector for a constant crack growth direction. They only apply for crack propagation with <a href="mpmheader.html#cracks">criterion</a> 2 and then only when that criterion selects the default propagation direction. The result is constant crack growth direction regardless of stress state or crack tip orientation. Any input vector will be normalized to a unit vector. If constant crack growth directions with a <a href="cracks.html">fixed crack</a> are located precisely on grid lines, it is possible for the crack algorithm to not recognize the crack plane. It is better to move such a crack sligthly off grid lines.
 </dd>
 
 <dt>&lt;delIc&gt;0.1&lt;/delIc&gt; and &lt;delIIc&gt;0.1&lt;/delIIc&gt;
