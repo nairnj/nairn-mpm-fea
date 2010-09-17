@@ -707,6 +707,13 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
                             return NOGROWTH;
                         }
                     }
+					if(fmobj->dflag[0]==4)
+					{	// stop in cutting simulation when reach edge of the sample
+						if(crkTip->x<1.)
+                        {   crkTip->steadyState=ARRESTING;
+                            return NOGROWTH;
+                        }
+					}
                     break;
                 
                 case ARRESTING:
