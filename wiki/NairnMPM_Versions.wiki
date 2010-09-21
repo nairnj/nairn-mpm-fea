@@ -25,8 +25,10 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Rewrote `MPMStep()` to organize all tasks into task objects. The tasks can be profiled. A future plan is to optimize each task, perhaps for multi-core processors.
     * Added `AltPropagate` command to allow competing fracture modes. Its initial use is for competition between interface fracture and fracture turning into the bulk.
     * The default `Vmin` for multimaterial contact was changed to 0.0.
-    * Added new `RigidBias` attribute for `MultiMaterialMode` command that takes the normal from the volume gradient of the rigid material unless the magnitude of the volume gradient of the non-rigid material is higher by the RigidBias factor. It only applies when normals=0.
+    * Added new `RigidBias` attribute for `MultiMaterialMode` command that takes the normal from the volume gradient of the rigid material unless the magnitude of the volume gradient from the non-rigid material is higher by the `RigidBias` factor. It only applies when normals=0.
     * Multimaterial mode that has contact with rigid particles can now track contact forces on the grid by using either a new `VTKArchive` custom task option or a new `GlobalArchive` option.
+    * New Trilinear traction law material was implemented.
+    * Added option to archive contact forces with rigid materials on the grid. A global archive option can archive a sum of all contact forces.
 
   * release-2.0 (25 JUL 2009)
     * Has NairnMPM 7.3.0
