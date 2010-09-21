@@ -203,6 +203,7 @@ ThermalRamp = $(src)/Global_Quantities/ThermalRamp
 TractionLaw = $(src)/Materials/TractionLaw
 TransIsotropic = $(com)/Materials/TransIsotropic
 TransportTask = $(src)/Custom_Tasks/TransportTask
+TrilinearTraction = $(src)/Materials/TrilinearTraction
 UpdateMomentaTask = $(src)/NairnMPM_Class/UpdateMomentaTask
 UpdateParticlesTask = $(src)/NairnMPM_Class/UpdateParticlesTask
 UpdateStrainsFirstTask = $(src)/NairnMPM_Class/UpdateStrainsFirstTask
@@ -286,6 +287,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # RigidMaterial.hpp : MaterialBase.hpp
 # TractionLaw.hpp : MaterialBase.hpp
 # TransIsotropic.hpp : Elastic.hpp (MaterialBase.hpp)
+# TrilinearTraction : MaterialBase.hpp TractionLaw.hpp CohesiveZone.hpp
 # UpdateMomentaTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # UpdateParticlesTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # UpdateStrainsFirstTask.hpp : MPMTask.hpp (CommonTask.hpp)
@@ -324,7 +326,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		BodySphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o BodyCylinderController.o \
 		TractionLaw.o CohesiveZone.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o SLMaterial.o CrackVelocityFieldMulti.o CrackVelocityFieldSingle.o \
-		WoodMaterial.o
+		WoodMaterial.o TrilinearTraction.o
 
 
 # -------------------------------------------------------------------------
@@ -386,7 +388,7 @@ MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialControlle
 		$(Mooney).hpp $(BistableIsotropic).hpp $(RigidMaterial).hpp $(MaterialBase).hpp $(JohnsonCook).hpp \
 		$(Elastic).hpp $(RubberElastic).hpp $(NairnMPM).hpp $(TractionLaw).hpp $(CohesiveZone).hpp $(LinearTraction).hpp \
 		$(CubicTraction).hpp $(AnisoPlasticity).hpp $(IsoPlasticity.hpp) $(HillPlastic).hpp $(MGSCGLMaterial).hpp \
-		$(SLMaterial).hpp $(WoodMaterial).hpp
+		$(SLMaterial).hpp $(WoodMaterial).hpp $(TrilinearTraction).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialController).cpp
 mathexpr.o : $(mathexpr).cpp $(mathexpr).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(mathexpr).cpp
@@ -652,6 +654,9 @@ TractionLaw.o : $(TractionLaw).cpp $(dprefix) $(TractionLaw).hpp $(MaterialBase)
 CohesiveZone.o : $(CohesiveZone).cpp $(dprefix) $(CohesiveZone).hpp $(TractionLaw).hpp $(MaterialBase).hpp \
 			$(CommonReadHandler).hpp $(CrackSegment).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CohesiveZone).cpp
+TrilinearTraction.o : $(TrilinearTraction).cpp $(dprefix) $(TrilinearTraction).hpp $(CohesiveZone).hpp $(TractionLaw).hpp \
+			 $(MaterialBase).hpp $(CommonReadHandler).hpp $(CrackSegment).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TrilinearTraction).cpp
 LinearTraction.o : $(LinearTraction).cpp $(dprefix) $(LinearTraction).hpp $(CohesiveZone).hpp $(TractionLaw).hpp \
 			$(MaterialBase).hpp $(CrackSegment).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(LinearTraction).cpp

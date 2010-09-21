@@ -28,6 +28,7 @@
 	  RigidMaterial+
 	  
 	  TractionLaw (MPM)	->	CohesiveZone+ (MPM)	-> LinearTraction+ (MPM)
+												-> TrilinearTraction+ (MPM)
 						->	CubicTraction+ (MPM)
 ****************************************************************************************************************************/
 
