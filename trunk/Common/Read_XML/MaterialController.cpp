@@ -27,6 +27,7 @@
 	#include "Materials/CohesiveZone.hpp"
 	#include "Materials/LinearTraction.hpp"
 	#include "Materials/CubicTraction.hpp"
+	#include "Materials/TrilinearTraction.hpp"
 #else
 	#include "Materials/ImperfectInterface.hpp"
 #endif
@@ -98,6 +99,9 @@ int MaterialController::AddMaterial(int matID,char *matName)
 			break;
 		case SLMATERIAL:
 			newMaterial=new SLMaterial(matName);
+			break;
+		case TRILINEARTRACTIONMATERIAL:
+			newMaterial=new TrilinearTraction(matName);
 			break;
 #else
 		case INTERFACEPARAMS:

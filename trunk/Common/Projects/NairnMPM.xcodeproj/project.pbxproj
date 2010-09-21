@@ -354,6 +354,8 @@
 		A7F723360A7179C000D23181 /* MatPoint3D.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7F723340A7179C000D23181 /* MatPoint3D.cpp */; };
 		A7F723970A7187F900D23181 /* ElementBase3D.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7F723950A7187F900D23181 /* ElementBase3D.cpp */; };
 		A7F723980A7187F900D23181 /* ElementBase3D.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7F723960A7187F900D23181 /* ElementBase3D.hpp */; };
+		A7FC2031124432B700DEAEF0 /* TrilinearTraction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7FC202F124432B700DEAEF0 /* TrilinearTraction.hpp */; };
+		A7FC2032124432B700DEAEF0 /* TrilinearTraction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7FC2030124432B700DEAEF0 /* TrilinearTraction.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -626,6 +628,8 @@
 		A7F723340A7179C000D23181 /* MatPoint3D.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPoint3D.cpp; sourceTree = "<group>"; };
 		A7F723950A7187F900D23181 /* ElementBase3D.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = ElementBase3D.cpp; sourceTree = "<group>"; };
 		A7F723960A7187F900D23181 /* ElementBase3D.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = ElementBase3D.hpp; sourceTree = "<group>"; };
+		A7FC202F124432B700DEAEF0 /* TrilinearTraction.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TrilinearTraction.hpp; sourceTree = "<group>"; };
+		A7FC2030124432B700DEAEF0 /* TrilinearTraction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TrilinearTraction.cpp; sourceTree = "<group>"; };
 		F536365A01FF7C620163AF10 /* MPMReadHandler.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = MPMReadHandler.hpp; sourceTree = "<group>"; };
 		F536365B01FF7C620163AF10 /* MPMReadHandler.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = MPMReadHandler.cpp; sourceTree = "<group>"; };
 		F549CA5702006FCA0163AF10 /* NodalPoint.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = NodalPoint.cpp; sourceTree = "<group>"; };
@@ -1261,6 +1265,8 @@
 				A79E8AF50D6F7D8700B8AB58 /* TractionLaw.cpp */,
 				A72F0A3D0D943D02003426B3 /* CohesiveZone.hpp */,
 				A72F0A3E0D943D02003426B3 /* CohesiveZone.cpp */,
+				A7FC202F124432B700DEAEF0 /* TrilinearTraction.hpp */,
+				A7FC2030124432B700DEAEF0 /* TrilinearTraction.cpp */,
 				A797728D0DA2E4EB00B0C21E /* LinearTraction.hpp */,
 				A797728E0DA2E4EB00B0C21E /* LinearTraction.cpp */,
 				A7EC3A6F0DA91A9B003D43AC /* CubicTraction.hpp */,
@@ -1400,6 +1406,7 @@
 				67B215D411F96C0C007523EE /* MoveCracksTask.hpp in Headers */,
 				67B215F011F96EC7007523EE /* ResetElementsTask.hpp in Headers */,
 				67BFA35511FB81B70083F95B /* InitializationTask.hpp in Headers */,
+				A7FC2031124432B700DEAEF0 /* TrilinearTraction.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1687,6 +1694,7 @@
 				67B215D511F96C0C007523EE /* MoveCracksTask.cpp in Sources */,
 				67B215F111F96EC7007523EE /* ResetElementsTask.cpp in Sources */,
 				67BFA35611FB81B70083F95B /* InitializationTask.cpp in Sources */,
+				A7FC2032124432B700DEAEF0 /* TrilinearTraction.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

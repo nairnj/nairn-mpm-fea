@@ -146,6 +146,7 @@
 				| K0 | Kd | Gd | alpha0 | alphad | transition | critical | DeltaVOffset
 				| reversible | irreversible | beta0 | betad | sigmaI | sigmaII | kIe | kIIe | nmix
 				| KIc | KIIc | JIc | JIIc | gamma | KIexp | KIIexp | delIc | delIIc | delpkI | delpkII
+				| sigmaI2 | sigmaII2 | delpkI2 | delpkII2
 				| D | DA | DT | Dx | Dy | Dz | D0 | Dd | csat | SettingFunction
 				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration
 				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd
@@ -153,7 +154,7 @@
 				| Bjc | njc | Cjc | ep0jc | C0 | S1 | S2 | GPpG0 | GTpG0 | gamma0
 				| Uk | YP | Friction | tempC1 | tempC2 )* >
 <!ATTLIST	Material
-			Type (1|2|3|4|5|7|8|9|10|11|12|13|14|15|16|17|18|19) #REQUIRED
+			Type (1|2|3|4|5|7|8|9|10|11|12|13|14|15|16|17|18|19|20) #REQUIRED
 			Name CDATA #IMPLIED>
 
 <!-- Displacement Boundary Conditions -->
@@ -372,11 +373,15 @@
 <!ELEMENT	JIIc (#PCDATA)>
 <!ELEMENT	nmix (#PCDATA)>
 <!ELEMENT	sigmaI (#PCDATA)>
+<!ELEMENT	sigmaI2 (#PCDATA)>
 <!ELEMENT	sigmaII (#PCDATA)>
+<!ELEMENT	sigmaII2 (#PCDATA)>
 <!ELEMENT	kIe (#PCDATA)>
 <!ELEMENT	kIIe (#PCDATA)>
 <!ELEMENT	delpkI (#PCDATA)>
+<!ELEMENT	delpkI2 (#PCDATA)>
 <!ELEMENT	delpkII (#PCDATA)>
+<!ELEMENT	delpkII2 (#PCDATA)>
 <!ELEMENT	gamma (#PCDATA)>
 <!ELEMENT	delIc (#PCDATA)>
 <!ELEMENT	delIIc (#PCDATA)>

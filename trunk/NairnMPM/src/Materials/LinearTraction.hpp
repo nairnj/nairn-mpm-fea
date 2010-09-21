@@ -33,7 +33,6 @@ class LinearTraction : public CohesiveZone
 		// accessors
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
-		
 };
 
 #endif
