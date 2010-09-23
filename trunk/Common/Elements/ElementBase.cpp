@@ -126,7 +126,7 @@ long ElementBase::NodeIndex(int i) { return nodes[i-1]-1; }
 
 #pragma mark CLASS METHODS
 
-// zero all velocity fields at start of time step
+// Return length of the sortest element side (because gridTolerance = TOLERANCE_RATIO*(shortest side)
 double ElementBase::GetMinimumCellSize(void) { return gridTolerance/TOLERANCE_RATIO; }
 
 

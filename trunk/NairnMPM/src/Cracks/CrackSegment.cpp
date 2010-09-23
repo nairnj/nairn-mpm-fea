@@ -607,39 +607,50 @@ int CrackSegment::CheckSurfaces(void)
 // vector dir*(-dyp,dxp) should point from surface to back across the crack normal to segment.
 bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool thereIsAnotherSegement,double dir)
 {	
-	int j=side-1;				// index to surface position
+	int j=side-1;								// index to surface position
 	double dxs=surfx[j]-x,dys=surfy[j]-y;		// vector crack particle to surface particle = xs-x
-	double segLength=sqrt(dxp*dxp+dyp*dyp);
+	double segLength=sqrt(dxp*dxp+dyp*dyp);		// segment length
 	
-	// distance crack particle to intersection place (relative to segment length
+	// distance to crack particle (relative to segment length)
+	// if far away, then ignore it. Far away means might have misintrepreted the side
+	double cod=sqrt(dxs*dxs+dys*dys)/segLength;
+	if(cod>1.) return !thereIsAnotherSegement;
+
+	// distance crack particle to intersection place (relative to segment length)
 	double t=(dxs*dxp+dys*dyp)/segLength;
 	
 	// if less than 0 and at first of two internal segments, return to try the next segment instead
 	if(t<0. && thereIsAnotherSegement) return false;
 	
 	// distance surface to crack plane (relative to segment length)
-	double n=(dxs*dyp-dys*dxp)*dir/segLength;
+	//double n=(dxs*dyp-dys*dxp)*dir/segLength;
 	
 	// if pretty close or negative, then do not move to plane and hope velocity fields will resolve on their own
 	// or if first of two internal segments, try the other one
-	if(n<1.e-6) return !thereIsAnotherSegement;
+	//if(n<1.e-6) return !thereIsAnotherSegement;
 	
 	// restrict terminal segments
 	if(prevSeg==NULL || nextSeg==NULL)
 	{	if(t<0.) t=0.;
 	}
+	
+	// restrict to intersect within this segment
 	if(t>1.)
 		t=1.;
 	else if(t<-1.)
 		t=-1.;
 	
-	//cout << "# move side " << side << " from (" << surfx[j] << "," << surfy[j] << ") to (";
+	// if -1 < t < 1, might want to screen out small movements using the n check which used to be above
+	
+	//if(x>16.)
+	//	cout << "# move side " << side << " from (" << surfx[j] << "," << surfy[j] << ") to (";
 	
 	// move to crack plane and a little more in normal direction
 	surfx[j]=x+t*dxp-1.0e-12*dir*dyp;
 	surfy[j]=y+t*dyp+1.0e-12*dir*dxp;
 	
-	//cout <<  surfx[j] << "," << surfy[j] << ") with n = " << n << endl;
+	//if(x>16.)
+	//	cout <<  surfx[j] << "," << surfy[j] << "), (dxp,dyp) = (" << dxp << "," << dyp << ") near (x,y) = (" << x << "," << y << ")" << endl;
 	
 	return true;
 	
