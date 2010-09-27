@@ -10,6 +10,7 @@ import java.nio.*;
 import java.awt.*;
 import java.awt.geom.*;
 
+
 public class MaterialPoint
 {
 	//---------------------------------------------------------------------
@@ -73,22 +74,37 @@ public class MaterialPoint
 		if(showSquarePts)
 		{	if(transformPts)
 			{	double dgrad00=0.01*(eps[MaterialPoint.XXID]+eplast[MaterialPoint.XXID]);
-				double wrot=Math.PI*erot/180.;
-				double dgrad01=0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID]-wrot);
-				double dgrad10=0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID]+wrot);
+				double wrot=Math.PI*(angleZ-erot)/180.;
+				double dgrad01=0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID])+wrot;
+				double dgrad10=0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID])-wrot;
 				double dgrad11=0.01*(eps[MaterialPoint.YYID]+eplast[MaterialPoint.YYID]);
 				
+				// This works in Java 1.5
 				GeneralPath quad=new GeneralPath();
-				Point2D.Float pathPt0=new Point2D.Float((float)(xpt+radiix*(1.+dgrad00)+radiiy*dgrad01),
-											(float)(ypt+radiix*dgrad10+radiiy*(1.+dgrad11)));
+				Point2D.Float pathPt0=new Point2D.Float((float)(xpt+radiix*(1.+dgrad00)-radiiy*dgrad10),
+											(float)(ypt+radiix*dgrad01-radiiy*(1.+dgrad11)));
 				quad.moveTo(pathPt0.x,pathPt0.y);
-				quad.lineTo((float)(xpt+radiix*(1.+dgrad00)-radiiy*dgrad01),
-											(float)(ypt+radiix*dgrad10-radiiy*(1.+dgrad11)));
-				quad.lineTo((float)(xpt-radiix*(1.+dgrad00)-radiiy*dgrad01),
-											(float)(ypt-radiix*dgrad10-radiiy*(1.+dgrad11)));
-				quad.lineTo((float)(xpt-radiix*(1.+dgrad00)+radiiy*dgrad01),
-											(float)(ypt-radiix*dgrad10+radiiy*(1.+dgrad11)));
+				quad.lineTo((float)(xpt+radiix*(1.+dgrad00)+radiiy*dgrad10),
+											(float)(ypt+radiix*dgrad01+radiiy*(1.+dgrad11)));
+				quad.lineTo((float)(xpt-radiix*(1.+dgrad00)+radiiy*dgrad10),
+											(float)(ypt-radiix*dgrad01+radiiy*(1.+dgrad11)));
+				quad.lineTo((float)(xpt-radiix*(1.+dgrad00)-radiiy*dgrad10),
+											(float)(ypt-radiix*dgrad01-radiiy*(1.+dgrad11)));
 				quad.lineTo(pathPt0.x,pathPt0.y);
+				/*
+				// This requires Java 1.6
+				Path2D.Double quad=new Path2D.Double();
+				Point2D.Double pathPt0=new Point2D.Double((double)(xpt+radiix*(1.+dgrad00)-radiiy*dgrad10),
+											(double)(ypt+radiix*dgrad01-radiiy*(1.+dgrad11)));
+				quad.moveTo(pathPt0.x,pathPt0.y);
+				quad.lineTo((double)(xpt+radiix*(1.+dgrad00)+radiiy*dgrad10),
+											(double)(ypt+radiix*dgrad01+radiiy*(1.+dgrad11)));
+				quad.lineTo((double)(xpt-radiix*(1.+dgrad00)+radiiy*dgrad10),
+											(double)(ypt-radiix*dgrad01+radiiy*(1.+dgrad11)));
+				quad.lineTo((double)(xpt-radiix*(1.+dgrad00)-radiiy*dgrad10),
+											(double)(ypt-radiix*dgrad01-radiiy*(1.+dgrad11)));
+				quad.lineTo(pathPt0.x,pathPt0.y);
+				*/
 				return quad;
 			}
 			else
