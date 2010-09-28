@@ -155,7 +155,7 @@ void MatPtLoadBC::GetPosition(double *xpos,double *ypos,double *zpos,double *rot
 {	*xpos=mpm[ptNum-1]->pos.x;
 	*ypos=mpm[ptNum-1]->pos.y;
 	*zpos=mpm[ptNum-1]->pos.z;
-	*rot=mpm[ptNum-1]->GetRotationZ();
+	*rot=mpm[ptNum-1]->GetParticleRotationZ();
 }
 
 

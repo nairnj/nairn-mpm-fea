@@ -83,6 +83,9 @@ class MPMBase : public LinkedObject
 		double GetRotationZ(void);
 		double GetRotationY(void);
 		double GetRotationX(void);
+		double GetParticleRotationZ(void);
+		double GetParticleRotationY(void);
+		double GetParticleRotationX(void);
 		double GetRotationZInDegrees(void);
 		double GetRotationYInDegrees(void);
 		double GetRotationXInDegrees(void);

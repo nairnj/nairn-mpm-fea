@@ -167,6 +167,7 @@ double MPMBase::GetDvDx(void) { return (ep.xy+eplast.xy+wrot.xy)/2.; }
 
 // anglez0 is initial z cw orientation angle (2D and 3D z,y,x scheme)
 double MPMBase::GetRotationZ(void) { return anglez0-0.5*wrot.xy; }
+double MPMBase::GetParticleRotationZ(void) { return -0.5*wrot.xy; }		// rotation in simulation, ignoring initial angle
 double MPMBase::GetRotationZInDegrees(void) { return 180.*(anglez0-0.5*wrot.xy)/PI_CONSTANT; }
 void MPMBase::SetAnglez0(double angle) { anglez0=angle; }
 void MPMBase::SetAnglez0InDegrees(double angle) { anglez0=PI_CONSTANT*angle/180.; }
@@ -174,6 +175,7 @@ double MPMBase::GetAnglez0InDegrees(void) { return 180.*anglez0/PI_CONSTANT; }
 
 // angley0 is initial y cw orientation angle (3D z,y,x scheme)
 double MPMBase::GetRotationY(void) { return angley0+0.5*wrot.xz; }
+double MPMBase::GetParticleRotationY(void) { return +0.5*wrot.xz; }		// rotation in simulation, ignoring initial angle
 double MPMBase::GetRotationYInDegrees(void) { return 180.*(angley0+0.5*wrot.xz)/PI_CONSTANT; }
 void MPMBase::SetAngley0(double angle) { angley0=angle; }
 void MPMBase::SetAngley0InDegrees(double angle) { angley0=PI_CONSTANT*angle/180.; }
@@ -181,6 +183,7 @@ double MPMBase::GetAngley0InDegrees(void) { return 180.*angley0/PI_CONSTANT; }
 
 // anglex0 is initial x cw orientation angle (3D z,y,x scheme)
 double MPMBase::GetRotationX(void) { return anglex0-0.5*wrot.yz; }
+double MPMBase::GetParticleRotationX(void) { return -0.5*wrot.yz; }		// rotation in simulation, ignoring initial angle
 double MPMBase::GetRotationXInDegrees(void) { return 180.*(anglex0-0.5*wrot.yz)/PI_CONSTANT; }
 void MPMBase::SetAnglex0(double angle) { anglex0=angle; }
 void MPMBase::SetAnglex0InDegrees(double angle) { anglex0=PI_CONSTANT*angle/180.; }
