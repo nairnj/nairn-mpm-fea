@@ -21,7 +21,8 @@ The version number is coded in the constructor of the `NairnMPM.cpp` class:
 NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions currently in this project are as follows:
 
   * Current trunk Version
-    * Working on NairnMPM 8.0.0
+    * Working on NairnMPM 8.0.1
+    * Changed `q` in user-defined functions to mean rotation during the simulation rather then material angle it meant before. Changed in 8.0.1 and it will invalidate old input files that used `q` in functions on particles that started with non-zero rotation angle.
     * Rewrote `MPMStep()` to organize all tasks into task objects. The tasks can be profiled. A future plan is to optimize each task, perhaps for multi-core processors.
     * Added `AltPropagate` command to allow competing fracture modes. Its initial use is for competition between interface fracture and fracture turning into the bulk.
     * The default `Vmin` for multimaterial contact was changed to 0.0.
