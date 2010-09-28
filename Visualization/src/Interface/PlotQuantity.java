@@ -141,6 +141,7 @@ public class PlotQuantity extends PlotControl
 		c.gridwidth = GridBagConstraints.REMAINDER;
 		c.weightx = 1.0;
 		gridbag.setConstraints(quant, c);
+		quant.setToolTipText("Selected the archived quantity to be plotter");
 		add(quant);
 		
 		// when quantity changes, update component menu
@@ -164,6 +165,7 @@ public class PlotQuantity extends PlotControl
 		c.weightx = 1.0;
 		gridbag.setConstraints(cmpnt, c);
 		cmpnt.addItem("--");
+		cmpnt.setToolTipText("Select component of currently selected quantity, which will depend on the type of quantity");
 		add(cmpnt);
 		
 		setEnabled(LoadArchive.NO_PLOT);

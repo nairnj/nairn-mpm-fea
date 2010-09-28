@@ -7,7 +7,10 @@
 *******************************************************************/
 
 import java.awt.*;
+
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 public class PlotOptions extends PlotControl
 {
@@ -36,17 +39,21 @@ public class PlotOptions extends PlotControl
 	JCheckBox showMeshBCs=new JCheckBox("Show BCs",true);
 	JCheckBox showDispMesh=new JCheckBox("Show Displaced Mesh",true);
 	JCheckBox transformPts=new JCheckBox("Transform Pts",true);
+	JCheckBox showSquarePts=new JCheckBox("Square Material Pts",true);
 	
 	// default off
 	JCheckBox showPtNums=new JCheckBox("Show Mat Pt Numbers",false);
-	JCheckBox showSquarePts=new JCheckBox("Square Material Pts",false);
 	JCheckBox showCrackPlanes=new JCheckBox("Show Crack Planes",false);
 	JCheckBox showNodeNums=new JCheckBox("Show Node Numbers",false);
 	JCheckBox showElemNums=new JCheckBox("Show Elem Numbers",false);
 	JCheckBox showNodes=new JCheckBox("Show Nodes",false);
 	JCheckBox clipParticles=new JCheckBox("Clip To Particles",false);
 	
-	// initialize
+	// particle size
+	private JLabel sizeSelected=new JLabel("100",JLabel.LEFT);
+	JSlider mpmParticleSize=new JSlider(JSlider.HORIZONTAL,0,100,5);
+	int particleSize=50;
+	
 	PlotOptions(DocViewer dc)
 	{   super(ControlPanel.WIDTH,142,dc);
 		setLayout(new GridLayout(7,2));
@@ -66,7 +73,37 @@ public class PlotOptions extends PlotControl
 		add(transformPts);
 		add(clipParticles);
 		
+		JPanel sizePanel=new JPanel();
+		GridBagLayout gridbag = new GridBagLayout();
+		GridBagConstraints c = new GridBagConstraints();
+		sizePanel.setLayout(gridbag);
+		c.fill = GridBagConstraints.HORIZONTAL;
+		
+		sizeSelected.setFont(new Font("sanserif",Font.PLAIN,9));
+		c.insets=new Insets(3,10,0,0);
+		c.gridwidth = 1;
+		c.weightx = 0.0;
+		gridbag.setConstraints(sizeSelected, c);
+		sizePanel.add(sizeSelected);
+
+		mpmParticleSize.setValue(particleSize);
+		mpmParticleSize.setToolTipText("Scale particle size as percent of cell size (default is 50%)");
+		mpmParticleSize.addChangeListener(new ChangeListener()
+		{   public void stateChanged(ChangeEvent e)
+			{	particleSize=mpmParticleSize.getValue();
+				sizeSelected.setText(""+particleSize);
+			}
+		});
+		c.insets=new Insets(0,0,0,0);
+		c.gridwidth = GridBagConstraints.REMAINDER;
+		c.weightx = 1.0;
+		gridbag.setConstraints(mpmParticleSize, c);
+		sizePanel.add(mpmParticleSize);
+		add(sizePanel);
+		
 		setEnabled(LoadArchive.NO_PLOT);
+		sizeSelected.setMinimumSize(sizeSelected.getPreferredSize());
+		sizeSelected.setText(""+particleSize);
 	}
 
 	// enable or disable check boxes
@@ -85,6 +122,7 @@ public class PlotOptions extends PlotControl
 			showDispMesh.setEnabled(false);
 			transformPts.setEnabled(true);
 			clipParticles.setEnabled(false);
+			mpmParticleSize.setEnabled(true);
 		}
 		else if(plotType==LoadArchive.MESH_PLOT)
 		{	showPts.setEnabled(false);
@@ -101,12 +139,14 @@ public class PlotOptions extends PlotControl
 				showSquarePts.setEnabled(false);
 				transformPts.setEnabled(false);
 				clipParticles.setEnabled(false);
+				mpmParticleSize.setEnabled(false);
 			}
 			else
 			{	showDispMesh.setEnabled(false);
 				showSquarePts.setEnabled(true);
 				transformPts.setEnabled(true);
 				clipParticles.setEnabled(true);
+				mpmParticleSize.setEnabled(true);
 			}
 		}
 		else
@@ -123,6 +163,7 @@ public class PlotOptions extends PlotControl
 			showDispMesh.setEnabled(false);
 			transformPts.setEnabled(false);
 			clipParticles.setEnabled(false);
+			mpmParticleSize.setEnabled(false);
 		}
 	}
 

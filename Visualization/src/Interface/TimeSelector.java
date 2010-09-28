@@ -35,6 +35,7 @@ public class TimeSelector extends PlotControl
 		{	select.setMajorTickSpacing(10);
 			select.setPaintTicks(true);
 		}
+		select.setToolTipText("Select the initial time results to be plotted");
 		add(select);
 		
 		// the displayed value
@@ -86,6 +87,9 @@ public class TimeSelector extends PlotControl
 		{   archiveTimes=docCtrl.resDoc.archiveTimes;
 			select.setEnabled(true);
 			select.setMaximum(archiveTimes.size()-1);
+			int ticks=(archiveTimes.size()-1)/10;
+			if(ticks<1) ticks=1;
+			select.setMajorTickSpacing(ticks);
 			//select.setValue(0);
 			timeSelected.setEnabled(true);
 		}

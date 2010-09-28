@@ -38,11 +38,11 @@ public class LoadArchive extends PlotControl implements ActionListener
 		plotType=new JRadioButton[4];
 		rbIcon=new JButton[4];
 		int top=6;
-		createButtonIcon(PARTICLE_PLOT,"ParticlePlots",top);
+		createButtonIcon(PARTICLE_PLOT,"ParticlePlots",top,"Particle plot of MPM results");
 		plotType[PARTICLE_PLOT].setSelected(true);
-		createButtonIcon(TIME_PLOT,"TimePlots",top);
-		createButtonIcon(MESH_PLOT,"MeshPlots",top);
-		createButtonIcon(MESH2D_PLOT,"Mesh2DPlots",top);
+		createButtonIcon(TIME_PLOT,"TimePlots",top,"Plot results as a function of time");
+		createButtonIcon(MESH_PLOT,"MeshPlots",top,"Mesh plot of MPM or FEA results");
+		createButtonIcon(MESH2D_PLOT,"Mesh2DPlots",top,"Plot results along a line through the grid at a fixed time");
 		
 		setEnabled(false);
 		setSize(ControlPanel.WIDTH,plotType[MESH2D_PLOT].getY()+plotType[MESH2D_PLOT].getHeight()+12);
@@ -73,7 +73,7 @@ public class LoadArchive extends PlotControl implements ActionListener
 	}
 	
 	// help to set an image of a radio button
-	private void createButtonIcon(int rbID,String icon,int yloc)
+	private void createButtonIcon(int rbID,String icon,int yloc,String btnTip)
 	{
 		plotType[rbID]=new JRadioButton();
 		int xloc= rbID>0 ? plotType[rbID-1].getX()+plotType[rbID-1].getWidth()+ICON_WIDTH+5 : 5 ;
@@ -81,6 +81,7 @@ public class LoadArchive extends PlotControl implements ActionListener
 		plotType[rbID].setActionCommand(icon);
 		plotType[rbID].setSize(plotType[rbID].getPreferredSize());
 		plotType[rbID].setLocation(xloc,yloc+6);
+		plotType[rbID].setToolTipText(btnTip+". Follow the lines to set additional options.");
 		plotGroup.add(plotType[rbID]);
 		add(plotType[rbID]);
 		
@@ -93,6 +94,7 @@ public class LoadArchive extends PlotControl implements ActionListener
 		rbIcon[rbID].setFocusPainted(false);
 		rbIcon[rbID].setBorderPainted(false);
 		rbIcon[rbID].setContentAreaFilled(false);
+		rbIcon[rbID].setToolTipText(btnTip+". Follow the lines to set additional options.");
 		add(rbIcon[rbID]);
 	}
 
