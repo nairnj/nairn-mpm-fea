@@ -37,3 +37,4 @@ Revisions before the start of the table or after the end of table have not been 
 || r228 || 16 Sep 2010 || Fixed single material mode broken in r223 and r225<br>Note that r227 is same but had logging enabled ||
 || r231 || 21 Sep 2010 || Added Trilinear Traction law material ||
 || r234 || 23 Sep 2010 || Changed movement of surface particles to crack surfaces<br>Ignores large movements because they are usually wrong ||
+|| r239 || 28 Sep 2010 || Changed meaning of `q` in user defined functions and changed to version 8.0.1 ||
