@@ -52,7 +52,7 @@ public class AboutWindow extends JFrame implements ActionListener
 		JLabel developer=new JLabel("   Written and documented by John A. Nairn");
 		developer.setFont(small);
 		
-		JButton homePage=addURLButton("http://woodscience.oregonstate.edu/faculty/nairn",small);
+		JButton homePage=addURLButton("http://www.cof.orst.edu/cof/wse/faculty/Nairn/",small);
 		
 		JButton webSite=addURLButton("http://oregonstate.edu/~nairnj/NairnFEAMPM",small);
 		

@@ -358,7 +358,7 @@ public class MeshPlotView extends JPanel
 	//----------------------------------------------------------------------------
 	
 	// set plot options
-	public void setOptions(boolean [] options,int theComponent,int theType)
+	public void setOptions(boolean [] options,int theComponent,int theType,double particleSize)
 	{	showMesh=options[PlotOptions.SHOW_MESH];
 		showMeshBCs=options[PlotOptions.SHOW_MESHBCS];
 		showNodeNums=options[PlotOptions.SHOW_NODENUMS];
@@ -375,6 +375,7 @@ public class MeshPlotView extends JPanel
 		
 		plotComponent=theComponent;
 		plotType=theType;
+		mpDiam=particleSize;
 		
 		if(plotType!=MPMPARTICLE_PLOTS)
 		{	showMatPts=false;

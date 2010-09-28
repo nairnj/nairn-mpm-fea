@@ -290,6 +290,7 @@ public class ControlPanel extends JPanel
 
 	// get list of options for the plot
 	public boolean [] getOptions() { return options.getOptions(); }
+	public double getParticleSize() { return (double)options.particleSize; }
 	
 	// get currently selected archive
 	public int getArchiveIndex() { return selectTime.getArchiveIndex(); }

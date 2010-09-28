@@ -179,7 +179,7 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProg
 	public void beginNewIndexNewComponent(int newIndex,int newComponent)
 	{	movieComponent=newComponent;
 		ControlPanel controls=resDoc.docCtrl.controls;
-		plotView.setOptions(controls.getOptions(),movieComponent,plotType);
+		plotView.setOptions(controls.getOptions(),movieComponent,plotType,controls.getParticleSize());
 		
 		boolean sameIndex=!movieControls.setArchiveIndex(newIndex);
 		if(sameIndex || resDoc.isFEAAnalysis())
