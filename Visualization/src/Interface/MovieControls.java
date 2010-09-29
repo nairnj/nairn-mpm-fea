@@ -7,7 +7,11 @@
 *******************************************************************/
 
 import java.awt.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+
 import javax.swing.*;
+
 import java.net.*;
 
 public class MovieControls extends JPanel
@@ -23,16 +27,30 @@ public class MovieControls extends JPanel
 	private JButton rewindMov=new JButton();
 	private JButton playMov=new JButton();
 	private TimeSelector selectTime=null;
+	public JComboBox pquant=new JComboBox();
+	public JComboBox pcmpnt=new JComboBox();
+	private boolean disableStartPlot=false;
+	private int plotType;
 	
+	// axes
+	private String xchar="x";
+	private String ychar="y";
+	private String zchar="z";
+	
+	// hold variable
+	private ResultsDocument resDoc;
+
 	//----------------------------------------------------------------------------
 	// initialize
 	//----------------------------------------------------------------------------
 	
-	MovieControls(int width,ResultsDocument gResDoc,MoviePlotWindow movieCtrl)
+	MovieControls(int width,ResultsDocument gResDoc,MoviePlotWindow movieCtrl,DocViewer gDocView)
 	{   super();
 		setLayout(null);
 		setPreferredSize(new Dimension(width,HEIGHT));
 		setBackground(Color.lightGray);
+		resDoc=gResDoc;
+		plotType=movieCtrl.getPlotType();
 		
 		int hpos=8;
 		if(gResDoc.isMPMAnalysis())
@@ -82,6 +100,72 @@ public class MovieControls extends JPanel
 		meshData.setBackground(Color.lightGray);
 		add(meshData);
 		
+		hpos+=meshData.getWidth()+3;
+		
+		// quantity menu
+		JComboBox quant=gResDoc.docCtrl.controls.getQuantityMenu();
+		int n=quant.getItemCount();
+		int i;
+		for(i=0;i<n;i++)
+		{	pquant.addItem(quant.getItemAt(i));
+		}
+		pquant.setSize(pquant.getPreferredSize());
+		pquant.setLocation(hpos,(HEIGHT-pquant.getHeight())/2);
+		add(pquant);
+		
+		hpos+=pquant.getWidth()+3;
+		
+		// component menu
+		JComboBox cmpnt=gResDoc.docCtrl.controls.getComponentMenu();
+		n=cmpnt.getItemCount();
+		for(i=0;i<n;i++)
+		{	pcmpnt.addItem(cmpnt.getItemAt(i));
+		}
+		pcmpnt.setSize(new Dimension(100,pquant.getHeight()));
+		pcmpnt.setLocation(hpos,(HEIGHT-pquant.getHeight())/2);
+		add(pcmpnt);
+		
+		// select quantity
+		pquant.setSelectedIndex(quant.getSelectedIndex());
+		pcmpnt.setSelectedIndex(cmpnt.getSelectedIndex());
+		
+		// when quantity changes, update component menu, update parent controls, redraw plot
+		pquant.addItemListener(new ItemListener()
+		{	public void itemStateChanged(ItemEvent e)
+			{	setComponentMenu();
+			
+				// sync with control panel, but only if same mode and different
+				int ctrlPlotType=resDoc.docCtrl.controls.getPlotType();
+				if(ctrlPlotType==plotType)
+				{	int newIndex=pquant.getSelectedIndex();
+					JComboBox plotQuant=resDoc.docCtrl.controls.getQuantityMenu();
+					if(plotQuant.getSelectedIndex()!=newIndex)
+						plotQuant.setSelectedIndex(newIndex);
+				}
+				
+				// replat
+				if(!disableStartPlot)
+					resDoc.docCtrl.startNewPlot(plotType);
+			}
+		});
+		
+		pcmpnt.addItemListener(new ItemListener()
+		{	public void itemStateChanged(ItemEvent e)
+			{	int ctrlPlotType=resDoc.docCtrl.controls.getPlotType();
+			
+				// sync with control panel, but only if same mode and different
+				if(ctrlPlotType==plotType)
+				{	int newIndex=pcmpnt.getSelectedIndex();
+					JComboBox plotCmpnt=resDoc.docCtrl.controls.getComponentMenu();
+					if(plotCmpnt.getSelectedIndex()!=newIndex)
+						plotCmpnt.setSelectedIndex(newIndex);
+				}
+				
+				// replot
+				if(!disableStartPlot)
+					resDoc.docCtrl.startNewPlot(plotType);
+			}
+		});
 	}
 	
 	//----------------------------------------------------------------------------
@@ -107,4 +191,118 @@ public class MovieControls extends JPanel
 		else
 			setButtonIcon("Play.png",playMov);
 	}
+	
+	// called when state changed in quantity menu
+	public void setComponentMenu()
+	{
+		PlotMenuItem pm=(PlotMenuItem)pquant.getSelectedItem();
+		if(pm==null) return;
+		switch(pm.getTag())
+		{   case PlotQuantity.MPMSIGMAX:
+			case PlotQuantity.MPMEPSX:
+			case PlotQuantity.MPMPLEPSX:
+			case PlotQuantity.MESHSIGMAX:
+			case PlotQuantity.MESHSTRAINX:
+			case PlotQuantity.MESHELEMSIGMAX:
+				if(!pcmpnt.getItemAt(0).equals(xchar+xchar))
+				{	pcmpnt.removeAllItems();
+					pcmpnt.addItem(xchar+xchar);
+					pcmpnt.addItem(ychar+ychar);
+					pcmpnt.addItem(xchar+ychar);
+					pcmpnt.addItem(zchar+zchar);
+				}
+				pcmpnt.setEnabled(true);
+				break;
+			
+			case PlotQuantity.MPMVELX:
+			case PlotQuantity.MPMDISPX:
+			case PlotQuantity.MESHDISPX:
+			case PlotQuantity.MESHFORCEX:
+				if(!pcmpnt.getItemAt(0).equals(xchar))
+				{	pcmpnt.removeAllItems();
+					pcmpnt.addItem(xchar);
+					pcmpnt.addItem(ychar);
+				}
+					pcmpnt.setEnabled(true);
+				break;
+			
+				
+			case PlotQuantity.MPMDCDX:
+				if(!pcmpnt.getItemAt(0).equals("dc/d"+xchar))
+				{	pcmpnt.removeAllItems();
+					pcmpnt.addItem("dc/d"+xchar);
+					pcmpnt.addItem("dc/d"+ychar);
+				}
+				pcmpnt.setEnabled(true);
+				break;
+				
+			case PlotQuantity.MPMDVDX:
+			case PlotQuantity.MESHDVDX:
+				if(!pcmpnt.getItemAt(0).equals("dv/d"+xchar))
+				{	pcmpnt.removeAllItems();
+					pcmpnt.addItem("dv/d"+xchar);
+					pcmpnt.addItem("du/d"+ychar);
+				}
+				pcmpnt.setEnabled(true);
+				break;
+			
+			case PlotQuantity.INTERFACETRACTION_N:
+				if(!pcmpnt.getItemAt(0).equals("normal"))
+				{	pcmpnt.removeAllItems();
+					pcmpnt.addItem("normal");
+					pcmpnt.addItem("tangential");
+				}
+				pcmpnt.setEnabled(true);
+				break;
+				
+			default:
+				pcmpnt.setEnabled(false);
+				break;
+		}
+	}
+	
+	// get plot component from current selection
+	public int getPlotComponent()
+	{	PlotMenuItem pm=(PlotMenuItem)pquant.getSelectedItem();
+		if(pm==null) return -1;
+		int plotComponent=pm.getTag();
+		
+		// adjust component menus - add component selected in component menu
+		int extra;
+		switch(plotComponent)
+		{   case PlotQuantity.MPMSIGMAX:
+			case PlotQuantity.MPMEPSX:
+			case PlotQuantity.MPMPLEPSX:
+			case PlotQuantity.MPMVELX:
+			case PlotQuantity.MPMDCDX:
+			case PlotQuantity.MPMDISPX:
+			case PlotQuantity.MPMDVDX:
+			case PlotQuantity.MESHSIGMAX:
+			case PlotQuantity.MESHDISPX:
+			case PlotQuantity.MESHSTRAINX:
+			case PlotQuantity.MESHDVDX:
+			case PlotQuantity.MESHELEMSIGMAX:
+			case PlotQuantity.MESHFORCEX:
+			case PlotQuantity.INTERFACETRACTION_N:
+				extra=pcmpnt.getSelectedIndex();
+				if(extra>=0) plotComponent+=extra;
+				break;
+			default:
+				break;
+		}
+		return plotComponent;
+	}
+	
+	// synch quantity and component menu when replot
+	public void syncPlotQuantityMenus()
+	{	disableStartPlot=true;
+		JComboBox plotQuant=resDoc.docCtrl.controls.getQuantityMenu();
+		if(plotQuant.getSelectedIndex()!=pquant.getSelectedIndex())
+			pquant.setSelectedIndex(plotQuant.getSelectedIndex());
+		JComboBox plotCmpnt=resDoc.docCtrl.controls.getComponentMenu();
+		if(plotCmpnt.getSelectedIndex()!=pcmpnt.getSelectedIndex())
+			pcmpnt.setSelectedIndex(plotCmpnt.getSelectedIndex());
+		disableStartPlot=false;
+	}
+
 }

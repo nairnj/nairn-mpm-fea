@@ -284,6 +284,8 @@ public class ControlPanel extends JPanel
 	
 	// get plot wanted
 	public int getPlotComponent() { return quantity.getPlotComponent(); }
+	public JComboBox getQuantityMenu() { return quantity.quant; }
+	public JComboBox getComponentMenu() { return quantity.cmpnt; }
 	
 	// set to item for checking the mesh
 	public void setCheckMeshItem() { quantity.setCheckMeshItem(); }
