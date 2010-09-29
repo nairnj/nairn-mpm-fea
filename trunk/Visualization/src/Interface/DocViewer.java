@@ -127,11 +127,17 @@ public class DocViewer extends NFMVViewer
 				}
 				else
 				{	// existing window
-					int newComponent=controls.getPlotComponent();
+					int newComponent;
+					if(newType==controls.getPlotType())
+						newComponent=controls.getPlotComponent();
+					else
+						newComponent=movieFrame.movieControls.getPlotComponent();
 					movieFrame.setTitle(resDoc.name+" ("+PlotQuantity.plotName(newComponent)+")");
 					movieFrame.setVisible(true);
 					movieFrame.toFront();
 					movieFrame.beginNewIndexNewComponent(controls.getArchiveIndex(),newComponent);
+					if(newType==controls.getPlotType())
+						movieFrame.movieControls.syncPlotQuantityMenus();
 				}
 				break;
 			

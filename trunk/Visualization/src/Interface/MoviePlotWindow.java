@@ -62,7 +62,7 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProg
 		content.add(plotScroll,BorderLayout.CENTER);
 		
 		// add controls
-		movieControls=new MovieControls(d.width,resDoc,this);
+		movieControls=new MovieControls(d.width,resDoc,this,gDocView);
 		content.add(movieControls,BorderLayout.SOUTH);
 		
 		NFMVPrefs.setWorkspace(chooser);
@@ -351,6 +351,7 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProg
 	
 	public MeshPlotView getPlotView() { return plotView; }
 	public boolean isMovieRunning() { return runFlag; }
+	public int getPlotType() { return plotType; }
 	
 	//----------------------------------------------------------------------------
 	// static methods

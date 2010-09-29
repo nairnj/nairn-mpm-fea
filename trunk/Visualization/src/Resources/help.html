@@ -376,6 +376,10 @@ You can resize the window to scale the plot size to the new window size.
 different times or use the &quot;Play,&quot;
 &quot;Rewind,&quot; and &quot;Pause&quot; buttons to run a movie of MPM results.</p>
 
+<p>You can use the quantity and component menus to plot a new
+simulation result or new component of the current simulation result. To change other plot features, go back
+to the &quot;Analysis Results&quot; window, select new options, and plot again.</p>
+
 <p>You can use the &quot;Zoom&quot; menu to zoom in on the plot. The zoom level is relative to the
 current window size and will remain so as the window is resized.
 Choose &quot;100%&quot; to see the entire plot.
@@ -387,7 +391,15 @@ the nearest element (el), the nearest node (nd), the nearest material point (mp)
 the plotting value of the nearest material point (z)
 </p>
 
-<p><a name="exportpng"></a>The &quot;Export Graphics...&quot; command in the &quot;File&quot; menu will export the current frame to a <code>png</code> file using a name you provide. The &quot;Export Movie Frames...&quot; command will export a series of frames (starting from current) to the end of the frames (or until the pause control is clicked). The names of the exported frames will use the base name you enter and append a number (<i>e.g.</i>, 0022) for the frame index number just prior to the <code>.png</code> extension. These saved files will overwrite any files in the target folder with the same name. This naming can be read by other software (such as reading an &quot;Image Sequence&quot; into ImageJ) that can convert the frames to a movie.</p> 
+<p><a name="exportpng"></a>The &quot;Export Graphics...&quot; command in the &quot;File&quot; menu
+will export the current frame to a <code>png</code> file using a name you provide.
+The &quot;Export Movie Frames...&quot; command will export a series of
+frames (starting from current) to the end of the frames (or until the pause control is clicked).
+The names of the exported frames will use the base name you enter and append a number
+(<i>e.g.</i>, 0022) for the frame index number just prior to the <code>.png</code>
+extension. These saved files will overwrite any files in the target folder with the same name.
+This naming can be read by other software (such as reading an &quot;Image Sequence&quot; into ImageJ)
+that can convert the frames to a movie.</p> 
 
 <p>| <a href="#index">index</a> | <a href="#plotting">Back to Plotting Results</a> |</p>
 
@@ -522,17 +534,22 @@ at different times or use the &quot;Play,&quot;
 FEA results plot the mesh results, but
 the movie controls will be inactive (since FEA results are static)</p>
 
-<p>You can move the mouse over the plot area. As it moves, the control bar will
-display the coordinates of the mouse location (x and y), that location's plot value (z),
-the nearest element (el), and the nearest node (nd).
-</p>
+<p>You can use the quantity and component menus to plot a new
+simulation result or new component of the current simulation result. To change other plot features, go back
+to the &quot;Analysis Results&quot; window, select new options, and plot again.</p>
 
 <p>You can use the &quot;Zoom&quot; menu to zoom in on the plot. The zoom level is relative to the
 current window size and will remain so as the window is resized.
 Choose &quot;100%&quot; to see the entire plot.
 </p>
 
-<p>You can use <a href="#exportpng">menu commands to export</a> the frame to a graphics file or to export a series of frames (for MPM results only).
+<p>You can move the mouse over the plot area. As it moves, the control bar will
+display the coordinates of the mouse location (x and y), that location's plot value (z),
+the nearest element (el), and the nearest node (nd).
+</p>
+
+<p>You can use <a href="#exportpng">menu commands to export</a> the frame to a graphics file
+or to export a series of frames (for MPM results only).
 
 <p>| <a href="#index">index</a> | <a href="#plotting">Back to Plotting Results</a> |</p>
 
