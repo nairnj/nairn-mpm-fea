@@ -30,6 +30,7 @@ public class NFMVViewer extends NFMVFrame
 	
 	NFMVViewer partnerCtrl=null;			// cmds->viz or viz->cmds
 	protected JMenuItem showPartnerMenuItem;
+	public JMenu editMenu=null;
 	public JMenu windowMenu;
 	protected JPanel buttonBar=new JPanel();
 	
@@ -107,6 +108,13 @@ public class NFMVViewer extends NFMVFrame
 		if(isCommandViewer())
 		{	makeMenuItem(menu,"Save","Save",KeyEvent.VK_S,this);
 			makeMenuItem(menu,"Save As...","SaveAs",0,this);
+		}
+		
+		// Edit menu
+		if(isCommandViewer())
+		{	editMenu = new JMenu("Edit");
+			menuBar.add(editMenu);
+			makeMenuItem(editMenu,"Go To Line...","GoToLine",0,this);
 		}
 		
 		// Window menu

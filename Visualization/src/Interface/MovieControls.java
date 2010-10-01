@@ -26,10 +26,10 @@ public class MovieControls extends JPanel
 
 	private JButton rewindMov=new JButton();
 	private JButton playMov=new JButton();
-	private TimeSelector selectTime=null;
+	public TimeSelector selectTime=null;
 	public JComboBox pquant=new JComboBox();
 	public JComboBox pcmpnt=new JComboBox();
-	private boolean disableStartPlot=false;
+	public boolean disableStartPlot=false;
 	private int plotType;
 	
 	// axes
@@ -133,37 +133,15 @@ public class MovieControls extends JPanel
 		pquant.addItemListener(new ItemListener()
 		{	public void itemStateChanged(ItemEvent e)
 			{	setComponentMenu();
-			
-				// sync with control panel, but only if same mode and different
-				int ctrlPlotType=resDoc.docCtrl.controls.getPlotType();
-				if(ctrlPlotType==plotType)
-				{	int newIndex=pquant.getSelectedIndex();
-					JComboBox plotQuant=resDoc.docCtrl.controls.getQuantityMenu();
-					if(plotQuant.getSelectedIndex()!=newIndex)
-						plotQuant.setSelectedIndex(newIndex);
-				}
-				
-				// replat
-				if(!disableStartPlot)
-					resDoc.docCtrl.startNewPlot(plotType);
+				if(e.getStateChange()==ItemEvent.SELECTED)
+					JNNotificationCenter.getInstance().postNotification("PlotQuantityChanged",resDoc.docCtrl,pquant);
 			}
 		});
 		
 		pcmpnt.addItemListener(new ItemListener()
 		{	public void itemStateChanged(ItemEvent e)
-			{	int ctrlPlotType=resDoc.docCtrl.controls.getPlotType();
-			
-				// sync with control panel, but only if same mode and different
-				if(ctrlPlotType==plotType)
-				{	int newIndex=pcmpnt.getSelectedIndex();
-					JComboBox plotCmpnt=resDoc.docCtrl.controls.getComponentMenu();
-					if(plotCmpnt.getSelectedIndex()!=newIndex)
-						plotCmpnt.setSelectedIndex(newIndex);
-				}
-				
-				// replot
-				if(!disableStartPlot)
-					resDoc.docCtrl.startNewPlot(plotType);
+			{	if(e.getStateChange()==ItemEvent.SELECTED)
+					JNNotificationCenter.getInstance().postNotification("PlotQuantityChanged",resDoc.docCtrl,pcmpnt);
 			}
 		});
 	}
@@ -226,7 +204,6 @@ public class MovieControls extends JPanel
 					pcmpnt.setEnabled(true);
 				break;
 			
-				
 			case PlotQuantity.MPMDCDX:
 				if(!pcmpnt.getItemAt(0).equals("dc/d"+xchar))
 				{	pcmpnt.removeAllItems();

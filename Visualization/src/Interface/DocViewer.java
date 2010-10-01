@@ -65,6 +65,9 @@ public class DocViewer extends NFMVViewer
 		// size and location
 		setFramePrefs("Results Window Width",600,"Results Window Height",800);
 		setFrameLocAndSize(this);
+		
+		// notifications
+		//JNNotificationCenter.getInstance().addNameAndObjectForTarget("TimeSliderChanged",this,this);
 	}
 	
 

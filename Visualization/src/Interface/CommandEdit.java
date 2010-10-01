@@ -64,6 +64,7 @@ public class CommandEdit extends JScrollPane
 	public void setCommands(String fileText)
 	{	textPane.setText(fileText);
 		textPane.select(0,0);
+		textPane.requestFocusInWindow();
 		changed=false;
 	}
 
