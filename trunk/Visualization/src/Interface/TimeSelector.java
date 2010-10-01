@@ -1,6 +1,12 @@
 /*******************************************************************
 	TimeSelector.java
 	NairnFEAMPMViz
+	
+	This same class is used for time selecter in both the results
+	control panel and in the movie window. Its location is determined
+	by whether movieCtrl==null (in results control panel) or
+	movieCtrl!=null (in movie plot window). docCtrl is always the
+	document controller.
 
 	Created by John Nairn on Tue Mar 09 2004.
 	Copyright (c) 2004 RSAC Software. All rights reserved.
@@ -16,12 +22,13 @@ public class TimeSelector extends PlotControl
 	static final long serialVersionUID=23L;
 	
 	// variables
-	private JSlider select=new JSlider(0,50,0);
+	public JSlider select=new JSlider(0,50,0);
 	private JLabel timeSelected=new JLabel();
 	private ArrayList<Double> archiveTimes;
 	private int value=-1;
 	private MoviePlotWindow movieCtrl;
 	private DocViewer docCtrl;
+	private String prefix;
 	
 	// initialize
 	TimeSelector(MoviePlotWindow mpc,DocViewer dc)
@@ -34,11 +41,13 @@ public class TimeSelector extends PlotControl
 		if(movieCtrl==null)
 		{	select.setMajorTickSpacing(10);
 			select.setPaintTicks(true);
+			select.setToolTipText("Select the initial time results to be plotted");
 		}
-		select.setToolTipText("Select the initial time results to be plotted");
+		else
+			select.setToolTipText("Select different time results to be plotted");
 		add(select);
 		
-		// the displayed value
+		// the displayed value in a text field
 		timeSelected.setHorizontalAlignment(JLabel.CENTER);
 		add(timeSelected);
 		
@@ -50,27 +59,24 @@ public class TimeSelector extends PlotControl
 			select.setBackground(Color.lightGray);
 			timeSelected.setFont(new Font("sanserif",Font.PLAIN,10));
 			timeSelected.setText(archiveTimes.get(0) + " ms");
+			prefix="";
 		}
 		else
 		{	setEnabled(LoadArchive.NO_PLOT);
 			timeSelected.setText("Time: 0.0 ms");
+			prefix="Time: ";
 		}
 		select.setFocusable(false);
 			
 		// the slider listener
 		select.addChangeListener(new ChangeListener()
 		{   public void stateChanged(ChangeEvent e)
-			{	if(movieCtrl!=null)
-				{	timeSelected.setText(archiveTimes.get(select.getValue()) + " ms");
-					if(!select.getValueIsAdjusting() && value!=select.getValue())
+			{	timeSelected.setText(prefix + archiveTimes.get(select.getValue()) + " ms");
+				if(!select.getValueIsAdjusting())
+				{	if(value!=select.getValue())
 					{	value=select.getValue();
-						movieCtrl.changeArchiveIndex(value);
+						JNNotificationCenter.getInstance().postNotification("TimeSliderChanged",docCtrl,select);
 					}
-					docCtrl.controls.setArchiveIndex(select.getValue());
-				}
-				else
-				{	timeSelected.setText("Time: " + archiveTimes.get(select.getValue()) + " ms");
-					if(!select.getValueIsAdjusting()) value=select.getValue();
 				}
 			}
 		});
@@ -107,16 +113,12 @@ public class TimeSelector extends PlotControl
 	public boolean setArchiveIndex(int newIndex)
 	{	if(newIndex!=select.getValue())
 		{	select.setValue(newIndex);
-			if(movieCtrl!=null)
-				docCtrl.controls.setArchiveIndex(newIndex);
-			// state change will reload the data
 			return true;
 		}
 		else if(value<0)
-		{	// only here on first call
+		{	// only here on first call, so post notification to get it read if in movie controller
 			value=select.getValue();
-			if(movieCtrl!=null)
-				movieCtrl.changeArchiveIndex(value);
+			JNNotificationCenter.getInstance().postNotification("TimeSliderChanged",docCtrl,select);
 			return true;
 		}
 		return false;
@@ -127,8 +129,6 @@ public class TimeSelector extends PlotControl
 	{	int currentIndex=select.getValue();
 		if(currentIndex==select.getMaximum()) return false;
 		select.setValue(currentIndex+1);
-		if(movieCtrl!=null)
-			docCtrl.controls.setArchiveIndex(currentIndex+1);
 		return true;
 	}
 }

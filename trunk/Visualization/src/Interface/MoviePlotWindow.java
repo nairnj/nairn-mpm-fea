@@ -20,7 +20,7 @@ import javax.imageio.*;
 import javax.imageio.stream.ImageOutputStream;
 import javax.imageio.event.*;
 
-public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProgressListener
+public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProgressListener, JNNotificationListener
 {
 	static final long serialVersionUID=12L;
 	
@@ -34,7 +34,7 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProg
 	protected MovieControls movieControls;
 	protected boolean runFlag,imageStillWriting;
 	protected int movieComponent;
-	protected int plotType;
+	public int plotType;
 	protected String frameFileRoot=null;
 	protected MeshPlotScroll plotScroll;
 	protected JCheckBoxMenuItem checkedZoomItem;
@@ -66,6 +66,16 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProg
 		content.add(movieControls,BorderLayout.SOUTH);
 		
 		NFMVPrefs.setWorkspace(chooser);
+		
+		// notifications
+		JNNotificationCenter.getInstance().addNameAndObjectForTarget("TimeSliderChanged",gDocView,this);
+		JNNotificationCenter.getInstance().addNameAndObjectForTarget("PlotQuantityChanged",gDocView,this);
+	}
+	
+	// dispose - remove the notification
+	public void dispose()
+	{	JNNotificationCenter.getInstance().removeAllForTarget(this);
+		super.dispose();
 	}
 
 	// make menu bar on launch
@@ -289,6 +299,55 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProg
 		
 		else
 			super.actionPerformed(e);
+	}
+	
+	public void receiveNotification(JNNotificationObject obj)
+	{	if(obj.getName().equals("TimeSliderChanged"))
+		{	JSlider select=(JSlider)obj.getUserInfo();
+			if(select==movieControls.selectTime.select)
+			{	// if slider in movie controller changes, load data and synch with doc view
+				changeArchiveIndex(select.getValue());
+				docView.controls.setArchiveIndex(select.getValue());
+			}
+			else
+			{	// if slider in doc view changed, change movie controller
+				// if it causes a changed, this will trigger notification to call again and
+				// load the data with above code
+				movieControls.setArchiveIndex(select.getValue());
+			}
+		}
+	
+		else if(obj.getName().equals("PlotQuantityChanged"))
+		{	JComboBox qmenu=(JComboBox)obj.getUserInfo();
+			int ctrlPlotType=docView.controls.getPlotType();
+			if(qmenu==movieControls.pquant)
+			{	// changed in plot window, synch with results window
+				if(ctrlPlotType==plotType)
+				{	int newIndex=qmenu.getSelectedIndex();
+					JComboBox plotQuant=docView.controls.getQuantityMenu();
+					if(plotQuant.getSelectedIndex()!=newIndex)
+						plotQuant.setSelectedIndex(newIndex);
+				}
+				if(!movieControls.disableStartPlot)
+					docView.startNewPlot(plotType);
+			}
+			else if(qmenu==movieControls.pcmpnt)
+			{	// changed in plot window, synch with results window
+				if(ctrlPlotType==plotType)
+				{	int newIndex=qmenu.getSelectedIndex();
+					JComboBox plotCmpnt=docView.controls.getComponentMenu();
+					if(plotCmpnt.getSelectedIndex()!=newIndex)
+						plotCmpnt.setSelectedIndex(newIndex);
+				}
+				if(!movieControls.disableStartPlot)
+					docView.startNewPlot(plotType);
+			}
+			else
+			{	// changed in controll panel - synch and replot
+				movieControls.syncPlotQuantityMenus();
+				docView.startNewPlot(plotType);
+			}
+		}
 	}
 
 	// export current frame to saveFile and return true of false if done OK

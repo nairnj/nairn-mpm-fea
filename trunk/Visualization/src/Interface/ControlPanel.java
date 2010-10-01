@@ -257,6 +257,14 @@ public class ControlPanel extends JPanel
 		int plotComponent=getPlotComponent();
 		timeoptions.setEnabled(selected,plotComponent);
 		thecrack.setEnabled(selected,plotComponent);
+		/*
+		// include this to replot on each menu change in control panel, but user might
+		// prefer to change both before replotting and it activated plot window too
+		if(docCtrl.movieFrame!=null)
+		{	if(getPlotType()==docCtrl.movieFrame.plotType)
+				JNNotificationCenter.getInstance().postNotification("PlotQuantityChanged",docCtrl,null);
+		}
+		*/
 	}
 	
 	//----------------------------------------------------------------------------

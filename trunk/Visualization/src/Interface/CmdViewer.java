@@ -14,7 +14,7 @@ import javax.swing.*;
 import java.io.*;
 import java.util.*;
 
-public class CmdViewer extends NFMVViewer implements Runnable
+public class CmdViewer extends NFMVViewer implements Runnable, FocusListener
 {
 	static final long serialVersionUID=30L;
 	
@@ -26,6 +26,7 @@ public class CmdViewer extends NFMVViewer implements Runnable
 	private JSplitPane full;			// window split view - TextDisplay on top, Console on bottom
 	private CommandEdit cmdField;		// editing zone at top of window
 	private ConsolePane console;		// console pane on the bottom
+	private Component currentFocus=null;	// which text area has focus
 	private ProcessBuilder builder;
 	private boolean running=false;
 	private boolean openMesh=false;
@@ -56,9 +57,11 @@ public class CmdViewer extends NFMVViewer implements Runnable
 				
 		// top displays sections and text of selected section
 		cmdField=new CommandEdit();
+		cmdField.textPane.addFocusListener(this);
 		
 		// console on the bottom
 		console=new ConsolePane();
+		console.soutPane.addFocusListener(this);
 		
 		// full window split pane
 		full=new JSplitPane(JSplitPane.VERTICAL_SPLIT,cmdField,console);
@@ -136,6 +139,15 @@ public class CmdViewer extends NFMVViewer implements Runnable
 					JOptionPane.showMessageDialog(this,"This window does not have an associated results.");
 				}
 			}
+		}
+		
+		else if(theCmd.equals("GoToLine"))
+		{	if(currentFocus==console.soutPane)
+				System.out.println("In the output console");
+			else if(currentFocus==cmdField.textPane)
+				System.out.println("In the command editor");
+			else
+				System.out.println("No focus"+currentFocus);
 		}
 		
 		else
@@ -373,6 +385,19 @@ public class CmdViewer extends NFMVViewer implements Runnable
 		running=false;
 	}
 	
+	//----------------------------------------------------------------------------
+	// Track which text field has focus (or null if neither
+	//----------------------------------------------------------------------------
+	
+	public void focusGained(FocusEvent e)
+	{	currentFocus=e.getComponent();
+	}
+
+	public void focusLost(FocusEvent e)
+	{	if(!e.isTemporary())
+			currentFocus=null;
+	}
+
 	//----------------------------------------------------------------------------
 	// Accessors
 	//----------------------------------------------------------------------------
