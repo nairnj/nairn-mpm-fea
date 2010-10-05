@@ -11,13 +11,17 @@ When the current code seems to be broken, it might be necessary to check out pre
 Revisions before the start of the table or after the end of table have not been checked. Revisions between any two numbers should be avoided when comparing to older code. Those revisions are either identical or might have a partial commit and should not be used.
 
 || Revision || Date || Change highlights ||
+|| r45 || 29 Dec 2009 || Official 1.0 now on Google Code ||
+|| r79 || 30 Dec 2009 || Changed to 7.2.1 ||
+|| r104 || 14 Jan 2010 || Changed to 7.2.1, Anisotropic 3D, but<br>broke. Fixed in r120 ||
+|| r120 || 13 Mar 2010 || Changed to 7.2.3, Fixed broken 2D code ||
 || r151 || 5 May 2010 || Added `nmix` for mixed mode fracture criteria ||
 || r157 || 10 May 2010 || Tried combining rigid particles between crack velocity fields ||
 || r158 || 10 May 2010 || Corrected volume gradient calculation in rigid contact to divide by rho<sup>2</sup> ||
 || r159 || 11 May 2010 || Removed combining of rigid particles ||
 || r160 || 11 May 2010 ||  ||
 || r161 || 21 May 2010 || Rotation calculations in `Generators.cpp` ||
-|| r168 || 3 Jun 2010 || Work on anisotropic 3D materials ||
+|| r168 || 3 Jun 2010 || Changed to 7.3.0, Anisotropic 3D materials ready ||
 || r173 || 4 Jun 2010 || Added `WoodMaterial` ||
 || r176 || 4 Jun 2010 || Work on `WoodMaterial` ||
 || r177 || 9 Jun 2010 || ||
@@ -25,7 +29,7 @@ Revisions before the start of the table or after the end of table have not been 
 || r181 || 24 Jun 2010 || ||
 || r183 || 14 Jul 2010 || Only change in `NodalPoint::GetMassGradient()`, but should have no affect ||
 || r188 || 25 Jul 2010 || Tagged as release 2.0, but should be same as r181 ||
-|| r189 || 25 Jul 2010 || Converted `MPMStep()` to use task objects ||
+|| r189 || 25 Jul 2010 || Changed to 8.0.0, Converted `MPMStep()` to use task objects ||
 || r200 || 30 Jul 2010 || Added Normals=2 option ||
 || r204 || 4 Aug 2010 || ||
 || r205 || 6 Aug 2010 || Added development flags to Rigid contact to try other methods ||
@@ -37,4 +41,4 @@ Revisions before the start of the table or after the end of table have not been 
 || r228 || 16 Sep 2010 || Fixed single material mode broken in r223 and r225<br>Note that r227 is same but had logging enabled ||
 || r231 || 21 Sep 2010 || Added Trilinear Traction law material ||
 || r234 || 23 Sep 2010 || Changed movement of surface particles to crack surfaces<br>Ignores large movements because they are usually wrong ||
-|| r239 || 28 Sep 2010 || Changed meaning of `q` in user defined functions and changed to version 8.0.1 ||
+|| r239 || 28 Sep 2010 || Changed to 8.0.1, Changed meaning of `q` in user defined functions ||
