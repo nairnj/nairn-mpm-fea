@@ -80,7 +80,7 @@ public class JNNotificationCenter extends Object
 		for(index=vector.size()-1;index>=0;index--)
 		{	JNNotificationObject notifyObject=vector.get(index);
 			if(notifyObject.getTarget()==target)
-			{	//System.out.println("Removed "+notificationName+" for "+target.getClass().getName());
+			{	System.out.println("Removed "+notificationName+" for "+target.getClass().getName());
 				vector.remove(index);
 			}
 		}
@@ -107,7 +107,7 @@ public class JNNotificationCenter extends Object
 		{	if(notify.getObject()==null || notify.getObject()==sender)
 			{	notify.setUserInfo(info);
 				notify.setSender(sender);
-				//System.out.println("Send "+notificationName+" to "+notify.getTarget().getClass().getName());
+				System.out.println("Send "+notificationName+" to "+notify.getTarget().getClass().getName());
 				notify.getTarget().receiveNotification(notify);
 			}
 		}
