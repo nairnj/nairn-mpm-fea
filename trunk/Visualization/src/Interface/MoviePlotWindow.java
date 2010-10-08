@@ -70,6 +70,18 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProg
 		// notifications
 		JNNotificationCenter.getInstance().addNameAndObjectForTarget("TimeSliderChanged",gDocView,this);
 		JNNotificationCenter.getInstance().addNameAndObjectForTarget("PlotQuantityChanged",gDocView,this);
+		
+		// this works to directly can method in parent class (or other class), but I have not
+		// figure out how removing the notificaiton basedo n target can funcion and inner class
+		// It owuld be good to find the parant class instance
+		/*
+		JNNotificationCenter.getInstance().addNameAndObjectForTarget("PlotQuantityChanged",gDocView,
+			new JNNotificationListener()
+			{	public void receiveNotification(JNNotificationObject obj)
+				{	MoviePlotWindow.this.pqc(obj);
+				}
+			});
+		*/
 	}
 	
 	// dispose - remove the notification
@@ -349,6 +361,40 @@ public class MoviePlotWindow extends NFMVFrame implements Runnable, IIOWriteProg
 			}
 		}
 	}
+	
+	public void pqc(JNNotificationObject obj)
+	{	JComboBox qmenu=(JComboBox)obj.getUserInfo();
+		int ctrlPlotType=docView.controls.getPlotType();
+		if(qmenu==movieControls.pquant)
+		{	// changed in plot window, synch with results window
+			if(ctrlPlotType==plotType)
+			{	int newIndex=qmenu.getSelectedIndex();
+				JComboBox plotQuant=docView.controls.getQuantityMenu();
+				if(plotQuant.getSelectedIndex()!=newIndex)
+					plotQuant.setSelectedIndex(newIndex);
+			}
+			if(!movieControls.disableStartPlot)
+				docView.startNewPlot(plotType);
+		}
+		else if(qmenu==movieControls.pcmpnt)
+		{	// changed in plot window, synch with results window
+			if(ctrlPlotType==plotType)
+			{	int newIndex=qmenu.getSelectedIndex();
+				JComboBox plotCmpnt=docView.controls.getComponentMenu();
+				if(plotCmpnt.getSelectedIndex()!=newIndex)
+					plotCmpnt.setSelectedIndex(newIndex);
+			}
+			if(!movieControls.disableStartPlot)
+				docView.startNewPlot(plotType);
+		}
+		else
+		{	// changed in controll panel - synch and replot
+			movieControls.syncPlotQuantityMenus();
+			docView.startNewPlot(plotType);
+		}
+	}
+
+
 
 	// export current frame to saveFile and return true of false if done OK
 	public boolean exportPlotFrame(File saveFile)
