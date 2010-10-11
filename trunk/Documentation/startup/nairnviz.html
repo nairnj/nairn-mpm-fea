@@ -224,7 +224,7 @@ path to the java binaries will be something like: </p>
 <li>Select &quot;Java Application&quot; and click the &quot;New&quot; icon to create a new runnable</li>
 <li>Enter any name such as &quot;<b>NairnFEAMPMViz with Memmory</b>.&quot;</li>
 <li>Enter &quot;<b>NairnFEAMPMViz</b>&quot; (or browse for it) into the Project field</li>
-<li>Enter &quot;Main&quot; (or browse for it) into the Main class field</li>
+<li>Enter &quot;NairnFEAMPMViz&quot; (or browse for it) into the Main class field</li>
 <li>Click on &quot;Arguments&quot; tab</li>
 <li>Enter &quot;-Xmx512m&quot; into the VM Arguments field
 (this command tells the Java machine to allocate 512 MB for running <b>NairnFEAMPMViz</b>.
@@ -246,13 +246,13 @@ files needed for the <b>NairnFEAMPMViz</b> project. When you get a new version o
 </ol>
 
 <p>The above jar file will include all the <b>NairnFEAMPMViz</b> code, but will not include
-the external jar file used for x-y plots. Because that jar remains an external jar, you have to navigate to the &quot;lib&quot; folder and run the <b>NairnFEAMPMViz</b> jar file created by this method using:</p>
+the external jars file used application framework and for x-y plots. Because those jar files remain as an external jars, you have to navigate to the &quot;lib&quot; folder and run the <b>NairnFEAMPMViz</b> jar file created by this method using:</p>
 
-<pre>java -Xmx512m -cp NairnFEAMPMViz.jar:JNPlot2D.jar Main
+<pre>java -Xmx512m -cp NairnFEAMPMViz.jar:JNFramework.jar:JNPlot2D.jar NairnFEAMPMViz
 </pre>
 
-<p>where the classpath option (<code>-cp</code>) gives the paths to the two required jar files (both of which should not be in the &quot;lib&quot; folder). The <code>-Xmx512m</code> argument is to give the virtual machine sufficent memory
-(as explained <a href="#runningViz">above</a>).</p>
+<p>where the classpath option (<code>-cp</code>) gives the paths to the three required jar files (all of which should now be in the &quot;lib&quot; folder). The <code>-Xmx512m</code> argument is to give the virtual machine sufficent memory (as explained <a href="#runningViz">above</a>). If you prefer a stand-alone jar file, compile
+using the <a href="#unix">command line method</a> instead of using <a href="http://www.eclipse.org" target="new">Eclipse</a>.</p>
 
 <h1><a name="paraview"></a>ParaView Quick Start</h1>
 
