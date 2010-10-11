@@ -1,16 +1,15 @@
-/*******************************************************************
-	ColorPicker.java
-	NairnFEAMPMViz
-
-	Created by John Nairn on 2/28/07.
-	Copyright 2007 RSAC Software. All rights reserved.
-	
-	No instance - all static variables and methods to hande
-	color spectrum of plots
-*******************************************************************/
+/*
+ * ColorPicker.java
+ * NairnFEAMPMViz Application
+ * 
+ * Created by John Nairn on 2/28/07.
+ * Copyright 2007 RSAC Software. All rights reserved.
+ */
 
 import java.awt.*;
 
+// No instance - all static variables and methods to handle
+// color spectrum of plots
 public class ColorPicker
 {
 	// variables and constants

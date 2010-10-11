@@ -884,9 +884,10 @@ public class ElementBase
 		ElementBase.setSpectrum(dmin,dmax,doc);
 		
 		// tell plot view its range
-		doc.docCtrl.movieFrame.plotView.dataMin=dmin;
-		doc.docCtrl.movieFrame.plotView.dataMax=dmax;
-		doc.docCtrl.movieFrame.plotView.dataLimitsSet=true;
+		MoviePlotWindow movieFrame=doc.docCtrl.getMovieFrame();
+		movieFrame.plotView.dataMin=dmin;
+		movieFrame.plotView.dataMax=dmax;
+		movieFrame.plotView.dataLimitsSet=true;
 	}
 	
 	// get mesh data in preparatoin for 2D mesh plots

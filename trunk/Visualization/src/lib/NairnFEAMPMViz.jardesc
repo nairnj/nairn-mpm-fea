@@ -1,18 +1,70 @@
-<?xml version="1.0" encoding="MacRoman"?>
+<?xml version="1.0" encoding="MacRoman" standalone="no"?>
 <jardesc>
-<jar path="NairnFEAMPMViz/lib/NairnFEAMPMViz.jar"/>
-<options buildIfNeeded="true" compress="true" descriptionLocation="/NairnFEAMPMViz/lib/NairnFEAMPMViz.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
-<storedRefactorings deprecationInfo="true" structuralOnly="false"/>
-<selectedProjects/>
-<manifest generateManifest="true" mainClassHandleIdentifier="=NairnFEAMPMViz/Interface&lt;{Main.java[Main" manifestLocation="" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
-<sealing sealJar="false">
-<packagesToSeal/>
-<packagesToUnSeal/>
-</sealing>
-</manifest>
-<selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
-<javaElement handleIdentifier="=NairnFEAMPMViz/Document"/>
-<javaElement handleIdentifier="=NairnFEAMPMViz/Interface"/>
-<javaElement handleIdentifier="=NairnFEAMPMViz/Resources"/>
-</selectedElements>
+    <jar path="NairnFEAMPMVizFramework/lib/NairnFEAMPMViz.jar"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/NairnFEAMPMVizFramework/lib/NairnFEAMPMViz.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <selectedProjects/>
+    <manifest generateManifest="true" mainClassHandleIdentifier="=NairnFEAMPMVizFramework/Interface&lt;{NairnFEAMPMViz.java[NairnFEAMPMViz" manifestLocation="" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
+        <sealing sealJar="false">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNNotificationObject.java"/>
+        <file path="/NairnFEAMPMVizFramework/geditcom/geditcom/JNFramework/Resources/app-about.png"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNPlainTextDocument.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNPlotTransferable.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNFileFilter.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNYAxisLabels.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNAboutWindow.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNMath.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNCommandParser.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNPlotFontObject.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/ResultsViewer"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNApplication.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNPlotInspector.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNPreferences.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/MovieViewer"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNPlotArrow.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/PlotWindows"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNXAxisLabels.java"/>
+        <file path="/NairnFEAMPMVizFramework/geditcom/geditcom/JNFramework/Resources/document-new.png"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNPlotObject.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNChildWindow.java"/>
+        <file path="/NairnFEAMPMVizFramework/geditcom/geditcom/JNFramework/Resources/document-save-as.png"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNExportLine.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/Document"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNConsolePane.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNPlotArray.java"/>
+        <file path="/NairnFEAMPMVizFramework/geditcom/geditcom/JNFramework/Resources/document-save.png"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNBoxPanel.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNCommandEditor.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNDropTarget.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNInputDialog.java"/>
+        <file path="/NairnFEAMPMVizFramework/geditcom/geditcom/JNFramework/Resources/app-preferences.png"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNUtilities.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNMacAdapter.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNColorWell.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/CommandsDocument"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNTextArea.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNNotificationCenter.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNVector.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNCmdTextDocument.java"/>
+        <file path="/NairnFEAMPMVizFramework/geditcom/geditcom/JNFramework/Resources/document-open.png"/>
+        <file path="/NairnFEAMPMVizFramework/geditcom/geditcom/JNFramework/Resources/app-help.png"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNPlotFrame.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNPlotView.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNNotificationListener.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNPlotLabel.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNPlotText.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNDocumentDelegate.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNHelpWindow.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNDocument.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNAxisLabels.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.JNFramework{JNMatrix.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNPrintPlot.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/geditcom&lt;geditcom.plot2d{JNDragSource.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMVizFramework/Interface"/>
+    </selectedElements>
 </jardesc>
