@@ -11,34 +11,11 @@
         </sealing>
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
-        <javaElement handleIdentifier="=NairnFEAMPMViz/CommandsDocument"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNAxisLabels.java"/>
         <javaElement handleIdentifier="=NairnFEAMPMViz/Document"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.JNFramework"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNExportLine.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNBoxPanel.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNPlotTransferable.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/Interface&lt;Resources"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNPlotArray.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNPlotText.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.JNFramework.Resources"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/Interface&lt;"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNDragSource.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNXAxisLabels.java"/>
-        <folder path="/NairnFEAMPMViz/lib"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNPlotArrow.java"/>
         <javaElement handleIdentifier="=NairnFEAMPMViz/ResultsViewer"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNPlotInspector.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNColorWell.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNPrintPlot.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNYAxisLabels.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNPlotObject.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNPlotView.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNPlotFrame.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/PlotWindows"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNPlotFontObject.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNPlotLabel.java"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/geditcom&lt;geditcom.plot2d{JNDropTarget.java"/>
+        <javaElement handleIdentifier="=NairnFEAMPMViz/Interface"/>
+        <javaElement handleIdentifier="=NairnFEAMPMViz/CommandsDocument"/>
         <javaElement handleIdentifier="=NairnFEAMPMViz/MovieViewer"/>
+        <javaElement handleIdentifier="=NairnFEAMPMViz/PlotWindows"/>
     </selectedElements>
 </jardesc>
