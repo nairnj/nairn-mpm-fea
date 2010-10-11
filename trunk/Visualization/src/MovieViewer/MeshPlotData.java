@@ -66,8 +66,8 @@ public class MeshPlotData  extends PlotControl implements MouseMotionListener
 		Point2D.Double pt=plotView.getCoords(e.getPoint());
 		
 		// coordinates
-		xlabel.setText("x: "+JNUtilities.formatDouble(pt.x));
-		ylabel.setText("y: "+JNUtilities.formatDouble(pt.y));
+		xlabel.setText("x: "+JNUtilities.formatDouble(pt.x)+" "+resDoc.distU);
+		ylabel.setText("y: "+JNUtilities.formatDouble(pt.y)+" "+resDoc.distU);
 		
 		// can't check while movie is running
 		if(resDoc.docCtrl.getMovieFrame().isMovieRunning())

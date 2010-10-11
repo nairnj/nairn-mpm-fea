@@ -229,7 +229,7 @@ public class MeshPlotView extends JPanel
 		xyBounds=new Rectangle2D.Double(meshBounds.getX()-bcExtra,meshBounds.getY()-bcExtra,
 							meshBounds.getWidth()+2.*bcExtra,meshBounds.getHeight()+2.*bcExtra);
 		
-		// adjust aspect ratio to match frame aspect ratio and get scaling (pixels/mm)
+		// adjust aspect ratio to match frame aspect ratio and get scaling (pixels/length unit)
 		Dimension d=getSize();
 		double xyAspect=xyBounds.getHeight()/xyBounds.getWidth();
 		double pixAspect=(double)(d.height-KEY_HEIGHT-2*BORDER)/(double)(d.width-2*BORDER);

@@ -53,6 +53,12 @@ public class ResultsDocument extends AbstractTableModel
 	public DocViewer docCtrl;
 	public int recSize;
 	
+	// units
+	public double lengthScale=1.0;			// mm
+	public String distU="mm";
+	public double timeScale=1.0;			// ms
+	public String timeU="ms";
+	
 	private int currentArchive;
 	
 	//---------------------------------------------------------
@@ -144,8 +150,8 @@ public class ResultsDocument extends AbstractTableModel
 		double xpt,ypt;
 		while(s.hasNextInt())
 		{	nodeNum=s.nextInt();
-			xpt=s.nextDouble();
-			ypt=s.nextDouble();
+			xpt=s.nextDouble()*lengthScale;
+			ypt=s.nextDouble()*lengthScale;
 			if(nodeNum!=prevNodeNum+1)
 				throw new Exception("Some node numbers are missing");
 			addNode(nodeNum,xpt,ypt);
@@ -154,7 +160,7 @@ public class ResultsDocument extends AbstractTableModel
 		if(prevNodeNum!=nnodes)
 			throw new Exception("Number of nodes does not match expected number of nodes.");
 		
-		// bounds now in xmin, xmax, etc., transferred to displacemed bounds
+		// bounds now in xmin, xmax, etc., transferred to displaced bounds
 		dxmin=xmin;
 		dxmax=xmax;
 		dymin=ymin;
@@ -202,7 +208,7 @@ public class ResultsDocument extends AbstractTableModel
 					throw new Exception("Element type found ("+elemID+") that is not yet supported in this tool.");
 			}
 			
-			addElement(elemNum,elemID,nds,matID,elemAngle,elemThickness);
+			addElement(elemNum,elemID,nds,matID,elemAngle,elemThickness*lengthScale);
 			prevElemNum=elemNum;
 		}
 		if(prevElemNum!=nelems)
@@ -303,7 +309,7 @@ public class ResultsDocument extends AbstractTableModel
 								s.next();
 						}
 					}
-					addGridBC(nodeNum,dof,bcID,bcVal,bcArg,bcAngle);
+					addGridBC(nodeNum,dof,bcID,bcVal*lengthScale,bcArg*timeScale,bcAngle);
 				}
 				else
 				{	bcVal=s.nextDouble();
@@ -320,7 +326,7 @@ public class ResultsDocument extends AbstractTableModel
 								bcAngle+=obj.getValue();
 						}
 					}
-					addGridBC(nodeNum,dof,bcID,bcVal,bcArg,bcAngle);
+					addGridBC(nodeNum,dof,bcID,bcVal*lengthScale,bcArg*timeScale,bcAngle);
 				}
 			}
 		}
@@ -361,9 +367,9 @@ public class ResultsDocument extends AbstractTableModel
 			}
 			if(gridInfo!=null)
 			{	sline=new Scanner(gridInfo).useDelimiter("[ :]");
-				if(sline.hasNextDouble()) xscale=sline.nextDouble();
+				if(sline.hasNextDouble()) xscale=sline.nextDouble()*lengthScale;
 				if(sline.hasNext()) sline.next();
-				if(sline.hasNextDouble()) yscale=sline.nextDouble();
+				if(sline.hasNextDouble()) yscale=sline.nextDouble()*lengthScale;
 				if(xscale>yscale)
 				{	xscale/=yscale;
 					yscale=1.;
@@ -502,7 +508,8 @@ public class ResultsDocument extends AbstractTableModel
 				// get time and file name (split any number of spaces)
 				words=line.trim().split(" +");
 				if(words.length<3) continue;
-				addArchiveFile(words[1],words[2]);
+				Double atime=new Double(words[1]);
+				addArchiveFile(atime.doubleValue()*timeScale,words[2]);
 			}
 			
 			// error in no files were found
@@ -525,8 +532,8 @@ public class ResultsDocument extends AbstractTableModel
 					if(numFound>nnodes || numFound<1)
 						throw new Exception("Found nodal displacement with unexpected node number.");
 					anode=nodes.get(numFound-1);
-					anode.dispx=s.nextDouble();
-					anode.dispy=s.nextDouble();
+					anode.dispx=s.nextDouble()*lengthScale;
+					anode.dispy=s.nextDouble()*lengthScale;
 					dxmin=Math.min(dxmin,anode.x+anode.dispx);
 					dxmax=Math.max(dxmax,anode.x+anode.dispx);
 					dymin=Math.min(dymin,anode.y+anode.dispy);
@@ -794,7 +801,7 @@ public class ResultsDocument extends AbstractTableModel
 	}
 	
 	// add archive file if it exists
-	public void addArchiveFile(String time,String name)
+	public void addArchiveFile(double time,String name)
 	{   // do not add unless the file exists
 	    File archive=new File(path,name);
 		if(!archive.exists()) return;
