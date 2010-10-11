@@ -6,7 +6,8 @@
 	<classpathentry kind="src" path="ResultsViewer"/>
 	<classpathentry kind="src" path="MovieViewer"/>
 	<classpathentry kind="src" path="Interface"/>
-	<classpathentry kind="src" path="geditcom"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/JNFramework.jar"/>
+	<classpathentry kind="lib" path="lib/JNPlot2D.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
