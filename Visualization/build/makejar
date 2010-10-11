@@ -14,13 +14,19 @@
 #      /usr/local/jdk1.5.0_06/bin/javac
 #      /usr/local/jdk1.5.0_06/bin/jar
 
-# compile all classes in Document and Interface folders
-javac -Xlint:none -d . -classpath ../src/lib/JNPlot2D.jar ../src/Document/*.java ../src/Interface/*.java
+# compile all classes in code folders
+javac -Xlint:none -d . -cp ../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar \
+../src/Document/*.java ../src/Interface/*.java ../src/CommandsDocument/*.java \
+../src/MovieViewer/*.java ../src/PlotWindows/*.java ../src/ResultsViewer/*.java
 
 # add to jar along with all .png graphics and html help
 mkdir Resources
-cp ../src/Resources/*.* Resources
+cd Resources
+mkdir Resources
+cp ../../src/Interface/Resources/*.* Resources
+cd ..
 jar xf ../src/lib/JNPlot2D.jar
+jar xf ../src/lib/JNFramework.jar
 jar cvmf Manifest NairnFEAMPMViz.jar *.class geditcom -C Resources .
 
 # delete compiled files (or comment out to retain them)

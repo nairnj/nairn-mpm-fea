@@ -588,9 +588,10 @@ public class MaterialPoint
 		setSpectrum(dmin,dmax,doc);
 		
 		// tell plot view its range
-		doc.docCtrl.movieFrame.plotView.dataMin=dmin;
-		doc.docCtrl.movieFrame.plotView.dataMax=dmax;
-		doc.docCtrl.movieFrame.plotView.dataLimitsSet=true;
+		MoviePlotWindow movieFrame=doc.docCtrl.getMovieFrame();
+		movieFrame.plotView.dataMin=dmin;
+		movieFrame.plotView.dataMax=dmax;
+		movieFrame.plotView.dataLimitsSet=true;
 	}
 	
 	// set color spectrum current range by changing colors
