@@ -48,6 +48,10 @@ public class CmdViewer extends JNCmdTextDocument
 		ImageIcon doStop=new ImageIcon(baseClass.getResource("Resources/process-stop.png"));
 		addToolBarIcon(doStop,"StopAnalysis","Run currently running FEA or MPM Analysis.",this);
 
+		addToolBarBar();
+		ImageIcon showRes=new ImageIcon(baseClass.getResource("Resources/image-x-generic.png"));
+		addToolBarIcon(showRes,"ShowPartner","Show associated simulation results (if available).",this);
+
 		finishFrameworkWindow(true);
 	}
 	
