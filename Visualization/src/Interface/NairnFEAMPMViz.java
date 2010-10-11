@@ -20,7 +20,7 @@ public class NairnFEAMPMViz extends JNApplication
 	{	super("NairnFEAMPMViz","Version 3.2.0",
 				"Java application for running and visualizing NairnMPM and NairnFEA calculations.");
 		NFMVPrefs.setWorkspace(chooser);
-		newDocument("MPMCmd");
+		newDocument("Welcome");
 	}
 		
 	//----------------------------------------------------------------------------
@@ -63,7 +63,14 @@ public class NairnFEAMPMViz extends JNApplication
 
 		// create viewer (or use empty one in the front) and add to application
 		docType="MPMCmd";
-		CmdViewer docCtrl=new CmdViewer(docType);
+		CmdViewer docCtrl=null;
+		JNDocument frontDoc=(JNDocument)frontDocument();
+		if(frontDoc==null)
+			docCtrl=new CmdViewer(docType);
+		else if(frontDoc.getDocType().equals(docType) && frontDoc.isEmptyDocument())
+			docCtrl=(CmdViewer)frontDoc;
+		else
+			docCtrl=new CmdViewer(docType);
 		docCtrl.loadTextFromFile(readData);
 		openUntitledDocument(docCtrl);
 	}

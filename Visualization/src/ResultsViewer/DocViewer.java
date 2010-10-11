@@ -44,8 +44,8 @@ public class DocViewer extends JNDocument
 		Class<?> baseClass=JNApplication.main.getClass();
 		ImageIcon newMPM=new ImageIcon(baseClass.getResource("Resources/image-x-generic.png"));
 		addToolBarIcon(newMPM,"Start Plot","Open plot using the currently selected options.",this);
-		//addToolBarBtn(buttonBar,"accessories-text-editor.png","ShowPartner",
-		//		"Show associated commands window (if available).",this);
+		ImageIcon showCmds=new ImageIcon(baseClass.getResource("Resources/commands-editor.png"));
+		addToolBarIcon(showCmds,"ShowPartner","Show associated commands window (if available).",this);
 
 		// top displays sections and text of selected section
 		display=new TextDisplay(resDoc);
