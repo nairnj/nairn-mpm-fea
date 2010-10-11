@@ -125,7 +125,7 @@ public class ReadArchive
 			{	// create material point
 				int pos=bb.position();
 				MaterialPoint mpm=new MaterialPoint(p+1);
-				mpm.readRecord(bb,mpmOrder);
+				mpm.readRecord(bb,mpmOrder,doc.lengthScale,doc.timeScale);
 				
 				// A negative material number means start of crack particles
 				if(mpm.material<0)
@@ -164,7 +164,7 @@ public class ReadArchive
 
 					// add the segment
 					CrackSegment cs=new CrackSegment();
-					cs.readRecord(bb,crackOrder);
+					cs.readRecord(bb,crackOrder,doc.lengthScale,doc.timeScale);
 					ch.add(cs);
 					
 					// next record

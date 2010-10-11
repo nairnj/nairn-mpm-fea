@@ -127,100 +127,116 @@ public class MaterialPoint
 	// read record from and archive file into this material point
 	//---------------------------------------------------------------------
 	
-	public void readRecord(ByteBuffer bb,char[] mpmOrder)
+	public void readRecord(ByteBuffer bb,char[] mpmOrder,double lengthScale,double timeScale)
 	{	// required elements
 		inElem=bb.getInt()-1;					// in element number (zero based)
 		mass=bb.getDouble();					// mass in g
 		material=bb.getShort();					// material number
 		bb.getShort();							// skip 2 bytes
+		
+		// 3D will have 3 angles, but not read in this app yet
 		angleZ=bb.getDouble();					// angle in degrees about Z axis
-		thickness=bb.getDouble();				// thickness in length units
-		x=bb.getDouble();						// x position
-		y=bb.getDouble();						// y position
+		thickness=bb.getDouble()*lengthScale;	// thickness in length units
+		
+		x=bb.getDouble()*lengthScale;			// x position
+		y=bb.getDouble()*lengthScale;			// y position
+		// 3D will have third position
 		
 		// new default puts original position (in length units) here
 		if(mpmOrder[ReadArchive.ARCH_Defaults]=='Y')
-		{	origx=bb.getDouble();
-			origy=bb.getDouble();
+		{	origx=bb.getDouble()*lengthScale;
+			origy=bb.getDouble()*lengthScale;
+			// 3D will have third position
 		}
 
-		// velocity (length units/time units)
+		// velocity (length units/time units), but archive has mm/sec so need to
+		// divide by 1000 to get default units here which are ms
 		if(mpmOrder[ReadArchive.ARCH_Velocity]=='Y')
-		{	velx=bb.getDouble();
-			vely=bb.getDouble();
+		{	double rescale=lengthScale/(1000.*timeScale);
+			velx=bb.getDouble()*rescale;
+			vely=bb.getDouble()*rescale;
+			// 3D will have third velocity
 		}
 		else
 		{	velx=0.;
 			vely=0.;
+			// 3D will have third velocity
 		}
 
-		// stress (in MPa)
+		// stress (in MPa) (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_Stress]=='Y')
 		{	sigma[XXID]=1.e-6*bb.getDouble();
 			sigma[YYID]=1.e-6*bb.getDouble();
 			sigma[ZZID]=1.e-6*bb.getDouble();
 			sigma[XYID]=1.e-6*bb.getDouble();
+			// 3D will have two more components
 		}
 		else
 		{	sigma[XXID]=0.;
 			sigma[YYID]=0.;
 			sigma[ZZID]=0.;
 			sigma[XYID]=0.;
+			// 3D will have two more components
 		}
 		
-		// strain (in %)
+		// strain (in %)  (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_Strain]=='Y')
 		{	eps[XXID]=100.*bb.getDouble();
 			eps[YYID]=100.*bb.getDouble();
 			eps[ZZID]=100.*bb.getDouble();
 			eps[XYID]=100.*bb.getDouble();
+			// 3D will have two more components
 		}
 		else
 		{	eps[XXID]=0.;
 			eps[YYID]=0.;
 			eps[ZZID]=0.;
 			eps[XYID]=0.;
+			// 3D will have two more components
 		}
 		
-		// plastic strain (in %)
+		// plastic strain (in %) (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_PlasticStrain]=='Y')
 		{	eplast[XXID]=100.*bb.getDouble();
 			eplast[YYID]=100.*bb.getDouble();
 			eplast[ZZID]=100.*bb.getDouble();
 			eplast[XYID]=100.*bb.getDouble();
+			// 3D will have two more components
 		}
 		else
 		{	eplast[XXID]=0.;
 			eplast[YYID]=0.;
 			eplast[ZZID]=0.;
 			eplast[XYID]=0.;
+			// 3D will have two more components
 		}
 				
 		// old method for original positions (in length units)
 		if(mpmOrder[ReadArchive.ARCH_OldOrigPosition]=='Y')
-		{	origx=bb.getDouble();
-			origy=bb.getDouble();
+		{	origx=bb.getDouble()*lengthScale;
+			origy=bb.getDouble()*lengthScale;
+			// 3D will have one more position
 		}
 		
-		// external work (cumulative) in J
+		// external work (cumulative) in J (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_ExtWork]=='Y')
 			extWork=bb.getDouble();
 		else
 			extWork=0.;
 		
-		// temperature (C)
+		// temperature (C) (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_DeltaTemp]=='Y')
 			deltaTemp=bb.getDouble();
 		else
 			deltaTemp=0.;
 				
-		// total plastic energy (Volume*energy) in J
+		// total plastic energy (Volume*energy) in J (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_PlasticEnergy]=='Y')
 			plastEnergy=bb.getDouble();
 		else
 			plastEnergy=0.;
 		
-		// shear components (dimensionless)
+		// shear components (dimensionless) (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_ShearComponents]=='Y')
 		{	dudy=bb.getDouble();
 			dvdx=bb.getDouble();
@@ -230,13 +246,13 @@ public class MaterialPoint
 			dvdx=0.;
 		}
 			
-		// total strain energy (Volume*energy) in J
+		// total strain energy (Volume*energy) in J (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_StrainEnergy]=='Y')
 			strainEnergy=bb.getDouble();
 		else
 			strainEnergy=0.;
 			
-		// particle history (variable units)
+		// particle history (variable units) (not converted for units)
 		history1=0.;
 		history2=0.;
 		history3=0.;
@@ -254,28 +270,30 @@ public class MaterialPoint
 		// concentration and gradients
 		if(mpmOrder[ReadArchive.ARCH_Concentration]=='Y')
 		{	concentration=bb.getDouble();
-			dcdx=bb.getDouble();
-			dcdy=bb.getDouble();
+			dcdx=bb.getDouble()/lengthScale;
+			dcdy=bb.getDouble()/lengthScale;
+			// 3D will have one more
 		}
 		else
 		{	concentration=0.;
 			dcdx=0.;
 			dcdy=0.;
+			// 3D will have one more
 		}
 		
-		// thermal energy
+		// thermal energy (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_ThermalEnergy]=='Y')
 			thermalEnergy=bb.getDouble();
 		else
 			thermalEnergy=0.;
 			
-		// element crossings
+		// element crossings (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_ElementCrossings]=='Y')
 			elementCrossings=bb.getInt();
 		else
 			elementCrossings=0;
 			
-		// rot strain (in degrees)
+		// rot strain (in degrees) (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_RotStrain]=='Y')
 			erot=bb.getDouble();
 		else
@@ -443,8 +461,8 @@ public class MaterialPoint
 			case PlotQuantity.MPMTOTKINENERGY:
 			case PlotQuantity.MPMKINENERGY:
 				if(component==PlotQuantity.MPMKINENERGY || component==PlotQuantity.MPMTOTKINENERGY) theValue=0.;
-				// mass in g, vel in mm/sec -> Joules
-				theValue+=0.5e-9*mass*(velx*velx+vely*vely);
+				// mass in g, vel in mm/msec (once converted by current scales) -> Joules
+				theValue+=0.5e-3*mass*(velx*velx+vely*vely)*doc.timeScale/doc.lengthScale;
 				if(component==PlotQuantity.MPMTOTPOTENERGY) theValue-=extWork;
 				break;
 			

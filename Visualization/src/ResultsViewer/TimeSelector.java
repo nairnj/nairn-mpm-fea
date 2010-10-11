@@ -59,12 +59,12 @@ public class TimeSelector extends PlotControl
 			setBackground(Color.lightGray);
 			select.setBackground(Color.lightGray);
 			timeSelected.setFont(new Font("sanserif",Font.PLAIN,10));
-			timeSelected.setText(archiveTimes.get(0) + " ms");
+			timeSelected.setText(archiveTimes.get(0) + " "+dc.resDoc.timeU);
 			prefix="";
 		}
 		else
 		{	setEnabled(LoadArchive.NO_PLOT);
-			timeSelected.setText("Time: 0.0 ms");
+			timeSelected.setText("Time: 0.0 "+dc.resDoc.timeU);
 			prefix="Time: ";
 		}
 		select.setFocusable(false);
@@ -72,7 +72,8 @@ public class TimeSelector extends PlotControl
 		// the slider listener
 		select.addChangeListener(new ChangeListener()
 		{   public void stateChanged(ChangeEvent e)
-			{	timeSelected.setText(prefix + archiveTimes.get(select.getValue()) + " ms");
+			{	ResultsDocument resDoc=TimeSelector.this.docCtrl.resDoc;
+				timeSelected.setText(prefix + archiveTimes.get(select.getValue()) + " "+resDoc.timeU);
 				if(!select.getValueIsAdjusting())
 				{	if(value!=select.getValue())
 					{	value=select.getValue();

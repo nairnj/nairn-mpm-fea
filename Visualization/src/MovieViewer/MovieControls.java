@@ -90,7 +90,7 @@ public class MovieControls extends JPanel
 			hpos+=selectTime.getWidth()+20;
 		}
 		
-		// data panael
+		// data panel
 		MeshPlotData meshData=new MeshPlotData(movieCtrl.getPlotView(),gResDoc);
 		meshData.setSize(new Dimension(200,HEIGHT));
 		meshData.setLocation(hpos,0);

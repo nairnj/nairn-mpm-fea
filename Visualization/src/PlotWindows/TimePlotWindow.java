@@ -49,7 +49,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 				char [] buffer=new char [(int)resDoc.globalArchive.length()];
 				fr.read(buffer);
 				plot2DView.readTable(new String(buffer));
-				plot2DView.setXTitle("Time (ms)");
+				plot2DView.setXTitle("Time ("+resDoc.timeU+")");
 				plot2DView.setYTitle("Global Quantity");
 				setVisible(true);
 				toFront();
@@ -117,8 +117,9 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 		
 		// axis labels
 		if(plot2DView.getNumberOfPlots()<2)
-		{	plot2DView.setXTitle("Time (ms)");
-			plot2DView.setYTitle(PlotQuantity.plotLabel(component,"mm","ms"));
+		{	ResultsDocument resDoc=((DocViewer)document).resDoc;
+			plot2DView.setXTitle("Time ("+resDoc.timeU+")");
+			plot2DView.setYTitle(PlotQuantity.plotLabel(component,resDoc.distU,resDoc.timeU));
 		}
 		controls.disableProgress();
 		setVisible(true);
@@ -176,7 +177,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			
 			// read record in the file and convert to MaterialPoint class
 			bb.position(headerLength+(ptNum-1)*resDoc.recSize);
-			mpm.readRecord(bb,mpmOrder);
+			mpm.readRecord(bb,mpmOrder,resDoc.lengthScale,resDoc.timeScale);
 			
 			// find particle property and add to plot
 			x.add(new Double(resDoc.archiveTimes.get(i)));
@@ -243,7 +244,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			for(p=0;p<nummpms;p++)
 			{	// read record in the file and convert to MaterialPoint class
 				bb.position(headerLength+p*resDoc.recSize);
-				mpm.readRecord(bb,mpmOrder);
+				mpm.readRecord(bb,mpmOrder,resDoc.lengthScale,resDoc.timeScale);
 			
 				// exit if crack or continue if do not want this material
 				if(mpm.material<0) break;
@@ -356,7 +357,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			
 			// read segment
 			bb.position(offset);
-			seg.readRecord(bb,crackOrder);
+			seg.readRecord(bb,crackOrder,resDoc.lengthScale,resDoc.timeScale);
 			
 			// crack tip properties
 			switch(component)
@@ -385,7 +386,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 					{   offset+=resDoc.recSize;
 						if(offset>lastoffset) break;
 						bb.position(offset);
-						seg.readRecord(bb,crackOrder);
+						seg.readRecord(bb,crackOrder,resDoc.lengthScale,resDoc.timeScale);
 						if(seg.startFlag==-1) break;
 						pt=seg.getMedianPosition();
 						double segLength=Math.sqrt((pt.x-lastPt.x)*(pt.x-lastPt.x) +
@@ -434,7 +435,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 							}
 						}
 						bb.position(tipOffset);
-						seg.readRecord(bb,crackOrder);
+						seg.readRecord(bb,crackOrder,resDoc.lengthScale,resDoc.timeScale);
 					}
 					
 					// not found in the crack (entire crack is traction law)
@@ -467,7 +468,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 					// read previous segment
 					offset = tipNum==CrackSelector.CRACK_START ? offset+resDoc.recSize : offset-resDoc.recSize;
 					bb.position(offset);
-					seg.readRecord(bb,crackOrder);
+					seg.readRecord(bb,crackOrder,resDoc.lengthScale,resDoc.timeScale);
 					lastPt=seg.getMedianPosition();
 					double dx=pt.x-lastPt.x;
 					double dy=pt.y-lastPt.y;
