@@ -471,7 +471,6 @@ public class ResultsDocument extends AbstractTableModel
 			else
 				archDir="";
 			setPath(file.getParentFile(),archDir);
-			System.out.println(file.getParentFile()+","+archDir);
 			
 			// archive format and check it
 			sline=new Scanner(s.next()).useDelimiter(": ");
@@ -809,7 +808,6 @@ public class ResultsDocument extends AbstractTableModel
 	    File archive=new File(path,name);
 		if(!archive.exists()) return;
 		archives.add(archive);
-		System.out.println((new Double(time))+","+name);
 	    archiveTimes.add(new Double(time));
 	}
 	
