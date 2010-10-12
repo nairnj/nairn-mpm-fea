@@ -684,9 +684,12 @@ public class ResultsDocument extends AbstractTableModel
 	//-----------------------------------------------------------------
 	
 	// clear all sections
-	public void clear()
-	{   sectionTitle.clear();
-		sectionText.clear();
+	// if doAll is false don't clear sections (used on rescaling results)
+	public void clear(boolean doAll)
+	{	if(doAll)
+		{   sectionTitle.clear();
+			sectionText.clear();
+		}
 		nodes.clear();
 		elements.clear();
 		gridBCs.clear();
@@ -806,6 +809,7 @@ public class ResultsDocument extends AbstractTableModel
 	    File archive=new File(path,name);
 		if(!archive.exists()) return;
 		archives.add(archive);
+		System.out.println((new Double(time))+","+name);
 	    archiveTimes.add(new Double(time));
 	}
 	
