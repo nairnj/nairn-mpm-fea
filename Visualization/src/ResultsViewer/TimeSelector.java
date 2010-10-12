@@ -1,8 +1,8 @@
-/*******************************************************************
+/*
 	TimeSelector.java
 	NairnFEAMPMViz
 	
-	This same class is used for time selecter in both the results
+	This same class is used for time selector in both the results
 	control panel and in the movie window. Its location is determined
 	by whether movieCtrl==null (in results control panel) or
 	movieCtrl!=null (in movie plot window). docCtrl is always the
@@ -10,11 +10,10 @@
 
 	Created by John Nairn on Tue Mar 09 2004.
 	Copyright (c) 2004 RSAC Software. All rights reserved.
-*******************************************************************/
+*/
 
 import java.awt.*;
 import javax.swing.*;
-import java.util.*;
 import javax.swing.event.*;
 import geditcom.JNFramework.*;
 
@@ -25,7 +24,6 @@ public class TimeSelector extends PlotControl
 	// variables
 	public JSlider select=new JSlider(0,50,0);
 	private JLabel timeSelected=new JLabel();
-	private ArrayList<Double> archiveTimes;
 	private int value=-1;
 	private MoviePlotWindow movieCtrl;
 	private DocViewer docCtrl;
@@ -59,7 +57,7 @@ public class TimeSelector extends PlotControl
 			setBackground(Color.lightGray);
 			select.setBackground(Color.lightGray);
 			timeSelected.setFont(new Font("sanserif",Font.PLAIN,10));
-			timeSelected.setText(archiveTimes.get(0) + " "+dc.resDoc.timeU);
+			timeSelected.setText(dc.resDoc.archiveTimes.get(0) + " "+dc.resDoc.timeU);
 			prefix="";
 		}
 		else
@@ -73,7 +71,8 @@ public class TimeSelector extends PlotControl
 		select.addChangeListener(new ChangeListener()
 		{   public void stateChanged(ChangeEvent e)
 			{	ResultsDocument resDoc=TimeSelector.this.docCtrl.resDoc;
-				timeSelected.setText(prefix + archiveTimes.get(select.getValue()) + " "+resDoc.timeU);
+				String theTime=JNUtilities.formatDouble(resDoc.archiveTimes.get(select.getValue()).doubleValue());
+				timeSelected.setText(prefix + theTime + " "+resDoc.timeU); 
 				if(!select.getValueIsAdjusting())
 				{	if(value!=select.getValue())
 					{	value=select.getValue();
@@ -88,14 +87,20 @@ public class TimeSelector extends PlotControl
 	// accessors
 	//----------------------------------------------------------------------------
 	
+	// update label on rescaling
+	public void updateLabel()
+	{	ResultsDocument resDoc=TimeSelector.this.docCtrl.resDoc;
+		String theTime=JNUtilities.formatDouble(resDoc.archiveTimes.get(select.getValue()).doubleValue());
+		timeSelected.setText(prefix + theTime + " "+resDoc.timeU);
+	}
+	
 	// called when new file loaded
 	public void setEnabled(int selected)
 	{	boolean opened = (selected!=LoadArchive.TIME_PLOT) && (selected!=LoadArchive.NO_PLOT) && (docCtrl.resDoc.isMPMAnalysis());
 	    if(opened)
-		{   archiveTimes=docCtrl.resDoc.archiveTimes;
-			select.setEnabled(true);
-			select.setMaximum(archiveTimes.size()-1);
-			int ticks=(archiveTimes.size()-1)/10;
+		{	select.setEnabled(true);
+			select.setMaximum(docCtrl.resDoc.archiveTimes.size()-1);
+			int ticks=(docCtrl.resDoc.archiveTimes.size()-1)/10;
 			if(ticks<1) ticks=1;
 			select.setMajorTickSpacing(ticks);
 			//select.setValue(0);

@@ -77,6 +77,7 @@ public class DocViewer extends JNDocument
 		JMenu menu = new JMenu("Analyze");
 		menuBar.add(menu);
 		makeMenuItem(menu,"Plot Results","Start Plot",this,KeyEvent.VK_R);
+		makeMenuItem(menu,"Scale Results...","Scale Results",this);
 
 		// Window
 		menu = new JMenu("Window");
@@ -115,6 +116,10 @@ public class DocViewer extends JNDocument
 				commandsWindow.toFront();
 			else
 				JNApplication.appBeep();
+		}
+		
+		else if(theCmd.equals("Scale Results"))
+		{	scaleResults();	
 		}
 		
 		else
@@ -218,6 +223,48 @@ public class DocViewer extends JNDocument
 			startNewPlot(LoadArchive.PARTICLE_PLOT);
 		else
 			startNewPlot(LoadArchive.MESH_PLOT);
+	}
+	
+	// scale mesh dialog
+	public void scaleResults()
+	{	// run the dialog box
+		ScaleResultsDialog sr=new ScaleResultsDialog(this);
+		if(sr.getClickedButton()==JNDialog.CANCEL_BUTTON) return;
+		
+		boolean changeUnits=false;
+		if(!sr.getLengthUnits().equals(resDoc.distU))
+		{	changeUnits=true;
+			resDoc.distU=sr.getLengthUnits();
+			resDoc.lengthScale=sr.getLengthScale();
+		}
+		if(!sr.getTimeUnits().equals(resDoc.timeU))
+		{	changeUnits=true;
+			resDoc.timeU=sr.getTimeUnits();
+			resDoc.timeScale=sr.getTimeScale();
+		}
+		
+		// change of if new units were selected
+		if(changeUnits)
+		{	// close plot windows
+			MoviePlotWindow mp=getMovieFrame();
+			if(mp!=null) mp.windowClosing(null);
+			TimePlotWindow tp=getTimeFrame();
+			if(tp!=null) tp.windowClosing(null);
+			XYPlotWindow xyp=getXYPlotFrame();
+			if(xyp!=null) xyp.windowClosing(null);
+			
+			// reread the data
+			try
+			{	resDoc.clear(false);
+				resDoc.DecodeFileSections(getFile());
+				controls.updateTimeDisplay();
+			}
+			catch (Exception e)
+			{	JOptionPane.showMessageDialog(this,"The analysis failed to read for rescaling:\n   "
+												+ e.getMessage());
+				windowClosing(null);
+			}
+		}
 	}
 
 	//----------------------------------------------------------------------------

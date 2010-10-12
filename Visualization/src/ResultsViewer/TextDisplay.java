@@ -117,7 +117,7 @@ public class TextDisplay extends JSplitPane
 	public int FindGenericSections(String mpm)
 	{
 		// clear previous one
-		resDoc.clear();
+		resDoc.clear(true);
 		
 		String section,title;
 		int titleEnd,sectionNum=1;
