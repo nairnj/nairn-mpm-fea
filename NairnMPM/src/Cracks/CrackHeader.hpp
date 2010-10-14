@@ -71,6 +71,7 @@ class CrackHeader : public LinkedObject
 		void SetDt(double);
 		void SetContact(double,double,double,double);
 		void Output(void);
+		void Describe(void);
         
 		void SetNumber(int);
 		int GetNumber(void);
