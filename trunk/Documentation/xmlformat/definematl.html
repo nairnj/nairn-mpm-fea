@@ -675,26 +675,24 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <dt>&lt;sigmaI&gt;10&lt;/sigmaI&gt; and &lt;sigmaII&gt;100&lt;/sigmaII&gt;</dt>
 <dd>The peak stress or cohesive stress of the traction law (&sigma;). Enter in units of MPa.</dd>
 
-<dt>&lt;delpkI&gt;0.1&lt;/delpkI&gt; and &lt;delpkII&gt;0.2&lt;/delpkI&gt;</dt>
-<dd>The relative displacement at the location of the peak in the triangular law. Enter in dimensionless units as fraction of <code>delIc</code> or <code>delIIc</code> (0 to 1). You can enter zero to get pure linear softening. Although a pure linear softening law seems to work well, it is possible the effectively infinite stiffess in the beginning might cause issues with dynamic convergence or, surprisingly, might be effectively less stiff that a law with a finite initial stiffness. If convergence problems or spurious dynamic effects occur, you can increase these values to make the initial stiffness finite.</dd>
-
 <dt>&lt;JIc&gt;10&lt;/JIc&gt; and &lt;JIIc&gt;100&lt;/JIIc&gt;</dt>
 <dd>The toughness of the traction law or area under the traction law (J<sub>c</sub>). Enter in units of J/m<sup>2</sup>.</dd>
-
 
 <dt>&lt;delIc&gt;10&lt;/delIc&gt; and &lt;delIIc&gt;100&lt;/delIIc&gt;</dt>
 <dd>The maximum opening displacement or critical displacement (&delta;<sub>c</sub>) at which debonding occurs. Enter in units of mm.</dd>
 
-<dt>&lt;nmix&gt;2&lt;/nmix&gt;</dt>
-<dd>The exponent used in the mixed-mode failure criterion (see below). Enter nmix<=0 to choose infinity, which is decoupled failure criterion.</dd>
-
+<dt>&lt;delpkI&gt;0.1&lt;/delpkI&gt; and &lt;delpkII&gt;0.2&lt;/delpkI&gt;</dt>
+<dd>The relative displacement at the location of the peak in the triangular law. Enter in dimensionless units as fraction of <code>delIc</code> or <code>delIIc</code> (0 to 1). You can enter zero to get pure linear softening. Although a pure linear softening law seems to work well, it is possible the effectively infinite stiffess in the beginning might cause issues with dynamic convergence or, surprisingly, might be effectively less stiff that a law with a finite initial stiffness. If convergence problems or spurious dynamic effects occur, you can increase these values to make the initial stiffness finite.</dd>
 
 <dt>&lt;kIe&gt;200&lt;/kIe&gt; and &lt;kIIe&gt;100&lt;/kIIe&gt;</dt>
 <dd>The slope of the initial elastic portion of the tractional law (k). Enter in units of MPa/mm.</dd>
 
+<dt>&lt;nmix&gt;2&lt;/nmix&gt;</dt>
+<dd>The exponent used in the mixed-mode failure criterion (see below). Enter nmix<=0 to choose infinity, which is decoupled failure criterion.</dd>
+
 </dl>
 
-<p>You must then enter exactly two of the first three properties. These properties are interrelated and the third one will be calculated using J<sub>c</sub> = 500 &sigma;<sub>max</sub> &delta;<sub>c</sub> (in the entered units). You must enter zero or one for the last two properties. If one is provided, the other will be calculated from k = &sigma;<sub>max</sub>/(&delta;<sub>peak</sub> &delta;<sub>c</sub>). A valid traction law requires &delta;<sub>peak</sub> &le; 1. If neither k nor &delta;<sub>peak</sub> are entered, the peak will be located at &delta;<sub>peak</sub> = 0.225926299. This location provides the closest match to the <a href="#cubic">cubic traction law</a> for area under the curve as a function of &delta;.  
+<p>You must then enter exactly two of the first three properties for each mode. These properties are interrelated and the third one will be calculated using J<sub>c</sub> = 500 &sigma;<sub>max</sub> &delta;<sub>c</sub> (in the entered units). You must enter zero or one for the next two properties. If one is provided, the other will be calculated from k = &sigma;<sub>max</sub>/(&delta;<sub>peak</sub> &delta;<sub>c</sub>). A valid traction law requires &delta;<sub>peak</sub> &le; 1. If neither k nor &delta;<sub>peak</sub> are entered, the peak will be located at &delta;<sub>peak</sub> = 0.225926299. This location provides the closest match to the <a href="#cubic">cubic traction law</a> for area under the curve as a function of &delta;.  
 </p>
 
 <p><a name="mixedmode"></a>These entered traction laws give mode I or mode II traction law for pure mode I or pure mode II loading. For mixed-mode loading, the normal and and shear tractions still depend only on normal and shear displacements, respectively, but the conditions for failure change. Under pure mode loading, failure occurs with the relevent displacement reaches the critical displacement. For mixed-mode loading, failure occurs when:

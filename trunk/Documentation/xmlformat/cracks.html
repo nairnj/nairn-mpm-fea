@@ -122,8 +122,11 @@ settings you use for the crack's contact condition.
 you can also assign traction laws to new crack surfaces that are created when a crack propagates.
 The propagation traction can be assigned globally in the <a href="mpmheader.html#propagate">MPM Header</a> or
 specifically for a <a href="definematl.html#common">given material type</a>. Since a crack that starts with
-no traction laws, but creates them when it propgates, will not automatically convert to a frictionless crack,
-you should be sure that all such cracks are setup to use frictionless crack contact.
+no traction laws, but creates them when it propagates, will not automatically convert to a frictionless crack,
+you should be sure that all such cracks are setup to use frictionless crack contact.</p>
+
+<p>Interacting cracks with traction laws are handled, but not validated well. All validation runs
+were done using non-interacting, traction-loaded cracks.</p>
 
 <h2>Crack Tip Parameters</h2>
 

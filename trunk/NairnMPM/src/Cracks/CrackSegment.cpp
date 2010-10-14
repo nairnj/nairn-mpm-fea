@@ -188,32 +188,76 @@ void CrackSegment::AddTractionFext(CrackHeader *theCrack,int side,double sign)
 	int i,iel,numnds,nds[MaxShapeNds];
     short vfld;
     double fn[MaxShapeNds];
+	NodalPoint *ndi;
 	
 	cspos.x=surfx[side];
 	cspos.y=surfy[side];
 	iel=surfInElem[side];
 	theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cspos,&ndpos);
 	for(i=1;i<=numnds;i++)
-	{	vfld=theCrack->CrackCross(cspos.x,cspos.y,nd[nds[i]]->x,nd[nds[i]]->y,&norm);
-		if(vfld>0)
-		{	// a crossing field - to use it, must be field there and must have same loc (wrt above or below crack)
-			// tration laws cannot handle multple cracks or interacting fiels
-			if(CrackVelocityField::ActiveNonrigidField(nd[nds[i]]->cvf[1]))
-			{	if(vfld==nd[nds[i]]->cvf[1]->location(FIRST_CRACK))
+	{	ndi=nd[nds[i]];
+		vfld=theCrack->CrackCross(cspos.x,cspos.y,ndi->x,ndi->y,&norm);
+		if(vfld>NO_CRACK)
+		{	// a crossing field - to use it, must find correct field and crack number in a velocity field
+			// traction laws may not handle multiple cracks or interacting fields correctly, but try to do something
+			//  1. Possible: [0], [1], [3], [0]&[3], [1]&[2], [0]&[1], [1]&[3], [0]&[1]&[2],
+			//			[0]&[1]&[3], [1]&[2]&[3], and [0]&[1]&[2]&[3]
+			//  2. Never occurs [2], [0]&[2], [2]&[3], [0]&[2]&[3]
+			int cnum=theCrack->GetNumber();
+			if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[1]))
+			{	// Node with: [1], [1]&[2], [0]&[1], [1]&[3], [0]&[1]&[2], [0]&[1]&[3], [1]&[2]&[3], or [0]&[1]&[2]&[3]
+				if(vfld==ndi->cvf[1]->location(FIRST_CRACK) && cnum==ndi->cvf[1]->crackNumber(FIRST_CRACK))
+				{	// this means field one is correct - single crack calcs will always get here if the field is active
 					vfld=1;
+				}
+				else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[2]))
+				{	// Node with: [1]&[2], [0]&[1]&[2], [1]&[2]&[3], or [0]&[1]&[2]&[3]
+					if(vfld==ndi->cvf[2]->location(FIRST_CRACK) && cnum==ndi->cvf[2]->crackNumber(FIRST_CRACK))
+					{	// this means there are two cracks here and this crack should add to field [2]
+						vfld=2;
+					}
+					else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[3]))
+					{	if((vfld==ndi->cvf[3]->location(FIRST_CRACK) && cnum==ndi->cvf[3]->crackNumber(FIRST_CRACK)) || 
+							(vfld==ndi->cvf[3]->location(SECOND_CRACK) && cnum==ndi->cvf[3]->crackNumber(SECOND_CRACK)))
+						{	// this means there are two cracks here and this crack should add to field [3]
+							vfld=3;
+						}
+					}
+				}
+				else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[3]))
+				{	// Node with: [1], [0]&[1], [1]&[3], or [0]&[1]&[3]
+					if((vfld==ndi->cvf[3]->location(FIRST_CRACK) && cnum==ndi->cvf[3]->crackNumber(FIRST_CRACK)) || 
+					   (vfld==ndi->cvf[3]->location(SECOND_CRACK) && cnum==ndi->cvf[3]->crackNumber(SECOND_CRACK)))
+					{	// this means there are two cracks here and this crack should add to field [3]
+						vfld=3;
+					}
+				}
 				else
-				{	vfld=-1;		// wrong side of the crack (warning to see if it ever happens)
-					cout << "# wrong non-empty crack field (x,y)=(" << x << "," << y << "), " ;
-					if(side+1==ABOVE_CRACK)
-						cout << "above" ;
-					else
-						cout << "below" ;
-					cout << " at (" << cspos.x << "," << cspos.y << ")" << endl;
+				{	// none are correct, sometimes [0] is correct in this case
+					// Use [0], but might want a warning to be issued
+					vfld=0;
+				}
+			}
+			else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[3]))
+			{	// Node with: [3], [0]&[3]
+				if((vfld==ndi->cvf[3]->location(FIRST_CRACK) && cnum==ndi->cvf[3]->crackNumber(FIRST_CRACK)) || 
+				   (vfld==ndi->cvf[3]->location(SECOND_CRACK) && cnum==ndi->cvf[3]->crackNumber(SECOND_CRACK)))
+				{	// this means there are two cracks here and this crack should add to field [3]
+					vfld=3;
+				}
+				else
+				{	// none are correct, sometimes [0] is correct in this case
+					// Use [0], but might want a warning to be issued
+					vfld=0;
 				}
 			}
 			else
-				vfld=-1;			// field is empty, no need to add a force
+			{	// Node with [0] only - empty field for this traction, no need to add force
+				vfld=-1;
+			}
 		}
+		
+		// add if find a field
 		if(vfld>=0)
 		{	nd[nds[i]]->AddFextSpreadTask3(vfld,FTract(sign*fn[i]));
 		}

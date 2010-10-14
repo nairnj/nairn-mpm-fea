@@ -1375,7 +1375,7 @@ void CrackHeader::CrackTipHeating(void)
 // crack crossing method
 
 // Determine if line from particle (1) to node (2) crosses this crack
-// Return ABOVE_CRACK, BELOW_CRACK, or NO_CRACK and crack normal in norm
+// Return ABOVE_CRACK (1), BELOW_CRACK (2), or NO_CRACK (0) and crack normal in norm
 short CrackHeader::CrackCross(double x1,double y1,double x2,double y2,Vector *norm)
 {
     double x3,y3,x4,y4;
@@ -1634,6 +1634,11 @@ int CrackHeader::CriterionNeeds(void)
 // load vector with initial crack tip direction
 bool CrackHeader::GetAllowAlternate(int crkTipIdx) { return allowAlternate[crkTipIdx]; }
 void CrackHeader::SetAllowAlternate(int crkTipIdx,bool setting) { allowAlternate[crkTipIdx]=setting; }
+
+// describe velocity field
+void CrackHeader::Describe(void)
+{	cout << "# crack#=" << number << " thickness=" << thickness << " custom contact=" << customContact << " has traction=" << hasTractionLaws << endl;
+}
 
 #pragma mark CrackHeader: Class methods
 
