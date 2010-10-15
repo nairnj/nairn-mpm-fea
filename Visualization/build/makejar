@@ -4,6 +4,9 @@
 #   and the graphics into NairnFEAMPMViz.jar with jar, and then removes
 #   all compiled classes.
 #
+# compile with javac [-wml] where use w for Windows (the default), m for
+#   Mac, or l for linux
+#
 # If javac and jar (version 1.5 or newer) are not in the default path,
 #   edit those lines to have the paths to the commands or add them
 #   to the start of $PATH in your .bashrc log in file. It should
@@ -14,8 +17,23 @@
 #      /usr/local/jdk1.5.0_06/bin/javac
 #      /usr/local/jdk1.5.0_06/bin/jar
 
+usage='usage: makejar [-wml?]'
+clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar"
+
+while getopts ":d:wcmlu" opt; do
+  case $opt in
+    w ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar" ;;
+    c ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar" ;;
+    m ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar ;;
+    l ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar ;;
+    u ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar ;;
+    \?) echo $usage
+        exit 1 ;;
+  esac
+done
+
 # compile all classes in code folders
-javac -Xlint:none -d . -cp ../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar \
+javac -Xlint:none -d . -cp "$clspath" \
 ../src/Document/*.java ../src/Interface/*.java ../src/CommandsDocument/*.java \
 ../src/MovieViewer/*.java ../src/PlotWindows/*.java ../src/ResultsViewer/*.java
 
