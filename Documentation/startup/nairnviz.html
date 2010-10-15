@@ -173,11 +173,13 @@ nairn-mpm-fea/Visualization/build/makejar
 </pre>
 
 <p>When you run this script, it will compile the Java source code and create a self-contained
-jar file in that same
-directory. To run this script, you need the <code>javac</code> compiler and <code>jar</code> utility
+jar file in that same directory. By default this script assumes compilation on Windows. To compile
+on Mac uses <code>makejar -m</code>. To compile on Linux, use <code>makejar -l</code>.</p>
+
+<p>To run this script, you need the <code>javac</code> compiler and <code>jar</code> utility
 installed on your computer. Compilation requires Java 1.5.x or newer. It is available free on
 various platforms from <a href="http://java.sun.com/javase/">Sun's website</a> as part of the
-standard Java Development Kit (JDK) installation. </P>
+standard Java Development Kit (JDK) installation.</p>
 
 <p>If the required <code>javac</code> and <code>jar</code> tools are not in the default path, you
 can edit the <code>makejar</code> file and enter the full path to each command (or add their paths
