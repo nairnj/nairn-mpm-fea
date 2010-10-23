@@ -82,6 +82,11 @@ public class PlotQuantity extends PlotControl
 	static final int MPMHISTORY3=65;
 	static final int MPMHISTORY4=66;
 	
+	static final int MPMEPSTOTX=90;
+	static final int MPMEPSTOTY=91;
+	static final int MPMEPSTOTXY=92;
+	static final int MPMEPSTOTZ=93;
+	
 	static final int MESHONLY=1001;
 	static final int MESHSIGMAX=1002;
 	static final int MESHSIGMAY=1003;
@@ -195,7 +200,10 @@ public class PlotQuantity extends PlotControl
 				if(arch[ReadArchive.ARCH_Strain]=='Y')
 					quant.addItem(new PlotMenuItem("Strain",MPMEPSX));
 				if(arch[ReadArchive.ARCH_PlasticStrain]=='Y')
-					quant.addItem(new PlotMenuItem("Plastic Strain",MPMPLEPSX));
+				{	quant.addItem(new PlotMenuItem("Plastic Strain",MPMPLEPSX));
+					if(arch[ReadArchive.ARCH_Strain]=='Y')
+						quant.addItem(new PlotMenuItem("Total Strain",MPMEPSTOTX));
+				}
 					
 				if(arch[ReadArchive.ARCH_StrainEnergy]=='Y')
 				{   quant.addItem(new PlotMenuItem("Strain Energy",MPMSTRENERGY));
@@ -332,6 +340,7 @@ public class PlotQuantity extends PlotControl
 		{   case MPMSIGMAX:
 			case MPMEPSX:
 			case MPMPLEPSX:
+			case MPMEPSTOTX:
 			case MESHSIGMAX:
 			case MESHSTRAINX:
 			case MESHELEMSIGMAX:
@@ -404,6 +413,7 @@ public class PlotQuantity extends PlotControl
 		{   case MPMSIGMAX:
 			case MPMEPSX:
 			case MPMPLEPSX:
+			case MPMEPSTOTX:
 			case MPMVELX:
 			case MPMDCDX:
 			case MPMDISPX:
@@ -452,6 +462,10 @@ public class PlotQuantity extends PlotControl
 			case MPMPLEPSY:
 			case MPMPLEPSXY:
 			case MPMPLEPSZ:
+			case MPMEPSTOTX:
+			case MPMEPSTOTY:
+			case MPMEPSTOTXY:
+			case MPMEPSTOTZ:
 			case MESHSTRAINX:
 			case MESHSTRAINY:
 			case MESHSTRAINXY:
@@ -615,18 +629,22 @@ public class PlotQuantity extends PlotControl
 				return "Stress zz";
 				
 			case MPMEPSX:
+			case MPMEPSTOTX:
 			case MESHSTRAINX:
 				return "Strain xx";
 				
 			case MPMEPSY:
+			case MPMEPSTOTY:
 			case MESHSTRAINY:
 				return "Strain yy";
 				
 			case MPMEPSXY:
+			case MPMEPSTOTXY:
 			case MESHSTRAINXY:
 				return "Strain xy";
 				
 			case MPMEPSZ:
+			case MPMEPSTOTZ:
 			case MESHSTRAINZ:
 				return "Strain zz";
 				

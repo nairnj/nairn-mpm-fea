@@ -6,6 +6,7 @@
 	Copyright 2008 RSAC Software. All rights reserved.
 */
 
+import java.io.File;
 import java.io.InputStream;
 
 import geditcom.JNFramework.*;
@@ -75,6 +76,16 @@ public class NairnFEAMPMViz extends JNApplication
 		openUntitledDocument(docCtrl);
 	}
 	
+	public void openDocumentType(String docType,String docText,File docFile)
+	{	// open that type
+		JNDocument front=JNApplication.main.frontDocument();
+		super.openDocumentType(docType,docText,docFile);
+		if(front!=JNApplication.main.frontDocument())
+		{	if(front.isEmptyDocument() && !front.getChanged())
+				front.closeDocument(false);
+		}
+	}
+
 	// called when open document
 	public JNDocument createDocumentObject(String docType)
 	{	JNDocument front=JNApplication.main.frontDocument();
