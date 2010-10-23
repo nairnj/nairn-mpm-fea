@@ -449,6 +449,50 @@ public class MaterialPoint
 				theValue=eplast[ZZID];
 				break;
 			
+				// Strains
+			case PlotQuantity.MPMEPSTOTX:
+			case PlotQuantity.MPMEPSTOTY:
+			case PlotQuantity.MPMEPSTOTXY:
+				if(angle==0.)
+				{   switch(component)
+					{   case PlotQuantity.MPMEPSTOTX:
+							theValue=eps[XXID]+eplast[XXID];
+							break;
+						case PlotQuantity.MPMEPSTOTY:
+							theValue=eps[YYID]+eplast[YYID];
+							break;
+						case PlotQuantity.MPMEPSTOTXY:
+							theValue=eps[XYID]+eplast[XYID];
+							break;
+						default:
+							break;
+					}
+				}
+				else
+				{   radAngle=Math.PI*angle/180.;
+					c=Math.cos(radAngle);
+					s=Math.sin(radAngle);
+					sigx=eps[XXID]+eplast[XXID];
+					sigy=eps[YYID]+eplast[YYID];
+					sigxy=eps[XYID]+eplast[XYID];
+					switch(component)
+					{   case PlotQuantity.MPMEPSTOTX:
+							theValue=c*c*sigx + s*s*sigy - c*s*sigxy;
+							break;
+						case PlotQuantity.MPMEPSTOTY:
+							theValue=s*s*sigx + c*c*sigy + c*s*sigxy;
+							break;
+						case PlotQuantity.MPMEPSTOTXY:
+							theValue=2*c*s*(sigx-sigy) + (c*c-s*s)*sigxy;
+							break;
+					}
+				}
+				break;
+				
+			case PlotQuantity.MPMEPSTOTZ:
+				theValue=eps[ZZID]+eplast[ZZID];
+				break;
+		
 			// Energy (totals are getting this point only)
 			case PlotQuantity.MPMTOTPOTENERGY:
 			case PlotQuantity.MPMTOTENERGY:

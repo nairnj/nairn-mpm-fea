@@ -176,6 +176,7 @@ public class MovieControls extends JPanel
 		{   case PlotQuantity.MPMSIGMAX:
 			case PlotQuantity.MPMEPSX:
 			case PlotQuantity.MPMPLEPSX:
+			case PlotQuantity.MPMEPSTOTX:
 			case PlotQuantity.MESHSIGMAX:
 			case PlotQuantity.MESHSTRAINX:
 			case PlotQuantity.MESHELEMSIGMAX:
@@ -247,6 +248,7 @@ public class MovieControls extends JPanel
 		{   case PlotQuantity.MPMSIGMAX:
 			case PlotQuantity.MPMEPSX:
 			case PlotQuantity.MPMPLEPSX:
+			case PlotQuantity.MPMEPSTOTX:
 			case PlotQuantity.MPMVELX:
 			case PlotQuantity.MPMDCDX:
 			case PlotQuantity.MPMDISPX:

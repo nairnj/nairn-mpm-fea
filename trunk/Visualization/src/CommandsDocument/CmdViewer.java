@@ -231,7 +231,14 @@ public class CmdViewer extends JNCmdTextDocument
 		shell.append("cd ");
 		String shellCD=outFile.getParent();
 		if(NairnFEAMPMViz.isWindowsOS())
-			shellCD=shellCD.replace('\\','/');
+		{	shellCD=shellCD.replace('\\','/');
+			// Replace C: by /cygdrive/c (if needed)
+			//if(shellCD.charAt(1)==':')
+			//{	char drive=shellCD.charAt(0);
+			//	if(drive<'a') drive+=32;
+			//	shellCD="/cygdrive/"+drive+shellCD.substring(2);
+			//}
+		}
 		if(shellCD.indexOf(' ')>=0)
 			shell.append("'"+shellCD+"'; ");
 		else
@@ -239,7 +246,14 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// executable (as shell command)
 		if(NairnFEAMPMViz.isWindowsOS())
-			myCmd=myCmd.replace('\\','/');
+		{	myCmd=myCmd.replace('\\','/');
+			// Replace C: by /cygdrive/c (if needed)
+			//if(myCmd.charAt(1)==':')
+			//{	char drive=myCmd.charAt(0);
+			//	if(drive<'a') drive+=32;
+			//	myCmd="/cygdrive/"+drive+myCmd.substring(2);
+			//}
+		}
 		if(myCmd.indexOf(' ')>=0)
 			shell.append("'"+myCmd+"'");
 		else
