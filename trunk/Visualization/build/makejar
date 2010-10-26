@@ -4,8 +4,11 @@
 #   and the graphics into NairnFEAMPMViz.jar with jar, and then removes
 #   all compiled classes.
 #
-# compile with javac [-wml] where use w for Windows (the default), m for
-#   Mac, or l for linux
+# compile with javac using
+#    makejar -w, makejar -m, or makejar -l
+# where use w for Windows (the default), m for Mac, or l for linux
+# (Mac and Linuc are same and can use -u of Unix as well)
+# (Windows usually uses cygwin and can use -c as well)
 #
 # If javac and jar (version 1.5 or newer) are not in the default path,
 #   edit those lines to have the paths to the commands or add them
@@ -17,17 +20,19 @@
 #      /usr/local/jdk1.5.0_06/bin/javac
 #      /usr/local/jdk1.5.0_06/bin/jar
 
-usage='usage: makejar [-wml?]'
+usage1="usage: makejar [-wml?]"
+usage2=".........w=Windows (default), m=Mac, l=Linux, ?=this message"
 clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar"
 
-while getopts ":d:wcmlu" opt; do
+while getopts ":wcmlu" opt; do
   case $opt in
     w ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar" ;;
     c ) clspath="../src/lib/JNFramework.jar;../src/lib/JNPlot2D.jar" ;;
     m ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar ;;
     l ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar ;;
     u ) clspath=../src/lib/JNFramework.jar:../src/lib/JNPlot2D.jar ;;
-    \?) echo $usage
+    \?) echo $usage1
+        echo $usage2
         exit 1 ;;
   esac
 done

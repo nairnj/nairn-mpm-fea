@@ -29,4 +29,3 @@ class UpdateMomentaTask : public MPMTask
 };
 
 #endif
-

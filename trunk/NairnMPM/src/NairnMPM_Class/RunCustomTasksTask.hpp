@@ -31,4 +31,3 @@ class RunCustomTasksTask : public MPMTask
 };
 
 #endif
-

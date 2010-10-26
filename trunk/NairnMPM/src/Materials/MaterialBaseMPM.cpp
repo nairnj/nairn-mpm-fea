@@ -1144,5 +1144,8 @@ short MaterialBase::GetMVFIsRigid(int matfld)
 {	return matfld<(int)fieldMatIDs.size() ? theMaterials[fieldMatIDs[matfld]]->Rigid() : FALSE ;
 }
 
+// convert field number (zero based) to material ID for that field (zero based)
+int MaterialBase::GetFieldMatID(int matfld) { return fieldMatIDs[matfld]; }
+
 
 

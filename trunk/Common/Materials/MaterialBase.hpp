@@ -139,6 +139,7 @@ class MaterialBase : public LinkedObject
 		virtual int SetField(int,bool,int);
 		static double GetMVFRho(int matfld);
 		static short GetMVFIsRigid(int matfld);
+		static int GetFieldMatID(int matfld);
 		int GetField(void);
  		Tensor *GetkCondTensor(void);
 		Tensor *GetDiffusionTensor(void);
