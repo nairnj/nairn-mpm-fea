@@ -30,5 +30,3 @@ class MoveCracksTask : public MPMTask
 };
 
 #endif
-
-

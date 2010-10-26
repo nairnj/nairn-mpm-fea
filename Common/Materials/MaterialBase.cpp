@@ -34,6 +34,10 @@
 
 #include "Materials/MaterialBase.hpp"
 
+// Constants for output fields for material properties
+#define PROP_LABEL_LENGTH 4
+#define PROP_COLUMN 20
+
 // Materials globals
 MaterialBase **theMaterials=NULL;		// list of materials
 int nmat=0;								// number of materials
@@ -109,9 +113,6 @@ void MaterialBase::PrintMaterial(int num)
 
 // print mechanical properties to output window
 void MaterialBase::PrintMechanicalProperties(void) {}
-
-#define PROP_LABEL_LENGTH 4
-#define PROP_COLUMN 20
 
 // print property with units (option) and align to columns for material properties
 void MaterialBase::PrintProperty(const char *propName,double value,const char *unitsStr)

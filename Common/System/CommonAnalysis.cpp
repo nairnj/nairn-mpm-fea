@@ -64,7 +64,15 @@ void CommonAnalysis::StartResultsOutput(void)
     PrintSection("ANALYSIS DESCRIPTION");
     cout << GetDescription() << endl;
 	
-	// development flags
+	/* development flags
+	 *
+	 *	Current Flags in Use in MPM Code
+	 *   [0]==1 - use MPM standard contact where each material finds normal from its own gradietn
+	 *   [0]==2 - find normal by averaging the volume gradient of the two contacting materials
+	 *   [0]==4 - cutting simulations - find normal for tool angle and the angle (interger only)
+	 *				is in flag [1]
+	 *   [1]==rake angle - cutting simulations when [0]==4
+	 */
 	int i;
 	bool hasFlags=FALSE;
 	for(i=0;i<NUMBER_DEVELOPMENT_FLAGS;i++)
@@ -214,7 +222,7 @@ int CommonAnalysis::ReadFile(const char *xmlFile)
 #ifdef MPM_CODE
 		delete parser;				// Must be done prior to calling Terminate, below.
 #else
-		// delete parser;			// not sure why can not delete the parser in FEA code
+		// delete parser;			// not sure why cannot delete the parser in FEA code
 #endif
 		delete handler;
 		XMLPlatformUtils::Terminate();
@@ -223,14 +231,14 @@ int CommonAnalysis::ReadFile(const char *xmlFile)
     catch(const XMLException& toCatch)
 	{	char *message = XMLString::transcode(toCatch.getMessage());
         cerr << "\nParcing error: " << message << endl;
-		XMLString::release(&message); // comment it out on inferno
+		//XMLString::release(&message); // commented out because inferno (and maybe others) can't take it
         return ReadFileErr;
     }
     
     catch(const SAXException& err)
 	{	char *message = XMLString::transcode(err.getMessage());
     	cerr << "\nInput file error: " << message << endl;
-		XMLString::release(&message); // comment it out on inferno
+		//XMLString::release(&message); // commented out because inferno (and maybe others) can't take it
         return ReadFileErr;
     }
 	
