@@ -71,6 +71,11 @@ char *VTKArchive::InputParam(char *pName,int &input)
 		thisBuffer=6;
     }
 	
+    else if(strcmp(pName,"totalstrain")==0)
+    {	q=VTK_TOTALSTRAIN;
+		thisBuffer=6;
+    }
+	
     else if(strcmp(pName,"displacement")==0)
     {	q=VTK_DISPLACEMENT;
 		thisBuffer=3;
@@ -291,6 +296,20 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 				vtkquant+=6;
 				break;
 			
+			case VTK_TOTALSTRAIN:
+				ten=mpnt->GetStrainTensor();
+				Tensor *ten2=mpnt->GetPlasticStrainTensor();
+				vtkquant[0]+=wt*(ten->xx+ten2->xx);
+				vtkquant[1]+=wt*(ten->yy+ten2->yy);
+				vtkquant[2]+=wt*(ten->zz+ten2->zz);
+				vtkquant[3]+=wt*(ten->xy+ten2->xy);
+				if(fmobj->IsThreeD())
+				{	vtkquant[4]+=wt*(ten->xz+ten2->xz);
+					vtkquant[5]+=wt*(ten->yz+ten2->yz);
+				}
+				vtkquant+=6;
+				break;
+
 			case VTK_DISPLACEMENT:
 				vtkquant[0]+=wt*(mpnt->pos.x-mpnt->origpos.x);
 				vtkquant[1]+=wt*(mpnt->pos.y-mpnt->origpos.y);

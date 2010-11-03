@@ -385,7 +385,7 @@ short CrackHeader::MoveCrack(void)
 	{	long iel;
 		double fn[MaxShapeNds];
 		Vector cncpos;
-		int j;
+		int j,nodeCounter;
 		Vector delv,cpos,vcm;
 		int nds[MaxShapeNds],numnds;
 		
@@ -400,6 +400,7 @@ short CrackHeader::MoveCrack(void)
 				
 				// initialize
 				ZeroVector(&delv);
+				nodeCounter=0;
 				
 				/*
 				// renormalize shape functions in case missing some nodes
@@ -419,18 +420,30 @@ short CrackHeader::MoveCrack(void)
 				// extrapolate to particle
 				for(j=1;j<=numnds;j++)
 				{	if(nd[nds[j]]->GetCMVelocityTask8(&vcm))
-						AddScaledVector(&delv,&vcm,fn[j]);
+					{	AddScaledVector(&delv,&vcm,fn[j]);
+						nodeCounter++;
+					}
 				}
 				
-				// move it
-				scrk->MovePosition(timestep*delv.x,timestep*delv.y);		// in mm
-				
-				// did element move
-				if(!scrk->FindElement()) return FALSE;
-				
-				// check surfaces
-				if(contact.GetPreventPlaneCrosses())
-				{	if(!scrk->CheckSurfaces()) return FALSE;
+				// move it or collapse it
+				if(nodeCounter>0)
+				{	scrk->MovePosition(timestep*delv.x,timestep*delv.y);		// in mm
+					
+					// did element move
+					if(!scrk->FindElement()) return FALSE;
+					
+					// check surfaces
+					if(contact.GetPreventPlaneCrosses())
+					{	if(!scrk->CheckSurfaces()) return FALSE;
+					}
+				}
+				else if(scrk->MatID()<0)
+				{	// crack surface is in free space and does not have traction law
+					scrk->CollapseSurfaces();
+				}
+				else if(contact.GetPreventPlaneCrosses())
+				{	// crack in free space, but has tractions so verify surfaces
+					if(!scrk->CheckSurfaces()) return FALSE;
 				}
 			}
 			
@@ -502,7 +515,7 @@ short CrackHeader::MoveCrack(short side)
 				else
 					nodeCounter++;
 			}
-			if(numempty!=0 && numempty!=numnds) ScaleVector(&delv,1./fnorm);
+			if(nodeCounter!=0 && nodeCounter!=numnds) ScaleVector(&delv,1./fnorm);
 			
 			// move it
 			scrk->MoveSurfacePosition(side,timestep*delv.x,timestep*delv.y,(nodeCounter!=numnds),surfaceMass);		// in mm
@@ -514,8 +527,13 @@ short CrackHeader::MoveCrack(short side)
 					nodeCounter++;
 			}
 			
+			// delv is Sum(fi vi) = Sum(fi pi/mi) and surfaceMass = Sum(fi mi)
+			if(nodeCounter>0)
+			{	ScaleVector(&delv,timestep);
+			}
+			
 			// move it (if returns true, check location of other side)
-			if(scrk->MoveSurfacePosition(side,timestep*delv.x,timestep*delv.y,(nodeCounter>0),surfaceMass))		// in mm
+			if(scrk->MoveSurfacePosition(side,delv.x,delv.y,(nodeCounter>0),surfaceMass))		// in mm
 			{	if(!scrk->FindElement(ABOVE_CRACK)) return FALSE;
 			}
 			
@@ -541,7 +559,7 @@ void CrackHeader::UpdateCrackTractions(void)
     }
 }
 
-// call in forces step for each crack to convert crack tractions laws into external forces
+// called in forces step for each crack to convert crack tractions laws into external forces
 void CrackHeader::TractionFext(void)
 {
 	if(!hasTractionLaws) return;
@@ -919,8 +937,13 @@ void CrackHeader::JIntegral(void)
 	
     /* Calculate J-integrals for the ith crack tip
     */
-	crkTipIdx=START_OF_CRACK;
+	
+	// it may try to contours at each crack tip. First try is at NearestnNode().
+	// if that path crosses the crack twice, it tries a contour from the next nearest node.
 	secondTry=FALSE;
+	
+	// each crack tip
+	crkTipIdx=START_OF_CRACK;
 	while(crkTipIdx<=END_OF_CRACK)
     {
 		/* Task 1: find crack tip and the crack direction
@@ -937,344 +960,357 @@ void CrackHeader::JIntegral(void)
 		// block to catch problems
 		NodalPoint *phantom=NULL;
 		crackPt=NULL;
-		try {
-        
-        /* Task 2: find ccw nodal points JGridSize from crack tip nodal point
-            Find orientation of each line segment
-        */
-        gridElem=tipCrk->planeInElem-1;
-        gridNode=theElements[gridElem]->NearestNode(tipCrk->x,tipCrk->y,&nextNearest);
-		if(secondTry) gridNode=nextNearest;
-        int numSegs=0;
-        
-        // step to the edge of the J Integral contour
-        gridNode=theElements[gridElem]->NextNode(gridNode);
-        for(i=1;i<JGridSize;i++)
-        {   gridElem=theElements[gridElem]->Neighbor(gridNode);
-            if(gridElem<0)
-				throw "J integral contour at a crack tip does not fit in the grid";
-            gridNode=theElements[gridElem]->NextNode(gridNode);
-        }
-        
-        // walk around the countour (0 and 4 are half edges)
-        prevPt=crackPt=new ContourPoint(nd[gridNode]);
-        numSegs++;
-        int numPts=JGridSize;
-        double cxmin=9e99,cxmax=-9e99,cymin=9e99,cymax=-9e99;
-        for(j=0;j<5;j++)
-        {   gridNode=theElements[gridElem]->NextNode(gridNode);
-            nextPt=new ContourPoint(nd[gridNode]);
-            prevPt->SetNextPoint(nextPt);
-            prevPt=nextPt;
-            numSegs++;
-            for(i=1;i<numPts;i++)
-            {   gridElem=theElements[gridElem]->Neighbor(gridNode);
-                if(gridElem<0)
+		try
+		{
+			/* Task 2: find ccw nodal points JGridSize from crack tip nodal point
+				Find orientation of each line segment
+			*/
+			gridElem=tipCrk->planeInElem-1;
+			gridNode=theElements[gridElem]->NearestNode(tipCrk->x,tipCrk->y,&nextNearest);
+			if(secondTry) gridNode=nextNearest;
+			int numSegs=0;
+			
+			// step to the edge of the J Integral contour
+			gridNode=theElements[gridElem]->NextNode(gridNode);
+			for(i=1;i<JGridSize;i++)
+			{   gridElem=theElements[gridElem]->Neighbor(gridNode);
+				if(gridElem<0)
 					throw "J integral contour at a crack tip does not fit in the grid";
-                gridNode=theElements[gridElem]->NextNode(gridNode);
-                nextPt=new ContourPoint(nd[gridNode]);
-                prevPt->SetNextPoint(nextPt);
-                prevPt=nextPt;
-                numSegs++;
-            }
-            
-            // check endpoints for extent of contour rectangle
-            cxmin=min(cxmin,nd[gridNode]->x);
-            cxmax=max(cxmax,nd[gridNode]->x);
-            cymin=min(cymin,nd[gridNode]->y);
-            cymax=max(cxmax,nd[gridNode]->y);
+				gridNode=theElements[gridElem]->NextNode(gridNode);
+			}
+			
+			// walk around the countour (0 and 4 are half edges)
+			prevPt=crackPt=new ContourPoint(nd[gridNode]);
+			numSegs++;
+			int numPts=JGridSize;
+			double cxmin=9e99,cxmax=-9e99,cymin=9e99,cymax=-9e99;
+			for(j=0;j<5;j++)
+			{   gridNode=theElements[gridElem]->NextNode(gridNode);
+				nextPt=new ContourPoint(nd[gridNode]);
+				prevPt->SetNextPoint(nextPt);
+				prevPt=nextPt;
+				numSegs++;
+				for(i=1;i<numPts;i++)
+				{   gridElem=theElements[gridElem]->Neighbor(gridNode);
+					if(gridElem<0)
+						throw "J integral contour at a crack tip does not fit in the grid";
+					gridNode=theElements[gridElem]->NextNode(gridNode);
+					nextPt=new ContourPoint(nd[gridNode]);
+					prevPt->SetNextPoint(nextPt);
+					prevPt=nextPt;
+					numSegs++;
+				}
+				
+				// check endpoints for extent of contour rectangle
+				cxmin=min(cxmin,nd[gridNode]->x);
+				cxmax=max(cxmax,nd[gridNode]->x);
+				cymin=min(cymin,nd[gridNode]->y);
+				cymax=max(cxmax,nd[gridNode]->y);
 
-            numPts = (j==3) ? JGridSize-1 : 2*JGridSize;
-        }
-        // connect end to start
-        prevPt->SetNextPoint(crackPt);
-        
-        /* Task 3: Find crack intersection with the contour
-            Verify only one intersection and x-y grid
-            Create phantom nodal point on the crack
-        */
-        int crossCount=0;
-        Vector p3,p4,crossPt,crossPt1;
-        nextPt=crackPt;
-		CrackSegment *startSeg=firstSeg,*endSeg;
-        while(TRUE)
-        {   // error if grid not alng x and y axes
-            if(nextPt->orient==ANGLED)
-            {	throw MPMTermination("The J Contour is not along x and y axes.",
-                                "CrackHeader::JIntegral");
-            }
-            
-            //p3,p4--two end points of eack crack segment
-            endSeg=firstSeg;
-            p3.x=endSeg->x;
-            p3.y=endSeg->y;
-            endSeg=endSeg->nextSeg;
-            while(endSeg!=NULL)
-            {	p4.x=endSeg->x;
-                p4.y=endSeg->y;
-                if(SegmentsCross(nextPt,p3,p4,&crossPt1))
-				{	crossCount++;
-                    if(crossCount>2)
-                    {	throw MPMTermination("More than 2 crossings between J-path and a crack",
-                                "CrackHeader::JIntegral");
-                    }
-                    else if(crossCount==2)
-                    {	if(!(DbleEqual(crossPt.x,crossPt1.x)&&DbleEqual(crossPt.y,crossPt1.y)))
-						{	if(secondTry)
-							{   throw MPMTermination("Two different crossings between J-path and a crack",
-														"CrackHeader::JIntegral");
-							}
-							else
-								throw "";
+				numPts = (j==3) ? JGridSize-1 : 2*JGridSize;
+			}
+			// connect end to start
+			prevPt->SetNextPoint(crackPt);
+			
+			/* Task 3: Find crack intersection with the contour
+				Verify only one intersection and x-y grid
+				Create phantom nodal point on the crack
+			*/
+			int crossCount=0;
+			Vector p3,p4,crossPt,crossPt1;
+			nextPt=crackPt;
+			CrackSegment *startSeg=firstSeg,*endSeg;
+			while(TRUE)
+			{   // error if grid not alng x and y axes
+				if(nextPt->orient==ANGLED)
+				{	throw MPMTermination("The J Contour is not along x and y axes.",
+									"CrackHeader::JIntegral");
+				}
+				
+				//p3,p4--two end points of eack crack segment
+				endSeg=firstSeg;
+				p3.x=endSeg->x;
+				p3.y=endSeg->y;
+				endSeg=endSeg->nextSeg;
+				while(endSeg!=NULL)
+				{	p4.x=endSeg->x;
+					p4.y=endSeg->y;
+					if(SegmentsCross(nextPt,p3,p4,&crossPt1))
+					{	crossCount++;
+						if(crossCount>2)
+						{	throw MPMTermination("More than 2 crossings between J-path and a crack",
+									"CrackHeader::JIntegral");
 						}
-                    }
-					else
-					{   prevPt=nextPt;
-						crossPt.x=crossPt1.x;
-						crossPt.y=crossPt1.y;
-						startSeg=endSeg->prevSeg;
+						else if(crossCount==2)
+						{	if(!(DbleEqual(crossPt.x,crossPt1.x)&&DbleEqual(crossPt.y,crossPt1.y)))
+							{	if(secondTry)
+								{   throw MPMTermination("Two different crossings between J-path and a crack",
+															"CrackHeader::JIntegral");
+								}
+								else
+									throw "";
+							}
+						}
+						else
+						{   prevPt=nextPt;
+							crossPt.x=crossPt1.x;
+							crossPt.y=crossPt1.y;
+							startSeg=endSeg->prevSeg;
+						}
 					}
-                }
-                p3.x=p4.x;
-                p3.y=p4.y;
-                endSeg=endSeg->nextSeg;
-            }
-            nextPt=nextPt->nextPoint;
-            if(nextPt==crackPt) break;
-        }
-        if(crossCount<1)
-        {   throw MPMTermination("A crack does not cross its J path",
-                    "CrackHeader::JIntegral");
-        }
-		
-		// find crack particle closer to the crack tipstart
-		if(crkTipIdx==END_OF_CRACK) startSeg=startSeg->nextSeg;
-        
-        // insert nodal point and define start of the path
-        double fract=prevPt->Fraction(crossPt);
-        phantom=new NodalPoint2D((long)0,crossPt.x,crossPt.y);
-		phantom->PrepareForFields();
-        crackPt=new ContourPoint(phantom);
-        crackPt->SetNextPoint(prevPt->nextPoint);
-        prevPt->SetNextPoint(crackPt);
-        phantom->Interpolate(prevPt->node,crackPt->nextPoint->node,fract,(tipCrk==firstSeg));
-        
-        /* Task 4: Loop over all segments and evaluate J integral (from the primary term)
-            Transform to crack plane and save results
-        */
-        DispField *sfld1,*sfld2;
-        Jx1=Jy1=0.0;			// J-integral components from the first term
-		double tractionEnergy=0.,bridgingReleased=0.;
-        numSegs>>=1;			// half the segments
-        int dfld = (tipCrk==firstSeg) ? ABOVE_CRACK : BELOW_CRACK;		// initial field
-        nextPt=crackPt;
-		int count=0;			// particles in the nodal fields
-        while(TRUE)
-        {   // J integral node1 to node2 using field dfld
-            NodalPoint *node1=nextPt->node;
-            NodalPoint *node2=nextPt->nextPoint->node;
-            if(dfld==ABOVE_CRACK)
-            {	sfld1=node1->cvf[(int)node1->above]->df;
-                sfld2=node2->cvf[(int)node2->above]->df;
-				count+=node2->cvf[(int)node2->above]->GetNumberPoints();
-            }
-            else
-            {	sfld1=node1->cvf[(int)node1->below]->df;
-                sfld2=node2->cvf[(int)node2->below]->df;
-				count+=node2->cvf[(int)node2->below]->GetNumberPoints();
-            }
-            
-            /* Calculate J Integral segment by segment
-               1 means the start point of the segment, 2 means the end point
-               Units work, kinetic, stress are in N/mm^2
-               Displacement gradient is dimensionless
-            */
-            
-            double wd1,kd1,sxx1,syy1,sxy1;
-            double dudx1,dudy1,dvdx1,dvdy1;
-            double wd2,kd2,sxx2,syy2,sxy2;
-            double dudx2,dudy2,dvdx2,dvdy2;
-            double termForJx1,termForJy1,termForJx2,termForJy2;
-            double fForJx1,fForJy1,fForJx2,fForJy2;
-
-            // segment dS and normal from ContourPoint object
-            double ds=nextPt->ds;
-            Vector segNorm=nextPt->norm;
-
-            // get values of the start point
-            if(sfld1!=NULL)
-            {	wd1=sfld1->work;
-                kd1=sfld1->kinetic;
-                sxx1=sfld1->stress.xx;
-                syy1=sfld1->stress.yy;
-                sxy1=sfld1->stress.xy;
-                dudx1=sfld1->du.x;
-                dudy1=sfld1->du.y;
-                dvdx1=sfld1->dv.x;
-                dvdy1=sfld1->dv.y;
-            }
-            else
-            {	wd1=0.; kd1=0.; sxx1=0.; syy1=0.; sxy1=0.;
-                dudx1=0.; dudy1=0.; dvdx1=0.; dvdy1=0.;
-            }
-
-            // get values of the end point
-            if(sfld2!=NULL)
-            {	wd2=sfld2->work;
-                kd2=sfld2->kinetic;
-                sxx2=sfld2->stress.xx;
-                syy2=sfld2->stress.yy;
-                sxy2=sfld2->stress.xy;
-                dudx2=sfld2->du.x;
-                dudy2=sfld2->du.y;
-                dvdx2=sfld2->dv.x;
-                dvdy2=sfld2->dv.y;
-            }
-            else
-            {	wd2=0.; kd2=0.; sxx2=0.; syy2=0.; sxy2=0.;
-                dudx2=0.; dudy2=0.; dvdx2=0.; dvdy2=0.;
-            }
-
-            // calculate Jx
-
-            // term (ti*ui,x) (N/mm^2)
-            termForJx1=(sxx1*segNorm.x+sxy1*segNorm.y)*dudx1
-                      +(sxy1*segNorm.x+syy1*segNorm.y)*dvdx1;
-            termForJx2=(sxx2*segNorm.x+sxy2*segNorm.y)*dudx2
-                      +(sxy2*segNorm.x+syy2*segNorm.y)*dvdx2;
-                      
-            // [(W+K)nx-ti*ui,x] (N/mm^2)
-            fForJx1=(wd1+kd1)*segNorm.x-termForJx1;
-            fForJx2=(wd2+kd2)*segNorm.x-termForJx2;
-
-            Jx1+=0.5*(fForJx1+fForJx2)*ds;	// N mm/mm^2
-
-            // calculate Jy
-
-            // term ti*ui,y
-            termForJy1=(sxx1*segNorm.x+sxy1*segNorm.y)*dudy1
-                      +(sxy1*segNorm.x+syy1*segNorm.y)*dvdy1;
-            termForJy2=(sxx2*segNorm.x+sxy2*segNorm.y)*dudy2
-                      +(sxy2*segNorm.x+syy2*segNorm.y)*dvdy2;
-                      
-            // [(W+K)ny-ti*ui,y]
-            fForJy1=(wd1+kd1)*segNorm.y-termForJy1;
-            fForJy2=(wd2+kd2)*segNorm.y-termForJy2;
-
-            Jy1+=0.5*(fForJy1+fForJy2)*ds; 
-
-            // on to next segment
-            numSegs--;
-            if(numSegs<=0)
-                dfld = (dfld==ABOVE_CRACK) ? BELOW_CRACK : ABOVE_CRACK;
-            nextPt=nextPt->nextPoint;
-            if(nextPt==crackPt) break;
-        }
-		if(count==0)
-		{	nextPt=crackPt;
-			NodalPoint *node1=nextPt->node;
-			cout << "# J Contour intersects crack at " << node1->x << "," << node1->y << " fraction " << fract << endl;
+					p3.x=p4.x;
+					p3.y=p4.y;
+					endSeg=endSeg->nextSeg;
+				}
+				nextPt=nextPt->nextPoint;
+				if(nextPt==crackPt) break;
+			}
+			if(crossCount<1)
+			{   throw MPMTermination("A crack does not cross its J path",
+						"CrackHeader::JIntegral");
+			}
+			
+			// find crack particle closer to the crack tipstart
+			if(crkTipIdx==END_OF_CRACK) startSeg=startSeg->nextSeg;
+			
+			// print the contour (for debegging)
+			/*
+			cout << "# J Contour from node " << crackPt->node->num << ", cross at (" << crossPt.x << "," << crossPt.y << ") fraction = "
+						<< prevPt->Fraction(crossPt) << " then nodes: " ;
+			nextPt=prevPt->nextPoint;
+			while(TRUE)
+			{	cout << " " << nextPt->node->num ;
+				nextPt=nextPt->nextPoint;
+				if(nextPt==prevPt->nextPoint) break;
+			}
+			cout << endl;
+			*/
+			
+			// insert nodal point and define start of the path
+			double fract=prevPt->Fraction(crossPt);
+			phantom=new NodalPoint2D((long)0,crossPt.x,crossPt.y);
+			phantom->PrepareForFields();
+			crackPt=new ContourPoint(phantom);
+			crackPt->SetNextPoint(prevPt->nextPoint);
+			prevPt->SetNextPoint(crackPt);
+			phantom->Interpolate(prevPt->node,crackPt->nextPoint->node,fract,(tipCrk==firstSeg));				
+				
+			/* Task 4: Loop over all segments and evaluate J integral (from the primary term)
+				Transform to crack plane and save results
+			*/
+			DispField *sfld1,*sfld2;
+			Jx1=Jy1=0.0;			// J-integral components from the first term
+			double tractionEnergy=0.,bridgingReleased=0.;
+			numSegs>>=1;			// half the segments
 			int dfld = (tipCrk==firstSeg) ? ABOVE_CRACK : BELOW_CRACK;		// initial field
-			numSegs=2*JGridSize*4+1;
+			nextPt=crackPt;
+			int count=0;			// particles in the nodal fields
 			while(TRUE)
 			{   // J integral node1 to node2 using field dfld
+				NodalPoint *node1=nextPt->node;
 				NodalPoint *node2=nextPt->nextPoint->node;
 				if(dfld==ABOVE_CRACK)
-					cout << "#  node " << node2->num << " count above " << node2->cvf[(int)node2->above]->GetNumberPoints() << endl;
+				{	sfld1=node1->cvf[(int)node1->above]->df;
+					sfld2=node2->cvf[(int)node2->above]->df;
+					count+=node2->cvf[(int)node2->above]->GetNumberPoints();
+				}
 				else
-					cout << "#  node " << node2->num << " count below " << node2->cvf[(int)node2->below]->GetNumberPoints() << endl;
+				{	sfld1=node1->cvf[(int)node1->below]->df;
+					sfld2=node2->cvf[(int)node2->below]->df;
+					count+=node2->cvf[(int)node2->below]->GetNumberPoints();
+				}
+				
+				/* Calculate J Integral segment by segment
+				   1 means the start point of the segment, 2 means the end point
+				   Units work, kinetic, stress are in N/mm^2
+				   Displacement gradient is dimensionless
+				*/
+				
+				double wd1,kd1,sxx1,syy1,sxy1;
+				double dudx1,dudy1,dvdx1,dvdy1;
+				double wd2,kd2,sxx2,syy2,sxy2;
+				double dudx2,dudy2,dvdx2,dvdy2;
+				double termForJx1,termForJy1,termForJx2,termForJy2;
+				double fForJx1,fForJy1,fForJx2,fForJy2;
+
+				// segment dS and normal from ContourPoint object
+				double ds=nextPt->ds;
+				Vector segNorm=nextPt->norm;
+
+				// get values of the start point
+				if(sfld1!=NULL)
+				{	wd1=sfld1->work;
+					kd1=sfld1->kinetic;
+					sxx1=sfld1->stress.xx;
+					syy1=sfld1->stress.yy;
+					sxy1=sfld1->stress.xy;
+					dudx1=sfld1->du.x;
+					dudy1=sfld1->du.y;
+					dvdx1=sfld1->dv.x;
+					dvdy1=sfld1->dv.y;
+				}
+				else
+				{	wd1=0.; kd1=0.; sxx1=0.; syy1=0.; sxy1=0.;
+					dudx1=0.; dudy1=0.; dvdx1=0.; dvdy1=0.;
+				}
+
+				// get values of the end point
+				if(sfld2!=NULL)
+				{	wd2=sfld2->work;
+					kd2=sfld2->kinetic;
+					sxx2=sfld2->stress.xx;
+					syy2=sfld2->stress.yy;
+					sxy2=sfld2->stress.xy;
+					dudx2=sfld2->du.x;
+					dudy2=sfld2->du.y;
+					dvdx2=sfld2->dv.x;
+					dvdy2=sfld2->dv.y;
+				}
+				else
+				{	wd2=0.; kd2=0.; sxx2=0.; syy2=0.; sxy2=0.;
+					dudx2=0.; dudy2=0.; dvdx2=0.; dvdy2=0.;
+				}
+
+				// calculate Jx
+
+				// term (ti*ui,x) (N/mm^2)
+				termForJx1=(sxx1*segNorm.x+sxy1*segNorm.y)*dudx1
+						  +(sxy1*segNorm.x+syy1*segNorm.y)*dvdx1;
+				termForJx2=(sxx2*segNorm.x+sxy2*segNorm.y)*dudx2
+						  +(sxy2*segNorm.x+syy2*segNorm.y)*dvdx2;
+						  
+				// [(W+K)nx-ti*ui,x] (N/mm^2)
+				fForJx1=(wd1+kd1)*segNorm.x-termForJx1;
+				fForJx2=(wd2+kd2)*segNorm.x-termForJx2;
+
+				Jx1+=0.5*(fForJx1+fForJx2)*ds;	// N mm/mm^2
+
+				// calculate Jy
+
+				// term ti*ui,y
+				termForJy1=(sxx1*segNorm.x+sxy1*segNorm.y)*dudy1
+						  +(sxy1*segNorm.x+syy1*segNorm.y)*dvdy1;
+				termForJy2=(sxx2*segNorm.x+sxy2*segNorm.y)*dudy2
+						  +(sxy2*segNorm.x+syy2*segNorm.y)*dvdy2;
+						  
+				// [(W+K)ny-ti*ui,y]
+				fForJy1=(wd1+kd1)*segNorm.y-termForJy1;
+				fForJy2=(wd2+kd2)*segNorm.y-termForJy2;
+
+				Jy1+=0.5*(fForJy1+fForJy2)*ds; 
+
+				// on to next segment
 				numSegs--;
 				if(numSegs<=0)
 					dfld = (dfld==ABOVE_CRACK) ? BELOW_CRACK : ABOVE_CRACK;
 				nextPt=nextPt->nextPoint;
 				if(nextPt==crackPt) break;
 			}
-			throw "Section of the J Integral contour was in empty space";
-		}
-
-        /* Task 5: Evaluate J integral from the additional terms (GYJ)
-            if requested */
-        Jx2=Jy2=0.;
-        if(JTerms==2)
-        {   double rho,xp,yp,carea;
-            double ax,ay,duxdx,duydx,duxdy,duydy;
-            double vx,vy,dvxdx,dvydy,dvxdy,dvydx;
-            double f2ForJx=0.,f2ForJy=0.;
-            count=0;	// number of particles within J-integral contour
-
-            for(long p=0;p<nmpms;p++)
-			{	if(theMaterials[mpm[p]->MatID()]->Rigid()) continue;
-            	xp=mpm[p]->pos.x;
-                yp=mpm[p]->pos.y;
-                if(xp>=cxmin && xp<cxmax && yp>=cymin && yp<cymax)
-                {   // (xp,yp) in the contour
-                    count++;
-                    // Mass density g/cm^3
-                    rho=theMaterials[mpm[p]->MatID()]->rho;
-                    // Accelerations mm/sec^2
-					Vector *acc=mpm[p]->GetAcc();
-                    ax=acc->x;
-                    ay=acc->y;
-                    // Displacement gradients (dimensionless)
-					Tensor *ep=mpm[p]->GetStrainTensor();
-                    duxdx=ep->xx;
-                    duydy=ep->yy;
-                    duxdy=mpm[p]->GetDuDy();
-                    duydx=mpm[p]->GetDvDx();
-                    // Velocities (mm/sec)
-                    vx=mpm[p]->vel.x;
-                    vy=mpm[p]->vel.y;
-                    // Velocity gradients
-					Tensor *velGrad=mpm[p]->GetVelGrad();
-                    dvxdx=velGrad->xx;
-                    dvydy=velGrad->yy;
-                    dvxdy=velGrad->xy;
-                    dvydx=velGrad->zz;			// yx stored in zz
-                    f2ForJx+=rho*((ax*duxdx+ay*duydx)-(vx*dvxdx+vy*dvydx)); 
-                    f2ForJy+=rho*((ax*duxdy+ay*duydy)-(vx*dvxdy+vy*dvydy));
-                }
-            }
-			
 			if(count==0)
-				throw "J Integral contour contains no particles";
-            carea=1.e-9*(cxmax-cxmin)*(cymax-cymin)/count;	// area per particle
-            Jx2=f2ForJx*carea;      // Jx2 in Nmm/mm^2 now
-            Jy2=f2ForJy*carea;      // Jy2 in Nmm/mm^2 now
-        }
-        
-		/* Task 6: Subtract energy due to tractions or for cracks in contact, subtract
-			energy associated with shear stress (not yet implemented thought)
-			If Jterms==3 or 4, subtract recoverable energy as well for R curve analysis
-		*/
-		if(hasTractionLaws)
-		{	tractionEnergy=startSeg->TractionEnergy(&crossPt,crkTipIdx,true);
-			bridgingReleased=startSeg->TractionEnergy(&crossPt,crkTipIdx,false);
-		}
-		else
-		{	// set traction energy to energy due to shear if in contact
-			tractionEnergy=0.;
-			bridgingReleased=0.;
-		}
-		
-        // add the two terms N mm/mm^2
-        Jx=Jx1+Jx2;
-        Jy=Jy1+Jy2;
+			{	nextPt=crackPt;
+				NodalPoint *node1=nextPt->node;
+				cout << "# J Contour intersects crack at " << node1->x << "," << node1->y << " fraction " << fract << endl;
+				int dfld = (tipCrk==firstSeg) ? ABOVE_CRACK : BELOW_CRACK;		// initial field
+				numSegs=2*JGridSize*4+1;
+				while(TRUE)
+				{   // J integral node1 to node2 using field dfld
+					NodalPoint *node2=nextPt->nextPoint->node;
+					if(dfld==ABOVE_CRACK)
+						cout << "#  node " << node2->num << " count above " << node2->cvf[(int)node2->above]->GetNumberPoints() << endl;
+					else
+						cout << "#  node " << node2->num << " count below " << node2->cvf[(int)node2->below]->GetNumberPoints() << endl;
+					numSegs--;
+					if(numSegs<=0)
+						dfld = (dfld==ABOVE_CRACK) ? BELOW_CRACK : ABOVE_CRACK;
+					nextPt=nextPt->nextPoint;
+					if(nextPt==crackPt) break;
+				}
+				throw "Section of the J Integral contour was in empty space";
+			}
 
-        /* Jint -- crack-axis components of dynamic J-integral
-			  Jint.x is J1 in archiving and literature and is energy release rate, here
-					it accounts for traction laws. Friction can be handled but not yet implemented
-			  Jint.y literature J2 - needed only to convert to KI and KII (archive when propagation is off)
-			  Jint.z is actual energy released when the crack and traction zone propagate together
-						(archived as J2 when propagation is on)
-		   crackDir -- crack propagating direction cosines from above
-        */
-        tipCrk->Jint.x= Jx*crackDir.x+Jy*crackDir.y-tractionEnergy;		// Jtip or energy that will be released if crack grows
-        tipCrk->Jint.y=-Jx*crackDir.y+Jy*crackDir.x;			// J2(x)
-		//tipCrk->Jint.y= Jx*crackDir.x+Jy*crackDir.y;			// store J1(x) in traction zones (archived only when no propagation)
-		tipCrk->Jint.z= tipCrk->Jint.x+bridgingReleased;		// Jrel or energy released in current state
+			/* Task 5: Evaluate J integral from the additional terms (GYJ)
+				if requested */
+			Jx2=Jy2=0.;
+			if(JTerms==2)
+			{   double rho,xp,yp,carea;
+				double ax,ay,duxdx,duydx,duxdy,duydy;
+				double vx,vy,dvxdx,dvydy,dvxdy,dvydx;
+				double f2ForJx=0.,f2ForJy=0.;
+				count=0;	// number of particles within J-integral contour
 
-		// end of try block on J calculation
-		secondTry=FALSE;
+				for(long p=0;p<nmpms;p++)
+				{	if(theMaterials[mpm[p]->MatID()]->Rigid()) continue;
+					xp=mpm[p]->pos.x;
+					yp=mpm[p]->pos.y;
+					if(xp>=cxmin && xp<cxmax && yp>=cymin && yp<cymax)
+					{   // (xp,yp) in the contour
+						count++;
+						// Mass density g/cm^3
+						rho=theMaterials[mpm[p]->MatID()]->rho;
+						// Accelerations mm/sec^2
+						Vector *acc=mpm[p]->GetAcc();
+						ax=acc->x;
+						ay=acc->y;
+						// Displacement gradients (dimensionless)
+						Tensor *ep=mpm[p]->GetStrainTensor();
+						duxdx=ep->xx;
+						duydy=ep->yy;
+						duxdy=mpm[p]->GetDuDy();
+						duydx=mpm[p]->GetDvDx();
+						// Velocities (mm/sec)
+						vx=mpm[p]->vel.x;
+						vy=mpm[p]->vel.y;
+						// Velocity gradients
+						Tensor *velGrad=mpm[p]->GetVelGrad();
+						dvxdx=velGrad->xx;
+						dvydy=velGrad->yy;
+						dvxdy=velGrad->xy;
+						dvydx=velGrad->zz;			// yx stored in zz
+						f2ForJx+=rho*((ax*duxdx+ay*duydx)-(vx*dvxdx+vy*dvydx)); 
+						f2ForJy+=rho*((ax*duxdy+ay*duydy)-(vx*dvxdy+vy*dvydy));
+					}
+				}
+				
+				if(count==0)
+					throw "J Integral contour contains no particles";
+				carea=1.e-9*(cxmax-cxmin)*(cymax-cymin)/count;	// area per particle
+				Jx2=f2ForJx*carea;      // Jx2 in Nmm/mm^2 now
+				Jy2=f2ForJy*carea;      // Jy2 in Nmm/mm^2 now
+			}
+			
+			/* Task 6: Subtract energy due to tractions or for cracks in contact, subtract
+				energy associated with shear stress (not yet implemented thought)
+				If Jterms==3 or 4, subtract recoverable energy as well for R curve analysis
+			*/
+			if(hasTractionLaws)
+			{	tractionEnergy=startSeg->TractionEnergy(&crossPt,crkTipIdx,true);
+				bridgingReleased=startSeg->TractionEnergy(&crossPt,crkTipIdx,false);
+			}
+			else
+			{	// set traction energy to energy due to shear if in contact
+				tractionEnergy=0.;
+				bridgingReleased=0.;
+			}
+			
+			// add the two terms N mm/mm^2
+			Jx=Jx1+Jx2;
+			Jy=Jy1+Jy2;
+
+			/* Jint -- crack-axis components of dynamic J-integral
+				  Jint.x is J1 in archiving and literature and is energy release rate, here
+						it accounts for traction laws. Friction can be handled but not yet implemented
+				  Jint.y literature J2 - needed only to convert to KI and KII (archive when propagation is off)
+				  Jint.z is actual energy released when the crack and traction zone propagate together
+							(archived as J2 when propagation is on)
+			   crackDir -- crack propagating direction cosines from above
+			*/
+			tipCrk->Jint.x= Jx*crackDir.x+Jy*crackDir.y-tractionEnergy;		// Jtip or energy that will be released if crack grows
+			tipCrk->Jint.y=-Jx*crackDir.y+Jy*crackDir.x;			// J2(x)
+			//tipCrk->Jint.y= Jx*crackDir.x+Jy*crackDir.y;			// store J1(x) in traction zones (archived only when no propagation)
+			tipCrk->Jint.z= tipCrk->Jint.x+bridgingReleased;		// Jrel or energy released in current state
+			
+			// end of try block on J calculation
+			secondTry=FALSE;
 		}
 		catch(MPMTermination term)
 		{	throw term;

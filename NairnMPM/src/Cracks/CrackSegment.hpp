@@ -49,6 +49,7 @@ class CrackSegment
         bool MoveSurfacePosition(short,double,double,bool,double);
 		int CheckSurfaces(void);
 		bool MoveToPlane(int,double,double,bool,double);
+		void CollapseSurfaces(void);
 		void StartCrackTipHeating(double,double);
 		double HeatRate(void);
 		double ForwardArea(double,double,int);
@@ -56,7 +57,7 @@ class CrackSegment
 		int MatID(void);
 		void SetMatID(int);
 		void AddTractionFext(CrackHeader *);
-		void AddTractionFext(CrackHeader *,int,double);
+		double AddTractionFextSide(CrackHeader *,int,double);
 		void UpdateTractions(CrackHeader *);
 		Vector GetTangential(double *);
 		double TractionEnergy(Vector *,int,bool);

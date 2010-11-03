@@ -152,13 +152,20 @@ void CrackVelocityField::DeleteStrainField(void)
 
 // Increment velocity when moving crack surface. This called after CM and total mass
 // is stored in the first non-empty material field
-short CrackVelocityField::IncrementDelvTask8(double fi,Vector *delV,double nodalMass)
+short CrackVelocityField::IncrementDelvTask8(double fi,Vector *delV,double *fieldMass)
 {	// skip low mass node
 	double totalMass=GetTotalMass();
-	if(totalMass/nodalMass<1.e-6) return FALSE;			// skip low mass
+	if(totalMass/(*fieldMass)<1.e-6) return FALSE;			// skip low mass
 	Vector totalPk=GetCMatMomentum();
 	AddScaledVector(delV,&totalPk,fi/totalMass);			// increment
+	*fieldMass=totalMass;
 	return TRUE;
+	/*
+	*fieldMass=GetTotalMass();
+	Vector totalPk=GetCMatMomentum();
+	AddScaledVector(delV,&totalPk,fi);			// increment
+	return TRUE;
+	*/
 }
 
 // Collect momenta and add to vector when finding CM velocity to move crack planes
@@ -251,13 +258,15 @@ int CrackVelocityField::GetNumberPointsNonrigid(void) { return numberPoints; }
 // for debugging
 void CrackVelocityField::Describe(void)
 {
-	cout << "Crack Field: npts="<<  numberPoints << " mass=" << GetTotalMass() << " unscaled vol=" << unscaledVolume << endl;
+	cout << "# Crack Field: npts="<<  numberPoints << " mass=" << GetTotalMass() << " unscaled vol=" << unscaledVolume << endl;
 	if(crackNum[0]>0)
 	{	cout << "#     crack 1=#" << crackNum[0] << ", loc=";
 		if(loc[0]==ABOVE_CRACK) cout << "above"; else cout << "below";
 		PrintVector(", n=",&norm[0]);
 		cout << endl;
 	}
+	else
+		cout << "#     non-crossing crack field" << endl;
 	if(crackNum[1]>0)
 	{	cout << "#     crack 2=#" << crackNum[1] << ", loc=" << loc[1];
 		if(loc[0]==ABOVE_CRACK) cout << "above"; else cout << "below";
