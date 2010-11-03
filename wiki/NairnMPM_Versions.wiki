@@ -32,6 +32,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Added option to archive contact forces with rigid materials on the grid. A global archive option can archive a sum of all contact forces.
     * Revised movement of crack surface particles to include more small movements and to ignore large movements. It works much better with the cutting simulations.
     * Improved traction laws so they can be used with interacting cracks.
+    * `VTKArchive` option for total strain
 
   * release-2.0 (25 JUL 2009)
     * Has NairnMPM 7.3.0
