@@ -176,12 +176,20 @@ bool CrackSegment::MoveSurfacePosition(short side,double xpt,double ypt,bool has
 void CrackSegment::AddTractionFext(CrackHeader *theCrack)
 {	// exit if no traction law
 	if(MatID()<0) return;
-	AddTractionFext(theCrack,ABOVE_CRACK,(double)1.);
-	AddTractionFext(theCrack,BELOW_CRACK,(double)-1.);
+	
+	// the second call makes sure the full traction force is applied to both sides
+	// of the crack. It may not be needed (or even be good?)
+	double fnorm=AddTractionFextSide(theCrack,ABOVE_CRACK,(double)1.);
+	if(fnorm>0. && fnorm<0.999)
+		AddTractionFextSide(theCrack,ABOVE_CRACK,(1./fnorm-1.));
+	
+	fnorm=AddTractionFextSide(theCrack,BELOW_CRACK,(double)-1.);
+	if(fnorm>0. && fnorm<0.999)
+		AddTractionFextSide(theCrack,ABOVE_CRACK,(1.-1./fnorm));
 }
 
 // calculate tractions on one side of crack for this segment
-void CrackSegment::AddTractionFext(CrackHeader *theCrack,int side,double sign)
+double CrackSegment::AddTractionFextSide(CrackHeader *theCrack,int side,double sign)
 {
 	side--;			// convert to 0 or 1 for above and below
 	Vector cspos,ndpos,norm;
@@ -189,6 +197,7 @@ void CrackSegment::AddTractionFext(CrackHeader *theCrack,int side,double sign)
     short vfld;
     double fn[MaxShapeNds];
 	NodalPoint *ndi;
+	double fnorm=0.;
 	
 	cspos.x=surfx[side];
 	cspos.y=surfy[side];
@@ -260,8 +269,12 @@ void CrackSegment::AddTractionFext(CrackHeader *theCrack,int side,double sign)
 		// add if find a field
 		if(vfld>=0)
 		{	nd[nds[i]]->AddFextSpreadTask3(vfld,FTract(sign*fn[i]));
+			fnorm+=fn[i];
 		}
 	}
+	
+	// return amount used
+	return fnorm;
 }
 
 // get normalized vector tangent to crack path and the length of the path associated with this particle
@@ -566,6 +579,7 @@ Vector CrackSegment::FTract(double fni)
 {	Vector fout;
 	fout.x=fni*tract.x;
 	fout.y=fni*tract.y;
+	fout.z=0.;
 	return fout;
 }
 
@@ -752,6 +766,15 @@ bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool thereIsAnothe
 	 return true;
 	 
 	 */
+}
+
+// if decide no longer need to track surfaces, can call this method to collapse surface
+// to the crack plane
+void CrackSegment::CollapseSurfaces(void)
+{
+	surfx[0]=surfx[1]=x;
+	surfy[0]=surfy[1]=y;
+	surfInElem[0]=surfInElem[1]=planeInElem;
 }
 
 #pragma mark ACCESSORS

@@ -710,8 +710,9 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	if(!CrackVelocityField::ActiveNonrigidField(cvf[vfld])) return FALSE;
 	
 	// increment the velocity if enough mass
-	if(cvf[vfld]->IncrementDelvTask8(fi,delv,mass))
-	{	*surfaceMass+=fi*mass;
+	double fieldMass=mass;
+	if(cvf[vfld]->IncrementDelvTask8(fi,delv,&fieldMass))
+	{	*surfaceMass+=fi*fieldMass;
 		return TRUE;
 	}
 	return FALSE;

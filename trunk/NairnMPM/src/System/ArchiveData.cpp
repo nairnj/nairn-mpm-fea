@@ -1093,7 +1093,8 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 				case VTK_STRESS:
 					if(quantity[q]==VTK_STRESS) scale=1.e-6;
 				case VTK_STRAIN:
-					if(quantity[q]==VTK_STRAIN) scale=1.;
+				case VTK_TOTALSTRAIN:
+					if(quantity[q]==VTK_STRAIN || quantity[q]==VTK_TOTALSTRAIN) scale=1.;
 					// stress in MPa, Strains absolute
 					if(vtk==NULL) break;
 					afile << scale*vtkquant[offset] << " " << scale*vtkquant[offset+3] << " " << scale*vtkquant[offset+4] << endl;

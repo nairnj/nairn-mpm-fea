@@ -60,7 +60,7 @@ class CrackVelocityField
 		void CreateStrainField(void);
 		void DeleteStrainField(void);
 		
-		short IncrementDelvTask8(double,Vector *,double);
+		short IncrementDelvTask8(double,Vector *,double *);
 		int CollectMomentaTask8(Vector *);
 		void SetCMVelocityTask8(Vector *,int);
 		bool GetCMVelocityTask8(Vector *);

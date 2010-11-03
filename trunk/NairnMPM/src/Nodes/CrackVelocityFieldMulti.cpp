@@ -542,7 +542,10 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 		else if(fmobj->dflag[0]==4)
 		{	// use special normals for cutting simulation with rake angle in dflag[1]
 			// and the material below the crack as the first defined material
-			if(MaterialBase::GetFieldMatID(i)==0)
+			Vector nrpos;
+			CopyScaleVector(&nrpos,&mvf[i]->disp,1./massi);
+			//if(MaterialBase::GetFieldMatID(i)==0)
+			if(nrpos.y<0.)
 			{	norm.x=0.;
 				norm.y=1.;
 			}
