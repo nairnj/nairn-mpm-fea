@@ -1001,7 +1001,7 @@ void CrackHeader::JIntegral(void)
 					numSegs++;
 				}
 				
-				// check endpoints for extent of contour rectangle
+				// check corners for extent of contour rectangle
 				cxmin=min(cxmin,nd[gridNode]->x);
 				cxmax=max(cxmax,nd[gridNode]->x);
 				cymin=min(cymin,nd[gridNode]->y);
@@ -1183,6 +1183,7 @@ void CrackHeader::JIntegral(void)
 				fForJx1=(wd1+kd1)*segNorm.x-termForJx1;
 				fForJx2=(wd2+kd2)*segNorm.x-termForJx2;
 
+				// add for two endpoints using midpoint rule
 				Jx1+=0.5*(fForJx1+fForJx2)*ds;	// N mm/mm^2
 
 				// calculate Jy
@@ -1197,6 +1198,7 @@ void CrackHeader::JIntegral(void)
 				fForJy1=(wd1+kd1)*segNorm.y-termForJy1;
 				fForJy2=(wd2+kd2)*segNorm.y-termForJy2;
 
+				// add for two endpoints using midpoint rule
 				Jy1+=0.5*(fForJy1+fForJy2)*ds; 
 
 				// on to next segment
