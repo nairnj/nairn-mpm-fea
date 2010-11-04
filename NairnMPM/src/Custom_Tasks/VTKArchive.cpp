@@ -268,7 +268,7 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 	unsigned int q;
 	double *vtkquant=vtk[ndmi->num];
 	double theWt=1.;
-	Tensor *ten=NULL;
+	Tensor *ten=NULL,*ten2;
 	
 	for(q=0;q<quantity.size();q++)
 	{	switch(quantity[q])
@@ -298,7 +298,7 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 			
 			case VTK_TOTALSTRAIN:
 				ten=mpnt->GetStrainTensor();
-				Tensor *ten2=mpnt->GetPlasticStrainTensor();
+				ten2=mpnt->GetPlasticStrainTensor();
 				vtkquant[0]+=wt*(ten->xx+ten2->xx);
 				vtkquant[1]+=wt*(ten->yy+ten2->yy);
 				vtkquant[2]+=wt*(ten->zz+ten2->zz);
