@@ -449,6 +449,7 @@ void NodalPoint::CalcStrainField(void)
 // Symbolically gets fract*n2 + (1-fract)*n1
 void NodalPoint::Interpolate(NodalPoint *n1,NodalPoint *n2,double fract,bool startTip)
 {
+	// Dereference above and below fields for each crack
 	DispField *a1fld=n1->cvf[(int)n1->above]->df;
 	DispField *b1fld=n1->cvf[(int)n1->below]->df;
 	DispField *a2fld=n2->cvf[(int)n2->above]->df;
@@ -467,18 +468,18 @@ void NodalPoint::Interpolate(NodalPoint *n1,NodalPoint *n2,double fract,bool sta
 	// node 2 has only one field
 	if(n2->above==n2->below)
 	{	if(startTip)
-		{	// node 2 field is above the crack
+		{	// node 2 field is entirely above the crack (in fld [0]) or no below the crack field
 			b2fld=NULL;
 			if(n1->above==n1->below)
-			{	// node 1 field is below the crack
+			{	// node 1 field is entirely below the crack (in fld [0]) or no above the crack field
 				a1fld=NULL;
 			}
 		}
 		else
-		{	// node 2 field is below the crack
+		{	// node 2 field is entirely below the crack (in fld [0]) or no above the crack field
 			a2fld=NULL;
 			if(n1->above==n1->below)
-			{	// node 1 field is ablve the crack
+			{	// node 1 field is entirely above the crack (in fld [0]) or no below the crack field
 				b1fld=NULL;
 			}
 		}
@@ -487,12 +488,12 @@ void NodalPoint::Interpolate(NodalPoint *n1,NodalPoint *n2,double fract,bool sta
 	// node 1 has only one field
 	else if(n1->above==n1->below)
 	{	if(startTip)
-		{	// node 1 field is below the crack
+		{	// node 1 field is entirely below the crack (in fld [0]) or no above the crack field
 			a1fld=NULL;
 			// node 2 is mixed because was not trapped above
 		}
 		else
-		{	// node 1 field is above the crack
+		{	// node 1 field is entirely above the crack (in fld [0]) or no below the crack field
 			b1fld=NULL;
 			// node 2 is mixed because was not trapped above
 		}
