@@ -34,19 +34,21 @@ class BodyForce
         // methods
 		void Activate(void);
 		short GetGravity(double *,double *);
-		double GetDamping(void);
+		double GetDamping(double);
 		void Output(void);
 		double GetAlpha(void);
 		void TrackAlpha(void);
 		void TrackAlpha(MPMBase *);
 		void UpdateAlpha(double,double);
 		void SetTargetFunction(char *);
+		void SetGridDampingFunction(char *);
 	
 	private:
 		short gravity;
 		double alpha;
 		double kineticEnergy,totalMass;
 		ROperation *function;
+		ROperation *gridfunction;
 		static double varTime;
 };
 

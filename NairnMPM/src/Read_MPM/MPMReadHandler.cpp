@@ -154,6 +154,17 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
         inputPtr=(char *)&bodyFrc.damping;
+		
+        numAttr=attrs.getLength();
+        for(i=0;i<numAttr;i++)
+        {   aName=XMLString::transcode(attrs.getLocalName(i));
+            value=XMLString::transcode(attrs.getValue(i));
+            if(strcmp(aName,"function")==0)
+			{	bodyFrc.SetGridDampingFunction(value);
+			}
+            delete [] aName;
+            delete [] value;
+        }
     }
     
     else if(strcmp(xName,"FeedbackDamping")==0)

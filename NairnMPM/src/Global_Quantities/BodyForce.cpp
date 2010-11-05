@@ -18,6 +18,7 @@ BodyForce bodyFrc;
 // global expression variables
 double BodyForce::varTime=0.;
 PRVar keTimeArray[1] = { NULL };
+PRVar gTimeArray[1] = { NULL };
 
 /*******************************************************************
 	ThermalRamp: Constructors and Destructors
@@ -44,11 +45,13 @@ void BodyForce::Activate(void)
 	gforcey=0.;
 	gravity=TRUE;
 	function=NULL;
+	gridfunction=NULL;
 }
 
 // Destructor (and it is virtual)
 BodyForce::~BodyForce()
 {	if(function!=NULL) delete function;
+	if(gridfunction!=NULL) delete gridfunction;
 }
 
 // If gravity return TRUE and current forces
@@ -61,7 +64,13 @@ short BodyForce::GetGravity(double *xfrc,double *yfrc)
 }
 
 // the damping
-double BodyForce::GetDamping(void) { return damping; }
+double BodyForce::GetDamping(double utime)
+{
+	if(gridfunction==NULL) return damping;
+	
+	varTime=1000.*utime;
+	return gridfunction->Val();
+}
 
 // display gravity settings
 void BodyForce::Output(void)
@@ -73,8 +82,15 @@ void BodyForce::Output(void)
 		cout << hline << endl;
 	}
 	
-	sprintf(hline,"Grid damping: %g /sec",damping);
-    cout << hline << endl;
+	if(gridfunction!=NULL)
+	{	char *expr=gridfunction->Expr('#');
+		cout << "Grid damping = " << expr << " /sec" << endl;
+		delete [] expr;
+	}
+	else
+	{	sprintf(hline,"Grid damping: %g /sec",damping);
+		cout << hline << endl;
+	}
 	
 	if(useFeedback)
 	{	sprintf(hline,"Feedback damping with coefficient: %g /mm^2",dampingCoefficient);
@@ -148,5 +164,27 @@ void BodyForce::SetTargetFunction(char *bcFunction)
 	if(function->HasError())
 		throw SAXException("Target energy function of time is not valid");
 }
+
+// set function for grid damping
+void BodyForce::SetGridDampingFunction(char *bcFunction)
+{
+	if(bcFunction==NULL)
+		throw SAXException("Grid damping function of time is missing");
+	if(strlen(bcFunction)==0)
+		throw SAXException("Grid damping function of time is missing");
+	if(gridfunction!=NULL)
+		throw SAXException("Duplicate grid damping functions of time");
+	
+	// create variable
+	if(gTimeArray[0]==NULL)
+	{	gTimeArray[0]=new RVar("t",&varTime);
+	}
+	
+	// create the function and check it
+	gridfunction=new ROperation(bcFunction,1,gTimeArray);
+	if(gridfunction->HasError())
+		throw SAXException("Grid damping function of time is not valid");
+}
+
 
 

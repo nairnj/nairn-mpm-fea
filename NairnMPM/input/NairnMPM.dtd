@@ -302,6 +302,8 @@
 <!ELEMENT	CrackArchiveOrder (#PCDATA)>
 <!ELEMENT	ProgSteps (#PCDATA)>
 <!ELEMENT	Damping (#PCDATA)>
+<!ATTLIST	Damping
+			function CDATA #IMPLIED>
 <!ELEMENT	FeedbackDamping (#PCDATA)>
 <!ATTLIST	FeedbackDamping
 			target CDATA #IMPLIED>

@@ -176,14 +176,16 @@ where K is the parameter entered in the <code>FeedbackDamping</code> command (wi
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A Nose-Hoover thermostat works in molecular calculations by tying kinetic energy to temperature. Here the thermostat ties kinetic energy to an expected kinetic energy after vibrations are damped out. When boundary conditions are constant, the target kinetic energy should be zero and feedback damping will help the problem converge to the static solution. For non-constant boundary conditions, you need to estimate the &quot;static&quot; (<i>i.e.</i>, very slow loading) kinetic energy to have this thermostat work correctly. The damping also depends on K; selecting a good value requires trial and error.
 </dd>
   
-  <dt><a name="damping"></a>&lt;Damping&gt;</dt>
+  <dt><a name="damping"></a>&lt;Damping function='2000*sign(1.0-t)'&gt;</dt>
   
-  <dd>Grid damping constant in units of 1/sec. This type of damping is applied directly to the nodes. It is less sophisticated than <a href="#feedbackdamping">FeedbackDamping Command</a>, but sometimes it is easier is use. Higher values give more damping. Selecting a good value requires trial and error. (Default value: 0)<br>
+  <dd>Grid damping constant. You can either specify a value in the text of this command or specify a <a href="function.html">user-defined function</a> of time in the <code>function</code> attribute. The specified value or the function result should be in units of 1/sec. This type of damping is applied directly to the nodes. It is less sophisticated than <a href="#feedbackdamping">FeedbackDamping Command</a>, but sometimes it can give better results, especially if the feedback damping loses control and starts to over damp. Higher values give more damping. Selecting a good value requires trial and error. (Default value: 0)<br>
   
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;With grid damping on, the nodal velocity update becomes<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v<sub>i</sub>(t+dt) = v<sub>i</sub>(t) + (a<sub>i</sub><sup>*</sup>
 - kv<sub>i</sub><sup>*</sup>)dt<br>
-where  a<sub>i</sub><sup>*</sup> = (f<sub>i</sub><sup>int</sup> + f<sub>i</sub><sup>ext</sup>)/m<sub>i</sub> is nodal acceleration without damping, v<sub>i</sub><sup>*</sup> = p<sub>i</sub>/m<sub>i</sub> in nodal velocity, m<sub>i</sub> is nodal mass, and k is the parameter entered in the <code>Damping</code> command.</dd>
+where  a<sub>i</sub><sup>*</sup> = (f<sub>i</sub><sup>int</sup> + f<sub>i</sub><sup>ext</sup>)/m<sub>i</sub> is nodal acceleration without damping, v<sub>i</sub><sup>*</sup> = p<sub>i</sub>/m<sub>i</sub> in nodal velocity, m<sub>i</sub> is nodal mass, and k is the parameter entered in the <code>Damping</code> command (or obtained from the <code>function</code> result).<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;It would easy to revise the code to allow a function of nodal position as well, which would permit simulations were different parts of the grid damped differently.
+</dd>
   
 <dt><a name="stressfreetemp"></a>&lt;StressFreeTemp&gt;</dt>
 <dd>This tags allows you to specify a stress free or reference temperature (in degrees C). The analysis will track absolute particle temperature. For a simple analysis with temperature-independent properties, the final results depend only on temperature difference. This parameter simply allows output temperature to have actual values. It has no influence unless the calculations include <a href="thermal.html">thermal conductivity and/or isothermal temperature differences</a>. (Default value: 0)
