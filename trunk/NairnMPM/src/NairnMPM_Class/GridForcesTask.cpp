@@ -133,7 +133,7 @@ void GridForcesTask::Execute(void)
 	CrackNode::InterfaceOnKnownNodes();
     
 	// Find grid total forces with external damping
-	double damping=bodyFrc.GetDamping();
+	double damping=bodyFrc.GetDamping(mtime);		// could move inside loop and make function of nodal position too
     for(int i=1;i<=nnodes;i++)
 		nd[i]->CalcFtotTask3(damping);
 	
