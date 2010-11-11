@@ -178,12 +178,13 @@ where K is the parameter entered in the <code>FeedbackDamping</code> command (wi
   
   <dt><a name="damping"></a>&lt;Damping function='2000*sign(1.0-t)'&gt;</dt>
   
-  <dd>Grid damping constant. You can either specify a value in the text of this command or specify a <a href="function.html">user-defined function</a> of time in the <code>function</code> attribute. The specified value or the function result should be in units of 1/sec. This type of damping is applied directly to the nodes. It is less sophisticated than <a href="#feedbackdamping">FeedbackDamping Command</a>, but sometimes it can give better results, especially if the feedback damping loses control and starts to over damp. Higher values give more damping. Selecting a good value requires trial and error. (Default value: 0)<br>
+  <dd>Grid damping constant. You can either specify a value in the text of this command or specify a <a href="function.html">user-defined function</a> of time in the <code>function</code> attribute. The specified value or the function result should be in units of 1/sec. This type of damping is applied directly to the nodes. It is less sophisticated than <a href="#feedbackdamping">FeedbackDamping Command</a>, but sometimes it can give better results, especially if the feedback damping loses control and starts to over damp. Higher values give more damping. (Default value: 0)<br>
   
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;With grid damping on, the nodal velocity update becomes<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v<sub>i</sub>(t+dt) = v<sub>i</sub>(t) + (a<sub>i</sub><sup>*</sup>
 - kv<sub>i</sub><sup>*</sup>)dt<br>
 where  a<sub>i</sub><sup>*</sup> = (f<sub>i</sub><sup>int</sup> + f<sub>i</sub><sup>ext</sup>)/m<sub>i</sub> is nodal acceleration without damping, v<sub>i</sub><sup>*</sup> = p<sub>i</sub>/m<sub>i</sub> in nodal velocity, m<sub>i</sub> is nodal mass, and k is the parameter entered in the <code>Damping</code> command (or obtained from the <code>function</code> result).<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The amount of damping to approach static results without over damping depends on the problem being damping. Under static conditions (no longer applying forces or moving particles), the total kinetic energy on the grid will decay with a exponential time constant on the order of &tau; &asymp; 1/(2k). The amount of damping should scale with wave speed of the materials or vibration times in certain problems. For a given problem, the damping will therefore scale with &radic;(E/&rho;). One set of tension tests on an isotropic material with E = 2300 MPa and &rho; = 1 g/cm<sup>3</sup> looked good with k = 5000 sec<sup>-1</sup> or &tau; &asymp; 0.1 msec.<br>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;It would easy to revise the code to allow a function of nodal position as well, which would permit simulations were different parts of the grid damped differently.
 </dd>
   

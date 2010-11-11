@@ -28,6 +28,7 @@ class TractionLaw : public MaterialBase
         virtual char *InputMat(char *,int &);
 		virtual const char *VerifyProperties(int);
 		virtual void PrintTransportProperties(void);
+		virtual void ReportDebond(double,CrackSegment *,double);
 		
 		// no need for constitutive laws
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);

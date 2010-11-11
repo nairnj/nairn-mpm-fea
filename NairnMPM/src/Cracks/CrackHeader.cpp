@@ -436,13 +436,27 @@ short CrackHeader::MoveCrack(void)
 					if(contact.GetPreventPlaneCrosses())
 					{	if(!scrk->CheckSurfaces()) return FALSE;
 					}
+					
+					// development flag to collapse wide open cracks during cutting
+					if(fmobj->dflag[0]==4 && scrk->MatID())
+					{	// find COD
+						double codx=scrk->surfx[0]-scrk->surfx[1];
+						double cody=scrk->surfy[0]-scrk->surfy[1];
+						double cod=sqrt(codx*codx+cody*cody);
+						if(cod>0.75)
+						{	scrk->x=(scrk->surfx[0]+scrk->surfx[1])/2.;
+							scrk->y=(scrk->surfy[0]+scrk->surfy[1])/2.;
+							if(!scrk->FindElement()) return FALSE;
+							scrk->CollapseSurfaces();
+						}
+					}
 				}
-				else if(scrk->MatID()<0)
-				{	// crack surface is in free space and does not have traction law
-					scrk->CollapseSurfaces();
-				}
+				//else if(scrk->MatID()<0)
+				//{	// crack surface is in free space and does not have traction law
+				//	scrk->CollapseSurfaces();
+				//}
 				else if(contact.GetPreventPlaneCrosses())
-				{	// crack in free space, but has tractions so verify surfaces
+				{	// crack in free space, but check if surfaces have moved
 					if(!scrk->CheckSurfaces()) return FALSE;
 				}
 			}
