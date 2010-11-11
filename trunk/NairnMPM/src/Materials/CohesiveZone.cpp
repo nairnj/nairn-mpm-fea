@@ -140,7 +140,7 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
 	{	// is it failed?
 		if(nCod>delIc)
 		{	cs->SetMatID(0);                        // then debonded
-			cout << "# mode I debond: t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
+			ReportDebond(mtime,cs,1.0);
 		}
 		else
 		{	if(nCod>upeak[0]) upeak[0]=nCod;                        // new peak reached
@@ -163,7 +163,7 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
 		double absTCod=fabs(tCod);
 		if(absTCod>delIIc)
 		{	cs->SetMatID(0);                        // then debonded
-			cout << "# mode II debond: t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
+			ReportDebond(mtime,cs,0.0);
 			Tn=0.;                                          // turn off normal traction when failed
 		}
 		else if(absTCod>0.)
@@ -185,7 +185,7 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
 	if(cs->MatID()>=0 && nmix>0)
 	{	if(pow(GI/JIc,nmix)+pow(GII/JIIc,nmix) > 1)
 		{	cs->SetMatID(0);				// now debonded
-			cout << "# mixed mode debond: t=" << 1000.*mtime << " and (x,y) = (" << cs->x << "," <<cs-> y << ")" << endl;
+			ReportDebond(mtime,cs,GI/(GI+GII));
 			Tn=0.;
 			Tt=0.;
 		}
