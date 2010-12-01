@@ -33,7 +33,7 @@ ifeq ($(SYSTEM),mac)
 	xercesSo = /usr/local/lib/libxerces-c.dylib
 endif
 ifeq ($(SYSTEM),carbon)
-	xercesSo = usr/local/xerces3/lib/libxerces-c.so
+	xercesSo = /usr/local/xerces3/lib/libxerces-c.so
 endif
 ifeq ($(SYSTEM),cygwin)
 	xercesSo = -L/usr/local/lib -lxerces-c
