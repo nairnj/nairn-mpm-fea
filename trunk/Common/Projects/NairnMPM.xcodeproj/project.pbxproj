@@ -35,8 +35,8 @@
 		67BFA35611FB81B70083F95B /* InitializationTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67BFA35411FB81B70083F95B /* InitializationTask.cpp */; };
 		A700094B0F86B75E00FD76C7 /* MatVelocityField.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A70009490F86B75E00FD76C7 /* MatVelocityField.hpp */; };
 		A700094C0F86B75E00FD76C7 /* MatVelocityField.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A700094A0F86B75E00FD76C7 /* MatVelocityField.cpp */; };
-		A70220B60B14C15A00534B35 /* libxerces-c.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A70220B50B14C15A00534B35 /* libxerces-c.dylib */; };
-		A70220B70B14C15A00534B35 /* libxerces-c.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A70220B50B14C15A00534B35 /* libxerces-c.dylib */; };
+		A70220B60B14C15A00534B35 /* libxerces-c-3.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A70220B50B14C15A00534B35 /* libxerces-c-3.1.dylib */; };
+		A70220B70B14C15A00534B35 /* libxerces-c-3.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A70220B50B14C15A00534B35 /* libxerces-c-3.1.dylib */; };
 		A708FDD40F326C1A003FA82B /* SLMaterial.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A708FDD20F326C1A003FA82B /* SLMaterial.hpp */; };
 		A708FDD50F326C1A003FA82B /* SLMaterial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A708FDD30F326C1A003FA82B /* SLMaterial.cpp */; };
 		A712FAB20E54ED8500AF8D78 /* JohnsonCook.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A712FAB00E54ED8500AF8D78 /* JohnsonCook.hpp */; };
@@ -386,7 +386,7 @@
 		67BFA35411FB81B70083F95B /* InitializationTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InitializationTask.cpp; sourceTree = "<group>"; };
 		A70009490F86B75E00FD76C7 /* MatVelocityField.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatVelocityField.hpp; sourceTree = "<group>"; };
 		A700094A0F86B75E00FD76C7 /* MatVelocityField.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatVelocityField.cpp; sourceTree = "<group>"; };
-		A70220B50B14C15A00534B35 /* libxerces-c.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; name = "libxerces-c.dylib"; path = "/usr/local/lib/libxerces-c.dylib"; sourceTree = "<absolute>"; };
+		A70220B50B14C15A00534B35 /* libxerces-c-3.1.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; name = "libxerces-c-3.1.dylib"; path = "/usr/local/lib/libxerces-c-3.1.dylib"; sourceTree = "<absolute>"; };
 		A708FDD20F326C1A003FA82B /* SLMaterial.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SLMaterial.hpp; sourceTree = "<group>"; };
 		A708FDD30F326C1A003FA82B /* SLMaterial.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SLMaterial.cpp; sourceTree = "<group>"; };
 		A70A7B11042A50950063AF10 /* MaterialBaseMPM.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = MaterialBaseMPM.cpp; sourceTree = "<group>"; };
@@ -674,7 +674,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A70220B60B14C15A00534B35 /* libxerces-c.dylib in Frameworks */,
+				A70220B60B14C15A00534B35 /* libxerces-c-3.1.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -682,7 +682,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A70220B70B14C15A00534B35 /* libxerces-c.dylib in Frameworks */,
+				A70220B70B14C15A00534B35 /* libxerces-c-3.1.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -692,7 +692,7 @@
 		0249A662FF388D9811CA2CEA /* External Frameworks and Libraries */ = {
 			isa = PBXGroup;
 			children = (
-				A70220B50B14C15A00534B35 /* libxerces-c.dylib */,
+				A70220B50B14C15A00534B35 /* libxerces-c-3.1.dylib */,
 			);
 			name = "External Frameworks and Libraries";
 			sourceTree = "<group>";
@@ -1789,8 +1789,7 @@
 		A7BB15DB09F4555D000A7C91 /* Default */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1)";
-				ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1 = "ppc i386";
+				ARCHS = "$(NATIVE_ARCH)";
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREFIX_HEADER = ../../NairnMPM/src/System/MPMPrefix.hpp;
@@ -1817,8 +1816,7 @@
 		A7BB15DF09F4555D000A7C91 /* Default */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1)";
-				ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1 = "ppc i386";
+				ARCHS = "$(NATIVE_ARCH)";
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREFIX_HEADER = ../../NairnFEA/src/System/FEAPrefix.hpp;
@@ -1846,10 +1844,7 @@
 		A7BB15E309F4555D000A7C91 /* Default */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = (
-					"$(NATIVE_ARCH)",
-					ppc,
-				);
+				ARCHS = "$(NATIVE_ARCH)";
 				VALID_ARCHS = "ppc7400 ppc64 ppc970 i386 x86_64 ppc";
 			};
 			name = Default;

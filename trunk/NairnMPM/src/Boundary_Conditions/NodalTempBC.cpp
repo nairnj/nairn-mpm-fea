@@ -19,7 +19,7 @@ NodalTempBC *reuseRigidTempBC=NULL;
 	NodalTempBC: Constructors and Destructors
 *******************************************************************/
 
-NodalTempBC::NodalTempBC(long num,int setStyle,double temperature,double argTime)
+NodalTempBC::NodalTempBC(int num,int setStyle,double temperature,double argTime)
 		: BoundaryCondition(setStyle,temperature,argTime)
 {
     nodeNum=num;
@@ -27,7 +27,7 @@ NodalTempBC::NodalTempBC(long num,int setStyle,double temperature,double argTime
 }
 
 // Reuse Rigid BC
-BoundaryCondition *NodalTempBC::SetRigidProperties(long num,int dof,int setStyle,double temperature)
+BoundaryCondition *NodalTempBC::SetRigidProperties(int num,int dof,int setStyle,double temperature)
 {	// set direction
 	nd[num]->SetFixedDirection(TEMP_DIRECTION);
 	// finish in base class
@@ -48,7 +48,7 @@ BoundaryCondition *NodalTempBC::UnsetDirection(void)
 BoundaryCondition *NodalTempBC::PrintBC(ostream &os)
 {
     char nline[200];
-	sprintf(nline,"%5ld %2d %15.7e %15.7e",nodeNum,style,value,ftime);
+	sprintf(nline,"%5d %2d %15.7e %15.7e",nodeNum,style,value,ftime);
     os << nline;
 	PrintFunction(os);
 	return (BoundaryCondition *)GetNextObject();

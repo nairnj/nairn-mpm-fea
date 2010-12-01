@@ -7,7 +7,6 @@
 ********************************************************************************/
 
 #include "Elements/ElementBase.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 #include "Read_XML/LineController.hpp"
 
 /********************************************************************************

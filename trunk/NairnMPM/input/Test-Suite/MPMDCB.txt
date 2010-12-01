@@ -21,6 +21,7 @@
 #	MoveToPlane() changed the way particles moved to the crack plane
 #
 # NairnMPM 8.0.0, 6 AUG 2010 - identical to 7.3.0
+# NairnMPM 8.1.0 (revision pending), 1 DEC 2010 - identical to 7.3.0
 #
 # ----------------------------------------------------------------------------
 #

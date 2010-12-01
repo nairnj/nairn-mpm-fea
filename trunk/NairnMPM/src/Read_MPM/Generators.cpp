@@ -41,7 +41,7 @@
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
 double pConc,pTemp,Angle,Thick;
-long Nhoriz=0,Nvert=0,Ndepth=0,MatID;
+int Nhoriz=0,Nvert=0,Ndepth=0,MatID;
 double cellHoriz=-1.,cellVert=-1.,cellDepth=-1.;
 Vector Vel;
 char *angleExpr[3];
@@ -109,7 +109,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"nx")==0)
-                sscanf(value,"%ld",&Nhoriz);
+                sscanf(value,"%d",&Nhoriz);
             else if(strcmp(aName,"rx")==0)
                 sscanf(value,"%lf",&Rhoriz);
             else if(strcmp(aName,"cellsize")==0)
@@ -126,7 +126,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"ny")==0)
-                sscanf(value,"%ld",&Nvert);
+                sscanf(value,"%d",&Nvert);
             else if(strcmp(aName,"ry")==0)
                 sscanf(value,"%lf",&Rvert);
  			else if(strcmp(aName,"cellsize")==0)
@@ -143,7 +143,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"nz")==0)
-                sscanf(value,"%ld",&Ndepth);
+                sscanf(value,"%d",&Ndepth);
             else if(strcmp(aName,"rz")==0)
                 sscanf(value,"%lf",&Rdepth);
             else if(strcmp(aName,"cellsize")==0)
@@ -171,7 +171,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			{	aName=XMLString::transcode(attrs.getLocalName(i));
                 value=XMLString::transcode(attrs.getValue(i));
                 if(strcmp(aName,"mat")==0)
-                    sscanf(value,"%ld",&MatID);
+                    sscanf(value,"%d",&MatID);
                 else if(strcmp(aName,"angle")==0)
                     sscanf(value,"%lf",&Angle);
                 else if(strcmp(aName,"thick")==0)
@@ -275,7 +275,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
-			theBody->SetProperty(aName,value);
+			theBody->SetBodyProperty(aName,value,this);
             delete [] aName;
             delete [] value;
         }
@@ -336,7 +336,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				if(endTip<0 && endTip!=-2) endTip=-1;
 			}
 			else if(strcmp(aName,"mat")==0)
-				sscanf(value,"%ld",&MatID);
+				sscanf(value,"%d",&MatID);
 
             delete [] aName;
             delete [] value;
@@ -604,7 +604,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			theShape->resetParticleEnumerator();
 			double normalize=theShape->particleCount();
 			while((i=theShape->nextParticle())>=0)
-			{   newLoadBC=new MatPtLoadBC((long)(i+1),dof,style);
+			{   newLoadBC=new MatPtLoadBC(i+1,dof,style);
 				newLoadBC->ftime=ftime;
 				newLoadBC->SetFunction(function);
 				if(function==NULL)
@@ -626,7 +626,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			MatPtFluxBC *newFluxBC;
 			theShape->resetParticleEnumerator();
 			while((i=theShape->nextParticle())>=0)
-			{   newFluxBC=new MatPtFluxBC((long)(i+1),dof,style);
+			{   newFluxBC=new MatPtFluxBC(i+1,dof,style);
 				newFluxBC->value=load;
 				newFluxBC->ftime=ftime;
 				newFluxBC->SetFunction(function);
@@ -699,10 +699,9 @@ short MPMReadHandler::EndGenerator(char *xName)
 //-----------------------------------------------------------
 void MPMReadHandler::MPMPts(void)
 {
-    int i,k;
 	Vector ppos[MaxElParticles];
     MPMBase *newMpt;
-    int ptFlag;
+    int i,k,ptFlag;
 	int numRotations=strlen(rotationAxes);
 	
 	if(numRotations>0)
@@ -729,7 +728,7 @@ void MPMReadHandler::MPMPts(void)
 						newMpt=new MatPoint2D(i,MatID,Angle,Thick);
                     newMpt->SetPosition(&ppos[k]);
                     newMpt->SetOrigin(&ppos[k]);
-                    newMpt->SetVelocity(&Vel);
+					newMpt->SetVelocity(&Vel);
 					SetMptAnglesFromFunctions(numRotations,&ppos[k],newMpt);
 					mpCtrl->AddMaterialPoint(newMpt,pConc,pTemp);
                 }
@@ -816,12 +815,12 @@ char *MPMReadHandler::LastBC(char *firstBC)
 void MPMReadHandler::grid()
 {
     int i,j,k,curPt=0,curEl=0;
-    long node,element,enode[MaxElNd]={0};
+	int node,element,enode[MaxElNd]={0};
     double xpt,ypt,zpt;
     
     // use cell sizes instead
     if(cellHoriz>0.)
-    {	Nhoriz=(long)((Xmax-Xmin)/cellHoriz);
+    {	Nhoriz=(int)((Xmax-Xmin)/cellHoriz);
     	double newMax=Xmin+Nhoriz*cellHoriz;
     	if(newMax<Xmax)
     	{	Xmax=newMax+cellHoriz;
@@ -829,7 +828,7 @@ void MPMReadHandler::grid()
     	}
     }
     if(cellVert>0.)
-    {	Nvert=(long)((Ymax-Ymin)/cellVert);
+    {	Nvert=(int)((Ymax-Ymin)/cellVert);
     	double newMax=Ymin+Nvert*cellVert;
     	if(newMax<Ymax)
     	{	Ymax=newMax+cellVert;
@@ -837,7 +836,7 @@ void MPMReadHandler::grid()
     	}
     }
     if(cellDepth>0. && fmobj->IsThreeD())
-    {	Ndepth=(long)((Zmax-Zmin)/cellDepth);
+    {	Ndepth=(int)((Zmax-Zmin)/cellDepth);
     	double newMax=Zmin+Ndepth*cellDepth;
     	if(newMax<Zmax)
     	{	Zmax=newMax+cellDepth;

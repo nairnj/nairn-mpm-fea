@@ -73,12 +73,12 @@ int ElementsController::CreateElement(char *xData)
 int ElementsController::CreateElement(char *xData,int elemMat,double elemAngle,double elemThick)
 #endif
 {
-	long eNode[MaxElNd];
+	int eNode[MaxElNd];
 	ElementBase *newElem=NULL;
 
 	switch(currentElemID)
 	{	case FOUR_NODE_ISO:
-			sscanf(xData,"%ld,%ld,%ld,%ld",&eNode[0],&eNode[1],&eNode[2],&eNode[3]);
+			sscanf(xData,"%d,%d,%d,%d",&eNode[0],&eNode[1],&eNode[2],&eNode[3]);
 #ifdef MPM_CODE
 			newElem=new FourNodeIsoparam(1,eNode);
 #else
@@ -88,7 +88,7 @@ int ElementsController::CreateElement(char *xData,int elemMat,double elemAngle,d
 			
 #ifdef MPM_CODE
 		case EIGHT_NODE_ISO_BRICK:
-			sscanf(xData,"%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld",&eNode[0],&eNode[1],
+			sscanf(xData,"%d,%d,%d,%d,%d,%d,%d,%d",&eNode[0],&eNode[1],
 					&eNode[2],&eNode[3],&eNode[4],&eNode[5],&eNode[6],&eNode[7]);
 			newElem=new EightNodeIsoparamBrick(1,eNode);
 			break;
@@ -96,29 +96,29 @@ int ElementsController::CreateElement(char *xData,int elemMat,double elemAngle,d
 
 #ifdef FEA_CODE
 		case EIGHT_NODE_ISO:
-			sscanf(xData,"%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld",&eNode[0],&eNode[1],
+			sscanf(xData,"%d,%d,%d,%d,%d,%d,%d,%d",&eNode[0],&eNode[1],
 					&eNode[2],&eNode[3],&eNode[4],&eNode[5],&eNode[6],&eNode[7]);
 			newElem=new EightNodeIsoparam(1,eNode,elemMat,elemAngle,elemThick);
 			break;
 
 		case ISO_TRIANGLE:
-			sscanf(xData,"%ld,%ld,%ld,%ld,%ld,%ld",&eNode[0],&eNode[1],
+			sscanf(xData,"%d,%d,%d,%d,%d,%d",&eNode[0],&eNode[1],
 					&eNode[2],&eNode[3],&eNode[4],&eNode[5]);
 			newElem=new SixNodeTriangle(1,eNode,elemMat,elemAngle,elemThick);
 			break;
 			
 		case CS_TRIANGLE:
-			sscanf(xData,"%ld,%ld,%ld",&eNode[0],&eNode[1],&eNode[2]);
+			sscanf(xData,"%d,%d,%d",&eNode[0],&eNode[1],&eNode[2]);
 			newElem=new CSTriangle(1,eNode,elemMat,elemAngle,elemThick);
 			break;
 			
 		case LINEAR_INTERFACE:
-			sscanf(xData,"%ld,%ld,%ld,%ld",&eNode[0],&eNode[1],&eNode[2],&eNode[3]);
+			sscanf(xData,"%d,%d,%d,%d",&eNode[0],&eNode[1],&eNode[2],&eNode[3]);
 			newElem=new LinearInterface(1,eNode,elemMat,elemAngle,elemThick);
 			break;
 			
 		case QUAD_INTERFACE:
-			sscanf(xData,"%ld,%ld,%ld,%ld,%ld,%ld",&eNode[0],&eNode[1],
+			sscanf(xData,"%d,%d,%d,%d,%d,%d",&eNode[0],&eNode[1],
 					&eNode[2],&eNode[3],&eNode[4],&eNode[5]);
 			newElem=new QuadInterface(1,eNode,elemMat,elemAngle,elemThick);
 			break;
@@ -136,7 +136,7 @@ int ElementsController::CreateElement(char *xData,int elemMat,double elemAngle,d
 
 #ifdef FEA_CODE
 // Create element(s) from node numbers calculated in meshing routine
-int ElementsController::MeshElement(long *eNode,int elemMat,double elemAngle,double elemThick)
+int ElementsController::MeshElement(int *eNode,int elemMat,double elemAngle,double elemThick)
 {
 	ElementBase *newElem=NULL;
 	
@@ -154,7 +154,7 @@ int ElementsController::MeshElement(long *eNode,int elemMat,double elemAngle,dou
 			break;
 		
 		case ISO_TRIANGLE:
-			long tNode[9];
+			int tNode[9];
 			Vector midPt;
 			theNodes->MidPoint(&eNode[1],8,&midPt);
 			theNodes->AddNode(midPt.x,midPt.y,(double)0.,(double)0.0);
@@ -213,7 +213,7 @@ int ElementsController::MeshElement(long *eNode,int elemMat,double elemAngle,dou
 				AddElement(newElem);
 			}
 			else
-			{	long holdNode=eNode[3];
+			{	int holdNode=eNode[3];
 				eNode[3]=eNode[4];
 				newElem=new CSTriangle(1,&eNode[1],elemMat,elemAngle,elemThick);
 				if(newElem==NULL) return FALSE;

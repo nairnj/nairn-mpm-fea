@@ -195,7 +195,7 @@ GlobalQuantity *GlobalQuantity::AppendName(char *fline)
 // append quantity
 GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 {
-	long p,numAvged=0;
+	int p,numAvged=0;
 	double value=0.,rho;
 	char numStr[100];
 	int matid,qid=0;

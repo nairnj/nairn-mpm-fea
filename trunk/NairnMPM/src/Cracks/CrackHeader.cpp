@@ -382,7 +382,7 @@ short CrackHeader::MoveCrack(void)
 	
 	// move crack plane particles by CM velocity
 	else
-	{	long iel;
+	{	int iel;
 		double fn[MaxShapeNds];
 		Vector cncpos;
 		int j,nodeCounter;
@@ -499,7 +499,7 @@ short CrackHeader::MoveCrack(void)
 short CrackHeader::MoveCrack(short side)
 {
     CrackSegment *scrk=firstSeg;
-    long iel;
+    int iel;
     double fn[MaxShapeNds],surfaceMass;
 	Vector cncpos;
     short js=side-1,nodeCounter,j;
@@ -940,8 +940,8 @@ void CrackHeader::InterpolatePosition(int surface,CrackSegment **seg,Vector &pos
 // J-integral calculation (YJG)
 void CrackHeader::JIntegral(void)
 {
-    long gridElem,gridNode,nextNearest;
-    long i,j;
+    int gridElem,gridNode,nextNearest;
+    int i,j;
     ContourPoint *crackPt,*prevPt,*nextPt;
     int crkTipIdx;
     CrackSegment *tipCrk;
@@ -1102,7 +1102,7 @@ void CrackHeader::JIntegral(void)
 			
 			// insert nodal point and define start of the path
 			double fract=prevPt->Fraction(crossPt);
-			phantom=new NodalPoint2D((long)0,crossPt.x,crossPt.y);
+			phantom=new NodalPoint2D(0,crossPt.x,crossPt.y);
 			phantom->PrepareForFields();
 			crackPt=new ContourPoint(phantom);
 			crackPt->SetNextPoint(prevPt->nextPoint);
@@ -1254,7 +1254,7 @@ void CrackHeader::JIntegral(void)
 				double f2ForJx=0.,f2ForJy=0.;
 				count=0;	// number of particles within J-integral contour
 
-				for(long p=0;p<nmpms;p++)
+				for(int p=0;p<nmpms;p++)
 				{	if(theMaterials[mpm[p]->MatID()]->Rigid()) continue;
 					xp=mpm[p]->pos.x;
 					yp=mpm[p]->pos.y;
@@ -1399,7 +1399,7 @@ CrackSegment *CrackHeader::Propagate(Vector &grow,int whichTip,int tractionMat)
 void CrackHeader::CrackTipHeating(void)
 {
     CrackSegment *scrk=firstSeg;
-	long iel;
+	int iel;
 	double fn[MaxShapeNds];
 	Vector cncpos,cpos;
 	int numnds,i,nds[MaxShapeNds];

@@ -34,7 +34,7 @@ CommonException::CommonException(const char *errMsg,const char *inCode)
 *******************************************************************/
 
 // display message and step info
-void CommonException::Display(long mstep,double mtime)
+void CommonException::Display(int mstep,double mtime)
 {	cerr << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
     if(mstep>0)
         cerr << "Step Number: " << mstep << " Current Time: " << mtime << endl;

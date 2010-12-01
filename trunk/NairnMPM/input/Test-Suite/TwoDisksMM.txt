@@ -14,6 +14,8 @@
 #
 # NairnMPM 8.0.0, 6 AUG 2010 - all identical
 #
+# Nairn 8.1.0 (pending revision), 2 DEC 2010 - identical
+#
 # ----------------------------------------------------------------------------
 #
 #setColor	black	blue	red

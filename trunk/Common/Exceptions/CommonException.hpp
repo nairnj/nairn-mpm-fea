@@ -25,7 +25,7 @@ class CommonException
         CommonException(const char *,const char *);
         
         // methods
-        void Display(long,double);
+        void Display(int,double);
         void Display(void);
         int ErrorCode(void);
 		char *Message(void) ;

@@ -9,14 +9,14 @@
 #include "Nodes/NodalPoint.hpp"
 
 // Nodal Point global
-long nnodes=0;			// number of nodes
+int nnodes=0;			// number of nodes
 NodalPoint **nd;		// list of nodes
 
 /********************************************************************************
 	NodalPoint: Constructors and Destructor
 ********************************************************************************/
 
-NodalPoint::NodalPoint(long nodeNum)
+NodalPoint::NodalPoint(int nodeNum)
 {
     num=nodeNum;
 #ifdef MPM_CODE 

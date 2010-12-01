@@ -162,6 +162,6 @@ class MPMBase : public LinkedObject
 
 // Lists of material points from mpm[0] to mpm[nmpms-1]
 extern MPMBase **mpm;
-extern long nmpms;
+extern int nmpms;
 
 #endif

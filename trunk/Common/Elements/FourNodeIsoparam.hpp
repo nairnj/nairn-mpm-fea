@@ -20,9 +20,9 @@ class FourNodeIsoparam : public Linear2D
     public:
         // constructors
 #ifdef MPM_CODE
-        FourNodeIsoparam(long,long *);
+        FourNodeIsoparam(int,int *);
 #else
-        FourNodeIsoparam(long,long *,int,double,double);
+        FourNodeIsoparam(int,int *,int,double,double);
 #endif
         
         // prototypes

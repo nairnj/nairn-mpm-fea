@@ -30,7 +30,7 @@ class ElementsController : public ParseController
 		int CreateElement(char *);
 #else
 		int CreateElement(char *,int,double,double);
-		int MeshElement(long *,int,double,double);
+		int MeshElement(int *,int,double,double);
 		int ElementsCompatible(int);
 		int HasMidsideNodes(void);
 		int ElementSides();

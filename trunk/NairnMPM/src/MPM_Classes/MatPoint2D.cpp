@@ -130,18 +130,21 @@ void MatPoint2D::SetVelocitySpeed(double speed)
 void MatPoint2D::SetOrigin(Vector *pt)
 {	origpos.x=pt->x;
     origpos.y=pt->y;
+	origpos.z=0.;
 }
 
 // set position (2D) (in mm)
 void MatPoint2D::SetPosition(Vector *pt)
 {	pos.x=pt->x;
     pos.y=pt->y;
+	pos.z=0.;
 }
 
 // set position (2D) (in mm/sec)
 void MatPoint2D::SetVelocity(Vector *pt)
 {	vel.x=pt->x;
     vel.y=pt->y;
+	vel.z=0.;
 }
 
 // thickness (in mm)
@@ -158,21 +161,24 @@ void MatPoint2D::SetDilatedVolume(void)
 void MatPoint2D::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
 {	fout.x=-mp*(sp.xx*xDeriv+sp.xy*yDeriv)*1000.;
 	fout.y=-mp*(sp.xy*xDeriv+sp.yy*yDeriv)*1000.;
+	fout.z=0.;
 }
 
 // return external force (times a shape function)
 void MatPoint2D::Fext(Vector &fout,double fni)
 {	fout.x=fni*pFext.x;
 	fout.y=fni*pFext.y;
+	fout.z=0.;
 }
 
-// zero the concentration gradient
+// zero the temperature gradient
 void MatPoint2D::AddTemperatureGradient(void)
 {	pTemp->DT.x=0.;
     pTemp->DT.y=0.;
+	pTemp->DT.z=0.;
 }
 
-// add to the concentration gradient
+// add to the temperature gradient
 void MatPoint2D::AddTemperatureGradient(Vector *grad)
 {	pTemp->DT.x+=grad->x;
     pTemp->DT.y+=grad->y;
@@ -190,6 +196,7 @@ double MatPoint2D::FCond(double dshdx,double dshdy,double dshdz)
 void MatPoint2D::AddConcentrationGradient(void)
 {	pDiffusion->Dc.x=0.;
     pDiffusion->Dc.y=0.;
+	pDiffusion->Dc.z=0.;
 }
 
 // add to the concentration gradient

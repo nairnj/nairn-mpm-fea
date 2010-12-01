@@ -1,5 +1,5 @@
 /********************************************************************************
-	WoodMaterial.hpp
+	WoodMaterial.cpp
 	NairnMPM
 
 	Created by John Nairn on 6/4/10.
@@ -7,7 +7,6 @@
 ********************************************************************************/
 
 #include "WoodMaterial.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
 

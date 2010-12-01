@@ -20,9 +20,8 @@
             are 1-based (length always MaxElNd, even if unused)
         subclass should set nodes[NumberNodes]=nodes[0]
 */
-ElementBase::ElementBase(long eNum,long *eNode)
+ElementBase::ElementBase(int eNum,int *eNode)
 {	int i;
-    
     num=eNum;
     for(i=0;i<MaxElNd;i++) nodes[i]=eNode[i];
 	neighbors=NULL;
@@ -365,9 +364,8 @@ void ElementBase::GetCentroid(Vector *xipos)
     could be closer node in neighboring element, even if
     this point is in this element
 */
-long ElementBase::NearestNode(double x,double y,long *secondChoice)
-{
-    long ind,nearest,nextNearest;
+int ElementBase::NearestNode(double x,double y,int *secondChoice)
+{	int ind,nearest,nextNearest;
     double dist,distMin,distNextMin,dltx,dlty;
     int k,numnds=NumberNodes();
     
@@ -417,9 +415,8 @@ long ElementBase::NearestNode(double x,double y,long *secondChoice)
     Assumes nodes[NumberNodes()]=nodes[0]
     return 0 if gridNode not in this element
 */
-long ElementBase::NextNode(long gridNode)
+int ElementBase::NextNode(int gridNode)
 {	int i;
-    
     for(i=0;i<NumberNodes();i++)
     {	if(nodes[i]==gridNode)
             return nodes[i+1];
@@ -432,7 +429,7 @@ void ElementBase::GetListOfNeighbors(int *theList) { mpmgrid.ListOfNeighbors2D(n
 
 // If needed, create the neighbors array (only down for 2D with cracks)
 void ElementBase::AllocateNeighborsArray(void)
-{	neighbors = new long[NumberSides()];
+{	neighbors = new int[NumberSides()];
 	int i;
 	for(i=0;i<NumberSides();i++)
 		neighbors[i]=UNKNOWN_NEIGHBOR;
@@ -444,10 +441,9 @@ void ElementBase::AllocateNeighborsArray(void)
     return NO_NEIGHBOR (-1) if no neighbor (i.e., on edge of grid)
     return UNKNOWN_NEIGHBOR (-2) if gridNode not in this element
 */
-long ElementBase::Neighbor(long gridNode)
+int ElementBase::Neighbor(int gridNode)
 {
-    long i;
-    int edge=-1;
+    int i,edge=-1;
     
     // which edge?
     for(i=0;i<NumberSides();i++)
@@ -460,7 +456,7 @@ long ElementBase::Neighbor(long gridNode)
     
     // search for neighbor if needed
     if(neighbors[edge]==UNKNOWN_NEIGHBOR)
-    {	long nextNode=nodes[edge+1];
+    {	int nextNode=nodes[edge+1];
         neighbors[edge]=NO_NEIGHBOR;
         
         // search for element with nextNode,gridNode in ccw direction
@@ -480,10 +476,9 @@ long ElementBase::Neighbor(long gridNode)
     Assumes nodes[NumberNodes()]=nodes[0]
     return edge number (0 based) or -1 if no such edge
 */
-int ElementBase::FindEdge(long beginNode,long endNode)
+int ElementBase::FindEdge(int beginNode,int endNode)
 {
     int i;
-    
     for(i=0;i<NumberNodes();i++)
     {	if(nodes[i]==beginNode && nodes[i+1]==endNode)
             return i;
@@ -501,7 +496,6 @@ int ElementBase::Orthogonal(double *dx,double *dy,double *dz) { return FALSE; }
 // zero all velocity fields at start of time step
 void ElementBase::AllocateNeighbors(void)
 {	int i;
-	
     for(i=0;i<nelems;i++)
         theElements[i]->AllocateNeighborsArray();
 }

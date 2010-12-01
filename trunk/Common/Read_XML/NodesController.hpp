@@ -26,7 +26,7 @@ class NodesController : public ParseController
 		int SetNodeArray(int *);
 		int NextNodeNumber(void);
 #ifdef FEA_CODE
-		void MidPoint(long *,int,Vector *);
+		void MidPoint(int *,int,Vector *);
 #endif
 };
 

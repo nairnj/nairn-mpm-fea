@@ -87,9 +87,9 @@ int NodesController::SetNodeArray(int *revMap)
 int NodesController::NextNodeNumber(void) { return numObjects+1; }
 
 #ifdef FEA_CODE
-void NodesController::MidPoint(long *eNode,int numNodes,Vector *midPt)
+void NodesController::MidPoint(int *eNode,int numNodes,Vector *midPt)
 {
-	long sNode[MaxElNd];
+	int sNode[MaxElNd];
 	int i;
 	
 	// sort copy of the nodes

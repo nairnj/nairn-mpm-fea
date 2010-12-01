@@ -22,8 +22,8 @@ enum { DISPLACEMENT_OUT=0,FORCE_OUT,ELEMSTRESS_OUT,AVGSTRESS_OUT,
 class NairnFEA : public CommonAnalysis
 {
     public:
-		long nsize;						// size of the problem
-		long nband;						// bandwidth of the problem
+		int nsize;						// size of the problem
+		int nband;						// bandwidth of the problem
 		double **st;					// stiffness matrix st[i][j] - i,j 1 based
 		double *stiffnessMemory;		// actually location of stiffness matrix in contiguous memory for speed
 		double *rm;						// reaction vector
@@ -45,7 +45,7 @@ class NairnFEA : public CommonAnalysis
 		void Usage();
 		void ForcesOnEdges(void);
 		void BuildStiffnessMatrix(void);
-		long GetBandWidth(void);
+		int GetBandWidth(void);
 		void DisplacementResults(void);
 		void ForceStressEnergyResults(void);
 		void AvgNodalStresses(void);

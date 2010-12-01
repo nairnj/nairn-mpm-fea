@@ -28,7 +28,7 @@ MPMTermination::MPMTermination(const char *errMsg,const char *inCode) : CommonEx
 *******************************************************************/
 
 // display message and step info
-void MPMTermination::Display(long mstep,double mtime)
+void MPMTermination::Display(int mstep,double mtime)
 {	cout << msg << "\nIn Subroutine: " << code << "()" << endl;
 	if(mstep>0)
 		cout << "Step Number: " << mstep << " Stopped Time: " << mtime << endl;

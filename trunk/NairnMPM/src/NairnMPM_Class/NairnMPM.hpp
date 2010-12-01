@@ -31,7 +31,7 @@ class NairnMPM : public CommonAnalysis
 		int propagateDirection[2];		// optional crack direction setting
 		int propagateMat[2];			// optional traction material to create when propagates
 		bool hasTractionCracks;			// TRUE is any crack segment has traction law material
-		long mstep;						// step number
+		int mstep;						// step number
 		double maxtime;					// maximum time for analysis
 		double FractCellTime;			// fraction of cell crossed at wave speed (<1)
 		int warnParticleLeftGrid;		// warning ID

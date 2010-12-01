@@ -77,10 +77,10 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
     // if still not found, check all elements
     for(i=0;i<nelems;i++)
     {	if(theElements[i]->PtInElement(mpt->pos))
-	{	if(theElements[i]->OnTheEdge()) return FALSE;
-		mpt->ChangeElemID(i);
-		return TRUE;
-	}
+		{	if(theElements[i]->OnTheEdge()) return FALSE;
+			mpt->ChangeElemID(i);
+			return TRUE;
+		}
     }
     return FALSE;
 }

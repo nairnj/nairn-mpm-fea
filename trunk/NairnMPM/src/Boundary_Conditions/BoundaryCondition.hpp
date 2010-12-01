@@ -31,7 +31,7 @@ enum {	CONSTANT_VALUE=1,LINEAR_VALUE,SINE_VALUE,COSINE_VALUE,SILENT,FUNCTION_VAL
 class BoundaryCondition : public LinkedObject
 {
     public:
-        long nodeNum;
+        int nodeNum;
         int style;
         double value,ftime,offset;
 		
@@ -39,15 +39,15 @@ class BoundaryCondition : public LinkedObject
 		BoundaryCondition(int,double,double);
 		virtual ~BoundaryCondition();
 		virtual BoundaryCondition *UnsetDirection(void);
-		virtual BoundaryCondition *SetRigidProperties(long,int,int,double);
+		virtual BoundaryCondition *SetRigidProperties(int,int,int,double);
 		
 		// pure virtual
         virtual BoundaryCondition *PrintBC(ostream &) = 0;
 		
 		// virtual methods
 		virtual double BCValue(double);
-		long GetNodeNum(double);
-		long GetNodeNum(void);
+		int GetNodeNum(double);
+		int GetNodeNum(void);
 		virtual void SetFunction(char *);
 		virtual char *GetFunctionString(void);
 		virtual void PrintFunction(ostream &);

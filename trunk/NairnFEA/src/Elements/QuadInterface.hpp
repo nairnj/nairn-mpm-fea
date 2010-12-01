@@ -19,7 +19,7 @@ class QuadInterface : public Interface2D
 {
     public:
         // constructors
-		QuadInterface(long,long *,int,double,double); 
+		QuadInterface(int,int *,int,double,double); 
         
         // prototypes
         virtual short ElementName(void);

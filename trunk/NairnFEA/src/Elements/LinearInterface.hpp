@@ -19,7 +19,7 @@ class LinearInterface : public Interface2D
 {
     public:
         // constructors
-		LinearInterface(long,long *,int,double,double); 
+		LinearInterface(int,int *,int,double,double); 
         
         // prototypes
         virtual short ElementName(void);

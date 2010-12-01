@@ -11,7 +11,6 @@
 ********************************************************************************/
 
 #include "BodyCylinderController.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 
 /********************************************************************************
 	BodyCylinderController: constructors and destructors
@@ -31,7 +30,7 @@ bool BodyCylinderController::FinishSetup(void)
 {
 	BodySphereController::FinishSetup();
 	if(axis<1 || axis>3)
-        throw SAXException("cylinder axis not set or not 1, 2, or 3");
+        ThrowSAXException("cylinder axis not set or not 1, 2, or 3");
 	return TRUE;
 }
 
@@ -56,11 +55,11 @@ bool BodyCylinderController::ContainsPoint(Vector& pt)
 ********************************************************************************/
 
 // set a property
-void BodyCylinderController::SetProperty(const char *aName,char *value)
+void BodyCylinderController::SetBodyProperty(const char *aName,char *value,CommonReadHandler *reader)
 {
 	if(strcmp(aName,"axis")==0)
 	{	sscanf(value,"%d",&axis);
 	}
 	else
-		BodyObjectController::SetProperty(aName,value);
+		BodyObjectController::SetBodyProperty(aName,value,reader);
 }

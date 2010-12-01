@@ -458,7 +458,7 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 	double rho,rigidVolume=UnscaledVolumeRigid();
 	int i;
 	
-	// loop over each material (skipping the one rigid material
+	// loop over each material (skipping the one rigid material)
 	for(i=0;i<maxMaterialFields;i++)
     {	if(!MatVelocityField::ActiveField(mvf[i]) || i==rigidFld) continue;
 		

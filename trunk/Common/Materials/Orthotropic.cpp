@@ -7,7 +7,6 @@
 ********************************************************************************/
 
 #include "Materials/Orthotropic.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 #ifdef MPM_CODE
 	#include "Custom_Tasks/ConductionTask.hpp"
 	#include "Custom_Tasks/DiffusionTask.hpp"

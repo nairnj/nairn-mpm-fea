@@ -12,7 +12,7 @@
 #pragma mark Quad2D: Constructors and Destructor
 
 // Main FEA constructor passes onto ElementBase constructor
-Quad2D::Quad2D(long eNum,long *eNode,int eMat,double eAng,double eThick) : 
+Quad2D::Quad2D(int eNum,int *eNode,int eMat,double eAng,double eThick) : 
                     ElementBase(eNum,eNode,eMat,eAng)
 { thickness=eThick; }
 

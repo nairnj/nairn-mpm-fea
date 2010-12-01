@@ -482,14 +482,14 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	// Set fixed displacement at a node
     else if(strcmp(xName,"fix")==0)
 	{	ValidateCommand(xName,FIXEDNODES,MUST_BE_2D);
-		long node=0;
+		int node=0;
 		int dof=0;
     	numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"node")==0)
-				sscanf(value,"%ld",&node);
+				sscanf(value,"%d",&node);
             else if(strcmp(aName,"dof")==0)
 				dof=GetDOFAttribute(value);
             delete [] aName;
@@ -511,7 +511,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
     	if(block!=FIXEDNODES && block!=BCSHAPE)
             ValidateCommand(xName,BAD_BLOCK,MUST_BE_2D);
-		long node=0;
+		int node=0;
 		int axis=0;
 		double angle=0.;
 		bool hasAngle=FALSE;
@@ -520,7 +520,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"node")==0)
-				sscanf(value,"%ld",&node);
+				sscanf(value,"%d",&node);
             else if(strcmp(aName,"axis")==0)
 				axis=GetDOFAttribute(value);
             else if(strcmp(aName,"angle")==0)
@@ -563,14 +563,14 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	// Apply a load to a node
     else if(strcmp(xName,"load")==0)
 	{	ValidateCommand(xName,LOADEDNODES,MUST_BE_2D);
-		long node=0;
+		int node=0;
 		int dof=0;
     	numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"node")==0)
-				sscanf(value,"%ld",&node);
+				sscanf(value,"%d",&node);
             else if(strcmp(aName,"dof")==0)
 				dof=GetDOFAttribute(value);
             delete [] aName;
@@ -590,14 +590,13 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	// Apply stress to face of an element
     else if(strcmp(xName,"stress")==0)
 	{	ValidateCommand(xName,LOADEDFACES,MUST_BE_2D);
-		long elem=0;
-    	int face=0,dir=0;
+		int elem=0,face=0,dir=0;
     	numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"elem")==0)
-				sscanf(value,"%ld",&elem);
+				sscanf(value,"%d",&elem);
 			if(strcmp(aName,"face")==0)
  				sscanf(value,"%d",&face);
 			else if(strcmp(aName,"dir")==0)
@@ -1481,7 +1480,7 @@ void FEAReadHandler::RemoveEmptyElements(void)
 		
 	// see if any nodes are now not in any element
 	if(emptyElements)
-	{	long nodeNum;
+	{	int nodeNum;
 		i=1;
 		while(i<=nnodes)
 		{	nodeNum=nd[i]->num;

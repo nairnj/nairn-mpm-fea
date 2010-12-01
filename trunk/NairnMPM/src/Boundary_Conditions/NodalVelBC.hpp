@@ -26,10 +26,10 @@ class NodalVelBC : public BoundaryCondition
  		double skewAngle;
         
         // constructors and destructors
-        NodalVelBC(long,int,int,double,double);
+        NodalVelBC(int,int,int,double,double);
 		virtual ~NodalVelBC();
 		virtual BoundaryCondition *UnsetDirection(void);
-		virtual BoundaryCondition *SetRigidProperties(long,int,int,double);
+		virtual BoundaryCondition *SetRigidProperties(int,int,int,double);
         
         // virtual methods
         virtual BoundaryCondition *PrintBC(ostream &);

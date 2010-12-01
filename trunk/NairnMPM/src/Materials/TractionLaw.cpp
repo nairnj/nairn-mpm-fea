@@ -7,7 +7,6 @@
 ********************************************************************************/
 
 #include "Materials/TractionLaw.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 #include "Cracks/CrackSegment.hpp"
 
 #pragma mark TractionLaw::Constructors and Destructors

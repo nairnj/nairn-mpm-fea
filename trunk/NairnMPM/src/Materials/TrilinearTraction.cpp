@@ -25,7 +25,6 @@
 ********************************************************************************/
 
 #include "Materials/TrilinearTraction.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 #include "Cracks/CrackSegment.hpp"
 
 extern double mtime;

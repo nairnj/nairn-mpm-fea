@@ -11,7 +11,6 @@
 
 #include "HillPlastic.hpp"
 #include "MPM_Classes/MPMBase.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 
 #pragma mark HillPlastic::Constructors and Destructors
 

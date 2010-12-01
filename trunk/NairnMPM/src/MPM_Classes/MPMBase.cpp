@@ -12,7 +12,7 @@
 
 // globals
 MPMBase **mpm;		// list of material points
-long nmpms=0;		// number of material points
+int nmpms=0;		// number of material points
 
 // class statics
 int MPMBase::currentParticleNum=0;

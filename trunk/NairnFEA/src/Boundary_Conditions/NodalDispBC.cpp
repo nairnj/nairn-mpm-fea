@@ -14,17 +14,17 @@ NodalDispBC *firstDispBC=NULL;
 
 #pragma mark NodalDispBC: Constructors and Destructors
 
-NodalDispBC::NodalDispBC(long num,int dof) : FEABoundaryCondition()
+NodalDispBC::NodalDispBC(int num,int dof) : FEABoundaryCondition()
 {
 	DefaultSetup(num,dof,(double)0.);
 }
 
-NodalDispBC::NodalDispBC(long num,int dof,double displacement) : FEABoundaryCondition()
+NodalDispBC::NodalDispBC(int num,int dof,double displacement) : FEABoundaryCondition()
 {
 	DefaultSetup(num,dof,displacement);
 }
 
-void NodalDispBC::DefaultSetup(long num,int dof,double displacement)
+void NodalDispBC::DefaultSetup(int num,int dof,double displacement)
 {
     if(num>=0)
     {	nodeNum=num;
@@ -48,9 +48,9 @@ NodalDispBC *NodalDispBC::PrintBC(ostream &os)
     char nline[200];
     
     if(direction>0)
-        sprintf(nline,"%5ld  %2d  %15.7e",nodeNum,direction,bcValue);
+        sprintf(nline,"%5d  %2d  %15.7e",nodeNum,direction,bcValue);
     else
-        sprintf(nline,"%5ld                          %2d  %15.7e",
+        sprintf(nline,"%5d                          %2d  %15.7e",
                         nodeNum,axis,angle);
     os << nline << endl;
 	bcValue/=1000.;		// to m
@@ -66,9 +66,9 @@ NodalDispBC *NodalDispBC::MapNodes(int *revMap)
 }
 
 // fix nodal displacement or rotate coordinates and return nextBC
-NodalDispBC *NodalDispBC::FixOrRotate(double **st,double *rm,long nsize,long nband,int nfree)
+NodalDispBC *NodalDispBC::FixOrRotate(double **st,double *rm,int nsize,int nband,int nfree)
 {
-    long jend,j,i,ii,jj,rowj;
+    int jend,j,i,ii,jj,rowj;
     double skew,cs,c2,s2,sn,cssn;
     double siii,sjjj,siiii,siijj,sjjjj,sijj,siij,rii,rjj;
     
@@ -176,7 +176,7 @@ void NodalDispBC::PrintReaction(void)
     // skip if rotation
     if(direction<=0) return;
     
-    sprintf(fline,"%5ld     %15.7e     %15.7e",nodeNum,
+    sprintf(fline,"%5d     %15.7e     %15.7e",nodeNum,
             nd[nodeNum]->fs->force.x,nd[nodeNum]->fs->force.y);
     cout << fline << endl;
 }

@@ -159,7 +159,6 @@ void ArchiveData::BeginArchives(bool isThreeD)
 	same on all computers then must have following sizes:
 		int: 4 bytes		short: 2 bytes
 		double: 8 bytes
-	Note: long are 4 bytes in 32 bit but 8 bytes in 64 bit
 */
 void ArchiveData::CalcArchiveSize(void)
 {
@@ -437,13 +436,13 @@ void ArchiveData::ArchiveResults(double atime)
 	if(atime>0.9*timestep && atime<firstArchTime) return;
     
     // get relative path name to the file
-    sprintf(fname,"%s%s.%ld",inputDir,archiveRoot,fmobj->mstep);
+    sprintf(fname,"%s%s.%d",inputDir,archiveRoot,fmobj->mstep);
     
     // output step number, time, and file name to results file
     for(i=strlen(fname);i>=0;i--)
     {	if(fname[i]=='/') break;
     }
-    sprintf(fline,"%7ld %15.7e  %s",fmobj->mstep,1000.*atime,&fname[i+1]);
+    sprintf(fline,"%7d %15.7e  %s",fmobj->mstep,1000.*atime,&fname[i+1]);
     cout << fline << endl;
 
     // open the file
@@ -972,7 +971,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 	lastVTKArchiveStep=fmobj->mstep;
 	
     // get relative path name to the file
-    sprintf(fname,"%s%s_%ld.vtk",inputDir,archiveRoot,fmobj->mstep);
+    sprintf(fname,"%s%s_%d.vtk",inputDir,archiveRoot,fmobj->mstep);
     
     // open the file
 	ofstream afile;
@@ -984,7 +983,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 	afile << "# vtk DataFile Version 4.2" << endl;
 	
 	// title
-	sprintf(fline,"step:%ld time:%15.7e ms",fmobj->mstep,1000.*atime);
+	sprintf(fline,"step:%d time:%15.7e ms",fmobj->mstep,1000.*atime);
     afile << fline << endl;
 	
 	// header

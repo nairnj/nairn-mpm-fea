@@ -8,7 +8,6 @@
 
 #include "Materials/VonMisesHardening.hpp"
 #include "MPM_Classes/MPMBase.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 
 #pragma mark VonMisesHardening::Constructors and Destructors
 

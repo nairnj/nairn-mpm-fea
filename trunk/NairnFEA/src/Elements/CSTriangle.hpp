@@ -19,7 +19,7 @@ class CSTriangle : public Linear2D
 {
     public:
         // constructors
-        CSTriangle(long,long *,int,double,double);
+        CSTriangle(int,int *,int,double,double);
         
         // prototypes
         virtual short ElementName(void);

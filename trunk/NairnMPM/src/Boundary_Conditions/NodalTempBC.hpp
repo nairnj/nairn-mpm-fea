@@ -23,9 +23,9 @@ class NodalTempBC: public BoundaryCondition
 		double temperatureNoBC;
         
         // constructors and destructors
-        NodalTempBC(long,int,double,double);
+        NodalTempBC(int,int,double,double);
 		virtual BoundaryCondition *UnsetDirection(void);
-		virtual BoundaryCondition *SetRigidProperties(long,int,int,double);
+		virtual BoundaryCondition *SetRigidProperties(int,int,int,double);
         
         // methods
         BoundaryCondition *PrintBC(ostream &);

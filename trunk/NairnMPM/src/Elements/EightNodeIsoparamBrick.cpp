@@ -39,7 +39,7 @@ static double gzti[64]={-1.,-1.,-1.,-1.,1.,1.,1.,1.,
 #pragma mark EightNodeIsoparamBrick::Constructors and Destructor
 
 // main constructor - pass up the chain
-EightNodeIsoparamBrick::EightNodeIsoparamBrick(long eNum,long *eNode) : ElementBase3D(eNum,eNode)
+EightNodeIsoparamBrick::EightNodeIsoparamBrick(int eNum,int *eNode) : ElementBase3D(eNum,eNode)
 {
 	nodes[8]=eNode[0];
 }

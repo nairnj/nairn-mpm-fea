@@ -7,7 +7,6 @@
 ********************************************************************************/
 
 #include "Materials/IsotropicMat.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 
 #pragma mark IsotropicMat::Constructors and Destructors
 

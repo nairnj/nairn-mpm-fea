@@ -47,10 +47,8 @@ double se[MxFree*MaxElNd][MxFree*MaxElNd];
 	input is node numbers (0-based array) but values
             are 1-based (length always 9, even if unused)
 */
-ElementBase::ElementBase(long eNum,long *eNode,int eMat,double eAng)
-{
-    int i;
-    
+ElementBase::ElementBase(int eNum,int *eNode,int eMat,double eAng)
+{	int i;
     num=eNum;
     for(i=0;i<9;i++) nodes[i]=eNode[i];
     filled=0;
@@ -223,7 +221,7 @@ void ElementBase::IsoparametricForceStress(double *rm,int np,int nfree)
 {
     int numnds=NumberNodes(),ind,j,i,k,nst=2*numnds,lnameEl;
     int ngp,nx,ind1,ind2,jmax;
-    long indg;
+    int indg;
     double sgp[5][5],etot[5],qe[9][5];
     double xiDeriv[MaxElNd],etaDeriv[MaxElNd],asbe[MaxElNd],fn[MaxElNd];
     double detjac,asr,temp,dv;
@@ -696,9 +694,8 @@ void ElementBase::GetProperties(int np)
 }
 
 // does element have this node?
-bool ElementBase::HasNode(long nodeNum)
-{
-	// check real nodes
+bool ElementBase::HasNode(int nodeNum)
+{	// check real nodes
 	int i;
     for(i=0;i<NumberNodes();i++)
     {	if(nodes[i]==nodeNum)
@@ -708,9 +705,8 @@ bool ElementBase::HasNode(long nodeNum)
 }
 
 // When deleting a node, decrement node numbers that are larger
-void ElementBase::DecrementNodeNums(long nodeNum)
-{
-	int i;
+void ElementBase::DecrementNodeNums(int nodeNum)
+{	int i;
     for(i=0;i<NumberNodes();i++)
     {	if(nodes[i]>nodeNum)
 			nodes[i]--;

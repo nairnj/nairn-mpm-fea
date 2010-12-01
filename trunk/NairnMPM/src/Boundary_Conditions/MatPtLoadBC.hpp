@@ -18,11 +18,11 @@
 class MatPtLoadBC: public BoundaryCondition
 {
     public:
-        long ptNum;
+        int ptNum;
         int direction;
         
         // constructors and destructors
-        MatPtLoadBC(long,int,int);
+        MatPtLoadBC(int,int,int);
         
         // virtual methods
         virtual BoundaryCondition *PrintBC(ostream &);

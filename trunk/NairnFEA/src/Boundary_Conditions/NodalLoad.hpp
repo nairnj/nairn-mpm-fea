@@ -20,7 +20,7 @@ class NodalLoad : public FEABoundaryCondition
     public:
 
         // constructors and destructors
-        NodalLoad(long,int);
+        NodalLoad(int,int);
         
         // methods
         NodalLoad *PrintLoad(void);

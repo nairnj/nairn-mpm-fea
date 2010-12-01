@@ -321,7 +321,7 @@ void MassAndMomentumTask::Execute(void)
 }	
 
 // Set boundary conditions determined by moving rigid paticles
-void MassAndMomentumTask::SetRigidBCs(long mi,int type,double value,double angle,BoundaryCondition **firstBC,
+void MassAndMomentumTask::SetRigidBCs(int mi,int type,double value,double angle,BoundaryCondition **firstBC,
 						   BoundaryCondition **lastBC,BoundaryCondition **firstRigidBC,BoundaryCondition **reuseRigidBC)
 {
 	BoundaryCondition *newBC=NULL;

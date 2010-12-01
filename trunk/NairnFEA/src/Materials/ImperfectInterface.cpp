@@ -7,7 +7,6 @@
 ********************************************************************************/
 
 #include "Materials/ImperfectInterface.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 
 #pragma mark ImperfectInterface::Constructors and Destructors
 

@@ -31,7 +31,7 @@ class MassAndMomentumTask : public MPMTask
 		CrackField cfld[2];
 		double zDeriv[MaxShapeNds];
 		
-		void SetRigidBCs(long,int,double,double,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);
+		void SetRigidBCs(int,int,double,double,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);
 		void RemoveRigidBCs(BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);
 		void UnsetRigidBCs(BoundaryCondition **,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);
 		void CountBCs(BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);

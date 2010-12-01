@@ -74,8 +74,7 @@ int CrackSegment::FindElement(void)
 // find current element (1 based) or return 0 if no element for crack surface
 int CrackSegment::FindElement(short side)
 {
-    int i;
-    short j=side-1;
+    int i,j=side-1;
 	Vector cpt;
 	cpt.x=surfx[j];
 	cpt.y=surfy[j];

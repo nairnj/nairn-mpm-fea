@@ -23,9 +23,9 @@ class NodalConcBC: public BoundaryCondition
 		double concentrationNoBC;
         
         // constructors and destructors
-        NodalConcBC(long,int,double,double);
+        NodalConcBC(int,int,double,double);
 		virtual BoundaryCondition *UnsetDirection(void);
-		virtual BoundaryCondition *SetRigidProperties(long,int,int,double);
+		virtual BoundaryCondition *SetRigidProperties(int,int,int,double);
         
         // methods
         BoundaryCondition *PrintBC(ostream &);

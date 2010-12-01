@@ -9,7 +9,6 @@
 		mathexpr
 ********************************************************************************/
 
-#include "Read_XML/CommonReadHandler.hpp"
 #include "FEABoundaryCondition.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Read_XML/mathexpr.hpp"
@@ -36,7 +35,7 @@ FEABoundaryCondition::~FEABoundaryCondition()
 
 // decrement node number or delete this BC if no longer user
 // deleted will be true only if first object was deleved
-LinkedObject *FEABoundaryCondition::DecrementNodeNum(long removedNode,LinkedObject *prevObject,bool *deleted)
+LinkedObject *FEABoundaryCondition::DecrementNodeNum(int removedNode,LinkedObject *prevObject,bool *deleted)
 {
 	*deleted=FALSE;
 	
@@ -69,7 +68,7 @@ void FEABoundaryCondition::SetValue(double numValue,char *bcFunction)
 	
 	// decode function at nodal position
 	if(strlen(bcFunction)==0)
-		throw SAXException("Boundary condition function of position is empty");
+		ThrowSAXException("Boundary condition function of position is empty");
 	
 	// create variable
 	if(varArray[0]==NULL)
@@ -82,7 +81,7 @@ void FEABoundaryCondition::SetValue(double numValue,char *bcFunction)
 	// create the function and check it
 	ROperation *function=new ROperation(bcFunction,4,varArray);
 	if(function->HasError())
-		throw SAXException("Boundary condition function of position is not valid");
+		ThrowSAXException("Boundary condition function of position is not valid");
 	
 	// set value to 1, it might be used to scale the function result
 	varXValue=varRValue=nd[nodeNum]->x;

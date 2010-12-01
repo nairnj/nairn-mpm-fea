@@ -15,7 +15,7 @@
 /* Main FEA constructor - passes on to Linear 2D
 	But also sets extra node to match starting node
 */
-Interface2D::Interface2D(long eNum,long *eNode,int eMat,double eAng,double eThick) : 
+Interface2D::Interface2D(int eNum,int *eNode,int eMat,double eAng,double eThick) : 
             ElementBase(eNum,eNode,eMat,eAng)
 {
 	thickness=eThick;
@@ -32,7 +32,7 @@ void Interface2D::ForceStress(double *rm,int np,int nfree)
 {
 	int numnds=NumberNodes();
 	int i,j,nst=2*numnds;
-    long indg;
+    int indg;
 	int nameEl=ElementName();
 	double Fxy[(MaxElNd-1)*MxFree+1];
 	double dx,dy,len,Dn,Dt;

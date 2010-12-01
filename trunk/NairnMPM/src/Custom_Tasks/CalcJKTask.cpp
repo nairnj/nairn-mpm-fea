@@ -72,7 +72,7 @@ CustomTask *CalcJKTask::FinishForStep(void)
     if(!getJKThisStep) return nextTask;
     
     // finished with strain fields
-    long i;
+    int i;
     for(i=1;i<=nnodes;i++)
         nd[i]->DeleteDisp();
         
@@ -168,7 +168,7 @@ CustomTask *CalcJKTask::EndExtrapolations(void)
     if(!getJKThisStep) return nextTask;
     
     // finish strain fields
-	long i;
+	int i;
     for(i=1;i<=nnodes;i++)
         nd[i]->CalcStrainField();
     

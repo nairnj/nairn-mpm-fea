@@ -67,7 +67,7 @@ TransportTask *DiffusionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,
 void DiffusionTask::GetValues(double stepTime)
 {
 	// convert to actual concentrations
-	long i;
+	int i;
     for(i=1;i<=nnodes;i++)
 	{   if(nd[i]->NumberNonrigidParticles()>0)
 			nd[i]->gConcentration/=nd[i]->gVolume;
@@ -112,7 +112,7 @@ void DiffusionTask::GetValues(double stepTime)
 // Get gradients in Vp * cp on particles
 void DiffusionTask::GetGradients(double stepTime)
 {
-    long i,p,iel;
+    int i,p,iel;
     double fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds],zDeriv[MaxShapeNds];
 	int numnds,nds[MaxShapeNds];
 	
@@ -161,7 +161,7 @@ TransportTask *DiffusionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double sh
 // one selected by grid based BC
 TransportTask *DiffusionTask::SetTransportForceBCs(double deltime)
 {
-    long i;
+    int i;
     NodalConcBC *nextBC=firstConcBC;
     
     // Paste back noBC concentration
@@ -193,7 +193,7 @@ TransportTask *DiffusionTask::SetTransportForceBCs(double deltime)
 TransportTask *DiffusionTask::TransportRates(double deltime)
 {
 	// convert forces to concentration rates
-	long i;
+	int i;
     for(i=1;i<=nnodes;i++)
 	{   if(nd[i]->NumberNonrigidParticles()>0)
 		{	nd[i]->fdiff/=nd[i]->gVolume;
@@ -223,7 +223,7 @@ TransportTask *DiffusionTask::MoveTransportValue(MPMBase *mptr,double deltime)
 TransportTask *DiffusionTask::UpdateNodalValues(double concTime)
 {
 	// add for each node
-	long i;
+	int i;
     for(i=1;i<=nnodes;i++)
 	{   if(nd[i]->NumberNonrigidParticles()>0)
 			nd[i]->gConcentration+=nd[i]->fdiff*concTime;

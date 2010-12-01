@@ -23,7 +23,7 @@ class MPMTermination : public CommonException
         MPMTermination(const char *,const char *);
     
         // methods
-        void Display(long,double);
+        void Display(int,double);
 		void Display(void);
 };
 

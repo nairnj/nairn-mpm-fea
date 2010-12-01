@@ -19,7 +19,7 @@ class EightNodeIsoparam : public Quad2D
 {
     public:
         // constructors
-        EightNodeIsoparam(long,long *,int,double,double);
+        EightNodeIsoparam(int,int *,int,double,double);
         
         // prototypes
         virtual short ElementName(void);

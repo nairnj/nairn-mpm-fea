@@ -20,7 +20,7 @@ class MatPtFluxBC : public MatPtLoadBC
     public:
         
         // constructors and destructors
-		MatPtFluxBC(long,int,int);
+		MatPtFluxBC(int,int,int);
 		
 		// methods
 		BoundaryCondition *PrintBC(ostream &);
