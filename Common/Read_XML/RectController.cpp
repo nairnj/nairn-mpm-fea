@@ -7,7 +7,6 @@
 ********************************************************************************/
 
 #include "Read_XML/RectController.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 
 /********************************************************************************
 	RectController: Constructors and Destructor
@@ -27,7 +26,7 @@ void RectController::FinishSetup(void)
         xmin=temp;
     }
     if(DbleEqual(xmin,xmax))
-        throw SAXException("xmax can not equal xmin in input parameters.");
+        ThrowSAXException("xmax can not equal xmin in input parameters.");
 		
     if(ymin>ymax)
 	{	temp=ymax;
@@ -35,7 +34,7 @@ void RectController::FinishSetup(void)
         ymin=temp;
     }
     if(DbleEqual(ymin,ymax))
-        throw SAXException("ymax can not equal ymin in input parameters.");
+        ThrowSAXException("ymax can not equal ymin in input parameters.");
 }
 
 /********************************************************************************

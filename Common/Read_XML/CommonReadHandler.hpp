@@ -13,7 +13,15 @@
 
 #define _COMMONREADHANDLER_
 
-// Xerces includes
+/* All Xerces includes are here. Any file that includes this header (directly or
+	indirectly) might be affected by version changes in Xerces
+
+	Current files are:
+		CommonReadHandler.cpp, ShapeController.cpp, BitMapFilesCommon.cpp
+	Header Files: MPMReadHandler.hpp, FEAReadHandler.hpp
+	which adds files
+		CommonAnalysis.cpp, Generators.cpp, BitMapFiles.cpp, BitMapFilesFEA.cpp
+*/
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/sax2/Attributes.hpp>
 #include <xercesc/sax2/DefaultHandler.hpp>
@@ -33,12 +41,6 @@ enum { NO_BLOCK=0,HEADER,MPMHEADER,NODELIST,MESHBLOCK,POINTSBLOCK,
 		LOADEDNODES,LOADEDFACES,KEYPOINTBLOCK,PATHBLOCK,AREABLOCK,
 		GRIDBLOCK=1000,BODYPART,BCSHAPE,BODY_SHAPE };
 
-// Input types
-enum { NO_INPUT=0,TEXT_BLOCK,LONG_NUM,INT_NUM,DOUBLE_NUM,NODE_BLOCK,
-            BC_BLOCK,MPMORDER_BLOCK,CRACKORDER_BLOCK,NOT_NUM,
-			STRESS_LIST,OUTFLAGS_BLOCK,ANALYSIS_NUM,FUNCTION_BLOCK,
-			SETTING_FUNCTION_BLOCK };
-        
 // input IDs
 enum { DESCRIPTION=0,TEMPERATURE_EXPR,ARCHIVEROOT_NAME,CHAR_ARRAY,UNIQUE_ARCHIVEROOT_NAME };
 
@@ -82,7 +84,7 @@ class CommonReadHandler : public DefaultHandler
         //  Handlers for the SAX ContentHandler interface
         void startElement(const XMLCh* const,const XMLCh* const,const XMLCh* const,const Attributes&);
         void endElement(const XMLCh *const,const XMLCh *const,const XMLCh *const);
-        void characters(const XMLCh* const,const unsigned int);
+        void characters(const XMLCh* const,const XMLSize_t);
 
         // prototypes for abstract methods (must override)
         virtual bool myStartElement(char *,const Attributes&) = 0;
@@ -91,7 +93,7 @@ class CommonReadHandler : public DefaultHandler
 		
 		// My Methods
 		char *ReadTagValue(const char *,const Attributes&);
-        void ReadTagNumber(long *,const Attributes&);
+        void ReadTagNumber(int *,const Attributes&);
 		double ReadNumericAttribute(const char *,const Attributes&,double);
         double ReadUnits(const Attributes&,int type);
 		short BMPFileCommonInput(char *,const Attributes&,int);
@@ -113,6 +115,7 @@ class CommonReadHandler : public DefaultHandler
 		double ReadX(char *,double);
 		double ReadY(char *,double);
 		double ReadZ(char *,double);
+		double ReadGridPoint(char *,double,double,double);
 
     protected:
         int block,meshType;

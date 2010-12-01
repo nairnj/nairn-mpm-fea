@@ -17,7 +17,7 @@ MatPtLoadBC *firstLoadedPt=NULL;
 #pragma mark MatPtLoadBC::Constructors and Destructors
 
 // Constructors
-MatPtLoadBC::MatPtLoadBC(long num,int dof,int sty)
+MatPtLoadBC::MatPtLoadBC(int num,int dof,int sty)
 			: BoundaryCondition(sty,(double)0.,(double)0.)
 {
     ptNum=num;
@@ -31,7 +31,7 @@ BoundaryCondition *MatPtLoadBC::PrintBC(ostream &os)
 {
     char nline[200];
     
-    sprintf(nline,"%5ld %2d %2d %15.7e %15.7e",ptNum,direction,style,value,ftime);
+    sprintf(nline,"%5d %2d %2d %15.7e %15.7e",ptNum,direction,style,value,ftime);
     os << nline;
 	PrintFunction(os);
 	

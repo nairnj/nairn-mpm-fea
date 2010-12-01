@@ -1,5 +1,5 @@
 /********************************************************************************
-    CommonAnalysis.hpp
+    CommonAnalysis.cpp
     NairnFEA and NairnMPM
     
     Created by John Nairn on Jan 13, 2006.
@@ -99,7 +99,7 @@ void CommonAnalysis::StartResultsOutput(void)
 	char hline[200];
     if(nnodes==0 || nelems<0)
         throw CommonException("No nodes or elements were defined in the input file.","CommonAnalysis::StartResultsOutput");
-    sprintf(hline,"Nodes: %ld       Elements: %ld\n",nnodes,nelems);
+    sprintf(hline,"Nodes: %d       Elements: %d\n",nnodes,nelems);
     cout << hline;
     sprintf(hline,"DOF per node: %d     ",nfree);
     cout << hline;
@@ -291,5 +291,14 @@ bool CommonAnalysis::IsThreeD(int otherNp) { return otherNp==THREED_MPM; }
 // is it axisynmmetric
 bool CommonAnalysis::IsAxisymmetric(void) { return np==AXI_SYM; }
 bool CommonAnalysis::IsAxisymmetric(int otherNp) { return otherNp==AXI_SYM; }
+
+/********************************************************************************
+	Methods to keep Xerces contact in fewer files
+********************************************************************************/
+
+// throw an SAXException
+void ThrowSAXException(const char *msg)
+{	throw SAXException(msg);
+}
 
 

@@ -28,7 +28,7 @@ static double geti[16]={-1.,-1.,1.,1.,-3.,-3.,-3.,-3.,-1.,1.,3.,3.,3.,3.,1.,-1.}
 /* Main MPM constructor - passes on to Linear 2D
 	But also sets extra node to match starting node
 */
-FourNodeIsoparam::FourNodeIsoparam(long eNum,long *eNode) : Linear2D(eNum,eNode)
+FourNodeIsoparam::FourNodeIsoparam(int eNum,int *eNode) : Linear2D(eNum,eNode)
 {
     nodes[4]=eNode[0];			// needed in some algorithms
 	thickness=1.;
@@ -38,7 +38,7 @@ FourNodeIsoparam::FourNodeIsoparam(long eNum,long *eNode) : Linear2D(eNum,eNode)
 /* Main FEA constructor - passes on to Linear 2D
 	But also sets extra node to match starting node
 */
-FourNodeIsoparam::FourNodeIsoparam(long eNum,long *eNode,int eMat,double eAng,double eThick) : 
+FourNodeIsoparam::FourNodeIsoparam(int eNum,int *eNode,int eMat,double eAng,double eThick) : 
             Linear2D(eNum,eNode,eMat,eAng,eThick)
 {
     nodes[4]=eNode[0];			// needed in some algorithms

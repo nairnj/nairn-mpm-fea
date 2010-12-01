@@ -13,7 +13,7 @@
 /* Main FEA constructor - passes on to Quad 2D
 	But also sets extra node to match starting node
 */
-SixNodeTriangle::SixNodeTriangle(long eNum,long *eNode,int eMat,double eAng,double eThick) : 
+SixNodeTriangle::SixNodeTriangle(int eNum,int *eNode,int eMat,double eAng,double eThick) : 
             Quad2D(eNum,eNode,eMat,eAng,eThick)
 {
     nodes[6]=eNode[0];			// needed in some algorithms

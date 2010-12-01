@@ -9,13 +9,9 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/Viscoelastic.hpp"
 #include "MPM_Classes/MPMBase.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Exceptions/CommonException.hpp"
-
-// Comment it out on inferno
-XERCES_CPP_NAMESPACE_USE		// for Xerces >=2.3.0
 
 #pragma mark Viscoelastic::Constructors and Destructors
 
@@ -91,24 +87,24 @@ char *Viscoelastic::InputMat(char *xName,int &input)
     else if(strcmp(xName,"Gk")==0)
     {	if(Gk==NULL)
         {   if(ntaus<=0)
-				throw SAXException("Gk found before number of taus specified.");
+				ThrowSAXException("Gk found before number of taus specified.");
             Gk=new double[ntaus];
         }
         currentGk++;
         if(currentGk>ntaus)
-			throw SAXException("Too many Gk's given.");
+			ThrowSAXException("Too many Gk's given.");
         return((char *)&Gk[currentGk-1]);
     }
     
     else if(strcmp(xName,"tauk")==0)
     {	if(tauk==NULL)
         {   if(ntaus<=0)
-				throw SAXException("tauk found before number of taus specified.");
+				ThrowSAXException("tauk found before number of taus specified.");
             tauk=new double[ntaus];
         }
         currentTauk++;
         if(currentTauk>ntaus)
-			throw SAXException("Too many tauk's given.");
+			ThrowSAXException("Too many tauk's given.");
         return((char *)&tauk[currentTauk-1]);
     }
     

@@ -20,7 +20,7 @@ class NodalPoint2D : public NodalPoint
     public:
        
         // constructors and destructors
-		NodalPoint2D(long,double,double);
+		NodalPoint2D(int,double,double);
 
 		// methods
         virtual void PrintNodalPoint(ostream &);

@@ -22,7 +22,6 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "System/ArchiveData.hpp"
 #include "Exceptions/CommonException.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"

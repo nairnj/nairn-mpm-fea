@@ -11,7 +11,6 @@
 ********************************************************************************/
 
 #include "Materials/RigidMaterial.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 #include "Read_XML/mathexpr.hpp"
 #include "Exceptions/CommonException.hpp"
 
@@ -176,11 +175,11 @@ bool RigidMaterial::GetSetting(double *setting,double theTime)
 void RigidMaterial::SetSettingFunction(char *bcFunction)
 {
 	if(bcFunction==NULL)
-		throw SAXException("Setting function of time is missing");
+		ThrowSAXException("Setting function of time is missing");
 	if(strlen(bcFunction)==0)
-		throw SAXException("Setting function of time is missing");
+		ThrowSAXException("Setting function of time is missing");
 	if(function!=NULL)
-		throw SAXException("Duplicate Setting functions of time");
+		ThrowSAXException("Duplicate setting functions of time");
 	
 	// create variable
 	if(rmTimeArray[0]==NULL)
@@ -190,7 +189,7 @@ void RigidMaterial::SetSettingFunction(char *bcFunction)
 	// create the function and check it
 	function=new ROperation(bcFunction,1,rmTimeArray);
 	if(function->HasError())
-		throw SAXException("Setting function of time is not valid");
+		ThrowSAXException("Setting function of time is not valid");
 }
 
 

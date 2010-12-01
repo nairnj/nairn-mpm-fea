@@ -21,7 +21,7 @@ static double gwt[4]={0.347854845137448,0.652145154861630,
 /* Main FEA constructor - passes on to Linear 2D
 	But also sets extra node to match starting node
 */
-QuadInterface::QuadInterface(long eNum,long *eNode,int eMat,double eAng,double eThick) : 
+QuadInterface::QuadInterface(int eNum,int *eNode,int eMat,double eAng,double eThick) : 
             Interface2D(eNum,eNode,eMat,eAng,eThick)
 {
     nodes[6]=eNode[0];			// needed in some algorithms

@@ -32,7 +32,7 @@ ifeq ($(SYSTEM),mac)
 	xercesSo = /usr/local/lib/libxerces-c.dylib
 endif
 ifeq ($(SYSTEM),carbon)
-	xercesSo = /usr/local/lib/libxerces-c.so
+	xercesSo = /usr/local/xerces3/lib/libxerces-c.so
 endif
 ifeq ($(SYSTEM),cygwin)
 	xercesSo = -L/usr/local/lib -lxerces-c
@@ -52,7 +52,7 @@ ifeq ($(SYSTEM),mac)
 	headersPath = /usr/local/include
 endif
 ifeq ($(SYSTEM),carbon)
-	headersPath = /usr/local/include
+	headersPath = /usr/local/xerces3/include
 endif
 ifeq ($(SYSTEM),cygwin)
 	headersPath = /usr/local/include
@@ -263,13 +263,11 @@ NodesController.o : $(NodesController).cpp $(dprefix) $(NodesController).hpp $(N
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NodesController).cpp
 ShapeController.o : $(ShapeController).cpp $(dprefix) $(ShapeController).hpp $(NodalPoint).hpp $(CommonReadHandler).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ShapeController).cpp
-LineController.o : $(LineController).cpp $(dprefix) $(LineController).hpp $(ShapeController).hpp $(CommonReadHandler).hpp \
-			$(ElementBase).hpp
+LineController.o : $(LineController).cpp $(dprefix) $(LineController).hpp $(ShapeController).hpp $(ElementBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(LineController).cpp
 BoxController.o : $(BoxController).cpp $(dprefix) $(BoxController).hpp $(ShapeController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BoxController).cpp
-ArcController.o : $(ArcController).cpp $(dprefix) $(ArcController).hpp $(LineController).hpp $(ShapeController).hpp \
-			 $(CommonReadHandler).hpp
+ArcController.o : $(ArcController).cpp $(dprefix) $(ArcController).hpp $(LineController).hpp $(ShapeController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ArcController).cpp
 PointController.o : $(PointController).cpp $(dprefix) $(PointController).hpp $(ShapeController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PointController).cpp
@@ -291,14 +289,11 @@ MaterialBase.o : $(MaterialBase).cpp $(dprefix) $(MaterialBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialBase).cpp
 Elastic.o : $(Elastic).cpp $(dprefix) $(Elastic).hpp $(MaterialBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Elastic).cpp
-IsotropicMat.o : $(IsotropicMat).cpp $(dprefix) $(IsotropicMat).hpp $(MaterialBase).hpp $(CommonReadHandler).hpp \
-		$(Elastic).hpp
+IsotropicMat.o : $(IsotropicMat).cpp $(dprefix) $(IsotropicMat).hpp $(MaterialBase).hpp $(Elastic).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(IsotropicMat).cpp
-TransIsotropic.o : $(TransIsotropic).cpp $(dprefix) $(TransIsotropic).hpp $(MaterialBase).hpp $(CommonReadHandler).hpp \
-		$(Elastic).hpp
+TransIsotropic.o : $(TransIsotropic).cpp $(dprefix) $(TransIsotropic).hpp $(MaterialBase).hpp $(Elastic).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TransIsotropic).cpp
-Orthotropic.o : $(Orthotropic).cpp $(dprefix) $(Orthotropic).hpp $(TransIsotropic).hpp $(MaterialBase).hpp \
-		 $(CommonReadHandler).hpp $(Elastic).hpp
+Orthotropic.o : $(Orthotropic).cpp $(dprefix) $(Orthotropic).hpp $(TransIsotropic).hpp $(MaterialBase).hpp $(Elastic).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Orthotropic).cpp
 
 # Common: Elements
@@ -377,10 +372,9 @@ PathBCController.o : $(PathBCController).cpp $(dprefix) $(PathBCController).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PathBCController).cpp
 
 # FEA: Materials
-MaterialBaseFEA.o : $(MaterialBaseFEA).cpp $(dprefix) $(MaterialBase).hpp $(CommonReadHandler).hpp
+MaterialBaseFEA.o : $(MaterialBaseFEA).cpp $(dprefix) $(MaterialBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialBaseFEA).cpp
-ImperfectInterface.o : $(ImperfectInterface).cpp $(dprefix) $(ImperfectInterface).hpp $(MaterialBase).hpp \
-			$(CommonReadHandler).hpp
+ImperfectInterface.o : $(ImperfectInterface).cpp $(dprefix) $(ImperfectInterface).hpp $(MaterialBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ImperfectInterface).cpp
 
 # FEA: Elements
@@ -412,8 +406,7 @@ MoreNodalPoint.o : $(MoreNodalPoint).cpp $(dprefix) $(NodalPoint).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MoreNodalPoint).cpp
 
 # FEA: Boundary Conditions
-FEABoundaryCondition.o : $(FEABoundaryCondition).cpp $(dprefix) $(FEABoundaryCondition).hpp $(NodalPoint).hpp \
-			$(mathexpr).hpp $(CommonReadHandler).hpp
+FEABoundaryCondition.o : $(FEABoundaryCondition).cpp $(dprefix) $(FEABoundaryCondition).hpp $(NodalPoint).hpp $(mathexpr).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(FEABoundaryCondition).cpp
 NodalDispBC.o : $(NodalDispBC).cpp $(dprefix) $(NodalDispBC).hpp $(NodalPoint).hpp $(FEABoundaryCondition).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NodalDispBC).cpp

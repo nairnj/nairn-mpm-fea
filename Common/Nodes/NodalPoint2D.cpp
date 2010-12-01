@@ -12,7 +12,7 @@
 	NodalPoint: Constructors and Destructor
 ********************************************************************************/
 
-NodalPoint2D::NodalPoint2D(long nodeNum,double xPt,double yPt)
+NodalPoint2D::NodalPoint2D(int nodeNum,double xPt,double yPt)
 		 : NodalPoint(nodeNum)
 {
     x=xPt;
@@ -28,6 +28,6 @@ NodalPoint2D::NodalPoint2D(long nodeNum,double xPt,double yPt)
 void NodalPoint2D::PrintNodalPoint(ostream &os)
 {
 	char nline[200];
-	sprintf(nline,"%5ld %15.7e %15.7e",num,x,y);
+	sprintf(nline,"%5d %15.7e %15.7e",num,x,y);
     os << nline << endl;
 }

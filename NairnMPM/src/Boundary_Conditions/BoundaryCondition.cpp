@@ -8,7 +8,6 @@
 
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "Nodes/NodalPoint.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 #include "Read_XML/mathexpr.hpp"
 
 // global expression variables
@@ -32,7 +31,7 @@ BoundaryCondition::BoundaryCondition(int bcStyle,double bcValue,double bcTime)
 }
 
 // Reuse Rigid properties (subclass set other properties) and return this for calling function use
-BoundaryCondition *BoundaryCondition::SetRigidProperties(long num,int dof,int bcStyle,double bcValue)
+BoundaryCondition *BoundaryCondition::SetRigidProperties(int num,int dof,int bcStyle,double bcValue)
 {	nodeNum=num;
     style=bcStyle;
     value=bcValue;
@@ -96,7 +95,7 @@ void BoundaryCondition::PrintFunction(ostream &os)
 #pragma mark BoundaryCondition: Accessors
 
 // if BC is activated, return nodeNum, otherwise return 0
-long BoundaryCondition::GetNodeNum(double mstime)
+int BoundaryCondition::GetNodeNum(double mstime)
 {
     switch(style)
     {   case CONSTANT_VALUE:
@@ -112,18 +111,18 @@ long BoundaryCondition::GetNodeNum(double mstime)
 }
 
 // just return the nodeNum
-long BoundaryCondition::GetNodeNum(void) { return nodeNum; }
+int BoundaryCondition::GetNodeNum(void) { return nodeNum; }
 
 // set function if needed
 void BoundaryCondition::SetFunction(char *bcFunction)
 {
 	if(style!=FUNCTION_VALUE) return;
 	if(bcFunction==NULL)
-		throw SAXException("Boundary condition function of time and position is missing");
+		ThrowSAXException("Boundary condition function of time and position is missing");
 	if(strlen(bcFunction)==0)
-		throw SAXException("Boundary condition function of time and position is missing");
+		ThrowSAXException("Boundary condition function of time and position is missing");
 	if(function!=NULL)
-		throw SAXException("Duplicate boundary condition functions of time");
+		ThrowSAXException("Duplicate boundary condition functions of time");
 	
 	// create variable
 	if(varTimeArray[0]==NULL)
@@ -137,7 +136,7 @@ void BoundaryCondition::SetFunction(char *bcFunction)
 	// create the function and check it
 	function=new ROperation(bcFunction,5,varTimeArray);
 	if(function->HasError())
-		throw SAXException("Boundary condition function of time and position is not valid");
+		ThrowSAXException("Boundary condition function of time and position is not valid");
 	
 	// keep value, which can option by + or - to tell visualization code the direction of the load
 	// value=1.;

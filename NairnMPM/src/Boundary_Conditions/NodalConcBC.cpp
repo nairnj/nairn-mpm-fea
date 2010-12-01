@@ -19,7 +19,7 @@ NodalConcBC *reuseRigidConcBC=NULL;
 	NodalConcBC: Constructors and Destructors
 *******************************************************************/
 
-NodalConcBC::NodalConcBC(long num,int setStyle,double concentration,double argTime)
+NodalConcBC::NodalConcBC(int num,int setStyle,double concentration,double argTime)
 		: BoundaryCondition(setStyle,concentration,argTime)
 {
     nodeNum=num;
@@ -27,7 +27,7 @@ NodalConcBC::NodalConcBC(long num,int setStyle,double concentration,double argTi
 }
 
 // Reuse Rigid BC
-BoundaryCondition *NodalConcBC::SetRigidProperties(long num,int dof,int setStyle,double concentration)
+BoundaryCondition *NodalConcBC::SetRigidProperties(int num,int dof,int setStyle,double concentration)
 {	// set direction
 	nd[num]->SetFixedDirection(CONC_DIRECTION);
 	// finish in base class
@@ -48,7 +48,7 @@ BoundaryCondition *NodalConcBC::UnsetDirection(void)
 BoundaryCondition *NodalConcBC::PrintBC(ostream &os)
 {
     char nline[200];
-	sprintf(nline,"%5ld %2d %15.7e %15.7e",nodeNum,style,value,ftime);
+	sprintf(nline,"%5d %2d %15.7e %15.7e",nodeNum,style,value,ftime);
     os << nline;
 	PrintFunction(os);
 	return (BoundaryCondition *)GetNextObject();

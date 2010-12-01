@@ -241,7 +241,7 @@ void CommonReadHandler::endElement(const XMLCh *const uri,const XMLCh *const loc
 }
 
 // Decode block of characters if input!=NO_INPUT
-void CommonReadHandler::characters(const XMLCh* const chars,const unsigned int length)
+void CommonReadHandler::characters(const XMLCh* const chars,const XMLSize_t length)
 {
     if(input==NO_INPUT) return;
     char *xData=XMLString::transcode(chars);
@@ -263,10 +263,6 @@ void CommonReadHandler::characters(const XMLCh* const chars,const unsigned int l
 			}
 			break;
         
-        case LONG_NUM:
-            sscanf(xData,"%ld",(long *)inputPtr);
-            break;
-            
         case INT_NUM:
             sscanf(xData,"%d",(int *)inputPtr);
             break;
@@ -336,7 +332,7 @@ double CommonReadHandler::ReadNumericAttribute(const char *theTag,const Attribut
 }
 
 // read the 'number' attribute in current tag, ignore other attributes
-void CommonReadHandler::ReadTagNumber(long *myval,const Attributes& attrs)
+void CommonReadHandler::ReadTagNumber(int *myval,const Attributes& attrs)
 {
     int i,aval;
     char *aName,*value;
@@ -527,48 +523,55 @@ void CommonReadHandler::warning(const SAXParseException& e)
 
 // x value
 double CommonReadHandler::ReadX(char *value,double distScaling)
-{	if(strcmp(value,"max")==0)
-		return mxmax;
-	else if(strcmp(value,"min")==0)
-		return mxmin;
-	else if(strcmp(value,"max+")==0)
-		return mxmax+ElementBase::GetMinimumCellSize();
-	else if(strcmp(value,"min-")==0)
-		return mxmin-ElementBase::GetMinimumCellSize();
-	double dval;
-	sscanf(value,"%lf",&dval);
-	return dval*distScaling;
+{	return ReadGridPoint(value,distScaling,mxmin,mxmax);
 }
 
 // y value
 double CommonReadHandler::ReadY(char *value,double distScaling)
-{	if(strcmp(value,"max")==0)
-		return mymax;
-	else if(strcmp(value,"min")==0)
-		return mymin;
-	else if(strcmp(value,"max+")==0)
-		return mymax+ElementBase::GetMinimumCellSize();
-	else if(strcmp(value,"min-")==0)
-		return mymin-ElementBase::GetMinimumCellSize();
-	double dval;
-	sscanf(value,"%lf",&dval);
-	return dval*distScaling;
+{	return ReadGridPoint(value,distScaling,mymin,mymax);
 }
 
-// z limits
+// z value
 double CommonReadHandler::ReadZ(char *value,double distScaling)
-{	if(strcmp(value,"max")==0)
-		return mzmax;
-	else if(strcmp(value,"min")==0)
-		return mzmin;
-	else if(strcmp(value,"max+")==0)
-		return mzmax+ElementBase::GetMinimumCellSize();
-	else if(strcmp(value,"min-")==0)
-		return mzmin-ElementBase::GetMinimumCellSize();
-	double dval;
+{	return ReadGridPoint(value,distScaling,mzmin,mzmax);
+}
+
+// generic value
+double CommonReadHandler::ReadGridPoint(char *value,double distScaling,double axisMin,double axisMax)
+{	double dval;
+	
+	// look for max, max+. max-, min, min+, min- optionally with a number
+	if(strlen(value)>=3 && value[0]=='m')
+	{	if(value[1]=='a' && value[2]=='x')
+		{	sscanf(value,"%*3c%lf",&dval);
+			if(DbleEqual(dval,0.))
+			{	dval=0.;
+				if(strlen(value)>3)
+				{	if(value[3]=='-')
+						dval=-1.;
+					else if(value[3]=='+')
+						dval=1.;
+				}
+			}
+			return axisMax+dval*ElementBase::GetMinimumCellSize();
+		}
+		else if(value[1]=='i' && value[2]=='n')
+		{	sscanf(value,"%*3c%lf",&dval);
+			if(DbleEqual(dval,0.))
+			{	dval=0.;
+				if(strlen(value)>3)
+				{	if(value[3]=='-')
+						dval=-1.;
+					else if(value[3]=='+')
+						dval=1.;
+				}
+			}
+			return axisMin+dval*ElementBase::GetMinimumCellSize();
+		}
+	}
+	
+	// just read a number
 	sscanf(value,"%lf",&dval);
 	return dval*distScaling;
 }
-
-
 

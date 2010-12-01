@@ -26,7 +26,7 @@ class BodyCylinderController : public BodySphereController
 		// methods
 		virtual bool FinishSetup(void);
 		virtual bool ContainsPoint(Vector &);
-		virtual void SetProperty(const char *,char *);
+		virtual void SetBodyProperty(const char *,char *,CommonReadHandler *);
 	
 	protected:
 		int axis;			// 1, 2, or 3, for x, y or z

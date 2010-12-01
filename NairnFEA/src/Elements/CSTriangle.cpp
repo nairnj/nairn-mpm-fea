@@ -17,7 +17,7 @@
 /* Main FEA constructor - passes on to Linear 2D
 	But also sets extra node to match starting node
 */
-CSTriangle::CSTriangle(long eNum,long *eNode,int eMat,double eAng,double eThick) : 
+CSTriangle::CSTriangle(int eNum,int *eNode,int eMat,double eAng,double eThick) : 
             Linear2D(eNum,eNode,eMat,eAng,eThick)
 {
     nodes[3]=eNode[0];			// needed in some algorithms

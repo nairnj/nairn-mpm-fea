@@ -19,17 +19,17 @@ class EdgeBC : public FEABoundaryCondition
 {
     public:
        // constructors and destructors
-        EdgeBC(long,int,int);
+        EdgeBC(int,int,int);
         
         // methods
 		EdgeBC *PrintEdgeLoad(void);
 		void GetConsistentLoads(double *,int);
 		void SetStress(double *,int);
 		bool SameDofSetting(EdgeBC *);
-		long ElementIndex(void);
+		int ElementIndex(void);
 	
 	private:
-		long element;
+		int element;
 		int face,facenodes;
 		double stress[3];
 };

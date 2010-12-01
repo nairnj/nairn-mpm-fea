@@ -23,7 +23,7 @@ MPMWarnings::MPMWarnings()
 }
 
 // add a warning
-int MPMWarnings::CreateWarning(const char *message,long abortStep)
+int MPMWarnings::CreateWarning(const char *message,int abortStep)
 {
 	WarningsData *newWarning = new WarningsData;
 	newWarning->numSteps=0;

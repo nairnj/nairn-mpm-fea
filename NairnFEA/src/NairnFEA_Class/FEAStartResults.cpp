@@ -34,7 +34,7 @@ void NairnFEA::PrintAnalysisType(void) {}
 void NairnFEA::MyStartResultsOutput(void)
 {
     char hline[200];
-    long i;
+    int i;
     
     //---------------------------------------------------
     // Temperature

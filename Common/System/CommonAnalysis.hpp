@@ -18,8 +18,8 @@
 class CommonAnalysis
 {
     public:
-		int np;							// analysis method
-		int nfree;						// degrees of freedom (here 2D)
+		int np;									// analysis method
+		int nfree;								// degrees of freedom (here 2D)
 		int dflag[NUMBER_DEVELOPMENT_FLAGS];	// flags that can be set for use in development
 	
         //  Constructors and Destructor
@@ -55,5 +55,13 @@ class CommonAnalysis
 		int version,subversion,buildnumber;
 		char *description;
 };
+
+// Input types
+enum { NO_INPUT=0,TEXT_BLOCK,INT_NUM,DOUBLE_NUM,NODE_BLOCK,
+	BC_BLOCK,MPMORDER_BLOCK,CRACKORDER_BLOCK,NOT_NUM,
+	STRESS_LIST,OUTFLAGS_BLOCK,ANALYSIS_NUM,FUNCTION_BLOCK,
+	SETTING_FUNCTION_BLOCK };
+
+void ThrowSAXException(const char *);
 
 #endif

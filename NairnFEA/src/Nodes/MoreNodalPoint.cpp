@@ -32,7 +32,7 @@ void NodalPoint::PrintAvgStress(void)
     char fline[200];
     double factor=1.e-6/(double)fs->numElems;
     
-    sprintf(fline,"%5ld  %15.7e  %15.7e  %15.7e  %15.7e",num,
+    sprintf(fline,"%5d  %15.7e  %15.7e  %15.7e  %15.7e",num,
             fs->stress.xx*factor,fs->stress.yy*factor,
             fs->stress.zz*factor,fs->stress.xy*factor);
     cout << fline << endl;

@@ -166,7 +166,7 @@ void MaterialBase::PrintProperty(const char *text,bool rightJustify)
 {
 	char prop[200];
 	
-	// up to two columns long
+	// up to two columns wide
 	int length=strlen(text);
 	int padLength = (length<PROP_COLUMN) ? PROP_COLUMN : 2*PROP_COLUMN ;
 	strcpy(prop,"");

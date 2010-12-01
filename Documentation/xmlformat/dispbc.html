@@ -109,22 +109,14 @@ The possible 2D shape commands are:
 <dl>
 
 <dt>xmin, xmax, ymin, ymax, zmin, zmax</dt>
-<dd>These attributes define the extent of a rectangle (2D) or box (3D). Any coordinate can be the text
-<code>'min'</code>, <code>'max'</code>, <code>'min-'</code>, or <code>'max+'</code>, meaning the minimum, maximum, one
-cell before the minimum, or one cell past the maximum of the current mesh. For GIMP
-calculations <code>'min'</code> and <code>'max'</code> will be limits of useable mesh while
-<code>'min-'</code> and <code>'max+'</code> will be limits to the total mesh.
+<dd>These attributes define the extent of a rectangle (2D) or box (3D) (they can be entered with numeric values or <a href="#minmax">relative to the mesh edges</a>).
 An optional <a href="mpmheader.html#units"><code>units</code> attribute</a> can specify the length units for all settings.
 All nodes that fall within the rectangle or box will be assigned the boundary conditions of
 the subordinate elements.</dd>
 
 <dt>(x1,y1) to (x2,y2)</dt>
 <dd>These attributes define the end points of a line (in <code>BCLine</code>) or corner points of
-an oval (in <code>BCArc</code>)  Any coordinate can be the text
-<code>'min'</code>, <code>'max'</code>, <code>'min-'</code>, or <code>'max+'</code>, meaning the minimum, maximum, one
-cell before the minimum, or one cell past the maximum of the current mesh. For GIMP
-calculations <code>'min'</code> and <code>'max'</code> will be limits of useable mesh while
-<code>'min-'</code> and <code>'max+'</code> will be limits to the total mesh.
+an oval (in <code>BCArc</code>) (they can be entered with numeric values or <a href="#minmax">relative to the mesh edges</a>).
 An optional <a href="mpmheader.html#units"><code>units</code> attribute</a> can
 specify the length units for all settings. All nodes that fall within <code>tolerance</code> of the
 line (for <code>BCLine</code>) or the arc (for <code>BCArc</code>) will be assigned the boundary
@@ -151,6 +143,12 @@ When omitted, it is automatically set to an appropriate value for the current me
 <a href="#temp">temperature</a>, and/or <a href="#conc">concentration</a> boundary conditions.
 Any combination of types of boundary conditions can be used within a single shape.
 <p>
+
+<h3><a name="minmax"></a>Relative Grid Locations</h3>
+
+<p>Rather than hard code positions for boundary conditions or shapes that define material points, any coordinate (<i>e.g.</i>, an entry for <code>x1</code>, <code>x2</code>, <code>xmin</code>, <code>xmax</code>, <i>etc.</i>) can be the text <code>'min'</code>, <code>'max'</code>, <code>'min-3'</code>, <code>'min+1.2'</code>, <code>'max-3.8'</code>, or <code>'max+2'</code>, meaning the minimum, the maximum, or a specified number of cells relative to the minimum or maximum of the current mesh. For GIMP
+calculations <code>'min'</code> and <code>'max'</code> will be limits of useable mesh while
+<code>'min-1'</code> and <code>'max+1'</code> will be limits to the total mesh. For backward compatibility, <code>min+</code>, <code>min-</code>, <code>max+</code>, and <code>max-</code> refer to plus or minus one cell from the minimum or maximum of the current mesh.</p>
 
 <a name="vel"></a><h2>Generated Velocity Conditions</h2>
 

@@ -22,9 +22,9 @@ class Linear2D : public ElementBase
         
         // constructors
 #ifdef MPM_CODE
-        Linear2D(long,long *);
+        Linear2D(int,int *);
 #else
-        Linear2D(long,long *,int,double,double);
+        Linear2D(int,int *,int,double,double);
 #endif
         
         // prototypes

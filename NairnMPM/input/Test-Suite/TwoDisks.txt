@@ -20,7 +20,10 @@
 #
 # NairnMPM 8.0.0, 6 AUG 2010 - identical
 #
-# Nairn 8.0.0, 17 AUG 2010 - identical in MultiMaterialMode with Friction<-10
+# NairnMPM 8.0.0, 17 AUG 2010 - identical in MultiMaterialMode with Friction=-20
+#
+# NairnMPM 8.1.0 (pending revision), 2 DEC 2010 - identicalin single material mode
+#                                identical in MultiMaterialMode with Friction=-20
 #
 # -----------------------------------------------------------------------------------
 #

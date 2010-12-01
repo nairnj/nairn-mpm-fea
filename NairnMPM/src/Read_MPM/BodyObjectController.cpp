@@ -46,7 +46,7 @@ bool BodyObjectController::FinishSetup(void)
         xmin=temp;
     }
     if(DbleEqual(xmin,xmax))
-        throw SAXException("xmax can not equal xmin in input parameters.");
+        ThrowSAXException("xmax can not equal xmin in input parameters.");
 		
     if(ymin>ymax)
 	{	temp=ymax;
@@ -54,7 +54,7 @@ bool BodyObjectController::FinishSetup(void)
         ymin=temp;
     }
     if(DbleEqual(ymin,ymax))
-        throw SAXException("ymax can not equal ymin in input parameters.");
+        ThrowSAXException("ymax can not equal ymin in input parameters.");
 	
 	if(!Is2DBodyObject())
 	{	if(zmin>zmax)
@@ -63,7 +63,7 @@ bool BodyObjectController::FinishSetup(void)
 			zmin=temp;
 		}
 		if(DbleEqual(zmin,zmax))
-			throw SAXException("zmax can not equal zmin in input parameters.");
+			ThrowSAXException("zmax can not equal zmin in input parameters.");
 	}
 	
 	return TRUE;
@@ -77,32 +77,20 @@ void BodyObjectController::FinishParameter(void) {	}
 ********************************************************************************/
 
 // set a property
-void BodyObjectController::SetProperty(const char *aName,char *value)
+void BodyObjectController::SetBodyProperty(const char *aName,char *value,CommonReadHandler *reader)
 {
 	if(strcmp(aName,"xmin")==0)
-	{	sscanf(value,"%lf",&xmin);
-		xmin*=distScaling;
-	}
+		xmin=reader->ReadX(value,distScaling);
 	else if(strcmp(aName,"ymin")==0)
-	{	sscanf(value,"%lf",&ymin);
-		ymin*=distScaling;
-	}
+		ymin=reader->ReadY(value,distScaling);
 	else if(strcmp(aName,"zmin")==0)
-	{	sscanf(value,"%lf",&zmin);
-		zmin*=distScaling;
-	}
+		zmin=reader->ReadZ(value,distScaling);
 	else if(strcmp(aName,"xmax")==0)
-	{	sscanf(value,"%lf",&xmax);
-		xmax*=distScaling;
-	}
+		xmax=reader->ReadX(value,distScaling);
 	else if(strcmp(aName,"ymax")==0)
-	{	sscanf(value,"%lf",&ymax);
-		ymax*=distScaling;
-	}
+		ymax=reader->ReadY(value,distScaling);
 	else if(strcmp(aName,"zmax")==0)
-	{	sscanf(value,"%lf",&zmax);
-		zmax*=distScaling;
-	}
+		zmax=reader->ReadZ(value,distScaling);
 }
 
 // set an object parameter (in subordinate command)

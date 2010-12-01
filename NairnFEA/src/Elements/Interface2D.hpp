@@ -21,7 +21,7 @@ class Interface2D : public ElementBase
 		double thickness;
 		
         // constructors
-		Interface2D(long,long *,int,double,double);
+		Interface2D(int,int *,int,double,double);
 		
         // prototypes
         virtual int NumberSides(void);

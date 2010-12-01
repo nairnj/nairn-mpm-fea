@@ -13,10 +13,10 @@
 
 #ifdef MPM_CODE
 // Main MPM constructor passes onto ElementBase constructor
-Linear2D::Linear2D(long eNum,long *eNode) : ElementBase(eNum,eNode) {}
+Linear2D::Linear2D(int eNum,int *eNode) : ElementBase(eNum,eNode) {}
 #else
 // Main FEA constructor passes onto ElementBase constructor
-Linear2D::Linear2D(long eNum,long *eNode,int eMat,double eAng,double eThick) : 
+Linear2D::Linear2D(int eNum,int *eNode,int eMat,double eAng,double eThick) : 
                     ElementBase(eNum,eNode,eMat,eAng)
 { thickness=eThick; }
 #endif

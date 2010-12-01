@@ -6,7 +6,6 @@
     Copyright (c) 2007 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
-#include "Read_XML/CommonReadHandler.hpp"
 #include "Read_XML/ArcController.hpp"
 
 /********************************************************************************

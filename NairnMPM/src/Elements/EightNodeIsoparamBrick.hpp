@@ -19,7 +19,7 @@ class EightNodeIsoparamBrick : public ElementBase3D
 {
     public:
         // constructors
-		EightNodeIsoparamBrick(long,long *);
+		EightNodeIsoparamBrick(int,int *);
         
         // prototypes
         virtual short ElementName(void);

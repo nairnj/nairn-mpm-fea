@@ -19,7 +19,7 @@ class SixNodeTriangle : public Quad2D
 {
     public:
         // constructors
-        SixNodeTriangle(long,long *,int,double,double);
+        SixNodeTriangle(int,int *,int,double,double);
         
         // prototypes
         virtual short ElementName(void);

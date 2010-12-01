@@ -153,7 +153,7 @@ double DotVectors2D(Vector *v1,Vector *v2)
 // Print vector to cout when debugging
 void PrintVector(const char *label,Vector *v)
 {	if(strlen(label)>0) cout << label;
-	cout << "(" << v->x << ", " << v->y << "," << v->z << ") ";
+	cout << "(" << v->x << ", " << v->y << ", " << v->z << ") ";
 }
 
 #pragma mark Tensor Functions

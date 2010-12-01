@@ -35,12 +35,12 @@
 class ElementBase : public LinkedObject
 {
     public:
-        long num;						// element number (1 based)
-        long nodes[MaxElNd];			// 1 based node numbers in nodes[0] to nodes[NumberNodes()-1]
+        int num;						// element number (1 based)
+        int nodes[MaxElNd];			// 1 based node numbers in nodes[0] to nodes[NumberNodes()-1]
         double xmin,xmax,ymin,ymax;		// element extent
         int filled;						// flags for loaded material points
 #ifdef MPM_CODE
-        long *neighbors;				// Elements next to faces
+        int *neighbors;				// Elements next to faces
 #else
         int material;					// FEA material ID
         double strainEnergy;			// FEA strain energy
@@ -57,9 +57,9 @@ class ElementBase : public LinkedObject
 		
         // constructors and destructors
 #ifdef MPM_CODE
-        ElementBase(long,long *);
+        ElementBase(int,int *);
 #else
-        ElementBase(long,long *,int,double);
+        ElementBase(int,int *,int,double);
 #endif
 		virtual ~ElementBase();
         
@@ -87,7 +87,7 @@ class ElementBase : public LinkedObject
 		virtual double GetDeltaZ(void);
 		virtual bool IntersectsBox(double,double,double,double,double);
         virtual int NumberSides(void);
-		long NodeIndex(int);
+		int NodeIndex(int);
         virtual void FindExtent(void);
 		virtual void FindCentroid(Vector *);
 #ifdef MPM_CODE
@@ -98,16 +98,16 @@ class ElementBase : public LinkedObject
 		virtual void GimpCompact(int *,int *,double *,double *,double *,double *);
 		virtual bool OnTheEdge(void);
 		virtual void GetListOfNeighbors(int *);
-		virtual long NextNode(long);
-        virtual int FindEdge(long,long);
-        virtual long Neighbor(long);
+		virtual int NextNode(int);
+        virtual int FindEdge(int,int);
+        virtual int Neighbor(int);
 		virtual void AllocateNeighborsArray(void);
 		virtual int Orthogonal(double *,double *,double *);
-        virtual long NearestNode(double,double,long *);
+        virtual int NearestNode(double,double,int *);
         virtual void MPMPoints(short,Vector *);
 #else
-		virtual bool HasNode(long);
-		virtual void DecrementNodeNums(long);
+		virtual bool HasNode(int);
+		virtual void DecrementNodeNums(int);
         virtual void MaxMinNode(int *,int *);
 		virtual void MapNodes(int *);
 		virtual void CalcEdgeLoads(double *,int,int,double *,int);
@@ -155,7 +155,7 @@ class ElementBase : public LinkedObject
 
 // List of elements stored as theElements[0] to theElements[nelems-1]
 extern ElementBase **theElements;
-extern long nelems;
+extern int nelems;
 #ifdef FEA_CODE
 	// temporary globals used in FEA element calculations
     extern Vector ce[MaxElNd];

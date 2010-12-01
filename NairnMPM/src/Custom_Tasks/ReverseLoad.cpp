@@ -26,7 +26,6 @@
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
 #include "Exceptions/MPMTermination.hpp"
 #include "Materials/MaterialBase.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 
 #pragma mark INITIALIZE
@@ -111,7 +110,6 @@ CustomTask *ReverseLoad::FinishForStep(void)
 {
     CrackHeader *nextCrack;
     int cnum;
-	long p;
     MatPtLoadBC *nextLoad;
     double currentLoad,loadx,loady;
     
@@ -164,6 +162,7 @@ CustomTask *ReverseLoad::FinishForStep(void)
                     }
 					
 					// reverse rigid particles
+					int p;
 					for(p=0;p<nmpms;p++)
 					{	if(theMaterials[mpm[p]->MatID()]->Rigid())
 						{	if(style==REVERSE)

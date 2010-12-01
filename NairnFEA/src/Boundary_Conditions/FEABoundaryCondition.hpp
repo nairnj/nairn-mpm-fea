@@ -22,12 +22,12 @@ class FEABoundaryCondition : public LinkedObject
 		virtual ~FEABoundaryCondition();
 		
 		// methods
-		virtual LinkedObject *DecrementNodeNum(long,LinkedObject *,bool *);
+		virtual LinkedObject *DecrementNodeNum(int,LinkedObject *,bool *);
 		virtual void SetValue(double,char *);
 		virtual double *GetValuePtr(void);
 		
 	protected:
-        long nodeNum;
+        int nodeNum;
 		int direction;
 		double bcValue;
 		static double varXValue,varYValue,varRValue,varZValue;

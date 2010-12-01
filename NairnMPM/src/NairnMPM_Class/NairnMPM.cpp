@@ -54,8 +54,8 @@ int maxMaterialFields;		// Maximum velocity fields or number of independent mate
 NairnMPM::NairnMPM()
 {
 	version=8;						// main version
-	subversion=0;					// subversion (must be < 10)
-	buildnumber=1;					// build number
+	subversion=1;					// subversion (must be < 10)
+	buildnumber=0;					// build number
 	mpmApproach=USAVG_METHOD;		// mpm method
 	ptsPerElement=4;				// number of points per element (2D default, 3D changes it to 8)
 	propagate[0]=propagate[1]=NO_PROPAGATION;						// default crack propagation type
@@ -304,7 +304,7 @@ void NairnMPM::MPMStep(void)
 #ifdef LOG_PROGRESS
 	char logLine[200];
 	archiver->ClearLogFile();
-	sprintf(logLine,"Step #%ld: Initialize",mstep);
+	sprintf(logLine,"Step #%d: Initialize",mstep);
 	archiver->WriteLogFile(logLine,NULL);
 #endif
 	
@@ -337,7 +337,7 @@ void NairnMPM::MPMStep(void)
 
 void NairnMPM::PreliminaryCalcs(void)
 {
-    long p,i;
+    int p,i;
     short matid;
     double area,volume,rho,crot,tst,tmin=1e15;
     double dcell;
@@ -460,7 +460,7 @@ void NairnMPM::PreliminaryCalcs(void)
     // Print particle information oand other preliminary calc results
     PrintSection("FULL MASS MATRIX");
     
-    sprintf(fline,"Number of Material Points: %ld",nmpms);
+    sprintf(fline,"Number of Material Points: %d",nmpms);
     cout << fline << endl;
 	
 	// background grid info
@@ -497,7 +497,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	}
 	
 	// create warnings
-	warnParticleLeftGrid=warnings.CreateWarning("particle left the grid",(long)warnParticleLeftGrid);
+	warnParticleLeftGrid=warnings.CreateWarning("particle left the grid",warnParticleLeftGrid);
 	
 	// nodal point calculations
 	NodalPoint::PreliminaryCalcs();

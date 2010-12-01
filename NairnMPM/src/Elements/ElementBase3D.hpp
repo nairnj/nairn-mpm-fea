@@ -21,7 +21,7 @@ class ElementBase3D : public ElementBase
 		double zmin,zmax;		// z extent
 		
 		// constructors
-		ElementBase3D(long,long *);
+		ElementBase3D(int,int *);
 			
 		// methods
 		virtual void FindExtent(void);

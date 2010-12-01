@@ -42,7 +42,7 @@ class NodalPoint : public LinkedObject
 	
 		// constants (not changed in MPM time step)
         double x,y,z;
-        long num;
+        int	num;
 #ifdef MPM_CODE
         char above,below;
 #endif
@@ -52,7 +52,7 @@ class NodalPoint : public LinkedObject
 #endif
        
         // constructors and destructors
-        NodalPoint(long);
+        NodalPoint(int);
         virtual ~NodalPoint();
         
         // methods - general and abstract
@@ -160,6 +160,6 @@ class NodalPoint : public LinkedObject
 
 // List of nodes stored as nd[1] to nd[nnodes]
 extern NodalPoint **nd;
-extern long nnodes;
+extern int nnodes;
 
 #endif

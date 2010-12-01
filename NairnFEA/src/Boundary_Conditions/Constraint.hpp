@@ -17,10 +17,10 @@ class Constraint : public LinkedObject
 {
     public:
 		// constructors and destructors
-		Constraint(long,int);
+		Constraint(int,int);
         
         // methods
-		void AddNode(long,double);
+		void AddNode(int,double);
 		void AddConstant(double);
 		int GetBandWidth(int,int);
 		Constraint *MapNodes(int *);

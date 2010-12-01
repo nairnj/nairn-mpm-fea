@@ -41,8 +41,8 @@
 		BCs.
 ********************************************************************************/
 
-#include "Read_XML/CommonReadHandler.hpp"
 #include "Read_XML/ShapeController.hpp"
+#include "Read_XML/CommonReadHandler.hpp"
 #include "Nodes/NodalPoint.hpp"
 #ifdef MPM_CODE
 	#include "MPM_Classes/MPMBase.hpp"

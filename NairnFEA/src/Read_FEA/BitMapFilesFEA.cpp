@@ -71,10 +71,9 @@ void FEAReadHandler::TranslateBMPFiles(void)
 	double cmin,cmax,wtc1,wtc2,weight;
 	int r1,r2,c1,c2;
 
-	int row,col;
+	int i,row,col;
 	ElementBase *elem;
 	Vector center;
-	int i;
 	for(i=0;i<nelems;i++)
 	{	elem=theElements[i]; 
 		elem->GetXYZCentroid(&center);

@@ -182,7 +182,7 @@ const char *Area::MeshInterface(void)
 				
 	// add the interface elements - 1 for each path interval
 	int i,numInt=edges[0]->intervals,rInt;
-	long eNode[MaxElNd];
+	int eNode[MaxElNd];
 	int lnameEl=theElems->CurrentElemID();
 	for(i=1;i<=numInt;i++)
 	{	// nodes 1 and 2 or 1, 2, and 3 on first path
@@ -220,7 +220,7 @@ const char *Area::MeshInterface(void)
 const char *Area::MeshArea(void)
 {
 	int i;
-	long eNode[MaxElNd];
+	int eNode[MaxElNd];
 	
 	// space for area nodes and element object
 	areaNode=new Vector[2*numPaths];

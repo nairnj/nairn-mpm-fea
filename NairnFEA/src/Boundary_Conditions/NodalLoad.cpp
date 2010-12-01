@@ -13,7 +13,7 @@ NodalLoad *firstLoadBC=NULL;
 
 #pragma mark NodalLoad: Constructors and Destructors
 
-NodalLoad::NodalLoad(long num,int dof) : FEABoundaryCondition()
+NodalLoad::NodalLoad(int num,int dof) : FEABoundaryCondition()
 {
     nodeNum=num;
     direction=dof;
@@ -26,7 +26,7 @@ NodalLoad *NodalLoad::PrintLoad(void)
 {
     char nline[200];
     
-    sprintf(nline,"%5ld  %2d  %15.7e",nodeNum,direction,bcValue);
+    sprintf(nline,"%5d  %2d  %15.7e",nodeNum,direction,bcValue);
     cout << nline << endl;
 	
 	return (NodalLoad *)nextObject;
@@ -42,7 +42,7 @@ NodalLoad *NodalLoad::MapNodes(int *revMap)
 // put load into reaction vector
 NodalLoad *NodalLoad::Reaction(double *rm,int np,int nfree)
 {
-    long nglob;
+    int nglob;
     
     nglob=nfree*(nodeNum-1)+direction;
     if(np!=AXI_SYM)

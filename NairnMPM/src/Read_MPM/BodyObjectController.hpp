@@ -13,6 +13,8 @@
 
 #define _BODYOBJECTCONTROLLER_
 
+class CommonReadHandler;
+
 class BodyObjectController
 {
     public:
@@ -25,7 +27,7 @@ class BodyObjectController
 		virtual bool ContainsPoint(Vector &);
 		virtual bool FinishSetup(void);
 		virtual bool Is2DBodyObject(void);
-		virtual void SetProperty(const char *,char *);
+		virtual void SetBodyProperty(const char *,char *,CommonReadHandler *);
 		virtual void SetParameter(char *,char *);
 		virtual void FinishParameter(void);
 		virtual void SetScaling(double);

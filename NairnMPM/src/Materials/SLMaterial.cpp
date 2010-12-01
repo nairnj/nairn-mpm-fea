@@ -1,5 +1,5 @@
 /********************************************************************************
-    SLMaterial.hpp
+    SLMaterial.cpp
     NairnMPM
     
     Created by John Nairn, 11/12/2008.
@@ -11,7 +11,6 @@
 ********************************************************************************/
 
 #include "Materials/SLMaterial.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 
 #pragma mark SLMaterial::Constructors and Destructors

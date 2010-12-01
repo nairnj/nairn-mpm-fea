@@ -1,5 +1,5 @@
 /********************************************************************************
-    BitMapFiles.cpp - extra code for MPMReadHandler.cpp to generate particles
+    BitMapFilesCommon.cpp - extra code for MPMReadHandler.cpp to generate particles
 		from gray scale BMP files
     NairnMPM
 

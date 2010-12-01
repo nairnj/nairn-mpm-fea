@@ -17,7 +17,7 @@ static double eti[4]={-1.,-1.,1.,1.};
 /* Main FEA constructor - passes on to Quad 2D
 	But also sets extra node to match starting node
 */
-EightNodeIsoparam::EightNodeIsoparam(long eNum,long *eNode,int eMat,double eAng,double eThick) : 
+EightNodeIsoparam::EightNodeIsoparam(int eNum,int *eNode,int eMat,double eAng,double eThick) : 
             Quad2D(eNum,eNode,eMat,eAng,eThick)
 {
     nodes[8]=eNode[0];			// needed in some algorithms

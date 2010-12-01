@@ -30,8 +30,8 @@ int gelbnd(double **,int,int,double *,double *,int);
 NairnFEA::NairnFEA()
 {
 	version=2;					// NairnFEA version number
-	subversion=7;				// subversion number
-	buildnumber=1;				// build number
+	subversion=8;				// subversion number
+	buildnumber=0;				// build number
 	xax='x';					// default axis names
 	yax='y';
 	zax='z';
@@ -74,7 +74,7 @@ void NairnFEA::FEAAnalysis()
 {
     char nline[200];
     int result;
-    long i;
+    int i;
     double *work;
     NodalDispBC *nextBC;
     double times[5];
@@ -95,7 +95,7 @@ void NairnFEA::FEAAnalysis()
     
     // Stiffness matrix info
     PrintSection("TOTAL STIFFNESS MATRIX");
-    sprintf(nline,"Initial number of equations:%6ld     Initial bandwidth:%6ld",nsize,nband);
+    sprintf(nline,"Initial number of equations:%6d     Initial bandwidth:%6d",nsize,nband);
     cout << nline << endl << endl;
 
 #pragma mark --- TASK 1: ALLOCATE R VECTOR
@@ -187,7 +187,7 @@ void NairnFEA::FEAAnalysis()
 
 void NairnFEA::ForcesOnEdges(void)
 {
-	long i,mi0,ni0,ii,mi,ni,iel;
+	int i,mi0,ni0,ii,mi,ni,iel;
 	int numnds;
 	EdgeBC *nextEdge=firstEdgeBC;
 	double re[17];		// max free * max nodes in element + 1
@@ -243,7 +243,7 @@ void NairnFEA::ForcesOnEdges(void)
 
 void NairnFEA::BuildStiffnessMatrix(void)
 {
-    long i,j,iel,mi0,ni0,mi,ni,mj0,nj0,ind,mj,nj;
+    int i,j,iel,mi0,ni0,mi,ni,mj0,nj0,ind,mj,nj;
     int numnds,ii,jj;
     
     // allocate memory for stiffness matrix and zero it
@@ -259,7 +259,7 @@ void NairnFEA::BuildStiffnessMatrix(void)
 											"NairnFEA::BuildStiffnessMatrix");
 											
 	// allocate each column
-	long baseAddr=0;
+	int baseAddr=0;
     for(i=1;i<=nband;i++)
 	{	st[i]=&stiffnessMemory[baseAddr];
 		st[i]--;					// to make it 1 based
@@ -334,9 +334,9 @@ void NairnFEA::BuildStiffnessMatrix(void)
 	Calculate bandwidth
 ***********************************************************/
 
-long NairnFEA::GetBandWidth(void)
+int NairnFEA::GetBandWidth(void)
 {
-    long nband=1,i;
+    int nband=1,i;
 	int minn,maxn;
     
     for(i=0;i<nelems;i++)
@@ -364,7 +364,7 @@ long NairnFEA::GetBandWidth(void)
 
 void NairnFEA::DisplacementResults(void)
 {
-    long i,ind=0,maxi,ii;
+    int i,ind=0,maxi,ii;
     char fline[200];
     
     if(outFlags[DISPLACEMENT_OUT]=='N') return;
@@ -389,11 +389,11 @@ void NairnFEA::DisplacementResults(void)
     
     	// 2D output
         if(nfree==2)
-            sprintf(fline,"%5ld %15.7e %15.7e",i,1000.*rm[ind-1],1000.*rm[ind]);
+            sprintf(fline,"%5d %15.7e %15.7e",i,1000.*rm[ind-1],1000.*rm[ind]);
         
         // 3D output
         else if(nfree==3)
-        {   sprintf(fline,"%5ld %15.7e %15.7e %15.7e",i,1000.*rm[ind-2],
+        {   sprintf(fline,"%5d %15.7e %15.7e %15.7e",i,1000.*rm[ind-2],
                                             1000.*rm[ind-1],1000.*rm[ind]);
         }
         
@@ -410,7 +410,7 @@ void NairnFEA::DisplacementResults(void)
 void NairnFEA::ForceStressEnergyResults(void)
 {
     int i,j,iel,ind,kftemp=0,kstemp=0,numnds;
-    long nodeNum;
+    int nodeNum;
     char gline[16],fline[200];
 	
     if(outFlags[FORCE_OUT]!='N' || outFlags[ELEMSTRESS_OUT]!='N')
@@ -447,7 +447,7 @@ void NairnFEA::ForceStressEnergyResults(void)
 
             // print force
             if(kftemp==1)
-            {	sprintf(fline,"%5s   %5ld     %15.7e     %15.7e",gline,
+            {	sprintf(fline,"%5s   %5d     %15.7e     %15.7e",gline,
                                 nodeNum,-se[ind][7],-se[ind+1][7]);
                 cout << fline << endl;
                 strcpy(gline,"     ");
@@ -481,7 +481,7 @@ void NairnFEA::ForceStressEnergyResults(void)
         {   nodeNum=theElements[iel]->nodes[j-1];
         
             if(kstemp==1)
-            {   sprintf(fline,"%5s   %5ld     %15.7e     %15.7e     %15.7e",
+            {   sprintf(fline,"%5s   %5d     %15.7e     %15.7e     %15.7e",
                             gline,nodeNum,1.e-6*se[j][1],1.e-6*se[j][2],1.e-6*se[j][3]);
                 cout << fline << endl;
                 strcpy(gline,"     ");
@@ -508,7 +508,7 @@ void NairnFEA::ForceStressEnergyResults(void)
             for(j=1;j<=numnds;j++)
             {   nodeNum=theElements[iel]->nodes[j-1];
                 if(kstemp==1)
-                {	sprintf(fline,"%5s   %5ld     %15.7e     %15.7e     %15.7e",
+                {	sprintf(fline,"%5s   %5d     %15.7e     %15.7e     %15.7e",
                                     gline,nodeNum,1.e-6*se[j][4],(double)0.0,(double)0.0);
                     cout << fline << endl;
                 }
@@ -532,7 +532,7 @@ void NairnFEA::ForceStressEnergyResults(void)
 
 void NairnFEA::AvgNodalStresses(void)
 {
-    long numshw,ii,i;
+    int numshw,ii,i;
     
     if(outFlags[AVGSTRESS_OUT]=='N') return;
     
@@ -581,7 +581,7 @@ void NairnFEA::ReactionResults(void)
 void NairnFEA::EnergyResults(void)
 {
     double temp;
-    long incolm,i,ind;
+    int incolm,i,ind;
     char fline[200];
     
     if(outFlags[ENERGY_OUT]=='N') return;
@@ -599,12 +599,12 @@ void NairnFEA::EnergyResults(void)
     for(i=1;i<=incolm;i++)
     {	ind=i+incolm;
         if(ind<=nelems)
-        {   sprintf(fline,"%5ld     %15.7e               %5ld     %15.7e",
+        {   sprintf(fline,"%5d     %15.7e               %5d     %15.7e",
                     i,theElements[i-1]->strainEnergy,ind,theElements[ind-1]->strainEnergy);
             temp+=theElements[ind-1]->strainEnergy;
         }
         else
-            sprintf(fline,"%5ld     %15.7e",i,theElements[i-1]->strainEnergy);
+            sprintf(fline,"%5d     %15.7e",i,theElements[i-1]->strainEnergy);
         temp+=theElements[i-1]->strainEnergy;
         cout << fline << endl;
     }

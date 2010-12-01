@@ -7,7 +7,6 @@
 ********************************************************************************/
 
 #include "Materials/JohnsonCook.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
 

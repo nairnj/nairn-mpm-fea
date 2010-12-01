@@ -14,7 +14,7 @@ double ElementBase::gridTolerance=1.e20;
 
 // Element globals
 ElementBase **theElements;	// list of elements
-long nelems=0;			// number of elements
+int nelems=0;			// number of elements
 
 #ifdef MPM_CODE
 bool ElementBase::useGimp=FALSE;
@@ -33,14 +33,14 @@ void ElementBase::PrintElement(ostream &os,int np)
     
     // write num and elemID
 #ifdef MPM_CODE
-	sprintf(eline,"%5ld %2d  ",num,elemID);
+	sprintf(eline,"%5d %2d  ",num,elemID);
 #else
     if(np==AXI_SYM)
-    {   sprintf(eline,"%5ld %2d %2d  %7.2lf            ",
+    {   sprintf(eline,"%5d %2d %2d  %7.2lf            ",
                             num,elemID,material,GetAngleInDegrees());
     }
     else  
-    {	sprintf(eline,"%5ld %2d %2d  %7.2lf %10.5lf ",
+    {	sprintf(eline,"%5d %2d %2d  %7.2lf %10.5lf ",
                             num,elemID,material,GetAngleInDegrees(),GetThickness());
     }
 #endif
@@ -48,7 +48,7 @@ void ElementBase::PrintElement(ostream &os,int np)
     
     // write each node number
     for(i=0;i<numnds;i++)
-    {	sprintf(eline,"%5ld ",nodes[i]);
+    {	sprintf(eline,"%5d ",nodes[i]);
         os << eline;
     }
     os << endl;
@@ -122,7 +122,7 @@ bool ElementBase::IntersectsBox(double xorig,double yorig,double xlength,double 
 int ElementBase::NumberSides(void) { return 4; }
 
 // return 0-based node number for node i where i is 1 to numnds
-long ElementBase::NodeIndex(int i) { return nodes[i-1]-1; }
+int ElementBase::NodeIndex(int i) { return nodes[i-1]-1; }
 
 #pragma mark CLASS METHODS
 

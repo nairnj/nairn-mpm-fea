@@ -21,13 +21,13 @@ class NodalDispBC : public FEABoundaryCondition
 		double angle;
         
         // constructors and destructors
-        NodalDispBC(long,int);
-		NodalDispBC(long,int,double);
-		void DefaultSetup(long,int,double);
+        NodalDispBC(int,int);
+		NodalDispBC(int,int,double);
+		void DefaultSetup(int,int,double);
 		
         // methods
         NodalDispBC *PrintBC(ostream &);
-        NodalDispBC *FixOrRotate(double **,double *,long,long,int);
+        NodalDispBC *FixOrRotate(double **,double *,int,int,int);
 		NodalDispBC *Unrotate(double *,int);
         void PrintReaction(void);
 		NodalDispBC *MapNodes(int *);

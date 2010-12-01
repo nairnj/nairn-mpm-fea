@@ -673,7 +673,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	// a velocity BC
     else if(strcmp(xName,"fix")==0)
 	{	ValidateCommand(xName,FIXEDNODES,ANY_DIM);
-    	long node=0;
+    	int node=0;
 		int dof=0,style=CONSTANT_VALUE;
         double ftime=0.,skewAngle=0.;
     	numAttr=attrs.getLength();
@@ -681,7 +681,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"node")==0)
-            	sscanf(value,"%ld",&node);
+            	sscanf(value,"%d",&node);
             else if(strcmp(aName,"dof")==0)
             	sscanf(value,"%d",&dof);
             else if(strcmp(aName,"style")==0)
@@ -735,14 +735,14 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	// A particle load
     else if(strcmp(xName,"load")==0)
 	{	ValidateCommand(xName,LOADEDPOINTS,ANY_DIM);
-    	long ptNum=0;
+    	int ptNum=0;
 		int dof=0,style=1;
     	numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"pt")==0)
-				sscanf(value,"%ld",&ptNum);
+				sscanf(value,"%d",&ptNum);
             else if(strcmp(aName,"style")==0)
 				sscanf(value,"%d",&style);
             else if(strcmp(aName,"dof")==0)

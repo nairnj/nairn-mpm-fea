@@ -70,7 +70,7 @@ TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr
 void ConductionTask::GetValues(double stepTime)
 {
 	// convert to actual temperatires
-	long i;
+	int i;
     for(i=1;i<=nnodes;i++)
 	{   if(nd[i]->NumberNonrigidParticles()>0)
 			nd[i]->gTemperature/=nd[i]->gRhoVCp;
@@ -102,7 +102,7 @@ void ConductionTask::GetValues(double stepTime)
 // Task 1b - get gradients in Vp * cp on particles
 void ConductionTask::GetGradients(double stepTime)
 {
-    long i,p,iel;
+    int i,p,iel;
     double fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds],zDeriv[MaxShapeNds];
 	int numnds,nds[MaxShapeNds];
 	
@@ -158,7 +158,7 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double s
 TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
 {
     // Paste back noBC temperature
-    long i;
+    int i;
     NodalTempBC *nextBC=firstTempBC;
     while(nextBC!=NULL)
         nextBC=nextBC->PasteNodalTemperature(nd[nextBC->GetNodeNum()]);
@@ -187,7 +187,7 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
 TransportTask *ConductionTask::TransportRates(double deltime)
 {
 	// convert forces to temperature rates
-	long i;
+	int i;
     for(i=1;i<=nnodes;i++)
 	{   if(nd[i]->NumberNonrigidParticles()>0)
 			nd[i]->fcond/=nd[i]->gRhoVCp;
@@ -211,7 +211,7 @@ TransportTask *ConductionTask::MoveTransportValue(MPMBase *mptr,double deltime)
 TransportTask *ConductionTask::UpdateNodalValues(double tempTime)
 {
 	// add for each node
-	long i;
+	int i;
     for(i=1;i<=nnodes;i++)
 	{   if(nd[i]->NumberNonrigidParticles()>0)
 			nd[i]->gTemperature+=nd[i]->fcond*tempTime;

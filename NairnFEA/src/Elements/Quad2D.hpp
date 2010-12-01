@@ -21,7 +21,7 @@ class Quad2D : public ElementBase
         double thickness;
         
         // constructors
-        Quad2D(long,long *,int,double,double);
+        Quad2D(int,int *,int,double,double);
         
         // prototypes
 		virtual int FaceNodes(void);

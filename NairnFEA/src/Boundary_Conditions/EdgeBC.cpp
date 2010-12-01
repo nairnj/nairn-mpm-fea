@@ -14,7 +14,7 @@ EdgeBC *firstEdgeBC=NULL;
 
 #pragma mark EdgeBC: Constructors and Destructors
 
-EdgeBC::EdgeBC(long elemNum,int faceNum,int dirNum) : FEABoundaryCondition()
+EdgeBC::EdgeBC(int elemNum,int faceNum,int dirNum) : FEABoundaryCondition()
 {
 	element=elemNum;
 	face=faceNum;
@@ -35,7 +35,7 @@ EdgeBC *EdgeBC::PrintEdgeLoad(void)
 	else
 		strcpy(loadType,"Shear1");
 	
-	sprintf(nline,"%5ld  %2d  %6s",element,face,loadType);
+	sprintf(nline,"%5d  %2d  %6s",element,face,loadType);
     cout << nline;
 	
 	switch(facenodes)
@@ -75,5 +75,5 @@ bool EdgeBC::SameDofSetting(EdgeBC *rhs)
 }
 
 // zero based element index
-long EdgeBC::ElementIndex(void) { return element-1; }
+int EdgeBC::ElementIndex(void) { return element-1; }
 

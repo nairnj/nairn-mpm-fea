@@ -7,7 +7,6 @@
 ********************************************************************************/
 
 #include "Materials/MaterialBase.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 
 #pragma mark MaterialBase::Initialization
 

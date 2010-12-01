@@ -15,7 +15,7 @@
 #pragma mark ElementBase3D::Constructors and Destructors
 
 // main constructor - pass up the chain
-ElementBase3D::ElementBase3D(long eNum,long *eNode) : ElementBase(eNum,eNode)
+ElementBase3D::ElementBase3D(int eNum,int *eNode) : ElementBase(eNum,eNode)
 {
 }
 

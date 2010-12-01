@@ -20,7 +20,7 @@ NodalVelBC *reuseRigidVelocityBC=NULL;
 #pragma mark NodalVelBC::Constructors and Destructors
 
 // MPM Constructors
-NodalVelBC::NodalVelBC(long num,int dof,int setStyle,double velocity,double argTime)
+NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTime)
 		: BoundaryCondition(setStyle,velocity,argTime)
 {
     nodeNum=num;
@@ -41,7 +41,7 @@ NodalVelBC::~NodalVelBC()
 }
 
 // Reuse Rigid properties
-BoundaryCondition *NodalVelBC::SetRigidProperties(long num,int dof,int setStyle,double velocity)
+BoundaryCondition *NodalVelBC::SetRigidProperties(int num,int dof,int setStyle,double velocity)
 {	// set dir and direction
     dir = dof==3 ? Z_DIRECTION : dof ;		// change 3 to Z_DIRECTION (4) bit location
 	skewAngle=0.;							// cw rotation angle from positive x axis in degrees
@@ -70,7 +70,7 @@ BoundaryCondition *NodalVelBC::PrintBC(ostream &os)
 {
     char nline[200];
 	int outdir = dir==Z_DIRECTION ? 3 : dir ;
-	sprintf(nline,"%5ld %2d %2d %15.7e %15.7e %7.2lf",nodeNum,outdir,style,value,
+	sprintf(nline,"%5d %2d %2d %15.7e %15.7e %7.2lf",nodeNum,outdir,style,value,
 					ftime,skewAngle*180./PI_CONSTANT);
     os << nline;
 	PrintFunction(os);

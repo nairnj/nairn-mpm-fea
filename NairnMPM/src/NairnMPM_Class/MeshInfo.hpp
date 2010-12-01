@@ -38,7 +38,7 @@ class MeshInfo
 		
 		// Accessors
 		void SetCartesian(int,double,double,double);
-		void SetElements(long,long,long,double,double,double);
+		void SetElements(int,int,int,double,double,double);
 		void SetParticleLength(int);
 		int GetCartesian(void);
 		double GetMinCellDimension(void);

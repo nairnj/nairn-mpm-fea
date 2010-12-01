@@ -206,10 +206,10 @@ void MeshInfo::SetCartesian(int style,double xcell,double ycell,double zcell)
 }
 
 // set grid style (only set by <Grid> command). For 2D, d=0 and z is the specified thickness, or 1.0 by default.
-void MeshInfo::SetElements(long h,long v,long d,double x,double y,double z)
-{	horiz=(int)h;
-	vert=(int)v;
-	depth=(int)d;
+void MeshInfo::SetElements(int h,int v,int d,double x,double y,double z)
+{	horiz=h;
+	vert=v;
+	depth=d;
 	xmin=x;
 	ymin=y;
 	zmin=z;

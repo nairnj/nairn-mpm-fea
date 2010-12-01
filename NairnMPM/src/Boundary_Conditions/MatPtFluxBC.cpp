@@ -21,7 +21,7 @@ MatPtFluxBC *firstFluxPt=NULL;
 *******************************************************************/
 
 // Constructors
-MatPtFluxBC::MatPtFluxBC(long num,int dof,int sty) : MatPtLoadBC(num,dof,sty)
+MatPtFluxBC::MatPtFluxBC(int num,int dof,int sty) : MatPtLoadBC(num,dof,sty)
 {
 }
 
@@ -34,7 +34,7 @@ BoundaryCondition *MatPtFluxBC::PrintBC(ostream &os)
 {
     char nline[200];
     
-    sprintf(nline,"%5ld %2d %2d %15.7e %15.7e",ptNum,direction,style,value,ftime);
+    sprintf(nline,"%5d %2d %2d %15.7e %15.7e",ptNum,direction,style,value,ftime);
     os << nline;
 	PrintFunction(os);
 	

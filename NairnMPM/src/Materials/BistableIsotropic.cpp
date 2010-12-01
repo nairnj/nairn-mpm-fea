@@ -9,7 +9,6 @@
 #include "Materials/BistableIsotropic.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 

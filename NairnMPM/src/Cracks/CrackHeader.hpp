@@ -102,7 +102,7 @@ class CrackHeader : public LinkedObject
         static double Triangle(double,double,double,double,double,double);
 
     private:
-        long numberSegments;
+        int numberSegments;
         double xmin,xmax,ymin,ymax;
 		int fixedCrack,number;
 		double crackFriction,crackDn,crackDnc,crackDt;

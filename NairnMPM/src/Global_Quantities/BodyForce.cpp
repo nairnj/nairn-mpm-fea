@@ -7,7 +7,6 @@
 ********************************************************************************/
 
 #include "Global_Quantities/BodyForce.hpp"
-#include "Read_XML/CommonReadHandler.hpp"
 #include "Read_XML/mathexpr.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 
@@ -148,11 +147,11 @@ void BodyForce::UpdateAlpha(double delTime,double utime)
 void BodyForce::SetTargetFunction(char *bcFunction)
 {
 	if(bcFunction==NULL)
-		throw SAXException("Target energy function of time is missing");
+		ThrowSAXException("Target energy function of time is missing");
 	if(strlen(bcFunction)==0)
-		throw SAXException("Target energy function of time is missing");
+		ThrowSAXException("Target energy function of time is missing");
 	if(function!=NULL)
-		throw SAXException("Duplicate target energy functions of time");
+		ThrowSAXException("Duplicate target energy functions of time");
 	
 	// create variable
 	if(keTimeArray[0]==NULL)
@@ -162,18 +161,18 @@ void BodyForce::SetTargetFunction(char *bcFunction)
 	// create the function and check it
 	function=new ROperation(bcFunction,1,keTimeArray);
 	if(function->HasError())
-		throw SAXException("Target energy function of time is not valid");
+		ThrowSAXException("Target energy function of time is not valid");
 }
 
 // set function for grid damping
 void BodyForce::SetGridDampingFunction(char *bcFunction)
 {
 	if(bcFunction==NULL)
-		throw SAXException("Grid damping function of time is missing");
+		ThrowSAXException("Grid damping function of time is missing");
 	if(strlen(bcFunction)==0)
-		throw SAXException("Grid damping function of time is missing");
+		ThrowSAXException("Grid damping function of time is missing");
 	if(gridfunction!=NULL)
-		throw SAXException("Duplicate grid damping functions of time");
+		ThrowSAXException("Duplicate grid damping functions of time");
 	
 	// create variable
 	if(gTimeArray[0]==NULL)
@@ -183,7 +182,7 @@ void BodyForce::SetGridDampingFunction(char *bcFunction)
 	// create the function and check it
 	gridfunction=new ROperation(bcFunction,1,gTimeArray);
 	if(gridfunction->HasError())
-		throw SAXException("Grid damping function of time is not valid");
+		ThrowSAXException("Grid damping function of time is not valid");
 }
 
 
