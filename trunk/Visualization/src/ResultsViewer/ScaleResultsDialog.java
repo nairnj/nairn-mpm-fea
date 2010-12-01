@@ -20,7 +20,7 @@ public class ScaleResultsDialog extends JNDialog
 	
 	// initialize
 	ScaleResultsDialog(DocViewer docCtrl)
-	{	super(docCtrl,"Scale Analysis Results","Select length and time units",
+	{	super(docCtrl,"Scale Results","Select length and time units",
 			" OK ","Cancel",null);
 		
 		// units menus
