@@ -21,7 +21,11 @@ The version number is coded in the constructor of the `NairnMPM.cpp` class:
 NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions currently in this project are as follows:
 
   * Current trunk Version
-    * Working on NairnMPM 8.0.1
+    * Working on NairnMPM 8.1.0
+    * Converted to using Xerces 3.1.1 and must link to 3.x or newer because new Xerces is not compatible with Xerces 2.8 or older.
+    * Converted all `longs` to `ints` to avoid any potential machine-dependent issues in 64 bit compiles (NairnMPM can compile as 32 bit or 64 bit, and must match Xerces library bits)
+    * Found bug in some 2D contact depending on machine/compiler combination and how they treated un-initialized doubles.
+    * `min`, `max`, `min+`, _etc._ option in boundary conditions now enhanced to `min+n`, `min-n` (_etc._) where `n` is an floating point number to specify number of cells relative to edge of the grid. This option can now also be used when using shapes to create material points.
     * Changed `q` in user-defined functions to mean rotation during the simulation rather then material angle it meant before. Changed in 8.0.1 and it will invalidate old input files that used `q` in functions on particles that started with non-zero rotation angle.
     * Rewrote `MPMStep()` to organize all tasks into task objects. The tasks can be profiled. A future plan is to optimize each task, perhaps for multi-core processors.
     * Added `AltPropagate` command to allow competing fracture modes. Its initial use is for competition between interface fracture and fracture turning into the bulk.
