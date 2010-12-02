@@ -27,7 +27,7 @@ public class CmdViewer extends JNCmdTextDocument
 	// Initialize
 	//----------------------------------------------------------------------------
 	
-	CmdViewer(String aType)
+	public CmdViewer(String aType)
 	{	super(aType,null,new ConsolePane());
 		soutConsole=(ConsolePane)console;
 	
@@ -231,13 +231,8 @@ public class CmdViewer extends JNCmdTextDocument
 		shell.append("cd ");
 		String shellCD=outFile.getParent();
 		if(NairnFEAMPMViz.isWindowsOS())
-		{	shellCD=shellCD.replace('\\','/');
-			// Replace C: by /cygdrive/c (if needed)
-			//if(shellCD.charAt(1)==':')
-			//{	char drive=shellCD.charAt(0);
-			//	if(drive<'a') drive+=32;
-			//	shellCD="/cygdrive/"+drive+shellCD.substring(2);
-			//}
+		{	//shellCD=shellCD.replace('\\','/');
+			shellCD=PathToCygwin(shellCD);
 		}
 		if(shellCD.indexOf(' ')>=0)
 			shell.append("'"+shellCD+"'; ");
@@ -246,13 +241,8 @@ public class CmdViewer extends JNCmdTextDocument
 
 		// executable (as shell command)
 		if(NairnFEAMPMViz.isWindowsOS())
-		{	myCmd=myCmd.replace('\\','/');
-			// Replace C: by /cygdrive/c (if needed)
-			//if(myCmd.charAt(1)==':')
-			//{	char drive=myCmd.charAt(0);
-			//	if(drive<'a') drive+=32;
-			//	myCmd="/cygdrive/"+drive+myCmd.substring(2);
-			//}
+		{	//myCmd=myCmd.replace('\\','/');
+			myCmd=PathToCygwin(myCmd);
 		}
 		if(myCmd.indexOf(' ')>=0)
 			shell.append("'"+myCmd+"'");
@@ -338,6 +328,7 @@ public class CmdViewer extends JNCmdTextDocument
 				}
 			}
 		}
+		dtdPath=PathToCygwin(dtdPath);
 		if(offset>0)
 		{	// insert path if needed
 			String oldDTD=initText.substring(offset,endOffset);
@@ -365,6 +356,20 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		
 		return true;
+	}
+
+	// convert Windows path to cygwin
+	private String PathToCygwin(String path)
+	{	if(JNApplication.isWindowsOS())
+		{	path=path.replace('\\','/');
+			// Replace C: by /cygdrive/c (if needed)
+			if(path.charAt(1)==':')
+			{	char drive=path.charAt(0);
+				if(drive<'a') drive+=32;
+				path="/cygdrive/"+drive+path.substring(2);
+			}
+		}
+		return path;
 	}
 
 	// save commands and return saved file (or null)
