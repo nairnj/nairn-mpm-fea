@@ -25,11 +25,11 @@ Getting Started
 <ul>
 <li><a href="#xcode">MacOS X</a>
 <ul class="lev2">
-<li><a href="#xcode">Compile using XCode</a>
-<li><a href="#term">Command-Line Compilation</a>
+<li><a href="#xcode">Compile using XCode</a></li>
+<li><a href="#term">Command-Line Compilation</a></li>
 </ul>
 </li>
-<li><a href="#windows">Windows using cygwin</a>
+<li><a href="#windows">Windows using cygwin</a></li>
 <li><a href="#eclipse">Compile using Eclipse IDE</a> - any platform
 </li>
 <li><a href="#linux">Specific Linux Systems</a>
@@ -43,7 +43,7 @@ Getting Started
 </ul></li>
 <li><a href="#other">Other Systems</a>
 <ul class="lev2">
-<li>See also <a href="#eclipse">Compile using Eclipse IDE</a>
+<li>See also <a href="#eclipse">Compile using Eclipse IDE</a></li>
 </ul>
 </li>
 
@@ -72,22 +72,24 @@ nairn-mpm-fea/Common/Projects/NairnMPM.xcodeproj
 /usr/local/lib/libxerces-c.dylib
 </pre>
 
-<p>for the library and at<p>
+<p>for the library and at</p>
 
 <pre>
 /usr/local/include
 </pre>
 
-<p>for the header files. If you download and install the <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html">NairnFEAMPM</a> package, it will install the <code>xerces</code> library (as a universal binary for all Macs) for you, but you will still need the header files. These can be obtained by downloading the 
+<p>for the header files. Since revision 274 of the <code>nairn-mpm-fea</code> project, this library must be <code>xerces 3.0</code> or newer; prior to that revision, it must be <code>xerces 2.8</code> or older. If you download and install the <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html">NairnFEAMPM</a> package, it will install the <code>xerces</code> library (as a universal binary for all Macs) for you (note: version 2.2 of the download installs <code>xerces 2.8</code>, until a new version is available you will need to manually install <code>xerces 3.1.1</code>), but you will still need the header files. These can be obtained by downloading the 
 <a href="http://xml.apache.org/xerces-c/index.html"><code>xerces</code> source code</a> from the <a href="http://www.apache.org/">Apache Software Foundation</a> web site. You can either move the header files to <code>/usr/local/include</code> or add the root <code>xerces</code> source folder you downloaded to the header search paths by editing the active target using the Project menu (you have to add it to both the <code>NairnFEA</code> and the <code>NairnMPM</code> targets).
 </p>
+
+<p>The XCode projects settings should be set to compile using the native architection of the current machine (if not, you can change them to that setting). This approach lets you compile in 64 bit (if possible) or 32 bit on other machines. In some tests, the 64 bit version is about twice as fast as a 32 bit version on that same machine. Note that the xerces library must be compile using the same number of bits as the compiled code (or it can a univerisal 32/64 bit library).</p>
 
 <p>Once the code is compiled, do a <a href="../running/index.html">test run</a> to verify it worked.
 </p>
 
 <h2><a name="term"></a>MacOS X Command-Line Compilation</h2>
 
-<p>It is also easy to compile on MacOS X using a command line approach. First install <code>xerces</code> and its header files as <a href="#xerces">explained above</a> and make sure they are in the specified default locations.
+<p>It is also easy to compile on MacOS X using a command line approach. First install <code>xerces</code> and its header files as <a href="#xerces">explained above</a> and make sure they are in the specified default locations.</p>
 
 <p>Once the variables are set, you compile <code>NairnMPM</code> using:</p>
 
@@ -115,42 +117,51 @@ make SYSTEM=mac
 <a name="windows"></a><h1>Windows Using cygwin</h1>
 
 <p>To compile and run in Windows, you need some kind of Linux/Unix environment. The recommended option is to use <a href="http://www.cygwin.com"><code>cygwin</code></a> and this documentation is based on its use. This process has be verified in both Windows XP, Windows Vista and Windows 7 (although you may need the latest <code>cygwin</code> 1.7 for Windows 7).
-<p>
+</p>
 
-<p>First you need to set up your computer to use <a href="http://www.cygwin.com"><code>cygwin</code></a>. Since this set up was neede to check out the code, these steps assume <a href="http://www.cygwin.com"><code>cygwin</code></a> is already set up. If not refer to the <a href="http://code.google.com/p/nairn-mpm-fea/wiki/Windows_Setup">Windows setup wiki page</a> for details. To next compile the code in <a href="http://www.cygwin.com"><code>cygwin</code></a> requires these additional steps:
+<p>First you need to set up your computer to use <a href="http://www.cygwin.com"><code>cygwin</code></a>. Since this set up was needed to check out the code, these steps assume <a href="http://www.cygwin.com"><code>cygwin</code></a> is already set up. If not refer to the <a href="http://code.google.com/p/nairn-mpm-fea/wiki/Windows_Setup">Windows setup wiki page</a> for details. To next compile the code in <a href="http://www.cygwin.com"><code>cygwin</code></a> requires these additional steps:</p>
 
 <ol>
 
-<li>First, you need to install <code>xerces</code> in your <code>cygwin</code> environment. Although <code>cygwin</code> has an option to install the <code>xerces</code> binary, it usually has an out-dated version. The preferred approach is to download the <code>xerces</code> source code for a newer version (2.7.0 or newer), build it, and install it. The procedure is:
+<li>First, you need to install <code>xerces</code> in your <code>cygwin</code> environment. Although <code>cygwin</code> has an option to install the <code>xerces</code> binary, it usually has an out-dated version. The preferred approach is to download the <code>xerces</code> source code for a newer version (2.7.0 or newer), build it, and install it. Since revision 274 of the <code>nairn-mpm-fea</code> project, the code requires <code>xerces 3.0</code> or newer. The procedure for <code>xerces 3.0</code> or newer is:
 <ol class="alpha">
-<li><a href="http://xerces.apache.org/xerces-c/download.cgi">Download the <code>xerces</code> source code</a>, which will be in a file such as <code>xerces-c-src_2_8_0.tar.gz</code>. Note that you should get the <code>.tar.gz</code> file instead of the <code>.zip</code> version because the <code>.zip</code> version has DOS files with carriage returns and line feeds (either in the source or inserted by Windows' zip methods) that complicate compiliation. The <code>.tar.gz</code> file is also smaller. Also note that <code>Nairn-MPM-FEA</code> and the following instructions have been tested with <code>xerces</code> 2.6 through 2.8. A new <code>xerces</code> 3.0 has recently appeared. While it is likely this lastest version would work fine, it has not been tested and the method to build the source code has changed. Consult the <a href="http://xerces.apache.org/xerces-c/build-3.html"><code>xerces</code> intructions</a> if you want to proceed with version 3.0 (note that version 2.8 can still be downloaded).</li>
+<li><a href="http://xerces.apache.org/xerces-c/download.cgi">Download the <code>xerces</code> source code</a>, which will be in a file such as <code>xerces-c-3.x.x.tar.gz</code> (with <code>x</code> being some numbers). Note that you should get the <code>.tar.gz</code> file instead of the <code>.zip</code> version because the <code>.zip</code> version has DOS files with carriage returns and line feeds (either in the source or inserted by Windows' zip methods) that may complicate compiliation. The <code>.tar.gz</code> file is also smaller.</li>
 
-<li>Move the downloaded file to the <code>cygwin</code> root directory. By default, the <code>cygwin</code> directory is installed at <code>C:\cygwin</code>. Start a <code>cygwin</code> shell and and extract the files with:
+<li>Move the downloaded file to folder in the <code>cygwin</code> system such as your home directory. By default, the <code>cygwin</code> directory is installed at <code>C:\cygwin</code>. Start a <code>cygwin</code> shell and and extract the files with:
 <pre>
-cd /
+cd (to directory with the download)
 gunzip xerces-c-src_2_8_0.tar.gz
 tar xvf xerces-c-src_2_8_0.tar
-</pre>
+</pre></li>
 
-<li>Set the <code>XERCESCROOT</code> variable in a <code>cygwin</code> bash shell to the newly extracted folder using
+<li>Go to the new folder and configure the code with:
 <pre>
-export XERCESCROOT=/xerces-c-src_2_8_0
+cd xerces-c-3.1.1
+./configure LDFLAGS=-no-undefined
 </pre>
-
-<li>Go to the <code>/xerces-c-src_2_8_0/src/xercesc</code> folder and enter the command
+This step will prepare the <code>xerces</code> source code for building. Note: if you get error messages saying that $'\r'$ command is not found it means your files are DOS files rather than Unix files. Consult a Unix expert on how to fix them or go back to step <code>a</code> and get the <code>.tar.gz</code> file this time.<br><br>
+<a name="doover"></a><font color="red">Warning</font>: It is possible some versions of <code>cygwin</code> (<i>e.g.</i>, 1.7.1) may have a conflict with <code>xerces 3.x</code> that prevents the dynamic library version from linking at runtime. If that occurs, you will have to rebuild and reinstall the library as a static-only library by returning to this step and starting over with:
 <pre>
-./runConfigure -pcygwin -cgcc -xg++
+cd xerces-c-3.1.1
+make clean
+./configure LDFLAGS=-no-undefined --disable-shared
 </pre>
-This step will prepare the <code>xerces</code> source code for building. Note: if you get error messages saying that $'\r'$ command is not found it means your files are DOS files rather than Unix files. Consult a Unix expert on how to fix them or go back to step <code>a</code> and get the <code>.tar.gz</code> file this time.
+and then proceed with the following steps. This approach did solve the problem although the <code>NairnMPM</code> and <code>NairnFEA</code> executables will by statically linked and therefore much larger.
+</li>
 
-<li>When this configuring step is done, enter the command &quot;<code>make</code>&quot; in the same folder. This step will compile <code>xerces</code>.
+<li>When this configuring step is done, enter the commands
+<pre>
+cd src
+make
+</pre>
+This step will compile <code>xerces</code> and save the librarys in the <code>xerces-c-3.1.1/.libs</code> folder.</li>
 
-<li>Finally, enter the command &quot;<code>make install</code>&quot; (still in the same folder). This step will install the compiled <code>xerces</code> libraries and needed header files in the default locations in the <code>/usr/local</code> folder.
+<li>Finally, enter the command &quot;<code>make install</code>&quot; (still in the same folder). This step will install the compiled <code>xerces</code> library and needed header files in the default locations of  <code>/usr/local/lib</code> and <code>/usr/local/include</code> folders, respectively.</li>
 
 </ol>
 </li>
 
-<li>You are now ready to compile. In a cygwin shell, navigate the the checked out folder as proceed as follows. To <code>NairnMPM</code> use:</p>
+<li>You are now ready to compile. In a cygwin shell, navigate to the checked out folder and proceed as follows. To compile <code>NairnMPM</code> use:
 
 <pre>
 cd nairn-mpm-fea/NairnMPM/build
@@ -167,7 +178,7 @@ make SYSTEM=cygwin
 <p>All source code will be compiled and the executables will be installed in <code>nairn-mpm-fea/NairnMPM/input</code> or <code>nairn-mpm-fea/NairnFEA/input</code>, respectively. You can use an additional '<code>make install</code>' command to copy each compiled executable to your <code>~/bin</code> folder if desired.
 </p>
 
-<p>If the command-line compile does not work, the most likely explanation is a problem with the <code>xerces</code> installation. You either have to install it as specified above or edit the <code>makefile</code> to recognize your custom installation. The process is documented in the <code>makefile</code> and involves editing the <code>xercesSo</code> and <code>headersPath</code> variables for your different settings.
+<p>If the command-line compile does not work, the most likely explanation is a problem with the <code>xerces</code> installation. You either have to install it as specified above or edit the <code>makefile</code> to recognize your custom installation. The process is documented in the <code>makefile</code> and involves editing the <code>xercesSo</code> and <code>headersPath</code> variables for your different settings. Another possible reason is a potential conflict with some versions of <code>cygwin</code>. If you get a linking error about <code>typeinfo</code> in <code>XMLException</code> being undefined, you will have to uninstall the library (from /usr/local/lib) and then <a href="#doover">rebuild the library</a> as a static-only library and try again.
 </p>
 </li>
 
@@ -179,7 +190,7 @@ make SYSTEM=cygwin
 <a name="eclipse"></a><h1>Compile using Eclipse IDE</h1>
 
 <p>Working with source code is easier when done using an integrated development environment (IDE) rather than using basic text editing on a collection of source files. On MacOS X, you can use the XCode IDE (free with developer tools) and the <code>nairn-mpm-fea</code> project has an <a href="#xcode">XCode project ready to use</a>. An option for any other platform (and for MacOS X too) is to use the cross-platform IDE <a href="http://www.eclipse.org" target="new">Eclipse</a>, which is an open-source and free IDE. This section explains how to compile <code>NairnMPM</code> and <code>NairnFEA</code> using <a href="http://www.eclipse.org" target="new">Eclipse</a>. Experienced Eclipse users may have better methods, but the steps explained below should work. These steps were based on and older version of Eclipse from should work similary in the latest Galileo version of Eclipse (version 3.5 or newer).
-<p>
+</p>
 
 <p>The first steps are to install and prepare Eclipse for C/C++ development as follows:
 </p>
@@ -193,12 +204,12 @@ make SYSTEM=cygwin
 
 <li>In Windows, <a href="http://www.eclipse.org" target="new">Eclipse</a> uses some <code>cygwin</code> tools and therefore projects need to know the path to the cygwin/bin folder. Thus, before creating any projects:
 <ol class="alpha">
-<li>Choose menu command to open Eclipse preferences
-<li>Find section for C/C++ &rarr; Make &rarr; New Make Projects
-<li>In the &quot;Environment&quot; section add the variable <code>PATH</code> with value <code>;C:\cygwin\bin;</code> (<i>i.e.</i>, the path to the bin direcetory of your cygwin folder). Make sure the option to append to native environment is selected.
-<li>Click OK
+<li>Choose menu command to open Eclipse preferences</li>
+<li>Find section for C/C++ &rarr; Make &rarr; New Make Projects</li>
+<li>In the &quot;Environment&quot; section add the variable <code>PATH</code> with value <code>;C:\cygwin\bin;</code> (<i>i.e.</i>, the path to the bin direcetory of your cygwin folder). Make sure the option to append to native environment is selected.</li>
+<li>Click OK</li>
 </ol>
-No such setting is required in MacOS X because, if developer tools are installed, it is automatically set up for compiling with Eclipse. On other plaftorms, some other setting may be needed for Eclipse to locate all the required tools.
+No such setting is required in MacOS X because, if developer tools are installed, it is automatically set up for compiling with Eclipse. On other plaftorms, some other setting may be needed for Eclipse to locate all the required tools.</li>
 </ol>
 
 <p>The above steps only need to be done the first time you compile <code>NairnMPM</code> and/or <code>NairnFEA</code>. Once they are done, you can proceed creating <code>NairnMPM</code> and <code>NairnFEA</code> projects as follows. These steps explain both at once. You can do both or just the one you need.
@@ -229,15 +240,15 @@ No such setting is required in MacOS X because, if developer tools are installed
 
 <li>Open the NairnMPM project properties. In the C/C++ make project settings or build settings, set the building directory to the <code>NairnMPM/build</code> folder. Repeat for NairnFEA project, setting the build folder to the <code>NairnFEA/build</code> folder. In that same window, change the <code>make</code> command from the default settings for NairnMPM to:
 <ol class="alpha">
-<li>For Windows/cygwin, change it to &quot;<code>make SYSTEM=cygwin CC=/bin/g++ RM=/bin/rm com=../Common</code>&quot;
-<li>For Mac, change it to &quot;<code>make SYSTEM=mac com=../Common</code>&quot;
-<li>For Linux, change it to &quot;<code>make com=../Common</code>&quot; (but this is untested).
+<li>For Windows/cygwin, change it to &quot;<code>make SYSTEM=cygwin CC=/bin/g++ RM=/bin/rm com=../Common</code>&quot;</li>
+<li>For Mac, change it to &quot;<code>make SYSTEM=mac com=../Common</code>&quot;</li>
+<li>For Linux, change it to &quot;<code>make com=../Common</code>&quot; (but this is untested).</li>
 </ol>
 For the NairnFEA project, change the <code>make</code> command from the default settings to:
 <ol class="alpha">
-<li>For Windows/cygwin, change it to &quot;<code>make SYSTEM=cygwin CC=/bin/g++ RM=/bin/rm com=../../NairnMPM/Common</code>&quot;
-<li>For Mac, change it to &quot;<code>make SYSTEM=mac com=../../NairnMPM/Common</code>&quot;
-<li>For Linux, change it to &quot;<code>make com=../../NairnMPM/Common</code>&quot; (but this is untested).
+<li>For Windows/cygwin, change it to &quot;<code>make SYSTEM=cygwin CC=/bin/g++ RM=/bin/rm com=../../NairnMPM/Common</code>&quot;</li>
+<li>For Mac, change it to &quot;<code>make SYSTEM=mac com=../../NairnMPM/Common</code>&quot;</li>
+<li>For Linux, change it to &quot;<code>make com=../../NairnMPM/Common</code>&quot; (but this is untested).</li>
 </ol>
 <b>Note:</b> If you only created the NairnFEA project and put the <code>Common</code> folder in that project, use <code>com=../Common</code> for each of these settings instead.
 </li>
@@ -267,7 +278,7 @@ For the NairnFEA project, change the <code>make</code> command from the default 
 <p>The code can easily be compiled on any Linux system with a c++ compiler and with <code>xerces</code> already installed. Below are details on specific systems that are already set up for compilation and are currently in use for <code>NairnMPM</code> and <code>NairnFEA</code>. See the section on <a href="#other">other systems</a> for compilation on other Linux/Unix systems.
 </p>
 
-<p>On the following specific Linux systems, the source code is set up for easy compilation and <code>xerces</code> is already installed. All you need to do is you the proper variable argument in the <code>make</code> command. The details are:
+<p>On the following specific Linux systems, the source code is set up for easy compilation and <code>xerces</code> is already installed. All you need to do is you the proper variable argument in the <code>make</code> command. The details are:</p>
 
 <a name="carbon"></a><h2>Carbon/Hedera Cluster (Oregon State University)</h2>
 
@@ -329,17 +340,17 @@ make SYSTEM=inferno
 <p>Compiling on any Linux/Unix system should be straightforward, with the most difficult step usually being installing and linking to the <code>xerces</code> library. The key steps needed for successful compilation:</p>
 
 <ol>
-<li>Use a compatible <code>C++</code> compiler. The code is known to work with <code>gcc 3.2</code> or newer (most current development is using <code>gcc 4.0</code>). It is possible other compilers will need minor changes for compilation.</li>
+<li>Use a compatible <code>C++</code> compiler. The code has been tested with at least <code>gcc 3.2</code> through <code>gcc 4.3.1</code>). It is possible other compilers will need minor changes for compilation.</li>
 
 <li>Validation and parsing of the <code>XML</code> files are handled using free third party software from the <a href="http://www.apache.org/">Apache Software Foundation</a> called the
-<a href="http://xml.apache.org/xerces-c/index.html"><code>xerces</code> validating XML parser</a>. You will need to download <code>xerces</code> and install it on your system. It is available in <a href="http://xml.apache.org/xerces-c/install.html">binary installs</a> for some systems (<i>e.g.</i>, Linux and Windows). For others systems (<i>e.g.</i>, MacOS X) you need to download the source code and <a href="http://xml.apache.org/xerces-c/build.html">build</a> it. When <a href="http://xml.apache.org/dist/xerces-c/stable/">downloading</a> <code>xerces</code> source code, look for the file <code>xerces-c-srcvvv.tar.gz</code> where <code>vvv</code> is the <code>xerces</code> version number. When <a href="http://xml.apache.org/dist/xerces-c/stable/">downloading</a> in binary form, look for <code>xerces-cvvv-xxx.tar.gz</code> where <code>xxx</code> is the system name. <code>NairnMPM</code> and <code>NairnFEA</code> are currently being developed with <code>xerces 2.8.0</code>. It should work with <code>xerces 2.3.0</code> or newer.
+<a href="http://xml.apache.org/xerces-c/index.html"><code>xerces</code> validating XML parser</a>. You will need to download <code>xerces</code> and install it on your system. It is available in <a href="http://xml.apache.org/xerces-c/install.html">binary installs</a> for some systems (<i>e.g.</i>, Linux and Windows). For others systems (<i>e.g.</i>, MacOS X) you need to download the source code and <a href="http://xml.apache.org/xerces-c/build.html">build</a> it. Since revision 274 of the <code>nairn-mpm-fea</code> project, the codes require <code>xerces 3.0</code> or newer. Prior to this revision, the codes requied <code>xerces 2.8</code> or older. Unfortunately, the new versions of <code>xerces</code> are not compatible with the older ones.
 </li>
 
-<li>Compiling of <code>NairnMPM</code> or <code>NairnFEA</code> needs access to all the <code>xerces</code> header files. These are provided in the <code>xerces</code> source code downloads. If your system has the xerces binary installed, it may not have the header files. You can get them by  <a href="http://xml.apache.org/dist/xerces-c/stable/">downloading the xerces source code</a>, even though you will not need to build it.</li>
+<li>Compiling of <code>NairnMPM</code> or <code>NairnFEA</code> needs access to all the <code>xerces</code> header files. These are provided in the <code>xerces</code> source code downloads. Even iff your system has the xerces binary installed, it may not have the header files. You can get them by  <a href="http://xml.apache.org/dist/xerces-c/stable/">downloading the xerces source code</a>, even though you will not need to build it.</li>
 
 </ol>
 
-<p>Once a suitable compiler, the <code>xerces</code> binary, and <code>xerces</code> header files are installed, compilation may require editing the <code>makefile</code>s in the <code>nairn-mpm-fea</code> folders. Specifically, you will need to edit the <code>makefile</code>s in the <code>build</code> directories (<code>NairnMPM</code> and <code>NairnFEA</code>) and set the following variables:
+<p>Once a suitable compiler, the <code>xerces</code> binary, and <code>xerces</code> header files are installed, compilation may require editing the <code>makefile</code>s in the <code>nairn-mpm-fea</code> folders. Specifically, you will need to edit the <code>makefile</code>s in the <code>build</code> directories (<code>NairnMPM</code> and <code>NairnFEA</code>) and set the following variables:</p>
 
 <ol>
 <li>The variable <code>CC</code>: set it to the desired <code>C++</code> compiler.</li>
@@ -349,7 +360,7 @@ make SYSTEM=inferno
 
 <p>After setting the variables, use a standard <code>make</code> command to compile the code.
 Once the code is compiled, do a <a href="../running/index.html">test run</a> to verify it worked.
-</p>
+If it compiles, but will not load the <code>xerces</code> library at runtime, you will have to find the system-dependent method to provide the path to the <code>xerces</code> library and make sure the system can find the <code>xerces</code> library.</p>
 
 <p>If you successfully get the code compiled and running on a system that is not listed above, please send email to <a href="mailto:John.Nairn@oregonstate.edu">John.Nairn@oregonstate.edu</a> with the system name and step-by-step instructions for compiling and running the code.</p>
 
