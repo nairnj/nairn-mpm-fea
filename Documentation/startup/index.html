@@ -142,49 +142,38 @@ make SYSTEM=mac CFLAGS=&quot;-c -O3 -arch x86_64&quot; LFLAGS=&quot;-arch x86_64
 <p>To compile and run in Windows, you need some kind of Linux/Unix environment. The recommended option is to use <a href="http://www.cygwin.com"><code>cygwin</code></a> and this documentation is based on its use. This process has be verified in both Windows XP, Windows Vista and Windows 7 (although you may need the latest <code>cygwin</code> 1.7 for Windows 7).
 </p>
 
-<p>First you need to set up your computer to use <a href="http://www.cygwin.com"><code>cygwin</code></a>. Since this set up was needed to check out the code, these steps assume <a href="http://www.cygwin.com"><code>cygwin</code></a> is already set up. If not refer to the <a href="http://code.google.com/p/nairn-mpm-fea/wiki/Windows_Setup">Windows setup wiki page</a> for details. To next compile the code in <a href="http://www.cygwin.com"><code>cygwin</code></a> requires these additional steps:</p>
+<p>First you need to set up your computer to use <a href="http://www.cygwin.com"><code>cygwin</code></a>. Since this set up was needed to check out the code, these steps assume <a href="http://www.cygwin.com"><code>cygwin</code></a> is already set up. If not refer to the <a href="http://code.google.com/p/nairn-mpm-fea/wiki/Windows_Setup">Windows setup wiki page</a> for details. The next step is to compile the code, but the first time you download the project, you will need to install <code>xerces</code> in your <a href="http://www.cygwin.com"><code>cygwin</code></a> environment (if you already have xerces installed, you can <a href="#cygcc">skip to compiling now</a>). Although <a href="http://www.cygwin.com"><code>cygwin</code></a> has an option to install the <code>xerces</code> binary, it usually has an out-dated version. You therefore will need to download the <code>xerces</code> source code, build it, and install it. Since revision 274 of the <code>nairn-mpm-fea</code> project, the code requires <code>xerces 3.0</code> or newer. The procedure for <code>xerces 3.0</code> or newer is:</p>
 
 <ol>
-
-<li>First, you need to install <code>xerces</code> in your <code>cygwin</code> environment. Although <code>cygwin</code> has an option to install the <code>xerces</code> binary, it usually has an out-dated version. The preferred approach is to download the <code>xerces</code> source code for a newer version (2.7.0 or newer), build it, and install it. Since revision 274 of the <code>nairn-mpm-fea</code> project, the code requires <code>xerces 3.0</code> or newer. The procedure for <code>xerces 3.0</code> or newer is:
-<ol class="alpha">
 <li><a href="http://xerces.apache.org/xerces-c/download.cgi">Download the <code>xerces</code> source code</a>, which will be in a file such as <code>xerces-c-3.x.x.tar.gz</code> (with <code>x</code> being some numbers). Note that you should get the <code>.tar.gz</code> file instead of the <code>.zip</code> version because the <code>.zip</code> version has DOS files with carriage returns and line feeds (either in the source or inserted by Windows' zip methods) that may complicate compiliation. The <code>.tar.gz</code> file is also smaller.</li>
 
-<li>Move the downloaded file to folder in the <code>cygwin</code> system such as your home directory. By default, the <code>cygwin</code> directory is installed at <code>C:\cygwin</code>. Start a <code>cygwin</code> shell and and extract the files with:
+<li>Move the downloaded file to a folder such as the root <code>cygwin</code> folder, which by default is at Windows path <code>C:\cygwin\</code> (<font color="red">warning</font>: the <code>xerces</code> install will fail if the path to the folder in <code>cygwin</code> contains any spaces; if you use the recommended root folder, the path will be &quot;<code>/</code>&quot; which has no spaces and is therefore safe).</li>
+<li>Start a <code>cygwin</code> shell and and extract the files with:
 <pre>
-cd (to directory with the download)
-gunzip xerces-c-src_2_8_0.tar.gz
-tar xvf xerces-c-src_2_8_0.tar
-</pre></li>
+cd /
+gunzip xerces-c-3.x.x.tar.gz
+tar xvf xerces-c-3.x.xtar</pre>
+where the <code>x</code>'s are replaced by numbers in your downloaded file.</li>
 
 <li>Go to the new folder and configure the code with:
 <pre>
-cd xerces-c-3.1.1
+cd xerces-c-3.x.x
 ./configure LDFLAGS=-no-undefined
 </pre>
-This step will prepare the <code>xerces</code> source code for building. Note: if you get error messages saying that $'\r'$ command is not found it means your files are DOS files rather than Unix files. Consult a Unix expert on how to fix them or go back to step <code>a</code> and get the <code>.tar.gz</code> file this time.<br><br>
-<a name="doover"></a><font color="red">Warning</font>: It is possible some versions of <code>cygwin</code> (<i>e.g.</i>, 1.7.1) may have a conflict with <code>xerces 3.x</code> that prevents the dynamic library version from linking at runtime. If that occurs, you will have to rebuild and reinstall the library as a static-only library by returning to this step and starting over with:
-<pre>
-cd xerces-c-3.1.1
-make clean
-./configure LDFLAGS=-no-undefined --disable-shared
-</pre>
-and then proceed with the following steps. This approach did solve the problem although the <code>NairnMPM</code> and <code>NairnFEA</code> executables will by statically linked and therefore much larger.
+This step will prepare the <code>xerces</code> source code for building. Note: if you get error messages saying that $'\r'$ command is not found it means your files are DOS files rather than Unix files. Consult a Unix expert on how to fix them or go back to step <code>1</code> and get the <code>.tar.gz</code> file this time.
 </li>
 
 <li>When this configuring step is done, enter the commands
 <pre>
 cd src
-make
-</pre>
-This step will compile <code>xerces</code> and save the librarys in the <code>xerces-c-3.1.1/.libs</code> folder.</li>
+make</pre>
+This step will compile <code>xerces</code> and save the librarys in the <code>xerces-c-3.x.x/.libs</code> folder.</li>
 
-<li>Finally, enter the command &quot;<code>make install</code>&quot; (still in the same folder). This step will install the compiled <code>xerces</code> library and needed header files in the default locations of  <code>/usr/local/lib</code> and <code>/usr/local/include</code> folders, respectively.</li>
+<li>Finally, enter the command &quot;<code>make install</code>&quot; (still in the same folder). This step will install the compiled <code>xerces</code> libraries and needed header files in the default locations of <code>/usr/local/lib</code> and <code>/usr/local/include</code> folders, respectively.</li>
 
 </ol>
-</li>
 
-<li>You are now ready to compile. In a cygwin shell, navigate to the checked out folder and proceed as follows. To compile <code>NairnMPM</code> use:
+<p><a name="cygcc"></a>You are now ready to compile the <code>nairn-mpm-fea</code> code. In a <code>cygwin</code> shell, navigate to the checked out <code>nairn-mpm-fea</code> and proceed as follows. To compile <code>NairnMPM</code> use:
 
 <pre>
 cd nairn-mpm-fea/NairnMPM/build
@@ -201,7 +190,7 @@ make SYSTEM=cygwin
 <p>All source code will be compiled and the executables will be installed in <code>nairn-mpm-fea/NairnMPM/input</code> or <code>nairn-mpm-fea/NairnFEA/input</code>, respectively. You can use an additional '<code>make install</code>' command to copy each compiled executable to your <code>~/bin</code> folder if desired.
 </p>
 
-<p>If the command-line compile does not work, the most likely explanation is a problem with the <code>xerces</code> installation. You either have to install it as specified above or edit the <code>makefile</code> to recognize your custom installation. The process is documented in the <code>makefile</code> and involves editing the <code>xercesSo</code> and <code>headersPath</code> variables for your different settings. Another possible reason is a potential conflict with some versions of <code>cygwin</code>. If you get a linking error about <code>typeinfo</code> in <code>XMLException</code> being undefined, you will have to uninstall the library (from /usr/local/lib) and then <a href="#doover">rebuild the library</a> as a static-only library and try again.
+<p>If the command-line compile does not work, the most likely explanation is a problem with the <code>xerces</code> installation. You either have to install it as specified above or edit the <code>makefile</code> to recognize your custom installation. The process is documented in the <code>makefile</code> and involves editing the <code>xercesSo</code> and <code>headersPath</code> variables for your different settings. Another possible reason is a potential conflict with some <code>cygwin</code>/Windows combinations. If you get a linking error about undefined references to <code>typeinfo</code>, you have encountered a dynamic linking problem. It can be fixed by deleting the dynamic library at <code>/usr/local/lib/libserces-c.dll.a</code> and then use the '<code>make SYSTEM=cygwin</code>' command to link again. This change will cause the code to link statically. The resulting executables will be much larger but should work fine.
 </p>
 </li>
 
@@ -215,17 +204,17 @@ make SYSTEM=cygwin
 <p>Working with source code is easier when done using an integrated development environment (IDE) rather than using basic text editing on a collection of source files. On MacOS X, you can use the XCode IDE (free with developer tools) and the <code>nairn-mpm-fea</code> project has an <a href="#xcode">XCode project ready to use</a>. An option for any other platform (and for MacOS X too) is to use the cross-platform IDE <a href="http://www.eclipse.org" target="new">Eclipse</a>, which is an open-source and free IDE. This section explains how to compile <code>NairnMPM</code> and <code>NairnFEA</code> using <a href="http://www.eclipse.org" target="new">Eclipse</a>. Experienced Eclipse users may have better methods, but the steps explained below should work. These steps were based on and older version of Eclipse from should work similary in the latest Galileo version of Eclipse (version 3.5 or newer).
 </p>
 
-<p>The first steps are to install and prepare Eclipse for C/C++ development as follows:
+<p>The first steps are to install and prepare <a href="http://www.eclipse.org" target="new">Eclipse</a> for C/C++ development as follows:
 </p>
 
 <ol>
-<li>Before using <a href="http://www.eclipse.org" target="new">Eclipse</a> on a new platform, you should compile the <code>Nairn-MPM-FEA</code> code using command line methods for your platform. This task verifies that you have the <code>xerces</code> library correctly installed, that the <code>makefile</code>s are valid for your system, and, for Windows, that <a href="#windows">cygwin is correctly installed</a>. All these items are prerequisites to successful compilation using <a href="http://www.eclipse.org" target="new">Eclipse</a>.
+<li>Before using <a href="http://www.eclipse.org" target="new">Eclipse</a> on a new platform, you should compile the <code>nairn-mpm-fea</code> code using command line methods for your platform. This task verifies that you have the <code>xerces</code> library correctly installed, that the <code>makefile</code>s are valid for your system, and, for Windows, that <a href="#windows">cygwin is correctly installed</a>. All these items are prerequisites to successful compilation using <a href="http://www.eclipse.org" target="new">Eclipse</a>.
 </li>
 
 <li>Download and install <a href="http://www.eclipse.org" target="new">Eclipse</a>. As downloaded, <a href="http://www.eclipse.org" target="new">Eclipse</a> may only be set up for Java development, and not ready for C/C++ development (depending on what you download). To configure for C/C++ development, choose the menu command &quot;Help &rarr; Software Update &rarr; Find and Install...&quot; and follow the procedures to install the C/C++ Development Tools (or CDT)
 </li>
 
-<li>In Windows, <a href="http://www.eclipse.org" target="new">Eclipse</a> uses some <code>cygwin</code> tools and therefore projects need to know the path to the cygwin/bin folder. Thus, before creating any projects:
+<li>In Windows, <a href="http://www.eclipse.org" target="new">Eclipse</a> uses some <code>cygwin</code> tools and therefore projects need to know the path to the <code>cygwin/bin</code> folder. Thus, before creating any projects:
 <ol class="alpha">
 <li>Choose menu command to open Eclipse preferences</li>
 <li>Find section for C/C++ &rarr; Make &rarr; New Make Projects</li>
