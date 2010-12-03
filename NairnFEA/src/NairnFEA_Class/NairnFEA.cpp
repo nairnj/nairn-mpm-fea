@@ -629,7 +629,7 @@ char *NairnFEA::CodeName(void)
 void NairnFEA::Usage()
 {
     CoutCodeVersion();
-    cout << "    Expects Xerces 2.8.0 or newer" << endl;
+    cout << "    Expects Xerces 3.1.1 or newer" << endl;
     cout << "\nUsage:\n"
             "    NairnFEA [-options] <InputFile>\n\n"
             "This program reads the <InputFile> and does an FEA analysis.\n"
