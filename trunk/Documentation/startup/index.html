@@ -15,7 +15,7 @@ Getting Started
 
 <h1><a name="top"></a>Compiling NairnMPM and NairnFEA Source Code</h1>
 
-<p>After checking out the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>Nairn-MPM-FEA</code> project</a>, the next step is to compile it. All code-engine source code is standard <code>C++</code>  and it should be possible to compile on a variety of systems. This page gives details on some common systems. Users are responsible for compilation on other systems.</p>
+<p>After checking out the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a>, the next step is to compile it. All code-engine source code is standard <code>C++</code>  and it should be possible to compile on a variety of systems. This page gives details on some common systems. Users are responsible for compilation on other systems.</p>
 
 
 <h2>Documented Systems</h2>
@@ -63,10 +63,10 @@ Getting Started
 nairn-mpm-fea/Common/Projects/NairnMPM.xcodeproj
 </pre>
 
-<p>This project is called <code>NairnMPM</code>, but it includes all MPM and FEA source code in two targets named <code>NairnMPM</code> and <code>NairnFEA</code>. Select the desired target and use build command to compile the code.
+<p>This project is called <code>NairnMPM</code>, but it includes all MPM and FEA source code in two targets named <code>NairnMPM</code> and <code>NairnFEA</code>.
 </p>
 
-<a name="xerces"></a><p>Before the code will compile and run, you will need an installed version of the <code>Xerces</code> library and a copy of the <code>Xerces</code> header files. The XCode project assumes they are installed in the default locations for MacOS X or at</P>
+<p><a name="xerces"></a>Before you can compile and run the project, however, you will need an installed version  of the <code>xerces</code> library and a copy of the <code>xerces</code> header files. The XCode project assumes they are installed in the default locations for MacOS X or at</>
 
 <pre>
 /usr/local/lib/libxerces-c.dylib
@@ -78,32 +78,55 @@ nairn-mpm-fea/Common/Projects/NairnMPM.xcodeproj
 /usr/local/include
 </pre>
 
-<p>for the header files. Since revision 274 of the <code>nairn-mpm-fea</code> project, this library must be <code>xerces 3.0</code> or newer; prior to that revision, it must be <code>xerces 2.8</code> or older. If you download and install the <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html">NairnFEAMPM</a> package, it will install the <code>xerces</code> library (as a universal binary for all Macs) for you (note: version 2.2 of the download installs <code>xerces 2.8</code>, until a new version is available you will need to manually install <code>xerces 3.1.1</code>), but you will still need the header files. These can be obtained by downloading the 
-<a href="http://xml.apache.org/xerces-c/index.html"><code>xerces</code> source code</a> from the <a href="http://www.apache.org/">Apache Software Foundation</a> web site. You can either move the header files to <code>/usr/local/include</code> or add the root <code>xerces</code> source folder you downloaded to the header search paths by editing the active target using the Project menu (you have to add it to both the <code>NairnFEA</code> and the <code>NairnMPM</code> targets).
-</p>
+<p>for the header files. These can be changed if needed by editing the project and target settings. Since revision 274 of the <code>nairn-mpm-fea</code> project, this library must be <code>xerces 3.0</code> or newer; prior to that revision, it had be <code>xerces 2.8</code> or older. These libraries can be obtained by downloading the 
+<a href="http://xml.apache.org/xerces-c/index.html"><code>xerces</code> source code</a> from the <a href="http://www.apache.org/">Apache Software Foundation</a> web site and then building and installing <code>xerces</code> with the following steps:</p>
 
-<p>The XCode projects settings should be set to compile using the native architection of the current machine (if not, you can change them to that setting). This approach lets you compile in 64 bit (if possible) or 32 bit on other machines. In some tests, the 64 bit version is about twice as fast as a 32 bit version on that same machine. Note that the xerces library must be compile using the same number of bits as the compiled code (or it can a univerisal 32/64 bit library).</p>
+<ol>
+<li>Open Terminal app and navigate to the xerces source folder expanded from the downloaded file.</li>
+<li>Configure the code with the command:
+<pre>
+./configure CFLAGS="-arch x86_64" CXXFLAGS="-arch x86_64"</pre>
+where the provided <code>arch</code> (or architecture) is the desired option for your machine. The main Mac options are <code>i386</code> for 32 bit Intel processors, <code>x86_64</code> for 64 bit Intel processors,  <code>ppc</code> for 32 bit PowerPC chips, or <code>ppc64</code> for 64 bit PowerPC64 chips. The PowerPC versions are no longer tested, but should work. Although <code>i386</code> will work on any Intel processor, you should use <code>x86_64</code> if you have a 64 bit processor, because the code will run faster. To determine how many bits your Intel chip has, chose &quot;About This Mac&quot; from the Apple menu, click &quot;More Info...&quot; button, and look up the processor name in the hardware section. The &quot;Intel Core Solo&quot; and &quot;Intel Core Duo&quot; are 32 bit chips and most others are 64 bit chips.
+</li>
+<li>When the configuration is done, use the following commands:
+<pre>
+cd src
+make
+make install</pre>
+These command make the library (but not the unneeded <code>xerces</code> examples). The final install command after <code>make</code> is done, installs the both the library and the header files at the default locations listed above.</li>
+<li>When working with <code>nairn-mpm-fea</code> on a new Mac, the <code>xerces</code> installation only needs to be done once. The only reason to repeat it is when a new <code>xerces</code> version is available and/or the project requires a new version for compatibility.</li>
+</ol>
+
+<p>Once <code>xerces</code> is installed, open the <code>NairnMPM.xcodeproj</code> to compile the code. The process is:</p>
+
+<ol>
+<li>Select the target to compile - either <code>NairnMPM</code> or <code>NairnFEA</code></li>
+<li>Choose build and they will compile</li>
+<li>If there is a linking error, you might have conflicting architectures between the XCode settings and the <code>xerces</code> library you installed. To fix this problem edit <i>both</i> the project and target settings and under the &quot;Architectures&quot; section, set the &quot;Architectures&quot; option to match the architecture you used when installing <code>xerces</code>.</li>
+</ol>
 
 <p>Once the code is compiled, do a <a href="../running/index.html">test run</a> to verify it worked.
 </p>
 
 <h2><a name="term"></a>MacOS X Command-Line Compilation</h2>
 
-<p>It is also easy to compile on MacOS X using a command line approach. First install <code>xerces</code> and its header files as <a href="#xerces">explained above</a> and make sure they are in the specified default locations.</p>
+<p>It is also easy to compile on MacOS X using a command line approach. First install <code>xerces</code> and its header files as <a href="#xerces">explained above</a> and make sure they are in the specified default locations (if needed).</p>
 
-<p>Once the variables are set, you compile <code>NairnMPM</code> using:</p>
+<p>Once the library is ready, you compile <code>NairnMPM</code> using:</p>
 
 <pre>
 cd nairn-mpm-fea/NairnMPM/build
-make SYSTEM=mac
+make SYSTEM=mac CFLAGS=&quot;-c -O3 -arch x86_64&quot; LFLAGS=&quot;-arch x86_64&quot;
 </pre>
 
 <p>and compile <code>NairnFEA</code> using:</p>
 
 <pre>
 cd nairn-mpm-fea/NairnFEA/build
-make SYSTEM=mac
+make SYSTEM=mac CFLAGS=&quot;-c -O3 -arch x86_64&quot; LFLAGS=&quot;-arch x86_64&quot;
 </pre>
+
+<p>Here the <code>arch</code> setting must match the one used when you installed the <code>xerces</code> library. The <code>-c</code> option is required. The <code>-O3</code> option creates optimized code; this option can be changed or omitted.</p>
 
 <p>All source code will be compiled and the executables will be installed in <code>nairn-mpm-fea/NairnMPM/input</code> or <code>nairn-mpm-fea/NairnFEA/input</code>, respectively. You can use an additional '<code>make install</code>' command to copy each compiled executable to your <code>~/bin</code> folder if desired.
 </p>

@@ -574,7 +574,7 @@ bool NairnMPM::ValidAnalysisType(void)
 void NairnMPM::Usage()
 {
 	CoutCodeVersion();
-    cout << "    Expects Xerces 2.8.0 or newer" << endl;
+    cout << "    Expects Xerces 3.1.1 or newer" << endl;
     cout << "\nUsage:\n"
             "    NairnMPM [-options] <InputFile>\n\n"
             "This program reads the <InputFile> and does an MPM analysis.\n"
