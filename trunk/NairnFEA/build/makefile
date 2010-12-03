@@ -18,17 +18,22 @@
 # The following are the most important variables
 #
 # 1. $(xercesSo) is path to directory with the compiled Xerces library
-# 2. $(headersPath) topath to directory with Xerces include files
+# 2. $(headersPath) is path to directory with Xerces include files
 # 3. $(CC) is the gcc compiler, $(RM) is the rm command, $(CP) is copy for install
-# 4. $(CFLAGS) is the gcc compiler options
-#    $(LFLAGS) is the gcc linking options
-# 5. $(output) is path to save executable
+# 4. $(CFLAGS) is the gcc compiler options, $(LFLAGS) is the gcc linking options
+# 5. $(output) is path to save or find executable
 # 6. $(ioutput) is path to install executable
 # 7. $(src) and $(com) are paths to parts of the source code
-
+#
+# Each of these can changed by editing or can be overriden at make time with syntax such as
+#
+# make CFLAGS="-c -arch x86_64" LFLAGS="-arch x84_64" output="~/Desktop/NairnMPM" SYSTEM=mac
+#
 # -------------------------------------------------------------------------
-# 1. Xerces location for Mac, Carbon/Hedera, Windows/cygwin, cluster2, and inferno
+# 1. Path and/or command to link to xerces library
+#    The default is standard Linux dynamic library install
 SYSTEM=carbon
+xercesSo= /usr/local/lib/libxerces-c.so
 ifeq ($(SYSTEM),mac)
 	xercesSo = /usr/local/lib/libxerces-c.dylib
 endif
@@ -48,15 +53,10 @@ ifeq ($(SYSTEM),zia)
 	xercesSo = /usr/lib/libxerces-c.so
 endif
 
-# 2. Path to outside headers for (Mac & Carbon/Hedera & Windows/cygwin), cluster2, and inferno 
-ifeq ($(SYSTEM),mac)
-	headersPath = /usr/local/include
-endif
+# 2. Path to xerces headers (if not at default /usr/local/include) 
+headersPath= /usr/local/include
 ifeq ($(SYSTEM),carbon)
 	headersPath = /usr/local/xerces3/include
-endif
-ifeq ($(SYSTEM),cygwin)
-	headersPath = /usr/local/include
 endif
 ifeq ($(SYSTEM),cluster2)
 	headersPath = /app/software/Xerces/includ
@@ -68,23 +68,41 @@ ifeq ($(SYSTEM),zia)
 	headersPath = /usr/include/xercesc
 endif
 
-# 3. Define compiler to use
+# 3. Define compiler to use and other commands
+#     CC is path to the c++ compiler
+#     RM is path/options to the file remove command (used only in make clean)
+#     CP is path/options to copy command (used only in make install
 CC= g++
 RM= rm
 CP= cp
 
 # 4. Compiler options -c=compile only, -O3=optimize most -O0=not optimized -g=debugging info
+#     CFLAGS are flags passed to compiled for each source file. If must contain -c and
+#		can add any other needed options. Some flags found useful in this project are
+#            -O3 = optimize most -O0 = not optimized
+#            -g = debuggin info  -pg = profiling
+#            -arch i386 = compile architecture (MacOS X only, other archs are x86_64, ppc, and ppc64)
+#     LFLAGS are flags passed at link time. The default is empty. Some flags found useful
+#       in this project are
+#            -arch i386 = link architecture (MacOS X only, other archs are x86_64, ppc, and ppc64)
+#            -pg = profiling
+#     If using -arch or -pg, must have in both CFLAGS and LFLAGS. For MacOS X, the specified arch
+#       must match the xerces library used for linking
 CFLAGS= -c -O3
 LFLAGS=
 
 # 5. Define executable destination
+#     output = relative or full path to save executable or to find it for a subsequent make install
+#     dtdpath = relative of full path to DTD file, only used during make install
 output = ../input/NairnFEA
 dtdpath = ../input/NairnFEA.dtd
 
-# 6. Define executable 'make install' location
+# 6. Provide relative of full path to install location, only used during make install
 ioutput = ~/bin
 
 # 7. Define paths to all files (relative to 'makefile')
+#     These are usually not changed unless you reorganize the code
+#     The comment com option is needed if you follow the suggest Eclipse procedure
 src = ../src
 com = ../../Common
 #com = ../../NairnMPM/Common
