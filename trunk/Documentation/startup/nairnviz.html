@@ -22,7 +22,7 @@ Visualization
 
 <ol>
 <li><a href="#nairnfeampm">Use <b>NairnFEAMPM</b></a> - on MacOS X computers only and the option with the most features.</li>
-<li><a href="#nairnviz">Use <b>NairnFEAMPMViz</b></a> - a Java application for any platform. Note: the <code>Nairn-MPM-FEA</code> package includes the <b>NairnFEAMPMViz</b> source code, which means you can change it and then <a href="#compile">recompile to create your own custom visualization application</a>. <b>NairnFEAMPMViz</b> has fewer features than <a href="#nairnfeampm"><b>NairnFEAMPM</b></a> and cannot visualize 3D simulations.</li>
+<li><a href="#nairnviz">Use <b>NairnFEAMPMViz</b></a> - a Java application for any platform. Note: the <code>nairn-mpm-fea</code> project includes the <b>NairnFEAMPMViz</b> source code, which means you can change it and then <a href="#compile">recompile to create your own custom visualization application</a>. <b>NairnFEAMPMViz</b> has fewer features than <a href="#nairnfeampm"><b>NairnFEAMPM</b></a> and cannot visualize 3D simulations.</li>
 <li>Use or write command-line tools to extract data from archive files to be input into your own or third-party visualization packages. This approach is the most difficult, but always an option if you need it. See <code>NairnMPM</code> <a href="tools.html">command line tools</a> for available tools (<i>e.g.</i>  <a href="tools.html#extractmpm"><code>ExtractMPM</code></a>) or to use as sample code for creating new tools.</li>
 <li><code>NairnMPM</code> results can alternatively be output as &quot;VTK Legacy&quot; files which can be input to various third-party visualizations tools. An excellent option is free, multi-platform <a href="http://www.paraview.org">ParaView</a>. See the <a href="../xmlformat/custom.html#VTKArchive">CustomTasks</a> in <code>NairnMPM</code> for exporting VTK files and see below for <a href="#paraview">ParaView quick start</a>. This option is most useful for 3D, but only plots results extrapolated to the grid. To plot 3D particle data, you have to use <a href="#nairnfeampm"><b>NairnFEAMPM</b></a> or, if not on a Mac, you can use <a href="tools.html#extractmpm"><code>ExtractMPM</code></a> to get particle-data VTK Legacy files.</li>
 </ol>
@@ -50,7 +50,7 @@ Visualization
 <h1><a name="nairnviz"></a>Using <b>NairnFEAMPMViz</b> Java Application
 </h1>
 
-<p>The <code>nairn-mpm-fea</code> package includes source code for a Java application called <b>NairnFEAMPMViz</b> that lets you create <code>XML</code> input files, run calculations, and visualize results for both <code>NairnFEA</code> and <code>NairnFEA</code>. The <code>nairn-mpm-fea</code> check out does not have the jar file for this application; you have two options:</p>
+<p>The <code>nairn-mpm-fea</code> project includes source code for a Java application called <b>NairnFEAMPMViz</b> that lets you create <code>XML</code> input files, run calculations, and visualize results for both <code>NairnFEA</code> and <code>NairnFEA</code>. The <code>nairn-mpm-fea</code> check out does not have the jar file for this application; you have two options:</p>
 
 <ol>
 <li>Visit the <a href="http://code.google.com/p/nairn-mpm-fea/downloads/list">download page</a> for this project. Periodically a recent compiled jar file along with a Windows-only clickable <code>exe</code> version will be posted. Simply download and run to start using <b>NairnFEAMPMViz</b>. (Note: that the <a href="http://code.google.com/p/nairn-mpm-fea/downloads/list">downloads page</a> does not have a clickable MacOS version of <b>NairnFEAMPMViz</b> because you should download and <a href="#nairnfeampm">use <b>NairnFEAMPMM</b></a> instead; it is on the download page as well as a <code>dmg</code> or disk image file.)</li>
@@ -59,7 +59,7 @@ Visualization
 
 </ol>
 
-<p>Note that <b>NairnFEAMPMViz</b> requires a system with Java 1.5.0 (<i>a.k.a</i> Java 5) or newer installed.</p>.
+<p>Note that <b>NairnFEAMPMViz</b> requires a system with Java 1.5.0 (<i>a.k.a</i> Java 5) or newer installed.</p>
 
 <h2><a name="runningViz"></a>Running <b>NairnFEAMPMViz</b></h2>
 
