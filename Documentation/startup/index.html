@@ -66,7 +66,7 @@ nairn-mpm-fea/Common/Projects/NairnMPM.xcodeproj
 <p>This project is called <code>NairnMPM</code>, but it includes all MPM and FEA source code in two targets named <code>NairnMPM</code> and <code>NairnFEA</code>.
 </p>
 
-<p><a name="xerces"></a>Before you can compile and run the project, however, you will need an installed version  of the <code>xerces</code> library and a copy of the <code>xerces</code> header files. The XCode project assumes they are installed in the default locations for MacOS X or at</>
+<p><a name="xerces"></a>Before you can compile and run the project, however, you will need an installed version  of the <code>xerces</code> library and a copy of the <code>xerces</code> header files. The XCode project and <a href="#term">command-line method</a> below both assume they are installed in the default locations for MacOS X or at</p>
 
 <pre>
 /usr/local/lib/libxerces-c.dylib
@@ -86,14 +86,14 @@ nairn-mpm-fea/Common/Projects/NairnMPM.xcodeproj
 <li>Configure the code with the command:
 <pre>
 ./configure CFLAGS="-arch x86_64" CXXFLAGS="-arch x86_64"</pre>
-where the provided <code>arch</code> (or architecture) is the desired option for your machine. The main Mac options are <code>i386</code> for 32 bit Intel processors, <code>x86_64</code> for 64 bit Intel processors,  <code>ppc</code> for 32 bit PowerPC chips, or <code>ppc64</code> for 64 bit PowerPC64 chips. The PowerPC versions are no longer tested, but should work. Although <code>i386</code> will work on any Intel processor, you should use <code>x86_64</code> if you have a 64 bit processor, because the code will run faster. To determine how many bits your Intel chip has, chose &quot;About This Mac&quot; from the Apple menu, click &quot;More Info...&quot; button, and look up the processor name in the hardware section. The &quot;Intel Core Solo&quot; and &quot;Intel Core Duo&quot; are 32 bit chips and most others are 64 bit chips.
+where the provided <code>arch</code> (or architecture) is the desired option for your machine. The main Mac options are <code>i386</code> for 32 bit Intel processors, <code>x86_64</code> for 64 bit Intel processors,  <code>ppc</code> for 32 bit PowerPC chips, or <code>ppc64</code> for 64 bit PowerPC64 chips. Although <code>i386</code> will work on any Intel processor, you should use <code>x86_64</code> if you have a 64 bit processor, because the code will run faster. To determine how many bits your Intel chip has, chose &quot;About This Mac&quot; from the Apple menu, click &quot;More Info...&quot; button, and look up the processor name in the hardware section. The &quot;Intel Core Solo&quot; and &quot;Intel Core Duo&quot; are 32 bit chips and most others are 64 bit chips.
 </li>
 <li>When the configuration is done, use the following commands:
 <pre>
 cd src
 make
 make install</pre>
-These command make the library (but not the unneeded <code>xerces</code> examples). The final install command after <code>make</code> is done, installs the both the library and the header files at the default locations listed above.</li>
+These command make the library (but not the unneeded <code>xerces</code> examples). The final install command after <code>make</code> is done, installs the both the library and the header files at the default locations listed above. If the '<code>make install</code>' shows a permission error, you can solve that by using '<code>sudo make install</code>' instead and provide your administrator password.</li>
 <li>When working with <code>nairn-mpm-fea</code> on a new Mac, the <code>xerces</code> installation only needs to be done once. The only reason to repeat it is when a new <code>xerces</code> version is available and/or the project requires a new version for compatibility.</li>
 </ol>
 
@@ -101,7 +101,7 @@ These command make the library (but not the unneeded <code>xerces</code> example
 
 <ol>
 <li>Select the target to compile - either <code>NairnMPM</code> or <code>NairnFEA</code></li>
-<li>Choose build and they will compile</li>
+<li>Choose build and they will compile and saves in the <code>nairn-mpm-fea/Common/Projects/build/Default</code> directory</li>
 <li>If there is a linking error, you might have conflicting architectures between the XCode settings and the <code>xerces</code> library you installed. To fix this problem edit <i>both</i> the project and target settings and under the &quot;Architectures&quot; section, set the &quot;Architectures&quot; option to match the architecture you used when installing <code>xerces</code>.</li>
 </ol>
 
@@ -126,7 +126,7 @@ cd nairn-mpm-fea/NairnFEA/build
 make SYSTEM=mac CFLAGS=&quot;-c -O3 -arch x86_64&quot; LFLAGS=&quot;-arch x86_64&quot;
 </pre>
 
-<p>Here the <code>arch</code> setting must match the one used when you installed the <code>xerces</code> library. The <code>-c</code> option is required. The <code>-O3</code> option creates optimized code; this option can be changed or omitted.</p>
+<p>Here the <code>arch</code> settings must match the one used when you installed the <code>xerces</code> library. The <code>-c</code> option is required. The <code>-O3</code> option creates optimized code; this option can be changed or omitted.</p>
 
 <p>All source code will be compiled and the executables will be installed in <code>nairn-mpm-fea/NairnMPM/input</code> or <code>nairn-mpm-fea/NairnFEA/input</code>, respectively. You can use an additional '<code>make install</code>' command to copy each compiled executable to your <code>~/bin</code> folder if desired.
 </p>
@@ -173,7 +173,7 @@ This step will compile <code>xerces</code> and save the librarys in the <code>xe
 
 </ol>
 
-<p><a name="cygcc"></a>You are now ready to compile the <code>nairn-mpm-fea</code> code. In a <code>cygwin</code> shell, navigate to the checked out <code>nairn-mpm-fea</code> and proceed as follows. To compile <code>NairnMPM</code> use:
+<p><a name="cygcc"></a>You are now ready to compile the <code>nairn-mpm-fea</code> code. In a <code>cygwin</code> shell, navigate to the checked out <code>nairn-mpm-fea</code> and proceed as follows. To compile <code>NairnMPM</code> use:</p>
 
 <pre>
 cd nairn-mpm-fea/NairnMPM/build
@@ -192,9 +192,6 @@ make SYSTEM=cygwin
 
 <p>If the command-line compile does not work, the most likely explanation is a problem with the <code>xerces</code> installation. You either have to install it as specified above or edit the <code>makefile</code> to recognize your custom installation. The process is documented in the <code>makefile</code> and involves editing the <code>xercesSo</code> and <code>headersPath</code> variables for your different settings. Another possible reason is a potential conflict with some <code>cygwin</code>/Windows combinations. If you get a linking error about undefined references to <code>typeinfo</code>, you have encountered a dynamic linking problem. It can be fixed by deleting the dynamic library at <code>/usr/local/lib/libserces-c.dll.a</code> and then use the '<code>make SYSTEM=cygwin</code>' command to link again. This change will cause the code to link statically. The resulting executables will be much larger but should work fine.
 </p>
-</li>
-
-</ol>
 
 <p>Once the code is compiled, do a <a href="../running/index.html">test run</a> to verify it worked.
 </p>
