@@ -326,7 +326,7 @@ const char *TrilinearTraction::SetTractionLaw(double &s1,double &k1,double &u1,d
 	{	if(s1>=0. && u1>=0.)
 			return "Cannot specify all three of sigmaI(II), kI(II)e, and umidI(II) for each mode";
 		else if(s1<0. && u1<0.)
-			return "Must specify exactly one of sigmaI(II) and umidI(II) for each mode when you specify kI(II)e";
+			return "Must specify exactly one of sigmaI(II) and umidI(II) for a mode where you specify kI(II)e";
 		else if(s1<0.)
 			s1=k1*u1;
 		else
@@ -375,6 +375,8 @@ const char *TrilinearTraction::SetTractionLaw(double &s1,double &k1,double &u1,d
 	{	if(s2<=0.)
 			return "When sigmaI2 or sigmaII2 is zero, you must specify delpkI or delpkII, respectively";
 		u1 = -(0.002*G/u3 - s1*u2 - s2)/s2;
+		if(u1<0. || u1>u2)
+			return "Calculated delpkI(II) is not between 0 and delpkI(II)2";
 	}
 	
 	else if(u3<0.)
@@ -392,7 +394,7 @@ const char *TrilinearTraction::SetTractionLaw(double &s1,double &k1,double &u1,d
 	{	return "The displacement break points must be 0 ≤ delpkI ≤ delpkI2 ≤ 1 and 0 ≤ delpkII ≤ delpkII2 ≤ 1";
 	}
 	if(u3<0. || s1<0. || s2<0. || G<=0.)
-	{	return "The critical cod or one of the two break stresses is nagative or total area is less than or equal to zero";
+	{	return "The critical cod or one of the two break stresses is negative or total area is less than or equal to zero";
 	}
 	
 	// Get initial stiffness (if appropriate)
