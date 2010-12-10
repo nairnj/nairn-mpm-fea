@@ -1,5 +1,5 @@
 #summary Setting up cygwin to download and and use nairn-mpm-fea.
-#labels Featured
+#labels Featured,Getting_Started
 
 = Introduction =
 
