@@ -1,5 +1,5 @@
 #summary Downloading the nairn-mpm-fea project
-#labels Featured
+#labels Featured,Getting_Started
 
 = Introduction =
 
