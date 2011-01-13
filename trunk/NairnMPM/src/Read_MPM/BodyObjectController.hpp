@@ -29,9 +29,10 @@ class BodyObjectController
 		virtual bool Is2DBodyObject(void);
 		virtual void SetBodyProperty(const char *,char *,CommonReadHandler *);
 		virtual void SetParameter(char *,char *);
-		virtual void FinishParameter(void);
+		virtual bool FinishParameter(void);
 		virtual void SetScaling(double);
 		virtual bool HasAllParameters(void);
+		virtual bool SetBodyPropertyFromData(char *,CommonReadHandler *);
 	
 	protected:
 		double xmin,xmax,ymin,ymax,zmin,zmax;

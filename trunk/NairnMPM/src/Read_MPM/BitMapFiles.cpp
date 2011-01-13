@@ -268,7 +268,10 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	if(setAngles) delete [] angleRows;
 	
 	// angles if allocated
-	for(ii=0;ii<numRotations;ii++) delete [] angleExpr[ii];
+	for(ii=0;ii<numRotations;ii++)
+	{	delete [] angleExpr[ii];
+		DeleteFunction(ii+1);
+	}
 		
 }
 

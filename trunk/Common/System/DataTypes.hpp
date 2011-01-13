@@ -122,6 +122,7 @@ Vector *CopyScaleVector(Vector *,Vector *,double);
 Vector *AddVector(Vector *,Vector *);
 Vector *SubVector(Vector *,Vector *);
 Vector *AddScaledVector(Vector *,Vector *,double);
+Vector *CrossProduct(Vector *,Vector *,Vector *);
 double DotVectors(Vector *,Vector *);
 double DotVectors2D(Vector *,Vector *);
 void PrintVector(const char *,Vector *);

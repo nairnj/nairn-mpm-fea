@@ -575,3 +575,51 @@ double CommonReadHandler::ReadGridPoint(char *value,double distScaling,double ax
 	return dval*distScaling;
 }
 
+// decode string delimited by white space, commands, or tabs and add intervening numbers
+// to the input vector (which is cleared first). Any other characters trigger an error
+bool CommonReadHandler::GetFreeFormatNumbers(char *nData,vector<double> &values,double scaling)
+{
+	int offset=0,numOffset=0;
+	double dval;
+	char numstr[200];
+	
+	// clear input array
+	values.clear();
+	
+	while(nData[offset]!=0)
+	{	// skip delimiters
+		char nc = nData[offset];
+		if(nc==' ' || nc == '\n' || nc == '\r' || nc == '\t' || nc == ':' || nc == ';' || nc == ',')
+		{	// decode number now
+			if(numOffset)
+			{	numstr[numOffset]=0;
+				sscanf(numstr,"%lf",&dval);
+				values.push_back(dval*scaling);
+				numOffset=0;
+			}
+			offset++;
+			continue;
+		}
+		
+		// valid number characters - exit on error
+		if((nc<'0' || nc>'9') && nc!='+' && nc!='-' && nc!='e' && nc!='E' && nc!='.')
+			return FALSE;
+		
+		// add to number string
+		numstr[numOffset++] = nc;
+				
+		// go on
+		offset++;
+	}
+	
+	// decode last number now
+	if(numOffset)
+	{	numstr[numOffset]=0;
+		sscanf(numstr,"%lf",&dval);
+		values.push_back(dval);
+		cout << dval << endl;
+	}
+	
+	return TRUE;
+}
+		

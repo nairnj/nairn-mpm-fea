@@ -37,6 +37,7 @@
 #include "Materials/MaterialBase.hpp"
 #include "Materials/RigidMaterial.hpp"
 #include "Custom_Tasks/PropagateTask.hpp"
+#include "Read_MPM/BodyObjectController.hpp"
 
 // Element types
 #include "Elements/FourNodeIsoparam.hpp"
@@ -1035,6 +1036,12 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
             // crack archive order only
 			archiver->SetCrackOrder(xData);
             break;
+		
+		case POLYHEDRON_BLOCK:
+			// must be in active body controller
+			if(!theBody->SetBodyPropertyFromData(xData,this))
+				throw SAXException("Invalid data block passed to a <Polyhedron> object.");
+			break;
         
         default:
             break;

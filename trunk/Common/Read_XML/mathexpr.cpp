@@ -87,7 +87,7 @@ Changes by John Nairn, April 2007
 double xvalue,yvalue,zvalue,dvalue,thetavalue;
 PRVar vararray[7];
 PROperation op=NULL;
-PROperation opex[2];
+PROperation opex[2]={NULL,NULL};
 
 // create function of x,y,z (or R=x and Z=y in axisymmetric) or D and T for polar coordinates from x and y
 // deletes input string and replaced with formatted expression
@@ -123,10 +123,10 @@ bool CreateFunction(char *&eqn)
 // can be 1, 2, or 3
 bool CreateFunction(char *&eqn,int i)
 {
-	// redirect if first on
+	// redirect if first one
 	if(op==NULL && i==1) return CreateFunction(eqn);
 	
-	// fails is base not there or index bad
+	// fails if base not there or index bad
 	if(op==NULL || i>MAX_FUNCTIONS || i<2) return false;
 	
 	// create the function
@@ -163,8 +163,10 @@ void DeleteFunction(int i)
 {	// delete base or extra one
 	if(i==1)
 		DeleteFunction();
-	else if(i>=2 && i<=MAX_FUNCTIONS)
-		delete opex[i-2];
+	else if(i>=2 && i<=MAX_FUNCTIONS && opex[i-2]!=NULL)
+	{	delete opex[i-2];
+		opex[i-2]=NULL;
+	}
 }
 
 // get function value for given x and y and origin

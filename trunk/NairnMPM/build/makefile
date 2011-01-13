@@ -129,6 +129,7 @@ BodyCylinderController = $(src)/Read_MPM/BodyCylinderController
 BodyObjectController = $(src)/Read_MPM/BodyObjectController
 BodyOvalController = $(src)/Read_MPM/BodyOvalController
 BodyPolygonController = $(src)/Read_MPM/BodyPolygonController
+BodyPolyhedronController = $(src)/Read_MPM/BodyPolyhedronController
 BodyRectController = $(src)/Read_MPM/BodyRectController
 BodySphereController = $(src)/Read_MPM/BodySphereController
 BoundaryCondition = $(src)/Boundary_Conditions/BoundaryCondition
@@ -207,6 +208,7 @@ NodesController = $(com)/Read_XML/NodesController
 Orthotropic = $(com)/Materials/Orthotropic
 ParseController = $(com)/Read_XML/ParseController
 PointController = $(com)/Read_XML/PointController
+PolyTriangle = $(src)/Read_MPM/PolyTriangle
 PropagateTask = $(src)/Custom_Tasks/PropagateTask
 RectController = $(com)/Read_XML/RectController
 ResetElementsTask = $(src)/NairnMPM_Class/ResetElementsTask
@@ -248,6 +250,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # BodyCylinderController.hpp : BodySphereController.hpp BodyObjectController.hpp
 # BodyOvalController.hpp : BodyObjectController.hpp
 # BodyPolygonController.hpp : BodyObjectController.hpp
+# BodyPolyhedronController.hpp : BodyObjectController.hpp
 # BodyRectController.hpp : BodyObjectController.hpp
 # BodySphereController.hpp : BodyObjectController.hpp
 # BoxController.hpp : ShapeController.hpp
@@ -321,6 +324,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # CustomTask.hpp ElementBase.hpp GlobalQuantity.hpp
 # MaterialBase.hpp MPMBase.hpp MPMWarnings.hpp NairnMPM.hpp
 # ParseController.hpp ShapeController.hpp StrX.hpp ThermalRamp.hpp TransportTask.hpp
+# PolyTriangle.hpp
 
 # -------------------------------------------------------------------------
 # all compiled objects
@@ -345,7 +349,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		BodySphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o BodyCylinderController.o \
 		TractionLaw.o CohesiveZone.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o SLMaterial.o CrackVelocityFieldMulti.o CrackVelocityFieldSingle.o \
-		WoodMaterial.o TrilinearTraction.o
+		WoodMaterial.o TrilinearTraction.o BodyPolyhedronController.o PolyTriangle.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -534,14 +538,15 @@ MPMReadHandler.o : $(MPMReadHandler).cpp $(dprefix) $(NairnMPM).hpp $(ArchiveDat
 			$(CrackHeader).hpp $(CrackSegment).hpp $(TransportTask).hpp $(MatPoint3D).hpp $(BodyObjectController).hpp \
 			$(BodyBoxController).hpp $(BodyOvalController).hpp $(BodyPolygonController).hpp $(BodyRectController).hpp \
 			$(BodySphereController).hpp $(BodyCylinderController).hpp $(RigidMaterial).hpp $(VTKArchive).hpp \
-			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(MeshInfo).hpp $(PropagateTask).hpp
+			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(MeshInfo).hpp $(PropagateTask).hpp $(BodyPolyhedronController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MPMReadHandler).cpp
 Generators.o : $(Generators).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hpp $(CommonReadHandler).hpp \
 			$(MPMBase).hpp $(ElementBase).hpp $(MatPoint2D).hpp $(NodalConcBC).hpp $(NodalTempBC).hpp $(NodalVelBC).hpp \
 			$(MatPtLoadBC).hpp $(MatPtFluxBC).hpp $(BoundaryCondition).hpp $(ThermalRamp).hpp $(StrX).hpp $(LineController).hpp \
 			$(MpsController).hpp $(FourNodeIsoparam).hpp $(ParseController).hpp $(Linear2D).hpp $(NodalPoint).hpp $(BoxController).hpp \
 			$(MeshInfo).hpp $(EightNodeIsoparamBrick).hpp $(ElementBase3D).hpp $(MatPoint3D).hpp $(ShapeController).hpp \
-			$(RectController).hpp $(ArcController).hpp $(NodalPoint2D).hpp $(NodalPoint3D).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
+			$(RectController).hpp $(ArcController).hpp $(NodalPoint2D).hpp $(NodalPoint3D).hpp $(CrackVelocityField).hpp \
+			$(MatVelocityField).hpp $(BodyObjectController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Generators).cpp
 BitMapFiles.o : $(BitMapFiles).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hpp $(CommonReadHandler).hpp \
 			$(BMPLevel).hpp $(MatPoint2D).hpp $(ElementBase).hpp $(ArchiveData).hpp $(CommonArchiveData).hpp \
@@ -567,6 +572,10 @@ BodyCylinderController.o : $(BodyCylinderController).cpp $(dprefix) $(BodyCylind
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodyCylinderController).cpp
 BodyPolygonController.o : $(BodyPolygonController).cpp $(dprefix) $(BodyPolygonController).hpp $(BodyObjectController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodyPolygonController).cpp
+BodyPolyhedronController.o : $(BodyPolyhedronController).cpp $(dprefix) $(BodyPolyhedronController).hpp $(BodyObjectController).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodyPolyhedronController).cpp
+PolyTriangle.o : $(PolyTriangle).cpp $(dprefix) $(PolyTriangle).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PolyTriangle).cpp
 
 # MPM: Exceptions
 MPMTermination.o : $(MPMTermination).cpp $(dprefix) $(MPMTermination).hpp $(CommonException).hpp

@@ -85,7 +85,7 @@
 
 <!ELEMENT	Body
 			( RotateX | RotateY | RotateZ | Unrotate
-			| Oval | Rect | Polygon | Sphere | Box | Cylinder )*>
+			| Oval | Rect | Polygon | Sphere | Box | Cylinder | Polyhedron )*>
 <!ATTLIST	Body
 			mat CDATA #REQUIRED
 			angle CDATA #IMPLIED
@@ -103,6 +103,9 @@
 			( pt+ )>
 <!ATTLIST	Polygon
 			np CDATA #REQUIRED>
+
+<!ELEMENT	Polyhedron
+			( faces+ )>
 
 <!ELEMENT	BMP
 			( Origin | Intensity | RotateX | RotateY | RotateZ | Unrotate)*>
@@ -577,6 +580,11 @@
 			zmin CDATA #REQUIRED
 			zmax CDATA #REQUIRED
 			axis CDATA #REQUIRED>
+
+<!ELEMENT	faces (#PCDATA)>
+<!ATTLIST	faces
+			units CDATA #IMPLIED
+			style CDATA #REQUIRED>
 
 <!ELEMENT	DisBC EMPTY>
 <!ATTLIST	DisBC
