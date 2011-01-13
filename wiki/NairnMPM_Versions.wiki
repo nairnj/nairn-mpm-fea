@@ -38,6 +38,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Improved traction laws so they can be used with interacting cracks.
     * `VTKArchive` option for total strain
     * `Damping` command can use a function to have grid damping that varies with time.
+    * `Polyhedron` command for more 3D objects
 
   * release-2.0 (25 JUL 2009)
     * Has NairnMPM 7.3.0
