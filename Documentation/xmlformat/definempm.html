@@ -23,7 +23,7 @@ There are two ways to specify the material points. One way is to explicitly list
 The other uses one or more commands that generate the material points. Both these methods must by within a single <code>&lt;MaterialPoints&gt;</code> element, but you are free to use both methods in a single input file.
 </p>
 
-<p>Material points are defined in a <code>&lt;MaterialPoints&gt;</code> element. The subordinate elements in this structure can explicitly list material points (<code>&lt;PointList&gt;</code>) or can define regions to contain points (<code>&lt;Body&gt;</code>), regions to be free of points (<code>&lt;Hole&gt;</code>), of map points from a gray-scale image (<code>&lt;BMP&gt;</code>). The general format (which shows both 2D and 3D commands, although they cannot be mixed in actual command files) is:
+<p>Material points are defined in a <code>&lt;MaterialPoints&gt;</code> element. The subordinate elements in this structure can explicitly list material points (<code>&lt;PointList&gt;</code>) or can define regions to contain points (<code>&lt;Body&gt;</code>), regions to be free of points (<code>&lt;Hole&gt;</code>), or map points from a gray-scale image (<code>&lt;BMP&gt;</code>). The general format (which shows both 2D and 3D commands, although they cannot be mixed in actual command files) is:
 </p>
 
 <pre>
@@ -66,6 +66,18 @@ The other uses one or more commands that generate the material points. Both thes
       &lt;Sphere units='mm' xmin='10' xmax='40' ymin='10' ymax='40' zmin='0' zmax='10'/&gt;     
       &lt;Box units='mm' xmin='10' xmax='40' ymin='10' ymax='40' zmin='0' zmax='10'/&gt;     
       &lt;Cylinder units='mm' xmin='10' xmax='40' ymin='10' ymax='40' zmin='0' zmax='10' axis='3'/&gt;     
+      &lt;Polyhedron&gt;
+          &lt;faces style="15482637"&gt;
+ 1.496206e+002  2.879507e+000  1.775602e+002
+ 5.361129e+001  3.039185e+000  1.498799e+002
+ 1.496158e+002  2.209645e+000  1.775729e+002
+ 5.360652e+001  2.369322e+000  1.498926e+002
+ 1.551372e+002  2.477263e+000  1.584236e+002
+ 5.912789e+001  2.636940e+000  1.307433e+002
+ 1.551324e+002  1.807400e+000  1.584363e+002
+ 5.912311e+001  1.967077e+000  1.307560e+002
+          &lt;/faces&gt;
+      &lt;/Polyhedron&gt;
    &lt;/Body&gt;
 
    &lt;BMP name='GrayScaleFile.bmp' units='mm' width='5.64' height='4.51' angles='GrayAngles.bmp'&gt;
@@ -212,7 +224,24 @@ attribute</a> can specify the length units) with material points The parameters 
   with material points. The <code>axis</code> atribute specifies the axis of the cylinder in the 1
   (for <code>x</code>), 2 (for <code>y</code>) or 3 (for <code>z</code>) direction. The parameters (except <code>axis</code>) be entered with numeric values or <a href="dispbc.html#minmax">relative to the mesh edges</a>.</dd>
  
- </dl>
+  <dt><code>&lt;Polyhedron&gt;</code></dt>
+  <dd>Fills or empties an arbitrary 3D shape specified by describing the object as a collection of triangular faces. The faces are specified with one or more <a href="#faces"><code>faces</code></a> commands subordinate to the <code>Polyhedron</code> command.
+  </dd>
+
+  <dt><a name="faces"></a><code>&lt;faces style='tripts'&gt;</code></dt>
+  <dd> The <code>faces</code> command has a set of options (specfied in the <code>style</code> attribute) to help in entering certain geometries. These options will grow as needed to solve new problems as they arise. For example, it would be easy to handle any number of connected triangular faces, but that option is not yet programmed. Here are the currently available options:
+  <ul>
+  <li><code>style='tripts'</code> or <code>style='trivectors'</code>: define a triclinic shape, which is an eight-corned box for which opposite faces are parallel, but the corners need not meet at right angles. For this style, you specify 4 points (or 12 coordinates). For <code>tripts</code>, the 4 points are the points labeled in the figure below. For <code>trivectors</code>, the first point is point 1 (the origin) and the remaining three points are the vectors between the shape's origin that point.
+  <center><img src="triclinic.jpg" alt="Triclinic Shape" width="300" height="173"></center>
+  </li>
+  <li><code>style='15482637'</code>: define an arbitrarily shaped 8-corner box. The provided numbers map the order of the provided 8 points (or 24 coordinates) to the standard order shown in the figure below.
+  <center><img src="arbbox.jpg" alt="8 Corner Box" width="444" height="142"></center>
+  </li>
+  </ul>
+  Between the <code>&lt;faces&gt;</code> and the <code>&lt;/faces&gt;</code> commands, all the data needed for the selected style are entered in a free format. The only requirements are the the correct number of valid numeric data points for the choosen style are provided and that the points are delimited by white space, commas, colons, and/or semicolons. The number of points per line does not matter and multiple delimiters between number can be used if desired.
+  </dd>
+  
+  </dl>
   
 <h3><a name="BMPShape"></a>BMP Shape</h3>
 
@@ -279,8 +308,10 @@ where <code>i</code> is intensity of the pixel. This function will be used for a
 <br><br>For MPM calculations, the <code>BMP</code> block can have optional <a href="#rotatezyx"><code>&lt;RotateZ&gt;</code>, <code>&lt;RotateY&gt;</code>, and <code>&lt;RotateX&gt;</code> commands</a> to rotate the material axes for all particles defined by the <code>BMP</code> block for 2D (Z only) or 3D calculations (X, Y, and Z). There are thus three ways to set material angle in a <code>BMP</code> block:
 <ol>
 <li>Use <code>&lt;Angle&gt;</code> command in an <code>&lt;Intensity&gt;</code> block - this option can only use a single constant (<i>i.e.</i>, all angles for that material must be the same), but each material type can have a different angle.</li>
-<li>Use <a href="#rotatezyx"><code>&lt;RotateZ&gt;</code>, <code>&lt;RotateY&gt;</code>, and <code>&lt;RotateX&gt;</code> commands</a> - these can set a constant angle or use a <a href="function.html">user-defined function</a> that evaluates to an angle (in degrees). If any rotate commands are used, all <code>&lt;Angle&gt;</code> commands are ignored. Furthermore, all material types use the same angle settings (<i>i.e.</i>, you cannot use different rotation angles or functions for each <code>&lt;Intensity&gt;</code> block).
+<li>Use <a href="#rotatezyx"><code>&lt;RotateZ&gt;</code>, <code>&lt;RotateY&gt;</code>, and <code>&lt;RotateX&gt;</code> commands</a> - these can set a constant angle or use a <a href="function.html">user-defined function</a> that evaluates to an angle (in degrees). If any rotate commands are used, all <code>&lt;Angle&gt;</code> commands are ignored. Furthermore, all material types use the same angle settings (<i>i.e.</i>, you cannot use different rotation angles or functions for each <code>&lt;Intensity&gt;</code> block).</li>
 <li>Use an <code>angles</code> attribute on the <code>BMP</code> tag with an angle definition file - if this third option is used, all <code>&lt;Angle&gt;</code> and rotation commands will be ignored.</li>
+</ol>
+
 </dd>
 
 </dl>
@@ -297,7 +328,7 @@ where <code>i</code> is intensity of the pixel. This function will be used for a
 <li>Select an archive time and use <a href="../startup/tools.html#extractmpm">ExtractMPM</a> to extract particle data to an XML file. A typical command would be
 <pre>ExtractMPM -Xh -q mass -o particles Archive.1843
 </pre>
-where <code>Archive.1843</code> is desired time archive containing material point locations. The points will be written to an <code>XML</code> file called <code>particles.xml</code>. The output file will have one &lt;mp&gt; element for each material point and all those elements within a single <code>&lt;PointList&gt;</code>. See the <a href="../startup/tools.html#extractmpm">ExtractMPM</a> tool documentation for more details on an <a href="../startup/tools.html#xmlExtract">XML extraction</a>.
+where <code>Archive.1843</code> is desired time archive containing material point locations. The points will be written to an <code>XML</code> file called <code>particles.xml</code>. The output file will have one &lt;mp&gt; element for each material point and all those elements within a single <code>&lt;PointList&gt;</code>. See the <a href="../startup/tools.html#extractmpm">ExtractMPM</a> tool documentation for more details on an <a href="../startup/tools.html#xmlExtract">XML extraction</a>.</li>
 
 <li>Finally, include this saved file in another commands file using an <code>XML</code> entity reference. First, define the path to the new file in the file's <code>DOCTYPE</code> element such as:
 <pre>&lt;!DOCTYPE JANFEAInput SYSTEM '/full path to/NairnMPM.dtd'
@@ -307,7 +338,7 @@ where <code>Archive.1843</code> is desired time archive containing material poin
 Then, import that file in the &lt;MaterialPoints&gt; element such as
 <pre>&lt;MaterialPoints&gt;
    &amp;mpfile;
-&lt;/MaterialPoints&gt;
+&lt;/MaterialPoints&gt;</pre></li>
 </ol>
 
 <p class="links">

@@ -70,7 +70,7 @@ bool BodyObjectController::FinishSetup(void)
 }
 
 // called after one parameter setting is done
-void BodyObjectController::FinishParameter(void) {	}
+bool BodyObjectController::FinishParameter(void) { return TRUE; }
 
 /********************************************************************************
 	BodyObjectController: accessors
@@ -104,3 +104,9 @@ void BodyObjectController::SetScaling(double scale) { distScaling=scale; }
 
 // called at most once right before use to see if enough parameters have been set
 bool BodyObjectController::HasAllParameters(void) { return TRUE; }
+
+// to allow obbject to decode object-specific character data
+bool BodyObjectController::SetBodyPropertyFromData(char *bData,CommonReadHandler *reader)
+{	return TRUE;
+}
+

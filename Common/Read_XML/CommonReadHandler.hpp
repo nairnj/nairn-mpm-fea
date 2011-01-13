@@ -116,7 +116,8 @@ class CommonReadHandler : public DefaultHandler
 		double ReadY(char *,double);
 		double ReadZ(char *,double);
 		double ReadGridPoint(char *,double,double,double);
-
+		bool GetFreeFormatNumbers(char *,vector<double> &,double);
+	
     protected:
         int block,meshType;
         char *inputPtr;

@@ -150,6 +150,14 @@ double DotVectors2D(Vector *v1,Vector *v2)
 {	return v1->x*v2->x + v1->y*v2->y ;
 }
 
+// Vector cross product of two vectors in a third vector
+Vector *CrossProduct(Vector *cp,Vector *a,Vector *b)
+{	cp->x = a->y*b->z - b->y*a->z ;
+	cp->y = b->x*a->z - a->x*b->z ;
+	cp->z = a->x*b->y - b->x*a->y ;
+	return cp;
+}
+
 // Print vector to cout when debugging
 void PrintVector(const char *label,Vector *v)
 {	if(strlen(label)>0) cout << label;

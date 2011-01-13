@@ -33,8 +33,12 @@ bool BodyPolygonController::ContainsPoint(Vector& pt)
 	{	x2=xpt[i];
 		y2=ypt[i];
 		d=(pt.y-y1)*(x2-x1)-(pt.x-x1)*(y2-y1);
+		
+		// get crossing unless both y's on same side of edge
 		if((y1>=pt.y) != (y2>=pt.y))
 			crossings+= (y2-y1>=0.) ? d>=0. : d<=0. ;
+		
+		// if d is 0, check if point is on line (and thus in polygon)
 		if(!d && fmin(x1,x2)<=pt.x && pt.x<=fmax(x1,x2) &&
 							fmin(y1,y2)<=pt.y && pt.y<=fmax(y1,y2))
 			return TRUE;
@@ -48,9 +52,10 @@ bool BodyPolygonController::ContainsPoint(Vector& pt)
 bool BodyPolygonController::FinishSetup(void) {	return FALSE; }
 
 // called after initialization is done
-void BodyPolygonController::FinishParameter(void)
+bool BodyPolygonController::FinishParameter(void)
 {	xpt.push_back(xparm);
 	ypt.push_back(yparm);
+	return TRUE;
 }
 
 /********************************************************************************
@@ -61,9 +66,13 @@ void BodyPolygonController::FinishParameter(void)
 void BodyPolygonController::SetParameter(char *aName,char *value)
 {
 	if(strcmp(aName,"x")==0)
-		sscanf(value,"%lf",&xparm);
+	{	sscanf(value,"%lf",&xparm);
+		xparm*=distScaling;
+	}
 	else if(strcmp(aName,"y")==0)
-		sscanf(value,"%lf",&yparm);
+	{	sscanf(value,"%lf",&yparm);
+		yparm*=distScaling;
+	}
 }
 
 // return if has enough parameters to use. If yes, close the  polygon

@@ -36,6 +36,7 @@
 #include "Read_MPM/BodyBoxController.hpp"
 #include "Read_MPM/BodyCylinderController.hpp"
 #include "Read_MPM/BodyPolygonController.hpp"
+#include "Read_MPM/BodyPolyhedronController.hpp"
 #include "Read_XML/mathexpr.hpp"
 
 // Global variables for Generator.cpp (first letter all capitalized)
@@ -245,7 +246,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
     // Read into geometry parameters for Body shape objects
     //-----------------------------------------------------------
     else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0
-				|| strcmp(xName,"Sphere")==0 || strcmp(xName,"Box")==0 || strcmp(xName,"Cylinder")==0)
+				|| strcmp(xName,"Sphere")==0 || strcmp(xName,"Box")==0 || strcmp(xName,"Cylinder")==0
+				|| strcmp(xName,"Polyhedron")==0 )
 	{	if(strcmp(xName,"Rect")==0)
 		{	ValidateCommand(xName,BODYPART,MUST_BE_2D);
 			theBody=new BodyRectController();
@@ -269,6 +271,10 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		else if(strcmp(xName,"Polygon")==0)
 		{	ValidateCommand(xName,BODYPART,MUST_BE_2D);
 			theBody=new BodyPolygonController();
+		}
+		else if(strcmp(xName,"Polyhedron")==0)
+		{	ValidateCommand(xName,BODYPART,MUST_BE_3D);
+			theBody=new BodyPolyhedronController();
 		}
 		theBody->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
         numAttr=attrs.getLength();
@@ -353,7 +359,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
     else if(strcmp(xName,"pt")==0)
 	{	ValidateCommand(xName,BODY_SHAPE,MUST_BE_2D);
 		if(theBody==NULL)
-			throw SAXException("Body object parameter occured without an active body shape.");
+			throw SAXException("Body object <pt> command occurred without an active 2D body shape.");
 		theBody->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
 		numAttr=attrs.getLength();
 		for(i=0;i<numAttr;i++)
@@ -365,7 +371,27 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		}
 		theBody->FinishParameter();
 	}
-
+	
+	// triclinic option
+	else if(strcmp(xName,"faces")==0)
+	{	ValidateCommand(xName,BODY_SHAPE,MUST_BE_3D);
+		if(theBody==NULL)
+			throw SAXException("Body object <faces> command occurred without an active 3D body shape.");
+		theBody->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
+		theBody->SetParameter("style","");
+		numAttr=attrs.getLength();
+		for(i=0;i<numAttr;i++)
+		{	aName=XMLString::transcode(attrs.getLocalName(i));
+			value=XMLString::transcode(attrs.getValue(i));
+			theBody->SetParameter(aName,value);
+			delete [] aName;
+			delete [] value;
+		}
+		if(!theBody->FinishParameter())
+			throw SAXException("Body object <faces> command did not specify the style for the data.");
+		input=POLYHEDRON_BLOCK;
+	}
+	
     // Store a line and tolerance into the current BC shape
     else if(strcmp(xName,"BCLine")==0)
 	{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
@@ -658,7 +684,10 @@ short MPMReadHandler::EndGenerator(char *xName)
     else if(strcmp(xName,"Body")==0)
 	{	int numRotations=strlen(rotationAxes);
 		int i;
-		for(i=0;i<numRotations;i++) delete [] angleExpr[i];
+		for(i=0;i<numRotations;i++)
+		{	delete [] angleExpr[i];
+			DeleteFunction(i+1);
+		}
     	block=POINTSBLOCK;
 	}
     
@@ -674,13 +703,22 @@ short MPMReadHandler::EndGenerator(char *xName)
     
     else if(strcmp(xName,"Polygon")==0)
 	{	if(!theBody->HasAllParameters())
-			throw SAXException("<Polygon> mst have at least 3 suborbdinate <pt> commands.");
+			throw SAXException("<Polygon> must have at least 3 subordinate <pt> commands.");
 		MPMPts();
 		delete theBody;
 		theBody=NULL;
 		block=BODYPART;
 	}
     
+    else if(strcmp(xName,"Polyhedron")==0)
+	{	if(!theBody->HasAllParameters())
+		throw SAXException("<Polyhedron> must have at least 4 faces.");
+		MPMPts();
+		delete theBody;
+		theBody=NULL;
+		block=BODYPART;
+	}
+
     else if(strcmp(xName,"BCLine")==0 || strcmp(xName,"LdRect")==0 || strcmp(xName,"BCLine")==0 || strcmp(xName,"BCBox")==0)
 	{	block=theShape->GetSourceBlock();
 		delete theShape;

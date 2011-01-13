@@ -34,12 +34,12 @@ short Quad2D::PtInElement(Vector &pt)
 		y2=nd[nodes[i+ns]]->y;
 		d=(pt.y-y1)*(x2-x1) - (pt.x-x1)*(y2-y1);
 		
-		// get crossing unless both y's on same side of egde
+		// get crossing unless both y's on same side of edge
 		if((y1>=pt.y) != (y2>=pt.y))
 		{	crossings+= (y2-y1>=0.) ? d>=0. : d<=0. ;
 		}
 		
-		// if d is 0, check if point is on line (and thus in polygon
+		// if d is 0, check if point is on line (and thus in polygon)
 		if(!d && fmin(x1,x2)<=pt.x && pt.x<=fmax(x1,x2) &&
 				 fmin(y1,y2)<=pt.y && pt.y<=fmax(y1,y2))
 		{	return(1);
