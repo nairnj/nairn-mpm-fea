@@ -424,7 +424,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 			if(result==JFileChooser.CANCEL_OPTION) return;
 			workPath.setText(newPath);
 			prefs.put(WorkSpaceKey,newPath);
-			setWorkspace(NairnFEAMPMViz.chooser);
+			setWorkspace(NairnFEAMPMViz.GetAppChooser());
 		}
 		
 		else if(theCmd.equals("change contours"))
