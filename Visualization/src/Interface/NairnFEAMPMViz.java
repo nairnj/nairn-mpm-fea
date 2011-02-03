@@ -9,6 +9,8 @@
 import java.io.File;
 import java.io.InputStream;
 
+import javax.swing.JFileChooser;
+
 import geditcom.JNFramework.*;
 
 public class NairnFEAMPMViz extends JNApplication
@@ -114,6 +116,12 @@ public class NairnFEAMPMViz extends JNApplication
 	}
 
 	//----------------------------------------------------------------------------
+	// Accessors
+	//----------------------------------------------------------------------------
+	
+	public static JFileChooser GetAppChooser() { return JNApplication.chooser; }
+	
+	//----------------------------------------------------------------------------
 	// main entry as static methods
 	//----------------------------------------------------------------------------
 	
@@ -156,4 +164,5 @@ public class NairnFEAMPMViz extends JNApplication
 		// create custom instance of the application class
 		new NairnFEAMPMViz();
     }
+    
 }
