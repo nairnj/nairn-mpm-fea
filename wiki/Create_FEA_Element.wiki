@@ -3,36 +3,39 @@
 
 = Introduction =
 
-This page explains how to create a new type of element for NairnFEA. It needs to be formatted for wiki display
+This page explains how to create a new type of element for NairnFEA.
 
-= Unformatted Text =
+= Add an Element for NairnFEA and/or NairnMPM =
 
-Creating a New Element Type
+The following sections described the various tasks needed to support a new element type in NairnFEA and NairnMPM. Since NairnMPM is typcially based only on 4-node 2D and 8-node 3D elements, these tasks are mostly about adding them for NairnFEA.
 
-INITIALIZATION: Start a new class - coordinate with Code Owner
---------------------------------------------------------------
-1. Define new class for the element and create cpp and
-	hpp files
+== Create New Element Class Source Files ==
 
-2. Define element type constant in ElementBase class header
-    Numbers have to be documented.
+The first step is to create a new class that is a subclass of an existing element or a subclass of `ElementBase` if it is  new class of element. The steps for this task are:
 
-3. Basic methods that must override
-  a. ElementName(void) - return code in #2
-  b. NumberNodes(void) - return number of nodes
-  c. NumberSides(void) - return number of sides
-  d. GetArea(void) - element area (only used in MPM to decide on wave speed)
-  e. FaceNodes(void) - return number of nodes on each face
-  f. PtInElement() - if point is in any element return 1 otherwise 0
-  g. ShapeFunction() - define function, write below
+  # Define new source for the element and create `.cpp` and `.hpp` files
+  # Define a constant (numeric ID) for the new element. To avoid potential future conflicts, all these constants are defines in `ElementBase.hpp`.
+  # Override and implement (as needed) the following methods:
+    * ElementName(void) - return numeric code defined in `ElementBase.hpp`
+    * NumberNodes(void) - return number of nodes
+    * NumberSides(void) - return number of sides
+    * GetArea(void) - element area (only used in MPM to decide on wave speed)
+    * FaceNodes(void) - return number of nodes on each face
+    * PtInElement() - if point is in any element return 1 otherwise 0
+    * ShapeFunction() - load shape functions, their derivatives (if requested), and data for axisymmetric calculations (if requested).
 
-CREATION: Reading input file and creating mesh
---------------------------------------------------------------
-1. Include header for element in ElementsController.cpp.
+== Create Instances of Elements ==
 
-2. ElementsController code needs attention for each element:
-  a. CreateElement() - create element and write corresponding constructor
-  b. MeshElement() - create element(s) and write corresponding constructor
+During initialization of a calculation, the mesh is created and divided into elements. The tasks in this section are needed to be able to add the new element to a mesh.
+
+  # Include new elements' header file in `ElementsController.cpp`.
+  # The `ElementsController.cpp` code handles most tasks when creating elements for a mesh. New elements will need some element-specific modifications to this source file:
+    * CreateElement()` - Elements can be created from XML `elem` command, which has the format
+{{{
+<elem type='2' matl='1' angle='0' thick='10'>1,5,69,68</elem>
+}}}
+    where type is element code (numeric ID defined above), `matl` is numerical material ID, `angle` is material angle for anisotropic materials, and `thick` is thickness in mm. The characters in the command are usually comma-separated list of nodes (but a custom element could define a different meaning to the data. To support creation of elements with this command, edit the `CreateElement()` method in `ElementsController.cpp` and define a new case for the new element to handle the above parameters.
+    * MeshElement() - create element(s) and write corresponding constructor
   c. ElementsCompatible() - document compatible types
   d. HasMidsideNodes() - return true if has them
   e. ElementSides() - return number of sides
