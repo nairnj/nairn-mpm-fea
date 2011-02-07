@@ -15,59 +15,53 @@ The first step is to create a new class that is a subclass of an existing elemen
 
   # Define new source for the element and create `.cpp` and `.hpp` files
   # Define a constant (numeric ID) for the new element. To avoid potential future conflicts, all these constants are defines in `ElementBase.hpp`.
+  # Write two constructors for the element class:
+    * `NewElement(int eNum, int *eNode)` - for MPM, the constructor arguments are the element number and an integer array of node numbers.
+    * `NewElement(int eNum, int *eNode, int eMat,double eAng,double eThick)`- for FEA, the additional arguments are the material number, the angle (for anisotropic materials), and the thickness (for plane strain or plane stress calculations).
   # Override and implement (as needed) the following methods:
-    * ElementName(void) - return numeric code defined in `ElementBase.hpp`
-    * NumberNodes(void) - return number of nodes
-    * NumberSides(void) - return number of sides
-    * GetArea(void) - element area (only used in MPM to decide on wave speed)
-    * FaceNodes(void) - return number of nodes on each face
-    * PtInElement() - if point is in any element return 1 otherwise 0
-    * ShapeFunction() - load shape functions, their derivatives (if requested), and data for axisymmetric calculations (if requested).
+    * `ElementName(void)` - return numeric code defined in `ElementBase.hpp`
+    * `NumberNodes(void)` - return number of nodes
+    * `NumberSides(void)` - return number of sides
+    * `GetArea(void)` - element area (only used in MPM to decide on wave speed)
+    * `FaceNodes(void)` - return number of nodes on each face
+    * `PtInElement()` - if point is in any element return 1 otherwise 0
+    * `ShapeFunction()` - load shape functions, their derivatives (if requested), and data for axisymmetric calculations (if requested).
 
 == Create Instances of Elements ==
 
 During initialization of a calculation, the mesh is created and divided into elements. The tasks in this section are needed to be able to add the new element to a mesh.
 
   # Include new elements' header file in `ElementsController.cpp`.
-  # The `ElementsController.cpp` code handles most tasks when creating elements for a mesh. New elements will need some element-specific modifications to this source file:
-    * CreateElement()` - Elements can be created from XML `elem` command, which has the format
+  # The `ElementsController.cpp` code handles all tasks when creating elements for a mesh. New elements will need some element-specific modifications to this source file withinthe following subroutines:
+    * `ElementsCompatible()` - document elements that are compatible in same mesh with new element
+    * `HasMidsideNodes()` - return true if new element has mid side nodes
+    * `ElementSides()` - return number of sides for the new element
+    * `ElementBase *MeshElement()` - creates elements for MPM grid. The input parameters are the element ID, the element number, and an integer array of nodes. To use the element in MPM grids, add a `case` to the `switch` block for the new element and return the element instance. Note: MPM currently only allow 4 node quadrilateral elements in 2D and 8 node brick elements is 3D. Before new elements can be used, the MPM input commands will need a new attribute or command related to the grid to specify the new element type. The changes are very minor.
+    * `int MeshElement()` - creates elements for FEA mesh. The input parameters are 4 or 8 nodes counter clockwise around a quadrilateral area (for interface elements it is 4 or 6 nodes counter clockwise back and forth along the interface). To use the element in FEA meshes, add a `case` to the `switch` block for the new element. See existing example for needs. The triangular elements need to create two elements in the provided quadrilateral. If you omit this change, the element cannot be used in generated FEA meshes.
+    * `CreateElement()` - Elements can be created from XML `elem` command, which has the format
 {{{
 <elem type='2' matl='1' angle='0' thick='10'>1,5,69,68</elem>
 }}}
-    where type is element code (numeric ID defined above), `matl` is numerical material ID, `angle` is material angle for anisotropic materials, and `thick` is thickness in mm. The characters in the command are usually comma-separated list of nodes (but a custom element could define a different meaning to the data. To support creation of elements with this command, edit the `CreateElement()` method in `ElementsController.cpp` and define a new case for the new element to handle the above parameters.
-    * MeshElement() - create element(s) and write corresponding constructor
-  c. ElementsCompatible() - document compatible types
-  d. HasMidsideNodes() - return true if has them
-  e. ElementSides() - return number of sides
+    where type is element code (numeric ID defined above), `matl` is numerical material ID, `angle` is material angle for anisotropic materials, and `thick` is thickness in mm. The data is list of node numbers (delimited by white space, commas, colons, or semicolons). This creating method is only used when explicitly generating meshes, which is very uncommon in FEA and not recommended for MPM (because it cannot use GIMP). Support for the new element in this subroutine is therefore option. To provide support, and a new `case` to the `switch` block to verify the right number of nodes were received and then to create an instance of the new element.
 
-3. Will not work in MPM generators unless code is added
-    there too.
+= Support or Element-Based Calculations =
 
-4. Test Mesh Creation (but do not run analysis yet)
+This section has changes needed for calculations that depend on the element type. For MPM, the calculations only involve shape functions. For FEA, they involve boundary conditions, shape functions, stiffness matrix, and output of element properties.
 
-TASK 0: INITIALIZE
---------------------------------------------------------------
-1. Support MaxMinNode() - built in to ElementBase.cpp
+== Allocate `R` Vector ==
 
-TASK 1: ALLOCATE R VECTOR
---------------------------------------------------------------
-1. Support CalcEdgeLoads() which is called by GetConsistentLoads(re,np)
-	called from ForcesOnEdges() is element can have stress boundary
-	conditions
+  # Support `CalcEdgeLoads()` which is called by `GetConsistentLoads(re,np)` - this method is called by `ForcesOnEdges()` to support stress based boundary conditions on an element edge (FEA only).
+
+== Shape Functions ==
+
+  # FEA - find Shape functions, their derivatives, and terms for axisymmetric calculations in `ShapeFunction()`.
+  # MPM - MPM elements have more shape function needs to support GIMP calculations. The details are not documented here.
 	
-TASK 2: GET STIFFNESS MATRIX
---------------------------------------------------------------
-1. Calculate element stiffness matrix in Stiffness() (called
-	in BuildStiffnessMatrix()). If use IsoparametricStiffness()
-	need to set numGauss and gaussSet.
+== Get Element Stiffness Matrix ==
 
-2. Building stiffness matrix requires support for ShapeFunction()
-	MPM as alternative ShapeFunction(), but FEA has just one.
+  # Calculate element stiffness matrix in `Stiffness()` - called in `BuildStiffnessMatrix()`. If element uses `IsoparametricStiffness()` then need to set `numGauss` and `gaussSet` (FEA only).
 
-TASK 6: OUTPUT RESULTS
---------------------------------------------------------------
-1. Support ForceStress() which is called in ForceStressEnergyResults(void).
+== Output Forces and Stresses ==
 
-2. If use IsoparametricForceStress() need to fill in option for
-	extrapolation to nodes for element type. Also need to set numGauss
-	and gaussSet.
+  # Support `ForceStress()` - called in `ForceStressEnergyResults(void)` (FEA only).
+  # If use `IsoparametricForceStress()` need to fill in option for extrapolation to nodes for element type. Also need to set `numGauss` and `gaussSet`(FEA only).
