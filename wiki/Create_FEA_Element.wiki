@@ -30,6 +30,7 @@ The first step is to create a new class that is a subclass of an existing elemen
     * `FindExtent()` - find range of nodal coordinates
     * `GetXiPos()` - find dimensionless position (analytical for speed and may have special case for typically orthogonal grid)
     * `Orthogonal()` - is the element a rectangle?
+For GIMP
     * `GetGimpNodes()` - get nodes for GIMP shape functions
     * `GimpShapeFunction()` get GIMP shape functions
     * The rest should be handled by `ElementBase.cpp` (which is partly in `MoreMPMElementCase.cpp`), but may need to be verified if problems arise.
