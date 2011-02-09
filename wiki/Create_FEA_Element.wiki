@@ -3,7 +3,7 @@
 
 = Introduction =
 
-This page explains how to create a new types of elements for NairnFEA and NairnMPM (although the later is uncommon in MPM code).
+This page explains how to create a new types of elements for NairnFEA and NairnMPM.
 
 = Add an Element for NairnFEA and/or NairnMPM =
 
@@ -18,27 +18,27 @@ The first step is to create a new class that is a subclass of an existing elemen
   # Write two constructors (as needed) for the element class:
     * `NewElement(int eNum, int *eNode)` - for MPM, the constructor arguments are the element number and an integer array of node numbers.
     * `NewElement(int eNum, int *eNode, int eMat,double eAng,double eThick)`- for FEA, the additional arguments are the material number, the angle (for anisotropic materials), and the thickness (for plane strain or plane stress calculations).
-  # All elements must override the following elements (unless handled by a superclass) and return new element values:
+  # All elements must override the following methods (unless handled by a superclass) and return new element values:
     * `ElementName(void)` - return numeric code defined in `ElementBase.hpp`
     * `NumberNodes(void)` - return number of nodes
     * `NumberSides(void)` - return number of sides (default is 4 if not overridden)
     * `GetArea(void)` - element area (only used in MPM to decide on wave speed)
     * `FaceNodes(void)` - return number of nodes on each face
     * `PtInElement()` - if point is in the element return 1 otherwise 0
-  # Elements that will be used in MPM calculations must implement additional shape function methods to handle GIMP calculations and a few other methods. These function can be ignored if the new element will not be used for MPM calculations:
-    * `ShapeFunction()` - load shape functions and their derivatives (if requested) (note that MPM and FEA have different shape function calls).
-    * `FindExtent()` - find range of nodal coordinates
-    * `GetXiPos()` - find dimensionless position (analytical for speed and may have special case for typically orthogonal grid)
-    * `Orthogonal()` - is the element a rectangle?
-For GIMP
-    * `GetGimpNodes()` - get nodes for GIMP shape functions
-    * `GimpShapeFunction()` get GIMP shape functions
-    * The rest should be handled by `ElementBase.cpp` (which is partly in `MoreMPMElementCase.cpp`), but may need to be verified if problems arise.
+    * `ShapeFunction()` - load shape functions, their derivatives (if requested), and information for axisymmetric analyses. Both MPM and FEA may use this function (the one with B matrix calculations), but MPM will require more shape function methods described below.
   # Elements that will be used in FEA calculations have other methods related to stiffness matrix and stress calculations. These functions can be ignored if the new element will not be used for FEA calculations.
-    * `ShapeFunction()` - load shape functions, their derivatives (if requested), and information for axisymmetric analyses (note that MPM and FEA have different shape function calls).
     * `CalcEdgeLoads()` - this method is called by `GetConsistentLoads(re,np)` that is called by `ForcesOnEdges()` to support stress based boundary conditions on an element edge.
     * `Stiffness()` - called in `BuildStiffnessMatrix()` to calculate element stiffness matrix. If element uses `IsoparametricStiffness()` then may need to set `numGauss` and `gaussSet`.
     * `ForceStress()` - called in `ForceStressEnergyResults(void)` to calculate forces, stresses, and energy. If use `IsoparametricForceStress()` need to fill in option for extrapolation to nodes for new element type. Also may need to set `numGauss` and `gaussSet`.
+  # Elements that will be used in MPM calculations must implement an additional shape function method (for speed) and a few other methods. These first functions activate the element for non-GIMP calculations only (see next item for GIMP as well). These functions can be ignored if the new element will not be used for MPM calculations:
+    * `ShapeFunction()` - load shape functions and their derivatives (if requested). Note that MPM uses the FEA shape function (from above) and has an additional call for speed. The second one is used when running in a regular grid and therefore gradients can be found with scaling factors (2/dx and 2/dy) rather than needing B matrix coordinate transformation.
+    * `FindExtent()` - find range of nodal coordinates. The basic task is handled in `ElementBase` but elements may want some extra calculations here for speed in later calculations. This method is called only once.
+    * `GetXiPos()` - find dimensionless position. The base method in `ElementBase` finds the position numerically. Ideally all MPM elements will find it by an analytical expression, which may depend on shape of element and can use parameters calculated in `FindExtent()`.
+    * `Orthogonal()` - is the element a rectangle aligned with x and z axes? Called only once and only for non-regular grids (uncommon).
+  # Elements that will do MPM-GIMP calculations need above MPM methods and the following extra methods for GIMP shape functions and gradients.  These function can be ignored if the new element will not be used for MPM-GIMP calculations:
+    * `GetGimpNodes()` - get nodes for GIMP shape functions
+    * `GimpShapeFunction()` get GIMP shape functions
+    # All other element needs should be handled by `ElementBase.cpp` (which is partly in `MoreElementBase.cpp` for FEA and in `MoreMPMElementCase.cpp` for MPM). This methods can be checked for compatibility if problems arise.
 
 == Create Instances of Elements ==
 
