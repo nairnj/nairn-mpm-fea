@@ -38,7 +38,7 @@ The first step is to create a new class that is a subclass of an existing elemen
   # Elements that will do MPM-GIMP calculations need above MPM methods and the following extra methods for GIMP shape functions and gradients.  These function can be ignored if the new element will not be used for MPM-GIMP calculations:
     * `GetGimpNodes()` - get nodes for GIMP shape functions
     * `GimpShapeFunction()` get GIMP shape functions
-    # All other element needs should be handled by `ElementBase.cpp` (which is partly in `MoreElementBase.cpp` for FEA and in `MoreMPMElementCase.cpp` for MPM). This methods can be checked for compatibility if problems arise.
+  # All other element needs should be handled by `ElementBase.cpp` (which is partly in `MoreElementBase.cpp` for FEA and in `MoreMPMElementCase.cpp` for MPM). These methods can be checked for compatibility if problems arise.
 
 == Create Instances of Elements ==
 
