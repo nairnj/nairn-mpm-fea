@@ -177,7 +177,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			
 			// read record in the file and convert to MaterialPoint class
 			bb.position(headerLength+(ptNum-1)*resDoc.recSize);
-			mpm.readRecord(bb,mpmOrder,resDoc.lengthScale,resDoc.timeScale);
+			mpm.readRecord(bb,mpmOrder,resDoc.lengthScale,resDoc.timeScale,resDoc.is3D());
 			
 			// find particle property and add to plot
 			x.add(new Double(resDoc.archiveTimes.get(i)));
@@ -244,7 +244,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			for(p=0;p<nummpms;p++)
 			{	// read record in the file and convert to MaterialPoint class
 				bb.position(headerLength+p*resDoc.recSize);
-				mpm.readRecord(bb,mpmOrder,resDoc.lengthScale,resDoc.timeScale);
+				mpm.readRecord(bb,mpmOrder,resDoc.lengthScale,resDoc.timeScale,resDoc.is3D());
 			
 				// exit if crack or continue if do not want this material
 				if(mpm.material<0) break;

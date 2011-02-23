@@ -621,10 +621,13 @@ new options (while the previous plot window is still open) and then clicking the
 
 <h2><a name="viz3D"></a>Visualizing 3D MPM Results<hr></h2>
 
-<p>This Java application cannot visualize 3D results and will report an error message when
-trying to open a file containing 3D results. You can, however,
-<a href="#start">run 3D calculations</a> using this tool or run 3D calculations on
-a standard command line. Your options for visualizing such results are:
+<p>You can <a href="#start">run 3D calculations</a> using this tool or run 3D calculations on
+a standard command line and even open the results in this Java application, but the visualization options
+are very limited. You can only look at text output
+and plot reults <i>vs.</i> time. Furthermore, with the exception of plotting global results, the time plots
+will be very slow for large calculations.</p>
+
+<p>Some other options for visualizing 3D results are:</p>
 
 <ul>
 <li>If you have a Macintosh, download the <b>NairnFEAMPM</b> application and open the file.
@@ -637,6 +640,11 @@ You can open these files in Paraview (or other tools) for 3D visualization of gr
 See <code>http://www.paraview.org</code> to download Paraview.
 </li>
 
+<li>If you save &quot;VTK Legacy&quot; files, you can read those files in MatLab and then write
+custom scripts to plot or do calculations with the results. The <code>nairn-fea-mpm</code> source code has a folder
+in the Visualization section with a MatLab file for reading &quot;VTK Legacy&quot; files and some
+scripts that work with the data.</li>
+
 <li>To get particle-based plots (without using a Mac), you can use the <code>ExtractMPM</code>
 tool in the <code>NairnMPM</code> package to extract another type of &quot;VTK Legacy&quot;
 file that Paraview can use to generate particle plots. The process in Paraview is
@@ -646,6 +654,7 @@ the current scale factor or, alternatvely, edit the scale factor to be 1 and ent
 absolute glyph size. Box glyph edges should be 1/2 the cell length in each dimension.
 Spherical glyph radii should be 1/4 the cell size.
 </li>
+
 </ul>
 
 <p>| <a href="#index">index</a> | <a href="#plotting">Back to Plotting Results</a> |</p>

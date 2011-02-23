@@ -46,9 +46,9 @@ public class ResultsDocument extends AbstractTableModel
 	public ArrayList<MaterialBase> materials;
 	public String archFormat,crackFormat;
 	public char[] feaArchFormat = {'N','N','N','N','N','N' };
-	public double xmin,xmax,ymin,ymax;					// mesh bounds
-	public double dxmin,dxmax,dymin,dymax;				// displaced mesh bounds
-	public double cellMinSide,xscale=1.,yscale=1.;
+	public double xmin,xmax,ymin,ymax,zmin,zmax;			// mesh bounds
+	public double dxmin,dxmax,dymin,dymax;					// displaced mesh bounds
+	public double cellMinSide,xscale=1.,yscale=1.,zscale=1;
 	public int np;
 	public DocViewer docCtrl;
 	public int recSize;
@@ -136,8 +136,8 @@ public class ResultsDocument extends AbstractTableModel
 		catch(NoSuchElementException e)
 		{	throw new Exception("Could not decode analysis type for this file");
 		}
-		if(is3D())
-			throw new Exception("This tool cannot visualize 3D results; see help information for other options.");
+		//if(is3D())
+		//	throw new Exception("This tool cannot visualize 3D results; see help information for other options.");
 		
 		//----------------------------------------------------------
 		// Nodal Point Coordinates
@@ -147,15 +147,29 @@ public class ResultsDocument extends AbstractTableModel
 			throw new Exception("Error decoding nodal point coordinates");
 		s=new Scanner(ndst.substring(lineStart,ndst.length()-1));
 		int prevNodeNum=0,nodeNum;
-		double xpt,ypt;
-		while(s.hasNextInt())
-		{	nodeNum=s.nextInt();
-			xpt=s.nextDouble()*lengthScale;
-			ypt=s.nextDouble()*lengthScale;
-			if(nodeNum!=prevNodeNum+1)
-				throw new Exception("Some node numbers are missing");
-			addNode(nodeNum,xpt,ypt);
-			prevNodeNum=nodeNum;
+		double xpt,ypt,zpt;
+		if(is3D())
+		{	while(s.hasNextInt())
+			{	nodeNum=s.nextInt();
+				xpt=s.nextDouble()*lengthScale;
+				ypt=s.nextDouble()*lengthScale;
+				zpt=s.nextDouble()*lengthScale;
+				if(nodeNum!=prevNodeNum+1)
+					throw new Exception("Some node numbers are missing");
+				addNode(nodeNum,xpt,ypt,zpt);
+				prevNodeNum=nodeNum;
+			}
+		}
+		else
+		{	while(s.hasNextInt())
+			{	nodeNum=s.nextInt();
+				xpt=s.nextDouble()*lengthScale;
+				ypt=s.nextDouble()*lengthScale;
+				if(nodeNum!=prevNodeNum+1)
+					throw new Exception("Some node numbers are missing");
+				addNode(nodeNum,xpt,ypt);
+				prevNodeNum=nodeNum;
+			}
 		}
 		if(prevNodeNum!=nnodes)
 			throw new Exception("Number of nodes does not match expected number of nodes.");
@@ -199,6 +213,7 @@ public class ResultsDocument extends AbstractTableModel
 				case ElementBase.ISO_TRIANGLE:
 				case ElementBase.LINEAR_INTERFACE:
 				case ElementBase.QUAD_INTERFACE:
+				case ElementBase.EIGHT_NODE_ISO_BRICK:
 					// read all nodes
 					for(i=0;i<ElementBase.NodesFromType(elemID);i++)
 						nds[i]=s.nextInt();
@@ -358,8 +373,10 @@ public class ResultsDocument extends AbstractTableModel
 			String gridInfo=null;
 			while(s.hasNext() && gridInfo==null)
 			{	String gridLine=s.next();
-				if(gridLine.length()<10) continue;
-				if(gridLine.substring(0,10).equals("Orthogonal"))
+				if(gridLine.length()<23) continue;
+				if(gridLine.substring(0,21).equals("Structured orthogonal") || 
+						gridLine.substring(0,23).equals("Unstructured orthogonal") ||
+						gridLine.substring(0,10).equals("Orthogonal"))
 				{	int beginIndex=gridLine.indexOf(":");
 					if(beginIndex<0) break;
 					gridInfo=gridLine.substring(beginIndex+1,gridLine.length());
@@ -377,6 +394,10 @@ public class ResultsDocument extends AbstractTableModel
 				else
 				{	yscale/=xscale;
 					xscale=1.;
+				}
+				if(is3D())
+				{	if(sline.hasNext()) sline.next();
+					if(sline.hasNextDouble()) zscale=sline.nextDouble()*lengthScale;
 				}
 			}
 		}
@@ -720,7 +741,7 @@ public class ResultsDocument extends AbstractTableModel
 		}
 	}
 	
-	// add nodal point
+	// add 2D nodal point
 	public void addNode(int nodeNum,double xpt,double ypt)
 	{	if(nodeNum==1)
 		{	xmin=xpt;
@@ -737,6 +758,26 @@ public class ResultsDocument extends AbstractTableModel
 		nodes.add(new NodalPoint(nodeNum,xpt,ypt));
 	}
 
+	// add 3D nodal point
+	public void addNode(int nodeNum,double xpt,double ypt,double zpt)
+	{	if(nodeNum==1)
+		{	xmin=xpt;
+			xmax=xpt;
+			ymin=ypt;
+			ymax=ypt;
+			zmin=zpt;
+			zmax=zpt;
+		}
+		else
+		{	if(xpt<xmin) xmin=xpt;
+			else if(xpt>xmax) xmax=xpt;
+			if(ypt<ymin) ymin=ypt;
+			else if(ypt>ymax) ymax=ypt;
+			if(zpt<zmin) zmin=ypt;
+			else if(zpt>zmax) zmax=ypt;
+		}
+		nodes.add(new NodalPoint(nodeNum,xpt,ypt,zpt));
+	}
 	// add element
 	public void addElement(int elemNum,int elemID,int [] nds,int matID,double angle,double thickness)
 	{
@@ -758,6 +799,10 @@ public class ResultsDocument extends AbstractTableModel
 			case ElementBase.ISO_TRIANGLE:
 				newElem=new IsoTriangle(elemNum,nds);
 				break;
+				
+			case ElementBase.EIGHT_NODE_ISO_BRICK:
+				newElem=new EightNodeBrick(elemNum,nds);
+				break;				
 			
 			case ElementBase.LINEAR_INTERFACE:
 				feaArchFormat[ReadArchive.ARCH_Interfaces]='Y';

@@ -51,12 +51,30 @@ public class LoadArchive extends PlotControl implements ActionListener
 	// called when new file is loaded
 	public void setEnabled()
 	{	if(docCtrl.resDoc.isMPMAnalysis())
-		{	plotType[PARTICLE_PLOT].setSelected(true);
-			selected=PARTICLE_PLOT;
-			plotType[PARTICLE_PLOT].setEnabled(true);
-			rbIcon[PARTICLE_PLOT].setEnabled(true);
-			plotType[TIME_PLOT].setEnabled(true);
-			rbIcon[TIME_PLOT].setEnabled(true);
+		{	if(docCtrl.resDoc.is3D())
+			{	plotType[PARTICLE_PLOT].setEnabled(false);
+				rbIcon[PARTICLE_PLOT].setEnabled(false);
+				plotType[TIME_PLOT].setSelected(true);
+				selected=TIME_PLOT;
+				plotType[TIME_PLOT].setEnabled(true);
+				rbIcon[TIME_PLOT].setEnabled(true);
+				plotType[MESH_PLOT].setEnabled(false);
+				rbIcon[MESH_PLOT].setEnabled(false);
+				plotType[MESH2D_PLOT].setEnabled(false);
+				rbIcon[MESH2D_PLOT].setEnabled(false);
+			}
+			else
+			{	plotType[PARTICLE_PLOT].setSelected(true);
+				selected=PARTICLE_PLOT;
+				plotType[PARTICLE_PLOT].setEnabled(true);
+				rbIcon[PARTICLE_PLOT].setEnabled(true);
+				plotType[TIME_PLOT].setEnabled(true);
+				rbIcon[TIME_PLOT].setEnabled(true);
+				plotType[MESH_PLOT].setEnabled(true);
+				rbIcon[MESH_PLOT].setEnabled(true);
+				plotType[MESH2D_PLOT].setEnabled(true);
+				rbIcon[MESH2D_PLOT].setEnabled(true);
+			}
 		}
 		else
 		{	plotType[MESH_PLOT].setSelected(true);
@@ -65,11 +83,11 @@ public class LoadArchive extends PlotControl implements ActionListener
 			rbIcon[PARTICLE_PLOT].setEnabled(false);
 			plotType[TIME_PLOT].setEnabled(false);
 			rbIcon[TIME_PLOT].setEnabled(false);
+			plotType[MESH_PLOT].setEnabled(true);
+			rbIcon[MESH_PLOT].setEnabled(true);
+			plotType[MESH2D_PLOT].setEnabled(true);
+			rbIcon[MESH2D_PLOT].setEnabled(true);
 		}
-		plotType[MESH_PLOT].setEnabled(true);
-		rbIcon[MESH_PLOT].setEnabled(true);
-		plotType[MESH2D_PLOT].setEnabled(true);
-		rbIcon[MESH2D_PLOT].setEnabled(true);
 	}
 	
 	// help to set an image of a radio button

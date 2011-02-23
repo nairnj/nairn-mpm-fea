@@ -1,10 +1,10 @@
-/*******************************************************************
-	EightNodeIsoparam.java
-	NairnFEAMPMViz
-
-	Created by John Nairn on 9/7/07.
-	Copyright 2007 RSAC Software. All rights reserved.
-*******************************************************************/
+/*
+ * EightNodeIsoparam.java
+ * NairnFEAMPMViz
+ *
+ * Created by John Nairn on 9/7/07.
+ * Copyright 2007 RSAC Software. All rights reserved.
+ */
 
 import java.awt.geom.*;
 
