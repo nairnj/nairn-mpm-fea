@@ -10,7 +10,7 @@ public class NodalPoint
 {
 	// variables
 	private int num,numpts;
-	public double x,y;
+	public double x,y,z;
 	public double dispx,dispy;
 	private double plotValue,weight;
 	public double sigxx,sigyy,sigzz,sigxy;		// FEA nodal stresses
@@ -26,6 +26,19 @@ public class NodalPoint
 		sigxx=sigyy=sigzz=sigxy=0.;
 	}
 	
+	// initialize
+	NodalPoint(int nodeNum,double xpt,double ypt,double zpt)
+	{   super();
+		num=nodeNum;
+		x=xpt;
+		y=ypt;
+		z=zpt;
+		dispx=0.;
+		dispy=0.;
+		sigxx=sigyy=sigzz=sigxy=0.;
+		// dispz, sigxz,sigyz not used yet
+	}
+
 	// fill node with circle
 	public void stroke(MeshPlotView pv,ResultsDocument doc,boolean displaced)
 	{

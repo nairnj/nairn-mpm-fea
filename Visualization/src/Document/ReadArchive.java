@@ -125,7 +125,7 @@ public class ReadArchive
 			{	// create material point
 				int pos=bb.position();
 				MaterialPoint mpm=new MaterialPoint(p+1);
-				mpm.readRecord(bb,mpmOrder,doc.lengthScale,doc.timeScale);
+				mpm.readRecord(bb,mpmOrder,doc.lengthScale,doc.timeScale,doc.is3D());
 				
 				// A negative material number means start of crack particles
 				if(mpm.material<0)

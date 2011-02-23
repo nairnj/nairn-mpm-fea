@@ -262,30 +262,32 @@ public class PlotQuantity extends PlotControl
 				{	// global results
 					if(docCtrl.resDoc.globalArchive!=null)
 						quant.addItem(new PlotMenuItem("Global Results",MPMGLOBALRESULTS));
-						
-					byte [] carch=docCtrl.resDoc.crackFormat.getBytes();
 					
-					if(carch[ReadArchive.ARCH_JIntegral]=='Y')
-					{	quant.addItem(new PlotMenuItem("J1",MPMJ1));
-						quant.addItem(new PlotMenuItem("J2",MPMJ2));
+					if(!docCtrl.resDoc.is3D())
+					{	byte [] carch=docCtrl.resDoc.crackFormat.getBytes();
+					
+						if(carch[ReadArchive.ARCH_JIntegral]=='Y')
+						{	quant.addItem(new PlotMenuItem("J1",MPMJ1));
+							quant.addItem(new PlotMenuItem("J2",MPMJ2));
+						}
+					
+						if(carch[ReadArchive.ARCH_StressIntensity]=='Y')
+						{	quant.addItem(new PlotMenuItem("KI",MPMKI));
+							quant.addItem(new PlotMenuItem("KII",MPMKII));
+						}
+					
+						if(carch[ReadArchive.ARCH_BalanceResults]=='Y')
+						{	quant.addItem(new PlotMenuItem("Global Released",MPMCRACKRELEASE));
+							quant.addItem(new PlotMenuItem("Global Dissipated",MPMCRACKABSORB));
+						}
+					
+						quant.addItem(new PlotMenuItem("Crack Length",MPMLENGTH));
+						quant.addItem(new PlotMenuItem("Debonded Crack Length",MPMDEBONDLENGTH));
+						quant.addItem(new PlotMenuItem("Normal CTOD",MPMNORMALCTOD));
+						quant.addItem(new PlotMenuItem("Shear CTOD",MPMSHEARCTOD));
+						quant.addItem(new PlotMenuItem("Debond Tip Normal COD",MPMDEBONDNCTOD));
+						quant.addItem(new PlotMenuItem("Debond Tip Shear COD",MPMDEBONDSCTOD));
 					}
-					
-					if(carch[ReadArchive.ARCH_StressIntensity]=='Y')
-					{	quant.addItem(new PlotMenuItem("KI",MPMKI));
-						quant.addItem(new PlotMenuItem("KII",MPMKII));
-					}
-					
-					if(carch[ReadArchive.ARCH_BalanceResults]=='Y')
-					{	quant.addItem(new PlotMenuItem("Global Released",MPMCRACKRELEASE));
-						quant.addItem(new PlotMenuItem("Global Dissipated",MPMCRACKABSORB));
-					}
-					
-					quant.addItem(new PlotMenuItem("Crack Length",MPMLENGTH));
-					quant.addItem(new PlotMenuItem("Debonded Crack Length",MPMDEBONDLENGTH));
-					quant.addItem(new PlotMenuItem("Normal CTOD",MPMNORMALCTOD));
-					quant.addItem(new PlotMenuItem("Shear CTOD",MPMSHEARCTOD));
-					quant.addItem(new PlotMenuItem("Debond Tip Normal COD",MPMDEBONDNCTOD));
-					quant.addItem(new PlotMenuItem("Debond Tip Shear COD",MPMDEBONDSCTOD));
 				}
 				
 				// additional time plot options

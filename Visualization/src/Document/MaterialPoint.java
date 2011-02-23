@@ -127,7 +127,7 @@ public class MaterialPoint
 	// read record from and archive file into this material point
 	//---------------------------------------------------------------------
 	
-	public void readRecord(ByteBuffer bb,char[] mpmOrder,double lengthScale,double timeScale)
+	public void readRecord(ByteBuffer bb,char[] mpmOrder,double lengthScale,double timeScale,boolean has3D)
 	{	// required elements
 		inElem=bb.getInt()-1;					// in element number (zero based)
 		mass=bb.getDouble();					// mass in g
@@ -135,18 +135,28 @@ public class MaterialPoint
 		bb.getShort();							// skip 2 bytes
 		
 		// 3D will have 3 angles, but not read in this app yet
-		angleZ=bb.getDouble();					// angle in degrees about Z axis
-		thickness=bb.getDouble()*lengthScale;	// thickness in length units
+		if(has3D)
+		{	angleZ=bb.getDouble();					// angle in degrees about Z axis
+			bb.getDouble();
+			bb.getDouble();
+			thickness=1.;
+		}
+		else
+		{	angleZ=bb.getDouble();					// angle in degrees about Z axis
+			thickness=bb.getDouble()*lengthScale;	// thickness in length units
+		}
 		
 		x=bb.getDouble()*lengthScale;			// x position
 		y=bb.getDouble()*lengthScale;			// y position
-		// 3D will have third position
+		// 3D will have third position\
+		if(has3D) bb.getDouble();
 		
 		// new default puts original position (in length units) here
 		if(mpmOrder[ReadArchive.ARCH_Defaults]=='Y')
 		{	origx=bb.getDouble()*lengthScale;
 			origy=bb.getDouble()*lengthScale;
 			// 3D will have third position
+			if(has3D) bb.getDouble();
 		}
 
 		// velocity (length units/time units), but archive has mm/sec so need to
@@ -156,6 +166,7 @@ public class MaterialPoint
 			velx=bb.getDouble()*rescale;
 			vely=bb.getDouble()*rescale;
 			// 3D will have third velocity
+			if(has3D) bb.getDouble();
 		}
 		else
 		{	velx=0.;
@@ -170,6 +181,10 @@ public class MaterialPoint
 			sigma[ZZID]=1.e-6*bb.getDouble();
 			sigma[XYID]=1.e-6*bb.getDouble();
 			// 3D will have two more components
+			if(has3D)
+			{	bb.getDouble();
+				bb.getDouble();
+			}
 		}
 		else
 		{	sigma[XXID]=0.;
@@ -186,6 +201,10 @@ public class MaterialPoint
 			eps[ZZID]=100.*bb.getDouble();
 			eps[XYID]=100.*bb.getDouble();
 			// 3D will have two more components
+			if(has3D)
+			{	bb.getDouble();
+				bb.getDouble();
+			}
 		}
 		else
 		{	eps[XXID]=0.;
@@ -202,6 +221,10 @@ public class MaterialPoint
 			eplast[ZZID]=100.*bb.getDouble();
 			eplast[XYID]=100.*bb.getDouble();
 			// 3D will have two more components
+			if(has3D)
+			{	bb.getDouble();
+				bb.getDouble();
+			}
 		}
 		else
 		{	eplast[XXID]=0.;
@@ -216,6 +239,7 @@ public class MaterialPoint
 		{	origx=bb.getDouble()*lengthScale;
 			origy=bb.getDouble()*lengthScale;
 			// 3D will have one more position
+			if(has3D) bb.getDouble();
 		}
 		
 		// external work (cumulative) in J (not converted for units)
@@ -273,6 +297,7 @@ public class MaterialPoint
 			dcdx=bb.getDouble()/lengthScale;
 			dcdy=bb.getDouble()/lengthScale;
 			// 3D will have one more
+			if(has3D) bb.getDouble();
 		}
 		else
 		{	concentration=0.;
