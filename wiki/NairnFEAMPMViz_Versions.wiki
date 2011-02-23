@@ -27,6 +27,8 @@ NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The vers
     * The Window menu tracks more windows.
     * On Mac, menus move to the top of the screen (but Mac users should use the Mac app instead)
     * Fixed on bug in mesh plots that clipped to particles.
+    * Recent files menu
+    * Can open 3D results. Can see text output, but only limited plotting options.
 
   * release-2.0 (25 JUL 2010)
     * Has NairnFEAMPMViz 3.1.0
