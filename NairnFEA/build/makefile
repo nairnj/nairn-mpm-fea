@@ -140,6 +140,7 @@ Interface2D = $(src)/Elements/Interface2D
 IsotropicMat = $(com)/Materials/IsotropicMat
 Keypoint = $(src)/Read_FEA/Keypoint
 KeypointsController = $(src)/Read_FEA/KeypointsController
+Lagrange2D = $(com)/Elements/Lagrange2D
 Linear2D = $(com)/Elements/Linear2D
 LinearInterface = $(src)/Elements/LinearInterface
 LineController = $(com)/Read_XML/LineController
@@ -166,7 +167,7 @@ Path = $(src)/Read_FEA/Path
 PathBCController = $(src)/Read_FEA/PathBCController
 PathsController = $(src)/Read_FEA/PathsController
 PointController = $(com)/Read_XML/PointController
-Quad2D = $(src)/Elements/Quad2D
+Quad2D = $(com)/Elements/Quad2D
 QuadInterface = $(src)/Elements/QuadInterface
 RectController = $(com)/Read_XML/RectController
 ShapeController = $(com)/Read_XML/ShapeController
@@ -199,6 +200,7 @@ dprefix = $(src)/System/FEAPrefix.hpp $(com)/System/DataTypes.hpp \
 # ImperfectInterface.hpp : ElementBase.hpp
 # Interface2D.hpp : ElementBase.hpp
 # IsotropicMat.hpp : Elastic.hpp (MaterialBase.hpp)
+# Lagrange2D.hpp : Quad2D.hpp (ElementBase.hpp)
 # Linear2D.hpp : ElementBase.hpp
 # LinearInterface : Interface2D.hpp (ElementBase.hpp)
 # LineController.hpp : ShapeController.hpp
@@ -239,7 +241,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		NodalDispBC.o NodalLoad.o EdgeBC.o Gauss.o Elastic.o Constraint.o ConstraintController.o \
 		mathexpr.o FEABoundaryCondition.o ShapeController.o PointController.o PathBCController.o \
 		RectController.o ArcController.o NodalPoint2D.o NodalPoint3D.o BitMapFilesCommon.o \
-		BMPLevel.o BitMapFilesFEA.o
+		BMPLevel.o BitMapFilesFEA.o Lagrange2D.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -276,7 +278,7 @@ ParseController.o : $(ParseController).cpp $(dprefix) $(ParseController).hpp
 ElementsController.o : $(ElementsController).cpp $(dprefix) $(ElementsController).hpp $(FourNodeIsoparam).hpp \
 			$(NodesController).hpp $(ParseController).hpp $(Linear2D).hpp $(ElementBase).hpp $(EightNodeIsoparam).hpp \
 			$(SixNodeTriangle).hpp $(CSTriangle).hpp $(LinearInterface).hpp $(QuadInterface).hpp $(Interface2D).hpp \
-			$(Quad2D).hpp
+			$(Quad2D).hpp  $(Lagrange2D).hpp $(CommonReadHandler).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ElementsController).cpp
 NodesController.o : $(NodesController).cpp $(dprefix) $(NodesController).hpp $(NodalPoint).hpp $(ParseController).hpp \
 			$(NodalPoint2D).hpp $(NodalPoint3D.hpp) $(NairnFEA).hpp
@@ -324,6 +326,10 @@ Linear2D.o : $(Linear2D).cpp $(dprefix) $(Linear2D).hpp $(ElementBase).hpp $(Nod
 FourNodeIsoparam.o : $(FourNodeIsoparam).cpp $(dprefix) $(FourNodeIsoparam).hpp $(Linear2D).hpp $(ElementBase).hpp \
 			$(NodalPoint).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(FourNodeIsoparam).cpp
+Quad2D.o : $(Quad2D).cpp $(dprefix) $(Quad2D).hpp $(ElementBase).hpp $(NodalPoint).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Quad2D).cpp
+Lagrange2D.o : $(Lagrange2D).cpp $(dprefix) $(Lagrange2D).hpp $(Quad2D).hpp $(ElementBase).hpp $(NodalPoint).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Lagrange2D).cpp
 
 # Common: Nodes
 NodalPoint.o : $(NodalPoint).cpp $(dprefix) $(NodalPoint).hpp
@@ -402,8 +408,6 @@ MoreElementBase.o : $(MoreElementBase).cpp $(dprefix) $(NairnFEA).hpp $(ElementB
 			$(NodalPoint).hpp $(CommonException).hpp $(FourNodeIsoparam).hpp $(EightNodeIsoparam).hpp \
 			$(SixNodeTriangle).hpp $(Quad2D).hpp $(Linear2D).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MoreElementBase).cpp
-Quad2D.o : $(Quad2D).cpp $(dprefix) $(Quad2D).hpp $(ElementBase).hpp $(NodalPoint).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Quad2D).cpp
 EightNodeIsoparam.o : $(EightNodeIsoparam).cpp $(dprefix) $(EightNodeIsoparam).hpp $(Quad2D).hpp $(ElementBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(EightNodeIsoparam).cpp
 SixNodeTriangle.o : $(SixNodeTriangle).cpp $(dprefix) $(SixNodeTriangle).hpp $(Quad2D).hpp $(ElementBase).hpp

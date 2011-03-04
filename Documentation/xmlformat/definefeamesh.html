@@ -75,9 +75,10 @@ Each element is defined in an <code>&lt;elem&gt;</code> tag. The <code>type</cod
 <li><code>4</code>: 6-node isoparametric triangular elements (quadratic)</li>
 <li><code>5</code>: 4-node imperfect inteface elements (linear)</li>
 <li><code>6</code>: 6-node imperfect interface elements (quadratic)</li>
+<li><code>8</code>: 9-node Langrangian rectangular element (quadratic) (9 point Gaussian quadrature)</li>
 </ul>
 
-<p>Element types can be mixed, but the types have to be compatible. You can mix linear elements (types 1, 2, and 5) with each other or quadratic elements (types 3, 4, and 6) with each other, but can not mix linear elements with quadratic elements.</p>
+<p>Element types can be mixed, but the types have to be compatible. You can mix linear elements (types 1, 2, and 5) with each other or quadratic elements (types 3, 4, 6, and 8) with each other, but cannot mix linear elements with quadratic elements.</p>
 
 
 <p>Each element has attributes to define the material for the element:
@@ -88,7 +89,7 @@ Each element is defined in an <code>&lt;elem&gt;</code> tag. The <code>type</cod
 <li><code>thick</code>: Thickness in mm (for plane stress or plane strain 2D calculations)</li>
 </ul>
 
-<p>The value of the <code>&lt;elem&gt;</code> tags are the node numbers listed in the counter-clockwise direction. For elements with mid-side nodes, the corner nodes are first followed by the mid-side nodes. The numbers correspond to the above nodal list with the first node being numbered 1.
+<p>The value of the <code>&lt;elem&gt;</code> tags are the node numbers listed in the counter-clockwise direction. For elements with mid-side nodes, the corner nodes are first followed by the mid-side nodes. The numbers correspond to the above nodal list with the first node being numbered 1. The node numbers can be delimited by any white space, commas, colons, semicolons, or any combination of those delimiters.
 </p>
 
 <p>The <code>&lt;BMP&gt;</code> element, which must come  after the <code>&lt;Mesh&gt;</code> element, lets you  asign material and material angles to the elements using a digitized image of the object. It's use is described below.</p>
@@ -185,8 +186,9 @@ Alternatively, the entire grid can be generated with <code>&lt;Keypoints&gt;</co
 <li><code>4</code>: 6-node isoparametric triangular elements (quadratic)</li>
 <li><code>5</code>: 4-node imperfect interface elements (linear)</li>
 <li><code>6</code>: 6-node imperfect interface elements (quadratic)</li>
+<li><code>8</code>: 9-node Langrangian rectangular element (quadratic) (9 point Gaussian quadrature)</li>
 </ul>
-The first <code>&lt;Area&gt;</code> command must define an element type. Subsequent <code>&lt;Area&gt;</code> commands can omit the element type unless the element type is changed to have an analysis with mixed elements. When mixed elements are used, they must be compatible elements (<i>i.e.</i>, you can mix linear elements (types 1, 2, and 5) with each other or quadratic elements (types 3, 4, and 6) with each other, but can not mix linear elements with quadratic elements). Whenever a <code>type</code> attribute is used, it will apply to that area and all subsequent areas until it is changed. Finally, quadrilateral areas can only use solid elements (types 1, 2, 3, and 4) and interface areas can use only interface elements (type 5 and 6).</li>
+The first <code>&lt;Area&gt;</code> command must define an element type. Subsequent <code>&lt;Area&gt;</code> commands can omit the element type unless the element type is changed to have an analysis with mixed elements. When mixed elements are used, they must be compatible elements (<i>i.e.</i>, you can mix linear elements (types 1, 2, and 5) with each other or quadratic elements (types 3, 4, 6, and 8) with each other, but cannot mix linear elements with quadratic elements). Whenever a <code>type</code> attribute is used, it will apply to that area and all subsequent areas until it is changed. Finally, quadrilateral areas can only use solid elements (types 1, 2, 3, 4, and 8) and interface areas can use only interface elements (type 5 and 6).</li>
 <li><code>flip</code>: For triangular elements, the initially created quadrilaterials are split into two elements by drawing a diagonal across the quadrilaterial. The <code>flip</code> option can change which diagonal is used. It should be 0 or 1. Once it is set, it will apply to that area and all subsequent areas until it is changed.</li>
 </ul>
 

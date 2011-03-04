@@ -93,7 +93,7 @@ at the desired size.
 <dd>This tag similarly defines the mesh in the <code>y</code> direction.
 <dd>
 
-<dt>&lt;Depth nz="20" rz="1.0"&gt; or &lt;Delth cellsize='2'/&gt;</dt>
+<dt>&lt;Depth nz="20" rz="1.0"&gt; or &lt;Depth cellsize='2'/&gt;</dt>
 <dd>This tag similarly defines the mesh in the <code>z</code> direction for 3D analyses.
 <dd>
 </dl>
@@ -136,7 +136,7 @@ The <code>x</code> and <code>y</code> attributes give the coordinates of each po
 </p>
 
 <p>These nodes are connected into elements in the <code>&lt;ElementList&gt;</code>.
-Each element is defined in an <code>&lt;elem&gt;</code> tag. The <code>type='2'</code> attribute means 4-node rectangular elements and is the only one supported for 2D calculations. The node numbers are listed in counter-clockwise direction. The numbers correspond to the above nodal list with the first node being numbered 1. A <code>type='7'</code> attribute means 8-node brick elements and is the only one supported for 3D calculations. The node numbers are listed in counter-clockwise direction for one face and the for the corresponding nodes on the opposite face.
+Each element is defined in an <code>&lt;elem&gt;</code> tag. The <code>type='2'</code> attribute means 4-node rectangular elements and is the only one supported for 2D calculations. The node numbers are listed in counter-clockwise direction. The numbers correspond to the above nodal list with the first node being numbered 1. A <code>type='7'</code> attribute means 8-node brick elements and is the only one supported for 3D calculations. The node numbers are listed in counter-clockwise direction for one face and the for the corresponding nodes on the opposite face. The node numbers can be delimited by any white space, commas, colons, semicolons, or any combination of those delimiters.
 </p>
 
 <p><font color="red">Warning</font> - explicited created meshes current cannot run using <a href="mpmheader.html#GIMP">GIMP</a> methods.

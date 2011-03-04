@@ -26,12 +26,13 @@ class ElementsController : public ParseController
 		// methods
 		void AddElement(ElementBase *);
 		int SetElementArray(void);
+		int ElementsCompatible(int);
 #ifdef MPM_CODE
 		int CreateElement(char *);
+		static ElementBase *MeshElement(int,int,int *);
 #else
 		int CreateElement(char *,int,double,double);
 		int MeshElement(int *,int,double,double);
-		int ElementsCompatible(int);
 		int HasMidsideNodes(void);
 		int ElementSides();
 		bool FlipTriangles(void);

@@ -46,7 +46,7 @@ bool BodyObjectController::FinishSetup(void)
         xmin=temp;
     }
     if(DbleEqual(xmin,xmax))
-        ThrowSAXException("xmax can not equal xmin in input parameters.");
+        ThrowSAXException("%s: xmax cannot equal xmin in input parameters.",GetObjectType());
 		
     if(ymin>ymax)
 	{	temp=ymax;
@@ -54,7 +54,7 @@ bool BodyObjectController::FinishSetup(void)
         ymin=temp;
     }
     if(DbleEqual(ymin,ymax))
-        ThrowSAXException("ymax can not equal ymin in input parameters.");
+        ThrowSAXException("%s: ymax cannot equal ymin in input parameters.",GetObjectType());
 	
 	if(!Is2DBodyObject())
 	{	if(zmin>zmax)
@@ -63,7 +63,7 @@ bool BodyObjectController::FinishSetup(void)
 			zmin=temp;
 		}
 		if(DbleEqual(zmin,zmax))
-			ThrowSAXException("zmax can not equal zmin in input parameters.");
+			ThrowSAXException("%s: zmax cannot equal zmin in input parameters.",GetObjectType());
 	}
 	
 	return TRUE;
@@ -109,4 +109,7 @@ bool BodyObjectController::HasAllParameters(void) { return TRUE; }
 bool BodyObjectController::SetBodyPropertyFromData(char *bData,CommonReadHandler *reader)
 {	return TRUE;
 }
+
+// type of object
+char *BodyObjectController::GetObjectType(void) { return "Body"; }
 

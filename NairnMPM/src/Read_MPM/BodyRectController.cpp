@@ -18,3 +18,6 @@ bool BodyRectController::ContainsPoint(Vector& pt)
 	if(pt.x>xmax || pt.x<xmin) return FALSE;
 	return TRUE;
 }
+
+// type of object
+char *BodyRectController::GetObjectType(void) { return "Rectangle"; }

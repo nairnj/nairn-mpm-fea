@@ -30,7 +30,7 @@ int gelbnd(double **,int,int,double *,double *,int);
 NairnFEA::NairnFEA()
 {
 	version=2;					// NairnFEA version number
-	subversion=8;				// subversion number
+	subversion=9;				// subversion number
 	buildnumber=0;				// build number
 	xax='x';					// default axis names
 	yax='y';
@@ -190,7 +190,7 @@ void NairnFEA::ForcesOnEdges(void)
 	int i,mi0,ni0,ii,mi,ni,iel;
 	int numnds;
 	EdgeBC *nextEdge=firstEdgeBC;
-	double re[17];		// max free * max nodes in element + 1
+	double re[2*MaxElNd+1];		// max free * max nodes in element + 1
 	
 	// loop of edge boundary conditions
 	while(nextEdge!=NULL)

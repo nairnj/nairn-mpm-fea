@@ -21,6 +21,7 @@ class BodyRectController : public BodyObjectController
 	
 		// methods
 		virtual bool ContainsPoint(Vector &);
+		virtual char *GetObjectType(void);
 };
 
 #endif

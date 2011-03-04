@@ -27,6 +27,7 @@ class SixNodeTriangle : public Quad2D
         virtual int NumberSides(void);
         virtual void ShapeFunction(Vector *,int,double *,double *,double *,
                                 Vector *,double *,double *,double *);
+		virtual void ExtrapolateGaussStressToNodes(double [][5]);
 };
 
 #endif

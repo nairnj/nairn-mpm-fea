@@ -117,9 +117,9 @@ const char *Area::MeshElements(void)
 	if(numPaths!=4)
 		return "Code can only mesh quadrilateral areas (4 paths) or interfaces (2 paths).";
 	
-	// can not be interface elements
+	// cannot be interface elements
 	if(theElems->InterfaceElements())
-		return "Areas can not be meshed into interface elements.";
+		return "Areas cannot be meshed into interface elements.";
 	
 	// must be connected
 	if(edges[numPaths-1]->LastKeypoint()!=edges[0]->FirstKeypoint())

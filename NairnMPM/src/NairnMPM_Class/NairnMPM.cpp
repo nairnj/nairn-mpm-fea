@@ -360,7 +360,7 @@ void NairnMPM::PreliminaryCalcs(void)
 				userCartesian=TRUE;
 			}
 			else
-			{	// on sebsequent elements, if size does not match current values, than not Cartesian grod so give up
+			{	// on sebsequent elements, if size does not match current values, than not Cartesian grid so give up
 				if(!DbleEqual(gridx,dx) || !DbleEqual(gridy,dy) || !DbleEqual(gridz,dz))
 				{	userCartesian=FALSE;
 					break;

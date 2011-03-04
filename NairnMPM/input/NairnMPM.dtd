@@ -65,6 +65,7 @@
 			ymax CDATA #REQUIRED
 			zmin CDATA #IMPLIED
 			zmax CDATA #IMPLIED
+			type (2|7|8) #IMPLIED
 			thickness CDATA #IMPLIED>
 
 <!-- Define the material points -->

@@ -294,6 +294,23 @@ void ElementBase::MPMPoints(short numPerElement,Vector *mpos)
     }
 }
 
+// Get GIMP nodes around an element #num, but only where shape functions is non zero
+// assumed to be properly numbered regular array
+// load nodes into nds[1]... and node IDs (0-15) into ndIDs[0]...
+// Elements that support GIMP must override
+void ElementBase::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos)
+{
+}
+
+// get GIMP shape functions and optionally derivatives wrt x and y
+// assumed to be properly numbered regular array
+// input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
+// Elements that support GIMP must override
+void ElementBase::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
+										 double *xDeriv,double *yDeriv,double *zDeriv)
+{
+}
+
 // Ignore zero shape functions in GIMP, but only need to check remote nodes
 void ElementBase::GimpCompact(int *numnds,int *nds,double *sfxn,double *xDeriv,double *yDeriv,double *zDeriv)
 {

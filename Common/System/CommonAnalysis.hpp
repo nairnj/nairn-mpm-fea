@@ -63,5 +63,6 @@ enum { NO_INPUT=0,TEXT_BLOCK,INT_NUM,DOUBLE_NUM,NODE_BLOCK,
 	SETTING_FUNCTION_BLOCK,POLYHEDRON_BLOCK };
 
 void ThrowSAXException(const char *);
+void ThrowSAXException(const char *,char *);
 
 #endif

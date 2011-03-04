@@ -31,3 +31,5 @@ bool BodyOvalController::ContainsPoint(Vector& pt)
 	return (((pt.x-x0)*(pt.x-x0)/a/a+(pt.y-y0)*(pt.y-y0)/b/b) <= 1.) ? TRUE : FALSE;
 }
 
+// type of object
+char *BodyOvalController::GetObjectType(void) { return "Oval"; }

@@ -113,6 +113,24 @@ void SixNodeTriangle::ShapeFunction(Vector *xi,int getDeriv,
 	}
 }
 
+// Take stress at three gauss points and map them to 6 nodes in this element
+// See FEA notes on stress extrapolation
+// sgp[i][j] is stress j (1 to 4) at Gauss point i (1 to numGauss)
+// se[i][j] is output stress j (1 to 4) at node i (1 to numnds) (externed variable)
+void SixNodeTriangle::ExtrapolateGaussStressToNodes(double sgp[][5])
+{
+	// extraplate internal triangle to 6 nodes - see notes FEA section
+	int j;
+	for(j=1;j<=4;j++)
+	{	se[1][j]=(5.*sgp[1][j]-sgp[2][j]-sgp[3][j])/3.;
+		se[2][j]=(-sgp[1][j]+5.*sgp[2][j]-sgp[3][j])/3.;
+		se[3][j]=(-sgp[1][j]-sgp[2][j]+5.*sgp[3][j])/3.;
+		se[4][j]=(2.*sgp[1][j]+2.*sgp[2][j]-sgp[3][j])/3.;
+		se[5][j]=(-sgp[1][j]+2.*sgp[2][j]+2.*sgp[3][j])/3.;
+		se[6][j]=(2.*sgp[1][j]-sgp[2][j]+2.*sgp[3][j])/3.;
+	}
+}
+
 #pragma mark SixNodeTriangle: accessors
 
 // element name as an ID

@@ -22,6 +22,7 @@ class BodyOvalController : public BodyObjectController
 		// methods
 		virtual bool FinishSetup(void);
 		virtual bool ContainsPoint(Vector &);
+		virtual char *GetObjectType(void);
 	
 	private:
 		double x0,y0;

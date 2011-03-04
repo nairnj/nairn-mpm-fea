@@ -33,6 +33,7 @@ class BodyPolyhedronController : public BodyObjectController
 		virtual bool FinishParameter(void);
 		virtual bool Is2DBodyObject(void);
 		virtual bool SetBodyPropertyFromData(char *,CommonReadHandler *);
+		virtual char *GetObjectType(void);
 	
 	private:
 		int style;

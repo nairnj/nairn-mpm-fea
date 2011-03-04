@@ -17,25 +17,31 @@
 #include "Elements/EightNodeIsoparam.hpp"
 #include "Elements/SixNodeTriangle.hpp"
 
-// Quadrature points
-static double placeXi[2][4]={{-0.577350269189626,-0.577350269189626,
-							0.577350269189626,0.577350269189626},
-							{0.666666666666667,0.166666666666667,0.166666666666667,0.}};
-static double placeEta[2][4]={{-0.577350269189626,0.577350269189626,
-							-0.577350269189626,0.577350269189626},
-							{0.166666666666667,0.666666666666667,0.166666666666667,0.}};
-static double weight[2][4]={{1.,1.,1.,1.},
-							{0.166666666666667,0.166666666666667,0.166666666666667,0.}};
-/*
-static double placeXi[4]={-0.577350269189626,-0.577350269189626,
-                    0.577350269189626,0.577350269189626};
-static double placeEta[4]={-0.577350269189626,0.577350269189626,
-                    -0.577350269189626,0.577350269189626};
-static double weight[4]={1.,1.,1.,1.};
-*/
+// Quadrature points in various sets
+// [0] is for 2X2 quadrilaterals (4 points)
+// [1] is for 3 points in triangle
+// [2] is for 3X3 quadrilaterals (9 points)
+// define maximum gauss points + 1
+#define MaxGaussPts 10
+static double placeXi[3][9] = {
+	{-0.577350269189626,-0.577350269189626,0.577350269189626,0.577350269189626,0.,0.,0.,0.,0.},
+	{0.666666666666667,0.166666666666667,0.166666666666667,0.,0.,0.,0.,0.,0.},
+	{-0.7745966692414834,-0.7745966692414834,-0.7745966692414834,0.,0.,0.,0.7745966692414834,0.7745966692414834,0.7745966692414834}
+};
+static double placeEta[3][9] = {
+	{-0.577350269189626,0.577350269189626,-0.577350269189626,0.577350269189626,0.,0.,0.,0.,0.},
+	{0.166666666666667,0.666666666666667,0.166666666666667,0.,0.,0.,0.,0.,0.},
+	{-0.7745966692414834,0.,0.7745966692414834,-0.7745966692414834,0.,0.7745966692414834,-0.7745966692414834,0.,0.7745966692414834}
+};
+static double weight[3][9] = {
+	{1.,1.,1.,1.,0.,0.,0.,0.,0.},
+	{0.166666666666667,0.166666666666667,0.166666666666667,0.,0.,0.,0.,0.,0.},
+	{0.3086419753086420,0.4938271604938272,0.3086419753086420,0.4938271604938272,0.7901234567901235,0.4938271604938272,
+		0.3086419753086420,0.4938271604938272,0.3086419753086420}
+};
 
-// globals for common element storage will building stiffness matrix or
-//    or evaluating results
+// globals for common element storage while building stiffness matrix or
+//    while evaluating results
 Vector ce[MaxElNd];
 double te[MaxElNd];
 double re[MxFree*MaxElNd];
@@ -45,12 +51,12 @@ double se[MxFree*MaxElNd][MxFree*MaxElNd];
 
 /* Main FEA contructor when creating elements:
 	input is node numbers (0-based array) but values
-            are 1-based (length always 9, even if unused)
+            are 1-based (length always MaxElNd, even if unused)
 */
 ElementBase::ElementBase(int eNum,int *eNode,int eMat,double eAng)
 {	int i;
     num=eNum;
-    for(i=0;i<9;i++) nodes[i]=eNode[i];
+    for(i=0;i<MaxElNd;i++) nodes[i]=eNode[i];
     filled=0;
     material=eMat;
 	SetAngleInDegrees(eAng);
@@ -219,17 +225,17 @@ void ElementBase::FillLowerHalfStiffness(void)
 */
 void ElementBase::IsoparametricForceStress(double *rm,int np,int nfree)
 {
-    int numnds=NumberNodes(),ind,j,i,k,nst=2*numnds,lnameEl;
-    int ngp,nx,ind1,ind2,jmax;
+    int numnds=NumberNodes(),ind,j,i,nst=2*numnds;
+    int ngp,nx,ind1,ind2;
     int indg;
-    double sgp[5][5],etot[5],qe[9][5];
+    double sgp[MaxGaussPts][5],etot[5];
     double xiDeriv[MaxElNd],etaDeriv[MaxElNd],asbe[MaxElNd],fn[MaxElNd];
-    double detjac,asr,temp,dv;
-    double at,bt,at2,bt2,atbt,deltaT;
+    double detjac,asr,temp,dv,deltaT;
+	
     double thck=GetThickness()/1000.;
     MaterialBase *matl=theMaterials[material-1];
 	Vector place;
-    
+	
     // Load element coordinates (ce[]), noodal temperature (te[]), 
 	//    and material props (mdm[][] and me0[])
     GetProperties(np);
@@ -336,86 +342,7 @@ void ElementBase::IsoparametricForceStress(double *rm,int np,int nfree)
     strainEnergy+=0.5*temp;
 
     // Extrapolate gaussian point stresses to nodal point stresses
-	lnameEl=ElementName();
-    switch(lnameEl)
-    {	case FOUR_NODE_ISO:
-        case EIGHT_NODE_ISO:
-            /* Linear quadrilateral, use shape functions based on
-				Gaussian points which are numbered ccw point as 1,3,4,2
-				See notes FEA section */
-            at=1.+1./placeXi[gaussSet][3];
-            bt=1.-1./placeXi[gaussSet][3];
-            at2=at*at/4.;
-            bt2=bt*bt/4.;
-            atbt=at*bt/4.;
-            qe[1][1]=at2;
-            qe[1][2]=atbt;
-            qe[1][3]=atbt;
-            qe[1][4]=bt2;
-            qe[2][1]=atbt;
-            qe[2][2]=bt2;
-            qe[2][3]=at2;
-            qe[2][4]=atbt;
-            qe[3][1]=bt2;
-            qe[3][2]=atbt;
-            qe[3][3]=atbt;
-            qe[3][4]=at2;
-            qe[4][1]=atbt;
-            qe[4][2]=at2;
-            qe[4][3]=bt2;
-            qe[4][4]=atbt;
-            if(lnameEl==EIGHT_NODE_ISO)
-            {	at=at/4.;
-                bt=bt/4.;
-                qe[5][1]=at;
-                qe[5][2]=bt;
-                qe[5][3]=at;
-                qe[5][4]=bt;
-                qe[6][1]=bt;
-                qe[6][2]=bt;
-                qe[6][3]=at;
-                qe[6][4]=at;
-                qe[7][1]=bt;
-                qe[7][2]=at;
-                qe[7][3]=bt;
-                qe[7][4]=at;
-                qe[8][1]=at;
-                qe[8][2]=at;
-                qe[8][3]=bt;
-                qe[8][4]=bt;
-            }
-            for(i=1;i<=numnds;i++)
-            {	for(j=1;j<=4;j++)
-                {   temp=0.;
-                    for(k=1;k<=4;k++)
-                    	temp+=qe[i][k]*sgp[k][j];
-                    se[i][j]=temp;
-                }
-            }
-            break;
-		
-		case ISO_TRIANGLE:
-			// extraplate internal triangle to 6 nodes - see notes FEA section
-			jmax=3;
-			if(np==AXI_SYM) jmax=4;
-			for(j=1;j<=jmax;j++)
-			{	se[1][j]=(5.*sgp[1][j]-sgp[2][j]-sgp[3][j])/3.;
-				se[2][j]=(-sgp[1][j]+5.*sgp[2][j]-sgp[3][j])/3.;
-				se[3][j]=(-sgp[1][j]-sgp[2][j]+5.*sgp[3][j])/3.;
-				se[4][j]=(2.*sgp[1][j]+2.*sgp[2][j]-sgp[3][j])/3.;
-				se[5][j]=(-sgp[1][j]+2.*sgp[2][j]+2.*sgp[3][j])/3.;
-				se[6][j]=(2.*sgp[1][j]-sgp[2][j]+2.*sgp[3][j])/3.;
-			}
-			break;
-
-        default:
-            // no extrapolation available, fill in with zeros
-            for(i=1;i<=numnds;i++)
-            {	for(j=1;j<=4;j++)
-                    se[i][j]=0.;
-            }
-            break;
-    }
+	ExtrapolateGaussStressToNodes(sgp);
 
     /* For plane strain analysis, calculate sigz stress
             For axisymmetric, multiply force and energy by 2 pi
@@ -431,6 +358,19 @@ void ElementBase::IsoparametricForceStress(double *rm,int np,int nfree)
     }
 }
 
+// Take stress at gauss points and map them to element nodes
+// Elements must override to support stress calculations
+// sgp[i][j] is stress j (1 to 4) at Gauss point i
+// se[i][j] is output stress j (1 to 4) at node i (1 to numnds) (externed variable)
+void ElementBase::ExtrapolateGaussStressToNodes(double sgp[][5])
+{
+	int i,j,numnds = NumberNodes();
+	for(i=1;i<=numnds;i++)
+	{	for(j=1;j<=4;j++)
+			se[i][j]=0.;
+	}
+}
+	
 // Determine if the element should be output
 int ElementBase::WantElement(char thisFlag,const vector< int > &selected)
 {
@@ -520,7 +460,7 @@ void ElementBase::LinearEdgeLoad(int nd1,int nd2,int ndir,double *fload,double *
 }
 
 /* Calculate equivalent forces for edge load on quadratic edges only
-	nd1, nd2, and nd3 are nodes along the (1 based)
+	nd1, nd2, and nd3 are element node #s along the edges (1 based)
 	ndir is 1 for normal, 2 for shear
 	fload[0] to fload[2] are nodal stresses in MPa
 	re is output resultants (1 based)

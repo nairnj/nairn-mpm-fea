@@ -21,6 +21,9 @@
 #define LINEAR_INTERFACE 5
 #define QUAD_INTERFACE 6
 #define EIGHT_NODE_ISO_BRICK 7
+#define NINE_NODE_LAGRANGE 8
+
+// other constants
 #define TOLERANCE_RATIO 0.1
 
 #define BMATRIX 2
@@ -36,11 +39,11 @@ class ElementBase : public LinkedObject
 {
     public:
         int num;						// element number (1 based)
-        int nodes[MaxElNd];			// 1 based node numbers in nodes[0] to nodes[NumberNodes()-1]
+        int nodes[MaxElNd];				// 1 based node numbers in nodes[0] to nodes[NumberNodes()-1]
         double xmin,xmax,ymin,ymax;		// element extent
         int filled;						// flags for loaded material points
 #ifdef MPM_CODE
-        int *neighbors;				// Elements next to faces
+        int *neighbors;					// Elements next to faces
 #else
         int material;					// FEA material ID
         double strainEnergy;			// FEA strain energy
@@ -74,8 +77,8 @@ class ElementBase : public LinkedObject
                                     Vector *,double *,double *,double *) = 0;
 #ifdef MPM_CODE
 		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *) = 0;
-		virtual void GetGimpNodes(int *,int *,int *,Vector *) = 0;
-		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *) = 0;
+		virtual void GetGimpNodes(int *,int *,int *,Vector *);
+		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *);
 #endif
 									
         // prototypes of methods defined in ElementBase class (but may override)
@@ -118,6 +121,7 @@ class ElementBase : public LinkedObject
 		void ZeroUpperHalfStiffness(void);
 		void FillLowerHalfStiffness(void);
         void IsoparametricForceStress(double *,int,int);
+		virtual void ExtrapolateGaussStressToNodes(double [][5]);
         int WantElement(char,const vector< int > &);
 		void LinearEdgeLoad(int,int,int,double *,double *,int);
 		void QuadEdgeLoad(int,int,int,int,double *,double *,int);
@@ -138,7 +142,7 @@ class ElementBase : public LinkedObject
 
 	protected:
 #ifdef MPM_CODE
-		bool pgElement;					// is is a parallelogram element?
+		bool pgElement;					// is it a parallelogram element?
 		double pgTerm[6];				// precalculated terms for GetXiPos() speed
 #else
         double angle;					// FEA material angle

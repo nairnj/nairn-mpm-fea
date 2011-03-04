@@ -30,7 +30,7 @@ static double geti[16]={-1.,-1.,1.,1.,-3.,-3.,-3.,-3.,-1.,1.,3.,3.,3.,3.,1.,-1.}
 */
 FourNodeIsoparam::FourNodeIsoparam(int eNum,int *eNode) : Linear2D(eNum,eNode)
 {
-    nodes[4]=eNode[0];			// needed in some algorithms
+    nodes[4]=eNode[0];			// needed in GetArea(), PtInElement()
 	thickness=1.;
 }
 
@@ -41,7 +41,7 @@ FourNodeIsoparam::FourNodeIsoparam(int eNum,int *eNode) : Linear2D(eNum,eNode)
 FourNodeIsoparam::FourNodeIsoparam(int eNum,int *eNode,int eMat,double eAng,double eThick) : 
             Linear2D(eNum,eNode,eMat,eAng,eThick)
 {
-    nodes[4]=eNode[0];			// needed in some algorithms
+    nodes[4]=eNode[0];			// needed in GetArea(), PtInElement()
 }
 #endif
 
@@ -121,6 +121,56 @@ void FourNodeIsoparam::ShapeFunction(Vector *xi,int getDeriv,
         if(outAsr!=NULL) *outAsr=asr;
     }
 }
+
+#ifdef FEA_CODE
+
+// Take stress at four gauss points and map them to 4 nodes in this element
+// by using coordinate system on the gauss points (numbered ccw as 1,3,4,2)
+// as mapping to -1 to 1 coordinates.
+// See FEA notes on stress extrapolation
+// sgp[i][j] is stress j (1 to 4) at Gauss point i (1 to numGauss)
+// se[i][j] is output stress j (1 to 4) at node i (1 to numnds) (externed variable)
+void FourNodeIsoparam::ExtrapolateGaussStressToNodes(double sgp[][5])
+{
+	double gpt = 0.577350269189626;
+	double at=1.+1./gpt;
+	double bt=1.-1./gpt;
+	double at2=at*at/4.;
+	double bt2=bt*bt/4.;
+	double atbt=at*bt/4.;
+	
+	double qe[5][5];
+	qe[1][1]=at2;
+	qe[1][2]=atbt;
+	qe[1][3]=atbt;
+	qe[1][4]=bt2;
+	qe[2][1]=atbt;
+	qe[2][2]=bt2;
+	qe[2][3]=at2;
+	qe[2][4]=atbt;
+	qe[3][1]=bt2;
+	qe[3][2]=atbt;
+	qe[3][3]=atbt;
+	qe[3][4]=at2;
+	qe[4][1]=atbt;
+	qe[4][2]=at2;
+	qe[4][3]=bt2;
+	qe[4][4]=atbt;
+	
+	// hard coded to 4 nodes and 4 Gauss points
+	double temp;
+	int i,j,k;
+	for(i=1;i<=4;i++)
+	{	for(j=1;j<=4;j++)
+		{   temp=0.;
+			for(k=1;k<=4;k++)
+				temp+=qe[i][k]*sgp[k][j];
+			se[i][j]=temp;
+		}
+	}
+}
+
+#endif
 
 #ifdef MPM_CODE
 
@@ -205,7 +255,7 @@ void FourNodeIsoparam::GetXiPos(Vector *pos,Vector *xipos)
 }
 
 // see if this element is rectangle in cartesion coordinates returning TRUE or FALSE
-// if true, dx and dy set to element dimensions and dy set to zero
+// if true, dx and dy set to element dimensions and dz set to zero
 int FourNodeIsoparam::Orthogonal(double *dx,double *dy,double *dz)
 {
 	int i;

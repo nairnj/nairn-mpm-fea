@@ -28,6 +28,7 @@ class BodyPolygonController : public BodyObjectController
 		virtual bool HasAllParameters(void);
 		virtual void SetParameter(char *,char *);
 		virtual bool FinishParameter(void);
+		virtual char *GetObjectType(void);
 	
 	private:
 		double xparm,yparm;
