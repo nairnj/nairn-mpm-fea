@@ -110,7 +110,7 @@ bool BodyPolyhedronController::SetBodyPropertyFromData(char *bData,CommonReadHan
 	Vector box[8];
 	
 	// read the data into a vector
-	if(!reader->GetFreeFormatNumbers(bData,pts,distScaling)) return FALSE;
+	if(!CommonReadHandler::GetFreeFormatNumbers(bData,pts,distScaling)) return FALSE;
 	//cout << -180.*atan((pts[5]-pts[2])/(pts[3]-pts[0]))/3.14159 << endl;
 	
 	switch(style)
@@ -196,4 +196,7 @@ bool BodyPolyhedronController::SetBodyPropertyFromData(char *bData,CommonReadHan
 	
 	return TRUE;
 }
-	
+
+// type of object
+char *BodyPolyhedronController::GetObjectType(void) { return "Polygonhedron"; }
+

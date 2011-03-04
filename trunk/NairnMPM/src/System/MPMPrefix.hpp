@@ -43,7 +43,7 @@ using namespace std;
 #define MaxShapeNds 28
 
 // Max number of nodes in an element + 1
-#define MaxElNd 9
+#define MaxElNd 10
 
 // Max number of particles in an element
 #define MaxElParticles 8

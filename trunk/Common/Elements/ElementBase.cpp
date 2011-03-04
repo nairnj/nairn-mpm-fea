@@ -56,7 +56,7 @@ void ElementBase::PrintElement(ostream &os,int np)
 
 //	Find extent of this element - called once at start (and must be called)
 void ElementBase::FindExtent(void)
-{
+{	
     int i,numnds=NumberNodes();
     double xNode,range;
     

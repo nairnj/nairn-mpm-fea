@@ -8,6 +8,7 @@
 
 #include "Read_XML/ElementsController.hpp"
 #include "Elements/FourNodeIsoparam.hpp"
+#include "Elements/Lagrange2D.hpp"
 #ifdef FEA_CODE
 	#include "Elements/EightNodeIsoparam.hpp"
 	#include "Elements/SixNodeTriangle.hpp"
@@ -19,6 +20,7 @@
 	#include "Elements/EightNodeIsoparamBrick.hpp"
 #endif
 #include "Read_XML/NodesController.hpp"
+#include "Read_XML/CommonReadHandler.hpp"
 
 ElementsController *theElems=NULL;
 
@@ -73,53 +75,67 @@ int ElementsController::CreateElement(char *xData)
 int ElementsController::CreateElement(char *xData,int elemMat,double elemAngle,double elemThick)
 #endif
 {
-	int eNode[MaxElNd];
+	vector<double> pts;
+	
+	// read the data into a vector of doubles
+	if(!CommonReadHandler::GetFreeFormatNumbers(xData,pts,1.0)) return FALSE;
+	int numnds = pts.size();
+	if(numnds<=0 || numnds>MaxElNd) return FALSE;
+	
+	// convert to integers
+	int i,eNode[MaxElNd];
+	for(i=0;i<numnds;i++) eNode[i] = int(pts[i]+0.1);
+	
+	// create elements
 	ElementBase *newElem=NULL;
 
 	switch(currentElemID)
-	{	case FOUR_NODE_ISO:
-			sscanf(xData,"%d,%d,%d,%d",&eNode[0],&eNode[1],&eNode[2],&eNode[3]);
+	{	
 #ifdef MPM_CODE
+		// All MPM Element types
+		case FOUR_NODE_ISO:
+			if(numnds!=4) break;
 			newElem=new FourNodeIsoparam(1,eNode);
-#else
-			newElem=new FourNodeIsoparam(1,eNode,elemMat,elemAngle,elemThick);
-#endif
 			break;
 			
-#ifdef MPM_CODE
 		case EIGHT_NODE_ISO_BRICK:
-			sscanf(xData,"%d,%d,%d,%d,%d,%d,%d,%d",&eNode[0],&eNode[1],
-					&eNode[2],&eNode[3],&eNode[4],&eNode[5],&eNode[6],&eNode[7]);
+			if(numnds!=8) break;
 			newElem=new EightNodeIsoparamBrick(1,eNode);
 			break;
-#endif
-
-#ifdef FEA_CODE
+#else
+		// All FEA Element types
+		case FOUR_NODE_ISO:
+			if(numnds!=4) break;
+			newElem=new FourNodeIsoparam(1,eNode,elemMat,elemAngle,elemThick);
+			break;
+			
 		case EIGHT_NODE_ISO:
-			sscanf(xData,"%d,%d,%d,%d,%d,%d,%d,%d",&eNode[0],&eNode[1],
-					&eNode[2],&eNode[3],&eNode[4],&eNode[5],&eNode[6],&eNode[7]);
+			if(numnds!=8) break;
 			newElem=new EightNodeIsoparam(1,eNode,elemMat,elemAngle,elemThick);
 			break;
 
 		case ISO_TRIANGLE:
-			sscanf(xData,"%d,%d,%d,%d,%d,%d",&eNode[0],&eNode[1],
-					&eNode[2],&eNode[3],&eNode[4],&eNode[5]);
+			if(numnds!=6) break;
 			newElem=new SixNodeTriangle(1,eNode,elemMat,elemAngle,elemThick);
 			break;
 			
 		case CS_TRIANGLE:
-			sscanf(xData,"%d,%d,%d",&eNode[0],&eNode[1],&eNode[2]);
+			if(numnds!=3) break;
 			newElem=new CSTriangle(1,eNode,elemMat,elemAngle,elemThick);
 			break;
 			
+		case NINE_NODE_LAGRANGE:
+			if(numnds!=9) break;
+			newElem=new Lagrange2D(1,eNode,elemMat,elemAngle,elemThick);
+			break;
+			
 		case LINEAR_INTERFACE:
-			sscanf(xData,"%d,%d,%d,%d",&eNode[0],&eNode[1],&eNode[2],&eNode[3]);
+			if(numnds!=4) break;
 			newElem=new LinearInterface(1,eNode,elemMat,elemAngle,elemThick);
 			break;
 			
 		case QUAD_INTERFACE:
-			sscanf(xData,"%d,%d,%d,%d,%d,%d",&eNode[0],&eNode[1],
-					&eNode[2],&eNode[3],&eNode[4],&eNode[5]);
+			if(numnds!=6) break;
 			newElem=new QuadInterface(1,eNode,elemMat,elemAngle,elemThick);
 			break;
 			
@@ -134,8 +150,34 @@ int ElementsController::CreateElement(char *xData,int elemMat,double elemAngle,d
 	return TRUE;
 }
 
-#ifdef FEA_CODE
-// Create element(s) from node numbers calculated in meshing routine
+#ifdef MPM_CODE
+// Create MPM element(s) from node numbers calculated in MPM grid() method
+ElementBase *ElementsController::MeshElement(int elemID,int element,int *enode)
+{
+	ElementBase *newElem=NULL;
+	
+	switch(elemID)
+	{	case FOUR_NODE_ISO:
+			newElem = new FourNodeIsoparam(element,enode);
+			break;
+		
+		case NINE_NODE_LAGRANGE:
+			newElem = new Lagrange2D(element,enode);
+			break;
+		
+		case EIGHT_NODE_ISO_BRICK:
+			newElem = new EightNodeIsoparamBrick(element,enode);
+			break;
+		
+		default:
+			break;
+	}
+	
+	return newElem;
+}
+			
+#else
+// Create FEA element(s) from node numbers calculated in FEA meshing routine
 int ElementsController::MeshElement(int *eNode,int elemMat,double elemAngle,double elemThick)
 {
 	ElementBase *newElem=NULL;
@@ -149,6 +191,18 @@ int ElementsController::MeshElement(int *eNode,int elemMat,double elemAngle,doub
 			
 		case EIGHT_NODE_ISO:
 			newElem=new EightNodeIsoparam(1,&eNode[1],elemMat,elemAngle,elemThick);
+			if(newElem==NULL) return FALSE;
+			AddElement(newElem);
+			break;
+		
+		case NINE_NODE_LAGRANGE:
+			int lNode[9],i;
+			Vector qmidPt;
+			theNodes->MidPoint(&eNode[1],8,&qmidPt);
+			theNodes->AddNode(qmidPt.x,qmidPt.y,(double)0.,(double)0.0);
+			for(i=1;i<=8;i++) lNode[i-1]=eNode[i];
+			lNode[8]=theNodes->numObjects;
+			newElem=new Lagrange2D(1,lNode,elemMat,elemAngle,elemThick);
 			if(newElem==NULL) return FALSE;
 			AddElement(newElem);
 			break;
@@ -247,7 +301,6 @@ int ElementsController::MeshElement(int *eNode,int elemMat,double elemAngle,doub
 }
 #endif
 
-#ifdef FEA_CODE
 // verify new element type is valid and compatible with previous one
 int ElementsController::ElementsCompatible(int previousType)
 {
@@ -260,6 +313,8 @@ int ElementsController::ElementsCompatible(int previousType)
 			case CS_TRIANGLE:
 			case LINEAR_INTERFACE:
 			case QUAD_INTERFACE:
+			case EIGHT_NODE_ISO_BRICK:
+			case NINE_NODE_LAGRANGE:
 				return TRUE;
 				break;
 			
@@ -282,11 +337,13 @@ int ElementsController::ElementsCompatible(int previousType)
 		case EIGHT_NODE_ISO:
 			if(previousType==ISO_TRIANGLE) return TRUE;
 			if(previousType==QUAD_INTERFACE) return TRUE;
+			if(previousType==NINE_NODE_LAGRANGE) return TRUE;
 			break;
 		
 		case ISO_TRIANGLE:
 			if(previousType==EIGHT_NODE_ISO) return TRUE;
 			if(previousType==QUAD_INTERFACE) return TRUE;
+			if(previousType==NINE_NODE_LAGRANGE) return TRUE;
 			break;
 		
 		case CS_TRIANGLE:
@@ -302,14 +359,20 @@ int ElementsController::ElementsCompatible(int previousType)
 		case QUAD_INTERFACE:
 			if(previousType==EIGHT_NODE_ISO) return TRUE;
 			if(previousType==ISO_TRIANGLE) return TRUE;
+			if(previousType==NINE_NODE_LAGRANGE) return TRUE;
 			break;
 		
+		case NINE_NODE_LAGRANGE:
+			if(previousType==ISO_TRIANGLE) return TRUE;
+			if(previousType==QUAD_INTERFACE) return TRUE;
+			if(previousType==EIGHT_NODE_ISO) return TRUE;
+			break;
+
 		default:
 			break;
 	}
 	return FALSE;
 }
-#endif
 
 #ifdef FEA_CODE
 // does current element type have mid side nodes
@@ -319,6 +382,7 @@ int ElementsController::HasMidsideNodes(void)
 	{	case EIGHT_NODE_ISO:
 		case ISO_TRIANGLE:
 		case QUAD_INTERFACE:
+		case NINE_NODE_LAGRANGE:
 			return TRUE;
 		
 		default:
@@ -335,6 +399,7 @@ int ElementsController::ElementSides(void)
 	switch(currentElemID)
 	{	case EIGHT_NODE_ISO:
 		case FOUR_NODE_ISO:
+		case NINE_NODE_LAGRANGE:
 			return 4;
 		case ISO_TRIANGLE:
 		case CS_TRIANGLE:
@@ -361,20 +426,18 @@ int ElementsController::SetElemIDStr(char *value)
 }
 int ElementsController::SetCurrentElemID(int elemID)
 {
-#ifdef FEA_CODE
 	int oldElemID=currentElemID;
 	currentElemID=elemID;
-	return ElementsCompatible(oldElemID);
-#else
+#ifdef MPM_CODE
+	// limit elements allowed in MPM
 	if(fmobj->IsThreeD())
-	{	if(elemID!=EIGHT_NODE_ISO_BRICK)
-			return FALSE;
+	{	if(elemID!=EIGHT_NODE_ISO_BRICK) return FALSE;
+		return TRUE;
 	}
-	else if(elemID!=FOUR_NODE_ISO)
+	else if(elemID!=FOUR_NODE_ISO && elemID!=NINE_NODE_LAGRANGE)
 		return FALSE;
-	currentElemID=elemID;
-	return TRUE;
 #endif
+	return ElementsCompatible(oldElemID);
 }
 
 #ifdef FEA_CODE

@@ -93,8 +93,8 @@ void CommonArchiveData::ArchiveElements(int np)
     cout << "  No. ID    Nd1   Nd2   Nd3   Nd4   Nd5   Nd6   Nd7   Nd8\n"
    	<< "-----------------------------------------------------------\n";
 #else
-    cout << "  No. ID Mat  Ang(deg) Thick(mm)  Nd1   Nd2   Nd3   Nd4   Nd5   Nd6   Nd7   Nd8\n"
-   	<< "---------------------------------------------------------------------------------\n";
+    cout << "  No. ID Mat  Ang(deg) Thick(mm)  Nd1   Nd2   Nd3   Nd4   Nd5   Nd6   Nd7   Nd8   Nd9\n"
+   	<< "---------------------------------------------------------------------------------------\n";
 #endif
 	for(i=0;i<nelems;i++)
         theElements[i]->PrintElement(cout,np);

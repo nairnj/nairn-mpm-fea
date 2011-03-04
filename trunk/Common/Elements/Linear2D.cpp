@@ -25,6 +25,7 @@ Linear2D::Linear2D(int eNum,int *eNode,int eMat,double eAng,double eThick) :
 
 /*	Calculate area of element (in mm^2 because nodes in mm)
 	node is pointer to 0-based array NodalPoints
+	Assumes nodes[NumberNodes()] = nodes[0]
 */
 double Linear2D::GetArea(void)
 {
@@ -44,6 +45,7 @@ double Linear2D::GetVolume(void) { return thickness*GetArea(); }
 
 /*	Use ray crossing algorithm to find out if a point (pt.x,pt.y) is in an element
 	nd is pointer to 1-based array NodalPoints
+	Assumes nodes[NumberNodes()] = nodes[0]
 */
 short Linear2D::PtInElement(Vector &pt)
 {

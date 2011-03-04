@@ -170,6 +170,7 @@ InitializationTask = $(src)/NairnMPM_Class/InitializationTask
 IsoPlasticity = $(src)/Materials/IsoPlasticity
 IsotropicMat = $(com)/Materials/IsotropicMat
 JohnsonCook = $(src)/Materials/JohnsonCook
+Lagrange2D = $(com)/Elements/Lagrange2D
 Linear2D = $(com)/Elements/Linear2D
 LinearTraction = $(src)/Materials/LinearTraction
 LineController = $(com)/Read_XML/LineController
@@ -210,6 +211,7 @@ ParseController = $(com)/Read_XML/ParseController
 PointController = $(com)/Read_XML/PointController
 PolyTriangle = $(src)/Read_MPM/PolyTriangle
 PropagateTask = $(src)/Custom_Tasks/PropagateTask
+Quad2D = $(com)/Elements/Quad2D
 RectController = $(com)/Read_XML/RectController
 ResetElementsTask = $(src)/NairnMPM_Class/ResetElementsTask
 ReverseLoad = $(src)/Custom_Tasks/ReverseLoad
@@ -276,6 +278,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # IsoPlasticity : IsotropicMat.hpp (Elastic.hpp MaterialBase.hpp)
 # IsotropicMat.hpp : Elastic.hpp (MaterialBase.hpp)
 # JohnsonCook.hpp : IsoPlasticity (IsotropicMat.hpp Elastic.hpp MaterialBase.hpp)
+# Lagrange2D.hpp : Quad2D.hpp (ElementBase.hpp)
 # Linear2D.hpp : ElementBase.hpp
 # LinearTraction.hpp : CohesiveZone.hpp MaterialBase.hpp TractionLaw.hpp
 # LineController.hpp : ShapeController.hpp
@@ -301,6 +304,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # Orthotropic.hpp : TransIsotropic.hpp (Elastic.hpp MaterialBase.hpp)
 # PointController.hpp : ShapeController.hpp
 # PropagateTask.hpp : CustomTask.hpp
+# Quad2D.hpp : ElementBase.hpp
 # RectController.hpp : ShapeController.hpp
 # ResetElementsTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # ReverseLoad.hpp : CustomTask.hpp
@@ -349,7 +353,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		BodySphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o BodyCylinderController.o \
 		TractionLaw.o CohesiveZone.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o SLMaterial.o CrackVelocityFieldMulti.o CrackVelocityFieldSingle.o \
-		WoodMaterial.o TrilinearTraction.o BodyPolyhedronController.o PolyTriangle.o
+		WoodMaterial.o TrilinearTraction.o BodyPolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -385,7 +389,8 @@ BMPLevel.o : $(BMPLevel).cpp $(dprefix) $(BMPLevel).hpp
 ParseController.o : $(ParseController).cpp $(dprefix) $(ParseController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ParseController).cpp
 ElementsController.o : $(ElementsController).cpp $(dprefix) $(ElementsController).hpp $(FourNodeIsoparam).hpp \
-			$(NodesController).hpp $(ParseController).hpp $(Linear2D).hpp $(ElementBase).hpp $(EightNodeIsoparamBrick).hpp
+			$(NodesController).hpp $(ParseController).hpp $(Linear2D).hpp $(ElementBase).hpp $(EightNodeIsoparamBrick).hpp \
+			$(CommonReadHandler).hpp $(Quad2D).hpp  $(Lagrange2D).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ElementsController).cpp
 NodesController.o : $(NodesController).cpp $(dprefix) $(NodesController).hpp $(NodalPoint).hpp $(ParseController).hpp \
 			$(NodalPoint2D).hpp $(NodalPoint3D).hpp $(NairnMPM).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
@@ -440,6 +445,11 @@ Linear2D.o : $(Linear2D).cpp $(dprefix) $(Linear2D).hpp $(ElementBase).hpp $(Nod
 FourNodeIsoparam.o : $(FourNodeIsoparam).cpp $(dprefix) $(FourNodeIsoparam).hpp $(Linear2D).hpp $(ElementBase).hpp \
 			$(NodalPoint).hpp $(MeshInfo).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(FourNodeIsoparam).cpp
+Quad2D.o : $(Quad2D).cpp $(dprefix) $(Quad2D).hpp $(ElementBase).hpp $(NodalPoint).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Quad2D).cpp
+Lagrange2D.o : $(Lagrange2D).cpp $(dprefix) $(Lagrange2D).hpp $(Quad2D).hpp $(ElementBase).hpp $(NodalPoint).hpp \
+			$(MeshInfo).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Lagrange2D).cpp
 
 # Common: Nodes
 NodalPoint.o : $(NodalPoint).cpp $(dprefix) $(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
@@ -546,7 +556,7 @@ Generators.o : $(Generators).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hp
 			$(MpsController).hpp $(FourNodeIsoparam).hpp $(ParseController).hpp $(Linear2D).hpp $(NodalPoint).hpp $(BoxController).hpp \
 			$(MeshInfo).hpp $(EightNodeIsoparamBrick).hpp $(ElementBase3D).hpp $(MatPoint3D).hpp $(ShapeController).hpp \
 			$(RectController).hpp $(ArcController).hpp $(NodalPoint2D).hpp $(NodalPoint3D).hpp $(CrackVelocityField).hpp \
-			$(MatVelocityField).hpp $(BodyObjectController).hpp
+			$(MatVelocityField).hpp $(BodyObjectController).hpp $(ElementsController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Generators).cpp
 BitMapFiles.o : $(BitMapFiles).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hpp $(CommonReadHandler).hpp \
 			$(BMPLevel).hpp $(MatPoint2D).hpp $(ElementBase).hpp $(ArchiveData).hpp $(CommonArchiveData).hpp \
@@ -557,7 +567,7 @@ MpsController.o : $(MpsController).cpp $(dprefix) $(MpsController).hpp $(MPMBase
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MpsController).cpp
 CrackController.o : $(CrackController).cpp $(dprefix) $(CrackController).hpp $(ParseController).hpp $(CrackHeader).hpp $(CrackSegment).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackController).cpp
-BodyObjectController.o : $(BodyObjectController).cpp $(dprefix) $(BodyObjectController).hpp
+BodyObjectController.o : $(BodyObjectController).cpp $(dprefix) $(BodyObjectController).hpp $(CommonReadHandler).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodyObjectController).cpp
 BodyRectController.o : $(BodyRectController).cpp $(dprefix) $(BodyRectController).hpp $(BodyObjectController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodyRectController).cpp

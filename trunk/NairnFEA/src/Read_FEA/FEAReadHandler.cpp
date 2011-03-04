@@ -112,7 +112,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
 		block=MESHBLOCK;
 		theNodes=new NodesController();			// deleted when Mesh is done
-		theElems=new ElementsController();		// delete when Mesh is done
+		theElems=new ElementsController();		// deleted when Mesh is done
 	}
 	
 	// Keypoints list - implies generated mesh

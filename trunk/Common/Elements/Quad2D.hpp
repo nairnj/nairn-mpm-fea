@@ -21,7 +21,11 @@ class Quad2D : public ElementBase
         double thickness;
         
         // constructors
-        Quad2D(int,int *,int,double,double);
+#ifdef MPM_CODE
+		Quad2D(int,int *);
+#else
+		Quad2D(int,int *,int,double,double);
+#endif
         
         // prototypes
 		virtual int FaceNodes(void);
@@ -29,9 +33,11 @@ class Quad2D : public ElementBase
 		virtual double GetVolume(void);
         virtual short PtInElement(Vector &);
         virtual double GetThickness(void);
+#ifdef FEA_CODE
 		virtual void CalcEdgeLoads(double *,int,int,double *,int);
 		virtual void MakeQuarterPointNodes(int,vector<int> &);
 		virtual void AdjustMidSideNode(int,int,int,vector<int> &);
+#endif
 };
 
 #endif

@@ -38,6 +38,7 @@
 #include "Read_MPM/BodyPolygonController.hpp"
 #include "Read_MPM/BodyPolyhedronController.hpp"
 #include "Read_XML/mathexpr.hpp"
+#include "Read_XML/ElementsController.hpp"
 
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
@@ -47,6 +48,11 @@ double cellHoriz=-1.,cellVert=-1.,cellDepth=-1.;
 Vector Vel;
 char *angleExpr[3];
 char rotationAxes[4];
+
+// to allow new elements, add attribute or command to change this for grid
+// Create those element in ElementsController::MeshElement()
+int mpm2DElement = FOUR_NODE_ISO;
+int mpm3DElement = EIGHT_NODE_ISO_BRICK;
 
 enum { LINE_SHAPE=0,CIRCLE_SHAPE };		// shape for generating crack segments, Liping Xue
 
@@ -88,6 +94,22 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%lf",&Zmax);
             else if(strcmp(aName,"thickness")==0)
                 sscanf(value,"%lf",&Z2DThickness);
+			else if(strcmp(aName,"type")==0)
+			{	int mpmElement;
+				sscanf(value,"%d",&mpmElement);
+				if(fmobj->IsThreeD())
+				{	// only one type is allowed in 3D
+					if(mpmElement!=EIGHT_NODE_ISO_BRICK)
+						throw SAXException("<Grid type='#'> attribute is invalid number for 3D MPM calculations.");
+				}
+				else
+				{	// only one type is allowed, but can switch to allow two once that element does gimp
+					//if(mpmElement!=FOUR_NODE_ISO && mpmElement!=NINE_NODE_LAGRANGE)
+					if(mpmElement!=FOUR_NODE_ISO)
+						throw SAXException("<Grid type='#'> attribute is invalid number for 2D MPM calculations.");
+					mpm2DElement=mpmElement;
+				}
+			}
             delete [] aName;
             delete [] value;
         }
@@ -848,7 +870,7 @@ char *MPMReadHandler::LastBC(char *firstBC)
 }
 
 //-----------------------------------------------------------
-// Subroutine for creating grid objects (nd, theEelements)
+// Subroutine for creating grid objects (nd, theElements)
 //-----------------------------------------------------------
 void MPMReadHandler::grid()
 {
@@ -926,11 +948,16 @@ void MPMReadHandler::grid()
     {	nnodes=(Nhoriz+1)*(Nvert+1)*(Ndepth+1);
 		nelems=Nhoriz*Nvert*Ndepth;
 	}
-	else
+	else if(mpm2DElement==FOUR_NODE_ISO)
     {	nnodes=(Nhoriz+1)*(Nvert+1);
 		nelems=Nhoriz*Nvert;
 	}
-
+	else
+	{	// 9 node Lagranging and side nodes and internal nodes adding one per element in each direction
+    	nnodes=(Nhoriz+1+Nhoriz)*(Nvert+1+Nvert);
+		nelems=Nhoriz*Nvert;
+	}
+	
      // space for nodal points (1 based)
     curPt=1;
     nd=(NodalPoint **)malloc(sizeof(NodalPoint *)*(nnodes+1));
@@ -971,14 +998,14 @@ void MPMReadHandler::grid()
 					enode[5]=enode[1]+zplane;
 					enode[6]=enode[2]+zplane;
 					enode[7]=enode[3]+zplane;
-					theElements[curEl]=new EightNodeIsoparamBrick(element,enode);
+					theElements[curEl]=ElementsController::MeshElement(mpm3DElement,element,enode);
 					theElements[curEl]->FindExtent();
 					curEl++;
 				}
 			}
 		}
 	}
-	else
+	else if(mpm2DElement==FOUR_NODE_ISO)
 	{	// create the nodes vary x first, y second
 		for(j=0;j<=Nvert;j++)
 		{	ypt=Ymin+(double)j*(Ymax-Ymin)/(double)Nvert;
@@ -997,7 +1024,39 @@ void MPMReadHandler::grid()
 				enode[1]=enode[0]+1;
 				enode[2]=enode[0]+(Nhoriz+2);
 				enode[3]=enode[2]-1;
-				theElements[curEl]=new FourNodeIsoparam(element,enode);
+				theElements[curEl]=ElementsController::MeshElement(mpm2DElement,element,enode);
+				theElements[curEl]->FindExtent();
+				curEl++;
+			}
+		}
+	}
+	else
+	{	// 2D Lagrange adds side and internal nodes
+		// create the nodes vary x first, y second
+		int NvertHalfCells=2*Nvert,NhorizHalfCells=2*Nhoriz;
+		for(j=0;j<=NvertHalfCells;j++)
+		{	ypt=Ymin+(double)j*(Ymax-Ymin)/(double)NvertHalfCells;
+			for(i=0;i<=NhorizHalfCells;i++)
+			{	xpt=Xmin+(double)i*(Xmax-Xmin)/(double)NhorizHalfCells;
+				node=j*(NhorizHalfCells+1)+(i+1);
+				nd[curPt]=new NodalPoint2D(node,xpt,ypt);
+				curPt++;
+			}
+		}
+		// create the elements in blocks at constant y
+		for(j=1;j<=Nvert;j++)
+		{	for(i=1;i<=Nhoriz;i++)
+			{	element=(j-1)*Nhoriz+i;
+				enode[0]=(j-1)*2*(NhorizHalfCells+1)+2*i-1;
+				enode[1]=enode[0]+2;
+				enode[2]=enode[1]+2*(NhorizHalfCells+1);
+				enode[3]=enode[2]-2;
+				enode[4]=enode[0]+1;
+				enode[5]=enode[1]+(NhorizHalfCells+1);
+				enode[6]=enode[3]+1;
+				enode[7]=enode[5]-2;
+				enode[8]=enode[7]+1;
+				theElements[curEl]=ElementsController::MeshElement(mpm2DElement,element,enode);
 				theElements[curEl]->FindExtent();
 				curEl++;
 			}

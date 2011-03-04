@@ -11,10 +11,20 @@
 
 #pragma mark Quad2D: Constructors and Destructor
 
+#ifdef MPM_CODE
+
+// Main MPM constructor passes onto ElementBase constructor
+Quad2D::Quad2D(int eNum,int *eNode) : ElementBase(eNum,eNode) {}
+
+#else
+
 // Main FEA constructor passes onto ElementBase constructor
 Quad2D::Quad2D(int eNum,int *eNode,int eMat,double eAng,double eThick) : 
-                    ElementBase(eNum,eNode,eMat,eAng)
-{ thickness=eThick; }
+			ElementBase(eNum,eNode,eMat,eAng)
+{	thickness=eThick;
+}
+
+#endif
 
 #pragma mark Quad2D: methods
 
@@ -72,11 +82,15 @@ short Quad2D::PtInElement(Vector &pt)
 	return crossings & 0x01;
 }
 
+#ifdef FEA_CODE
+
 // Calculate edge loads
 void Quad2D::CalcEdgeLoads(double *re,int iedge,int ndir,double *fload,int np)
-{
+{	// iedge is edge number (1 ... NumberSides())
 	int ind1=iedge,ind2,ind3;
 	
+	// assumes corners at 1 ... NumberSides() and midside nodes at
+	//    NumberSides+1 ... 2*NumberSides()
 	ind2=ind1+NumberSides();
 	if(ind1==NumberSides())
 		ind3=1;
@@ -88,7 +102,7 @@ void Quad2D::CalcEdgeLoads(double *re,int iedge,int ndir,double *fload,int np)
 // If this node has crack tip nodes, move neighboring nodes toward the crack tip
 void Quad2D::MakeQuarterPointNodes(int crackTip,vector<int> &movedNodes)
 {
-	// check real nodes
+	// check real corner nodes (in nodes[0] to nodes[NumberSides()]
 	int i,ct=-1;;
     for(i=0;i<NumberSides();i++)
     {	if(nodes[i]==crackTip)
@@ -98,17 +112,18 @@ void Quad2D::MakeQuarterPointNodes(int crackTip,vector<int> &movedNodes)
     }
 	if(ct<0) return;
 	
-	// edge after ct
+	// edge after ct (assumes midside nodes and ct+NumberSides())
+	// note hav internal nodes after last midside node as 2*NumberSides()-1 (zero based)
 	if(ct<NumberSides()-1)
 		AdjustMidSideNode(ct,ct+NumberSides(),ct+1,movedNodes);
 	else
-		AdjustMidSideNode(NumberSides()-1,NumberNodes()-1,0,movedNodes);
+		AdjustMidSideNode(NumberSides()-1,2*NumberSides()-1,0,movedNodes);
 	
 	// edge before ct
 	if(ct>0)
 		AdjustMidSideNode(ct,ct-1+NumberSides(),ct-1,movedNodes);
 	else
-		AdjustMidSideNode(0,NumberNodes()-1,NumberSides()-1,movedNodes);
+		AdjustMidSideNode(0,2*NumberSides()-1,NumberSides()-1,movedNodes);
 }
 
 // move mid side node to quarter point, but only if was not moved before
@@ -120,8 +135,11 @@ void Quad2D::AdjustMidSideNode(int tip,int mid,int end,vector<int> &movedNodes)
 	for(i=0;i<movedNodes.size();i++)
 	{	if(movedNodes[i]==nd2) return;
 	}
+	
+	// mark this node now as moved
 	movedNodes.push_back(nd2);
 	
+	// 1D extrapolation for these three nodes
 	int nd1=nodes[tip],nd3=nodes[end];
 	double dx,dmidx;
 	
@@ -134,6 +152,8 @@ void Quad2D::AdjustMidSideNode(int tip,int mid,int end,vector<int> &movedNodes)
 	nd[nd2]->y += (-0.5*dx + 0.25*dmidx);
 }
 
+#endif
+
 #pragma mark Quad2D: accessors
 
 // thickness which may be in a subclass
@@ -143,7 +163,7 @@ double Quad2D::GetThickness(void) { return thickness; }
 int Quad2D::FaceNodes(void) { return 3; }
 
 /*	Calculate area of element (in mm^2 because nodes in mm)
-	node is pointer to 0-based array NodalPoints
+	nodes is pointer to 0-based array NodalPoints
 */
 double Quad2D::GetArea(void)
 {

@@ -27,5 +27,6 @@ bool BodyBoxController::ContainsPoint(Vector& pt)
 // override for 3D objects
 bool BodyBoxController::Is2DBodyObject(void) { return FALSE; }
 
-
+// type of object
+char *BodyBoxController::GetObjectType(void) { return "Box"; }
 

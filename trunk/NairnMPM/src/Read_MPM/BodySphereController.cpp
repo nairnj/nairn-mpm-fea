@@ -40,4 +40,6 @@ bool BodySphereController::ContainsPoint(Vector& pt)
 // override for 3D objects
 bool BodySphereController::Is2DBodyObject(void) { return FALSE; }
 
+// type of object
+char *BodySphereController::GetObjectType(void) { return "Sphere"; }
 

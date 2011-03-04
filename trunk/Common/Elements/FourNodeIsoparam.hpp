@@ -30,6 +30,9 @@ class FourNodeIsoparam : public Linear2D
         virtual int NumberNodes(void);
         virtual void ShapeFunction(Vector *,int,double *,double *,double *,
                                 Vector *,double *,double *,double *);
+#ifdef FEA_CODE
+		virtual void ExtrapolateGaussStressToNodes(double [][5]);
+#endif
 #ifdef MPM_CODE
 		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *);
         virtual void FindExtent(void);

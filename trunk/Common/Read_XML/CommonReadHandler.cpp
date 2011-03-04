@@ -102,6 +102,7 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 		if(meshType!=EXPLICIT_MESH)
             throw SAXException("<ElementList> can not be used with a generated mesh.");
     	block=ELEMENTLIST;
+		// MPM only uses when in ElementList (which is uncommon because does not suppport GIMP)
 		if(theElems==NULL) theElems=new ElementsController();
 	}
         
@@ -575,6 +576,8 @@ double CommonReadHandler::ReadGridPoint(char *value,double distScaling,double ax
 	return dval*distScaling;
 }
 
+#pragma mark ACCESSORS
+
 // decode string delimited by white space, commands, or tabs and add intervening numbers
 // to the input vector (which is cleared first). Any other characters trigger an error
 bool CommonReadHandler::GetFreeFormatNumbers(char *nData,vector<double> &values,double scaling)
@@ -617,7 +620,6 @@ bool CommonReadHandler::GetFreeFormatNumbers(char *nData,vector<double> &values,
 	{	numstr[numOffset]=0;
 		sscanf(numstr,"%lf",&dval);
 		values.push_back(dval);
-		cout << dval << endl;
 	}
 	
 	return TRUE;

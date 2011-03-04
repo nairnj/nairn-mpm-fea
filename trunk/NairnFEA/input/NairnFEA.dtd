@@ -190,7 +190,7 @@
 
 <!ELEMENT	elem (#PCDATA)>
 <!ATTLIST	elem
-			type (2|3|4) #REQUIRED
+			type (2|3|4|8) #REQUIRED
 			matl CDATA #REQUIRED
 			angle CDATA "0.0"
 			thick CDATA #REQUIRED>

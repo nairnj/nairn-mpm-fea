@@ -83,3 +83,8 @@ bool BodyPolygonController::HasAllParameters(void)
 	ypt.push_back(ypt[0]);
 	return TRUE;
 }
+
+// type of object
+char *BodyPolygonController::GetObjectType(void) { return "Polygon"; }
+
+
