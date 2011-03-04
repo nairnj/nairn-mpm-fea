@@ -20,9 +20,10 @@ The version number is coded in the constructor of the `NairnFEA.cpp` class:
 NairnFEA was first imported to `GoogleCode.com` as version 2.7.0. The versions currently in this project are as follows:
 
   * Current trunk Version
-    * Working on NairnFEA 2.8.0 
+    * Working on NairnFEA 2.9.0 
     * Converted to using Xerces 3.1.1 and must link to 3.x or newer because new Xerces is not compatible with Xerces 2.8 or older.
-    * Converted all `longs` to `ints` to avoid any potential machine-dependent issues in 64 bit compiles (NairnFEA can compile as 32 bit or 64 bit, and must match Xerces library bits)
+    * Converted all `longs` to `ints` to avoid any potential machine-dependent issues in 64 bit compiles (NairnFEA can compile as 32 bit or 64 bit, and must match Xerces library bits).
+    * Added `Lagrange2D` element for 9 node quadrilateral (9th node in the center). It is integrated using 9 Gaussian points, because using less gave singular matrix in some simple problems.
 
   * release-2.0 (25 JUL 2010)
     * Has NairnFEA 2.7.1
