@@ -211,6 +211,11 @@ void MPMReadHandler::TranslateBMPFiles(void)
 					matID=-1;
 
 				// create a material point if one at this spot using matID and nextLevel
+				// Note that empty spaced is not marked as filled which allows superposition of
+				// images with different materials. If want to forcefully create a hole that
+				// cannot be filled by subsequent image, will need to define a new material
+				// type that can have matID for a hole. It will not create a point, but will mark
+				// the location as filled
 				if(matID>0)
 				{	if(fmobj->IsThreeD())
 						newMpt=new MatPoint3D(ii,matID,nextLevel->angle);
@@ -253,8 +258,8 @@ void MPMReadHandler::TranslateBMPFiles(void)
 					{	// If had Rotate commands then use them
 						SetMptAnglesFromFunctions(numRotations,&mpos[k],newMpt);
 					}
+					elem->filled|=ptFlag;
 				}
-				elem->filled|=ptFlag;
             }
         }
     }
