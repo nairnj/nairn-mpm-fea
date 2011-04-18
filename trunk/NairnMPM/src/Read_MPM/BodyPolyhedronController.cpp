@@ -116,7 +116,7 @@ bool BodyPolyhedronController::SetBodyPropertyFromData(char *bData,CommonReadHan
 	switch(style)
 	{	case TRICLINIC_POINTS:
 		case TRICLINIC_VECTORS:
-			// requires 12 points
+		{	// requires 12 points
 			if(pts.size()!=12) return FALSE;
 			
 			// Find origin, vectors and make sure first four are points
@@ -159,7 +159,7 @@ bool BodyPolyhedronController::SetBodyPropertyFromData(char *bData,CommonReadHan
 			pts.push_back(v.z);
 			
 			strcpy(order,"12453678");
-			
+		}
 		case BOX_CORNERS:
 			if(pts.size()!=24) return FALSE;
 			
