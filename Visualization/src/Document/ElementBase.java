@@ -20,6 +20,7 @@ public class ElementBase
 	public static final int LINEAR_INTERFACE=5;
 	public static final int QUAD_INTERFACE=6;
 	public static final int EIGHT_NODE_ISO_BRICK=7;
+	public static final int LAGRANGE_2D=8;
 	public static final int MAXITER=100;
 	
 	// variables
@@ -199,7 +200,7 @@ public class ElementBase
 		return nearest+1;
 	}
 	
-	// find minumum side this element (cellMinSide<0 to get for this cell or >=0 for global compare)
+	// find minimum side this element (cellMinSide<0 to get for this cell or >=0 for global compare)
 	// actually finds minimum extent in either direction - works all element types
 	public double getMinSide(double cellMinSide,ResultsDocument doc)
 	{	int i;
@@ -346,7 +347,7 @@ public class ElementBase
 	}
 
 	// get plot values from element data at one node. The first properties are calculated
-	//   from element data. The later properties ar calculated from nodal
+	//   from element data. The later properties are calculated from nodal
 	//	 properties - these are all for plotting FEA results
 	public double getNodeValue(int ndi,int comp,double stressAngle,ResultsDocument doc) throws Exception
 	{	switch(comp)
@@ -1017,6 +1018,8 @@ public class ElementBase
 			case ISO_TRIANGLE:
 			case QUAD_INTERFACE:
 				return 6;
+			case LAGRANGE_2D:
+				return 9;
 			default:
 				break;
 		}

@@ -190,7 +190,7 @@ public class ResultsDocument extends AbstractTableModel
 		int prevElemNum=0,elemNum,elemID,i,matID=0;
 		double elemThickness=1.,elemAngle=0.;
 		int[] nds;
-		nds=new int[8];
+		nds=new int[9];
 		while(s.hasNextInt())
 		{	elemNum=s.nextInt();				// element number
 			if(elemNum!=prevElemNum+1)
@@ -214,6 +214,7 @@ public class ResultsDocument extends AbstractTableModel
 				case ElementBase.LINEAR_INTERFACE:
 				case ElementBase.QUAD_INTERFACE:
 				case ElementBase.EIGHT_NODE_ISO_BRICK:
+				case ElementBase.LAGRANGE_2D:
 					// read all nodes
 					for(i=0;i<ElementBase.NodesFromType(elemID);i++)
 						nds[i]=s.nextInt();
@@ -812,6 +813,10 @@ public class ResultsDocument extends AbstractTableModel
 			case ElementBase.QUAD_INTERFACE:
 				feaArchFormat[ReadArchive.ARCH_Interfaces]='Y';
 				newElem=new QuadInt(elemNum,nds);
+				break;
+			
+			case ElementBase.LAGRANGE_2D:
+				newElem=new Lagrange2D(elemNum,nds);
 				break;
 				
 			default:
