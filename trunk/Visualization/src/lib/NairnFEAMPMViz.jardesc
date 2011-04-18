@@ -1,21 +1,21 @@
-<?xml version="1.0" encoding="MacRoman" standalone="no"?>
+<?xml version="1.0" encoding="MacRoman"?>
 <jardesc>
-    <jar path="NairnFEAMPMViz/lib/NairnFEAMPMViz.jar"/>
-    <options buildIfNeeded="true" compress="true" descriptionLocation="/NairnFEAMPMViz/lib/NairnFEAMPMViz.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
-    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
-    <selectedProjects/>
-    <manifest generateManifest="true" mainClassHandleIdentifier="=NairnFEAMPMViz/Interface&lt;{NairnFEAMPMViz.java[NairnFEAMPMViz" manifestLocation="" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
-        <sealing sealJar="false">
-            <packagesToSeal/>
-            <packagesToUnSeal/>
-        </sealing>
-    </manifest>
-    <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
-        <javaElement handleIdentifier="=NairnFEAMPMViz/Document"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/ResultsViewer"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/Interface"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/CommandsDocument"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/MovieViewer"/>
-        <javaElement handleIdentifier="=NairnFEAMPMViz/PlotWindows"/>
-    </selectedElements>
+<jar path="NairnFEAMPMViz/lib/NairnFEAMPMViz.jar"/>
+<options buildIfNeeded="true" compress="true" descriptionLocation="/NairnFEAMPMViz/lib/NairnFEAMPMViz.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+<storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+<selectedProjects/>
+<manifest generateManifest="true" mainClassHandleIdentifier="=NairnFEAMPMViz/Interface&lt;{NairnFEAMPMViz.java[NairnFEAMPMViz" manifestLocation="" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
+<sealing sealJar="false">
+<packagesToSeal/>
+<packagesToUnSeal/>
+</sealing>
+</manifest>
+<selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
+<javaElement handleIdentifier="=NairnFEAMPMViz/Interface"/>
+<javaElement handleIdentifier="=NairnFEAMPMViz/PlotWindows"/>
+<javaElement handleIdentifier="=NairnFEAMPMViz/MovieViewer"/>
+<javaElement handleIdentifier="=NairnFEAMPMViz/CommandsDocument"/>
+<javaElement handleIdentifier="=NairnFEAMPMViz/Document"/>
+<javaElement handleIdentifier="=NairnFEAMPMViz/ResultsViewer"/>
+</selectedElements>
 </jardesc>
