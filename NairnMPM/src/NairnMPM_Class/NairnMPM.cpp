@@ -299,7 +299,7 @@ void NairnMPM::MPMAnalysis(bool abort)
 // Main analysis loop for MPM analysis
 // Made up of tasks created in MPMAnalysis()
 void NairnMPM::MPMStep(void)
-{
+{	
 	// Step initialization
 #ifdef LOG_PROGRESS
 	char logLine[200];
