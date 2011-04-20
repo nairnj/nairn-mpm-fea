@@ -252,7 +252,7 @@ attribute</a> can specify the length units) with material points The parameters 
 assigns material points to the grid (or element properties in an FEA mesh) based on intensities within the bit map. The <code>width</code>
 and <code>height</code> attributes (an optional <a href="mpmheader.html#units"><code>units</code>
 attribute</a> can specify the length units) define the size of the image. You can specify both a
-width and a height or just one dimension. If only one dimension is given, the other will be
+width and a height or just one dimension. In addition, if the number is positive it is total width or height, but if it is negative it is interpreted as the specified length unit per pixel. If only one dimension is given, the other will be
 calculated based on the image aspect ratio. You can specify dimensions that differ from the image to
 scale one direction differently than the other direction.
 
@@ -276,7 +276,7 @@ be assigned to various material types as determined by one or more subodinate
 <code>&lt;Intensity&gt;</code> blocks. The atttibutes define the material number and the minimum and
 maximum intensity for that material. The intensity is on a scale from 0 (for black) to 255 (for
 white). You can create a composite by having multiple shades of gray and corresponding multiple
-<code>&lt;Intensity&gt;</code> blocks to assign different shades to different materials.
+<code>&lt;Intensity&gt;</code> blocks to assign different shades to different materials. You can also build a model by superposing multiple <code>&lt;BMP&gt;</code> groups on the same block of space. The subsequent images will only fill space that was not occupied by prior images.
 
 <br><br>The subordinate <code>&lt;Thickness&gt;</code> (2D only), <code>&lt;Angle&gt;</code>, and <code>&lt;Temperature&gt;</code> let you set the thickness and any non-zero value for angle and temperature for the materal point (or FEA element). For MPM calculations additional, subordinate <code>&lt;vel&gt;</code> and <code>&lt;Concentration&gt;</code>
 let you set any non-zero values for velocity and concentration

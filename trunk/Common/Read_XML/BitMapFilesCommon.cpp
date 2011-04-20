@@ -32,7 +32,7 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
     if(strcmp(xName,"BMP")==0)
 	{	ValidateCommand(xName,expectedBlock,ANY_DIM);
         block=BMPBLOCK;
-		bwidth=bheight=-1.;
+		bwidth=bheight=-1.e9;		// < -1.e8 means dimension was not specified
 		bmpFileName[0]=0;
 		bmpAngleFileName[0]=0;
 		xorig=yorig=0.;
@@ -56,8 +56,8 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
             delete [] aName;
             delete [] value;
         }
-		if(bwidth<0. && bheight<0.)
-            throw SAXException(BMPError("<BMP> must specify width and/or height.",bmpFileName));
+		if(bwidth<-1.e8 && bheight<-1.e8)
+            throw SAXException(BMPError("<BMP> must specify width and/or height as size or pixels per mm.",bmpFileName));
 		bwidth*=aScaling;
 		bheight*=aScaling;
 		if(bmpFileName[0]==0)

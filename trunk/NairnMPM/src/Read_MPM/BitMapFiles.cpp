@@ -82,11 +82,24 @@ void MPMReadHandler::TranslateBMPFiles(void)
 		}
 	}
 	
-	// resolutions
+	// provided mm per pixel
+	double xpw=-1.,ypw=-1.;
+	if(bheight<0. && bheight>-1.e8)
+	{	ypw = -bheight;
+		bheight = ypw*(double)info.height;
+	}
+	if(bwidth<0. && bwidth>-1.e8)
+	{	xpw = -bwidth;
+		bwidth = xpw*(double)info.width;
+	}
+	
+	// total dimensions (if only one is known, find the other, never have both unknown)
 	if(bheight<0) bheight=bwidth*(double)info.height/(double)info.width;
 	if(bwidth<0) bwidth=bheight*(double)info.width/(double)info.height;
-	double xpw=bwidth/(double)info.width;
-	double ypw=bheight/(double)info.height;
+	
+	// final mm per pixel (if needed)
+	if(xpw<0.) xpw=bwidth/(double)info.width;
+	if(ypw<0.) ypw=bheight/(double)info.height;
 	
 	// variables for scanning BMP file
 	int matID;
