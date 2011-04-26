@@ -85,6 +85,6 @@ bool BodyPolygonController::HasAllParameters(void)
 }
 
 // type of object
-char *BodyPolygonController::GetObjectType(void) { return "Polygon"; }
+const char *BodyPolygonController::GetObjectType(void) { return "Polygon"; }
 
 

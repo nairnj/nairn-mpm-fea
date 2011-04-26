@@ -65,5 +65,5 @@ void BodyCylinderController::SetBodyProperty(const char *aName,char *value,Commo
 }
 
 // type of object
-char *BodyCylinderController::GetObjectType(void) { return "Cylinder"; }
+const char *BodyCylinderController::GetObjectType(void) { return "Cylinder"; }
 

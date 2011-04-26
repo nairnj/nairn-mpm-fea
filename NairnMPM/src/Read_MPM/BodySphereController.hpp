@@ -23,7 +23,7 @@ class BodySphereController : public BodyObjectController
 		virtual bool FinishSetup(void);
 		virtual bool ContainsPoint(Vector &);
 		virtual bool Is2DBodyObject(void);
-		virtual char *GetObjectType(void);
+		virtual const char *GetObjectType(void);
 	
 	protected:
 		double x0,y0,z0;

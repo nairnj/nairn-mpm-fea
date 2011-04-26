@@ -28,5 +28,5 @@ bool BodyBoxController::ContainsPoint(Vector& pt)
 bool BodyBoxController::Is2DBodyObject(void) { return FALSE; }
 
 // type of object
-char *BodyBoxController::GetObjectType(void) { return "Box"; }
+const char *BodyBoxController::GetObjectType(void) { return "Box"; }
 

@@ -41,5 +41,5 @@ bool BodySphereController::ContainsPoint(Vector& pt)
 bool BodySphereController::Is2DBodyObject(void) { return FALSE; }
 
 // type of object
-char *BodySphereController::GetObjectType(void) { return "Sphere"; }
+const char *BodySphereController::GetObjectType(void) { return "Sphere"; }
 

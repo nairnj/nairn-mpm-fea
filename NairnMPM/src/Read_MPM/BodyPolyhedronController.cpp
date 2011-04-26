@@ -198,5 +198,5 @@ bool BodyPolyhedronController::SetBodyPropertyFromData(char *bData,CommonReadHan
 }
 
 // type of object
-char *BodyPolyhedronController::GetObjectType(void) { return "Polygonhedron"; }
+const char *BodyPolyhedronController::GetObjectType(void) { return "Polyhedron"; }
 

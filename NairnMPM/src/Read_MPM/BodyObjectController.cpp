@@ -111,5 +111,5 @@ bool BodyObjectController::SetBodyPropertyFromData(char *bData,CommonReadHandler
 }
 
 // type of object
-char *BodyObjectController::GetObjectType(void) { return "Body"; }
+const char *BodyObjectController::GetObjectType(void) { return "Body"; }
 
