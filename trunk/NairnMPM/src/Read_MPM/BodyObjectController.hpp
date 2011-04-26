@@ -34,7 +34,7 @@ class BodyObjectController
 		virtual bool HasAllParameters(void);
 		virtual bool SetBodyPropertyFromData(char *,CommonReadHandler *);
 	
-	virtual char *GetObjectType();
+		virtual const char *GetObjectType();
 	
 	protected:
 		double xmin,xmax,ymin,ymax,zmin,zmax;

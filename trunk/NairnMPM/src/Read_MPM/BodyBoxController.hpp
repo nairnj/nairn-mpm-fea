@@ -22,7 +22,7 @@ class BodyBoxController : public BodyObjectController
 		// methods
 		virtual bool ContainsPoint(Vector &);
 		virtual bool Is2DBodyObject(void);
-		virtual char *GetObjectType(void);
+		virtual const char *GetObjectType(void);
 };
 
 #endif

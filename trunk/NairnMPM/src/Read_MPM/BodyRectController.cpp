@@ -20,4 +20,4 @@ bool BodyRectController::ContainsPoint(Vector& pt)
 }
 
 // type of object
-char *BodyRectController::GetObjectType(void) { return "Rectangle"; }
+const char *BodyRectController::GetObjectType(void) { return "Rectangle"; }

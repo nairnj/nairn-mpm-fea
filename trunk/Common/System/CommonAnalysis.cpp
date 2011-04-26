@@ -302,7 +302,7 @@ void ThrowSAXException(const char *msg)
 }
 
 // throw an SAXException with format string and one string variable
-void ThrowSAXException(const char *frmt,char *msg)
+void ThrowSAXException(const char *frmt,const char *msg)
 {	char eline[500];
 	sprintf(eline,frmt,msg);
 	throw SAXException(eline);
