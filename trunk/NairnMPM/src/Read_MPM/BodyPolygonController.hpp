@@ -26,7 +26,7 @@ class BodyPolygonController : public BodyObjectController
 		virtual bool FinishSetup(void);
 		virtual bool ContainsPoint(Vector &);
 		virtual bool HasAllParameters(void);
-		virtual void SetParameter(char *,char *);
+		virtual void SetParameter(const char *,const char *);
 		virtual bool FinishParameter(void);
 		virtual const char *GetObjectType(void);
 	

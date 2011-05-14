@@ -63,7 +63,7 @@ bool BodyPolygonController::FinishParameter(void)
 ********************************************************************************/
 
 // set a property
-void BodyPolygonController::SetParameter(char *aName,char *value)
+void BodyPolygonController::SetParameter(const char *aName,const char *value)
 {
 	if(strcmp(aName,"x")==0)
 	{	sscanf(value,"%lf",&xparm);

@@ -94,7 +94,7 @@ void BodyObjectController::SetBodyProperty(const char *aName,char *value,CommonR
 }
 
 // set an object parameter (in subordinate command)
-void BodyObjectController::SetParameter(char *aName,char *value) { }
+void BodyObjectController::SetParameter(const char *aName,const char *value) { }
 
 // override for 3D objects
 bool BodyObjectController::Is2DBodyObject(void) { return TRUE; }

@@ -76,7 +76,7 @@ bool BodyPolyhedronController::HasAllParameters(void)
 }
 
 // set a property - only style
-void BodyPolyhedronController::SetParameter(char *aName,char *value)
+void BodyPolyhedronController::SetParameter(const char *aName,const char *value)
 {	
 	if(strcmp(aName,"style")==0)
 	{	if(strcmp(value,"tripts")==0)
@@ -107,7 +107,7 @@ bool BodyPolyhedronController::SetBodyPropertyFromData(char *bData,CommonReadHan
 {
 	int i;
 	vector<double> pts;
-	Vector box[8];
+	Vector box[8],xn,yn,zn,origin;
 	
 	// read the data into a vector
 	if(!CommonReadHandler::GetFreeFormatNumbers(bData,pts,distScaling)) return FALSE;
@@ -120,8 +120,7 @@ bool BodyPolyhedronController::SetBodyPropertyFromData(char *bData,CommonReadHan
 			if(pts.size()!=12) return FALSE;
 			
 			// Find origin, vectors and make sure first four are points
-			Vector xn,yn,zn;
-			Vector origin = MakeVector(pts[0],pts[1],pts[2]);
+			origin = MakeVector(pts[0],pts[1],pts[2]);
 			if(style==TRICLINIC_POINTS)
 			{	xn = MakeVector(pts[3]-pts[0],pts[4]-pts[1],pts[5]-pts[2]);
 				yn = MakeVector(pts[6]-pts[0],pts[7]-pts[1],pts[8]-pts[2]);
@@ -138,7 +137,7 @@ bool BodyPolyhedronController::SetBodyPropertyFromData(char *bData,CommonReadHan
 				}
 			}
 			
-			// get remaining 4 points
+			// get remaining 4 points to get 24, then fall through to BOX_CORNERS
 			Vector v;
 			AddVector(AddVector(CopyVector(&v,&origin),&xn),&yn);
 			pts.push_back(v.x);
