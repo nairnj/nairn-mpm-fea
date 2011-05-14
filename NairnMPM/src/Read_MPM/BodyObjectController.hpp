@@ -28,7 +28,7 @@ class BodyObjectController
 		virtual bool FinishSetup(void);
 		virtual bool Is2DBodyObject(void);
 		virtual void SetBodyProperty(const char *,char *,CommonReadHandler *);
-		virtual void SetParameter(char *,char *);
+		virtual void SetParameter(const char *,const char *);
 		virtual bool FinishParameter(void);
 		virtual void SetScaling(double);
 		virtual bool HasAllParameters(void);
