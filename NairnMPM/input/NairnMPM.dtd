@@ -146,7 +146,7 @@
 				| Ex | Ey | Ez | Gxy | Gxz | Gyz | nuxy | nuxz | nuyz
 				| alphax | alphay | alphaz | betax | betay | betaz
 				| K | G0 | ntaus | Gk | tauk | xGrow | yGrow
-				| C1 | C2 | speed | gain | p | maxLength | Propagate | AltPropagate | initTime
+				| G1 | G2 | speed | gain | p | maxLength | Propagate | AltPropagate | initTime
 				| K0 | Kd | Gd | alpha0 | alphad | transition | critical | DeltaVOffset
 				| reversible | irreversible | beta0 | betad | sigmaI | sigmaII | kIe | kIIe | nmix
 				| KIc | KIIc | JIc | JIIc | gamma | KIexp | KIIexp | delIc | delIIc | delpkI | delpkII
@@ -423,8 +423,8 @@
 <!ELEMENT	ntaus (#PCDATA)>
 <!ELEMENT	Gk (#PCDATA)>
 <!ELEMENT	tauk (#PCDATA)>
-<!ELEMENT	C1 (#PCDATA)>
-<!ELEMENT	C2 (#PCDATA)>
+<!ELEMENT	G1 (#PCDATA)>
+<!ELEMENT	G2 (#PCDATA)>
 <!ELEMENT	Uk (#PCDATA)>
 <!ELEMENT	YP (#PCDATA)>
 <!ELEMENT	K0 (#PCDATA)>

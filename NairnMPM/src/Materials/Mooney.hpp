@@ -4,6 +4,9 @@
     
     Created by John Nairn on Fri Feb 28 2003.
     Copyright (c) 2003 John A. Nairn, All rights reserved.
+ 
+	Moony-Rivlin hyperelastic material. A special case setting G2=0 is
+	neo-Hookean material
 
 	Dependencies
 		RubberElastic.hpp
@@ -15,12 +18,13 @@
 
 #include "Materials/RubberElastic.hpp"
 
-enum {C1_PROP=0,C2_PROP,CTE_PROP,MOONEY_PROPS};
+enum {G1_PROP=0,G2_PROP,KBULK_PROP,CTE_PROP,MOONEY_PROPS};
 
 class Mooney : public RubberElastic
 {
     public:
-        double C1,C2,aI,betaI;
+        double G1,G2,Kbulk;
+		// double aI,betaI		// isotropic expanion defined in super classes
  
         // constructors and destructors
         Mooney();
@@ -38,13 +42,12 @@ class Mooney : public RubberElastic
     
 		// accessors
 		virtual double WaveSpeed(bool);
-		virtual bool ThreeDMaterial();
+		virtual double ShearWaveSpeed(bool);
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
 		
     private:
-		double C1sp, C2sp;
-        char read[MOONEY_PROPS];
+		double G1sp, G2sp, Ksp;
 };
 
 #endif

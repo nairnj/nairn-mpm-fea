@@ -205,6 +205,7 @@ double MPMBase::GetDispEnergy(void) { return dispEnergy; }
 void MPMBase::AddDispEnergy(double energyInc) { dispEnergy+=energyInc; }
 void MPMBase::SetDispEnergy(double energy) { dispEnergy=energy; }
 double MPMBase::GetStrainEnergy(void) { return strainEnergy; }
+void MPMBase::SetStrainEnergy(double energyTot) { strainEnergy=energyTot; }
 void MPMBase::AddStrainEnergy(double energyInc) { strainEnergy+=energyInc; }
 double MPMBase::GetExtWork(void) { return extWork; }
 
