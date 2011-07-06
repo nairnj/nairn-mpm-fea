@@ -46,6 +46,6 @@ Revisions before the start of the table or after the end of table have not been 
 || r264 || 3 Nov 2010 || Traction loads better balanced<br>Improved surface mass calculation when updating crack surfaces and plane by `avg`<br>Wide-open cracks with no tractions are collapsed<br>Added `VKArchive` option for total strain ||
 || r274 || 1 DEC 2010 || Converted to Xerces 3.1.1 (now required to compile and run)<br>Fixed bug in contact detection on some machines (depending on uninitialized doubles)<br>Converted `longs` to `ints` to avoid machine-dependent 64 bit results (NairnMPM can compile either) ||
 || r289 || 13 JAN 2011 || Added Polyhedron option for 3D simulations ||
-|| r312 || 18 APR 2011 || Langrange 2D element added. It is used in FEA. I does not seem to work well inMPM, but might if a GIMP option is added. ||
-|| r322 || 7 JUN 2011 || Enhanced Polyhedron option for 3D simulations and enhance BMP command for new options ||
-|| r324 || 6 JUL 2011 || Convert Mooney material it full 2D and 3D, isotropic, hyperelastic material ||
+|| r312 || 18 APR 2011 || Langrange 2D element added. It is used in FEA. I does not seem to work well in MPM (and therefore disabled). It might work if a GIMP option is added. ||
+|| r322 || 7 JUN 2011 || Enhanced Polyhedron option for 3D simulations and enhanced BMP command for new options ||
+|| r324 || 6 JUL 2011 || Converted Mooney material into full 2D and 3D, isotropic, hyperelastic material ||
