@@ -31,16 +31,16 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Added `AltPropagate` command to allow competing fracture modes. Its initial use is for competition between interface fracture and fracture turning into the bulk.
     * The default `Vmin` for multimaterial contact was changed to 0.0.
     * Added new `RigidBias` attribute for `MultiMaterialMode` command that takes the normal from the volume gradient of the rigid material unless the magnitude of the volume gradient from the non-rigid material is higher by the `RigidBias` factor. It only applies when normals=0.
-    * Multimaterial mode that has contact with rigid particles can now track contact forces on the grid by using either a new `VTKArchive` custom task option or a new `GlobalArchive` option.
+    * Multimaterial mode that has contact with rigid particles can now track contact forces on the grid by using either a new `VTKArchive` custom task option or a new `GlobalArchive` option to archive a sum of all contact forces.
     * New Trilinear traction law material was implemented.
-    * Added option to archive contact forces with rigid materials on the grid. A global archive option can archive a sum of all contact forces.
     * Revised movement of crack surface particles to include more small movements and to ignore large movements. It works much better with the cutting simulations.
     * Improved traction laws so they can be used with interacting cracks.
     * `VTKArchive` option for total strain
     * `Damping` command can use a function to have grid damping that varies with time.
     * `Polyhedron` command for more 3D objects
     * Added `Entity` command.
-    * Enhanced `BMP` command to allow specifying dist per pixel and to superpose multiple images.
+    * Enhanced `BMP` command to allow specifying distance per pixel and to superpose multiple images.
+    * The previous Mooney material (which was not really working correctly) was rewritten and expanded to full Hyperelastic material and works in 2D (plane stress and plane strain) and in 3D. A subset of this material is a Neo-Hookean material.
 
   * release-2.0 (25 JUL 2009)
     * Has NairnMPM 7.3.0
