@@ -114,6 +114,7 @@ class MPMBase : public LinkedObject
 		void AddDispEnergy(double energyInc);
 		void SetDispEnergy(double energy);
 		double GetStrainEnergy(void);
+		void SetStrainEnergy(double energyTot);
 		void AddStrainEnergy(double energyInc);
 		double GetExtWork(void);
 		Tensor *GetStressTensor(void);

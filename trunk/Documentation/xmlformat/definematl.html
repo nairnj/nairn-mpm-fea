@@ -83,8 +83,9 @@
 <tr>
 <td><a href="#mooney"><code>Mooney</code></a></td>
 <td>8</td>
-<td width="50%">Mooney-Rivlin non-linear elastic rubbery material</td>
-<td align="center"></td><td align="center">X</td><td align="center"></td>
+<td width="50%">Mooney-Rivlin, hyperelastic material. This material includes neo-Hookian
+as a special case.</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
@@ -480,15 +481,25 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
     
 <a name="mooney"></a><h2>Mooney-Rivlin Rubber, Isotropic</h2>
 
-<p>The material type is <code>Type=8</code>. It is a rubber elastic material using a Mooney-Rivlin constitutive equation. The input properties are:</p>
+<p>The material type is <code>Type=8</code>. It is an isotropic, hyperelastic material. The stresses are defined from the strain energy, which is defined by invariants of the left Cauchy Green Tensor ([B] = [F][F]<sup>T</sup> where [F] is the deformation gradient). In a Mooney-Rivlin material, the strain energy depends on three material properties:</p>
+
+<blockquote>
+2W = G<sub>1</sub>(I<sub>1</sub>-3) + G<sub>2</sub>(I<sub>2</sub>-3) + K(J-1)<sup>2</sup>
+</blockquote>
+
+<p>where I<sub>1</sub> = Trace([B])/J<sup>2/3</sup>, I<sub>2</sub> = 0.5(I<sub>1</sub><sup>2</sup>
+- [B]<sup>..</sup>[B]/J<sup>4/3</sup>), and J = Det([F]). The remaining parameters are material properties:</p>
 
 <dl>
 
-<dt>&lt;C1&gt;0.1&lt;/C1&gt;</dt>
-<dd>The C1 modulus (in MPa)</dd>
+<dt>&lt;G1&gt;0.1&lt;/G1&gt;</dt>
+<dd>The G<sub>1</sub> shear modulus (in MPa). The low-strain shear modulus is G<sub>1</sub>+G<sub>2</sub>.</dd>
     	
-<dt>&lt;C2&gt;0.33&lt;/C2&gt;</dt>
-<dd>The C2 modulus (in MPa)</dd>
+<dt>&lt;G2&gt;0.33&lt;/G2&gt;</dt>
+<dd>The G<sub>2</sub> shear modulus (in MPa). The low-strain shear modulus is G<sub>1</sub>+G<sub>2</sub>.</dd>
+    	
+<dt>&lt;K&gt;2.5&lt;/K&gt;</dt>
+<dd>The K modulus (in MPa), which is equal to the low-strain bulk modulus.</dd>
     	
 <dt>&lt;alpha&gt;60&lt;/alpha&gt;</dt>
 <dd>The material thermal expansion coefficient (in ppm/C)</dd>
@@ -506,6 +517,8 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <dd>See the <a href="#common">properties common to all materials</a>.</dd>
     	
 </dl>
+
+<p>A neo-Hookean material is a special case of a Mooney-Rivlin material by setting G<sub>2</sub> = 0.</p>
 
 <a name="vonmises"></a><h2>Von Mises Plastic, Isotropic</h2>
 

@@ -13,6 +13,9 @@
 // Constructors
 RubberElastic::RubberElastic() {}
 
-RubberElastic::RubberElastic(char *matName) : MaterialBase(matName) {}
+RubberElastic::RubberElastic(char *matName) : MaterialBase(matName)
+{
+	aI=0.;
+}
 
 
