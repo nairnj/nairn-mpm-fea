@@ -22,6 +22,7 @@
 %\def\C{{\fam=9 C}}
 \def\A{\hbox{\tenbsf A}}
 \def\a#1{\alpha_{#1}}  
+\def\B{\hbox{\tenbsf B}}
 \def\b#1{\beta_{#1}}  
 \def\C{\hbox{\tenbsf C}}
 \def\D{\hbox{\tenbsf D}}
@@ -42,7 +43,9 @@
 \def\e#1{\varepsilon_{#1}}
 \def\er#1{\varepsilon_{#1}^{(res)}}
 \def\err#1{\varepsilon_{#1}^{(res,r)}}
+\def\F{\hbox{\tenbsf F}}
 \def\g#1{\gamma_{#1}}  
+\def\I{\hbox{\tenbsf I}}
 \def\P{\hbox{\tenbsf P}}
 \def\Q{\hbox{\tenbsf Q}}
 \def\R{\hbox{\tenbsf R}}
@@ -924,9 +927,66 @@ The history variables update using
         h_{ij,k}^{(i)}   & = & e^{-\Delta t/\tau_k}\left(h_{ij,k}^{(i-1)} - {G_k\over\tau_k}d\g{ij}\right)
 \end{eqnarray}
 
-\section{Rubber Elastic Materials}
+\section{Isotropic Hyperelastic Materials}
 
-To be added
+The Mooney-Rivilin material is an isotropic, hyperelastic material. It's stresses are based on a strain energy function that depends only on invariants to the left Cauchy-Green deformation tensor:
+\begin{equation}
+    \B = \F\F^T
+\end{equation}
+where $\F$ is the deformation tensor. The deformation tensor can be calculated by combining cumulative strain and rotation tensors (see {\tt Mooney.cpp} for the calculation). The strain energy is assumed to be
+\begin{equation}
+W = {G_1\over2}\left(\bar{I_1}-3\right)^2 + {G_2\over2}\left(\bar{I_2}-3\right)^2 + {K\over2}\left(J-1\right)^2
+\end{equation}
+where $G_1$, $G_2$, and $K$ are material properties, $J=\det\F$, and the invariants are
+\begin{eqnarray}
+   \bar{I_1} & = & {B_{xx}+B_{yy}+B_{zz}\over J^{2/3}} \\
+   \bar{I_2} & = & {1\over2}\left(\bar{I_1}^2 - {B_{xx}^2+B_{yy}^2+B_{zz}^2+2B_{xy}^2+2B_{xz}^2+2B_{yz}^2\over J^{5/3}}\right)
+\end{eqnarray}
+For low strains, this material is equivalent for a linear elastic, isotropic material with shear modulus $G_1+G_2$ and bulk modulus $K$. If $G_2=0$, the material is a neo-Hookean material.
+
+To handle thermal and moisture strains, $\F$ is replaced by the deformation relative to the free expansion state:
+\begin{equation}
+     \F^* = {\F\over \lambda_{res}}
+\end{equation}
+where $\lambda_{res}$ is total extension due to free thermal and moisture expansion:
+\begin{equation}
+    1 + \alpha\Delta T + \beta \Delta c
+\end{equation}
+The total effect of expansion stress is included by replacing $J$ in all equations with $J/\lambda_{res}^3$.
+
+The Cauchy (or true stress) is found by differentiating the strain energy to get
+\begin{equation}
+     \sigma = {G_1\over J^{5/3}}\left(\B - {I_1\over3}\I\right)
+                     +  {G_2\over J^{7/3}}\left(I_1\B - \B^2 - {2I_2\over3}\I\right)   + K(J-1)\I
+\end{equation}
+where $\I_1 = J^{2/3}\bar{I_1}$ and $\I_2 = J^{4/3}\bar{I_2}$. The stress components explicitly evaluate to:
+\begin{eqnarray}
+      \s{xx} & = & K(J-1) + G_1{2B_{xx}-B_{yy}-B_{zz}\over 3J^{5/3}}   \nonumber\\
+                  && \qquad\mbox{}    + G_2{B_{xx}(B_{yy}+B_{zz})-2B_{yy}B_{zz}-B_{xy}^2-B_{xz}^2+2B_{yz}^2\over 3J^{7/3} }\\
+      \s{yy} & = & K(J-1) + G_1{2B_{yy}-B_{xx}-B_{zz}\over 3J^{5/3}}   \nonumber\\
+                  && \qquad\mbox{}    + G_2{B_{yy}(B_{xx}+B_{zz})-2B_{xx}B_{zz}-B_{xy}^2+2B_{xz}^2-B_{yz}^2\over 3J^{7/3} }\\
+      \s{zz} & = &  K(J-1) + G_1{2B_{zz}-B_{xx}-B_{yy}\over 3J^{5/3}}   \nonumber\\
+                  && \qquad\mbox{}    + G_2{B_{zz}(B_{xx}+B_{yy})-2B_{xx}B_{yy}+2B_{xy}^2-B_{xz}^2-B_{yz}^2\over 3J^{7/3} }\\
+       \t{xy} & = &  G_1{B_{xy}\over J^{5/3}} + G_2{B_{zz}B_{xy}-B_{xz}B_{yz}\over J^{7/3}}\\
+       \t{xz} & = & G_1{B_{xz}\over J^{5/3}} + G_2{B_{yy}B_{xz}-B_{xy}B_{yz}\over J^{7/3}}\\
+       \t{yz} & = & G_1{B_{yz}\over J^{5/3}} + G_2{B_{xx}B_{yz}-B_{xy}B_{xz}\over J^{7/3}}
+\end{eqnarray}
+
+\subsection{Plane Strain and Plane Stress Analysis}
+
+For 2D analysis, $F_{xz}=F_{yz}=F_{zx}=F_{zy}=0$, which leads to zero for corresponding terms in $\B$. The resulting stresses are
+\begin{eqnarray}
+      \s{xx} & = & K(J-1) + G_1{2B_{xx}-B_{yy}-B_{zz}\over 3J^{5/3}}  
+                    + G_2{B_{xx}(B_{yy}+B_{zz})-2B_{yy}B_{zz}-B_{xy}^2\over 3J^{7/3} }\\
+      \s{yy} & = & K(J-1) + G_1{2B_{yy}-B_{xx}-B_{zz}\over 3J^{5/3}}   
+                     + G_2{B_{yy}(B_{xx}+B_{zz})-2B_{xx}B_{zz}-B_{xy}^2\over 3J^{7/3} }\\
+      \s{zz} & = &  K(J-1) + G_1{2B_{zz}-B_{xx}-B_{yy}\over 3J^{5/3}}   
+                     + G_2{B_{zz}(B_{xx}+B_{yy})-2B_{xx}B_{yy}+2B_{xy}^2\over 3J^{7/3} }\\
+       \t{xy} & = &  G_1{B_{xy}\over J^{5/3}} + G_2{B_{zz}B_{xy}\over J^{7/3}}\\
+       \t{xz} & = & 0 \\
+       \t{yz} & = & 0
+\end{eqnarray}
+For plane strain analysis $B_{zz}=0$. For plane stress analysis, one has to solve numerically for $B_{zz}$ to get $\s{zz}=0$ and then use that result to find $\e{zz}$ and other stresses.
 
 \section{Two-State Isotropic Material}
 
