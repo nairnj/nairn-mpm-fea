@@ -120,13 +120,17 @@ public class TextDisplay extends JSplitPane
 		resDoc.clear(true);
 		
 		String section,title;
-		int titleEnd,sectionNum=1;
+		int titleEnd,sectionNum=1,crEnd;
 		Scanner s=new Scanner(mpm).useDelimiter("\\*\\*\\*\\*\\*\\s+\\d+\\.\\s+");
 		if(s.hasNext()) resDoc.add("TITLE",s.next());
 		while(s.hasNext())
 		{	section=s.next();
 			titleEnd=section.indexOf("\n");
-			if(titleEnd<0) titleEnd=section.indexOf("\r");
+			crEnd=section.indexOf("\r");
+			if(titleEnd<0)
+				titleEnd=crEnd;
+			else if(crEnd>0 && crEnd<titleEnd)
+				titleEnd=crEnd;
 			if(titleEnd>0)
 				title=section.substring(0,titleEnd);
 			else
@@ -152,7 +156,11 @@ public class TextDisplay extends JSplitPane
 		if(index>0)
 		{	try
 			{	int endFile=fdata.indexOf("\n",index);
-				if(endFile<0) endFile=fdata.indexOf("\r",index);
+				int crEnd=fdata.indexOf("\r",index);
+				if(endFile<0)
+					endFile=crEnd;
+				else if(crEnd>0 && crEnd<endFile)
+					endFile=crEnd;
 				if(endFile>0)
 				{	File subFile=new File(file.getParentFile(),fdata.substring(index+6,endFile));
 					FileReader fr=new FileReader(subFile);
