@@ -102,7 +102,7 @@ public class ResultsDocument extends AbstractTableModel
 		int nnodes,nelems;
 		try
 		{	// get nodes and elements
-			s=new Scanner(summary).useDelimiter("[\\n\\r]");
+			s=new Scanner(summary).useDelimiter("\\r\\n|\\n|\\r");
 			s.next();
 			s.next();
 			sline=new Scanner(s.next());
@@ -233,7 +233,7 @@ public class ResultsDocument extends AbstractTableModel
 		//----------------------------------------------------------
 		// defined materials
 		String matls=section("DEFINED MATERIALS");
-		s=new Scanner(matls).useDelimiter("[\\n\\r]");
+		s=new Scanner(matls).useDelimiter("\\r\\n|\\n|\\r");
 		while(true)
 		{	// scan to start of next material and get its name
 			String matLine,matName=null;
@@ -369,7 +369,7 @@ public class ResultsDocument extends AbstractTableModel
 			}
 			
 			bcs=section("FULL MASS MATRIX");
-			s=new Scanner(bcs).useDelimiter("[\\n\\r]");
+			s=new Scanner(bcs).useDelimiter("\\r\\n|\\n|\\r");
 			// scan to grid info
 			String gridInfo=null;
 			while(s.hasNext() && gridInfo==null)
@@ -461,7 +461,7 @@ public class ResultsDocument extends AbstractTableModel
 		if(isMPMAnalysis())
 		{	String globalResults=section("ARCHIVED GLOBAL RESULTS");
 			if(globalResults.length()>0)
-			{	s=new Scanner(globalResults).useDelimiter("[\\n\\r]");
+			{	s=new Scanner(globalResults).useDelimiter("\\r\\n|\\n|\\r");
 				s.next();
 				s.next();
 				
@@ -479,7 +479,7 @@ public class ResultsDocument extends AbstractTableModel
 		// read archive list
 		if(isMPMAnalysis())
 		{	String archives=section("ARCHIVED ANALYSIS RESULTS");
-			s=new Scanner(archives).useDelimiter("[\\n\\r]");
+			s=new Scanner(archives).useDelimiter("\\r\\n|\\n|\\r");
 			s.next();
 			s.next();
 			
@@ -865,7 +865,7 @@ public class ResultsDocument extends AbstractTableModel
 	// Utilities for decoding text when reading a file
 	//-----------------------------------------------------------------
 	
-	// find index to start of line after line containg substring
+	// find index to start of line after line containingg substring
 	public int findNextLine(String data,String lookStr)
 	{
 		int endIndex=data.indexOf(lookStr);
@@ -902,7 +902,7 @@ public class ResultsDocument extends AbstractTableModel
 	public String section(String name)
 	{   int index;
 		for(index=0;index<sectionTitle.size();index++)
-		{   if(name.equals(sectionTitle.get(index)))
+		{	if(name.equals(sectionTitle.get(index)))
 				return section(index);
 		}
 		return "";
