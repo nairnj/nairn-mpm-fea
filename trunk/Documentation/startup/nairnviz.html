@@ -192,32 +192,26 @@ path to the java binaries will be something like: </p>
 
 <h2><a name="eclipse"></a>Compiling Using Eclipse</h2>
 
-<p><a href="http://www.eclipse.org" target="new">Eclipse</a> is an open-source and free development system for Java (and for other languages with the appropriate plug ins). This section explains how to import the code into an Eclipse project. This method was done using Eclipse 3.5.1, which is available free for Windows, Mac, and other platforms.</p>
+<p><a href="http://www.eclipse.org" target="new">Eclipse</a> is an open-source and free development system for Java (and for other languages with the appropriate plug ins). This section explains how to import the code into an <a href="http://www.eclipse.org" target="new">Eclipse</a> project. This method was done using <a href="http://www.eclipse.org" target="new">Eclipse Indigo (3.7)</a>, which is available free for Windows, Mac, and other platforms. These steps will probably work for other versions too.</p>
 
-<p>While you could create a new project and manually add files from the <code>nairn-mpm-fea</code> check out, the preferred method is to directly check out from the <code>GoogleCode.com</code> repository using <code>Subversion</code>. Unfortunately, the default installation of <a href="http://www.eclipse.org" target="new">Eclipse</a> does not have <code>Subversion</code>; but it is available as a plug in:
-</p>
+<p>The first steps are to install and prepare <a href="http://www.eclipse.org" target="new">Eclipse</a> for Java development. These steps also need tools for subversion and are described <a href="index.html#geteclipse">here</a>. Be sure to do the optional step for Java development.</p>
 
-<ol>
-<li>Start <a href="http://www.eclipse.org" target="new">Eclipse</a> and choose menu command &quot;Help &rarr; Install New Software...&quot;</li>
-
-<li>In the drop down menu to the right of the &quot;Work With&quot; field, select a server such as the &quot;Galileo&quot; server.</li>
-
-<li>Expand the &quot;Collaboration&quot; section and select the &quot;Subversive SVN Team Provider&quot; item.</li>
-
-<li>Click &quot;Next&quot; as needed, accept the terms, and click &quot;Finish&quot; to install. You will be encouraged to restart <a href="http://www.eclipse.org" target="new">Eclipse</a> after the installation.</li>
-
-</ol>
-
-<p>The above steps only need to be done once. You are now ready to manage <a href="http://www.eclipse.org" target="new">Eclipse</a> projects using <code>svn</code>. To start with a <b>NairnFEAMPMViz</b> project, do the following:</p>
+<p>You are now ready to manage <a href="http://www.eclipse.org" target="new">Eclipse</a> projects using SVN. To start with a <b>NairnFEAMPMViz</b> project, do the following:</p>
 
 <ol>
 
-<li>Choose menu command &quot;New &rarr; Project...&quot;, expand the &quot;SVN&quot; section, choose &quot;Project from SVN&quot; and click &quot;Next&quot;. Now, the first time you try this, you will be told you need to install an SVN connection. Select any one (such a &quot;SVN Kit 1.3&quot;) and then click &quot;Next&quot; until you accept the terms and click &quot;Finish&quot;. Once the connection is installed, you will be encouraged to restart <a href="http://www.eclipse.org" target="new">Eclipse</a> again. Once it restarts, repeat this step and and then proceed to the next step. You will only need to install the SVN connection once.</li>
+<li>Choose menu command &quot;New &rarr; Project...&quot;, expand the &quot;SVN&quot; section, choose &quot;Project from SVN&quot; and click &quot;Next.&quot;</li>
 
-<li>Enter <code>https://nairn-mpm-fea.googlecode.com/svn/trunk/Visualization/src</code> into the URL field. If you are checking out with a password, enter your <code>GoogleCode.com</code> username and password. For anonymous check out you can omit username and password, but change the URL to begin in <code>http://</code> instead. When done, click &quot;Next&quot;
+<li>You will be asked to select an SVN repository. Enter the following settings followed by clicking &quot;Next&quot;:
+<ul>
+<li>URL: <code>https://nairn-mpm-fea.googlecode.com/svn/trunk.Visualization/src</code></li>
+<li>User: enter your gmail name for access to <a href="http://code.google.com" target="new">google code</a> (this process is assuming you have been added as a &quot;contributor&quot; to the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a>. You can request to be added by <a href="mailto:John.Nairn@oregonstate.edu">sending email to project owner</a>.</li>
+<li>Password: Enter the password generated for you in the &quot;Profile &rarr; Settings&quot; section when logged onto <a href="http://code.google.com" target="new">google code</a>.</li>
+<li>For anonymous checkout you might be able to omit username and password, but change the URL to begin in <code>http://</code> instead of <code>https://</code>. </li>
+</ul>
 </li>
 
-<li>The next page should already have the same URL. Select &quot;Head Revision&quot; and click &quot;Finish&quot; (Note: sometimes &quot;Finish&quot; will be disabled until you select a different option and then go back to &quot;Head Revision&quot;).</li>
+<li>Choose &quot;Head Revision&quot; for latest version or use date or revision options for older versions and then click &quot;Next.&quot;</li>
 
 <li>Select &quot;Check out as project with the name specified&quot; and specify <b>NairnFEAMPMViz</b>. Click &quot;Finish&quot; and the project will be created. It should automatically build and be ready to run.</li>
 
@@ -233,30 +227,28 @@ path to the java binaries will be something like: </p>
 You can increase or decrease the memory as needed).</li>
 <li>Click &quot;Apply&quot;</li>
 <li>Click &quot;Run&quot; to run <b>NairnFEAMPMViz</b></li>
-<li>In the future, you can run using the  &quot;<b>NairnFEAMPMViz with Meomry</b>&quot; item in the Run History menu</li>
+<li>In the future, you can run using the  &quot;<b>NairnFEAMPMViz with Memory</b>&quot; item in the Run History menu</li>
 </ol></li>
 </ol>
 
-<p>The above process will create a project in the Eclipse workspace that will have a copy of the
+<p>The above process will create a project in the <a href="http://www.eclipse.org" target="new">Eclipse</a> workspace that will have a copy of the
 files needed for the <b>NairnFEAMPMViz</b> project. You can update to the latest version by
-control-clicking the project name and selecting &quot;Update&quot; from the &quot;Team&quot;
-submenu. Alternatively, you can delete the old project and create a new one with the above steps.</p>
+right clicking (or control clicking on Mac) the project name and selecting &quot;Update&quot; from the &quot;Team&quot; submenu. If you are certified as a project committer, you can save your changes by right clicking (or control clicking on Mac) on the project name and choosing &quot;Team &rarr; Commit...&quot;</p>
 
-<p>The above process will let you compile and run <b>NairnFEAMPMViz</b> within Eclipse. You can also use Eclipse to create a jar file, which can be run outside of Eclipse. The process is:</p>
+<p>The above process will let you compile and run <b>NairnFEAMPMViz</b> within <a href="http://www.eclipse.org" target="new">Eclipse</a>. You can also use <a href="http://www.eclipse.org" target="new">Eclipse</a> to create a jar file, which can be run outside of <a href="http://www.eclipse.org" target="new">Eclipse</a>. The process is:</p>
 
 <ol>
-<li>Expand the &quot;lib&quot; folder in the <b>NairnFEAMPMViz</b> project and double click on the &quot;NairnFEAMPMViz.jardesc&quot; file.</li>
-<li>Click "Finish" to generate the jar file (unless you want to change the jar creation process, which is uncommon)</li>
+<li>Choose menu command &quot;Export...&quot; and the select &quot;Runable Jar File&quot; in the &quot;Java&quot; section. Click &quot;Next.&quot;</li>
+<li>Choose the <b>NairnFEAMPMViz</b> launch configution (such as the quot;<b>NairnFEAMPMViz with Memory</b>&quot; one created above), choose export destination (which by default is <code>(project)/lib/NairnFEAMPMViz.jar</code>, where <code>(project)</code> is the name you gave this project in your workspace), and select to &quot;Extract required libraries into generated JAR.&quot;</li>
+<li>Click "Finish" to generate the jar file</li>
 </ol>
 
-<p>The above jar file will include all the <b>NairnFEAMPMViz</b> code, but will not include
-the external jar files used for the application framework and for x-y plots. Because those jar files remain as an external jars, you have to navigate to the &quot;lib&quot; folder and run the <b>NairnFEAMPMViz</b> jar file created by this method using:</p>
+<p>To run the jar with sufficient memory, navigate to the &quot;lib&quot; folder and run the <b>NairnFEAMPMViz</b> jar file created using:</p>
 
-<pre>java -Xmx512m -cp NairnFEAMPMViz.jar:JNFramework.jar:JNPlot2D.jar NairnFEAMPMViz
+<pre>java -Xmx512m -jar NairnFEAMPMViz.jar
 </pre>
 
-<p>where the classpath option (<code>-cp</code>) gives the paths to the three required jar files (all of which should now be in the &quot;lib&quot; folder). The <code>-Xmx512m</code> argument is to give the virtual machine sufficent memory (as explained <a href="#runningViz">above</a>). If you prefer a stand-alone jar file with all jar files embedded into a single file, compile
-using the <a href="#unix">command line method above</a> instead of using <a href="http://www.eclipse.org" target="new">Eclipse</a>.</p>
+<p>The <code>-Xmx512m</code> argument is to give the virtual machine sufficent memory (as explained <a href="#runningViz">above</a>).</p>
 
 <h1><a name="paraview"></a>ParaView Quick Start</h1>
 
@@ -276,8 +268,6 @@ using the <a href="#unix">command line method above</a> instead of using <a href
 </ol>
 
 <p>ParaView has many more options for plotting and reading results from <code>NairnMPM</code> run using the <a href="../xmlformat/custom.html#VTKArchive">VTKArchive custom task</a>. The above just get one plot.</p>
-
-</ol>
 
 <p class="links">
 <a href="../index.html">Home</a> &rarr;

@@ -134,8 +134,7 @@ void NairnFEA::FEAAnalysis()
                                 "NairnFEA::FEAAnalysis");
     }
     else if(result==-1)
-    {	throw CommonException("Linear solver error: solution process was too severe. Results might be invalid.\n  (Hint: turn on resequencing to check for mesh connectivity problem)",
-                                "NairnFEA::FEAAnalysis");
+	{	cout << "Linear solver warning: solution process was close to singular. Results might be invalid." << endl;
     }
     delete [] work;
     delete [] st;

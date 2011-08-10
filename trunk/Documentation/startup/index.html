@@ -198,89 +198,81 @@ make SYSTEM=cygwin
 
 <a name="eclipse"></a><h1>Compile using Eclipse IDE</h1>
 
-<p>Working with source code is easier when done using an integrated development environment (IDE) rather than using basic text editing on a collection of source files. On MacOS X, you can use the XCode IDE (free with developer tools) and the <code>nairn-mpm-fea</code> project has an <a href="#xcode">XCode project ready to use</a>. An option for any other platform (and for MacOS X too) is to use the cross-platform IDE <a href="http://www.eclipse.org" target="new">Eclipse</a>, which is an open-source and free IDE. This section explains how to compile <code>NairnMPM</code> and <code>NairnFEA</code> using <a href="http://www.eclipse.org" target="new">Eclipse</a>. Experienced Eclipse users may have better methods, but the steps explained below should work. These steps were based on and older version of Eclipse from should work similary in the latest Galileo version of Eclipse (version 3.5 or newer).
+<p>Working with source code is easier when done using an integrated development environment (IDE) rather than using basic text editing on a collection of source files. On MacOS X, you can use the XCode IDE (free with developer tools) and the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a> has an <a href="#xcode">XCode project ready to use</a>. An option for any other platform (and an alternative option for MacOS X) is to use the cross-platform IDE <a href="http://www.eclipse.org" target="new">Eclipse</a>, which is an open-source and free IDE. This section explains how to compile <code>NairnMPM</code> and <code>NairnFEA</code> using <a href="http://www.eclipse.org" target="new">Eclipse</a>. These steps were based on the <a href="http://www.eclipse.org" target="new">Eclipse Indigo (version 3.7)</a>, but are likely to work in other versions as well.
 </p>
 
-<p>The first steps are to install and prepare <a href="http://www.eclipse.org" target="new">Eclipse</a> for C/C++ development as follows:
-</p>
+<p>Before attempting to use <a href="http://www.eclipse.org" target="new">Eclipse</a>, it is recommended that you compile using the command-line approach for your platform (<a href="#term">Mac</a>, <a href="#windows">Windows</a>, or <a href="#linux">Linux</a>) first. This process verifies you have all tools needed by <a href="http://www.eclipse.org" target="new">Eclipse</a> for compiling and verifies that <code>xerces</code> is correctly installed.</p>
 
-<ol>
-<li>Before using <a href="http://www.eclipse.org" target="new">Eclipse</a> on a new platform, you should compile the <code>nairn-mpm-fea</code> code using command line methods for your platform. This task verifies that you have the <code>xerces</code> library correctly installed, that the <code>makefile</code>s are valid for your system, and, for Windows, that <a href="#windows">cygwin is correctly installed</a>. All these items are prerequisites to successful compilation using <a href="http://www.eclipse.org" target="new">Eclipse</a>.
-</li>
-
-<li>Download and install <a href="http://www.eclipse.org" target="new">Eclipse</a>. As downloaded, <a href="http://www.eclipse.org" target="new">Eclipse</a> may only be set up for Java development, and not ready for C/C++ development (depending on what you download). To configure for C/C++ development, choose the menu command &quot;Help &rarr; Software Update &rarr; Find and Install...&quot; and follow the procedures to install the C/C++ Development Tools (or CDT)
-</li>
-
-<li>In Windows, <a href="http://www.eclipse.org" target="new">Eclipse</a> uses some <code>cygwin</code> tools and therefore projects need to know the path to the <code>cygwin/bin</code> folder. Thus, before creating any projects:
-<ol class="alpha">
-<li>Choose menu command to open Eclipse preferences</li>
-<li>Find section for C/C++ &rarr; Make &rarr; New Make Projects</li>
-<li>In the &quot;Environment&quot; section add the variable <code>PATH</code> with value <code>;C:\cygwin\bin;</code> (<i>i.e.</i>, the path to the bin direcetory of your cygwin folder). Make sure the option to append to native environment is selected.</li>
-<li>Click OK</li>
-</ol>
-No such setting is required in MacOS X because, if developer tools are installed, it is automatically set up for compiling with Eclipse. On other plaftorms, some other setting may be needed for Eclipse to locate all the required tools.</li>
-</ol>
-
-<p>The above steps only need to be done the first time you compile <code>NairnMPM</code> and/or <code>NairnFEA</code>. Once they are done, you can proceed creating <code>NairnMPM</code> and <code>NairnFEA</code> projects as follows. These steps explain both at once. You can do both or just the one you need.
+<p><a name="geteclipse"></a>The first steps (which are only needed once) are to install and prepare <a href="http://www.eclipse.org" target="new">Eclipse</a> for C/C++ development. You will need <a href="http://www.eclipse.org" target="new">Eclipse</a> and will need to install tools for subversion. Subversion will be used to directly check out the code from <a href="http://code.google.com" target="new">google code</a> into an <a href="http://www.eclipse.org" target="new">Eclipse</a> project (even though you should have checked out the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a> to verify command-line compile, this process will checkout another copy for compiling in <a href="http://www.eclipse.org" target="new">Eclipse</a>):
 </p>
 
 <ol>
-
-<li>Create a new project and select a C/C++ standard make file project. Name it &quot;NairnMPM&quot; and click Finish. Repeat (if desired) to create a &quot;NairnFEA&quot; project.
+<li>Download and install <a href="http://www.eclipse.org/downloads/" target="new">Eclipse IDE for C/C++ Developers</a>. These steps were based on use of <a href="http://www.eclipse.org" target="new">Eclipse Indigo (version 3.7)</a>, but other versions should work by similar steps. Most system have 32 bit or 64 bit options. Choose the one best for your system. Note that <a href="http://www.eclipse.org" target="new">Eclipse</a> is a Java application and thus if you choose a 64 bit option, you will need to have 64 bit Java as well.
 </li>
 
-<li>Select the NairnMPM project and create two new source folders - one called <code>src</code> and the other called <code>Common</code>. Repeat for NairnFEA project, but create just a <code>src</code> folder. <b>Note</b>: if you are compiling only <code>NairnFEA</code>, create a <code>Common</code> source folder in NairnFEA project too, otherwise that project will use the common files in the NairnMPM project.
+<li>Start <a href="http://www.eclipse.org" target="new">Eclipse</a> and create or select your workspace.</li>
+
+<li>Install tools for subversion (this step and the next). Choose &quot;Install New Software...&quot; menu command, choose download site to &quot;work with.&quot; Once loaded, choose &quot;Subversive SVN Team Provider&quot; in the &quot;Collaboration&quot; section and proceed to installation. After installation, restart <a href="http://www.eclipse.org" target="new">Eclipse</a>.
 </li>
 
-<li>Right click (control click in MacOS X) on the <code>src</code> folder in the NairnMPM project and choose Import. Select General &rarr; File System and then browse for the <code>nairn-mpm-fea/NairnMPM/src</code> folder in your code check out. After selecting the folder, check its box in the left half of the window and click Finish. Repeat for NairnFEA project, but import the <code>nairn-mpm-fea/NairnFEA/src</code> folder into its <code>src</code> folder.
+<li>Use of subversion also needs a &quot;connector.&quot; In theory, <a href="http://www.eclipse.org" target="new">Eclipse</a> will ask you to install a connector the first time you need it. You can force it to need it by opening <a href="http://www.eclipse.org" target="new">Eclipse</a> preferences and choosing &quot;Team &rarr; SVN&quot; or by trying to create a new project using &quot;SVN &rarr; Project from SVN.&quot; When asked, select a connector that is compatible with your version of subversion (to check your version, use &quot;<code>svn --version</code>&quot; in your command-line tool). You can select more than one if you want and choose the one to use in the <a href="http://www.eclipse.org" target="new">Eclipse</a> preferences (under &quot;Team &rarr; SVN&quot;). After installation, restart <a href="http://www.eclipse.org" target="new">Eclipse</a>. (Hint: if no connector is installed and you are not asked to install one when needed, try restarting <a href="http://www.eclipse.org" target="new">Eclipse</a>).
 </li>
 
-<li>Right click (control click in MacOS X) on the <code>Common</code> folder in the NairnMPM project and choose Import. Select General &rarr; File System and then browse for the <code>nairn-mpm-fea/Common</code> folder. After selecting the folder, check its box on the left half of the window. Next expand the folder deselect the <code>Projects</code> folder and click Finish. If you are compiling only <code>NairnFEA</code>, do the above step for a <code>Common</code> folder in that project, otherwise nothing else is needed in this step for the NairnFEA project.
-</li>
-
-<li>Select the NairnMPM project and create two new folders (not source folders) - one called <code>input</code> and the other called <code>build</code>. Repeat for NairnFEA project.
-</li>
-
-<li>Right click (control click in MacOS X) on the <code>build</code> folder in the NairnMPM project and choose Import. Select General &rarr; File System and then browse for the <code>nairn-mpm-fea/NairnMPM/build</code> folder. After selecting the folder, check its box on the left half of the window and then select the folder. On the right half of the window, select only the <code>makefile</code>. Click Finish. Repeat for NairnFEA project, but import the <code>makefile</code> in <code>nairn-mpm-fea/NairnFEA/build</code>.
-</li>
-
-<li>Right click (control click in MacOS X) on the <code>input</code> folder in the NairnMPM project and choose Import. Select General &rarr; File System and then browse for the <code>nairn-mpm-fea/NairnMPM/input</code> folder. After selecting the folder, check its box on the left half of the window and then select the folder. On the right half of the window, select only the <code>NairnMPM.dtd</code> file. Click Finish. Repeat for NairnFEA project, but import the <code>NairnFEA.dtd</code> file in <code>nairn-mpm-fea/NairnFEA/input</code>.
-</li>
-
-<li>Open the NairnMPM project properties. In the C/C++ make project settings or build settings, set the building directory to the <code>NairnMPM/build</code> folder. Repeat for NairnFEA project, setting the build folder to the <code>NairnFEA/build</code> folder. In that same window, change the <code>make</code> command from the default settings for NairnMPM to:
-<ol class="alpha">
-<li>For Windows/cygwin, change it to &quot;<code>make SYSTEM=cygwin CC=/bin/g++ RM=/bin/rm com=../Common</code>&quot;</li>
-<li>For Mac, change it to &quot;<code>make SYSTEM=mac com=../Common</code>&quot;</li>
-<li>For Linux, change it to &quot;<code>make com=../Common</code>&quot; (but this is untested).</li>
-</ol>
-For the NairnFEA project, change the <code>make</code> command from the default settings to:
-<ol class="alpha">
-<li>For Windows/cygwin, change it to &quot;<code>make SYSTEM=cygwin CC=/bin/g++ RM=/bin/rm com=../../NairnMPM/Common</code>&quot;</li>
-<li>For Mac, change it to &quot;<code>make SYSTEM=mac com=../../NairnMPM/Common</code>&quot;</li>
-<li>For Linux, change it to &quot;<code>make com=../../NairnMPM/Common</code>&quot; (but this is untested).</li>
-</ol>
-<b>Note:</b> If you only created the NairnFEA project and put the <code>Common</code> folder in that project, use <code>com=../Common</code> for each of these settings instead.
-</li>
-
-<li>If everything worked, you should be able to build the project by selecting the project and choosing &quot;Build Project&quot; menu command. If automatic building is selected, the project may have already been built. When done, it will install <code>NairnMPM</code> or <code>NairnFEA</code> executables into the input folders for those projects.
-</li>
-
-<li>If building did not work due to a command or target error, you may need to change the <code>make</code> command settings in step 8 or alternatively edit the <code>makefile</code>.
-</li>
-
-<li>If the initial projects had some dummy files (such as an initial <code>makefile</code> or source code for a trivial <code>main()</code>), you can delete those files.</li>
-
+<li>(Optional) If you intend to do Java development (such as <a href="nairnviz.html#eclipses">compiling the <b>NairnFEAMPMViz</b> Java application</a>), you should also install Java development tools. Choose &quot;New Software...&quot;, select site, and then select &quot;Eclipse Java Development&quot; from the section on &quot;Programming Languages&quot;. After installation, restart <a href="http://www.eclipse.org" target="new">Eclipse</a>.</li>
 </ol>
 
-<p>Once the code is compiled, do a <a href="../running/index.html">test run</a> to verify it worked.
-</p>
+<p>You are now ready to create a project for compiling the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a>.</p>
 
-<p>You can now edit source code as desired and rebuild the project. This project is a manual <code>makefile</code> project. If you add new source code, or change the dependencies of source code on header files, you will need to edit the <code>makefile</code> to reflect those changes.
-</p>
+<ol>
 
+<li>Start <a href="http://www.eclipse.org" target="new">Eclipse</a>, choose &quot;New &rarr; Project...&quot; and then select &quot;SVN &rarr; Project from SVN.&quot;</li>
 
-<p>When you check out a new version <code>Nairn-FEA-MPM</code>, you do not need to start over. You can update simply by repeating steps 3, 4, 6, and 7 (<b>warning</b>: this update will erase any source code changes you made; if you want to keep them, you should create a new project instead or backup your old files first). The project should then be ready to build and run.</p>
+<li>You will be asked to select an SVN repository. Enter the following settings followed by clicking &quot;Next&quot;:
+<ul>
+<li>URL: <code>https://nairn-mpm-fea.googlecode.com/svn/trunk</code></li>
+<li>User: enter your gmail name for access to <a href="http://code.google.com" target="new">google code</a> (this process is assuming you have been added as a &quot;contributor&quot; to the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a>. You can request to be added by <a href="mailto:John.Nairn@oregonstate.edu">sending email to project owner</a>.</li>
+<li>Password: Enter the password generated for you in the &quot;Profile &rarr; Settings&quot; section when logged onto <a href="http://code.google.com" target="new">google code</a>.</li>
+<li>For anonymous checkout you might be able to omit username and password, but change the URL to begin in <code>http://</code> instead of <code>https://</code>.</li>
+</ul>
+</li>
 
+<li>Choose &quot;Head Revision&quot; for latest version or use date or revision options for older versions and then click &quot;Next.&quot;</li>
+
+<li>In final project dialog, select project with a custom name and enter &quot;nairn-mpm-fea&quot; or any other name you prefer. This name will be used in your <a href="http://www.eclipse.org" target="new">Eclipse</a> workspace folders. When you click to &quot;Finish,&quot; the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a> will be checked out into your <a href="http://www.eclipse.org" target="new">Eclipse</a> workspace.</li>
+
+<li>The checkout has all files, but it not an <a href="http://www.eclipse.org" target="new">Eclipse</a> project. The next step is to select the project in the <a href="http://www.eclipse.org" target="new">Eclipse</a> navigator and choose &quot;New &rarr; Convert to a C/C++ Project. When asked, choose the project to be an &quot;Executable&quot; and choose appropriate tool chain (<a href="http://www.eclipse.org" target="new">Eclipse</a> compiles using outside tools). For Mac choose &quot;MacOS GCC.&quot; For Windows choose &quot;cygwin GCC.&quot;</li>
+
+<li>Reconfigure the project from its default build settings to use the <code>make</code> files provided in the source code:
+<ul>
+<li>Choose the project properties and select &quot;C/C++ Build.&quot;</li>
+<li>Click &quot;Manage Configurations...&quot; and edit until there are two configurations - one named <code>NairnMPM</code> and one named <code>NairnFEA</code>.</li>
+<li>Back in the &quot;C/C++&quot; window, select the <code>NairnMPM</code> configuration and then:
+<ul>
+<li>Uncheck &quot;Use default build command&quot; and change it to be &quot;<code>make SYSTEM=mac</code>&quot; (for MacOS) or &quot;<code>make SYSTEM=cygwin</code>&quot; (for Windows). The default setting can be left in place for Linux.</li>
+<li>Uncheck the &quot;Generate Makefiles automatically&quot;, click &quot;Workspace...&quot; and select <code>nairn-mpm-fea/NairnMPM/build</code> as the build directory.</li>
+</ul>
+</li>
+<li>Select the <code>NairnFEA</code> configuration and repeat the previous step (except choose the <code>nairn-mpm-fea/NairnFEA/build</code> directory instead.
+</li>
+</ul>
+</li>
+
+</ol>
+
+<p>The project should now be ready to compile. The verify, set the active configuration (<code>NairnMPM</code> or <code>NairnFEA</code>) and then choose build. The progress should appear in the console. When done the executable will be installed in <code>nairn-mpm-fea/NairnMPM/input</code> or in <code>nairn-mpm-fea/NairnFEA/input</code>. Once the code is compiled, do a <a href="../running/index.html">test run</a> to verify it worked.</p>
+
+<p>You might be able to run from Eclipse, but a better approach is probably to run the compiled code by <a name="nairnviz.html#nairnfeampm">using <b>NairnFEAMPM</b></a> (on MacOS X computers) or by <a href="nairnviz.html#nairnviz">using the <b>NairnFEAMPMViz</b> Java application</a> (all other platforms). By this approach, the development process would be:</p>
+
+<ol>
+
+<li>Make changes to the code and then build the executables.</li>
+
+<li>Start <a href="nairnviz.html#nairnfeampm"><b>NairnFEAMPM</b></a> or the <a href="nairnviz.html#nairnviz"><b>NairnFEAMPMViz</b> Java application</a> and run calculations using the new compiled executables. For this process to use the new executables, you should set the application preferences to point to the executables and <code>DTD</code> files in your  <a href="http://www.eclipse.org" target="new">Eclipse</a> workspace.</li>
+
+<li>When a new version of the code is available, right click (control click on Mac) on the project and choose &quot;Team &rarr; Update.&quot; You are ready to re-build and run.</li>
+
+<li>If you are certified as a project committer, save your changes by right clicking (or control clicking on Mac) on the project name and choosing &quot;Team &rarr; Commit...&quot;</li>
+</ol>
 
 <a name="linux"></a><h1>Specific Linux Systems</h1>
 
