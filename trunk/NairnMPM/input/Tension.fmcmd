@@ -1,46 +1,73 @@
 <?xml version='1.0'?>
-<!DOCTYPE JANFEAInput SYSTEM "/Users/dnairn/Desktop/John/NairnCode/NairnMPM/input/NairnMPM.dtd"
+<!DOCTYPE JANFEAInput SYSTEM "/Users/jnairn/Programming/Cocoa_Projects/nairn-mpm-fea/NairnMPM/input/NairnMPM.dtd"
 [
- <!ENTITY fileroot 'Tension/iso.'>
- <!ENTITY matnum '1'>
- <!ENTITY angle '0'>
- <!ENTITY cs '5'>
+   <!ENTITY fileroot 'Tension/iso.'>
+   <!ENTITY matnum '6'>
+   <!ENTITY angle '0'>
+   <!ENTITY cs '5'>
+   <!ENTITY stressperhold '10'>
+   <!ENTITY hold '1'>
+   <!ENTITY unload '5'>
+   <!ENTITY endtime '3'>
+   <!ENTITY arch '.05'>
+   <!ENTITY damp '0'>
+   <!ENTITY fbdamp '0'>
 ]>
 <JANFEAInput version='3'>
 
 <!-- MPM analysis simple tension under a ramp load. Several different
-     material types are in the file by changing matnum entity
+     material types. As material types are added, they should be picked
+     with base wave speed to be about 1000 m/sec
+     (e.g., E=1000 MPa and rho=1 g/cm^3)
+     Calculation is by plane stress
 
-    1. Isotropic
-    2. Transversly Isotropic (in plane) (can set angle)
-    3. Transversly Isotropic (can set angle)
-    4. Orthotropic (can set angle)
-    5. Von Mises with Hardening
+ The entity settings
 
-    All have low moduli, originally for time scale reasons
-    TensionFEA.fmcmd in NairnFEA/input has same first 4 materials
-
-    cs: cell size in mm
+ fileroot: path name for saving archived files
+ matnum: a material number from this list
+     1. Isotropic
+     2. Transversly Isotropic (EA along Z)
+     3. Transversly Isotropic (EA along angle to y)
+     4. Orthotropic (uses angle)
+     5. Von Mises with linear hardening
+     6. Isotropic Hyperelastic
+ angle: material angle in degress used by aniostropic materials
+ cs: sample is 50 mm X 100 mm. Set cell size as some fraction of
+        these sizes (e.g., 5, 2, 1, etc.). Smaller is slower
+ stressperhold: sample is loaded by particle forces. The peak
+        stress reached is this value times hold setting
+ hold: load at constant rate over this many ms and then hold
+        at peak stress. the hold time should be on the order
+        of 1 ms. Faster will lead to inertia effects and slower
+        will reduce such effects
+ unload: start unloading at this time in ms (> hold or can be
+        > endtime to have no unloading)
+ endtime: end calculations at this time in ms.
+ arch: archive time for saving calculations
+ damp: grid damping (0 to omit). Values around 5000 are good
+        for these material properties
+ fbdamp: feedback damping gain (0 to omit). Values around 10
+        are good for these material properties
 -->
 
   <Header>
     <Description>
-Title: MPM Analysis
-User Name: User Name
-  Simple tensile loading with variety of material types
+Title: Tensile Loading by Particle Forces
+User Name: John Nairn
+  Simple uniaxial tensile loading with variety of material types
     </Description>
     <Analysis>11</Analysis>
   </Header>
 
   <MPMHeader>
-    <ArchiveTime>2e-02</ArchiveTime>
-    <MaxTime>1.0</MaxTime>
+    <ArchiveTime units="ms">&arch;</ArchiveTime>
+    <MaxTime units="ms">&endtime;</MaxTime>
     <ArchiveRoot>&fileroot;</ArchiveRoot>
-    <MPMArchiveOrder>mYYYYYNYYYNNY</MPMArchiveOrder>
-    <CrackArchiveOrder>mYNN</CrackArchiveOrder>
-    <!--<Damping>50</Damping>-->
-    <FeedbackDamping>1</FeedbackDamping >
-    <GlobalArchiveTime>1e-2</GlobalArchiveTime>
+    <MPMArchiveOrder>mYYYYNYYYNYYNNNNNY</MPMArchiveOrder>
+    <CrackArchiveOrder>mYYYN</CrackArchiveOrder>
+    <Damping>&damp;</Damping>
+    <FeedbackDamping>&fbdamp;</FeedbackDamping>
+    <GlobalArchiveTime units="ms">&arch;</GlobalArchiveTime>
     <GlobalArchive type='syy'/>
     <GlobalArchive type='eyy'/>
     <GlobalArchive type='exx'/>
@@ -55,23 +82,23 @@ User Name: User Name
   </Mesh>
 
   <MaterialPoints>
-    <Body mat="&matnum;" angle="&angle;" thick="1" vx="0" vy="0">
+    <Body mat="&matnum;" angle="&angle;" thick=".02" vx="0" vy="0">
       <Rect xmin="0" xmax="50" ymin="0" ymax="100"/>     
     </Body>
   </MaterialPoints>
 
   <Material Type="1" Name="Isotropic Material">
-    <rho>1.5</rho>
-    <E>1e-02</E>
+    <rho>1</rho>
+    <E>1000</E>
     <nu>0.33</nu>
     <alpha>60</alpha>
   </Material>
 
-  <Material Type="2" Name="In-Plane Transversely Isotropic Material">
-    <rho>1.5</rho>
-    <EA>0.1</EA>
-    <ET>1e-02</ET>
-    <GA>1e-02</GA>
+  <Material Type="2" Name="Transversely Isotropic Material (EA along z)">
+    <rho>1</rho>
+    <EA>1000</EA>
+    <ET>200</ET>
+    <GA>200</GA>
     <nuA>0.2</nuA>
     <nuT>0.33</nuT>
     <alphaA>20</alphaA>
@@ -79,10 +106,10 @@ User Name: User Name
   </Material>
 
   <Material Type="3" Name="Transversely Isotropic Material">
-    <rho>1.5</rho>
-    <EA>0.1</EA>
-    <ET>1e-02</ET>
-    <GA>1e-02</GA>
+    <rho>1</rho>
+    <EA>1000</EA>
+    <ET>200</ET>
+    <GA>200</GA>
     <nuA>0.2</nuA>
     <nuT>0.33</nuT>
     <alphaA>20</alphaA>
@@ -90,30 +117,38 @@ User Name: User Name
   </Material>
 
   <Material Type="4" Name="Orthotropic Material">
-    <rho>1.5</rho>
-    <Ex>0.1</Ex>
-    <Ey>5e-02</Ey>
-    <Ez>1</Ez>
-    <Gxy>3e-03</Gxy>
-    <Gxz>4e-03</Gxz>
-    <Gyz>5e-03</Gyz>
+    <rho>1</rho>
+    <Ex>300</Ex>
+    <Ey>1000</Ey>
+    <Ez>100</Ez>
+    <Gxy>50</Gxy>
+    <Gxz>150</Gxz>
+    <Gyz>200</Gyz>
     <nuxy>0.33</nuxy>
-    <nuxz>2e-02</nuxz>
-    <nuyz>0.125</nuyz>
+    <nuxz>0.4</nuxz>
+    <nuyz>0.1</nuyz>
     <alphax>20</alphax>
     <alphay>40</alphay>
     <alphaz>60</alphaz>
   </Material>
 
   <Material Type="9" Name="Von Mises Linear Hardening Material">
-    <rho>1.5</rho>
-    <E>1.0</E>
+    <rho>1</rho>
+    <E>1000</E>
     <nu>0.33</nu>
     <alpha>60</alpha>
-    <yield>0.00002</yield>
-    <Ep>.2</Ep>
+    <yield>5</yield>
+    <Ep>200</Ep>
   </Material>
  
+  <Material Type="8" Name="Isotropic Hyperelastic Material">
+    <rho>1</rho>
+    <G1>250</G1>
+    <G2>125</G2>
+    <K>1000</K>
+    <alpha>60</alpha>
+  </Material>
+
   <GridBCs>
     <BCLine x1="min" y1="min-" x2="max" y2="min-" tolerance="*1">
       <DisBC dir="2" disp="0"/>
@@ -123,8 +158,9 @@ User Name: User Name
   <ParticleBCs>                            
     <BCLine x1="min" x2="max" y1="100" y2="100" tolerance="*.3">
       <net/>
-      <LoadBC dir="2" style="2" load="1e-4" ftime="0.0"/> 
-      <LoadBC dir="2" style="2" load="-1e-4" ftime="250.0"/>
+      <LoadBC dir="2" style="2" load="&stressperhold;" ftime="0.0"/> 
+      <LoadBC dir="2" style="2" load="-&stressperhold;" ftime="&hold;"/>
+      <LoadBC dir="2" style="2" load="-&stressperhold;" ftime="&unload;"/>
     </BCLine>
   </ParticleBCs> 
 
