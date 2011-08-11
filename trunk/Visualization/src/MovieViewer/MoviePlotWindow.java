@@ -81,13 +81,13 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		// File menu
 		JMenu menu = new JMenu("File");
 		menuBar.add(menu);
-		document.makeMenuItem(menu,"Open...","openDocument",NairnFEAMPMViz.main,KeyEvent.VK_O);
-		document.makeMenuItem(menu,"Close","closeWindow",this,KeyEvent.VK_W);
+		JNDocument.makeMenuItem(menu,"Open...","openDocument",NairnFEAMPMViz.main,KeyEvent.VK_O);
+		JNDocument.makeMenuItem(menu,"Close","closeWindow",this,KeyEvent.VK_W);
 		menu.addSeparator();
-		document.makeMenuItem(menu,"Export Graphics...","ExportFrame",this,KeyEvent.VK_E);
-		document.makeMenuItem(menu,"Export Movie Frames...","ExportMovie",this,KeyEvent.VK_L);
+		JNDocument.makeMenuItem(menu,"Export Graphics...","ExportFrame",this,KeyEvent.VK_E);
+		JNDocument.makeMenuItem(menu,"Export Movie Frames...","ExportMovie",this,KeyEvent.VK_L);
 		menu.addSeparator();
-		document.makeMenuItem(menu,"Close","Close",this,KeyEvent.VK_W);
+		JNDocument.makeMenuItem(menu,"Close","Close",this,KeyEvent.VK_W);
 		
 		// Zoom menu
 		menu = new JMenu("Zoom");
@@ -106,9 +106,9 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		menu = new JMenu("Window");
 		menuBar.add(menu);
 		if(JNApplication.isMacLNF())
-		{	document.makeMenuItem(menu,"Help","openHelp",JNApplication.main,0);
+		{	JNDocument.makeMenuItem(menu,"Help","openHelp",JNApplication.main,0);
 		}
-		document.makeMenuItem(menu,"Analysis Results","ShowResults",this,KeyEvent.VK_D);
+		JNDocument.makeMenuItem(menu,"Analysis Results","ShowResults",this,KeyEvent.VK_D);
 		menu.addSeparator();
 		setWindowMenu(menu);
 		

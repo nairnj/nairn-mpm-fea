@@ -45,22 +45,22 @@ public class TwoDPlotWindow extends JNChildWindow
 		// Plot menu
 		JMenu menu = new JMenu("File");
 		menuBar.add(menu);
-		document.makeMenuItem(menu,"Open...","OpenFile",NairnFEAMPMViz.main,KeyEvent.VK_O);
+		JNDocument.makeMenuItem(menu,"Open...","OpenFile",NairnFEAMPMViz.main,KeyEvent.VK_O);
 		menu.addSeparator();
-		document.makeMenuItem(menu,"Close","closeWindow",this,KeyEvent.VK_W);
+		JNDocument.makeMenuItem(menu,"Close","closeWindow",this,KeyEvent.VK_W);
 		menu.addSeparator();
-		document.makeMenuItem(menu,"Export Graphics...","ExportImage",plot2DView,KeyEvent.VK_G);
-		document.makeMenuItem(menu,"Export Data...","Export",plot2DView,KeyEvent.VK_E);
-		document.makeMenuItem(menu,"Import...","Import",plot2DView,KeyEvent.VK_I,true);
-		document.makeMenuItem(menu,"Print...","Print",plot2DView,KeyEvent.VK_P);
+		JNDocument.makeMenuItem(menu,"Export Graphics...","ExportImage",plot2DView,KeyEvent.VK_G);
+		JNDocument.makeMenuItem(menu,"Export Data...","Export",plot2DView,KeyEvent.VK_E);
+		JNDocument.makeMenuItem(menu,"Import...","Import",plot2DView,KeyEvent.VK_I,true);
+		JNDocument.makeMenuItem(menu,"Print...","Print",plot2DView,KeyEvent.VK_P);
 		
 		// Edit menu
-		menuBar.add(document.defaultPlotEditMenu(plot2DView));
+		menuBar.add(JNDocument.defaultPlotEditMenu(plot2DView));
 		
 		// Window menu
 		menu = new JMenu("Window");
 		menuBar.add(menu);
-		document.makeMenuItem(menu,"Analysis Results","ShowResults",this,KeyEvent.VK_D);
+		JNDocument.makeMenuItem(menu,"Analysis Results","ShowResults",this,KeyEvent.VK_D);
 	}
 	
 	//----------------------------------------------------------------------------
