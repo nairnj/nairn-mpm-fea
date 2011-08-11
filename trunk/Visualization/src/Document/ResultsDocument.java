@@ -385,9 +385,16 @@ public class ResultsDocument extends AbstractTableModel
 			}
 			if(gridInfo!=null)
 			{	sline=new Scanner(gridInfo).useDelimiter("[ :]");
-				if(sline.hasNextDouble()) xscale=sline.nextDouble()*lengthScale;
+				if(sline.hasNextDouble())
+					xscale=sline.nextDouble()*lengthScale;
+				else
+					xscale=1.;
 				if(sline.hasNext()) sline.next();
-				if(sline.hasNextDouble()) yscale=sline.nextDouble()*lengthScale;
+				if(sline.hasNext()) sline.next();
+				if(sline.hasNextDouble())
+					yscale=sline.nextDouble()*lengthScale;
+				else
+					yscale=xscale;
 				if(xscale>yscale)
 				{	xscale/=yscale;
 					yscale=1.;
