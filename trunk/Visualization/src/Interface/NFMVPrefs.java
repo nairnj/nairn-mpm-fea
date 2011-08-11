@@ -462,6 +462,12 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	// create preferences storage object
 	public static void initializePrefs()
 	{	createPrefs("com/geditcom/NairnFEAMPMViz");
+	
+		// default close action
+		NFMVPrefs.setDefaultQuitCloseLastWindow(false);
+	
+		// restore open docs
+		NFMVPrefs.setDefaultRestoreOpenDocs(true);
 	}
 
 

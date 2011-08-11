@@ -23,7 +23,8 @@ public class NairnFEAMPMViz extends JNApplication
 	{	super("NairnFEAMPMViz","Version 3.2.0",
 				"Java application for running and visualizing NairnMPM and NairnFEA calculations.");
 		NFMVPrefs.setWorkspace(chooser);
-		newDocument("Welcome");
+		if(!finishLaunching(true))
+			newDocument("Welcome");
 	}
 		
 	//----------------------------------------------------------------------------
@@ -84,7 +85,7 @@ public class NairnFEAMPMViz extends JNApplication
 		super.openDocumentType(docType,docText,docFile);
 		if(front!=JNApplication.main.frontDocument())
 		{	if(front.isEmptyDocument() && !front.getChanged())
-				front.closeDocument(false);
+				front.closeDocument(false,null);
 		}
 	}
 
