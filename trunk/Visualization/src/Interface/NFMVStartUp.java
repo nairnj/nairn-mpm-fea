@@ -64,21 +64,25 @@ public class NFMVStartUp extends JNStartUpBase
 		openDoc.setActionCommand("openDocument");
 		openDoc.addActionListener(JNApplication.main);
 		openDoc.setToolTipText("Click to open a previous commands or results document");
+		openDoc.setFocusPainted(false);
 		
 		JButton newMPM = new JButton("New MPM commands document");
 		newMPM.setActionCommand("newDocumentMPMCmd");
 		newMPM.addActionListener(JNApplication.main);
 		newMPM.setToolTipText("Click to create a new document for MPM calculations");
+		newMPM.setFocusPainted(false);
 		
 		JButton newFEA = new JButton("New FEA commands document");
 		newFEA.setActionCommand("newDocumentFEACmd");
 		newFEA.addActionListener(JNApplication.main);
 		newFEA.setToolTipText("Click to create a new document for FEA calculations");
+		newFEA.setFocusPainted(false);
 
 		JButton quitApp = new JButton("Quit NairnFEAMPMViz");
 		quitApp.setActionCommand("Quit");
 		quitApp.addActionListener(JNApplication.main);
 		quitApp.setToolTipText("Click to exit the NairnFEAMPMViz application");
+		quitApp.setFocusPainted(false);
 		
 		JLabel seeAlso = new JLabel("(See menu commands for more options)",JLabel.CENTER);
 		

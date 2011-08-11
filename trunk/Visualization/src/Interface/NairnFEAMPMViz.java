@@ -83,7 +83,7 @@ public class NairnFEAMPMViz extends JNApplication
 	{	// open that type
 		JNDocument front=JNApplication.main.frontDocument();
 		super.openDocumentType(docType,docText,docFile);
-		if(front!=JNApplication.main.frontDocument())
+		if(front!=JNApplication.main.frontDocument() && front!=null)
 		{	if(front.isEmptyDocument() && !front.getChanged())
 				front.closeDocument(false,null);
 		}

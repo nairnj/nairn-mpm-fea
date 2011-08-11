@@ -293,12 +293,19 @@ public class DocViewer extends JNDocument
 	public void windowOpened(WindowEvent e)
 	{	double splitLoc=NFMVPrefs.prefs.getDouble(NFMVPrefs.ResultsTopSplitKey,
 													NFMVPrefs.ResultsTopSplitDef);
-		if(splitLoc<0. || splitLoc>1.) splitLoc=NFMVPrefs.ResultsTopSplitDef;
-	    display.setDividerLocation(splitLoc);
+		if(splitLoc<10.)
+		{	Dimension winSize = JNPreferences.getFrameSize(this);
+			splitLoc = (double)winSize.width/2.;
+		}
+	    display.setDividerLocation((int)splitLoc);
+	    
 		splitLoc=NFMVPrefs.prefs.getDouble(NFMVPrefs.ResultsSplitKey,
 													NFMVPrefs.ResultsSplitDef);
-		if(splitLoc<0. || splitLoc>1.) splitLoc=NFMVPrefs.ResultsSplitDef;
-		full.setDividerLocation(splitLoc);
+		if(splitLoc<10.)
+		{	Dimension winSize = JNPreferences.getFrameSize(this);
+			splitLoc = (double)winSize.height/2.;
+		}
+		full.setDividerLocation((int)splitLoc);
 		
 		super.windowOpened(e);
 		
@@ -313,11 +320,10 @@ public class DocViewer extends JNDocument
 			
 	public void windowClosing(WindowEvent e)
 	{
-		double loc=(double)display.getDividerLocation()/
-					(double)(display.getMaximumDividerLocation()-display.getMinimumDividerLocation());
+		double loc=(double)display.getDividerLocation();
 		NFMVPrefs.prefs.putDouble(NFMVPrefs.ResultsTopSplitKey,loc);
-		loc=(double)full.getDividerLocation()/
-					(double)(full.getMaximumDividerLocation()-full.getMinimumDividerLocation());
+	    
+	    loc=(double)full.getDividerLocation();
 		NFMVPrefs.prefs.putDouble(NFMVPrefs.ResultsSplitKey,loc);
 
 		super.windowClosing(e);

@@ -278,6 +278,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 
 		add(tabbedPane);
 		setSize(600, 480);
+		setLocation(60,30+JNApplication.menuBarHeight());
 		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 	}
 
