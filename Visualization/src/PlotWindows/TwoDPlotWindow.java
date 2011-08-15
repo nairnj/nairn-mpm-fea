@@ -8,7 +8,9 @@
 
 import java.awt.*;
 import javax.swing.*;
+
 import java.awt.event.*;
+
 import geditcom.JNFramework.*;
 import geditcom.plot2d.*;
 
@@ -42,17 +44,9 @@ public class TwoDPlotWindow extends JNChildWindow
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
 		
-		// Plot menu
-		JMenu menu = new JMenu("File");
+		// Plot File menu
+		JMenu menu = document.defaultPlotFileMenu(plot2DView);
 		menuBar.add(menu);
-		JNDocument.makeMenuItem(menu,"Open...","OpenFile",NairnFEAMPMViz.main,KeyEvent.VK_O);
-		menu.addSeparator();
-		JNDocument.makeMenuItem(menu,"Close","closeWindow",this,KeyEvent.VK_W);
-		menu.addSeparator();
-		JNDocument.makeMenuItem(menu,"Export Graphics...","ExportImage",plot2DView,KeyEvent.VK_G);
-		JNDocument.makeMenuItem(menu,"Export Data...","Export",plot2DView,KeyEvent.VK_E);
-		JNDocument.makeMenuItem(menu,"Import...","Import",plot2DView,KeyEvent.VK_I,true);
-		JNDocument.makeMenuItem(menu,"Print...","Print",plot2DView,KeyEvent.VK_P);
 		
 		// Edit menu
 		menuBar.add(JNDocument.defaultPlotEditMenu(plot2DView));
@@ -60,7 +54,12 @@ public class TwoDPlotWindow extends JNChildWindow
 		// Window menu
 		menu = new JMenu("Window");
 		menuBar.add(menu);
+		if(JNApplication.isMacLNF())
+		{	JNDocument.makeMenuItem(menu,"Help","openHelp",JNApplication.main,0);
+		}
 		JNDocument.makeMenuItem(menu,"Analysis Results","ShowResults",this,KeyEvent.VK_D);
+		menu.addSeparator();
+		setWindowMenu(menu);
 	}
 	
 	//----------------------------------------------------------------------------
