@@ -102,16 +102,34 @@ void Mooney::InitialLoadMechProps(int makeSpecific,int np)
 void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
 								double delTime,int np)
 {
-	// Add to total strain
+	// get new doformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
+	// deformation gradient (found from current strains and rotations)
 	Tensor *ep=mptr->GetStrainTensor();
-    ep->xx+=dvxx;
-    ep->yy+=dvyy;
-    ep->xy+=dvxy+dvyx;
-	
-	// rotational strain increments (particle updated by Hypo3D)
-	double dwxy=dvyx-dvxy;
-	mptr->IncrementRotationStrain(dwxy);
 	TensorAntisym *wrot = mptr->GetRotationStrainTensor();
+	double Fxx = 1. + ep->xx;;
+	double Fxy = (ep->xy - wrot->xy)/2.;
+	double Fyx = (ep->xy + wrot->xy)/2.;
+	double Fyy = 1. + ep->yy;
+	
+	// get new 2D deformation gradient
+	double F[3][3];
+	F[0][0] = (1. + dvxx)*Fxx + dvxy*Fyx;		// 1 + du/dx
+	F[0][1] = (1. + dvxx)*Fxy + dvxy*Fyy;		// du/dy
+	//F[0][2] = 0.;								// du/dz
+	F[1][0] = dvyx*Fxx + (1. + dvyy)*Fyx;		// dv/dx
+	F[1][1] = dvyx*Fxy + (1. + dvyy)*Fyy;		// 1 + dv/dy
+	//F[1][2] = 0.;							// dv/dz
+	//F[2][0] = 0.;							// dw/dx
+	//F[2][1] = 0.;							// dw/dy
+	//F[2][2] = ? ;							// 1 + dw/dz (done later)
+	
+	// store in total strain and rotation tensors
+    ep->xx = F[0][0] - 1.;
+    ep->yy = F[1][1] - 1.;
+    ep->xy = F[1][0] + F[0][1];
+	
+	// rotational strain increments
+	wrot->xy = F[1][0] - F[0][1];
 	
     // total residual stretch (1 + alpha dT + beta csat dConcentration)
 	double resStretch = 1.0;
@@ -121,18 +139,6 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	{	double dConc=mptr->pPreviousConcentration-DiffusionTask::reference;
 		resStretch += CME1*dConc;
 	}
-	
-	// get 2D deformation gradient
-	double F[3][3];
-	F[0][0] = 1. + ep->xx;					// 1 + du/dx
-	F[0][1] = (ep->xy - wrot->xy)/2.;		// du/dy
-	//F[0][2] = 0.;							// du/dz
-	F[1][0] = (ep->xy + wrot->xy)/2.;		// dv/dx
-	F[1][1] = 1. + ep->yy;					// 1 + dv/dy
-	//F[1][2] = 0.;							// dv/dz
-	//F[2][0] = 0.;							// dw/dx
-	//F[2][1] = 0.;							// dw/dy
-	//F[2][2] = ? ;							// 1 + dw/dz (done later)
 	
 	// left Caucy deformation tensor B = F F^T
 	Tensor B;
@@ -182,7 +188,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 		
 		// particle strain
 		F[2][2] =  sqrt(B.zz);					// 1 + dw/dz
-		ep->zz = F[2][2]-1.;
+		ep->zz = F[2][2] - 1.;
 		J2 = B.zz*arg;
 	}
 	
@@ -246,21 +252,44 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
 						  double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
 {
-	// Add to total strain
+	// get new doformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
+	// deformation gradient (stored int current strains and rotations)
 	Tensor *ep=mptr->GetStrainTensor();
-    ep->xx+=dvxx;
-    ep->yy+=dvyy;
-    ep->zz+=dvzz;
-    ep->xy+=dvxy+dvyx;
-    ep->xz+=dvxz+dvzx;
-    ep->yz+=dvyz+dvzy;
-	
-	// rotational strain increments (particle updated by Hypo3D)
-	double dwxy=dvyx-dvxy;
-	double dwxz=dvzx-dvxz;
-	double dwyz=dvzy-dvyz;
-	mptr->IncrementRotationStrain(dwxy,dwxz,dwyz);
 	TensorAntisym *wrot = mptr->GetRotationStrainTensor();
+	double Fxx = 1. + ep->xx;;
+	double Fxy = (ep->xy - wrot->xy)/2.;
+	double Fxz = (ep->xz - wrot->xz)/2.;
+	double Fyx = (ep->xy + wrot->xy)/2.;
+	double Fyy = 1. + ep->yy;
+	double Fyz = (ep->yz - wrot->yz)/2.;
+	double Fzx = (ep->xz + wrot->xz)/2.;
+	double Fzy = (ep->yz + wrot->yz)/2.;
+	double Fzz = 1. + ep->zz;
+
+	// get new deformation gradient
+	double F[3][3];
+	F[0][0] = (1. + dvxx)*Fxx + dvxy*Fyx + dvxz*Fzx;		// 1 + du/dx
+	F[0][1] = (1. + dvxx)*Fxy + dvxy*Fyy + dvxz*Fzy;		// du/dy
+	F[0][2] = (1. + dvxx)*Fxz + dvxy*Fyz + dvxz*Fzz;		// du/dz
+	F[1][0] = dvyx*Fxx + (1. + dvyy)*Fyx + dvyz*Fzx;		// dv/dx
+	F[1][1] = dvyx*Fxy + (1. + dvyy)*Fyy + dvyz*Fzy;		// 1 + dv/dy
+	F[1][2] = dvyx*Fxz + (1. + dvyy)*Fyz + dvyz*Fzz;		// dv/dz
+	F[2][0] = dvzx*Fxx + dvzy*Fyx + (1. + dvzz)*Fzx;		// dw/dx
+	F[2][1] = dvzx*Fxy + dvzy*Fyy + (1. + dvzz)*Fzy;		// dw/dy
+	F[2][2] = dvzx*Fxz + dvzy*Fyz + (1. + dvzz)*Fzz;		// 1 + dw/dz
+
+	// store in total strain and rotation tensors
+    ep->xx = F[0][0] - 1.;
+    ep->yy = F[1][1] - 1.;
+	ep->zz = F[2][2] - 1.;
+    ep->xy = F[1][0] + F[0][1];
+	ep->xz = F[2][0] + F[0][2];
+	ep->yz = F[2][1] + F[1][2];
+	
+	// rotational strain increments
+	wrot->xy = F[1][0] - F[0][1];
+	wrot->xz = F[2][0] - F[0][2];
+	wrot->yz = F[2][1] - F[1][2];
 	
     // total residual stretch (1 + alpha dT + beta csat dConcentration)
 	double resStretch = 1.0;
@@ -271,19 +300,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 		resStretch += CME1*dConc;
 	}
 	
-	// get deformation gradient
-	double F[3][3];
-	F[0][0] = 1. + ep->xx;					// 1 + du/dx
-	F[0][1] = (ep->xy - wrot->xy)/2.;		// du/dy
-	F[0][2] = (ep->xz - wrot->xz)/2.;		// du/dz
-	F[1][0] = (ep->xy + wrot->xy)/2.;		// dv/dx
-	F[1][1] = 1. + ep->yy;					// 1 + dv/dy
-	F[1][2] = (ep->yz - wrot->yz)/2.;		// dv/dz
-	F[2][0] = (ep->xz + wrot->xz)/2.;		// dw/dx
-	F[2][1] = (ep->yz + wrot->yz)/2.;		// dw/dy
-	F[2][2] = 1. + ep->zz;					// 1 + dw/dz
-	
-	// left Caucy deformation tensor B = F F^T
+	// left Cauchy deformation tensor B = F F^T
 	Tensor B;
 	ZeroTensor(&B);
 	int i;
