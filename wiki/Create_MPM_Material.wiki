@@ -47,11 +47,11 @@ Finally, go through each method and keep, edit, or delete. Any method that is de
 
 == Creating New Material Properties ==
 
-Usually a newly-created material type will have additional material properties. To create such properties, you need the following steps:
+Usually a newly-created material type will have additional material properties. To create such properties, you need the following steps for each one:
 
-  # Define the property in the `.hpp` file (usually scalars). It is usually desireable to make these properties `protected` in the class definition).
-  # Define a name for the property in the `DTD` file. Allow that property to appear in a `Material` block and define the element as a simple `XML` element (_e.g._, `<!ELEMENT prop (#PCDATA)>`)
-  # Edit the new material's `InputMat()` method and look for that property by name. If found, set pointer type (_e.g._, `DOUBLE_NUM` or `INT_NUM`) and return a pointer to the class variable.
+  # Define the property variable in the `.hpp` file (usually scalars). It is usually best to define these properties `protected` section of the class, although `public` properties are sometimes needed.
+  # To allow the property in input files, select a unique property name. Define that property in the `DTD` file, usually as a simple `XML` element like `<!ELEMENT prop (#PCDATA)>`, where `prop` is the new property name. In addition, add that property's name to the list of allowed elements within the `Material` element definition in the `DTD` file.
+  # Edit the new material's `InputMat()` method and look for that property by name. If found, set pointer type (_e.g._, `DOUBLE_NUM` or `INT_NUM`) and return a pointer to the class variable define in the `.hpp` file..
   # If desired, set default value for the property in the material's constructor method.
   # If desired, check that the final value is acceptable in the `VerifyProperties()` method. If it is not, return an error message as a string.
   # Print the property to the output file (usually in the `PrintMechanicalProperties()` method)
@@ -73,12 +73,12 @@ There is currently no template code for traction law materials. One should be cr
 
 See `NewMaterial.cpp` for latest details, but here is summary of key methods involved with MPM calculations in each time step:
 
-  * `virtual void LoadMechanicalProps(MPMBase *,int)` - mechanical properties if depends on state
-  * `virtual void LoadTransportProps(MPMBase *)` - diffusion and conductivity if depends on state
-  * `virtual double GetHeatCapacity(MPMBase *)` - C<sub>P</sub> if depends on state
-  * `virtual double GetHeatCapacityVol(MPMBase *mptr)` - C<sub>V</sub> if depends on state
-  *  `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int)` - 2D law
-  * `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int)` - 3D law
+  * `virtual void LoadMechanicalProps(MPMBase *,int)` - This method is called just before the constitutive law on each time step. You can set any parameters for the material that depend on the current state of the particle. Things that never change (_i.e._, properties that are independent of particle state) should be calculated in `InitialLoadMechProps()` instead. NOTE: Some materials also used in FEA make use of `LoadMechProps()` in this task, but that method is limited to 2D because it only inputs a single rotation about the `z` axis.
+  * `virtual void LoadTransportProps(MPMBase *)` - This method is called when looping over material points to store parameters needed in transport calculations (tensors). It is called prior to the transport tasks to `AddForces()`. It is only needed for anistropic materials or for materials whose transport properties change depending on particle state. This method should load the required values into `diffusionTensor` and `kCondTensor` in the `MaterialBase` class. Transport properties that never change (_i.e._, independent of particle state) should be calculated in `InitialLoadTransProps()` instead.
+  * `virtual double GetHeatCapacity(MPMBase *)` - When conduction is activated, this method is called before calculations that depend on heat capacity C<sub>P</sub>. If C<sub>P</sub> changes with particle state, return current heat capacity using units of J/(g-K). This method can be ignored if C<sub>P</sub> is a constant (note that the `heatCapacity` variable in `MaterialBase` is internally stored in J/(g-K) during calculations, although it is input as J/(kg-K)).
+  * `virtual double GetHeatCapacityVol(MPMBase *mptr)` - This method has the same function as `GetHeatCapacity()` except applies to constant volume heat capacity C<sub>V</sub>, and the base class variable is `heatCapacityVol`.
+  *  `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int)` - This methods applies constitutive law for the material in 2D calculations and updates all needed particle properties. The required updates include stress (should be a specific stress), strain, plastic strain, rotational strain, strain energy, plastic energy, dissipated energy (dissipated needed if want to couple to conduction), and any material history dependent variables defined for the material. To support thermal and solvent expansion, include their effect on the constitutive law. Then input `dvij` are components of velocity gradient times the time step, which gives components of the deformation gradient change.
+  * `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int)` - This method is the same as the previous method except it applies to 3D calculations and the extra input variables define the full change in the 3D deformation gradient.
 		
 
 == Fracture Methods ==
