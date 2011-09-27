@@ -19,13 +19,15 @@ The following chart shows all materials in `nairn-mpm-fea`. Materials to the rig
 ||             ||                           || `BISTABLEISO=10` ||                                              ||                                  ||    ||
 ||     || <font color="green">`TRANSISO1(2)=2,3`</font> || <font color="green">`ORTHO=4`</font> ||   `AnisoPlasticity`       || `HILLPLASTIC=15` || `WOODMATERIAL=19` ||
 || `VISCOELASTIC=7` ||          ||                           ||                                                  ||                                 ||    ||
-|| `RubberElastic` || `MOONEYRIVLIN=8` ||         ||                                                  ||                                 ||    ||
+|| `HyperElastic` || `MOONEYRIVLIN=8` ||         ||                                                  ||                                 ||     ||
+|| `HEANISOTROPIC=21` ||         ||                                                  ||                                 ||    ||  ||
 || <font color="red">`INTERFACEPARAMS=5`</font> ||        ||         ||                         ||                                 ||    ||
 || `RIGIDMATERIAL=11` ||                      ||         ||                                                  ||                                 ||    ||
-|| `TractionLaw`  || `COHESIVEZONEMATERIAL=12` || `LINEARTRACTIONMATERIAL=13` ||           ||                          ||    ||
+|| `TractionLaw`  || `COHESIVEZONEMATERIAL=12` || `LINEARTRACTIONMATERIAL=13` ||           ||         ||   ||               
+||    ||   || `TRILINEARTRACTIONMATERIAL=20` ||           ||                          ||    ||
 ||                               || `CUBICTRACTIONLAW=14` ||                      ||           ||                          ||    ||
 
-When you create a new material, you should fit it into the above hierarchy and define a constant (in UPPERCASE) that will be a unique number for that material. The above table uses numbers 1 through 19 (except for 6). New materials needed a new number. Once the number and constant are determined, define the constant in the new material header file and be sure to add this number as an option  to the `Material` command in the DTD file.
+When you create a new material, you should fit it into the above hierarchy and define a constant (in UPPERCASE) that will be a unique number for that material. The above table uses numbers 1 through 21 (except for 6). New materials need a new number. Once the number and constant are determined, define the constant in the new material header file and be sure to add this number as an option  to the `Material` command in the DTD file.
 
 == Editing Required in Core Code ==
 
