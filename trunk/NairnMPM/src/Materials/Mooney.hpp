@@ -9,18 +9,18 @@
 	neo-Hookean material
 
 	Dependencies
-		RubberElastic.hpp
+		HyperElastic.hpp
 ********************************************************************************/
 
 #ifndef MOONEYRIVLIN
 
 #define MOONEYRIVLIN 8
 
-#include "Materials/RubberElastic.hpp"
+#include "Materials/HyperElastic.hpp"
 
 enum {G1_PROP=0,G2_PROP,KBULK_PROP,CTE_PROP,MOONEY_PROPS};
 
-class Mooney : public RubberElastic
+class Mooney : public HyperElastic
 {
     public:
         double G1,G2,Kbulk;

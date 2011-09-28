@@ -271,8 +271,8 @@
 		A7A355170B68193500EF7973 /* Elastic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7A355150B68193500EF7973 /* Elastic.cpp */; };
 		A7A355180B68193500EF7973 /* Elastic.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7A355140B68193500EF7973 /* Elastic.hpp */; };
 		A7A355190B68193500EF7973 /* Elastic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7A355150B68193500EF7973 /* Elastic.cpp */; };
-		A7A355240B681DC100EF7973 /* RubberElastic.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7A355220B681DC100EF7973 /* RubberElastic.hpp */; };
-		A7A355250B681DC100EF7973 /* RubberElastic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7A355230B681DC100EF7973 /* RubberElastic.cpp */; };
+		A7A355240B681DC100EF7973 /* HyperElastic.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7A355220B681DC100EF7973 /* HyperElastic.hpp */; };
+		A7A355250B681DC100EF7973 /* HyperElastic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7A355230B681DC100EF7973 /* HyperElastic.cpp */; };
 		A7A355CF0B6822E300EF7973 /* ElasticMPM.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7A355CE0B6822E300EF7973 /* ElasticMPM.cpp */; };
 		A7A44B7F0A11217D00978858 /* ElementBase.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7A44B7E0A11217D00978858 /* ElementBase.hpp */; };
 		A7A44B800A11217D00978858 /* ElementBase.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7A44B7E0A11217D00978858 /* ElementBase.hpp */; };
@@ -283,6 +283,8 @@
 		A7AD44010C8A7B3300231EA0 /* BodyCylinderController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7AD43FF0C8A7B3300231EA0 /* BodyCylinderController.cpp */; };
 		A7B5ECAA072437850027119D /* NodalTempBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7B5ECA8072437850027119D /* NodalTempBC.hpp */; };
 		A7B5ECAB072437850027119D /* NodalTempBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7B5ECA9072437850027119D /* NodalTempBC.cpp */; };
+		A7B6936914325B02006F6A27 /* HEAnisotropic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */; };
+		A7B6936A14325B02006F6A27 /* HEAnisotropic.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7B6936814325B02006F6A27 /* HEAnisotropic.hpp */; };
 		A7BC45AA0C6A514C003FF704 /* ShapeController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7BC45A80C6A514C003FF704 /* ShapeController.hpp */; };
 		A7BC45AB0C6A514C003FF704 /* ShapeController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7BC45A90C6A514C003FF704 /* ShapeController.cpp */; };
 		A7BC45AC0C6A514C003FF704 /* ShapeController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7BC45A80C6A514C003FF704 /* ShapeController.hpp */; };
@@ -553,8 +555,8 @@
 		A79E8AF50D6F7D8700B8AB58 /* TractionLaw.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TractionLaw.cpp; sourceTree = "<group>"; };
 		A7A355140B68193500EF7973 /* Elastic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Elastic.hpp; sourceTree = "<group>"; };
 		A7A355150B68193500EF7973 /* Elastic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Elastic.cpp; sourceTree = "<group>"; };
-		A7A355220B681DC100EF7973 /* RubberElastic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = RubberElastic.hpp; sourceTree = "<group>"; };
-		A7A355230B681DC100EF7973 /* RubberElastic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RubberElastic.cpp; sourceTree = "<group>"; };
+		A7A355220B681DC100EF7973 /* HyperElastic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HyperElastic.hpp; sourceTree = "<group>"; };
+		A7A355230B681DC100EF7973 /* HyperElastic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HyperElastic.cpp; sourceTree = "<group>"; };
 		A7A355CE0B6822E300EF7973 /* ElasticMPM.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ElasticMPM.cpp; sourceTree = "<group>"; };
 		A7A44B7E0A11217D00978858 /* ElementBase.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = ElementBase.hpp; sourceTree = "<group>"; };
 		A7A44BE30A11287600978858 /* MPMPrefix.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = MPMPrefix.hpp; sourceTree = "<group>"; };
@@ -571,6 +573,8 @@
 		A7B38BAE0510BA920063AF10 /* MPMTermination.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = MPMTermination.hpp; sourceTree = "<group>"; };
 		A7B5ECA8072437850027119D /* NodalTempBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = NodalTempBC.hpp; sourceTree = "<group>"; };
 		A7B5ECA9072437850027119D /* NodalTempBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NodalTempBC.cpp; sourceTree = "<group>"; };
+		A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HEAnisotropic.cpp; sourceTree = "<group>"; };
+		A7B6936814325B02006F6A27 /* HEAnisotropic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HEAnisotropic.hpp; sourceTree = "<group>"; };
 		A7BC45A80C6A514C003FF704 /* ShapeController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ShapeController.hpp; sourceTree = "<group>"; };
 		A7BC45A90C6A514C003FF704 /* ShapeController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShapeController.cpp; sourceTree = "<group>"; };
 		A7BC466D0C6A60F3003FF704 /* PointController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PointController.hpp; sourceTree = "<group>"; };
@@ -1261,8 +1265,8 @@
 				A7A355CE0B6822E300EF7973 /* ElasticMPM.cpp */,
 				A7CA395703F16F3A0063AF10 /* Viscoelastic.hpp */,
 				A7CA395603F16F3A0063AF10 /* Viscoelastic.cpp */,
-				A7A355220B681DC100EF7973 /* RubberElastic.hpp */,
-				A7A355230B681DC100EF7973 /* RubberElastic.cpp */,
+				A7A355220B681DC100EF7973 /* HyperElastic.hpp */,
+				A7A355230B681DC100EF7973 /* HyperElastic.cpp */,
 				A7D5DB42041028D50063AF10 /* Mooney.hpp */,
 				A7D5DB43041028D50063AF10 /* Mooney.cpp */,
 				A7CD01500E070CBD003470EE /* IsoPlasticity.hpp */,
@@ -1297,6 +1301,8 @@
 				A71FC00D0E377F1F001908F8 /* NewMaterial.cpp */,
 				A7DE477A11B97CD400FDEFE6 /* WoodMaterial.hpp */,
 				A7DE477B11B97CD400FDEFE6 /* WoodMaterial.cpp */,
+				A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */,
+				A7B6936814325B02006F6A27 /* HEAnisotropic.hpp */,
 			);
 			path = Materials;
 			sourceTree = "<group>";
@@ -1383,7 +1389,7 @@
 				A7F723350A7179C000D23181 /* MatPoint3D.hpp in Headers */,
 				A7F723980A7187F900D23181 /* ElementBase3D.hpp in Headers */,
 				A7A355160B68193500EF7973 /* Elastic.hpp in Headers */,
-				A7A355240B681DC100EF7973 /* RubberElastic.hpp in Headers */,
+				A7A355240B681DC100EF7973 /* HyperElastic.hpp in Headers */,
 				A7DDE95F0BCBFA01005CC32D /* mathexpr.hpp in Headers */,
 				A7BC45AC0C6A514C003FF704 /* ShapeController.hpp in Headers */,
 				A7BC46710C6A60F3003FF704 /* PointController.hpp in Headers */,
@@ -1433,6 +1439,7 @@
 				A7E100A512D7D0B50074E568 /* PolyTriangle.hpp in Headers */,
 				A76DC50C1303428B00BFECBD /* Lagrange2D.hpp in Headers */,
 				A76DC512130342EE00BFECBD /* Quad2D.hpp in Headers */,
+				A7B6936A14325B02006F6A27 /* HEAnisotropic.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1681,7 +1688,7 @@
 				A7F723360A7179C000D23181 /* MatPoint3D.cpp in Sources */,
 				A7F723970A7187F900D23181 /* ElementBase3D.cpp in Sources */,
 				A7A355170B68193500EF7973 /* Elastic.cpp in Sources */,
-				A7A355250B681DC100EF7973 /* RubberElastic.cpp in Sources */,
+				A7A355250B681DC100EF7973 /* HyperElastic.cpp in Sources */,
 				A7A355CF0B6822E300EF7973 /* ElasticMPM.cpp in Sources */,
 				A7DDE95E0BCBFA01005CC32D /* mathexpr.cpp in Sources */,
 				A7BC45AD0C6A514C003FF704 /* ShapeController.cpp in Sources */,
@@ -1733,6 +1740,7 @@
 				A7E100A612D7D0B50074E568 /* PolyTriangle.cpp in Sources */,
 				A76DC50B1303428B00BFECBD /* Lagrange2D.cpp in Sources */,
 				A76DC511130342EE00BFECBD /* Quad2D.cpp in Sources */,
+				A7B6936914325B02006F6A27 /* HEAnisotropic.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

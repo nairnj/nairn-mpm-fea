@@ -8,9 +8,6 @@
 
 #include "Materials/Mooney.hpp"
 #include "MPM_Classes/MPMBase.hpp"
-#include "Custom_Tasks/ConductionTask.hpp"
-#include "Custom_Tasks/DiffusionTask.hpp"
-#include "Global_Quantities/ThermalRamp.hpp"
  
 #pragma mark Mooney::Constructors and Destructors
 
@@ -19,7 +16,7 @@ Mooney::Mooney()
 {
 }
 // Constructors with arguments 
-Mooney::Mooney(char *matName) : RubberElastic(matName)
+Mooney::Mooney(char *matName) : HyperElastic(matName)
 {
 	G1 = -1.;			// required
 	G2 = 0.;			// zero is neo-Hookean
@@ -61,7 +58,7 @@ char *Mooney::InputMat(char *xName,int &input)
     else if(strcmp(xName,"beta")==0)
         return((char *)&betaI);
     
-    return(MaterialBase::InputMat(xName,input));
+    return(HyperElastic::InputMat(xName,input));
 }
 
 // verify settings and some initial calculations
@@ -102,58 +99,17 @@ void Mooney::InitialLoadMechProps(int makeSpecific,int np)
 void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
 								double delTime,int np)
 {
-	// get new doformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
-	// deformation gradient (found from current strains and rotations)
-	Tensor *ep=mptr->GetStrainTensor();
-	TensorAntisym *wrot = mptr->GetRotationStrainTensor();
-	double Fxx = 1. + ep->xx;;
-	double Fxy = (ep->xy - wrot->xy)/2.;
-	double Fyx = (ep->xy + wrot->xy)/2.;
-	double Fyy = 1. + ep->yy;
-	
-	// get new 2D deformation gradient
+	// get new deformation gradient and update strains and rotations
 	double F[3][3];
-	F[0][0] = (1. + dvxx)*Fxx + dvxy*Fyx;		// 1 + du/dx
-	F[0][1] = (1. + dvxx)*Fxy + dvxy*Fyy;		// du/dy
-	//F[0][2] = 0.;								// du/dz
-	F[1][0] = dvyx*Fxx + (1. + dvyy)*Fyx;		// dv/dx
-	F[1][1] = dvyx*Fxy + (1. + dvyy)*Fyy;		// 1 + dv/dy
-	//F[1][2] = 0.;							// dv/dz
-	//F[2][0] = 0.;							// dw/dx
-	//F[2][1] = 0.;							// dw/dy
-	//F[2][2] = ? ;							// 1 + dw/dz (done later)
+	GetDeformationGrad(F,mptr,dvxx,dvyy,dvxy,dvyx,TRUE);
 	
-	// store in total strain and rotation tensors
-    ep->xx = F[0][0] - 1.;
-    ep->yy = F[1][1] - 1.;
-    ep->xy = F[1][0] + F[0][1];
+	// left Cauchy deformation tensor B = F F^T
+	Tensor B = GetLeftCauchyTensor2D(F);
 	
-	// rotational strain increments
-	wrot->xy = F[1][0] - F[0][1];
-	
-    // total residual stretch (1 + alpha dT + beta csat dConcentration)
-	double resStretch = 1.0;
-	double dTemp=mptr->pPreviousTemperature-thermal.reference;
-	resStretch += CTE1*dTemp;
-	if(DiffusionTask::active)
-	{	double dConc=mptr->pPreviousConcentration-DiffusionTask::reference;
-		resStretch += CME1*dConc;
-	}
-	
-	// left Caucy deformation tensor B = F F^T
-	Tensor B;
-	ZeroTensor(&B);
-	B.xx = F[0][0]*F[0][0] + F[0][1]*F[0][1];
-	B.yy = F[1][0]*F[1][0] + F[1][1]*F[1][1];
-	B.xy = F[0][0]*F[1][0] + F[0][1]*F[1][1];
-	//B.zz = ? ;   done in next section
-	
-	// Deformation gradiates and Cauchy tensor differ in plane stress and plane strain
+	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
 	double J2;
 	if(np==PLANE_STRAIN_MPM)
-	{	F[2][2] =  1.;					// 1 + dw/dz
-		B.zz = 1.;
-		J2 = B.xx*B.yy - B.xy*B.xy;
+	{	J2 = B.xx*B.yy - B.xy*B.xy;
 	}
 	else
 	{	// Find B.zz required to have zero stress in z direction
@@ -166,6 +122,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 		
 		// Newton-Rapheson starting at B.zz = 1
 		// In tests finds answer in 3 or less steps
+		Tensor *ep=mptr->GetStrainTensor();
 		double xn16,xn12,xnp1,xn = 1.+ep->zz;
 		double fx,fxp;
 		int iter=1;
@@ -192,7 +149,8 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 		J2 = B.zz*arg;
 	}
 	
-	// J as determinant of F (or sqrt root of determinant of B)
+	// J as determinant of F (or sqrt root of determinant of B) normalized to residual stretch
+	double resStretch = GetResidualStretch(mptr);
 	double J = sqrt(J2)/(resStretch*resStretch*resStretch);
 	double J53 = pow(J, 5./3.);
 	double J73 = pow(J, 7./3.);
@@ -209,34 +167,6 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 				+ (B.zz*(B.xx+B.yy)-2*B.xx*B.yy+2.*B.xy*B.xy)*G2sp/(3.*J73);
 	}
 	
-	// Convert to Kirchoff Stress (time J)
-	/*
-	 sp->xx *= J;
-	 sp->yy *= J;
-	 sp->zz *= J;
-	 sp->xy *= J;
-	 */
-	
-	// Convert to nominal stress by premultiply with J F^(-1)
-	// JFi is transpose of matrix of cofactors for F
-	/*
-	 double JFi[3][3];
-	 JFi[0][0] = F[1][1]*F[2][2];
-	 JFi[0][1] = -F[0][1]*F[2][2];
-	 JFi[0][2] = 0.;
-	 JFi[1][0] = -F[1][0]*F[2][2];
-	 JFi[1][1] = F[0][0]*F[2][2];
-	 JFi[1][2] = 0.;
-	 JFi[2][0] = 0.;
-	 JFi[2][1] = 0.;
-	 JFi[2][2] = F[0][0]*F[1][1] - F[1][0]*F[0][1];
-	 Tensor sp0=*sp;
-	 sp->xx = JFi[0][0]*sp0.xx + JFi[0][1]*sp0.xy;
-	 sp->xy = JFi[0][0]*sp0.xy + JFi[0][1]*sp0.yy;
-	 sp->yy = JFi[1][0]*sp0.xy + JFi[1][1]*sp0.yy;
-	 sp->zz = JFi[2][2]*sp0.zz;
-	 */
-	
 	// strain energy
 	double J23 = J53/J;
 	double J43 = J23*J23;
@@ -252,74 +182,21 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
 						  double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
 {
-	// get new doformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
-	// deformation gradient (stored int current strains and rotations)
-	Tensor *ep=mptr->GetStrainTensor();
-	TensorAntisym *wrot = mptr->GetRotationStrainTensor();
-	double Fxx = 1. + ep->xx;;
-	double Fxy = (ep->xy - wrot->xy)/2.;
-	double Fxz = (ep->xz - wrot->xz)/2.;
-	double Fyx = (ep->xy + wrot->xy)/2.;
-	double Fyy = 1. + ep->yy;
-	double Fyz = (ep->yz - wrot->yz)/2.;
-	double Fzx = (ep->xz + wrot->xz)/2.;
-	double Fzy = (ep->yz + wrot->yz)/2.;
-	double Fzz = 1. + ep->zz;
-
 	// get new deformation gradient
 	double F[3][3];
-	F[0][0] = (1. + dvxx)*Fxx + dvxy*Fyx + dvxz*Fzx;		// 1 + du/dx
-	F[0][1] = (1. + dvxx)*Fxy + dvxy*Fyy + dvxz*Fzy;		// du/dy
-	F[0][2] = (1. + dvxx)*Fxz + dvxy*Fyz + dvxz*Fzz;		// du/dz
-	F[1][0] = dvyx*Fxx + (1. + dvyy)*Fyx + dvyz*Fzx;		// dv/dx
-	F[1][1] = dvyx*Fxy + (1. + dvyy)*Fyy + dvyz*Fzy;		// 1 + dv/dy
-	F[1][2] = dvyx*Fxz + (1. + dvyy)*Fyz + dvyz*Fzz;		// dv/dz
-	F[2][0] = dvzx*Fxx + dvzy*Fyx + (1. + dvzz)*Fzx;		// dw/dx
-	F[2][1] = dvzx*Fxy + dvzy*Fyy + (1. + dvzz)*Fzy;		// dw/dy
-	F[2][2] = dvzx*Fxz + dvzy*Fyz + (1. + dvzz)*Fzz;		// 1 + dw/dz
+	GetDeformationGrad(F,mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,TRUE);
 
-	// store in total strain and rotation tensors
-    ep->xx = F[0][0] - 1.;
-    ep->yy = F[1][1] - 1.;
-	ep->zz = F[2][2] - 1.;
-    ep->xy = F[1][0] + F[0][1];
-	ep->xz = F[2][0] + F[0][2];
-	ep->yz = F[2][1] + F[1][2];
-	
-	// rotational strain increments
-	wrot->xy = F[1][0] - F[0][1];
-	wrot->xz = F[2][0] - F[0][2];
-	wrot->yz = F[2][1] - F[1][2];
-	
-    // total residual stretch (1 + alpha dT + beta csat dConcentration)
-	double resStretch = 1.0;
-	double dTemp=mptr->pPreviousTemperature-thermal.reference;
-	resStretch += CTE1*dTemp;
-	if(DiffusionTask::active)
-	{	double dConc=mptr->pPreviousConcentration-DiffusionTask::reference;
-		resStretch += CME1*dConc;
-	}
-	
 	// left Cauchy deformation tensor B = F F^T
-	Tensor B;
-	ZeroTensor(&B);
-	int i;
-	for(i=0;i<3;i++)
-	{	B.xx += F[0][i]*F[0][i];
-		B.yy += F[1][i]*F[1][i];
-		B.zz += F[2][i]*F[2][i];
-		B.xy += F[0][i]*F[1][i];
-		B.xz += F[0][i]*F[2][i];
-		B.yz += F[1][i]*F[2][i];
-	}
+	Tensor B = GetLeftCauchyTensor3D(F);
 	
-	// J as determinant of F (or sqrt root of determinant of B)
+	// J as determinant of F (or sqrt root of determinant of B), normalized to residual stretch
 	double J2 = B.xx*B.yy*B.zz + 2.*B.xy*B.xz*B.yz - B.yz*B.yz*B.xx - B.xz*B.xz*B.yy - B.xy*B.xy*B.zz;
+	double resStretch = GetResidualStretch(mptr);
 	double J = sqrt(J2)/(resStretch*resStretch*resStretch);
 	double J53 = pow(J, 5./3.);
 	double J73 = pow(J, 7./3.);
 	
-	// find Cauchy stresses
+	// Find Cauchy stresses
 	Tensor *sp=mptr->GetStressTensor();
 	sp->xx = Ksp*(J-1.) + (2*B.xx-B.yy-B.zz)*G1sp/(3.*J53)
 			+ (B.xx*(B.yy+B.zz)-2*B.yy*B.zz-B.xy*B.xy-B.xz*B.xz+2.*B.yz*B.yz)*G2sp/(3.*J73);
@@ -330,38 +207,6 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 	sp->xy = B.xy*G1sp/J53 + (B.zz*B.xy-B.xz*B.yz)*G2sp/J73;
 	sp->xz = B.xz*G1sp/J53 + (B.yy*B.xz-B.xy*B.yz)*G2sp/J73;
 	sp->yz = B.yz*G1sp/J53 + (B.xx*B.yz-B.xy*B.xz)*G2sp/J73;
-	
-	// Convert to Kirchoff Stress (time J)
-	/*
-	sp->xx *= J;
-	sp->yy *= J;
-	sp->zz *= J;
-	sp->xy *= J;
-	sp->xz *= J;
-	sp->yz *= J;
-	*/
-	
-	// Convert to nominal stress by premultiply with J F^(-1)
-	// JFi is transpose of matrix of cofactors for F
-	/*
-	double JFi[3][3];
-	JFi[0][0] = F[1][1]*F[2][2] - F[2][1]*F[1][2];
-	JFi[0][1] = -(F[0][1]*F[2][2] - F[2][1]*F[0][2]);
-	JFi[0][2] = F[0][1]*F[1][2] - F[1][1]*F[0][2];
-	JFi[1][0] = -(F[1][0]*F[2][2] - F[2][0]*F[1][2]);
-	JFi[1][1] = F[0][0]*F[2][2] - F[2][0]*F[0][2];
-	JFi[1][2] = -(F[0][0]*F[1][2] - F[1][0]*F[0][2]);
-	JFi[2][0] = F[1][0]*F[2][1] - F[2][0]*F[1][1];
-	JFi[2][1] = -(F[0][0]*F[2][1] - F[2][0]*F[0][1]);
-	JFi[2][2] = F[0][0]*F[1][1] - F[1][0]*F[0][1];
-	Tensor sp0=*sp;
-	sp->xx = JFi[0][0]*sp0.xx + JFi[0][1]*sp0.xy + JFi[0][2]*sp0.xz;
-	sp->xy = JFi[0][0]*sp0.xy + JFi[0][1]*sp0.yy + JFi[0][2]*sp0.yz;
-	sp->xz = JFi[0][0]*sp0.xz + JFi[0][1]*sp0.yz + JFi[0][2]*sp0.zz;
-	sp->yy = JFi[1][0]*sp0.xy + JFi[1][1]*sp0.yy + JFi[1][2]*sp0.yz;
-	sp->yz = JFi[1][0]*sp0.xz + JFi[1][1]*sp0.yz + JFi[1][2]*sp0.zz;
-	sp->zz = JFi[2][0]*sp0.xz + JFi[2][1]*sp0.yz + JFi[2][2]*sp0.zz;
-	*/
 	
 	// strain energy
 	double J23 = J53/J;
