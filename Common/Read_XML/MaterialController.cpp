@@ -22,6 +22,7 @@
 	#include "Materials/MGSCGLMaterial.hpp"
 	#include "Materials/SLMaterial.hpp"
 	#include "Materials/Mooney.hpp"
+	#include "Materials/HEAnisotropic.hpp"
 	#include "Materials/BistableIsotropic.hpp"
 	#include "Materials/RigidMaterial.hpp"
 	#include "Materials/CohesiveZone.hpp"
@@ -66,6 +67,9 @@ int MaterialController::AddMaterial(int matID,char *matName)
 			break;
 		case MOONEYRIVLIN:
 			newMaterial=new Mooney(matName);
+			break;
+		case HEANISOTROPIC:
+			newMaterial = new HEAnisotropic(matName);
 			break;
 		case VONMISESHARDENING:
 			newMaterial=new VonMisesHardening(matName);

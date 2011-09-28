@@ -29,12 +29,9 @@ NewMaterial::NewMaterial(char *matName) : MaterialBase(matName)
 
 #pragma mark NewMaterial::Initialization
 
-/* If material has new property types, it must override this method and
-	1. Define XML tag in the DTD file
-	2. If xName matches a new property tag, set input to the type
-		of variable (DOUBLE_NUM or INT_NUM) and return pointer
-		to the class variable to be set.
-	c. If no match, call InputMat() of superclass
+/* This method reads properties defined in this material class. For details
+ see the "Creating New Material Properties" section of the wiki
+ Create_MPM_Material in the nairn-mpm-fea google code web site.
 */
 // Read material properties
 char *NewMaterial::InputMat(char *xName,int &input)
@@ -135,65 +132,34 @@ void NewMaterial::PrintMechanicalProperties(void)
 
 #pragma mark NewMaterial:Methods
 
-/* This method is called just before the constitutive law on each time step. You
-	can set any parameters for that law that depends on the current state of the
-	particle. Things that never change (i.e., independent of particle state) should be
-	put in InitialLoadMechProps() instead.
-	NOTE: For compatibility with FEA materials, some materials override LoadMechProps()
-		instead, but that method only allows properties dependent on one angle (e.g., 2D
-		anisotropic materials rotated about z axis).
-*/
-// State dependent material properties
+// Calculate material properties that dependent on the state of the particle
+// See Create_MPM_Material for details in google code web site wiki
 //void NewMaterial::LoadMechanicalProps(MPMBase *mptr,int np)
 //{
 //	MaterialBase::LoadMechanicalProps(mptr,np);
 //}
 
-/* Called when looping over material points to store parameters needed in transport calculations (tensors).
-	It is called prior to transport task to AddForces(). Only needed for anistropic materials
-	or those whose transport properties change depending on particle state. Load the properties into diffusionTensor
-	and kCondTensor in the MaterialBase class. Things that never change (i.e., independent of particle state)
-	should be put in InitialLoadTransProps() instead.
-*/
-// State dependent material properties
+// Calculate transport properties that dependent on the state of the particle
+// See Create_MPM_Material for details in google code web site wiki
 //void NewMaterial::LoadTransportProps(MPMBase *mptr,int np) {}
 //{
 //	MaterialBase::LoadTransportProps(mptr,np);
 //}
 
-/* When conduction is activated, this method is called before calculations that depend
-	on heat capacity. If it changes with particle state, return new result in units
-	of J/(g-K).
-	NOTE: The heatCapacity and heatCapacityVol properties in base class are converted to
-		these units when the analysis starts.
-	NOTE: GetHeatCapacityVol() for Cv not used by any materials, but could be implemented
-		and called if needed.
-*/
 // implemented in case heat capacity (Cp or Cv) changes with particle state
+// See Create_MPM_Material for details in google code web site wiki
 //double NewMaterial::GetHeatCapacity(MPMBase *mptr) { return heatCapacity; }
 //double NewMaterial::GetHeatCapacityVol(MPMBase *mptr) { return heatCapacityVol; }
 
-/*	Apply 2D constitutive law updating all needed terms for material type Required updates are:
-		stress, strain, plastic strain (all components) (stress should be a specific stress)
-		rotation strain (single angle)
-		strain energy, plastic energy, and dissipated energy (dissipated needed if want to couple to conduction)
-	To support thermal and solvent expansion, include their effect on strains
-    If there are material-related data on the particle, update them too
-	dvij are (gradient rates X time increment) to give deformation gradient change
-*/
+// Apply 2D Constitutive law
+// See Create_MPM_Material for details in google code web site wiki
 void NewMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
         double delTime,int np)
 {
 }
 
-/* Apply 3D constitutive law updating all needed terms for material type Required updates are:
-		stress, strain, plastic strain (all components) (stress should be a specific stress)
-		rotation strain
-		strain energy, plastic energy, and dissipated energy (dissipated needed if want to couple to conduction)
-	To support thermal and solvent expansion, include their effect on strains
-    If there are material-related data on the particle, update them too
-    dvij are (gradient rates X time increment) to give deformation gradient change
-*/
+// Apply 3D Constitutive law
+// See Create_MPM_Material for details in google code web site wiki
 void NewMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
         double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
 {

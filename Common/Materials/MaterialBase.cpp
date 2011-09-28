@@ -21,7 +21,7 @@
 					
 	  Viscoelastic+ (MPM)
 					
-	  RubberElastic		->	Mooney+ (MPM)
+	  HyperElastic		->	Mooney+ (MPM)
 					
 	  ImperfectInterface+ (FEA)
 					

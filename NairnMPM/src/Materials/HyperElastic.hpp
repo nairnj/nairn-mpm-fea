@@ -1,5 +1,5 @@
 /********************************************************************************
-    RubberElastic.hpp
+    HyperElastic.hpp
     NairnMPM
     
     Created by John Nairn on Wed Jan 24 2007.
@@ -12,22 +12,28 @@
 		MaterialBase.hpp
 ********************************************************************************/
 
-#ifndef _RUBBERELASTIC_
+#ifndef _HYPERELASTIC_
 
-#define _RUBBERELASTIC_
+#define _HYPERELASTIC_
 
 #include "Materials/MaterialBase.hpp"
 
-class RubberElastic : public MaterialBase
+class HyperElastic : public MaterialBase
 {
     public:
 		double aI;				// thermal expansion isotropic
 		// double beta;			// moisture expansion isotopic (in base material)
         
         // constructors and destructors
-        RubberElastic();
-        RubberElastic(char *);
+        HyperElastic();
+        HyperElastic(char *);
         
+		// Methods
+		void GetDeformationGrad(double F[][3],MPMBase *,double,double,double,double,bool);
+		void GetDeformationGrad(double F[][3],MPMBase *,double,double,double,double,double,double,double,double,double,bool);
+		Tensor GetLeftCauchyTensor2D(double F[][3]);
+		Tensor GetLeftCauchyTensor3D(double F[][3]);
+		double GetResidualStretch(MPMBase *);
 };
 
 #endif

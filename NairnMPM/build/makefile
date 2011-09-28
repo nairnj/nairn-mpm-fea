@@ -165,7 +165,9 @@ FourNodeIsoparam = $(com)/Elements/FourNodeIsoparam
 Generators = $(src)/Read_MPM/Generators
 GlobalQuantity = $(src)/Global_Quantities/GlobalQuantity
 GridForcesTask = $(src)/NairnMPM_Class/GridForcesTask
+HEAnisotropic = $(src)/Materials/HEAnisotropic
 HillPlastic = $(src)/Materials/HillPlastic
+HyperElastic = $(src)/Materials/HyperElastic
 InitializationTask = $(src)/NairnMPM_Class/InitializationTask
 IsoPlasticity = $(src)/Materials/IsoPlasticity
 IsotropicMat = $(com)/Materials/IsotropicMat
@@ -216,7 +218,6 @@ RectController = $(com)/Read_XML/RectController
 ResetElementsTask = $(src)/NairnMPM_Class/ResetElementsTask
 ReverseLoad = $(src)/Custom_Tasks/ReverseLoad
 RigidMaterial = $(src)/Materials/RigidMaterial
-RubberElastic = $(src)/Materials/RubberElastic
 RunCustomTasksTask = $(src)/NairnMPM_Class/RunCustomTasksTask
 ShapeController = $(com)/Read_XML/ShapeController
 SLMaterial = $(src)/Materials/SLMaterial
@@ -273,6 +274,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # ElementBase3D : ElementBase
 # FourNodeIsoparam.hpp : Linear2D.hpp (ElementBase.hpp)
 # GridForcesTask.hpp : MPMTask.hpp (CommonTask.hpp)
+# HEAnisotropic.hpp : HyperElastic.hpp (MaterialBase.hpp)
 # HillPlastic : AnisoPlasticity.hpp (Orthotropic.hpp TranIsotropic.hpp Elastic.hpp MaterialBase.hpp)
 # InitializationTask : MPMTask.hpp (CommonTask.hpp)
 # IsoPlasticity : IsotropicMat.hpp (Elastic.hpp MaterialBase.hpp)
@@ -288,7 +290,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # MatPtFluxBC.hpp : BoundaryCondition.hpp
 # MatPoint2D.hpp : MPMBase.hpp
 # MatPoint3D.hpp : MPMBase.hpp
-# Mooney.hpp : RubberElastic.hpp (MaterialBase.hpp)
+# Mooney.hpp : HyperElastic.hpp (MaterialBase.hpp)
 # MoveCracksTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # MPMReadHandler.hpp : CommonReadHandler.hpp
 # MPMTask.hpp : CommonTask.hpp
@@ -308,7 +310,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # RectController.hpp : ShapeController.hpp
 # ResetElementsTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # ReverseLoad.hpp : CustomTask.hpp
-# RubberElastic.hpp : MaterialBase.hpp
+# HyperElastic.hpp : MaterialBase.hpp
 # RunCustomTasksTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # RigidMaterial.hpp : MaterialBase.hpp
 # TractionLaw.hpp : MaterialBase.hpp
@@ -343,11 +345,11 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		CrackController.o MPMTermination.o MPMWarnings.o BodyForce.o GlobalQuantity.o \
 		ThermalRamp.o MPMBase.o MatPoint2D.o CrackHeader.o CrackSegment.o ContourPoint.o \
 		CrackSurfaceContact.o CrackNode.o MaterialBaseMPM.o Viscoelastic.o JohnsonCook.o \
-		Mooney.o VonMisesHardening.o BistableIsotropic.o RigidMaterial.o BoundaryCondition.o \
+		Mooney.o HEAnisotropic.o VonMisesHardening.o BistableIsotropic.o RigidMaterial.o BoundaryCondition.o \
 		MatPtLoadBC.o MatPtFluxBC.o NodalVelBC.o NodalConcBC.o NodalTempBC.o MoreMPMElementBase.o \
 		NodalPointMPM.o CustomTask.o CalcJKTask.o PropagateTask.o ReverseLoad.o \
 		DiffusionTask.o ConductionTask.o MeshInfo.o TransportTask.o ElementBase3D.o \
-		EightNodeIsoparamBrick.o MatPoint3D.o Elastic.o ElasticMPM.o RubberElastic.o \
+		EightNodeIsoparamBrick.o MatPoint3D.o Elastic.o ElasticMPM.o HyperElastic.o \
 		mathexpr.o ShapeController.o PointController.o RectController.o BodyObjectController.o \
 		BodyBoxController.o BodyOvalController.o BodyPolygonController.o BodyRectController.o \
 		BodySphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o BodyCylinderController.o \
@@ -410,8 +412,8 @@ RectController.o : $(RectController).cpp $(dprefix) $(RectController).hpp $(Shap
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(RectController).cpp
 MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialController).hpp $(ParseController).hpp \
 		$(IsotropicMat).hpp $(TransIsotropic).hpp $(Orthotropic).hpp $(Viscoelastic).hpp $(VonMisesHardening).hpp \
-		$(Mooney).hpp $(BistableIsotropic).hpp $(RigidMaterial).hpp $(MaterialBase).hpp $(JohnsonCook).hpp \
-		$(Elastic).hpp $(RubberElastic).hpp $(NairnMPM).hpp $(TractionLaw).hpp $(CohesiveZone).hpp $(LinearTraction).hpp \
+		$(Mooney).hpp $(HEAnisotropic).hpp $(BistableIsotropic).hpp $(RigidMaterial).hpp $(MaterialBase).hpp $(JohnsonCook).hpp \
+		$(Elastic).hpp $(HyperElastic).hpp $(NairnMPM).hpp $(TractionLaw).hpp $(CohesiveZone).hpp $(LinearTraction).hpp \
 		$(CubicTraction).hpp $(AnisoPlasticity).hpp $(IsoPlasticity.hpp) $(HillPlastic).hpp $(MGSCGLMaterial).hpp \
 		$(SLMaterial).hpp $(WoodMaterial).hpp $(TrilinearTraction).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialController).cpp
@@ -651,11 +653,14 @@ AnisoPlasticity.o : $(AnisoPlasticity).cpp $(dprefix) $(AnisoPlasticity).hpp $(O
 Viscoelastic.o : $(Viscoelastic).cpp $(dprefix) $(Viscoelastic).hpp $(MaterialBase).hpp $(MPMBase).hpp \
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(TransportTask).hpp $(CommonException).hpp $(NairnMPM).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Viscoelastic).cpp
-RubberElastic.o : $(RubberElastic).cpp $(dprefix) $(RubberElastic).hpp $(MaterialBase).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(RubberElastic).cpp
-Mooney.o : $(Mooney).cpp $(dprefix) $(Mooney).hpp $(MaterialBase).hpp $(RubberElastic).hpp $(TransportTask).hpp \
+HyperElastic.o : $(HyperElastic).cpp $(dprefix) $(HyperElastic).hpp $(MaterialBase).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(HyperElastic).cpp
+Mooney.o : $(Mooney).cpp $(dprefix) $(Mooney).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(TransportTask).hpp \
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Mooney).cpp
+HEAnisotropic.o : $(HEAnisotropic).cpp $(dprefix) $(HEAnisotropic).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(TransportTask).hpp \
+			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(HEAnisotropic).cpp
 VonMisesHardening.o : $(VonMisesHardening).cpp $(dprefix) $(VonMisesHardening).hpp $(IsoPlasticity).hpp $(IsotropicMat).hpp \
 			$(Elastic).hpp $(MaterialBase).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(VonMisesHardening).cpp
