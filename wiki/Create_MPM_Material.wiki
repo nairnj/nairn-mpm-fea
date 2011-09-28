@@ -19,8 +19,8 @@ The following chart shows all materials in `nairn-mpm-fea`. Materials to the rig
 ||             ||                           || `BISTABLEISO=10` ||                                              ||                                  ||    ||
 ||     || <font color="green">`TRANSISO1(2)=2,3`</font> || <font color="green">`ORTHO=4`</font> ||   `AnisoPlasticity`       || `HILLPLASTIC=15` || `WOODMATERIAL=19` ||
 || `VISCOELASTIC=7` ||          ||                           ||                                                  ||                                 ||    ||
-|| `HyperElastic` || `MOONEYRIVLIN=8` ||         ||                                                  ||                                 ||     ||
-|| `HEANISOTROPIC=21` ||         ||                                                  ||                                 ||    ||  ||
+|| `HyperElastic` || `MOONEYRIVLIN=8` ||         ||                                                  ||                                 ||   || 
+||  || `HEANISOTROPIC=21` ||         ||                                                  ||                                 ||    || 
 || <font color="red">`INTERFACEPARAMS=5`</font> ||        ||         ||                         ||                                 ||    ||
 || `RIGIDMATERIAL=11` ||                      ||         ||                                                  ||                                 ||    ||
 || `TractionLaw`  || `COHESIVEZONEMATERIAL=12` || `LINEARTRACTIONMATERIAL=13` ||           ||         ||   ||               
@@ -71,7 +71,7 @@ There is currently no template code for traction law materials. One should be cr
 
 == Material Methods - Calculations called during MPM steps ==
 
-See `NewMaterial.cpp` for latest details, but here is summary of key methods involved with MPM calculations in each time step:
+Below is summary of key methods involved with MPM calculations in each time step. The first four are called first to allow update of material properties when those material properties depend on the current state of the particle (_e.g._, properties that depend on temperature, moisture, orientation, or current particles stress or stain). Once the properties are set, one of the last two are calculated to implement the constitutive law.
 
   * `virtual void LoadMechanicalProps(MPMBase *,int)` - This method is called just before the constitutive law on each time step. You can set any parameters for the material that depend on the current state of the particle. Things that never change (_i.e._, properties that are independent of particle state) should be calculated in `InitialLoadMechProps()` instead. NOTE: Some materials also used in FEA make use of `LoadMechProps()` in this task, but that method is limited to 2D because it only inputs a single rotation about the `z` axis.
   * `virtual void LoadTransportProps(MPMBase *)` - This method is called when looping over material points to store parameters needed in transport calculations (tensors). It is called prior to the transport tasks to `AddForces()`. It is only needed for anistropic materials or for materials whose transport properties change depending on particle state. This method should load the required values into `diffusionTensor` and `kCondTensor` in the `MaterialBase` class. Transport properties that never change (_i.e._, independent of particle state) should be calculated in `InitialLoadTransProps()` instead.
