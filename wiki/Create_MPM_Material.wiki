@@ -5,45 +5,73 @@
 
 These notes explain how to create a new material class for use in NairnMPM.
 
-= Details =
+= Getting Started =
 
-== Getting Started ==
+The first steps are to add a new class to NairnMPM and to allow input command files to use that material. These steps involve creating the source code and some edited of the core code to add the new material class. Those steps are defined in this section.
 
-Duplicate the `NewMaterial.cpp` and `NewMaterial.hpp` files, which are templates for a new material class. Edit the files and change `NewMaterial` to the new material's class name. The template is a subclass of `MaterialBase`. Normally the new material will be a subclass of another class. If so, change `MaterialBase` references, as needed, to the actual parent class.
+== Class Source Code ==
 
-The following chart shows all materials in `nairn-mpm-fea`. Materials to the right are subclasses of materials to the left. If the cell to the left is empty, the material is subclass of the next material above and to the left. Materials in UPPERCASE or actual materials. Materials mixed cases are abstract classes. All material inherit from `MaterialBase` class (which is not shown in the table). Finally, materials in <font color="green">green</font> are in both FEA and MPM; materials in <font color="red">red</font> are only in FEA; all the rest are only in MPM.
+The best way to create the source code is to duplicate the `NewMaterial.cpp` and `NewMaterial.hpp` files, which are templates for a new material class. Edit the files and change `NewMaterial` to the new material's class name. The template is a subclass of `MaterialBase`. Normally the new material will be a subclass of another class. If so, change `MaterialBase` references, as needed, to the actual parent class. These changes are needed whenever a method in the new material class needs to pass control to its immediate super class.
 
-|| <font color="green">`Elastic`</font> || <font color="green">`ISOTROPIC=1`</font> || `IsoPlasticity`    || `VONMISESHARDENING=9` ||                                 ||    ||
-||             ||                           ||                              || `MGSCGLMATERIAL=17`       || `SLMATERIAL=18`  ||    ||
-||             ||                           ||                              || `JOHNSONCOOK=16`       ||           ||    ||
-||             ||                           || `BISTABLEISO=10` ||                                              ||                                  ||    ||
-||     || <font color="green">`TRANSISO1(2)=2,3`</font> || <font color="green">`ORTHO=4`</font> ||   `AnisoPlasticity`       || `HILLPLASTIC=15` || `WOODMATERIAL=19` ||
-|| `VISCOELASTIC=7` ||          ||                           ||                                                  ||                                 ||    ||
-|| `HyperElastic` || `MOONEYRIVLIN=8` ||         ||                                                  ||                                 ||   || 
-||  || `HEANISOTROPIC=21` ||         ||                                                  ||                                 ||    || 
-|| <font color="red">`INTERFACEPARAMS=5`</font> ||        ||         ||                         ||                                 ||    ||
-|| `RIGIDMATERIAL=11` ||                      ||         ||                                                  ||                                 ||    ||
-|| `TractionLaw`  || `COHESIVEZONEMATERIAL=12` || `LINEARTRACTIONMATERIAL=13` ||           ||         ||   ||               
-||    ||   || `TRILINEARTRACTIONMATERIAL=20` ||           ||                          ||    ||
-||                               || `CUBICTRACTIONLAW=14` ||                      ||           ||                          ||    ||
+== Material Class Hierarchy ==
 
-When you create a new material, you should fit it into the above hierarchy and define a constant (in UPPERCASE) that will be a unique number for that material. The above table uses numbers 1 through 21 (except for 6). New materials need a new number. Once the number and constant are determined, define the constant in the new material header file and be sure to add this number as an option  to the `Material` command in the DTD file.
+The following outline shows all materials in `nairn-mpm-fea`as a class hierarchy. Materials in UPPERCASE are actual materials. Materials in mixed case are abstract classes. Materials in <font color="green">green</font> are in both FEA and MPM; materials in <font color="red">red</font> are only in FEA; all the rest are only in MPM. The new material should be inserted into this hierarchy and it should define a new, unique constant (in UPPERCASE) for that material. The current materials use numbers 1 through 21 (except for 6). This new constant should replace the `NEWMATERIAL` constant in the new `.hpp`. Futhermore, to allow this number in input command files, it must be added as an option for the `Material` command in the `DTD` file.
+
+  * <font color="green">`MaterialBase`</font>
+    * <font color="green">`Elastic`</font>
+      * <font color="green">`ISOTROPIC=1`</font>
+        * `IsoPlasticity`
+          * `VONMISESHARDENING=9`
+          * `MGSCGLMATERIAL=17`
+            * `SLMATERIAL=18`
+          * `JOHNSONCOOK=16` 
+        * `BISTABLEISO=10`
+      * <font color="green">`TRANSISO1(2)=2,3`</font>
+        * <font color="green">`ORTHO=4`</font>
+          * `AnisoPlasticity` 
+            * `HILLPLASTIC=15`
+              * `WOODMATERIAL=19`
+    * `VISCOELASTIC=7`
+    * `HyperElastic`
+      * `MOONEYRIVLIN=8`
+      * `HEANISOTROPIC=21`
+    * <font color="red">`INTERFACEPARAMS=5`</font>
+    * `RIGIDMATERIAL=11`
+    * `TractionLaw`
+      * `COHESIVEZONEMATERIAL=12`
+        *`LINEARTRACTIONMATERIAL=13`
+        * `TRILINEARTRACTIONMATERIAL=20`
+      * `CUBICTRACTIONLAW=14`
 
 == Editing Required in Core Code ==
 
-Almost all coding will be done in the new material class files, but a few places in the core code need to be edited to recognize the new material:
+Almost all coding will be done in the new material class files, but for that material to be recognized as an option in NairnMPM, a few places in the core code have to be edited first. Theses should be the only changes need outside the new material class files.
 
-  # In `MaterialController::AddMaterial(int matID,char ``*``matName)`- - add a new case in the `switch(matID)` section to call the default constructor of the new material when `matID` matches the tag created above.
+  # In `MaterialController::AddMaterial(int matID,char ``*``matName)`- - add a new case in the `switch(matID)` section to call the default constructor of the new material when `matID` matches the new material constant defined in the previous section.
   # Include the new material's header file at the top of `MaterialController.hpp`
-  # Edit the makefile and add the new material's header file to the header file's needed to compile `MaterialController.hpp`
-  # Edit the makefile to compile the new material's file too (see a similar material for example of what is needed).
-  # Add any newly defined material properties to the DTD file
 
-== Editing the Material Class ==
+== Compiling with `make` Command ==
 
-Edit the template files. Change all occuranced of `NewMaterial` to the new material's class name. Similarly, if the new material subclasses some other material, edit all occurances of `MaterialBase` and change to the actual parent class.
+If you want to be able to do command-line compiling using the 'make command, the new material source files needed to add to the `makefile`. The steps are best done by comparing to a similar material's files in the `makefile`' The main steps are are to edit the `makefile` and do:
 
-Finally, go through each method and keep, edit, or delete. Any method that is deleted from source should be removed from header file as well. See comments in the template file for the function of each method.
+  # Add the new material's header file to the header file's needed to compile `MaterialController.hpp`
+  # Compile the new material's source file (see a similar material for example of what is needed).
+
+= Writing the Material Class Source Code =
+
+The remaining steps can usually all be done by editing only the material's source code file. The requirements and optional methods are described in the following sections. This stage involves editing the template file created above and customizing the listed methods and/or deleting optional methods that are not needed.
+
+== Basic Class Accessors ==
+
+These methods (required unless specified as optional) return basic facts about the material:
+
+  * `const char *MaterialType(void)` - return a short name to describe the material. This string is printed with material properties in the output of simulations.
+  * `int MaterialTag()` - return the constant define above.
+  * `bool ThreeDMaterial(void)` (optional) - return `false` is this material does not support `MPMConstLaw()` for three dimensional simulations. If it does support 3D you can delete the method because the `MaterialBase` class returns `true'.
+  * `double WaveSpeed(bool)` - Return the maximum wave speed for material in mm/sec. This method is called once for each material point at start of calculation and after material properties have been defined. If the wave speed might change during the simulation, be conservative and return the maximum possible save speed. The parameter is `true` for 3D calculations or `false` for 2D. This speed is needed to pick the time step for explicit calculations.
+  * `double ShearWaveSpeed(bool)` (optional) - Return the shear wave speed for the material. This method is only used by silent boundary conditions. The `MaterialBase` class returns `WaveSpeed()/sqrt(3)`. You only need to override this method if you want a better value.
+  * ` double MaximumDiffusion(void)` (optional) - return maximum diffusion constant in cm<sup>2</sup>/sec. This method is called once for each material at the start of the calculation and after material properties are defined. The `MaterialBase` class returns the appropriate result for isotropic materials. You only need to override if you need a different result.
+  * `double MaximumDiffusivity(void)` (optional) - return maximum thermal diffusivity in cm<sup>2</sup>/sec = k/(100 rho C<sub>p</sub>). This method is called once for each material at the start of the calculation and after material properties are defined. The `MaterialBase` class returns the appropriate result for isotropic materials. You only need to override if you need a different result.
 
 == Creating New Material Properties ==
 
