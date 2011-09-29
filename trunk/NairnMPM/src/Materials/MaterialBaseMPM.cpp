@@ -417,20 +417,11 @@ int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid)
 // -1 if material not in use, otherwise zero-based field number
 int MaterialBase::GetField(void) { return field; }
 
-// if cannot be used in current analysis type throw MPMTermination()
-void MaterialBase::ValidateUse(int np)
-{	if(np==THREED_MPM && !ThreeDMaterial())
-		throw CommonException("A non-3D material is being used in a 3D calculation","NairnMPM::ValidateOptions");
-}
-
 // maximum diffusion coefficient in cm^2/sec (anisotropic must override)
 double MaterialBase::MaximumDiffusion(void) { return diffusionCon/100.; }
 
 // maximum diffusivity in cm^2/sec  (anisotropic must override)
 double MaterialBase::MaximumDiffusivity(void) { return kCond/(rho*heatCapacity*100.); }
-
-// override until 3D constitutive law is ready
-bool MaterialBase::ThreeDMaterial(void) { return true; }
 
 // material-to-material contact
 void MaterialBase::SetFriction(double friction,int matID,double Dn,double Dnc,double Dt)
@@ -503,6 +494,9 @@ void MaterialBase::ContactOutput(int thisMatID)
 }
 
 #pragma mark MaterialBase::Methods
+
+// if cannot be used in current analysis type throw an exception
+void MaterialBase::MPMConstLaw(int np) {}
 
 // MPM call to allow material to change properties depending on particle state
 // The base method assumes angle is only variable and loads possible

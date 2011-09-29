@@ -544,7 +544,7 @@ void NairnMPM::ValidateOptions(void)
 	int i;
 	for(i=0;i<nmat;i++)
 	{	if(theMaterials[i]->GetField()>=0)
-			theMaterials[i]->ValidateUse(np);
+			theMaterials[i]->MPMConstLaw(np);
 	}
 }
 

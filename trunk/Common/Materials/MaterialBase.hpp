@@ -68,7 +68,6 @@ class MaterialBase : public LinkedObject
 		void PrintProperty(const char *,double,const char *);
 		void PrintProperty(const char *,bool);
 #ifdef MPM_CODE
-		virtual void ValidateUse(int);
         virtual char *MaterialData(void);
 		virtual void InitialLoadTransProps(void);
 		virtual void PrintTransportProperties(void);
@@ -91,6 +90,7 @@ class MaterialBase : public LinkedObject
 		virtual double GetHeatCapacityVol(MPMBase *);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int) = 0;
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int) = 0;
+		virtual void MPMConstLaw(int);
 #endif
 
 		// Methods (base class only)
@@ -117,7 +117,6 @@ class MaterialBase : public LinkedObject
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag(void) = 0;
 #ifdef MPM_CODE
-		virtual bool ThreeDMaterial(void);
         virtual double WaveSpeed(bool) = 0;
 		virtual double ShearWaveSpeed(bool);
 		virtual double MaximumDiffusion(void);

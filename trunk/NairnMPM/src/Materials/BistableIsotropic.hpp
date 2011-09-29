@@ -54,6 +54,7 @@ class BistableIsotropic : public IsotropicMat
         
         // override methods
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
+		virtual void MPMConstLaw(int);
         virtual void LoadMechanicalProps(MPMBase *,int);
         virtual void LoadTransportProps(MPMBase *,int);
 		
@@ -65,7 +66,6 @@ class BistableIsotropic : public IsotropicMat
         virtual double MaximumDiffusion(void);
         virtual double MaximumDiffusivity(void);
 		virtual const char *MaterialType(void);
-		virtual bool ThreeDMaterial(void);
         virtual double GetHistory(int,char *);
 		virtual int MaterialTag();
     

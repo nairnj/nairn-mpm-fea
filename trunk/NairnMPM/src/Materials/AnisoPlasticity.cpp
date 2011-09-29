@@ -173,10 +173,9 @@ void AnisoPlasticity::InitialLoadMechProps(int makeSpecific,int np)
 }
 
 // if cannot be used in current analysis type throw MPMTermination()
-void AnisoPlasticity::ValidateUse(int np)
+void AnisoPlasticity::MPMConstLaw(int np)
 {	if(np!=PLANE_STRAIN_MPM && np!=THREED_MPM)
-		throw CommonException("Anisotropic plasticity materials require 3D or plane strain MPM analysis","NairnMPM::ValidateOptions");
-	Orthotropic::ValidateUse(np);
+		throw CommonException("Anisotropic plasticity materials require 3D or 2D plane strain MPM analysis","NairnMPM::ValidateOptions");
 }
 
 #pragma mark VonMisesHardening::Methods
