@@ -66,8 +66,7 @@ The remaining steps can usually all be done by editing only the material's sourc
 These methods (required unless specified as optional) return basic facts about the material:
 
   * `const char *MaterialType(void)` - return a short name to describe the material. This string is printed with material properties in the output of simulations.
-  * `int MaterialTag()` - return the constant define above.
-  * `bool ThreeDMaterial(void)` (optional) - return `false` is this material does not support `MPMConstLaw()` for three dimensional simulations. If it does support 3D you can delete the method because the `MaterialBase` class returns `true'.
+  * `int MaterialTag()` - return the constant defined above.
   * `double WaveSpeed(bool)` - Return the maximum wave speed for material in mm/sec. This method is called once for each material point at start of calculation and after material properties have been defined. If the wave speed might change during the simulation, be conservative and return the maximum possible save speed. The parameter is `true` for 3D calculations or `false` for 2D. This speed is needed to pick the time step for explicit calculations.
   * `double ShearWaveSpeed(bool)` (optional) - Return the shear wave speed for the material. This method is only used by silent boundary conditions. The `MaterialBase` class returns `WaveSpeed()/sqrt(3)`. You only need to override this method if you want a better value.
   * ` double MaximumDiffusion(void)` (optional) - return maximum diffusion constant in cm<sup>2</sup>/sec. This method is called once for each material at the start of the calculation and after material properties are defined. The `MaterialBase` class returns the appropriate result for isotropic materials. You only need to override if you need a different result.
@@ -86,13 +85,47 @@ Once a property variable and name are defined, you set that variable, check, and
 
   * `char *InputMat(char *xName,int &input)` - if `xName` string matches a property name for this material, set `input` to `DOUBLE_NUM` or `INT_NUM` (depending on the type of variable) and return a pointer to the class variable for that property. If `xName` is not a recognized property return `InputMat(xName,input)` for the super class to look for their valid property types.
   * `const char *VerifyProperties(int np)` (optional) - this method is called after input file is read but before the new material is printed to the results file. You can use this method to verify the input material properties are physically allowed. If not, return an string with an error message and the simulation will be aborted. If there are no errors, return superclass call to let it check properties as well. The input `np` is a constant for the analysis type (_e.g._, plane stress, plane strain, 3D, _etc._).
-  * `void ValidateUse(int np)` (optional) - this method called before starting, but only if this material is actually assigned to at least one material point. If the material does not support the current analysis type (as specified by `np` input parameter), this method should throw an `MPMTermination()` exception to stop the calculations. If it is acceptable, be sure to call `ValidateUse(np)` in super class so it can check as well.
   * `void InitialLoadMechProps(int makeSpecific,int np)` (optional) - this method is called once at beginning (at the end of `VerifyProperties()` in `MaterialBase` calss). For efficiency, use this method to calculate material properties that are independent of the particle state and thus will remain constant throughout the calculation. This properties may be useful in the materials constitutive law calculations. Be sure to call super class `InitialLoadMechProps(makeSpecific,np)` method to allow its calculations (but `MaterialBase` and `Elastic` do not do any calculations in this method).
   * `void InitialLoadTransProps(void)` (optional) - this method is called right after `InitialLoadMechProps()`. For efficiency, use this method to calculate transport properties that are independent of the particle state and thus will remain constant throughout the calculation. Be sure to call super class `InitialLoadTransProps(makeSpecific,np)` method to allow its calculations. `MaterialBase` automatically finds diffusion and conductivity tensors for isotropic material by using material properties `D` (in `diffusionCon`) for diffusion constant and `kCond` (in `kCond`) for thermal conductivity.
   * `void PrintMechanicalProperties(void)` - this method should print all mechanical properties or call super class and print just the new mechanical properties. Use a format compatible with code that will read results file and use style similar to other materials (need not pass on to `MaterialBase` or `Elastic` since they print nothing). This method is called after `VerifyProperties()` and `InitialLoadMechProps()` are done.
   * `void PrintTransportProperties(void)` (optional) - this method should print all transport properties in format compatible with code that will read results file. It should only print them is transport is activated (_i.e._, `if(DiffusionTask::active)` or `if(ConductionTask::active)`). The `MaterialBase` class prints isotropic properties and the `ORTHO` and `TRANSISO1(2)` classes print anisotropic properties. No additional printing is needed of one of these classes handle the task.
 
-== Traction Law Materials (only for traction law materials) ==
+== History Dependent Properties ==
+
+For some materials, the constitutive law will depend on the state of the particle in the form of history-dependent data (_e.g._ cumulative plastic strain for plasticity or strain history for viscoelasticity). Such properties are implemented in a material by using history data. The methods in the material class are as follows:
+
+  * `char *MaterialData(void)` (optional) - this method is called once for each material point using this material at the start of the calculations. It should allocate memory to store history data on the particle, initialize the values, and return a pointer to the structure. It can be as simple as a single variable or a pointer to an array of any number of variables. If a class overrides this method in a super class, the material will need to make sure all history data is correctly allocated and accessible.
+  * `double GetHistory(int num,char *ptr)` - this method should extract history variable number `num` from the allocated data pointer in `ptr`. This method is only used when archiving results and `num` will only be 1 through 4 (currently only the first four history variables can be archived). If `num` is out of range for the current material, this method should return zero.
+
+To access values of history variables during constitutive law calculations, you can fetch them from the material point methods `GetHistoryPtr()`, `GetHistoryDble()`, and `SetHistoryDble()`.
+
+= MPM Step Calculations =
+
+The bulk of MPM calculations for a material will be done in the material-dependent code that is called during each MPM time step. Below is a summary of the key methods. These methods should be made as efficient as possible.
+
+== Prepare for Updates ==
+
+These methods are called prior to constitutive law methods to allow update of material properties when those material properties depend on the current state of the particle (_e.g._, properties that depend on temperature, moisture, orientation, or current particle's stress or stain):
+
+  * `virtual void LoadMechanicalProps(MPMBase *,int)` (optional) - this method is called just before the constitutive law on each time step. You can set any parameters for the material that depend on the current state of the particle. Things that never change (_i.e._, properties that are independent of particle state) should be calculated in `InitialLoadMechProps()` instead. Some materials also used in FEA make use of `LoadMechProps()` in this task, but that method is limited to 2D because it only inputs a single rotation about the `z` axis.
+  * `virtual void LoadTransportProps(MPMBase *)` (optional) - This method is called when looping over material points to store parameters needed in transport calculations (_i.e._, diffusion and conductivity tensors). It is called prior to the transport task to `AddForces()`. It is only needed for anistropic materials or for materials whose transport properties change depending on particle state. This method should load the required values into `diffusionTensor` and `kCondTensor` variables. It is automatically handled for subclasses of `TRANSISO1(2`) if the only effect is the current orientation. Transport properties that never change (_i.e._, independent of particle state) should be calculated in `InitialLoadTransProps()` instead.
+  * `virtual double GetHeatCapacity(MPMBase *)`  (optional) - when conduction is activated, this method is called before calculations that depend on heat capacity C<sub>P</sub>. If C<sub>P</sub> changes with particle state, return current heat capacity using units of J/(g-K). This method can be ignored if C<sub>P</sub> is a constant (note that the `heatCapacity` variable in `MaterialBase` is internally stored in J/(g-K) during calculations, although it is input as J/(kg-K)).
+  * `virtual double GetHeatCapacityVol(MPMBase *mptr)`  (optional) - This method has the same function as `GetHeatCapacity()` except applies to constant volume heat capacity C<sub>V</sub>, and the base class variable is `heatCapacityVol`.
+
+== Constitutive Law Methods ==
+
+Once the properties are set (from previous section), one of these methods is called to implement the constitutive law. The separate methods for 2D or 3D calculations.
+
+  *  `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int)` - This methods applies constitutive law for the material in 2D calculations and updates all needed particle properties. The required updates include stress (should be a specific stress), strain, plastic strain, rotational strain, strain energy, plastic energy, dissipated energy (dissipated needed if want to couple to conduction), and any material history dependent variables defined for the material. To support thermal and solvent expansion, include their effect on the constitutive law. Then input `dvij` are components of velocity gradient times the time step, which gives components of the deformation gradient change.
+  * `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int)` - This method is the same as the previous method except it applies to 3D calculations and the extra input variables define the full change in the 3D deformation gradient.
+
+All materials are assumed to support both these methods and all analysis types. For some materials (or during material development), a material might only support certain types of calculations. To make sure calculations only proceed with valid materials, you can implement the following method:
+
+  * `virtual void MPMConstLaw(int np)` (optional) - throw an exception if constitutive law is not available for the analysis type specified in `np` (which will be `PLANE_STRAIN_MPM`, `PLANE_STRESS_MPM`, or `THREED_MPM`). If all methods are supported, the method can be deleted. It super class needs to check too, the method should pass control to that class.
+		
+= Traction Law Materials (only for traction law materials) =
+
+(This section needs more details)
 
 There is currently no template code for traction law materials. One should be created the next time a new traction law is needed. Here are some notes on traction law methods
 
@@ -104,19 +137,9 @@ There is currently no template code for traction law materials. One should be cr
   * `CrackTractionLaw()` - Calculate tractions for current opening and shear cod and will be the core coding needed for new traction laws.
   * `CrackTractionEnergy()` - Calculate full energy or released energy for current COD.
 
-== Material Methods - Calculations called during MPM steps ==
+= Fracture Methods =
 
-Below is summary of key methods involved with MPM calculations in each time step. The first four are called first to allow update of material properties when those material properties depend on the current state of the particle (_e.g._, properties that depend on temperature, moisture, orientation, or current particles stress or stain). Once the properties are set, one of the last two are calculated to implement the constitutive law.
-
-  * `virtual void LoadMechanicalProps(MPMBase *,int)` - This method is called just before the constitutive law on each time step. You can set any parameters for the material that depend on the current state of the particle. Things that never change (_i.e._, properties that are independent of particle state) should be calculated in `InitialLoadMechProps()` instead. NOTE: Some materials also used in FEA make use of `LoadMechProps()` in this task, but that method is limited to 2D because it only inputs a single rotation about the `z` axis.
-  * `virtual void LoadTransportProps(MPMBase *)` - This method is called when looping over material points to store parameters needed in transport calculations (tensors). It is called prior to the transport tasks to `AddForces()`. It is only needed for anistropic materials or for materials whose transport properties change depending on particle state. This method should load the required values into `diffusionTensor` and `kCondTensor` in the `MaterialBase` class. Transport properties that never change (_i.e._, independent of particle state) should be calculated in `InitialLoadTransProps()` instead.
-  * `virtual double GetHeatCapacity(MPMBase *)` - When conduction is activated, this method is called before calculations that depend on heat capacity C<sub>P</sub>. If C<sub>P</sub> changes with particle state, return current heat capacity using units of J/(g-K). This method can be ignored if C<sub>P</sub> is a constant (note that the `heatCapacity` variable in `MaterialBase` is internally stored in J/(g-K) during calculations, although it is input as J/(kg-K)).
-  * `virtual double GetHeatCapacityVol(MPMBase *mptr)` - This method has the same function as `GetHeatCapacity()` except applies to constant volume heat capacity C<sub>V</sub>, and the base class variable is `heatCapacityVol`.
-  *  `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int)` - This methods applies constitutive law for the material in 2D calculations and updates all needed particle properties. The required updates include stress (should be a specific stress), strain, plastic strain, rotational strain, strain energy, plastic energy, dissipated energy (dissipated needed if want to couple to conduction), and any material history dependent variables defined for the material. To support thermal and solvent expansion, include their effect on the constitutive law. Then input `dvij` are components of velocity gradient times the time step, which gives components of the deformation gradient change.
-  * `virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int)` - This method is the same as the previous method except it applies to 3D calculations and the extra input variables define the full change in the 3D deformation gradient.
-		
-
-== Fracture Methods ==
+(This section needs more details)
 
 The methods deal with fracture and are currently handled for all materials in the base class.
 
