@@ -1301,8 +1301,8 @@
 				A71FC00D0E377F1F001908F8 /* NewMaterial.cpp */,
 				A7DE477A11B97CD400FDEFE6 /* WoodMaterial.hpp */,
 				A7DE477B11B97CD400FDEFE6 /* WoodMaterial.cpp */,
-				A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */,
 				A7B6936814325B02006F6A27 /* HEAnisotropic.hpp */,
+				A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */,
 			);
 			path = Materials;
 			sourceTree = "<group>";

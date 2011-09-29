@@ -29,9 +29,9 @@ class AnisoPlasticity : public Orthotropic
 		virtual void InitialLoadMechProps(int,int);
 		virtual void PrintMechanicalProperties(void);
 		virtual void PrintYieldProperties(void);
-		virtual void ValidateUse(int);
 			
 		// methods
+		virtual void MPMConstLaw(int);
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
 		virtual double SolveForLambda(MPMBase *mptr,int,double,Tensor *);

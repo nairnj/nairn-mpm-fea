@@ -198,14 +198,13 @@ char *Viscoelastic::MaterialData(void)
     return p;
 }
 
-// if cannot be used in current analysis type throw MPMTermination()
-void Viscoelastic::ValidateUse(int np)
-{	if(np==PLANE_STRESS_MPM)
-		throw CommonException("Viscoelastic materials require plane strain or 3D MPM analysis","NairnMPM::ValidateOptions");
-	MaterialBase::ValidateUse(np);
-}
-
 #pragma mark Viscoelastic::Methods
+
+// plane stress not allowed in viscoelasticity
+void Viscoelastic::MPMConstLaw(int np)
+{	if(np==PLANE_STRESS_MPM)
+		throw CommonException("Viscoelastic materials require 2D plane strain or 3D MPM analysis","NairnMPM::ValidateOptions");
+}
 
 /* For 2D MPM analysis, take increments in strain and calculate new
     Particle: strains, rotation strain, stresses, history variables,

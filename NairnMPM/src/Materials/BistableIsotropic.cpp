@@ -11,6 +11,7 @@
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark BistableIsotropic::Constructors and Destructors
 
@@ -398,6 +399,12 @@ void BistableIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double
     }
 }
 
+// 3D not allowed
+void BistableIsotropic::MPMConstLaw(int np)
+{	if(np==THREED_MPM)
+		throw CommonException("BistableIsotropic materials cannot do 3D MPM analysis","NairnMPM::ValidateOptions");
+}
+
 #pragma mark BistableIsotropic::Accessors
 
 // Return the material tag
@@ -418,9 +425,6 @@ double BistableIsotropic::MaximumDiffusivity(void) { return max(kCondd,kCond0)/(
 
 // return material type
 const char *BistableIsotropic::MaterialType(void) { return "Bistable Isotropic"; }
-
-// remove when 3D law written
-bool BistableIsotropic::ThreeDMaterial(void) { return false; }
 
 // archive material data for this material type when requested.
 double BistableIsotropic::GetHistory(int num,char *historyPtr)

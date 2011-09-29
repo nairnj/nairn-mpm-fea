@@ -11,7 +11,6 @@
 
 #include "HEAnisotropic.hpp"
 #include "MPM_Classes/MPMBase.hpp"
-#include "Exceptions/CommonException.hpp"
 
 #pragma mark HEAnisotropic::Constructors and Destructors
 
@@ -116,6 +115,13 @@ void HEAnisotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvz
 {
 }
 
+// if analysis not allowed, throw an exception
+//void HEAnisotropic::MPMConstLaw(int np)
+//{	if(np==THREED_MPM)
+//		throw CommonException("BistableIsotropic materials cannot do 3D MPM analysis","NairnMPM::ValidateOptions");
+//	HyperElastic::MPMConstLaw(np);
+//}
+
 #pragma mark HEAnisotropic::Custom Methods
 
 #pragma mark HEAnisotropic::Accessors
@@ -125,9 +131,6 @@ int HEAnisotropic::MaterialTag(void) { return HEANISOTROPIC; }
 
 // return unique, short name for this material
 const char *HEAnisotropic::MaterialType(void) { return "Hyperelastic Anisotropic"; }
-
-// If this material supports 3D MPM, then remove this method
-bool HEAnisotropic::ThreeDMaterial(void) { return true; }
 
 /* Calculate maximum wave speed for material in mm/sec. WaveSpeed called only
 	once for each material point at beginning of calculation. If variable wave
