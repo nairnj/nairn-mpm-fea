@@ -11,6 +11,7 @@
 
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Read_XML/BMPLevel.hpp"
+#include "Read_XML/MaterialController.hpp"
 
 #ifdef MPM_CODE
 extern char rotationAxes[4];
@@ -102,11 +103,17 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
 		int imax=-1;
 		minAngle=0.;
 		double maxAngle=0.;
+		char matname[200];
+		matname[0]=0;
         for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"mat")==0)
 				sscanf(value,"%d",&mat);
+			else if(strcmp(aName,"matname")==0)
+			{	if(strlen(value)>199) value[200]=0;
+				strcpy(matname,value);
+			}
             else if(strcmp(aName,"imin")==0)
                 sscanf(value,"%d",&imin);
             else if(strcmp(aName,"imax")==0)
@@ -118,6 +125,9 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
             delete [] aName;
             delete [] value;
         }
+		// if gave a matname, it takes precedence over mat number
+		if(strlen(matname)>0)
+			mat = matCtrl->GetIDFromNewName(matname);
 		if(imin<0 || imax<0)
 			throw SAXException(BMPError("<Intensity> has incomplete set of attributes.",bmpFileName));
 		if(imin>=imax)

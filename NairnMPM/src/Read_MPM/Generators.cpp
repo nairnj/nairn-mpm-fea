@@ -39,6 +39,7 @@
 #include "Read_MPM/BodyPolyhedronController.hpp"
 #include "Read_XML/mathexpr.hpp"
 #include "Read_XML/ElementsController.hpp"
+#include "Read_XML/MaterialController.hpp"
 
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
@@ -183,6 +184,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,POINTSBLOCK,ANY_DIM);
         block=BODYPART;
         MatID=0;
+		char matname[200];
+		matname[0]=0;
         if(strcmp(xName,"Body")==0)
         {   Thick=mpmgrid.GetDefaultThickness();
             Angle=Vel.x=Vel.y=Vel.z=0.0;
@@ -195,6 +198,10 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 value=XMLString::transcode(attrs.getValue(i));
                 if(strcmp(aName,"mat")==0)
                     sscanf(value,"%d",&MatID);
+                else if(strcmp(aName,"matname")==0)
+				{	if(strlen(value)>199) value[200]=0;
+                    strcpy(matname,value);
+				}
                 else if(strcmp(aName,"angle")==0)
                     sscanf(value,"%lf",&Angle);
                 else if(strcmp(aName,"thick")==0)
@@ -221,6 +228,9 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 delete [] aName;
                 delete [] value;
             }
+			// if gave a matname, it takes precedence over mat number
+			if(strlen(matname)>0)
+				MatID = matCtrl->GetIDFromNewName(matname);
             if(MatID<=0)
                 throw SAXException("Positive material ID needed in <Body> element.");
             if(Thick<=0. && !fmobj->IsThreeD())
@@ -336,6 +346,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		double start_angle=0.,end_angle=360.;
 		int startTip=-1,endTip=-1;
 		MatID=0;
+		char lawname[200];
+		lawname[0]=0;
         for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -365,10 +377,17 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			}
 			else if(strcmp(aName,"mat")==0)
 				sscanf(value,"%d",&MatID);
-
+			else if(strcmp(aName,"matname")==0)
+			{	if(strlen(value)>199) value[200]=0;
+				strcpy(lawname,value);
+			}
+			
             delete [] aName;
             delete [] value;
         }
+		// if gave a lawname, it takes precedence over mat number
+		if(strlen(lawname)>0)
+			MatID = matCtrl->GetIDFromNewName(lawname);
 		Xmin*=aScaling;
 		Xmax*=aScaling;
 		Ymin*=aScaling;

@@ -138,16 +138,25 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     	numAttr=attrs.getLength();
 		int setWhichMat=0;
 		quantityName[0]=0;
+		char whichMat[200];
+		whichMat[0]=0;
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"type")==0)
 				strcpy(quantityName,value);
-            else if(strcmp(aName,"material")==0)
+            else if(strcmp(aName,"material")==0 || strcmp(aName,"mat")==0)
                 sscanf(value,"%d",&setWhichMat);
+			else if(strcmp(aName,"matname")==0)
+			{	if(strlen(value)>199) value[200]=0;
+				strcpy(whichMat,value);
+			}
             delete [] aName;
             delete [] value;
         }
+		// if gave a matname, it takes precedence over mat number
+		if(strlen(whichMat)>0)
+			setWhichMat = matCtrl->GetIDFromNewName(whichMat);
 		new GlobalQuantity(quantityName,setWhichMat);
     }
 	
@@ -286,6 +295,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			ThrowCompoundErrorMessage(xName," command found at invalid location.","");
     	input=DOUBLE_NUM;
 		double *theDn,*theDnc,*theDt;
+		char othername[200];
+		othername[0]=0;
 		if(block==CRACKHEADER)
 		{	inputPtr=(char *)&contact.friction;
 			theDn=&contact.Dn;
@@ -331,9 +342,16 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			else if(strcmp(aName,"mat")==0)
 			{	sscanf(value,"%d",&(matCtrl->otherMatID));
 			}
+			else if(strcmp(aName,"matname")==0)
+			{	if(strlen(value)>199) value[200]=0;
+				strcpy(othername,value);
+			}
 			delete [] value;
             delete [] aName;
         }
+		// if gave a mat name, it takes precedence over mat number
+		if(strlen(othername)>0)
+			matCtrl->otherMatID = matCtrl->GetIDFromNewName(othername);
     }
     
     else if(strcmp(xName,"Propagate")==0 || strcmp(xName,"AltPropagate")==0)
@@ -507,6 +525,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         int tipMatnum=-1;
 		int matid=0;
     	numAttr=attrs.getLength();
+		char matname[200];
+		matname[0]=0;
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
@@ -519,10 +539,17 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             else if(strcmp(aName,"tip")==0)
             	sscanf(value,"%d",&tipMatnum);		// <CrackList> only
             else if(strcmp(aName,"mat")==0)
-            	sscanf(value,"%d",&matid);			// <CrackList> only, 1-based ID
+            	sscanf(value,"%d",&matid);			// <CrackList> only, 1-based ID or follwoing name use
+			else if(strcmp(aName,"matname")==0)
+			{	if(strlen(value)>199) value[200]=0;
+				strcpy(matname,value);
+			}
             delete [] aName;
             delete [] value;
         }
+		// if gave a matname, it takes precedence over mat number
+		if(strlen(matname)>0)
+			matid = matCtrl->GetIDFromNewName(matname);
 		ScaleVector(&xp,aScaling);
         
         if(block==NODELIST)
@@ -549,6 +576,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		double thick=mpmgrid.GetDefaultThickness();
 		double pTempInitial=thermal.reference;
     	numAttr=attrs.getLength();
+		char mpmat[200];
+		mpmat[0]=0;
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             sscanf(value,"%lf",&dval);
@@ -557,8 +586,12 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			{	elemNum=(int)(dval+0.5);
 				if(elemNum<1 || elemNum>nelems) elemNum=1;
 			}
-            else if(strcmp(aName,"matl")==0)
+            else if(strcmp(aName,"matl")==0 || strcmp(aName,"mat")==0)
                 matl=(int)(dval+0.5);
+			else if(strcmp(aName,"matname")==0)
+			{	if(strlen(value)>199) value[200]=0;
+				strcpy(mpmat,value);
+			}
             else if(strcmp(aName,"thick")==0)
                 thick=dval;
             else if(strcmp(aName,"conc")==0)
@@ -578,6 +611,9 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             delete [] aName;
             delete [] value;
         }
+		// if gave a matname, it takes precedence over mat number
+		if(strlen(mpmat)>0)
+			matl = matCtrl->GetIDFromNewName(mpmat);
         
         // create object for 3D or 2D analysis
 		if(fmobj->IsThreeD())

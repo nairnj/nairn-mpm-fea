@@ -80,7 +80,9 @@
 			( pt, vel?, mass? )>
 <!ATTLIST	mp
 			elem CDATA #IMPLIED
-			matl CDATA #REQUIRED
+			matl CDATA #IMPLIED
+			mat CDATA #IMPLIED
+			matname CDATA #IMPLIED
 			angle CDATA #IMPLIED
 			thick CDATA #IMPLIED>
 
@@ -88,7 +90,8 @@
 			( RotateX | RotateY | RotateZ | Unrotate
 			| Oval | Rect | Polygon | Sphere | Box | Cylinder | Polyhedron )*>
 <!ATTLIST	Body
-			mat CDATA #REQUIRED
+			mat CDATA #IMPLIED
+			matname CDATA #IMPLIED
 			angle CDATA #IMPLIED
 			thick CDATA #IMPLIED
 			vx CDATA #IMPLIED
@@ -121,6 +124,7 @@
 			( Angle | Thickness | vel | Temperature | Concentration )*>
 <!ATTLIST	Intensity
 			mat CDATA #IMPLIED
+			matname CDATA #IMPLIED
 			imin CDATA #REQUIRED
 			imax CDATA #REQUIRED
 			minAngle CDATA #IMPLIED
@@ -159,7 +163,7 @@
 				| Uk | YP | Friction | tempC1 | tempC2 )* >
 <!ATTLIST	Material
 			Type (1|2|3|4|5|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21) #REQUIRED
-			Name CDATA #IMPLIED>
+			Name CDATA #REQUIRED>
 
 <!-- Displacement Boundary Conditions -->
 
@@ -256,7 +260,8 @@
 			Dnt CDATA #IMPLIED
 			Dnc CDATA #IMPLIED
 			Dt CDATA #IMPLIED
-			mat CDATA #IMPLIED>
+			mat CDATA #IMPLIED
+			matname CDATA #IMPLIED>
 <!ELEMENT	Propagate EMPTY>
 <!ATTLIST	Propagate
 			criterion (0|1|2|3|4|5|6|7) #IMPLIED
@@ -298,7 +303,9 @@
 <!ELEMENT	GlobalArchive EMPTY>
 <!ATTLIST	GlobalArchive
 			type CDATA #REQUIRED
-			material CDATA #IMPLIED>
+			material CDATA #IMPLIED
+			mat CDATA #IMPLIED
+			matname CDATA #IMPLIED>
 <!ELEMENT	ArchiveRoot (#PCDATA)>
 <!ATTLIST	ArchiveRoot
 			unique (0|1) #IMPLIED>
@@ -465,7 +472,8 @@
 			y CDATA #REQUIRED
 			z CDATA #IMPLIED
 			tip CDATA #IMPLIED
-			mat CDATA #IMPLIED>
+			mat CDATA #IMPLIED
+			matname CDATA #IMPLIED>
 
 <!ELEMENT	Line EMPTY>
 <!ATTLIST	Line
@@ -477,7 +485,8 @@
 			resolution CDATA #REQUIRED
 			start_tip CDATA #IMPLIED
 			end_tip CDATA #IMPLIED
-			mat CDATA #IMPLIED>
+			mat CDATA #IMPLIED
+			matname CDATA #IMPLIED>
 
 <!ELEMENT	Circle EMPTY>
 <!ATTLIST	Circle
@@ -491,8 +500,8 @@
 			end_angle CDATA #IMPLIED
 			start_tip CDATA #IMPLIED
 			end_tip CDATA #IMPLIED
-			mat CDATA #IMPLIED>
-
+			mat CDATA #IMPLIED
+			matname CDATA #IMPLIED>
 
 <!ELEMENT	elem (#PCDATA)>
 <!ATTLIST	elem

@@ -35,9 +35,26 @@
 
 MaterialController *matCtrl=NULL;
 
-/********************************************************************************
-	MaterialController: methods
-********************************************************************************/
+#pragma mark ParseController: Constructors and Destructor
+
+MaterialController::MaterialController(void) : ParseController()
+{
+	nameCtrl=new ParseController();
+}
+
+MaterialController::~MaterialController()
+{
+	// remove saved names
+	IsotropicMat *nextMat = (IsotropicMat *)nameCtrl->firstObject;
+	while(nextMat!=NULL)
+	{	IsotropicMat *prevMat = nextMat;
+		nextMat = (IsotropicMat *)prevMat->GetNextObject();
+		delete prevMat;
+	}
+	delete nameCtrl;
+}
+
+#pragma mark MaterialController: Methods
 
 /* Create new material
 	When a new material is added to NairnMPM or NairnFEA, you must include the
@@ -120,21 +137,63 @@ int MaterialController::AddMaterial(int matID,char *matName)
 }
 
 // assemble into array used in the code
-int MaterialController::SetMaterialArray(void)
+const char *MaterialController::SetMaterialArray(void)
 {
 	theMaterials=(MaterialBase **)MakeObjectArray(0);
-	if(theMaterials==NULL) return FALSE;
+	if(theMaterials==NULL) return "No materials were defined in the input file or a memory error.";
+	int i;
+	for(i=0;i<numObjects;i++) theMaterials[i] = NULL;
 	
-	// fill the array
 	MaterialBase *obj=(MaterialBase *)firstObject;
-	nmat=0;
-	while(obj!=NULL)
-	{	theMaterials[nmat]=obj;
-		nmat++;
-		obj=(MaterialBase *)obj->GetNextObject(); 
+
+	// filled with named materials first
+	if(nameCtrl->firstObject!=NULL)
+	{	while(obj!=NULL)
+		{	int matID = GetIDFromName(obj->name);
+			if(matID>0)
+			{	// found name, but is it defined more than once or were too many, return error message
+				if(matID>=numObjects)
+					return "More named materials referenced then were defined in the input file.";
+				else if(theMaterials[matID-1] != NULL)
+				{	char *errMsg=new char[strlen(obj->name)+50];
+					strcpy(errMsg,"Duplicate referenced material name: ");
+					strcat(errMsg,obj->name);
+					return errMsg;
+				}
+				theMaterials[matID-1]=obj;
+			}
 			
+			// check next material
+			obj=(MaterialBase *)obj->GetNextObject(); 
+		}
 	}
-	return TRUE;
+	
+	// fill the array with remaining unreferenced materials
+	nmat = 0;
+	int numUnreferenced = 0;
+	obj=(MaterialBase *)firstObject;
+	while(obj!=NULL)
+	{	int matID = GetIDFromName(obj->name);
+		if(matID == 0)
+		{	while(theMaterials[nmat] != NULL)
+			{	nmat++;
+				// following check should not be possible
+				if(nmat>=numObjects)
+					return "Not enough room for unreferenced materials";
+			}
+			theMaterials[nmat] = obj;
+			numUnreferenced++;
+			nmat++;
+		}
+		obj=(MaterialBase *)obj->GetNextObject(); 
+	}
+	
+	// final number, but must matched sum of referenced and unreferenced
+	nmat = numObjects;
+	if(nmat != nameCtrl->numObjects+numUnreferenced)
+		return "One or more materials was referenced but never defined.";
+	
+	return NULL;
 }
 
 // pointer to read a material property
@@ -171,4 +230,37 @@ void MaterialController::SetMaterialFriction(void)
 }
 
 #endif
+
+// get MatID for given name, but if name not defined, add a new one to the list
+int MaterialController::GetIDFromNewName(char *matname)
+{
+	// get name and exit if done
+	int matID = GetIDFromName(matname);
+	if(matID > 0) return matID;
+	
+	// create new material name
+	IsotropicMat *namedMaterial = new IsotropicMat(matname);
+	nameCtrl->AddObject(namedMaterial);
+	return nameCtrl->numObjects;
+}
+
+// get MatID for given name, but if name not defined return 0
+int MaterialController::GetIDFromName(char *matname)
+{
+	int matID = 0, currentMat = 1;
+	
+	// checked saved names
+	IsotropicMat *nextMat = (IsotropicMat *)nameCtrl->firstObject;
+	while(nextMat!=NULL)
+	{	if(strcmp(matname,nextMat->name)==0)
+		{	matID = currentMat;
+			break;
+		}
+		currentMat++;
+		nextMat = (IsotropicMat *)nextMat->GetNextObject();
+	}
+	return matID;
+}
+
+
 

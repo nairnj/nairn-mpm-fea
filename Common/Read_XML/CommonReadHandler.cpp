@@ -35,8 +35,9 @@ CommonReadHandler::CommonReadHandler()
 CommonReadHandler::~CommonReadHandler()
 {
 	// set material array
-	if(!matCtrl->SetMaterialArray())
-		throw SAXException("Memory error in materials creation or no materials.");
+	const char *emsg = matCtrl->SetMaterialArray();
+	if(emsg!=NULL)
+		throw SAXException(emsg);
 	delete matCtrl;
 }
 
@@ -100,7 +101,7 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
     else if(strcmp(xName,"ElementList")==0)
 	{	ValidateCommand(xName,MESHBLOCK,ANY_DIM);
 		if(meshType!=EXPLICIT_MESH)
-            throw SAXException("<ElementList> can not be used with a generated mesh.");
+            throw SAXException("<ElementList> cannot be used with a generated mesh.");
     	block=ELEMENTLIST;
 		// MPM only uses when in ElementList (which is uncommon because does not suppport GIMP)
 		if(theElems==NULL) theElems=new ElementsController();
@@ -139,10 +140,14 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
             if(strcmp(aName,"Type")==0)
                 sscanf(value,"%d",&matID);
             else if(strcmp(aName,"Name")==0)
+			{	if(strlen(value)>199) value[200]=0;
                 strcpy(matName,value);
+			}
             delete [] aName;
             delete [] value;
         }
+		if(strlen(matName)==0)
+			throw SAXException("<Material> must be named using 'Name' atttribute.");
 		if(!matCtrl->AddMaterial(matID,matName))
 			ThrowCatErrorMessage("Invalid material: either undefined or not allowed for current analysis type",matName);
     }

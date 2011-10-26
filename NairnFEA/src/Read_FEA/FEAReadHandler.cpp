@@ -161,7 +161,9 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
     	if(meshType!=GENERATED_MESH || paths==NULL)
             throw SAXException("Invalid use of <Area> block.");
 		block=AREABLOCK;
-		int matnum=0;			// must set
+		int matnum=0;			// must set number or name
+		char matname[200];
+		matname[0]=0;
 		char *angleExpr=NULL;		// optional
 		double thick=1.0;		// optional
     	numAttr=attrs.getLength();
@@ -170,6 +172,10 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
             aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"mat")==0)
 				sscanf(value,"%d",&matnum);
+			else if(strcmp(aName,"matname")==0)
+			{	if(strlen(value)>199) value[200]=0;
+				strcpy(matname,value);
+			}
             else if(strcmp(aName,"angle")==0)
 			{	if(angleExpr!=NULL) delete [] angleExpr;
 				angleExpr=new char[strlen(value)+1];
@@ -187,6 +193,9 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
             delete [] value;
         }
 		
+		// if gave a matname, it takes precedence over mat number
+		if(strlen(matname)>0)
+			matnum = matCtrl->GetIDFromNewName(matname);
 		if(matnum<0)
 			throw SAXException("Missing or invalid material number for Area.");
 		theArea=new Area(matnum,angleExpr,thick);		// deleted when Area is done
@@ -263,6 +272,8 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
         elemThick=1.;
 		int elemTypeSet=FALSE;
     	numAttr=attrs.getLength();
+		char elmat[200];
+		elmat[0]=0;
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
             aName=XMLString::transcode(attrs.getLocalName(i));
@@ -271,8 +282,12 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 					throw SAXException("Invalid or incompatible element type.");
 				elemTypeSet=TRUE;
 			}
-            else if(strcmp(aName,"matl")==0)
+            else if(strcmp(aName,"matl")==0 || strcmp(aName,"mat")==0)
                 sscanf(value,"%d",&elemMat);
+			else if(strcmp(aName,"matname")==0)
+			{	if(strlen(value)>199) value[200]=0;
+				strcpy(elmat,value);
+			}
             else if(strcmp(aName,"angle")==0)
                 sscanf(value,"%lf",&elemAngle);
             else if(strcmp(aName,"thick")==0)
@@ -280,6 +295,9 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
             delete [] aName;
             delete [] value;
         }
+		// if gave a matname, it takes precedence over mat number
+		if(strlen(elmat)>0)
+			elemMat = matCtrl->GetIDFromNewName(elmat);
 		if(!elemTypeSet)
             throw SAXException("<elem> does not specify element type.");
     }

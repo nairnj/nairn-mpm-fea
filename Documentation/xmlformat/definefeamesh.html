@@ -20,7 +20,7 @@
 
 <p>FEA calculations are done within a mesh of elements. There are two ways to specify the mesh. One way is to <a href="#sec1">explicitly list</a> each nodal point and each element. The other method is to use <code>XML</code> commands that <a href="#sec2">generate</a> the mesh.</p>
 
-<p>Each type of mesh creation must be subordinate to a <code>&lt;Mesh&gt;</code> element, but the methods can not be mixed. Only one <code>&lt;Mesh&gt;</code> element is allowed in the input file and it must either <a href="#sec1">explicitly</a> specify the mesh or use commands to <a href="#sec2">generate</a> the mesh
+<p>Each type of mesh creation must be subordinate to a <code>&lt;Mesh&gt;</code> element, but the methods cannot be mixed. Only one <code>&lt;Mesh&gt;</code> element is allowed in the input file and it must either <a href="#sec1">explicitly</a> specify the mesh or use commands to <a href="#sec2">generate</a> the mesh
 </p>
 
 <a name="sec1"></a><h2>Explicit Mesh Definition</h2>
@@ -39,8 +39,8 @@
   &lt;/NodeList&gt;
   
   &lt;ElementList&gt;
-     &lt;elem type='2' matl='1' angle='0' thick='10'&gt;1,5,69,68&lt;/elem&gt;
-     &lt;elem type='2' matl='1' angle='0' thick='10'&gt;5,6,70,69&lt;/elem&gt;
+     &lt;elem type='2' mat='1' angle='0' thick='10'&gt;1,5,69,68&lt;/elem&gt;
+     &lt;elem type='2' mat='1' angle='0' thick='10'&gt;5,6,70,69&lt;/elem&gt;
         .
         .
         .
@@ -84,7 +84,8 @@ Each element is defined in an <code>&lt;elem&gt;</code> tag. The <code>type</cod
 <p>Each element has attributes to define the material for the element:
 </p>
 <ul>
-<li><code>matl</code>: Material number in the list of defined materials. An integer, starting at 1, referring to <a href="definematl.html">materials</a> in the order they are defined in the input file. If you are using the optional <code>BMP</code> file to set element properties, the matl can be 0 to indicate it will be set later by the <code>BMP</code> file.</li>
+<li><code>mat</code> (or <code>matl</code> for backward compatibility): Material number in the list of defined materials. An integer, starting at 1, referring to <a href="definematl.html">materials</a> in the order they are defined in the input file. If you are using the optional <code>BMP</code> file to set element properties, the <code>mat</code> should be 0 for elements that will be set later by the <code>BMP</code> file.</li>
+<li><code>matname</code>: Alternatively, materials can be specied by name. See <a href="definematl.html#usemats">Defining Materials</a> for details on this method.</li>
 <li><code>angle</code>: Optional material angle relevant to <a href="definematl.html">anisotropic materials</a></li>
 <li><code>thick</code>: Thickness in mm (for plane stress or plane strain 2D calculations)</li>
 </ul>
@@ -175,7 +176,8 @@ Alternatively, the entire grid can be generated with <code>&lt;Keypoints&gt;</co
 <p>The attributes for a <code>&lt;Area&gt;</code> command are:
 </p>
 <ul>
-<li><code>mat</code>: Material number in the list of defined materials. An integer, starting at 1, referring to <a href="definematl.html">materials</a> in the order they are defined in the input file. Quadrilateral areas cannot use an <a href="definematl.html#interface">interface material</a> while interface areas must use an <a href="definematl.html#interface">interface material</a>. When materials and angle will be set using a <code>BMP</code> file, the mat should be set to 0 to indicate no material assigned until the <a href="#bmpcmd"><code>&lt;BMP&gt;</code></a> command.</li>
+<li><code>mat</code>: Material number in the list of defined materials. Quadrilateral areas cannot use an <a href="definematl.html#interface">interface material</a> while interface areas must use an <a href="definematl.html#interface">interface material</a>. When materials and angle will be set using a <code>BMP</code> file, the <code>mat</code> should be set to 0 to indicate no material assigned until the <a href="#bmpcmd"><code>&lt;BMP&gt;</code></a> command.</li>
+<li><code>matname</code>: Alternatively, materials can be specied by name. See <a href="definematl.html#usemats">Defining Materials</a> for details on this method.</li>
 <li><code>angle</code>: Optional material angle relevant to <a href="definematl.html">anisotropic materials</a>. It can be entered as a number or as a <a href="function.html">user-defined function</a>. A function is evaluated at the midpoint of an element. Triangular elements are created in pairs and the function is evaluated at the midpoint of each pair.</li>
 <li><code>thick</code>: Thickness in mm for plane stress or plain strain analysis; not needed for axisymmetric analysis.</li>
 <li><code>type</code>: The type of element to create. The options are:

@@ -19,13 +19,17 @@ class MaterialController : public ParseController
 {
     public:
 #ifdef MPM_CODE
-		double friction,Dn,Dnc,Dt;			// temporary varoables when reading friction
+		double friction,Dn,Dnc,Dt;			// temporary variables when reading friction
 		int otherMatID;
 #endif
+		ParseController *nameCtrl;
+	
+	MaterialController(void);
+		~MaterialController(void);
 	
 		// methods
 		int AddMaterial(int,char *);
-		int SetMaterialArray(void);
+		const char *SetMaterialArray(void);
 		char *InputPointer(char *,int &);
 		void SetMatColor(float,float,float);
 #ifdef MPM_CODE
@@ -34,6 +38,8 @@ class MaterialController : public ParseController
 		void SetTractionMat(int,int);
 		void SetMaterialFriction(void);
 #endif
+		int GetIDFromName(char *);
+		int GetIDFromNewName(char *);
 };
 
 extern MaterialController *matCtrl;
