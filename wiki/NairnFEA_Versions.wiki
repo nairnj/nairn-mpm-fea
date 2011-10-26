@@ -25,7 +25,8 @@ NairnFEA was first imported to `GoogleCode.com` as version 2.7.0. The versions c
     * Converted all `longs` to `ints` to avoid any potential machine-dependent issues in 64 bit compiles (NairnFEA can compile as 32 bit or 64 bit, and must match Xerces library bits).
     * Added `Lagrange2D` element for 9 node quadrilateral (9th node in the center). It is integrated using 9 Gaussian points, because using less gave singular matrix in some simple problems.
     * Added `Entity` command.
-    * Enhanced `BMP` command to allow specifying dist per pixel and to superpose multiple images.
+    * Enhanced `BMP` command to allow specifying distance per pixel and to superpose multiple images.
+    * Commands that specify materials with `mat` attribute can now use `matname` instead to specify materials by name. Using `mat` and `matname` options in the same input file should be avoided.
 
   * release-2.0 (25 JUL 2010)
     * Has NairnFEA 2.7.1
