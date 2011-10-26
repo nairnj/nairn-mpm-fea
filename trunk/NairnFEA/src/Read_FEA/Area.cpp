@@ -291,7 +291,7 @@ const char *Area::MeshArea(void)
 				  nc         na
 	-------------------------------------------------------------------*/
 	if(edges[0]->intervals!=edges[2]->intervals)
-	{	// area intervals (have been order such that n1>n3)
+	{	// area intervals (have been ordered such that n1>n3, which implies n2>n4)
 		int n1=edges[0]->intervals;
 		int n3=edges[2]->intervals;
 		int n4=edges[3]->intervals;

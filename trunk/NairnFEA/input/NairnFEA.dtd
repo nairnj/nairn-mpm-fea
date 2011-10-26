@@ -47,7 +47,8 @@
 <!ELEMENT	Area
 			( path+ )>
 <!ATTLIST	Area
-			mat CDATA #REQUIRED
+			mat CDATA #IMPLIED
+			matname CDATA #IMPLIED
 			angle CDATA #IMPLIED
 			thick CDATA #IMPLIED
 			type CDATA #IMPLIED
@@ -66,6 +67,7 @@
 			( Angle | Thickness | Temperature )*>
 <!ATTLIST	Intensity
 			mat CDATA #IMPLIED
+			matname CDATA #IMPLIED
 			imin CDATA #REQUIRED
 			imax CDATA #REQUIRED
 			minAngle CDATA #IMPLIED
@@ -87,7 +89,7 @@
 				| Dn | Dt )* >
 <!ATTLIST	Material
 			Type (1|2|3|4|5) #REQUIRED
-			Name CDATA #IMPLIED>
+			Name CDATA #REQUIRED>
 
 <!-- Boundary conditions all on the grid -->
 
@@ -191,7 +193,9 @@
 <!ELEMENT	elem (#PCDATA)>
 <!ATTLIST	elem
 			type (2|3|4|8) #REQUIRED
-			matl CDATA #REQUIRED
+			matl CDATA #IMPLIED
+			mat CDATA #IMPLIED
+			matname CDATA #IMPLIED
 			angle CDATA "0.0"
 			thick CDATA #REQUIRED>
 

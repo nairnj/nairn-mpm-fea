@@ -100,7 +100,7 @@ Thickness is only needed when the crack surface uses tractions laws (see below).
 apply traction to the crack surface as a function of crack normal and shear opening displacments.
 You assign a traction to any created segments by adding a <code>mat='n'</code> attribute to any
 <code>pt</code>, <code>Line</code>, or <code>Circle</code> command, where <code>n</code> is
-the <a href="definematl.html#traction">traction law material</a> nummber. In addition, you must specify
+the <a href="definematl.html#traction">traction law material</a> nummber. Alternatively, you can use a <code>matnam = 'law name'</code> attribute where <code>'law name'</code> is the name of the <a href="definematl.html#traction">traction law material</a> (see <a href="definematl.html#usemats">Defining Materials</a> for details on numbers <i>vs</i>. names). In addition, you must specify
 the crack thickness using a <code>Thickness</code> command.</p>
 
 <p>The traction law will naturally debond
