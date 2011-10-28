@@ -156,14 +156,16 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	double J73 = pow(J, 7./3.);
 	
 	// find Cauchy stresses
+	double Kterm = Ksp*(J-1.);
+	//double Kterm = Ksp*log(J)/J;
 	Tensor *sp=mptr->GetStressTensor();
-	sp->xx = Ksp*(J-1.) + (2*B.xx-B.yy-B.zz)*G1sp/(3.*J53)
+	sp->xx = Kterm + (2*B.xx-B.yy-B.zz)*G1sp/(3.*J53)
 			+ (B.xx*(B.yy+B.zz)-2*B.yy*B.zz-B.xy*B.xy)*G2sp/(3.*J73);
-	sp->yy = Ksp*(J-1.) + (2*B.yy-B.xx-B.zz)*G1sp/(3.*J53)
+	sp->yy = Kterm + (2*B.yy-B.xx-B.zz)*G1sp/(3.*J53)
 			+ (B.yy*(B.xx+B.zz)-2*B.xx*B.zz-B.xy*B.xy)*G2sp/(3.*J73);
 	sp->xy = B.xy*G1sp/J53 + (B.zz*B.xy)*G2sp/J73;
 	if(np==PLANE_STRAIN_MPM)
-	{	sp->zz = Ksp*(J-1.) + (2*B.zz-B.xx-B.yy)*G1sp/(3.*J53)
+	{	sp->zz = Kterm + (2*B.zz-B.xx-B.yy)*G1sp/(3.*J53)
 				+ (B.zz*(B.xx+B.yy)-2*B.xx*B.yy+2.*B.xy*B.xy)*G2sp/(3.*J73);
 	}
 	
@@ -172,7 +174,9 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	double J43 = J23*J23;
 	double I1bar = (B.xx+B.yy+B.zz)/J23;
 	double I2bar = 0.5*(I1bar*I1bar - (B.xx*B.xx+B.yy*B.yy+B.zz*B.zz+2.*B.xy*B.xy)/J43);
-    mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Ksp*(J-1.)*(J-1.)));
+	Kterm = Ksp*(J-1.)*(J-1.);
+	//Kterm = Ksp*log(J)*log(J);
+    mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kterm));
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
@@ -197,12 +201,14 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 	double J73 = pow(J, 7./3.);
 	
 	// Find Cauchy stresses
+	double Kterm = Ksp*(J-1.);
+	//double Kterm = Ksp*log(J)/J;
 	Tensor *sp=mptr->GetStressTensor();
-	sp->xx = Ksp*(J-1.) + (2*B.xx-B.yy-B.zz)*G1sp/(3.*J53)
+	sp->xx = Kterm + (2*B.xx-B.yy-B.zz)*G1sp/(3.*J53)
 			+ (B.xx*(B.yy+B.zz)-2*B.yy*B.zz-B.xy*B.xy-B.xz*B.xz+2.*B.yz*B.yz)*G2sp/(3.*J73);
-	sp->yy = Ksp*(J-1.) + (2*B.yy-B.xx-B.zz)*G1sp/(3.*J53)
+	sp->yy = Kterm + (2*B.yy-B.xx-B.zz)*G1sp/(3.*J53)
 			+ (B.yy*(B.xx+B.zz)-2*B.xx*B.zz-B.xy*B.xy+2.*B.xz*B.xz-B.yz*B.yz)*G2sp/(3.*J73);
-	sp->zz = Ksp*(J-1.) + (2*B.zz-B.xx-B.yy)*G1sp/(3.*J53)
+	sp->zz = Kterm + (2*B.zz-B.xx-B.yy)*G1sp/(3.*J53)
 			+ (B.zz*(B.xx+B.yy)-2*B.xx*B.yy+2.*B.xy*B.xy-B.xz*B.xz-B.yz*B.yz)*G2sp/(3.*J73);
 	sp->xy = B.xy*G1sp/J53 + (B.zz*B.xy-B.xz*B.yz)*G2sp/J73;
 	sp->xz = B.xz*G1sp/J53 + (B.yy*B.xz-B.xy*B.yz)*G2sp/J73;
@@ -213,7 +219,9 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 	double J43 = J23*J23;
 	double I1bar = (B.xx+B.yy+B.zz)/J23;
 	double I2bar = 0.5*(I1bar*I1bar - (B.xx*B.xx+B.yy*B.yy+B.zz*B.zz+2.*B.xy*B.xy+2*B.xz*B.xz+2.*B.yz*B.yz)/J43);
-    mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Ksp*(J-1.)*(J-1.)));
+	Kterm = Ksp*(J-1.)*(J-1.);
+	//Kterm = Ksp*log(J)*log(J);
+    mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kterm));
 }
 
 #pragma mark Mooney::Accessors
