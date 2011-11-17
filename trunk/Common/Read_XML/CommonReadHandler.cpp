@@ -548,30 +548,41 @@ double CommonReadHandler::ReadGridPoint(char *value,double distScaling,double ax
 	
 	// look for max, max+. max-, min, min+, min- optionally with a number
 	if(strlen(value)>=3 && value[0]=='m')
-	{	if(value[1]=='a' && value[2]=='x')
-		{	sscanf(value,"%*3c%lf",&dval);
-			if(DbleEqual(dval,0.))
-			{	dval=0.;
-				if(strlen(value)>3)
-				{	if(value[3]=='-')
-						dval=-1.;
-					else if(value[3]=='+')
-						dval=1.;
+	{	dval = 0.;
+		
+		// max+, max-, max+f, or max-f, where f is an unsigned float
+		if(value[1]=='a' && value[2]=='x')
+		{	if(strlen(value)==4)
+			{	// old style can only be + or -
+				if(value[3]=='-')
+					dval=-1.;
+				else if(value[3]=='+')
+					dval=1.;
+				else if(value[3]>=0x30 && value[3]<=0x39)
+				{	// allow max0 to max9 to be max+#
+					dval=(float)(value[3]-0x30);
 				}
 			}
+			else if(strlen(value)>4)
+				sscanf(value,"%*3c%lf",&dval);
 			return axisMax+dval*ElementBase::GetMinimumCellSize();
 		}
+		
+		// min+, min-, min+f, or min-f, where f is an unsigned float
 		else if(value[1]=='i' && value[2]=='n')
-		{	sscanf(value,"%*3c%lf",&dval);
-			if(DbleEqual(dval,0.))
-			{	dval=0.;
-				if(strlen(value)>3)
-				{	if(value[3]=='-')
-						dval=-1.;
-					else if(value[3]=='+')
-						dval=1.;
+		{	if(strlen(value)==4)
+			{	// old style can only be + or -
+				if(value[3]=='-')
+					dval=-1.;
+				else if(value[3]=='+')
+					dval=1.;
+				else if(value[3]>=0x30 && value[3]<=0x39)
+				{	// allow min0 to min9 to be min+#
+					dval=(float)(value[3]-0x30);
 				}
 			}
+			else  if(strlen(value)>4)
+				sscanf(value,"%*3c%lf",&dval);
 			return axisMin+dval*ElementBase::GetMinimumCellSize();
 		}
 	}
