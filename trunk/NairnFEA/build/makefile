@@ -6,6 +6,7 @@
 #    you are compiling. Supported systems are:
 #       mac - MacOS X
 #       carbon - OSU carbon/hedera cluster (the default)
+#		mpm - OSU machine
 #       cygwin - Standard cygwin install in Windows
 #       cluster2 - Grant Smith's cluster at U of Utah
 #       inferno - C-SAFE cluster at U of Utah
@@ -40,6 +41,9 @@ endif
 ifeq ($(SYSTEM),carbon)
 	xercesSo = /usr/local/xerces3/lib/libxerces-c.so
 endif
+ifeq ($(SYSTEM),mpm)
+	xercesSo = /usr/lib/libxerces-c.so
+endif
 ifeq ($(SYSTEM),cygwin)
 	xercesSo = -L/usr/local/lib -lxerces-c
 endif
@@ -57,6 +61,9 @@ endif
 headersPath= /usr/local/include
 ifeq ($(SYSTEM),carbon)
 	headersPath = /usr/local/xerces3/include
+endif
+ifeq ($(SYSTEM),mpm)
+	headersPath = /usr/include
 endif
 ifeq ($(SYSTEM),cluster2)
 	headersPath = /app/software/Xerces/includ
