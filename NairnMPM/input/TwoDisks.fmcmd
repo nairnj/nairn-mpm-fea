@@ -52,10 +52,10 @@ Problem: Two disks colliding
   </Mesh>
 
   <MaterialPoints>
-    <Body mat="1" angle="0" thick="1" vx="&vel;" vy="0">
+    <Body matname="Polymer 1" angle="0" thick="1" vx="&vel;" vy="0">
       <Oval xmin="-45" xmax="-15" ymin="-15" ymax="15"/>     
     </Body>
-    <Body mat="2" angle="0" thick="1" vx="-&vel;" vy="0">
+    <Body matname="Polymer 2" angle="0" thick="1" vx="-&vel;" vy="0">
       <Oval xmin="15" xmax="45" ymin="-15" ymax="15"/>     
     </Body>
   </MaterialPoints>
@@ -67,7 +67,7 @@ Problem: Two disks colliding
     <alpha>60</alpha>
   </Material>
 
-  <Material Type="1" Name="Polymer 1">
+  <Material Type="1" Name="Polymer 2">
     <rho>1.5</rho>
     <E>&modulus;</E>
     <nu>0.33</nu>

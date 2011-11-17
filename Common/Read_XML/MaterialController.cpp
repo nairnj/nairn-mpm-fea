@@ -152,7 +152,7 @@ const char *MaterialController::SetMaterialArray(void)
 		{	int matID = GetIDFromName(obj->name);
 			if(matID>0)
 			{	// found name, but is it defined more than once or were too many, return error message
-				if(matID>=numObjects)
+				if(matID>numObjects)
 					return "More named materials referenced then were defined in the input file.";
 				else if(theMaterials[matID-1] != NULL)
 				{	char *errMsg=new char[strlen(obj->name)+50];
