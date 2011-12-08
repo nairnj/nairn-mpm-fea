@@ -64,9 +64,10 @@ public class CmdViewer extends JNCmdTextDocument
 			menuBar.add(defaultApplicationMenu());		// Application menu
 		menuBar.add(defaultFileMenu(this));				// File menu
 		
-		// Analyze menu
-		JMenu menu = new JMenu("Edit");
+		// Edit menu
+		JMenu menu = defaultEditMenu(true);
 		menuBar.add(menu);
+		menu.addSeparator();
 		makeMenuItem(menu,"Go To Line...","GoToLine",this,KeyEvent.VK_L);
 		
 		// Analyze menu

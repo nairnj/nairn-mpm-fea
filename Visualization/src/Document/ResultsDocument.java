@@ -103,9 +103,11 @@ public class ResultsDocument extends AbstractTableModel
 		try
 		{	// get nodes and elements
 			s=new Scanner(summary).useDelimiter("\\r\\n|\\n|\\r");
+			s.useLocale(Locale.US);
 			s.next();
 			s.next();
 			sline=new Scanner(s.next());
+			sline.useLocale(Locale.US);
 			sline.next();
 			nnodes=sline.nextInt();
 			sline.next();
@@ -114,6 +116,7 @@ public class ResultsDocument extends AbstractTableModel
 			// Options are 2D Plane Strain Analysis, 2D Plane Stress Analysis, Axisymmetric Analysis,
 			//	2D Plane Strain MPM Analysis, 2D Plane Stress MPM Analysis, 3D MPM Analysis
 			sline=new Scanner(s.next());
+			sline.useLocale(Locale.US);
 			sline.next();
 			sline.next();
 			sline.next();
@@ -146,6 +149,7 @@ public class ResultsDocument extends AbstractTableModel
 		if(lineStart<0)
 			throw new Exception("Error decoding nodal point coordinates");
 		s=new Scanner(ndst.substring(lineStart,ndst.length()-1));
+		s.useLocale(Locale.US);
 		int prevNodeNum=0,nodeNum;
 		double xpt,ypt,zpt;
 		if(is3D())
@@ -187,6 +191,7 @@ public class ResultsDocument extends AbstractTableModel
 		if(lineStart<0)
 			throw new Exception("Error decoding element definitions");
 		s=new Scanner(elems.substring(lineStart,elems.length()-1));
+		s.useLocale(Locale.US);
 		int prevElemNum=0,elemNum,elemID,i,matID=0;
 		double elemThickness=1.,elemAngle=0.;
 		int[] nds;
@@ -234,6 +239,7 @@ public class ResultsDocument extends AbstractTableModel
 		// defined materials
 		String matls=section("DEFINED MATERIALS");
 		s=new Scanner(matls).useDelimiter("\\r\\n|\\n|\\r");
+		s.useLocale(Locale.US);
 		while(true)
 		{	// scan to start of next material and get its name
 			String matLine,matName=null;
@@ -252,6 +258,7 @@ public class ResultsDocument extends AbstractTableModel
 			
 			// get material type
 			sline=new Scanner(s.next());
+			sline.useLocale(Locale.US);
 			String word1=sline.next();
 			String word2=sline.next();
 			MaterialBase matl;
@@ -307,6 +314,7 @@ public class ResultsDocument extends AbstractTableModel
 		lineStart=findNextLine(bcs,"-----");
 		if(lineStart>0 && lineStart<bcs.length())
 		{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
+			s.useLocale(Locale.US);
 			int dof,bcID;
 			double bcVal,bcArg,bcAngle;
 			while(s.hasNextInt())
@@ -354,6 +362,7 @@ public class ResultsDocument extends AbstractTableModel
 			lineStart=findNextLine(bcs,"-----");
 			if(lineStart>0 && lineStart<bcs.length())
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
+				s.useLocale(Locale.US);
 				int dof,bcID;
 				double bcLoad,bcArg;
 				while(s.hasNextInt())
@@ -370,6 +379,7 @@ public class ResultsDocument extends AbstractTableModel
 			
 			bcs=section("FULL MASS MATRIX");
 			s=new Scanner(bcs).useDelimiter("\\r\\n|\\n|\\r");
+			s.useLocale(Locale.US);
 			// scan to grid info
 			String gridInfo=null;
 			while(s.hasNext() && gridInfo==null)
@@ -385,6 +395,7 @@ public class ResultsDocument extends AbstractTableModel
 			}
 			if(gridInfo!=null)
 			{	sline=new Scanner(gridInfo).useDelimiter("[ :]");
+				sline.useLocale(Locale.US);
 				if(sline.hasNextDouble())
 					xscale=sline.nextDouble()*lengthScale;
 				else
@@ -417,6 +428,7 @@ public class ResultsDocument extends AbstractTableModel
 			lineStart=findNextLine(bcs,"-----");
 			if(lineStart>0 && lineStart<bcs.length())
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
+				s.useLocale(Locale.US);
 				int dof;
 				double bcLoad,bcAngle;
 				while(s.hasNextInt())
@@ -443,6 +455,7 @@ public class ResultsDocument extends AbstractTableModel
 			lineStart=findNextLine(bcs,"-----");
 			if(lineStart>0 && lineStart<bcs.length())
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
+				s.useLocale(Locale.US);
 				int face;
 				String orient;
 				double str1,str2,str3;
@@ -469,11 +482,13 @@ public class ResultsDocument extends AbstractTableModel
 		{	String globalResults=section("ARCHIVED GLOBAL RESULTS");
 			if(globalResults.length()>0)
 			{	s=new Scanner(globalResults).useDelimiter("\\r\\n|\\n|\\r");
+				s.useLocale(Locale.US);
 				s.next();
 				s.next();
 				
 				// global results file name
 				sline=new Scanner(s.next()).useDelimiter(": ");
+				sline.useLocale(Locale.US);
 				sline.next();
 				line=sline.next();
 				setGlobalPath(file.getParentFile(),line);
@@ -487,11 +502,13 @@ public class ResultsDocument extends AbstractTableModel
 		if(isMPMAnalysis())
 		{	String archives=section("ARCHIVED ANALYSIS RESULTS");
 			s=new Scanner(archives).useDelimiter("\\r\\n|\\n|\\r");
+			s.useLocale(Locale.US);
 			s.next();
 			s.next();
 			
 			// root file name
 			sline=new Scanner(s.next()).useDelimiter(": ");
+			sline.useLocale(Locale.US);
 			sline.next();
 			line=sline.next();
 			endIndex=line.lastIndexOf('/');
@@ -503,6 +520,7 @@ public class ResultsDocument extends AbstractTableModel
 			
 			// archive format and check it
 			sline=new Scanner(s.next()).useDelimiter(": ");
+			sline.useLocale(Locale.US);
 			sline.next();
 			setArchFormat(sline.next());
 			if(archFormat.length()>ReadArchive.ARCH_MAXMPMITEMS)
@@ -514,6 +532,7 @@ public class ResultsDocument extends AbstractTableModel
 			
 			// crack archive format
 			sline=new Scanner(s.next()).useDelimiter(": ");
+			sline.useLocale(Locale.US);
 			sline.next();
 			setCrackFormat(sline.next());
 			if(crackFormat.length()>ReadArchive.ARCH_MAXCRACKITEMS)
@@ -553,6 +572,7 @@ public class ResultsDocument extends AbstractTableModel
 			lineStart=findNextLine(bcs,"-----");
 			if(lineStart>0 && lineStart<bcs.length())
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
+				s.useLocale(Locale.US);
 				int numFound;
 				NodalPoint anode;
 				while(s.hasNextInt())
@@ -578,6 +598,7 @@ public class ResultsDocument extends AbstractTableModel
 			lineStart=findNextLine(bcs,"-----");
 			if(lineStart>0 && lineStart<bcs.length())
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
+				s.useLocale(Locale.US);
 				int numFound;
 				NodalPoint anode;
 				while(s.hasNextInt())
@@ -598,6 +619,7 @@ public class ResultsDocument extends AbstractTableModel
 			lineStart=findNextLine(bcs,"-----");
 			if(lineStart>0 && lineStart<bcs.length())
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
+				s.useLocale(Locale.US);
 				ElementBase aelem;
 				while(s.hasNextInt())
 				{	elemNum=s.nextInt();		// element number
@@ -614,7 +636,7 @@ public class ResultsDocument extends AbstractTableModel
 			lineStart=findNextLine(bcs,"-----");
 			if(lineStart>0 && lineStart<bcs.length())
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
-			
+				s.useLocale(Locale.US);
 				ElementBase aelem=null;
 				boolean hasForces=false,hasStresses=false;
 				while(s.hasNext())

@@ -23,6 +23,7 @@ public class IsotropicMat extends MaterialBase
 	public void decodeData(Scanner s)
 	{	// E, nu, and G (not needed)
 		Scanner sline=new Scanner(s.next());
+		sline.useLocale(Locale.US);
 		sline.next();			// E
 		sline.next();			// =
 		E=sline.nextDouble();
@@ -32,6 +33,7 @@ public class IsotropicMat extends MaterialBase
 		
 		// a
 		sline=new Scanner(s.next());
+		sline.useLocale(Locale.US);
 		sline.next();			// a
 		sline.next();			// =
 		a=sline.nextDouble();

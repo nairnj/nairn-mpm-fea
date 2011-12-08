@@ -13,6 +13,8 @@ import javax.swing.event.*;
 import java.util.*;
 import java.awt.event.*;
 
+import geditcom.JNFramework.*;
+
 public class TextDisplay extends JSplitPane
 {
 	static final long serialVersionUID=20L;
@@ -22,7 +24,7 @@ public class TextDisplay extends JSplitPane
 	//-----------------------------------------------------------------
 	
 	// members
-	public JTextArea textPane = new JTextArea( );
+	public JNTextArea textPane = new JNTextArea( );
 	public JTable sectionList;
 	private ResultsDocument resDoc;
 	private JScrollPane right;
@@ -50,6 +52,7 @@ public class TextDisplay extends JSplitPane
 				index=lsm.getMinSelectionIndex();
 				textPane.setText(resDoc.section(index));
 				newSelection=true;
+				textPane.goTopGetFocus();
 			}
 		});
 		sectionList.setShowGrid(false);
@@ -106,7 +109,10 @@ public class TextDisplay extends JSplitPane
 		{	resDoc.DecodeFileSections(file);
 		}
 		catch (Exception e)
-		{	throw new Exception("Could not find all the required data:\n   " + e.getMessage());
+		{	String emsg = e.getMessage();
+			if(emsg == null)
+				emsg = "Scanner error probably due to corrupted or misformatted data.";
+			throw new Exception("Could not find all the required data:\n   " + emsg);
 		}
 		
 		// load first section and exit
@@ -122,6 +128,7 @@ public class TextDisplay extends JSplitPane
 		String section,title;
 		int titleEnd,sectionNum=1,crEnd;
 		Scanner s=new Scanner(mpm).useDelimiter("\\*\\*\\*\\*\\*\\s+\\d+\\.\\s+");
+		s.useLocale(Locale.US);
 		if(s.hasNext()) resDoc.add("TITLE",s.next());
 		while(s.hasNext())
 		{	section=s.next();

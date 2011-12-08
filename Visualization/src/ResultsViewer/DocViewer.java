@@ -73,8 +73,14 @@ public class DocViewer extends JNDocument
 			menuBar.add(defaultApplicationMenu());		// Application menu
 		menuBar.add(CmdViewer.defaultFileMenu(this));				// File menu
 		
+		// Edit menu
+		JMenu menu = new JMenu("Edit");
+		menuBar.add(menu);
+		makeMenuItem(menu,"Find...","openFindPanel",JNApplication.main,KeyEvent.VK_F);
+		makeMenuItem(menu,"Find Again","findAgain",JNApplication.main,KeyEvent.VK_G);
+		
 		// Analyze menu
-		JMenu menu = new JMenu("Analyze");
+		menu = new JMenu("Analyze");
 		menuBar.add(menu);
 		makeMenuItem(menu,"Plot Results","Start Plot",this,KeyEvent.VK_R);
 		makeMenuItem(menu,"Scale Results...","Scale Results",this);
@@ -124,6 +130,10 @@ public class DocViewer extends JNDocument
 		
 		else
 			super.actionPerformed(e);
+	}
+	
+	public void doFindReplaceAction(int frAction)
+	{	display.textPane.doFindReplaceAction(frAction);
 	}
 	
 	// start new plot using current settings
@@ -260,8 +270,11 @@ public class DocViewer extends JNDocument
 				controls.updateTimeDisplay();
 			}
 			catch (Exception e)
-			{	JOptionPane.showMessageDialog(this,"The analysis failed to read for rescaling:\n   "
-												+ e.getMessage());
+			{	String emsg = e.getMessage();
+				if(emsg == null)
+					emsg = "Scanner error probably due to corrupted or misformatted data.";
+				JOptionPane.showMessageDialog(this,"The analysis failed to read for rescaling:\n   "
+												+ emsg);
 				windowClosing(null);
 			}
 		}

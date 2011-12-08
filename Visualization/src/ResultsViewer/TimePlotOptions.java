@@ -251,7 +251,7 @@ public class TimePlotOptions extends PlotControl
 	{
 		String xyRange=rangeText.getText();
 		if(xyRange.length()==0) return 0.d;
-		Scanner validate=new Scanner(xyRange);
+		Scanner validate=new Scanner(xyRange);		// will use user's locale
 		if(validate.hasNextDouble()) return validate.nextDouble();
 		throw new Exception("The optional '+/-' field must be a valid number or be empty");
 	}
