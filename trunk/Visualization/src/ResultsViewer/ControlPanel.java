@@ -375,7 +375,7 @@ public class ControlPanel extends JPanel
 	// read a field which must be an integer
 	public static int readInteger(JTextField theField,String fieldName) throws Exception
 	{
-		Scanner validate=new Scanner(theField.getText());
+		Scanner validate=new Scanner(theField.getText());		// will use user's locale
 		if(validate.hasNextInt()) return validate.nextInt();
 		throw new Exception("The "+fieldName+" must be an integer");
 	}
@@ -383,7 +383,7 @@ public class ControlPanel extends JPanel
 	// read a field which must be an integer
 	public static double readDouble(JTextField theField,String fieldName) throws Exception
 	{
-		Scanner validate=new Scanner(theField.getText());
+		Scanner validate=new Scanner(theField.getText());		// will use user's locale
 		if(validate.hasNextDouble()) return validate.nextDouble();
 		throw new Exception("The "+fieldName+" must be an floating point number");
 	}
