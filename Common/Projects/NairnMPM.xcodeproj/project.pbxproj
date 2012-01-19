@@ -251,6 +251,8 @@
 		A7845CED0E01D94F00D2378A /* AnisoPlasticity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7845CEB0E01D94F00D2378A /* AnisoPlasticity.cpp */; };
 		A7845CF00E01DAA300D2378A /* HillPlastic.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7845CEE0E01DAA300D2378A /* HillPlastic.hpp */; };
 		A7845CF10E01DAA300D2378A /* HillPlastic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7845CEF0E01DAA300D2378A /* HillPlastic.cpp */; };
+		A78B28DB14C8B1D6008C83C5 /* libxerces-c-3.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A78B28DA14C8B1D6008C83C5 /* libxerces-c-3.1.dylib */; };
+		A78B28DC14C8B1D6008C83C5 /* libxerces-c-3.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A78B28DA14C8B1D6008C83C5 /* libxerces-c-3.1.dylib */; };
 		A78BCA59061C74FA009232A2 /* NodalDispBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A78BCA57061C74FA009232A2 /* NodalDispBC.cpp */; };
 		A78BCA5A061C74FA009232A2 /* NodalDispBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A78BCA58061C74FA009232A2 /* NodalDispBC.hpp */; };
 		A78BCA66061C76F1009232A2 /* NodalVelBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A78BCA64061C76F1009232A2 /* NodalVelBC.hpp */; };
@@ -360,8 +362,6 @@
 		A7E1FF9C12D78BCE0074E568 /* BodyPolyhedronController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7E1FF9A12D78BCE0074E568 /* BodyPolyhedronController.cpp */; };
 		A7EC3A710DA91A9B003D43AC /* CubicTraction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7EC3A6F0DA91A9B003D43AC /* CubicTraction.hpp */; };
 		A7EC3A720DA91A9B003D43AC /* CubicTraction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7EC3A700DA91A9B003D43AC /* CubicTraction.cpp */; };
-		A7F52BCF12A8521400176F22 /* libxerces-c.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A7F52BCE12A8521400176F22 /* libxerces-c.dylib */; };
-		A7F52BD112A8522A00176F22 /* libxerces-c.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A7F52BCE12A8521400176F22 /* libxerces-c.dylib */; };
 		A7F723350A7179C000D23181 /* MatPoint3D.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7F723330A7179C000D23181 /* MatPoint3D.hpp */; };
 		A7F723360A7179C000D23181 /* MatPoint3D.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7F723340A7179C000D23181 /* MatPoint3D.cpp */; };
 		A7F723970A7187F900D23181 /* ElementBase3D.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7F723950A7187F900D23181 /* ElementBase3D.cpp */; };
@@ -533,6 +533,7 @@
 		A7845CEB0E01D94F00D2378A /* AnisoPlasticity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AnisoPlasticity.cpp; sourceTree = "<group>"; };
 		A7845CEE0E01DAA300D2378A /* HillPlastic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HillPlastic.hpp; sourceTree = "<group>"; };
 		A7845CEF0E01DAA300D2378A /* HillPlastic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HillPlastic.cpp; sourceTree = "<group>"; };
+		A78B28DA14C8B1D6008C83C5 /* libxerces-c-3.1.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; name = "libxerces-c-3.1.dylib"; path = "/usr/local/lib/libxerces-c-3.1.dylib"; sourceTree = "<absolute>"; };
 		A78BCA57061C74FA009232A2 /* NodalDispBC.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = NodalDispBC.cpp; sourceTree = "<group>"; };
 		A78BCA58061C74FA009232A2 /* NodalDispBC.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = NodalDispBC.hpp; sourceTree = "<group>"; };
 		A78BCA64061C76F1009232A2 /* NodalVelBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = NodalVelBC.hpp; sourceTree = "<group>"; };
@@ -643,7 +644,6 @@
 		A7EC3A700DA91A9B003D43AC /* CubicTraction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CubicTraction.cpp; sourceTree = "<group>"; };
 		A7F04606060F6C7E0060AE2F /* NairnMPM.dtd */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.xml; path = NairnMPM.dtd; sourceTree = "<group>"; };
 		A7F04627060F79120060AE2F /* NairnFEA.dtd */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.xml; path = NairnFEA.dtd; sourceTree = "<group>"; };
-		A7F52BCE12A8521400176F22 /* libxerces-c.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libxerces-c.dylib"; path = "/usr/local/lib/libxerces-c.dylib"; sourceTree = "<absolute>"; };
 		A7F723330A7179C000D23181 /* MatPoint3D.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatPoint3D.hpp; sourceTree = "<group>"; };
 		A7F723340A7179C000D23181 /* MatPoint3D.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPoint3D.cpp; sourceTree = "<group>"; };
 		A7F723950A7187F900D23181 /* ElementBase3D.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = ElementBase3D.cpp; sourceTree = "<group>"; };
@@ -694,7 +694,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A7F52BD112A8522A00176F22 /* libxerces-c.dylib in Frameworks */,
+				A78B28DB14C8B1D6008C83C5 /* libxerces-c-3.1.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -702,7 +702,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A7F52BCF12A8521400176F22 /* libxerces-c.dylib in Frameworks */,
+				A78B28DC14C8B1D6008C83C5 /* libxerces-c-3.1.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -712,7 +712,7 @@
 		0249A662FF388D9811CA2CEA /* External Frameworks and Libraries */ = {
 			isa = PBXGroup;
 			children = (
-				A7F52BCE12A8521400176F22 /* libxerces-c.dylib */,
+				A78B28DA14C8B1D6008C83C5 /* libxerces-c-3.1.dylib */,
 			);
 			name = "External Frameworks and Libraries";
 			sourceTree = "<group>";
@@ -1847,7 +1847,7 @@
 					..,
 					/usr/local/include,
 				);
-				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				LIBRARY_SEARCH_PATHS = "";
 				"Library search paths" = "";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
@@ -1874,7 +1874,7 @@
 					..,
 					/usr/local/include,
 				);
-				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				LIBRARY_SEARCH_PATHS = "$(DYLD_LIBRARY_PATH)";
 				"Library search paths" = "";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
