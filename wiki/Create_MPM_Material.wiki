@@ -24,7 +24,7 @@ The following outline shows all materials in `nairn-mpm-fea`as a class hierarchy
           * `VONMISESHARDENING=9`
           * `MGSCGLMATERIAL=17`
             * `SLMATERIAL=18`
-          * `JOHNSONCOOK=16` 
+          * `JOHNSONCOOK=16` (not implemented yet)
         * `BISTABLEISO=10`
       * <font color="green">`TRANSISO1(2)=2,3`</font>
         * <font color="green">`ORTHO=4`</font>
