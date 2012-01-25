@@ -1,0 +1,225 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>Defining the Mesh</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#feacontents">FEA XML File Contents</a>
+
+</p>
+
+<h1>Defining the FEA Mesh</h1>
+
+<p>FEA calculations are done within a mesh of elements. There are two ways to specify the mesh. One way is to <a href="#sec1">explicitly list</a> each nodal point and each element. The other method is to use <code>XML</code> commands that <a href="#sec2">generate</a> the mesh.</p>
+
+<p>Each type of mesh creation must be subordinate to a <code>&lt;Mesh&gt;</code> element, but the methods cannot be mixed. Only one <code>&lt;Mesh&gt;</code> element is allowed in the input file and it must either <a href="#sec1">explicitly</a> specify the mesh or use commands to <a href="#sec2">generate</a> the mesh
+</p>
+
+<a name="sec1"></a><h2>Explicit Mesh Definition</h2>
+
+<p>To explicitly define a mesh, define all nodal points and all elements in lists within a <code>&lt;Mesh&gt;</code> element as follows:
+</p>
+
+<pre>
+&lt;Mesh&gt;
+  &lt;NodeList&gt;
+    &lt;pt x='0' y='-18' temp='-100'/&gt;
+    &lt;pt x='110' y='-18'/&gt;
+        .
+        .
+        .
+  &lt;/NodeList&gt;
+  
+  &lt;ElementList&gt;
+     &lt;elem type='2' mat='1' angle='0' thick='10'&gt;1,5,69,68&lt;/elem&gt;
+     &lt;elem type='2' mat='1' angle='0' thick='10'&gt;5,6,70,69&lt;/elem&gt;
+        .
+        .
+        .
+  &lt;/ElementList&gt;
+&lt;/Mesh&gt;
+
+&lt;!-- optional method to set element properties --&gt;
+&lt;<a href="#bmpcmd"><code>BMP</code></a> name="MatImage.bmp" width="50" angles="MatAngles.bmp"&gt;
+  &lt;Origin x="0" y="0"/&gt;
+  &lt;Intensity mat="2" imin="76" imax="255"&gt;
+    &lt;Thickness units="mm"&gt;1&lt;/Thickness&gt;
+  &lt;/Intensity&gt;
+  &lt;Intensity mat="3" imin="1" imax="75"&gt;
+    &lt;Thickness units="mm"&gt;1&lt;/Thickness&gt;
+  &lt;/Intensity&gt;
+  &lt;Intensity imin="0" imax="255" minAngle="0.000000" maxAngle="90.000000"/&gt;
+&lt;/BMP&gt;
+</pre>
+
+<p>The <code>&lt;NodeList&gt;</code> must have one <code>&lt;pt&gt;</code> tag for each nodal point.
+The <code>x</code> and <code>y</code> attributes give the coordinates of each point in mm. The optional <code>temp</code> can be used to set the temperature of the node as the temperature difference relative to the stress free temperature.
+</p>
+
+<p>These nodes are connected into elements in the <code>&lt;ElementList&gt;</code>.
+Each element is defined in an <code>&lt;elem&gt;</code> tag. The <code>type</code> attribute defines the type of element. The current element options in NairnFEA are.
+</p>
+
+<ul>
+<li><code>1</code>: 3-node constant-strain triangular elements (linear)</li>
+<li><code>2</code>: 4-node isoparametric rectangular elements (linear)</li>
+<li><code>3</code>: 8-node isoparametric rectangular elements (quadratic)</li>
+<li><code>4</code>: 6-node isoparametric triangular elements (quadratic)</li>
+<li><code>5</code>: 4-node imperfect inteface elements (linear)</li>
+<li><code>6</code>: 6-node imperfect interface elements (quadratic)</li>
+<li><code>8</code>: 9-node Langrangian rectangular element (quadratic) (9 point Gaussian quadrature)</li>
+</ul>
+
+<p>Element types can be mixed, but the types have to be compatible. You can mix linear elements (types 1, 2, and 5) with each other or quadratic elements (types 3, 4, 6, and 8) with each other, but cannot mix linear elements with quadratic elements.</p>
+
+
+<p>Each element has attributes to define the material for the element:
+</p>
+<ul>
+<li><code>mat</code> (or <code>matl</code> for backward compatibility): Material number in the list of defined materials. An integer, starting at 1, referring to <a href="definematl.html">materials</a> in the order they are defined in the input file. If you are using the optional <code>BMP</code> file to set element properties, the <code>mat</code> should be 0 for elements that will be set later by the <code>BMP</code> file.</li>
+<li><code>matname</code>: Alternatively, materials can be specied by name. See <a href="definematl.html#usemats">Defining Materials</a> for details on this method.</li>
+<li><code>angle</code>: Optional material angle relevant to <a href="definematl.html">anisotropic materials</a></li>
+<li><code>thick</code>: Thickness in mm (for plane stress or plane strain 2D calculations)</li>
+</ul>
+
+<p>The value of the <code>&lt;elem&gt;</code> tags are the node numbers listed in the counter-clockwise direction. For elements with mid-side nodes, the corner nodes are first followed by the mid-side nodes. The numbers correspond to the above nodal list with the first node being numbered 1. The node numbers can be delimited by any white space, commas, colons, semicolons, or any combination of those delimiters.
+</p>
+
+<p>The <code>&lt;BMP&gt;</code> element, which must come  after the <code>&lt;Mesh&gt;</code> element, lets you  asign material and material angles to the elements using a digitized image of the object. It's use is described below.</p>
+
+<a name="sec2"></a><h2>Generated Mesh</h2>
+
+<p>
+Alternatively, the entire grid can be generated with <code>&lt;Keypoints&gt;</code>, <code>&lt;Path&gt;</code>, and <code>&lt;Area&gt;</code> commands, with an optional <code>&lt;BMP&gt;</code> command to assign material properties from a digitized image of the object, as follows:
+</p>
+
+
+<pre>
+&lt;Mesh&gt;
+  &lt;<a href="#Keypoints"><code>Keypoints</code></a>&gt;
+    &lt;pt x='0' y='0' id='lowerleft'/&gt;
+    &lt;pt x='0' y='10' id='upperleft'/&gt;
+    &lt;pt x='50' y='0' id='lowerright'/&gt;
+    &lt;pt x='50' y='10' id='upperright'/&gt;
+  &lt;/Keypoints&gt;
+
+  &lt;<a href="#Paths"><code>Path</code></a> id="bottom" intervals='6' ratio='1'&gt;
+    &lt;keypt id='lowerleft'/&gt;
+    &lt;keypt id='lowerright'/&gt;
+  &lt;/Path&gt;
+  &lt;Path id="right" intervals='3'&gt;
+    &lt;keypt id='lowerright'/&gt;
+    &lt;keypt id='upperright'/&gt;
+  &lt;/Path&gt;
+  &lt;Path id="top" intervals='6'&gt;
+    &lt;keypt id='upperright'/&gt;
+    &lt;keypt id='upperleft'/&gt;
+  &lt;/Path&gt;
+  &lt;Path id="left" intervals='3'&gt;
+    &lt;keypt id='upperleft'/&gt;
+    &lt;keypt id='lowerleft'/&gt;
+  &lt;/Path&gt;
+
+  &lt;<a href="#Areas"><code>Area</code></a> mat="1" thick="10" type="4" flip="0" angle="0"&gt;
+    &lt;path id="bottom"/&gt;
+    &lt;path id="right"/&gt;
+    &lt;path id="top"/&gt;
+    &lt;path id="left"/&gt;
+  &lt;/Area&gt;
+&lt;/Mesh&gt;
+
+&lt;!-- optional method to set element properties --&gt;
+&lt;<a href="#bmpcmd"><code>BMP</code></a> name="MatImage.bmp" width="50" angles="MatAngles.bmp"&gt;
+  &lt;Origin x="0" y="0"/&gt;
+  &lt;Intensity mat="2" imin="76" imax="255"&gt;
+    &lt;Thickness units="mm"&gt;1&lt;/Thickness&gt;
+  &lt;/Intensity&gt;
+  &lt;Intensity mat="3" imin="1" imax="75"&gt;
+    &lt;Thickness units="mm"&gt;1&lt;/Thickness&gt;
+  &lt;/Intensity&gt;
+  &lt;Intensity imin="0" imax="255" minAngle="0.000000" maxAngle="90.000000"/&gt;
+&lt;/BMP&gt;
+</pre>
+
+<h3><a name="Keypoints"></a>Keypoints</h3>
+
+<p>The <code>&lt;Keypoints&gt;</code> section must come first. It can define any number of key points. Each subordinate <code>&lt;pt&gt;</code> command defines a key point, provides its <code>x</code> and <code>y</code> coordinates and gives it an <code>id</code>. The <code>id</code>'s can be text or numbers and must all be unique among key points.
+</p>
+
+<h3><a name="Paths"></a>Paths</h3>
+
+<p>Following the <code>&lt;Keypoints&gt;</code>, there are a series of <code>&lt;Path&gt;</code> commands that link the key points into lines or arcs and define mesh information along those paths. Subordinate to each <code>&lt;Path&gt;</code> command are a series of <code>&lt;keypt&gt;</code> commands that list the key points that define the path. Use two key points to define a line or three key points to define an arc. Currently the path can only have two ot three key points. The key points are selected by their <code>id</code>. The attributes for a <code>&lt;Path&gt;</code> command are:
+</p>
+<ul>
+<li><code>id</code>: An <code>id</code> for the path. The <code>id</code>'s can be text or numbers and must be unique among all paths.</li>
+<li><code>intervals</code>: Number of elements along this path when it is meshed into an area.</li>
+<li><code>ratio</code>: Ratio of the size of the first element along the path to the last one. If <code>ratio<0</code>, then the absolute size of the first element on the path with be <code>|ratio|</code>. The default is 1.0 which gives equally sized elements.</li>
+</ul>
+
+
+<h3><a name="Areas"></a>Areas</h3>
+
+<p>Finally, the FEA mesh is created by a series of <code>&lt;Area&gt;</code> commands. An <code>&lt;Area&gt;</code> command links a series of paths into a region to be meshed. Subordinate to each <code>&lt;Area&gt;</code> command are a series of <code>&lt;path&gt;</code> commands that list the paths that define the area. Currently NairnFEA only supports areas with four paths, to mesh quadrilateral areas, or areas with two paths, to mesh interfaces.</p>
+
+<p>For quadrilateral areas, the end of the last path must connect to the start of the first path. The direction of each path does not matter as they will be rearranged if needed to define the area; but the paths must circumnavigate the area in the counter-clockwise direction. If <code>n<sub>1</sub></code>, <code>n<sub>2</sub></code>, <code>n<sub>3</sub></code>, and <code>n<sub>4</sub></code> and the number of nodes along the four paths, the meshing algorithm requires that <code>n<sub>1</sub>+n<sub>2</sub>=n<sub>3</sub>+n<sub>4</sub></code>.
+
+<p>For interface meshing, the two paths must be different, but indentical paths. In other words, they must connect different keypoints, but the coordinates of the keypoints, the number of intervals along the path, and the path ratios must be identical. The order and orientation of the two paths in the area command does not matter. Finally, interfaces only function when they connect two areas. To insure this connection, the paths for an interface must have each been previously used in exactly one quadrilateral area.</p>
+
+<p>The attributes for a <code>&lt;Area&gt;</code> command are:
+</p>
+<ul>
+<li><code>mat</code>: Material number in the list of defined materials. Quadrilateral areas cannot use an <a href="definematl.html#interface">interface material</a> while interface areas must use an <a href="definematl.html#interface">interface material</a>. When materials and angle will be set using a <code>BMP</code> file, the <code>mat</code> should be set to 0 to indicate no material assigned until the <a href="#bmpcmd"><code>&lt;BMP&gt;</code></a> command.</li>
+<li><code>matname</code>: Alternatively, materials can be specied by name. See <a href="definematl.html#usemats">Defining Materials</a> for details on this method.</li>
+<li><code>angle</code>: Optional material angle relevant to <a href="definematl.html">anisotropic materials</a>. It can be entered as a number or as a <a href="function.html">user-defined function</a>. A function is evaluated at the midpoint of an element. Triangular elements are created in pairs and the function is evaluated at the midpoint of each pair.</li>
+<li><code>thick</code>: Thickness in mm for plane stress or plain strain analysis; not needed for axisymmetric analysis.</li>
+<li><code>type</code>: The type of element to create. The options are:
+<ul class="lev2args">
+<li><code>1</code>: 3-node constant-stain triangular elements (linear)</li>
+<li><code>2</code>: 4-node isoparametric rectangular elements(linear)</li>
+<li><code>3</code>: 8-node isoparametric rectangular elements (quadratic)</li>
+<li><code>4</code>: 6-node isoparametric triangular elements (quadratic)</li>
+<li><code>5</code>: 4-node imperfect interface elements (linear)</li>
+<li><code>6</code>: 6-node imperfect interface elements (quadratic)</li>
+<li><code>8</code>: 9-node Langrangian rectangular element (quadratic) (9 point Gaussian quadrature)</li>
+</ul>
+The first <code>&lt;Area&gt;</code> command must define an element type. Subsequent <code>&lt;Area&gt;</code> commands can omit the element type unless the element type is changed to have an analysis with mixed elements. When mixed elements are used, they must be compatible elements (<i>i.e.</i>, you can mix linear elements (types 1, 2, and 5) with each other or quadratic elements (types 3, 4, 6, and 8) with each other, but cannot mix linear elements with quadratic elements). Whenever a <code>type</code> attribute is used, it will apply to that area and all subsequent areas until it is changed. Finally, quadrilateral areas can only use solid elements (types 1, 2, 3, 4, and 8) and interface areas can use only interface elements (type 5 and 6).</li>
+<li><code>flip</code>: For triangular elements, the initially created quadrilaterials are split into two elements by drawing a diagonal across the quadrilaterial. The <code>flip</code> option can change which diagonal is used. It should be 0 or 1. Once it is set, it will apply to that area and all subsequent areas until it is changed.</li>
+</ul>
+
+<h3><a name="bmpcmd"></a>BMP Command</h3>
+
+<p>A powerful way to mesh complicated structures or composite materials with complicated morphologies is to do most of the work in <code>&lt;BMP&gt;</code> command(s). The process is:</p>
+
+<ol>
+
+<li>Create a standard mesh as described above. For sections of the mesh that will be set from the <code>BMP</code> file, set the material argument to 0.</li>
+
+<li>Use one or more <code>&lt;BMP&gt;</code> commands. It will map elements it covers currently with material 0 to the the material defined by the image. The grid can be regular or irregular. The material will be selected from the image information at the centroid of the element. To resolve complicated structures, the grid has to be fine enough to resolve material details.</li>
+
+<li>When the mesh is done, any elements initialized to material 0 but not assigned to a material by the <code>&lt;BMP&gt;</code> command(s) will automatically be removed from the mesh. This feature allows calculations on materials with voids or irregular edges without needing to use <a href="#Areas"><code>&lt;Area&gt;</code></a> commands to construct all details of the shape. If these removals cause the mesh to be partitioned into disconnected sections, however, the FEA analysis will fail. A good way to verify connectivity is to attempt to <a href="feabc.html#Resequence">resquence the nodes</a>.</li>
+
+</ol>
+
+<p>Further details on the <code>&lt;BMP&gt;</code> command and the meaning of its attributes and subordinate commands are give <a href="definempm.html#BMPShape">here</a> (in the MPM documentation).</p>
+
+
+
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#feacontents">FEA XML File Contents</a>
+
+</p>
+
+</body>
+
+</html>
+

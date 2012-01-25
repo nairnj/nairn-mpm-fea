@@ -1,0 +1,375 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
+	<title>Compiling Nairn_MPM-FEA Code</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+Getting Started
+</p>
+
+<h1><a name="top"></a>Compiling NairnMPM and NairnFEA Source Code</h1>
+
+<p>After checking out the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a>, the next step is to compile it. All code-engine source code is standard <code>C++</code>  and it should be possible to compile on a variety of systems. This page gives details on some common systems. Users are responsible for compilation on other systems.</p>
+
+
+<h2>Documented Systems</h2>
+
+<p>The following system information is provided:</p>
+
+<ul>
+<li><a href="#xcode">MacOS X</a>
+<ul class="lev2">
+<li><a href="#xcode">Compile using XCode</a></li>
+<li><a href="#term">Command-Line Compilation</a></li>
+</ul>
+</li>
+<li><a href="#windows">Windows using cygwin</a></li>
+<li><a href="#eclipse">Compile using Eclipse IDE</a> - any platform
+</li>
+<li><a href="#linux">Specific Linux Systems</a>
+<ul class="lev2">
+<li><a href="#carbon">Carbon/Hedera</a> at Oregon State University
+</li>
+<li><a href="#cluster2">Cluster2</a> at University of Utah
+</li>
+<li><a href="#inferno">Inferno</a> at University of Utah
+</li>
+</ul></li>
+<li><a href="#other">Other Systems</a>
+<ul class="lev2">
+<li>See also <a href="#eclipse">Compile using Eclipse IDE</a></li>
+</ul>
+</li>
+
+</ul>
+
+<p>If you get the code compiled on another platform, please send the details to <a href="mailto:John.Nairn@oregonstate.edu">John.Nairn@oregonstate.edu</a> for posting in this documentation.
+</p>
+
+<a name="xcode"></a><h1>MacOS X</h1>
+
+<h2>XCode Compilation
+</h2>
+
+<p>Most development of <code>NairnMPM</code> and <code>NairnFEA</code> is done in MacOS X and thus compiling on MacOS X is easy. The preferred method is to use XCode (a <a href="#term">command-line method</a> is described below). A complete XCode project is located at</p>
+
+<pre>
+nairn-mpm-fea/Common/Projects/NairnMPM.xcodeproj
+</pre>
+
+<p>This project is called <code>NairnMPM</code>, but it includes all MPM and FEA source code in two targets named <code>NairnMPM</code> and <code>NairnFEA</code>.
+</p>
+
+<p><a name="xerces"></a>Before you can compile and run the project, however, you will need an installed version  of the <code>xerces</code> library and a copy of the <code>xerces</code> header files. The XCode project and <a href="#term">command-line method</a> below both assume they are installed in the default locations for MacOS X or at</p>
+
+<pre>
+/usr/local/lib/libxerces-c.dylib
+</pre>
+
+<p>for the library and at</p>
+
+<pre>
+/usr/local/include
+</pre>
+
+<p>for the header files. These can be changed if needed by editing the project and target settings. Since revision 274 of the <code>nairn-mpm-fea</code> project, this library must be <code>xerces 3.0</code> or newer; prior to that revision, it had be <code>xerces 2.8</code> or older. These libraries can be obtained by downloading the 
+<a href="http://xml.apache.org/xerces-c/index.html"><code>xerces</code> source code</a> from the <a href="http://www.apache.org/">Apache Software Foundation</a> web site and then building and installing <code>xerces</code> with the following steps:</p>
+
+<ol>
+<li>Open Terminal app and navigate to the xerces source folder expanded from the downloaded file.</li>
+<li>Configure the code with the command:
+<pre>
+./configure CFLAGS="-arch x86_64" CXXFLAGS="-arch x86_64"</pre>
+where the provided <code>arch</code> (or architecture) is the desired option for your machine. The main Mac options are <code>i386</code> for 32 bit Intel processors, <code>x86_64</code> for 64 bit Intel processors,  <code>ppc</code> for 32 bit PowerPC chips, or <code>ppc64</code> for 64 bit PowerPC64 chips. Although <code>i386</code> will work on any Intel processor, you should use <code>x86_64</code> if you have a 64 bit processor, because the code will run faster. To determine how many bits your Intel chip has, chose &quot;About This Mac&quot; from the Apple menu, click &quot;More Info...&quot; button, and look up the processor name in the hardware section. The &quot;Intel Core Solo&quot; and &quot;Intel Core Duo&quot; are 32 bit chips and most others are 64 bit chips.
+</li>
+<li>When the configuration is done, use the following commands:
+<pre>
+cd src
+make
+make install</pre>
+These command make the library (but not the unneeded <code>xerces</code> examples). The final install command after <code>make</code> is done, installs the both the library and the header files at the default locations listed above. If the '<code>make install</code>' shows a permission error, you can solve that by using '<code>sudo make install</code>' instead and provide your administrator password.</li>
+<li>When working with <code>nairn-mpm-fea</code> on a new Mac, the <code>xerces</code> installation only needs to be done once. The only reason to repeat it is when a new <code>xerces</code> version is available and/or the project requires a new version for compatibility.</li>
+</ol>
+
+<p>Once <code>xerces</code> is installed, open the <code>NairnMPM.xcodeproj</code> to compile the code. The process is:</p>
+
+<ol>
+<li>Select the target to compile - either <code>NairnMPM</code> or <code>NairnFEA</code></li>
+<li>Choose build and they will compile and saves in the <code>nairn-mpm-fea/Common/Projects/build/Default</code> directory</li>
+<li>If there is a linking error, you might have conflicting architectures between the XCode settings and the <code>xerces</code> library you installed. To fix this problem edit <i>both</i> the project and target settings and under the &quot;Architectures&quot; section, set the &quot;Architectures&quot; option to match the architecture you used when installing <code>xerces</code>.</li>
+</ol>
+
+<p>Once the code is compiled, do a <a href="../running/index.html">test run</a> to verify it worked.
+</p>
+
+<h2><a name="term"></a>MacOS X Command-Line Compilation</h2>
+
+<p>It is also easy to compile on MacOS X using a command line approach. First install <code>xerces</code> and its header files as <a href="#xerces">explained above</a> and make sure they are in the specified default locations (if needed).</p>
+
+<p>Once the library is ready, you compile <code>NairnMPM</code> using:</p>
+
+<pre>
+cd nairn-mpm-fea/NairnMPM/build
+make SYSTEM=mac CFLAGS=&quot;-c -O3 -arch x86_64&quot; LFLAGS=&quot;-arch x86_64&quot;
+</pre>
+
+<p>and compile <code>NairnFEA</code> using:</p>
+
+<pre>
+cd nairn-mpm-fea/NairnFEA/build
+make SYSTEM=mac CFLAGS=&quot;-c -O3 -arch x86_64&quot; LFLAGS=&quot;-arch x86_64&quot;
+</pre>
+
+<p>Here the <code>arch</code> settings must match the one used when you installed the <code>xerces</code> library. The <code>-c</code> option is required. The <code>-O3</code> option creates optimized code; this option can be changed or omitted.</p>
+
+<p>All source code will be compiled and the executables will be installed in <code>nairn-mpm-fea/NairnMPM/input</code> or <code>nairn-mpm-fea/NairnFEA/input</code>, respectively. You can use an additional '<code>make install</code>' command to copy each compiled executable to your <code>~/bin</code> folder if desired.
+</p>
+
+<p>If the command-line compile does not work, the most likely explanation is a problem with the <code>xerces</code> installation. You either have to install it as specified <a href="#xerces">above</a> or edit the <code>makefile</code> to recognize your custom installation. The process is documented in the <code>makefile</code> and involves editing the <code>xercesSo</code> and <code>headersPath</code> variables for your different settings.
+</p>
+
+<p>Once the code is compiled, do a <a href="../running/index.html">test run</a> to verify it worked.
+</p>
+
+<a name="windows"></a><h1>Windows Using cygwin</h1>
+
+<p>To compile and run in Windows, you need some kind of Linux/Unix environment. The recommended option is to use <a href="http://www.cygwin.com"><code>cygwin</code></a> and this documentation is based on its use. This process has be verified in both Windows XP, Windows Vista and Windows 7 (although you may need the latest <code>cygwin</code> 1.7 for Windows 7).
+</p>
+
+<p>First you need to set up your computer to use <a href="http://www.cygwin.com"><code>cygwin</code></a>. Since this set up was needed to check out the code, these steps assume <a href="http://www.cygwin.com"><code>cygwin</code></a> is already set up. If not refer to the <a href="http://code.google.com/p/nairn-mpm-fea/wiki/Windows_Setup">Windows setup wiki page</a> for details. The next step is to compile the code, but the first time you download the project, you will need to install <code>xerces</code> in your <a href="http://www.cygwin.com"><code>cygwin</code></a> environment (if you already have xerces installed, you can <a href="#cygcc">skip to compiling now</a>). Although <a href="http://www.cygwin.com"><code>cygwin</code></a> has an option to install the <code>xerces</code> binary, it usually has an out-dated version. You therefore will need to download the <code>xerces</code> source code, build it, and install it. Since revision 274 of the <code>nairn-mpm-fea</code> project, the code requires <code>xerces 3.0</code> or newer. The procedure for <code>xerces 3.0</code> or newer is:</p>
+
+<ol>
+<li><a href="http://xerces.apache.org/xerces-c/download.cgi">Download the <code>xerces</code> source code</a>, which will be in a file such as <code>xerces-c-3.x.x.tar.gz</code> (with <code>x</code> being some numbers). Note that you should get the <code>.tar.gz</code> file instead of the <code>.zip</code> version because the <code>.zip</code> version has DOS files with carriage returns and line feeds (either in the source or inserted by Windows' zip methods) that may complicate compiliation. The <code>.tar.gz</code> file is also smaller.</li>
+
+<li>Move the downloaded file to a folder such as the root <code>cygwin</code> folder, which by default is at Windows path <code>C:\cygwin\</code> (<font color="red">warning</font>: the <code>xerces</code> install will fail if the path to the folder in <code>cygwin</code> contains any spaces; if you use the recommended root folder, the path will be &quot;<code>/</code>&quot; which has no spaces and is therefore safe).</li>
+<li>Start a <code>cygwin</code> shell and and extract the files with:
+<pre>
+cd /
+gunzip xerces-c-3.x.x.tar.gz
+tar xvf xerces-c-3.x.xtar</pre>
+where the <code>x</code>'s are replaced by numbers in your downloaded file.</li>
+
+<li>Go to the new folder and configure the code with:
+<pre>
+cd xerces-c-3.x.x
+./configure LDFLAGS=-no-undefined
+</pre>
+This step will prepare the <code>xerces</code> source code for building. Note: if you get error messages saying that $'\r'$ command is not found it means your files are DOS files rather than Unix files. Consult a Unix expert on how to fix them or go back to step <code>1</code> and get the <code>.tar.gz</code> file this time.
+</li>
+
+<li>When this configuring step is done, enter the commands
+<pre>
+cd src
+make</pre>
+This step will compile <code>xerces</code> and save the librarys in the <code>xerces-c-3.x.x/.libs</code> folder.</li>
+
+<li>Finally, enter the command &quot;<code>make install</code>&quot; (still in the same folder). This step will install the compiled <code>xerces</code> libraries and needed header files in the default locations of <code>/usr/local/lib</code> and <code>/usr/local/include</code> folders, respectively.</li>
+
+</ol>
+
+<p><a name="cygcc"></a>You are now ready to compile the <code>nairn-mpm-fea</code> code. In a <code>cygwin</code> shell, navigate to the checked out <code>nairn-mpm-fea</code> and proceed as follows. To compile <code>NairnMPM</code> use:</p>
+
+<pre>
+cd nairn-mpm-fea/NairnMPM/build
+make SYSTEM=cygwin
+</pre>
+
+<p>and to compile <code>NairnFEA</code> use:</p>
+
+<pre>
+cd nairn-mpm-fea/NairnFEA/build
+make SYSTEM=cygwin
+</pre>
+
+<p>All source code will be compiled and the executables will be installed in <code>nairn-mpm-fea/NairnMPM/input</code> or <code>nairn-mpm-fea/NairnFEA/input</code>, respectively. You can use an additional '<code>make install</code>' command to copy each compiled executable to your <code>~/bin</code> folder if desired.
+</p>
+
+<p>If the command-line compile does not work, the most likely explanation is a problem with the <code>xerces</code> installation. You either have to install it as specified above or edit the <code>makefile</code> to recognize your custom installation. The process is documented in the <code>makefile</code> and involves editing the <code>xercesSo</code> and <code>headersPath</code> variables for your different settings. Another possible reason is a potential conflict with some <code>cygwin</code>/Windows combinations. If you get a linking error about undefined references to <code>typeinfo</code>, you have encountered a dynamic linking problem. It can be fixed by deleting the dynamic library at <code>/usr/local/lib/libserces-c.dll.a</code> and then use the '<code>make SYSTEM=cygwin</code>' command to link again. This change will cause the code to link statically. The resulting executables will be much larger but should work fine.
+</p>
+
+<p>Once the code is compiled, do a <a href="../running/index.html">test run</a> to verify it worked.
+</p>
+
+<a name="eclipse"></a><h1>Compile using Eclipse IDE</h1>
+
+<p>Working with source code is easier when done using an integrated development environment (IDE) rather than using basic text editing on a collection of source files. On MacOS X, you can use the XCode IDE (free with developer tools) and the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a> has an <a href="#xcode">XCode project ready to use</a>. An option for any other platform (and an alternative option for MacOS X) is to use the cross-platform IDE <a href="http://www.eclipse.org" target="new">Eclipse</a>, which is an open-source and free IDE. This section explains how to compile <code>NairnMPM</code> and <code>NairnFEA</code> using <a href="http://www.eclipse.org" target="new">Eclipse</a>. These steps were based on the <a href="http://www.eclipse.org" target="new">Eclipse Indigo (version 3.7)</a>, but are likely to work in other versions as well. They work for MacOS, Windows, and Linux.
+</p>
+
+<p>Before attempting to use <a href="http://www.eclipse.org" target="new">Eclipse</a>, it is recommended that you compile using the command-line approach for your platform (<a href="#term">Mac</a>, <a href="#windows">Windows</a>, or <a href="#linux">Linux</a>) first. This process verifies you have all tools needed by <a href="http://www.eclipse.org" target="new">Eclipse</a> for compiling and verifies that <code>xerces</code> is correctly installed.</p>
+
+<p><a name="geteclipse"></a>The first steps (which are only needed once) are to install and prepare <a href="http://www.eclipse.org" target="new">Eclipse</a> for C/C++ development. You will need <a href="http://www.eclipse.org" target="new">Eclipse</a> and will need to install tools for subversion. Subversion will be used to directly check out the code from <a href="http://code.google.com" target="new">google code</a> into an <a href="http://www.eclipse.org" target="new">Eclipse</a> project (even though you should have checked out the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a> to verify command-line compile, this process will checkout another copy for compiling in <a href="http://www.eclipse.org" target="new">Eclipse</a>):
+</p>
+
+<ol>
+<li>Download and install <a href="http://www.eclipse.org/downloads/" target="new">Eclipse IDE for C/C++ Developers</a>. These steps were based on use of <a href="http://www.eclipse.org" target="new">Eclipse Indigo (version 3.7)</a>, but other versions should work by similar steps. Most system have 32 bit or 64 bit options. Choose the one best for your system. Note that <a href="http://www.eclipse.org" target="new">Eclipse</a> is a Java application and thus if you choose a 64 bit option, you will need to have 64 bit Java as well.
+</li>
+
+<li>Start <a href="http://www.eclipse.org" target="new">Eclipse</a> and create or select your workspace.</li>
+
+<li>Install tools for subversion (this step and the next). Choose &quot;Install New Software...&quot; menu command, choose download site to &quot;work with.&quot; Once loaded, choose &quot;Subversive SVN Team Provider&quot; in the &quot;Collaboration&quot; section and proceed to installation. After installation, restart <a href="http://www.eclipse.org" target="new">Eclipse</a>.
+</li>
+
+<li>Use of subversion also needs a &quot;connector.&quot; In theory, <a href="http://www.eclipse.org" target="new">Eclipse</a> will ask you to install a connector the first time you need it. You can force it to need it by opening <a href="http://www.eclipse.org" target="new">Eclipse</a> preferences and choosing &quot;Team &rarr; SVN&quot; or by trying to create a new project using &quot;SVN &rarr; Project from SVN.&quot; When asked, select a connector that is compatible with your version of subversion (to check your version, use &quot;<code>svn --version</code>&quot; in your command-line tool). You can select more than one if you want and choose the one to use in the <a href="http://www.eclipse.org" target="new">Eclipse</a> preferences (under &quot;Team &rarr; SVN&quot;). After installation, restart <a href="http://www.eclipse.org" target="new">Eclipse</a>. (Hint: if no connector is installed and you are not asked to install one when needed, try restarting <a href="http://www.eclipse.org" target="new">Eclipse</a>).
+</li>
+
+<li>(Optional) If you intend to do Java development (such as <a href="nairnviz.html#eclipses">compiling the <b>NairnFEAMPMViz</b> Java application</a>), you should also install Java development tools. Choose &quot;New Software...&quot;, select site, and then select &quot;Eclipse Java Development&quot; from the section on &quot;Programming Languages&quot;. After installation, restart <a href="http://www.eclipse.org" target="new">Eclipse</a>.</li>
+</ol>
+
+<p>You are now ready to create a project for compiling the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a>.</p>
+
+<ol>
+
+<li>Start <a href="http://www.eclipse.org" target="new">Eclipse</a>, choose &quot;New &rarr; Project...&quot; and then select &quot;SVN &rarr; Project from SVN.&quot;</li>
+
+<li>You will be asked to select an SVN repository. Enter the following settings followed by clicking &quot;Next&quot;:
+<ul>
+<li>URL: <code>https://nairn-mpm-fea.googlecode.com/svn/trunk</code></li>
+<li>User: enter your gmail name for access to <a href="http://code.google.com" target="new">google code</a> (this process is assuming you have been added as a &quot;contributor&quot; to the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a>. You can request to be added by <a href="mailto:John.Nairn@oregonstate.edu">sending email to project owner</a>.</li>
+<li>Password: Enter the password generated for you in the &quot;Profile &rarr; Settings&quot; section when logged onto <a href="http://code.google.com" target="new">google code</a>.</li>
+<li>For anonymous checkout you might be able to omit username and password, but change the URL to begin in <code>http://</code> instead of <code>https://</code>.</li>
+</ul>
+</li>
+
+<li>Choose &quot;Head Revision&quot; for latest version or use date or revision options for older versions and then click &quot;Next.&quot;</li>
+
+<li>In final project dialog, select project with a custom name and enter &quot;nairn-mpm-fea&quot; or any other name you prefer. This name will be used in your <a href="http://www.eclipse.org" target="new">Eclipse</a> workspace folders. When you click to &quot;Finish,&quot; the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a> will be checked out into your <a href="http://www.eclipse.org" target="new">Eclipse</a> workspace.</li>
+
+<li>The checkout has all files, but it not an <a href="http://www.eclipse.org" target="new">Eclipse</a> project. The next step is to select the project in the <a href="http://www.eclipse.org" target="new">Eclipse</a> navigator and choose &quot;New &rarr; Convert to a C/C++ Project. When asked, choose the project to be an &quot;Executable&quot; and choose appropriate tool chain (<a href="http://www.eclipse.org" target="new">Eclipse</a> compiles using outside tools). For Mac choose &quot;MacOS GCC.&quot; For Windows choose &quot;cygwin GCC.&quot; For Linux choose &quot;Linux GCC.&quot;</li>
+
+<li>Reconfigure the project from its default build settings to use the <code>make</code> files provided in the source code:
+<ul>
+<li>Choose the project properties and select &quot;C/C++ Build.&quot;</li>
+<li>Click &quot;Manage Configurations...&quot; and edit until there are two configurations - one named <code>NairnMPM</code> and one named <code>NairnFEA</code>.</li>
+<li>Back in the &quot;C/C++&quot; window, select the <code>NairnMPM</code> configuration and then:
+<ul>
+<li>Uncheck &quot;Use default build command&quot; and change it to be &quot;<code>make SYSTEM=mac</code>&quot; (for MacOS) or &quot;<code>make SYSTEM=cygwin</code>&quot; (for Windows). The default setting can be left in place for Linux.</li>
+<li>Uncheck the &quot;Generate Makefiles automatically&quot;, click &quot;Workspace...&quot; and select <code>nairn-mpm-fea/NairnMPM/build</code> as the build directory.</li>
+</ul>
+</li>
+<li>Select the <code>NairnFEA</code> configuration and repeat the previous step (except choose the <code>nairn-mpm-fea/NairnFEA/build</code> directory instead.
+</li>
+</ul>
+</li>
+
+</ol>
+
+<p>The project should now be ready to compile. To verify, set the active configuration (<code>NairnMPM</code> or <code>NairnFEA</code>) and then choose build. The progress should appear in the console. When done the executable will be installed in <code>nairn-mpm-fea/NairnMPM/input</code> or in <code>nairn-mpm-fea/NairnFEA/input</code>. Once the code is compiled, do a <a href="../running/index.html">test run</a> to verify it worked.</p>
+
+<p>You might be able to run from Eclipse, but a better approach is probably to run the compiled code by <a name="nairnviz.html#nairnfeampm">using <b>NairnFEAMPM</b></a> (on MacOS X computers) or by <a href="nairnviz.html#nairnviz">using the <b>NairnFEAMPMViz</b> Java application</a> (all other platforms). By this approach, the development process would be:</p>
+
+<ol>
+
+<li>Make changes to the code and then build the executables.</li>
+
+<li>Start <a href="nairnviz.html#nairnfeampm"><b>NairnFEAMPM</b></a> or the <a href="nairnviz.html#nairnviz"><b>NairnFEAMPMViz</b> Java application</a> and run calculations using the new compiled executables. For this process to use the new executables, you should set the application preferences to point to the executables and <code>DTD</code> files in your  <a href="http://www.eclipse.org" target="new">Eclipse</a> workspace.</li>
+
+<li>When a new version of the code is available, right click (control click on Mac) on the project and choose &quot;Team &rarr; Update.&quot; You are ready to re-build and run.</li>
+
+<li>If you are certified as a project committer, save your changes by right clicking (or control clicking on Mac) on the project name and choosing &quot;Team &rarr; Commit...&quot;</li>
+</ol>
+
+<a name="linux"></a><h1>Specific Linux Systems</h1>
+
+<p>The code can easily be compiled on any Linux system with a c++ compiler and with <code>xerces</code> already installed. Below are details on specific systems that are already set up for compilation and are currently in use for <code>NairnMPM</code> and <code>NairnFEA</code>. See the section on <a href="#other">other systems</a> for compilation on other Linux/Unix systems.
+</p>
+
+<p>On the following specific Linux systems, the source code is set up for easy compilation and <code>xerces</code> is already installed. All you need to do is you the proper variable argument in the <code>make</code> command. The details are:</p>
+
+<a name="carbon"></a><h2>Carbon/Hedera Cluster (Oregon State University)</h2>
+
+<p>If you are using the Carbon/Hedera cluster in the <a href="http://www.oregonstate.edu/">Oregon State University</a>, <a href="http://woodscience.oregonstate.edu//">Wood Science &amp; Engineering Department</a>, use a simple make command. This system is the default system from compiling the code. The commands are
+</p>
+<pre>
+cd nairn-mpm-fea/NairnMPM/build
+make
+</pre>
+
+<p>or</p>
+
+<pre>
+cd nairn-mpm-fea/NairnFEA/build
+make
+</pre>
+
+<a name="cluster2"></a><h2>Cluster2 (University of Utah)</h2>
+
+<p>If you are using cluster2 in <a href="http://www.eng.utah.edu/~gdsmith/">Grant Smith's group</a> at the <a href="http://www.utah.edu/">University or Utah</a>, the commands are:
+</p>
+<pre>
+cd nairn-mpm-fea/NairnMPM/build
+make SYSTEM=cluster2
+</pre>
+
+<p>or</p>
+
+<pre>
+cd nairn-mpm-fea/NairnFEA/build
+make SYSTEM=cluster2
+</pre>
+
+<a name="inferno"></a><h2>Inferno (University of Utah)</h2>
+
+<p>If you are using Inferno in the <a href="http://www.utah.edu/">University or Utah</a>, <a href="http://www.csafe.utah.edu/">CSAFE Group</a>, the commands are:
+</p>
+<pre>
+cd nairn-mpm-fea/NairnMPM/build
+make SYSTEM=inferno
+</pre>
+
+<p>or</p>
+
+<pre>
+cd nairn-mpm-fea/NairnFEA/build
+make SYSTEM=inferno
+</pre>
+
+
+<h2><a name="cdmake"></a>Compilation on All Above Linux Systems
+</h2>
+
+<p>The commands for the above system will compile all source code and install the executables in <code>nairn-mpm-fea/NairnMPM/input</code> or <code>nairn-mpm-fea/NairnFEA/input</code>, respectively. Once the code is compiled, do a <a href="../running/index.html">test run</a> to verify it worked.
+</p>
+
+<a name="other"></a><h1>Other Systems</h1>
+
+<p>Compiling on any Linux/Unix system should be straightforward, with the most difficult step usually being installing and linking to the <code>xerces</code> library. The key steps needed for successful compilation:</p>
+
+<ol>
+<li>Use a compatible <code>C++</code> compiler. The code has been tested with at least <code>gcc 3.2</code> through <code>gcc 4.3.1</code>). It is possible other compilers will need minor changes for compilation.</li>
+
+<li>Validation and parsing of the <code>XML</code> files are handled using free third party software from the <a href="http://www.apache.org/">Apache Software Foundation</a> called the
+<a href="http://xml.apache.org/xerces-c/index.html"><code>xerces</code> validating XML parser</a>. You will need to download <code>xerces</code> and install it on your system. It is available in <a href="http://xml.apache.org/xerces-c/install.html">binary installs</a> for some systems (<i>e.g.</i>, Linux and Windows). For others systems (<i>e.g.</i>, MacOS X) you need to download the source code and <a href="http://xml.apache.org/xerces-c/build.html">build</a> it. Since revision 274 of the <code>nairn-mpm-fea</code> project, the codes require <code>xerces 3.0</code> or newer. Prior to this revision, the codes requied <code>xerces 2.8</code> or older. Unfortunately, the new versions of <code>xerces</code> are not compatible with the older ones.
+</li>
+
+<li>Compiling of <code>NairnMPM</code> or <code>NairnFEA</code> needs access to all the <code>xerces</code> header files. These are provided in the <code>xerces</code> source code downloads. Even iff your system has the xerces binary installed, it may not have the header files. You can get them by  <a href="http://xml.apache.org/dist/xerces-c/stable/">downloading the xerces source code</a>, even though you will not need to build it.</li>
+
+</ol>
+
+<p>Once a suitable compiler, the <code>xerces</code> binary, and <code>xerces</code> header files are installed, compilation may require editing the <code>makefile</code>s in the <code>nairn-mpm-fea</code> folders. Specifically, you will need to edit the <code>makefile</code>s in the <code>build</code> directories (<code>NairnMPM</code> and <code>NairnFEA</code>) and set the following variables:</p>
+
+<ol>
+<li>The variable <code>CC</code>: set it to the desired <code>C++</code> compiler.</li>
+<li>The variable <code>xercesSo</code>: set it to the path name to the <code>xerces</code> library binary file.</li>
+<li>The variable <code>headersPath</code>: set it to the path name to the folder containing the <code>xercesc</code> folder of header files.</li>
+</ol>
+
+<p>After setting the variables, use a standard <code>make</code> command to compile the code.
+Once the code is compiled, do a <a href="../running/index.html">test run</a> to verify it worked.
+If it compiles, but will not load the <code>xerces</code> library at runtime, you will have to find the system-dependent method to provide the path to the <code>xerces</code> library and make sure the system can find the <code>xerces</code> library.</p>
+
+<p>If you successfully get the code compiled and running on a system that is not listed above, please send email to <a href="mailto:John.Nairn@oregonstate.edu">John.Nairn@oregonstate.edu</a> with the system name and step-by-step instructions for compiling and running the code.</p>
+
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+Getting Started
+</p>
+
+</body>
+</html>

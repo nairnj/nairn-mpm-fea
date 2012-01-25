@@ -1,0 +1,65 @@
+<?xml version='1.0'?>
+<!DOCTYPE JANFEAInput SYSTEM "/Users/dnairn/Desktop/John/NairnCode/NairnMPM/input/NairnMPM.dtd"
+[
+ <!ENTITY fileroot 'Results/template.'>
+]>
+<JANFEAInput version='3'>
+
+<!-- MPM analysis template
+-->
+
+  <Header>
+    <Description>
+Title: MPM Analysis
+User Name: User Name
+    </Description>
+    <Analysis>11</Analysis>
+  </Header>
+
+  <MPMHeader>
+    <ArchiveTime>1e-02</ArchiveTime>
+    <MaxTime>0.6</MaxTime>
+    <ArchiveRoot>&fileroot;</ArchiveRoot>
+    <MPMArchiveOrder>mYYYYYNYYYNNY</MPMArchiveOrder>
+    <CrackArchiveOrder>mYNN</CrackArchiveOrder>
+    <Damping>50</Damping>
+    <GlobalArchiveTime>1e-2</GlobalArchiveTime>
+    <GlobalArchive type='sxx'/>
+    <GlobalArchive type='exx'/>
+    <GIMP/>
+   </MPMHeader>
+
+  <Mesh>
+    <Grid xmin="-20" xmax="100" ymin="-5" ymax="25">
+      <Horiz cellsize="5"/>
+      <Vert cellsize="5"/>
+    </Grid>
+  </Mesh>
+
+  <MaterialPoints>
+    <Body mat="1" angle="0" thick="5" vx="0" vy="0">
+      <Rect xmin="0" xmax="100" ymin="0" ymax="20"/>     
+    </Body>
+  </MaterialPoints>
+
+  <Material Type="1" Name="Isotropic Material">
+    <rho>1.5</rho>
+    <E>1e-02</E>
+    <nu>0.33</nu>
+    <alpha>60</alpha>
+  </Material>
+
+  <GridBCs>
+    <BCLine x1="max+" y1="min" x2="max+" y2="max" tolerance="*1">
+      <DisBC dir="1" disp="0"/>
+    </BCLine>
+  </GridBCs>
+
+  <ParticleBCs>                            
+    <BCLine x1="0" x2="0" y1="-5" y2="25" tolerance="*.3">       
+      <LoadBC dir="1" style="2" load="-6.25e-5" ftime="0.0"/> 
+      <LoadBC dir="1" style="2" load="6.25e-5" ftime="100.0"/> 
+    </BCLine>
+  </ParticleBCs> 
+
+</JANFEAInput>

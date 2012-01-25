@@ -1,0 +1,312 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>Grid Boundary Conditions in MPM</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+<h1>Grid Boundary Conditions in MPM</h1>
+
+<p>Several types of boundary conditions can be set on the MPM background grid. For example, grid points can have
+specified velocities. Zero velocity boundary conditions set up barriers to prevent particles from leaving the grid.
+Non-zero velocity can control motion of particles near those nodes. When a <a href="cracks.html">crack</a> is near
+a grid-based velocity condition, the condition only affects particles on the same side of the crack as the node
+(it is probably better to avoid cracks near boundary conditions). Besides velocity conditions, grid-based conditions
+can also control temperature and concentration.</p>
+
+<p>Grid-based boundary conditions are normally only useful for small-displacement problems.
+The problem with large displacement problems is that particles may move away from the boundary
+conditions and the conditions will no longer have an influence.
+</p>
+
+<p>All grid-based boundary conditions must be set up within a single <code>&lt;GridBCs&gt;</code> element. The format is
+
+<pre>
+&lt;GridBCs&gt;
+   &lt;BCLine units='mm' x1="0" y1="0" x2="100" y2="0" tolerance="0.1"&gt;
+      &lt;DisBC dir='1' vel='0' style='1' time='0.0'/&gt;
+      &lt;DisBC dir='2' vel='0'/&gt;
+         ...
+      &lt;ConcBC value='0' style='1' time='0.0'/&gt;
+         ...
+      &lt;TempBC value='0' style='1' time='0.0'/&gt;
+   &lt;/BCLine&gt;
+   
+   &lt;DisplacementBCs&gt;
+      &lt;fix node='4' dof='1' style='1' time='0.0'&gt;velocity&lt;/fix&gt;
+      &lt;fix node='1' dof='1'&gt;velocity&lt;/fix&gt;
+         ...
+   &lt;/DisplacementBCs&gt;
+&lt;/GridBCs&gt;
+</pre>
+
+<p>There are two ways to specify grid boundary conditions. The most common approach is to
+<a href="#sec2">generate</a> boundary conditions using one or more shape commands
+(like <code>&lt;BCLine&gt;</code> above) to select nodes and assign specified
+<a href="#vel">velocity</a>, <a href="#temp">temperature</a>, and/or <a href="#conc">concentration</a> conditions
+to those nodes. The other way is to <a href="#sec1">explicitly</a> list each grid point.
+This method is shown in the <code>&lt;DisplacementBCs&gt;</code> section above; it is limited to
+velocity conditions, and is usually generated with other software. You can use both shape commands
+and a <code>&lt;DisplacementBCs&gt;</code> section in the same input file.
+You can apply more than one condition to a node and the resulting boundary condition will be a
+superposition of all assigned conditions.
+</p>
+
+
+<p>Grid boundary conditions are typcially placed on grid elements, on, or outside the body defined by the
+material points. When using <a href="mpmheader.html#gimp">GIMP</a> methods, a particle near the
+boundary will interact with the boundary conditions, but may also interact with nodes beyond a
+single row of boundary conditions. To prevent non-physical results from the extra nodes that
+are physcially outside the body, it may be necessary to set up two rows (or columns) of
+boundary conditions. For example, to have a rigid wall, set the velocity of two rows (or columns)
+or nodes to be zero. An alternative solution is to fill a boundary area with
+<a href="definematl.html#rigid">rigid particles</a>. Rigid particle automatically create the required
+boundary conditions on two rows (or columns) of nodes.
+</p>
+
+<a name="sec2"></a><h2>Generated Grid Boundary Conditions</h2>
+
+<p>Grid boundary conditions can be generated within one or more shape structures each of which defines
+a shape within the grid. All grid points defined by that shape will be assigned the selected
+boundary conditions subordinate to that element. 2D and 3D calculations use different shapes.
+The possible 2D shape commands are:
+
+<pre>
+   &lt;LdRect xmin='18.5' xmax='20' ymin='-12' ymax='12'&gt;
+      ...      
+   &lt;/LdRect&gt;
+      
+   &lt;BCLine x1='0' y1="0" x2='100' y2='0' tolerance='0.1'&gt;
+      ...
+   &lt;/BCLine&gt;
+   
+   &lt;BCArc x1='0' y1='0' x2='100' y2='0' start='0' end='90' tolerance='0.1'&gt;
+      ...
+   &lt;/BCArc&gt;
+</pre>
+   
+<p>The possible 3D shape commands are:
+
+<pre>
+   &lt;BCBox xmin='18.5' xmax='20' ymin='-12' ymax='12' zmin='0' zmax='10'&gt;
+      ...      
+   &lt;/BCBox&gt;
+</pre>
+
+
+<p>where</p>
+
+<dl>
+
+<dt>xmin, xmax, ymin, ymax, zmin, zmax</dt>
+<dd>These attributes define the extent of a rectangle (2D) or box (3D) (they can be entered with numeric values or <a href="#minmax">relative to the mesh edges</a>).
+An optional <a href="mpmheader.html#units"><code>units</code> attribute</a> can specify the length units for all settings.
+All nodes that fall within the rectangle or box will be assigned the boundary conditions of
+the subordinate elements.</dd>
+
+<dt>(x1,y1) to (x2,y2)</dt>
+<dd>These attributes define the end points of a line (in <code>BCLine</code>) or corner points of
+an oval (in <code>BCArc</code>) (they can be entered with numeric values or <a href="#minmax">relative to the mesh edges</a>).
+An optional <a href="mpmheader.html#units"><code>units</code> attribute</a> can
+specify the length units for all settings. All nodes that fall within <code>tolerance</code> of the
+line (for <code>BCLine</code>) or the arc (for <code>BCArc</code>) will be assigned the boundary
+conditions of the subordinate elements. 
+The arc will trace the oval defined by the points over
+angles from <code>start</code> to <code>end</code> in the counter-clockwise direction
+where <code>start=0</code> is along the <code>x</code> axis</dd>
+
+<dt>start, end</dt>
+<dd>The start and end angles (in degrees) for <code>BCArc</code> shapes. The arc is traced in the
+counter-clockwise direction with angle = 0 being along the <code>x</code> axis.</dd>
+
+<dt>tolerance</dt>
+<dd>This number defines the maximum distance from the line to the node for that node to be assigned
+boundary conditions (an optional <a href="mpmheader.html#units"><code>units</code> attribute</a> can
+specify the length units). You can optionally use the format <code>'*0.5'</code> to set
+the tolerance to any factor <i>times</i> the minimum cell dimension in the current mesh.
+Normally the lines will be along mesh lines and this attribute can be omitted.
+When omitted, it is automatically set to an appropriate value for the current mesh.</dd>
+
+</dl>
+
+<p>The elements subordinate to the shape commands can assign <a href="#vel">velocity</a>,
+<a href="#temp">temperature</a>, and/or <a href="#conc">concentration</a> boundary conditions.
+Any combination of types of boundary conditions can be used within a single shape.
+<p>
+
+<h3><a name="minmax"></a>Relative Grid Locations</h3>
+
+<p>Rather than hard code positions for boundary conditions or shapes that define material points, any coordinate (<i>e.g.</i>, an entry for <code>x1</code>, <code>x2</code>, <code>xmin</code>, <code>xmax</code>, <i>etc.</i>) can be the text <code>'min'</code>, <code>'max'</code>, <code>'min-3'</code>, <code>'min+1.2'</code>, <code>'max-3.8'</code>, or <code>'max+2'</code>, meaning the minimum, the maximum, or a specified number of cells relative to the minimum or maximum of the current mesh. For GIMP
+calculations <code>'min'</code> and <code>'max'</code> will be limits of useable mesh while
+<code>'min-1'</code> and <code>'max+1'</code> will be limits to the total mesh. For backward compatibility, <code>min+</code>, <code>min-</code>, <code>max+</code>, and <code>max-</code> refer to plus or minus one cell from the minimum or maximum of the current mesh.</p>
+
+<a name="vel"></a><h2>Generated Velocity Conditions</h2>
+
+<p>Velocity conditions subordinate to a shape command are created using:
+</p>
+
+<pre>
+   &lt;DisBC dir='1' vel='0' style='1' time='0.0' angle='0.0' function='sin(t)'/&gt;
+</pre>
+
+<p>where</p>
+
+<dl>
+<dt>dir</dt>
+<dd>Determines if the <code>x</code> direction (<code>dir=1</code>), the <code>y</code> direction (<code>dir=2</code>), or the <code>z</code> direction (<code>dir=3</code>) will have the specified velocity. For 2D calculations the velocity can be set to a skewed direction in the <code>x</code>-<code>y</code> plane by setting <code>dir=0</code>.  When using a skewed direction, specify the angle of the direction in the <code>angle</code> attribute (see below)
+</dd>
+
+<dt>vel</dt>
+<dd>Defines the <code>value</code> of the velocity in mm/sec or mm/sec/ms. A zero velocity can be used to set fixed nodes.</dd>
+
+<dt>style</dt>
+<dd>Defines the style of the imposed velocity. The options are listed <a href="#style">below</a>. This attribute is optional; when omitted, the default value is 1.</dd>
+
+<dt>time</dt>
+<dd>Defines a parameter used in some styles defined <a href="#style">below</a>.
+This attribute is optional; when omitted, the default value is 0.0.</dd>
+
+<dt>angle</dt>
+<dd>Clockwise angle (in degrees) from the positive <code>x</code> axis for skewed velocity direction when <code>dir=0</code>. Angle=0 fixes the <code>x</code> direction, angle=-90 fixes the <code>y</code> direction, and any other angle can fix an arbitrary direction.
+</dd>
+
+<dt>function</dt>
+<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code> (in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, and <code>z</code> in mm). The function should evaluate to velocity in mm/s.
+</dd>
+
+</dl>
+
+<a name="style"></a><h2>Boundary Conditions Styles</h2>
+
+<p>The <code>value</code> (the specified velocity, temperature, or concentration), <code>style</code>, and <code>time</code> attributes for grid-based boundary conditions are used to set the time-dependence of the boundary conditions. The <code>style</code> options are listed below and any number of options can be combined on a single node. When a single node and direction has multiple conditions, the resulting condition will be a superposition of the imposed conditions.</p>
+
+<dl>
+  <dt>Style=1 (constant)</dt>
+  <dd>Set condition to <code>(value)</code> starting at time in <code>(time)</code> attribute. The units for <code>(time)</code> are ms.</dd>
+  
+  <dt>Style=2 (linearly increasing condition)</dt>
+  <dd>Set condition to <code>(value)*[t-(time)]</code> where <code>t</code> is current time (in ms) and and <code>(time)</code> has units ms. The condition starts at time in the <code>(time)</code> attribute.</dd>
+
+  <dt>Style=3 (sine variation)</dt>
+  <dd>Set condition to <code>(value)*sin[t*(time)]</code> where <code>t</code> is current time (in ms) and <code>(time)</code> has units 1/ms.</dd>
+  
+  <dt>Style=4 (cosine variation)</dt>
+  <dd>Set condition to <code>(value)*cos[t*(time)]</code> where <code>t</code> is current time (in ms) and <code>(time)</code> has units 1/ms.</dd>
+  
+  <dt>Style=6 (user-defined function)</dt>
+  <dd>Set condition to the evaluated value of a <a href="function.html">user-defined function</a> of time (in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, and <code>z</code> in mm). If the <code>time</code> attribute is used the condition starts at time in the <code>(time)</code> attribute and the function is evaluated at <code>[t-(time)]</code> (in ms).</dd>
+</dl>
+
+<a name="temp"></a><h2>Generated Temperature Conditions</h2>
+
+<p>When doing conduction calculations, you can set fixed temperatures on the grid. Temperature boundary conditions are ignored unless conduction is activated with a <code>&lt;Conduction/&gt;</code> element in the <a href="thermal.html">Thermal Loading</a> section. Temperature conditions subordinate to a shape element are created using:
+</p>
+
+<pre>
+   &lt;TempBC value='0' style='1' time='0.0' function='sin(t)'/&gt;
+</pre>
+
+<p>where</p>
+
+<dl>
+
+<dt>value</dt>
+<dd>Defines the temperature.</dd>
+
+<dt>style</dt>
+<dd>Defines the style of the imposed concentration. The options are listed <a href="#style">above</a>. This attribute is optional; when omitted, the default value is 1 or a constant temperature.</dd>
+
+<dt>time</dt>
+<dd>Defines a parameter used in some styles defined <a href="#style">above</a>
+This attribute is optional; when omitted, the default value is 0.0.</dd>
+
+<dt>function</dt>
+<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code> (in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, and <code>z</code> in mm). The function should evaluate to the desired temperature.</dd>
+
+</dl>
+
+
+<p>Note that temperatures are scalars and thus do not define a direction for the boundary condition.</p>
+
+<a name="conc"></a><h2>Generated Concentration Conditions</h2>
+
+<p>When doing diffusion calculations, you can set fixed concentrations on the grid (set as a potential from 0 to 1 where 1 is the <a href="definematl.html#csat">saturation concentration</a> of a material type). Concentration boundary conditions are ignored unless diffusion is activated with a <code>&lt;Diffusion/&gt;</code> element in the <a href="mpmheader.html">MPM Header</a>. Concentration conditions subordinate to a shape element are created using:
+</p>
+
+<pre>
+   &lt;ConcBC value='0' style='1' time='0.0' function='sin(t)'/&gt;
+</pre>
+
+<p>where</p>
+
+<dl>
+
+<dt>value</dt>
+<dd>Defines the magnitude of the concentration potential.</dd>
+
+<dt>style</dt>
+<dd>Defines the style of the imposed concentration. The options are listed <a href="#style">above</a>. This attribute is optional; when omitted, the default value is 1 or a constant concentration.</dd>
+
+<dt>time</dt>
+<dd>Defines a parameter used in some styles defined <a href="#style">above</a>
+This attribute is optional; when omitted, the default value is 0.0.</dd>
+
+<dt>function</dt>
+<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code> (in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, and <code>z</code> in mm). The function should evaluate to the a concentration potential.
+</dd>
+
+</dl>
+
+<p>Note that concentrations are scalars and thus do not define a direction for the boundary condition. Also note that if the sum of all concentrations conditions applied to a node is outside the potential range of 0 to 1, it will be truncated to 0 or 1.</p>
+
+<a name="sec1"></a><h2>Explicit Velocity Conditions</h2>
+
+<p>Explicit velocity boundary condition are defined with <code>&lt;fix&gt;</code> elements within a <code>&lt;DisplacementBCs&gt;</code> element. The <code>node</code> attribute determines which node has specified velocity. Because this command requires knowledge of the node numbering, it is usually used in combination with the <a href="definemesh.html"><code>&lt;NodeList&gt;</code></a> and <a href="definemesh.html"><code>&lt;ElementList&gt;</code></a> methods to define the mesh. The format for a <code>&lt;fix&gt;</code> is:
+</p>
+
+<pre>
+   &lt;fix node='4' dof='1' style='1' time='0.0' angle='0.0'&gt;velocity&lt;/fix&gt;
+</pre>
+
+<p>where</p>
+
+<dl>
+<dt>velocity</dt>
+<dd>The text of the <code>&lt;fix&gt;</code> tag is the <code>value</code> of the fixed velocity in mm/sec or in mm/sec/ms. When using an arbitrary function (see <code>Style=6</code> below) the text of the tag should be the a <a href="function.html">user-defined function</a> of <code>t</code> (in ms) that evaluates to velocity in mm/s.
+</dd>
+
+<dt>dof</dt>
+<dd>Determines if the <code>x</code> direction (<code>dof=1</code>), the <code>y</code> direction (<code>dof=2</code>), or the <code>z</code> direction (<code>dof=3</code>) will have the specified velocity. For 2D calculations the velocity can be set to a skewed direction in the <code>x</code>-<code>y</code> plane by setting <code>dof=0</code>.  When using a skewed direction, specify the angle of the direction in the <code>angle</code> attribute (see below)
+</dd>
+
+<dt>style</dt>
+<dd>Determines the time dependence of the boundary condition. The possible styles are defined <a href="#style">above</a>. If this attribute is omitted, it is assumed to be 1.
+</dd>
+
+<dt>time</dt>
+<dd>A time parameter used for various <a href="#style">styles</a> described in the next section. If this attribute is omitted, it is assumed to be 0.0.
+</dd>
+
+<dt>angle</dt>
+<dd>Clockwise angle (in degrees) from the positive <code>x</code> axis for skewed velocity direction when <code>dof=0</code>. Angle=0 fixes the <code>x</code> direction, angle=-90 fixes the <code>y</code> direction, and any other angle can fix an arbitrary direction.
+</dd>
+</dl>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+</body>
+
+</html>
