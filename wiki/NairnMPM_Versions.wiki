@@ -21,7 +21,11 @@ The version number is coded in the constructor of the `NairnMPM.cpp` class:
 NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions currently in this project are as follows:
 
   * Current trunk Version
-    * Working on NairnMPM 8.1.0
+    * Working on NairnMPM 8.5.0
+    * Added Johnson-Cook material (verification in progress).
+
+  * Release-3.0 (25 JAN 2012)
+    * Has NairnMPM 8.1.0
     * Converted to using Xerces 3.1.1 and must link to 3.x or newer because new Xerces is not compatible with Xerces 2.8 or older.
     * Converted all `longs` to `ints` to avoid any potential machine-dependent issues in 64 bit compiles (NairnMPM can compile as 32 bit or 64 bit, and must match Xerces library bits)
     * Found bug in some 2D contact depending on machine/compiler combination and how they treated un-initialized doubles.
