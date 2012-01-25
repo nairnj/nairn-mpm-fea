@@ -315,7 +315,9 @@ For a special case, consider an isotropic material with isotropic hardening, a s
 \begin{equation}
       f = \|\dev\| - \sqrt{2\over3} K(\alpha)
 \end{equation}
-where $\dev$ is the deviatoric stress tensor and $K(\alpha)$ defines the tensile yield stress as a function of the hardening variable and possibly other variables. In terms of total stresses,
+where $\dev$ is the deviatoric stress tensor and $K(\alpha)$ defines the tensile yield stress as a function of the hardening variable and possibly other variables ({\it e.g.}, plastic strain rate or temperature, but not pressure). All materials that fit this mold are handled in {\tt NairnMPM} by the {\tt IsoPlasticity} class and often only need minimal coding to implement its yield stress function.
+
+In terms of total stresses,
 \begin{eqnarray}
      2J_2 = \|\dev\|^2 & = & {1\over 3}\Bigl( (\s{xx}-\s{yy})^2 + (\s{xx}-\s{zz})^2  + (\s{yy}-\s{zz})^2 \Bigr) + 2\tau_{xy}^2 + 2\tau_{xz}^2 + 2\tau_{yz}^2 \\
          & = & {2\over3}\Bigl( \s{xx}^2 + \s{yy}^2 + \s{zz}^2 - \s{xx}\s{yy} - \s{xx}\s{zz} - \s{yy}\s{zz}\Bigr) + 2\tau_{xy}^2 + 2\tau_{xz}^2 + 2\tau_{yz}^2
@@ -357,7 +359,19 @@ This can be solved in the iterative method above with the specific results of:
 \end{eqnarray}
 where $K'(\alpha^{(k)})$ is the derivative with respect to $\alpha$. A subclass of \code{IsoPlasticity} class can implement this numerical solution simply by providing for calculation of $K(\alpha^{(k)})$ (in \code{GetYield()}) and $\sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda}$ (in \code{GetKPrime()}).
 
-For certain hardening laws, $\lambda$ can be found in a closed-form expression. For example, if $K(\alpha)=\sigma_Y + E_p\alpha$, the task is to solve
+The solution for $\lambda$ is found numerically. The base class uses Newton's method with bracketing; the bracketing is needed because some yield functions are unstable by the unbracketed Newton's method. The solution is done in {\tt SolveForLambdaBracketed()} as follows:
+
+\begin{enumerate}
+
+\item The result for $\lambda=0$ is known to have $f>0$.
+
+\item Set the plastic strain rate $d\alpha/dt$ to 1 sec$^{-1}$ where $dt$ is time step and then trial $\lambda=d\alpha/\sqrt{2/3}$.
+
+\item Evaluate $f$; if it is negative, $\lambda$ is between current value and previous order of magnitude; if it is positive, increase the strain rate by a factor or 10 and go back to beginning of this step.
+
+\end{enumerate}
+
+If any subclass material can bracket the solution faster (or find the solution with an unbracketed method), it can override {\tt SolveForLambdaBracketed()} and provide a new method (which may be as simple as calling the unbracketed method in {\tt SolveForLambda()} or devising a better bracketing method in {\tt BracketSolution()}). For example, linear hardening laws, $\lambda$ can be found in a closed-form expression --- when $K(\alpha)=\sigma_Y + E_p\alpha$, the task is to solve
 \begin{equation}
       f =  \|\dev_{trial}\| - \lambda 2G -  \sqrt{2\over3} \left(\sigma_Y + E_p\left(\alpha^{0}+ \lambda \sqrt{2\over3}\right)\right) = 0
 \end{equation}
@@ -418,7 +432,7 @@ The \code{IsoPlasticity} class (and its subclasses) and based on $K$ and $G$ (in
        \code{psLr2G} & = & {\nu\over 1-\nu} ={{K\over 2G} - {1\over 3} \over {K\over 2G} + {2\over 3}} \\
        \code{psKred} & = & {E\over 3(1-\nu)} = K*\code{psRed} = {K \over {K\over 2G} + {2\over 3}}
 \end{eqnarray}
-Note that plane stress analysis assumes incrementally linear-elastic response (although the linear terms can depend on particle state) and also needs to know \code{psRed}  \emph{before} finding the pressure change. Materials that override \code{LoadMechanicaProps()} must calculate \code{psRed}, \code{psLr2G}, and \code{psKred} along with \code{Kred} and \code{Gred}. Materials the override \code{GetPressureChange()} instead will need to deal with these terms differently. For such materials, the incremental volumetric strain passed to \code{GetPressureChange()} depends on \code{psRed} (see Eq.~(\ref{psDelV})). The best approach is to set $\code{psRed}=1$ and then scale \code{delV} by the current $(1-2\nu)/(1-\nu)$ in \code{GetPressureChange()}. That method should then leave $\code{psRed}=1$ (because it is no longer needed) and calculate \code{psLr2G} (for normal stress update) and \code{psKred} (for finding $\lambda$) needed in subsequent calculations. It should also calculate \code{Gred}, but \code{Kred} is not needed.
+Note that plane stress analysis assumes incrementally linear-elastic response (although the linear terms can depend on particle state) and also needs to know \code{psRed}  \emph{before} finding the pressure change. Materials that override \code{LoadMechanicaProps()} must calculate \code{psRed}, \code{psLr2G}, and \code{psKred} along with \code{Kred} and \code{Gred}. Materials that override \code{GetPressureChange()} instead will need to deal with these terms differently. For such materials, the incremental volumetric strain passed to \code{GetPressureChange()} depends on \code{psRed} (see Eq.~(\ref{psDelV})). The best approach is to set $\code{psRed}=1$ and then scale \code{delV} by the current $(1-2\nu)/(1-\nu)$ in \code{GetPressureChange()}. That method should then leave $\code{psRed}=1$ (because it is no longer needed) and calculate \code{psLr2G} (for normal stress update) and \code{psKred} (for finding $\lambda$) needed in subsequent calculations. It should also calculate \code{Gred}, but \code{Kred} is not needed.
 
 When $f>0$, the process (following Simo and Hughes), effectively (or equivalently) revises $f$ using squares to be
 \begin{equation}
@@ -510,9 +524,9 @@ This analysis follows the plane strain section except includes direct updates fo
 
 \subsection{Examples of $J_2$ Flow Theory Materials}
 
-From the previous sections, analysis with materials that can use $J_2$ flow theory only require code implementation of the yield stress ($K(\alpha)$) and its derivatives. For plane strain or 3D, the code only needs $\sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda}$. To handle plane stress as well, the code needs ${1\over3}{dK^2(\alpha^{(k)})\over d\lambda}$. When evaluation in plane strain or 3D code $\alpha'(\lambda) = \sqrt{2/3}$ and $\dot{\varepsilon}_p'(\lambda) = \sqrt{2/3}/dt$. where $dt$ is the time step. In plane stress code $\alpha'(\lambda) = \sqrt{2/3}\|\dev\|$ and $\dot{\varepsilon}_p'(\lambda) = \sqrt{2/3}\|\dev\|/dt$
+From the previous sections, analysis with materials that can use $J_2$ flow theory only require code implementation of the yield stress ($K(\alpha)$) and its derivatives. For plane strain or 3D, the code only needs $\sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda}$. To handle plane stress as well, the code needs ${1\over3}{dK^2(\alpha^{(k)})\over d\lambda}$. When the yield stress depends on strain rate, $\dot{\varepsilon}_p = d\alpha/dt$ where $dt$ is the time step. When evaluating in plane strain or 3D code $\alpha'(\lambda) = \sqrt{2/3}$ and $\dot{\varepsilon}_p'(\lambda) = \sqrt{2/3}/dt$. In plane stress code $\alpha'(\lambda) = \sqrt{2/3}\|\dev\|$ and $\dot{\varepsilon}_p'(\lambda) = \sqrt{2/3}\|\dev\|/dt$
 
-\subsubsection{VonMises Material with Work Hardening}
+\subsubsection{VonMises Material with Non-Linear Work Hardening}
 
 \begin{eqnarray}
    K(\alpha) & = & \sigma_y(1+\beta\alpha)^n \\
@@ -533,6 +547,16 @@ From the previous sections, analysis with materials that can use $J_2$ flow theo
               \left[B n \alpha^{n-1}\left(1+C\ln{\dot{\varepsilon}_p\over \dot{\varepsilon}_0}\right)
                   + {C\over \dot{\varepsilon}_p dt}(A+B\alpha^n)
               \right]  \|\dev\|
+\end{eqnarray}
+
+\noindent This law has numerical issues as $\dot{\varepsilon}_p\to 0$ because the $\ln \dot{\varepsilon}_p$ can cause the yield stress to be nonphysically negative. One solution is to truncate at $\dot{\varepsilon}_{p,min}$ within $\dot{\varepsilon}_0 e^{-1/C} < \dot{\varepsilon}_{p,min} < \dot{\varepsilon}_0$; the lower limit is when the rate term becomes zero and the upper is when it is one. Below $\dot{\varepsilon}_{p,min}$, the rate term can be taken as a constant using that minimum strain rate. The resulting yield functions are
+
+\begin{eqnarray}
+   K(\alpha) & = &  (A+B\alpha^n)\left(1+C\ln{\dot{\varepsilon}_{p,min}\over \dot{\varepsilon}_0}\right)\bigl(1-(T^*)^m\bigr) \\
+   \sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda} & = &  {2\over 3} B n \alpha^{n-1}\left(1+C\ln{\dot{\varepsilon}_{p,min}\over \dot{\varepsilon}_0}\right)
+                   \bigl(1-(T^*)^m\bigr)\\
+   {1\over3}{dK^2(\alpha^{(k)})\over d\lambda} & = & \sqrt{8\over27}B n \alpha^{n-1}(A+B\alpha^n)\left(1+C\ln{\dot{\varepsilon}_{p,min}\over \dot{\varepsilon}_0}\right)^2
+                   \bigl(1-(T^*)^m\bigr)^2   \|\dev\|
 \end{eqnarray}
 
 \subsection{Anisotropic Plane Strain Analysis}
