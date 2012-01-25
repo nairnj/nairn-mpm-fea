@@ -136,6 +136,13 @@ as a special case.</td>
 </tr>
 
 <tr>
+<td><a href="#JC"><code>JohnsonCook</code></a></td>
+<td>16</td>
+<td width="50%">Isotropic Johnson-Cook material with a rate- and temperature-dependent yield stress</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
 <td><a href="#bistab"><code>Bistable</code></a></td>
 <td>10</td>
 <td width="50%">Elastic, isotropic material with two stable states and reversible or irreversible transitions between the two states</td>
@@ -1098,7 +1105,65 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <p>The three history variables are the cummulative equivalent plastic strain (absolute) defined as the sum of
 <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>, the current rate- and temperature-dependent yield stress (Y<sub>T</sub>) in MPa, and the current equivalent plastic strain rate (d&epsilon;<sub>p</sub>/dt in 1/sec). These variables can be archived as history variables 1, 2, and/or 3.</p>
-    
+
+<a name="JC"></a><h2>Johnson-Cook Material</h2>
+
+<p>The material type is <code>Type=16</code>. This material is isotropic with rate- and temperature-dependent plasticity. The material properties are:
+</p>
+
+<dl>
+
+<dt>&lt;Ajc&gt;90&lt;/Ajc&gt;</dt>
+<dd>The initial yield stress at reference rate and temperature. It has units MPa.</dd>
+
+<dt>&lt;Bjc&gt;292&lt;/Bjc&gt;</dt>
+<dd>Hardening term in the yield stress. It has units MPa.</dd>
+
+<dt>&lt;njc&gt;0.31&lt;/njc&gt;</dt>
+<dd>Exponent for power-law hardening term. It is dimensionless.</dd>
+
+<dt>&lt;Cjc&gt;0.025&lt;/Cjc&gt;</dt>
+<dd>Coefficient for rate-dependent term. It is dimensionless</dd>
+
+<dt>&lt;ep0jc&gt;1&lt;/ep0jc&gt;</dt>
+<dd>Reference strain rate for reference yield stress in <code>Ajc</code>. It has units sec<sup>-1</sup>.</dd>
+
+<dt>&lt;Tmjc&gt;1356&lt;/Tmjc&gt;</dt>
+<dd>The material's melting point. It has units degree K.</dd>
+
+<dt>&lt;mjc&gt;1.09&lt;/mjc&gt;</dt>
+<dd>Exponent in the thermal term. It is dimensionless.</dd>
+
+<dt>Isotropic Properties</dt>
+<dd>Enter all constituitive properties required for an <a href="#iso">isotropic material</a>.
+</dd>
+
+<dt>Other Properties</dt>
+<dd>Enter density, &rho;, and other properties in <a href="#common">properties common to all materials</a>.
+</dd>
+</dl>
+
+<p>This material yields when <code>f=0</code> according to the empirical plastic potential
+</p>
+<blockquote>
+     f = ||s|| - sqrt(2/3) * &sigma;<sub>Y</sub>
+</blockquote>
+<p>where <code>||s||</code> is the deviatoric or flow stress and the yield stress is given by the hardening law:
+</p>
+<blockquote>
+     &sigma;<sub>y</sub> = (Ajc + Bjc &epsilon;<sub>p</sub><sup>njc</sup>) [1 + Cjc ln(d&epsilon;<sub>p</sub>/ep0jc) ] (1 - Tr<sup>mjc</sup>)
+</blockquote>
+<p>where &epsilon;<sub>p</sub> is equivalent plastic strain, d&epsilon;<sub>p</sub> is plastic strain rate, and the reduced temperature (Tr) is given by</p>
+<blockquote>
+     Tr = (T - T<sub>0</sub>) / (Tmjc - T<sub>0</sub>)
+</blockquote>
+<p> and T<sub>0</sub> is the current <a href="mpmheader.html#stressfreetemp">stress free temperature</a>. See G. R. Johnson and W. H. Cook, &quot;A constitutive model and data for metals subjected to large strains, high strain rates ad high temperatures&quot; (<i>Proceedings of the 7th International Symposium on Ballistics</i>, 541-547 (1983)) for details.
+</p>
+
+<h3>History Data for Johnson-Cook Material</h3>
+
+<p>The one history variable is the cummulative equivalent plastic strain, <code>&alpha;</code>, defined as the sum of <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>. This variable can be archived as history variable 1.</p>
+
 <p class="links">
 <a href="../index.html">Home</a> &rarr;
 <a href="index.html#feacontents">FEA XML File Contents</a> /

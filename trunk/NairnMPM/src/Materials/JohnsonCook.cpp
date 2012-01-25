@@ -11,8 +11,6 @@
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Exceptions/CommonException.hpp"
 
-#include "NairnMPM_Class/NairnMPM.hpp"
-
 #pragma mark JohnsonCook::Constructors and Destructors
 
 // Constructors
