@@ -160,7 +160,7 @@
 				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd
 				| yldxx | yldyy | yldzz | yldxy | yldxz | yldyz | Khard | nhard | color | betahard
 				| Bjc | njc | Cjc | ep0jc | C0 | S1 | S2 | GPpG0 | GTpG0 | gamma0
-				| Uk | YP | Friction | tempC1 | tempC2 )* >
+				| Uk | YP | Friction | tempC1 | tempC2 | Ajc | mjc | Tmjc )* >
 <!ATTLIST	Material
 			Type (1|2|3|4|5|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21) #REQUIRED
 			Name CDATA #REQUIRED>
@@ -350,10 +350,13 @@
 <!ELEMENT	Ep (#PCDATA)>
 <!ELEMENT	Khard (#PCDATA)>
 <!ELEMENT	nhard (#PCDATA)>
+<!ELEMENT	Ajc (#PCDATA)>
 <!ELEMENT	Bjc (#PCDATA)>
 <!ELEMENT	njc (#PCDATA)>
 <!ELEMENT	Cjc (#PCDATA)>
 <!ELEMENT	ep0jc (#PCDATA)>
+<!ELEMENT	mjc (#PCDATA)>
+<!ELEMENT	Tmjc (#PCDATA)>
 <!ELEMENT	EA (#PCDATA)>
 <!ELEMENT	ET (#PCDATA)>
 <!ELEMENT	GA (#PCDATA)>

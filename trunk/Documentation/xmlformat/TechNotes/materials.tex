@@ -508,6 +508,33 @@ The special hardening laws that allow a closed-form expression in plane strain w
 
 This analysis follows the plane strain section except includes direct updates for $\e{zz}$, $\gamma_{xz}$, $\gamma_{yz}$, $\tau_{xz}$, and $\tau_{yz}$. Also the $z$ direction strain increment is $d\varepsilon_{zz}^{(tot)} = d\varepsilon_{zz} - d\er{}$.
 
+\subsection{Examples of $J_2$ Flow Theory Materials}
+
+From the previous sections, analysis with materials that can use $J_2$ flow theory only require code implementation of the yield stress ($K(\alpha)$) and its derivatives. For plane strain or 3D, the code only needs $\sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda}$. To handle plane stress as well, the code needs ${1\over3}{dK^2(\alpha^{(k)})\over d\lambda}$. When evaluation in plane strain or 3D code $\alpha'(\lambda) = \sqrt{2/3}$ and $\dot{\varepsilon}_p'(\lambda) = \sqrt{2/3}/dt$. where $dt$ is the time step. In plane stress code $\alpha'(\lambda) = \sqrt{2/3}\|\dev\|$ and $\dot{\varepsilon}_p'(\lambda) = \sqrt{2/3}\|\dev\|/dt$
+
+\subsubsection{VonMises Material with Work Hardening}
+
+\begin{eqnarray}
+   K(\alpha) & = & \sigma_y(1+\beta\alpha)^n \\
+   \sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda} & = & {2\over 3} \sigma_y \beta n (1+\beta\alpha)^{n-1} \\
+   {1\over3}{dK^2(\alpha^{(k)})\over d\lambda} & = & \sqrt{8\over27} \sigma_y^2 \beta n  (1+\beta\alpha)^{2n-1} \|\dev\|
+\end{eqnarray}
+
+\subsubsection{Johnson-Cook}
+
+\begin{eqnarray}
+   K(\alpha) & = &  (A+B\alpha^n)\left(1+C\ln{\dot{\varepsilon}_p\over \dot{\varepsilon}_0}\right)\bigl(1-(T^*)^m\bigr) \\
+   \sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda} & = &  {2\over 3} \left[B n \alpha^{n-1}\left(1+C\ln{\dot{\varepsilon}_p\over \dot{\varepsilon}_0}\right)
+                  + {C\over \dot{\varepsilon}_p dt}(A+B\alpha^n)
+              \right] \bigl(1-(T^*)^m\bigr)\\
+   {1\over3}{dK^2(\alpha^{(k)})\over d\lambda} & = & \sqrt{8\over27}(A+B\alpha^n)\left(1+C\ln{\dot{\varepsilon}_p\over \dot{\varepsilon}_0}\right)
+                   \bigl(1-(T^*)^m\bigr)^2  \nonumber \\
+    && \qquad\qquad\mbox{}
+              \left[B n \alpha^{n-1}\left(1+C\ln{\dot{\varepsilon}_p\over \dot{\varepsilon}_0}\right)
+                  + {C\over \dot{\varepsilon}_p dt}(A+B\alpha^n)
+              \right]  \|\dev\|
+\end{eqnarray}
+
 \subsection{Anisotropic Plane Strain Analysis}
 
 In general plane strain analysis, the matrix equation for update needs an extra term (only needed when there are residual stresses)

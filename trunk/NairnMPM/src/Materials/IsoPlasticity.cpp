@@ -168,8 +168,8 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvx
     }
 	
 	// Find  lambda for this plastic state
-	// Base class finds it numerically, subclass can override if solvable
-	double lambdak = SolveForLambda(mptr,np,strial,&stk,delTime);
+	// Base class finds it numerically, subclass can override if solvable by more efficient methods
+    double lambdak = SolveForLambdaBracketed(mptr,np,strial,&stk,delTime);
 	
 	// Now have lambda, finish update on this particle
 	if(np==PLANE_STRESS_MPM)
@@ -340,9 +340,9 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvz
 	}
 	
 	// Find direction of plastic strain and lambda for this plastic state
-	// Base class finds it numerically, subclass can override if solvable
+	// Base class finds it numerically, subclass can override if solvable by more efficient meethods
 	GetDfDsigma(strial,&stk,np);
-	double lambdak = SolveForLambda(mptr,np,strial,&stk,delTime);
+	double lambdak = SolveForLambdaBracketed(mptr,np,strial,&stk,delTime);
 	
 	// Now have lambda, finish update on this particle
         
@@ -491,12 +491,17 @@ void IsoPlasticity::GetDfDsigma(double smag,Tensor *st0,int np)
 	}
 }
 
-// Solve numerically for lambda
-// Subclasses can override for analytical solution if possible
+/* Solve numerically for lambda
+    This method is not used by the IsoPlasticity class, but it may be used by subclasses
+        by overriding SolveForLambdaBracketed() and calling this insteas
+    Uses Newton's law with initial guess being lambda = dalpha/sqrt(2/3). The solution is not
+        bracket, which means it may not be safe. It faster than bracketing when it is safe, but'
+        otherwise should not be used (currently used by SLMaterial and VonMisesHardening)
+    Set alpint and dalpha before calling
+*/
 double IsoPlasticity::SolveForLambda(MPMBase *mptr,int np,double strial,Tensor *stk,double delTime)
 {
 	// initial lambdk from dalpha set before call, often 0, but might be otherwise
-	//double lambdak=0.;
 	double lambdak=dalpha/SQRT_TWOTHIRDS;
 	int step=1;
 	
@@ -531,12 +536,179 @@ double IsoPlasticity::SolveForLambda(MPMBase *mptr,int np,double strial,Tensor *
 			double delLam = -glam/slope;
 			lambdak += delLam;
 			UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
-			
+ 			
 			// check for convergence
 			if(LambdaConverged(step++,lambdak,delLam)) break;
 		}
 	}
 	return lambdak;
+}
+
+/* Solve numerically for lambda by safe Newton's method (i.e., with bracketing)
+    Subclasses can override for analytical solution is possible or if more efficient method
+        is available (e.g., non-bracketed method in SolveForLambda())
+    the input ftrial is f function when lambda=0 (but not useful in in plane stress)
+*/
+double IsoPlasticity::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,double delTime)
+{
+    double xl,xh;
+    BracketSolution(mptr,np,strial,stk,delTime,&xl,&xh);
+        
+	// initial lambdk midpoint of the brackets
+	double lambdak=0.5*(xl+xh);
+    UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
+    double dxold=fabs(xh-xl);
+    double dx=dxold;
+	int step=1;
+	
+	if(np==PLANE_STRESS_MPM)
+	{	double n2trial = -stk->xx+stk->yy;
+		n2trial *= n2trial/2;
+		n2trial += 2.*stk->xy*stk->xy;
+		double n1trial = stk->xx+stk->yy;
+		n1trial *= n1trial/6.;
+        while(true)
+        {	// update iterative variables (lambda, alpha)
+			double d1 = (1 + psKred*lambdak);
+			double d2 = (1.+2.*Gred*lambdak);
+			double fnp12 = n1trial/(d1*d1) + n2trial/(d2*d2);
+			double kyld = GetYield(mptr,np,delTime);
+			double glam = 0.5*fnp12 - kyld*kyld/3.;
+			double fnp1 = sqrt(fnp12);
+			double slope = -(psKred*n1trial/(d1*d1*d1) + 2*Gred*n2trial/(d2*d2*d2)) - GetK2Prime(mptr,fnp1,delTime);
+            
+            // bisect if Newton out of range
+            if( ((lambdak-xh)*slope-glam) * ((lambdak-xl)*slope-glam) >= 0. ||
+               fabs(2.*glam) > fabs(dxold*slope) )
+            {   dxold = dx;
+                dx = 0.5*(xh-xl);
+                lambdak = xl+dx;
+                if(xl == lambdak) break;    // change in root is negligible
+            }
+            else
+            {   dxold = dx;
+                dx = glam/slope;
+                double temp = lambdak;
+                lambdak -= dx;
+                if(temp == lambdak) break;  // change in root is negligible
+            }
+            
+            // update and check convergence
+            UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
+            if(LambdaConverged(step++,lambdak,dx)) break;
+            
+            // reset limits
+            if(glam < 0.)
+                xl = lambdak;
+            else
+                xh = lambdak;
+        }
+	}
+	else
+	{	while(true)
+        {	// update iterative variables (lambda, alpha)
+            double glam = strial - 2*Gred*lambdak - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime);
+            double slope = -2.*Gred - GetKPrime(mptr,np,delTime);
+            
+            // bisect if Newton out of range
+            if( ((lambdak-xh)*slope-glam) * ((lambdak-xl)*slope-glam) >= 0. ||
+                    fabs(2.*glam) > fabs(dxold*slope) )
+            {   dxold = dx;
+                dx = 0.5*(xh-xl);
+                lambdak = xl+dx;
+                if(xl == lambdak) break;    // change in root is negligible
+            }
+            else
+            {   dxold = dx;
+                dx = glam/slope;
+                double temp = lambdak;
+                lambdak -= dx;
+                if(temp == lambdak) break;  // change in root is negligible
+            }
+            
+            // update and check convergence
+            UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
+            if(LambdaConverged(step++,lambdak,dx)) break;
+            
+            // reset limits
+            if(glam < 0.)
+                xl = lambdak;
+            else
+                xh = lambdak;
+        }
+	}
+    
+    // return final answer
+    // cout << "   lambdak = " << (lambdak*SQRT_TWOTHIRDS/delTime) << endl;
+	return lambdak;
+}
+
+/* Bracket the solution for lambda for safe Newton's method
+    Subclass can override if have faster way to bracket
+    ftrial is 3D or plane strain result for lamda=0 and it is positive
+// Return lamNeg for f<0 (higher lambda) and lamPos where f>0 (lower lambda
+*/
+void IsoPlasticity::BracketSolution(MPMBase *mptr,int np,double strial,Tensor *stk,double delTime,
+                                        double *lamNeg,double *lamPos)
+{
+    double epdot = 1.,gmax;
+    int step=0;
+    
+    // take lambda = 0 as positive limit (to start)
+    *lamPos = 0.;
+    
+    if(np==PLANE_STRESS_MPM)
+	{	double n2trial = -stk->xx+stk->yy;
+		n2trial *= 0.5*n2trial;
+		n2trial += 2.*stk->xy*stk->xy;
+		double n1trial = stk->xx+stk->yy;
+		n1trial *= n1trial/6.;
+        
+        // find when plane stress term become negative
+        while(step<20)
+        {   // try above
+            dalpha = epdot*delTime;
+            alpint = mptr->GetHistoryDble() + dalpha;
+            double lambdak = dalpha/SQRT_TWOTHIRDS;
+			double d1 = (1 + psKred*lambdak);
+			double d2 = (1.+2.*Gred*lambdak);
+			double fnp12 = n1trial/(d1*d1) + n2trial/(d2*d2);
+			double kyld = GetYield(mptr,np,delTime);
+			gmax = 0.5*fnp12 - kyld*kyld/3.;
+            if(gmax<0.) break;
+            
+            // update positive limit and go to next order of magnitude
+            *lamPos = lambdak;
+            epdot *= 10.;
+            step++;
+        }
+    }
+    else
+    {   // find when strial 2 GRed sqrt(3/2) dalpha - sqrt(2/3)GetYield(alpha+dalpha,dalpha)
+        // becomes negative
+        while(step<20)
+        {   // try above
+            dalpha = epdot*delTime;
+            alpint = mptr->GetHistoryDble() + dalpha;
+            gmax = strial - 2*Gred*dalpha/SQRT_TWOTHIRDS - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime) ;
+            if(gmax<0.) break;
+        
+            // next block
+            *lamPos = dalpha/SQRT_TWOTHIRDS;
+            epdot *= 10.;
+            step++;
+        }
+    }
+    
+    // exception if did not find answer in 20 orders of magnitude in strain rate
+    if(step>=20)
+        throw CommonException("Plasticity solution could not be bracketed","IsoPlasticity::BracketSolution");
+    
+    // set upper limits
+    *lamNeg = dalpha/SQRT_TWOTHIRDS;
+    
+    //cout << "steps: " << step << ", epdot range: " << (*lamPos*SQRT_TWOTHIRDS/delTime) <<
+    //        " to " << (*lamNeg*SQRT_TWOTHIRDS/delTime) << endl;
 }
 
 // decide if the numerical solution for lambda has converged

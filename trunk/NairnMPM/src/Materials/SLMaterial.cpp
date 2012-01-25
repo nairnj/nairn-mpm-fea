@@ -213,7 +213,7 @@ double SLMaterial::GetEpdot(double YT)
 
 // Solve numerically for lambda
 // Subclasses can override for analytical solution if possible
-double SLMaterial::SolveForLambda(MPMBase *mptr,int np,double strial,Tensor *stk,double delTime)
+double SLMaterial::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,double delTime)
 {
 	if(np==PLANE_STRESS_MPM)
 	{	// not allowed

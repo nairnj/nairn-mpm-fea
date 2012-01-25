@@ -42,8 +42,8 @@ class JohnsonCook : public IsoPlasticity
 		virtual int MaterialTag();
 		
     protected:
-		double Bjc,Cjc,njc,ep0jc;
-		double Bred,etared;
+		double Bjc,Cjc,njc,ep0jc,Tmjc,mjc;
+		double Bred,TjcTerm,edotMin,eminTerm;
 
 };
 
