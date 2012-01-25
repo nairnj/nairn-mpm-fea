@@ -195,7 +195,7 @@ void FEAReadHandler::TranslateBMPFiles(void)
 					else
 						rweight=1.;
 					for(col=c1;col<=c2;col++)
-					{	// skip if point is not in the element
+					{	// skip if point if not in the element
 						scanPt.x=xpw*col+xorig;
 						if(!elem->PtInElement(scanPt)) continue;
 						if(col==c1)

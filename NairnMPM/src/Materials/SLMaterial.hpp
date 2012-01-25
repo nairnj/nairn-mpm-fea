@@ -44,7 +44,7 @@ class SLMaterial : public MGSCGLMaterial
 		virtual double GetYield(MPMBase *,int,double);
  		virtual double GetKPrime(MPMBase *,int,double);
 		double GetEpdot(double);
-		virtual double SolveForLambda(MPMBase *,int,double,Tensor *,double);
+		virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double);
 		virtual void ElasticUpdateFinished(MPMBase *,int,double);
 				
 		// accessors

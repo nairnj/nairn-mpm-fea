@@ -34,7 +34,7 @@ class AnisoPlasticity : public Orthotropic
 		virtual void MPMConstLaw(int);
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
-		virtual double SolveForLambda(MPMBase *mptr,int,double,Tensor *);
+		virtual double SolveForLambdaAP(MPMBase *mptr,int,double,Tensor *);
 		virtual double GetFkFromLambdak(MPMBase *,Tensor *,Tensor *,double,int);
 		virtual void GetDfCdf(MPMBase *,Tensor *,int);
 		virtual void UpdateStress(Tensor *,Tensor *,double,int);

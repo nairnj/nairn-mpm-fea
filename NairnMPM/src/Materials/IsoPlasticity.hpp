@@ -44,6 +44,8 @@ class IsoPlasticity : public IsotropicMat
 		virtual double GetMagnitudeS(Tensor *st,int);
 		virtual void GetDfDsigma(double,Tensor *,int);
 		virtual double SolveForLambda(MPMBase *,int,double,Tensor *,double);
+        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double);
+        virtual void BracketSolution(MPMBase *,int,double,Tensor *,double,double *,double *);
 		virtual bool LambdaConverged(int,double,double);
 		virtual double GetYield(MPMBase *,int,double) = 0;				// subclass must provide
 		virtual double GetKPrime(MPMBase *,int,double) = 0;				// subclass must provide

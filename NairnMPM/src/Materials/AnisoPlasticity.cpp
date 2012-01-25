@@ -234,8 +234,8 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
     }
     
 	// Find  lambda for this plastic state
-	// Base class finds it numerically, subclass can override if solvable
-	double lambda = SolveForLambda(mptr,np,ftrial,&stk);
+	// This material overrides to have custom solution
+	double lambda = SolveForLambdaAP(mptr,np,ftrial,&stk);
     
     // Plastic strain increments on particle
     double dexxp=lambda*dfdsxx;
@@ -440,8 +440,8 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	//}
 	
 	// Find  lambda for this plastic state
-	// Base class finds it numerically, subclass can override if solvable
-	double lambda = SolveForLambda(mptr,np,ftrial,&stk);
+	// This material overrides to custom solution
+	double lambda = SolveForLambdaAP(mptr,np,ftrial,&stk);
     
     // Plastic strain increments on particle
     double dexxp=lambda*dfdsxx;
@@ -522,9 +522,8 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 #pragma mark AnisoPlasticity::Custom Methods
 
 // Solve numerically for lambda
-// Subclasses can override for alternative solution if possible
 // Ouptut is lambdak, final df, final alpha
-double AnisoPlasticity::SolveForLambda(MPMBase *mptr,int np,double ftrial,Tensor *strial)
+double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tensor *strial)
 {
 	// step 0 = stress is strial, alpha is previous alpha
 	GetDfCdf(mptr,strial,np);								// find df/dsigma

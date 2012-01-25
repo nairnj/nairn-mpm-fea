@@ -38,7 +38,7 @@ class VonMisesHardening : public IsoPlasticity
 		virtual double GetYield(MPMBase *,int,double);
  		virtual double GetKPrime(MPMBase *,int,double);
 		virtual double GetK2Prime(MPMBase *,double,double);
-		virtual double SolveForLambda(MPMBase *,int,double,Tensor *,double);
+		virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double);
        
 		// accessors
 		virtual const char *MaterialType(void);
