@@ -18,7 +18,10 @@ public static final String versionReadable="Version 3.0.0";
 NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The versions currently in this project are as follows:
 
   * Current trunk Version
-    * Working on NairnFEAMPMViz 3.2.0.
+    * No changes yet to NairnFEAMPMViz 3.3.0.
+
+  * release-3.0 (25 JAN 2012)
+    * has NairnFEAMPMViz 3.3.0.
     * Reorganized the code moving all application details to a separate package.
     * Particle and mesh plots now have their own menu and can change the plot quantity.
     * Time and X-Y plots can add labels, which can be dragged to move and double clicked to edit.
@@ -26,7 +29,7 @@ NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The vers
     * Scale Results to plot mesh and particles with different units.
     * The Window menu tracks more windows.
     * On Mac, menus move to the top of the screen (but Mac users should use the Mac app instead)
-    * Fixed on bug in mesh plots that clipped to particles.
+    * Fixed one bug in mesh plots that clipped to particles.
     * Recent files menu
     * Can open 3D results. Can see text output, but only limited plotting options.
     * Updated to read FEA results with 9-node Lagrange elements
