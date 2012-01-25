@@ -33,6 +33,7 @@ NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The vers
     * Recent files menu
     * Can open 3D results. Can see text output, but only limited plotting options.
     * Updated to read FEA results with 9-node Lagrange elements
+    * Find/Replace window for editing of input files or for finding in analysis results.
 
   * release-2.0 (25 JUL 2010)
     * Has NairnFEAMPMViz 3.1.0
