@@ -141,10 +141,10 @@ double JohnsonCook::GetKPrime(MPMBase *mptr,int np,double delTime)
     if(ep>edotMin)
     {   double term1 = yldred + Bred*pow(alpint,njc);
         double term2 = 1. + Cjc*log(ep) ;
-        return (2./3.) * TjcTerm * (Bred*njc*pow(alpint,njc-1.)*term2 + Cjc*term1/dalpha ) ;
+        return TWOTHIRDS * TjcTerm * (Bred*njc*pow(alpint,njc-1.)*term2 + Cjc*term1/dalpha ) ;
     }
     else
-        return (2./3.) * TjcTerm * Bred*njc*pow(alpint,njc-1.) * eminTerm ;
+        return TWOTHIRDS * TjcTerm * Bred*njc*pow(alpint,njc-1.) * eminTerm ;
 }
 
 // Get derivative of (1./3.)*yield^2 with respect to lambda for plane stress only
@@ -157,11 +157,11 @@ double JohnsonCook::GetK2Prime(MPMBase *mptr,double fnp1,double delTime)
     double ep = dalpha/(delTime*ep0jc);
     if(ep>edotMin)
     {   double term2 = 1. + Cjc*log(ep) ;
-        return sqrt(8./27.) * term1 * term2 * fnp1 * TjcTerm * TjcTerm *
+        return SQRT_EIGHT27THS * term1 * term2 * fnp1 * TjcTerm * TjcTerm *
                         (Bred*njc*pow(alpint,njc-1.)*term2 + Cjc*term1/dalpha ) ;
     }
     else
-    {   return sqrt(8./27.) * term1 * fnp1 * TjcTerm * TjcTerm * eminTerm * eminTerm *
+    {   return SQRT_EIGHT27THS * term1 * fnp1 * TjcTerm * TjcTerm * eminTerm * eminTerm *
                     (Bred*njc*pow(alpint,njc-1.)) ;
     }
 }

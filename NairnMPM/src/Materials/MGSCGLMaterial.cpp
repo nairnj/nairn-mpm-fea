@@ -221,8 +221,8 @@ double MGSCGLMaterial::GetPressureChange(MPMBase *mptr,double &delV,int np)
 	double pressure0 = -(sptr->xx+sptr->yy+sptr->zz)/3.;
 	double dTemp=mptr->pPreviousTemperature-thermal.reference;
 	
-	// plane stress needs to adjust delV (but currently not working)
-	// this calculation is based on initial state
+	// plane stress needs to adjust delV
+	// Note: this calculation is based on initial state, because final state not known yet
 	if(np==PLANE_STRESS_MPM)
 	{	Kred = k1 + x0*(2.*k2 + 3.*k3*x0);
 		double neta0=pow(1./(1.-x0),ONETHIRD);
@@ -238,12 +238,12 @@ double MGSCGLMaterial::GetPressureChange(MPMBase *mptr,double &delV,int np)
 	double neta=pow(1./(1.-x),ONETHIRD);
 	Gred = G0red*(1.+GPpred*pressure/neta + GTp*dTemp);
 	
-	// plane stress terms (but currently not working)
+	// plane stress terms
 	if(np==PLANE_STRESS_MPM)
 	{	Kred = k1 + x*(2.*k2 + 3.*k3*x);
 		double psRed0 = 1./(Kred/(2.*Gred) + TWOTHIRDS);	// (1-2nu)/(1-nu) for plane stress
 		psLr2G = (Kred/(2.*Gred) - ONETHIRD)*psRed0;		// nu/(1-nu) to find ezz
-		psKred = Kred*psRed0;							// E/(3(1-v)) to find lambda
+		psKred = Kred*psRed0;                               // E/(3(1-v)) to find lambda
 	}
 	
 	// return change in pressure
@@ -273,7 +273,14 @@ double MGSCGLMaterial::GetKPrime(MPMBase *mptr,int np,double delTime)
 }
 
 // this material does not support plane stress calculations
-double MGSCGLMaterial::GetK2Prime(MPMBase *mptr,double fnp1,double delTime) { return 0; }
+double MGSCGLMaterial::GetK2Prime(MPMBase *mptr,double fnp1,double delTime)
+{
+	// slope zero if in constant max yield condition
+	if(yldred*pow(1.+beta*alpint,nhard)>=yldMaxred) return 0.;
+
+	double factor=yldred*Gred/G0red;
+	return SQRT_EIGHT27THS*factor*factor*beta*nhard*pow(1.+beta*alpint,2.*nhard-1)*fnp1;
+}
 
 #pragma mark MGSCGLMaterial::Accessors
 

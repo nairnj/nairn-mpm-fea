@@ -62,6 +62,16 @@ char *SLMaterial::InputMat(char *xName,int &input)
 	return(MGSCGLMaterial::InputMat(xName,input));
 }
 
+// verify settings and some initial calculations
+const char *SLMaterial::VerifyProperties(int np)
+{	
+	// check properties
+	if(np==PLANE_STRESS_MPM) return "The Steinberg-Lund material does not support plane stress calculations yet.";
+    
+	// call super class
+	return MGSCGLMaterial::VerifyProperties(np);
+}
+
 // Constant properties used in constitutive law
 void SLMaterial::InitialLoadMechProps(int makeSpecific,int np)
 {	
@@ -111,7 +121,7 @@ double SLMaterial::GetPressureChange(MPMBase *mptr,double &delV,int np)
 	double YTlast=mptr->GetHistoryDble(YT_HISTORY)*1.e6/rho;
 	currentYTred=fmax(YTmin,YTlast);
 
-	// super class handle pressure calculaion
+	// super class handles pressure calculation
 	return MGSCGLMaterial::GetPressureChange(mptr,delV,np);
 }
 
