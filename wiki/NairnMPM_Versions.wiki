@@ -21,7 +21,7 @@ The version number is coded in the constructor of the `NairnMPM.cpp` class:
 NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions currently in this project are as follows:
 
   * Current trunk Version
-    * Working on NairnMPM 8.5.0
+    * Working on NairnMPM 8.2.0
     * Added Johnson-Cook material (verification in progress).
 
   * release-3.0 (25 JAN 2012)
