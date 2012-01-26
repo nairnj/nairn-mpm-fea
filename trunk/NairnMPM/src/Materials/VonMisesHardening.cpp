@@ -110,7 +110,7 @@ double VonMisesHardening::GetYield(MPMBase *mptr,int np,double delTime)
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)lamda or depdot/dlambda = sqrt(2./3.)/delTime
 double VonMisesHardening::GetKPrime(MPMBase *mptr,int np,double delTime)
 {
-	return linearHardening ? 2.*Epred/3. : 2.*yldred*beta*npow*pow(1.+beta*alpint,npow-1)/3. ;
+	return linearHardening ? TWOTHIRDS*Epred : TWOTHIRDS*yldred*beta*npow*pow(1.+beta*alpint,npow-1) ;
 }
 
 // Get derivative of (1./3.)*yield^2 with respect to lambda for plane stress only
@@ -119,8 +119,8 @@ double VonMisesHardening::GetKPrime(MPMBase *mptr,int np,double delTime)
 // Also equal to sqrt(2./3.)*GetYield()*GetKPrime()*fnp1, but in separate call for efficiency
 double VonMisesHardening::GetK2Prime(MPMBase *mptr,double fnp1,double delTime)
 {
-	return linearHardening ? sqrt(8./27.)*(yldred + Epred*alpint)*Epred*fnp1 : 
-								sqrt(8./27.)*yldred*yldred*beta*npow*pow(1.+beta*alpint,2.*npow-1)*fnp1;
+	return linearHardening ? SQRT_EIGHT27THS*(yldred + Epred*alpint)*Epred*fnp1 : 
+								SQRT_EIGHT27THS*yldred*yldred*beta*npow*pow(1.+beta*alpint,2.*npow-1)*fnp1;
 }
 
 // Solve this linear model in closed form for lambdak and update trial alpha

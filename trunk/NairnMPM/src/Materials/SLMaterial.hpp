@@ -38,6 +38,7 @@ class SLMaterial : public MGSCGLMaterial
 		virtual void InitialLoadMechProps(int,int);
 		virtual void PrintYieldProperties(void);
 		virtual char *MaterialData(void);
+        virtual const char *VerifyProperties(int);
 				
 		// methods
 		virtual double GetPressureChange(MPMBase *,double &,int);

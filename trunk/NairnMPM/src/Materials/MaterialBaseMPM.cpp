@@ -293,8 +293,6 @@ void MaterialBase::PrintTransportProperties(void)
 {
 	if(Rigid()) return;
 	
-	char mline[200];
-    
 	// Diffusion constants
 	if(DiffusionTask::active)
 	{	PrintProperty("D",diffusionCon,"mm^2/sec");
@@ -307,7 +305,7 @@ void MaterialBase::PrintTransportProperties(void)
 	if(ConductionTask::active)
 	{	PrintProperty("k",kCond,"W/(m-K)");
 		PrintProperty("Cp",1000.*heatCapacity,"J/(kg-K)");
-		cout << mline << endl;
+		cout << endl;
 	}
 }
 
