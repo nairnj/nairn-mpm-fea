@@ -24,7 +24,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Working on NairnMPM 8.5.0
     * Added Johnson-Cook material (verification in progress).
 
-  * Release-3.0 (25 JAN 2012)
+  * release-3.0 (25 JAN 2012)
     * Has NairnMPM 8.1.0
     * Converted to using Xerces 3.1.1 and must link to 3.x or newer because new Xerces is not compatible with Xerces 2.8 or older.
     * Converted all `longs` to `ints` to avoid any potential machine-dependent issues in 64 bit compiles (NairnMPM can compile as 32 bit or 64 bit, and must match Xerces library bits)
