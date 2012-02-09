@@ -24,11 +24,13 @@ HyperElastic::HyperElastic(char *matName) : MaterialBase(matName)
 
 #pragma mark HyperElastic::Methods
 
-// Get new deformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
-// dvij are elements of gradV * time step
-// if storeInParticle is true, transfer new gradient to particle strain and rotation tensors
-// Note: This assumes plane strain to find F[2][2]=1. If the 2D calculation is plane stress, the
-//	caller must replace F[2][2] with 1 + dw/dz
+/*  Get new deformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
+        deformation gradient
+    dvij are elements of gradV * time step
+    if storeInParticle is true, transfer new gradient to particle strain and rotation tensors
+    Note: This assumes plane strain to find F[2][2]=1. If the 2D calculation is plane stress, the
+        caller must replace F[2][2] with 1 + dw/dz
+*/
 void HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,double dvyy,
 												double dvxy,double dvyx,bool storeInParticle)
 {
@@ -156,6 +158,58 @@ double HyperElastic::GetResidualStretch(MPMBase *mptr)
 		resStretch += CME1*dConc;
 	}
 	return resStretch;
+}
+
+#ifndef CONSTANT_RHO
+// Get current relative volume change = J = det F = lam1 lam2 lam3
+// If using CONSTANT_RHO, then skip, which will pass to base class result of 1
+double HyperElastic::GetCurrentRelativeVolume(MPMBase *mptr,bool threeD)
+{
+	// deformation gradient (found from current strains and rotations)
+	Tensor *ep=mptr->GetStrainTensor();
+	TensorAntisym *wrot = mptr->GetRotationStrainTensor();
+	
+	// current deformation gradient in 2D
+	double Fxx = 1. + ep->xx;;
+	double Fxy = (ep->xy - wrot->xy)/2.;
+	double Fyx = (ep->xy + wrot->xy)/2.;
+	double Fyy = 1. + ep->yy;
+    double Fzz = 1. + ep->zz;
+    
+    if(threeD)
+    {   // add 3D terms
+        double Fxz = (ep->xz - wrot->xz)/2.;
+        double Fyz = (ep->yz - wrot->yz)/2.;
+        double Fzx = (ep->xz + wrot->xz)/2.;
+        double Fzy = (ep->yz + wrot->yz)/2.;
+        
+        return Fxx*(Fyy*Fxx-Fzy*Fyz) - Fxy*(Fyx*Fzz-Fzx*Fyz) + Fxz*(Fyx*Fzy-Fzx*Fyy);
+    }
+    else
+        return Fzz*(Fxx*Fyy - Fxy*Fyx);
+}
+#endif
+
+// Convert to nominal stress in 2D by premultiply with J F^(-1)
+// JFi is transpose of matrix of cofactors for F (since J = det F)
+void HyperElastic::ConvertToNominalStress2D(MPMBase *mptr,double F[][3])
+{
+    Tensor *sp=mptr->GetStressTensor();
+	double JFi[3][3];
+	JFi[0][0] = F[1][1]*F[2][2];
+	JFi[0][1] = -F[0][1]*F[2][2];
+	//JFi[0][2] = 0.;
+	JFi[1][0] = -F[1][0]*F[2][2];
+	JFi[1][1] = F[0][0]*F[2][2];
+	//JFi[1][2] = 0.;
+	//JFi[2][0] = 0.;
+	//JFi[2][1] = 0.;
+	JFi[2][2] = F[0][0]*F[1][1] - F[1][0]*F[0][1];
+	Tensor sp0=*sp;
+	sp->xx = JFi[0][0]*sp0.xx + JFi[0][1]*sp0.xy;
+	sp->xy = JFi[0][0]*sp0.xy + JFi[0][1]*sp0.yy;
+	sp->yy = JFi[1][0]*sp0.xy + JFi[1][1]*sp0.yy;
+	sp->zz = JFi[2][2]*sp0.zz;
 }
 
 // In future, may need to convert to Kirchoff or Nominal Stress in 2D or 3D 

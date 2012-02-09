@@ -419,7 +419,7 @@ void ArchiveData::ArchiveVelocityBCs(BoundaryCondition *firstBC)
 // Archive the results if it is time
 void ArchiveData::ArchiveResults(double atime)
 {
-	double rho;
+	double rho,rho0,relVolume;
     double sxx,syy,sxy;
     char fname[300],fline[300];
     int i,p;
@@ -555,7 +555,10 @@ void ArchiveData::ArchiveResults(double atime)
         }
 
         // stress (in N/m^2)
-        rho=theMaterials[mpm[p]->MatID()]->rho;
+        int matid = mpm[p]->MatID();
+        rho0=theMaterials[matid]->rho;
+        relVolume = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],threeD);      // also rho0/rho
+        rho = rho0/relVolume;
 		Tensor *sp=mpm[p]->GetStressTensor();
         sxx=rho*sp->xx;
         syy=rho*sp->yy;
@@ -644,9 +647,9 @@ void ArchiveData::ArchiveResults(double atime)
         
         // total plastic energy (Volume*energy) in J
         // energies in material point based on specific stress
-        // here need (mass/rho) * rho * stress * strain
+        // here need (mass/rho) * rho0 * stress * strain
         if(mpmOrder[ARCH_PlasticEnergy]=='Y')
-        {   *(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetPlastEnergy();
+        {   *(double *)app=1.0e-6*mpm[p]->mp*relVolume*mpm[p]->GetPlastEnergy();
             app+=sizeof(double);
         }
                 
@@ -661,9 +664,9 @@ void ArchiveData::ArchiveResults(double atime)
 
         // total strain energy (Volume*energy) in J
         // energies in material point based on specific stress
-        // here need (mass/rho) * rho * stress * strain
+        // here need (mass/rho) * rho0 * stress * strain
         if(mpmOrder[ARCH_StrainEnergy]=='Y')
-        {   *(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetStrainEnergy();
+        {   *(double *)app=1.0e-6*mpm[p]->mp*relVolume*mpm[p]->GetStrainEnergy();
             app+=sizeof(double);
         }
         
@@ -725,12 +728,12 @@ void ArchiveData::ArchiveResults(double atime)
        }
 		
         // thermal energy in J (approximate - assume low dT)
-		// want (mass/rho) * rho Cp dT^2 / (2 T0)
+		// want (mass/rho) * rho0 Cp dT^2 / (2 T0)
 		// or mass (g) Cp (J/(g-K)) dT^2 (K^2) / (2 T0 (K)) for Joules
         if(mpmOrder[ARCH_ThermalEnergy]=='Y')
 		{	double deltaT=(mpm[p]->pTemperature-thermal.reference);
 			double Cp=theMaterials[mpm[p]->MatID()]->GetHeatCapacity(mpm[p]);		// in J/(g-K)
-            *(double *)app=mpm[p]->mp*Cp*deltaT*deltaT/(2.*thermal.reference);
+            *(double *)app=mpm[p]->mp*relVolume*Cp*deltaT*deltaT/(2.*thermal.reference);
             app+=sizeof(double);
         }
 		

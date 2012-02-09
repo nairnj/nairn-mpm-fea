@@ -984,7 +984,7 @@ The Mooney-Rivilin material is an isotropic, hyperelastic material. It's stresse
 \begin{equation}
     \B = \F\F^T
 \end{equation}
-where $\F$ is the deformation tensor. The deformation tensor can be calculated by combining cumulative strain and rotation tensors (see {\tt Mooney.cpp} for the calculation). The strain energy is assumed to be
+where $\F$ is the deformation tensor. The deformation tensor can be calculated by combining cumulative strain and rotation tensors (see {\tt HyperElastic.cpp} for the calculation). The strain energy is assumed to be
 \begin{equation}
 W = {G_1\over2}\left(\bar{I_1}-3\right)^2 + {G_2\over2}\left(\bar{I_2}-3\right)^2 + {K\over2}\left(J-1\right)^2
 \end{equation}
@@ -1010,7 +1010,7 @@ The Cauchy (or true stress) is found by differentiating the strain energy to get
      \sigma = {G_1\over J^{5/3}}\left(\B - {I_1\over3}\I\right)
                      +  {G_2\over J^{7/3}}\left(I_1\B - \B^2 - {2I_2\over3}\I\right)   + K(J-1)\I
 \end{equation}
-where $\I_1 = J^{2/3}\bar{I_1}$ and $\I_2 = J^{4/3}\bar{I_2}$. The stress components explicitly evaluate to:
+where $I_1 = J^{2/3}\bar{I_1}$ and $I_2 = J^{4/3}\bar{I_2}$. The stress components explicitly evaluate to:
 \begin{eqnarray}
       \s{xx} & = & K(J-1) + G_1{2B_{xx}-B_{yy}-B_{zz}\over 3J^{5/3}}   \nonumber\\
                   && \qquad\mbox{}    + G_2{B_{xx}(B_{yy}+B_{zz})-2B_{yy}B_{zz}-B_{xy}^2-B_{xz}^2+2B_{yz}^2\over 3J^{7/3} }\\

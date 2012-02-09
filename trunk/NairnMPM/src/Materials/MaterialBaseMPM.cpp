@@ -1138,5 +1138,11 @@ short MaterialBase::GetMVFIsRigid(int matfld)
 // convert field number (zero based) to material ID for that field (zero based)
 int MaterialBase::GetFieldMatID(int matfld) { return fieldMatIDs[matfld]; }
 
+// Get current relative volume change - only used to convert speific results to actual values when archiving
+// Material with explicit treatment of large deformation might need it (e.g., Hyperelastic)
+double MaterialBase::GetCurrentRelativeVolume(MPMBase *mptr,bool threeD) { return 1.; }
+
+
+
 
 

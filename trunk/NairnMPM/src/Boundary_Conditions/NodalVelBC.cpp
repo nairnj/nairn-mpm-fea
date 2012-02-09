@@ -209,7 +209,7 @@ void NodalVelBC::GridMomentumConditions(int makeCopy)
 
 /**********************************************************
     Set forces on nodes with set velocity such that
-    momemtum after the update will match the BC
+    momentum after the update will match the BC
     velocity (and momentum)
 */
 void NodalVelBC::ConsistentGridForces(void)
