@@ -23,6 +23,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
   * Current trunk Version
     * Working on NairnMPM 8.2.0
     * Added Johnson-Cook material (verification in progress).
+    * The MGSCGLMaterial can now do plane stress calculations
 
   * release-3.0 (25 JAN 2012)
     * Has NairnMPM 8.1.0
