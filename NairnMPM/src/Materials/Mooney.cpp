@@ -64,8 +64,8 @@ char *Mooney::InputMat(char *xName,int &input)
 // verify settings and some initial calculations
 const char *Mooney::VerifyProperties(int np)
 {
-    if(G1<0. || Kbulk < 0.)
-		return "Mooney-Rivlin material needs non-negative G1 and K";
+    if(G1<0. || Kbulk < 0. || G2<0.)
+		return "Mooney-Rivlin Hyperelastic material needs non-negative G1, G2, and K";
 
 	// call super class
 	return MaterialBase::VerifyProperties(np);
@@ -152,12 +152,27 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	// J as determinant of F (or sqrt root of determinant of B) normalized to residual stretch
 	double resStretch = GetResidualStretch(mptr);
 	double J = sqrt(J2)/(resStretch*resStretch*resStretch);
+#ifdef CONSTANT_RHO
+    // Ignore change in density in the specific stress
+    // i.e., get Cauchy stress / rho0
 	double J53 = pow(J, 5./3.);
-	double J73 = pow(J, 7./3.);
-	
-	// find Cauchy stresses
+	double J23 = J53/J;
+	double J73 = J53*J;
+	double J43 = J23*J23;
 	double Kterm = Ksp*(J-1.);
 	//double Kterm = Ksp*log(J)/J;
+#else
+    // Account for density change in specific stress
+    // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
+	double J23 = pow(J, 2./3.);
+	double J43 = J23*J23;
+	double J53 = J23;                 // Using J^(2/3) = J^(5/3)/J
+	double J73 = J43;                 // Using J^(4/3) = J^(7/3)/J
+	double Kterm = Ksp*(J-1.)*J;
+	//double Kterm = Ksp*log(J);
+#endif
+	
+	// find (Cauchy stress)/rho0 (if CONSTANT_RHO) or (Kirchoff stress)/rho0 (in not)
 	Tensor *sp=mptr->GetStressTensor();
 	sp->xx = Kterm + (2*B.xx-B.yy-B.zz)*G1sp/(3.*J53)
 			+ (B.xx*(B.yy+B.zz)-2*B.yy*B.zz-B.xy*B.xy)*G2sp/(3.*J73);
@@ -169,9 +184,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 				+ (B.zz*(B.xx+B.yy)-2*B.xx*B.yy+2.*B.xy*B.xy)*G2sp/(3.*J73);
 	}
 	
-	// strain energy
-	double J23 = J53/J;
-	double J43 = J23*J23;
+	// strain energy (total energy divided by initial rho)
 	double I1bar = (B.xx+B.yy+B.zz)/J23;
 	double I2bar = 0.5*(I1bar*I1bar - (B.xx*B.xx+B.yy*B.yy+B.zz*B.zz+2.*B.xy*B.xy)/J43);
 	Kterm = Ksp*(J-1.)*(J-1.);
@@ -197,11 +210,27 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 	double J2 = B.xx*B.yy*B.zz + 2.*B.xy*B.xz*B.yz - B.yz*B.yz*B.xx - B.xz*B.xz*B.yy - B.xy*B.xy*B.zz;
 	double resStretch = GetResidualStretch(mptr);
 	double J = sqrt(J2)/(resStretch*resStretch*resStretch);
+#ifdef CONSTANT_RHO
+    // Ignore change in density in the specific stress
+    // i.e., get Cauchy stress / rho0
 	double J53 = pow(J, 5./3.);
-	double J73 = pow(J, 7./3.);
+	double J23 = J53/J;
+	double J43 = J23*J23;
+	double J73 = J43*J;
+	double Kterm = Ksp*(J-1.);
+	//double Kterm = Ksp*log(J)/J;
+#else
+    // Account for density change in specific stress
+    // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
+	double J23 = pow(J, 2./3.);
+	double J43 = J23*J23;
+	double J53 = J23;                 // Using J^(2/3) = J^(5/3)/J
+	double J73 = J43;                 // Using J^(4/3) = J^(7/3)/J
+	double Kterm = Ksp*(J-1.)*J;
+	//double Kterm = Ksp*log(J);
+#endif
 	
 	// Find Cauchy stresses
-	double Kterm = Ksp*(J-1.);
 	//double Kterm = Ksp*log(J)/J;
 	Tensor *sp=mptr->GetStressTensor();
 	sp->xx = Kterm + (2*B.xx-B.yy-B.zz)*G1sp/(3.*J53)
@@ -213,10 +242,8 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 	sp->xy = B.xy*G1sp/J53 + (B.zz*B.xy-B.xz*B.yz)*G2sp/J73;
 	sp->xz = B.xz*G1sp/J53 + (B.yy*B.xz-B.xy*B.yz)*G2sp/J73;
 	sp->yz = B.yz*G1sp/J53 + (B.xx*B.yz-B.xy*B.xz)*G2sp/J73;
-	
+    
 	// strain energy
-	double J23 = J53/J;
-	double J43 = J23*J23;
 	double I1bar = (B.xx+B.yy+B.zz)/J23;
 	double I2bar = 0.5*(I1bar*I1bar - (B.xx*B.xx+B.yy*B.yy+B.zz*B.zz+2.*B.xy*B.xy+2*B.xz*B.xz+2.*B.yz*B.yz)/J43);
 	Kterm = Ksp*(J-1.)*(J-1.);
@@ -244,6 +271,6 @@ double Mooney::WaveSpeed(bool threeD)
 double Mooney::ShearWaveSpeed(bool threeD) { return sqrt(1.e9*(G1+G2)/rho); }
 
 // return material type
-const char *Mooney::MaterialType(void) { return "Mooney-Rivlin Rubber"; }
+const char *Mooney::MaterialType(void) { return "Mooney-Rivlin Hyperelastic"; }
 
 
