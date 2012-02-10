@@ -24,6 +24,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Working on NairnMPM 8.2.0
     * Added Johnson-Cook material (verification in progress).
     * The MGSCGLMaterial can now do plane stress calculations
+    * BCBox for particle or velocity boundary conditions can specify an axis to change to a cylinder
 
   * release-3.0 (25 JAN 2012)
     * Has NairnMPM 8.1.0
