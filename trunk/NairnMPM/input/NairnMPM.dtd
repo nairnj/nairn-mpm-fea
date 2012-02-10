@@ -223,7 +223,8 @@
 			ymin CDATA #REQUIRED
 			ymax CDATA #REQUIRED
 			zmin CDATA #REQUIRED
-			zmax CDATA #REQUIRED>
+			zmax CDATA #REQUIRED
+            axis (0|1|2|3|x|y|z|X|Y|Z) #IMPLIED>
 			
 <!-- Thermal analysis -->
 

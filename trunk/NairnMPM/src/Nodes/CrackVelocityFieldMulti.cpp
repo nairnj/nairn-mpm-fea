@@ -539,6 +539,25 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 			AddVector(&norm,&normj);
 			ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
 		}
+        else if(fmobj->dflag[0]==3)
+        {   // normal along +/-x, +/-y or +/-z from flag[1] as +/-1, +/-2, or +/-3
+            int normAxis = fmobj->dflag[1];
+            if(normAxis==1 || normAxis==-1)
+            {   norm.x = (double)normAxis;
+                norm.y = 0.;
+                norm.z = 0.;
+            }
+            if(normAxis==2 || normAxis==-2)
+            {   norm.x = 0.;
+                norm.y = normAxis>0 ? 1. : -1. ;
+                norm.z = 0.;
+            }
+            else
+            {   norm.x = 0.;
+                norm.y = 0.;
+                norm.z = normAxis>0 ? 1. : -1. ;
+            }
+        }
 		else if(fmobj->dflag[0]==4)
 		{	// use special normals for cutting simulation with rake angle in dflag[1]
 			// and the material below the crack as the first defined material

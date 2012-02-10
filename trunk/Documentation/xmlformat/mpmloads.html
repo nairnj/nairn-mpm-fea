@@ -74,7 +74,7 @@ All particles defined by the shape will be assigned the selected boundary condit
 <p>The possible 3D shape commands are:
 
 <pre>
-   &lt;BCBox xmin='18.5' xmax='20' ymin='-12' ymax='12' zmin='0' zmax='10'&gt;
+   &lt;BCBox xmin='18.5' xmax='20' ymin='-12' ymax='12' zmin='0' zmax='10' axis='0'&gt;
       ...      
    &lt;/BCBox&gt;
 </pre>
@@ -85,9 +85,9 @@ All particles defined by the shape will be assigned the selected boundary condit
 <dl>
 
 <dt>xmin, xmax, ymin, ymax, zmin, zmax</dt>
-<dd>These attributes define the extent of a rectangle (2D) or box (3D) (they can be entered with numeric values or <a href="dispbc.html#minmax">relative to the mesh edges</a>).
+<dd>These attributes define the extent of a rectangle (2D) or box (3D) (they can be entered with numeric values or <a href="dispbc.html#minmax">relative to the mesh edges</a>). An optional <code>axis</code> attribute for <code>BCBox</code> can convert the shape to the cylinder enclosed within the box with axis along the specified direction (as x, 1, y, 2, z, or 3).
 An optional <a href="mpmheader.html#units"><code>units</code> attribute</a> can specify the length units.
-All material points that fall within the rectangle or box will be assigned the boundary conditions of the
+All material points that fall within the rectangle or box or cylinder will be assigned the boundary conditions of the
 subordinate elements.</dd>
 
 <dt>(x1,y1) to (x2,y2)</dt>

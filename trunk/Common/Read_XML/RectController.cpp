@@ -26,7 +26,7 @@ void RectController::FinishSetup(void)
         xmin=temp;
     }
     if(DbleEqual(xmin,xmax))
-        ThrowSAXException("xmax can not equal xmin in input parameters.");
+        ThrowSAXException("xmax cannot equal xmin in input parameters.");
 		
     if(ymin>ymax)
 	{	temp=ymax;
@@ -34,7 +34,7 @@ void RectController::FinishSetup(void)
         ymin=temp;
     }
     if(DbleEqual(ymin,ymax))
-        ThrowSAXException("ymax can not equal ymin in input parameters.");
+        ThrowSAXException("ymax cannot equal ymin in input parameters.");
 }
 
 /********************************************************************************
