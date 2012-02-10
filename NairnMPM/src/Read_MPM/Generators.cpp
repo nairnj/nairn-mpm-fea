@@ -490,6 +490,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             delete [] aName;
             delete [] value;
         }
+        theBox->FinishSetup();
 		theShape=theBox;
         block=BCSHAPE;
     }

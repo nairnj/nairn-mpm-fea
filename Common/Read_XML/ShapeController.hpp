@@ -23,11 +23,13 @@ class ShapeController
 		ShapeController(int);
 		ShapeController(int,double,double,double,double,double);
 		virtual ~ShapeController();
+    
+        // base close only (non virtual)
+        int GetSourceBlock(void);
+        bool RequiredBlock(int);
 		
 		// methods
 		virtual bool PtOnShape(Vector);
-		int GetSourceBlock(void);
-		bool RequiredBlock(int);
 		virtual void resetNodeEnumerator(void);
 		virtual const char *startNodeEnumerator(int,int);
 		virtual int nextNode(void);

@@ -18,12 +18,19 @@
 class BoxController : public ShapeController
 {
     public:
+        int axis;
 	
 		// contructors
 		BoxController(int);
 	
 		// methods
+        virtual void SetProperty(const char *,char *,CommonReadHandler *);
+        virtual void FinishSetup(void);
 		virtual bool PtOnShape(Vector);
+    
+    protected:
+        double xmid,ymid,zmid;
+        double a2,b2,c2;
 		
 };
 
