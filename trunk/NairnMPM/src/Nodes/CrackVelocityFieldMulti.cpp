@@ -541,6 +541,7 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 		}
         else if(fmobj->dflag[0]==3)
         {   // normal along +/-x, +/-y or +/-z from flag[1] as +/-1, +/-2, or +/-3
+            // This should be the normal vector pointing into the rigid material
             int normAxis = fmobj->dflag[1];
             if(normAxis==1 || normAxis==-1)
             {   norm.x = (double)normAxis;
