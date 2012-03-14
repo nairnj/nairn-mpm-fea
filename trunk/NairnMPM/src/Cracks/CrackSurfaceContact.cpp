@@ -97,7 +97,7 @@ void CrackSurfaceContact::Output(int numberOfCracks)
 		cout << "Crack Plane Crosses: surface particles moved back to the current plane" << endl;
 	else
 		cout << "Crack Plane Crosses: ignored" << endl;
-	
+    
 	// allocate memory for custom crack contact laws
 	char *p=new char[(numberOfCracks+1)*sizeof(ContactDetails)];
 	CrackContactLaw=(ContactDetails *)p;
@@ -229,6 +229,28 @@ void CrackSurfaceContact::MaterialOutput(void)
 			break;
 	}
 	cout << endl;
+    
+    // development flags for multimaterial contact
+    if(fmobj->dflag[0] > 0)
+    {   cout << "** Development flag for custom contact **" << endl;
+        switch(fmobj->dflag[0])
+        {   case 1:
+                cout << "   Each material uses its own mass gradient" << endl;
+                break;
+            case 2:
+                cout << "   Average mass gradient of the contacting materials" << endl;
+                break;
+            case 3:
+                cout << "   Specified normal along axis " << fmobj->dflag[1] << " with 1,2,3 for x,y,z" << endl;
+            case 4:
+                cout << "   Special normals for cutting. Top of tool using rake angle " << fmobj->dflag[1] <<
+                ". Bottom of tool normal = (0,1)." << endl;
+                break;
+            default:
+                break;
+        }
+    }
+	
 }
 
 // prepare array for material contact details
