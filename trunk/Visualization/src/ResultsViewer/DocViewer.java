@@ -8,7 +8,6 @@
 
 import java.awt.*;
 import java.awt.event.*;
-
 import javax.swing.*;
 
 import geditcom.JNFramework.*;
@@ -26,6 +25,11 @@ public class DocViewer extends JNDocument
 	private boolean startWithMesh=false;
 	private CmdViewer commandsWindow=null;
 
+	// Actions
+	private ShowPartnerAction showPartnerCommand = new ShowPartnerAction();
+	private ScaleResultsAction scaleResultsCommand = new ScaleResultsAction();
+	private StartPlotAction startPlotCommand = new StartPlotAction();
+	
 	public DocViewer(boolean openMesh)
 	{   super("DocViewer");
 	
@@ -43,9 +47,9 @@ public class DocViewer extends JNDocument
 		addToolBarBar();
 		Class<?> baseClass=JNApplication.main.getClass();
 		ImageIcon newMPM=new ImageIcon(baseClass.getResource("Resources/image-x-generic.png"));
-		addToolBarIcon(newMPM,"Start Plot","Open plot using the currently selected options.",this);
+		addToolBarIcon(newMPM,null,"Open plot using the currently selected options.",startPlotCommand);
 		ImageIcon showCmds=new ImageIcon(baseClass.getResource("Resources/commands-editor.png"));
-		addToolBarIcon(showCmds,"ShowPartner","Show associated commands window (if available).",this);
+		addToolBarIcon(showCmds,null,"Show associated commands window (if available).",showPartnerCommand);
 
 		// top displays sections and text of selected section
 		display=new TextDisplay(resDoc);
@@ -76,22 +80,22 @@ public class DocViewer extends JNDocument
 		// Edit menu
 		JMenu menu = new JMenu("Edit");
 		menuBar.add(menu);
-		makeMenuItem(menu,"Find...","openFindPanel",JNApplication.main,KeyEvent.VK_F);
-		makeMenuItem(menu,"Find Again","findAgain",JNApplication.main,KeyEvent.VK_G);
+		menu.add(JNApplication.main.getOpenFindAction());
+		menu.add(JNApplication.main.getFindAgainAction());
 		
 		// Analyze menu
 		menu = new JMenu("Analyze");
 		menuBar.add(menu);
-		makeMenuItem(menu,"Plot Results","Start Plot",this,KeyEvent.VK_R);
-		makeMenuItem(menu,"Scale Results...","Scale Results",this);
+		menu.add(startPlotCommand);
+		menu.add(scaleResultsCommand);
 
 		// Window
 		menu = new JMenu("Window");
 		menuBar.add(menu);
 		if(JNApplication.isMacLNF())
-		{	makeMenuItem(menu,"Help","openHelp",JNApplication.main,0);
+		{	menu.add(JNApplication.main.getOpenHelpAction());
 		}
-		makeMenuItem(menu,"Show Commands","ShowPartner",this);
+		menu.add(showPartnerCommand);
 		menu.addSeparator();
 		setWindowMenu(menu);
 
@@ -110,28 +114,7 @@ public class DocViewer extends JNDocument
 	// handle application commands
 	//----------------------------------------------------------------------------
 	
-	public void actionPerformed(ActionEvent e)
-	{	String theCmd=e.getActionCommand();
-	
-		if(theCmd.equals("Start Plot"))
-		{	startNewPlot(controls.getPlotType());
-		}
-		
-		else if(theCmd.equals("ShowPartner"))
-		{	if(commandsWindow!=null)
-				commandsWindow.toFront();
-			else
-				JNApplication.appBeep();
-		}
-		
-		else if(theCmd.equals("Scale Results"))
-		{	scaleResults();	
-		}
-		
-		else
-			super.actionPerformed(e);
-	}
-	
+	// only find in this read only document
 	public void doFindReplaceAction(int frAction)
 	{	display.textPane.doFindReplaceAction(frAction);
 	}
@@ -349,6 +332,51 @@ public class DocViewer extends JNDocument
 	{	super.childWindowDidClose(child);
 		//might need to change button name
 		controls.plotOpened();
+	}
+
+	//----------------------------------------------------------------------------
+	// Actions as inner classes
+	//----------------------------------------------------------------------------
+	
+	// action to shaw partner menu command
+	protected class ShowPartnerAction extends JNAction
+	{	private static final long serialVersionUID = 1L;
+
+		public ShowPartnerAction()
+		{	super("Show Commands");
+		}
+ 
+		public void actionPerformed(ActionEvent e)
+		{	if(commandsWindow!=null)
+				commandsWindow.toFront();
+			else
+				JNApplication.appBeep();
+		}
+	}
+
+	// action to shaw partner menu command
+	protected class ScaleResultsAction extends JNAction
+	{	private static final long serialVersionUID = 1L;
+
+		public ScaleResultsAction()
+		{	super("Scale Results...");
+		}
+ 
+		public void actionPerformed(ActionEvent e) { scaleResults(); }
+	}
+	
+	// action to start a plot
+	public StartPlotAction getStartPlotAction() { return startPlotCommand; }
+
+	// action to shaw partner menu command
+	protected class StartPlotAction extends JNAction
+	{	private static final long serialVersionUID = 1L;
+
+		public StartPlotAction()
+		{	super("Start Plot");
+		}
+ 
+		public void actionPerformed(ActionEvent e) { startNewPlot(controls.getPlotType()); }
 	}
 
 }
