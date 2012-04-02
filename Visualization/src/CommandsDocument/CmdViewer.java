@@ -22,6 +22,11 @@ public class CmdViewer extends JNCmdTextDocument
 	private boolean wasSubmitted=false;
 	private ConsolePane soutConsole;
 	private DocViewer linkedResults=null;
+	
+	// Actions
+	private BgAnalysisAction bgAnalysisCammand = new BgAnalysisAction();
+	private CheckAnalysisAction checkAnalysisCammand = new CheckAnalysisAction();
+	private ShowPartnerAction showPartnerCommand = new ShowPartnerAction();
 
 	//----------------------------------------------------------------------------
 	// Initialize
@@ -42,15 +47,15 @@ public class CmdViewer extends JNCmdTextDocument
 		Class<?> baseClass=JNApplication.main.getClass();
 		addToolBarBar();
 		ImageIcon goNext=new ImageIcon(baseClass.getResource("Resources/go-next.png"));
-		addToolBarIcon(goNext,"RunAnalysis","Run FEA or MPM Analysis.",this);
+		addToolBarIcon(goNext,null,"Run FEA or MPM Analysis.",getRunAnalysisAction());
 		ImageIcon goLast=new ImageIcon(baseClass.getResource("Resources/go-last.png"));
-		addToolBarIcon(goLast,"CheckAnalysis","Check mesh for FEA or MPM Analysis.",this);
+		addToolBarIcon(goLast,null,"Check mesh for FEA or MPM Analysis.",checkAnalysisCammand);
 		ImageIcon doStop=new ImageIcon(baseClass.getResource("Resources/process-stop.png"));
-		addToolBarIcon(doStop,"StopAnalysis","Run currently running FEA or MPM Analysis.",this);
+		addToolBarIcon(doStop,null,"Run currently running FEA or MPM Analysis.",getStopAnalysisAction());
 
 		addToolBarBar();
 		ImageIcon showRes=new ImageIcon(baseClass.getResource("Resources/image-x-generic.png"));
-		addToolBarIcon(showRes,"ShowPartner","Show associated simulation results (if available).",this);
+		addToolBarIcon(showRes,null,"Show associated simulation results (if available).",showPartnerCommand);
 
 		finishFrameworkWindow(true);
 	}
@@ -68,24 +73,24 @@ public class CmdViewer extends JNCmdTextDocument
 		JMenu menu = defaultEditMenu(true);
 		menuBar.add(menu);
 		menu.addSeparator();
-		makeMenuItem(menu,"Go To Line...","GoToLine",this,KeyEvent.VK_L);
+		menu.add(getGoToLineAction());
 		
 		// Analyze menu
 		menu = new JMenu("Analyze");
 		menuBar.add(menu);
-		makeMenuItem(menu,"Run FEA/MPM Analysis","RunAnalysis",this,KeyEvent.VK_R);
-		makeMenuItem(menu,"Background FEA/MPM Analysis...","BgAnalysis",this,KeyEvent.VK_B);
-		makeMenuItem(menu,"Test FEA/MPM Mesh...", "CheckAnalysis",this,KeyEvent.VK_T);
+		menu.add(getRunAnalysisAction("Run FEA/MPM Analysis"));
+		menu.add(bgAnalysisCammand);
+		menu.add(checkAnalysisCammand);
 		menu.addSeparator();
-		makeMenuItem(menu,"Stop Analysis...","StopAnalysis",this,KeyEvent.VK_PERIOD);
+		menu.add(getStopAnalysisAction());
 		
 		// Window
 		menu = new JMenu("Window");
 		menuBar.add(menu);
 		if(JNApplication.isMacLNF())
-		{	makeMenuItem(menu,"Help","openHelp",JNApplication.main,0);
+		{	menu.add(JNApplication.main.getOpenHelpAction());
 		}
-		makeMenuItem(menu,"Show Results","ShowPartner",this);
+		menu.add(showPartnerCommand);
 		menu.addSeparator();
 		setWindowMenu(menu);
 
@@ -107,8 +112,8 @@ public class CmdViewer extends JNCmdTextDocument
 	{
 		// tool bar icons
 		target.addToolBarBar();
-		target.addToolBarIcon(null,"openPreferences","Open the preferences window.",JNApplication.main);
-		target.addToolBarIcon(null,"openHelp","Open the help information window.",JNApplication.main);
+		target.addToolBarIcon(null,null,"Open the preferences window.",JNApplication.main.getOpenPreferencesAction());
+		target.addToolBarIcon(null,null,"Open the help information window.",JNApplication.main.getOpenHelpAction());
 		
 		target.addToolBarBar();
 		target.addToolBarIcon(null,"openDocument","Open a saved document file.",JNApplication.main);
@@ -123,32 +128,8 @@ public class CmdViewer extends JNCmdTextDocument
 	// handle running analysis
 	//----------------------------------------------------------------------------
 	
-	public void actionPerformed(ActionEvent e)
-	{	String theCmd=e.getActionCommand();
-	
-		if(theCmd.equals("RunAnalysis"))
-		{	runNFMAnalysis(false,false);
-		}
-	
-		else if(theCmd.equals("BgAnalysis"))
-		{	runNFMAnalysis(true,false);
-		}
-	
-		else if(theCmd.equals("CheckAnalysis"))
-		{	runNFMAnalysis(false,true);
-		}
-		
-		else if(theCmd.equals("ShowPartner"))
-		{	if(linkedResults!=null)
-				linkedResults.toFront();
-			else
-				JNApplication.appBeep();
-		}
-		
-		else
-			super.actionPerformed(e);
-		
-	}
+	// default command run method passed to custom one
+	public void runAnalysis() { runNFMAnalysis(false,false); }
 	
 	// Run FEA or MPM analysis
 	public void runNFMAnalysis(boolean doBackground,boolean checkMesh)
@@ -476,5 +457,45 @@ public class CmdViewer extends JNCmdTextDocument
 		super.windowClosed(e);
 	}
 
+	//----------------------------------------------------------------------------
+	// Actions as inner classes
+	//----------------------------------------------------------------------------
+	
+	// action for stop analysis menu command
+	protected class BgAnalysisAction extends JNAction
+	{	private static final long serialVersionUID = 1L;
 
+		public BgAnalysisAction()
+		{	super("Background FEA/MPM Analysis...",KeyEvent.VK_B);
+		}
+ 
+		public void actionPerformed(ActionEvent e) { runNFMAnalysis(true,false); }
+	}
+
+	// action for stop analysis menu command
+	protected class CheckAnalysisAction extends JNAction
+	{	private static final long serialVersionUID = 1L;
+
+		public CheckAnalysisAction()
+		{	super("Test FEA/MPM Mesh...",KeyEvent.VK_T);
+		}
+ 
+		public void actionPerformed(ActionEvent e) { runNFMAnalysis(false,true); }
+	}
+	
+	// action to shaw partner menu command
+	protected class ShowPartnerAction extends JNAction
+	{	private static final long serialVersionUID = 1L;
+
+		public ShowPartnerAction()
+		{	super("Show Results");
+		}
+ 
+		public void actionPerformed(ActionEvent e)
+		{	if(linkedResults!=null)
+				linkedResults.toFront();
+			else
+				JNApplication.appBeep();
+		}
+	}
 }

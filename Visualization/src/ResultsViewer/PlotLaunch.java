@@ -23,12 +23,13 @@ public class PlotLaunch extends PlotControl
 		setLayout(null);
 	
 		// start plot button
+		plotBtn.setAction(docCtrl.getStartPlotAction());
 		plotBtn.setActionCommand("Start Plot");
 		plotBtn.setSize(plotBtn.getPreferredSize());
 		int centerLoc=(36-plotBtn.getHeight())>>1;
 		plotBtn.setLocation(10,centerLoc);
+		//plotBtn.addActionListener(docCtrl);
 		plotBtn.setText("Plot");
-		plotBtn.addActionListener(docCtrl);
 		add(plotBtn);
 		
 		Dimension size=progress.getPreferredSize();

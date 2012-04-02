@@ -103,7 +103,7 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		menu = new JMenu("Window");
 		menuBar.add(menu);
 		if(JNApplication.isMacLNF())
-		{	JNDocument.makeMenuItem(menu,"Help","openHelp",JNApplication.main,0);
+		{	menu.add(JNApplication.main.getOpenHelpAction());
 		}
 		JNDocument.makeMenuItem(menu,"Analysis Results","ShowResults",this,KeyEvent.VK_D);
 		menu.addSeparator();
