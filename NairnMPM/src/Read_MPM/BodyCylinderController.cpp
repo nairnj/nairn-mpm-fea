@@ -21,9 +21,15 @@ BodyCylinderController::BodyCylinderController() : BodySphereController()
 	axis=0;
 }
 
-/********************************************************************************
-	BodySphereController: methods
-********************************************************************************/
+// set a property
+void BodyCylinderController::SetProperty(const char *aName,char *value,CommonReadHandler *reader)
+{
+	if(strcmp(aName,"axis")==0)
+	{	sscanf(value,"%d",&axis);
+	}
+	else
+		BodyObjectController::SetProperty(aName,value,reader);
+}
 
 // called after initialization is done
 bool BodyCylinderController::FinishSetup(void)
@@ -33,6 +39,10 @@ bool BodyCylinderController::FinishSetup(void)
         ThrowSAXException("cylinder axis not set or not 1, 2, or 3");
 	return TRUE;
 }
+
+/********************************************************************************
+	BodySphereController: methods
+********************************************************************************/
 
 // return true if point is in this body
 bool BodyCylinderController::ContainsPoint(Vector& pt)
@@ -54,16 +64,6 @@ bool BodyCylinderController::ContainsPoint(Vector& pt)
 	BodyCylinderController: accessors
 ********************************************************************************/
 
-// set a property
-void BodyCylinderController::SetBodyProperty(const char *aName,char *value,CommonReadHandler *reader)
-{
-	if(strcmp(aName,"axis")==0)
-	{	sscanf(value,"%d",&axis);
-	}
-	else
-		BodyObjectController::SetBodyProperty(aName,value,reader);
-}
-
 // type of object
-const char *BodyCylinderController::GetObjectType(void) { return "Cylinder"; }
+const char *BodyCylinderController::GetShapeName(void) { return "Cylinder"; }
 

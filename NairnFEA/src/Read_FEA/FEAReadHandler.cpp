@@ -755,6 +755,12 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
     {
     }
 
+    //-------------------------------------------------------------------
+    // MatRegion section
+    else if(MatRegionInput(xName,attrs))
+    {
+    }
+    
     //-------------------------------------------------------
     // <Thermal> section
     
@@ -829,7 +835,11 @@ void FEAReadHandler::myEndElement(char *xName)
 		theShape=NULL;
     }
 	
-    else if(EndBMPInput(xName,MESHBLOCK))
+    else if(EndBMPInput(xName,NO_BLOCK))
+    {   
+    }
+    
+    else if(EndMatRegionInput(xName,NO_BLOCK))
     {   
     }
 }

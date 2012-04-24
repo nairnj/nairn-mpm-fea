@@ -20,7 +20,7 @@
 short FEAReadHandler::BMPFileInput(char *xName,const Attributes& attrs)
 {
 	// check for common commands
-	if(BMPFileCommonInput(xName,attrs,NO_BLOCK)) return TRUE;
+	if(BMPFileCommonInput(xName,attrs,MUST_BE_NO_BLOCK)) return TRUE;
 	
 	return FALSE;
 }
@@ -92,7 +92,7 @@ void FEAReadHandler::TranslateBMPFiles(void)
 		elem->GetXYZCentroid(&center);
 		
 		// skip unless the center of extent of the element is in the image
-		if(!imageRect->PtOnShape(center)) continue;
+		if(!imageRect->ContainsPoint(center)) continue;
 		
 		// skip if element already has a material
 		

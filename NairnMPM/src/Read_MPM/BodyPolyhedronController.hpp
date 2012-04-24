@@ -25,15 +25,19 @@ class BodyPolyhedronController : public BodyObjectController
 		// constructors
 		~BodyPolyhedronController();
 	
+        // Initialize
+        virtual void SetParameter(const char *,const char *);
+        virtual void SetProperty(char *,CommonReadHandler *);
+        virtual bool FinishParameter(void);
+        virtual bool FinishSetup(void);
+        virtual bool HasAllParameters(void);
+    
 		// methods
-		virtual bool FinishSetup(void);
 		virtual bool ContainsPoint(Vector &);
-		virtual bool HasAllParameters(void);
-		virtual void SetParameter(const char *,const char *);
-		virtual bool FinishParameter(void);
-		virtual bool Is2DBodyObject(void);
-		virtual bool SetBodyPropertyFromData(char *,CommonReadHandler *);
-		virtual const char *GetObjectType(void);
+    
+        // accessors
+		virtual bool Is2DShape(void);
+		virtual const char *GetShapeName(void);
 	
 	private:
 		int style;

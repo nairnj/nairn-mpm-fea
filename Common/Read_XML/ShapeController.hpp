@@ -24,26 +24,38 @@ class ShapeController
 		ShapeController(int,double,double,double,double,double);
 		virtual ~ShapeController();
     
-        // base close only (non virtual)
-        int GetSourceBlock(void);
-        bool RequiredBlock(int);
-		
+        // initialize
+        virtual void SetProperty(const char *,char *,CommonReadHandler *);
+        virtual void SetProperty(const char *,double);
+        virtual void SetProperty(char *,CommonReadHandler *);
+        virtual void SetScaling(double);
+        virtual void SetParameter(const char *,const char *);
+        virtual bool FinishParameter(void);
+        virtual bool FinishSetup(void);
+        virtual bool HasAllParameters(void);
+    
 		// methods
-		virtual bool PtOnShape(Vector);
+		virtual bool ContainsPoint(Vector &);
 		virtual void resetNodeEnumerator(void);
 		virtual const char *startNodeEnumerator(int,int);
 		virtual int nextNode(void);
 		virtual char *GetContextInfo(void);
-		virtual void SetScaling(double);
-		virtual void SetProperty(const char *,char *,CommonReadHandler *);
-		virtual void SetProperty(const char *,double);
-		virtual void FinishSetup(void);
+    
+        // base close only (non virtual)
+        int GetSourceBlock(void);
+        bool RequiredBlock(int);
+    
+        // MPM only methods
 #ifdef MPM_CODE
 		void setNetBC(bool);
 		double particleCount(void);
 		virtual void resetParticleEnumerator(void);
 		virtual int nextParticle(void);
 #endif
+    
+        // accessors
+        virtual const char *GetShapeName(void);
+        virtual bool Is2DShape(void);
 		
 	protected:
 		double xmin,xmax,ymin,ymax,zmin,zmax;

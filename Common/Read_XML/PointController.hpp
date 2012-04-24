@@ -21,12 +21,16 @@ class PointController : public ShapeController
 	
 		// contructors
 		PointController(int,int);
+        virtual bool FinishSetup(void);
 	
 		// methods
 		virtual int nextNode(void);
 #ifdef MPM_CODE
 		virtual int nextParticle(void);
 #endif
+    
+        // accessors
+        virtual const char *GetShapeName();
 
 	private:
 		int nearestNode;

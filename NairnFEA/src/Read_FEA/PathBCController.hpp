@@ -23,11 +23,15 @@ class PathBCController : public ShapeController
 	
 		// contructors
 		PathBCController(int,Path *);
+        virtual bool FinishSetup(void);
 	
 		// methods
 		virtual const char *startNodeEnumerator(int,int);
 		virtual int nextNode(void);
 		virtual char *GetContextInfo(void);
+    
+        // accessors
+        virtual const char *GetShapeName();
 
 	private:
 		Path *thePath;

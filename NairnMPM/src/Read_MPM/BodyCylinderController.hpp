@@ -23,11 +23,15 @@ class BodyCylinderController : public BodySphereController
 		// constructor
 		BodyCylinderController();
 		
+        // initialize
+        virtual bool FinishSetup(void);
+        virtual void SetProperty(const char *,char *,CommonReadHandler *);
+    
 		// methods
-		virtual bool FinishSetup(void);
 		virtual bool ContainsPoint(Vector &);
-		virtual void SetBodyProperty(const char *,char *,CommonReadHandler *);
-		virtual const char *GetObjectType(void);
+    
+        // accessors
+		virtual const char *GetShapeName(void);
 	
 	protected:
 		int axis;			// 1, 2, or 3, for x, y or z

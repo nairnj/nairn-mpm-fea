@@ -19,11 +19,15 @@ class BodySphereController : public BodyObjectController
 {
     public:
 	
+        // initialize
+        virtual bool FinishSetup(void);
+    
 		// methods
-		virtual bool FinishSetup(void);
 		virtual bool ContainsPoint(Vector &);
-		virtual bool Is2DBodyObject(void);
-		virtual const char *GetObjectType(void);
+    
+        // accessors
+		virtual bool Is2DShape(void);
+		virtual const char *GetShapeName(void);
 	
 	protected:
 		double x0,y0,z0;

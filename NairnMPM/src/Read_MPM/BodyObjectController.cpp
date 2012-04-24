@@ -12,7 +12,7 @@
 BodyObjectController *theBody=NULL;
 
 /********************************************************************************
-	BodyObjectController: constructors and destructors
+	BodyObjectController: constructors and destructors and initializers
 ********************************************************************************/
 
 BodyObjectController::BodyObjectController()
@@ -28,15 +28,66 @@ BodyObjectController::BodyObjectController()
 
 BodyObjectController::~BodyObjectController() { }
 
-/********************************************************************************
-	BodyObjectController: methods
-********************************************************************************/
+// set a property
+void BodyObjectController::SetProperty(const char *aName,char *value,CommonReadHandler *reader)
+{
+    if(strcmp(aName,"x1")==0 || strcmp(aName,"xmin")==0)
+    {	xmin=reader->ReadX(value,distScaling);
+    }
+    else if(strcmp(aName,"y1")==0 || strcmp(aName,"ymin")==0)
+    {	ymin=reader->ReadY(value,distScaling);
+    }
+    else if(strcmp(aName,"z1")==0 || strcmp(aName,"zmin")==0)
+    {	zmin=reader->ReadZ(value,distScaling);
+    }
+    else if(strcmp(aName,"x2")==0 || strcmp(aName,"xmax")==0)
+    {	xmax=reader->ReadX(value,distScaling);
+    }
+    else if(strcmp(aName,"y2")==0 || strcmp(aName,"ymax")==0)
+    {	ymax=reader->ReadY(value,distScaling);
+    }
+    else if(strcmp(aName,"z2")==0 || strcmp(aName,"zmax")==0)
+    {	zmax=reader->ReadZ(value,distScaling);
+    }
+}
 
-// return true if point is in this body
-bool BodyObjectController::ContainsPoint(Vector& pt) { return FALSE; }
+// set a property from value without read handler
+void BodyObjectController::SetProperty(const char *aName,double value)
+{
+	if(strcmp(aName,"x1")==0 || strcmp(aName,"xmin")==0)
+		xmin=value*distScaling;
+	else if(strcmp(aName,"y1")==0 || strcmp(aName,"ymin")==0)
+		ymin=value*distScaling;
+	else if(strcmp(aName,"z1")==0 || strcmp(aName,"zmin")==0)
+		zmin=value*distScaling;
+	else if(strcmp(aName,"x2")==0 || strcmp(aName,"xmax")==0)
+		xmax=value*distScaling;
+	else if(strcmp(aName,"y2")==0 || strcmp(aName,"ymax")==0)
+		ymax=value*distScaling;
+	else if(strcmp(aName,"z2")==0 || strcmp(aName,"zmax")==0)
+		zmax=value*distScaling;
+}
+
+// to allow object to decode object-specific character data
+// throw an exception if bad data
+void BodyObjectController::SetProperty(char *bData,CommonReadHandler *reader) {}
+
+// set the scaling
+void BodyObjectController::SetScaling(double scale) { distScaling=scale; }
+
+// set an object parameter (in subordinate command)
+// called for attributes on XML objects subordinate to the shape command
+void BodyObjectController::SetParameter(const char *aName,const char *value) { }
+
+// called after finish attributes of subordinate command
+// return FALSE if not set correctly, or TRUE is OK to continue
+bool BodyObjectController::FinishParameter(void) { return TRUE; }
 
 // called after initialization is done, return TRUE if ready to use
 // or FALSE if this object needs to wait for parameters
+// This base class requires min and max (x, y and z) to differ and
+//      reorders if needed. This it correct for rect, oval, box, sphere
+//      and cylinder, but maybe not for others.
 bool BodyObjectController::FinishSetup(void)
 {
     double temp;
@@ -46,70 +97,47 @@ bool BodyObjectController::FinishSetup(void)
         xmin=temp;
     }
     if(DbleEqual(xmin,xmax))
-        ThrowSAXException("%s: xmax cannot equal xmin in input parameters.",GetObjectType());
-		
+        ThrowSAXException("%s: xmax cannot equal xmin in input parameters.",GetShapeName());
+    
     if(ymin>ymax)
 	{	temp=ymax;
         ymax=ymin;
         ymin=temp;
     }
     if(DbleEqual(ymin,ymax))
-        ThrowSAXException("%s: ymax cannot equal ymin in input parameters.",GetObjectType());
+        ThrowSAXException("%s: ymax cannot equal ymin in input parameters.",GetShapeName());
 	
-	if(!Is2DBodyObject())
+	if(!Is2DShape())
 	{	if(zmin>zmax)
-		{	temp=zmax;
-			zmax=zmin;
-			zmin=temp;
-		}
+    {	temp=zmax;
+        zmax=zmin;
+        zmin=temp;
+    }
 		if(DbleEqual(zmin,zmax))
-			ThrowSAXException("%s: zmax cannot equal zmin in input parameters.",GetObjectType());
+			ThrowSAXException("%s: zmax cannot equal zmin in input parameters.",GetShapeName());
 	}
 	
 	return TRUE;
 }
 
-// called after one parameter setting is done
-bool BodyObjectController::FinishParameter(void) { return TRUE; }
+// some shapes might call this right be fore use. Return TRUE or FALSE
+// if has all parameters. Normally only for shapes with subordinate commands.
+bool BodyObjectController::HasAllParameters(void) { return TRUE; }
+
+/********************************************************************************
+	BodyObjectController: methods
+********************************************************************************/
+
+// return true if point is in this body
+bool BodyObjectController::ContainsPoint(Vector& pt) { return FALSE; }
 
 /********************************************************************************
 	BodyObjectController: accessors
 ********************************************************************************/
 
-// set a property
-void BodyObjectController::SetBodyProperty(const char *aName,char *value,CommonReadHandler *reader)
-{
-	if(strcmp(aName,"xmin")==0)
-		xmin=reader->ReadX(value,distScaling);
-	else if(strcmp(aName,"ymin")==0)
-		ymin=reader->ReadY(value,distScaling);
-	else if(strcmp(aName,"zmin")==0)
-		zmin=reader->ReadZ(value,distScaling);
-	else if(strcmp(aName,"xmax")==0)
-		xmax=reader->ReadX(value,distScaling);
-	else if(strcmp(aName,"ymax")==0)
-		ymax=reader->ReadY(value,distScaling);
-	else if(strcmp(aName,"zmax")==0)
-		zmax=reader->ReadZ(value,distScaling);
-}
-
-// set an object parameter (in subordinate command)
-void BodyObjectController::SetParameter(const char *aName,const char *value) { }
-
 // override for 3D objects
-bool BodyObjectController::Is2DBodyObject(void) { return TRUE; }
-
-// set the scaling
-void BodyObjectController::SetScaling(double scale) { distScaling=scale; }
-
-// called at most once right before use to see if enough parameters have been set
-bool BodyObjectController::HasAllParameters(void) { return TRUE; }
-
-// to allow obbject to decode object-specific character data
-bool BodyObjectController::SetBodyPropertyFromData(char *bData,CommonReadHandler *reader)
-{	return TRUE;
-}
+bool BodyObjectController::Is2DShape(void) { return TRUE; }
 
 // type of object
-const char *BodyObjectController::GetObjectType(void) { return "Body"; }
+const char *BodyObjectController::GetShapeName(void) { return "Shape"; }
 

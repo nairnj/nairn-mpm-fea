@@ -34,6 +34,8 @@ class FEAReadHandler : public CommonReadHandler
 		void FindPeriodicNodes(void) ;
 		void RemoveEmptyElements(void);
 		short BMPFileInput(char *,const Attributes&);
+        short MatRegionInput(char *,const Attributes&);
+        short EndMatRegionInput(char *,int);
 				         
     private:
         int elemMat,resequence;

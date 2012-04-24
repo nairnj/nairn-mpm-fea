@@ -17,23 +17,25 @@ ArcController::ArcController(int block) : LineController(block)
 	endAngle=2.*PI_CONSTANT;
 }
 
-// called after initialization is done to precalculate terms helpful in PtOnShape
-void ArcController::FinishSetup(void)
+// called after initialization is done to precalculate terms helpful in ContainsPoint
+bool ArcController::FinishSetup(void)
 {
+    ShapeController::FinishSetup();
 	centerX=(xmax+xmin)/2.0;
 	centerY=(ymax+ymin)/2.0;
 	a=(xmax-xmin)/2.0;
 	b=(ymax-ymin)/2.0;
+    return TRUE;
 }
 
 /********************************************************************************
 	ArcController: methods
 ********************************************************************************/
 
-// Deterime if point is sufficiently close to the line from
+// Determine if point is sufficiently close to the line from
 //   (xmin,ymin) to (xmax,ymax). Must be within rectangle a
 //   distance tolerance from the line in all directions 
-bool ArcController::PtOnShape(Vector v)
+bool ArcController::ContainsPoint(Vector& v)
 {
 	double deltaX, deltaY, sita=0.0, R;
 
@@ -69,5 +71,8 @@ void ArcController::SetProperty(const char *aName,char *value,CommonReadHandler 
 	else
 		LineController::SetProperty(aName,value,reader);
 }
+
+// type of object
+const char *ArcController::GetShapeName(void) { return "Arc"; }
 
 
