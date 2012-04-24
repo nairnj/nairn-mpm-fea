@@ -472,8 +472,14 @@ void CommonReadHandler::ThrowCompoundErrorMessage(const char *msg,const char *ex
 // error if not correct dimension
 void CommonReadHandler::ValidateCommand(char *cmdName,int blockNeed,int dimNeed)
 {
+    // check those that require NO_BLOCK
+    if(blockNeed==MUST_BE_NO_BLOCK)
+    {   if(block!=NO_BLOCK)
+            ThrowCompoundErrorMessage(cmdName,"command found at invalid location","");
+    }
+    
 	// check block location
-	if(blockNeed!=NO_BLOCK && block!=blockNeed)
+	else if(blockNeed!=NO_BLOCK && block!=blockNeed)
 		ThrowCompoundErrorMessage(cmdName,"command found at invalid location","");
 		
 	// only allowed in 3D calculations

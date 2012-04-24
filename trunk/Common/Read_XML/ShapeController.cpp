@@ -17,7 +17,7 @@
 		a. Constructor to store enough parameters to define the shape (base
 			class has xmin,xmax,ymin,ymax, and tolerance for use) or
 			handle parameters in SetProperty().
-		b. The function PtOnShape(Vector v) to decide if the point v is
+		b. The function ContainsPoint(Vector& v) to decide if the point v is
 			contained by the shape and should be assigned a BC.
 		c. The optional FinishSetup() can be called after setting all
 			parameters in case helpful to the object.
@@ -29,7 +29,7 @@
 		only that node), the class may instead overide
 		a. nextNode() - return node number by index nodeNum (starting at 1)
 		b. nextParticle() - return particle number by index particleNum (starting at 0)
-		This type of subclass will not need PtOnShape() unless the overridden
+		This type of subclass will not need ContainsPoint() unless the overridden
 		nextNode() or nextParticle() use it.
 	
 	4. For preventing use as particleBC, overide nextParticle() to return -1
@@ -50,8 +50,9 @@
 
 ShapeController *theShape=NULL;
 
+#pragma mark ShapeController: constructors, destructors, and initializes
 /********************************************************************************
-	ShapeController: Constructors and Destructor
+    ShapeController: Initialize
 ********************************************************************************/
 
 ShapeController::ShapeController(int block)
@@ -88,12 +89,110 @@ ShapeController::ShapeController(int block,double x1,double x2,double y1,double 
 
 ShapeController::~ShapeController() { }
 
+// set a property on reading for x, y, z, min and max
+void ShapeController::SetProperty(const char *aName,char *value,CommonReadHandler *reader)
+{
+    if(strcmp(aName,"x1")==0 || strcmp(aName,"xmin")==0)
+    {	xmin=reader->ReadX(value,distScaling);
+    }
+    else if(strcmp(aName,"y1")==0 || strcmp(aName,"ymin")==0)
+    {	ymin=reader->ReadY(value,distScaling);
+    }
+    else if(strcmp(aName,"z1")==0 || strcmp(aName,"zmin")==0)
+    {	zmin=reader->ReadZ(value,distScaling);
+    }
+    else if(strcmp(aName,"x2")==0 || strcmp(aName,"xmax")==0)
+    {	xmax=reader->ReadX(value,distScaling);
+    }
+    else if(strcmp(aName,"y2")==0 || strcmp(aName,"ymax")==0)
+    {	ymax=reader->ReadY(value,distScaling);
+    }
+    else if(strcmp(aName,"z2")==0 || strcmp(aName,"zmax")==0)
+    {	zmax=reader->ReadZ(value,distScaling);
+    }
+}
+
+// set a property from value without read handler
+void ShapeController::SetProperty(const char *aName,double value)
+{
+	if(strcmp(aName,"x1")==0 || strcmp(aName,"xmin")==0)
+		xmin=value*distScaling;
+	else if(strcmp(aName,"y1")==0 || strcmp(aName,"ymin")==0)
+		ymin=value*distScaling;
+	else if(strcmp(aName,"z1")==0 || strcmp(aName,"zmin")==0)
+		zmin=value*distScaling;
+	else if(strcmp(aName,"x2")==0 || strcmp(aName,"xmax")==0)
+		xmax=value*distScaling;
+	else if(strcmp(aName,"y2")==0 || strcmp(aName,"ymax")==0)
+		ymax=value*distScaling;
+	else if(strcmp(aName,"z2")==0 || strcmp(aName,"zmax")==0)
+		zmax=value*distScaling;
+}
+
+// to allow object to decode object-specific character data
+// throw an exception if bad data
+void ShapeController::SetProperty(char *bData,CommonReadHandler *reader) {}
+
+// set the scaling
+void ShapeController::SetScaling(double scale) { distScaling=scale; }
+
+// set an object parameter (in subordinate command)
+// called for attributes on XML objects subordinate to the shape command
+void ShapeController::SetParameter(const char *aName,const char *value) { }
+
+// called after finish attributes of subordinate command
+// return FALSE if not set correctly, or TRUE is OK to continue
+bool ShapeController::FinishParameter(void) { return TRUE; }
+
+// called after initialization is done, return TRUE if ready to use
+// or FALSE if this object needs to wait for parameters
+// This base class requires min and max (x, y and z) to differ and
+//      reorders if needed. This it correct for rect, oval, box, sphere
+//      and cylinder, but maybe not for others.
+bool ShapeController::FinishSetup(void)
+{
+    double temp;
+    if(xmin>xmax)
+	{	temp=xmax;
+        xmax=xmin;
+        xmin=temp;
+    }
+    if(DbleEqual(xmin,xmax))
+        ThrowSAXException("%s: xmax cannot equal xmin in input parameters.",GetShapeName());
+        
+    if(ymin>ymax)
+    {	temp=ymax;
+        ymax=ymin;
+        ymin=temp;
+    }
+    if(DbleEqual(ymin,ymax))
+        ThrowSAXException("%s: ymax cannot equal ymin in input parameters.",GetShapeName());
+        
+    if(!Is2DShape())
+    {	if(zmin>zmax)
+        {	temp=zmax;
+            zmax=zmin;
+            zmin=temp;
+        }
+        if(DbleEqual(zmin,zmax))
+            ThrowSAXException("%s: zmax cannot equal zmin in input parameters.",GetShapeName());
+    }
+	
+	return TRUE;
+
+}
+
+// some shapes might call this right be fore use. Return TRUE or FALSE
+// if has all parameters. Normally only for shapes with subordinate commands.
+bool ShapeController::HasAllParameters(void) { return TRUE; }
+
+#pragma mark ShapeController: methods
 /********************************************************************************
 	ShapeController: methods
 ********************************************************************************/
 
 // Deterime if on the shape (depending of the type of shape) 
-bool ShapeController::PtOnShape(Vector v) { return FALSE; }
+bool ShapeController::ContainsPoint(Vector& v) { return FALSE; }
 
 // the source block
 int ShapeController::GetSourceBlock(void) { return sourceBlock; }
@@ -119,7 +218,8 @@ int ShapeController::nextNode(void)
 	if(nodeNum>nnodes) return 0;
 	int i;
 	for(i=nodeNum;i<=nnodes;i++)
-	{   if(PtOnShape(MakeVector(nd[i]->x,nd[i]->y,nd[i]->z)))
+    {   Vector nv = MakeVector(nd[i]->x,nd[i]->y,nd[i]->z);
+	    if(ContainsPoint(nv))
 		{	nodeNum=i+1;
 			return i;
 		}
@@ -128,6 +228,14 @@ int ShapeController::nextNode(void)
 	return 0;
 }
 
+// return no path
+char *ShapeController::GetContextInfo(void) { return NULL; }
+
+#pragma mark ShapeController: MPM only methods
+/********************************************************************************
+    ShapeController: MPM Only Methods
+********************************************************************************/
+
 #ifdef MPM_CODE
 // return next node for this shape or -1 if no more
 int ShapeController::nextParticle(void)
@@ -135,7 +243,8 @@ int ShapeController::nextParticle(void)
 	if(particleNum>=nmpms) return -1;
 	int i;
 	for(i=particleNum;i<nmpms;i++)
-	{   if(PtOnShape(MakeVector(mpm[i]->pos.x,mpm[i]->pos.y,mpm[i]->pos.z)))
+    {   Vector nv = MakeVector(mpm[i]->pos.x,mpm[i]->pos.y,mpm[i]->pos.z);
+	    if(ContainsPoint(nv))
 		{	particleNum=i+1;
 			return i;
 		}
@@ -165,52 +274,16 @@ double ShapeController::particleCount(void) { return numParticles>0 ? (double)nu
 
 #endif
 
-// return no path
-char *ShapeController::GetContextInfo(void) { return NULL; }
+#pragma mark ShapeController: accessors
+/********************************************************************************
+ ShapeController: Accessors
+ ********************************************************************************/
 
-// set the scaling
-void ShapeController::SetScaling(double scale) { distScaling=scale; }
+// type of object - used in some error messages
+const char *ShapeController::GetShapeName(void) { return "Shape"; }
 
-// set a property
-void ShapeController::SetProperty(const char *aName,char *value,CommonReadHandler *reader)
-{	if(strcmp(aName,"x1")==0 || strcmp(aName,"xmin")==0)
-	{	xmin=reader->ReadX(value,distScaling);
-	}
-	else if(strcmp(aName,"y1")==0 || strcmp(aName,"ymin")==0)
-	{	ymin=reader->ReadY(value,distScaling);
-	}
-	else if(strcmp(aName,"z1")==0 || strcmp(aName,"zmin")==0)
-	{	zmin=reader->ReadZ(value,distScaling);
-	}
-	else if(strcmp(aName,"x2")==0 || strcmp(aName,"xmax")==0)
-	{	xmax=reader->ReadX(value,distScaling);
-	}
-	else if(strcmp(aName,"y2")==0 || strcmp(aName,"ymax")==0)
-	{	ymax=reader->ReadY(value,distScaling);
-	}
-	else if(strcmp(aName,"z2")==0 || strcmp(aName,"zmax")==0)
-	{	zmax=reader->ReadZ(value,distScaling);
-	}
-}
+// override for 3D shapes and result FALSE
+bool ShapeController::Is2DShape(void) { return TRUE; }
 
-// set a property
-void ShapeController::SetProperty(const char *aName,double value)
-{
-	if(strcmp(aName,"x1")==0 || strcmp(aName,"xmin")==0)
-		xmin=value*distScaling;
-	else if(strcmp(aName,"y1")==0 || strcmp(aName,"ymin")==0)
-		ymin=value*distScaling;
-	else if(strcmp(aName,"z1")==0 || strcmp(aName,"zmin")==0)
-		zmin=value*distScaling;
-	else if(strcmp(aName,"x2")==0 || strcmp(aName,"xmax")==0)
-		xmax=value*distScaling;
-	else if(strcmp(aName,"y2")==0 || strcmp(aName,"ymax")==0)
-		ymax=value*distScaling;
-	else if(strcmp(aName,"z2")==0 || strcmp(aName,"zmax")==0)
-		zmax=value*distScaling;
-}
-
-// called after initialization is done
-void ShapeController::FinishSetup(void) { }
 
 

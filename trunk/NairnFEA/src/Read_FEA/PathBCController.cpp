@@ -18,6 +18,9 @@ PathBCController::PathBCController(int block,Path *bcPath) : ShapeController(blo
 	thePath=bcPath;
 }
 
+// bothing to check
+bool PathBCController::FinishSetup(void) { return TRUE; }
+
 /********************************************************************************
 	LineController: methods
 ********************************************************************************/
@@ -39,3 +42,5 @@ int PathBCController::nextNode(void)
 // return the path
 char *PathBCController::GetContextInfo(void) { return (char *)thePath; }
 
+// type of object
+const char *PathBCController::GetShapeName(void) { return "Path"; }

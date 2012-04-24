@@ -15,6 +15,40 @@
 BodyPolygonController::~BodyPolygonController()
 {	xpt.clear();
 	ypt.clear();
+    xparm = 0.;
+    yparm = 0.;
+}
+
+// set (x,y) point
+void BodyPolygonController::SetParameter(const char *aName,const char *value)
+{
+	if(strcmp(aName,"x")==0)
+	{	sscanf(value,"%lf",&xparm);
+		xparm*=distScaling;
+	}
+	else if(strcmp(aName,"y")==0)
+	{	sscanf(value,"%lf",&yparm);
+		yparm*=distScaling;
+	}
+}
+
+// called after initialization is done
+bool BodyPolygonController::FinishParameter(void)
+{	xpt.push_back(xparm);
+	ypt.push_back(yparm);
+	return TRUE;
+}
+
+// called after initialization is done, need to wait for pt parameters
+bool BodyPolygonController::FinishSetup(void) {	return FALSE; }
+
+// return if has enough parameters to use. If yes, close the  polygon
+// Warning - only call once, just before use and exception if fails
+bool BodyPolygonController::HasAllParameters(void)
+{	if(xpt.size()<3) return FALSE;
+	xpt.push_back(xpt[0]);
+	ypt.push_back(ypt[0]);
+	return TRUE;
 }
 
 /********************************************************************************
@@ -48,43 +82,11 @@ bool BodyPolygonController::ContainsPoint(Vector& pt)
 	return (crossings & 0x01);
 }
 
-// called after initialization is done, need to wait for pt parameters
-bool BodyPolygonController::FinishSetup(void) {	return FALSE; }
-
-// called after initialization is done
-bool BodyPolygonController::FinishParameter(void)
-{	xpt.push_back(xparm);
-	ypt.push_back(yparm);
-	return TRUE;
-}
-
 /********************************************************************************
 	BodyPolygonController: accessors
 ********************************************************************************/
 
-// set a property
-void BodyPolygonController::SetParameter(const char *aName,const char *value)
-{
-	if(strcmp(aName,"x")==0)
-	{	sscanf(value,"%lf",&xparm);
-		xparm*=distScaling;
-	}
-	else if(strcmp(aName,"y")==0)
-	{	sscanf(value,"%lf",&yparm);
-		yparm*=distScaling;
-	}
-}
-
-// return if has enough parameters to use. If yes, close the  polygon
-// Warning - only call once, just before use and exception if fails
-bool BodyPolygonController::HasAllParameters(void)
-{	if(xpt.size()<3) return FALSE;
-	xpt.push_back(xpt[0]);
-	ypt.push_back(ypt[0]);
-	return TRUE;
-}
-
 // type of object
-const char *BodyPolygonController::GetObjectType(void) { return "Polygon"; }
+const char *BodyPolygonController::GetShapeName(void) { return "Polygon"; }
 
 

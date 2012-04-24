@@ -23,10 +23,16 @@ class BoxController : public ShapeController
 		// contructors
 		BoxController(int);
 	
-		// methods
+        // initialize
         virtual void SetProperty(const char *,char *,CommonReadHandler *);
-        virtual void FinishSetup(void);
-		virtual bool PtOnShape(Vector);
+        virtual bool FinishSetup(void);
+    
+		// methods
+		virtual bool ContainsPoint(Vector &);
+    
+        // accessors
+        virtual bool Is2DShape(void);
+        virtual const char *GetShapeName();
     
     protected:
         double xmid,ymid,zmid;

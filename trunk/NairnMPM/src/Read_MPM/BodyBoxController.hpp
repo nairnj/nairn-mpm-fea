@@ -21,8 +21,10 @@ class BodyBoxController : public BodyObjectController
 	
 		// methods
 		virtual bool ContainsPoint(Vector &);
-		virtual bool Is2DBodyObject(void);
-		virtual const char *GetObjectType(void);
+    
+        // accessors
+		virtual bool Is2DShape(void);
+		virtual const char *GetShapeName(void);
 };
 
 #endif

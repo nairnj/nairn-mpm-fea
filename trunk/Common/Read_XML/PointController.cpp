@@ -18,6 +18,9 @@ PointController::PointController(int block,int node) : ShapeController(block)
 	nearestNode=node;
 }
 
+// bothing to check
+bool PointController::FinishSetup(void) { return TRUE; }
+
 /********************************************************************************
 	LineController: methods
 ********************************************************************************/
@@ -35,3 +38,5 @@ int PointController::nextNode(void)
 int PointController::nextParticle(void) { return -1; }
 #endif
 
+// type of object
+const char *PointController::GetShapeName(void) { return "Point"; }

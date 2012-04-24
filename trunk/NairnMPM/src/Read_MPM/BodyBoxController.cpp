@@ -20,13 +20,9 @@ bool BodyBoxController::ContainsPoint(Vector& pt)
 	return TRUE;
 }
 
-/********************************************************************************
-	BodyBoxController: accessors
-********************************************************************************/
-
 // override for 3D objects
-bool BodyBoxController::Is2DBodyObject(void) { return FALSE; }
+bool BodyBoxController::Is2DShape(void) { return FALSE; }
 
 // type of object
-const char *BodyBoxController::GetObjectType(void) { return "Box"; }
+const char *BodyBoxController::GetShapeName(void) { return "Box"; }
 

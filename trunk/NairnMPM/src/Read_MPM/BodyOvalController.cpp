@@ -32,4 +32,4 @@ bool BodyOvalController::ContainsPoint(Vector& pt)
 }
 
 // type of object
-const char *BodyOvalController::GetObjectType(void) { return "Oval"; }
+const char *BodyOvalController::GetShapeName(void) { return "Oval"; }

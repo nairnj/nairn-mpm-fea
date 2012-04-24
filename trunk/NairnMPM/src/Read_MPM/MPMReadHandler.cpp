@@ -1075,8 +1075,7 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
 		
 		case POLYHEDRON_BLOCK:
 			// must be in active body controller
-			if(!theBody->SetBodyPropertyFromData(xData,this))
-				throw SAXException("Invalid data block passed to a <Polyhedron> object.");
+			theBody->SetProperty(xData,this);
 			break;
         
         default:

@@ -22,13 +22,17 @@ class BodyPolygonController : public BodyObjectController
 		// constructors
 		~BodyPolygonController();
 	
+        // initialize
+        virtual bool FinishSetup(void);
+        virtual void SetParameter(const char *,const char *);
+        virtual bool FinishParameter(void);
+        virtual bool HasAllParameters(void);
+    
 		// methods
-		virtual bool FinishSetup(void);
 		virtual bool ContainsPoint(Vector &);
-		virtual bool HasAllParameters(void);
-		virtual void SetParameter(const char *,const char *);
-		virtual bool FinishParameter(void);
-		virtual const char *GetObjectType(void);
+    
+        // accessors
+		virtual const char *GetShapeName(void);
 	
 	private:
 		double xparm,yparm;

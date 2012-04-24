@@ -23,18 +23,22 @@ class BodyObjectController
 		BodyObjectController();
 		virtual ~BodyObjectController();
 	
+        // Initialize
+        virtual void SetProperty(const char *,char *,CommonReadHandler *);
+        virtual void SetProperty(const char *,double);
+        virtual void SetProperty(char *,CommonReadHandler *);
+        virtual void SetParameter(const char *,const char *);
+        virtual bool FinishParameter(void);
+        virtual bool HasAllParameters(void);
+        virtual void SetScaling(double);
+        virtual bool FinishSetup(void);
+    
 		// methods
 		virtual bool ContainsPoint(Vector &);
-		virtual bool FinishSetup(void);
-		virtual bool Is2DBodyObject(void);
-		virtual void SetBodyProperty(const char *,char *,CommonReadHandler *);
-		virtual void SetParameter(const char *,const char *);
-		virtual bool FinishParameter(void);
-		virtual void SetScaling(double);
-		virtual bool HasAllParameters(void);
-		virtual bool SetBodyPropertyFromData(char *,CommonReadHandler *);
-	
-		virtual const char *GetObjectType();
+    
+        // accessors
+		virtual bool Is2DShape(void);
+		virtual const char *GetShapeName();
 	
 	protected:
 		double xmin,xmax,ymin,ymax,zmin,zmax;

@@ -26,11 +26,12 @@ LineController::LineController(int block,double x1,double x2,double y1,double y2
 }
 
 // called after initialization is done
-void LineController::FinishSetup(void)
+bool LineController::FinishSetup(void)
 {
 	// globals for length and tolerance
 	distanceSq=(xmax-xmin)*(xmax-xmin)+(ymax-ymin)*(ymax-ymin);
 	dtolerance=sqrt(distanceSq)*tolerance;
+    return TRUE;
 }
 
 /********************************************************************************
@@ -40,7 +41,7 @@ void LineController::FinishSetup(void)
 // Deterime if point is sufficiently close to the line from
 //   (xmin,ymin) to (xmax,ymax). Must be within rectangle a
 //   distance tolerance from the line in all directions 
-bool LineController::PtOnShape(Vector v)
+bool LineController::ContainsPoint(Vector& v)
 {
     double ypr=(xmax-xmin)*(v.y-ymin)-(ymax-ymin)*(v.x-xmin);
     
@@ -74,4 +75,8 @@ void LineController::SetProperty(const char *aName,char *value,CommonReadHandler
 
 // set tolerance (no need of scaling)
 void LineController::SetTolerance(double value) { tolerance=value; }
+
+// type of object
+const char *LineController::GetShapeName(void) { return "Line"; }
+
 

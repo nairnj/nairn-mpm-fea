@@ -25,13 +25,18 @@ class LineController : public ShapeController
 		LineController(int);
 		LineController(int,double,double,double,double,double);
 	
+        // initialize
+        virtual void SetProperty(const char *,char *,CommonReadHandler *);
+        virtual bool FinishSetup(void);
+    
 		// methods
-		virtual bool PtOnShape(Vector);
-		virtual void SetProperty(const char *,char *,CommonReadHandler *);
-		virtual void FinishSetup(void);
+		virtual bool ContainsPoint(Vector &);
 		
 		// line only methods
 		void SetTolerance(double);
+    
+        // accessors
+        virtual const char *GetShapeName();
 
 	protected:
 		double distanceSq,dtolerance,tolerance;

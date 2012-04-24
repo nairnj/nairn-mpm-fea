@@ -23,8 +23,10 @@ class RectController : public ShapeController
 		RectController(int);
 	
 		// methods
-		virtual bool PtOnShape(Vector);
-		virtual void FinishSetup(void);
+		virtual bool ContainsPoint(Vector &);
+    
+        // accessors
+        virtual const char *GetShapeName();
 
 };
 

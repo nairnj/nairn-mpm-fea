@@ -21,47 +21,10 @@ BoxController::BoxController(int block) : ShapeController(block)
 	BoxController: methods
 ********************************************************************************/
 
-// set a property
-void BoxController::SetProperty(const char *aName,char *value,CommonReadHandler *reader)
-{	if(strcmp(aName,"axis")==0)
-    {	if(strcmp(value,"x")==0 || strcmp(value,"X")==0 || strcmp(value,"1")==0)
-            axis=1;
-        else if(strcmp(value,"y")==0 || strcmp(value,"Y")==0 || strcmp(value,"2")==0)
-            axis=2;
-        else if(strcmp(value,"z")==0 || strcmp(value,"Z")==0 || strcmp(value,"3")==0)
-            axis=3;
-        else if(strcmp(value,"0")==0)
-            axis=0;
-        else
-            ThrowSAXException("Box axis must be x, y, z, 1, 2, or 3");
-    }
-    else
-        ShapeController::SetProperty(aName,value,reader);
-}
-
-// called after initialization is done
-void BoxController::FinishSetup(void)
-{
-    if(axis==0) return;
-    
-    // midpoints
-    xmid = (xmin+xmax)/2.;
-    ymid = (ymin+ymax)/2.;
-    zmid = (zmin+zmax)/2.;
-    
-    // radii
-    a2 = xmax-xmid;
-    a2 *= a2;
-    b2 = ymax-ymid;
-    b2 *= b2;
-    c2 = zmax-zmid;
-    c2 *= c2;
-}
-
 // Deterime if point is sufficiently close to the line from
 //   (xmin,ymin) to (xmax,ymax). Must be within rectangle a
 //   distance tolerance from the line in all directions 
-bool BoxController::PtOnShape(Vector v)
+bool BoxController::ContainsPoint(Vector& v)
 {   if(axis==0)
     {   return v.x<=xmax && v.x>=xmin && v.y<=ymax && v.y>=ymin && v.z<=zmax && v.z>=zmin;
     }
@@ -84,3 +47,52 @@ bool BoxController::PtOnShape(Vector v)
         return (dx*dx/a2 + dy*dy/b2) <= 1. ;
     }
 }
+// set a property
+void BoxController::SetProperty(const char *aName,char *value,CommonReadHandler *reader)
+{	if(strcmp(aName,"axis")==0)
+    {	if(strcmp(value,"x")==0 || strcmp(value,"X")==0 || strcmp(value,"1")==0)
+            axis=1;
+        else if(strcmp(value,"y")==0 || strcmp(value,"Y")==0 || strcmp(value,"2")==0)
+            axis=2;
+        else if(strcmp(value,"z")==0 || strcmp(value,"Z")==0 || strcmp(value,"3")==0)
+            axis=3;
+        else if(strcmp(value,"0")==0)
+            axis=0;
+        else
+            ThrowSAXException("Box axis must be x, y, z, 1, 2, or 3");
+    }
+    else
+        ShapeController::SetProperty(aName,value,reader);
+}
+
+// called after initialization is done
+bool BoxController::FinishSetup(void)
+{
+    ShapeController::FinishSetup();
+    
+    // done for box
+    if(axis==0) return TRUE;
+    
+    // midpoints
+    xmid = (xmin+xmax)/2.;
+    ymid = (ymin+ymax)/2.;
+    zmid = (zmin+zmax)/2.;
+    
+    // radii
+    a2 = xmax-xmid;
+    a2 *= a2;
+    b2 = ymax-ymid;
+    b2 *= b2;
+    c2 = zmax-zmid;
+    c2 *= c2;
+    
+    return TRUE;
+}
+
+// override for 3D objects
+bool BoxController::Is2DShape(void) { return FALSE; }
+
+// type of object
+const char *BoxController::GetShapeName(void) { return axis==0 ? "Box" : "Cylinder" ; }
+
+

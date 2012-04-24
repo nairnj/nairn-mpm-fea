@@ -313,7 +313,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
-			theBody->SetBodyProperty(aName,value,this);
+			theBody->SetProperty(aName,value,this);
             delete [] aName;
             delete [] value;
         }
@@ -754,7 +754,7 @@ short MPMReadHandler::EndGenerator(char *xName)
     
     else if(strcmp(xName,"Polyhedron")==0)
 	{	if(!theBody->HasAllParameters())
-		throw SAXException("<Polyhedron> must have at least 4 faces.");
+            throw SAXException("<Polyhedron> must have at least 4 faces.");
 		MPMPts();
 		delete theBody;
 		theBody=NULL;

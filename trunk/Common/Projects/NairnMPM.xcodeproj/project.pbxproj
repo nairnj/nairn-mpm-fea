@@ -39,6 +39,7 @@
 		A708FDD50F326C1A003FA82B /* SLMaterial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A708FDD30F326C1A003FA82B /* SLMaterial.cpp */; };
 		A712FAB20E54ED8500AF8D78 /* JohnsonCook.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A712FAB00E54ED8500AF8D78 /* JohnsonCook.hpp */; };
 		A712FAB30E54ED8500AF8D78 /* JohnsonCook.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A712FAB10E54ED8500AF8D78 /* JohnsonCook.cpp */; };
+		A715F5A21542066800D53E52 /* MatRegionFEA.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A715F5A11542066800D53E52 /* MatRegionFEA.cpp */; };
 		A7198C88097810AF00334C4F /* CommonUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7198C87097810AF00334C4F /* CommonUtilities.cpp */; };
 		A7198C89097810AF00334C4F /* CommonUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7198C87097810AF00334C4F /* CommonUtilities.cpp */; };
 		A7198C8E0978110F00334C4F /* CommonReadHandler.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7198C8C0978110F00334C4F /* CommonReadHandler.hpp */; };
@@ -405,6 +406,7 @@
 		A70A7B15042A50D80063AF10 /* MoreNodalPoint.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = MoreNodalPoint.cpp; sourceTree = "<group>"; };
 		A712FAB00E54ED8500AF8D78 /* JohnsonCook.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = JohnsonCook.hpp; sourceTree = "<group>"; };
 		A712FAB10E54ED8500AF8D78 /* JohnsonCook.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = JohnsonCook.cpp; sourceTree = "<group>"; };
+		A715F5A11542066800D53E52 /* MatRegionFEA.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatRegionFEA.cpp; sourceTree = "<group>"; };
 		A7198C87097810AF00334C4F /* CommonUtilities.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = CommonUtilities.cpp; sourceTree = "<group>"; };
 		A7198C8C0978110F00334C4F /* CommonReadHandler.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CommonReadHandler.hpp; sourceTree = "<group>"; };
 		A7198C8D0978110F00334C4F /* CommonReadHandler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CommonReadHandler.cpp; sourceTree = "<group>"; };
@@ -992,6 +994,7 @@
 				A78F82A203EF284B0063AF10 /* FEAReadHandler.hpp */,
 				A78F82A103EF284B0063AF10 /* FEAReadHandler.cpp */,
 				A77AF3880D59382500D5313A /* BitMapFilesFEA.cpp */,
+				A715F5A11542066800D53E52 /* MatRegionFEA.cpp */,
 				A767E06608B14E4A004540AB /* KeypointsController.hpp */,
 				A767E06508B14E4A004540AB /* KeypointsController.cpp */,
 				A767E06408B14E4A004540AB /* Keypoint.hpp */,
@@ -1814,6 +1817,7 @@
 				67B213B911F90404007523EE /* CommonTask.cpp in Sources */,
 				A76DC5091303428B00BFECBD /* Lagrange2D.cpp in Sources */,
 				A76DC50F130342EE00BFECBD /* Quad2D.cpp in Sources */,
+				A715F5A21542066800D53E52 /* MatRegionFEA.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

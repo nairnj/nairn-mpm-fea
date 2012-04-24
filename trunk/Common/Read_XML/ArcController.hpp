@@ -25,9 +25,12 @@ class ArcController : public LineController
 		ArcController(int);
 	
 		// methods
-		virtual bool PtOnShape(Vector);
+		virtual bool ContainsPoint(Vector &);
 		virtual void SetProperty(const char *,char *,CommonReadHandler *);
-		virtual void FinishSetup(void);
+		virtual bool FinishSetup(void);
+    
+        // accessors
+        virtual const char *GetShapeName();
 	
 	private:
 		double startAngle,endAngle;
