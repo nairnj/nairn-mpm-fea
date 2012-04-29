@@ -20,7 +20,8 @@ The version number is coded in the constructor of the `NairnFEA.cpp` class:
 NairnFEA was first imported to `GoogleCode.com` as version 2.7.0. The versions currently in this project are as follows:
 
   * Current trunk Version
-    * No changes yet to 2.9.0
+    * Has NairnFEA 3.0.0
+    * Allows `Body` and `Hole` commands to set elements with no material using shape commands.
  
   * Release-3.0 (25 JAN 2012)
     * Has NairnFEA 2.9.0 
