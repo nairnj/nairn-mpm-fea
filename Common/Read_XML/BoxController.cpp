@@ -8,48 +8,17 @@
 
 #include "Read_XML/BoxController.hpp"
 
-/********************************************************************************
-	BoxController: Constructors and Destructor
-********************************************************************************/
+#pragma mark BoxController: constructors, destructor, initializers
 
 BoxController::BoxController(int block) : ShapeController(block)
 {
     axis = 0;    // 0 for box, 1,2,3 for axis of a cylinder
 }
 
-/********************************************************************************
-	BoxController: methods
-********************************************************************************/
-
-// Deterime if point is sufficiently close to the line from
-//   (xmin,ymin) to (xmax,ymax). Must be within rectangle a
-//   distance tolerance from the line in all directions 
-bool BoxController::ContainsPoint(Vector& v)
-{   if(axis==0)
-    {   return v.x<=xmax && v.x>=xmin && v.y<=ymax && v.y>=ymin && v.z<=zmax && v.z>=zmin;
-    }
-    else if(axis==1)
-    {   if(v.x>xmax || v.x<xmin) return FALSE;
-        double dy = v.y-ymid;
-        double dz = v.z-zmid;
-        return (dy*dy/b2 + dz*dz/c2) <= 1. ;
-    }
-    else if(axis==2)
-    {   if(v.y>ymax || v.y<ymin) return FALSE;
-        double dx = v.x-xmid;
-        double dz = v.z-zmid;
-        return (dx*dx/a2 + dz*dz/c2) <= 1. ;
-    }
-    else
-    {   if(v.z>zmax || v.z<zmin) return FALSE;
-        double dx = v.x-xmid;
-        double dy = v.y-ymid;
-        return (dx*dx/a2 + dy*dy/b2) <= 1. ;
-    }
-}
 // set a property
 void BoxController::SetProperty(const char *aName,char *value,CommonReadHandler *reader)
-{	if(strcmp(aName,"axis")==0)
+{
+    if(strcmp(aName,"axis")==0)
     {	if(strcmp(value,"x")==0 || strcmp(value,"X")==0 || strcmp(value,"1")==0)
             axis=1;
         else if(strcmp(value,"y")==0 || strcmp(value,"Y")==0 || strcmp(value,"2")==0)
@@ -88,6 +57,36 @@ bool BoxController::FinishSetup(void)
     
     return TRUE;
 }
+
+#pragma mark BoxController: methods
+
+// Deterine if point in box or cylinder
+bool BoxController::ContainsPoint(Vector& v)
+{
+    if(axis==0)
+    {   return v.x<=xmax && v.x>=xmin && v.y<=ymax && v.y>=ymin && v.z<=zmax && v.z>=zmin;
+    }
+    else if(axis==1)
+    {   if(v.x>xmax || v.x<xmin) return FALSE;
+        double dy = v.y-ymid;
+        double dz = v.z-zmid;
+        return (dy*dy/b2 + dz*dz/c2) <= 1. ;
+    }
+    else if(axis==2)
+    {   if(v.y>ymax || v.y<ymin) return FALSE;
+        double dx = v.x-xmid;
+        double dz = v.z-zmid;
+        return (dx*dx/a2 + dz*dz/c2) <= 1. ;
+    }
+    else
+    {   if(v.z>zmax || v.z<zmin) return FALSE;
+        double dx = v.x-xmid;
+        double dy = v.y-ymid;
+        return (dx*dx/a2 + dy*dy/b2) <= 1. ;
+    }
+}
+
+#pragma mark BoxController: accessors
 
 // override for 3D objects
 bool BoxController::Is2DShape(void) { return FALSE; }

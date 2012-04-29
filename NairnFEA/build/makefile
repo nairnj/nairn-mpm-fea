@@ -157,6 +157,7 @@ MaterialBase = $(com)/Materials/MaterialBase
 MaterialBaseFEA = $(src)/Materials/MaterialBaseFEA
 MaterialController = $(com)/Read_XML/MaterialController
 mathexpr = $(com)/Read_XML/mathexpr
+MatRegionFEA = $(src)/Read_FEA/MatRegionFEA
 MoreElementBase = $(src)/Elements/MoreElementBase
 MoreNodalPoint = $(src)/Nodes/MoreNodalPoint
 NairnFEA = $(src)/NairnFEA_Class/NairnFEA
@@ -169,11 +170,13 @@ NodalPoint2D = $(com)/Nodes/NodalPoint2D
 NodalPoint3D = $(com)/Nodes/NodalPoint3D
 NodesController = $(com)/Read_XML/NodesController
 Orthotropic = $(com)/Materials/Orthotropic
+OvalController = $(com)/Read_XML/OvalController
 ParseController = $(com)/Read_XML/ParseController
 Path = $(src)/Read_FEA/Path
 PathBCController = $(src)/Read_FEA/PathBCController
 PathsController = $(src)/Read_FEA/PathsController
 PointController = $(com)/Read_XML/PointController
+PolygonController = $(com)/Read_XML/PolygonController
 Quad2D = $(com)/Elements/Quad2D
 QuadInterface = $(src)/Elements/QuadInterface
 RectController = $(com)/Read_XML/RectController
@@ -220,9 +223,11 @@ dprefix = $(src)/System/FEAPrefix.hpp $(com)/System/DataTypes.hpp \
 # NodalPoint3D.hpp : NodalPoint.hpp
 # NodesController.hpp : ParseController.hpp
 # Orthotropic.hpp : TransIsotropic.hpp (Elastic.hpp MaterialBase.hpp)
+# OvalController.hpp : ShapeController.hpp
 # PathBCController.hpp : ShapeController.hpp
 # PathsController.hpp : ParseController.hpp
 # PointController.hpp : ShapeController.hpp
+# PolygonController.hpp : ShapeController.hpp
 # Quad2D.hpp : ElementBase.hpp
 # QuadInterface : Interface2D.hpp (ElementBase.hpp)
 # RectController.hpp : ShapeController.hpp
@@ -248,7 +253,8 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		NodalDispBC.o NodalLoad.o EdgeBC.o Gauss.o Elastic.o Constraint.o ConstraintController.o \
 		mathexpr.o FEABoundaryCondition.o ShapeController.o PointController.o PathBCController.o \
 		RectController.o ArcController.o NodalPoint2D.o NodalPoint3D.o BitMapFilesCommon.o \
-		BMPLevel.o BitMapFilesFEA.o Lagrange2D.o
+		OvalController.o BMPLevel.o BitMapFilesFEA.o Lagrange2D.o MatRegionFEA.o \
+		PolygonController.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -290,7 +296,8 @@ ElementsController.o : $(ElementsController).cpp $(dprefix) $(ElementsController
 NodesController.o : $(NodesController).cpp $(dprefix) $(NodesController).hpp $(NodalPoint).hpp $(ParseController).hpp \
 			$(NodalPoint2D).hpp $(NodalPoint3D.hpp) $(NairnFEA).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NodesController).cpp
-ShapeController.o : $(ShapeController).cpp $(dprefix) $(ShapeController).hpp $(NodalPoint).hpp $(CommonReadHandler).hpp
+ShapeController.o : $(ShapeController).cpp $(dprefix) $(ShapeController).hpp $(NodalPoint).hpp $(CommonReadHandler).hpp \
+            $(ElementBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ShapeController).cpp
 LineController.o : $(LineController).cpp $(dprefix) $(LineController).hpp $(ShapeController).hpp $(ElementBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(LineController).cpp
@@ -302,6 +309,10 @@ PointController.o : $(PointController).cpp $(dprefix) $(PointController).hpp $(S
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PointController).cpp
 RectController.o : $(RectController).cpp $(dprefix) $(RectController).hpp $(ShapeController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(RectController).cpp
+OvalController.o : $(OvalController).cpp $(dprefix) $(OvalController).hpp $(ShapeController).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(OvalController).cpp
+PolygonController.o : $(PolygonController).cpp $(dprefix) $(PolygonController).hpp $(ShapeController).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PolygonController).cpp
 MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialController).hpp $(ParseController).hpp \
 		$(IsotropicMat).hpp $(TransIsotropic).hpp $(Orthotropic).hpp $(ImperfectInterface).hpp \
 		$(Elastic).hpp $(MaterialBase).hpp
@@ -371,9 +382,13 @@ FEAReadHandler.o : $(FEAReadHandler).cpp $(dprefix) $(FEAReadHandler).hpp $(Comm
 			$(Constraint).hpp $(ConstraintController).hpp $(mathexpr).hpp $(FEABoundaryCondition).hpp \
 			$(ShapeController).hpp $(PathBCController).hpp $(PointController).hpp $(ArcController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(FEAReadHandler).cpp
-BitMapFilesFEA.o : $(BitMapFilesFEA).cpp $(dprefix) $(FEAReadHandler).hpp $(CommonArchiveData).hpp $(RectController).hpp \
+BitMapFilesFEA.o : $(BitMapFilesFEA).cpp $(dprefix) $(FEAReadHandler).hpp $(CommonReadHandler).hpp $(RectController).hpp \
 			$(ShapeController).hpp $(ElementBase).hpp $(FEAArchiveData).hpp $(CommonArchiveData).hpp $(BMPLevel).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BitMapFilesFEA).cpp
+MatRegionFEA.o : $(MatRegionFEA).cpp $(dprefix) $(FEAReadHandler).hpp $(CommonReadHandler).hpp $(RectController).hpp \
+			$(ShapeController).hpp $(ElementBase).hpp $(MaterialController).hpp $(OvalController).hpp $(ParseController).hpp \
+			$(PolygonController).hpp $(mathexpr).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MatRegionFEA).cpp
 KeypointsController.o : $(KeypointsController).cpp $(dprefix) $(KeypointsController).hpp $(ParseController).hpp \
 			$(Keypoint).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(KeypointsController).cpp

@@ -77,7 +77,7 @@ FEAReadHandler::~FEAReadHandler()
 
 // Custom FEA element start
 bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
-{
+{   
     char *value,*aName;
     char matName[100];
     int i,numAttr;
@@ -201,38 +201,42 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		theArea=new Area(matnum,angleExpr,thick);		// deleted when Area is done
 	}
 	
-	// point in NodeList or Keypoints list
+	// point in NodeList or Keypoints list or polygon
     else if(strcmp(xName,"pt")==0)
-	{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
-        x=y=temp=0.;
-		matName[0]=0;
-    	numAttr=attrs.getLength();
-		
-        for(i=0;i<numAttr;i++)
-        {   value=XMLString::transcode(attrs.getValue(i));
-            aName=XMLString::transcode(attrs.getLocalName(i));
-            if(strcmp(aName,"x")==0)
-				sscanf(value,"%lf",&x);
-            else if(strcmp(aName,"y")==0)
-				sscanf(value,"%lf",&y);
-			else if(strcmp(aName,"temp")==0)
-				sscanf(value,"%lf",&temp);
-			else if(strcmp(aName,"id")==0)
-				strcpy(matName,value);
-            delete [] aName;
-            delete [] value;
-        }
-
-		// make node or keypoint
-        if(block==NODELIST)
-			theNodes->AddNode(x,y,(double)0.,temp);
-		else if(block==KEYPOINTBLOCK)
-		{	if(!keyPts->ValidName(matName))
-				ThrowCatErrorMessage("Duplicate or invalid Keypoint ID",matName);
-			keyPts->AddObject(new Keypoint(matName,x,y));		// deleted when keyPts is deleted
-		}
+    {   if(block==BODY_SHAPE)
+            MatRegionInput(xName,attrs);
         else
-			ValidateCommand(xName,BAD_BLOCK,MUST_BE_2D);
+        {	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
+            x=y=temp=0.;
+            matName[0]=0;
+            numAttr=attrs.getLength();
+            
+            for(i=0;i<numAttr;i++)
+            {   value=XMLString::transcode(attrs.getValue(i));
+                aName=XMLString::transcode(attrs.getLocalName(i));
+                if(strcmp(aName,"x")==0)
+                    sscanf(value,"%lf",&x);
+                else if(strcmp(aName,"y")==0)
+                    sscanf(value,"%lf",&y);
+                else if(strcmp(aName,"temp")==0)
+                    sscanf(value,"%lf",&temp);
+                else if(strcmp(aName,"id")==0)
+                    strcpy(matName,value);
+                delete [] aName;
+                delete [] value;
+            }
+
+            // make node or keypoint
+            if(block==NODELIST)
+                theNodes->AddNode(x,y,(double)0.,temp);
+            else if(block==KEYPOINTBLOCK)
+            {	if(!keyPts->ValidName(matName))
+                    ThrowCatErrorMessage("Duplicate or invalid Keypoint ID",matName);
+                keyPts->AddObject(new Keypoint(matName,x,y));		// deleted when keyPts is deleted
+            }
+            else
+                ValidateCommand(xName,BAD_BLOCK,MUST_BE_2D);
+        }
     }
 	
 	// Keypoint in path definition
@@ -788,7 +792,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 
 // End an element
 void FEAReadHandler::myEndElement(char *xName)
-{
+{   
 	if(strcmp(xName,"GridBCs")==0)
 	{	// set r==0 nodes if axisymmetric
 		if(fmobj->np==AXI_SYM)
@@ -1475,7 +1479,7 @@ void FEAReadHandler::FindPeriodicNodes(void)
 ********************************************************************************/
 
 void FEAReadHandler::RemoveEmptyElements(void)
-{
+{   
 	int nmatl=matCtrl->numObjects;
 	
 	int j,i=0;
@@ -1484,11 +1488,11 @@ void FEAReadHandler::RemoveEmptyElements(void)
 	{	int matID=theElements[i]->material;
 	
 		// invalid materials
-		if(matID<0 || matID>nmatl)
+		if(matID<HOLE_MATERIAL || matID>nmatl)
 			throw SAXException("An element has an unknown material type.");
 		
 		// if valid material continue
-		if(matID!=0)
+		if(matID>NO_MATERIAL)
 		{	i++;
 			continue;
 		}

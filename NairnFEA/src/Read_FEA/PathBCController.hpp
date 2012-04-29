@@ -28,10 +28,10 @@ class PathBCController : public ShapeController
 		// methods
 		virtual const char *startNodeEnumerator(int,int);
 		virtual int nextNode(void);
-		virtual char *GetContextInfo(void);
     
         // accessors
         virtual const char *GetShapeName();
+        virtual char *GetContextInfo(void);
 
 	private:
 		Path *thePath;

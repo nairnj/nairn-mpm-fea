@@ -30,6 +30,7 @@ class Interface2D : public ElementBase
 		virtual bool BulkElement(void);
         virtual short PtInElement(Vector &);
         virtual double GetThickness(void);
+        virtual void SetThickness(double);  
 		virtual void Stiffness(int);
 		virtual void IncrementStiffnessElements(double,double *,double,double,double,double,double);
 		virtual void ForceStress(double *,int,int);

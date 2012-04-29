@@ -98,6 +98,7 @@ void ElementBase::FindCentroid(Vector *center)
 
 // thickness which may be in a subclass
 double ElementBase::GetThickness(void) { return (double)1.; }
+void ElementBase::SetThickness(double thick) { }
 
 // centroid (but possibly may not be in the element if it is distorted
 void ElementBase::GetXYZCentroid(Vector *center)

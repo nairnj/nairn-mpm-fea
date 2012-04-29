@@ -3,7 +3,7 @@
 ================================================-->
 
 <!ELEMENT	JANFEAInput 
-			( Header, Mesh, BMP*, Material+, GridBCs?, Thermal?)>
+			( Header, Mesh, (BMP | Body | Hole)*, Material+, GridBCs?, Thermal?)>
 <!ATTLIST	JANFEAInput
 			version (1|2|3) "3">			
      
@@ -63,6 +63,17 @@
 			width CDATA #IMPLIED
 			height CDATA #IMPLIED>
 
+<!ELEMENT	Body
+            ( Rect | Oval | Polygon )*>
+<!ATTLIST	Body
+            mat CDATA #IMPLIED
+            matname CDATA #IMPLIED
+            angle CDATA #IMPLIED
+            thick CDATA #IMPLIED>
+
+<!ELEMENT	Hole
+            ( Rect | Oval | Polygon )*>
+
 <!ELEMENT	Intensity
 			( Angle | Thickness | Temperature )*>
 <!ATTLIST	Intensity
@@ -90,6 +101,29 @@
 <!ATTLIST	Material
 			Type (1|2|3|4|5) #REQUIRED
 			Name CDATA #REQUIRED>
+
+<!-- Region shapes -->
+
+<!ELEMENT	Rect EMPTY>
+<!ATTLIST	Rect
+            units CDATA #IMPLIED
+            xmin CDATA #REQUIRED
+            xmax CDATA #REQUIRED
+            ymin CDATA #REQUIRED
+            ymax CDATA #REQUIRED>
+
+<!ELEMENT	Oval EMPTY>
+<!ATTLIST	Oval
+            units CDATA #IMPLIED
+            xmin CDATA #REQUIRED
+            xmax CDATA #REQUIRED
+            ymin CDATA #REQUIRED
+            ymax CDATA #REQUIRED>
+
+<!ELEMENT	Polygon
+            ( pt+ )>
+<!ATTLIST	Polygon
+            np CDATA #REQUIRED>
 
 <!-- Boundary conditions all on the grid -->
 

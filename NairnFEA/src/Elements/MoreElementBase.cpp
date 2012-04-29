@@ -676,6 +676,7 @@ void ElementBase::MaxMinNode(int *maxn,int *minn)
 bool ElementBase::BulkElement(void) { return TRUE; }
 
 // element material angle
+void ElementBase::SetAngle(double newAngle) { angle = newAngle; }
 void ElementBase::SetAngleInDegrees(double eAng) { angle=PI_CONSTANT*eAng/180.; }
 double ElementBase::GetAngleInDegrees(void) { return 180.*angle/PI_CONSTANT; }
 

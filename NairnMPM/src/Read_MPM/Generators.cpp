@@ -22,6 +22,7 @@
 #include "Exceptions/StrX.hpp"
 #include "Read_XML/ArcController.hpp"
 #include "Read_XML/RectController.hpp"
+#include "Read_XML/OvalController.hpp"
 #include "Read_XML/BoxController.hpp"
 #include "Read_MPM/MpsController.hpp"
 #include "Elements/FourNodeIsoparam.hpp"
@@ -31,12 +32,9 @@
 #include "Read_MPM/CrackController.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackSegment.hpp"
-#include "Read_MPM/BodyRectController.hpp"
-#include "Read_MPM/BodyOvalController.hpp"
-#include "Read_MPM/BodyBoxController.hpp"
-#include "Read_MPM/BodyCylinderController.hpp"
-#include "Read_MPM/BodyPolygonController.hpp"
-#include "Read_MPM/BodyPolyhedronController.hpp"
+#include "Read_MPM/SphereController.hpp"
+#include "Read_XML/PolygonController.hpp"
+#include "Read_MPM/PolyhedronController.hpp"
 #include "Read_XML/mathexpr.hpp"
 #include "Read_XML/ElementsController.hpp"
 #include "Read_XML/MaterialController.hpp"
@@ -282,47 +280,43 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				|| strcmp(xName,"Polyhedron")==0 )
 	{	if(strcmp(xName,"Rect")==0)
 		{	ValidateCommand(xName,BODYPART,MUST_BE_2D);
-			theBody=new BodyRectController();
-		}
+            theShape = new RectController(BODYPART);
+ 		}
 		else if(strcmp(xName,"Oval")==0)
 		{	ValidateCommand(xName,BODYPART,MUST_BE_2D);
-			theBody=new BodyOvalController();
+            theShape = new OvalController(BODYPART);
 		}
-		else if(strcmp(xName,"Box")==0)
+		else if(strcmp(xName,"Box")==0 || strcmp(xName,"Cylinder")==0)
 		{	ValidateCommand(xName,BODYPART,MUST_BE_3D);
-			theBody=new BodyBoxController();
+			theShape = new BoxController(BODYPART);
 		}
  		else if(strcmp(xName,"Sphere")==0)
 		{	ValidateCommand(xName,BODYPART,MUST_BE_3D);
-			theBody=new BodySphereController();
-		}
- 		else if(strcmp(xName,"Cylinder")==0)
-		{	ValidateCommand(xName,BODYPART,MUST_BE_3D);
-			theBody=new BodyCylinderController();
+			theShape = new SphereController(BODYPART);
 		}
 		else if(strcmp(xName,"Polygon")==0)
 		{	ValidateCommand(xName,BODYPART,MUST_BE_2D);
-			theBody=new BodyPolygonController();
+			theShape = new PolygonController(BODYPART);
 		}
 		else if(strcmp(xName,"Polyhedron")==0)
 		{	ValidateCommand(xName,BODYPART,MUST_BE_3D);
-			theBody=new BodyPolyhedronController();
+			theShape = new PolyhedronController(BODYPART);
 		}
-		theBody->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
+		theShape->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
         numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
-			theBody->SetProperty(aName,value,this);
+			theShape->SetProperty(aName,value,this);
             delete [] aName;
             delete [] value;
         }
 		
 		// finish up and if body is done, generate points now
-		if(theBody->FinishSetup())
+		if(theShape->FinishSetup())
 		{	MPMPts();
-			delete theBody;
-			theBody=NULL;
+			delete theShape;
+			theShape=NULL;
 		}
 		else
 			block=BODY_SHAPE;
@@ -399,36 +393,36 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	// add to polygon body object
     else if(strcmp(xName,"pt")==0)
 	{	ValidateCommand(xName,BODY_SHAPE,MUST_BE_2D);
-		if(theBody==NULL)
+		if(theShape == NULL)
 			throw SAXException("Body object <pt> command occurred without an active 2D body shape.");
-		theBody->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
+		theShape->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
 		numAttr=attrs.getLength();
 		for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
 			value=XMLString::transcode(attrs.getValue(i));
-			theBody->SetParameter(aName,value);
+			theShape->SetParameter(aName,value);
 			delete [] aName;
 			delete [] value;
 		}
-		theBody->FinishParameter();
+		theShape->FinishParameter();
 	}
 	
 	// triclinic option
 	else if(strcmp(xName,"faces")==0)
 	{	ValidateCommand(xName,BODY_SHAPE,MUST_BE_3D);
-		if(theBody==NULL)
+		if(theShape == NULL)
 			throw SAXException("Body object <faces> command occurred without an active 3D body shape.");
-		theBody->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
-		theBody->SetParameter("style","");
+		theShape->SetScaling(ReadUnits(attrs,LENGTH_UNITS));
+		theShape->SetParameter("style","");
 		numAttr=attrs.getLength();
 		for(i=0;i<numAttr;i++)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
 			value=XMLString::transcode(attrs.getValue(i));
-			theBody->SetParameter(aName,value);
+			theShape->SetParameter(aName,value);
 			delete [] aName;
 			delete [] value;
 		}
-		if(!theBody->FinishParameter())
+		if(!theShape->FinishParameter())
 			throw SAXException("Body object <faces> command did not specify the style for the data.");
 		input=POLYHEDRON_BLOCK;
 	}
@@ -718,9 +712,9 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 short MPMReadHandler::EndGenerator(char *xName)
 {
     if(strcmp(xName,"Grid")==0)
-    {	grid();				// Generate grid (1 per analysis)
-		SetGIMPBorderAsHoles();
-        block=MESHBLOCK;	// Must have been in MESHBLOCK
+    {	grid();                     // Generate grid (1 per analysis)
+		SetGIMPBorderAsHoles();     // if GIMP, mark edge elements as filled (i.e., no material pts allowed)
+        block=MESHBLOCK;            // Must have been in MESHBLOCK
     }
 
     else if(strcmp(xName,"Body")==0)
@@ -744,20 +738,20 @@ short MPMReadHandler::EndGenerator(char *xName)
     	block=POINTSBLOCK;
     
     else if(strcmp(xName,"Polygon")==0)
-	{	if(!theBody->HasAllParameters())
+	{	if(!theShape->HasAllParameters())
 			throw SAXException("<Polygon> must have at least 3 subordinate <pt> commands.");
 		MPMPts();
-		delete theBody;
-		theBody=NULL;
+		delete theShape;
+		theShape = NULL;
 		block=BODYPART;
 	}
     
     else if(strcmp(xName,"Polyhedron")==0)
-	{	if(!theBody->HasAllParameters())
+	{	if(!theShape->HasAllParameters())
             throw SAXException("<Polyhedron> must have at least 4 faces.");
 		MPMPts();
-		delete theBody;
-		theBody=NULL;
+		delete theShape;
+		theShape = NULL;
 		block=BODYPART;
 	}
 
@@ -800,7 +794,7 @@ void MPMReadHandler::MPMPts(void)
         for(k=0;k<fmobj->ptsPerElement;k++)
 		{	ptFlag=1<<k;
             if(theElements[i-1]->filled&ptFlag) continue;
-            if(theBody->ContainsPoint(ppos[k]))
+            if(theShape->ContainsPoint(ppos[k]))
 			{	if(MatID>0)
 				{	if(fmobj->IsThreeD())
 						newMpt=new MatPoint3D(i,MatID,Angle);
@@ -1082,9 +1076,6 @@ void MPMReadHandler::grid()
 			}
 		}
 	}
-	
-	// if GIMP, implicit holes in the edge elements
-	theBody=new BodyRectController();
 }
 
 //------------------------------------------------------------------

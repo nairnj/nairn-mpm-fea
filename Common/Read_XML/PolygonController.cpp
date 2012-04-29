@@ -1,18 +1,22 @@
 /********************************************************************************
-    BodyPolygonController.cpp
-    NairnFEA
+    PolygonController.cpp
+    NairnMPM
     
     Created by John Nairn on 8/10/07.
     Copyright (c) 2007 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
-#include "Read_MPM/BodyPolygonController.hpp"
+#include "Read_XML/PolygonController.hpp"
 
-/********************************************************************************
-	BodyPolygonController: contructors and destructors
-********************************************************************************/
+#pragma mark PolygonController: initializers
 
-BodyPolygonController::~BodyPolygonController()
+// constructor
+PolygonController::PolygonController(int block) : ShapeController(block)
+{
+}
+
+// destructor
+PolygonController::~PolygonController()
 {	xpt.clear();
 	ypt.clear();
     xparm = 0.;
@@ -20,7 +24,7 @@ BodyPolygonController::~BodyPolygonController()
 }
 
 // set (x,y) point
-void BodyPolygonController::SetParameter(const char *aName,const char *value)
+void PolygonController::SetParameter(const char *aName,const char *value)
 {
 	if(strcmp(aName,"x")==0)
 	{	sscanf(value,"%lf",&xparm);
@@ -33,30 +37,28 @@ void BodyPolygonController::SetParameter(const char *aName,const char *value)
 }
 
 // called after initialization is done
-bool BodyPolygonController::FinishParameter(void)
+bool PolygonController::FinishParameter(void)
 {	xpt.push_back(xparm);
 	ypt.push_back(yparm);
 	return TRUE;
 }
 
 // called after initialization is done, need to wait for pt parameters
-bool BodyPolygonController::FinishSetup(void) {	return FALSE; }
+bool PolygonController::FinishSetup(void) {	return FALSE; }
 
 // return if has enough parameters to use. If yes, close the  polygon
 // Warning - only call once, just before use and exception if fails
-bool BodyPolygonController::HasAllParameters(void)
+bool PolygonController::HasAllParameters(void)
 {	if(xpt.size()<3) return FALSE;
 	xpt.push_back(xpt[0]);
 	ypt.push_back(ypt[0]);
 	return TRUE;
 }
 
-/********************************************************************************
-	BodyPolygonController: methods
-********************************************************************************/
+#pragma mark PolygonController: methods
 
 // return true if point is in this body
-bool BodyPolygonController::ContainsPoint(Vector& pt)
+bool PolygonController::ContainsPoint(Vector& pt)
 {
 	unsigned i,crossings=0;
 	double x1,x2,y1,y2,d;
@@ -82,11 +84,9 @@ bool BodyPolygonController::ContainsPoint(Vector& pt)
 	return (crossings & 0x01);
 }
 
-/********************************************************************************
-	BodyPolygonController: accessors
-********************************************************************************/
+#pragma mark PolygonController: accessors
 
 // type of object
-const char *BodyPolygonController::GetShapeName(void) { return "Polygon"; }
+const char *PolygonController::GetShapeName(void) { return "Polygon"; }
 
 

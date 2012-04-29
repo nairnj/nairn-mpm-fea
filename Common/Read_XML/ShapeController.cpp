@@ -44,6 +44,7 @@
 #include "Read_XML/ShapeController.hpp"
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "Elements/ElementBase.hpp"
 #ifdef MPM_CODE
 	#include "MPM_Classes/MPMBase.hpp"
 #endif
@@ -51,21 +52,19 @@
 ShapeController *theShape=NULL;
 
 #pragma mark ShapeController: constructors, destructors, and initializes
-/********************************************************************************
-    ShapeController: Initialize
-********************************************************************************/
 
 ShapeController::ShapeController(int block)
 {
 	sourceBlock=block;
 	distScaling=1.;
 	xmin=0.;
-	xmax=-1.;
+	xmax=0.;
 	ymin=0.;
-	ymax=-1.;
+	ymax=0.;
 	zmin=0.;
-	zmax=-1.;
+	zmax=0.;
 	nodeNum=1;
+    elemNum=0;
 #ifdef MPM_CODE
 	particleNum=0;
 	numParticles=0;
@@ -81,6 +80,7 @@ ShapeController::ShapeController(int block,double x1,double x2,double y1,double 
 	ymin=y1;
 	ymax=y2;
 	nodeNum=1;
+    elemNum=0;
 #ifdef MPM_CODE
 	particleNum=0;
 	numParticles=0;
@@ -187,24 +187,12 @@ bool ShapeController::FinishSetup(void)
 bool ShapeController::HasAllParameters(void) { return TRUE; }
 
 #pragma mark ShapeController: methods
-/********************************************************************************
-	ShapeController: methods
-********************************************************************************/
 
 // Deterime if on the shape (depending of the type of shape) 
 bool ShapeController::ContainsPoint(Vector& v) { return FALSE; }
 
-// the source block
-int ShapeController::GetSourceBlock(void) { return sourceBlock; }
-bool ShapeController::RequiredBlock(int block) { return block==sourceBlock; }
-
 // reset nodeNum and return NULL (no errors except in other shapes)
 void ShapeController::resetNodeEnumerator(void) { nodeNum=1; }
-
-#ifdef MPM_CODE
-// reset nodeNum and return NULL (no errors except in other shapes)
-void ShapeController::resetParticleEnumerator(void) { particleNum=0; }
-#endif
 
 // reset nodeNum and return NULL (no errors except in other shapes)
 const char *ShapeController::startNodeEnumerator(int command,int axis)
@@ -228,13 +216,27 @@ int ShapeController::nextNode(void)
 	return 0;
 }
 
-// return no path
-char *ShapeController::GetContextInfo(void) { return NULL; }
+// reset nodeNum and return NULL (no errors except in other shapes)
+void ShapeController::resetElementEnumerator(void) { elemNum=0; }
+
+// return next node for this shape or 0 if no more
+int ShapeController::nextElement(void)
+{
+	if(elemNum>=nelems) return -1;
+	int i;
+    Vector ev;
+    for(i=elemNum;i<nelems;i++)
+    {   theElements[i]->GetXYZCentroid(&ev);
+	    if(ContainsPoint(ev))
+		{	elemNum=i+1;
+			return i;
+		}
+	}
+	elemNum=nelems;
+	return -1;
+}
 
 #pragma mark ShapeController: MPM only methods
-/********************************************************************************
-    ShapeController: MPM Only Methods
-********************************************************************************/
 
 #ifdef MPM_CODE
 // return next node for this shape or -1 if no more
@@ -272,18 +274,29 @@ void ShapeController::setNetBC(bool setting)
 // return num of particles in current shape or 1 if on perParticle basis
 double ShapeController::particleCount(void) { return numParticles>0 ? (double)numParticles : (double)1. ; }
 
+// reset nodeNum and return NULL (no errors except in other shapes)
+void ShapeController::resetParticleEnumerator(void) { particleNum=0; }
+
 #endif
 
 #pragma mark ShapeController: accessors
-/********************************************************************************
- ShapeController: Accessors
- ********************************************************************************/
 
 // type of object - used in some error messages
 const char *ShapeController::GetShapeName(void) { return "Shape"; }
 
 // override for 3D shapes and result FALSE
 bool ShapeController::Is2DShape(void) { return TRUE; }
+
+// the source block
+int ShapeController::GetSourceBlock(void) { return sourceBlock; }
+
+// check if sourceBlock is same as a required block (TRUE or FALSE)
+bool ShapeController::RequiredBlock(int block) { return block==sourceBlock; }
+
+// return no pointer
+char *ShapeController::GetContextInfo(void) { return NULL; }
+
+
 
 
 

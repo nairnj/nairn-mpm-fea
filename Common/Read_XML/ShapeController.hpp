@@ -39,11 +39,8 @@ class ShapeController
 		virtual void resetNodeEnumerator(void);
 		virtual const char *startNodeEnumerator(int,int);
 		virtual int nextNode(void);
-		virtual char *GetContextInfo(void);
-    
-        // base close only (non virtual)
-        int GetSourceBlock(void);
-        bool RequiredBlock(int);
+        void resetElementEnumerator(void);
+        int nextElement(void);
     
         // MPM only methods
 #ifdef MPM_CODE
@@ -56,11 +53,15 @@ class ShapeController
         // accessors
         virtual const char *GetShapeName(void);
         virtual bool Is2DShape(void);
+        virtual char *GetContextInfo(void);
+        // base class only (non virtual)
+        int GetSourceBlock(void);
+        bool RequiredBlock(int);
 		
 	protected:
 		double xmin,xmax,ymin,ymax,zmin,zmax;
 		double distScaling;
-		int sourceBlock,nodeNum;
+		int sourceBlock,nodeNum,elemNum;
 #ifdef MPM_CODE
 		int particleNum,numParticles;
 #endif
