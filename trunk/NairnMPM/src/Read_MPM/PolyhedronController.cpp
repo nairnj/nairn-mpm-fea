@@ -1,20 +1,24 @@
 /********************************************************************************
-	BodyPolyhedronController.cpp
+	PolyhedronController.cpp
 	NairnMPM
 
 	Created by John Nairn on 1/7/11.
 	Copyright (c) 2011 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
-#include "BodyPolyhedronController.hpp"
+#include "PolyhedronController.hpp"
 #include "Read_XML/CommonReadHandler.hpp"
 #include "Read_MPM/PolyTriangle.hpp"
 
-/********************************************************************************
-	BodyPolyhedronController: constructors and destructors
-********************************************************************************/
+#pragma mark PolyhedronController: initializers
 
-BodyPolyhedronController::~BodyPolyhedronController()
+// constructor
+PolyhedronController::PolyhedronController(int block) : ShapeController(block)
+{
+}
+
+// destructor
+PolyhedronController::~PolyhedronController()
 {	unsigned i;
 	for(i=0;i<faces.size();i++)
 		delete faces[i];
@@ -22,7 +26,7 @@ BodyPolyhedronController::~BodyPolyhedronController()
 }
 
 // set from  arbitrary string data
-void BodyPolyhedronController::SetProperty(char *bData,CommonReadHandler *reader)
+void PolyhedronController::SetProperty(char *bData,CommonReadHandler *reader)
 {
 	int i;
 	vector<double> pts;
@@ -117,7 +121,7 @@ void BodyPolyhedronController::SetProperty(char *bData,CommonReadHandler *reader
 }
 
 // set a property - only style
-void BodyPolyhedronController::SetParameter(const char *aName,const char *value)
+void PolyhedronController::SetParameter(const char *aName,const char *value)
 {	
 	if(strcmp(aName,"style")==0)
 	{	if(strcmp(value,"tripts")==0)
@@ -141,7 +145,7 @@ void BodyPolyhedronController::SetParameter(const char *aName,const char *value)
 }
 
 // Return if has enough parameters to use.
-bool BodyPolyhedronController::HasAllParameters(void)
+bool PolyhedronController::HasAllParameters(void)
 {	if(faces.size()<4) return FALSE;
 	
 	unsigned i;
@@ -159,14 +163,18 @@ bool BodyPolyhedronController::HasAllParameters(void)
 	return TRUE;
 }
 
-/********************************************************************************
-	BodyPolyhedronController: methods
-********************************************************************************/
+// called read attributes to verify all attributes were there
+bool PolyhedronController::FinishParameter(void) { return style!=NO_FACES; }
+
+// called after initialization is done, need to wait for pt parameters
+bool PolyhedronController::FinishSetup(void) {	return FALSE; }
+
+#pragma mark PolyhedronController: methods
 
 // return true if point is in this body
 // To handle edges, this assumes he faces enclose and area with no open
 // space.
-bool BodyPolyhedronController::ContainsPoint(Vector& pt)
+bool PolyhedronController::ContainsPoint(Vector& pt)
 {	
 	unsigned i,crossings=0,edges=0;
 	int cross;
@@ -184,19 +192,11 @@ bool BodyPolyhedronController::ContainsPoint(Vector& pt)
 	return ((crossings+(edges>>1)) & 0x01);
 }
 
-// called read attributes to verify all attributes were there
-bool BodyPolyhedronController::FinishParameter(void) { return style!=NO_FACES; }
-
-// called after initialization is done, need to wait for pt parameters
-bool BodyPolyhedronController::FinishSetup(void) {	return FALSE; }
-
-/********************************************************************************
-	BodyPolyhedronController: accessors
-********************************************************************************/
+#pragma mark PolyhedronController: accessors
 
 // override for 3D objects
-bool BodyPolyhedronController::Is2DShape(void) { return FALSE; }
+bool PolyhedronController::Is2DShape(void) { return FALSE; }
 
 // type of object
-const char *BodyPolyhedronController::GetShapeName(void) { return "Polyhedron"; }
+const char *PolyhedronController::GetShapeName(void) { return "Polyhedron"; }
 

@@ -91,6 +91,7 @@ void Linear2D::CalcEdgeLoads(double *re,int iedge,int ndir,double *fload,int np)
 
 // thickness which may be in a subclass
 double Linear2D::GetThickness(void) { return thickness; }
+void Linear2D::SetThickness(double thick) { thickness = thick; }
 
 // face nodes
 int Linear2D::FaceNodes(void) { return 2; }

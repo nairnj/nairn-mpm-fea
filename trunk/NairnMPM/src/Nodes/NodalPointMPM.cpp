@@ -273,7 +273,7 @@ void NodalPoint::CombineRigidParticles(void)
 	if(rmvf==NULL) return;
 	
 	// sum other fields with this same rigid material into that materials field in cvf[i]
-	// since 0 to i-1 have not rigid material, only need to look from i+1 to end
+	// since 0 to i-1 do not have rigid material, only need to look from i+1 to end
 	for(j=i+1;j<maxCrackFields;j++)
 	{	if(CrackVelocityField::ActiveField(cvf[j]))
 		{	// copy rigid material from field j to field i

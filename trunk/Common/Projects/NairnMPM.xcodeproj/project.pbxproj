@@ -7,6 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		671514D115465E8B005F33A9 /* OvalController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 671514D015465E8B005F33A9 /* OvalController.cpp */; };
+		671514D215465E8B005F33A9 /* OvalController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 671514D015465E8B005F33A9 /* OvalController.cpp */; };
+		671514D415465EAD005F33A9 /* OvalController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 671514D315465EAD005F33A9 /* OvalController.hpp */; };
+		671514D515465EAD005F33A9 /* OvalController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 671514D315465EAD005F33A9 /* OvalController.hpp */; };
+		671514D81547035D005F33A9 /* PolygonController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 671514D61547035D005F33A9 /* PolygonController.cpp */; };
+		671514D91547035D005F33A9 /* PolygonController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 671514D61547035D005F33A9 /* PolygonController.cpp */; };
+		671514DA1547035D005F33A9 /* PolygonController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 671514D71547035D005F33A9 /* PolygonController.hpp */; };
+		671514DB1547035D005F33A9 /* PolygonController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 671514D71547035D005F33A9 /* PolygonController.hpp */; };
 		67B213B611F90404007523EE /* CommonTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B213B411F90404007523EE /* CommonTask.hpp */; };
 		67B213B711F90404007523EE /* CommonTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B213B511F90404007523EE /* CommonTask.cpp */; };
 		67B213B811F90404007523EE /* CommonTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B213B411F90404007523EE /* CommonTask.hpp */; };
@@ -207,18 +215,8 @@
 		A76F4FEA0B7998DE002C61D7 /* Constraint.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A76F4FE80B7998DE002C61D7 /* Constraint.cpp */; };
 		A76F4FF10B799DFB002C61D7 /* ConstraintController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A76F4FEF0B799DFB002C61D7 /* ConstraintController.hpp */; };
 		A76F4FF20B799DFB002C61D7 /* ConstraintController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A76F4FF00B799DFB002C61D7 /* ConstraintController.cpp */; };
-		A76FD8440C6CDB0600A07DBF /* BodyObjectController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A76FD8420C6CDB0600A07DBF /* BodyObjectController.hpp */; };
-		A76FD8450C6CDB0600A07DBF /* BodyObjectController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A76FD8430C6CDB0600A07DBF /* BodyObjectController.cpp */; };
-		A76FD8D00C6CE23C00A07DBF /* BodyRectController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A76FD8CE0C6CE23C00A07DBF /* BodyRectController.hpp */; };
-		A76FD8D10C6CE23C00A07DBF /* BodyRectController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A76FD8CF0C6CE23C00A07DBF /* BodyRectController.cpp */; };
-		A76FD8F10C6CE3EC00A07DBF /* BodyOvalController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A76FD8EF0C6CE3EC00A07DBF /* BodyOvalController.hpp */; };
-		A76FD8F20C6CE3EC00A07DBF /* BodyOvalController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A76FD8F00C6CE3EC00A07DBF /* BodyOvalController.cpp */; };
-		A76FD92A0C6CE5F400A07DBF /* BodyBoxController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A76FD9280C6CE5F400A07DBF /* BodyBoxController.hpp */; };
-		A76FD92B0C6CE5F400A07DBF /* BodyBoxController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A76FD9290C6CE5F400A07DBF /* BodyBoxController.cpp */; };
-		A76FD9340C6CE89300A07DBF /* BodySphereController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A76FD9320C6CE89300A07DBF /* BodySphereController.hpp */; };
-		A76FD9350C6CE89300A07DBF /* BodySphereController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A76FD9330C6CE89300A07DBF /* BodySphereController.cpp */; };
-		A76FD9410C6CEA0500A07DBF /* BodyPolygonController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A76FD93F0C6CEA0500A07DBF /* BodyPolygonController.hpp */; };
-		A76FD9420C6CEA0500A07DBF /* BodyPolygonController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A76FD9400C6CEA0500A07DBF /* BodyPolygonController.cpp */; };
+		A76FD9340C6CE89300A07DBF /* SphereController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A76FD9320C6CE89300A07DBF /* SphereController.hpp */; };
+		A76FD9350C6CE89300A07DBF /* SphereController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A76FD9330C6CE89300A07DBF /* SphereController.cpp */; };
 		A76FDB6D0C6D1B2600A07DBF /* ArcController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A76FDB6B0C6D1B2600A07DBF /* ArcController.hpp */; };
 		A76FDB6E0C6D1B2600A07DBF /* ArcController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A76FDB6C0C6D1B2600A07DBF /* ArcController.cpp */; };
 		A76FDB6F0C6D1B2600A07DBF /* ArcController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A76FDB6B0C6D1B2600A07DBF /* ArcController.hpp */; };
@@ -282,8 +280,6 @@
 		A7A44BE40A11287600978858 /* MPMPrefix.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7A44BE30A11287600978858 /* MPMPrefix.hpp */; };
 		A7A598240C56CA2B003DF165 /* FEABoundaryCondition.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7A598220C56CA2B003DF165 /* FEABoundaryCondition.hpp */; };
 		A7A598250C56CA2B003DF165 /* FEABoundaryCondition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7A598230C56CA2B003DF165 /* FEABoundaryCondition.cpp */; };
-		A7AD44000C8A7B3300231EA0 /* BodyCylinderController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7AD43FE0C8A7B3300231EA0 /* BodyCylinderController.hpp */; };
-		A7AD44010C8A7B3300231EA0 /* BodyCylinderController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7AD43FF0C8A7B3300231EA0 /* BodyCylinderController.cpp */; };
 		A7B5ECAA072437850027119D /* NodalTempBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7B5ECA8072437850027119D /* NodalTempBC.hpp */; };
 		A7B5ECAB072437850027119D /* NodalTempBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7B5ECA9072437850027119D /* NodalTempBC.cpp */; };
 		A7B6936914325B02006F6A27 /* HEAnisotropic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */; };
@@ -359,8 +355,8 @@
 		A7E037250A6D4639006B5A4E /* TransportTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7E037230A6D4639006B5A4E /* TransportTask.cpp */; };
 		A7E100A512D7D0B50074E568 /* PolyTriangle.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7E100A312D7D0B50074E568 /* PolyTriangle.hpp */; };
 		A7E100A612D7D0B50074E568 /* PolyTriangle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7E100A412D7D0B50074E568 /* PolyTriangle.cpp */; };
-		A7E1FF9B12D78BCE0074E568 /* BodyPolyhedronController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7E1FF9912D78BCE0074E568 /* BodyPolyhedronController.hpp */; };
-		A7E1FF9C12D78BCE0074E568 /* BodyPolyhedronController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7E1FF9A12D78BCE0074E568 /* BodyPolyhedronController.cpp */; };
+		A7E1FF9B12D78BCE0074E568 /* PolyhedronController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7E1FF9912D78BCE0074E568 /* PolyhedronController.hpp */; };
+		A7E1FF9C12D78BCE0074E568 /* PolyhedronController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7E1FF9A12D78BCE0074E568 /* PolyhedronController.cpp */; };
 		A7EC3A710DA91A9B003D43AC /* CubicTraction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7EC3A6F0DA91A9B003D43AC /* CubicTraction.hpp */; };
 		A7EC3A720DA91A9B003D43AC /* CubicTraction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7EC3A700DA91A9B003D43AC /* CubicTraction.cpp */; };
 		A7F723350A7179C000D23181 /* MatPoint3D.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7F723330A7179C000D23181 /* MatPoint3D.hpp */; };
@@ -373,6 +369,10 @@
 
 /* Begin PBXFileReference section */
 		08FB7796FE84155DC02AAC07 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; tabWidth = 4; };
+		671514D015465E8B005F33A9 /* OvalController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OvalController.cpp; sourceTree = "<group>"; };
+		671514D315465EAD005F33A9 /* OvalController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = OvalController.hpp; sourceTree = "<group>"; };
+		671514D61547035D005F33A9 /* PolygonController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PolygonController.cpp; sourceTree = "<group>"; };
+		671514D71547035D005F33A9 /* PolygonController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PolygonController.hpp; sourceTree = "<group>"; };
 		67B213B411F90404007523EE /* CommonTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CommonTask.hpp; sourceTree = "<group>"; };
 		67B213B511F90404007523EE /* CommonTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CommonTask.cpp; sourceTree = "<group>"; };
 		67B213C611F90F84007523EE /* MPMTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MPMTask.hpp; sourceTree = "<group>"; };
@@ -492,18 +492,8 @@
 		A76F4FE80B7998DE002C61D7 /* Constraint.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Constraint.cpp; sourceTree = "<group>"; };
 		A76F4FEF0B799DFB002C61D7 /* ConstraintController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ConstraintController.hpp; sourceTree = "<group>"; };
 		A76F4FF00B799DFB002C61D7 /* ConstraintController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConstraintController.cpp; sourceTree = "<group>"; };
-		A76FD8420C6CDB0600A07DBF /* BodyObjectController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BodyObjectController.hpp; sourceTree = "<group>"; };
-		A76FD8430C6CDB0600A07DBF /* BodyObjectController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BodyObjectController.cpp; sourceTree = "<group>"; };
-		A76FD8CE0C6CE23C00A07DBF /* BodyRectController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BodyRectController.hpp; sourceTree = "<group>"; };
-		A76FD8CF0C6CE23C00A07DBF /* BodyRectController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BodyRectController.cpp; sourceTree = "<group>"; };
-		A76FD8EF0C6CE3EC00A07DBF /* BodyOvalController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BodyOvalController.hpp; sourceTree = "<group>"; };
-		A76FD8F00C6CE3EC00A07DBF /* BodyOvalController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BodyOvalController.cpp; sourceTree = "<group>"; };
-		A76FD9280C6CE5F400A07DBF /* BodyBoxController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BodyBoxController.hpp; sourceTree = "<group>"; };
-		A76FD9290C6CE5F400A07DBF /* BodyBoxController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BodyBoxController.cpp; sourceTree = "<group>"; };
-		A76FD9320C6CE89300A07DBF /* BodySphereController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BodySphereController.hpp; sourceTree = "<group>"; };
-		A76FD9330C6CE89300A07DBF /* BodySphereController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BodySphereController.cpp; sourceTree = "<group>"; };
-		A76FD93F0C6CEA0500A07DBF /* BodyPolygonController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BodyPolygonController.hpp; sourceTree = "<group>"; };
-		A76FD9400C6CEA0500A07DBF /* BodyPolygonController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BodyPolygonController.cpp; sourceTree = "<group>"; };
+		A76FD9320C6CE89300A07DBF /* SphereController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SphereController.hpp; sourceTree = "<group>"; };
+		A76FD9330C6CE89300A07DBF /* SphereController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SphereController.cpp; sourceTree = "<group>"; };
 		A76FDB6B0C6D1B2600A07DBF /* ArcController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ArcController.hpp; sourceTree = "<group>"; };
 		A76FDB6C0C6D1B2600A07DBF /* ArcController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ArcController.cpp; sourceTree = "<group>"; };
 		A7721173103F13EA002F99FC /* CrackVelocityFieldMulti.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CrackVelocityFieldMulti.cpp; sourceTree = "<group>"; };
@@ -570,8 +560,6 @@
 		A7A7578F042249260063AF10 /* NodalLoad.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = NodalLoad.cpp; sourceTree = "<group>"; };
 		A7A75790042249260063AF10 /* NodalLoad.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = NodalLoad.hpp; sourceTree = "<group>"; };
 		A7A75796042249480063AF10 /* Gauss.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = Gauss.cpp; sourceTree = "<group>"; };
-		A7AD43FE0C8A7B3300231EA0 /* BodyCylinderController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BodyCylinderController.hpp; sourceTree = "<group>"; };
-		A7AD43FF0C8A7B3300231EA0 /* BodyCylinderController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BodyCylinderController.cpp; sourceTree = "<group>"; };
 		A7B38BAD0510BA920063AF10 /* MPMTermination.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = MPMTermination.cpp; sourceTree = "<group>"; };
 		A7B38BAE0510BA920063AF10 /* MPMTermination.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = MPMTermination.hpp; sourceTree = "<group>"; };
 		A7B5ECA8072437850027119D /* NodalTempBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = NodalTempBC.hpp; sourceTree = "<group>"; };
@@ -640,8 +628,8 @@
 		A7E037230A6D4639006B5A4E /* TransportTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TransportTask.cpp; sourceTree = "<group>"; };
 		A7E100A312D7D0B50074E568 /* PolyTriangle.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PolyTriangle.hpp; sourceTree = "<group>"; };
 		A7E100A412D7D0B50074E568 /* PolyTriangle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PolyTriangle.cpp; sourceTree = "<group>"; };
-		A7E1FF9912D78BCE0074E568 /* BodyPolyhedronController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BodyPolyhedronController.hpp; sourceTree = "<group>"; };
-		A7E1FF9A12D78BCE0074E568 /* BodyPolyhedronController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BodyPolyhedronController.cpp; sourceTree = "<group>"; };
+		A7E1FF9912D78BCE0074E568 /* PolyhedronController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PolyhedronController.hpp; sourceTree = "<group>"; };
+		A7E1FF9A12D78BCE0074E568 /* PolyhedronController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PolyhedronController.cpp; sourceTree = "<group>"; };
 		A7EC3A6F0DA91A9B003D43AC /* CubicTraction.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CubicTraction.hpp; sourceTree = "<group>"; };
 		A7EC3A700DA91A9B003D43AC /* CubicTraction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CubicTraction.cpp; sourceTree = "<group>"; };
 		A7F04606060F6C7E0060AE2F /* NairnMPM.dtd */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.xml; path = NairnMPM.dtd; sourceTree = "<group>"; };
@@ -812,6 +800,12 @@
 				A767E03E08B14CAA004540AB /* NodesController.cpp */,
 				A7BC45A80C6A514C003FF704 /* ShapeController.hpp */,
 				A7BC45A90C6A514C003FF704 /* ShapeController.cpp */,
+				A7BC47560C6A6E0C003FF704 /* RectController.hpp */,
+				A7BC47550C6A6E0C003FF704 /* RectController.cpp */,
+				671514D315465EAD005F33A9 /* OvalController.hpp */,
+				671514D015465E8B005F33A9 /* OvalController.cpp */,
+				671514D61547035D005F33A9 /* PolygonController.cpp */,
+				671514D71547035D005F33A9 /* PolygonController.hpp */,
 				A767E03908B14CAA004540AB /* LineController.hpp */,
 				A767E03808B14CAA004540AB /* LineController.cpp */,
 				A7C477C40C87806700A3ED03 /* BoxController.hpp */,
@@ -820,8 +814,6 @@
 				A76FDB6C0C6D1B2600A07DBF /* ArcController.cpp */,
 				A7BC466D0C6A60F3003FF704 /* PointController.hpp */,
 				A7BC466E0C6A60F3003FF704 /* PointController.cpp */,
-				A7BC47560C6A6E0C003FF704 /* RectController.hpp */,
-				A7BC47550C6A6E0C003FF704 /* RectController.cpp */,
 				A767E03B08B14CAA004540AB /* MaterialController.hpp */,
 				A767E03A08B14CAA004540AB /* MaterialController.cpp */,
 				A7DDE95D0BCBFA01005CC32D /* mathexpr.hpp */,
@@ -966,22 +958,10 @@
 				A767E03C08B14CAA004540AB /* MpsController.cpp */,
 				A767E03508B14CAA004540AB /* CrackController.hpp */,
 				A767E03408B14CAA004540AB /* CrackController.cpp */,
-				A76FD8420C6CDB0600A07DBF /* BodyObjectController.hpp */,
-				A76FD8430C6CDB0600A07DBF /* BodyObjectController.cpp */,
-				A76FD8CE0C6CE23C00A07DBF /* BodyRectController.hpp */,
-				A76FD8CF0C6CE23C00A07DBF /* BodyRectController.cpp */,
-				A76FD8EF0C6CE3EC00A07DBF /* BodyOvalController.hpp */,
-				A76FD8F00C6CE3EC00A07DBF /* BodyOvalController.cpp */,
-				A76FD9280C6CE5F400A07DBF /* BodyBoxController.hpp */,
-				A76FD9290C6CE5F400A07DBF /* BodyBoxController.cpp */,
-				A76FD9320C6CE89300A07DBF /* BodySphereController.hpp */,
-				A76FD9330C6CE89300A07DBF /* BodySphereController.cpp */,
-				A7AD43FE0C8A7B3300231EA0 /* BodyCylinderController.hpp */,
-				A7AD43FF0C8A7B3300231EA0 /* BodyCylinderController.cpp */,
-				A76FD93F0C6CEA0500A07DBF /* BodyPolygonController.hpp */,
-				A76FD9400C6CEA0500A07DBF /* BodyPolygonController.cpp */,
-				A7E1FF9912D78BCE0074E568 /* BodyPolyhedronController.hpp */,
-				A7E1FF9A12D78BCE0074E568 /* BodyPolyhedronController.cpp */,
+				A76FD9320C6CE89300A07DBF /* SphereController.hpp */,
+				A76FD9330C6CE89300A07DBF /* SphereController.cpp */,
+				A7E1FF9912D78BCE0074E568 /* PolyhedronController.hpp */,
+				A7E1FF9A12D78BCE0074E568 /* PolyhedronController.cpp */,
 				A7E100A312D7D0B50074E568 /* PolyTriangle.hpp */,
 				A7E100A412D7D0B50074E568 /* PolyTriangle.cpp */,
 			);
@@ -1397,17 +1377,11 @@
 				A7BC45AC0C6A514C003FF704 /* ShapeController.hpp in Headers */,
 				A7BC46710C6A60F3003FF704 /* PointController.hpp in Headers */,
 				A7BC475A0C6A6E0C003FF704 /* RectController.hpp in Headers */,
-				A76FD8440C6CDB0600A07DBF /* BodyObjectController.hpp in Headers */,
-				A76FD8D00C6CE23C00A07DBF /* BodyRectController.hpp in Headers */,
-				A76FD8F10C6CE3EC00A07DBF /* BodyOvalController.hpp in Headers */,
-				A76FD92A0C6CE5F400A07DBF /* BodyBoxController.hpp in Headers */,
-				A76FD9340C6CE89300A07DBF /* BodySphereController.hpp in Headers */,
-				A76FD9410C6CEA0500A07DBF /* BodyPolygonController.hpp in Headers */,
+				A76FD9340C6CE89300A07DBF /* SphereController.hpp in Headers */,
 				A76FDB6D0C6D1B2600A07DBF /* ArcController.hpp in Headers */,
 				A7C4745A0C87457900A3ED03 /* NodalPoint2D.hpp in Headers */,
 				A7C474640C87459700A3ED03 /* NodalPoint3D.hpp in Headers */,
 				A7C477C60C87806700A3ED03 /* BoxController.hpp in Headers */,
-				A7AD44000C8A7B3300231EA0 /* BodyCylinderController.hpp in Headers */,
 				A79E8AF60D6F7D8700B8AB58 /* TractionLaw.hpp in Headers */,
 				A72F0A3F0D943D02003426B3 /* CohesiveZone.hpp in Headers */,
 				A797728F0DA2E4EB00B0C21E /* LinearTraction.hpp in Headers */,
@@ -1438,11 +1412,13 @@
 				67B215F011F96EC7007523EE /* ResetElementsTask.hpp in Headers */,
 				67BFA35511FB81B70083F95B /* InitializationTask.hpp in Headers */,
 				A7FC2031124432B700DEAEF0 /* TrilinearTraction.hpp in Headers */,
-				A7E1FF9B12D78BCE0074E568 /* BodyPolyhedronController.hpp in Headers */,
+				A7E1FF9B12D78BCE0074E568 /* PolyhedronController.hpp in Headers */,
 				A7E100A512D7D0B50074E568 /* PolyTriangle.hpp in Headers */,
 				A76DC50C1303428B00BFECBD /* Lagrange2D.hpp in Headers */,
 				A76DC512130342EE00BFECBD /* Quad2D.hpp in Headers */,
 				A7B6936A14325B02006F6A27 /* HEAnisotropic.hpp in Headers */,
+				671514D415465EAD005F33A9 /* OvalController.hpp in Headers */,
+				671514DA1547035D005F33A9 /* PolygonController.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1509,6 +1485,8 @@
 				67B213B811F90404007523EE /* CommonTask.hpp in Headers */,
 				A76DC50A1303428B00BFECBD /* Lagrange2D.hpp in Headers */,
 				A76DC510130342EE00BFECBD /* Quad2D.hpp in Headers */,
+				671514D515465EAD005F33A9 /* OvalController.hpp in Headers */,
+				671514DB1547035D005F33A9 /* PolygonController.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1697,17 +1675,11 @@
 				A7BC45AD0C6A514C003FF704 /* ShapeController.cpp in Sources */,
 				A7BC46720C6A60F3003FF704 /* PointController.cpp in Sources */,
 				A7BC47590C6A6E0C003FF704 /* RectController.cpp in Sources */,
-				A76FD8450C6CDB0600A07DBF /* BodyObjectController.cpp in Sources */,
-				A76FD8D10C6CE23C00A07DBF /* BodyRectController.cpp in Sources */,
-				A76FD8F20C6CE3EC00A07DBF /* BodyOvalController.cpp in Sources */,
-				A76FD92B0C6CE5F400A07DBF /* BodyBoxController.cpp in Sources */,
-				A76FD9350C6CE89300A07DBF /* BodySphereController.cpp in Sources */,
-				A76FD9420C6CEA0500A07DBF /* BodyPolygonController.cpp in Sources */,
+				A76FD9350C6CE89300A07DBF /* SphereController.cpp in Sources */,
 				A76FDB6E0C6D1B2600A07DBF /* ArcController.cpp in Sources */,
 				A7C4745B0C87457900A3ED03 /* NodalPoint2D.cpp in Sources */,
 				A7C474650C87459700A3ED03 /* NodalPoint3D.cpp in Sources */,
 				A7C477C00C87805700A3ED03 /* BoxController.cpp in Sources */,
-				A7AD44010C8A7B3300231EA0 /* BodyCylinderController.cpp in Sources */,
 				A77AF2CF0D592A7E00D5313A /* BitMapFilesCommon.cpp in Sources */,
 				A79E8AF70D6F7D8700B8AB58 /* TractionLaw.cpp in Sources */,
 				A72F0A400D943D02003426B3 /* CohesiveZone.cpp in Sources */,
@@ -1739,11 +1711,13 @@
 				67B215F111F96EC7007523EE /* ResetElementsTask.cpp in Sources */,
 				67BFA35611FB81B70083F95B /* InitializationTask.cpp in Sources */,
 				A7FC2032124432B700DEAEF0 /* TrilinearTraction.cpp in Sources */,
-				A7E1FF9C12D78BCE0074E568 /* BodyPolyhedronController.cpp in Sources */,
+				A7E1FF9C12D78BCE0074E568 /* PolyhedronController.cpp in Sources */,
 				A7E100A612D7D0B50074E568 /* PolyTriangle.cpp in Sources */,
 				A76DC50B1303428B00BFECBD /* Lagrange2D.cpp in Sources */,
 				A76DC511130342EE00BFECBD /* Quad2D.cpp in Sources */,
 				A7B6936914325B02006F6A27 /* HEAnisotropic.cpp in Sources */,
+				671514D115465E8B005F33A9 /* OvalController.cpp in Sources */,
+				671514D81547035D005F33A9 /* PolygonController.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1818,6 +1792,8 @@
 				A76DC5091303428B00BFECBD /* Lagrange2D.cpp in Sources */,
 				A76DC50F130342EE00BFECBD /* Quad2D.cpp in Sources */,
 				A715F5A21542066800D53E52 /* MatRegionFEA.cpp in Sources */,
+				671514D215465E8B005F33A9 /* OvalController.cpp in Sources */,
+				671514D91547035D005F33A9 /* PolygonController.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

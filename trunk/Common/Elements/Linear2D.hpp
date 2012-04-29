@@ -33,6 +33,7 @@ class Linear2D : public ElementBase
 		virtual double GetVolume(void);
         virtual short PtInElement(Vector &);
         virtual double GetThickness(void);
+    virtual void SetThickness(double);
 #ifdef FEA_CODE
 		virtual void CalcEdgeLoads(double *,int,int,double *,int);
 #endif

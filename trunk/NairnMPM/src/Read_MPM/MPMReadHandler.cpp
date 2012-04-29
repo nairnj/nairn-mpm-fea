@@ -37,7 +37,7 @@
 #include "Materials/MaterialBase.hpp"
 #include "Materials/RigidMaterial.hpp"
 #include "Custom_Tasks/PropagateTask.hpp"
-#include "Read_MPM/BodyObjectController.hpp"
+#include "Read_XML/ShapeController.hpp"
 
 // Element types
 #include "Elements/FourNodeIsoparam.hpp"
@@ -1075,7 +1075,7 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
 		
 		case POLYHEDRON_BLOCK:
 			// must be in active body controller
-			theBody->SetProperty(xData,this);
+			theShape->SetProperty(xData,this);
 			break;
         
         default:

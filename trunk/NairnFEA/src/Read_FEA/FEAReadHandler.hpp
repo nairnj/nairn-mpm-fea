@@ -13,6 +13,9 @@
 
 #define _FEAREADHANDLER_
 
+#define NO_MATERIAL 0
+#define HOLE_MATERIAL -1
+
 #include "Read_XML/CommonReadHandler.hpp"
 
 class FEAReadHandler : public CommonReadHandler
@@ -34,8 +37,10 @@ class FEAReadHandler : public CommonReadHandler
 		void FindPeriodicNodes(void) ;
 		void RemoveEmptyElements(void);
 		short BMPFileInput(char *,const Attributes&);
+    
         short MatRegionInput(char *,const Attributes&);
         short EndMatRegionInput(char *,int);
+        void SetRegionElements(void);
 				         
     private:
         int elemMat,resequence;

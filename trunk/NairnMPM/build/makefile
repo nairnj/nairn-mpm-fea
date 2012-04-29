@@ -130,15 +130,7 @@ BitMapFiles = $(src)/Read_MPM/BitMapFiles
 BitMapFilesCommon = $(com)/Read_XML/BitMapFilesCommon
 BistableIsotropic = $(src)/Materials/BistableIsotropic
 BMPLevel = $(com)/Read_XML/BMPLevel
-BodyBoxController = $(src)/Read_MPM/BodyBoxController
 BodyForce = $(src)/Global_Quantities/BodyForce
-BodyCylinderController = $(src)/Read_MPM/BodyCylinderController
-BodyObjectController = $(src)/Read_MPM/BodyObjectController
-BodyOvalController = $(src)/Read_MPM/BodyOvalController
-BodyPolygonController = $(src)/Read_MPM/BodyPolygonController
-BodyPolyhedronController = $(src)/Read_MPM/BodyPolyhedronController
-BodyRectController = $(src)/Read_MPM/BodyRectController
-BodySphereController = $(src)/Read_MPM/BodySphereController
 BoundaryCondition = $(src)/Boundary_Conditions/BoundaryCondition
 BoxController = $(com)/Read_XML/BoxController
 CalcJKTask = $(src)/Custom_Tasks/CalcJKTask
@@ -216,8 +208,11 @@ NodalTempBC = $(src)/Boundary_Conditions/NodalTempBC
 NodalVelBC = $(src)/Boundary_Conditions/NodalVelBC
 NodesController = $(com)/Read_XML/NodesController
 Orthotropic = $(com)/Materials/Orthotropic
+OvalController = $(com)/Read_XML/OvalController
 ParseController = $(com)/Read_XML/ParseController
 PointController = $(com)/Read_XML/PointController
+PolygonController = $(com)/Read_XML/PolygonController
+PolyhedronController = $(src)/Read_MPM/PolyhedronController
 PolyTriangle = $(src)/Read_MPM/PolyTriangle
 PropagateTask = $(src)/Custom_Tasks/PropagateTask
 Quad2D = $(com)/Elements/Quad2D
@@ -228,6 +223,7 @@ RigidMaterial = $(src)/Materials/RigidMaterial
 RunCustomTasksTask = $(src)/NairnMPM_Class/RunCustomTasksTask
 ShapeController = $(com)/Read_XML/ShapeController
 SLMaterial = $(src)/Materials/SLMaterial
+SphereController = $(src)/Read_MPM/SphereController
 StartOutput = $(src)/NairnMPM_Class/StartOutput
 StrX = $(com)/Exceptions/StrX
 ThermalRamp = $(src)/Global_Quantities/ThermalRamp
@@ -256,13 +252,8 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # ArcController.hpp : LineController.hpp ShapeController.hpp
 # ArchiveData.hpp : CommonArchiveData.hpp
 # BistableIsotropic.hpp : IsotropicMat.hpp (Elastic.hpp MaterialBase.hpp)
-# BodyBoxController.hpp : BodyObjectController.hpp
-# BodyCylinderController.hpp : BodySphereController.hpp BodyObjectController.hpp
-# BodyOvalController.hpp : BodyObjectController.hpp
-# BodyPolygonController.hpp : BodyObjectController.hpp
-# BodyPolyhedronController.hpp : BodyObjectController.hpp
-# BodyRectController.hpp : BodyObjectController.hpp
-# BodySphereController.hpp : BodyObjectController.hpp
+# PolygonController.hpp : ShapeController.hpp
+# PolyhedronController.hpp : ShapeController.hpp
 # BoxController.hpp : ShapeController.hpp
 # CalcJKTask.hpp : CustomTask.hpp
 # CohesiveZone.hpp : MaterialBase.hpp TractionLaw.hpp
@@ -311,7 +302,9 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # NodalVelBC.hpp : BoundaryCondition.hpp
 # NodesController.hpp : ParseController.hpp
 # Orthotropic.hpp : TransIsotropic.hpp (Elastic.hpp MaterialBase.hpp)
+# OvalController.hpp : ShapeController.hpp
 # PointController.hpp : ShapeController.hpp
+# PolygonController.hpp : ShapeController.hpp
 # PropagateTask.hpp : CustomTask.hpp
 # Quad2D.hpp : ElementBase.hpp
 # RectController.hpp : ShapeController.hpp
@@ -320,6 +313,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # HyperElastic.hpp : MaterialBase.hpp
 # RunCustomTasksTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # RigidMaterial.hpp : MaterialBase.hpp
+# SphereController.hpp : ShapeController.hpp
 # TractionLaw.hpp : MaterialBase.hpp
 # TransIsotropic.hpp : Elastic.hpp (MaterialBase.hpp)
 # TrilinearTraction : MaterialBase.hpp TractionLaw.hpp CohesiveZone.hpp
@@ -357,12 +351,11 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		NodalPointMPM.o CustomTask.o CalcJKTask.o PropagateTask.o ReverseLoad.o \
 		DiffusionTask.o ConductionTask.o MeshInfo.o TransportTask.o ElementBase3D.o \
 		EightNodeIsoparamBrick.o MatPoint3D.o Elastic.o ElasticMPM.o HyperElastic.o \
-		mathexpr.o ShapeController.o PointController.o RectController.o BodyObjectController.o \
-		BodyBoxController.o BodyOvalController.o BodyPolygonController.o BodyRectController.o \
-		BodySphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o BodyCylinderController.o \
+		mathexpr.o ShapeController.o PointController.o RectController.o OvalController.o PolygonController.o \
+		SphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o \
 		TractionLaw.o CohesiveZone.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o SLMaterial.o CrackVelocityFieldMulti.o CrackVelocityFieldSingle.o \
-		WoodMaterial.o TrilinearTraction.o BodyPolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o
+		WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -405,7 +398,7 @@ NodesController.o : $(NodesController).cpp $(dprefix) $(NodesController).hpp $(N
 			$(NodalPoint2D).hpp $(NodalPoint3D).hpp $(NairnMPM).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NodesController).cpp
 ShapeController.o : $(ShapeController).cpp $(dprefix) $(ShapeController).hpp $(NodalPoint).hpp $(MPMBase).hpp \
-			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(CommonReadHandler).hpp
+			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(CommonReadHandler).hpp $(ElementBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ShapeController).cpp
 LineController.o : $(LineController).cpp $(dprefix) $(LineController).hpp $(ShapeController).hpp $(ElementBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(LineController).cpp
@@ -417,6 +410,10 @@ PointController.o : $(PointController).cpp $(dprefix) $(PointController).hpp $(S
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PointController).cpp
 RectController.o : $(RectController).cpp $(dprefix) $(RectController).hpp $(ShapeController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(RectController).cpp
+OvalController.o : $(OvalController).cpp $(dprefix) $(OvalController).hpp $(ShapeController).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(OvalController).cpp
+PolygonController.o : $(PolygonController).cpp $(dprefix) $(PolygonController).hpp $(ShapeController).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PolygonController).cpp
 MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialController).hpp $(ParseController).hpp \
 		$(IsotropicMat).hpp $(TransIsotropic).hpp $(Orthotropic).hpp $(Viscoelastic).hpp $(VonMisesHardening).hpp \
 		$(Mooney).hpp $(HEAnisotropic).hpp $(BistableIsotropic).hpp $(RigidMaterial).hpp $(MaterialBase).hpp $(JohnsonCook).hpp \
@@ -554,10 +551,9 @@ MPMReadHandler.o : $(MPMReadHandler).cpp $(dprefix) $(NairnMPM).hpp $(ArchiveDat
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(NodalTempBC).hpp $(NodalVelBC).hpp $(MatPtLoadBC).hpp $(MatPtFluxBC).hpp \
 			$(BoundaryCondition).hpp $(NodesController).hpp $(ElementsController).hpp $(ParseController).hpp $(MaterialController).hpp \
 			$(MpsController).hpp $(MaterialController).hpp $(CrackController).hpp $(ElementBase).hpp $(MaterialBase).hpp \
-			$(CrackHeader).hpp $(CrackSegment).hpp $(TransportTask).hpp $(MatPoint3D).hpp $(BodyObjectController).hpp \
-			$(BodyBoxController).hpp $(BodyOvalController).hpp $(BodyPolygonController).hpp $(BodyRectController).hpp \
-			$(BodySphereController).hpp $(BodyCylinderController).hpp $(RigidMaterial).hpp $(VTKArchive).hpp \
-			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(MeshInfo).hpp $(PropagateTask).hpp $(BodyPolyhedronController).hpp
+			$(CrackHeader).hpp $(CrackSegment).hpp $(TransportTask).hpp $(MatPoint3D).hpp \
+			$(PolygonController).hpp $(ShapeController).hpp  $(SphereController).hpp $(RigidMaterial).hpp $(VTKArchive).hpp \
+			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(MeshInfo).hpp $(PropagateTask).hpp $(PolyhedronController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MPMReadHandler).cpp
 Generators.o : $(Generators).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hpp $(CommonReadHandler).hpp \
 			$(MPMBase).hpp $(ElementBase).hpp $(MatPoint2D).hpp $(NodalConcBC).hpp $(NodalTempBC).hpp $(NodalVelBC).hpp \
@@ -565,7 +561,7 @@ Generators.o : $(Generators).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hp
 			$(MpsController).hpp $(FourNodeIsoparam).hpp $(ParseController).hpp $(Linear2D).hpp $(NodalPoint).hpp $(BoxController).hpp \
 			$(MeshInfo).hpp $(EightNodeIsoparamBrick).hpp $(ElementBase3D).hpp $(MatPoint3D).hpp $(ShapeController).hpp \
 			$(RectController).hpp $(ArcController).hpp $(NodalPoint2D).hpp $(NodalPoint3D).hpp $(CrackVelocityField).hpp \
-			$(MatVelocityField).hpp $(BodyObjectController).hpp $(ElementsController).hpp
+			$(OvalController).hpp $(MatVelocityField).hpp $(ElementsController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Generators).cpp
 BitMapFiles.o : $(BitMapFiles).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hpp $(CommonReadHandler).hpp \
 			$(BMPLevel).hpp $(MatPoint2D).hpp $(ElementBase).hpp $(ArchiveData).hpp $(CommonArchiveData).hpp \
@@ -576,23 +572,10 @@ MpsController.o : $(MpsController).cpp $(dprefix) $(MpsController).hpp $(MPMBase
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MpsController).cpp
 CrackController.o : $(CrackController).cpp $(dprefix) $(CrackController).hpp $(ParseController).hpp $(CrackHeader).hpp $(CrackSegment).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackController).cpp
-BodyObjectController.o : $(BodyObjectController).cpp $(dprefix) $(BodyObjectController).hpp $(CommonReadHandler).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodyObjectController).cpp
-BodyRectController.o : $(BodyRectController).cpp $(dprefix) $(BodyRectController).hpp $(BodyObjectController).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodyRectController).cpp
-BodyOvalController.o : $(BodyOvalController).cpp $(dprefix) $(BodyOvalController).hpp $(BodyObjectController).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodyOvalController).cpp
-BodyBoxController.o : $(BodyBoxController).cpp $(dprefix) $(BodyBoxController).hpp $(BodyObjectController).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodyBoxController).cpp
-BodySphereController.o : $(BodySphereController).cpp $(dprefix) $(BodySphereController).hpp $(BodyObjectController).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodySphereController).cpp
-BodyCylinderController.o : $(BodyCylinderController).cpp $(dprefix) $(BodyCylinderController).hpp $(BodySphereController).hpp \
-			$(BodyObjectController).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodyCylinderController).cpp
-BodyPolygonController.o : $(BodyPolygonController).cpp $(dprefix) $(BodyPolygonController).hpp $(BodyObjectController).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodyPolygonController).cpp
-BodyPolyhedronController.o : $(BodyPolyhedronController).cpp $(dprefix) $(BodyPolyhedronController).hpp $(BodyObjectController).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodyPolyhedronController).cpp
+SphereController.o : $(SphereController).cpp $(dprefix) $(SphereController).hpp $(ShapeController).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(SphereController).cpp
+PolyhedronController.o : $(PolyhedronController).cpp $(dprefix) $(PolyhedronController).hpp $(ShapeController).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PolyhedronController).cpp
 PolyTriangle.o : $(PolyTriangle).cpp $(dprefix) $(PolyTriangle).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PolyTriangle).cpp
 

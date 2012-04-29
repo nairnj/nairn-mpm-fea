@@ -9,9 +9,7 @@
 #include "Read_FEA/PathBCController.hpp"
 #include "Read_FEA/Path.hpp"
 
-/********************************************************************************
-	LineController: Constructors and Destructor
-********************************************************************************/
+#pragma mark PathBCController: initilizers
 
 PathBCController::PathBCController(int block,Path *bcPath) : ShapeController(block)
 {
@@ -21,9 +19,7 @@ PathBCController::PathBCController(int block,Path *bcPath) : ShapeController(blo
 // bothing to check
 bool PathBCController::FinishSetup(void) { return TRUE; }
 
-/********************************************************************************
-	LineController: methods
-********************************************************************************/
+#pragma mark PathBCController: methods
 
 // reset nodeNum and verify OK if applied to a path in FEA
 const char *PathBCController::startNodeEnumerator(int command,int axis)
@@ -38,6 +34,8 @@ int PathBCController::nextNode(void)
 	nodeNum++;
 	return thePath->nodeAtIndex(nodeNum-1);
 }
+
+#pragma mark PathBCController: accessors
 
 // return the path
 char *PathBCController::GetContextInfo(void) { return (char *)thePath; }

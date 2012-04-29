@@ -158,6 +158,7 @@ void Quad2D::AdjustMidSideNode(int tip,int mid,int end,vector<int> &movedNodes)
 
 // thickness which may be in a subclass
 double Quad2D::GetThickness(void) { return thickness; }
+void Quad2D::SetThickness(double thick) { thickness = thick; }
 
 // face nodes
 int Quad2D::FaceNodes(void) { return 3; }

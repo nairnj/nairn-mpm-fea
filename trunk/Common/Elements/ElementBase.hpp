@@ -84,6 +84,7 @@ class ElementBase : public LinkedObject
         // prototypes of methods defined in ElementBase class (but may override)
 		virtual void PrintElement(ostream &,int);
 		virtual double GetThickness(void);
+        virtual void SetThickness(double);
 		virtual void GetXYZCentroid(Vector *);
 		virtual double GetDeltaX(void);
 		virtual double GetDeltaY(void);
@@ -127,6 +128,7 @@ class ElementBase : public LinkedObject
 		void QuadEdgeLoad(int,int,int,int,double *,double *,int);
 		virtual bool BulkElement(void);
 		virtual void MakeQuarterPointNodes(int,vector<int> &);
+        virtual void SetAngle(double);
 		void SetAngleInDegrees(double eAng);
 		double GetAngleInDegrees(void);
 #endif

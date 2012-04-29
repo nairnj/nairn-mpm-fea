@@ -1,5 +1,5 @@
 <?xml version='1.0'?>
-<!DOCTYPE JANFEAInput SYSTEM "/Users/dnairn/Desktop/John/NairnCode/NairnMPM/input/NairnMPM.dtd"
+<!DOCTYPE JANFEAInput SYSTEM "/Users/nairnj/Programming/Cocoa_Projects/nairn-mpm-fea/NairnMPM/input/NairnMPM.dtd"
 [
  <!ENTITY modulus "1.0">
  <!ENTITY nu "0.33">

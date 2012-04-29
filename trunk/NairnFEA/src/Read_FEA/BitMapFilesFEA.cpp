@@ -89,18 +89,19 @@ void FEAReadHandler::TranslateBMPFiles(void)
 	Vector center;
 	for(i=0;i<nelems;i++)
 	{	elem=theElements[i]; 
-		elem->GetXYZCentroid(&center);
+        
+		// skip if element already has a material
+        if(elem->material!=NO_MATERIAL) continue;
 		
 		// skip unless the center of extent of the element is in the image
+		elem->GetXYZCentroid(&center);
 		if(!imageRect->ContainsPoint(center)) continue;
-		
-		// skip if element already has a material
 		
 		// half the extent of the volume of a particle
 		deltax=(elem->GetDeltaX())/2.;
 		deltay=(elem->GetDeltaY())/2.;
 		
-		// find range of rows and cols for pixels over this element exten
+		// find range of rows and cols for pixels over this element extent
 		rmin=(center.y-deltay-yorig)/ypw;
 		rmax=(center.y+deltay-yorig)/ypw;
 		r1=BMPIndex(rmin,info.height);

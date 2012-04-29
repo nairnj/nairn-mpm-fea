@@ -188,6 +188,7 @@ int Interface2D::NumberSides(void) { return 2; }
 
 // thickness which may be in a subclass
 double Interface2D::GetThickness(void) { return thickness; }
+void Interface2D::SetThickness(double thick) { thickness = thick; }
 
 //	Interface element area is zero
 double Interface2D::GetArea(void) { return 0.; }

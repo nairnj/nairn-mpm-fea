@@ -1,42 +1,40 @@
 /********************************************************************************
-    BodyCylinderController.hpp
+    SphereController.hpp
     NairnFEA
     
-    Created by John Nairn on 9/1/07.
+    Created by John Nairn on 8/10/07.
     Copyright (c) 2007 John A. Nairn, All rights reserved.
 	
 	Dependencies
-		BodyObjectController.hpp
-		BodySphereController.hpp
+		ShapeController.hpp
 ********************************************************************************/
 
-#ifndef _BODYCYLINDERCONTROLLER_
+#ifndef _SPHERECONTROLLER_
 
-#define _BODYCYLINDERCONTROLLER_
+#define _SPHERECONTROLLER_
 
-#include "Read_MPM/BodySphereController.hpp"
+#include "Read_XML/ShapeController.hpp"
 
-class BodyCylinderController : public BodySphereController
+class SphereController : public ShapeController
 {
     public:
 	
-		// constructor
-		BodyCylinderController();
-		
         // initialize
+        SphereController(int);
         virtual bool FinishSetup(void);
-        virtual void SetProperty(const char *,char *,CommonReadHandler *);
     
 		// methods
 		virtual bool ContainsPoint(Vector &);
     
         // accessors
+		virtual bool Is2DShape(void);
 		virtual const char *GetShapeName(void);
 	
 	protected:
-		int axis;			// 1, 2, or 3, for x, y or z
-	
+		double x0,y0,z0;
 };
 
 #endif
+
+
 

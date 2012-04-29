@@ -1,29 +1,31 @@
 /********************************************************************************
-	BodyPolyhedronController.hpp
+	PolyhedronController.hpp
 	NairnMPM
 
 	Created by John Nairn on 1/7/11.
 	Copyright (c) 2011 John A. Nairn, All rights reserved.
 
 	Dependencies
-		BodyObjectController.hpp
+		ShapeController.hpp
 ********************************************************************************/
 
-#ifndef _BODYPOLYHEDRONCONTROLLER_
+#ifndef _POLYHEDRONCONTROLLER_
 
-#define _BODYPOLYHEDRONCONTROLLER_
+#define _POLYHEDRONCONTROLLER_
 
-#include "Read_MPM/BodyObjectController.hpp"
+#include "Read_XML/ShapeController.hpp"
 
 class PolyTriangle;
 
 enum { NO_FACES=0,TRICLINIC_POINTS,TRICLINIC_VECTORS,BOX_CORNERS } ;
 
-class BodyPolyhedronController : public BodyObjectController
+class PolyhedronController : public ShapeController
 {
 	public:
+    
 		// constructors
-		~BodyPolyhedronController();
+        PolyhedronController(int);
+		virtual ~PolyhedronController();
 	
         // Initialize
         virtual void SetParameter(const char *,const char *);
