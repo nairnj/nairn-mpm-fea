@@ -37,6 +37,7 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "Nodes/MaterialInterfaceNode.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackNode.hpp"
@@ -130,7 +131,9 @@ void GridForcesTask::Execute(void)
 	if(conduction) conduction->AddCrackTipHeating();
 	
 	// interface forces added to mvf[]->fint and track interface energy
-	CrackNode::InterfaceOnKnownNodes();
+    NodalPoint::interfaceEnergy=0.;
+    CrackNode::InterfaceOnKnownNodes();
+    MaterialInterfaceNode::InterfaceOnKnownNodes();
     
 	// Find grid total forces with external damping
 	double damping=bodyFrc.GetDamping(mtime);		// could move inside loop and make function of nodal position too

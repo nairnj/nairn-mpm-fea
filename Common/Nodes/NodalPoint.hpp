@@ -19,6 +19,7 @@
 
 #ifdef MPM_CODE
 class CrackSegment;
+class MaterialInterfaceNode;
 #include "Nodes/CrackVelocityField.hpp"
 #endif
 
@@ -107,9 +108,10 @@ class NodalPoint : public LinkedObject
         void Interpolate(NodalPoint *,NodalPoint *,double,bool);
         void CrackContact(int,bool,double);
 		void CrackContactThree(int,bool,double);
-		void InterfaceForce(void);
+		void CrackInterfaceForce(void);
 		void InterfaceForceThree(int);
 		void MaterialContactOnNode(bool,double);
+        void MaterialInterfaceForce(MaterialInterfaceNode *);
 		void GetMassGradient(short,int,Vector *,double);
 		double GetMass(short,int);
 		void SetXMomVel(void);

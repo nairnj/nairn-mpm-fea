@@ -225,6 +225,8 @@
 		A7721178103F13EA002F99FC /* CrackVelocityFieldMulti.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7721174103F13EA002F99FC /* CrackVelocityFieldMulti.hpp */; };
 		A7721179103F13EA002F99FC /* CrackVelocityFieldSingle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7721175103F13EA002F99FC /* CrackVelocityFieldSingle.cpp */; };
 		A772117A103F13EA002F99FC /* CrackVelocityFieldSingle.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7721176103F13EA002F99FC /* CrackVelocityFieldSingle.hpp */; };
+		A772E3E8155349CA0090B050 /* MaterialInterfaceNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A772E3E7155349CA0090B050 /* MaterialInterfaceNode.cpp */; };
+		A772E3EA155349DF0090B050 /* MaterialInterfaceNode.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A772E3E9155349DF0090B050 /* MaterialInterfaceNode.hpp */; };
 		A7731E2B05B44BDE00294E25 /* ArchiveData.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7731E2A05B44BDE00294E25 /* ArchiveData.hpp */; };
 		A7731E3005B44C0100294E25 /* GlobalQuantity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7731E2E05B44C0100294E25 /* GlobalQuantity.cpp */; };
 		A7731E3105B44C0100294E25 /* GlobalQuantity.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7731E2F05B44C0100294E25 /* GlobalQuantity.hpp */; };
@@ -500,6 +502,8 @@
 		A7721174103F13EA002F99FC /* CrackVelocityFieldMulti.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CrackVelocityFieldMulti.hpp; sourceTree = "<group>"; };
 		A7721175103F13EA002F99FC /* CrackVelocityFieldSingle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CrackVelocityFieldSingle.cpp; sourceTree = "<group>"; };
 		A7721176103F13EA002F99FC /* CrackVelocityFieldSingle.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CrackVelocityFieldSingle.hpp; sourceTree = "<group>"; };
+		A772E3E7155349CA0090B050 /* MaterialInterfaceNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MaterialInterfaceNode.cpp; sourceTree = "<group>"; };
+		A772E3E9155349DF0090B050 /* MaterialInterfaceNode.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MaterialInterfaceNode.hpp; sourceTree = "<group>"; };
 		A7731E2A05B44BDE00294E25 /* ArchiveData.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = ArchiveData.hpp; sourceTree = "<group>"; };
 		A7731E2E05B44C0100294E25 /* GlobalQuantity.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = GlobalQuantity.cpp; sourceTree = "<group>"; };
 		A7731E2F05B44C0100294E25 /* GlobalQuantity.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = GlobalQuantity.hpp; sourceTree = "<group>"; };
@@ -1035,6 +1039,8 @@
 				A7721175103F13EA002F99FC /* CrackVelocityFieldSingle.cpp */,
 				A7721174103F13EA002F99FC /* CrackVelocityFieldMulti.hpp */,
 				A7721173103F13EA002F99FC /* CrackVelocityFieldMulti.cpp */,
+				A772E3E9155349DF0090B050 /* MaterialInterfaceNode.hpp */,
+				A772E3E7155349CA0090B050 /* MaterialInterfaceNode.cpp */,
 			);
 			path = Nodes;
 			sourceTree = "<group>";
@@ -1419,6 +1425,7 @@
 				A7B6936A14325B02006F6A27 /* HEAnisotropic.hpp in Headers */,
 				671514D415465EAD005F33A9 /* OvalController.hpp in Headers */,
 				671514DA1547035D005F33A9 /* PolygonController.hpp in Headers */,
+				A772E3EA155349DF0090B050 /* MaterialInterfaceNode.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1718,6 +1725,7 @@
 				A7B6936914325B02006F6A27 /* HEAnisotropic.cpp in Sources */,
 				671514D115465E8B005F33A9 /* OvalController.cpp in Sources */,
 				671514D81547035D005F33A9 /* PolygonController.cpp in Sources */,
+				A772E3E8155349CA0090B050 /* MaterialInterfaceNode.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

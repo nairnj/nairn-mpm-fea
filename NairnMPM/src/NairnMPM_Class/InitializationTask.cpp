@@ -16,6 +16,7 @@
 #include "NairnMPM_Class/InitializationTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "Nodes/MaterialInterfaceNode.hpp"
 #include "Exceptions/MPMWarnings.hpp"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
 #include "Cracks/CrackNode.hpp"
@@ -51,6 +52,7 @@ void InitializationTask::Execute(void)
 	
 	// remove contact conditions
 	CrackNode::RemoveCrackNodes();
+	MaterialInterfaceNode::RemoveInterfaceNodes();
 	
     // turn off isothermal ramp when done and ramp step initialization
 	thermal.CheckDone(mtime);

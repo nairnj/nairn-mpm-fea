@@ -66,8 +66,9 @@ class CrackSurfaceContact
 		void SetContactByDisplacements(bool);
 		void SetNormalCODCutoff(double);
 		double GetNormalCODCutoff(void);
-		short GetMaterialContactLaw(int,int);
+		int GetMaterialContactLaw(int,int);
 		double GetMaterialFriction(int,int);
+        void GetMaterialInterface(int,int,double *,double *,double *);
 	
 		void MaterialContactPairs(int);
 	
@@ -77,7 +78,7 @@ class CrackSurfaceContact
 		ContactDetails **mmContact;
 		bool moveOnlySurfaces;
 		bool contactByDisplacements;
-	bool preventPlaneCrosses;
+        bool preventPlaneCrosses;
 		double normalCODAdjust;
 
 		void TangentialSlipDeltaP(Vector *,Vector *);

@@ -9,6 +9,7 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Nodes/CrackVelocityFieldMulti.hpp"
+#include "Nodes/MaterialInterfaceNode.hpp"
 #include "Exceptions/MPMTermination.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
@@ -286,7 +287,8 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
     {	if(!MatVelocityField::ActiveField(mvf[i])) continue;
 		
 		// some variables
-		Vector norm,delPi;
+		Vector norm,delPi,dispcScaled,dispi;
+        bool hasDisplacements = FALSE;
 		double rho=MaterialBase::GetMVFRho(i);				// in g/mm^3
 		double dotn,massi=mvf[i]->mass,massRatio=massi/Mc;
 		
@@ -305,103 +307,145 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 		}
 		// problem if ipaired not found, but it will be found
 		int maxContactLaw=contact.GetMaterialContactLaw(i,ipaired);
-		double maxFriction=contact.GetMaterialFriction(i,ipaired);
+		double maxFriction=0.,Dn,Dnc,Dt;
+        bool inContact = FALSE;
+        
+        // get contact parameters
+        if(maxContactLaw == IMPERFECT_INTERFACE)
+        {   // fetch interface properties
+            contact.GetMaterialInterface(i,ipaired,&Dn,&Dnc,&Dt);
+        }
+        else
+            maxFriction=contact.GetMaterialFriction(i,ipaired);
 		
-		if(maxContactLaw!=NOCONTACT)
-		{	// check nodal volume
-			if(unscaledVolume/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
-		
-			// ignore very small mass nodes
-			if(massRatio<1.e-6 || massRatio>0.999999) continue;
-			
-			// find -mi(vi-vc) = (ma/mc)pc-pi or momentum change to match ctr of mass momentum
-			CopyScaleVector(&delPi,&mvf[i]->pk,-1.);
-			AddScaledVector(&delPi,&Pc,massRatio);
+        // If needed, determine if the surfaces are in contact
+        if(maxContactLaw == NOCONTACT)
+        {   // find -mi(vi-vc) = (ma/mc)pc-pi or momentum change to match ctr of mass momentum
+            CopyScaleVector(&delPi,&mvf[i]->pk,-1.);
+            AddScaledVector(&delPi,&Pc,massRatio);
+            inContact = TRUE;
+        }
+        
+        else
+        {   // first look for conditions to ignore contact and interface at this node
+            
+            // 1. check nodal volume (this is turned off by setting the materialContactVmin to zero)
+            if(unscaledVolume/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
+            
+            // 2. ignore very small mass nodes - may not be needed
+            if(massRatio<1.e-6 || massRatio>0.999999) continue;
+            
+            // second go through contact conditions; break if not in contact or
+            // set inContact to true and break if is in contact
+            while(TRUE)
+            {   // find -mi(vi-vc) = (ma/mc)pc-pi or momentum change to match ctr of mass momentum
+                CopyScaleVector(&delPi,&mvf[i]->pk,-1.);
+                AddScaledVector(&delPi,&Pc,massRatio);
 
-			// Get normal vector by various options
-			switch(contact.materialNormalMethod)
-			{	case MAXIMUM_VOLUME_GRADIENT:
-				{	// Use mat with largest magnitude volume gradient
-					Vector normi,normj;
-					nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
-					nd[nodenum]->GetMassGradient(vfld,ipaired,&normj,-1.);
-					
-					// compare magnitude of volume gradients
-					double magi=sqrt(DotVectors(&normi,&normi));
-					double magj=sqrt(DotVectors(&normj,&normj));
-					if(magi/rho >= magj/rhopaired)
-						CopyScaleVector(&norm,&normi,1./magi);		// use material i
-					else
-						CopyScaleVector(&norm,&normj,1./magj);		// use material j
-					break;
-				}
-				case MAXIMUM_VOLUME:
-					// Use mat with most volume
-					if(massi/rho >= maxOtherMaterialVolume)
-						nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
-					else
-						nd[nodenum]->GetMassGradient(vfld,ipaired,&norm,-1.);
-					CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
-					break;
+                // Get normal vector by various options
+                switch(contact.materialNormalMethod)
+                {	case MAXIMUM_VOLUME_GRADIENT:
+                    {	// Use mat with largest magnitude volume gradient
+                        Vector normi,normj;
+                        nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
+                        nd[nodenum]->GetMassGradient(vfld,ipaired,&normj,-1.);
+                        
+                        // compare magnitude of volume gradients
+                        double magi=sqrt(DotVectors(&normi,&normi));
+                        double magj=sqrt(DotVectors(&normj,&normj));
+                        if(magi/rho >= magj/rhopaired)
+                            CopyScaleVector(&norm,&normi,1./magi);		// use material i
+                        else
+                            CopyScaleVector(&norm,&normj,1./magj);		// use material j
+                        break;
+                    }
+                        
+                    case AVERAGE_MAT_VOLUME_GRADIENTS:
+                    {	// get mass gradients for each
+                        Vector normi,normj;
+                        nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
+                        nd[nodenum]->GetMassGradient(vfld,ipaired,&normj,-1.);
+                        
+                        // volume weighted mean of volume gradients
+                        //  = (voli * grad voli + volpaired * grad volpaired)/(voli + volpaired)
+                        //  = (massi/rho)*normi/rho + maxOtherMaterialVolume*normj/rhopaired (then normalized)
+                        CopyScaleVector(&norm,&normi,massi/(rho*rho));
+                        AddScaledVector(&norm,&normj,maxOtherMaterialVolume/rhopaired);
+                        double magi=sqrt(DotVectors(&norm,&norm));
+                        ScaleVector(&norm,1./magi);
+                        break;
+                    }
+                        
+                    case MAXIMUM_VOLUME:
+                        // Use mat with most volume
+                        if(massi/rho >= maxOtherMaterialVolume)
+                            nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+                        else
+                            nd[nodenum]->GetMassGradient(vfld,ipaired,&norm,-1.);
+                        CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
+                        break;
 
-				default:
-					break;
-			}
-			
-			// Development code to try alternative methods
-			if(fmobj->dflag[0]==1)
-			{	// Use each material's own volume gradient
-				nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
-				ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
-			}
-			else if(fmobj->dflag[0]==2)
-			{	// get an average volume gradient
-				Vector normj;
-				nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
-				nd[nodenum]->GetMassGradient(vfld,ipaired,&normj,-1.);
-				AddVector(&norm,&normj);
-				ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
-			}
-			
-			// get approach direction momentum form delPi.n (actual (vc-vi) = delPi/mi)
-			dotn=DotVectors(&delPi,&norm);
-			
-			// With this check, any movement apart will be taken as noncontact
-			// Also, frictional contact assumes dotn<0
-			if(dotn>=0.) continue;
-			
-			// displacement check
-			if(contact.displacementCheck)
-			{	// get other mass and ignore if very small mass in other materials
-				double scaleDisp=(Mc-massi)/Mc;
-				if(scaleDisp<1.e-6) continue;
-				
-				// scale displacements to get delta = (Mc/(Mc-mi))*disp - (Mc/(Mc-mi))*(mvf[i]->disp/mi)
-				Vector dispcScaled,dispi;
-				CopyScaleVector(&dispcScaled,&dispc,1./scaleDisp);
-				scaleDisp*=massi;
-				CopyScaleVector(&dispi,&mvf[i]->disp,1./scaleDisp);
-				
-				// to get normal velocity delta v = (Mc/(Mc-mi)) (delta p/mi)
-				double dvel = dotn/scaleDisp;
-				
-				// check for contact
-				if(contact.MaterialContact(&dispi,&dispcScaled,&norm,dvel,postUpdate,deltime)==SEPARATED) continue;
-			}
-		}
-		else
-		{	// for no contact rule only get single velocity field conditions
-			CopyScaleVector(&delPi,&mvf[i]->pk,-1.);
-			AddScaledVector(&delPi,&Pc,massRatio);
+                    default:
+                        break;
+                }
+                
+                // Development code to try alternative methods for normals
+                if(fmobj->dflag[0]==1)
+                {	// Use each material's own volume gradient
+                    nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+                    ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
+                }
+                
+                // get approach direction momentum from delPi.n (actual (vc-vi) = delPi/mi)
+                dotn=DotVectors(&delPi,&norm);
+                
+                // 3. With this check, any movement apart will be taken as noncontact
+                // Also, frictional contact assumes dotn<0
+                if(dotn>=0.) break;
+                
+                // displacement check
+                if(contact.displacementCheck)
+                {	// 4. get other mass and ignore if very small mass in other materials
+                    double scaleDisp=(Mc-massi)/Mc;
+                    if(scaleDisp<1.e-6) break;
+                    
+                    // scale displacements to get delta = (Mc/(Mc-mi))*disp - (Mc/(Mc-mi))*(mvf[i]->disp/mi)
+                    // dispi is displacement (or position) for material i and dispcScaled is displacement
+                    //    (or position) for the virtual paired material (combination of other materials)
+                    // the separation vector is their difference
+                    CopyScaleVector(&dispcScaled,&dispc,1./scaleDisp);
+                    scaleDisp*=massi;
+                    CopyScaleVector(&dispi,&mvf[i]->disp,1./scaleDisp);
+                    hasDisplacements = TRUE;
+                    
+                    // to get normal velocity delta v = (Mc/(Mc-mi)) (delta p/mi)
+                    double dvel = dotn/scaleDisp;
+                    
+                    // 5. check for contact
+                    if(contact.MaterialContact(&dispi,&dispcScaled,&norm,dvel,postUpdate,deltime)==SEPARATED) break;
+                }
+                
+                // passed all tests
+                inContact = TRUE;
+                break;
+            }
+            
+            // continue if not in contact, unless it is an imperfect interface law
+            if(!inContact && (maxContactLaw!=IMPERFECT_INTERFACE)) continue;
 		}
 		
 		// the material is in contact
 		Vector tang;
 		double dott;
+        bool createNode;
 		
+        // adjust momentum change as needed
 		switch(maxContactLaw)
 		{	case STICK:
 			case NOCONTACT:
+                // use delPi as is to get center of mass motion
+                // NOCONTACT is here always
+                // STICK here only if in contact
 				break;
 				
 			case FRICTIONLESS:
@@ -425,6 +469,119 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 					}
 				}
 				break;
+            
+            case IMPERFECT_INTERFACE:
+                // Contact handled here only perfect interface (Dt or Dn < 0)
+                // Imperfect interfaces are handled as forces later
+                createNode = TRUE;
+                if(Dt<0)
+                {	if( (!inContact && Dn>=0.) || (inContact && Dnc>=0.) )
+                    {	// prefect in tangential, but imperfect in normal direction
+                        // make stick in tangential direction only
+                        AddScaledVector(&delPi,&norm,-dotn);
+                    }
+                    else
+                    {   // else perfect in both so return with the stick conditions already in delPi
+                        createNode=FALSE;
+                    }
+                }
+                else if( (!inContact && Dn<0.) || (inContact && Dnc<0.) )
+                {	// perfect in normal direction, but imperfect in tangential direction
+                    // make stick in normal direction only
+                    CopyScaleVector(&delPi,&norm,dotn);
+                }
+                else
+                {	// no change in momentum, just imperfect interface forces later and nothing changed here
+                    ZeroVector(&delPi);
+                }
+                
+                // create interface node and find interface forces to be added later
+                if(createNode && !postUpdate)
+                {   // get displacement of material i and the virtual opposite material
+                    if(!hasDisplacements)
+                    {   if(!contact.displacementCheck)
+                        {	dispc=GetCMDisplacement();
+                            ScaleVector(&dispc,1./Mc);
+                        }
+                        
+                        // scale displacements to get delta = (Mc/(Mc-mi))*dispc - (Mc/(Mc-mi))*(mvf[i]->disp/mi)
+                        //    of delta = disp(virtual) - dist(mat i) = dispcScaled - dispi
+                        double scaleDisp=(Mc-massi)/Mc;
+                        CopyScaleVector(&dispcScaled,&dispc,1./scaleDisp);
+                        scaleDisp*=massi;
+                        CopyScaleVector(&dispi,&mvf[i]->disp,1./scaleDisp);
+                    }
+                    
+                    // find displacement difference vector
+                    Vector delta=dispcScaled;
+                    SubVector(&delta,&dispi);
+                    
+                    // normal displacement (norm is normalized) = delta . norm, subtract adjustment when using position
+                    dotn = DotVectors(&delta,&norm);
+                    if(!contact.GetContactByDisplacements()) dotn -= contact.GetNormalCODCutoff();
+                    
+                    // tangential vector in tang
+                    CopyVector(&tang,&delta);
+                    AddScaledVector(&tang,&norm,-dotn);       // delta - dotn (n) = dott (t)
+                    dott=sqrt(DotVectors(&tang,&tang));
+                    if(!DbleEqual(dott,0.)) ScaleVector(&tang,1/dott);
+                    
+                    double trn=0.,trt=0.;
+
+                    if(Dn>=0. || Dnc>=0.)
+                    {   // Normal traction in g/(mm sec^2) - but different separated or in contact
+                        if(dotn>0.)
+                        {	// normal direction in tension if imperfecs
+                            if(Dn>=0.)
+                                trn=1.e6*Dn*dotn;
+                        }
+                        else
+                        {	// normal direction in compression
+                            if(Dnc>=0.)
+                                trn=1.e6*Dnc*dotn;
+                        }
+                    }
+                    
+                    if(Dt>=0.)
+                    {   // transverse traction in g/(mm sec^2)
+                        trt=1.e6*Dt*dott;
+                    }
+                    
+                    // find trn n + trt t for force in cartesian coordinates
+                    Vector fImp;
+                    CopyScaleVector(&fImp, &norm, trn);
+                    AddScaledVector(&fImp, &tang, trt);
+                    
+                    // total energy (not increment) is (1/2)(trn dn + trt dt) in g/sec^2
+                    // units will be g/sec^2
+                    double rawEnergy=(trn*dotn + trt*dott)/2.;
+                    
+                    // find perpendicular distance which gets smaller as interface tilts
+                    //   thus the surface area increases
+                    // See JANOSU-6-23
+                    double dist;
+                    if(mpmgrid.Is3DGrid())
+                    {   // probably does not handle all cases yet
+                        dist = fmax(fabs(mpmgrid.gridx*norm.x),fabs(mpmgrid.gridy*norm.y));
+                        dist = fmax(dist,fabs(mpmgrid.gridy*norm.y));
+                    }
+                    else
+                    {   dist = fmax(fabs(mpmgrid.gridx*norm.x),fabs(mpmgrid.gridy*norm.y));
+                    }
+                    
+                    // minimum volume
+                    double matVolume = mvf[i]->mass/rhoj;
+                    double surfaceArea=2.0*fmin(UnscaledVolumeNonrigid()-matVolume,matVolume)/dist;
+                    
+                    ScaleVector(&fImp, surfaceArea);
+                    //cout << "#mm " << i << "," << ipaired << "," << surfaceArea << "," << fImp.x << "," << fImp.y << endl;
+                    
+                    int iother = numberMaterials==2 ? ipaired : -1 ;
+                    MaterialInterfaceNode::currentNode=new MaterialInterfaceNode(nd[nodenum],vfld,i,iother,&fImp,rawEnergy*surfaceArea);
+                    if(MaterialInterfaceNode::currentNode==NULL) throw CommonException("Memory error allocating storage for a material interface node.",
+                                                                           "CrackVelocityFieldMulti::MaterialContact");
+                }
+                break;
 				
 			default:
 				break;
@@ -502,6 +659,29 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 					CopyScaleVector(&norm,&normj,1./sqrt(magj));		// use rigid material
 				break;
 			}
+                
+            case AVERAGE_MAT_VOLUME_GRADIENTS:
+            {	// get volume-weighted mean of volume gradiates
+                Vector normi,normj;
+                nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
+                nd[nodenum]->GetMassGradient(vfld,rigidFld,&normj,-1.);
+                
+                // volume weighted mean of volume gradients
+                //  = (massi/rho)*normi/rho + rigidVolume*normj (then normalized)
+                CopyScaleVector(&norm,&normi,massi/(rho*rho));
+                AddScaledVector(&norm,&normj,rigidVolume);
+                double sumVolume = massi/rho + rigidVolume;
+                double magi = DotVectors(&norm,&norm);
+                double magj = DotVectors(&normj,&normj);                  // already a volume gradient
+                
+                // compare square of volume gradients (the bias has been squared)
+                if(magi/(sumVolume*sumVolume) >= contact.rigidGradientBias*magj)
+                    ScaleVector(&norm,1./sqrt(magi));
+				else
+					CopyScaleVector(&norm,&normj,1./sqrt(magj));		// use rigid material
+                break;
+            }
+                
 			case MAXIMUM_VOLUME:
 				// Use mat with most volume
 				if(massi/rho >= rigidVolume)
@@ -516,10 +696,6 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 				nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
 				CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
 				break;
-			 
-			case AVERAGE_MAT_VOLUME_GRADIENTS:
-				// Take an average of the two volume gradients
-				break;
 			*/
 			default:
 				break;
@@ -529,14 +705,6 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 		if(fmobj->dflag[0]==1)
 		{	// Use each material's own volume gradient
 			nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
-			ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
-		}
-		else if(fmobj->dflag[0]==2)
-		{	// get an average volume gradients (not same as averaging mass gradients with non-rigid materials)
-			Vector normj;
-			nd[nodenum]->GetMassGradient(vfld,i,&norm,1./rho);
-			nd[nodenum]->GetMassGradient(vfld,rigidFld,&normj,-1.);
-			AddVector(&norm,&normj);
 			ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
 		}
         else if(fmobj->dflag[0]==3)
@@ -651,7 +819,7 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 	}
 }
 
-	// retrieve mass gradient
+// retrieve mass gradient
 void CrackVelocityFieldMulti::GetMassGradient(int matfld,Vector *grad,double scale) { CopyScaleVector(grad,mvf[matfld]->massGrad,scale); }
 
 #pragma mark VELOCITY METHODS
@@ -988,7 +1156,7 @@ void CrackVelocityFieldMulti::ChangeMomentum(Vector *delP,bool postUpdate,double
 {
 	int i;
 	
-	// special case for only one material (and it must be nonrigid
+	// special case for only one material (and it must be nonrigid)
 	if(numberMaterials==1)
 	{	for(i=0;i<maxMaterialFields;i++)
 		{	if(MatVelocityField::ActiveField(mvf[i]))

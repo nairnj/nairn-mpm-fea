@@ -34,7 +34,7 @@ CrackNode::CrackNode(NodalPoint *nd)
 // Add internal force to all nodes with imperfect interfaces 
 CrackNode *CrackNode::InterfaceForce(void)
 {
-	theNode->InterfaceForce();
+	theNode->CrackInterfaceForce();
 	return prevBC;
 }
 
@@ -92,7 +92,6 @@ void CrackNode::ContactOnKnownNodes(void)
 // When there are imperfect interfaces, add to nodal internal force
 void CrackNode::InterfaceOnKnownNodes(void)
 {
-	NodalPoint::interfaceEnergy=0.;
 	CrackNode *prevBC=currentNode;
 	while(prevBC!=NULL)
 		prevBC=prevBC->InterfaceForce();

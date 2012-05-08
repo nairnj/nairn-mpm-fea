@@ -21,6 +21,7 @@
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "Nodes/CrackVelocityFieldMulti.hpp"
 #include "Nodes/MatVelocityField.hpp"
+#include "Nodes/MaterialInterfaceNode.hpp"
 
 // class statics
 double NodalPoint::interfaceEnergy=0.;
@@ -647,7 +648,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 			otherCrack=cvf[3]->OppositeCrackTo(crackNumber,ABOVE_CRACK+BELOW_CRACK-side);
 			if(otherCrack>0)
 			{	if(CrackVelocityField::ActiveNonrigidField(cvf[1]))
-				{	if(otherCrack=cvf[1]->crackNumber(FIRST_CRACK))
+				{	if(otherCrack==cvf[1]->crackNumber(FIRST_CRACK))
 					{	if(SurfaceCrossesOneCrack(x1,y1,x,y,otherCrack)!=NO_CRACK)
 							vfld=1;
 						else
@@ -655,7 +656,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 					}
 				}
 				if(vfld<0 && CrackVelocityField::ActiveNonrigidField(cvf[2]))
-				{	if(otherCrack=cvf[2]->crackNumber(FIRST_CRACK))
+				{	if(otherCrack==cvf[2]->crackNumber(FIRST_CRACK))
 					{	if(SurfaceCrossesOneCrack(x1,y1,x,y,otherCrack)!=NO_CRACK)
 							vfld=2;
 						else
@@ -920,6 +921,28 @@ double NodalPoint::GetMass(short vfld,int matfld)
 		return 0.;
 }
  
+// This node is known to have imperfect interface with forces in cvf[vfld] from material mati
+// to matipaired (second material with the max volume)
+void NodalPoint::MaterialInterfaceForce(MaterialInterfaceNode *mmnode)
+{	
+    // recall interface response from material interface node
+    Vector fImpInt;
+    double energy = mmnode->GetInterfaceTraction(&fImpInt);
+    
+    // add total force (in g mm/sec^2) to material field
+    int vfld,mati,matipaired;
+    mmnode->GetFieldInfo(&vfld, &mati, &matipaired);
+    cvf[vfld]->AddFintTask3(mati,&fImpInt);
+    
+    // add negative force to paired material (in a pair)
+    if(matipaired>=0)
+    {   ScaleVector(&fImpInt, -1.);
+        cvf[vfld]->AddFintTask3(matipaired,&fImpInt);
+    }
+    
+    // add interface energy in units g-mm^2/sec^2 (multiply by 1e-9 to get J - kg-m^2/sec^2)
+    interfaceEnergy+=energy;
+}
 
 #pragma mark CRACK SURFACE CONTACT
 
@@ -1061,7 +1084,7 @@ void NodalPoint::AdjustContact(short a,short b,Vector *norm,int crackNumber,bool
 }
 
 // Look for crack contact and adjust accordingly
-void NodalPoint::InterfaceForce(void)
+void NodalPoint::CrackInterfaceForce(void)
 {	// Nothing to do if not near a crack contact surface: Possible fields are
 	//  1. Those with no contacts: [0], [1], [3], [0]&[3], [1]&[2]
 	//  2. Those with contacts: [0]&[1], [1]&[3], [0]&[1]&[2], [0]&[1]&[3], [1]&[2]&[3], and [0]&[1]&[2]&[3]
@@ -1156,14 +1179,12 @@ void NodalPoint::AddInterfaceForce(short a,short b,Vector *norm,int crackNumber)
 	
 	// find perpendicular distance which gets smaller as interface tilts
 	//   thus the surface area increases
-	double dist=sqrt(norm->x*norm->x+norm->y*norm->y);
-	double tx=fabs(norm->y/dist);			// normalized tx
-	if(tx<mpmgrid.diagx)
-		dist=fabs(mpmgrid.gridx*norm->x/dist);
-	else
-		dist=mpmgrid.gridy*tx;
+    double dxnx = fabs(mpmgrid.gridx*norm->x), dyny = fabs(mpmgrid.gridy*norm->y) ;
+	double dist = fmax(dxnx,dyny)/sqrt(norm->x*norm->x+norm->y*norm->y);
 	double surfaceArea=2.0*fmin(cvf[a]->UnscaledVolumeNonrigid(),cvf[b]->UnscaledVolumeNonrigid())/dist;
 	
+    //cout << "#crack: " << surfaceArea << "," << fImpInt.x*surfaceArea << "," << fImpInt.y*surfaceArea << endl;
+
 	// add total force (in g mm/sec^2)
 	AddFintSpreadTask3(a,MakeVector(fImpInt.x*surfaceArea,fImpInt.y*surfaceArea,0.));
 	AddFintSpreadTask3(b,MakeVector(-fImpInt.x*surfaceArea,-fImpInt.y*surfaceArea,0.));
@@ -1486,6 +1507,7 @@ void NodalPoint::PreliminaryCalcs(void)
 }
 
 // adjust momenta at overlaping material velocity fields
+// multimaterial mode only
 void NodalPoint::MaterialContact(bool multiMaterials,bool postUpdate,double deltime)
 {	if(!multiMaterials) return;
 	

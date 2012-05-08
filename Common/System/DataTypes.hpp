@@ -65,7 +65,7 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY};
 	
 	// contact law properties, nextFriction and matID only used for material contact
 	typedef struct {
-		short law;
+		int law;
 		double friction;
 		double Dn;
 		double Dnc;
