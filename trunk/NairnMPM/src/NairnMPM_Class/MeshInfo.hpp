@@ -13,16 +13,16 @@
 
 #define _MESHINFO_
 
-// grid type
+// grid type - all 3D ones above the marker
 enum {	UNKNOWN_GRID=-1,NOT_CARTESIAN=0,SQUARE_GRID,RECTANGULAR_GRID,
-			CUBIC_GRID,ORTHOGONAL_GRID };
+			BEGIN_3D_GRIDS,CUBIC_GRID,ORTHOGONAL_GRID };
 
 class MeshInfo
 {
     public:
 		double gridx,gridy,gridz;
 		double partx,party,partz;
-		double diagx,diagy;
+		double diagx,diagy,diagz;
 		int xplane,yplane,zplane;
 		double xmin,ymin,zmin;			// minimums (if from a grid)
 		
@@ -44,6 +44,7 @@ class MeshInfo
 		double GetMinCellDimension(void);
 		int CanDoGIMP(void);
 		bool IsStructuredGrid(void);
+        bool Is3DGrid(void);
 		void GetGridPoints(int *,int *,int *);
 		double GetCellVolume(void);
 		double GetThickness(void);

@@ -425,14 +425,20 @@ double MaterialBase::MaximumDiffusivity(void) { return kCond/(rho*heatCapacity*1
 void MaterialBase::SetFriction(double friction,int matID,double Dn,double Dnc,double Dt)
 {	
 	if(lastFriction==NULL)
-	{	lastFriction=(ContactDetails *)malloc(sizeof(ContactDetails));
+    {   // if this material did not have an friction settings, create one now
+        // and tell the new object it is the only one (i.e., it's next is NULL)
+		lastFriction=(ContactDetails *)malloc(sizeof(ContactDetails));
 		lastFriction->nextFriction=NULL;
 	}
 	else
-	{	ContactDetails *newFriction=(ContactDetails *)malloc(sizeof(ContactDetails));
+    {   // if this material already has a friction setting, create a new one,
+        // set it to point to the prior one (in lastFriction), and then set
+        // this material's lastFriction to this latest one
+		ContactDetails *newFriction=(ContactDetails *)malloc(sizeof(ContactDetails));
 		newFriction->nextFriction=(char *)lastFriction;
 		lastFriction=newFriction;
 	}
+    // the law type is set later in MaterialBase::ContactOutput()
 	lastFriction->friction=friction;
 	lastFriction->matID=matID;
 	lastFriction->Dn=Dn;
@@ -440,7 +446,9 @@ void MaterialBase::SetFriction(double friction,int matID,double Dn,double Dnc,do
 	lastFriction->Dt=Dt;
 }
 
-// Look for contact to a given material and return contact details if fond
+// Look for contact to a given material and return contact details
+// by checking on friction settings for this material. If found return
+// the ContactDetails, otherwise return NULL
 ContactDetails *MaterialBase::GetContactToMaterial(int otherMatID)
 {	ContactDetails *currentFriction=lastFriction;
 	while(currentFriction!=NULL)
@@ -460,9 +468,15 @@ void MaterialBase::ContactOutput(int thisMatID)
 	if(currentFriction!=NULL)
 		cout << "Custom contact between material " << thisMatID << " and" << endl;
 	
+    // Law determined by friction coefficient
+    // <= -10 : Revert to single velocity field
+    // -1 to -9 (actually -10 < friction < -.5 : stick conditions in contact, free in separation
+    // 0 : frictionless
+    // >=10 : imperfect interface
+    // otherwise : friction with that coefficient of friction
 	while(currentFriction!=NULL)
 	{	// Custom Contact
-		if(currentFriction->friction<-10.)
+		if(currentFriction->friction<=-10.)
 		{   currentFriction->law=NOCONTACT;
 			sprintf(hline,"contact nodes revert to center of mass velocity field");
 		}

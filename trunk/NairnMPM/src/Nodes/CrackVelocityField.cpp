@@ -191,7 +191,7 @@ bool CrackVelocityField::GetCMVelocityTask8(Vector *velCM)
 	return TRUE;
 }
 
-#pragma mark MATERIAL CONTACT IN SUBCLASSES
+#pragma mark MATERIAL CONTACT AND INTERFACES IN SUBCLASSES
 
 // Called in multimaterial mode to check contact at nodes with multiple materials
 void CrackVelocityField::MaterialContact(int nodenum,int vfld,bool postUpdate,double deltime) { return; }

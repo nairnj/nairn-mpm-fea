@@ -188,20 +188,22 @@ void MeshInfo::SetCartesian(int style,double xcell,double ycell,double zcell)
 		gridz=zcell;
 		if(DbleEqual(xcell,ycell))
 		{	if(DbleEqual(zcell,0.))
-			cartesian=SQUARE_GRID;
-		else if(DbleEqual(xcell,zcell))
-			cartesian=CUBIC_GRID;
-		else
-			cartesian=ORTHOGONAL_GRID;
+                cartesian=SQUARE_GRID;      // 2D, xcell=ycell
+            else if(DbleEqual(xcell,zcell))
+                cartesian=CUBIC_GRID;       // 3D, xcell=ycell=zcell
+            else
+                cartesian=ORTHOGONAL_GRID;  // 3D, xcell=ycell != zcell
 		}
 		else if(DbleEqual(zcell,0.))
-			cartesian=RECTANGULAR_GRID;
+			cartesian=RECTANGULAR_GRID;     // 2D, xcell != ycell
 		else
-			cartesian=ORTHOGONAL_GRID;
+			cartesian=ORTHOGONAL_GRID;      // 3D, xcell != ycell, zcell not checked
 		
-		double diag=sqrt(gridx*gridx+gridy*gridy);
+        // find normal vector on diagonal of the cell
+		double diag=sqrt(gridx*gridx+gridy*gridy+gridz*gridz);
 		diagx=gridx/diag;
 		diagy=gridy/diag;
+        diagz=gridz/diag;
 	}
 }
 
@@ -251,6 +253,9 @@ void MeshInfo::SetParticleLength(int pointsPerCell)
 
 // return cartesian setting
 int MeshInfo::GetCartesian(void) { return cartesian; }
+
+// see if 3D grid
+bool MeshInfo::Is3DGrid(void) { return cartesian > BEGIN_3D_GRIDS; }
 
 // return minimum cell dimension if the grid is cartesian (-1 if not)
 double MeshInfo::GetMinCellDimension(void)

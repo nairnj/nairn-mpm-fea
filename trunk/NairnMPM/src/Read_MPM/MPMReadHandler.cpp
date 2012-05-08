@@ -233,6 +233,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// 0
 				else if(scanInput<1.5)
 					contact.materialNormalMethod=MAXIMUM_VOLUME;				// 1
+				else if(scanInput<2.5)
+					contact.materialNormalMethod=AVERAGE_MAT_VOLUME_GRADIENTS;	// 2
 				else
 					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// other (but turned off now, revert to 0)
 			}
@@ -298,19 +300,22 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		char othername[200];
 		othername[0]=0;
 		if(block==CRACKHEADER)
-		{	inputPtr=(char *)&contact.friction;
+        {   // Commmand in the <Cracks> element of the <MPMHeader>
+			inputPtr=(char *)&contact.friction;
 			theDn=&contact.Dn;
 			theDnc=&contact.Dnc;
 			theDt=&contact.Dt;
 		}
 		else if(block==MULTIMATERIAL)
-		{	inputPtr=(char *)&contact.materialFriction;
+        {   // Commmand in the <MultiMaterialMode> element of the <MPMHeader>
+			inputPtr=(char *)&contact.materialFriction;
 			theDn=&contact.materialDn;
 			theDnc=&contact.materialDnc;
 			theDt=&contact.materialDt;
 		}
 		else
-		{	matCtrl->friction=0.;
+        {   // Command in a material to set custom material-to-material contact
+			matCtrl->friction=0.;
 			inputPtr=(char *)&(matCtrl->friction);
 			matCtrl->Dn=-1.;
 			theDn=&(matCtrl->Dn);
@@ -326,21 +331,16 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"Dn")==0 || strcmp(aName,"Dnt")==0)
 			{	sscanf(value,"%lf",theDn);
-				if(block!=CRACKHEADER)
-					ThrowCompoundErrorMessage("Imperfect interfaces not allowed in ","multimaterial friction.","it is planned soon");
 			}
             else if(strcmp(aName,"Dnc")==0)
 			{	sscanf(value,"%lf",theDnc);
-				if(block!=CRACKHEADER)
-					ThrowCompoundErrorMessage("Imperfect interfaces not allowed in ","multimaterial friction.","it is planned soon");
 			}
 			else if(strcmp(aName,"Dt")==0)
 			{	sscanf(value,"%lf",theDt);
-				if(block!=CRACKHEADER)
-					ThrowCompoundErrorMessage("Imperfect interfaces not allowed in ","multimaterial friction.","it is planned soon");
 			}
 			else if(strcmp(aName,"mat")==0)
-			{	sscanf(value,"%d",&(matCtrl->otherMatID));
+            {   // only relevant in material definition
+				sscanf(value,"%d",&(matCtrl->otherMatID));
 			}
 			else if(strcmp(aName,"matname")==0)
 			{	if(strlen(value)>199) value[200]=0;
@@ -349,9 +349,13 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			delete [] value;
             delete [] aName;
         }
-		// if gave a mat name, it takes precedence over mat number
+		// if gave a mat name, it takes precedence over mat number (only relevant in material definition
 		if(strlen(othername)>0)
 			matCtrl->otherMatID = matCtrl->GetIDFromNewName(othername);
+        
+        // the inputPtr above will read in the friction coefficient (or numerical flag for other types of contact
+        
+        // the end of of friction element will transfer the material controller variable to the material
     }
     
     else if(strcmp(xName,"Propagate")==0 || strcmp(xName,"AltPropagate")==0)

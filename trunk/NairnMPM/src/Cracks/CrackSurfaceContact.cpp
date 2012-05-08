@@ -44,7 +44,7 @@ CrackSurfaceContact::CrackSurfaceContact()
 	materialDt=-1.;						// perfect in shear by default
 	materialContactVmin=0.0;			// cutoff to kick in other contact checks
 	displacementCheck=FALSE;			// if implementing check on displacement or position (last thing)
-	materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// method to find normals in multimaterial contact
+	materialNormalMethod=AVERAGE_MAT_VOLUME_GRADIENTS;		// method to find normals in multimaterial contact
 	rigidGradientBias=1.;				// Use rigid gradient unless material volume gradient is this much higher (only normal method 2)
 }
 
@@ -100,6 +100,8 @@ void CrackSurfaceContact::Output(int numberOfCracks)
     
 	// allocate memory for custom crack contact laws
 	char *p=new char[(numberOfCracks+1)*sizeof(ContactDetails)];
+    
+    // this is the default contact law
 	CrackContactLaw=(ContactDetails *)p;
 	CrackContactLaw[0].law=ContactLaw;
 	CrackContactLaw[0].friction=friction;
@@ -224,6 +226,8 @@ void CrackSurfaceContact::MaterialOutput(void)
 			break;
 		case AVERAGE_MAT_VOLUME_GRADIENTS:
 			cout << " average volume gradient of material and other material with largest volume";
+			cout << "                        but prefer rigid material with bias factor = " << rigidGradientBias;
+			rigidGradientBias*=rigidGradientBias;
 			break;
 		default:
 			break;
@@ -270,7 +274,7 @@ void CrackSurfaceContact::MaterialContactPairs(int maxFields)
 		}
 	}
 	
-	// check all active materials
+	// check all active materials and change laws that were specified
 	for(i=0;i<nmat;i++)
 	{	int mati=theMaterials[i]->GetField();
 		if(mati<0) continue;
@@ -294,7 +298,7 @@ void CrackSurfaceContact::MaterialContactPairs(int maxFields)
 
 // In task 1, track displacements or position and track volume of the entire crack velocity field
 void CrackSurfaceContact::AddDisplacementVolumeTask1(short vfld,int matfld,NodalPoint *ndpt,MPMBase *mptr,double shape)
-{	// exit if has no cracks and is in single material mode (i.e., not contact being done)
+{	// exit if has no cracks and is in single material mode (i.e., no contact being done)
 	if(firstCrack==NULL && maxMaterialFields==1) return;
 	
 	// displacement or position for contact calculations
@@ -471,7 +475,7 @@ short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVe
 short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,Vector *delPb,
 		CrackVelocityField *cva,CrackVelocityField *cvb,Vector *norm,int number,bool postUpdate,double deltime)
 {
-	if this options is turned on need to check this code and include check for coontact
+	if this options is turned on need to check this code and include check for contact
 	also check all code within _BC_CRACK_SIDE_ONLY_ sections
 	and delete CheckBCCMVelocity() which needs to be replaced by new strategy
 		
@@ -738,7 +742,7 @@ void CrackSurfaceContact::SetNormalCODCutoff(double meshSize) { normalCODAdjust=
 double CrackSurfaceContact::GetNormalCODCutoff(void) { return normalCODAdjust; }
 
 // material contact law for field mati to field matj
-short CrackSurfaceContact::GetMaterialContactLaw(int mati,int matj)
+int CrackSurfaceContact::GetMaterialContactLaw(int mati,int matj)
 {	// index based on smaller of the two indices
 	return mati<matj ? mmContact[mati][matj-mati-1].law : mmContact[matj][mati-matj-1].law ;
 }
@@ -747,4 +751,20 @@ short CrackSurfaceContact::GetMaterialContactLaw(int mati,int matj)
 double CrackSurfaceContact::GetMaterialFriction(int mati,int matj)
 {	// index based on smaller of the two indices
 	return mati<matj ? mmContact[mati][matj-mati-1].friction : mmContact[matj][mati-matj-1].friction ;
+}
+
+void CrackSurfaceContact::GetMaterialInterface(int mati,int matj,double *Dn,double *Dnc,double *Dt)
+{   // index based on smaller of the two indices
+    int i,j;
+    if(mati < matj)
+    {   i = mati;
+        j = matj-mati-1;
+    }
+    else
+    {   i = matj;
+        j = mati-matj-1;
+    }
+    *Dn = mmContact[i][j].Dn;
+    *Dnc = mmContact[i][j].Dnc;
+    *Dt = mmContact[i][j].Dt;
 }
