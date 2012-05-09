@@ -222,10 +222,11 @@ void CrackSurfaceContact::MaterialOutput(void)
 			cout << " gradient of material with maximum volume";
 			break;
 		case EACH_MATERIALS_MASS_GRADIENT:
+            // this is currently not implemented or allowed in input files
 			cout << " each material's own mass gradient";
 			break;
 		case AVERAGE_MAT_VOLUME_GRADIENTS:
-			cout << " average volume gradient of material and other material with largest volume";
+			cout << " volume-weighted mean gradient of material and other material with largest volume," << endl;
 			cout << "                        but prefer rigid material with bias factor = " << rigidGradientBias;
 			rigidGradientBias*=rigidGradientBias;
 			break;
