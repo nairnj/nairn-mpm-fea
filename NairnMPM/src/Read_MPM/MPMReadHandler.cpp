@@ -230,7 +230,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			}
             else if(strcmp(aName,"Normals")==0)
  			{	if(scanInput<0.5)
-					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// 0
+					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// 0 (and negative)
 				else if(scanInput<1.5)
 					contact.materialNormalMethod=MAXIMUM_VOLUME;				// 1
 				else if(scanInput<2.5)
