@@ -287,7 +287,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
     {	if(!MatVelocityField::ActiveField(mvf[i])) continue;
 		
 		// some variables
-		Vector norm,delPi,dispcScaled,dispi;
+		Vector norm,delPi,dispcScaled,dispi,otherGrad;
         bool hasDisplacements = FALSE;
 		double rho=MaterialBase::GetMVFRho(i);				// in g/mm^3
 		double dotn,massi=mvf[i]->mass,massRatio=massi/Mc;
@@ -295,6 +295,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 		// First determine contact law from other material with most volume
 		double maxOtherMaterialVolume=0.,rhoj,rhopaired=rho;
 		int ipaired=0;
+		ZeroVector(&otherGrad);
 		for(j=0;j<maxMaterialFields;j++)
 		{	if(j==i || !MatVelocityField::ActiveField(mvf[j])) continue;
 			rhoj=MaterialBase::GetMVFRho(j);				// in g/mm^3
@@ -304,7 +305,12 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 				ipaired=j;
 				rhopaired=rhoj;
 			}
+			
+			// get volume gradient (unnormalized) from all other materials
+			nd[nodenum]->GetMassGradient(vfld,j,&norm,-1.);
+			AddScaledVector(&otherGrad,&norm,matUnscaledVolume/rhoj);
 		}
+		
 		// problem if ipaired not found, but it will be found
 		int maxContactLaw=contact.GetMaterialContactLaw(i,ipaired);
 		double maxFriction=0.,Dn,Dnc,Dt;
