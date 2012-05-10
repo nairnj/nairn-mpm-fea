@@ -214,9 +214,10 @@ void CrackSurfaceContact::MaterialOutput(void)
 	cout << "Normal Calculation: ";
 	switch(materialNormalMethod)
 	{	case MAXIMUM_VOLUME_GRADIENT:
-			cout << " gradient of material with maximum volume gradient," << endl;
-			cout << "                        but prefer rigid material with bias factor = " << rigidGradientBias;
-			rigidGradientBias*=rigidGradientBias;
+			cout << " gradient of material or paired material (if all nonrigid), or the rigid material (if" << endl;
+			cout << "                   one rigid material), that has highest magnitude. When has rigid" << endl;
+			cout << "                   material, prefer rigid material gradient with bias factor = " << rigidGradientBias;
+			rigidGradientBias*=rigidGradientBias;       // squared as needed in algorithm
 			break;
 		case MAXIMUM_VOLUME:
 			cout << " gradient of material with maximum volume";
@@ -226,9 +227,10 @@ void CrackSurfaceContact::MaterialOutput(void)
 			cout << " each material's own mass gradient";
 			break;
 		case AVERAGE_MAT_VOLUME_GRADIENTS:
-			cout << " volume-weighted mean gradient of material and other materials lumped," << endl;
-			cout << "                        but prefer rigid material with bias factor = " << rigidGradientBias;
-			rigidGradientBias*=rigidGradientBias;
+			cout << " volume-weighted mean gradient of material and other materials lumped (if all nonrigid)," << endl;
+			cout << "                   on just the rigid material (if one rigid material). When has rigid" << endl;
+			cout << "                   material, prefer rigid material gradient with bias factor = " << rigidGradientBias;
+			rigidGradientBias*=rigidGradientBias;       // squared as needed in algorithm
 			break;
 		default:
 			break;
@@ -241,9 +243,6 @@ void CrackSurfaceContact::MaterialOutput(void)
         switch(fmobj->dflag[0])
         {   case 1:
                 cout << "   Each material uses its own mass gradient" << endl;
-                break;
-            case 2:
-                cout << "   Average mass gradient of the contacting materials" << endl;
                 break;
             case 3:
                 cout << "   Specified normal along axis " << fmobj->dflag[1] << " with 1,2,3 for x,y,z" << endl;

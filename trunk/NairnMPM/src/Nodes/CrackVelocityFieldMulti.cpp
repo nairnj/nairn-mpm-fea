@@ -577,16 +577,24 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
                     double rawEnergy=(trn*dotn + trt*dott)/2.;
                     
                     // find perpendicular distance which gets smaller as interface tilts
-                    //   thus the surface area increases
-                    // See JANOSU-6-23
+                    //   thus the effect surface area increases
+                    // See JANOSU-6-23 to 49
                     double dist;
                     if(mpmgrid.Is3DGrid())
-                    {   // probably does not handle all cases yet
-                        dist = fmax(fabs(mpmgrid.gridx*norm.x),fabs(mpmgrid.gridy*norm.y));
-                        dist = fmax(dist,fabs(mpmgrid.gridy*norm.y));
+                    {   // 3D has two cases
+                        double a=fabs(mpmgrid.gridx*norm.x);
+                        double b=fabs(mpmgrid.gridy*norm.y);
+                        double c=fabs(mpmgrid.gridz*norm.z);
+                        dist = fmax(a,fmax(b,c));
+                        if(2.*dist < a+b+c)
+                        {   // need alternate formula in this case (i.e., Max(a,b,c) < sum of other two)
+                            dist = (1./4.)*(2./a + 2./b + 2/c - a/(b*c) - b/(a*c) - c/(a*b));
+                            dist = 1./dist;
+                        }
                     }
                     else
-                    {   dist = fmax(fabs(mpmgrid.gridx*norm.x),fabs(mpmgrid.gridy*norm.y));
+                    {   // 2D just take maximum
+                        dist = fmax(fabs(mpmgrid.gridx*norm.x),fabs(mpmgrid.gridy*norm.y));
                     }
                     
                     // minimum volume
@@ -681,7 +689,7 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 			}
                 
             case AVERAGE_MAT_VOLUME_GRADIENTS:
-            {	// get volume-weighted mean of volume gradiates
+            {	// get volume-weighted mean of volume gradiants of material and rigid material
                 Vector normi,normj;
                 nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
                 nd[nodenum]->GetMassGradient(vfld,rigidFld,&normj,-1.);
