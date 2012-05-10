@@ -287,15 +287,15 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
     {	if(!MatVelocityField::ActiveField(mvf[i])) continue;
 		
 		// some variables
-		Vector norm,delPi,dispcScaled,dispi,otherGrad;
+		Vector norm,delPi,dispcScaled,dispi;
         bool hasDisplacements = FALSE;
 		double rho=MaterialBase::GetMVFRho(i);				// in g/mm^3
 		double dotn,massi=mvf[i]->mass,massRatio=massi/Mc;
 		
 		// First determine contact law from other material with most volume
+        // and find total other volume and volume weighted mean volume gradient
 		double maxOtherMaterialVolume=0.,rhoj,rhopaired=rho;
 		int ipaired=0;
-		ZeroVector(&otherGrad);
 		for(j=0;j<maxMaterialFields;j++)
 		{	if(j==i || !MatVelocityField::ActiveField(mvf[j])) continue;
 			rhoj=MaterialBase::GetMVFRho(j);				// in g/mm^3
@@ -305,10 +305,6 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 				ipaired=j;
 				rhopaired=rhoj;
 			}
-			
-			// get volume gradient (unnormalized) from all other materials
-			nd[nodenum]->GetMassGradient(vfld,j,&norm,-1.);
-			AddScaledVector(&otherGrad,&norm,matUnscaledVolume/rhoj);
 		}
 		
 		// problem if ipaired not found, but it will be found
@@ -367,16 +363,34 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
                     }
                         
                     case AVERAGE_MAT_VOLUME_GRADIENTS:
-                    {	// get mass gradients for each
-                        Vector normi,normj;
+                    {	// get mass gradients material i and for other material(s)
+                        Vector normi,normj,otherGrad;
                         nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
-                        nd[nodenum]->GetMassGradient(vfld,ipaired,&normj,-1.);
                         
+                        // Find total other volume weighted volume gradient
+                        //nd[nodenum]->GetMassGradient(vfld,ipaired,&normj,-1.);        // to just use paired one
+                        ZeroVector(&otherGrad);
+                        for(j=0;j<maxMaterialFields;j++)
+                        {	if(j==i || !MatVelocityField::ActiveField(mvf[j])) continue;
+                             
+                            // Finding -V grad V = -Sum V_j grad V_j = -Sum (m_j/rhoj) grad m_j/rhoj
+                            nd[nodenum]->GetMassGradient(vfld,j,&normj,-1.);
+                            rhoj=MaterialBase::GetMVFRho(j);				// in g/mm^3
+                            AddScaledVector(&otherGrad,&normj,mvf[j]->mass/(rhoj*rhoj));
+                        }
+                        // No need to divide by otherVolume to normalize because we want
+                        // avg grad * other volume, which was found above
+                       
                         // volume weighted mean of volume gradients
-                        //  = (voli * grad voli + volpaired * grad volpaired)/(voli + volpaired)
-                        //  = (massi/rho)*normi/rho + maxOtherMaterialVolume*normj/rhopaired (then normalized)
+                        //  = (voli * grad voli + otherVolume * grad otherVolume)/(total volume)
+                        //  = (massi/rho)*normi/rho + otherGrad (then normalized)
                         CopyScaleVector(&norm,&normi,massi/(rho*rho));
-                        AddScaledVector(&norm,&normj,maxOtherMaterialVolume/rhopaired);
+                        AddScaledVector(&norm,&otherGrad,1.);
+                        
+                         //  = (massi/rho)*normi/rho + maxOtherMaterialVolume*normj/rhopaired (then normalized)
+                        //AddScaledVector(&norm,&normj,maxOtherMaterialVolume/rhopaired);        // to just use paired one
+                        
+                        // normalize
                         double magi=sqrt(DotVectors(&norm,&norm));
                         ScaleVector(&norm,1./magi);
                         break;
@@ -440,7 +454,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
             if(!inContact && (maxContactLaw!=IMPERFECT_INTERFACE)) continue;
 		}
 		
-		// the material is in contact
+		// the material is in contact or imperfect interface (which is in or not in contact)
 		Vector tang;
 		double dott;
         bool createNode;
