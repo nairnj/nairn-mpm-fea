@@ -39,8 +39,11 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void RezeroNodeTask6(double);
 	
 		virtual void MaterialContact(int,int,bool,double);
+        virtual void GetFrictionalDeltaMomentum(Vector *,Vector *,double,double);
 		virtual void GetMassGradient(int,Vector *,double);
 		virtual void RigidMaterialContact(int,int,int,bool,double);
+        virtual bool GetDeltaMomemtumOfInterface(Vector *,Vector *,double,bool,double,double,double);
+        virtual double GetInterfaceForcesForNode(Vector *,Vector *,double,double,double,Vector *,double *);
 		virtual void CalcVelocityForStrainUpdate(void);
 	
 		// boundary conditions
