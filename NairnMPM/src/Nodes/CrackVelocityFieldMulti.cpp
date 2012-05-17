@@ -337,7 +337,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
             // 2. ignore very small mass nodes - may not be needed
             if(massRatio<1.e-6 || massRatio>0.999999) continue;
             
-            // second go through contact conditions; break if not in contact or
+            // third go through contact conditions; break if not in contact or
             // set inContact to true and break if is in contact
             while(TRUE)
             {   // find -mi(vi-vc) = (ma/mc)pc-pi or momentum change to match ctr of mass momentum
@@ -649,156 +649,179 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 		
 		// First determine contact law with rigid material
 		int maxContactLaw=contact.GetMaterialContactLaw(i,rigidFld);
-		double maxFriction=contact.GetMaterialFriction(i,rigidFld);
-		
-		// NOCONTACT with rigid materials means to ignore contact, which it not revert ot single velocity field
+        
+		// NOCONTACT with rigid materials means to ignore contact, which it not revert to single velocity field
 		if(maxContactLaw==NOCONTACT) continue;
+		
+        // get contact parameters
+        double maxFriction,Dn,Dnc,Dt;
+        bool inContact = FALSE;
+        if(maxContactLaw == IMPERFECT_INTERFACE)
+        {   // fetch interface properties
+            contact.GetMaterialInterface(i,rigidFld,&Dn,&Dnc,&Dt);
+        }
+        else
+            maxFriction=contact.GetMaterialFriction(i,rigidFld);
 		
 		// some variables
 		Vector norm,delPi;
 		rho=MaterialBase::GetMVFRho(i);				// in g/mm^3
 		double dotn,massi=mvf[i]->mass;
+        
+        // first look for conditions to ignore contact and interface at this node
 		
-		// check nodal volume
+		// 1. check nodal volume
 		if(unscaledVolume/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
 		
-		// ignore very small interactions
+		// 2. ignore very small interactions
 		double volRatio=massi/rho/unscaledVolume;
 		if(volRatio<1.e-6 || volRatio>0.999999) continue;
 		
-		// find -mi(vi-vr) = mi*vr-pi, which is change in momentum to match the rigid particle velocity
-		CopyScaleVector(&delPi,&mvf[i]->pk,-1.);
-		AddScaledVector(&delPi,&mvf[rigidFld]->vk,massi);
+        // third go through contact conditions; break if not in contact or
+        // set inContact to true and break if is in contact
+        while(TRUE)
+		{   // find -mi(vi-vr) = mi*vr-pi, which is change in momentum to match the rigid particle velocity
+            CopyScaleVector(&delPi,&mvf[i]->pk,-1.);
+            AddScaledVector(&delPi,&mvf[rigidFld]->vk,massi);
 		
-		// Get normal vector by various options
-		switch(contact.materialNormalMethod)
-		{	case MAXIMUM_VOLUME_GRADIENT:
-			{	// Use mat with largest magnitude volume gradient
-				Vector normi,normj;
-				nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
-				nd[nodenum]->GetMassGradient(vfld,rigidFld,&normj,-1.);
+            // Get normal vector by various options
+            switch(contact.materialNormalMethod)
+            {	case MAXIMUM_VOLUME_GRADIENT:
+                {	// Use mat with largest magnitude volume gradient
+                    Vector normi,normj;
+                    nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
+                    nd[nodenum]->GetMassGradient(vfld,rigidFld,&normj,-1.);
 				
-				// compare square of volume gradients (the bias has been squared)
-				double magi=DotVectors(&normi,&normi);
-				double magj=DotVectors(&normj,&normj);			// already a volume gradient
-				if(magi/(rho*rho) >= contact.rigidGradientBias*magj)
-					CopyScaleVector(&norm,&normi,1./sqrt(magi));		// use non-rigid material
-				else
-					CopyScaleVector(&norm,&normj,1./sqrt(magj));		// use rigid material
-				break;
-			}
+                    // compare square of volume gradients (the bias has been squared)
+                    double magi=DotVectors(&normi,&normi);
+                    double magj=DotVectors(&normj,&normj);			// already a volume gradient
+                    if(magi/(rho*rho) >= contact.rigidGradientBias*magj)
+                        CopyScaleVector(&norm,&normi,1./sqrt(magi));		// use non-rigid material
+                    else
+                        CopyScaleVector(&norm,&normj,1./sqrt(magj));		// use rigid material
+                    break;
+                }
                 
-            case AVERAGE_MAT_VOLUME_GRADIENTS:
-            {	// get volume-weighted mean of volume gradiants of material and rigid material
-                Vector normi,normj;
-                nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
-                nd[nodenum]->GetMassGradient(vfld,rigidFld,&normj,-1.);
+                case AVERAGE_MAT_VOLUME_GRADIENTS:
+                {	// get volume-weighted mean of volume gradiants of material and rigid material
+                    Vector normi,normj;
+                    nd[nodenum]->GetMassGradient(vfld,i,&normi,1.);
+                    nd[nodenum]->GetMassGradient(vfld,rigidFld,&normj,-1.);
                 
-                // volume weighted mean of volume gradients
-                //  = (massi/rho)*normi/rho + rigidVolume*normj (then normalized)
-                CopyScaleVector(&norm,&normi,massi/(rho*rho));
-                AddScaledVector(&norm,&normj,rigidVolume);
-                double sumVolume = massi/rho + rigidVolume;
-                double magi = DotVectors(&norm,&norm);
-                double magj = DotVectors(&normj,&normj);                  // already a volume gradient
+                    // volume weighted mean of volume gradients
+                    //  = (massi/rho)*normi/rho + rigidVolume*normj (then normalized)
+                    CopyScaleVector(&norm,&normi,massi/(rho*rho));
+                    AddScaledVector(&norm,&normj,rigidVolume);
+                    double sumVolume = massi/rho + rigidVolume;
+                    double magi = DotVectors(&norm,&norm);
+                    double magj = DotVectors(&normj,&normj);                  // already a volume gradient
                 
-                // compare square of volume gradients (the bias has been squared)
-                if(magi/(sumVolume*sumVolume) >= contact.rigidGradientBias*magj)
-                    ScaleVector(&norm,1./sqrt(magi));
-				else
-					CopyScaleVector(&norm,&normj,1./sqrt(magj));		// use rigid material
-                break;
-            }
+                    // compare square of volume gradients (the bias has been squared)
+                    if(magi/(sumVolume*sumVolume) >= contact.rigidGradientBias*magj)
+                        ScaleVector(&norm,1./sqrt(magi));
+                    else
+                        CopyScaleVector(&norm,&normj,1./sqrt(magj));		// use rigid material
+                    break;
+                }
                 
-			case MAXIMUM_VOLUME:
-				// Use mat with most volume
-				if(massi/rho >= rigidVolume)
-					nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
-				else
-					nd[nodenum]->GetMassGradient(vfld,rigidFld,&norm,-1.);
-				CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
-				break;
-			/*
-			case EACH_MATERIALS_MASS_GRADIENT:
-				// Use each mat as is
-				nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
-				CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
-				break;
-			*/
-			default:
-				break;
-		}			
+                case MAXIMUM_VOLUME:
+                    // Use mat with most volume
+                    if(massi/rho >= rigidVolume)
+                        nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+                    else
+                        nd[nodenum]->GetMassGradient(vfld,rigidFld,&norm,-1.);
+                    CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
+                    break;
+                /*
+                case EACH_MATERIALS_MASS_GRADIENT:
+                    // Use each mat as is
+                    nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+                    CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
+                    break;
+                 */
+                default:
+                    break;
+            }			
 		
-		// Development code to try alternative methods to get rigid contact normal
-		if(fmobj->dflag[0]==1)
-		{	// Use each material's own volume gradient
-			nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
-			ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
-		}
-        else if(fmobj->dflag[0]==3)
-        {   // normal along +/-x, +/-y or +/-z from flag[1] as +/-1, +/-2, or +/-3
-            // This should be the normal vector pointing into the rigid material
-            int normAxis = fmobj->dflag[1];
-            if(normAxis==1 || normAxis==-1)
-            {   norm.x = (double)normAxis;
-                norm.y = 0.;
-                norm.z = 0.;
+            // Development code to try alternative methods to get rigid contact normal
+            if(fmobj->dflag[0]==1)
+            {	// Use each material's own volume gradient
+                nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+                ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
             }
-            if(normAxis==2 || normAxis==-2)
-            {   norm.x = 0.;
-                norm.y = normAxis>0 ? 1. : -1. ;
-                norm.z = 0.;
+            else if(fmobj->dflag[0]==3)
+            {   // normal along +/-x, +/-y or +/-z from flag[1] as +/-1, +/-2, or +/-3
+                // This should be the normal vector pointing into the rigid material
+                int normAxis = fmobj->dflag[1];
+                if(normAxis==1 || normAxis==-1)
+                {   norm.x = (double)normAxis;
+                    norm.y = 0.;
+                    norm.z = 0.;
+                }
+                if(normAxis==2 || normAxis==-2)
+                {   norm.x = 0.;
+                    norm.y = normAxis>0 ? 1. : -1. ;
+                    norm.z = 0.;
+                }
+                else
+                {   norm.x = 0.;
+                    norm.y = 0.;
+                    norm.z = normAxis>0 ? 1. : -1. ;
+                }
             }
-            else
-            {   norm.x = 0.;
-                norm.y = 0.;
-                norm.z = normAxis>0 ? 1. : -1. ;
+            else if(fmobj->dflag[0]==4)
+            {	// use special normals for cutting simulation with rake angle in dflag[1]
+                // and the material below the crack as the first defined material
+                // Assumes material 1 = material to cut (need not be used), 2 is tool, and 3 is roller bar
+                //	(note: theID is one less than the number)
+                Vector nrpos;
+                CopyScaleVector(&nrpos,&mvf[i]->disp,1./massi);
+                //if(MaterialBase::GetFieldMatID(i)==0)
+                if(nrpos.y<0. || MaterialBase::GetFieldMatID(rigidFld)==2)
+                {	norm.x=0.;
+                    norm.y=1.;
+                }
+                else if(MaterialBase::GetFieldMatID(rigidFld)!=2)
+                {	double radAngle=(double)fmobj->dflag[1]*PI_CONSTANT/180.;
+                    norm.x=cos(radAngle);
+                    norm.y=-sin(radAngle);
+                }
+                norm.z=0.;
             }
+		
+            // get approach direction momentum form delPi.n (actual (vr-vi).n = delPi.n/mi)
+            dotn=DotVectors(&delPi,&norm);
+		
+            // With this check, any movement apart will be taken as noncontact
+            // Also, frictional contact assumes dotn<0
+            if(dotn>=0.) break;
+		
+            // displacement check
+            if(contact.displacementCheck)
+            {	// rigid material displacement was scaled by volume, while non-rigid was weighted by mass
+                Vector rigidDisp,dispi;
+                CopyScaleVector(&rigidDisp,&mvf[rigidFld]->disp,1./rigidVolume);
+                CopyScaleVector(&dispi,&mvf[i]->disp,1./massi);
+			
+                // convert dotn to velocity of approach
+                double dvel = dotn/massi;
+			
+                // check for contact
+                if(contact.MaterialContact(&dispi,&rigidDisp,&norm,dvel,postUpdate,deltime)==SEPARATED) break;
+            }
+            
+            // passed all tests
+            inContact = TRUE;
+            break;
         }
-		else if(fmobj->dflag[0]==4)
-		{	// use special normals for cutting simulation with rake angle in dflag[1]
-			// and the material below the crack as the first defined material
-			// Assumes material 1 = material to cut (need not be used), 2 is tool, and 3 is roller bar
-			//	(note: theID is one less than the number)
-			Vector nrpos;
-			CopyScaleVector(&nrpos,&mvf[i]->disp,1./massi);
-			//if(MaterialBase::GetFieldMatID(i)==0)
-			if(nrpos.y<0. || MaterialBase::GetFieldMatID(rigidFld)==2)
-			{	norm.x=0.;
-				norm.y=1.;
-			}
-			else if(MaterialBase::GetFieldMatID(rigidFld)!=2)
-			{	double radAngle=(double)fmobj->dflag[1]*PI_CONSTANT/180.;
-				norm.x=cos(radAngle);
-				norm.y=-sin(radAngle);
-			}
-			norm.z=0.;
-		}
-		
-		// get approach direction momentum form delPi.n (actual (vr-vi).n = delPi.n/mi)
-		dotn=DotVectors(&delPi,&norm);
-		
-		// With this check, any movement apart will be taken as noncontact
-		// Also, frictional contact assumes dotn<0
-		if(dotn>=0.) continue;
-		
-		// displacement check
-		if(contact.displacementCheck)
-		{	// rigid material displacement was scaled by volume, while non-rigid was weighted by mass
-			Vector rigidDisp,dispi;
-			CopyScaleVector(&rigidDisp,&mvf[rigidFld]->disp,1./rigidVolume);
-			CopyScaleVector(&dispi,&mvf[i]->disp,1./massi);
-			
-			// convert dotn to velocity of approach
-			double dvel = dotn/massi;
-			
-			// check for contact
-			if(contact.MaterialContact(&dispi,&rigidDisp,&norm,dvel,postUpdate,deltime)==SEPARATED) continue;
-		}
+        
+        // continue if not in contact, unless it is an imperfect interface law
+        if(!inContact && (maxContactLaw!=IMPERFECT_INTERFACE)) continue;
 		
 		// the material is in contact
 		Vector tang;
 		double dott;
+        bool createNode;
 		
 		switch(maxContactLaw)
 		{	case STICK:
@@ -827,6 +850,39 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 				}
 				break;
 				
+                
+            case IMPERFECT_INTERFACE:
+                // Contact handled here only perfect interface (Dt or Dn < 0)
+                // Imperfect interfaces are handled as forces later
+                createNode = TRUE;
+                if(Dt<0)
+                {	if( (!inContact && Dn>=0.) || (inContact && Dnc>=0.) )
+                    {	// prefect in tangential, but imperfect in normal direction
+                        // make stick in tangential direction only
+                        AddScaledVector(&delPi,&norm,-dotn);
+                    }
+                    else
+                    {   // else perfect in both so return with the stick conditions already in delPi
+                        createNode=FALSE;
+                    }
+                }
+                else if( (!inContact && Dn<0.) || (inContact && Dnc<0.) )
+                {	// perfect in normal direction, but imperfect in tangential direction
+                    // make stick in normal direction only
+                    CopyScaleVector(&delPi,&norm,dotn);
+                }
+                else
+                {	// no change in momentum, just imperfect interface forces later and nothing changed here
+                    ZeroVector(&delPi);
+                }
+                
+                // create interface node and find interface forces to be added later
+                if(createNode && !postUpdate)
+                {
+                    // need the code
+                }
+                break;
+                
 			default:
 				break;
 		}
