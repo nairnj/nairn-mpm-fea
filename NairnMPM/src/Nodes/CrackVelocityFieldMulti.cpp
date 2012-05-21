@@ -584,7 +584,8 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 		
 		// 2. ignore very small interactions
 		double volRatio=massi/rho/unscaledVolume;
-		if(volRatio<1.e-6 || volRatio>0.999999) continue;
+		if(volRatio<.01 || volRatio>0.99) continue;
+		//if(volRatio<1.e-6 || volRatio>0.999999) continue;
 		
         // third go through contact conditions; break if not in contact or
         // set inContact to true and break if is in contact

@@ -155,7 +155,7 @@
 				| reversible | irreversible | beta0 | betad | sigmaI | sigmaII | kIe | kIIe | nmix
 				| KIc | KIIc | JIc | JIIc | gamma | KIexp | KIIexp | delIc | delIIc | delpkI | delpkII
 				| sigmaI2 | sigmaII2 | delpkI2 | delpkII2
-				| D | DA | DT | Dx | Dy | Dz | D0 | Dd | csat | SettingFunction
+				| D | DA | DT | Dx | Dy | Dz | D0 | Dd | csat | SettingFunction | SettingFunction2 | SettingFunction3
 				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration
 				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd
 				| yldxx | yldyy | yldzz | yldxy | yldxz | yldyz | Khard | nhard | color | betahard
@@ -412,6 +412,8 @@
 <!ELEMENT	Dd (#PCDATA)>
 <!ELEMENT	csat (#PCDATA)>
 <!ELEMENT	SettingFunction (#PCDATA)>
+<!ELEMENT	SettingFunction2 (#PCDATA)>
+<!ELEMENT	SettingFunction3 (#PCDATA)>
 <!ELEMENT	kCond (#PCDATA)>
 <!ELEMENT	kCondA (#PCDATA)>
 <!ELEMENT	kCondT (#PCDATA)>

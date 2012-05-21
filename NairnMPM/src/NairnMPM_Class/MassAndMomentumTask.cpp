@@ -127,11 +127,12 @@ void MassAndMomentumTask::Execute(void)
 				
 				// for particles that are multimaterial rigid materials, set their velocity
 				if(matID->Rigid())
-				{	double newvel;
-					if(((RigidMaterial *)matID)->GetSetting(&newvel,mtime))
-					{	double velmag=DotVectors(&mpmptr->vel,&mpmptr->vel);
-						if(!DbleEqual(velmag,0.0))
-							ScaleVector(&mpmptr->vel, fabs(newvel)/sqrt(velmag));
+				{	Vector newvel;
+					bool hasDir[3];
+					if(((RigidMaterial *)matID)->GetVectorSetting(&newvel,hasDir,mtime,&mpmptr->pos))
+					{	if(hasDir[0]) mpmptr->vel.x = newvel.x;
+						if(hasDir[1]) mpmptr->vel.y = newvel.y;
+						if(hasDir[2]) mpmptr->vel.z = newvel.z;
 					}
 				}
 			}
@@ -206,69 +207,51 @@ void MassAndMomentumTask::Execute(void)
 			for(i=1;i<=numnds;i++)
 			{   mi=theElements[iel]->nodes[i-1];		// 1 based node
 				
-				// check skewed, x or y direction velocities
-				if(rigid->RigidDirection(X_DIRECTION+Y_DIRECTION))
-				{	// get magnitude and angle (in radians, cw from x+ axis)
-					double vel=sqrt(mpmptr->vel.x*mpmptr->vel.x+mpmptr->vel.y*mpmptr->vel.y);
-					double angle;
-					if(DbleEqual(mpmptr->vel.x,0.))
-						angle = (mpmptr->vel.y>0) ? -PI_CONSTANT/2. : PI_CONSTANT/2. ;
-					else if(mpmptr->vel.x>0)
-						angle=-atan(mpmptr->vel.y/mpmptr->vel.x);
-					else
-						angle=PI_CONSTANT-atan(mpmptr->vel.y/mpmptr->vel.x);
-					
-					// adjust magnitude if has setting function and not currently zero
-					// but setting function for skewed conditions must be positive otherwise skew direction
-					// toggles back and forth, rather than continuing in same directioon
-					if(rigid->GetSetting(&rvalue,mtime))
-					{	if(!DbleEqual(vel,0.))
-						{	vel=fabs(rvalue);
-							mpmptr->vel.x=vel*cos(angle);
-							mpmptr->vel.y=-vel*sin(angle);
-						}
+				// look for setting function in one to three directions
+				bool hasDir[3];
+				Vector rvel;
+				if(rigid->GetVectorSetting(&rvel,hasDir,mtime,&mpmptr->pos))
+				{	if(hasDir[0])
+					{	mpmptr->vel.x = rvel.x;
+						SetRigidBCs(mi,X_DIRECTION,rvel.x,0.,
+								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
+								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 					}
-					
-					if(DbleEqual(mpmptr->vel.x,0.) || DbleEqual(mpmptr->vel.y,0.))
-					{	// special case of on-axis zero fixes both directions
-						SetRigidBCs(mi,X_DIRECTION,mpmptr->vel.x,0.,
-									(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
-									(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
-						SetRigidBCs(mi,Y_DIRECTION,mpmptr->vel.y,0.,
+					if(hasDir[1])
+					{	mpmptr->vel.y = rvel.y;
+						SetRigidBCs(mi,Y_DIRECTION,rvel.y,0.,
 									(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 									(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 					}
-					else
-					{	angle*=180./PI_CONSTANT;			// convert to degrees for BC methods
-						SetRigidBCs(mi,SKEW_DIRECTION,vel,angle,
+					if(hasDir[2])
+					{	mpmptr->vel.z = rvel.z;
+						SetRigidBCs(mi,Z_DIRECTION,rvel.z,0.,
 									(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 									(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 					}
 				}
-				else if(rigid->RigidDirection(X_DIRECTION))
-				{	if(rigid->GetSetting(&rvalue,mtime)) mpmptr->vel.x=rvalue;
-					SetRigidBCs(mi,X_DIRECTION,mpmptr->vel.x,0.,
-								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
-								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
-				}
-				else if(rigid->RigidDirection(Y_DIRECTION))
-				{	if(rigid->GetSetting(&rvalue,mtime)) mpmptr->vel.y=rvalue;
-					SetRigidBCs(mi,Y_DIRECTION,mpmptr->vel.y,0.,
-								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
-								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
-				}
-				
-				// z direction
-				if(rigid->RigidDirection(Z_DIRECTION))
-				{	if(rigid->GetSetting(&rvalue,mtime)) mpmptr->vel.z=rvalue;
-					SetRigidBCs(mi,Z_DIRECTION,mpmptr->vel.z,0.,
-								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
-								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
+				else
+				{	// check skewed, x or y direction velocities
+					if(rigid->RigidDirection(X_DIRECTION))
+					{	SetRigidBCs(mi,X_DIRECTION,mpmptr->vel.x,0.,
+										(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
+										(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
+					}
+					if(rigid->RigidDirection(Y_DIRECTION))
+					{	SetRigidBCs(mi,Y_DIRECTION,mpmptr->vel.y,0.,
+									(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
+									(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
+					}
+					if(rigid->RigidDirection(Z_DIRECTION))
+					{	SetRigidBCs(mi,Z_DIRECTION,mpmptr->vel.z,0.,
+									(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
+									(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
+					}
 				}
 				
 				// temperature
 				if(rigid->RigidTemperature())
-				{	if(rigid->GetSetting(&rvalue,mtime)) mpmptr->pTemperature=rvalue;
+				{	if(rigid->GetSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pTemperature=rvalue;
 					SetRigidBCs(mi,TEMP_DIRECTION,mpmptr->pTemperature,0.,
 								(BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,
 								(BoundaryCondition **)&firstRigidTempBC,(BoundaryCondition **)&reuseRigidTempBC);
@@ -276,7 +259,7 @@ void MassAndMomentumTask::Execute(void)
 				
 				// concentration
 				if(rigid->RigidConcentration())
-				{	if(rigid->GetSetting(&rvalue,mtime)) mpmptr->pConcentration=rvalue;
+				{	if(rigid->GetSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pConcentration=rvalue;
 					SetRigidBCs(mi,CONC_DIRECTION,mpmptr->pConcentration,0.,
 								(BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,
 								(BoundaryCondition **)&firstRigidConcBC,(BoundaryCondition **)&reuseRigidConcBC);

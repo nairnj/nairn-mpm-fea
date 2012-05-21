@@ -1064,7 +1064,9 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
 			break;
         
 		case SETTING_FUNCTION_BLOCK:
-			((RigidMaterial *)inputPtr)->SetSettingFunction(xData);
+		case SETTING_FUNCTION2_BLOCK:
+		case SETTING_FUNCTION3_BLOCK:
+			((RigidMaterial *)inputPtr)->SetSettingFunction(xData,input);
 			break;
         
         case MPMORDER_BLOCK:
