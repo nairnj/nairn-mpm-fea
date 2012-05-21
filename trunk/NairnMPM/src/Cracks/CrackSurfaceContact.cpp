@@ -31,7 +31,7 @@ CrackSurfaceContact::CrackSurfaceContact()
 	ContactLaw=FRICTIONLESS;	// the law
 	friction=0.;				// crack contact friction
 	Dn=-1.;						// prefect in tension by default
-	Dnc=-101.;					// perfect in compression by default
+	Dnc=-101.;					// <-100 means not set and should be set same as Dn
 	Dt=-1.;						// perfect in shear by default
 	hasImperfectInterface=FALSE;	// flag for any imperfect interfaces
 	moveOnlySurfaces=TRUE;			// move surfaces, plane moves at midpoint of surfaces
@@ -40,7 +40,7 @@ CrackSurfaceContact::CrackSurfaceContact()
 	positionCutoff=0.8;				// element fraction when contact by positions
 	materialFriction=0.;				// material contact friction
 	materialDn=-1.;						// prefect in tension by default
-	materialDnc=-101.;					// not set in compression by default
+	materialDnc=-101.;					// <-100 means not set and should be set same as Dn
 	materialDt=-1.;						// perfect in shear by default
 	materialContactVmin=0.0;			// cutoff to kick in other contact checks
 	displacementCheck=FALSE;			// if implementing check on displacement or position (last thing)
@@ -177,7 +177,7 @@ void CrackSurfaceContact::MaterialOutput(void)
 	}
 	else if(materialFriction>10.)
 	{   materialContactLaw=IMPERFECT_INTERFACE;
-		if(materialDnc<100.) materialDnc=materialDn;
+		if(materialDnc<-100.) materialDnc=materialDn;
 		sprintf(hline,"imperfect interface\n     Dnt = %g MPa/mm, Dnc = %g MPa/mm, Dt = %g MPa/mm",
 				materialDn,materialDnc,materialDt);
 	}

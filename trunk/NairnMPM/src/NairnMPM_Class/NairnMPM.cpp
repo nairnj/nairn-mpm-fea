@@ -113,9 +113,6 @@ void NairnMPM::MPMAnalysis(bool abort)
 	// Do Preliminary MPM Calculations
 	PreliminaryCalcs();
 
-	// finish isothermal ramp (now that have time step)
-	thermal.SetParameters(timestep);
-
 	//---------------------------------------------------
 	// Create custom tasks
 
@@ -333,6 +330,7 @@ void NairnMPM::MPMStep(void)
 		- Initialize history variables
 	2. Loop over elements
 	3. Print information about particles
+	4. Initialize thermal calculations
 **********************************************************/
 
 void NairnMPM::PreliminaryCalcs(void)
@@ -501,6 +499,9 @@ void NairnMPM::PreliminaryCalcs(void)
 	
 	// nodal point calculations
 	NodalPoint::PreliminaryCalcs();
+	
+	// finish isothermal ramp (now that have time step)
+	thermal.SetParameters(timestep);
     
     // blank line
     cout << endl;
