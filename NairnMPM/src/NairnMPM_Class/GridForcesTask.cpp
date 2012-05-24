@@ -62,7 +62,7 @@ void GridForcesTask::Execute(void)
 
 	int numnds,nds[MaxShapeNds];
 	MaterialBase *matID;
-	double xfrc,yfrc,fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds];
+	double xfrc,yfrc,zfrc,fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds];
 	TransportTask *nextTransport;
 	Vector theFrc;
 	NodalPoint *ndptr;
@@ -99,8 +99,9 @@ void GridForcesTask::Execute(void)
 			ndptr->AddFintTask3(vfld,matfld,&theFrc);
             
             // body forces (not 3D yet)
-			if(bodyFrc.GetGravity(&xfrc,&yfrc))
-			{	theFrc=MakeVector(mp*fn[i]*xfrc,mp*fn[i]*yfrc,0.);
+			if(bodyFrc.GetGravity(&xfrc,&yfrc,&zfrc))
+            {   double gscale=mp*fn[i];
+				theFrc=MakeVector(gscale*xfrc,gscale*yfrc,gscale*zfrc);
 				ndptr->AddFintTask3(vfld,matfld,&theFrc);
 			}
             

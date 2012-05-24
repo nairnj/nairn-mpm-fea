@@ -50,7 +50,7 @@ void UpdateParticlesTask::Execute(void)
 	
     // Update particle position, velocity, temp, and conc
 	Vector delv,*acc;
-	bodyFrc.TrackAlpha();
+	bodyFrc.TrackAlpha();       // zero total kinectic energy
     for(p=0;p<nmpms;p++)
 	{	matID=theMaterials[mpm[p]->MatID()];
 		if(!matID->Rigid())

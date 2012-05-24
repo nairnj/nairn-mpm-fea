@@ -29,7 +29,7 @@
     used here, stress is multiplied by Vp0 to get shape function integral
     normalized by Vp0. In MPM this is converted to mp/rho0 to get mass-weighted
     integrals. Thus we want mass-weighted average of (Cauchy Stress)/rho0.
-    Note that this might change if uniform GIMP was change to another method.
+    Note that this might change if uniform GIMP was changed to another method.
 */
 #define CONSTANT_RHO
 

@@ -25,7 +25,8 @@ HyperElastic::HyperElastic(char *matName) : MaterialBase(matName)
 #pragma mark HyperElastic::Methods
 
 /*  Get new deformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
-        deformation gradient
+        deformation gradient (i.e., two steps with two gradients F1 = F and F2 = dF, the total
+        gradient is product of F1 and F2 in reverse order)
     dvij are elements of gradV * time step
     if storeInParticle is true, transfer new gradient to particle strain and rotation tensors
     Note: This assumes plane strain to find F[2][2]=1. If the 2D calculation is plane stress, the

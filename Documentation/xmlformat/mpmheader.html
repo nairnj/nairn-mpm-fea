@@ -220,7 +220,7 @@ where  a<sub>i</sub><sup>*</sup> = (f<sub>i</sub><sup>int</sup> + f<sub>i</sub><
 <dd>This setting means to take the normal from the material that has the largest volume at the node. The <code>RigidBias</code> factor is ignored.</dd>
 
 <dt>Normals='2' RigidBias='1'</dt>
-<dd>These settings mean to use a volume-weighted average of volume gradients for the two materials in contact. If more that two materials are present, it averages the material of interest with the other material with the most volume. The <code>RigidBias</code> (see <code>Normals='0'</code> section) is used and compares this average volume gradient to the volume gradient from the rigid material alone; it uses the rigid one alone unless the average one is the specified bias factor larger then the average.</dd>
+<dd>These settings mean to use a volume-weighted average of volume gradients for the two materials in contact. If more than two non-rigid materials are present, it averages the material of interest with the average gradient of all other materials combined. If one of the other materials is a rigid materials, it averages with only the rigid material's volume gradient. The <code>RigidBias</code> (see <code>Normals='0'</code> section) is used and compares this average volume gradient to the volume gradient from the rigid material alone; it uses the rigid one alone unless the average one is the specified bias factor larger then the rigid one.</dd>
 
 </dl>
 

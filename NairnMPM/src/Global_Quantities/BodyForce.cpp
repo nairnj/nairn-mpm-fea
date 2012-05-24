@@ -30,7 +30,10 @@ BodyForce::BodyForce()
 	damping=0.;
 	useFeedback=FALSE;
 	dampingCoefficient=0.;		// 1/Q in Nose-Hoover feedback
+    maxAlpha=-1.;
 	alpha=0.;					// evolving damping coefficient
+	function=NULL;
+	gridfunction=NULL;
 }
 
 /*******************************************************************
@@ -40,11 +43,8 @@ BodyForce::BodyForce()
 // turn gravity on (initially zero forces)
 void BodyForce::Activate(void)
 {
-	gforcex=0.;
-	gforcey=0.;
+    ZeroVector(&gforce);
 	gravity=TRUE;
-	function=NULL;
-	gridfunction=NULL;
 }
 
 // Destructor (and it is virtual)
@@ -54,11 +54,12 @@ BodyForce::~BodyForce()
 }
 
 // If gravity return TRUE and current forces
-short BodyForce::GetGravity(double *xfrc,double *yfrc)
+bool BodyForce::GetGravity(double *gx,double *gy,double *gz)
 {
 	if(!gravity) return FALSE;
-	*xfrc=gforcex;
-	*yfrc=gforcey;
+    *gx = gforce.x;
+    *gy = gforce.y;
+    *gz = gforce.z;
 	return TRUE;
 }
 
@@ -77,7 +78,7 @@ void BodyForce::Output(void)
 	char hline[200];
 	
 	if(gravity)
-	{	sprintf(hline,"Body force per g: (%e,%e) mm/sec^2",gforcex,gforcey);
+	{	sprintf(hline,"Body force per g: (%g,%g,%g) mm/sec^2",gforce.x,gforce.y,gforce.z);
 		cout << hline << endl;
 	}
 	
@@ -99,6 +100,12 @@ void BodyForce::Output(void)
 			cout << "   Target kinetic energy = " << expr << " micro J" << endl;
 			delete [] expr;
 		}
+        else
+            cout << "   Target kinetic energy = 0" << endl;
+        if(maxAlpha>0.)
+        {	sprintf(hline,"   Maximum damping alpha: %g /sec",maxAlpha);
+            cout << hline << endl;
+        }
 	}
 
 }
@@ -137,21 +144,27 @@ void BodyForce::UpdateAlpha(double delTime,double utime)
 		targetEnergy=0.;
 
 	// actual kinetic energy in micro J is kineticEnergy*1.0e-3
+    // for target energy in g mm^2/sec^2 is 1000*targetEnergy
 	// this damping factor has units of 1/mm^2 and extra factor of 2.e3 to make same
 	//    magnitude as previous damping method
-	alpha+=dampingCoefficient*(2.*kineticEnergy-2.e3*targetEnergy)*delTime/totalMass;
-	if(alpha<0.) alpha=0.;
+	alpha+=2.*dampingCoefficient*(kineticEnergy-1000.*targetEnergy)*delTime/totalMass;
+	if(alpha<0.)
+        alpha=0.;
+    else if(maxAlpha>0)
+    {   if(alpha>maxAlpha)
+            alpha=maxAlpha;
+    }
 }
 
 // set target function for feedback damping
 void BodyForce::SetTargetFunction(char *bcFunction)
-{
+{   
 	if(bcFunction==NULL)
 		ThrowSAXException("Target energy function of time is missing");
 	if(strlen(bcFunction)==0)
 		ThrowSAXException("Target energy function of time is missing");
 	if(function!=NULL)
-		ThrowSAXException("Duplicate target energy functions of time");
+		ThrowSAXException("Duplicate target energy function of time");
 	
 	// create variable
 	if(keTimeArray[0]==NULL)
@@ -163,6 +176,14 @@ void BodyForce::SetTargetFunction(char *bcFunction)
 	if(function->HasError())
 		ThrowSAXException("Target energy function of time is not valid");
 }
+
+// set maximum alpha (units 1/sec)
+void BodyForce::SetMaxAlpha(double theMax)
+{   if(theMax<=0.)
+		ThrowSAXException("Maximum feedback damping alpha must be positive");
+    maxAlpha = theMax;
+}
+
 
 // set function for grid damping
 void BodyForce::SetGridDampingFunction(char *bcFunction)
