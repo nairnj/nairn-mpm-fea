@@ -37,6 +37,7 @@ RigidMaterial::RigidMaterial(char *matName) : MaterialBase(matName)
 	function=NULL;
 	function2=NULL;
 	function3=NULL;
+    Vfunction=NULL;
 	rho=1000.;
 }
 
@@ -47,88 +48,153 @@ void RigidMaterial::PrintMechanicalProperties(void)
 {
 	if(setDirection&RIGID_MULTIMATERIAL_MODE)
 	{	cout << "Rigid multimaterial with contact" << endl;
-		
+        if(function!=NULL)
+        {	char *expr=function->Expr('#');
+			cout << "Velocity x = " << expr << endl;
+            delete [] expr;
+        }
+        if(function2!=NULL)
+        {	char *expr=function2->Expr('#');
+			cout << "Velocity y = " << expr << endl;
+            delete [] expr;
+        }
+        if(function3!=NULL)
+        {	char *expr=function3->Expr('#');
+			cout << "Velocity z = " << expr << endl;
+            delete [] expr;
+        }
+        
 		// in this mode, no boundary conditions can be applied
 		setDirection=RIGID_MULTIMATERIAL_MODE;
 		setConcentration=FALSE;
 		setTemperature=FALSE;
+        if(Vfunction!=NULL)
+        {   delete Vfunction;
+            Vfunction=NULL;
+        }
 	}
 	else
-	{	int numFxns=0;
-		if(function!=NULL) numFxns++;
-		if(function2!=NULL) numFxns++;
-		if(function3!=NULL) numFxns++;
+    {   // count velocities with functions
+		int numFxns=0;
+        char *expr=NULL,*expr2=NULL,*expr3=NULL;
+		if(function!=NULL)
+        {   numFxns++;
+            expr=function->Expr('#');
+        }
+		if(function2!=NULL)
+        {   numFxns++;
+            expr2=function2->Expr('#');
+        }
+		if(function3!=NULL)
+        {   numFxns++;
+            expr3=function3->Expr('#');
+        }
+        
+        // display control directions and functinos
 		if(setDirection&CONTROL_X_DIRECTION)
 		{	if(setDirection&CONTROL_Y_DIRECTION)
 			{	if(setDirection&CONTROL_Z_DIRECTION)
-				{	if(numFxns==1)
-						cout << "Velocity in x direction controlled" << endl;
+                {   // set x, y and z (unless too few functions)
+					if(numFxns==1)
+                    {   cout << "Velocity in x direction controlled" << endl;
+                        cout << "Velocity x = " << expr << endl;
+                    }
 					else if(numFxns==2)
-						cout << "Velocity in y direction controlled" << endl;
+                    {   cout << "Velocity in x and y directions controlled" << endl;
+                        cout << "Velocity x = " << expr << endl;
+                        cout << "Velocity y = " << expr2 << endl;
+                    }
 					else
-						cout << "Velocity in x, y, and z direction controlled" << endl;
+                    {   cout << "Velocity in x, y, and z directions controlled" << endl;
+                        if(numFxns>2)
+                        {   cout << "Velocity x = " << expr << endl;
+                            cout << "Velocity y = " << expr2 << endl;
+                            cout << "Velocity z = " << expr3 << endl;
+                        }
+                    }
 				}
 				else
-				{	if(numFxns==1)
-						cout << "Velocity in x direction controlled" << endl;
+                {   // set x and y (unless to few functions)
+					if(numFxns==1)
+                    {   cout << "Velocity in x direction controlled" << endl;
+                        cout << "Velocity x = " << expr << endl;
+                    }
 					else
-						cout << "Velocity in x and y directions controlled" << endl;
+                    {   cout << "Velocity in x and y directions controlled" << endl;
+                        if(numFxns>1)
+                        {   cout << "Velocity x = " << expr << endl;
+                            cout << "Velocity y = " << expr2 << endl;
+                        }
+                    }
 				}
 			}
 			else if(setDirection&CONTROL_Z_DIRECTION)
-			{	if(numFxns==1)
-					cout << "Velocity in x direction controlled" << endl;
+            {   // set x and z (unless too few functions)
+				if(numFxns==1)
+                {   cout << "Velocity in x direction controlled" << endl;
+                    cout << "Velocity x = " << expr << endl;
+                }
 				else
-					cout << "Velocity in x and z directions controlled" << endl;
+                {   cout << "Velocity in x and z directions controlled" << endl;
+                    if(numFxns>1)
+                    {   cout << "Velocity x = " << expr << endl;
+                        cout << "Velocity z = " << expr2 << endl;
+                    }
+                }
 			}
 			else
+            {   // set x direction only
 				cout << "Velocity in x direction controlled" << endl;
+                if(numFxns>=1)
+                    cout << "Velocity x = " << expr << endl;
+            }
 		}
 		else if(setDirection&CONTROL_Y_DIRECTION)
 		{	if(setDirection&CONTROL_Z_DIRECTION)
-			{	if(numFxns==1)
-					cout << "Velocity in y direction controlled" << endl;
+            {   // set y and z (unless too few functions)
+				if(numFxns==1)
+                {   cout << "Velocity in y direction controlled" << endl;
+                    cout << "Velocity y = " << expr << endl;
+                }
 				else
-					cout << "Velocity in y and z directions controlled" << endl;
+                {   cout << "Velocity in y and z directions controlled" << endl;
+                    if(numFxns>1)
+                    {   cout << "Velocity y = " << expr << endl;
+                        cout << "Velocity z = " << expr2 << endl;
+                    }
+                }
 			}
 			else
-				cout << "Velocity in y direction controlled" << endl;
+            {   // set y direction only
+                cout << "Velocity in y direction controlled" << endl;
+                if(numFxns>=1)
+                    cout << "Velocity y = " << expr << endl;
+            }
 		}
 		else if(setDirection&CONTROL_Z_DIRECTION)
-			cout << "Velocity in z direction controlled" << endl;
+        {   // set z direction only
+            cout << "Velocity in z direction controlled" << endl;
+            if(numFxns>=1)
+                cout << "Velocity z = " << expr << endl;
+        }
+        
+        // clean up
+        if(expr!=NULL) delete [] expr;
+        if(expr2!=NULL) delete [] expr2;
+        if(expr3!=NULL) delete [] expr3;
 	}
 	
-	if(setTemperature) cout << "Temperature controlled" << endl;
-	if(setConcentration) cout << "Concentration controlled" << endl;
+	if(setTemperature || setConcentration)
+    {   if(setTemperature) cout << "Temperature controlled" << endl;
+        if(setConcentration) cout << "Concentration controlled" << endl;
 	
-	// values or velocities
-	if(function!=NULL)
-	{	char *expr=function->Expr('#');
-		if(setDirection&RIGID_MULTIMATERIAL_MODE)
-			cout << "Velocity x = ";
-		else
-			cout << "Value #1 = ";
-		cout << expr << endl;
-		delete [] expr;
-	}
-	if(function2!=NULL)
-	{	char *expr=function2->Expr('#');
-		if(setDirection&RIGID_MULTIMATERIAL_MODE)
-			cout << "Velocity y = ";
-		else
-			cout << "Value #2 = ";
-		cout << expr << endl;
-		delete [] expr;
-	}
-	if(function3!=NULL)
-	{	char *expr=function3->Expr('#');
-		if(setDirection&RIGID_MULTIMATERIAL_MODE)
-			cout << "Velocity z = ";
-		else
-			cout << "Value #3 = ";
-		cout << expr << endl;
-		delete [] expr;
-	}
+        // value
+        if(Vfunction!=NULL)
+        {	char *expr=Vfunction->Expr('#');
+			cout << "Value #1 = " << expr << endl;
+            delete [] expr;
+        }
+    }
 	
 	// optional color
 	if(red>=0.)
@@ -172,6 +238,12 @@ char *RigidMaterial::InputMat(char *xName,int &input)
 	{	input=SETTING_FUNCTION3_BLOCK;
 		return((char *)this);
 	}
+    
+	else if(strcmp(xName,"ValueFunction")==0)
+	{	input=VALUE_FUNCTION_BLOCK;
+		return((char *)this);
+	}
+    
     return (char *)NULL;
 }
 
@@ -232,36 +304,67 @@ bool RigidMaterial::RigidDirection(int aDir) { return (setDirection&aDir)==aDir;
 bool RigidMaterial::RigidTemperature(void) { return setTemperature; }
 bool RigidMaterial::RigidConcentration(void) { return setConcentration; }
 
-// get scaling factor if a function is defined (temperature and concentration use only)
-bool RigidMaterial::GetSetting(double *setting,double theTime,Vector *pos)
-{	if(function==NULL) return false;
+// get value function (temperature and concentration use only)
+bool RigidMaterial::GetValueSetting(double *setting,double theTime,Vector *pos)
+{	if(Vfunction==NULL) return false;
 	varTime=1000.*theTime;
 	xPos=pos->x;
 	yPos=pos->y;
 	zPos=pos->z;
-	*setting=function->Val();
+	*setting=Vfunction->Val();
 	return true;
 }
 
-// get vector from one to three functinos
+// get vector from one to three functions and the directions being set in hasDir
+// If no directions set or no functions in place return false
 bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vector *pos)
 {
-	// exit if not function being used
-	if(setDirection==0) return false;
+    // false if nothing is set
+    if(setDirection==0) return false;
 	
-	// set time
-	varTime=1000.*theTime;
-	xPos=pos->x;
-	yPos=pos->y;
-	zPos=pos->z;
+    // contact rigid materials
+    // false if no functions or 1 to 3 values set
+	if(setDirection==RIGID_MULTIMATERIAL_MODE)
+    {   if(function==NULL && function2==NULL && function3==NULL)
+            return false;
+        
+        // set variables
+        varTime=1000.*theTime;
+        xPos=pos->x;
+        yPos=pos->y;
+        zPos=pos->z;
 	
-	// get first function (if needed)
-	double f1 = function!=NULL ? function->Val() : 0.0;
-	
-	// set one to three components
-	hasDir[0]=hasDir[1]=hasDir[2]=false;
+		if(function!=NULL)
+        {	vel->x=function->Val();
+            hasDir[0]=true;
+        }
+		if(function2!=NULL)
+		{	vel->y = function2->Val();
+			hasDir[1]=true;
+		}
+		if(function3!=NULL)
+		{	vel->z = function3->Val();
+			hasDir[2]=true;
+		}
+        
+        return true;
+	}
+    
+    // if no functions, then done
+    if(function==NULL) return false;
+    
+	// set one to three components (in order of functions and set directions)
+	hasDir[0] = hasDir[1] = hasDir[2] = false;
+    
+    // set variables
+    varTime=1000.*theTime;
+    xPos=pos->x;
+    yPos=pos->y;
+    zPos=pos->z;
+    
+    // BC rigid materials
 	if(setDirection&CONTROL_X_DIRECTION)
-	{	vel->x=f1;
+	{	vel->x=function->Val();
 		hasDir[0]=true;
 		if(function2!=NULL)
 		{	if(setDirection&CONTROL_Y_DIRECTION)
@@ -281,7 +384,7 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
 		}
 	}
 	else if(setDirection&CONTROL_Y_DIRECTION)
-	{	vel->y=f1;
+	{	vel->y=function->Val();
 		hasDir[1]=true;
 		if(function2!=NULL)
 		{	if(setDirection&CONTROL_Z_DIRECTION)
@@ -291,24 +394,10 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
 		}
 	}
 	else if(setDirection&CONTROL_Z_DIRECTION)
-	{	vel->z=f1;
+	{	vel->z=function->Val();
 		hasDir[2]=true;
 	}
-	else if(setDirection==RIGID_MULTIMATERIAL_MODE)
-	{	if(function!=NULL)
-		{	vel->x=f1;
-			hasDir[0]=true;
-		}
-		if(function2!=NULL)
-		{	vel->y = function2->Val();
-			hasDir[1]=true;
-		}
-		if(function3!=NULL)
-		{	vel->z = function3->Val();
-			hasDir[2]=true;
-		}
-	}
-
+    
 	return true;
 }
 
@@ -317,9 +406,9 @@ void RigidMaterial::SetSettingFunction(char *bcFunction,int functionNum)
 {
 	// NULL or empty is an error
 	if(bcFunction==NULL)
-		ThrowSAXException("Setting function of time is missing");
+		ThrowSAXException("Setting function of time and position is missing");
 	if(strlen(bcFunction)==0)
-		ThrowSAXException("Setting function of time is missing");
+		ThrowSAXException("Setting function of time and position is missing");
 	
 	// create time variable if needed
 	if(rmTimeArray[0]==NULL)
@@ -333,28 +422,35 @@ void RigidMaterial::SetSettingFunction(char *bcFunction,int functionNum)
 	switch(functionNum)
 	{	case SETTING_FUNCTION_BLOCK:
 			if(function!=NULL)
-				ThrowSAXException("Duplicate setting function #1 of time");
+				ThrowSAXException("Duplicate setting function #1");
 			function=new ROperation(bcFunction,4,rmTimeArray);
 			if(function->HasError())
-				ThrowSAXException("Setting function #1 of time is not valid");
+				ThrowSAXException("Setting function #1is not valid");
 			break;
 		case SETTING_FUNCTION2_BLOCK:
 			if(function==NULL && setDirection!=RIGID_MULTIMATERIAL_MODE)
-				ThrowSAXException("Cannot set function #2 of time before function #1 unless rigid contact material");
+				ThrowSAXException("Cannot set function #2 before function #1 unless rigid contact material");
 			if(function2!=NULL)
-				ThrowSAXException("Duplicate setting function #2 of time");
+				ThrowSAXException("Duplicate setting function #2");
 			function2=new ROperation(bcFunction,4,rmTimeArray);
 			if(function2->HasError())
-				ThrowSAXException("Setting function #2 of time is not valid");
+				ThrowSAXException("Setting function #2 is not valid");
 			break;
 		case SETTING_FUNCTION3_BLOCK:
 			if((function==NULL || function2==NULL) && setDirection!=RIGID_MULTIMATERIAL_MODE)
-				ThrowSAXException("Cannot set function #3 of time before functions #1 and #2 unless rigid contact material");
+				ThrowSAXException("Cannot set function #3 before functions #1 and #2 unless rigid contact material");
 			if(function3!=NULL)
-				ThrowSAXException("Duplicate setting function #3 of time");
+				ThrowSAXException("Duplicate setting function #3");
 			function3=new ROperation(bcFunction,4,rmTimeArray);
 			if(function3->HasError())
-				ThrowSAXException("Setting function #3 of time is not valid");
+				ThrowSAXException("Setting function #3 is not valid");
+			break;
+        case VALUE_FUNCTION_BLOCK:
+            if(Vfunction!=NULL)
+				ThrowSAXException("Duplicate value setting function");
+			Vfunction=new ROperation(bcFunction,4,rmTimeArray);
+			if(Vfunction->HasError())
+				ThrowSAXException("Value setting function is not valid");
 			break;
 		default:
 			break;

@@ -95,6 +95,9 @@ void Mooney::InitialLoadMechProps(int makeSpecific,int np)
     Particle: strains, rotation strain, stresses, strain energy, angle
     dvij are (gradient rates X time increment) to give deformation gradient change
 	Does not support thermal or moisture strains
+ 
+    Note the incompressible rubber are not suitable for dynamic calculations because
+    they have an infinite wave speed
 */
 void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
 								double delTime,int np)
@@ -195,6 +198,9 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 /* For 3D MPM analysis, take increments in strain and calculate new
 	Particle: strains, rotation strain, stresses, strain energy, angle
 	dvij are (gradient rates X time increment) to give deformation gradient change
+ 
+    Note the incompressible rubber are not suitable for dynamic calculations because
+    they have an infinite wave speed
 */
 void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
 						  double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)

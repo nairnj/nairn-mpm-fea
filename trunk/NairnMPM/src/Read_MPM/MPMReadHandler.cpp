@@ -190,6 +190,11 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             if(strcmp(aName,"target")==0)
 			{	bodyFrc.SetTargetFunction(value);
 			}
+            else if(strcmp(aName,"max")==0)
+            {   double maxAlpha;
+                sscanf(value,"%lf",&maxAlpha);
+                bodyFrc.SetMaxAlpha(maxAlpha);
+            }
             delete [] aName;
             delete [] value;
         }
@@ -872,16 +877,23 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     
 	// Gravity in X direction
     else if(strcmp(xName,"BodyXForce")==0)
-	{	ValidateCommand(xName,GRAVITY,MUST_BE_2D);
+	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
     	input=DOUBLE_NUM;
-        inputPtr=(char *)&bodyFrc.gforcex;
+        inputPtr=(char *)&bodyFrc.gforce.x;
     }
     
 	// Gravity in Y direction
     else if(strcmp(xName,"BodyYForce")==0)
-	{	ValidateCommand(xName,GRAVITY,MUST_BE_2D);
+	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
     	input=DOUBLE_NUM;
-        inputPtr=(char *)&bodyFrc.gforcey;
+        inputPtr=(char *)&bodyFrc.gforce.y;
+    }
+
+	// Gravity in Y direction
+    else if(strcmp(xName,"BodyZForce")==0)
+	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
+    	input=DOUBLE_NUM;
+        inputPtr=(char *)&bodyFrc.gforce.z;
     }
 
     //-------------------------------------------------------
@@ -1066,6 +1078,7 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
 		case SETTING_FUNCTION_BLOCK:
 		case SETTING_FUNCTION2_BLOCK:
 		case SETTING_FUNCTION3_BLOCK:
+		case VALUE_FUNCTION_BLOCK:
 			((RigidMaterial *)inputPtr)->SetSettingFunction(xData,input);
 			break;
         

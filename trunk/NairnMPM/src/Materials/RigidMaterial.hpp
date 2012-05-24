@@ -50,7 +50,7 @@ class RigidMaterial : public MaterialBase
 		bool RigidDirection(int);
 		bool RigidTemperature(void);
 		bool RigidConcentration(void);
-		bool GetSetting(double *,double,Vector *);
+		bool GetValueSetting(double *,double,Vector *);
 		bool GetVectorSetting(Vector *,bool *,double,Vector *);
 		void SetSettingFunction(char *,int);
 		
@@ -66,6 +66,7 @@ class RigidMaterial : public MaterialBase
 		ROperation *function;
 		ROperation *function2;
 		ROperation *function3;
+        ROperation *Vfunction;
 		static double varTime,xPos,yPos,zPos;
 };
 

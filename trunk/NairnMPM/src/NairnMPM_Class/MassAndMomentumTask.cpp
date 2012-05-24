@@ -130,7 +130,8 @@ void MassAndMomentumTask::Execute(void)
 				{	Vector newvel;
 					bool hasDir[3];
 					if(((RigidMaterial *)matID)->GetVectorSetting(&newvel,hasDir,mtime,&mpmptr->pos))
-					{	if(hasDir[0]) mpmptr->vel.x = newvel.x;
+                    {   // change velocity if functions being used, otherwise keep velocity constant
+						if(hasDir[0]) mpmptr->vel.x = newvel.x;
 						if(hasDir[1]) mpmptr->vel.y = newvel.y;
 						if(hasDir[2]) mpmptr->vel.z = newvel.z;
 					}
@@ -231,8 +232,8 @@ void MassAndMomentumTask::Execute(void)
 					}
 				}
 				else
-				{	// check skewed, x or y direction velocities
-					if(rigid->RigidDirection(X_DIRECTION))
+                {   // set any direction that is being controlled
+                    if(rigid->RigidDirection(X_DIRECTION))
 					{	SetRigidBCs(mi,X_DIRECTION,mpmptr->vel.x,0.,
 										(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 										(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
@@ -251,7 +252,7 @@ void MassAndMomentumTask::Execute(void)
 				
 				// temperature
 				if(rigid->RigidTemperature())
-				{	if(rigid->GetSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pTemperature=rvalue;
+				{	if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pTemperature=rvalue;
 					SetRigidBCs(mi,TEMP_DIRECTION,mpmptr->pTemperature,0.,
 								(BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,
 								(BoundaryCondition **)&firstRigidTempBC,(BoundaryCondition **)&reuseRigidTempBC);
@@ -259,7 +260,7 @@ void MassAndMomentumTask::Execute(void)
 				
 				// concentration
 				if(rigid->RigidConcentration())
-				{	if(rigid->GetSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pConcentration=rvalue;
+				{	if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pConcentration=rvalue;
 					SetRigidBCs(mi,CONC_DIRECTION,mpmptr->pConcentration,0.,
 								(BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,
 								(BoundaryCondition **)&firstRigidConcBC,(BoundaryCondition **)&reuseRigidConcBC);

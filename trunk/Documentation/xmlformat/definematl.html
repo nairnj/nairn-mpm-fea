@@ -682,10 +682,10 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <p>The material type is <code>Type=11</code> and it is actually two materials in one, depending on the value for its <code>SetDirection</code> property:</p>
 
 <ol>
-<li>If <code>SetDirection</code> is 0 through 7, the material is not really a material and points that are this type of rigid material will not really be part of the MPM analysis. These rigid material points are used to set boundary conditions on the grid that move with the particles. The rigid material points should be initialized to a velocity, temperature, or concentration <a href="definempm.html">when they are created</a>. As the rigid material points move through the grid, all nodes connected to those points will be assigned grid-based boundary conditions for the selected particle properties of velocity, temperature, and/or concentration. To have the boundary condition vary in time, use the the <code>SettingFunction</code> property below to select the value rather than setting the initial particle properties.
+<li>If <code>SetDirection</code> is 0 through 7, the material is not really a material and points that are this type of rigid material will not really be part of the MPM analysis. These rigid material points are used to set boundary conditions on the grid that move with the particles. The rigid material points should be initialized to a velocity, temperature, or concentration <a href="definempm.html">when they are created</a>. As the rigid material points move through the grid, all nodes connected to those points will be assigned grid-based boundary conditions for the selected particle properties of velocity, temperature, and/or concentration. To have the boundary condition vary in time, use the the <code>SettingFunction(2)(3)</code> properties below to select the value rather than setting the initial particle properties (which can only be constant).
 </li>
 <li>If <code>SetDirection</code> is 8, the material will correspond to actual material points that move through the analysis. Since they are rigid, they will move with their prescribed velocity. They will interact with other material points only through multimaterial contact laws and thus this type of rigid material can only be used in <a href="mpmheader.html#mmmode">multimaterial mode MPM</a> calculations. These particles will also ignore grid-based velocity boundary conditions, including those set by rigid particles with <code>SetDirection</code> equal to 0 through 7.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;The advantage of this type of rigid material (unlike the other type) is that you can set frictional properties for contact between rigid materials and non-rigid materials. These rigid materials will move in the direction defined by the initial velocity. They will either move at the magnitude of that velocity or the magnitude can varied by using the <code>SettingFunction</code> property below. If two rigid materials of this type moving at different velocities interact at the same node, however, there is a conflict and the calculation will stop. Finally, this type of rigid material can only set velocity; it cannot set temperature or concentration.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;The advantage of this type of rigid material (unlike the other type) is that you can set frictional properties for contact between rigid materials and non-rigid materials. These rigid materials will move in the direction defined by the initial velocity. To have non-constant (e.g., rotational) motion, use the <code>SettingFunction(2)(3)</code> properties below rather than the initial partical velocity. If two different rigid materials of this type interact at the same node, however, there is a conflict and the calculation will stop. Finally, this type of rigid material can only set velocity; it cannot set temperature or concentration.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;This type of material ignores cracks, but that actually makes to possible to use them for new crack problems. For example, these rigid particles can provide wedge opening of a crack. If the rigid particles run along an explicit crack plane, those particles may contact particles on either side of the crack and then move the top and bottom surfaces of the crack apart. It may be only way to wedge open a crack (<i>i.e.</i>, the only material that can act like it is within a crack rather than on either side of the crack). All crack calculations (<i>e.g.</i>, crack contact, traction laws, imperfect interfaces, updating of crack position, and J integral) will ignore the rigid particles. The interactions with the rigid particles arise only by contact laws between the rigid particles and the various crack velocity fields.
 </li>
 </ol>
@@ -695,31 +695,40 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <dl>
 
 <dt>&lt;SetDirection&gt;1&lt;/SetDirection&gt;</dt>
-<dd>Values 1 through 7 set various combinations of velocity directions. To create the alternate type of rigid particles that can implement frictional contact, set this value to 8. The options 1 through 7 set grid velocites to various components of the rigid particle velocity:
-<ol>
-<li>set <code>x</code> direction velocity only</li>
-<li>set <code>y</code> direction velocity only</li>
-<li>set velocity in the direction of the net particle velocity, which may be in any direction in the <code>x</code>-<code>y</code> plane. If both x and y velocities are zero, this option will set both those velocities to zero.</li>
-<li>set <code>z</code> direction velocity only</li>
-<li>set <code>x</code> and <code>z</code> direction velocities</li>
-<li>set <code>y</code> and <code>z</code> direction velocities</li>
-<li>set <code>x</code>-<code>y</code> plane velocity in net particle direction (see #3) and set <code>z</code> direction velocity</li>
-</ol>
+<dd>Values 1 through 7 set various combinations of velocity directions. To create the alternate type of rigid particles that can implement frictional contact, set this value to 8. The options 1 through 7 set grid velocites to various components of the rigid particle velocity by bit-wise selection with first three bits being for x, y, and z directions:
+<table border="1" cellpadding="0" cellspacing="0" align="center">
+<tr><th>Value</th><th>Binary</th><th>Set Directions</th>
+</tr>
+<tr><td>1</td><td>0x001</td><td>x only</td></tr>
+<tr><td>2</td><td>0x010</td><td>y only</td></tr>
+<tr><td>3</td><td>0x011</td><td>x and y</td></tr>
+<tr><td>4</td><td>0x100</td><td>z only</td></tr>
+<tr><td>5</td><td>0x101</td><td>x and z</td></tr>
+<tr><td>6</td><td>0x110</td><td>y and z</td></tr>
+<tr><td>7</td><td>0x111</td><td>x, y, and z</td></tr>
+</table>
 </dd>
     	    	
 <dt>&lt;SetTemperature/&gt;</dt>
-<dd>Set temperature to the particle temperature. This setting has no affect unless the analysis is doing thermal calculations. Can only be used if <code>SetDirection</code> is 0 through 4.</dd>
+<dd>Set temperature to the particle temperature. This setting has no affect unless the analysis is doing thermal calculations. Can only be used if <code>SetDirection</code> is 0 through 7. Use 0 to having moving heat source; use 1 to 7 to combine moving heat source with velocity boundary conditions.</dd>
 
 <dt>&lt;SetConcentration/&gt;</dt>
-<dd>Set concentration to the particle concentration entered as a potential from 0 to 1 where 1 is the <a href="#csat">saturation concentration</a> for the particle's material type. This setting has no affect unless the analysis is doing diffusion calculations. Can only be used if <code>SetDirection</code> is 0 through 4.</dd>
+<dd>Set concentration to the particle concentration entered as a potential from 0 to 1 where 1 is the <a href="#csat">saturation concentration</a> for the particle's material type. This setting has no affect unless the analysis is doing diffusion calculations. Can only be used if <code>SetDirection</code> is 0 through 7. Use 0 to having moving concentration source; use 1 to 7 to combine moving concentration source with velocity boundary conditions.</dd>
 
 
-<dt>&lt;SettingFunction&gt;50*(1-sign(t-10))&lt;/SettingFunction&gt;</dt>
-<dd>By entering a <a href="function.html">user-defined function</a> of time (<code>t</code> in ms and the function must depend only on time and cannot depend on position), the rigid particle setting can vary with time. When setting a direction, temperature, or concentration, the function should evaluate to the velocity in mm/s, temperature, or concentration potential. The initial velocity, temperature, or concentration assigned to the rigid particles <a href="definempm.html">when they are created</a> will be ignored. The one exception is when <code>SetDirection</code> is 3 (for particle velocity set in a skewed <code>x</code>-<code>y</code> direction) or 8 (for rigid particles that can do contact). For these settings, the initial particle <code>x</code> and <code>y</code> velocities (for <code>SetDirection</code>=3) or complete velocity vector (for <code>SetDirection</code>=8) will define the velocity direction and the setting function will determine the magnitude (absolute value of setting function will be taken so rigid particle cannot reverse directions). Note that if the initial particle velocity is zero or the setting function ever becomes zero when <code>SetDirection</code> is 3 or 8, the particle will halt even if the setting function becomes non-zero at later times. Thus, when <code>SetDirection</code> is 3 or 8, the setting function must never evaluate to zero (unless you want it to stop).
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Since there is only one setting function, a rigid material with a setting function can set only one property and will set all particles of that material type to the same value determined by the function. To have rigid particles move with different values determined by a function, even if in the same direction, thus requires definition of multiple rigid material types.</dd>
+<dt>&lt;SettingFunction&gt;50*(1-sign(t-10))&lt;/SettingFunction&gt;<br>
+&lt;SettingFunction2&gt;50*(1-sign(t-10))&lt;/SettingFunction2&gt;<br>
+&lt;SettingFunction3&gt;50*(1-sign(t-10))&lt;/SettingFunction3&gt;</dt>
+<dd>By entering <a href="function.html">user-defined functions</a> of time (<code>t</code> in ms) and position (<code>x</code>, <code>y</code>, and <code>z</code> in mm) the rigid particle velocity setting can vary with time and position. The functions should evaluate to the velocity in mm/s. The initial velocity assigned to the rigid particles <a href="definempm.html">when they are created</a> will be ignored.
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The three setting functions can set up to three directions. For <code>SetDirection</code> 1 to 7 the functions must be given in order (<code>SettingFunction</code>, <code>SettingFunction2</code>, and <code>SettingFunction3</code>) and apply to the set velocities in order (<i>e.g.</i>, when controlling <code>y</code> and <code>z</code> with <code>SetDirection</code>=6, the <code>SettingFunction</code> is for <code>y</code> direction and <code>SettingFunction2</code> is for <code>z</code> direction). For <code>SetDirection</code> of 8, the three functions are for setting <code>x</code>, <code>y</code>, and <code>z</code> directions and zero to three can be used. Any not controlled will use the initial particle velocity.</dd>
+
+<dt>&lt;ValueFunction&gt;50*(1-sign(t-10))&lt;/ValueFunction&gt;</dt>
+<dd>By entering <a href="function.html">user-defined functions</a> of time (<code>t</code> in ms) and position (<code>x</code>, <code>y</code>, and <code>z</code> in mm) the rigid particle temperature and concentration can vary with time and position. The function should evaluate to the temperature or concentration potential. The initial temperature or concentration assigned to the rigid particles <a href="definempm.html">when they are created</a> will be ignored.
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Since there is only one value function, you cannot independently vary temperature and concentration with time and position. Thus rigid particles with value functions should only set one of these quantities.</dd>
+
 </dl>
 
-<p>Note that <a href="mpmheader.html#mmmode">multimaterial mode MPM</a> calculations can combine moving boundary condition rigid particles (<code>SetDirection</code>=0 to 4) with contact rigid particles (<code>SetDirection</code>=8) to provide different functions, but single-material mode MPM can only use boundary condition rigid particles (<code>SetDirection</code>=0 to 4).</p>
+<p>Note that <a href="mpmheader.html#mmmode">multimaterial mode MPM</a> calculations can combine moving boundary condition rigid particles (<code>SetDirection</code>=0 to 7) with contact rigid particles (<code>SetDirection</code>=8) to provide different functions, but single-material mode MPM can only use boundary condition rigid particles (<code>SetDirection</code>=0 to 7).</p>
 
 <p>Note that creating rigid particles but not setting any velocity direction (<code>SetDirection</code>=0) can be used to create moving temperature or concentration boundary conditions that move over the particles; <i>i.e.</i>, the rigid particles will move through the real particles. Such moving temperature or concentration boundary conditions can only move at a constant velocity defined by the initial particle velocity.</p>
 

@@ -22,10 +22,10 @@ class MPMBase;
 class BodyForce
 {
     public:
-		double gforcex,gforcey;		// gravity forces
 		double damping;				// external damping
 		double dampingCoefficient;	// 1/Q in Nose-Hoover feedback damping
 		short useFeedback;
+        Vector gforce;              // gravity forces
 		
         // constructors and destructors
         BodyForce();
@@ -33,7 +33,7 @@ class BodyForce
     
         // methods
 		void Activate(void);
-		short GetGravity(double *,double *);
+		bool GetGravity(double *,double *,double *);
 		double GetDamping(double);
 		void Output(void);
 		double GetAlpha(void);
@@ -41,14 +41,15 @@ class BodyForce
 		void TrackAlpha(MPMBase *);
 		void UpdateAlpha(double,double);
 		void SetTargetFunction(char *);
+        void SetMaxAlpha(double);
 		void SetGridDampingFunction(char *);
 	
 	private:
-		short gravity;
-		double alpha;
+        ROperation *function;
+        ROperation *gridfunction;
+		bool gravity;               // true if gravity turned on
+		double alpha,maxAlpha;
 		double kineticEnergy,totalMass;
-		ROperation *function;
-		ROperation *gridfunction;
 		static double varTime;
 };
 
