@@ -113,6 +113,8 @@ void MPMBase::InitializeMass(double mass)
 }
 
 // set or average velocity gradient (2D) (only needed for second J Term)
+// for USF and SZS, sets gradient on its only pass
+// for USAVG, stores in on first pass and then averages on second (J calc follows the second pass)
 void MPMBase::SetVelocityGradient(double dvxx,double dvyy,double dvxy,double dvyx,int secondPass)
 {
     if(JTerms!=2) return;

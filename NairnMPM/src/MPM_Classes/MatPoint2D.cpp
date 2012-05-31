@@ -35,7 +35,7 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np)
 	// exit if rigid
 	if(matRef->Rigid()) return;
 	
-	// make sure mechanical properties for this material and angle
+	// make sure have mechanical properties for this material and angle
 	matRef->LoadMechanicalProps(this,np);
 	
 	// get field number
@@ -61,10 +61,10 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np)
         dvyx+=vel.y*xDeriv[i];
     }
 	    
-    // save velocity gradient (if needed)
+    // save velocity gradient (if needed for J integral calculation)
     SetVelocityGradient(dvxx,dvyy,dvxy,dvyx,secondPass);
     
-    // convert to strain increments
+    // convert to strain increments (e.g., now dvxx = dvx/dx * dt = d/dx(du/dt) * dt = d/dt(du/dx) * dt = du/dx)
     dvxx*=strainTime;
     dvyy*=strainTime;
     dvxy*=strainTime;

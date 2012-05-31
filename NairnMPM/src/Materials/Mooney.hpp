@@ -39,6 +39,7 @@ class Mooney : public HyperElastic
 		// methods
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
+        virtual double GetVolumetricTerms(double,double *);
     
 		// accessors
 		virtual double WaveSpeed(bool);
