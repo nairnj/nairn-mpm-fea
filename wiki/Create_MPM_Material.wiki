@@ -35,6 +35,7 @@ The following outline shows all materials in `nairn-mpm-fea`as a class hierarchy
     * `HyperElastic`
       * `MOONEYRIVLIN=8`
       * `HEANISOTROPIC=21`
+      * `IDEALGASMATERIAL=22`
     * <font color="red">`INTERFACEPARAMS=5`</font>
     * `RIGIDMATERIAL=11`
     * `TractionLaw`
