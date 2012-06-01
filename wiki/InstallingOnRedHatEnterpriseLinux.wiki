@@ -1,5 +1,4 @@
-#summary One-sentence summary of this page.
-Compiling NairnMPM and NairnFEM on Redhat Enterprise Linux.
+#summary Compiling NairnMPM and NairnFEM on Redhat Enterprise Linux.
 
 = Introduction =
 
