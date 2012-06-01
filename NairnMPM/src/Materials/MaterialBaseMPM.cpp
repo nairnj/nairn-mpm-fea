@@ -381,6 +381,10 @@ void MaterialBase::InitialLoadTransProps(void)
 //	particle
 char *MaterialBase::MaterialData(void) { return NULL; }
 
+// If needed, a material can initialize particle state
+// For example, ideal gas initializes to base line pressure
+void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np) { }
+
 // preliminary calculations (throw CommonException on problem)
 void MaterialBase::PreliminaryMatCalcs(void)
 {	int i;

@@ -65,6 +65,8 @@
 		A7313F9A07CF77F90074510B /* CrackNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7313F9807CF77F90074510B /* CrackNode.cpp */; };
 		A7313F9B07CF77F90074510B /* CrackNode.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7313F9907CF77F90074510B /* CrackNode.hpp */; };
 		A73B09880605FFAE0078D29A /* MaterialBaseFEA.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A73B09870605FFAE0078D29A /* MaterialBaseFEA.cpp */; };
+		A743491515792C0300EF8DFA /* IdealGas.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A743491315792C0300EF8DFA /* IdealGas.cpp */; };
+		A743491615792C0300EF8DFA /* IdealGas.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A743491415792C0300EF8DFA /* IdealGas.hpp */; };
 		A743CB3D0607732800CEC2E8 /* EdgeBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A743CB3B0607732800CEC2E8 /* EdgeBC.cpp */; };
 		A743CB3E0607732800CEC2E8 /* EdgeBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A743CB3C0607732800CEC2E8 /* EdgeBC.hpp */; };
 		A747207A07BBC6A800456B14 /* MPMWarnings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A747207607BBC6A800456B14 /* MPMWarnings.cpp */; };
@@ -436,6 +438,8 @@
 		A7313F9807CF77F90074510B /* CrackNode.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = CrackNode.cpp; sourceTree = "<group>"; };
 		A7313F9907CF77F90074510B /* CrackNode.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = CrackNode.hpp; sourceTree = "<group>"; };
 		A73B09870605FFAE0078D29A /* MaterialBaseFEA.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = MaterialBaseFEA.cpp; sourceTree = "<group>"; };
+		A743491315792C0300EF8DFA /* IdealGas.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IdealGas.cpp; sourceTree = "<group>"; };
+		A743491415792C0300EF8DFA /* IdealGas.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = IdealGas.hpp; sourceTree = "<group>"; };
 		A743CB3B0607732800CEC2E8 /* EdgeBC.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = EdgeBC.cpp; sourceTree = "<group>"; };
 		A743CB3C0607732800CEC2E8 /* EdgeBC.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = EdgeBC.hpp; sourceTree = "<group>"; };
 		A747207607BBC6A800456B14 /* MPMWarnings.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = MPMWarnings.cpp; sourceTree = "<group>"; };
@@ -1292,6 +1296,8 @@
 				A7DE477B11B97CD400FDEFE6 /* WoodMaterial.cpp */,
 				A7B6936814325B02006F6A27 /* HEAnisotropic.hpp */,
 				A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */,
+				A743491315792C0300EF8DFA /* IdealGas.cpp */,
+				A743491415792C0300EF8DFA /* IdealGas.hpp */,
 			);
 			path = Materials;
 			sourceTree = "<group>";
@@ -1426,6 +1432,7 @@
 				671514D415465EAD005F33A9 /* OvalController.hpp in Headers */,
 				671514DA1547035D005F33A9 /* PolygonController.hpp in Headers */,
 				A772E3EA155349DF0090B050 /* MaterialInterfaceNode.hpp in Headers */,
+				A743491615792C0300EF8DFA /* IdealGas.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1726,6 +1733,7 @@
 				671514D115465E8B005F33A9 /* OvalController.cpp in Sources */,
 				671514D81547035D005F33A9 /* PolygonController.cpp in Sources */,
 				A772E3E8155349CA0090B050 /* MaterialInterfaceNode.cpp in Sources */,
+				A743491515792C0300EF8DFA /* IdealGas.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

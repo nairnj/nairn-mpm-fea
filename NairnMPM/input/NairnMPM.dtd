@@ -157,12 +157,12 @@
 				| sigmaI2 | sigmaII2 | delpkI2 | delpkII2 | ValueFunction
 				| D | DA | DT | Dx | Dy | Dz | D0 | Dd | csat | SettingFunction | SettingFunction2 | SettingFunction3
 				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration
-				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd
+				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd | P0 | T0
 				| yldxx | yldyy | yldzz | yldxy | yldxz | yldyz | Khard | nhard | color | betahard
 				| Bjc | njc | Cjc | ep0jc | C0 | S1 | S2 | GPpG0 | GTpG0 | gamma0
 				| Uk | YP | Friction | C1 | C2 | Ajc | mjc | Tmjc | tempC1 | tempC2 )* >
 <!ATTLIST	Material
-			Type (1|2|3|4|5|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21) #REQUIRED
+			Type (1|2|3|4|5|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22) #REQUIRED
 			Name CDATA #REQUIRED>
 
 <!-- Displacement Boundary Conditions -->
@@ -425,6 +425,8 @@
 <!ELEMENT	kCondz (#PCDATA)>
 <!ELEMENT	kCond0 (#PCDATA)>
 <!ELEMENT	kCondd (#PCDATA)>
+<!ELEMENT	P0 (#PCDATA)>
+<!ELEMENT	T0 (#PCDATA)>
 <!ELEMENT	Cp (#PCDATA)>
 <!ELEMENT	Cv (#PCDATA)>
 <!ELEMENT	speed (#PCDATA)>

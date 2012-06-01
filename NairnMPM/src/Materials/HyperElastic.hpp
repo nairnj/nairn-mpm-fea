@@ -46,8 +46,8 @@ class HyperElastic : public MaterialBase
         HyperElastic(char *);
         
 		// Methods (make virtual if any subclass needs them)
-		void GetDeformationGrad(double F[][3],MPMBase *,double,double,double,double,bool);
-		void GetDeformationGrad(double F[][3],MPMBase *,double,double,double,double,double,double,double,double,double,bool);
+		double GetDeformationGrad(double F[][3],MPMBase *,double,double,double,double,bool,bool);
+		double GetDeformationGrad(double F[][3],MPMBase *,double,double,double,double,double,double,double,double,double,bool,bool);
 		Tensor GetLeftCauchyTensor2D(double F[][3]);
 		Tensor GetLeftCauchyTensor3D(double F[][3]);
 		double GetResidualStretch(MPMBase *);

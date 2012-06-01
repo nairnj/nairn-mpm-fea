@@ -167,6 +167,7 @@ GridForcesTask = $(src)/NairnMPM_Class/GridForcesTask
 HEAnisotropic = $(src)/Materials/HEAnisotropic
 HillPlastic = $(src)/Materials/HillPlastic
 HyperElastic = $(src)/Materials/HyperElastic
+IdealGass = $(src)/Materials/IdealGas
 InitializationTask = $(src)/NairnMPM_Class/InitializationTask
 IsoPlasticity = $(src)/Materials/IsoPlasticity
 IsotropicMat = $(com)/Materials/IsotropicMat
@@ -275,6 +276,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # GridForcesTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # HEAnisotropic.hpp : HyperElastic.hpp (MaterialBase.hpp)
 # HillPlastic : AnisoPlasticity.hpp (Orthotropic.hpp TranIsotropic.hpp Elastic.hpp MaterialBase.hpp)
+# IdealGas.hpp : HyperElastic.hpp (MaterialBase.hpp)
 # InitializationTask : MPMTask.hpp (CommonTask.hpp)
 # IsoPlasticity : IsotropicMat.hpp (Elastic.hpp MaterialBase.hpp)
 # IsotropicMat.hpp : Elastic.hpp (MaterialBase.hpp)
@@ -350,7 +352,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		CrackSurfaceContact.o CrackNode.o MaterialInterfaceNode.o MaterialBaseMPM.o Viscoelastic.o JohnsonCook.o \
 		Mooney.o HEAnisotropic.o VonMisesHardening.o BistableIsotropic.o RigidMaterial.o BoundaryCondition.o \
 		MatPtLoadBC.o MatPtFluxBC.o NodalVelBC.o NodalConcBC.o NodalTempBC.o MoreMPMElementBase.o \
-		NodalPointMPM.o CustomTask.o CalcJKTask.o PropagateTask.o ReverseLoad.o \
+		NodalPointMPM.o CustomTask.o CalcJKTask.o PropagateTask.o ReverseLoad.o IdealGas.o \
 		DiffusionTask.o ConductionTask.o MeshInfo.o TransportTask.o ElementBase3D.o \
 		EightNodeIsoparamBrick.o MatPoint3D.o Elastic.o ElasticMPM.o HyperElastic.o \
 		mathexpr.o ShapeController.o PointController.o RectController.o OvalController.o PolygonController.o \
@@ -421,7 +423,7 @@ MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialControlle
 		$(Mooney).hpp $(HEAnisotropic).hpp $(BistableIsotropic).hpp $(RigidMaterial).hpp $(MaterialBase).hpp $(JohnsonCook).hpp \
 		$(Elastic).hpp $(HyperElastic).hpp $(NairnMPM).hpp $(TractionLaw).hpp $(CohesiveZone).hpp $(LinearTraction).hpp \
 		$(CubicTraction).hpp $(AnisoPlasticity).hpp $(IsoPlasticity.hpp) $(HillPlastic).hpp $(MGSCGLMaterial).hpp \
-		$(SLMaterial).hpp $(WoodMaterial).hpp $(TrilinearTraction).hpp
+		$(SLMaterial).hpp $(WoodMaterial).hpp $(TrilinearTraction).hpp $(IdealGas).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialController).cpp
 mathexpr.o : $(mathexpr).cpp $(mathexpr).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(mathexpr).cpp
@@ -656,6 +658,9 @@ Mooney.o : $(Mooney).cpp $(dprefix) $(Mooney).hpp $(MaterialBase).hpp $(HyperEla
 HEAnisotropic.o : $(HEAnisotropic).cpp $(dprefix) $(HEAnisotropic).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(TransportTask).hpp \
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(HEAnisotropic).cpp
+IdealGas.o : $(IdealGas).cpp $(dprefix) $(IdealGas).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(TransportTask).hpp \
+			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp $(ThermalRamp).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(IdealGas).cpp
 VonMisesHardening.o : $(VonMisesHardening).cpp $(dprefix) $(VonMisesHardening).hpp $(IsoPlasticity).hpp $(IsotropicMat).hpp \
 			$(Elastic).hpp $(MaterialBase).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(VonMisesHardening).cpp
