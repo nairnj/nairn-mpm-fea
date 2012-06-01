@@ -433,6 +433,9 @@ void NairnMPM::PreliminaryCalcs(void)
 			if(potential>1.) potential=1.;
 			mpm[p]->pConcentration=potential;
 		}
+        
+        // material dependent initialization
+        theMaterials[matid]->SetInitialParticleState(mpm[p],np);
 		
 		// Transport property time steps
 		TransportTask *nextTransport=transportTasks;

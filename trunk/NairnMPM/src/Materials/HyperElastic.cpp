@@ -29,11 +29,12 @@ HyperElastic::HyperElastic(char *matName) : MaterialBase(matName)
         gradient is product of F1 and F2 in reverse order)
     dvij are elements of gradV * time step
     if storeInParticle is true, transfer new gradient to particle strain and rotation tensors
+    if detIncrement is true, return det(dF), otherwise return 0.0 (some materials mighe make use of this result)
     Note: This assumes plane strain to find F[2][2]=1. If the 2D calculation is plane stress, the
-        caller must replace F[2][2] with 1 + dw/dz
+        caller must replace F[2][2] with 1 + dw/dz. Likewise, caller must multiply det(dF) by 1 + dw/dz
 */
-void HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,double dvyy,
-												double dvxy,double dvyx,bool storeInParticle)
+double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,double dvyy,
+												double dvxy,double dvyx,bool storeInParticle,bool detIncrement)
 {
 	// deformation gradient (found from current strains and rotations)
 	Tensor *ep=mptr->GetStrainTensor();
@@ -67,13 +68,20 @@ void HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,do
 		// rotational strain increments
 		wrot->xy = F[1][0] - F[0][1];
 	}
+    
+    // calculate incremental determinant of (I+ gradV*dt) if desired
+    if(!detIncrement) return 0.0;
+    
+    // assumes plain strain; multiply by 1+dwdz when known to get det(dF) in plane stress
+    return (1. + dvxx)*(1. + dvyy)- dvyx*dvxy;
 }
 
 // Get new deformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
 // dvij are elements of gradV * time step
 // if storeInParticle is true, transfer new gradient to particle strain and rotation tensors
-void HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-						 double dvxz,double dvzx,double dvyz,double dvzy,bool storeInParticle)
+// if detIncrement is true, return det(dF), otherwise return 0.0 (some materials mighe make use of this result)
+double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
+						 double dvxz,double dvzx,double dvyz,double dvzy,bool storeInParticle,bool detIncrement)
 {
 	// get new doformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
 	// deformation gradient (stored int current strains and rotations)
@@ -116,6 +124,13 @@ void HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,do
 		wrot->xz = F[2][0] - F[0][2];
 		wrot->yz = F[2][1] - F[1][2];
 	}
+    
+    // calculate incremental determinant of (I+ gradV*dt) if desired
+    if(!detIncrement) return 0.0;
+    
+    return (1. + dvxx)*((1. + dvyy)*(1. + dvzz)-dvzy*dvyz)
+                    - dvyx*(dvxy*(1. + dvzz)-dvzy*dvxz)
+                    + dvzx*(dvxy*dvyz-(1. + dvyy)*dvxz);
 }
 
 // Find Left-Cauchy Green Tensor B = F.F^T for 2D calculations

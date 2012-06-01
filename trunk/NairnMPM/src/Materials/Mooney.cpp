@@ -21,7 +21,6 @@ Mooney::Mooney(char *matName) : HyperElastic(matName)
 	G1 = -1.;			// required
 	G2 = 0.;			// zero is neo-Hookean
 	Kbulk = -1.;		// required
-	
 }
 
 #pragma mark Mooney::Initialization
@@ -104,7 +103,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 {
 	// get new deformation gradient and update strains and rotations
 	double F[3][3];
-	GetDeformationGrad(F,mptr,dvxx,dvyy,dvxy,dvyx,TRUE);
+	GetDeformationGrad(F,mptr,dvxx,dvyy,dvxy,dvyx,TRUE,FALSE);
 	
 	// left Cauchy deformation tensor B = F F^T
 	Tensor B = GetLeftCauchyTensor2D(F);
@@ -204,7 +203,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 {
 	// get new deformation gradient
 	double F[3][3];
-	GetDeformationGrad(F,mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,TRUE);
+	GetDeformationGrad(F,mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,TRUE,FALSE);
 
 	// left Cauchy deformation tensor B = F F^T
 	Tensor B = GetLeftCauchyTensor3D(F);

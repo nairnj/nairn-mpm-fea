@@ -102,7 +102,7 @@ void MaterialBase::PrintMaterial(int num)
 	// call class to list mechanical properties
 	PrintMechanicalProperties();
 	
-	// properties in command base class (differs for MPM and FEA)
+	// properties in common base class (differs for MPM and FEA)
 	PrintCommonProperties();
     
 #ifdef MPM_CODE
