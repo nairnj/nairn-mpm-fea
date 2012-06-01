@@ -78,7 +78,7 @@ These methods (required unless specified as optional) return basic facts about t
 Usually a newly-created material type will have additional material properties. To create such properties, you need to define them, allow them in input command files (_i.e._, update the `DTD` file), set them in the material class file, validate them, and finally use them in calculation. The following steps are needed:
 
   # Define the property variable in the `.hpp` file (usually `int` or `double`). It is best to define these properties in the `protected` section of the class, although `public` properties are sometimes needed (and are allowed)
-  # To allow the property in input files, select a unique property name (the name may or may not be same as variable in previous sep). Define that property by name in the `DTD` file, usually as a simple `XML` element like `<!ELEMENT prop (#PCDATA)>`, where `prop` is the new property name.
+  # To allow the property in input files, select a unique property name (the name may or may not be same as variable in previous step). Define that property by name in the `DTD` file, usually as a simple `XML` element like `<!ELEMENT prop (#PCDATA)>`, where `prop` is the new property name.
   # Add that property's name to the list of allowed elements within the `Material` element definition in the `DTD` file.
   # Set some default value for the new property variable in the new material's constructor method.
 
