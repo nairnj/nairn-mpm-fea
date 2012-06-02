@@ -49,7 +49,7 @@ The following outline shows all materials in `nairn-mpm-fea`as a class hierarchy
 Almost all coding will be done in the new material class files, but for that material to be recognized as an option in NairnMPM, a few places in the core code have to be edited first. Theses should be the only changes need outside the new material class files.
 
   # In `MaterialController::AddMaterial(int matID,char ``*``matName)`- - add a new case in the `switch(matID)` section to call the default constructor of the new material when `matID` matches the new material constant defined in the previous section.
-  # Include the new material's header file at the top of `MaterialController.hpp`
+  # Include the new material's header file at the top of `Common/Read_XML/MaterialController.cpp`
 
 == Compiling with `make` Command ==
 
