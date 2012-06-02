@@ -108,6 +108,13 @@ as a special case.</td>
 </tr>
 
 <tr>
+<td><a href="#idealgas"><code>IdealGas</code></a></td>
+<td>22</td>
+<td width="50%">Ideal Gas, as a hyperelastic material</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
 <td><a href="#vonmises"><code>VonMises</code></a></td>
 <td>9</td>
 <td width="50%">Elastic-plastic material with a VonMises stress yield criterion and isotropic hardening</td>
@@ -554,6 +561,37 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <p>The possible input properties are:</p>
 
 <dl>
+
+<dt>Other Properties</dt>
+<dd>See the <a href="#common">properties common to all materials</a>.</dd>
+    	
+</dl>
+
+
+<a name="idealgas"></a><h2>Ideal Gas, as a Hyperelastic Material</h2>
+
+<p>The material type is an ideal gas, implemented as an isotropic, hyperelastic material at finite deformations. It is currently in development.</p>
+
+<p>
+<blockquote>
+p = J<sup>-1</sup> p<sub>0</sub> T/T<sub>0</sub>
+= p<sub>0</sub> * &rho;/&rho;<sub>0</sub> * T/T<sub>0</sub>
+</blockquote>
+</P>
+
+<p>The possible input properties are:</p>
+
+<dl>
+
+<dt>&lt;T0&gt;273.15&lt;/T0&gt;</dt>
+<dd>The reference temperature (in Kelvin)</dd>
+    	
+<dt>&lt;rho&gt;0.00129&lt;/rho&gt;</dt>
+<dd>The reference density (in g/cm<sup>3</sup>) at reference temperature.  This must be a positive value greather than zero.</dd>
+    	
+<dt>&lt;P0&gt;0.1013&lt;/P0&gt;</dt>
+<dd>The reference pressure (in MPa) at reference temperature and reference density.  This must be a positive value greather than zero.</dd>
+    	
 
 <dt>Other Properties</dt>
 <dd>See the <a href="#common">properties common to all materials</a>.</dd>
