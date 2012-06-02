@@ -19,7 +19,7 @@ IdealGas::IdealGas() {}
 IdealGas::IdealGas(char *matName) : HyperElastic(matName)
 {
 	P0   = -1.;			// required initial pressure in MPa
-	rho = -1.;			// required density (override default of 1) in g/cm^3
+	rho  = -1.;			// required density (override default of 1) in g/cm^3
 	T0   = -1.;			// required initial temperature in Kelvin
 }
 
@@ -53,8 +53,13 @@ const char *IdealGas::VerifyProperties(int np)
     if(P0 <= 0. || rho <= 0.0 || T0 <= 0.0 )
 		return "Ideal gas material model needs positive parameters P0, rho, and T0";
 
-	// call super class
-	return MaterialBase::VerifyProperties(np);
+    // set current temperature to initial temperature 
+    // until a better value becomes available 
+    // (stored as a member variable)
+    Temp = T0;
+
+    // call super class
+    return MaterialBase::VerifyProperties(np);
 }
 
 // Private properties used in constitutive law
@@ -90,29 +95,35 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np)
 void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
 								double delTime,int np)
 {
+	// current temperature in Kelvin (now stored as a member variable)
+	Temp = mptr->pPreviousTemperature;
+	
+	// get new deformation gradient
+	double F[3][3];
+	double detf = GetDeformationGrad(F,mptr,dvxx,dvyy,dvxy,dvyx,TRUE,TRUE);
+
+	// left Cauchy deformation tensor B = F F^T
+	Tensor B = GetLeftCauchyTensor2D(F);
+	
+	//double J2 = B.xx*B.yy*B.zz + 2.*B.xy*B.xz*B.yz - B.yz*B.yz*B.xx - B.xz*B.xz*B.yy - B.xy*B.xy*B.zz;
+	//double J = sqrt(J2);
 	/*
-	 John,
-	 
-	 The ideal gas does not need any more than the volume change and temperature change.
-	 However, I do not know if you are using material strains for plotting or other post processing purposes.
-	 The current implementation simply computes the stress tensor and does notupdate strain variables.  Please let
-	 me and Edward know of you want strain at material level and we can add the respective update (copy from Mooney.cpp)
-	 
-	 */
+	John,
+
+	The above step is not needed since detf == J (if everything is computed correctly).
+
+	Peter
+	*/
 	
 	// get new Jacobian determinant and update strains and rotations
 	double J = 1.0;
 #ifndef CONSTANT_RHO
-	J = GetCurrentRelativeVolume(mptr,FALSE);	
+	// J = GetCurrentRelativeVolume(mptr,FALSE);	
+        J = detf;
 #endif
-	
-	double Temp;
 	
 	/*
 	 John,
-	 
-	 At this point I do not know where to get temperature in your code (first looked at it 4 hours ago!)
-	 to update the actual temperature based on the thermal analysis.
 	 
 	 A thought on adiabatic simulations: 
 	   o temperature can be computed from the adiabatic equation of state
@@ -123,8 +134,6 @@ void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,dou
 	     include limits of isothermal and adiabatic changes of state.  Don't know if that is of interest
 	     to you, or even if that's possible in the current code.
 	*/
-	
-	Temp = T0; // should be changed to current temperature in Kelvin
 	
 	// compute specific pressure p/rho0
 	//double Psp = 0.0;	
@@ -156,37 +165,35 @@ void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,dou
 void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
 						  double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
 {
+	// current temperature in Kelvin (now stored as a member variable)
+	Temp = mptr->pPreviousTemperature;
+
 	// get new deformation gradient
 	double F[3][3];
 	double detf = GetDeformationGrad(F,mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,TRUE,TRUE);
-    
+
+        double J = 1.0;
+#ifndef CONSTANT_RHO
+        double J = detf;
+#endif
+
 	// left Cauchy deformation tensor B = F F^T
 	Tensor B = GetLeftCauchyTensor3D(F);
 	
-	double J2 = B.xx*B.yy*B.zz + 2.*B.xy*B.xz*B.yz - B.yz*B.yz*B.xx - B.xz*B.xz*B.yy - B.xy*B.xy*B.zz;
-	double J = sqrt(J2);
-	
+	//double J2 = B.xx*B.yy*B.zz + 2.*B.xy*B.xz*B.yz - B.yz*B.yz*B.xx - B.xz*B.xz*B.yy - B.xy*B.xy*B.zz;
+	//double J = sqrt(J2);
 	/*
-	 John,
-	 
-	 At this point I do not know where to get temperature in your code (first looked at it 4 hours ago!)
-	 to update the actual temperature based on the thermal analysis.
-	 
-	 A thought on adiabatic simulations: 
-	 o temperature can be computed from the adiabatic equation of state
-	 instead of a thermal analysis and plugged in the next line.  This would do adiabatic changes, 
-	 but ignores any thermal calculation in the background.
-	 o instead, a heat source could be added to the thermal analysis and its magniture would need
-	 to be computed from within the material class.  This would allow for non-equilibrium computations that 
-	 include limits of isothermal and adiabatic changes of state.  Don't know if that is of interest
-	 to you, or even if that's possible in the current code.
-	 
-    */
+	John,
+
+	The above step is not needed since detf == J (if everything is computed correctly).
+
+	Peter
+	*/
 	
 	// compute specific pressure p/rho0
-	double Psp = P0sp * (mptr->pPreviousTemperature/T0) / J;
+	double Psp = P0sp * (Temp/T0) / J;
 	
-    // Find Cauchy stresses
+	// Find Cauchy stresses
 	Tensor *sp=mptr->GetStressTensor();
 	sp->xx = -Psp;
 	sp->yy = -Psp;
@@ -212,9 +219,7 @@ int IdealGas::MaterialTag(void) { return IDEALGASMATERIAL; }
 //	calculate wave speed in mm/sec
 double IdealGas::WaveSpeed(bool threeD)
 {
-    double cp = sqrt(1.e9*P0/rho);
-	double Temp = T0;           // maximum expected temperature
-	return cp *= sqrt(Temp/T0);
+    return sqrt(1.e9*(P0/rho)*(Temp/T0));
 }
 
 

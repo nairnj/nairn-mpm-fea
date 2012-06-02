@@ -48,6 +48,7 @@ class IdealGas : public HyperElastic
     private:
 	    double P0sp;  // mass specific initial pressure
 	    double Psp;   // current specific pressure
+	    double Temp;  // current temperature (in Kelvin)
 };
 
 #endif
