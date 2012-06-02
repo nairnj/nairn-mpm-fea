@@ -34,7 +34,7 @@ HyperElastic::HyperElastic(char *matName) : MaterialBase(matName)
         caller must replace F[2][2] with 1 + dw/dz. Likewise, caller must multiply det(dF) by 1 + dw/dz
 */
 double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,double dvyy,
-												double dvxy,double dvyx,bool storeInParticle,bool detIncrement)
+			double dvxy,double dvyx,bool storeInParticle,bool detIncrement)
 {
 	// deformation gradient (found from current strains and rotations)
 	Tensor *ep=mptr->GetStrainTensor();
