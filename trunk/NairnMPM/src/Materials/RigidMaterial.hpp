@@ -38,9 +38,9 @@ class RigidMaterial : public MaterialBase
         
         // initialize
         virtual char *InputMat(char *,int &);
+		virtual const char *VerifyProperties(int);
         virtual void PrintMechanicalProperties(void);
 		virtual int SetField(int,bool,int);
-		virtual void PreliminaryMatCalcs(void);
 		
 		// define abstract methods even though not used
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);

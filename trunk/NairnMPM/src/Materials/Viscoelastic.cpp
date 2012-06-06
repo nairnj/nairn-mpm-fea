@@ -128,6 +128,17 @@ const char *Viscoelastic::VerifyProperties(int np)
 	return MaterialBase::VerifyProperties(np);
 }
 
+// plane stress not allowed in viscoelasticity
+void Viscoelastic::ValidateForUse(int np)
+{	if(np==PLANE_STRESS_MPM)
+	{	throw CommonException("Viscoelastic materials require 2D plane strain or 3D MPM analysis",
+							  "Viscoelastic::MPMConstLaw");
+	}
+	
+	//call super class (why can't call super class?)
+	return MaterialBase::ValidateForUse(np);
+}
+
 // Private properties used in constitutive law
 void Viscoelastic::InitialLoadMechProps(int makeSpecific,int np)
 {
@@ -199,15 +210,6 @@ char *Viscoelastic::MaterialData(void)
 }
 
 #pragma mark Viscoelastic::Methods
-
-// plane stress not allowed in viscoelasticity
-void Viscoelastic::MPMConstLaw(int np)
-{	if(np==PLANE_STRESS_MPM)
-		throw CommonException("Viscoelastic materials require 2D plane strain or 3D MPM analysis","Viscoelastic::MPMConstLaw");
-	
-	//call super class (why can't call super class?)
-	return MaterialBase::MPMConstLaw(np);
-}
 
 /* For 2D MPM analysis, take increments in strain and calculate new
     Particle: strains, rotation strain, stresses, history variables,

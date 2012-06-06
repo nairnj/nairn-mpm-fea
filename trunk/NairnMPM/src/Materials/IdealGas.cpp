@@ -67,6 +67,17 @@ const char *IdealGas::VerifyProperties(int np)
     return MaterialBase::VerifyProperties(np);
 }
 
+// if analysis not allowed, throw an exception
+void IdealGas::ValidateForUse(int np)
+{	if(np==PLANE_STRESS_MPM)
+	{	throw CommonException("IdealGas material cannot do 2D plane stree MPM analysis",
+							  "NairnMPM::ValidateForUse");
+	}
+	
+	// call super class (why can't call super class?)
+	return MaterialBase::ValidateForUse(np);
+}
+
 // Private properties used in constitutive law
 void IdealGas::InitialLoadMechProps(int makeSpecific,int np)
 {
@@ -153,15 +164,6 @@ void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,dou
 										- ConductionTask::dTemperature*(detf-1.));
 	mptr->AddStrainEnergy(dU);
 	mptr->AddDispEnergy(dU);
-}
-
-// if analysis not allowed, throw an exception
-void IdealGas::MPMConstLaw(int np)
-{	if(np==PLANE_STRESS_MPM)
-		throw CommonException("IdealGas material cannot do 2D plane stree MPM analysis","NairnMPM::MPMConstLaw");
-	
-	// call super class (why can't call super class?)
-	return MaterialBase::MPMConstLaw(np);
 }
 
 #pragma mark IdealGas::Accessors

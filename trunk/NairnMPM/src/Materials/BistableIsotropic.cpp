@@ -221,6 +221,17 @@ const char *BistableIsotropic::VerifyProperties(int np)
 	return MaterialBase::VerifyProperties(np);
 }
 
+// 3D not allowed
+void BistableIsotropic::ValidateForUse(int np)
+{	if(np==THREED_MPM)
+	{	throw CommonException("BistableIsotropic materials cannot do 3D MPM analysis",
+							  "BistableIsotropic::ValidateForUse");
+	}
+	
+	// call super class (why can't call super class?)
+	return MaterialBase::ValidateForUse(np);
+}
+
 // calculate properties for give state
 const char *BistableIsotropic::CurrentProperties(short newState,int np)
 {
@@ -397,15 +408,6 @@ void BistableIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double
 		else
 			ep->zz=mdm[4][1]*(exx + eyy)+normOffset+erzz;
     }
-}
-
-// 3D not allowed
-void BistableIsotropic::MPMConstLaw(int np)
-{	if(np==THREED_MPM)
-		throw CommonException("BistableIsotropic materials cannot do 3D MPM analysis","BistableIsotropic::ValidateOptions");
-	
-	// call super class (why can't call super class?)
-	return MaterialBase::MPMConstLaw(np);
 }
 
 #pragma mark BistableIsotropic::Accessors

@@ -35,12 +35,12 @@ class Viscoelastic : public MaterialBase
 		virtual const char *VerifyProperties(int);
 		virtual void InitialLoadMechProps(int,int);
 		virtual void PrintMechanicalProperties(void);
-        virtual char *MaterialData(void);
+		virtual void ValidateForUse(int);
+		virtual char *MaterialData(void);
     
 		// methods
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
-		virtual void MPMConstLaw(int);
 		
 		// accessors
         virtual double WaveSpeed(bool,MPMBase *);

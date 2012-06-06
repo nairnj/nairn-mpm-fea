@@ -368,10 +368,6 @@ void NairnMPM::PreliminaryCalcs(void)
 		mpmgrid.SetCartesian(userCartesian,gridx,gridy,gridz);
 	}
 	
-	// any material type checks needed?
-	for(p=0;p<nmat;p++)
-		theMaterials[p]->PreliminaryMatCalcs();
-	
 	// future - make this a parameter that can be input
 	double PropFractCellTime=FractCellTime;
 	double minSize=mpmgrid.GetMinCellDimension()/10.;	// in cm
@@ -379,14 +375,15 @@ void NairnMPM::PreliminaryCalcs(void)
     // loop over material points
 	maxMaterialFields=0;
     for(p=0;p<nmpms;p++)
-	{	matid=mpm[p]->MatID();
+	{	// verify material is defined and sets if field number (in in multimaterial mode)
+		matid=mpm[p]->MatID();
 		if(matid>=nmat)
 			throw CommonException("Material point with an undefined material type","NairnMPM::PreliminaryCalcs");
 		if(theMaterials[matid]->isTractionLaw())
 			throw CommonException("Material point with traction-law material","NairnMPM::PreliminaryCalcs");
 		maxMaterialFields=theMaterials[matid]->SetField(maxMaterialFields,multiMaterialMode,matid);
-		if(maxMaterialFields<0)
-			throw CommonException("Rigid material with contact not allowed in single material mode MPM","NairnMPM::PreliminaryCalcs");
+		
+		// nothing left if rigid material is a BC rigid material
 		if(theMaterials[matid]->RigidBC()) continue;
 	
 		// element and mp properties
@@ -548,7 +545,7 @@ void NairnMPM::ValidateOptions(void)
 	int i;
 	for(i=0;i<nmat;i++)
 	{	if(theMaterials[i]->GetField()>=0)
-			theMaterials[i]->MPMConstLaw(np);
+			theMaterials[i]->ValidateForUse(np);
 	}
 }
 

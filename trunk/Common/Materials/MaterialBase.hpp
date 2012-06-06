@@ -68,6 +68,7 @@ class MaterialBase : public LinkedObject
 		void PrintProperty(const char *,double,const char *);
 		void PrintProperty(const char *,bool);
 #ifdef MPM_CODE
+		virtual void ValidateForUse(int);
         virtual char *MaterialData(void);
 		virtual void InitialLoadTransProps(void);
 		virtual void PrintTransportProperties(void);
@@ -79,7 +80,6 @@ class MaterialBase : public LinkedObject
 		void PrintCommonProperties(void);
 #ifdef MPM_CODE
 		void PrintCriterion(int,int);
-		virtual void PreliminaryMatCalcs(void);
 #endif
          
         // Methods (abstract methods must be overridden)
@@ -91,7 +91,6 @@ class MaterialBase : public LinkedObject
 		virtual double GetHeatCapacityVol(MPMBase *);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int) = 0;
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int) = 0;
-		virtual void MPMConstLaw(int);
 #endif
 
 		// Methods (base class only)

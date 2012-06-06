@@ -35,7 +35,7 @@ const char *LinearTraction::VerifyProperties(int np)
 	kI1*=1.0e6;
 	kII1*=1.0e6;
 	
-	return NULL;
+	return TractionLaw::VerifyProperties(np);
 }
 
 // print to output window

@@ -328,11 +328,12 @@ const char *MaterialBase::PreferredDirection(int style)
 	return " in default criterion direction";
 }
 
-/*	Calculate properties used in analyses. If error, return string with an error message.
+/*	Verify andcCalculate properties used in analyses. If error, return string with an error message.
 	This is called once at start of the calculation just before the material properties
 		are printined to the output file and before any calculations. It is called for
 		every material defined in the input file, even if it is not used by any
-		particle
+		particle.
+	Thois base class method calls InitialLoadMechProps() and InitialLoadTransProps()
 	If superclass overrides this method, must call this too
 */
 const char *MaterialBase::VerifyProperties(int np)
@@ -350,12 +351,6 @@ const char *MaterialBase::VerifyProperties(int np)
 	InitialLoadMechProps((int)(np>BEGIN_MPM_TYPES),np);
 	InitialLoadTransProps();
 	
-	// check for unsupported alternate propagation criterion
-	if(criterion[1]==TOTALENERGYBALANCE)
-		return "The alternate propagation criterion cannot be energy balance method.";
-	if(criterion[1]==STEADYSTATEGROWTH)
-		return "The alternate propagation criterion cannot be steady state crack growth.";
-
 	return NULL;
 }
 
@@ -381,6 +376,39 @@ void MaterialBase::InitialLoadTransProps(void)
 	kCondTensor.yz=0.;
 }
 
+/* This is called after PreliminaryCalcs() and just before first MPM time step and it
+		is only called if the material is actually in use by one or more particles
+	If material cannot be used in current analysis type throw an exception
+	Subclass that overrides must pass on to super class
+ */
+void MaterialBase::ValidateForUse(int np)
+{	int i;
+	
+	for(i=0;i<=1;i++)
+	{	if(i==1 && criterion[i]==NO_PROPAGATION) break;		// skip if no alternate criterion
+		if(tractionMat[i]>0)
+		{	if(tractionMat[i]>nmat)
+			{	throw CommonException("Material with undefined traction law material for propagation",
+									  "MaterialBase::ValidateForUse");
+			}
+			if(!theMaterials[tractionMat[i]-1]->isTractionLaw())
+			{	throw CommonException("Material with propagation material that is not a traction law",
+									  "MaterialBase::ValidateForUse");
+			}
+		}
+	}
+	
+	// check for unsupported alternate propagation criterion
+	if(criterion[1]==TOTALENERGYBALANCE)
+	{	throw CommonException("The alternate propagation criterion cannot be energy balance method.",
+							  "MaterialBase::ValidateForUse");
+	}
+	if(criterion[1]==STEADYSTATEGROWTH)
+	{	throw CommonException("The alternate propagation criterion cannot be steady state crack growth.",
+							  "MaterialBase::ValidateForUse");
+	}
+}
+
 // create and return pointer to material-specific data on a particle
 //	using this material. Called once at start of analysis for each
 //	particle
@@ -389,21 +417,6 @@ char *MaterialBase::MaterialData(void) { return NULL; }
 // If needed, a material can initialize particle state
 // For example, ideal gas initializes to base line pressure
 void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np) { }
-
-// preliminary calculations (throw CommonException on problem)
-void MaterialBase::PreliminaryMatCalcs(void)
-{	int i;
-	
-	for(i=0;i<=1;i++)
-	{	if(i==1 && criterion[i]==NO_PROPAGATION) break;		// skip if no alternate criterion
-		if(tractionMat[i]>0)
-		{	if(tractionMat[i]>nmat)
-				throw CommonException("Material with undefined traction law material for propagation","MaterialBase::PreliminaryMatCalcs");
-			if(!theMaterials[tractionMat[i]-1]->isTractionLaw())
-				throw CommonException("Material with propagation material that is not a traction law","MaterialBase::PreliminaryMatCalcs");
-		}
-	}
-}
 
 // when set, return total number of materials if this is a new one, or 1 if not in multimaterial mode
 int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid)
@@ -516,14 +529,6 @@ void MaterialBase::ContactOutput(int thisMatID)
 
 #pragma mark MaterialBase::Methods
 
-/* Do are required preliminary calculations.
-	If material cannot be used in current analysis type throw an exception
-	This is called once before calculations start, but only if the material is
-		actually in use by one or more particles
-	Subclass that overrides must pass on to super class
-*/
-void MaterialBase::MPMConstLaw(int np) {}
-
 // MPM call to allow material to change properties depending on particle state
 // The base method assumes angle is only variable and loads possible
 //     rotated meechanical properties (which does nothing unless overridden)
@@ -531,10 +536,11 @@ void MaterialBase::LoadMechanicalProps(MPMBase *mptr,int np)
 {	LoadMechProps(TRUE,mptr->GetRotationZ(),np);
 }
 
-// get transport property tensors (if change with particle state)
+// Get transport property tensors (if change with particle state)
 void MaterialBase::LoadTransportProps(MPMBase *mptr,int np) { return; }
 
-// implemented in case heat capacity changes with particle state (Cp and Cv)
+// Implemented in case heat capacity changes with particle state (Cp and Cv)
+// Cp is used in conduction; Cv is rarely used
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) { return heatCapacity; }
 double MaterialBase::GetHeatCapacityVol(MPMBase *mptr) { return heatCapacityVol; }
 
