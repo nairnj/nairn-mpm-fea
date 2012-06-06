@@ -43,7 +43,7 @@ char *NewMaterial::InputMat(char *xName,int &input)
     return(MaterialBase::InputMat(xName,input));
 }
 
-// verify input properties; if problem return string with an error message
+// Verify input properties; if problem return string with an error message
 // if OK, pass on to super class
 const char *NewMaterial::VerifyProperties(int np)
 {
@@ -113,11 +113,16 @@ void NewMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,
 {
 }
 
+/*
 // if analysis not allowed, throw an exception
-//void NewMaterial::MPMConstLaw(int np)
-//{	if(np==THREED_MPM)
-//		throw CommonException("NewMaterial cannot do 3D MPM analysis","NairnMPM::ValidateOptions");
-//}
+void NewMaterial::MPMConstLaw(int np)
+{	if(np==THREED_MPM)
+		throw CommonException("NewMaterial cannot do 3D MPM analysis","NewMaterial::MPMConstLaw");
+ 
+	//call super class (why can't call super class?)
+	return MaterialBase::MPMConstLaw(np);
+}
+*/
 
 #pragma mark NewMaterial::Custom Methods
 
@@ -129,11 +134,11 @@ int NewMaterial::MaterialTag(void) { return NEWMATERIAL; }
 // return unique, short name for this material
 const char *NewMaterial::MaterialType(void) { return "Template Material"; }
 
-// wave speed for this material in mm/sec
-double NewMaterial::WaveSpeed(bool threeD) { return 1.e-12; }
+// Calculate maximum wave speed for material in mm/sec.
+double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
 
-// shear wave speed for this material
-//double NewMaterial::ShearWaveSpeed(bool threeD) { return 1.e-12; }
+// Calculate shear wave speed for material in mm/sec.
+//double NewMaterial::ShearWaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
 
 // maximum diffusion coefficient in cm^2/sec
 //double NewMaterial::MaximumDiffusion(void) { return 0.; }

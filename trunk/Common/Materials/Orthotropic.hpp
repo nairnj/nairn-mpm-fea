@@ -39,7 +39,7 @@ class Orthotropic : public TransIsotropic
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
 #ifdef MPM_CODE
-        virtual double WaveSpeed(bool);
+        virtual double WaveSpeed(bool,MPMBase *);
 		virtual double GetDiffZ(void);
 		virtual double GetKcondZ(void);
 #endif

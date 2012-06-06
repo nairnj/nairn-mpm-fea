@@ -293,5 +293,5 @@ const char *MGSCGLMaterial::MaterialType(void) { return "M-G, SGCL Material"; }
 /*	calculate wave speed in mm/sec. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
     K in Pa is 1000*rho*C0, G is in MPa, rho is in g/cm^3
 */
-double MGSCGLMaterial::WaveSpeed(bool threeD) { return 1000.*sqrt(C0*C0+4000.*G/(3.*rho)); }
+double MGSCGLMaterial::WaveSpeed(bool threeD,MPMBase *mptr) { return 1000.*sqrt(C0*C0+4000.*G/(3.*rho)); }
 

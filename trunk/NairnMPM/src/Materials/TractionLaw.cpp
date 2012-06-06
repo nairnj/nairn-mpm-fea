@@ -71,7 +71,7 @@ void TractionLaw::MPMConstLaw(MPMBase *,double,double,double,double,double,doubl
 #pragma mark TractionLaw::Accessors
 
 // required accessors
-double TractionLaw::WaveSpeed(bool threeD) { return 1.e-12; }
+double TractionLaw::WaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
 
 // return material type
 const char *TractionLaw::MaterialType(void) { return "Crack Traction Law"; }

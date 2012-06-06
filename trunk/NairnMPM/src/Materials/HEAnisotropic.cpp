@@ -115,13 +115,6 @@ void HEAnisotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvz
 {
 }
 
-// if analysis not allowed, throw an exception
-//void HEAnisotropic::MPMConstLaw(int np)
-//{	if(np==THREED_MPM)
-//		throw CommonException("BistableIsotropic materials cannot do 3D MPM analysis","NairnMPM::ValidateOptions");
-//	HyperElastic::MPMConstLaw(np);
-//}
-
 #pragma mark HEAnisotropic::Custom Methods
 
 #pragma mark HEAnisotropic::Accessors
@@ -132,16 +125,6 @@ int HEAnisotropic::MaterialTag(void) { return HEANISOTROPIC; }
 // return unique, short name for this material
 const char *HEAnisotropic::MaterialType(void) { return "Hyperelastic Anisotropic"; }
 
-/* Calculate maximum wave speed for material in mm/sec. WaveSpeed called only
-	once for each material point at beginning of calculation. If variable wave
-	speed, be conservative and return the maximum possible save speed.
-*/
-// wave speed for this material
-double HEAnisotropic::WaveSpeed(bool threeD) { return 1.e-12; }
-
-/* This method is only used by silent boundary conditions. The MaterialBase base
-	class returns WaveSpeed()/sqrt(3). Override only if have better result
-*/
-// shear wave speed for this material
-//double HEAnisotropic::ShearWaveSpeed(bool threeD) { return 1.e-12; }
+// calculate wave speed in mm/sec - needs to be implemented
+double HEAnisotropic::WaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
 

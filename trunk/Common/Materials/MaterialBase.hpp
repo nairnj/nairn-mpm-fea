@@ -118,8 +118,8 @@ class MaterialBase : public LinkedObject
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag(void) = 0;
 #ifdef MPM_CODE
-        virtual double WaveSpeed(bool) = 0;
-		virtual double ShearWaveSpeed(bool);
+        virtual double WaveSpeed(bool,MPMBase *) = 0;
+		virtual double ShearWaveSpeed(bool,MPMBase *);
 		virtual double MaximumDiffusion(void);
         virtual double MaximumDiffusivity(void);
         virtual double GetHistory(int,char *);

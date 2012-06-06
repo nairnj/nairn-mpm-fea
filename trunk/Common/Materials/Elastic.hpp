@@ -37,7 +37,7 @@ class Elastic : public MaterialBase
 		double prop1,prop2;
 #ifdef MPM_CODE
         double mdm[6][6];
-        double me0[8],mc0[5];
+        double me0[8],mc0[6];
 		int hasTransProps;			// flag set TRUE whenever transport props have been evaluated
 #else
         double prop3;

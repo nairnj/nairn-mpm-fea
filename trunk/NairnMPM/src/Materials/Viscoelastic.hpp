@@ -43,7 +43,7 @@ class Viscoelastic : public MaterialBase
 		virtual void MPMConstLaw(int);
 		
 		// accessors
-        virtual double WaveSpeed(bool);
+        virtual double WaveSpeed(bool,MPMBase *);
 		virtual const char *MaterialType();
 		virtual double GetHistory(int ,char *);
 		virtual int MaterialTag();

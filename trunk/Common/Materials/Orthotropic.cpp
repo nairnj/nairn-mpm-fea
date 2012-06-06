@@ -249,9 +249,9 @@ int Orthotropic::MaterialTag(void) { return ORTHO; }
 const char *Orthotropic::MaterialType(void) { return "Orthotropic (3 axis normal to x-y plane)"; }
 
 #ifdef MPM_CODE
-/*	calculate maximum wave speed in mm/sec (moduli in MPa, rho in g/cm^3)
-*/
-double Orthotropic::WaveSpeed(bool threeD)
+
+// calculate maximum wave speed in mm/sec (moduli in MPa, rho in g/cm^3)
+double Orthotropic::WaveSpeed(bool threeD,MPMBase *mptr)
 {
     double xx,cnorm,cshear;
     

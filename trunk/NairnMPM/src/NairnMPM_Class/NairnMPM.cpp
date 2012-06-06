@@ -411,7 +411,7 @@ void NairnMPM::PreliminaryCalcs(void)
 		}
         
         // check time step
-        crot=theMaterials[matid]->WaveSpeed(IsThreeD())/10.;		// in cm/sec
+        crot=theMaterials[matid]->WaveSpeed(IsThreeD(),mpm[p])/10.;		// in cm/sec
 		tst=FractCellTime*dcell/crot;					// in sec
         if(tst<tmin) tmin=tst;
         
@@ -544,7 +544,7 @@ void NairnMPM::ValidateOptions(void)
 			throw CommonException("Multimaterial mode is not allowed unless using a generated regular mesh","NairnMPM::ValidateOptions");
 	}
 	
-	// check each material type (if it is used)
+	// check each material type (but only if it is used)
 	int i;
 	for(i=0;i<nmat;i++)
 	{	if(theMaterials[i]->GetField()>=0)

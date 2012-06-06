@@ -31,13 +31,11 @@ class HEAnisotropic : public HyperElastic
 		// step methods
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
-		//virtual bool MPMConstLaw(int);
 				
 		// accessors
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
-		virtual double WaveSpeed(bool);
-		//virtual double ShearWaveSpeed(bool);
+		virtual double WaveSpeed(bool,MPMBase *);
 		
     protected:
 		// unique properties

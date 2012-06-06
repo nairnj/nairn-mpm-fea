@@ -175,7 +175,10 @@ void AnisoPlasticity::InitialLoadMechProps(int makeSpecific,int np)
 // if cannot be used in current analysis type throw MPMTermination()
 void AnisoPlasticity::MPMConstLaw(int np)
 {	if(np!=PLANE_STRAIN_MPM && np!=THREED_MPM)
-		throw CommonException("Anisotropic plasticity materials require 3D or 2D plane strain MPM analysis","NairnMPM::ValidateOptions");
+		throw CommonException("Anisotropic plasticity materials require 3D or 2D plane strain MPM analysis","AnisoPlasticity::MPMConstLaw");
+	
+	// call super class (why can't call super class?)
+	return MaterialBase::MPMConstLaw(np);
 }
 
 #pragma mark VonMisesHardening::Methods
