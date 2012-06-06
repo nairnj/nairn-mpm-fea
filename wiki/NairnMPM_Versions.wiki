@@ -26,6 +26,13 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * The MGSCGLMaterial can now do plane stress calculations
     * BCBox for particle or velocity boundary conditions can specify an axis to change to a cylinder
     * All internal objects based on `BodyObjectController` were change to derive from generalized `ShapeController`. The changes allowed several body object controllers to be deleted.
+    * Added ideal gas material implemented as a hyperelastic material.
+    * A new `Normals` option for multimaterial mode finds the volume-weighted average volume gradient of the contacting materials. It seems generally better and has been made the default normals method as well.
+    * The `RigidMaterial` code has been improved to allow independent control of velocities in `x`, `y`, and `z` directions (`direction` = 0 to 7), each axis can use its own function, and the functions can depend on position and time. This change allows, for example, to have rigid materials in circular motion.
+    * `RigidMaterials` for contact (`direction`=8) can now use separate functions for each coordinate to simulate more types of motion and the function can now depend on position and time.
+    * `RigidMaterials` that set temperature or concentration with a function now use a new `valueFunction` property and it can be a function of position and time. Because temperature and concentration functions were set before using `settingFunction`, old files will have to be updated to this  new method.
+    * Multmaterial mode contact can now implement imperfect interface laws in addition to friction laws. It is set up with the `Friction` commands used to set material contact friction before.
+    * Body forces for gravity were not correctly implemented for 3D before, but now work in 3D simulations.
 
   * release-3.0 (25 JAN 2012)
     * Has NairnMPM 8.1.0
