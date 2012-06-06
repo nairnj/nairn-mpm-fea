@@ -79,7 +79,10 @@ const char *TrilinearTraction::VerifyProperties(int np)
 	const char *msg=SetTractionLaw(stress1,kI1,umidI,sI2,uI2,delIc,JIc);
 	if(msg!=NULL) return msg;
 	
-	return SetTractionLaw(stress2,kII1,umidII,sII2,uII2,delIIc,JIIc);
+	msg=SetTractionLaw(stress2,kII1,umidII,sII2,uII2,delIIc,JIIc);
+	if(msg!=NULL) return msg;
+	
+	return TractionLaw::VerifyProperties(np);
 }
 
 // print to output window

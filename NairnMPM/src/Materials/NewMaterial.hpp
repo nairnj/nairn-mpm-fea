@@ -32,6 +32,7 @@ class NewMaterial : public MaterialBase
 		//virtual void InitialLoadTransProps(void);
 		virtual void PrintMechanicalProperties(void);
 		//virtual void PrintTransportProperties(void);
+		//virtual bool ValidateForUse(int);
 	
 		// History-dependent properties
 		//virtual char *MaterialData(void);
@@ -44,7 +45,6 @@ class NewMaterial : public MaterialBase
 		//virtual double GetHeatCapacityVol(MPMBase *);
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
-		//virtual bool MPMConstLaw(int);
 				
 		// accessors
 		virtual const char *MaterialType(void);

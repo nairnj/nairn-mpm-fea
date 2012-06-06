@@ -43,6 +43,17 @@ RigidMaterial::RigidMaterial(char *matName) : MaterialBase(matName)
 
 #pragma mark RigidMaterial::Initialization
 
+// preliminary calculations (throw CommonException on problem)
+const char *RigidMaterial::VerifyProperties(int np)
+{	// is rigid multimaterial, then nothing else allowed
+	if(setDirection&RIGID_MULTIMATERIAL_MODE && (setDirection!=RIGID_MULTIMATERIAL_MODE || setTemperature || setConcentration))
+	{	return "Rigid material for contact in multimaterial mode cannot also set other velocities, temperature, or concentration.";
+	}
+	
+	// to super class
+	return MaterialBase::VerifyProperties(np);
+}
+
 // print to output window
 void RigidMaterial::PrintMechanicalProperties(void)
 {
@@ -253,18 +264,13 @@ int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid)
 	if(setDirection!=RIGID_MULTIMATERIAL_MODE) return fieldNum;
 	
 	// not allowed unless in multimaterial mode
-	if(!multiMaterials) return -1;
+	if(!multiMaterials)
+	{	throw CommonException("Rigid material with contact not allowed in single material mode MPM",
+						  "RigidMaterial::SetField");
+	}
 	
 	// go to superclass
 	return MaterialBase::SetField(fieldNum,multiMaterials,matid);
-}
-
-// preliminary calculations (throw CommonException on problem)
-void RigidMaterial::PreliminaryMatCalcs(void)
-{	// is rigid multimaterial, then nothing else allowed
-	if(setDirection&RIGID_MULTIMATERIAL_MODE && (setDirection!=RIGID_MULTIMATERIAL_MODE || setTemperature || setConcentration))
-		throw CommonException("Rigid material for contact in multimaterial mode cannot also set other velocities, temperature, or concentration.","RigidMaterial::PreliminaryMatCalcs");
-	MaterialBase::PreliminaryMatCalcs();
 }
 
 #pragma mark RigidMaterial::Methods

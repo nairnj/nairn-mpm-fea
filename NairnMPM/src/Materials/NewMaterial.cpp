@@ -30,7 +30,7 @@ NewMaterial::NewMaterial(char *matName) : MaterialBase(matName)
 #pragma mark NewMaterial::Initialization
 
 // Read material properties by name (in xName). Set input to variable type
-// (DOUBLE_NUM or INT_NUM) and return pointed to the class variable
+// (DOUBLE_NUM or INT_NUM) and return pointer to the class variable
 // (cast as a char *)
 char *NewMaterial::InputMat(char *xName,int &input)
 {
@@ -44,7 +44,8 @@ char *NewMaterial::InputMat(char *xName,int &input)
 }
 
 // Verify input properties; if problem return string with an error message
-// if OK, pass on to super class
+// If OK, MUST pass on to super class
+// (see also ValidateForUse() for checkes that depend on MPM calculation mode)
 const char *NewMaterial::VerifyProperties(int np)
 {
 	// check properties
@@ -53,13 +54,13 @@ const char *NewMaterial::VerifyProperties(int np)
 	return MaterialBase::VerifyProperties(np);
 }
 
-// Constant properties used in constitutive law
+// Initialize constant properties used in constitutive law
 //void NewMaterial::InitialLoadMechProps(int makeSpecific,int np)
 //{
 //	MaterialBase::InitialLoadMechProps(makeSpecific,np);
 //}
 
-// Constrant transport properties used in transport calculation
+// Initialize constant transport properties used in transport calculation
 //void NewMaterial::InitialLoadTransProps(void) {}
 
 // print mechanical properties to the results
@@ -75,30 +76,47 @@ void NewMaterial::PrintMechanicalProperties(void)
 // Print transport properties (if activated)
 //void NewMaterial::PrintTransportProperties(void) {}
 
+// If MPM analysis not allowed, throw an exception (e.g. 3D not implemented)
+// If OK, MUST pass on to super class
+// (see also VerifyProperties() for generic material property checks)
+//void NewMaterial::ValidateForUse(int np)
+//{	if(np==THREED_MPM)
+//	{	throw CommonException("NewMaterial cannot do 3D MPM analysis",
+//							  "NewMaterial::ValidateForUse");
+//	}
+//	return MaterialBase::ValidateForUse(np);
+//}
+
 #pragma mark NewMaterial:HistoryVariables
 
-// Initialize history data on a particle
+// Initialize history data on a particle (if has any)
 //char *NewMaterial::MaterialData(void) { return NULL; }
 
-// archive history data for this material type when requested.
+// Reutrn history data for this material type when requested (if has any)
 //double NewMaterial::GetHistory(int num,char *historyPtr) { return 0.; }
 
 #pragma mark NewMaterial:Step Methods
 
-// Calculate material properties that dependent on the state of the particle
+// Calculate material properties that depend on the state of the particle
+// If implemented, MUST pass onto super class
 //void NewMaterial::LoadMechanicalProps(MPMBase *mptr,int np)
 //{
 //	MaterialBase::LoadMechanicalProps(mptr,np);
 //}
 
-// Calculate transport properties that dependent on the state of the particle
+// Calculate transport properties that depend on the state of the particle
+// If implemented, MUST pass onto super class
 //void NewMaterial::LoadTransportProps(MPMBase *mptr,int np) {}
 //{
 //	MaterialBase::LoadTransportProps(mptr,np);
 //}
 
-// implemented in case heat capacity (Cp or Cv) changes with particle state
+// Implemented in case heat capacity (Cp/heat capacity for conduction) changes with particle state
+// Called by conduction code
 //double NewMaterial::GetHeatCapacity(MPMBase *mptr) { return heatCapacity; }
+
+// Implemented in case heat capacity Cv changes with particle state (but not called
+//		by any core methods)
 //double NewMaterial::GetHeatCapacityVol(MPMBase *mptr) { return heatCapacityVol; }
 
 // Apply 2D Constitutive law
@@ -112,17 +130,6 @@ void NewMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,
         double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
 {
 }
-
-/*
-// if analysis not allowed, throw an exception
-void NewMaterial::MPMConstLaw(int np)
-{	if(np==THREED_MPM)
-		throw CommonException("NewMaterial cannot do 3D MPM analysis","NewMaterial::MPMConstLaw");
- 
-	//call super class (why can't call super class?)
-	return MaterialBase::MPMConstLaw(np);
-}
-*/
 
 #pragma mark NewMaterial::Custom Methods
 
@@ -138,12 +145,13 @@ const char *NewMaterial::MaterialType(void) { return "Template Material"; }
 double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
 
 // Calculate shear wave speed for material in mm/sec.
+// Used only by silent boundary conditions, which are only for isotropic materials
 //double NewMaterial::ShearWaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
 
-// maximum diffusion coefficient in cm^2/sec
+// Maximum diffusion coefficient in cm^2/sec
 //double NewMaterial::MaximumDiffusion(void) { return 0.; }
 
-// maximum diffusivity in cm^2/sec
+// Maximum diffusivity in cm^2/sec
 //double NewMaterial::MaximumDiffusivity(void) { return 0.; }
 
 

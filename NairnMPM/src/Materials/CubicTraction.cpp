@@ -29,7 +29,10 @@ const char *CubicTraction::VerifyProperties(int np)
 	const char *msg=SetTractionLaw(stress1,delIc,JIc,kI1);
 	if(msg!=NULL) return msg;
 	
-	return SetTractionLaw(stress2,delIIc,JIIc,kII1);
+	msg=SetTractionLaw(stress2,delIIc,JIIc,kII1);
+	if(msg!=NULL) return msg;
+	
+	return TractionLaw::VerifyProperties(np);
 }
 
 // print to output window

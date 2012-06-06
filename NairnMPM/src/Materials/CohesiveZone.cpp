@@ -78,7 +78,10 @@ const char *CohesiveZone::VerifyProperties(int np)
 	const char *msg=SetTractionLaw(stress1,kI1,delIc,JIc,umidI);
 	if(msg!=NULL) return msg;
 	
-	return SetTractionLaw(stress2,kII1,delIIc,JIIc,umidII);
+	msg=SetTractionLaw(stress2,kII1,delIIc,JIIc,umidII);
+	if(msg!=NULL) return msg;
+	
+	return TractionLaw::VerifyProperties(np);
 }
 
 // print to output window

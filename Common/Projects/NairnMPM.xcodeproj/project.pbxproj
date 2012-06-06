@@ -735,6 +735,7 @@
 				A767E03308B14C39004540AB /* Read_MPM */,
 				A7C77A2909869D7E001BE128 /* NairnMPM_Class */,
 				F5F7068E0326ABD00163AF10 /* Materials */,
+				67D1F371157F932D0010691C /* Traction_Laws */,
 				F5F7068C0326AB830163AF10 /* Elements */,
 				A7731E4705B44C7F00294E25 /* Nodes */,
 				A7731E3405B44C2C00294E25 /* Global_Quantities */,
@@ -758,6 +759,24 @@
 				A72A90C90CD2ADA5001DCFA8 /* ExtractMPM */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		67D1F371157F932D0010691C /* Traction_Laws */ = {
+			isa = PBXGroup;
+			children = (
+				A79E8AF40D6F7D8700B8AB58 /* TractionLaw.hpp */,
+				A79E8AF50D6F7D8700B8AB58 /* TractionLaw.cpp */,
+				A72F0A3D0D943D02003426B3 /* CohesiveZone.hpp */,
+				A72F0A3E0D943D02003426B3 /* CohesiveZone.cpp */,
+				A7FC202F124432B700DEAEF0 /* TrilinearTraction.hpp */,
+				A7FC2030124432B700DEAEF0 /* TrilinearTraction.cpp */,
+				A797728D0DA2E4EB00B0C21E /* LinearTraction.hpp */,
+				A797728E0DA2E4EB00B0C21E /* LinearTraction.cpp */,
+				A7EC3A6F0DA91A9B003D43AC /* CubicTraction.hpp */,
+				A7EC3A700DA91A9B003D43AC /* CubicTraction.cpp */,
+			);
+			name = Traction_Laws;
+			path = Materials;
 			sourceTree = "<group>";
 		};
 		A7198C5409780F5200334C4F /* Common */ = {
@@ -1256,12 +1275,10 @@
 			children = (
 				A70A7B11042A50950063AF10 /* MaterialBaseMPM.cpp */,
 				A7A355CE0B6822E300EF7973 /* ElasticMPM.cpp */,
+				A7C954F7044717540063AF10 /* BistableIsotropic.hpp */,
+				A7C954F8044717540063AF10 /* BistableIsotropic.cpp */,
 				A7CA395703F16F3A0063AF10 /* Viscoelastic.hpp */,
 				A7CA395603F16F3A0063AF10 /* Viscoelastic.cpp */,
-				A7A355220B681DC100EF7973 /* HyperElastic.hpp */,
-				A7A355230B681DC100EF7973 /* HyperElastic.cpp */,
-				A7D5DB42041028D50063AF10 /* Mooney.hpp */,
-				A7D5DB43041028D50063AF10 /* Mooney.cpp */,
 				A7CD01500E070CBD003470EE /* IsoPlasticity.hpp */,
 				A7CD01510E070CBD003470EE /* IsoPlasticity.cpp */,
 				A747207907BBC6A800456B14 /* VonMisesHardening.hpp */,
@@ -1272,32 +1289,24 @@
 				A79013050ECB8F8C0000C289 /* MGSCGLMaterial.cpp */,
 				A708FDD20F326C1A003FA82B /* SLMaterial.hpp */,
 				A708FDD30F326C1A003FA82B /* SLMaterial.cpp */,
-				A7C954F7044717540063AF10 /* BistableIsotropic.hpp */,
-				A7C954F8044717540063AF10 /* BistableIsotropic.cpp */,
 				A7845CEA0E01D94F00D2378A /* AnisoPlasticity.hpp */,
 				A7845CEB0E01D94F00D2378A /* AnisoPlasticity.cpp */,
 				A7845CEE0E01DAA300D2378A /* HillPlastic.hpp */,
 				A7845CEF0E01DAA300D2378A /* HillPlastic.cpp */,
-				A7D1E5800749581A00BC2956 /* RigidMaterial.hpp */,
-				A7D1E5810749581A00BC2956 /* RigidMaterial.cpp */,
-				A79E8AF40D6F7D8700B8AB58 /* TractionLaw.hpp */,
-				A79E8AF50D6F7D8700B8AB58 /* TractionLaw.cpp */,
-				A72F0A3D0D943D02003426B3 /* CohesiveZone.hpp */,
-				A72F0A3E0D943D02003426B3 /* CohesiveZone.cpp */,
-				A7FC202F124432B700DEAEF0 /* TrilinearTraction.hpp */,
-				A7FC2030124432B700DEAEF0 /* TrilinearTraction.cpp */,
-				A797728D0DA2E4EB00B0C21E /* LinearTraction.hpp */,
-				A797728E0DA2E4EB00B0C21E /* LinearTraction.cpp */,
-				A7EC3A6F0DA91A9B003D43AC /* CubicTraction.hpp */,
-				A7EC3A700DA91A9B003D43AC /* CubicTraction.cpp */,
-				A71FC00E0E377F1F001908F8 /* NewMaterial.hpp */,
-				A71FC00D0E377F1F001908F8 /* NewMaterial.cpp */,
 				A7DE477A11B97CD400FDEFE6 /* WoodMaterial.hpp */,
 				A7DE477B11B97CD400FDEFE6 /* WoodMaterial.cpp */,
+				A7A355220B681DC100EF7973 /* HyperElastic.hpp */,
+				A7A355230B681DC100EF7973 /* HyperElastic.cpp */,
+				A7D5DB42041028D50063AF10 /* Mooney.hpp */,
+				A7D5DB43041028D50063AF10 /* Mooney.cpp */,
 				A7B6936814325B02006F6A27 /* HEAnisotropic.hpp */,
 				A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */,
 				A743491415792C0300EF8DFA /* IdealGas.hpp */,
 				A743491315792C0300EF8DFA /* IdealGas.cpp */,
+				A7D1E5800749581A00BC2956 /* RigidMaterial.hpp */,
+				A7D1E5810749581A00BC2956 /* RigidMaterial.cpp */,
+				A71FC00E0E377F1F001908F8 /* NewMaterial.hpp */,
+				A71FC00D0E377F1F001908F8 /* NewMaterial.cpp */,
 			);
 			path = Materials;
 			sourceTree = "<group>";
