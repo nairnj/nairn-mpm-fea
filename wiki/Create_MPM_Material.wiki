@@ -53,7 +53,7 @@ Almost all coding will be done in the new material class files, but for that mat
 
 == Compiling with `make` Command ==
 
-If you want to be able to do command-line compiling using the 'make command, the new material source files needed to add to the `makefile`. The steps are best done by comparing to a similar material's files in the `makefile`' The main steps are are to edit the `makefile` and do:
+If you want to be able to do command-line compiling using the `make` command, the new material source files needed to add to the `makefile`. The steps are best done by comparing to a similar material's files in the `makefile`. The main steps are are to edit the `makefile` and do:
 
   # Add the new material's header file to the header file's needed to compile `MaterialController.hpp`
   # Compile the new material's source file (see a similar material for example of what is needed).
