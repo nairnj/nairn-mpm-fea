@@ -203,7 +203,10 @@ char *Viscoelastic::MaterialData(void)
 // plane stress not allowed in viscoelasticity
 void Viscoelastic::MPMConstLaw(int np)
 {	if(np==PLANE_STRESS_MPM)
-		throw CommonException("Viscoelastic materials require 2D plane strain or 3D MPM analysis","NairnMPM::ValidateOptions");
+		throw CommonException("Viscoelastic materials require 2D plane strain or 3D MPM analysis","Viscoelastic::MPMConstLaw");
+	
+	//call super class (why can't call super class?)
+	return MaterialBase::MPMConstLaw(np);
 }
 
 /* For 2D MPM analysis, take increments in strain and calculate new
@@ -388,11 +391,10 @@ const char *Viscoelastic::MaterialType(void) { return "Viscoelastic"; }
 // Return the material tag
 int Viscoelastic::MaterialTag(void) { return VISCOELASTIC; }
 
-/*	calculate wave speed in mm/sec (because G in MPa and rho in g/cm^3)
-	Uses sqrt((K +4Ge/3)/rho) which is probably the maximum
-            wave speed possible
+/* Calculate wave speed in mm/sec (because G in MPa and rho in g/cm^3)
+	Uses sqrt((K +4Ge/3)/rho) which is probably the maximum wave speed possible
 */
-double Viscoelastic::WaveSpeed(bool threeD) { return sqrt(1.e3*(Ke + 4.*Ge/3.)/rho); }
+double Viscoelastic::WaveSpeed(bool threeD,MPMBase *mptr) { return sqrt(1.e3*(Ke + 4.*Ge/3.)/rho); }
 
 // Should support archiving history - if it is useful
 double Viscoelastic::GetHistory(int num,char *historyPtr) { return (double)0; }

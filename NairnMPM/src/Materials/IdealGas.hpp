@@ -39,9 +39,10 @@ class IdealGas : public HyperElastic
 		// methods
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
+		virtual void MPMConstLaw(int);
     
 		// accessors
-		virtual double WaveSpeed(bool);
+		virtual double WaveSpeed(bool,MPMBase *);
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
 		

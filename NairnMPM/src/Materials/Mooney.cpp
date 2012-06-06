@@ -279,19 +279,19 @@ double Mooney::GetVolumetricTerms(double J,double *Kse)
 // Return the material tag
 int Mooney::MaterialTag(void) { return MOONEYRIVLIN; }
 
-/*	calculate wave speed in mm/sec (because G in MPa and rho in g/cm^3)
- Uses sqrt((K +4G/3)/rho) which is dilational wave speed
- at low strain G = G1+G2
+/* Calculate wave speed in mm/sec (because G in MPa and rho in g/cm^3)
+	Uses sqrt((K +4G/3)/rho) which is dilational wave speed
+	at low strain G = G1+G2
 */
-double Mooney::WaveSpeed(bool threeD)
+double Mooney::WaveSpeed(bool threeD,MPMBase *mptr)
 {
     return sqrt(1.e9*(Kbulk+4.*(G1+G2)/3.)/rho);
 }
 
-/*	calculate shear wave speed in mm/sec (because G1 and G2 in MPa and rho in g/cm^3)
+/* Calculate shear wave speed in mm/sec (because G1 and G2 in MPa and rho in g/cm^3)
 	at low strain G = G1+G2
 */
-double Mooney::ShearWaveSpeed(bool threeD) { return sqrt(1.e9*(G1+G2)/rho); }
+double Mooney::ShearWaveSpeed(bool threeD,MPMBase *mptr) { return sqrt(1.e9*(G1+G2)/rho); }
 
 // return material type
 const char *Mooney::MaterialType(void) { return "Mooney-Rivlin Hyperelastic"; }

@@ -42,8 +42,8 @@ class Mooney : public HyperElastic
         virtual double GetVolumetricTerms(double,double *);
     
 		// accessors
-		virtual double WaveSpeed(bool);
-		virtual double ShearWaveSpeed(bool);
+		virtual double WaveSpeed(bool,MPMBase *);
+		virtual double ShearWaveSpeed(bool,MPMBase *);
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
 		

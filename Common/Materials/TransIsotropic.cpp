@@ -844,14 +844,15 @@ const char *TransIsotropic::MaterialType(void)
 }
 
 #ifdef MPM_CODE
-/*	calculate maximum wave speed in mm/sec (moduli in MPa, rho in g.cm^3
-        TRANSISO1
-            wave speeds are GT/rho and (KT+GT)/rho - return larger one
-        TRANSISO2
-            wave speeds are GT/rho, GA/rho, (KT+GT)/rho, and (EA + 4KT nuA^2)/rho
-            return largest (assumes shear ones are not largest)
+
+/* Calculate maximum wave speed in mm/sec (moduli in MPa, rho in g/cm^3)
+	TRANSISO1
+		wave speeds are GT/rho and (KT+GT)/rho - return larger one
+	TRANSISO2
+		wave speeds are GT/rho, GA/rho, (KT+GT)/rho, and (EA + 4KT nuA^2)/rho
+		return largest (assumes shear ones are not largest)
 */
-double TransIsotropic::WaveSpeed(bool threeD)
+double TransIsotropic::WaveSpeed(bool threeD,MPMBase *mptr)
 {
     if(MaterialTag()==TRANSISO1 && !threeD)
         return sqrt(1.e9*(KT+GT)/rho);

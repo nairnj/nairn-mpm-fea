@@ -328,12 +328,17 @@ const char *MaterialBase::PreferredDirection(int style)
 	return " in default criterion direction";
 }
 
-/* calculate properties used in analyses
+/*	Calculate properties used in analyses. If error, return string with an error message.
+	This is called once at start of the calculation just before the material properties
+		are printined to the output file and before any calculations. It is called for
+		every material defined in the input file, even if it is not used by any
+		particle
 	If superclass overrides this method, must call this too
 */
 const char *MaterialBase::VerifyProperties(int np)
 {
-	// check which were set
+	// check which were set of Cp = heatCapacity and Cv = heatCapacityVol
+	// if set only Cp, Cv=Cp, if set only Cv, Cp=Cv, if both set, they are used
 	if(heatCapacityVol<0.) heatCapacityVol=fmax(heatCapacity,0.);
 	if(heatCapacity<0.) heatCapacity=heatCapacityVol;
 	
@@ -511,7 +516,12 @@ void MaterialBase::ContactOutput(int thisMatID)
 
 #pragma mark MaterialBase::Methods
 
-// if cannot be used in current analysis type throw an exception
+/* Do are required preliminary calculations.
+	If material cannot be used in current analysis type throw an exception
+	This is called once before calculations start, but only if the material is
+		actually in use by one or more particles
+	Subclass that overrides must pass on to super class
+*/
 void MaterialBase::MPMConstLaw(int np) {}
 
 // MPM call to allow material to change properties depending on particle state
@@ -752,7 +762,7 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
 						// (Note that JIc may differ from 2*gamma if desired
 						// but must have JIc >= 2*gamma)
                     	crkTip->steadyState=BEGINPROPAGATING;
-                        crkTip->speed=initSpeed*WaveSpeed(FALSE);		// fraction of wave speed in 2D
+                        crkTip->speed=initSpeed*WaveSpeed(FALSE,NULL);		// fraction of wave speed in 2D
                         cout << "# Initiate t:" << 1000.*mtime <<
                                 " s:" << crkTip->speed << endl;
 						SelectDirection(crkTip,crackDir,theCrack,critIndex);
@@ -800,14 +810,14 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
                     // balance>0 means energy is decreasing. Here we speed up the
                     //    crack to try and use it up, but not above wave speed
                     else
-                    {	adjustSpeed=fmin(adjustSpeed,WaveSpeed(FALSE)-crkTip->speed);
+                    {	adjustSpeed=fmin(adjustSpeed,WaveSpeed(FALSE,NULL)-crkTip->speed);
                         crkTip->steadyState=PROPAGATING;
                     }
                     
                     // adjust speed, but never below minimum
                     crkTip->speed+=adjustSpeed;
-                    if(crkTip->speed<=0.5*initSpeed*WaveSpeed(FALSE))
-                    {	crkTip->speed=0.5*initSpeed*WaveSpeed(FALSE);
+                    if(crkTip->speed<=0.5*initSpeed*WaveSpeed(FALSE,NULL))
+                    {	crkTip->speed=0.5*initSpeed*WaveSpeed(FALSE,NULL);
                         crkTip->steadyState=SLOWLYPROPAGATING;
                     }
 					
@@ -1121,8 +1131,24 @@ bool MaterialBase::ControlCrackSpeed(CrackSegment *crkTip,double &waitTime)
 
 #pragma mark MaterialBase::Accessors
 
-// Provide something
-double MaterialBase::ShearWaveSpeed(bool threeD) { return WaveSpeed(threeD)/sqrt(3.); }
+/* Calculate maximum wave speed for material in mm/sec. WaveSpeed() is called
+	once for each material point at beginning of calculation. If variable wave
+	speed, be conservative and return the maximum possible save speed.
+	It is also called by crack propagation, for which threeD is always FALSE
+		and mptr is NULL
+	It is also called by silent boundary conditions if ShearWaveSpeed() is not
+		overridden. These boundary conditions only work (an not even sure of that)
+		for isotropic materials.
+	The method is abstract (in MaterialBase.hpp) so all sub classes must implement
+*/
+//double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) { }
+
+/* Calculate shear wave speed for material in mm/sec. This is only called for silent
+	boundary conditions. This base class return WaveSpeed()/sqrt(3). A new
+	material only needs to override this method if it will implement silent boundary
+	conditions and if the base class method is not correct.
+*/
+double MaterialBase::ShearWaveSpeed(bool threeD,MPMBase *mptr) { return WaveSpeed(threeD,mptr)/sqrt(3.); }
 
 // archive material data for this material type when requested.
 double MaterialBase::GetHistory(int num,char *historyPtr) { return (double)0.; }

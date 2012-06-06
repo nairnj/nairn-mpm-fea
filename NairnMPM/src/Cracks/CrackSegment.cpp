@@ -545,8 +545,8 @@ void CrackSegment::FillArchive(char *app,int segNum)
 void CrackSegment::StartCrackTipHeating(double growth,double tp)
 {
 	MaterialBase *tipMat=theMaterials[tipMatnum-1];
-	double rhoH=1.0;									// should come from a material property
-	double adot=tipMat->WaveSpeed(FALSE);				// in mm/secin 2D
+	double rhoH=1.0;											// should come from a material property
+	double adot=tipMat->WaveSpeed(FALSE,NULL);					// in mm/sec in 2D
 	
 	// set up rate and times (making sure proper number of steps)
 	int nsteps=(int)(growth/(adot*timestep));

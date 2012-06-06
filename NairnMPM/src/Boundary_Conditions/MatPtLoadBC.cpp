@@ -68,10 +68,10 @@ MatPtLoadBC *MatPtLoadBC::AddMPLoad(double bctime)
 			 pFext->z+=BCValue(mstime);
 	}
 	else
-	{	double mp=mpm[ptNum-1]->mp;								// in g
+	{	double mp=mpm[ptNum-1]->mp;												// in g
 		int matnum=mpm[ptNum-1]->MatID();
-		double cd=theMaterials[matnum]->WaveSpeed(FALSE);			// in mm/sec (2D or isotropic only)
-		double cs=theMaterials[matnum]->ShearWaveSpeed(FALSE);		// in mm/sec
+		double cd=theMaterials[matnum]->WaveSpeed(FALSE,mpm[ptNum-1]);			// in mm/sec (2D or isotropic only)
+		double cs=theMaterials[matnum]->ShearWaveSpeed(FALSE,mpm[ptNum-1]);		// in mm/sec
 		Vector pVel=mpm[ptNum-1]->vel;
 		Vector *pFext=mpm[ptNum-1]->GetPFext();
 		

@@ -568,37 +568,6 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 </dl>
 
 
-<a name="idealgas"></a><h2>Ideal Gas, as a Hyperelastic Material</h2>
-
-<p>The material type is an ideal gas, implemented as an isotropic, hyperelastic material at finite deformations. It is currently in development.</p>
-
-<p>
-<blockquote>
-p = J<sup>-1</sup> p<sub>0</sub> T/T<sub>0</sub>
-= p<sub>0</sub> * &rho;/&rho;<sub>0</sub> * T/T<sub>0</sub>
-</blockquote>
-</P>
-
-<p>The possible input properties are:</p>
-
-<dl>
-
-<dt>&lt;T0&gt;273.15&lt;/T0&gt;</dt>
-<dd>The reference temperature (in Kelvin)</dd>
-    	
-<dt>&lt;rho&gt;0.00129&lt;/rho&gt;</dt>
-<dd>The reference density (in g/cm<sup>3</sup>) at reference temperature.  This must be a positive value greather than zero.</dd>
-    	
-<dt>&lt;P0&gt;0.1013&lt;/P0&gt;</dt>
-<dd>The reference pressure (in MPa) at reference temperature and reference density.  This must be a positive value greather than zero.</dd>
-    	
-
-<dt>Other Properties</dt>
-<dd>See the <a href="#common">properties common to all materials</a>.</dd>
-    	
-</dl>
-
-
 <a name="vonmises"></a><h2>Von Mises Plastic, Isotropic</h2>
 
 <p>The material type is <code>Type=9</code>. The material is isotropic and yields when <code>f=0</code> according to the plastic potential
@@ -643,6 +612,49 @@ p = J<sup>-1</sup> p<sub>0</sub> T/T<sub>0</sub>
 
 <p>The one history variable is the cummulative equivalent plastic strain, <code>&alpha;</code>, defined as the sum of <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>. This variable can be archived as history variable 1.</p>
     
+<a name="idealgas"></a><h2>Ideal Gas, as a Hyperelastic Material</h2>
+
+<p>The material type is an ideal gas, implemented as an isotropic, hyperelastic material at finite deformations. Its contitutive law is.</p>
+
+<blockquote>
+P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
+</blockquote>
+
+<p>where J is determinant of the deformation tensor and J = V/V<sub>0</sub>. The pressure P is stored in the normal stresses or &sigma;<sub>xx</sub> = &sigma;<sub>yy</sub>
+= &sigma;<sub>zz</sub> = -P. The material can be used in 3D and 2D plain strain calculations, but not in 2D plane stress calculations.</p>
+
+<p>The possible input properties are:</p>
+
+<dl>
+
+<dt>&lt;P0&gt;0.1013&lt;/P0&gt;</dt>
+<dd>The reference pressure (in MPa) at reference temperature and reference density.  This must be a positive value greather than zero.</dd>
+    	
+<dt>&lt;T0&gt;273.15&lt;/T0&gt;</dt>
+<dd>The reference temperature (in Kelvin)</dd>
+    	
+<dt>&lt;rho&gt;0.00129&lt;/rho&gt;</dt>
+<dd>The reference density (in g/cm<sup>3</sup>) at reference temperature.  This must be a positive value greather than zero.</dd>
+
+<dt>&lt;kCond&gt;0.0257&lt;/kCond&gt;</dt>
+<dd>Thermal conductivity (in W/(m-K)). Only used when doing conduction calculations.</dd>
+    	
+</dl>
+
+<p>When using gas particles, the <a href="mpmheader.html#stressfreetemp">stress free temperature</a> must be set to the desired temperature in Kelvin. The material properties refer to gas state at any reference conditions. For example, air might have reference pressure of 1 atm = 0.101325 MPa at any temperature <code>T0</code>. The density of air (or any gas) is then given by</p>
+
+<blockquote>
+<code>rho = (P0/T0) * (M<sub>g</sub>/R)</code>
+</blockquote>
+
+<p>where <code>M<sub>g</sub></code> is the molecular weight of the gas (such as 28.97 g/mol for air) and <code>R</code> is the gas constant, R = 8.3144621 J/k/mol.</p>
+
+<p>When thermal conduction is off, this material models isothermal compression and expansion. To model adibatic compression and expansion, turn conduction on and active energy coupling. The energy will convert to heat result in heating during compression or cooling during expansion. See the <a href="thermal.html"><code>Thermal</code></a> command for details. There is no need to enter heat capacity because that term is calculated using ideal gas theory. You do, however, need to enter thermal conductivity. The current implementation uses a temperature independent conductivity, which may change in the future.</p>
+
+<p>Ideal gas particles are fairly stable, but can be made unstable by certain boundary conditions on constraining walls. If stability problems arise, try different boundary conditions.</p>
+
+<p>If the calculation archives strain energy, it tracks work done on the gas particles (in the form of <code>P dV</code> work).</p>
+
 <a name="bistab"></a><h2>Bistable, Isotropic Elastic</h2>
 
 <p>The material type is <code>Type=10</code>. This material has two isotopic states. The first state (state &quot;0&quot;) must be fully defined. Any property omitted for the second state (state &quot;d&quot;) will be assumed to be indentical to the first state. The second state can optionally have an offset volumetric strain to give the deformed state a different zero-stress intercept than the undeformed state. The mechanical properties in the two states are set with:</p>

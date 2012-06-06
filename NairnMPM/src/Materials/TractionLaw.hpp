@@ -40,7 +40,7 @@ class TractionLaw : public MaterialBase
 		
 		// accessors
 		virtual const char *MaterialType(void);
-		virtual double WaveSpeed(bool);
+		virtual double WaveSpeed(bool,MPMBase *);
 		virtual bool isTractionLaw(void);
 	
 	protected:

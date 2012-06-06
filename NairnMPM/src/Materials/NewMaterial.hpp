@@ -49,8 +49,8 @@ class NewMaterial : public MaterialBase
 		// accessors
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
-		virtual double WaveSpeed(bool);
-		//virtual double ShearWaveSpeed(bool);
+		virtual double WaveSpeed(bool,MPMBase *);
+		//virtual double ShearWaveSpeed(bool,MPMBase *);
 		//virtual double MaximumDiffusion(void);
         //virtual double MaximumDiffusivity(void);
 		
