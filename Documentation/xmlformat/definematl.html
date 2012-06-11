@@ -51,10 +51,21 @@
 </tr>
 
 <tr>
+<td colspan="6"><b>Linear Elastic and Hypoelastic (in MPM) Materials</b></td>
+</tr>
+
+<tr>
 <td><a href="#iso"><code>Isotropic</code></a></td>
 <td>1</td>
 <td>Linear elastic, isotropic</td>
 <td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td><a href="#bistab"><code>Bistable</code></a></td>
+<td>10</td>
+<td width="50%">Elastic, isotropic material with two stable states and reversible or irreversible transitions between the two states</td>
+<td align="center"></td><td align="center">X</td><td align="center"></td>
 </tr>
 
 <tr>
@@ -79,17 +90,7 @@
 </tr>
 
 <tr>
-<td><a href="#interface"><code>Interface</code></a></td>
-<td>5</td>
-<td width="50%">A definition of an imperfect interface</td>
-<td align="center">X</td><td align="center"></td><td align="center"></td>
-</tr>
-
-<tr>
-<td><a href="#visc"><code>Viscoelastic</code></a></td>
-<td>6</td>
-<td width="50%">Linear viscoelastic material with sum of relaxation times</td>
-<td align="center"></td><td align="center">X</td><td align="center">X</td>
+<td colspan="6"><b>Hyperelastic Materials</b></td>
 </tr>
 
 <tr>
@@ -103,7 +104,7 @@ as a special case.</td>
 <tr>
 <td><a href="#heaniso"><code>HEAnisotropic</code></a></td>
 <td>21</td>
-<td width="50%">An anisotropic, hyperelastic material.</td>
+<td width="50%">An anisotropic, hyperelastic material (in development).</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
@@ -115,9 +116,13 @@ as a special case.</td>
 </tr>
 
 <tr>
+<td colspan="6"><b>Elastic-Plastic and Hypoelastic (in MPM) Materials</b></td>
+</tr>
+
+<tr>
 <td><a href="#vonmises"><code>VonMises</code></a></td>
 <td>9</td>
-<td width="50%">Elastic-plastic material with a VonMises stress yield criterion and isotropic hardening</td>
+<td width="50%">Elastic-plastic isotropic material with a VonMises stress yield criterion and isotropic hardening</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
@@ -131,29 +136,44 @@ as a special case.</td>
 <tr>
 <td><a href="#MGSCGL"><code>MGSCGLMaterial</code></a></td>
 <td>17</td>
-<td width="50%">Isotropic material using the Mie-Gr&#252;neisen equation of state with shear modulus and yield stress from Steinberg, Cochran, and Guinan.</td>
+<td width="50%">Elastic-plastic isotropic material using the Mie-Gr&#252;neisen equation of state with shear modulus and yield stress from Steinberg, Cochran, and Guinan.</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
 <td><a href="#SL"><code>SLMaterial</code></a></td>
 <td>18</td>
-<td width="50%">Isotropic material based on the <a href="#MGSCGL">MGSCGLMaterial</a> but with the addition of a rate-dependent yield stress term from Steinberg and Lund</td>
+<td width="50%">Elastic-plastic isotropic material based on the <a href="#MGSCGL">MGSCGLMaterial</a> but with the addition of a rate-dependent yield stress term from Steinberg and Lund</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
 <td><a href="#JC"><code>JohnsonCook</code></a></td>
 <td>16</td>
-<td width="50%">Isotropic Johnson-Cook material with a rate- and temperature-dependent yield stress</td>
+<td width="50%">Elastic-plastic isotropic Johnson-Cook material with a rate- and temperature-dependent yield stress</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
-<td><a href="#bistab"><code>Bistable</code></a></td>
-<td>10</td>
-<td width="50%">Elastic, isotropic material with two stable states and reversible or irreversible transitions between the two states</td>
-<td align="center"></td><td align="center">X</td><td align="center"></td>
+<td colspan="6"><b>Viscoelastic Materials</b></td>
+</tr>
+
+<tr>
+<td><a href="#visc"><code>Viscoelastic</code></a></td>
+<td>6</td>
+<td width="50%">Linear viscoelastic material with sum of relaxation times</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td colspan="6"><b>Specialty Materials</b></td>
+</tr>
+
+<tr>
+<td><a href="#interface"><code>Interface</code></a></td>
+<td>5</td>
+<td width="50%">A definition of an imperfect interface</td>
+<td align="center">X</td><td align="center"></td><td align="center"></td>
 </tr>
 
 <tr>
@@ -164,16 +184,21 @@ as a special case.</td>
 </tr>
 
 <tr>
+<td colspan="6"><b>Traction Law Materials</b></td>
+</tr>
+
+</tr>
+<tr>
 <td><a href="#traction"><code>TriangularTraction</code></a></td>
 <td>12</td>
-<td width="50%">A mixed-mode cohesive law with triangular <a href="cracks.html#traction">traction law</a> for pure modes</td>
+<td width="50%">A triangular <a href="cracks.html#traction">traction law</a> for use on crack surfaces</td>
 <td align="center"></td><td align="center">X</td><td align="center"></td>
 </tr>
 
 <tr>
 <td><a href="#lineart"><code>LinearTraction</code></a></td>
 <td>13</td>
-<td width="50%">A linear elastic <a href="cracks.html#traction">traction law</a> for use on crack surfaces</td>
+<td width="50%">A linear elastic <a href="cracks.html#traction">traction law</a> for use on crack surfaces. This law never failures and therefore only implement crack-surface stiffness.</td>
 <td align="center"></td><td align="center">X</td><td align="center"></td>
 </tr>
 
@@ -285,7 +310,7 @@ as a special case.</td>
 
 <dt><a name="friction"></a>&lt;Friction mat='2'&gt;0.3&lt;/Friction&gt;
 </dt>
-<dd>This command within a material definition allows multimaterial mode to have different contact laws between different pairs of materials. Set the contact law as explained for <a href="mpmheader.html#friction">Friction command</a> in the <a href="mpmheader.html#cracks">Cracks section of the MPM header</a> except that imperfect interface settings are not yet supported and setting less than -10 means to assume materials are always in contact and revert to single material mode. The <code>mat</code> attribute defines contact mechanics between this material and the one listed (self contact is ignored). Alternatively, the other material can be specified by name using a <code>matname</code> attribute
+<dd>This command within a material definition allows multimaterial mode to have different contact laws between different pairs of materials. Set the contact law as explained for <a href="mpmheader.html#friction">Friction command</a> in the <a href="mpmheader.html#cracks">Cracks section of the MPM header</a> except that a setting less than -10 means to assume materials are always in contact and revert to single material mode. The <code>mat</code> attribute defines contact mechanics between this material and the one listed (self contact is ignored). Alternatively, the other material can be specified by name using a <code>matname</code> attribute
 as explained <a href="definematl.html#usemats">here</a>. If a node has more than two materials, the contact law used will be one between each material and the other material with the most volume.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;You only need to set friction on one of the materials in a pair. If you set both, the setting for the second material will override the one from the first material.
 </dd>
@@ -636,9 +661,9 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 <dt>&lt;rho&gt;0.00129&lt;/rho&gt;</dt>
 <dd>The reference density (in g/cm<sup>3</sup>) at reference temperature.  This must be a positive value greather than zero.</dd>
 
-<dt>&lt;kCond&gt;0.0257&lt;/kCond&gt;</dt>
-<dd>Thermal conductivity (in W/(m-K)). Only used when doing conduction calculations.</dd>
-    	
+<dt>Other Properties (where applicable)</dt>
+<dd>See <a href="#iso">Linear Elastic, Isotopic</a> material.</dd>
+
 </dl>
 
 <p>When using gas particles, the <a href="mpmheader.html#stressfreetemp">stress free temperature</a> must be set to the desired temperature in Kelvin. The material properties refer to gas state at any reference conditions. For example, air might have reference pressure of 1 atm = 0.101325 MPa at any temperature <code>T0</code>. The density of air (or any gas) is then given by</p>
@@ -734,9 +759,11 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 <ol>
 <li>If <code>SetDirection</code> is 0 through 7, the material is not really a material and points that are this type of rigid material will not really be part of the MPM analysis. These rigid material points are used to set boundary conditions on the grid that move with the particles. The rigid material points should be initialized to a velocity, temperature, or concentration <a href="definempm.html">when they are created</a>. As the rigid material points move through the grid, all nodes connected to those points will be assigned grid-based boundary conditions for the selected particle properties of velocity, temperature, and/or concentration. To have the boundary condition vary in time, use the the <code>SettingFunction(2)(3)</code> properties below to select the value rather than setting the initial particle properties (which can only be constant).
 </li>
-<li>If <code>SetDirection</code> is 8, the material will correspond to actual material points that move through the analysis. Since they are rigid, they will move with their prescribed velocity. They will interact with other material points only through multimaterial contact laws and thus this type of rigid material can only be used in <a href="mpmheader.html#mmmode">multimaterial mode MPM</a> calculations. These particles will also ignore grid-based velocity boundary conditions, including those set by rigid particles with <code>SetDirection</code> equal to 0 through 7.<br>
+<li>If <code>SetDirection</code> is 8, the material will correspond to actual material points that move through the analysis. Since they are rigid, they will move with their prescribed velocity. They will interact with other material points only through multimaterial contact laws and thus this type of rigid material can only be used in <a href="mpmheader.html#mmmode">multimaterial mode MPM</a> calculations. These particles will also ignore grid-based velocity boundary conditions, including those set by rigid particles with <code>SetDirection</code> equal to 0 through 7. Rigid contact is briefly described in <a href="references.html#Lemiale2010">Lemiale et al. (2010)</a>.<br>
+
 &nbsp;&nbsp;&nbsp;&nbsp;The advantage of this type of rigid material (unlike the other type) is that you can set frictional properties for contact between rigid materials and non-rigid materials. These rigid materials will move in the direction defined by the initial velocity. To have non-constant (e.g., rotational) motion, use the <code>SettingFunction(2)(3)</code> properties below rather than the initial partical velocity. If two different rigid materials of this type interact at the same node, however, there is a conflict and the calculation will stop. Finally, this type of rigid material can only set velocity; it cannot set temperature or concentration.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;This type of material ignores cracks, but that actually makes to possible to use them for new crack problems. For example, these rigid particles can provide wedge opening of a crack. If the rigid particles run along an explicit crack plane, those particles may contact particles on either side of the crack and then move the top and bottom surfaces of the crack apart. It may be only way to wedge open a crack (<i>i.e.</i>, the only material that can act like it is within a crack rather than on either side of the crack). All crack calculations (<i>e.g.</i>, crack contact, traction laws, imperfect interfaces, updating of crack position, and J integral) will ignore the rigid particles. The interactions with the rigid particles arise only by contact laws between the rigid particles and the various crack velocity fields.
+
+&nbsp;&nbsp;&nbsp;&nbsp;This type of material ignores cracks, but that actually makes to possible to use them for new crack problems. For example, these rigid particles can provide wedge opening of a crack. If the rigid particles run along an explicit crack plane, those particles may contact particles on either side of the crack and then move the top and bottom surfaces of the crack apart. It may be the only way to wedge open a crack (<i>i.e.</i>, the only material that can act like it is within a crack rather than on either side of the crack). All crack calculations (<i>e.g.</i>, crack contact, traction laws, imperfect interfaces, updating of crack position, and J integral) will ignore the rigid particles. The interactions with the rigid particles arise only by contact laws between the rigid particles and the various crack velocity fields.
 </li>
 </ol>
 
@@ -783,145 +810,6 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 <p>Note that creating rigid particles but not setting any velocity direction (<code>SetDirection</code>=0) can be used to create moving temperature or concentration boundary conditions that move over the particles; <i>i.e.</i>, the rigid particles will move through the real particles. Such moving temperature or concentration boundary conditions can only move at a constant velocity defined by the initial particle velocity.</p>
 
 <p>If a rigid particle is added to a problem, but it does not set any velocity, temperature, or concentration (<code>SetDirection</code>=0 or omitted and <code>SetTemperature</code> and <code>SetConcentration</code> omitted), it will have no affect on the calculations. It may plot in visualization software and therefore appear to be part of the simulation, but it will be identical to the results that would be obtained if it had never been added to the problem.</p>
-
-<a name="traction"></a><h2>Triangular Traction Law Material</h2>
-
-<p>The material type is <code>Type=12</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. The traction laws in pure mode I or pure mode II each have the following triangular shape:
-</p>
-<center><img src = "tritraction.jpg" width = "291" height = "185" alt = "triangular traction law">
-</center>
-<p>You must enter properties for both normal opening (mode I) and shear (mode II) traction laws using the following parameters:
-</p>
-
-<dl>
-
-<dt>&lt;sigmaI&gt;10&lt;/sigmaI&gt; and &lt;sigmaII&gt;100&lt;/sigmaII&gt;</dt>
-<dd>The peak stress or cohesive stress of the traction law (&sigma;). Enter in units of MPa.</dd>
-
-<dt>&lt;JIc&gt;10&lt;/JIc&gt; and &lt;JIIc&gt;100&lt;/JIIc&gt;</dt>
-<dd>The toughness of the traction law or area under the traction law (J<sub>c</sub>). Enter in units of J/m<sup>2</sup>.</dd>
-
-<dt>&lt;delIc&gt;10&lt;/delIc&gt; and &lt;delIIc&gt;100&lt;/delIIc&gt;</dt>
-<dd>The maximum opening displacement or critical displacement (&delta;<sub>c</sub>) at which debonding occurs. Enter in units of mm.</dd>
-
-<dt>&lt;delpkI&gt;0.1&lt;/delpkI&gt; and &lt;delpkII&gt;0.2&lt;/delpkI&gt;</dt>
-<dd>The relative displacement at the location of the peak in the triangular law. Enter in dimensionless units as fraction of <code>delIc</code> or <code>delIIc</code> (0 to 1). You can enter zero to get pure linear softening. Although a pure linear softening law seems to work well, it is possible the effectively infinite stiffess in the beginning might cause issues with dynamic convergence or, surprisingly, might be effectively less stiff that a law with a finite initial stiffness. If convergence problems or spurious dynamic effects occur, you can increase these values to make the initial stiffness finite.</dd>
-
-<dt>&lt;kIe&gt;200&lt;/kIe&gt; and &lt;kIIe&gt;100&lt;/kIIe&gt;</dt>
-<dd>The slope of the initial elastic portion of the tractional law (k). Enter in units of MPa/mm.</dd>
-
-<dt>&lt;nmix&gt;2&lt;/nmix&gt;</dt>
-<dd>The exponent used in the mixed-mode failure criterion (see below). Enter nmix<=0 to choose infinity, which is decoupled failure criterion.</dd>
-
-</dl>
-
-<p>You must then enter exactly two of the first three properties for each mode. These properties are interrelated and the third one will be calculated using J<sub>c</sub> = 500 &sigma;<sub>max</sub> &delta;<sub>c</sub> (in the entered units). You must enter zero or one for the next two properties. If one is provided, the other will be calculated from k = &sigma;<sub>max</sub>/(&delta;<sub>peak</sub> &delta;<sub>c</sub>). A valid traction law requires &delta;<sub>peak</sub> &le; 1. If neither k nor &delta;<sub>peak</sub> are entered, the peak will be located at &delta;<sub>peak</sub> = 0.225926299. This location provides the closest match to the <a href="#cubic">cubic traction law</a> for area under the curve as a function of &delta;.  
-</p>
-
-<p>The theoretical <i>J</i> vs &delta; curve will be flat up to &delta;<sub>peak</sub> &delta;<sub>c</sub>
-and then will increase linearly up to &delta;<sub>c</sub> with a slope of
-</p>
-<blockquote>500 &sigma;<sub>max</sub>/(1-&delta;<sub>peak</sub>)
-</blockquote>
-
-<p><a name="mixedmode"></a>These entered traction laws give mode I or mode II traction law for pure mode I or pure mode II loading. For mixed-mode loading, the normal and and shear tractions still depend only on normal and shear displacements, respectively, but the conditions for failure change. Under pure mode loading, failure occurs with the relevent displacement reaches the critical displacement. For mixed-mode loading, failure occurs when:
-</p>
-<blockquote>(G<sub>I</sub>/J<sub>Ic</sub>)<sup>nmix</sup> + (G<sub>II</sub>/J<sub>IIc</sub>)<sup>nmix</sup> = 1
-</blockquote>
-<p>where G<sub>I</sub> and G<sub>II</sub> are areas under mode I and mode II traction laws up to current displacements. Now this failure criterion will mean that failure may occur when normal or shear tractions are nonzero and result in a sudden drop to zero traction. This approach is identical to the one adopted by Thouless <i>et. al</i> to handle mixed-mode loading and appears to work well. There has been work to modify the traction laws so they always approach zero at time of failure (<i>e.g.</i>, work of Hogberg (2006) or Tvergaard and Hutchinson (1994)). These approaches were tried, gave poor results for certain problems, led to non-physical coupling between mode I and mode II, and therefore were abandoned.
-</p>
-
-<a name="trilinear"></a><h2>Trilinear Traction Law Material</h2>
-
-<p>The material type is <code>Type=20</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. The traction laws in pure mode I or pure mode II each have the following trilinear shapes with arbitrarily-specifiable break points:
-</p>
-<center><img src = "trilintraction.jpg" width = "291" height = "185" alt = "triangular traction law">
-</center>
-<p>You must enter properties for both normal opening (mode I) and shear (mode II) traction laws using the following parameters:
-</p>
-
-<dl>
-<dt>&lt;sigmaI&gt;10&lt;/sigmaI&gt;, &lt;sigmaII&gt;100&lt;/sigmaII&gt;, &lt;JIc&gt;10&lt;/JIc&gt;,  &lt;JIIc&gt;100&lt;/JIIc&gt;, &lt;delIc&gt;10&lt;/delIc&gt;, &lt;delIIc&gt;100&lt;/delIIc&gt;, &lt;kIe&gt;200&lt;/kIe&gt;, &lt;kIIe&gt;100&lt;/kIIe&gt;, &lt;delpkI&gt;0.1&lt;/delpkI&gt;,  &lt;delpkII&gt;0.2&lt;/delpkII&gt;, and &lt;nmix&gt;2&lt;/nmix&gt;</dt>
-<dd>These properties are defined in the <a href="#traction">Triangular Traction Law</a> and they all mean the same thing for this traction law, except that <code>sigmaI</code>, <code>sigmaII</code>, <code>delpkI</code>, and <code>delpkII</code> now apply to the first break point in the trilinear law at (&delta;<sub>1</sub>,&sigma;<sub>1</sub>).</dd>
-
-<dt>&lt;sigmaI2&gt;10&lt;/sigmaI2&gt; and &lt;sigmaII2&gt;100&lt;/sigmaII2&gt;</dt>
-<dd>The stress at the second break point in the traction traction law (&sigma;<sub>2</sub>). Enter in units of MPa.</dd>
-
-<dt>&lt;delpkI2&gt;0.1&lt;/delpkI2&gt; and &lt;delpkII2&gt;0.2&lt;/delpkI2&gt;</dt>
-<dd>The relative displacement at the location of the second break point in the traction law (&delta;<sub>2</sub>/&delta;<sub>c</sub>). Enter in dimensionless units as fraction of <code>delIc</code> or <code>delIIc</code> (0 to 1). It must be &ge; <code>delpkI</code> or <code>delpkII</code>.</dd>
-</dl>
-
-<p>You must enter exactly 5 of the seven properties for each mode (<i>e.g</i>, for mode I, five of <code>JIc</code>, <code>sigmaI</code>, <code>delIc</code>, <code>kIe</code>, <code>delpkI</code>, <code>sigmaI2</code>, and <code>delpkI2</code>). Furthermore, if one of the 5 is <code>kIe</code> (or <code>kIIe</code> for mode II), then either <code>sigmaI</code> or <code>delpkI</code> (but not both) must be specified. The unspecied parameters will be calculated. The final law must satisfy &delta;<sub>1</sub> &le; &delta;<sub>2</sub> &le; &delta;<sub>c</sub>, &delta;<sub>c</sub> &gt; 0, &sigma;<sub>1</sub> &ge; 0, &sigma;<sub>2</sub> &ge; 0, and &sigma;<sub>1</sub>+&sigma;<sub>2</sub> &gt; 0.
-</p>
-
-<p>These entered traction laws give mode I or mode II traction law for pure mode I or pure mode II loading. The failure under mixed loading uses the same criterion explained <a href="#mixedmode">above</a>.
-
-<p>This law can be imagined as modeling the sum of two processes. The total area for this law is</p> <blockquote>J<sub>total</sub>=(1/2)(&sigma;<sub>1</sub>&delta;<sub>2</sub>+&sigma;<sub>2</sub>(&delta;<sub>c</sub>-&delta;<sub>1</sub>))
-</blockquote>
-<p>which can be divided into two processes. The area under the first peak and bounded by the dotted red line in the above figure, is the total energy released by the first process. It is equal to J<sub>1</sub>=(1/2)(&sigma;<sub>1</sub>&delta;<sub>2</sub>-&sigma;<sub>2</sub>&delta;<sub>1</sub>). The remaining area is associated with the second process. It is equal to J<sub>2</sub>=(1/2)&sigma;<sub>2</sub>&delta;<sub>c</sub>. For example, the first peak might be associated with crack tip fracture toughness while the tail models a process zone such as fiber bridging. In fact, in the limit as &sigma;<sub>1</sub> &rarr; &infin; and &delta;<sub>2</sub> &rarr; 0, a simulation with a pre-existing cohesive zone should approach a simulation propagating a crack tip using fracture mechanics along with a linear softening traction law having &sigma;<sub>2</sub> as the cohesive stress. Both these simulations are possible with <code>NairnMPM</code>.</p>
-
-<p>The theoretical <i>J</i> vs &delta; curve will be flat up to &delta;<sub>1</sub>
-and then will increase linearly up to &delta;<sub>2</sub> with a slope of
-</p>
-<blockquote>500(&sigma;<sub>1</sub>&delta;<sub>2</sub>-&sigma;<sub>2</sub>&delta;<sub>1</sub>)/(&delta;<sub>2</sub>-&delta;<sub>1</sub>)
-</blockquote>
-<p>Between &delta;<sub>2</sub> and &delta;<sub>c</sub>, it will increase linearly with slope or
-<blockquote>500&sigma;<sub>2</sub>&delta;<sub>c</sub>/(&delta;<sub>c</sub>-&delta;<sub>2</sub>)
-</blockquote>
-
-<a name="lineart"></a><h2>Linear Elastic Law Material</h2>
-
-<p>The material type is <code>Type=13</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. This material creates a linear elastic traction law that never fails and therefore never releases energy. The only properties are the slopes for normal and shear opening:
-</p>
-<center><img src = "linear.jpg" width = "291" height = "185" alt = "linear elastic traction law">
-</center>
-<p>Enter the slopes using the following propertes. If either slope is left out, it will be set to zero.
-</p>
-
-<dl>
-
-<dt>&lt;kIe&gt;200&lt;/kIe&gt; and &lt;kIIe&gt;100&lt;/kIIe&gt;</dt>
-<dd>The slope of the linear elastic tractional law (k). Enter in units of MPa/mm.</dd>
-
-
-</dl>
-
-<p>To create a linear elastic traction law that fails at some critical cod, use a <a href="#traction">triangular traction law material</a> instead and set the properties such that the maximum cod is at the same location as the peak stress (<i>i.e.</i>, &delta;<sub>c</sub> = &sigma;/k or &delta;<sub>pk</sub>=1)
-</p>
-
-<a name="cubic"></a><h2>Cubic Traction Law Material</h2>
-
-<p>The material type is <code>Type=14</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. The traction laws in pure mode I or pure mode II each have cubic shape. These cubic laws have zero slope at the end (&delta;<sub>c</sub>) and the peak stress is always at &delta;<sub>c</sub>/3. The key properties are illustrated below:
-</p>
-<center><img src = "cubictraction.jpg" width = "291" height = "185" alt = "cubic traction law">
-</center>
-<p>You must enter properties for both normal opening (mode I) and shear (mode II) traction laws using the following parameters:
-</p>
-
-<dl>
-
-<dt>&lt;sigmaI&gt;10&lt;/sigmaI&gt; and &lt;sigmaII&gt;100&lt;/sigmaII&gt;</dt>
-<dd>The peak stress or cohesive stress of the traction law (&sigma;). Enter in units of MPa.</dd>
-
-
-<dt>&lt;JIc&gt;10&lt;/JIc&gt; and &lt;JIIc&gt;100&lt;/JIIc&gt;</dt>
-<dd>The toughness of the traction law or area under the traction law (J<sub>c</sub>). Enter in units of J/m<sup>2</sup>.</dd>
-
-
-<dt>&lt;delIc&gt;10&lt;/delIc&gt; and &lt;delIIc&gt;100&lt;/delIIc&gt;</dt>
-<dd>The maximum opening displacement or critical displacement (&delta;<sub>c</sub>) at which debonding occurs. Enter in units of mm.</dd>
-
-<dt>&lt;nmix&gt;2&lt;/nmix&gt;</dt>
-<dd>The exponent used in the mixed-mode failure criterion (see below). Enter nmix<=0 to choose infinity, which is decoupled failure criterion.</dd>
-
-</dl>
-
-<p>You must then enter exactly two of the first three properties. These properties are interrelated and the third one will be calculated using J<sub>c</sub> = 9000 &sigma;<sub>max</sub> &delta;<sub>c</sub>/16. The full traction law is:</p>
-<blockquote>
-&sigma; = (27/4) &sigma;<sub>max</sub> (&delta;/&delta;<sub>c</sub>)(1-(&delta;/&delta;<sub>c</sub>))<sup>2</sup>.
-</blockquote>
-<p>The failure criterion under possible mixed-mode conditions is identical to the one used in the <a href="#mixedmode"><code>TriangularTraction</code> law</a>.
-</p>
 
 <a name="hill"></a><h2>Hill Plastic, Orthotropic Material</h2>
 
@@ -1222,6 +1110,147 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 <h3>History Data for Johnson-Cook Material</h3>
 
 <p>The one history variable is the cummulative equivalent plastic strain, <code>&alpha;</code>, defined as the sum of <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>. This variable can be archived as history variable 1.</p>
+
+<a name="traction"></a><h2>Triangular Traction Law Material</h2>
+
+<p>The material type is <code>Type=12</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. The traction laws in pure mode I or pure mode II each have the following triangular shape:
+</p>
+<center><img src = "tritraction.jpg" width = "291" height = "185" alt = "triangular traction law">
+</center>
+<p>You must enter properties for both normal opening (mode I) and shear (mode II) traction laws using the following parameters:
+</p>
+
+<dl>
+
+<dt>&lt;sigmaI&gt;10&lt;/sigmaI&gt; and &lt;sigmaII&gt;100&lt;/sigmaII&gt;</dt>
+<dd>The peak stress or cohesive stress of the traction law (&sigma;). Enter in units of MPa.</dd>
+
+<dt>&lt;JIc&gt;10&lt;/JIc&gt; and &lt;JIIc&gt;100&lt;/JIIc&gt;</dt>
+<dd>The toughness of the traction law or area under the traction law (J<sub>c</sub>). Enter in units of J/m<sup>2</sup>.</dd>
+
+<dt>&lt;delIc&gt;10&lt;/delIc&gt; and &lt;delIIc&gt;100&lt;/delIIc&gt;</dt>
+<dd>The maximum opening displacement or critical displacement (&delta;<sub>c</sub>) at which debonding occurs. Enter in units of mm.</dd>
+
+<dt>&lt;delpkI&gt;0.1&lt;/delpkI&gt; and &lt;delpkII&gt;0.2&lt;/delpkI&gt;</dt>
+<dd>The relative displacement at the location of the peak in the triangular law. Enter in dimensionless units as fraction of <code>delIc</code> or <code>delIIc</code> (0 to 1). You can enter zero to get pure linear softening. Although a pure linear softening law seems to work well, it is possible the effectively infinite stiffess in the beginning might cause issues with dynamic convergence or, surprisingly, might be effectively less stiff that a law with a finite initial stiffness. If convergence problems or spurious dynamic effects occur, you can increase these values to make the initial stiffness finite.</dd>
+
+<dt>&lt;kIe&gt;200&lt;/kIe&gt; and &lt;kIIe&gt;100&lt;/kIIe&gt;</dt>
+<dd>The slope of the initial elastic portion of the tractional law (k). Enter in units of MPa/mm.</dd>
+
+<dt>&lt;nmix&gt;2&lt;/nmix&gt;</dt>
+<dd>The exponent used in the mixed-mode failure criterion (see below). Enter nmix<=0 to choose infinity, which is decoupled failure criterion.</dd>
+
+</dl>
+
+<p>You must then enter exactly two of the first three properties for each mode. These properties are interrelated and the third one will be calculated using J<sub>c</sub> = 500 &sigma;<sub>max</sub> &delta;<sub>c</sub> (in the entered units). You must enter zero or one for the next two properties. If one is provided, the other will be calculated from k = &sigma;<sub>max</sub>/(&delta;<sub>peak</sub> &delta;<sub>c</sub>). A valid traction law requires &delta;<sub>peak</sub> &le; 1. If neither k nor &delta;<sub>peak</sub> are entered, the peak will be located at &delta;<sub>peak</sub> = 0.225926299. This location provides the closest match to the <a href="#cubic">cubic traction law</a> for area under the curve as a function of &delta;.  
+</p>
+
+<p>The theoretical <i>J</i> vs &delta; curve will be flat up to &delta;<sub>peak</sub> &delta;<sub>c</sub>
+and then will increase linearly up to &delta;<sub>c</sub> with a slope of
+</p>
+<blockquote>500 &sigma;<sub>max</sub>/(1-&delta;<sub>peak</sub>)
+</blockquote>
+
+<p><a name="mixedmode"></a>These entered traction laws give mode I or mode II traction law for pure mode I or pure mode II loading. For mixed-mode loading, the normal and and shear tractions still depend only on normal and shear displacements, respectively, but the conditions for failure change. Under pure mode loading, failure occurs with the relevent displacement reaches the critical displacement. For mixed-mode loading, failure occurs when:
+</p>
+<blockquote>(G<sub>I</sub>/J<sub>Ic</sub>)<sup>nmix</sup> + (G<sub>II</sub>/J<sub>IIc</sub>)<sup>nmix</sup> = 1
+</blockquote>
+<p>where G<sub>I</sub> and G<sub>II</sub> are areas under mode I and mode II traction laws up to current displacements. Now this failure criterion will mean that failure may occur when normal or shear tractions are nonzero and result in a sudden drop to zero traction. This approach is identical to the one adopted by Thouless <i>et. al</i> to handle mixed-mode loading and appears to work well. There has been work to modify the traction laws so they always approach zero at time of failure (<i>e.g.</i>, work of Hogberg (2006) or Tvergaard and Hutchinson (1994)). These approaches were tried, gave poor results for certain problems, led to non-physical coupling between mode I and mode II, and therefore were abandoned.
+</p>
+
+<a name="trilinear"></a><h2>Trilinear Traction Law Material</h2>
+
+<p>The material type is <code>Type=20</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. The traction laws in pure mode I or pure mode II each have the following trilinear shapes with arbitrarily-specifiable break points:
+</p>
+<center><img src = "trilintraction.jpg" width = "291" height = "185" alt = "triangular traction law">
+</center>
+<p>You must enter properties for both normal opening (mode I) and shear (mode II) traction laws using the following parameters:
+</p>
+
+<dl>
+<dt>&lt;sigmaI&gt;10&lt;/sigmaI&gt;, &lt;sigmaII&gt;100&lt;/sigmaII&gt;, &lt;JIc&gt;10&lt;/JIc&gt;,  &lt;JIIc&gt;100&lt;/JIIc&gt;, &lt;delIc&gt;10&lt;/delIc&gt;, &lt;delIIc&gt;100&lt;/delIIc&gt;, &lt;kIe&gt;200&lt;/kIe&gt;, &lt;kIIe&gt;100&lt;/kIIe&gt;, &lt;delpkI&gt;0.1&lt;/delpkI&gt;,  &lt;delpkII&gt;0.2&lt;/delpkII&gt;, and &lt;nmix&gt;2&lt;/nmix&gt;</dt>
+<dd>These properties are defined in the <a href="#traction">Triangular Traction Law</a> and they all mean the same thing for this traction law, except that <code>sigmaI</code>, <code>sigmaII</code>, <code>delpkI</code>, and <code>delpkII</code> now apply to the first break point in the trilinear law at (&delta;<sub>1</sub>,&sigma;<sub>1</sub>).</dd>
+
+<dt>&lt;sigmaI2&gt;10&lt;/sigmaI2&gt; and &lt;sigmaII2&gt;100&lt;/sigmaII2&gt;</dt>
+<dd>The stress at the second break point in the traction traction law (&sigma;<sub>2</sub>). Enter in units of MPa.</dd>
+
+<dt>&lt;delpkI2&gt;0.1&lt;/delpkI2&gt; and &lt;delpkII2&gt;0.2&lt;/delpkI2&gt;</dt>
+<dd>The relative displacement at the location of the second break point in the traction law (&delta;<sub>2</sub>/&delta;<sub>c</sub>). Enter in dimensionless units as fraction of <code>delIc</code> or <code>delIIc</code> (0 to 1). It must be &ge; <code>delpkI</code> or <code>delpkII</code>.</dd>
+</dl>
+
+<p>You must enter exactly 5 of the seven properties for each mode (<i>e.g</i>, for mode I, five of <code>JIc</code>, <code>sigmaI</code>, <code>delIc</code>, <code>kIe</code>, <code>delpkI</code>, <code>sigmaI2</code>, and <code>delpkI2</code>). Furthermore, if one of the 5 is <code>kIe</code> (or <code>kIIe</code> for mode II), then either <code>sigmaI</code> or <code>delpkI</code> (but not both) must be specified. The unspecied parameters will be calculated. The final law must satisfy &delta;<sub>1</sub> &le; &delta;<sub>2</sub> &le; &delta;<sub>c</sub>, &delta;<sub>c</sub> &gt; 0, &sigma;<sub>1</sub> &ge; 0, &sigma;<sub>2</sub> &ge; 0, and &sigma;<sub>1</sub>+&sigma;<sub>2</sub> &gt; 0.
+</p>
+
+<p>These entered traction laws give mode I or mode II traction law for pure mode I or pure mode II loading. The failure under mixed loading uses the same criterion explained <a href="#mixedmode">above</a>.
+
+<p>This law can be imagined as modeling the sum of two processes. The total area for this law is</p> <blockquote>J<sub>total</sub>=(1/2)(&sigma;<sub>1</sub>&delta;<sub>2</sub>+&sigma;<sub>2</sub>(&delta;<sub>c</sub>-&delta;<sub>1</sub>))
+</blockquote>
+<p>which can be divided into two processes. The area under the first peak and bounded by the dotted red line in the above figure, is the total energy released by the first process. It is equal to J<sub>1</sub>=(1/2)(&sigma;<sub>1</sub>&delta;<sub>2</sub>-&sigma;<sub>2</sub>&delta;<sub>1</sub>). The remaining area is associated with the second process. It is equal to J<sub>2</sub>=(1/2)&sigma;<sub>2</sub>&delta;<sub>c</sub>. For example, the first peak might be associated with crack tip fracture toughness while the tail models a process zone such as fiber bridging. In fact, in the limit as &sigma;<sub>1</sub> &rarr; &infin; and &delta;<sub>2</sub> &rarr; 0, a simulation with a pre-existing cohesive zone should approach a simulation propagating a crack tip using fracture mechanics along with a linear softening traction law having &sigma;<sub>2</sub> as the cohesive stress. Both these simulations are possible with <code>NairnMPM</code>.</p>
+
+<p>The theoretical <i>J</i> vs &delta; curve will be flat up to &delta;<sub>1</sub>
+and then will increase linearly up to &delta;<sub>2</sub> with a slope of
+</p>
+<blockquote>500(&sigma;<sub>1</sub>&delta;<sub>2</sub>-&sigma;<sub>2</sub>&delta;<sub>1</sub>)/(&delta;<sub>2</sub>-&delta;<sub>1</sub>)
+</blockquote>
+<p>Between &delta;<sub>2</sub> and &delta;<sub>c</sub>, it will increase linearly with slope or
+<blockquote>500&sigma;<sub>2</sub>&delta;<sub>c</sub>/(&delta;<sub>c</sub>-&delta;<sub>2</sub>)
+</blockquote>
+
+<a name="lineart"></a><h2>Linear Elastic Traction Law Material</h2>
+
+<p>The material type is <code>Type=13</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. This material creates a linear elastic traction law that never fails and therefore never releases energy. The only properties are the slopes for normal and shear opening:
+</p>
+<center><img src = "linear.jpg" width = "291" height = "185" alt = "linear elastic traction law">
+</center>
+<p>Enter the slopes using the following propertes. If either slope is left out, it will be set to zero.
+</p>
+
+<dl>
+
+<dt>&lt;kIe&gt;200&lt;/kIe&gt; and &lt;kIIe&gt;100&lt;/kIIe&gt;</dt>
+<dd>The slope of the linear elastic tractional law (k). Enter in units of MPa/mm.</dd>
+
+
+</dl>
+
+<p>To create a linear elastic traction law that fails at some critical cod, use a <a href="#traction">triangular traction law material</a> instead and set the properties such that the maximum cod is at the same location as the peak stress (<i>i.e.</i>, &delta;<sub>c</sub> = &sigma;/k or &delta;<sub>pk</sub>=1)
+</p>
+
+<a name="cubic"></a><h2>Cubic Traction Law Material</h2>
+
+<p>The material type is <code>Type=14</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. The traction laws in pure mode I or pure mode II each have cubic shape. These cubic laws have zero slope at the end (&delta;<sub>c</sub>) and the peak stress is always at &delta;<sub>c</sub>/3. The key properties are illustrated below:
+</p>
+<center><img src = "cubictraction.jpg" width = "291" height = "185" alt = "cubic traction law">
+</center>
+<p>You must enter properties for both normal opening (mode I) and shear (mode II) traction laws using the following parameters:
+</p>
+
+<dl>
+
+<dt>&lt;sigmaI&gt;10&lt;/sigmaI&gt; and &lt;sigmaII&gt;100&lt;/sigmaII&gt;</dt>
+<dd>The peak stress or cohesive stress of the traction law (&sigma;). Enter in units of MPa.</dd>
+
+
+<dt>&lt;JIc&gt;10&lt;/JIc&gt; and &lt;JIIc&gt;100&lt;/JIIc&gt;</dt>
+<dd>The toughness of the traction law or area under the traction law (J<sub>c</sub>). Enter in units of J/m<sup>2</sup>.</dd>
+
+
+<dt>&lt;delIc&gt;10&lt;/delIc&gt; and &lt;delIIc&gt;100&lt;/delIIc&gt;</dt>
+<dd>The maximum opening displacement or critical displacement (&delta;<sub>c</sub>) at which debonding occurs. Enter in units of mm.</dd>
+
+<dt>&lt;nmix&gt;2&lt;/nmix&gt;</dt>
+<dd>The exponent used in the mixed-mode failure criterion (see below). Enter nmix<=0 to choose infinity, which is decoupled failure criterion.</dd>
+
+</dl>
+
+<p>You must then enter exactly two of the first three properties. These properties are interrelated and the third one will be calculated using J<sub>c</sub> = 9000 &sigma;<sub>max</sub> &delta;<sub>c</sub>/16. The full traction law is:</p>
+<blockquote>
+&sigma; = (27/4) &sigma;<sub>max</sub> (&delta;/&delta;<sub>c</sub>)(1-(&delta;/&delta;<sub>c</sub>))<sup>2</sup>.
+</blockquote>
+<p>The failure criterion under possible mixed-mode conditions is identical to the one used in the <a href="#mixedmode"><code>TriangularTraction</code> law</a>.
+</p>
+
+
 
 <p class="links">
 <a href="../index.html">Home</a> &rarr;

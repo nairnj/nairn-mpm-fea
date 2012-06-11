@@ -178,7 +178,7 @@ load boundary conditions and have no effect on other boundary conditions within 
   <dd>Set condition to <code>(value)*cos[t*(time)]</code> where <code>t</code> is current time (in ms) and <code>(time)</code> has units 1/ms.</dd>
   
   <dt>Style=5 (silent boundary)</dt>
-  <dd>Set the boundary to absorbing boundary conditions. The intent of a silent boundary is to eliminate reflected waves at a free edge and mimic a sample in a semi-infinite domain. The silent boundary must have normal vector in <code>x</code> or <code>y</code> direction. The <code>dof</code> attribute specifies the direction of the normal vector. There is no need to specify a <code>load</code> or <code>time</code> argument. This boundary condition currently only works for linear elastic, isotropic materials and it requires a regular grid. Silent boundary conditions are only allowed for particles loads.
+  <dd>Set the boundary to absorbing boundary conditions. The intent of a silent boundary is to eliminate reflected waves at a free edge and mimic a sample in a semi-infinite domain. The silent boundary must have normal vector in <code>x</code> or <code>y</code> direction. The <code>dof</code> attribute specifies the direction of the normal vector. There is no need to specify a <code>load</code> or <code>time</code> argument. This boundary condition currently only works for linear elastic, isotropic materials and it requires a regular grid. Silent boundary conditions are only allowed for particles loads. See <a href="references.html#Shen2005">Shen and Chen</a> for details on their development.
   </dd>
   
   <dt><a name="function"></a>Style=6 (user-defined function)</dt>
