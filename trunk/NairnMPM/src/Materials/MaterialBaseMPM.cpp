@@ -339,7 +339,8 @@ const char *MaterialBase::PreferredDirection(int style)
 const char *MaterialBase::VerifyProperties(int np)
 {
 	// check which were set of Cp = heatCapacity and Cv = heatCapacityVol
-	// if set only Cp, Cv=Cp, if set only Cv, Cp=Cv, if both set, they are used
+	// if set only Cp, Cv=Cp, if set only Cv, Cp=Cv, if both set, they are used,
+	//		if neither set, they both are zero
 	if(heatCapacityVol<0.) heatCapacityVol=fmax(heatCapacity,0.);
 	if(heatCapacity<0.) heatCapacity=heatCapacityVol;
 	
@@ -406,6 +407,13 @@ void MaterialBase::ValidateForUse(int np)
 	if(criterion[1]==STEADYSTATEGROWTH)
 	{	throw CommonException("The alternate propagation criterion cannot be steady state crack growth.",
 							  "MaterialBase::ValidateForUse");
+	}
+	
+	if(ConductionTask::active)
+	{	if(heatCapacity<=0.)
+		{	throw CommonException("Thermal conduction cannot be done using materials that have zero heat capacity.",
+								  "MaterialBase::ValidateForUse");
+		}
 	}
 }
 
@@ -513,7 +521,7 @@ void MaterialBase::ContactOutput(int thisMatID)
 		else if(currentFriction->friction>10.)
 		{   currentFriction->law=IMPERFECT_INTERFACE;
 			if(currentFriction->Dnc<-100.) currentFriction->Dnc=currentFriction->Dn;
-			sprintf(hline,"imperfect interface\n     Dn = %g MPa/mm, Dnc = %g MPa/mm, Dt = %g MPa/mm",
+			sprintf(hline,"imperfect interface\n         Dn = %g MPa/mm, Dnc = %g MPa/mm, Dt = %g MPa/mm",
 					currentFriction->Dn,currentFriction->Dnc,currentFriction->Dt);
 		}
 		else

@@ -204,6 +204,20 @@ void MGSCGLMaterial::PrintTransportProperties(void)
 	cout << endl;
 }
 
+// if analysis not allowed, throw an exception
+void MGSCGLMaterial::ValidateForUse(int np)
+{	
+	if(thermal.reference<=0)
+	{	throw CommonException("MGSCGLMaterial material requires the simulation to set the stress free temperature in degrees K",
+							  "MGSCGLMaterial::ValidateForUse");
+	}
+	
+	// call super class (why can't call super class?)
+	return MaterialBase::ValidateForUse(np);
+}
+
+
+
 #pragma mark MGSCGLMaterial::Custom Methods
 
 // Find pressure using Mie-Gruneisen EOS

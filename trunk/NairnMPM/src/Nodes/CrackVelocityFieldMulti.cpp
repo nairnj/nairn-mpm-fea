@@ -513,8 +513,10 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
                     
                     int iother = numberMaterials==2 ? ipaired : -1 ;
                     MaterialInterfaceNode::currentNode=new MaterialInterfaceNode(nd[nodenum],vfld,i,iother,&fImp,rawEnergy*surfaceArea);
-                    if(MaterialInterfaceNode::currentNode==NULL) throw CommonException("Memory error allocating storage for a material interface node.",
-                                                                           "CrackVelocityFieldMulti::MaterialContact");
+                    if(MaterialInterfaceNode::currentNode==NULL)
+					{	throw CommonException("Memory error allocating storage for a material interface node.",
+													"CrackVelocityFieldMulti::MaterialContact");
+					}
                 }
                 break;
 				
@@ -784,8 +786,10 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
                     //cout << "#mm " << i << "," << ipaired << "," << surfaceArea << "," << fImp.x << "," << fImp.y << endl;
                     
                     MaterialInterfaceNode::currentNode=new MaterialInterfaceNode(nd[nodenum],vfld,i,-1,&fImp,rawEnergy*surfaceArea);
-                    if(MaterialInterfaceNode::currentNode==NULL) throw CommonException("Memory error allocating storage for a material interface node.",
-                                                                                       "CrackVelocityFieldMulti::MaterialContact");
+                    if(MaterialInterfaceNode::currentNode==NULL)
+					{	throw CommonException("Memory error allocating storage for a material interface node.",
+																"CrackVelocityFieldMulti::MaterialContact");
+					}
                 }
                 break;
                 
@@ -870,7 +874,8 @@ bool CrackVelocityFieldMulti::GetDeltaMomemtumOfInterface(Vector *delPi,Vector *
     return TRUE;
 }
 
-double CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *norm,double Dn,double Dnc,double Dt,Vector *fImp,double *rawEnergy)
+double CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *norm,
+														  double Dn,double Dnc,double Dt,Vector *fImp,double *rawEnergy)
 {
     // normal displacement (norm is normalized) = delta . norm, subtract adjustment when using position
     double dotn = DotVectors(delta,norm);

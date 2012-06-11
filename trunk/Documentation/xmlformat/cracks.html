@@ -93,6 +93,8 @@ positive <code>x</code> direction.
 (the default is 1.0 mm and can have an optional <a href="mpmheader.html#units"><code>units</code> attribute</a>).
 Thickness is only needed when the crack surface uses tractions laws (see below).</p>
 
+<p>The implementation of explicit cracks in MPM was developed in NairnMPM. The first use cracks in MPM by CRAMP algorithm is described in <a href="references.html#Nairn2003">Nairn (2003)</a>. The <a href="references.html">references</a> page lists many articles for MPM fracture and crack propagation simulations.</p>
+
 
 <h2><a name="traction"></a>Crack-Surface Traction Laws</h2>
 
@@ -127,6 +129,8 @@ you should be sure that all such cracks are setup to use frictionless crack cont
 
 <p>Interacting cracks with traction laws are handled, but not validated well. All validation runs
 were done using non-interacting, traction-loaded cracks.</p>
+
+<p>The use of traction laws on MPM cracks is described in <a href="references.html#Nairn2009">Nairn (2009)</a> and used in <a href="references.html#Bardenhagen2011">Bardenhagen <i>et al.</i> (2011)</a> and <a href="references.html#Matsumoto2012">Matsumoto and Nairn (2012)</a>.</p>
 
 <h2>Crack Tip Parameters</h2>
 
@@ -165,8 +169,7 @@ The result is such crack tips may not move correctly if the object is moving.</p
 <p>Fixed cracks will not translate with the analysis and will not track positions of the crack tip
 surfaces. They are not really for modeling cracks, but rather for modeling certain special effects
 such as etching between two layers (<em>e.g.</em> by specifying a fixed crack with constant crack
-propagation direction). Although calculation of J integral should be OK, because crack surfaces are
-not tracked, a fixed crack can not calculate stress intensity factors.</p>
+propagation direction). Although calculation of J integral should be OK, a fixed crack can not calculate stress intensity factors (because crack surfaces are not tracked).</p>
 
 <p class="links">
 <a href="../index.html">Home</a> &rarr;

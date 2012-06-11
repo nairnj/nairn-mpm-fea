@@ -71,7 +71,12 @@ const char *IdealGas::VerifyProperties(int np)
 void IdealGas::ValidateForUse(int np)
 {	if(np==PLANE_STRESS_MPM)
 	{	throw CommonException("IdealGas material cannot do 2D plane stree MPM analysis",
-							  "NairnMPM::ValidateForUse");
+							  "IdealGas::ValidateForUse");
+	}
+	
+	if(thermal.reference<=0)
+	{	throw CommonException("IdealGas material requires the simulation set the stress free temperature in degrees K",
+							  "IdealGas::ValidateForUse");
 	}
 	
 	// call super class (why can't call super class?)

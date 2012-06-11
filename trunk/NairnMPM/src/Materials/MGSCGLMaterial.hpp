@@ -33,7 +33,8 @@ class MGSCGLMaterial : public IsoPlasticity
 		virtual void PrintMechanicalProperties(void);
 		virtual void PrintYieldProperties(void);
 		virtual void PrintTransportProperties(void);
-		
+		virtual void ValidateForUse(int);
+	
 		// methods
 		virtual double GetPressureChange(MPMBase *,double &,int);
 		virtual double GetYield(MPMBase *,int,double);
