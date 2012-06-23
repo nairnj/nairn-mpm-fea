@@ -223,11 +223,12 @@ attribute</a> can specify the length units) with material points The parameters 
   with material points. The parameters be entered with numeric values or <a href="dispbc.html#minmax">relative to the mesh edges</a>.</dd>
   
  <dt><code>&lt;Cylinder&gt;</code></dt>
- <dd>Fills or empties the cylinder bounded by the parameters <code>xmin</code>, <code>xmax</code>, 
+ <dd>Fills or empties the cylinder or cone bounded by the parameters <code>xmin</code>, <code>xmax</code>, 
   <code>ymin</code>, <code>ymax</code>, <code>zmin</code>, and <code>zmax</code>
   (an optional <a href="mpmheader.html#units"><code>units</code> attribute</a> can specify the length units)
   with material points. The <code>axis</code> attribute specifies the axis of the cylinder in the 1
-  (for <code>x</code>), 2 (for <code>y</code>) or 3 (for <code>z</code>) direction. The parameters (except <code>axis</code>) be entered with numeric values or <a href="dispbc.html#minmax">relative to the mesh edges</a>.</dd>
+  (for <code>x</code>), 2 (for <code>y</code>) or 3 (for <code>z</code>) direction. The parameters (except <code>axis</code>) may be entered with numeric values or <a href="dispbc.html#minmax">relative to the mesh edges</a>.<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;To fill or empty a cone, add a <code>radius</code> attribute with a value between -1 and 1. This value gives the relative radius of the cylinder at the top (if &gt; 0) or at the bottom of the cylinder (if &lt; 0) while the opposite end will have relative radius of 1. Entering 0 gives a cone with a point on the top (to get a cone with point on the bottom enter a small negative number). The relative radius varies linearly along the length on the cylinder.</dd>
  
   <dt><code>&lt;Polyhedron&gt;</code></dt>
   <dd>Fills or empties an arbitrary 3D shape specified by describing the object as a collection of triangular faces. The faces are specified with one or more <a href="#faces"><code>faces</code></a> commands subordinate to the <code>Polyhedron</code> command.

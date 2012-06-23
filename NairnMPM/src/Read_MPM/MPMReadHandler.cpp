@@ -870,7 +870,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	
 	// begin Gravity section
     else if(strcmp(xName,"Gravity")==0)
-	{	ValidateCommand(xName,NO_BLOCK,MUST_BE_2D);
+	{	ValidateCommand(xName,NO_BLOCK,ANY_DIM);
     	block=GRAVITY;
 		bodyFrc.Activate();
     }

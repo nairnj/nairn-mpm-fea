@@ -602,7 +602,8 @@
 			ymax CDATA #REQUIRED
 			zmin CDATA #REQUIRED
 			zmax CDATA #REQUIRED
-			axis CDATA #REQUIRED>
+			axis CDATA #REQUIRED
+            radius CDATA #IMPLIED>
 
 <!ELEMENT	faces (#PCDATA)>
 <!ATTLIST	faces
