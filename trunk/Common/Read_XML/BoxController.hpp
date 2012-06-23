@@ -19,6 +19,7 @@ class BoxController : public ShapeController
 {
     public:
         int axis;
+        double coneRadius;
 	
 		// contructors
 		BoxController(int);

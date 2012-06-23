@@ -13,6 +13,7 @@
 BoxController::BoxController(int block) : ShapeController(block)
 {
     axis = 0;    // 0 for box, 1,2,3 for axis of a cylinder
+    coneRadius = 1.;    // between -1 and 1 for radius at top (>0) or botton (<0), cylinder only
 }
 
 // set a property
@@ -29,6 +30,11 @@ void BoxController::SetProperty(const char *aName,char *value,CommonReadHandler 
             axis=0;
         else
             ThrowSAXException("Box axis must be x, y, z, 1, 2, or 3");
+    }
+    else if(strcmp(aName,"radius")==0)
+    {   sscanf(value,"%lf",&coneRadius);
+        if(coneRadius<-1. || coneRadius>1.)
+            ThrowSAXException("Cone radius must be between -1 and 1");
     }
     else
         ShapeController::SetProperty(aName,value,reader);
@@ -68,21 +74,27 @@ bool BoxController::ContainsPoint(Vector& v)
     }
     else if(axis==1)
     {   if(v.x>xmax || v.x<xmin) return FALSE;
+        double dx = xmax-xmin;
+        double R = coneRadius<0. ? (v.x-xmin+coneRadius*(v.x-xmax))/dx : (xmax-v.x+coneRadius*(v.x-xmin))/dx ;
         double dy = v.y-ymid;
         double dz = v.z-zmid;
-        return (dy*dy/b2 + dz*dz/c2) <= 1. ;
+        return (dy*dy/b2 + dz*dz/c2) <= R*R ;
     }
     else if(axis==2)
     {   if(v.y>ymax || v.y<ymin) return FALSE;
+        double dy = ymax-ymin;
+        double R = coneRadius<0. ? (v.y-ymin+coneRadius*(v.y-ymax))/dy : (ymax-v.y+coneRadius*(v.y-ymin))/dy ;
         double dx = v.x-xmid;
         double dz = v.z-zmid;
-        return (dx*dx/a2 + dz*dz/c2) <= 1. ;
+        return (dx*dx/a2 + dz*dz/c2) <= R*R ;
     }
     else
     {   if(v.z>zmax || v.z<zmin) return FALSE;
+        double dz = zmax-zmin;
+        double R = coneRadius<0. ? (v.z-zmin+coneRadius*(v.z-zmax))/dz : (zmax-v.z+coneRadius*(v.z-zmin))/dz ;
         double dx = v.x-xmid;
         double dy = v.y-ymid;
-        return (dx*dx/a2 + dy*dy/b2) <= 1. ;
+        return (dx*dx/a2 + dy*dy/b2) <= R*R ;
     }
 }
 
@@ -92,6 +104,9 @@ bool BoxController::ContainsPoint(Vector& v)
 bool BoxController::Is2DShape(void) { return FALSE; }
 
 // type of object
-const char *BoxController::GetShapeName(void) { return axis==0 ? "Box" : "Cylinder" ; }
+const char *BoxController::GetShapeName(void)
+{   if(axis==0) return "Box";
+    return coneRadius>-1. && coneRadius<1. ? "Cone" : "Cylinder" ;
+}
 
 
