@@ -1181,10 +1181,14 @@ void NodalPoint::AddInterfaceForce(short a,short b,Vector *norm,int crackNumber)
 	//   thus the surface area increases
     double dxnx = fabs(mpmgrid.gridx*norm->x), dyny = fabs(mpmgrid.gridy*norm->y) ;
 	double dist = fmax(dxnx,dyny)/sqrt(norm->x*norm->x+norm->y*norm->y);
-	double surfaceArea=2.0*fmin(cvf[a]->UnscaledVolumeNonrigid(),cvf[b]->UnscaledVolumeNonrigid())/dist;
 	
-    //cout << "#crack: " << surfaceArea << "," << fImpInt.x*surfaceArea << "," << fImpInt.y*surfaceArea << endl;
-
+	// method 1: (2*vmin/vtot)*vtot/dist = 2*vmin/dist
+	//double surfaceArea=2.0*fmin(cvf[a]->UnscaledVolumeNonrigid(),cvf[b]->UnscaledVolumeNonrigid())/dist;
+	
+	// method 2: sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
+	double vola=cvf[a]->UnscaledVolumeNonrigid(),volb=cvf[b]->UnscaledVolumeNonrigid(),voltot=vola+volb;
+	double surfaceArea=sqrt(2.0*fmin(vola,volb)*voltot)/dist;
+	
 	// add total force (in g mm/sec^2)
 	AddFintSpreadTask3(a,MakeVector(fImpInt.x*surfaceArea,fImpInt.y*surfaceArea,0.));
 	AddFintSpreadTask3(b,MakeVector(-fImpInt.x*surfaceArea,-fImpInt.y*surfaceArea,0.));
