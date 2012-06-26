@@ -416,6 +416,26 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
                     nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
                     ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
                 }
+				else if(fmobj->dflag[0]==3)
+				{   // normal along +/-x, +/-y or +/-z from flag[1] as +/-1, +/-2, or +/-3
+					// This should be the normal vector pointing out of lower numbere material
+					int normAxis = fmobj->dflag[1];
+					if(normAxis==1 || normAxis==-1)
+					{   norm.x = (double)normAxis;
+						norm.y = 0.;
+						norm.z = 0.;
+					}
+					else if(normAxis==2 || normAxis==-2)
+					{   norm.x = 0.;
+						norm.y = normAxis>0 ? 1. : -1. ;
+						norm.z = 0.;
+					}
+					else
+					{   norm.x = 0.;
+						norm.y = 0.;
+						norm.z = normAxis>0 ? 1. : -1. ;
+					}
+				}
                 
                 // get approach direction momentum from delPi.n (actual (vc-vi) = delPi/mi)
                 dotn=DotVectors(&delPi,&norm);
@@ -506,9 +526,14 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
                     double rawEnergy;
                     double dist = GetInterfaceForcesForNode(&delta,&norm,Dn,Dnc,Dt,&fImp,&rawEnergy);
                     
+					// Scale voltot=voli+volb by sqrt(2*vmin/voltot)
+					double volb=UnscaledVolumeNonrigid()-voli;
+					double surfaceArea = sqrt(2.*fmin(voli,volb)*(voli+volb))/dist;
+					
                     // scale by minimum volume in perpendicular distance
-                    double surfaceArea=2.0*fmin(UnscaledVolumeNonrigid()-voli,voli)/dist;
                     ScaleVector(&fImp, surfaceArea);
+					
+					//cout << "#Vol " << voli << "," << unscaledVolume << "," << UnscaledVolumeNonrigid()-voli << "," << dist << endl;
                     //cout << "#mm " << i << "," << ipaired << "," << surfaceArea << "," << fImp.x << "," << fImp.y << endl;
                     
                     int iother = numberMaterials==2 ? ipaired : -1 ;
@@ -679,7 +704,7 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
                     norm.y = 0.;
                     norm.z = 0.;
                 }
-                if(normAxis==2 || normAxis==-2)
+                else if(normAxis==2 || normAxis==-2)
                 {   norm.x = 0.;
                     norm.y = normAxis>0 ? 1. : -1. ;
                     norm.z = 0.;

@@ -24,7 +24,7 @@ MaterialInterfaceNode::MaterialInterfaceNode(NodalPoint *nd,int vf,int i,int j,
 	theNode=nd;                 // the node with an interface
     vfld = vf;                  // the crack velocity field
     mati = i;                   // the material velocity field
-    matipaired = j;             // the other material (or -1 if more than on other material)
+    matipaired = j;             // the other material (or -1 if more than one other material)
 	prevBC=currentNode;
     CopyVector(&traction, fImp);
     energy = iEnergy;
