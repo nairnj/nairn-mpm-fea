@@ -529,6 +529,8 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 					// Scale voltot=voli+volb by sqrt(2*vmin/voltot)
 					double volb=UnscaledVolumeNonrigid()-voli;
 					double surfaceArea = sqrt(2.*fmin(voli,volb)*(voli+volb))/dist;
+					//double surfaceArea = 2.*fmin(voli,volb)/dist;
+					//double surfaceArea = (voli+volb)/dist;
 					
                     // scale by minimum volume in perpendicular distance
                     ScaleVector(&fImp, surfaceArea);
