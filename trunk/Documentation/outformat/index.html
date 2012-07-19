@@ -116,7 +116,7 @@ The <a href="#masterformats">archive format information</a> is still included in
 <h3><a name="archsize"></a>Record Size</h3>
 
 <p>
-The information for each particle and each crack segment are stored as a series of binary records. All records are exactly the same size. The size is calculated from the sum of sizes required to store the information listed in the format strings. The following sizes assume <code>doubles</code> are 8 bytes, <code>longs</code> and <code>ints</code> are 4 bytes, and <code>shorts</code> are 2 bytes. Any byte with setting <code>N</code> will store no bytes. The following lists specify the number of bytes for setting <code>Y</code>. The numbers of bytes differ for 2D analyses <i>vs.</i> 3D analysis (in development).
+The information for each particle and each crack segment are stored as a series of binary records. All records are exactly the same size. The size is calculated from the sum of sizes required to store the information listed in the format strings. The following sizes assume <code>doubles</code> are 8 bytes, <code>ints</code> are 4 bytes (true on both 32 bit and 64 bit processors), and <code>shorts</code> are 2 bytes. Any byte with setting <code>N</code> will store no bytes. The following lists specify the number of bytes for setting <code>Y</code>. The numbers of bytes differ for 2D analyses <i>vs.</i> 3D analysis (in development).
 </p>
 
 <dl>
@@ -198,7 +198,7 @@ The following items may be archived for each material point. This section list t
 <dd>This setting must be <code>Y</code>. A setting of <code>O</code> is means an old archive format that is no longer supported. The default properties are:
 
 <pre class="near">
-long inElem - element number containing the material point
+int inElem - element number containing the material point
 double mp - mass (g)
 short matnum - material number
 short unused - not used
@@ -395,7 +395,7 @@ The following items may be archived for each crack point. This section lists the
 <dd>This setting must be <code>Y</code> or <code>O</code>. A setting of <code>O</code> means an old archive format that is no longer supported. The default parameters that are archived as crack point properties are:
 
 <pre class="near">
-long inElem - element number containing the crack point
+int inElem - element number containing the crack point
 int tipMatnum - crack tip material ID (1 based) or -1 for no material or -2 for exterior crack tip
 spacer - for alignment with material point records, unused bytes (count = sizeof(double)-sizeof(int))
 short marker - -1 for first point in crack, -2 for other points
@@ -404,10 +404,10 @@ double x - current x position (mm)
 double y - current y position (mm)
 double origx - original x position (mm)
 double origy - original y position (mm)
-long inElemAbove - element number containing the crack top surface point
+int inElemAbove - element number containing the crack top surface point
 double xAbove - current x position of crack top surface (mm)
 double yAbove - current y position of crack top surface (mm)
-long inElemBelow - element number containing the crack bottom surface point
+int inElemBelow - element number containing the crack bottom surface point
 double xBelow - current x position of crack bottom surface (mm)
 double yBelow - current y position of crack bottom surface (mm)
 </pre>
