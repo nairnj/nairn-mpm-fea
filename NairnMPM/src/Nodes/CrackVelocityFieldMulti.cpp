@@ -622,7 +622,7 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 		{   // find -mi(vi-vr) = mi*vr-pi, which is change in momentum to match the rigid particle velocity
             CopyScaleVector(&delPi,&mvf[i]->pk,-1.);
             
-            // rotating rigid material may have mixed velocities
+            // rigid material with position-dependent velocities may have mixed velocities
             Vector rvel;
             if(mvf[rigidFld]->numberPoints==1)
                 CopyVector(&rvel,&mvf[rigidFld]->vk);
