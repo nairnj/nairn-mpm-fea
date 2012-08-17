@@ -30,8 +30,8 @@
 			( Friction | ContactPosition )*>
 <!ATTLIST	MultiMaterialMode
 			Vmin CDATA #IMPLIED
-			Dcheck CDATA #IMPLIED
-			Normals CDATA #IMPLIED
+			Dcheck (0|1) #IMPLIED
+			Normals (0|1|2|3) #IMPLIED
 			RigidBias CDATA #IMPLIED>
 
 

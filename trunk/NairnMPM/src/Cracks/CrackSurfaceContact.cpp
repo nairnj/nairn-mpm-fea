@@ -222,15 +222,14 @@ void CrackSurfaceContact::MaterialOutput(void)
 		case MAXIMUM_VOLUME:
 			cout << " gradient of material with maximum volume";
 			break;
-		case EACH_MATERIALS_MASS_GRADIENT:
-            // this is currently not implemented or allowed in input files
-			cout << " each material's own mass gradient";
-			break;
 		case AVERAGE_MAT_VOLUME_GRADIENTS:
 			cout << " volume-weighted mean gradient of material and other materials lumped (if all nonrigid)," << endl;
 			cout << "                   on just the rigid material (if one rigid material). When has rigid" << endl;
 			cout << "                   material, prefer rigid material gradient with bias factor = " << rigidGradientBias;
 			rigidGradientBias*=rigidGradientBias;       // squared as needed in algorithm
+			break;
+		case EACH_MATERIALS_MASS_GRADIENT:
+			cout << " each material's own mass gradient";
 			break;
 		default:
 			break;
@@ -240,12 +239,17 @@ void CrackSurfaceContact::MaterialOutput(void)
     // development flags for multimaterial contact
     if(fmobj->dflag[0] > 0)
     {   cout << "** Development flag for custom contact **" << endl;
+        int normAxis = abs(fmobj->dflag[1]);
         switch(fmobj->dflag[0])
         {   case 1:
                 cout << "   Each material uses its own mass gradient" << endl;
                 break;
             case 3:
-                cout << "   Specified normal along axis " << fmobj->dflag[1] << " with 1,2,3 for x,y,z" << endl;
+                if(normAxis==1 || normAxis==2 || normAxis==3)
+                    cout << "   Specified normal along axis " << fmobj->dflag[1] << " with +/- 1,2,3 for +/- x,y,z" << endl;
+                else
+                    cout << "   Specified normal = (1,0,0) rotated " << fmobj->dflag[1] << " degrees CW about z axis" << endl;
+                break;
             case 4:
                 cout << "   Special normals for cutting. Top of tool using rake angle " << fmobj->dflag[1] <<
                 ". Bottom of tool normal = (0,1)." << endl;
