@@ -360,8 +360,19 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
                             CopyScaleVector(&norm,&normi,1./magi);		// use material i
                         else
                             CopyScaleVector(&norm,&normj,1./magj);		// use material j
+                        
                         break;
                     }
+                        
+                    case MAXIMUM_VOLUME:
+                        // Use mat with most volume
+                        if(voli >= maxOtherMaterialVolume)
+                            nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+                        else
+                            nd[nodenum]->GetMassGradient(vfld,ipaired,&norm,-1.);
+                        CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
+                        
+                        break;
                         
                     case AVERAGE_MAT_VOLUME_GRADIENTS:
                     {	// get mass gradients material i and for other material(s)
@@ -397,28 +408,21 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
                         break;
                     }
                         
-                    case MAXIMUM_VOLUME:
-                        // Use mat with most volume
-                        if(voli >= maxOtherMaterialVolume)
-                            nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
-                        else
-                            nd[nodenum]->GetMassGradient(vfld,ipaired,&norm,-1.);
-                        CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
+                    case EACH_MATERIALS_MASS_GRADIENT:
+                        // Use each materials own gradient and handle separately (i.e. does not conserve momentum)
+                        nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+                        ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
                         break;
-
-                    default:
+                        
+                   default:
                         break;
                 }
                 
-                // Development code to try alternative methods for normals
-                if(fmobj->dflag[0]==1)
-                {	// Use each material's own volume gradient
-                    nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
-                    ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
-                }
-				else if(fmobj->dflag[0]==3)
+                 // current options 3 (give an axis) and 4 (cutting, but only in rigid contact)
+				if(fmobj->dflag[0]==3)
 				{   // normal along +/-x, +/-y or +/-z from flag[1] as +/-1, +/-2, or +/-3
-					// This should be the normal vector pointing out of lower numbere material
+                    // if flag[1] > 3 then rotates cw about z axis by that number of degrees n = (cos(angle),-sin(angle),0)
+					// This should be the normal vector pointing out of lower numbered material
 					int normAxis = fmobj->dflag[1];
 					if(normAxis==1 || normAxis==-1)
 					{   norm.x = (double)normAxis;
@@ -430,11 +434,17 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 						norm.y = normAxis>0 ? 1. : -1. ;
 						norm.z = 0.;
 					}
-					else
+					else if(normAxis==3 || normAxis==-3)
 					{   norm.x = 0.;
 						norm.y = 0.;
 						norm.z = normAxis>0 ? 1. : -1. ;
 					}
+                    else
+                    {   double radAngle=(double)fmobj->dflag[1]*PI_CONSTANT/180.;
+                        norm.x=cos(radAngle);
+                        norm.y=-sin(radAngle);
+                        norm.z = 0.;
+                    }
 				}
                 
                 // get approach direction momentum from delPi.n (actual (vc-vi) = delPi/mi)
@@ -535,10 +545,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
                     // scale by minimum volume in perpendicular distance
                     ScaleVector(&fImp, surfaceArea);
 					
-					//cout << "#Vol " << voli << "," << unscaledVolume << "," << UnscaledVolumeNonrigid()-voli << "," << dist << endl;
-                    //cout << "#mm " << i << "," << ipaired << "," << surfaceArea << "," << fImp.x << "," << fImp.y << endl;
-                    
-                    int iother = numberMaterials==2 ? ipaired : -1 ;
+                    int iother = numberMaterials==2 && contact.materialNormalMethod!=EACH_MATERIALS_MASS_GRADIENT ? ipaired : -1 ;
                     MaterialInterfaceNode::currentNode=new MaterialInterfaceNode(nd[nodenum],vfld,i,iother,&fImp,rawEnergy*surfaceArea);
                     if(MaterialInterfaceNode::currentNode==NULL)
 					{	throw CommonException("Memory error allocating storage for a material interface node.",
@@ -563,7 +570,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 		mvf[i]->ChangeMatMomentum(&delPi,postUpdate,deltime);
 		
 		// special case two materials for efficiency (and if both will find normal the same way)
-		if(numberMaterials==2 && fmobj->dflag[0]!=1)
+		if(numberMaterials==2 && contact.materialNormalMethod!=EACH_MATERIALS_MASS_GRADIENT)
 		{	mvf[ipaired]->ChangeMatMomentum(ScaleVector(&delPi,-1.),postUpdate,deltime);
 			break;
 		}
@@ -650,6 +657,15 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
                     break;
                 }
                 
+                case MAXIMUM_VOLUME:
+                    // Use mat with most volume (no rigid bias used)
+                    if(massi/rho >= rigidVolume)
+                        nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
+                    else
+                        nd[nodenum]->GetMassGradient(vfld,rigidFld,&norm,-1.);
+                    CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
+                    break;
+                    
                 case AVERAGE_MAT_VOLUME_GRADIENTS:
                 {	// get volume-weighted mean of volume gradiants of material and rigid material
                     Vector normi,normj;
@@ -672,33 +688,20 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
                     break;
                 }
                 
-                case MAXIMUM_VOLUME:
-                    // Use mat with most volume
-                    if(massi/rho >= rigidVolume)
-                        nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
-                    else
-                        nd[nodenum]->GetMassGradient(vfld,rigidFld,&norm,-1.);
-                    CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
-                    break;
-                /*
                 case EACH_MATERIALS_MASS_GRADIENT:
-                    // Use each mat as is
+                    // Use non-rigid materials own gradient (no rigid bias used)
                     nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
                     CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
                     break;
-                 */
+
                 default:
                     break;
             }			
 		
-            // Development code to try alternative methods to get rigid contact normal
-            if(fmobj->dflag[0]==1)
-            {	// Use each material's own volume gradient
-                nd[nodenum]->GetMassGradient(vfld,i,&norm,1.);
-                ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
-            }
-            else if(fmobj->dflag[0]==3)
+            // current options 3 (give an axis) and 4 (cutting)
+            if(fmobj->dflag[0]==3)
             {   // normal along +/-x, +/-y or +/-z from flag[1] as +/-1, +/-2, or +/-3
+                // if flag[1] > 3 then rotates cw about z axis by that number of degrees n = (cos(angle),-sin(angle),0)
                 // This should be the normal vector pointing into the rigid material
                 int normAxis = fmobj->dflag[1];
                 if(normAxis==1 || normAxis==-1)
@@ -711,10 +714,16 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
                     norm.y = normAxis>0 ? 1. : -1. ;
                     norm.z = 0.;
                 }
-                else
+                else if(normAxis==3 || normAxis==-3)
                 {   norm.x = 0.;
                     norm.y = 0.;
                     norm.z = normAxis>0 ? 1. : -1. ;
+                }
+                else
+                {   double radAngle=(double)fmobj->dflag[1]*PI_CONSTANT/180.;
+                    norm.x=cos(radAngle);
+                    norm.y=-sin(radAngle);
+                    norm.z = 0.;
                 }
             }
             else if(fmobj->dflag[0]==4)
@@ -807,10 +816,11 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
                     double rawEnergy;
                     double dist = GetInterfaceForcesForNode(&delta,&norm,Dn,Dnc,Dt,&fImp,&rawEnergy);
                       
-                    // scale by minimum volume and perpendicular distance
-                    double surfaceArea=2.0*fmin(UnscaledVolumeRigid(),massi/rho)/dist;
+                    // scale by minimum volume and perpendicular distance terms
+                    double volb = UnscaledVolumeRigid();
+                    double voli = massi/rho;
+                    double surfaceArea = sqrt(2.*fmin(voli,volb)*(voli+volb))/dist;
                     ScaleVector(&fImp, surfaceArea);
-                    //cout << "#mm " << i << "," << ipaired << "," << surfaceArea << "," << fImp.x << "," << fImp.y << endl;
                     
                     MaterialInterfaceNode::currentNode=new MaterialInterfaceNode(nd[nodenum],vfld,i,-1,&fImp,rawEnergy*surfaceArea);
                     if(MaterialInterfaceNode::currentNode==NULL)

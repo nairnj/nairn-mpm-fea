@@ -228,22 +228,26 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			{	contact.materialContactVmin=scanInput;
 			}
             else if(strcmp(aName,"Dcheck")==0)
-			{	if(scanInput>0.5)
-					contact.displacementCheck=TRUE;
+            {   if(scanInput<0.5 && scanInput>-0.5)
+                    contact.displacementCheck=FALSE;                // 0
+				else if(scanInput<1.5)
+					contact.displacementCheck=TRUE;                 // 1  
 				else
-					contact.displacementCheck=FALSE;
+                    throw SAXException("Dcheck attribute on MultiMaterialMode must be 0 or 1.");
 			}
             else if(strcmp(aName,"Normals")==0)
- 			{	if(scanInput<0.5)
-					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// 0 (and negative)
+ 			{	if(scanInput<0.5 && scanInput>-0.5)
+					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;           // 0 - MAXG
 				else if(scanInput<1.5)
-					contact.materialNormalMethod=MAXIMUM_VOLUME;				// 1
+					contact.materialNormalMethod=MAXIMUM_VOLUME;                    // 1 - MAXV
 				else if(scanInput<2.5)
-					contact.materialNormalMethod=AVERAGE_MAT_VOLUME_GRADIENTS;	// 2
-				else
-					contact.materialNormalMethod=MAXIMUM_VOLUME_GRADIENT;		// other (but turned off now, revert to 0)
+					contact.materialNormalMethod=AVERAGE_MAT_VOLUME_GRADIENTS;      // 2 - AVGG
+				else if(scanInput<3.5)
+					contact.materialNormalMethod=EACH_MATERIALS_MASS_GRADIENT;		// 3 - OWNG
+                else
+                    throw SAXException("Normals attribute on MultiMaterialMode must be 0 to 3.");
 			}
-            if(strcmp(aName,"RigidBias")==0)
+            else if(strcmp(aName,"RigidBias")==0)
 			{	contact.rigidGradientBias=scanInput;
 			}
 			delete [] aName;
