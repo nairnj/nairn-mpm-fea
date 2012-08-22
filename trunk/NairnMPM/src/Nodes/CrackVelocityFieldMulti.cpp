@@ -531,7 +531,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
                     Vector delta=dispcScaled;
                     SubVector(&delta,&dispi);
                     
-                    // get interface forces for furture use
+                    // get interface forces for future use and get non-uniform grid correction
                     Vector fImp;
                     double rawEnergy;
                     double dist = GetInterfaceForcesForNode(&delta,&norm,Dn,Dnc,Dt,&fImp,&rawEnergy);
@@ -811,12 +811,12 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
                     Vector delta=rigidDisp;
                     SubVector(&delta,&dispi);
                     
-                    // get interface forces for furture use
+                    // get interface forces for future use and nonuniform grid correction
                     Vector fImp;
                     double rawEnergy;
                     double dist = GetInterfaceForcesForNode(&delta,&norm,Dn,Dnc,Dt,&fImp,&rawEnergy);
                       
-                    // scale by minimum volume and perpendicular distance terms
+                    // Area correction: scale by minimum volume and perpendicular distance terms
                     double volb = UnscaledVolumeRigid();
                     double voli = massi/rho;
                     double surfaceArea = sqrt(2.*fmin(voli,volb)*(voli+volb))/dist;
@@ -954,14 +954,30 @@ double CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *
     // units will be g/sec^2
     *rawEnergy=(trn*dotn + trt*dott)/2.;
     
-    // find perpendicular distance which gets smaller as interface tilts
-    //   thus the effect surface area increases
-    // See JANOSU-6-23 to 49
+    // get perpendicular distance to correct contact area
     double dist;
+    
+    // Angled path correction method 1: distance to ellipsoid through cell corners
+    //    defined by tangent vector, i.e., line normal to normal vector
+    // See JANOSU-6-60
+    double a=mpmgrid.gridx*norm->x;
+    double b=mpmgrid.gridy*norm->y;
+    if(mpmgrid.Is3DGrid())
+    {   double c=mpmgrid.gridz*norm->z;
+        dist = sqrt(a*a + b*b + c*c);
+    }
+    else
+        dist = sqrt(a*a + b*b);
+    
+	// Angled path correction method 2 (in imperfect interface by cracks paper):
+    //   Find perpendicular distance which gets smaller as interface tilts
+    //   thus the effective surface area increases
+    // See JANOSU-6-23 to 49
+    /*
+    double a=fabs(mpmgrid.gridx*norm->x);
+    double b=fabs(mpmgrid.gridy*norm->y);
     if(mpmgrid.Is3DGrid())
     {   // 3D has two cases
-        double a=fabs(mpmgrid.gridx*norm->x);
-        double b=fabs(mpmgrid.gridy*norm->y);
         double c=fabs(mpmgrid.gridz*norm->z);
         dist = fmax(a,fmax(b,c));
         if(2.*dist < a+b+c)
@@ -972,8 +988,9 @@ double CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *
     }
     else
     {   // 2D just take maximum
-        dist = fmax(fabs(mpmgrid.gridx*norm->x),fabs(mpmgrid.gridy*norm->y));
+        dist = fmax(a,b);
     }
+    */
     
     return dist;
 }
