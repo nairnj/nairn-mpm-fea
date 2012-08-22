@@ -1177,17 +1177,22 @@ void NodalPoint::AddInterfaceForce(short a,short b,Vector *norm,int crackNumber)
 	if(!contact.GetInterfaceForce(this,&fImpInt,cvf[a],cvf[b],norm,crackNumber,&rawEnergy))
 		return;
 	
-	// find perpendicular distance which gets smaller as interface tilts
+    // Angled path correction method 1: distance to elipse through cell corners
+    double dxnx = mpmgrid.gridx*norm->x, dyny = mpmgrid.gridy*norm->y ;
+    double dist = sqrt(dxnx*dyny/(norm->x*norm->x+norm->y*norm->y));
+	
+	// Angled path correction method 2 (in imperfect interface by cracks paper):
+    //   Find perpendicular distance which gets smaller as interface tilts
 	//   thus the surface area increases
-    double dxnx = fabs(mpmgrid.gridx*norm->x), dyny = fabs(mpmgrid.gridy*norm->y) ;
-	double dist = fmax(dxnx,dyny)/sqrt(norm->x*norm->x+norm->y*norm->y);
-	
-	// method 1: (2*vmin/vtot)*vtot/dist = 2*vmin/dist
-	//double surfaceArea=2.0*fmin(cvf[a]->UnscaledVolumeNonrigid(),cvf[b]->UnscaledVolumeNonrigid())/dist;
-	
-	// method 2: sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
+    //double dxnx = fabs(mpmgrid.gridx*norm->x), dyny = fabs(mpmgrid.gridy*norm->y) ;
+	//double dist = fmax(dxnx,dyny)/sqrt(norm->x*norm->x+norm->y*norm->y);
+    
+	// Area correction method 1 (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
 	double vola=cvf[a]->UnscaledVolumeNonrigid(),volb=cvf[b]->UnscaledVolumeNonrigid(),voltot=vola+volb;
 	double surfaceArea=sqrt(2.0*fmin(vola,volb)*voltot)/dist;
+	
+	// Area correction method 2 (in imperfect interface by cracks paper): (2*vmin/vtot)*vtot/dist = 2*vmin/dist
+	//double surfaceArea=2.0*fmin(cvf[a]->UnscaledVolumeNonrigid(),cvf[b]->UnscaledVolumeNonrigid())/dist;
 	
 	// add total force (in g mm/sec^2)
 	AddFintSpreadTask3(a,MakeVector(fImpInt.x*surfaceArea,fImpInt.y*surfaceArea,0.));
