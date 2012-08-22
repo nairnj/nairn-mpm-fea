@@ -1179,7 +1179,7 @@ void NodalPoint::AddInterfaceForce(short a,short b,Vector *norm,int crackNumber)
 	
     // Angled path correction method 1: distance to elipse through cell corners
     double dxnx = mpmgrid.gridx*norm->x, dyny = mpmgrid.gridy*norm->y ;
-    double dist = sqrt(dxnx*dyny/(norm->x*norm->x+norm->y*norm->y));
+    double dist = sqrt((dxnx*dxnx+dyny*dyny)/(norm->x*norm->x+norm->y*norm->y));
 	
 	// Angled path correction method 2 (in imperfect interface by cracks paper):
     //   Find perpendicular distance which gets smaller as interface tilts

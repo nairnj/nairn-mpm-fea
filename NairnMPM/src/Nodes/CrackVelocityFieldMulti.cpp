@@ -338,8 +338,11 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
             // 2. ignore very small mass nodes - may not be needed
             if(massRatio<1.e-6 || massRatio>0.999999) continue;
             
-            // third go through contact conditions; break if not in contact or
-            // set inContact to true and break if is in contact
+            // 3. go through contact conditions; break if not in contact or
+            //    set inContact to true and break if is in contact. Note that
+            //    imperfect interfaces will always proceed to calculations, but it
+            //    needs normal vector and needs to know if in contact (to know
+            //    whether to use Dnc or Dnt for normal stiffness
             while(TRUE)
             {   // find -mi(vi-vc) = (ma/mc)pc-pi or momentum change to match ctr of mass momentum
                 CopyScaleVector(&delPi,&mvf[i]->pk,-1.);
@@ -418,10 +421,10 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
                         break;
                 }
                 
-                 // current options 3 (give an axis) and 4 (cutting, but only in rigid contact)
-				if(fmobj->dflag[0]==3)
-				{   // normal along +/-x, +/-y or +/-z from flag[1] as +/-1, +/-2, or +/-3
-                    // if flag[1] > 3 then rotates cw about z axis by that number of degrees n = (cos(angle),-sin(angle),0)
+                // current options: 3 (give an axis of z rotation angle)
+ 				if(fmobj->dflag[0]==3)
+				{   // normal along +/-x, +/-y or +/-z from flag[1] = +/-1, +/-2, or +/-3
+                    //    otherwisse rotates cw about z axis by that number of degrees n = (cos(angle),-sin(angle),0)
 					// This should be the normal vector pointing out of lower numbered material
 					int normAxis = fmobj->dflag[1];
 					if(normAxis==1 || normAxis==-1)
@@ -450,11 +453,11 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
                 // get approach direction momentum from delPi.n (actual (vc-vi) = delPi/mi)
                 dotn=DotVectors(&delPi,&norm);
                 
-                // 3. With this check, any movement apart will be taken as noncontact
+                // 3a. With this check, any movement apart will be taken as noncontact
                 // Also, frictional contact assumes dotn<0
                 if(dotn>=0.) break;
                 
-                // displacement check
+                // 3b. Displacement check
                 if(contact.displacementCheck)
                 {	// 4. get other mass and ignore if very small mass in other materials
                     double scaleDisp=(Mc-massi)/Mc;
@@ -615,7 +618,7 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
         
         // first look for conditions to ignore contact and interface at this node
 		
-		// 1. check nodal volume
+        // 1. check nodal volume (this is turned off by setting the materialContactVmin to zero)
 		if(unscaledVolume/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
 		
 		// 2. ignore very small interactions
@@ -623,8 +626,11 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 		if(volRatio<.01 || volRatio>0.99) continue;
 		//if(volRatio<1.e-6 || volRatio>0.999999) continue;
 		
-        // third go through contact conditions; break if not in contact or
-        // set inContact to true and break if is in contact
+        // 3. go through contact conditions; break if not in contact or
+        //    set inContact to true and break if is in contact. Note that
+        //    imperfect interfaces will always proceed to calculations, but it
+        //    needs normal vector and needs to know if in contact (to know
+        //    whether to use Dnc or Dnt for normal stiffness
         while(TRUE)
 		{   // find -mi(vi-vr) = mi*vr-pi, which is change in momentum to match the rigid particle velocity
             CopyScaleVector(&delPi,&mvf[i]->pk,-1.);
@@ -698,11 +704,12 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
                     break;
             }			
 		
-            // current options 3 (give an axis) and 4 (cutting)
+            // current options: 3 (give an axis of z rotation angle)
+            //                  4 (cutting, but only in rigid contact)
             if(fmobj->dflag[0]==3)
-            {   // normal along +/-x, +/-y or +/-z from flag[1] as +/-1, +/-2, or +/-3
-                // if flag[1] > 3 then rotates cw about z axis by that number of degrees n = (cos(angle),-sin(angle),0)
-                // This should be the normal vector pointing into the rigid material
+            {   // normal along +/-x, +/-y or +/-z from flag[1] = +/-1, +/-2, or +/-3
+                //    otherwisse rotates cw about z axis by that number of degrees n = (cos(angle),-sin(angle),0)
+                // This should be the normal vector pointing out of the non-rigid material
                 int normAxis = fmobj->dflag[1];
                 if(normAxis==1 || normAxis==-1)
                 {   norm.x = (double)normAxis;
@@ -749,11 +756,11 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
             // get approach direction momentum form delPi.n (actual (vr-vi).n = delPi.n/mi)
             dotn=DotVectors(&delPi,&norm);
 		
-            // With this check, any movement apart will be taken as noncontact
+            // 3a. With this check, any movement apart will be taken as noncontact
             // Also, frictional contact assumes dotn<0
             if(dotn>=0.) break;
 		
-            // displacement check
+            // 3b. Displacement check
             if(contact.displacementCheck)
             {	// rigid material displacement was scaled by volume, while non-rigid was weighted by mass
                 CopyScaleVector(&rigidDisp,&mvf[rigidFld]->disp,1./rigidVolume);
@@ -775,7 +782,7 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
         // continue if not in contact, unless it is an imperfect interface law
         if(!inContact && (maxContactLaw!=IMPERFECT_INTERFACE)) continue;
 		
-		// the material is in contact
+		// the material is in contact or it is an imperfect interface
         bool createNode;
 		
 		switch(maxContactLaw)
