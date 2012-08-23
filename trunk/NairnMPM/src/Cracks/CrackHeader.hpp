@@ -35,6 +35,8 @@ class ContourPoint;
 #define END_OF_CRACK 1
 #define EXTERIOR_CRACK -2
 
+#define EXTENT_NORMALS 6
+
 class CrackHeader : public LinkedObject
 {
     public:
@@ -58,6 +60,8 @@ class CrackHeader : public LinkedObject
         short add(CrackSegment *, int);
         void Archive(ofstream &);
         short CrackCross(double,double,double,double,Vector *);
+        void CreateExtents(double,double);
+        void CheckExtents(double,double);
         short MoveCrack(void);
         short MoveCrack(short);
 		void UpdateCrackTractions(void);
@@ -103,7 +107,7 @@ class CrackHeader : public LinkedObject
 
     private:
         int numberSegments;
-        double xmin,xmax,ymin,ymax;
+        double cnear[EXTENT_NORMALS],cfar[EXTENT_NORMALS];
 		int fixedCrack,number;
 		double crackFriction,crackDn,crackDnc,crackDt;
 		bool customContact,hasTractionLaws;
