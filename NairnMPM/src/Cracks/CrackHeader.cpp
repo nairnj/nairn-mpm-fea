@@ -39,6 +39,23 @@ int JGridSize=2;			// size of J Integral contour
 int JContourType=1;			// future might try different contours
 int JTerms=1;				// number of terms in J Integral calculation
 
+// extent normals (make sure EXTENT_NORMALS in header is defined to match)
+// first two must always be x=(1,0) and y = (0,1)
+// rest are unnormalized P[i] = (1,enorm[i])
+
+// old code used just x and y - see old extent code comments to implement
+
+// x, y, +45, -45 (tangent of each angle)
+//static double enorm[4][2] = {{1.,0.}, {0.,1.},
+//                            {0.7071067811865475,0.7071067811865475}, {0.7071067811865475,-0.7071067811865475}};
+//static double enorm[4] = {0.,1.,1.,-1.};
+
+// x, y, +60, +30, -30, -60 (tangent of each angle)
+//static double enorm[6][2] = {{1.,0.}, {0.,1.},
+//                            {0.5,0.8660254037844386}, {0.8660254037844386,0.5},
+//                            {0.8660254037844386,-0.5}, {0.5,-0.8660254037844386} };
+static double enorm[6] = {0.,1.,1.732050807568877,0.5773502691896258,-0.5773502691896258,-1.732050807568877};
+
 #pragma mark CrackHeader: Constructors and Destructors
 
 // Constructors
@@ -118,8 +135,7 @@ short CrackHeader::add(CrackSegment *cs)
     if(cs==NULL) return FALSE;		// not created
     if(lastSeg==NULL)
     {	firstSeg=cs;
-        xmin=xmax=cs->x;
-        ymin=ymax=cs->y;
+        CreateExtents(cs->x, cs->y);
     }
     else
 	{	// no need to add a zero length segment
@@ -131,10 +147,7 @@ short CrackHeader::add(CrackSegment *cs)
 		}
     	lastSeg->nextSeg=cs;
 		cs->prevSeg=lastSeg;
-        xmin=fmin(xmin,cs->x);
-        xmax=fmax(xmax,cs->x);
-        ymin=fmin(ymin,cs->y);
-        ymax=fmax(ymax,cs->y);
+        CheckExtents(cs->x, cs->y);
     }
     lastSeg=cs;
     numberSegments++;
@@ -182,8 +195,7 @@ short CrackHeader::add(CrackSegment *cs,int whichTip)
     if(lastSeg==NULL)
     {	// should never happen
     	lastSeg=firstSeg=cs;
-        xmin=xmax=cs->x;
-        ymin=ymax=cs->y;
+        CreateExtents(cs->x, cs->y);
     }
     else
     {	if(whichTip==END_OF_CRACK)
@@ -198,10 +210,7 @@ short CrackHeader::add(CrackSegment *cs,int whichTip)
             prevSeg=firstSeg;
             firstSeg=cs;
         }
-        xmin=fmin(xmin,cs->x);
-        xmax=fmax(xmax,cs->x);
-        ymin=fmin(ymin,cs->y);
-        ymax=fmax(ymax,cs->y);
+        CheckExtents(cs->x, cs->y);
         
         // transfer crack tip results to new crack tip
         cs->tipMatnum=prevSeg->tipMatnum;
@@ -329,9 +338,11 @@ double CrackHeader::Triangle(double x1,double y1,double x2,double y2,double x3,d
 //		the surfaces; thus only need to move to midpoint and check if element has changed
 // If contact.GetMoveOnlySurfaces() is FALSE, move all crack plane particles
 //		using CM velocities (precalculated and stored in field[0])
+// Also must recalculate extent of crack in cnear[i] and cfar[i]
 short CrackHeader::MoveCrack(void)
 {
 	CrackSegment *scrk=firstSeg;
+    double cx,cy;
 
 	// move only surfaces
 	if(contact.GetMoveOnlySurfaces())
@@ -352,28 +363,20 @@ short CrackHeader::MoveCrack(void)
 			// track extent
 			if(scrk==firstSeg)
 			{	if(scrk->tipMatnum==EXTERIOR_CRACK)
-				{   xmin=xmax=5.*scrk->x-4.*scrk->nextSeg->x;		// x1-4*(x2-x1)
-					ymin=ymax=5.*scrk->y-4.*scrk->nextSeg->y;		// y1-4*(y2-y1)
+				{   cx = 5.*scrk->x-4.*scrk->nextSeg->x;		// x1-4*(x2-x1)
+					cy = 5.*scrk->y-4.*scrk->nextSeg->y;		// y1-4*(y2-y1)
+                    CreateExtents(cx,cy);
 				}
 				else
-				{   xmin=xmax=scrk->x;
-					ymin=ymax=scrk->y;
-				}
+                    CreateExtents(scrk->x,scrk->y);
 			}
 			else if(scrk==lastSeg && scrk->tipMatnum==EXTERIOR_CRACK)
-			{	double cx=5.*scrk->x-4.*scrk->prevSeg->x;		// xn+4*(xn-x(nm1))
-				double cy=5.*scrk->y-4.*scrk->prevSeg->y;		// yn+4*(yn-y(nm1))
-			    xmin=fmin(xmin,cx);
-				xmax=fmax(xmax,cx);
-				ymin=fmin(ymin,cy);
-				ymax=fmax(ymax,cy);
+			{	cx=5.*scrk->x-4.*scrk->prevSeg->x;		// xn+4*(xn-x(nm1))
+				cy=5.*scrk->y-4.*scrk->prevSeg->y;		// yn+4*(yn-y(nm1))
+                CheckExtents(cx,cy);
 			}
 			else
-			{   xmin=fmin(xmin,scrk->x);
-				xmax=fmax(xmax,scrk->x);
-				ymin=fmin(ymin,scrk->y);
-				ymax=fmax(ymax,scrk->y);
-			}
+                CheckExtents(scrk->x,scrk->y);
 			
 			// next segments
 			scrk=scrk->nextSeg;
@@ -464,28 +467,20 @@ short CrackHeader::MoveCrack(void)
 			// track extent
 			if(scrk==firstSeg)
 			{	if(scrk->tipMatnum==EXTERIOR_CRACK)
-				{   xmin=xmax=5.*scrk->x-4.*scrk->nextSeg->x;		// x1-4*(x2-x1)
-					ymin=ymax=5.*scrk->y-4.*scrk->nextSeg->y;		// y1-4*(y2-y1)
+				{   cx = 5.*scrk->x-4.*scrk->nextSeg->x;		// x1-4*(x2-x1)
+					cy = 5.*scrk->y-4.*scrk->nextSeg->y;		// y1-4*(y2-y1)
+                    CreateExtents(cx, cy);
 				}
 				else
-				{   xmin=xmax=scrk->x;
-					ymin=ymax=scrk->y;
-				}
+                    CreateExtents(scrk->x, scrk->y);
 			}
 			else if(scrk==lastSeg && scrk->tipMatnum==EXTERIOR_CRACK)
-			{	double cx=5.*scrk->x-4.*scrk->prevSeg->x;		// xn+4*(xn-x(nm1))
-				double cy=5.*scrk->y-4.*scrk->prevSeg->y;		// yn+4*(yn-y(nm1))
-			    xmin=fmin(xmin,cx);
-				xmax=fmax(xmax,cx);
-				ymin=fmin(ymin,cy);
-				ymax=fmax(ymax,cy);
+			{	cx=5.*scrk->x-4.*scrk->prevSeg->x;		// xn+4*(xn-x(nm1))
+				cy=5.*scrk->y-4.*scrk->prevSeg->y;		// yn+4*(yn-y(nm1))
+                CheckExtents(cx, cy);
 			}
 			else
-			{   xmin=fmin(xmin,scrk->x);
-				xmax=fmax(xmax,scrk->x);
-				ymin=fmin(ymin,scrk->y);
-				ymax=fmax(ymax,scrk->y);
-			}
+                CheckExtents(scrk->x, scrk->y);
 			
 			// next segments
 			scrk=scrk->nextSeg;
@@ -1438,11 +1433,28 @@ short CrackHeader::CrackCross(double x1,double y1,double x2,double y2,Vector *no
     // in no segments
     if(scrk==NULL) return cross;
     
-    // check extents
-    if(fmax(x1,x2)<xmin) return cross;
-    if(fmin(x1,x2)>xmax) return cross;
-    if(fmax(y1,y2)<ymin) return cross;
-    if(fmin(y1,y2)>ymax) return cross;
+    // check extents for entire crack, which may have multiple normals
+    // See JANOSU-6-66
+    if(fmax(x1,x2) < cnear[0]) return cross;        // Pi = (1,0)
+    if(fmin(x1,x2) > cfar[0]) return cross;
+    if(fmax(y1,y2) < cnear[1]) return cross;        // Pi = (0,1)
+    if(fmin(y1,y2) > cfar[1]) return cross;
+    
+    // old extent code - comment out this section
+    int i;
+    for(i=2;i<EXTENT_NORMALS;i++)
+    {   double Pia = x2-x1 + enorm[i]*(y2-y1);      // Pi.a with Pi = (1,enorm[i])
+        double Pib = x1 + enorm[i]*y1;              // Pi.b
+        if(Pia>0.)
+        {   if(cnear[i]-Pib > Pia) return cross;
+            if(cfar[i] < Pib) return cross;
+        }
+        else
+        {   // This works for Pia=0 as well
+            if(cfar[i]-Pib < Pia) return cross;
+            if(cnear[i] > Pib) return cross;
+        }
+    }
     
     // first point
     x3=scrk->x;
@@ -1467,14 +1479,14 @@ short CrackHeader::CrackCross(double x1,double y1,double x2,double y2,Vector *no
 			}
 		}
         scrk=scrk->nextSeg;
-            
-        // first two areas (123 and 124)
-        area1=Triangle(x1,y1,x2,y2,x3,y3);
-        area2=Triangle(x1,y1,x2,y2,x4,y4);
-            
+        
         // check for crossing
         while(TRUE)
-        {   // first area negative
+        {   // first two areas (123 and 124)
+            area1=Triangle(x1,y1,x2,y2,x3,y3);
+            area2=Triangle(x1,y1,x2,y2,x4,y4);
+            
+            // first area negative
             if(area1<0.)
             {	if(area2>0.)
                 {   if(Triangle(x3,y3,x4,y4,x1,y1)<=0.) break;
@@ -1556,6 +1568,48 @@ below:
 	
     // return result
     return cross;
+}
+
+// When adding of moving a crack, initialize the extents
+// for the first segment for each normal to Pi.(cx,xy)
+void CrackHeader::CreateExtents(double cx,double cy)
+{
+    // first normal in Pi = (1,0) so Pi.(cx,xy) = cx
+    cnear[0] = cfar[0] = cx;
+    
+    // second normal in Pi = (0,1) so Pi.(cx,xy) = cy
+    cnear[1] = cfar[1] = cy;
+    
+    // old extent code - comment out next section
+    
+    // remaining normals are Pi = (1,enorm[i]) so Pi,(cx,cy) = cx + enorm[i]*cy
+    for(int i=2;i<EXTENT_NORMALS;i++)
+        cnear[i] = cfar[i] = cx + enorm[i]*cy;
+
+}
+
+// When creating or movins a crack, look at new segement and
+// see if need to change the extents minima or maxima
+// of the term Pi.(cx,xy). cnear[i] is the global minimum
+// and cfar[i] is the global maximum
+void CrackHeader::CheckExtents(double cx,double cy)
+{
+    // first normal in Pi = (1,0) so Pi.(cx,xy) = cx
+    if(cx < cnear[0]) cnear[0] = cx;
+    if(cx > cfar[0]) cfar[0] = cx;
+    
+    // second normal in Pi = (0,1) so Pi.(cx,xy) = cy
+    if(cy < cnear[1]) cnear[1] = cy;
+    if(cy > cfar[1]) cfar[1] = cy;
+    
+    // old extent code - comment out next section
+    
+    // remaining normals are Pi = (1,enorm[i]) so Pi,(cx,cy) = cx + enorm[i]*cy
+    for(int i=2;i<EXTENT_NORMALS;i++)
+    {   double cij = cx + enorm[i]*cy;
+        if(cij < cnear[i]) cnear[i] = cij;
+        if(cij > cfar[i]) cfar[i] = cij;
+    }
 }
 
 #pragma mark ACCESSORS
