@@ -6,14 +6,16 @@
     Copyright (c) 2001 John A. Nairn, All rights reserved.
 	
 	Dependencies
-		none
+		CrackHeader.hpp
 ********************************************************************************/
 
 #ifndef _CRACKSEGMENT_
 
 #define _CRACKSEGMENT_
 
-class CrackHeader;
+#include "Cracks/CrackHeader.hpp"
+
+class CrackLeaf;
 
 enum { STATIONARY=0, PROPAGATING, ARRESTING, ARRESTED, SLOWLYPROPAGATING,
         BEGINPROPAGATING};
@@ -35,7 +37,12 @@ class CrackSegment
 		double release,absorb,propagationJ;
 		short heating;
 		double heatRate,heatEndTime;
-        
+
+#ifdef HIERARCHICAL_CRACKS
+        double cnear[4],cfar[4];
+        CrackLeaf *parent;
+#endif
+    
         // constructors
         CrackSegment();
         CrackSegment(double,double,int,int);
@@ -65,6 +72,10 @@ class CrackSegment
 		Vector FTract(double);
 		void SetHistoryData(char *p);
 		char *GetHistoryData(void);
+
+#ifdef HIERARCHICAL_CRACKS
+        void CreateSegmentExtents(bool);
+#endif
 				
 	private:
 		Vector cFtract;				// traction law force
@@ -73,6 +84,7 @@ class CrackSegment
 		bool planeMove;
 		int matnum;						// 1-based material ID for traction law
         char *historyData;				// history dependent traction law data
+    
 };
 
 #endif

@@ -30,6 +30,9 @@ CrackSegment::CrackSegment(double xend,double yend,int tip,int matid)
     planeInElem=surfInElem[0]=surfInElem[1]=0;
     nextSeg=NULL;
 	prevSeg=NULL;
+#ifdef HIERARCHICAL_CRACKS
+    parent=NULL;
+#endif
 	ZeroVector(&Jint);
 	ZeroVector(&sif);
 	ZeroVector(&tract);
@@ -205,6 +208,7 @@ double CrackSegment::AddTractionFextSide(CrackHeader *theCrack,int side,double s
 	for(i=1;i<=numnds;i++)
 	{	ndi=nd[nds[i]];
 		vfld=theCrack->CrackCross(cspos.x,cspos.y,ndi->x,ndi->y,&norm);
+        
 		if(vfld>NO_CRACK)
 		{	// a crossing field - to use it, must find correct field and crack number in a velocity field
 			// traction laws may not handle multiple cracks or interacting fields correctly, but try to do something
@@ -776,6 +780,82 @@ void CrackSegment::CollapseSurfaces(void)
 	surfInElem[0]=surfInElem[1]=planeInElem;
 }
 
+#pragma mark HIERACHICAL CRACKS
+
+#ifdef HIERARCHICAL_CRACKS
+
+// Create extents when segment is created or changed
+// This is the first segment if isFirstSeg is TRUE and it is the last
+//  if nextSeg->nextSeg is NULL
+void CrackSegment::CreateSegmentExtents(bool isFirstSeg)
+{
+    if(nextSeg==NULL) return;           // end of the crack so no extents needed
+    
+    // fetch endpoints of line from this crack particle to the next
+    double x1 = x;
+    double y1 = y;
+    double x2 = nextSeg->x;
+    double y2 = nextSeg->y;
+    
+    // check for exterior crack on either end of the crack
+    if(isFirstSeg && tipMatnum==EXTERIOR_CRACK)
+    {   x1 = 5.*x1-4.*x2;		// x1-4*(x2-x1)
+        y1 = 5.*y1-4.*y2;		// y1-4*(y2-y1)
+    }
+    if(nextSeg->nextSeg==NULL)
+    {   if(nextSeg->tipMatnum==EXTERIOR_CRACK)
+        {   x2=5.*x2-4.*x1;		// xn+4*(xn-x(nm1))
+            y2=5.*y2-4.*y1;		// yn+4*(yn-y(nm1))
+        }
+    }
+    
+    // Find extents for bounding octagon
+    
+    // Pi = (1,0)
+    if(x1>x2)
+    {   cnear[0] = x2;        // min
+        cfar[0] = x1;         // max
+    }
+    else
+    {   cnear[0] = x1;        // min
+        cfar[0] = x2;         // max
+    }
+    
+    // Pi = (0,1)
+    if(y1>y2)
+    {   cnear[1] = y2;        // min
+        cfar[1] = y1;         // max
+    }
+    else
+    {   cnear[1] = y1;        // min
+        cfar[1] = y2;         // max
+    }
+    
+    // Pi = (1,1)
+    double sum1=x1+y1,sum2=x2+y2;
+    if(sum1>sum2)
+    {   cnear[2] = sum2;        // min
+        cfar[2] = sum1;         // max
+    }
+    else
+    {   cnear[2] = sum1;        // min
+        cfar[2] = sum2;         // max
+    }
+    
+    // Pi = (1,-1)
+    double diff1=x1-y1,diff2=x2-y2;
+    if(diff1>diff2)
+    {   cnear[3] = diff2;        // min
+        cfar[3] = diff1;         // max
+    }
+    else
+    {   cnear[3] = diff1;        // min
+        cfar[3] = diff2;         // max
+    }
+}
+
+#endif
+
 #pragma mark ACCESSORS
 
 // move above or below position slightly in the direction of the normal
@@ -786,8 +866,9 @@ Vector CrackSegment::SlightlyMoved(int side)
 	moved.x=surfx[side-1];
 	moved.y=surfy[side-1];
 	moved.z=0;
-	if(x!=moved.x || y!=moved.y) return moved;
+	if(x!=moved.x && y!=moved.y) return moved;
 	
+    // get vector normal to crack from above to below v = (dx,dy)
 	double dx,dy;
 	if(nextSeg!=NULL)
 	{	dy=x-nextSeg->x;		// -¶x
@@ -798,6 +879,7 @@ Vector CrackSegment::SlightlyMoved(int side)
 		dx=y-prevSeg->y;		// ¶y
 	}
 	
+    // move in direction of this side
 	if(side==ABOVE_CRACK)
 	{	moved.x-=dx*1e-8;
 		moved.y-=dy*1e-8;

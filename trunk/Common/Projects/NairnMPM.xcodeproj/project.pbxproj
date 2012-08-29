@@ -361,6 +361,8 @@
 		A7E100A612D7D0B50074E568 /* PolyTriangle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7E100A412D7D0B50074E568 /* PolyTriangle.cpp */; };
 		A7E1FF9B12D78BCE0074E568 /* PolyhedronController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7E1FF9912D78BCE0074E568 /* PolyhedronController.hpp */; };
 		A7E1FF9C12D78BCE0074E568 /* PolyhedronController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7E1FF9A12D78BCE0074E568 /* PolyhedronController.cpp */; };
+		A7E8CEA115E6E61800910593 /* CrackLeaf.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7E8CEA015E6E61800910593 /* CrackLeaf.cpp */; };
+		A7E8CEA315E6E63200910593 /* CrackLeaf.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7E8CEA215E6E63200910593 /* CrackLeaf.hpp */; };
 		A7EC3A710DA91A9B003D43AC /* CubicTraction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7EC3A6F0DA91A9B003D43AC /* CubicTraction.hpp */; };
 		A7EC3A720DA91A9B003D43AC /* CubicTraction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7EC3A700DA91A9B003D43AC /* CubicTraction.cpp */; };
 		A7F723350A7179C000D23181 /* MatPoint3D.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7F723330A7179C000D23181 /* MatPoint3D.hpp */; };
@@ -638,6 +640,8 @@
 		A7E100A412D7D0B50074E568 /* PolyTriangle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PolyTriangle.cpp; sourceTree = "<group>"; };
 		A7E1FF9912D78BCE0074E568 /* PolyhedronController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PolyhedronController.hpp; sourceTree = "<group>"; };
 		A7E1FF9A12D78BCE0074E568 /* PolyhedronController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PolyhedronController.cpp; sourceTree = "<group>"; };
+		A7E8CEA015E6E61800910593 /* CrackLeaf.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CrackLeaf.cpp; sourceTree = "<group>"; };
+		A7E8CEA215E6E63200910593 /* CrackLeaf.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CrackLeaf.hpp; sourceTree = "<group>"; };
 		A7EC3A6F0DA91A9B003D43AC /* CubicTraction.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CubicTraction.hpp; sourceTree = "<group>"; };
 		A7EC3A700DA91A9B003D43AC /* CubicTraction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CubicTraction.cpp; sourceTree = "<group>"; };
 		A7F04606060F6C7E0060AE2F /* NairnMPM.dtd */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.xml; path = NairnMPM.dtd; sourceTree = "<group>"; };
@@ -952,6 +956,8 @@
 				A7731E3905B44C5800294E25 /* CrackSurfaceContact.cpp */,
 				A7313F9907CF77F90074510B /* CrackNode.hpp */,
 				A7313F9807CF77F90074510B /* CrackNode.cpp */,
+				A7E8CEA215E6E63200910593 /* CrackLeaf.hpp */,
+				A7E8CEA015E6E61800910593 /* CrackLeaf.cpp */,
 			);
 			path = Cracks;
 			sourceTree = "<group>";
@@ -1442,6 +1448,7 @@
 				671514DA1547035D005F33A9 /* PolygonController.hpp in Headers */,
 				A772E3EA155349DF0090B050 /* MaterialInterfaceNode.hpp in Headers */,
 				A743491615792C0300EF8DFA /* IdealGas.hpp in Headers */,
+				A7E8CEA315E6E63200910593 /* CrackLeaf.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1743,6 +1750,7 @@
 				671514D81547035D005F33A9 /* PolygonController.cpp in Sources */,
 				A772E3E8155349CA0090B050 /* MaterialInterfaceNode.cpp in Sources */,
 				A743491515792C0300EF8DFA /* IdealGas.cpp in Sources */,
+				A7E8CEA115E6E61800910593 /* CrackLeaf.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

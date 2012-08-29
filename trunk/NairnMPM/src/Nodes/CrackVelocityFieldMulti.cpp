@@ -333,6 +333,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
         {   // first look for conditions to ignore contact and interface at this node
             
             // 1. check nodal volume (this is turned off by setting the materialContactVmin to zero)
+            //    (warning: 2D must set grid thickness if it is not 1)
             if(unscaledVolume/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
             
             // 2. ignore very small mass nodes - may not be needed
@@ -619,6 +620,7 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
         // first look for conditions to ignore contact and interface at this node
 		
         // 1. check nodal volume (this is turned off by setting the materialContactVmin to zero)
+        //    (warning: 2D must set grid thickness if it is not 1)
 		if(unscaledVolume/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
 		
 		// 2. ignore very small interactions
@@ -964,19 +966,58 @@ double CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *
     // get perpendicular distance to correct contact area
     double dist;
     
-    // Angled path correction method 1: distance to ellipsoid through cell corners
-    //    defined by tangent vector, i.e., line normal to normal vector
-    // See JANOSU-6-60
-    double a=mpmgrid.gridx*norm->x;
-    double b=mpmgrid.gridy*norm->y;
+    // Angled path correction method 1: hperp  is distance to ellipsoid through cell corners
+    //    defined by tangent vector. In 3D, also multiply by distance to ellipsoid along
+    //    n X t (which is along z axis for 2D)
+    // In 2D and 3D the dist is equal to grid spacing is gridx=gridy=gridz.
+    // See JANOSU-6-60 and JANOSU-6-74
     if(mpmgrid.Is3DGrid())
-    {   double c=mpmgrid.gridz*norm->z;
-        dist = sqrt(a*a + b*b + c*c);
+    {   if(DbleEqual(dott,0.))
+        {   // pick any tangent vector
+            tang.z = 0.;
+            if(!DbleEqual(norm->x,0.0) || !DbleEqual(norm->y,0.0))
+            {   tang.x = norm->y;
+                tang.y = -norm->x;
+            }
+            else
+            {   // norm = (0,0,1)
+                tang.x = 1.;
+                tang.y = 0.;
+            }
+        }
+        Vector t2;
+        t2.x = norm->y*tang.z - norm->z*tang.y;
+        t2.y = norm->z*tang.x - norm->x*tang.z;
+        t2.z = norm->x*tang.y - norm->y*tang.x;
+        double a1 = tang.x/mpmgrid.gridx;
+        double b1 = tang.y/mpmgrid.gridy;
+        double c1 = tang.z/mpmgrid.gridz;
+        double a2 = t2.x/mpmgrid.gridx;
+        double b2 = t2.y/mpmgrid.gridy;
+        double c2 = t2.z/mpmgrid.gridz;
+        dist = mpmgrid.gridx*mpmgrid.gridy*mpmgrid.gridz*sqrt((a1*a1 + b1*b1 + c1*c1)*(a2*a2 + b2*b2 + c2*c2));
     }
     else
+    {   double a=mpmgrid.gridx*norm->x;
+        double b=mpmgrid.gridy*norm->y;
         dist = sqrt(a*a + b*b);
+    }
     
-	// Angled path correction method 2 (in imperfect interface by cracks paper):
+    // Angled path correction method 2: distance to ellipsoid along normal
+    //      defined as hperp
+    // See JANOSU-6-76
+    /*
+    double a=norm->x/mpmgrid.gridx;
+    double b=norm->y/mpmgrid.gridy;
+    if(mpmgrid.Is3DGrid())
+    {   double c=norm->z/mpmgrid.gridz;
+        dist = 1./sqrt(a*a + b*b + c*c);
+    }
+    else
+        dist = 1./sqrt(a*a + b*b);
+    */
+    
+	// Angled path correction method 3 (in imperfect interface by cracks paper):
     //   Find perpendicular distance which gets smaller as interface tilts
     //   thus the effective surface area increases
     // See JANOSU-6-23 to 49

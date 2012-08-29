@@ -673,6 +673,9 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	{	Vector moved=seg->SlightlyMoved(side);
 		CrackField cfld[2];
 		SurfaceCrossesCracks(moved.x,moved.y,x,y,cfld);
+        //cout << "#Active on node " << num << ": " << CrackVelocityField::ActiveNonrigidField(cvf[0]) << "," <<
+        //                       CrackVelocityField::ActiveNonrigidField(cvf[1]) << endl;
+        //cout << "#Side " << side << " (" << x1 << "," << y1 << ") to (" << moved.x << "," << moved.y << ")" << endl;
 		if(cfld[0].loc==NO_CRACK)
 			vfld=0;
 		else if(cfld[1].loc==NO_CRACK)
@@ -725,7 +728,8 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 void NodalPoint::SurfaceCrossesCracks(double x1,double y1,double x2,double y2,CrackField *cfld)
 {
 	CrackHeader *nextCrack=firstCrack;
-	int vfld,cfound=0;
+	int cfound=0;
+    short vfld;
 	Vector norm;
 	
 	cfld[0].loc=NO_CRACK;			// NO_CRACK, ABOVE_CRACK, or BELOW_CRACK

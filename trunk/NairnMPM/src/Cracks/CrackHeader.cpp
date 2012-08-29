@@ -22,6 +22,10 @@
 #include "Nodes/NodalPoint2D.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 
+#ifdef HIERARCHICAL_CRACKS
+#include "Cracks/CrackLeaf.hpp"
+#endif
+
 using namespace std; 
 
 // class statics
@@ -39,22 +43,24 @@ int JGridSize=2;			// size of J Integral contour
 int JContourType=1;			// future might try different contours
 int JTerms=1;				// number of terms in J Integral calculation
 
+#ifndef HIERARCHICAL_CRACKS
+
+// to revert to old code, define the following constant (EXTENT_NORMALS setting is irrelavant as long as 2 or higher)
+//#define BOUNDING_BOX_ONLY
+
+#ifndef BOUNDING_BOX_ONLY
 // extent normals (make sure EXTENT_NORMALS in header is defined to match)
-// first two must always be x=(1,0) and y = (0,1)
-// rest are unnormalized P[i] = (1,enorm[i])
+// first two must always be x=(1,0) and y=(0,1)
+// rest are unnormalized P[i] = (1,enorm[i]) where enorm[i] is tangent of that angle
 
-// old code used just x and y - see old extent code comments to implement
-
-// x, y, +45, -45 (tangent of each angle)
-//static double enorm[4][2] = {{1.,0.}, {0.,1.},
-//                            {0.7071067811865475,0.7071067811865475}, {0.7071067811865475,-0.7071067811865475}};
+// EXTENT_NORMALS=4: x (0), y (90), +45, -45 (tangent of each angle, except for 90)
 //static double enorm[4] = {0.,1.,1.,-1.};
 
-// x, y, +60, +30, -30, -60 (tangent of each angle)
-//static double enorm[6][2] = {{1.,0.}, {0.,1.},
-//                            {0.5,0.8660254037844386}, {0.8660254037844386,0.5},
-//                            {0.8660254037844386,-0.5}, {0.5,-0.8660254037844386} };
+// EXTENT_NORMALS=6 x (0), y (90), +60, +30, -30, -60 (tangent of each angle, except for 90)
 static double enorm[6] = {0.,1.,1.732050807568877,0.5773502691896258,-0.5773502691896258,-1.732050807568877};
+#endif
+
+#endif
 
 #pragma mark CrackHeader: Constructors and Destructors
 
@@ -86,6 +92,12 @@ CrackHeader::~CrackHeader()
 // preliminary calculations (throw CommonException on problem)
 void CrackHeader::PreliminaryCrackCalcs(void)
 {
+    // it does not make sense unless there are two segments (and at least one line)
+    if(firstSeg==NULL)
+        throw CommonException("A defined crack does not have any particles","CrackHeader::PreliminaryCrackCalcs");
+    else if(firstSeg->nextSeg==NULL)
+        throw CommonException("All cracks must have at least two particles","CrackHeader::PreliminaryCrackCalcs");
+    
 	// check traction laws and set history variables
 	if(hasTractionLaws)
 	{	CrackSegment *scrk=firstSeg;
@@ -135,7 +147,9 @@ short CrackHeader::add(CrackSegment *cs)
     if(cs==NULL) return FALSE;		// not created
     if(lastSeg==NULL)
     {	firstSeg=cs;
+#ifndef HIERARCHICAL_CRACKS
         CreateExtents(cs->x, cs->y);
+#endif
     }
     else
 	{	// no need to add a zero length segment
@@ -147,7 +161,9 @@ short CrackHeader::add(CrackSegment *cs)
 		}
     	lastSeg->nextSeg=cs;
 		cs->prevSeg=lastSeg;
+#ifndef HIERARCHICAL_CRACKS
         CheckExtents(cs->x, cs->y);
+#endif
     }
     lastSeg=cs;
     numberSegments++;
@@ -192,70 +208,72 @@ short CrackHeader::add(CrackSegment *cs,int whichTip)
 		return FALSE;
 	}
 
-    if(lastSeg==NULL)
-    {	// should never happen
-    	lastSeg=firstSeg=cs;
-        CreateExtents(cs->x, cs->y);
+    // we can assume lastSeg!=NULL because calculations will not start
+    // unless all cracks have at least two particles and therefore always
+    // have a lastSeg
+    
+    if(whichTip==END_OF_CRACK)
+    {   lastSeg->nextSeg=cs;
+        cs->prevSeg=lastSeg;
+        prevSeg=lastSeg;
+        lastSeg=cs;
     }
     else
-    {	if(whichTip==END_OF_CRACK)
-        {   lastSeg->nextSeg=cs;
-			cs->prevSeg=lastSeg;
-            prevSeg=lastSeg;
-            lastSeg=cs;
-        }
-        else
-        {   cs->nextSeg=firstSeg;
-			firstSeg->prevSeg=cs;
-            prevSeg=firstSeg;
-            firstSeg=cs;
-        }
-        CheckExtents(cs->x, cs->y);
-        
-        // transfer crack tip results to new crack tip
-        cs->tipMatnum=prevSeg->tipMatnum;
-        cs->Jint=prevSeg->Jint;
-        cs->sif=prevSeg->sif;
-		cs->propagationJ=cs->Jint.z;					// store the actual energy released
-        cs->steadyState=prevSeg->steadyState;
-        cs->speed=prevSeg->speed;
-        for(i=0;i<3;i++)
-        {   cs->potential[i]=prevSeg->potential[i];
-            cs->plastic[i]=prevSeg->plastic[i];
-            cs->clength[i]=prevSeg->clength[i];
-        }
-		cs->release=prevSeg->release;
-		cs->absorb=prevSeg->absorb;
-		cs->crackIncrements=prevSeg->crackIncrements;
-        
-        // calculate growth that formed this segment
-        dx=cs->x-prevSeg->x;
-        dy=cs->y-prevSeg->y;
-        cs->theGrowth=sqrt(dx*dx+dy*dy);
-        
-        // remove original tip settings
-        prevSeg->tipMatnum=-1;
-		ZeroVector(&prevSeg->Jint);
-		ZeroVector(&prevSeg->sif);
-		
-		// has it created traction law
-		int tmatnum=cs->MatID();
-		if(tmatnum>=0)
-		{	hasTractionLaws=true;
-			// history data if needed
-			cs->SetHistoryData(theMaterials[tmatnum]->MaterialData());
-		}
-	
+    {   cs->nextSeg=firstSeg;
+        firstSeg->prevSeg=cs;
+        prevSeg=firstSeg;
+        firstSeg=cs;
     }
+
+    // transfer crack tip results to new crack tip
+    cs->tipMatnum=prevSeg->tipMatnum;
+    cs->Jint=prevSeg->Jint;
+    cs->sif=prevSeg->sif;
+    cs->propagationJ=cs->Jint.z;					// store the actual energy released
+    cs->steadyState=prevSeg->steadyState;
+    cs->speed=prevSeg->speed;
+    for(i=0;i<3;i++)
+    {   cs->potential[i]=prevSeg->potential[i];
+        cs->plastic[i]=prevSeg->plastic[i];
+        cs->clength[i]=prevSeg->clength[i];
+    }
+    cs->release=prevSeg->release;
+    cs->absorb=prevSeg->absorb;
+    cs->crackIncrements=prevSeg->crackIncrements;
+    
+    // calculate growth that formed this segment
+    dx=cs->x-prevSeg->x;
+    dy=cs->y-prevSeg->y;
+    cs->theGrowth=sqrt(dx*dx+dy*dy);
+    
+    // remove original tip settings
+    prevSeg->tipMatnum=-1;
+    ZeroVector(&prevSeg->Jint);
+    ZeroVector(&prevSeg->sif);
+    
+    // has it created traction law
+    int tmatnum=cs->MatID();
+    if(tmatnum>=0)
+    {	hasTractionLaws=true;
+        // history data if needed
+        cs->SetHistoryData(theMaterials[tmatnum]->MaterialData());
+    }
+	
     numberSegments++;
     
-    return TRUE;
+#ifdef HIERARCHICAL_CRACKS
+    ExtendHierarchy(cs);
+#else
+    CheckExtents(cs->x, cs->y);
+#endif
+    
+   return TRUE;
 }
 
 // output crack info and evaluate contact law
 void CrackHeader::Output(void)
 {
-	cout << "  Crack " << number << ": length = " << Length() << ", thickness = " << thickness << " mm";
+	cout << "  Crack " << number << ": length = " << Length() << ", segments = " << NumberOfSegments() << ", thickness = " << thickness << " mm";
 	if(fixedCrack) cout << " (fixed)";
 	if(hasTractionLaws)
 	{	cout << " (has traction laws)";
@@ -342,7 +360,6 @@ double CrackHeader::Triangle(double x1,double y1,double x2,double y2,double x3,d
 short CrackHeader::MoveCrack(void)
 {
 	CrackSegment *scrk=firstSeg;
-    double cx,cy;
 
 	// move only surfaces
 	if(contact.GetMoveOnlySurfaces())
@@ -359,8 +376,10 @@ short CrackHeader::MoveCrack(void)
 				{	if(!scrk->CheckSurfaces()) return FALSE;
 				}
 			}
-			
+
+#ifndef HIERARCHICAL_CRACKS
 			// track extent
+            double cx,cy;
 			if(scrk==firstSeg)
 			{	if(scrk->tipMatnum==EXTERIOR_CRACK)
 				{   cx = 5.*scrk->x-4.*scrk->nextSeg->x;		// x1-4*(x2-x1)
@@ -377,6 +396,7 @@ short CrackHeader::MoveCrack(void)
 			}
 			else
                 CheckExtents(scrk->x,scrk->y);
+#endif
 			
 			// next segments
 			scrk=scrk->nextSeg;
@@ -463,8 +483,11 @@ short CrackHeader::MoveCrack(void)
 					if(!scrk->CheckSurfaces()) return FALSE;
 				}
 			}
-			
+
+
+#ifndef HIERARCHICAL_CRACKS
 			// track extent
+            double cx,cy;
 			if(scrk==firstSeg)
 			{	if(scrk->tipMatnum==EXTERIOR_CRACK)
 				{   cx = 5.*scrk->x-4.*scrk->nextSeg->x;		// x1-4*(x2-x1)
@@ -481,11 +504,16 @@ short CrackHeader::MoveCrack(void)
 			}
 			else
                 CheckExtents(scrk->x, scrk->y);
+#endif
 			
 			// next segments
 			scrk=scrk->nextSeg;
 		}
 	}
+    
+#ifdef HIERARCHICAL_CRACKS
+    MoveHierarchy();
+#endif
 	
     return TRUE;
 }
@@ -1419,20 +1447,24 @@ void CrackHeader::CrackTipHeating(void)
 	}
 }
 
-// crack crossing method
+#pragma mark GLOBAL EXTENT CRACKS
 
 // Determine if line from particle (1) to node (2) crosses this crack
 // Return ABOVE_CRACK (1), BELOW_CRACK (2), or NO_CRACK (0) and crack normal in norm
+// This method uses global extents for crack, if that fails it checks all
+//      segments
+#ifdef HIERARCHICAL_CRACKS
+short CrackHeader::FlatCrackCross(double x1,double y1,double x2,double y2,Vector *norm)
+#else
 short CrackHeader::CrackCross(double x1,double y1,double x2,double y2,Vector *norm)
+#endif
 {
     double x3,y3,x4,y4;
     CrackSegment *scrk=firstSeg;
     short cross=NO_CRACK;
     double area1,area2;
     
-    // in no segments
-    if(scrk==NULL) return cross;
-    
+#ifndef HIERARCHICAL_CRACKS
     // check extents for entire crack, which may have multiple normals
     // See JANOSU-6-66
     if(fmax(x1,x2) < cnear[0]) return cross;        // Pi = (1,0)
@@ -1440,7 +1472,8 @@ short CrackHeader::CrackCross(double x1,double y1,double x2,double y2,Vector *no
     if(fmax(y1,y2) < cnear[1]) return cross;        // Pi = (0,1)
     if(fmin(y1,y2) > cfar[1]) return cross;
     
-    // old extent code - comment out this section
+#ifndef BOUNDING_BOX_ONLY
+    // remaining normals are Pi = (1,enorm[i])
     int i;
     for(i=2;i<EXTENT_NORMALS;i++)
     {   double Pia = x2-x1 + enorm[i]*(y2-y1);      // Pi.a with Pi = (1,enorm[i])
@@ -1455,6 +1488,8 @@ short CrackHeader::CrackCross(double x1,double y1,double x2,double y2,Vector *no
             if(cnear[i] > Pib) return cross;
         }
     }
+#endif
+#endif
     
     // first point
     x3=scrk->x;
@@ -1570,6 +1605,8 @@ below:
     return cross;
 }
 
+#ifndef HIERARCHICAL_CRACKS
+
 // When adding of moving a crack, initialize the extents
 // for the first segment for each normal to Pi.(cx,xy)
 void CrackHeader::CreateExtents(double cx,double cy)
@@ -1580,11 +1617,11 @@ void CrackHeader::CreateExtents(double cx,double cy)
     // second normal in Pi = (0,1) so Pi.(cx,xy) = cy
     cnear[1] = cfar[1] = cy;
     
-    // old extent code - comment out next section
-    
-    // remaining normals are Pi = (1,enorm[i]) so Pi,(cx,cy) = cx + enorm[i]*cy
+#ifndef BOUNDING_BOX_ONLY
+    // remaining normals are Pi = (1,enorm[i]) so Pi.(cx,cy) = cx + enorm[i]*cy
     for(int i=2;i<EXTENT_NORMALS;i++)
         cnear[i] = cfar[i] = cx + enorm[i]*cy;
+#endif
 
 }
 
@@ -1602,15 +1639,540 @@ void CrackHeader::CheckExtents(double cx,double cy)
     if(cy < cnear[1]) cnear[1] = cy;
     if(cy > cfar[1]) cfar[1] = cy;
     
-    // old extent code - comment out next section
-    
-    // remaining normals are Pi = (1,enorm[i]) so Pi,(cx,cy) = cx + enorm[i]*cy
+#ifndef BOUNDING_BOX_ONLY
+    // remaining normals are Pi = (1,enorm[i]) so Pi.(cx,cy) = cx + enorm[i]*cy
     for(int i=2;i<EXTENT_NORMALS;i++)
     {   double cij = cx + enorm[i]*cy;
         if(cij < cnear[i]) cnear[i] = cij;
         if(cij > cfar[i]) cfar[i] = cij;
     }
+#endif
+    
 }
+
+#endif
+
+#pragma mark HIERARCHICAL CRACKS
+
+#ifdef HIERARCHICAL_CRACKS
+
+// Determine if line from particle (1) to node (2) crosses this crack
+// Return ABOVE_CRACK (1), BELOW_CRACK (2), or NO_CRACK (0) and crack normal in norm
+// This method uses hierarchical crack in a binary tree
+short CrackHeader::CrackCross(double x1,double y1,double x2,double y2,Vector *norm)
+{
+    // recursive method to travese tree hierarchy
+    return CrackCrossLeaf(rootLeaf,x1,y1,x2,y2,norm,NO_CRACK);
+}
+
+// Recurusive Method to process each leaf in hierarchical traversal
+short CrackHeader::CrackCrossLeaf(CrackLeaf *leaf,double x1,double y1,double x2,double y2,Vector *norm,short cross)
+{
+    // check extents this leaf, return current cross if not in this leaf's extent
+    // See JANOSU-6-66
+    if(fmax(x1,x2) < leaf->cnear[0]) return cross;        // Pi = (1,0)
+    if(fmin(x1,x2) > leaf->cfar[0]) return cross;
+    if(fmax(y1,y2) < leaf->cnear[1]) return cross;        // Pi = (0,1)
+    if(fmin(y1,y2) > leaf->cfar[1]) return cross;
+    
+    double Pib = x1 + y1;                       // Pi.b
+    double Pia = x2 + y2 - Pib;                 // Pi.a with Pi = (1,1)
+    if(Pia>0.)
+    {   if(leaf->cnear[2]-Pib > Pia) return cross;
+        if(leaf->cfar[2] < Pib) return cross;
+    }
+    else
+    {   // This works for Pia=0 as well
+        if(leaf->cfar[2]-Pib < Pia) return cross;
+        if(leaf->cnear[2] > Pib) return cross;
+    }
+    
+    Pib = x1 - y1;                              // Pi.b
+    Pia = x2 - y2 - Pib;                        // Pi.a with Pi = (1,-1)
+    if(Pia>0.)
+    {   if(leaf->cnear[3]-Pib > Pia) return cross;
+        if(leaf->cfar[3] < Pib) return cross;
+    }
+    else
+    {   // This works for Pia=0 as well
+        if(leaf->cfar[3]-Pib < Pia) return cross;
+        if(leaf->cnear[3] > Pib) return cross;
+    }
+    
+    // It is in extent of this leaf
+    // if not terminal, go on to the child leaves
+    if(!leaf->ChildrenAreSegments())
+    {   CrackLeaf *child1,*child2;
+        leaf->GetChildLeaves(&child1,&child2);
+        cross = CrackCrossLeaf(child1,x1,y1,x2,y2,norm,cross);
+        if(child2!=NULL) cross = CrackCrossLeaf(child2,x1,y1,x2,y2,norm,cross);
+        return cross;
+    }
+    
+    // Meethod 1: This code checks each segment now in a subroutine
+    CrackSegment *scrk1,*scrk2;
+    leaf->GetChildSegments(&scrk1,&scrk2);
+    cross = CrackCrossOneSegment(scrk1,x1,y1,x2,y2,norm,cross);
+    return CrackCrossOneSegment(scrk2,x1,y1,x2,y2,norm,cross);
+    
+    // Method 2: This code checks both segments for crossing without regard to their known extents
+    // It has reached two segments. Check each one for crossing
+    /*
+    double x3,y3,x4,y4;
+    double area1,area2;
+    CrackSegment *scrk1,*scrk2;
+    leaf->GetChildSegments(&scrk1,&scrk2);
+    
+    // first point
+    CrackSegment *scrk = scrk1;
+    x3=scrk1->x;
+    y3=scrk1->y;
+	if(scrk1==firstSeg && scrk1->tipMatnum==EXTERIOR_CRACK)
+    {   x3-=4.*(scrk2->x-x3);
+		y3-=4.*(scrk2->y-y3);
+	}
+    scrk = scrk2;
+    
+	// checking areas of various triangles
+	// See JAN0048-7 for details
+    while(scrk!=NULL)
+    {	x4=scrk->x;
+        y4=scrk->y;
+		if(scrk==lastSeg)
+		{	if(scrk->tipMatnum==EXTERIOR_CRACK)
+            {	x4-=4.*(x3-x4);
+                y4-=4.*(y3-y4);
+            }
+		}
+        
+        // check for crossing
+        while(TRUE)
+        {   // first two areas (123 and 124)
+            area1=Triangle(x1,y1,x2,y2,x3,y3);
+            area2=Triangle(x1,y1,x2,y2,x4,y4);
+            
+            // first area negative
+            if(area1<0.)
+            {	if(area2>0.)
+                {   if(Triangle(x3,y3,x4,y4,x1,y1)<=0.) break;
+                    
+                    // TRUE mean - + + (- or 0) (0 means node on crack)
+                    if(Triangle(x3,y3,x4,y4,x2,y2)<=0.) goto above;
+                }
+                    
+                else if(area2==0.)
+                {   if(Triangle(x3,y3,x4,y4,x1,y1)<=0.) break;
+                    
+                    // TRUE means - 0 + 0 (node on pt 4) or - 0 + - (pt 4 between mpt and node)
+                    if(Triangle(x3,y3,x4,y4,x2,y2)<=0.) goto above;
+                }
+            }
+            
+            // first area positive
+            else if(area1>0.)
+            {	if(area2<0.)
+                {   if(Triangle(x3,y3,x4,y4,x1,y1)>=0.) break;
+                    
+                    // TRUE means + - - (+ or 0) (0 means node on crack)
+                    if(Triangle(x3,y3,x4,y4,x2,y2)>=0.) goto below;		
+                }
+                    
+                else if(area2==0.)
+                {   if(Triangle(x3,y3,x4,y4,x1,y1)>=0.) break;
+                    
+                    // TRUE means + 0 - 0 (node on pt 4) or + 0 - + (pt 4 between mpt and node)
+                    if(Triangle(x3,y3,x4,y4,x2,y2)>=0.) goto below;
+                }
+            }
+            
+            // first area zero
+            else
+            {	if(area2<0.)
+                {   if(Triangle(x3,y3,x4,y4,x1,y1)>=0.) break;
+                    
+                    // TRUE means 0 - - 0 (node on pt 3) or 0 - - + (pt 3 between mpt and node) 
+                    if(Triangle(x3,y3,x4,y4,x2,y2)>=0.) goto below;		
+                }
+                    
+                else if(area2>0.)
+                {   if(Triangle(x3,y3,x4,y4,x1,y1)<=0.) break;
+                    
+                    // TRUE means 0 + + 0 (node on pt 3) or 0 + + - (pt 3 between mpt and node)
+                    if(Triangle(x3,y3,x4,y4,x2,y2)<=0.) goto above;
+                }
+            }
+            
+            // it does not cross
+            break;
+			
+            // toggle the setting in case there are multiple crossings
+        above:
+            if(cross==NO_CRACK)
+            {	cross=ABOVE_CRACK;
+                norm->y=x3-x4;			// -¶x
+                norm->x=y4-y3;			// ¶y
+            }
+            else
+                cross=NO_CRACK;
+            break;
+        below:
+            if(cross==NO_CRACK)
+            {	cross=BELOW_CRACK;
+                norm->y=x3-x4;			// -¶x
+                norm->x=y4-y3;			// ¶y
+            }
+            else
+                cross=NO_CRACK;
+            break;
+        }
+		
+        // on to next segment
+        if(scrk!=scrk2) break;
+        scrk=scrk->nextSeg;
+        x3=x4;
+        y3=y4;
+    }
+    
+    return cross;
+     */
+}
+
+// Deepest Method to process one line segment in crack from particle scrk1 to scrk1->nextSeg
+// Checks extents of that segment first. If fails, finally do line segment crossing algorithm
+short CrackHeader::CrackCrossOneSegment(CrackSegment *scrk1,double x1,double y1,double x2,double y2,Vector *norm,short cross)
+{
+    // next segment, exit if none (i.e., terminal particle)
+    CrackSegment *scrk2 = scrk1->nextSeg;
+    if(scrk2 == NULL) return cross;
+    
+    // check this segment's extents
+    // See JANOSU-6-66
+    if(fmax(x1,x2) < scrk1->cnear[0]) return cross;        // Pi = (1,0)
+    if(fmin(x1,x2) > scrk1->cfar[0]) return cross;
+    if(fmax(y1,y2) < scrk1->cnear[1]) return cross;        // Pi = (0,1)
+    if(fmin(y1,y2) > scrk1->cfar[1]) return cross;
+    
+    double Pib = x1 + y1;                       // Pi.b
+    double Pia = x2 + y2 - Pib;                 // Pi.a with Pi = (1,1)
+    if(Pia>0.)
+    {   if(scrk1->cnear[2]-Pib > Pia) return cross;
+        if(scrk1->cfar[2] < Pib) return cross;
+    }
+    else
+    {   // This works for Pia=0 as well
+        if(scrk1->cfar[2]-Pib < Pia) return cross;
+        if(scrk1->cnear[2] > Pib) return cross;
+    }
+    
+    Pib = x1 - y1;                              // Pi.b
+    Pia = x2 - y2 - Pib;                        // Pi.a with Pi = (1,-1)
+    if(Pia>0.)
+    {   if(scrk1->cnear[3]-Pib > Pia) return cross;
+        if(scrk1->cfar[3] < Pib) return cross;
+    }
+    else
+    {   // This works for Pia=0 as well
+        if(scrk1->cfar[3]-Pib < Pia) return cross;
+        if(scrk1->cnear[3] > Pib) return cross;
+    }
+    
+    // No must check for crossing
+    double x3,y3,x4,y4;
+    double area1,area2;
+    
+    // first point
+    x3=scrk1->x;
+    y3=scrk1->y;
+	if(scrk1==firstSeg && scrk1->tipMatnum==EXTERIOR_CRACK)
+    {   x3-=4.*(scrk2->x-x3);
+		y3-=4.*(scrk2->y-y3);
+	}
+    
+    // second point
+    x4=scrk2->x;
+    y4=scrk2->y;
+    if(scrk2==lastSeg)
+    {	if(scrk2->tipMatnum==EXTERIOR_CRACK)
+        {	x4-=4.*(x3-x4);
+            y4-=4.*(y3-y4);
+        }
+    }
+        
+	// checking areas of various triangles
+	// See JAN0048-7 for details
+    while(TRUE)
+    {   // first two areas (123 and 124)
+        area1=Triangle(x1,y1,x2,y2,x3,y3);
+        area2=Triangle(x1,y1,x2,y2,x4,y4);
+        
+        // first area negative
+        if(area1<0.)
+        {	if(area2>0.)
+            {   if(Triangle(x3,y3,x4,y4,x1,y1)<=0.) break;
+            
+                // TRUE mean - + + (- or 0) (0 means node on crack)
+                if(Triangle(x3,y3,x4,y4,x2,y2)<=0.) goto above;
+            }
+            
+            else if(area2==0.)
+            {   if(Triangle(x3,y3,x4,y4,x1,y1)<=0.) break;
+            
+                // TRUE means - 0 + 0 (node on pt 4) or - 0 + - (pt 4 between mpt and node)
+                if(Triangle(x3,y3,x4,y4,x2,y2)<=0.) goto above;
+            }
+        }
+        
+        // first area positive
+        else if(area1>0.)
+        {	if(area2<0.)
+            {   if(Triangle(x3,y3,x4,y4,x1,y1)>=0.) break;
+                
+                // TRUE means + - - (+ or 0) (0 means node on crack)
+                if(Triangle(x3,y3,x4,y4,x2,y2)>=0.) goto below;		
+            }
+                
+            else if(area2==0.)
+            {   if(Triangle(x3,y3,x4,y4,x1,y1)>=0.) break;
+                
+                // TRUE means + 0 - 0 (node on pt 4) or + 0 - + (pt 4 between mpt and node)
+                if(Triangle(x3,y3,x4,y4,x2,y2)>=0.) goto below;
+            }
+        }
+        
+        // first area zero
+        else
+        {	if(area2<0.)
+            {   if(Triangle(x3,y3,x4,y4,x1,y1)>=0.) break;
+                
+                // TRUE means 0 - - 0 (node on pt 3) or 0 - - + (pt 3 between mpt and node) 
+                if(Triangle(x3,y3,x4,y4,x2,y2)>=0.) goto below;		
+            }
+                
+            else if(area2>0.)
+            {   if(Triangle(x3,y3,x4,y4,x1,y1)<=0.) break;
+                
+                // TRUE means 0 + + 0 (node on pt 3) or 0 + + - (pt 3 between mpt and node)
+                if(Triangle(x3,y3,x4,y4,x2,y2)<=0.) goto above;
+            }
+        }
+        
+        // it does not cross
+        break;
+        
+        // toggle the setting in case there are multiple crossings
+    above:
+        if(cross==NO_CRACK)
+        {	cross=ABOVE_CRACK;
+            norm->y=x3-x4;			// -¶x
+            norm->x=y4-y3;			// ¶y
+        }
+        else
+            cross=NO_CRACK;
+        break;
+    below:
+        if(cross==NO_CRACK)
+        {	cross=BELOW_CRACK;
+            norm->y=x3-x4;			// -¶x
+            norm->x=y4-y3;			// ¶y
+        }
+        else
+            cross=NO_CRACK;
+        break;
+    }
+		    
+    return cross;
+}
+
+// Compare Hierarchical crack crossing result to flat one
+// A call can be inserted after each call to CrackCrossing to see if hierarchical method gets a different
+//   answer than the flat one
+// The option at the end revert to flat results
+void CrackHeader::CFFlatCrossing(double x1,double y1,double x2,double y2,Vector *norm,short *vfld,int pnum,int nodenum)
+{
+    Vector flatNorm;
+    short svfld = *vfld;
+    short flatVfld = FlatCrackCross(x1,y1,x2,y2,&flatNorm);
+    if(flatVfld!=svfld || (svfld!=NO_CRACK && (!DbleEqual(norm->x,flatNorm.x) || !DbleEqual(norm->y,flatNorm.y))) )
+    {   cout << "# Discrepancy for cross from partcle ";
+        if(pnum>0)
+            cout << pnum;
+        else
+            cout << "at (" << x1 << "," << y1 << ")";
+        cout << " to node ";
+        if(nodenum>0)
+            cout << nodenum;
+        else
+            cout << "at (" << x2 << "," << y2 << ")";
+        cout << endl;
+        cout << "#   Hier: " << *vfld << ", " << norm->x << ", " << norm->y << endl;
+        cout << "#   Flat: " << flatVfld << ", " << flatNorm.x << ", " << flatNorm.y << endl;
+        
+        // option to revert to flat calculation
+        //*vfld = flatVfld;
+        //norm->x = flatNorm.x;
+        //norm->y = flatNorm.y;
+    }
+}
+
+// When crack is first create at start of calculations, create all the CrackLeaf
+// objects needed to describe the crack as a binary tree starting from
+// the rootleaf
+void CrackHeader::CreateHierarchy(void)
+{
+    CrackSegment *scrk1 = firstSeg;
+    CrackSegment *scrk2 = scrk1->nextSeg;           // firstSeg always exists
+    CrackLeaf *firstLeaf=NULL,*lastLeaf,*leaf;
+    int numLeaves=0;
+    
+    // consider line segments in pairs (or could be only 1 if scrk2->nextSeg==NULL)
+    //  scrk1 to scrk2 and scrk2 to scrk2->nextSeg
+    while(scrk2!=NULL)
+    {   // set extents of each segment
+        scrk1->CreateSegmentExtents(scrk1==firstSeg);
+        scrk2->CreateSegmentExtents(FALSE);
+        
+        // make a leaf
+        leaf = new CrackLeaf(scrk1,scrk2);
+        numLeaves++;
+        if(firstLeaf==NULL)
+            firstLeaf = leaf;
+        else
+            lastLeaf->nextLeaf = leaf;
+        
+        // on to next one
+        scrk1 = scrk2->nextSeg;
+        if(scrk1==NULL) break;
+        scrk2 = scrk1->nextSeg;
+        lastLeaf = leaf;
+    }
+    
+    // trace up the tree as long as more than 1 leaf is present
+    while(numLeaves>1)
+    {   CrackLeaf *leaf1 = firstLeaf;
+        CrackLeaf *leaf2 = leaf1->nextLeaf;
+        firstLeaf = NULL;
+        numLeaves = 0;
+        
+        while(leaf1!=NULL)
+        {   // make parent leaf
+            leaf = new CrackLeaf(leaf1,leaf2);
+            numLeaves++;
+            if(firstLeaf==NULL)
+                firstLeaf = leaf;
+            else
+                lastLeaf->nextLeaf = leaf;
+            
+            // on to next on
+            if(leaf2==NULL) break;
+            leaf1 = leaf2->nextLeaf;
+            if(leaf1!=NULL)
+            {   leaf2 = leaf1->nextLeaf;
+                lastLeaf = leaf;
+            }
+        }
+    }
+    
+    // all done, but root is the most recent firstLeaf
+    rootLeaf = firstLeaf;
+    
+}
+
+// When crack is first create at start of calculations, create all the CrackLeaf
+// objects needed to describe the crack as a binary tree starting from
+// the rootleaf
+void CrackHeader::MoveHierarchy(void)
+{
+    CrackSegment *scrk1 = firstSeg;
+    CrackSegment *scrk2 = scrk1->nextSeg;           // firstSeg always exists
+    
+    // consider line segments in pairs (or could be only 1 if scrk2->nextSeg==NULL)
+    //  scrk1 to scrk2 and scrk2 to scrk2->nextSeg
+    while(scrk2!=NULL)
+    {   // set extents of each segment
+        scrk1->CreateSegmentExtents(scrk1==firstSeg);
+        scrk2->CreateSegmentExtents(FALSE);
+        
+        // on to next one
+        scrk1 = scrk2->nextSeg;
+        if(scrk1==NULL) break;
+        scrk2 = scrk1->nextSeg;
+    }
+    
+    // trace up the tree to the root leaf
+    CrackLeaf *firstLeaf = firstSeg->parent;
+    while(firstLeaf!=NULL)
+    {   CrackLeaf *leaf = firstLeaf;
+        
+        // recalculate extents in this level
+        while(leaf!=NULL)
+        {   leaf->GetLeafExtents();
+            leaf = leaf->nextLeaf;
+        }
+        
+        // on to parent level
+        firstLeaf = firstLeaf->parent;
+    }
+}
+
+// When crack propagates, a new segement (here cs) is added at the start (if cs==firstSeg) or at
+// then end (if cs==lastSeg). The crack hierarchy needs to accomodate the new crack segment
+void CrackHeader::ExtendHierarchy(CrackSegment *cs)
+{
+    // add segment at the beginning of the crack
+    if(cs == firstSeg)
+    {   // shift leaves
+        CrackSegment *scrk1 = firstSeg;
+        CrackSegment *scrk2 = scrk1->nextSeg;
+        
+        while(scrk2!=NULL)
+        {   // shift leaf one spot to the left or create new one at the end
+            if(scrk2->nextSeg!=NULL)
+            {   CrackLeaf *leaf = scrk2->parent;
+                leaf->ShiftLeft(scrk1);
+            }
+            else
+            {   // needs new leaf on the end, when new crack has even number of particles
+                ExtendHierarchy(scrk2);
+                return;
+            }
+        
+            // on to next one
+            scrk1 = scrk2->nextSeg;
+            if(scrk1==NULL) break;
+            scrk2 = scrk1->nextSeg;
+        }
+    }
+    
+    // add a segment at the end of the crack
+    else
+    {   // the current last leaf is parent of penultimate crack particle
+        CrackSegment *oldLast = cs->prevSeg;
+        CrackSegment *oldPenSeg = oldLast->prevSeg;
+        CrackLeaf *leaf = oldPenSeg->parent;
+        
+        // try to add to previous last leaf, but when new crack has even number of particles
+        // it will require a new leaf
+        CrackLeaf *newLeaf = leaf->AddSegment(oldLast);
+        
+        // keeping adding leaves until find one that has room or reach the end
+        while(newLeaf !=NULL)
+        {   leaf->nextLeaf = newLeaf;
+            if(leaf == rootLeaf)
+            {   rootLeaf = new CrackLeaf(leaf,newLeaf);
+                break;
+            }
+            leaf = leaf->parent;
+            newLeaf = leaf->AddLeaf(newLeaf);
+        }
+    }
+    
+    // Once all leaves rearrange, reuse Move code to update extents
+    MoveHierarchy();
+    //Describe();
+    //rootLeaf->DescribeSegments(0);
+}
+
+#endif
 
 #pragma mark ACCESSORS
 
@@ -1655,6 +2217,9 @@ double CrackHeader::Length(void)
     }
     return length;
 }
+
+// Count Segments
+int CrackHeader::NumberOfSegments(void) { return numberSegments; }
 
 // crack number
 void CrackHeader::SetNumber(int newNum) { number=newNum; }
@@ -1744,6 +2309,8 @@ void CrackHeader::SetAllowAlternate(int crkTipIdx,bool setting) { allowAlternate
 // describe velocity field
 void CrackHeader::Describe(void)
 {	cout << "# crack#=" << number << " thickness=" << thickness << " custom contact=" << customContact << " has traction=" << hasTractionLaws << endl;
+    cout << "#    from (" << firstSeg->x << "," << firstSeg->y << ") to (" << lastSeg->x << "," << lastSeg->y << "), length = " << Length() ;
+    cout << ", segments = " << NumberOfSegments() << endl;
 }
 
 #pragma mark CrackHeader: Class methods

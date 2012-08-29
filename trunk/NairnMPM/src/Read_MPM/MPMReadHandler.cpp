@@ -552,7 +552,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             else if(strcmp(aName,"tip")==0)
             	sscanf(value,"%d",&tipMatnum);		// <CrackList> only
             else if(strcmp(aName,"mat")==0)
-            	sscanf(value,"%d",&matid);			// <CrackList> only, 1-based ID or follwoing name use
+            	sscanf(value,"%d",&matid);			// <CrackList> only, 1-based ID or following name use
 			else if(strcmp(aName,"matname")==0)
 			{	if(strlen(value)>199) value[200]=0;
 				strcpy(matname,value);
@@ -970,8 +970,13 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 // End an element
 void MPMReadHandler::myEndElement(char *xName)
 {
-    if(strcmp(xName,"CustomTasks")==0 || strcmp(xName,"Gravity")==0 || strcmp(xName,"CrackList")==0)
+    if(strcmp(xName,"CustomTasks")==0 || strcmp(xName,"Gravity")==0)
     {	block=NO_BLOCK;
+    }
+    
+    else if(strcmp(xName,"CrackList")==0)
+    {   crackCtrl->FinishCrack();
+        block = NO_BLOCK;
     }
 	
 	else if(strcmp(xName,"MPMHeader")==0)

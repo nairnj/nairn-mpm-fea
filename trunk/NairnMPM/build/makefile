@@ -145,6 +145,7 @@ ConductionTask = $(src)/Custom_Tasks/ConductionTask
 ContourPoint = $(src)/Cracks/ContourPoint
 CrackController = $(src)/Read_MPM/CrackController
 CrackHeader = $(src)/Cracks/CrackHeader
+CrackLeaf = $(src)/Cracks/CrackLeaf
 CrackNode = $(src)/Cracks/CrackNode
 CrackSegment = $(src)/Cracks/CrackSegment
 CrackSurfaceContact = $(src)/Cracks/CrackSurfaceContact
@@ -262,6 +263,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # ConductionTask.hpp : TransportTask.hpp
 # CrackController.hpp : ParseController.hpp
 # CrackNode.hpp : NodalPoint.hpp
+# CrackSegment.hpp : CrackHeader.hpp
 # CrackSurfaceContact.hpp : NodalPoint.hpp CrackVelocityField.hpp MatVelocityField.hpp
 # CrackVelocityField.hpp : MatVelocityField.hpp
 # CrackVelocityFieldMulti.hpp : CrackVelocityField.hpp MatVelocityField.hpp
@@ -331,7 +333,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 
 # Header files with no dependencies
 # BMPLevel.hpp BodyForce.hpp BoundaryCondition.hpp CommonArchiveData.hpp CommonException.hpp
-# CommonReadHandler.hpp ContourPoint.hpp CrackHeader.hpp CrackSegment.hpp
+# CommonReadHandler.hpp ContourPoint.hpp CrackHeader.hpp CrackLeaf.hpp
 # CustomTask.hpp ElementBase.hpp GlobalQuantity.hpp
 # MaterialBase.hpp MPMBase.hpp MPMWarnings.hpp NairnMPM.hpp
 # ParseController.hpp ShapeController.hpp StrX.hpp ThermalRamp.hpp TransportTask.hpp
@@ -348,7 +350,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		UpdateParticlesTask.o UpdateStrainsLastTask.o RunCustomTasksTask.o MoveCracksTask.o ResetElementsTask.o \
 		StartOutput.o MPMReadHandler.o Generators.o BitMapFiles.o BitMapFilesCommon.o BMPLevel.o MpsController.o \
 		CrackController.o MPMTermination.o MPMWarnings.o BodyForce.o GlobalQuantity.o \
-		ThermalRamp.o MPMBase.o MatPoint2D.o CrackHeader.o CrackSegment.o ContourPoint.o \
+		ThermalRamp.o MPMBase.o MatPoint2D.o CrackHeader.o CrackSegment.o CrackLeaf.o ContourPoint.o \
 		CrackSurfaceContact.o CrackNode.o MaterialInterfaceNode.o MaterialBaseMPM.o Viscoelastic.o JohnsonCook.o \
 		Mooney.o HEAnisotropic.o VonMisesHardening.o BistableIsotropic.o RigidMaterial.o BoundaryCondition.o \
 		MatPtLoadBC.o MatPtFluxBC.o NodalVelBC.o NodalConcBC.o NodalTempBC.o MoreMPMElementBase.o \
@@ -616,9 +618,11 @@ MatPoint3D.o : $(MatPoint3D).cpp $(dprefix) $(MatPoint3D).hpp $(MPMBase).hpp $(M
 # MPM: Cracks
 CrackHeader.o : $(CrackHeader).cpp $(dprefix) $(MaterialBase).hpp $(NairnMPM).hpp $(MPMTermination).hpp $(MeshInfo).hpp \
 			$(ArchiveData).hpp $(CommonException).hpp $(CommonArchiveData).hpp $(CrackHeader).hpp \
-			$(ElementBase).hpp $(CrackSurfaceContact).hpp $(ContourPoint).hpp $(CrackSegment).hpp \
+			$(ElementBase).hpp $(CrackSurfaceContact).hpp $(ContourPoint).hpp $(CrackSegment).hpp $(CrackLeaf).hpp \
 			$(NodalPoint).hpp $(MPMBase).hpp $(CrackNode).hpp $(NodalPoint2D).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackHeader).cpp
+CrackLeaf.o : $(CrackLeaf).cpp $(dprefix) $(CrackLeaf).hpp $(CrackHeader).hpp $(CrackSegment).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackLeaf).cpp
 CrackSegment.o : $(CrackSegment).cpp $(dprefix) $(CrackSegment).hpp $(MaterialBase).hpp $(ArchiveData).hpp \
 			$(ElementBase).hpp $(NairnMPM).hpp $(CommonArchiveData).hpp $(CrackHeader).hpp $(NodalPoint).hpp \
 			$(TractionLaw).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
@@ -687,18 +691,18 @@ BistableIsotropic.o : $(BistableIsotropic).cpp $(dprefix) $(BistableIsotropic).h
 RigidMaterial.o : $(RigidMaterial).cpp $(dprefix) $(RigidMaterial).hpp $(MaterialBase).hpp $(CommonException).hpp \
 			$(mathexpr).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(RigidMaterial).cpp
-TractionLaw.o : $(TractionLaw).cpp $(dprefix) $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp
+TractionLaw.o : $(TractionLaw).cpp $(dprefix) $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TractionLaw).cpp
-CohesiveZone.o : $(CohesiveZone).cpp $(dprefix) $(CohesiveZone).hpp $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp
+CohesiveZone.o : $(CohesiveZone).cpp $(dprefix) $(CohesiveZone).hpp $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CohesiveZone).cpp
 TrilinearTraction.o : $(TrilinearTraction).cpp $(dprefix) $(TrilinearTraction).hpp $(CohesiveZone).hpp $(TractionLaw).hpp \
-			 $(MaterialBase).hpp $(CrackSegment).hpp
+			 $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TrilinearTraction).cpp
 LinearTraction.o : $(LinearTraction).cpp $(dprefix) $(LinearTraction).hpp $(CohesiveZone).hpp $(TractionLaw).hpp \
-			$(MaterialBase).hpp $(CrackSegment).hpp
+			$(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(LinearTraction).cpp
 CubicTraction.o : $(CubicTraction).cpp $(dprefix) $(CubicTraction).hpp $(TractionLaw).hpp $(MaterialBase).hpp \
-			$(CrackSegment).hpp
+			$(CrackSegment).hpp $(CrackHeader).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CubicTraction).cpp
 
 # MPM: Boundary_Conditions
