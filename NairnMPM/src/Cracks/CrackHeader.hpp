@@ -30,11 +30,23 @@
 
 class CrackSegment;
 class ContourPoint;
+class CrackLeaf;
 
 #define START_OF_CRACK 0
 #define END_OF_CRACK 1
 #define EXTERIOR_CRACK -2
 
+/* The HIERARCHICAL_CRACKS constants determines the method used to screen
+    cracks for intersections in the CrackCross() method and eliminate those
+    that do not intersect crack extents, which are tracked.
+        If defined, cracks is hierarchical structure with each branch having
+            its own extents
+        If not defined, track one global extent. See EXTENT_NORMALS to pick
+            the shape of the crack
+*/
+#define HIERARCHICAL_CRACKS
+
+// must match enorm[] dimensions when using global extents
 #define EXTENT_NORMALS 6
 
 class CrackHeader : public LinkedObject
@@ -60,13 +72,12 @@ class CrackHeader : public LinkedObject
         short add(CrackSegment *, int);
         void Archive(ofstream &);
         short CrackCross(double,double,double,double,Vector *);
-        void CreateExtents(double,double);
-        void CheckExtents(double,double);
         short MoveCrack(void);
         short MoveCrack(short);
 		void UpdateCrackTractions(void);
         int Count(void);
         double Length(void);
+        int NumberOfSegments(void);
 		void CrackTipHeating(void);
 		void SetFixedCrack(int);
 		void SetFriction(double);
@@ -76,6 +87,19 @@ class CrackHeader : public LinkedObject
 		void SetContact(double,double,double,double);
 		void Output(void);
 		void Describe(void);
+
+#ifdef HIERARCHICAL_CRACKS
+        void CreateHierarchy(void);
+        void MoveHierarchy(void);
+        void ExtendHierarchy(CrackSegment *);
+        short CrackCrossLeaf(CrackLeaf *,double,double,double,double,Vector *,short);
+        short CrackCrossOneSegment(CrackSegment *,double,double,double,double,Vector *,short);
+        short FlatCrackCross(double,double,double,double,Vector *);
+        void CFFlatCrossing(double,double,double,double,Vector *,short *,int,int);
+#else
+        void CreateExtents(double,double);
+        void CheckExtents(double,double);
+#endif
         
 		void SetNumber(int);
 		int GetNumber(void);
@@ -107,12 +131,17 @@ class CrackHeader : public LinkedObject
 
     private:
         int numberSegments;
-        double cnear[EXTENT_NORMALS],cfar[EXTENT_NORMALS];
 		int fixedCrack,number;
 		double crackFriction,crackDn,crackDnc,crackDt;
 		bool customContact,hasTractionLaws;
 		Vector initialDirection[2];
 		bool allowAlternate[2];
+
+#ifdef HIERARCHICAL_CRACKS
+        CrackLeaf *rootLeaf;
+#else
+        double cnear[EXTENT_NORMALS],cfar[EXTENT_NORMALS];
+#endif
         
 };
 

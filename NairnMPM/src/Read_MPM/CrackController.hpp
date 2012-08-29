@@ -25,6 +25,7 @@ class CrackController : public ParseController
 		// methods
 		void AddCrack(CrackHeader *);
 		int AddSegment(CrackSegment *);
+        void FinishCrack(void);
 };
 
 extern CrackController *crackCtrl;

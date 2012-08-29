@@ -31,3 +31,12 @@ int CrackController::AddSegment(CrackSegment *newSegment)
 	return ((CrackHeader *)lastObject)->add(newSegment);
 }
 
+// When done with crack, finish any other needed initializations
+void CrackController::FinishCrack(void)
+{
+#ifdef HIERARCHICAL_CRACKS
+	((CrackHeader *)lastObject)->CreateHierarchy();
+#endif
+}
+
+
