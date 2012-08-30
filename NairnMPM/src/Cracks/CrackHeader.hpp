@@ -47,7 +47,7 @@ class CrackLeaf;
 #define HIERARCHICAL_CRACKS
 
 // must match enorm[] dimensions when using global extents
-#define EXTENT_NORMALS 6
+#define EXTENT_NORMALS 4
 
 class CrackHeader : public LinkedObject
 {
