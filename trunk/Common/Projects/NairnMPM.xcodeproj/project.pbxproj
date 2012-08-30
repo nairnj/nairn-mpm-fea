@@ -250,6 +250,8 @@
 		A77FA043090E76B0007E0B3B /* Utilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A77FA042090E76B0007E0B3B /* Utilities.cpp */; };
 		A77FA046090E76C2007E0B3B /* CSTriangle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A77FA044090E76C2007E0B3B /* CSTriangle.cpp */; };
 		A77FA047090E76C2007E0B3B /* CSTriangle.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A77FA045090E76C2007E0B3B /* CSTriangle.hpp */; };
+		A7834B5115F000A10043ADB9 /* CoupledSawTooth.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7834B5015F000A10043ADB9 /* CoupledSawTooth.cpp */; };
+		A7834B5315F000C80043ADB9 /* CoupledSawTooth.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7834B5215F000C80043ADB9 /* CoupledSawTooth.hpp */; };
 		A7845CEC0E01D94F00D2378A /* AnisoPlasticity.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7845CEA0E01D94F00D2378A /* AnisoPlasticity.hpp */; };
 		A7845CED0E01D94F00D2378A /* AnisoPlasticity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7845CEB0E01D94F00D2378A /* AnisoPlasticity.cpp */; };
 		A7845CF00E01DAA300D2378A /* HillPlastic.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7845CEE0E01DAA300D2378A /* HillPlastic.hpp */; };
@@ -531,6 +533,8 @@
 		A77FA042090E76B0007E0B3B /* Utilities.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = Utilities.cpp; sourceTree = "<group>"; };
 		A77FA044090E76C2007E0B3B /* CSTriangle.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = CSTriangle.cpp; sourceTree = "<group>"; };
 		A77FA045090E76C2007E0B3B /* CSTriangle.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = CSTriangle.hpp; sourceTree = "<group>"; };
+		A7834B5015F000A10043ADB9 /* CoupledSawTooth.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoupledSawTooth.cpp; sourceTree = "<group>"; };
+		A7834B5215F000C80043ADB9 /* CoupledSawTooth.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CoupledSawTooth.hpp; sourceTree = "<group>"; };
 		A7845CEA0E01D94F00D2378A /* AnisoPlasticity.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = AnisoPlasticity.hpp; sourceTree = "<group>"; };
 		A7845CEB0E01D94F00D2378A /* AnisoPlasticity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AnisoPlasticity.cpp; sourceTree = "<group>"; };
 		A7845CEE0E01DAA300D2378A /* HillPlastic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HillPlastic.hpp; sourceTree = "<group>"; };
@@ -772,6 +776,8 @@
 				A79E8AF50D6F7D8700B8AB58 /* TractionLaw.cpp */,
 				A72F0A3D0D943D02003426B3 /* CohesiveZone.hpp */,
 				A72F0A3E0D943D02003426B3 /* CohesiveZone.cpp */,
+				A7834B5215F000C80043ADB9 /* CoupledSawTooth.hpp */,
+				A7834B5015F000A10043ADB9 /* CoupledSawTooth.cpp */,
 				A7FC202F124432B700DEAEF0 /* TrilinearTraction.hpp */,
 				A7FC2030124432B700DEAEF0 /* TrilinearTraction.cpp */,
 				A797728D0DA2E4EB00B0C21E /* LinearTraction.hpp */,
@@ -1449,6 +1455,7 @@
 				A772E3EA155349DF0090B050 /* MaterialInterfaceNode.hpp in Headers */,
 				A743491615792C0300EF8DFA /* IdealGas.hpp in Headers */,
 				A7E8CEA315E6E63200910593 /* CrackLeaf.hpp in Headers */,
+				A7834B5315F000C80043ADB9 /* CoupledSawTooth.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1751,6 +1758,7 @@
 				A772E3E8155349CA0090B050 /* MaterialInterfaceNode.cpp in Sources */,
 				A743491515792C0300EF8DFA /* IdealGas.cpp in Sources */,
 				A7E8CEA115E6E61800910593 /* CrackLeaf.cpp in Sources */,
+				A7834B5115F000A10043ADB9 /* CoupledSawTooth.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
