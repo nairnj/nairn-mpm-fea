@@ -79,7 +79,7 @@ nairn-mpm-fea/Common/Projects/NairnMPM.xcodeproj
 </pre>
 
 <p>for the header files. These can be changed if needed by editing the project and target settings. Since revision 274 of the <code>nairn-mpm-fea</code> project, this library must be <code>xerces 3.0</code> or newer; prior to that revision, it had be <code>xerces 2.8</code> or older. These libraries can be obtained by downloading the 
-<a href="http://xml.apache.org/xerces-c/index.html"><code>xerces</code> source code</a> from the <a href="http://www.apache.org/">Apache Software Foundation</a> web site and then building and installing <code>xerces</code> with the following steps:</p>
+<a href="http://xml.apache.org/xerces-c/index.html"><code>xerces</code> source code</a> from the <a href="http://www.apache.org/">Apache Software Foundation</a> web site and then building and installing <code>xerces</code> with the following steps (after seeing potential <a href="#lion">startup issues on Lion or newer systems</a>):</p>
 
 <ol>
 <li>Open Terminal app and navigate to the xerces source folder expanded from the downloaded file.</li>
@@ -110,7 +110,7 @@ These command make the library (but not the unneeded <code>xerces</code> example
 
 <h2><a name="term"></a>MacOS X Command-Line Compilation</h2>
 
-<p>It is also easy to compile on MacOS X using a command line approach. First install <code>xerces</code> and its header files as <a href="#xerces">explained above</a> and make sure they are in the specified default locations (if needed).</p>
+<p>It is also easy to compile on MacOS X using a command line approach (after seeing potential <a href="#lion">startup issues on Lion or newer systems</a>). First install <code>xerces</code> and its header files as <a href="#xerces">explained above</a> and make sure they are in the specified default locations (if needed).</p>
 
 <p>Once the library is ready, you compile <code>NairnMPM</code> using:</p>
 
@@ -136,6 +136,27 @@ make SYSTEM=mac CFLAGS=&quot;-c -O3 -arch x86_64&quot; LFLAGS=&quot;-arch x86_64
 
 <p>Once the code is compiled, do a <a href="../running/index.html">test run</a> to verify it worked.
 </p>
+
+<h2><a name="lion"></a>MacOS X Lion or Newer Command-Line Tools</h2>
+
+<p>For some strange reason, Apple choose not to install command line tools on Lion (or newer systems such as Mountain Lion) and makes it hard to access some very useful folders (such as your home &quot;Library&quot; folder). With these changes, you cannot compile <code>xerces</code> or <code>nairn-fea-mpm</code> before doing additional set up:</p>
+
+<ol>
+<li>Before continuing you probably have to install XCode (even if you do not plan to use it).</li>
+<li>In XCode, use its preferences window to install &quot;Command Line Tools&quot;.</li>
+<li>Most tools should now be available. You should be able to make and install the <code>xerces</code> project and then use the provided XCode project to build <code>NairnMPM</code> and <code>NairnFEA</code>.</li>
+</ol>
+
+<p>One issue in the XCode project is that it might not find your <code>xerces</code> library, even if it is in the standard location. If it is not found, the library will be in <font color="red">red</font> in the &quot;External Frameworks and Libraries&quot; folder. You have to select the library, view its properties, and then click to set the path on your computer. The problem is that you cannot navigate to the <code>/usr/local/lib</code> folder anymore (another new Apple &quot;feature&quot;). Here is a trick to get there:</p>
+
+<ol>
+<li>In the Finder, use the &quot;Go to Folder...&quot; menu command and enter &quot;<code>/usr/local</code>&quot;.</li>
+<li>After it opens, choose the &quot;Add To Sidebar&quot; menu command. This folder will now appear in all file selection boxes.</li>
+<li>Go back to XCode and enter box to select the path the the <code>xerces</code> library.</li>
+<li>Go through your new &quot;local&quot; folder and select the <code>xerces</code> library file in <code>/usr/local/lib</code>.</li>
+</ol>
+
+<p>Apple is trying hard to stop you from using you computer for interesting programming. With a few tricks it is still possible to get around their road blocks. Hopefully the tricks will continue to work in the future.</p>
 
 <a name="windows"></a><h1>Windows Using cygwin</h1>
 

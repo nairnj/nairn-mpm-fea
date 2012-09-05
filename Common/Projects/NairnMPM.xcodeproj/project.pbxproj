@@ -555,7 +555,7 @@
 		A79115C40720554600B81ECA /* ConductionTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConductionTask.cpp; sourceTree = "<group>"; };
 		A797728D0DA2E4EB00B0C21E /* LinearTraction.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LinearTraction.hpp; sourceTree = "<group>"; };
 		A797728E0DA2E4EB00B0C21E /* LinearTraction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LinearTraction.cpp; sourceTree = "<group>"; };
-		A79AD68E14C8EFB800993169 /* libxerces-c-3.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libxerces-c-3.1.dylib"; path = "../../../../../../../usr/local/lib/libxerces-c-3.1.dylib"; sourceTree = "<group>"; };
+		A79AD68E14C8EFB800993169 /* libxerces-c-3.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libxerces-c-3.1.dylib"; path = "/usr/local/lib/libxerces-c-3.1.dylib"; sourceTree = "<absolute>"; };
 		A79E3D2F0A1A80BE00378F5C /* MeshInfo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MeshInfo.hpp; sourceTree = "<group>"; };
 		A79E3D300A1A80BE00378F5C /* MeshInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MeshInfo.cpp; sourceTree = "<group>"; };
 		A79E8AF40D6F7D8700B8AB58 /* TractionLaw.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TractionLaw.hpp; sourceTree = "<group>"; };
