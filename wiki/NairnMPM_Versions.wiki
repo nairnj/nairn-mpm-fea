@@ -35,6 +35,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * `RigidMaterials` that set temperature or concentration with a function now use a new `valueFunction` property and it can be a function of position and time. Because temperature and concentration functions were set before using `settingFunction`, old files will have to be updated to this  new method.
     * Body forces for gravity were not correctly implemented for 3D before, but now work in 3D simulations.
     * `Cylinder` shape can add `radius` attribute to create a cone shape.
+    * A new `CoupledSawTooth` traction law is implemented (but not yet documented).
 
   * release-3.0 (25 JAN 2012)
     * Has NairnMPM 8.1.0
