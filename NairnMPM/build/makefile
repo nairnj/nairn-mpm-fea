@@ -143,6 +143,7 @@ CommonTask = $(com)/System/CommonTask
 CommonUtilities = $(com)/System/CommonUtilities
 ConductionTask = $(src)/Custom_Tasks/ConductionTask
 ContourPoint = $(src)/Cracks/ContourPoint
+CoupledSawTooth = $(src)/Materials/CoupledSawTooth
 CrackController = $(src)/Read_MPM/CrackController
 CrackHeader = $(src)/Cracks/CrackHeader
 CrackLeaf = $(src)/Cracks/CrackLeaf
@@ -261,6 +262,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # CalcJKTask.hpp : CustomTask.hpp
 # CohesiveZone.hpp : MaterialBase.hpp TractionLaw.hpp
 # ConductionTask.hpp : TransportTask.hpp
+# CoupledSawTooth.hpp : CohesiveZone.hpp MaterialBase.hpp TractionLaw.hpp
 # CrackController.hpp : ParseController.hpp
 # CrackNode.hpp : NodalPoint.hpp
 # CrackSegment.hpp : CrackHeader.hpp
@@ -359,7 +361,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		EightNodeIsoparamBrick.o MatPoint3D.o Elastic.o ElasticMPM.o HyperElastic.o \
 		mathexpr.o ShapeController.o PointController.o RectController.o OvalController.o PolygonController.o \
 		SphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o \
-		TractionLaw.o CohesiveZone.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
+		TractionLaw.o CohesiveZone.o CoupledSawTooth.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o SLMaterial.o CrackVelocityFieldMulti.o CrackVelocityFieldSingle.o \
 		WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o
 
@@ -425,7 +427,7 @@ MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialControlle
 		$(Mooney).hpp $(HEAnisotropic).hpp $(BistableIsotropic).hpp $(RigidMaterial).hpp $(MaterialBase).hpp $(JohnsonCook).hpp \
 		$(Elastic).hpp $(HyperElastic).hpp $(NairnMPM).hpp $(TractionLaw).hpp $(CohesiveZone).hpp $(LinearTraction).hpp \
 		$(CubicTraction).hpp $(AnisoPlasticity).hpp $(IsoPlasticity.hpp) $(HillPlastic).hpp $(MGSCGLMaterial).hpp \
-		$(SLMaterial).hpp $(WoodMaterial).hpp $(TrilinearTraction).hpp $(IdealGas).hpp
+		$(SLMaterial).hpp $(WoodMaterial).hpp $(TrilinearTraction).hpp $(IdealGas).hpp $(CoupledSawTooth).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialController).cpp
 mathexpr.o : $(mathexpr).cpp $(mathexpr).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(mathexpr).cpp
@@ -695,8 +697,11 @@ TractionLaw.o : $(TractionLaw).cpp $(dprefix) $(TractionLaw).hpp $(MaterialBase)
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TractionLaw).cpp
 CohesiveZone.o : $(CohesiveZone).cpp $(dprefix) $(CohesiveZone).hpp $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CohesiveZone).cpp
+CoupledSawTooth.o : $(CoupledSawTooth).cpp $(dprefix) $(CoupledSawTooth).hpp $(CohesiveZone).hpp $(TractionLaw).hpp $(MaterialBase).hpp \
+            $(CrackSegment).hpp $(CrackHeader).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CoupledSawTooth).cpp
 TrilinearTraction.o : $(TrilinearTraction).cpp $(dprefix) $(TrilinearTraction).hpp $(CohesiveZone).hpp $(TractionLaw).hpp \
-			 $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp
+            $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TrilinearTraction).cpp
 LinearTraction.o : $(LinearTraction).cpp $(dprefix) $(LinearTraction).hpp $(CohesiveZone).hpp $(TractionLaw).hpp \
 			$(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp

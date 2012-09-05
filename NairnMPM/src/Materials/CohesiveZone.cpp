@@ -43,8 +43,8 @@ CohesiveZone::CohesiveZone(char *matName) : TractionLaw(matName)
 
 // no properties to read
 char *CohesiveZone::InputMat(char *xName,int &input)
-{
-	if(strcmp(xName,"kIe")==0)
+{   
+    if(strcmp(xName,"kIe")==0)
 	{	input=DOUBLE_NUM;
 		return((char *)&kI1);
 	}
