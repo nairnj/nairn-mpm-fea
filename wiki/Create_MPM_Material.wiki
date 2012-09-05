@@ -15,7 +15,7 @@ The best way to create the source code is to duplicate the `NewMaterial.cpp` and
 
 == Material Class Hierarchy ==
 
-The following outline shows all materials in `nairn-mpm-fea`as a class hierarchy. Materials in UPPERCASE are actual materials. Materials in mixed case are abstract classes. Materials in <font color="green">green</font> are in both FEA and MPM; materials in <font color="red">red</font> are only in FEA; all the rest are only in MPM. The new material should be inserted into this hierarchy and it should define a new, unique constant (in UPPERCASE) for that material. The current materials use numbers 1 through 22 (except for 6). This new constant should replace the `NEWMATERIAL` constant in the new `.hpp`. Futhermore, to allow this number in input command files, it must be added as an option for the `Material` command in the `DTD` file.
+The following outline shows all materials in `nairn-mpm-fea`as a class hierarchy. Materials in UPPERCASE are actual materials. Materials in mixed case are abstract classes. Materials in <font color="green">green</font> are in both FEA and MPM; materials in <font color="red">red</font> are only in FEA; all the rest are only in MPM. The new material should be inserted into this hierarchy and it should define a new, unique constant (in UPPERCASE) for that material. The current materials use numbers 1 through 23 (except for 6). This new constant should replace the `NEWMATERIAL` constant in the new `.hpp`. Futhermore, to allow this number in input command files, it must be added as an option for the `Material` command in the `DTD` file.
 
   * <font color="green">`MaterialBase`</font>
     * <font color="green">`Elastic`</font>
@@ -40,8 +40,9 @@ The following outline shows all materials in `nairn-mpm-fea`as a class hierarchy
     * `RIGIDMATERIAL=11`
     * `TractionLaw`
       * `COHESIVEZONEMATERIAL=12`
-        *`LINEARTRACTIONMATERIAL=13`
+        * `LINEARTRACTIONMATERIAL=13`
         * `TRILINEARTRACTIONMATERIAL=20`
+        * `COUPLEDSAWTOOTHMATERIAL=23` (not documented yet)
       * `CUBICTRACTIONLAW=14`
 
 == Editing Required in Core Code ==
