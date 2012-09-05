@@ -45,19 +45,23 @@ int JTerms=1;				// number of terms in J Integral calculation
 
 #ifndef HIERARCHICAL_CRACKS
 
-// to revert to old code, define the following constant (EXTENT_NORMALS setting is irrelavant as long as 2 or higher)
-#define BOUNDING_BOX_ONLY
-
-#ifndef BOUNDING_BOX_ONLY
-// extent normals (make sure EXTENT_NORMALS in header is defined to match)
+// extent normals (to revert to old code, set EXTENT_NORMALS to 2, and do not define HIERARCHICAL_CRACKS)
 // first two must always be x=(1,0) and y=(0,1)
 // rest are unnormalized P[i] = (1,enorm[i]) where enorm[i] is tangent of that angle
+#if EXTENT_NORMALS == 2
 
-// EXTENT_NORMALS=4: x (0), y (90), +45, -45 (tangent of each angle, except for 90)
+#define BOUNDING_BOX_ONLY
+
+#elif EXTENT_NORMALS == 4
+
+// 4 Normals: x (0), y (90), +45, -45 (tangent of each angle, except for 90)
 static double enorm[4] = {0.,1.,1.,-1.};
 
-// EXTENT_NORMALS=6 x (0), y (90), +60, +30, -30, -60 (tangent of each angle, except for 90)
-//static double enorm[6] = {0.,1.,1.732050807568877,0.5773502691896258,-0.5773502691896258,-1.732050807568877};
+#elif EXTENT_NORMALS == 6
+
+// 6 Normals: x (0), y (90), +60, +30, -30, -60 (tangent of each angle, except for 90)
+static double enorm[6] = {0.,1.,1.732050807568877,0.5773502691896258,-0.5773502691896258,-1.732050807568877};
+
 #endif
 
 #endif

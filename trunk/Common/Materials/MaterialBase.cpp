@@ -29,6 +29,7 @@
 	  
 	  TractionLaw (MPM)	->	CohesiveZone+ (MPM)	-> LinearTraction+ (MPM)
 												-> TrilinearTraction+ (MPM)
+                                                -> CoupledSawTooth+ (MPM)
 						->	CubicTraction+ (MPM)
 ****************************************************************************************************************************/
 

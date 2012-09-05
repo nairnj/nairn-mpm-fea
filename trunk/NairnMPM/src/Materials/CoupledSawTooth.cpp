@@ -10,15 +10,22 @@
  
        Tn = (1-D) k dn      and Tt = (1-D) k dt
  
-    where D = (dc (deff - dpk)) / (deff (dc - dpk)) is a damge parameter a
+    where D = (dc (deff - dpk)) / (deff (dc - dpk)) is a damage parameter and
     D = 0 if deff < dpk. Here deff = |(dn,dt)|, dc is critical deff at
     failure, and dpk is deff at the peak of Teff vs deff where
-    Teff = |(Tm,Tt)| and Teff = (1-D) k deff
+ 
+        Teff = |(Tm,Tt)| and Teff = (1-D) k deff
+ 
+    In damage variable, deff is actually the maximum deff attained in the
+    loading history.
  
     If we require (Tn, Tt) to be gradient of a potential (which this law does)
     we must have single k above (same stiffness in normal and traction). This law
     implies pure mode I and mode II tractions are idential (same cohesive stress
-    of k dpk and same critical COD of dc).
+    oo k dpk and same critical COD of dc).
+ 
+    But I think potential arguments need to be clarified when damage is
+    occurring.
  
     Failure occurs when G = (1/2) k dpk dc, independent of mode and cohesive stress
     if sc = k dpk
@@ -50,9 +57,14 @@ CoupledSawTooth::CoupledSawTooth(char *matName) : CohesiveZone(matName)
 */
 const char *CoupledSawTooth::VerifyProperties(int np)
 {
+    // set off mode I settings
 	const char *msg=SetTractionLaw(stress1,kI1,delIc,JIc,umidI);
 	if(msg!=NULL) return msg;
 	
+    // mode II not allowed
+    if(stress2>0. || kII1>0. || delIIc>0. || JIIc>0. || umidII>0.)
+        return "Mode II properties not allowed in Coupled Triangular Traction law.";
+    
     // do not need to call base material class methods
 	return NULL;
 }
@@ -76,13 +88,13 @@ void CoupledSawTooth::PrintMechanicalProperties(void)
 char *CoupledSawTooth::MaterialData(void)
 {
     double *h=new double;
-    *h=0.;
+    *h=umidI;
     return (char *)h;
 }
 
 #pragma mark CohesiveZone::Traction Law
 
-// Traction law - assume trianglar shape with unloading from down slope back to the origin
+// Traction law - assume trianglar shape with unloading down slope back to the origin
 void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,double dx,double dy,double area)
 {
 	double Tn=0.,Tt=0.;
@@ -101,14 +113,18 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
     // is it a new peak?
     if(deff > umidI) upeak[0] = deff;
     
-    // stiffness same for both modes keff = (1-D)k = (1-D) sc (df-d)/(d*(df-d0)
-    // Note: prior to deff reaching d0, upeak[0]=umidI and  keff = sc/d0 = k
-    double keff=sIc*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
-    
-    // normal force (only if open, closed handled by crack contact)
-    if(nCod>0.) Tn = keff*nCod;
-    
-    Tt = keff*tCod;
+    // skip if zero since tractions are zero, and would cause problem if pure linear softening law when deff=0
+    // (deff>0 implies upeak[0]>0 even when umidI=0 for pure linear softening)
+    if(deff > 0.)
+    {   // stiffness same for both modes keff = (1-D)k = sc(df-dmax)/(dmax*(df-d0) = k d0*(df-dmax)/(dmax*(df-d0)
+        // Note: prior to deff reaching d0, dmax=upeak[0]=umidI=d0 and  keff = sc/d0 = k
+        double keff=sIc*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
+        
+        // normal force (only if open, closed handled by crack contact)
+        if(nCod>0.) Tn = keff*nCod;
+        
+        Tt = keff*tCod;
+    }
 	
 	// force is traction times area projected onto x-y plane
 	cs->tract.x=area*(Tn*dy - Tt*dx);
@@ -120,6 +136,7 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
 // return released energy = total energy - recoverable energy (due to elastic unloading)
 //		when fullEnergy is false
 // units of N/mm
+// For this law it is from area under T vs deff curve
 double CoupledSawTooth::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod,bool fullEnergy)
 {
 	double tEnergy=0.;
@@ -127,12 +144,23 @@ double CoupledSawTooth::CrackTractionEnergy(CrackSegment *cs,double nCod,double 
     double deff = sqrt(nCod*nCod + tCod*tCod);
     
     if(deff < umidI)
-    {
-        
+    {	double T=kI1*deff;
+        tEnergy=0.5e-6*T*deff;					// now in units of N/mm
+    }
+    else
+    {   // G = sIc*(deff*deff - 2.*deff*delIc + umidI*delIc)/(2.*(umidI - delIc));
+    	double s2=(delIc-deff)*stress1/(delIc-umidI);                   // stress in N/mm^2
+        tEnergy=0.5*(umidI*stress1 + (deff-umidI)*(stress1+s2));		// now in units of N/mm
+    }
+   
+	// subtract recoverable energy when want released energy
+	if(!fullEnergy && deff>0.)
+	{	double *upeak =(double *)cs->GetHistoryData();
+		double keff = sIc*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
+        double T=keff*deff;
+        tEnergy-=0.5e-6*T*deff;                                // now in units of N/mm
     }
     
-    double G = sIc*(deff*deff - 2.*deff*delIc + umidI*delIc)/(2.*(umidI - delIc));
-		
 	return tEnergy;
 }
 

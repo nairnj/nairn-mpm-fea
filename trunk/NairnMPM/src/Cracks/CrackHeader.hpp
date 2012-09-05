@@ -39,14 +39,15 @@ class CrackLeaf;
 /* The HIERARCHICAL_CRACKS constants determines the method used to screen
     cracks for intersections in the CrackCross() method and eliminate those
     that do not intersect crack extents, which are tracked.
-        If defined, cracks is hierarchical structure with each branch having
+        If defined, cracks are hierarchical structures with each branch having
             its own extents
         If not defined, track one global extent. See EXTENT_NORMALS to pick
-            the shape of the crack
+            the shape of the crack bounding region
 */
 #define HIERARCHICAL_CRACKS
 
-// must match enorm[] dimensions when using global extents
+// Determines full crack bounding region. Must be 2, 4, or 6, for box, octagon, dodecahedron
+// Setting is irrelevant when HIERARCHICAL_CRACKS is defined
 #define EXTENT_NORMALS 4
 
 class CrackHeader : public LinkedObject

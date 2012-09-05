@@ -26,6 +26,7 @@
 	#include "Materials/BistableIsotropic.hpp"
 	#include "Materials/RigidMaterial.hpp"
 	#include "Materials/CohesiveZone.hpp"
+    #include "Materials/CoupledSawTooth.hpp"
 	#include "Materials/LinearTraction.hpp"
 	#include "Materials/CubicTraction.hpp"
 	#include "Materials/TrilinearTraction.hpp"
@@ -100,6 +101,9 @@ int MaterialController::AddMaterial(int matID,char *matName)
 			break;
 		case COHESIVEZONEMATERIAL:
 			newMaterial=new CohesiveZone(matName);
+			break;
+		case COUPLEDSAWTOOTHMATERIAL:
+			newMaterial=new CoupledSawTooth(matName);
 			break;
 		case LINEARTRACTIONMATERIAL:
 			newMaterial=new LinearTraction(matName);
@@ -202,7 +206,7 @@ const char *MaterialController::SetMaterialArray(void)
 
 // pointer to read a material property
 char *MaterialController::InputPointer(char *property,int &input)
-{	return ((MaterialBase *)lastObject)->InputMat(property,input);
+{   return ((MaterialBase *)lastObject)->InputMat(property,input);
 }
 
 // set material color (optional)

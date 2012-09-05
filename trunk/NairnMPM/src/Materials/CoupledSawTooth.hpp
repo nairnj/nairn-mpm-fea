@@ -11,7 +11,7 @@
 
 #ifndef COUPLEDSAWTOOTHMATERIAL
 
-#define COUPLEDSAWTOOTHMATERIAL 21
+#define COUPLEDSAWTOOTHMATERIAL 23
 
 #include "Materials/TractionLaw.hpp"
 #include "Materials/CohesiveZone.hpp"
