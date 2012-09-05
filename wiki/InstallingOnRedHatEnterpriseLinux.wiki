@@ -2,7 +2,7 @@
 
 = Introduction =
 
-Redhat EL does not come with the xerces libraries needed for parsing the XML input files.  Unless you installed this library under /usr/local/xerces3, the makefiles will generate a long list of errors.  Below are the steps needed *before NairnMPM and NairnFEM can be compiled* on your system.
+Redhat EL does not come with the xerces libraries needed for parsing the XML input files.  Unless you installed this library under /usr/local/xerces3, the makefiles will generate a long list of errors.  Below are the steps needed *before NairnMPM and NairnFEA can be compiled* on your system.
 
 
 = Details =
