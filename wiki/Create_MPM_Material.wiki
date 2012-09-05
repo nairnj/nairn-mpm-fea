@@ -123,17 +123,42 @@ Once the properties are set (from previous section), one of these methods is cal
 
 = Traction Law Materials (only for traction law materials) =
 
-(This section needs more details)
+There is currently no template code for traction law materials, but the creation process is much easier than creating a new material. Here are some notes on creating traction law materials.
 
-There is currently no template code for traction law materials. One should be created the next time a new traction law is needed. Here are some notes on traction law methods
+== Create Traction Law Class ==
 
-  * The base class for all traction laws in `TractionLaw.cpp`. It handles some things:
-    # Overrides `MPMConstLaw()` with empty methods because not needed for traction laws
-    # Blocks transport law printing (not needed) and no other transport stuff is needed either
-  * `VerifyProperties()` - This method should check properties, but do not call `MaterialBase` class method. It is OK to fall up to `TractionLaw` because that class will block further calls.
-  * `InitialLoadMechProps()` - Never called for traction laws
-  * `CrackTractionLaw()` - Calculate tractions for current opening and shear cod and will be the core coding needed for new traction laws.
-  * `CrackTractionEnergy()` - Calculate full energy or released energy for current COD.
+To get started, create a new traction law class and configure `NairnMPM` to use it as follows:
+
+  * The base class for all traction laws in `TractionLaw.cpp`. It is an abstract class that does not implement any traction law, but it does provide some support for subordinate traction law classes:
+    # It reads mode I and mode II cohesive stresses using names `sigmaI` and `sigmaII` and stores then in object variables `stress1` and `stress2`. All tractions lows will need at least one of these stresses.
+    # Because `TractionLaw` is a material subclass of `MaterialBase` and many material options are not needed, this traction law base class overrides or blocks any that could cause problems. The new traction law materials therefore need not worry about those details.
+  * To create a new traction law, create a new subclass of `TractionLaw` (or of one of its subclasses). The class needs is own unique number that is unique from all other materials and traction laws.
+  * Instantiate an instance of the traction law in `AddMaterial()` of `MaterialController.cpp` when `matID` matching the traction law's number occurs.
+  * Add the new traction law's number to the list of allowed numbers for the `Material` element in the `NairnMPM.dtd` file.
+
+== Traction Law Initiation ==
+
+Once the new traction law class is created as described in previous section, write all the methods needed to implement it. This section describes initialization methods called before the calculations begin.
+
+  * Constructor - initialize custom variables and then pass control on to parent class (it must get to the main `TractionLaw` constructor.
+  * `InputMat(char *xName,int &input)` - if `xName` matches a custom parameter for this law, set `input` to the variable type (_e.g._, `DOUBLE_NUM') and return point to the variable case as a `char ``*`. Any new parameter names need to be added to the options in the `Material` element in the `NairnMPM.dtd` file.
+  * `VerifyProperties(in np)` - This method checks all parameters. If missing or invalid parameters were provided, return an error message (as a string). If all is acceptable, pass control to the parent class.
+  * `PrintMechanicalProperties(void)` - Print the traction law properties if format suitable for the output results file. See other tractions laws for standard. Once this method is done, it is a good place to calculate common terms, such as convert input parameters to more convenient units for use in subsequent calculations.
+  * `MaterialData(void)` - Many traction laws unload differently then they load, which is interpreted as damage. Implementing such laws typically requires history variables, such as to record the previous maximum crack opening displacement. Use this method to allocate memory for any number of history variables residing on a single crack segment particle.
+
+== Traction Law Implementation ==
+
+These two core methods are the ones that actually implement the traction law and are called often during calculations.
+
+  * `CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,double dx,double dy,double area)` - Calculate normal and tangential tractions for current opening (`nCod`) and shear (`tCod`) crack opening displacements. The results are returned in analysis coordinates as forces in `cs->tract` vector. Typically, this method finds `Tn` and `Tt` and then calculates `cs->tract.x=area``*``(Tn``*``dy - Tt``*``dx)` and `cs->tract.y=area``*``(-Tn``*``dx - Tt``*``dy)` where the required `area`, `dx`, and `dy` are provided input paremeters. Another function of this method is to determine if the traction law has failed (reached critical condition determined by any desired failure criterion. If it has failed, tell the crack segment using `cs->SetMatID(0)`. All traction laws also report the debonding event by calling `ReportDebond()` in the `TractionLaw` class or by their own custom method.
+  * `CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod,bool fullEnergy)` - Calculate full energy (if `fullEnergy` is `true`) or released energy (if `fullEnergy` is `false`) for current opening (`nCod`) and shear (`tCod`) crack opening displacements and return the result. This method has no affect on results, but it is needed to find J integal and to archive R curve results during propagation calculations. Formally (in my opinion), the method is not possible unless the loading in monotonic; it must therefore assume monotonic loading has occurred. Further research needs to be aimed at this topic for all use of cohesive laws in numerical modeling. The standard approach used in `NairnMPM` to find released energy is to subtract the area under an unloading curve from the current traction back to the origin (_i.e.~, to assume elastic unloading in the traction law).
+
+== Traction Law Accessors ==
+
+The following traction law accessors should be provided.
+
+  * `MaterialType(void)` - Return character string with the name of the traction law.
+  * `MaterialTag(void)` - Return the traction laws unique number
 
 = Fracture Methods =
 
