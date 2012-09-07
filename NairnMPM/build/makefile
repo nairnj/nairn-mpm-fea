@@ -167,6 +167,7 @@ Generators = $(src)/Read_MPM/Generators
 GlobalQuantity = $(src)/Global_Quantities/GlobalQuantity
 GridForcesTask = $(src)/NairnMPM_Class/GridForcesTask
 HEAnisotropic = $(src)/Materials/HEAnisotropic
+HEIsotropic = $(src)/Materials/HEIsotropic
 HillPlastic = $(src)/Materials/HillPlastic
 HyperElastic = $(src)/Materials/HyperElastic
 IdealGas = $(src)/Materials/IdealGas
@@ -279,6 +280,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # FourNodeIsoparam.hpp : Linear2D.hpp (ElementBase.hpp)
 # GridForcesTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # HEAnisotropic.hpp : HyperElastic.hpp (MaterialBase.hpp)
+# HEIsotropic.hpp : HyperElastic.hpp (MaterialBase.hpp)
 # HillPlastic : AnisoPlasticity.hpp (Orthotropic.hpp TranIsotropic.hpp Elastic.hpp MaterialBase.hpp)
 # IdealGas.hpp : HyperElastic.hpp (MaterialBase.hpp)
 # InitializationTask : MPMTask.hpp (CommonTask.hpp)
@@ -351,10 +353,10 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		InitializationTask.o MassAndMomentumTask.o UpdateStrainsFirstTask.o GridForcesTask.o UpdateMomentaTask.o \
 		UpdateParticlesTask.o UpdateStrainsLastTask.o RunCustomTasksTask.o MoveCracksTask.o ResetElementsTask.o \
 		StartOutput.o MPMReadHandler.o Generators.o BitMapFiles.o BitMapFilesCommon.o BMPLevel.o MpsController.o \
-		CrackController.o MPMTermination.o MPMWarnings.o BodyForce.o GlobalQuantity.o \
+		CrackController.o MPMTermination.o MPMWarnings.o BodyForce.o GlobalQuantity.o BoundaryCondition.o \
 		ThermalRamp.o MPMBase.o MatPoint2D.o CrackHeader.o CrackSegment.o CrackLeaf.o ContourPoint.o \
 		CrackSurfaceContact.o CrackNode.o MaterialInterfaceNode.o MaterialBaseMPM.o Viscoelastic.o JohnsonCook.o \
-		Mooney.o HEAnisotropic.o VonMisesHardening.o BistableIsotropic.o RigidMaterial.o BoundaryCondition.o \
+		Mooney.o HEAnisotropic.o HEIsotropic.o VonMisesHardening.o BistableIsotropic.o RigidMaterial.o \
 		MatPtLoadBC.o MatPtFluxBC.o NodalVelBC.o NodalConcBC.o NodalTempBC.o MoreMPMElementBase.o \
 		NodalPointMPM.o CustomTask.o CalcJKTask.o PropagateTask.o ReverseLoad.o IdealGas.o \
 		DiffusionTask.o ConductionTask.o MeshInfo.o TransportTask.o ElementBase3D.o \
@@ -427,7 +429,8 @@ MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialControlle
 		$(Mooney).hpp $(HEAnisotropic).hpp $(BistableIsotropic).hpp $(RigidMaterial).hpp $(MaterialBase).hpp $(JohnsonCook).hpp \
 		$(Elastic).hpp $(HyperElastic).hpp $(NairnMPM).hpp $(TractionLaw).hpp $(CohesiveZone).hpp $(LinearTraction).hpp \
 		$(CubicTraction).hpp $(AnisoPlasticity).hpp $(IsoPlasticity.hpp) $(HillPlastic).hpp $(MGSCGLMaterial).hpp \
-		$(SLMaterial).hpp $(WoodMaterial).hpp $(TrilinearTraction).hpp $(IdealGas).hpp $(CoupledSawTooth).hpp
+		$(SLMaterial).hpp $(WoodMaterial).hpp $(TrilinearTraction).hpp $(IdealGas).hpp $(CoupledSawTooth).hpp \
+        $(HEIsotropic).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialController).cpp
 mathexpr.o : $(mathexpr).cpp $(mathexpr).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(mathexpr).cpp
@@ -661,6 +664,9 @@ HyperElastic.o : $(HyperElastic).cpp $(dprefix) $(HyperElastic).hpp $(MaterialBa
 Mooney.o : $(Mooney).cpp $(dprefix) $(Mooney).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(TransportTask).hpp \
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Mooney).cpp
+HEIsotropic.o : $(HEIsotropic).cpp $(dprefix) $(HEIsotropic).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(TransportTask).hpp \
+			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(HEIsotropic).cpp
 HEAnisotropic.o : $(HEAnisotropic).cpp $(dprefix) $(HEAnisotropic).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(TransportTask).hpp \
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(HEAnisotropic).cpp
