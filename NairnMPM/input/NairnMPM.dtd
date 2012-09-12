@@ -276,7 +276,7 @@
 <!ELEMENT	MovePlane EMPTY>
 <!ATTLIST	MovePlane
 			prevent (yes|YES|Yes|no|No|NO) #IMPLIED
-			type (cm|CM|avg|Avg|AVG) #IMPLIED>
+			type (cm|CM|Cm|avg|Avg|AVG) #IMPLIED>
 <!ELEMENT	ContactPosition (#PCDATA)>
 <!ELEMENT	PropagateLength (#PCDATA)>
 <!ELEMENT	JContour EMPTY>
@@ -330,6 +330,8 @@
 <!ELEMENT	StressFreeTemp (#PCDATA)>
 <!ELEMENT	LeaveLimit (#PCDATA)>
 <!ELEMENT	GIMP EMPTY>
+<!ATTLIST	GIMP
+			type (Dirac|uGIMP|lCPDI|qCPDI) #IMPLIED>
 <!ELEMENT	Diffusion EMPTY>
 <!ATTLIST	Diffusion
 			reference CDATA #IMPLIED>

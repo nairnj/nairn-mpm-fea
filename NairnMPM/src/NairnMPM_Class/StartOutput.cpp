@@ -57,7 +57,17 @@ void NairnMPM::PrintAnalysisType(void)
             throw CommonException("Invalid MPM analysis method provided.","NairnMPM::PrintAnalysisType");
     }
 	
-	if(ElementBase::useGimp) cout << " / GIMP";
+    switch(ElementBase::useGimp)
+    {   case UNIFORM_GIMP:
+            cout << " / GIMP";
+            break;
+        case LINEAR_CPDI:
+            cout << " / Linear CPDI";
+            break;
+        case QUADRATIC_CPDI:
+            cout << " / Quadratric CPDI";
+            break;
+    }
 	cout << endl;
     
 	// time step and max time

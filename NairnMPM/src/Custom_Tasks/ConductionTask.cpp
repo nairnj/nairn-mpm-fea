@@ -112,7 +112,7 @@ void ConductionTask::GetGradients(double stepTime)
 	
 		// find shape functions and derviatives
 		iel=mpm[p]->ElemID();
-		theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv);
+		theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
 		
 		// Find gradients from current temperatures
 		mpm[p]->AddTemperatureGradient();			// zero gradient on the particle

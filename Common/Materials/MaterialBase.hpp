@@ -142,7 +142,7 @@ class MaterialBase : public LinkedObject
 		int GetField(void);
  		Tensor *GetkCondTensor(void);
 		Tensor *GetDiffusionTensor(void);
-        virtual double GetCurrentRelativeVolume(MPMBase *,bool);
+        virtual double GetCurrentRelativeVolume(MPMBase *);
 #endif
 		
 	protected:

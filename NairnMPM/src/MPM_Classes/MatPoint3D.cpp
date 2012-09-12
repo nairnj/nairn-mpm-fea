@@ -50,7 +50,7 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np)
     
 	// find shape functions and derviatives
 	int iel=ElemID();
-	theElements[iel]->GetShapeGradients(&numnds,fn,nds,&ncpos,xDeriv,yDeriv,zDeriv);
+	theElements[iel]->GetShapeGradients(&numnds,fn,nds,&ncpos,xDeriv,yDeriv,zDeriv,this);
     
     // Find strain rates at particle from current grid velocities
 	//   and using the velocity field for that particle with each node
@@ -222,3 +222,31 @@ double MatPoint3D::FDiff(double dshdx,double dshdy,double dshdz)
 double MatPoint3D::KineticEnergy(void)
 {	return 0.5*mp*(vel.x*vel.x+vel.y*vel.y+vel.z*vel.z);
 }
+
+// get deformation gradient, which is stored in strain and rotation tensors
+void MatPoint3D::GetDeformationGradient(double F[][3])
+{
+	// current deformation gradient in 2D
+	F[0][0] = 1. + ep.xx + eplast.xx;
+	F[1][1] = 1. + ep.yy + eplast.yy;
+	F[2][2] = 1. + ep.zz + eplast.zz;
+    double exy = ep.xy + eplast.xy;
+	F[0][1] = 0.5*(exy - wrot.xy);
+	F[1][0] = 0.5*(exy + wrot.xy);
+    double exz = ep.xz + eplast.xz;
+	F[0][2] = 0.5*(exz - wrot.xz);
+	F[2][0] = 0.5*(exz + wrot.xz);
+    double eyz = ep.yz + eplast.yz;
+	F[1][2] = 0.5*(eyz - wrot.yz);
+	F[2][1] = 0.5*(eyz + wrot.yz);
+}
+
+// get relative volume from det J for large deformation material laws
+double MatPoint3D::GetRelativeVolume(void)
+{   double pF[3][3];
+    GetDeformationGradient(pF);
+    return pF[0][0]*(pF[1][1]*pF[2][2]-pF[2][1]*pF[1][2])
+                - pF[0][1]*(pF[1][0]*pF[2][2]-pF[2][0]*pF[1][2])
+                + pF[0][2]*(pF[1][0]*pF[2][1]-pF[2][0]*pF[1][1]);
+}
+

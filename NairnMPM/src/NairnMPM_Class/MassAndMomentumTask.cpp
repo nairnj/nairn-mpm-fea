@@ -123,7 +123,7 @@ void MassAndMomentumTask::Execute(void)
 			
 			// get nodes and shape function for material point p
 			if(fmobj->multiMaterialMode)
-			{	theElements[iel]->GetShapeFunctionsAndGradients(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv);
+			{	theElements[iel]->GetShapeFunctionsAndGradients(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
 				
 				// for particles that are multimaterial rigid materials, set their velocity
 				if(matID->Rigid())
@@ -138,7 +138,7 @@ void MassAndMomentumTask::Execute(void)
 				}
 			}
 			else
-				theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos());
+				theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),mpmptr);
 			
 			// get deformed particle volume if it will be needed (for transport tasks)
 			if(fmobj->volumeExtrap) mpmptr->SetDilatedVolume();

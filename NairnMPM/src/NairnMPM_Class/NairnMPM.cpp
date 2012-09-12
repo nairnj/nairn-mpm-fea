@@ -511,7 +511,7 @@ void NairnMPM::PreliminaryCalcs(void)
 // Can insert code here to black runs with invalid options
 void NairnMPM::ValidateOptions(void)
 {	
-	if(ElementBase::useGimp)
+	if(ElementBase::useGimp == UNIFORM_GIMP)
 	{	if(!mpmgrid.CanDoGIMP())
 			throw CommonException("GIMP not allowed unless using a generated regular mesh","NairnMPM::ValidateOptions");
 		if(ptsPerElement!=4 && !IsThreeD())
@@ -519,6 +519,11 @@ void NairnMPM::ValidateOptions(void)
 		if(ptsPerElement!=8 && IsThreeD())
 			throw CommonException("GIMP requires 8 particles per element for 3D","NairnMPM::ValidateOptions");
 	}
+    
+    else if(ElementBase::useGimp == LINEAR_CPDI || ElementBase::useGimp == QUADRATIC_CPDI)
+    {   if(IsThreeD())
+			throw CommonException("CPDI methods not yet available for 3D","NairnMPM::ValidateOptions");
+    }
 	
 	if(contact.hasImperfectInterface)
 	{	if(mpmgrid.GetCartesian()<=0)

@@ -818,7 +818,7 @@ void MPMReadHandler::MPMPts(void)
 void MPMReadHandler::SetGIMPBorderAsHoles(void)
 {
 	// not needed (or wanted) if not using GIMP
-	if(!ElementBase::useGimp) return;
+	if(ElementBase::useGimp == POINT_GIMP) return;
 	
     int i,k,ptFlag;
     for(i=1;i<=nelems;i++)
@@ -931,7 +931,7 @@ void MPMReadHandler::grid()
 	mzmax=Zmax;
 		
 	// allow for GIMP
-	if(ElementBase::useGimp)
+	if(ElementBase::useGimp != POINT_GIMP)
 	{	double cell=(Xmax-Xmin)/(double)Nhoriz;
 		Nhoriz+=2;
 		Xmin-=cell;

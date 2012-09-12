@@ -89,9 +89,9 @@ void UpdateStrainsLastTask::Execute(void)
 		// find shape functions
 		iel=mpm[p]->ElemID();
 		if(fmobj->multiMaterialMode)
-			theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv);
+			theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
 		else
-			theElements[iel]->GetShapeFunctions(&numnds,fn,nds,mpm[p]->GetNcpos());
+			theElements[iel]->GetShapeFunctions(&numnds,fn,nds,mpm[p]->GetNcpos(),mpm[p]);
 		
 		for(i=1;i<=numnds;i++)
 		{	vfld=(short)mpm[p]->vfld[i];

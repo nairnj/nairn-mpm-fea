@@ -557,7 +557,7 @@ void ArchiveData::ArchiveResults(double atime)
         // stress (in N/m^2)
         int matid = mpm[p]->MatID();
         rho0=theMaterials[matid]->rho;
-        relVolume = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p],threeD);      // also rho0/rho
+        relVolume = theMaterials[matid]->GetCurrentRelativeVolume(mpm[p]);      // also rho0/rho
         rho = rho0/relVolume;
 		Tensor *sp=mpm[p]->GetStressTensor();
         sxx=rho*sp->xx;

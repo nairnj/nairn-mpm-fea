@@ -68,6 +68,8 @@ class MPMBase : public LinkedObject
 		virtual void AddConcentrationGradient(Vector *) = 0;
 		virtual double FDiff(double,double,double) = 0;
 		virtual double KineticEnergy(void) = 0;
+        virtual void GetDeformationGradient(double F[][3]) = 0;
+        virtual double GetRelativeVolume(void) = 0;
        
 		// base only methods (make virtual if need to override)
 		int MatID(void);
@@ -127,7 +129,7 @@ class MPMBase : public LinkedObject
 		void SetHistoryDble(double);
 		double GetHistoryDble(int);
 		void SetHistoryDble(int,double);
-					
+    
 		// class methods
 		static void FullStrainUpdate(double,int,int);
 	

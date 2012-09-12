@@ -48,7 +48,7 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np)
     
 	// find shape functions and derviatives
 	int iel=ElemID();
-	theElements[iel]->GetShapeGradients(&numnds,fn,nds,&ncpos,xDeriv,yDeriv,NULL);
+	theElements[iel]->GetShapeGradients(&numnds,fn,nds,&ncpos,xDeriv,yDeriv,NULL,this);
     
     // Find strain rates at particle from current grid velocities
 	//   and using the velocity field for that particle and each node and the right material
@@ -217,5 +217,24 @@ double MatPoint2D::FDiff(double dshdx,double dshdy,double dshdz)
 double MatPoint2D::KineticEnergy(void)
 {	return 0.5*mp*(vel.x*vel.x+vel.y*vel.y);
 }
-	
+
+// get deformation gradient, which is stored in strain and rotation tensors
+void MatPoint2D::GetDeformationGradient(double F[][3])
+{
+	// current deformation gradient in 2D
+	F[0][0] = 1. + ep.xx + eplast.xx;
+    double exy = ep.xy + eplast.xy;
+	F[0][1] = 0.5*(exy - wrot.xy);
+	F[1][0] = 0.5*(exy + wrot.xy);
+	F[1][1] = 1. + ep.yy + eplast.yy;
+    F[2][2] = 1. + ep.zz + eplast.zz;
+}
+
+// get relative volume from det J for large deformation material laws
+double MatPoint2D::GetRelativeVolume(void)
+{
+    // = Fzz*(Fxx*Fyy - Fxy*Fyx)
+    double exy = ep.xy + eplast.xy;
+    return (1. + ep.zz + eplast.zz)*((1. + ep.xx + eplast.xx)*(1. + ep.yy + eplast.yy) - 0.25*(exy*exy - wrot.xy*wrot.xy));
+}
 

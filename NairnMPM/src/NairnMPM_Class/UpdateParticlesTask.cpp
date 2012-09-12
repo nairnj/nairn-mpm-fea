@@ -56,7 +56,7 @@ void UpdateParticlesTask::Execute(void)
 		if(!matID->Rigid())
 		{	// get shape functions
 			iel=mpm[p]->ElemID();
-			theElements[iel]->GetShapeFunctions(&numnds,fn,nds,mpm[p]->GetNcpos());
+			theElements[iel]->GetShapeFunctions(&numnds,fn,nds,mpm[p]->GetNcpos(),mpm[p]);
 			
 			// Update particle position and velocity
 			matfld=matID->GetField();

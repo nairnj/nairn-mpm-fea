@@ -423,7 +423,7 @@ short CrackHeader::MoveCrack(void)
 				iel=scrk->planeInElem-1;			// now zero based
 				cpos.x=scrk->x;
 				cpos.y=scrk->y;
-				theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cpos,&cncpos);
+				theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cpos,&cncpos,NULL);
 				
 				// initialize
 				ZeroVector(&delv);
@@ -540,7 +540,7 @@ short CrackHeader::MoveCrack(short side)
 			iel=scrk->surfInElem[js]-1;			// now zero based
 			cpos.x=scrk->surfx[js];
 			cpos.y=scrk->surfy[js];
-			theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cpos,&cncpos);
+			theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cpos,&cncpos,NULL);
             
 			// initialize
 			ZeroVector(&delv);
@@ -1439,7 +1439,7 @@ void CrackHeader::CrackTipHeating(void)
 	{	iel=scrk->planeInElem-1;		// now zero based
 		cpos.x=scrk->x;
 		cpos.y=scrk->y;
-		theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cpos,&cncpos);
+		theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cpos,&cncpos,NULL);
 	
         // Add crack particle heating to each node in the element
         for(i=1;i<=numnds;i++)

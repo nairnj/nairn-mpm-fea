@@ -161,9 +161,10 @@ void MeshInfo::ListOfNeighbors2D(int num,int *neighbor)
 	neighbor[i]=0;
 }
 
-// If have a structured grid, get the eight 2D neighbor elements. The 1-based
+// If have a structured grid, get the 27 (3D) neighbor elements. The 1-based
 // element numbers are returned and the list is terminated by 0
 // neighbor needs to be size [27]
+// NOT WRITTEN YET
 void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 {
 	if(horiz<=0)
@@ -176,6 +177,37 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 	// mark the end
 	neighbor[i]=0;
 }
+
+// For structured grid only, find element from location (1-based)
+int MeshInfo::FindElementFromPoint(Vector *pt)
+{
+    int theElem = 0;
+    
+    // error if not structure grid
+    if(horiz<0) return theElem;
+    
+    int col = (int)((pt->x-xmin)/gridx);
+    if(col == horiz) horiz--;
+    int row = (int)((pt->y-ymin)/gridy);
+    if(row == vert) vert--;
+    
+    // 3D
+    if(gridz > 0.)
+    {   // not written yet
+        int zrow = (int)((pt->z-zmin)/gridz);
+        if(zrow == depth) zrow--;
+        theElem = horiz*(zrow*vert + row) + col + 1;
+    }
+    
+    // 2D
+    else
+    {   theElem = row*horiz + col + 1;
+    }
+    
+    // return result
+    return theElem;
+}
+
 #pragma mark MeshInfo:Accessors
 
 // set grid style (zcell=0 if 2D grid)
