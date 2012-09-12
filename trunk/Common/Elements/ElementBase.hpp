@@ -110,6 +110,7 @@ class ElementBase : public LinkedObject
 		virtual void GetShapeGradients(int *,double *,int *,Vector *,double *,double *,double *,MPMBase *);
 		virtual void GetShapeFunctionsAndGradients(int *,double *,int *,Vector *,Vector *,double *,double *,double *,MPMBase *);
 		virtual void GimpCompact(int *,int *,double *,double *,double *,double *);
+		virtual void GetCPDIFunctions(int,CPDIDomain *,double *,int *,int *,double *,double *,double *,double *);
 		virtual bool OnTheEdge(void);
 		virtual void GetListOfNeighbors(int *);
 		virtual int NextNode(int);
@@ -119,6 +120,7 @@ class ElementBase : public LinkedObject
 		virtual int Orthogonal(double *,double *,double *);
         virtual int NearestNode(double,double,int *);
         virtual void MPMPoints(short,Vector *);
+		virtual void GetXiPos(Vector *,Vector *);
 #else
 		virtual bool HasNode(int);
 		virtual void DecrementNodeNums(int);
@@ -164,7 +166,6 @@ class ElementBase : public LinkedObject
         virtual void GetCentroid(Vector *);
         virtual void GetCoordinates(Vector *,int,int *);
 		virtual void GetNodes(int *,int *);
-        virtual void GetXiPos(Vector *,Vector *);
 #endif
 
 };

@@ -86,7 +86,7 @@ void UpdateStrainsLastTask::Execute(void)
 		mp=mpm[p]->mp;			// in g
 		matfld=matID->GetField();
 		
-		// find shape functions
+		// find shape functions (why ever need gradients?)
 		iel=mpm[p]->ElemID();
 		if(fmobj->multiMaterialMode)
 			theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
@@ -100,7 +100,7 @@ void UpdateStrainsLastTask::Execute(void)
 			nd[nds[i]]->AddMomentumTask6(vfld,matfld,fn[i]*mp,&mpm[p]->vel);
 			
 			// add updated displacement and volume (if cracks, not 3D)
-			contact.AddDisplacementTask6(vfld,matfld,nd[nds[i]],mpm[p],fn[i]);				
+			contact.AddDisplacementTask6(vfld,matfld,nd[nds[i]],mpm[p],fn[i]);
 		}
 	}
 	

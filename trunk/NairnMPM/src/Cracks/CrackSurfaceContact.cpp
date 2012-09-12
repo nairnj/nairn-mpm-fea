@@ -320,7 +320,7 @@ void CrackSurfaceContact::AddDisplacementVolumeTask1(short vfld,int matfld,Nodal
 
 // In task 6, track displacements or position but do not need to track volume
 void CrackSurfaceContact::AddDisplacementTask6(short vfld,int matfld,NodalPoint *ndpt,MPMBase *mptr,double shape)
-{	// exit if has no cracks and is in single material mode (i.e., not contact being done)
+{	// exit if has no cracks and is in single material mode (i.e., no contact being done)
 	if(firstCrack==NULL && maxMaterialFields==1) return;
 	
 	// displacement or position for contact calculations

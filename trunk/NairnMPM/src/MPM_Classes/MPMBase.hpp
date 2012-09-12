@@ -70,6 +70,8 @@ class MPMBase : public LinkedObject
 		virtual double KineticEnergy(void) = 0;
         virtual void GetDeformationGradient(double F[][3]) = 0;
         virtual double GetRelativeVolume(void) = 0;
+		virtual void GetCPDINodesAndWeights(int) = 0;
+
        
 		// base only methods (make virtual if need to override)
 		int MatID(void);
@@ -108,6 +110,7 @@ class MPMBase : public LinkedObject
         void SetVelocityGradient(double,double,double,double,int);
 		Vector *GetPFext(void);
 		Vector *GetNcpos(void);
+		CPDIDomain *GetCPDIInfo(void);
 		Vector *GetAcc(void);
 		Tensor *GetVelGrad(void);
 		double GetPlastEnergy(void);
@@ -137,6 +140,7 @@ class MPMBase : public LinkedObject
 		// variables (changed in MPM time step)
 		Vector pFext;				// external force
 		Vector ncpos;				// natural coordinates position
+		CPDIDomain cpdi[4];		// Should makle pointer and allocate only what is needed
 		Vector acc;					// acceleration
 		Tensor *velGrad;			// used for J Integral only
 		Tensor sp;					// stress tensor (init 0)

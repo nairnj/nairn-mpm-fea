@@ -39,11 +39,7 @@ class FourNodeIsoparam : public Linear2D
 		virtual int Orthogonal(double *,double *,double *);
 		virtual void GetGimpNodes(int *,int *,int *,Vector *);
 		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *);
-#endif
-
-	protected:
-#ifdef MPM_CODE
-        virtual void GetXiPos(Vector *,Vector *);
+	virtual void GetXiPos(Vector *,Vector *);
 #endif
 
 };
