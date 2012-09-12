@@ -204,7 +204,7 @@ double CrackSegment::AddTractionFextSide(CrackHeader *theCrack,int side,double s
 	cspos.x=surfx[side];
 	cspos.y=surfy[side];
 	iel=surfInElem[side];
-	theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cspos,&ndpos);
+	theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cspos,&ndpos,NULL);
 	for(i=1;i<=numnds;i++)
 	{	ndi=nd[nds[i]];
 		vfld=theCrack->CrackCross(cspos.x,cspos.y,ndi->x,ndi->y,&norm);

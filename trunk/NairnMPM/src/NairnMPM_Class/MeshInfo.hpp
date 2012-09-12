@@ -35,6 +35,7 @@ class MeshInfo
 		bool EdgeElement3D(int);
 		void ListOfNeighbors2D(int,int *);
 		void ListOfNeighbors3D(int,int *);
+        int FindElementFromPoint(Vector *);
 		
 		// Accessors
 		void SetCartesian(int,double,double,double);

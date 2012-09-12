@@ -65,7 +65,7 @@ bool ElementBase3D::IntersectsBox(double xorig,double yorig,double xlength,doubl
 // check if this GIMP element is on the edge of the grid
 // assumes a generated 3D structured grid
 bool ElementBase3D::OnTheEdge(void)
-{	if(!useGimp) return FALSE;
+{	if(useGimp == POINT_GIMP) return FALSE;
 	return mpmgrid.EdgeElement3D(num);
 }
 

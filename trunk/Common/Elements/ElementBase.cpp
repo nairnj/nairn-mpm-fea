@@ -17,8 +17,8 @@ ElementBase **theElements;	// list of elements
 int nelems=0;			// number of elements
 
 #ifdef MPM_CODE
-bool ElementBase::useGimp=FALSE;
-bool ElementBase::previousGimp=FALSE;
+int ElementBase::useGimp=POINT_GIMP;
+int ElementBase::analysisGimp=POINT_GIMP;
 #endif
 
 #pragma mark ElementBase::Methods

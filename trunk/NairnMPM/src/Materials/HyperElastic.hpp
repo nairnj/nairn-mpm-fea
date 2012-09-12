@@ -55,7 +55,7 @@ class HyperElastic : public MaterialBase
     
         // Accessors
 #ifndef CONSTANT_RHO
-        virtual double GetCurrentRelativeVolume(MPMBase *,bool);
+        virtual double GetCurrentRelativeVolume(MPMBase *);
 #endif
 };
 

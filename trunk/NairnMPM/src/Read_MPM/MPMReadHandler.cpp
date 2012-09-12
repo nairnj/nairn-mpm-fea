@@ -209,9 +209,37 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     }
 
     else if(strcmp(xName,"GIMP")==0)
-	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
-		ElementBase::useGimp=TRUE;
-		ElementBase::previousGimp=TRUE;
+    {   // no attribute or empty implies uGIMP (backward compatibility) or look for key words
+		ValidateCommand(xName,MPMHEADER,ANY_DIM);
+		ElementBase::useGimp = UNIFORM_GIMP;
+		ElementBase::analysisGimp = UNIFORM_GIMP;
+        numAttr=attrs.getLength();
+        for(i=0;i<numAttr;i++)
+        {   aName=XMLString::transcode(attrs.getLocalName(i));
+            if(strcmp(aName,"type")==0)
+			{	value=XMLString::transcode(attrs.getValue(i));
+                if(strcmp(value,"Dirac")==0)
+                {   ElementBase::useGimp = POINT_GIMP;
+                    ElementBase::analysisGimp = POINT_GIMP;
+                }
+                else if(strcmp(value,"uGIMP")==0)
+                {   ElementBase::useGimp = UNIFORM_GIMP;
+                    ElementBase::analysisGimp = UNIFORM_GIMP;
+                }
+                else if(strcmp(value,"lCPDI")==0)
+                {   ElementBase::useGimp = LINEAR_CPDI;
+                    ElementBase::analysisGimp = LINEAR_CPDI;
+                }
+                else if(strcmp(value,"qCPDI")==0)
+                {   ElementBase::useGimp = QUADRATIC_CPDI;
+                    ElementBase::analysisGimp = QUADRATIC_CPDI;
+                }
+                else
+                    throw SAXException("GIMP type must be Dirac, uGIMP, lCPDI, or qCPDI.");
+				delete [] value;
+			}
+			delete [] aName;
+        }
     }
 
     else if(strcmp(xName,"MultiMaterialMode")==0)

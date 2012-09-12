@@ -13,6 +13,10 @@
 
 #define _ELEMENTBASE_
 
+#ifdef MPM_CODE
+class MPMBase;
+#endif
+
 // element types
 #define CS_TRIANGLE 1
 #define FOUR_NODE_ISO 2
@@ -22,6 +26,12 @@
 #define QUAD_INTERFACE 6
 #define EIGHT_NODE_ISO_BRICK 7
 #define NINE_NODE_LAGRANGE 8
+
+// GIMP methods
+#define POINT_GIMP 0
+#define UNIFORM_GIMP 1
+#define LINEAR_CPDI 2
+#define QUADRATIC_CPDI 3
 
 // other constants
 #define TOLERANCE_RATIO 0.1
@@ -54,8 +64,8 @@ class ElementBase : public LinkedObject
 		// static variables
         static double gridTolerance;	// TOLERANCE_RATIO * minimum grid extent
 #ifdef MPM_CODE
-		static bool useGimp;			// TRUE for GIMP elements
-		static bool previousGimp;		// Hold GIMP status while disabled
+		static int useGimp;             // Code for GIMP method (0 is classic MPM special case of GIMP)
+		static int analysisGimp;		// store GIMP option in case need to disable for a while
 #endif
 		
         // constructors and destructors
@@ -95,10 +105,10 @@ class ElementBase : public LinkedObject
         virtual void FindExtent(void);
 		virtual void FindCentroid(Vector *);
 #ifdef MPM_CODE
-		virtual void GetShapeFunctions(int *,double *,int *,Vector *,Vector *);
-		virtual void GetShapeFunctions(int *,double *,int *,Vector *);
-		virtual void GetShapeGradients(int *,double *,int *,Vector *,double *,double *,double *);
-		virtual void GetShapeFunctionsAndGradients(int *,double *,int *,Vector *,Vector *,double *,double *,double *);
+		virtual void GetShapeFunctions(int *,double *,int *,Vector *,Vector *,MPMBase *);
+		virtual void GetShapeFunctions(int *,double *,int *,Vector *,MPMBase *);
+		virtual void GetShapeGradients(int *,double *,int *,Vector *,double *,double *,double *,MPMBase *);
+		virtual void GetShapeFunctionsAndGradients(int *,double *,int *,Vector *,Vector *,double *,double *,double *,MPMBase *);
 		virtual void GimpCompact(int *,int *,double *,double *,double *,double *);
 		virtual bool OnTheEdge(void);
 		virtual void GetListOfNeighbors(int *);
@@ -134,8 +144,8 @@ class ElementBase : public LinkedObject
 #endif
 		// class methods
 #ifdef MPM_CODE
-		static void DisableGimp(void);
-		static void EnableGimp(void);
+		static void ChangeGimp(int);
+		static void RestoreGimp(void);
 		static void AllocateNeighbors(void);
 #else
 		static void MoveCrackTipNodes(int);

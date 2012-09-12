@@ -36,22 +36,16 @@ HyperElastic::HyperElastic(char *matName) : MaterialBase(matName)
 double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,double dvyy,
 			double dvxy,double dvyx,bool storeInParticle,bool detIncrement)
 {
-	// deformation gradient (found from current strains and rotations)
-	Tensor *ep=mptr->GetStrainTensor();
-	TensorAntisym *wrot = mptr->GetRotationStrainTensor();
-	
 	// current deformation gradient in 2D
-	double Fxx = 1. + ep->xx;;
-	double Fxy = (ep->xy - wrot->xy)/2.;
-	double Fyx = (ep->xy + wrot->xy)/2.;
-	double Fyy = 1. + ep->yy;
+    double pF[3][3];
+    mptr->GetDeformationGradient(pF);
 	
 	// get new 2D deformation gradient
-	F[0][0] = (1. + dvxx)*Fxx + dvxy*Fyx;		// 1 + du/dx
-	F[0][1] = (1. + dvxx)*Fxy + dvxy*Fyy;		// du/dy
+	F[0][0] = (1. + dvxx)*pF[0][0] + dvxy*pF[1][0];		// 1 + du/dx
+	F[0][1] = (1. + dvxx)*pF[0][1] + dvxy*pF[1][1];		// du/dy
 	//F[0][2] = 0.;								// du/dz
-	F[1][0] = dvyx*Fxx + (1. + dvyy)*Fyx;		// dv/dx
-	F[1][1] = dvyx*Fxy + (1. + dvyy)*Fyy;		// 1 + dv/dy
+	F[1][0] = dvyx*pF[0][0] + (1. + dvyy)*pF[1][0];		// dv/dx
+	F[1][1] = dvyx*pF[0][1] + (1. + dvyy)*pF[1][1];		// 1 + dv/dy
 	//F[1][2] = 0.;								// dv/dz
 	//F[2][0] = 0.;								// dw/dx
 	//F[2][1] = 0.;								// dw/dy
@@ -61,6 +55,9 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
 	// (assumes plane strain so ep->zz = 0)
 	if(storeInParticle)
 	{	// strain increments
+        Tensor *ep=mptr->GetStrainTensor();
+        TensorAntisym *wrot = mptr->GetRotationStrainTensor();
+        
     	ep->xx = F[0][0] - 1.;
 		ep->yy = F[1][1] - 1.;
 		ep->xy = F[1][0] + F[0][1];
@@ -83,36 +80,27 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
 double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
 						 double dvxz,double dvzx,double dvyz,double dvzy,bool storeInParticle,bool detIncrement)
 {
-	// get new doformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
-	// deformation gradient (stored int current strains and rotations)
-	Tensor *ep=mptr->GetStrainTensor();
-	TensorAntisym *wrot = mptr->GetRotationStrainTensor();
-	
 	// current deformation gradient in 3D
-	double Fxx = 1. + ep->xx;;
-	double Fxy = (ep->xy - wrot->xy)/2.;
-	double Fxz = (ep->xz - wrot->xz)/2.;
-	double Fyx = (ep->xy + wrot->xy)/2.;
-	double Fyy = 1. + ep->yy;
-	double Fyz = (ep->yz - wrot->yz)/2.;
-	double Fzx = (ep->xz + wrot->xz)/2.;
-	double Fzy = (ep->yz + wrot->yz)/2.;
-	double Fzz = 1. + ep->zz;
+    double pF[3][3];
+    mptr->GetDeformationGradient(pF);
 	
 	// get new deformation gradient
-	F[0][0] = (1. + dvxx)*Fxx + dvxy*Fyx + dvxz*Fzx;		// 1 + du/dx
-	F[0][1] = (1. + dvxx)*Fxy + dvxy*Fyy + dvxz*Fzy;		// du/dy
-	F[0][2] = (1. + dvxx)*Fxz + dvxy*Fyz + dvxz*Fzz;		// du/dz
-	F[1][0] = dvyx*Fxx + (1. + dvyy)*Fyx + dvyz*Fzx;		// dv/dx
-	F[1][1] = dvyx*Fxy + (1. + dvyy)*Fyy + dvyz*Fzy;		// 1 + dv/dy
-	F[1][2] = dvyx*Fxz + (1. + dvyy)*Fyz + dvyz*Fzz;		// dv/dz
-	F[2][0] = dvzx*Fxx + dvzy*Fyx + (1. + dvzz)*Fzx;		// dw/dx
-	F[2][1] = dvzx*Fxy + dvzy*Fyy + (1. + dvzz)*Fzy;		// dw/dy
-	F[2][2] = dvzx*Fxz + dvzy*Fyz + (1. + dvzz)*Fzz;		// 1 + dw/dz
+	F[0][0] = (1. + dvxx)*pF[0][0] + dvxy*pF[1][0] + dvxz*pF[2][0];		// 1 + du/dx
+	F[0][1] = (1. + dvxx)*pF[0][1] + dvxy*pF[1][1] + dvxz*pF[2][1];		// du/dy
+	F[0][2] = (1. + dvxx)*pF[0][2] + dvxy*pF[1][2] + dvxz*pF[2][2];		// du/dz
+	F[1][0] = dvyx*pF[0][0] + (1. + dvyy)*pF[1][0] + dvyz*pF[2][0];		// dv/dx
+	F[1][1] = dvyx*pF[0][1] + (1. + dvyy)*pF[1][1] + dvyz*pF[2][1];		// 1 + dv/dy
+	F[1][2] = dvyx*pF[0][2] + (1. + dvyy)*pF[1][2] + dvyz*pF[2][2];		// dv/dz
+	F[2][0] = dvzx*pF[0][0] + dvzy*pF[1][0] + (1. + dvzz)*pF[2][0];		// dw/dx
+	F[2][1] = dvzx*pF[0][1] + dvzy*pF[1][1] + (1. + dvzz)*pF[2][1];		// dw/dy
+	F[2][2] = dvzx*pF[0][2] + dvzy*pF[1][2] + (1. + dvzz)*pF[2][2];		// 1 + dw/dz
 	
 	// store in total strain and rotation tensors
 	if(storeInParticle)
-	{	ep->xx = F[0][0] - 1.;
+    {   Tensor *ep=mptr->GetStrainTensor();
+        TensorAntisym *wrot = mptr->GetRotationStrainTensor();
+        
+		ep->xx = F[0][0] - 1.;
 		ep->yy = F[1][1] - 1.;
 		ep->zz = F[2][2] - 1.;
 		ep->xy = F[1][0] + F[0][1];
@@ -178,31 +166,10 @@ double HyperElastic::GetResidualStretch(MPMBase *mptr)
 
 #ifndef CONSTANT_RHO
 // Get current relative volume change = J = det F = lam1 lam2 lam3
-// If using CONSTANT_RHO, then skip, which will pass to base class result of 1
-double HyperElastic::GetCurrentRelativeVolume(MPMBase *mptr,bool threeD)
-{
-	// deformation gradient (found from current strains and rotations)
-	Tensor *ep=mptr->GetStrainTensor();
-	TensorAntisym *wrot = mptr->GetRotationStrainTensor();
-	
-	// current deformation gradient in 2D
-	double Fxx = 1. + ep->xx;;
-	double Fxy = (ep->xy - wrot->xy)/2.;
-	double Fyx = (ep->xy + wrot->xy)/2.;
-	double Fyy = 1. + ep->yy;
-    double Fzz = 1. + ep->zz;
-    
-    if(threeD)
-    {   // add 3D terms
-        double Fxz = (ep->xz - wrot->xz)/2.;
-        double Fyz = (ep->yz - wrot->yz)/2.;
-        double Fzx = (ep->xz + wrot->xz)/2.;
-        double Fzy = (ep->yz + wrot->yz)/2.;
-        
-        return Fxx*(Fyy*Fxx-Fzy*Fyz) - Fxy*(Fyx*Fzz-Fzx*Fyz) + Fxz*(Fyx*Fzy-Fzx*Fyy);
-    }
-    else
-        return Fzz*(Fxx*Fyy - Fxy*Fyx);
+// If using CONSTANT_RHO, then do not define, which will pass to base class result of 1
+// Need to have main call in material classes to allow small and large deformation material laws
+double HyperElastic::GetCurrentRelativeVolume(MPMBase *mptr)
+{   return mptr->GetRelativeVolume();
 }
 #endif
 

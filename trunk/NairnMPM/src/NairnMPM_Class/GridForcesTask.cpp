@@ -85,7 +85,7 @@ void GridForcesTask::Execute(void)
 		
         // find shape functions and derviatives
  		theElements[mpmptr->ElemID()]->
-				GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv);
+				GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
 		
         // Add particle property to each node in the element
         for(int i=1;i<=numnds;i++)

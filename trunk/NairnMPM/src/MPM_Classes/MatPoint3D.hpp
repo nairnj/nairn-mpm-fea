@@ -41,6 +41,8 @@ class MatPoint3D : public MPMBase
 		virtual void AddConcentrationGradient(Vector *);
 		virtual double FDiff(double,double,double);
 		virtual double KineticEnergy(void);
+        virtual void GetDeformationGradient(double F[][3]);
+        virtual double GetRelativeVolume(void);
 };
 
 #endif
