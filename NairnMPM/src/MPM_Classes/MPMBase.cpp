@@ -214,6 +214,7 @@ double MPMBase::GetExtWork(void) { return extWork; }
 // pointers to variables
 Vector *MPMBase::GetPFext(void) { return &pFext; }
 Vector *MPMBase::GetNcpos(void) { return &ncpos; }
+CPDIDomain *MPMBase::GetCPDIInfo(void) { return cpdi; }
 Vector *MPMBase::GetAcc(void) { return &acc; }
 Tensor *MPMBase::GetVelGrad(void) { return velGrad; }
 Tensor *MPMBase::GetStressTensor(void) { return &sp; }

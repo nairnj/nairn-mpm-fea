@@ -46,6 +46,7 @@ class MatPoint2D : public MPMBase
 		virtual double KineticEnergy(void);
         virtual void GetDeformationGradient(double F[][3]);
         virtual double GetRelativeVolume(void);
+		virtual void GetCPDINodesAndWeights(int);
 };
 
 #endif

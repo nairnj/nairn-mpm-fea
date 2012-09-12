@@ -13,6 +13,9 @@
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 
+#include "NairnMPM_Class/MeshInfo.hpp"
+
+
 #pragma mark MatPoint2D::Constructors and Destructors
 
 // Constructors
@@ -236,5 +239,63 @@ double MatPoint2D::GetRelativeVolume(void)
     // = Fzz*(Fxx*Fyy - Fxy*Fyx)
     double exy = ep.xy + eplast.xy;
     return (1. + ep.zz + eplast.zz)*((1. + ep.xx + eplast.xx)*(1. + ep.yy + eplast.yy) - 0.25*(exy*exy - wrot.xy*wrot.xy));
+}
+
+// To support CPDI find nodes in tghe particle domain, find their element,
+// their natural coordinates, and weighting values for gradient calculations
+// Should be done only once per time stept
+void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
+{
+	// get particle 2D deformation gradient
+	double pF[3][3];
+	GetDeformationGradient(pF);
+	
+	// get polygone vectors
+	Vector r1,r2,c;
+	r1.x = pF[0][0]*mpmgrid.gridx*0.25;
+	r1.y = pF[1][0]*mpmgrid.gridx*0.25;
+	r2.x = pF[0][1]*mpmgrid.gridy*0.25;
+	r2.y = pF[1][1]*mpmgrid.gridy*0.25;
+	
+	if(cpdiType == LINEAR_CPDI)
+	{	// nodes at four courves in ccw direction
+		c.x = pos.x-r1.x-r2.x;
+		c.y = pos.y-r1.y-r2.y;
+		cpdi[0].inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+		theElements[cpdi[0].inElem]->GetXiPos(&c,&cpdi[0].ncpos);
+		
+		c.x = pos.x+r1.x-r2.x;
+		c.y = pos.y+r1.y-r2.y;
+		cpdi[1].inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+		theElements[cpdi[1].inElem]->GetXiPos(&c,&cpdi[1].ncpos);
+
+		c.x = pos.x+r1.x+r2.x;
+		c.y = pos.y+r1.y+r2.y;
+		cpdi[2].inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+		theElements[cpdi[2].inElem]->GetXiPos(&c,&cpdi[2].ncpos);
+		
+		c.x = pos.x-r1.x+r2.x;
+		c.y = pos.y-r1.y+r2.y;
+		cpdi[3].inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+		theElements[cpdi[3].inElem]->GetXiPos(&c,&cpdi[3].ncpos);
+		
+		// Polygon ares
+		double Ap = 4.*(r1.x*r2.y - r1.y*r2.x);
+			
+		// gradient weighting values
+		cpdi[0].wg.x = (r1.y-r2.y)/Ap;
+		cpdi[0].wg.y = (-r1.x+r2.x)/Ap;
+		cpdi[1].wg.x = (r1.y+r2.y)/Ap;
+		cpdi[1].wg.y = (-r1.x-r2.x)/Ap;
+		cpdi[2].wg.x = (-r1.y+r2.y)/Ap;
+		cpdi[2].wg.y = (r1.x-r2.x)/Ap;
+		cpdi[3].wg.x = (-r1.y-r2.y)/Ap;
+		cpdi[3].wg.y = (r1.x+r2.x)/Ap;
+	}
+	
+	else
+	{	throw "Quadratic CPDI in 2D not yet programmed";
+	}
+
 }
 

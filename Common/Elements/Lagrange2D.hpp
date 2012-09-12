@@ -38,10 +38,6 @@ class Lagrange2D : public Quad2D
 		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *);
 		virtual void FindExtent(void);
 		virtual int Orthogonal(double *,double *,double *);
-#endif
-	
-	protected:
-#ifdef MPM_CODE
 		virtual void GetXiPos(Vector *,Vector *);
 #endif
 	

@@ -90,7 +90,7 @@ void GridForcesTask::Execute(void)
         // Add particle property to each node in the element
         for(int i=1;i<=numnds;i++)
 		{	vfld=(short)mpmptr->vfld[i];					// crack velocity field to use
-			ndptr=nd[nds[i]];					// nodal point pointer
+			ndptr=nd[nds[i]];								// nodal point pointer
 			
             // internal force vector (in g mm/sec^2 or micro N)
 			//	(note: stress is specific stress in units N/m^2 cm^3/g

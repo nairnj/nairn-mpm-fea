@@ -74,6 +74,15 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY};
 		int matID;
 	} ContactDetails;
 
+	// for each node in CPDI domain give its element
+	// its naturual coordinates, and weighting factor
+	// for finding the gradient
+	typedef struct {
+		int inElem;
+		Vector ncpos;
+		Vector wg;
+	} CPDIDomain;
+
 #else
 	// tensor (2D and axisymmetric and plane strain)
 	typedef struct {

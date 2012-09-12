@@ -250,3 +250,10 @@ double MatPoint3D::GetRelativeVolume(void)
                 + pF[0][2]*(pF[1][0]*pF[2][1]-pF[2][0]*pF[1][1]);
 }
 
+// to support CPDI return nodes for corners (or for 9 nodes) and weights for shape functions
+//	and shape function gradients
+void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
+{
+	throw "CPDI nodes not yet available for 2D";
+}
+
