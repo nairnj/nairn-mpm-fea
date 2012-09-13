@@ -12,7 +12,6 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
-
 #include "NairnMPM_Class/MeshInfo.hpp"
 
 
@@ -257,44 +256,109 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 	r2.x = pF[0][1]*mpmgrid.gridy*0.25;
 	r2.y = pF[1][1]*mpmgrid.gridy*0.25;
 	
+    // Polygon area
+    double Ap = 4.*(r1.x*r2.y - r1.y*r2.x);
+    
 	if(cpdiType == LINEAR_CPDI)
 	{	// nodes at four courves in ccw direction
 		c.x = pos.x-r1.x-r2.x;
 		c.y = pos.y-r1.y-r2.y;
-		cpdi[0].inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
-		theElements[cpdi[0].inElem]->GetXiPos(&c,&cpdi[0].ncpos);
+		cpdi[0]->inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+		theElements[cpdi[0]->inElem]->GetXiPos(&c,&cpdi[0]->ncpos);
 		
 		c.x = pos.x+r1.x-r2.x;
 		c.y = pos.y+r1.y-r2.y;
-		cpdi[1].inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
-		theElements[cpdi[1].inElem]->GetXiPos(&c,&cpdi[1].ncpos);
+		cpdi[1]->inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+		theElements[cpdi[1]->inElem]->GetXiPos(&c,&cpdi[1]->ncpos);
 
 		c.x = pos.x+r1.x+r2.x;
 		c.y = pos.y+r1.y+r2.y;
-		cpdi[2].inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
-		theElements[cpdi[2].inElem]->GetXiPos(&c,&cpdi[2].ncpos);
+		cpdi[2]->inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+		theElements[cpdi[2]->inElem]->GetXiPos(&c,&cpdi[2]->ncpos);
 		
 		c.x = pos.x-r1.x+r2.x;
 		c.y = pos.y-r1.y+r2.y;
-		cpdi[3].inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
-		theElements[cpdi[3].inElem]->GetXiPos(&c,&cpdi[3].ncpos);
+		cpdi[3]->inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+		theElements[cpdi[3]->inElem]->GetXiPos(&c,&cpdi[3]->ncpos);
 		
-		// Polygon ares
-		double Ap = 4.*(r1.x*r2.y - r1.y*r2.x);
-			
 		// gradient weighting values
-		cpdi[0].wg.x = (r1.y-r2.y)/Ap;
-		cpdi[0].wg.y = (-r1.x+r2.x)/Ap;
-		cpdi[1].wg.x = (r1.y+r2.y)/Ap;
-		cpdi[1].wg.y = (-r1.x-r2.x)/Ap;
-		cpdi[2].wg.x = (-r1.y+r2.y)/Ap;
-		cpdi[2].wg.y = (r1.x-r2.x)/Ap;
-		cpdi[3].wg.x = (-r1.y-r2.y)/Ap;
-		cpdi[3].wg.y = (r1.x+r2.x)/Ap;
+		cpdi[0]->wg.x = (r1.y-r2.y)/Ap;
+		cpdi[0]->wg.y = (-r1.x+r2.x)/Ap;
+		cpdi[1]->wg.x = (r1.y+r2.y)/Ap;
+		cpdi[1]->wg.y = (-r1.x-r2.x)/Ap;
+		cpdi[2]->wg.x = (-r1.y+r2.y)/Ap;
+		cpdi[2]->wg.y = (r1.x-r2.x)/Ap;
+		cpdi[3]->wg.x = (-r1.y-r2.y)/Ap;
+		cpdi[3]->wg.y = (r1.x+r2.x)/Ap;
 	}
 	
 	else
-	{	throw "Quadratic CPDI in 2D not yet programmed";
+	{	// nodes at four courves in ccw direction
+		c.x = pos.x-r1.x-r2.x;
+		c.y = pos.y-r1.y-r2.y;
+		cpdi[0]->inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+		theElements[cpdi[0]->inElem]->GetXiPos(&c,&cpdi[0]->ncpos);
+        
+		c.x = pos.x+r1.x-r2.x;
+		c.y = pos.y+r1.y-r2.y;
+		cpdi[1]->inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+		theElements[cpdi[1]->inElem]->GetXiPos(&c,&cpdi[1]->ncpos);
+        
+		c.x = pos.x+r1.x+r2.x;
+		c.y = pos.y+r1.y+r2.y;
+		cpdi[2]->inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+		theElements[cpdi[2]->inElem]->GetXiPos(&c,&cpdi[2]->ncpos);
+		
+		c.x = pos.x-r1.x+r2.x;
+		c.y = pos.y-r1.y+r2.y;
+		cpdi[3]->inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+		theElements[cpdi[3]->inElem]->GetXiPos(&c,&cpdi[3]->ncpos);
+        
+        // nodes at four edges in ccw direction
+        c.x = pos.x-r2.x;
+        c.y = pos.y-r2.y;
+        cpdi[4]->inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+        theElements[cpdi[4]->inElem]->GetXiPos(&c,&cpdi[4]->ncpos);
+        
+        c.x = pos.x+r1.x;
+        c.y = pos.y+r1.y;
+        cpdi[5]->inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+        theElements[cpdi[5]->inElem]->GetXiPos(&c,&cpdi[5]->ncpos);
+        
+        c.x = pos.x+r2.x;
+        c.y = pos.y+r2.y;
+        cpdi[6]->inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+        theElements[cpdi[6]->inElem]->GetXiPos(&c,&cpdi[6]->ncpos);
+        
+        c.x = pos.x-r1.x;
+        c.y = pos.y-r1.y;
+        cpdi[7]->inElem = mpmgrid.FindElementFromPoint(&c)-1;			// watch out for <0
+        theElements[cpdi[7]->inElem]->GetXiPos(&c,&cpdi[7]->ncpos);
+        
+        // node on material point
+        cpdi[8]->inElem = ElemID();
+        theElements[cpdi[8]->inElem]->GetXiPos(&pos,&cpdi[8]->ncpos);
+        
+		// gradient weighting values
+        Ap *= 3.;
+		cpdi[0]->wg.x = (r1.y-r2.y)/Ap;
+		cpdi[0]->wg.y = (-r1.x+r2.x)/Ap;
+		cpdi[1]->wg.x = (r1.y+r2.y)/Ap;
+		cpdi[1]->wg.y = (-r1.x-r2.x)/Ap;
+		cpdi[2]->wg.x = (-r1.y+r2.y)/Ap;
+		cpdi[2]->wg.y = (r1.x-r2.x)/Ap;
+		cpdi[3]->wg.x = (-r1.y-r2.y)/Ap;
+		cpdi[3]->wg.y = (r1.x+r2.x)/Ap;
+		cpdi[4]->wg.x = 4.*r1.y/Ap;
+		cpdi[4]->wg.y = -4.*r1.x/Ap;
+		cpdi[5]->wg.x = 4.*r2.y/Ap;
+		cpdi[5]->wg.y = -4.*r2.x/Ap;
+		cpdi[6]->wg.x = -4.*r1.y/Ap;
+		cpdi[6]->wg.y = 4.*r1.x/Ap;
+		cpdi[7]->wg.x = -4.*r2.y/Ap;
+		cpdi[7]->wg.y = 4.*r2.x/Ap;
+		cpdi[8]->wg.x = 0.;
+		cpdi[8]->wg.y = 0.;
 	}
 
 }

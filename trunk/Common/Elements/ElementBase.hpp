@@ -27,12 +27,6 @@ class MPMBase;
 #define EIGHT_NODE_ISO_BRICK 7
 #define NINE_NODE_LAGRANGE 8
 
-// GIMP methods
-#define POINT_GIMP 0
-#define UNIFORM_GIMP 1
-#define LINEAR_CPDI 2
-#define QUADRATIC_CPDI 3
-
 // other constants
 #define TOLERANCE_RATIO 0.1
 
@@ -110,7 +104,7 @@ class ElementBase : public LinkedObject
 		virtual void GetShapeGradients(int *,double *,int *,Vector *,double *,double *,double *,MPMBase *);
 		virtual void GetShapeFunctionsAndGradients(int *,double *,int *,Vector *,Vector *,double *,double *,double *,MPMBase *);
 		virtual void GimpCompact(int *,int *,double *,double *,double *,double *);
-		virtual void GetCPDIFunctions(int,CPDIDomain *,double *,int *,int *,double *,double *,double *,double *);
+		virtual void GetCPDIFunctions(int,CPDIDomain **,double *,int *,int *,double *,double *,double *,double *);
 		virtual bool OnTheEdge(void);
 		virtual void GetListOfNeighbors(int *);
 		virtual int NextNode(int);

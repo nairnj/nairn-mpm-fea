@@ -88,6 +88,31 @@ void MPMBase::AllocateJStructures(void)
 {	velGrad=new Tensor;
 }
 
+// allocate structures when needed for particle domains
+bool MPMBase::AllocateCPDIStructures(int gimpType)
+{
+    int cpdiSize=0;
+    
+    if(gimpType==LINEAR_CPDI)
+        cpdiSize = 4;
+    else if(gimpType==QUADRATIC_CPDI)
+        cpdiSize = 9;
+    else
+        return TRUE;
+    
+    // create memory for cpdiSize pointers
+    cpdi = (CPDIDomain **)malloc(sizeof(LinkedObject *)*(cpdiSize));
+    if(cpdi == NULL) return FALSE;
+    
+    // create each one
+    int i;
+    for(i=0;i<cpdiSize;i++)
+        cpdi[i] = new CPDIDomain;
+    
+    return TRUE;
+        
+}
+
 // Destructor (and it is virtual)
 MPMBase::~MPMBase() { }
 
@@ -214,7 +239,7 @@ double MPMBase::GetExtWork(void) { return extWork; }
 // pointers to variables
 Vector *MPMBase::GetPFext(void) { return &pFext; }
 Vector *MPMBase::GetNcpos(void) { return &ncpos; }
-CPDIDomain *MPMBase::GetCPDIInfo(void) { return cpdi; }
+CPDIDomain **MPMBase::GetCPDIInfo(void) { return cpdi; }
 Vector *MPMBase::GetAcc(void) { return &acc; }
 Tensor *MPMBase::GetVelGrad(void) { return velGrad; }
 Tensor *MPMBase::GetStressTensor(void) { return &sp; }
