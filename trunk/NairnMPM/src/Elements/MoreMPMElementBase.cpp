@@ -10,6 +10,7 @@
 #include "Nodes/NodalPoint.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "MPM_Classes/MPMBase.hpp"
+#include "Exceptions/MPMTermination.hpp"
 
 #define MAXITER 100
 
@@ -622,7 +623,12 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,double *ws,int 
 			}
 		}
 		else
-		{	if(fn[count]>1.e-10) count++;		// keep only if shape is nonzero
+		{	if(fn[count]>1.e-10)
+			{	count++;		// keep only if shape is nonzero
+				if(count>=MaxShapeNds)
+				{	throw MPMTermination("Too many CPDI nodes found; increase MaxShapeNds in source code to fix","ElementBase::GetCPDIFunctions");
+				}
+			}
 			nds[count] = cnodes[i];
 			fn[count] = wsSi[i];
 			if(xDeriv!=NULL)

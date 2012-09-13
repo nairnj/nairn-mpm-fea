@@ -178,24 +178,40 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 	neighbor[i]=0;
 }
 
-// For structured grid only, find element from location (1-based)
+// For structured grid only, find element from location and return result (1-based element number)
+// throws empty exception if not a structured grid (horiz<0) or if point is not in the grid
 int MeshInfo::FindElementFromPoint(Vector *pt)
 {
     int theElem = 0;
     
     // error if not structure grid
-    if(horiz<0) return theElem;
+    if(horiz<0) throw "";
     
-    int col = (int)((pt->x-xmin)/gridx);
-    if(col == horiz) horiz--;
+    int col = (int)((pt->x-xmin)/gridx);		// zero-based column # from 0 to horiz-1
+	if(col<0 || col>=horiz)
+	{	if(pt->x == xmin+horiz*gridx)
+			col = horiz-1;
+		else
+			throw "";
+	}
     int row = (int)((pt->y-ymin)/gridy);
-    if(row == vert) vert--;
+	if(row<0 || row>=vert)
+	{	if(pt->y == ymin+vert*gridy)
+			row = vert-1;
+		else
+			throw "";
+	}
     
     // 3D
     if(gridz > 0.)
     {   // not written yet
         int zrow = (int)((pt->z-zmin)/gridz);
-        if(zrow == depth) zrow--;
+		if(zrow<0 || zrow>=depth)
+		{	if(pt->z == zmin+depth*gridz)
+				zrow = depth-1;
+			else
+				throw "";
+		}
         theElem = horiz*(zrow*vert + row) + col + 1;
     }
     
@@ -240,6 +256,7 @@ void MeshInfo::SetCartesian(int style,double xcell,double ycell,double zcell)
 }
 
 // set grid style (only set by <Grid> command). For 2D, d=0 and z is the specified thickness, or 1.0 by default.
+// horiz is number of elements in x direction, vert is y direction, depth in z direction (or 0 in 2D)
 void MeshInfo::SetElements(int h,int v,int d,double x,double y,double z)
 {	horiz=h;
 	vert=v;
