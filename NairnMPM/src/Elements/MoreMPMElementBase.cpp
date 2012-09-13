@@ -13,7 +13,11 @@
 
 #define MAXITER 100
 
+// weigths for finding CPDI shape functions
 static double wslCPDI[4] = {0.25,0.25,0.25,0.25};
+static double wsqCPDI[9] = {0.027777777777778,0.027777777777778,0.027777777777778,0.027777777777778,
+                            0.111111111111111,0.111111111111111,0.111111111111111,0.111111111111111,
+                            0.444444444444444};
 
 #pragma mark ElementBase: Constructors and Destructor MPM Only
 
@@ -45,7 +49,9 @@ ElementBase::~ElementBase()
 	See other GetShapeFunctions() if need to change
   NOTE: This is called in MassAndMomentum task at start of time step. Subsequent needs
 	for shape function call without pos and therefore need the xipos calculated in the
-	fisrt call. Crack methods call it too and do not need to save xipos
+	fisrt call.
+  NOTE: Crack update and tractions methods call this method too and do not need to save xipos.
+    Those calls have mpmptr==NULL
 */
 void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,Vector *xipos,MPMBase *mpmptr)
 {
@@ -68,7 +74,12 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,
         }
             
         case LINEAR_CPDI:
-		{	if(mpmptr==NULL) cout << "NULL mpmptr" << endl;
+		{	if(mpmptr==NULL)
+            {   ChangeGimp(POINT_GIMP);
+                GetShapeFunctions(numnds,fn,nds,pos,xipos,NULL);
+                RestoreGimp();
+                break;
+            }
 			mpmptr->GetCPDINodesAndWeights(useGimp);
 			GetCPDIFunctions(4,mpmptr->GetCPDIInfo(),wslCPDI,numnds,nds,fn,NULL,NULL,NULL);
             
@@ -100,8 +111,16 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,
         }
             
         case QUADRATIC_CPDI:
-			throw "Quadratic CPDI not alloed yet";
+		{	if(mpmptr==NULL)
+            {   ChangeGimp(POINT_GIMP);
+                GetShapeFunctions(numnds,fn,nds,pos,xipos,NULL);
+                RestoreGimp();
+                break;
+            }
+			mpmptr->GetCPDINodesAndWeights(useGimp);
+			GetCPDIFunctions(9,mpmptr->GetCPDIInfo(),wsqCPDI,numnds,nds,fn,NULL,NULL,NULL);
             break;
+        }
     }
 }
 
@@ -164,8 +183,10 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipo
 		}
 			
         case QUADRATIC_CPDI:
-			throw "Quadratic CPDI not available yet";
+		{	if(mpmptr==NULL) cout << "NULL mpmptr" << endl;
+			GetCPDIFunctions(9,mpmptr->GetCPDIInfo(),wsqCPDI,numnds,nds,fn,NULL,NULL,NULL);
             break;
+        }
     }
 }
 
@@ -245,8 +266,10 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
 		}
 			
 		case QUADRATIC_CPDI:
-			throw "Quadratic CPDI not available yet";
+		{	if(mpmptr==NULL) cout << "NULL mpmptr" << endl;
+			GetCPDIFunctions(9,mpmptr->GetCPDIInfo(),wsqCPDI,numnds,nds,fn,xDeriv,yDeriv,zDeriv);
 			break;
+        }
     }
 }
 
@@ -328,8 +351,11 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
 		}
 		
 		case QUADRATIC_CPDI:
-			throw "Quadratic CPDI not available yet";
+		{	if(mpmptr==NULL) cout << "NULL mpmptr" << endl;
+			mpmptr->GetCPDINodesAndWeights(useGimp);
+			GetCPDIFunctions(9,mpmptr->GetCPDIInfo(),wsqCPDI,numnds,nds,fn,xDeriv,yDeriv,zDeriv);
 			break;
+        }
 
     }
 }
@@ -508,7 +534,7 @@ bool ElementBase::OnTheEdge(void)
 // xa - array of coordinates for corner nodes (numDnds of them)
 // ws - shape function weights (numNds of them)
 // wg - gradient weights (numNds of them)
-void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain *cpdi,double *ws,int *numnds,int *nds,
+void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,double *ws,int *numnds,int *nds,
 								   double *fn,double *xDeriv,double *yDeriv,double *zDeriv)
 {
 	int i,j;
@@ -521,17 +547,17 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain *cpdi,double *ws,int *
 	// loop over the domain nodes
 	for(i=0;i<numDnds;i++)
 	{	// get shape straight grid shape functions
-		ElementBase *elem = theElements[cpdi[i].inElem];
+		ElementBase *elem = theElements[cpdi[i]->inElem];
 		elem->GetNodes(numnds,nds);
-		elem->ShapeFunction(&cpdi[i].ncpos,FALSE,&fn[1],NULL,NULL,NULL);
+		elem->ShapeFunction(&cpdi[i]->ncpos,FALSE,&fn[1],NULL,NULL,NULL);
 		
 		// loop over shape grid shape functions and collect in arrays
 		for(j=1;j<=*numnds;j++)
 		{   cnodes[ncnds] = nds[j];
 			wsSi[ncnds] = ws[i]*fn[j];
 			if(xDeriv!=NULL)
-			{	wgSi[ncnds].x = cpdi[i].wg.x*fn[j];
-				wgSi[ncnds].y = cpdi[i].wg.y*fn[j];
+			{	wgSi[ncnds].x = cpdi[i]->wg.x*fn[j];
+				wgSi[ncnds].y = cpdi[i]->wg.y*fn[j];
 			}
 			ncnds++;
 		}

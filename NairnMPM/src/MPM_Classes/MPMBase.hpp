@@ -48,6 +48,7 @@ class MPMBase : public LinkedObject
 		void AllocateDiffusion(void);
 		void AllocateTemperature(void);
 		void AllocateJStructures(void);
+        bool AllocateCPDIStructures(int gimpType);
         
         // virtual methods
         virtual double thickness(void) = 0;
@@ -110,7 +111,7 @@ class MPMBase : public LinkedObject
         void SetVelocityGradient(double,double,double,double,int);
 		Vector *GetPFext(void);
 		Vector *GetNcpos(void);
-		CPDIDomain *GetCPDIInfo(void);
+		CPDIDomain **GetCPDIInfo(void);
 		Vector *GetAcc(void);
 		Tensor *GetVelGrad(void);
 		double GetPlastEnergy(void);
@@ -140,7 +141,7 @@ class MPMBase : public LinkedObject
 		// variables (changed in MPM time step)
 		Vector pFext;				// external force
 		Vector ncpos;				// natural coordinates position
-		CPDIDomain cpdi[4];		// Should makle pointer and allocate only what is needed
+		CPDIDomain **cpdi;		// Should makle pointer and allocate only what is needed
 		Vector acc;					// acceleration
 		Tensor *velGrad;			// used for J Integral only
 		Tensor sp;					// stress tensor (init 0)

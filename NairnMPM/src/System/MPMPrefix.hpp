@@ -67,4 +67,12 @@ enum { NOGROWTH=0,GROWNOW };
 // crack velocity fields
 enum { NO_CRACK=0,ABOVE_CRACK,BELOW_CRACK};
 
+// GIMP methods
+#define POINT_GIMP 0
+#define UNIFORM_GIMP 1
+#define LINEAR_CPDI 2
+#define QUADRATIC_CPDI 3
+
+
+
 
