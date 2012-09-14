@@ -620,16 +620,16 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         block=BCSHAPE;
     }
 
-    // Read into load boundary conditions (direction,style,values)
+    // Read into load/traction boundary conditions (direction,style,values)
 	//  or concentration flux BC on current shape
-    else if(strcmp(xName,"LoadBC")==0 || strcmp(xName,"ConcFluxBC")==0)
-	{	if(strcmp(xName,"LoadBC")==0)
+    else if(strcmp(xName,"LoadBC")==0 || strcmp(xName,"ConcFluxBC")==0 || strcmp(xName,"TractionBC")==0)
+	{	if(strcmp(xName,"LoadBC")==0 || strcmp(xName,"TractionBC")==0)
 			ValidateCommand(xName,BCSHAPE,ANY_DIM);
 		else
 			ValidateCommand(xName,BCSHAPE,ANY_DIM);
 		if(!theShape->RequiredBlock(PARTICLEBCHEADER))
 			ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
-        int dof=0,style=1;
+        int dof=0,style=1,face=1;
         double ftime=0.0,load=0.0;
 		char *function=NULL;
         numAttr=attrs.getLength();
@@ -640,7 +640,9 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%d",&dof);
             else if(strcmp(aName,"style")==0)
                 sscanf(value,"%d",&style);
-            else if(strcmp(aName,"load")==0 || strcmp(aName,"value")==0)
+            else if(strcmp(aName,"face")==0)
+                sscanf(value,"%d",&face);
+            else if(strcmp(aName,"load")==0 || strcmp(aName,"value")==0 || strcmp(aName,"traction")==0)
                 sscanf(value,"%lf",&load);
             else if(strcmp(aName,"ftime")==0 || strcmp(aName,"time")==0 || strcmp(aName,"bath")==0)
                 sscanf(value,"%lf",&ftime);
@@ -653,11 +655,25 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             delete [] value;
         }
 		if(fmobj->IsThreeD())
-		{	if(dof<1 || dof>3)
-				throw SAXException("'dir' in <LoadBC> or <ConcFluxBC> element must be 1, 2, or 3 for 3D analyses.");
+        {   // checks for 3D
+			if(dof<1 || dof>3)
+				throw SAXException("'dir' in <LoadBC>, <TractionBC>, or <ConcFluxBC> element must be 1, 2, or 3 for 3D analyses.");
+            if(strcmp(xName,"TractionBC")==0)
+            {	if(face<1 || face>6)
+                    throw SAXException("'face' in <TractionBC> element must be 1 to 6 for 3D analyses.");
+                throw SAXException("<TractionBC> element not yet available for 3D analyses.");
+            }
 		}
-        else if(dof>2 || dof<1)
-            throw SAXException("'dir' in <LoadBC> or <ConcFluxBC> element must be 1 or 2 for 2D analyses.");
+        else
+        {   // checks for 2D
+            if(dof>2 || dof<1)
+                throw SAXException("'dir' in <LoadBC>, <TractionBC>, or <ConcFluxBC> element must be 1 or 2 for 2D analyses.");
+            if(strcmp(xName,"TractionBC")==0)
+            {	if(face<1 || face>4)
+                    throw SAXException("'face' in <TractionBC> element must be 1 to 4 for 3D analyses.");
+            }
+        }
+
 		
 		// separate search depending on type
 		if(strcmp(xName,"LoadBC")==0)
@@ -676,13 +692,27 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				mpLoadCtrl->AddObject(newLoadBC);
 			}
 		}
+		else if(strcmp(xName,"TractionBC")==0)
+        {   if(style==SILENT)
+                throw SAXException("Tractions boundary conditions cannot use silent style.");
+            
+		    // check each material point
+			//MatPtLoadBC *newLoadBC;
+			theShape->resetParticleEnumerator();
+			while((i=theShape->nextParticle())>=0)
+			{   //newLoadBC=new MatPtLoadBC(i+1,dof,style);
+				//newLoadBC->ftime=ftime;
+				//newLoadBC->SetFunction(function);
+				//mpLoadCtrl->AddObject(newLoadBC);
+			}
+		}
 		else
         {	if(dof==2 && style!=FUNCTION_VALUE && style!=SILENT)
 				throw SAXException("Coupled concentration flux condition must use function style");
 			else if(dof==3 && style!=SILENT)
 				throw SAXException("'dir' in this <ConcFluxBC> element must be 1 or 2 .");
 			else if(dof==3 && style==SILENT)
-				throw SAXException("Silent <ConcFluxBC> is still in development in 2D and cannoe be used in 3D analyses.");
+				throw SAXException("Silent <ConcFluxBC> is still in development in 2D and cannot be used in 3D analyses.");
 				
 			// check each material point
 			MatPtFluxBC *newFluxBC;

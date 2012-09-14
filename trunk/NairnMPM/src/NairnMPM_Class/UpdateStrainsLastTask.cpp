@@ -82,14 +82,17 @@ void UpdateStrainsLastTask::Execute(void)
 	// loop over non-rigid particles
 	for(p=0;p<nmpms;p++)
 	{	matID=theMaterials[mpm[p]->MatID()];
-		if(matID->Rigid()) continue;
+		if(matID->Rigid()) continue;            // skip rigid BCs and rigid contact materials
 		mp=mpm[p]->mp;			// in g
 		matfld=matID->GetField();
 		
 		// find shape functions (why ever need gradients?)
 		iel=mpm[p]->ElemID();
 		if(fmobj->multiMaterialMode)
-			theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
+        {   // Don't need gradients except for mass gradient, and that not changed here
+            //theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
+            theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
+        }
 		else
 			theElements[iel]->GetShapeFunctions(&numnds,fn,nds,mpm[p]->GetNcpos(),mpm[p]);
 		
@@ -101,6 +104,11 @@ void UpdateStrainsLastTask::Execute(void)
 			
 			// add updated displacement and volume (if cracks, not 3D)
 			contact.AddDisplacementTask6(vfld,matfld,nd[nds[i]],mpm[p],fn[i]);
+            
+            // material contact calculations (not needed since using initial position and mass not changed)
+            // if later needed, must zero in RezeronodesTask6() method
+            //if(fmobj->multiMaterialMode)
+            //    nd[nds[i]]->AddMassGradient(vfld,matfld,mp,xDeriv[i],yDeriv[i],zDeriv[i]);
 		}
 	}
 	

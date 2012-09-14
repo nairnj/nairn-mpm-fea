@@ -60,6 +60,8 @@ class ElementBase : public LinkedObject
 #ifdef MPM_CODE
 		static int useGimp;             // Code for GIMP method (0 is classic MPM special case of GIMP)
 		static int analysisGimp;		// store GIMP option in case need to disable for a while
+        static int numCPDINodes;        // number of nodes used by CPDI in particle domain
+        static double *wShape;          // weighting values for each node when finding shape function using CPDI
 #endif
 		
         // constructors and destructors
@@ -143,6 +145,7 @@ class ElementBase : public LinkedObject
 		static void ChangeGimp(int);
 		static void RestoreGimp(void);
 		static void AllocateNeighbors(void);
+        static void InitializeCPDI(void);
 #else
 		static void MoveCrackTipNodes(int);
 #endif
