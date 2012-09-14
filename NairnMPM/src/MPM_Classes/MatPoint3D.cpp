@@ -254,6 +254,14 @@ double MatPoint3D::GetRelativeVolume(void)
 //	and shape function gradients
 void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 {
-	throw "CPDI nodes not yet available for 2D";
+	throw "CPDI nodes not yet available for 3D";
+}
+
+// To support traction boundary conditions, find the deformed edge, natural coordinates of
+// the corners around the face, elements for those faces, and a normal vector in direction
+// of the traction. Input vectors need to be length 4
+void MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tnorm)
+{
+	throw "Traction boundary conditions not yet available for 3D";
 }
 

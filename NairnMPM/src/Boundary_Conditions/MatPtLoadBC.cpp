@@ -31,7 +31,7 @@ BoundaryCondition *MatPtLoadBC::PrintBC(ostream &os)
 {
     char nline[200];
     
-    sprintf(nline,"%5d %2d %2d %15.7e %15.7e",ptNum,direction,style,value,ftime);
+    sprintf(nline,"%7d %2d %2d %15.7e %15.7e",ptNum,direction,style,value,ftime);
     os << nline;
 	PrintFunction(os);
 	

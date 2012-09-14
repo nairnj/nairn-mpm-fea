@@ -18,6 +18,7 @@
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
+#include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Exceptions/StrX.hpp"
 #include "Read_XML/ArcController.hpp"
@@ -38,6 +39,7 @@
 #include "Read_XML/mathexpr.hpp"
 #include "Read_XML/ElementsController.hpp"
 #include "Read_XML/MaterialController.hpp"
+
 
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
@@ -642,7 +644,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%d",&style);
             else if(strcmp(aName,"face")==0)
                 sscanf(value,"%d",&face);
-            else if(strcmp(aName,"load")==0 || strcmp(aName,"value")==0 || strcmp(aName,"traction")==0)
+            else if(strcmp(aName,"load")==0 || strcmp(aName,"value")==0 || strcmp(aName,"stress")==0)
                 sscanf(value,"%lf",&load);
             else if(strcmp(aName,"ftime")==0 || strcmp(aName,"time")==0 || strcmp(aName,"bath")==0)
                 sscanf(value,"%lf",&ftime);
@@ -697,13 +699,14 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 throw SAXException("Tractions boundary conditions cannot use silent style.");
             
 		    // check each material point
-			//MatPtLoadBC *newLoadBC;
+			MatPtTractionBC *newTractionBC;
 			theShape->resetParticleEnumerator();
 			while((i=theShape->nextParticle())>=0)
-			{   //newLoadBC=new MatPtLoadBC(i+1,dof,style);
-				//newLoadBC->ftime=ftime;
-				//newLoadBC->SetFunction(function);
-				//mpLoadCtrl->AddObject(newLoadBC);
+			{   newTractionBC=new MatPtTractionBC(i+1,dof,face,style);
+				newTractionBC->ftime=ftime;
+				newTractionBC->SetFunction(function);
+				newTractionBC->value=load;
+				mpTractionCtrl->AddObject(newTractionBC);
 			}
 		}
 		else

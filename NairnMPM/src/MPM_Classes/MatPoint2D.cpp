@@ -285,14 +285,15 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 			theElements[cpdi[3]->inElem]->GetXiPos(&c,&cpdi[3]->ncpos);
 			
 			// gradient weighting values
-			cpdi[0]->wg.x = (r1.y-r2.y)/Ap;
-			cpdi[0]->wg.y = (-r1.x+r2.x)/Ap;
-			cpdi[1]->wg.x = (r1.y+r2.y)/Ap;
-			cpdi[1]->wg.y = (-r1.x-r2.x)/Ap;
-			cpdi[2]->wg.x = (-r1.y+r2.y)/Ap;
-			cpdi[2]->wg.y = (r1.x-r2.x)/Ap;
-			cpdi[3]->wg.x = (-r1.y-r2.y)/Ap;
-			cpdi[3]->wg.y = (r1.x+r2.x)/Ap;
+			Ap = 1./Ap;
+			cpdi[0]->wg.x = (r1.y-r2.y)*Ap;
+			cpdi[0]->wg.y = (-r1.x+r2.x)*Ap;
+			cpdi[1]->wg.x = (r1.y+r2.y)*Ap;
+			cpdi[1]->wg.y = (-r1.x-r2.x)*Ap;
+			cpdi[2]->wg.x = (-r1.y+r2.y)*Ap;
+			cpdi[2]->wg.y = (r1.x-r2.x)*Ap;
+			cpdi[3]->wg.x = (-r1.y-r2.y)*Ap;
+			cpdi[3]->wg.y = (r1.x+r2.x)*Ap;
 		}
 		
 		else
@@ -342,7 +343,7 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 			cpdi[8]->inElem = ElemID();
 			theElements[cpdi[8]->inElem]->GetXiPos(&pos,&cpdi[8]->ncpos);
 			
-			// gradient weighting values
+			// gradient weighting values - use linear weights
 			Ap = 1./(3.*Ap);
 			cpdi[0]->wg.x = (r1.y-r2.y)*Ap;
 			cpdi[0]->wg.y = (-r1.x+r2.x)*Ap;
@@ -362,11 +363,113 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 			cpdi[7]->wg.y = 4.*r2.x*Ap;
 			cpdi[8]->wg.x = 0.;
 			cpdi[8]->wg.y = 0.;
+			
+			/*
+			int i;
+			for(i=4;i<9;i++)
+			{	cpdi[i]->wg.x = 0.;
+				cpdi[i]->wg.y = 0.;
+			}
+			*/
 		}
 	}
 	catch(...)
-	{	throw MPMTermination("A CPDI partical domain nodes has left the grid.","MatPoint2D::GetCPDINodesAndWeights");
+	{	throw MPMTermination("A CPDI partical domain node has left the grid.","MatPoint2D::GetCPDINodesAndWeights");
 	}
+
+}
+
+// To support traction boundary conditions, find the deformed edge, natural coordinates of
+// the corners along the edge, elements for those edges, and a normal vector in direction
+// of the traction
+void MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tnorm)
+{
+	// get particle 2D deformation gradient
+	double pF[3][3];
+	GetDeformationGradient(pF);
+	
+	// get polygon vectors - these are from particle to edge
+    //      and generalize semi width lp in 1D GIMP
+	Vector r1,r2,c1,c2;
+	r1.x = pF[0][0]*mpmgrid.gridx*0.25;
+	r1.y = pF[1][0]*mpmgrid.gridx*0.25;
+	r2.x = pF[0][1]*mpmgrid.gridy*0.25;
+	r2.y = pF[1][1]*mpmgrid.gridy*0.25;
+	
+	switch(face)
+	{	case 1:
+			// lower edge
+			c1.x = pos.x-r1.x-r2.x;
+			c1.y = pos.y-r1.y-r2.y;
+			c2.x = pos.x+r1.x-r2.x;
+			c2.y = pos.y+r1.y-r2.y;
+			break;
+		
+		case 2:
+			// right edgt
+			c1.x = pos.x+r1.x-r2.x;
+			c1.y = pos.y+r1.y-r2.y;
+			c2.x = pos.x+r1.x+r2.x;
+			c2.y = pos.y+r1.y+r2.y;
+			break;
+		
+		case 3:
+			// top edge
+			c1.x = pos.x+r1.x+r2.x;
+			c1.y = pos.y+r1.y+r2.y;
+			c2.x = pos.x-r1.x+r2.x;
+			c2.y = pos.y-r1.y+r2.y;
+			break;
+		
+		default:
+			// left edge
+			c1.x = pos.x-r1.x+r2.x;
+			c1.y = pos.y-r1.y+r2.y;
+			c2.x = pos.x-r1.x-r2.x;
+			c2.y = pos.y-r1.y-r2.y;
+			break;
+	}
+	
+	// get elements
+	try
+	{	cElem[0] = mpmgrid.FindElementFromPoint(&c1)-1;
+		theElements[cElem[0]]->GetXiPos(&c1,&corners[0]);
+		
+		cElem[1] = mpmgrid.FindElementFromPoint(&c2)-1;
+		theElements[cElem[1]]->GetXiPos(&c1,&corners[1]);
+	}
+	catch(...)
+	{	throw MPMTermination("A Traction edge node has left the grid.","MatPoint2D::GetTractionInfo");
+	}
+	
+	// get traction normal vector
+	switch(dof)
+	{	case 1:
+			// normal is (c2-c1) X (0,0,1)
+			tnorm->x = c2.y - c1.y;
+			tnorm->y = c1.x - c2.x;
+			break;
+		
+		default:
+			// shear
+			if(face==2 || face==4)
+			{	// left and right go from c1 to c2
+				tnorm->x = c2.x-c1.x;
+				tnorm->y = c2.y-c1.y;
+			}
+			else
+			{	// top and bottom go from c2 to c1
+				tnorm->x = c1.x-c2.x;
+				tnorm->y = c1.y-c2.y;
+			}
+			break;
+	}
+	
+	// normalize the vector
+	double tmag = 1./sqrt(tnorm->x*tnorm->x + tnorm->y*tnorm->y);
+	tnorm->x *= tmag;
+	tnorm->y *= tmag;
+	tnorm->z = 0.;
 
 }
 

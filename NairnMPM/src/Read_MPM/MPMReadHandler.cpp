@@ -25,6 +25,7 @@
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
+#include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
 #include "Read_XML/NodesController.hpp"
 #include "Read_XML/ElementsController.hpp"
@@ -801,6 +802,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,NO_BLOCK,ANY_DIM);
 		block=PARTICLEBCHEADER;
 		mpLoadCtrl=new ParseController();
+		mpTractionCtrl=new ParseController();
 		mpConcFluxCtrl=new ParseController();
     }
 
@@ -1031,8 +1033,10 @@ void MPMReadHandler::myEndElement(char *xName)
 	
 	else if(strcmp(xName,"ParticleBCs")==0)
 	{	firstLoadedPt=(MatPtLoadBC *)mpLoadCtrl->firstObject;
+		firstTractionPt=(MatPtTractionBC *)mpTractionCtrl->firstObject;
 		firstFluxPt=(MatPtFluxBC *)mpConcFluxCtrl->firstObject;
 		delete mpLoadCtrl;
+		delete mpTractionCtrl;
 		delete mpConcFluxCtrl;
 	}
 	

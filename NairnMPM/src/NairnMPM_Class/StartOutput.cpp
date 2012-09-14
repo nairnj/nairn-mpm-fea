@@ -21,6 +21,7 @@
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
+#include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
 #include "Cracks/CrackHeader.hpp"
 
@@ -174,14 +175,24 @@ void NairnMPM::MyStartResultsOutput(void)
     //---------------------------------------------------
     // Loaded Material Points
     PrintSection("MATERIAL POINTS WITH EXTERNAL FORCES");
-    cout << "Point DOF ID     Load (N)     Arg (ms/ms^-1)  Function\n"
-   	<< "--------------------------------------------------------\n";
+    cout << "Point   DOF ID     Load (N)     Arg (ms/ms^-1)  Function\n"
+   	<< "----------------------------------------------------------\n";
     nextBC=(BoundaryCondition *)firstLoadedPt;
     while(nextBC!=NULL)
     	nextBC=nextBC->PrintBC(cout);
     cout << endl;
 	
-    //---------------------------------------------------
+	//---------------------------------------------------
+    // Traction Loaded Material Points
+    PrintSection("MATERIAL POINTS WITH TRACTIONS");
+    cout << "Point   DOF Face ID   Stress (MPa)    Arg (ms/ms^-1)  Function\n"
+   	<< "----------------------------------------------------------------\n";
+    nextBC=(BoundaryCondition *)firstTractionPt;
+    while(nextBC!=NULL)
+    	nextBC=nextBC->PrintBC(cout);
+    cout << endl;
+	
+   //---------------------------------------------------
     // Diffusion boundary conditions
 	if(DiffusionTask::active)
 	{   PrintSection("NODAL POINTS WITH FIXED CONCENTRATIONS");

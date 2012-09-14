@@ -813,6 +813,11 @@ void ElementBase::InitializeCPDI(void)
         for(i=0;i<4;i++) wShape[i] = 1./36.;
         for(i=4;i<8;i++) wShape[i] = 1./9.;
         wShape[8] = 4./9.;
+		/*
+        for(i=0;i<4;i++) wShape[i] = 0.25;
+        for(i=4;i<8;i++) wShape[i] = 0.;
+        wShape[8] = 0.;
+		*/
     }
 }
 
