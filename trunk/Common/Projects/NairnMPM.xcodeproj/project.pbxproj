@@ -41,6 +41,8 @@
 		67B215F111F96EC7007523EE /* ResetElementsTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B215EF11F96EC7007523EE /* ResetElementsTask.cpp */; };
 		67BFA35511FB81B70083F95B /* InitializationTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67BFA35311FB81B70083F95B /* InitializationTask.hpp */; };
 		67BFA35611FB81B70083F95B /* InitializationTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67BFA35411FB81B70083F95B /* InitializationTask.cpp */; };
+		67E191331602CB2700B34CA9 /* MatPtTractionBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */; };
+		67E191351602CB3F00B34CA9 /* MatPtTractionBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67E191341602CB3F00B34CA9 /* MatPtTractionBC.hpp */; };
 		A700094B0F86B75E00FD76C7 /* MatVelocityField.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A70009490F86B75E00FD76C7 /* MatVelocityField.hpp */; };
 		A700094C0F86B75E00FD76C7 /* MatVelocityField.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A700094A0F86B75E00FD76C7 /* MatVelocityField.cpp */; };
 		A708FDD40F326C1A003FA82B /* SLMaterial.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A708FDD20F326C1A003FA82B /* SLMaterial.hpp */; };
@@ -407,6 +409,8 @@
 		67B215EF11F96EC7007523EE /* ResetElementsTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ResetElementsTask.cpp; sourceTree = "<group>"; };
 		67BFA35311FB81B70083F95B /* InitializationTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InitializationTask.hpp; sourceTree = "<group>"; };
 		67BFA35411FB81B70083F95B /* InitializationTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InitializationTask.cpp; sourceTree = "<group>"; };
+		67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPtTractionBC.cpp; sourceTree = "<group>"; };
+		67E191341602CB3F00B34CA9 /* MatPtTractionBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatPtTractionBC.hpp; sourceTree = "<group>"; };
 		A70009490F86B75E00FD76C7 /* MatVelocityField.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatVelocityField.hpp; sourceTree = "<group>"; };
 		A700094A0F86B75E00FD76C7 /* MatVelocityField.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatVelocityField.cpp; sourceTree = "<group>"; };
 		A708FDD20F326C1A003FA82B /* SLMaterial.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SLMaterial.hpp; sourceTree = "<group>"; };
@@ -1198,6 +1202,8 @@
 				A7BD09A60618D90C0006BA43 /* BoundaryCondition.cpp */,
 				F57B2BD202108E5101EAD83C /* MatPtLoadBC.hpp */,
 				F57B2BD102108E5101EAD83C /* MatPtLoadBC.cpp */,
+				67E191341602CB3F00B34CA9 /* MatPtTractionBC.hpp */,
+				67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */,
 				A77CBDE90608C15600FDE1D6 /* MatPtFluxBC.hpp */,
 				A77CBDEA0608C15600FDE1D6 /* MatPtFluxBC.cpp */,
 				A78BCA64061C76F1009232A2 /* NodalVelBC.hpp */,
@@ -1463,6 +1469,7 @@
 				A7E8CEA315E6E63200910593 /* CrackLeaf.hpp in Headers */,
 				A7834B5315F000C80043ADB9 /* CoupledSawTooth.hpp in Headers */,
 				A77F5ECE15FA6ED8005188E8 /* HEIsotropic.hpp in Headers */,
+				67E191351602CB3F00B34CA9 /* MatPtTractionBC.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1767,6 +1774,7 @@
 				A7E8CEA115E6E61800910593 /* CrackLeaf.cpp in Sources */,
 				A7834B5115F000A10043ADB9 /* CoupledSawTooth.cpp in Sources */,
 				A77F5ECD15FA6ED8005188E8 /* HEIsotropic.cpp in Sources */,
+				67E191331602CB2700B34CA9 /* MatPtTractionBC.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

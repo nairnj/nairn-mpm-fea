@@ -72,6 +72,7 @@ class MPMBase : public LinkedObject
         virtual void GetDeformationGradient(double F[][3]) = 0;
         virtual double GetRelativeVolume(void) = 0;
 		virtual void GetCPDINodesAndWeights(int) = 0;
+		virtual void GetTractionInfo(int,int,int *,Vector *,Vector *) = 0;
 
        
 		// base only methods (make virtual if need to override)

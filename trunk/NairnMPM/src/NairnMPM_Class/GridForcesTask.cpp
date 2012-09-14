@@ -42,6 +42,7 @@
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackNode.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
+#include "BOundary_Conditions/MatPtTractionBC.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -118,6 +119,9 @@ void GridForcesTask::Execute(void)
 		// clear coupled dissipated energy
 		if(ConductionTask::energyCoupling) mpmptr->SetDispEnergy(0.);
 	}
+	
+	// Add traction BCs on particles
+	MatPtTractionBC::SetParticleSurfaceTractions(mtime);
 	
 	// traction law forces add to mvf[]->fext
 	if(fmobj->hasTractionCracks)
