@@ -19,6 +19,8 @@ int nelems=0;			// number of elements
 #ifdef MPM_CODE
 int ElementBase::useGimp=POINT_GIMP;
 int ElementBase::analysisGimp=POINT_GIMP;
+int ElementBase::numCPDINodes=4;
+double *ElementBase::wShape = NULL;
 #endif
 
 #pragma mark ElementBase::Methods

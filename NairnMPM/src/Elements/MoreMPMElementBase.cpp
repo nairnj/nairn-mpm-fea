@@ -11,14 +11,9 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/MPMTermination.hpp"
+#include "Materials/MaterialBase.hpp"
 
 #define MAXITER 100
-
-// weigths for finding CPDI shape functions
-static double wslCPDI[4] = {0.25,0.25,0.25,0.25};
-static double wsqCPDI[9] = {0.027777777777778,0.027777777777778,0.027777777777778,0.027777777777778,
-                            0.111111111111111,0.111111111111111,0.111111111111111,0.111111111111111,
-                            0.444444444444444};
 
 #pragma mark ElementBase: Constructors and Destructor MPM Only
 
@@ -49,8 +44,8 @@ ElementBase::~ElementBase()
 	Input: pointer to material point position and dimensionless position
 	See other GetShapeFunctions() if need to change
   NOTE: This is called in MassAndMomentum task at start of time step. Subsequent needs
-	for shape function call without pos and therefore need the xipos calculated in the
-	fisrt call.
+	for shape function call GetShapeFunctions() or GetShapeGradients() without pos and
+    therefore need the xipos calculated in this first call (or need CPDI calculations).
   NOTE: Crack update and tractions methods call this method too and do not need to save xipos.
     Those calls have mpmptr==NULL
 */
@@ -75,42 +70,6 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,
         }
             
         case LINEAR_CPDI:
-		{	if(mpmptr==NULL)
-            {   ChangeGimp(POINT_GIMP);
-                GetShapeFunctions(numnds,fn,nds,pos,xipos,NULL);
-                RestoreGimp();
-                break;
-            }
-			mpmptr->GetCPDINodesAndWeights(useGimp);
-			GetCPDIFunctions(4,mpmptr->GetCPDIInfo(),wslCPDI,numnds,nds,fn,NULL,NULL,NULL);
-            
-			/*
-			cout << "CPDI Initial Compacted: " << endl;
-			int i;
-			for(i=1;i<=*numnds;i++)
-			{   cout << "  node = " << nds[i] << ", Phiip = " << fn[i] << endl;;
-			}
-			*/
-			
-			/*
-			GetNodes(numnds,nds);
-			Vector rpos = mpmptr->pos;
-			Vector rxipos;
-			GetXiPos(&rpos,&rxipos);
-			ShapeFunction(&rxipos,FALSE,&fn[1],NULL,NULL,NULL);
-			*/
-			
-			/*
-			cout << "   Initial Regular: " << endl;
-			int j;
-			for(j=1;j<=*numnds;j++)
-			{   cout << "     node = " << nds[j] << ", Phiip = " << fn[j] << endl;
-			}
-			*/
-			
-            break;
-        }
-            
         case QUADRATIC_CPDI:
 		{	if(mpmptr==NULL)
             {   ChangeGimp(POINT_GIMP);
@@ -119,7 +78,27 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,
                 break;
             }
 			mpmptr->GetCPDINodesAndWeights(useGimp);
-			GetCPDIFunctions(9,mpmptr->GetCPDIInfo(),wsqCPDI,numnds,nds,fn,NULL,NULL,NULL);
+			GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),ElementBase::wShape,numnds,nds,fn,NULL,NULL,NULL);
+            
+            /*
+             cout << "CPDI Initial Compacted: " << endl;
+             int i;
+             for(i=1;i<=*numnds;i++)
+             {   cout << "  node = " << nds[i] << ", Phiip = " << fn[i] << endl;;
+             }
+             
+             GetNodes(numnds,nds);
+             Vector rpos = mpmptr->pos;
+             Vector rxipos;
+             GetXiPos(&rpos,&rxipos);
+             ShapeFunction(&rxipos,FALSE,&fn[1],NULL,NULL,NULL);
+             cout << "   Initial Regular: " << endl;
+             int j;
+             for(j=1;j<=*numnds;j++)
+             {   cout << "     node = " << nds[j] << ", Phiip = " << fn[j] << endl;
+             }
+             */
+			
             break;
         }
     }
@@ -132,7 +111,8 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,
 	Input: pointer to material point dimensionless position
 	See other GetShapeFunctions() if need to change
  NOTE: This is called at various places in the time step when shape functions are needed. It should
-	recalculate the ones found at the begnning of the time step
+	recalculate the ones found at the begnning of the time step using precalculated xipos
+    or CPDI info
 */
 void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipos,MPMBase *mpmptr)
 {
@@ -153,129 +133,36 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipo
         }
             
         case LINEAR_CPDI:
-		{	if(mpmptr==NULL) cout << "NULL mpmptr" << endl;
-			GetCPDIFunctions(4,mpmptr->GetCPDIInfo(),wslCPDI,numnds,nds,fn,NULL,NULL,NULL);
-            
-			/*
-			cout << "CPDI Recall Compacted: " << endl;
-			int i;
-			for(i=1;i<=*numnds;i++)
-			{   cout << "  node = " << nds[i] << ", Phiip = " << fn[i] << endl;;
-			}
-			*/
-			
-			/*
-			GetNodes(numnds,nds);
-			Vector rpos = mpmptr->pos;
-			Vector rxipos;
-			GetXiPos(&rpos,&rxipos);
-			ShapeFunction(&rxipos,FALSE,&fn[1],NULL,NULL,NULL);
-			*/
-			
-			/*
-			cout << "   Recall Regular: " << endl;
-			int j;
-			for(j=1;j<=*numnds;j++)
-			{   cout << "     node = " << nds[j] << ", Phiip = " << fn[j] << endl;
-			}
-			*/
-			
-            break;
-		}
-			
         case QUADRATIC_CPDI:
-		{	if(mpmptr==NULL) cout << "NULL mpmptr" << endl;
-			GetCPDIFunctions(9,mpmptr->GetCPDIInfo(),wsqCPDI,numnds,nds,fn,NULL,NULL,NULL);
-            break;
-        }
-    }
-}
-
-/* do several element things at once
-	Load number of nodes into numnds
-	Load node numbers into nds[1]...
-	Load shape functions into fn[1]...
-	Load shape function derviatives into xDeriv[1]..., yDeriv[1]..., zDeriv[1]...
-		zDeriv may be NULL for 2D
-	Input: pointer to material point dimensionless position
-	See all GetShapeFunctionsAndGradients() if need to change
- NOTE: This is called at various places in the time step when gradients are needed. It should
-	recalculate the ones found at the beginning of the time step using the precalculate xipos
-*/
-void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipos,
-										double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr)
-{
-    switch(useGimp)
-    {   case POINT_GIMP:
-        	// load nodal numbers
-            GetNodes(numnds,nds);
+        {   GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),ElementBase::wShape,numnds,nds,fn,NULL,NULL,NULL);
             
-            // special case for regular mesh
-            if(mpmgrid.GetCartesian()>0)
-            {	double *zptr = zDeriv==NULL ? NULL : &zDeriv[1];
-                ShapeFunction(xipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],zptr);
-            }
-            else
-            {	// Load element coordinates
-                Vector ce[MaxElNd];
-                double fnh[MaxElNd];
-                GetCoordinates(ce,*numnds,nds);
-                
-                // find shape functions and derviatives
-                ShapeFunction(xipos,BMATRIX,&fn[1],&xDeriv[1],&yDeriv[1],&ce[1],NULL,NULL,&fnh[1]);
-            }
-            break;
-            
-        case UNIFORM_GIMP:
-        {	// uGIMP analysis
-            int ndIDs[MaxShapeNds];
-            GetGimpNodes(numnds,nds,ndIDs,xipos);
-            GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
-            GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
-            break;
-        }
-            
-        case LINEAR_CPDI:
-		{	if(mpmptr==NULL) cout << "NULL mpmptr" << endl;
-			GetCPDIFunctions(4,mpmptr->GetCPDIInfo(),wslCPDI,numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+            /*
+             cout << "CPDI Recall Compacted: " << endl;
+             int i;
+             for(i=1;i<=*numnds;i++)
+             {   cout << "  node = " << nds[i] << ", Phiip = " << fn[i] << endl;;
+             }
+             
+             GetNodes(numnds,nds);
+             Vector rpos = mpmptr->pos;
+             Vector rxipos;
+             GetXiPos(&rpos,&rxipos);
+             ShapeFunction(&rxipos,FALSE,&fn[1],NULL,NULL,NULL);
+             
+             cout << "   Recall Regular: " << endl;
+             int j;
+             for(j=1;j<=*numnds;j++)
+             {   cout << "     node = " << nds[j] << ", Phiip = " << fn[j] << endl;
+             }
+             */
 			
-			/*
-			cout << "CPDI Recall Compacted: " << endl;
-			int i;
-			for(i=1;i<=*numnds;i++)
-			{   cout << "  node = " << nds[i] << ", Phiip = " << fn[i] ;
-				cout << ", gx = " << xDeriv[i] << ", gy = " << yDeriv[i] << endl;
-			}
-			*/
-			
-			/*
-			GetNodes(numnds,nds);
-			Vector rpos = mpmptr->pos;
-			Vector rxipos;
-			GetXiPos(&rpos,&rxipos);
-			ShapeFunction(&rxipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],NULL);
-			*/
-			
-			/*
-			cout << "   Recall Regular Shape and Gradients: " << endl;
-			int j;
-			for(j=1;j<=*numnds;j++)
-			{   cout << "     node = " << nds[j] << ", Phiip = " << fn[j] << ", gx = " << xDeriv[j] << ", gy = " << yDeriv[j] << endl;
-			}
-			*/
             break;
 		}
-			
-		case QUADRATIC_CPDI:
-		{	if(mpmptr==NULL) cout << "NULL mpmptr" << endl;
-			GetCPDIFunctions(9,mpmptr->GetCPDIInfo(),wsqCPDI,numnds,nds,fn,xDeriv,yDeriv,zDeriv);
-			break;
-        }
     }
 }
 
 /* Do several element things at once including finding dimensionless position of current particle
-	only called in MPM and multimaterial mode at start of time step
+        This method is only called in MPM in multimaterial mode at start of time step
 	Load number of nodes into numnds
 	Load dimensionless position of particle into xipos on the particle
 	Load node numbers into nds[1]...
@@ -285,10 +172,10 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
 	pos and xipos not used or set in CPDI
 	Input: pointer to material point dimensionless position, which is changed here
 	See also GetShapeGradients() if need to change
- NOTE: This is called in MassAndMomentum task at start of time step as replacement for GetShapeFunctions()
+ NOTE: This is called in MassAndMomentumTask at start of time step as replacement for GetShapeFunctions()
 	when in multimaterial mode.
-		Subsequent needs for shape function  and gradients call method without pos and therefore need the
-	xipos calculated in this fisrt call.
+		Subsequent needs for shape function and gradients call GetShapeGradieents() method without pos and
+    therefore need the xipos calculated in this first call (or need CPDI calculations)
 */
 void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,Vector *pos,Vector *xipos,
 									double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr)
@@ -326,17 +213,24 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
         }
             
         case LINEAR_CPDI:
-		{	if(mpmptr==NULL) cout << "NULL mpmptr" << endl;
-			mpmptr->GetCPDINodesAndWeights(useGimp);
-			GetCPDIFunctions(4,mpmptr->GetCPDIInfo(),wslCPDI,numnds,nds,fn,xDeriv,yDeriv,zDeriv);
-			
+		case QUADRATIC_CPDI:
+        {   if(theMaterials[mpmptr->MatID()]->Rigid())
+            {   ChangeGimp(POINT_GIMP);
+                GetShapeFunctionsAndGradients(numnds,fn,nds,pos,xipos,xDeriv,yDeriv,zDeriv,mpmptr);
+                RestoreGimp();
+                break;
+            }
+            mpmptr->GetCPDINodesAndWeights(useGimp);
+			GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),ElementBase::wShape,numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+            
+            /*
 			cout << "CPDI Initial Compacted: " << endl;
 			int i;
 			for(i=1;i<=*numnds;i++)
 			{   cout << "  node = " << nds[i] << ", Phiip = " << fn[i] ;
 				cout << ", gx = " << xDeriv[i] << ", gy = " << yDeriv[i] << endl;
 			}
-
+            
 			GetNodes(numnds,nds);
 			Vector rpos = mpmptr->pos;
 			Vector rxipos;
@@ -348,16 +242,91 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
 			for(j=1;j<=*numnds;j++)
 			{   cout << "     node = " << nds[j] << ", Phiip = " << fn[j] << ", gx = " << xDeriv[j] << ", gy = " << yDeriv[j] << endl;
 			}
+            */
+            
             break;
 		}
-		
-		case QUADRATIC_CPDI:
-		{	if(mpmptr==NULL) cout << "NULL mpmptr" << endl;
-			mpmptr->GetCPDINodesAndWeights(useGimp);
-			GetCPDIFunctions(9,mpmptr->GetCPDIInfo(),wsqCPDI,numnds,nds,fn,xDeriv,yDeriv,zDeriv);
-			break;
-        }
+    }
+}
 
+/* Do several element things at once
+    Load number of nodes into numnds
+    Load node numbers into nds[1]...
+    Load shape functions into fn[1]...
+    Load shape function derviatives into xDeriv[1]..., yDeriv[1]..., zDeriv[1]...
+    zDeriv may be NULL for 2D
+    Input: pointer to material point dimensionless position
+    See all GetShapeFunctionsAndGradients() if need to change
+   NOTE: This is called at various places in the time step when gradients are needed. It should
+    recalculate the ones found at the beginning of the time step using the precalculated xipos
+    of CPDI info.
+ */
+void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipos,
+                                    double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr)
+{
+    switch(useGimp)
+    {   case POINT_GIMP:
+        	// load nodal numbers
+            GetNodes(numnds,nds);
+            
+            // special case for regular mesh
+            if(mpmgrid.GetCartesian()>0)
+            {	double *zptr = zDeriv==NULL ? NULL : &zDeriv[1];
+                ShapeFunction(xipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],zptr);
+            }
+            else
+            {	// Load element coordinates
+                Vector ce[MaxElNd];
+                double fnh[MaxElNd];
+                GetCoordinates(ce,*numnds,nds);
+                
+                // find shape functions and derviatives
+                ShapeFunction(xipos,BMATRIX,&fn[1],&xDeriv[1],&yDeriv[1],&ce[1],NULL,NULL,&fnh[1]);
+            }
+            break;
+            
+        case UNIFORM_GIMP:
+        {	// uGIMP analysis
+            int ndIDs[MaxShapeNds];
+            GetGimpNodes(numnds,nds,ndIDs,xipos);
+            GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+            GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+            break;
+        }
+            
+        case LINEAR_CPDI:
+		case QUADRATIC_CPDI:
+        {   if(theMaterials[mpmptr->MatID()]->Rigid())
+            {   ChangeGimp(POINT_GIMP);
+                GetShapeGradients(numnds,fn,nds,xipos,xDeriv,yDeriv,zDeriv,mpmptr);
+                RestoreGimp();
+                break;
+            }
+            GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),ElementBase::wShape,numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+			
+            /*
+             cout << "CPDI Recall Compacted: " << endl;
+             int i;
+             for(i=1;i<=*numnds;i++)
+             {   cout << "  node = " << nds[i] << ", Phiip = " << fn[i] ;
+             cout << ", gx = " << xDeriv[i] << ", gy = " << yDeriv[i] << endl;
+             }
+             
+             GetNodes(numnds,nds);
+             Vector rpos = mpmptr->pos;
+             Vector rxipos;
+             GetXiPos(&rpos,&rxipos);
+             ShapeFunction(&rxipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],NULL);
+             
+             cout << "   Recall Regular Shape and Gradients: " << endl;
+             int j;
+             for(j=1;j<=*numnds;j++)
+             {   cout << "     node = " << nds[j] << ", Phiip = " << fn[j] << ", gx = " << xDeriv[j] << ", gy = " << yDeriv[j] << endl;
+             }
+             */
+            
+            break;
+		}
     }
 }
 
@@ -547,7 +516,7 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,double *ws,int 
 	
 	// loop over the domain nodes
 	for(i=0;i<numDnds;i++)
-	{	// get shape straight grid shape functions
+	{	// get straight grid shape functions
 		ElementBase *elem = theElements[cpdi[i]->inElem];
 		elem->GetNodes(numnds,nds);
 		elem->ShapeFunction(&cpdi[i]->ncpos,FALSE,&fn[1],NULL,NULL,NULL);
@@ -564,14 +533,14 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,double *ws,int 
 		}
 	}
 	
-	/*
-	if(wg!=NULL)
+    /*
+    if(xDeriv!=NULL)
 	{	cout << "Initial:" << endl;
 		for(i=0;i<ncnds;i++)
 		{   cout << "# node = " << cnodes[i] << ", ws*Si = " << wsSi[i] << ", wgx*Si = " << wgSi[i].x << ", wgy*Si = " << wgSi[i].y << endl;
 		}
 	}
-	*/
+    */
 	
 	// shell sort by node numbers in cnodes[] (always 16 for linear CPDI)
 	int lognb2=(int)(log((double)ncnds)*1.442695022+1.0e-5);	// log base 2
@@ -601,14 +570,14 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,double *ws,int 
 		}
 	}
 	
-	/*
-	if(wg!=NULL)
+    /*
+	if(xDeriv!=NULL)
 	{	cout << "Sorted: " << endl;
 		for(i=0;i<ncnds;i++)
 		{   cout << "# node = " << cnodes[i] << ", ws*Si = " << wsSi[i] << ", wgx*Si = " << wgSi[i].x << ", wgy*Si = " << wgSi[i].y << endl;
 		}
 	}
-	*/
+    */
 	
 	// compact same node number
 	int count = 0;
@@ -827,6 +796,25 @@ void ElementBase::AllocateNeighbors(void)
 void ElementBase::ChangeGimp(int newGimp) { useGimp = newGimp; }
 void ElementBase::RestoreGimp(void) { useGimp = analysisGimp; }
 
+// on start up initialize number of CPDI nodes (if needed)
+// needs revision when add 3D CPDI
+void ElementBase::InitializeCPDI(void)
+{
+    int i;
+    
+    if(useGimp == LINEAR_CPDI)
+    {   numCPDINodes = 4;
+        wShape = (double *)malloc(numCPDINodes*sizeof(double));
+        for(i=0;i<4;i++) wShape[i] = 0.25;
+    }
+    else if(useGimp == QUADRATIC_CPDI)
+    {   numCPDINodes = 9;
+        wShape = (double *)malloc(numCPDINodes*sizeof(double));
+        for(i=0;i<4;i++) wShape[i] = 1./36.;
+        for(i=4;i<8;i++) wShape[i] = 1./9.;
+        wShape[8] = 4./9.;
+    }
+}
 
 
 

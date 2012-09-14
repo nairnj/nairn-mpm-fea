@@ -367,6 +367,9 @@ void NairnMPM::PreliminaryCalcs(void)
 		}
 		mpmgrid.SetCartesian(userCartesian,gridx,gridy,gridz);
 	}
+    
+    // CPDI factors if needed
+    ElementBase::InitializeCPDI();
 	
 	// future - make this a parameter that can be input
 	double PropFractCellTime=FractCellTime;

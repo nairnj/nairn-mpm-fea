@@ -129,7 +129,7 @@ void MassAndMomentumTask::Execute(void)
 				if(matID->Rigid())
 				{	Vector newvel;
 					bool hasDir[3];
-					if(((RigidMaterial *)matID)->GetVectorSetting(&newvel,hasDir,mtime,&mpmptr->pos))
+ 					if(((RigidMaterial *)matID)->GetVectorSetting(&newvel,hasDir,mtime,&mpmptr->pos))
                     {   // change velocity if functions being used, otherwise keep velocity constant
 						if(hasDir[0]) mpmptr->vel.x = newvel.x;
 						if(hasDir[1]) mpmptr->vel.y = newvel.y;
