@@ -27,7 +27,7 @@ BoundaryCondition::BoundaryCondition(int bcStyle,double bcValue,double bcTime)
     ftime=bcTime;
 	offset=0.;
 	function=NULL;
-	scale=1.;				// for function settings
+	scale=1.;				// scale function calculation only
 }
 
 // Reuse Rigid properties (subclass set other properties) and return this for calling function use

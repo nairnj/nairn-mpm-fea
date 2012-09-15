@@ -9,6 +9,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "Boundary_Conditions/MatPtTractionBC.hpp"
 
 // globals
 MPMBase **mpm;		// list of material points
@@ -63,6 +64,10 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	// temperature (degrees) and gradient (degrees/mm)
 	SetTemperature(0.,0.);
 	pTemp=NULL;
+    
+    // CPDI data
+    cpdi = NULL;
+    faceArea = NULL;
 
     // PS - when point created, velocity and position and ext force should be set too
 	ZeroVector(&vel);
@@ -108,6 +113,9 @@ bool MPMBase::AllocateCPDIStructures(int gimpType)
     int i;
     for(i=0;i<cpdiSize;i++)
         cpdi[i] = new CPDIDomain;
+    
+    // save face areas (or lengths in 2D)
+    if(firstTractionPt!=NULL) faceArea = new Vector;
     
     return TRUE;
         

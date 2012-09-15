@@ -107,6 +107,7 @@ class ElementBase : public LinkedObject
 		virtual void GetShapeFunctionsAndGradients(int *,double *,int *,Vector *,Vector *,double *,double *,double *,MPMBase *);
 		virtual void GimpCompact(int *,int *,double *,double *,double *,double *);
 		virtual void GetCPDIFunctions(int,CPDIDomain **,double *,int *,int *,double *,double *,double *,double *);
+        virtual void GridShapeFunctions(int *,int *,Vector *,double *);
 		virtual bool OnTheEdge(void);
 		virtual void GetListOfNeighbors(int *);
 		virtual int NextNode(int);
