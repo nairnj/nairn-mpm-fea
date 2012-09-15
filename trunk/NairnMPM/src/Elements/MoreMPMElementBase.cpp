@@ -611,6 +611,13 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,double *ws,int 
 	
 }
 
+// by non-element methods that need access to grid shape functions only, and those methods are protected
+void ElementBase::GridShapeFunctions(int *numnds,int *nds,Vector *xipos,double *fn)
+{
+    GetNodes(numnds,nds);
+    ShapeFunction(xipos,FALSE,&fn[1],NULL,NULL,NULL);
+}
+
 #pragma mark ElementBase: MPM Only Methods
 
 /* Get list of nodes for this element and the numbner of nodes

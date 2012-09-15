@@ -72,7 +72,7 @@ class MPMBase : public LinkedObject
         virtual void GetDeformationGradient(double F[][3]) = 0;
         virtual double GetRelativeVolume(void) = 0;
 		virtual void GetCPDINodesAndWeights(int) = 0;
-		virtual void GetTractionInfo(int,int,int *,Vector *,Vector *) = 0;
+		virtual void GetTractionInfo(int,int,int *,Vector *,Vector *,int *) = 0;
 
        
 		// base only methods (make virtual if need to override)
@@ -142,7 +142,8 @@ class MPMBase : public LinkedObject
 		// variables (changed in MPM time step)
 		Vector pFext;				// external force
 		Vector ncpos;				// natural coordinates position
-		CPDIDomain **cpdi;		// Should makle pointer and allocate only what is needed
+		CPDIDomain **cpdi;          // Should makle pointer and allocate only what is needed
+        Vector *faceArea;           // make pointer then needed
 		Vector acc;					// acceleration
 		Tensor *velGrad;			// used for J Integral only
 		Tensor sp;					// stress tensor (init 0)

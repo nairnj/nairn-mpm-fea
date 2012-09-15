@@ -34,11 +34,14 @@ BoundaryCondition *MatPtLoadBC::PrintBC(ostream &os)
     sprintf(nline,"%7d %2d %2d %15.7e %15.7e",ptNum,direction,style,value,ftime);
     os << nline;
 	PrintFunction(os);
+    
+    // initial value is F in N or N/numParticles if net, but if function
+    //      initial value is 1 or 1/numParticles if net
 	
 	// rescale
 	value*=1.e6;		// Multiply by 1e6 to get N (kg-m/sec^2) to g-mm/sec^2
 	if(style==FUNCTION_VALUE)
-		scale=value;		// ... value is 1.e6/numParticles 
+		scale=value;		// ... value is now 1.e6 or 1.e6/numParticles if net force
 	else
 		scale*=1.e6;		// ... same in case using a function
 	

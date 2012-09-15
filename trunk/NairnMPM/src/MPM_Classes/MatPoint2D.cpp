@@ -376,100 +376,141 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 	catch(...)
 	{	throw MPMTermination("A CPDI partical domain node has left the grid.","MatPoint2D::GetCPDINodesAndWeights");
 	}
-
+    
+    // traction BC area saves
+    if(faceArea!=NULL)
+    {   faceArea->x = sqrt(r1.x*r1.x+r1.y*r1.y)*mpmgrid.GetThickness();
+        faceArea->y = sqrt(r2.x*r2.x+r2.y*r2.y)*mpmgrid.GetThickness();
+    }
 }
 
 // To support traction boundary conditions, find the deformed edge, natural coordinates of
 // the corners along the edge, elements for those edges, and a normal vector in direction
 // of the traction
-void MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tnorm)
+void MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
 {
-	// get particle 2D deformation gradient
-	double pF[3][3];
-	GetDeformationGradient(pF);
+    *numDnds = 2;
+    double faceWt;
+    
+    // which GIMP method (cannot be used in POINT_GIMP)
+    if(ElementBase::useGimp==UNIFORM_GIMP)
+    {   // initial vectors only
+        double r1x = mpmgrid.gridx*0.25;
+        double r2y = mpmgrid.gridy*0.25;
+        
+        Vector c1,c2;
+        switch(face)
+        {	case 1:
+                // lower edge
+                c1.x = pos.x-r1x;
+                c1.y = pos.y-r2y;
+                c2.x = pos.x+r1x;
+                c2.y = pos.y-r2y;
+                faceWt = r1x*mpmgrid.GetThickness();
+                break;
+                
+            case 2:
+                // right edgt
+                c1.x = pos.x+r1x;
+                c1.y = pos.y-r2y;
+                c2.x = pos.x+r1x;
+                c2.y = pos.y+r2y;
+                faceWt = r2y*mpmgrid.GetThickness();
+                break;
+                
+            case 3:
+                // top edge
+                c1.x = pos.x+r1x;
+                c1.y = pos.y+r2y;
+                c2.x = pos.x-r1x;
+                c2.y = pos.y+r2y;
+                faceWt = r1x*mpmgrid.GetThickness();
+                break;
+                
+            default:
+                // left edge
+                c1.x = pos.x-r1x;
+                c1.y = pos.y+r2y;
+                c2.x = pos.x-r1x;
+                c2.y = pos.y-r2y;
+                faceWt = r2y*mpmgrid.GetThickness();
+                break;
+        }
+        
+        // get elements
+        try
+        {	cElem[0] = mpmgrid.FindElementFromPoint(&c1)-1;
+            theElements[cElem[0]]->GetXiPos(&c1,&corners[0]);
+            
+            cElem[1] = mpmgrid.FindElementFromPoint(&c2)-1;
+            theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
+        }
+        catch(...)
+        {	throw MPMTermination("A Traction edge node has left the grid.","MatPoint2D::GetTractionInfo");
+        }
+    }
+    else
+    {   // get deformed corners, but get element and natural coordinates
+        //  from CPDI info because corners have moved by here for any
+        //  simulations that update strains between initial extrapolation
+        //  and the grid forces calculation
+        int d1,d2;
+        switch(face)
+        {	case 1:
+                // lower edge
+                d1=0;
+                d2=1;
+                break;
+                
+            case 2:
+                // right edgt
+                d1=1;
+                d2=2;
+                break;
+                
+            case 3:
+                // top edge
+                d1=2;
+                d2=3;
+                break;
+                
+            default:
+                // left edge
+                d1=3;
+                d2=0;
+                break;
+        }
+        
+        // copy for initial state at start of time step
+        cElem[0] = cpdi[d1]->inElem;
+        corners[0].x = cpdi[d1]->ncpos.x;
+        corners[0].y = cpdi[d1]->ncpos.y;
+        cElem[1] = cpdi[d2]->inElem;
+        corners[1].x = cpdi[d2]->ncpos.x;
+        corners[1].y = cpdi[d2]->ncpos.y;
+        
+        // get weighting factor as 1/2 of face area
+        if(face==1 || face==3)
+            faceWt = faceArea->x;
+        else
+            faceWt = faceArea->y;
+        
+    }
 	
-	// get polygon vectors - these are from particle to edge
-    //      and generalize semi width lp in 1D GIMP
-	Vector r1,r2,c1,c2;
-	r1.x = pF[0][0]*mpmgrid.gridx*0.25;
-	r1.y = pF[1][0]*mpmgrid.gridx*0.25;
-	r2.x = pF[0][1]*mpmgrid.gridy*0.25;
-	r2.y = pF[1][1]*mpmgrid.gridy*0.25;
-	
-	switch(face)
-	{	case 1:
-			// lower edge
-			c1.x = pos.x-r1.x-r2.x;
-			c1.y = pos.y-r1.y-r2.y;
-			c2.x = pos.x+r1.x-r2.x;
-			c2.y = pos.y+r1.y-r2.y;
-			break;
-		
-		case 2:
-			// right edgt
-			c1.x = pos.x+r1.x-r2.x;
-			c1.y = pos.y+r1.y-r2.y;
-			c2.x = pos.x+r1.x+r2.x;
-			c2.y = pos.y+r1.y+r2.y;
-			break;
-		
-		case 3:
-			// top edge
-			c1.x = pos.x+r1.x+r2.x;
-			c1.y = pos.y+r1.y+r2.y;
-			c2.x = pos.x-r1.x+r2.x;
-			c2.y = pos.y-r1.y+r2.y;
-			break;
-		
-		default:
-			// left edge
-			c1.x = pos.x-r1.x+r2.x;
-			c1.y = pos.y-r1.y+r2.y;
-			c2.x = pos.x-r1.x-r2.x;
-			c2.y = pos.y-r1.y-r2.y;
-			break;
-	}
-	
-	// get elements
-	try
-	{	cElem[0] = mpmgrid.FindElementFromPoint(&c1)-1;
-		theElements[cElem[0]]->GetXiPos(&c1,&corners[0]);
-		
-		cElem[1] = mpmgrid.FindElementFromPoint(&c2)-1;
-		theElements[cElem[1]]->GetXiPos(&c1,&corners[1]);
-	}
-	catch(...)
-	{	throw MPMTermination("A Traction edge node has left the grid.","MatPoint2D::GetTractionInfo");
-	}
-	
-	// get traction normal vector
+    // get traction normal vector
+    ZeroVector(tscaled);
 	switch(dof)
 	{	case 1:
-			// normal is (c2-c1) X (0,0,1)
-			tnorm->x = c2.y - c1.y;
-			tnorm->y = c1.x - c2.x;
+			// normal is x direction
+			tscaled->x = faceWt;
 			break;
-		
+        case 2:
+            // normal is y direction
+            tscaled->y = faceWt;
 		default:
-			// shear
-			if(face==2 || face==4)
-			{	// left and right go from c1 to c2
-				tnorm->x = c2.x-c1.x;
-				tnorm->y = c2.y-c1.y;
-			}
-			else
-			{	// top and bottom go from c2 to c1
-				tnorm->x = c1.x-c2.x;
-				tnorm->y = c1.y-c2.y;
-			}
+			// normal is z direction (not used here)
+            tscaled->z = faceWt;
 			break;
 	}
-	
-	// normalize the vector
-	double tmag = 1./sqrt(tnorm->x*tnorm->x + tnorm->y*tnorm->y);
-	tnorm->x *= tmag;
-	tnorm->y *= tmag;
-	tnorm->z = 0.;
-
 }
-
+	

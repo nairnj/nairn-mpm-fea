@@ -44,7 +44,7 @@ NodalPoint::~NodalPoint()
 // Can allocate things that were not known while reading the XML file
 void NodalPoint::PrepareForFields()
 {
-	// need maxCrackFields Crack Velocity fields (1 if not cracks or MAX_FIELDS_FOR_CRACKS if any cracks)
+	// need maxCrackFields Crack Velocity fields (1 if no cracks or MAX_FIELDS_FOR_CRACKS if any cracks)
 	cvf=(CrackVelocityField **)malloc(sizeof(CrackVelocityField *)*maxCrackFields);
 	if(cvf==NULL) throw CommonException("Memory error allocating crack velocity field pointers.",
 										"NodalPoint::PrepareForFields");

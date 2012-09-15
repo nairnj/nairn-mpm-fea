@@ -47,7 +47,7 @@ class MatPoint2D : public MPMBase
         virtual void GetDeformationGradient(double F[][3]);
         virtual double GetRelativeVolume(void);
 		virtual void GetCPDINodesAndWeights(int);
-		virtual void GetTractionInfo(int,int,int *,Vector *,Vector *);
+		virtual void GetTractionInfo(int,int,int *,Vector *,Vector *,int *);
 };
 
 #endif
