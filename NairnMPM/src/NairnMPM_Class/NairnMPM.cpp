@@ -535,7 +535,7 @@ void NairnMPM::ValidateOptions(void)
     else
     {   // in Classic MPM or POINT_GIMP
         if(firstTractionPt!=NULL)
-			throw CommonException("Traction boundary conditions cannot require use of a GIMP MPM method.","NairnMPM::ValidateOptions");
+			throw CommonException("Traction boundary conditions require use of a GIMP MPM method.","NairnMPM::ValidateOptions");
     }
             
 	if(contact.hasImperfectInterface)

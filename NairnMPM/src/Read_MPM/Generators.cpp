@@ -663,7 +663,6 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             if(strcmp(xName,"TractionBC")==0)
             {	if(face<1 || face>6)
                     throw SAXException("'face' in <TractionBC> element must be 1 to 6 for 3D analyses.");
-                throw SAXException("<TractionBC> element not yet available for 3D analyses.");
             }
 		}
         else

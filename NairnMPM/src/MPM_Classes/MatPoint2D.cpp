@@ -377,10 +377,10 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 	{	throw MPMTermination("A CPDI partical domain node has left the grid.","MatPoint2D::GetCPDINodesAndWeights");
 	}
     
-    // traction BC area saves
+    // traction BC area saves 1/2 surface area of particle doman on the various edges
     if(faceArea!=NULL)
-    {   faceArea->x = sqrt(r1.x*r1.x+r1.y*r1.y)*mpmgrid.GetThickness();
-        faceArea->y = sqrt(r2.x*r2.x+r2.y*r2.y)*mpmgrid.GetThickness();
+    {   faceArea->x = sqrt(r1.x*r1.x+r1.y*r1.y)*mpmgrid.GetThickness();			// edges 1 and 3
+        faceArea->y = sqrt(r2.x*r2.x+r2.y*r2.y)*mpmgrid.GetThickness();			// edges 2 and 4
     }
 }
 
