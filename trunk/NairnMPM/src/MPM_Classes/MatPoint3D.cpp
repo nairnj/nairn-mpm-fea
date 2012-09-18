@@ -273,11 +273,12 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 	r3.y = pF[1][2]*mpmgrid.gridz*0.25;
 	r3.z = pF[2][2]*mpmgrid.gridz*0.25;
 	
-    // Particle domain area is area of the full parallelogram
+    // Particle domain volume is 8 * volume of the parallelepiped defined by r1, r2, and r3
+	// V = 8 * (r1 . (r2 X r3))
     // Assume positive due to orientation of initial vectors, and sign probably does not matter
     double Vp = 8.*(r1.x * (r2.y*r3.z - r2.z*r3.y)
-                    + r2.x * (r1.z*r3.y - r1.y*r3.z)
-                    + r3.x * (r1.y*r2.z - r1.z*r2.y) );
+                    + r1.y * (r2.z*r3.x - r2.x*r3.z)
+                     + r1.z * (r2.x*r3.y - r2.y*r3.x) );
     
 	if(cpdiType == LINEAR_CPDI)
     {   try
@@ -366,13 +367,253 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
     }
     
     // traction BC area saves
+    if(faceArea!=NULL)
+	{	// edges 1 and 3 = |r1 X r3|
+		c.x = r1.y*r3.z - r1.z*r3.y;
+		c.y = r1.z*r3.x - r1.x*r3.z;
+		c.z = r1.x*r3.y - r1.y*r3.x;
+		faceArea->x = sqrt(c.x*c.x+c.y*c.y+c.z*c.z);
+		// edges 2 and 4 = |r2 X r3|
+		c.x = r2.y*r3.z - r2.z*r3.y;
+		c.y = r2.z*r3.x - r2.x*r3.z;
+		c.z = r2.x*r3.y - r2.y*r3.x;
+		faceArea->y = sqrt(c.x*c.x+c.y*c.y+c.z*c.z);
+		// top and bottom = |r1 X r2|
+		c.x = r1.y*r2.z - r1.z*r2.y;
+		c.y = r1.z*r2.x - r1.x*r2.z;
+		c.z = r1.x*r2.y - r1.y*r2.x;
+		faceArea->z = sqrt(c.x*c.x+c.y*c.y+c.z*c.z);
+    }
 }
 
 // To support traction boundary conditions, find the deformed edge, natural coordinates of
 // the corners around the face, elements for those faces, and a normal vector in direction
 // of the traction. Input vectors need to be length 4
-void MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tnorm,int *numDnds)
+void MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
 {
-    throw MPMTermination("Traction boundary conditions not yet available for 3D.","MatPoint3D::GetTractionInfo");
+    *numDnds = 4;
+    double faceWt;
+    
+    // which GIMP method (cannot be used in POINT_GIMP)
+    if(ElementBase::useGimp==UNIFORM_GIMP)
+    {   // initial vectors only
+        double r1x = mpmgrid.gridx*0.25;
+        double r2y = mpmgrid.gridy*0.25;
+		double r3z = mpmgrid.gridz*0.25;
+        
+        Vector c1,c2,c3,c4;
+        switch(face)
+        {	case 1:
+                // lower face n = (0,-1,0)
+                c1.x = pos.x-r1x;
+                c1.y = pos.y-r2y;
+				c1.z = pos.z-r3z;
+                c2.x = pos.x+r1x;
+                c2.y = pos.y-r2y;
+				c2.z = pos.z-r3z;
+                c3.x = pos.x-r1x;
+                c3.y = pos.y-r2y;
+				c3.z = pos.z+r3z;
+                c4.x = pos.x+r1x;
+                c4.y = pos.y-r2y;
+				c4.z = pos.z+r3z;
+                faceWt = r1x*r3z;
+                break;
+                
+            case 2:
+                // right face n = (1,0,0)
+                c1.x = pos.x+r1x;
+                c1.y = pos.y-r2y;
+				c1.z = pos.z-r3z;
+                c2.x = pos.x+r1x;
+                c2.y = pos.y+r2y;
+				c2.z = pos.z-r3z;
+                c3.x = pos.x+r1x;
+                c3.y = pos.y-r2y;
+				c3.z = pos.z+r3z;
+                c4.x = pos.x+r1x;
+                c4.y = pos.y+r2y;
+				c4.z = pos.z+r3z;
+                faceWt = r2y*r3z;
+                break;
+                
+            case 3:
+                // top face n = (0,1,0)
+                c1.x = pos.x+r1x;
+                c1.y = pos.y+r2y;
+				c1.z = pos.z-r3z;
+                c2.x = pos.x-r1x;
+                c2.y = pos.y+r2y;
+				c2.z = pos.z-r3z;
+                c3.x = pos.x+r1x;
+                c3.y = pos.y+r2y;
+				c3.z = pos.z+r3z;
+                c4.x = pos.x-r1x;
+                c4.y = pos.y+r2y;
+				c4.z = pos.z+r3z;
+                faceWt = r1x*r3z;
+                break;
+                
+            case 4:
+                // left face n = (-1,0,0)
+                c1.x = pos.x-r1x;
+                c1.y = pos.y+r2y;
+				c1.z = pos.z-r3z;
+                c2.x = pos.x-r1x;
+                c2.y = pos.y-r2y;
+				c2.z = pos.z-r3z;
+                c3.x = pos.x-r1x;
+                c3.y = pos.y+r2y;
+				c3.z = pos.z+r3z;
+                c4.x = pos.x-r1x;
+                c4.y = pos.y-r2y;
+				c4.z = pos.z+r3z;
+                faceWt = r2y*r3z;
+                break;
+			
+			case 5:
+                // bottom face n = (0,0,-1)
+                c1.x = pos.x-r1x;
+                c1.y = pos.y-r2y;
+				c1.z = pos.z-r3z;
+                c2.x = pos.x-r1x;
+                c2.y = pos.y+r2y;
+				c2.z = pos.z-r3z;
+                c3.x = pos.x+r1x;
+                c3.y = pos.y+r2y;
+				c3.z = pos.z-r3z;
+                c4.x = pos.x-r1x;
+                c4.y = pos.y+r2y;
+				c4.z = pos.z-r3z;
+                faceWt = r2y*r3z;
+                break;
+			
+			default:
+                // top face n = (0,0,1)
+                c1.x = pos.x-r1x;
+                c1.y = pos.y-r2y;
+				c1.z = pos.z+r3z;
+                c2.x = pos.x-r1x;
+                c2.y = pos.y+r2y;
+				c2.z = pos.z+r3z;
+                c3.x = pos.x+r1x;
+                c3.y = pos.y+r2y;
+				c3.z = pos.z+r3z;
+                c4.x = pos.x-r1x;
+                c4.y = pos.y+r2y;
+				c4.z = pos.z+r3z;
+                faceWt = r2y*r3z;
+                break;
+       }
+        
+        // get elements
+        try
+        {	cElem[0] = mpmgrid.FindElementFromPoint(&c1)-1;
+            theElements[cElem[0]]->GetXiPos(&c1,&corners[0]);
+            
+            cElem[1] = mpmgrid.FindElementFromPoint(&c2)-1;
+            theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
+			
+            cElem[2] = mpmgrid.FindElementFromPoint(&c3)-1;
+            theElements[cElem[2]]->GetXiPos(&c3,&corners[2]);
+			
+            cElem[3] = mpmgrid.FindElementFromPoint(&c4)-1;
+            theElements[cElem[3]]->GetXiPos(&c4,&corners[3]);
+        }
+        catch(...)
+        {	throw MPMTermination("A Traction edge node has left the grid.","MatPoint2D::GetTractionInfo");
+        }
+    }
+    else
+    {   // get deformed corners, but get element and natural coordinates
+        //  from CPDI info because corners have moved by here for any
+        //  simulations that update strains between initial extrapolation
+        //  and the grid forces calculation
+        int d1,d2,d3,d4;
+        switch(face)
+        {	case 1:
+                // lower face n = (0,-1,0)
+                d1=0;
+                d2=1;
+				d3=4;
+				d4=5;
+                break;
+                
+            case 2:
+                // right face n = (1,0,0)
+                d1=1;
+                d2=2;
+				d3=5;
+				d4=6;
+                break;
+                
+            case 3:
+                // top face n = (0,1,0)
+                d1=2;
+                d2=3;
+				d3=6;
+				d4=7;
+                break;
+                
+            case 4:
+                // left face n = (-1,0,0)
+                d1=3;
+                d2=0;
+				d3=7;
+				d4=4;
+                break;
+			
+			case 5:
+				// bottom face n = (0,0,-1)
+                d1=0;
+                d2=1;
+				d3=2;
+				d4=3;
+                break;
+			
+			default:
+				// top face n = (0,0,1)
+                d1=4;
+                d2=5;
+				d3=6;
+				d4=7;
+                break;
+        }
+        
+        // copy for initial state at start of time step
+        cElem[0] = cpdi[d1]->inElem;
+		CopyVector(&corners[0], &cpdi[d1]->ncpos);
+        cElem[1] = cpdi[d2]->inElem;
+		CopyVector(&corners[1], &cpdi[d2]->ncpos);
+        cElem[2] = cpdi[d3]->inElem;
+		CopyVector(&corners[2], &cpdi[d3]->ncpos);
+        cElem[3] = cpdi[d4]->inElem;
+		CopyVector(&corners[3], &cpdi[d4]->ncpos);
+        
+        // get weighting factor as 1/2 of face area
+        if(face==1 || face==3)
+            faceWt = faceArea->x;
+        else if(face==2 || face==4)
+            faceWt = faceArea->y;
+		else
+			faceWt = faceArea->z;
+        
+    }
+	
+    // get traction normal vector
+    ZeroVector(tscaled);
+	switch(dof)
+	{	case 1:
+			// normal is x direction
+			tscaled->x = faceWt;
+			break;
+        case 2:
+            // normal is y direction
+            tscaled->y = faceWt;
+		default:
+			// normal is z direction (not used here)
+            tscaled->z = faceWt;
+			break;
+	}
 }
 

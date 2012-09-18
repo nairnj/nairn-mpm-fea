@@ -812,7 +812,7 @@ void ElementBase::InitializeCPDI(bool isThreeD)
             wShape = (double *)malloc(numCPDINodes*sizeof(double));
             for(i=0;i<8;i++) wShape[i] = 0.125;
         }
-        else
+        else if(useGimp == QUADRATIC_CPDI)
         {	throw MPMTermination("qCPDI is not yet implemented for 3D (use lCPDI instead).","MatPoint3D::GetCPDINodesAndWeights");
         }
     }
