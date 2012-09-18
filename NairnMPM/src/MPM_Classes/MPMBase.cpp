@@ -94,12 +94,12 @@ void MPMBase::AllocateJStructures(void)
 }
 
 // allocate structures when needed for particle domains
-bool MPMBase::AllocateCPDIStructures(int gimpType)
+bool MPMBase::AllocateCPDIStructures(int gimpType,bool isThreeD)
 {
     int cpdiSize=0;
     
     if(gimpType==LINEAR_CPDI)
-        cpdiSize = 4;
+        cpdiSize = isThreeD ? 8 : 4 ;
     else if(gimpType==QUADRATIC_CPDI)
         cpdiSize = 9;
     else
@@ -112,7 +112,10 @@ bool MPMBase::AllocateCPDIStructures(int gimpType)
     // create each one
     int i;
     for(i=0;i<cpdiSize;i++)
-        cpdi[i] = new CPDIDomain;
+    {   cpdi[i] = new CPDIDomain;
+        cpdi[i]->wg.z = 0.;             // set zero once for 2D calculations
+        cpdi[0]->ncpos.z = 0.;          // set zero once for 2D calculations
+    }
     
     // save face areas (or lengths in 2D)
     if(firstTractionPt!=NULL) faceArea = new Vector;
@@ -253,6 +256,7 @@ Tensor *MPMBase::GetVelGrad(void) { return velGrad; }
 Tensor *MPMBase::GetStressTensor(void) { return &sp; }
 Tensor *MPMBase::GetStrainTensor(void) { return &ep; }
 Tensor *MPMBase::GetPlasticStrainTensor(void) { return &eplast; }
+Tensor *MPMBase::GetElasticLeftCauchyTensor(void) { return &eplast; }
 
 // history data
 char *MPMBase::GetHistoryPtr(void) { return matData; }

@@ -12,6 +12,8 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
+#include "Exceptions/MPMTermination.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
 
 #pragma mark MatPoint3D::Constructors and Destructors
 
@@ -254,7 +256,116 @@ double MatPoint3D::GetRelativeVolume(void)
 //	and shape function gradients
 void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 {
-	throw "CPDI nodes not yet available for 3D";
+	// get particle 2D deformation gradient
+	double pF[3][3];
+	GetDeformationGradient(pF);
+	
+	// get polygon vectors - these are from particle to edge
+    //      and generalize semi width lp in 1D GIMP
+	Vector r1,r2,r3,c;
+	r1.x = pF[0][0]*mpmgrid.gridx*0.25;
+	r1.y = pF[1][0]*mpmgrid.gridx*0.25;
+	r1.z = pF[2][0]*mpmgrid.gridx*0.25;
+	r2.x = pF[0][1]*mpmgrid.gridy*0.25;
+	r2.y = pF[1][1]*mpmgrid.gridy*0.25;
+	r2.z = pF[2][1]*mpmgrid.gridy*0.25;
+	r3.x = pF[0][2]*mpmgrid.gridz*0.25;
+	r3.y = pF[1][2]*mpmgrid.gridz*0.25;
+	r3.z = pF[2][2]*mpmgrid.gridz*0.25;
+	
+    // Particle domain area is area of the full parallelogram
+    // Assume positive due to orientation of initial vectors, and sign probably does not matter
+    double Vp = 8.*(r1.x * (r2.y*r3.z - r2.z*r3.y)
+                    + r2.x * (r1.z*r3.y - r1.y*r3.z)
+                    + r3.x * (r1.y*r2.z - r1.z*r2.y) );
+    
+	if(cpdiType == LINEAR_CPDI)
+    {   try
+        {	// nodes at 8 node
+            c.x = pos.x-r1.x-r2.x-r3.x;
+            c.y = pos.y-r1.y-r2.y-r3.y;
+            c.z = pos.z-r1.z-r2.z-r3.z;
+            cpdi[0]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+            theElements[cpdi[0]->inElem]->GetXiPos(&c,&cpdi[0]->ncpos);
+            
+            c.x = pos.x+r1.x-r2.x-r3.x;
+            c.y = pos.y+r1.y-r2.y-r3.y;
+            c.z = pos.z+r1.z-r2.z-r3.z;
+            cpdi[1]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+            theElements[cpdi[1]->inElem]->GetXiPos(&c,&cpdi[1]->ncpos);
+            
+            c.x = pos.x+r1.x+r2.x-r3.x;
+            c.y = pos.y+r1.y+r2.y-r3.y;
+            c.z = pos.z+r1.z+r2.z-r3.z;
+            cpdi[2]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+            theElements[cpdi[2]->inElem]->GetXiPos(&c,&cpdi[2]->ncpos);
+            
+            c.x = pos.x-r1.x+r2.x-r3.x;
+            c.y = pos.y-r1.y+r2.y-r3.y;
+            c.z = pos.z-r1.z+r2.z-r3.z;
+            cpdi[3]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+            theElements[cpdi[3]->inElem]->GetXiPos(&c,&cpdi[3]->ncpos);
+            
+            c.x = pos.x-r1.x-r2.x+r3.x;
+            c.y = pos.y-r1.y-r2.y+r3.y;
+            c.z = pos.z-r1.z-r2.z+r3.z;
+            cpdi[4]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+            theElements[cpdi[4]->inElem]->GetXiPos(&c,&cpdi[4]->ncpos);
+            
+            c.x = pos.x+r1.x-r2.x+r3.x;
+            c.y = pos.y+r1.y-r2.y+r3.y;
+            c.z = pos.z+r1.z-r2.z+r3.z;
+            cpdi[5]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+            theElements[cpdi[5]->inElem]->GetXiPos(&c,&cpdi[5]->ncpos);
+            
+            c.x = pos.x+r1.x+r2.x+r3.x;
+            c.y = pos.y+r1.y+r2.y+r3.y;
+            c.z = pos.z+r1.z+r2.z+r3.z;
+            cpdi[6]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+            theElements[cpdi[6]->inElem]->GetXiPos(&c,&cpdi[6]->ncpos);
+            
+            c.x = pos.x-r1.x+r2.x+r3.x;
+            c.y = pos.y-r1.y+r2.y+r3.y;
+            c.z = pos.z-r1.z+r2.z+r3.z;
+            cpdi[7]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+            theElements[cpdi[7]->inElem]->GetXiPos(&c,&cpdi[7]->ncpos);
+
+            // gradient weighting values
+            Vp = 1./Vp;
+            cpdi[0]->wg.x = (r1.z*r2.y - r1.y*r2.z - r1.z*r3.y + r2.z*r3.y + r1.y*r3.z - r2.y*r3.z)*Vp;
+            cpdi[0]->wg.y = (-(r1.z*r2.x) + r1.x*r2.z + r1.z*r3.x - r2.z*r3.x - r1.x*r3.z + r2.x*r3.z)*Vp;
+            cpdi[0]->wg.z = (r1.y*r2.x - r1.x*r2.y - r1.y*r3.x + r2.y*r3.x + r1.x*r3.y - r2.x*r3.y)*Vp;
+            cpdi[1]->wg.x = (r1.z*r2.y - r1.y*r2.z - r1.z*r3.y - r2.z*r3.y + r1.y*r3.z + r2.y*r3.z)*Vp;
+            cpdi[1]->wg.y = (-(r1.z*r2.x) + r1.x*r2.z + r1.z*r3.x + r2.z*r3.x - r1.x*r3.z - r2.x*r3.z)*Vp;
+            cpdi[1]->wg.z = (r1.y*r2.x - r1.x*r2.y - r1.y*r3.x - r2.y*r3.x + r1.x*r3.y + r2.x*r3.y)*Vp;
+            cpdi[2]->wg.x = (r1.z*r2.y - r1.y*r2.z + r1.z*r3.y - r2.z*r3.y - r1.y*r3.z + r2.y*r3.z)*Vp;
+            cpdi[2]->wg.y = (-(r1.z*r2.x) + r1.x*r2.z - r1.z*r3.x + r2.z*r3.x + r1.x*r3.z - r2.x*r3.z)*Vp;
+            cpdi[2]->wg.z = (r1.y*r2.x - r1.x*r2.y + r1.y*r3.x - r2.y*r3.x - r1.x*r3.y + r2.x*r3.y)*Vp;
+            cpdi[3]->wg.x = (r1.z*r2.y - r1.y*r2.z + r1.z*r3.y + r2.z*r3.y - r1.y*r3.z - r2.y*r3.z)*Vp;
+            cpdi[3]->wg.y = (-(r1.z*r2.x) + r1.x*r2.z - r1.z*r3.x - r2.z*r3.x + r1.x*r3.z + r2.x*r3.z)*Vp;
+            cpdi[3]->wg.z = (r1.y*r2.x - r1.x*r2.y + r1.y*r3.x + r2.y*r3.x - r1.x*r3.y - r2.x*r3.y)*Vp;
+            cpdi[4]->wg.x = (-(r1.z*r2.y) + r1.y*r2.z - r1.z*r3.y + r2.z*r3.y + r1.y*r3.z - r2.y*r3.z)*Vp;
+            cpdi[4]->wg.y = (r1.z*r2.x - r1.x*r2.z + r1.z*r3.x - r2.z*r3.x - r1.x*r3.z + r2.x*r3.z)*Vp;
+            cpdi[4]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y - r1.y*r3.x + r2.y*r3.x + r1.x*r3.y - r2.x*r3.y)*Vp;
+            cpdi[5]->wg.x = (-(r1.z*r2.y) + r1.y*r2.z - r1.z*r3.y - r2.z*r3.y + r1.y*r3.z + r2.y*r3.z)*Vp;
+            cpdi[5]->wg.y = (r1.z*r2.x - r1.x*r2.z + r1.z*r3.x + r2.z*r3.x - r1.x*r3.z - r2.x*r3.z)*Vp;
+            cpdi[5]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y - r1.y*r3.x - r2.y*r3.x + r1.x*r3.y + r2.x*r3.y)*Vp;
+            cpdi[6]->wg.x = (-(r1.z*r2.y) + r1.y*r2.z + r1.z*r3.y - r2.z*r3.y - r1.y*r3.z + r2.y*r3.z)*Vp;
+            cpdi[6]->wg.y = (r1.z*r2.x - r1.x*r2.z - r1.z*r3.x + r2.z*r3.x + r1.x*r3.z - r2.x*r3.z)*Vp;
+            cpdi[6]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y + r1.y*r3.x - r2.y*r3.x - r1.x*r3.y + r2.x*r3.y)*Vp;
+            cpdi[7]->wg.x = (-(r1.z*r2.y) + r1.y*r2.z + r1.z*r3.y + r2.z*r3.y - r1.y*r3.z - r2.y*r3.z)*Vp;
+            cpdi[7]->wg.y = (r1.z*r2.x - r1.x*r2.z - r1.z*r3.x - r2.z*r3.x + r1.x*r3.z + r2.x*r3.z)*Vp;
+            cpdi[7]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y + r1.y*r3.x + r2.y*r3.x - r1.x*r3.y - r2.x*r3.y)*Vp;
+        }
+        catch(...)
+        {	throw MPMTermination("A CPDI partical domain node has left the grid.","MatPoint3D::GetCPDINodesAndWeights");
+        }
+    }
+    else
+    {	throw MPMTermination("qCPDI is not yet implemented for 3D (use lCPDI instead).","MatPoint3D::GetCPDINodesAndWeights");
+    }
+    
+    // traction BC area saves
 }
 
 // To support traction boundary conditions, find the deformed edge, natural coordinates of
@@ -262,6 +373,6 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 // of the traction. Input vectors need to be length 4
 void MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tnorm,int *numDnds)
 {
-	throw "Traction boundary conditions not yet available for 3D";
+    throw MPMTermination("Traction boundary conditions not yet available for 3D.","MatPoint3D::GetTractionInfo");
 }
 

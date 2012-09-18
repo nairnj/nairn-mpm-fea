@@ -219,15 +219,15 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"type")==0)
 			{	value=XMLString::transcode(attrs.getValue(i));
-                if(strcmp(value,"Dirac")==0)
+                if(strcmp(value,"Dirac")==0 || strcmp(value,"Classic")==0)
                 {   ElementBase::useGimp = POINT_GIMP;
                     ElementBase::analysisGimp = POINT_GIMP;
                 }
-                else if(strcmp(value,"uGIMP")==0)
+                else if(strcmp(value,"uGIMP")==0 || strcmp(value,"GIMP")==0)
                 {   ElementBase::useGimp = UNIFORM_GIMP;
                     ElementBase::analysisGimp = UNIFORM_GIMP;
                 }
-                else if(strcmp(value,"lCPDI")==0)
+                else if(strcmp(value,"lCPDI")==0 || strcmp(value,"CPDI")==0)
                 {   ElementBase::useGimp = LINEAR_CPDI;
                     ElementBase::analysisGimp = LINEAR_CPDI;
                 }

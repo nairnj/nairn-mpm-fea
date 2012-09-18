@@ -169,28 +169,34 @@ void NairnMPM::MyStartResultsOutput(void)
 	
     //---------------------------------------------------
     // Fixed Displacements
-    PrintSection("NODAL POINTS WITH FIXED DISPLACEMENTS");
-	archiver->ArchiveVelocityBCs(firstVelocityBC);
+    if(firstVelocityBC!=NULL)
+    {   PrintSection("NODAL POINTS WITH FIXED DISPLACEMENTS");
+        archiver->ArchiveVelocityBCs(firstVelocityBC);
+    }
     
     //---------------------------------------------------
     // Loaded Material Points
-    PrintSection("MATERIAL POINTS WITH EXTERNAL FORCES");
-    cout << "Point   DOF ID     Load (N)     Arg (ms/ms^-1)  Function\n"
-   	<< "----------------------------------------------------------\n";
-    nextBC=(BoundaryCondition *)firstLoadedPt;
-    while(nextBC!=NULL)
-    	nextBC=nextBC->PrintBC(cout);
-    cout << endl;
+    if(firstLoadedPt!=NULL)
+    {   PrintSection("MATERIAL POINTS WITH EXTERNAL FORCES");
+        cout << "Point   DOF ID     Load (N)     Arg (ms/ms^-1)  Function\n"
+        << "----------------------------------------------------------\n";
+        nextBC=(BoundaryCondition *)firstLoadedPt;
+        while(nextBC!=NULL)
+            nextBC=nextBC->PrintBC(cout);
+        cout << endl;
+    }
 	
 	//---------------------------------------------------
     // Traction Loaded Material Points
-    PrintSection("MATERIAL POINTS WITH TRACTIONS");
-    cout << "Point   DOF Face ID   Stress (MPa)    Arg (ms/ms^-1)  Function\n"
-   	<< "----------------------------------------------------------------\n";
-    nextBC=(BoundaryCondition *)firstTractionPt;
-    while(nextBC!=NULL)
-    	nextBC=nextBC->PrintBC(cout);
-    cout << endl;
+    if(firstTractionPt!=NULL)
+    {   PrintSection("MATERIAL POINTS WITH TRACTIONS");
+        cout << "Point   DOF Face ID   Stress (MPa)    Arg (ms/ms^-1)  Function\n"
+        << "----------------------------------------------------------------\n";
+        nextBC=(BoundaryCondition *)firstTractionPt;
+        while(nextBC!=NULL)
+            nextBC=nextBC->PrintBC(cout);
+        cout << endl;
+    }
 	
    //---------------------------------------------------
     // Diffusion boundary conditions

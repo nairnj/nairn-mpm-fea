@@ -72,7 +72,7 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,
         case LINEAR_CPDI:
         case QUADRATIC_CPDI:
 		{	if(mpmptr==NULL)
-            {   ChangeGimp(POINT_GIMP);
+            {   ChangeGimp(UNIFORM_GIMP);
                 GetShapeFunctions(numnds,fn,nds,pos,xipos,NULL);
                 RestoreGimp();
                 break;
@@ -168,7 +168,6 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipo
 	Load node numbers into nds[1]...
 	Load shape functions into fn[1]...
 	Load shape function derviatives into xDeriv[1]..., yDeriv[1]..., zDeriv[1]...
-	zDeriv may be NULL for 2D
 	pos and xipos not used or set in CPDI
 	Input: pointer to material point dimensionless position, which is changed here
 	See also GetShapeGradients() if need to change
@@ -215,7 +214,7 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
         case LINEAR_CPDI:
 		case QUADRATIC_CPDI:
         {   if(theMaterials[mpmptr->MatID()]->Rigid())
-            {   ChangeGimp(POINT_GIMP);
+            {   ChangeGimp(UNIFORM_GIMP);
                 GetShapeFunctionsAndGradients(numnds,fn,nds,pos,xipos,xDeriv,yDeriv,zDeriv,mpmptr);
                 RestoreGimp();
                 break;
@@ -254,7 +253,6 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
     Load node numbers into nds[1]...
     Load shape functions into fn[1]...
     Load shape function derviatives into xDeriv[1]..., yDeriv[1]..., zDeriv[1]...
-    zDeriv may be NULL for 2D
     Input: pointer to material point dimensionless position
     See all GetShapeFunctionsAndGradients() if need to change
    NOTE: This is called at various places in the time step when gradients are needed. It should
@@ -525,10 +523,7 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,double *ws,int 
 		for(j=1;j<=*numnds;j++)
 		{   cnodes[ncnds] = nds[j];
 			wsSi[ncnds] = ws[i]*fn[j];
-			if(xDeriv!=NULL)
-			{	wgSi[ncnds].x = cpdi[i]->wg.x*fn[j];
-				wgSi[ncnds].y = cpdi[i]->wg.y*fn[j];
-			}
+			if(xDeriv!=NULL) CopyScaleVector(&wgSi[ncnds], &cpdi[i]->wg, fn[j]);
 			ncnds++;
 		}
 	}
@@ -589,6 +584,7 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,double *ws,int 
 			if(xDeriv!=NULL)
 			{	xDeriv[count] += wgSi[i].x;
 				yDeriv[count] += wgSi[i].y;
+                zDeriv[count] += wgSi[i].z;
 			}
 		}
 		else
@@ -603,6 +599,7 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,double *ws,int 
 			if(xDeriv!=NULL)
 			{	xDeriv[count] = wgSi[i].x;
 				yDeriv[count] = wgSi[i].y;
+                zDeriv[count] = wgSi[i].z;
 			}
 		}
 	}
@@ -805,26 +802,33 @@ void ElementBase::RestoreGimp(void) { useGimp = analysisGimp; }
 
 // on start up initialize number of CPDI nodes (if needed)
 // needs revision when add 3D CPDI
-void ElementBase::InitializeCPDI(void)
+void ElementBase::InitializeCPDI(bool isThreeD)
 {
     int i;
     
-    if(useGimp == LINEAR_CPDI)
-    {   numCPDINodes = 4;
-        wShape = (double *)malloc(numCPDINodes*sizeof(double));
-        for(i=0;i<4;i++) wShape[i] = 0.25;
+    if(isThreeD)
+    {   if(useGimp == LINEAR_CPDI)
+        {   numCPDINodes = 8;
+            wShape = (double *)malloc(numCPDINodes*sizeof(double));
+            for(i=0;i<8;i++) wShape[i] = 0.125;
+        }
+        else
+        {	throw MPMTermination("qCPDI is not yet implemented for 3D (use lCPDI instead).","MatPoint3D::GetCPDINodesAndWeights");
+        }
     }
-    else if(useGimp == QUADRATIC_CPDI)
-    {   numCPDINodes = 9;
-        wShape = (double *)malloc(numCPDINodes*sizeof(double));
-        for(i=0;i<4;i++) wShape[i] = 1./36.;
-        for(i=4;i<8;i++) wShape[i] = 1./9.;
-        wShape[8] = 4./9.;
-		/*
-        for(i=0;i<4;i++) wShape[i] = 0.25;
-        for(i=4;i<8;i++) wShape[i] = 0.;
-        wShape[8] = 0.;
-		*/
+    else
+    {   if(useGimp == LINEAR_CPDI)
+        {   numCPDINodes = 4;
+            wShape = (double *)malloc(numCPDINodes*sizeof(double));
+            for(i=0;i<4;i++) wShape[i] = 0.25;
+        }
+        else if(useGimp == QUADRATIC_CPDI)
+        {   numCPDINodes = 9;
+            wShape = (double *)malloc(numCPDINodes*sizeof(double));
+            for(i=0;i<4;i++) wShape[i] = 1./36.;
+            for(i=4;i<8;i++) wShape[i] = 1./9.;
+            wShape[8] = 4./9.;
+        }
     }
 }
 

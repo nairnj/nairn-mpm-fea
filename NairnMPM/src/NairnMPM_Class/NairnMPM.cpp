@@ -34,6 +34,7 @@
 #include "NairnMPM_Class/RunCustomTasksTask.hpp"
 #include "NairnMPM_Class/MoveCracksTask.hpp"
 #include "NairnMPM_Class/ResetElementsTask.hpp"
+#include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include <time.h>
 
 // global analysis object
@@ -369,7 +370,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	}
     
     // CPDI factors if needed
-    ElementBase::InitializeCPDI();
+    ElementBase::InitializeCPDI(IsThreeD());
 	
 	// future - make this a parameter that can be input
 	double PropFractCellTime=FractCellTime;
@@ -443,7 +444,7 @@ void NairnMPM::PreliminaryCalcs(void)
 			nextTransport=nextTransport->TransportTimeStep(matid,dcell,&tmin);
         
         // CPDI domain data
-        if(!mpm[p]->AllocateCPDIStructures(ElementBase::useGimp))
+        if(!mpm[p]->AllocateCPDIStructures(ElementBase::useGimp,IsThreeD()))
             throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryCalcs");
 	}
 	
@@ -519,18 +520,24 @@ void NairnMPM::PreliminaryCalcs(void)
 void NairnMPM::ValidateOptions(void)
 {	
 	if(ElementBase::useGimp != POINT_GIMP)
-	{	if(!mpmgrid.CanDoGIMP())
+    {   // using a GIMP method
+		if(!mpmgrid.CanDoGIMP())
 			throw CommonException("GIMP not allowed unless using a generated regular mesh","NairnMPM::ValidateOptions");
 		if(ptsPerElement!=4 && !IsThreeD())
 			throw CommonException("GIMP requires 4 particles per element for 2D","NairnMPM::ValidateOptions");
 		if(ptsPerElement!=8 && IsThreeD())
 			throw CommonException("GIMP requires 8 particles per element for 3D","NairnMPM::ValidateOptions");
-        if(ElementBase::useGimp == LINEAR_CPDI || ElementBase::useGimp == QUADRATIC_CPDI)
+        if(ElementBase::useGimp == QUADRATIC_CPDI)
         {   if(IsThreeD())
-                throw CommonException("CPDI methods not yet available for 3D","NairnMPM::ValidateOptions");
+                throw CommonException("qCPDI methods not yet available for 3D; use lCPDI instead","NairnMPM::ValidateOptions");
         }
 	}
-    	
+    else
+    {   // in Classic MPM or POINT_GIMP
+        if(firstTractionPt!=NULL)
+			throw CommonException("Traction boundary conditions cannot require use of a GIMP MPM method.","NairnMPM::ValidateOptions");
+    }
+            
 	if(contact.hasImperfectInterface)
 	{	if(mpmgrid.GetCartesian()<=0)
 			throw CommonException("Imperfect interfaces require a cartesian mesh","NairnMPM::ValidateOptions");
