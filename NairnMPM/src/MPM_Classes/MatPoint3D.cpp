@@ -228,19 +228,32 @@ double MatPoint3D::KineticEnergy(void)
 // get deformation gradient, which is stored in strain and rotation tensors
 void MatPoint3D::GetDeformationGradient(double F[][3])
 {
-	// current deformation gradient in 2D
-	F[0][0] = 1. + ep.xx + eplast.xx;
-	F[1][1] = 1. + ep.yy + eplast.yy;
-	F[2][2] = 1. + ep.zz + eplast.zz;
-    double exy = ep.xy + eplast.xy;
-	F[0][1] = 0.5*(exy - wrot.xy);
-	F[1][0] = 0.5*(exy + wrot.xy);
-    double exz = ep.xz + eplast.xz;
-	F[0][2] = 0.5*(exz - wrot.xz);
-	F[2][0] = 0.5*(exz + wrot.xz);
-    double eyz = ep.yz + eplast.yz;
-	F[1][2] = 0.5*(eyz - wrot.yz);
-	F[2][1] = 0.5*(eyz + wrot.yz);
+	// current deformation gradient in 3D
+    if(theMaterials[MatID()]->HasPlasticStrainForGradient())
+    {   F[0][0] = 1. + ep.xx + eplast.xx;
+        F[1][1] = 1. + ep.yy + eplast.yy;
+        F[2][2] = 1. + ep.zz + eplast.zz;
+        double exy = ep.xy + eplast.xy;
+        F[0][1] = 0.5*(exy - wrot.xy);
+        F[1][0] = 0.5*(exy + wrot.xy);
+        double exz = ep.xz + eplast.xz;
+        F[0][2] = 0.5*(exz - wrot.xz);
+        F[2][0] = 0.5*(exz + wrot.xz);
+        double eyz = ep.yz + eplast.yz;
+        F[1][2] = 0.5*(eyz - wrot.yz);
+        F[2][1] = 0.5*(eyz + wrot.yz);
+    }
+    else
+    {   F[0][0] = 1. + ep.xx;
+        F[1][1] = 1. + ep.yy;
+        F[2][2] = 1. + ep.zz;
+        F[0][1] = 0.5*(ep.xy - wrot.xy);
+        F[1][0] = 0.5*(ep.xy + wrot.xy);
+        F[0][2] = 0.5*(ep.xz - wrot.xz);
+        F[2][0] = 0.5*(ep.xz + wrot.xz);
+        F[1][2] = 0.5*(ep.yz - wrot.yz);
+        F[2][1] = 0.5*(ep.yz + wrot.yz);
+    }
 }
 
 // get relative volume from det J for large deformation material laws

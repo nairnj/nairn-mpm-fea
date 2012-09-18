@@ -706,3 +706,6 @@ double AnisoPlasticity::GetFkFromLambdak(MPMBase *mptr,Tensor *strial,Tensor *st
 	return GetF(mptr,stk,np);
 }
 
+// plastic strain needed to get deformation gradient for this material class
+bool AnisoPlasticity::HasPlasticStrainForGradient(void) { return TRUE; }
+

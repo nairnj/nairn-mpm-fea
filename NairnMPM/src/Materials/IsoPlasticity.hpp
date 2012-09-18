@@ -60,6 +60,7 @@ class IsoPlasticity : public IsotropicMat
 		
 		// accessors
 		virtual double GetHistory(int,char *);
+        virtual bool HasPlasticStrainForGradient(void);
 		
     protected:
 		double yldred,Gred,Kred;

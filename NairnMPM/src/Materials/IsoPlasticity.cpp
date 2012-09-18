@@ -736,3 +736,7 @@ double IsoPlasticity::GetHistory(int num,char *historyPtr)
     }
     return history;
 }
+
+// plastic strain needed to get deformation gradient for this material class
+bool IsoPlasticity::HasPlasticStrainForGradient(void) { return TRUE; }
+

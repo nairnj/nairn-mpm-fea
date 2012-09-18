@@ -46,6 +46,9 @@ class AnisoPlasticity : public Orthotropic
 		virtual void GetDfDsigma(MPMBase *,Tensor *,int) = 0;
 		virtual double GetDfAlphaDotH(MPMBase *,int,Tensor *) = 0;
 		virtual void UpdatePlasticInternal(MPMBase *,int) = 0;
+    
+        // accessors
+        virtual bool HasPlasticStrainForGradient(void);
 		
    protected:
 		double syxx,syyy,syzz,tyyz,tyxz,tyxy;
