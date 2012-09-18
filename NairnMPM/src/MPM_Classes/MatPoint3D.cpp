@@ -366,7 +366,7 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
     {	throw MPMTermination("qCPDI is not yet implemented for 3D (use lCPDI instead).","MatPoint3D::GetCPDINodesAndWeights");
     }
     
-    // traction BC area saves
+    // traction BC area saves 1/4 the total face area
     if(faceArea!=NULL)
 	{	// edges 1 and 3 = |r1 X r3|
 		c.x = r1.y*r3.z - r1.z*r3.y;
@@ -405,104 +405,62 @@ void MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vec
         switch(face)
         {	case 1:
                 // lower face n = (0,-1,0)
-                c1.x = pos.x-r1x;
-                c1.y = pos.y-r2y;
-				c1.z = pos.z-r3z;
-                c2.x = pos.x+r1x;
-                c2.y = pos.y-r2y;
-				c2.z = pos.z-r3z;
-                c3.x = pos.x-r1x;
-                c3.y = pos.y-r2y;
-				c3.z = pos.z+r3z;
-                c4.x = pos.x+r1x;
-                c4.y = pos.y-r2y;
-				c4.z = pos.z+r3z;
+                c1.x = c3.x = pos.x-r1x;
+                c2.x = c4.x = pos.x+r1x;
+                c1.y = c2.y = c3.y = c4.y = pos.y-r2y;
+				c1.z = c2.z = pos.z-r3z;
+				c3.z = c4.z = pos.z+r3z;
                 faceWt = r1x*r3z;
                 break;
                 
             case 2:
                 // right face n = (1,0,0)
-                c1.x = pos.x+r1x;
-                c1.y = pos.y-r2y;
-				c1.z = pos.z-r3z;
-                c2.x = pos.x+r1x;
-                c2.y = pos.y+r2y;
-				c2.z = pos.z-r3z;
-                c3.x = pos.x+r1x;
-                c3.y = pos.y-r2y;
-				c3.z = pos.z+r3z;
-                c4.x = pos.x+r1x;
-                c4.y = pos.y+r2y;
-				c4.z = pos.z+r3z;
+                c1.x = c3.x = c2.x = c4.x = pos.x+r1x;
+                c1.y = c3.y = pos.y-r2y;
+                c2.y = c4.y = pos.y+r2y;
+				c1.z = c2.z = pos.z-r3z;
+				c3.z = c4.z = pos.z+r3z;
                 faceWt = r2y*r3z;
                 break;
                 
             case 3:
                 // top face n = (0,1,0)
-                c1.x = pos.x+r1x;
-                c1.y = pos.y+r2y;
-				c1.z = pos.z-r3z;
-                c2.x = pos.x-r1x;
-                c2.y = pos.y+r2y;
-				c2.z = pos.z-r3z;
-                c3.x = pos.x+r1x;
-                c3.y = pos.y+r2y;
-				c3.z = pos.z+r3z;
-                c4.x = pos.x-r1x;
-                c4.y = pos.y+r2y;
-				c4.z = pos.z+r3z;
+                c1.x = c3.x = pos.x+r1x;
+                c2.x = c4.x = pos.x-r1x;
+                c1.y = c2.y = c3.y = c4.y = pos.y+r2y;
+				c1.z = c2.z = pos.z-r3z;
+				c3.z = c4.z = pos.z+r3z;
                 faceWt = r1x*r3z;
                 break;
                 
             case 4:
                 // left face n = (-1,0,0)
-                c1.x = pos.x-r1x;
-                c1.y = pos.y+r2y;
-				c1.z = pos.z-r3z;
-                c2.x = pos.x-r1x;
-                c2.y = pos.y-r2y;
-				c2.z = pos.z-r3z;
-                c3.x = pos.x-r1x;
-                c3.y = pos.y+r2y;
-				c3.z = pos.z+r3z;
-                c4.x = pos.x-r1x;
-                c4.y = pos.y-r2y;
-				c4.z = pos.z+r3z;
+                c1.x = c3.x = c2.x = c4.x = pos.x-r1x;
+                c1.y = c3.y = pos.y+r2y;
+                c2.y = c4.y = pos.y-r2y;
+				c1.z = c2.z = pos.z-r3z;
+				c3.z = c4.z = pos.z+r3z;
                 faceWt = r2y*r3z;
                 break;
 			
 			case 5:
                 // bottom face n = (0,0,-1)
-                c1.x = pos.x-r1x;
-                c1.y = pos.y-r2y;
-				c1.z = pos.z-r3z;
-                c2.x = pos.x-r1x;
-                c2.y = pos.y+r2y;
-				c2.z = pos.z-r3z;
-                c3.x = pos.x+r1x;
-                c3.y = pos.y+r2y;
-				c3.z = pos.z-r3z;
-                c4.x = pos.x-r1x;
-                c4.y = pos.y+r2y;
-				c4.z = pos.z-r3z;
-                faceWt = r2y*r3z;
+                c1.x = c2.x = pos.x-r1x;
+                c3.x = c4.x = pos.x+r1x;
+                c1.y = c3.y = pos.y-r2y;
+                c2.y = c4.y = pos.y+r2y;
+				c1.z = c2.z = c3.z = c4.z = pos.z-r3z;
+                faceWt = r2y*r1x;
                 break;
 			
 			default:
                 // top face n = (0,0,1)
-                c1.x = pos.x-r1x;
-                c1.y = pos.y-r2y;
-				c1.z = pos.z+r3z;
-                c2.x = pos.x-r1x;
-                c2.y = pos.y+r2y;
-				c2.z = pos.z+r3z;
-                c3.x = pos.x+r1x;
-                c3.y = pos.y+r2y;
-				c3.z = pos.z+r3z;
-                c4.x = pos.x-r1x;
-                c4.y = pos.y+r2y;
-				c4.z = pos.z+r3z;
-                faceWt = r2y*r3z;
+                c1.x = c2.x = pos.x-r1x;
+                c3.x = c4.x = pos.x+r1x;
+                c1.y = c3.y = pos.y-r2y;
+                c2.y = c4.y = pos.y+r2y;
+				c1.z = c2.z = c3.z = c4.z = pos.z+r3z;
+                faceWt = r2y*r1x;
                 break;
        }
         
@@ -590,7 +548,8 @@ void MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vec
         cElem[3] = cpdi[d4]->inElem;
 		CopyVector(&corners[3], &cpdi[d4]->ncpos);
         
-        // get weighting factor as 1/2 of face area
+        // get weighting factor as 1/4 of face area
+        // 1/4 is the get average of the four nodes
         if(face==1 || face==3)
             faceWt = faceArea->x;
         else if(face==2 || face==4)

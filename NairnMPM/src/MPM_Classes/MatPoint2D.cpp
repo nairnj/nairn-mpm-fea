@@ -403,17 +403,15 @@ void MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vec
         {	case 1:
                 // lower edge
                 c1.x = pos.x-r1x;
-                c1.y = pos.y-r2y;
                 c2.x = pos.x+r1x;
-                c2.y = pos.y-r2y;
+                c1.y = c2.y = pos.y-r2y;
                 faceWt = r1x*mpmgrid.GetThickness();
                 break;
                 
             case 2:
                 // right edgt
-                c1.x = pos.x+r1x;
+                c1.x = c2.x = pos.x+r1x;
                 c1.y = pos.y-r2y;
-                c2.x = pos.x+r1x;
                 c2.y = pos.y+r2y;
                 faceWt = r2y*mpmgrid.GetThickness();
                 break;
@@ -421,17 +419,15 @@ void MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vec
             case 3:
                 // top edge
                 c1.x = pos.x+r1x;
-                c1.y = pos.y+r2y;
                 c2.x = pos.x-r1x;
-                c2.y = pos.y+r2y;
+                c1.y = c2.y = pos.y+r2y;
                 faceWt = r1x*mpmgrid.GetThickness();
                 break;
                 
             default:
                 // left edge
-                c1.x = pos.x-r1x;
+                c1.x = c2.x = pos.x-r1x;
                 c1.y = pos.y+r2y;
-                c2.x = pos.x-r1x;
                 c2.y = pos.y-r2y;
                 faceWt = r2y*mpmgrid.GetThickness();
                 break;
@@ -490,6 +486,7 @@ void MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vec
         corners[1].y = cpdi[d2]->ncpos.y;
         
         // get weighting factor as 1/2 of face area
+        // the 1/2 is weighting factor to average the two nodes
         if(face==1 || face==3)
             faceWt = faceArea->x;
         else
@@ -497,7 +494,7 @@ void MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vec
         
     }
 	
-    // get traction normal vector
+    // get traction normal vector by 1/2 the face area
     ZeroVector(tscaled);
 	switch(dof)
 	{	case 1:
