@@ -224,12 +224,21 @@ double MatPoint2D::KineticEnergy(void)
 void MatPoint2D::GetDeformationGradient(double F[][3])
 {
 	// current deformation gradient in 2D
-	F[0][0] = 1. + ep.xx + eplast.xx;
-    double exy = ep.xy + eplast.xy;
-	F[0][1] = 0.5*(exy - wrot.xy);
-	F[1][0] = 0.5*(exy + wrot.xy);
-	F[1][1] = 1. + ep.yy + eplast.yy;
-    F[2][2] = 1. + ep.zz + eplast.zz;
+    if(theMaterials[MatID()]->HasPlasticStrainForGradient())
+    {   F[0][0] = 1. + ep.xx + eplast.xx;
+        double exy = ep.xy + eplast.xy;
+        F[0][1] = 0.5*(exy - wrot.xy);
+        F[1][0] = 0.5*(exy + wrot.xy);
+        F[1][1] = 1. + ep.yy + eplast.yy;
+        F[2][2] = 1. + ep.zz + eplast.zz;
+    }
+    else
+    {   F[0][0] = 1. + ep.xx;
+        F[0][1] = 0.5*(ep.xy - wrot.xy);
+        F[1][0] = 0.5*(ep.xy + wrot.xy);
+        F[1][1] = 1. + ep.yy;
+        F[2][2] = 1. + ep.zz;
+    }
 }
 
 // get relative volume from det J for large deformation material laws
