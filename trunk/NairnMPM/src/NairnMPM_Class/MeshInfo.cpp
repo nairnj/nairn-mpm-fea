@@ -184,7 +184,7 @@ int MeshInfo::FindElementFromPoint(Vector *pt)
 {
     int theElem = 0;
     
-    // error if not structure grid
+    // error if not structured grid
     if(horiz<0) throw "";
     
     int col = (int)((pt->x-xmin)/gridx);		// zero-based column # from 0 to horiz-1
@@ -204,8 +204,7 @@ int MeshInfo::FindElementFromPoint(Vector *pt)
     
     // 3D
     if(gridz > 0.)
-    {   // not written yet
-        int zrow = (int)((pt->z-zmin)/gridz);
+    {   int zrow = (int)((pt->z-zmin)/gridz);
 		if(zrow<0 || zrow>=depth)
 		{	if(pt->z == zmin+depth*gridz)
 				zrow = depth-1;

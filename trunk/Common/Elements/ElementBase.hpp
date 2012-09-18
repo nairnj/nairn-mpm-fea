@@ -146,7 +146,7 @@ class ElementBase : public LinkedObject
 		static void ChangeGimp(int);
 		static void RestoreGimp(void);
 		static void AllocateNeighbors(void);
-        static void InitializeCPDI(void);
+        static void InitializeCPDI(bool);
 #else
 		static void MoveCrackTipNodes(int);
 #endif

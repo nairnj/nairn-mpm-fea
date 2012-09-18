@@ -48,7 +48,7 @@ class MPMBase : public LinkedObject
 		void AllocateDiffusion(void);
 		void AllocateTemperature(void);
 		void AllocateJStructures(void);
-        bool AllocateCPDIStructures(int gimpType);
+        bool AllocateCPDIStructures(int,bool);
         
         // virtual methods
         virtual double thickness(void) = 0;
@@ -127,6 +127,7 @@ class MPMBase : public LinkedObject
 		Tensor *GetStressTensor(void);
 		Tensor *GetStrainTensor(void);
  		Tensor *GetPlasticStrainTensor(void);
+        Tensor *GetElasticLeftCauchyTensor(void);
 		TensorAntisym *GetRotationStrainTensor(void);
 		char *GetHistoryPtr(void);
 		void SetHistoryPtr(char *);
