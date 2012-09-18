@@ -142,7 +142,7 @@ or <code>3</code> for <code>z</code> axis (if 3D))</dd>
 <dd>Defines the type of loading (<a href="#style">see below</a>).</dd>
 
 <dt>face (for <code>TractionBC</code>)</dt>
-<dd>The face of the original particle domain that is loaded by traction. In 2D, the faces are the edges numbered 1 through 4 in the counter-clockwise direction with the bottom edge being number 1.</dd>
+<dd>The face of the original particle domain that is loaded by traction. In 2D, the faces are the edges numbered 1 through 4 in the counter-clockwise direction with the bottom edge being number 1. In 3D, 1 to 4 are the same faces (<i>i.e.</i>, faces with normals (0,-1,0), (1,0,0), (0,1,0), and (-1,0,0) on the original particle domain, respectively), 5 is the bottom (with normal (0,0,-1)), and 6 is the top (with normal (0,0,1)).</dd>
 
 <dt>load and time (for <code>LoadBC</code>)</dt>
 <dd>Defines the two parameters (<code>value</code> and <code>time</code>) for the specified style
@@ -176,15 +176,15 @@ load boundary conditions and have no effect on other boundary conditions, includ
 
 <h3>Difference Between LoadBC and TractionBC</h3>
 
-<p>The <code>LoadBC</code> option considers the load (in N) to be applied directly to the particle, which in MPM is not on the surface of the body, even in the particle is on the edge. During the MPM algorithm, this load is extrapolated to all nodes around the paraticle resulting in some of a modeled surface loading being applied internal to the object. It is common, therefore, to see artifacts in particles near edges that are loaded directly by forces. The MPM results away from the particles are usually OK. This form of external loading appears to be common to all MPM codes.</p>
+<p>The <code>LoadBC</code> option considers the load (in N) to be applied directly to the particle, which in MPM is not really applied to the surface of the body, even in the particle is on the edge. During the MPM algorithm, this load is extrapolated to all nodes around the paraticle resulting in some of a modeled loading being applied internal to the object. It is common, therefore, to see artifacts in particles near edges that are loaded directly by forces. The MPM results away from the particles, however, seem the be correct. This form of external loading appears to be common to all MPM codes.</p>
 
-<p>In contrast, the <code>TractionBC</code> option attempts to apply the load (as a stress) on the surface by implementing a surface integral term that appears in MPM derivations. This integral involves integration of the traction times grid shape functions on the particle surface. This surface is found  from the current particle deformation as follows (and depending on the current <a href="mpmheader.html#gimp">MPM method</a> being used):</p>
+<p>In contrast, the <code>TractionBC</code> option attempts to apply the load (as a stress) on the actual surface by implementing a surface integral term that appears in MPM derivations. This integral involves integration of the traction times grid shape functions on the particle surface. This surface is found  from the current particle deformation as follows (and depending on the current <a href="mpmheader.html#gimp">MPM method</a> being used):</p>
   <ul class="lev2args">
   <li><code>Dirac</code>: <code>TractionBC</code> commands are not allowed in this method; only <code>LoadBC</code> can be used</li>
   <li><code>uGIMP</code>: Integrate on the surface determined from the initial particle shape but translated to the new particle position.</li>
   <li><code>lCPDI</code> or <code>qCPDI</code>: Find parallelgram for the deformed particle domain from the particle's deformation gradient and integrate the selected surface terms by expanding its integrand in linear shape functions (<i>i.e.</i>, very similar to <code>CPDI</code> methods for shape function integration).</li>
   </ul>
-<p>The <code>TractionBC</code> option is still in development and not yet available in 3D. This method appears to reduce artifacts that occur on particles loaded by <code>LoadBC</code>. They might be more unstable in large deformation problems because they rely on forces closer to the edge where low mass nodes might cause inaccurate accelerations. The current <code>TractionBC</code> implementation ignores <a href="cracks.html">cracks</a>. They can be used in probems with cracks, but only if the tractions are all at least two grid elements away from any crack plane.</p>
+<p>This method appears to reduce artifacts that occur on particles loaded by <code>LoadBC</code>. They might be more unstable in large deformation problems because they rely on forces closer to the edge where low mass nodes might cause inaccurate accelerations. The current <code>TractionBC</code> implementation ignores <a href="cracks.html">cracks</a>. They can be used in probems with cracks, but only if the tractions are all at least two grid elements away from any crack plane.</p>
 
 <a name="style"></a><h2>Boundary Conditions Styles</h2>
 

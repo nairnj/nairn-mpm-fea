@@ -146,9 +146,9 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
     for(i=1;i<=numnds;i++)
     {   // external force vector
         CopyScaleVector(&theFrc,&tscaled,tmag*fn[i]);
-        cout << "# ... node = " << nds[i];
-        PrintVector(", F = ",&theFrc);
-        cout << endl;
+        //cout << "# ... node = " << nds[i];
+        //PrintVector(", F = ",&theFrc);
+        //cout << endl;
         nd[nds[i]]->AddFextTask3(vfld,matfld,&theFrc);
     }
    
