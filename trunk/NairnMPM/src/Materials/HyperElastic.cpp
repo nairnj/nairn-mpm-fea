@@ -63,7 +63,7 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
 		ep->xy = F[1][0] + F[0][1];
 	
 		// rotational strain increments
-		wrot->xy = F[1][0] - F[0][1];
+		wrot->xy = F[1][0] - F[0][1];		// dv/dx - du/dy
 	}
     
     // calculate incremental determinant of (I+ gradV*dt) if desired
@@ -108,9 +108,9 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
 		ep->yz = F[2][1] + F[1][2];
 		
 		// rotational strain increments
-		wrot->xy = F[1][0] - F[0][1];
-		wrot->xz = F[2][0] - F[0][2];
-		wrot->yz = F[2][1] - F[1][2];
+		wrot->xy = F[1][0] - F[0][1];			// dv/dx - du/dy
+		wrot->xz = F[2][0] - F[0][2];			// dw/dx - du/dz
+		wrot->yz = F[2][1] - F[1][2];			// dw/dy - dv/dz
 	}
     
     // calculate incremental determinant of (I+ gradV*dt) if desired
