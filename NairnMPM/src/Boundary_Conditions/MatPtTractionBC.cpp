@@ -144,12 +144,15 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
     
     // add force to each node
     for(i=1;i<=numnds;i++)
-    {   // external force vector - tscaled has direction, surface area, and factor 1/2 (2D) or 1/4 (3D) to average the nodes
-        CopyScaleVector(&theFrc,&tscaled,tmag*fn[i]);
-        //cout << "# ... node = " << nds[i];
-        //PrintVector(", F = ",&theFrc);
-        //cout << endl;
-        nd[nds[i]]->AddFextTask3(vfld,matfld,&theFrc);
+    {   // skip empty nodes
+        if(nd[nds[i]]->NumberNonrigidParticles())
+        {   // external force vector - tscaled has direction, surface area, and factor 1/2 (2D) or 1/4 (3D) to average the nodes
+            CopyScaleVector(&theFrc,&tscaled,tmag*fn[i]);
+            //cout << "# ... node = " << nds[i] << ", mass =" << nd[nds[i]]->GetMass(0,0) << ", np =" << nd[nds[i]]->NumberNonrigidParticles();
+            //PrintVector(", F = ",&theFrc);
+            //cout << endl;
+            nd[nds[i]]->AddFextTask3(vfld,matfld,&theFrc);
+        }
     }
    
     // next boundary condition
