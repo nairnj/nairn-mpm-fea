@@ -41,7 +41,7 @@ using namespace std;
 #define PI_CONSTANT 3.141592653589793
 
 // MaxShapeNds - max number non-zero shape functions +1
-#define MaxShapeNds 28
+#define MaxShapeNds 37
 
 // Max number of nodes in an element + 1
 #define MaxElNd 10

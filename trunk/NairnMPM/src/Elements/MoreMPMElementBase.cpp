@@ -591,7 +591,11 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,double *ws,int 
 		{	if(fn[count]>1.e-10)
 			{	count++;		// keep only if shape is nonzero
 				if(count>=MaxShapeNds)
-				{	throw MPMTermination("Too many CPDI nodes found; increase MaxShapeNds in source code to fix","ElementBase::GetCPDIFunctions");
+                {	cout << "# Found " << count-1 << " nodes; need room for remaining nodes:" << endl;
+                    for(j=i;j<ncnds;j++)
+                    {   cout << "#   node = " << cnodes[j] << ", ws*Si = " << endl;
+                    }
+					throw MPMTermination("Too many CPDI nodes found; increase MaxShapeNds in source code at least number of remaining nodes","ElementBase::GetCPDIFunctions");
 				}
 			}
 			nds[count] = cnodes[i];
