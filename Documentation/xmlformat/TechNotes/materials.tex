@@ -119,7 +119,7 @@ The new terms are set in \code{SetAnalysisProps()} as \code{C13} $=-C_{13}/C_{33
 The plane strain stiffness equations for in-plane stresses are
 \begin{equation}
       \vvec{\s{xx}}{\s{yy}}{\t{xy}} = \symmat{C_{11}}{C_{12}}{0}{C_{22}}{0}{C_{66}}
-          \vvec{\e{xx} -\err{xx}}{\e{yy} - \err{yy}}{\g{xx}}
+          \vvec{\e{xx} -\err{xx}}{\e{yy} - \err{yy}}{\g{xy}}
  \end{equation}
  where residual strains now depend on reduced residual strains
 \begin{equation}
@@ -371,7 +371,7 @@ The solution for $\lambda$ is found numerically. The base class uses Newton's me
 
 \end{enumerate}
 
-If any subclass material can bracket the solution faster (or find the solution with an unbracketed method), it can override {\tt SolveForLambdaBracketed()} and provide a new method (which may be as simple as calling the unbracketed method in {\tt SolveForLambda()} or devising a better bracketing method in {\tt BracketSolution()}). For example, linear hardening laws, $\lambda$ can be found in a closed-form expression --- when $K(\alpha)=\sigma_Y + E_p\alpha$, the task is to solve
+If any subclass material can bracket the solution faster (or find the solution with an unbracketed method), it can override {\tt SolveForLambdaBracketed()} and provide a new method (which may be as simple as calling the unbracketed method in {\tt SolveForLambda()} or devising a better bracketing method in {\tt BracketSolution()}). For example, for a linear hardening law, $\lambda$ can be found in a closed-form expression --- when $K(\alpha)=\sigma_Y + E_p\alpha$, the task is to solve
 \begin{equation}
       f =  \|\dev_{trial}\| - \lambda 2G -  \sqrt{2\over3} \left(\sigma_Y + E_p\left(\alpha^{0}+ \lambda \sqrt{2\over3}\right)\right) = 0
 \end{equation}
