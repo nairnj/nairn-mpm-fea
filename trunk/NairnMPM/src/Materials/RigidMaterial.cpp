@@ -321,6 +321,29 @@ bool RigidMaterial::GetValueSetting(double *setting,double theTime,Vector *pos)
 	return true;
 }
 
+// Return true or false is this rigid particle is moving at constant velocity
+// Used by ReverseLoad custom task, because only constant velocity partilces are reversed
+bool RigidMaterial::IsConstantVelocity(void)
+{
+    // If no velocity is set, perhaps temperature or concentration are being set
+    if(setDirection==0)
+	{	if(Vfunction==NULL) return true;
+		return false;
+	}
+	
+    // contact rigid materials: true if no functions or 1 to 3 values set
+	// rigid BCs: true is no first function
+	if(setDirection==RIGID_MULTIMATERIAL_MODE)
+    {   if(function==NULL && function2==NULL && function3==NULL)
+			return true;
+	}
+	else if(function==NULL)
+		return true;
+	
+	// the particle motion is controlled by a function
+	return false;
+}
+
 // get vector from one to three functions and the directions being set in hasDir
 // If no directions set or no functions in place return false
 bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vector *pos)

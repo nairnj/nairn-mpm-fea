@@ -133,12 +133,14 @@ MPMBase::~MPMBase() { }
 void MPMBase::ReverseParticle(void)
 {	vel.x=-vel.x;
     vel.y=-vel.y;
+	vel.z=-vel.z;
 }
 
 // stop the particle (should only be done for rigid material particles)
 void MPMBase::StopParticle(void)
 {	vel.x=0.;
     vel.y=0.;
+	vel.z=0.;
 }
 
 #pragma mark MPMBase::Accessors

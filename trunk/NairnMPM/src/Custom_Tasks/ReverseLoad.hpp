@@ -21,7 +21,7 @@ class ReverseLoad : public CustomTask
 {
     public:
         int crackNum,style;
-        double finalLength,finalLoad;
+        double finalLength,finalTime;
         bool reversed;
         
         // constructors and destructors
