@@ -117,7 +117,7 @@ MatPtLoadBC *MatPtLoadBC::ReverseLinearLoad(double bctime,double *finalTime)
             }
             break;
 		case CONSTANT_VALUE:
-			value=0.;
+			value=-value;
 			break;
         default:
             break;
