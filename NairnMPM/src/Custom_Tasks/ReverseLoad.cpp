@@ -24,9 +24,11 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
+#include "BOundary_Conditions/MatPtTractionBC.hpp"
 #include "Exceptions/MPMTermination.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"
+#include "Materials/RigidMaterial.hpp"
 
 #pragma mark INITIALIZE
 
@@ -111,23 +113,12 @@ CustomTask *ReverseLoad::FinishForStep(void)
     CrackHeader *nextCrack;
     int cnum;
     MatPtLoadBC *nextLoad;
-    double currentLoad,loadx,loady;
+	MatPtTractionBC *nextTraction;
     
     // exit if done or no need
     if(reversed)
-	{	if(style==REVERSE)
-		{	if(firstLoadedPt!=NULL)
-			{	Vector *pFext=mpm[(firstLoadedPt->ptNum)-1]->GetPFext();
-				loadx=pFext->x;
-				loady=pFext->y;
-				currentLoad=fmax(fabs(loadx),fabs(loady));
-				if(loadx<0. || loady<0.) currentLoad=-currentLoad;
-				if(currentLoad*finalLoad<0.)
-					throw MPMTermination("Load has returned to zero","ReverseLoad::FinishForStep");
-			}
-			else if(mtime>=finalLoad)
-				throw MPMTermination("Displacement has returned to zero","ReverseLoad::FinishForStep");
-		}
+	{	if(style==REVERSE && mtime>finalTime)
+			throw MPMTermination("Load or displacement has returned to zero","ReverseLoad::FinishForStep");
 		return nextTask;
 	}
 	
@@ -150,43 +141,47 @@ CustomTask *ReverseLoad::FinishForStep(void)
                 propagateTask->ArrestGrowth(TRUE);
                 cout << "# Crack arrested at time t: " << 1000* mtime << endl;
 
-                // reverse the loads and rigid particles (REVERSE or HOLD)
+                // REVERSE: reverse linear loads, zero constant loads, reverse or zero constant velocity rigid particles
+				// HOLD: make linear loads constant, stop constant velocity rigid particles
+				// finalTime will be twice current time, or if any reversed linear loads, the time last one gets to zero
+				finalTime = 2.*mtime;
                 if(style!=NOCHANGE)
                 {   reversed=TRUE;
+					
+					// load BCs
                     nextLoad=firstLoadedPt;
                     while(nextLoad!=NULL)
                     {	if(style==REVERSE)
-                            nextLoad=nextLoad->ReverseLinearLoad(mtime);
+                            nextLoad=nextLoad->ReverseLinearLoad(mtime,&finalTime);
                         else
                             nextLoad=nextLoad->MakeConstantLoad(mtime);
                     }
 					
-					// reverse rigid particles
+					// traction BCs
+                    nextTraction=firstTractionPt;
+                    while(nextTraction!=NULL)
+                    {	if(style==REVERSE)
+							nextTraction=(MatPtTractionBC *)nextTraction->ReverseLinearLoad(mtime,&finalTime);
+						else
+							nextTraction=(MatPtTractionBC *)nextTraction->MakeConstantLoad(mtime);
+                    }
+					
+					// reverse rigid particles at constant velocity
 					int p;
 					for(p=0;p<nmpms;p++)
-					{	if(theMaterials[mpm[p]->MatID()]->Rigid())
-						{	if(style==REVERSE)
-								mpm[p]->ReverseParticle();
-							else
-								mpm[p]->StopParticle();
+					{	MaterialBase *mat = theMaterials[mpm[p]->MatID()];
+						if(mat->Rigid())
+						{	if(((RigidMaterial *)mat)->IsConstantVelocity())
+							{	if(style==REVERSE)
+									mpm[p]->ReverseParticle();
+								else
+									mpm[p]->StopParticle();
+							}
 						}
 					}
 					
                 }
-				
-				// find when to stop based on first point
-				if(style==REVERSE)
-				{	if(firstLoadedPt!=NULL)
-					{	Vector *pFext=mpm[(firstLoadedPt->ptNum)-1]->GetPFext();
-						loadx=pFext->x;
-						loady=pFext->y;
-						finalLoad=fmax(fabs(loadx),fabs(loady));
-						if(loadx<0. || loady<0.) finalLoad=-finalLoad;
-					}
-					else
-						finalLoad=2.*mtime;
-				}
-            }
+			}
         }
         nextCrack=(CrackHeader *)nextCrack->GetNextObject();
     }

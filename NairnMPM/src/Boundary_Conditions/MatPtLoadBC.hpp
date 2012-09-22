@@ -31,7 +31,7 @@ class MatPtLoadBC: public BoundaryCondition
 		// specific methods
         MatPtLoadBC *ZeroMPLoad(void);
         MatPtLoadBC *AddMPLoad(double);
-        MatPtLoadBC *ReverseLinearLoad(double);
+        MatPtLoadBC *ReverseLinearLoad(double,double *);
         MatPtLoadBC *MakeConstantLoad(double);
         
 		// class methods

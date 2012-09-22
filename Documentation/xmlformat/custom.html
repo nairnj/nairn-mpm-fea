@@ -133,18 +133,18 @@
 
 <h2><a name="ReverseLoad"></a>ReverseLoad</h2>
 
-<p>The <code>ReverseLoad</code> custom task monitors crack lengths. Once any crack or a specified crack reaches a specified crack length, the crack propagation of all cracks stops and various actions can be performed. The default action is to reverse all loads to unload the specimen (as implied by the name), but other options are available.</p>
+<p>The <code>ReverseLoad</code> custom task monitors crack lengths. Once any crack or a specified crack reaches a specified crack length, the crack propagation of all cracks stops and various actions can be performed. The default action is to specimen loading (as implied by the name), but other options are available.</p>
 
 <dl>
 
 <dt>style</dt>
 <dd>This parameter determines what happens after the specified crack length is reached and crack propagation is stopped. The default vaule is 0. The options are:
 <ul class="lev2args">
-<li>0: Reverses all linearly increasing loads (<a href="mpmloads.html#style">see style=2 loads</a>) and reverses direction of all <a href="definematl.html#rigid">rigid particles</a>. This style will unload until the load (on loaded particles) or displacement (on moving rigid particles) returns to zero at which point the analysis will stop.
+<li>0: Reverses all linearly increasing particle loads, zeros all constant particle loads, reverses all linearly increasing particle tractions, and zeros all constant particle tractions  (see <a href="mpmloads.html#style">see style=0 and style=2 loads</a>). This option also reverses direction of all constant-velocity <a href="definematl.html#rigid">rigid particles</a>. This style will unload until the load or traction (on loaded particles) or displacement (on moving rigid particles). If not linearly increasing loads or tractions are found, the analysis will stop at twice the current time. Note that loads or tractions set by other styles (<i>e.g.</i>, a <a href="function.html">function</a>) and rigid particles with velocity controlled by <a href="function.html">functions</a>, will not be changed by this task.
 </li>
-<li>1: Stops all linearly increasing loads (<a href="mpmloads.html#style">see style=2 loads</a>) and stops all <a href="definematl.html#rigid">rigid particles</a> at their current values. The analysis continues.
+<li>1: Stops all linearly increasing loads and tractions at their current value (<a href="mpmloads.html#style">see style=2 loads</a>) and zeros the velocity of all constant-velocity <a href="definematl.html#rigid">rigid particles</a>. The analysis continues. Note that loads or tractions set by other styles (<i>e.g.</i>, a <a href="function.html">function</a>) and rigid particles with velocity controlled by <a href="function.html">functions</a>, will not be changed by this task.
 </li>
-<li>2: All loads and rigid particles continue unchanged. Only the crack propagation stops.
+<li>2: All loads, tractions, and rigid particles continue unchanged. Only the crack propagation stops.
 </li>
 <li>3: The analysis terminates.
 </li>

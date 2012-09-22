@@ -101,7 +101,8 @@ MatPtLoadBC *MatPtLoadBC::AddMPLoad(double bctime)
 
 // reverse active linear loads. Leave rest alone
 // input is analysis time in seconds
-MatPtLoadBC *MatPtLoadBC::ReverseLinearLoad(double bctime)
+// if LINEAR_VALUE, set finalTime to time when load returns to zero
+MatPtLoadBC *MatPtLoadBC::ReverseLinearLoad(double bctime,double *finalTime)
 {
 	double mstime=1000.*bctime;
 	
@@ -111,8 +112,13 @@ MatPtLoadBC *MatPtLoadBC::ReverseLinearLoad(double bctime)
 			{   offset=BCValue(mstime);
                 value=-value;
                 ftime=mstime;
+				// new BC is offset+value*(mstime-ftime), which is zero when mstime = ftime-offset/value
+				*finalTime = 0.001*(ftime - offset/value);
             }
             break;
+		case CONSTANT_VALUE:
+			value=0.;
+			break;
         default:
             break;
     }
