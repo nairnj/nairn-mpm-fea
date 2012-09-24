@@ -122,7 +122,8 @@ src = ../src
 com = ../../Common
 #com = ../Common
 
-headers = -I$(src) -I$(com) -I$(headersPath) 
+headers = -I$(src) -I$(com) -I$(headersPath)
+AdjustTimeStepTask = $(src)/Custom_Tasks/AdjustTimeStepTask
 AnisoPlasticity = $(src)/Materials/AnisoPlasticity
 ArcController = $(com)/Read_XML/ArcController
 ArchiveData = $(src)/System/ArchiveData
@@ -254,6 +255,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 		$(com)/System/CommonAnalysis.hpp $(com)/System/LinkedObject.hpp
 
 # header files that include other header files (other than $(dprefix) files)
+# AdjustTimeStepTask.hpp : CustomTask.hpp
 # AnisoPlasticity : Orthotropic.hpp (TranIsotropic.hpp Elastic.hpp MaterialBase.hpp)
 # ArcController.hpp : LineController.hpp ShapeController.hpp
 # ArchiveData.hpp : CommonArchiveData.hpp
@@ -336,6 +338,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # Viscoelastic.hpp : MaterialBase.hpp
 # VonMisesHardening.hpp : IsoPlasticity (IsotropicMat.hpp Elastic.hpp MaterialBase.hpp)
 # WoodMaterial : HillPlastic.hpp (AnisoPlasticity.hpp, Orthotropic.hpp TranIsotropic.hpp Elastic.hpp MaterialBase.hpp)
+# VTKArchive.hpp : CustomTask.hpp
 
 # Header files with no dependencies
 # BMPLevel.hpp BodyForce.hpp BoundaryCondition.hpp CommonArchiveData.hpp CommonException.hpp
@@ -366,8 +369,8 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		mathexpr.o ShapeController.o PointController.o RectController.o OvalController.o PolygonController.o \
 		SphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o \
 		TractionLaw.o CohesiveZone.o CoupledSawTooth.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
-		HillPlastic.o MGSCGLMaterial.o VTKArchive.o SLMaterial.o CrackVelocityFieldMulti.o CrackVelocityFieldSingle.o \
-		WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o
+		HillPlastic.o MGSCGLMaterial.o VTKArchive.o AdjustTimeStepTask.o SLMaterial.o CrackVelocityFieldMulti.o \
+		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -568,7 +571,7 @@ MPMReadHandler.o : $(MPMReadHandler).cpp $(dprefix) $(NairnMPM).hpp $(ArchiveDat
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(NodalTempBC).hpp $(NodalVelBC).hpp $(MatPtLoadBC).hpp $(MatPtFluxBC).hpp \
 			$(BoundaryCondition).hpp $(NodesController).hpp $(ElementsController).hpp $(ParseController).hpp $(MaterialController).hpp \
 			$(MpsController).hpp $(MaterialController).hpp $(CrackController).hpp $(ElementBase).hpp $(MaterialBase).hpp \
-			$(CrackHeader).hpp $(CrackSegment).hpp $(TransportTask).hpp $(MatPoint3D).hpp $(MatPtTractionBC).hpp \
+			$(CrackHeader).hpp $(CrackSegment).hpp $(TransportTask).hpp $(MatPoint3D).hpp $(MatPtTractionBC).hpp $(AdjustTimeStepTask).hpp \
 			$(PolygonController).hpp $(ShapeController).hpp  $(SphereController).hpp $(RigidMaterial).hpp $(VTKArchive).hpp \
 			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(MeshInfo).hpp $(PropagateTask).hpp $(PolyhedronController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MPMReadHandler).cpp
@@ -774,6 +777,9 @@ VTKArchive.o : $(VTKArchive).cpp $(dprefix) $(VTKArchive).hpp $(CustomTask).hpp 
 			$(CommonException).hpp $(ArchiveData).hpp $(MeshInfo).hpp $(MaterialBase).hpp \
 			$(MPMBase).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(CommonArchiveData).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(VTKArchive).cpp
+AdjustTimeStepTask.o : $(AdjustTimeStepTask).cpp $(dprefix) $(AdjustTimeStepTask).hpp $(CustomTask).hpp $(NairnMPM).hpp \
+			$(ArchiveData).hpp $(MeshInfo).hpp $(MaterialBase).hpp $(MPMBase).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(AdjustTimeStepTask).cpp
 
 # MPM: Elements
 MoreMPMElementBase.o : $(MoreMPMElementBase).cpp $(dprefix) $(ElementBase).hpp $(NodalPoint).hpp $(MPMBase).hpp \
@@ -791,6 +797,7 @@ NodalPointMPM.o : $(NodalPointMPM).cpp $(dprefix) $(NodalPoint).hpp $(NairnMPM).
 			$(CrackNode).hpp $(MeshInfo).hpp $(CrackSegment).hpp $(CrackHeader).hpp $(CrackVelocityField).hpp \
 			$(MatVelocityField).hpp $(BoundaryCondition).hpp $(CrackVelocityFieldMulti).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NodalPointMPM).cpp
+
 
 # -------------------------------------------------------------------------
 # To make executable

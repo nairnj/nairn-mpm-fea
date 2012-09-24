@@ -119,6 +119,7 @@ class MaterialBase : public LinkedObject
 #ifdef MPM_CODE
         virtual double WaveSpeed(bool,MPMBase *) = 0;
 		virtual double ShearWaveSpeed(bool,MPMBase *);
+        virtual double CurrentWaveSpeed(bool,MPMBase *);
 		virtual double MaximumDiffusion(void);
         virtual double MaximumDiffusivity(void);
         virtual double GetHistory(int,char *);

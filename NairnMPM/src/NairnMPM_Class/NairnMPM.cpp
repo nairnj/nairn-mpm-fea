@@ -64,7 +64,8 @@ NairnMPM::NairnMPM()
 	propagateMat[0]=propagateMat[1]=0;								// default is new crack with no traction law
 	hasTractionCracks=FALSE;		// if any crack segment has a traction law material
 	maxtime=1.;						// maximum time (sec)
-	FractCellTime=.5;				// fraction cell crossed in 1 step at wave spd
+	FractCellTime=.5;				// fraction cell crossed in 1 step at wave speed
+    PropFractCellTime=-1.;          // fracture cell crossed in 1 step for propagation time step (current not use settable)
 	mstep=0;						// step number
 	volumeExtrap=FALSE;				// set if need volume extrapolations
 	warnParticleLeftGrid=1;			// abort when this many leave the grid
@@ -372,8 +373,8 @@ void NairnMPM::PreliminaryCalcs(void)
     // CPDI factors if needed
     ElementBase::InitializeCPDI(IsThreeD());
 	
-	// future - make this a parameter that can be input
-	double PropFractCellTime=FractCellTime;
+    // future - make PropFractCellTime a user parameter, which not changed is user picked it
+    if(PropFractCellTime<0.) PropFractCellTime=FractCellTime;
 	double minSize=mpmgrid.GetMinCellDimension()/10.;	// in cm
     
     // loop over material points
