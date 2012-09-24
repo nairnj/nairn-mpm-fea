@@ -66,6 +66,8 @@
 		A72F0A400D943D02003426B3 /* CohesiveZone.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A72F0A3E0D943D02003426B3 /* CohesiveZone.cpp */; };
 		A7313F9A07CF77F90074510B /* CrackNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7313F9807CF77F90074510B /* CrackNode.cpp */; };
 		A7313F9B07CF77F90074510B /* CrackNode.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7313F9907CF77F90074510B /* CrackNode.hpp */; };
+		A734D4FA1610D8C700B9A4B7 /* AdjustTimeStepTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A734D4F91610D8C700B9A4B7 /* AdjustTimeStepTask.cpp */; };
+		A734D4FC1610D8DA00B9A4B7 /* AdjustTimeStepTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A734D4FB1610D8DA00B9A4B7 /* AdjustTimeStepTask.hpp */; };
 		A73B09880605FFAE0078D29A /* MaterialBaseFEA.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A73B09870605FFAE0078D29A /* MaterialBaseFEA.cpp */; };
 		A743491515792C0300EF8DFA /* IdealGas.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A743491315792C0300EF8DFA /* IdealGas.cpp */; };
 		A743491615792C0300EF8DFA /* IdealGas.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A743491415792C0300EF8DFA /* IdealGas.hpp */; };
@@ -447,6 +449,8 @@
 		A72F0A3E0D943D02003426B3 /* CohesiveZone.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CohesiveZone.cpp; sourceTree = "<group>"; };
 		A7313F9807CF77F90074510B /* CrackNode.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = CrackNode.cpp; sourceTree = "<group>"; };
 		A7313F9907CF77F90074510B /* CrackNode.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = CrackNode.hpp; sourceTree = "<group>"; };
+		A734D4F91610D8C700B9A4B7 /* AdjustTimeStepTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AdjustTimeStepTask.cpp; sourceTree = "<group>"; };
+		A734D4FB1610D8DA00B9A4B7 /* AdjustTimeStepTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = AdjustTimeStepTask.hpp; sourceTree = "<group>"; };
 		A73B09870605FFAE0078D29A /* MaterialBaseFEA.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = MaterialBaseFEA.cpp; sourceTree = "<group>"; };
 		A743491315792C0300EF8DFA /* IdealGas.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IdealGas.cpp; sourceTree = "<group>"; };
 		A743491415792C0300EF8DFA /* IdealGas.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = IdealGas.hpp; sourceTree = "<group>"; };
@@ -943,6 +947,8 @@
 				A79115C40720554600B81ECA /* ConductionTask.cpp */,
 				A750ED3C0EE9C10E003545A3 /* VTKArchive.hpp */,
 				A750ED3D0EE9C10E003545A3 /* VTKArchive.cpp */,
+				A734D4FB1610D8DA00B9A4B7 /* AdjustTimeStepTask.hpp */,
+				A734D4F91610D8C700B9A4B7 /* AdjustTimeStepTask.cpp */,
 			);
 			path = Custom_Tasks;
 			sourceTree = "<group>";
@@ -1470,6 +1476,7 @@
 				A7834B5315F000C80043ADB9 /* CoupledSawTooth.hpp in Headers */,
 				A77F5ECE15FA6ED8005188E8 /* HEIsotropic.hpp in Headers */,
 				67E191351602CB3F00B34CA9 /* MatPtTractionBC.hpp in Headers */,
+				A734D4FC1610D8DA00B9A4B7 /* AdjustTimeStepTask.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1775,6 +1782,7 @@
 				A7834B5115F000A10043ADB9 /* CoupledSawTooth.cpp in Sources */,
 				A77F5ECD15FA6ED8005188E8 /* HEIsotropic.cpp in Sources */,
 				67E191331602CB2700B34CA9 /* MatPtTractionBC.cpp in Sources */,
+				A734D4FA1610D8C700B9A4B7 /* AdjustTimeStepTask.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

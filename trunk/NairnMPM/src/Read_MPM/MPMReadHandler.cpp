@@ -13,6 +13,7 @@
 #include "Custom_Tasks/CalcJKTask.hpp"
 #include "Custom_Tasks/ReverseLoad.hpp"
 #include "Custom_Tasks/VTKArchive.hpp"
+#include "Custom_Tasks/AdjustTimeStepTask.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
@@ -953,6 +954,10 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
                 {   nextTask=(CustomTask *)(new VTKArchive());
                     if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
 					archiver->SetDoingVTKArchive(TRUE);
+                }
+				else if(strcmp(value,"AdjustTimeStep")==0)
+                {   nextTask=(CustomTask *)(new AdjustTimeStepTask());
+                    if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
                 }
                 else
                     throw SAXException("Unknown custom task requested for scheduling.");

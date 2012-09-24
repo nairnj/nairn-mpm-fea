@@ -1151,7 +1151,7 @@ bool MaterialBase::ControlCrackSpeed(CrackSegment *crkTip,double &waitTime)
 	It is also called by crack propagation, for which threeD is always FALSE
 		and mptr is NULL
 	It is also called by silent boundary conditions if ShearWaveSpeed() is not
-		overridden. These boundary conditions only work (an not even sure of that)
+		overridden. These boundary conditions only work (and not even sure of that)
 		for isotropic materials.
 	The method is abstract (in MaterialBase.hpp) so all sub classes must implement
 */
@@ -1163,6 +1163,15 @@ bool MaterialBase::ControlCrackSpeed(CrackSegment *crkTip,double &waitTime)
 	conditions and if the base class method is not correct.
 */
 double MaterialBase::ShearWaveSpeed(bool threeD,MPMBase *mptr) { return WaveSpeed(threeD,mptr)/sqrt(3.); }
+
+/* This method is only called by the custom task to adjust the wave speed depending on
+    particle stress state. The default implementation calls the WaveSpeed() method used
+    at the start of the time step. If wave speed depends on particle state in a known way,
+    this method can be overridden to get the current wave speed. The custom task to
+    adjust time step will only work for materials that override this method for
+    particle-dependent results.
+*/
+double MaterialBase::CurrentWaveSpeed(bool threeD,MPMBase *mptr) { return WaveSpeed(threeD,mptr); }
 
 // archive material data for this material type when requested.
 double MaterialBase::GetHistory(int num,char *historyPtr) { return (double)0.; }

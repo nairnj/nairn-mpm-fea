@@ -40,7 +40,7 @@ CustomTask *CustomTask::Initialize(void)
 CustomTask *CustomTask::PrepareForStep(bool &doNodalExtraps)
 { return nextTask; }
 
-// do custom calculatoin
+// do custom calculation
 CustomTask *CustomTask::StepCalculation(void) { return nextTask; }
 
 // Called when custom tasks are all done on a step

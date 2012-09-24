@@ -34,6 +34,7 @@ class NairnMPM : public CommonAnalysis
 		int mstep;						// step number
 		double maxtime;					// maximum time for analysis
 		double FractCellTime;			// fraction of cell crossed at wave speed (<1)
+        double PropFractCellTime;       // separate fraction of cell crossed for propagation time steps (current not settable)
 		int warnParticleLeftGrid;		// warning ID
 		bool multiMaterialMode;			// TRUE to use separate velocity fields for each material
 		bool hasRigidContactParticles;	// TRUE if some particles in multimaterial mode or rigid (direction=8)

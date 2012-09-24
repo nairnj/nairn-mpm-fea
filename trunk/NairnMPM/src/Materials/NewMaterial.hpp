@@ -51,6 +51,7 @@ class NewMaterial : public MaterialBase
 		virtual int MaterialTag();
 		virtual double WaveSpeed(bool,MPMBase *);
 		//virtual double ShearWaveSpeed(bool,MPMBase *);
+        //virtual double CurrentWaveSpeed(bool,MPMBase *);
 		//virtual double MaximumDiffusion(void);
         //virtual double MaximumDiffusivity(void);
 		

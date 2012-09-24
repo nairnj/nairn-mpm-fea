@@ -493,7 +493,7 @@ void IsoPlasticity::GetDfDsigma(double smag,Tensor *st0,int np)
 
 /* Solve numerically for lambda
     This method is not used by the IsoPlasticity class, but it may be used by subclasses
-        by overriding SolveForLambdaBracketed() and calling this insteas
+        by overriding SolveForLambdaBracketed() and calling this instead
     Uses Newton's law with initial guess being lambda = dalpha/sqrt(2/3). The solution is not
         bracket, which means it may not be safe. It faster than bracketing when it is safe, but'
         otherwise should not be used (currently used by SLMaterial and VonMisesHardening)
@@ -646,7 +646,7 @@ double IsoPlasticity::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial
 /* Bracket the solution for lambda for safe Newton's method
     Subclass can override if have faster way to bracket
     ftrial is 3D or plane strain result for lamda=0 and it is positive
-// Return lamNeg for f<0 (higher lambda) and lamPos where f>0 (lower lambda
+// Return lamNeg for f<0 (higher lambda) and lamPos where f>0 (lower lambda)
 */
 void IsoPlasticity::BracketSolution(MPMBase *mptr,int np,double strial,Tensor *stk,double delTime,
                                         double *lamNeg,double *lamPos)
