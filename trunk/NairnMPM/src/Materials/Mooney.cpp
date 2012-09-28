@@ -160,7 +160,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
     // i.e., get Cauchy stress / rho0
 	double J53 = pow(J, 5./3.);
 	double J23 = J53/J;
-	double J73 = J53*J;
+	double J73 = J53*J23;
 	double J43 = J23*J23;
 	double Kterm = GetVolumetricTerms(J,&Kse);
 #else
@@ -254,24 +254,23 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 // Each block of lines if for a different U(J)
 double Mooney::GetVolumetricTerms(double J,double *Kse)
 {
-    double Kterm;
-    
     // This is for U(J) = (K/2)(J-1)^2
-    Kterm = Ksp*(J-1.);
-    *Kse = Kterm*(J-1);     // = Ksp*(J-1)^2
-    return Kterm;
+    //double Kterm = Ksp*(J-1.);
+    //*Kse = Kterm*(J-1);     // = Ksp*(J-1)^2
+    //return Kterm;
     
     // This is for for U(J) = (K/2)(ln J)^2
     // Zienkiewicz & Taylor recommend not using this one
     //double lj = log(J);
-    //Kterm =Ksp*log(J);
+    //double Kterm =Ksp*log(J);
     //*Kse = Kterm*lj;        // = Ksp*(ln J)^2
     //return Kterm/J;         // = Ksp*(ln J)/J
     
     // This is for U(J) = (K/2)((1/2)(J^2-1) - ln J)
-    // Zienkiewicz & Taylor note stress goes to infinite as J=0 and J->infinity, while others do not
-    //*Kse = Ksp*(0.5*(J*J-1.)-log(J));
-    //return 0.5*Ksp*(J - 1./J);
+    // Zienkiewicz & Taylor note that stress goes to infinite as J=0 and J->infinity for this function, while others do not
+    // Simo and Hughes also use this form (see Eq. 9.2.3)
+    *Kse = Ksp*(0.5*(J*J-1.)-log(J));
+    return 0.5*Ksp*(J - 1./J);
 }
 
 #pragma mark Mooney::Accessors

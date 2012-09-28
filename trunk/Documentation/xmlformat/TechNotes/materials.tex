@@ -986,7 +986,7 @@ The Mooney-Rivilin material is an isotropic, hyperelastic material. It's stresse
 \end{equation}
 where $\F$ is the deformation tensor. The deformation tensor can be calculated by combining cumulative strain and rotation tensors (see {\tt HyperElastic.cpp} for the calculation). The strain energy is assumed to be
 \begin{equation}
-W = {G_1\over2}\left(\bar{I_1}-3\right)^2 + {G_2\over2}\left(\bar{I_2}-3\right)^2 + {K\over2}\left(J-1\right)^2
+W = {G_1\over2}\left(\bar{I_1}-3\right) + {G_2\over2}\left(\bar{I_2}-3\right)^2 + {K\over2}\left(J-1\right)^2
 \end{equation}
 where $G_1$, $G_2$, and $K$ are material properties, $J=\det\F$, and the invariants are
 \begin{eqnarray}
