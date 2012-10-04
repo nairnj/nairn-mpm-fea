@@ -60,7 +60,7 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
         
     	ep->xx = F[0][0] - 1.;
 		ep->yy = F[1][1] - 1.;
-		ep->xy = F[1][0] + F[0][1];
+		ep->xy = F[1][0] + F[0][1];         // du/dy + dv/dx
 	
 		// rotational strain increments
 		wrot->xy = F[1][0] - F[0][1];		// dv/dx - du/dy
