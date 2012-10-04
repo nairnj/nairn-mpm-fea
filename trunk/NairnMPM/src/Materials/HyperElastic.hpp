@@ -31,7 +31,7 @@
     integrals. Thus we want mass-weighted average of (Cauchy Stress)/rho0.
     Note that this might change if uniform GIMP was changed to another method.
 */
-#define CONSTANT_RHO
+//#define CONSTANT_RHO
 
 #include "Materials/MaterialBase.hpp"
 
