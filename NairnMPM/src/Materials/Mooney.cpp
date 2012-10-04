@@ -173,7 +173,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	double Kterm = J*GetVolumetricTerms(J,&Kse);
 #endif
 	
-	// find (Cauchy stress)/rho0 (if CONSTANT_RHO) or (Kirchoff stress)/rho0 (in not)
+	// find (Cauchy stress)/rho0 (if CONSTANT_RHO) or (Kirchoff stress)/rho0 (if not)
 	Tensor *sp=mptr->GetStressTensor();
 	sp->xx = Kterm + (2*B.xx-B.yy-B.zz)*G1sp/(3.*J53)
 			+ (B.xx*(B.yy+B.zz)-2*B.yy*B.zz-B.xy*B.xy)*G2sp/(3.*J73);
