@@ -128,13 +128,30 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 		double xn16,xn12,xnp1,xn = 1.+ep->zz;
 		double fx,fxp;
 		int iter=1;
+        
+        // solution for B.zz in xn
 		while(iter<10)
 		{	xn16 = pow(xn,1./6.);
 			xn12 = sqrt(xn);
-			fx = 3.*Ksp*xn*arg*(xn12*arg12-1.) + G1sp*(2.*xn-arg2)*xn16*arg16
-				+ G2sp*(xn*arg2-2.*arg)/(xn16*arg16);
-			fxp = 3.*Ksp*arg*(1.5*arg12*xn12-1.) + G1sp*xn16*arg16*(14.*xn-arg2)/(6.*xn)
-				+ G2sp*(2.*arg+5.*xn*arg2)/(6.*xn16*arg16*xn);
+            
+            // three options for K term in function
+            // For K(J-1) term
+			//fx = 3.*Ksp*xn*arg*(xn12*arg12-1.); 
+			//fxp = 3.*Ksp*arg*(1.5*arg12*xn12-1.); 
+            
+            // For K(ln J)/J term
+            //fx = 1.5*Ksp*xn12*arg12*log(xn*arg);
+            //fxp = 0.75*Ksp*arg12*(2.+log(arg*xn))/xn12;
+            
+            // For (K/2)(J-1/J) term
+            fx = 1.5*Ksp*xn12*arg12*(xn*arg-1.);            
+            fxp = 0.75*Ksp*arg12*(3.*arg*xn-1.)/xn12;
+           
+            // N ow add the shear terms
+            fx += G1sp*(2.*xn-arg2)*xn16*arg16 + G2sp*(xn*arg2-2.*arg)/(xn16*arg16);
+            fxp += G1sp*xn16*arg16*(14.*xn-arg2)/(6.*xn) + G2sp*(2.*arg+5.*xn*arg2)/(6.*xn16*arg16*xn);
+            
+            // new prediction for solution
 			xnp1 = xn - fx/fxp;
 			//cout << iter << ": " << xn << "," << xnp1 << "," << fabs(xn-xnp1) << endl;
 			if(fabs(xn-xnp1)<1e-6)
@@ -254,26 +271,27 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 
 // Return normal stress term (due to bulk modulus) and twice the pressure term for strain energy
 // Each block of lines if for a different U(J)
+// Any change here must also me made in 2D MPMConstLaw for the numerical solution to find B.zz in plane stress
 double Mooney::GetVolumetricTerms(double J,double *Kse)
 {
-    // This is for U(J) = (K/2)(J-1)^2
+    // This is for *Kse/2 = U(J) = (K/2)(J-1)^2
     //double Kterm = Ksp*(J-1.);
-    //*Kse = Kterm*(J-1);     // = Ksp*(J-1)^2
-    //return Kterm;
+    //*Kse = Kterm*(J-1);
+    //return Kterm;             // = Ksp*(J-1)
     
-    // This is for for U(J) = (K/2)(ln J)^2
+    // This is for for *Kse/2 = U(J) = (K/2)(ln J)^2
     // Zienkiewicz & Taylor recommend not using this one
     //double lj = log(J);
-    //double Kterm =Ksp*log(J);
-    //*Kse = Kterm*lj;        // = Ksp*(ln J)^2
-    //return Kterm/J;         // = Ksp*(ln J)/J
+    //double Kterm =Ksp*lj;
+    //*Kse = Kterm*lj;
+    //return Kterm/J;           // = Ksp*(ln J)/J
     
-    // This is for U(J) = (K/2)((1/2)(J^2-1) - ln J)
-    // Zienkiewicz & Taylor note that stress goes to infinite as J=0 and J->infinity for this function, while others do not
+    // This is for *Kse/2 = U(J) = (K/2)((1/2)(J^2-1) - ln J)
+    // Zienkiewicz & Taylor note that stress is infinite as J->0 and J->infinity for this function, while others are not
     // Simo and Hughes also use this form (see Eq. 9.2.3)
     *Kse = Ksp*(0.5*(J*J-1.)-log(J));
-    return 0.5*Ksp*(J - 1./J);
-}
+    return 0.5*Ksp*(J - 1./J);      // = (Ksp/2)*(J - 1/J)
+}  
 
 #pragma mark Mooney::Accessors
 
