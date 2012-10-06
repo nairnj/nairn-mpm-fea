@@ -49,3 +49,7 @@ Revisions before the start of the table or after the end of table have not been 
 || r312 || 18 APR 2011 || Langrange 2D element added. It is used in FEA. I does not seem to work well in MPM (and therefore disabled). It might work if a GIMP option is added. ||
 || r322 || 7 JUN 2011 || Enhanced Polyhedron option for 3D simulations and enhanced BMP command for new options ||
 || r324 || 6 JUL 2011 || Converted Mooney material into full 2D and 3D, isotropic, hyperelastic material ||
+|| r374 || 26 JAN 2012 || Release 3.0 tagged. See wiki on NairnMPM versions ||
+|| r410 || 1 JUN 2012 || Added ideal gas material ||
+|| r430 || 29 AUG 2012 || Added binary tree crack method ||
+|| r468 || 28 SEP 2012 || Adde CPDI, traction BCs, started HEDevelopment branch ||
