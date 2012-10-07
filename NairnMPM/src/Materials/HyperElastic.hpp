@@ -21,15 +21,14 @@
     class will always return 1 for current relative volume.
    When it is not defined, subclasses should find (Kirchoff Stress)/rho0, i.e.,
     find J*(Cauchy Stress)/rho0 = (Cauchy Stress)/rho. The relative volume
-    method will return J = det F = lam1*lam2*lam3
-   I think when done correctly, they give the same result when converted to
-    Cauchy Stress. Default is to define the constant because it is slightly
-    more efficient
-   Logic: GIMP development implies Cauchy stress. In finite (or uniform) GIMP
-    used here, stress is multiplied by Vp0 to get shape function integral
-    normalized by Vp0. In MPM this is converted to mp/rho0 to get mass-weighted
-    integrals. Thus we want mass-weighted average of (Cauchy Stress)/rho0.
-    Note that this might change if uniform GIMP was changed to another method.
+    method should return J = det F = lam1*lam2*lam3
+   I think the appropriate choice is to not define it and get Kirchoff stress
+	but, this assumes GIMP shape function is divided by actual Vp and not
+	initial Vp0. Hence when using CPDI, the "not defined" choice seems right.
+    When using uGIMP, it might be better to define it, but then CPDI would
+    be wrong and uGIMP won't work to high deformation anyway. A possible
+    improvement for uGIMP would to divide shape function by J, hence
+	dividing by J Vp0 = Vp.
 */
 //#define CONSTANT_RHO
 
