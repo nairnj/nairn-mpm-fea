@@ -257,6 +257,10 @@ Vector *MPMBase::GetAcc(void) { return &acc; }
 Tensor *MPMBase::GetVelGrad(void) { return velGrad; }
 Tensor *MPMBase::GetStressTensor(void) { return &sp; }
 Tensor *MPMBase::GetStrainTensor(void) { return &ep; }
+
+// These methods return pointer to the same symmetric tensor. A material class must
+// decide how it will use the eplast tensor variable and use only that one purpose.
+// The only reason for two names is to make the code more readable
 Tensor *MPMBase::GetPlasticStrainTensor(void) { return &eplast; }
 Tensor *MPMBase::GetElasticLeftCauchyTensor(void) { return &eplast; }
 

@@ -96,15 +96,22 @@
 <tr>
 <td><a href="#mooney"><code>Mooney</code></a></td>
 <td>8</td>
-<td width="50%">Mooney-Rivlin, hyperelastic material. This material includes neo-Hookian
+<td width="50%">Mooney-Rivlin, elastic, hyperelastic material. This material includes neo-Hookian
 as a special case.</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td><a href="#heiso"><code>HEIsotropic</code></a></td>
+<td>24</td>
+<td width="50%">Isotropic, elastic-plastic, hyperelastic material (in development).</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
 <td><a href="#heaniso"><code>HEAnisotropic</code></a></td>
 <td>21</td>
-<td width="50%">An anisotropic, hyperelastic material (in development).</td>
+<td width="50%">Anisotropic, elastic-plastic, hyperelastic material (in development).</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
@@ -213,6 +220,13 @@ as a special case.</td>
 <td><a href="#trilinear"><code>TrilinearTraction</code></a></td>
 <td>20</td>
 <td width="50%">A trilinear <a href="cracks.html#traction">traction law</a> for use on crack surfaces</td>
+<td align="center"></td><td align="center">X</td><td align="center"></td>
+</tr>
+
+<tr>
+<td><code>CoupledSawTooth</code></td>
+<td>23</td>
+<td width="50%">A triangular <a href="cracks.html#traction">traction law</a> for use on crack surfaces based on coupled displacement method (not documented yet).</td>
 <td align="center"></td><td align="center">X</td><td align="center"></td>
 </tr>
 
@@ -579,9 +593,23 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <p>A neo-Hookean material is a special case of a Mooney-Rivlin material by setting G<sub>2</sub> = 0.</p>
 
-<a name="heaniso"></a><h2>Anisotropic, Hyperelastic Material</h2>
+<a name="heiso"></a><h2>Isotropic, Elastic-Plastic, Hyperelastic Material</h2>
 
-<p>The material type is an anisotropic, hyperelastic material. It is currently in development.</p>
+<p>The material type is an isotropic, hyperelastic material with plasticity. It is currently in development.</p>
+
+<p>The possible input properties are:</p>
+
+<dl>
+
+<dt>Other Properties</dt>
+<dd>See the <a href="#common">properties common to all materials</a>.</dd>
+    	
+</dl>
+
+
+<a name="heaniso"></a><h2>Anisotropic, Elastic-Plastic, Hyperelastic Material</h2>
+
+<p>The material type is an anisotropic, hyperelastic material with plasticity. It is currently in development.</p>
 
 <p>The possible input properties are:</p>
 

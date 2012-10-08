@@ -1210,8 +1210,9 @@ int MaterialBase::GetFieldMatID(int matfld) { return fieldMatIDs[matfld]; }
 double MaterialBase::GetCurrentRelativeVolume(MPMBase *mptr) { return 1.; }
 
 // If material partitions total strain into elastic and plastic strain saved in ep and eplast, it'
-// should override this method and return TRUE. It is only used when deformation gradient is needed. When this
-// is true, gradient uses total strain, otherwise it uses only the terms in ep and wrot.
+// should override this method and return TRUE. It is only used when material point is asked for
+// its GetDeformationGradient(). When this is TRUE, gradient uses total strain, otherwise it
+// uses only the terms in ep and wrot.
 bool MaterialBase::HasPlasticStrainForGradient(void) { return FALSE; }
 
 

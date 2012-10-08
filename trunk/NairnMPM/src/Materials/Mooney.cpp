@@ -171,27 +171,17 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	// J as determinant of F (or sqrt root of determinant of B) normalized to residual stretch
 	double resStretch = GetResidualStretch(mptr);
 	double J = sqrt(J2)/(resStretch*resStretch*resStretch);
-    double Kterm,Kse;
-    double JforG1,JforG2;
-#ifdef CONSTANT_RHO
-    // Ignore change in density in the specific stress
-    // i.e., get Cauchy stress / rho0
-	JforG1 = pow(J, 5./3.);             // J^(5/3)
-	JforG2 = J53*J23;                   // J^(7/3)
-	double J23 = J53/J;
-	double J43 = J23*J23;
-	Kterm = GetVolumetricTerms(J,&Kse);
-#else
+    
     // Account for density change in specific stress
     // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
 	double J23 = pow(J, 2./3.);
 	double J43 = J23*J23;
-	JforG1 = J23;                   // J^(2/3) to get J*(Cauchy Stress) below
-	JforG2 = J43;                   // J^(4/3) to get J*(Cauchy Stress) below
-	Kterm = J*GetVolumetricTerms(J,&Kse);
-#endif
+	double JforG1 = J23;                   // J^(2/3) to get J*(Cauchy Stress) below
+	double JforG2 = J43;                   // J^(4/3) to get J*(Cauchy Stress) below
+    double Kse;
+	double Kterm = J*GetVolumetricTerms(J,&Kse);
 	
-	// find (Cauchy stress)/rho0 (if CONSTANT_RHO) or (Kirchoff stress)/rho0 (if not)
+	// find (Cauchy stress)J/rho0 = (Kirchoff stress)/rho0
 	Tensor *sp=mptr->GetStressTensor();
 	sp->xx = Kterm + (2*B.xx-B.yy-B.zz)*G1sp/(3.*JforG1)
 			+ (B.xx*(B.yy+B.zz)-2*B.yy*B.zz-B.xy*B.xy)*G2sp/(3.*JforG2);
@@ -203,7 +193,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 				+ (B.zz*(B.xx+B.yy)-2*B.xx*B.yy+2.*B.xy*B.xy)*G2sp/(3.*JforG2);
 	}
 	
-	// strain energy (total energy divided by initial rho)
+	// strain energy density / rho0 = (U/V) * (1/rho0)
 	double I1bar = (B.xx+B.yy+B.zz)/J23;
 	double I2bar = 0.5*(I1bar*I1bar - (B.xx*B.xx+B.yy*B.yy+B.zz*B.zz+2.*B.xy*B.xy)/J43);
     mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kse));
@@ -230,28 +220,17 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 	double J2 = B.xx*B.yy*B.zz + 2.*B.xy*B.xz*B.yz - B.yz*B.yz*B.xx - B.xz*B.xz*B.yy - B.xy*B.xy*B.zz;
 	double resStretch = GetResidualStretch(mptr);
 	double J = sqrt(J2)/(resStretch*resStretch*resStretch);
-    double Kterm,Kse;
-    double JforG1,JforG2;
-#ifdef CONSTANT_RHO
-    // Ignore change in density in the specific stress
-    // i.e., get Cauchy stress / rho0
-	JforG1 = pow(J, 5./3.);
-	double J23 = J53/J;
-	double J43 = J23*J23;
-	JforG2 = J43*J;
-	Kterm = GetVolumetricTerms(J,&Kse);
-#else
+    
     // Account for density change in specific stress
     // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
 	double J23 = pow(J, 2./3.);
 	double J43 = J23*J23;
-	JforG1 = J23;                 // J^(2/3) = J^(5/3)/J to get Kirchoff stress
-	JforG2 = J43;                 // J^(4/3) = J^(7/3)/J to get Kirchoff stress
-	Kterm = J*GetVolumetricTerms(J,&Kse);       // times J to get Kirchoff stress
-#endif
+	double JforG1 = J23;                 // J^(2/3) = J^(5/3)/J to get Kirchoff stress
+	double JforG2 = J43;                 // J^(4/3) = J^(7/3)/J to get Kirchoff stress
+    double Kse;
+	double Kterm = J*GetVolumetricTerms(J,&Kse);       // times J to get Kirchoff stress
 	
-	// Find Cauchy stresses
-	//double Kterm = Ksp*log(J)/J;
+	// find (Cauchy stress)J/rho0 = (Kirchoff stress)/rho0
 	Tensor *sp=mptr->GetStressTensor();
 	sp->xx = Kterm + (2*B.xx-B.yy-B.zz)*G1sp/(3.*JforG1)
 			+ (B.xx*(B.yy+B.zz)-2*B.yy*B.zz-B.xy*B.xy-B.xz*B.xz+2.*B.yz*B.yz)*G2sp/(3.*JforG2);
@@ -263,7 +242,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 	sp->xz = B.xz*G1sp/JforG1 + (B.yy*B.xz-B.xy*B.yz)*G2sp/JforG2;
 	sp->yz = B.yz*G1sp/JforG1 + (B.xx*B.yz-B.xy*B.xz)*G2sp/JforG2;
     
-	// strain energy
+	// strain energy density / rho0 =  U/V * (1/rho0)
 	double I1bar = (B.xx+B.yy+B.zz)/J23;
 	double I2bar = 0.5*(I1bar*I1bar - (B.xx*B.xx+B.yy*B.yy+B.zz*B.zz+2.*B.xy*B.xy+2*B.xz*B.xz+2.*B.yz*B.yz)/J43);
     mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kse));

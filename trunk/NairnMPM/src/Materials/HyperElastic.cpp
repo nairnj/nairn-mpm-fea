@@ -121,7 +121,7 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
                     + dvzx*(dvxy*dvyz-(1. + dvyy)*dvxz);
 }
 
-// Find Left-Cauchy Green Tensor B = F.F^T for 2D calculations
+// Find Left-Cauchy Green Tensor B = F.F^T for 2D calculations for a provided F[][]
 // Note: This assumes plane strain to set B.zz=1. If the 2D calculation is plane stress, the
 //	caller must replace B.zz with the plane stress result
 Tensor HyperElastic::GetLeftCauchyTensor2D(double F[][3])
@@ -135,7 +135,7 @@ Tensor HyperElastic::GetLeftCauchyTensor2D(double F[][3])
 	return B;
 }
 
-// Find Left-Cauchy Green Tensor B = F.F^T for 3D calculations
+// Find Left-Cauchy Green Tensor B = F.F^T for 3D calculations for a provided F[][]
 Tensor HyperElastic::GetLeftCauchyTensor3D(double F[][3])
 {
 	// left Cauchy deformation tensor B = F F^T
@@ -164,98 +164,10 @@ double HyperElastic::GetResidualStretch(MPMBase *mptr)
 	return resStretch;
 }
 
-#ifndef CONSTANT_RHO
 // Get current relative volume change = J = det F = lam1 lam2 lam3
-// If using CONSTANT_RHO, then do not define, which will pass to base class result of 1
-// Need to have main call in material classes to allow small and large deformation material laws
+// Need to have this call in material classes to allow small and large deformation material laws
+//  to handle it differently.
 double HyperElastic::GetCurrentRelativeVolume(MPMBase *mptr)
 {   return mptr->GetRelativeVolume();
 }
-#endif
-
-// Convert to nominal stress in 2D by premultiply with J F^(-1)
-// JFi is transpose of matrix of cofactors for F (since J = det F)
-void HyperElastic::ConvertToNominalStress2D(MPMBase *mptr,double F[][3])
-{
-    Tensor *sp=mptr->GetStressTensor();
-	double JFi[3][3];
-	JFi[0][0] = F[1][1]*F[2][2];
-	JFi[0][1] = -F[0][1]*F[2][2];
-	//JFi[0][2] = 0.;
-	JFi[1][0] = -F[1][0]*F[2][2];
-	JFi[1][1] = F[0][0]*F[2][2];
-	//JFi[1][2] = 0.;
-	//JFi[2][0] = 0.;
-	//JFi[2][1] = 0.;
-	JFi[2][2] = F[0][0]*F[1][1] - F[1][0]*F[0][1];
-	Tensor sp0=*sp;
-	sp->xx = JFi[0][0]*sp0.xx + JFi[0][1]*sp0.xy;
-	sp->xy = JFi[0][0]*sp0.xy + JFi[0][1]*sp0.yy;
-	sp->yy = JFi[1][0]*sp0.xy + JFi[1][1]*sp0.yy;
-	sp->zz = JFi[2][2]*sp0.zz;
-}
-
-// In future, may need to convert to Kirchoff or Nominal Stress in 2D or 3D 
-
-// Convert to Kirchoff Stress in 2D (times J)
-/*
-	sp->xx *= J;
-	sp->yy *= J;
-	sp->zz *= J;
-	sp->xy *= J;
-*/
-
-// Convert to nominal stress in 2D by premultiply with J F^(-1)
-// JFi is transpose of matrix of cofactors for F
-/*
-	double JFi[3][3];
-	JFi[0][0] = F[1][1]*F[2][2];
-	JFi[0][1] = -F[0][1]*F[2][2];
-	JFi[0][2] = 0.;
-	JFi[1][0] = -F[1][0]*F[2][2];
-	JFi[1][1] = F[0][0]*F[2][2];
-	JFi[1][2] = 0.;
-	JFi[2][0] = 0.;
-	JFi[2][1] = 0.;
-	JFi[2][2] = F[0][0]*F[1][1] - F[1][0]*F[0][1];
-	Tensor sp0=*sp;
-	sp->xx = JFi[0][0]*sp0.xx + JFi[0][1]*sp0.xy;
-	sp->xy = JFi[0][0]*sp0.xy + JFi[0][1]*sp0.yy;
-	sp->yy = JFi[1][0]*sp0.xy + JFi[1][1]*sp0.yy;
-	sp->zz = JFi[2][2]*sp0.zz;
-*/
-
-// Convert to Kirchoff Stress 3D (times J)
-/*
-	sp->xx *= J;
-	sp->yy *= J;
-	sp->zz *= J;
-	sp->xy *= J;
-	sp->xz *= J;
-	sp->yz *= J;
-*/
-
-// Convert to nominal stress in 3D by premultiply with J F^(-1)
-// JFi is transpose of matrix of cofactors for F
-/*
-	double JFi[3][3];
-	JFi[0][0] = F[1][1]*F[2][2] - F[2][1]*F[1][2];
-	JFi[0][1] = -(F[0][1]*F[2][2] - F[2][1]*F[0][2]);
-	JFi[0][2] = F[0][1]*F[1][2] - F[1][1]*F[0][2];
-	JFi[1][0] = -(F[1][0]*F[2][2] - F[2][0]*F[1][2]);
-	JFi[1][1] = F[0][0]*F[2][2] - F[2][0]*F[0][2];
-	JFi[1][2] = -(F[0][0]*F[1][2] - F[1][0]*F[0][2]);
-	JFi[2][0] = F[1][0]*F[2][1] - F[2][0]*F[1][1];
-	JFi[2][1] = -(F[0][0]*F[2][1] - F[2][0]*F[0][1]);
-	JFi[2][2] = F[0][0]*F[1][1] - F[1][0]*F[0][1];
-	Tensor sp0=*sp;
-	sp->xx = JFi[0][0]*sp0.xx + JFi[0][1]*sp0.xy + JFi[0][2]*sp0.xz;
-	sp->xy = JFi[0][0]*sp0.xy + JFi[0][1]*sp0.yy + JFi[0][2]*sp0.yz;
-	sp->xz = JFi[0][0]*sp0.xz + JFi[0][1]*sp0.yz + JFi[0][2]*sp0.zz;
-	sp->yy = JFi[1][0]*sp0.xy + JFi[1][1]*sp0.yy + JFi[1][2]*sp0.yz;
-	sp->yz = JFi[1][0]*sp0.xz + JFi[1][1]*sp0.yz + JFi[1][2]*sp0.zz;
-	sp->zz = JFi[2][0]*sp0.xz + JFi[2][1]*sp0.yz + JFi[2][2]*sp0.zz;
-*/
-
-
 
