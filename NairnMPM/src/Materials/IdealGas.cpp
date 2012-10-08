@@ -75,7 +75,7 @@ void IdealGas::ValidateForUse(int np)
 	}
 	
 	if(thermal.reference<=0)
-	{	throw CommonException("IdealGas material requires the simulation set the stress free temperature in degrees K",
+	{	throw CommonException("IdealGas material requires the simulation to set the stress free temperature in degrees K",
 							  "IdealGas::ValidateForUse");
 	}
 	
@@ -97,12 +97,19 @@ void IdealGas::InitialLoadMechProps(int makeSpecific,int np)
 // For example, ideal gas initializes to base line pressure
 void IdealGas::SetInitialParticleState(MPMBase *mptr,int np)
 {
-    // Find Cauchy stresses
+    // The initial state has particle mass mp = Vp * rho at T = thermal.reference
+    // Imagine heating from T0 to T holding volume constant. Then
+    // Cachy stress / rho = Cachy stress J/ rho0 = Kirchoff stress / rho0
+    // because J=1. The new specific pressure is
     double Psp = P0sp * (thermal.reference/T0);
+    
+    // set the particle pressure
 	Tensor *sp=mptr->GetStressTensor();
 	sp->xx = -Psp;
 	sp->yy = -Psp;
 	sp->zz = -Psp;
+    
+    // Initial particle strains are zero (because J=1)
 }
 
 
@@ -119,54 +126,51 @@ void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,dou
 	// get new deformation gradient
 	double F[3][3];
 	double detf = GetDeformationGrad(F,mptr,dvxx,dvyy,dvxy,dvyx,TRUE,TRUE);
-
-	// compute specific pressure p/rho0 = P0sp * (T/T0) * (1/J)
-	// incrementally J(n+1) = det f Jn, p(n+1)/rho0 = P0sp * (T(n+1)/T0) * (1/(det f Jn))
-	//												= P0sp * (Tn/T0) * (1/Jn) * (T(n+1)/Tn) * (1/det f)
-	//												= pn * (T(n+1)/Tn) * (1/det f)
-	//double Psp = - P0sp * (mptr->pPreviousTemperature/T0) / J;
-	Tensor *sp=mptr->GetStressTensor();
-	double Psp = (sp->xx/(1.-ConductionTask::dTemperature/mptr->pPreviousTemperature)) / detf;
-	
-	// find (Cauchy stress)/rho0 (if CONSTANT_RHO) or (Kirchoff stress)/rho0 (if not)
-	sp->xx = Psp;
-	sp->yy = Psp;
-	sp->zz = Psp;
-	
-	// internal energy change (per rho0) = - 0.5 * (pn+p(n+1))/rho0 * (V(n+1)-Vn)
-	double dU = -0.5*(P0sp/T0)*(mptr->pPreviousTemperature*(detf-1./detf)
-								- ConductionTask::dTemperature*(detf-1.));
-	mptr->AddStrainEnergy(dU);
-	mptr->AddDispEnergy(dU);
+    
+    // single 2D and 3D law
+    MPMCombinedLaw(mptr,detf);
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
-	Particle: strains, rotation strain, stresses, strain energy, angle
-	dvij are (gradient rates X time increment) to give deformation gradient change
-*/
+ Particle: strains, rotation strain, stresses, strain energy, angle
+ dvij are (gradient rates X time increment) to give deformation gradient change
+ */
 void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-						  double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
+                           double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
 {
 	// get determinent of incremental deformation gradient (and update strains)
 	double F[3][3];
 	double detf = GetDeformationGrad(F,mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,TRUE,TRUE);
+    
+    // single 2D and 3D law
+    MPMCombinedLaw(mptr,detf);
+}
 
-	// compute specific pressure p/rho0 = P0sp * (T/T0) * (1/J)
-	// incrementally J(n+1) = det f Jn, p(n+1)/rho0 = P0sp * (T(n+1)/T0) * (1/(det f Jn))
-	//												= P0sp * (Tn/T0) * (1/Jn) * (T(n+1)/Tn) * (1/det f)
-	//												= pn * (T(n+1)/Tn) * (1/det f)
-	//double Psp = - P0sp * (mptr->pPreviousTemperature/T0) / J;
+// Common parts for both 2D plane strain and 3D law
+void IdealGas::MPMCombinedLaw(MPMBase *mptr,double detf)
+{
+    // update stress
 	Tensor *sp=mptr->GetStressTensor();
-	double Psp = (sp->xx/(1.-ConductionTask::dTemperature/mptr->pPreviousTemperature)) / detf;
+	// compute specific pressure as p/rho = P0sp * (T/T0)
+	// incrementally p(n+1)/rho = P0sp * (T(n+1)/T0)
+	//							= P0sp * (Tn/T0) * (T(n+1)/Tn)
+	//							= pn * (T(n+1)/Tn)
+	// (note: pPreviousTemperature is T(n+1))
+	double mPsp = (sp->xx/(1.-ConductionTask::dTemperature/mptr->pPreviousTemperature));
+
+	// store in stress (which is minus the pressure)
+	sp->xx = mPsp;
+	sp->yy = mPsp;
+	sp->zz = mPsp;
 	
-	// Find Cauchy stresses
-	sp->xx = Psp;
-	sp->yy = Psp;
-	sp->zz = Psp;
-   
-	// internal energy change (per rho0) = - 0.5 * (pn+p(n+1))/rho0 * (V(n+1)-Vn)
+	// internal energy density change per unit volume (per rho0) so that
+    // archiving gets Joules when multiply by V * rho0. Using midpoint rule:
+    // dU/V*(1/rho0) = (V0/V) dU/(rho0 V0) = - 0.5 * (pn+p(n+1))/rho0 * (V(n+1)-Vn)/V0, which simplifies to
 	double dU = -0.5*(P0sp/T0)*(mptr->pPreviousTemperature*(detf-1./detf)
-										- ConductionTask::dTemperature*(detf-1.));
+                                - ConductionTask::dTemperature*(detf-1.));
+    dU /= GetCurrentRelativeVolume(mptr);
+    
+    // increment energies and all is dissipated
 	mptr->AddStrainEnergy(dU);
 	mptr->AddDispEnergy(dU);
 }
