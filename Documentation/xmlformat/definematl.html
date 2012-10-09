@@ -702,9 +702,9 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 
 <p>where <code>M<sub>g</sub></code> is the molecular weight of the gas (such as 28.97 g/mol for air) and <code>R</code> is the gas constant, R = 8.3144621 J/k/mol.</p>
 
-<p>When thermal conduction is off, this material models isothermal compression and expansion. To model adibatic compression and expansion, turn conduction on and active energy coupling. The energy will convert to heat result in heating during compression or cooling during expansion. See the <a href="thermal.html"><code>Thermal</code></a> command for details. There is no need to enter heat capacity because that term is calculated using ideal gas theory. You do, however, need to enter thermal conductivity. The current implementation uses a temperature independent conductivity, which may change in the future.</p>
+<p>When thermal conduction is off, this material models isothermal compression and expansion. To model adibatic compression and expansion, turn conduction on and activate energy coupling. The energy will convert to heat resulting in heating during compression or cooling during expansion. See the <a href="thermal.html"><code>Thermal</code></a> command for details. There is no need to enter heat capacity because that term is calculated using ideal gas theory. You do, however, need to enter thermal conductivity. The current implementation uses a temperature independent conductivity, which may change in the future.</p>
 
-<p>Ideal gas particles are fairly stable, but can be made unstable by certain boundary conditions on constraining walls. If stability problems arise, try different boundary conditions.</p>
+<p>Ideal gas particles are fairly stable, but can be made unstable by certain boundary conditions on constraining walls. If stability problems arise, try different boundary conditions. They also do not work for irreversibale processes such as free expansion in to empty space. They are intended to be always bounded by pressure.</p>
 
 <p>If the calculation archives strain energy, it tracks work done on the gas particles (in the form of <code>P dV</code> work).</p>
 

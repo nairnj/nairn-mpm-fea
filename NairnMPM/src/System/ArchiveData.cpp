@@ -647,10 +647,11 @@ void ArchiveData::ArchiveResults(double atime)
         }
         
         // total plastic energy (Volume*energy) in J
-        // energies in material point based on specific stress
-        // here need (mass/rho) * rho0 * stress * strain
+        // energies in material point based on energy per unit mass
+        // here need mass * U/(rho0 V0)
         if(mpmOrder[ARCH_PlasticEnergy]=='Y')
-        {   *(double *)app=1.0e-6*mpm[p]->mp*relVolume*mpm[p]->GetPlastEnergy();
+        {   //*(double *)app=1.0e-6*mpm[p]->mp*relVolume*mpm[p]->GetPlastEnergy();
+			*(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetPlastEnergy();
             app+=sizeof(double);
         }
                 
@@ -664,10 +665,11 @@ void ArchiveData::ArchiveResults(double atime)
         }
 
         // total strain energy (Volume*energy) in J
-        // energies in material point based on specific stress
-        // here need (mass/rho) * rho0 * stress * strain
+        // energies in material point based on energy per unit mass
+        // here need mass * U/(rho0 V0)
         if(mpmOrder[ARCH_StrainEnergy]=='Y')
-        {   *(double *)app=1.0e-6*mpm[p]->mp*relVolume*mpm[p]->GetStrainEnergy();
+        {   //*(double *)app=1.0e-6*mpm[p]->mp*relVolume*mpm[p]->GetStrainEnergy();
+			*(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetStrainEnergy();
             app+=sizeof(double);
         }
         
