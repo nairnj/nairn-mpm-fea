@@ -75,7 +75,7 @@ void Mooney::InitialLoadMechProps(int makeSpecific,int np)
 {
 	hasMatProps=TRUE;
 	
-	// G1, G2, and Kbulk in Specific units
+	// G1, G2, and Kbulk in Specific units using initial rho
 	// for MPM (units N/m^2 cm^3/g)
 	G1sp=G1*1.0e+06/rho;
 	G2sp=G2*1.0e+06/rho;
@@ -193,10 +193,11 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 				+ (B.zz*(B.xx+B.yy)-2*B.xx*B.yy+2.*B.xy*B.xy)*G2sp/(3.*JforG2);
 	}
 	
-	// strain energy increment per unit mass (dU/(rho0 V0)) = (dU/(rho0 V)) * (V/V0)
+	// strain energy per unit mass (U/(rho0 V0)) and we are using
+    // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
 	double I1bar = (B.xx+B.yy+B.zz)/J23;
 	double I2bar = 0.5*(I1bar*I1bar - (B.xx*B.xx+B.yy*B.yy+B.zz*B.zz+2.*B.xy*B.xy)/J43);
-    mptr->SetStrainEnergy(0.5*J*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kse));
+    mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kse));
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
@@ -242,7 +243,8 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 	sp->xz = B.xz*G1sp/JforG1 + (B.yy*B.xz-B.xy*B.yz)*G2sp/JforG2;
 	sp->yz = B.yz*G1sp/JforG1 + (B.xx*B.yz-B.xy*B.xz)*G2sp/JforG2;
     
-	// strain energy increment per unit mass (dU/(rho0 V0)) = (dU/(V rho0)) * (V/V0)
+	// strain energy per unit mass (U/(rho0 V0)) and we are using
+    // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
 	double I1bar = (B.xx+B.yy+B.zz)/J23;
 	double I2bar = 0.5*(I1bar*I1bar - (B.xx*B.xx+B.yy*B.yy+B.zz*B.zz+2.*B.xy*B.xy+2*B.xz*B.xz+2.*B.yz*B.yz)/J43);
     mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kse));
