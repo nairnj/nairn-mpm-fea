@@ -43,6 +43,7 @@
 \def\e#1{\varepsilon_{#1}}
 \def\er#1{\varepsilon_{#1}^{(res)}}
 \def\err#1{\varepsilon_{#1}^{(res,r)}}
+\def\f{\hbox{\tenbsf f}}
 \def\F{\hbox{\tenbsf F}}
 \def\fvvec#1#2#3#4#5#6{\left(\begin{array}{ccc} #1 \\ #2 \\ #3 \\ #4 \\ #5 \\ #6 \end{array}\right)}
 \def\g#1{\gamma_{#1}}  
@@ -1077,6 +1078,66 @@ W = {K\over2}(\ln J)^2  \qquad{\rm and}\qquad W = {K\over2}\left({1\over2}(J^2-1
 \end{equation}
 
 \noindent Although these three compressibility terms show some significant differences when $J$ deviates significantly from 1, under most problems, $J$ will stay close to one. Two exceptions could be constrained compression or tension. Here, the only one that works well to very small or large $J$ is the second one above. This one correctly leads to inifinite positive stress as $J\to\infty$ and infinite negative stress as $J\to0$. This later one is the one currently implemented for this material in {\tt NairnMPM}.
+
+\subsection{Ideal Gas Law}
+
+The ideal gas material implements ideal gas law as a hyperelastic material. It seems to work well for gas confined within a solid or constrained by rigid particles. It does not handle gas dynamics such as irreversible free expansion, but does handle reversible processes including coupled conversion of energy into heat ({\em i.e.}, cooling on expansion and heating on compression).
+
+The ideal gas law is
+\begin{equation}
+    PV = nRT
+\end{equation}
+The ideal gas properties are defined by picking any reference pressure, $P_0$, reference temperature, $T_0$, and reference density, $\rho_0$. If $M$ is the molecular weight of the gas molecules, the reference density is given by
+\begin{equation}
+    \rho_0 = {P_0\over T_0} {M\over R}
+\end{equation}
+We can now eliminate $n$ and $R$ to derive
+\begin{equation}
+    P = P_0{V_0\over V}{T\over T_0} = P_0 {T\over T_0} {1\over J}
+\end{equation}
+where $J = \det \F = V/V_0$. The Cauchy stress due to this pressure is $-P\I$, but the code needs a specific Kirchoff stress normalized to $\rho_0$ or
+\begin{equation}
+    \vec\tau^{(s)} = -{PJ\over \rho_0}\I  = - {P_0\over \rho_0} {T\over T_0}\I
+\end{equation}
+
+In code, an incremental approach is often preferred. 
+If $\tau_n^{(s)}$ is any diagonal element of the specific Kirchoff stress tensor, then
+\begin{equation}
+   \tau_{n+1}^{(s)} = - {P_0\over \rho_0} {T_n\over T_0} {T_{n+1}\over T_n}
+       = \tau_n^{(s)} {T_{n+1}\over T_n}
+\end{equation}
+The energy increment associated with this stress change is $dU = -P\thinspace dV$ work. The energy per unit mass using midpoint rule between initial and final pressure is therefore
+\begin{equation}
+    {dU\over \rho_0 V_0} = - {1\over2} {P_n+P_{n+1}\over \rho_0} {V_{n+1}\over V_0}
+         \left(1 - {V_n\over V_{n+1}}\right)
+\end{equation}
+Let deformation gradient for step $n+1$ be
+\begin{equation}
+       \F_{n+1} = \f\cdot\F_n  \quad{\rm where}\quad \f = \I + \Delta t\nabla\vec v
+       \quad{\rm and}\quad J_{n+1} = \det \f J_n
+\end{equation}
+which leads to
+\begin{equation}
+    {dU\over \rho_0 V_0} = - {J_{n+1}\over2} {P_n+P_{n+1}\over \rho_0} 
+         \left(1 - {1\over\det f}\right) = - {1\over2}
+         \left({P_n\over \rho_{n}}\det f+{P_{n+1}\over \rho_{n+1}} \right)
+         \left(1 - {1\over\det f}\right)
+\end{equation}
+But, $P/\rho$ is $-\tau^{(s)}$ leading to
+\begin{equation}
+    {dU\over \rho_0 V_0} =  {1\over2}
+         \left(\tau_n^{(s)}\det f+\tau_{n+1}^{(s)} \right)
+         \left(1 - {1\over\det f}\right)
+\end{equation}
+When conduction with energy coupling is activated, this entire energy is dissipated energy, which can lead to temperature changes.
+
+When gas particles are present, they have to be initialized to the pressure (or stress) of
+\begin{equation}
+     \tau_i^{(s)} = - {P_0\over \rho_0} {T\over T_0}
+\end{equation}
+where $T$ is the simulation reference temperature (need not be the gas reference temperature, which can be any desired reference condition). All simulations with gas particles must therefore specify a reference temperature in degrees Kelvin.
+
+When doing conduction and energy coupling, this material needs head capacity and thermal conductivity. Heat capacity is calculated using ideal gas law theory (and any entered heat capacities will be ignored). Thermal conductivity, however, should be entered. The current code assumes conductivity is a temperature-independent property, although conductivity of a gas does vary with temperature. If simulations with large temperature changes of the gas are important, this material will need to be improved to allow temperature-dependent thermal conductivity.
 
 \section{Two-State Isotropic Material}
 

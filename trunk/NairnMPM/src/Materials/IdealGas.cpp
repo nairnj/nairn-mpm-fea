@@ -90,7 +90,6 @@ void IdealGas::InitialLoadMechProps(int makeSpecific,int np)
 	
 	// P0 in specific units for MPM of N/m^2 cm^3/g
 	P0sp=P0*1.0e+06/rho;
-	
 }
 
 // If needed, a material can initialize particle state
@@ -98,16 +97,14 @@ void IdealGas::InitialLoadMechProps(int makeSpecific,int np)
 void IdealGas::SetInitialParticleState(MPMBase *mptr,int np)
 {
     // The initial state has particle mass mp = Vp * rho at T = thermal.reference
-    // Imagine heating from T0 to T holding volume constant. Then
-    // Cachy stress / rho = Cachy stress J/ rho0 = Kirchoff stress / rho0
-    // because J=1. The new specific pressure is
-    double Psp = P0sp * (thermal.reference/T0);
+    // Imagine heating from T0 to T holding volume constant and find Kirchoff stress / rho0
+    double Psp = -P0sp * (thermal.reference/T0);
     
     // set the particle pressure
 	Tensor *sp=mptr->GetStressTensor();
-	sp->xx = -Psp;
-	sp->yy = -Psp;
-	sp->zz = -Psp;
+	sp->xx = Psp;
+	sp->yy = Psp;
+	sp->zz = Psp;
     
     // Initial particle strains are zero (because J=1)
 }
@@ -151,7 +148,7 @@ void IdealGas::MPMCombinedLaw(MPMBase *mptr,double detf)
 {
     // update stress
 	Tensor *sp=mptr->GetStressTensor();
-    //double mPnsp = sp->xx;
+    double mPnsp = sp->xx;
     
 	// compute specific pressure as p/rho = P0sp * (T/T0)
 	// incrementally p(n+1)/rho = P0sp * (T(n+1)/T0)
@@ -165,14 +162,9 @@ void IdealGas::MPMCombinedLaw(MPMBase *mptr,double detf)
 	sp->yy = mPsp;
 	sp->zz = mPsp;
 	
-	// internal energy density change per unit volume (per rho0) so that
-    // archiving gets Joules when multiply by V * rho0. Using midpoint rule:
-    // dU/V*(1/rho0) = (V0/V) dU/(rho0 V0) = - 0.5 * (pn+p(n+1))/rho0 * (V(n+1)-Vn)/V0, which simplifies to
-	double dU = -0.5*(P0sp/T0)*(mptr->pPreviousTemperature*(detf-1./detf)
-                                - ConductionTask::dTemperature*(detf-1.));
-    dU /= GetCurrentRelativeVolume(mptr);
-    
-    //double dU = (0.5/GetCurrentRelativeVolume(mptr))*(mPnsp*detf + mPsp)*(1.-1/detf);
+	// internal energy increment per unit mass or dU/(rho0 V0)
+    // dU/(rho0 V0) = - 0.5 * (pn+p(n+1))/rho0 * (V(n+1)-Vn)/V0, which simplifies to
+    double dU = 0.5*(mPnsp*detf + mPsp)*(1.-1/detf);
     
     // increment energies and all is dissipated
 	mptr->AddStrainEnergy(dU);
@@ -189,8 +181,8 @@ int IdealGas::MaterialTag(void) { return IDEALGASMATERIAL; }
 
 // Calculate wave speed in mm/sec. Here using adiabatic bulk modulus at the starting temperature
 // If T rises a lot during compression, the problem may become unstable. The solution is
-// to anticipate and use some time step saftelt factor. The problem will probably not arise
-// when gas using in conjuctions with solids having much higher wave speeds.
+// to anticipate and use some time step safety factor. The problem will probably not arise
+// when gas used in conjuctions with solids having much higher wave speeds.
 double IdealGas::WaveSpeed(bool threeD,MPMBase *mptr)
 {	return sqrt(1.6667e9*(P0/rho)*(mptr->pTemperature/T0));
 }
