@@ -121,11 +121,12 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
                     + dvzx*(dvxy*dvyz-(1. + dvyy)*dvxz);
 }
 
-// Find Left-Cauchy Green Tensor B = F.F^T for 2D calculations for a provided F[][]
-// Note: This assumes plane strain to set B.zz=1. If the 2D calculation is plane stress, the
+// Find Left-Cauchy Green Tensor B = F.F^T for 2D calculations from a provided F[][]
+// Note: This assumes plane strain and sets B.zz=1. If the 2D calculation is plane stress, the
 //	caller must replace B.zz with the plane stress result
 Tensor HyperElastic::GetLeftCauchyTensor2D(double F[][3])
 {
+	// left Cauchy deformation tensor B = F F^T
 	Tensor B;
 	ZeroTensor(&B);
 	B.xx = F[0][0]*F[0][0] + F[0][1]*F[0][1];
@@ -135,7 +136,7 @@ Tensor HyperElastic::GetLeftCauchyTensor2D(double F[][3])
 	return B;
 }
 
-// Find Left-Cauchy Green Tensor B = F.F^T for 3D calculations for a provided F[][]
+// Find Left-Cauchy Green Tensor B = F.F^T for 3D calculations from a provided F[][]
 Tensor HyperElastic::GetLeftCauchyTensor3D(double F[][3])
 {
 	// left Cauchy deformation tensor B = F F^T

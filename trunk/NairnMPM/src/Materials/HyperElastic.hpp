@@ -5,8 +5,8 @@
     Created by John Nairn on Wed Jan 24 2007.
     Copyright (c) 2007 John A. Nairn, All rights reserved.
  
-    Isotropic, hyperelastic materials with subclasses to implement various
-	theories
+    Base class for all Hyperelastic materials. It should have methods common
+    to all.
 
 	Dependencies
 		MaterialBase.hpp

@@ -91,11 +91,10 @@ void Mooney::InitialLoadMechProps(int makeSpecific,int np)
 #pragma mark Mooney::Methods
 
 /* For 2D MPM analysis, take increments in strain and calculate new
-    Particle: strains, rotation strain, stresses, strain energy, angle
+    Particle: strains, rotation strain, stresses, strain energy (per unit mass)
     dvij are (gradient rates X time increment) to give deformation gradient change
-	Does not support thermal or moisture strains
  
-    Note the incompressible rubber are not suitable for dynamic calculations because
+    Note that incompressible rubber is not suitable for dynamic calculations because
     they have an infinite wave speed
 */
 void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
@@ -201,10 +200,10 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
-	Particle: strains, rotation strain, stresses, strain energy, angle
+	Particle: strains, rotation strain, stresses, strain energy (per unit mass)
 	dvij are (gradient rates X time increment) to give deformation gradient change
  
-    Note the incompressible rubber are not suitable for dynamic calculations because
+    Note that incompressible rubber is not suitable for dynamic calculations because
     they have an infinite wave speed
 */
 void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
@@ -250,9 +249,9 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
     mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kse));
 }
 
-// Return normal stress term (due to bulk modulus) and twice the pressure term for strain energy
-// Each block of lines if for a different U(J)
-// Any change here must also me made in 2D MPMConstLaw for the numerical solution to find B.zz in plane stress
+// Return normal stress term (due to bulk modulus) and twice the pressure term for strain energy.
+// Each block of lines is for a different U(J).
+// Any change here must also be made in 2D MPMConstLaw for the numerical solution to find B.zz in plane stress
 double Mooney::GetVolumetricTerms(double J,double *Kse)
 {
     // This is for *Kse/2 = U(J) = (K/2)(J-1)^2
