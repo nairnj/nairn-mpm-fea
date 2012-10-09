@@ -69,7 +69,7 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 	else
 		ep->zz+=mdm[4][1]*dvxx+mdm[4][2]*dvyy+mdm[4][3]*dgam+erzz;
 	
-    // strain energy (by midpoint rule)
+    // strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule)
     mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dvxx
                             + (st0.yy+sp->yy)*dvyy
                             + (st0.xy+sp->xy)*dgam));
@@ -132,7 +132,7 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doub
 	// update stress (need to make hypoelastic)
 	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,delsp);
 	
-	// strain energy
+	// strain energy increment per unit mass (dU/(rho0 V0))
     mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dvxx
                             + (st0.yy+sp->yy)*dvyy
                             + (st0.zz+sp->zz)*dvzz

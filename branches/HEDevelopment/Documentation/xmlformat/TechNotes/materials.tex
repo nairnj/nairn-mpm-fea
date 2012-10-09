@@ -43,19 +43,21 @@
 \def\e#1{\varepsilon_{#1}}
 \def\er#1{\varepsilon_{#1}^{(res)}}
 \def\err#1{\varepsilon_{#1}^{(res,r)}}
+\def\f{\hbox{\tenbsf f}}
 \def\F{\hbox{\tenbsf F}}
+\def\fvvec#1#2#3#4#5#6{\left(\begin{array}{ccc} #1 \\ #2 \\ #3 \\ #4 \\ #5 \\ #6 \end{array}\right)}
 \def\g#1{\gamma_{#1}}  
 \def\I{\hbox{\tenbsf I}}
 \def\P{\hbox{\tenbsf P}}
 \def\Q{\hbox{\tenbsf Q}}
 \def\R{\hbox{\tenbsf R}}
 \def\s#1{\sigma_{#1}}  
+\def\symmat#1#2#3#4#5#6{\left(\begin{array}{ccc} #1 & #2 & #3 \\ #2 & #4 & #5 \\
+                                                      #3 & #5 & #6 \end{array}\right)}
 \def\t#1{\tau_{#1}}  
 \def\v#1{\nu_{#1}}  
 \def\vvec#1#2#3{\left(\begin{array}{ccc} #1 \\ #2 \\ #3 \end{array}\right)}
-\def\fvvec#1#2#3#4#5#6{\left(\begin{array}{ccc} #1 \\ #2 \\ #3 \\ #4 \\ #5 \\ #6 \end{array}\right)}
-\def\symmat#1#2#3#4#5#6{\left(\begin{array}{ccc} #1 & #2 & #3 \\ #2 & #4 & #5 \\
-                                                      #3 & #5 & #6 \end{array}\right)}
+\def\w#1{\omega_{#1}}  
 
 
 
@@ -978,9 +980,32 @@ The history variables update using
         h_{ij,k}^{(i)}   & = & e^{-\Delta t/\tau_k}\left(h_{ij,k}^{(i-1)} - {G_k\over\tau_k}d\g{ij}\right)
 \end{eqnarray}
 
-\section{Isotropic Hyperelastic Materials}
+\section{Hyperelastic Materials}
 
-The Mooney-Rivilin material is an isotropic, hyperelastic material. It's stresses are based on a strain energy function that depends only on invariants to the left Cauchy-Green deformation tensor:
+\subsection{Material Point Properties}
+
+Constitutive laws for hyperelastic materials always involve the deformation gradient, $F$. All hyperelastic materials store the full deformation gradient using the strain and rotation variables on the particles (named $\vec\e{}=${\tt ep} and $\vec\w{}=${\tt wrot}) as follows:
+\begin{equation}
+   \F = \left(\begin{array}{ccc}
+          1 + \e{xx} & {1\over2}(\g{xy}-\w{xy}) & {1\over2}(\g{xz}-\w{xz})   \\
+         {1\over2}(\g{xy}+\w{xy})  & 1 + \e{yy} & {1\over2}(\g{yz}-\w{yz})   \\
+        {1\over2}(\g{xz}+\w{xz}) & {1\over2}(\g{yz}+\w{yz}) & 1 + \e{zz}
+        \end{array}\right)
+\end{equation}
+and should store the updated gradient back on strain and rotation tensors on each time step.
+
+Hyperelastic materials with plasticity, still store full deformation gradient as above and thus unlike small-strain plasticity materials, the strain variable is the total strain and not just the elastic strain. The current implementation uses the plastic strain variable on the particles ($\vec\e{}^{(p)}=${\tt eplast}) to store the symmetric, elastic, left Cauchy-Green tensor ( $\B = \F\F^T$). For convenience, hyperelastic materials can obtain a pointer to this variable using the particle accessor {\tt GetElasticLeftCauchyTensor()}. Because this just returns a pointer to {\tt eplast}, that material cannot also use {\tt GetPlasticStrainTensor()} expecting an option to store different particle state information.
+
+Large deformation MPM requires calculation of specific Cauchy stress ($\vec\s{}$) on each time step, or the Cauchy stress divided by the current density ($\rho$) accounting for volume changes. This required quantity is equivalent to
+\begin{equation}
+              {\vec\s{}\over\rho} = {\vec\s{} J\over\rho_0} =  {\vec\tau\over\rho_0}
+\end{equation}
+where $J$ is $\det \F$ and equal to the relative volume change, $\vec\tau$ is the Kirchoff stress, and $\rho_0$ is the initial volume ({\em i.e.}, $\rho_0 = J\rho$). In other words, all hyperelastic materials track the Kirchoff stress normalized to the initial density.
+
+
+\subsection{Mooney-Rivlin Material}
+
+The Mooney-Rivilin material is an isotropic, elastic, hyperelastic material. It's stresses are based on a strain energy function that depends only on invariants to the left Cauchy-Green deformation tensor:
 \begin{equation}
     \B = \F\F^T
 \end{equation}
@@ -993,7 +1018,7 @@ where $G_1$, $G_2$, and $K$ are material properties, $J=\det\F$, and the invaria
    \bar{I_1} & = & {B_{xx}+B_{yy}+B_{zz}\over J^{2/3}} \\
    \bar{I_2} & = & {1\over2}\left(\bar{I_1}^2 - {B_{xx}^2+B_{yy}^2+B_{zz}^2+2B_{xy}^2+2B_{xz}^2+2B_{yz}^2\over J^{5/3}}\right)
 \end{eqnarray}
-For low strains, this material is equivalent for a linear elastic, isotropic material with shear modulus $G_1+G_2$ and bulk modulus $K$. If $G_2=0$, the material is a neo-Hookean material. See below for an alternate compressibility term. Some hyperelastic rubber models assume incompressible materials, which corresponds to $K\to\infty$; such models do not work in explicit code.
+For low strains, this material is equivalent for a linear elastic, isotropic material with shear modulus $G_1+G_2$ and bulk modulus $K$. If $G_2=0$, the material is a neo-Hookean material. See below for an alternate compressibility terms. Some hyperelastic rubber models assume incompressible materials, which corresponds to $K\to\infty$; such models do not work in dynamic code (because wave speed is infinite).
 
 To handle thermal and moisture strains, $\F$ is replaced by the deformation relative to the free expansion state:
 \begin{equation}
@@ -1023,7 +1048,7 @@ where $I_1 = J^{2/3}\bar{I_1}$ and $I_2 = J^{4/3}\bar{I_2}$. The stress componen
        \t{yz} & = & G_1{B_{yz}\over J^{5/3}} + G_2{B_{xx}B_{yz}-B_{xy}B_{xz}\over J^{7/3}}
 \end{eqnarray}
 
-\subsection{Plane Strain and Plane Stress Analysis}
+\subsubsection{Plane Strain and Plane Stress Analysis}
 
 For 2D analysis, $F_{xz}=F_{yz}=F_{zx}=F_{zy}=0$, which leads to zero for corresponding terms in $\B$. The resulting stresses are
 \begin{eqnarray}
@@ -1039,7 +1064,7 @@ For 2D analysis, $F_{xz}=F_{yz}=F_{zx}=F_{zy}=0$, which leads to zero for corres
 \end{eqnarray}
 For plane strain analysis $B_{zz}=1$. For plane stress analysis, one has to solve numerically for $B_{zz}$ to get $\s{zz}=0$ and then use that result to find $\e{zz}$ and other stresses.
 
-\subsection{Alternate Bulk Modulus Term}
+\subsubsection{Alternate Bulk Modulus Term}
 
 Two alternative compressibility terms (showing only that term) is
 
@@ -1052,7 +1077,80 @@ W = {K\over2}(\ln J)^2  \qquad{\rm and}\qquad W = {K\over2}\left({1\over2}(J^2-1
      \sigma = K {\ln J\over J}\I  \qquad{\rm and}\qquad \sigma = {K\over 2}\left(J-{1\over J}\right)\I
 \end{equation}
 
-\noindent Although these three compressibility terms show some significant differences when $J$ deviates significantly from 1, under most problems, $J$ will stay close to one. One exception could be constrained compression or tension. Besides these cases, the most efficient one is preferred, which is the one in previous sections because it does not need $\ln J$ or any division.
+\noindent Although these three compressibility terms show some significant differences when $J$ deviates significantly from 1, under most problems, $J$ will stay close to one. Two exceptions could be constrained compression or tension. Here, the only one that works well to very small or large $J$ is the second one above. This one correctly leads to inifinite positive stress as $J\to\infty$ and infinite negative stress as $J\to0$. This later one is the one currently implemented for this material in {\tt NairnMPM}.
+
+\subsection{Ideal Gas Law}
+
+The ideal gas material implements ideal gas law as a large deformation, hyperelastic material. It seems to work well for gas confined within a solid or constrained by rigid particles. It does not handle gas dynamics such as irreversible free expansion, but does handle reversible processes including coupled conversion of energy into heat ({\em i.e.}, cooling on expansion and heating on compression).
+
+The ideal gas law is
+\begin{equation}
+    PV = nRT
+\end{equation}
+The ideal gas properties are defined by picking any reference pressure, $P_0$, reference temperature, $T_0$, and reference density, $\rho_0$. If $M$ is the molecular weight of the gas molecules, the reference density can be found from:
+\begin{equation}
+    \rho_0 = {P_0\over T_0} {M\over R}
+\end{equation}
+We can now eliminate $n$ and $R$ to derive
+\begin{equation}
+    P = P_0{V_0\over V}{T\over T_0} = P_0 {T\over T_0} {1\over J}
+\end{equation}
+where $J = \det \F = V/V_0$. The Cauchy stress due to this pressure is $-P\I$, which implies hyperelastic energy function determined from:
+\begin{equation}
+    \vec\sigma = - P_0 {T\over T_0} {1\over J}\I = {dU(J)\over dJ}\I
+        \qquad{\rm or}\qquad
+         U(J) = - P_i \ln J
+\end{equation}
+where $P_i = P_0T/T_0$ is the initial pressure (when $J=1$). This energy is equal to the energy per unit initial volume for isothermal compression or expansion of an ideal gas:
+\begin{equation}
+    U(J) = - {1\over V_0} \int_{V_0}^V P\thinspace dV = - {nRT\over V_0} \int_{V_0}^V {1\over V}\thinspace dV = - P_i \ln {V\over V_0} = - P_i \ln J
+\end{equation}
+
+For MPM calculations, the code needs a specific Kirchoff stress normalized to $\rho_0$ or
+\begin{equation}
+    \vec\tau^{(s)} = -{PJ\over \rho_0}\I  = - {P_0\over \rho_0} {T\over T_0}\I
+\end{equation}
+In coding, an incremental approach is preferred. 
+If $\tau_n^{(s)}$ is any diagonal element of the specific Kirchoff stress tensor for time step $n$, then
+\begin{equation}
+   \tau_{n+1}^{(s)} = - {P_0\over \rho_0} {T_{n+1}\over T_0}  = - {P_0\over \rho_0} {T_n\over T_0} {T_{n+1}\over T_n}
+       = \tau_n^{(s)} {T_{n+1}\over T_n}
+\end{equation}
+Note that the Kirchoff stress remains constant for isothermal expansion and compression.
+
+The energy increment associated with this stress change is $dU = -P\thinspace dV$ work. The energy per unit mass using midpoint rule between initial and final pressure is therefore
+\begin{equation}
+    {dU\over \rho_0 V_0} = - {1\over2} {P_n+P_{n+1}\over \rho_0} 
+         {V_{n+1} - V_n\over V_0} = - {1\over2} {P_n+P_{n+1}\over \rho_0} {V_{n+1}\over V_0}
+         \left(1 - {V_n\over V_{n+1}}\right)
+\end{equation}
+Let deformation gradient for step $n+1$ be
+\begin{equation}
+       \F_{n+1} = \f\cdot\F_n  \quad{\rm where}\quad \f = \I + \Delta t\nabla\vec v
+       \quad{\rm and}\quad J_{n+1} = \det \f J_n
+\end{equation}
+which leads to
+\begin{equation}
+    {dU\over \rho_0 V_0} = - {J_{n+1}\over2} {P_n+P_{n+1}\over \rho_0} 
+         \left(1 - {1\over\det f}\right) = - {1\over2}
+         \left({P_n\over \rho_{n}}\det f+{P_{n+1}\over \rho_{n+1}} \right)
+         \left(1 - {1\over\det f}\right)
+\end{equation}
+But, $P/\rho$ is $-\tau^{(s)}$ leading to
+\begin{equation}
+    {dU\over \rho_0 V_0} =  {1\over2}
+         \left(\tau_n^{(s)}\det f+\tau_{n+1}^{(s)} \right)
+         \left(1 - {1\over\det f}\right)
+\end{equation}
+When conduction with energy coupling is activated, this entire energy is dissipated energy, which can lead to temperature changes.
+
+When gas particles are present, they have to be initialized to the pressure (or stress) of
+\begin{equation}
+     \tau_i^{(s)} =  - {P_i\over \rho_0} = - {P_0\over \rho_0} {T\over T_0}
+\end{equation}
+where $T$ is the simulation reference temperature (need not be the gas reference temperature, which can be any desired reference condition). All simulations with gas particles must therefore specify a reference temperature in degrees Kelvin.
+
+When doing conduction and energy coupling, this material needs head capacity and thermal conductivity. Heat capacity is calculated using ideal gas law theory (and any entered heat capacities will be ignored). Thermal conductivity, however, should be entered. The current code assumes conductivity is a temperature-independent property, although conductivity of a gas does vary with temperature. If simulations with large temperature changes of the gas are important, this material will need to be improved to allow temperature-dependent thermal conductivity.
 
 \section{Two-State Isotropic Material}
 

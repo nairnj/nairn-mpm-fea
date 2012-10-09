@@ -155,7 +155,7 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvx
 		else
 			ep->zz += eres - psLr2G*(dexxr+deyyr);
 		
-		// strain energy (by midpoint rule)
+		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule)
 		mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr + (st0.yy+sp->yy)*deyyr
 								+ (st0.xy+sp->xy)*dgxy));
 		if(np==PLANE_STRAIN_MPM)
@@ -233,12 +233,12 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvx
 	}
 	Hypo2DCalculations(mptr,-dwrotxy,dels.xx,dels.yy,dels.xy);
 	
-    // Elastic energy density
+    // Elastic energy increment per unit mass (dU/(rho0 V0))
     mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr
                         + (st0.yy+sp->yy)*deyyr
                         + (st0.xy+sp->xy)*dgxy));
 
-    // Plastic energy increment
+    // Plastic energy increment per unit mass (dU/(rho0 V0))
 	double dispEnergy=0.5*((st0.xx+sp->xx)*dexxp
                         + (st0.yy+sp->yy)*deyyp
                         + (st0.xy+sp->xy)*dgxyp);
@@ -325,7 +325,7 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvz
 		// update stress (need to make hypoelastic)
 		Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 		
-		// strain energy
+		// strain energy increment per unit mass (dU/(rho0 V0))
 		mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr
 								+ (st0.yy+sp->yy)*deyyr
 								+ (st0.zz+sp->zz)*dezzr
@@ -387,7 +387,7 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvz
 	dsig[XY] -= Gred*dgxyp;
 	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 	
-    // Elastic energy density
+    // Elastic energy increment per unit mass (dU/(rho0 V0))
 	mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr
 							+ (st0.yy+sp->yy)*deyyr
 							+ (st0.zz+sp->zz)*dezzr
@@ -395,7 +395,7 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvz
 							+ (st0.xz+sp->xz)*dgxz
 							+ (st0.xy+sp->xy)*dgxy));
 
-    // Plastic energy increment
+    // Plastic energy increment per unit mass (dU/(rho0 V0))
 	double dispEnergy=0.5*(0.5*((st0.xx+sp->xx)*dexxp
 							+ (st0.yy+sp->yy)*deyyp
 							+ (st0.zz+sp->zz)*dezzp

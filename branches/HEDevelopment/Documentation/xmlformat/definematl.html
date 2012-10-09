@@ -96,15 +96,22 @@
 <tr>
 <td><a href="#mooney"><code>Mooney</code></a></td>
 <td>8</td>
-<td width="50%">Mooney-Rivlin, hyperelastic material. This material includes neo-Hookian
+<td width="50%">Mooney-Rivlin, elastic, hyperelastic material. This material includes neo-Hookian
 as a special case.</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td><a href="#heiso"><code>HEIsotropic</code></a></td>
+<td>24</td>
+<td width="50%">Isotropic, elastic-plastic, hyperelastic material (in development).</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
 <tr>
 <td><a href="#heaniso"><code>HEAnisotropic</code></a></td>
 <td>21</td>
-<td width="50%">An anisotropic, hyperelastic material (in development).</td>
+<td width="50%">Anisotropic, elastic-plastic, hyperelastic material (in development).</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td>
 </tr>
 
@@ -213,6 +220,13 @@ as a special case.</td>
 <td><a href="#trilinear"><code>TrilinearTraction</code></a></td>
 <td>20</td>
 <td width="50%">A trilinear <a href="cracks.html#traction">traction law</a> for use on crack surfaces</td>
+<td align="center"></td><td align="center">X</td><td align="center"></td>
+</tr>
+
+<tr>
+<td><code>CoupledSawTooth</code></td>
+<td>23</td>
+<td width="50%">A triangular <a href="cracks.html#traction">traction law</a> for use on crack surfaces based on coupled displacement method (not documented yet).</td>
 <td align="center"></td><td align="center">X</td><td align="center"></td>
 </tr>
 
@@ -579,9 +593,23 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <p>A neo-Hookean material is a special case of a Mooney-Rivlin material by setting G<sub>2</sub> = 0.</p>
 
-<a name="heaniso"></a><h2>Anisotropic, Hyperelastic Material</h2>
+<a name="heiso"></a><h2>Isotropic, Elastic-Plastic, Hyperelastic Material</h2>
 
-<p>The material type is an anisotropic, hyperelastic material. It is currently in development.</p>
+<p>The material type is an isotropic, hyperelastic material with plasticity. It is currently in development.</p>
+
+<p>The possible input properties are:</p>
+
+<dl>
+
+<dt>Other Properties</dt>
+<dd>See the <a href="#common">properties common to all materials</a>.</dd>
+    	
+</dl>
+
+
+<a name="heaniso"></a><h2>Anisotropic, Elastic-Plastic, Hyperelastic Material</h2>
+
+<p>The material type is an anisotropic, hyperelastic material with plasticity. It is currently in development.</p>
 
 <p>The possible input properties are:</p>
 
@@ -674,9 +702,9 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 
 <p>where <code>M<sub>g</sub></code> is the molecular weight of the gas (such as 28.97 g/mol for air) and <code>R</code> is the gas constant, R = 8.3144621 J/k/mol.</p>
 
-<p>When thermal conduction is off, this material models isothermal compression and expansion. To model adibatic compression and expansion, turn conduction on and active energy coupling. The energy will convert to heat result in heating during compression or cooling during expansion. See the <a href="thermal.html"><code>Thermal</code></a> command for details. There is no need to enter heat capacity because that term is calculated using ideal gas theory. You do, however, need to enter thermal conductivity. The current implementation uses a temperature independent conductivity, which may change in the future.</p>
+<p>When thermal conduction is off, this material models isothermal compression and expansion. To model adibatic compression and expansion, turn conduction on and activate energy coupling. The energy will convert to heat resulting in heating during compression or cooling during expansion. See the <a href="thermal.html"><code>Thermal</code></a> command for details. There is no need to enter heat capacity because that term is calculated using ideal gas theory. You do, however, need to enter thermal conductivity. The current implementation uses a temperature independent conductivity, which may change in the future.</p>
 
-<p>Ideal gas particles are fairly stable, but can be made unstable by certain boundary conditions on constraining walls. If stability problems arise, try different boundary conditions.</p>
+<p>Ideal gas particles are fairly stable, but can be made unstable by certain boundary conditions on constraining walls. If stability problems arise, try different boundary conditions. They also do not work for irreversibale processes such as free expansion in to empty space. They are intended to be always bounded by pressure.</p>
 
 <p>If the calculation archives strain energy, it tracks work done on the gas particles (in the form of <code>P dV</code> work).</p>
 

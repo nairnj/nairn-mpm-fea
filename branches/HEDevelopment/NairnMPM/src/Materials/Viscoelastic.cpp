@@ -276,6 +276,7 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy
     }
 	
 	// find energy from work increment, but not dissipated energy yet
+	// energy increment per unit mass (dU/(rho0 V0))
 	dvxx-=er;
 	dvyy-=er;
 	double dvzz=-er;
@@ -376,6 +377,7 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz
     }
 	
 	// find energy from work increment, but not dissipated energy yet
+	// energy increment per unit mass (dU/(rho0 V0))
 	dvxx-=er;
 	dvyy-=er;
 	dvzz=-er;
