@@ -94,7 +94,7 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
 	F[2][0] = dvzx*pF[0][0] + dvzy*pF[1][0] + (1. + dvzz)*pF[2][0];		// dw/dx
 	F[2][1] = dvzx*pF[0][1] + dvzy*pF[1][1] + (1. + dvzz)*pF[2][1];		// dw/dy
 	F[2][2] = dvzx*pF[0][2] + dvzy*pF[1][2] + (1. + dvzz)*pF[2][2];		// 1 + dw/dz
-	
+ 
 	// store in total strain and rotation tensors
 	if(storeInParticle)
     {   Tensor *ep=mptr->GetStrainTensor();
@@ -124,14 +124,51 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
 // Find Left-Cauchy Green Tensor B = F.F^T for 2D calculations
 // Note: This assumes plane strain to set B.zz=1. If the 2D calculation is plane stress, the
 //	caller must replace B.zz with the plane stress result
+
+
+
 Tensor HyperElastic::GetLeftCauchyTensor2D(double F[][3])
 {
-	Tensor B;
+    Tensor B;
 	ZeroTensor(&B);
 	B.xx = F[0][0]*F[0][0] + F[0][1]*F[0][1];
 	B.yy = F[1][0]*F[1][0] + F[1][1]*F[1][1];
 	B.xy = F[0][0]*F[1][0] + F[0][1]*F[1][1];
 	B.zz = 1.;
+	return B;
+}
+
+// Update Left-Cauchy Green Tensor B = dF.pB.dF^T for 2D calculations
+// assume pB is on stored on particle
+Tensor HyperElastic::GetLeftCauchyTensor2D(MPMBase *mptr,double dvxx,double dvyy,
+                                           double dvxy,double dvyx,bool storeInParticle)
+{
+    // get previous particle B
+    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
+
+    // Incremental calcul of B
+    Tensor B;
+	ZeroTensor(&B);
+    
+    B.xx = ((1. + dvxx)*pB->xx+dvxy*pB->xy)*(1. + dvxx)
+            +((1. + dvxx)*pB->xy+dvxy*pB->yy)*dvxy;
+    
+	B.yy = (dvyx*pB->xx+(1.+dvyy)*pB->xy)*dvyx
+            +(dvyx*pB->xy+(1.+dvyy)*pB->yy)*(1.+dvyy);
+
+    B.xy = ((1. + dvxx)*pB->xx+dvxy*pB->xy)*dvyx
+            +((1. + dvxx)*pB->xy+dvxy*pB->yy)*(1.+dvyy);
+   
+    // B.yx=B.xy
+    B.zz = 1.;
+    
+    if(storeInParticle)
+    {   pB->xx = B.xx;
+        pB->xy = B.xy;
+        pB->yy = B.yy;
+        pB->zz = B.zz;
+    }
+    
 	return B;
 }
 
@@ -147,6 +184,50 @@ Tensor HyperElastic::GetLeftCauchyTensor3D(double F[][3])
 	B.xz = F[0][0]*F[2][0] + F[0][1]*F[2][1] + F[0][2]*F[2][2];
 	B.yz = F[1][0]*F[2][0] + F[1][1]*F[2][1] + F[1][2]*F[2][2];
 	return B;
+}
+    
+Tensor HyperElastic::GetLeftCauchyTensor3D(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
+                                           double dvxz,double dvzx,double dvyz,double dvzy,bool storeInParticle)
+{
+    // get previous particle B
+    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
+    
+    // Incremental implementation of B
+    //double dvxx,double dvyy,double dvzz,double dvxy,double dvyx;
+    Tensor B;
+	ZeroTensor(&B);
+   
+    B.xx = ((1. + dvxx)*pB.xx+dvxy*pB.yx+dvxz*pB.zx)*(1. + dvxx)
+          +((1. + dvxx)*pB.xy+dvxy*pB.yy+dvxz*pB.zy)*dvxy
+          +((1. + dvxx)*pB.xz+dvxy*pB.yz+dvxz*pB.zz)*dvxz;
+    
+	B.yy = (dvyx*pB.xx+(1.+dvyy)*pB.yx+dvyz*pB.zx)*dvyx
+          +(dvyx*pB.xy+(1.+dvyy)*pB.yy+dvyz*pB.zy)*(1.+dvyy)
+          +(dvyx*pB.xz+(1.+dvyy)*pB.yz+dvyz*pB.zz)*dvyz ;
+    
+    B.zz = (dvzx*pB.xx+dvzy*pB.yx+(1.+dvzz)*pB.zx)*dvzx
+          +(dvzx*pB.xy+dvzy*pB.yy+(1.+dvzz)*pB.zy)*dvzy
+          +(dvzx*pB.xz+dvzy*pB.yz+(1.+dvzz)*pB.zz)*(1.+dvzz);
+    
+    B.xy = ((1. + dvxx)*pB.xx+dvxy*pB.yx+dvxz*pB.zx)*dvyx
+          +((1. + dvxx)*pB.xy+dvxy*pB.yy+dvxz*pB.zy)*(1.+dvyy)
+          +((1. + dvxx)*pB.xz+dvxy*pB.yz+dvxz*pB.zz)*dvyz;
+
+    B.xz = (dvyx*pB.xx+(1.+dvyy)*pB.yx+dvyz*pB.zx)*dvzx
+          +(dvyx*pB.xy+(1.+dvyy)*pB.yy+dvyz*pB.zy)*dvzy
+          +(dvyx*pB.xz+(1.+dvyy)*pB.yz+dvyz*pB.zz)*(1.+dvzz) ;
+
+    B.yz = (dvyx*pB.xx+(1.+dvyy)*pB.yx+dvyz*pB.zx)*dvzx
+          +(dvyx*pB.xy+(1.+dvyy)*pB.yy+dvyz*pB.zy)*dvzy
+          +(dvyx*pB.xz+(1.+dvyy)*pB.yz+dvyz*pB.zz)*(1.+dvzz) ;
+    
+    // B.yx=B.xy
+    // B.zx=B.xz
+    // B.zy=B.yz
+    
+    
+	return B;
+
 }
 
 // Find isotropic stretch for thermal and moisture expansion
@@ -189,10 +270,10 @@ void HyperElastic::ConvertToNominalStress2D(MPMBase *mptr,double F[][3])
 	//JFi[2][1] = 0.;
 	JFi[2][2] = F[0][0]*F[1][1] - F[1][0]*F[0][1];
 	Tensor sp0=*sp;
-	sp->xx = JFi[0][0]*sp0.xx + JFi[0][1]*sp0.xy;
-	sp->xy = JFi[0][0]*sp0.xy + JFi[0][1]*sp0.yy;
-	sp->yy = JFi[1][0]*sp0.xy + JFi[1][1]*sp0.yy;
-	sp->zz = JFi[2][2]*sp0.zz;
+	//sp->xx = JFi[0][0]*sp0.xx + JFi[0][1]*sp0.xy;
+	//sp->xy = JFi[0][0]*sp0.xy + JFi[0][1]*sp0.yy;
+	//sp->yy = JFi[1][0]*sp0.xy + JFi[1][1]*sp0.yy;
+	//sp->zz = JFi[2][2]*sp0.zz;
 }
 
 // In future, may need to convert to Kirchoff or Nominal Stress in 2D or 3D 

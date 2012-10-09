@@ -255,9 +255,10 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 double Mooney::GetVolumetricTerms(double J,double *Kse)
 {
     // This is for U(J) = (K/2)(J-1)^2
-    //double Kterm = Ksp*(J-1.);
-    //*Kse = Kterm*(J-1);     // = Ksp*(J-1)^2
-    //return Kterm;
+    double Kterm = Ksp*(J-1.);
+    //double Kterm = (J-1.);
+    *Kse = Kterm*(J-1);     // = Ksp*(J-1)^2
+    return Kterm;
     
     // This is for for U(J) = (K/2)(ln J)^2
     // Zienkiewicz & Taylor recommend not using this one
@@ -269,8 +270,8 @@ double Mooney::GetVolumetricTerms(double J,double *Kse)
     // This is for U(J) = (K/2)((1/2)(J^2-1) - ln J)
     // Zienkiewicz & Taylor note that stress goes to infinite as J=0 and J->infinity for this function, while others do not
     // Simo and Hughes also use this form (see Eq. 9.2.3)
-    *Kse = Ksp*(0.5*(J*J-1.)-log(J));
-    return 0.5*Ksp*(J - 1./J);
+    //*Kse = Ksp*(0.5*(J*J-1.)-log(J));
+    //return 0.5*Ksp*(J - 1./J);
 }
 
 #pragma mark Mooney::Accessors

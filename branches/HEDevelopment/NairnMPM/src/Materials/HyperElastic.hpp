@@ -31,7 +31,7 @@
     integrals. Thus we want mass-weighted average of (Cauchy Stress)/rho0.
     Note that this might change if uniform GIMP was changed to another method.
 */
-#define CONSTANT_RHO
+//#define CONSTANT_RHO
 
 #include "Materials/MaterialBase.hpp"
 
@@ -49,7 +49,9 @@ class HyperElastic : public MaterialBase
 		double GetDeformationGrad(double F[][3],MPMBase *,double,double,double,double,bool,bool);
 		double GetDeformationGrad(double F[][3],MPMBase *,double,double,double,double,double,double,double,double,double,bool,bool);
 		Tensor GetLeftCauchyTensor2D(double F[][3]);
+        Tensor GetLeftCauchyTensor2D(MPMBase *mptr,double,double,double,double,bool);
 		Tensor GetLeftCauchyTensor3D(double F[][3]);
+        Tensor GetLeftCauchyTensor3D(MPMBase *mptr,double,double,double,double,double,double,double,double,double,bool);
 		double GetResidualStretch(MPMBase *);
         void ConvertToNominalStress2D(MPMBase *,double F[][3]);
     
