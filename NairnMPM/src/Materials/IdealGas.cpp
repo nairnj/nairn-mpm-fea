@@ -151,6 +151,8 @@ void IdealGas::MPMCombinedLaw(MPMBase *mptr,double detf)
 {
     // update stress
 	Tensor *sp=mptr->GetStressTensor();
+    //double mPnsp = sp->xx;
+    
 	// compute specific pressure as p/rho = P0sp * (T/T0)
 	// incrementally p(n+1)/rho = P0sp * (T(n+1)/T0)
 	//							= P0sp * (Tn/T0) * (T(n+1)/Tn)
@@ -169,6 +171,8 @@ void IdealGas::MPMCombinedLaw(MPMBase *mptr,double detf)
 	double dU = -0.5*(P0sp/T0)*(mptr->pPreviousTemperature*(detf-1./detf)
                                 - ConductionTask::dTemperature*(detf-1.));
     dU /= GetCurrentRelativeVolume(mptr);
+    
+    //double dU = (0.5/GetCurrentRelativeVolume(mptr))*(mPnsp*detf + mPsp)*(1.-1/detf);
     
     // increment energies and all is dissipated
 	mptr->AddStrainEnergy(dU);
