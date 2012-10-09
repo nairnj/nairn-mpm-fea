@@ -1081,13 +1081,13 @@ W = {K\over2}(\ln J)^2  \qquad{\rm and}\qquad W = {K\over2}\left({1\over2}(J^2-1
 
 \subsection{Ideal Gas Law}
 
-The ideal gas material implements ideal gas law as a hyperelastic material. It seems to work well for gas confined within a solid or constrained by rigid particles. It does not handle gas dynamics such as irreversible free expansion, but does handle reversible processes including coupled conversion of energy into heat ({\em i.e.}, cooling on expansion and heating on compression).
+The ideal gas material implements ideal gas law as a large deformation, hyperelastic material. It seems to work well for gas confined within a solid or constrained by rigid particles. It does not handle gas dynamics such as irreversible free expansion, but does handle reversible processes including coupled conversion of energy into heat ({\em i.e.}, cooling on expansion and heating on compression).
 
 The ideal gas law is
 \begin{equation}
     PV = nRT
 \end{equation}
-The ideal gas properties are defined by picking any reference pressure, $P_0$, reference temperature, $T_0$, and reference density, $\rho_0$. If $M$ is the molecular weight of the gas molecules, the reference density is given by
+The ideal gas properties are defined by picking any reference pressure, $P_0$, reference temperature, $T_0$, and reference density, $\rho_0$. If $M$ is the molecular weight of the gas molecules, the reference density can be found from:
 \begin{equation}
     \rho_0 = {P_0\over T_0} {M\over R}
 \end{equation}
@@ -1095,20 +1095,33 @@ We can now eliminate $n$ and $R$ to derive
 \begin{equation}
     P = P_0{V_0\over V}{T\over T_0} = P_0 {T\over T_0} {1\over J}
 \end{equation}
-where $J = \det \F = V/V_0$. The Cauchy stress due to this pressure is $-P\I$, but the code needs a specific Kirchoff stress normalized to $\rho_0$ or
+where $J = \det \F = V/V_0$. The Cauchy stress due to this pressure is $-P\I$, which implies hyperelastic energy function determined from:
+\begin{equation}
+    \vec\sigma = - P_0 {T\over T_0} {1\over J}\I = {dU(J)\over dJ}\I
+        \qquad{\rm or}\qquad
+         U(J) = - P_i \ln J
+\end{equation}
+where $P_i = P_0T/T_0$ is the initial pressure (when $J=1$). This energy is equal to the energy per unit initial volume for isothermal compression or expansion of an ideal gas:
+\begin{equation}
+    U(J) = - {1\over V_0} \int_{V_0}^V P\thinspace dV = - {nRT\over V_0} \int_{V_0}^V {1\over V}\thinspace dV = - P_i \ln {V\over V_0} = - P_i \ln J
+\end{equation}
+
+For MPM calculations, the code needs a specific Kirchoff stress normalized to $\rho_0$ or
 \begin{equation}
     \vec\tau^{(s)} = -{PJ\over \rho_0}\I  = - {P_0\over \rho_0} {T\over T_0}\I
 \end{equation}
-
-In code, an incremental approach is often preferred. 
-If $\tau_n^{(s)}$ is any diagonal element of the specific Kirchoff stress tensor, then
+In coding, an incremental approach is preferred. 
+If $\tau_n^{(s)}$ is any diagonal element of the specific Kirchoff stress tensor for time step $n$, then
 \begin{equation}
-   \tau_{n+1}^{(s)} = - {P_0\over \rho_0} {T_n\over T_0} {T_{n+1}\over T_n}
+   \tau_{n+1}^{(s)} = - {P_0\over \rho_0} {T_{n+1}\over T_0}  = - {P_0\over \rho_0} {T_n\over T_0} {T_{n+1}\over T_n}
        = \tau_n^{(s)} {T_{n+1}\over T_n}
 \end{equation}
+Note that the Kirchoff stress remains constant for isothermal expansion and compression.
+
 The energy increment associated with this stress change is $dU = -P\thinspace dV$ work. The energy per unit mass using midpoint rule between initial and final pressure is therefore
 \begin{equation}
-    {dU\over \rho_0 V_0} = - {1\over2} {P_n+P_{n+1}\over \rho_0} {V_{n+1}\over V_0}
+    {dU\over \rho_0 V_0} = - {1\over2} {P_n+P_{n+1}\over \rho_0} 
+         {V_{n+1} - V_n\over V_0} = - {1\over2} {P_n+P_{n+1}\over \rho_0} {V_{n+1}\over V_0}
          \left(1 - {V_n\over V_{n+1}}\right)
 \end{equation}
 Let deformation gradient for step $n+1$ be
@@ -1133,7 +1146,7 @@ When conduction with energy coupling is activated, this entire energy is dissipa
 
 When gas particles are present, they have to be initialized to the pressure (or stress) of
 \begin{equation}
-     \tau_i^{(s)} = - {P_0\over \rho_0} {T\over T_0}
+     \tau_i^{(s)} =  - {P_i\over \rho_0} = - {P_0\over \rho_0} {T\over T_0}
 \end{equation}
 where $T$ is the simulation reference temperature (need not be the gas reference temperature, which can be any desired reference condition). All simulations with gas particles must therefore specify a reference temperature in degrees Kelvin.
 
