@@ -310,18 +310,14 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
             threeD = fmobj->IsThreeD();
 			for(p=0;p<nmpms;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
-                {   //double relVolume =  theMaterials[mpm[p]->MatID()]->GetCurrentRelativeVolume(mpm[p]);
-                    switch(quantity)
+                {   switch(quantity)
 					{   case TOTL_ENERGY:
 						case POTL_ENERGY:
 					    case KINE_ENERGY:
-							//value+=0.5e-3*mpm[p]->mp*relVolume*(mpm[p]->vel.x*mpm[p]->vel.x
-							//			+ mpm[p]->vel.y*mpm[p]->vel.y);
 							value+=0.5e-3*mpm[p]->mp*(mpm[p]->vel.x*mpm[p]->vel.x
 																+ mpm[p]->vel.y*mpm[p]->vel.y);
 							if(quantity==KINE_ENERGY) break;
 						case STRN_ENERGY:
-							//value+=mpm[p]->mp*relVolume*mpm[p]->GetStrainEnergy();
 							value+=mpm[p]->mp*mpm[p]->GetStrainEnergy();
 							if(quantity==POTL_ENERGY)
 								value-=1.e-3*mpm[p]->GetExtWork();
@@ -353,9 +349,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
             threeD = fmobj->IsThreeD();
 			for(p=0;p<nmpms;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
-                {   //double relVolume =  theMaterials[mpm[p]->MatID()]->GetCurrentRelativeVolume(mpm[p]);
-					//value+=mpm[p]->mp*relVolume*mpm[p]->GetPlastEnergy();
-					value+=mpm[p]->mp*mpm[p]->GetPlastEnergy();
+                {   value+=mpm[p]->mp*mpm[p]->GetPlastEnergy();
                 }
 			}
 			value*=1.e-6;
@@ -369,8 +363,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	deltaT=(mpm[p]->pTemperature-thermal.reference);
 					Cp=theMaterials[mpm[p]->MatID()]->GetHeatCapacity(mpm[p]);		// in J/(g-K)
-                    double relVolume =  theMaterials[mpm[p]->MatID()]->GetCurrentRelativeVolume(mpm[p]);
-					value+=mpm[p]->mp*relVolume*Cp*deltaT*deltaT/(2.*thermal.reference);
+					value+=mpm[p]->mp*Cp*deltaT*deltaT/(2.*thermal.reference);
 				}
 			}
 			break;

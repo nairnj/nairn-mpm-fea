@@ -166,7 +166,7 @@ double HyperElastic::GetResidualStretch(MPMBase *mptr)
 
 // Get current relative volume change = J = det F = lam1 lam2 lam3
 // Need to have this call in material classes to allow small and large deformation material laws
-//  to handle it differently.
+//  to handle it differently. It is used on archiving to convert Kirchoff Stress/rho0 to Cauchy stress
 double HyperElastic::GetCurrentRelativeVolume(MPMBase *mptr)
 {   return mptr->GetRelativeVolume();
 }
