@@ -75,7 +75,7 @@ void Mooney::InitialLoadMechProps(int makeSpecific,int np)
 {
 	hasMatProps=TRUE;
 	
-	// G1, G2, and Kbulk in Specific units
+	// G1, G2, and Kbulk in Specific units using initial rho
 	// for MPM (units N/m^2 cm^3/g)
 	G1sp=G1*1.0e+06/rho;
 	G2sp=G2*1.0e+06/rho;
@@ -106,7 +106,6 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	
 	// left Cauchy deformation tensor B = F F^T
 	Tensor B = GetLeftCauchyTensor2D(F);
-    
 	
 	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
 	double J2;
@@ -128,13 +127,30 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 		double xn16,xn12,xnp1,xn = 1.+ep->zz;
 		double fx,fxp;
 		int iter=1;
+        
+        // solution for B.zz in xn
 		while(iter<10)
 		{	xn16 = pow(xn,1./6.);
 			xn12 = sqrt(xn);
-			fx = 3.*Ksp*xn*arg*(xn12*arg12-1.) + G1sp*(2.*xn-arg2)*xn16*arg16
-				+ G2sp*(xn*arg2-2.*arg)/(xn16*arg16);
-			fxp = 3.*Ksp*arg*(1.5*arg12*xn12-1.) + G1sp*xn16*arg16*(14.*xn-arg2)/(6.*xn)
-				+ G2sp*(2.*arg+5.*xn*arg2)/(6.*xn16*arg16*xn);
+            
+            // three options for K term in function
+            // For K(J-1) term
+			//fx = 3.*Ksp*xn*arg*(xn12*arg12-1.); 
+			//fxp = 3.*Ksp*arg*(1.5*arg12*xn12-1.); 
+            
+            // For K(ln J)/J term
+            //fx = 1.5*Ksp*xn12*arg12*log(xn*arg);
+            //fxp = 0.75*Ksp*arg12*(2.+log(arg*xn))/xn12;
+            
+            // For (K/2)(J-1/J) term
+            fx = 1.5*Ksp*xn12*arg12*(xn*arg-1.);            
+            fxp = 0.75*Ksp*arg12*(3.*arg*xn-1.)/xn12;
+           
+            // N ow add the shear terms
+            fx += G1sp*(2.*xn-arg2)*xn16*arg16 + G2sp*(xn*arg2-2.*arg)/(xn16*arg16);
+            fxp += G1sp*xn16*arg16*(14.*xn-arg2)/(6.*xn) + G2sp*(2.*arg+5.*xn*arg2)/(6.*xn16*arg16*xn);
+            
+            // new prediction for solution
 			xnp1 = xn - fx/fxp;
 			//cout << iter << ": " << xn << "," << xnp1 << "," << fabs(xn-xnp1) << endl;
 			if(fabs(xn-xnp1)<1e-6)
@@ -154,38 +170,30 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	// J as determinant of F (or sqrt root of determinant of B) normalized to residual stretch
 	double resStretch = GetResidualStretch(mptr);
 	double J = sqrt(J2)/(resStretch*resStretch*resStretch);
-    double Kse;
-#ifdef CONSTANT_RHO
-    // Ignore change in density in the specific stress
-    // i.e., get Cauchy stress / rho0
-	double J53 = pow(J, 5./3.);
-	double J23 = J53/J;
-	double J73 = J53*J23;
-	double J43 = J23*J23;
-	double Kterm = GetVolumetricTerms(J,&Kse);
-#else
+    
     // Account for density change in specific stress
     // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
 	double J23 = pow(J, 2./3.);
 	double J43 = J23*J23;
-	double J53 = J23;                 // Using J^(2/3) = J^(5/3)/J
-	double J73 = J43;                 // Using J^(4/3) = J^(7/3)/J
+	double JforG1 = J23;                   // J^(2/3) to get J*(Cauchy Stress) below
+	double JforG2 = J43;                   // J^(4/3) to get J*(Cauchy Stress) below
+    double Kse;
 	double Kterm = J*GetVolumetricTerms(J,&Kse);
-#endif
 	
-	// find (Cauchy stress)/rho0 (if CONSTANT_RHO) or (Kirchoff stress)/rho0 (in not)
+	// find (Cauchy stress)J/rho0 = (Kirchoff stress)/rho0
 	Tensor *sp=mptr->GetStressTensor();
-	sp->xx = Kterm + (2*B.xx-B.yy-B.zz)*G1sp/(3.*J53)
-			+ (B.xx*(B.yy+B.zz)-2*B.yy*B.zz-B.xy*B.xy)*G2sp/(3.*J73);
-	sp->yy = Kterm + (2*B.yy-B.xx-B.zz)*G1sp/(3.*J53)
-			+ (B.yy*(B.xx+B.zz)-2*B.xx*B.zz-B.xy*B.xy)*G2sp/(3.*J73);
-	sp->xy = B.xy*G1sp/J53 + (B.zz*B.xy)*G2sp/J73;
+	sp->xx = Kterm + (2*B.xx-B.yy-B.zz)*G1sp/(3.*JforG1)
+			+ (B.xx*(B.yy+B.zz)-2*B.yy*B.zz-B.xy*B.xy)*G2sp/(3.*JforG2);
+	sp->yy = Kterm + (2*B.yy-B.xx-B.zz)*G1sp/(3.*JforG1)
+			+ (B.yy*(B.xx+B.zz)-2*B.xx*B.zz-B.xy*B.xy)*G2sp/(3.*JforG2);
+	sp->xy = B.xy*G1sp/JforG1 + (B.zz*B.xy)*G2sp/JforG2;
 	if(np==PLANE_STRAIN_MPM)
-	{	sp->zz = Kterm + (2*B.zz-B.xx-B.yy)*G1sp/(3.*J53)
-				+ (B.zz*(B.xx+B.yy)-2*B.xx*B.yy+2.*B.xy*B.xy)*G2sp/(3.*J73);
+	{	sp->zz = Kterm + (2*B.zz-B.xx-B.yy)*G1sp/(3.*JforG1)
+				+ (B.zz*(B.xx+B.yy)-2*B.xx*B.yy+2.*B.xy*B.xy)*G2sp/(3.*JforG2);
 	}
 	
-	// strain energy (total energy divided by initial rho)
+	// strain energy per unit mass (U/(rho0 V0)) and we are using
+    // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
 	double I1bar = (B.xx+B.yy+B.zz)/J23;
 	double I2bar = 0.5*(I1bar*I1bar - (B.xx*B.xx+B.yy*B.yy+B.zz*B.zz+2.*B.xy*B.xy)/J43);
     mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kse));
@@ -212,39 +220,30 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 	double J2 = B.xx*B.yy*B.zz + 2.*B.xy*B.xz*B.yz - B.yz*B.yz*B.xx - B.xz*B.xz*B.yy - B.xy*B.xy*B.zz;
 	double resStretch = GetResidualStretch(mptr);
 	double J = sqrt(J2)/(resStretch*resStretch*resStretch);
-    double Kse;
-#ifdef CONSTANT_RHO
-    // Ignore change in density in the specific stress
-    // i.e., get Cauchy stress / rho0
-	double J53 = pow(J, 5./3.);
-	double J23 = J53/J;
-	double J43 = J23*J23;
-	double J73 = J43*J;
-	double Kterm = GetVolumetricTerms(J,&Kse);
-#else
+    
     // Account for density change in specific stress
     // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
 	double J23 = pow(J, 2./3.);
 	double J43 = J23*J23;
-	double J53 = J23;                 // Using J^(2/3) = J^(5/3)/J
-	double J73 = J43;                 // Using J^(4/3) = J^(7/3)/J
-	double Kterm = J*GetVolumetricTerms(J,&Kse);
-#endif
+	double JforG1 = J23;                 // J^(2/3) = J^(5/3)/J to get Kirchoff stress
+	double JforG2 = J43;                 // J^(4/3) = J^(7/3)/J to get Kirchoff stress
+    double Kse;
+	double Kterm = J*GetVolumetricTerms(J,&Kse);       // times J to get Kirchoff stress
 	
-	// Find Cauchy stresses
-	//double Kterm = Ksp*log(J)/J;
+	// find (Cauchy stress)J/rho0 = (Kirchoff stress)/rho0
 	Tensor *sp=mptr->GetStressTensor();
-	sp->xx = Kterm + (2*B.xx-B.yy-B.zz)*G1sp/(3.*J53)
-			+ (B.xx*(B.yy+B.zz)-2*B.yy*B.zz-B.xy*B.xy-B.xz*B.xz+2.*B.yz*B.yz)*G2sp/(3.*J73);
-	sp->yy = Kterm + (2*B.yy-B.xx-B.zz)*G1sp/(3.*J53)
-			+ (B.yy*(B.xx+B.zz)-2*B.xx*B.zz-B.xy*B.xy+2.*B.xz*B.xz-B.yz*B.yz)*G2sp/(3.*J73);
-	sp->zz = Kterm + (2*B.zz-B.xx-B.yy)*G1sp/(3.*J53)
-			+ (B.zz*(B.xx+B.yy)-2*B.xx*B.yy+2.*B.xy*B.xy-B.xz*B.xz-B.yz*B.yz)*G2sp/(3.*J73);
-	sp->xy = B.xy*G1sp/J53 + (B.zz*B.xy-B.xz*B.yz)*G2sp/J73;
-	sp->xz = B.xz*G1sp/J53 + (B.yy*B.xz-B.xy*B.yz)*G2sp/J73;
-	sp->yz = B.yz*G1sp/J53 + (B.xx*B.yz-B.xy*B.xz)*G2sp/J73;
+	sp->xx = Kterm + (2*B.xx-B.yy-B.zz)*G1sp/(3.*JforG1)
+			+ (B.xx*(B.yy+B.zz)-2*B.yy*B.zz-B.xy*B.xy-B.xz*B.xz+2.*B.yz*B.yz)*G2sp/(3.*JforG2);
+	sp->yy = Kterm + (2*B.yy-B.xx-B.zz)*G1sp/(3.*JforG1)
+			+ (B.yy*(B.xx+B.zz)-2*B.xx*B.zz-B.xy*B.xy+2.*B.xz*B.xz-B.yz*B.yz)*G2sp/(3.*JforG2);
+	sp->zz = Kterm + (2*B.zz-B.xx-B.yy)*G1sp/(3.*JforG1)
+			+ (B.zz*(B.xx+B.yy)-2*B.xx*B.yy+2.*B.xy*B.xy-B.xz*B.xz-B.yz*B.yz)*G2sp/(3.*JforG2);
+	sp->xy = B.xy*G1sp/JforG1 + (B.zz*B.xy-B.xz*B.yz)*G2sp/JforG2;
+	sp->xz = B.xz*G1sp/JforG1 + (B.yy*B.xz-B.xy*B.yz)*G2sp/JforG2;
+	sp->yz = B.yz*G1sp/JforG1 + (B.xx*B.yz-B.xy*B.xz)*G2sp/JforG2;
     
-	// strain energy
+	// strain energy per unit mass (U/(rho0 V0)) and we are using
+    // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
 	double I1bar = (B.xx+B.yy+B.zz)/J23;
 	double I2bar = 0.5*(I1bar*I1bar - (B.xx*B.xx+B.yy*B.yy+B.zz*B.zz+2.*B.xy*B.xy+2*B.xz*B.xz+2.*B.yz*B.yz)/J43);
     mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kse));
@@ -255,25 +254,24 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 // Any change here must also be made in 2D MPMConstLaw for the numerical solution to find B.zz in plane stress
 double Mooney::GetVolumetricTerms(double J,double *Kse)
 {
-    // This is for U(J) = (K/2)(J-1)^2
-    double Kterm = Ksp*(J-1.);
-    //double Kterm = (J-1.);
-    *Kse = Kterm*(J-1);     // = Ksp*(J-1)^2
-    return Kterm;
+    // This is for *Kse/2 = U(J) = (K/2)(J-1)^2
+    //double Kterm = Ksp*(J-1.);
+    //*Kse = Kterm*(J-1);
+    //return Kterm;             // = Ksp*(J-1)
     
-    // This is for for U(J) = (K/2)(ln J)^2
+    // This is for for *Kse/2 = U(J) = (K/2)(ln J)^2
     // Zienkiewicz & Taylor recommend not using this one
     //double lj = log(J);
-    //double Kterm =Ksp*log(J);
-    //*Kse = Kterm*lj;        // = Ksp*(ln J)^2
-    //return Kterm/J;         // = Ksp*(ln J)/J
+    //double Kterm =Ksp*lj;
+    //*Kse = Kterm*lj;
+    //return Kterm/J;           // = Ksp*(ln J)/J
     
-    // This is for U(J) = (K/2)((1/2)(J^2-1) - ln J)
-    // Zienkiewicz & Taylor note that stress goes to infinite as J=0 and J->infinity for this function, while others do not
+    // This is for *Kse/2 = U(J) = (K/2)((1/2)(J^2-1) - ln J)
+    // Zienkiewicz & Taylor note that stress is infinite as J->0 and J->infinity for this function, while others are not
     // Simo and Hughes also use this form (see Eq. 9.2.3)
-    //*Kse = Ksp*(0.5*(J*J-1.)-log(J));
-    //return 0.5*Ksp*(J - 1./J);
-}
+    *Kse = Ksp*(0.5*(J*J-1.)-log(J));
+    return 0.5*Ksp*(J - 1./J);      // = (Ksp/2)*(J - 1/J)
+}  
 
 #pragma mark Mooney::Accessors
 
