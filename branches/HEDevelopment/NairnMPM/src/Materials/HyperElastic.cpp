@@ -22,6 +22,7 @@ HyperElastic::HyperElastic(char *matName) : MaterialBase(matName)
 	aI=0.;
 }
 
+
 #pragma mark HyperElastic::Methods
 
 /*  Get new deformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
@@ -39,6 +40,7 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
 	// current deformation gradient in 2D
     double pF[3][3];
     mptr->GetDeformationGradient(pF);
+   // cout << dvxx << endl;
 	
 	// get new 2D deformation gradient
 	F[0][0] = (1. + dvxx)*pF[0][0] + dvxy*pF[1][0];		// 1 + du/dx
@@ -136,6 +138,43 @@ Tensor HyperElastic::GetLeftCauchyTensor2D(double F[][3])
 	return B;
 }
 
+
+// 2D Incremental calculation of B = dF.pB.dF^T
+//
+Tensor HyperElastic::GetLeftCauchyTensor2D(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,bool storeInParticle)
+{
+    // get previous particle B
+    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
+    
+    // Incremental implementation of B
+    //double dvxx,double dvyy,double dvzz,double dvxy,double dvyx;
+    Tensor B;
+	ZeroTensor(&B);
+    
+    B.xx = ((1. + dvxx)*pB->xx+dvxy*pB->xy)*(1. + dvxx)
+    +((1. + dvxx)*pB->xy+dvxy*pB->yy)*dvxy;
+    //cout << pB->xx << "," << dvxx << " to " << B.xx << endl;
+    
+	B.yy = (dvyx*pB->xx+(1.+dvyy)*pB->xy)*dvyx
+    +(dvyx*pB->xy+(1.+dvyy)*pB->yy)*(1.+dvyy);
+    
+    B.xy = ((1. + dvxx)*pB->xx+dvxy*pB->xy)*dvyx
+    +((1. + dvxx)*pB->xy+dvxy*pB->yy)*(1.+dvyy);
+    
+    B.zz=1.;
+    // B.yx=B.xy
+    
+    if(storeInParticle)
+    {   pB->xx = B.xx;
+        pB->yy = B.yy;
+        //pB->zz = B.zz;
+        pB->xy = B.xy;
+    }
+    
+	return B;
+    
+}
+
 // Find Left-Cauchy Green Tensor B = F.F^T for 3D calculations from a provided F[][]
 Tensor HyperElastic::GetLeftCauchyTensor3D(double F[][3])
 {
@@ -149,6 +188,61 @@ Tensor HyperElastic::GetLeftCauchyTensor3D(double F[][3])
 	B.yz = F[1][0]*F[2][0] + F[1][1]*F[2][1] + F[1][2]*F[2][2];
 	return B;
 }
+
+// 3D Incremental calculation of B = dF.pB.dF^T
+
+Tensor HyperElastic::GetLeftCauchyTensor3D(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
+                                           double dvxz,double dvzx,double dvyz,double dvzy,bool storeInParticle)
+{
+    // get previous particle B
+    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
+    
+    // Incremental implementation of B
+    //double dvxx,double dvyy,double dvzz,double dvxy,double dvyx;
+    Tensor B;
+	ZeroTensor(&B);
+    
+    B.xx = ((1. + dvxx)*pB->xx+dvxy*pB->xy+dvxz*pB->xz)*(1. + dvxx)
+    +((1. + dvxx)*pB->xy+dvxy*pB->yy+dvxz*pB->yz)*dvxy
+    +((1. + dvxx)*pB->xz+dvxy*pB->yz+dvxz*pB->zz)*dvxz;
+    
+	B.yy = (dvyx*pB->xx+(1.+dvyy)*pB->xy+dvyz*pB->xz)*dvyx
+    +(dvyx*pB->xy+(1.+dvyy)*pB->yy+dvyz*pB->yz)*(1.+dvyy)
+    +(dvyx*pB->xz+(1.+dvyy)*pB->yz+dvyz*pB->zz)*dvyz ;
+    
+    B.zz = (dvzx*pB->xx+dvzy*pB->xy+(1.+dvzz)*pB->xz)*dvzx
+    +(dvzx*pB->xy+dvzy*pB->yy+(1.+dvzz)*pB->yz)*dvzy
+    +(dvzx*pB->xz+dvzy*pB->yz+(1.+dvzz)*pB->zz)*(1.+dvzz);
+    
+    B.xy = ((1. + dvxx)*pB->xx+dvxy*pB->xy+dvxz*pB->xz)*dvyx
+    +((1. + dvxx)*pB->xy+dvxy*pB->yy+dvxz*pB->yz)*(1.+dvyy)
+    +((1. + dvxx)*pB->xz+dvxy*pB->yz+dvxz*pB->zz)*dvyz;
+    
+    B.xz = (dvyx*pB->xx+(1.+dvyy)*pB->xy+dvyz*pB->xz)*dvzx
+    +(dvyx*pB->xy+(1.+dvyy)*pB->yy+dvyz*pB->yz)*dvzy
+    +(dvyx*pB->xz+(1.+dvyy)*pB->yz+dvyz*pB->zz)*(1.+dvzz) ;
+    
+    B.yz = (dvyx*pB->xx+(1.+dvyy)*pB->xy+dvyz*pB->xz)*dvzx
+    +(dvyx*pB->xy+(1.+dvyy)*pB->yy+dvyz*pB->yz)*dvzy
+    +(dvyx*pB->xz+(1.+dvyy)*pB->yz+dvyz*pB->zz)*(1.+dvzz) ;
+    
+    // B.yx=B.xy
+    // B.zx=B.xz
+    // B.zy=B.yz
+    
+    if(storeInParticle)
+    {   pB->xx = B.xx;
+        pB->yy = B.yy;
+        pB->zz = B.zz;
+        pB->xy = B.xy;
+        pB->xz = B.xz;
+        pB->yz = B.yz;
+    }
+    
+	return B;
+    
+}
+
 
 // Find isotropic stretch for thermal and moisture expansion
 // total residual stretch (1 + alpha dT + beta csat dConcentration)

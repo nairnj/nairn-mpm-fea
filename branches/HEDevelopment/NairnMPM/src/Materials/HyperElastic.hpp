@@ -24,6 +24,7 @@ class HyperElastic : public MaterialBase
 		double aI;				// thermal expansion isotropic
 		// double beta;			// moisture expansion isotopic (in base material)
         
+    
         // constructors and destructors
         HyperElastic();
         HyperElastic(char *);
@@ -33,7 +34,11 @@ class HyperElastic : public MaterialBase
 		double GetDeformationGrad(double F[][3],MPMBase *,double,double,double,double,double,double,double,double,double,bool,bool);
 		Tensor GetLeftCauchyTensor2D(double F[][3]);
 		Tensor GetLeftCauchyTensor3D(double F[][3]);
+        Tensor GetLeftCauchyTensor2D(MPMBase *,double,double,double,double,bool);
+        Tensor GetLeftCauchyTensor3D(MPMBase *,double,double,double,double,double,double,double,double,double,bool);
+
 		double GetResidualStretch(MPMBase *);
+
     
         // Accessors
         virtual double GetCurrentRelativeVolume(MPMBase *);

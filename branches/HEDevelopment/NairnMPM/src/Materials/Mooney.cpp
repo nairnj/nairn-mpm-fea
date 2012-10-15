@@ -36,7 +36,20 @@ void Mooney::PrintMechanicalProperties(void)
 	PrintProperty("a",aI,"");
 	cout << endl;
 }
-	
+
+void Mooney::SetInitialParticleState(MPMBase *mptr,int np)
+{
+    // get previous particle B
+    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
+    
+    ZeroTensor(pB);
+    pB->xx = pB->yy = pB->zz = 1.;
+    
+    //HyperElastic::SetInitialParticleState(mptr,np);
+}
+
+
+
 // Read material properties
 char *Mooney::InputMat(char *xName,int &input)
 {
@@ -86,7 +99,13 @@ void Mooney::InitialLoadMechProps(int makeSpecific,int np)
 	CME1 = betaI*concSaturation;
 	
 	// nothing else needed from superclass
+    
+    // If needed, a material can initialize particle state
+    // For example, ideal gas initializes to base line pressure
+  
 }
+
+
 
 #pragma mark Mooney::Methods
 
@@ -104,8 +123,16 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	double F[3][3];
 	GetDeformationGrad(F,mptr,dvxx,dvyy,dvxy,dvyx,TRUE,FALSE);
 	
+    Tensor B;
 	// left Cauchy deformation tensor B = F F^T
-	Tensor B = GetLeftCauchyTensor2D(F);
+	//B = GetLeftCauchyTensor2D(F);
+    //cout << "old = " << B.xx << "," << B.yy << "," << B.xy << endl;
+    
+    // left Cauchy deformation tensor B = dF pB dF^T
+    B = GetLeftCauchyTensor2D(mptr,dvxx,dvyy,dvxy,dvyx,TRUE);
+    //cout << dvxx << endl;
+    //cout << ", new = " << B.xx << "," << B.yy << "," << B.xy << endl;
+
 	
 	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
 	double J2;
