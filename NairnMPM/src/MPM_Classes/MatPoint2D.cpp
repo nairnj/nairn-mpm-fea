@@ -243,10 +243,9 @@ void MatPoint2D::GetDeformationGradient(double F[][3])
 
 // get relative volume from det J for large deformation material laws
 double MatPoint2D::GetRelativeVolume(void)
-{
-    // = Fzz*(Fxx*Fyy - Fxy*Fyx)
-    double exy = ep.xy + eplast.xy;
-    return (1. + ep.zz + eplast.zz)*((1. + ep.xx + eplast.xx)*(1. + ep.yy + eplast.yy) - 0.25*(exy*exy - wrot.xy*wrot.xy));
+{   double pF[3][3];
+    GetDeformationGradient(pF);
+    return pF[2][2]*(pF[0][0]*pF[1][1]-pF[1][0]*pF[0][1]);
 }
 
 // To support CPDI find nodes in tghe particle domain, find their element,
