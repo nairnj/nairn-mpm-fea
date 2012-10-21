@@ -24,7 +24,7 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
-#include "BOundary_Conditions/MatPtTractionBC.hpp"
+#include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Exceptions/MPMTermination.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"
