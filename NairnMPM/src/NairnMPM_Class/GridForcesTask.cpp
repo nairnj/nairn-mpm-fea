@@ -42,7 +42,7 @@
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackNode.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
-#include "BOundary_Conditions/MatPtTractionBC.hpp"
+#include "Boundary_Conditions/MatPtTractionBC.hpp"
 
 #pragma mark CONSTRUCTORS
 
