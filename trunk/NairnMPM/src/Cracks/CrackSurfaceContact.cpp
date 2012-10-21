@@ -241,10 +241,7 @@ void CrackSurfaceContact::MaterialOutput(void)
     {   cout << "** Development flag for custom contact **" << endl;
         int normAxis = abs(fmobj->dflag[1]);
         switch(fmobj->dflag[0])
-        {   case 1:
-                cout << "   Each material uses its own mass gradient" << endl;
-                break;
-            case 3:
+		{	case 3:
                 if(normAxis==1 || normAxis==2 || normAxis==3)
                     cout << "   Specified normal along axis " << fmobj->dflag[1] << " with +/- 1,2,3 for +/- x,y,z" << endl;
                 else
@@ -254,6 +251,9 @@ void CrackSurfaceContact::MaterialOutput(void)
                 cout << "   Special normals for cutting. Top of tool using rake angle " << fmobj->dflag[1] <<
                 ". Bottom of tool normal = (0,1)." << endl;
                 break;
+			case 5:
+				cout << "   Radial normal for spherical inclusion" <<endl;
+				break;
             default:
                 break;
         }

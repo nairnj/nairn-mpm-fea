@@ -164,7 +164,7 @@ GlobalArchive sxx,#matID
 GlobalArchive syy,#matID
 GlobalArchive szz,#matID
 GlobalArchive sxy,#matID
-GlobalArchive exy,#matID
+GlobalArchive exye,#matID
 GlobalArchive "Strain Energy",#matID
 GlobalArchive "Kinetic Energy",#matID
 GlobalArchiveTime #time/100

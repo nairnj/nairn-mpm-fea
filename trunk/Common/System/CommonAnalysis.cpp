@@ -37,6 +37,8 @@ CommonAnalysis::CommonAnalysis()
 	np=-1;						// analysis method to be set
 	nfree=2;					// 2D analysis
 	
+	// current uses
+	// dflag[0] - affects normal calcualtion in contact
 	int i;
 	for(i=0;i<NUMBER_DEVELOPMENT_FLAGS;i++) dflag[i]=0;
 }
