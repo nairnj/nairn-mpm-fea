@@ -1,0 +1,279 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
+	<title>Visualization Options</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html">Getting Started</a> &rarr;
+Visualization
+</p>
+
+<h1>Visualization Options
+</h1>
+
+<p>The four options for visualizing <code>NairnFEA</code> and <code>NairnMPM</code> calculation results are:
+</p>
+
+<ol>
+<li><a href="#nairnfeampm">Use <b>NairnFEAMPM</b></a> - on MacOS X computers only and the option with the most features.</li>
+<li><a href="#nairnviz">Use <b>NairnFEAMPMViz</b></a> - a Java application for any platform. Note: the <code>nairn-mpm-fea</code> project includes the <b>NairnFEAMPMViz</b> source code, which means you can change it and then <a href="#compile">recompile to create your own custom visualization application</a>. <b>NairnFEAMPMViz</b> has fewer features than <a href="#nairnfeampm"><b>NairnFEAMPM</b></a> and cannot visualize 3D simulations.</li>
+<li>Use or write command-line tools to extract data from archive files to be input into your own or third-party visualization packages. This approach is the most difficult, but always an option if you need it. See <code>NairnMPM</code> <a href="tools.html">command line tools</a> for available tools (<i>e.g.</i>  <a href="tools.html#extractmpm"><code>ExtractMPM</code></a>) or to use as sample code for creating new tools.</li>
+<li><code>NairnMPM</code> results can alternatively be output as &quot;VTK Legacy&quot; files which can be input to various third-party visualizations tools. An excellent option is free, multi-platform <a href="http://www.paraview.org">ParaView</a>. See the <a href="../xmlformat/custom.html#VTKArchive">CustomTasks</a> in <code>NairnMPM</code> for exporting VTK files and see below for <a href="#paraview">ParaView quick start</a>. This option is most useful for 3D, but only plots results extrapolated to the grid. To plot 3D particle data, you have to use <a href="#nairnfeampm"><b>NairnFEAMPM</b></a> or, if not on a Mac, you can use <a href="tools.html#extractmpm"><code>ExtractMPM</code></a> to get particle-data VTK Legacy files.</li>
+</ol>
+
+<h1><a name="nairnfeampm"></a>Using NairnFEAMPM on MacOS X Computer
+</h1>
+
+<p>If you are using a Mac (with MacOS 10.4 or newer, Tiger), you can go to the <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html"><b>NairnFEAMPM</b> web site</a> and download a complete package (or get it from the <a href="http://code.google.com/p/nairn-mpm-fea/downloads/list">downloads page</a> for this project). This package lets you create input files using a command language or raw <code>XML</code> commands, run calculations, and visualize the results. This package only works in MacOS X</p>
+
+<p>To visualize <code>NairnFEA</code> or <code>NairnMPM</code> results using <b>NairnFEAMPM</b>:
+</p>
+
+<ol>
+<li>Start <b>NairnFEAMPM</b></li>
+
+<li>Choose the File &rarr; Open... menu command and select the <code>NairnFEA</code> output file or the master <code>NairnMPM</code> output file.</li>
+
+<li>See <b>NairnFEAMPM</b> application help information for all the visualization option.</li>
+
+</ol>
+
+<p>The use of <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html"><b>NairnFEAMPM</b></a> gives the the most robust set of visualization options.
+</p>
+
+<h1><a name="nairnviz"></a>Using <b>NairnFEAMPMViz</b> Java Application
+</h1>
+
+<p>The <code>nairn-mpm-fea</code> project includes source code for a Java application called <b>NairnFEAMPMViz</b> that lets you create <code>XML</code> input files, run calculations, and visualize results for both <code>NairnFEA</code> and <code>NairnFEA</code>. The <code>nairn-mpm-fea</code> check out does not have the jar file for this application; you have two options:</p>
+
+<ol>
+<li>Visit the <a href="http://code.google.com/p/nairn-mpm-fea/downloads/list">download page</a> for this project. Periodically a recent compiled jar file along with a Windows-only clickable <code>exe</code> version will be posted. Simply download and run to start using <b>NairnFEAMPMViz</b>. (Note: that the <a href="http://code.google.com/p/nairn-mpm-fea/downloads/list">downloads page</a> does not have a clickable MacOS version of <b>NairnFEAMPMViz</b> because you should download and <a href="#nairnfeampm">use <b>NairnFEAMPMM</b></a> instead; it is on the download page as well as a <code>dmg</code> or disk image file.)</li>
+
+<li>If you want the latest version (the <a href="http://code.google.com/p/nairn-mpm-fea/downloads/list">download version</a> may lag behind the current version) or if you want to make changes to the code, the other option is to <a href="#compile">compile the <b>NairnFEAMPMViz</b> source code</a> in this project.</li>
+
+</ol>
+
+<p>Note that <b>NairnFEAMPMViz</b> requires a system with Java 1.5.0 (<i>a.k.a</i> Java 5) or newer installed.</p>
+
+<h2><a name="runningViz"></a>Running <b>NairnFEAMPMViz</b></h2>
+
+<p>If you <a href="http://code.google.com/p/nairn-mpm-fea/downloads/list">downloads page</a> the Windows <code>exe</code> version, just double click to start. The rest of this section is about starting the application using the jar file version.</p>
+
+<p>You can start a Java application as a jar file by double clicking on the jar file. Although this works on most computers, the application will start with the default amount of memory for the Java Virtual Machine. The default memory is enough to open small calculations, but not enough for larger calculations. To start <b>NairnFEAMPMViz</b> with more memory, you should launch the Java application from a command line using:</p>
+
+<pre>
+java -Xmx512m -jar NairnFEAMPMViz.jar
+</pre>
+
+<p>The <code>-Xmx</code> option allocates the desired memory (where &quot;m&quot; means in megabytes). The <code>-jar</code> option gives a path to the compiled jar file (the above assumes you are in the same folder as the jat file).
+</p>
+
+<p>When running in Windows, you can launch from a Windows command prompt or from a <code>cygwin</code> shell. In either case, you will need to include the path to the <code>java</code> command in your <code>PATH</code> environment variable. The path to Java executables in Windows will be something like:
+</p>
+
+<pre>
+C:\Program Files\Java\jdk1.6.0_03\bin
+</pre>
+
+<p>Installation of java may add this path to your Windows environment for you; if not you will have to edit the system environment variables and add it. For <code>cygwin</code>, its <code>$PATH</code> variable does not use the Windows path; thus you will need to manually add the java path to <code>cygwin</code>'s <code>$PATH</code> variable as well, perhaps in one of your login files (<i>e.g.</i>, <code>.bash_profile</code>). You should add a path that will be similar to:
+</p>
+
+<pre>
+/cygdrive/c/Files/Java/jdk1.6.0_03/bin
+</pre>
+
+<p>Note the use of forward slashes in <code>cygwin</code> instead of Window's back slashes.</p>
+
+<p>Another method in Windows to launch <b>NairnFEAMPMViz</b> correctly is to create a simple batch file. The process is:
+</p>
+
+<ul>
+
+<li>Make a copy of the file <code>nairn-mpm-fea/Visualization/build/NairnFEAMPMVIz.bat</code>
+and edit that copy. This file will contain something like
+
+<pre>
+C:
+chdir &quot;C:\Documents and Settings\user\nairn-mpm-fea\Visualization\build&quot;
+java -Xmx512m -jar NairnFEAMPMViz.jar
+</pre>
+
+Edit the second line to be the full path to the folder with your <b>NairnFEAMPMViz</b> jar file (quote the path if it includes spaces in some directory names). The last line assumes your Windows environment includes the path to the <code>java</code> command. If note, you can replace <code>java</code> by the full path to the <code>java</code> executable.</li>
+
+<li>Next create a short cut to the batch file (and give it any desired name). Right click on the new shortcut and select &quot;Properties&quot;. In the properties window, click &quot;Change Icon...&quot; and &quot;Browse...&quot; for the <code>NairnFEAMPMViz.ico</code> file (in the <code>nairn-mpm-fea/Visualization/build</code> folder). 
+</li>
+<li>Finally, move the short cut to your desktop (or to any other folder). You can double click the shortcut to launch <b>NairnFEAMPMViz</b> ready for calculations and/or visualization.
+</li>
+
+</ul>
+
+<h2>Running <b>NairnFEAMPMViz</b> on a Remote Computer</h2>
+<p>To run <b>NairnFEAMPMViz</b> remotely (such as running from a terminal connected to a Linux cluster that has your code and calculation results), you have to log onto the remote computer using <code>X11</code> terminal software and enable &quot;trusted <code>X11</code> forwarding.&quot; The command line is
+</p>
+<pre>
+ssh -Y -l username servername
+</pre>
+
+<p>Once connected, start <b>NairnFEAMPMViz</b> using the <code>java</code> command line method described in the previous section.
+</p>
+
+<h2>Very Brief Usage Instructions</h2>
+<p>To use <b>NairnFEAMPMViz</b>:
+</p>
+
+<ol>
+
+<li>To edit input files and launch calculations, see the help on <a href="../running/index.html#javaviz">running the code</a>. Results run in <b>NairnFEAMPMViz</b> will automatically open for visualization when done.
+</li>
+
+<li>To open saved results for visualization use the &quot;Open...&quot; menu command or click the &quot;Folder&quot; icon. Note that &quot;calculation results&quot; are in the file of output text sent by <code>NairnFEA</code> or <code>NairnMPM</code> to standard output, and <i>not</i> one of the associated files written by <code>NairnMPM</code>. Once opened, the text results will appear in the top two sections of a new window. A control panel for visualizing results will appear in the bottom section.
+</li>
+
+<li>To plot results, select a plot type in the control panel area and then follow the blue line to select all available options for that type of plot.
+</li>
+
+<li>Finally, click the &quot;Plot&quot; button to get the plot in a new window. To plot different results, select new options and click the &quot;Plot&quot; button again (which may have changed to &quot;Replot&quot; or &quot;Add Plot&quot;).
+</li>
+
+<li>For more details on use of <b>NairnFEAMPM</b>, click the &quot;Help&quot; button in the application.
+</li>
+
+</ol>
+
+<h2>Performance Issues</h2>
+<p>The nature of Java applications is that they are slower than compiled applications. Thus <b>NairnFEAMPMViz</b> is slower than <a href="#nairnfeampm"><b>NairnFEAMPM</b></a>. The speed of <b>NairnFEAMPMViz</b>, however, is good. All internal calculations run fast. The slowest step is the time required to draw the graphics to the screen. Furthermore, this step is very system dependent. Running in MacOS is the fastest (but if you have MacOS, you may as well use <a href="#nairnfeampm"><b>NairnFEAMPM</b></a> instead). Running in Windows is slower, but still good. 
+</p>
+
+<p>Running on a Linux machine using an <code>X11</code> terminal is significantly slower, especially when any window with graphics is open. You will want to avoid this option, unless it is the only option available (<i>i.e.</i>, when your only access to the data is through a remote login). The differences are caused by the system dependent Java virtual machines and between <code>X11</code> and non-<code>X11</code> uses by Java.</p>
+
+
+<h1><a name="compile"></a>Compiling <b>NairnFEAMPMViz</b> Java Application</h1>
+
+<p>One option for creating new visualization tools, is to edit the <b>NairnFEAMPMViz</b> source code and create them. After editing, you will need to recompile the code as explained in this section. The options for working with the <b>NairnFEAMPMViz</b>  source code are:
+</p>
+
+<ul>
+<li><a href="#unix">Compile using command line script</a></li>
+<li><a href="#eclipse">Compile using Eclipse on any platform</a></li>
+</ul>
+
+<h2><a name="unix"></a>Command Line Compile</h2>
+
+<p>You can compile the code and create the jar file on a Unix/Linux command line by running the
+script called <code>makejar</code> that is located at:</p>
+
+<pre>
+nairn-mpm-fea/Visualization/build/makejar
+</pre>
+
+<p>When you run this script, it will compile the Java source code and create a self-contained
+jar file in that same directory. By default this script assumes compilation on Windows. To compile
+on Mac uses <code>makejar -m</code>. To compile on Linux, use <code>makejar -l</code>.</p>
+
+<p>To run this script, you need the <code>javac</code> compiler and <code>jar</code> utility
+installed on your computer. Compilation requires Java 1.5.x or newer. It is available free on
+various platforms from <a href="http://java.sun.com/javase/">Sun's website</a> as part of the
+standard Java Development Kit (JDK) installation.</p>
+
+<p>If the required <code>javac</code> and <code>jar</code> tools are not in the default path, you
+can edit the <code>makejar</code> file and enter the full path to each command (or add their paths
+to your <code>$PATH</code> environment variable). When using <code>cygwin</code> in Windows, the
+path to the java binaries will be something like: </p>
+
+<pre>
+/cygdrive/c/Program Files/Java/jdk1.6.0_03/bin
+</pre>
+
+<h2><a name="eclipse"></a>Compiling Using Eclipse</h2>
+
+<p><a href="http://www.eclipse.org" target="new">Eclipse</a> is an open-source and free development system for Java (and for other languages with the appropriate plug ins). This section explains how to import the code into an <a href="http://www.eclipse.org" target="new">Eclipse</a> project. This method was done using <a href="http://www.eclipse.org" target="new">Eclipse Indigo (3.7)</a>, which is available free for Windows, Mac, and other platforms. These steps will probably work for other versions too.</p>
+
+<p>The first steps are to install and prepare <a href="http://www.eclipse.org" target="new">Eclipse</a> for Java development. These steps also need tools for subversion and are described <a href="index.html#geteclipse">here</a>. Be sure to do the optional step for Java development.</p>
+
+<p>You are now ready to manage <a href="http://www.eclipse.org" target="new">Eclipse</a> projects using SVN. To start with a <b>NairnFEAMPMViz</b> project, do the following:</p>
+
+<ol>
+
+<li>Choose menu command &quot;New &rarr; Project...&quot;, expand the &quot;SVN&quot; section, choose &quot;Project from SVN&quot; and click &quot;Next.&quot;</li>
+
+<li>You will be asked to select an SVN repository. Enter the following settings followed by clicking &quot;Next&quot;:
+<ul>
+<li>URL: <code>https://nairn-mpm-fea.googlecode.com/svn/trunk.Visualization/src</code></li>
+<li>User: enter your gmail name for access to <a href="http://code.google.com" target="new">google code</a> (this process is assuming you have been added as a &quot;contributor&quot; to the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a>. You can request to be added by <a href="mailto:John.Nairn@oregonstate.edu">sending email to project owner</a>.</li>
+<li>Password: Enter the password generated for you in the &quot;Profile &rarr; Settings&quot; section when logged onto <a href="http://code.google.com" target="new">google code</a>.</li>
+<li>For anonymous checkout you might be able to omit username and password, but change the URL to begin in <code>http://</code> instead of <code>https://</code>. </li>
+</ul>
+</li>
+
+<li>Choose &quot;Head Revision&quot; for latest version or use date or revision options for older versions and then click &quot;Next.&quot;</li>
+
+<li>Select &quot;Check out as project with the name specified&quot; and specify <b>NairnFEAMPMViz</b>. Click &quot;Finish&quot; and the project will be created. It should automatically build and be ready to run.</li>
+
+<li>To create a running option with sufficient memory, choose the &quot;Run Configurations...&quot; menu command
+<ol type="a">
+<li>Select &quot;Java Application&quot; and click the &quot;New&quot; icon to create a new runnable</li>
+<li>Enter any name such as &quot;<b>NairnFEAMPMViz with Memory</b>.&quot;</li>
+<li>Enter &quot;<b>NairnFEAMPMViz</b>&quot; (or browse for it) into the Project field</li>
+<li>Enter &quot;NairnFEAMPMViz&quot; (or browse for it) into the Main class field</li>
+<li>Click on &quot;Arguments&quot; tab</li>
+<li>Enter &quot;-Xmx512m&quot; into the VM Arguments field
+(this command tells the Java machine to allocate 512 MB for running <b>NairnFEAMPMViz</b>.
+You can increase or decrease the memory as needed).</li>
+<li>Click &quot;Apply&quot;</li>
+<li>Click &quot;Run&quot; to run <b>NairnFEAMPMViz</b></li>
+<li>In the future, you can run using the  &quot;<b>NairnFEAMPMViz with Memory</b>&quot; item in the Run History menu</li>
+</ol></li>
+</ol>
+
+<p>The above process will create a project in the <a href="http://www.eclipse.org" target="new">Eclipse</a> workspace that will have a copy of the
+files needed for the <b>NairnFEAMPMViz</b> project. You can update to the latest version by
+right clicking (or control clicking on Mac) the project name and selecting &quot;Update&quot; from the &quot;Team&quot; submenu. If you are certified as a project committer, you can save your changes by right clicking (or control clicking on Mac) on the project name and choosing &quot;Team &rarr; Commit...&quot;</p>
+
+<p>The above process will let you compile and run <b>NairnFEAMPMViz</b> within <a href="http://www.eclipse.org" target="new">Eclipse</a>. You can also use <a href="http://www.eclipse.org" target="new">Eclipse</a> to create a jar file, which can be run outside of <a href="http://www.eclipse.org" target="new">Eclipse</a>. The process is:</p>
+
+<ol>
+<li>Choose menu command &quot;Export...&quot; and the select &quot;Runable Jar File&quot; in the &quot;Java&quot; section. Click &quot;Next.&quot;</li>
+<li>Choose the <b>NairnFEAMPMViz</b> launch configution (such as the quot;<b>NairnFEAMPMViz with Memory</b>&quot; one created above), choose export destination (which by default is <code>(project)/lib/NairnFEAMPMViz.jar</code>, where <code>(project)</code> is the name you gave this project in your workspace), and select to &quot;Extract required libraries into generated JAR.&quot;</li>
+<li>Click "Finish" to generate the jar file</li>
+</ol>
+
+<p>To run the jar with sufficient memory, navigate to the &quot;lib&quot; folder and run the <b>NairnFEAMPMViz</b> jar file created using:</p>
+
+<pre>java -Xmx512m -jar NairnFEAMPMViz.jar
+</pre>
+
+<p>The <code>-Xmx512m</code> argument is to give the virtual machine sufficent memory (as explained <a href="#runningViz">above</a>).</p>
+
+<h1><a name="paraview"></a>ParaView Quick Start</h1>
+
+<p><a href="http://www.paraview.org">ParaView</a> is advanced software with many options and ample documentation on the <a href="http://www.paraview.org">web or in books</a>. This section just gives steps to get one plot from NairnMPM output:</p>
+
+<ol>
+
+<li>Run NairnMPM calculations using the <a href="../xmlformat/custom.html#VTKArchive">VTKArchive custom task</a>.</li>
+<li>Run ParaView, choose the open command and select the block of VTK legacy files. The files will be found in the archived results folder with the naming stlye &quot;MPM_#.vtk&quot; where &quot;MPM&quot; is the root name you used for the calculations archived files and &quot;#&quot; is the step number. ParaView will let you select these as a block and open the entire block at once. It will load them in the correct order.</li>
+
+<li>ParaView does not actually read files when they are opened. To read them, click the &quot;Apply&quot; button in the object inspect. When it is done reading, a wire frame of the space should appear in the plot area.</li>
+
+<li>To get a plot, click the &quot;Contour&quot; icon. In the object inspector, set it to countour by mass. In the isosurfaces section, set the contour value to some number less than the maximum mass.</li>
+
+<li>Finally, use the &quot;Color by&quot; menu (in tool bar or in object inspector) to choose archived component to apply color the the mass surface</li>
+
+</ol>
+
+<p>ParaView has many more options for plotting and reading results from <code>NairnMPM</code> run using the <a href="../xmlformat/custom.html#VTKArchive">VTKArchive custom task</a>. The above just get one plot.</p>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html">Getting Started</a> &rarr;
+Visualization
+</p>
+
+</body>
+</html>
