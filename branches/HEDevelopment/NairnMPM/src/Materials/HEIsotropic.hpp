@@ -20,7 +20,7 @@ enum {G11_PROP=0,KBULKK_PROP,CTEE_PROP,HEISOTROPIC_PROPS};
 class HEIsotropic : public HyperElastic
 {
     public:
-    double G1,Kbulk;
+    double G1,G2,Kbulk;
         // constructors and destructors
 		HEIsotropic();
 		HEIsotropic(char *matName);
@@ -47,7 +47,7 @@ class HEIsotropic : public HyperElastic
     protected:
 		// unique properties
 private:
-    double G1sp, Ksp;
+    double G1sp, G2sp, Ksp;
 	
 };
 

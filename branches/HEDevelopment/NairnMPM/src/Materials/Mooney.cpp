@@ -37,6 +37,14 @@ void Mooney::PrintMechanicalProperties(void)
 	cout << endl;
 }
 
+char *Mooney::MaterialData(void)
+{
+	double *p=new double;
+	*p=1.;
+	return (char *)p;
+}
+
+
 void Mooney::SetInitialParticleState(MPMBase *mptr,int np)
 {
     // get previous particle B
@@ -93,6 +101,7 @@ void Mooney::InitialLoadMechProps(int makeSpecific,int np)
 	G1sp=G1*1.0e+06/rho;
 	G2sp=G2*1.0e+06/rho;
 	Ksp=Kbulk*1.0e+06/rho;
+    cout << "Ksp haut = " << Ksp << endl;
 	
 	// expansion coefficients
 	CTE1 = 1.e-6*aI;
@@ -122,22 +131,39 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	// get new deformation gradient and update strains and rotations
 	double F[3][3];
 	GetDeformationGrad(F,mptr,dvxx,dvyy,dvxy,dvyx,TRUE,FALSE);
+    	    
+    // get new deformation gradient
+    //   double F[3][3];
+    //double detdF = GetDeformationGrad(F,mptr,dvxx,dvyy,dvxy,dvyx,TRUE,TRUE);
+    //cout << "detdF dans Mooney = " << detdF << endl;
+    // Incremental calculation of J det(F)=det(dF)det(pF)
+    //double JJ = detdF*mptr->GetHistoryDble();
+    //cout << "New JJ = " << JJ << endl;
+
 	
     Tensor B;
 	// left Cauchy deformation tensor B = F F^T
-	//B = GetLeftCauchyTensor2D(F);
-    //cout << "old = " << B.xx << "," << B.yy << "," << B.xy << endl;
+    //B = GetLeftCauchyTensor2D(F);
+    //cout << "Bxx = " << B.xx << "  , " << "Byy = " << B.yy << "  , " << "Bxy = " << B.xy << "  , " << "Bzz = " << B.zz << endl;
     
     // left Cauchy deformation tensor B = dF pB dF^T
     B = GetLeftCauchyTensor2D(mptr,dvxx,dvyy,dvxy,dvyx,TRUE);
     //cout << dvxx << endl;
-    //cout << ", new = " << B.xx << "," << B.yy << "," << B.xy << endl;
-
+    cout << "New" << "Bxx = " << B.xx << "  , " << "Byy = " << B.yy << "  , " << "Bxy = " << B.xy << "  , " << "Bzz = " << B.zz << endl;
 	
 	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
 	double J2;
 	if(np==PLANE_STRAIN_MPM)
-	{	J2 = B.xx*B.yy - B.xy*B.xy;
+	{
+        J2 = B.xx*B.yy - B.xy*B.xy;
+        // get new deformation gradient
+        //   double F[3][3];
+        //double detdF = GetDeformationGrad(F,mptr,dvxx,dvyy,dvxy,dvyx,TRUE,TRUE);
+        //cout << "detdF dans Mooney = " << detdF << endl;
+        // Incremental calculation of J det(F)=det(dF)det(pF)
+        //double J2 = detdF*mptr->GetHistoryDble();
+        //cout << "New J = " << J2 << endl;
+
 	}
 	else
 	{	// Find B.zz required to have zero stress in z direction
@@ -196,7 +222,9 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	
 	// J as determinant of F (or sqrt root of determinant of B) normalized to residual stretch
 	double resStretch = GetResidualStretch(mptr);
-	double J = sqrt(J2)/(resStretch*resStretch*resStretch);
+    double J = sqrt(J2)/(resStretch*resStretch*resStretch);
+    //double J = J2;
+    //cout << "old J = " << J <<","<< "old J = " << JJ << endl;
     
     // Account for density change in specific stress
     // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
@@ -206,11 +234,18 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	double JforG2 = J43;                   // J^(4/3) to get J*(Cauchy Stress) below
     double Kse;
 	double Kterm = J*GetVolumetricTerms(J,&Kse);
+    //double Kterm=1/2*Ksp*(J-1./J);
+	//cout << "Ksp = " << Ksp << endl;
 	
-	// find (Cauchy stress)J/rho0 = (Kirchoff stress)/rho0
+    // find (Cauchy stress)J/rho0 = (Kirchoff stress)/rho0
 	Tensor *sp=mptr->GetStressTensor();
-	sp->xx = Kterm + (2*B.xx-B.yy-B.zz)*G1sp/(3.*JforG1)
+
+	//cout << "old B  " <<"Bxx = " << B.xx << "Bzz = " << B.zz << ","<< "Byy = " << B.yy << endl;
+
+    sp->xx = Kterm + (2*B.xx-B.yy-B.zz)*G1sp/(3.*JforG1)
 			+ (B.xx*(B.yy+B.zz)-2*B.yy*B.zz-B.xy*B.xy)*G2sp/(3.*JforG2);
+    //sp->xx = Kterm+1/3*G1sp*(2*B.xx-B.yy-B.zz)/J23;
+    //sp->xx = Kterm+1/3*G1sp*(2*B.xx-B.yy-B.zz)/J23;
 	sp->yy = Kterm + (2*B.yy-B.xx-B.zz)*G1sp/(3.*JforG1)
 			+ (B.yy*(B.xx+B.zz)-2*B.xx*B.zz-B.xy*B.xy)*G2sp/(3.*JforG2);
 	sp->xy = B.xy*G1sp/JforG1 + (B.zz*B.xy)*G2sp/JforG2;
@@ -218,6 +253,11 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	{	sp->zz = Kterm + (2*B.zz-B.xx-B.yy)*G1sp/(3.*JforG1)
 				+ (B.zz*(B.xx+B.yy)-2*B.xx*B.yy+2.*B.xy*B.xy)*G2sp/(3.*JforG2);
 	}
+    //sp->xx = 0.5*Ksp*(J*J-1)/J+1/3*G1sp*(2*B.xx-B.yy-B.zz)/J53;
+    //sp->yy = 0.5*Ksp*(J-1/J)/J+1/3*G1sp*(2*B.yy-B.xx-B.zz)/J53;
+    //sp->zz = 0.5*Ksp*(J-1/J)/J+1/3*G1sp*(2*B.zz-B.xx-B.yy)/J53;
+    //sp->xy = G1sp*B.xy/J53;
+    //cout << "Bxx = " << B.xx << ","<< "Byy = " << B.yy << endl;
 	
 	// strain energy per unit mass (U/(rho0 V0)) and we are using
     // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V

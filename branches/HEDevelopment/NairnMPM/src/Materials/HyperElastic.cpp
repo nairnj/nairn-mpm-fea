@@ -37,7 +37,7 @@ HyperElastic::HyperElastic(char *matName) : MaterialBase(matName)
 double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,double dvyy,
 			double dvxy,double dvyx,bool storeInParticle,bool detIncrement)
 {
-	// current deformation gradient in 2D
+  	// current deformation gradient in 2D
     double pF[3][3];
     mptr->GetDeformationGradient(pF);
    // cout << dvxx << endl;
@@ -82,7 +82,9 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
 double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
 						 double dvxz,double dvzx,double dvyz,double dvzy,bool storeInParticle,bool detIncrement)
 {
-	// current deformation gradient in 3D
+	
+    cout << "detIncrement =" << detIncrement << endl;
+    // current deformation gradient in 3D
     double pF[3][3];
     mptr->GetDeformationGradient(pF);
 	
@@ -167,7 +169,7 @@ Tensor HyperElastic::GetLeftCauchyTensor2D(MPMBase *mptr,double dvxx,double dvyy
     if(storeInParticle)
     {   pB->xx = B.xx;
         pB->yy = B.yy;
-        //pB->zz = B.zz;
+        pB->zz = B.zz;
         pB->xy = B.xy;
     }
     

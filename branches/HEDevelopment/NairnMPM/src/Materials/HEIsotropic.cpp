@@ -50,6 +50,9 @@ char *HEIsotropic::InputMat(char *xName,int &input)
         
         if(strcmp(xName,"G1")==0)
             return((char *)&G1);
+        
+        if(strcmp(xName,"G1")==0)
+            return((char *)&G1);
     
         else if(strcmp(xName,"K")==0)
             return((char *)&Kbulk);
@@ -181,15 +184,17 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
 	
     
     // get new deformation gradient
- //   double F[3][3];
-    double detdF = GetDeformationGrad(F,mptr,dvxx,dvyy,dvxy,dvyx,TRUE,TRUE);
+    //double F[3][3];
+    //double detdF = GetDeformationGrad(F,mptr,dvxx,dvyy,dvxy,dvyx,TRUE,TRUE);
 
-/*    // left Cauchy deformation tensor B = dF pB dF^T
+    // left Cauchy deformation tensor B = dF pB dF^T
     Tensor B = GetLeftCauchyTensor2D(mptr,dvxx,dvyy,dvxy,dvyx,TRUE);
-*/
-    // left Cauchy deformation tensor B = F F^T
-	Tensor B = GetLeftCauchyTensor2D(F);
+    cout << "New" << "Bxx = " << B.xx << "  , " << "Byy = " << B.yy << "  , " << "Bxy = " << B.xy << "  , " << "Bzz = " << B.zz << endl;
 
+    // left Cauchy deformation tensor B = F F^T
+	//Tensor B;
+    //B = GetLeftCauchyTensor2D(F);
+    //cout << "old" << "Bxx = " << B.xx << "  , " << "Byy = " << B.yy << "  , " << "Bxy = " << B.xy << "  , " << "Bzz = " << B.zz << endl;
 	
 	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
 	double J2;
@@ -212,26 +217,24 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
 
     
     // Incremental calculation of J det(F)=det(dF)det(pF)
-  //  double JJ = detdF*mptr->GetHistoryDble();
-    double JJ=sqrt(J2);
-    double J23=pow(JJ,2./3.);
-       
+  //  double J = detdF*mptr->GetHistoryDble();
+
+    double J=sqrt(J2);
+    double J53=pow(J,5./3.);
+    //double Kse;
+	//double Kterm = J*GetVolumetricTerms(J,&Kse);
+    cout << "New" << "Bxx = " << B.xx << "  , " << "Byy = " << B.yy << "  , " << "Bxy = " << B.xy << "  , " << "Bzz = " << B.zz << endl;
+
     Tensor *sp=mptr->GetStressTensor();
-    sp->xx = Ksp/2*(JJ-1) + G1sp*(2*B.xx-B.yy-B.zz)/J23;
-    sp->yy = Ksp/2*(JJ-1) + G1sp*(2*B.yy-B.xx-B.zz)/J23;
-    sp->zz = Ksp/2*(JJ-1) + G1sp*(2*B.zz-B.xx-B.yy)/J23;
-    sp->xy = G1sp*B.xy/J23;
-	
-    /*
-    if(np==PLANE_STRAIN_MPM)
-	{	
-       
-	}
-	*/
-	// strain energy per unit mass (U/(rho0 V0)) and we are using
+    sp->xx = Ksp/2*(J-1./J)+1/3*G1sp*(2*B.xx-B.yy-B.zz)/J53;
+    sp->yy = Ksp/2*(J-1./J)+1/3*G1sp*(2*B.yy-B.xx-B.zz)/J53;
+    sp->zz = Ksp/2*(J-1./J)+1/3*G1sp*(2*B.zz-B.xx-B.yy)/J53;
+    sp->xy = G1sp*B.xy/J53;
+ 
+  // strain energy per unit mass (U/(rho0 V0)) and we are using
     // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
-	double I1bar = (B.xx+B.yy+B.zz)/J23;
-    mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + Kbulk*(1/2*(JJ*JJ-1)-log(JJ))));
+	double I1bar = (B.xx+B.yy+B.zz)/J53;
+    mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + Kbulk*(1/2*(J*J-1)-log(J))));
 }
 
 
@@ -264,16 +267,16 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,
     
     
     // Incremental calculation of J det(F)=det(dF)det(pF)
-    double JJ = detdF*mptr->GetHistoryDble();
-    double J23=pow(JJ,2./3.);
+    double J = detdF*mptr->GetHistoryDble();
+    double J53=pow(J,5./3.);
 
  Tensor *sp=mptr->GetStressTensor();
- sp->xx = Kbulk/2*(JJ-1) + G1sp*(2*B.xx-B.yy-B.zz)/J23;
- sp->yy = Kbulk/2*(JJ-1) + G1sp*(2*B.yy-B.xx-B.zz)/J23;
- sp->zz = Kbulk/2*(JJ-1) + G1sp*(2*B.zz-B.xx-B.yy)/J23;
- sp->xy = G1sp*B.xy/J23;
- sp->xz = G1sp*B.xz/J23;
- sp->yz = G1sp*B.yz/J23;
+ sp->xx = Ksp/2*(J-1./J) + 1/3*G1sp*(2*B.xx-B.yy-B.zz)/J53;
+ sp->yy = Ksp/2*(J-1./J) + 1/3*G1sp*(2*B.yy-B.xx-B.zz)/J53;
+ sp->zz = Ksp/2*(J-1./J) + 1/3*G1sp*(2*B.zz-B.xx-B.yy)/J53;
+ sp->xy = G1sp*B.xy/J53;
+ sp->xz = G1sp*B.xz/J53;
+ sp->yz = G1sp*B.yz/J53;
 }
 // Return normal stress term (due to bulk modulus) and twice the pressure term for strain energy.
 // Each block of lines is for a different U(J).

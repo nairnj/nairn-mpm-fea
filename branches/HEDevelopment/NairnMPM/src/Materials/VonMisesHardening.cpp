@@ -27,7 +27,7 @@ VonMisesHardening::VonMisesHardening(char *matName) : IsoPlasticity(matName)
 	npow=1.;
 }
 
-#pragma mark VonMisesHardening::Initialization
+#pragma mark VonMisesHardening::        
 
 // print to output window
 void VonMisesHardening::PrintMechanicalProperties(void)
