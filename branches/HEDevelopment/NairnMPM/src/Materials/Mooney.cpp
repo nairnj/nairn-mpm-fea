@@ -225,6 +225,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
     double J = sqrt(J2)/(resStretch*resStretch*resStretch);
     //double J = J2;
     //cout << "old J = " << J <<","<< "old J = " << JJ << endl;
+    mptr->SetHistoryDble(J);
     
     // Account for density change in specific stress
     // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
