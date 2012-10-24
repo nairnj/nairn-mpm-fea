@@ -68,6 +68,7 @@ class IsoPlasticity : public IsotropicMat
 		int readYield;
 		double dfdsxx,dfdsyy,dfdtxy,dfdszz,dfdtxz,dfdtyz;
 		double alpint,dalpha;		// internal alpha variable and current increment
+		bool saving; //for saving history variables in Microstructure Model
 
 };
 
