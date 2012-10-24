@@ -24,6 +24,7 @@ IsoPlasticity::IsoPlasticity() {}
 IsoPlasticity::IsoPlasticity(char *matName) : IsotropicMat(matName)
 {
 	readYield=FALSE;
+	saving=FALSE; 		//for microstructure history data
 }
 
 #pragma mark IsoPlasticity::Initialization
@@ -628,6 +629,12 @@ double IsoPlasticity::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial
             
             // update and check convergence
             UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
+			// rerun to store history variables for Microstructure Material
+			if(LambdaConverged(step,lambdak,dx)) 
+			{	saving=TRUE;
+				double updating = GetYield(mptr,np,delTime);
+				saving=FALSE;
+			}
             if(LambdaConverged(step++,lambdak,dx)) break;
             
             // reset limits

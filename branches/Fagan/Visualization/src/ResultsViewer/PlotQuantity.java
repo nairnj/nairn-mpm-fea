@@ -81,6 +81,8 @@ public class PlotQuantity extends PlotControl
 	static final int MPMHISTORY2=64;
 	static final int MPMHISTORY3=65;
 	static final int MPMHISTORY4=66;
+	static final int MPMHISTORY5=67; //history 5 & 6 for Microstructure Based Material Law
+	static final int MPMHISTORY6=68;
 	
 	static final int MPMEPSTOTX=90;
 	static final int MPMEPSTOTY=91;
@@ -249,6 +251,10 @@ public class PlotQuantity extends PlotControl
 						quant.addItem(new PlotMenuItem("History 3",MPMHISTORY3));
 					if((history & 0x08) !=0)
 						quant.addItem(new PlotMenuItem("History 4",MPMHISTORY4));
+					if((history & 0x10) !=0)
+						quant.addItem(new PlotMenuItem("History 5",MPMHISTORY5));
+					if((history & 0x20) !=0)
+						quant.addItem(new PlotMenuItem("History 6",MPMHISTORY6));
 				}
 				
 				if(arch[ReadArchive.ARCH_ShearComponents]=='Y')
@@ -533,6 +539,8 @@ public class PlotQuantity extends PlotControl
 			case MPMHISTORY2:
 			case MPMHISTORY3:
 			case MPMHISTORY4:
+			case MPMHISTORY5:
+			case MPMHISTORY6:
 				return "Material History";
 			
 			// concentration
@@ -743,6 +751,8 @@ public class PlotQuantity extends PlotControl
 			case MPMHISTORY2:
 			case MPMHISTORY3:
 			case MPMHISTORY4:
+			case MPMHISTORY5:
+			case MPMHISTORY6:
 				return "Material History";
 			
 			case MPMDCDY:

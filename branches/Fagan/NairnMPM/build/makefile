@@ -196,6 +196,7 @@ MatPtTractionBC = $(src)/Boundary_Conditions/MatPtTractionBC
 MatVelocityField = $(src)/Nodes/MatVelocityField
 MeshInfo = $(src)/NairnMPM_Class/MeshInfo
 MGSCGLMaterial = $(src)/Materials/MGSCGLMaterial
+MicrostructureModel = $(src)/Materials/MicrostructureModel
 Mooney = $(src)/Materials/Mooney
 MoreMPMElementBase = $(src)/Elements/MoreMPMElementBase
 MoveCracksTask = $(src)/NairnMPM_Class/MoveCracksTask
@@ -370,7 +371,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		SphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o \
 		TractionLaw.o CohesiveZone.o CoupledSawTooth.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o AdjustTimeStepTask.o SLMaterial.o CrackVelocityFieldMulti.o \
-		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o
+		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o MicrostructureModel.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -435,7 +436,7 @@ MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialControlle
 		$(Elastic).hpp $(HyperElastic).hpp $(NairnMPM).hpp $(TractionLaw).hpp $(CohesiveZone).hpp $(LinearTraction).hpp \
 		$(CubicTraction).hpp $(AnisoPlasticity).hpp $(IsoPlasticity.hpp) $(HillPlastic).hpp $(MGSCGLMaterial).hpp \
 		$(SLMaterial).hpp $(WoodMaterial).hpp $(TrilinearTraction).hpp $(IdealGas).hpp $(CoupledSawTooth).hpp \
-        $(HEIsotropic).hpp
+        $(HEIsotropic).hpp $(MicrostructureModel).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialController).cpp
 mathexpr.o : $(mathexpr).cpp $(mathexpr).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(mathexpr).cpp
@@ -724,6 +725,9 @@ LinearTraction.o : $(LinearTraction).cpp $(dprefix) $(LinearTraction).hpp $(Cohe
 CubicTraction.o : $(CubicTraction).cpp $(dprefix) $(CubicTraction).hpp $(TractionLaw).hpp $(MaterialBase).hpp \
 			$(CrackSegment).hpp $(CrackHeader).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CubicTraction).cpp
+MicrostructureModel.o : $(MicrostructureModel).cpp $(dprefix) $(MicrostructureModel).hpp $(IsoPlasticity).hpp $(IsotropicMat).hpp \
+			$(Elastic).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ConductionTask).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MicrostructureModel).cpp	
 
 # MPM: Boundary_Conditions
 BoundaryCondition.o : $(BoundaryCondition).cpp $(dprefix) $(BoundaryCondition).hpp \

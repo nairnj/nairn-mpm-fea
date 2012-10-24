@@ -31,6 +31,7 @@ class MPMBase : public LinkedObject
 		Vector pos,vel;
 		double pTemperature,pPreviousTemperature;
 		double pConcentration,pPreviousConcentration;	// conc potential (0 to 1) (archived * concSaturation)
+		double yieldC, yieldP, archiverhoC, archiverhoW, archiveTDL, archiveDSize, fr, initfr, rhoWDot, rhoCDot; // Variables for Microstructure Material
 		double volume;
 		char vfld[MaxShapeNds];
 		TemperatureField *pTemp;

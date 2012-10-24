@@ -32,6 +32,7 @@
 	#include "Materials/CubicTraction.hpp"
 	#include "Materials/TrilinearTraction.hpp"
     #include "Materials/IdealGas.hpp"
+	#include "Materials/MicrostructureModel.hpp" // Microstructure Based Material Law
 #else
 	#include "Materials/ImperfectInterface.hpp"
 #endif
@@ -135,6 +136,9 @@ int MaterialController::AddMaterial(int matID,char *matName)
 			break;
 		case IDEALGASMATERIAL:
 			newMaterial=new IdealGas(matName);
+			break;
+		case MICROSTRUCTUREMODEL:
+			newMaterial=new MicrostructureModel(matName);
 			break;
 #else
 		case INTERFACEPARAMS:

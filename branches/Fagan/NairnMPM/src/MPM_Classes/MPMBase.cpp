@@ -61,6 +61,12 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	pConcentration=0.;
 	pDiffusion=NULL;
     
+	// history variables for Microstructure Model
+	// **Perhaps place if (Microstructure Model TRUE) here?
+	yieldC=yieldP=0.;
+	archiverhoC=archiverhoW=archiveTDL=archiveDSize=fr=0.;
+ 	rhoWDot=rhoCDot=0.;								
+	initfr=-3.;	
 	// temperature (degrees) and gradient (degrees/mm)
 	SetTemperature(0.,0.);
 	pTemp=NULL;

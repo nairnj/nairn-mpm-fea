@@ -254,6 +254,8 @@ void ArchiveData::CalcArchiveSize(void)
 		if(mpmOrder[ARCH_History]&0x02) mpmRecSize+=sizeof(double);
 		if(mpmOrder[ARCH_History]&0x04) mpmRecSize+=sizeof(double);
 		if(mpmOrder[ARCH_History]&0x08) mpmRecSize+=sizeof(double);
+		if(mpmOrder[ARCH_History]&0x10) mpmRecSize+=sizeof(double);
+		if(mpmOrder[ARCH_History]&0x20) mpmRecSize+=sizeof(double);
 	}
     if(mpmOrder[ARCH_Concentration]=='Y')
         mpmRecSize+=sizeof(double)+vectorSize;
@@ -692,6 +694,14 @@ void ArchiveData::ArchiveResults(double atime)
 			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(4,mpm[p]->GetHistoryPtr());
 				app+=sizeof(double);
 			}
+			if(mpmOrder[ARCH_History]&0x10)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(5,mpm[p]->GetHistoryPtr());
+				app+=sizeof(double);
+			}
+			if(mpmOrder[ARCH_History]&0x20)
+			{   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(6,mpm[p]->GetHistoryPtr());
+				app+=sizeof(double);
+			}
 		}
 		
 		// concentration and gradients convert to wt fraction units using csat for this material
@@ -854,6 +864,8 @@ void ArchiveData::ArchiveResults(double atime)
 				if(mpmOrder[ARCH_History]&0x02) app+=Reverse(app,sizeof(double));
 				if(mpmOrder[ARCH_History]&0x04) app+=Reverse(app,sizeof(double));
 				if(mpmOrder[ARCH_History]&0x08) app+=Reverse(app,sizeof(double));
+				if(mpmOrder[ARCH_History]&0x10) app+=Reverse(app,sizeof(double));
+				if(mpmOrder[ARCH_History]&0x20) app+=Reverse(app,sizeof(double));
 			}
                     
             // concentration and gradients

@@ -228,6 +228,8 @@ public class ReadArchive
 			if((history & 0x02) !=0) mpmRecSize+=sizeofDouble;
 			if((history & 0x04) !=0) mpmRecSize+=sizeofDouble;
 			if((history & 0x08) !=0) mpmRecSize+=sizeofDouble;
+			if((history & 0x10) !=0) mpmRecSize+=sizeofDouble;
+			if((history & 0x20) !=0) mpmRecSize+=sizeofDouble;
 		}
 		if(mpmOrder[ARCH_Concentration]=='Y')
 			mpmRecSize+=3*sizeofDouble;
