@@ -38,7 +38,7 @@
 SYSTEM=carbon
 xercesSo= /usr/local/lib/libxerces-c.so
 ifeq ($(SYSTEM),mac)
-	xercesSo = /usr/local/lib/libxerces-c.dylib
+    xercesSo = /usr/local/lib/libxerces-c.dylib
 endif
 ifeq ($(SYSTEM),carbon)
 	xercesSo = /usr/local/xerces3/lib/libxerces-c.so
@@ -88,6 +88,9 @@ endif
 #     RM is path/options to the file remove command (used only in make clean)
 #     CP is path/options to copy command (used only in make install
 CC= g++
+ifeq ($(SYSTEM),carbon)
+    CC= /usr/bin/g++
+endif
 RM= rm
 CP= cp
 
