@@ -554,7 +554,8 @@ void ArchiveData::ArchiveResults(double atime)
 			}
         }
 
-        // stress (in N/m^2)
+        // stress - internally it is N/m^2 cm^3/g, output in N/m^2 or Pa
+        //          internal SI units are kPa/(kg/m^3)
 		// For large deformation, need to convert Kirchoff Stress/rho0 to Cauchy stress
         int matid = mpm[p]->MatID();
         rho0=theMaterials[matid]->rho;
@@ -665,6 +666,7 @@ void ArchiveData::ArchiveResults(double atime)
         // total strain energy (Volume*energy) in J
         // energies in material point based on energy per unit mass
         // here need mass * U/(rho0 V0)
+        // internal units are same as stress: N/m^2 cm^3/g = microJ/g = mJ/kg
         if(mpmOrder[ARCH_StrainEnergy]=='Y')
         {   *(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetStrainEnergy();
             app+=sizeof(double);
