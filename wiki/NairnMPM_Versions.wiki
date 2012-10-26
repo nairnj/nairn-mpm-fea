@@ -38,6 +38,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Body forces for gravity were not correctly implemented for 3D before, but now work in 3D simulations.
     * `Cylinder` shape can add `radius` attribute to create a cone shape.
     * A new `CoupledSawTooth` traction law is implemented (but not yet documented).
+    * New `HistoryArchive` custom task to archive particle history data to tab-delimited text files.
 
   * release-3.0 (25 JAN 2012)
     * Has NairnMPM 8.1.0
