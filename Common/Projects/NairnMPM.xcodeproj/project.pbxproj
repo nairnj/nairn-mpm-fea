@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6700560A163AFC3600FFE145 /* HistoryArchive.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67005609163AFC3600FFE145 /* HistoryArchive.hpp */; };
+		6700560C163AFC6B00FFE145 /* HistoryArchive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6700560B163AFC6B00FFE145 /* HistoryArchive.cpp */; };
 		671514D115465E8B005F33A9 /* OvalController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 671514D015465E8B005F33A9 /* OvalController.cpp */; };
 		671514D215465E8B005F33A9 /* OvalController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 671514D015465E8B005F33A9 /* OvalController.cpp */; };
 		671514D415465EAD005F33A9 /* OvalController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 671514D315465EAD005F33A9 /* OvalController.hpp */; };
@@ -383,6 +385,8 @@
 
 /* Begin PBXFileReference section */
 		08FB7796FE84155DC02AAC07 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; tabWidth = 4; };
+		67005609163AFC3600FFE145 /* HistoryArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HistoryArchive.hpp; sourceTree = "<group>"; };
+		6700560B163AFC6B00FFE145 /* HistoryArchive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HistoryArchive.cpp; sourceTree = "<group>"; };
 		671514D015465E8B005F33A9 /* OvalController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OvalController.cpp; sourceTree = "<group>"; };
 		671514D315465EAD005F33A9 /* OvalController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = OvalController.hpp; sourceTree = "<group>"; };
 		671514D61547035D005F33A9 /* PolygonController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PolygonController.cpp; sourceTree = "<group>"; };
@@ -947,6 +951,8 @@
 				A79115C40720554600B81ECA /* ConductionTask.cpp */,
 				A750ED3C0EE9C10E003545A3 /* VTKArchive.hpp */,
 				A750ED3D0EE9C10E003545A3 /* VTKArchive.cpp */,
+				67005609163AFC3600FFE145 /* HistoryArchive.hpp */,
+				6700560B163AFC6B00FFE145 /* HistoryArchive.cpp */,
 				A734D4FB1610D8DA00B9A4B7 /* AdjustTimeStepTask.hpp */,
 				A734D4F91610D8C700B9A4B7 /* AdjustTimeStepTask.cpp */,
 			);
@@ -1477,6 +1483,7 @@
 				A77F5ECE15FA6ED8005188E8 /* HEIsotropic.hpp in Headers */,
 				67E191351602CB3F00B34CA9 /* MatPtTractionBC.hpp in Headers */,
 				A734D4FC1610D8DA00B9A4B7 /* AdjustTimeStepTask.hpp in Headers */,
+				6700560A163AFC3600FFE145 /* HistoryArchive.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1786,6 +1793,7 @@
 				A77F5ECD15FA6ED8005188E8 /* HEIsotropic.cpp in Sources */,
 				67E191331602CB2700B34CA9 /* MatPtTractionBC.cpp in Sources */,
 				A734D4FA1610D8C700B9A4B7 /* AdjustTimeStepTask.cpp in Sources */,
+				6700560C163AFC6B00FFE145 /* HistoryArchive.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

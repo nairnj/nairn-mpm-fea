@@ -52,7 +52,8 @@ class ArchiveData : public CommonArchiveData
 		bool MakeArchiveFolder(void);
 		void BeginArchives(bool);
 		void ArchiveResults(double);
-		void ArchiveVTKFile(double atime,vector< int >,vector< int >,vector< char * >,double **);
+		void ArchiveVTKFile(double,vector< int >,vector< int >,vector< char * >,double **);
+		void ArchiveHistoryFile(double,vector< int >);
 		void FileError(const char *,const char *,const char *);
 		
 		// log file methods
