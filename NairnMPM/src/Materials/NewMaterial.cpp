@@ -144,6 +144,11 @@ const char *NewMaterial::MaterialType(void) { return "Template Material"; }
 // Calculate maximum wave speed for material in mm/sec.
 double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
 
+// If wave speed changes with particle state, recalculate it here and return result in mm/sec
+// Only needed if wave speed changes with particle state AND if you plan to use the
+// custom task to periodically adjust the time step
+//double MaterialBase::CurrentWaveSpeed(bool threeD,MPMBase *mptr) { return (new wave speed); }
+
 // Calculate shear wave speed for material in mm/sec.
 // Used only by silent boundary conditions, which are only for isotropic materials
 //double NewMaterial::ShearWaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
