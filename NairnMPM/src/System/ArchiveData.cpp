@@ -982,7 +982,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 	ofstream afile;
 	afile.open(fname, ios::out);
 	if(!afile.is_open())
-        FileError("Cannot open a vtk archive file",fname,"ArchiveData::ArchiveResults");
+        FileError("Cannot open a vtk archive file",fname,"ArchiveData::ArchiveVTKFile");
 	
     // required header line
 	afile << "# vtk DataFile Version 4.2" << endl;
@@ -1118,7 +1118,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
     // close the file
 	afile.close();
 	if(afile.bad())
-        FileError("File error closing a vtk archive file",fname,"ArchiveData::ArchiveResults");
+        FileError("File error closing a vtk archive file",fname,"ArchiveData::ArchiveVTKFile");
 }
 
 // Archive the results if it is time
@@ -1133,7 +1133,7 @@ void ArchiveData::ArchiveHistoryFile(double atime,vector< int > quantity)
 	ofstream afile;
 	afile.open(fname, ios::out);
 	if(!afile.is_open())
-        FileError("Cannot open a particle history archive file",fname,"ArchiveData::ArchiveResults");
+        FileError("Cannot open a particle history archive file",fname,"ArchiveData::ArchiveHistoryFile");
 	
     // header line
 	afile << "Particle History Data File" << endl;
@@ -1142,13 +1142,35 @@ void ArchiveData::ArchiveHistoryFile(double atime,vector< int > quantity)
 	sprintf(fline,"step:%d time:%15.7e ms",fmobj->mstep,1000.*atime);
     afile << fline << endl;
 	
-	strcpy(fline,"#\tx\ty\tz");
+	strcpy(fline,"#\tx\ty");
+    if(threeD) strcat(fline,"\tz");
 	unsigned int q;
 	for(q=0;q<quantity.size();q++)
 	{	sprintf(subline,"\t%d",quantity[q]);
-		strcpy(fline,subline);
+		strcat(fline,subline);
 	}
-	afile << "\n\n" << fline << endl;
+	afile << fline << endl;
+    
+    // each particle
+    int p;
+    for(p=0;p<nmpms;p++)
+    {   // number and position
+        afile << p+1 << "\t" << mpm[p]->pos.x << "\t" << mpm[p]->pos.y ;
+        if(threeD) afile << "\t" << mpm[p]->pos.z ;
+        
+        // history data
+        MaterialBase *matptr = theMaterials[mpm[p]->MatID()];
+        char *hptr = mpm[p]->GetHistoryPtr();
+        for(q=0;q<quantity.size();q++)
+        {   afile << "\t" << matptr->GetHistory(quantity[q],hptr);
+        }
+        afile << endl;
+    }
+    
+    // close the file
+	afile.close();
+	if(afile.bad())
+        FileError("File error closing a particle history archive file",fname,"ArchiveData::ArchiveHistoryFile");
 }
 
 // force archive now, but stay on archiving schedule after that

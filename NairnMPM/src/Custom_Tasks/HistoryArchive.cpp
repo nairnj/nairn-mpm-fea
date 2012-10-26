@@ -42,7 +42,6 @@ char *HistoryArchive::InputParam(char *pName,int &input)
 	{	// assume an integer
 		int historyNum;
 		sscanf(pName,"%d",&historyNum);
-		
 		quantity.push_back(historyNum);
 		
 		// ignore any command data
@@ -80,8 +79,8 @@ CustomTask *HistoryArchive::Initialize(void)
 	
 	// quantities
 	unsigned int q;
-	cout << "   History Numbers:\n      " ;
-	int len=6;
+	cout << "   History Numbers: " ;
+	int len=20;
 	for(q=0;q<quantity.size();q++)
 	{	if(len>70)
 		{	cout << "\n      ";

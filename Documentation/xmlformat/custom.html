@@ -25,6 +25,8 @@
 
 <li><a href="#VTKArchive">VTKArchive Custom Task</a></li>
 
+<li><a href="#HistoryArchive">HistoryArchive Custom Task</a></li>
+
 <li><a href="#ReverseLoad">ReverseLoad Custom Task</a></li>
 
 </ul>
@@ -119,7 +121,7 @@
 </dd>
 
 <dt>firstArchiveTime</dt>
-<dd>Enter the time to save the first results (in ms). After this time is reached, subsequent archives will be spaced by the entered <code>archiveTime</code>. This parameter is ignored unless the <code>archiveTime</code> parameter is set as well. To get a VTK archive on the first step, enter <code>firstArchiveTime</code> of zero.
+<dd>Enter the time to save the first results (in ms). After this time is reached, subsequent archives will be spaced by the entered <code>archiveTime</code>. This parameter is ignored unless the <code>archiveTime</code> parameter is set as well. To get a VTK archive <i>after</i> the first step, enter <code>firstArchiveTime</code> of zero.
 </dd>
 
 </dl>
@@ -130,6 +132,28 @@
    ( zx   zy   zz ) = ( 6  7  8 )
 </pre>
 
+
+<h2><a name="HistoryArchive"></a>HistoryArchive</h2>
+
+<p>The current <a href="mpmheader.html#mpmarchive"><code>MPMArchiveOrder</code> (byte 14)</a> options can only archive a combination of history variables 1 through 4 for each particle. This custom task provides a method to archive more history variables and also provides an alternate format for arching history variables 1 through 4. When this task is activated, the history data on each particle will be written to tab-delimited text files in the output results folder. The name of the file will include the <a href="mpmheader.html#aroot">current root name</a> and wilil be followed by &quot;<code>_History_#.txt</code>&quot;, where &quot;<code>#</code>&quot; is the step number.</p>
+
+<p>You select which history variables to archive, and their order, using a series of Parameter commands:
+</p>
+<pre>   &lt;Parameter name='2'/&gt;
+</pre>
+<p>where the name is the history variable number. In addition, you can control the timing for output of particle history data files using two timing parameters:</p>
+
+<dl>
+
+<dt>archiveTime</dt>
+<dd>Enter the time interval (in ms) between saving of history archives. If this parameter is omitted, the history archive files are written on the same steps as the particle archives (see <a href="mpmheader.html#atime">ArchiveTime</a> and <a href="mpmheader.html#fatime">FirstArchiveTime</a> commands). The one exception is that no history archive is written on the first step.
+</dd>
+
+<dt>firstArchiveTime</dt>
+<dd>Enter the time to save the first results (in ms). After this time is reached, subsequent archives will be spaced by the entered <code>archiveTime</code>. This parameter is ignored unless the <code>archiveTime</code> parameter is set as well. To get a history archive <i>after</i> the first step, enter <code>firstArchiveTime</code> of zero.
+</dd>
+
+</dl>
 
 <h2><a name="ReverseLoad"></a>ReverseLoad</h2>
 

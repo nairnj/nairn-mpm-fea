@@ -173,6 +173,7 @@ GridForcesTask = $(src)/NairnMPM_Class/GridForcesTask
 HEAnisotropic = $(src)/Materials/HEAnisotropic
 HEIsotropic = $(src)/Materials/HEIsotropic
 HillPlastic = $(src)/Materials/HillPlastic
+HistoryArchive = $(src)/Custom_Tasks/HistoryArchive
 HyperElastic = $(src)/Materials/HyperElastic
 IdealGas = $(src)/Materials/IdealGas
 InitializationTask = $(src)/NairnMPM_Class/InitializationTask
@@ -288,6 +289,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # HEAnisotropic.hpp : HyperElastic.hpp (MaterialBase.hpp)
 # HEIsotropic.hpp : HyperElastic.hpp (MaterialBase.hpp)
 # HillPlastic : AnisoPlasticity.hpp (Orthotropic.hpp TranIsotropic.hpp Elastic.hpp MaterialBase.hpp)
+# HistoryArchive.hpp : CustomTask.hpp
 # IdealGas.hpp : HyperElastic.hpp (MaterialBase.hpp)
 # InitializationTask : MPMTask.hpp (CommonTask.hpp)
 # IsoPlasticity : IsotropicMat.hpp (Elastic.hpp MaterialBase.hpp)
@@ -370,7 +372,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		DiffusionTask.o ConductionTask.o MeshInfo.o TransportTask.o ElementBase3D.o \
 		EightNodeIsoparamBrick.o MatPoint3D.o Elastic.o ElasticMPM.o HyperElastic.o \
 		mathexpr.o ShapeController.o PointController.o RectController.o OvalController.o PolygonController.o \
-		SphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o \
+		SphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o HistoryArchive.o \
 		TractionLaw.o CohesiveZone.o CoupledSawTooth.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o AdjustTimeStepTask.o SLMaterial.o CrackVelocityFieldMulti.o \
 		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o
@@ -575,7 +577,7 @@ MPMReadHandler.o : $(MPMReadHandler).cpp $(dprefix) $(NairnMPM).hpp $(ArchiveDat
 			$(BoundaryCondition).hpp $(NodesController).hpp $(ElementsController).hpp $(ParseController).hpp $(MaterialController).hpp \
 			$(MpsController).hpp $(MaterialController).hpp $(CrackController).hpp $(ElementBase).hpp $(MaterialBase).hpp \
 			$(CrackHeader).hpp $(CrackSegment).hpp $(TransportTask).hpp $(MatPoint3D).hpp $(MatPtTractionBC).hpp $(AdjustTimeStepTask).hpp \
-			$(PolygonController).hpp $(ShapeController).hpp  $(SphereController).hpp $(RigidMaterial).hpp $(VTKArchive).hpp \
+			$(PolygonController).hpp $(ShapeController).hpp  $(SphereController).hpp $(RigidMaterial).hpp $(VTKArchive).hpp $(HistoryArchive).hpp \
 			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(MeshInfo).hpp $(PropagateTask).hpp $(PolyhedronController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MPMReadHandler).cpp
 Generators.o : $(Generators).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hpp $(CommonReadHandler).hpp \
@@ -780,6 +782,9 @@ VTKArchive.o : $(VTKArchive).cpp $(dprefix) $(VTKArchive).hpp $(CustomTask).hpp 
 			$(CommonException).hpp $(ArchiveData).hpp $(MeshInfo).hpp $(MaterialBase).hpp \
 			$(MPMBase).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(CommonArchiveData).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(VTKArchive).cpp
+HistoryArchive.o : $(HistoryArchive).cpp $(dprefix) $(HistoryArchive).hpp $(CustomTask).hpp $(NairnMPM).hpp \
+			$(ArchiveData).hpp $(CommonArchiveData).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(HistoryArchive).cpp
 AdjustTimeStepTask.o : $(AdjustTimeStepTask).cpp $(dprefix) $(AdjustTimeStepTask).hpp $(CustomTask).hpp $(NairnMPM).hpp \
 			$(ArchiveData).hpp $(MeshInfo).hpp $(MaterialBase).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(AdjustTimeStepTask).cpp
