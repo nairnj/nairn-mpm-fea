@@ -1121,6 +1121,36 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
         FileError("File error closing a vtk archive file",fname,"ArchiveData::ArchiveResults");
 }
 
+// Archive the results if it is time
+void ArchiveData::ArchiveHistoryFile(double atime,vector< int > quantity)
+{
+    char fname[300],fline[600],subline[100];
+	
+    // get relative path name to the file
+    sprintf(fname,"%s%s_History_%d.txt",inputDir,archiveRoot,fmobj->mstep);
+    
+    // open the file
+	ofstream afile;
+	afile.open(fname, ios::out);
+	if(!afile.is_open())
+        FileError("Cannot open a particle history archive file",fname,"ArchiveData::ArchiveResults");
+	
+    // header line
+	afile << "Particle History Data File" << endl;
+	
+	// title
+	sprintf(fline,"step:%d time:%15.7e ms",fmobj->mstep,1000.*atime);
+    afile << fline << endl;
+	
+	strcpy(fline,"#\tx\ty\tz");
+	unsigned int q;
+	for(q=0;q<quantity.size();q++)
+	{	sprintf(subline,"\t%d",quantity[q]);
+		strcpy(fline,subline);
+	}
+	afile << "\n\n" << fline << endl;
+}
+
 // force archive now, but stay on archiving schedule after that
 void ArchiveData::ForceArchiving(void)
 {	nextArchTime-=archTime;
