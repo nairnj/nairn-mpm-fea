@@ -73,6 +73,51 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
     return (1. + dvxx)*(1. + dvyy)- dvyx*dvxy;
 }
 
+/*  Get new deformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
+        deformation gradient (i.e., two steps with two gradients F1 = F and F2 = dF, the total
+        gradient is product of F1 and F2 in reverse order)
+    dvij are elements of gradV * time step
+    if Bptr!=NULL, find new B from (I + gradV*dt)pB(I + gradV*dt)^T where pB is current particle B
+        This is not stored on the particle unless Bptr is pointer to particle B
+    if storeInParticle is true, transfer new gradient to particle strain and rotation tensors
+    if detIncrement is true, return det(dF), otherwise return 0.0 (some materials might make use of this result)
+    Note: This assumes plane strain to find F[2][2]=1. If the 2D calculation is plane stress, the
+        caller must replace F[2][2] with 1 + dw/dz. Likewise, caller must multiply det(dF) by 1 + dw/dz.
+        Finally, caller must get B.zz as needed and store on particle
+ */
+double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx)
+{
+	// current deformation gradient in 2D
+    double pF[3][3];
+    mptr->GetDeformationGradient(pF);
+	
+	// get new 2D deformation gradient to increment particle strain
+    // plaine stress will need to add ep->zz when known
+    Tensor *ep=mptr->GetStrainTensor();
+    TensorAntisym *wrot = mptr->GetRotationStrainTensor();
+	ep->xx += dvxx*(1.+ep->xx) + dvxy*pF[1][0];             // 1 + du/dx - 1
+	ep->yy += dvyx*pF[0][1] + dvyy*(1.+ep->yy);             // 1 + dv/dy - 1
+	double F01 = (1. + dvxx)*pF[0][1] + dvxy*pF[1][1];		// du/dy
+	double F10 = dvyx*pF[0][0] + (1. + dvyy)*pF[1][0];		// dv/dx
+    ep->xy = F10 + F01;                                     // du/dy + dv/dx
+    wrot->xy = F10 - F01;                                   // dv/dx - du/dy
+	
+    // increment Left Cauchy tensor B = F.F^T
+    // plain stress will need to update B.zz when known
+    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
+    double b1 = (1.+dvxx)*pB->xx +      dvxy*pB->xy;
+    double b2 = (1.+dvxx)*pB->xy +      dvxy*pB->yy;
+    double b3 =      dvyx*pB->xx + (1.+dvyy)*pB->xy;
+    double b4 =      dvyx*pB->xy + (1.+dvyy)*pB->yy;
+    pB->xx = (1. + dvxx)*b1 +      dvxy*b2;
+    pB->xy =        dvyx*b1 + (1.+dvyy)*b2;
+    pB->yy =        dvyx*b3 + (1.+dvyy)*b4;
+    
+    // det(I + grad v * dt), which assumes plain strain
+    // multiply by 1+dvzz when known to get det(dF) in plane stress
+    return (1. + dvxx)*(1. + dvyy)- dvyx*dvxy;
+}
+
 // Get new deformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
 // dvij are elements of gradV * time step
 // if storeInParticle is true, transfer new gradient to particle strain and rotation tensors
