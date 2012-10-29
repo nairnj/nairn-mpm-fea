@@ -593,6 +593,10 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <p>A neo-Hookean material is a special case of a Mooney-Rivlin material by setting G<sub>2</sub> = 0.</p>
 
+<h3>History Data for Mooney-Rivlin Materials</h3>
+
+<p>This material use history #1 to store the volumetric strain (i.e., the determinant of the deformation gradient). The total strain, which is elastic, is stored in the elastic strain variable, but the plastic strain stores the left Cauchy Green tensor.</p>
+    
 <a name="heiso"></a><h2>Isotropic, Elastic-Plastic, Hyperelastic Material</h2>
 
 <p>The material type is an isotropic, hyperelastic material with plasticity. It is currently in development.</p>

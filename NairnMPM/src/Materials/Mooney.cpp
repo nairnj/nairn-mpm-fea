@@ -119,15 +119,11 @@ void Mooney::SetInitialParticleState(MPMBase *mptr,int np)
 void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
 								double delTime,int np)
 {
-	// get new deformation gradient and update strains and rotations and Left Cauchy strain
+	// Update strains and rotations and Left Cauchy strain
 	double detDf = IncrementDeformation(mptr,dvxx,dvyy,dvxy,dvyx);
-    //double F[3][3];
-    //double detDf = GetDeformationGrad(F,mptr,dvxx,dvyy,dvxy,dvyx,TRUE,TRUE);
     
-    // get pointer to left Cauchy strain
+    // get pointer to new left Cauchy strain
     Tensor *B = mptr->GetElasticLeftCauchyTensor();
-    //Tensor Bt = GetLeftCauchyTensor2D(F);
-    //Tensor *B = &Bt;
 	
 	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
 	if(np==PLANE_STRESS_MPM)
@@ -164,7 +160,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
             fx = 1.5*Ksp*xn12*arg12*(xn*arg-1.);            
             fxp = 0.75*Ksp*arg12*(3.*arg*xn-1.)/xn12;
            
-            // N ow add the shear terms
+            // Now add the shear terms
             fx += G1sp*(2.*xn-arg2)*xn16*arg16 + G2sp*(xn*arg2-2.*arg)/(xn16*arg16);
             fxp += G1sp*xn16*arg16*(14.*xn-arg2)/(6.*xn) + G2sp*(2.*arg+5.*xn*arg2)/(6.*xn16*arg16*xn);
             
@@ -175,26 +171,26 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 			xn = xnp1;
 			iter+=1;
 		}
-		
-		// particle strain
-		ep->zz = sqrt(xn) - 1.;             // 1 + dw/dz - 1
         
-        // incremental J
-        detDf *= sqrt(xn/B->zz);
-        
-        // new particle B.zz
+        // Done and xn = new B->zz = (1+dw/dz)^2 = (1+dvzz)^2*(old Bzz), 
+        //      and find dvzz and store new Bzz
+        double dvzz = sqrt(xn/B->zz) - 1.;
         B->zz = xn;
+		
+		// particle strain ezz now known
+		ep->zz += dvzz*(1+ep->zz);
+        
+        // incremental J changes
+        detDf *= (1.+dvzz);
 	}
     
     // Increment J and save it
     double J = detDf*mptr->GetHistoryDble();
     mptr->SetHistoryDble(J);
-    //double J2 = B->zz*(B->xx*B->yy - B->xy*B->xy);
 	
 	// J as determinant of F (or sqrt root of determinant of B) normalized to residual stretch
 	double resStretch = GetResidualStretch(mptr);
 	J /= (resStretch*resStretch*resStretch);
-    //double J = sqrt(J2)/(resStretch*resStretch*resStretch);
     
     // Account for density change in specific stress
     // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
@@ -234,17 +230,16 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
 						  double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
 {
-	// get new deformation gradient
-	double F[3][3];
-	GetDeformationGrad(F,mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,TRUE,FALSE);
-
-	// left Cauchy deformation tensor B = F F^T
-	Tensor B = GetLeftCauchyTensor3D(F);
-	
-	// J as determinant of F (or sqrt root of determinant of B), normalized to residual stretch
-	double J2 = B.xx*B.yy*B.zz + 2.*B.xy*B.xz*B.yz - B.yz*B.yz*B.xx - B.xz*B.xz*B.yy - B.xy*B.xy*B.zz;
+	// Update strains and rotations and Left Cauchy strain
+	double detDf = IncrementDeformation(mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy);
+    
+    // Increment J and save it
+    double J = detDf*mptr->GetHistoryDble();
+    mptr->SetHistoryDble(J);
+    
+    // account for residual stresses
 	double resStretch = GetResidualStretch(mptr);
-	double J = sqrt(J2)/(resStretch*resStretch*resStretch);
+	J /= (resStretch*resStretch*resStretch);
     
     // Account for density change in specific stress
     // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
@@ -256,21 +251,22 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 	double Kterm = J*GetVolumetricTerms(J,&Kse);       // times J to get Kirchoff stress
 	
 	// find (Cauchy stress)J/rho0 = (Kirchoff stress)/rho0
+    Tensor *B = mptr->GetElasticLeftCauchyTensor();
 	Tensor *sp=mptr->GetStressTensor();
-	sp->xx = Kterm + (2*B.xx-B.yy-B.zz)*G1sp/(3.*JforG1)
-			+ (B.xx*(B.yy+B.zz)-2*B.yy*B.zz-B.xy*B.xy-B.xz*B.xz+2.*B.yz*B.yz)*G2sp/(3.*JforG2);
-	sp->yy = Kterm + (2*B.yy-B.xx-B.zz)*G1sp/(3.*JforG1)
-			+ (B.yy*(B.xx+B.zz)-2*B.xx*B.zz-B.xy*B.xy+2.*B.xz*B.xz-B.yz*B.yz)*G2sp/(3.*JforG2);
-	sp->zz = Kterm + (2*B.zz-B.xx-B.yy)*G1sp/(3.*JforG1)
-			+ (B.zz*(B.xx+B.yy)-2*B.xx*B.yy+2.*B.xy*B.xy-B.xz*B.xz-B.yz*B.yz)*G2sp/(3.*JforG2);
-	sp->xy = B.xy*G1sp/JforG1 + (B.zz*B.xy-B.xz*B.yz)*G2sp/JforG2;
-	sp->xz = B.xz*G1sp/JforG1 + (B.yy*B.xz-B.xy*B.yz)*G2sp/JforG2;
-	sp->yz = B.yz*G1sp/JforG1 + (B.xx*B.yz-B.xy*B.xz)*G2sp/JforG2;
+	sp->xx = Kterm + (2*B->xx-B->yy-B->zz)*G1sp/(3.*JforG1)
+			+ (B->xx*(B->yy+B->zz)-2*B->yy*B->zz-B->xy*B->xy-B->xz*B->xz+2.*B->yz*B->yz)*G2sp/(3.*JforG2);
+	sp->yy = Kterm + (2*B->yy-B->xx-B->zz)*G1sp/(3.*JforG1)
+			+ (B->yy*(B->xx+B->zz)-2*B->xx*B->zz-B->xy*B->xy+2.*B->xz*B->xz-B->yz*B->yz)*G2sp/(3.*JforG2);
+	sp->zz = Kterm + (2*B->zz-B->xx-B->yy)*G1sp/(3.*JforG1)
+			+ (B->zz*(B->xx+B->yy)-2*B->xx*B->yy+2.*B->xy*B->xy-B->xz*B->xz-B->yz*B->yz)*G2sp/(3.*JforG2);
+	sp->xy = B->xy*G1sp/JforG1 + (B->zz*B->xy-B->xz*B->yz)*G2sp/JforG2;
+	sp->xz = B->xz*G1sp/JforG1 + (B->yy*B->xz-B->xy*B->yz)*G2sp/JforG2;
+	sp->yz = B->yz*G1sp/JforG1 + (B->xx*B->yz-B->xy*B->xz)*G2sp/JforG2;
     
 	// strain energy per unit mass (U/(rho0 V0)) and we are using
     // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
-	double I1bar = (B.xx+B.yy+B.zz)/J23;
-	double I2bar = 0.5*(I1bar*I1bar - (B.xx*B.xx+B.yy*B.yy+B.zz*B.zz+2.*B.xy*B.xy+2*B.xz*B.xz+2.*B.yz*B.yz)/J43);
+	double I1bar = (B->xx+B->yy+B->zz)/J23;
+	double I2bar = 0.5*(I1bar*I1bar - (B->xx*B->xx+B->yy*B->yy+B->zz*B->zz+2.*B->xy*B->xy+2*B->xz*B->xz+2.*B->yz*B->yz)/J43);
     mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kse));
 }
 
