@@ -32,6 +32,7 @@ class HyperElastic : public MaterialBase
 		double GetDeformationGrad(double F[][3],MPMBase *,double,double,double,double,bool,bool);
         double IncrementDeformation(MPMBase *,double,double,double,double);
 		double GetDeformationGrad(double F[][3],MPMBase *,double,double,double,double,double,double,double,double,double,bool,bool);
+        double IncrementDeformation(MPMBase *,double,double,double,double,double,double,double,double,double);
 		Tensor GetLeftCauchyTensor2D(double F[][3]);
 		Tensor GetLeftCauchyTensor3D(double F[][3]);
 		double GetResidualStretch(MPMBase *);
