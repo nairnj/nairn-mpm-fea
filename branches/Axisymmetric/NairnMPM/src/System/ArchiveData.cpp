@@ -554,7 +554,8 @@ void ArchiveData::ArchiveResults(double atime)
 			}
         }
 
-        // stress (in N/m^2)
+        // stress - internally it is N/m^2 cm^3/g, output in N/m^2 or Pa
+        //          internal SI units are kPa/(kg/m^3)
 		// For large deformation, need to convert Kirchoff Stress/rho0 to Cauchy stress
         int matid = mpm[p]->MatID();
         rho0=theMaterials[matid]->rho;
@@ -665,6 +666,7 @@ void ArchiveData::ArchiveResults(double atime)
         // total strain energy (Volume*energy) in J
         // energies in material point based on energy per unit mass
         // here need mass * U/(rho0 V0)
+        // internal units are same as stress: N/m^2 cm^3/g = microJ/g = mJ/kg
         if(mpmOrder[ARCH_StrainEnergy]=='Y')
         {   *(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetStrainEnergy();
             app+=sizeof(double);
@@ -980,7 +982,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 	ofstream afile;
 	afile.open(fname, ios::out);
 	if(!afile.is_open())
-        FileError("Cannot open a vtk archive file",fname,"ArchiveData::ArchiveResults");
+        FileError("Cannot open a vtk archive file",fname,"ArchiveData::ArchiveVTKFile");
 	
     // required header line
 	afile << "# vtk DataFile Version 4.2" << endl;
@@ -1116,7 +1118,59 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
     // close the file
 	afile.close();
 	if(afile.bad())
-        FileError("File error closing a vtk archive file",fname,"ArchiveData::ArchiveResults");
+        FileError("File error closing a vtk archive file",fname,"ArchiveData::ArchiveVTKFile");
+}
+
+// Archive the results if it is time
+void ArchiveData::ArchiveHistoryFile(double atime,vector< int > quantity)
+{
+    char fname[300],fline[600],subline[100];
+	
+    // get relative path name to the file
+    sprintf(fname,"%s%s_History_%d.txt",inputDir,archiveRoot,fmobj->mstep);
+    
+    // open the file
+	ofstream afile;
+	afile.open(fname, ios::out);
+	if(!afile.is_open())
+        FileError("Cannot open a particle history archive file",fname,"ArchiveData::ArchiveHistoryFile");
+	
+    // header line
+	afile << "Particle History Data File" << endl;
+	
+	// title
+	sprintf(fline,"step:%d time:%15.7e ms",fmobj->mstep,1000.*atime);
+    afile << fline << endl;
+	
+	strcpy(fline,"#\tx\ty");
+    if(threeD) strcat(fline,"\tz");
+	unsigned int q;
+	for(q=0;q<quantity.size();q++)
+	{	sprintf(subline,"\t%d",quantity[q]);
+		strcat(fline,subline);
+	}
+	afile << fline << endl;
+    
+    // each particle
+    int p;
+    for(p=0;p<nmpms;p++)
+    {   // number and position
+        afile << p+1 << "\t" << mpm[p]->pos.x << "\t" << mpm[p]->pos.y ;
+        if(threeD) afile << "\t" << mpm[p]->pos.z ;
+        
+        // history data
+        MaterialBase *matptr = theMaterials[mpm[p]->MatID()];
+        char *hptr = mpm[p]->GetHistoryPtr();
+        for(q=0;q<quantity.size();q++)
+        {   afile << "\t" << matptr->GetHistory(quantity[q],hptr);
+        }
+        afile << endl;
+    }
+    
+    // close the file
+	afile.close();
+	if(afile.bad())
+        FileError("File error closing a particle history archive file",fname,"ArchiveData::ArchiveHistoryFile");
 }
 
 // force archive now, but stay on archiving schedule after that

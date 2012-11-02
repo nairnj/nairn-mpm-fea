@@ -70,7 +70,7 @@ const char *IdealGas::VerifyProperties(int np)
 // if analysis not allowed, throw an exception
 void IdealGas::ValidateForUse(int np)
 {	if(np==PLANE_STRESS_MPM)
-	{	throw CommonException("IdealGas material cannot do 2D plane stree MPM analysis",
+	{	throw CommonException("IdealGas material cannot do 2D plane stress MPM analysis",
 							  "IdealGas::ValidateForUse");
 	}
 	

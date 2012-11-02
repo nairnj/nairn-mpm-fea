@@ -13,12 +13,14 @@
 #include "Custom_Tasks/CalcJKTask.hpp"
 #include "Custom_Tasks/ReverseLoad.hpp"
 #include "Custom_Tasks/VTKArchive.hpp"
+#include "Custom_Tasks/HistoryArchive.hpp"
 #include "Custom_Tasks/AdjustTimeStepTask.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Global_Quantities/GlobalQuantity.hpp"
 #include "MPM_Classes/MatPoint2D.hpp"
+#include "MPM_Classes/MatPointAS.hpp"					// +AS
 #include "MPM_Classes/MatPoint3D.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
@@ -662,6 +664,10 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		if(fmobj->IsThreeD())
 		{	mpCtrl->AddMaterialPoint(new MatPoint3D(elemNum,matl,angle),pConcentration,pTempInitial);
 		}
+		else if(fmobj->IsAxisymmetric())
+		{	// thickness set to x position in pt command by SetPtOrVel() when it calls SetOrigin()
+			mpCtrl->AddMaterialPoint(new MatPointAS(elemNum,matl,angle,1.),pConcentration,pTempInitial);
+		}
 		else
 		{	mpCtrl->AddMaterialPoint(new MatPoint2D(elemNum,matl,angle,thick),pConcentration,pTempInitial);
 		}
@@ -954,6 +960,10 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
                 {   nextTask=(CustomTask *)(new VTKArchive());
                     if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
 					archiver->SetDoingVTKArchive(TRUE);
+                }
+				else if(strcmp(value,"HistoryArchive")==0)
+                {   nextTask=(CustomTask *)(new HistoryArchive());
+                    if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
                 }
 				else if(strcmp(value,"AdjustTimeStep")==0)
                 {   nextTask=(CustomTask *)(new AdjustTimeStepTask());

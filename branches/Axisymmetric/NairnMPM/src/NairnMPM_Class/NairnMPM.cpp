@@ -397,7 +397,8 @@ void NairnMPM::PreliminaryCalcs(void)
 			dcell = (minSize>0.) ? minSize : pow(volume,1./3.) ;
 		}
 		else
-		{	area=theElements[mpm[p]->ElemID()]->GetArea()/100.;	// in cm^2
+		{	// when axisymmetric, thickness is particle radial position to mp = rho*Ap*Rp
+			area=theElements[mpm[p]->ElemID()]->GetArea()/100.;	// in cm^2
 			volume=mpm[p]->thickness()*area/10.;				// in cm^2
 			dcell = (minSize>0.) ? minSize : sqrt(area) ;
 		}

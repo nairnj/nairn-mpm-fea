@@ -17,21 +17,9 @@
 
 <h1>Scheduling Custom Tasks</h1>
 
-<p>NairnMPM supports custom tasks that are performed at the end of each time step. The tasks can range from simple calculations to iterations over all material points and nodes. Some built-in operations (such as <a href="mpmheader.html#propagate">crack propagation</a>, <a href="mpmheader.html#diffusion">diffusion</a>, and <a href="thermal.html">conduction</a>) are handled by custom tasks and are automatically scheduled by other commands. Alternatively custom tasks can be written by users working with NairnMPM source code. These user-defined custom tasks can be schedule when needed. This topic explains how to schedule user-defined custom tasks and documents the currently available custom tasks.</p>
+<p>NairnMPM supports custom tasks that are performed at the end of each time step. The tasks can range from simple calculations to iterations over all material points and nodes. Some built-in operations (such as <a href="mpmheader.html#propagate">crack propagation</a>, <a href="mpmheader.html#diffusion">diffusion</a>, and <a href="thermal.html">conduction</a>) are handled by custom tasks and are automatically scheduled by other commands. Alternatively custom tasks can be written by users working with NairnMPM source code and then scheduled when needed.</p>
 
-<ul>
-
-<li><a href="#schedule">Scheduling Custom Tasks</a></li>
-
-<li><a href="#VTKArchive">VTKArchive Custom Task</a></li>
-
-<li><a href="#ReverseLoad">ReverseLoad Custom Task</a></li>
-
-</ul>
-
-<h2><a name="schedule"></a>Scheduling Custom Tasks</h2>
-
-<p>The format for scheduling any custom task is as follows:</p>
+<p>The format for scheduling any available custom task is as follows:</p>
 
 <pre>
 &lt;CustomTasks&gt;
@@ -47,8 +35,22 @@
 &lt;/CustomTasks&gt;
 </pre>
 
-<p>All custom tasks are scheduled within a single <code>&lt;CustomTasks&gt;</code> block. A specific task is scheduled with a  <code>&lt;Schedule&gt;</code> command where the name attribute specifies the task name. Any task may depend on parameters which can be set with a series of <code>&lt;Parameter&gt;</code> commands. The name attribute gives the name of the parameter and the value is the setting for that parameter. The current custom tasks are listed below.
+<p>All custom tasks are scheduled within a single <code>&lt;CustomTasks&gt;</code> block. A specific task is scheduled with a  <code>&lt;Schedule&gt;</code> command where the name attribute specifies the task name. Any task may depend on parameters which can be set with a series of <code>&lt;Parameter&gt;</code> commands. The name attribute gives the name of the parameter and the value is the setting for that parameter. If the named parameter does not have a value, the value text can be omitted (<i>e.g.</i>, use just <code>&lt;Parameter name='NoValueNeeded'/&gt;</code>)
 </p>
+
+<p>The currently available (and documented) custom tasks are:</p>
+
+<ul>
+
+<li><a href="#VTKArchive">VTKArchive Custom Task</a></li>
+
+<li><a href="#HistoryArchive">HistoryArchive Custom Task</a></li>
+
+<li><a href="#ReverseLoad">ReverseLoad Custom Task</a></li>
+
+<li><a href="#AdjustTimeStep">AdjustTimeStep Custom Task</a></li>
+
+</ul>
 
 <h2><a name="VTKArchive"></a>VTKArchive</h2>
 
@@ -115,11 +117,11 @@
 <dd>Nodal force on the grid for <a href="mpmheader.html#mmmode"><code>MultiMaterialMode</code></a> simulations when they include <a href="definematl.html#rigid">rigid materials</a> that have <code>SetDirection</code>=8. It is force of the rigid material on the object in Newtons.</dd>
 
 <dt>archiveTime</dt>
-<dd>Enter the time interval (in ms) between saving of <code>VTK</code> archives. If this parameter is omitted, the VTK archive files are written on the same steps as the particle archives (see <a href="mpmheader.html#atime">ArchiveTime</a> and <a href="mpmheader.html#fatime">FirstArchiveTime</a> commands). The one exception is that no VTK archive is written on the first step.
+<dd>Enter the time interval (in ms) between saving of <code>VTK</code> archives. If this parameter is omitted, the VTK archive files are written on the same steps as the particle archives (see <a href="mpmheader.html#atime">ArchiveTime</a> and <a href="mpmheader.html#fatime">FirstArchiveTime</a> commands). The one exception is that no VTK archive is written <i>before</i> the first step.
 </dd>
 
 <dt>firstArchiveTime</dt>
-<dd>Enter the time to save the first results (in ms). After this time is reached, subsequent archives will be spaced by the entered <code>archiveTime</code>. This parameter is ignored unless the <code>archiveTime</code> parameter is set as well. To get a VTK archive on the first step, enter <code>firstArchiveTime</code> of zero.
+<dd>Enter the time to save the first results (in ms). After this time is reached, subsequent archives will be spaced by the entered <code>archiveTime</code>. This parameter is ignored unless the <code>archiveTime</code> parameter is set as well. To get a VTK archive <i>after</i> the first step, enter <code>firstArchiveTime</code> of zero.
 </dd>
 
 </dl>
@@ -130,6 +132,30 @@
    ( zx   zy   zz ) = ( 6  7  8 )
 </pre>
 
+
+<h2><a name="HistoryArchive"></a>HistoryArchive</h2>
+
+<p>The current <a href="mpmheader.html#mpmarchive"><code>MPMArchiveOrder</code> (byte 14)</a> options can only archive a combination of history variables 1 through 4 for each particle. This custom task provides a method to archive more history variables and also provides an alternate format for archiving history variables 1 through 4.</p>
+
+<p>When this task is activated, the history data on each particle will be written to tab-delimited text files in the output results folder. The name of the file will include the <a href="mpmheader.html#aroot">current root name</a> and will be followed by &quot;<code>_History_#.txt</code>&quot;, where &quot;<code>#</code>&quot; is the step number. The file will begin with short header giving step number, step time, and column labels. Each row that follows will have data for one particle. It will include particle number, current particle position (in mm), and each requested history variable.</p>
+
+<p>You select which history variables to archive, and their order, using a series of <code>Parameter</code> commands:
+</p>
+<pre>   &lt;Parameter name='2'/&gt;
+</pre>
+<p>where the name is the history variable number. In addition, you can control the timing for output of particle history data files using the following two timing parameters:</p>
+
+<dl>
+
+<dt>archiveTime</dt>
+<dd>Enter the time interval (in ms) between saving of history archives. If this parameter is omitted, the history archive files are written on the same steps as the particle archives (see <a href="mpmheader.html#atime">ArchiveTime</a> and <a href="mpmheader.html#fatime">FirstArchiveTime</a> commands). The one exception is that no history archive is written <i>before</i> the first step.
+</dd>
+
+<dt>firstArchiveTime</dt>
+<dd>Enter the time to save the first history results (in ms). After this time is reached, subsequent archives will be spaced by the entered <code>archiveTime</code>. This parameter is ignored unless the <code>archiveTime</code> parameter is set as well. To get a history archive <i>after</i> the first step, enter <code>firstArchiveTime</code> of zero.
+</dd>
+
+</dl>
 
 <h2><a name="ReverseLoad"></a>ReverseLoad</h2>
 
@@ -158,6 +184,21 @@
 <dd>This parameter gives the crack number to watch. When that crack reaches the specificed maximum length, the task will take effect. Alternatively, <code>crackNumber</code> can be zero which causes the task to take effect when any crack reaches the specified maximum length. The default value is 0 or to watch all cracks.</dd>
 
 </dl>
+
+<h2><a name="AdjustTimeStep"></a>AdjustTimeStep</h2>
+
+<p>For convergence of explicit, dynamic calculations, like NairnMPM, the time step must be less then the time it takes a stress wave to pass across the smallest element size. For safety, the time step is usually calculated to be some fraction of this time as specified by the input <a href="mpmheader.html#timefactor"><code>TimeFactor</code></a>. But, for some material types, the wave speed might change during the calculations thereby necessitating an adjustment in the time step to retain convergence. This tasks allows you to periodically adjust the time step. Its only parameter is:</p>
+
+<dl>
+
+<dt>adjustTime</dt>
+<dd>Enter the time interval for checking the time step and adjusting it if needed (in ms). This parameter is optional; if it is omitted, the time step adjustment is done each time particle data are archived (see <a href="mpmheader.html#atime">ArchiveTime</a> and <a href="mpmheader.html#fatime">FirstArchiveTime</a> commands).</dd>
+
+</dl>
+
+<p>This command only has an effect if some particles are using <a href="definematl.html">material classes</a> that respond to <code>CurrentWaveSpeed()</code> and provide a wave speed that changes depending on current particle state. Currently no material supports this option, but it is planned for the future or can be used now by those developing their own materials.</p>
+
+
 
 <p class="links">
 <a href="../index.html">Home</a> &rarr;
