@@ -87,6 +87,11 @@ void NewMaterial::PrintMechanicalProperties(void)
 //	return MaterialBase::ValidateForUse(np);
 //}
 
+// If needed, a material can initialize particle state
+// For example, ideal gas initializes to base line pressure
+//void NewMaterial::SetInitialParticleState(MPMBase *mptr,int np) {}
+
+
 #pragma mark NewMaterial:HistoryVariables
 
 // Initialize history data on a particle (if has any)

@@ -33,6 +33,7 @@ class NewMaterial : public MaterialBase
 		virtual void PrintMechanicalProperties(void);
 		//virtual void PrintTransportProperties(void);
 		//virtual bool ValidateForUse(int);
+        //virtual void SetInitialParticleState(MPMBase *,int);
 	
 		// History-dependent properties
 		//virtual char *MaterialData(void);
