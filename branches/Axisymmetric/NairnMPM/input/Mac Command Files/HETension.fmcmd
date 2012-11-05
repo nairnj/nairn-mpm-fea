@@ -102,6 +102,8 @@ TimeStep 1000,(1+#hold+#unload)*#time,#factor
 MaximumTime (1+#hold+#unload)*#time
 ArchiveTime (1+#hold+#unload)*#time/50
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
+! plastic strain is Left Cauchy Green Strain, history 1 is J or volumetric strain
+ToArchive plasticstrain,history1
 Comment "Load time = "&#time&" ms"
 Comment "Hold time = "&#hold&" ms"
 
