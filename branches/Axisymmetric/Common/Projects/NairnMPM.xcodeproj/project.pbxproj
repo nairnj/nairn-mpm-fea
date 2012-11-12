@@ -17,8 +17,6 @@
 		671514D91547035D005F33A9 /* PolygonController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 671514D61547035D005F33A9 /* PolygonController.cpp */; };
 		671514DA1547035D005F33A9 /* PolygonController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 671514D71547035D005F33A9 /* PolygonController.hpp */; };
 		671514DB1547035D005F33A9 /* PolygonController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 671514D71547035D005F33A9 /* PolygonController.hpp */; };
-		673B31D01636F6CC00FB27DA /* MatPointAS.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 673B31CF1636F6CC00FB27DA /* MatPointAS.cpp */; };
-		673B31D21636F6E400FB27DA /* MatPointAS.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 673B31D11636F6E400FB27DA /* MatPointAS.hpp */; };
 		67B213B611F90404007523EE /* CommonTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B213B411F90404007523EE /* CommonTask.hpp */; };
 		67B213B711F90404007523EE /* CommonTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B213B511F90404007523EE /* CommonTask.cpp */; };
 		67B213B811F90404007523EE /* CommonTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B213B411F90404007523EE /* CommonTask.hpp */; };
@@ -45,6 +43,8 @@
 		67B215F111F96EC7007523EE /* ResetElementsTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B215EF11F96EC7007523EE /* ResetElementsTask.cpp */; };
 		67BFA35511FB81B70083F95B /* InitializationTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67BFA35311FB81B70083F95B /* InitializationTask.hpp */; };
 		67BFA35611FB81B70083F95B /* InitializationTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67BFA35411FB81B70083F95B /* InitializationTask.cpp */; };
+		67C3E42E16482C7500AD5339 /* MatPointAS.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 673B31CF1636F6CC00FB27DA /* MatPointAS.cpp */; };
+		67C3E42F16482C7D00AD5339 /* MatPointAS.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 673B31D11636F6E400FB27DA /* MatPointAS.hpp */; };
 		67E191331602CB2700B34CA9 /* MatPtTractionBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */; };
 		67E191351602CB3F00B34CA9 /* MatPtTractionBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67E191341602CB3F00B34CA9 /* MatPtTractionBC.hpp */; };
 		A700094B0F86B75E00FD76C7 /* MatVelocityField.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A70009490F86B75E00FD76C7 /* MatVelocityField.hpp */; };
@@ -1490,6 +1490,7 @@
 				67E191351602CB3F00B34CA9 /* MatPtTractionBC.hpp in Headers */,
 				A734D4FC1610D8DA00B9A4B7 /* AdjustTimeStepTask.hpp in Headers */,
 				6700560A163AFC3600FFE145 /* HistoryArchive.hpp in Headers */,
+				67C3E42F16482C7D00AD5339 /* MatPointAS.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1800,6 +1801,7 @@
 				67E191331602CB2700B34CA9 /* MatPtTractionBC.cpp in Sources */,
 				A734D4FA1610D8C700B9A4B7 /* AdjustTimeStepTask.cpp in Sources */,
 				6700560C163AFC6B00FFE145 /* HistoryArchive.cpp in Sources */,
+				67C3E42E16482C7500AD5339 /* MatPointAS.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

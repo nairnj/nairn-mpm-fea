@@ -27,7 +27,7 @@ MatPointAS::MatPointAS(int inElemNum,int theMatl,double angin,double thickin) : 
 
 #pragma mark MatPoint2D::Accessors
 
-// set original position (2D) (in mm)
+// set original position (2D) (in mm) and here set thick to be radial position
 void MatPointAS::SetOrigin(Vector *pt)
 {	origpos.x=pt->x;
     origpos.y=pt->y;
