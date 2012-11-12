@@ -78,6 +78,61 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 	}
 }
 
+/* For Axismmetric MPM analysis, take increments in strain and calculate new
+    Particle: strains, rotation strain, stresses, strain energy, angle
+    dvij are (gradient rates X time increment) to give deformation gradient change
+    Assumes linear elastic, uses hypoelastic correction
+    Here x -> r, y -> z, and z -> theta directions
+*/
+void Elastic::MPMConstLaw(MPMBase *mptr,double dvrr,double dvzz,double dvrz,double dvzr,double dvtt,
+                          double delTime,int np)
+{
+	// Add to total strain
+	Tensor *ep=mptr->GetStrainTensor();
+    ep->xx += dvrr;
+    ep->yy += dvzz;
+    double dgam = dvrz+dvzr;
+    ep->xy += dgam;
+	double dwrotrz = dvzr-dvrz;
+	
+    // residual strains (thermal and moisture)
+	double errr = me0[1]*ConductionTask::dTemperature;
+	double erzz = me0[2]*ConductionTask::dTemperature;
+	double errz = me0[3]*ConductionTask::dTemperature;
+	double ertt = CTE3*ConductionTask::dTemperature;
+	if(DiffusionTask::active)
+	{	errr += mc0[1]*DiffusionTask::dConcentration;
+		erzz += mc0[2]*DiffusionTask::dConcentration;
+		errz += mc0[3]*DiffusionTask::dConcentration;
+		ertt += CME3*DiffusionTask::dConcentration;
+	}
+	
+    // thermal strain and temperature change (if conduction OR thermal ramp active)
+    dvrr -= errr;
+    dvzz -= erzz;
+	dgam -= errz;
+    dvtt -= ertt;
+    
+    // save initial stresses
+	Tensor *sp=mptr->GetStressTensor();
+    Tensor st0=*sp;
+	
+    /* ---------------------------------------------------
+        find stress (Units N/m^2  cm^3/g)
+    */
+    double c1 = mdm[1][1]*dvrr + mdm[1][2]*dvzz + mdm[1][3]*dgam + mdm[4][1]*dvtt;
+    double c2 = mdm[1][2]*dvrr + mdm[2][2]*dvzz + mdm[2][3]*dgam + mdm[4][2]*dvtt;
+    double c3 = mdm[1][3]*dvrr + mdm[2][3]*dvzz + mdm[3][3]*dgam + mdm[4][3]*dvtt;
+	Hypo2DCalculations(mptr,-dwrotrz,c1,c2,c3);
+    
+	// hoop stress
+    sp->zz += mdm[4][1]*dvrr + mdm[4][2]*dvzz + mdm[4][3]*dgam + mdm[4][4]*dvtt;
+	
+    // strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule)
+    mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dvrr + (st0.yy+sp->yy)*dvzz
+                               + (st0.xy+sp->xy)*dgam) + (st0.zz+sp->zz)*dvtt);
+}
+
 /* For 3D MPM analysis, take increments in strain and calculate new
     Particle: strains, rotation strain, stresses, strain energy, angle
     dvij are (gradient rates X time increment) to give deformation gradient change

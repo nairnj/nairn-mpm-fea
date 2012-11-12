@@ -90,6 +90,7 @@ class MaterialBase : public LinkedObject
 		virtual double GetHeatCapacity(MPMBase *);
 		virtual double GetHeatCapacityVol(MPMBase *);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int) = 0;
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int) = 0;
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int) = 0;
 #endif
 

@@ -287,6 +287,16 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy
     mptr->AddStrainEnergy(totalEnergy);
 }
 
+/* For Axismmetric MPM analysis, take increments in strain and calculate new
+    Particle: strains, rotation strain, stresses, strain energy, angle
+    dvij are (gradient rates X time increment) to give deformation gradient change
+    Assumes linear elastic, uses hypoelastic correction
+*/
+void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvrr,double dvzz,double dvrz,double dvzr,double dvtt,
+                          double delTime,int np)
+{
+}
+
 /* For 3D MPM analysis, take increments in strain and calculate new
     Particle: nothing yet
     dvij are (gradient rates X time increment) to give deformation gradient change

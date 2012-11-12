@@ -9,6 +9,7 @@
 #include "Elements/ElementBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"          // +AS
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/MPMTermination.hpp"
 #include "Materials/MaterialBase.hpp"
@@ -168,13 +169,15 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipo
 	Load node numbers into nds[1]...
 	Load shape functions into fn[1]...
 	Load shape function derviatives into xDeriv[1]..., yDeriv[1]..., zDeriv[1]...
+       For axisymmetric load zDeriv with shape function / particle radial position
+       Input zDeriv must not be NULL
 	pos and xipos not used or set in CPDI
 	Input: pointer to material point dimensionless position, which is changed here
 	See also GetShapeGradients() if need to change
  NOTE: This is called in MassAndMomentumTask at start of time step as replacement for GetShapeFunctions()
 	when in multimaterial mode.
-		Subsequent needs for shape function and gradients call GetShapeGradieents() method without pos and
-    therefore need the xipos calculated in this first call (or need CPDI calculations)
+    Subsequent needs for shape function and gradients call GetShapeGradieents() method without pos and
+        therefore need the xipos calculated in this first call (or need CPDI calculations)
 */
 void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,Vector *pos,Vector *xipos,
 									double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr)
@@ -187,9 +190,7 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
             
             // special case for regular mesh
             if(mpmgrid.GetCartesian()>0)
-            {	double *zptr = zDeriv==NULL ? NULL : &zDeriv[1];
-                ShapeFunction(xipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],zptr);
-            }
+                ShapeFunction(xipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
             else
             {	// Load element coordinates
                 Vector ce[MaxElNd];
@@ -234,7 +235,7 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
 			Vector rpos = mpmptr->pos;
 			Vector rxipos;
 			GetXiPos(&rpos,&rxipos);
-			ShapeFunction(&rxipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],NULL);
+			ShapeFunction(&rxipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
 			
 			cout << "   Regular Shape and Gradients: " << endl;
 			int j;
@@ -253,6 +254,8 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
     Load node numbers into nds[1]...
     Load shape functions into fn[1]...
     Load shape function derviatives into xDeriv[1]..., yDeriv[1]..., zDeriv[1]...
+        For axisymmetric load zDeriv with shape function / particle radial position
+        Input zDeriv must not be NULL
     Input: pointer to material point dimensionless position
     See all GetShapeFunctionsAndGradients() if need to change
    NOTE: This is called at various places in the time step when gradients are needed. It should
@@ -269,9 +272,7 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
             
             // special case for regular mesh
             if(mpmgrid.GetCartesian()>0)
-            {	double *zptr = zDeriv==NULL ? NULL : &zDeriv[1];
-                ShapeFunction(xipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],zptr);
-            }
+                ShapeFunction(xipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
             else
             {	// Load element coordinates
                 Vector ce[MaxElNd];
@@ -314,7 +315,7 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
              Vector rpos = mpmptr->pos;
              Vector rxipos;
              GetXiPos(&rpos,&rxipos);
-             ShapeFunction(&rxipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],NULL);
+             ShapeFunction(&rxipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
              
              cout << "   Recall Regular Shape and Gradients: " << endl;
              int j;

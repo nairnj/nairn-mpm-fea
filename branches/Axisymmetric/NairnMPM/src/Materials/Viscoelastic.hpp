@@ -40,6 +40,7 @@ class Viscoelastic : public MaterialBase
     
 		// methods
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
 		
 		// accessors

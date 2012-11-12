@@ -44,6 +44,7 @@ class RigidMaterial : public MaterialBase
 		
 		// define abstract methods even though not used
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
 		
 		// RigidMaterial only methods

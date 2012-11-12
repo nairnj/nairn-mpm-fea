@@ -92,6 +92,7 @@ class ElementBase : public LinkedObject
 		virtual double GetThickness(void);
         virtual void SetThickness(double);
 		virtual void GetXYZCentroid(Vector *);
+        virtual double GetCenterX(void);
 		virtual double GetDeltaX(void);
 		virtual double GetDeltaY(void);
 		virtual double GetDeltaZ(void);

@@ -32,6 +32,7 @@ class TractionLaw : public MaterialBase
 		
 		// no need for constitutive laws
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
   		
         // prototypes for traction law methods (subclasses must override)

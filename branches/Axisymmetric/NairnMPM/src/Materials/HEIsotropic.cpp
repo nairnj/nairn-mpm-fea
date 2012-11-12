@@ -102,6 +102,15 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
 {
 }
 
+/* For Axismmetric MPM analysis, take increments in strain and calculate new
+    Particle: strains, rotation strain, stresses, strain energy, angle
+    dvij are (gradient rates X time increment) to give deformation gradient change
+ */
+void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvrr,double dvzz,double dvrz,double dvzr,double dvtt,
+                                double delTime,int np)
+{
+}
+
 /* Apply 3D constitutive law updating all needed terms for material type. Required updates are:
 		stress, strain, plastic strain (all components) (stress should be a specific stress)
 		rotation strain

@@ -24,7 +24,9 @@ class MatPointAS : public MatPoint2D
 		MatPointAS(int,int,double,double);
 	
 		// methods
-		virtual void SetOrigin(Vector *);
+        virtual void UpdateStrain(double,int,int);
+        virtual void Fint(Vector &,double,double,double);
+        virtual void SetOrigin(Vector *);
 };
 
 #endif

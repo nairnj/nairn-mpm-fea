@@ -10,6 +10,7 @@
 #include "Nodes/NodalPoint.hpp"
 #ifdef MPM_CODE
 	#include "NairnMPM_Class/MeshInfo.hpp"
+    #include "NairnMPM_Class/NairnMPM.hpp"      // +AS
 #endif
 
 // globals for node locations
@@ -176,11 +177,18 @@ void FourNodeIsoparam::ExtrapolateGaussStressToNodes(double sgp[][5])
 
 // get shape functions and optionally derivatives wrt x and y, but derivatives only work
 // if it is a regular array. Shape functions are general
+// For axisymmetric MPM, make sure zDeriv is not NULL and load with shape function/rp
 void FourNodeIsoparam::ShapeFunction(Vector *xi,int getDeriv,double *sfxn,
 										double *xDeriv,double *yDeriv,double *zDeriv)
 {
-    double temp1,temp2;
+    double temp1,temp2,dx,dy,xp;
 	int i;
+    
+    if(getDeriv)
+    {   dx = GetDeltaX();
+        dy = GetDeltaY();
+        xp = GetCenterX() + 0.5*xi->x*GetDeltaX();
+    }
     
     // just shape function
     for(i=0;i<4;i++)
@@ -188,8 +196,9 @@ void FourNodeIsoparam::ShapeFunction(Vector *xi,int getDeriv,double *sfxn,
         temp2=(1.+eti[i]*xi->y);
         sfxn[i]=0.25*temp1*temp2;
 		if(getDeriv)
-		{	xDeriv[i]=0.5*xii[i]*temp2/GetDeltaX();
-			yDeriv[i]=0.5*eti[i]*temp1/GetDeltaY();
+		{	xDeriv[i]=0.5*xii[i]*temp2/dx;
+			yDeriv[i]=0.5*eti[i]*temp1/dy;
+            if(fmobj->IsAxisymmetric()) zDeriv[i] = sfxn[i]/xp;
 		}
     }
 }

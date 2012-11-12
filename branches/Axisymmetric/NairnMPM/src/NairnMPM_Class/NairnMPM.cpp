@@ -521,6 +521,8 @@ void NairnMPM::PreliminaryCalcs(void)
 // Can insert code here to black runs with invalid options
 void NairnMPM::ValidateOptions(void)
 {	
+    // GIMP and CPDI require regular mesh and 4 (2D) or 8 (3D) points per element
+    //  and qCPDI not allowed in 3D
 	if(ElementBase::useGimp != POINT_GIMP)
     {   // using a GIMP method
 		if(!mpmgrid.CanDoGIMP())
@@ -535,16 +537,19 @@ void NairnMPM::ValidateOptions(void)
         }
 	}
     else
-    {   // in Classic MPM or POINT_GIMP
+    {   // in Classic MPM or POINT_GIMP, cannot use traction BCs
         if(firstTractionPt!=NULL)
 			throw CommonException("Traction boundary conditions require use of a GIMP MPM method.","NairnMPM::ValidateOptions");
     }
-            
+    
+    // Imperfect interface requires cartensian grid
 	if(contact.hasImperfectInterface)
 	{	if(mpmgrid.GetCartesian()<=0)
 			throw CommonException("Imperfect interfaces require a cartesian mesh","NairnMPM::ValidateOptions");
 	}
 	
+    // 3D requires orthogonal grid and 1 or 8 particles per element
+    // 2D requires 1 or 4 particles per element
 	if(IsThreeD())
 	{	if(mpmgrid.GetCartesian()!=CUBIC_GRID && mpmgrid.GetCartesian()!=ORTHOGONAL_GRID)
 			throw CommonException("3D calculations require an orthogonal grid","NairnMPM::ValidateOptions");
@@ -555,13 +560,27 @@ void NairnMPM::ValidateOptions(void)
 	{	if(ptsPerElement!=1 && ptsPerElement!=4)
 			throw CommonException("2D analysis requires 1 or 4 particles per cell","NairnMPM::ValidateOptions");
 	}
+    
+    // Axisymmetric requirements
+    if(IsAxisymmetric())
+    {   if(ElementBase::useGimp == POINT_GIMP)
+        {   // require cartesian grid
+            if(mpmgrid.GetCartesian()<=0)
+            {   throw CommonException("Axisymmetric with Classic MPM requires anorthogonal grid","NairnMPM::ValidateOptions");
+            }
+        }
+        else
+        {   throw CommonException("Axisymmetric is not yet available for GIMP or CPDI shape functions","NairnMPM::ValidateOptions");
+        }
+    }
 	
+    // Multimaterial mode requires a regular grid
 	if(multiMaterialMode)
 	{	if(!mpmgrid.CanDoGIMP())
 			throw CommonException("Multimaterial mode is not allowed unless using a generated regular mesh","NairnMPM::ValidateOptions");
 	}
 	
-	// check each material type (but only if it is used)
+	// check each material type (but only if it is used it at least one material point)
 	int i;
 	for(i=0;i<nmat;i++)
 	{	if(theMaterials[i]->GetField()>=0)

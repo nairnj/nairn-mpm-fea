@@ -110,6 +110,7 @@ void ElementBase::GetXYZCentroid(Vector *center)
 }
 
 // depth - 3D element return z extent
+double ElementBase::GetCenterX(void) { return 0.5*(xmax+xmin); }
 double ElementBase::GetDeltaX(void) { return xmax-xmin; }
 double ElementBase::GetDeltaY(void) { return ymax-ymin; }
 double ElementBase::GetDeltaZ(void) { return GetThickness(); }

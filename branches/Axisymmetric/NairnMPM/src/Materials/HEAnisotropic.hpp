@@ -30,6 +30,7 @@ class HEAnisotropic : public HyperElastic
 		
 		// step methods
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
 				
 		// accessors
