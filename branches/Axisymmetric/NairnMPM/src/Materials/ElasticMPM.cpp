@@ -94,7 +94,7 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvrr,double dvzz,double dvrz,doub
     double dgam = dvrz+dvzr;
     ep->xy += dgam;
 	double dwrotrz = dvzr-dvrz;
-	
+    
     // residual strains (thermal and moisture)
 	double errr = me0[1]*ConductionTask::dTemperature;
 	double erzz = me0[2]*ConductionTask::dTemperature;
