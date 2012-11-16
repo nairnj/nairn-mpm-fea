@@ -561,7 +561,7 @@ void NairnMPM::ValidateOptions(void)
 			throw CommonException("2D analysis requires 1 or 4 particles per cell","NairnMPM::ValidateOptions");
 	}
     
-    // Axisymmetric requirements
+    // Axisymmetric requirements and adjustments
     if(IsAxisymmetric())
     {   if(ElementBase::useGimp == POINT_GIMP)
         {   // require cartesian grid
@@ -569,9 +569,13 @@ void NairnMPM::ValidateOptions(void)
             {   throw CommonException("Axisymmetric with Classic MPM requires anorthogonal grid","NairnMPM::ValidateOptions");
             }
         }
-        else
-        {   throw CommonException("Axisymmetric is not yet available for GIMP or CPDI shape functions","NairnMPM::ValidateOptions");
+        else if(ElementBase::useGimp == UNIFORM_GIMP)
+		{	ElementBase::useGimp = UNIFORM_GIMP_AS;
+			ElementBase::analysisGimp = UNIFORM_GIMP_AS;
         }
+		else
+		{   throw CommonException("Axisymmetric is not yet available for GIMP or CPDI shape functions","NairnMPM::ValidateOptions");
+		}
     }
 	
     // Multimaterial mode requires a regular grid

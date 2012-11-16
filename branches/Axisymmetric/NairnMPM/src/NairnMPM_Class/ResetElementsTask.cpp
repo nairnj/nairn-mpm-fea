@@ -54,7 +54,8 @@ void ResetElementsTask::Execute(void)
 }
 
 // Find element for particle. Return FALSE if left
-// the grid or for GIMP moved to an edge element
+//		the grid or for GIMP moved to an edge element
+//		or for axisymmetric if as R<0
 // Also used during initialization to set particle's initial element
 int ResetElementsTask::ResetElement(MPMBase *mpt)
 {
@@ -68,6 +69,7 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
 	{	j=elemNeighbors[i]-1;
     	if(theElements[j]->PtInElement(mpt->pos))
 		{	if(theElements[j]->OnTheEdge()) return FALSE;
+			if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return FALSE;
 			mpt->ChangeElemID(j);
 			return TRUE;
 		}
@@ -78,6 +80,7 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
     for(i=0;i<nelems;i++)
     {	if(theElements[i]->PtInElement(mpt->pos))
 		{	if(theElements[i]->OnTheEdge()) return FALSE;
+			if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return FALSE;
 			mpt->ChangeElemID(i);
 			return TRUE;
 		}

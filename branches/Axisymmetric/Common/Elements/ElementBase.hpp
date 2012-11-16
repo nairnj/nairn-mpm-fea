@@ -85,6 +85,7 @@ class ElementBase : public LinkedObject
 		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *) = 0;
 		virtual void GetGimpNodes(int *,int *,int *,Vector *);
 		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *);
+		virtual void GimpShapeFunctionAS(Vector *,int,int *,int,double *,double *,double *,double *);
 #endif
 									
         // prototypes of methods defined in ElementBase class (but may override)

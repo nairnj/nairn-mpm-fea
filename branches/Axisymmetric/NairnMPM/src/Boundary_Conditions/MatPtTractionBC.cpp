@@ -55,19 +55,22 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
 	// get corners and direction from material point
 	int cElem[4],numDnds;
 	Vector corners[4],tscaled;
-	mpmptr->GetTractionInfo(face,direction,cElem,corners,&tscaled,&numDnds);
+	double ratio = mpmptr->GetTractionInfo(face,direction,cElem,corners,&tscaled,&numDnds);
 	
-	// loop over corner finding all nodes and add to fext
+	// loop over corners finding all nodes and add to fext
     int numnds,nds[8*numDnds+1],ncnds=0;
     double fn[8*numDnds+1],cnodes[8*numDnds],twt[8*numDnds];              // allows 3D which can have 8 nodes each
     for(i=0;i<numDnds;i++)
 	{	// get straight grid shape functions
 		theElements[cElem[i]]->GridShapeFunctions(&numnds,nds,&corners[i],fn);
 		
+		// in case axisymmetric, scale weight for second node
+		double scale = (i==1) ? ratio : 1.;
+		
 		// loop over shape grid shape functions and collect in arrays
 		for(j=1;j<=numnds;j++)
 		{   cnodes[ncnds] = nds[j];
-			twt[ncnds] = fn[j];
+			twt[ncnds] = fn[j]*scale;
 			ncnds++;
 		}
 	}

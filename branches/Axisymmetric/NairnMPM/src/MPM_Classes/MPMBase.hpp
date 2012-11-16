@@ -31,7 +31,6 @@ class MPMBase : public LinkedObject
 		Vector pos,vel;
 		double pTemperature,pPreviousTemperature;
 		double pConcentration,pPreviousConcentration;	// conc potential (0 to 1) (archived * concSaturation)
-		double volume;
 		char vfld[MaxShapeNds];
 		TemperatureField *pTemp;
 		DiffusionField *pDiffusion;
@@ -55,7 +54,6 @@ class MPMBase : public LinkedObject
         virtual void SetOrigin(Vector *) = 0;
         virtual void SetPosition(Vector *) = 0;
         virtual void SetVelocity(Vector *) = 0;
-		virtual void SetDilatedVolume(void) = 0;
 		virtual void UpdateStrain(double,int,int) = 0;
 		virtual void Fint(Vector &,double,double,double) = 0;
 		virtual void Fext(Vector &,double) = 0;
@@ -72,10 +70,12 @@ class MPMBase : public LinkedObject
         virtual void GetDeformationGradient(double F[][3]) = 0;
         virtual double GetRelativeVolume(void) = 0;
 		virtual void GetCPDINodesAndWeights(int) = 0;
-		virtual void GetTractionInfo(int,int,int *,Vector *,Vector *,int *) = 0;
+		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *) = 0;
 
        
 		// base only methods (make virtual if need to override)
+		void SetDilatedVolume(void);
+		double GetVolume();
 		int MatID(void);
 		int ArchiveMatID(void);
 		int ElemID(void);
@@ -151,6 +151,7 @@ class MPMBase : public LinkedObject
 		Tensor ep;					// total strain tensor (init 0)
 		Tensor eplast;				// plastic strain tensor (init 0)
 		TensorAntisym wrot;			// rotation strain tensor (init 0)
+		double volume;
 		double plastEnergy;			// total plastic energy
 		double dispEnergy;			// dissipated energy in current step
 		double strainEnergy;		// total strain energy

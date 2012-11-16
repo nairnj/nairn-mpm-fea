@@ -19,6 +19,8 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
+#include "Exceptions/MPMTermination.hpp"
 
 #pragma mark MatPointAS::Constructors and Destructors
 
@@ -121,12 +123,110 @@ void MatPointAS::SetOrigin(Vector *pt)
 	thick = pt->x;
 }
 
-
 // return internal force as -mp sigma.deriv * 1000. which converts to g mm/sec^2 or micro N
 void MatPointAS::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
 {	fout.x=-mp*(sp.xx*xDeriv+sp.xy*yDeriv+sp.zz*zDeriv)*1000.;
 	fout.y=-mp*(sp.xy*xDeriv+sp.yy*yDeriv)*1000.;
 	fout.z=0.;
+}
+
+// To support traction boundary conditions, find the deformed edge, natural coordinates of
+// the corners along the edge, elements for those edges, and a normal vector in direction
+// of the traction
+// return ratio of second nodal weight to first one
+double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
+{
+    *numDnds = 2;
+    double faceWt,ratio=1.;
+    
+    // always UNIFORM_GIMP_AS
+	
+	// initial vectors only
+	double r1x = mpmgrid.gridx*0.25;
+	double r2y = mpmgrid.gridy*0.25;
+	double rp = pos.x;
+        
+	Vector c1,c2;
+	switch(face)
+	{	case 1:
+			// lower edge
+			c1.x = pos.x-r1x;
+			c2.x = pos.x+r1x;
+			c1.y = c2.y = pos.y-r2y;
+			if(c1.x < 0)
+			{	c1.x = 0.;
+				r1x = 0.5*c2.x;
+				rp = r1x;
+			}
+			faceWt = r1x*(rp + r1x/3.);				// node 3, node 4 should be minus
+			ratio = r1x*(rp - r1x/3.)/faceWt;		// find the ratio
+			break;
+			
+		case 2:
+			// right edge
+			c1.x = c2.x = pos.x+r1x;
+			c1.y = pos.y-r2y;
+			c2.y = pos.y+r2y;
+			faceWt = r2y*c1.x;
+			break;
+			
+		case 3:
+			// top edge
+			c1.x = pos.x+r1x;
+			c2.x = pos.x-r1x;
+			c1.y = c2.y = pos.y+r2y;
+			if(c2.x<0.)
+			{	c2.x = 0.;
+				r1x = 0.5*c1.x;
+				rp = r1x;
+			}
+			faceWt = r1x*(rp - r1x/3.);				// node 1, node 2 should be plus
+			ratio = r1x*(rp + r1x/3.)/faceWt;		// find the ratio
+			break;
+			
+		default:
+			// left edge
+			c1.x = c2.x = pos.x-r1x;
+			c1.y = pos.y+r2y;
+			c2.y = pos.y-r2y;
+			if(c1.x<0.)
+			{	c1.x = c2.x= 0.;
+				faceWt = 0.;
+			}
+			else
+				faceWt = r2y*c1.x;
+			break;
+	}
+	
+	// get elements
+	try
+	{	cElem[0] = mpmgrid.FindElementFromPoint(&c1)-1;
+		theElements[cElem[0]]->GetXiPos(&c1,&corners[0]);
+		
+		cElem[1] = mpmgrid.FindElementFromPoint(&c2)-1;
+		theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
+	}
+	catch(...)
+	{	throw MPMTermination("A Traction edge node has left the grid.","MatPointAS::GetTractionInfo");
+	}
+	
+    // get traction normal vector by radial integral for first node no the edge
+    ZeroVector(tscaled);
+	switch(dof)
+	{	case 1:
+			// normal is x direction
+			tscaled->x = faceWt;
+			break;
+        case 2:
+            // normal is y direction
+            tscaled->y = faceWt;
+		default:
+			// normal is z direction (not used here)
+            tscaled->z = faceWt;
+			break;
+	}
+	
+	return ratio;
 }
 
 

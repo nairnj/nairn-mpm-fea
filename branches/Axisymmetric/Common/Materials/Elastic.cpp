@@ -131,7 +131,7 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
         C33=e3*(1.-v21*v12)/xx;
     }
     
-    /* 3D stiffness matrix or axisymmetric matrix
+    /* Full 3D stiffness matrix or axisymmetric matrix components
             For axisymmetric, E1 along r, E2 along z, and E3 along hoop */
     else if(np==AXI_SYM || np==THREED_MPM || np==AXISYMMETRIC_MPM)
     {	xx=1.-v13*v31-v23*v32-v12*v21-2.*v13*v32*v21;

@@ -10,6 +10,7 @@
 #include "Cracks/CrackHeader.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
+#include "Materials/MaterialBase.hpp"							// +AS
 
 // globals
 MPMBase **mpm;		// list of material points
@@ -200,6 +201,14 @@ int MPMBase::GetResetElementCrossings(void)
 	elementCrossings=0;
 	return was;
 }
+
+// set dilated current volume using current strains
+void MPMBase::SetDilatedVolume(void)
+{	double rho=theMaterials[MatID()]->rho*0.001;			// in g/mm^3
+	volume=GetRelativeVolume()*mp/rho;						// in mm^3
+}
+
+double MPMBase::GetVolume(void) { return volume; }
 
 // get deformation gradient terms
 double MPMBase::GetDuDy(void) { return (ep.xy+eplast.xy-wrot.xy)/2.; }

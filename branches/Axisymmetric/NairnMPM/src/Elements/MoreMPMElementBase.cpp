@@ -70,6 +70,16 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,
             break;
         }
             
+        case UNIFORM_GIMP_AS:
+        {   // uGIMP analysis
+            int ndIDs[MaxShapeNds];
+            GetXiPos(pos,xipos);
+            GetGimpNodes(numnds,nds,ndIDs,xipos);
+            GimpShapeFunctionAS(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
+            GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
+            break;
+        }
+			
         case LINEAR_CPDI:
         case QUADRATIC_CPDI:
 		{	if(mpmptr==NULL)
@@ -129,6 +139,15 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipo
             int ndIDs[MaxShapeNds];
             GetGimpNodes(numnds,nds,ndIDs,xipos);
             GimpShapeFunction(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
+            GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
+            break;
+        }
+            
+        case UNIFORM_GIMP_AS:
+        {	// GIMP analysis
+            int ndIDs[MaxShapeNds];
+            GetGimpNodes(numnds,nds,ndIDs,xipos);
+            GimpShapeFunctionAS(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
             GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
             break;
         }
@@ -212,6 +231,16 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
             break;
         }
             
+        case UNIFORM_GIMP_AS:
+        {	// GIMP analysis
+            int ndIDs[MaxShapeNds];
+            GetXiPos(pos,xipos);
+            GetGimpNodes(numnds,nds,ndIDs,xipos);
+            GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+            GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+            break;
+        }
+            
         case LINEAR_CPDI:
 		case QUADRATIC_CPDI:
         {   if(theMaterials[mpmptr->MatID()]->Rigid())
@@ -289,6 +318,15 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
             int ndIDs[MaxShapeNds];
             GetGimpNodes(numnds,nds,ndIDs,xipos);
             GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+            GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+            break;
+        }
+            
+        case UNIFORM_GIMP_AS:
+        {	// uGIMP analysis
+            int ndIDs[MaxShapeNds];
+            GetGimpNodes(numnds,nds,ndIDs,xipos);
+            GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
             GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
             break;
         }
@@ -468,6 +506,15 @@ void ElementBase::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos)
 // Elements that support GIMP must override
 void ElementBase::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
 										 double *xDeriv,double *yDeriv,double *zDeriv)
+{
+}
+
+// get GIMP shape functions and optionally derivatives wrt x and y
+// assumed to be properly numbered regular array
+// input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
+// Only that elements that support axisymmetric GIMP must override
+void ElementBase::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
+									double *xDeriv,double *yDeriv,double *zDeriv)
 {
 }
 

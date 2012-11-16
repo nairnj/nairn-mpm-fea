@@ -152,13 +152,6 @@ void MatPoint2D::SetVelocity(Vector *pt)
 // thickness (in mm)
 double MatPoint2D::thickness() { return thick; }
 
-// set current volume using current strains - but only 2D strains
-void MatPoint2D::SetDilatedVolume(void)
-{	double rho=theMaterials[MatID()]->rho*0.001;			// in g/mm^3
-	double dilate=(1.+ep.xx)*(1.+ep.yy);
-	volume=dilate*mp/rho;									// in mm^3
-}
-
 // return internal force as -mp sigma.deriv * 1000. which converts to g mm/sec^2 or micro N
 void MatPoint2D::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
 {	fout.x=-mp*(sp.xx*xDeriv+sp.xy*yDeriv)*1000.;
@@ -395,7 +388,7 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 // To support traction boundary conditions, find the deformed edge, natural coordinates of
 // the corners along the edge, elements for those edges, and a normal vector in direction
 // of the traction
-void MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
+double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
 {
     *numDnds = 2;
     double faceWt;
@@ -519,5 +512,7 @@ void MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vec
             tscaled->z = faceWt;
 			break;
 	}
+	
+	return 1.;
 }
 	

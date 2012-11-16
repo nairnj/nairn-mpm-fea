@@ -153,13 +153,6 @@ void MatPoint3D::SetVelocity(Vector *v) { vel=*v; }
 // no thickness
 double MatPoint3D::thickness() { return -1.; }
 
-// set current volume using current strains
-void MatPoint3D::SetDilatedVolume(void)
-{	double rho=theMaterials[MatID()]->rho*0.001;			// in g/mm^3
-	double dilate=(1.+ep.xx)*(1.+ep.yy)*(1+ep.zz);
-	volume=dilate*mp/rho;									// in mm^3
-}
-
 // calculate internal force as -mp sigma.deriv * 1000.
 void MatPoint3D::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
 {	fout.x=-mp*(sp.xx*xDeriv+sp.xy*yDeriv+sp.xz*zDeriv)*1000.;
@@ -402,13 +395,13 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 // To support traction boundary conditions, find the deformed edge, natural coordinates of
 // the corners around the face, elements for those faces, and a normal vector in direction
 // of the traction. Input vectors need to be length 4
-void MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
+double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
 {
     *numDnds = 4;
     double faceWt;
     
     // which GIMP method (cannot be used in POINT_GIMP)
-    if(ElementBase::useGimp==UNIFORM_GIMP)
+    if(ElementBase::useGimp==UNIFORM_GIMP || ElementBase::useGimp==UNIFORM_GIMP_AS)
     {   // initial vectors only
         double r1x = mpmgrid.gridx*0.25;
         double r2y = mpmgrid.gridy*0.25;
@@ -588,5 +581,7 @@ void MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vec
             tscaled->z = faceWt;
 			break;
 	}
+	
+	return 1.;
 }
 

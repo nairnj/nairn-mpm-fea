@@ -60,6 +60,7 @@ void NairnMPM::PrintAnalysisType(void)
 	
     switch(ElementBase::useGimp)
     {   case UNIFORM_GIMP:
+		case UNIFORM_GIMP_AS:
             cout << " / GIMP";
             break;
         case LINEAR_CPDI:

@@ -27,7 +27,6 @@ class MatPoint3D : public MPMBase
         virtual void SetPosition(Vector *);
         virtual void SetVelocity(Vector *);
         virtual double thickness(void);
-		virtual void SetDilatedVolume(void);
 		virtual void UpdateStrain(double,int,int);
 		virtual void Fint(Vector &,double,double,double);
 		virtual void Fext(Vector &,double fni);
@@ -44,7 +43,7 @@ class MatPoint3D : public MPMBase
         virtual void GetDeformationGradient(double F[][3]);
         virtual double GetRelativeVolume(void);
 		virtual void GetCPDINodesAndWeights(int);
-		virtual void GetTractionInfo(int,int,int *,Vector *,Vector *,int *);
+		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *);
 };
 
 #endif
