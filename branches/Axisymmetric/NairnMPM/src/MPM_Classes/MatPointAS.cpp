@@ -130,6 +130,105 @@ void MatPointAS::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
 	fout.z=0.;
 }
 
+// To support CPDI find nodes in the particle domain, find their elements,
+// their natural coordinates, and weighting values for gradient calculations
+// Should be done only once per time step and here only for axisynmmetric
+// and linear CPDI
+void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
+{
+	// get particle 2D deformation gradient
+	double pF[3][3];
+	GetDeformationGradient(pF);
+	
+	// always LINEAR_CPDI_AS
+	
+	// get polygon vectors - these are from particle to edge
+    //      and generalize semi width lp in 1D GIMP
+	Vector r1,r2,c;
+	r1.x = pF[0][0]*mpmgrid.gridx*0.25;
+	r1.y = pF[1][0]*mpmgrid.gridx*0.25;
+	r2.x = pF[0][1]*mpmgrid.gridy*0.25;
+	r2.y = pF[1][1]*mpmgrid.gridy*0.25;
+	
+	
+	// shrink domain if any have x < 0, but keep particle in the middle
+	if(pos.x-fabs(r1.x+r2.x)<0.)
+	{	// make pos.x-shrink*fabs(r1.x+r2.x) very small and positive
+		double shrink = (pos.x-mpmgrid.gridx*1.e-10)/fabs(r1.x+r2.x);
+		r1.x *= shrink;
+		r1.y *= shrink;
+		r2.x *= shrink;
+		r2.y *= shrink;
+	}
+	
+    // Particle domain area is area of the full parallelogram
+    // Assume positive due to orientation of initial vectors, and sign probably does not matter
+    double Ap = 4.*(r1.x*r2.y - r1.y*r2.x);
+    
+	try
+	{	// nodes at four courves in ccw direction
+		c.x = pos.x-r1.x-r2.x;
+		c.y = pos.y-r1.y-r2.y;
+		cpdi[0]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		theElements[cpdi[0]->inElem]->GetXiPos(&c,&cpdi[0]->ncpos);
+		
+		c.x = pos.x+r1.x-r2.x;
+		c.y = pos.y+r1.y-r2.y;
+		cpdi[1]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		theElements[cpdi[1]->inElem]->GetXiPos(&c,&cpdi[1]->ncpos);
+		
+		c.x = pos.x+r1.x+r2.x;
+		c.y = pos.y+r1.y+r2.y;
+		cpdi[2]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		theElements[cpdi[2]->inElem]->GetXiPos(&c,&cpdi[2]->ncpos);
+		
+		c.x = pos.x-r1.x+r2.x;
+		c.y = pos.y-r1.y+r2.y;
+		cpdi[3]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		theElements[cpdi[3]->inElem]->GetXiPos(&c,&cpdi[3]->ncpos);
+		
+		// shape weights
+		double rxsum = r1.x+r2.x;
+		double rxdiff = r1.x-r2.x;
+		cpdi[0]->ws = 0.25 - rxsum/(12.*pos.x);
+		cpdi[1]->ws = 0.25 + rxdiff/(12.*pos.x);
+		cpdi[2]->ws = 0.25 + rxsum/(12.*pos.x);
+		cpdi[3]->ws = 0.25 - rxdiff/(12.*pos.x);
+		
+		// gradient weighting values
+		Ap = 1./Ap;
+		double beta = r1.x*r1.y - r2.x*r2.y;
+		double rysum = r1.y+r2.y;
+		double rydiff = r1.y-r2.y;
+		cpdi[0]->wg.x = (rydiff - beta/(3.*pos.x))*Ap;
+		cpdi[0]->wg.y = -rxdiff*Ap*4.*cpdi[0]->ws;
+		double tipwt =  0.25/pos.x;
+		cpdi[0]->wg.z = tipwt;
+		
+		cpdi[1]->wg.x = (rysum + beta/(3.*pos.x))*Ap;
+		cpdi[1]->wg.y = -rxsum*Ap*4.*cpdi[1]->ws;
+		cpdi[1]->wg.z = tipwt;
+		
+		cpdi[2]->wg.x = -(rydiff + beta/(3.*pos.x))*Ap;
+		cpdi[2]->wg.y = rxdiff*Ap*4.*cpdi[2]->ws;
+		cpdi[2]->wg.z = tipwt;
+		
+		cpdi[3]->wg.x = -(rysum - beta/(3.*pos.x))*Ap;
+		cpdi[3]->wg.y = rxsum*Ap*4.*cpdi[3]->ws;;
+		cpdi[3]->wg.z = tipwt;
+	}
+		
+	catch(...)
+	{	throw MPMTermination("A CPDI partical domain node has left the grid.","MatPoint2D::GetCPDINodesAndWeights");
+	}
+    
+    // traction BC area saves 1/2 surface area of particle domain on the various edges
+    if(faceArea!=NULL)
+    {   faceArea->x = sqrt(r1.x*r1.x+r1.y*r1.y)*mpmgrid.GetThickness();			// edges 1 and 3
+        faceArea->y = sqrt(r2.x*r2.x+r2.y*r2.y)*mpmgrid.GetThickness();			// edges 2 and 4
+    }
+}
+
 // To support traction boundary conditions, find the deformed edge, natural coordinates of
 // the corners along the edge, elements for those edges, and a normal vector in direction
 // of the traction
@@ -139,7 +238,7 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
     *numDnds = 2;
     double faceWt,ratio=1.;
     
-    // always UNIFORM_GIMP_AS
+    // always UNIFORM_GIMP_AS or LINEAR_CPDI_AS
 	
 	// initial vectors only
 	double r1x = mpmgrid.gridx*0.25;

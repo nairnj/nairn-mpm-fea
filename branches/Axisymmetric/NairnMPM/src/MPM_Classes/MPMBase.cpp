@@ -99,7 +99,7 @@ bool MPMBase::AllocateCPDIStructures(int gimpType,bool isThreeD)
 {
     int cpdiSize=0;
     
-    if(gimpType==LINEAR_CPDI)
+    if(gimpType==LINEAR_CPDI || gimpType==LINEAR_CPDI_AS)
         cpdiSize = isThreeD ? 8 : 4 ;
     else if(gimpType==QUADRATIC_CPDI)
         cpdiSize = 9;
@@ -109,13 +109,25 @@ bool MPMBase::AllocateCPDIStructures(int gimpType,bool isThreeD)
     // create memory for cpdiSize pointers
     cpdi = (CPDIDomain **)malloc(sizeof(LinkedObject *)*(cpdiSize));
     if(cpdi == NULL) return FALSE;
-    
+	
     // create each one
     int i;
     for(i=0;i<cpdiSize;i++)
     {   cpdi[i] = new CPDIDomain;
         cpdi[i]->wg.z = 0.;             // set zero once for 2D calculations
         cpdi[0]->ncpos.z = 0.;          // set zero once for 2D calculations
+		
+		// weights constant except for axisymmetric CPDI
+		if(gimpType==LINEAR_CPDI)
+			cpdi[i]->ws = isThreeD ? 0.125 : 0.25 ;
+		else if(gimpType==QUADRATIC_CPDI)
+		{	if(i<4)
+				cpdi[i]->ws = 1./36.;
+			else if(i<8)
+				cpdi[i]->ws = 1./9.;
+			else
+				cpdi[i]->ws = 4./9.;
+		}
     }
     
     // save face areas (or lengths in 2D)

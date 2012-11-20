@@ -241,9 +241,9 @@ double MatPoint2D::GetRelativeVolume(void)
     return pF[2][2]*(pF[0][0]*pF[1][1]-pF[1][0]*pF[0][1]);
 }
 
-// To support CPDI find nodes in tghe particle domain, find their element,
+// To support CPDI find nodes in the particle domain, find their element,
 // their natural coordinates, and weighting values for gradient calculations
-// Should be done only once per time stept
+// Should be done only once per time step
 void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 {
 	// get particle 2D deformation gradient
@@ -392,6 +392,8 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 {
     *numDnds = 2;
     double faceWt;
+	
+	// always UNIFORM_GIMP or LINEAR_CPDI
     
     // which GIMP method (cannot be used in POINT_GIMP)
     if(ElementBase::useGimp==UNIFORM_GIMP)

@@ -533,7 +533,7 @@ void NairnMPM::ValidateOptions(void)
 			throw CommonException("GIMP requires 8 particles per element for 3D","NairnMPM::ValidateOptions");
         if(ElementBase::useGimp == QUADRATIC_CPDI)
         {   if(IsThreeD())
-                throw CommonException("qCPDI methods not yet available for 3D; use lCPDI instead","NairnMPM::ValidateOptions");
+                throw CommonException("3D does not allow qCPDI shape functions; use lCPDI instead","NairnMPM::ValidateOptions");
         }
 	}
     else
@@ -573,8 +573,12 @@ void NairnMPM::ValidateOptions(void)
 		{	ElementBase::useGimp = UNIFORM_GIMP_AS;
 			ElementBase::analysisGimp = UNIFORM_GIMP_AS;
         }
+        else if(ElementBase::useGimp == LINEAR_CPDI)
+		{	ElementBase::useGimp = LINEAR_CPDI_AS;
+			ElementBase::analysisGimp = LINEAR_CPDI_AS;
+        }
 		else
-		{   throw CommonException("Axisymmetric is not yet available for GIMP or CPDI shape functions","NairnMPM::ValidateOptions");
+		{   throw CommonException("Axisymmetric does not allow qCPDI shape functions","NairnMPM::ValidateOptions");
 		}
     }
 	

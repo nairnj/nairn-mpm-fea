@@ -64,6 +64,7 @@ void NairnMPM::PrintAnalysisType(void)
             cout << " / GIMP";
             break;
         case LINEAR_CPDI:
+		case LINEAR_CPDI_AS:
             cout << " / Linear CPDI";
             break;
         case QUADRATIC_CPDI:

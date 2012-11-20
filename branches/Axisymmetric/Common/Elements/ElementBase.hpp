@@ -61,7 +61,6 @@ class ElementBase : public LinkedObject
 		static int useGimp;             // Code for GIMP method (0 is classic MPM special case of GIMP)
 		static int analysisGimp;		// store GIMP option in case need to disable for a while
         static int numCPDINodes;        // number of nodes used by CPDI in particle domain
-        static double *wShape;          // weighting values for each node when finding shape function using CPDI
 #endif
 		
         // constructors and destructors
@@ -108,7 +107,7 @@ class ElementBase : public LinkedObject
 		virtual void GetShapeGradients(int *,double *,int *,Vector *,double *,double *,double *,MPMBase *);
 		virtual void GetShapeFunctionsAndGradients(int *,double *,int *,Vector *,Vector *,double *,double *,double *,MPMBase *);
 		virtual void GimpCompact(int *,int *,double *,double *,double *,double *);
-		virtual void GetCPDIFunctions(int,CPDIDomain **,double *,int *,int *,double *,double *,double *,double *);
+		virtual void GetCPDIFunctions(int,CPDIDomain **,int *,int *,double *,double *,double *,double *);
         virtual void GridShapeFunctions(int *,int *,Vector *,double *);
 		virtual bool OnTheEdge(void);
 		virtual void GetListOfNeighbors(int *);

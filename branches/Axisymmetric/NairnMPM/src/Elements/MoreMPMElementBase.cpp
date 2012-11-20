@@ -81,15 +81,17 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,
         }
 			
         case LINEAR_CPDI:
+		case LINEAR_CPDI_AS:
         case QUADRATIC_CPDI:
 		{	if(mpmptr==NULL)
-            {   ChangeGimp(UNIFORM_GIMP);
+			{	int newGimp = fmobj->IsAxisymmetric() ? UNIFORM_GIMP_AS : UNIFORM_GIMP ;
+                ChangeGimp(newGimp);
                 GetShapeFunctions(numnds,fn,nds,pos,xipos,NULL);
                 RestoreGimp();
                 break;
             }
 			mpmptr->GetCPDINodesAndWeights(useGimp);
-			GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),ElementBase::wShape,numnds,nds,fn,NULL,NULL,NULL);
+			GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),numnds,nds,fn,NULL,NULL,NULL);
             
             /*
              cout << "CPDI Initial Compacted: " << endl;
@@ -112,6 +114,7 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,
 			
             break;
         }
+			
     }
 }
 
@@ -153,8 +156,9 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipo
         }
             
         case LINEAR_CPDI:
+		case LINEAR_CPDI_AS:
         case QUADRATIC_CPDI:
-        {   GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),ElementBase::wShape,numnds,nds,fn,NULL,NULL,NULL);
+        {   GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),numnds,nds,fn,NULL,NULL,NULL);
             
             /*
              cout << "CPDI Recall Compacted: " << endl;
@@ -242,15 +246,17 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
         }
             
         case LINEAR_CPDI:
+		case LINEAR_CPDI_AS:
 		case QUADRATIC_CPDI:
         {   if(theMaterials[mpmptr->MatID()]->Rigid())
-            {   ChangeGimp(UNIFORM_GIMP);
+			{	int newGimp = fmobj->IsAxisymmetric() ? UNIFORM_GIMP_AS : UNIFORM_GIMP ;
+				ChangeGimp(newGimp);
                 GetShapeFunctionsAndGradients(numnds,fn,nds,pos,xipos,xDeriv,yDeriv,zDeriv,mpmptr);
                 RestoreGimp();
                 break;
             }
-            mpmptr->GetCPDINodesAndWeights(useGimp);
-			GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),ElementBase::wShape,numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+			mpmptr->GetCPDINodesAndWeights(useGimp);
+			GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),numnds,nds,fn,xDeriv,yDeriv,zDeriv);
             
             /*
 			cout << "CPDI Initial Compacted: " << endl;
@@ -332,14 +338,16 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
         }
             
         case LINEAR_CPDI:
+		case LINEAR_CPDI_AS:
 		case QUADRATIC_CPDI:
         {   if(theMaterials[mpmptr->MatID()]->Rigid())
-            {   ChangeGimp(POINT_GIMP);
+			{	int newGimp = fmobj->IsAxisymmetric() ? UNIFORM_GIMP_AS : UNIFORM_GIMP ;
+				ChangeGimp(newGimp);
                 GetShapeGradients(numnds,fn,nds,xipos,xDeriv,yDeriv,zDeriv,mpmptr);
                 RestoreGimp();
                 break;
             }
-            GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),ElementBase::wShape,numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+            GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),numnds,nds,fn,xDeriv,yDeriv,zDeriv);
 			
             /*
              cout << "CPDI Recall Compacted: " << endl;
@@ -547,10 +555,11 @@ bool ElementBase::OnTheEdge(void)
 
 // Calculate CPDI shape functions and optionall gradients
 // numDnds - number of nodes in the particle domain
-// xa - array of coordinates for corner nodes (numDnds of them)
-// ws - shape function weights (numNds of them)
-// wg - gradient weights (numNds of them)
-void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,double *ws,int *numnds,int *nds,
+// cpdi[i]->ncpos - array of coordinates for corner nodes (numDnds of them)
+// cpdi[i]->inElem - the element they are in
+// cpdi[i]->ws - shape function weights (numNds of them)
+// cpdi[i]->wg - gradient weights (numNds of them)
+void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,int *numnds,int *nds,
 								   double *fn,double *xDeriv,double *yDeriv,double *zDeriv)
 {
 	int i,j;
@@ -570,7 +579,7 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,double *ws,int 
 		// loop over shape grid shape functions and collect in arrays
 		for(j=1;j<=*numnds;j++)
 		{   cnodes[ncnds] = nds[j];
-			wsSi[ncnds] = ws[i]*fn[j];
+			wsSi[ncnds] = cpdi[i]->ws*fn[j];
 			if(xDeriv!=NULL) CopyScaleVector(&wgSi[ncnds], &cpdi[i]->wg, fn[j]);
 			ncnds++;
 		}
@@ -853,33 +862,23 @@ void ElementBase::ChangeGimp(int newGimp) { useGimp = newGimp; }
 void ElementBase::RestoreGimp(void) { useGimp = analysisGimp; }
 
 // on start up initialize number of CPDI nodes (if needed)
-// needs revision when add 3D CPDI
+// done here in case need more initializations in the future
 void ElementBase::InitializeCPDI(bool isThreeD)
 {
-    int i;
-    
     if(isThreeD)
     {   if(useGimp == LINEAR_CPDI)
         {   numCPDINodes = 8;
-            wShape = (double *)malloc(numCPDINodes*sizeof(double));
-            for(i=0;i<8;i++) wShape[i] = 0.125;
         }
         else if(useGimp == QUADRATIC_CPDI)
         {	throw MPMTermination("qCPDI is not yet implemented for 3D (use lCPDI instead).","MatPoint3D::GetCPDINodesAndWeights");
         }
     }
     else
-    {   if(useGimp == LINEAR_CPDI)
+    {   if(useGimp == LINEAR_CPDI || useGimp==LINEAR_CPDI_AS)
         {   numCPDINodes = 4;
-            wShape = (double *)malloc(numCPDINodes*sizeof(double));
-            for(i=0;i<4;i++) wShape[i] = 0.25;
         }
         else if(useGimp == QUADRATIC_CPDI)
         {   numCPDINodes = 9;
-            wShape = (double *)malloc(numCPDINodes*sizeof(double));
-            for(i=0;i<4;i++) wShape[i] = 1./36.;
-            for(i=4;i<8;i++) wShape[i] = 1./9.;
-            wShape[8] = 4./9.;
         }
     }
 }
