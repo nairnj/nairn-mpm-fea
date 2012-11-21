@@ -15,6 +15,13 @@
 
 #ifdef MPM_CODE
 class MPMBase;
+
+// Undefine to try axisymmetric GIMP using planar GIMP shape functions
+//#define NONRADIAL_GIMP_AS
+
+// Comment out to try uGIMP with no truncation AND lCPDI with no shrinkage
+//#define TRUNCATE
+
 #endif
 
 // element types

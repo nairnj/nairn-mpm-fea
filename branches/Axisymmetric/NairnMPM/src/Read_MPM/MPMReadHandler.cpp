@@ -99,7 +99,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     else if(strcmp(xName,"TimeFactor")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
-        inputPtr=(char *)&fmobj->FractCellTime;
+        inputPtr=(char *)fmobj->GetCFLPtr();
     }
     
     else if(strcmp(xName,"MaxTime")==0)

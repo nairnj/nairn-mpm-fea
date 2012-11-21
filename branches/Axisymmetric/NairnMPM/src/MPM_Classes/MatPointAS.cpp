@@ -150,7 +150,8 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
 	r2.x = pF[0][1]*mpmgrid.gridy*0.25;
 	r2.y = pF[1][1]*mpmgrid.gridy*0.25;
 	
-	
+
+#ifdef TRUNCATE
 	// shrink domain if any have x < 0, but keep particle in the middle
 	if(pos.x-fabs(r1.x+r2.x)<0.)
 	{	// make pos.x-shrink*fabs(r1.x+r2.x) very small and positive
@@ -160,7 +161,8 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
 		r2.x *= shrink;
 		r2.y *= shrink;
 	}
-	
+#endif
+    
     // Particle domain area is area of the full parallelogram
     // Assume positive due to orientation of initial vectors, and sign probably does not matter
     double Ap = 4.*(r1.x*r2.y - r1.y*r2.x);

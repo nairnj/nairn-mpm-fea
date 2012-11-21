@@ -82,7 +82,7 @@ void GridForcesTask::Execute(void)
 			matID->LoadTransportProps(mpmptr,fmobj->np);
 		
         double mp=mpmptr->mp;					// in g
-		int matfld=matID->GetField();		// material field
+		int matfld=matID->GetField();           // material field
 		
         // find shape functions and derviatives
  		theElements[mpmptr->ElemID()]->

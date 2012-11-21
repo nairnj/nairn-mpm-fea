@@ -226,6 +226,11 @@ int MeshInfo::FindElementFromPoint(Vector *pt)
 #pragma mark MeshInfo:Accessors
 
 // set grid style (zcell=0 if 2D grid)
+// Options: style=0 means not aligned with x,y,z axes
+//    SQUARE_GRID = 2D and dx = dy
+//    CUBIC_GRID = 3D and dx = dy = dz
+//    RECTANGULAR_GRID = 2D and dx != dy
+//    ORTHONGONAL_GRID = 3D and one of dx, dy, dz != others
 void MeshInfo::SetCartesian(int style,double xcell,double ycell,double zcell)
 {
 	cartesian=style;

@@ -118,8 +118,8 @@ void MassAndMomentumTask::Execute(void)
 		
 		// normal materials
 		if(!matID->RigidBC())
-		{	mp=mpmptr->mp;					// material point mass in g
-			matfld=matID->GetField();		// material velocity field
+		{	mp=mpmptr->mp;                      // material point mass in g
+			matfld=matID->GetField();           // material velocity field
 			
 			// get nodes and shape function for material point p
 			if(fmobj->multiMaterialMode)

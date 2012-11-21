@@ -75,7 +75,7 @@ void NairnMPM::PrintAnalysisType(void)
     
 	// time step and max time
     cout << "Time step: min(" << 1000.*timestep << " ms, "
-        << FractCellTime << " time for wave to cross one cell)\n";
+        << fmobj->GetCFLCondition() << " time for wave to cross one cell)\n";
     cout << "Maximum time: " << 1000.*maxtime << " ms\n\n";
 }
 

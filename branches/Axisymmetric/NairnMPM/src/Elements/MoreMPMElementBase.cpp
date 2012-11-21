@@ -843,9 +843,8 @@ int ElementBase::FindEdge(int beginNode,int endNode)
     return -1;
 }
 
-/* return TRUE or false if Orthogonal in x-y-z planes and if orthogonal then find width, height, and depth
-	of the element. If 2D element, return depth=0
-	*/
+// return TRUE or false if Orthogonal in x-y-z planes and if orthogonal then find width, height, and depth
+// of the element. If 2D element, return depth=0. Only for MPM elements.
 int ElementBase::Orthogonal(double *dx,double *dy,double *dz) { return FALSE; }
 
 #pragma mark CLASS METHODS

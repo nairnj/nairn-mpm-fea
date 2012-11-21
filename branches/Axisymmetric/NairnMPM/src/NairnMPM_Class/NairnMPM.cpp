@@ -64,8 +64,8 @@ NairnMPM::NairnMPM()
 	propagateMat[0]=propagateMat[1]=0;								// default is new crack with no traction law
 	hasTractionCracks=FALSE;		// if any crack segment has a traction law material
 	maxtime=1.;						// maximum time (sec)
-	FractCellTime=.5;				// fraction cell crossed in 1 step at wave speed
-    PropFractCellTime=-1.;          // fracture cell crossed in 1 step for propagation time step (current not use settable)
+	FractCellTime=.5;				// fraction cell crossed in 1 step at wave speed (CFL convergence condition)
+    PropFractCellTime=-1.;          // fracture cell crossed in 1 step for propagation time step (currently not user settable)
 	mstep=0;						// step number
 	volumeExtrap=FALSE;				// set if need volume extrapolations
 	warnParticleLeftGrid=1;			// abort when this many leave the grid
@@ -349,7 +349,8 @@ void NairnMPM::PreliminaryCalcs(void)
 		double dx,dy,dz,gridx=0.,gridy=0.,gridz=0.;
 		for(i=0;i<nelems;i++)
 		{	if(!theElements[i]->Orthogonal(&dx,&dy,&dz))
-			{	userCartesian=FALSE;
+            {   // exit if find one that is not orthongal
+				userCartesian=FALSE;
 				break;
 			}
 			if(!userCartesian)
@@ -373,9 +374,9 @@ void NairnMPM::PreliminaryCalcs(void)
     // CPDI factors if needed
     ElementBase::InitializeCPDI(IsThreeD());
 	
-    // future - make PropFractCellTime a user parameter, which not changed is user picked it
+    // future - make PropFractCellTime a user parameter, which not changed here if user picked it
     if(PropFractCellTime<0.) PropFractCellTime=FractCellTime;
-	double minSize=mpmgrid.GetMinCellDimension()/10.;	// in cm
+	double minSize=mpmgrid.GetMinCellDimension()/10.;                   // in cm
     
     // loop over material points
 	maxMaterialFields=0;
@@ -397,7 +398,7 @@ void NairnMPM::PreliminaryCalcs(void)
 			dcell = (minSize>0.) ? minSize : pow(volume,1./3.) ;
 		}
 		else
-		{	// when axisymmetric, thickness is particle radial position to mp = rho*Ap*Rp
+		{	// when axisymmetric, thickness is particle radial position, which gives mp = rho*Ap*Rp
 			area=theElements[mpm[p]->ElemID()]->GetArea()/100.;	// in cm^2
 			volume=mpm[p]->thickness()*area/10.;				// in cm^2
 			dcell = (minSize>0.) ? minSize : sqrt(area) ;
@@ -405,9 +406,11 @@ void NairnMPM::PreliminaryCalcs(void)
 		rho=theMaterials[matid]->rho;					// in g/cm^3
         
         // assumes same number of points for all elements
+        // for axisyymmeric xp = rho*Ap*volume/(# per element)
 		mpm[p]->InitializeMass(rho*volume/((double)ptsPerElement));			// in g
 		
-		// done if rigid contact material in multimaterial mode (mass will be in mm^3 and will be particle volume)
+		// done if rigid contact material in multimaterial mode
+        // mass will be in mm^3 and will be particle volume
 		if(theMaterials[matid]->Rigid())
 		{	hasRigidContactParticles=true;
 			continue;
@@ -415,7 +418,7 @@ void NairnMPM::PreliminaryCalcs(void)
         
         // check time step
         crot=theMaterials[matid]->WaveSpeed(IsThreeD(),mpm[p])/10.;		// in cm/sec
-		tst=FractCellTime*dcell/crot;					// in sec
+		tst=FractCellTime*dcell/crot;                                   // in sec
         if(tst<tmin) tmin=tst;
         
         // propagation time (in sec)
@@ -480,7 +483,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	// contact law materials and cracks
 	contact.SetNormalCODCutoff(mpmgrid.GetMinCellDimension());
 	
-    // progation time step and other settings when has cracks
+    // prpagation time step and other settings when has cracks
     if(firstCrack!=NULL)
 	{	if(propagate[0])
 		{   sprintf(fline,"Propagation time step (ms): %.7e",1000.*propTime);
@@ -654,4 +657,13 @@ double NairnMPM::CPUTime(void) { return (double)(clock()-startCPU)/CLOCKS_PER_SE
 
 // if crack develops tractionlaw, call here to turn it on
 void NairnMPM::SetHasTractionCracks(bool setting) { hasTractionCracks=setting; }
+
+// Get Courant-Friedrichs-Levy condition factor for convergence
+void NairnMPM::SetCFLCondition(double factor) { FractCellTime = factor; }
+double NairnMPM::GetCFLCondition(void) { return FractCellTime; }
+double *NairnMPM::GetCFLPtr(void) { return &FractCellTime; }
+
+// Get Courant-Friedrichs-Levy condition factor for convergence for propagation calculations
+double NairnMPM::GetPropagationCFLCondition(void) { return PropFractCellTime; }
+
 

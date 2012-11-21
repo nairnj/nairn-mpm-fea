@@ -18,9 +18,6 @@
 class MatPoint2D : public MPMBase
 {
     public:
-		// used in set up
-        double thick;
-        
         // constructors and destructors
         MatPoint2D();
         MatPoint2D(int,int,double,double);
@@ -47,6 +44,9 @@ class MatPoint2D : public MPMBase
         virtual double GetRelativeVolume(void);
 		virtual void GetCPDINodesAndWeights(int);
 		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *);
+    
+    protected:
+        double thick;
 };
 
 #endif

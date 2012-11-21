@@ -476,9 +476,6 @@ void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int ge
 	}
 }
 
-//#define NONRADIAL_GIMP_AS
-#define TRUNCATE
-
 // get GIMP shape functions and optionally derivatives wrt x and y
 // assumed to be properly numbered regular array
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
