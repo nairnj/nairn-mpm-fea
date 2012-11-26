@@ -181,13 +181,13 @@ void FourNodeIsoparam::ExtrapolateGaussStressToNodes(double sgp[][5])
 void FourNodeIsoparam::ShapeFunction(Vector *xi,int getDeriv,double *sfxn,
 										double *xDeriv,double *yDeriv,double *zDeriv)
 {
-    double temp1,temp2,dx,dy,xp;
+    double temp1,temp2,dx,dy,rp;
 	int i;
     
     if(getDeriv)
     {   dx = GetDeltaX();
         dy = GetDeltaY();
-        xp = GetCenterX() + 0.5*xi->x*GetDeltaX();
+        rp = GetCenterX() + 0.5*xi->x*GetDeltaX();
     }
     
     // just shape function
@@ -198,7 +198,7 @@ void FourNodeIsoparam::ShapeFunction(Vector *xi,int getDeriv,double *sfxn,
 		if(getDeriv)
 		{	xDeriv[i]=0.5*xii[i]*temp2/dx;
 			yDeriv[i]=0.5*eti[i]*temp1/dy;
-            if(fmobj->IsAxisymmetric()) zDeriv[i] = sfxn[i]/xp;
+            if(fmobj->IsAxisymmetric()) zDeriv[i] = sfxn[i]/rp;
 		}
     }
 }
@@ -486,14 +486,12 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 	GimpShapeFunction(xi,numnds,ndIDs,getDeriv,sfxn,xDeriv,yDeriv,zDeriv);
 	
 	if(getDeriv)
-	{	double ri;
-		double dx = GetDeltaX();
+	{	double dx = GetDeltaX();
 		double midx = GetCenterX();
+		double rp = midx+0.5*xi->x*dx;
 		int i;
 		for(i=0;i<numnds;i++)
-		{	ri = midx+0.5*gxii[ndIDs[i]]*dx;
-			zDeriv[i] = sfxn[i]/ri;
-		}
+			zDeriv[i] = sfxn[i]/rp;
 	}
 #else
 	int i,n;
@@ -515,55 +513,35 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 		// find nodal position based on node numbers and nodal column number
 		ri = midx+0.5*gxii[ndIDs[i]]*dx;
 		nr=ri/dx;
+#ifdef TRUNCATE
 		if(fabs(nr)<0.01)
 			n=0;
 		else if(fabs(nr-1.)<0.01)
 			n=1;
 		else
 			n=2;
-		
+#else
+		n=-1;			// to skip all special cases
+#endif
+
+		// Note: when n=0, xp>0 and when n=1, xp>-2 (not need to check)
 		if(xp<-q3 || nr<-0.01)
 			Svpx=0.;
 		else if(xp<-q2)
-		{
-#ifdef TRUNCATE
-			if(n==0)
-				Svpx=0.;
-			else if(n==1)
-			{	if(xp<-2.)
-					Svpx=0.;
-				else
-					Svpx=-(5.+2.*xp)/6.;
-			}
+		{	if(n==1)
+				Svpx=-(5.+2.*xp)/6.;
 			else
 			{	argx=(5.+2.*xp);
 				Svpx=-argx*argx*(-1.+6.*nr+2.*xp)/(48.*(2.*nr+xp));
 			}
-#else
-			argx=(5.+2.*xp);
-			Svpx=-argx*argx*(-1.+6.*nr+2.*xp)/(48.*(2.*nr+xp));
-#endif	
 		}
 		else if(xp<-q1)
-		{	if(n==0)
-				Svpx=0.;
-			else
-				Svpx=-1.-0.5*xp-1./(24.*(2.*nr+xp));
-		}
+			Svpx=-1.-0.5*xp-1./(24.*(2.*nr+xp));
 		else if(xp<q1)
-		{
-#ifdef TRUNCATE
-			if(n==0)
-			{	if(xp<0.)
-					Svpx=0.;
-				else
-					Svpx=(-5.+2.*xp)/6.;
-			}
+		{	if(n==0)
+				Svpx=(-5.+2.*xp)/6.;
 			else
 				Svpx=(-9.*xp+4.*xp*xp*xp+3.*nr*(-7.+4.*xp*xp))/(12.*(2.*nr+xp));
-#else
-			Svpx=(-9.*xp+4.*xp*xp*xp+3.*nr*(-7.+4.*xp*xp))/(12.*(2.*nr+xp));
-#endif
 		}
 		else if(xp<q2)
 			Svpx=-1.+0.5*xp+1./(24.*(2.*nr+xp));
@@ -591,45 +569,22 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 		if(getDeriv)
 		{	ysign = xi->y>geti[ndIDs[i]] ? 1. : -1.;
 			
+			// Note: when n=0, xp>0 and when n=1, xp>-2 (not need to check)
 			if(xp<-q3 || nr<-0.01)
 				dSvpx=0.;
 			else if(xp<-q2)
-			{
-#ifdef TRUNCATE
-				if(n==0)
-					dSvpx=0.;
-				else if(n==1)
-				{	if(xp<-2.)
-						dSvpx=0.;
-					else
-						dSvpx=-0.5;
-				}
+			{	if(n==1)
+					dSvpx=-0.5;
 				else
 					dSvpx=-(5.+2.*xp)*(-3.+8.*nr+2.*xp)/(16.*(2.*nr+xp));
-#else
-				dSvpx=-(5.+2.*xp)*(-3.+8.*nr+2.*xp)/(16.*(2.*nr+xp));
-#endif
 			}
 			else if(xp<-q1)
-			{	if(n==0)
-					dSvpx=0.;
-				else
-					dSvpx=-0.5;
-			}
+				dSvpx=-0.5;
 			else if(xp<q1)
-			{
-#ifdef TRUNCATE
-				if(n==0)
-				{	if(xp<0.)
-						dSvpx=0.;
-					else
-						dSvpx=0.5;
-				}
+			{	if(n==0)
+					dSvpx=0.5;
 				else
 					dSvpx=(1.+4.*xp*(4.*nr+xp))/(8.*(2.*nr+xp));
-#else
-				dSvpx=(1.+4.*xp*(4.*nr+xp))/(8.*(2.*nr+xp));
-#endif
 			}
 			else if(xp<q2)
 				dSvpx=0.5;
@@ -637,7 +592,7 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 				dSvpx=(5.-2.*xp)*(3.+8.*nr+2.*xp)/(16.*(2.*nr+xp));
 			else
 				dSvpx=0.;
-			
+
 			if(yp<=q1)
 				dSvpy=yp;
 			else if(yp<=q2)
@@ -649,51 +604,29 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 			
 			xDeriv[i]=dSvpx*Svpy*2.0/dx;
 			yDeriv[i]=ysign*Svpx*dSvpy*2.0/dy;
-			
+
+			// Note: when n=0, xp>0 and when n=1, xp>-2 (not need to check)
 			if(xp<-q3 || nr<-0.01)
 				pTr=0.;
 			else if(xp<-q2)
-			{
-#ifdef TRUNCATE
-				if(n==0)
-					pTr=0.;
-				else if(n==1)
-				{	if(xp<-2.)
-						pTr=0.;
-					else
-						pTr=-0.5;
-				}
+			{	if(n==1)
+					pTr=-0.5;
 				else
 				{	argx=(5.+2.*xp);
 					pTr=-argx*argx/(16.*(2.*nr+xp));
 				}
-#else
-				argx=(5.+2.*xp);
-				pTr=-argx*argx/(16.*(2.*nr+xp));
-#endif
 			}
 			else if(xp<-q1)
-			{	if(n==0)
-					pTr=0.;
-				else if(n==1)
+			{	if(n==1)
 					pTr=-0.5;
 				else
 					pTr=-(2.+xp)/(2.*(2.*nr+xp));
 			}
 			else if(xp<q1)
-			{
-#ifdef TRUNCATE
-				if(n==0)
-				{	if(xp<0.)
-						pTr=0.;
-					else
-						pTr=(-7.*2.*xp)/(2.+4.*xp);
-				}
+			{	if(n==0)
+					pTr=(-7.*2.*xp)/(2.+4.*xp);
 				else
 					pTr=(-7.+4.*xp*xp)/(8.*(2.*nr+xp));
-#else
-				pTr=(-7.+4.*xp*xp)/(8.*(2.*nr+xp));
-#endif
 			}
 			else if(xp<q2)
 				pTr=(-2.+xp)/(2.*(2.*nr+xp));

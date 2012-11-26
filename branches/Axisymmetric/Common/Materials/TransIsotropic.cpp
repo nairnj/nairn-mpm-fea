@@ -693,7 +693,7 @@ void TransIsotropic::LoadMechProps(int makeSpecific,double angle,int np)
         mdm[2][2]*=rrho;
         mdm[2][3]*=rrho;
         mdm[3][3]*=rrho;
-		if(np==PLANE_STRAIN_MPM)
+		if(np==PLANE_STRAIN_MPM || np==AXISYMMETRIC_MPM)
     	{	mdm[4][1]*=rrho;
 			mdm[4][2]*=rrho;
 			mdm[4][3]*=rrho;

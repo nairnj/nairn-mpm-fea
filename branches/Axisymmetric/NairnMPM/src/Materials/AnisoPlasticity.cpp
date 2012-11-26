@@ -91,10 +91,8 @@ void AnisoPlasticity::ValidateForUse(int np)
 	}
 	
 	// call super class (why can't call super class?)
-	return MaterialBase::ValidateForUse(np);
+	return Orthotropic::ValidateForUse(np);
 }
-
-
 
 // print to output window
 void AnisoPlasticity::PrintMechanicalProperties(void)
@@ -191,11 +189,12 @@ void AnisoPlasticity::InitialLoadMechProps(int makeSpecific,int np)
     Particle: strains, rotation strain, plastic strain, stresses, strain energy, 
 		plastic energy, dissipated energy, angle
     dvij are (gradient rates X time increment) to give deformation gradient change
-	This is general analysis for isotropic material. Subclass can define any
+   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
+   This is general analysis for isotropic material. Subclass can define any
 		desired plastic potential using methods GetF(), GetDfDsigma(), and GetDfDWp()
 */
 void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double delTime,int np)
+        double dvzz,double delTime,int np)
 {
     // Effective strain by deducting thermal strain
 	// (note me0[1] and mc0[1] are reduced in plane strain, but CTE3 and CME3 are not)
@@ -236,7 +235,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	double ftrial = GetF(mptr,&stk,np);
 	if(ftrial<0.)
 	{	// elastic, update stress and strain energy as usual
-		Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,delTime,np); 
+		Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,delTime,np);
 		return; 
     }
     

@@ -39,7 +39,6 @@ class Mooney : public HyperElastic
         virtual void SetInitialParticleState(MPMBase *,int);
  		
 		// methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
         virtual double GetVolumetricTerms(double,double *);

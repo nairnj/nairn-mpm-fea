@@ -184,7 +184,7 @@ void IsotropicMat::InitialLoadMechProps(int makeSpecific,int np)
         mdm[1][2]*=rrho;
         mdm[2][2]*=rrho;
         mdm[3][3]*=rrho;
-		if(np==PLANE_STRAIN_MPM)
+		if(np==PLANE_STRAIN_MPM || AXISYMMETRIC_MPM)
 		{	mdm[4][1]*=rrho;
 			mdm[4][2]*=rrho;
 			mdm[4][3]*=rrho;

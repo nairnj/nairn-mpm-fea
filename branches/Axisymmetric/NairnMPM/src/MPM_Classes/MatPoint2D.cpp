@@ -99,7 +99,7 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np)
 	}
 	
     // update particle strain and stress using its constituitive law
-    matRef->MPMConstLaw(this,dvxx,dvyy,dvxy,dvyx,strainTime,np);
+    matRef->MPMConstLaw(this,dvxx,dvyy,dvxy,dvyx,0.0,strainTime,np);
 }
 
 // Move position (2D) (in mm)

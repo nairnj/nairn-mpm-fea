@@ -121,7 +121,7 @@ void NewMaterial::PrintMechanicalProperties(void)
 
 // Apply 2D Constitutive law
 void NewMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double delTime,int np)
+        double dvzz,double delTime,int np)
 {
 }
 

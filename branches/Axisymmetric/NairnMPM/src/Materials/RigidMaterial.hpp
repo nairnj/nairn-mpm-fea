@@ -43,7 +43,6 @@ class RigidMaterial : public MaterialBase
 		virtual int SetField(int,bool,int);
 		
 		// define abstract methods even though not used
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
 		

@@ -69,8 +69,8 @@ const char *IdealGas::VerifyProperties(int np)
 
 // if analysis not allowed, throw an exception
 void IdealGas::ValidateForUse(int np)
-{	if(np==PLANE_STRESS_MPM)
-	{	throw CommonException("IdealGas material cannot do 2D plane stress MPM analysis",
+{	if(np==PLANE_STRESS_MPM or np==AXISYMMETRIC_MPM)
+	{	throw CommonException("IdealGas material cannot do 2D plane stress or axisymmetric MPM analysis",
 							  "IdealGas::ValidateForUse");
 	}
 	
@@ -80,7 +80,7 @@ void IdealGas::ValidateForUse(int np)
 	}
 	
 	// call super class (why can't call super class?)
-	return MaterialBase::ValidateForUse(np);
+	return HyperElastic::ValidateForUse(np);
 }
 
 // Private properties used in constitutive law
@@ -116,9 +116,10 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np)
     Particle: strains, rotation strain, stresses, strain energy, angle
     dvij are (gradient rates X time increment) to give deformation gradient change
 	Does not support thermal or moisture strains
+   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 */
 void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-								double delTime,int np)
+								double dvzz,double delTime,int np)
 {
 	// get new deformation gradient
 	double F[3][3];
@@ -126,15 +127,6 @@ void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,dou
     
     // single 2D and 3D law
     MPMCombinedLaw(mptr,detf);
-}
-
-/* For Axismmetric MPM analysis, take increments in strain and calculate new
-    Particle: strains, rotation strain, stresses, strain energy, angle
-    dvij are (gradient rates X time increment) to give deformation gradient change
-*/
-void IdealGas::MPMConstLaw(MPMBase *mptr,double dvrr,double dvzz,double dvrz,double dvzr,double dvtt,
-                              double delTime,int np)
-{
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new

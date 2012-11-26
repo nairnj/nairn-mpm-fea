@@ -39,7 +39,6 @@ class Viscoelastic : public MaterialBase
 		virtual char *MaterialData(void);
     
 		// methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
 		

@@ -85,7 +85,7 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
         where New B.zz = (1+dvzz)^2 * (Old B.zz) = (1+e.zz)^2
         Likewise, caller must multiply det(dF) by 1 + dvzz = sqrt(New B.zz/Old B.zz).
  */
-double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx)
+double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,double dvzz)
 {
 	// get new 2D deformation gradient to increment particle strain
     // plaine stress will need to add ep->zz when known
@@ -109,6 +109,11 @@ double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,
     ep->xy = F10 + F01;                                     // du/dy + dv/dx
     wrot->xy = F10 - F01;                                   // dv/dx - du/dy
 	
+    // ezz  = (1+dvzz)*pF[2][2] - 1							// axisymmetric only, otherwise dvzz=0
+    //      = (1+dvzz)*(1+ezz) - 1
+    //      = ezz + dvzz*(1+exx)
+	ep->zz += dvzz*(1.+ep->zz);
+
     // increment Left Cauchy tensor B = F.F^T = dF.old B.dF^T
     // plain stress will need to update B.zz when known
     Tensor *pB = mptr->GetElasticLeftCauchyTensor();
@@ -116,13 +121,15 @@ double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,
     double b2 = (1.+dvxx)*pB->xy +      dvxy*pB->yy;
     double b3 =      dvyx*pB->xx + (1.+dvyy)*pB->xy;
     double b4 =      dvyx*pB->xy + (1.+dvyy)*pB->yy;
-    pB->xx = (1. + dvxx)*b1 +      dvxy*b2;
-    pB->xy =        dvyx*b1 + (1.+dvyy)*b2;
-    pB->yy =        dvyx*b3 + (1.+dvyy)*b4;
+    double b5 = (1.+dvzz)*pB->zz;
+    pB->xx = b1*(1. + dvxx) + b2*dvxy;
+    pB->xy = b1*dvyx        + b2*(1.+dvyy);
+    pB->yy = b3*dvyx        + b4*(1.+dvyy);
+	pB->zz = b5*(1. + dvzz);
     
-    // det(I + grad v * dt), which assumes plain strain
+    // det(I + grad v * dt), which assumes plain strain or axisymmetric
     // multiply by 1+dvzz when known to get det(dF) in plane stress
-    return (1. + dvxx)*(1. + dvyy)- dvyx*dvxy;
+    return (1. + dvzz)*((1. + dvxx)*(1. + dvyy)- dvyx*dvxy);
 }
 
 // Get new deformation gradient from current one using dF.F where dF = I + gradV * dt and F is current

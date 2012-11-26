@@ -212,8 +212,8 @@ void MGSCGLMaterial::ValidateForUse(int np)
 							  "MGSCGLMaterial::ValidateForUse");
 	}
 	
-	// call super class (why can't call super class?)
-	return MaterialBase::ValidateForUse(np);
+	// call super class
+	return IsoPlasticity::ValidateForUse(np);
 }
 
 

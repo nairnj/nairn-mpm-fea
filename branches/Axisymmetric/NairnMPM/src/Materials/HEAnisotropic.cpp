@@ -96,18 +96,10 @@ void HEAnisotropic::PrintMechanicalProperties(void)
 	To support thermal and solvent expansion, include their effect on strains
     If there are material-related data on the particle, update them too
 	dvij are (gradient rates X time increment) to give deformation gradient change
+   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 */
 void HEAnisotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double delTime,int np)
-{
-}
-
-/* For Axismmetric MPM analysis, take increments in strain and calculate new
-    Particle: strains, rotation strain, stresses, strain energy, angle
-    dvij are (gradient rates X time increment) to give deformation gradient change
-*/
-void HEAnisotropic::MPMConstLaw(MPMBase *mptr,double dvrr,double dvzz,double dvrz,double dvzr,double dvtt,
-                         double delTime,int np)
+        double dvzz,double delTime,int np)
 {
 }
 

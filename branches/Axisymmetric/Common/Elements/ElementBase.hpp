@@ -20,7 +20,7 @@ class MPMBase;
 //#define NONRADIAL_GIMP_AS
 
 // Comment out to try uGIMP with no truncation AND lCPDI with no shrinkage
-//#define TRUNCATE
+#define TRUNCATE
 
 #endif
 

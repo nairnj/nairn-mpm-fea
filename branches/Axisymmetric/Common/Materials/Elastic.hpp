@@ -27,7 +27,6 @@ class Elastic : public MaterialBase
         
 		// methods
 #ifdef MPM_CODE
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
 #else

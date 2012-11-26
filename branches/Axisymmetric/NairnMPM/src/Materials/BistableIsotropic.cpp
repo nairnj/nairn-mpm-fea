@@ -223,13 +223,13 @@ const char *BistableIsotropic::VerifyProperties(int np)
 
 // 3D not allowed
 void BistableIsotropic::ValidateForUse(int np)
-{	if(np==THREED_MPM)
-	{	throw CommonException("BistableIsotropic materials cannot do 3D MPM analysis",
+{	if(np==THREED_MPM || np==AXISYMMETRIC_MPM)
+	{	throw CommonException("BistableIsotropic materials cannot do 3D  or Axisymmetric MPM analysis",
 							  "BistableIsotropic::ValidateForUse");
 	}
 	
 	// call super class (why can't call super class?)
-	return MaterialBase::ValidateForUse(np);
+	return IsotropicMat::ValidateForUse(np);
 }
 
 // calculate properties for give state
@@ -319,16 +319,17 @@ void BistableIsotropic::LoadTransportProps(MPMBase *mptr,int np)
     Particle: strains, rotation strain, stresses, strain energy, angle,
 		current state
     dvij are (gradient rates X time increment) to give deformation gradient change
+   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 */
 void BistableIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double delTime,int np)
+        double dvzz,double delTime,int np)
 {
     short *state=(short *)(mptr->GetHistoryPtr()),transition=FALSE;
     double dmechV,dTrace,ds1,ds2,ds3;
 	Tensor *sp=mptr->GetStressTensor();
     
     // update in latest state
-    Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,delTime,np);
+    Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,delTime,np);
 	
     // Calculate critical value for transition
 	Tensor *ep=mptr->GetStrainTensor();

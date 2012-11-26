@@ -89,7 +89,6 @@ class MaterialBase : public LinkedObject
 		virtual void LoadTransportProps(MPMBase *,int);
 		virtual double GetHeatCapacity(MPMBase *);
 		virtual double GetHeatCapacityVol(MPMBase *);
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int) = 0;
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int) = 0;
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int) = 0;
 #endif

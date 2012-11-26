@@ -112,20 +112,20 @@ void Mooney::SetInitialParticleState(MPMBase *mptr,int np)
 /* For 2D MPM analysis, take increments in strain and calculate new
     Particle: strains, rotation strain, stresses, strain energy (per unit mass)
     dvij are (gradient rates X time increment) to give deformation gradient change
- 
-    Note that incompressible rubber is not suitable for dynamic calculations because
+   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
+   Note that incompressible rubber is not suitable for dynamic calculations because
     they have an infinite wave speed
 */
 void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-								double delTime,int np)
+								double dvzz,double delTime,int np)
 {
 	// Update strains and rotations and Left Cauchy strain
-	double detDf = IncrementDeformation(mptr,dvxx,dvyy,dvxy,dvyx);
+	double detDf = IncrementDeformation(mptr,dvxx,dvyy,dvxy,dvyx,dvzz);
     
     // get pointer to new left Cauchy strain
     Tensor *B = mptr->GetElasticLeftCauchyTensor();
 	
-	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
+	// Deformation gradients and Cauchy tensor differ in plane stress
 	if(np==PLANE_STRESS_MPM)
 	{	// Find B->zz required to have zero stress in z direction
 		
@@ -174,7 +174,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
         
         // Done and xn = new B->zz = (1+dw/dz)^2 = (1+dvzz)^2*(old Bzz), 
         //      and find dvzz and store new Bzz
-        double dvzz = sqrt(xn/B->zz) - 1.;
+        dvzz = sqrt(xn/B->zz) - 1.;
         B->zz = xn;
 		
 		// particle strain ezz now known
@@ -208,7 +208,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	sp->yy = Kterm + (2*B->yy-B->xx-B->zz)*G1sp/(3.*JforG1)
 			+ (B->yy*(B->xx+B->zz)-2*B->xx*B->zz-B->xy*B->xy)*G2sp/(3.*JforG2);
 	sp->xy = B->xy*G1sp/JforG1 + (B->zz*B->xy)*G2sp/JforG2;
-	if(np==PLANE_STRAIN_MPM)
+	if(np!=PLANE_STRESS_MPM)
 	{	sp->zz = Kterm + (2*B->zz-B->xx-B->yy)*G1sp/(3.*JforG1)
 				+ (B->zz*(B->xx+B->yy)-2*B->xx*B->yy+2.*B->xy*B->xy)*G2sp/(3.*JforG2);
 	}
@@ -220,20 +220,11 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
     mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kse));
 }
 
-/* For Axismmetric MPM analysis, take increments in strain and calculate new
-    Particle: strains, rotation strain, stresses, strain energy, angle
-    dvij are (gradient rates X time increment) to give deformation gradient change
-*/
-void Mooney::MPMConstLaw(MPMBase *mptr,double dvrr,double dvzz,double dvrz,double dvzr,double dvtt,
-                               double delTime,int np)
-{
-}
-
 /* For 3D MPM analysis, take increments in strain and calculate new
 	Particle: strains, rotation strain, stresses, strain energy (per unit mass)
 	dvij are (gradient rates X time increment) to give deformation gradient change
  
-    Note that incompressible rubber is not suitable for dynamic calculations because
+   Note that incompressible rubber is not suitable for dynamic calculations because
     they have an infinite wave speed
 */
 void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,

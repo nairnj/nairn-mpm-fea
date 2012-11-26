@@ -32,13 +32,12 @@ class IdealGas : public HyperElastic
         // initialize
         virtual char *InputMat(char *,int &);
 		virtual const char *VerifyProperties(int);
+		virtual void ValidateForUse(int);
         virtual void InitialLoadMechProps(int,int);
 		virtual void PrintMechanicalProperties(void);
         void SetInitialParticleState(MPMBase *,int);
-		virtual void ValidateForUse(int);
  		
 		// methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
         virtual void MPMCombinedLaw(MPMBase *,double);

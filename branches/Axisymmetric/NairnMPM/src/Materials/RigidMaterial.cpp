@@ -277,14 +277,8 @@ int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid)
 
 // does not have 2D constituitive law
 void RigidMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double delTime,int np)
+        double dvzz,double delTime,int np)
 {}
-
-// does not have axisymmetric constituitive law
-void RigidMaterial::MPMConstLaw(MPMBase *mptr,double dvrr,double dvzz,double dvrz,double dvzr,double dvtt,
-                           double delTime,int np)
-{
-}
 
 // Does not have 3D constitutive law
 void RigidMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,

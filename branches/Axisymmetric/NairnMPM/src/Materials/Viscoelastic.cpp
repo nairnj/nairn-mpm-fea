@@ -130,7 +130,7 @@ const char *Viscoelastic::VerifyProperties(int np)
 
 // plane stress not allowed in viscoelasticity
 void Viscoelastic::ValidateForUse(int np)
-{	if(np==PLANE_STRESS_MPM)
+{	if(np==PLANE_STRESS_MPM || np==AXISYMMETRIC_MPM)
 	{	throw CommonException("Viscoelastic materials require 2D plane strain or 3D MPM analysis",
 							  "Viscoelastic::MPMConstLaw");
 	}
@@ -215,9 +215,10 @@ char *Viscoelastic::MaterialData(void)
     Particle: strains, rotation strain, stresses, history variables,
 		strain energy, angle
     dvij are (gradient rates X time increment) to give deformation gradient change
+   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 */
 void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double delTime,int np)
+        double dvzz,double delTime,int np)
 {
     /* ---------------------------------------------------
         Add to total strain
@@ -279,22 +280,12 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy
 	// energy increment per unit mass (dU/(rho0 V0))
 	dvxx-=er;
 	dvyy-=er;
-	double dvzz=-er;
+	dvzz=-er;
 	double totalEnergy=(st0.xx+0.5*dsxx)*dvxx
 							+(st0.yy+0.5*dsyy)*dvyy
 							+(st0.xy+0.5*dtxy)*dgam
 							+(st0.xy+0.5*dszz)*dvzz;
     mptr->AddStrainEnergy(totalEnergy);
-}
-
-/* For Axismmetric MPM analysis, take increments in strain and calculate new
-    Particle: strains, rotation strain, stresses, strain energy, angle
-    dvij are (gradient rates X time increment) to give deformation gradient change
-    Assumes linear elastic, uses hypoelastic correction
-*/
-void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvrr,double dvzz,double dvrz,double dvzr,double dvtt,
-                          double delTime,int np)
-{
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
