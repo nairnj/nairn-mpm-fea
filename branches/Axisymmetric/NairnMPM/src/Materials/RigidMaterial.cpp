@@ -6,8 +6,14 @@
     Copyright (c) 2004 John A. Nairn, All rights reserved.
 
 	Rigid material in multimaterial mode
-		rho = 1000 mm^3/cm^3
+		rho = 1000 mm^3/cm^3 actually, but code thinks 1000 g/cm^3 or rho=1 g/mm^3
+    If Planar and 3D
 		mp = rho * vol (cm^3) / ptsperelement = particle volume in mm^3
+        mp/rho = particle volume in mm^3 (because rho=1 g/mm^3)
+    If axisymmetric
+        mp = rho Ap rp / ptsperelement = particle volume per radian in mm^3
+        mp/rho = particle volume per radian in mm^3 (because rho=1 g/mm^3)
+        mp/(rho rp) = particle area in mm^2 (because rho=1 g/mm^3)
 ********************************************************************************/
 
 #include "Materials/RigidMaterial.hpp"

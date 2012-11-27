@@ -217,7 +217,7 @@ void CrackVelocityField::AddDisplacement(int matfld,double wt,Vector *pdisp)
 // Unscaled because it does not account for strains
 // If multiple materials, it is sum of all materials in this field
 // Includes rigid material only if they are type=8 for contact calculations
-void CrackVelocityField::AddUnscaledVolume(double wtVol) { unscaledVolume+=wtVol; }
+void CrackVelocityField::AddUnscaledVolume(double wtVol) { unscaledVolume += wtVol; }
 
 #pragma mark ACCESSORS
 

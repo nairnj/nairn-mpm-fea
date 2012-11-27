@@ -524,7 +524,7 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 		n=-1;			// to skip all special cases
 #endif
 
-		// Note: when n=0, xp>0 and when n=1, xp>-2 (not need to check)
+		// Note: when n=0, xp>0 and when n=1, xp>-2 (no need to check)
 		if(xp<-q3 || nr<-0.01)
 			Svpx=0.;
 		else if(xp<-q2)
@@ -569,7 +569,7 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 		if(getDeriv)
 		{	ysign = xi->y>geti[ndIDs[i]] ? 1. : -1.;
 			
-			// Note: when n=0, xp>0 and when n=1, xp>-2 (not need to check)
+			// Note: when n=0, xp>0 and when n=1, xp>-2 (no need to check)
 			if(xp<-q3 || nr<-0.01)
 				dSvpx=0.;
 			else if(xp<-q2)
@@ -605,7 +605,7 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 			xDeriv[i]=dSvpx*Svpy*2.0/dx;
 			yDeriv[i]=ysign*Svpx*dSvpy*2.0/dy;
 
-			// Note: when n=0, xp>0 and when n=1, xp>-2 (not need to check)
+			// Note: when n=0, xp>0 and when n=1, xp>-2 (no need to check)
 			if(xp<-q3 || nr<-0.01)
 				pTr=0.;
 			else if(xp<-q2)
