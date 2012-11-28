@@ -149,7 +149,6 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
 	r1.y = pF[1][0]*mpmgrid.gridx*0.25;
 	r2.x = pF[0][1]*mpmgrid.gridy*0.25;
 	r2.y = pF[1][1]*mpmgrid.gridy*0.25;
-	
 
 #ifdef TRUNCATE
 	// shrink domain if any have x < 0, but keep particle in the middle
@@ -238,64 +237,101 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
 double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
 {
     *numDnds = 2;
-    double faceWt,ratio=1.;
+    double faceWt,ratio=1.,r1mag,r2mag;
+    double rp=pos.x;
+    Vector r1,r2;;
     
-    // always UNIFORM_GIMP_AS or LINEAR_CPDI_AS
-	
-	// initial vectors only
-	double r1x = mpmgrid.gridx*0.25;
-	double r2y = mpmgrid.gridy*0.25;
-	double rp = pos.x;
+    if(ElementBase::useGimp==UNIFORM_GIMP_AS)
+    {   r1.x = mpmgrid.gridx*0.25;
+        r1.y = 0.;
+        r2.x = 0.;
+        r2.y = mpmgrid.gridy*0.25;
+
+#ifdef TRUNCATE
+        // truncate if extends into r<0
+        if(pos.x-r1.x<0.)
+        {   r1.x = 0.5*(pos.x+r1.x);
+            rp = r1.x;
+        }
+#endif
         
+        // get magnitudes
+        r1mag = r1.x;
+        r2mag = r2.y;
+    }
+    
+    else
+    {   // always LINEAR_CPDI_AS
+	
+        // get particle 2D deformation gradient
+        double pF[3][3];
+        GetDeformationGradient(pF);
+	
+        // get polygon vectors - these are from particle to edge
+        //      and generalize semi width lp in 1D GIMP
+        r1.x = pF[0][0]*mpmgrid.gridx*0.25;
+        r1.y = pF[1][0]*mpmgrid.gridx*0.25;
+        r2.x = pF[0][1]*mpmgrid.gridy*0.25;
+        r2.y = pF[1][1]*mpmgrid.gridy*0.25;
+        
+#ifdef TRUNCATE
+        // shrink domain if any have x < 0, but keep particle in the middle
+        if(pos.x-fabs(r1.x+r2.x)<0.)
+        {	// make pos.x-shrink*fabs(r1.x+r2.x) very small and positive
+            double shrink = (pos.x-mpmgrid.gridx*1.e-10)/fabs(r1.x+r2.x);
+            r1.x *= shrink;
+            r1.y *= shrink;
+            r2.x *= shrink;
+            r2.y *= shrink;
+        }
+#endif
+        
+        // get magnitudes
+        r1mag = sqrt(r1.x*r1.x + r1.y*r1.y);
+        r2mag = sqrt(r2.x*r2.x + r2.y*r2.y);
+    }
+    
+    // Find corners
 	Vector c1,c2;
 	switch(face)
 	{	case 1:
 			// lower edge
-			c1.x = pos.x-r1x;
-			c2.x = pos.x+r1x;
-			c1.y = c2.y = pos.y-r2y;
-			if(c1.x < 0)
-			{	c1.x = 0.;
-				r1x = 0.5*c2.x;
-				rp = r1x;
-			}
-			faceWt = r1x*(rp + r1x/3.);				// node 3, node 4 should be minus
-			ratio = r1x*(rp - r1x/3.)/faceWt;		// find the ratio
+			c1.x = rp-r1.x-r2.x;         // node 1
+			c1.y = pos.y-r1.y-r2.y;
+			c2.x = rp+r1.x-r2.x;         // node 2
+            c2.y = pos.y+r1.y-r2.y;
+			faceWt = r1mag*(rp - r2.x - r1.x/3.);			// node 1, node 2 should be plus
+			ratio = r1mag*(rp - r2.x + r1.x/3.)/faceWt;		// find the ratio
 			break;
 			
 		case 2:
 			// right edge
-			c1.x = c2.x = pos.x+r1x;
-			c1.y = pos.y-r2y;
-			c2.y = pos.y+r2y;
-			faceWt = r2y*c1.x;
+			c1.x = rp+r1.x-r2.x;         // node 2
+			c1.y = pos.y+r1.y-r2.y;
+			c2.x = rp+r1.x+r2.x;         // node 3
+			c2.y = pos.y+r1.y+r2.y;
+			faceWt = r2mag*(rp + r1.x - r2.x/3.);			// node 2, node 3 should be plus
+			ratio = r2mag*(rp + r1.x + r2.x/3.)/faceWt;		// find the ratio
 			break;
 			
 		case 3:
 			// top edge
-			c1.x = pos.x+r1x;
-			c2.x = pos.x-r1x;
-			c1.y = c2.y = pos.y+r2y;
-			if(c2.x<0.)
-			{	c2.x = 0.;
-				r1x = 0.5*c1.x;
-				rp = r1x;
-			}
-			faceWt = r1x*(rp - r1x/3.);				// node 1, node 2 should be plus
-			ratio = r1x*(rp + r1x/3.)/faceWt;		// find the ratio
+			c1.x = rp+r1.x+r2.x;         // node 3
+			c1.y = pos.y+r1.y+r2.y;
+			c2.x = rp-r1.x+r2.x;         // node 4
+			c2.y = pos.y-r1.y+r2.y;
+			faceWt = r1mag*(rp + r2.x + r1.x/3.);			// node 3, node 4 should be minus
+			ratio = r2mag*(rp + r2.x - r1.x/3.)/faceWt;		// find the ratio
 			break;
 			
 		default:
 			// left edge
-			c1.x = c2.x = pos.x-r1x;
-			c1.y = pos.y+r2y;
-			c2.y = pos.y-r2y;
-			if(c1.x<0.)
-			{	c1.x = c2.x= 0.;
-				faceWt = 0.;
-			}
-			else
-				faceWt = r2y*c1.x;
+			c1.x = rp-r1.x+r2.x;         // node 4
+			c1.y = pos.y-r1.y+r2.y;
+			c2.x = rp-r1.x-r2.x;         // node 1
+			c2.y = pos.y-r1.y-r2.y;
+			faceWt = r2mag*(rp - r1.x + r2.x/3.);			// node 4, node 1 should be plus
+			ratio = r2mag*(rp - r1.x - r2.x/3.)/faceWt;		// find the ratio
 			break;
 	}
 	
@@ -321,6 +357,7 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
         case 2:
             // normal is y direction
             tscaled->y = faceWt;
+            break;
 		default:
 			// normal is z direction (not used here)
             tscaled->z = faceWt;

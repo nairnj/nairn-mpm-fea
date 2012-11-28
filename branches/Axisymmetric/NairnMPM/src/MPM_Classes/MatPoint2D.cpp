@@ -509,6 +509,7 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
         case 2:
             // normal is y direction
             tscaled->y = faceWt;
+            break;
 		default:
 			// normal is z direction (not used here)
             tscaled->z = faceWt;
