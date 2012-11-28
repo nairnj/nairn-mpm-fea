@@ -27,19 +27,23 @@ MPMMethod USF,#method
 #style="rigid"				
 #Po=-1
 #Pi=0
-#errmax=0.1
+#errmax=0.7
 
 #Ebase=2300
 #rhobase=1.2
-#matname="polymer"
+#abase=60
+#nubase=.33
+
+! "isoptropic" or "neohookean
+#matID="neohookean"
 
 #mult=250					! transit times for complete analysis
-#rampfraction=0.5			! fraction to full pressure
+#rampfraction=1.0			! fraction to full pressure
 
 #cell=2.5
 #border=2
 
-#zconfine="none"			! confine z bottom, top, or both
+#zconfine="both"			! confine z bottom, top, or both
 
 ! Calculate maximum and ramp times
 #speed=sqrt(1000*#Ebase/#rhobase)		! in mm/msec
@@ -59,18 +63,39 @@ GlobalArchive eyye
 GlobalArchive szz
 GlobalArchive ezze
 
+ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
+! plastic strain is Left Cauchy Green Strain, history 1 is J or volumetric strain
+ToArchive plasticstrain,history1
+
 ! ********** Materials Section **********
-Material "polymer","Polymer","Isotropic"
-  E #Ebase
-  nu .33
-  a 60
-  rho #rhobase
-Done
+
+if #matID="isotropic"
+  Material #matID,"Polymer","Isotropic"
+    E #Ebase
+    nu #nubase
+    a #abase
+    rho #rhobase
+  Done
+
+else if #matID="neohookean"
+  #G1=#Ebase/(2*(1+#nubase))
+  #G2=0
+  #G0=#G1+#G2
+  #Kbulk=#Ebase/(3*(1-2*#nubase))
+  Material #matID,"Neohookean Material","Mooney"
+    G1 #G1
+    G2 #G2
+    K #Kbulk
+    a #abase
+    rho #rhobase
+  Done
+  
+endif
 
 if #style="rigid"
   #maxDisp = #length*#errmax
   #rate = #maxDisp/#ramp
-  #rfxn = (-1000*#rate)&"*t*(1-sign(t-"&#ramp&"))"
+  #rfxn = (-1000*#rate)&"*(1-sign(t-"&#ramp&"))"
   Material "rigid","Rigid Piston","Rigid"
     direction 1
     SettingFunction #rfxn
@@ -84,7 +109,7 @@ GridVert (#depth+2*#border*#cell)/#cell
 GridThickness #thick
 GridRect #inner-#border*#cell,#length+#border*#cell,-#border*#cell,#depth+#border*#cell
 
-Region #matname,0,0,#thick
+Region #matID,0,0,#thick
   Rect #inner,#length,0,#depth
 EndRegion
 

@@ -321,7 +321,7 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 			c2.x = rp-r1.x+r2.x;         // node 4
 			c2.y = pos.y-r1.y+r2.y;
 			faceWt = r1mag*(rp + r2.x + r1.x/3.);			// node 3, node 4 should be minus
-			ratio = r2mag*(rp + r2.x - r1.x/3.)/faceWt;		// find the ratio
+			ratio = r1mag*(rp + r2.x - r1.x/3.)/faceWt;		// find the ratio
 			break;
 			
 		default:
@@ -330,7 +330,7 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 			c1.y = pos.y-r1.y+r2.y;
 			c2.x = rp-r1.x-r2.x;         // node 1
 			c2.y = pos.y-r1.y-r2.y;
-			faceWt = r2mag*(rp - r1.x + r2.x/3.);			// node 4, node 1 should be plus
+			faceWt = r2mag*(rp - r1.x + r2.x/3.);			// node 4, node 1 should be minus
 			ratio = r2mag*(rp - r1.x - r2.x/3.)/faceWt;		// find the ratio
 			break;
 	}
