@@ -42,7 +42,7 @@ EndHeader
 #factor=.025				! convergence factor (needs to be small for large strains)
 #rampfraction=1.0			! fraction to full pressure or strain, then hold
 #damp=0						! grid damping
-#fbdamp=5					! feedback damping
+#fbdamp=0					! feedback damping
 
 ! mesh details
 #cell=2
@@ -82,6 +82,7 @@ ToArchive plasticstrain,history1
 ! only needed when using force or traction conditions
 #maxDisp=#length*#maxstrain/100
 #stress=#Ebase*#maxstrain/100
+#stress=1000
 
 ! extra cells for tennsion
 if #maxDisp>0
