@@ -21,6 +21,7 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Exceptions/MPMTermination.hpp"
+#include "Boundary_Conditions/BoundaryCondition.hpp"
 
 #pragma mark MatPointAS::Constructors and Destructors
 
@@ -349,6 +350,7 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 	
     // get traction normal vector by radial integral for first node no the edge
     ZeroVector(tscaled);
+	double ex,ey,enorm;
 	switch(dof)
 	{	case 1:
 			// normal is x direction
@@ -358,6 +360,20 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
             // normal is y direction
             tscaled->y = faceWt;
             break;
+		case N_DIRECTION:
+			// cross product of edge vector with (0,0,1) = (ey, -ex)
+			ex = c2.y-c1.y;
+			ey = c1.x-c2.x;
+		case T1_DIRECTION:
+			if(dof==T1_DIRECTION)
+			{	ex = c2.x-c1.x;
+				ey = c2.y-c1.y;
+			}
+			// load in direction specified by normalized (ex,ey)
+			enorm = sqrt(ex*ex+ey*ey);
+			tscaled->x = ex*faceWt/enorm;
+			tscaled->y = ey*faceWt/enorm;
+			break;
 		default:
 			// normal is z direction (not used here)
             tscaled->z = faceWt;

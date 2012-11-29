@@ -96,7 +96,7 @@ class NodalPoint : public LinkedObject
 		int NumberNonrigidParticles(void);
 		void Describe(void);
 		void AddDisplacement(short,int,double,Vector *);
-		void AddUnscaledVolume(short,double);
+		void AddUnscaledVolume(short,double,bool);
         void AddUGradient(short,double,double,double,double,double);
         void AddEnergy(short,double,double,double,double);
         void AddStress(short,double,Tensor *);

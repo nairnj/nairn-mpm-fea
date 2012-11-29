@@ -126,6 +126,7 @@ class ElementBase : public LinkedObject
         virtual int NearestNode(double,double,int *);
         virtual void MPMPoints(short,Vector *);
 		virtual void GetXiPos(Vector *,Vector *);
+		virtual void GetPosition(Vector *,Vector *);
 #else
 		virtual bool HasNode(int);
 		virtual void DecrementNodeNums(int);

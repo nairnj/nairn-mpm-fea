@@ -22,6 +22,7 @@ MatPtLoadBC::MatPtLoadBC(int num,int dof,int sty)
 {
     ptNum=num;
     direction=dof;		// note that 3 or 4 means z here, which may not be Z_DIRECTION (4) bit location
+						// it is assumed z if not x (=1) or y (=2)
 }
 
 #pragma mark MatPtLoadBC: Methods

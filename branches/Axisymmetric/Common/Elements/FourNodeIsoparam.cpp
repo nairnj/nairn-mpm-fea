@@ -263,6 +263,21 @@ void FourNodeIsoparam::GetXiPos(Vector *pos,Vector *xipos)
 		ElementBase::GetXiPos(pos,xipos);
 }
 
+// Find Cartesion position from natural coordinates
+void FourNodeIsoparam::GetPosition(Vector *xipos,Vector *pos)
+{
+	if(pgElement)
+	{	double xarg = 0.25*(xipos->x + pgTerm[5]*pgTerm[0] - pgTerm[2]*pgTerm[3]);
+		double yarg = 0.25*(xipos->y + pgTerm[1]*pgTerm[3] - pgTerm[4]*pgTerm[0]);
+		double denom = (pgTerm[1]*pgTerm[5] - pgTerm[2]*pgTerm[4]);
+		pos->x = (pgTerm[1]*xarg + pgTerm[2]*yarg) / denom;
+		pos->y = (pgTerm[4]*xarg + pgTerm[5]*yarg) / denom;
+		pos->z = 0.;
+	}
+	else
+		ElementBase::GetPosition(xipos,pos);
+}
+
 // see if this element is rectangle in cartesion coordinates returning TRUE or FALSE
 // if true, dx and dy set to element dimensions and dz set to zero
 int FourNodeIsoparam::Orthogonal(double *dx,double *dy,double *dz)

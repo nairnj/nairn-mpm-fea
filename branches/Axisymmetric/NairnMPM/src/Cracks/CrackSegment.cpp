@@ -327,15 +327,17 @@ void CrackSegment::UpdateTractions(CrackHeader *theCrack)
 	double nCod=-t.y*codx+t.x*cody;			// absolute normal cod
 	double tCod=t.x*codx+t.y*cody;			// absolute tangential cod
 	
-	// will eventually call a traction law materials
+	// will eventually call a traction law material and get total force
+	// or force per radian is axisymmetric
+	double area = fmobj->IsAxisymmetric() ? x*dl : theCrack->GetThickness()*dl ;
 	TractionLaw *theLaw=(TractionLaw *)theMaterials[MatID()];
-	theLaw->CrackTractionLaw(this,nCod,tCod,t.x,t.y,theCrack->thickness*dl);
+	theLaw->CrackTractionLaw(this,nCod,tCod,t.x,t.y,area);
 }
 
 // Calculate energy in the traction law for this segment if in traction
 // fullEnergy true gets total energy at location of this segment or nearest traction law tip
 // full Energy false gets recoverable energy at the traction law tip
-// Used in J integral calculations so return energy in N/mm
+// Only used in J integral calculations for released and bridged energy, so return energy in N/mm
 double CrackSegment::TractionEnergy(Vector *crossPt,int crkTipIdx,bool fullEnergy)
 {
 	// if not traction law, scan toward crack tip looking for one

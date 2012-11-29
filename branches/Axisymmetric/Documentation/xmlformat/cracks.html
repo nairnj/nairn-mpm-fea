@@ -17,7 +17,7 @@
 
 <h1>Defining Cracks</h1>
 
-<p>MPM simulations can have cracks and can have multiple cracks, but cracks are currently only allowed in 2D analyses. Each crack is defined by a <code>&lt;CrackList&gt;</code> structure. Within each <code>&lt;CrackList&gt;</code> structure, that crack's geometry is defined by a series of line segments, lines, and arcs. The format is:
+<p>MPM simulations can have cracks and can have multiple cracks, but cracks are currently only allowed in 2D or axisymmetric analyses. Each crack is defined by a <code>&lt;CrackList&gt;</code> structure. Within each <code>&lt;CrackList&gt;</code> structure, that crack's geometry is defined by a series of line segments, lines, and arcs. The format is:
 
 <pre>
 &lt;CrackList friction='0.1' Dn='200' Dnc='-1' Dnt='200' Dt='5'&gt;
@@ -69,7 +69,7 @@ lines.
 <dd>Defines a series of points defined by the <code>x</code> and
 <code>y</code> attributes to be connected with line segments. An optional
 <a href="mpmheader.html#units"><code>units</code> attribute</a> can
-specify the length units</dd>
+specify the length units.</dd>
 
 <dt>Line</dt>
 <dd>Generates a straight line starting from <code>(xmin, ymin)</code> to <code>(xmax, ymax)</code> (nn optional
@@ -89,11 +89,13 @@ positive <code>x</code> direction.
 </dd>
 </dl>
 
+<p>For axisymmetric analyses enter <code>R</code> and <code>Z</code> corrdinates or limits by using <code>x</code> and <code>y</code> coordinates or <code>xmin</code>, <code>xmax</code>, <code>ymin</code>, and <code>ymax</code> limits.</p>
+
 <p>The <code>Thickness</code> command is used to set the crack thickness
 (the default is 1.0 mm and can have an optional <a href="mpmheader.html#units"><code>units</code> attribute</a>).
-Thickness is only needed when the crack surface uses tractions laws (see below).</p>
+Thickness is only needed for planar calculations and then when the crack surfaces uses tractions laws (see below).</p>
 
-<p>The implementation of explicit cracks in MPM was developed in NairnMPM. The first use cracks in MPM by CRAMP algorithm is described in <a href="references.html#Nairn2003">Nairn (2003)</a>. The <a href="references.html">references</a> page lists many articles for MPM fracture and crack propagation simulations.</p>
+<p>The implementation of explicit cracks in MPM was developed in NairnMPM. The first use of cracks in MPM by CRAMP algorithm is described in <a href="references.html#Nairn2003">Nairn (2003)</a>. The <a href="references.html">references</a> page lists many articles for MPM fracture and crack propagation simulations.</p>
 
 
 <h2><a name="traction"></a>Crack-Surface Traction Laws</h2>
@@ -102,8 +104,7 @@ Thickness is only needed when the crack surface uses tractions laws (see below).
 apply traction to the crack surface as a function of crack normal and shear opening displacments.
 You assign a traction to any created segments by adding a <code>mat='n'</code> attribute to any
 <code>pt</code>, <code>Line</code>, or <code>Circle</code> command, where <code>n</code> is
-the <a href="definematl.html#traction">traction law material</a> nummber. Alternatively, you can use a <code>matnam = 'law name'</code> attribute where <code>'law name'</code> is the name of the <a href="definematl.html#traction">traction law material</a> (see <a href="definematl.html#usemats">Defining Materials</a> for details on numbers <i>vs</i>. names). In addition, you must specify
-the crack thickness using a <code>Thickness</code> command.</p>
+the <a href="definematl.html#traction">traction law material</a> nummber. Alternatively, you can use a <code>matnam = 'law name'</code> attribute where <code>'law name'</code> is the name of the <a href="definematl.html#traction">traction law material</a> (see <a href="definematl.html#usemats">Defining Materials</a> for details on numbers <i>vs</i>. names). In addition, for planar 2D calculations you must specify the crack thickness using a <code>Thickness</code> command.</p>
 
 <p>The traction law will naturally debond
 if the critical opening displacements are reached. The visualization tools can plot total crack length or
@@ -113,7 +114,7 @@ tip nearest the crack tip.
 </p>
 
 <p>For normal opening, traction laws only apply traction when a cracked is opened.
-The crack contact mechanics handle the case where the crack surfaces are in contact.
+The crack contact mechanics handles the case where the crack surfaces are in contact.
 For shear opening, the traction law applies forces in both directions.
 To avoid conflicts with these tractions, the crack surface contact must use frictionaless sliding.
 In fact any crack with traction laws will automatically convert to a frictionless crack regardless of

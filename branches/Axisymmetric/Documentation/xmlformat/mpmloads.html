@@ -136,7 +136,7 @@ flux</a> boundary conditions. Any combination of types of boundary conditions ca
 
 <dt>dir</dt>
 <dd>Defines the loading direction (<code>1</code> for <code>x</code> axis, <code>2</code> for <code>y</code> axis,
-or <code>3</code> for <code>z</code> axis (if 3D))</dd>
+or <code>3</code> for <code>z</code> axis (if 3D)). For <code>TractionBC</code>, <code>dir</code> can be 11 or 12 to mean normal or shear traction relative the the selected <code>face</code>, respectively. A normal traction is positive if pointing out of the particle domain and a shear traction is positive when oriented in the counter-clockwise direction. Normal and shear tractions are not allowed in 3D calculations.</dd>
 
 <dt>style</dt>
 <dd>Defines the type of loading (<a href="#style">see below</a>).</dd>

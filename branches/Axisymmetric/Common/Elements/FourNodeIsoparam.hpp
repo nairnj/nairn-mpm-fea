@@ -41,6 +41,7 @@ class FourNodeIsoparam : public Linear2D
 		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *);
 		virtual void GimpShapeFunctionAS(Vector *,int,int *,int,double *,double *,double *,double *);
 		virtual void GetXiPos(Vector *,Vector *);
+		virtual void GetPosition(Vector *xipos,Vector *);
 #endif
 
 };

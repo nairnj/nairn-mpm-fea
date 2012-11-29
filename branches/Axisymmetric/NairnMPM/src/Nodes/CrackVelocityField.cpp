@@ -59,7 +59,7 @@ void CrackVelocityField::Zero(short theLoc,int cnum,bool zeroMVFs)
 	crackNum[SECOND_CRACK]=0;
 	ZeroVector(&norm[FIRST_CRACK]);
 	ZeroVector(&norm[SECOND_CRACK]);
-	unscaledVolume=0.;
+	unscaledVolume = unscaledRigidVolume = 0.;
 	numberPoints=0;
 	
 	// can't call when constructing because subclass not ready yet for this
@@ -215,9 +215,14 @@ void CrackVelocityField::AddDisplacement(int matfld,double wt,Vector *pdisp)
 // Add unscaled volume (mass/rho)
 // Total volume extrapolated to this crack velocity field in mm^3
 // Unscaled because it does not account for strains
-// If multiple materials, it is sum of all materials in this field
-// Includes rigid material only if they are type=8 for contact calculations
+// If multiple materials, it is sum of all non-rigid materials in this field
+// Only use is in contact an imperfect interfaces
 void CrackVelocityField::AddUnscaledVolume(double wtVol) { unscaledVolume += wtVol; }
+
+// Add unscaled volume (mass/rho)
+// Includes only rigid materials if they are type=8 for contact calculations
+// Only use is in contact an imperfect interfaces
+void CrackVelocityField::AddUnscaledRigidVolume(double wtVol) { unscaledRigidVolume += wtVol; }
 
 #pragma mark ACCESSORS
 
@@ -262,7 +267,8 @@ int CrackVelocityField::GetNumberPointsNonrigid(void) { return numberPoints; }
 // for debugging
 void CrackVelocityField::Describe(void)
 {
-	cout << "# Crack Field: npts="<<  numberPoints << " mass=" << GetTotalMass() << " unscaled vol=" << unscaledVolume << endl;
+	cout << "# Crack Field: npts="<<  numberPoints << " mass=" << GetTotalMass()
+		<< " unscaled nonrigid vol=" << unscaledVolume << " unscaled rigid vol=" << unscaledRigidVolume << endl;
 	if(crackNum[0]>0)
 	{	cout << "#     crack 1=#" << crackNum[0] << ", loc=";
 		if(loc[0]==ABOVE_CRACK) cout << "above"; else cout << "below";
@@ -281,7 +287,8 @@ void CrackVelocityField::Describe(void)
 
 // the unscaled volume
 double CrackVelocityField::UnscaledVolumeNonrigid(void) { return unscaledVolume; }
-double CrackVelocityField::UnscaledVolumeRigid(void) { return 0.; }
+double CrackVelocityField::UnscaledVolumeRigid(void) { return unscaledRigidVolume; }
+double CrackVelocityField::UnscaledVolumeTotal(void) { return unscaledVolume+unscaledRigidVolume; }
 
 // add contact force on rigid material to the input vector
 void CrackVelocityField::SumAndClearRigidContactForces(Vector *fcontact,bool) {}

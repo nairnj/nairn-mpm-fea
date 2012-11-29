@@ -815,8 +815,11 @@ void NodalPoint::AddDisplacement(short vfld,int matfld,double wt,Vector *pdisp)
 }
 
 // Add unscaled volume (mass/rho) to selected field
-void NodalPoint::AddUnscaledVolume(short vfld,double wtVol)
-{	cvf[vfld]->AddUnscaledVolume(wtVol);
+void NodalPoint::AddUnscaledVolume(short vfld,double wtVol,bool isRigid)
+{	if(isRigid)
+		cvf[vfld]->AddUnscaledRigidVolume(wtVol);
+	else
+		cvf[vfld]->AddUnscaledVolume(wtVol);
 }
 
 #pragma mark VELOCITY FIELDS
@@ -1171,7 +1174,7 @@ void NodalPoint::InterfaceForceThree(int single)
 	}
 }
 
-// Look for crack contact and adjust accordingly - a for field above and b for field below
+// Look for cracks as imperfect interfaces and adjust accordingly - a for field above and b for field below
 // fields must be verified as present (1 or more points)
 void NodalPoint::AddInterfaceForce(short a,short b,Vector *norm,int crackNumber)
 {	Vector fImpInt;

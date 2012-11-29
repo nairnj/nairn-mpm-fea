@@ -20,6 +20,9 @@ class ROperation;
 #define X_DIRECTION 1
 #define Y_DIRECTION 2
 #define Z_DIRECTION 4
+#define N_DIRECTION 11
+#define T1_DIRECTION 12
+#define T2_DIRECTION 13
 #define TEMP_DIRECTION 8
 #define CONC_DIRECTION 16
 #define EXTERNAL_FLUX 1

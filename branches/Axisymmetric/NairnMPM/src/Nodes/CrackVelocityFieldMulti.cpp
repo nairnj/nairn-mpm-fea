@@ -77,7 +77,7 @@ void CrackVelocityFieldMulti::CombineRigidFrom(CrackVelocityFieldMulti *cvfm,int
 	numberPoints+=rmvf->numberPoints;
 	
 	// add unscaled volume to this crack velocity field
-	unscaledVolume+=cvfm->UnscaledVolumeRigid();
+	unscaledRigidVolume+=cvfm->UnscaledVolumeRigid();
 	
 	// sum momentum, displacement, and mass grad (velocity is same) into material velocity field
 	mvf[rigidFieldNum]->numberPoints+=rmvf->numberPoints;
@@ -97,7 +97,7 @@ void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int ri
 	
 	// current valiues
 	int initialRigidPoints=mvf[rigidFieldNum]->numberPoints;
-	unscaledVolume-=UnscaledVolumeRigid();
+	unscaledRigidVolume-=UnscaledVolumeRigid();
 	*/
 	
 	// create material field if needed
@@ -122,8 +122,8 @@ void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int ri
 	numberRigidPoints+=rmvf->numberPoints-initialRigidPoints;
 	numberPoints+=rmvf->numberPoints-initialRigidPoints;
 	
-	// add unscaled volume to this crack velocity field
-	unscaledVolume+=cvfm->UnscaledVolumeRigid()-initialRigidVolume;
+	// add unscaled volume to this crack velocity field (may be wrong due to recent change in unscaled volumes)
+	unscaledRigidVolume+=cvfm->UnscaledVolumeRigid()-initialRigidVolume;
 	
 	// copy momentum, displacement, and mass grad (velocity is same) into material velocity field
 	mvf[rigidFieldNum]->numberPoints=rmvf->numberPoints;
@@ -335,7 +335,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
             
             // 1. check nodal volume (this is turned off by setting the materialContactVmin to zero)
             //    (warning: 2D must set grid thickness if it is not 1)
-            if(unscaledVolume/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
+            if(UnscaledVolumeTotal()/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
             
             // 2. ignore very small mass nodes - may not be needed
             if(massRatio<1.e-6 || massRatio>0.999999) continue;
@@ -550,7 +550,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
                     double rawEnergy;
 					
 					// Get raw surface area, it is divided by hperp in GetInterfaceForces()
-					// Scale voltot=voli+volb to voltot*sqrt(2*vmin/voltot)
+					// Scale voltot=voli+volb to voltot*sqrt(2*vmin/voltot) = sqrt(2*vmin*vtot)
 					double volb=UnscaledVolumeNonrigid()-voli;
 					double rawSurfaceArea = sqrt(2.*fmin(voli,volb)*(voli+volb));
 					//double surfaceArea = 2.*fmin(voli,volb);
@@ -651,10 +651,10 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
             
             // 1. check nodal volume (this is turned off by setting the materialContactVmin to zero)
             //    (warning: 2D must set grid thickness if it is not 1)
-            if(unscaledVolume/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
+            if(UnscaledVolumeTotal()/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
             
             // 2. ignore very small interactions
-            double volRatio=massi/rho/unscaledVolume;
+            double volRatio=massi/rho/UnscaledVolumeTotal();
             if(volRatio<.001 || volRatio>0.999) continue;
             //if(volRatio<1.e-6 || volRatio>0.999999) continue;
             
@@ -1405,31 +1405,6 @@ MatVelocityField *CrackVelocityFieldMulti::GetRigidMaterialField(int *rigidField
 	}
 	
 	return NULL;
-}
-
-// get rigid material volume by subtracting other materials from the total unscaled volume
-double CrackVelocityFieldMulti::UnscaledVolumeNonrigid(void)
-{	// total volume if no rigid particles
-	if(numberRigidPoints<=0) return unscaledVolume;
-	
-	// sum each nonrigid material
-	double rho,nonrigidVolume=0.0;
-	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-		{	rho=MaterialBase::GetMVFRho(i);				// in g/mm^3
-			nonrigidVolume+=(mvf[i]->mass/rho);
-		}
-	}
-	return nonrigidVolume;
-}
-
-// get rigid material volume by subtracting nonrigid materials from the total unscaled volume
-// assumes at most one rigid field
-double CrackVelocityFieldMulti::UnscaledVolumeRigid(void)
-{	// total volume if all rigid particles
-	if(numberRigidPoints==numberPoints) return unscaledVolume;
-	return unscaledVolume-UnscaledVolumeNonrigid();
 }
 
 /* in response to crack contact, change moment by changing velocity of all 

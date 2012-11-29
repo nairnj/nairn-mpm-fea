@@ -40,7 +40,7 @@
 		mpm[]->vfld[]
 		Allocate cvf[] and their mvf[] as needed
 			mvf[]->pk, vk, numberPoints, mass
-			mvf[]->disp, unscaledVolume (if contact might happen)
+			mvf[]->disp, unscaledVolume and unscaledRigidVolume (if contact might happen)
 			mvf[]->massGrad (if multimaterial mode)
 			cvf[]->norm, numberMaterials
 		nd[]->mass

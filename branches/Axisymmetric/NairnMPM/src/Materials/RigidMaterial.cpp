@@ -303,7 +303,7 @@ int RigidMaterial::MaterialTag(void) { return RIGIDMATERIAL; }
 const char *RigidMaterial::MaterialType(void) { return "Rigid Material"; }
 
 // return TRUE if rigid particle (for contact or for BC)
-short RigidMaterial::Rigid(void) { return TRUE; }
+bool RigidMaterial::Rigid(void) { return TRUE; }
 
 // return TRUE if rigid BC particle (not rigid for contact)
 short RigidMaterial::RigidBC(void) { return setDirection!=RIGID_MULTIMATERIAL_MODE; }

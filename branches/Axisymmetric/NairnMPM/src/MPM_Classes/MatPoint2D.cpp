@@ -14,6 +14,7 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Exceptions/MPMTermination.hpp"
+#include "Boundary_Conditions/BoundaryCondition.hpp"			// +AS
 
 #pragma mark MatPoint2D::Constructors and Destructors
 
@@ -391,7 +392,8 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
 {
     *numDnds = 2;
-    double faceWt;
+    double faceWt,ex,ey,enorm;
+	Vector c1,c2;
 	
 	// always UNIFORM_GIMP or LINEAR_CPDI
     
@@ -401,7 +403,6 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
         double r1x = mpmgrid.gridx*0.25;
         double r2y = mpmgrid.gridy*0.25;
         
-        Vector c1,c2;
         switch(face)
         {	case 1:
                 // lower edge
@@ -447,10 +448,14 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
         catch(...)
         {	throw MPMTermination("A Traction edge node has left the grid.","MatPoint2D::GetTractionInfo");
         }
+		
+		// get edge vector
+		ex = c2.x-c1.x;
+		ey = c2.y-c1.y;
     }
     else
-    {   // get deformed corners, but get element and natural coordinates
-        //  from CPDI info because corners have moved by here for any
+    {   // get deformed corners, but get from element and natural coordinates
+        //  from CPDI info because corners may have moved by here for any
         //  simulations that update strains between initial extrapolation
         //  and the grid forces calculation
         int d1,d2;
@@ -462,7 +467,7 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
                 break;
                 
             case 2:
-                // right edgt
+                // right edge
                 d1=1;
                 d2=2;
                 break;
@@ -496,6 +501,14 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
             faceWt = faceArea->x;
         else
             faceWt = faceArea->y;
+		
+		// get edge vector
+		if(dof==N_DIRECTION || dof==T1_DIRECTION)
+		{	theElements[cElem[0]]->GetPosition(&corners[0],&c1);
+			theElements[cElem[1]]->GetPosition(&corners[1],&c2);
+			ex = c2.x-c1.x;
+			ey = c2.y-c1.y;
+		}
         
     }
 	
@@ -510,6 +523,17 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
             // normal is y direction
             tscaled->y = faceWt;
             break;
+		case N_DIRECTION:
+			// cross product of edge vector with (0,0,1) = (ey, -ex)
+			enorm = ey;
+			ey = -ex;
+			ex = enorm;
+		case T1_DIRECTION:
+			// load in direction specified by normalize (ex,ey)
+			enorm = sqrt(ex*ex+ey*ey);
+			tscaled->x = ex*faceWt/enorm;
+			tscaled->y = ey*faceWt/enorm;
+			break;
 		default:
 			// normal is z direction (not used here)
             tscaled->z = faceWt;

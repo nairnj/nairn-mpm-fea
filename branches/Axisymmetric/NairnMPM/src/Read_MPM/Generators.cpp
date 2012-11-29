@@ -234,8 +234,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				MatID = matCtrl->GetIDFromNewName(matname);
             if(MatID<=0)
                 throw SAXException("Positive material ID needed in <Body> element.");
-            if(Thick<=0. && !fmobj->IsThreeD())
-                throw SAXException("Positive material thickness needed in <Body> element for 2D analyses.");
+            if(Thick<=0. && !fmobj->IsThreeD() && !fmobj->IsAxisymmetric())
+                throw SAXException("Positive material thickness needed in <Body> element for planar 2D analyses.");
         }
     }
 
@@ -660,7 +660,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		if(fmobj->IsThreeD())
         {   // checks for 3D
 			if(dof<1 || dof>3)
-				throw SAXException("'dir' in <LoadBC>, <TractionBC>, or <ConcFluxBC> element must be 1, 2, or 3 for 3D analyses.");
+			{	throw SAXException("'dir' in <LoadBC>, <TractionBC>, or <ConcFluxBC> must be 1-3 for 3D analyses.");
+			}
             if(strcmp(xName,"TractionBC")==0)
             {	if(face<1 || face>6)
                     throw SAXException("'face' in <TractionBC> element must be 1 to 6 for 3D analyses.");
@@ -669,7 +670,10 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         else
         {   // checks for 2D
             if(dof>2 || dof<1)
-                throw SAXException("'dir' in <LoadBC>, <TractionBC>, or <ConcFluxBC> element must be 1 or 2 for 2D analyses.");
+			{	if(dof<11 || dof>12 || strcmp(xName,"TractionBC")!=0)
+				{	throw SAXException("'dir' in <LoadBC> or <ConcFluxBC> must be 1 or 2 and in <TractionBC> must be 1, 2, 11, or 12 for 2D analyses.");
+				}
+			}
             if(strcmp(xName,"TractionBC")==0)
             {	if(face<1 || face>4)
                     throw SAXException("'face' in <TractionBC> element must be 1 to 4 for 3D analyses.");

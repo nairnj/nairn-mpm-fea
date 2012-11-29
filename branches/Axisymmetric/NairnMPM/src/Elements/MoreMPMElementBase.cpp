@@ -678,7 +678,7 @@ void ElementBase::GridShapeFunctions(int *numnds,int *nds,Vector *xipos,double *
 
 #pragma mark ElementBase: MPM Only Methods
 
-/* Get list of nodes for this element and the numbner of nodes
+/* Get list of nodes for this element and the number of nodes
 	nodes will be in nds[1]...
 */
 void ElementBase::GetNodes(int *numnds,int *nds)
@@ -846,6 +846,20 @@ int ElementBase::FindEdge(int beginNode,int endNode)
 // return TRUE or false if Orthogonal in x-y-z planes and if orthogonal then find width, height, and depth
 // of the element. If 2D element, return depth=0. Only for MPM elements.
 int ElementBase::Orthogonal(double *dx,double *dy,double *dz) { return FALSE; }
+
+// Find Cartesion position from natural coordinates
+void ElementBase::GetPosition(Vector *xipos,Vector *xyzpos)
+{
+	double fn[MaxElNd];
+	ShapeFunction(xipos,FALSE,&fn[1],NULL,NULL,NULL);
+	int i;
+	ZeroVector(xyzpos);
+	for(i=1;i<=NumberNodes();i++)
+	{	xyzpos->x += fn[i]*nd[nodes[i-1]]->x;
+		xyzpos->y += fn[i]*nd[nodes[i-1]]->y;
+		xyzpos->z += fn[i]*nd[nodes[i-1]]->z;
+	}
+}
 
 #pragma mark CLASS METHODS
 

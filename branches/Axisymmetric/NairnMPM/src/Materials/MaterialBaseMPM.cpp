@@ -1177,7 +1177,7 @@ double MaterialBase::CurrentWaveSpeed(bool threeD,MPMBase *mptr) { return WaveSp
 double MaterialBase::GetHistory(int num,char *historyPtr) { return (double)0.; }
 
 // return TRUE if rigid particle (for contact or for BC)
-short MaterialBase::Rigid(void) { return FALSE; }
+bool MaterialBase::Rigid(void) { return FALSE; }
 
 // return TRUE is rigid BC particle (not rigid for contact)
 short MaterialBase::RigidBC(void) { return FALSE; }

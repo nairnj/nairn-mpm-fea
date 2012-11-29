@@ -701,7 +701,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		crackCtrl->AddCrack(newCrack);
 		newCrack->SetContact(contact.friction,contact.Dn,contact.Dnc,contact.Dt);
 		double gridThickness=mpmgrid.GetThickness();
-		if(gridThickness>0.) newCrack->thickness=gridThickness;
+		if(gridThickness>0.) newCrack->SetThickness(gridThickness);
 		
 		// read crack attributes
 		double dval;
@@ -741,7 +741,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,CRACKLIST,MUST_BE_2D);
     	input=DOUBLE_NUM;
 		CrackHeader *newCrack=(CrackHeader *)crackCtrl->currentObject();
-        inputPtr=(char *)&newCrack->thickness;
+        inputPtr=(char *)newCrack->GetThicknessPtr();
         gScaling=ReadUnits(attrs,LENGTH_UNITS);
     }
     //-----------------------------------------------------------

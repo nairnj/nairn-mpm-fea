@@ -123,7 +123,7 @@ class MaterialBase : public LinkedObject
 		virtual double MaximumDiffusion(void);
         virtual double MaximumDiffusivity(void);
         virtual double GetHistory(int,char *);
-		virtual short Rigid(void);
+		virtual bool Rigid(void);
 		virtual short RigidBC(void);
 		virtual short RigidContact(void);
 		virtual bool isTractionLaw(void);

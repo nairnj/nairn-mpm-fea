@@ -22,6 +22,7 @@ MatPtTractionBC::MatPtTractionBC(int num,int dof,int edge,int sty)
 							: MatPtLoadBC(num,dof,sty)
 {
 	face = edge;
+	// direction set in super class can be 11, 12, 13 for normal, tangential 1, or tangential 2 loading
 }
 
 #pragma mark MatPtTractionBC: Methods
