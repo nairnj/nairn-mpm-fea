@@ -328,7 +328,7 @@ void CrackSegment::UpdateTractions(CrackHeader *theCrack)
 	double tCod=t.x*codx+t.y*cody;			// absolute tangential cod
 	
 	// will eventually call a traction law material and get total force
-	// or force per radian is axisymmetric
+	// or force per radian if axisymmetric
 	double area = fmobj->IsAxisymmetric() ? x*dl : theCrack->GetThickness()*dl ;
 	TractionLaw *theLaw=(TractionLaw *)theMaterials[MatID()];
 	theLaw->CrackTractionLaw(this,nCod,tCod,t.x,t.y,area);

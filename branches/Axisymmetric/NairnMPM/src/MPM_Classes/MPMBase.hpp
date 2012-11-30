@@ -72,7 +72,10 @@ class MPMBase : public LinkedObject
 		virtual void GetCPDINodesAndWeights(int) = 0;
 		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *) = 0;
 
-       
+        // defined virtual methods
+        virtual double GetUnscaledVolume(void);
+        double GetMassForGradient(void);
+
 		// base only methods (make virtual if need to override)
 		void SetDilatedVolume(void);
 		double GetVolume();

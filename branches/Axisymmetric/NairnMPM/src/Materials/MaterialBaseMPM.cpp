@@ -333,7 +333,7 @@ const char *MaterialBase::PreferredDirection(int style)
 		are printined to the output file and before any calculations. It is called for
 		every material defined in the input file, even if it is not used by any
 		particle.
-	Thois base class method calls InitialLoadMechProps() and InitialLoadTransProps()
+	This base class method calls InitialLoadMechProps() and InitialLoadTransProps()
 	If superclass overrides this method, must call this too
 */
 const char *MaterialBase::VerifyProperties(int np)

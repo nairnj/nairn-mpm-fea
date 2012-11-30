@@ -27,7 +27,8 @@ class MatPointAS : public MatPoint2D
         virtual void UpdateStrain(double,int,int);
         virtual void Fint(Vector &,double,double,double);
         virtual void SetOrigin(Vector *);
-		virtual void GetCPDINodesAndWeights(int);
+        virtual double GetUnscaledVolume(void);
+        virtual void GetCPDINodesAndWeights(int);
 		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *);
 };
 

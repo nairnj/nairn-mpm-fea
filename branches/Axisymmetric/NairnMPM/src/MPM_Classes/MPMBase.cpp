@@ -222,6 +222,17 @@ void MPMBase::SetDilatedVolume(void)
 
 double MPMBase::GetVolume(void) { return volume; }
 
+// get unscaled volume for use only in contact and imperfect interface calculations
+// return result in mm^3
+double MPMBase::GetUnscaledVolume(void)
+{	double rho=theMaterials[MatID()]->rho*0.001;			// in g/mm^3
+	return mp/rho;                                          // in mm^3
+}
+
+// get mass when finding mass gradient for contact calculations
+// Axisymmetric particles override to return mass/rp to get uniform particle mass
+double MPMBase::GetMassForGradient(void) { return mp; }
+
 // get deformation gradient terms
 double MPMBase::GetDuDy(void) { return (ep.xy+eplast.xy-wrot.xy)/2.; }
 double MPMBase::GetDvDx(void) { return (ep.xy+eplast.xy+wrot.xy)/2.; }

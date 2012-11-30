@@ -180,8 +180,8 @@ void MassAndMomentumTask::Execute(void)
 				contact.AddDisplacementVolumeTask1(vfld,matfld,ndptr,mpmptr,fn[i]);
 				
 				// material contact calculations
-				if(fmobj->multiMaterialMode)
-					ndptr->AddMassGradient(vfld,matfld,mp,xDeriv[i],yDeriv[i],zDeriv[i]);
+                // +AS - write mat pt function to get mass for gradient (will be mp/r0 for AS)
+                ndptr->AddMassGradient(vfld,matfld,mpmptr->GetMassForGradient(),xDeriv[i],yDeriv[i],zDeriv[i]);
 				
 				// more for non-rigid contact materials
 				if(!matID->Rigid())

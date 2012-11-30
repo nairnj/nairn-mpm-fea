@@ -1200,6 +1200,9 @@ void NodalPoint::AddInterfaceForce(short a,short b,Vector *norm,int crackNumber)
 	
 	// Area correction method 2 (in imperfect interface by cracks paper): (2*vmin/vtot)*vtot/dist = 2*vmin/dist
 	//double surfaceArea=2.0*fmin(cvf[a]->UnscaledVolumeNonrigid(),cvf[b]->UnscaledVolumeNonrigid())/dist;
+    
+    // If axisymmetric, multiply by radial position
+    if(fmobj->IsAxisymmetric()) surfaceArea *= x;
 	
 	// add total force (in g mm/sec^2)
 	AddFintSpreadTask3(a,MakeVector(fImpInt.x*surfaceArea,fImpInt.y*surfaceArea,0.));

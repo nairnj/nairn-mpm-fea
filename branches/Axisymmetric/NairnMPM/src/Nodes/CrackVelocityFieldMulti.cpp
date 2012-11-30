@@ -42,6 +42,7 @@ void CrackVelocityFieldMulti::ZeroMatFields(void)
 void CrackVelocityFieldMulti::AddMassTask1(int matfld) { numberRigidPoints++; }
 
 // Add to mass gradient
+// This gradient is only used in multimaterial contact calculations
 void CrackVelocityFieldMulti::AddMassGradient(int matfld,double mp,double dNdx,double dNdy,double dNdz)
 {	mvf[matfld]->massGrad->x+=mp*dNdx;
 	mvf[matfld]->massGrad->y+=mp*dNdy;
@@ -300,7 +301,8 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 		int ipaired=0;
 		for(j=0;j<maxMaterialFields;j++)
 		{	if(j==i || !MatVelocityField::ActiveField(mvf[j])) continue;
-			rhoj=MaterialBase::GetMVFRho(j);				// in g/mm^3
+            // +AS - for axisymmetric should probably get other material area instead
+			rhoj=MaterialBase::GetMVFRho(j); // in g/mm^3
 			double matUnscaledVolume=mvf[j]->mass/rhoj;
 			if(matUnscaledVolume>maxOtherMaterialVolume)
 			{	maxOtherMaterialVolume=matUnscaledVolume;
@@ -553,8 +555,10 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 					// Scale voltot=voli+volb to voltot*sqrt(2*vmin/voltot) = sqrt(2*vmin*vtot)
 					double volb=UnscaledVolumeNonrigid()-voli;
 					double rawSurfaceArea = sqrt(2.*fmin(voli,volb)*(voli+volb));
-					//double surfaceArea = 2.*fmin(voli,volb);
-					//double surfaceArea = (voli+volb);
+ 					//double rawSurfaceArea = 2.*fmin(voli,volb);
+					//double rawSurfaceArea = (voli+volb);
+                    // times nodal position for axisymmetric
+                    if(fmobj->IsAxisymmetric()) rawSurfaceArea *= nd[nodenum]->x;
 					
 					// get forces
                     GetInterfaceForcesForNode(&delta,&norm,Dn,Dnc,Dt,&fImp,&rawEnergy,rawSurfaceArea);

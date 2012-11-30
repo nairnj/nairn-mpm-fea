@@ -316,8 +316,7 @@ void CrackSurfaceContact::AddDisplacementVolumeTask1(short vfld,int matfld,Nodal
 	
 	// add unscaled volume, only used by contact and imperfect interfaces
 	MaterialBase *matptr = theMaterials[mptr->MatID()];
-	double rho=matptr->rho*0.001;						// in g/mm^3
-	ndpt->AddUnscaledVolume(vfld,mptr->mp*shape/rho,matptr->Rigid());   // in mm^3
+	ndpt->AddUnscaledVolume(vfld,shape*mptr->GetUnscaledVolume(),matptr->Rigid());   // in mm^3
 }
 
 // In task 6, track displacements or position but do not need to track volume

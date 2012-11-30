@@ -131,6 +131,16 @@ void MatPointAS::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
 	fout.z=0.;
 }
 
+// get unscaled volume for use only in contact and imperfect interface calculations
+// For axisymmetric, really needs area of the initial particle domain in mm^3
+// Calculations will need to multiply by radial position to get local volume
+// Here thickness is the original radial position of the particle
+double MatPointAS::GetUnscaledVolume(void)
+{	double rho=theMaterials[MatID()]->rho*0.001;			// in g/mm^3
+	return mp/(rho*thickness());                            // in mm^3 per unit radial position
+}
+
+
 // To support CPDI find nodes in the particle domain, find their elements,
 // their natural coordinates, and weighting values for gradient calculations
 // Should be done only once per time step and here only for axisynmmetric

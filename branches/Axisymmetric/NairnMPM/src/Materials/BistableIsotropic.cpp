@@ -218,7 +218,7 @@ const char *BistableIsotropic::VerifyProperties(int np)
     dVii/=100.;
 
 	// call super-super class
-	return MaterialBase::VerifyProperties(np);
+	return IsotropicMat::VerifyProperties(np);
 }
 
 // 3D not allowed
