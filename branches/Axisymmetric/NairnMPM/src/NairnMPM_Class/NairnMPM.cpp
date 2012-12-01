@@ -67,7 +67,6 @@ NairnMPM::NairnMPM()
 	FractCellTime=.5;				// fraction cell crossed in 1 step at wave speed (CFL convergence condition)
     PropFractCellTime=-1.;          // fracture cell crossed in 1 step for propagation time step (currently not user settable)
 	mstep=0;						// step number
-	volumeExtrap=FALSE;				// set if need volume extrapolations
 	warnParticleLeftGrid=1;			// abort when this many leave the grid
 	multiMaterialMode=false;		// multi-material mode
 	hasRigidContactParticles=false;	// rigid contact particles in multimaterial mode
@@ -143,9 +142,6 @@ void NairnMPM::MPMAnalysis(bool abort)
 		cout << endl;
 	}
 
-	// need particle volume? (assumes only transport tasks do)
-	if(transportTasks) volumeExtrap=TRUE;
-    
 	//---------------------------------------------------
 	// Create all the step tasks
 	

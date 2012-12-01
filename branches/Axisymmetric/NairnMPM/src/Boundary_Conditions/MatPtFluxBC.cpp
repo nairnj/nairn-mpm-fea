@@ -53,7 +53,7 @@ MatPtFluxBC *MatPtFluxBC::ZeroMPFlux(void)
 // (only called when diffusion is active)
 MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 {
-	double volume=mpm[ptNum-1]->GetVolume();						// in mm^3
+	double volume=mpm[ptNum-1]->GetVolume(TRUE);						// in mm^3
 	
 	if(style==SILENT)
 	{	// silent assumes isotropic material

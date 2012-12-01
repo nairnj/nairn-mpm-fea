@@ -1194,9 +1194,6 @@ Tensor *MaterialBase::GetkCondTensor(void) { return &kCondTensor; }
 // return pointer to diffusion tensor
 Tensor *MaterialBase::GetDiffusionTensor(void) { return &diffusionTensor; }
 
-// get material rho (g/mm^3) for material velocity field (can only call in multimaterial mode)
-double MaterialBase::GetMVFRho(int matfld) { return theMaterials[fieldMatIDs[matfld]]->rho*0.001; }
-
 // see if material for a material velocity field is rigid (only rigid contact materials can be in a velocity field)
 short MaterialBase::GetMVFIsRigid(int matfld)
 {	return matfld<(int)fieldMatIDs.size() ? theMaterials[fieldMatIDs[matfld]]->Rigid() : FALSE ;

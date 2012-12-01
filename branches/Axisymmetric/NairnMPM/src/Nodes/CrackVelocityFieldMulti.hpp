@@ -26,7 +26,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		// specific task methods
 		virtual void AddMassTask1(int);
 		virtual double GetTotalMassAndCount(void);
-		virtual void AddMassGradient(int,double,double,double,double);
+		virtual void AddVolumeGradient(int,double,double,double,double);
 		virtual void CombineRigidFrom(CrackVelocityFieldMulti *,int);
 		virtual void CopyRigidFrom(CrackVelocityFieldMulti *,int);
 	
@@ -40,7 +40,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 	
 		virtual void MaterialContact(int,int,bool,double);
         virtual void GetFrictionalDeltaMomentum(Vector *,Vector *,double,double);
-		virtual void GetMassGradient(int,Vector *,double);
+		virtual void GetVolumeGradient(int,Vector *,double);
 		virtual void RigidMaterialContact(int,int,int,bool,double);
         virtual bool GetDeltaMomemtumOfInterface(Vector *,Vector *,double,bool,double,double,double);
         virtual void GetInterfaceForcesForNode(Vector *,Vector *,double,double,double,Vector *,double *,double);
@@ -68,6 +68,8 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual int GetNumberPointsNonrigid(void);
 		virtual void SumAndClearRigidContactForces(Vector *,bool);
 		virtual double GetTotalMass(void);
+		virtual double GetVolumeNonrigid(void);
+		virtual double GetVolumeTotal(void);
 		virtual double GetMass(int);
 		virtual Vector GetCMatMomentum(void);
 		virtual Vector GetCMDisplacement(void);

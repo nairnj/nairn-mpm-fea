@@ -259,7 +259,8 @@ void MeshInfo::SetCartesian(int style,double xcell,double ycell,double zcell)
 	}
 }
 
-// set grid style (only set by <Grid> command). For 2D, d=0 and z is the specified thickness, or 1.0 by default.
+// set grid style (only set by <Grid> command). For 2D, d=0 and z is the specified thickness, or 1.0 by default,
+//   or 1.0 if axisymmetric (so cell Volume is area)
 // horiz is number of elements in x direction, vert is y direction, depth in z direction (or 0 in 2D)
 void MeshInfo::SetElements(int h,int v,int d,double x,double y,double z)
 {	horiz=h;

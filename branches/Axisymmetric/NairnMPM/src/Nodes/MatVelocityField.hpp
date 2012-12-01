@@ -27,8 +27,9 @@ class MatVelocityField
 		Vector fext;				// external force
 		Vector ftot;				// total force or contact force for rigid material
 		Vector disp;				// displacement for contact calculations
-		Vector *massGrad;			// mass gradient allocated in multimaterial mode
+		Vector *volumeGrad;			// mass gradient allocated in multimaterial mode
 		bool rigidField;			// TRUE or FALSE if for rigid contact particles
+		double volume;			// only for transport tasks or contact (cracks or multimaterial)
 	
 		// constants (not changed in MPM time step)
 				

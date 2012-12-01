@@ -58,8 +58,8 @@ TransportTask *DiffusionTask::TransportTimeStep(int matid,double dcell,double *t
 // potential from 0 to 1 where 1 means concentration is equal to that materials saturation
 // concentration.
 TransportTask *DiffusionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape)
-{	ndpt->gConcentration += mptr->pConcentration*mptr->GetVolume()*shape;
-	ndpt->gVolume += mptr->GetVolume()*shape;
+{	ndpt->gConcentration += mptr->pConcentration*mptr->GetVolume(TRUE)*shape;
+	ndpt->gVolume += mptr->GetVolume(TRUE)*shape;
 	return nextTask;
 }
 

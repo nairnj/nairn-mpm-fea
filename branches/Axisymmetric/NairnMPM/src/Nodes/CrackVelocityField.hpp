@@ -42,7 +42,7 @@ class CrackVelocityField
 		virtual void AddMass(int,double);
 		virtual void AddMassTask1(int);
 		virtual double GetTotalMassAndCount(void) = 0;
-		virtual void AddMassGradient(int,double,double,double,double);
+		virtual void AddVolumeGradient(int,double,double,double,double);
 	
 		void AddFintTask3(int,Vector *);
 		virtual void AddFintSpreadTask3(Vector *) = 0;
@@ -67,15 +67,11 @@ class CrackVelocityField
 	
 		void AddNormals(Vector *,int);
 		void AddDisplacement(int,double,Vector *);
-		void AddUnscaledVolume(double);
-		void AddUnscaledRigidVolume(double wtVol);
-		double UnscaledVolumeNonrigid(void);
-		double UnscaledVolumeRigid(void);
-		double UnscaledVolumeTotal(void);
+		void AddVolume(int,double);
 	
 		// methods
 		virtual void MaterialContact(int,int,bool,double);
-		virtual void GetMassGradient(int,Vector *,double);
+		virtual void GetVolumeGradient(int,Vector *,double);
 		virtual void CalcVelocityForStrainUpdate(void) = 0;
 	
 		// boundary conditions
@@ -102,6 +98,8 @@ class CrackVelocityField
 		int OppositeCrackTo(int,int);
 		void SetLocationAndCrack(short,int,int);
 		virtual double GetTotalMass(void) = 0;
+		virtual double GetVolumeNonrigid(void) = 0;
+		virtual double GetVolumeTotal(void) = 0;
 		virtual double GetMass(int) = 0;
 		virtual Vector GetCMatMomentum(void) = 0;
 		virtual Vector GetCMDisplacement(void) = 0;
@@ -127,7 +125,6 @@ class CrackVelocityField
 		MatVelocityField **mvf;		// material velocity fields
 		// unscaled nonrigid volume (ignores dilation) only used for imperfect interface forces and material contact
 		// unscaleRigidVolume is due to rigid contaft materials (type 8) (always zero unless multimaterial mode)
-		double unscaledVolume,unscaledRigidVolume;
 };
 
 #endif

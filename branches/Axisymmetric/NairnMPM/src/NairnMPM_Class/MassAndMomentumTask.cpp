@@ -40,8 +40,8 @@
 		mpm[]->vfld[]
 		Allocate cvf[] and their mvf[] as needed
 			mvf[]->pk, vk, numberPoints, mass
-			mvf[]->disp, unscaledVolume and unscaledRigidVolume (if contact might happen)
-			mvf[]->massGrad (if multimaterial mode)
+			mvf[]->disp, volume (if contact might happen)
+			mvf[]->volumeGrad (if multimaterial mode)
 			cvf[]->norm, numberMaterials
 		nd[]->mass
 		nd[]->gConcentration, gVolume (for diffusion)
@@ -140,9 +140,6 @@ void MassAndMomentumTask::Execute(void)
 			else
 				theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),mpmptr);
 			
-			// get deformed particle volume if it will be needed (for transport tasks)
-			if(fmobj->volumeExtrap) mpmptr->SetDilatedVolume();
-			
 			// Add particle property to each node in the element
 			for(i=1;i<=numnds;i++)
 			{	ndptr=nd[nds[i]];				// get pointer
@@ -177,11 +174,10 @@ void MassAndMomentumTask::Execute(void)
 				mpmptr->vfld[i]=vfld;
 				
 				// crack contact calculations
-				contact.AddDisplacementVolumeTask1(vfld,matfld,ndptr,mpmptr,fn[i]);
+				contact.AddDisplacementVolume(vfld,matfld,ndptr,mpmptr,fn[i]);
 				
 				// material contact calculations
-                // +AS - write mat pt function to get mass for gradient (will be mp/r0 for AS)
-                ndptr->AddMassGradient(vfld,matfld,mpmptr->GetMassForGradient(),xDeriv[i],yDeriv[i],zDeriv[i]);
+                ndptr->AddVolumeGradient(vfld,matfld,mpmptr->GetVolume(FALSE),xDeriv[i],yDeriv[i],zDeriv[i]);
 				
 				// more for non-rigid contact materials
 				if(!matID->Rigid())

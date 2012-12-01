@@ -23,9 +23,9 @@
 // Constructors
 MatVelocityField::MatVelocityField(short forRigid)
 {	if(fmobj->multiMaterialMode)
-		massGrad=new Vector;
+		volumeGrad=new Vector;
 	else
-		massGrad=NULL;
+		volumeGrad=NULL;
 	rigidField=FALSE;
 	Zero();
 	rigidField=forRigid;
@@ -33,8 +33,8 @@ MatVelocityField::MatVelocityField(short forRigid)
 
 // Destructor
 MatVelocityField::~MatVelocityField()
-{	if(massGrad!=NULL)
-		delete massGrad;
+{	if(volumeGrad!=NULL)
+		delete volumeGrad;
 }
 
 // zero data at start of time step
@@ -48,8 +48,9 @@ void MatVelocityField::Zero(void)
 	}
 	ZeroVector(&vk);
 	ZeroVector(&disp);
-	if(massGrad!=NULL) ZeroVector(massGrad);
+	if(volumeGrad!=NULL) ZeroVector(volumeGrad);
 	numberPoints=0;
+	volume=0.;
 }
 
 #pragma mark METHODS

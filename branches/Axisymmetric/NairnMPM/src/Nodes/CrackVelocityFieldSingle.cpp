@@ -72,6 +72,7 @@ void CrackVelocityFieldSingle::RezeroNodeTask6(double)
 {	if(MatVelocityField::ActiveField(mvf[0]))
 	{	ZeroVector(&mvf[0]->pk);
 		ZeroVector(&mvf[0]->disp);
+		mvf[0]->volume=0.;
 	}
 }
 
@@ -235,6 +236,16 @@ void CrackVelocityFieldSingle::AddSkewFtot(double deltime,double vel,double angl
 // total mass all velocity fields
 double CrackVelocityFieldSingle::GetTotalMass(void)
 {	return MatVelocityField::ActiveField(mvf[0]) ? mvf[0]->mass : 0. ;
+}
+
+// get volume when only a single material (overridden when might be more)
+double CrackVelocityFieldSingle::GetVolumeNonrigid(void)
+{	return MatVelocityField::ActiveField(mvf[0]) ? mvf[0]->volume : 0. ;
+}
+
+// get volume when only a single material (overridden when might be more)
+double CrackVelocityFieldSingle::GetVolumeTotal(void)
+{	return MatVelocityField::ActiveField(mvf[0]) ? mvf[0]->volume : 0. ;
 }
 
 // total mass all velocity fields

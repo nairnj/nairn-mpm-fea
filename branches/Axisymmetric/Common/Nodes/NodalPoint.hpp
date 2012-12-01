@@ -66,7 +66,7 @@ class NodalPoint : public LinkedObject
 		short AddMomentumTask1(int,CrackField *,double,Vector *);
 		void AddMass(short,int,double);
 		void AddMassTask1(short,int);
-		void AddMassGradient(short,int,double,double,double,double);
+		void AddVolumeGradient(short,int,double,double,double,double);
 	
 		void AddFintTask3(short,int,Vector *);
 		void AddFintSpreadTask3(short,Vector);
@@ -96,7 +96,7 @@ class NodalPoint : public LinkedObject
 		int NumberNonrigidParticles(void);
 		void Describe(void);
 		void AddDisplacement(short,int,double,Vector *);
-		void AddUnscaledVolume(short,double,bool);
+		void AddVolume(short,int,double);
         void AddUGradient(short,double,double,double,double,double);
         void AddEnergy(short,double,double,double,double);
         void AddStress(short,double,Tensor *);
@@ -112,7 +112,7 @@ class NodalPoint : public LinkedObject
 		void InterfaceForceThree(int);
 		void MaterialContactOnNode(bool,double);
         void MaterialInterfaceForce(MaterialInterfaceNode *);
-		void GetMassGradient(short,int,Vector *,double);
+		void GetVolumeGradient(short,int,Vector *,double);
 		double GetMass(short,int);
 		void SetXMomVel(void);
 		void SetYMomVel(void);

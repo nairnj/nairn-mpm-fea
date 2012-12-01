@@ -988,9 +988,16 @@ void MPMReadHandler::grid()
 	}
     
 	if(DbleEqual(Rhoriz,1.) && DbleEqual(Rvert,1.) && (!fmobj->IsThreeD() || DbleEqual(Rdepth,1.)))
-	{	double gridz = fmobj->IsThreeD() ? (Zmax-Zmin)/(double)Ndepth : 0.;
+	{	double zparam,gridz = 0.;
+		if(fmobj->IsThreeD())
+		{	zparam = Zmin;
+			gridz = (Zmax-Zmin)/(double)Ndepth;
+		}
+		else if(fmobj->IsAxisymmetric())
+			zparam = 1.0;
+		else
+			zparam = Z2DThickness;
 		mpmgrid.SetCartesian(TRUE,(Xmax-Xmin)/(double)Nhoriz,(Ymax-Ymin)/(double)Nvert,gridz);
-		double zparam = fmobj->IsThreeD() ? Zmin : Z2DThickness;
 		mpmgrid.SetElements(Nhoriz,Nvert,Ndepth,Xmin,Ymin,zparam);
 	}
 	else

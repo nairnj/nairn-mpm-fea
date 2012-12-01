@@ -237,8 +237,9 @@ short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector 
 }
 
 // Add mass for selected field
-void NodalPoint::AddMassGradient(short vfld,int matfld,double mp,double dNdx,double dNdy,double dNdz)
-{	cvf[vfld]->AddMassGradient(matfld,mp,dNdx,dNdy,dNdz);
+void NodalPoint::AddVolumeGradient(short vfld,int matfld,double Vp,double dNdx,double dNdy,double dNdz)
+{	if(fmobj->multiMaterialMode)
+		cvf[vfld]->AddVolumeGradient(matfld,Vp,dNdx,dNdy,dNdz);
 }
 
 // Calculate total mass. Calculations might need to exclude nodes whose
@@ -814,12 +815,9 @@ void NodalPoint::AddDisplacement(short vfld,int matfld,double wt,Vector *pdisp)
 {	cvf[vfld]->AddDisplacement(matfld,wt,pdisp);
 }
 
-// Add unscaled volume (mass/rho) to selected field
-void NodalPoint::AddUnscaledVolume(short vfld,double wtVol,bool isRigid)
-{	if(isRigid)
-		cvf[vfld]->AddUnscaledRigidVolume(wtVol);
-	else
-		cvf[vfld]->AddUnscaledVolume(wtVol);
+// Add volume to selected field
+void NodalPoint::AddVolume(short vfld,int matfld,double wtVol)
+{	cvf[vfld]->AddVolume(matfld,wtVol);
 }
 
 #pragma mark VELOCITY FIELDS
@@ -873,9 +871,9 @@ void NodalPoint::MaterialContactOnNode(bool postUpdate,double deltime)
 }
 
 // retrieve -2*scale*(mass gradient) for material matfld in velocity field vfld
-void NodalPoint::GetMassGradient(short vfld,int matfld,Vector *grad,double scale)
+void NodalPoint::GetVolumeGradient(short vfld,int matfld,Vector *grad,double scale)
 {
-	cvf[vfld]->GetMassGradient(matfld,grad,scale);
+	cvf[vfld]->GetVolumeGradient(matfld,grad,scale);
 	
 	/*
 	// number of nodes each direction (1 more than number of elements)
@@ -1195,13 +1193,13 @@ void NodalPoint::AddInterfaceForce(short a,short b,Vector *norm,int crackNumber)
 	//double dist = fmax(dxnx,dyny)/sqrt(norm->x*norm->x+norm->y*norm->y);
     
 	// Area correction method 1 (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
-	double vola=cvf[a]->UnscaledVolumeNonrigid(),volb=cvf[b]->UnscaledVolumeNonrigid(),voltot=vola+volb;
+	double vola=cvf[a]->GetVolumeNonrigid(),volb=cvf[b]->GetVolumeNonrigid(),voltot=vola+volb;
 	double surfaceArea=sqrt(2.0*fmin(vola,volb)*voltot)/dist;
 	
 	// Area correction method 2 (in imperfect interface by cracks paper): (2*vmin/vtot)*vtot/dist = 2*vmin/dist
 	//double surfaceArea=2.0*fmin(cvf[a]->UnscaledVolumeNonrigid(),cvf[b]->UnscaledVolumeNonrigid())/dist;
     
-    // If axisymmetric, multiply by radial position
+    // If axisymmetric, multiply by radial position (vola, volb above were areas)
     if(fmobj->IsAxisymmetric()) surfaceArea *= x;
 	
 	// add total force (in g mm/sec^2)

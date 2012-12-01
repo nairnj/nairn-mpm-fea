@@ -36,7 +36,6 @@ class NairnMPM : public CommonAnalysis
 		int warnParticleLeftGrid;		// warning ID
 		bool multiMaterialMode;			// TRUE to use separate velocity fields for each material
 		bool hasRigidContactParticles;	// TRUE if some particles in multimaterial mode or rigid (direction=8)
-		bool volumeExtrap;				// true if need particle volume
 		
         //  Constructors and Destructor
 		NairnMPM();

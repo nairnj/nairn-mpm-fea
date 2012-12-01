@@ -131,6 +131,19 @@ void MatPointAS::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
 	fout.z=0.;
 }
 
+// get dilated current volume using current deformation gradient
+// only used for contact (cracks and multimaterial) and for transport tasks
+// when actual is false, get t*Ap, where Ap is deformed particle area
+double MatPointAS::GetVolume(bool actual)
+{	double rho=theMaterials[MatID()]->rho*0.001;			// in g/mm^3
+	if(actual)
+		return GetRelativeVolume()*mp/rho;					// in mm^3
+	
+	// get deformed area per unit radial position
+	double pF[3][3];
+	GetDeformationGradient(pF);
+	return (pF[0][0]*pF[1][1]-pF[1][0]*pF[0][1])*mp/(origpos.x*rho);
+}
 // get unscaled volume for use only in contact and imperfect interface calculations
 // For axisymmetric, really needs area of the initial particle domain in mm^3
 // Calculations will need to multiply by radial position to get local volume

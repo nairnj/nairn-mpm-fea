@@ -214,14 +214,6 @@ int MPMBase::GetResetElementCrossings(void)
 	return was;
 }
 
-// set dilated current volume using current strains
-void MPMBase::SetDilatedVolume(void)
-{	double rho=theMaterials[MatID()]->rho*0.001;			// in g/mm^3
-	volume=GetRelativeVolume()*mp/rho;						// in mm^3
-}
-
-double MPMBase::GetVolume(void) { return volume; }
-
 // get unscaled volume for use only in contact and imperfect interface calculations
 // return result in mm^3
 double MPMBase::GetUnscaledVolume(void)

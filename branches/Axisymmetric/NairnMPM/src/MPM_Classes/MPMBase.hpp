@@ -69,6 +69,7 @@ class MPMBase : public LinkedObject
 		virtual double KineticEnergy(void) = 0;
         virtual void GetDeformationGradient(double F[][3]) = 0;
         virtual double GetRelativeVolume(void) = 0;
+		virtual double GetVolume(bool) = 0;
 		virtual void GetCPDINodesAndWeights(int) = 0;
 		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *) = 0;
 
@@ -77,8 +78,6 @@ class MPMBase : public LinkedObject
         double GetMassForGradient(void);
 
 		// base only methods (make virtual if need to override)
-		void SetDilatedVolume(void);
-		double GetVolume();
 		int MatID(void);
 		int ArchiveMatID(void);
 		int ElemID(void);
@@ -154,7 +153,6 @@ class MPMBase : public LinkedObject
 		Tensor ep;					// total strain tensor (init 0)
 		Tensor eplast;				// plastic strain tensor (init 0)
 		TensorAntisym wrot;			// rotation strain tensor (init 0)
-		double volume;
 		double plastEnergy;			// total plastic energy
 		double dispEnergy;			// dissipated energy in current step
 		double strainEnergy;		// total strain energy
