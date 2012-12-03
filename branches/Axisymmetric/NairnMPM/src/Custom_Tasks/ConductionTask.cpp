@@ -60,7 +60,7 @@ TransportTask *ConductionTask::TransportTimeStep(int matid,double dcell,double *
 TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape)
 {	double Cp=theMaterials[mptr->MatID()]->GetHeatCapacity(mptr);
 	double rho=theMaterials[mptr->MatID()]->rho;
-	double arg=mptr->GetVolume(TRUE)*rho*Cp*shape;
+	double arg=mptr->GetVolume(DEFORMED_VOLUME)*rho*Cp*shape;
 	ndpt->gTemperature+=mptr->pTemperature*arg;
 	ndpt->gRhoVCp+=arg;
 	return nextTask;
@@ -143,7 +143,7 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double s
 	{	// V * q = 1000 J/sec where J = 1.0e-9 * V (mm^3) * rho (g/cm^3) * specific energy
 		// ...see data archiving for details on units
 		double rho=theMaterials[mptr->MatID()]->rho;
-		ndpt->fcond+=sh*1.0e-6*mptr->GetVolume(TRUE)*rho*mptr->GetDispEnergy()/timestep;
+		ndpt->fcond+=sh*1.0e-6*mptr->GetVolume(DEFORMED_VOLUME)*rho*mptr->GetDispEnergy()/timestep;
 	}
 	
 	// if on boundary, get boundary force

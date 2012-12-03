@@ -57,8 +57,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		// accessors
 		virtual double GetTotalMass(void);
 		virtual double GetVolumeNonrigid(void);
-		virtual double GetVolumeTotal(void);
-		virtual double GetMass(int);
+		virtual double GetVolumeTotal(double);
 		virtual Vector GetCMatMomentum(void);
 		virtual Vector GetCMDisplacement(void);
 		virtual Vector GetCMatFtot(void);

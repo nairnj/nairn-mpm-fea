@@ -19,6 +19,7 @@
 #include "Nodes/MatVelocityField.hpp"
 
 class MPMBase;
+class NodalPoint;
 
 class CrackVelocityField
 {
@@ -40,9 +41,9 @@ class CrackVelocityField
 		// specific task methods
 		void AddMomentumTask1(int,Vector *,Vector *);
 		virtual void AddMass(int,double);
-		virtual void AddMassTask1(int);
+		virtual void AddMassTask1(int,double);
 		virtual double GetTotalMassAndCount(void) = 0;
-		virtual void AddVolumeGradient(int,double,double,double,double);
+		virtual void AddVolumeGradient(int,MPMBase *,double,double,double);
 	
 		void AddFintTask3(int,Vector *);
 		virtual void AddFintSpreadTask3(Vector *) = 0;
@@ -71,7 +72,7 @@ class CrackVelocityField
 	
 		// methods
 		virtual void MaterialContact(int,int,bool,double);
-		virtual void GetVolumeGradient(int,Vector *,double);
+		virtual void GetVolumeGradient(int,NodalPoint *,Vector *,double);
 		virtual void CalcVelocityForStrainUpdate(void) = 0;
 	
 		// boundary conditions
@@ -99,8 +100,7 @@ class CrackVelocityField
 		void SetLocationAndCrack(short,int,int);
 		virtual double GetTotalMass(void) = 0;
 		virtual double GetVolumeNonrigid(void) = 0;
-		virtual double GetVolumeTotal(void) = 0;
-		virtual double GetMass(int) = 0;
+		virtual double GetVolumeTotal(double) = 0;
 		virtual Vector GetCMatMomentum(void) = 0;
 		virtual Vector GetCMDisplacement(void) = 0;
 		virtual Vector GetCMatFtot(void) = 0;

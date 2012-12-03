@@ -30,14 +30,14 @@ EndHeader! ------------ Parameters ---------------
 
 ! Dimensions
 #cell=2
-#length=40			! length
+#length=20			! length
 #width=10			! width
 #thick=10			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
 #loading="traction"	! Loading = "rigid", "contact", "force", "traction"
-#fixsides="yes"		! Yes to constrain y direction (and z direction if 3D)
-#strain=200	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
+#fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
+#strain=100	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak
@@ -58,7 +58,7 @@ MPMMethod #update,#method
 ! convert to contact
 if #loading="contact"
   MultimaterialMode 0,enabled,maxgrad,100
-  !ImperfectInterfaceMM 0,-1
+  !ImperfectInterfaceMM 0,100
   XMLData,"Header"
     <DevelFlag Number='0'>3</DevelFlag>
     <DevelFlag Number='1'>-1</DevelFlag>
@@ -239,11 +239,11 @@ ifStr #loading="rigid"
 else if #loading="contact"
   if #analysis="3D MPM"
     Region "rigid",1,0,0
-      Box -#cell,0,-#sides*#cell,#width+#sides*#cell,-#sides*#cell,#thick+#sides*#cell
+      Box -2*#cell,0,-#sides*#cell,#width+#sides*#cell,-#sides*#cell,#thick+#sides*#cell
     EndRegion
   else
     Region "rigid",1,0,#thick
-      Rect -#cell,0,-#sides*#cell,#width+#sides*#cell
+      Rect -2*#cell,0,-#sides*#cell,#width+#sides*#cell
     EndRegion
   endif
   

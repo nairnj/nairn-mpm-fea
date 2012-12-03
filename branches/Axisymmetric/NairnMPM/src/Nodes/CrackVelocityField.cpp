@@ -86,10 +86,10 @@ void CrackVelocityField::AddMomentumTask1(int matfld,Vector *addPk,Vector *vel)
 void CrackVelocityField::AddMass(int matfld,double mnode) { mvf[matfld]->mass+=mnode; }
 
 // add "mass" for  rigid particle (task 1) (only functions in CrackVelocityFieldMulti)
-void CrackVelocityField::AddMassTask1(int matfld) { }
+void CrackVelocityField::AddMassTask1(int matfld,double mnode) { }
 
 // Add to mass gradient (overridden in CrackVelocityFieldMulti where it is needed)
-void CrackVelocityField::AddVolumeGradient(int matfld,double Vp,double dNdx,double dNdy,double dNdz) {}
+void CrackVelocityField::AddVolumeGradient(int matfld,MPMBase *mptr,double dNdx,double dNdy,double dNdz) {}
 
 #pragma mark TASK 3 METHODS
 
@@ -196,7 +196,7 @@ bool CrackVelocityField::GetCMVelocityTask8(Vector *velCM)
 void CrackVelocityField::MaterialContact(int nodenum,int vfld,bool postUpdate,double deltime) { return; }
 
 // retrieve mass gradient (overridden in CrackVelocityFieldMulti where it is needed
-void CrackVelocityField::GetVolumeGradient(int matfld,Vector *grad,double scale) { ZeroVector(grad); }
+void CrackVelocityField::GetVolumeGradient(int matfld,NodalPoint *ndptr,Vector *grad,double scale) { ZeroVector(grad); }
 
 #pragma mark PROPERTIES FOR CRACK AND MATERIAL CONTACT
 
@@ -213,7 +213,7 @@ void CrackVelocityField::AddDisplacement(int matfld,double wt,Vector *pdisp)
 
 // Add volume
 void CrackVelocityField::AddVolume(int matfld,double wtVol)
-{	mvf[matfld]->volume += wtVol;
+{	mvf[matfld]->AddContactVolume(wtVol);
 }
 
 #pragma mark ACCESSORS
@@ -260,7 +260,7 @@ int CrackVelocityField::GetNumberPointsNonrigid(void) { return numberPoints; }
 void CrackVelocityField::Describe(void)
 {
 	cout << "# Crack Field: npts="<<  numberPoints << " mass=" << GetTotalMass()
-		<< " vol=" << GetVolumeTotal() << endl;
+		<< " vol=" << GetVolumeTotal(1.) << endl;
 	if(crackNum[0]>0)
 	{	cout << "#     crack 1=#" << crackNum[0] << ", loc=";
 		if(loc[0]==ABOVE_CRACK) cout << "above"; else cout << "below";

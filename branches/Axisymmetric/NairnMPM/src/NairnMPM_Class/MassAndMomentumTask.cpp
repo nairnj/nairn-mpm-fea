@@ -177,7 +177,7 @@ void MassAndMomentumTask::Execute(void)
 				contact.AddDisplacementVolume(vfld,matfld,ndptr,mpmptr,fn[i]);
 				
 				// material contact calculations
-                ndptr->AddVolumeGradient(vfld,matfld,mpmptr->GetVolume(FALSE),xDeriv[i],yDeriv[i],zDeriv[i]);
+                ndptr->AddVolumeGradient(vfld,matfld,mpmptr,xDeriv[i],yDeriv[i],zDeriv[i]);
 				
 				// more for non-rigid contact materials
 				if(!matID->Rigid())
@@ -191,7 +191,7 @@ void MassAndMomentumTask::Execute(void)
 				}
 				else
 				{	// for rigid particles, let the crack velocity field know
-					ndptr->AddMassTask1(vfld,matfld);
+					ndptr->AddMassTask1(vfld,matfld,mp*fn[i]);
 				}
 			}
 		}

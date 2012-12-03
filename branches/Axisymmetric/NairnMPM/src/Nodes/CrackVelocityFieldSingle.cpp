@@ -72,7 +72,7 @@ void CrackVelocityFieldSingle::RezeroNodeTask6(double)
 {	if(MatVelocityField::ActiveField(mvf[0]))
 	{	ZeroVector(&mvf[0]->pk);
 		ZeroVector(&mvf[0]->disp);
-		mvf[0]->volume=0.;
+		mvf[0]->SetContactVolume(0.);
 	}
 }
 
@@ -240,16 +240,13 @@ double CrackVelocityFieldSingle::GetTotalMass(void)
 
 // get volume when only a single material (overridden when might be more)
 double CrackVelocityFieldSingle::GetVolumeNonrigid(void)
-{	return MatVelocityField::ActiveField(mvf[0]) ? mvf[0]->volume : 0. ;
+{	return MatVelocityField::ActiveField(mvf[0]) ? mvf[0]->GetContactVolume() : 0. ;
 }
 
 // get volume when only a single material (overridden when might be more)
-double CrackVelocityFieldSingle::GetVolumeTotal(void)
-{	return MatVelocityField::ActiveField(mvf[0]) ? mvf[0]->volume : 0. ;
+double CrackVelocityFieldSingle::GetVolumeTotal(double ndr)
+{	return MatVelocityField::ActiveField(mvf[0]) ? mvf[0]->GetContactVolume() : 0. ;
 }
-
-// total mass all velocity fields
-double CrackVelocityFieldSingle::GetMass(int matfld) { return GetTotalMass(); }
 
 // get center of mass momentum for all material fields in this crack velocity field
 Vector CrackVelocityFieldSingle::GetCMatMomentum(void)

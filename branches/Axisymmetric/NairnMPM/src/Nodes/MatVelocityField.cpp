@@ -86,7 +86,7 @@ void MatVelocityField::AddContactForce(Vector *delP)
 // Velocity is mm/sec
 void MatVelocityField::CalcVelocityForStrainUpdate(void)
 {	// only 1 point or rigid contact material is stored already, 0 will have zero velocity
-	if(numberPoints<=1 || mass==0) return;
+	if(numberPoints<=1 || rigidField || mass==0.) return;
 	CopyScaleVector(&vk,&pk,1./mass);
 }
 
@@ -105,6 +105,12 @@ void MatVelocityField::Describe(void)
 {
 	cout << "#      - Material Field: n="<<  numberPoints << " mass=" << mass << endl;
 }
+
+// volume for contact calculations
+void MatVelocityField::AddContactVolume(double vol) { volume += vol; }
+void MatVelocityField::SetContactVolume(double vol) { volume = vol; }
+double MatVelocityField::GetContactVolume(void) { return volume; }
+
 
 #pragma mark CLASS METHODS
 

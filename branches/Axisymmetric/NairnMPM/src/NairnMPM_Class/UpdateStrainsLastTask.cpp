@@ -105,7 +105,7 @@ void UpdateStrainsLastTask::Execute(void)
 			contact.AddDisplacementVolume(vfld,matfld,nd[nds[i]],mpm[p],fn[i]);
             
             // material contact calculations
-			nd[nds[i]]->AddVolumeGradient(vfld,matfld,mpm[p]->GetVolume(FALSE),xDeriv[i],yDeriv[i],zDeriv[i]);
+			nd[nds[i]]->AddVolumeGradient(vfld,matfld,mpm[p],xDeriv[i],yDeriv[i],zDeriv[i]);
 		}
 	}
 	

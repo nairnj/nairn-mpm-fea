@@ -184,7 +184,7 @@ void MatPoint2D::AddTemperatureGradient(Vector *grad)
 double MatPoint2D::FCond(double dshdx,double dshdy,double dshdz)
 {
 	Tensor *kten=theMaterials[MatID()]->GetkCondTensor();
-	return -GetVolume(TRUE)*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y)*dshdx
+	return -GetVolume(DEFORMED_VOLUME)*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y)*dshdx
 						+ (kten->xy*pTemp->DT.x + kten->yy*pTemp->DT.y)*dshdy);
 }
 
@@ -205,7 +205,7 @@ void MatPoint2D::AddConcentrationGradient(Vector *grad)
 double MatPoint2D::FDiff(double dshdx,double dshdy,double dshdz)
 {
 	Tensor *Dten=theMaterials[MatID()]->GetDiffusionTensor();
-	return -GetVolume(TRUE)*((Dten->xx*pDiffusion->Dc.x + Dten->xy*pDiffusion->Dc.y)*dshdx
+	return -GetVolume(DEFORMED_VOLUME)*((Dten->xx*pDiffusion->Dc.x + Dten->xy*pDiffusion->Dc.y)*dshdx
 						+ (Dten->xy*pDiffusion->Dc.x + Dten->yy*pDiffusion->Dc.y)*dshdy);
 }
 
@@ -245,12 +245,12 @@ double MatPoint2D::GetRelativeVolume(void)
 // get dilated current volume using current deformation gradient
 // only used for contact (cracks and multimaterial) and for transport tasks
 // when actual is false, get t*Ap, where Ap is deformed particle area
-double MatPoint2D::GetVolume(bool actual)
+double MatPoint2D::GetVolume(bool volumeType)
 {	double rho=theMaterials[MatID()]->rho*0.001;		// in g/mm^3
-	if(actual)
+	if(volumeType==DEFORMED_VOLUME)
 		return GetRelativeVolume()*mp/rho;						// in mm^3
 	
-	// get thickness times area
+	// get thickness times area (for contact and for gradient)
 	double pF[3][3];
 	GetDeformationGradient(pF);
 	return (pF[0][0]*pF[1][1]-pF[1][0]*pF[0][1])*mp/rho;

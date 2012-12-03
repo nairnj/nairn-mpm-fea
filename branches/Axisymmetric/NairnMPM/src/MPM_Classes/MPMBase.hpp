@@ -13,6 +13,9 @@
 
 #define _MPM_BASE_
 
+#define DEFORMED_VOLUME 0
+#define DEFORMED_AREA 1
+
 // variables for conduction calculations
 typedef struct {
 	Vector DT;			// conc potential gradient (archived * concSaturation)

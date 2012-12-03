@@ -16,15 +16,15 @@ Axisymmetric analysis of an axially loaded cylinder.
 EndHeader
 
 ! ********** Parameters Section **********
-#length=40                  ! Length in mm
+#length=20                  ! Length in mm
 #Ri=0                   	! Internal radius (0 for solid)
-#Ro=10                   	! Outer radius in mm
+#Ro=20                   	! Outer radius in mm
 
-! "force" or "traction" or "rigid"
+! "force" or "traction" or "rigid" or "contact"
 ! Tries to load to approximate #maxStrain (%)
-#style="traction"
+#style="force"
 ! may need small #factor and faster loading to get high tension
-#maxstrain=100				
+#maxstrain=-50				
 
 ! Base properties should be used
 ! Needed for time calculations
@@ -39,7 +39,7 @@ EndHeader
 ! Simulations, timing, and damping
 #method="lCPDI"				! lCPDI, uGIMP, or Classic
 #mult=40					! transit times for complete analysis
-#factor=.025				! convergence factor (needs to be small for large strains)
+#factor=.1				    ! convergence factor (needs to be small for large strains)
 #rampfraction=1.0			! fraction to full pressure or strain, then hold
 #damp=0						! grid damping
 #fbdamp=0					! feedback damping
@@ -54,6 +54,16 @@ EndHeader
 ! Start analysis
 Analysis "Axisymmetric MPM"
 MPMMethod USF,#method
+
+! convert to contact
+if #style="contact"
+  MultimaterialMode 0.8,enabled,maxgrad,100
+  !ImperfectInterfaceMM 0,1000
+  XMLData,"Header"
+    <DevelFlag Number='0'>3</DevelFlag>
+    <DevelFlag Number='1'>2</DevelFlag>
+  EndXMLData
+endif
 
 ! Calculate maximum and ramp times
 #speed=sqrt(1000*#Ebase/#rho)		! in mm/msec
@@ -71,6 +81,10 @@ GlobalArchive syy
 GlobalArchive eyye
 GlobalArchive szz
 GlobalArchive ezze
+if #style="contact"
+  GlobalArchive "contactx"
+  GlobalArchive "contacty"
+endif
 
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
 ! plastic strain is Left Cauchy Green Strain, history 1 is J or volumetric strain
@@ -82,7 +96,6 @@ ToArchive plasticstrain,history1
 ! only needed when using force or traction conditions
 #maxDisp=#length*#maxstrain/100
 #stress=#Ebase*#maxstrain/100
-#stress=1000
 
 ! extra cells for tennsion
 if #maxDisp>0
@@ -117,12 +130,17 @@ else if #matID="neohookean"
 endif
 
 ! Get displacement function if rigid
+#rate = #maxDisp/#ramp
+#rfxn = (1000*#rate)&"*(1-sign(t-"&#ramp&"))"
 if #style="rigid"
-  #rate = #maxDisp/#ramp
-  #rfxn = (1000*#rate)&"*(1-sign(t-"&#ramp&"))"
   Material "rigid","Rigid Piston","Rigid"
     direction 2
     SettingFunction #rfxn
+  Done
+else if #style="contact"
+  Material "rigid","Loading Clamp","Rigid"
+    direction 8
+    SettingFunction2 #rfxn
   Done
 endif
 
@@ -162,6 +180,10 @@ EndMoveLine
 if #style="rigid"
   Region "rigid",0,0,1
     Rect 0,#Ro+#border*#cell,#length,#length+#cell
+  EndRegion
+else if #style="contact"
+  Region "rigid",0,0,1
+    Rect 0,#Ro+#border*#cell,#length,#length+2*#cell
   EndRegion
 else
   LoadLine 0,#length,#Ro,#length,#cell/2

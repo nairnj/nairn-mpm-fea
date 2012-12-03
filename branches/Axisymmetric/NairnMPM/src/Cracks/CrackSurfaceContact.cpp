@@ -319,7 +319,7 @@ void CrackSurfaceContact::AddDisplacementVolume(short vfld,int matfld,NodalPoint
 	if(matptr->Rigid())
 		ndpt->AddVolume(vfld,matfld,shape*mptr->GetUnscaledVolume());
 	else
-		ndpt->AddVolume(vfld,matfld,shape*mptr->GetVolume(FALSE));
+		ndpt->AddVolume(vfld,matfld,shape*mptr->GetVolume(DEFORMED_AREA));
 }
 
 #pragma mark CrackSurfaceContact: Contact Calculations

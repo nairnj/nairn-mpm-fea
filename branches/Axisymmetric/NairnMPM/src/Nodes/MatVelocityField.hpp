@@ -29,7 +29,6 @@ class MatVelocityField
 		Vector disp;				// displacement for contact calculations
 		Vector *volumeGrad;			// mass gradient allocated in multimaterial mode
 		bool rigidField;			// TRUE or FALSE if for rigid contact particles
-		double volume;			// only for transport tasks or contact (cracks or multimaterial)
 	
 		// constants (not changed in MPM time step)
 				
@@ -47,11 +46,17 @@ class MatVelocityField
 	
 		// accessors
 		void Describe(void);
+		void AddContactVolume(double);
+		void SetContactVolume(double);
+		double GetContactVolume(void);
 	
 		// class methods
 		static bool ActiveField(MatVelocityField *);
 		static bool ActiveNonrigidField(MatVelocityField *mvf);
 		static bool ActiveRigidField(MatVelocityField *mvf);
+	
+	private:
+		double volume;				// only for contact (cracks or multimaterial)
 
 };
 

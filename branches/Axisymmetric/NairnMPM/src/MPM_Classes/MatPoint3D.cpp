@@ -185,7 +185,7 @@ void MatPoint3D::AddTemperatureGradient(Vector *grad)
 double MatPoint3D::FCond(double dshdx,double dshdy,double dshdz)
 {
 	Tensor *kten=theMaterials[MatID()]->GetkCondTensor();
-	return -GetVolume(TRUE)*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y + kten->xz*pTemp->DT.z)*dshdx
+	return -GetVolume(DEFORMED_VOLUME)*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y + kten->xz*pTemp->DT.z)*dshdx
 						+ (kten->xy*pTemp->DT.x + kten->yy*pTemp->DT.y + kten->yz*pTemp->DT.z)*dshdy
 						+ (kten->xz*pTemp->DT.x + kten->yz*pTemp->DT.y + kten->zz*pTemp->DT.z)*dshdz);
 }
@@ -208,7 +208,7 @@ void MatPoint3D::AddConcentrationGradient(Vector *grad)
 double MatPoint3D::FDiff(double dshdx,double dshdy,double dshdz)
 {
 	Tensor *Dten=theMaterials[MatID()]->GetDiffusionTensor();
-	return -GetVolume(TRUE)*((Dten->xx*pDiffusion->Dc.x + Dten->xy*pDiffusion->Dc.y + Dten->xz*pDiffusion->Dc.z)*dshdx
+	return -GetVolume(DEFORMED_VOLUME)*((Dten->xx*pDiffusion->Dc.x + Dten->xy*pDiffusion->Dc.y + Dten->xz*pDiffusion->Dc.z)*dshdx
 						+ (Dten->xy*pDiffusion->Dc.x + Dten->yy*pDiffusion->Dc.y + Dten->yz*pDiffusion->Dc.z)*dshdy
 						+ (Dten->xz*pDiffusion->Dc.x + Dten->yz*pDiffusion->Dc.y + Dten->zz*pDiffusion->Dc.z)*dshdz);
 }
@@ -260,9 +260,9 @@ double MatPoint3D::GetRelativeVolume(void)
 
 // get dilated current volume using current deformation gradient
 // only used for contact (cracks and multimaterial) and for transport tasks
-double MatPoint3D::GetVolume(bool actual)
+double MatPoint3D::GetVolume(bool volumeType)
 {	double rho=theMaterials[MatID()]->rho*0.001;				// in g/mm^3
-	return GetRelativeVolume()*mp/rho;						// in mm^3
+	return GetRelativeVolume()*mp/rho;							// in mm^3
 }
 
 // to support CPDI return nodes for corners (or for 9 nodes) and weights for shape functions

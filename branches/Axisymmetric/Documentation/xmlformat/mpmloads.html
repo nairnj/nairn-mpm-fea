@@ -89,7 +89,7 @@ All particles defined by the shape will be assigned the selected boundary condit
 <dd>These attributes define the extent of a rectangle (2D) or box (3D) (they can be entered with numeric values or <a href="dispbc.html#minmax">relative to the mesh edges</a>). An optional <code>axis</code> attribute for <code>BCBox</code> can convert the shape to the cylinder enclosed within the box with axis along the specified direction (as x, 1, y, 2, z, or 3).
 An optional <a href="mpmheader.html#units"><code>units</code> attribute</a> can specify the length units.
 All material points that fall within the rectangle or box or cylinder will be assigned the boundary conditions of the
-subordinate elements.</dd>
+subordinate elements. For axisymmetric MPM, <code>x</code> and <code>y</code> refer to <code>R</code> and <code>Z</code> directions.</dd>
 
 <dt>(x1,y1) to (x2,y2)</dt>
 <dd>These attributes define the end points of a line (in <code>BCLine</code>) or corner points of an
@@ -98,7 +98,7 @@ An optional <a href="mpmheader.html#units"><code>units</code> attribute</a> can 
 All material points that fall within <code>tolerance</code> of the line (for <code>BCLine</code>) or
 the arc (for <code>BCArc</code>) will be assigned the boundary conditions of the subordinate elements.
 The arc will trace the oval defined by the points over angles from <code>start</code> to <code>end</code> in
-the counter-clockwise direction where <code>start=0</code> is along the <code>x</code> axis</dd>
+the counter-clockwise direction where <code>start=0</code> is along the <code>x</code> axis.  For axisymmetric MPM, <code>x</code> and <code>y</code> refer to <code>R</code> and <code>Z</code> directions.</dd>
 
 <dt>start, end</dt>
 <dd>The start and end angles (in degrees) for <code>BCArc</code> shapes. The arc is traced in the
@@ -136,7 +136,7 @@ flux</a> boundary conditions. Any combination of types of boundary conditions ca
 
 <dt>dir</dt>
 <dd>Defines the loading direction (<code>1</code> for <code>x</code> axis, <code>2</code> for <code>y</code> axis,
-or <code>3</code> for <code>z</code> axis (if 3D)). For <code>TractionBC</code>, <code>dir</code> can be 11 or 12 to mean normal or shear traction relative the the selected <code>face</code>, respectively. A normal traction is positive if pointing out of the particle domain and a shear traction is positive when oriented in the counter-clockwise direction. Normal and shear tractions are not allowed in 3D calculations.</dd>
+<code>3</code> for <code>z</code> axis (if 3D), <code>1</code> for <code>R</code> axis (if axisymemtric), or <code>2</code> for <code>Z</code> axis (if axisymemtric)). For <code>TractionBC</code>, <code>dir</code> can be 11 or 12 to mean normal or shear traction relative the the selected <code>face</code>, respectively. A normal traction is positive if pointing out of the particle domain and a shear traction is positive when oriented in the counter-clockwise direction. Normal and shear tractions are not allowed in 3D calculations.</dd>
 
 <dt>style</dt>
 <dd>Defines the type of loading (<a href="#style">see below</a>).</dd>
@@ -154,7 +154,7 @@ or <code>3</code> for <code>z</code> axis (if 3D)). For <code>TractionBC</code>,
 
 <dt>function</dt>
 <dd>When using <a href="#function"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined
-function</a> of <code>t</code> (in ms), of current particle position (<code>x</code>, <code>y</code>, and <code>z</code>
+function</a> of time (<code>t</code> in ms), of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code>).
 in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians).
 The function should evaluate to load in Newtons (for <code>LoadBC</code>) or stress in MPa (for <code>TractionBC</code>). When using a function, the <code>load</code> and <code>stress</code> attributes
 are ignored, but <code>time</code> can be used to determine <a href="#function">when the function is evaluated</a>.</dd>
@@ -186,7 +186,7 @@ load boundary conditions and have no effect on other boundary conditions, includ
   </ul>
 <p>This method appears to reduce artifacts that occur on particles loaded by <code>LoadBC</code>. Because this method applies forces closer to the actual edge, the potential for artifacts due to low-mass nodes is a concern. The code tries to screen out obvious problem nodes. If instability occurs, try <code>LoadBC</code> instead. The current <code>TractionBC</code> implementation ignores <a href="cracks.html">cracks</a>. They can be used in probems with cracks, but only if the tractions are all at least two grid elements away from any crack plane.</p>
 
-<p>Another difference is that <code>LoadBC</code> applies a total force. In large deformation problems, the stress will change if the cross-section area changes. In contrast, <code>TractionBC</code> applies a stress to the deformed particle domain, which means its effect depends on <a href="mpmheader.html#gimp">MPM method</a> being used. When using <code>uGIMP</code>, the deformed particle domain is the same as the initial particle domain and therefore the stress will not change if the particle cross-sectional area changes. But, when using <code>lCPDI</code> or <code>qCPDI</code>, the stress will be a true stress that remains constant even if the particle cross sectional area changes.</p>
+<p>Another difference is that <code>LoadBC</code> applies a total force. In large deformation problems, the stress will change if the cross-section area changes. In contrast, <code>TractionBC</code> applies a stress to the deformed particle domain, which means its effect depends on <a href="mpmheader.html#gimp">MPM method</a> being used. When using <code>uGIMP</code>, the deformed particle domain is the same as the initial particle domain and therefore the applied stress will always be engineering stress based on initial particle area (<i>i.e.</i>, the stress will change if particle cross-sectional area changes). But, when using <code>lCPDI</code> or <code>qCPDI</code>, the stress will be a true stress that remains constant even if the particle cross sectional area changes.</p>
 
 <a name="style"></a><h2>Boundary Conditions Styles</h2>
 
@@ -206,11 +206,11 @@ load boundary conditions and have no effect on other boundary conditions, includ
   <dd>Set condition to <code>(value)*cos[t*(time)]</code> where <code>t</code> is current time (in ms) and <code>(time)</code> has units 1/ms.</dd>
   
   <dt>Style=5 (silent boundary)</dt>
-  <dd>Set the boundary to absorbing boundary conditions. The intent of a silent boundary is to eliminate reflected waves at a free edge and mimic a sample in a semi-infinite domain. The silent boundary must have normal vector in <code>x</code> or <code>y</code> direction. The <code>dof</code> attribute specifies the direction of the normal vector. There is no need to specify a <code>load</code> or <code>time</code> argument. This boundary condition currently only works for linear elastic, isotropic materials and it requires a regular grid. Silent boundary conditions are only allowed for particles loads. See <a href="references.html#Shen2005">Shen and Chen</a> for details on their development.
+  <dd>Set the boundary to absorbing boundary conditions. The intent of a silent boundary is to eliminate reflected waves at a free edge and mimic a sample in a semi-infinite domain. The silent boundary must have normal vector in <code>x</code> or <code>y</code> direction (or in <code>R</code> or <code>Z</code> direction for axisymmetric MPM). The <code>dir</code> attribute specifies the direction of the normal vector. There is no need to specify a <code>load</code> or <code>time</code> argument. This boundary condition currently only works for linear elastic, isotropic materials and it requires a regular grid. Silent boundary conditions are only allowed for particle loads. See <a href="references.html#Shen2005">Shen and Chen</a> for details on their development.
   </dd>
   
   <dt><a name="function"></a>Style=6 (user-defined function)</dt>
-  <dd>Set condition to the evaluated value of a <a href="function.html">user-defined function</a> of time (in ms), of current particle position (<code>x</code>, <code>y</code>, and <code>z</code> in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians). If the <code>time</code> attribute is used the condition starts at time in the <code>(time)</code> attribute and the function is evaluated at <code>(t-(time))</code> (in ms). A function of rotational angle is sometimes needed for large displacement calculations.</dd>
+  <dd>Set condition to the evaluated value of a <a href="function.html">user-defined function</a> of time (<code>t</code> in ms), of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians). If the <code>time</code> attribute is used the condition starts at time in the <code>(time)</code> attribute and the function is evaluated at <code>(t-(time))</code> (in ms). A function of rotational angle is sometimes needed for large displacement calculations.</dd>
 </dl>
 
 <a name="flux"></a><h2>Generated Concentration Flux Conditions</h2>
@@ -236,13 +236,13 @@ load boundary conditions and have no effect on other boundary conditions, includ
 <dd>Must be 1 to indicate an external flux.</dd>
 
 <dt>style</dt>
-<dd>Defines the type of flux using <a href="#style">standard styles</a> (except that the <code>silent</code> us expermental (<a href="#silentflux">see below</a>)).</dd>
+<dd>Defines the type of flux using <a href="#style">standard styles</a> (except that the <code>silent</code> option is expermental (<a href="#silentflux">see below</a>)).</dd>
 
 <dt>value and time</dt>
 <dd>These arguments are used with the chosen <a href="#style">style</a>. The resulting external flux is in concentration potential per second on the particle.</dd>
 
 <dt>function</dt>
-<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code> (in ms), of current particle position (<code>x</code>, <code>y</code>, and <code>z</code> in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in concentration potential per second. When using a function, the <code>value</code> attribute is ignored, but <code>time</code> can be used to determine <a href="#function">when the function is evaluated</a>.
+<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of time (<code>t</code> in ms), of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in concentration potential per second. When using a function, the <code>value</code> attribute is ignored, but <code>time</code> can be used to determine <a href="#function">when the function is evaluated</a>.
 </dd>
 
 
@@ -270,7 +270,7 @@ load boundary conditions and have no effect on other boundary conditions, includ
 <dd>Must be 6 meaning the condition is specified in a function (see below)</dd>
 
 <dt>function</dt>
-<dd>Enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code>, where <code>t</code> stands for the difference between the particle concentration potential and the reservoir concentration potential, of current particle position (<code>x</code>, <code>y</code>, and <code>z</code> in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in concentration potential per second. The sign is irrelevant. The applied flux will be positive if the particle concentration is less than the bath or negative if it is greater than the bath. The function gives the magnitude of the flux.
+<dd>Enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code>, where <code>t</code> stands for the difference between the particle concentration potential and the reservoir concentration potential, of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in concentration potential per second. The sign is irrelevant. The applied flux will be positive if the particle concentration is less than the bath or negative if it is greater than the bath. The function gives the magnitude of the flux.
 </dd>
 
 
@@ -282,7 +282,7 @@ load boundary conditions and have no effect on other boundary conditions, includ
 
 <h3><a name="silentflux"></a>Silent Surface Flux</h3>
 
-<p class="warn">Warning: This feature is in development. It is working in the right direction, but does not agree with calculations on different size specimens or at different resolutions. Furthermore, it is in development in 2D and connot be used in 3D. It needs more development before it should be used.</p>
+<p class="warn">Warning: This feature is in development. It is working in the right direction, but does not agree with calculations on different size specimens or at different resolutions. Furthermore, it is in development in 2D and cannot be used in 3D. It needs more development before it should be used.</p>
 
 <p>This option sets the surface flux to the flux that would result if the same material continued on in the specified direction. It allows simulations of diffusion in a large object by only looking at a small portion of the object:
 </p>
@@ -297,7 +297,7 @@ load boundary conditions and have no effect on other boundary conditions, includ
 <dl>
 
 <dt>dir</dt>
-<dd>Must be 1 or 2 to indicate the direction normal to the surface at the particle is the <code>x</code> or <code>y</code> direction respectively.</dd>
+<dd>Must be 1 or 2 to indicate the direction normal to the surface at the particle is the <code>x</code> or <code>y</code> (or <code>R</code> and <code>Z</code> if axisymmetric) direction respectively.</dd>
 
 <dt>style</dt>
 <dd>Must be 5 meaning the condition is a silent boundary condition</dd>
@@ -324,14 +324,13 @@ load boundary conditions and have no effect on other boundary conditions, includ
 <dl>
 <dt>Text of the Element</dt>
 <dd>The data in the element has two
-numbers whose meanings are the <code>value</code> and <code>time</code> arguments for the boundary condition <a href="#style">styles</a> listed below. The <code>value</code> is in Newtons. When using an arbitrary function (see <code>Style=6</code> below) the date in the element should be the a <a href="function.html">user-defined function</a> of <code>t</code> (in ms) that evaluates to load in Newtons.</dd>
+numbers whose meanings are the <code>value</code> and <code>time</code> arguments for the boundary condition <a href="#style">styles</a> listed below. The <code>value</code> is in Newtons. When using an arbitrary function (see <code>Style=6</code> below) the data in the element should be the a <a href="function.html">user-defined function</a> of <code>t</code> (in ms) that evaluates to load in Newtons.</dd>
 
 <dt>dof</dt>
-<dd>Determines if applied load is in the <code>x</code> direction (<code>dof=1</code>), the <code>y</code> direction (<code>dof=2</code>), the <code>z</code> direction (<code>dof=3</code>, 3D only). To apply load in arbitrary direction, use a combination of x and y direction loads. 
-</dd>
+<dd>Determines if applied load is in the <code>x</code> direction (<code>dof=1</code>), the <code>y</code> direction (<code>dof=2</code>), <code>z</code> direction (<code>dof=3</code>, 3D only), <code>R</code> direction (<code>dof=1</code>, if axisymnmetric), or <code>Z</code> direction (<code>dof=2</code>, if axisymmetric). To apply load in arbitrary direction, use a combination loads in the different directions.
 
 <dt>style</dt>
-<dd>Determines the time dependence of the boundary condition. The possible styles are defined in the <a href="#style">next section</a>. If this attribute is omitted, it is assumed to be 1.
+<dd>Determines the time dependence of the boundary condition. The possible styles are defined <a href="#style">above</a>. If this attribute is omitted, it is assumed to be 1.
 </dd>
 
 </dl>

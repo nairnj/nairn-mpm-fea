@@ -79,7 +79,7 @@ void NodalPoint::InitializeForTimeStep(void)
 void NodalPoint::AddMass(short vfld,int matfld,double mnode) { cvf[vfld]->AddMass(matfld,mnode); }
 
 // for rigid particles, adding mass is counting number of rigid particles
-void NodalPoint::AddMassTask1(short vfld,int matfld) { cvf[vfld]->AddMassTask1(matfld); }
+void NodalPoint::AddMassTask1(short vfld,int matfld,double mnode) { cvf[vfld]->AddMassTask1(matfld,mnode); }
 
 // Add to momentum vector (first pass - allocate cvf[] if needed) (both 2D and 3D)
 short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector *vel)
@@ -237,9 +237,9 @@ short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector 
 }
 
 // Add mass for selected field
-void NodalPoint::AddVolumeGradient(short vfld,int matfld,double Vp,double dNdx,double dNdy,double dNdz)
+void NodalPoint::AddVolumeGradient(short vfld,int matfld,MPMBase *mptr,double dNdx,double dNdy,double dNdz)
 {	if(fmobj->multiMaterialMode)
-		cvf[vfld]->AddVolumeGradient(matfld,Vp,dNdx,dNdy,dNdz);
+		cvf[vfld]->AddVolumeGradient(matfld,mptr,dNdx,dNdy,dNdz);
 }
 
 // Calculate total mass. Calculations might need to exclude nodes whose
@@ -872,60 +872,9 @@ void NodalPoint::MaterialContactOnNode(bool postUpdate,double deltime)
 
 // retrieve -2*scale*(mass gradient) for material matfld in velocity field vfld
 void NodalPoint::GetVolumeGradient(short vfld,int matfld,Vector *grad,double scale)
-{
-	cvf[vfld]->GetVolumeGradient(matfld,grad,scale);
-	
-	/*
-	// number of nodes each direction (1 more than number of elements)
-	int horiz,vert,depth;
-	mpmgrid.GetGridPoints(&horiz,&vert,&depth);
-	
-	// 3D or 2D
-	if(fmobj->IsThreeD())
-	{	//int stack=horiz*vert;
-		//int slice=num % stack*depth;
-		//if(slice==0 || slice>stack*(depth-1))	// last slice
-		//	grad->z=(nd[num-stack]->GetMass(vfld,matfld))/mpmgrid.gridz;
-		//else if(col<=stack)	// first slice
-		//	grad->z=(-nd[num+stack]->GetMass(vfld,matfld))/mpmgrid.gridz;
-		//else
-		//	grad->z=(nd[num-stack]->GetMass(vfld,matfld)-nd[num+stack]->GetMass(vfld,matfld))/mpmgrid.gridz;
-		//grad->z*=scale;
-	}
-	else
-	{	// -2*scale*dm/dy
-		int col=num % horiz;
-		if(col==0)		// last column
-			grad->x=(nd[num-1]->GetMass(vfld,matfld))/mpmgrid.gridx;
-		else if(col==1)		// first column
-			grad->x=(-nd[num+1]->GetMass(vfld,matfld))/mpmgrid.gridx;
-		else
-			grad->x=(nd[num-1]->GetMass(vfld,matfld)-nd[num+1]->GetMass(vfld,matfld))/mpmgrid.gridx;
-		grad->x*=scale;
-	
-		// -2*scale*dm/dy
-		if(num>horiz*(vert-1))	// top row
-			grad->y=(nd[num-horiz]->GetMass(vfld,matfld))/mpmgrid.gridy;
-		else if(num<=horiz)		// bottom row
-			grad->y=(-nd[num+horiz]->GetMass(vfld,matfld))/mpmgrid.gridy;
-		else
-			grad->y=(nd[num-horiz]->GetMass(vfld,matfld)-nd[num+horiz]->GetMass(vfld,matfld))/mpmgrid.gridy;
-		grad->y*=scale;
-	
-		//-2*scale*dm/dz
-		grad->z=0.;
-	}
-	*/
+{	cvf[vfld]->GetVolumeGradient(matfld,this,grad,scale);
 }
 
-// get mass (or zero of no field)
-double NodalPoint::GetMass(short vfld,int matfld)
-{	if(CrackVelocityField::ActiveField(cvf[vfld]))
-		return cvf[vfld]->GetMass(matfld);
-	else
-		return 0.;
-}
- 
 // This node is known to have imperfect interface with forces in cvf[vfld] from material mati
 // to matipaired (second material with the max volume)
 void NodalPoint::MaterialInterfaceForce(MaterialInterfaceNode *mmnode)
