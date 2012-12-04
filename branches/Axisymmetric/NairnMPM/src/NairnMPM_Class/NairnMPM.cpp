@@ -35,6 +35,7 @@
 #include "NairnMPM_Class/MoveCracksTask.hpp"
 #include "NairnMPM_Class/ResetElementsTask.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
+#include "Boundary_Conditions/MatPtFluxBC.hpp"                      // +AS
 #include <time.h>
 
 // global analysis object
@@ -537,8 +538,8 @@ void NairnMPM::ValidateOptions(void)
 	}
     else
     {   // in Classic MPM or POINT_GIMP, cannot use traction BCs
-        if(firstTractionPt!=NULL)
-			throw CommonException("Traction boundary conditions require use of a GIMP MPM method.","NairnMPM::ValidateOptions");
+        if(firstTractionPt!=NULL || firstFluxPt!=NULL)
+			throw CommonException("Traction and flux boundary conditions require use of a GIMP MPM method.","NairnMPM::ValidateOptions");
     }
     
     // Imperfect interface requires cartensian grid

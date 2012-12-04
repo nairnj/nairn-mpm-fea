@@ -22,7 +22,7 @@ conditions include loads, tractions, and concentration fluxes. Particle-based bo
 to particles on the boundary of the object.</p>
 
 <p>All particle-based boundary conditions must be set up within a single <code>&lt;ParticleBCs&gt;</code> element.
-The format is
+The format is</p>
 
 <pre>
 &lt;ParticleBCs&gt;
@@ -56,7 +56,7 @@ resulting boundary condition will be a superposition of the assigned conditions.
 
 <p>Particle boundary conditions are usually generated within one or more shape structures.
 All particles defined by the shape will be assigned the selected boundary conditions subordinate to that element.
-2D and 3D calculations use diffent shapes. The possible 2D shape commands are:
+2D and 3D calculations use diffent shapes. The possible 2D shape commands are:</p>
 
 <pre>
    &lt;LdRect xmin='18.5' xmax='20' ymin='-12' ymax='12'&gt;
@@ -72,7 +72,7 @@ All particles defined by the shape will be assigned the selected boundary condit
    &lt;/BCArc&gt;
 </pre>
    
-<p>The possible 3D shape commands are:
+<p>The possible 3D shape commands are:</p>
 
 <pre>
    &lt;BCBox xmin='18.5' xmax='20' ymin='-12' ymax='12' zmin='0' zmax='10' axis='0'&gt;
@@ -115,7 +115,7 @@ the tolerance to any factor <i>times</i> the minimum cell dimension in the curre
 
 <p>The elements subordinate to the shape commands can assign <a href="#load">load</a> and/or <a href="#flux">concentration
 flux</a> boundary conditions. Any combination of types of boundary conditions can be used within a single shape.
-<p>
+</p>
 
 <a name="load"></a><h2>Generated Particle Load or Traction Conditions</h2>
 
@@ -174,6 +174,11 @@ You can switch back and forth between total load and per-particle load in a sing
 load boundary conditions and have no effect on other boundary conditions, including <code>TractionBC</code> conditions, within the same
 <a href="#sec2">shape command</a>.</p>
 
+<h3>TractionBC requirements</h3>
+
+<p>To calculate forces from specified traction stresses, the simulation needs to know the <a href="definemesh.html">grid thickness</a> and it should match the particle thickness. The use of tractions also requires <a href="mpmheader.html#gimp">uGIMP or lCPDI anlaysis metho</a>.
+</p>
+
 <h3>Difference Between LoadBC and TractionBC</h3>
 
 <p>The <code>LoadBC</code> option considers the load (in N) to be applied directly to the particle, which in MPM is not really applied to the surface of the body, even when the particle is on the edge. During the MPM algorithm, this load is extrapolated to all nodes around the paraticle resulting in some of a modeled loading being applied internal to the object. It is common, therefore, to see artifacts in particles near edges that are loaded directly by forces. The MPM results away from the particles, however, seem to be correct. This form of external loading appears to be common to all MPM codes.</p>
@@ -215,7 +220,7 @@ load boundary conditions and have no effect on other boundary conditions, includ
 
 <a name="flux"></a><h2>Generated Concentration Flux Conditions</h2>
 
-<p>When doing diffusion calculations, you can set surface flux boundary conditions on particles (normally particles near the surface). Any surface particles with no boundary conditions will implement zero-flux boundary conditions. There are three-options for setting non-zero flux conditions:
+<p>When doing diffusion calculations, you can set surface flux boundary conditions on particles (which are expected to be particles near the surface). Any surface particles with no boundary conditions will implement zero-flux boundary conditions; there is no use in setting zero flux conditions There are three-options for setting non-zero flux conditions:
 </p>
 
 <h3>Externally Applied Flux</h3>
@@ -236,16 +241,16 @@ load boundary conditions and have no effect on other boundary conditions, includ
 <dd>Must be 1 to indicate an external flux.</dd>
 
 <dt><a name="fluxface"></a>face</dt>
-<dd>The face of the original particle domain that has concentration flux. In 2D, the faces are the edges numbered 1 through 4 in the counter-clockwise direction with the bottom edge being number 1. In 3D, 1 to 4 are the same faces (<i>i.e.</i>, faces with normals (0,-1,0), (1,0,0), (0,1,0), and (-1,0,0) on the original particle domain, respectively), 5 is the bottom (with normal (0,0,-1)), and 6 is the top (with normal (0,0,1)).</dd>
+<dd>The face of the original particle domain that in on the boundary and has the concentration flux. In 2D, the faces are the edges numbered 1 through 4 in the counter-clockwise direction with the bottom edge being number 1. In 3D, 1 to 4 are the same faces (<i>i.e.</i>, faces with normals (0,-1,0), (1,0,0), (0,1,0), and (-1,0,0) on the original particle domain, respectively), 5 is the bottom (with normal (0,0,-1)), and 6 is the top (with normal (0,0,1)).</dd>
 
 <dt>style</dt>
-<dd>Defines the type of flux using <a href="#style">standard styles</a> (except that the <code>silent</code> option is expermental (<a href="#silentflux">see below</a>)).</dd>
+<dd>Defines the type of flux using <a href="#style">standard styles</a>. <a href="#silentflux">See below</a> for meaning of the <code>silent</code>.</dd>
 
 <dt>value and time</dt>
-<dd>These arguments are used with the chosen <a href="#style">style</a>. The resulting external flux is in g/(mm^2-sec). Positive flux is to into the object and negative is out of the object. For isotropic material in applied flux <code>J</code>, the expected output concentration gradient is <code>dc/dn = J/(&rho; D)</code>, where <code>n</code> is coordinate normal to the surface. The actual output <code>dc/dn</code> may differ however, if concentration on the edge with defined flux approaches the saturation concentration.</dd>
+<dd>These arguments are used with the chosen <a href="#style">style</a>. The resulting external flux should be in kg/(m^2-sec). Positive flux is to into the object and negative is out of the object. For isotropic material with applied flux <code>J</code>, the expected output concentration gradient is <code>dc/dn = J/(&rho; D)</code>, where <code>n</code> is coordinate normal to the surface. The resulting <code>dc/dn</code> may differ however, if concentration on the edge with defined flux approaches the saturation concentration.</dd>
 
 <dt>function</dt>
-<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of time (<code>t</code> in ms), of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in g/(mm^2-sec). When using a function, the <code>value</code> attribute is ignored, but <code>time</code> can be used to determine <a href="#function">when the function is evaluated</a>.
+<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of time (<code>t</code> in ms), of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in kg/(m^2-sec). When using a function, the <code>value</code> attribute is ignored, but <code>time</code> can be used to determine <a href="#function">when the function is evaluated</a>.
 </dd>
 
 
@@ -258,7 +263,7 @@ load boundary conditions and have no effect on other boundary conditions, includ
 </p>
 
 <pre>
-    &lt;ConcFluxBC dir='2' style='6' function='t^2'  bath='1'/&gt; 
+    &lt;ConcFluxBC dir='2' face='3' style='6' function='t^2'  bath='1'/&gt; 
 </pre>
 
 
@@ -276,24 +281,22 @@ load boundary conditions and have no effect on other boundary conditions, includ
 <dd>Must be 6 meaning the condition is specified in a function (see below)</dd>
 
 <dt>function</dt>
-<dd>Enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code>, where <code>t</code> stands for the difference between the particle concentration potential and the reservoir concentration potential, of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in g/(mm^2-sec). The sign is irrelevant. The applied flux will be positive if the particle concentration is less than the bath or negative if it is greater than the bath. The magnitude of the function gives the magnitude of the flux.
+<dd>Enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code>, where <code>t</code> stands for the difference between the particle concentration potential and the reservoir concentration potential, of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in kg/(m^2-sec). The sign is irrelevant. The applied flux will be positive if the particle concentration is less than the bath or negative if it is greater than the bath. The magnitude of the function gives the magnitude of the flux.
 </dd>
 
 <dt>bath</dt>
-<dd>The concentration potential (0 to 1) of the surrounding reservoir bath.</dd>
+<dd>The concentration potential (0 to 1) of the surrounding reservoir bath. Note that the bath is specified as a concentration potential (c/csat) and not actual weight fraction concentation.</dd>
 
 </dl>
 
 
 <h3><a name="silentflux"></a>Silent Surface Flux</h3>
 
-<p class="warn">Warning: This feature is in development. It is working in the right direction, but does not agree with calculations on different size specimens or at different resolutions. Furthermore, it is in development in 2D and cannot be used in 3D. It needs more development before it should be used.</p>
-
-<p>This option sets the surface flux to the flux that would result if the same material continued on in the specified direction. It allows simulations of diffusion in a large object by only looking at a small portion of the object:
+<p>This option sets the surface flux to the natural flux determined by <code>(D grad c).n</code> on particles on the edge with the boundary condition. It should enable simulation of flux through materials. 
 </p>
 
 <pre>
-    &lt;ConcFluxBC dir='2' style='5' value='1'/&gt; 
+    &lt;ConcFluxBC dir='1' face='2' style='5'/&gt; 
 </pre>
 
 
@@ -302,18 +305,16 @@ load boundary conditions and have no effect on other boundary conditions, includ
 <dl>
 
 <dt>dir</dt>
-<dd>Must be 1 or 2 to indicate the direction normal to the surface at the particle is the <code>x</code> or <code>y</code> (or <code>R</code> and <code>Z</code> if axisymmetric) direction respectively.</dd>
+<dd>Must be 1.</dd>
+
+<dt>face</dt>
+<dd>The face with the flux as defined <a href="#fluxface">above</a>.</dd>
 
 <dt>style</dt>
 <dd>Must be 5 meaning the condition is a silent boundary condition</dd>
 
-<dt>value</dt>
-<dd>Value must be positive or negative to indicate if the normal vector directed out from the surface is in the positive or negative direction specified in the <code>dir</code> argument.</dd>
-
 </dl>
 
-
-</dl>
 
 <a name="sec1"></a><h2>Explicit Particle Loading</h2>
 
@@ -332,7 +333,7 @@ load boundary conditions and have no effect on other boundary conditions, includ
 numbers whose meanings are the <code>value</code> and <code>time</code> arguments for the boundary condition <a href="#style">styles</a> listed below. The <code>value</code> is in Newtons. When using an arbitrary function (see <code>Style=6</code> below) the data in the element should be the a <a href="function.html">user-defined function</a> of <code>t</code> (in ms) that evaluates to load in Newtons.</dd>
 
 <dt>dof</dt>
-<dd>Determines if applied load is in the <code>x</code> direction (<code>dof=1</code>), the <code>y</code> direction (<code>dof=2</code>), <code>z</code> direction (<code>dof=3</code>, 3D only), <code>R</code> direction (<code>dof=1</code>, if axisymnmetric), or <code>Z</code> direction (<code>dof=2</code>, if axisymmetric). To apply load in arbitrary direction, use a combination loads in the different directions.
+<dd>Determines if applied load is in the <code>x</code> direction (<code>dof=1</code>), the <code>y</code> direction (<code>dof=2</code>), <code>z</code> direction (<code>dof=3</code>, 3D only), <code>R</code> direction (<code>dof=1</code>, if axisymnmetric), or <code>Z</code> direction (<code>dof=2</code>, if axisymmetric). To apply load in arbitrary direction, use a combination loads in the different directions.</dd>
 
 <dt>style</dt>
 <dd>Determines the time dependence of the boundary condition. The possible styles are defined <a href="#style">above</a>. If this attribute is omitted, it is assumed to be 1.

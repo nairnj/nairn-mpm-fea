@@ -36,7 +36,7 @@ BoundaryCondition *MatPtFluxBC::PrintBC(ostream &os)
 {
     char nline[200];
     
-    sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,face,direction,style,value,ftime);
+    sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,value,ftime);
     os << nline;
 	PrintFunction(os);
 	
@@ -48,43 +48,27 @@ BoundaryCondition *MatPtFluxBC::PrintBC(ostream &os)
 // (only called when diffusion is active)
 MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 {
-	/*
-	double volume = mpm[ptNum-1]->GetVolume(DEFORMED_VOLUME);						// in mm^3
+    // condition value
+	// flux BC in kg/(m^2-sec) - find J/rho in units of mm/sec
+	MPMBase *mpmptr = mpm[ptNum-1];
+    MaterialBase *matptr = theMaterials[mpmptr->MatID()];
+	double csatrho = matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
+	double fluxMagX,fluxMagY=0.;
+    int bcDir=X_DIRECTION;
 	
 	if(style==SILENT)
 	{	// silent assumes isotropic material
-		int matnum=mpm[ptNum-1]->MatID();
-		theMaterials[matnum]->LoadTransportProps(mpm[ptNum-1],fmobj->np);
-		Tensor *D=theMaterials[matnum]->GetDiffusionTensor();			// in mm^2/sec
-		
-		// get flux force in pot mm^3/s
-		double sign = value>=0. ? 1. : -1.;
-		if(direction==X_DIRECTION)
-			mpm[ptNum-1]->pDiffusion->flux+=sign*(D->xx*mpm[ptNum-1]->pDiffusion->Dc.x+D->xy*mpm[ptNum-1]->pDiffusion->Dc.y)*volume/mpmgrid.partx;
-		else
-			mpm[ptNum-1]->pDiffusion->flux+=sign*(D->xy*mpm[ptNum-1]->pDiffusion->Dc.x+D->yy*mpm[ptNum-1]->pDiffusion->Dc.y)*volume/mpmgrid.party;
+		matptr->LoadTransportProps(mpm[ptNum-1],fmobj->np);
+		Tensor *D=matptr->GetDiffusionTensor();			// in mm^2/sec
+        
+        // get in mm/sec
+		fluxMagX = D->xx*mpmptr->pDiffusion->Dc.x + D->xy*mpmptr->pDiffusion->Dc.y;
+        fluxMagY = D->xy*mpmptr->pDiffusion->Dc.x + D->yy*mpmptr->pDiffusion->Dc.y;
+        bcDir = N_DIRECTION;
 	}
 	else if(direction==EXTERNAL_FLUX)
 	{	double mstime=1000.*bctime;
-		mpm[ptNum-1]->pDiffusion->flux += BCValue(mstime)*volume;
-	}
-	else
-    {   // coupled surface flux and ftime is bath concentration
-		varTime = mpm[ptNum-1]->pConcentration-ftime;
-		GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
-		double currentValue = fabs(function->Val());
-		if(varTime>0.) currentValue=-currentValue;
-		mpm[ptNum-1]->pDiffusion->flux += currentValue*volume;
-	}
-	*/
-		
-    // condition value
-	MPMBase *mpmptr = mpm[ptNum-1];
-	double fluxMag;
-	
-	if(direction==EXTERNAL_FLUX)
-	{	double mstime=1000.*bctime;
-		fluxMag = BCValue(mstime);
+		fluxMagX = BCValue(mstime)/csatrho;
 	}
 	else
     {   // coupled surface flux and ftime is bath concentration
@@ -92,18 +76,13 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 		GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
 		double currentValue = fabs(function->Val());
 		if(varTime>0.) currentValue=-currentValue;
-		fluxMag = currentValue;
+		fluxMagX = currentValue/csatrho;
 	}
-	
-	// fluxMag in g/(mm^2-sec) - find J/rho in units of mm/sec
-	MaterialBase *matptr = theMaterials[mpmptr->MatID()];
-	double rho = 0.001*matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
-	fluxMag /= rho;
 	
 	// get corners and direction from material point
 	int cElem[4],numDnds;
 	Vector corners[4],tscaled;
-	double ratio = mpmptr->GetTractionInfo(face,X_DIRECTION,cElem,corners,&tscaled,&numDnds);
+	double ratio = mpmptr->GetTractionInfo(face,bcDir,cElem,corners,&tscaled,&numDnds);
 	
     // compact CPDI nodes into list of nodes (nds) and final shape function term (fn)
     // May need up to 8 (in 3D) for each of the numDnds (2 in 2D or 4 in 3D)
@@ -116,7 +95,7 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
     for(i=1;i<=numnds;i++)
     {   // skip empty nodes
         if(nd[nds[i]]->NumberNonrigidParticles())
-		{	nd[nds[i]]->fdiff += fluxMag*tscaled.x*fn[i];
+		{	nd[nds[i]]->fdiff += (fluxMagX*tscaled.x + fluxMagY*tscaled.y)*fn[i];
         }
     }
 	

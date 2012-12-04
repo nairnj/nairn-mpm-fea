@@ -68,11 +68,11 @@ attribute</a> can specify the length units attribute.</p>
 
 <p>The <code>thickness</code> in planar 2D calculations defines the thickness of the grid.
 This attribute is required when doing <a href="mpmheader.html#mmmode">multimaterial</a> contact
-including the optional volume check. It is optional in other calculations because
+including the optional volume check and when using <a href="mpmloads.html">traction or flux boundary conditions</a>. It is optional in other calculations because
 thickness can be set when <a href="definempm.html">defining material points</a>
 and when <a href="cracks.html">defining cracks</a>. If used, however, all
 material points and cracks will default to the grid thickness. You can enter 
-different values, although it is not recommended (and may change the physics in multimaterial simulations). A warning is printed in the output if a crack thickness does not match the grid thickness. Currently no warning is given if material points have different thicknesses.
+different values, although it is not recommended (and may change the physics in multimaterial simulations or results to traction or flux boundary conditions). A warning is printed in the output if a crack thickness does not match the grid thickness. Currently no warning is given if material points have different thicknesses.
 </p>
 
 <p>The subordinate tags define the number of elements in each direction:

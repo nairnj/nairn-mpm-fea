@@ -713,13 +713,11 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				mpTractionCtrl->AddObject(newTractionBC);
 			}
 		}
-		else
-        {	if(dof==2 && style!=FUNCTION_VALUE && style!=SILENT)
+		else if(strcmp(xName,"ConcFluxBC")==0)
+        {	if(dof==2 && style!=FUNCTION_VALUE)
 				throw SAXException("Coupled concentration flux condition must use function style");
-			else if(dof==3 && style!=SILENT)
-				throw SAXException("'dir' in this <ConcFluxBC> element must be 1 or 2 .");
-			else if(dof==3 && style==SILENT)
-				throw SAXException("Silent <ConcFluxBC> is still in development in 2D and cannot be used in 3D analyses.");
+			else if(style==SILENT && fmobj->IsThreeD())
+				throw SAXException("Silent <ConcFluxBC> is currently only available in 2D analyses.");
 				
 			// check each material point
 			MatPtFluxBC *newFluxBC;
