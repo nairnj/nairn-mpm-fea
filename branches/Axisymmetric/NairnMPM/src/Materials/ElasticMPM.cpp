@@ -80,14 +80,14 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 		sp->zz += mdm[4][1]*(dvxx+me0[5]*erzz)+mdm[4][2]*(dvyy+me0[6]*erzz)
 					+mdm[4][3]*(dgam+me0[7]*erzz)-mdm[4][4]*erzz;
 		
-		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule)
+		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
 		mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
 								   + (st0.xy+sp->xy)*dgam)-0.5*(st0.zz+sp->zz)*erzz);
 	}
 	else if(np==PLANE_STRESS_MPM)
 	{	ep->zz += mdm[4][1]*dvxx+mdm[4][2]*dvyy+mdm[4][3]*dgam+erzz;
 		
-		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule)
+		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
 		mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
 								   + (st0.xy+sp->xy)*dgam));
 	}
@@ -95,7 +95,7 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 	{	// axisymmetric hoop stress
 		sp->zz += mdm[4][1]*dvxx + mdm[4][2]*dvyy + mdm[4][4]*dvzz + mdm[4][3]*dgam;
 		
-		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule)
+		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
 		mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
 								   + (st0.xy+sp->xy)*dgam) + (st0.zz+sp->zz)*dvzz);
 	}

@@ -180,11 +180,11 @@ void MatPoint2D::AddTemperatureGradient(Vector *grad)
     pTemp->DT.y+=grad->y;
 }
 
-// return conduction force = - V [D] Grad T . Grad S
+// return conduction force = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units N-mm/sec)
 double MatPoint2D::FCond(double dshdx,double dshdy,double dshdz)
 {
 	Tensor *kten=theMaterials[MatID()]->GetkCondTensor();
-	return -GetVolume(DEFORMED_VOLUME)*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y)*dshdx
+	return -mp*GetRelativeVolume()*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y)*dshdx
 						+ (kten->xy*pTemp->DT.x + kten->yy*pTemp->DT.y)*dshdy);
 }
 
@@ -201,7 +201,7 @@ void MatPoint2D::AddConcentrationGradient(Vector *grad)
     pDiffusion->Dc.y+=grad->y;
 }
 
-// return diffusion force = - V [D] Grad C . Grad S
+// return diffusion force = - V [D] Grad C . Grad S in mm^3/sec
 double MatPoint2D::FDiff(double dshdx,double dshdy,double dshdz)
 {
 	Tensor *Dten=theMaterials[MatID()]->GetDiffusionTensor();
@@ -543,7 +543,7 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 			ey = -ex;
 			ex = enorm;
 		case T1_DIRECTION:
-			// load in direction specified by normalize (ex,ey)
+			// load in direction specified by normalized (ex,ey)
 			enorm = sqrt(ex*ex+ey*ey);
 			tscaled->x = ex*faceWt/enorm;
 			tscaled->y = ey*faceWt/enorm;

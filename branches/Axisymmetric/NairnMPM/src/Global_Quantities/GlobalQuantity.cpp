@@ -362,8 +362,8 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 			for(p=0;p<nmpms;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	deltaT=(mpm[p]->pTemperature-thermal.reference);
-					Cp=theMaterials[mpm[p]->MatID()]->GetHeatCapacity(mpm[p]);		// in J/(g-K)
-					value+=mpm[p]->mp*Cp*deltaT*deltaT/(2.*thermal.reference);
+					Cp=theMaterials[mpm[p]->MatID()]->GetHeatCapacity(mpm[p]);              // in mJ/(g-K)
+					value += 1.e-3*mpm[p]->mp*Cp*deltaT*deltaT/(2.*thermal.reference);      // J
 				}
 			}
 			break;

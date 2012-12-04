@@ -47,8 +47,7 @@ BoundaryCondition *MatPtTractionBC::PrintBC(ostream &os)
 // input is analysis time in seconds
 MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
 {
-    int i,j;
-    
+    // condition value
 	double mstime=1000.*bctime;
 	MPMBase *mpmptr = mpm[ptNum-1];
 	double tmag = BCValue(mstime);
@@ -57,91 +56,15 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
 	int cElem[4],numDnds;
 	Vector corners[4],tscaled;
 	double ratio = mpmptr->GetTractionInfo(face,direction,cElem,corners,&tscaled,&numDnds);
-	
-	// loop over corners finding all nodes and add to fext
-    int numnds,nds[8*numDnds+1],ncnds=0;
-    double fn[8*numDnds+1],cnodes[8*numDnds],twt[8*numDnds];              // allows 3D which can have 8 nodes each
-    for(i=0;i<numDnds;i++)
-	{	// get straight grid shape functions
-		theElements[cElem[i]]->GridShapeFunctions(&numnds,nds,&corners[i],fn);
-		
-		// in case axisymmetric, scale weight for second node
-		double scale = (i==1) ? ratio : 1.;
-		
-		// loop over shape grid shape functions and collect in arrays
-		for(j=1;j<=numnds;j++)
-		{   cnodes[ncnds] = nds[j];
-			twt[ncnds] = fn[j]*scale;
-			ncnds++;
-		}
-	}
     
-    /*
-    cout << "# Initial:" << endl;
-    for(i=0;i<ncnds;i++)
-    {   cout << "# node = " << cnodes[i] << ", Si = " << twt[i] << endl;
-    }
-    */
-    
- 	// shell sort by node numbers in cnodes[] (always 16 for linear CPDI)
-	int lognb2=(int)(log((double)ncnds)*1.442695022+1.0e-5);	// log base 2
-	int k=ncnds,l,cmpNode;
-	double cmpSi;
-	for(l=1;l<=lognb2;l++)
-	{	k>>=1;		// divide by 2
-		for(j=k;j<ncnds;j++)
-		{	i=j-k;
-			cmpNode = cnodes[j];
-			cmpSi = twt[j];
-			
-			// Back up until find insertion point
-			while(i>=0 && cnodes[i]>cmpNode)
-			{	cnodes[i+k] = cnodes[i];
-				twt[i+k] = twt[i];
-				i-=k;
-			}
-			
-			// Insert point
-			cnodes[i+k]=cmpNode;
-			twt[i+k]=cmpSi;
-		}
-	}
-    
-    /*
-    cout << "# Sorted:" << endl;
-    for(i=0;i<ncnds;i++)
-    {   cout << "# node = " << cnodes[i] << ", Si = " << twt[i] << endl;
-    }
-    */
-
- 	// compact same node number
-	int count = 0;
-	nds[0] = -1;
-	fn[0] = 1.;
-	for(i=0;i<ncnds;i++)
-	{   if(cnodes[i] == nds[count])
-        {   fn[count] += twt[i];
-        }
-        else
-        {	if(fn[count]>1.e-10) count++;       // keep only if shape is nonzero
-            nds[count] = cnodes[i];
-            fn[count] = twt[i];
-        }
-	}
-	if(fn[count]<1.e-10) count--;
-	numnds = count;
-    
-    /*
-    cout << "# Compacted: tmag = " << tmag;
-    PrintVector(", t vec =",&tscaled);
-    cout << endl;
-    for(i=1;i<=numnds;i++)
-    {   cout << "# node = " << nds[i] << ", Total Si = " << fn[i] << endl;
-    }
-    */
+    // compact CPDI nodes into list of nodes (nds) and final shape function term (fn)
+    // May need up to 8 (in 3D) for each of the numDnds (2 in 2D or 4 in 3D)
+    int nds[8*numDnds+1];
+    double fn[8*numDnds+1];
+    int numnds = CompactCornerNodes(numDnds,corners,cElem,ratio,nds,fn);
     
     // Particle information about field
-    int vfld=0;                                             // To support traction near cracks need to calculate for each node
+    int i,vfld=0;                                             // To support traction near cracks need to calculate for each node
     MaterialBase *matID=theMaterials[mpmptr->MatID()];		// material class object
     int matfld=matID->GetField();                           // material field
     Vector theFrc;

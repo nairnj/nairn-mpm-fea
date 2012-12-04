@@ -158,6 +158,7 @@
 				| D | DA | DT | Dx | Dy | Dz | D0 | Dd | csat | SettingFunction | SettingFunction2 | SettingFunction3
 				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration
 				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd | P0 | T0
+                | kCondR | kCondZ
 				| yldxx | yldyy | yldzz | yldxy | yldxz | yldyz | Khard | nhard | color | betahard
 				| Bjc | njc | Cjc | ep0jc | C0 | S1 | S2 | GPpG0 | GTpG0 | gamma0
 				| Uk | YP | Friction | C1 | C2 | Ajc | mjc | Tmjc | tempC1 | tempC2 )* >
@@ -427,6 +428,8 @@
 <!ELEMENT	kCondz (#PCDATA)>
 <!ELEMENT	kCond0 (#PCDATA)>
 <!ELEMENT	kCondd (#PCDATA)>
+<!ELEMENT	kCondR (#PCDATA)>
+<!ELEMENT	kCondZ (#PCDATA)>
 <!ELEMENT	P0 (#PCDATA)>
 <!ELEMENT	T0 (#PCDATA)>
 <!ELEMENT	Cp (#PCDATA)>

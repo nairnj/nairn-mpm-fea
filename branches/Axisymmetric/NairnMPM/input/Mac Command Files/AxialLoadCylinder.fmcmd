@@ -22,9 +22,9 @@ EndHeader
 
 ! "force" or "traction" or "rigid" or "contact"
 ! Tries to load to approximate #maxStrain (%)
-#style="force"
+#style="traction"
 ! may need small #factor and faster loading to get high tension
-#maxstrain=-50				
+#maxstrain=50				
 
 ! Base properties should be used
 ! Needed for time calculations

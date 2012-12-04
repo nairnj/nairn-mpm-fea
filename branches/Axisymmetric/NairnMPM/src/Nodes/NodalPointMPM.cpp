@@ -68,7 +68,7 @@ void NodalPoint::InitializeForTimeStep(void)
 	gVolume=0.;
 	gConcentration=0.;
 	gTemperature=0.;
-	gRhoVCp=0.;
+	gMpCp=0.;
 	fdiff=0.;
 	fcond=0.;
 }

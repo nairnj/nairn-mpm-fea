@@ -185,7 +185,7 @@ void MatPoint3D::AddTemperatureGradient(Vector *grad)
 double MatPoint3D::FCond(double dshdx,double dshdy,double dshdz)
 {
 	Tensor *kten=theMaterials[MatID()]->GetkCondTensor();
-	return -GetVolume(DEFORMED_VOLUME)*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y + kten->xz*pTemp->DT.z)*dshdx
+	return -mp*GetRelativeVolume()*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y + kten->xz*pTemp->DT.z)*dshdx
 						+ (kten->xy*pTemp->DT.x + kten->yy*pTemp->DT.y + kten->yz*pTemp->DT.z)*dshdy
 						+ (kten->xz*pTemp->DT.x + kten->yz*pTemp->DT.y + kten->zz*pTemp->DT.z)*dshdz);
 }

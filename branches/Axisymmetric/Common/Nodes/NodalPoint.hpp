@@ -34,7 +34,7 @@ class NodalPoint : public LinkedObject
 		double gVolume;
 		double gConcentration;
 		double fdiff;				// diffusion
-		double gRhoVCp;
+		double gMpCp;
 		double fcond;				// conduction
 		unsigned char fixedDirection;
 	

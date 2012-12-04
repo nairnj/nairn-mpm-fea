@@ -53,7 +53,7 @@ MatPtFluxBC *MatPtFluxBC::ZeroMPFlux(void)
 // (only called when diffusion is active)
 MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 {
-	double volume=mpm[ptNum-1]->GetVolume(DEFORMED_VOLUME);						// in mm^3
+	double volume = mpm[ptNum-1]->GetVolume(DEFORMED_VOLUME);						// in mm^3
 	
 	if(style==SILENT)
 	{	// silent assumes isotropic material
@@ -70,14 +70,15 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 	}
 	else if(direction==EXTERNAL_FLUX)
 	{	double mstime=1000.*bctime;
-		mpm[ptNum-1]->pDiffusion->flux+=BCValue(mstime)*volume;
+		mpm[ptNum-1]->pDiffusion->flux += BCValue(mstime)*volume;
 	}
 	else
-	{	varTime=mpm[ptNum-1]->pConcentration-ftime;
+    {   // coupled surface flux and ftime is bath concentration
+		varTime = mpm[ptNum-1]->pConcentration-ftime;
 		GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
-		double currentValue=fabs(function->Val());
+		double currentValue = fabs(function->Val());
 		if(varTime>0.) currentValue=-currentValue;
-		mpm[ptNum-1]->pDiffusion->flux+=currentValue*volume;
+		mpm[ptNum-1]->pDiffusion->flux += currentValue*volume;
 	}
 		
     return (MatPtFluxBC *)GetNextObject();

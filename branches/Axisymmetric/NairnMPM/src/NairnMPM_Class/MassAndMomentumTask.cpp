@@ -45,7 +45,7 @@
 			cvf[]->norm, numberMaterials
 		nd[]->mass
 		nd[]->gConcentration, gVolume (for diffusion)
-		nd[]->gTemperature, gRhoVCp (for conduction)
+		nd[]->gTemperature, gMpCp (for conduction)
 ********************************************************************************/
 
 #include "NairnMPM_Class/MassAndMomentumTask.hpp"

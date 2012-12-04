@@ -58,22 +58,21 @@ TransportTask *ConductionTask::TransportTimeStep(int matid,double dcell,double *
 
 // Task 1 Extrapolation of concentration to the grid
 TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape)
-{	double Cp=theMaterials[mptr->MatID()]->GetHeatCapacity(mptr);
-	double rho=theMaterials[mptr->MatID()]->rho;
-	double arg=mptr->GetVolume(DEFORMED_VOLUME)*rho*Cp*shape;
-	ndpt->gTemperature+=mptr->pTemperature*arg;
-	ndpt->gRhoVCp+=arg;
+{	double Cp=theMaterials[mptr->MatID()]->GetHeatCapacity(mptr);   // mJ/(g-K)
+	double arg = mptr->mp*Cp*shape;                                 // mJ/K
+	ndpt->gTemperature+=mptr->pTemperature*arg;                     // mJ
+	ndpt->gMpCp+=arg;                                               // mJ/K
 	return nextTask;
 }
 
 // Task 1b - get grid temperatures and impose grid-based concentration BCs
 void ConductionTask::GetValues(double stepTime)
 {
-	// convert to actual temperatires
+	// convert to actual temperatures
 	int i;
     for(i=1;i<=nnodes;i++)
 	{   if(nd[i]->NumberNonrigidParticles()>0)
-			nd[i]->gTemperature/=nd[i]->gRhoVCp;
+			nd[i]->gTemperature/=nd[i]->gMpCp;
 	}
 
 	// Copy no-BC temperature
@@ -125,28 +124,24 @@ void ConductionTask::GetGradients(double stepTime)
 	// impose flux boundary conditions (only allows zero for now)
 }
 
-// find forces for conduction calculation
+// find forces for conduction calculation (N-mm/sec = mJ/sec
 TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double sh,double dshdx,double dshdy,double dshdz)
 {
-	// get conduction constant for this material (xx, yy, xy order)
-	//Tensor *kten=theMaterials[mptr->MatID()]->GetkCondTensor();
-	
-	// internal force
-	ndpt->fcond+=mptr->FCond(dshdx,dshdy,dshdz);
-	//ndpt->fcond-=mptr->volume*((kten->xx*mptr->pTemp->DT.x + kten->xy*mptr->pTemp->DT.y)*dshdx
-	//					+ (kten->xy*mptr->pTemp->DT.x + kten->yy*mptr->pTemp->DT.y)*dshdy);
+	// internal force based on conduction tensor
+	ndpt->fcond += mptr->FCond(dshdx,dshdy,dshdz);
 	
 	// add source terms
 	
 	// if coupled to material dissipated energy, add and then zero dissipated energy
 	if(energyCoupling)
-	{	// V * q = 1000 J/sec where J = 1.0e-9 * V (mm^3) * rho (g/cm^3) * specific energy
-		// ...see data archiving for details on units
-		double rho=theMaterials[mptr->MatID()]->rho;
-		ndpt->fcond+=sh*1.0e-6*mptr->GetVolume(DEFORMED_VOLUME)*rho*mptr->GetDispEnergy()/timestep;
+	{	// V * q heat energy is mp (g) * specific energy (uJ/g) = uJ
+		// To get mJ/sec, divide timestep (sec) and times 1e-3
+		ndpt->fcond += sh*1.0e-3*mptr->mp*mptr->GetDispEnergy()/timestep;
 	}
 	
-	// if on boundary, get boundary force
+    // add external flux on particles (see diffusion method to add for thermal)
+    
+	// when implement boundary flux integral add it here
 	
 	// next task
 	return nextTask;
@@ -163,20 +158,20 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
     while(nextBC!=NULL)
         nextBC=nextBC->PasteNodalTemperature(nd[nextBC->GetNodeNum()]);
     
-    // Set force to - rho V Cp T(no BC)/timestep
+    // Set force to - mp Cp T(no BC)/timestep
 	double mstime=1000.*(mtime+deltime);
     nextBC=firstTempBC;
     while(nextBC!=NULL)
 	{   i=nextBC->GetNodeNum(mstime);
-		if(i!=0) nd[i]->fcond=-nd[i]->gRhoVCp*nd[i]->gTemperature/deltime;
+		if(i!=0) nd[i]->fcond = -nd[i]->gMpCp*nd[i]->gTemperature/deltime;
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
 	}
     
-    // Now add each superposed concentration (* rho V Cp) BC at incremented time
+    // Now add each superposed concentration (* mp Cp) BC at incremented time
     nextBC=firstTempBC;
     while(nextBC!=NULL)
     {	i=nextBC->GetNodeNum(mstime);
-		if(i!=0) nd[i]->fcond+=nd[i]->gRhoVCp*nextBC->BCValue(mstime)/deltime;
+		if(i!=0) nd[i]->fcond += nd[i]->gMpCp*nextBC->BCValue(mstime)/deltime;
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
     }
 	
@@ -190,7 +185,7 @@ TransportTask *ConductionTask::TransportRates(double deltime)
 	int i;
     for(i=1;i<=nnodes;i++)
 	{   if(nd[i]->NumberNonrigidParticles()>0)
-			nd[i]->fcond/=nd[i]->gRhoVCp;
+			nd[i]->fcond /= nd[i]->gMpCp;
 	}
 	return nextTask;
 }
@@ -214,21 +209,21 @@ TransportTask *ConductionTask::UpdateNodalValues(double tempTime)
 	int i;
     for(i=1;i<=nnodes;i++)
 	{   if(nd[i]->NumberNonrigidParticles()>0)
-			nd[i]->gTemperature+=nd[i]->fcond*tempTime;
+			nd[i]->gTemperature += nd[i]->fcond*tempTime;
 	}
 	return nextTask;
 }
 
 // increment transport rate
 TransportTask *ConductionTask::IncrementValueExtrap(NodalPoint *ndpt,double shape)
-{	pValueExtrap+=ndpt->gTemperature*shape;
+{	pValueExtrap += ndpt->gTemperature*shape;
 	return nextTask;
 }
 
 // after extrapolated, find change this update on particle
 TransportTask *ConductionTask::GetDeltaValue(MPMBase *mptr)
-{	dTemperature=pValueExtrap-mptr->pPreviousTemperature;
-	mptr->pPreviousTemperature=pValueExtrap;
+{	dTemperature = pValueExtrap-mptr->pPreviousTemperature;
+	mptr->pPreviousTemperature = pValueExtrap;
 	return nextTask;
 }
 

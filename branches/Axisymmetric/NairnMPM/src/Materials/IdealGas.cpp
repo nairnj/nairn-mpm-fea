@@ -56,7 +56,7 @@ const char *IdealGas::VerifyProperties(int np)
     if(P0 <= 0. || rho <= 0.0 || T0 <= 0.0 )
 		return "Ideal gas material model needs positive parameters P0, rho, and T0";
 	
-	// Ideal gas has heat capacity in J/(kg-K)
+	// Ideal gas has heat capacity in J/(kg-K) = mJ/(g-K)
 	// Must set C to Cv to work well with theory, even though output and equations
 	//    for conductivity claim Cp is needed. For Ideal Gas, Cv = 1.5R
 	// This material overrides any attempt to set heat capacity
@@ -163,7 +163,7 @@ void IdealGas::MPMCombinedLaw(MPMBase *mptr,double detf)
 	sp->yy = mPsp;
 	sp->zz = mPsp;
 	
-	// internal energy increment per unit mass or dU/(rho0 V0)
+	// internal energy increment per unit mass or dU/(rho0 V0) (uJ/g)
     // dU/(rho0 V0) = - 0.5 * (pn+p(n+1))/rho0 * (V(n+1)-Vn)/V0, which simplifies to
     double dU = 0.5*(mPnsp*detf + mPsp)*(1.-1/detf);
     

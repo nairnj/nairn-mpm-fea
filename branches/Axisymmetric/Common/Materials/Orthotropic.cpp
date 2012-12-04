@@ -70,7 +70,8 @@ void Orthotropic::PrintTransportProperties(void)
 	}
 	// Conductivity constants
 	if(ConductionTask::active)
-	{   sprintf(mline,"kx =%12.3g   ky =%12.3g   kz =%12.3g W/(m-K)\nCp  =%12.3g J/(kg-K)",kcondT,kcondA,kcondz,1000.*heatCapacity);
+	{   sprintf(mline,"kx =%12.3g   ky =%12.3g   kz =%12.3g W/(m-K)\nCp  =%12.3g J/(kg-K)",
+                    rho*kcondT/1000.,rho*kcondA/1000.,rho*kcondz/1000.,heatCapacity);
 		cout << mline << endl;
 	}
 }
@@ -175,10 +176,10 @@ char *Orthotropic::InputMat(char *xName,int &input)
     else if(strcmp(xName,"Dz")==0)
         return((char *)&Dz);
 		
-    else if(strcmp(xName,"kCondx")==0)
+    else if(strcmp(xName,"kCondx")==0 || strcmp(xName,"kCondR")==0)
         return((char *)&kcondT);
 		
-    else if(strcmp(xName,"kCondy")==0)
+    else if(strcmp(xName,"kCondy")==0 || strcmp(xName,"kCondZ")==0)
         return((char *)&kcondA);
 		
     else if(strcmp(xName,"kCondz")==0)
@@ -230,6 +231,9 @@ const char *Orthotropic::VerifyProperties(int np)
     {	if(!read[i])
 			return "A required material property is missing";
     }
+    
+    // make conductivty specific (N mm^3/(sec-K-g))
+    kcondz *= (1000./rho);
 
     // set properties
     const char *err=SetAnalysisProps(np,1.e6*Ex,1.e6*Ey,1.e6*Ez,nuxy,nuxz,nuyz,

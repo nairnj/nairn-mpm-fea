@@ -43,7 +43,7 @@ class MaterialBase : public LinkedObject
 		int criterion[2];
         double KIc,KIIc,KIexp,KIIexp,JIc,JIIc,gamma,delIc,delIIc,nmix;
 		Tensor diffusionTensor;
-		Tensor kCondTensor;
+		Tensor kCondTensor;                 // divided by rho (in g/mm^3)
 		double pCrit3,gain,initSpeed;
 		double initTime,maxLength;
 		int constantDirection;

@@ -119,17 +119,18 @@ void MGSCGLMaterial::InitialLoadMechProps(int makeSpecific,int np)
 	yldred = yield*1.e6/rho;
 	yldMaxred = yieldMax*1.e6/rho;
 	
-	double rhoC02=1000.*rho*C0*C0;				// Pa
-	double Cv=1000.*heatCapacityVol;		// J/(kg K)
-	double rhoCvT0=1000.*rho*Cv*thermal.reference;	// Pa
+	double rhoC02 = 1000.*rho*C0*C0;                    // Pa
+	double Cv = heatCapacityVol;                        // J/(kg K) = mJ/(g-K)
+	double rhoCvT0 = 1000.*rho*Cv*thermal.reference;    // Pa
 	double g2=gamma0*gamma0;
 	
 	k1=(rhoC02-g2*rhoCvT0)/rho;	// Pa
 	k2=(2.*rhoC02*S1-0.5*g2*gamma0*rhoCvT0)/rho;
 	k3=(3.*rhoC02*S1*S1 - gamma0*rhoC02*S1/3. + 2.*rhoC02*S2*C0 - g2*g2*rhoCvT0/6.)/rho;
 	
-	// gamma0 rho heatCapacityVol has units J/(cm^3-K) = MPa/K, multiply by 1.e6 and divide by rho to make specific
-	gRhoCv=gamma0*heatCapacityVol*1.e6;
+	// gamma0*rho*heatCapacityVol has units mJ/(cm^3-K) = kPa/K, multiply by 1.e3 (get Pa/K)
+    //    and divide by rho (which just removes it) to make specific
+	gRhoCv=1000.*gamma0*heatCapacityVol;
 	
 	G0red = G*1.e6/rho;
 	Gred = G0red;
@@ -173,7 +174,7 @@ void MGSCGLMaterial::PrintMechanicalProperties(void)
 	PrintYieldProperties();
 	
 	// effective CTE (in ppm/K)
-	double effAlpha = (1.e12*heatCapacityVol*gamma0)/(3.*k1);
+	double effAlpha = (1.e9*heatCapacityVol*gamma0)/(3.*k1);
 	PrintProperty("a",effAlpha,"");
 	PrintProperty("T0",thermal.reference,"K");
 	cout <<  endl;
@@ -195,11 +196,11 @@ void MGSCGLMaterial::PrintTransportProperties(void)
 	// Conductivity constants
 	if(ConductionTask::active)
 	{	MaterialBase::PrintTransportProperties();
-		PrintProperty("Cv",1000.*heatCapacityVol,"J/(kg-K)");
+		PrintProperty("Cv",heatCapacityVol,"J/(kg-K)");
 	}
 	else
-	{	PrintProperty("Cp",1000.*heatCapacity,"J/(kg-K)");
-		PrintProperty("Cv",1000.*heatCapacityVol,"J/(kg-K)");
+	{	PrintProperty("Cp",heatCapacity,"J/(kg-K)");
+		PrintProperty("Cv",heatCapacityVol,"J/(kg-K)");
 	}
 	cout << endl;
 }
