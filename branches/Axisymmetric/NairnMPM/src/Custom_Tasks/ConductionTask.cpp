@@ -124,7 +124,7 @@ void ConductionTask::GetGradients(double stepTime)
 	// impose flux boundary conditions (only allows zero for now)
 }
 
-// find forces for conduction calculation (N-mm/sec = mJ/sec
+// find forces for conduction calculation (N-mm/sec = mJ/sec)
 TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double sh,double dshdx,double dshdy,double dshdz)
 {
 	// internal force based on conduction tensor
@@ -138,10 +138,6 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double s
 		// To get mJ/sec, divide timestep (sec) and times 1e-3
 		ndpt->fcond += sh*1.0e-3*mptr->mp*mptr->GetDispEnergy()/timestep;
 	}
-	
-    // add external flux on particles (see diffusion method to add for thermal)
-    
-	// when implement boundary flux integral add it here
 	
 	// next task
 	return nextTask;
@@ -174,6 +170,8 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
 		if(i!=0) nd[i]->fcond += nd[i]->gMpCp*nextBC->BCValue(mstime)/deltime;
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
     }
+	
+	// --------- heat flux BCs -------------
 	
 	return nextTask;
 }

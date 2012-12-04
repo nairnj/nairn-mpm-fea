@@ -224,7 +224,7 @@ load boundary conditions and have no effect on other boundary conditions, includ
 </p>
 
 <pre>
-    &lt;ConcFluxBC dir='1' style='1' value='0' time='0.0' function='sinh(t)'/&gt; 
+    &lt;ConcFluxBC dir='1' face='1' style='1' value='0' time='0.0' function='sinh(t)'/&gt; 
 </pre>
 
 
@@ -235,14 +235,17 @@ load boundary conditions and have no effect on other boundary conditions, includ
 <dt>dir</dt>
 <dd>Must be 1 to indicate an external flux.</dd>
 
+<dt><a name="fluxface"></a>face</dt>
+<dd>The face of the original particle domain that has concentration flux. In 2D, the faces are the edges numbered 1 through 4 in the counter-clockwise direction with the bottom edge being number 1. In 3D, 1 to 4 are the same faces (<i>i.e.</i>, faces with normals (0,-1,0), (1,0,0), (0,1,0), and (-1,0,0) on the original particle domain, respectively), 5 is the bottom (with normal (0,0,-1)), and 6 is the top (with normal (0,0,1)).</dd>
+
 <dt>style</dt>
 <dd>Defines the type of flux using <a href="#style">standard styles</a> (except that the <code>silent</code> option is expermental (<a href="#silentflux">see below</a>)).</dd>
 
 <dt>value and time</dt>
-<dd>These arguments are used with the chosen <a href="#style">style</a>. The resulting external flux is in concentration potential per second on the particle.</dd>
+<dd>These arguments are used with the chosen <a href="#style">style</a>. The resulting external flux is in g/(mm^2-sec). Positive flux is to into the object and negative is out of the object. For isotropic material in applied flux <code>J</code>, the expected output concentration gradient is <code>dc/dn = J/(&rho; D)</code>, where <code>n</code> is coordinate normal to the surface. The actual output <code>dc/dn</code> may differ however, if concentration on the edge with defined flux approaches the saturation concentration.</dd>
 
 <dt>function</dt>
-<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of time (<code>t</code> in ms), of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in concentration potential per second. When using a function, the <code>value</code> attribute is ignored, but <code>time</code> can be used to determine <a href="#function">when the function is evaluated</a>.
+<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of time (<code>t</code> in ms), of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in g/(mm^2-sec). When using a function, the <code>value</code> attribute is ignored, but <code>time</code> can be used to determine <a href="#function">when the function is evaluated</a>.
 </dd>
 
 
@@ -266,16 +269,18 @@ load boundary conditions and have no effect on other boundary conditions, includ
 <dt>dir</dt>
 <dd>Must be 2 to indicate a coupled surface flux.</dd>
 
+<dt>face</dt>
+<dd>The face with the flux as defined <a href="#fluxface">above</a>.</dd>
+
 <dt>style</dt>
 <dd>Must be 6 meaning the condition is specified in a function (see below)</dd>
 
 <dt>function</dt>
-<dd>Enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code>, where <code>t</code> stands for the difference between the particle concentration potential and the reservoir concentration potential, of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in concentration potential per second. The sign is irrelevant. The applied flux will be positive if the particle concentration is less than the bath or negative if it is greater than the bath. The function gives the magnitude of the flux.
+<dd>Enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code>, where <code>t</code> stands for the difference between the particle concentration potential and the reservoir concentration potential, of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in mm), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in g/(mm^2-sec). The sign is irrelevant. The applied flux will be positive if the particle concentration is less than the bath or negative if it is greater than the bath. The magnitude of the function gives the magnitude of the flux.
 </dd>
 
-
 <dt>bath</dt>
-<dd>The concentration potential of the surrounding reservoir bath.</dd>
+<dd>The concentration potential (0 to 1) of the surrounding reservoir bath.</dd>
 
 </dl>
 

@@ -132,14 +132,6 @@ void DiffusionTask::GetGradients(double stepTime)
 			mpm[p]->AddConcentrationGradient(ScaleVector(&deriv,nd[nds[i]]->gConcentration));
 		}
 	}
-	
-	// impose flux boundary conditions
-    MatPtFluxBC *nextFlux=firstFluxPt;
-    while(nextFlux!=NULL)
-    	nextFlux=nextFlux->ZeroMPFlux();
-    nextFlux=firstFluxPt;
-    while(nextFlux!=NULL)
-    	nextFlux=nextFlux->AddMPFlux(stepTime);
 }
 
 // find forces for diffusion calculation (mm^3/sec)
@@ -149,11 +141,6 @@ TransportTask *DiffusionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double sh
 	ndpt->fdiff += mptr->FDiff(dshdx,dshdy,dshdz);
 	
 	// add source terms (should be potential per sec, if c units per second, divide by concSaturation)
-	
-	// add external flux on particles (already multiplied by volume)
-	ndpt->fdiff += mptr->pDiffusion->flux*sh;
-    
-    // when implement boundary flux integral add it here
 	
 	// return next task
 	return nextTask;
@@ -167,6 +154,8 @@ TransportTask *DiffusionTask::SetTransportForceBCs(double deltime)
     int i;
     NodalConcBC *nextBC=firstConcBC;
     
+	// --------- grid concentration BCs ------------
+	
     // Paste back noBC concentration
     while(nextBC!=NULL)
         nextBC = nextBC->PasteNodalConcentration(nd[nextBC->GetNodeNum()]);
@@ -188,6 +177,12 @@ TransportTask *DiffusionTask::SetTransportForceBCs(double deltime)
         nextBC = (NodalConcBC *)nextBC->GetNextObject();
     }
 	
+	// --------- concentration flux BCs -------------
+	
+	MatPtFluxBC *nextFlux=firstFluxPt;
+    while(nextFlux!=NULL)
+    	nextFlux = nextFlux->AddMPFlux(deltime);
+
 	return nextTask;
 }
 

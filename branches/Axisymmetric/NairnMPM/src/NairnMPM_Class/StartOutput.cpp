@@ -204,8 +204,8 @@ void NairnMPM::MyStartResultsOutput(void)
     // Diffusion boundary conditions
 	if(DiffusionTask::active)
 	{   PrintSection("NODAL POINTS WITH FIXED CONCENTRATIONS");
-		cout << " Node ID   Conc (/csat)   Arg (ms/ms^-1)  Function\n"
-		<< "----------------------------------------------------\n";
+		cout << "  Node  ID    Conc (/csat)   Arg (ms/ms^-1)  Function\n"
+		<< "------------------------------------------------------\n";
 		nextBC=firstConcBC;
 		while(nextBC!=NULL)
 			nextBC=nextBC->PrintBC(cout);
@@ -214,8 +214,8 @@ void NairnMPM::MyStartResultsOutput(void)
 		//---------------------------------------------------
 		// Concentration Flux Material Points
 		PrintSection("MATERIAL POINTS WITH CONCENTRATION FLUX");
-		cout << " Point DOF ID      Flux ( )     Arg (ms/ms^-1)\n"
-		<< "-------------------------------------------------\n";
+		cout << " Point  DOF Face ID   Flux (mm/sec)   Arg (ms/ms^-1)  Function\n"
+		<< "---------------------------------------------------------------\n";
 		nextBC=(BoundaryCondition *)firstFluxPt;
 		while(nextBC!=NULL)
 			nextBC=nextBC->PrintBC(cout);
@@ -226,8 +226,8 @@ void NairnMPM::MyStartResultsOutput(void)
     // Conduction boundary conditions
 	if(ConductionTask::active)
 	{   PrintSection("NODAL POINTS WITH FIXED TEMPERATURES");
-		cout << " Node ID   Temp (-----)   Arg (ms/ms^-1)  Function\n"
-		<< "----------------------------------------------------\n";
+		cout << " Node   ID   Temp (-----)   Arg (ms/ms^-1)  Function\n"
+		<< "------------------------------------------------------\n";
 		nextBC=firstTempBC;
 		while(nextBC!=NULL)
 			nextBC=nextBC->PrintBC(cout);

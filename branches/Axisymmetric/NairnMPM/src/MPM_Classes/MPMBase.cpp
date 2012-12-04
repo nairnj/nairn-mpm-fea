@@ -85,7 +85,6 @@ void MPMBase::AllocateTemperature(void)
 // allocation diffusion data if need in this calculations
 void MPMBase::AllocateDiffusion(void)
 {	pDiffusion=new DiffusionField;
-	pDiffusion->flux=0.;
 	ZeroVector(&pDiffusion->Dc);
 }
 

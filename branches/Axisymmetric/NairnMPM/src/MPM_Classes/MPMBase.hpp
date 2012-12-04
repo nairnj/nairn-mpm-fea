@@ -23,7 +23,6 @@ typedef struct {
 
 // variables for diffusion calculations
 typedef struct {
-	double flux;		// potential*volume/sec for external fluxes
 	Vector Dc;			// conc potential gradient (archived * concSaturation)
 } DiffusionField;
 

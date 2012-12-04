@@ -145,12 +145,13 @@ MatPtLoadBC *MatPtLoadBC::MakeConstantLoad(double bctime)
 
 // compact CPDI surface nodes into arrays
 int MatPtLoadBC::CompactCornerNodes(int numDnds,Vector *corners,int *cElem,double ratio,int *nds,double *fn)
-{
+{	
     // loop over corners finding all nodes and add to fext
     // maximum is numDnds nodes with 8 nodes (if 3D) for each
     int i,j,numnds,ncnds=0;
     double cnodes[8*numDnds],twt[8*numDnds];
     double scale = 1.;
+	
     for(i=0;i<numDnds;i++)
 	{	// get straight grid shape functions
 		theElements[cElem[i]]->GridShapeFunctions(&numnds,nds,&corners[i],fn);
@@ -162,11 +163,11 @@ int MatPtLoadBC::CompactCornerNodes(int numDnds,Vector *corners,int *cElem,doubl
 			twt[ncnds] = fn[j]*scale;
 			ncnds++;
 		}
-        
+		
 		// in case axisymmetric, scale weight for second node (numDnds will be 2)
 		scale = ratio;
 	}
-    
+	
  	// shell sort by node numbers in cnodes[] (always 16 for linear CPDI)
     // sort to get repeating nodes together
 	int lognb2=(int)(log((double)ncnds)*1.442695022+1.0e-5);	// log base 2

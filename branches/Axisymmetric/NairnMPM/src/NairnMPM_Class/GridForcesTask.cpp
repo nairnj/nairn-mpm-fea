@@ -148,7 +148,7 @@ void GridForcesTask::Execute(void)
     // Imposed BCs on ftot to get correct grid BCs for velocity
     NodalVelBC::ConsistentGridForces();
 	
-	// Do similar to tranport property BCs
+	// Do similar to transport property BCs
 	nextTransport=transportTasks;
 	while(nextTransport!=NULL)
 		nextTransport=nextTransport->SetTransportForceBCs(timestep);

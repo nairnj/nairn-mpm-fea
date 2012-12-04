@@ -64,7 +64,7 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
     int numnds = CompactCornerNodes(numDnds,corners,cElem,ratio,nds,fn);
     
     // Particle information about field
-    int i,vfld=0;                                             // To support traction near cracks need to calculate for each node
+    int i,vfld=0;                                           // To support traction near cracks need to calculate for each node
     MaterialBase *matID=theMaterials[mpmptr->MatID()];		// material class object
     int matfld=matID->GetField();                           // material field
     Vector theFrc;

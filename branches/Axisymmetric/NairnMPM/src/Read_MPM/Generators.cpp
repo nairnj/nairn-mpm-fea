@@ -725,7 +725,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			MatPtFluxBC *newFluxBC;
 			theShape->resetParticleEnumerator();
 			while((i=theShape->nextParticle())>=0)
-			{   newFluxBC=new MatPtFluxBC(i+1,dof,style);
+			{   newFluxBC=new MatPtFluxBC(i+1,dof,style,face);
 				newFluxBC->value=load;
 				newFluxBC->ftime=ftime;
 				newFluxBC->SetFunction(function);

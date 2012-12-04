@@ -195,13 +195,13 @@ void MatPoint2D::AddConcentrationGradient(void)
 	pDiffusion->Dc.z=0.;
 }
 
-// add to the concentration gradient
+// add to the concentration gradient (1/mm)
 void MatPoint2D::AddConcentrationGradient(Vector *grad)
 {	pDiffusion->Dc.x+=grad->x;
     pDiffusion->Dc.y+=grad->y;
 }
 
-// return diffusion force = - V [D] Grad C . Grad S in mm^3/sec
+// return diffusion force = - V [D] Grad C . Grad S in (mm^3) (mm^2/sec) (1/mm) (1/mm) = mm^3/sec
 double MatPoint2D::FDiff(double dshdx,double dshdy,double dshdz)
 {
 	Tensor *Dten=theMaterials[MatID()]->GetDiffusionTensor();
@@ -416,7 +416,7 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
     {   // initial vectors only
         double r1x = mpmgrid.gridx*0.25;
         double r2y = mpmgrid.gridy*0.25;
-        
+
         switch(face)
         {	case 1:
                 // lower edge
