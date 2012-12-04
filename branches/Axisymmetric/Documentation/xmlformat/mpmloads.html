@@ -188,7 +188,7 @@ load boundary conditions and have no effect on other boundary conditions, includ
 
 <p>Another difference is that <code>LoadBC</code> applies a total force. In large deformation problems, the stress will change if the cross-section area changes. In contrast, <code>TractionBC</code> applies a stress to the deformed particle domain, which means its effect depends on <a href="mpmheader.html#gimp">MPM method</a> being used. When using <code>uGIMP</code>, the deformed particle domain is the same as the initial particle domain and therefore the applied stress will always be engineering stress based on initial particle area (<i>i.e.</i>, the stress will change if particle cross-sectional area changes). But, when using <code>lCPDI</code> or <code>qCPDI</code>, the stress will be a true stress that remains constant even if the particle cross sectional area changes.</p>
 
-<a name="style"></a><h2>Boundary Conditions Styles</h2>
+<a name="style"></a><h2>Boundary Condition Styles</h2>
 
 <p>The <code>value</code>, <code>style</code>, and <code>time</code> attributes for particle-based boundary conditions are used to set the time-dependence of the boundary conditions. The <code>style</code> options are listed below and any number of options can be combined on a single particle. When a single particle has multiple conditions, the resulting condition will be a superposition of the imposed conditions.</p>
 
