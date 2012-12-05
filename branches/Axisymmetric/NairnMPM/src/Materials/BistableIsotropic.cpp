@@ -231,7 +231,7 @@ const char *BistableIsotropic::VerifyProperties(int np)
 // 3D not allowed
 void BistableIsotropic::ValidateForUse(int np)
 {	if(np==THREED_MPM || np==AXISYMMETRIC_MPM)
-	{	throw CommonException("BistableIsotropic materials cannot do 3D  or Axisymmetric MPM analysis",
+	{	throw CommonException("BistableIsotropic materials cannot do 3D or Axisymmetric MPM analysis",
 							  "BistableIsotropic::ValidateForUse");
 	}
 	

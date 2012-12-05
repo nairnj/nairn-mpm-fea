@@ -120,10 +120,12 @@ void NairnMPM::MPMAnalysis(bool abort)
 
 	// if there are cracks, create J/K task and optionally a propagation task
 	//		(it is essential for propagation task to be after the JK task)
-	//		(insert this tasks before other custom tasks)
+	//		(insert this task before other custom tasks)
 	if(firstCrack!=NULL)
 	{	if(propagate[0] || archiver->WillArchiveJK(FALSE))
-		{	nextTask=new CalcJKTask();
+		{	if(IsAxisymmetric())
+				throw CommonException("Axisymmetric MPM cannot yet do J Integral calculations.","NairnMPM::ValidateOptions");
+			nextTask=new CalcJKTask();
 			if(propagate[0])
 			{   nextTask=new PropagateTask();
 				theJKTask->nextTask=nextTask;

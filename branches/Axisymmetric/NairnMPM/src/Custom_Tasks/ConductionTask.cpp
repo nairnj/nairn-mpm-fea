@@ -1,10 +1,41 @@
-/********************************************************************************
+/*********************************************************************************************
     ConductionTask.cpp
     NairnMPM
     
     Created by John Nairn on Fri Oct 15 2004
     Copyright (c) 2004 John A. Nairn, All rights reserved.
-********************************************************************************/
+ 
+	Conduction calculations
+   -------------------------
+	Initialization:
+		Set gTemperature, gMpCp, fcond on node to zero;
+	Mass and Momentum Task
+		Extrapolate gTemperature and gMpCp (Task1Extrapolation())
+		Divide gTemperature by gMpCp and impose grid T BCs (GetValues())
+		Find grad T on particle (GetGradients())
+	Grid Forces Task
+		Extrapolate conductivity force to fcond (AddForces())
+			(include heat sources, and energy coupling)
+		Add crack tip heating to fcond (AddCrackTipHeating())
+		Finish grid BCs and impose flux BCs in fcond (SetTransportForceBCs())
+	Update Momenta Task
+		Divide fcond by gMpCp to get temperature rates (TransportRates())
+	Update Particles Task
+		Each particle: zero rate, extrapolate from nodes to particle, then
+			update particle (ZeroTransportRate(), IncrementTransportRate(),
+			MoveTransportRate()).
+	Update strains last (if used)
+		Update gTemperature on nodes (UpdateNodalValues())
+	Update strains on particles (both places)
+		Extrapolate grid temperature to particle using pValueExtra (IncrementValueExtrap())
+		Find dTemperature = extrapolated value minus previous extrapolated value and then
+			store extrapolated value in pPreviousTemperature (GetDeltaValue())
+		This task is done because contititutive laws work better when temperature comes
+			from grid extrapolation instead of particle temperature. The current grid
+			based result is stored in a different particle temperature. The particle
+			temperature, however, is the one used in conduction calculations. Using the
+			grid based one causes numerical diffision.
+*********************************************************************************************/
 
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
@@ -120,8 +151,6 @@ void ConductionTask::GetGradients(double stepTime)
 			mpm[p]->AddTemperatureGradient(ScaleVector(&deriv,nd[nds[i]]->gTemperature));
 		}
 	}
-	
-	// impose flux boundary conditions (only allows zero for now)
 }
 
 // find forces for conduction calculation (N-mm/sec = mJ/sec)

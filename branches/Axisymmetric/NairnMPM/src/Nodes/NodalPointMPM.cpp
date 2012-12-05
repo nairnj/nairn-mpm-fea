@@ -65,6 +65,8 @@ void NodalPoint::InitializeForTimeStep(void)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
 			cvf[i]->Zero(0,0,TRUE);
 	}
+	
+	// for conduction and diffusion
 	gVolume=0.;
 	gConcentration=0.;
 	gTemperature=0.;
