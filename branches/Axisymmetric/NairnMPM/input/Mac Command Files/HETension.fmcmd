@@ -29,18 +29,18 @@ EndHeader! ------------ Parameters ---------------
 #aBase=60
 
 ! Dimensions
-#cell=2
-#length=20			! length
+#cell=10
+#length=10			! length
 #width=10			! width
 #thick=10			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading="force"	! Loading = "rigid", "contact", "force", "traction"
+#loading="rigid"	! Loading = "rigid", "contact", "force", "traction"
 #fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
 #strain=100	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
 
 ! Loading rate
-#tmult=40			! number of transit times to load peak
+#tmult=10			! number of transit times to load peak
 #hold=0				! hold time (multiple of loading time)
 #unload=0		    ! 0 no unload or >0 for unloading time (multiple of loading time, but at same loading rate)
 
@@ -54,6 +54,7 @@ EndHeader! ------------ Parameters ---------------
 ! Analysis type
 Analysis #analysis
 MPMMethod #update,#method
+PtsPerElement 1
 
 ! convert to contact
 if #loading="contact"

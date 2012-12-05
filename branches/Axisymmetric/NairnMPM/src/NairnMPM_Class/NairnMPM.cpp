@@ -527,10 +527,10 @@ void NairnMPM::ValidateOptions(void)
     {   // using a GIMP method
 		if(!mpmgrid.CanDoGIMP())
 			throw CommonException("GIMP not allowed unless using a generated regular mesh","NairnMPM::ValidateOptions");
-		if(ptsPerElement!=4 && !IsThreeD())
-			throw CommonException("GIMP requires 4 particles per element for 2D","NairnMPM::ValidateOptions");
-		if(ptsPerElement!=8 && IsThreeD())
-			throw CommonException("GIMP requires 8 particles per element for 3D","NairnMPM::ValidateOptions");
+		if(ptsPerElement!=4 && !IsThreeD() && ElementBase::useGimp != LINEAR_CPDI)
+			throw CommonException("uGIMP currently requires 4 particles per element for 2D","NairnMPM::ValidateOptions");
+		if(ptsPerElement!=8 && IsThreeD() && ElementBase::useGimp != LINEAR_CPDI)
+			throw CommonException("uGIMP currently requires 8 particles per element for 3D","NairnMPM::ValidateOptions");
         if(ElementBase::useGimp == QUADRATIC_CPDI)
         {   if(IsThreeD())
                 throw CommonException("3D does not allow qCPDI shape functions; use lCPDI instead","NairnMPM::ValidateOptions");

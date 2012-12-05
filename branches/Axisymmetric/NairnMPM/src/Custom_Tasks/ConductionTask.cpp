@@ -72,7 +72,7 @@ void ConductionTask::GetValues(double stepTime)
 	int i;
     for(i=1;i<=nnodes;i++)
 	{   if(nd[i]->NumberNonrigidParticles()>0)
-			nd[i]->gTemperature/=nd[i]->gMpCp;
+			nd[i]->gTemperature /= nd[i]->gMpCp;
 	}
 
 	// Copy no-BC temperature
