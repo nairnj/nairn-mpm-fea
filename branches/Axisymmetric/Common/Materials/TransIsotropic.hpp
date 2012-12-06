@@ -66,6 +66,7 @@ class TransIsotropic : public Elastic
 #ifdef MPM_CODE
 		double lastTransAngle;
 #endif
+        int hasMatProps;
 	
 	private:
 		int tiType;

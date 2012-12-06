@@ -29,18 +29,18 @@ EndHeader! ------------ Parameters ---------------
 #aBase=60
 
 ! Dimensions
-#cell=10
-#length=10			! length
+#cell=2
+#length=20			! length
 #width=10			! width
 #thick=10			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
 #loading="rigid"	! Loading = "rigid", "contact", "force", "traction"
 #fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
-#strain=100	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
+#strain=25	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
 
 ! Loading rate
-#tmult=10			! number of transit times to load peak
+#tmult=40			! number of transit times to load peak
 #hold=0				! hold time (multiple of loading time)
 #unload=0		    ! 0 no unload or >0 for unloading time (multiple of loading time, but at same loading rate)
 
@@ -54,7 +54,7 @@ EndHeader! ------------ Parameters ---------------
 ! Analysis type
 Analysis #analysis
 MPMMethod #update,#method
-PtsPerElement 1
+!PtsPerElement 1
 
 ! convert to contact
 if #loading="contact"
@@ -66,18 +66,15 @@ if #loading="contact"
   EndXMLData
 endif
 
-if #matID="neohookean"
-  #G1=#Ebase/(2*(1+#nuBase))
-  #G2=0
-  #G0=#G1+#G2
-  #Kbulk=#Ebase/(3*(1-2*#nuBase))
-endif
-
+! base line calculations
+#G1=#Ebase/(2*(1+#nuBase))
+#G2=0
+#G0=#G1+#G2
+#Kbulk=#Ebase/(3*(1-2*#nuBase))
 if #matID="mooney"
-  #G1=#Ebase/(4*(1+#nuBase))
+  #G1=#G1/2
   #G2=#G1
   #G0=#G1+#G2
-  #Kbulk=#Ebase/(3*(1-2*#nuBase))
 endif
 
 ! estimate stress to reach strain (only used if force or tractions)
@@ -133,7 +130,13 @@ endif
 if #matID="heiso"
   XMLData Material,#matID
   <Material Type="24" Name="Hyperelastic Isotropic">
-    <rho>1.0</rho>
+    <rho>1</rho>
+    <G1>41.666666667</G1>
+    <G2>0</G2>
+    <K>55.555555556</K>
+    <alpha>60</alpha>
+    <yield>200</yield>
+    <Ep>25</Ep>
   </Material>
   EndXMLData
 endif

@@ -76,22 +76,10 @@ class CrackVelocityField
 		virtual void CalcVelocityForStrainUpdate(void) = 0;
 	
 		// boundary conditions
-		virtual void SetXMomVel(void) = 0;
-		virtual void SetYMomVel(void) = 0;
-		virtual void SetZMomVel(void) = 0;
-		virtual void SetSkewMomVel(double) = 0;
-		virtual void AddXMomVel(double) = 0;
-		virtual void AddYMomVel(double) = 0;
-		virtual void AddZMomVel(double) = 0;
-		virtual void AddSkewMomVel(double,double) = 0;
-		virtual void SetXFtot(double) = 0;
-		virtual void SetYFtot(double) = 0;
-		virtual void SetZFtot(double) = 0;
-		virtual void SetSkewFtot(double,double) = 0;
-		virtual void AddXFtot(double,double) = 0;
-		virtual void AddYFtot(double,double) = 0;
-		virtual void AddZFtot(double,double) = 0;
-		virtual void AddSkewFtot(double,double,double) = 0;
+        virtual void SetMomVel(int) = 0;
+        virtual void AddMomVel(int,double) = 0;
+        virtual void SetFtot(int,double) = 0;
+        virtual void AddFtot(int,double,double) = 0;
 	
 		// accessors
 		short location(int);

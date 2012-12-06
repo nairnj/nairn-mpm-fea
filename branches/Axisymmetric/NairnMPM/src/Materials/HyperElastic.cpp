@@ -19,59 +19,52 @@ HyperElastic::HyperElastic() {}
 
 HyperElastic::HyperElastic(char *matName) : MaterialBase(matName)
 {
+	Kbulk = -1.;                                        // required (check >0 before starting)
+    UofJOption = HALF_J_SQUARED_MINUS_1_MINUS_LN_J;     // default U(J) functino
 	aI=0.;
 }
 
-#pragma mark HyperElastic::Methods
-
-/*  Get new deformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
-        deformation gradient (i.e., two steps with two gradients F1 = F and F2 = dF, the total
-        gradient is product of F1 and F2 in reverse order)
-    dvij are elements of gradV * time step
-    if storeInParticle is true, transfer new gradient to particle strain and rotation tensors
-    if detIncrement is true, return det(dF), otherwise return 0.0 (some materials mighe make use of this result)
-    Note: This assumes plane strain to find F[2][2]=1. If the 2D calculation is plane stress, the
-        caller must replace F[2][2] with 1 + dw/dz. Likewise, caller must multiply det(dF) by 1 + dw/dz
-*/
-double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,double dvyy,
-			double dvxy,double dvyx,bool storeInParticle,bool detIncrement)
+// Read material properties
+char *HyperElastic::InputMat(char *xName,int &input)
 {
-	// current deformation gradient in 2D
-    double pF[3][3];
-    mptr->GetDeformationGradient(pF);
-	
-	// get new 2D deformation gradient
-	F[0][0] = (1. + dvxx)*pF[0][0] + dvxy*pF[1][0];		// 1 + du/dx
-	F[0][1] = (1. + dvxx)*pF[0][1] + dvxy*pF[1][1];		// du/dy
-	//F[0][2] = 0.;								// du/dz
-	F[1][0] = dvyx*pF[0][0] + (1. + dvyy)*pF[1][0];		// dv/dx
-	F[1][1] = dvyx*pF[0][1] + (1. + dvyy)*pF[1][1];		// 1 + dv/dy
-	//F[1][2] = 0.;								// dv/dz
-	//F[2][0] = 0.;								// dw/dx
-	//F[2][1] = 0.;								// dw/dy
-	F[2][2] = 1. ;								// 1 + dw/dz (assumes plane strain)
-	
-	// store in total strain and rotation tensors
-	// (assumes plane strain so ep->zz = 0)
-	if(storeInParticle)
-	{	// strain increments
-        Tensor *ep=mptr->GetStrainTensor();
-        TensorAntisym *wrot = mptr->GetRotationStrainTensor();
-        
-    	ep->xx = F[0][0] - 1.;
-		ep->yy = F[1][1] - 1.;
-		ep->xy = F[1][0] + F[0][1];         // du/dy + dv/dx
-	
-		// rotational strain increments
-		wrot->xy = F[1][0] - F[0][1];		// dv/dx - du/dy
-	}
+    input=DOUBLE_NUM;
     
-    // calculate incremental determinant of (I+ gradV*dt) if desired
-    if(!detIncrement) return 0.0;
+    if(strcmp(xName,"K")==0)
+        return((char *)&Kbulk);
     
-    // assumes plain strain; multiply by 1+dwdz when known to get det(dF) in plane stress
-    return (1. + dvxx)*(1. + dvyy)- dvyx*dvxy;
+    else if(strcmp(xName,"alpha")==0)
+        return((char *)&aI);
+    
+    return(MaterialBase::InputMat(xName,input));
 }
+
+#pragma mark HyperElastic::Initialize
+
+// Set intial particle Left Cauchy strain tensor to identity
+void HyperElastic::SetInitialParticleState(MPMBase *mptr,int np)
+{
+    // get previous particle B
+    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
+    
+    ZeroTensor(pB);
+    pB->xx = pB->yy = pB->zz = 1.;
+}
+
+// Constant properties used in constitutive law
+void HyperElastic::InitialLoadMechProps(int makeSpecific,int np)
+{
+	// Kbulk in Specific units using initial rho
+	// for MPM (units N/m^2 cm^3/g)
+	Ksp=Kbulk*1.0e+06/rho;
+	
+	// expansion coefficients
+	CTE1 = 1.e-6*aI;
+	CME1 = betaI*concSaturation;
+	
+    // call superclass
+    MaterialBase::InitialLoadMechProps(makeSpecific,np);
+}
+#pragma mark HyperElastic::Methods
 
 /*  Given components of incremental deformation dF = (I + gradV *dt), increment particle strain,
         rotation, and LeftCauchy Green strain (latter is assumed to be stored in the particle's
@@ -85,99 +78,59 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
         where New B.zz = (1+dvzz)^2 * (Old B.zz) = (1+e.zz)^2
         Likewise, caller must multiply det(dF) by 1 + dvzz = sqrt(New B.zz/Old B.zz).
  */
-double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,double dvzz)
+double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
+                                            double dvyx,double dvzz,Tensor *Btrial)
 {
 	// get new 2D deformation gradient to increment particle strain
     // plaine stress will need to add ep->zz when known
     Tensor *ep=mptr->GetStrainTensor();
     TensorAntisym *wrot = mptr->GetRotationStrainTensor();
     
-    // exx  = (1+dvxx)*pF[0][0] + dvxy*pF[1][0] - 1
-    //      = (1+dvxx)*(1+exx) + dvxy*0.5*(exy + wxy) - 1
-    //      = exx + dvxx*(1+exx) + dvxy*pF10
-    double pF10 = 0.5*(ep->xy + wrot->xy);                  // previous particle gradient
-	double F10 = dvyx*(1. + ep->xx) + (1. + dvyy)*pF10;		// dv/dx in new deformation gradient
-	ep->xx += dvxx*(1.+ep->xx) + dvxy*pF10;
+    // exx  = (1+dvxx)*pFxx + dvxy*pFyx - 1
+    //      = (1+dvxx)*(1+exx) + dvxy*pFyx - 1
+    //      = exx + dvxx*(1+exx) + dvxy*pFyx
+    double pFyx = 0.5*(ep->xy + wrot->xy);                  // previous particle gradient
+	double Fyx = dvyx*(1. + ep->xx) + (1. + dvyy)*pFyx;		// dv/dx in new deformation gradient
+	ep->xx += dvxx*(1. + ep->xx) + dvxy*pFyx;
     
-    // eyy = dvyx*pF[0][1] + (1+dvyy)*(1+eyy) - 1
-    //      = eyy + dvyy*(1+eyy) + dvyx*pF01
-    double pF01 = 0.5*(ep->xy - wrot->xy);                  // previous particle gradient
-	double F01 = (1. + dvxx)*pF01 + dvxy*(1. + ep->yy);		// du/dy in new deformation gradient
-	ep->yy += dvyx*pF01 + dvyy*(1.+ep->yy);
+    // eyy = dvyx*pFxy + (1+dvyy)*(1+eyy) - 1
+    //      = eyy + dvyy*(1+eyy) + dvyx*pFxy
+    double pFxy = 0.5*(ep->xy - wrot->xy);                  // previous particle gradient
+	double Fxy = (1. + dvxx)*pFxy + dvxy*(1. + ep->yy);		// du/dy in new deformation gradient
+	ep->yy += dvyx*pFxy + dvyy*(1. + ep->yy);
     
     // shear and rotation for new deformation gradient
-    ep->xy = F10 + F01;                                     // du/dy + dv/dx
-    wrot->xy = F10 - F01;                                   // dv/dx - du/dy
+    ep->xy = Fyx + Fxy;                                     // du/dy + dv/dx
+    wrot->xy = Fyx - Fxy;                                   // dv/dx - du/dy
 	
-    // ezz  = (1+dvzz)*pF[2][2] - 1							// axisymmetric only, otherwise dvzz=0
+    // ezz  = (1+dvzz)*pFzz - 1							// axisymmetric only, otherwise dvzz=0
     //      = (1+dvzz)*(1+ezz) - 1
-    //      = ezz + dvzz*(1+exx)
-	ep->zz += dvzz*(1.+ep->zz);
+    //      = ezz + dvzz*(1+ezz)
+	ep->zz += dvzz*(1. + ep->zz);
 
     // increment Left Cauchy tensor B = F.F^T = dF.old B.dF^T
     // plain stress will need to update B.zz when known
     Tensor *pB = mptr->GetElasticLeftCauchyTensor();
-    double b1 = (1.+dvxx)*pB->xx +      dvxy*pB->xy;
-    double b2 = (1.+dvxx)*pB->xy +      dvxy*pB->yy;
-    double b3 =      dvyx*pB->xx + (1.+dvyy)*pB->xy;
-    double b4 =      dvyx*pB->xy + (1.+dvyy)*pB->yy;
-    double b5 = (1.+dvzz)*pB->zz;
-    pB->xx = b1*(1. + dvxx) + b2*dvxy;
-    pB->xy = b1*dvyx        + b2*(1.+dvyy);
-    pB->yy = b3*dvyx        + b4*(1.+dvyy);
-	pB->zz = b5*(1. + dvzz);
+    
+    // elements of dF.B
+    double dFBxx = (1.+dvxx)*pB->xx +      dvxy*pB->xy;
+    double dFBxy = (1.+dvxx)*pB->xy +      dvxy*pB->yy;
+    double dFByx =      dvyx*pB->xx + (1.+dvyy)*pB->xy;
+    double dFByy =      dvyx*pB->xy + (1.+dvyy)*pB->yy;
+    double dFBzz = (1.+dvzz)*pB->zz;
+    
+    // return trial B (if provided) or store new B on the particle
+    if(Btrial != NULL) pB = Btrial;
+    
+    // find (dF.B).dF^T
+    pB->xx = dFBxx*(1.+dvxx) + dFBxy*dvxy;
+    pB->xy = dFBxx*dvyx      + dFBxy*(1.+dvyy);
+    pB->yy = dFByx*dvyx      + dFByy*(1.+dvyy);
+    pB->zz = dFBzz*(1.+dvzz);
     
     // det(I + grad v * dt), which assumes plain strain or axisymmetric
     // multiply by 1+dvzz when known to get det(dF) in plane stress
     return (1. + dvzz)*((1. + dvxx)*(1. + dvyy)- dvyx*dvxy);
-}
-
-// Get new deformation gradient from current one using dF.F where dF = I + gradV * dt and F is current
-// dvij are elements of gradV * time step
-// if storeInParticle is true, transfer new gradient to particle strain and rotation tensors
-// if detIncrement is true, return det(dF), otherwise return 0.0 (some materials mighe make use of this result)
-double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-						 double dvxz,double dvzx,double dvyz,double dvzy,bool storeInParticle,bool detIncrement)
-{
-	// current deformation gradient in 3D
-    double pF[3][3];
-    mptr->GetDeformationGradient(pF);
-	
-	// get new deformation gradient
-	F[0][0] = (1. + dvxx)*pF[0][0] + dvxy*pF[1][0] + dvxz*pF[2][0];		// 1 + du/dx
-	F[0][1] = (1. + dvxx)*pF[0][1] + dvxy*pF[1][1] + dvxz*pF[2][1];		// du/dy
-	F[0][2] = (1. + dvxx)*pF[0][2] + dvxy*pF[1][2] + dvxz*pF[2][2];		// du/dz
-	F[1][0] = dvyx*pF[0][0] + (1. + dvyy)*pF[1][0] + dvyz*pF[2][0];		// dv/dx
-	F[1][1] = dvyx*pF[0][1] + (1. + dvyy)*pF[1][1] + dvyz*pF[2][1];		// 1 + dv/dy
-	F[1][2] = dvyx*pF[0][2] + (1. + dvyy)*pF[1][2] + dvyz*pF[2][2];		// dv/dz
-	F[2][0] = dvzx*pF[0][0] + dvzy*pF[1][0] + (1. + dvzz)*pF[2][0];		// dw/dx
-	F[2][1] = dvzx*pF[0][1] + dvzy*pF[1][1] + (1. + dvzz)*pF[2][1];		// dw/dy
-	F[2][2] = dvzx*pF[0][2] + dvzy*pF[1][2] + (1. + dvzz)*pF[2][2];		// 1 + dw/dz
-	
-	// store in total strain and rotation tensors
-	if(storeInParticle)
-    {   Tensor *ep=mptr->GetStrainTensor();
-        TensorAntisym *wrot = mptr->GetRotationStrainTensor();
-        
-		ep->xx = F[0][0] - 1.;
-		ep->yy = F[1][1] - 1.;
-		ep->zz = F[2][2] - 1.;
-		ep->xy = F[1][0] + F[0][1];
-		ep->xz = F[2][0] + F[0][2];
-		ep->yz = F[2][1] + F[1][2];
-		
-		// rotational strain increments
-		wrot->xy = F[1][0] - F[0][1];			// dv/dx - du/dy
-		wrot->xz = F[2][0] - F[0][2];			// dw/dx - du/dz
-		wrot->yz = F[2][1] - F[1][2];			// dw/dy - dv/dz
-	}
-    
-    // calculate incremental determinant of (I+ gradV*dt) if desired
-    if(!detIncrement) return 0.0;
-    
-    return (1. + dvxx)*((1. + dvyy)*(1. + dvzz)-dvzy*dvyz)
-                    - dvyx*(dvxy*(1. + dvzz)-dvzy*dvxz)
-                    + dvzx*(dvxy*dvyz-(1. + dvyy)*dvxz);
 }
 
 /*  Given components of incremental deformation dF = (I + gradV *dt), increment particle strain,
@@ -189,19 +142,19 @@ double HyperElastic::GetDeformationGrad(double F[][3],MPMBase *mptr,double dvxx,
     Returns |dF|
 */
 double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-                                        double dvxz,double dvzx,double dvyz,double dvzy)
+                                        double dvxz,double dvzx,double dvyz,double dvzy,Tensor *Btrial)
 {
 	// current deformation gradient in 3D
     double pF[3][3];
     mptr->GetDeformationGradient(pF);
 	
 	// get new deformation gradient for off axis components
-	double F01 = (1. + dvxx)*pF[0][1] + dvxy*pF[1][1] + dvxz*pF[2][1];		// du/dy
-	double F02 = (1. + dvxx)*pF[0][2] + dvxy*pF[1][2] + dvxz*pF[2][2];		// du/dz
-	double F10 = dvyx*pF[0][0] + (1. + dvyy)*pF[1][0] + dvyz*pF[2][0];		// dv/dx
-	double F12 = dvyx*pF[0][2] + (1. + dvyy)*pF[1][2] + dvyz*pF[2][2];		// dv/dz
-	double F20 = dvzx*pF[0][0] + dvzy*pF[1][0] + (1. + dvzz)*pF[2][0];		// dw/dx
-	double F21 = dvzx*pF[0][1] + dvzy*pF[1][1] + (1. + dvzz)*pF[2][1];		// dw/dy
+	double Fxy = (1. + dvxx)*pF[0][1] + dvxy*pF[1][1] + dvxz*pF[2][1];		// du/dy
+	double Fxz = (1. + dvxx)*pF[0][2] + dvxy*pF[1][2] + dvxz*pF[2][2];		// du/dz
+	double Fyx = dvyx*pF[0][0] + (1. + dvyy)*pF[1][0] + dvyz*pF[2][0];		// dv/dx
+	double Fyz = dvyx*pF[0][2] + (1. + dvyy)*pF[1][2] + dvyz*pF[2][2];		// dv/dz
+	double Fzx = dvzx*pF[0][0] + dvzy*pF[1][0] + (1. + dvzz)*pF[2][0];		// dw/dx
+	double Fzy = dvzx*pF[0][1] + dvzy*pF[1][1] + (1. + dvzz)*pF[2][1];		// dw/dy
 	
 	// store in total strain and rotation tensors
     Tensor *ep=mptr->GetStrainTensor();
@@ -210,33 +163,38 @@ double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,
     ep->xx = (1. + dvxx)*pF[0][0] + dvxy*pF[1][0] + dvxz*pF[2][0] - 1.;     // 1 + du/dx - 1
     ep->yy = dvyx*pF[0][1] + (1. + dvyy)*pF[1][1] + dvyz*pF[2][1] - 1.;		// 1 + dv/dy - 1
     ep->zz = dvzx*pF[0][2] + dvzy*pF[1][2] + (1. + dvzz)*pF[2][2] - 1.;		// 1 + dw/dz - 1
-    ep->xy = F10 + F01;
-    ep->xz = F20 + F02;
-    ep->yz = F21 + F12;
+    ep->xy = Fyx + Fxy;
+    ep->xz = Fzx + Fxz;
+    ep->yz = Fzy + Fyz;
     
     // rotational strain increments
-    wrot->xy = F10 - F01;			// dv/dx - du/dy
-    wrot->xz = F20 - F02;			// dw/dx - du/dz
-    wrot->yz = F21 - F12;			// dw/dy - dv/dz
+    wrot->xy = Fyx - Fxy;			// dv/dx - du/dy
+    wrot->xz = Fzx - Fxz;			// dw/dx - du/dz
+    wrot->yz = Fzy - Fyz;			// dw/dy - dv/dz
     
     // increment Left Cauchy tensor B = F.F^T = dF.old B.dF^T
     // plain stress will need to update B.zz when known
     Tensor *pB = mptr->GetElasticLeftCauchyTensor();
-    double b1 = (1.+dvxx)*pB->xx +      dvxy*pB->xy +      dvxz*pB->xz;
-    double b2 = (1.+dvxx)*pB->xy +      dvxy*pB->yy +      dvxz*pB->yz;
-    double b3 = (1.+dvxx)*pB->xz +      dvxy*pB->yz +      dvxz*pB->zz;
-    double b4 =      dvyx*pB->xx + (1.+dvyy)*pB->xy +      dvyz*pB->xz;
-    double b5 =      dvyx*pB->xy + (1.+dvyy)*pB->yy +      dvyz*pB->yz;
-    double b6 =      dvyx*pB->xz + (1.+dvyy)*pB->yz +      dvyz*pB->zz;
-    double b7 =      dvzx*pB->xx +      dvzy*pB->xy + (1.+dvzz)*pB->xz;
-    double b8 =      dvzx*pB->xy +      dvzy*pB->yy + (1.+dvzz)*pB->yz;
-    double b9 =      dvzx*pB->xz +      dvzy*pB->yz + (1.+dvzz)*pB->zz;
-    pB->xx = (1+dvxx)*b1 +      dvxy*b2 +      dvxz*b3;
-    pB->xy =     dvyx*b1 + (1.+dvyy)*b2 +      dvyz*b3;
-    pB->xz =     dvzx*b1 +      dvzy*b2 + (1.+dvzz)*b3;
-    pB->yy =     dvyx*b4 + (1.+dvyy)*b5 +      dvyz*b6;
-    pB->yz =     dvzx*b4 +      dvzy*b5 + (1.+dvzz)*b6;
-    pB->zz =     dvzx*b7 +      dvzy*b8 + (1.+dvzz)*b9;
+    
+    // elements of dF.B
+    double dFBxx = (1.+dvxx)*pB->xx +      dvxy*pB->xy +      dvxz*pB->xz;
+    double dFBxy = (1.+dvxx)*pB->xy +      dvxy*pB->yy +      dvxz*pB->yz;
+    double dFBxz = (1.+dvxx)*pB->xz +      dvxy*pB->yz +      dvxz*pB->zz;
+    double dFByx =      dvyx*pB->xx + (1.+dvyy)*pB->xy +      dvyz*pB->xz;
+    double dFByy =      dvyx*pB->xy + (1.+dvyy)*pB->yy +      dvyz*pB->yz;
+    double dFByz =      dvyx*pB->xz + (1.+dvyy)*pB->yz +      dvyz*pB->zz;
+    double dFBzx =      dvzx*pB->xx +      dvzy*pB->xy + (1.+dvzz)*pB->xz;
+    double dFBzy =      dvzx*pB->xy +      dvzy*pB->yy + (1.+dvzz)*pB->yz;
+    double dFBzz =      dvzx*pB->xz +      dvzy*pB->yz + (1.+dvzz)*pB->zz;
+    
+    // return trial B (if provided) or store new B on the particle
+    if(Btrial != NULL) pB = Btrial;
+    pB->xx = dFBxx*(1+dvxx) + dFBxy*dvxy      + dFBxz*dvxz;
+    pB->xy = dFBxx*dvyx     + dFBxy*(1.+dvyy) + dFBxz*dvyz;
+    pB->xz = dFBxx*dvzx     + dFBxy*dvzy      + dFBxz*(1.+dvzz);
+    pB->yy = dFByx*dvyx     + dFByy*(1.+dvyy) + dFByz*dvyz;
+    pB->yz = dFByx*dvzx     + dFByy*dvzy      + dFByz*(1.+dvzz);
+    pB->zz = dFBzx*dvzx     + dFBzy*dvzy      + dFBzz*(1.+dvzz);
     
     // return |dF|
     return (1. + dvxx)*((1. + dvyy)*(1. + dvzz)-dvzy*dvyz)
@@ -244,37 +202,9 @@ double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,
                 + dvzx*(dvxy*dvyz-(1. + dvyy)*dvxz);
 }
 
-// Find Left-Cauchy Green Tensor B = F.F^T for 2D calculations from a provided F[][]
-// Note: This assumes plane strain and sets B.zz=1. If the 2D calculation is plane stress, the
-//	caller must replace B.zz with the plane stress result
-Tensor HyperElastic::GetLeftCauchyTensor2D(double F[][3])
-{
-	// left Cauchy deformation tensor B = F F^T
-	Tensor B;
-	ZeroTensor(&B);
-	B.xx = F[0][0]*F[0][0] + F[0][1]*F[0][1];
-	B.yy = F[1][0]*F[1][0] + F[1][1]*F[1][1];
-	B.xy = F[0][0]*F[1][0] + F[0][1]*F[1][1];
-	B.zz = 1.;
-	return B;
-}
-
-// Find Left-Cauchy Green Tensor B = F.F^T for 3D calculations from a provided F[][]
-Tensor HyperElastic::GetLeftCauchyTensor3D(double F[][3])
-{
-	// left Cauchy deformation tensor B = F F^T
-	Tensor B;
-	B.xx = F[0][0]*F[0][0] + F[0][1]*F[0][1] + F[0][2]*F[0][2];
-	B.yy = F[1][0]*F[1][0] + F[1][1]*F[1][1] + F[1][2]*F[1][2];
-	B.zz = F[2][0]*F[2][0] + F[2][1]*F[2][1] + F[2][2]*F[2][2];
-	B.xy = F[0][0]*F[1][0] + F[0][1]*F[1][1] + F[0][2]*F[1][2];
-	B.xz = F[0][0]*F[2][0] + F[0][1]*F[2][1] + F[0][2]*F[2][2];
-	B.yz = F[1][0]*F[2][0] + F[1][1]*F[2][1] + F[1][2]*F[2][2];
-	return B;
-}
-
 // Find isotropic stretch for thermal and moisture expansion
 // total residual stretch (1 + alpha dT + beta csat dConcentration)
+// Current assumes isotropic with CTE1 and CME1 expansion coefficients
 double HyperElastic::GetResidualStretch(MPMBase *mptr)
 {
 	// total residual stretch (1 + alpha dT + beta csat dConcentration)
@@ -294,4 +224,43 @@ double HyperElastic::GetResidualStretch(MPMBase *mptr)
 double HyperElastic::GetCurrentRelativeVolume(MPMBase *mptr)
 {   return mptr->GetRelativeVolume();
 }
+
+// Return normal stress term (due to bulk modulus) and twice the pressure term (i.e. 2U(J)) for strain energy.
+// Each block of lines is for a different U(J).
+// Any change here must also be made in 2D MPMConstLaw for the numerical solution to find B.zz in plane stress
+double HyperElastic::GetVolumetricTerms(double J,double *Kse)
+{
+    double Kterm;
+    
+    switch(UofJOption)
+    {   case J_MINUS_1_SQUARED:
+            // This is for *Kse/2 = U(J) = (K/2)(J-1)^2
+            Kterm = Ksp*(J-1.);
+            *Kse = Kterm*(J-1);
+            break;
+        
+        case LN_J_SQUARED:
+        {   // This is for for *Kse/2 = U(J) = (K/2)(ln J)^2
+            // Zienkiewicz & Taylor recommend not using this one
+            double lj = log(J);
+            Kterm =Ksp*lj;
+            *Kse = Kterm*lj;
+            Kterm /= J;           // = Ksp*(ln J)/J
+            break;
+        }
+        
+        case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
+        default:
+            // This is for *Kse/2 = U(J) = (K/2)((1/2)(J^2-1) - ln J)
+            // Zienkiewicz & Taylor note that stress is infinite as J->0 and J->infinity for this function, while others are not
+            // Simo and Hughes also use this form (see Eq. 9.2.3)
+            *Kse = Ksp*(0.5*(J*J-1.)-log(J));
+            Kterm = 0.5*Ksp*(J - 1./J);      // = (Ksp/2)*(J - 1/J)
+            break;
+    }
+    
+    // return result
+    return Kterm;
+}  
+
 

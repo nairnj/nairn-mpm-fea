@@ -23,7 +23,6 @@ class NodalVelBC : public BoundaryCondition
     public:
         int dir;
 		Vector *pk;
- 		double skewAngle;
         
         // constructors and destructors
         NodalVelBC(int,int,int,double,double);
@@ -41,9 +40,6 @@ class NodalVelBC : public BoundaryCondition
 		// class methods
 		static void GridMomentumConditions(int);
 		static void ConsistentGridForces(void);
-		
-		// accessors
-		void SetSkewAngle(double);
 };
 
 // variables (changed in MPM time step)

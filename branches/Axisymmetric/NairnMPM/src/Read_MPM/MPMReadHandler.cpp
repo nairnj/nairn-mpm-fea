@@ -761,7 +761,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,FIXEDNODES,ANY_DIM);
     	int node=0;
 		int dof=0,style=CONSTANT_VALUE;
-        double ftime=0.,skewAngle=0.;
+        double ftime=0.;
     	numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
@@ -774,8 +774,6 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             	sscanf(value,"%d",&style);
             else if(strcmp(aName,"time")==0)
                 sscanf(value,"%lf",&ftime);
-            else if(strcmp(aName,"angle")==0)
-                sscanf(value,"%lf",&skewAngle);
             delete [] aName;
             delete [] value;
         }
@@ -788,7 +786,6 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         
         // create object and get input
         NodalVelBC *newVelBC=new NodalVelBC(node,dof,style,(double)0.,ftime);
-		if(dof==SKEW_DIRECTION) newVelBC->SetSkewAngle(skewAngle);
 		velocityBCs->AddObject(newVelBC);
 		
 		if(style!=FUNCTION_VALUE)

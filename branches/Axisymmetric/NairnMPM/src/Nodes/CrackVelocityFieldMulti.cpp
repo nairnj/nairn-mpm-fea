@@ -1135,198 +1135,109 @@ void CrackVelocityFieldMulti::CalcVelocityForStrainUpdate(void)
 
 #pragma mark BOUNDARY CONDITIONS
 
-// zero x moment and velocity
-void CrackVelocityFieldMulti::SetXMomVel(void)
+// zero one component of moment and velocity
+void CrackVelocityFieldMulti::SetMomVel(int dir)
 {	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-		{	mvf[i]->pk.x=0.;
-			mvf[i]->vk.x=0.;
-		}
-	}
+    if(dir==X_DIRECTION)
+    {   for(i=0;i<maxMaterialFields;i++)
+        {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+            {	mvf[i]->pk.x = 0.;
+                mvf[i]->vk.x = 0.;
+            }
+        }
+    }
+    else if(dir==Y_DIRECTION)
+    {   for(i=0;i<maxMaterialFields;i++)
+        {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+            {	mvf[i]->pk.y = 0.;
+                mvf[i]->vk.y = 0.;
+            }
+        }
+    }
+    else
+    {   for(i=0;i<maxMaterialFields;i++)
+        {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+            {	mvf[i]->pk.z = 0.;
+                mvf[i]->vk.z = 0.;
+            }
+        }
+    }
 }
 
-// zero y moment and velocity
-void CrackVelocityFieldMulti::SetYMomVel(void)
+// add one component momentum and velocity from BCs
+void CrackVelocityFieldMulti::AddMomVel(int dir,double vel)
 {	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-		{	mvf[i]->pk.y=0.;
-			mvf[i]->vk.y=0.;
-		}
-	}
+    if(dir==X_DIRECTION)
+    {   for(i=0;i<maxMaterialFields;i++)
+        {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+            {	mvf[i]->pk.x += mvf[i]->mass*vel;
+                mvf[i]->vk.x += vel;
+            }
+        }
+    }
+    else if(dir==Y_DIRECTION)
+    {   for(i=0;i<maxMaterialFields;i++)
+        {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+            {	mvf[i]->pk.y += mvf[i]->mass*vel;
+                mvf[i]->vk.y += vel;
+            }
+        }
+    }
+    else
+    {   for(i=0;i<maxMaterialFields;i++)
+        {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+            {	mvf[i]->pk.z += mvf[i]->mass*vel;
+                mvf[i]->vk.z += vel;
+            }
+        }
+    }
 }
 
-// zero z moment and velocity
-void CrackVelocityFieldMulti::SetZMomVel(void)
+// set one component of force to -p(interpolated)/time such that updated momentum
+//    of pk.i + deltime*ftot.i will be zero
+void CrackVelocityFieldMulti::SetFtot(int dir,double deltime)
 {	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-		{	mvf[i]->pk.z=0.;
-			mvf[i]->vk.z=0.;
-		}
-	}
+    if(dir==X_DIRECTION)
+    {   for(i=0;i<maxMaterialFields;i++)
+        {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+                mvf[i]->ftot.x = -mvf[i]->pk.x/deltime;
+        }
+    }
+    else if(dir==Y_DIRECTION)
+    {   for(i=0;i<maxMaterialFields;i++)
+        {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+                mvf[i]->ftot.y = -mvf[i]->pk.y/deltime;
+        }
+    }
+    else
+    {   for(i=0;i<maxMaterialFields;i++)
+        {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+                mvf[i]->ftot.z = -mvf[i]->pk.z/deltime;
+        }
+    }
 }
 
-// zero momentum in direction (cos(angle), -sin(angle)) or vector rotated from postive x axis
-// by clockwise angle. The desired vector is (p.t)t where t is unit vector normal to
-// skew direction and here t = (sin(angle), cos(angle))
-void CrackVelocityFieldMulti::SetSkewMomVel(double angle)
+// add one component of force such that updated momentum will be mass*velocity
+void CrackVelocityFieldMulti::AddFtot(int dir,double deltime,double vel)
 {	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-		{	double c=cos(angle),s=sin(angle);
-			Vector *npk=&mvf[i]->pk;
-			double momx=npk->x*s*s + npk->y*c*s;
-			double momy=npk->x*c*s + npk->y*c*c;
-			npk->x=momx;
-			npk->y=momy;
-			mvf[i]->vk.x=momx/mvf[i]->mass;
-			mvf[i]->vk.y=momy/mvf[i]->mass;
-		}
-	}
-}
-
-// add to x momentum and velocity from BCs
-void CrackVelocityFieldMulti::AddXMomVel(double vx)
-{	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-		{	mvf[i]->pk.x+=mvf[i]->mass*vx;
-			mvf[i]->vk.x+=vx;
-		}
-	}
-}
-
-// add to y momentum and velocity from BCs
-void CrackVelocityFieldMulti::AddYMomVel(double vy)
-{	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-		{	mvf[i]->pk.y+=mvf[i]->mass*vy;
-			mvf[i]->vk.y+=vy;
-		}
-	}
-}
-
-// add to z momentum and velocity from BCs
-void CrackVelocityFieldMulti::AddZMomVel(double vz)
-{	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-		{	mvf[i]->pk.z+=mvf[i]->mass*vz;
-			mvf[i]->vk.z+=vz;
-		}
-	}
-}
-
-// Add velocity in direction (cos(angle), -sin(angle)) or vector rotated from postive x axis
-// by clockwise angle.
-void CrackVelocityFieldMulti::AddSkewMomVel(double vel,double angle)
-{	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-		{	double velx=cos(angle)*vel;
-			double vely=-sin(angle)*vel;
-			mvf[i]->pk.x+=mvf[i]->mass*velx;
-			mvf[i]->vk.x+=velx;
-			mvf[i]->pk.y+=mvf[i]->mass*vely;
-			mvf[i]->vk.y+=vely;
-		}
-	}
-}
-
-// set x force to -p(interpolated)/time such that updated momentum
-//    of pk.x + deltime*ftot.x will be zero
-void CrackVelocityFieldMulti::SetXFtot(double deltime)
-{	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-			mvf[i]->ftot.x=-mvf[i]->pk.x/deltime;
-	}
-}
-
-// set y force to -p(interpolated)/time such that updated momentum
-//    of pk.y + deltime*ftot.y will be zero
-void CrackVelocityFieldMulti::SetYFtot(double deltime)
-{	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-			mvf[i]->ftot.y=-mvf[i]->pk.y/deltime;
-	}
-}
-
-// set z force to -p(interpolated)/time such that updated momentum
-//    of pk.z + deltime*ftot.z will be zero
-void CrackVelocityFieldMulti::SetZFtot(double deltime)
-{	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-			mvf[i]->ftot.z=-mvf[i]->pk.z/deltime;
-	}
-}
-
-// Change current ftot such that updated momentum of (pk.x + deltime*ftot.x, pk.y + deltime*ftot.y) will have zero
-// momentum in the (cos(theta), -sin(angle)) direction (or direction clockwise from positive x axis by angle).
-// Superpose force to induce zero momentum in the skew direction:
-//			f dt = (p.t)t - p(interpolated)
-// where t = (sin(angle),cos(angle)) is tangential vector, with the existing component of total force
-// in the t direction or (f.t)t
-void CrackVelocityFieldMulti::SetSkewFtot(double deltime,double angle)
-{	
-	 int i;
-	 for(i=0;i<maxCrackFields;i++)
-	 {   if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-		{	double c=cos(angle),s=sin(angle);
-			double dfxdt=-mvf[i]->pk.x*c*c + mvf[i]->pk.y*c*s;	// to get zero skew momentum
-			double dfydt=mvf[i]->pk.x*c*s - mvf[i]->pk.y*s*s;
-			double fx=mvf[i]->ftot.x*s*s + mvf[i]->ftot.y*c*s;	// f normal to skew direction
-			double fy=mvf[i]->ftot.x*c*s + mvf[i]->ftot.y*c*c;
-			mvf[i]->ftot.x=fx + dfxdt/deltime;
-			mvf[i]->ftot.y=fy + dfydt/deltime;
-		}
-	 }
-}
-
-// add to x force such that updated momentum will be mass*velocity
-void CrackVelocityFieldMulti::AddXFtot(double deltime,double velx)
-{	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-			mvf[i]->ftot.x+=mvf[i]->mass*velx/deltime;
-	}
-}
-
-// add to y force such that updated momentum will be mass*velocity
-void CrackVelocityFieldMulti::AddYFtot(double deltime,double vely)
-{	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-			mvf[i]->ftot.y+=mvf[i]->mass*vely/deltime;
-	}
-}
-
-// add to z force such that updated momentum will be mass*velocity
-void CrackVelocityFieldMulti::AddZFtot(double deltime,double velz)
-{	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-			mvf[i]->ftot.z+=mvf[i]->mass*velz/deltime;
-	}
-}
-
-// set force in the skew direction (cos(angle),-sin(angle)), or direction rotated from postive
-// x axis by clockwise angle.
-void CrackVelocityFieldMulti::AddSkewFtot(double deltime,double vel,double angle)
-{	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-		{	double velx=cos(angle)*vel;
-			double vely=-sin(angle)*vel;
-			mvf[i]->ftot.x+=mvf[i]->mass*velx/deltime;
-			mvf[i]->ftot.y+=mvf[i]->mass*vely/deltime;
-		}
-	}
+    if(dir==X_DIRECTION)
+	{   for(i=0;i<maxMaterialFields;i++)
+        {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+                mvf[i]->ftot.x += mvf[i]->mass*vel/deltime;
+        }
+    }
+    else if(dir==Y_DIRECTION)
+    {   for(i=0;i<maxMaterialFields;i++)
+        {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+                mvf[i]->ftot.y += mvf[i]->mass*vel/deltime;
+        }
+    }
+    else
+    {   for(i=0;i<maxMaterialFields;i++)
+        {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+                mvf[i]->ftot.z += mvf[i]->mass*vel/deltime;
+        }
+    }
 }
 
 #pragma mark ACCESSORS

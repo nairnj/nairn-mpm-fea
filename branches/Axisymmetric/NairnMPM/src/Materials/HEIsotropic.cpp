@@ -11,6 +11,7 @@
 
 #include "HEIsotropic.hpp"
 #include "MPM_Classes/MPMBase.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark HEIsotropic::Constructors and Destructors
 
@@ -23,72 +24,118 @@ HEIsotropic::HEIsotropic() {}
 // Constructors
 HEIsotropic::HEIsotropic(char *matName) : HyperElastic(matName)
 {
-	// inintialize unique properties
+   	G1 = -1.;			// required
+	G2 = 0.;			// zero is neo-Hookean
+    
+    // default value of plastic modulus (ideal elastic-plasticity)
+    Ep = Epred = 0.0;
+    yield = 1.e12;      // no yielding unless given
 }
+
 
 #pragma mark HEIsotropic::Initialization
 
-/* This method reads properties from input file that are unique to this class.
-	For details see "Creating New Material Properties" section in the
-	Create_MPM_Material Wiki on nairn-fea-mem google code page
-*/
 // Read material properties
 char *HEIsotropic::InputMat(char *xName,int &input)
 {
-	// read properties for this material
-    //if(strcmp(xName,"mypropertyname")==0)
-    //{	input=DOUBLE_NUM;
-    //    return((char *)&newproperty);
-    //}
-	
+    input=DOUBLE_NUM;
+    
+    if(strcmp(xName,"G1")==0)
+        return((char *)&G1);
+    
+    if(strcmp(xName,"G2")==0)
+        return((char *)&G2);
+
+    // Ep: plastic modulus, i.e. slope of unidirectional stress-plastic strain curve
+    else if(strcmp(xName,"Ep")==0)
+        return((char *)&Ep);
+    
+    // yield: stress yield
+    else if(strcmp(xName,"yield")==0)
+        return((char *)&yield);
+    
     return(HyperElastic::InputMat(xName,input));
 }
 
-/* This method is called after input file is read but before the new
-	material is printed to the results file. If necessary, verify that
-	all new properties are valid. If not return string with a description
-	of the problem. If OK, must pass on to a superclass
-	NOTE: np is analysis type in case that is important
-*/
 // verify settings and maybe some initial calculations
 const char *HEIsotropic::VerifyProperties(int np)
 {
 	// check properties
-
+    
+    // user must enter G1 and Kbulk
+    if(G1<0. || Kbulk < 0. )
+		return "HEIsotropic Material needs non-negative G1 and K";
+    
 	// must call super class
 	return HyperElastic::VerifyProperties(np);
 }
 
-/* Called once at beginning (by VerifyProperties() in MaterialBase). For efficiency,
-	use this method to calculate new terms that are independent of the particle
-	state and thus will remain constant throughout the calculation. When done
-	(or before), pass on to super class (but MaterialBase and Elastic do not need it)
-*/
+// plane stress not allowed in viscoelasticity
+void HEIsotropic::ValidateForUse(int np)
+{	if(np==PLANE_STRESS_MPM || np==AXISYMMETRIC_MPM)
+    {	throw CommonException("HEIsotropic materials require 2D plane strain or 3D MPM analysis",
+                                "HEIsotropic::ValidateForUse");
+    }
+	
+	//call super class (why can't call super class?)
+	return HyperElastic::ValidateForUse(np);
+}
+
 // Constant properties used in constitutive law
 void HEIsotropic::InitialLoadMechProps(int makeSpecific,int np)
 {
-	HyperElastic::InitialLoadMechProps(makeSpecific,np);
+	// MU in specific units using initial rho
+	// for MPM (units N/m^2 cm^3/g)
+	G1sp=G1*1.0e+06/rho;
+    G2sp=0.;
+	
+	// reduced properties
+    Epred = Ep*1.e6/rho;
+    yldred = yield*1.e6/rho;
+	Gred = G1*1.e6/rho;
+    
+    // call super class for the rest
+    HyperElastic::InitialLoadMechProps(makeSpecific,np);
 }
 
-/* Print all mechanical properties or call parent class and print
-	just the new mechanical properties. Use a format compatible with code
-	that will read results file and similar to style of other materials
-	(need not pass on to MaterialBase or Elastic since they print nothing)
-	NOTE: This is called after VerifyProperties() and InitialLoadMechProps()
-	Sometimes scaling of properties for internal units is best done here after
-	they are printed.
-*/
 // print mechanical properties to the results
 void HEIsotropic::PrintMechanicalProperties(void)
 {	
 	// call superclass here if it is not Material base
 	HyperElastic::PrintMechanicalProperties();
 	
-	// add new properties here
+    PrintProperty("G1",G1,"");
+    PrintProperty("K",Kbulk,"");
+    cout << endl;
+        
+    PrintProperty("a",aI,"");\
+    cout << endl;
+    
+	PrintProperty("yld",yield,"");
+    PrintProperty("Ep",Ep,"");
+    cout << endl;
+}
+
+// store particle J and cummulative equivalent plastic strain (alpha) on
+// two history variables
+char *HEIsotropic::MaterialData(void)
+{
+	double *p=new double[2];
+	p[0]=1.;                // J
+	p[1]=0.;                // alpha
+	return (char *)p;
+}
+
+// Return yield stress for current conditions (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
+//double HEIsotropic::GetYield(MPMBase *mptr,int np,double alpint,double delTime)
+double HEIsotropic::GetYield(MPMBase *mptr,int np,double delTime)
+{
+	return yldred + Epred*alpint;
 }
 
 #pragma mark HEIsotropic:Methods
 
+//===============================================================================================================
 /*	Apply 2D constitutive law updating all needed terms for material type. Required updates are:
 		stress, strain, plastic strain (all components) (stress should be a specific stress)
 		rotation strain (single angle)
@@ -96,13 +143,239 @@ void HEIsotropic::PrintMechanicalProperties(void)
 	To support thermal and solvent expansion, include their effect on strains
     If there are material-related data on the particle, update them too
 	dvij are (gradient rates X time increment) to give deformation gradient change
-   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
+    For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 */
-void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double dvzz,double delTime,int np)
+//===============================================================================================================
+void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,double dvzz,
+                                        double delTime,int np)
 {
+    // Compute Elastic Predictor
+    // ============================================
+    
+	// Update total deformation gradient, and calculate trial B
+    Tensor Btrial;
+	double detdF = IncrementDeformation(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,&Btrial);
+    
+	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
+	double J2;
+	if(np==PLANE_STRAIN_MPM)
+	{
+        //J2 = Btrial.xx*Btrial.yy - Btrial.xy*Btrial.xy;
+      
+        //Incremental calculation of J det(F)=det(dF)det(pF)
+        J2 = detdF*mptr->GetHistoryDble(J_HISTORY);
+	}
+	else
+	{	
+		// first we don't consider a 2D plane stress
+	}
+    
+    // save new J
+    mptr->SetHistoryDble(J_HISTORY,J2);  // Stocking J
+    
+    // J as determinant of F (or sqrt root of determinant of B) normalized to residual stretch
+	double resStretch = GetResidualStretch(mptr);
+    double J = J2/(resStretch*resStretch*resStretch);
+    //cout << "    #J  =   "<< J<<  endl;
+    
+    // Others constants
+    double J23 = pow(J, 2./3.);
+    
+	
+    // find Trial Specific Kirchoff stress Tensor (Trial_Tau/rho0)
+    
+    Tensor stk = GetTrialStressTensor2D(&Btrial,J23);
+   
+    // Checking for plastic loading
+    // ============================================
+    
+    // Get magnitude of the deviatoric stress tensor
+    // ||s|| = sqrt(2J2) where J2 = (1/6)((sx-sy)^2+(sy-sz)^2+(sx-sz)^2) + txy^2+txz^2+tyz^2
+    // In 2D 2J2 = (2/3)(sx^2 + sy^2 - sx*sy + sz*(sz-sx-sy)) + 2*txy^2
+    
+    magnitude_strial = sqrt(0.6666667*(stk.xx*stk.xx+stk.yy*stk.yy+stk.zz*stk.zz-stk.xx*stk.yy-stk.xx*stk.zz-stk.yy*stk.zz)+2*stk.xy*stk.xy);
+    double gyld=GetYield(mptr,np,delTime);
+    double magnitude_strial = GetMagnitudeS(&stk,np);
+    double ftrial = magnitude_strial-SQRT_TWOTHIRDS*gyld;
+    //cout << "  #magnitude_strial =   "<< magnitude_strial<< "  GetYield =   "<< gyld<< "  ftrial =   "<< ftrial<< endl;
+    //cout << "  #yldred =   "<< yldred << "  Epred =   "<< Epred << "  gyld =   "<< gyld <<"  alpint =   "<< alpint<< "  ftrial =   "<< ftrial<< endl;
+        
+    //============================
+    //  TEST
+    //============================
+    //ftrial=-1.;
+    if(ftrial<=0.)
+        
+        // if elastic
+        //============================
+    {   Tensor B = Btrial;
+        
+        // save on particle
+
+        Tensor *pB = mptr->GetElasticLeftCauchyTensor();
+        pB->xx = B.xx;
+        pB->yy = B.yy;
+        pB->zz = B.zz;
+        pB->xy = B.xy;
+        //cout << "# in elastic  B.yy  =    " << Btrial.yy <<"     B.zz  =    " << Btrial.zz << endl;
+        
+        // Get specifique stress i.e. (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
+        Tensor *sp=mptr->GetStressTensor();
+           
+        sp->xx = 0.5*Ksp*(J*J-1.)+stk.xx;//1./3.*G1sp*(2.*B.xx-B.yy-B.zz)/J23;
+        sp->yy = 0.5*Ksp*(J*J-1.)+stk.yy;//1./3.*G1sp*(2.*B.yy-B.xx-B.zz)/J23;
+        sp->zz = 0.5*Ksp*(J*J-1.)+stk.zz;//1./3.*G1sp*(2.*B.zz-B.xx-B.yy)/J23;
+        sp->xy = stk.xy;//G1sp*B.xy/J23;
+        
+        //  J = 1
+        //sp->xx = 1./3.*G1sp*(2.*B.xx-B.yy-B.zz);
+        //sp->yy = 1./3.*G1sp*(2.*B.yy-B.xx-B.zz);
+        //sp->zz = 1./3.*G1sp*(2.*B.zz-B.xx-B.yy);
+        //sp->xy = G1sp*B.xy;
+        
+        // strain energy per unit mass (U/(rho0 V0)) and we are using
+        // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
+        double I1bar = (B.xx+B.yy+B.zz)/J23;
+        mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + Ksp*(1/2*(J*J-1)-log(J))));
+        
+        return;
+    }
+    // Plastic behavior - Return Mapping algorithm 
+    //=====================================================
+    // if plastic
+    
+    Tensor B = Btrial;
+    double Ie1bar = (1./3.)*(B.xx+B.yy+B.zz)/J23;
+    double MUbar = Gred*Ie1bar;
+    
+    // Find  lambda for this plastic state
+    double dlambda = (ftrial/(2.*MUbar))/(1.+Epred/(3.*MUbar));
+   
+    dalpha=SQRT_TWOTHIRDS*dlambda;
+    alpint = mptr->GetHistoryDble(ALPHA_HISTORY)+dalpha;
+    mptr->SetHistoryDble(ALPHA_HISTORY,alpint);
+    //cout << "# dlambda  =    " << dlambda <<", dalpha  =    " << dalpha << ", alpint =    " << alpint << endl;
+    
+    Tensor nk = GetNormalTensor2D(&stk,magnitude_strial);
+    //cout << "nk.xx  =    " << nk.xx << "nk.xy  =    " << nk.xy << endl;
+    
+    Tensor *sp=mptr->GetStressTensor();
+    sp->xx = 0.5*Ksp*(J*J-1.)+(stk.xx-2.*MUbar*dlambda*nk.xx);
+    sp->yy = 0.5*Ksp*(J*J-1.)+(stk.yy-2.*MUbar*dlambda*nk.yy);
+    sp->zz = 0.5*Ksp*(J*J-1.)+(stk.zz-2.*MUbar*dlambda*nk.zz);
+    sp->xy = (stk.xy-2.*MUbar*dlambda*nk.xy);
+    
+    
+    //cout << "EXT B.xx  =    " << B.xx << endl;
+    // save on particle
+    
+    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
+     pB->xx = ((stk.xx-2.*MUbar*dlambda*nk.xx)/Gred+Ie1bar)*J23;
+     pB->yy = ((stk.yy-2.*MUbar*dlambda*nk.yy)/Gred+Ie1bar)*J23;
+     pB->zz = ((stk.zz-2.*MUbar*dlambda*nk.zz)/Gred+Ie1bar)*J23;
+     pB->xy = (stk.xy-2.*MUbar*dlambda*nk.xy)/Gred*J23;
+     //cout << "# in pB plastic  nk.xx  =    " << nk->xx <<"     nk.yy  =    " << nk.yy<<"     nk.zz  =    " << nk.zzß << endl;
+    
+        
+    // strain energy per unit mass (U/(rho0 V0)) and we are using
+    // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
+    double I1bar = (B.xx+B.yy+B.zz)/J23;
+    mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + Ksp*(1/2*(J*J-1)-log(J))));
+
+    return;
+    
 }
 
+// 2D implementation of the strial stress tensor
+
+
+Tensor HEIsotropic::GetTrialStressTensor2D(Tensor *B,double J23)
+{
+    // Trial specific Kirchhoff Stress Tensor 
+    Tensor strial;
+    ZeroTensor(&strial);
+    strial.xx = 1./3.*Gred*(2.*B->xx-B->yy-B->zz)/J23;
+    strial.yy = 1./3.*Gred*(2.*B->yy-B->xx-B->zz)/J23;
+    strial.zz = 1./3.*Gred*(2.*B->zz-B->xx-B->yy)/J23;
+    strial.xy = Gred*B->xy/J23;
+    return strial;
+}
+
+double HEIsotropic::GetMagnitudeS(Tensor *st,int np)
+{
+	double s,t;
+	
+	switch(np)
+	{	case PLANE_STRAIN_MPM:
+			s = fmax(st->xx*st->xx + st->yy*st->yy - st->xx*st->yy + st->zz*(st->zz-st->xx-st->yy),0.);
+			t = st->xy*st->xy;
+			break;
+		case PLANE_STRESS_MPM:
+			s = fmax(st->xx*st->xx + st->yy*st->yy - st->xx*st->yy,0.);
+			t = st->xy*st->xy;
+			break;
+		case THREED_MPM:
+		default:
+			s = fmax(st->xx*st->xx + st->yy*st->yy - st->xx*st->yy + st->zz*(st->zz-st->xx-st->yy),0.);
+			t = st->xy*st->xy + st->xz*st->xz + st->yz*st->yz;
+			break;
+	}
+	return sqrt(2.*(s/3. + t));
+}
+ 
+
+// 2D implementation of the normal to the yield surface
+
+Tensor HEIsotropic::GetNormalTensor2D(Tensor *strial,double magnitude_strial)
+{
+    // Trial specific Kirchhoff Stress Tensor
+    Tensor n;
+    ZeroTensor(&n);
+    n.xx = strial->xx/magnitude_strial;
+    n.yy = strial->yy/magnitude_strial;
+    n.xy = strial->xy/magnitude_strial;
+    n.zz = strial->zz/magnitude_strial;
+    //cout << "strial.yy  =    " << strial->yy << "      strial.zz  =    " << strial->zz << "magnitude_strial  =    " << magnitude_strial << endl;
+    //cout << "n.xx  =    " << n.xx << "n.xy  =    " << n.xy << endl;
+    return n;
+}
+
+
+/* Get internal variables while iterating to find lambda
+ Here alpha (in alpint) is cumulative equivalent plastic strain and
+ The increment in alpha is dalpha. dalpha/delTime is plastic strain rate
+ For plane strain and 3D
+ dalpha = lambda sqrt(2/3) df/dsigma::df/dsigma = lambda sqrt(2/3) since df/dsigma is unit vector
+ For plane stress
+ dalpha = lambda sqrt(2/3) fnp1
+ First one is called at start to initialize alpint and dalpha
+ */
+void HEIsotropic::UpdateTrialAlpha(MPMBase *mptr,int np)
+{	alpint = mptr->GetHistoryDble(ALPHA_HISTORY);
+	dalpha = 0.;
+}
+void HEIsotropic::UpdateTrialAlpha(MPMBase *mptr,int np,double dlambda,double fnp1)
+{	dalpha = SQRT_TWOTHIRDS*dlambda ;
+	alpint = mptr->GetHistoryDble(ALPHA_HISTORY) + dalpha;
+}
+
+// The prior soltution for lambda tracked the internal variable. Just move to the particle now
+void HEIsotropic::UpdatePlasticInternal(MPMBase *mptr,int np)
+{	mptr->SetHistoryDble(ALPHA_HISTORY,alpint);
+}
+
+
+
+/*
+double HEIsotropic::SolveForLambda(MPMBase *mptr,int np,double ftrial,Tensor *stk,double delTime)
+{
+	// initial lambdk from dalpha set before call, often 0, but might be otherwise
+	double lambdak=dalpha/SQRT_TWOTHIRDS;
+    return lambdak;
+}
+*/
+
+//===============================================================================================================
 /* Apply 3D constitutive law updating all needed terms for material type. Required updates are:
 		stress, strain, plastic strain (all components) (stress should be a specific stress)
 		rotation strain
@@ -111,12 +384,191 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
     If there are material-related data on the particle, update them too
     dvij are (gradient rates X time increment) to give deformation gradient change
 */
+//===============================================================================================================
+
+
+// 3D Stress Calculation New Law
 void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-        double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
+                              double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
+
 {
+	// Update strains and rotations and Left Cauchy strain
+    Tensor Btrial;
+	double detdF = IncrementDeformation(mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,&Btrial);
+    
+    // Incremental calculation of J det(F)=det(dF)det(pF)
+    double J2 = detdF*mptr->GetHistoryDble(J_HISTORY);
+    mptr->SetHistoryDble(J_HISTORY,J2);  // Stocking J
+    
+    // J as determinant of F (or sqrt root of determinant of B) normalized to residual stretch
+	double resStretch = GetResidualStretch(mptr);
+    double J = J2/(resStretch*resStretch*resStretch);
+    //cout << " # J  =    " << J <<  endl;
+    
+    double J23=pow(J,2./3.);
+    
+    
+    // find Trial Specific Kirchoff stress Tensor (Trial_Tau/rho0)
+    
+    Tensor stk = GetTrialStressTensor3D(&Btrial,J23);
+    
+    // Checking for plastic loading
+    // ============================================
+    
+    // Get magnitude of the deviatoric stress tensor
+  
+    // magnitude_strial = sqrt(0.6666667*(stk.xx*stk.xx+stk.yy*stk.yy+stk.zz*stk.zz-stk.xx*stk.yy-stk.xx*stk.zz-stk.yy*stk.zz)+2*stk.xy*stk.xy+2*stk.xz*stk.xz+2*stk.yz*stk.yz);
+    
+    double gyld=GetYield(mptr,np,delTime);
+    double magnitude_strial = GetMagnitudeS(&stk,np);
+    double ftrial = magnitude_strial-SQRT_TWOTHIRDS*gyld;
+    
+    //cout << "  #yldred =   "<< yldred << "  Epred =   "<< Epred << "  gyld =   "<< gyld <<"  alpint =   "<< alpint<< "  ftrial =   "<< ftrial<< endl;
+    
+    //============================
+    //  TEST
+    //============================
+    ftrial=-1.;
+    //cout << " # ftrial  =    " << ftrial <<  endl;
+    if(ftrial<=0.)
+
+        // if elastic
+        //============================
+    {   Tensor B = Btrial;
+        
+        // save on particle
+        
+        Tensor *pB = mptr->GetElasticLeftCauchyTensor();
+        pB->xx = B.xx;
+        pB->yy = B.yy;
+        pB->zz = B.zz;
+        pB->xy = B.xy;
+        pB->xz = B.xz;
+        pB->yz = B.yz;
+        //cout << "# in elastic  B.yy  =    " << Btrial.yy <<"     B.zz  =    " << Btrial.zz << endl;
+        
+        // Get specifique stress i.e. (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
+        Tensor *sp=mptr->GetStressTensor();
+        
+        sp->xx = 0.5*Ksp*(J*J-1.)+stk.xx;//1./3.*G1sp*(2.*B.xx-B.yy-B.zz)/J23;
+        sp->yy = 0.5*Ksp*(J*J-1.)+stk.yy;//1./3.*G1sp*(2.*B.yy-B.xx-B.zz)/J23;
+        sp->zz = 0.5*Ksp*(J*J-1.)+stk.zz;//1./3.*G1sp*(2.*B.zz-B.xx-B.yy)/J23;
+        sp->xy = stk.xy;//G1sp*B.xy/J23;
+        sp->xz = stk.xz;//G1sp*B.xy/J23;
+        sp->yz = stk.yz;//G1sp*B.xy/J23;
+        
+        //  J = 1   for Simple Shear test
+        
+        //sp->xx = 1./3.*G1sp*(2.*B.xx-B.yy-B.zz);
+        //sp->yy = 1./3.*G1sp*(2.*B.yy-B.xx-B.zz);
+        //sp->zz = 1./3.*G1sp*(2.*B.zz-B.xx-B.yy);
+        //sp->xy = G1sp*B.xy;
+        //sp->xz = G1sp*B.xz;
+        //sp->yz = G1sp*B.yz;
+        
+        // strain energy per unit mass (U/(rho0 V0)) and we are using
+        // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
+        double I1bar = (B.xx+B.yy+B.zz)/J23;
+        mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + Ksp*(1/2*(J*J-1)-log(J))));
+        
+        return;
+    }
+    
+    // Plastic behavior - Return Mapping algorithm
+    //=====================================================
+    // if plastic
+    
+    Tensor B = Btrial;
+    double Ie1bar = (1./3.)*(B.xx+B.yy+B.zz)/J23;
+    double MUbar = Gred*Ie1bar;
+    
+    // Find  lambda for this plastic state
+    double dlambda = (ftrial/(2.*MUbar))/(1.+Epred/(3.*MUbar));
+    
+    dalpha=SQRT_TWOTHIRDS*dlambda;
+    alpint = mptr->GetHistoryDble(ALPHA_HISTORY)+dalpha;
+    mptr->SetHistoryDble(ALPHA_HISTORY,alpint);
+    //cout << "# dlambda  =    " << dlambda <<", dalpha  =    " << dalpha << ", alpint =    " << alpint << endl;
+    
+    Tensor nk = GetNormalTensor3D(&stk,magnitude_strial);
+    //cout << "nk.xx  =    " << nk.xx << "nk.xy  =    " << nk.xy << endl;
+    
+    Tensor *sp=mptr->GetStressTensor();
+    sp->xx = 0.5*Ksp*(J*J-1.)+(stk.xx-2.*MUbar*dlambda*nk.xx);
+    sp->yy = 0.5*Ksp*(J*J-1.)+(stk.yy-2.*MUbar*dlambda*nk.yy);
+    sp->zz = 0.5*Ksp*(J*J-1.)+(stk.zz-2.*MUbar*dlambda*nk.zz);
+    sp->xy = (stk.xy-2.*MUbar*dlambda*nk.xy);
+    sp->xz = (stk.xz-2.*MUbar*dlambda*nk.xz);
+    sp->yz = (stk.yz-2.*MUbar*dlambda*nk.yz);
+    
+    
+    //cout << "EXT B.xx  =    " << B.xx << endl;
+    // save on particle
+    
+    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
+    pB->xx = ((stk.xx-2.*MUbar*dlambda*nk.xx)/Gred+Ie1bar)*J23;
+    pB->yy = ((stk.yy-2.*MUbar*dlambda*nk.yy)/Gred+Ie1bar)*J23;
+    pB->zz = ((stk.zz-2.*MUbar*dlambda*nk.zz)/Gred+Ie1bar)*J23;
+    pB->xy = (stk.xy-2.*MUbar*dlambda*nk.xy)/Gred*J23;
+    pB->xz = (stk.xz-2.*MUbar*dlambda*nk.xz)/Gred*J23;
+    pB->yz = (stk.yz-2.*MUbar*dlambda*nk.yz)/Gred*J23;
+    
+    //cout << "# in pB plastic  nk.xx  =    " << nk->xx <<"     nk.yy  =    " << nk.yy<<"     nk.zz  =    " << nk.zzß << endl;
+    
+    
+    // strain energy per unit mass (U/(rho0 V0)) and we are using
+    // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
+    double I1bar = (B.xx+B.yy+B.zz)/J23;
+    mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + Ksp*(1/2*(J*J-1)-log(J))));
+    
+    return;
+    
 }
 
+// Return normal stress term (due to bulk modulus) and twice the pressure term for strain energy.
+// Each block of lines is for a different U(J).
+// Any change here must also be made in 2D MPMConstLaw for the numerical solution to find B.zz in plane stress
+
+
+
 #pragma mark HEIsotropic::Custom Methods
+
+// 2D implementation of the strial stress tensor
+
+
+Tensor HEIsotropic::GetTrialStressTensor3D(Tensor *B,double J23)
+{
+    // Trial specific Kirchhoff Stress Tensor
+    Tensor strial;
+    ZeroTensor(&strial);
+    strial.xx = 1./3.*Gred*(2.*B->xx-B->yy-B->zz)/J23;
+    strial.yy = 1./3.*Gred*(2.*B->yy-B->xx-B->zz)/J23;
+    strial.zz = 1./3.*Gred*(2.*B->zz-B->xx-B->yy)/J23;
+    strial.xy = Gred*B->xy/J23;
+    strial.xz = Gred*B->xz/J23;
+    strial.yz = Gred*B->yz/J23;
+   
+    return strial;
+}
+
+// 2D implementation of the normal to the yield surface
+
+Tensor HEIsotropic::GetNormalTensor3D(Tensor *strial,double magnitude_strial)
+{
+    // Trial specific Kirchhoff Stress Tensor
+    Tensor n;
+    ZeroTensor(&n);
+    n.xx = strial->xx/magnitude_strial;
+    n.yy = strial->yy/magnitude_strial;
+    n.zz = strial->zz/magnitude_strial;
+    n.xy = strial->xy/magnitude_strial;
+    n.xz = strial->xz/magnitude_strial;
+    n.yz = strial->yz/magnitude_strial;
+    //cout << "strial.yy  =    " << strial->yy << "      strial.zz  =    " << strial->zz << "magnitude_strial  =    " << magnitude_strial << endl;
+    //cout << "n.xx  =    " << n.xx << "n.xy  =    " << n.xy << endl;
+    return n;
+}
+
 
 #pragma mark HEIsotropic::Accessors
 
@@ -127,5 +579,20 @@ int HEIsotropic::MaterialTag(void) { return HEISOTROPIC; }
 const char *HEIsotropic::MaterialType(void) { return "Hyperelastic isotropic"; }
 
 // calculate wave speed in mm/sec - needs to be implemented
-double HEIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
+double HEIsotropic::WaveSpeed(bool threeD,MPMBase *mptr)
+{
+    return sqrt(1.e9*(Kbulk+4.*G1/3.)/rho);
+}
+
+// this material has two history variables
+double HEIsotropic::GetHistory(int num,char *historyPtr)
+{
+    double history=0.;
+	if(num==1 || num==2)
+	{	double *p=(double *)historyPtr;
+		history=p[num-1];
+	}
+    return history;
+}
+
 

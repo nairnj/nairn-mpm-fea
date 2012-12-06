@@ -31,7 +31,6 @@ Viscoelastic::Viscoelastic(char *matName) : MaterialBase(matName)
     G0=0.;
     currentGk=0;
     currentTauk=0;
-	betaI=0.;
     for(i=0;i<VISCO_PROPS;i++)
         read[i]=0;
 }
@@ -75,9 +74,6 @@ char *Viscoelastic::InputMat(char *xName,int &input)
     {	read[VA_PROP]=1;
         return((char *)&aI);
     }
-    
-    else if(strcmp(xName,"beta")==0)
-        return((char *)&betaI);
     
     else if(strcmp(xName,"ntaus")==0)
     {	input=INT_NUM;
@@ -132,7 +128,7 @@ const char *Viscoelastic::VerifyProperties(int np)
 void Viscoelastic::ValidateForUse(int np)
 {	if(np==PLANE_STRESS_MPM || np==AXISYMMETRIC_MPM)
 	{	throw CommonException("Viscoelastic materials require 2D plane strain or 3D MPM analysis",
-							  "Viscoelastic::MPMConstLaw");
+							  "Viscoelastic::ValidateForUse");
 	}
 	
 	//call super class (why can't call super class?)
@@ -144,8 +140,6 @@ void Viscoelastic::InitialLoadMechProps(int makeSpecific,int np)
 {
     int i;
     
-	hasMatProps=TRUE;
-	
     // zero time shear modulus
     Ge=G0;
     dGe=0.0;

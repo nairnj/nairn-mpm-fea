@@ -305,7 +305,6 @@ void MassAndMomentumTask::SetRigidBCs(int mi,int type,double value,double angle,
 						   BoundaryCondition **lastBC,BoundaryCondition **firstRigidBC,BoundaryCondition **reuseRigidBC)
 {
 	BoundaryCondition *newBC=NULL;
-	NodalVelBC *velBC;
 	
 	// check if already set in that direction by actual BC or by previous rigid BC
 	// New rigid BC's can only be on free directions
@@ -313,20 +312,7 @@ void MassAndMomentumTask::SetRigidBCs(int mi,int type,double value,double angle,
 	
 	// create new boundary conditions
 	switch(type)
-	{	case SKEW_DIRECTION:
-			if(nd[mi]->fixedDirection&(X_DIRECTION+Y_DIRECTION)) return;
-			if(*reuseRigidBC!=NULL)
-				velBC=(NodalVelBC *)((*reuseRigidBC)->SetRigidProperties(mi,type,CONSTANT_VALUE,value));
-			else
-			{	velBC=new NodalVelBC(mi,type,CONSTANT_VALUE,value,(double)0.);
-				if(velBC==NULL) throw CommonException("Memory error allocating rigid particle boundary condition.",
-													  "NairnMPM::SetRigidBCs");
-			}
-			velBC->SetSkewAngle(angle);
-			newBC=(BoundaryCondition *)velBC;
-			break;
-			
-		case X_DIRECTION:
+    {   case X_DIRECTION:
 		case Y_DIRECTION:
 		case Z_DIRECTION:
 			if(*reuseRigidBC!=NULL)

@@ -64,13 +64,13 @@ const char *IdealGas::VerifyProperties(int np)
 	heatCapacityVol = heatCapacity;
 	
     // call super class
-    return MaterialBase::VerifyProperties(np);
+    return HyperElastic::VerifyProperties(np);
 }
 
 // if analysis not allowed, throw an exception
 void IdealGas::ValidateForUse(int np)
-{	if(np==PLANE_STRESS_MPM or np==AXISYMMETRIC_MPM)
-	{	throw CommonException("IdealGas material cannot do 2D plane stress or axisymmetric MPM analysis",
+{	if(np==PLANE_STRESS_MPM)
+	{	throw CommonException("IdealGas material cannot do 2D plane stress analysis",
 							  "IdealGas::ValidateForUse");
 	}
 	
@@ -86,8 +86,6 @@ void IdealGas::ValidateForUse(int np)
 // Private properties used in constitutive law
 void IdealGas::InitialLoadMechProps(int makeSpecific,int np)
 {
-	hasMatProps=TRUE;
-	
 	// P0 in specific units for MPM of N/m^2 cm^3/g
 	P0sp=P0*1.0e+06/rho;
 }
@@ -107,6 +105,9 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np)
 	sp->zz = Psp;
     
     // Initial particle strains are zero (because J=1)
+    
+    // call super class for Cauchy Green strain
+    return HyperElastic::SetInitialParticleState(mptr,np);
 }
 
 
@@ -121,9 +122,9 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np)
 void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
 								double dvzz,double delTime,int np)
 {
-	// get new deformation gradient
-	double F[3][3];
-	double detf = GetDeformationGrad(F,mptr,dvxx,dvyy,dvxy,dvyx,TRUE,TRUE);
+	// Update strains and rotations and Left Cauchy strain
+    // get new deformation gradient
+	double detf = IncrementDeformation(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,NULL);
     
     // single 2D and 3D law
     MPMCombinedLaw(mptr,detf);
@@ -136,10 +137,10 @@ void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,dou
 void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
                            double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
 {
-	// get determinent of incremental deformation gradient (and update strains)
-	double F[3][3];
-	double detf = GetDeformationGrad(F,mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,TRUE,TRUE);
-    
+ 	// Update strains and rotations and Left Cauchy strain
+    // get determinent of incremental deformation gradient
+	double detf = IncrementDeformation(mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,NULL);
+   
     // single 2D and 3D law
     MPMCombinedLaw(mptr,detf);
 }

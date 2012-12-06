@@ -25,12 +25,9 @@ NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTi
 {
     nodeNum=num;
     dir = dof==3 ? Z_DIRECTION : dof ;		// change 3 to Z_DIRECTION (4) bit location
-	skewAngle=0.;							// cw rotation angle from positive x axis in degrees
 	
-	if(dir==0)
-		nd[nodeNum]->SetFixedDirection(X_DIRECTION+Y_DIRECTION);	// skew setting (x and y)
-	else
-		nd[nodeNum]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
+    // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
+    nd[nodeNum]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
 	
 	pk=NULL;
 }
@@ -44,11 +41,9 @@ NodalVelBC::~NodalVelBC()
 BoundaryCondition *NodalVelBC::SetRigidProperties(int num,int dof,int setStyle,double velocity)
 {	// set dir and direction
     dir = dof==3 ? Z_DIRECTION : dof ;		// change 3 to Z_DIRECTION (4) bit location
-	skewAngle=0.;							// cw rotation angle from positive x axis in degrees
-	if(dir==0)
-		nd[num]->SetFixedDirection(X_DIRECTION+Y_DIRECTION);	// skew setting (x and y)
-	else
-		nd[num]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
+    
+    // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
+    nd[num]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
 	
 	// finish in base class (nodenum set there)
 	return BoundaryCondition::SetRigidProperties(num,dof,setStyle,velocity);
@@ -56,10 +51,7 @@ BoundaryCondition *NodalVelBC::SetRigidProperties(int num,int dof,int setStyle,d
 
 // just unset condition, because may want to reuse it, return next one to unset
 BoundaryCondition *NodalVelBC::UnsetDirection(void)
-{	if(dir==0)
-		nd[nodeNum]->UnsetFixedDirection(X_DIRECTION+Y_DIRECTION);	// skew setting (x and y)
-	else
-		nd[nodeNum]->UnsetFixedDirection(dir);		// x, y, or z (1,2,4) directions
+{	nd[nodeNum]->UnsetFixedDirection(dir);		// x, y, or z (1,2,4) directions
 	return (BoundaryCondition *)GetNextObject();
 }
 
@@ -70,8 +62,7 @@ BoundaryCondition *NodalVelBC::PrintBC(ostream &os)
 {
     char nline[200];
 	int outdir = dir==Z_DIRECTION ? 3 : dir ;
-	sprintf(nline,"%7d %2d %2d %15.7e %15.7e %7.2lf",nodeNum,outdir,style,value,
-					ftime,skewAngle*180./PI_CONSTANT);
+	sprintf(nline,"%7d %2d %2d %15.7e %15.7e",nodeNum,outdir,style,value,ftime);
     os << nline;
 	PrintFunction(os);
 	return (BoundaryCondition *)GetNextObject();
@@ -119,11 +110,6 @@ NodalVelBC *NodalVelBC::PasteNodalVelocities(NodalPoint *nd)
 #endif
     return (NodalVelBC *)GetNextObject();
 }
-
-#pragma mark NodelVelBC::Accessors
-
-// for skewed BC, only if dof=0
-void NodalVelBC::SetSkewAngle(double angle) { skewAngle=angle*PI_CONSTANT/180.; }
 
 #pragma mark NodelVelBC::Class Methods
 
@@ -177,32 +163,16 @@ void NodalVelBC::GridMomentumConditions(int makeCopy)
     while(nextBC!=NULL)
     {	// x, y, or z velocity will be set
         if((i=nextBC->GetNodeNum(mstime)))
-		{	if(nextBC->dir==X_DIRECTION)
-				nd[i]->SetXMomVel();
-			else if(nextBC->dir==Y_DIRECTION)
-				nd[i]->SetYMomVel();
-			else if(nextBC->dir==Z_DIRECTION)
-				nd[i]->SetZMomVel();
-			else
-				nd[i]->SetSkewMomVel(nextBC->skewAngle);
-		}
+            nd[i]->SetMomVel(nextBC->dir);
         nextBC=(NodalVelBC *)nextBC->GetNextObject();
     }
     
     // Now add all velocities to nodes with velocity BCs
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-	{	// x or y velocity is incremented
+	{	// x, y, or z velocity is incremented
 		if((i=nextBC->GetNodeNum(mstime)))
-		{	if(nextBC->dir==X_DIRECTION)
-				nd[i]->AddXMomVel(nextBC->BCValue(mstime));
-			else if(nextBC->dir==Y_DIRECTION)
-				nd[i]->AddYMomVel(nextBC->BCValue(mstime));
-			else if(nextBC->dir==Z_DIRECTION)
-				nd[i]->AddZMomVel(nextBC->BCValue(mstime));
-			else
-				nd[i]->AddSkewMomVel(nextBC->BCValue(mstime),nextBC->skewAngle);
-		}
+            nd[i]->AddMomVel(nextBC->dir,nextBC->BCValue(mstime));
         nextBC=(NodalVelBC *)nextBC->GetNextObject();
     }
 }
@@ -231,15 +201,7 @@ void NodalVelBC::ConsistentGridForces(void)
     while(nextBC!=NULL)
 	{	// x velocity will be set
 		if((i=nextBC->GetNodeNum(mstime)))
-		{	if(nextBC->dir==X_DIRECTION)
-				nd[i]->SetXFtot(timestep);
-			else if(nextBC->dir==Y_DIRECTION)
-				nd[i]->SetYFtot(timestep);
-			else if(nextBC->dir==Z_DIRECTION)
-				nd[i]->SetZFtot(timestep);
-			else
-				nd[i]->SetSkewFtot(timestep,nextBC->skewAngle);
-		}
+            nd[i]->SetFtot(nextBC->dir,timestep);
         nextBC=(NodalVelBC *)nextBC->GetNextObject();
     }
     
@@ -248,15 +210,7 @@ void NodalVelBC::ConsistentGridForces(void)
     while(nextBC!=NULL)
 	{	// x velocity will be set
 		if((i=nextBC->GetNodeNum(mstime)))
-		{	if(nextBC->dir==X_DIRECTION)
-				nd[i]->AddXFtot(timestep,nextBC->BCValue(mstime));
-			else if(nextBC->dir==Y_DIRECTION)
-				nd[i]->AddYFtot(timestep,nextBC->BCValue(mstime));
-			else if(nextBC->dir==Z_DIRECTION)
-				nd[i]->AddZFtot(timestep,nextBC->BCValue(mstime));
-			else
-				nd[i]->AddSkewFtot(timestep,nextBC->BCValue(mstime),nextBC->skewAngle);
-		}
+            nd[i]->AddFtot(nextBC->dir,timestep,nextBC->BCValue(mstime));
         nextBC=(NodalVelBC *)nextBC->GetNextObject();
     }
 }

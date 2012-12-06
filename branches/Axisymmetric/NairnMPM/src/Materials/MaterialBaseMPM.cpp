@@ -146,6 +146,11 @@ char *MaterialBase::InputMat(char *xName,int &input)
         return((char *)&diffusionCon);
 	}
     
+    else if(strcmp(xName,"beta")==0)
+    {	input=DOUBLE_NUM;
+        return((char *)&betaI);
+    }
+	
 	else if(strcmp(xName,"kCond")==0)
     {	input=DOUBLE_NUM;
         return((char *)&kCond);

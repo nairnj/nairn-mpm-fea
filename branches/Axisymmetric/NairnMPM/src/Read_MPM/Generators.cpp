@@ -497,7 +497,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,BCSHAPE,ANY_DIM);
 		if(!theShape->RequiredBlock(GRIDBCHEADER))
 			ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
-        double dispvel=0.0,ftime=0.0,skewAngle=0.;
+        double dispvel=0.0,ftime=0.0;
 		int dof=0,style=CONSTANT_VALUE;
 		char *function=NULL;
         numAttr=attrs.getLength();
@@ -512,8 +512,6 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%lf",&ftime);
             else if(strcmp(aName,"style")==0)
                 sscanf(value,"%d",&style);
-            else if(strcmp(aName,"angle")==0)
-                sscanf(value,"%lf",&skewAngle);
             else if(strcmp(aName,"function")==0)
 			{	if(function!=NULL) delete [] function;
 				function=new char[strlen(value)+1];
@@ -533,7 +531,6 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		theShape->resetNodeEnumerator();
 		while((i=theShape->nextNode()))
 		{	NodalVelBC *newVelBC=new NodalVelBC(nd[i]->num,dof,style,dispvel,ftime);
-			if(dof==SKEW_DIRECTION) newVelBC->SetSkewAngle(skewAngle);
 			newVelBC->SetFunction(function);
 			velocityBCs->AddObject(newVelBC);
 		}

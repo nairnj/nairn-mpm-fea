@@ -154,7 +154,6 @@ class MaterialBase : public LinkedObject
 #endif
 	
 		// constants (changed in MPM time step)
-        int hasMatProps;
         double lastMatAngle;
 		double C11,C12,C13,C22,C23,C33,C44,C55,C66;
 		double CTE1,CTE2,CTE3;

@@ -35,6 +35,7 @@ TransIsotropic::TransIsotropic(char *matName,int matID) : Elastic(matName)
 #endif
 	betaA=0.;
 	betaT=0.;
+    hasMatProps=FALSE;          // lazy loading of material properties
 }
 
 #pragma mark TransIsotropic::Initialization

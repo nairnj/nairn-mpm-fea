@@ -154,14 +154,14 @@ calculations <code>'min'</code> and <code>'max'</code> will be limits of useable
 </p>
 
 <pre>
-   &lt;DisBC dir='1' vel='0' style='1' time='0.0' angle='0.0' function='sin(t)'/&gt;
+   &lt;DisBC dir='1' vel='0' style='1' time='0.0' function='sin(t)'/&gt;
 </pre>
 
 <p>where</p>
 
 <dl>
 <dt>dir</dt>
-<dd>Determines if the <code>x</code> direction (<code>dir=1</code>), the <code>y</code> direction (<code>dir=2</code>), the <code>z</code> direction (<code>dir=3</code>), the <code>R</code> direction when axisymetric (<code>dir=1</code>), or the <code>Z</code> direction when axisymmetric (<code>dir=2</code>) will have the specified velocity. For 2D calculations the velocity can be set to a skewed direction in the <code>x</code>-<code>y</code> plane (or <code>R</code>-<code>Z</code> plane when axisymmetric) by setting <code>dir=0</code>.  When using a skewed direction, specify the angle of the direction in the <code>angle</code> attribute (see below)
+<dd>Determines if the <code>x</code> direction (<code>dir=1</code>), the <code>y</code> direction (<code>dir=2</code>), the <code>z</code> direction (<code>dir=3</code>), the <code>R</code> direction when axisymetric (<code>dir=1</code>), or the <code>Z</code> direction when axisymmetric (<code>dir=2</code>) will have the specified velocity.
 </dd>
 
 <dt>vel</dt>
@@ -173,10 +173,6 @@ calculations <code>'min'</code> and <code>'max'</code> will be limits of useable
 <dt>time</dt>
 <dd>Defines a parameter used in some styles defined <a href="#style">below</a>.
 This attribute is optional; when omitted, the default value is 0.0.</dd>
-
-<dt>angle</dt>
-<dd>Clockwise angle (in degrees) from the positive <code>x</code> axis for skewed velocity direction when <code>dir=0</code>. Angle=0 fixes the <code>x</code> direction, angle=-90 fixes the <code>y</code> direction, and any other angle can fix an arbitrary direction.
-</dd>
 
 <dt>function</dt>
 <dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of time (<code>t</code> in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, <code>z</code>, <code>R</code>, <code>Z</code>, <code>D</code>, and <code>T</code> in mm). The function should evaluate to velocity in mm/s.
@@ -273,7 +269,7 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 </p>
 
 <pre>
-   &lt;fix node='4' dof='1' style='1' time='0.0' angle='0.0'&gt;velocity&lt;/fix&gt;
+   &lt;fix node='4' dof='1' style='1' time='0.0'&gt;velocity&lt;/fix&gt;
 </pre>
 
 <p>where</p>
@@ -284,7 +280,7 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 </dd>
 
 <dt>dof</dt>
-<dd>Determines if the <code>x</code> direction (<code>dof=1</code>), the <code>y</code> direction (<code>dof=2</code>), the <code>z</code> direction (<code>dof=3</code>), the <code>R</code> direction when axisymetric (<code>dir=1</code>), or the <code>Z</code> direction when axisymmetric (<code>dir=2</code>) will have the specified velocity. For 2D calculations the velocity can be set to a skewed direction in the <code>x</code>-<code>y</code> (or <code>R</code>-<code>Z</code> plane when axisymmetric) plane by setting <code>dof=0</code>.  When using a skewed direction, specify the angle of the direction in the <code>angle</code> attribute (see below)
+<dd>Determines if the <code>x</code> direction (<code>dof=1</code>), the <code>y</code> direction (<code>dof=2</code>), the <code>z</code> direction (<code>dof=3</code>), the <code>R</code> direction when axisymetric (<code>dir=1</code>), or the <code>Z</code> direction when axisymmetric (<code>dir=2</code>) will have the specified velocity.
 </dd>
 
 <dt>style</dt>
@@ -295,9 +291,6 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 <dd>A time parameter used for various <a href="#style">styles</a> described in the next section. If this attribute is omitted, it is assumed to be 0.0.
 </dd>
 
-<dt>angle</dt>
-<dd>Clockwise angle (in degrees) from the positive <code>x</code> axis for skewed velocity direction when <code>dof=0</code>. Angle=0 fixes the <code>x</code> direction, angle=-90 fixes the <code>y</code> direction, and any other angle can fix an arbitrary direction.
-</dd>
 </dl>
 
 <p class="links">
