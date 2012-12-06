@@ -408,8 +408,8 @@ void ArchiveData::ArchiveVelocityBCs(BoundaryCondition *firstBC)
 	}
 	
 	// list in output file (by request or if file error)
-    cout << " Node   DOF ID  Vel (mm/sec)    Arg (ms/ms^-1)  Angle  Function\n"
-   	<< "------------------------------------------------------------------\n";
+    cout << " Node   DOF ID  Vel (mm/sec)    Arg (ms/ms^-1)  Function\n"
+   	     << "----------------------------------------------------------\n";
     nextBC=(BoundaryCondition *)firstBC;
     while(nextBC!=NULL)
 		nextBC=nextBC->PrintBC(cout);

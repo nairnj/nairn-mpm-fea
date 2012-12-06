@@ -36,10 +36,18 @@ class NodalVelBC : public BoundaryCondition
 		// specific methods
         NodalVelBC *CopyNodalVelocities(NodalPoint *);
         NodalVelBC *PasteNodalVelocities(NodalPoint *);
-		
+		NodalVelBC *ZeroVelBC(double);
+		NodalVelBC *AddVelBC(double);
+		NodalVelBC *SetGhostVelBC(double);
+		NodalVelBC *InitFtot(double);
+		NodalVelBC *AddFtot(double);
+	
 		// class methods
 		static void GridMomentumConditions(int);
 		static void ConsistentGridForces(void);
+	
+	protected:
+		double currentValue;
 };
 
 // variables (changed in MPM time step)

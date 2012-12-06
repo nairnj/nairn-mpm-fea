@@ -11,7 +11,7 @@ Header
 EndHeader
 
 Analysis "Axisymmetric MPM"
-#method="lCPDI"
+#method="uGIMP"
 MPMMethod USF,#method
 
 ! ********** Parameters Section **********
@@ -27,14 +27,14 @@ MPMMethod USF,#method
 #style="rigid"				
 #Po=-1
 #Pi=0
-#errmax=0.7
+#errmax=0.6
 
 #Ebase=2300
 #rhobase=1.2
 #abase=60
 #nubase=.33
 
-! "isoptropic" or "neohookean
+! "isoptropic" or "neohookean"
 #matID="neohookean"
 
 #mult=250					! transit times for complete analysis
@@ -54,6 +54,7 @@ MPMMethod USF,#method
 Archive "Results/Disk_"&#method&"_"&#style&"/ASMPM"
 ArchiveTime #maxtime/25
 MaximumTime #maxtime
+PtsPerElement 1
 !Damping 1500
 
 GlobalArchive sxx
@@ -138,7 +139,7 @@ endif
 ! Outside pressure
 if #style="rigid"
   Region "rigid",0,0,#thick
-    Rect #length,#length+#cell,0,#depth
+    Rect #length,#length+2*#cell,0,#depth
   EndRegion
 else
   if #Po!=0

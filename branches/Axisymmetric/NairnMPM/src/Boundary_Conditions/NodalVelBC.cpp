@@ -111,6 +111,63 @@ NodalVelBC *NodalVelBC::PasteNodalVelocities(NodalPoint *nd)
     return (NodalVelBC *)GetNextObject();
 }
 
+// set to zero in x, y, or z velocity
+NodalVelBC *NodalVelBC::ZeroVelBC(double mstime)
+{	// set if has been activated
+	int i = GetNodeNum(mstime);
+	if(i>0) nd[i]->SetMomVel(dir);
+    return (NodalVelBC *)GetNextObject();
+}
+
+// superpose x, y, or z velocity
+NodalVelBC *NodalVelBC::AddVelBC(double mstime)
+{	// set if has been activated
+	int i = GetNodeNum(mstime);
+	if(i>0)
+	{	currentValue = BCValue(mstime);
+		nd[i]->AddMomVel(dir,currentValue);
+	}
+    return (NodalVelBC *)GetNextObject();
+}
+
+// superpose x, y, or z velocity
+NodalVelBC *NodalVelBC::SetGhostVelBC(double mstime)
+{	// set if has been activated
+	int i = GetNodeNum(mstime);
+	int ghost = -1;
+	if(i>0)
+	{	// see if neighbor in ghost direction fixed same dof
+		if(nd[i+ghost]->fixedDirection&dir)
+		{	// second node must by unfixed and have point
+			int mirror = i+2*ghost;
+			if(nd[mirror]->fixedDirection==0 && nd[mirror]->NumberNonrigidParticles()>0)
+			{	// found node to mirror
+				//cout << "# node " << mirror << " vs. " << i ;
+			}
+		}
+	}
+	return (NodalVelBC *)GetNextObject();
+}
+
+// superpose x, y, or z velocity
+NodalVelBC *NodalVelBC::InitFtot(double mstime)
+{	// set if has been activated
+	int i = GetNodeNum(mstime);
+	if(i>0) nd[i]->SetFtot(dir,timestep);
+	return (NodalVelBC *)GetNextObject();
+}
+
+// superpose x, y, or z velocity
+NodalVelBC *NodalVelBC::AddFtot(double mstime)
+{	// set if has been activated
+	int i = GetNodeNum(mstime);
+	if(i>0)
+	{	// use currentValue set earlier in this step
+		nd[i]->AddFtot(dir,timestep,currentValue);
+	}
+	return (NodalVelBC *)GetNextObject();
+}
+
 #pragma mark NodelVelBC::Class Methods
 
 /*******************************************************************
@@ -161,20 +218,17 @@ void NodalVelBC::GridMomentumConditions(int makeCopy)
     // Now zero nodes with velocity set by BC
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-    {	// x, y, or z velocity will be set
-        if((i=nextBC->GetNodeNum(mstime)))
-            nd[i]->SetMomVel(nextBC->dir);
-        nextBC=(NodalVelBC *)nextBC->GetNextObject();
-    }
+		nextBC = nextBC->ZeroVelBC(mstime);
     
     // Now add all velocities to nodes with velocity BCs
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-	{	// x, y, or z velocity is incremented
-		if((i=nextBC->GetNodeNum(mstime)))
-            nd[i]->AddMomVel(nextBC->dir,nextBC->BCValue(mstime));
-        nextBC=(NodalVelBC *)nextBC->GetNextObject();
-    }
+		nextBC = nextBC->AddVelBC(mstime);
+	
+	// check for ghosts
+    nextBC=firstVelocityBC;
+    while(nextBC!=NULL)
+		nextBC = nextBC->SetGhostVelBC(mstime);
 }
 
 /**********************************************************
@@ -199,19 +253,11 @@ void NodalVelBC::ConsistentGridForces(void)
     // Second set force to -p(interpolated)/timestep
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-	{	// x velocity will be set
-		if((i=nextBC->GetNodeNum(mstime)))
-            nd[i]->SetFtot(nextBC->dir,timestep);
-        nextBC=(NodalVelBC *)nextBC->GetNextObject();
-    }
+		nextBC = nextBC->InitFtot(mstime);
     
     // Now add each superposed velocity BC at incremented time
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-	{	// x velocity will be set
-		if((i=nextBC->GetNodeNum(mstime)))
-            nd[i]->AddFtot(nextBC->dir,timestep,nextBC->BCValue(mstime));
-        nextBC=(NodalVelBC *)nextBC->GetNextObject();
-    }
+		nextBC = nextBC->AddFtot(mstime);
 }
 

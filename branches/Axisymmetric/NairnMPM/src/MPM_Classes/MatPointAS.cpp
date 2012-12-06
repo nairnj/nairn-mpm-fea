@@ -173,10 +173,10 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
 	// get polygon vectors - these are from particle to edge
     //      and generalize semi width lp in 1D GIMP
 	Vector r1,r2,c;
-	r1.x = pF[0][0]*mpmgrid.gridx*0.25;
-	r1.y = pF[1][0]*mpmgrid.gridx*0.25;
-	r2.x = pF[0][1]*mpmgrid.gridy*0.25;
-	r2.y = pF[1][1]*mpmgrid.gridy*0.25;
+	r1.x = pF[0][0]*mpmgrid.partx;
+	r1.y = pF[1][0]*mpmgrid.partx;
+	r2.x = pF[0][1]*mpmgrid.party;
+	r2.y = pF[1][1]*mpmgrid.party;
 
 #ifdef TRUNCATE
 	// shrink domain if any have x < 0, but keep particle in the middle
@@ -270,10 +270,10 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
     Vector r1,r2;;
     
     if(ElementBase::useGimp==UNIFORM_GIMP_AS)
-    {   r1.x = mpmgrid.gridx*0.25;
+    {   r1.x = mpmgrid.partx;
         r1.y = 0.;
         r2.x = 0.;
-        r2.y = mpmgrid.gridy*0.25;
+        r2.y = mpmgrid.party;
 
 #ifdef TRUNCATE
         // truncate if extends into r<0
@@ -297,10 +297,10 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 	
         // get polygon vectors - these are from particle to edge
         //      and generalize semi width lp in 1D GIMP
-        r1.x = pF[0][0]*mpmgrid.gridx*0.25;
-        r1.y = pF[1][0]*mpmgrid.gridx*0.25;
-        r2.x = pF[0][1]*mpmgrid.gridy*0.25;
-        r2.y = pF[1][1]*mpmgrid.gridy*0.25;
+        r1.x = pF[0][0]*mpmgrid.partx;
+        r1.y = pF[1][0]*mpmgrid.partx;
+        r2.x = pF[0][1]*mpmgrid.party;
+        r2.y = pF[1][1]*mpmgrid.party;
         
 #ifdef TRUNCATE
         // shrink domain if any have x < 0, but keep particle in the middle

@@ -171,7 +171,8 @@ void EightNodeIsoparamBrick::GetXiPos(Vector *pos,Vector *xipos)
 void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos)
 {
 	// quadrant barriers assuming 8 particles
-	double q1=-0.5,q2=0.5;
+	double lp = mpmgrid.lp;
+	double q1 = -1.+lp, q2 = 1.-lp;
 	
 	// nodes directly associated with the element
 	nds[1]=nodes[0];
@@ -906,7 +907,8 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,
 	// assuming the particle size is the same in x, y and z direction in element coordinate
 	// the deformation of the particle is not considered yet.
 	// assumes 8 particles per element
-	double q1=0.5,q2=1.5,q3=2.5;
+	double lp = mpmgrid.lp;
+	double q1 = lp,q2 = 2.-lp, q3 = 2.+lp;
 
 	for(i=0;i<numnds;i++)
 	{	xp=fabs(xi->x-gxii[ndIDs[i]]);			// first quadrant (xp, yp)>=0
@@ -914,40 +916,40 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,
 		zp=fabs(xi->z-gzti[ndIDs[i]]);
 		
 		if(xp<=q1)
-			Svpx=(4.*xp*xp-7.)/8.;
+			Svpx = ((4.-lp)*lp-xp*xp)/(4.*lp);	// if lp=0.5: -(4.*xp*xp-7.)/8.;
 		else if(xp<=q2)
-			Svpx=(xp-2.)/2.;
+			Svpx = (2.-xp)/2.;
 		else if(xp<=q3)
-		{	argx=(5.-2.*xp)/4.;
-			Svpx=-argx*argx;
+		{	argx = (2.+lp-xp)/(4.*lp);			// if lp=0.5: (5.-2.*xp)/4
+			Svpx = 2.*lp*argx*argx;				// if lp=0.5: (5.-2.*xp)^2/16
 		}
 		else
 			Svpx=0.;
 			
 		if(yp<=q1)
-			Svpy=(4.*yp*yp-7.)/8.;
+			Svpy = ((4.-lp)*lp-yp*yp)/(4.*lp);	// if lp=0.5: -(4.*yp*yp-7.)/8.;
 		else if(yp<=q2)
-			Svpy=(yp-2.)/2.;
+			Svpy = (2.-yp)/2.;
 		else if(yp<=q3)
-		{	argy=(5.-2.*yp)/4.;
-			Svpy=-argy*argy;
+		{	argy = (2.+lp-yp)/(4.*lp);			// if lp=0.5: (5.-2.*yp)/4
+			Svpy = 2.*lp*argy*argy;				// if lp=0.5: (5.-2.*yp)^2/16
 		}
 		else
 			Svpy=0.;
 
 		if(zp<=q1)
-			Svpz=(4.*zp*zp-7.)/8.;
+			Svpz = ((4.-lp)*lp-zp*zp)/(4.*lp);	// if lp=0.5: -(4.*zp*zp-7.)/8.;
 		else if(zp<=q2)
-			Svpz=(zp-2.)/2.;
+			Svpz = (2.-zp)/2.;
 		else if(zp<=q3)
-		{	argz=(5.-2.*zp)/4.;
-			Svpz=-argz*argz;
+		{	argz = (2.+lp-zp)/(4.*lp);			// if lp=0.5: (5.-2.*zp)/4
+			Svpz = 2.*lp*argz*argz;				// if lp=0.5: (5.-2.*zp)^2/16
 		}
 		else
 			Svpz=0.;
 
 			
-		sfxn[i]=-Svpx*Svpy*Svpz;
+		sfxn[i] = Svpx*Svpy*Svpz;
 				
 		// find shape function at (xp,yp,zp) 		
 		if(getDeriv)
@@ -956,36 +958,36 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,
 			zsign = xi->z>gzti[ndIDs[i]] ? 1. : -1.;
 
 			if(xp<=q1)
-				dSvpx=xp;
+				dSvpx = -xp/(2.*lp);			// if lp=0.5: -xp
 			else if(xp<=q2)
-				dSvpx=0.5;
+				dSvpx = -0.5;
 			else if(xp<=q3)
-				dSvpx=argx;
+				dSvpx = -argx;
 			else
-				dSvpx=0.;
+				dSvpx = 0.;
 				
 			if(yp<=q1)
-				dSvpy=yp;
+				dSvpy = -yp/(2.*lp);			// if lp=0.5: -xp
 			else if(yp<=q2)
-				dSvpy=0.5;
+				dSvpy = -0.5;
 			else if(yp<=q3)
-				dSvpy=argy;
+				dSvpy = -argy;
 			else
-				dSvpy=0.;
+				dSvpy = 0.;
 
 			if(zp<=q1)
-				dSvpz=zp;
+				dSvpz = -zp/(2.*lp);			// if lp=0.5: -xp;
 			else if(zp<=q2)
-				dSvpz=0.5;
+				dSvpz = -0.5;
 			else if(zp<=q3)
-				dSvpz=argz;
+				dSvpz = argz;
 			else
-				dSvpz=0.;
+				dSvpz = 0.;
 
 
-			xDeriv[i]=-xsign*dSvpx*Svpy*Svpz*2.0/GetDeltaX();
-			yDeriv[i]=-ysign*Svpx*dSvpy*Svpz*2.0/GetDeltaY();
-			zDeriv[i]=-zsign*Svpx*Svpy*dSvpz*2.0/GetDeltaZ();
+			xDeriv[i] = xsign*dSvpx*Svpy*Svpz*2.0/GetDeltaX();
+			yDeriv[i] = ysign*Svpx*dSvpy*Svpz*2.0/GetDeltaY();
+			zDeriv[i] = zsign*Svpx*Svpy*dSvpz*2.0/GetDeltaZ();
 		}
 	}
 

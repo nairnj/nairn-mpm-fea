@@ -226,11 +226,12 @@ int MeshInfo::FindElementFromPoint(Vector *pt)
 #pragma mark MeshInfo:Accessors
 
 // set grid style (zcell=0 if 2D grid)
-// Options: style=0 means not aligned with x,y,z axes
+// Options: style=0 (NOT_CARTESIAN) means not aligned with x,y,z axes
 //    SQUARE_GRID = 2D and dx = dy
 //    CUBIC_GRID = 3D and dx = dy = dz
 //    RECTANGULAR_GRID = 2D and dx != dy
 //    ORTHONGONAL_GRID = 3D and one of dx, dy, dz != others
+// If cartensian, set gridi and celli
 void MeshInfo::SetCartesian(int style,double xcell,double ycell,double zcell)
 {
 	cartesian=style;
@@ -284,25 +285,25 @@ void MeshInfo::SetElements(int h,int v,int d,double x,double y,double z)
 	}
 }
 
-// set grid length per particle - requires cartesian grid, but need not be structured
+// set grid length (as radius) per particle - requires cartesian grid, but need not be structured
 void MeshInfo::SetParticleLength(int pointsPerCell)
 {
 	// surface length per particle on edge
 	switch(pointsPerCell)
 	{	case 1:
-			partx=gridx;
-			party=gridy;
-			partz=gridz;
+			lp = 1.0;
 			break;
 		case 4:
 		case 8:
 		default:
 			// 4 is always 2D and 8 is always 3D
-			partx=gridx/2.;
-			party=gridy/2.;
-			partz=gridz/2.;
+			lp = 0.5;
 			break;
 	}
+	
+	partx = lp*gridx/2.;
+	party = lp*gridy/2.;
+	partz = lp*gridz/2.;
 }
 
 // return cartesian setting

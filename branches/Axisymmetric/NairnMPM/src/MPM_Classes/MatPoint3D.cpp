@@ -276,15 +276,15 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 	// get polygon vectors - these are from particle to edge
     //      and generalize semi width lp in 1D GIMP
 	Vector r1,r2,r3,c;
-	r1.x = pF[0][0]*mpmgrid.gridx*0.25;
-	r1.y = pF[1][0]*mpmgrid.gridx*0.25;
-	r1.z = pF[2][0]*mpmgrid.gridx*0.25;
-	r2.x = pF[0][1]*mpmgrid.gridy*0.25;
-	r2.y = pF[1][1]*mpmgrid.gridy*0.25;
-	r2.z = pF[2][1]*mpmgrid.gridy*0.25;
-	r3.x = pF[0][2]*mpmgrid.gridz*0.25;
-	r3.y = pF[1][2]*mpmgrid.gridz*0.25;
-	r3.z = pF[2][2]*mpmgrid.gridz*0.25;
+	r1.x = pF[0][0]*mpmgrid.partx;
+	r1.y = pF[1][0]*mpmgrid.partx;
+	r1.z = pF[2][0]*mpmgrid.partx;
+	r2.x = pF[0][1]*mpmgrid.party;
+	r2.y = pF[1][1]*mpmgrid.party;
+	r2.z = pF[2][1]*mpmgrid.party;
+	r3.x = pF[0][2]*mpmgrid.partz;
+	r3.y = pF[1][2]*mpmgrid.partz;
+	r3.z = pF[2][2]*mpmgrid.partz;
 	
     // Particle domain volume is 8 * volume of the parallelepiped defined by r1, r2, and r3
 	// V = 8 * (r1 . (r2 X r3))
@@ -409,9 +409,9 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
     // which GIMP method (cannot be used in POINT_GIMP)
     if(ElementBase::useGimp==UNIFORM_GIMP)
     {   // initial vectors only
-        double r1x = mpmgrid.gridx*0.25;
-        double r2y = mpmgrid.gridy*0.25;
-		double r3z = mpmgrid.gridz*0.25;
+        double r1x = mpmgrid.partx;
+        double r2y = mpmgrid.party;
+		double r3z = mpmgrid.partz;
         
         Vector c1,c2,c3,c4;
         switch(face)

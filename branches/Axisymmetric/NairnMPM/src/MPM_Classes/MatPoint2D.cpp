@@ -268,10 +268,10 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 	// get polygon vectors - these are from particle to edge
     //      and generalize semi width lp in 1D GIMP
 	Vector r1,r2,c;
-	r1.x = pF[0][0]*mpmgrid.gridx*0.25;
-	r1.y = pF[1][0]*mpmgrid.gridx*0.25;
-	r2.x = pF[0][1]*mpmgrid.gridy*0.25;
-	r2.y = pF[1][1]*mpmgrid.gridy*0.25;
+	r1.x = pF[0][0]*mpmgrid.partx;
+	r1.y = pF[1][0]*mpmgrid.partx;
+	r2.x = pF[0][1]*mpmgrid.party;
+	r2.y = pF[1][1]*mpmgrid.party;
 	
     // Particle domain area is area of the full parallelogram
     // Assume positive due to orientation of initial vectors, and sign probably does not matter
@@ -414,8 +414,8 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
     // which GIMP method (cannot be used in POINT_GIMP)
     if(ElementBase::useGimp==UNIFORM_GIMP)
     {   // initial vectors only
-        double r1x = mpmgrid.gridx*0.25;
-        double r2y = mpmgrid.gridy*0.25;
+        double r1x = mpmgrid.partx;
+        double r2y = mpmgrid.party;
 
         switch(face)
         {	case 1:

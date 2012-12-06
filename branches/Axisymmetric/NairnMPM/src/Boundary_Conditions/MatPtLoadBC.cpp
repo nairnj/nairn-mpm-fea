@@ -82,19 +82,19 @@ MatPtLoadBC *MatPtLoadBC::AddMPLoad(double bctime)
 		
 		// get forces in g-mm/sec^2
 		if(direction==X_DIRECTION)
-		{	pFext->x-=mp*cd*pVel.x/mpmgrid.partx;
-			pFext->y-=mp*cs*pVel.y/mpmgrid.partx;
-			pFext->z-=mp*cs*pVel.z/mpmgrid.partx;
+		{	pFext->x-=mp*cd*pVel.x/(2.*mpmgrid.partx);
+			pFext->y-=mp*cs*pVel.y/(2.*mpmgrid.partx);
+			pFext->z-=mp*cs*pVel.z/(2.*mpmgrid.partx);
 		}
 		else if(direction==Y_DIRECTION)
-		{	pFext->x-=mp*cs*pVel.x/mpmgrid.party;
-			pFext->y-=mp*cd*pVel.y/mpmgrid.party;
-			pFext->z-=mp*cs*pVel.z/mpmgrid.party;
+		{	pFext->x-=mp*cs*pVel.x/(2.*mpmgrid.party);
+			pFext->y-=mp*cd*pVel.y/(2.*mpmgrid.party);
+			pFext->z-=mp*cs*pVel.z/(2.*mpmgrid.party);
 		}
 		else
-		{	pFext->x-=mp*cs*pVel.x/mpmgrid.partz;
-			pFext->y-=mp*cs*pVel.y/mpmgrid.partz;
-			pFext->z-=mp*cd*pVel.z/mpmgrid.partz;
+		{	pFext->x-=mp*cs*pVel.x/(2.*mpmgrid.partz);
+			pFext->y-=mp*cs*pVel.y/(2.*mpmgrid.partz);
+			pFext->z-=mp*cd*pVel.z/(2.*mpmgrid.partz);
 		}
 	}
 		
