@@ -11,7 +11,7 @@
 #include "Read_MPM/MPMReadHandler.hpp"
 #include "Read_XML/BMPLevel.hpp"
 #include "MPM_Classes/MatPoint2D.hpp"
-#include "MPM_Classes/MatPointAS.hpp"			// +AS
+#include "MPM_Classes/MatPointAS.hpp"
 #include "MPM_Classes/MatPoint3D.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Read_MPM/MpsController.hpp"

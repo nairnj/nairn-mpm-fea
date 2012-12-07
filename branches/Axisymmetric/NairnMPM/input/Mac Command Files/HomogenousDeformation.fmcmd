@@ -13,19 +13,19 @@ Header
    Body in homogeneous deformation field
 EndHeader
 
-! Analysis type: "Plane Strain MPM" or "Plane Stress MPM"
+! Analysis type: "Plane Strain MPM" or "Plane Stress MPM" or "Axisymmetric MPM"
 #analysis="Plane Strain MPM"
 
 ! Points per element
 #ppe=1
 
 ! pick a method usually "lCPDI" or "uGIMP"
-#method="uGIMP"
+#method="lCPDI"
 
 ! pick strain update method usually "USF" or "USAVG"
 #update="USF"
 
-! Supported materials: "neohookean" (G2=0), "mooney" (G1=G2), heiso
+! Supported materials: "neohookean" (G2=0)
 #matname="neohookean"
 
 ! Basic properties
@@ -42,14 +42,14 @@ EndHeader
 
 ! time factors
 #tmult=100				 ! wave speed for transit times over width to reach max
-#factor=0.4				 ! convergence factor
-#cycles=4				 ! rotation cycles after reach load
+#factor=0.01				 ! convergence factor
+#cycles=2				 ! rotation cycles after reach load
 
 ! initial strains
-#strainx=50
-#shearx=0
+#strainx=0
+#shearx=50				 ! nonphyscial in axisymmetric
 #strainy=0
-#sheary=0
+#sheary=25
 
 ! ********** Calculation Section **********
 
@@ -68,6 +68,7 @@ PtsPerElement #ppe
 #transit=1000*#width/#speed					    ! transit time in ms
 #time=#tmult*#transit							! time to peak load in ms using tmult
 
+! estimated displacements, but currently does not seem exact?
 #disp=abs(#strainx)*#width/2 + abs(#shearx)*#height/2
 #vmax=abs(#sheary)*#width/2 + abs(#strainy)*#height/2
 if #vmax>#disp
@@ -75,9 +76,7 @@ if #vmax>#disp
 endif
 #disp/=100
 
-! border for displacmeents
-#border=2*int(#disp/#cell)+1
-
+! Analysis settings
 TimeStep 1000,(1+#cycles)*#time,#factor
 MaximumTime (1+#cycles)*#time
 ArchiveTime (1+#cycles)*#time/100
@@ -85,12 +84,13 @@ Archive "Results/Homogeneous/"&#method&"-"&#ppe&"/"&#matname
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
 ! plastic strain is Left Cauchy Green Strain, history 1 is J or volumetric strain
 ToArchive plasticstrain,history1
-Comment "Load/Cycle time = "&#time&" ms"
+Comment "Load and Cycle time = "&#time&" ms"
 Comment "Maximum displacement = "&#disp&" mm"
 Comment "Displacement rate = "&(#disp/#time)&" m/sec"
 GlobalArchive "sxx"
 GlobalArchive "sxy"
 GlobalArchive "syy"
+GlobalArchive "szz"
 GlobalArchive "exxe"
 
 if #matname ="neohookean"
@@ -105,15 +105,38 @@ endif
 
 ! ********** Grid and Material Points Section **********
 
-! Grid centered on (0,0)
-GridHoriz (#width+2*#border*#cell)/#cell
-GridVert (#height+2*#border*#cell)/#cell
-GridThickness #thickness
-GridRect -#width/2-#border*#cell,#width/2+#border*#cell,-#height/2-#border*#cell,#height/2+#border*#cell
+! border for displacmeents
+if #disp>0
+  #border=2*int(#disp/#cell)+1
+else
+  #border=2
+endif
 
-Region #matname,0,0,#thickness
-  Rect -#width/2,#width/2,-#height/2,#height/2
-EndRegion
+if #analysis="Axisymmetric MPM"
+  #gleft=-#cell
+  #gright=#width+2*#border*#cell
+else
+  #gleft=-#width/2-#border*#cell
+  #gright=#width/2+#border*#cell
+endif
+#gbot=-#height/2-#border*#cell
+#gtop=#height/2+#border*#cell
+
+! Grid centered on (0,0)
+GridHoriz (#gright-#gleft)/#cell
+GridVert (#gtop-#gbot)/#cell
+GridThickness #thickness
+GridRect #gleft,#gright,#gbot,#gtop
+
+if #analysis="Axisymmetric MPM"
+  Region #matname,0,0,#thickness
+    Rect 0,#width,-#height/2,#height/2
+  EndRegion
+else
+  Region #matname,0,0,#thickness
+    Rect -#width/2,#width/2,-#height/2,#height/2
+  EndRegion
+endif
 
 ! ********** Boundary Condition Section **********
 
@@ -125,8 +148,8 @@ EndRegion
 ! load linearly to total F
 #dpart="*(1-sign(t-"&#time&"))*"&(1000/#time)
 
-! rotation speed in mm/sec after reaches load
-#speed=2*3.14159*#width*1000/#time		
+! rotation speed in radians/sec after reaches load
+#speed=2*3.14159*1000/#time		
 
 ! convert to actual strain
 #strainx/=100
@@ -135,11 +158,11 @@ EndRegion
 #sheary/=100
 
 ! homogeneous deformation field
-MoveLine -#width/2-#border*#cell,0,#width/2+#border*#cell,0,#height/2+#border*#cell
+MoveLine #gleft-#cell,0,#gright+#cell,0,#gtop+#cell
   Velocity x,function,"("&#strainx&"*x+"&#shearx&"*y)"&#dpart
   Velocity y,function,"("&#sheary&"*x+"&#strainy&"*y)"&#dpart
   if #cycles>0
-    Velocity x,function,(#speed/#width)&"*y",#time
-    Velocity y,function,(-#speed/#width)&"*x",#time
+    Velocity x,function,(#speed)&"*y",#time
+    Velocity y,function,(-#speed)&"*x",#time
   endif
 EndMoveLIne

@@ -10,7 +10,7 @@
 #include "Nodes/NodalPoint.hpp"
 #ifdef MPM_CODE
 	#include "NairnMPM_Class/MeshInfo.hpp"
-    #include "NairnMPM_Class/NairnMPM.hpp"      // +AS
+    #include "NairnMPM_Class/NairnMPM.hpp"
 #endif
 
 // globals for node locations

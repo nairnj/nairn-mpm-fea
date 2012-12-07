@@ -10,7 +10,7 @@
 #include "Cracks/CrackHeader.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
-#include "Materials/MaterialBase.hpp"							// +AS
+#include "Materials/MaterialBase.hpp"
 
 // globals
 MPMBase **mpm;		// list of material points

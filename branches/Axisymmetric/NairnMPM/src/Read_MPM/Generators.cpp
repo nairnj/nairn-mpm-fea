@@ -12,7 +12,7 @@
 #include "Read_MPM/MPMReadHandler.hpp"
 #include "Elements/ElementBase.hpp"
 #include "MPM_Classes/MatPoint2D.hpp"
-#include "MPM_Classes/MatPointAS.hpp"						// +AS
+#include "MPM_Classes/MatPointAS.hpp"
 #include "MPM_Classes/MatPoint3D.hpp"
 #include "Boundary_Conditions/NodalConcBC.hpp"
 #include "Boundary_Conditions/NodalTempBC.hpp"

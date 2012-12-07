@@ -35,7 +35,7 @@
 #include "NairnMPM_Class/MoveCracksTask.hpp"
 #include "NairnMPM_Class/ResetElementsTask.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
-#include "Boundary_Conditions/MatPtFluxBC.hpp"                      // +AS
+#include "Boundary_Conditions/MatPtFluxBC.hpp"
 #include <time.h>
 
 // global analysis object
@@ -55,8 +55,8 @@ int maxMaterialFields;		// Maximum velocity fields or number of independent mate
 // Constructor
 NairnMPM::NairnMPM()
 {
-	version=8;						// main version
-	subversion=3;					// subversion (must be < 10)
+	version=9;						// main version
+	subversion=0;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 	mpmApproach=USAVG_METHOD;		// mpm method
 	ptsPerElement=4;				// number of points per element (2D default, 3D changes it to 8)

@@ -10,7 +10,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
-#include "Elements/ElementBase.hpp"                 // +AS
+#include "Elements/ElementBase.hpp"
 
 // global
 MatPtLoadBC *firstLoadedPt=NULL;

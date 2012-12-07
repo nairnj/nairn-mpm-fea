@@ -15,7 +15,7 @@
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Materials/MaterialBase.hpp"
-#include "MPM_Classes/MPMBase.hpp"				// +AS
+#include "MPM_Classes/MPMBase.hpp"
 
 #pragma mark INITIALIZATION
 

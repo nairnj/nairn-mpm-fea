@@ -231,9 +231,11 @@ const char *Orthotropic::VerifyProperties(int np)
     {	if(!read[i])
 			return "A required material property is missing";
     }
-    
+
+#ifdef MPM_CODE
     // make conductivty specific (N mm^3/(sec-K-g))
     kcondz *= (1000./rho);
+#endif
 
     // set properties
     const char *err=SetAnalysisProps(np,1.e6*Ex,1.e6*Ey,1.e6*Ez,nuxy,nuxz,nuyz,

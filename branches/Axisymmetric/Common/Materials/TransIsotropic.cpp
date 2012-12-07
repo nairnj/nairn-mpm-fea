@@ -188,10 +188,12 @@ const char *TransIsotropic::VerifyProperties(int np)
                 1.e6*GA,1.e6*GA,1.e6*GT,1.e-6*aT,1.e-6*aA,1.e-6*aT,betaT*concSaturation,betaA*concSaturation,betaT*concSaturation);
     }
 	if(err!=NULL) return err;
-    
+
+#ifdef MPM_CODE
     // make conductivity specific (N mm^3/(sec-K-g))
     kcondA *= (1000./rho);
     kcondT *= (1000./rho);
+#endif
 	
 	// superclass call
 	return MaterialBase::VerifyProperties(np);

@@ -12,7 +12,7 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Read_XML/mathexpr.hpp"
-#include "Nodes/NodalPoint.hpp"				// +AS
+#include "Nodes/NodalPoint.hpp"
 
 // global
 MatPtFluxBC *firstFluxPt=NULL;

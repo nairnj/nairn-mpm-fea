@@ -14,7 +14,7 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Exceptions/MPMTermination.hpp"
-#include "Boundary_Conditions/BoundaryCondition.hpp"			// +AS
+#include "Boundary_Conditions/BoundaryCondition.hpp"
 
 #pragma mark MatPoint2D::Constructors and Destructors
 

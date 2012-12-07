@@ -20,7 +20,7 @@
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Global_Quantities/GlobalQuantity.hpp"
 #include "MPM_Classes/MatPoint2D.hpp"
-#include "MPM_Classes/MatPointAS.hpp"					// +AS
+#include "MPM_Classes/MatPointAS.hpp"
 #include "MPM_Classes/MatPoint3D.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"

@@ -9,7 +9,7 @@
 #include "Elements/ElementBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
-#include "NairnMPM_Class/NairnMPM.hpp"          // +AS
+#include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/MPMTermination.hpp"
 #include "Materials/MaterialBase.hpp"
