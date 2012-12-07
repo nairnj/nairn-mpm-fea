@@ -47,7 +47,7 @@ using namespace std;
 #define MaxElNd 10
 
 // Max number of particles in an element
-#define MaxElParticles 8
+#define MaxElParticles 27
 
 #define NEED_J 1
 #define NEED_K 2

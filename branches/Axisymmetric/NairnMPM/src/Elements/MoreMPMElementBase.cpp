@@ -430,8 +430,8 @@ void ElementBase::GetXiPos(Vector *pos,Vector *xipos)
 // return dimensionless location for material points
 void ElementBase::MPMPoints(short numPerElement,Vector *mpos)
 {
-    int j,k;
-    double fxn[MaxElNd];
+    int i,j,k;
+    double fxn[MaxElNd],row,zrow;
     
     if(NumberSides()==4)
     {	switch(numPerElement)
@@ -483,6 +483,91 @@ void ElementBase::MPMPoints(short numPerElement,Vector *mpos)
                 mpos[7].y=.5;
 				mpos[7].z=.5;
 				break;
+            case 9:
+                // 2D
+                k=0;
+                row = -2./3.;
+                for(j=0;j<3;j++)
+                {   mpos[k].x=-2./3.;
+                    mpos[k].y=row;
+                    mpos[k].z=0.;
+                    mpos[k+1].x=0.;
+                    mpos[k+1].y=row;
+                    mpos[k+1].z=0.;
+                    mpos[k+2].x=2./3.;
+                    mpos[k+2].y=row;
+                    mpos[k+2].z=0.;
+                    k += 3;
+                    row += 2./3.;
+                }
+                break;
+            case 16:
+                // 2D
+                k=0;
+                row = -0.75;
+                for(j=0;j<4;j++)
+                {   mpos[k].x=-0.75;
+                    mpos[k].y=row;
+                    mpos[k].z=0.;
+                    mpos[k+1].x=-.25;
+                    mpos[k+1].y=row;
+                    mpos[k+1].z=0.;
+                    mpos[k+2].x=.25;
+                    mpos[k+2].y=row;
+                    mpos[k+2].z=0.;
+                    mpos[k+3].x=.75;
+                    mpos[k+3].y=row;
+                    mpos[k+3].z=0.;
+                    k += 4;
+                    row += 0.5;
+                }
+                break;
+            case 25:
+                // 2D
+                k=0;
+                row = -0.8;
+                for(j=0;j<5;j++)
+                {   mpos[k].x=-0.8;
+                    mpos[k].y=row;
+                    mpos[k].z=0.;
+                    mpos[k+1].x=-.4;
+                    mpos[k+1].y=row;
+                    mpos[k+1].z=0.;
+                    mpos[k+2].x=0.;
+                    mpos[k+2].y=row;
+                    mpos[k+2].z=0.;
+                    mpos[k+3].x=.4;
+                    mpos[k+3].y=row;
+                    mpos[k+3].z=0.;
+                    mpos[k+4].x=.8;
+                    mpos[k+4].y=row;
+                    mpos[k+4].z=0.;
+                    k += 5;
+                    row += 0.4;
+                }
+                break;
+            case 27:
+                // 3D
+                k=0;
+                zrow = -2./3.;
+                for(i=0;i<3;i++)
+                {   row = -2./3.;
+                    for(j=0;j<3;j++)
+                    {   mpos[k].x=-2./3.;
+                        mpos[k].y=row;
+                        mpos[k].z=zrow;
+                        mpos[k+1].x=0.;
+                        mpos[k+1].y=row;
+                        mpos[k+1].z=zrow;
+                        mpos[k+2].x=2./3.;
+                        mpos[k+2].y=row;
+                        mpos[k+2].z=zrow;
+                        k += 3;
+                        row += 2./3.;
+                    }
+                    zrow += 2./3.;
+                }
+                break;
             default:
                 break;
         }

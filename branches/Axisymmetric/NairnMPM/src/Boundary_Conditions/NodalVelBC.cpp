@@ -130,19 +130,23 @@ NodalVelBC *NodalVelBC::AddVelBC(double mstime)
     return (NodalVelBC *)GetNextObject();
 }
 
-// superpose x, y, or z velocity
+// change to a ghost BC
 NodalVelBC *NodalVelBC::SetGhostVelBC(double mstime)
-{	// set if has been activated
+{   // this will need to by BC property
+    // distance in nd[] array to neighbors in direction dir, verified stays in grid
+    int ghost = -1;         
+
+    // set if has been activated
 	int i = GetNodeNum(mstime);
-	int ghost = -1;
-	if(i>0)
-	{	// see if neighbor in ghost direction fixed same dof
+	if(i>0 && nd[i]->NumberParticles())
+	{	// see if neighbor in ghost direction fixes same dof
 		if(nd[i+ghost]->fixedDirection&dir)
-		{	// second node must by unfixed and have point
+		{	// second node must by unfixed and have points
 			int mirror = i+2*ghost;
-			if(nd[mirror]->fixedDirection==0 && nd[mirror]->NumberNonrigidParticles()>0)
+			if(nd[mirror]->fixedDirection==0 && nd[mirror]->NumberParticles()>0)
 			{	// found node to mirror
 				//cout << "# node " << mirror << " vs. " << i ;
+                // get CM mass from pk on node mirror
 			}
 		}
 	}
@@ -226,9 +230,11 @@ void NodalVelBC::GridMomentumConditions(int makeCopy)
 		nextBC = nextBC->AddVelBC(mstime);
 	
 	// check for ghosts
+    /*
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
 		nextBC = nextBC->SetGhostVelBC(mstime);
+    */
 }
 
 /**********************************************************

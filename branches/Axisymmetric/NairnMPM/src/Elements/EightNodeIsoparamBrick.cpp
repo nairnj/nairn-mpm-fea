@@ -947,7 +947,6 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,
 		}
 		else
 			Svpz=0.;
-
 			
 		sfxn[i] = Svpx*Svpy*Svpz;
 				
@@ -967,7 +966,7 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,
 				dSvpx = 0.;
 				
 			if(yp<=q1)
-				dSvpy = -yp/(2.*lp);			// if lp=0.5: -xp
+				dSvpy = -yp/(2.*lp);			// if lp=0.5: -yp
 			else if(yp<=q2)
 				dSvpy = -0.5;
 			else if(yp<=q3)
@@ -976,14 +975,13 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,
 				dSvpy = 0.;
 
 			if(zp<=q1)
-				dSvpz = -zp/(2.*lp);			// if lp=0.5: -xp;
+				dSvpz = -zp/(2.*lp);			// if lp=0.5: -zp;
 			else if(zp<=q2)
 				dSvpz = -0.5;
 			else if(zp<=q3)
-				dSvpz = argz;
+				dSvpz = -argz;
 			else
 				dSvpz = 0.;
-
 
 			xDeriv[i] = xsign*dSvpx*Svpy*Svpz*2.0/GetDeltaX();
 			yDeriv[i] = ysign*Svpx*dSvpy*Svpz*2.0/GetDeltaY();

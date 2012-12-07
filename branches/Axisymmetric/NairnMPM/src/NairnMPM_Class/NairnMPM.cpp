@@ -551,11 +551,11 @@ void NairnMPM::ValidateOptions(void)
 	if(IsThreeD())
 	{	if(mpmgrid.GetCartesian()!=CUBIC_GRID && mpmgrid.GetCartesian()!=ORTHOGONAL_GRID)
 			throw CommonException("3D calculations require an orthogonal grid","NairnMPM::ValidateOptions");
-		if(ptsPerElement!=1 && ptsPerElement!=8)
+		if(ptsPerElement!=1 && ptsPerElement!=8 && ptsPerElement!=27)
 			throw CommonException("3D analysis requires 1 or 8 particles per cell","NairnMPM::ValidateOptions");
 	}
 	else
-	{	if(ptsPerElement!=1 && ptsPerElement!=4)
+	{	if(ptsPerElement!=1 && ptsPerElement!=4 && ptsPerElement!=9 && ptsPerElement!=16 && ptsPerElement!=25)
 			throw CommonException("2D analysis requires 1 or 4 particles per cell","NairnMPM::ValidateOptions");
 	}
     

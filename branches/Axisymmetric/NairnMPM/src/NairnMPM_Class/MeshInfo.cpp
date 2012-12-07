@@ -293,6 +293,17 @@ void MeshInfo::SetParticleLength(int pointsPerCell)
 	{	case 1:
 			lp = 1.0;
 			break;
+        case 9:
+        case 27:
+            // 9 is always 2D and 27 is always 3D
+            lp = 1./3.;
+            break;
+        case 16:
+            lp = 0.25;
+            break;
+        case 25:
+            lp = 0.20;
+            break;
 		case 4:
 		case 8:
 		default:

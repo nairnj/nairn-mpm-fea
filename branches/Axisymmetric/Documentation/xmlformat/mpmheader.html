@@ -61,7 +61,7 @@ This section defines many MPM analysis parameters; it is required for NairnMPM a
 
 <dl>
   <dt><a name="matlptsperelement"></a>&lt;MatlPtsPerElement&gt;</dt>
-  <dd>Number of material points in each element (only used when input file has commands to generate a mesh; it is ignored when material points are explicitly entered - see <a href="definempm.html">defining material points</a>). The supported options are 1 or 4 per cell in 2D oraxisymmetric and 1 or 8 per cell in 3D (<b>Default values: 4 for 2D or axisymmetric and 8 for 3D</b>). Analysis using <a href="#gimp">uGIMP</a> requires 4 (in 2D or axisymmetric) or 8 (in 3D).</dd>
+  <dd>Number of material points in each element. The supported options are 1, 4, 9, 16, and 25 per cell in 2D or axisymmetric and 1, 8, or 27 per cell in 3D (<b>Default values: 4 for 2D or axisymmetric and 8 for 3D</b>).</dd>
 
   <dt><a name="mpmmethod"></a>&lt;MPMMethod&gt;</dt>
   <dd>MPM algorithm used. The options, entered by number code, are:
@@ -88,7 +88,7 @@ This section defines many MPM analysis parameters; it is required for NairnMPM a
 </ul>
 &nbsp;&nbsp;&nbsp;&nbsp;Because <code>lCPDI</code> and <code>qCPDI</code> account for deformed particle domain (approximately), they perform much better at very high strains. In problems where <code>Dirac</code> or <code>uGIMP</code> have numerical fracture caused by particles being separated by more than one element, <code>lCPDI</code> and <code>qCPDI</code> may continue to work.<br>
 
-&nbsp;&nbsp;&nbsp;&nbsp;The use of any GIMP method requires a regular grid that is generated using the <a href="definemesh.html"><code>Grid</code></a> command. For 2D or axisymmetric analyses, it requires the use of <a href="#matlptsperelement">4 material points per element</a>; For 3D analyses, it requires the use of <a href="#matlptsperelement">8 material points per element</a>.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;The use of any GIMP method requires a regular grid that is generated using the <a href="definemesh.html"><code>Grid</code></a> command.<br>
 
 &nbsp;&nbsp;&nbsp;&nbsp;When using GIMP, a particle is considered to have left the grid if it moves into any element on the edge of the analysis. Thus, the use of GIMP will cause the <a href="definemesh.html"><code>Grid</code></a> command to automatically add an extra boundary of elements. Note that the edge restriction does not apply to particles with <a href="definematl.html#rigid">rigid materials</a>; such particles can be in edge elements.<br>
 

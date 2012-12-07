@@ -4,6 +4,18 @@
     
     Created by John Nairn on Mon Mar 08 2004
     Copyright (c) 2003 John A. Nairn, All rights reserved.
+ 
+    Diffusion calculations
+   -------------------------
+    See comments in ConductionTask.cpp but:
+    Change gTemperature to gConcentration, gMpCp to gVolume, and fcond to fdiff
+    Update Particles Task
+        cut off particle potential to range 0 to 1
+    Chemical potential (or concentration potential 0 to 1)
+        Internally all calculations in terms or potential (0 to 1)
+        Output concentration and concentration gradient scaled to
+            csat to get weight fraction and weight fraction gradient
+        Flux set as mass per area per sec. See documentation for conversions.
 ********************************************************************************/
 
 #include "Custom_Tasks/DiffusionTask.hpp"
@@ -17,8 +29,8 @@
 
 // global
 bool DiffusionTask::active=FALSE;
-double DiffusionTask::dConcentration=0.;
-double DiffusionTask::reference=0.;				// zero-strain concentration
+double DiffusionTask::dConcentration = 0.;
+double DiffusionTask::reference = 0.;				// zero-strain concentration
 
 #pragma mark INITIALIZE
 
@@ -84,7 +96,7 @@ void DiffusionTask::GetValues(double stepTime)
     nextBC=firstConcBC;
     while(nextBC!=NULL)
 	{   i=nextBC->GetNodeNum(mstime);
-	    if(i!=0) nd[i]->gConcentration=0.;
+	    if(i!=0) nd[i]->gConcentration = 0.;
         nextBC=(NodalConcBC *)nextBC->GetNextObject();
     }
 
@@ -92,19 +104,19 @@ void DiffusionTask::GetValues(double stepTime)
     nextBC=firstConcBC;
     while(nextBC!=NULL)
 	{   i=nextBC->GetNodeNum(mstime);
-	    if(i!=0) nd[i]->gConcentration+=nextBC->BCValue(mstime);
+	    if(i!=0) nd[i]->gConcentration += nextBC->BCValue(mstime);
         nextBC=(NodalConcBC *)nextBC->GetNextObject();
     }
 	
-	// verify all between 0 and 1
+	// verify all set BCs are between 0 and 1
     nextBC=firstConcBC;
     while(nextBC!=NULL)
 	{   i=nextBC->GetNodeNum(mstime);
 		if(i!=0)
 		{	if(nd[i]->gConcentration<0)
-				nd[i]->gConcentration=0.;
+				nd[i]->gConcentration = 0.;
 			else if(nd[i]->gConcentration>1.)
-				nd[i]->gConcentration=1.;
+				nd[i]->gConcentration = 1.;
 		}
         nextBC=(NodalConcBC *)nextBC->GetNextObject();
     }
@@ -154,7 +166,7 @@ TransportTask *DiffusionTask::SetTransportForceBCs(double deltime)
     int i;
     NodalConcBC *nextBC=firstConcBC;
     
-	// --------- grid concentration BCs ------------
+	// --------- consistent forces for grid concentration BCs ------------
 	
     // Paste back noBC concentration
     while(nextBC!=NULL)
@@ -195,11 +207,13 @@ TransportTask *DiffusionTask::TransportRates(double deltime)
     for(i=1;i<=nnodes;i++)
 	{   if(nd[i]->NumberNonrigidParticles()>0)
 		{	nd[i]->fdiff /= nd[i]->gVolume;
-			double concTest = nd[i]->gConcentration+nd[i]->fdiff*deltime;
+            /*
+			double concTest = nd[i]->gConcentration + nd[i]->fdiff*deltime;
 			if(concTest<0.)
-				nd[i]->fdiff = -nd[i]->gConcentration/deltime;
+				nd[i]->fdiff = -nd[i]->gConcentration/deltime;          // will evolve to 0
 			else if(concTest>1.)
-				nd[i]->fdiff = (1.-nd[i]->gConcentration)/deltime;
+				nd[i]->fdiff = (1.-nd[i]->gConcentration)/deltime;      // will evolve to 1
+            */
 		}
 	}
 	return nextTask;
@@ -214,6 +228,10 @@ TransportTask *DiffusionTask::IncrementTransportRate(NodalPoint *ndpt,double sha
 // increment particle concentration
 TransportTask *DiffusionTask::MoveTransportValue(MPMBase *mptr,double deltime)
 {	mptr->pConcentration += deltime*rate;
+    if(mptr->pConcentration<0.)
+        mptr->pConcentration = 0.;
+    else if(mptr->pConcentration>1.)
+        mptr->pConcentration = 1.;
 	return nextTask;
 }
 
@@ -239,7 +257,7 @@ TransportTask *DiffusionTask::IncrementValueExtrap(NodalPoint *ndpt,double shape
 // property to this grid extrapolated value
 TransportTask *DiffusionTask::GetDeltaValue(MPMBase *mptr)
 {	dConcentration = pValueExtrap-mptr->pPreviousConcentration;
-	mptr->pPreviousConcentration=pValueExtrap;
+	mptr->pPreviousConcentration = pValueExtrap;
 	return nextTask;
 }
 
