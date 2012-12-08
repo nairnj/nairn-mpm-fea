@@ -13,6 +13,9 @@
 
 #define _MPM_BASE_
 
+#define DEFORMED_VOLUME 0
+#define DEFORMED_AREA 1
+
 // variables for conduction calculations
 typedef struct {
 	Vector DT;			// conc potential gradient (archived * concSaturation)
@@ -20,7 +23,6 @@ typedef struct {
 
 // variables for diffusion calculations
 typedef struct {
-	double flux;		// potential*volume/sec for external fluxes
 	Vector Dc;			// conc potential gradient (archived * concSaturation)
 } DiffusionField;
 
@@ -31,7 +33,6 @@ class MPMBase : public LinkedObject
 		Vector pos,vel;
 		double pTemperature,pPreviousTemperature;
 		double pConcentration,pPreviousConcentration;	// conc potential (0 to 1) (archived * concSaturation)
-		double volume;
 		char vfld[MaxShapeNds];
 		TemperatureField *pTemp;
 		DiffusionField *pDiffusion;
@@ -55,7 +56,6 @@ class MPMBase : public LinkedObject
         virtual void SetOrigin(Vector *) = 0;
         virtual void SetPosition(Vector *) = 0;
         virtual void SetVelocity(Vector *) = 0;
-		virtual void SetDilatedVolume(void) = 0;
 		virtual void UpdateStrain(double,int,int) = 0;
 		virtual void Fint(Vector &,double,double,double) = 0;
 		virtual void Fext(Vector &,double) = 0;
@@ -71,10 +71,14 @@ class MPMBase : public LinkedObject
 		virtual double KineticEnergy(void) = 0;
         virtual void GetDeformationGradient(double F[][3]) = 0;
         virtual double GetRelativeVolume(void) = 0;
+		virtual double GetVolume(bool) = 0;
 		virtual void GetCPDINodesAndWeights(int) = 0;
-		virtual void GetTractionInfo(int,int,int *,Vector *,Vector *,int *) = 0;
+		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *) = 0;
 
-       
+        // defined virtual methods
+        virtual double GetUnscaledVolume(void);
+        double GetMassForGradient(void);
+
 		// base only methods (make virtual if need to override)
 		int MatID(void);
 		int ArchiveMatID(void);

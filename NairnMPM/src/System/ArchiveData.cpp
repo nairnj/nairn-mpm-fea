@@ -408,8 +408,8 @@ void ArchiveData::ArchiveVelocityBCs(BoundaryCondition *firstBC)
 	}
 	
 	// list in output file (by request or if file error)
-    cout << " Node   DOF ID  Vel (mm/sec)    Arg (ms/ms^-1)  Angle  Function\n"
-   	<< "------------------------------------------------------------------\n";
+    cout << " Node   DOF ID  Vel (mm/sec)    Arg (ms/ms^-1)  Function\n"
+   	     << "----------------------------------------------------------\n";
     nextBC=(BoundaryCondition *)firstBC;
     while(nextBC!=NULL)
 		nextBC=nextBC->PrintBC(cout);
@@ -734,8 +734,8 @@ void ArchiveData::ArchiveResults(double atime)
 		// or mass (g) Cp (J/(g-K)) dT^2 (K^2) / (2 T0 (K)) for Joules
         if(mpmOrder[ARCH_ThermalEnergy]=='Y')
 		{	double deltaT=(mpm[p]->pTemperature-thermal.reference);
-			double Cp=theMaterials[mpm[p]->MatID()]->GetHeatCapacity(mpm[p]);		// in J/(g-K)
-            *(double *)app=mpm[p]->mp*Cp*deltaT*deltaT/(2.*thermal.reference);
+			double Cp=theMaterials[mpm[p]->MatID()]->GetHeatCapacity(mpm[p]);		// in mJ/(g-K)
+            *(double *)app = 1.e-3*mpm[p]->mp*Cp*deltaT*deltaT/(2.*thermal.reference);
             app+=sizeof(double);
         }
 		

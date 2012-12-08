@@ -24,9 +24,7 @@ a grid-based velocity condition, the condition only affects particles on the sam
 (it is probably better to avoid cracks near boundary conditions). Besides velocity conditions, grid-based conditions
 can also control temperature and concentration.</p>
 
-<p>Grid-based boundary conditions are normally only useful for small-displacement problems.
-The problem with large displacement problems is that particles may move away from the boundary
-conditions and the conditions will no longer have an influence.
+<p>Grid-based boundary conditions are used for fixed edges, object symmetry planes, or for applying displacements in small-displacement problems. Fixed edges and symmetry planes apply zero veclocity and are always useful. Application of displacements, however, is limited to small displacements because in large-displacement problems, the particles may move away from the boundary conditions and the conditions will no longer have the correct influence. To apply moving grid-based velocity conditions, see <a href="definematl.html#rigid">rigid material options</a>.
 </p>
 
 <p>All grid-based boundary conditions must be set up within a single <code>&lt;GridBCs&gt;</code> element. The format is
@@ -112,7 +110,7 @@ The possible 2D shape commands are:
 <dd>These attributes define the extent of a rectangle (2D) or box (3D) (they can be entered with numeric values or <a href="#minmax">relative to the mesh edges</a>). An optional <code>axis</code> attribute for <code>BCBox</code> can convert the shape to the cylinder enclosed within the box with axis along the specified direction (as x, 1, y, 2, z, or 3).
 An optional <a href="mpmheader.html#units"><code>units</code> attribute</a> can specify the length units for all settings.
 All nodes that fall within the rectangle or box or cylinder will be assigned the boundary conditions of
-the subordinate elements.</dd>
+the subordinate elements. For axisymmetric MPM, <code>x</code> and <code>y</code> refer to <code>R</code> and <code>Z</code> directions.</dd>
 
 <dt>(x1,y1) to (x2,y2)</dt>
 <dd>These attributes define the end points of a line (in <code>BCLine</code>) or corner points of
@@ -123,11 +121,11 @@ line (for <code>BCLine</code>) or the arc (for <code>BCArc</code>) will be assig
 conditions of the subordinate elements. 
 The arc will trace the oval defined by the points over
 angles from <code>start</code> to <code>end</code> in the counter-clockwise direction
-where <code>start=0</code> is along the <code>x</code> axis</dd>
+where <code>start=0</code> is along the <code>x</code> axis.  For axisymmetric MPM, <code>x</code> and <code>y</code> refer to <code>R</code> and <code>Z</code> directions.</dd>
 
 <dt>start, end</dt>
 <dd>The start and end angles (in degrees) for <code>BCArc</code> shapes. The arc is traced in the
-counter-clockwise direction with angle = 0 being along the <code>x</code> axis.</dd>
+counter-clockwise direction with angle = 0 being along the <code>x</code> axis (or <code>R</code> axis in axisymmetric MPM).</dd>
 
 <dt>tolerance</dt>
 <dd>This number defines the maximum distance from the line to the node for that node to be assigned
@@ -156,14 +154,14 @@ calculations <code>'min'</code> and <code>'max'</code> will be limits of useable
 </p>
 
 <pre>
-   &lt;DisBC dir='1' vel='0' style='1' time='0.0' angle='0.0' function='sin(t)'/&gt;
+   &lt;DisBC dir='1' vel='0' style='1' time='0.0' function='sin(t)'/&gt;
 </pre>
 
 <p>where</p>
 
 <dl>
 <dt>dir</dt>
-<dd>Determines if the <code>x</code> direction (<code>dir=1</code>), the <code>y</code> direction (<code>dir=2</code>), or the <code>z</code> direction (<code>dir=3</code>) will have the specified velocity. For 2D calculations the velocity can be set to a skewed direction in the <code>x</code>-<code>y</code> plane by setting <code>dir=0</code>.  When using a skewed direction, specify the angle of the direction in the <code>angle</code> attribute (see below)
+<dd>Determines if the <code>x</code> direction (<code>dir=1</code>), the <code>y</code> direction (<code>dir=2</code>), the <code>z</code> direction (<code>dir=3</code>), the <code>R</code> direction when axisymetric (<code>dir=1</code>), or the <code>Z</code> direction when axisymmetric (<code>dir=2</code>) will have the specified velocity.
 </dd>
 
 <dt>vel</dt>
@@ -176,12 +174,8 @@ calculations <code>'min'</code> and <code>'max'</code> will be limits of useable
 <dd>Defines a parameter used in some styles defined <a href="#style">below</a>.
 This attribute is optional; when omitted, the default value is 0.0.</dd>
 
-<dt>angle</dt>
-<dd>Clockwise angle (in degrees) from the positive <code>x</code> axis for skewed velocity direction when <code>dir=0</code>. Angle=0 fixes the <code>x</code> direction, angle=-90 fixes the <code>y</code> direction, and any other angle can fix an arbitrary direction.
-</dd>
-
 <dt>function</dt>
-<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code> (in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, and <code>z</code> in mm). The function should evaluate to velocity in mm/s.
+<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of time (<code>t</code> in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, <code>z</code>, <code>R</code>, <code>Z</code>, <code>D</code>, and <code>T</code> in mm). The function should evaluate to velocity in mm/s.
 </dd>
 
 </dl>
@@ -204,7 +198,7 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
   <dd>Set condition to <code>(value)*cos[t*(time)]</code> where <code>t</code> is current time (in ms) and <code>(time)</code> has units 1/ms.</dd>
   
   <dt>Style=6 (user-defined function)</dt>
-  <dd>Set condition to the evaluated value of a <a href="function.html">user-defined function</a> of time (in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, and <code>z</code> in mm). If the <code>time</code> attribute is used the condition starts at time in the <code>(time)</code> attribute and the function is evaluated at <code>[t-(time)]</code> (in ms).</dd>
+  <dd>Set condition to the evaluated value of a <a href="function.html">user-defined function</a> of time (<code>t</code> in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, <code>z</code>, <code>R</code>, <code>Z</code>, <code>D</code>, and <code>T</code> in mm). If the <code>time</code> attribute is used the condition starts at time in the <code>(time)</code> attribute and the function is evaluated at <code>[t-(time)]</code> (in ms).</dd>
 </dl>
 
 <a name="temp"></a><h2>Generated Temperature Conditions</h2>
@@ -231,7 +225,7 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 This attribute is optional; when omitted, the default value is 0.0.</dd>
 
 <dt>function</dt>
-<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code> (in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, and <code>z</code> in mm). The function should evaluate to the desired temperature.</dd>
+<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of time (<code>t</code> in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, <code>z</code>, <code>R</code>, <code>Z</code>, <code>D</code>, and <code>T</code> in mm). The function should evaluate to the desired temperature.</dd>
 
 </dl>
 
@@ -262,7 +256,7 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 This attribute is optional; when omitted, the default value is 0.0.</dd>
 
 <dt>function</dt>
-<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code> (in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, and <code>z</code> in mm). The function should evaluate to the a concentration potential.
+<dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of time (<code>t</code> in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, <code>z</code>, <code>R</code>, <code>Z</code>, <code>D</code>, and <code>T</code> in mm). The function should evaluate to the a concentration potential.
 </dd>
 
 </dl>
@@ -275,7 +269,7 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 </p>
 
 <pre>
-   &lt;fix node='4' dof='1' style='1' time='0.0' angle='0.0'&gt;velocity&lt;/fix&gt;
+   &lt;fix node='4' dof='1' style='1' time='0.0'&gt;velocity&lt;/fix&gt;
 </pre>
 
 <p>where</p>
@@ -286,7 +280,7 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 </dd>
 
 <dt>dof</dt>
-<dd>Determines if the <code>x</code> direction (<code>dof=1</code>), the <code>y</code> direction (<code>dof=2</code>), or the <code>z</code> direction (<code>dof=3</code>) will have the specified velocity. For 2D calculations the velocity can be set to a skewed direction in the <code>x</code>-<code>y</code> plane by setting <code>dof=0</code>.  When using a skewed direction, specify the angle of the direction in the <code>angle</code> attribute (see below)
+<dd>Determines if the <code>x</code> direction (<code>dof=1</code>), the <code>y</code> direction (<code>dof=2</code>), the <code>z</code> direction (<code>dof=3</code>), the <code>R</code> direction when axisymetric (<code>dir=1</code>), or the <code>Z</code> direction when axisymmetric (<code>dir=2</code>) will have the specified velocity.
 </dd>
 
 <dt>style</dt>
@@ -297,9 +291,6 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 <dd>A time parameter used for various <a href="#style">styles</a> described in the next section. If this attribute is omitted, it is assumed to be 0.0.
 </dd>
 
-<dt>angle</dt>
-<dd>Clockwise angle (in degrees) from the positive <code>x</code> axis for skewed velocity direction when <code>dof=0</code>. Angle=0 fixes the <code>x</code> direction, angle=-90 fixes the <code>y</code> direction, and any other angle can fix an arbitrary direction.
-</dd>
 </dl>
 
 <p class="links">

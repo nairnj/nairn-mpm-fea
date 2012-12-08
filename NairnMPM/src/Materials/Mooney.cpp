@@ -20,7 +20,6 @@ Mooney::Mooney(char *matName) : HyperElastic(matName)
 {
 	G1 = -1.;			// required
 	G2 = 0.;			// zero is neo-Hookean
-	Kbulk = -1.;		// required
 }
 
 #pragma mark Mooney::Initialization
@@ -48,15 +47,6 @@ char *Mooney::InputMat(char *xName,int &input)
     else if(strcmp(xName,"G2")==0)
         return((char *)&G2);
     
-    else if(strcmp(xName,"K")==0)
-        return((char *)&Kbulk);
-    
-    else if(strcmp(xName,"alpha")==0)
-        return((char *)&aI);
-    
-    else if(strcmp(xName,"beta")==0)
-        return((char *)&betaI);
-    
     return(HyperElastic::InputMat(xName,input));
 }
 
@@ -73,19 +63,13 @@ const char *Mooney::VerifyProperties(int np)
 // Private properties used in constitutive law
 void Mooney::InitialLoadMechProps(int makeSpecific,int np)
 {
-	hasMatProps=TRUE;
-	
-	// G1, G2, and Kbulk in Specific units using initial rho
+	// G1 and G2 in Specific units using initial rho
 	// for MPM (units N/m^2 cm^3/g)
 	G1sp=G1*1.0e+06/rho;
 	G2sp=G2*1.0e+06/rho;
-	Ksp=Kbulk*1.0e+06/rho;
 	
-	// expansion coefficients
-	CTE1 = 1.e-6*aI;
-	CME1 = betaI*concSaturation;
-	
-	// nothing else needed from superclass
+    // call super class for the rest
+    HyperElastic::InitialLoadMechProps(makeSpecific,np);
 }
 
 // Store J, which is calculated incrementally, and available for archiving
@@ -96,36 +80,25 @@ char *Mooney::MaterialData(void)
 	return (char *)p;
 }
 
-
-// Set intial particle Left Cauchy strain tensor to identity
-void Mooney::SetInitialParticleState(MPMBase *mptr,int np)
-{
-    // get previous particle B
-    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
-    
-    ZeroTensor(pB);
-    pB->xx = pB->yy = pB->zz = 1.;
-}
-
 #pragma mark Mooney::Methods
 
 /* For 2D MPM analysis, take increments in strain and calculate new
     Particle: strains, rotation strain, stresses, strain energy (per unit mass)
     dvij are (gradient rates X time increment) to give deformation gradient change
- 
-    Note that incompressible rubber is not suitable for dynamic calculations because
+   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
+   Note that incompressible rubber is not suitable for dynamic calculations because
     they have an infinite wave speed
 */
 void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-								double delTime,int np)
+								double dvzz,double delTime,int np)
 {
 	// Update strains and rotations and Left Cauchy strain
-	double detDf = IncrementDeformation(mptr,dvxx,dvyy,dvxy,dvyx);
+	double detDf = IncrementDeformation(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,NULL);
     
     // get pointer to new left Cauchy strain
     Tensor *B = mptr->GetElasticLeftCauchyTensor();
 	
-	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
+	// Deformation gradients and Cauchy tensor differ in plane stress
 	if(np==PLANE_STRESS_MPM)
 	{	// Find B->zz required to have zero stress in z direction
 		
@@ -174,7 +147,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
         
         // Done and xn = new B->zz = (1+dw/dz)^2 = (1+dvzz)^2*(old Bzz), 
         //      and find dvzz and store new Bzz
-        double dvzz = sqrt(xn/B->zz) - 1.;
+        dvzz = sqrt(xn/B->zz) - 1.;
         B->zz = xn;
 		
 		// particle strain ezz now known
@@ -208,7 +181,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	sp->yy = Kterm + (2*B->yy-B->xx-B->zz)*G1sp/(3.*JforG1)
 			+ (B->yy*(B->xx+B->zz)-2*B->xx*B->zz-B->xy*B->xy)*G2sp/(3.*JforG2);
 	sp->xy = B->xy*G1sp/JforG1 + (B->zz*B->xy)*G2sp/JforG2;
-	if(np==PLANE_STRAIN_MPM)
+	if(np!=PLANE_STRESS_MPM)
 	{	sp->zz = Kterm + (2*B->zz-B->xx-B->yy)*G1sp/(3.*JforG1)
 				+ (B->zz*(B->xx+B->yy)-2*B->xx*B->yy+2.*B->xy*B->xy)*G2sp/(3.*JforG2);
 	}
@@ -224,14 +197,14 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 	Particle: strains, rotation strain, stresses, strain energy (per unit mass)
 	dvij are (gradient rates X time increment) to give deformation gradient change
  
-    Note that incompressible rubber is not suitable for dynamic calculations because
+   Note that incompressible rubber is not suitable for dynamic calculations because
     they have an infinite wave speed
 */
 void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
 						  double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
 {
 	// Update strains and rotations and Left Cauchy strain
-	double detDf = IncrementDeformation(mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy);
+	double detDf = IncrementDeformation(mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,NULL);
     
     // Increment J and save it
     double J = detDf*mptr->GetHistoryDble();
@@ -269,30 +242,6 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 	double I2bar = 0.5*(I1bar*I1bar - (B->xx*B->xx+B->yy*B->yy+B->zz*B->zz+2.*B->xy*B->xy+2*B->xz*B->xz+2.*B->yz*B->yz)/J43);
     mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kse));
 }
-
-// Return normal stress term (due to bulk modulus) and twice the pressure term for strain energy.
-// Each block of lines is for a different U(J).
-// Any change here must also be made in 2D MPMConstLaw for the numerical solution to find B.zz in plane stress
-double Mooney::GetVolumetricTerms(double J,double *Kse)
-{
-    // This is for *Kse/2 = U(J) = (K/2)(J-1)^2
-    //double Kterm = Ksp*(J-1.);
-    //*Kse = Kterm*(J-1);
-    //return Kterm;             // = Ksp*(J-1)
-    
-    // This is for for *Kse/2 = U(J) = (K/2)(ln J)^2
-    // Zienkiewicz & Taylor recommend not using this one
-    //double lj = log(J);
-    //double Kterm =Ksp*lj;
-    //*Kse = Kterm*lj;
-    //return Kterm/J;           // = Ksp*(ln J)/J
-    
-    // This is for *Kse/2 = U(J) = (K/2)((1/2)(J^2-1) - ln J)
-    // Zienkiewicz & Taylor note that stress is infinite as J->0 and J->infinity for this function, while others are not
-    // Simo and Hughes also use this form (see Eq. 9.2.3)
-    *Kse = Ksp*(0.5*(J*J-1.)-log(J));
-    return 0.5*Ksp*(J - 1./J);      // = (Ksp/2)*(J - 1/J)
-}  
 
 #pragma mark Mooney::Accessors
 

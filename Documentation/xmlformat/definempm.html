@@ -109,7 +109,7 @@ can be used for backward compatibility and numbers can be replaced by names
 using a <code>matname</code> attribute as explained <a href="definematl.html#usemats">here</a>),
 the material angle (<code>angle</code> in
 degrees which is used for some <a href="definematl.html">anisotropic materials</a>), the thickness
-(<code>thick</code> in mm, 2D only), the initial concentration (<code>conc</code> set as potential
+(<code>thick</code> in mm, planar 2D only), the initial concentration (<code>conc</code> set as potential
 from 0 to 1 where 1 is the <a href="definematl.html#href">saturation concentration</a> for the
 particle's material type) when doing diffusion calculations, and the initial temperature
 (<code>temp</code>) when doing thermal loading or conduction
@@ -129,9 +129,9 @@ units) and the material point's initial velocity (<code>&lt;vel&gt;</code> and t
 <code>x</code>, <code>y</code>, and <code>z</code> (if 3D) directions in <code>mm/sec</code>, but an
 optional <a href="mpmheader.html#units"><code>units</code> attribute</a> can specify other velocity
 units). If not specified, the initial velocity, angle, and concentration potential will all be zero,
-the thickness (if 2D) will be 1 mm, and the temperature will be equal to the <a
+the thickness (if planar 2D) will be the grid thickness, and the temperature will be equal to the <a
 href="mpmheader.html#stressfreetemp">stress-free
-temperature</a>.
+temperature</a>. For axisymmetric calculations use x and y to enter R and Z coordinates.
 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Normally the particle mass is determined from the
 size of the elements and the <a href="mpmheader.html#matlptsperelement">number of particles per
@@ -146,9 +146,9 @@ number (<code>mat</code>, see <a href="definematl.html">Defining Materials</a>;
 numbers can be replaced by names using a <code>matname</code> attribute
 as explained <a href="definematl.html#usemats">here</a>), material angle
 (<code>angle</code> in degrees which is used for some <a href="definematl.html">anisotropic
-materials</a>), thickness (<code>thick</code> in mm), initial velocities in the <code>x</code>,
+materials</a>), thickness (<code>thick</code> in mm for planar 2D), initial velocities in the <code>x</code>,
 <code>y</code>, and <code>z</code> (if 3D) directions (<code>vx</code>, <code>vy</code> and
-<code>vz</code> in <code>mm/sec</code>), the initial concentration (<code>conc</code> set as
+<code>vz</code> in <code>mm/sec</code> and use <code>x</code> and <code>y</code> for <code>R</code> and <code>Z</code> in axisymmetric calculations), the initial concentration (<code>conc</code> set as
 potential from 0 to 1 where 1 is the <a href="definematl.html#href">saturation concentration</a> for
 the particle's material type) when doing diffusion calculations, and the initial temperature
 (<code>temp</code>) when doing thermal loading or conduction calculations. A single
@@ -160,14 +160,14 @@ Material points created using <code>&lt;PointList&gt;</code> elements, however, 
 created by <code>&lt;Body&gt;</code> elements. The user is thus responsible for insuring no
 duplication of points at the same location when mixing <code>&lt;PointList&gt;</code> and
 <code>&lt;Body&gt;</code> elements. If not specified, the initial velocity, angle, and concentration
-potential will all be zero, the thickness (if 2D) will be 1 mm, and the temperature will be equal to
+potential will all be zero, the thickness (if planar 2D) will be the grid thickness, and the temperature will be equal to
 the <a href="mpmheader.html#stressfreetemp">stress-free temperature</a>.</dd>
 
 <dt><a name="rotatezyx"></a>&lt;RotateZ&gt;20&lt;/RotateZ&gt;, &lt;RotateY&gt;y-z&lt;/RotateY&gt;, <code>&lt;RotateX&gt;45&lt;/RotateX&gt;</code></dt>
 <dd>These commands are to rotate the material axes in the current <code>&lt;Body&gt;</code> to orient anistropic materials in their initial configuration.
 You apply rotations in order by using one to three commands. There are two physical pictures. First, you can imagine sitting on the material coordinate system and defining a series of clockwise rotations about material axes that transform the <code>x-y-z</code> analysis axes into the material axes. Alternatively (and identically) the transformation can be viewed as counter-clockwise rotations about analysis axes that transform the material axes into the analysis axes. The text for each command is either an angle or a <a href="function.html">user-defined function</a> that evaluates to an angle (either are in degrees).<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;All single and double angle rotations are allowed (<code>x</code>, <code>y</code>, <code>z</code>, <code>xy</code>, <code>xz</code>, <code>yx</code>, <code>yz</code>, <code>zx</code>, and <code>zy</code>). When doing three rotations, the only schemes currently supported are <code>zyx</code> and <code>zyz</code>. It is easy to add more if needed (or to rearrange coordinates to make one of these work).<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2D calculations only allow z axis rotation, which can be done with either an <code>angle</code> attribute on the <code>&lt;Body&gt;</code> command or a single <code>&lt;RotateZ&gt;</code> command (although the <code>&lt;RotateZ&gt;</code> method is needed if you want to use a <a href="function.html">user-defined function</a>). Also note that use of any <code>Rotate</code> command will override any number used in <code>angle</code> (<i>i.e.</i>, <code>angle</code> will be ignored).
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2D calculations only allow z axis rotation (which is &theta; rotation in axisymmetric calculations), which can be done with either an <code>angle</code> attribute on the <code>&lt;Body&gt;</code> command or a single <code>&lt;RotateZ&gt;</code> command (although the <code>&lt;RotateZ&gt;</code> method is needed if you want to use a <a href="function.html">user-defined function</a>). Also note that use of any <code>Rotate</code> command will override any number used in <code>angle</code> (<i>i.e.</i>, <code>angle</code> will be ignored).
 </dd>
 
 <dt><code>&lt;Unrotate/&gt;</code></dt>
@@ -206,6 +206,8 @@ attribute</a> can specify the length units) with material points The parameters 
   point is automatically connected to the first point to make a closed region.</dd>
   
 </dl>
+
+<p>In axisymmetric calculations, the <code>x</code> and <code>y</code> limits or points in a polygon refer to <code>R</code> and <code>Z</code> limits on points, respectively.</p>
   
 <h3><a name="3DShapes"></a>3D Shapes</h3>
 <dl>
@@ -270,7 +272,7 @@ shades of gray), or 8 bit (256 shades of gray) resolution. Many programs can sav
 <br><br>Image files are always 2D. For 2D analysis, the lower-left corner of the image
 can be mapped to any point on the mesh using a subordinate <code>&lt;Origin&gt;</code> tag
 (<code>x</code> and <code>y</code> location of the origin with an optional
-<a href="mpmheader.html#units"><code>units</code> attribute</a> and the default origion is (0,0)). For
+<a href="mpmheader.html#units"><code>units</code> attribute</a> and the default origion is (0,0); for axisymmetric calculations use <code>x</code> and <code>y</code> to enter <code>R</code> and <code>Z</code> coordinates). For
 3D analysis, a single image represents a slice at constant <code>z</code> coordinate specified in a
 <code>z</code> attribute of the <code>&lt;Origin&gt;</code> tag. The image will be mapped to
 <code>x</code> and <code>y</code> locations (relative to the specified origin) in a plane of
@@ -286,7 +288,7 @@ maximum intensity for that material. The intensity is on a scale from 0 (for bla
 white). You can create a composite by having multiple shades of gray and corresponding multiple
 <code>&lt;Intensity&gt;</code> blocks to assign different shades to different materials. You can also build a model by superposing multiple <code>&lt;BMP&gt;</code> groups on the same block of space. The subsequent images will only fill space that was not occupied by prior images.
 
-<br><br>The subordinate <code>&lt;Thickness&gt;</code> (2D only), <code>&lt;Angle&gt;</code>, and <code>&lt;Temperature&gt;</code> let you set the thickness and any non-zero value for angle and temperature for the materal point (or FEA element). For MPM calculations additional, subordinate <code>&lt;vel&gt;</code> and <code>&lt;Concentration&gt;</code>
+<br><br>The subordinate <code>&lt;Thickness&gt;</code> (planar 2D only), <code>&lt;Angle&gt;</code>, and <code>&lt;Temperature&gt;</code> let you set the thickness and any non-zero value for angle and temperature for the materal point (or FEA element). For MPM calculations additional, subordinate <code>&lt;vel&gt;</code> and <code>&lt;Concentration&gt;</code>
 let you set any non-zero values for velocity and concentration
 (set as a potential from 0 to 1 where 1 is the <a href="definematl.html#href">saturation
 concentration</a> for the particle's material type). These properties function exactly like the
@@ -313,7 +315,7 @@ angle = minAngle + ((i-imin)/(imax-imin)) * maxAngle
 </pre>
 where <code>i</code> is intensity of the pixel. This function will be used for any intensity, which means it is not restricted to just <code>imin &lt; i &lt; imax</code>.
 
-<br><br>For MPM calculations, the <code>BMP</code> block can have optional <a href="#rotatezyx"><code>&lt;RotateZ&gt;</code>, <code>&lt;RotateY&gt;</code>, and <code>&lt;RotateX&gt;</code> commands</a> to rotate the material axes for all particles defined by the <code>BMP</code> block for 2D (Z only) or 3D calculations (X, Y, and Z). There are thus three ways to set material angle in a <code>BMP</code> block:
+<br><br>For MPM calculations, the <code>BMP</code> block can have optional <a href="#rotatezyx"><code>&lt;RotateZ&gt;</code>, <code>&lt;RotateY&gt;</code>, and <code>&lt;RotateX&gt;</code> commands</a> to rotate the material axes for all particles defined by the <code>BMP</code> block for 2D (Z only, which is &theta; for axisymmetric calculations) or 3D calculations (X, Y, and Z). There are thus three ways to set material angle in a <code>BMP</code> block:
 <ol>
 <li>Use <code>&lt;Angle&gt;</code> command in an <code>&lt;Intensity&gt;</code> block - this option can only use a single constant (<i>i.e.</i>, all angles for that material must be the same), but each material type can have a different angle.</li>
 <li>Use <a href="#rotatezyx"><code>&lt;RotateZ&gt;</code>, <code>&lt;RotateY&gt;</code>, and <code>&lt;RotateX&gt;</code> commands</a> - these can set a constant angle or use a <a href="function.html">user-defined function</a> that evaluates to an angle (in degrees). If any rotate commands are used, all <code>&lt;Angle&gt;</code> commands are ignored. Furthermore, all material types use the same angle settings (<i>i.e.</i>, you cannot use different rotation angles or functions for each <code>&lt;Intensity&gt;</code> block).</li>

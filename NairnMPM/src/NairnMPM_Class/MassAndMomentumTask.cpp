@@ -40,12 +40,12 @@
 		mpm[]->vfld[]
 		Allocate cvf[] and their mvf[] as needed
 			mvf[]->pk, vk, numberPoints, mass
-			mvf[]->disp, unscaledVolume (if contact might happen)
-			mvf[]->massGrad (if multimaterial mode)
+			mvf[]->disp, volume (if contact might happen)
+			mvf[]->volumeGrad (if multimaterial mode)
 			cvf[]->norm, numberMaterials
 		nd[]->mass
 		nd[]->gConcentration, gVolume (for diffusion)
-		nd[]->gTemperature, gRhoVCp (for conduction)
+		nd[]->gTemperature, gMpCp (for conduction)
 ********************************************************************************/
 
 #include "NairnMPM_Class/MassAndMomentumTask.hpp"
@@ -118,8 +118,8 @@ void MassAndMomentumTask::Execute(void)
 		
 		// normal materials
 		if(!matID->RigidBC())
-		{	mp=mpmptr->mp;					// material point mass in g
-			matfld=matID->GetField();		// material velocity field
+		{	mp=mpmptr->mp;                      // material point mass in g
+			matfld=matID->GetField();           // material velocity field
 			
 			// get nodes and shape function for material point p
 			if(fmobj->multiMaterialMode)
@@ -139,9 +139,6 @@ void MassAndMomentumTask::Execute(void)
 			}
 			else
 				theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),mpmptr);
-			
-			// get deformed particle volume if it will be needed (for transport tasks)
-			if(fmobj->volumeExtrap) mpmptr->SetDilatedVolume();
 			
 			// Add particle property to each node in the element
 			for(i=1;i<=numnds;i++)
@@ -177,11 +174,10 @@ void MassAndMomentumTask::Execute(void)
 				mpmptr->vfld[i]=vfld;
 				
 				// crack contact calculations
-				contact.AddDisplacementVolumeTask1(vfld,matfld,ndptr,mpmptr,fn[i]);
+				contact.AddDisplacementVolume(vfld,matfld,ndptr,mpmptr,fn[i]);
 				
 				// material contact calculations
-				if(fmobj->multiMaterialMode)
-					ndptr->AddMassGradient(vfld,matfld,mp,xDeriv[i],yDeriv[i],zDeriv[i]);
+                ndptr->AddVolumeGradient(vfld,matfld,mpmptr,xDeriv[i],yDeriv[i],zDeriv[i]);
 				
 				// more for non-rigid contact materials
 				if(!matID->Rigid())
@@ -195,7 +191,7 @@ void MassAndMomentumTask::Execute(void)
 				}
 				else
 				{	// for rigid particles, let the crack velocity field know
-					ndptr->AddMassTask1(vfld,matfld);
+					ndptr->AddMassTask1(vfld,matfld,mp*fn[i]);
 				}
 			}
 		}
@@ -309,7 +305,6 @@ void MassAndMomentumTask::SetRigidBCs(int mi,int type,double value,double angle,
 						   BoundaryCondition **lastBC,BoundaryCondition **firstRigidBC,BoundaryCondition **reuseRigidBC)
 {
 	BoundaryCondition *newBC=NULL;
-	NodalVelBC *velBC;
 	
 	// check if already set in that direction by actual BC or by previous rigid BC
 	// New rigid BC's can only be on free directions
@@ -317,20 +312,7 @@ void MassAndMomentumTask::SetRigidBCs(int mi,int type,double value,double angle,
 	
 	// create new boundary conditions
 	switch(type)
-	{	case SKEW_DIRECTION:
-			if(nd[mi]->fixedDirection&(X_DIRECTION+Y_DIRECTION)) return;
-			if(*reuseRigidBC!=NULL)
-				velBC=(NodalVelBC *)((*reuseRigidBC)->SetRigidProperties(mi,type,CONSTANT_VALUE,value));
-			else
-			{	velBC=new NodalVelBC(mi,type,CONSTANT_VALUE,value,(double)0.);
-				if(velBC==NULL) throw CommonException("Memory error allocating rigid particle boundary condition.",
-													  "NairnMPM::SetRigidBCs");
-			}
-			velBC->SetSkewAngle(angle);
-			newBC=(BoundaryCondition *)velBC;
-			break;
-			
-		case X_DIRECTION:
+    {   case X_DIRECTION:
 		case Y_DIRECTION:
 		case Z_DIRECTION:
 			if(*reuseRigidBC!=NULL)

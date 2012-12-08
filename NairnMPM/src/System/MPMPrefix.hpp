@@ -47,7 +47,7 @@ using namespace std;
 #define MaxElNd 10
 
 // Max number of particles in an element
-#define MaxElParticles 8
+#define MaxElParticles 27
 
 #define NEED_J 1
 #define NEED_K 2
@@ -59,7 +59,7 @@ enum { USF_METHOD=0,USL_METHOD,USAVG_METHOD,SZS_METHOD};
 // analysis type
 // also defined in MPMPrefix.hpp - keep same
 enum { PLANE_STRAIN=0,PLANE_STRESS,AXI_SYM,THREE_DIM,END_FEA_TYPES,
-        BEGIN_MPM_TYPES=9,PLANE_STRAIN_MPM,PLANE_STRESS_MPM,THREED_MPM,END_MPM_TYPES };
+        BEGIN_MPM_TYPES=9,PLANE_STRAIN_MPM,PLANE_STRESS_MPM,THREED_MPM,AXISYMMETRIC_MPM,END_MPM_TYPES };
 
 // propagation status
 enum { NOGROWTH=0,GROWNOW };
@@ -72,6 +72,8 @@ enum { NO_CRACK=0,ABOVE_CRACK,BELOW_CRACK};
 #define UNIFORM_GIMP 1
 #define LINEAR_CPDI 2
 #define QUADRATIC_CPDI 3
+#define UNIFORM_GIMP_AS 4
+#define LINEAR_CPDI_AS 5
 
 
 

@@ -113,13 +113,13 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
 			dcell = (minSize>0.) ? minSize : sqrt(area) ;
 		}
         
-        // check time step
-        crot=theMaterials[matid]->CurrentWaveSpeed(fmobj->IsThreeD(),mpm[p])/10.;		// in cm/sec
-		tst=fmobj->FractCellTime*dcell/crot;                                            // in sec
+        // check time step using convergence condition
+        crot=theMaterials[matid]->CurrentWaveSpeed(fmobj->IsThreeD(),mpm[p])/10.;           // in cm/sec
+		tst=fmobj->GetCFLCondition()*dcell/crot;                                            // in sec
         if(tst<timestep) timestep=tst;
         
         // propagation time (in sec)
-        tst=fmobj->PropFractCellTime*dcell/crot;                                        // in sec
+        tst=fmobj->GetPropagationCFLCondition()*dcell/crot;                                        // in sec
         if(tst<propTime) propTime=tst;
 	}
 	

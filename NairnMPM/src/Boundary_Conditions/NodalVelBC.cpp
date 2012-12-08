@@ -25,12 +25,9 @@ NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTi
 {
     nodeNum=num;
     dir = dof==3 ? Z_DIRECTION : dof ;		// change 3 to Z_DIRECTION (4) bit location
-	skewAngle=0.;							// cw rotation angle from positive x axis in degrees
 	
-	if(dir==0)
-		nd[nodeNum]->SetFixedDirection(X_DIRECTION+Y_DIRECTION);	// skew setting (x and y)
-	else
-		nd[nodeNum]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
+    // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
+    nd[nodeNum]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
 	
 	pk=NULL;
 }
@@ -44,11 +41,9 @@ NodalVelBC::~NodalVelBC()
 BoundaryCondition *NodalVelBC::SetRigidProperties(int num,int dof,int setStyle,double velocity)
 {	// set dir and direction
     dir = dof==3 ? Z_DIRECTION : dof ;		// change 3 to Z_DIRECTION (4) bit location
-	skewAngle=0.;							// cw rotation angle from positive x axis in degrees
-	if(dir==0)
-		nd[num]->SetFixedDirection(X_DIRECTION+Y_DIRECTION);	// skew setting (x and y)
-	else
-		nd[num]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
+    
+    // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
+    nd[num]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
 	
 	// finish in base class (nodenum set there)
 	return BoundaryCondition::SetRigidProperties(num,dof,setStyle,velocity);
@@ -56,10 +51,7 @@ BoundaryCondition *NodalVelBC::SetRigidProperties(int num,int dof,int setStyle,d
 
 // just unset condition, because may want to reuse it, return next one to unset
 BoundaryCondition *NodalVelBC::UnsetDirection(void)
-{	if(dir==0)
-		nd[nodeNum]->UnsetFixedDirection(X_DIRECTION+Y_DIRECTION);	// skew setting (x and y)
-	else
-		nd[nodeNum]->UnsetFixedDirection(dir);		// x, y, or z (1,2,4) directions
+{	nd[nodeNum]->UnsetFixedDirection(dir);		// x, y, or z (1,2,4) directions
 	return (BoundaryCondition *)GetNextObject();
 }
 
@@ -70,8 +62,7 @@ BoundaryCondition *NodalVelBC::PrintBC(ostream &os)
 {
     char nline[200];
 	int outdir = dir==Z_DIRECTION ? 3 : dir ;
-	sprintf(nline,"%7d %2d %2d %15.7e %15.7e %7.2lf",nodeNum,outdir,style,value,
-					ftime,skewAngle*180./PI_CONSTANT);
+	sprintf(nline,"%7d %2d %2d %15.7e %15.7e",nodeNum,outdir,style,value,ftime);
     os << nline;
 	PrintFunction(os);
 	return (BoundaryCondition *)GetNextObject();
@@ -120,10 +111,66 @@ NodalVelBC *NodalVelBC::PasteNodalVelocities(NodalPoint *nd)
     return (NodalVelBC *)GetNextObject();
 }
 
-#pragma mark NodelVelBC::Accessors
+// set to zero in x, y, or z velocity
+NodalVelBC *NodalVelBC::ZeroVelBC(double mstime)
+{	// set if has been activated
+	int i = GetNodeNum(mstime);
+	if(i>0) nd[i]->SetMomVel(dir);
+    return (NodalVelBC *)GetNextObject();
+}
 
-// for skewed BC, only if dof=0
-void NodalVelBC::SetSkewAngle(double angle) { skewAngle=angle*PI_CONSTANT/180.; }
+// superpose x, y, or z velocity
+NodalVelBC *NodalVelBC::AddVelBC(double mstime)
+{	// set if has been activated
+	int i = GetNodeNum(mstime);
+	if(i>0)
+	{	currentValue = BCValue(mstime);
+		nd[i]->AddMomVel(dir,currentValue);
+	}
+    return (NodalVelBC *)GetNextObject();
+}
+
+// change to a ghost BC
+NodalVelBC *NodalVelBC::SetGhostVelBC(double mstime)
+{   // this will need to by BC property
+    // distance in nd[] array to neighbors in direction dir, verified stays in grid
+    int ghost = -1;         
+
+    // set if has been activated
+	int i = GetNodeNum(mstime);
+	if(i>0 && nd[i]->NumberParticles())
+	{	// see if neighbor in ghost direction fixes same dof
+		if(nd[i+ghost]->fixedDirection&dir)
+		{	// second node must by unfixed and have points
+			int mirror = i+2*ghost;
+			if(nd[mirror]->fixedDirection==0 && nd[mirror]->NumberParticles()>0)
+			{	// found node to mirror
+				//cout << "# node " << mirror << " vs. " << i ;
+                // get CM mass from pk on node mirror
+			}
+		}
+	}
+	return (NodalVelBC *)GetNextObject();
+}
+
+// superpose x, y, or z velocity
+NodalVelBC *NodalVelBC::InitFtot(double mstime)
+{	// set if has been activated
+	int i = GetNodeNum(mstime);
+	if(i>0) nd[i]->SetFtot(dir,timestep);
+	return (NodalVelBC *)GetNextObject();
+}
+
+// superpose x, y, or z velocity
+NodalVelBC *NodalVelBC::AddFtot(double mstime)
+{	// set if has been activated
+	int i = GetNodeNum(mstime);
+	if(i>0)
+	{	// use currentValue set earlier in this step
+		nd[i]->AddFtot(dir,timestep,currentValue);
+	}
+	return (NodalVelBC *)GetNextObject();
+}
 
 #pragma mark NodelVelBC::Class Methods
 
@@ -175,36 +222,19 @@ void NodalVelBC::GridMomentumConditions(int makeCopy)
     // Now zero nodes with velocity set by BC
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-    {	// x, y, or z velocity will be set
-        if((i=nextBC->GetNodeNum(mstime)))
-		{	if(nextBC->dir==X_DIRECTION)
-				nd[i]->SetXMomVel();
-			else if(nextBC->dir==Y_DIRECTION)
-				nd[i]->SetYMomVel();
-			else if(nextBC->dir==Z_DIRECTION)
-				nd[i]->SetZMomVel();
-			else
-				nd[i]->SetSkewMomVel(nextBC->skewAngle);
-		}
-        nextBC=(NodalVelBC *)nextBC->GetNextObject();
-    }
+		nextBC = nextBC->ZeroVelBC(mstime);
     
     // Now add all velocities to nodes with velocity BCs
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-	{	// x or y velocity is incremented
-		if((i=nextBC->GetNodeNum(mstime)))
-		{	if(nextBC->dir==X_DIRECTION)
-				nd[i]->AddXMomVel(nextBC->BCValue(mstime));
-			else if(nextBC->dir==Y_DIRECTION)
-				nd[i]->AddYMomVel(nextBC->BCValue(mstime));
-			else if(nextBC->dir==Z_DIRECTION)
-				nd[i]->AddZMomVel(nextBC->BCValue(mstime));
-			else
-				nd[i]->AddSkewMomVel(nextBC->BCValue(mstime),nextBC->skewAngle);
-		}
-        nextBC=(NodalVelBC *)nextBC->GetNextObject();
-    }
+		nextBC = nextBC->AddVelBC(mstime);
+	
+	// check for ghosts
+    /*
+    nextBC=firstVelocityBC;
+    while(nextBC!=NULL)
+		nextBC = nextBC->SetGhostVelBC(mstime);
+    */
 }
 
 /**********************************************************
@@ -229,35 +259,11 @@ void NodalVelBC::ConsistentGridForces(void)
     // Second set force to -p(interpolated)/timestep
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-	{	// x velocity will be set
-		if((i=nextBC->GetNodeNum(mstime)))
-		{	if(nextBC->dir==X_DIRECTION)
-				nd[i]->SetXFtot(timestep);
-			else if(nextBC->dir==Y_DIRECTION)
-				nd[i]->SetYFtot(timestep);
-			else if(nextBC->dir==Z_DIRECTION)
-				nd[i]->SetZFtot(timestep);
-			else
-				nd[i]->SetSkewFtot(timestep,nextBC->skewAngle);
-		}
-        nextBC=(NodalVelBC *)nextBC->GetNextObject();
-    }
+		nextBC = nextBC->InitFtot(mstime);
     
     // Now add each superposed velocity BC at incremented time
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-	{	// x velocity will be set
-		if((i=nextBC->GetNodeNum(mstime)))
-		{	if(nextBC->dir==X_DIRECTION)
-				nd[i]->AddXFtot(timestep,nextBC->BCValue(mstime));
-			else if(nextBC->dir==Y_DIRECTION)
-				nd[i]->AddYFtot(timestep,nextBC->BCValue(mstime));
-			else if(nextBC->dir==Z_DIRECTION)
-				nd[i]->AddZFtot(timestep,nextBC->BCValue(mstime));
-			else
-				nd[i]->AddSkewFtot(timestep,nextBC->BCValue(mstime),nextBC->skewAngle);
-		}
-        nextBC=(NodalVelBC *)nextBC->GetNextObject();
-    }
+		nextBC = nextBC->AddFtot(mstime);
 }
 

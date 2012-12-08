@@ -14,6 +14,7 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Exceptions/MPMTermination.hpp"
+#include "Boundary_Conditions/BoundaryCondition.hpp"
 
 #pragma mark MatPoint2D::Constructors and Destructors
 
@@ -99,7 +100,7 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np)
 	}
 	
     // update particle strain and stress using its constituitive law
-    matRef->MPMConstLaw(this,dvxx,dvyy,dvxy,dvyx,strainTime,np);
+    matRef->MPMConstLaw(this,dvxx,dvyy,dvxy,dvyx,0.0,strainTime,np);
 }
 
 // Move position (2D) (in mm)
@@ -152,13 +153,6 @@ void MatPoint2D::SetVelocity(Vector *pt)
 // thickness (in mm)
 double MatPoint2D::thickness() { return thick; }
 
-// set current volume using current strains - but only 2D strains
-void MatPoint2D::SetDilatedVolume(void)
-{	double rho=theMaterials[MatID()]->rho*0.001;			// in g/mm^3
-	double dilate=(1.+ep.xx)*(1.+ep.yy);
-	volume=dilate*mp/rho;									// in mm^3
-}
-
 // return internal force as -mp sigma.deriv * 1000. which converts to g mm/sec^2 or micro N
 void MatPoint2D::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
 {	fout.x=-mp*(sp.xx*xDeriv+sp.xy*yDeriv)*1000.;
@@ -186,11 +180,11 @@ void MatPoint2D::AddTemperatureGradient(Vector *grad)
     pTemp->DT.y+=grad->y;
 }
 
-// return conduction force = - V [D] Grad T . Grad S
+// return conduction force = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units N-mm/sec)
 double MatPoint2D::FCond(double dshdx,double dshdy,double dshdz)
 {
 	Tensor *kten=theMaterials[MatID()]->GetkCondTensor();
-	return -volume*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y)*dshdx
+	return -mp*GetRelativeVolume()*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y)*dshdx
 						+ (kten->xy*pTemp->DT.x + kten->yy*pTemp->DT.y)*dshdy);
 }
 
@@ -201,17 +195,17 @@ void MatPoint2D::AddConcentrationGradient(void)
 	pDiffusion->Dc.z=0.;
 }
 
-// add to the concentration gradient
+// add to the concentration gradient (1/mm)
 void MatPoint2D::AddConcentrationGradient(Vector *grad)
 {	pDiffusion->Dc.x+=grad->x;
     pDiffusion->Dc.y+=grad->y;
 }
 
-// return diffusion force = - V [D] Grad C . Grad S
+// return diffusion force = - V [D] Grad C . Grad S in (mm^3) (mm^2/sec) (1/mm) (1/mm) = mm^3/sec
 double MatPoint2D::FDiff(double dshdx,double dshdy,double dshdz)
 {
 	Tensor *Dten=theMaterials[MatID()]->GetDiffusionTensor();
-	return -volume*((Dten->xx*pDiffusion->Dc.x + Dten->xy*pDiffusion->Dc.y)*dshdx
+	return -GetVolume(DEFORMED_VOLUME)*((Dten->xx*pDiffusion->Dc.x + Dten->xy*pDiffusion->Dc.y)*dshdx
 						+ (Dten->xy*pDiffusion->Dc.x + Dten->yy*pDiffusion->Dc.y)*dshdy);
 }
 
@@ -248,9 +242,23 @@ double MatPoint2D::GetRelativeVolume(void)
     return pF[2][2]*(pF[0][0]*pF[1][1]-pF[1][0]*pF[0][1]);
 }
 
-// To support CPDI find nodes in tghe particle domain, find their element,
+// get dilated current volume using current deformation gradient
+// only used for contact (cracks and multimaterial) and for transport tasks
+// when actual is false, get t*Ap, where Ap is deformed particle area
+double MatPoint2D::GetVolume(bool volumeType)
+{	double rho=theMaterials[MatID()]->rho*0.001;		// in g/mm^3
+	if(volumeType==DEFORMED_VOLUME)
+		return GetRelativeVolume()*mp/rho;						// in mm^3
+	
+	// get thickness times area (for contact and for gradient)
+	double pF[3][3];
+	GetDeformationGradient(pF);
+	return (pF[0][0]*pF[1][1]-pF[1][0]*pF[0][1])*mp/rho;
+}
+
+// To support CPDI find nodes in the particle domain, find their element,
 // their natural coordinates, and weighting values for gradient calculations
-// Should be done only once per time stept
+// Should be done only once per time step
 void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 {
 	// get particle 2D deformation gradient
@@ -260,10 +268,10 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 	// get polygon vectors - these are from particle to edge
     //      and generalize semi width lp in 1D GIMP
 	Vector r1,r2,c;
-	r1.x = pF[0][0]*mpmgrid.gridx*0.25;
-	r1.y = pF[1][0]*mpmgrid.gridx*0.25;
-	r2.x = pF[0][1]*mpmgrid.gridy*0.25;
-	r2.y = pF[1][1]*mpmgrid.gridy*0.25;
+	r1.x = pF[0][0]*mpmgrid.partx;
+	r1.y = pF[1][0]*mpmgrid.partx;
+	r2.x = pF[0][1]*mpmgrid.party;
+	r2.y = pF[1][1]*mpmgrid.party;
 	
     // Particle domain area is area of the full parallelogram
     // Assume positive due to orientation of initial vectors, and sign probably does not matter
@@ -395,18 +403,20 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 // To support traction boundary conditions, find the deformed edge, natural coordinates of
 // the corners along the edge, elements for those edges, and a normal vector in direction
 // of the traction
-void MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
+double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
 {
     *numDnds = 2;
-    double faceWt;
+    double faceWt,ex,ey,enorm;
+	Vector c1,c2;
+	
+	// always UNIFORM_GIMP or LINEAR_CPDI
     
     // which GIMP method (cannot be used in POINT_GIMP)
     if(ElementBase::useGimp==UNIFORM_GIMP)
     {   // initial vectors only
-        double r1x = mpmgrid.gridx*0.25;
-        double r2y = mpmgrid.gridy*0.25;
-        
-        Vector c1,c2;
+        double r1x = mpmgrid.partx;
+        double r2y = mpmgrid.party;
+
         switch(face)
         {	case 1:
                 // lower edge
@@ -452,10 +462,14 @@ void MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vec
         catch(...)
         {	throw MPMTermination("A Traction edge node has left the grid.","MatPoint2D::GetTractionInfo");
         }
+		
+		// get edge vector
+		ex = c2.x-c1.x;
+		ey = c2.y-c1.y;
     }
     else
-    {   // get deformed corners, but get element and natural coordinates
-        //  from CPDI info because corners have moved by here for any
+    {   // get deformed corners, but get from element and natural coordinates
+        //  from CPDI info because corners may have moved by here for any
         //  simulations that update strains between initial extrapolation
         //  and the grid forces calculation
         int d1,d2;
@@ -467,7 +481,7 @@ void MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vec
                 break;
                 
             case 2:
-                // right edgt
+                // right edge
                 d1=1;
                 d2=2;
                 break;
@@ -501,6 +515,14 @@ void MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vec
             faceWt = faceArea->x;
         else
             faceWt = faceArea->y;
+		
+		// get edge vector
+		if(dof==N_DIRECTION || dof==T1_DIRECTION)
+		{	theElements[cElem[0]]->GetPosition(&corners[0],&c1);
+			theElements[cElem[1]]->GetPosition(&corners[1],&c2);
+			ex = c2.x-c1.x;
+			ey = c2.y-c1.y;
+		}
         
     }
 	
@@ -514,10 +536,24 @@ void MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vec
         case 2:
             // normal is y direction
             tscaled->y = faceWt;
+            break;
+		case N_DIRECTION:
+			// cross product of edge vector with (0,0,1) = (ey, -ex)
+			enorm = ey;
+			ey = -ex;
+			ex = enorm;
+		case T1_DIRECTION:
+			// load in direction specified by normalized (ex,ey)
+			enorm = sqrt(ex*ex+ey*ey);
+			tscaled->x = ex*faceWt/enorm;
+			tscaled->y = ey*faceWt/enorm;
+			break;
 		default:
 			// normal is z direction (not used here)
             tscaled->z = faceWt;
 			break;
 	}
+	
+	return 1.;
 }
 	

@@ -48,13 +48,13 @@ class BistableIsotropic : public IsotropicMat
 		// initialize
         virtual char *InputMat(char *,int &);
 		virtual const char *VerifyProperties(int);
+		virtual void ValidateForUse(int);
 		virtual void PrintMechanicalProperties(void);
 		virtual void PrintTransportProperties(void);
-		virtual void ValidateForUse(int);
         virtual char *MaterialData(void);
         
         // override methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
         virtual void LoadMechanicalProps(MPMBase *,int);
         virtual void LoadTransportProps(MPMBase *,int);
 		

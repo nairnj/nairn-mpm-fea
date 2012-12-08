@@ -18,27 +18,36 @@
 
 #include "Materials/MaterialBase.hpp"
 
+enum { HALF_J_SQUARED_MINUS_1_MINUS_LN_J=0,J_MINUS_1_SQUARED,LN_J_SQUARED };
+
 class HyperElastic : public MaterialBase
 {
     public:
-		double aI;				// thermal expansion isotropic
-		// double beta;			// moisture expansion isotopic (in base material)
+        double Kbulk;               // bulk modulus
+		double aI;                  // thermal expansion isotropic
+        int UofJOption;             // pick U(J) function
+		// double betaI;			// moisture expansion isotopic (in base material)
         
         // constructors and destructors
         HyperElastic();
         HyperElastic(char *);
-        
+    
+        // initialize
+        virtual char *InputMat(char *,int &);
+        virtual void SetInitialParticleState(MPMBase *,int);
+        virtual void InitialLoadMechProps(int,int);
+    
 		// Methods (make virtual if any subclass needs them)
-		double GetDeformationGrad(double F[][3],MPMBase *,double,double,double,double,bool,bool);
-        double IncrementDeformation(MPMBase *,double,double,double,double);
-		double GetDeformationGrad(double F[][3],MPMBase *,double,double,double,double,double,double,double,double,double,bool,bool);
-        double IncrementDeformation(MPMBase *,double,double,double,double,double,double,double,double,double);
-		Tensor GetLeftCauchyTensor2D(double F[][3]);
-		Tensor GetLeftCauchyTensor3D(double F[][3]);
+        double IncrementDeformation(MPMBase *,double,double,double,double,double,Tensor *);
+        double IncrementDeformation(MPMBase *,double,double,double,double,double,double,double,double,double,Tensor *);
 		double GetResidualStretch(MPMBase *);
     
         // Accessors
+        virtual double GetVolumetricTerms(double,double *);
         virtual double GetCurrentRelativeVolume(MPMBase *);
+    
+    protected:
+        double Ksp;                 // specific bulk modulus
 };
 
 #endif

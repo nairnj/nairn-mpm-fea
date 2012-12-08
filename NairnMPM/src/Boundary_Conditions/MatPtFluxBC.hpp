@@ -18,13 +18,13 @@
 class MatPtFluxBC : public MatPtLoadBC
 {
     public:
-        
+		int face;
+    
         // constructors and destructors
-		MatPtFluxBC(int,int,int);
+		MatPtFluxBC(int,int,int,int);
 		
 		// methods
 		BoundaryCondition *PrintBC(ostream &);
-		MatPtFluxBC *ZeroMPFlux(void);
         MatPtFluxBC *AddMPFlux(double);
 };
 

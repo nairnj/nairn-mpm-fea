@@ -40,7 +40,7 @@ using namespace std;
 // analysis type
 // also defined in MPMPrefix.hpp - keep same
 enum { PLANE_STRAIN=0,PLANE_STRESS,AXI_SYM,THREE_DIM,END_FEA_TYPES,
-        BEGIN_MPM_TYPES=9,PLANE_STRAIN_MPM,PLANE_STRESS_MPM,THREED_MPM,END_MPM_TYPES };
+        BEGIN_MPM_TYPES=9,PLANE_STRAIN_MPM,PLANE_STRESS_MPM,THREED_MPM,AXISYMMETRIC_MPM,END_MPM_TYPES };
 
 // FEA utilities
 int IsEven(int);

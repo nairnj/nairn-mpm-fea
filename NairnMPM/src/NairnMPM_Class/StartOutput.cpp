@@ -60,9 +60,11 @@ void NairnMPM::PrintAnalysisType(void)
 	
     switch(ElementBase::useGimp)
     {   case UNIFORM_GIMP:
+		case UNIFORM_GIMP_AS:
             cout << " / GIMP";
             break;
         case LINEAR_CPDI:
+		case LINEAR_CPDI_AS:
             cout << " / Linear CPDI";
             break;
         case QUADRATIC_CPDI:
@@ -73,7 +75,7 @@ void NairnMPM::PrintAnalysisType(void)
     
 	// time step and max time
     cout << "Time step: min(" << 1000.*timestep << " ms, "
-        << FractCellTime << " time for wave to cross one cell)\n";
+        << fmobj->GetCFLCondition() << " time for wave to cross one cell)\n";
     cout << "Maximum time: " << 1000.*maxtime << " ms\n\n";
 }
 
@@ -202,8 +204,8 @@ void NairnMPM::MyStartResultsOutput(void)
     // Diffusion boundary conditions
 	if(DiffusionTask::active)
 	{   PrintSection("NODAL POINTS WITH FIXED CONCENTRATIONS");
-		cout << " Node ID   Conc (/csat)   Arg (ms/ms^-1)  Function\n"
-		<< "----------------------------------------------------\n";
+		cout << "  Node  ID    Conc (/csat)   Arg (ms/ms^-1)  Function\n"
+		<< "------------------------------------------------------\n";
 		nextBC=firstConcBC;
 		while(nextBC!=NULL)
 			nextBC=nextBC->PrintBC(cout);
@@ -212,8 +214,8 @@ void NairnMPM::MyStartResultsOutput(void)
 		//---------------------------------------------------
 		// Concentration Flux Material Points
 		PrintSection("MATERIAL POINTS WITH CONCENTRATION FLUX");
-		cout << " Point DOF ID      Flux ( )     Arg (ms/ms^-1)\n"
-		<< "-------------------------------------------------\n";
+		cout << " Point  DOF Face ID   Flux (mm/sec)   Arg (ms/ms^-1)  Function\n"
+		<< "---------------------------------------------------------------\n";
 		nextBC=(BoundaryCondition *)firstFluxPt;
 		while(nextBC!=NULL)
 			nextBC=nextBC->PrintBC(cout);
@@ -224,8 +226,8 @@ void NairnMPM::MyStartResultsOutput(void)
     // Conduction boundary conditions
 	if(ConductionTask::active)
 	{   PrintSection("NODAL POINTS WITH FIXED TEMPERATURES");
-		cout << " Node ID   Temp (-----)   Arg (ms/ms^-1)  Function\n"
-		<< "----------------------------------------------------\n";
+		cout << " Node   ID   Temp (-----)   Arg (ms/ms^-1)  Function\n"
+		<< "------------------------------------------------------\n";
 		nextBC=firstTempBC;
 		while(nextBC!=NULL)
 			nextBC=nextBC->PrintBC(cout);

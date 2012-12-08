@@ -15,6 +15,13 @@
 
 #ifdef MPM_CODE
 class MPMBase;
+
+// Undefine to try axisymmetric GIMP using planar GIMP shape functions
+//#define NONRADIAL_GIMP_AS
+
+// Comment out to try uGIMP with no truncation AND lCPDI with no shrinkage
+#define TRUNCATE
+
 #endif
 
 // element types
@@ -61,7 +68,6 @@ class ElementBase : public LinkedObject
 		static int useGimp;             // Code for GIMP method (0 is classic MPM special case of GIMP)
 		static int analysisGimp;		// store GIMP option in case need to disable for a while
         static int numCPDINodes;        // number of nodes used by CPDI in particle domain
-        static double *wShape;          // weighting values for each node when finding shape function using CPDI
 #endif
 		
         // constructors and destructors
@@ -85,6 +91,7 @@ class ElementBase : public LinkedObject
 		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *) = 0;
 		virtual void GetGimpNodes(int *,int *,int *,Vector *);
 		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *);
+		virtual void GimpShapeFunctionAS(Vector *,int,int *,int,double *,double *,double *,double *);
 #endif
 									
         // prototypes of methods defined in ElementBase class (but may override)
@@ -92,6 +99,7 @@ class ElementBase : public LinkedObject
 		virtual double GetThickness(void);
         virtual void SetThickness(double);
 		virtual void GetXYZCentroid(Vector *);
+        virtual double GetCenterX(void);
 		virtual double GetDeltaX(void);
 		virtual double GetDeltaY(void);
 		virtual double GetDeltaZ(void);
@@ -106,7 +114,7 @@ class ElementBase : public LinkedObject
 		virtual void GetShapeGradients(int *,double *,int *,Vector *,double *,double *,double *,MPMBase *);
 		virtual void GetShapeFunctionsAndGradients(int *,double *,int *,Vector *,Vector *,double *,double *,double *,MPMBase *);
 		virtual void GimpCompact(int *,int *,double *,double *,double *,double *);
-		virtual void GetCPDIFunctions(int,CPDIDomain **,double *,int *,int *,double *,double *,double *,double *);
+		virtual void GetCPDIFunctions(int,CPDIDomain **,int *,int *,double *,double *,double *,double *);
         virtual void GridShapeFunctions(int *,int *,Vector *,double *);
 		virtual bool OnTheEdge(void);
 		virtual void GetListOfNeighbors(int *);
@@ -118,6 +126,7 @@ class ElementBase : public LinkedObject
         virtual int NearestNode(double,double,int *);
         virtual void MPMPoints(short,Vector *);
 		virtual void GetXiPos(Vector *,Vector *);
+		virtual void GetPosition(Vector *,Vector *);
 #else
 		virtual bool HasNode(int);
 		virtual void DecrementNodeNums(int);

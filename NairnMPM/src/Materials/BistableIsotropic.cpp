@@ -87,9 +87,10 @@ void BistableIsotropic::PrintTransportProperties(void)
 	    sprintf(mline,"b0 =%12.6g   bD =%12.6g 1/wt fr",beta0,betad);
 		cout << mline << endl;
 	}
-	// Conductivity constants
+	// Conductivity constants (Cp is also mJ/(g-K))
 	if(ConductionTask::active)
-	{   sprintf(mline,"k0 =%12.3g W/(m-K)  kd =%12.3g W/(m-K)  Cp  =%12.3g J/(kg-K)",kCond0,kCondd,1000.*heatCapacity);
+	{   sprintf(mline,"k0 =%12.3g W/(m-K)  kd =%12.3g W/(m-K)  Cp  =%12.3g J/(kg-K)",
+                            rho*kCond0/1000.,rho*kCondd/1000.,heatCapacity);
 		cout << mline << endl;
 	}
 }
@@ -199,13 +200,19 @@ const char *BistableIsotropic::VerifyProperties(int np)
     if(!readbs[TRANSITION_PROP] || rule<DILATION_RULE || rule>VONMISES_RULE)
 		return "Phase transition rule is missing or invalid.";
     
-    // if not provided, not change in property at transition
+    // if not provided, no change in property at transition
     if(!readbs[KD_PROP]) Kd=K0;
     if(!readbs[GD_PROP]) Gd=G0;
     if(!readbs[AD_PROP]) ad=a0;
     if(!readbs[BD_PROP]) betad=beta0;
     if(!readbs[DIFFD_PROP]) diffd=diff0;
     if(!readbs[KCONDD_PROP]) kCondd=kCond0;
+    
+    // no change in heat capacity
+    
+    // make conductivty specific (N mm^3/(sec-K-g))
+    kCond0 *= (1000./rho);
+    kCondd *= (1000./rho);
     
     // test validity of each state
     const char *err=CurrentProperties(DEFORMED_STATE,np);
@@ -218,18 +225,18 @@ const char *BistableIsotropic::VerifyProperties(int np)
     dVii/=100.;
 
 	// call super-super class
-	return MaterialBase::VerifyProperties(np);
+	return IsotropicMat::VerifyProperties(np);
 }
 
 // 3D not allowed
 void BistableIsotropic::ValidateForUse(int np)
-{	if(np==THREED_MPM)
-	{	throw CommonException("BistableIsotropic materials cannot do 3D MPM analysis",
+{	if(np==THREED_MPM || np==AXISYMMETRIC_MPM)
+	{	throw CommonException("BistableIsotropic materials cannot do 3D or Axisymmetric MPM analysis",
 							  "BistableIsotropic::ValidateForUse");
 	}
 	
 	// call super class (why can't call super class?)
-	return MaterialBase::ValidateForUse(np);
+	return IsotropicMat::ValidateForUse(np);
 }
 
 // calculate properties for give state
@@ -319,16 +326,17 @@ void BistableIsotropic::LoadTransportProps(MPMBase *mptr,int np)
     Particle: strains, rotation strain, stresses, strain energy, angle,
 		current state
     dvij are (gradient rates X time increment) to give deformation gradient change
+   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 */
 void BistableIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double delTime,int np)
+        double dvzz,double delTime,int np)
 {
     short *state=(short *)(mptr->GetHistoryPtr()),transition=FALSE;
     double dmechV,dTrace,ds1,ds2,ds3;
 	Tensor *sp=mptr->GetStressTensor();
     
     // update in latest state
-    Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,delTime,np);
+    Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,delTime,np);
 	
     // Calculate critical value for transition
 	Tensor *ep=mptr->GetStrainTensor();
@@ -422,11 +430,12 @@ double BistableIsotropic::WaveSpeed(bool threeD,MPMBase *mptr)
 { return fmax(sqrt(1.e9*(K0+4.*G0/3.)/rho),sqrt(1.e9*(Kd+4.*Gd/3.)/rho));
 }
 
-// maximum diffusion coefficient in cm^2/sec
+// maximum diffusion coefficient in cm^2/sec (diff in mm^2/sec)
 double BistableIsotropic::MaximumDiffusion(void) { return max(diffd,diff0)/100.; }
 
 // maximum diffusivity in cm^2/sec
-double BistableIsotropic::MaximumDiffusivity(void) { return max(kCondd,kCond0)/(rho*heatCapacity*100.); }
+// specific k is mJ mm^2/(sec-K-g) and Cp is mJ/(g-K) so k/Cp = mm^2/sec * 1e-2 = cm^2/sec
+double BistableIsotropic::MaximumDiffusivity(void) { return 0.01*max(kCondd,kCond0)/heatCapacity; }
 
 // return material type
 const char *BistableIsotropic::MaterialType(void) { return "Bistable Isotropic"; }

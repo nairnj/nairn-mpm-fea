@@ -12,6 +12,7 @@
 #include "Read_MPM/MPMReadHandler.hpp"
 #include "Elements/ElementBase.hpp"
 #include "MPM_Classes/MatPoint2D.hpp"
+#include "MPM_Classes/MatPointAS.hpp"
 #include "MPM_Classes/MatPoint3D.hpp"
 #include "Boundary_Conditions/NodalConcBC.hpp"
 #include "Boundary_Conditions/NodalTempBC.hpp"
@@ -233,8 +234,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				MatID = matCtrl->GetIDFromNewName(matname);
             if(MatID<=0)
                 throw SAXException("Positive material ID needed in <Body> element.");
-            if(Thick<=0. && !fmobj->IsThreeD())
-                throw SAXException("Positive material thickness needed in <Body> element for 2D analyses.");
+            if(Thick<=0. && !fmobj->IsThreeD() && !fmobj->IsAxisymmetric())
+                throw SAXException("Positive material thickness needed in <Body> element for planar 2D analyses.");
         }
     }
 
@@ -496,7 +497,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,BCSHAPE,ANY_DIM);
 		if(!theShape->RequiredBlock(GRIDBCHEADER))
 			ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
-        double dispvel=0.0,ftime=0.0,skewAngle=0.;
+        double dispvel=0.0,ftime=0.0;
 		int dof=0,style=CONSTANT_VALUE;
 		char *function=NULL;
         numAttr=attrs.getLength();
@@ -511,8 +512,6 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%lf",&ftime);
             else if(strcmp(aName,"style")==0)
                 sscanf(value,"%d",&style);
-            else if(strcmp(aName,"angle")==0)
-                sscanf(value,"%lf",&skewAngle);
             else if(strcmp(aName,"function")==0)
 			{	if(function!=NULL) delete [] function;
 				function=new char[strlen(value)+1];
@@ -532,7 +531,6 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		theShape->resetNodeEnumerator();
 		while((i=theShape->nextNode()))
 		{	NodalVelBC *newVelBC=new NodalVelBC(nd[i]->num,dof,style,dispvel,ftime);
-			if(dof==SKEW_DIRECTION) newVelBC->SetSkewAngle(skewAngle);
 			newVelBC->SetFunction(function);
 			velocityBCs->AddObject(newVelBC);
 		}
@@ -659,7 +657,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		if(fmobj->IsThreeD())
         {   // checks for 3D
 			if(dof<1 || dof>3)
-				throw SAXException("'dir' in <LoadBC>, <TractionBC>, or <ConcFluxBC> element must be 1, 2, or 3 for 3D analyses.");
+			{	throw SAXException("'dir' in <LoadBC>, <TractionBC>, or <ConcFluxBC> must be 1-3 for 3D analyses.");
+			}
             if(strcmp(xName,"TractionBC")==0)
             {	if(face<1 || face>6)
                     throw SAXException("'face' in <TractionBC> element must be 1 to 6 for 3D analyses.");
@@ -668,7 +667,10 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         else
         {   // checks for 2D
             if(dof>2 || dof<1)
-                throw SAXException("'dir' in <LoadBC>, <TractionBC>, or <ConcFluxBC> element must be 1 or 2 for 2D analyses.");
+			{	if(dof<11 || dof>12 || strcmp(xName,"TractionBC")!=0)
+				{	throw SAXException("'dir' in <LoadBC> or <ConcFluxBC> must be 1 or 2 and in <TractionBC> must be 1, 2, 11, or 12 for 2D analyses.");
+				}
+			}
             if(strcmp(xName,"TractionBC")==0)
             {	if(face<1 || face>4)
                     throw SAXException("'face' in <TractionBC> element must be 1 to 4 for 3D analyses.");
@@ -708,19 +710,17 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				mpTractionCtrl->AddObject(newTractionBC);
 			}
 		}
-		else
-        {	if(dof==2 && style!=FUNCTION_VALUE && style!=SILENT)
+		else if(strcmp(xName,"ConcFluxBC")==0)
+        {	if(dof==2 && style!=FUNCTION_VALUE)
 				throw SAXException("Coupled concentration flux condition must use function style");
-			else if(dof==3 && style!=SILENT)
-				throw SAXException("'dir' in this <ConcFluxBC> element must be 1 or 2 .");
-			else if(dof==3 && style==SILENT)
-				throw SAXException("Silent <ConcFluxBC> is still in development in 2D and cannot be used in 3D analyses.");
+			else if(style==SILENT && fmobj->IsThreeD())
+				throw SAXException("Silent <ConcFluxBC> is currently only available in 2D analyses.");
 				
 			// check each material point
 			MatPtFluxBC *newFluxBC;
 			theShape->resetParticleEnumerator();
 			while((i=theShape->nextParticle())>=0)
-			{   newFluxBC=new MatPtFluxBC(i+1,dof,style);
+			{   newFluxBC=new MatPtFluxBC(i+1,dof,style,face);
 				newFluxBC->value=load;
 				newFluxBC->ftime=ftime;
 				newFluxBC->SetFunction(function);
@@ -830,6 +830,8 @@ void MPMReadHandler::MPMPts(void)
 			{	if(MatID>0)
 				{	if(fmobj->IsThreeD())
 						newMpt=new MatPoint3D(i,MatID,Angle);
+					else if(fmobj->IsAxisymmetric())
+						newMpt=new MatPointAS(i,MatID,Angle,ppos[k].x);
 					else
 						newMpt=new MatPoint2D(i,MatID,Angle,Thick);
                     newMpt->SetPosition(&ppos[k]);
@@ -981,9 +983,16 @@ void MPMReadHandler::grid()
 	}
     
 	if(DbleEqual(Rhoriz,1.) && DbleEqual(Rvert,1.) && (!fmobj->IsThreeD() || DbleEqual(Rdepth,1.)))
-	{	double gridz = fmobj->IsThreeD() ? (Zmax-Zmin)/(double)Ndepth : 0.;
+	{	double zparam,gridz = 0.;
+		if(fmobj->IsThreeD())
+		{	zparam = Zmin;
+			gridz = (Zmax-Zmin)/(double)Ndepth;
+		}
+		else if(fmobj->IsAxisymmetric())
+			zparam = 1.0;
+		else
+			zparam = Z2DThickness;
 		mpmgrid.SetCartesian(TRUE,(Xmax-Xmin)/(double)Nhoriz,(Ymax-Ymin)/(double)Nvert,gridz);
-		double zparam = fmobj->IsThreeD() ? Zmin : Z2DThickness;
 		mpmgrid.SetElements(Nhoriz,Nvert,Ndepth,Xmin,Ymin,zparam);
 	}
 	else

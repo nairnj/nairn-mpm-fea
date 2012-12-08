@@ -53,7 +53,6 @@ MaterialBase::MaterialBase(char *matName)
 {
 	name=new char[strlen(matName)+1];
     strcpy(name,matName);
-    hasMatProps=FALSE;
 	concSaturation=1.;
 	betaI=0.;
 	red=-1.;

@@ -24,9 +24,9 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void ZeroMatFields(void);
 	
 		// specific task methods
-		virtual void AddMassTask1(int);
+		virtual void AddMassTask1(int,double);
 		virtual double GetTotalMassAndCount(void);
-		virtual void AddMassGradient(int,double,double,double,double);
+		virtual void AddVolumeGradient(int,MPMBase *,double,double,double);
 		virtual void CombineRigidFrom(CrackVelocityFieldMulti *,int);
 		virtual void CopyRigidFrom(CrackVelocityFieldMulti *,int);
 	
@@ -40,37 +40,24 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 	
 		virtual void MaterialContact(int,int,bool,double);
         virtual void GetFrictionalDeltaMomentum(Vector *,Vector *,double,double);
-		virtual void GetMassGradient(int,Vector *,double);
+		virtual void GetVolumeGradient(int,NodalPoint *,Vector *,double);
 		virtual void RigidMaterialContact(int,int,int,bool,double);
         virtual bool GetDeltaMomemtumOfInterface(Vector *,Vector *,double,bool,double,double,double);
         virtual void GetInterfaceForcesForNode(Vector *,Vector *,double,double,double,Vector *,double *,double);
 		virtual void CalcVelocityForStrainUpdate(void);
 	
 		// boundary conditions
-		virtual void SetXMomVel(void);
-		virtual void SetYMomVel(void);
-		virtual void SetZMomVel(void);
-		virtual void SetSkewMomVel(double);
-		virtual void AddXMomVel(double);
-		virtual void AddYMomVel(double);
-		virtual void AddZMomVel(double);
-		virtual void AddSkewMomVel(double,double);
-		virtual void SetXFtot(double);
-		virtual void SetYFtot(double);
-		virtual void SetZFtot(double);
-		virtual void SetSkewFtot(double,double);
-		virtual void AddXFtot(double,double);
-		virtual void AddYFtot(double,double);
-		virtual void AddZFtot(double,double);
-		virtual void AddSkewFtot(double,double,double);
+        virtual void SetMomVel(int);
+        virtual void AddMomVel(int,double);
+        virtual void SetFtot(int,double);
+        virtual void AddFtot(int,double,double);
 	
 		// accessors
 		virtual int GetNumberPointsNonrigid(void);
-		virtual double UnscaledVolumeNonrigid(void);
-		virtual double UnscaledVolumeRigid(void);
 		virtual void SumAndClearRigidContactForces(Vector *,bool);
 		virtual double GetTotalMass(void);
-		virtual double GetMass(int);
+		virtual double GetVolumeNonrigid(void);
+		virtual double GetVolumeTotal(double);
 		virtual Vector GetCMatMomentum(void);
 		virtual Vector GetCMDisplacement(void);
 		virtual Vector GetCMatFtot(void);

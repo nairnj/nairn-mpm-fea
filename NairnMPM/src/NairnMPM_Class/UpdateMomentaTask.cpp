@@ -21,7 +21,7 @@
 	transport tasks
  
 	Input Variables
-		mvf[]->pk, ftot, mass, disp, unscaledVolume, massGrad
+		mvf[]->pk, ftot, mass, disp, volume, volumeGrad
 		cvf[]->norm
 		nd[]->fcond, gRhoVp, fdiff, gVolume
  

@@ -10,6 +10,7 @@
 #include "Cracks/CrackHeader.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
+#include "Materials/MaterialBase.hpp"
 
 // globals
 MPMBase **mpm;		// list of material points
@@ -84,7 +85,6 @@ void MPMBase::AllocateTemperature(void)
 // allocation diffusion data if need in this calculations
 void MPMBase::AllocateDiffusion(void)
 {	pDiffusion=new DiffusionField;
-	pDiffusion->flux=0.;
 	ZeroVector(&pDiffusion->Dc);
 }
 
@@ -98,7 +98,7 @@ bool MPMBase::AllocateCPDIStructures(int gimpType,bool isThreeD)
 {
     int cpdiSize=0;
     
-    if(gimpType==LINEAR_CPDI)
+    if(gimpType==LINEAR_CPDI || gimpType==LINEAR_CPDI_AS)
         cpdiSize = isThreeD ? 8 : 4 ;
     else if(gimpType==QUADRATIC_CPDI)
         cpdiSize = 9;
@@ -108,13 +108,25 @@ bool MPMBase::AllocateCPDIStructures(int gimpType,bool isThreeD)
     // create memory for cpdiSize pointers
     cpdi = (CPDIDomain **)malloc(sizeof(LinkedObject *)*(cpdiSize));
     if(cpdi == NULL) return FALSE;
-    
+	
     // create each one
     int i;
     for(i=0;i<cpdiSize;i++)
     {   cpdi[i] = new CPDIDomain;
         cpdi[i]->wg.z = 0.;             // set zero once for 2D calculations
         cpdi[0]->ncpos.z = 0.;          // set zero once for 2D calculations
+		
+		// weights constant except for axisymmetric CPDI
+		if(gimpType==LINEAR_CPDI)
+			cpdi[i]->ws = isThreeD ? 0.125 : 0.25 ;
+		else if(gimpType==QUADRATIC_CPDI)
+		{	if(i<4)
+				cpdi[i]->ws = 1./36.;
+			else if(i<8)
+				cpdi[i]->ws = 1./9.;
+			else
+				cpdi[i]->ws = 4./9.;
+		}
     }
     
     // save face areas (or lengths in 2D)
@@ -200,6 +212,17 @@ int MPMBase::GetResetElementCrossings(void)
 	elementCrossings=0;
 	return was;
 }
+
+// get unscaled volume for use only in contact and imperfect interface calculations
+// return result in mm^3
+double MPMBase::GetUnscaledVolume(void)
+{	double rho=theMaterials[MatID()]->rho*0.001;			// in g/mm^3
+	return mp/rho;                                          // in mm^3
+}
+
+// get mass when finding mass gradient for contact calculations
+// Axisymmetric particles override to return mass/rp to get uniform particle mass
+double MPMBase::GetMassForGradient(void) { return mp; }
 
 // get deformation gradient terms
 double MPMBase::GetDuDy(void) { return (ep.xy+eplast.xy-wrot.xy)/2.; }

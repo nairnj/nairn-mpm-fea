@@ -9,6 +9,7 @@
 #include "Elements/ElementBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/MPMTermination.hpp"
 #include "Materials/MaterialBase.hpp"
@@ -69,16 +70,28 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,
             break;
         }
             
+        case UNIFORM_GIMP_AS:
+        {   // uGIMP analysis
+            int ndIDs[MaxShapeNds];
+            GetXiPos(pos,xipos);
+            GetGimpNodes(numnds,nds,ndIDs,xipos);
+            GimpShapeFunctionAS(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
+            GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
+            break;
+        }
+			
         case LINEAR_CPDI:
+		case LINEAR_CPDI_AS:
         case QUADRATIC_CPDI:
 		{	if(mpmptr==NULL)
-            {   ChangeGimp(UNIFORM_GIMP);
+			{	int newGimp = fmobj->IsAxisymmetric() ? UNIFORM_GIMP_AS : UNIFORM_GIMP ;
+                ChangeGimp(newGimp);
                 GetShapeFunctions(numnds,fn,nds,pos,xipos,NULL);
                 RestoreGimp();
                 break;
             }
 			mpmptr->GetCPDINodesAndWeights(useGimp);
-			GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),ElementBase::wShape,numnds,nds,fn,NULL,NULL,NULL);
+			GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),numnds,nds,fn,NULL,NULL,NULL);
             
             /*
              cout << "CPDI Initial Compacted: " << endl;
@@ -101,6 +114,7 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,
 			
             break;
         }
+			
     }
 }
 
@@ -132,9 +146,19 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipo
             break;
         }
             
+        case UNIFORM_GIMP_AS:
+        {	// GIMP analysis
+            int ndIDs[MaxShapeNds];
+            GetGimpNodes(numnds,nds,ndIDs,xipos);
+            GimpShapeFunctionAS(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
+            GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
+            break;
+        }
+            
         case LINEAR_CPDI:
+		case LINEAR_CPDI_AS:
         case QUADRATIC_CPDI:
-        {   GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),ElementBase::wShape,numnds,nds,fn,NULL,NULL,NULL);
+        {   GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),numnds,nds,fn,NULL,NULL,NULL);
             
             /*
              cout << "CPDI Recall Compacted: " << endl;
@@ -168,13 +192,15 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipo
 	Load node numbers into nds[1]...
 	Load shape functions into fn[1]...
 	Load shape function derviatives into xDeriv[1]..., yDeriv[1]..., zDeriv[1]...
+       For axisymmetric load zDeriv with shape function / particle radial position
+       Input zDeriv must not be NULL
 	pos and xipos not used or set in CPDI
 	Input: pointer to material point dimensionless position, which is changed here
 	See also GetShapeGradients() if need to change
  NOTE: This is called in MassAndMomentumTask at start of time step as replacement for GetShapeFunctions()
 	when in multimaterial mode.
-		Subsequent needs for shape function and gradients call GetShapeGradieents() method without pos and
-    therefore need the xipos calculated in this first call (or need CPDI calculations)
+    Subsequent needs for shape function and gradients call GetShapeGradieents() method without pos and
+        therefore need the xipos calculated in this first call (or need CPDI calculations)
 */
 void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,Vector *pos,Vector *xipos,
 									double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr)
@@ -187,9 +213,7 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
             
             // special case for regular mesh
             if(mpmgrid.GetCartesian()>0)
-            {	double *zptr = zDeriv==NULL ? NULL : &zDeriv[1];
-                ShapeFunction(xipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],zptr);
-            }
+                ShapeFunction(xipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
             else
             {	// Load element coordinates
                 Vector ce[MaxElNd];
@@ -211,16 +235,28 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
             break;
         }
             
+        case UNIFORM_GIMP_AS:
+        {	// GIMP analysis
+            int ndIDs[MaxShapeNds];
+            GetXiPos(pos,xipos);
+            GetGimpNodes(numnds,nds,ndIDs,xipos);
+            GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+            GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+            break;
+        }
+            
         case LINEAR_CPDI:
+		case LINEAR_CPDI_AS:
 		case QUADRATIC_CPDI:
         {   if(theMaterials[mpmptr->MatID()]->Rigid())
-            {   ChangeGimp(UNIFORM_GIMP);
+			{	int newGimp = fmobj->IsAxisymmetric() ? UNIFORM_GIMP_AS : UNIFORM_GIMP ;
+				ChangeGimp(newGimp);
                 GetShapeFunctionsAndGradients(numnds,fn,nds,pos,xipos,xDeriv,yDeriv,zDeriv,mpmptr);
                 RestoreGimp();
                 break;
             }
-            mpmptr->GetCPDINodesAndWeights(useGimp);
-			GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),ElementBase::wShape,numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+			mpmptr->GetCPDINodesAndWeights(useGimp);
+			GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),numnds,nds,fn,xDeriv,yDeriv,zDeriv);
             
             /*
 			cout << "CPDI Initial Compacted: " << endl;
@@ -234,7 +270,7 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
 			Vector rpos = mpmptr->pos;
 			Vector rxipos;
 			GetXiPos(&rpos,&rxipos);
-			ShapeFunction(&rxipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],NULL);
+			ShapeFunction(&rxipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
 			
 			cout << "   Regular Shape and Gradients: " << endl;
 			int j;
@@ -253,6 +289,8 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
     Load node numbers into nds[1]...
     Load shape functions into fn[1]...
     Load shape function derviatives into xDeriv[1]..., yDeriv[1]..., zDeriv[1]...
+        For axisymmetric load zDeriv with shape function / particle radial position
+        Input zDeriv must not be NULL
     Input: pointer to material point dimensionless position
     See all GetShapeFunctionsAndGradients() if need to change
    NOTE: This is called at various places in the time step when gradients are needed. It should
@@ -269,9 +307,7 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
             
             // special case for regular mesh
             if(mpmgrid.GetCartesian()>0)
-            {	double *zptr = zDeriv==NULL ? NULL : &zDeriv[1];
-                ShapeFunction(xipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],zptr);
-            }
+                ShapeFunction(xipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
             else
             {	// Load element coordinates
                 Vector ce[MaxElNd];
@@ -292,15 +328,26 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
             break;
         }
             
+        case UNIFORM_GIMP_AS:
+        {	// uGIMP analysis
+            int ndIDs[MaxShapeNds];
+            GetGimpNodes(numnds,nds,ndIDs,xipos);
+            GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+            GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+            break;
+        }
+            
         case LINEAR_CPDI:
+		case LINEAR_CPDI_AS:
 		case QUADRATIC_CPDI:
         {   if(theMaterials[mpmptr->MatID()]->Rigid())
-            {   ChangeGimp(POINT_GIMP);
+			{	int newGimp = fmobj->IsAxisymmetric() ? UNIFORM_GIMP_AS : UNIFORM_GIMP ;
+				ChangeGimp(newGimp);
                 GetShapeGradients(numnds,fn,nds,xipos,xDeriv,yDeriv,zDeriv,mpmptr);
                 RestoreGimp();
                 break;
             }
-            GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),ElementBase::wShape,numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+            GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),numnds,nds,fn,xDeriv,yDeriv,zDeriv);
 			
             /*
              cout << "CPDI Recall Compacted: " << endl;
@@ -314,7 +361,7 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
              Vector rpos = mpmptr->pos;
              Vector rxipos;
              GetXiPos(&rpos,&rxipos);
-             ShapeFunction(&rxipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],NULL);
+             ShapeFunction(&rxipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
              
              cout << "   Recall Regular Shape and Gradients: " << endl;
              int j;
@@ -383,8 +430,8 @@ void ElementBase::GetXiPos(Vector *pos,Vector *xipos)
 // return dimensionless location for material points
 void ElementBase::MPMPoints(short numPerElement,Vector *mpos)
 {
-    int j,k;
-    double fxn[MaxElNd];
+    int i,j,k;
+    double fxn[MaxElNd],row,zrow;
     
     if(NumberSides()==4)
     {	switch(numPerElement)
@@ -436,6 +483,91 @@ void ElementBase::MPMPoints(short numPerElement,Vector *mpos)
                 mpos[7].y=.5;
 				mpos[7].z=.5;
 				break;
+            case 9:
+                // 2D
+                k=0;
+                row = -2./3.;
+                for(j=0;j<3;j++)
+                {   mpos[k].x=-2./3.;
+                    mpos[k].y=row;
+                    mpos[k].z=0.;
+                    mpos[k+1].x=0.;
+                    mpos[k+1].y=row;
+                    mpos[k+1].z=0.;
+                    mpos[k+2].x=2./3.;
+                    mpos[k+2].y=row;
+                    mpos[k+2].z=0.;
+                    k += 3;
+                    row += 2./3.;
+                }
+                break;
+            case 16:
+                // 2D
+                k=0;
+                row = -0.75;
+                for(j=0;j<4;j++)
+                {   mpos[k].x=-0.75;
+                    mpos[k].y=row;
+                    mpos[k].z=0.;
+                    mpos[k+1].x=-.25;
+                    mpos[k+1].y=row;
+                    mpos[k+1].z=0.;
+                    mpos[k+2].x=.25;
+                    mpos[k+2].y=row;
+                    mpos[k+2].z=0.;
+                    mpos[k+3].x=.75;
+                    mpos[k+3].y=row;
+                    mpos[k+3].z=0.;
+                    k += 4;
+                    row += 0.5;
+                }
+                break;
+            case 25:
+                // 2D
+                k=0;
+                row = -0.8;
+                for(j=0;j<5;j++)
+                {   mpos[k].x=-0.8;
+                    mpos[k].y=row;
+                    mpos[k].z=0.;
+                    mpos[k+1].x=-.4;
+                    mpos[k+1].y=row;
+                    mpos[k+1].z=0.;
+                    mpos[k+2].x=0.;
+                    mpos[k+2].y=row;
+                    mpos[k+2].z=0.;
+                    mpos[k+3].x=.4;
+                    mpos[k+3].y=row;
+                    mpos[k+3].z=0.;
+                    mpos[k+4].x=.8;
+                    mpos[k+4].y=row;
+                    mpos[k+4].z=0.;
+                    k += 5;
+                    row += 0.4;
+                }
+                break;
+            case 27:
+                // 3D
+                k=0;
+                zrow = -2./3.;
+                for(i=0;i<3;i++)
+                {   row = -2./3.;
+                    for(j=0;j<3;j++)
+                    {   mpos[k].x=-2./3.;
+                        mpos[k].y=row;
+                        mpos[k].z=zrow;
+                        mpos[k+1].x=0.;
+                        mpos[k+1].y=row;
+                        mpos[k+1].z=zrow;
+                        mpos[k+2].x=2./3.;
+                        mpos[k+2].y=row;
+                        mpos[k+2].z=zrow;
+                        k += 3;
+                        row += 2./3.;
+                    }
+                    zrow += 2./3.;
+                }
+                break;
             default:
                 break;
         }
@@ -470,6 +602,15 @@ void ElementBase::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeri
 {
 }
 
+// get GIMP shape functions and optionally derivatives wrt x and y
+// assumed to be properly numbered regular array
+// input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
+// Only that elements that support axisymmetric GIMP must override
+void ElementBase::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
+									double *xDeriv,double *yDeriv,double *zDeriv)
+{
+}
+
 // Ignore zero shape functions in GIMP, but only need to check remote nodes
 void ElementBase::GimpCompact(int *numnds,int *nds,double *sfxn,double *xDeriv,double *yDeriv,double *zDeriv)
 {
@@ -499,10 +640,11 @@ bool ElementBase::OnTheEdge(void)
 
 // Calculate CPDI shape functions and optionall gradients
 // numDnds - number of nodes in the particle domain
-// xa - array of coordinates for corner nodes (numDnds of them)
-// ws - shape function weights (numNds of them)
-// wg - gradient weights (numNds of them)
-void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,double *ws,int *numnds,int *nds,
+// cpdi[i]->ncpos - array of coordinates for corner nodes (numDnds of them)
+// cpdi[i]->inElem - the element they are in
+// cpdi[i]->ws - shape function weights (numNds of them)
+// cpdi[i]->wg - gradient weights (numNds of them)
+void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,int *numnds,int *nds,
 								   double *fn,double *xDeriv,double *yDeriv,double *zDeriv)
 {
 	int i,j;
@@ -522,7 +664,7 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,double *ws,int 
 		// loop over shape grid shape functions and collect in arrays
 		for(j=1;j<=*numnds;j++)
 		{   cnodes[ncnds] = nds[j];
-			wsSi[ncnds] = ws[i]*fn[j];
+			wsSi[ncnds] = cpdi[i]->ws*fn[j];
 			if(xDeriv!=NULL) CopyScaleVector(&wgSi[ncnds], &cpdi[i]->wg, fn[j]);
 			ncnds++;
 		}
@@ -621,7 +763,7 @@ void ElementBase::GridShapeFunctions(int *numnds,int *nds,Vector *xipos,double *
 
 #pragma mark ElementBase: MPM Only Methods
 
-/* Get list of nodes for this element and the numbner of nodes
+/* Get list of nodes for this element and the number of nodes
 	nodes will be in nds[1]...
 */
 void ElementBase::GetNodes(int *numnds,int *nds)
@@ -786,10 +928,23 @@ int ElementBase::FindEdge(int beginNode,int endNode)
     return -1;
 }
 
-/* return TRUE or false if Orthogonal in x-y-z planes and if orthogonal then find width, height, and depth
-	of the element. If 2D element, return depth=0
-	*/
+// return TRUE or false if Orthogonal in x-y-z planes and if orthogonal then find width, height, and depth
+// of the element. If 2D element, return depth=0. Only for MPM elements.
 int ElementBase::Orthogonal(double *dx,double *dy,double *dz) { return FALSE; }
+
+// Find Cartesion position from natural coordinates
+void ElementBase::GetPosition(Vector *xipos,Vector *xyzpos)
+{
+	double fn[MaxElNd];
+	ShapeFunction(xipos,FALSE,&fn[1],NULL,NULL,NULL);
+	int i;
+	ZeroVector(xyzpos);
+	for(i=1;i<=NumberNodes();i++)
+	{	xyzpos->x += fn[i]*nd[nodes[i-1]]->x;
+		xyzpos->y += fn[i]*nd[nodes[i-1]]->y;
+		xyzpos->z += fn[i]*nd[nodes[i-1]]->z;
+	}
+}
 
 #pragma mark CLASS METHODS
 
@@ -805,33 +960,23 @@ void ElementBase::ChangeGimp(int newGimp) { useGimp = newGimp; }
 void ElementBase::RestoreGimp(void) { useGimp = analysisGimp; }
 
 // on start up initialize number of CPDI nodes (if needed)
-// needs revision when add 3D CPDI
+// done here in case need more initializations in the future
 void ElementBase::InitializeCPDI(bool isThreeD)
 {
-    int i;
-    
     if(isThreeD)
     {   if(useGimp == LINEAR_CPDI)
         {   numCPDINodes = 8;
-            wShape = (double *)malloc(numCPDINodes*sizeof(double));
-            for(i=0;i<8;i++) wShape[i] = 0.125;
         }
         else if(useGimp == QUADRATIC_CPDI)
         {	throw MPMTermination("qCPDI is not yet implemented for 3D (use lCPDI instead).","MatPoint3D::GetCPDINodesAndWeights");
         }
     }
     else
-    {   if(useGimp == LINEAR_CPDI)
+    {   if(useGimp == LINEAR_CPDI || useGimp==LINEAR_CPDI_AS)
         {   numCPDINodes = 4;
-            wShape = (double *)malloc(numCPDINodes*sizeof(double));
-            for(i=0;i<4;i++) wShape[i] = 0.25;
         }
         else if(useGimp == QUADRATIC_CPDI)
         {   numCPDINodes = 9;
-            wShape = (double *)malloc(numCPDINodes*sizeof(double));
-            for(i=0;i<4;i++) wShape[i] = 1./36.;
-            for(i=4;i<8;i++) wShape[i] = 1./9.;
-            wShape[8] = 4./9.;
         }
     }
 }

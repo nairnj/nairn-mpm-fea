@@ -43,7 +43,7 @@ class MaterialBase : public LinkedObject
 		int criterion[2];
         double KIc,KIIc,KIexp,KIIexp,JIc,JIIc,gamma,delIc,delIIc,nmix;
 		Tensor diffusionTensor;
-		Tensor kCondTensor;
+		Tensor kCondTensor;                 // divided by rho (in g/mm^3)
 		double pCrit3,gain,initSpeed;
 		double initTime,maxLength;
 		int constantDirection;
@@ -89,7 +89,7 @@ class MaterialBase : public LinkedObject
 		virtual void LoadTransportProps(MPMBase *,int);
 		virtual double GetHeatCapacity(MPMBase *);
 		virtual double GetHeatCapacityVol(MPMBase *);
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int) = 0;
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int) = 0;
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int) = 0;
 #endif
 
@@ -123,7 +123,7 @@ class MaterialBase : public LinkedObject
 		virtual double MaximumDiffusion(void);
         virtual double MaximumDiffusivity(void);
         virtual double GetHistory(int,char *);
-		virtual short Rigid(void);
+		virtual bool Rigid(void);
 		virtual short RigidBC(void);
 		virtual short RigidContact(void);
 		virtual bool isTractionLaw(void);
@@ -138,7 +138,6 @@ class MaterialBase : public LinkedObject
 		// accessors (base class only)
 #ifdef MPM_CODE
 		virtual int SetField(int,bool,int);
-		static double GetMVFRho(int matfld);
 		static short GetMVFIsRigid(int matfld);
 		static int GetFieldMatID(int matfld);
 		int GetField(void);
@@ -155,7 +154,6 @@ class MaterialBase : public LinkedObject
 #endif
 	
 		// constants (changed in MPM time step)
-        int hasMatProps;
         double lastMatAngle;
 		double C11,C12,C13,C22,C23,C33,C44,C55,C66;
 		double CTE1,CTE2,CTE3;

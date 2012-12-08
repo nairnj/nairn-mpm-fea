@@ -1,0 +1,168 @@
+! ********** Introduction **********
+! This command  file applies a homogeneous deformation field by applying
+!    position dependent velocities to all nodes. It is done in two steps.
+!    First stretch (by specific strains) and then rotate
+! This test can test constitutive laws and check for objectivity by
+!    consistent results during rotation phase
+
+Title "Homogeneous Deformation Test"
+Name "John A. Nairn"
+
+! Header
+Header
+   Body in homogeneous deformation field
+EndHeader
+
+! Analysis type: "Plane Strain MPM" or "Plane Stress MPM" or "Axisymmetric MPM"
+#analysis="Plane Strain MPM"
+
+! Points per element
+#ppe=1
+
+! pick a method usually "lCPDI" or "uGIMP"
+#method="lCPDI"
+
+! pick strain update method usually "USF" or "USAVG"
+#update="USF"
+
+! Supported materials: "neohookean" (G2=0)
+#matname="neohookean"
+
+! Basic properties
+#Ebase=2300
+#nuBase=0.33
+#abase=60
+#rho=1
+
+! Dimensions
+#cell=40                 ! cell size (square cells)
+#width=40                ! Width of object in mm (mult of cell)
+#height=40               ! Height in mm (mult of cell)
+#thickness=10            ! Thickness in mm
+
+! time factors
+#tmult=100				 ! wave speed for transit times over width to reach max
+#factor=0.01				 ! convergence factor
+#cycles=2				 ! rotation cycles after reach load
+
+! initial strains
+#strainx=0
+#shearx=50				 ! nonphyscial in axisymmetric
+#strainy=0
+#sheary=25
+
+! ********** Calculation Section **********
+
+! start analysis
+Analysis #analysis
+MPMMethod #update,#method
+PtsPerElement #ppe
+
+#G1=#Ebase/(2*(1+#nuBase))
+#G2=0
+#G0=#G1+#G2
+#Kbulk=#Ebase/(3*(1-2*#nuBase))
+
+! Time calcs
+#speed=1000*sqrt(1000*(#Kbulk+4*#G0/3)/#rho)	! wave speed
+#transit=1000*#width/#speed					    ! transit time in ms
+#time=#tmult*#transit							! time to peak load in ms using tmult
+
+! estimated displacements, but currently does not seem exact?
+#disp=abs(#strainx)*#width/2 + abs(#shearx)*#height/2
+#vmax=abs(#sheary)*#width/2 + abs(#strainy)*#height/2
+if #vmax>#disp
+  #disp = #vmax
+endif
+#disp/=100
+
+! Analysis settings
+TimeStep 1000,(1+#cycles)*#time,#factor
+MaximumTime (1+#cycles)*#time
+ArchiveTime (1+#cycles)*#time/100
+Archive "Results/Homogeneous/"&#method&"-"&#ppe&"/"&#matname
+ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
+! plastic strain is Left Cauchy Green Strain, history 1 is J or volumetric strain
+ToArchive plasticstrain,history1
+Comment "Load and Cycle time = "&#time&" ms"
+Comment "Maximum displacement = "&#disp&" mm"
+Comment "Displacement rate = "&(#disp/#time)&" m/sec"
+GlobalArchive "sxx"
+GlobalArchive "sxy"
+GlobalArchive "syy"
+GlobalArchive "szz"
+GlobalArchive "exxe"
+
+if #matname ="neohookean"
+  Material #matname,"Neohookean Material","Mooney"
+    G1 #G1
+    G2 #G2
+    K #Kbulk
+    a #abase
+    rho #rho
+  Done
+endif
+
+! ********** Grid and Material Points Section **********
+
+! border for displacmeents
+if #disp>0
+  #border=2*int(#disp/#cell)+1
+else
+  #border=2
+endif
+
+if #analysis="Axisymmetric MPM"
+  #gleft=-#cell
+  #gright=#width+2*#border*#cell
+else
+  #gleft=-#width/2-#border*#cell
+  #gright=#width/2+#border*#cell
+endif
+#gbot=-#height/2-#border*#cell
+#gtop=#height/2+#border*#cell
+
+! Grid centered on (0,0)
+GridHoriz (#gright-#gleft)/#cell
+GridVert (#gtop-#gbot)/#cell
+GridThickness #thickness
+GridRect #gleft,#gright,#gbot,#gtop
+
+if #analysis="Axisymmetric MPM"
+  Region #matname,0,0,#thickness
+    Rect 0,#width,-#height/2,#height/2
+  EndRegion
+else
+  Region #matname,0,0,#thickness
+    Rect -#width/2,#width/2,-#height/2,#height/2
+  EndRegion
+endif
+
+! ********** Boundary Condition Section **********
+
+! homogenous field to give displacement in time #time
+!  u = #strainx*#x + #shearx*#y
+!  v = #sheary*#x + #strainy*#y
+!  F = [(1+#strainx, #shearx, 0), (#sheary, 1+#strainy,0),(0,0,1))
+
+! load linearly to total F
+#dpart="*(1-sign(t-"&#time&"))*"&(1000/#time)
+
+! rotation speed in radians/sec after reaches load
+#speed=2*3.14159*1000/#time		
+
+! convert to actual strain
+#strainx/=100
+#shearx/=100
+#strainy/=100
+#sheary/=100
+
+! homogeneous deformation field
+MoveLine #gleft-#cell,0,#gright+#cell,0,#gtop+#cell
+  Velocity x,function,"("&#strainx&"*x+"&#shearx&"*y)"&#dpart
+  Velocity y,function,"("&#sheary&"*x+"&#strainy&"*y)"&#dpart
+  if #cycles>0
+    Velocity x,function,(#speed)&"*y",#time
+    Velocity y,function,(-#speed)&"*x",#time
+  endif
+EndMoveLIne

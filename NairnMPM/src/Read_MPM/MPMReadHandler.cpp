@@ -20,6 +20,7 @@
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Global_Quantities/GlobalQuantity.hpp"
 #include "MPM_Classes/MatPoint2D.hpp"
+#include "MPM_Classes/MatPointAS.hpp"
 #include "MPM_Classes/MatPoint3D.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
@@ -98,7 +99,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     else if(strcmp(xName,"TimeFactor")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
-        inputPtr=(char *)&fmobj->FractCellTime;
+        inputPtr=(char *)fmobj->GetCFLPtr();
     }
     
     else if(strcmp(xName,"MaxTime")==0)
@@ -663,6 +664,10 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		if(fmobj->IsThreeD())
 		{	mpCtrl->AddMaterialPoint(new MatPoint3D(elemNum,matl,angle),pConcentration,pTempInitial);
 		}
+		else if(fmobj->IsAxisymmetric())
+		{	// thickness set to x position in pt command by SetPtOrVel() when it calls SetOrigin()
+			mpCtrl->AddMaterialPoint(new MatPointAS(elemNum,matl,angle,1.),pConcentration,pTempInitial);
+		}
 		else
 		{	mpCtrl->AddMaterialPoint(new MatPoint2D(elemNum,matl,angle,thick),pConcentration,pTempInitial);
 		}
@@ -696,7 +701,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		crackCtrl->AddCrack(newCrack);
 		newCrack->SetContact(contact.friction,contact.Dn,contact.Dnc,contact.Dt);
 		double gridThickness=mpmgrid.GetThickness();
-		if(gridThickness>0.) newCrack->thickness=gridThickness;
+		if(gridThickness>0.) newCrack->SetThickness(gridThickness);
 		
 		// read crack attributes
 		double dval;
@@ -736,7 +741,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,CRACKLIST,MUST_BE_2D);
     	input=DOUBLE_NUM;
 		CrackHeader *newCrack=(CrackHeader *)crackCtrl->currentObject();
-        inputPtr=(char *)&newCrack->thickness;
+        inputPtr=(char *)newCrack->GetThicknessPtr();
         gScaling=ReadUnits(attrs,LENGTH_UNITS);
     }
     //-----------------------------------------------------------
@@ -756,7 +761,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,FIXEDNODES,ANY_DIM);
     	int node=0;
 		int dof=0,style=CONSTANT_VALUE;
-        double ftime=0.,skewAngle=0.;
+        double ftime=0.;
     	numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
@@ -769,8 +774,6 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             	sscanf(value,"%d",&style);
             else if(strcmp(aName,"time")==0)
                 sscanf(value,"%lf",&ftime);
-            else if(strcmp(aName,"angle")==0)
-                sscanf(value,"%lf",&skewAngle);
             delete [] aName;
             delete [] value;
         }
@@ -783,7 +786,6 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         
         // create object and get input
         NodalVelBC *newVelBC=new NodalVelBC(node,dof,style,(double)0.,ftime);
-		if(dof==SKEW_DIRECTION) newVelBC->SetSkewAngle(skewAngle);
 		velocityBCs->AddObject(newVelBC);
 		
 		if(style!=FUNCTION_VALUE)

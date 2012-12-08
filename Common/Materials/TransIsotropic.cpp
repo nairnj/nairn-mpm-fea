@@ -35,6 +35,7 @@ TransIsotropic::TransIsotropic(char *matName,int matID) : Elastic(matName)
 #endif
 	betaA=0.;
 	betaT=0.;
+    hasMatProps=FALSE;          // lazy loading of material properties
 }
 
 #pragma mark TransIsotropic::Initialization
@@ -74,9 +75,9 @@ void TransIsotropic::PrintTransportProperties(void)
 	}
 	// Conductivity constants
 	if(ConductionTask::active)
-	{	PrintProperty("ka",kcondA,"W/(m-K)");
-		PrintProperty("kt",kcondT,"W/(m-K)");
-		PrintProperty("Cp",1000.*heatCapacity,"J/(kg-K)");
+	{	PrintProperty("ka",rho*kcondA/1000.,"W/(m-K)");
+		PrintProperty("kt",rho*kcondT/1000.,"W/(m-K)");
+		PrintProperty("Cp",heatCapacity,"J/(kg-K)");
 		cout << endl;
 	}
 }
@@ -187,6 +188,12 @@ const char *TransIsotropic::VerifyProperties(int np)
                 1.e6*GA,1.e6*GA,1.e6*GT,1.e-6*aT,1.e-6*aA,1.e-6*aT,betaT*concSaturation,betaA*concSaturation,betaT*concSaturation);
     }
 	if(err!=NULL) return err;
+
+#ifdef MPM_CODE
+    // make conductivity specific (N mm^3/(sec-K-g))
+    kcondA *= (1000./rho);
+    kcondT *= (1000./rho);
+#endif
 	
 	// superclass call
 	return MaterialBase::VerifyProperties(np);
@@ -693,7 +700,7 @@ void TransIsotropic::LoadMechProps(int makeSpecific,double angle,int np)
         mdm[2][2]*=rrho;
         mdm[2][3]*=rrho;
         mdm[3][3]*=rrho;
-		if(np==PLANE_STRAIN_MPM)
+		if(np==PLANE_STRAIN_MPM || np==AXISYMMETRIC_MPM)
     	{	mdm[4][1]*=rrho;
 			mdm[4][2]*=rrho;
 			mdm[4][3]*=rrho;
@@ -725,7 +732,7 @@ void TransIsotropic::LoadMechProps(int makeSpecific,double angle,int np)
 }
 
 #ifdef MPM_CODE
-// fill in transport tensor if necessary
+// fill in specific transport tensor if necessary
 // Used by TranIsoptropic 1 and 2 and by Orthotropic
 void TransIsotropic::LoadTransportProps(MPMBase *mptr,int np)
 {	
@@ -756,23 +763,23 @@ void TransIsotropic::LoadTransportProps(MPMBase *mptr,int np)
 			diffusionTensor.xx=diffA*s2 + diffT*c2;
 			diffusionTensor.yy=diffA*c2 + diffT*s2;
 			diffusionTensor.xy=(diffT-diffA)*cssn;
-			kCondTensor.xx=kcondA*s2 + kcondT*c2;
-			kCondTensor.yy=kcondA*c2 + kcondT*s2;
-			kCondTensor.xy=(kcondT-kcondA)*cssn;
+			kCondTensor.xx = kcondA*s2 + kcondT*c2;
+			kCondTensor.yy = kcondA*c2 + kcondT*s2;
+			kCondTensor.xy = (kcondT-kcondA)*cssn;
 		}
 		
 		else
 		{	if(MaterialTag()==TRANSISO1)
 			{	diffusionTensor.xx=diffT;
 				diffusionTensor.yy=diffT;
-				kCondTensor.xx=kcondT;
-				kCondTensor.yy=kcondT;
+				kCondTensor.xx = kcondT;
+				kCondTensor.yy = kcondT;
 			}
 			else
 			{	diffusionTensor.xx=diffT;
 				diffusionTensor.yy=diffA;
-				kCondTensor.xx=kcondT;
-				kCondTensor.yy=kcondA;
+				kCondTensor.xx = kcondT;
+				kCondTensor.yy = kcondA;
 			}
 			diffusionTensor.xy=0.;
 			kCondTensor.xy=0.;
@@ -860,11 +867,12 @@ double TransIsotropic::WaveSpeed(bool threeD,MPMBase *mptr)
         return sqrt(1.e9*fmax(GA,fmax(KT+GT,EA+4.*KT*nuA*nuA))/rho);
 }
 
-// maximum diffusion coefficient in cm^2/sec
+// maximum diffusion coefficient in cm^2/sec (diff in mm^2/sec)
 double TransIsotropic::MaximumDiffusion(void) { return max(diffA,diffT)/100.; }
 
 // maximum diffusivity in cm^2/sec
-double TransIsotropic::MaximumDiffusivity(void) { return max(kcondA,kcondT)/(rho*heatCapacity*100.); }
+// specific k is mJ mm^2/(sec-K-g) and Cp is mJ/(g-K) so k/Cp = mm^2 /sec * 1e-2 = cm^2/sec
+double TransIsotropic::MaximumDiffusivity(void) { return 0.01*max(kcondA,kcondT)/heatCapacity; }
 
 // diffusion and conductivity in the z direction
 double TransIsotropic::GetDiffZ(void) { return MaterialTag()==TRANSISO1 ? diffA : diffT; }

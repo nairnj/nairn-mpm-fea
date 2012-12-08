@@ -56,7 +56,7 @@ const char *IdealGas::VerifyProperties(int np)
     if(P0 <= 0. || rho <= 0.0 || T0 <= 0.0 )
 		return "Ideal gas material model needs positive parameters P0, rho, and T0";
 	
-	// Ideal gas has heat capacity in J/(kg-K)
+	// Ideal gas has heat capacity in J/(kg-K) = mJ/(g-K)
 	// Must set C to Cv to work well with theory, even though output and equations
 	//    for conductivity claim Cp is needed. For Ideal Gas, Cv = 1.5R
 	// This material overrides any attempt to set heat capacity
@@ -64,13 +64,13 @@ const char *IdealGas::VerifyProperties(int np)
 	heatCapacityVol = heatCapacity;
 	
     // call super class
-    return MaterialBase::VerifyProperties(np);
+    return HyperElastic::VerifyProperties(np);
 }
 
 // if analysis not allowed, throw an exception
 void IdealGas::ValidateForUse(int np)
 {	if(np==PLANE_STRESS_MPM)
-	{	throw CommonException("IdealGas material cannot do 2D plane stree MPM analysis",
+	{	throw CommonException("IdealGas material cannot do 2D plane stress analysis",
 							  "IdealGas::ValidateForUse");
 	}
 	
@@ -80,14 +80,12 @@ void IdealGas::ValidateForUse(int np)
 	}
 	
 	// call super class (why can't call super class?)
-	return MaterialBase::ValidateForUse(np);
+	return HyperElastic::ValidateForUse(np);
 }
 
 // Private properties used in constitutive law
 void IdealGas::InitialLoadMechProps(int makeSpecific,int np)
 {
-	hasMatProps=TRUE;
-	
 	// P0 in specific units for MPM of N/m^2 cm^3/g
 	P0sp=P0*1.0e+06/rho;
 }
@@ -107,6 +105,9 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np)
 	sp->zz = Psp;
     
     // Initial particle strains are zero (because J=1)
+    
+    // call super class for Cauchy Green strain
+    return HyperElastic::SetInitialParticleState(mptr,np);
 }
 
 
@@ -116,13 +117,14 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np)
     Particle: strains, rotation strain, stresses, strain energy, angle
     dvij are (gradient rates X time increment) to give deformation gradient change
 	Does not support thermal or moisture strains
+   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 */
 void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-								double delTime,int np)
+								double dvzz,double delTime,int np)
 {
-	// get new deformation gradient
-	double F[3][3];
-	double detf = GetDeformationGrad(F,mptr,dvxx,dvyy,dvxy,dvyx,TRUE,TRUE);
+	// Update strains and rotations and Left Cauchy strain
+    // get new deformation gradient
+	double detf = IncrementDeformation(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,NULL);
     
     // single 2D and 3D law
     MPMCombinedLaw(mptr,detf);
@@ -135,10 +137,10 @@ void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,dou
 void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
                            double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
 {
-	// get determinent of incremental deformation gradient (and update strains)
-	double F[3][3];
-	double detf = GetDeformationGrad(F,mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,TRUE,TRUE);
-    
+ 	// Update strains and rotations and Left Cauchy strain
+    // get determinent of incremental deformation gradient
+	double detf = IncrementDeformation(mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,NULL);
+   
     // single 2D and 3D law
     MPMCombinedLaw(mptr,detf);
 }
@@ -162,7 +164,7 @@ void IdealGas::MPMCombinedLaw(MPMBase *mptr,double detf)
 	sp->yy = mPsp;
 	sp->zz = mPsp;
 	
-	// internal energy increment per unit mass or dU/(rho0 V0)
+	// internal energy increment per unit mass or dU/(rho0 V0) (uJ/g)
     // dU/(rho0 V0) = - 0.5 * (pn+p(n+1))/rho0 * (V(n+1)-Vn)/V0, which simplifies to
     double dU = 0.5*(mPnsp*detf + mPsp)*(1.-1/detf);
     

@@ -61,7 +61,6 @@ class CrackHeader : public LinkedObject
 		static int warnThreeFields;
 		static int warnNodeOnCrack;
 		static int warnThreeCracks;
-		double thickness;						// 2D tractions and crack-tip heating
 		
         // constructors and destructors
         CrackHeader();
@@ -104,7 +103,10 @@ class CrackHeader : public LinkedObject
         
 		void SetNumber(int);
 		int GetNumber(void);
-         
+		void SetThickness(double);
+		double GetThickness(void);
+		double *GetThicknessPtr(void);
+    
         // calculate J-integral (YJG)
         int inMat;                        // material ID of crack
         bool SegmentsCross(ContourPoint *,Vector &,Vector &,Vector *);
@@ -137,6 +139,7 @@ class CrackHeader : public LinkedObject
 		bool customContact,hasTractionLaws;
 		Vector initialDirection[2];
 		bool allowAlternate[2];
+		double thickness;						// 2D tractions and crack-tip heating
 
 #ifdef HIERARCHICAL_CRACKS
         CrackLeaf *rootLeaf;

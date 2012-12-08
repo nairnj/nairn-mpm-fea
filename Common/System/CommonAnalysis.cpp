@@ -131,6 +131,10 @@ void CommonAnalysis::StartResultsOutput(void)
         case THREED_MPM:
             cout << "3D MPM Analysis\n\n";
             break;
+		
+		case AXISYMMETRIC_MPM:
+            cout << "Axisymmetric MPM Analysis\n\n";
+            break;
         
         default:
             throw CommonException("No FEA or MPM analysis type was provided.","CommonAnalysis::StartResultsOutput");
@@ -290,9 +294,9 @@ char *CommonAnalysis::GetDescription(void) { return &description[1]; }
 bool CommonAnalysis::IsThreeD(void) { return np==THREED_MPM; }
 bool CommonAnalysis::IsThreeD(int otherNp) { return otherNp==THREED_MPM; }
 
-// is it axisynmmetric
-bool CommonAnalysis::IsAxisymmetric(void) { return np==AXI_SYM; }
-bool CommonAnalysis::IsAxisymmetric(int otherNp) { return otherNp==AXI_SYM; }
+// is it axisynmmetric (FEA or MPM)
+bool CommonAnalysis::IsAxisymmetric(void) { return np==AXI_SYM || np==AXISYMMETRIC_MPM; }
+bool CommonAnalysis::IsAxisymmetric(int otherNp) { return otherNp==AXI_SYM || otherNp==AXISYMMETRIC_MPM; }
 
 /********************************************************************************
 	Methods to keep Xerces contact in fewer files

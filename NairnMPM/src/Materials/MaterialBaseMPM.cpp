@@ -146,6 +146,11 @@ char *MaterialBase::InputMat(char *xName,int &input)
         return((char *)&diffusionCon);
 	}
     
+    else if(strcmp(xName,"beta")==0)
+    {	input=DOUBLE_NUM;
+        return((char *)&betaI);
+    }
+	
 	else if(strcmp(xName,"kCond")==0)
     {	input=DOUBLE_NUM;
         return((char *)&kCond);
@@ -303,8 +308,8 @@ void MaterialBase::PrintTransportProperties(void)
 	}
 	// Conductivity constants
 	if(ConductionTask::active)
-	{	PrintProperty("k",kCond,"W/(m-K)");
-		PrintProperty("Cp",1000.*heatCapacity,"J/(kg-K)");
+	{	PrintProperty("k",rho*kCond/1000.,"W/(m-K)");
+		PrintProperty("Cp",heatCapacity,"J/(kg-K)");        // aka mJ/(g-K)
 		cout << endl;
 	}
 }
@@ -333,7 +338,7 @@ const char *MaterialBase::PreferredDirection(int style)
 		are printined to the output file and before any calculations. It is called for
 		every material defined in the input file, even if it is not used by any
 		particle.
-	Thois base class method calls InitialLoadMechProps() and InitialLoadTransProps()
+	This base class method calls InitialLoadMechProps() and InitialLoadTransProps()
 	If superclass overrides this method, must call this too
 */
 const char *MaterialBase::VerifyProperties(int np)
@@ -341,12 +346,12 @@ const char *MaterialBase::VerifyProperties(int np)
 	// check which were set of Cp = heatCapacity and Cv = heatCapacityVol
 	// if set only Cp, Cv=Cp, if set only Cv, Cp=Cv, if both set, they are used,
 	//		if neither set, they both are zero
+    // Units mJ/(g-K)
 	if(heatCapacityVol<0.) heatCapacityVol=fmax(heatCapacity,0.);
 	if(heatCapacity<0.) heatCapacity=heatCapacityVol;
 	
-	// Convert to J/(g-K) such that (J/(sec-m-K)) / (rho (g/cm^3) Cp) has units mm^2/sec
-	heatCapacity/=1000.;
-	heatCapacityVol/=1000.;
+    // make conductivity specific (N mm^3/(sec-K-g) = mJ mm^2/(sec-K-g))
+    kCond *= (1000./rho);
 
 	// in case only need to load some things once, load those mechanical properties now
 	InitialLoadMechProps((int)(np>BEGIN_MPM_TYPES),np);
@@ -368,13 +373,13 @@ void MaterialBase::InitialLoadTransProps(void)
 	diffusionTensor.xz=0.;
 	diffusionTensor.yz=0.;
 	
-	// conductivity tensor (xx, yy, xy order)
-	kCondTensor.xx=kCond;
-	kCondTensor.yy=kCond;
-	kCondTensor.zz=kCond;
-	kCondTensor.xy=0.;
-	kCondTensor.xz=0.;
-	kCondTensor.yz=0.;
+	// conductivity tensor (xx, yy, xy order) normalized to rho
+	kCondTensor.xx = kCond;
+	kCondTensor.yy = kCond;
+	kCondTensor.zz = kCond;
+	kCondTensor.xy = 0.;
+	kCondTensor.xz = 0.;
+	kCondTensor.yz = 0.;
 }
 
 /* This is called after PreliminaryCalcs() and just before first MPM time step and it
@@ -445,11 +450,12 @@ int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid)
 // -1 if material not in use, otherwise zero-based field number
 int MaterialBase::GetField(void) { return field; }
 
-// maximum diffusion coefficient in cm^2/sec (anisotropic must override)
+// maximum diffusion coefficient in cm^2/sec (anisotropic must override) (diff in mm^2/sec)
 double MaterialBase::MaximumDiffusion(void) { return diffusionCon/100.; }
 
 // maximum diffusivity in cm^2/sec  (anisotropic must override)
-double MaterialBase::MaximumDiffusivity(void) { return kCond/(rho*heatCapacity*100.); }
+// specific ks is mJ mm^2/(sec-K-g) and Cp is mJ/(g-K) so ks/Cp = mm^2 / sec * 1e-2 = cm^2/sec
+double MaterialBase::MaximumDiffusivity(void) { return 0.01*kCond/heatCapacity; }
 
 // material-to-material contact
 void MaterialBase::SetFriction(double friction,int matID,double Dn,double Dnc,double Dt)
@@ -549,6 +555,7 @@ void MaterialBase::LoadTransportProps(MPMBase *mptr,int np) { return; }
 
 // Implemented in case heat capacity changes with particle state (Cp and Cv)
 // Cp is used in conduction; Cv is rarely used
+// Units mJ/(g-K)
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) { return heatCapacity; }
 double MaterialBase::GetHeatCapacityVol(MPMBase *mptr) { return heatCapacityVol; }
 
@@ -1177,7 +1184,7 @@ double MaterialBase::CurrentWaveSpeed(bool threeD,MPMBase *mptr) { return WaveSp
 double MaterialBase::GetHistory(int num,char *historyPtr) { return (double)0.; }
 
 // return TRUE if rigid particle (for contact or for BC)
-short MaterialBase::Rigid(void) { return FALSE; }
+bool MaterialBase::Rigid(void) { return FALSE; }
 
 // return TRUE is rigid BC particle (not rigid for contact)
 short MaterialBase::RigidBC(void) { return FALSE; }
@@ -1188,14 +1195,11 @@ short MaterialBase::RigidContact(void) { return FALSE; }
 // check if traciton law material
 bool MaterialBase::isTractionLaw(void) { return FALSE; }
 
-// return pointer to k conduction tensor
+// return pointer to k conduction tensor (which is normalized to density)
 Tensor *MaterialBase::GetkCondTensor(void) { return &kCondTensor; }
 
 // return pointer to diffusion tensor
 Tensor *MaterialBase::GetDiffusionTensor(void) { return &diffusionTensor; }
-
-// get material rho (g/mm^3) for material velocity field (can only call in multimaterial mode)
-double MaterialBase::GetMVFRho(int matfld) { return theMaterials[fieldMatIDs[matfld]]->rho*0.001; }
 
 // see if material for a material velocity field is rigid (only rigid contact materials can be in a velocity field)
 short MaterialBase::GetMVFIsRigid(int matfld)
