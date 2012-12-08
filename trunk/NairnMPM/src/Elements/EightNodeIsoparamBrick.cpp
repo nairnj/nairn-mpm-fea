@@ -945,7 +945,6 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,
 		}
 		else
 			Svpz=0.;
-
 			
 		sfxn[i]=-Svpx*Svpy*Svpz;
 				
