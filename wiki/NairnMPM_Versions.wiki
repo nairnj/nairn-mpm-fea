@@ -21,9 +21,12 @@ The version number is coded in the constructor of the `NairnMPM.cpp` class:
 NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions currently in this project are as follows:
 
   * Current trunk Version
-    * Working on NairnMPM 8.3.0
+    * Working on NairnMPM 9.0.0
+    * Addition of axisymmetric option for MPM. It does not yet do J integral and a few materials types do not support it yet. The code will not run if you pick an unsupported material. The materials that do support axisymmetry have not all be tested completely but are likely to be fine.
     * Added `CPDI` (convected particle domain integration) as option to `GIMP` command (2D and 3D)
-    * Added `TractionBC` to apply loads to surfaces rather directly to particles (which can reduce artifacts in particle with external loads) (verification in progress)
+    * Added `TractionBC` to apply loads to surfaces rather then directly to particles (which can reduce artifacts in particles with external loads)
+    * The grid now support 1, 4, 9,  16, or 25 particles per cell in 2D and 1, 8, or 27 in 3D and both GIMP and CPDI work for all options.
+    * The flux boundary condition for diffusion is now much better. It uses the real surface integral term in MPM diffusion analysis.
     * Added Johnson-Cook material (verification in progress).
     * The `MGSCGLMaterial` can now do plane stress calculations
     * `BCBox` for particle or velocity boundary conditions can specify an axis to change it to a cylinder
@@ -35,11 +38,13 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * The `RigidMaterial` code has been improved to allow independent control of velocities in `x`, `y`, and `z` directions (`direction` = 0 to 7), each axis can use its own function, and the functions can depend on position and time. This change allows, for example, to have rigid materials in circular motion.
     * `RigidMaterials` for contact (`direction`=8) can now use separate functions for each coordinate to simulate more types of motion and the function can now depend on position and time.
     * `RigidMaterials` that set temperature or concentration with a function now use a new `valueFunction` property and it can be a function of position and time. Because temperature and concentration functions were set before using `settingFunction`, old files will have to be updated to this  new method.
+    * Improved contact mechanics (especially with rigid materials)
     * Body forces for gravity were not correctly implemented for 3D before, but now work in 3D simulations.
     * `Cylinder` shape can add `radius` attribute to create a cone shape.
     * A new `CoupledSawTooth` traction law is implemented (but not yet documented).
     * New `HistoryArchive` custom task to archive particle history data to tab-delimited text files.
     * New `AdjustTimeStep` custom task to adjust time step depending on particle state, but only for material types that can calculate a particle-state-dependent wave speed.
+    * The skewed velocity condition had little use and has been removed. To get it just apply two conditions for x and y directions separately.
 
   * release-3.0 (25 JAN 2012)
     * Has NairnMPM 8.1.0
