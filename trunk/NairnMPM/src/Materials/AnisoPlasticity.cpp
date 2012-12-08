@@ -91,10 +91,8 @@ void AnisoPlasticity::ValidateForUse(int np)
 	}
 	
 	// call super class (why can't call super class?)
-	return MaterialBase::ValidateForUse(np);
+	return Orthotropic::ValidateForUse(np);
 }
-
-
 
 // print to output window
 void AnisoPlasticity::PrintMechanicalProperties(void)
@@ -191,11 +189,12 @@ void AnisoPlasticity::InitialLoadMechProps(int makeSpecific,int np)
     Particle: strains, rotation strain, plastic strain, stresses, strain energy, 
 		plastic energy, dissipated energy, angle
     dvij are (gradient rates X time increment) to give deformation gradient change
-	This is general analysis for isotropic material. Subclass can define any
+   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
+   This is general analysis for isotropic material. Subclass can define any
 		desired plastic potential using methods GetF(), GetDfDsigma(), and GetDfDWp()
 */
 void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double delTime,int np)
+        double dvzz,double delTime,int np)
 {
     // Effective strain by deducting thermal strain
 	// (note me0[1] and mc0[1] are reduced in plane strain, but CTE3 and CME3 are not)
@@ -236,7 +235,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	double ftrial = GetF(mptr,&stk,np);
 	if(ftrial<0.)
 	{	// elastic, update stress and strain energy as usual
-		Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,delTime,np); 
+		Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,delTime,np);
 		return; 
     }
     
@@ -294,12 +293,12 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	{	sp->zz += mdm[4][1]*(dexx+me0[5]*erzz) + mdm[4][2]*(deyy+me0[6]*erzz) + mdm[4][3]*(dgxy+me0[7]*erzz) + mdm[4][4]*dezz;
 	}
 
-	// Elastic energy increment per unit mass (dU/(rho0 V0))
+	// Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
     mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexx
                         + (st0.yy+sp->yy)*deyy
                         + (st0.xy+sp->xy)*dgxy));
 
-    // Plastic energy increment per unit mass (dU/(rho0 V0))
+    // Plastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	double dispEnergy=0.5*((st0.xx+sp->xx)*dexxp
                         + (st0.yy+sp->yy)*deyyp
                         + (st0.xy+sp->xy)*dgxyp);
@@ -498,7 +497,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
     dsig[XY] = mdm[5][0]*dexx+mdm[5][1]*deyy+mdm[5][2]*dezz+mdm[5][3]*dgyz+mdm[5][4]*dgxz+mdm[5][5]*dgxy;
 	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 
-    // Elastic energy increment per unit mass (dU/(rho0 V0))
+    // Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexx
 							   + (st0.yy+sp->yy)*deyy
 							   + (st0.zz+sp->zz)*dezz
@@ -506,7 +505,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 							   + (st0.xz+sp->xz)*dgxz
 							   + (st0.xy+sp->xy)*dgxy));
 	
-    // Plastic energy increment per unit mass (dU/(rho0 V0))
+    // Plastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	double dispEnergy=0.5*(0.5*((st0.xx+sp->xx)*dexxp
 								+ (st0.yy+sp->yy)*deyyp
 								+ (st0.zz+sp->zz)*dezzp

@@ -89,8 +89,7 @@ void UpdateStrainsLastTask::Execute(void)
 		// find shape functions (why ever need gradients?)
 		iel=mpm[p]->ElemID();
 		if(fmobj->multiMaterialMode)
-        {   // Don't need gradients except for mass gradient, and that not changed here
-            //theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
+        {   // Need gradients for volume gradient
             theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
         }
 		else
@@ -103,12 +102,10 @@ void UpdateStrainsLastTask::Execute(void)
 			nd[nds[i]]->AddMomentumTask6(vfld,matfld,fn[i]*mp,&mpm[p]->vel);
 			
 			// add updated displacement and volume (if cracks, not 3D)
-			contact.AddDisplacementTask6(vfld,matfld,nd[nds[i]],mpm[p],fn[i]);
+			contact.AddDisplacementVolume(vfld,matfld,nd[nds[i]],mpm[p],fn[i]);
             
-            // material contact calculations (not needed since using initial position and mass not changed)
-            // if later needed, must zero in RezeronodesTask6() method
-            //if(fmobj->multiMaterialMode)
-            //    nd[nds[i]]->AddMassGradient(vfld,matfld,mp,xDeriv[i],yDeriv[i],zDeriv[i]);
+            // material contact calculations
+			nd[nds[i]]->AddVolumeGradient(vfld,matfld,mpm[p],xDeriv[i],yDeriv[i],zDeriv[i]);
 		}
 	}
 	

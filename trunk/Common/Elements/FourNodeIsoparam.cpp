@@ -10,6 +10,7 @@
 #include "Nodes/NodalPoint.hpp"
 #ifdef MPM_CODE
 	#include "NairnMPM_Class/MeshInfo.hpp"
+    #include "NairnMPM_Class/NairnMPM.hpp"
 #endif
 
 // globals for node locations
@@ -176,11 +177,18 @@ void FourNodeIsoparam::ExtrapolateGaussStressToNodes(double sgp[][5])
 
 // get shape functions and optionally derivatives wrt x and y, but derivatives only work
 // if it is a regular array. Shape functions are general
+// For axisymmetric MPM, make sure zDeriv is not NULL and load with shape function/rp
 void FourNodeIsoparam::ShapeFunction(Vector *xi,int getDeriv,double *sfxn,
 										double *xDeriv,double *yDeriv,double *zDeriv)
 {
-    double temp1,temp2;
+    double temp1,temp2,dx,dy,rp;
 	int i;
+    
+    if(getDeriv)
+    {   dx = GetDeltaX();
+        dy = GetDeltaY();
+        rp = GetCenterX() + 0.5*xi->x*GetDeltaX();
+    }
     
     // just shape function
     for(i=0;i<4;i++)
@@ -188,8 +196,9 @@ void FourNodeIsoparam::ShapeFunction(Vector *xi,int getDeriv,double *sfxn,
         temp2=(1.+eti[i]*xi->y);
         sfxn[i]=0.25*temp1*temp2;
 		if(getDeriv)
-		{	xDeriv[i]=0.5*xii[i]*temp2/GetDeltaX();
-			yDeriv[i]=0.5*eti[i]*temp1/GetDeltaY();
+		{	xDeriv[i]=0.5*xii[i]*temp2/dx;
+			yDeriv[i]=0.5*eti[i]*temp1/dy;
+            if(fmobj->IsAxisymmetric()) zDeriv[i] = sfxn[i]/rp;
 		}
     }
 }
@@ -254,6 +263,21 @@ void FourNodeIsoparam::GetXiPos(Vector *pos,Vector *xipos)
 		ElementBase::GetXiPos(pos,xipos);
 }
 
+// Find Cartesion position from natural coordinates
+void FourNodeIsoparam::GetPosition(Vector *xipos,Vector *pos)
+{
+	if(pgElement)
+	{	double xarg = 0.25*(xipos->x + pgTerm[5]*pgTerm[0] - pgTerm[2]*pgTerm[3]);
+		double yarg = 0.25*(xipos->y + pgTerm[1]*pgTerm[3] - pgTerm[4]*pgTerm[0]);
+		double denom = (pgTerm[1]*pgTerm[5] - pgTerm[2]*pgTerm[4]);
+		pos->x = (pgTerm[1]*xarg + pgTerm[2]*yarg) / denom;
+		pos->y = (pgTerm[4]*xarg + pgTerm[5]*yarg) / denom;
+		pos->z = 0.;
+	}
+	else
+		ElementBase::GetPosition(xipos,pos);
+}
+
 // see if this element is rectangle in cartesion coordinates returning TRUE or FALSE
 // if true, dx and dy set to element dimensions and dz set to zero
 int FourNodeIsoparam::Orthogonal(double *dx,double *dy,double *dz)
@@ -287,7 +311,8 @@ int FourNodeIsoparam::Orthogonal(double *dx,double *dy,double *dz)
 void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos)
 {
 	// quadrant barriers assuming 4 particles
-	double q1=-0.5,q2=0.5;
+	double lp = mpmgrid.lp;
+	double q1 = -1.+lp, q2 = 1.-lp;
 	
 	// nodes directly associated with the element
 	nds[1]=nodes[0];
@@ -408,63 +433,246 @@ void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int ge
 	// assuming the particle size is the same in x and y direction in element coordinate
 	// the deformation of the particle is not considered yet.
 	// assumes 4 particles per element
-	double q1=0.5,q2=1.5,q3=2.5;
+	double lp = mpmgrid.lp;
+	double q1 = lp, q2 = 2.-lp, q3 = 2.+lp;
 	
 	for(i=0;i<numnds;i++)
-	{	xp=fabs(xi->x-gxii[ndIDs[i]]);			// first qudrant (xp, yp)>=0
-		yp=fabs(xi->y-geti[ndIDs[i]]);
+	{	xp = fabs(xi->x - gxii[ndIDs[i]]);			// first qudrant (xp, yp)>=0
+		yp = fabs(xi->y - geti[ndIDs[i]]);
 		
 		if(xp<=q1)
-			Svpx=(4.*xp*xp-7.)/8.;
+			Svpx = ((4.-lp)*lp-xp*xp)/(4.*lp);	// if lp=0.5: -(4.*xp*xp-7.)/8.;
 		else if(xp<=q2)
-			Svpx=(xp-2.)/2.;
+			Svpx = (2.-xp)/2.;
 		else if(xp<=q3)
-		{	argx=(5.-2.*xp)/4.;
-			Svpx=-argx*argx;
+		{	argx = (2.+lp-xp)/(4.*lp);			// if lp=0.5: (5.-2.*xp)/4
+			Svpx = 2.*lp*argx*argx;				// if lp=0.5: argx*argx
 		}
 		else
 			Svpx=0.;
-			
+		
 		if(yp<=q1)
-			Svpy=(4.*yp*yp-7.)/8.;
+			Svpy = ((4.-lp)*lp-yp*yp)/(4.*lp);	// if lp=0.5: -(4.*yp*yp-7.)/8.;
 		else if(yp<=q2)
-			Svpy=(yp-2.)/2.;
+			Svpy = (2.-yp)/2.;
 		else if(yp<=q3)
-		{	argy=(5.-2.*yp)/4.;
-			Svpy=-argy*argy;
+		{	argy = (2.+lp-yp)/(4.*lp);			// if lp=0.5: (5.-2.*yp)/4
+			Svpy = 2.*lp*argy*argy;				// if lp=0.5: (5.-2.*yp)^2/16
 		}
 		else
 			Svpy=0.;
-			
-		sfxn[i]=Svpx*Svpy;
-				
+ 		
+		sfxn[i] = Svpx*Svpy;
+		
 		// find shape function at (xp,yp) 		
 		if(getDeriv)
 		{	xsign = xi->x>gxii[ndIDs[i]] ? 1. : -1.;
 			ysign = xi->y>geti[ndIDs[i]] ? 1. : -1.;
 
-			if(xp<=q1)
-				dSvpx=xp;
+ 			if(xp<=q1)
+				dSvpx = -xp/(2.*lp);			// if lp=0.5: -xp
 			else if(xp<=q2)
-				dSvpx=0.5;
+				dSvpx = -0.5;
 			else if(xp<=q3)
-				dSvpx=argx;
+				dSvpx = -argx;
 			else
-				dSvpx=0.;
-				
-			if(yp<=q1)
-				dSvpy=yp;
+				dSvpx = 0.;
+ 			
+ 			if(yp<=q1)
+				dSvpy = -yp/(2.*lp);			// if lp=0.5: -xp
 			else if(yp<=q2)
-				dSvpy=0.5;
+				dSvpy = -0.5;
 			else if(yp<=q3)
-				dSvpy=argy;
+				dSvpy = -argy;
 			else
-				dSvpy=0.;
-
-			xDeriv[i]=xsign*dSvpx*Svpy*2.0/GetDeltaX();
-			yDeriv[i]=ysign*Svpx*dSvpy*2.0/GetDeltaY();
+				dSvpy = 0.;
+			
+			xDeriv[i] = xsign*dSvpx*Svpy*2.0/GetDeltaX();
+			yDeriv[i] = ysign*Svpx*dSvpy*2.0/GetDeltaY();
 		}
 	}
+}
+
+// get GIMP shape functions and optionally derivatives wrt x and y
+// assumed to be properly numbered regular array
+// input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
+void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
+										 double *xDeriv,double *yDeriv,double *zDeriv)
+{
+#ifdef NONRADIAL_GIMP_AS
+	GimpShapeFunction(xi,numnds,ndIDs,getDeriv,sfxn,xDeriv,yDeriv,zDeriv);
+	
+	if(getDeriv)
+	{	double dx = GetDeltaX();
+		double midx = GetCenterX();
+		double rp = midx+0.5*xi->x*dx;
+		int i;
+		for(i=0;i<numnds;i++)
+			zDeriv[i] = sfxn[i]/rp;
+	}
+#else
+	int i,n;
+	double xp,yp,ri,nr,Svpx,Svpy,dSvpx,dSvpy,pTr,ysign,argx=0.,argy=0.;
+	
+	// L is the cell spacing, 2*lp is the current particle size.
+	// assuming the particle size is the same in x and y direction in element coordinates
+	// the deformation of the particle is not considered here.
+	// assumes 4 particles per element
+	double lp = mpmgrid.lp;
+	double q1 = lp,q2 = 2.-lp, q3 = 2.+lp;
+	double dx = GetDeltaX();
+	double midx = GetCenterX();
+	double dy = GetDeltaY();
+	
+	for(i=0;i<numnds;i++)
+	{	xp = xi->x-gxii[ndIDs[i]];				// signed xp
+		yp = fabs(xi->y-geti[ndIDs[i]]);		// first quadrant for yp>0
+		
+		// find nodal position based on node numbers and nodal column number
+		ri = midx+0.5*gxii[ndIDs[i]]*dx;
+		nr=ri/dx;
+#ifdef TRUNCATE
+		if(fabs(nr)<0.01)
+			n=0;
+		else if(fabs(nr-1.)<0.01)
+			n=1;
+		else
+			n=2;
+#else
+		n=-1;			// to skip all special cases
+#endif
+
+		// Note: when n=0, xp>0 and when n=1, xp>-2 (no need to check)
+		if(xp<-q3 || nr<-0.01)
+			Svpx = 0.;
+		else if(xp<-q2)
+		{	if(n==1)
+				Svpx = (2.+lp+xp)/3.;				// if lp=0.5: (5.+2.*xp)/6.;
+			else
+			{	argx = (2+lp+xp)/(4.*lp);
+				Svpx = 2.*lp*argx*argx*(1.-(2.*(1.-lp)+xp)/(3.*(2.*nr+xp)));
+				// if lp=0.5: argx = (5.+2.*xp)/4.;
+				//Svpx = argx*argx*(-1.+6.*nr+2.*xp)/(3.*(2.*nr+xp));
+			}
+		}
+		else if(xp<-q1)
+			Svpx = (2.+xp)/2. + lp*lp/(6.*(2.*nr+xp));		// if lp=0.5: (2.+xp)/2 + 1./(24.*(2.*nr+xp));
+		else if(xp<q1)
+		{	if(n==0)
+				Svpx = (3.-lp-xp)/3.;						// if lp=0.5: (5.-2.*xp)/6.;
+			else
+			{	Svpx = ((4.-lp)*lp-xp*xp)/(4.*lp) + xp*(xp*xp-3.*lp*lp)/(12.*lp*(2.*nr+xp));
+				// iflp=0.5:
+				// Svpx = -(-9.*xp+4.*xp*xp*xp+3.*nr*(-7.+4.*xp*xp))/(12.*(2.*nr+xp));
+			}
+		}
+		else if(xp<q2)
+			Svpx = (2.-xp)/2. - lp*lp/(6.*(2.*nr+xp));		// if lp=0.5: (2.-xp)/2. - 1./(24.*(2.*nr+xp));
+		else if(xp<q3)
+		{	argx = (2+lp-xp)/(4.*lp);
+			Svpx = 2.*lp*argx*argx*(1.+(2.*(1.-lp)-xp)/(3.*(2.*nr+xp)));
+			// if lp=0.5: argx = argx = (5.-2.*xp);
+			//Svpx = argx*argx*(1.+6.*nr+2.*xp)/(3.*(2.*nr+xp));
+		}
+		else
+			Svpx = 0.;
+			
+		if(yp<=q1)
+			Svpy = ((4.-lp)*lp-yp*yp)/(4.*lp);		// if lp=0.5: (7-4.*yp*yp)/8.;
+		else if(yp<=q2)
+			Svpy = (2.-yp)/2.;
+		else if(yp<=q3)
+		{	argy = (2.+lp-yp)/(4.*lp);				// if lp=0.5: (5.-2.*yp)/4
+			Svpy = 2.*lp*argy*argy;					// if lp=0.5: (5.-2.*yp)^2/16
+		}
+		else
+			Svpy=0.;
+		
+		sfxn[i] = Svpx*Svpy;
+		
+		// find shape function at (xp,yp) 		
+		if(getDeriv)
+		{	ysign = xi->y>geti[ndIDs[i]] ? 1. : -1.;
+			
+			// Note: when n=0, xp>0 and when n=1, xp>-2 (no need to check)
+			if(xp<-q3 || nr<-0.01)
+				dSvpx = 0.;
+			else if(xp<-q2)
+			{	if(n==1)
+					dSvpx = 0.5;
+				else
+				{	dSvpx = (2.+lp+xp)*(1 - (2.-lp+xp)/(2.*(2.*nr+xp)))/(4*lp);
+					// if lp=0.5: (5.+2.*xp)*(1 - (3.+2.*xp)/(4.*(2.*nr+xp)))/4;
+					//			or (5.+2.*xp)*(-3.+8.*nr+2.*xp)/(16.*(2.*nr+xp));
+				}
+			}
+			else if(xp<-q1)
+				dSvpx = 0.5;
+			else if(xp<q1)
+			{	if(n==0)
+					dSvpx = -0.5;
+				else
+					dSvpx = -xp/(2.*lp) - (lp*lp-xp*xp)/(4.*lp*(2.*nr+xp));  // if lp=0.5: -xp - (1.-4.*xp*xp)/(8.*(2.*nr+xp));
+			}
+			else if(xp<q2)
+				dSvpx = -0.5;
+			else if(xp<q3)
+			{	dSvpx = -(2.+lp-xp)*(1. + (2.-lp-xp)/(2.*(2.*nr+xp)))/(4*lp);
+				// if lp=0.5: -(5.-2.*xp)*(1 + (3-2.*xp)/(4.*(2.*nr+xp)))/4;
+				//			or -(5.-2.*xp)*(3.+8.*nr+2.*xp)/(16.*(2.*nr+xp));
+			}
+			else
+				dSvpx=0.;
+
+			if(yp<=q1)
+				dSvpy = -yp/(2.*lp);			// if lp=0.5: -yp
+			else if(yp<=q2)
+				dSvpy = -0.5;
+			else if(yp<=q3)
+				dSvpy = -argy;
+			else
+				dSvpy = 0.;
+			
+			xDeriv[i] = dSvpx*Svpy*2.0/dx;
+			yDeriv[i] = ysign*Svpx*dSvpy*2.0/dy;
+
+			// Note: when n=0, xp>0 and when n=1, xp>-2 (no need to check)
+			if(xp<-q3 || nr<-0.01)
+				pTr = 0.;
+			else if(xp<-q2)
+			{	if(n==1)
+					pTr = 0.5;
+				else
+				{	argx = (2.+lp+xp)/(4.*lp);				// if lp=0.5: (5.+2.*xp)/4
+					pTr = 2.*lp*argx*argx/(2.*nr+xp);		// if lp=0.5: (5.+2.*xp)^2/(16.*(2.*nr+xp))
+				}
+			}
+			else if(xp<-q1)
+			{	if(n==1)
+					pTr = 0.5;
+				else
+					pTr = (2.+xp)/(2.*(2.*nr+xp));
+			}
+			else if(xp<q1)
+			{	if(n==0)
+					pTr = 2./(xp+lp) - 0.5;					// if lp=0.5: (7.-2.*xp)/(2.+4.*xp);
+				else
+					pTr = ((4.-lp)*lp-xp*xp)/(4.*lp*(2.*nr+xp));	// if lp=0.5: (7-4.*yp*yp)/(8.*(2.*nr+xp));
+			}
+			else if(xp<q2)
+				pTr = (2.-xp)/(2.*(2.*nr+xp));
+			else if(xp<q3)
+			{	argx = (2.+lp-xp)/(4.*lp);						// if lp=0.5: (5.-2.*yp)/4
+				pTr = 2.*lp*argx*argx/(2.*nr+xp);				// if lp=0.5: (5.-2.*yp)^2/(16.*(2.*nr+xp))
+			}
+			else
+				pTr = 0.;
+			
+			zDeriv[i] = pTr*Svpy*2.0/dx;
+
+		}
+	}
+#endif
 }
 
 #endif

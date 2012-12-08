@@ -45,7 +45,7 @@ For 2D analyses, the following commands generate a square mesh as a grid:
 &lt;/Mesh&gt;
 </pre>
 
-<p>For 3D analyses, the following commands generate an orthogonal mesh of cells:
+<p>Axisymmetric calculations use <code>x</code> and <code>y</code> limits for <code>R</code> and <code>Z</code> limits. For 3D analyses, the following commands generate an orthogonal mesh of cells:
 </p>
 
 <pre>
@@ -61,18 +61,18 @@ For 2D analyses, the following commands generate a square mesh as a grid:
 
 <p>
 where the first four to six attributes (<code>xmin</code>, <code>xmax</code>,
-<code>ymin</code>, <code>ymax</code>, <code>zmin</code>, <code>zmax</code>) denote
-the extent of the grid in the <code>x</code>, <code>y</code>, and <code>z</code> 
+<code>ymin</code>, <code>ymax</code>, <code>zmin</code>, <code>zmax</code>, code>Rmin</code>, <code>Rmax</code>, <code>Zmin</code>, <code>Zmax</code>) denote
+the extent of the grid in the <code>x</code>, <code>y</code>, <code>z</code>, <code>R</code>, and <code>Z</code> 
 directions, respectively. An optional <a href="mpmheader.html#units"><code>units</code>
 attribute</a> can specify the length units attribute.</p>
 
-<p>The <code>thickness</code> in 2D calculations defines the thickness of the grid.
+<p>The <code>thickness</code> in planar 2D calculations defines the thickness of the grid.
 This attribute is required when doing <a href="mpmheader.html#mmmode">multimaterial</a> contact
-including the optional volume check. It is optional in other calculations because
+including the optional volume check and when using <a href="mpmloads.html">traction or flux boundary conditions</a>. It is optional in other calculations because
 thickness can be set when <a href="definempm.html">defining material points</a>
 and when <a href="cracks.html">defining cracks</a>. If used, however, all
 material points and cracks will default to the grid thickness. You can enter 
-different values, although it is not recommended (and may change the physics in multimaterial simulations). A warning is printed in the output if a crack thickness does not match the grid thickness. Currently no warning is given if material points have a different thickness.
+different values, although it is not recommended (and may change the physics in multimaterial simulations or results to traction or flux boundary conditions). A warning is printed in the output if a crack thickness does not match the grid thickness. Currently no warning is given if material points have different thicknesses.
 </p>
 
 <p>The subordinate tags define the number of elements in each direction:
@@ -86,11 +86,11 @@ different values, although it is not recommended (and may change the physics in 
 of cells and <code>rx</code> is a ratio of cell sizes (currently only <code>rx=1</code> for a regular grid
 is supported). Alternatively, you can set the <code>cellsize</code> (in mm).
 Note: if needed, <code>xmax</code> will be increased to accomodate an integral number of elements
-at the desired size.
+at the desired size. In axisymmetric calculations the horizontal direction is the radial or <code>R</code> direction.
 </dd>
 
 <dt>&lt;Vert ny="20" ry="1.0"&gt; or &lt;Vert cellsize='2'/&gt;</dt>
-<dd>This tag similarly defines the mesh in the <code>y</code> direction.
+<dd>This tag similarly defines the mesh in the <code>y</code> direction. In axisymmetric calculations the vertical direction is the axial or <code>Z</code> direction.
 <dd>
 
 <dt>&lt;Depth nz="20" rz="1.0"&gt; or &lt;Depth cellsize='2'/&gt;</dt>
@@ -132,14 +132,14 @@ at the desired size.
 
 
 <p>The <code>&lt;NodeList&gt;</code> must have one <code>&lt;pt&gt;</code> tag for each nodal point.
-The <code>x</code> and <code>y</code> attributes give the coordinates of each point in mm (by default) or in the units specified by the optional <a href="mpmheader.html#units"><code>units</code> attribute</a>. For 3D analyses, add a <code>z</code> attribute for the third coordinate.
+The <code>x</code> and <code>y</code> attributes give the coordinates of each point in mm (by default) or in the units specified by the optional <a href="mpmheader.html#units"><code>units</code> attribute</a>. For axisymmetric calculations use <code>x</code> and <code>y</code> for <code>R</code> and <code>Z</code>. For 3D analyses, add a <code>z</code> attribute for the third coordinate.
 </p>
 
 <p>These nodes are connected into elements in the <code>&lt;ElementList&gt;</code>.
 Each element is defined in an <code>&lt;elem&gt;</code> tag. The <code>type='2'</code> attribute means 4-node rectangular elements and is the only one supported for 2D calculations. The node numbers are listed in counter-clockwise direction. The numbers correspond to the above nodal list with the first node being numbered 1. A <code>type='7'</code> attribute means 8-node brick elements and is the only one supported for 3D calculations. The node numbers are listed in counter-clockwise direction for one face and the for the corresponding nodes on the opposite face. The node numbers can be delimited by any white space, commas, colons, semicolons, or any combination of those delimiters.
 </p>
 
-<p><font color="red">Warning</font> - explicited created meshes current cannot run using <a href="mpmheader.html#GIMP">GIMP</a> methods.
+<p><font color="red">Warning</font> - explicitly created meshes cannot run using any <a href="mpmheader.html#GIMP">GIMP</a> methods.
 </p>
 
 <p class="links">

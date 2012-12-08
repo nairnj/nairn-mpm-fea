@@ -20,10 +20,11 @@ enum {	UNKNOWN_GRID=-1,NOT_CARTESIAN=0,SQUARE_GRID,RECTANGULAR_GRID,
 class MeshInfo
 {
     public:
-		double gridx,gridy,gridz;
-		double partx,party,partz;
-		double diagx,diagy,diagz;
-		int xplane,yplane,zplane;
+		// properties of a regular grid
+		double gridx,gridy,gridz;		// cell size
+		double partx,party,partz,lp;	// semilength of particle (lp in natural coordinates)
+		double diagx,diagy,diagz;		// cell diagonal
+		int xplane,yplane,zplane;		// node spacings in each plane
 		double xmin,ymin,zmin;			// minimums (if from a grid)
 		
 		// constructors
@@ -52,10 +53,10 @@ class MeshInfo
 		double GetDefaultThickness();
 		
 	private:
-		int cartesian;
-		int totalElems;
+		int cartesian;					// non-zero (NOT_CARTESIAN) is a regular grid
+		int totalElems;					// total number of elements
 		int horiz,vert,depth;			// number of elements in that direction (if from a grid)
-		double cellVolume;
+		double cellVolume;				// cell volume
 };
 
 extern MeshInfo mpmgrid;

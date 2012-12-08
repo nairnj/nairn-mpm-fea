@@ -65,10 +65,12 @@ void NodalPoint::InitializeForTimeStep(void)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
 			cvf[i]->Zero(0,0,TRUE);
 	}
+	
+	// for conduction and diffusion
 	gVolume=0.;
 	gConcentration=0.;
 	gTemperature=0.;
-	gRhoVCp=0.;
+	gMpCp=0.;
 	fdiff=0.;
 	fcond=0.;
 }
@@ -79,7 +81,7 @@ void NodalPoint::InitializeForTimeStep(void)
 void NodalPoint::AddMass(short vfld,int matfld,double mnode) { cvf[vfld]->AddMass(matfld,mnode); }
 
 // for rigid particles, adding mass is counting number of rigid particles
-void NodalPoint::AddMassTask1(short vfld,int matfld) { cvf[vfld]->AddMassTask1(matfld); }
+void NodalPoint::AddMassTask1(short vfld,int matfld,double mnode) { cvf[vfld]->AddMassTask1(matfld,mnode); }
 
 // Add to momentum vector (first pass - allocate cvf[] if needed) (both 2D and 3D)
 short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector *vel)
@@ -237,8 +239,9 @@ short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector 
 }
 
 // Add mass for selected field
-void NodalPoint::AddMassGradient(short vfld,int matfld,double mp,double dNdx,double dNdy,double dNdz)
-{	cvf[vfld]->AddMassGradient(matfld,mp,dNdx,dNdy,dNdz);
+void NodalPoint::AddVolumeGradient(short vfld,int matfld,MPMBase *mptr,double dNdx,double dNdy,double dNdz)
+{	if(fmobj->multiMaterialMode)
+		cvf[vfld]->AddVolumeGradient(matfld,mptr,dNdx,dNdy,dNdz);
 }
 
 // Calculate total mass. Calculations might need to exclude nodes whose
@@ -814,9 +817,9 @@ void NodalPoint::AddDisplacement(short vfld,int matfld,double wt,Vector *pdisp)
 {	cvf[vfld]->AddDisplacement(matfld,wt,pdisp);
 }
 
-// Add unscaled volume (mass/rho) to selected field
-void NodalPoint::AddUnscaledVolume(short vfld,double wtVol)
-{	cvf[vfld]->AddUnscaledVolume(wtVol);
+// Add volume to selected field
+void NodalPoint::AddVolume(short vfld,int matfld,double wtVol)
+{	cvf[vfld]->AddVolume(matfld,wtVol);
 }
 
 #pragma mark VELOCITY FIELDS
@@ -870,61 +873,10 @@ void NodalPoint::MaterialContactOnNode(bool postUpdate,double deltime)
 }
 
 // retrieve -2*scale*(mass gradient) for material matfld in velocity field vfld
-void NodalPoint::GetMassGradient(short vfld,int matfld,Vector *grad,double scale)
-{
-	cvf[vfld]->GetMassGradient(matfld,grad,scale);
-	
-	/*
-	// number of nodes each direction (1 more than number of elements)
-	int horiz,vert,depth;
-	mpmgrid.GetGridPoints(&horiz,&vert,&depth);
-	
-	// 3D or 2D
-	if(fmobj->IsThreeD())
-	{	//int stack=horiz*vert;
-		//int slice=num % stack*depth;
-		//if(slice==0 || slice>stack*(depth-1))	// last slice
-		//	grad->z=(nd[num-stack]->GetMass(vfld,matfld))/mpmgrid.gridz;
-		//else if(col<=stack)	// first slice
-		//	grad->z=(-nd[num+stack]->GetMass(vfld,matfld))/mpmgrid.gridz;
-		//else
-		//	grad->z=(nd[num-stack]->GetMass(vfld,matfld)-nd[num+stack]->GetMass(vfld,matfld))/mpmgrid.gridz;
-		//grad->z*=scale;
-	}
-	else
-	{	// -2*scale*dm/dy
-		int col=num % horiz;
-		if(col==0)		// last column
-			grad->x=(nd[num-1]->GetMass(vfld,matfld))/mpmgrid.gridx;
-		else if(col==1)		// first column
-			grad->x=(-nd[num+1]->GetMass(vfld,matfld))/mpmgrid.gridx;
-		else
-			grad->x=(nd[num-1]->GetMass(vfld,matfld)-nd[num+1]->GetMass(vfld,matfld))/mpmgrid.gridx;
-		grad->x*=scale;
-	
-		// -2*scale*dm/dy
-		if(num>horiz*(vert-1))	// top row
-			grad->y=(nd[num-horiz]->GetMass(vfld,matfld))/mpmgrid.gridy;
-		else if(num<=horiz)		// bottom row
-			grad->y=(-nd[num+horiz]->GetMass(vfld,matfld))/mpmgrid.gridy;
-		else
-			grad->y=(nd[num-horiz]->GetMass(vfld,matfld)-nd[num+horiz]->GetMass(vfld,matfld))/mpmgrid.gridy;
-		grad->y*=scale;
-	
-		//-2*scale*dm/dz
-		grad->z=0.;
-	}
-	*/
+void NodalPoint::GetVolumeGradient(short vfld,int matfld,Vector *grad,double scale)
+{	cvf[vfld]->GetVolumeGradient(matfld,this,grad,scale);
 }
 
-// get mass (or zero of no field)
-double NodalPoint::GetMass(short vfld,int matfld)
-{	if(CrackVelocityField::ActiveField(cvf[vfld]))
-		return cvf[vfld]->GetMass(matfld);
-	else
-		return 0.;
-}
- 
 // This node is known to have imperfect interface with forces in cvf[vfld] from material mati
 // to matipaired (second material with the max volume)
 void NodalPoint::MaterialInterfaceForce(MaterialInterfaceNode *mmnode)
@@ -1171,7 +1123,7 @@ void NodalPoint::InterfaceForceThree(int single)
 	}
 }
 
-// Look for crack contact and adjust accordingly - a for field above and b for field below
+// Look for cracks as imperfect interfaces and adjust accordingly - a for field above and b for field below
 // fields must be verified as present (1 or more points)
 void NodalPoint::AddInterfaceForce(short a,short b,Vector *norm,int crackNumber)
 {	Vector fImpInt;
@@ -1192,11 +1144,14 @@ void NodalPoint::AddInterfaceForce(short a,short b,Vector *norm,int crackNumber)
 	//double dist = fmax(dxnx,dyny)/sqrt(norm->x*norm->x+norm->y*norm->y);
     
 	// Area correction method 1 (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
-	double vola=cvf[a]->UnscaledVolumeNonrigid(),volb=cvf[b]->UnscaledVolumeNonrigid(),voltot=vola+volb;
+	double vola=cvf[a]->GetVolumeNonrigid(),volb=cvf[b]->GetVolumeNonrigid(),voltot=vola+volb;
 	double surfaceArea=sqrt(2.0*fmin(vola,volb)*voltot)/dist;
 	
 	// Area correction method 2 (in imperfect interface by cracks paper): (2*vmin/vtot)*vtot/dist = 2*vmin/dist
 	//double surfaceArea=2.0*fmin(cvf[a]->UnscaledVolumeNonrigid(),cvf[b]->UnscaledVolumeNonrigid())/dist;
+    
+    // If axisymmetric, multiply by radial position (vola, volb above were areas)
+    if(fmobj->IsAxisymmetric()) surfaceArea *= x;
 	
 	// add total force (in g mm/sec^2)
 	AddFintSpreadTask3(a,MakeVector(fImpInt.x*surfaceArea,fImpInt.y*surfaceArea,0.));
@@ -1249,263 +1204,75 @@ void NodalPoint::Describe(void)
 	
 #pragma mark BOUNDARY CONDITION METHODS
 
-// set X velocity and momentum to zero
-void NodalPoint::SetXMomVel(void)
+// set one component of velocity and momentum to zero
+void NodalPoint::SetMomVel(int dir)
 {
 #ifdef _BC_CRACK_SIDE_ONLY_
 	// just set if on same side of crack
-	cvf[0]->SetXMomVel();
+	cvf[0]->SetMomVel(dir);
 #else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->SetXMomVel();
+            cvf[i]->SetMomVel(dir);
 	}
 #endif
 }
 
-// Set Y velocity and momentum to zero
-void NodalPoint::SetYMomVel(void)
+// Add one component of velocity and momentum at a node (assumes mass already set)
+void NodalPoint::AddMomVel(int dir,double vel)
 {	
 #ifdef _BC_CRACK_SIDE_ONLY_
 	// just set if on same side of crack
-	cvf[0]->SetYMomVel();
+	cvf[0]->AddMomVel(dir,vel);
 #else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->SetYMomVel();
+            cvf[i]->AddMomVel(dir,vel);
 	}
 #endif
 }
 
-// Set Z velocity and momentum to zero
-void NodalPoint::SetZMomVel(void)
-{	
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just set if on same side of crack
-	cvf[0]->SetZMomVel();
-#else
-	int i;
-	for(i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->SetZMomVel();
-	}
-#endif
-}
-
-// Set velocity and momentum to zero in skewed direction (angle in radians)
-// ccw from positive x axis
-void NodalPoint::SetSkewMomVel(double angle)
-{	
-	// need to do skew condition at the velocity field level
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just set if on same side of crack
-	cvf[0]->SetSkewMomVel(angle);
-#else
-	int i;
-	for(i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->SetSkewMomVel(angle);
-	}
-#endif
-}
-
-// Add X velocity and momentum at a node (assumes mass already set)
-void NodalPoint::AddXMomVel(double velx)
-{	
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just set if on same side of crack
-	cvf[0]->AddXMomVelvelx);
-#else
-	int i;
-	for(i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->AddXMomVel(velx);
-	}
-#endif
-}
-
-// Add Y velocity and momentum at a node (assumes mass set)
-void NodalPoint::AddYMomVel(double vely)
-{
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just set if on same side of crack
-	cvf[0]->AddYMomVel(vely);
-#else
-	int i;
-	for(i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->AddYMomVel(vely);
-	}
-#endif
-}
-
-// Add Z velocity and momentum at a node (assumes mass set)
-void NodalPoint::AddZMomVel(double velz)
-{	
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just set if on same side of crack
-	cvf[0]->AddZMomVel(velz);
-#else
-	int i;
-	for(i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->AddZMomVel(velz);
-	}
-#endif
-}
-
-// Add velocity and momentum in skewed direction (angle in radians)
-void NodalPoint::AddSkewMomVel(double vel,double angle)
-{	
-	// need to do skew condition at the velocity field level
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just set if on same side of crack
-	cvf[0]->AddSkewMomVel(vel,angle);
-#else
-	int i;
-	for(i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->AddSkewMomVel(vel,angle);
-	}
-#endif
-}
-
-// set X force to -p(interpolated)/time such that updated momentum
-//    of pk.x + deltime*ftot.x will be zero
-void NodalPoint::SetXFtot(double deltime)
+// set one component of force to -p(interpolated)/time such that updated momentum
+//    of pk.i + deltime*ftot.i will be zero
+void NodalPoint::SetFtot(int dir,double deltime)
 {	
 #ifdef _BC_CRACK_SIDE_ONLY_
 	// just on same side of the crack
-	cvf[0]->SetXFtot(deltime);
+	cvf[0]->SetFtot(dir,deltime);
 #else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->SetXFtot(deltime);
+            cvf[i]->SetFtot(dir,deltime);
 	}
 #endif
 }
 
-// set Y force to -p(interpolated)/time such that updated momentum
-//    of pk.y + deltime*ftot.y will be zero
-void NodalPoint::SetYFtot(double deltime)
+// set one component of force such that updated momentum will be mass*velocity
+void NodalPoint::AddFtot(int dir,double deltime,double vel)
 {	
 #ifdef _BC_CRACK_SIDE_ONLY_
 	// just on same side of the crack
-	cvf[0]->SetYFtot(deltime);
+	cvf[0]->AddFtot(dir,deltime,vel);
 #else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->SetYFtot(deltime);
-	}
-#endif
-}
-
-// set Z force to -p(interpolated)/time such that updated momentum
-//    of pk.z + deltime*ftot.z will be zero
-void NodalPoint::SetZFtot(double deltime)
-{	
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just on same side of the crack
-	cvf[0]->SetZFtot(deltime);
-#else
-	int i;
-	for(i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->SetZFtot(deltime);
-	}
-#endif
-}
-
-// set skew force to -p(interpolated)/time such that updated momentum
-//    of nv[j]->pk.x + deltime*nv[j]->ftot.x
-//    of nv[j]->pk.y + deltime*nv[j]->ftot.y
-// will be zero in skew direction
-void NodalPoint::SetSkewFtot(double deltime,double angle)
-{	
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just on same side of the crack
-	cvf[0]->SetSkewFtot(deltime,angle);
-#else
-	int i;
-	for(i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->SetSkewFtot(deltime,angle);
-	}
-#endif
-}
-
-// set x force such that updated momentum will be mass*velocity
-void NodalPoint::AddXFtot(double deltime,double velx)
-{	
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just on same side of the crack
-	cvf[0]->AddXFtot(deltime,velx);
-#else
-	int i;
-	for(i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->AddXFtot(deltime,velx);
-	}
-#endif
-}
-
-// set y force suce that updated momentum will be mass*velocity
-void NodalPoint::AddYFtot(double deltime,double vely)
-{	
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just on same side of the crack
-	cvf[0]->AddYFtot(deltime,vely);
-#else
-	int i;
-	for(i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->AddYFtot(deltime,vely);
-	}
-#endif
-}
-
-// set z force such that updated momentum will be mass*velocity
-void NodalPoint::AddZFtot(double deltime,double velz)
-{	
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just on same side of the crack
-	cvf[0]->AddZFtot(deltime,velz);
-#else
-	int i;
-	for(i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->AddZFtot(deltime,velz);
-	}
-#endif
-}
-
-// set Y force suce that updated momentum will be mass*velocity
-void NodalPoint::AddSkewFtot(double deltime,double vel,double angle)
-{	
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just on same side of the crack
-	cvf[0]->AddSkewFtot(deltime,vel,angle);
-#else
-	int i;
-	for(i=0;i<maxCrackFields;i++)
-	{   if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->AddSkewFtot(deltime,vel,angle);
+            cvf[i]->AddFtot(dir,deltime,vel);
 	}
 #endif
 }
 
 // Mark a direction as fixed by velocity BC
-// Assume 1 means x, 2 means y, 4 means z, x+y (or 3) is skewed condition
+// Assume 1 means x, 2 means y, 4 means z
 void NodalPoint::SetFixedDirection(int dir)
 {	fixedDirection|=dir;
 }
 
 // Unmark a direction as fixed by velocity BC
-// Assume 1 means x, 2 means y, 4 means z, x+y (or 3) is skewed condition
+// Assume 1 means x, 2 means y, 4 means z
 void NodalPoint::UnsetFixedDirection(int dir)
 {	fixedDirection^=dir;
 }

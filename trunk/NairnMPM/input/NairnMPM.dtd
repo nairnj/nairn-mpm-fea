@@ -147,22 +147,27 @@
 <!ELEMENT	Material
 			( rho | E | nu | G | alpha | yield | Ep | beta | yieldMax
 				| EA | ET | GA | nuA | nuT | alphaA | alphaT | betaA | betaT
-				| Ex | Ey | Ez | Gxy | Gxz | Gyz | nuxy | nuxz | nuyz
-				| alphax | alphay | alphaz | betax | betay | betaz
+				| Ex | ER | Ey | EZ | Ez | Gxy | Gyx | GRZ | GZR | Gxz | Gzx 
+				| GRT | GTR | Gyz | Gzy | GZT | GTZ
+				| nuxy | nuyx | nuRZ | nuZR | nuxz | nuzx | nuRT | nuTR | nuyz | nuzy | nuZT | nuTZ
+				| alphax | alphay | alphaz | alphaR | alphaZ
+				| betax | betay | betaz | betaR | betaZ
 				| K | G0 | ntaus | Gk | tauk | xGrow | yGrow
 				| G1 | G2 | speed | gain | p | maxLength | Propagate | AltPropagate | initTime
 				| K0 | Kd | Gd | alpha0 | alphad | transition | critical | DeltaVOffset
 				| reversible | irreversible | beta0 | betad | sigmaI | sigmaII | kIe | kIIe | nmix
 				| KIc | KIIc | JIc | JIIc | gamma | KIexp | KIIexp | delIc | delIIc | delpkI | delpkII
 				| sigmaI2 | sigmaII2 | delpkI2 | delpkII2 | ValueFunction
-				| D | DA | DT | Dx | Dy | Dz | D0 | Dd | csat | SettingFunction | SettingFunction2 | SettingFunction3
+				| D | DA | DT | Dx | Dy | Dz | DR | DZ | D0 | Dd | csat 
+				| SettingFunction | SettingFunction2 | SettingFunction3
 				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration
 				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd | P0 | T0
+                | kCondR | kCondZ
 				| yldxx | yldyy | yldzz | yldxy | yldxz | yldyz | Khard | nhard | color | betahard
 				| Bjc | njc | Cjc | ep0jc | C0 | S1 | S2 | GPpG0 | GTpG0 | gamma0
 				| Uk | YP | Friction | C1 | C2 | Ajc | mjc | Tmjc | tempC1 | tempC2 )* >
 <!ATTLIST	Material
-			Type (1|2|3|4|5|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23) #REQUIRED
+			Type (1|2|3|4|5|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24) #REQUIRED
 			Name CDATA #REQUIRED>
 
 <!-- Displacement Boundary Conditions -->
@@ -374,18 +379,42 @@
 <!ELEMENT	Ex (#PCDATA)>
 <!ELEMENT	Ey (#PCDATA)>
 <!ELEMENT	Ez (#PCDATA)>
+<!ELEMENT	ER (#PCDATA)>
+<!ELEMENT	EZ (#PCDATA)>
 <!ELEMENT	Gxy (#PCDATA)>
+<!ELEMENT	Gyx (#PCDATA)>
 <!ELEMENT	Gxz (#PCDATA)>
+<!ELEMENT	Gzx (#PCDATA)>
 <!ELEMENT	Gyz (#PCDATA)>
+<!ELEMENT	Gzy (#PCDATA)>
+<!ELEMENT	GRZ (#PCDATA)>
+<!ELEMENT	GZR (#PCDATA)>
+<!ELEMENT	GRT (#PCDATA)>
+<!ELEMENT	GTR (#PCDATA)>
+<!ELEMENT	GZT (#PCDATA)>
+<!ELEMENT	GTZ (#PCDATA)>
 <!ELEMENT	nuxy (#PCDATA)>
-<!ELEMENT	nuxz (#PCDATA)>
 <!ELEMENT	nuyz (#PCDATA)>
+<!ELEMENT	nuxz (#PCDATA)>
+<!ELEMENT	nuyx (#PCDATA)>
+<!ELEMENT	nuzy (#PCDATA)>
+<!ELEMENT	nuzx (#PCDATA)>
+<!ELEMENT	nuRZ (#PCDATA)>
+<!ELEMENT	nuZR (#PCDATA)>
+<!ELEMENT	nuRT (#PCDATA)>
+<!ELEMENT	nuTR (#PCDATA)>
+<!ELEMENT	nuZT (#PCDATA)>
+<!ELEMENT	nuTZ (#PCDATA)>
 <!ELEMENT	alphax (#PCDATA)>
 <!ELEMENT	alphay (#PCDATA)>
 <!ELEMENT	alphaz (#PCDATA)>
+<!ELEMENT	alphaR (#PCDATA)>
+<!ELEMENT	alphaZ (#PCDATA)>
 <!ELEMENT	betax (#PCDATA)>
 <!ELEMENT	betay (#PCDATA)>
 <!ELEMENT	betaz (#PCDATA)>
+<!ELEMENT	betaR (#PCDATA)>
+<!ELEMENT	betaZ (#PCDATA)>
 <!ELEMENT	KIc (#PCDATA)>
 <!ELEMENT	KIexp (#PCDATA)>
 <!ELEMENT	KIIc (#PCDATA)>
@@ -412,6 +441,8 @@
 <!ELEMENT	Dx (#PCDATA)>
 <!ELEMENT	Dy (#PCDATA)>
 <!ELEMENT	Dz (#PCDATA)>
+<!ELEMENT	DR (#PCDATA)>
+<!ELEMENT	DZ (#PCDATA)>
 <!ELEMENT	D0 (#PCDATA)>
 <!ELEMENT	Dd (#PCDATA)>
 <!ELEMENT	csat (#PCDATA)>
@@ -427,6 +458,8 @@
 <!ELEMENT	kCondz (#PCDATA)>
 <!ELEMENT	kCond0 (#PCDATA)>
 <!ELEMENT	kCondd (#PCDATA)>
+<!ELEMENT	kCondR (#PCDATA)>
+<!ELEMENT	kCondZ (#PCDATA)>
 <!ELEMENT	P0 (#PCDATA)>
 <!ELEMENT	T0 (#PCDATA)>
 <!ELEMENT	Cp (#PCDATA)>
@@ -637,6 +670,7 @@
 			style (1|2|3|4|5|6) "1"
 			time CDATA #IMPLIED
 			bath CDATA #IMPLIED
+			face CDATA #IMPLIED
 			function CDATA #IMPLIED>
 
 <!ELEMENT	TempBC EMPTY>

@@ -153,13 +153,6 @@ void MatPoint3D::SetVelocity(Vector *v) { vel=*v; }
 // no thickness
 double MatPoint3D::thickness() { return -1.; }
 
-// set current volume using current strains
-void MatPoint3D::SetDilatedVolume(void)
-{	double rho=theMaterials[MatID()]->rho*0.001;			// in g/mm^3
-	double dilate=(1.+ep.xx)*(1.+ep.yy)*(1+ep.zz);
-	volume=dilate*mp/rho;									// in mm^3
-}
-
 // calculate internal force as -mp sigma.deriv * 1000.
 void MatPoint3D::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
 {	fout.x=-mp*(sp.xx*xDeriv+sp.xy*yDeriv+sp.xz*zDeriv)*1000.;
@@ -192,7 +185,7 @@ void MatPoint3D::AddTemperatureGradient(Vector *grad)
 double MatPoint3D::FCond(double dshdx,double dshdy,double dshdz)
 {
 	Tensor *kten=theMaterials[MatID()]->GetkCondTensor();
-	return -volume*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y + kten->xz*pTemp->DT.z)*dshdx
+	return -mp*GetRelativeVolume()*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y + kten->xz*pTemp->DT.z)*dshdx
 						+ (kten->xy*pTemp->DT.x + kten->yy*pTemp->DT.y + kten->yz*pTemp->DT.z)*dshdy
 						+ (kten->xz*pTemp->DT.x + kten->yz*pTemp->DT.y + kten->zz*pTemp->DT.z)*dshdz);
 }
@@ -215,7 +208,7 @@ void MatPoint3D::AddConcentrationGradient(Vector *grad)
 double MatPoint3D::FDiff(double dshdx,double dshdy,double dshdz)
 {
 	Tensor *Dten=theMaterials[MatID()]->GetDiffusionTensor();
-	return -volume*((Dten->xx*pDiffusion->Dc.x + Dten->xy*pDiffusion->Dc.y + Dten->xz*pDiffusion->Dc.z)*dshdx
+	return -GetVolume(DEFORMED_VOLUME)*((Dten->xx*pDiffusion->Dc.x + Dten->xy*pDiffusion->Dc.y + Dten->xz*pDiffusion->Dc.z)*dshdx
 						+ (Dten->xy*pDiffusion->Dc.x + Dten->yy*pDiffusion->Dc.y + Dten->yz*pDiffusion->Dc.z)*dshdy
 						+ (Dten->xz*pDiffusion->Dc.x + Dten->yz*pDiffusion->Dc.y + Dten->zz*pDiffusion->Dc.z)*dshdz);
 }
@@ -265,6 +258,13 @@ double MatPoint3D::GetRelativeVolume(void)
                 + pF[0][2]*(pF[1][0]*pF[2][1]-pF[2][0]*pF[1][1]);
 }
 
+// get dilated current volume using current deformation gradient
+// only used for contact (cracks and multimaterial) and for transport tasks
+double MatPoint3D::GetVolume(bool volumeType)
+{	double rho=theMaterials[MatID()]->rho*0.001;				// in g/mm^3
+	return GetRelativeVolume()*mp/rho;							// in mm^3
+}
+
 // to support CPDI return nodes for corners (or for 9 nodes) and weights for shape functions
 //	and shape function gradients
 void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
@@ -276,15 +276,15 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 	// get polygon vectors - these are from particle to edge
     //      and generalize semi width lp in 1D GIMP
 	Vector r1,r2,r3,c;
-	r1.x = pF[0][0]*mpmgrid.gridx*0.25;
-	r1.y = pF[1][0]*mpmgrid.gridx*0.25;
-	r1.z = pF[2][0]*mpmgrid.gridx*0.25;
-	r2.x = pF[0][1]*mpmgrid.gridy*0.25;
-	r2.y = pF[1][1]*mpmgrid.gridy*0.25;
-	r2.z = pF[2][1]*mpmgrid.gridy*0.25;
-	r3.x = pF[0][2]*mpmgrid.gridz*0.25;
-	r3.y = pF[1][2]*mpmgrid.gridz*0.25;
-	r3.z = pF[2][2]*mpmgrid.gridz*0.25;
+	r1.x = pF[0][0]*mpmgrid.partx;
+	r1.y = pF[1][0]*mpmgrid.partx;
+	r1.z = pF[2][0]*mpmgrid.partx;
+	r2.x = pF[0][1]*mpmgrid.party;
+	r2.y = pF[1][1]*mpmgrid.party;
+	r2.z = pF[2][1]*mpmgrid.party;
+	r3.x = pF[0][2]*mpmgrid.partz;
+	r3.y = pF[1][2]*mpmgrid.partz;
+	r3.z = pF[2][2]*mpmgrid.partz;
 	
     // Particle domain volume is 8 * volume of the parallelepiped defined by r1, r2, and r3
 	// V = 8 * (r1 . (r2 X r3))
@@ -292,92 +292,89 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
     double Vp = 8.*(r1.x * (r2.y*r3.z - r2.z*r3.y)
                     + r1.y * (r2.z*r3.x - r2.x*r3.z)
                      + r1.z * (r2.x*r3.y - r2.y*r3.x) );
+	
+	// always LINEAR_CPDI
     
-	if(cpdiType == LINEAR_CPDI)
-    {   try
-        {	// nodes at 8 node
-            c.x = pos.x-r1.x-r2.x-r3.x;
-            c.y = pos.y-r1.y-r2.y-r3.y;
-            c.z = pos.z-r1.z-r2.z-r3.z;
-            cpdi[0]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-            theElements[cpdi[0]->inElem]->GetXiPos(&c,&cpdi[0]->ncpos);
-            
-            c.x = pos.x+r1.x-r2.x-r3.x;
-            c.y = pos.y+r1.y-r2.y-r3.y;
-            c.z = pos.z+r1.z-r2.z-r3.z;
-            cpdi[1]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-            theElements[cpdi[1]->inElem]->GetXiPos(&c,&cpdi[1]->ncpos);
-            
-            c.x = pos.x+r1.x+r2.x-r3.x;
-            c.y = pos.y+r1.y+r2.y-r3.y;
-            c.z = pos.z+r1.z+r2.z-r3.z;
-            cpdi[2]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-            theElements[cpdi[2]->inElem]->GetXiPos(&c,&cpdi[2]->ncpos);
-            
-            c.x = pos.x-r1.x+r2.x-r3.x;
-            c.y = pos.y-r1.y+r2.y-r3.y;
-            c.z = pos.z-r1.z+r2.z-r3.z;
-            cpdi[3]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-            theElements[cpdi[3]->inElem]->GetXiPos(&c,&cpdi[3]->ncpos);
-            
-            c.x = pos.x-r1.x-r2.x+r3.x;
-            c.y = pos.y-r1.y-r2.y+r3.y;
-            c.z = pos.z-r1.z-r2.z+r3.z;
-            cpdi[4]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-            theElements[cpdi[4]->inElem]->GetXiPos(&c,&cpdi[4]->ncpos);
-            
-            c.x = pos.x+r1.x-r2.x+r3.x;
-            c.y = pos.y+r1.y-r2.y+r3.y;
-            c.z = pos.z+r1.z-r2.z+r3.z;
-            cpdi[5]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-            theElements[cpdi[5]->inElem]->GetXiPos(&c,&cpdi[5]->ncpos);
-            
-            c.x = pos.x+r1.x+r2.x+r3.x;
-            c.y = pos.y+r1.y+r2.y+r3.y;
-            c.z = pos.z+r1.z+r2.z+r3.z;
-            cpdi[6]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-            theElements[cpdi[6]->inElem]->GetXiPos(&c,&cpdi[6]->ncpos);
-            
-            c.x = pos.x-r1.x+r2.x+r3.x;
-            c.y = pos.y-r1.y+r2.y+r3.y;
-            c.z = pos.z-r1.z+r2.z+r3.z;
-            cpdi[7]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-            theElements[cpdi[7]->inElem]->GetXiPos(&c,&cpdi[7]->ncpos);
+	try
+	{	// nodes at 8 node
+		c.x = pos.x-r1.x-r2.x-r3.x;
+		c.y = pos.y-r1.y-r2.y-r3.y;
+		c.z = pos.z-r1.z-r2.z-r3.z;
+		cpdi[0]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		theElements[cpdi[0]->inElem]->GetXiPos(&c,&cpdi[0]->ncpos);
+		
+		c.x = pos.x+r1.x-r2.x-r3.x;
+		c.y = pos.y+r1.y-r2.y-r3.y;
+		c.z = pos.z+r1.z-r2.z-r3.z;
+		cpdi[1]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		theElements[cpdi[1]->inElem]->GetXiPos(&c,&cpdi[1]->ncpos);
+		
+		c.x = pos.x+r1.x+r2.x-r3.x;
+		c.y = pos.y+r1.y+r2.y-r3.y;
+		c.z = pos.z+r1.z+r2.z-r3.z;
+		cpdi[2]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		theElements[cpdi[2]->inElem]->GetXiPos(&c,&cpdi[2]->ncpos);
+		
+		c.x = pos.x-r1.x+r2.x-r3.x;
+		c.y = pos.y-r1.y+r2.y-r3.y;
+		c.z = pos.z-r1.z+r2.z-r3.z;
+		cpdi[3]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		theElements[cpdi[3]->inElem]->GetXiPos(&c,&cpdi[3]->ncpos);
+		
+		c.x = pos.x-r1.x-r2.x+r3.x;
+		c.y = pos.y-r1.y-r2.y+r3.y;
+		c.z = pos.z-r1.z-r2.z+r3.z;
+		cpdi[4]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		theElements[cpdi[4]->inElem]->GetXiPos(&c,&cpdi[4]->ncpos);
+		
+		c.x = pos.x+r1.x-r2.x+r3.x;
+		c.y = pos.y+r1.y-r2.y+r3.y;
+		c.z = pos.z+r1.z-r2.z+r3.z;
+		cpdi[5]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		theElements[cpdi[5]->inElem]->GetXiPos(&c,&cpdi[5]->ncpos);
+		
+		c.x = pos.x+r1.x+r2.x+r3.x;
+		c.y = pos.y+r1.y+r2.y+r3.y;
+		c.z = pos.z+r1.z+r2.z+r3.z;
+		cpdi[6]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		theElements[cpdi[6]->inElem]->GetXiPos(&c,&cpdi[6]->ncpos);
+		
+		c.x = pos.x-r1.x+r2.x+r3.x;
+		c.y = pos.y-r1.y+r2.y+r3.y;
+		c.z = pos.z-r1.z+r2.z+r3.z;
+		cpdi[7]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+		theElements[cpdi[7]->inElem]->GetXiPos(&c,&cpdi[7]->ncpos);
 
-            // gradient weighting values
-            Vp = 1./Vp;
-            cpdi[0]->wg.x = (r1.z*r2.y - r1.y*r2.z - r1.z*r3.y + r2.z*r3.y + r1.y*r3.z - r2.y*r3.z)*Vp;
-            cpdi[0]->wg.y = (-(r1.z*r2.x) + r1.x*r2.z + r1.z*r3.x - r2.z*r3.x - r1.x*r3.z + r2.x*r3.z)*Vp;
-            cpdi[0]->wg.z = (r1.y*r2.x - r1.x*r2.y - r1.y*r3.x + r2.y*r3.x + r1.x*r3.y - r2.x*r3.y)*Vp;
-            cpdi[1]->wg.x = (r1.z*r2.y - r1.y*r2.z - r1.z*r3.y - r2.z*r3.y + r1.y*r3.z + r2.y*r3.z)*Vp;
-            cpdi[1]->wg.y = (-(r1.z*r2.x) + r1.x*r2.z + r1.z*r3.x + r2.z*r3.x - r1.x*r3.z - r2.x*r3.z)*Vp;
-            cpdi[1]->wg.z = (r1.y*r2.x - r1.x*r2.y - r1.y*r3.x - r2.y*r3.x + r1.x*r3.y + r2.x*r3.y)*Vp;
-            cpdi[2]->wg.x = (r1.z*r2.y - r1.y*r2.z + r1.z*r3.y - r2.z*r3.y - r1.y*r3.z + r2.y*r3.z)*Vp;
-            cpdi[2]->wg.y = (-(r1.z*r2.x) + r1.x*r2.z - r1.z*r3.x + r2.z*r3.x + r1.x*r3.z - r2.x*r3.z)*Vp;
-            cpdi[2]->wg.z = (r1.y*r2.x - r1.x*r2.y + r1.y*r3.x - r2.y*r3.x - r1.x*r3.y + r2.x*r3.y)*Vp;
-            cpdi[3]->wg.x = (r1.z*r2.y - r1.y*r2.z + r1.z*r3.y + r2.z*r3.y - r1.y*r3.z - r2.y*r3.z)*Vp;
-            cpdi[3]->wg.y = (-(r1.z*r2.x) + r1.x*r2.z - r1.z*r3.x - r2.z*r3.x + r1.x*r3.z + r2.x*r3.z)*Vp;
-            cpdi[3]->wg.z = (r1.y*r2.x - r1.x*r2.y + r1.y*r3.x + r2.y*r3.x - r1.x*r3.y - r2.x*r3.y)*Vp;
-            cpdi[4]->wg.x = (-(r1.z*r2.y) + r1.y*r2.z - r1.z*r3.y + r2.z*r3.y + r1.y*r3.z - r2.y*r3.z)*Vp;
-            cpdi[4]->wg.y = (r1.z*r2.x - r1.x*r2.z + r1.z*r3.x - r2.z*r3.x - r1.x*r3.z + r2.x*r3.z)*Vp;
-            cpdi[4]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y - r1.y*r3.x + r2.y*r3.x + r1.x*r3.y - r2.x*r3.y)*Vp;
-            cpdi[5]->wg.x = (-(r1.z*r2.y) + r1.y*r2.z - r1.z*r3.y - r2.z*r3.y + r1.y*r3.z + r2.y*r3.z)*Vp;
-            cpdi[5]->wg.y = (r1.z*r2.x - r1.x*r2.z + r1.z*r3.x + r2.z*r3.x - r1.x*r3.z - r2.x*r3.z)*Vp;
-            cpdi[5]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y - r1.y*r3.x - r2.y*r3.x + r1.x*r3.y + r2.x*r3.y)*Vp;
-            cpdi[6]->wg.x = (-(r1.z*r2.y) + r1.y*r2.z + r1.z*r3.y - r2.z*r3.y - r1.y*r3.z + r2.y*r3.z)*Vp;
-            cpdi[6]->wg.y = (r1.z*r2.x - r1.x*r2.z - r1.z*r3.x + r2.z*r3.x + r1.x*r3.z - r2.x*r3.z)*Vp;
-            cpdi[6]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y + r1.y*r3.x - r2.y*r3.x - r1.x*r3.y + r2.x*r3.y)*Vp;
-            cpdi[7]->wg.x = (-(r1.z*r2.y) + r1.y*r2.z + r1.z*r3.y + r2.z*r3.y - r1.y*r3.z - r2.y*r3.z)*Vp;
-            cpdi[7]->wg.y = (r1.z*r2.x - r1.x*r2.z - r1.z*r3.x - r2.z*r3.x + r1.x*r3.z + r2.x*r3.z)*Vp;
-            cpdi[7]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y + r1.y*r3.x + r2.y*r3.x - r1.x*r3.y - r2.x*r3.y)*Vp;
-        }
-        catch(...)
-        {	throw MPMTermination("A CPDI partical domain node has left the grid.","MatPoint3D::GetCPDINodesAndWeights");
-        }
-    }
-    else
-    {	throw MPMTermination("qCPDI is not yet implemented for 3D (use lCPDI instead).","MatPoint3D::GetCPDINodesAndWeights");
-    }
+		// gradient weighting values
+		Vp = 1./Vp;
+		cpdi[0]->wg.x = (r1.z*r2.y - r1.y*r2.z - r1.z*r3.y + r2.z*r3.y + r1.y*r3.z - r2.y*r3.z)*Vp;
+		cpdi[0]->wg.y = (-(r1.z*r2.x) + r1.x*r2.z + r1.z*r3.x - r2.z*r3.x - r1.x*r3.z + r2.x*r3.z)*Vp;
+		cpdi[0]->wg.z = (r1.y*r2.x - r1.x*r2.y - r1.y*r3.x + r2.y*r3.x + r1.x*r3.y - r2.x*r3.y)*Vp;
+		cpdi[1]->wg.x = (r1.z*r2.y - r1.y*r2.z - r1.z*r3.y - r2.z*r3.y + r1.y*r3.z + r2.y*r3.z)*Vp;
+		cpdi[1]->wg.y = (-(r1.z*r2.x) + r1.x*r2.z + r1.z*r3.x + r2.z*r3.x - r1.x*r3.z - r2.x*r3.z)*Vp;
+		cpdi[1]->wg.z = (r1.y*r2.x - r1.x*r2.y - r1.y*r3.x - r2.y*r3.x + r1.x*r3.y + r2.x*r3.y)*Vp;
+		cpdi[2]->wg.x = (r1.z*r2.y - r1.y*r2.z + r1.z*r3.y - r2.z*r3.y - r1.y*r3.z + r2.y*r3.z)*Vp;
+		cpdi[2]->wg.y = (-(r1.z*r2.x) + r1.x*r2.z - r1.z*r3.x + r2.z*r3.x + r1.x*r3.z - r2.x*r3.z)*Vp;
+		cpdi[2]->wg.z = (r1.y*r2.x - r1.x*r2.y + r1.y*r3.x - r2.y*r3.x - r1.x*r3.y + r2.x*r3.y)*Vp;
+		cpdi[3]->wg.x = (r1.z*r2.y - r1.y*r2.z + r1.z*r3.y + r2.z*r3.y - r1.y*r3.z - r2.y*r3.z)*Vp;
+		cpdi[3]->wg.y = (-(r1.z*r2.x) + r1.x*r2.z - r1.z*r3.x - r2.z*r3.x + r1.x*r3.z + r2.x*r3.z)*Vp;
+		cpdi[3]->wg.z = (r1.y*r2.x - r1.x*r2.y + r1.y*r3.x + r2.y*r3.x - r1.x*r3.y - r2.x*r3.y)*Vp;
+		cpdi[4]->wg.x = (-(r1.z*r2.y) + r1.y*r2.z - r1.z*r3.y + r2.z*r3.y + r1.y*r3.z - r2.y*r3.z)*Vp;
+		cpdi[4]->wg.y = (r1.z*r2.x - r1.x*r2.z + r1.z*r3.x - r2.z*r3.x - r1.x*r3.z + r2.x*r3.z)*Vp;
+		cpdi[4]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y - r1.y*r3.x + r2.y*r3.x + r1.x*r3.y - r2.x*r3.y)*Vp;
+		cpdi[5]->wg.x = (-(r1.z*r2.y) + r1.y*r2.z - r1.z*r3.y - r2.z*r3.y + r1.y*r3.z + r2.y*r3.z)*Vp;
+		cpdi[5]->wg.y = (r1.z*r2.x - r1.x*r2.z + r1.z*r3.x + r2.z*r3.x - r1.x*r3.z - r2.x*r3.z)*Vp;
+		cpdi[5]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y - r1.y*r3.x - r2.y*r3.x + r1.x*r3.y + r2.x*r3.y)*Vp;
+		cpdi[6]->wg.x = (-(r1.z*r2.y) + r1.y*r2.z + r1.z*r3.y - r2.z*r3.y - r1.y*r3.z + r2.y*r3.z)*Vp;
+		cpdi[6]->wg.y = (r1.z*r2.x - r1.x*r2.z - r1.z*r3.x + r2.z*r3.x + r1.x*r3.z - r2.x*r3.z)*Vp;
+		cpdi[6]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y + r1.y*r3.x - r2.y*r3.x - r1.x*r3.y + r2.x*r3.y)*Vp;
+		cpdi[7]->wg.x = (-(r1.z*r2.y) + r1.y*r2.z + r1.z*r3.y + r2.z*r3.y - r1.y*r3.z - r2.y*r3.z)*Vp;
+		cpdi[7]->wg.y = (r1.z*r2.x - r1.x*r2.z - r1.z*r3.x - r2.z*r3.x + r1.x*r3.z + r2.x*r3.z)*Vp;
+		cpdi[7]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y + r1.y*r3.x + r2.y*r3.x - r1.x*r3.y - r2.x*r3.y)*Vp;
+	}
+	catch(...)
+	{	throw MPMTermination("A CPDI partical domain node has left the grid.","MatPoint3D::GetCPDINodesAndWeights");
+	}
     
     // traction BC area saves 1/4 the total face area
     if(faceArea!=NULL)
@@ -402,17 +399,19 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 // To support traction boundary conditions, find the deformed edge, natural coordinates of
 // the corners around the face, elements for those faces, and a normal vector in direction
 // of the traction. Input vectors need to be length 4
-void MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
+double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
 {
     *numDnds = 4;
     double faceWt;
+	
+	// always UNIFORM_GIMP or LINEAR_CPDI
     
     // which GIMP method (cannot be used in POINT_GIMP)
     if(ElementBase::useGimp==UNIFORM_GIMP)
     {   // initial vectors only
-        double r1x = mpmgrid.gridx*0.25;
-        double r2y = mpmgrid.gridy*0.25;
-		double r3z = mpmgrid.gridz*0.25;
+        double r1x = mpmgrid.partx;
+        double r2y = mpmgrid.party;
+		double r3z = mpmgrid.partz;
         
         Vector c1,c2,c3,c4;
         switch(face)
@@ -588,5 +587,7 @@ void MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vec
             tscaled->z = faceWt;
 			break;
 	}
+	
+	return 1.;
 }
 

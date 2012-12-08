@@ -70,7 +70,8 @@ void Orthotropic::PrintTransportProperties(void)
 	}
 	// Conductivity constants
 	if(ConductionTask::active)
-	{   sprintf(mline,"kx =%12.3g   ky =%12.3g   kz =%12.3g W/(m-K)\nCp  =%12.3g J/(kg-K)",kcondT,kcondA,kcondz,1000.*heatCapacity);
+	{   sprintf(mline,"kx =%12.3g   ky =%12.3g   kz =%12.3g W/(m-K)\nCp  =%12.3g J/(kg-K)",
+                    rho*kcondT/1000.,rho*kcondA/1000.,rho*kcondz/1000.,heatCapacity);
 		cout << mline << endl;
 	}
 }
@@ -81,107 +82,107 @@ char *Orthotropic::InputMat(char *xName,int &input)
 {
     input=DOUBLE_NUM;
     
-    if(strcmp(xName,"Ex")==0)
+    if(strcmp(xName,"Ex")==0 || strcmp(xName,"ER")==0)
     {	read[EX_PROP]=1;
         return((char *)&Ex);
     }
     
-    else if(strcmp(xName,"Ey")==0)
+    else if(strcmp(xName,"Ey")==0 || strcmp(xName,"EZ")==0)
     {	read[EY_PROP]=1;
         return((char *)&Ey);
     }
     
-    else if(strcmp(xName,"Ez")==0)
+    else if(strcmp(xName,"Ez")==0 || strcmp(xName,"ET")==0)
     {	read[EZ_PROP]=1;
         return((char *)&Ez);
     }
     
-    else if(strcmp(xName,"Gxy")==0 || strcmp(xName,"Gyx")==0)
+    else if(strcmp(xName,"Gxy")==0 || strcmp(xName,"Gyx")==0 || strcmp(xName,"GRZ")==0 || strcmp(xName,"GZR")==0)
     {	read[GXY_PROP]=1;
         return((char *)&Gxy);
     }
     
-    else if(strcmp(xName,"Gxz")==0 || strcmp(xName,"Gzx")==0)
+    else if(strcmp(xName,"Gxz")==0 || strcmp(xName,"Gzx")==0 || strcmp(xName,"GRT")==0 || strcmp(xName,"GTR")==0)
     {	read[GXZ_PROP]=1;
         return((char *)&Gxz);
     }
     
-    else if(strcmp(xName,"Gyz")==0 || strcmp(xName,"Gzy")==0)
+    else if(strcmp(xName,"Gyz")==0 || strcmp(xName,"Gzy")==0 || strcmp(xName,"GZT")==0 || strcmp(xName,"GTZ")==0)
     {	read[GYZ_PROP]=1;
         return((char *)&Gyz);
     }
     
-    else if(strcmp(xName,"nuyx")==0)
+    else if(strcmp(xName,"nuyx")==0 || strcmp(xName,"nuZR")==0)
     {	read[NUYX_PROP]=1;
         return((char *)&nuyx);
     }
     
-    else if(strcmp(xName,"nuxy")==0)
+    else if(strcmp(xName,"nuxy")==0 || strcmp(xName,"nuRZ")==0)
     {	read[NUXY_PROP]=1;
         return((char *)&nuxy);
     }
     
-    else if(strcmp(xName,"nuyz")==0)
+    else if(strcmp(xName,"nuyz")==0 || strcmp(xName,"nuZT")==0)
     {	read[NUYZ_PROP]=1;
         return((char *)&nuyz);
     }
     
-    else if(strcmp(xName,"nuzy")==0)
+    else if(strcmp(xName,"nuzy")==0 || strcmp(xName,"nuTZ")==0)
     {	read[NUZY_PROP]=1;
         return((char *)&nuzy);
     }
     
-    else if(strcmp(xName,"nuxz")==0)
+    else if(strcmp(xName,"nuxz")==0 || strcmp(xName,"nuRT")==0)
     {	read[NUXZ_PROP]=1;
         return((char *)&nuxz);
     }
     
-    else if(strcmp(xName,"nuzx")==0)
+    else if(strcmp(xName,"nuzx")==0 || strcmp(xName,"nuTR")==0)
     {	read[NUZX_PROP]=1;
         return((char *)&nuzx);
     }
     
-    else if(strcmp(xName,"alphax")==0)
+    else if(strcmp(xName,"alphax")==0 || strcmp(xName,"alphaR")==0)
     {	read[AX_PROP]=1;
         return((char *)&ax);
     }
     
-    else if(strcmp(xName,"alphay")==0)
+    else if(strcmp(xName,"alphay")==0 || strcmp(xName,"alphaZ")==0)
     {	read[AY_PROP]=1;
         return((char *)&ay);
     }
     
-    else if(strcmp(xName,"alphaz")==0)
+    else if(strcmp(xName,"alphaz")==0 || strcmp(xName,"alphaT")==0)
     {	read[AZ_PROP]=1;
         return((char *)&az);
     }
 
 #ifdef MPM_CODE
-    else if(strcmp(xName,"betax")==0)
+    else if(strcmp(xName,"betax")==0 || strcmp(xName,"betaR")==0)
         return((char *)&betax);
     
-    else if(strcmp(xName,"betay")==0)
+    else if(strcmp(xName,"betay")==0 || strcmp(xName,"betaZ")==0)
         return((char *)&betay);
     
-    else if(strcmp(xName,"betaz")==0)
+    else if(strcmp(xName,"betaz")==0 || strcmp(xName,"betaT")==0)
         return((char *)&betaz);
 
-    else if(strcmp(xName,"Dx")==0)
+    else if(strcmp(xName,"Dx")==0 || strcmp(xName,"DR")==0)
         return((char *)&diffT);
 		
-    else if(strcmp(xName,"Dy")==0)
+    else if(strcmp(xName,"Dy")==0 || strcmp(xName,"DZ")==0)
         return((char *)&diffA);
 		
-    else if(strcmp(xName,"Dz")==0)
+    else if(strcmp(xName,"Dz")==0 || strcmp(xName,"DT")==0)
         return((char *)&Dz);
 		
-    else if(strcmp(xName,"kCondx")==0)
+    else if(strcmp(xName,"kCondx")==0 || strcmp(xName,"kCondR")==0)
         return((char *)&kcondT);
 		
-    else if(strcmp(xName,"kCondy")==0)
+    else if(strcmp(xName,"kCondy")==0 || strcmp(xName,"kCondZ")==0)
         return((char *)&kcondA);
 		
-    else if(strcmp(xName,"kCondz")==0)
+    else if(strcmp(xName,"kCondz")==0 || strcmp(xName,"kCondT")==0)
         return((char *)&kcondz);
 #endif
 		
@@ -230,6 +231,11 @@ const char *Orthotropic::VerifyProperties(int np)
     {	if(!read[i])
 			return "A required material property is missing";
     }
+
+#ifdef MPM_CODE
+    // make conductivty specific (N mm^3/(sec-K-g))
+    kcondz *= (1000./rho);
+#endif
 
     // set properties
     const char *err=SetAnalysisProps(np,1.e6*Ex,1.e6*Ey,1.e6*Ez,nuxy,nuxz,nuyz,

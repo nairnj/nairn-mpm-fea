@@ -6,8 +6,14 @@
     Copyright (c) 2004 John A. Nairn, All rights reserved.
 
 	Rigid material in multimaterial mode
-		rho = 1000 mm^3/cm^3
+		rho = 1000 mm^3/cm^3 actually, but code thinks 1000 g/cm^3 or rho=1 g/mm^3
+    If Planar and 3D
 		mp = rho * vol (cm^3) / ptsperelement = particle volume in mm^3
+        mp/rho = particle volume in mm^3 (because rho=1 g/mm^3)
+    If axisymmetric
+        mp = rho Ap rp / ptsperelement = particle volume per radian in mm^3
+        mp/rho = particle volume per radian in mm^3 (because rho=1 g/mm^3)
+        mp/(rho rp) = particle area in mm^2 (because rho=1 g/mm^3)
 ********************************************************************************/
 
 #include "Materials/RigidMaterial.hpp"
@@ -275,9 +281,9 @@ int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid)
 
 #pragma mark RigidMaterial::Methods
 
-// does not have 2D constutuve law
+// does not have 2D constituitive law
 void RigidMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double delTime,int np)
+        double dvzz,double delTime,int np)
 {}
 
 // Does not have 3D constitutive law
@@ -297,7 +303,7 @@ int RigidMaterial::MaterialTag(void) { return RIGIDMATERIAL; }
 const char *RigidMaterial::MaterialType(void) { return "Rigid Material"; }
 
 // return TRUE if rigid particle (for contact or for BC)
-short RigidMaterial::Rigid(void) { return TRUE; }
+bool RigidMaterial::Rigid(void) { return TRUE; }
 
 // return TRUE if rigid BC particle (not rigid for contact)
 short RigidMaterial::RigidBC(void) { return setDirection!=RIGID_MULTIMATERIAL_MODE; }

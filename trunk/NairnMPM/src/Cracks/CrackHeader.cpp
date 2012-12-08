@@ -2317,6 +2317,11 @@ void CrackHeader::Describe(void)
     cout << ", segments = " << NumberOfSegments() << endl;
 }
 
+// crack thickness for planar problems
+void CrackHeader::SetThickness(double thick) { thickness = thick; }
+double CrackHeader::GetThickness(void) { return thickness; }
+double *CrackHeader::GetThicknessPtr(void) { return &thickness; }
+
 #pragma mark CrackHeader: Class methods
 
 #include "System/ArchiveData.hpp"

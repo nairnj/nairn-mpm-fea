@@ -87,13 +87,14 @@ char *IsoPlasticity::MaterialData(void)
     Particle: strains, rotation strain, plastic strain, stresses, strain energy, 
 		plastic energy, dissipated energy, angle
     dvij are (gradient rates X time increment) to give deformation gradient change
-	This is general analysis for isotropic plastic material. Subclass must define
+   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
+   This is general analysis for isotropic plastic material. Subclass must define
 		GetYield() and GetKPrime() and optionally can override more. Those methods
 		require history dependent variables and rates (e.g. cum. plastic strain (alpint) and
 		plastic strain rate (dalpha/delTime) to be set before they are called.
 */
 void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double delTime,int np)
+        double dvzz,double delTime,int np)
 {
     // Effective strain by deducting thermal strain (no shear thermal strain because isotropic)
 	//  (note: using unreduced terms in CTE3 and CME3)
@@ -104,15 +105,15 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvx
 	// here dvij is total strain increment, dexxr is relative strain by subtracting off eres
     double dexxr=dvxx-eres;			// trial dexx=dvxx
     double deyyr=dvyy-eres;			// trial deyy=dvyy
-	double dezzr=-eres;				// used in plane strain only, where trial dezz=0
+	double dezzr=dvzz-eres;			// In plane strain trial dezz=0, dvzz=0 except in axisymmetric
     double dgxy=dvxy+dvyx;			// no need to substract residual strain
 	
 	// Trial update assuming elastic response
 	double delV,dP;
-	if(np==PLANE_STRAIN_MPM)
-		delV = (dexxr+deyyr+dezzr)/3.;			// = (dvxx+dvyy)/3. - eres
-	else
+	if(np==PLANE_STRESS_MPM)
 		delV = psRed*(dexxr+deyyr)/3.;
+	else
+		delV = (dexxr+deyyr+dezzr)/3.;			// = (dvxx+dvyy+dvzz)/3. - eres
 	
 	// allow arbitrary equation of state for pressure
 	dP = GetPressureChange(mptr,delV,np);
@@ -123,10 +124,10 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvx
     Tensor dels,stk,st0=*sp;
 	dels.xx = 2.*Gred*(dexxr-delV) - dP;
 	dels.yy = 2.*Gred*(deyyr-delV) - dP;
-	if(np==PLANE_STRAIN_MPM)
-		dels.zz = 2.*Gred*(dezzr-delV) - dP;
-	else
+	if(np==PLANE_STRESS_MPM)
 		dels.zz = 0.;
+	else
+		dels.zz = 2.*Gred*(dezzr-delV) - dP;
 	dels.xy = Gred*dgxy;
     stk.xx = st0.xx + dels.xx;
     stk.yy = st0.yy + dels.yy;
@@ -150,16 +151,23 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvx
 		Hypo2DCalculations(mptr,-dwrotxy,dels.xx,dels.yy,dels.xy);
 		
 		// out of plane
+		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
 		if(np==PLANE_STRAIN_MPM)
-			sp->zz=stk.zz;
-		else
-			ep->zz += eres - psLr2G*(dexxr+deyyr);
-		
-		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule)
-		mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr + (st0.yy+sp->yy)*deyyr
+		{	sp->zz=stk.zz;
+			mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr + (st0.yy+sp->yy)*deyyr
+									   + (st0.xy+sp->xy)*dgxy + (st0.zz+sp->zz)*dezzr));
+		}
+		else if(np==PLANE_STRESS_MPM)
+		{	ep->zz += eres - psLr2G*(dexxr+deyyr);
+			mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr + (st0.yy+sp->yy)*deyyr
 								+ (st0.xy+sp->xy)*dgxy));
-		if(np==PLANE_STRAIN_MPM)
-			mptr->AddStrainEnergy(0.5*(st0.zz+sp->zz)*dezzr);
+		}
+		else
+		{	sp->zz=stk.zz;
+			ep->zz+=dvzz;
+			mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr + (st0.yy+sp->yy)*deyyr
+									   + (st0.xy+sp->xy)*dgxy + (st0.zz+sp->zz)*dezzr));
+		}
 		
 		// give material chance to update history variables that change in elastic updates
 		ElasticUpdateFinished(mptr,np,delTime);
@@ -208,8 +216,11 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvx
 	if(np==PLANE_STRESS_MPM)
 		ep->zz += eres - psLr2G*(dexxr+deyyr+dezzp);
 	else
-	{	ep->zz -= dezzp;		// += (0-dezzp) where 0 is the trial dezz
-		dezzr -= dezzp;
+	{	// plain strain and axisymmetric when plastic increments is dezzp
+		// In plain strain, dvzz=0 elastic increment is -dezzp to zz strain total is zero
+		// Axisymmetry can have non-zero hoop strain
+		ep->zz += (dvzz-dezzp);
+		dezzr -= dezzp; 
 	}
 	
 	// rotational strain
@@ -219,12 +230,12 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvx
     dexxr -= dexxp;
     deyyr -= deyyp;
 	//dgxy -= dgxyp;			// done above
-	//dezzr -= dezzp;			// plane strain only done above
+	//dezzr -= dezzp;			// plane strain and axisymmetry done above, plain stress not needed
 
 	// increment particle stresses (plane stress increments found above)
 	// First since plastic strain does not change volume or pressure, we can
 	//    use the trial delV and dP from above
-	if(np==PLANE_STRAIN_MPM)
+	if(np!=PLANE_STRESS_MPM)
 	{	dels.xx -= 2.*Gred*dexxp;
 		dels.yy -= 2.*Gred*deyyp;
 		dels.xy -= Gred*dgxyp;
@@ -233,17 +244,17 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvx
 	}
 	Hypo2DCalculations(mptr,-dwrotxy,dels.xx,dels.yy,dels.xy);
 	
-    // Elastic energy increment per unit mass (dU/(rho0 V0))
+    // Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
     mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr
                         + (st0.yy+sp->yy)*deyyr
                         + (st0.xy+sp->xy)*dgxy));
 
-    // Plastic energy increment per unit mass (dU/(rho0 V0))
+    // Plastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	double dispEnergy=0.5*((st0.xx+sp->xx)*dexxp
                         + (st0.yy+sp->yy)*deyyp
                         + (st0.xy+sp->xy)*dgxyp);
 	
-	if(np==PLANE_STRAIN_MPM)
+	if(np!=PLANE_STRESS_MPM)
     {	mptr->AddStrainEnergy(0.5*(st0.zz+sp->zz)*dezzr);
 		dispEnergy += 0.5*(st0.zz+sp->zz)*dezzp;
 	}
@@ -325,7 +336,7 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvz
 		// update stress (need to make hypoelastic)
 		Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 		
-		// strain energy increment per unit mass (dU/(rho0 V0))
+		// strain energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 		mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr
 								+ (st0.yy+sp->yy)*deyyr
 								+ (st0.zz+sp->zz)*dezzr
@@ -387,7 +398,7 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvz
 	dsig[XY] -= Gred*dgxyp;
 	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 	
-    // Elastic energy increment per unit mass (dU/(rho0 V0))
+    // Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr
 							+ (st0.yy+sp->yy)*deyyr
 							+ (st0.zz+sp->zz)*dezzr
@@ -395,7 +406,7 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvz
 							+ (st0.xz+sp->xz)*dgxz
 							+ (st0.xy+sp->xy)*dgxy));
 
-    // Plastic energy increment per unit mass (dU/(rho0 V0))
+    // Plastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	double dispEnergy=0.5*(0.5*((st0.xx+sp->xx)*dexxp
 							+ (st0.yy+sp->yy)*deyyp
 							+ (st0.zz+sp->zz)*dezzp
@@ -451,6 +462,7 @@ double IsoPlasticity::GetMagnitudeS(Tensor *st,int np)
 	
 	switch(np)
 	{	case PLANE_STRAIN_MPM:
+		case AXISYMMETRIC_MPM:
 			s = fmax(st->xx*st->xx + st->yy*st->yy - st->xx*st->yy + st->zz*(st->zz-st->xx-st->yy),0.);
 			t = st->xy*st->xy;
 			break;

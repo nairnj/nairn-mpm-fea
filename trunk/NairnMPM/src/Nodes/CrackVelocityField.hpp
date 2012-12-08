@@ -19,6 +19,7 @@
 #include "Nodes/MatVelocityField.hpp"
 
 class MPMBase;
+class NodalPoint;
 
 class CrackVelocityField
 {
@@ -40,9 +41,9 @@ class CrackVelocityField
 		// specific task methods
 		void AddMomentumTask1(int,Vector *,Vector *);
 		virtual void AddMass(int,double);
-		virtual void AddMassTask1(int);
+		virtual void AddMassTask1(int,double);
 		virtual double GetTotalMassAndCount(void) = 0;
-		virtual void AddMassGradient(int,double,double,double,double);
+		virtual void AddVolumeGradient(int,MPMBase *,double,double,double);
 	
 		void AddFintTask3(int,Vector *);
 		virtual void AddFintSpreadTask3(Vector *) = 0;
@@ -65,31 +66,20 @@ class CrackVelocityField
 		void SetCMVelocityTask8(Vector *,int);
 		bool GetCMVelocityTask8(Vector *);
 	
-		// methods
-		virtual void MaterialContact(int,int,bool,double);
-		virtual void GetMassGradient(int,Vector *,double);
 		void AddNormals(Vector *,int);
 		void AddDisplacement(int,double,Vector *);
-		void AddUnscaledVolume(double);
+		void AddVolume(int,double);
+	
+		// methods
+		virtual void MaterialContact(int,int,bool,double);
+		virtual void GetVolumeGradient(int,NodalPoint *,Vector *,double);
 		virtual void CalcVelocityForStrainUpdate(void) = 0;
 	
 		// boundary conditions
-		virtual void SetXMomVel(void) = 0;
-		virtual void SetYMomVel(void) = 0;
-		virtual void SetZMomVel(void) = 0;
-		virtual void SetSkewMomVel(double) = 0;
-		virtual void AddXMomVel(double) = 0;
-		virtual void AddYMomVel(double) = 0;
-		virtual void AddZMomVel(double) = 0;
-		virtual void AddSkewMomVel(double,double) = 0;
-		virtual void SetXFtot(double) = 0;
-		virtual void SetYFtot(double) = 0;
-		virtual void SetZFtot(double) = 0;
-		virtual void SetSkewFtot(double,double) = 0;
-		virtual void AddXFtot(double,double) = 0;
-		virtual void AddYFtot(double,double) = 0;
-		virtual void AddZFtot(double,double) = 0;
-		virtual void AddSkewFtot(double,double,double) = 0;
+        virtual void SetMomVel(int) = 0;
+        virtual void AddMomVel(int,double) = 0;
+        virtual void SetFtot(int,double) = 0;
+        virtual void AddFtot(int,double,double) = 0;
 	
 		// accessors
 		short location(int);
@@ -97,7 +87,8 @@ class CrackVelocityField
 		int OppositeCrackTo(int,int);
 		void SetLocationAndCrack(short,int,int);
 		virtual double GetTotalMass(void) = 0;
-		virtual double GetMass(int) = 0;
+		virtual double GetVolumeNonrigid(void) = 0;
+		virtual double GetVolumeTotal(double) = 0;
 		virtual Vector GetCMatMomentum(void) = 0;
 		virtual Vector GetCMDisplacement(void) = 0;
 		virtual Vector GetCMatFtot(void) = 0;
@@ -108,8 +99,6 @@ class CrackVelocityField
 		Vector GetContactForce(int);
 		virtual int GetNumberPoints(void);
 		virtual int GetNumberPointsNonrigid(void);
-		virtual double UnscaledVolumeNonrigid(void);
-		virtual double UnscaledVolumeRigid(void);
 		virtual void Describe(void);
 		virtual void SumAndClearRigidContactForces(Vector *,bool);
 	
@@ -122,9 +111,8 @@ class CrackVelocityField
 		// variables (changed in MPM time step)
 		int numberPoints;			// total number of materials points in this field/field [0] changed to sum of all in task 8
 		MatVelocityField **mvf;		// material velocity fields
-		double unscaledVolume;		// unscaled volume (ignores dilation) only used for imperfect interface forces and material contact
-	
-		// constants (not changed in MPM time step)
+		// unscaled nonrigid volume (ignores dilation) only used for imperfect interface forces and material contact
+		// unscaleRigidVolume is due to rigid contaft materials (type 8) (always zero unless multimaterial mode)
 };
 
 #endif

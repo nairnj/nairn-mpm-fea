@@ -49,11 +49,6 @@ char *IsotropicMat::InputMat(char *xName,int &input)
         return((char *)&aI);
     }
 
-#ifdef MPM_CODE
-    else if(strcmp(xName,"beta")==0)
-        return((char *)&betaI);
-#endif
-
     return MaterialBase::InputMat(xName,input);
 }
 
@@ -108,8 +103,6 @@ const char *IsotropicMat::VerifyProperties(int np)
 // Here gets mdm[6][6], me0[4], mc0[4]
 void IsotropicMat::InitialLoadMechProps(int makeSpecific,int np)
 {
-    hasMatProps=TRUE;
-	
 #ifdef MPM_CODE
 	if(np==THREED_MPM)
 	{	double rrho=1./rho;
@@ -184,7 +177,7 @@ void IsotropicMat::InitialLoadMechProps(int makeSpecific,int np)
         mdm[1][2]*=rrho;
         mdm[2][2]*=rrho;
         mdm[3][3]*=rrho;
-		if(np==PLANE_STRAIN_MPM)
+		if(np==PLANE_STRAIN_MPM || AXISYMMETRIC_MPM)
 		{	mdm[4][1]*=rrho;
 			mdm[4][2]*=rrho;
 			mdm[4][3]*=rrho;

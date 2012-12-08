@@ -59,7 +59,6 @@ void CrackVelocityField::Zero(short theLoc,int cnum,bool zeroMVFs)
 	crackNum[SECOND_CRACK]=0;
 	ZeroVector(&norm[FIRST_CRACK]);
 	ZeroVector(&norm[SECOND_CRACK]);
-	unscaledVolume=0.;
 	numberPoints=0;
 	
 	// can't call when constructing because subclass not ready yet for this
@@ -87,10 +86,10 @@ void CrackVelocityField::AddMomentumTask1(int matfld,Vector *addPk,Vector *vel)
 void CrackVelocityField::AddMass(int matfld,double mnode) { mvf[matfld]->mass+=mnode; }
 
 // add "mass" for  rigid particle (task 1) (only functions in CrackVelocityFieldMulti)
-void CrackVelocityField::AddMassTask1(int matfld) { }
+void CrackVelocityField::AddMassTask1(int matfld,double mnode) { }
 
 // Add to mass gradient (overridden in CrackVelocityFieldMulti where it is needed)
-void CrackVelocityField::AddMassGradient(int matfld,double mp,double dNdx,double dNdy,double dNdz) {}
+void CrackVelocityField::AddVolumeGradient(int matfld,MPMBase *mptr,double dNdx,double dNdy,double dNdz) {}
 
 #pragma mark TASK 3 METHODS
 
@@ -197,7 +196,7 @@ bool CrackVelocityField::GetCMVelocityTask8(Vector *velCM)
 void CrackVelocityField::MaterialContact(int nodenum,int vfld,bool postUpdate,double deltime) { return; }
 
 // retrieve mass gradient (overridden in CrackVelocityFieldMulti where it is needed
-void CrackVelocityField::GetMassGradient(int matfld,Vector *grad,double scale) { ZeroVector(grad); }
+void CrackVelocityField::GetVolumeGradient(int matfld,NodalPoint *ndptr,Vector *grad,double scale) { ZeroVector(grad); }
 
 #pragma mark PROPERTIES FOR CRACK AND MATERIAL CONTACT
 
@@ -212,12 +211,10 @@ void CrackVelocityField::AddDisplacement(int matfld,double wt,Vector *pdisp)
 {	AddScaledVector(&mvf[matfld]->disp,pdisp,wt);
 }
 
-// Add unscaled volume (mass/rho)
-// Total volume extrapolated to this crack velocity field in mm^3
-// Unscaled because it does not account for strains
-// If multiple materials, it is sum of all materials in this field
-// Includes rigid material only if they are type=8 for contact calculations
-void CrackVelocityField::AddUnscaledVolume(double wtVol) { unscaledVolume+=wtVol; }
+// Add volume
+void CrackVelocityField::AddVolume(int matfld,double wtVol)
+{	mvf[matfld]->AddContactVolume(wtVol);
+}
 
 #pragma mark ACCESSORS
 
@@ -262,7 +259,8 @@ int CrackVelocityField::GetNumberPointsNonrigid(void) { return numberPoints; }
 // for debugging
 void CrackVelocityField::Describe(void)
 {
-	cout << "# Crack Field: npts="<<  numberPoints << " mass=" << GetTotalMass() << " unscaled vol=" << unscaledVolume << endl;
+	cout << "# Crack Field: npts="<<  numberPoints << " mass=" << GetTotalMass()
+		<< " vol=" << GetVolumeTotal(1.) << endl;
 	if(crackNum[0]>0)
 	{	cout << "#     crack 1=#" << crackNum[0] << ", loc=";
 		if(loc[0]==ABOVE_CRACK) cout << "above"; else cout << "below";
@@ -278,10 +276,6 @@ void CrackVelocityField::Describe(void)
 		cout << endl;
 	}
 }
-
-// the unscaled volume
-double CrackVelocityField::UnscaledVolumeNonrigid(void) { return unscaledVolume; }
-double CrackVelocityField::UnscaledVolumeRigid(void) { return 0.; }
 
 // add contact force on rigid material to the input vector
 void CrackVelocityField::SumAndClearRigidContactForces(Vector *fcontact,bool) {}

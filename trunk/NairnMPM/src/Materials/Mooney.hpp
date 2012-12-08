@@ -23,7 +23,7 @@ enum {G1_PROP=0,G2_PROP,KBULK_PROP,CTE_PROP,MOONEY_PROPS};
 class Mooney : public HyperElastic
 {
     public:
-        double G1,G2,Kbulk;
+        double G1,G2;
 		// double aI,betaI		// isotropic expanion defined in super classes
  
         // constructors and destructors
@@ -36,12 +36,10 @@ class Mooney : public HyperElastic
         virtual void InitialLoadMechProps(int,int);
 		virtual void PrintMechanicalProperties(void);
         virtual char *MaterialData(void);
-        virtual void SetInitialParticleState(MPMBase *,int);
  		
 		// methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
-        virtual double GetVolumetricTerms(double,double *);
     
 		// accessors
 		virtual double WaveSpeed(bool,MPMBase *);
@@ -50,8 +48,8 @@ class Mooney : public HyperElastic
 		virtual int MaterialTag();
         virtual double GetHistory(int,char *);
 		
-    private:
-		double G1sp, G2sp, Ksp;
+    protected:
+		double G1sp, G2sp;
 };
 
 #endif

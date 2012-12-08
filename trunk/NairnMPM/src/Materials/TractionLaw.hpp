@@ -31,7 +31,7 @@ class TractionLaw : public MaterialBase
 		virtual void ReportDebond(double,CrackSegment *,double);
 		
 		// no need for constitutive laws
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
   		
         // prototypes for traction law methods (subclasses must override)

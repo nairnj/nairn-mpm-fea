@@ -31,7 +31,6 @@ Viscoelastic::Viscoelastic(char *matName) : MaterialBase(matName)
     G0=0.;
     currentGk=0;
     currentTauk=0;
-	betaI=0.;
     for(i=0;i<VISCO_PROPS;i++)
         read[i]=0;
 }
@@ -75,9 +74,6 @@ char *Viscoelastic::InputMat(char *xName,int &input)
     {	read[VA_PROP]=1;
         return((char *)&aI);
     }
-    
-    else if(strcmp(xName,"beta")==0)
-        return((char *)&betaI);
     
     else if(strcmp(xName,"ntaus")==0)
     {	input=INT_NUM;
@@ -130,9 +126,9 @@ const char *Viscoelastic::VerifyProperties(int np)
 
 // plane stress not allowed in viscoelasticity
 void Viscoelastic::ValidateForUse(int np)
-{	if(np==PLANE_STRESS_MPM)
+{	if(np==PLANE_STRESS_MPM || np==AXISYMMETRIC_MPM)
 	{	throw CommonException("Viscoelastic materials require 2D plane strain or 3D MPM analysis",
-							  "Viscoelastic::MPMConstLaw");
+							  "Viscoelastic::ValidateForUse");
 	}
 	
 	//call super class (why can't call super class?)
@@ -144,8 +140,6 @@ void Viscoelastic::InitialLoadMechProps(int makeSpecific,int np)
 {
     int i;
     
-	hasMatProps=TRUE;
-	
     // zero time shear modulus
     Ge=G0;
     dGe=0.0;
@@ -215,9 +209,10 @@ char *Viscoelastic::MaterialData(void)
     Particle: strains, rotation strain, stresses, history variables,
 		strain energy, angle
     dvij are (gradient rates X time increment) to give deformation gradient change
+   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 */
 void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double delTime,int np)
+        double dvzz,double delTime,int np)
 {
     /* ---------------------------------------------------
         Add to total strain
@@ -276,10 +271,10 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy
     }
 	
 	// find energy from work increment, but not dissipated energy yet
-	// energy increment per unit mass (dU/(rho0 V0))
+	// energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	dvxx-=er;
 	dvyy-=er;
-	double dvzz=-er;
+	dvzz=-er;
 	double totalEnergy=(st0.xx+0.5*dsxx)*dvxx
 							+(st0.yy+0.5*dsyy)*dvyy
 							+(st0.xy+0.5*dtxy)*dgam
@@ -377,7 +372,7 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz
     }
 	
 	// find energy from work increment, but not dissipated energy yet
-	// energy increment per unit mass (dU/(rho0 V0))
+	// energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	dvxx-=er;
 	dvyy-=er;
 	dvzz=-er;

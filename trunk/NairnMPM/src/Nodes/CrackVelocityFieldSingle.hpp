@@ -37,26 +37,15 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		virtual void CalcVelocityForStrainUpdate(void);
 	
 		// boundary conditions
-		virtual void SetXMomVel(void);
-		virtual void SetYMomVel(void);
-		virtual void SetZMomVel(void);
-		virtual void SetSkewMomVel(double);
-		virtual void AddXMomVel(double);
-		virtual void AddYMomVel(double);
-		virtual void AddZMomVel(double);
-		virtual void AddSkewMomVel(double,double);
-		virtual void SetXFtot(double);
-		virtual void SetYFtot(double);
-		virtual void SetZFtot(double);
-		virtual void SetSkewFtot(double,double);
-		virtual void AddXFtot(double,double);
-		virtual void AddYFtot(double,double);
-		virtual void AddZFtot(double,double);
-		virtual void AddSkewFtot(double,double,double);
+        virtual void SetMomVel(int);
+        virtual void AddMomVel(int,double);
+        virtual void SetFtot(int,double);
+        virtual void AddFtot(int,double,double);
 	
 		// accessors
 		virtual double GetTotalMass(void);
-		virtual double GetMass(int);
+		virtual double GetVolumeNonrigid(void);
+		virtual double GetVolumeTotal(double);
 		virtual Vector GetCMatMomentum(void);
 		virtual Vector GetCMDisplacement(void);
 		virtual Vector GetCMatFtot(void);

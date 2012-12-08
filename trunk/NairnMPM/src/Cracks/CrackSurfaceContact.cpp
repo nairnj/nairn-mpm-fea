@@ -302,7 +302,7 @@ void CrackSurfaceContact::MaterialContactPairs(int maxFields)
 
 // In task 1, track displacements or position and track volume of the entire crack velocity field
 // Alwasy done if any cracks or more than one material in multimaterial mode
-void CrackSurfaceContact::AddDisplacementVolumeTask1(short vfld,int matfld,NodalPoint *ndpt,MPMBase *mptr,double shape)
+void CrackSurfaceContact::AddDisplacementVolume(short vfld,int matfld,NodalPoint *ndpt,MPMBase *mptr,double shape)
 {	// exit if has no cracks and is in single material mode (i.e., no contact being done)
 	if(firstCrack==NULL && maxMaterialFields==1) return;
 	
@@ -314,22 +314,12 @@ void CrackSurfaceContact::AddDisplacementVolumeTask1(short vfld,int matfld,Nodal
 	else
 		ndpt->AddDisplacement(vfld,matfld,mptr->mp*shape,&mptr->pos);
 	
-	double rho=theMaterials[mptr->MatID()]->rho*0.001;	// in g/mm^3
-	ndpt->AddUnscaledVolume(vfld,mptr->mp*shape/rho);   // in mm^3
-}
-
-// In task 6, track displacements or position but do not need to track volume
-void CrackSurfaceContact::AddDisplacementTask6(short vfld,int matfld,NodalPoint *ndpt,MPMBase *mptr,double shape)
-{	// exit if has no cracks and is in single material mode (i.e., no contact being done)
-	if(firstCrack==NULL && maxMaterialFields==1) return;
-	
-	// displacement or position for contact calculations
-	if(contactByDisplacements)
-	{	Vector pdisp=mptr->pos;
-		ndpt->AddDisplacement(vfld,matfld,mptr->mp*shape,SubVector(&pdisp,&mptr->origpos));
-	}
+	// add dilated volume, only used by transport tasks, contact, and imperfect interfaces
+	MaterialBase *matptr = theMaterials[mptr->MatID()];
+	if(matptr->Rigid())
+		ndpt->AddVolume(vfld,matfld,shape*mptr->GetUnscaledVolume());
 	else
-		ndpt->AddDisplacement(vfld,matfld,mptr->mp*shape,&mptr->pos);
+		ndpt->AddVolume(vfld,matfld,shape*mptr->GetVolume(DEFORMED_AREA));
 }
 
 #pragma mark CrackSurfaceContact: Contact Calculations

@@ -854,7 +854,7 @@ int SearchOperator(char *s,ROperator op)
 	}
 	int i;
 	for(i=(int)strlen(s)-1;i>=0;i--)
-	{	if(s[i]==opc && (op!=Sub || i && s[i-1]==')')) return i;
+	{	if(s[i]==opc && (op!=Sub || (i && s[i-1]==')'))) return i;
 		if(s[i]==')')
 		{	i=SearchCorClosebracket(s,i);
 			if(i==-1) return -1;

@@ -33,6 +33,7 @@ class MatPtLoadBC: public BoundaryCondition
         MatPtLoadBC *AddMPLoad(double);
         MatPtLoadBC *ReverseLinearLoad(double,double *);
         MatPtLoadBC *MakeConstantLoad(double);
+        int CompactCornerNodes(int,Vector *,int *,double,int *,double *);
         
 		// class methods
 		static void SetParticleFext(double);

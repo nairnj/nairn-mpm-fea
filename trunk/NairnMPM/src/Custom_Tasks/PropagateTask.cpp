@@ -136,7 +136,7 @@ CustomTask *PropagateTask::StepCalculation(void)
 						
 						// crack tip heating (if activated)
 						if(ConductionTask::active)
-							conduction->StartCrackTipHeating(crkTip,grow,nextCrack->thickness);
+							conduction->StartCrackTipHeating(crkTip,grow,nextCrack->GetThickness());
 					}
                 }
                 else

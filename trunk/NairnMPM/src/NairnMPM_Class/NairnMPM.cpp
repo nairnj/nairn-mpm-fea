@@ -35,6 +35,7 @@
 #include "NairnMPM_Class/MoveCracksTask.hpp"
 #include "NairnMPM_Class/ResetElementsTask.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
+#include "Boundary_Conditions/MatPtFluxBC.hpp"
 #include <time.h>
 
 // global analysis object
@@ -54,8 +55,8 @@ int maxMaterialFields;		// Maximum velocity fields or number of independent mate
 // Constructor
 NairnMPM::NairnMPM()
 {
-	version=8;						// main version
-	subversion=3;					// subversion (must be < 10)
+	version=9;						// main version
+	subversion=0;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 	mpmApproach=USAVG_METHOD;		// mpm method
 	ptsPerElement=4;				// number of points per element (2D default, 3D changes it to 8)
@@ -64,10 +65,9 @@ NairnMPM::NairnMPM()
 	propagateMat[0]=propagateMat[1]=0;								// default is new crack with no traction law
 	hasTractionCracks=FALSE;		// if any crack segment has a traction law material
 	maxtime=1.;						// maximum time (sec)
-	FractCellTime=.5;				// fraction cell crossed in 1 step at wave speed
-    PropFractCellTime=-1.;          // fracture cell crossed in 1 step for propagation time step (current not use settable)
+	FractCellTime=.5;				// fraction cell crossed in 1 step at wave speed (CFL convergence condition)
+    PropFractCellTime=-1.;          // fracture cell crossed in 1 step for propagation time step (currently not user settable)
 	mstep=0;						// step number
-	volumeExtrap=FALSE;				// set if need volume extrapolations
 	warnParticleLeftGrid=1;			// abort when this many leave the grid
 	multiMaterialMode=false;		// multi-material mode
 	hasRigidContactParticles=false;	// rigid contact particles in multimaterial mode
@@ -120,10 +120,12 @@ void NairnMPM::MPMAnalysis(bool abort)
 
 	// if there are cracks, create J/K task and optionally a propagation task
 	//		(it is essential for propagation task to be after the JK task)
-	//		(insert this tasks before other custom tasks)
+	//		(insert this task before other custom tasks)
 	if(firstCrack!=NULL)
 	{	if(propagate[0] || archiver->WillArchiveJK(FALSE))
-		{	nextTask=new CalcJKTask();
+		{	if(IsAxisymmetric())
+				throw CommonException("Axisymmetric MPM cannot yet do J Integral calculations.","NairnMPM::ValidateOptions");
+			nextTask=new CalcJKTask();
 			if(propagate[0])
 			{   nextTask=new PropagateTask();
 				theJKTask->nextTask=nextTask;
@@ -143,9 +145,6 @@ void NairnMPM::MPMAnalysis(bool abort)
 		cout << endl;
 	}
 
-	// need particle volume? (assumes only transport tasks do)
-	if(transportTasks) volumeExtrap=TRUE;
-    
 	//---------------------------------------------------
 	// Create all the step tasks
 	
@@ -349,7 +348,8 @@ void NairnMPM::PreliminaryCalcs(void)
 		double dx,dy,dz,gridx=0.,gridy=0.,gridz=0.;
 		for(i=0;i<nelems;i++)
 		{	if(!theElements[i]->Orthogonal(&dx,&dy,&dz))
-			{	userCartesian=FALSE;
+            {   // exit if find one that is not orthongal
+				userCartesian=FALSE;
 				break;
 			}
 			if(!userCartesian)
@@ -373,9 +373,9 @@ void NairnMPM::PreliminaryCalcs(void)
     // CPDI factors if needed
     ElementBase::InitializeCPDI(IsThreeD());
 	
-    // future - make PropFractCellTime a user parameter, which not changed is user picked it
+    // future - make PropFractCellTime a user parameter, which not changed here if user picked it
     if(PropFractCellTime<0.) PropFractCellTime=FractCellTime;
-	double minSize=mpmgrid.GetMinCellDimension()/10.;	// in cm
+	double minSize=mpmgrid.GetMinCellDimension()/10.;                   // in cm
     
     // loop over material points
 	maxMaterialFields=0;
@@ -397,16 +397,19 @@ void NairnMPM::PreliminaryCalcs(void)
 			dcell = (minSize>0.) ? minSize : pow(volume,1./3.) ;
 		}
 		else
-		{	area=theElements[mpm[p]->ElemID()]->GetArea()/100.;	// in cm^2
+		{	// when axisymmetric, thickness is particle radial position, which gives mp = rho*Ap*Rp
+			area=theElements[mpm[p]->ElemID()]->GetArea()/100.;	// in cm^2
 			volume=mpm[p]->thickness()*area/10.;				// in cm^2
 			dcell = (minSize>0.) ? minSize : sqrt(area) ;
 		}
 		rho=theMaterials[matid]->rho;					// in g/cm^3
         
         // assumes same number of points for all elements
+        // for axisyymmeric xp = rho*Ap*volume/(# per element)
 		mpm[p]->InitializeMass(rho*volume/((double)ptsPerElement));			// in g
 		
-		// done if rigid contact material in multimaterial mode (mass will be in mm^3 and will be particle volume)
+		// done if rigid contact material in multimaterial mode
+        // mass will be in mm^3 and will be particle volume
 		if(theMaterials[matid]->Rigid())
 		{	hasRigidContactParticles=true;
 			continue;
@@ -414,7 +417,7 @@ void NairnMPM::PreliminaryCalcs(void)
         
         // check time step
         crot=theMaterials[matid]->WaveSpeed(IsThreeD(),mpm[p])/10.;		// in cm/sec
-		tst=FractCellTime*dcell/crot;					// in sec
+		tst=FractCellTime*dcell/crot;                                   // in sec
         if(tst<tmin) tmin=tst;
         
         // propagation time (in sec)
@@ -479,7 +482,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	// contact law materials and cracks
 	contact.SetNormalCODCutoff(mpmgrid.GetMinCellDimension());
 	
-    // progation time step and other settings when has cracks
+    // prpagation time step and other settings when has cracks
     if(firstCrack!=NULL)
 	{	if(propagate[0])
 		{   sprintf(fline,"Propagation time step (ms): %.7e",1000.*propTime);
@@ -520,47 +523,70 @@ void NairnMPM::PreliminaryCalcs(void)
 // Can insert code here to black runs with invalid options
 void NairnMPM::ValidateOptions(void)
 {	
+    // GIMP and CPDI require regular
+    //  and qCPDI not allowed in 3D
 	if(ElementBase::useGimp != POINT_GIMP)
     {   // using a GIMP method
 		if(!mpmgrid.CanDoGIMP())
 			throw CommonException("GIMP not allowed unless using a generated regular mesh","NairnMPM::ValidateOptions");
-		if(ptsPerElement!=4 && !IsThreeD())
-			throw CommonException("GIMP requires 4 particles per element for 2D","NairnMPM::ValidateOptions");
-		if(ptsPerElement!=8 && IsThreeD())
-			throw CommonException("GIMP requires 8 particles per element for 3D","NairnMPM::ValidateOptions");
         if(ElementBase::useGimp == QUADRATIC_CPDI)
         {   if(IsThreeD())
-                throw CommonException("qCPDI methods not yet available for 3D; use lCPDI instead","NairnMPM::ValidateOptions");
+                throw CommonException("3D does not allow qCPDI shape functions; use lCPDI instead","NairnMPM::ValidateOptions");
         }
 	}
     else
-    {   // in Classic MPM or POINT_GIMP
-        if(firstTractionPt!=NULL)
-			throw CommonException("Traction boundary conditions require use of a GIMP MPM method.","NairnMPM::ValidateOptions");
+    {   // in Classic MPM or POINT_GIMP, cannot use traction BCs
+        if(firstTractionPt!=NULL || firstFluxPt!=NULL)
+			throw CommonException("Traction and flux boundary conditions require use of a GIMP MPM method.","NairnMPM::ValidateOptions");
     }
-            
+    
+    // Imperfect interface requires cartensian grid
 	if(contact.hasImperfectInterface)
 	{	if(mpmgrid.GetCartesian()<=0)
 			throw CommonException("Imperfect interfaces require a cartesian mesh","NairnMPM::ValidateOptions");
 	}
 	
+    // 3D requires orthogonal grid and 1 or 8 particles per element
+    // 2D requires 1 or 4 particles per element
 	if(IsThreeD())
 	{	if(mpmgrid.GetCartesian()!=CUBIC_GRID && mpmgrid.GetCartesian()!=ORTHOGONAL_GRID)
 			throw CommonException("3D calculations require an orthogonal grid","NairnMPM::ValidateOptions");
-		if(ptsPerElement!=1 && ptsPerElement!=8)
+		if(ptsPerElement!=1 && ptsPerElement!=8 && ptsPerElement!=27)
 			throw CommonException("3D analysis requires 1 or 8 particles per cell","NairnMPM::ValidateOptions");
 	}
 	else
-	{	if(ptsPerElement!=1 && ptsPerElement!=4)
+	{	if(ptsPerElement!=1 && ptsPerElement!=4 && ptsPerElement!=9 && ptsPerElement!=16 && ptsPerElement!=25)
 			throw CommonException("2D analysis requires 1 or 4 particles per cell","NairnMPM::ValidateOptions");
 	}
+    
+    // Axisymmetric requirements and adjustments
+    if(IsAxisymmetric())
+    {   if(ElementBase::useGimp == POINT_GIMP)
+        {   // require cartesian grid
+            if(mpmgrid.GetCartesian()<=0)
+            {   throw CommonException("Axisymmetric with Classic MPM requires anorthogonal grid","NairnMPM::ValidateOptions");
+            }
+        }
+        else if(ElementBase::useGimp == UNIFORM_GIMP)
+		{	ElementBase::useGimp = UNIFORM_GIMP_AS;
+			ElementBase::analysisGimp = UNIFORM_GIMP_AS;
+        }
+        else if(ElementBase::useGimp == LINEAR_CPDI)
+		{	ElementBase::useGimp = LINEAR_CPDI_AS;
+			ElementBase::analysisGimp = LINEAR_CPDI_AS;
+        }
+		else
+		{   throw CommonException("Axisymmetric does not allow qCPDI shape functions","NairnMPM::ValidateOptions");
+		}
+    }
 	
+    // Multimaterial mode requires a regular grid
 	if(multiMaterialMode)
 	{	if(!mpmgrid.CanDoGIMP())
 			throw CommonException("Multimaterial mode is not allowed unless using a generated regular mesh","NairnMPM::ValidateOptions");
 	}
 	
-	// check each material type (but only if it is used)
+	// check each material type (but only if it is used it at least one material point)
 	int i;
 	for(i=0;i<nmat;i++)
 	{	if(theMaterials[i]->GetField()>=0)
@@ -626,4 +652,13 @@ double NairnMPM::CPUTime(void) { return (double)(clock()-startCPU)/CLOCKS_PER_SE
 
 // if crack develops tractionlaw, call here to turn it on
 void NairnMPM::SetHasTractionCracks(bool setting) { hasTractionCracks=setting; }
+
+// Get Courant-Friedrichs-Levy condition factor for convergence
+void NairnMPM::SetCFLCondition(double factor) { FractCellTime = factor; }
+double NairnMPM::GetCFLCondition(void) { return FractCellTime; }
+double *NairnMPM::GetCFLPtr(void) { return &FractCellTime; }
+
+// Get Courant-Friedrichs-Levy condition factor for convergence for propagation calculations
+double NairnMPM::GetPropagationCFLCondition(void) { return PropFractCellTime; }
+
 

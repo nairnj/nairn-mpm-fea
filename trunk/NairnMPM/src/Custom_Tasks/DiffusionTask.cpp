@@ -4,6 +4,18 @@
     
     Created by John Nairn on Mon Mar 08 2004
     Copyright (c) 2003 John A. Nairn, All rights reserved.
+ 
+    Diffusion calculations
+   -------------------------
+    See comments in ConductionTask.cpp but:
+    Change gTemperature to gConcentration, gMpCp to gVolume, and fcond to fdiff
+    Update Particles Task
+        cut off particle potential to range 0 to 1
+    Chemical potential (or concentration potential 0 to 1)
+        Internally all calculations in terms or potential (0 to 1)
+        Output concentration and concentration gradient scaled to
+            csat to get weight fraction and weight fraction gradient
+        Flux set as mass per area per sec. See documentation for conversions.
 ********************************************************************************/
 
 #include "Custom_Tasks/DiffusionTask.hpp"
@@ -17,8 +29,8 @@
 
 // global
 bool DiffusionTask::active=FALSE;
-double DiffusionTask::dConcentration=0.;
-double DiffusionTask::reference=0.;				// zero-strain concentration
+double DiffusionTask::dConcentration = 0.;
+double DiffusionTask::reference = 0.;				// zero-strain concentration
 
 #pragma mark INITIALIZE
 
@@ -56,10 +68,11 @@ TransportTask *DiffusionTask::TransportTimeStep(int matid,double dcell,double *t
 
 // Task 1 Extrapolation of concentration to the grid. Concentration is acutally a chemical
 // potential from 0 to 1 where 1 means concentration is equal to that materials saturation
-// concentration.
+// concentration. (units are mm^3)
 TransportTask *DiffusionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape)
-{	ndpt->gConcentration+=mptr->pConcentration*mptr->volume*shape;
-	ndpt->gVolume+=mptr->volume*shape;
+{   double Vp = mptr->GetVolume(DEFORMED_VOLUME);
+	ndpt->gConcentration += mptr->pConcentration*Vp*shape;
+	ndpt->gVolume += Vp*shape;
 	return nextTask;
 }
 
@@ -83,7 +96,7 @@ void DiffusionTask::GetValues(double stepTime)
     nextBC=firstConcBC;
     while(nextBC!=NULL)
 	{   i=nextBC->GetNodeNum(mstime);
-	    if(i!=0) nd[i]->gConcentration=0.;
+	    if(i!=0) nd[i]->gConcentration = 0.;
         nextBC=(NodalConcBC *)nextBC->GetNextObject();
     }
 
@@ -91,19 +104,19 @@ void DiffusionTask::GetValues(double stepTime)
     nextBC=firstConcBC;
     while(nextBC!=NULL)
 	{   i=nextBC->GetNodeNum(mstime);
-	    if(i!=0) nd[i]->gConcentration+=nextBC->BCValue(mstime);
+	    if(i!=0) nd[i]->gConcentration += nextBC->BCValue(mstime);
         nextBC=(NodalConcBC *)nextBC->GetNextObject();
     }
 	
-	// verify all between 0 and 1
+	// verify all set BCs are between 0 and 1
     nextBC=firstConcBC;
     while(nextBC!=NULL)
 	{   i=nextBC->GetNodeNum(mstime);
 		if(i!=0)
 		{	if(nd[i]->gConcentration<0)
-				nd[i]->gConcentration=0.;
+				nd[i]->gConcentration = 0.;
 			else if(nd[i]->gConcentration>1.)
-				nd[i]->gConcentration=1.;
+				nd[i]->gConcentration = 1.;
 		}
         nextBC=(NodalConcBC *)nextBC->GetNextObject();
     }
@@ -131,26 +144,15 @@ void DiffusionTask::GetGradients(double stepTime)
 			mpm[p]->AddConcentrationGradient(ScaleVector(&deriv,nd[nds[i]]->gConcentration));
 		}
 	}
-	
-	// impose flux boundary conditions
-    MatPtFluxBC *nextFlux=firstFluxPt;
-    while(nextFlux!=NULL)
-    	nextFlux=nextFlux->ZeroMPFlux();
-    nextFlux=firstFluxPt;
-    while(nextFlux!=NULL)
-    	nextFlux=nextFlux->AddMPFlux(stepTime);
 }
 
-// find forces for diffusion calculation
+// find forces for diffusion calculation (mm^3/sec)
 TransportTask *DiffusionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double sh,double dshdx,double dshdy,double dshdz)
 {
 	// internal force
-	ndpt->fdiff+=mptr->FDiff(dshdx,dshdy,dshdz);
+	ndpt->fdiff += mptr->FDiff(dshdx,dshdy,dshdz);
 	
 	// add source terms (should be potential per sec, if c units per second, divide by concSaturation)
-	
-	// add external flux on particles (already multiplied by volume)
-	ndpt->fdiff+=mptr->pDiffusion->flux*sh;
 	
 	// return next task
 	return nextTask;
@@ -164,27 +166,35 @@ TransportTask *DiffusionTask::SetTransportForceBCs(double deltime)
     int i;
     NodalConcBC *nextBC=firstConcBC;
     
+	// --------- consistent forces for grid concentration BCs ------------
+	
     // Paste back noBC concentration
     while(nextBC!=NULL)
-        nextBC=nextBC->PasteNodalConcentration(nd[nextBC->GetNodeNum()]);
+        nextBC = nextBC->PasteNodalConcentration(nd[nextBC->GetNodeNum()]);
     
     // Set force to - VC(no BC)/timestep
 	double mstime=1000.*(mtime+deltime);
     nextBC=firstConcBC;
     while(nextBC!=NULL)
-    {	i=nextBC->GetNodeNum(mstime);
-		if(i!=0) nd[i]->fdiff=-nd[i]->gVolume*nd[i]->gConcentration/deltime;
-		nextBC=(NodalConcBC *)nextBC->GetNextObject();
+    {	i = nextBC->GetNodeNum(mstime);
+		if(i!=0) nd[i]->fdiff = -nd[i]->gVolume*nd[i]->gConcentration/deltime;
+		nextBC = (NodalConcBC *)nextBC->GetNextObject();
     }
 
     // Now add each superposed concentration (* volume) BC at incremented time
     nextBC=firstConcBC;
     while(nextBC!=NULL)
-    {	i=nextBC->GetNodeNum(mstime);
-		if(i!=0) nd[i]->fdiff+=nd[i]->gVolume*nextBC->BCValue(mstime)/deltime;
-        nextBC=(NodalConcBC *)nextBC->GetNextObject();
+    {	i = nextBC->GetNodeNum(mstime);
+		if(i!=0) nd[i]->fdiff += nd[i]->gVolume*nextBC->BCValue(mstime)/deltime;
+        nextBC = (NodalConcBC *)nextBC->GetNextObject();
     }
 	
+	// --------- concentration flux BCs -------------
+	
+	MatPtFluxBC *nextFlux=firstFluxPt;
+    while(nextFlux!=NULL)
+    	nextFlux = nextFlux->AddMPFlux(deltime);
+
 	return nextTask;
 }
 
@@ -196,12 +206,14 @@ TransportTask *DiffusionTask::TransportRates(double deltime)
 	int i;
     for(i=1;i<=nnodes;i++)
 	{   if(nd[i]->NumberNonrigidParticles()>0)
-		{	nd[i]->fdiff/=nd[i]->gVolume;
-			double concTest=nd[i]->gConcentration+nd[i]->fdiff*deltime;
+		{	nd[i]->fdiff /= nd[i]->gVolume;
+            /*
+			double concTest = nd[i]->gConcentration + nd[i]->fdiff*deltime;
 			if(concTest<0.)
-				nd[i]->fdiff=-nd[i]->gConcentration/deltime;
+				nd[i]->fdiff = -nd[i]->gConcentration/deltime;          // will evolve to 0
 			else if(concTest>1.)
-				nd[i]->fdiff=(1.-nd[i]->gConcentration)/deltime;
+				nd[i]->fdiff = (1.-nd[i]->gConcentration)/deltime;      // will evolve to 1
+            */
 		}
 	}
 	return nextTask;
@@ -209,13 +221,17 @@ TransportTask *DiffusionTask::TransportRates(double deltime)
 		
 // increment concentration rate on the particle
 TransportTask *DiffusionTask::IncrementTransportRate(NodalPoint *ndpt,double shape)
-{	rate+=ndpt->fdiff*shape;			// fdiff are concentration rates from TransportRates()
+{	rate += ndpt->fdiff*shape;			// fdiff are concentration rates from TransportRates()
 	return nextTask;
 }
 
 // increment particle concentration
 TransportTask *DiffusionTask::MoveTransportValue(MPMBase *mptr,double deltime)
-{	mptr->pConcentration+=deltime*rate;
+{	mptr->pConcentration += deltime*rate;
+    if(mptr->pConcentration<0.)
+        mptr->pConcentration = 0.;
+    else if(mptr->pConcentration>1.)
+        mptr->pConcentration = 1.;
 	return nextTask;
 }
 
@@ -226,22 +242,22 @@ TransportTask *DiffusionTask::UpdateNodalValues(double concTime)
 	int i;
     for(i=1;i<=nnodes;i++)
 	{   if(nd[i]->NumberNonrigidParticles()>0)
-			nd[i]->gConcentration+=nd[i]->fdiff*concTime;
+			nd[i]->gConcentration += nd[i]->fdiff*concTime;
 	}
 	return nextTask;
 }
 
 // increment transport rate
 TransportTask *DiffusionTask::IncrementValueExtrap(NodalPoint *ndpt,double shape)
-{	pValueExtrap+=ndpt->gConcentration*shape;
+{	pValueExtrap += ndpt->gConcentration*shape;
 	return nextTask;
 }
 
 // after extrapolated, find change this update on particle and reset particle
 // property to this grid extrapolated value
 TransportTask *DiffusionTask::GetDeltaValue(MPMBase *mptr)
-{	dConcentration=pValueExtrap-mptr->pPreviousConcentration;
-	mptr->pPreviousConcentration=pValueExtrap;
+{	dConcentration = pValueExtrap-mptr->pPreviousConcentration;
+	mptr->pPreviousConcentration = pValueExtrap;
 	return nextTask;
 }
 

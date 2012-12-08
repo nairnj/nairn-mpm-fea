@@ -33,12 +33,9 @@ class NairnMPM : public CommonAnalysis
 		bool hasTractionCracks;			// TRUE is any crack segment has traction law material
 		int mstep;						// step number
 		double maxtime;					// maximum time for analysis
-		double FractCellTime;			// fraction of cell crossed at wave speed (<1)
-        double PropFractCellTime;       // separate fraction of cell crossed for propagation time steps (current not settable)
 		int warnParticleLeftGrid;		// warning ID
 		bool multiMaterialMode;			// TRUE to use separate velocity fields for each material
 		bool hasRigidContactParticles;	// TRUE if some particles in multimaterial mode or rigid (direction=8)
-		bool volumeExtrap;				// true if need particle volume
 		
         //  Constructors and Destructor
 		NairnMPM();
@@ -53,16 +50,24 @@ class NairnMPM : public CommonAnalysis
 		void SetForceBCs(void);
 		void ValidateOptions(void);
 		void Usage(void);
-		double CPUTime();
-		double ElapsedTime();
-		
+		double CPUTime(void);
+		double ElapsedTime(void);
+    
 		// accessors
 		virtual void PrintAnalysisTitle(void);
 		virtual void PrintAnalysisType(void);
 		virtual char *CodeName(void);
 		virtual bool ValidAnalysisType(void);
 		virtual void SetHasTractionCracks(bool);
-	
+        double *GetCFLPtr(void);
+        void SetCFLCondition(double);
+        double GetCFLCondition(void);
+        double GetPropagationCFLCondition(void);
+    
+    protected:
+        double FractCellTime;			// fraction of cell crossed at wave speed (<1)
+        double PropFractCellTime;       // separate fraction of cell crossed for propagation time steps (currently not settable)
+
 	private:
 		time_t startTime;			// timers
 		clock_t startCPU;

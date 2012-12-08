@@ -37,7 +37,7 @@ class IsoPlasticity : public IsotropicMat
 		virtual void PrintYieldProperties(void) = 0;							// subclass must provide
 		
 		// methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
 		
 		// custom methods: Find yield function and solve for lambda

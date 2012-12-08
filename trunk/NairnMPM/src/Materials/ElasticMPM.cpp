@@ -15,12 +15,14 @@
 #pragma mark Elastic::Methods
 
 /* For 2D MPM analysis, take increments in strain and calculate new
-    Particle: strains, rotation strain, stresses, strain energy, angle
-    dvij are (gradient rates X time increment) to give deformation gradient change
-    Assumes linear elastic, uses hypoelastic correction
+	Particle: strains, rotation strain, stresses, strain energy, angle
+	dvij are (gradient rates X time increment) to give deformation gradient change
+	Assumes linear elastic, uses hypoelastic correction
+   For Axisymmetric MPM, x->R, y->Z, x->theta, and dvzz is change in hoop strain
+	(i.e., du/r on particle and dvzz will be zero if not axisymmetric)
 */
-void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double delTime,int np)
+void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,double dvzz,
+                          double delTime,int np)
 {
 	// Add to total strain
 	Tensor *ep=mptr->GetStrainTensor();
@@ -42,40 +44,62 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 		erzz+=CME3*DiffusionTask::dConcentration;
 	}
 	
-    // thermal strain and temperature change (if conduction OR thermal ramp active)
-    dvxx-=erxx;
-    dvyy-=eryy;
-	dgam-=erxy;
+    // moisture and thermal strain and temperature change
+	//   (when diffusion, conduction, OR thermal ramp active)
+    dvxx -= erxx;
+    dvyy -= eryy;
+	dgam -= erxy;
     
     // save initial stresses
 	Tensor *sp=mptr->GetStressTensor();
     Tensor st0=*sp;
 	
-    /* ---------------------------------------------------
-        find stress (Units N/m^2  cm^3/g)
-    */
-    double c1=mdm[1][1]*dvxx + mdm[1][2]*dvyy + mdm[1][3]*dgam;
-    double c2=mdm[1][2]*dvxx + mdm[2][2]*dvyy + mdm[2][3]*dgam;
-    double c3=mdm[1][3]*dvxx + mdm[2][3]*dvyy + mdm[3][3]*dgam;
-	Hypo2DCalculations(mptr,-dwrotxy,c1,c2,c3);
-    
-	// out of plane stress or strain
-	if(np==PLANE_STRAIN_MPM)
-	{	// need to add back terms to get from reduced cte to actual cte
-		sp->zz+=mdm[4][1]*(dvxx+me0[5]*erzz)+mdm[4][2]*(dvyy+me0[6]*erzz)
-								+mdm[4][3]*(dgam+me0[7]*erzz)-mdm[4][4]*erzz;
+	// find stress (Units N/m^2  cm^3/g)
+	// this does xx, yy, ans xy only. zz do later if needed
+	double c1,c2,c3;
+	if(np==AXISYMMETRIC_MPM)
+	{	// axisymmetric strain
+		ep->zz += dvzz;
 		
+		// hoop stress affect on RR, ZZ, and RZ stresses
+		dvzz -= erzz;
+		c1=mdm[1][1]*dvxx + mdm[1][2]*dvyy + mdm[4][1]*dvzz + mdm[1][3]*dgam;
+		c2=mdm[1][2]*dvxx + mdm[2][2]*dvyy + mdm[4][1]*dvzz + mdm[2][3]*dgam;
+		c3=mdm[1][3]*dvxx + mdm[2][3]*dvyy + mdm[4][3]*dvzz + mdm[3][3]*dgam;
 	}
 	else
-		ep->zz+=mdm[4][1]*dvxx+mdm[4][2]*dvyy+mdm[4][3]*dgam+erzz;
-	
-    // strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule)
-    mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dvxx
-                            + (st0.yy+sp->yy)*dvyy
-                            + (st0.xy+sp->xy)*dgam));
-	if(np==PLANE_STRAIN_MPM)
-	{	mptr->AddStrainEnergy(-0.5*(st0.zz+sp->zz)*erzz);
+    {	c1=mdm[1][1]*dvxx + mdm[1][2]*dvyy + mdm[1][3]*dgam;
+		c2=mdm[1][2]*dvxx + mdm[2][2]*dvyy + mdm[2][3]*dgam;
+		c3=mdm[1][3]*dvxx + mdm[2][3]*dvyy + mdm[3][3]*dgam;
 	}
+	Hypo2DCalculations(mptr,-dwrotxy,c1,c2,c3);
+    
+	// out of plane stress or strain and energy incrment
+	if(np==PLANE_STRAIN_MPM)
+	{	// need to add back terms to get from reduced cte to actual cte
+		sp->zz += mdm[4][1]*(dvxx+me0[5]*erzz)+mdm[4][2]*(dvyy+me0[6]*erzz)
+					+mdm[4][3]*(dgam+me0[7]*erzz)-mdm[4][4]*erzz;
+		
+		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
+		mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
+								   + (st0.xy+sp->xy)*dgam)-0.5*(st0.zz+sp->zz)*erzz);
+	}
+	else if(np==PLANE_STRESS_MPM)
+	{	ep->zz += mdm[4][1]*dvxx+mdm[4][2]*dvyy+mdm[4][3]*dgam+erzz;
+		
+		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
+		mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
+								   + (st0.xy+sp->xy)*dgam));
+	}
+	else
+	{	// axisymmetric hoop stress
+		sp->zz += mdm[4][1]*dvxx + mdm[4][2]*dvyy + mdm[4][4]*dvzz + mdm[4][3]*dgam;
+		
+		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
+		mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
+								   + (st0.xy+sp->xy)*dgam) + (st0.zz+sp->zz)*dvzz);
+	}
+	
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new

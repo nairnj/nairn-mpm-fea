@@ -43,7 +43,7 @@ class RigidMaterial : public MaterialBase
 		virtual int SetField(int,bool,int);
 		
 		// define abstract methods even though not used
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
 		
 		// RigidMaterial only methods
@@ -58,7 +58,7 @@ class RigidMaterial : public MaterialBase
 		// accessors
 		virtual const char *MaterialType(void);
         virtual double WaveSpeed(bool,MPMBase *);
-		virtual short Rigid(void);			// override base class to return true
+		virtual bool Rigid(void);			// override base class to return true
 		virtual short RigidBC(void);		// override base class to return true if appropriate
 		virtual short RigidContact(void);	// override base class to return true if appropriate
 		virtual int MaterialTag();

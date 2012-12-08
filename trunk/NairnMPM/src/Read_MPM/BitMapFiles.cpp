@@ -11,6 +11,7 @@
 #include "Read_MPM/MPMReadHandler.hpp"
 #include "Read_XML/BMPLevel.hpp"
 #include "MPM_Classes/MatPoint2D.hpp"
+#include "MPM_Classes/MatPointAS.hpp"
 #include "MPM_Classes/MatPoint3D.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Read_MPM/MpsController.hpp"
@@ -232,6 +233,8 @@ void MPMReadHandler::TranslateBMPFiles(void)
 				if(matID>0)
 				{	if(fmobj->IsThreeD())
 						newMpt=new MatPoint3D(ii,matID,nextLevel->angle);
+					else if(fmobj->IsAxisymmetric())
+						newMpt=new MatPointAS(ii,matID,nextLevel->angle,mpos[k].x);
 					else
 						newMpt=new MatPoint2D(ii,matID,nextLevel->angle,nextLevel->thickness);
 					newMpt->SetPosition(&mpos[k]);

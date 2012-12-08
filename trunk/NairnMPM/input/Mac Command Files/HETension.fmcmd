@@ -13,8 +13,12 @@ EndHeader! ------------ Parameters ---------------
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"#analysis="Plane Strain MPM"
 
+! Points per element
+#ppe=4
+
 ! pick a method usually "lCPDI" or "uGIMP"
-#method="lCPDI"
+#method="uGIMP"
+
 
 ! pick strain update method usually "USF" or "USAVG"
 #update="USF"
@@ -30,14 +34,14 @@ EndHeader! ------------ Parameters ---------------
 
 ! Dimensions
 #cell=2
-#length=40			! length
+#length=10			! length
 #width=10			! width
 #thick=10			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading="traction"	! Loading = "rigid", "contact", "force", "traction"
-#fixsides="yes"		! Yes to constrain y direction (and z direction if 3D)
-#strain=200	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
+#loading="rigid"	! Loading = "rigid", "contact", "force", "traction"
+#fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
+#strain=-50	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak
@@ -54,29 +58,27 @@ EndHeader! ------------ Parameters ---------------
 ! Analysis type
 Analysis #analysis
 MPMMethod #update,#method
+PtsPerElement #ppe
 
 ! convert to contact
 if #loading="contact"
   MultimaterialMode 0,enabled,maxgrad,100
-  !ImperfectInterfaceMM 0,-1
+  !ImperfectInterfaceMM 0,100
   XMLData,"Header"
     <DevelFlag Number='0'>3</DevelFlag>
     <DevelFlag Number='1'>-1</DevelFlag>
   EndXMLData
 endif
 
-if #matID="neohookean"
-  #G1=#Ebase/(2*(1+#nuBase))
-  #G2=0
-  #G0=#G1+#G2
-  #Kbulk=#Ebase/(3*(1-2*#nuBase))
-endif
-
+! base line calculations
+#G1=#Ebase/(2*(1+#nuBase))
+#G2=0
+#G0=#G1+#G2
+#Kbulk=#Ebase/(3*(1-2*#nuBase))
 if #matID="mooney"
-  #G1=#Ebase/(4*(1+#nuBase))
+  #G1=#G1/2
   #G2=#G1
   #G0=#G1+#G2
-  #Kbulk=#Ebase/(3*(1-2*#nuBase))
 endif
 
 ! estimate stress to reach strain (only used if force or tractions)
@@ -94,9 +96,9 @@ endif
 #disprate=1000*#disp/#time			    ! displacement rate mm/s using tmult
 ! Archiving
 if #fixsides="yes"
-  Archive "Results/ConstrainedTension/"&#analysis&" "&#method&"/"&#loading&"/"&#matID
+  Archive "Results/ConstrainedTension/"&#analysis&"/"&#method&"/"&#loading&"/"&#matID
 else
-  Archive "Results/Tension/"&#analysis&" "&#method&"/"&#loading&"/"&#matID
+  Archive "Results/Tension/"&#analysis&"/"&#method&"/"&#loading&"/"&#matID
 endif
 TimeStep 1000,(1+#hold+#unload)*#time,#factor
 MaximumTime (1+#hold+#unload)*#time
@@ -132,7 +134,13 @@ endif
 if #matID="heiso"
   XMLData Material,#matID
   <Material Type="24" Name="Hyperelastic Isotropic">
-    <rho>1.0</rho>
+    <rho>1</rho>
+    <G1>41.666666667</G1>
+    <G2>0</G2>
+    <K>55.555555556</K>
+    <alpha>60</alpha>
+    <yield>200</yield>
+    <Ep>25</Ep>
   </Material>
   EndXMLData
 endif
@@ -239,11 +247,11 @@ ifStr #loading="rigid"
 else if #loading="contact"
   if #analysis="3D MPM"
     Region "rigid",1,0,0
-      Box -#cell,0,-#sides*#cell,#width+#sides*#cell,-#sides*#cell,#thick+#sides*#cell
+      Box -2*#cell,0,-#sides*#cell,#width+#sides*#cell,-#sides*#cell,#thick+#sides*#cell
     EndRegion
   else
     Region "rigid",1,0,#thick
-      Rect -#cell,0,-#sides*#cell,#width+#sides*#cell
+      Rect -2*#cell,0,-#sides*#cell,#width+#sides*#cell
     EndRegion
   endif
   

@@ -74,13 +74,15 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY};
 		int matID;
 	} ContactDetails;
 
-	// for each node in CPDI domain give its element
-	// its naturual coordinates, and weighting factor
-	// for finding the gradient
+	// for each node in CPDI domain give its element,
+	// its naturual coordinates, weighting factor
+	// for finding the gradient, and weighting factor
+	// for shape function
 	typedef struct {
 		int inElem;
 		Vector ncpos;
 		Vector wg;
+		double ws;
 	} CPDIDomain;
 
 #else

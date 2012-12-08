@@ -45,7 +45,7 @@ char *NewMaterial::InputMat(char *xName,int &input)
 
 // Verify input properties; if problem return string with an error message
 // If OK, MUST pass on to super class
-// (see also ValidateForUse() for checkes that depend on MPM calculation mode)
+// (see also ValidateForUse() for checks that depend on MPM calculation mode)
 const char *NewMaterial::VerifyProperties(int np)
 {
 	// check properties
@@ -126,7 +126,7 @@ void NewMaterial::PrintMechanicalProperties(void)
 
 // Apply 2D Constitutive law
 void NewMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double delTime,int np)
+        double dvzz,double delTime,int np)
 {
 }
 

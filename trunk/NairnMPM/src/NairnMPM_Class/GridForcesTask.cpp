@@ -82,7 +82,7 @@ void GridForcesTask::Execute(void)
 			matID->LoadTransportProps(mpmptr,fmobj->np);
 		
         double mp=mpmptr->mp;					// in g
-		int matfld=matID->GetField();		// material field
+		int matfld=matID->GetField();           // material field
 		
         // find shape functions and derviatives
  		theElements[mpmptr->ElemID()]->
@@ -148,7 +148,7 @@ void GridForcesTask::Execute(void)
     // Imposed BCs on ftot to get correct grid BCs for velocity
     NodalVelBC::ConsistentGridForces();
 	
-	// Do similar to tranport property BCs
+	// Do similar to transport property BCs
 	nextTransport=transportTasks;
 	while(nextTransport!=NULL)
 		nextTransport=nextTransport->SetTransportForceBCs(timestep);
