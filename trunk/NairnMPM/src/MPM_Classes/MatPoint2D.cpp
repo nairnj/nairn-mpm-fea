@@ -215,6 +215,14 @@ double MatPoint2D::KineticEnergy(void)
 }
 
 // get deformation gradient, which is stored in strain and rotation tensors
+Matrix3 MatPoint2D::GetDeformationGradientMatrix(void)
+{	double F[3][3];
+	GetDeformationGradient(F);
+	Matrix3 Fm(F[0][0],F[0][1],F[1][0],F[1][1],F[2][2]);
+	return Fm;
+}
+	
+// get deformation gradient, which is stored in strain and rotation tensors
 void MatPoint2D::GetDeformationGradient(double F[][3])
 {
 	// current deformation gradient in 2D

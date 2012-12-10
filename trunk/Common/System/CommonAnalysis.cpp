@@ -109,36 +109,40 @@ void CommonAnalysis::StartResultsOutput(void)
 	// analysis type
     switch(np)
     {	case PLANE_STRAIN:
-            cout << "2D Plane Strain Analysis\n\n";
+            cout << "2D Plane Strain Analysis\n";
             break;
         
         case PLANE_STRESS:
-            cout << "2D Plane Stress Analysis\n\n";
+            cout << "2D Plane Stress Analysis\n";
             break;
         
         case AXI_SYM:
-            cout << "Axisymmetric Analysis\n\n";
+            cout << "Axisymmetric Analysis\n";
             break;
         
     	case PLANE_STRAIN_MPM:
-            cout << "2D Plane Strain MPM Analysis\n\n";
+            cout << "2D Plane Strain MPM Analysis\n";
             break;
         
         case PLANE_STRESS_MPM:
-            cout << "2D Plane Stress MPM Analysis\n\n";
+            cout << "2D Plane Stress MPM Analysis\n";
             break;
         
         case THREED_MPM:
-            cout << "3D MPM Analysis\n\n";
+            cout << "3D MPM Analysis\n";
             break;
 		
 		case AXISYMMETRIC_MPM:
-            cout << "Axisymmetric MPM Analysis\n\n";
+            cout << "Axisymmetric MPM Analysis\n";
             break;
         
         default:
             throw CommonException("No FEA or MPM analysis type was provided.","CommonAnalysis::StartResultsOutput");
     }
+#ifdef MPM_CODE
+	cout << "Incremental F Terms: " << MaterialBase::incrementalDefGradTerms << endl;
+#endif
+	cout << endl;
 	
     //---------------------------------------------------
     // Nodes

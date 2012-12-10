@@ -20,6 +20,7 @@
 
 // class statics for MPM - zero based material IDs when in multimaterial mode
 vector<int> MaterialBase::fieldMatIDs;
+int MaterialBase::incrementalDefGradTerms = 2;			// terms in exponential of deformation gradient
 
 #pragma mark MaterialBase::Initialization
 

@@ -13,14 +13,17 @@ Header
    Body in homogeneous deformation field
 EndHeader
 
-! Analysis type: "Plane Strain MPM" or "Plane Stress MPM" or "Axisymmetric MPM"
+! Analysis type: "Plane Strain MPM" or "Plane Stress MPM" or "Axisymmetric MPM" or "3D MPM"
 #analysis="Plane Strain MPM"
 
 ! Points per element
 #ppe=1
+XMLData MPMHeader
+    <DefGradTerms>2</DefGradTerms>
+EndXMLData
 
 ! pick a method usually "lCPDI" or "uGIMP"
-#method="lCPDI"
+#method="uGIMP"
 
 ! pick strain update method usually "USF" or "USAVG"
 #update="USF"
@@ -38,18 +41,18 @@ EndHeader
 #cell=40                 ! cell size (square cells)
 #width=40                ! Width of object in mm (mult of cell)
 #height=40               ! Height in mm (mult of cell)
-#thickness=10            ! Thickness in mm
+#thickness=40            ! Thickness in mm
 
 ! time factors
 #tmult=100				 ! wave speed for transit times over width to reach max
-#factor=0.01				 ! convergence factor
-#cycles=2				 ! rotation cycles after reach load
+#factor=0.4				 ! convergence factor
+#cycles=4				 ! rotation cycles after reach load
 
 ! initial strains
-#strainx=0
-#shearx=50				 ! nonphyscial in axisymmetric
+#strainx=50
+#shearx=0				 ! nonphyscial in axisymmetric
 #strainy=0
-#sheary=25
+#sheary=0
 
 ! ********** Calculation Section **********
 
@@ -121,16 +124,27 @@ else
 endif
 #gbot=-#height/2-#border*#cell
 #gtop=#height/2+#border*#cell
+#gzmin = -#thickness/2-#border*#cell
+#gzmax = #thickness/2+#border*#cell
 
 ! Grid centered on (0,0)
 GridHoriz (#gright-#gleft)/#cell
 GridVert (#gtop-#gbot)/#cell
-GridThickness #thickness
-GridRect #gleft,#gright,#gbot,#gtop
+if #analysis="3D MPM"
+  GridDepth (#gzmax-#gzmin)/#cell
+  GridRect #gleft,#gright,#gbot,#gtop,#gzmin,#gzmax
+else
+  GridThickness #thickness
+  GridRect #gleft,#gright,#gbot,#gtop
+endif
 
 if #analysis="Axisymmetric MPM"
   Region #matname,0,0,#thickness
     Rect 0,#width,-#height/2,#height/2
+  EndRegion
+else if #analysis="3D MPM"
+  Region #matname,0,0,0
+    Box -#width/2,#width/2,-#height/2,#height/2,-#thickness/2,#thickness/2
   EndRegion
 else
   Region #matname,0,0,#thickness
@@ -158,11 +172,23 @@ endif
 #sheary/=100
 
 ! homogeneous deformation field
-MoveLine #gleft-#cell,0,#gright+#cell,0,#gtop+#cell
-  Velocity x,function,"("&#strainx&"*x+"&#shearx&"*y)"&#dpart
-  Velocity y,function,"("&#sheary&"*x+"&#strainy&"*y)"&#dpart
-  if #cycles>0
-    Velocity x,function,(#speed)&"*y",#time
-    Velocity y,function,(-#speed)&"*x",#time
-  endif
-EndMoveLIne
+if #analysis="3D MPM"
+  MoveBox #gleft-#cell,#gbot-#cell,#gzmin-#cell,#gright+#cell,#gtop+#cell,#gzmax+#cell
+    Velocity x,function,"("&#strainx&"*x+"&#shearx&"*y)"&#dpart
+    Velocity y,function,"("&#sheary&"*x+"&#strainy&"*y)"&#dpart
+    Velocity z,constant
+    if #cycles>0
+      Velocity x,function,(#speed)&"*y",#time
+      Velocity y,function,(-#speed)&"*x",#time
+    endif
+  EndMoveBox
+else
+  MoveLine #gleft-#cell,0,#gright+#cell,0,#gtop+#cell
+    Velocity x,function,"("&#strainx&"*x+"&#shearx&"*y)"&#dpart
+    Velocity y,function,"("&#sheary&"*x+"&#strainy&"*y)"&#dpart
+    if #cycles>0
+      Velocity x,function,(#speed)&"*y",#time
+      Velocity y,function,(-#speed)&"*x",#time
+    endif
+  EndMoveLine
+endif

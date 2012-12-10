@@ -69,6 +69,7 @@ class MPMBase : public LinkedObject
 		virtual void AddConcentrationGradient(Vector *) = 0;
 		virtual double FDiff(double,double,double) = 0;
 		virtual double KineticEnergy(void) = 0;
+		virtual Matrix3 GetDeformationGradientMatrix(void) = 0;
         virtual void GetDeformationGradient(double F[][3]) = 0;
         virtual double GetRelativeVolume(void) = 0;
 		virtual double GetVolume(bool) = 0;

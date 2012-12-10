@@ -20,7 +20,7 @@
 <!ELEMENT	MPMHeader
 			( MatlPtsPerElement | Cracks | MPMMethod | TimeStep | TimeFactor
 			| MaxTime | ArchiveTime | ArchiveRoot | MPMArchiveOrder | CrackArchiveOrder
-			| ProgSteps | Damping | FeedbackDamping | GlobalArchiveTime | GlobalArchive
+			| ProgSteps | Damping | FeedbackDamping | GlobalArchiveTime | GlobalArchive | DefGradTerms
 			| Diffusion | StressFreeTemp | FirstArchiveTime | GIMP | LeaveLimit | MultiMaterialMode )*>
 
 <!ELEMENT	Cracks
@@ -317,6 +317,7 @@
 			unique (0|1) #IMPLIED>
 <!ELEMENT	MPMArchiveOrder (#PCDATA)>
 <!ELEMENT	CrackArchiveOrder (#PCDATA)>
+<!ELEMENT	DefGradTerms (#PCDATA)>
 <!ELEMENT	ProgSteps (#PCDATA)>
 <!ELEMENT	Damping (#PCDATA)>
 <!ATTLIST	Damping

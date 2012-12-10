@@ -145,16 +145,16 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 			iter+=1;
 		}
         
-        // Done and xn = new B->zz = (1+dw/dz)^2 = (1+dvzz)^2*(old Bzz), 
-        //      and find dvzz and store new Bzz
-        dvzz = sqrt(xn/B->zz) - 1.;
+        // Done and xn = new B->zz = Fzz^2 = dFzz*(old Bzz)*dFzz = dFzz^2*(old Bzz),
+		//    and Fzz = dFzz*(old Fzz) = 1 + ep->zz
+        double dFzz = sqrt(xn/B->zz);
         B->zz = xn;
 		
 		// particle strain ezz now known
-		ep->zz += dvzz*(1+ep->zz);
+		ep->zz = dFzz*(1.+ep->zz) - 1.;
         
         // incremental J changes
-        detDf *= (1.+dvzz);
+        detDf *= dFzz;
 	}
     
     // Increment J and save it

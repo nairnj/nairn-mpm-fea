@@ -211,6 +211,12 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		if(DiffusionTask::reference<0.) DiffusionTask::reference=0.;
 		if(DiffusionTask::reference>1.) DiffusionTask::reference=1.;
     }
+	
+	else if(strcmp(xName,"DefGradTerms")==0)
+	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+		input=INT_NUM;
+        inputPtr=(char *)&MaterialBase::incrementalDefGradTerms;
+	}
 
     else if(strcmp(xName,"GIMP")==0)
     {   // no attribute or empty implies uGIMP (backward compatibility) or look for key words
