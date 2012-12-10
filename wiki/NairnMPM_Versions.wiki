@@ -26,6 +26,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Added `CPDI` (convected particle domain integration) as option to `GIMP` command (2D and 3D)
     * Added `TractionBC` to apply loads to surfaces rather then directly to particles (which can reduce artifacts in particles with external loads)
     * The grid now support 1, 4, 9,  16, or 25 particles per cell in 2D and 1, 8, or 27 in 3D and both GIMP and CPDI work for all options.
+    * Added `DefGradTerms` to pick how many terms used in the new exponential expansion to find the incremental deformation gradient for hyperelastic materials. The default 2 is recommended.
     * The flux boundary condition for diffusion is now much better. It uses the real surface integral term in MPM diffusion analysis.
     * Added Johnson-Cook material (verification in progress).
     * The `MGSCGLMaterial` can now do plane stress calculations
