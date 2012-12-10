@@ -198,6 +198,7 @@ MatPoint3D = $(src)/MPM_Classes/MatPoint3D
 MatPtFluxBC = $(src)/Boundary_Conditions/MatPtFluxBC
 MatPtLoadBC = $(src)/Boundary_Conditions/MatPtLoadBC
 MatPtTractionBC = $(src)/Boundary_Conditions/MatPtTractionBC
+Matrix3 = $(com)/System/Matrix3
 MatVelocityField = $(src)/Nodes/MatVelocityField
 MeshInfo = $(src)/NairnMPM_Class/MeshInfo
 MGSCGLMaterial = $(src)/Materials/MGSCGLMaterial
@@ -256,7 +257,7 @@ WoodMaterial = $(src)/Materials/WoodMaterial
 prefix = $(src)/System/MPMPrefix.hpp
 
 # path from 'makefile' to default headers (this included by $(prefix)
-dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
+dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/Matrix3.hpp\
 		$(com)/System/CommonAnalysis.hpp $(com)/System/LinkedObject.hpp
 
 # header files that include other header files (other than $(dprefix) files)
@@ -358,7 +359,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp \
 # -------------------------------------------------------------------------
 # all compiled objects
 objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtilities.o CommonTask.o \
-		CommonException.o ElementBase.o Linear2D.o FourNodeIsoparam.o MaterialBase.o \
+		CommonException.o ElementBase.o Linear2D.o FourNodeIsoparam.o MaterialBase.o Matrix3.o \
 		CommonReadHandler.o ParseController.o ElementsController.o NodesController.o \
 		LineController.o MaterialController.o IsotropicMat.o TransIsotropic.o BoxController.o \
 		Orthotropic.o NodalPoint.o NodalPoint2D.o NodalPoint3D.o ArchiveData.o NairnMPM.o MPMTask.o \
@@ -401,6 +402,8 @@ CommonUtilities.o : $(CommonUtilities).cpp $(dprefix)
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonUtilities).cpp
 CommonTask.o : $(CommonTask).cpp $(dprefix) $(CommonTask).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonTask).cpp
+Matrix3.o : $(Matrix3).cpp $(dprefix)
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Matrix3).cpp
 
 # Common: Read_XML
 CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).hpp $(NairnMPM).hpp $(MaterialController).hpp \
