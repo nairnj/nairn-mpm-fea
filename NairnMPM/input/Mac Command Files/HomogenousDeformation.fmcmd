@@ -49,10 +49,10 @@ EndXMLData
 #cycles=4				 ! rotation cycles after reach load
 
 ! initial strains
-#strainx=50
-#shearx=0				 ! nonphyscial in axisymmetric
+#strainx=0
+#shearx=100				 ! nonphyscial in axisymmetric
 #strainy=0
-#sheary=0
+#sheary=100
 
 ! ********** Calculation Section **********
 
