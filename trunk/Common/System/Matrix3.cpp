@@ -1,10 +1,49 @@
-/********************************************************************************
+/*************************************************************************************
 	Matrix3.cpp
 	NairnFEA and NairnMPM
 
 	Created by John Nairn on 12/8/12.
 	Copyright (c) 2012 John A. Nairn, All rights reserved.
-********************************************************************************/
+ 
+A class for holding 3X3 matrices, with some special handling for 2D versions 
+    of these matrices (i.e., with xz, yz, zx, and zy terms zero)
+ 
+ Creation
+    Matrix() - zero
+    Matrix(xx,xy,xz,yx,yy,yz,zx,zy,zz) - full matrix
+    Matrix(xx,xy,yz,yy,zz) - 2D matrix
+
+ Methods
+    Zero() - sets all elements to zero
+    Transpose() - returns new matrix that is transpose of M
+    Exponential(kmx) - find exp(M) using kmax terms in the Taylor series expansion
+ 
+ Operators
+    m1=m2 - matrix copy
+    m1*m2 or m1*=m2 - matrix multiplication
+    m1+m2 or m1+=m2 - matrix addition
+    m1-m2 or m1-=m2 - matrix subtraction
+    cout << m1 - print matrix elements in one-line string
+    m(i,j) or m(i,j)=x - get or set element i,j (0 based or 0 to 2 for each)
+        (warning: for efficiency, i and j and not checked to be in bounds)
+        (warning: setting 20, 21, 02, or 12 of 2D matrix will not mark it
+                    as now a 3D matrix)
+ 
+ Accessors
+    set(double) - set all elements to number (and set not a 2D matrix)
+    set(double a[][3]) - set all elements to those in the array a
+    get(double a[][3]) - copy all elements to the array a
+    bool getIs2D() - is this a 2D matrix?
+    setIs2D(bool) - set 2D marker for this element (and zero out elements
+                    20, 21, 02, or 12 of the matrix)
+    double trace() - trace of the matrix
+    double determinant() - determinant of the matrix
+    double second_invariant() - second invarient of the matrix
+    characteristics(double &c0,double &c1,double &c2) - get the coefficients
+        for the characteristic polynomial defined by
+        c(z) = det(zI-M) = z^3 - c0 - c1 z - c2 z^2
+
+*************************************************************************************/
 
 #include "Matrix3.hpp"
 
@@ -56,8 +95,17 @@ void Matrix3::Zero(void)
 	is2D = TRUE;
 }
 
+// get the transpose
+Matrix3 Matrix3::Transpose(void) const
+{   Matrix3 mT(m[0][0],m[1][0],m[2][0],
+               m[0][1],m[1][1],m[2][1],
+               m[0][2],m[1][2],m[2][2]);
+    mT.setIs2D(is2D);
+    return mT;
+}
+
 // exponential of matrix to kmax terms
-Matrix3 Matrix3::Exponential(int kmax)
+Matrix3 Matrix3::Exponential(int kmax) const
 {	
 	if(is2D)
 	{	// first term
@@ -144,16 +192,6 @@ Matrix3 Matrix3::Exponential(int kmax)
 }
 
 #pragma mark Matrix3:operators
-
-// equals
-Matrix3 &Matrix3::operator=(const Matrix3 &rhs)
-{	if(this != &rhs)
-	{	// make this = rhs
-		rhs.get(m);
-		is2D = rhs.getIs2D();
-	}
-	return *this;
-}
 
 // +=
 Matrix3 &Matrix3::operator+=(const Matrix3 &rhs)
@@ -258,7 +296,7 @@ void Matrix3::set(double constant)
 }
 
 // copy this object to an array
-void Matrix3::get(double c[3][3]) const
+void Matrix3::get(double c[][3]) const
 {	int i,j;
 	for(i=0;i<3;i++)
 	{	for(j=0;j<3;j++)
@@ -267,7 +305,7 @@ void Matrix3::get(double c[3][3]) const
 }
 
 // set this object to contents of an array
-void Matrix3::set(double c[3][3])
+void Matrix3::set(double c[][3])
 {	int i,j;
 	for(i=0;i<3;i++)
 	{	for(j=0;j<3;j++)
@@ -278,6 +316,13 @@ void Matrix3::set(double c[3][3])
 
 // is this a 2D matrix?
 bool Matrix3::getIs2D(void) const { return is2D; }
+void Matrix3::setIs2D(bool new2D)
+{   is2D = new2D;
+    m[0][2] = 0.;
+    m[1][2] = 0.;
+    m[2][0] = 0.;
+    m[2][1] = 0.;
+}
 
 // trace
 double Matrix3::trace(void) const { return m[0][0] + m[1][1] + m[2][2]; }
@@ -300,11 +345,20 @@ double Matrix3::second_invariant(void) const
 }
 
 // coefficients for c(z) = det(zI-M) = z^3 - c0 - c1 z - c2 z^2
-void Matrix3::characteristics(double &c0,double &c1,double &c2)
+void Matrix3::characteristics(double &c0,double &c1,double &c2) const
 {
 	c2 = trace();
 	c1 = -second_invariant();
 	c0 = determinant();
 }
+
+#pragma mark Matrix3::Class Methods
+
+// return an identity matrix
+Matrix3 Matrix3::Identity(void)
+{	Matrix3 im(1.,0.,0.,1.,1.);
+    return im;
+}
+
 
 

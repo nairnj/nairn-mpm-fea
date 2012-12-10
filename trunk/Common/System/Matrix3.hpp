@@ -24,10 +24,12 @@ class Matrix3
 	
 		// methods
 		void Zero();
-		Matrix3 Exponential(int);
+    
+        // read only methods
+        Matrix3 Transpose(void) const;
+		Matrix3 Exponential(int) const;
 	
 		// operators
-		Matrix3 &operator=(const Matrix3 &);
 		Matrix3 &operator+=(const Matrix3 &);
 		const Matrix3 operator+(const Matrix3 &) const;
 		Matrix3 &operator-=(const Matrix3 &);
@@ -38,15 +40,21 @@ class Matrix3
 		const double &operator()(unsigned row,unsigned col) const;
 	
 		// accessors
-		void get(double c[3][3]) const;
 		void set(double);
 		void set(int,int,double);
-		void set(double c[3][3]);
-		bool getIs2D(void) const;
-		double determinant(void) const;
-		double second_invariant(void) const;
-		double trace(void) const;
-		void characteristics(double &,double &,double &);
+		void set(double c[][3]);
+        void setIs2D(bool);
+    
+        // read only accessors
+        void get(double c[][3]) const;
+        bool getIs2D(void) const;
+        double determinant(void) const;
+        double second_invariant(void) const;
+        double trace(void) const;
+        void characteristics(double &,double &,double &) const;
+    
+        // class methods
+        static Matrix3 Identity(void);
 	
 	private:
 		bool is2D;
