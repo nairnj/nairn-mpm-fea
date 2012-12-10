@@ -53,6 +53,7 @@ class MaterialBase : public LinkedObject
         double diffusionCon,kCond;			// for isotropic properties
 		ContactDetails *lastFriction;
 		static vector<int> fieldMatIDs;
+		static int incrementalDefGradTerms;
 #endif
         
         // constructors and destructors

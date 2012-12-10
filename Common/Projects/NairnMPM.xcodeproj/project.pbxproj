@@ -45,6 +45,8 @@
 		67BFA35611FB81B70083F95B /* InitializationTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67BFA35411FB81B70083F95B /* InitializationTask.cpp */; };
 		67C3E42E16482C7500AD5339 /* MatPointAS.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 673B31CF1636F6CC00FB27DA /* MatPointAS.cpp */; };
 		67C3E42F16482C7D00AD5339 /* MatPointAS.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 673B31D11636F6E400FB27DA /* MatPointAS.hpp */; };
+		67C733C016741ED100698D4F /* Matrix3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67C733BE16741ED100698D4F /* Matrix3.cpp */; };
+		67C733C116741ED100698D4F /* Matrix3.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67C733BF16741ED100698D4F /* Matrix3.hpp */; };
 		67E191331602CB2700B34CA9 /* MatPtTractionBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */; };
 		67E191351602CB3F00B34CA9 /* MatPtTractionBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67E191341602CB3F00B34CA9 /* MatPtTractionBC.hpp */; };
 		A700094B0F86B75E00FD76C7 /* MatVelocityField.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A70009490F86B75E00FD76C7 /* MatVelocityField.hpp */; };
@@ -419,6 +421,9 @@
 		67B215EF11F96EC7007523EE /* ResetElementsTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ResetElementsTask.cpp; sourceTree = "<group>"; };
 		67BFA35311FB81B70083F95B /* InitializationTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InitializationTask.hpp; sourceTree = "<group>"; };
 		67BFA35411FB81B70083F95B /* InitializationTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InitializationTask.cpp; sourceTree = "<group>"; };
+		67C733BD167412DC00698D4F /* Documentation */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Documentation; path = ../../Documentation; sourceTree = "<group>"; };
+		67C733BE16741ED100698D4F /* Matrix3.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Matrix3.cpp; sourceTree = "<group>"; };
+		67C733BF16741ED100698D4F /* Matrix3.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Matrix3.hpp; sourceTree = "<group>"; };
 		67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPtTractionBC.cpp; sourceTree = "<group>"; };
 		67E191341602CB3F00B34CA9 /* MatPtTractionBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatPtTractionBC.hpp; sourceTree = "<group>"; };
 		A70009490F86B75E00FD76C7 /* MatVelocityField.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatVelocityField.hpp; sourceTree = "<group>"; };
@@ -749,6 +754,7 @@
 				08FB7795FE84155DC02AAC07 /* NairnMPM */,
 				A78F829503EF27970063AF10 /* NairnFEA */,
 				A7198C5409780F5200334C4F /* Common */,
+				67C733BD167412DC00698D4F /* Documentation */,
 				A72A90CC0CD2ADC0001DCFA8 /* ExtractMPM */,
 				0249A662FF388D9811CA2CEA /* External Frameworks and Libraries */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
@@ -837,6 +843,8 @@
 				A7198C87097810AF00334C4F /* CommonUtilities.cpp */,
 				67B213B411F90404007523EE /* CommonTask.hpp */,
 				67B213B511F90404007523EE /* CommonTask.cpp */,
+				67C733BF16741ED100698D4F /* Matrix3.hpp */,
+				67C733BE16741ED100698D4F /* Matrix3.cpp */,
 			);
 			path = System;
 			sourceTree = "<group>";
@@ -1491,6 +1499,7 @@
 				A734D4FC1610D8DA00B9A4B7 /* AdjustTimeStepTask.hpp in Headers */,
 				6700560A163AFC3600FFE145 /* HistoryArchive.hpp in Headers */,
 				67C3E42F16482C7D00AD5339 /* MatPointAS.hpp in Headers */,
+				67C733C116741ED100698D4F /* Matrix3.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1802,6 +1811,7 @@
 				A734D4FA1610D8C700B9A4B7 /* AdjustTimeStepTask.cpp in Sources */,
 				6700560C163AFC6B00FFE145 /* HistoryArchive.cpp in Sources */,
 				67C3E42E16482C7500AD5339 /* MatPointAS.cpp in Sources */,
+				67C733C016741ED100698D4F /* Matrix3.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
