@@ -1,8 +1,9 @@
 \documentclass[11pt]{article}
 \usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
 \usepackage{graphicx}
-\usepackage{amssymb}
 \usepackage{epstopdf}
+\usepackage{amssymb,amsmath}
+\usepackage[charter]{mathdesign}
 \DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
 
 \textwidth6.5in
@@ -17,6 +18,9 @@
 
 \font\tenbsf=cmssbx10 at 11pt
 \font\bfsym=cmmib10 at 11pt
+
+\renewcommand{\vec}[1]{\boldsymbol{#1}}
+\newcommand{\tens}[1]{\boldsymbol{\mathsf{#1}}}
 
 % definitions
 %\def\C{{\fam=9 C}}
@@ -41,6 +45,7 @@
 \def\DT{\Delta T}
 \def\dWp{dW_p}
 \def\e#1{\varepsilon_{#1}}
+\def\ee{\varepsilon}
 \def\er#1{\varepsilon_{#1}^{(res)}}
 \def\err#1{\varepsilon_{#1}^{(res,r)}}
 \def\f{\hbox{\tenbsf f}}
@@ -58,8 +63,6 @@
 \def\v#1{\nu_{#1}}  
 \def\vvec#1#2#3{\left(\begin{array}{ccc} #1 \\ #2 \\ #3 \end{array}\right)}
 \def\w#1{\omega_{#1}}  
-
-
 
 \begin{document}
 \maketitle
@@ -232,17 +235,17 @@ For general analysis, begin with an elastic stress increment, $\dsig$, given by
 where $\C$ is the stiffness matrix, $\deff=d\vec\varepsilon-d\vec\varepsilon_{res}$ is total strain increment (using tensorial strains) relative to the residual strain increments. Let $f(\vec{\sigma},\vec{\alpha},...)$ be a plastic potential function that depends on components of stress, possibly on some collection of internal variables ($\vec{\alpha}$) or other parameters. The potential function is defined such that $f=0$ is the yield surface, $f<0$ is the elastic region, and $f>0$ is not allowed.
 
 First construct a trial update that assumes elastic deformation only or assumes that $\del=\deff$, $\dpl=0$, and $d\vec\alpha=0$ (in other words all internal variables are associated with plastic strain). The trial $f$ is given by\begin{equation}
-       f_{trial} = f(\vec\s{} + \dsig,\vec\alpha,\dots) = f(\vec\s{} + \C \deff ,\vec\alpha,\dots)
+       f_{trial} = f(\vec\sigma + \dsig,\vec\alpha,\dots) = f(\vec\sigma + \C \deff ,\vec\alpha,\dots)
 \end{equation}
 If $f_{trial}<0$, the deformation is elastic, the trial increment is accepted, and the analysis is done.
 
 If $f_{trial}>0$, the task is to partition the total strain into elastic and plastic strain, $\deff=\del+\dpl$, such that the final $f$ is zero. In other words, the task is to solve
 \begin{equation}
-     f(\vec\s{} + \C \deff  - \C\dpl,\vec\alpha + \da,\dots) = 0
+     f(\vec\sigma + \C \deff  - \C\dpl,\vec\alpha + \da,\dots) = 0
 \end{equation}
 By the associative flow rule, the increment in plastic strain and internal variables are assumed to be 
 \begin{equation}
-      \dpl = \lambda\df   \qquad {\rm and}\qquad \da = -\lambda \vec h(\s{},\vec\alpha)
+      \dpl = \lambda\df   \qquad {\rm and}\qquad \da = -\lambda \vec h(\sigma,\vec\alpha)
 \end{equation}
 where
 \begin{equation}
@@ -250,7 +253,7 @@ where
 \end{equation}
 are the derivatives of $f$ with respect to the components of stress and the internal variables and $\vec h$ is function of stress and internal variable state). Thus, the task is to solve
 \begin{equation}
-     f(\vec\s{} + \C \deff - \lambda\C\df,\vec\alpha -\lambda \vec h,\dots) = 0
+     f(\vec\sigma + \C \deff - \lambda\C\df,\vec\alpha -\lambda \vec h,\dots) = 0
 \end{equation}
 for $\lambda$. For arbitrary $f$, this solution may require numerical analysis.
 
@@ -271,41 +274,41 @@ For larger increments or more accurate solution, the problem can be solved itera
 
 \begin{enumerate}
 
-\item Find an initial guess for $\lambda^{(2)}=\lambda$ from the Eq.~(\ref{lambdaInitial}) where $\df$ and $\vec h$ are found from ${\vec\s{trial}}$ or stress when $\lambda=0$ and $\dfa$ is found from initial $\alpha$.
+\item Find an initial guess for $\lambda^{(2)}=\lambda$ from the Eq.~(\ref{lambdaInitial}) where $\df$ and $\vec h$ are found from ${\vec\sigma_{trial}}$ or stress when $\lambda=0$ and $\dfa$ is found from initial $\alpha$.
 
 \item Update stress at initial guess in two steps
 \begin{eqnarray}
-      {\vec\s{}}^{(1)} & = & {\vec\s{trial}} - \lambda^{(2)}\C\df({\vec\s{trial}}) \\
-      {\vec\s{}}^{(2)} & = & {\vec\s{trial}} - \lambda^{(2)}\C\df({\vec\s{}}^{(1)}) 
+      {\vec\sigma}^{(1)} & = & {\vec\sigma_{trial}} - \lambda^{(2)}\C\df({\vec\sigma_{trial}}) \\
+      {\vec\sigma}^{(2)} & = & {\vec\sigma_{trial}} - \lambda^{(2)}\C\df({\vec\sigma}^{(1)}) 
 \end{eqnarray}
 
-\item Find new $\df$ and $\vec h$ using ${\vec\s{}}^{(2)}$ followed by calculation of $f_2$ corresponding to $\lambda_2$:
+\item Find new $\df$ and $\vec h$ using ${\vec\sigma}^{(2)}$ followed by calculation of $f_2$ corresponding to $\lambda_2$:
 \begin{equation}
-     f^{(2)} =  f({\vec\s{}}^{(2)},\alpha^{(0)} - \lambda^{(2)} \vec h({\vec\s{}}^{(2)}),\dots)
+     f^{(2)} =  f({\vec\sigma}^{(2)},\alpha^{(0)} - \lambda^{(2)} \vec h({\vec\sigma}^{(2)}),\dots)
 \end{equation}
 
 \item Pick a lower $\lambda$ and calculate $f$:
 \begin{eqnarray}
      \lambda^{(1)} & = & {\lambda^{(2)}\over 2} \\
-      {\vec\s{}}^{(1)} & = & {\vec\s{trial}} - \lambda^{(1)}\C\df({\vec\s{}}^{(2)}) \\
-     f^{(1)} & = &  f({\vec\s{}}^{(1)},\alpha^{(0)} - \lambda^{(1)} \vec h({\vec\s{}}^{(2)}),\dots)
+      {\vec\sigma}^{(1)} & = & {\vec\sigma_{trial}} - \lambda^{(1)}\C\df({\vec\sigma}^{(2)}) \\
+     f^{(1)} & = &  f({\vec\sigma}^{(1)},\alpha^{(0)} - \lambda^{(1)} \vec h({\vec\sigma}^{(2)}),\dots)
 \end{eqnarray}
 
 \item Expand the interval $\lambda^{(1)}$ to $\lambda^{(2)}$ as needed until it brackets a solution for $f=0$. The code follows {\tt zbrac()} in ``Numerical Recipes in C'' (page 260). Whenever need new value for $f$, use:
 \begin{eqnarray}
-      {\vec\s{}}^{(k)} & = & {\vec\s{trial}} - \lambda^{(k)}\C\df({\vec\s{}}^{(2)}) \\
-     f^{(k)} & = &  f({\vec\s{}}^{(k)},\alpha^{(0)} - \lambda^{(k)} \vec h({\vec\s{}}^{(2)}),\dots)
+      {\vec\sigma}^{(k)} & = & {\vec\sigma_{trial}} - \lambda^{(k)}\C\df({\vec\sigma}^{(2)}) \\
+     f^{(k)} & = &  f({\vec\sigma}^{(k)},\alpha^{(0)} - \lambda^{(k)} \vec h({\vec\sigma}^{(2)}),\dots)
 \end{eqnarray}
 In other words, use the slopes calculated in step 3 above throughout the calculation. Attempts to recalculate the slope on each step tended to cause problems. If the bracketing fails, return the initial $\lambda$ from step 1 as an approximate result.
 
 \item Solve for $\lambda$ using Newton-Raphson method with derivatives and bracketing following {\tt rtsafe()} in ``Numerical Recipes in C'' (page 273). Whenever needed, find $f$ and its derivative from
 \begin{eqnarray}
-      {\vec\s{}}^{(k)} & = & {\vec\s{trial}} - \lambda^{(k)}\C\df({\vec\s{}}^{(2)}) \\
-      \alpha^{(k)} & = & \alpha^{(0)} - \lambda^{(k)} \vec h({\vec\s{}}^{(2)}) \\
-      f^{(k)} & = &  f({\vec\s{}}^{(k)},\alpha^{(k)} ,\dots)  \\
-      {df^{(k)}\over d\lambda} & = & -\left( \df({\vec\s{}}^{(2)})\cdot \C\df({\vec\s{}}^{(2)}) + \dfa(\alpha^{(k)}) \cdot \vec h({\vec\s{}}^{(2)})\right) 
+      {\vec\sigma}^{(k)} & = & {\vec\sigma_{trial}} - \lambda^{(k)}\C\df({\vec\sigma}^{(2)}) \\
+      \alpha^{(k)} & = & \alpha^{(0)} - \lambda^{(k)} \vec h({\vec\sigma}^{(2)}) \\
+      f^{(k)} & = &  f({\vec\sigma}^{(k)},\alpha^{(k)} ,\dots)  \\
+      {df^{(k)}\over d\lambda} & = & -\left( \df({\vec\sigma}^{(2)})\cdot \C\df({\vec\sigma}^{(2)}) + \dfa(\alpha^{(k)}) \cdot \vec h({\vec\sigma}^{(2)})\right) 
 \end{eqnarray}
-Again, the key slopes are found from the initial stress guess in ${\vec\s{}}^{(2)}$. Attempts to update slopes as solution proceeds were less stable and also slower. It might be possible to update slopes after solution, re-bracket the solution and repeat, but it may not improve accuracy much.
+Again, the key slopes are found from the initial stress guess in ${\vec\sigma}^{(2)}$. Attempts to update slopes as solution proceeds were less stable and also slower. It might be possible to update slopes after solution, re-bracket the solution and repeat, but it may not improve accuracy much.
 
 \item Continue until convergence.
 
@@ -438,17 +441,17 @@ Note that plane stress analysis assumes incrementally linear-elastic response (a
 
 When $f>0$, the process (following Simo and Hughes), effectively (or equivalently) revises $f$ using squares to be
 \begin{equation}
-       f = \|\dev\|^2 - {2\over 3}K^2(\alpha) = \s{} \P\s{} - {2\over 3}K^2(\alpha)
+       f = \|\dev\|^2 - {2\over 3}K^2(\alpha) = \sigma \P\sigma - {2\over 3}K^2(\alpha)
 \end{equation}
-where $\P$ is a transformation matrix on the plane stress vector $\s{} = (\s{xx}, \s{yy}, \tau_{xy})$ given by
+where $\P$ is a transformation matrix on the plane stress vector $\sigma = (\s{xx}, \s{yy}, \tau_{xy})$ given by
 \begin{equation}
           \P = \left( \begin{array}{rrr}
                     {2\over 3} & -{1\over 3} & 0 \\ 
                     -{1\over 3} & {2\over 3} & 0 \\ 0 & 0 & 2 \end{array}\right)
 \end{equation}
-such that $\s{} \P\s{} = \|\dev\|^2$. The plastic strain update from this $f$, and using engineering shear strain, is
+such that $\sigma \P\sigma = \|\dev\|^2$. The plastic strain update from this $f$, and using engineering shear strain, is
 \begin{equation}
-     (d\varepsilon_{xx}^p,  d\varepsilon_{yy}^p, d\gamma_{xy}^p) = \lambda \df = \lambda \P\s{}
+     (d\varepsilon_{xx}^p,  d\varepsilon_{yy}^p, d\gamma_{xy}^p) = \lambda \df = \lambda \P\sigma
 \end{equation}
 Now, in this flow theory, the total volume change due to plastic strains is zero; thus this plastic strain increment implies $d\varepsilon_{zz}^p = - (d\varepsilon_{xx}^p + d\varepsilon_{yy}^p)$. The full 3D plastic strain increment tensor using tensorial strains is
 \begin{equation}
@@ -458,11 +461,11 @@ Now, in this flow theory, the total volume change due to plastic strains is zero
 \end{equation}
 This traceless tensor has inner product
 \begin{equation}
-  \|\dpl\|^2 = \lambda^2 \left( {2\over 3}(\s{xx}^2 + \s{yy}^2 - \s{xx}\s{yy}) + 2\tau_{xy}^2\right) = \lambda^2 \s{} \P\s{}
+  \|\dpl\|^2 = \lambda^2 \left( {2\over 3}(\s{xx}^2 + \s{yy}^2 - \s{xx}\s{yy}) + 2\tau_{xy}^2\right) = \lambda^2 \sigma \P\sigma
 \end{equation}
 Requiring $d\alpha$ to equal the equivalent plastic strain increment (as it does in plane strain and 3D), leads to
 \begin{equation}
-        d\alpha = \sqrt{2\over3}\lambda \sqrt{\s{} \P\s{}}
+        d\alpha = \sqrt{2\over3}\lambda \sqrt{\sigma \P\sigma}
 \end{equation}
 
 When $f>0$, the task is to find the $(n+1)^{st}$ stress and strain state in terms of the $n^{th}$ state. In terms of the to-be-determined $\lambda$, the stress update is
@@ -759,9 +762,9 @@ The quadratic Hill yield criterion can implement anisotropic plasticity and hard
  &&\qquad\mbox{}
                     - 2H \overline{\s{xx}}\overline{\s{yy}}
                    +2L\overline{\t{yz}}^2 +2M\overline{\t{xz}}^2+2N\overline{\t{xy}}^2\Bigr]^{1/2}  - g(\vec\alpha) \\
-             & = & \sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}} - g(\vec\alpha)       \label{froteq}
+             & = & \sqrt{\overline{\vec\sigma} \cdot \A \overline{\vec\sigma}} - g(\vec\alpha)       \label{froteq}
 \end{eqnarray}
-where $\overline{\vec\s{}} = (\overline{\s{xx}}, \overline{\s{yy}}, \overline{\s{zz}}, \overline{\t{yz}}, \overline{\t{xz}}, \overline{\t{xy}})$, $g(\vec\alpha)$ is some hardening function of internal variables, and
+where $\overline{\vec\sigma} = (\overline{\s{xx}}, \overline{\s{yy}}, \overline{\s{zz}}, \overline{\t{yz}}, \overline{\t{xz}}, \overline{\t{xy}})$, $g(\vec\alpha)$ is some hardening function of internal variables, and
 \begin{equation}
       \A = \left( \begin{array}{cccccc}
                        G+H & -H & -G & 0 & 0 & 0 \\
@@ -774,16 +777,16 @@ where $\overline{\vec\s{}} = (\overline{\s{xx}}, \overline{\s{yy}}, \overline{\s
 \end{equation}
 An overbar is the stress in the material coordinates. It is found from
 \begin{equation}
-     \overline{\vec\s{}} = \R_x\R_y\R_z\vec\s{} = \R_\sigma\vec\s{}
+     \overline{\vec\sigma} = \R_x\R_y\R_z\vec\sigma = \R_\sigma\vec\sigma
 \end{equation}
 where $\R_x$, $\R_y$, and $\R_z$ are rotation matrices about each axis for rotation of stress in the clockwise direction.
 The corresponding equation in analysis axis coordinates for the yield function takes the form
 \begin{equation}
-     f = \sqrt{\vec\s{} \R_\sigma^T\cdot \A \R_\sigma\vec\s{}} - g(\vec\alpha) = \sqrt{\vec\s{} \A' \vec\s{}} - g(\vec\alpha)     \label{fanaleq}
+     f = \sqrt{\vec\sigma \R_\sigma^T\cdot \A \R_\sigma\vec\sigma} - g(\vec\alpha) = \sqrt{\vec\sigma \A' \vec\sigma} - g(\vec\alpha)     \label{fanaleq}
 \end{equation}
 where $\A' = \R_\sigma^T\A\R_\sigma$ is the $\A$ matrix rotated in the counter-clockwise direction from the material axes to the analysis axes (the same transformation used for compliance matrices).
 
-For 2D, plane strain, $\overline{\vec\s{}} = (\overline{\s{xx}}, \overline{\s{yy}}, \s{zz}, \overline{\t{xy}})$ ({\em i.e.}, $\s{zz}$ does not rotate) and
+For 2D, plane strain, $\overline{\vec\sigma} = (\overline{\s{xx}}, \overline{\s{yy}}, \s{zz}, \overline{\t{xy}})$ ({\em i.e.}, $\s{zz}$ does not rotate) and
 \begin{equation}
       \A = \left( \begin{array}{cccc}
                        G+H & -H & -G & 0 \\
@@ -794,7 +797,7 @@ For 2D, plane strain, $\overline{\vec\s{}} = (\overline{\s{xx}}, \overline{\s{yy
 \end{equation}
 The only rotation needed is clockwise rotations around the $z$ axis:
 \begin{equation}
-      \overline{\vec\s{}} = \R_\sigma\vec\s{} = \R_z\vec\s{}  \quad{\rm where}\quad \R_z = \left( \begin{array}{cccc}
+      \overline{\vec\sigma} = \R_\sigma\vec\sigma = \R_z\vec\sigma  \quad{\rm where}\quad \R_z = \left( \begin{array}{cccc}
                        \cos^2\theta & \sin^2\theta & 0 & -2\cos\theta\sin\theta \\
                        \sin^2\theta & \cos^2\theta & 0 & 2\cos\theta\sin\theta \\
                        0 & 0 & 1 & 0 \\
@@ -839,14 +842,14 @@ leading to an isotropic material with $K(\alpha)=\sigma_Y + E_p\alpha$ if $g(\ve
 
 The derivatives with respect to analyses axes are found by differentiating with respect to rotated stress (see Eq.~\ref{froteq}) and then transforming the result by strain rotation in the counter-clockwise direction back to the analysis axes. The result is
 \begin{equation}
-         \df = {\R_\varepsilon^{-1}\A \overline{\vec\s{}}\over\sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}}} \end{equation}
+         \df = {\R_\varepsilon^{-1}\A \overline{\vec\sigma}\over\sqrt{\overline{\vec\sigma} \cdot \A \overline{\vec\sigma}}} \end{equation}
 where $\R_\varepsilon$ is the rotation matrix for clockwise strain rotation. Alternatively, differentiating in analysis coordinates (see Eq.~\ref{fanaleq}) gives:
 \begin{equation}
-   \df = {\A' \vec\s{}\over\sqrt{\vec\s{} \A' \vec\s{}}}  = {\R_\sigma^T\A \overline{\vec\s{}}\over\sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}}} 
+   \df = {\A' \vec\sigma\over\sqrt{\vec\sigma \A' \vec\sigma}}  = {\R_\sigma^T\A \overline{\vec\sigma}\over\sqrt{\overline{\vec\sigma} \cdot \A \overline{\vec\sigma}}} 
 \end{equation}
 Because $\R_\varepsilon^{-1} = \R_\sigma^T$, the two results are the same. In 2D, the results reduce to
 \begin{equation}
-         \df = {\R^{-1}\A \overline{\vec\s{}}\over\sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}}}    \quad{\rm where}\quad
+         \df = {\R^{-1}\A \overline{\vec\sigma}\over\sqrt{\overline{\vec\sigma} \cdot \A \overline{\vec\sigma}}}    \quad{\rm where}\quad
          \R = \left( \begin{array}{cccc}
                        \cos^2\theta & \sin^2\theta & 0 & -\cos\theta\sin\theta \\
                        \sin^2\theta & \cos^2\theta & 0 & \cos\theta\sin\theta \\
@@ -857,11 +860,11 @@ Because $\R_\varepsilon^{-1} = \R_\sigma^T$, the two results are the same. In 2D
 
 In the material axis system, the full plastic strain increment is
 \begin{equation}
-       \overline{\dpl} = \lambda \R_\varepsilon\df = {\A \overline{\vec\s{}}\over\sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}}}
+       \overline{\dpl} = \lambda \R_\varepsilon\df = {\A \overline{\vec\sigma}\over\sqrt{\overline{\vec\sigma} \cdot \A \overline{\vec\sigma}}}
 \end{equation}
 This strain results in a traceless tensor ({\em i.e.}, only deviatoric plastic strains):
 \begin{equation}
-         \dpl = {\lambda\over \sqrt{\overline{\vec\s{}} \cdot \A \overline{\vec\s{}}}}
+         \dpl = {\lambda\over \sqrt{\overline{\vec\sigma} \cdot \A \overline{\vec\sigma}}}
          \left( \begin{array}{ccc}
                       {\overline{\s{xx}}\over (\s{xx}^Y)^2} - H\overline{\s{yy}} - G\overline{\s{zz}} & N\overline{\t{xy}} & M\overline{\t{xz}} \\
                        N\overline{\t{xy}} & -H\overline{\s{xx}} + {\overline{\s{yy}}\over (\s{yy}^Y)^2} - F\overline{\s{zz}} & L\overline{\t{yz}}  \\
@@ -890,7 +893,7 @@ These two laws are identical when $n=1$ and give linear hardening. If $K_1$ is t
 
 The numerical solution uses the following interative equations
 \begin{eqnarray}
-       \vec\sigma^{(k)} & = & \vec\s{}^{trial} - \lambda^{(k)}\C\df(\lambda^{(k)}) \\
+       \vec\sigma^{(k)} & = & \vec\sigma^{trial} - \lambda^{(k)}\C\df(\lambda^{(k)}) \\
         \vec h^{(k)} & = & -\R\df(\vec\sigma^{(k)}) \\
         f^{(k)} & = &  f( \vec\sigma^{(k)},\vec\alpha^{(k)})  \\
         {df^{(k)}\over d\lambda} & = & -\left( \df(\vec\sigma^{(k)})\cdot \C\df(\vec\sigma^{(k)})  + \dfa \cdot \vec h^{(k)}\right) \\
@@ -915,7 +918,7 @@ The stress-strain relation for an isotropic viscoelastic material in which bulk 
 where $\er{} = \a{}\DT + \b{}\Delta c$.
 Now focus on terms like
 \begin{equation}
-       \s{}(t) = \int_0^t G(t-\tau) {d\e{}\over d\tau} d\tau
+       \sigma(t) = \int_0^t G(t-\tau) {d\e{}\over d\tau} d\tau
 \end{equation}
 Writing $\s{i}$ as stress at time $t=i\Delta t$, the stress increment can be written as $\s{i+1}=\s{i}+\Delta \s{i}$ where
 \begin{equation}
@@ -984,7 +987,7 @@ The history variables update using
 
 \subsection{Material Point Properties}
 
-Constitutive laws for hyperelastic materials always involve the deformation gradient, $F$. All hyperelastic materials store the full deformation gradient using the strain and rotation variables on the particles (named $\vec\e{}=${\tt ep} and $\vec\w{}=${\tt wrot}) as follows:
+Constitutive laws for hyperelastic materials always involve the deformation gradient, $F$. All hyperelastic materials store the full deformation gradient using the strain and rotation variables on the particles (named $\vec\ee=${\tt ep} and $\vec\omega=${\tt wrot}) as follows:
 \begin{equation}
    \F = \left(\begin{array}{ccc}
           1 + \e{xx} & {1\over2}(\g{xy}-\w{xy}) & {1\over2}(\g{xz}-\w{xz})   \\
@@ -994,14 +997,127 @@ Constitutive laws for hyperelastic materials always involve the deformation grad
 \end{equation}
 and should store the updated gradient back on strain and rotation tensors on each time step.
 
-Hyperelastic materials with plasticity, still store full deformation gradient as above and thus unlike small-strain plasticity materials, the strain variable is the total strain and not just the elastic strain. The current implementation uses the plastic strain variable on the particles ($\vec\e{}^{(p)}=${\tt eplast}) to store the symmetric, elastic, left Cauchy-Green tensor ( $\B = \F\F^T$). For convenience, hyperelastic materials can obtain a pointer to this variable using the particle accessor {\tt GetElasticLeftCauchyTensor()}. Because this just returns a pointer to {\tt eplast}, that material cannot also use {\tt GetPlasticStrainTensor()} expecting an option to store different particle state information.
+Hyperelastic materials with plasticity, still store full deformation gradient as above and thus unlike small-strain plasticity materials, the strain variables describe the total strain and not just the elastic deformationTo have information about elastic and plastic deformation, these materials use the plastic strain variable on the particles ($\vec\ee^{(p)}=${\tt eplast}) to store the symmetric, elastic, left Cauchy-Green tensor ( $\B = \F\F^T$). For convenience, hyperelastic materials can obtain a pointer to this variable using the particle accessor {\tt GetElasticLeftCauchyTensor()}. Because this just returns a pointer to {\tt eplast}, that material cannot also use {\tt GetPlasticStrainTensor()} expecting an option to store different particle state information.
 
-Large deformation MPM requires calculation of specific Cauchy stress ($\vec\s{}$) on each time step, or the Cauchy stress divided by the current density ($\rho$) accounting for volume changes. This required quantity is equivalent to
+Large deformation MPM requires calculation of specific Cauchy stress ($\vec\sigma$) on each time step, or the Cauchy stress divided by the current density ($\rho$) accounting for volume changes. This required quantity is equivalent to
 \begin{equation}
-              {\vec\s{}\over\rho} = {\vec\s{} J\over\rho_0} =  {\vec\tau\over\rho_0}
+              {\vec\sigma\over\rho} = {\vec\sigma J\over\rho_0} =  {\vec\tau\over\rho_0}
 \end{equation}
-where $J$ is $\det \F$ and equal to the relative volume change, $\vec\tau$ is the Kirchoff stress, and $\rho_0$ is the initial volume ({\em i.e.}, $\rho_0 = J\rho$). In other words, all hyperelastic materials track the Kirchoff stress normalized to the initial density.
+where $J$ is $\det \F$ and equal to the relative volume change, $\vec\tau$ is the Kirchoff stress, and $\rho_0$ is the initial volume ({\em i.e.}, $\rho_0 = J\rho$). In other words, all hyperelastic materials track the Kirchoff stress normalized to the initial density, which is done by dividing all constitutive law properties by $\rho_0$ at the start of the calculation and then finding Kirchoff in constitutive laws. The output stress, however, are converted to Cauchy stress using particle $J$.
 
+\subsection{Incremental Deformation Gradient}
+
+Each MPM time step requires evaluation of deformation gradient rate defined by
+\begin{equation}
+    {d\tens F\over dt} = \nabla\vec v \tens F
+\end{equation}
+If velocity gradient, $\nabla \vec v$, is constant for the time step, the exact solution is
+\begin{equation}
+    \tens F(t+\Delta t) = \exp(\Delta t \nabla\vec v)\tens F(t) = \tens{dF} \thinspace \tens F(t)
+\end{equation}
+where $\tens{dF}$ is the incremental deformation gradient. An interesting review article on finding the exponential of a matrix is  ``Nineteen Dubious Ways to Compute the Exponential of a Matrix. Twenty Five Years Later.'' (C. Moler and C. Van Loan, {\em SIAM Review}, {\bf 46}, 2003). They conclude no single way is stable and efficient for all problems, but in MPM with sufficiently small time steps, an expansion method should work well
+\begin{equation}
+    \exp(\Delta t \nabla\vec v) = \sum_{k=0}^{k_{max}} {(\nabla u)^k \over k!} 
+            = \tens I + \nabla u + \sum_{k=2}^{k_{max}} {(\nabla u)^k \over k!}
+\end{equation}
+where $\nabla u = \Delta t \nabla\vec v$ is the incremental displacement gradient. The first two terms are trivial, but have been noticed to have issues in rotational deformation fields. The question is how to evaluate extra terms as efficiently as possible.
+
+Method 8 of the ``Nineteen Dubious Ways'' uses the Cayley-Hamilton theorem to find $(\nabla u)^k$ without any matrix multiplications in 2D and just one in 3D. In 2D (plane stress, plain strain, or axisymmetric), the deformation gradient can be partitioned as
+\begin{equation}
+       \nabla u = \left(\begin{array}{cc}
+               \left[\begin{array}{cc}
+                      du_{xx} & du_{xy} \\
+                      du_{yx} & du_{yy}
+                     \end{array}\right] & \begin{array}{c} 0 \\ 0 \end{array} \\
+                     0 \qquad 0  & du_{zz}
+                 \end{array}\right)
+\end{equation}
+where $du_{ij} = \partial u_i/\partial j$ ($du_{zz}=0$ for plain strain, but not for plane stress or axisymmetry). If $\tens A$ is the $2\times2$ partition, then
+\begin{equation}
+    (\nabla u)^k = \left(\begin{array}{cc}
+                \tens A^k & \begin{array}{c} 0 \\ 0 \end{array} \\
+                 0 \quad 0  & du_{zz}^k
+              \end{array}\right)
+\end{equation}
+Let the characteristic polymer of $\tens A$ (of any dimension $n$) be
+\begin{equation}
+    c(z) = \det(z\tens I - \tens A) = z^n - \sum_{k=0}^{n-1} c_k z^k
+\end{equation}
+Because $c(\tens A)=0$, the $n^{th}$ power of $\tens A$ can be found from lower powers of $\tens A$
+\begin{equation}
+     \tens A^n = \sum_{k=0}^{n-1} c_k \tens A^k
+\end{equation}
+For $n=2$, these reduce to
+\begin{equation}
+    c_0 = -\det(\tens A), \qquad c_1 = {\rm Tr}(\tens A), \qquad {\rm and} \qquad \tens A^2 = c_0\tens I + c_1\tens A
+\end{equation}
+Higher powers of $\tens A$ can be found by recursion to be
+\begin{equation}
+     \tens A^k = \beta_{k,0}\tens I + \beta_{k,1}\tens A
+\end{equation}
+where $\beta_{2,i} = c_i$, $\beta_{k,0}=c_0\beta_{k-1,1}$, and $\beta_{k,1}=c_1\beta_{k-1,1} + \beta_{k-1,0}$. In other words, $\tens I$ and $\tens A$ are a basis for all powers of $\tens A$. Finally, we can expand the incremental deformation gradient using $k_{max}$ terms as
+\begin{equation}
+    \tens{dF}({k_{max}}) = \left(\begin{array}{cc}
+                [\alpha_0\tens I + \alpha_1\tens A] & \begin{array}{c} 0 \\ 0 \end{array} \\
+                 0 \quad 0  & 1 + du_{zz} + \sum_{k=2}^{k_{max}} {du_{zz}^k\over k!}
+              \end{array}\right)
+\end{equation}
+where
+\begin{equation}
+      \alpha_0 = 1 + \sum_{k=2}^{k_{max}} {\beta_{k,0}\over k!} \qquad {\rm and} \qquad
+      \alpha_1 = 1 + \sum_{k=2}^{k_{max}} {\beta_{k,1}\over k!}
+\end{equation}
+An efficient computer algorithm for all non-zero elements of the deformation gradient is
+\begin{verbatim}
+    double c0 = duxy*duyx - duxx*duyy, c1 = duxx + duyy;
+    double alpha0 = 1. + 0.5*c0, alpha1 = 1. + 0.5*c1.;
+    double alphaz = duzz*duzz; dFzz = 1. + duzz + 0.5*alphaz
+    
+    // loop only needed if kmax>2
+    int k,kmax=5;
+    double factorial = 2., temp, beta0 = c0, beta1 = c1;
+    for(k = 3; k <= kmax; k++)
+    {   temp = c0*beta1;
+        beta1 = c1*beta1 + beta0;
+        beta0 = temp;
+        factorial *= (double)k;
+        alpha0 += beta0/factorial;
+        alpha1 += beta1/factorial;
+        alphaz *= duzz;
+        dFzz += alphaz/factorial;
+    }
+    
+    double dFxx = alpha0 + alpha1*duxx;
+    double dFxy = alpha1*duxy;
+    double dFyx = alpha1*duyx;
+    double dFyy = alpha0 + alpha1*duyyl
+\end{verbatim}
+Each extra term included in the expansion costs 7 multiplications/division and 4 additions. Direct matrix multiplication would add 14 multiplcations/division and 13 additions for each term.
+
+A similar approach can be done in 3D, but does require one matrix multiplication. The overall expansion is
+\begin{equation}
+    \exp(\Delta t \nabla\vec v) = \sum_{k=0}^{k_{max}} {(\nabla u)^k \over k!} 
+            = \tens I + \nabla u + {1\over 2}(\nabla u)^2 + \sum_{k=3}^{k_{max}} {(\nabla u)^k \over k!}
+\end{equation}
+which can be reduced to
+\begin{equation}
+    \exp(\Delta t \nabla\vec v) = \alpha_0\tens I + \alpha_1\nabla u + \alpha_2(\nabla u)^2
+\end{equation}
+\begin{equation}
+      \alpha_0 = 1 + \sum_{k=3}^{k_{max}} {\beta_{k,0}\over k!}, \qquad
+      \alpha_1 = 1 + \sum_{k=3}^{k_{max}} {\beta_{k,1}\over k!}, \quad {\rm and} \quad
+      \alpha_2 = {1\over 2} + \sum_{k=3}^{k_{max}} {\beta_{k,2}\over k!}
+\end{equation}
+The required recursion relations are $\beta_{3,i} = c_i$, $\beta_{k,0}=c_0\beta_{k-1,2}$, $\beta_{k,1}=c_1\beta_{k-1,2} + \beta_{k-1,0}$, and $\beta_{k,2}=c_2\beta_{k-1,2} + \beta_{k-1,1}$. Each extra term included in the expansion seems the same as for 2D or 7 multiplications/division and 4 additions. Direct matrix multiplication would add 36 multiplications/division and 27 additions for each term.
+
+One MPM user suggested loading a single particle in tension to some value and then rotating. A plot of axial stress in the loading direction should increase linearly while loading and then oscillate around a constant mean during rotation. In 2D calculations with $k_{max}=1$, the stress continues to increase while rotating, but using $k_{max}=2$ appears to make it constant. Addition of extra terms beyond $k_{max}=2$ does not seem to provide much benefit (at least in this example). A need for extra terms can be demonstrated by using a very large time step, such as 8 times the Courant-Friedrichs-Lewy (CFL) condition. Some results are in Fig.~\ref{dFCalc}. With 1 term, the calculations are immediately bad once rotation starts. Each extra term improves the result. With 5 or more terms, the result is correct. When CFL is less than 1 (as it should be), terms beyond $k_{max}=2$ might not have much benefit.
+\begin{figure}
+\begin{center}
+\includegraphics[width=5in]{IncrementalDef}
+\caption{Calculation for a single particle loaded in tension, held, and then rotated. The different curves show $k_{max}$ or the number of terms used to expand the matrix exponential in the incremental deformation gradient.}
+\label{dFCalc}
+\end{center}
+\end{figure}
 
 \subsection{Mooney-Rivlin Material}
 
