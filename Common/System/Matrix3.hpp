@@ -28,6 +28,8 @@ class Matrix3
         // read only methods
         Matrix3 Transpose(void) const;
 		Matrix3 Exponential(int) const;
+		void Scale(double);
+		Matrix3 Inverse(void) const;
 	
 		// operators
 		Matrix3 &operator+=(const Matrix3 &);

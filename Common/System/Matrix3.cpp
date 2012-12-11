@@ -16,10 +16,12 @@ A class for holding 3X3 matrices, with some special handling for 2D versions
  Methods
     Zero() - sets all elements to zero
     Transpose() - returns new matrix that is transpose of M
-    Exponential(kmx) - find exp(M) using kmax terms in the Taylor series expansion
+    Exponential(kmax) - find exp(M) using kmax terms in the Taylor series expansion
+	Scale(double) - multiply all elements by scaling factor
+	Inverse() - returns new matrix with inverse of M
  
  Operators
-    m1=m2 - matrix copy
+    m1=m2 - matrix copy (built in method)
     m1*m2 or m1*=m2 - matrix multiplication
     m1+m2 or m1+=m2 - matrix addition
     m1-m2 or m1-=m2 - matrix subtraction
@@ -31,10 +33,12 @@ A class for holding 3X3 matrices, with some special handling for 2D versions
  
  Accessors
     set(double) - set all elements to number (and set not a 2D matrix)
+		(warning: always marks the matrix as no longer 2D, unles set to 0.)
     set(double a[][3]) - set all elements to those in the array a
+		(warning: always marks the matrix as no longer 2D)
     get(double a[][3]) - copy all elements to the array a
     bool getIs2D() - is this a 2D matrix?
-    setIs2D(bool) - set 2D marker for this element (and zero out elements
+    setIs2D(bool) - set 2D marker for this matrix (and zero out elements
                     20, 21, 02, or 12 of the matrix)
     double trace() - trace of the matrix
     double determinant() - determinant of the matrix
@@ -123,7 +127,7 @@ Matrix3 Matrix3::Exponential(int kmax) const
 		// higher order terms
 		if(kmax>2)
 		{	int k;
-			double factorial = 2., temp, beta0 = c0, beta1 = c1;
+			double factorial = 0.5, temp, beta0 = c0, beta1 = c1;
 			for(k=3;k<=kmax;k++)
 			{	// update beta using beta(k,0) = c0 beta(k-1,1)
 				//			     and beta(k,1) = c1 beta(k-1,1) + beta(k-1,0)
@@ -131,10 +135,10 @@ Matrix3 Matrix3::Exponential(int kmax) const
 				beta1 = c1*temp + beta0;
 				beta0 = c0*temp;
 				betaz *= m[2][2];
-				factorial *= (double)k;
-				alpha0 += beta0/factorial;
-				alpha1 += beta1/factorial;
-				ezz += betaz/factorial;
+				factorial /= (double)k;
+				alpha0 += beta0*factorial;
+				alpha1 += beta1*factorial;
+				ezz += betaz*factorial;
 			}
 		}
 			
@@ -169,7 +173,7 @@ Matrix3 Matrix3::Exponential(int kmax) const
 	// higher order terms
 	if(kmax>3)
 	{	int k;
-		double factorial = 6., temp, beta0 = c0, beta1 = c1, beta2 = c2;
+		double factorial = 1./6., temp, beta0 = c0, beta1 = c1, beta2 = c2;
 		for(k=4;k<=kmax;k++)
 		{	// update beta using beta(k,0) = c0 beta(k-1,2)
 			//			     and beta(k,1) = c1 beta(k-1,2) + beta(k-1,0)
@@ -178,10 +182,10 @@ Matrix3 Matrix3::Exponential(int kmax) const
 			beta2 = c2*temp + beta1;
 			beta1 = c1*temp + beta0;
 			beta0 = c0*temp;
-			factorial *= (double)k;
-			alpha0 += beta0/factorial;
-			alpha1 += beta1/factorial;
-			alpha2 += beta2/factorial;
+			factorial /= (double)k;
+			alpha0 += beta0*factorial;
+			alpha1 += beta1*factorial;
+			alpha2 += beta2*factorial;
 		}
 	}
 
@@ -189,6 +193,39 @@ Matrix3 Matrix3::Exponential(int kmax) const
 	return Matrix3(alpha0 + alpha1*m[0][0] + alpha2*m2(0,0), alpha1*m[0][1] + alpha2*m2(0,1), alpha1*m[0][2] + alpha2*m2(0,2),
 				   alpha1*m[1][0] + alpha2*m2(1,0), alpha0 + alpha1*m[1][1] + alpha2*m2(1,1), alpha1*m[1][2] + alpha2*m2(1,2),
 				   alpha1*m[2][0] + alpha2*m2(2,0), alpha1*m[2][1] + alpha2*m2(2,1), alpha0 + alpha1*m[2][2] + alpha2*m2(2,2));
+}
+
+// scale all elements by factor
+void Matrix3::Scale(double factor)
+{
+	m[0][0] *= factor;
+	m[0][1] *= factor;
+	m[1][0] *= factor;
+	m[1][1] *= factor;
+	m[2][2] *= factor;
+	if(!is2D)
+	{	m[0][2] *= factor;
+		m[1][2] *= factor;
+		m[2][0] *= factor;
+		m[2][1] *= factor;
+	}
+}
+
+// Return inverse in a new matrix3
+Matrix3 Matrix3::Inverse(void) const
+{	// special case for 2D
+	if(is2D)
+	{	double subdet = 1./(m[0][0]*m[1][1] - m[1][0]*m[0][1]);
+		Matrix3 inv(m[1][1]*subdet,-m[0][1]*subdet,-m[1][0]*subdet,m[0][0]*subdet,1./m[2][2]);
+		return inv;
+	}
+	
+	// general 3D
+	Matrix3 inv3(m[1][1]*m[2][2]-m[2][1]*m[1][2], -(m[0][1]*m[2][2]-m[2][1]*m[0][2]), m[1][0]*m[1][2]-m[1][1]*m[0][2],
+				 -(m[1][0]*m[2][2]-m[2][0]*m[1][2]), m[0][0]*m[2][2]-m[2][0]*m[0][2], -(m[0][0]*m[1][2]-m[1][0]*m[0][2]),
+				   m[1][0]*m[2][1]-m[2][0]*m[1][1], -(m[0][0]*m[2][1]-m[2][0]*m[0][1]), m[0][0]*m[1][1]-m[1][0]*m[0][1]);
+	inv3.Scale(1./determinant());
+	return inv3;
 }
 
 #pragma mark Matrix3:operators
