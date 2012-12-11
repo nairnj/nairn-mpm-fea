@@ -19,7 +19,7 @@ EndHeader
 ! Points per element
 #ppe=1
 XMLData MPMHeader
-    <DefGradTerms>2</DefGradTerms>
+    <DefGradTerms>3</DefGradTerms>
 EndXMLData
 
 ! pick a method usually "lCPDI" or "uGIMP"
@@ -46,13 +46,13 @@ EndXMLData
 ! time factors
 #tmult=100				 ! wave speed for transit times over width to reach max
 #factor=0.4				 ! convergence factor
-#cycles=4				 ! rotation cycles after reach load
+#cycles=0				 ! rotation cycles after reach load
 
 ! initial strains
 #strainx=0
 #shearx=100				 ! nonphyscial in axisymmetric
 #strainy=0
-#sheary=100
+#sheary=0
 
 ! ********** Calculation Section **********
 
