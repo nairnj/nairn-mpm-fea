@@ -5,7 +5,7 @@
 	Created by John Nairn on 12/8/12.
 	Copyright (c) 2012 John A. Nairn, All rights reserved.
  
-A class for holding 3X3 matrices, with some special handling for 2D versions 
+ A class for holding 3X3 matrices, with some special handling for 2D versions 
     of these matrices (i.e., with xz, yz, zx, and zy terms zero)
  
  Creation
@@ -119,35 +119,33 @@ Matrix3 Matrix3::Exponential(int kmax) const
 		}
 		
 		// kmax is 2 or higher
+        int k;
 		double c0 = m[0][1]*m[1][0] - m[0][0]*m[1][1];		// -det(A)
 		double c1 = m[0][0] + m[1][1];						// Tr(A)
-		double alpha0 = 1. + 0.5*c0, alpha1 = 1. + 0.5*c1;
-		double betaz = m[2][2]*m[2][2], ezz = 1. + m[2][2] + 0.5*betaz;
+        double beta0 = 0., beta1 = 1.;
+		double alpha0 = 1., alpha1 = 1.;
+		double betaz = m[2][2], ezz = 1. + betaz;
+        double factor, temp;
 		
-		// higher order terms
-		if(kmax>2)
-		{	int k;
-			double factorial = 0.5, temp, beta0 = c0, beta1 = c1;
-			for(k=3;k<=kmax;k++)
-			{	// update beta using beta(k,0) = c0 beta(k-1,1)
-				//			     and beta(k,1) = c1 beta(k-1,1) + beta(k-1,0)
-				temp = beta1;
-				beta1 = c1*temp + beta0;
-				beta0 = c0*temp;
-				betaz *= m[2][2];
-				factorial /= (double)k;
-				alpha0 += beta0*factorial;
-				alpha1 += beta1*factorial;
-				ezz += betaz*factorial;
-			}
-		}
+        for(k=2;k<=kmax;k++)
+        {	// update beta using beta(k,0) = (1/k) c0 beta(k-1,1)
+            //               and beta(k,1) = (1/k) (c1 beta(k-1,1) + beta(k-1,0))
+            factor = 1/(double)k;
+            temp = beta1;
+            beta1 = factor*(c1*temp + beta0);
+            beta0 = factor*c0*temp;
+            betaz *= factor*m[2][2];
+            alpha0 += beta0;
+            alpha1 += beta1;
+            ezz += betaz;
+        }
 			
 		// return alpha0*I + alpha1*m
 		return Matrix3(alpha0 + alpha1*m[0][0], alpha1*m[0][1],
 						   alpha1*m[1][0], alpha0 + alpha1*m[1][1], ezz);
 	}
 	
-	// done is only 1 term
+	// done if only 1 term
 	if(kmax==1)
 	{	return Matrix3(1. + m[0][0], m[0][1], m[0][2],
 						m[1][0], 1. + m[1][1], m[1][2],
@@ -166,28 +164,25 @@ Matrix3 Matrix3::Exponential(int kmax) const
 	}
 	
 	// kmax is 3 or more
-	double c0,c1,c2;
+    int k;
+	double c0,c1,c2,factor,temp;
 	characteristics(c0,c1,c2);
-	double alpha0 = 1. + c0/6., alpha1 = 1. + c1/6., alpha2 = 0.5 + c2/6.;
-	
-	// higher order terms
-	if(kmax>3)
-	{	int k;
-		double factorial = 1./6., temp, beta0 = c0, beta1 = c1, beta2 = c2;
-		for(k=4;k<=kmax;k++)
-		{	// update beta using beta(k,0) = c0 beta(k-1,2)
-			//			     and beta(k,1) = c1 beta(k-1,2) + beta(k-1,0)
-			//			     and beta(k,2) = c2 beta(k-1,2) + beta(k-1,1)
-			temp = beta2;
-			beta2 = c2*temp + beta1;
-			beta1 = c1*temp + beta0;
-			beta0 = c0*temp;
-			factorial /= (double)k;
-			alpha0 += beta0*factorial;
-			alpha1 += beta1*factorial;
-			alpha2 += beta2*factorial;
-		}
-	}
+    double beta0 = 0.,beta1 = 0.,beta2 = 0.5;
+	double alpha0 = 1.,alpha1 = 1.,alpha2 = 0.5;
+    
+    for(k=3;k<=kmax;k++)
+    {	// update beta using beta(k,0) = (1/k) c0 beta(k-1,2)
+        //			     and beta(k,1) = (1/k) (c1 beta(k-1,2) + beta(k-1,0))
+        //			     and beta(k,2) = (1/k) (c2 beta(k-1,2) + beta(k-1,1))
+        factor = 1./(double)k;
+        temp = beta2;
+        beta2 = factor*(c2*temp + beta1);
+        beta1 = factor*(c1*temp + beta0);
+        beta0 = factor*c0*temp;
+        alpha0 += beta0;
+        alpha1 += beta1;
+        alpha2 += beta2;
+    }
 
 	// return alpha0*I + alpha1*m + alpha2*m2
 	return Matrix3(alpha0 + alpha1*m[0][0] + alpha2*m2(0,0), alpha1*m[0][1] + alpha2*m2(0,1), alpha1*m[0][2] + alpha2*m2(0,2),

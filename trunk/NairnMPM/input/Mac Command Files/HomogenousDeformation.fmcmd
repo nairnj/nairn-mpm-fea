@@ -45,12 +45,12 @@ EndXMLData
 
 ! time factors
 #tmult=100				 ! wave speed for transit times over width to reach max
-#factor=0.4				 ! convergence factor
-#cycles=0				 ! rotation cycles after reach load
+#factor=8				 ! convergence factor
+#cycles=4				 ! rotation cycles after reach load
 
 ! initial strains
-#strainx=0
-#shearx=100				 ! nonphyscial in axisymmetric
+#strainx=50
+#shearx=0				 ! nonphyscial in axisymmetric
 #strainy=0
 #sheary=0
 

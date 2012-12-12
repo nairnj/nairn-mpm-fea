@@ -16,11 +16,11 @@ EndHeader! ------------ Parameters ---------------
 ! Points per element
 #ppe=2
 XMLData MPMHeader
-    <DefGradTerms>2</DefGradTerms>
+    <DefGradTerms>1</DefGradTerms>
 EndXMLData
 
 ! pick a method usually "lCPDI" or "uGIMP"
-#method="uGIMP"
+#method="lCPDI"
 
 ! pick strain update method usually "USF" or "USAVG"
 #update="USF"
@@ -41,19 +41,19 @@ EndXMLData
 #thick=10			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading="rigid"	! Loading = "rigid", "contact", "force", "traction"
+#loading="traction"	! Loading = "rigid", "contact", "force", "traction"
 #fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
-#strain=20	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
+#strain=100	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
 
 ! Loading rate
-#tmult=10			! number of transit times to load peak
+#tmult=40			! number of transit times to load peak
 #hold=0				! hold time (multiple of loading time)
 #unload=0		    ! 0 no unload or >0 for unloading time (multiple of loading time, but at same loading rate)
 
 ! Damping parameter - for feedback or grid damping
 #damp=0
 #fbdamp=0.0
-#factor=0.025			! time step factor
+#factor=0.05			! time step factor
 
 ! ------------ Calculations ---------------
 
