@@ -151,6 +151,9 @@ TensorAntisym *ZeroTensorAntisym(TensorAntisym *);
 
 #include "System/CommonAnalysis.hpp"
 #include "System/LinkedObject.hpp"
+
+#ifdef MPM_CODE
 #include "System/Matrix3.hpp"
+#endif
 
 #endif
