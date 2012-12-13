@@ -16,7 +16,7 @@ EndHeader! ------------ Parameters ---------------
 ! Points per element
 #ppe=2
 XMLData MPMHeader
-    <DefGradTerms>1</DefGradTerms>
+    <DefGradTerms>2</DefGradTerms>
 EndXMLData
 
 ! pick a method usually "lCPDI" or "uGIMP"

@@ -42,8 +42,8 @@ class CrackVelocityFieldMulti : public CrackVelocityField
         virtual void GetFrictionalDeltaMomentum(Vector *,Vector *,double,double);
 		virtual void GetVolumeGradient(int,NodalPoint *,Vector *,double);
 		virtual void RigidMaterialContact(int,int,int,bool,double);
-        virtual bool GetDeltaMomemtumOfInterface(Vector *,Vector *,double,bool,double,double,double);
-        virtual void GetInterfaceForcesForNode(Vector *,Vector *,double,double,double,Vector *,double *,double);
+        virtual bool GetDeltaMomemtumOfInterface(Vector *,Vector *,double,bool,double,double,double,double &,double &);
+        virtual void GetInterfaceForcesForNode(Vector *,Vector *,double,double,double,Vector *,double *,double,double,double);
 		virtual void CalcVelocityForStrainUpdate(void);
 	
 		// boundary conditions
