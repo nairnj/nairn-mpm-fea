@@ -49,7 +49,7 @@ bool ArchiveData::MakeArchiveFolder(void)
 	
     //---------------------------------------------------
     // Create directory for archived files (if needed)
-	char syscmd[300];
+	char syscmd[600];
 	if(strlen(archiveParent)>0 || forceUnique)
 	{	// find unique archiveParent if requested
 		if(forceUnique)
@@ -393,7 +393,7 @@ void ArchiveData::ArchiveVelocityBCs(BoundaryCondition *firstBC)
 	BoundaryCondition *nextBC=firstBC;
 	
 	if(archiveMesh && fmobj->IsThreeD())
-	{	char fname[256];
+	{	char fname[500];
 		ofstream outfile;
 		sprintf(fname,"%s%s_VelBCs.txt",inputDir,archiveRoot);
 		outfile.open(fname);
@@ -421,7 +421,7 @@ void ArchiveData::ArchiveResults(double atime)
 {
 	double rho,rho0;
     double sxx,syy,sxy;
-    char fname[300],fline[300];
+    char fname[500],fline[500];
     int i,p;
     CrackHeader *nextCrack;
 	
