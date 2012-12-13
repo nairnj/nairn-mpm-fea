@@ -498,15 +498,12 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
             // continue if not in contact, unless it is an imperfect interface law
             if(!inContact && (maxContactLaw!=IMPERFECT_INTERFACE))
 			{	// special case two materials for efficiency (and if both will find normal the same way)
-				// can break out of contact, otherwise continue to next material
+				// can break out of contact because now know to be no contact, otherwise continue to next material
 				if(numberMaterials==2 && contact.materialNormalMethod!=EACH_MATERIALS_MASS_GRADIENT)
 					break;
 				continue;
 			}
 		}
-		
-		// the material is in contact or imperfect interface (which is in or not in contact)
-        bool createNode;
 		
         // adjust momentum change as needed
 		switch(maxContactLaw)
@@ -526,59 +523,54 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 				break;
             
             case IMPERFECT_INTERFACE:
-			{	// Contact handled here only perfect interface (Dt or Dn < 0)
-                // Imperfect interfaces are handled as forces later
-                double maxFn,maxFt;
-                createNode = GetDeltaMomemtumOfInterface(&delPi,&norm,dotn,inContact,Dn,Dnc,Dt,maxFn,maxFt);
-                
-                // create interface node and find interface forces to be added later
-                if(createNode && !postUpdate)
-                {   // get displacement of material i and the virtual opposite material
-                    if(!hasDisplacements)
-                    {   if(!contact.displacementCheck)
-                        {	dispc=GetCMDisplacement();
-                            ScaleVector(&dispc,1./Mc);
-                        }
-                        
-                        // scale displacements to get delta = (Mc/(Mc-mi))*dispc - (Mc/(Mc-mi))*(mvf[i]->disp/mi)
-                        //    of delta = disp(virtual) - dist(mat i) = dispcScaled - dispi
-                        double scaleDisp=(Mc-massi)/Mc;
-                        CopyScaleVector(&dispcScaled,&dispc,1./scaleDisp);
-                        scaleDisp*=massi;
-                        CopyScaleVector(&dispi,&mvf[i]->disp,1./scaleDisp);
-                    }
-                    
-                    // find displacement difference vector
-                    Vector delta=dispcScaled;
-                    SubVector(&delta,&dispi);
-                    
-                    // get interface forces for future use and get non-uniform grid correction
-                    Vector fImp;
-                    double rawEnergy;
+			{	// get displacement of material i and the virtual opposite material
+				if(!hasDisplacements)
+				{   if(!contact.displacementCheck)
+					{	dispc=GetCMDisplacement();
+						ScaleVector(&dispc,1./Mc);
+					}
 					
-					// Get raw surface area, it is divided by hperp in GetInterfaceForces()
-					// Scale voltot=voli+volb to voltot*sqrt(2*vmin/voltot) = sqrt(2*vmin*vtot)
-					double volb = GetVolumeNonrigid()-voli;
-					double rawSurfaceArea = sqrt(2.*fmin(voli,volb)*(voli+volb));
- 					//double rawSurfaceArea = 2.*fmin(voli,volb);
-					//double rawSurfaceArea = (voli+volb);
-					
-					// multiple by position for axisymmetric
-					if(fmobj->IsAxisymmetric()) rawSurfaceArea *= nd[nodenum]->x;
-					
-					// get forces
-                    GetInterfaceForcesForNode(&delta,&norm,Dn,Dnc,Dt,&fImp,&rawEnergy,rawSurfaceArea,maxFn,maxFt);
-                    
-					// decide if force balance can get other node too
-                    int iother = numberMaterials==2 && contact.materialNormalMethod!=EACH_MATERIALS_MASS_GRADIENT ? ipaired : -1 ;
+					// scale displacements to get delta = (Mc/(Mc-mi))*dispc - (Mc/(Mc-mi))*(mvf[i]->disp/mi)
+					//    of delta = disp(virtual) - dist(mat i) = dispcScaled - dispi
+					double scaleDisp=(Mc-massi)/Mc;
+					CopyScaleVector(&dispcScaled,&dispc,1./scaleDisp);
+					scaleDisp*=massi;
+					CopyScaleVector(&dispi,&mvf[i]->disp,1./scaleDisp);
+				}
+				
+				// find displacement difference vector
+				Vector delta=dispcScaled;
+				SubVector(&delta,&dispi);
+				
+				// get interface forces for future use and get non-uniform grid correction
+				Vector fImp;
+				double rawEnergy;
+				
+				// Get raw surface area, it is divided by hperp in GetInterfaceForces()
+				// Scale voltot=voli+volb to voltot*sqrt(2*vmin/voltot) = sqrt(2*vmin*vtot)
+				double volb = GetVolumeNonrigid()-voli;
+				double rawSurfaceArea = sqrt(2.*fmin(voli,volb)*(voli+volb));
+				//double rawSurfaceArea = 2.*fmin(voli,volb);
+				//double rawSurfaceArea = (voli+volb);
+				
+				// multiple by position for axisymmetric
+				if(fmobj->IsAxisymmetric()) rawSurfaceArea *= nd[nodenum]->x;
+				
+				// get forces
+				bool createNode = GetInterfaceForcesForNode(&delta,&norm,Dn,Dnc,Dt,&fImp,&rawEnergy,
+															rawSurfaceArea,&delPi,dotn,inContact,postUpdate);
+				
+				if(createNode && !postUpdate)
+				{	// decide if force balance can get other node too
+					int iother = numberMaterials==2 && contact.materialNormalMethod!=EACH_MATERIALS_MASS_GRADIENT ? ipaired : -1 ;
 					
 					// create node to add internal force later
-                    MaterialInterfaceNode::currentNode=new MaterialInterfaceNode(nd[nodenum],vfld,i,iother,&fImp,rawEnergy);
-                    if(MaterialInterfaceNode::currentNode==NULL)
+					MaterialInterfaceNode::currentNode=new MaterialInterfaceNode(nd[nodenum],vfld,i,iother,&fImp,rawEnergy);
+					if(MaterialInterfaceNode::currentNode==NULL)
 					{	throw CommonException("Memory error allocating storage for a material interface node.",
 													"CrackVelocityFieldMulti::MaterialContact");
 					}
-                }
+				}
                 break;
 			}
 				
@@ -813,9 +805,6 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
             if(!inContact && (maxContactLaw!=IMPERFECT_INTERFACE)) continue;
         }
 		
-		// the material is in contact or it is an imperfect interface
-        bool createNode;
-		
 		switch(maxContactLaw)
 		{	case STICK:
 			case NOCONTACT:
@@ -834,43 +823,38 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 				
                 
             case IMPERFECT_INTERFACE:
-			{	// Contact handled here only perfect interface (Dt or Dn < 0)
-                // Imperfect interfaces are handled as forces later
-                double maxFn,maxFt;
-                createNode = GetDeltaMomemtumOfInterface(&delPi,&norm,dotn,inContact,Dn,Dnc,Dt,maxFn,maxFt);
-                
-                // create interface node and find interface forces to be added later
-                if(createNode && !postUpdate)
-                {   // get displacement of material i and the rigid material
-                    if(!hasDisplacements)
-                    {   // rigid material displacement was scaled by volume, while non-rigid was weighted by mass
-                        CopyScaleVector(&rigidDisp,&mvf[rigidFld]->disp,1./actualRigidVolume);
-                        CopyScaleVector(&dispi,&mvf[i]->disp,1./massi);
-                    }
-                    
-                    // find displacement difference vector
-                    Vector delta=rigidDisp;
-                    SubVector(&delta,&dispi);
-                    
-                    // get interface forces for future use and nonuniform grid correction
-                    Vector fImp;
-                    double rawEnergy;
-					
-					// Get raw surface area, it is divided by hperp in GetInterfaceForces()
-					// Scale voltot=voli+rigidVolume to voltot*sqrt(2*vmin/voltot)
-                    double rawSurfaceArea = sqrt(2.*fmin(voli,rigidVolume)*(voli+rigidVolume));
-					
-                    // times nodal position for axisymmetric (above volumes were areas)
-                    if(fmobj->IsAxisymmetric()) rawSurfaceArea *= nd[nodenum]->x;
-					
-                    GetInterfaceForcesForNode(&delta,&norm,Dn,Dnc,Dt,&fImp,&rawEnergy,rawSurfaceArea,maxFn,maxFt);
-                    
-                    MaterialInterfaceNode::currentNode=new MaterialInterfaceNode(nd[nodenum],vfld,i,-1,&fImp,rawEnergy);
-                    if(MaterialInterfaceNode::currentNode==NULL)
+			{	// get displacement of material i and the rigid material
+				if(!hasDisplacements)
+				{   // rigid material displacement was scaled by volume, while non-rigid was weighted by mass
+					CopyScaleVector(&rigidDisp,&mvf[rigidFld]->disp,1./actualRigidVolume);
+					CopyScaleVector(&dispi,&mvf[i]->disp,1./massi);
+				}
+				
+				// find displacement difference vector
+				Vector delta=rigidDisp;
+				SubVector(&delta,&dispi);
+				
+				// get interface forces for future use and nonuniform grid correction
+				Vector fImp;
+				double rawEnergy;
+				
+				// Get raw surface area, it is divided by hperp in GetInterfaceForces()
+				// Scale voltot=voli+rigidVolume to voltot*sqrt(2*vmin/voltot)
+				double rawSurfaceArea = sqrt(2.*fmin(voli,rigidVolume)*(voli+rigidVolume));
+				
+				// times nodal position for axisymmetric (above volumes were areas)
+				if(fmobj->IsAxisymmetric()) rawSurfaceArea *= nd[nodenum]->x;
+				
+				bool createNode = GetInterfaceForcesForNode(&delta,&norm,Dn,Dnc,Dt,&fImp,&rawEnergy,
+															rawSurfaceArea,&delPi,dotn,inContact,postUpdate);
+				
+				if(createNode && !postUpdate)
+				{	MaterialInterfaceNode::currentNode=new MaterialInterfaceNode(nd[nodenum],vfld,i,-1,&fImp,rawEnergy);
+					if(MaterialInterfaceNode::currentNode==NULL)
 					{	throw CommonException("Memory error allocating storage for a material interface node.",
 																"CrackVelocityFieldMulti::MaterialContact");
 					}
-                }
+				}
                 break;
 			}
                 
@@ -944,110 +928,116 @@ void CrackVelocityFieldMulti::GetVolumeGradient(int matfld,NodalPoint *ndptr,Vec
 		CopyScaleVector(grad,mvf[matfld]->volumeGrad,scale);
 }
 
-// Non-interface parts of imperfect interface
-// Contact handled here only for perfect interface parts (Dt or Dn < 0)
-// Imperfect interfaces are handled as forces later if needed by returning TRUE
+//#define LIMIT_FORCES
+// Handle interface forces or not (if they are perfect interfces
+// Contact handled here only for perfect interface parts (Dt or Dn < 0), if done return FALSE
+// Imperfect interfaces are handled next
 // maxFn and maxFt below find normal and tangential force for perfect interface for the
 //		direction that is an imperfect interface. One would like to use these forces to limit
 //		the internal force and thereby work better for large Dn and Dt. So far the correction
-//      does not seem to work?
-bool CrackVelocityFieldMulti::GetDeltaMomemtumOfInterface(Vector *delPi,Vector *norm,double dotn,bool inContact,double Dn,
-														  double Dnc,double Dt,double &maxFn,double &maxFt)
-{
-    if(Dt<0)
-    {	if( (!inContact && Dn>=0.) || (inContact && Dnc>=0.) )
-        {	// prefect in tangential, but imperfect in normal direction
-            // make stick in tangential direction only by subtracting dotn.norm
-            AddScaledVector(delPi,norm,-dotn);
-			
-			// but maximum normal dp is dotn
-			maxFn = dotn/timestep;
-            maxFt = 1.e100;
-			
-        }
-        else
-        {   // else perfect in both so return with the stick conditions already in delPi
-			// interface calculations will be skipped
-            return FALSE;
-        }
-    }
-    else if( (!inContact && Dn<0.) || (inContact && Dnc<0.) )
-    {   // perfect in normal direction, but imperfect in tangential direction
-        
-		// but maximum tangential dp is dott.t = delPi - dotn.n
-        Vector tang = *delPi;
-        AddScaledVector(&tang,norm,-dotn);       // delta - dotn (n) = dott (t)
-        double dott=sqrt(DotVectors(&tang,&tang));
-        if(!DbleEqual(dott,0.))
-        {   ScaleVector(&tang,1/dott);
-            maxFt = sqrt(DotVectors(delPi,&tang))/timestep;    // sign to pair with tang
-        }
-        else
-            maxFt = 1.e100;
-        maxFn = 1.e100;
-		
-        // make stick in normal direction only
-        CopyScaleVector(delPi,norm,dotn);
-    }
-    else
-    {   // imperfect both directions, just imperfect interface forces later and nothing changed here
-        
-		// but maximum normal dp is dotn
-		maxFn = dotn/timestep;
-		
-		// but maximum tangential dp is dott.t = delPi - dotn.n
-        Vector tang = *delPi;
-        AddScaledVector(&tang,norm,-dotn);       // delta - dotn (n) = dott (t)
-        double dott=sqrt(DotVectors(&tang,&tang));
-        if(!DbleEqual(dott,0.))
-        {   ScaleVector(&tang,1/dott);
-            maxFt = sqrt(DotVectors(delPi,&tang))/timestep;    // sign to pair with tang
-        }
-        else
-            maxFt = 1.e100;
-    	
-		// no change in momentum, just imperfect interface forces later and nothing changed here
-        ZeroVector(delPi);
-    }
-	
-	// continue to interface calculations
-    return TRUE;
-}
-
-void CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *norm,double Dn,double Dnc,
-                    double Dt,Vector *fImp,double *rawEnergy,double rawSurfaceArea,double maxFn,double maxFt)
+//      does not seem to work? (comment or uncomment LIMIT_FORCES to use it)
+bool CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *norm,double Dn,double Dnc,
+                    double Dt,Vector *fImp,double *rawEnergy,double rawSurfaceArea,
+					Vector *delPi,double dotn,bool inContact,bool postUpdate)
 {
     // normal displacement (norm is normalized) = delta . norm, subtract adjustment when using position
-    double dotn = DotVectors(delta,norm);
-    if(!contact.GetContactByDisplacements()) dotn -= contact.GetNormalCODCutoff();
+    double deln = DotVectors(delta,norm);
+    if(!contact.GetContactByDisplacements()) deln -= contact.GetNormalCODCutoff();
     
     // tangential vector in tang
     Vector tang;
     CopyVector(&tang,delta);
-    AddScaledVector(&tang,norm,-dotn);       // delta - dotn (n) = dott (t)
-    double dott=sqrt(DotVectors(&tang,&tang));
-    if(!DbleEqual(dott,0.)) ScaleVector(&tang,1/dott);
+    AddScaledVector(&tang,norm,-deln);				// delta - deln (n) = dott (t)
+    double delt=sqrt(DotVectors(&tang,&tang));
+    if(!DbleEqual(delt,0.)) ScaleVector(&tang,1/delt);
     
-    double trn=0.,trt=0.;
-    
-    if(Dn>=0. || Dnc>=0.)
-    {   // Normal traction in g/(mm sec^2) - but different separated or in contact
-        if(dotn>0.)
-        {	// normal direction in tension if imperfect
-            if(Dn>=0.)
-				trn=1.e6*Dn*dotn;
-        }
-        else
-        {	// normal direction in compression
-            if(Dnc>=0.)
-				trn=1.e6*Dnc*dotn;
-        }
+    double trn=0.,trt=0.;					// interface forces
+#ifdef LIMIT_FORCES
+	Vector delPn,delPt;						// normal and tangential to restore perfect interface
+	double maxFt,maxFn;						// maximum force for perfect interface
+#endif
+	
+    if(Dt<0)
+    {	if( (!inContact && Dn>=0.) || (inContact && Dnc>=0.) )
+		{	// prefect in tangential, but imperfect in normal direction
+#ifdef LIMIT_FORCES
+			// get delPn to stick normal and delPi to stick tangential
+			CopyScaleVector(&delPn,norm,dotn);
+            SubVector(delPi,&delPn);
+			
+			// but maximum normal dp is dotn
+			maxFn = dotn/timestep;
+			maxFt = 1.e100;
+#else
+			// make stick in tangential direction only by subtracting dotn.norm
+			AddScaledVector(delPi,norm,-dotn);
+#endif
+		}
+		else
+		{   // else perfect in both so return with the stick conditions already in delPi
+			// interface calculations will be skipped
+			return FALSE;
+		}
     }
-    
-    if(Dt>=0.)
-    {   // transverse traction in g/(mm sec^2)
-        trt=1.e6*Dt*dott;
-    }
+	else
+	{   // transverse traction in g/(mm sec^2)
+        trt=1.e6*Dt*delt;
+		
+#ifdef LIMIT_FORCES
+		// get contact tangent stick momentum and its magnitude
+		delPt = *delPi;
+		AddScaledVector(&delPt,norm,-dotn);					// delta - dotn (n) = dott (t)
+		double dott=sqrt(DotVectors(&delPt,&delPt));
+#endif
+
+		if( (!inContact && Dn<0.) || (inContact && Dnc<0.) )
+		{   // perfect in normal direction, but imperfect in tangential direction
+#ifdef LIMIT_FORCES
+			// but maximum tangential dp is dott
+			if(!DbleEqual(dott,0.))
+				maxFt = dott/timestep;
+			else
+				maxFt = 1.e100;
+			maxFn = 1.e100;
+#endif
+			// make stick in normal direction only
+			CopyScaleVector(delPi,norm,dotn);
+		}
+		else
+		{   // imperfect both directions, just imperfect interface forces below and nothing changed here
+#ifdef LIMIT_FORCES
+			// but maximum normal dp is dotn
+			maxFn = dotn/timestep;
+			
+			// but maximum tangential dp is dott
+			if(!DbleEqual(dott,0.))
+				maxFt = dott/timestep;
+			else
+				maxFt = 1.e100;
+			
+			// normal momentum change
+			CopyScaleVector(&delPn,norm,dotn);
+#endif
+			// no change in momentum, just imperfect interface forces later and nothing changed here
+			ZeroVector(delPi);
+		}
+	}
+
+#ifndef LIMIT_FORCES
+	if(postUpdate) return FALSE;
+#endif
+
+	// get normal traction in g/(mm sec^2) - but different separated or in contact
+	if(deln>0.)
+	{	if(Dn>=0.)
+		{	// normal direction in tension is imperfect
+			trn=1.e6*Dn*deln;
+		}
+	}
+	else if(Dnc>=0.)
+	{	// normal direction in compression
+		trn=1.e6*Dnc*deln;
+	}
 	
     // get perpendicular distance to correct contact area
     double dist;
@@ -1058,7 +1048,7 @@ void CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *no
     // In 2D and 3D the dist is equal to grid spacing is gridx=gridy=gridz.
     // See JANOSU-6-60 and JANOSU-6-74
     if(mpmgrid.Is3DGrid())
-    {   if(DbleEqual(dott,0.))
+    {   if(DbleEqual(delt,0.))
         {   // pick any tangent vector
             tang.z = 0.;
             if(!DbleEqual(norm->x,0.0) || !DbleEqual(norm->y,0.0))
@@ -1130,13 +1120,25 @@ void CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *no
 	double surfaceArea = rawSurfaceArea/dist;
 	trn *= surfaceArea;
 	trt *= surfaceArea;
-    
-    if(fabs(trt)>fabs(maxFt))
-    {   //cout << "# limited by " << fabs(maxFt)/fabs(trt) << endl;
-        trt = maxFt;
-    }
-    else if(maxFt<1.e50)
-        trt = maxFt;
+	
+	// set to zero energy
+	*rawEnergy = 0.;
+	
+#ifdef LIMIT_FORCES
+	// compare to tangential forces
+	if(fabs(trt)>fabs(maxFt))
+	{	AddVector(delPi,&delPt);
+		trt=0;
+		*rawEnergy += 0.5*maxFt*delt;
+	}
+	
+	// compare to normal forces
+	if(fabs(trn)>fabs(maxFn))
+	{	AddVector(delPi,&delPn);
+		trn=0;
+		*rawEnergy += 0.5*maxFn*deln;
+	}
+#endif
 	
     // find (trn n + trt t)*Ai for force in cartesian coordinates
     CopyScaleVector(fImp, norm, trn);
@@ -1144,7 +1146,9 @@ void CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *no
     
     // total energy (not increment) is (1/2)(trn dn + trt dt)*Ai in g/sec^2
     // units will be g/sec^2
-    *rawEnergy = (trn*dotn + trt*dott)/2.;
+    *rawEnergy += 0.5*(trn*deln + trt*delt);
+	
+	return TRUE;
     
 }
 
