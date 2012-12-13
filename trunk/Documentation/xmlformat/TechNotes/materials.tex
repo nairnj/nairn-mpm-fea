@@ -1003,7 +1003,7 @@ Large deformation MPM requires calculation of specific Cauchy stress ($\vec\sigm
 \begin{equation}
               {\vec\sigma\over\rho} = {\vec\sigma J\over\rho_0} =  {\vec\tau\over\rho_0}
 \end{equation}
-where $J$ is $\det \F$ and equal to the relative volume change, $\vec\tau$ is the Kirchoff stress, and $\rho_0$ is the initial volume ({\em i.e.}, $\rho_0 = J\rho$). In other words, all hyperelastic materials track the Kirchoff stress normalized to the initial density, which is done by dividing all constitutive law properties by $\rho_0$ at the start of the calculation and then finding Kirchoff in constitutive laws. The output stress, however, are converted to Cauchy stress using particle $J$.
+where $J$ is $\det \F$ and equal to the relative volume change, $\vec\tau$ is the Kirchoff stress, and $\rho_0$ is the initial volume ({\em i.e.}, $\rho_0 = J\rho$). In other words, all hyperelastic materials track the Kirchoff stress normalized to the initial density, which is done by dividing all constitutive law properties by $\rho_0$ at the start of the calculation and then finding Kirchoff in constitutive laws. The output stresses, however, are converted to Cauchy stress using particle $J$.
 
 \subsection{Incremental Deformation Gradient}
 
@@ -1032,7 +1032,7 @@ Method 8 of the ``Nineteen Dubious Ways'' uses the Cayley-Hamilton theorem to fi
                      0 \qquad 0  & du_{zz}
                  \end{array}\right)
 \end{equation}
-where $du_{ij} = \partial u_i/\partial j$ ($du_{zz}=0$ for plain strain, but not for plane stress or axisymmetry). If $\tens A$ is the $2\times2$ partition, then
+where $du_{ij} = \partial u_i/\partial x_j$ ($du_{zz}=0$ for plain strain, but not for plane stress or axisymmetry). If $\tens A$ is the $2\times2$ partition, then
 \begin{equation}
     (\nabla u)^k = \left(\begin{array}{cc}
                 \tens A^k & \begin{array}{c} 0 \\ 0 \end{array} \\
@@ -1055,7 +1055,7 @@ Higher powers of $\tens A$ can be found by recursion to be
 \begin{equation}
      \tens A^k = \beta_{k,0}\tens I + \beta_{k,1}\tens A
 \end{equation}
-where $\beta_{2,i} = c_i$, $\beta_{k,0}=c_0\beta_{k-1,1}$, and $\beta_{k,1}=c_1\beta_{k-1,1} + \beta_{k-1,0}$. In other words, $\tens I$ and $\tens A$ are a basis for all powers of $\tens A$. Finally, we can expand the incremental deformation gradient using $k_{max}$ terms as
+where $\beta_{1,i} = \delta_{i1}$, $\beta_{k,0}=c_0\beta_{k-1,1}$, and $\beta_{k,1}=c_1\beta_{k-1,1} + \beta_{k-1,0}$. In other words, $\tens I$ and $\tens A$ are a basis for all powers of $\tens A$. Finally, we can expand the incremental deformation gradient using $k_{max}$ terms as
 \begin{equation}
     \tens{dF}({k_{max}}) = \left(\begin{array}{cc}
                 [\alpha_0\tens I + \alpha_1\tens A] & \begin{array}{c} 0 \\ 0 \end{array} \\
@@ -1067,32 +1067,29 @@ where
       \alpha_0 = 1 + \sum_{k=2}^{k_{max}} {\beta_{k,0}\over k!} \qquad {\rm and} \qquad
       \alpha_1 = 1 + \sum_{k=2}^{k_{max}} {\beta_{k,1}\over k!}
 \end{equation}
-An efficient computer algorithm for all non-zero elements of the deformation gradient is
+An efficient computer algorithm for all non-zero elements of the deformation gradient using $k_{max}$ terms (which eliminates as many multiplications and divides as I think are possible and the factorial terms are scaled into the {\tt beta} variables such that {\tt betai}$=\beta_{k,i}/k!$) is:
 \begin{verbatim}
     double c0 = duxy*duyx - duxx*duyy, c1 = duxx + duyy;
-    double alpha0 = 1. + 0.5*c0, alpha1 = 1. + 0.5*c1.;
-    double alphaz = duzz*duzz; dFzz = 1. + duzz + 0.5*alphaz
-    
-    // loop only needed if kmax>2
-    int k,kmax=5;
-    double factorial = 2., temp, beta0 = c0, beta1 = c1;
-    for(k = 3; k <= kmax; k++)
-    {   temp = c0*beta1;
-        beta1 = c1*beta1 + beta0;
-        beta0 = temp;
-        factorial *= (double)k;
-        alpha0 += beta0/factorial;
-        alpha1 += beta1/factorial;
-        alphaz *= duzz;
-        dFzz += alphaz/factorial;
+    double beta0 = 0., beta1 = 1., alpha0 = 1., alpha1 = 1.;
+    double betaz = duzz; dFzz = 1. + duzz
+    int k;
+    double factor, temp;;
+    for(k = 2; k <= kmax; k++)
+    {   factor = 1/(double)k;
+        temp = beta1;
+        beta1 = factor*(c1*temp + beta0);
+        beta0 = factor*c0*temp;
+        betaz *= factor*duzz;
+        alpha0 += beta0;
+        alpha1 += beta1;
+        dFzz += betaz;
     }
-    
     double dFxx = alpha0 + alpha1*duxx;
     double dFxy = alpha1*duxy;
     double dFyx = alpha1*duyx;
     double dFyy = alpha0 + alpha1*duyyl
 \end{verbatim}
-Each extra term included in the expansion costs 7 multiplications/division and 4 additions. Direct matrix multiplication would add 14 multiplcations/division and 13 additions for each term.
+Each extra term included in the expansion costs 6 multiplications, 1 division, and 4 additions. Direct matrix multiplication would add 14 multiplcations/division and 13 additions for each term.
 
 A similar approach can be done in 3D, but does require one matrix multiplication. The overall expansion is
 \begin{equation}
@@ -1108,9 +1105,9 @@ which can be reduced to
       \alpha_1 = 1 + \sum_{k=3}^{k_{max}} {\beta_{k,1}\over k!}, \quad {\rm and} \quad
       \alpha_2 = {1\over 2} + \sum_{k=3}^{k_{max}} {\beta_{k,2}\over k!}
 \end{equation}
-The required recursion relations are $\beta_{3,i} = c_i$, $\beta_{k,0}=c_0\beta_{k-1,2}$, $\beta_{k,1}=c_1\beta_{k-1,2} + \beta_{k-1,0}$, and $\beta_{k,2}=c_2\beta_{k-1,2} + \beta_{k-1,1}$. Each extra term included in the expansion seems the same as for 2D or 7 multiplications/division and 4 additions. Direct matrix multiplication would add 36 multiplications/division and 27 additions for each term.
+The required recursion relations are $\beta_{2,i} = \delta_{i2}$, $\beta_{k,0}=c_0\beta_{k-1,2}$, $\beta_{k,1}=c_1\beta_{k-1,2} + \beta_{k-1,0}$, and $\beta_{k,2}=c_2\beta_{k-1,2} + \beta_{k-1,1}$. For a $3\times3$ matrix, $c_0 = \det(\tens M)$, $c_1 = -I_2$, and $c_2 = {\rm Tr}(\tens M)$, where $I_2$ is the second invariant. Each extra term included in the expansion adds 6 multiplications, 1 division and 5 additions. Direct matrix multiplication would add about 36 multiplications, 1 division, and 27 additions for each term.
 
-One MPM user suggested loading a single particle in tension to some value and then rotating. A plot of axial stress in the loading direction should increase linearly while loading and then oscillate around a constant mean during rotation. In 2D calculations with $k_{max}=1$, the stress continues to increase while rotating, but using $k_{max}=2$ appears to make it constant. Addition of extra terms beyond $k_{max}=2$ does not seem to provide much benefit (at least in this example). A need for extra terms can be demonstrated by using a very large time step, such as 8 times the Courant-Friedrichs-Lewy (CFL) condition. Some results are in Fig.~\ref{dFCalc}. With 1 term, the calculations are immediately bad once rotation starts. Each extra term improves the result. With 5 or more terms, the result is correct. When CFL is less than 1 (as it should be), terms beyond $k_{max}=2$ might not have much benefit.
+One MPM user suggested loading a single particle in tension to some value and then rotating. A plot of axial stress in the loading direction should increase linearly while loading and then oscillate around a constant mean during rotation. In 2D calculations with $k_{max}=1$, the stress continues to increase while rotating, but using $k_{max}=2$ appears to make it constant. Addition of extra terms beyond $k_{max}=2$ does not seem to provide much benefit (at least in this example). A need for extra terms can be demonstrated by using a very large time step, such as 8 times the Courant-Friedrichs-Lewy (CFL) condition. Some results are in Fig.~\ref{dFCalc}. With 1 term, the calculations are immediately bad once rotation starts. Each extra term improves the result. With 5 or more terms, the result is correct. When CFL is less than 1 (as it should be), terms beyond $k_{max}=2$ might not have much benefit, but can be seen, for example, in pure shear examples.
 \begin{figure}
 \begin{center}
 \includegraphics[width=5in]{IncrementalDef}
