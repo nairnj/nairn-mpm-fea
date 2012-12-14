@@ -93,7 +93,7 @@ public class MovieControls extends JPanel
 		if(resDoc.isAxisymmetric())
 		{	xchar="r";
 			ychar="z";
-			zchar="T";
+			zchar="t";
 		}
 		
 		// data panel
