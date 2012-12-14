@@ -52,4 +52,18 @@ public class MaterialBase
 	
 	// most are not rigid
 	public boolean isRigid() { return false; }
+	
+	// true it this material archives plastic strain that
+	// should be added to elastic strain when finding deformation
+	// gradient. It is onlu low-strain plasticity materials
+	public boolean hasPlasticStrainForGradient()
+	{ 	switch(type)
+		{	case VONMISES:
+				return true;
+			default:
+				break;
+		}
+		return false;
+	}
+
 }
