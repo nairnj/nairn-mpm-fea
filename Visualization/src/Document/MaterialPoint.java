@@ -58,26 +58,36 @@ public class MaterialPoint
 	// draw the material point
 	public void stroke(MeshPlotView pv,ResultsDocument doc)
 	{	pv.moveTo(x,y);
-		pv.drawMaterialPoint(plotColor,eps,eplast,angleZ-erot,this);
+		pv.drawMaterialPoint(plotColor,this);
 	}
 	
 	// draw the material point
 	public void addToClip(MeshPlotView pv,ResultsDocument doc,GeneralPath theClip)
 	{	pv.moveTo(x,y);
-		pv.clipMaterialPoint(eps,eplast,angleZ-erot,this,theClip);
+		pv.clipMaterialPoint(this,theClip);
 	}
 	
 	// return shape for the particle at current location
-	public Shape particleShape(double xpt,double ypt,double radiix,double radiiy,
+	public Shape particleShape(ResultsDocument resDoc,double xpt,double ypt,double radiix,double radiiy,
 								boolean showSquarePts,boolean transformPts)
 	{	// depends on setting
 		if(showSquarePts)
 		{	if(transformPts)
-			{	double dgrad00=0.01*(eps[MaterialPoint.XXID]+eplast[MaterialPoint.XXID]);
-				double wrot=Math.PI*(angleZ-erot)/180.;
-				double dgrad01=0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID])+wrot;
-				double dgrad10=0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID])-wrot;
-				double dgrad11=0.01*(eps[MaterialPoint.YYID]+eplast[MaterialPoint.YYID]);
+			{	double dgrad00,dgrad01,dgrad10,dgrad11;
+				if(resDoc.materials.get(materialIndex()).hasPlasticStrainForGradient())
+				{	dgrad00=0.01*(eps[MaterialPoint.XXID]+eplast[MaterialPoint.XXID]);
+					double wrot=Math.PI*(angleZ-erot)/180.;
+					dgrad01=0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID])+wrot;
+					dgrad10=0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID])-wrot;
+					dgrad11=0.01*(eps[MaterialPoint.YYID]+eplast[MaterialPoint.YYID]);
+				}
+				else
+				{	dgrad00=0.01*eps[MaterialPoint.XXID];
+					double wrot=Math.PI*(angleZ-erot)/180.;
+					dgrad01=0.005*eps[MaterialPoint.XYID]+wrot;
+					dgrad10=0.005*eps[MaterialPoint.XYID]-wrot;
+					dgrad11=0.01*eps[MaterialPoint.YYID];
+				}
 				
 				// This works in Java 1.5
 				GeneralPath quad=new GeneralPath();

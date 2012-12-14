@@ -125,7 +125,11 @@ public class ResultsDocument extends AbstractTableModel
 			if(word.equals("3D"))
 				np=THREED_MPM;
 			else if(word.equals("Axisymmetric"))
-				np=AXI_SYM;
+			{	if(sline.next().equals("MPM"))
+					np=AXI_SYM_MPM;
+				else
+					np=AXI_SYM;
+			}
 			else
 			{	sline.next();
 				if(sline.next().equals("Strain"))
@@ -222,7 +226,8 @@ public class ResultsDocument extends AbstractTableModel
 				case ElementBase.LAGRANGE_2D:
 					// read all nodes
 					for(i=0;i<ElementBase.NodesFromType(elemID);i++)
-						nds[i]=s.nextInt();
+					{	nds[i]=s.nextInt();
+					}
 					break;
 				
 				default:

@@ -287,20 +287,20 @@ public class MeshPlotView extends JPanel
 	}
 	
 	// draw material point and fill with plot color
-	public void drawMaterialPoint(Color theColor,double[] eps,double[] eplast,double erot,MaterialPoint mpart)
+	public void drawMaterialPoint(Color theColor,MaterialPoint mpart)
 	{	double diam=0.01*mpDiam*resDoc.cellMinSide*scale;
 		double radiix=resDoc.xscale*diam/2.;
 		double radiiy=resDoc.yscale*diam/2.;
 		g2Loc.setColor(theColor);
-		g2Loc.fill(mpart.particleShape(xpt,ypt,radiix,radiiy,showSquarePts,transformPts));
+		g2Loc.fill(mpart.particleShape(resDoc,xpt,ypt,radiix,radiiy,showSquarePts,transformPts));
 	}
 	
 	// draw material point and fill with plot color
-	public void clipMaterialPoint(double[] eps,double[] eplast,double erot,MaterialPoint mpart,GeneralPath theClip)
+	public void clipMaterialPoint(MaterialPoint mpart,GeneralPath theClip)
 	{	double diam=0.01*mpDiam*resDoc.cellMinSide*scale;
 		double radiix=resDoc.xscale*diam/2.;
 		double radiiy=resDoc.yscale*diam/2.;
-		theClip.append(mpart.particleShape(xpt,ypt,radiix,radiiy,showSquarePts,transformPts),false);
+		theClip.append(mpart.particleShape(resDoc,xpt,ypt,radiix,radiiy,showSquarePts,transformPts),false);
 	}
 	
 	// transform shape to coordinates and fill in current color

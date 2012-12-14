@@ -90,6 +90,12 @@ public class MovieControls extends JPanel
 			hpos+=selectTime.getWidth()+20;
 		}
 		
+		if(resDoc.isAxisymmetric())
+		{	xchar="r";
+			ychar="z";
+			zchar="T";
+		}
+		
 		// data panel
 		MeshPlotData meshData=new MeshPlotData(movieCtrl.getPlotView(),gResDoc);
 		meshData.setSize(new Dimension(200,HEIGHT));
