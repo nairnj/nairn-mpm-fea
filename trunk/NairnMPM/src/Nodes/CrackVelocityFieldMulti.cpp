@@ -1117,6 +1117,7 @@ bool CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *no
     */
 	
 	// scale by minimum volume in perpendicular distance
+    // Now forces are g-mm/sec^2
 	double surfaceArea = rawSurfaceArea/dist;
 	trn *= surfaceArea;
 	trt *= surfaceArea;
@@ -1144,8 +1145,8 @@ bool CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *no
     CopyScaleVector(fImp, norm, trn);
     AddScaledVector(fImp, &tang, trt);
     
-    // total energy (not increment) is (1/2)(trn dn + trt dt)*Ai in g/sec^2
-    // units will be g/sec^2
+    // total energy (not increment) is (1/2)(trn dn + trt dt)*Ai in g-mm^2/sec^2
+    // units will be g-mm^2/sec^2
     *rawEnergy += 0.5*(trn*deln + trt*delt);
 	
 	return TRUE;

@@ -135,7 +135,7 @@ void GridForcesTask::Execute(void)
 	// crack tip heating adds to fcond
 	if(conduction) conduction->AddCrackTipHeating();
 	
-	// interface forces added to mvf[]->fint and track interface energy
+	// interface forces added to mvf[]->fint and track total interface energy
     NodalPoint::interfaceEnergy=0.;
     CrackNode::InterfaceOnKnownNodes();
     MaterialInterfaceNode::InterfaceOnKnownNodes();

@@ -14,6 +14,12 @@ EndHeader! ------------ Parameters ---------------
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"
 #analysis="Plane Strain MPM"
 
+! Points per element
+#ppe=2
+XMLData MPMHeader
+    <DefGradTerms>3</DefGradTerms>
+EndXMLData
+
 ! pick a method usually "lCPDI" or "uGIMP"
 #method="lCPDI"
 
