@@ -897,6 +897,7 @@ void NodalPoint::MaterialInterfaceForce(MaterialInterfaceNode *mmnode)
     }
     
     // add interface energy in units g-mm^2/sec^2 (multiply by 1e-9 to get J - kg-m^2/sec^2)
+    // but only once for pair of interface nodes
     interfaceEnergy+=energy;
 }
 
