@@ -77,7 +77,7 @@ int PolyTriangle::PointCrossesFace(Vector *p,unsigned *edges)
 			if(d==0.) break;
 			// If signs are correct then ray passes through the faces, otherwise no
 			if((d>0. && n.x>0.) || (d<0. && n.x<0.))
-			{	if(u==0. || v==0. || u+v==1.) *edges++;
+			{	if(u==0. || v==0. || u+v==1.) *edges = *edges+1;
 				return 1;
 			}
 			return -1;
@@ -85,7 +85,7 @@ int PolyTriangle::PointCrossesFace(Vector *p,unsigned *edges)
 			// nx=0, not cross if not on plane (i.e. if d!=0)
 			if(d!=0.) return -1;
 			// increment edges if ray passes through the face
-			if(p->y>=fmin.y && p->y<=fmax.y && p->z>=fmin.z && p->z<=fmax.z && p->x<=fmin.x) *edges++;
+			if(p->y>=fmin.y && p->y<=fmax.y && p->z>=fmin.z && p->z<=fmax.z && p->x<=fmin.x) *edges = *edges+1;
 			// now check if point is on this face
 			u = m11*(p->x-v0.x) + m12*(p->y-v0.y);
 			if(u<0. || u>1.) return -1;
@@ -96,7 +96,7 @@ int PolyTriangle::PointCrossesFace(Vector *p,unsigned *edges)
 			// nx=nz=0, not cross if not on plane (i.e. if d!=0)
 			if(d!=0.) return -1;
 			// increment edges if ray passes through the face (no need to check y since all must be equal)
-			if(p->z>=fmin.z && p->z<=fmax.z && p->x<=fmin.x) *edges++;
+			if(p->z>=fmin.z && p->z<=fmax.z && p->x<=fmin.x) *edges = *edges+1;
 			// now check if point is on this face
 			u = m11*(p->x-v0.x) + m12*(p->z-v0.z);
 			if(u<0. || u>1.) return -1;

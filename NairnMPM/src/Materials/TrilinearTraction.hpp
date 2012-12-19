@@ -32,7 +32,7 @@ class TrilinearTraction : public CohesiveZone
 		virtual double CrackTractionEnergy(CrackSegment *,double,double,bool);
 		
 		// accessors
-		virtual const char *SetTractionLaw(double &,double &,double &,double &,double &,double &,double &);
+		virtual const char *SetTLTractionLaw(double &,double &,double &,double &,double &,double &,double &);
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
 		

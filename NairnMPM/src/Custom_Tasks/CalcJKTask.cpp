@@ -94,7 +94,7 @@ CustomTask *CalcJKTask::StepCalculation(void)
     {   nextCrack->JIntegral();         // crack-axis components of J-integral
         
         // if material known, find KI and KII for crack tips
-        if(getJKThisStep && NEED_K)
+        if(getJKThisStep & NEED_K)
         {   for(i=START_OF_CRACK;i<=END_OF_CRACK;i++)
             {   crkTip=nextCrack->GetCrackTip(i);
                 inMat=crkTip->tipMatnum;

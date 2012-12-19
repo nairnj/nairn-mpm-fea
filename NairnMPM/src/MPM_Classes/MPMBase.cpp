@@ -207,11 +207,8 @@ void MPMBase::ChangeElemID(int newElem)
 int MPMBase::ArchiveElemID(void) { return inElem; }			// one based for archiving
 
 // return current element crossings for archiving and reset to zero
-int MPMBase::GetResetElementCrossings(void)
-{	int was=elementCrossings;
-	elementCrossings=0;
-	return was;
-}
+int MPMBase::GetElementCrossings(void) { return elementCrossings; }
+void MPMBase::SetElementCrossings(int ec) { elementCrossings = ec; }
 
 // get unscaled volume for use only in contact and imperfect interface calculations
 // return result in mm^3
