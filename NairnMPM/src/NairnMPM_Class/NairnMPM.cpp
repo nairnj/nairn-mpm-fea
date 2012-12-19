@@ -212,7 +212,7 @@ void NairnMPM::MPMAnalysis(bool abort)
 		archiver->ArchiveResults(mtime);
 		
 		// optional validation of parameters
-		ValidateOptions();
+ 		ValidateOptions();
 		
 		// exit if do not want analysis
 		if(abort) mtime=maxtime+1;
@@ -558,7 +558,7 @@ void NairnMPM::ValidateOptions(void)
 	{	if(ptsPerElement!=1 && ptsPerElement!=4 && ptsPerElement!=9 && ptsPerElement!=16 && ptsPerElement!=25)
 			throw CommonException("2D analysis requires 1 or 4 particles per cell","NairnMPM::ValidateOptions");
 	}
-    
+
     // Axisymmetric requirements and adjustments
     if(IsAxisymmetric())
     {   if(ElementBase::useGimp == POINT_GIMP)

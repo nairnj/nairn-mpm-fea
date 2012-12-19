@@ -279,23 +279,24 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy
     }
 	
 	// find energy from work increment
-    // add total energy using elastic stress increment
+    // add total energy using total stress increment
     // Not sure correct, but does have energy + dissipated equal to total energy increment
 	// energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	dvxx -= er;
 	dvyy -= er;
 	dvzz -= er;
-	double totalEnergy=(st0.xx+0.5*dsxxe)*dvxx
-							+(st0.yy+0.5*dsyye)*dvyy
-							+(st0.xy+0.5*dtxye)*dgam
-							+(st0.xy+0.5*dszze)*dvzz;
+	double totalEnergy=(st0.xx+0.5*(dsxxe+dsxxv))*dvxx
+							+(st0.yy+0.5*(dsyye+dsyyv))*dvyy
+							+(st0.xy+0.5*(dtxye+dtxyv))*dgam
+							+(st0.xy+0.5*(dszze+dszzv))*dvzz;
     mptr->AddStrainEnergy(totalEnergy);
     
     // visous energy is disspated
-    // dissipated energy using viscous stress increment only
+    // dissipated energy using viscous stress increment only (which is negative)
 	double dispEnergy=0.5*dsxxv*dvxx + 0.5*dsyyv*dvyy
                     +0.5*dtxyv*dgam + 0.5*dszzv*dvzz;
-    mptr->AddDispEnergy(dispEnergy);
+    mptr->AddDispEnergy(-dispEnergy);
+    mptr->AddPlastEnergy(-dispEnergy);
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
@@ -397,22 +398,23 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz
 	delspe[5] = Ge*dgamxy/rho;
 	
 	// find energy from work increment
-    // add total energy using elastic stress increment
+    // add total energy using total stress increment
     // Not sure correct, but does have energy + dissipated equal to total energy increment
 	// energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	dvxx-=er;
 	dvyy-=er;
 	dvzz=-er;
-	double totalEnergy = (st0.xx+0.5*delspe[0])*dvxx + (st0.yy+0.5*delspe[1])*dvyy
-						+ (st0.zz+0.5*delspe[2])*dvzz + (st0.yz+0.5*delspe[3])*dgamyz
-						+ (st0.xz+0.5*delspe[4])*dgamxz + (st0.xy+0.5*delspe[5])*dgamxy;
+	double totalEnergy = (st0.xx+0.5*delsp[0])*dvxx + (st0.yy+0.5*delsp[1])*dvyy
+						+ (st0.zz+0.5*delsp[2])*dvzz + (st0.yz+0.5*delsp[3])*dgamyz
+						+ (st0.xz+0.5*delsp[4])*dgamxz + (st0.xy+0.5*delsp[5])*dgamxy;
     mptr->AddStrainEnergy(totalEnergy);
     
-    // dissipated energy using viscous stress increment only
+    // dissipated energy using viscous stress increment only (which is negative)
     for(k=0;k<6;k++) delsp[k] -= delspe[k];
 	double dispEnergy = 0.5*delsp[0]*dvxx + 0.5*delsp[1]*dvyy + 0.5*delsp[2]*dvzz
                         + 0.5*delsp[3]*dgamyz + 0.5*delsp[4]*dgamxz + 0.5*delsp[5]*dgamxy;
-    mptr->AddDispEnergy(dispEnergy);
+    mptr->AddDispEnergy(-dispEnergy);
+    mptr->AddPlastEnergy(-dispEnergy);
 }
 
 #pragma mark Viscoelastic::Accessors
