@@ -79,13 +79,18 @@ PtsPerElement #ppe
 ! 2. Pull Shear: F(2D) = (cos(w tr),sin(w tr)),(sin(w tr),cos(w tr)) : J = cos(2w tr)
 !		#vxx = #vyy = -w tan(2 w tr)
 !       #vxy = #vyx = w sec(2 w tr)
-!		(To keep J>0, need -#PI/4 < #w < #PI/4)
+!		(To keep J>0, need -#PI/4 < #w < #PI/4, see #5 also)
 ! 3. Constant axial stretch rate: F(2D) = (1 + exx tr,0),(0,1 + eyy tr) : J = (1+exx)(1+eyy)
 !       #vxx = exx/(1+exx tr)   #vxy=0
 !       #vyy = exx/(1+eyy tr)   #vyx=0
 ! 4. Constant shear strain rate: F(2D) = (1,gxy tr),(gxy tr,1) : J = 1 - gxy^2 tr^2
 !       #vxx = #vyy = gxy^2 tr/(gxy^2 tr^2 - 1)
 !       #vxy = #vyx = -gxy/(gxy^2 tr^2 - 1)
+! 5. Pull shear on 45, which looks like tension/compression in x-y plane
+!       F(2D) = (cos(w tr)-sin(w tr),0),(0,sin(w tr)+cos(w tr)) : J = cos(2w tr)
+!       #vxx = -w (cos(w tr)+sin(w tr))/(cos(w tr)-sin(w tr))   #vxy=0
+!       #vyy = w (cos(w tr)-sin(w tr))/(cos(w tr)+sin(w tr))   #vyx=0
+!		(To keep J>0, need -#PI/4 < #w < #PI/4, see #2 also)
 ! Anything else: just pick constant values for each grad v term, such as
 !   a. Simple Stretch: F(2D) = (exp(a tr),0)),(0,exp(b tr)) : J = exp((a+b)tr)
 !       #vxx=a #vyy=b, #vxy=#vyx=0
@@ -93,7 +98,7 @@ PtsPerElement #ppe
 !		#vxy=a, #vyx=b, #vxx=#vyy=0, and a*b>0 and w = sqrt(a*b)
 !   c. Pure rotation (see type=1)
 
-#type=2
+#type=5
 
 if #type=1
   #w=2*3.14159
@@ -124,12 +129,21 @@ else if #type=4
   #vyy=#vxx
   #vyx=#vxy
 
+else if #type=5
+  #w=.4
+  #cps="(cos("&(#w/#time)&"*t)+sin("&(#w/#time)&"*t))"
+  #cms="(cos("&(#w/#time)&"*t)-sin("&(#w/#time)&"*t))"
+  #vxx=(-#w)&"*"&#cps&"/"&#cms
+  #vyy=#w&"*"&#cms&"/"&#cps
+  #vxy=0
+  #vyx=0
+
 else
   ! all others just pick constant value for each
-  #vxx=0
-  #vyy=0
-  #vxy=#w
-  #vyx=-#w
+  #vxx=1
+  #vyy=1
+  #vxy=0
+  #vyx=0
 
 endif
 
