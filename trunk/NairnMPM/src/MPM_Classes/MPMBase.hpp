@@ -88,7 +88,8 @@ class MPMBase : public LinkedObject
 		int ArchiveElemID(void);
 		void ReverseParticle(void);
 		void StopParticle(void);
-		int GetResetElementCrossings(void);
+		int GetElementCrossings(void);
+		void SetElementCrossings(int);
 		double GetDuDy(void);
 		double GetDvDx(void);
 		double GetRotationZ(void);

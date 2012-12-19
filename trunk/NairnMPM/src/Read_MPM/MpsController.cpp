@@ -36,7 +36,7 @@ int MpsController::SetPtOrVel(char *xName,Vector *value)
 	{	newMpt->SetPosition(value);
 		newMpt->SetOrigin(value);
 		if(!ResetElementsTask::ResetElement(newMpt)) return FALSE;
-		newMpt->GetResetElementCrossings();
+		newMpt->SetElementCrossings(0);
 		
 	}
 	else

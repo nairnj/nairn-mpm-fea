@@ -76,10 +76,10 @@ char *TrilinearTraction::InputMat(char *xName,int &input)
 // Calculate properties used in analyses - here trilinear law
 const char *TrilinearTraction::VerifyProperties(int np)
 {
-	const char *msg=SetTractionLaw(stress1,kI1,umidI,sI2,uI2,delIc,JIc);
+	const char *msg=SetTLTractionLaw(stress1,kI1,umidI,sI2,uI2,delIc,JIc);
 	if(msg!=NULL) return msg;
 	
-	msg=SetTractionLaw(stress2,kII1,umidII,sII2,uII2,delIIc,JIIc);
+	msg=SetTLTractionLaw(stress2,kII1,umidII,sII2,uII2,delIIc,JIIc);
 	if(msg!=NULL) return msg;
 	
 	return TractionLaw::VerifyProperties(np);
@@ -321,7 +321,7 @@ int TrilinearTraction::MaterialTag(void) { return TRILINEARTRACTIONMATERIAL; }
 	u3 is final displacement (mm)
 	G is toughness (J/m^2) = 500 (s1 u2 _ s2 u3 - s2 u1)
 */
-const char *TrilinearTraction::SetTractionLaw(double &s1,double &k1,double &u1,double &s2,double &u2,double &u3,double &G)
+const char *TrilinearTraction::SetTLTractionLaw(double &s1,double &k1,double &u1,double &s2,double &u2,double &u3,double &G)
 {
 	// see if initial stiffness was used and convert to possible s1 and u1
 	// if k1 is provided, s1 or u1 (but not both) must be there too

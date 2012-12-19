@@ -49,6 +49,7 @@ using namespace std;
 // Max number of particles in an element
 #define MaxElParticles 27
 
+// bits for J and K or set both bits
 #define NEED_J 1
 #define NEED_K 2
 #define NEED_JANDK 3

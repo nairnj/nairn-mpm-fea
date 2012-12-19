@@ -739,14 +739,18 @@ void ArchiveData::ArchiveResults(double atime)
             app+=sizeof(double);
         }
 		
-		// element crossings since last archive
+		// element crossings since last archive - now cumulative
         if(mpmOrder[ARCH_ElementCrossings]=='Y')
-        {	*(int *)app=mpm[p]->GetResetElementCrossings();
+        {	*(int *)app=mpm[p]->GetElementCrossings();
 			app+=sizeof(int);
 		}
 		
-		// here=initial angle (degrees) angle (from above)=here-0.5*wxy (degrees)
-		//		This engineering wxy = 2(here-angle) (degrees or * PI/180 for radians)
+		// here=initial angle z (degrees) while angle(above)=here-0.5*180*wxy/PI (degrees)
+		//		Thus 0.5*180*wxy/PI = here-angle(above) or wxy = (PI/90)*(here-angle(above))
+		// here=initial angle y (degrees) while angle(above)=here+0.5*180*wrot.xz/PI_CONSTANT (degrees)
+		//		Thus 0.5*180*wxz/PI = -(here-angle(above)) or wxz = -(PI/90)*(here-angle(above))
+		// here=initial angle x (degrees) while angle(above)=here-0.5*180.*wrot.yz/PI_CONSTANT; (degrees)
+		//		Thus 0.5*180*wyz/PI = (here-angle(above)) or wyz = (PI/90)*(here-angle(above))
         if(mpmOrder[ARCH_RotStrain]=='Y')
 		{	if(threeD)
 			{	*(double *)app=mpm[p]->GetAnglez0InDegrees();
