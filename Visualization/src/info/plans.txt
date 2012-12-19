@@ -14,6 +14,39 @@ NairnFEAMPMViz Plans
 	See NairnFEAMPM preferences
 
 -------------------------------------------------------------------
+Cammand Development
+-------------------------------------------------------------------
+
+Requires commas to delimit arguments but requires space after command
+String variables must end in $ and text may need to be quoted
+Variables do not need the #
+
+FEA Not Done
+	Select
+	Material definitions
+	Output
+	SelectLine
+	SelectPoint
+	Comment
+	EndPath - validate acceptable path
+	BMPRegion É EndRegion
+	Hole É EndHole
+	Origin
+	Region É EndRegion
+	StreeFreeTemp
+	Temperature
+	Periodic
+	Stress
+	CrackTip
+	Rotate
+	Periodic
+	
+Conditionals
+
+NairnFEAMPM allow $ and end of variables (without conflicting with GEDitCOM II)
+MaterialBase recognize new material types (at minimum)
+
+-------------------------------------------------------------------
 Development Notes
 -------------------------------------------------------------------
 
@@ -22,7 +55,7 @@ Development Notes
 	B: Background FEA/MPM Analysis (commands window), Delete (2D plot window)
 	C: Copy (2D plot window)
 	D: Analysis Results (movie window, 2D plot window)
-	E: 
+	E: Interpret commands and view XML result
 	shift-E: Export... (2D plot window)
 	F:
 	G: 
@@ -49,8 +82,10 @@ Development Notes
 	W: Close
 	X: Cut (2D plot window)
 	Y:
-	Z:
-	.: 
+	Z: Undo
+	shift-Z Redo
+	
+	.: Stop
 	,: Preferences (Mac only)
 	1: 100% (movie window)
 	2: 150% (movie window)

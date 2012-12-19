@@ -117,7 +117,7 @@ public class MeshPlotData  extends PlotControl implements MouseMotionListener
 			nodelabel.setText("nd: "+nearest);
 			
 			// find nearest material point
-			if(plotView.getPlotType()==MeshPlotView.MPMPARTICLE_PLOTS)
+			if(plotView.getPlotType()==LoadArchive.PARTICLE_PLOT)
 			{	MaterialPoint mpt=resDoc.mpmPoints.get(0);
 				double distance=pt.distanceSq(mpt.x,mpt.y);
 				MaterialPoint nearmp=mpt;

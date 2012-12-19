@@ -84,7 +84,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 				case PlotQuantity.MPMTOTPLASTICENERGY:
 				case PlotQuantity.MPMTOTTHERMALENERGY:
 				case PlotQuantity.MPMTOTELEMENTCROSSINGS:
-					plotTotalEnergy();
+					plotTotalEnergy(false);
 					break;
 				
 				case PlotQuantity.MPMJ1:
@@ -132,6 +132,13 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 		// settings
 		ResultsDocument resDoc=((DocViewer)document).resDoc;
 		int ptNum=controls.getParticleNumber();
+		
+		// trap averaged quantity
+		if(ptNum<=0)
+		{	plotTotalEnergy(true);
+			return;
+		}
+		
 		int i,npts=resDoc.archives.size();
 		double angle=0.;
 		
@@ -194,7 +201,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 	}
 	
 	// plot particle data
-	private void plotTotalEnergy() throws Exception
+	private void plotTotalEnergy(boolean average) throws Exception
 	{
 		// settings
 		ResultsDocument resDoc=((DocViewer)document).resDoc;
@@ -256,6 +263,8 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 				// find particle property and add to total
 				total+=mpm.getForPlot(component,angle,resDoc);
 			}
+			
+			if(average) total/=(double)nummpms;
 			
 			// add total calculation to the  plot
 			x.add(new Double(resDoc.archiveTimes.get(i)));

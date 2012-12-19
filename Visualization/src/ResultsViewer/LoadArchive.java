@@ -21,13 +21,14 @@ public class LoadArchive extends PlotControl implements ActionListener
 	private ButtonGroup plotGroup=new ButtonGroup();
 	private JRadioButton [] plotType;
 	private JButton [] rbIcon;
+	
 	public static final int NO_PLOT=-1;
+	// 	MPMPARTICLE_PLOTS=0;
 	public static final int PARTICLE_PLOT=0;
 	public static final int TIME_PLOT=1;
 	public static final int MESH_PLOT=2;
 	public static final int MESH2D_PLOT=3;
 	private int selected;
-	
 	
 	// initilize
 	LoadArchive(DocViewer dc)

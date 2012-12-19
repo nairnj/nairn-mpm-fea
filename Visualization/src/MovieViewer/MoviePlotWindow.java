@@ -422,6 +422,6 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 	
 	public MeshPlotView getPlotView() { return plotView; }
 	public boolean isMovieRunning() { return runFlag; }
-	public int getPlotType() { return MeshPlotView.MPMPARTICLE_PLOTS; }
+	public int getPlotType() { return LoadArchive.PARTICLE_PLOT; }
 	
 }

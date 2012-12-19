@@ -807,7 +807,7 @@ public class ElementBase
 		if(component==PlotQuantity.MESHONLY) return;
 		
 		// load plotValue of nodal points for MPM plots and transfer to element plotValues
-		if(plotType==MeshPlotView.MPMMESH_PLOTS)
+		if(plotType==LoadArchive.MESH_PLOT && doc.isMPMAnalysis())
 		{	// extrapolate to the grid
 			mpmExtrapolation(component,0.0d,doc);
 				
@@ -1048,6 +1048,52 @@ public class ElementBase
 		
 		// none
 		return null;
+	}
+	
+	// see if two FEA elements are compatible
+	public static boolean CompatibleElements(int lnameEl,int oldnameEl,int np)
+	{
+		if(np>CmdViewer.BEGIN_MPM_TYPES)
+		{	if(lnameEl==FOUR_NODE_ISO)
+			{	if(np == CmdViewer.THREED_MPM) return false;
+			}
+			else if(lnameEl==EIGHT_NODE_ISO_BRICK)
+			{	if(np != CmdViewer.THREED_MPM) return false;
+			}
+			else
+				return false;
+		}
+		else if(lnameEl == EIGHT_NODE_ISO_BRICK)
+			return false;
+		
+		// if previous was not used, then make sure it is valid
+		if(oldnameEl==CmdViewer.NO_ELEMENT) return true;
+		
+		// otherwise, look for compatibility
+		switch(lnameEl)
+		{	case FOUR_NODE_ISO:
+			case LINEAR_INTERFACE:
+			case CST:
+				if(oldnameEl==CST) return true;
+				if(oldnameEl==LINEAR_INTERFACE) return true;
+				if(oldnameEl==FOUR_NODE_ISO) return true;
+				break;
+			
+			case EIGHT_NODE_ISO:
+			case ISO_TRIANGLE:
+			case LAGRANGE_2D:
+			case QUAD_INTERFACE:
+				if(oldnameEl==EIGHT_NODE_ISO) return true;
+				if(oldnameEl==ISO_TRIANGLE) return true;
+				if(oldnameEl==QUAD_INTERFACE) return true;
+				if(oldnameEl==LAGRANGE_2D) return true;
+				break;
+			
+			default:
+				break;
+		}
+		
+		return false;
 	}
 
 }

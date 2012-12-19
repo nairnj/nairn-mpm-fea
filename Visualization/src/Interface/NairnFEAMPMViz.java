@@ -8,6 +8,7 @@
 
 import java.io.File;
 import java.io.InputStream;
+import java.net.URL;
 
 import javax.swing.JFileChooser;
 
@@ -114,12 +115,18 @@ public class NairnFEAMPMViz extends JNApplication
 	}
 	
 	//----------------------------------------------------------------------------
-	// Override preferences methods
+	// Override preferences and help methods
 	//----------------------------------------------------------------------------
 	
 	// called first time preferences window needs to open
 	public JNPreferences openPreferencesWindow()
 	{	return new NFMVPrefs();
+	}
+
+	public void openHelp()
+	{	NFMVHelp helpWindow=NFMVHelp.customHelpWindow(this);
+		helpWindow.setVisible(true);
+		helpWindow.toFront();
 	}
 
 	//----------------------------------------------------------------------------

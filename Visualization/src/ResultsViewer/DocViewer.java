@@ -126,7 +126,7 @@ public class DocViewer extends JNDocument
 		{	case LoadArchive.PARTICLE_PLOT:
 				currentClass=MPMParticlePlotWindow.class;
 			case LoadArchive.MESH_PLOT:
-				if(newType==LoadArchive.MESH_PLOT)
+				if(newType!=LoadArchive.PARTICLE_PLOT)
 				{	currentClass = resDoc.isMPMAnalysis() ?
 						MeshPlotWindow.class : FEAMeshPlotWindow.class ;
 				}
