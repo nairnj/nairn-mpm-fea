@@ -974,14 +974,24 @@ where
 \begin{eqnarray}
           \Delta \s{ii} & = & \left(G_e + {\Delta t\over 2}G_e'\right) d\e{ii}
                           + \Delta t  \sum_{k=1}^n h_{ii,k}^{(i-1)}     \\
-          \Delta \t{ij} & = & \left(G_e + {\Delta t\over 2}G_e'\right) \g{ij}
+          \Delta \t{ij} & = & \left(G_e + {\Delta t\over 2}G_e'\right) d\g{ij}
                           + \Delta t  \sum_{k=1}^n h_{ij,k}^{(i-1)} 
 \end{eqnarray}
 The history variables update using
 \begin{eqnarray}
-        h_{ii,k}^{(i)}   & = & e^{-\Delta t/\tau_k}\left(h_{ii,k}^{(i-1)} - {G_k\over\tau_k}d\e{i}\right)  \\
+        h_{ii,k}^{(i)}   & = & e^{-\Delta t/\tau_k}\left(h_{ii,k}^{(i-1)} - {G_k\over\tau_k}d\e{ii}\right)  \\
         h_{ij,k}^{(i)}   & = & e^{-\Delta t/\tau_k}\left(h_{ij,k}^{(i-1)} - {G_k\over\tau_k}d\g{ij}\right)
 \end{eqnarray}
+Note that in plane strain modeling that $d\e{zz}$ is always zero, which implies that $h_{zz,k}^{(i)} = \Delta\s{zz} = 0$.
+
+For calculation of stored and dissipated energy, the code splits up the stress increment into elastic and viscous energy. The elastic part is
+\begin{eqnarray}
+      d\s{xx}^{(elas)} & = & K(d\e{xx} + d\e{yy} + d\e{zz} - 3\er{}) + {2G_e\over 3}\left(2d\e{xx} - d\e{yy} - d\e{zz}\right) \\
+      d\s{yy}^{(elas)} & = & K(d\e{xx} + d\e{yy} + d\e{zz} - 3\er{}) + {2G_e\over 3}\left(2d\e{yy} - d\e{zz} - d\e{zz}\right) \\
+      d\s{zz}^{(elas)} & = & K(d\e{xx} +d\e{yy} + d\e{zz} - 3\er{}) + {2G_e\over 3}\left(2d\e{zz} -d\e{yy} -d\e{xx}\right) \\
+      d \t{ij}^{(elas)} & = & G_e d\g{ij}
+\end{eqnarray}
+The elastic strress increment is used to find the stored energy increment. The viscous energy (from $d\s{xx} - d\s{xx}^{(elas)}$ for example) is used to find the dissipated energy increment.
 
 \section{Hyperelastic Materials}
 
