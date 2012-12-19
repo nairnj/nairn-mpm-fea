@@ -29,10 +29,6 @@ public class MeshPlotView extends JPanel
 	static final int MOVE_LABEL=CENTER_LABEL;		// add options that move before drawing
 	static final int KEY_HEIGHT=25;
 	
-	public static final int MPMPARTICLE_PLOTS=0;
-	public static final int MPMMESH_PLOTS=1;
-	public static final int FEAMESH_PLOTS=2;
-	
 	private double xpt,ypt;
 	public Rectangle2D.Double xyBounds;
 	private double scale;
@@ -94,9 +90,9 @@ public class MeshPlotView extends JPanel
 		if(!firstLoad) return;
 		
 		// fill elements
-		if(plotType!=MPMPARTICLE_PLOTS && plotComponent!=PlotQuantity.MESHONLY)
+		if(plotType!=LoadArchive.PARTICLE_PLOT && plotComponent!=PlotQuantity.MESHONLY)
 		{	// clip MPM mesh plots to the current particle settings
-			if(plotType==MPMMESH_PLOTS && clipToParticles)
+			if(plotType==LoadArchive.MESH_PLOT && clipToParticles)
 			{	// clip to particles
 				GeneralPath clipPath=new GeneralPath();
 				for(i=0;i<resDoc.mpmPoints.size();i++)
@@ -110,7 +106,7 @@ public class MeshPlotView extends JPanel
 			{	(resDoc.elements.get(i)).fill(this);
 			}
 			
-			if(plotType==MPMMESH_PLOTS && clipToParticles)
+			if(plotType==LoadArchive.MESH_PLOT && clipToParticles)
 				g2Loc.setClip(null);
 		}
 		
@@ -174,7 +170,7 @@ public class MeshPlotView extends JPanel
 		
 		// particle BCs
 		g2Loc.setColor(meshLineColor);
-		if(showMeshBCs && plotType==MPMPARTICLE_PLOTS)
+		if(showMeshBCs && plotType==LoadArchive.PARTICLE_PLOT)
 		{	for(i=0;i<resDoc.particleBCs.size();i++)
 			{	(resDoc.particleBCs.get(i)).stroke(this,resDoc);
 			}
@@ -378,13 +374,13 @@ public class MeshPlotView extends JPanel
 		plotType=theType;
 		mpDiam=particleSize;
 		
-		if(plotType!=MPMPARTICLE_PLOTS)
+		if(plotType!=LoadArchive.PARTICLE_PLOT)
 		{	showMatPts=false;
 			showMatPtNums=false;
 			showCrackPlanes=false;
 			showCrackSurfaces=false;
 		}
-		if(plotType!=FEAMESH_PLOTS)
+		if(plotType!=LoadArchive.MESH_PLOT)
 		{	showDisplaced=false;
 		}
 	}

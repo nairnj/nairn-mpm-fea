@@ -179,12 +179,26 @@ public class TimePlotOptions extends PlotControl
 				
 				default:
 					plotPoint.setEnabled(true);
+					if(plotPoint.isSelected())
+						ptNumberText.setEnabled(true);
+					else
+						ptNumberText.setEnabled(false);	
+					plotAll.setEnabled(true);
+					plot1Mat.setEnabled(true);
+					if(plot1Mat.isSelected())
+						matNumberText.setEnabled(true);
+					else
+						matNumberText.setEnabled(false);
+					break;
+					/*
+					plotPoint.setEnabled(true);
 					ptNumberText.setEnabled(true);
 					plotPoint.setSelected(true);
 					plotAll.setEnabled(false);
 					plot1Mat.setEnabled(false);
 					matNumberText.setEnabled(false);
 					break;
+					*/
 			}
 			xyContour.setEnabled(false);
 			functionText.setEnabled(false);

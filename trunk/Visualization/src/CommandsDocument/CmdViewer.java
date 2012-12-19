@@ -6,8 +6,9 @@
  */
 
 import java.awt.event.*;
-import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+
 import javax.swing.*;
 
 import geditcom.JNFramework.*;
@@ -16,18 +17,44 @@ public class CmdViewer extends JNCmdTextDocument
 {
 	private static final long serialVersionUID = 1L;
 	
-	private ProcessBuilder builder;
-	private Thread runThread=null;
-	private boolean openMesh=false;
-	private boolean wasSubmitted=false;
 	private ConsolePane soutConsole;
 	private DocViewer linkedResults=null;
 	
 	// Actions
 	private BgAnalysisAction bgAnalysisCammand = new BgAnalysisAction();
 	private CheckAnalysisAction checkAnalysisCammand = new CheckAnalysisAction();
+	private InterpretCommandsAction interpretCammand = new InterpretCommandsAction();
 	private ShowPartnerAction showPartnerCommand = new ShowPartnerAction();
+	
+	// analysis runner
+	private NFMAnalysis nfmAnalysis = null;
+	private int openMesh;
+	private boolean useBackground;
 
+	// global settings
+	private String title;
+	private String username;
+	private String header;
+	private int np;
+	private int lnameEl;
+	private HashMap<String,String> xmldata = null;
+	public Materials mats = null;
+	public Areas areas = null;
+	private FEABCs feaBCs = null;
+	
+	// constants
+	public static final int PLANE_STRAIN=0;
+	public static final int PLANE_STRESS=1;
+	public static final int AXI_SYM=2;
+	public static final int THREE_DIM=3;
+	public static final int BEGIN_MPM_TYPES=9;
+	public static final int PLANE_STRAIN_MPM=10;
+	public static final int PLANE_STRESS_MPM=11;
+	public static final int THREED_MPM=12;
+	public static final int AXI_SYM_MPM=13;
+	
+	public static final int NO_ELEMENT=0;
+	
 	//----------------------------------------------------------------------------
 	// Initialize
 	//----------------------------------------------------------------------------
@@ -51,13 +78,18 @@ public class CmdViewer extends JNCmdTextDocument
 		ImageIcon goLast=new ImageIcon(baseClass.getResource("Resources/go-last.png"));
 		addToolBarIcon(goLast,null,"Check mesh for FEA or MPM Analysis.",checkAnalysisCammand);
 		ImageIcon doStop=new ImageIcon(baseClass.getResource("Resources/process-stop.png"));
-		addToolBarIcon(doStop,null,"Run currently running FEA or MPM Analysis.",getStopAnalysisAction());
+		addToolBarIcon(doStop,null,"Stop currently running FEA or MPM Analysis.",getStopAnalysisAction());
 
 		addToolBarBar();
 		ImageIcon showRes=new ImageIcon(baseClass.getResource("Resources/image-x-generic.png"));
 		addToolBarIcon(showRes,null,"Show associated simulation results (if available).",showPartnerCommand);
 
 		finishFrameworkWindow(true);
+		
+		// create persistent objects
+		mats = new Materials(this);
+		areas = new Areas(this);
+		feaBCs = new FEABCs(this);
 	}
 	
 	// make menu bar on launch
@@ -81,6 +113,7 @@ public class CmdViewer extends JNCmdTextDocument
 		menu.add(getRunAnalysisAction("Run FEA/MPM Analysis"));
 		menu.add(bgAnalysisCammand);
 		menu.add(checkAnalysisCammand);
+		menu.add(interpretCammand);
 		menu.addSeparator();
 		menu.add(getStopAnalysisAction());
 		
@@ -125,312 +158,327 @@ public class CmdViewer extends JNCmdTextDocument
 	}
 	
 	//----------------------------------------------------------------------------
-	// handle running analysis
+	// Interpret commands to XML input commands
 	//----------------------------------------------------------------------------
 	
 	// default command run method passed to custom one
-	public void runAnalysis() { runNFMAnalysis(false,false); }
+	public void runAnalysis() { runNFMAnalysis(false,NFMAnalysis.FULL_ANALYSIS); }
 	
-	// Run FEA or MPM analysis
-	public void runNFMAnalysis(boolean doBackground,boolean checkMesh)
+	public void runNFMAnalysis(boolean doBackground,int runType)
 	{
 		// only allowed if the commands have been saved
 		if(getFile()==null)
 		{	JNApplication.appBeep();
-			JOptionPane.showMessageDialog(this,"The XML input commands have to be saved to a file before running an analysis.");
+			JOptionPane.showMessageDialog(this,"The input commands have to be saved to a file before running an analysis.");
 			return;
 		}
 		
+		// create once
+		if(nfmAnalysis == null)
+			nfmAnalysis = new NFMAnalysis(this);
+		
 		// what is process is current running?
-		if(running)
+		if(nfmAnalysis.isRunning())
 		{	JNApplication.appBeep();
 			String message="An FEA or MPM process is currently running.\nDo you want stop it and start a new process?";
 			int result=JOptionPane.showConfirmDialog(this, message, "Continue?", JOptionPane.OK_CANCEL_OPTION);
 			if(result==JOptionPane.CANCEL_OPTION) return;
-			if(runThread.isAlive())
-			{	running=false;
-				try
-				{	runThread.join();
-				}
-				catch(InterruptedException ie)
-				{
-				}
-			}
+			nfmAnalysis.stopRunning();
 		}
 		
-		// save the commands
-		File inFile=getFile();
+		// save this document (commands saved before each run - preference would be better)
+		//if(!saveDocument()) return;
 		
-		// prepare output path
-		boolean mpmAnalysis=isMPMAnalysis();
-		boolean doValidate;
-		String myCmd,myDTD;
-		if(mpmAnalysis)
-		{	if(!soutConsole.setOutputPath(inFile,"mpm")) return;
-		
-			// get path to NairnFEA and NairnMPM
-			myCmd=NFMVPrefs.prefs.get(NFMVPrefs.NairnMPMKey,NFMVPrefs.NairnMPMDef);
-			myDTD=NFMVPrefs.prefs.get(NFMVPrefs.NairnMPMDTDKey,NFMVPrefs.NairnMPMDTDDef);
-			doValidate=NFMVPrefs.prefs.getBoolean(NFMVPrefs.NairnMPMValidateKey,NFMVPrefs.NairnMPMValidateDef);
-		}
-		else
-		{	if(!soutConsole.setOutputPath(inFile,"fea")) return;
-		
-			// get path to NairnFEA and NairnMPM
-			myCmd=NFMVPrefs.prefs.get(NFMVPrefs.NairnFEAKey,NFMVPrefs.NairnFEADef);
-			myDTD=NFMVPrefs.prefs.get(NFMVPrefs.NairnFEADTDKey,NFMVPrefs.NairnFEADTDDef);
-			doValidate=NFMVPrefs.prefs.getBoolean(NFMVPrefs.NairnFEAValidateKey,NFMVPrefs.NairnFEAValidateDef);
-		}
-		
-		// insert DTD path if validating
-		if(doValidate)
-		{	if(!insertDTD(myDTD))
-			{	JNApplication.appBeep();
-				JOptionPane.showMessageDialog(this,"The file does not start with the required <?xml ...?> element.");
-				return;
-			}
-		}
-		
-		// copy command file (if needed)
-		if(!saveDocument()) return;
-		File outFile=soutConsole.getFile();
-		if(!inFile.getParent().equals(outFile.getParent()))
-			inFile=saveCopyOfCommands(new File(outFile.getParent()+"/"+inFile.getName()),this);
-		if(inFile==null) return;
-			
-		// set commands and options
-		ArrayList<String> cmds=new ArrayList<String>(20);
-		
-		// start login bash shell
-		cmds.add(NFMVPrefs.prefs.get(NFMVPrefs.ShellKey,NFMVPrefs.ShellDef));
-		cmds.add("--login");			// only needed for windows
-		cmds.add("-c");
-		
-		// build shell command
-		StringBuffer shell=new StringBuffer();
-		
-		// cd to file directory
-		shell.append("cd ");
-		String shellCD=outFile.getParent();
-		if(NairnFEAMPMViz.isWindowsOS())
-		{	//shellCD=shellCD.replace('\\','/');
-			shellCD=PathToCygwin(shellCD);
-		}
-		if(shellCD.indexOf(' ')>=0)
-			shell.append("'"+shellCD+"'; ");
-		else
-			shell.append(shellCD+"; ");
-
-		// executable (as shell command)
-		if(NairnFEAMPMViz.isWindowsOS())
-		{	//myCmd=myCmd.replace('\\','/');
-			myCmd=PathToCygwin(myCmd);
-		}
-		if(myCmd.indexOf(' ')>=0)
-			shell.append("'"+myCmd+"'");
-		else
-			shell.append(myCmd);
-			
-		// options (-a to abort after setup, -v to validate)
-		if(checkMesh) shell.append(" -a");
-		if(doValidate) shell.append(" -v");
-			
-		String inName=inFile.getName();
-		if(inName.indexOf(' ')>=0)
-			shell.append(" '"+inName+"'");
-		else
-			shell.append(" "+inName);
-		
-		if(doBackground)
-		{	shell.append(" >& ");
-			
-			// output file
-			String outFileName=outFile.getName();
-			if(outFileName.indexOf(' ')>=0)
-				shell.append("'"+outFileName+"'");
-			else
-				shell.append(outFileName);
-				
-			shell.append(" &");
-		}
-		
-		// add the shell command
-		System.out.println(shell);
-		cmds.add(shell.toString());
-
-		// create the process and set working directory
-		builder = new ProcessBuilder(cmds);
-		//Map<String, String> environ = builder.environment();
-		//builder.directory(myFile.getParentFile());
-		builder.redirectErrorStream(true);
-		
-		runThread=new Thread(this);
-		running=true;
-		openMesh=checkMesh;
-		wasSubmitted=doBackground;
-		runThread.start();
-	}
-	
-	// insert DTD path into commands
-	public boolean insertDTD(String dtdPath)
-	{
-		String initText=cmdField.getCommands();
-		int offset=initText.indexOf("<!DOCTYPE"),endOffset=0;
-		int docOffset=offset;
-		if(offset>0)
-		{	offset=initText.indexOf("JANFEAInput",offset+9);
-			if(offset>0)
-			{	offset=initText.indexOf("SYSTEM",offset+6);
-			
-				// if filed <!DOCTYPE JANFEAInput SYSEM located quoted path name
-				if(offset>0)
-				{	char startChar=' ';
-					while(offset<initText.length())
-					{	startChar=initText.charAt(offset);
-						if(startChar=='\'' || startChar=='\"') break;
-						if(startChar=='\n' || startChar=='\r')
-						{	offset=0;
-							break;
-						}
-						offset++;
-					}
-					if(offset>0)
-					{	offset++;
-						endOffset=offset;
-						while(endOffset<initText.length())
-						{	char endChar=initText.charAt(endOffset);
-							if(endChar==startChar) break;
-							if(endChar=='\n' || endChar=='\r')
-							{	offset=0;
-								break;
-							}
-							endOffset++;
-						}
-					}
-				}
-			}
-		}
-		dtdPath=PathToCygwin(dtdPath);
-		if(offset>0)
-		{	// insert path if needed
-			String oldDTD=initText.substring(offset,endOffset);
-			if(!oldDTD.equals(dtdPath))
-			{	cmdField.setCommands(initText.substring(0,offset)+dtdPath+
-							initText.substring(endOffset,initText.length()));
-				changed=true;
-			}
-		}
-		else if(docOffset>0)
-		{	docOffset+=9;
-			cmdField.setCommands(initText.substring(0,docOffset)+" JANFEAInput SYSTEM '"
-				+dtdPath+"'"+initText.substring(docOffset,initText.length()));
-			changed=true;
-		}
-		else
-		{	// insert <!DOCTYPE
-			docOffset=initText.indexOf("?>");
-			if(docOffset<=0) return false;
-			docOffset+=2;
-			cmdField.setCommands(initText.substring(0,docOffset)
-						+"\n<!DOCTYPE JANFEAInput SYSTEM '"+dtdPath+"'>"
-						+initText.substring(docOffset,initText.length()));
-			changed=true;
-		}
-		
-		return true;
-	}
-
-	// convert Windows path to cygwin
-	private String PathToCygwin(String path)
-	{	if(JNApplication.isWindowsOS())
-		{	path=path.replace('\\','/');
-			// Replace C: by /cygdrive/c (if needed)
-			if(path.charAt(1)==':')
-			{	char drive=path.charAt(0);
-				if(drive<'a') drive+=32;
-				path="/cygdrive/"+drive+path.substring(2);
-			}
-		}
-		return path;
-	}
-
-	// save commands and return saved file (or null)
-	public File saveCopyOfCommands(File saveFile,JFrame fileWindow)
-	{
-		// save to saveFile
-		try
-		{	FileWriter theFile=new FileWriter(saveFile);
-			theFile.write(cmdField.getCommands());
-			theFile.flush();
-			theFile.close();
-		}
-		catch (Exception fe)
-		{	JNApplication.appBeep();
-			JOptionPane.showMessageDialog(fileWindow,"Error writing XML input  commands: " + fe);
-			return null;
-		}
-		
-		return saveFile;
-	}
-	
-	//----------------------------------------------------------------------------
-	// detachable to run the process
-	//----------------------------------------------------------------------------
-	
-	public void run()
-	{	
-		try
-		{	Process process = builder.start();
-			InputStream is = process.getInputStream();
-			InputStreamReader isr = new InputStreamReader(is);
-			BufferedReader br = new BufferedReader(isr);
-			
+		// check if DTD file
+		int offset=cmdField.getCommands().indexOf("<?xml ");
+		if(offset<0 || offset>10)
+		{	// interpret commands
+			useBackground = doBackground;
+			openMesh = runType;
 			soutConsole.clear();
-			String line;
-			while((line = br.readLine()) != null)
-			{	soutConsole.appendLine(line);
-				if(!running) break;
-			}
+			super.runAnalysis();
 			
-			// if done and no errors, save and open for visualization
-			if(running)
-			{	int result=1;
-				try
-				{	process.waitFor();
-					result=process.exitValue();
-				}
-				catch (InterruptedException ie) {}
-				if(result==0)
-				{	if(wasSubmitted)
-					{	JOptionPane.showMessageDialog(this,"FEA or MPM job submitted"+soutConsole.processID());
-					}
-					else if(soutConsole.saveOutput(this))
-					{	if(linkedResults!=null)
-						{	linkedResults.windowClosing(null);
-						}
-						NairnFEAMPMViz.main.openDocument(soutConsole.getFile());
-						linkedResults=(DocViewer)NairnFEAMPMViz.main.frontDocument();
-						linkedResults.setCommandsWindow(this);
-						if(linkedResults!=null && openMesh)
-						{	linkedResults.checkMeshNow();
-						}
-					}
-				}
-				else
-					soutConsole.saveOutput(this);		// save in case needed
-			}
-			else
-				soutConsole.saveOutput(this);			// save in case needed
-			is.close();
-			process.destroy();
+			// when done, when launch the analysis
+			return;
 		}
-		catch(IOException tpe)
-		{	JNApplication.appBeep();
-			JOptionPane.showMessageDialog(this,tpe.toString());
-		}
-		running=false;
+		
+		// launch analysis with DTD commands in the field
+		nfmAnalysis.runNFMAnalysis(doBackground,runType,cmdField.getCommands(),soutConsole);
 	}
+	
+	// when analysis is done, proceed with calculations (if OKO)
+	public void analysisFinished(boolean status)
+	{	// give up on error
+		if(status==false) return;
+		
+		// launch analysis with DTD commands in the field
+		nfmAnalysis.runNFMAnalysis(useBackground,openMesh,buildXMLCommands(),soutConsole);
+	}
+	
+	// initialize variables when intepreting commands
+	public void initRunSettings() throws Exception
+	{
+		title = "NairnFEAMPMViz Calculations";
+		username = null;
+		header = null;
+		np = -1;
+		lnameEl = NO_ELEMENT;
+		xmldata = new HashMap<String,String>(10);
+		mats.initRunSettings();
+		areas.initRunSettings();
+		feaBCs.initRunSettings();
+	}
+	
+	// handle commands
+	public void doCommand(String theCmd,ArrayList<String> args) throws Exception
+	{	
+		if(theCmd.equals("title"))
+		{	// set analysis title
+			if(args.size()<2)
+				throw new Exception("'Title' command does not have a title");
+			title = readStringArg(args.get(1));
+		}
+		
+		else if(theCmd.equals("name"))
+		{	// set analysis title
+			if(args.size()<2)
+				throw new Exception("'Name' command does not have a name");
+			username = readStringArg(args.get(1));
+		}
+		
+		else if(theCmd.equals("header"))
+			header = readVerbatim("endheader");
+		
+		else if(theCmd.equals("analysis"))
+			doAnalysis(args);
+		
+		else if(theCmd.equals("element"))
+			doElement(args);
+		
+		else if(theCmd.equals("xmldata"))
+			doXmldata(args);
+		
+		else if(theCmd.equals("area"))
+			areas.StartArea(args);
+		
+		else if(theCmd.equals("endarea"))
+			areas.EndArea(args);
+		
+		else if(theCmd.equals("path"))
+			areas.StartPath(args);
+		
+		else if(theCmd.equals("endpath"))
+			areas.EndPath(args);
+		
+		else if(theCmd.equals("paths"))
+			areas.AddPaths(args);
+		
+		else if(theCmd.equals("keypoint"))
+			areas.AddKeypoint(args);
+		
+		else if(theCmd.equals("keypoints"))
+			areas.AddKeypoints(args);
+		
+		else if(theCmd.equals("fliptriangles"))
+			areas.setFlipTriangles(args);
+		
+		else if(theCmd.equals("fixline"))
+			feaBCs.StartFixLine(args);
+		
+		else if(theCmd.equals("endfixline"))
+			feaBCs.EndFixLine(args);
+		
+		else if(theCmd.equals("fixpoint"))
+			feaBCs.StartFixPoint(args);
+		
+		else if(theCmd.equals("endfixpoint"))
+			feaBCs.EndFixPoint(args);
+		
+		else if(theCmd.equals("displacement"))
+			feaBCs.AddDisplacement(args);
+		
+		else if(theCmd.equals("load"))
+			feaBCs.AddLoad(args);
+		
+		else if(theCmd.equals("resequence"))
+			feaBCs.Resequence(args);
+		
+		else if(theCmd.equals("origin"))
+			areas.setOrigin(args);
+		
+		else
+			super.doCommand(theCmd, args);
+	}
+	
+	// Analysis (type),(element)
+	public void doAnalysis(ArrayList<String> args) throws Exception
+	{
+		if(np>=0)
+			throw new Exception("Only one 'Analysis' command is allowed.");
+		
+		if(args.size()<2)
+			throw new Exception("'Analysis' command has no argument.");
+		
+		// options
+		HashMap<String,Integer> options = new HashMap<String,Integer>(10);
+		options.put("plane strain", new Integer(PLANE_STRAIN));
+		options.put("plane strain fea", new Integer(PLANE_STRAIN));
+		options.put("plane stress", new Integer(PLANE_STRESS));
+		options.put("plane stress fea", new Integer(PLANE_STRESS));
+		options.put("axisymmetric", new Integer(AXI_SYM));
+		options.put("axisymmetric fea", new Integer(AXI_SYM));
+		options.put("plane strain mpm", new Integer(PLANE_STRAIN_MPM));
+		options.put("plane stress mpm", new Integer(PLANE_STRESS_MPM));
+		options.put("axisymmetric mpm", new Integer(AXI_SYM_MPM));
+		options.put("3d mpm", new Integer(THREED_MPM));
+		
+		// read it
+		np = readIntOption(args.get(1),options,"Analysis type");
+		
+		// optional element second
+		if(args.size()>2)
+		{	args.remove(1);
+			doElement(args);
+		}
+		else if(lnameEl==NO_ELEMENT)
+        {   if(np>BEGIN_MPM_TYPES)
+            	lnameEl=ElementBase.FOUR_NODE_ISO;
+        }
+	}
+	
+	// Element (element type)
+	public void doElement(ArrayList<String> args) throws Exception
+	{
+		if(np<0)
+			throw new Exception("The 'Element' command must come after the 'Analysis' command");
+		
+		if(args.size()<2)
+			throw new Exception("'Element' command has no argument.");
+		
+		// options
+		HashMap<String,Integer> options = new HashMap<String,Integer>(10);
+		options.put("3 node triangle", new Integer(ElementBase.CST));
+		options.put("4 node quadrilateral", new Integer(ElementBase.FOUR_NODE_ISO));
+		options.put("8 node quadrilateral", new Integer(ElementBase.EIGHT_NODE_ISO));
+		options.put("6 node triangle", new Integer(ElementBase.ISO_TRIANGLE));
+		options.put("4 node interface", new Integer(ElementBase.LINEAR_INTERFACE));
+		options.put("6 node interface", new Integer(ElementBase.QUAD_INTERFACE));
+		options.put("8 node brick", new Integer(ElementBase.EIGHT_NODE_ISO_BRICK));
+		options.put("9 node lagrange", new Integer(ElementBase.LAGRANGE_2D));
+		
+		int oldnameEl = lnameEl;
+		lnameEl = readIntOption(args.get(1),options,"Element type");
+		
+		if(!ElementBase.CompatibleElements(lnameEl,oldnameEl,np))
+		{	throw new Exception("Element type ("+args.get(1)+") not allowed or incompatible with other elements.");
+		}
+		
+		// pass to FEA areas
+		areas.setElementType(lnameEl);
+	}
+	
+	// XMLData (section),(material ID)
+	// Warning: does not check that section is valid
+	// Valid are: Header, Mesh, MPMHeader, MaterialPoints, CrackList, Material (must have ID)
+	//		GridBCs, ParticleBCs, Thermal, Gravity, CustomTasks, end (just append to end)
+	public void doXmldata(ArrayList<String> args) throws Exception
+	{
+		String section = "end";
+		if(args.size()>1)
+			section = readStringArg(args.get(1));
+		
+		// grab text
+		String newXML = readVerbatim("endxmldata");
+		
+		// check for material section
+		if(section.equals("Material"))
+		{	if(args.size()<3)
+				throw new Exception("XMLData command for a material needs to specify a material ID");
+			String matID = readStringArg(args.get(2));
+			mats.StartNewMaterial(matID,newXML);
+			return;
+			
+		}
+		
+		// check previous option
+		String currentXML = xmldata.get(section);
+		if(currentXML != null) newXML = currentXML+newXML;
+		
+		// set value
+		xmldata.put(section,newXML);
+	}
+	
+	// when analysis is done create XML commands
+	public String buildXMLCommands()
+	{	// start buffer for XML commands
+		StringBuffer xml = new StringBuffer("<?xml version='1.0'?>\n");
+		xml.append("<!DOCTYPE JANFEAInput SYSTEM 'pathto.dtd'>\n");
+		xml.append("<JANFEAInput version='3'>\n\n");
+		
+		// Header
+		//-----------------------------------------------------------
+		xml.append("  <Header>\n    <Description>\n");
+		xml.append("Title: "+title+"\n");
+		if(username != null)
+			xml.append("User Name: "+username+"\n");
+		if(header != null)
+			xml.append(header);
+		xml.append("    </Description>\n");
+		xml.append("    <Analysis>"+np+"</Analysis>\n");
+		xml.append("  </Header>\n\n");
+		
+		// FEA section: Mesh
+		//-----------------------------------------------------------
+		if(isFEA())
+		{	xml.append("  <Mesh>\n"+areas.toXMLString());
+		
+			// check added xml
+			String more = xmldata.get("Mesh");
+			if(more != null) xml.append(more);
+			
+			// done
+			xml.append("  </Mesh>\n\n");
+		}
+		
+		// MPM sections: MPMHeader, Mesh, MaterialPoints, CrackList
+		//-----------------------------------------------------------
+		if(isMPM())
+		{
+			
+		}
+		
+		// Materials
+		//-----------------------------------------------------------
+		xml.append(mats.toXMLString());
+		
+		// GridBCs
+		//-----------------------------------------------------------
+		if(isFEA())
+		{	xml.append("  <GridBCs>\n"+feaBCs.toXMLString());
+		
+			// check added xml
+			String more = xmldata.get("GridBCs");
+			if(more != null) xml.append(more);
+		
+			// done
+			xml.append("  </GridBCs>\n\n");
+		}
+		
+		// ParticleBCs
+		//-----------------------------------------------------------
+		
+		// FEA: Thermal
+		//-----------------------------------------------------------
+		
+		// MPM: Thermal, Gravity, CustomTasks
+		//-----------------------------------------------------------
 
+		
+		// convert to string and return
+		xml.append("</JANFEAInput>\n");
+		return xml.toString();
+	}
+		
 	//----------------------------------------------------------------------------
 	// Accessors
 	//----------------------------------------------------------------------------
@@ -443,11 +491,6 @@ public class CmdViewer extends JNCmdTextDocument
 		return false;
 	}
 	
-	// look for required MPMHeader element
-	public boolean isMPMAnalysis()
-	{	return cmdField.getCommands().indexOf("<MPMHeader>")>0;
-	}
-	
 	// call by results when it closes
 	public void setLinkedResults(DocViewer someResults) { linkedResults=someResults; }
 	
@@ -457,6 +500,21 @@ public class CmdViewer extends JNCmdTextDocument
 		super.windowClosed(e);
 	}
 
+	// called when analysis is done and should link to new results in console
+	public DocViewer linkToResults()
+	{	if(linkedResults!=null)
+		{	linkedResults.windowClosing(null);
+		}
+		NairnFEAMPMViz.main.openDocument(soutConsole.getFile());
+		linkedResults=(DocViewer)NairnFEAMPMViz.main.frontDocument();
+		linkedResults.setCommandsWindow(this);
+		return linkedResults;
+	}
+	
+	// type of analysis
+	public boolean isFEA() { return np>=0 && np<BEGIN_MPM_TYPES ; }
+	public boolean isMPM() { return np>BEGIN_MPM_TYPES ; }
+		
 	//----------------------------------------------------------------------------
 	// Actions as inner classes
 	//----------------------------------------------------------------------------
@@ -469,7 +527,7 @@ public class CmdViewer extends JNCmdTextDocument
 		{	super("Background FEA/MPM Analysis...",KeyEvent.VK_B);
 		}
  
-		public void actionPerformed(ActionEvent e) { runNFMAnalysis(true,false); }
+		public void actionPerformed(ActionEvent e) { runNFMAnalysis(true,NFMAnalysis.FULL_ANALYSIS); }
 	}
 
 	// action for stop analysis menu command
@@ -480,7 +538,18 @@ public class CmdViewer extends JNCmdTextDocument
 		{	super("Test FEA/MPM Mesh...",KeyEvent.VK_T);
 		}
  
-		public void actionPerformed(ActionEvent e) { runNFMAnalysis(false,true); }
+		public void actionPerformed(ActionEvent e) { runNFMAnalysis(false,NFMAnalysis.RUN_CHECK_MESH); }
+	}
+	
+	// action for stop analysis menu command
+	protected class InterpretCommandsAction extends JNAction
+	{	private static final long serialVersionUID = 1L;
+
+		public InterpretCommandsAction()
+		{	super("Interpret Commands...",KeyEvent.VK_E);
+		}
+ 
+		public void actionPerformed(ActionEvent e) { runNFMAnalysis(false,NFMAnalysis.INTERPRET_ONLY); }
 	}
 	
 	// action to shaw partner menu command

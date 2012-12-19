@@ -21,6 +21,6 @@ public class FEAMeshPlotWindow extends MoviePlotWindow
 	}
 	
 	// the plot type
-	public int getPlotType() { return MeshPlotView.FEAMESH_PLOTS; }
+	public int getPlotType() { return LoadArchive.MESH_PLOT; }
 
 }
