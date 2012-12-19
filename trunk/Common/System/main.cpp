@@ -91,7 +91,7 @@ int main(int argc,const char *argv[])
     }
     
     catch(CommonException err)
-	{   
+	{   cout << "Warning: pipe timing may prevent error details from appearing below" << endl;
 #ifdef MPM_CODE
     	err.Display(fmobj->mstep,mtime);
 #else
@@ -101,7 +101,8 @@ int main(int argc,const char *argv[])
     }
 	
 	catch(const char *errMsg)
-	{	cerr << "\n" << errMsg << endl;
+    {   cout << "Warning: pipe timing may prevent error details form appearing below\n" << endl;
+		cerr << "\n" << errMsg << endl;
 		return AnalysisErr;
 	}
 	
