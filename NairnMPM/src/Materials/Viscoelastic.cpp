@@ -220,66 +220,82 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy
         delTime (sec)
         tau[k] (sec)
     */
-	Tensor *ep=mptr->GetStrainTensor();
-    ep->xx+=dvxx;
-    ep->yy+=dvyy;
-    double dgam=dvxy+dvyx;
-    ep->xy+=dgam;
-	double dwrotxy=dvyx-dvxy;
+	Tensor *ep = mptr->GetStrainTensor();
+    ep->xx += dvxx;
+    ep->yy += dvyy;
+    double dgam = dvxy+dvyx;
+    ep->xy += dgam;
+	double dwrotxy = dvyx-dvxy;
     
     // save initial stresses
-	Tensor *sp=mptr->GetStressTensor();
-    Tensor st0=*sp;
+	Tensor *sp = mptr->GetStressTensor();
+    Tensor st0 = *sp;
 
     /* ---------------------------------------------------
         find stress (Units N/m^2  cm^3/g)
 		stress increament due to G(t) and corresponding strains 
     */
+    
+    // viscous part of stress update
     double **h =(double **)(mptr->GetHistoryPtr());
     int k;
-    double dsigmaGxx=0;
-	double dsigmaGyy=0;
-	double dsigmaGxy=0;
+    double dsigmaGxx = 0;
+	double dsigmaGyy = 0;
+	double dsigmaGxy = 0;
     for (k=0;k<ntaus;k++)
-    {   dsigmaGxx+=h[XX_HISTORY][k];
-        dsigmaGyy+=h[YY_HISTORY][k];
-        dsigmaGxy+=h[XY_HISTORY][k];
+    {   dsigmaGxx += h[XX_HISTORY][k];
+        dsigmaGyy += h[YY_HISTORY][k];
+        dsigmaGxy += h[XY_HISTORY][k];
     }
-    dsigmaGxx=(Ge+0.5*delTime*dGe)*dvxx+dsigmaGxx*delTime;
-    dsigmaGyy=(Ge+0.5*delTime*dGe)*dvyy+dsigmaGyy*delTime;
-    dsigmaGxy=(Ge+0.5*delTime*dGe)*dgam+dsigmaGxy*delTime;
+    dsigmaGxx = 0.5*delTime*dGe*dvxx + dsigmaGxx*delTime;
+    dsigmaGyy = 0.5*delTime*dGe*dvyy + dsigmaGyy*delTime;
+    dsigmaGxy = 0.5*delTime*dGe*dgam + dsigmaGxy*delTime;
 
 	// stress increment (specific stress)
-    double factor23=2.0/3.0;
-	double er=CTE*ConductionTask::dTemperature+CME*DiffusionTask::dConcentration;
-	double dilate=Ke*(dvxx+dvyy-3.*er);
+    double factor23 = 2.0/3.0;
+	double er = CTE*ConductionTask::dTemperature;
+    if(DiffusionTask::active) er += CME*DiffusionTask::dConcentration;
+	double dilate = Ke*(dvxx+dvyy-3.*er);
 	
-	double dsxx=(dilate+factor23*(2.*dsigmaGxx-dsigmaGyy))/rho;
-	double dsyy=(dilate+factor23*(2.*dsigmaGyy-dsigmaGxx))/rho;
-	double dtxy=dsigmaGxy/rho;
-	double dszz=(dilate-factor23*(dsigmaGyy+dsigmaGxx))/rho;
-	Hypo2DCalculations(mptr,-dwrotxy,dsxx,dsyy,dtxy);
-    sp->zz+=dszz;
+    // elastic and viscous components of stree update
+	double dsxxv = factor23*(2.*dsigmaGxx-dsigmaGyy)/rho;
+    double dsxxe = (dilate + factor23*Ge*(2.*dvxx-dvyy))/rho;
+	double dsyyv = factor23*(2.*dsigmaGyy-dsigmaGxx)/rho;
+	double dsyye = (dilate + factor23*Ge*(2.*dvyy-dvxx))/rho;
+	double dtxyv = dsigmaGxy/rho;
+    double dtxye = Ge*dgam/rho;
+	double dszzv = -factor23*(dsigmaGyy+dsigmaGxx)/rho;
+	double dszze = (dilate - factor23*Ge*(dvyy+dvzz))/rho;
+	Hypo2DCalculations(mptr,-dwrotxy,dsxxe+dsxxv,dsyye+dsyyv,dtxye+dtxyv);
+    sp->zz += dszze+dszzv;
 
     // update history variables after stress has been calculated
     for(k=0;k<ntaus;k++)
-    {   double tmp=exp(-delTime/tauk[k]);
-		double gtk=1.0e6*Gk[k]/tauk[k];
-		h[XX_HISTORY][k]=tmp*(h[XX_HISTORY][k]-gtk*dvxx);
-		h[YY_HISTORY][k]=tmp*(h[YY_HISTORY][k]-gtk*dvyy);
-		h[XY_HISTORY][k]=tmp*(h[XY_HISTORY][k]-gtk*dgam);
+    {   double tmp = exp(-delTime/tauk[k]);
+		double gtk = 1.0e6*Gk[k]/tauk[k];
+		h[XX_HISTORY][k] = tmp*(h[XX_HISTORY][k]-gtk*dvxx);
+		h[YY_HISTORY][k] = tmp*(h[YY_HISTORY][k]-gtk*dvyy);
+		h[XY_HISTORY][k] = tmp*(h[XY_HISTORY][k]-gtk*dgam);
     }
 	
-	// find energy from work increment, but not dissipated energy yet
+	// find energy from work increment
+    // add total energy using elastic stress increment
+    // Not sure correct, but does have energy + dissipated equal to total energy increment
 	// energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-	dvxx-=er;
-	dvyy-=er;
-	dvzz=-er;
-	double totalEnergy=(st0.xx+0.5*dsxx)*dvxx
-							+(st0.yy+0.5*dsyy)*dvyy
-							+(st0.xy+0.5*dtxy)*dgam
-							+(st0.xy+0.5*dszz)*dvzz;
+	dvxx -= er;
+	dvyy -= er;
+	dvzz -= er;
+	double totalEnergy=(st0.xx+0.5*dsxxe)*dvxx
+							+(st0.yy+0.5*dsyye)*dvyy
+							+(st0.xy+0.5*dtxye)*dgam
+							+(st0.xy+0.5*dszze)*dvzz;
     mptr->AddStrainEnergy(totalEnergy);
+    
+    // visous energy is disspated
+    // dissipated energy using viscous stress increment only
+	double dispEnergy=0.5*dsxxv*dvxx + 0.5*dsyyv*dvyy
+                    +0.5*dtxyv*dgam + 0.5*dszzv*dvzz;
+    mptr->AddDispEnergy(dispEnergy);
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
@@ -370,16 +386,33 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz
 		h[XZ_HISTORY][k]=tmp*(h[XZ_HISTORY][k]-gtk*dgamxz);
 		h[YZ_HISTORY][k]=tmp*(h[YZ_HISTORY][k]-gtk*dgamyz);
     }
+    
+    // how much was viscous energy?
+	double delspe[6];
+	delspe[0] = (dilate+factor23*Ge*(2.*dvxx-dvyy-dvzz))/rho;
+	delspe[1] = (dilate+factor23*Ge*(2.*dvyy-dvxx-dvzz))/rho;
+	delspe[2] = (dilate+factor23*Ge*(2.*dvzz-dvxx-dvyy))/rho;
+	delspe[3] = Ge*dgamyz/rho;
+	delspe[4] = Ge*dgamxz/rho;
+	delspe[5] = Ge*dgamxy/rho;
 	
-	// find energy from work increment, but not dissipated energy yet
+	// find energy from work increment
+    // add total energy using elastic stress increment
+    // Not sure correct, but does have energy + dissipated equal to total energy increment
 	// energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	dvxx-=er;
 	dvyy-=er;
 	dvzz=-er;
-	double totalEnergy = (st0.xx+0.5*delsp[0])*dvxx + (st0.yy+0.5*delsp[1])*dvyy
-						+ (st0.zz+0.5*delsp[2])*dvzz + (st0.yz+0.5*delsp[3])*dgamyz
-						+ (st0.xz+0.5*delsp[4])*dgamxz + (st0.xy+0.5*delsp[5])*dgamxy;
-   mptr->AddStrainEnergy(totalEnergy);
+	double totalEnergy = (st0.xx+0.5*delspe[0])*dvxx + (st0.yy+0.5*delspe[1])*dvyy
+						+ (st0.zz+0.5*delspe[2])*dvzz + (st0.yz+0.5*delspe[3])*dgamyz
+						+ (st0.xz+0.5*delspe[4])*dgamxz + (st0.xy+0.5*delspe[5])*dgamxy;
+    mptr->AddStrainEnergy(totalEnergy);
+    
+    // dissipated energy using viscous stress increment only
+    for(k=0;k<6;k++) delsp[k] -= delspe[k];
+	double dispEnergy = 0.5*delsp[0]*dvxx + 0.5*delsp[1]*dvyy + 0.5*delsp[2]*dvzz
+                        + 0.5*delsp[3]*dgamyz + 0.5*delsp[4]*dgamxz + 0.5*delsp[5]*dgamxy;
+    mptr->AddDispEnergy(dispEnergy);
 }
 
 #pragma mark Viscoelastic::Accessors
