@@ -73,25 +73,27 @@ PtsPerElement #ppe
 !
 ! To find functions, find grad v = (dF/dt) F^-1 for desired final F
 !
-! Examples:
-! 1. Pure Rotation: F(2D) = (cos(w t/#time),(a/w)sin(w t/#time)),(-(w/a)sin(w t/#time),cos(w t/#time)) : J = 1
+! Examples: (in all these, tr = t/#time)
+! 1. Pure Rotation: F(2D) = (cos(w t/#time),(a/w)sin(w tr)),(-(w/a)sin(w tr),cos(w tr)) : J = 1
 !                   #vxx=#vyy=0, #vxy=w, #vyx=-w
-! 2. Pull Shear: F(2D) = (cos(w t/#time),sin(w t/#time)),(sin(w t/#time),cos(w t/#time)) : J = cos(2w t/#time)
-!		#vxx = #vyy = -w tan(2 w t/#time)
-!       #vxy = #vyx = w/cos(2 w t/#time)
+! 2. Pull Shear: F(2D) = (cos(w tr),sin(w tr)),(sin(w tr),cos(w tr)) : J = cos(2w tr)
+!		#vxx = #vyy = -w tan(2 w tr)
+!       #vxy = #vyx = w sec(2 w tr)
 !		(To keep J>0, need -#PI/4 < #w < #PI/4)
-! 3. Simple Stretch: F(2D) = (exp(at/#time),0)),(0,exp(bt/#time)) : J = exp((a+b)t/#time)
+! 3. Constant axial stretch rate: F(2D) = (1 + exx tr,0),(0,1 + eyy tr) : J = (1+exx)(1+eyy)
+!       #vxx = exx/(1+exx tr)   #vxy=0
+!       #vyy = exx/(1+eyy tr)   #vyx=0
+! 4. Constant shear strain rate: F(2D) = (1,gxy tr),(gxy tr,1) : J = 1 - gxy^2 tr^2
+!       #vxx = #vyy = gxy^2 tr/(gxy^2 tr^2 - 1)
+!       #vxy = #vyx = -gxy/(gxy^2 tr^2 - 1)
+! Anything else: just pick constant values for each grad v term, such as
+!   a. Simple Stretch: F(2D) = (exp(a tr),0)),(0,exp(b tr)) : J = exp((a+b)tr)
 !       #vxx=a #vyy=b, #vxy=#vyx=0
-! 4. Simple Shear: F(2D) = (cosh(wt/#time),(a/w)sinh(wt/#time)),((w/a)sinh(wt/#time),cosh(wt/#time)) : J = 1
+!   b. Simple Shear: F(2D) = (cosh(w ttr),(a/w)sinh(w tr)),((w/a)sinh(w tr),cosh(w tr)) : J = 1
 !		#vxy=a, #vyx=b, #vxx=#vyy=0, and a*b>0 and w = sqrt(a*b)
-! 5. Constant axial stretch rate: F(2D) = (1 + exx t,0),(0,1 + eyy t) : J = (1+exx)(1+eyy)
-!       #vxx = exx/(1+exx t/#time)   #vxy=0
-!       #vyy = exx/(1+eyy t/#time)   #vyx=0
-! 6. Constant shear strain rate: F(2D) = (1,gxy t),(gxy t,1) : J = 1 - gxy^2 t^2
-!       #vxx = #vyy = gxy^2 t/(gxy^2 t^2 - 1)
-!       #vxy = #vyx = -gxy/(gxy^2 t^2 - 1)
+!   c. Pure rotation (see type=1)
 
-#type=3
+#type=2
 
 if #type=1
   #w=2*3.14159
@@ -107,7 +109,7 @@ else if #type=2
   #vyx=#vxy
   #vyy=#vxx
 
-else if #type=5
+else if #type=3
   #exx=.5
   #eyy=-.5
   #vxx = #exx&"/(1+("&(#exx/#time)&")*t)"
@@ -115,7 +117,7 @@ else if #type=5
   #vxy=0
   #vyx=0
 
-else if #type=6
+else if #type=4
   #gxy=.5
   #vxx=(#gxy*#gxy/#time)&"*t/("&(#gxy*#gxy/#time/#time)&"*t^2-1)"
   #vxy=(-#gxy)&"/("&(#gxy*#gxy/#time/#time)&"*t^2-1)"
@@ -123,7 +125,11 @@ else if #type=6
   #vyx=#vxy
 
 else
-   Stop "Type = "&#type&" is not handled by a special case yet."
+  ! all others just pick constant value for each
+  #vxx=0
+  #vyy=0
+  #vxy=#w
+  #vyx=-#w
 
 endif
 
