@@ -65,8 +65,8 @@ public class MPMGrid
 	    	throw new Exception("The grid parameters are invalid: "+args);
 	}
 	
-	// GridRect xmin,xmax,ymin,ymax
-	public void doGridRectOrBox(ArrayList<String> args) throws Exception
+	// GridRect xmin,xmax,ymin,ymax (zmin,zmax if 3D)
+	public void doGridRect(ArrayList<String> args) throws Exception
 	{
 	    // FEA Only
 		doc.requiresMPM(args);
