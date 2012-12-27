@@ -172,19 +172,20 @@ Defines a title for the analysis.</li>
 Select archiving folder for MPM calculations as relative path from the output file.</li>
 <li><code>ArchiveTime #1,&lt;#2&gt;</code><br>
 Select archiving frequency for MPM calculations. #1 is the archiving time in ms. The option #2 is the time to start archiving (in ms).</li>
-<li><a href="damping.html">Damping</a>: Select factor for damping grid velocities in MPM calculations.</li>
-<li><a href="feedbackdamping.html">FeedbackDamping</a>: Select coefficient for alternative viscous damping of MPM particle velocities.</li>
-<li><a href="globalarchive.html">GlobalArchive</a>: Specify global results to be archived in MPM calculations.</li>
-<li><a href="globalarchive.html">GlobalArchiveTime</a>: Specify time interval for archiving global results.</li>
-<li><a href="leavelimit.html">LeaveLimit</a>: Set action taken when a particle leaves the grid.</li>
+<li>Damping: Select factor for damping grid velocities in MPM calculations.</li>
+<li>FeedbackDamping: Select coefficient for alternative viscous damping of MPM particle velocities.</li>
+<li>GlobalArchive: Specify global results to be archived in MPM calculations.</li>
+<li>GlobalArchiveTime: Specify time interval for archiving global results.</li>
+<li>LeaveLimit: Set action taken when a particle leaves the grid.</li>
 <li><a name="maximumtime"></a><code>MaximumTime #1</code><br>
 Set time the MPM calculations will stop in ms.</li>
 <li><code>MPMMethod #1, #2</code><br>
 Select MPM methods for the calculations. #1 is the update method and it can be USF (or 0), USAVG (or 2) or SZS (or 3). #2 is the shape functions method and it can be uGIMP (or GIMP), lCPDI (or CPDI), qCPDI, or Classic (or Dirac).</li>
-<li><a href="ptsperelement.html">PtsPerElement</a>: Select number of material points per element in MPM calculations.</li>
+<li>PtsPerElement: Select number of material points per element in MPM calculations.</li>
 <li><code>TimeStep #1,&lt;#2&gt;,&lt;#3&gt;</code><br>
 Set MPM time step parameters. #1 is the time step in ms (choose a high number to have the code pick time step based on material properties). Optional #2 is the maximum time to stop the calculations in ms (which can also be set in the <a href="#maximumtime">Maximum time command</a>). Optional #3 is the Courant-Levy safety factor for the code to adjust the time step (and should be less than 1).</li>
-<li><a href="toarchive.html">ToArchive</a>: Specify results to be archived in MPM calculations.</li>
+<li><code>ToArchive #1,&lt;#2&gt;,...</code><br>
+Specify results to be archived in MPM calculations. The list can be in multiple arguments and/or in multiple ToArchive commands. The archiving options are velocity, stress, strain, plasticstrain, externalwork, temperature, plasticenergy, shearcomponents, strainenergy, jintegral, stressintensity, history1, history2, history3, history4, thermalenergy, concentration (which includes concentration gradients), energybalance, elementcrossings, and rotstrain.</li>
 </ul>
 
 <h2><a name="materials"></a>Defining Materials</h2>
@@ -192,11 +193,11 @@ Set MPM time step parameters. #1 is the time step in ms (choose a high number to
 <p>The details on the one command in this section explain how to enter properties for materials used in the calculations.</p>
 
 <ul>
-	<li><code>Material #1,#2,#3<br>
+	<li><a name="material"></a><code>Material #1,#2,#3<br>
 	&nbsp;&nbsp;(commands to define properties)<br>
 	Done</code><br>
 	Define a material type. For more details see the materials help topic.</li>
-	<li><a href="tractionlaws.html">Traction Laws</a>: Use the <a href="material.html">Material</a> command to define traction laws.</li>
+	<li>Traction Laws: Use the Material command to define traction laws.</li>
 </ul>
 
 <h2><a name="grid"></a>Defining the MPM Grid with Material Points</h2>
@@ -204,33 +205,38 @@ Set MPM time step parameters. #1 is the time step in ms (choose a high number to
 <p>These commands are used to define the background MPM grid and to define material points within that grid.</p>
 
 <ul>
-<li><a href="bmpregion.html">BMPRegion</a> ... <a href="endregion.html">EndRegion</a>: Create material points from an image in a BMP file.</li>
+<li><a name="bmpregion"></a>BMPRegion ... EndRegion: Create material points from an image in a BMP file.</li>
 
-<li><a href="box.html">Box</a>: Define cubical volume of material points or for a hole.</li>
+<li>Box: Define cubical volume of material points or for a hole.</li>
 
-<li><a href="cylinder.html">Cylinder</a>: Define cylindrical volume of material points or for a hole.</li>
+<li>Cylinder: Define cylindrical volume of material points or for a hole.</li>
 
 <li><code>Element #1</code><br>
 Define type of element to use in the MPM background grid. Currently #1 can only be &quot;4 Node Quadrilateral&quot; (or 2) for 2D or axisymmetric MPM and can only be &quot;8 Node Brick&quot; (or 7) for 3D MPM.</li>
 
-<li><a href="intensity.html">Intensity</a>: Map pixel intensities to material types in a <a href="bmpregion.html">BMPRegion</a>.</li>
+<li>Intensity: Map pixel intensities to material types in a <a href="#bmpregion">BMPRegion</a>.</li>
 
-<li><a href="griddepth.html">GridDepth</a>: Set depth or z-direction MPM grid parameters.</li>
+<li><a name="griddepth"></a><code>GridDepth #1,&lt;#2&gt;</code><br>
+Set depth or z-direction MPM grid parameters. #1 is the number of cells. #2 is for variable element size, but is currently ignored.</li>
 
-<li><a href="gridhoriz.html">GridHoriz</a>: Set horizontal MPM grid parameters.</li>
+<li><a name="griddhoriz"></a><code>GridHoriz #1,&lt;#2&gt;</code><br>
+Set horizontal or x-direction MPM grid parameters (r direction is axisymetric). #1 is the number of cells. #2 is for variable element size, but is currently ignored.</li>
 
-<li><a href="gridrect.html">GridRect</a>: Set rectangle for MPM grid.</li>
+<li><code>GridRect #1,#2,#3,#4,&lt;#5&gt;,&lt;#6&gt;</code><br>
+Set rectangle for 2D MPM grid or box for 3D MPM. #1 to #4 are x minimum. x maximum, y minimum, and y maximum for the rectangle (or R and Z limits if axisymmetric). #5 and #5 are for z minimum and z maximum if 3D calculations. Use <a href="#gridhoriz">GridHoriz</a>, <a href="#gridvert">GridVert</a>, and <a href="#griddepth">GridDepth</a> to set number of cells in each direction.</li>
 
-<li><a href="gridthickness.html">GridThickness</a>: Set thickness for 2D MPM grid.</li>
+<li><code>GridThickness #1</code><br>
+Set thickness for 2D MPM grid (in mm). It is only needed for some command and for 2D planar calculations.</li>
 
-<li><a href="gridvert.html">GridVert</a>: Set vertical MPM grid parameters.</li>
+<li><a name="gridvert"></a><code>GridVert #1,&lt;#2&gt;</code><br>
+Set vertical or y-direction MPM grid parameters (Z direction is axisymetric). #1 is the number of cells. #2 is for variable element size, but is currently ignored.</li>
 
 <li><a name="holempm"></a><code>Hole<br>
 &nbsp;&nbsp;(series of <a href="#rectmpm">Rect</a>, <a href="ovalmpm">Oval</a>, or <a href="#polyptmpm">PolyPt</a> commands)<br>
 EndHole</code><br>
 Define a region for creating a hole that will not be assigned material points by any subsequent shape commands.</li>
 
-<li><a name="originmpm"></a>Origin: Set origin to map data in <a href="bmpregion.html">BMPRegion</a> to the grid.</li>
+<li><a name="originmpm"></a>Origin: Set origin to map data in <a href="#bmpregion">BMPRegion</a> to the grid.</li>
 
 <li><a name="ovalmpm"></a><code>Oval #1,#2,#3,#4</code><br>
 Define oval within the rectangle defined by xmin, xmax, ymin, ymax (for #1 to #4) for the current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
@@ -243,7 +249,7 @@ Define rectangle using xmin, xmax, ymin, ymax (for #1 to #4) for the current <a 
 
 <li><a name="regionmpm"></a>Region ... EndRegion: Define a region for creating material points.</li>
 
-<li><a href="sphere.html">Sphere</a>: Define spherical volume of material points or for a hole.</li>
+<li>Sphere: Define spherical volume of material points or for a hole.</li>
 
 </ul>
 
@@ -257,7 +263,7 @@ Define rectangle using xmin, xmax, ymin, ymax (for #1 to #4) for the current <a 
 EndArea</code><br>
 Define an area for mesh generation where #1 is a defined <a href="#material">material ID</a>, #2 is thickness (in mm) (ignored in axisummetric FEA, but still required), and #3 is an angle (for anisotropic materials) (it can be a <a href="#function">user-defined function</a>). The commands in the area block should define four paths (to enclose 2D area) or two paths (for a 1D interface). Material ID can be &quot;_NONE_&quot; when the elements will be filled later by <a href="#bmpregionfea">BMPRegion</a> or various shape commands.</li>
 
-<li><a name="bmpregionfea">BMPRegion</a> ... <a href="endregion.html">EndRegion</a>: Generate elements from an image in a BMP file.</li>
+<li><a name="bmpregionfea">BMPRegion</a> ... EndRegion: Generate elements from an image in a BMP file.</li>
 
 <li><code>Element #1</code><br>
 Define type of element to use in subsequent <a href="#area">Area</a> commands. #1 can be &quot;3 Node Triangle&quot; (or 1), &quot;4 Node Quadrilateral&quot; (or 2), &quot;8 Node Quadrilateral&quot; (or 3), 6 Node Triangle&quot; (or 4), &quot;4 Node Interface&quot; (or 5), 6 Node Interface&quot; (or 6), or &quot;9 Node Lagrange&quot; (or 8)</li>
@@ -282,7 +288,7 @@ Define coordinate system origin for entry of <a href="#keypoint">Keypoints</a> u
 <li><a name="ovalfea"></a><code>Oval #1,#2,#3,#4</code><br>
 Define oval within the rectangle defined by xmin, xmax, ymin, ymax (for #1 to #4) for the current <a href="#regionfea">region</a> or <a href="#holefea">hole</a> block.</li>
 
-<li><a href="path.html"></a><code>Path #1,#2,&lt;#3&gt;<br>
+<li><a nmame="path"></a><code>Path #1,#2,&lt;#3&gt;<br>
 &nbsp;&nbsp;(list and/or define keypoinst along the path)<br>
 EndPath</code><br>
 Define a path used in defining <a href="#area">Areas</a>. #1 is the ID for the path. #2 is the number of intervals along the path when used in a mesh. Optional #3 defines the ratio of the first element size to the last element size. Alternatively, #3 can be negative to specify the absolute size of the first element (in mm) to be |#3|. #3 is 1 is not supplied. The commands between within the path block should list and/or define two or three keypoints for the path (two points for a line or three points for a curve.</li>
@@ -311,25 +317,26 @@ To turn on the option to resequence the nodes, which will minimize the bandwidth
 
 <h3>Cracks in MPM Calculations</h3>
 
-<p>Cracks in MPM calculations are implemented using the <a href="../references.html#cramp">CRAMP</a> algorithm first described by Nairn (<a href="../developer.html">developer</a> of this software) and coworkers. The commands to define explicit cracks and set up crack
+<p>Cracks in MPM calculations are implemented using the CRAMP algorithm first described by Nairn (developer of this software) and coworkers. The commands to define explicit cracks and set up crack
 propagation in MPM calculations are:</p>
 
 <ul>
-<li><a href="altpropagate.html">AltPropagate</a>: Set a second rule for crack propagation and optional propagation direction for models with competing fracture modes.</li>
-<li><a href="contactposition.html">ContactPosition</a>: Determines method for detecting contact when using particle displacements.</li>
-<li><a href="crackinterface.html">CrackInterface</a>: Sets custom interface parameters for a specific crack.</li>
-<li><a href="crackthickness.html">CrackThickness</a>: Sets crack thickness; only used or needed when crack have <a href="tractionlaws.html">traction laws</a> or <a href="conduction.html">crack tips release their energy into heat</a>.</li>
-<li><a href="friction.html">Friction</a>: Set crack contact conditions.</li>
-<li><a href="growcrack.html">GrowCrack</a>: Used to extend the current crack to a new point.</li>
-<li><a href="growcrackarc.html">GrowCrackArc</a>: Used to add a curved arc to the current crack.</li>
-<li><a href="growcrackline.html">GrowCrackLine</a>: Used to add a straight line to the current crack.</li>
-<li><a href="jcontour.html">JContour</a>: Used to set some options for the J Integral calculation.</li>
-<li><a href="imperfectinterface.html">ImperfectInterface</a>: Converts cracks to imperfect interface and sets the interfacial properties.</li>
-<li><a href="moveplane.html">MovePlane</a>: Used to set how crack plane particles move.</li>
-<li><a href="newcrack.html">NewCrack</a> : Used to start a new explicit crack.</li>
-<li><a href="propagate.html">Propagate</a>: Set rule for crack propagation and optional propagation direction.</li>
-<li><a href="propagatelength.html">PropagateLength</a>: Determines the amount of crack growth each time the crack propagates.</li>
-<li><a href="toarchive.html">ToArchive</a>: To add crack parameters such as J Integral and stress intensity factor to the archive.</li>
+<li>AltPropagate: Set a second rule for crack propagation and optional propagation direction for models with competing fracture modes.</li>
+<li>ContactPosition: Determines method for detecting contact when using particle displacements.</li>
+<li>CrackInterface: Sets custom interface parameters for a specific crack.</li>
+<li>CrackThickness: Sets crack thickness; only used or needed when crack have traction laws or crack tips release their energy into heat.</li>
+<li>Friction: Set crack contact conditions.</li>
+<li>GrowCrack: Used to extend the current crack to a new point.</li>
+<li>GrowCrackArc: Used to add a curved arc to the current crack.</li>
+<li>GrowCrackLine: Used to add a straight line to the current crack.</li>
+<li>JContour: Used to set some options for the J Integral calculation.</li>
+<li>ImperfectInterface: Converts cracks to imperfect interface and sets the interfacial properties.</li>
+<li>MovePlane: Used to set how crack plane particles move.</li>
+<li>NewCrack: Used to start a new explicit crack.</li>
+<li>Propagate: Set rule for crack propagation and optional propagation direction.</li>
+<li>PropagateLength: Determines the amount of crack growth each time the crack propagates.</li>
+<li><code>ToArchive #1,&lt;#2&gt;,...</code><br>
+Specify crack parameters to be archived in MPM calculations. The list can be in multiple arguments and/or in multiple ToArchive commands. The archiving options for crack paramters are jintegral, stressintensity, and energybalance.</li>
 </ul>
 
 
@@ -341,23 +348,23 @@ propagation in MPM calculations are:</p>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <img src = "../Images/cchalf.jpg" width = "201" height = "228" alt = "" align="top"/>
 </center>
-<p>The crack plane edges must be collinear and of equal length (&Delta;a). When a calculation with cracks is done, the <a href="../closure.html">Crack Closure...</a> command can be used to calculate crack tip energy release rate.</p>
+<p>The crack plane edges must be collinear and of equal length (&Delta;a). When a calculation with cracks is done, the Crack Closure... command (in NairnFEAMPM) can be used to calculate crack tip energy release rate.</p>
 <p>The one command to alter crack tip geometry is
 </p>
 <ul>
-<li><a href="cracktip.html">CrackTip</a>: Create quarter-point elements at the crack tip.</li>
+<li>CrackTip: Create quarter-point elements at the crack tip.</li>
 </ul>
 
 <h2><a name="mmmode"></a>Multimaterial MPM Calculations</h2>
 
-<p>NairnMPM can use <a href="multimaterialmode.html">multimaterial mode</a> where each material has its own velocity field and intersections between materials on nodes are resolved using various contact mechanics models. The key commands to use this mode are:</p>
+<p>NairnMPM can use multimaterial mode where each material has its own velocity field and intersections between materials on nodes are resolved using various contact mechanics models. The key commands to use this mode are:</p>
 
 <ul>
-<li><a href="contactposition.html">ContactPosition</a>: Determines method for detecting contact when using particle displacements.</li>
-<li><a href="friction.html">Friction</a>: When used within a <a href="material.html">material</a>, it can set specific material-material friction properties.</li>
-<li><a href="frictionmm.html">FrictionMM</a>: Set multimaterial mode friction properties.</li>
-<li><a href="imperfectinterface.html">ImperfectInterfaceMM and Interface</a>: Set properties for contact to model an imperfect interface.</li>
-<li><a href="multimaterialmode.html">MultimaterialMode</a>: Sets to use multimaterial modes and sets some options.</li>
+<li>ContactPosition: Determines method for detecting contact when using particle displacements.</li>
+<li>Friction: When used within a <a href="#material">material</a>, it can set specific material-material friction properties.</li>
+<li>FrictionMM: Set multimaterial mode friction properties.</li>
+<li>ImperfectInterfaceMM and Interface: Set properties for contact to model an imperfect interface.</li>
+<li>MultimaterialMode: Sets to use multimaterial modes and sets some options.</li>
 </ul>
 
 
@@ -369,25 +376,28 @@ propagation in MPM calculations are:</p>
 <h3>MPM Thermal Calculations</h3>
 
 <ul>
-<li><a href="conduction.html">Conduction</a>: Turn on thermal conductivity calculations and define heat source options.</li>
-<li><a href="globalarchive.html">GlobalArchive</a>: To archive average temperature or total thermal energy.</li>
-<li><a href="intensity.html">Intensity</a>: To set initial temperature of particles created using a <a href="bmpregion.html">BMPRegion</a>.</li>
-<li><a href="material.html">Material</a>: Define material properties needed for conduction calculations (conductivity, heat capactiy, coefficient of thermal expansion, <i>etc.</i>).</li>
-<li><a href="stressfreetemp.html">StressFreeTemp</a>: Set the stress free temperature.</li>
-<li><a href="temperature.html">Temperature</a>: Apply temperature boundary conditions to <a href="moveline.html">selected nodes</a>.
+<li>Conduction: Turn on thermal conductivity calculations and define heat source options.</li>
+<li>GlobalArchive: To archive average temperature or total thermal energy.</li>
+<li>Intensity: To set initial temperature of particles created using a <a name="#bmpregion">BMPRegion</a>.</li>
+<li><code>Material #1,#2,#3</code><br>
+Use the <a href="#material">material</a> command to define material properties needed for conduction calculations (conductivity, heat capactiy, coefficient of thermal expansion, <i>etc.</i>).</li>
+<li>StressFreeTemp: Set the stress free temperature.</li>
+<li>Temperature: Apply temperature boundary conditions to selected nodes.
 </li>
-<li><a href="thermal.html">ThermalRamp</a>: Apply isothermal temperature difference over a specified time and optionally define the stress-free temperature.</li>
-<li><a href="rampstart.html">RampStart</a>: Set the start time for application of a thermal ramp.</li>
-<li><a href="region.html">Region</a> ... <a href="endregion.html">EndRegion</a>: To set initial particle temperature when creating material points.</li>
-<li><a href="toarchive.html">ToArchive</a>: To add temperature or thermal energy to the archive.</li>
+<li>ThermalRamp: Apply isothermal temperature difference over a specified time and optionally define the stress-free temperature.</li>
+<li>RampStart: Set the start time for application of a thermal ramp.</li>
+<li>Region ... EndRegion: To set initial particle temperature when creating material points.</li>
+<li><code>ToArchive #1,&lt;#2&gt;,...</code><br>
+Specify results to be archived in MPM calculations. The list can be in multiple arguments and/or in multiple ToArchive commands. The archiving options related to thermal calculations are temperature and thermalenergy.</li>
 </ul>
 
 <h3>FEA Thermal Calculations</h3>
 
 <ul>
-<li><a href="material.html">Material</a>: Define material properties needed for thermal calculations (coefficient of thermal expansion).</li>
-<li><a href="stressfreetemp.html">StressFreeTemp</a>: Set the stress free temperature.</li>
-<li><a href="temperature.html">Temperature</a>: Apply temperature to all nodes.
+<li><code>Material #1,#2,#3</code><br>
+Usse the <a href="#material">material</a> command methods to define material properties needed for thermal calculations (coefficient of thermal expansion).</li>
+<li>StressFreeTemp: Set the stress free temperature.</li>
+<li>Temperature: Apply temperature to all nodes.
 </li>
 </ul>
 
@@ -396,16 +406,18 @@ propagation in MPM calculations are:</p>
 <p>These commands are used to do diffusion calculations (MPM only):</p>
 
 <ul>
-<li><a href="concentration.html">Concentration</a>: Apply concentration conditions to <a href="moveline.html">selected nodes</a>.
+<li>Concentration: Apply concentration conditions to selected nodes.
 </li>
-<li><a href="concentrationflux.html">ConcentrationFlux</a>: Apply concentration flux conditions to <a href="loadline.html">selected particles</a>.
+<li>ConcentrationFlux: Apply concentration flux conditions to selected particles.
 </li>
-<li><a href="diffusion.html">Diffusion</a>: To turn on diffusion calculations.</li>
-<li><a href="globalarchive.html">GlobalArchive</a>: To archive total weight fracture concentration.</li>
-<li><a href="intensity.html">Intensity</a>: To set initial concentration of particles created using a <a href="bmpregion.html">BMPRegion</a>.</li>
-<li><a href="material.html">Material</a>: Define material properties needed for diffusion calculations (diffusion constant, saturation concentration, coefficient of concentration expansion, <i>etc.</i>).</li>
-<li><a href="region.html">Region</a> ... <a href="endregion.html">EndRegion</a>: To set initial particle concentration when creating material points.</li>
-<li><a href="toarchive.html">ToArchive</a>: To add concentration and concentration gradients to the archive.</li>
+<li>Diffusion: To turn on diffusion calculations.</li>
+<li>GlobalArchive: To archive total weight fracture concentration.</li>
+<li>Intensity: To set initial concentration of particles created using a <a name="#bmpregion">BMPRegion</a>.</li>
+<li><code>Material #1,#2,#3</code><br>
+Use the <a href="#material">material</a> command to define material properties needed for diffusion calculations (diffusion constant, saturation concentration, coefficient of concentration expansion, <i>etc.</i>).</li>
+<li>Region ... EndRegion: To set initial particle concentration when creating material points.</li>
+<li><code>ToArchive #1,&lt;#2&gt;,...</code><br>
+Specify results to be archived in MPM calculations. The list can be in multiple arguments and/or in multiple ToArchive commands. The archiving option related to diffusion calculations is concentration (which includes concentration gradients).</li>
 </ul>
 
 <h2><a name="bconds"></a>Applying Boundary Conditions</h2>
@@ -415,36 +427,36 @@ propagation in MPM calculations are:</p>
 <h3>MPM Boundary Conditions</h3>
 
 <ul>
-<li><a href="concentration.html">Concentration</a>: Apply concentration conditions to <a href="moveline.html">selected nodes</a>.
+<li>Concentration: Apply concentration conditions to selected nodes.
 </li>
 
-<li><a href="concentrationflux.html">ConcentrationFlux</a>: Apply concentration flux conditions to <a href="loadline.html">selected particles</a>.
+<li>ConcentrationFlux: Apply concentration flux conditions to selected particles.
 </li>
 
-<li><a href="gravity.html">Gravity</a>: Apply body forces to all particles for simulations within a constant graviational field.</li>
+<li>Gravity: Apply body forces to all particles for simulations within a constant graviational field.</li>
 
-<li><a href="load.html">Load</a>: Apply force to <a href="loadline.html">selected particles</a>.</li>
+<li>Load: Apply force to selected particles.</li>
 
-<li><a href="loadline.html">LoadArc</a> ... <a href="endloadline.html">EndLoadArc</a>: Apply force or concentration flux conditions to particles near an arc.</li>
+<li>LoadArc ... EndLoadArc: Apply force or concentration flux conditions to particles near an arc.</li>
 
-<li><a href="loadline.html">LoadBox</a> ... <a href="endloadline.html">EndLoadBox</a>: Apply force or concentration flux conditions to particles within a 3D box.</li>
+<li>LoadBox ... EndLoadBox: Apply force or concentration flux conditions to particles within a 3D box.</li>
 
-<li><a href="loadline.html">LoadLine</a> ... <a href="endloadline.html">EndLoadLine</a>: Apply force or concentration flux conditions to particles near a line.</li>
+<li>LoadLine ... EndLoadLine: Apply force or concentration flux conditions to particles near a line.</li>
 
-<li><a href="loadrect.html">LoadRect</a> ... <a href="endloadrect.html">EndLoadRect</a>: Apply force or concentration flux conditions to particles within a rectangle.</li>
+<li>LoadRect ... EndLoadRect: Apply force or concentration flux conditions to particles within a rectangle.</li>
 
-<li><a href="moveline.html">MoveArc</a> ... <a href="endmoveline.html">EndMoveArc</a>: Apply velocity, temperature, or concentration conditions to nodes along an arc.</li>
+<li>MoveArc ... EndMoveArc: Apply velocity, temperature, or concentration conditions to nodes along an arc.</li>
 
-<li><a href="moveline.html">MoveBox</a> ... <a href="endmoveline.html">EndMoveBox</a>: Apply velocity, temperature, or concentration conditions to nodes within a 3D box.</li>
+<li>MoveBox ... EndMoveBox: Apply velocity, temperature, or concentration conditions to nodes within a 3D box.</li>
 
-<li><a href="moveline.html">MoveLine</a> ... <a href="endmoveline.html">EndMoveLine</a>: Apply velocity, temperature, or concentration conditions to nodes along a line.</li>
+<li>MoveLine ... EndMoveLine: Apply velocity, temperature, or concentration conditions to nodes along a line.</li>
 
-<li><a href="temperature.html">Temperature</a>: apply temperature conditions to <a href="moveline.html">selected nodes</a>.
+<li>Temperature: apply temperature conditions to selected nodes.
 </li>
 
-<li><a href="traction.html">Traction</a>: Apply traction to surfaces of <a href="loadline.html">selected particles</a>.</li>
+<li>Traction: Apply traction to surfaces of selected particles.</li>
 
-<li><a href="velocity.html">Velocity</a>: Apply velocity conditions to <a href="moveline.html">selected nodes</a>.</li>
+<li>Velocity: Apply velocity conditions to selected nodes.</li>
 </ul>
 
 <h3>FEA Boundary Conditions</h3>
@@ -470,9 +482,9 @@ Apply displacement or load conditions to a single node. If only #1 is given, it 
 <li><a name="load"></a><code>Load #1,#2</code><br>
 Apply forces to selected nodes. #1 is x or y (or 1, or 2, R, or Z if axisymmetric) to specify the direction of the applied force. #2 is the applied force (in N). It can be specified by a number or by a <a href="#function">user-defined function</a> of nodal point position.</li>
 
-<li><a href="periodic.html">Periodic</a>: Set up calculations to be periodic in the <code>x</code> direction..</li>
+<li>Periodic: Set up calculations to be periodic in the <code>x</code> direction..</li>
 
-<li><a name="rotate"></a>Rotate: Rotate <a href="fixline.html">selected nodes</a> for the purpose of applying skewed boundary conditions.</li>
+<li><a name="rotate"></a>Rotate: Rotate selected nodes for the purpose of applying skewed boundary conditions.</li>
 
 <li><a name="select"></a><code>Select</code><br>
 Select the nodes and/or elements reference by the current <a href="#fixline">FixLine</a> or <a href="#fixpoint">FixPoint</a> boundary condition for conditional <a href="#output">output</a> of results.</li>
@@ -493,21 +505,21 @@ Apply stress boundary conditions to faces of <a href="#fixline">selected element
 <p>These commands are used to schedule custom tasks that are run at the end of each time step in MPM calculations.</p>
 
 <ul>
-<li><a href="customtask.html">CustomTask</a>: Schedule a custom task and documentation on all possible custom tasks.
+<li>CustomTask: Schedule a custom task and documentation on all possible custom tasks.
 </li>
 
-<li><a href="parameter.html">Parameter</a>: set a parameter for the current custom task.
+<li>Parameter: set a parameter for the current custom task.
 </li>
 
 </ul>
 
 <h2><a name="xml"></a>XML Commands</h2>
 
-<p>These commands are used to insert raw <code>XML</code> commands at various locations in the input commands. See <a href="../../xmlformat/index.html">Code Engine Commands</a> for the format of all raw <code>XML</code> commands.</p>
+<p>These commands are used to insert raw <code>XML</code> commands at various locations in the input commands. See Code Engine Commands for the format of all raw <code>XML</code> commands.</p>
 
 <ul>
 
-<li><a href="entity.html">Entity</a>: Define entity to appear in XML output file.</li>
+<li>Entity: Define entity to appear in XML output file.</li>
 
 <li><a name="xmldata"></a><code>XMLData &lt;#1&gt;,&lt;#2&gt;<br>
 &nbsp;&nbsp;(lines of verbatim XML content)<br>
@@ -516,9 +528,9 @@ Insert XML data in the interpretation output. #1 indicates the section where the
 
 </ul>
 
-<h2><a name="function"></a>User-Defined Functinos</h2>
+<h2><a name="function"></a>User-Defined Functions</h2>
 
-
+<p>Details to follows.</p>
 
 
 </body>

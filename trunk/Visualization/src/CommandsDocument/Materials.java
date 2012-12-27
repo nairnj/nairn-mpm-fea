@@ -6,12 +6,7 @@
  * Copyright (c) 2012 RSAC Software. All rights reserved.
  */
 
-import java.io.*;
 import java.util.*;
-
-import javax.swing.*;
-
-import geditcom.JNFramework.*;
 
 public class Materials
 {
