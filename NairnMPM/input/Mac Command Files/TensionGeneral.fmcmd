@@ -18,7 +18,7 @@ EndHeader! ------------ Parameters ---------------
 
 ! material options: isotropic, vonmises, bistable, iptrans, normtrans, ortho
 !   viscoelastic, hill, johnson, wood, MGSCGL, SL
-#matID="vonmises"
+#matID="isotropic"
 #angle=0					! material angle for anisotopic materials
 
 ! temperature option to test energy coupling
@@ -141,67 +141,61 @@ if #matID="vonmises"
 endif
 
 if #matID="johnson"
-  XMLData Material,"johnson"
-  <Material Type="16" Name="Copper Johnson Cook">
-    <rho>8.96</rho>
-    <Cp>383</Cp>
-    <E>120000</E>
-    <nu>.25</nu>
-    <alpha>0</alpha>
-    <kCond>0.202</kCond>
-    <Ajc>90</Ajc>
-    <Bjc>292</Bjc>
-    <njc>.31</njc>
-    <Cjc>0.025</Cjc>
-    <ep0jc>1</ep0jc>
-    <Tmjc>1356</Tmjc>
-    <mjc>1.09</mjc>
-  </Material>
-  EndXMLData
+  Material #matID,"Copper Johnson Cook","johnsoncook"
+    rho 8.96
+    Cp 383
+    E 120000
+    nu .25
+    alpha 0
+    kCond 0.202
+    Ajc 90
+    Bjc 292
+    njc .31
+    Cjc 0.025
+    ep0jc 1
+    Tmjc 1356
+    mjc 1.09
+  Done
 endif
 
 if #matID="MGSCGL"
-  XMLData Material,"MGSCGL"
-  <Material Type="17" Name="Tungsten">
-    <C0>4004</C0>
-    <S1>1.35</S1>
-    <S2>0</S2>
-    <gamma0>1.64</gamma0>
-    <rho>19.256</rho>
-    <yield>2200</yield>
-    <G>160000</G>
-    <Cv>134</Cv>
-	<GPpG0>0.01e-3</GPpG0>
-	<GTpG0>-2.2e-4</GTpG0>
-    <yieldMax>4000</yieldMax>
-    <betahard>7.7</betahard>
-    <nhard>0.13</nhard>
-  </Material>
-  EndXMLData
+  Material "MGSCGL","Tungsten","MGSCGLMaterial"
+    C0 4004
+    S1 1.35
+    S2 0
+    gamma0 1.64
+    rho 19.256
+    yield 2200
+    G 160000
+    Cv 134
+	GPpG0 0.01e-3
+	GTpG0 -2.2e-4
+    yieldMax 4000
+    betahard 7.7
+    nhard 0.13
+  Done
 endif
 
 if #matID="SL"
-  XMLData Material,"SL"
-  <Material Type="18" Name="Tungsten">
-    <C0>4004</C0>
-    <S1>1.35</S1>
-    <S2>0</S2>
-    <gamma0>1.64</gamma0>
-    <rho>19.256</rho>
-    <yield>2200</yield>
-    <G>160000</G>
-    <Cv>134</Cv>
-	<GPpG0>0.01e-3</GPpG0>
-	<GTpG0>-2.2e-4</GTpG0>
-    <yieldMax>4000</yieldMax>
-    <betahard>7.7</betahard>
-    <nhard>0.13</nhard>
-	<YP>1000</YP>
-	<Uk>0.31</Uk>
-	<C1>710000</C1>
-	<C2>0.012</C2>
-  </Material>
-  EndXMLData
+  Material #matID,"Tungsten","SLMaterial"
+    C0 4004
+    S1 1.35
+    S2 0
+    gamma0 1.64
+    rho 19.256
+    yield 2200
+    G 160000
+    Cv 134
+	GPpG0 0.01e-3
+	GTpG0 -2.2e-4
+    yieldMax 4000
+    betahard 7.7
+    nhard 0.13
+	YP 1000
+	Uk 0.31
+	C1 710000
+	C2 0.012
+  Done
 endif
 
 if #matID="viscoelastic"

@@ -125,7 +125,7 @@
 <!ELEMENT	Polygon
             ( pt+ )>
 <!ATTLIST	Polygon
-            np CDATA #REQUIRED>
+            np CDATA #IMPLIED>
 
 <!-- Boundary conditions all on the grid -->
 
@@ -235,6 +235,7 @@
 
 <!ELEMENT	pt EMPTY>
 <!ATTLIST	pt
+			units CDATA #IMPLIED
 			x CDATA #REQUIRED
 			y CDATA #REQUIRED
 			id CDATA #IMPLIED
