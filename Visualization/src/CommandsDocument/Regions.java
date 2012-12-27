@@ -18,7 +18,7 @@ public class Regions
 	
 	private static int REGION_BLOCK=1;
 	private static int HOLE_BLOCK=1;
-	private static int BMPREGION_BLOCK=1;
+	//private static int BMPREGION_BLOCK=1;
 	
 	//----------------------------------------------------------------------------
 	// Initialize
@@ -79,7 +79,7 @@ public class Regions
 			{	thick = doc.readDoubleArg(args.get(4));
 			}
 			if(doc.isMPM3D())
-				xmlRegions.append(" vx='"+thick+"'");
+				xmlRegions.append(" vz='"+thick+"'");
 			else if(args.size()>4)
 				xmlRegions.append(" thick='"+thick+"'");
 			

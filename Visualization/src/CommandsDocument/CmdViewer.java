@@ -41,6 +41,7 @@ public class CmdViewer extends JNCmdTextDocument
 	public Materials mats = null;
 	public Areas areas = null;
 	public Regions regions = null;
+	public MPMGrid gridinfo = null;
 	private FEABCs feaBCs = null;
 	private StringBuffer outFlags;
 	private int mpmMethod;
@@ -49,6 +50,9 @@ public class CmdViewer extends JNCmdTextDocument
 	private String archiveTime;
 	private String timeStep;
 	private String maxTime;
+	private StringBuffer mpmOrder;
+	private StringBuffer crackOrder;
+	private boolean mpmMeshToFile;
 	
 	// constants
 	public static final int PLANE_STRAIN=0;
@@ -99,6 +103,7 @@ public class CmdViewer extends JNCmdTextDocument
 		areas = new Areas(this);
 		regions = new Regions(this);
 		feaBCs = new FEABCs(this);
+		gridinfo = new MPMGrid(this);
 	}
 	
 	// make menu bar on launch
@@ -237,7 +242,11 @@ public class CmdViewer extends JNCmdTextDocument
 		areas.initRunSettings();
 		regions.initRunSettings();
 		feaBCs.initRunSettings();
+		gridinfo.initRunSettings();
+		mpmMeshToFile = true;
 		outFlags = null;
+		mpmOrder = null;
+		crackOrder = null;
 		mpmMethod = 0;
 		shapeMethod = "uGIMP";
 		archiveRoot = "    <ArchiveRoot>Results/data.</ArchiveRoot>\n";
@@ -289,6 +298,9 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		else if(theCmd.equals("archive"))
 			doArchive(args,false);
+		
+		else if(theCmd.equals("toarchive"))
+			doToArchive(args);
 		
 		else if(theCmd.equals("archiveunique"))
 			doArchive(args,true);
@@ -400,6 +412,21 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		else if(theCmd.equals("polypt"))
 			regions.AddPolypoint(args);
+		
+		else if(theCmd.equals("gridhoriz"))
+			gridinfo.doGridAxis(args,0);
+		
+		else if(theCmd.equals("gridvert"))
+			gridinfo.doGridAxis(args,1);
+		
+		else if(theCmd.equals("griddepth"))
+			gridinfo.doGridAxis(args,2);
+		
+		else if(theCmd.equals("gridrect") || theCmd.equals("gridbox"))
+			gridinfo.doGridRectOrBox(args);
+		
+		else if(theCmd.equals("gridthickness"))
+			gridinfo.doGridThickness(args);
 		
 		else
 			super.doCommand(theCmd, args);
@@ -559,6 +586,114 @@ public class CmdViewer extends JNCmdTextDocument
 		// archive time
 		double aTime = readDoubleArg(args.get(1));
 		maxTime = "    <MaxTime units='ms'>"+aTime+"</MaxTime>\n";
+	}
+	
+	// ToArchive #1,...
+	public void doToArchive(ArrayList<String> args) throws Exception
+	{
+	    // MPM Only
+	    requiresMPM(args);
+	    
+	    // needs at least one
+	    if(args.size()<2)
+	    	throw new Exception("'ToArchive' has too few parameters: "+args);
+	    
+	    // first time
+    	int i;
+	    if(mpmOrder == null)
+	    {	// default settings
+	    	mpmOrder = new StringBuffer("iY");
+	    	for(i=2;i<ReadArchive.ARCH_MAXMPMITEMS;i++)
+	    		mpmOrder.append('N');
+	    	
+	    	crackOrder = new StringBuffer("iY");
+	    	for(i=2;i<ReadArchive.ARCH_MAXCRACKITEMS;i++)
+	    		crackOrder.append('N');
+	    }
+		
+		// initial history
+		char historyChar = mpmOrder.charAt(ReadArchive.ARCH_History);
+		int history;
+		if(historyChar=='N')
+			history=0x30;
+		else if(historyChar=='Y')
+			history=0x31;
+		else
+			history = (int)historyChar;
+		int origHistory = history;
+	    
+		// set all options in this command
+	    for(i=1;i<args.size();i++)
+	    {	String archive = readStringArg(args.get(i)).toLowerCase();
+	    	int loc = -1;
+	    	int cloc = -1;
+	        if(archive.equals("velocity"))
+	        	loc = ReadArchive.ARCH_Velocity;
+	        else if(archive.equals("stress"))
+	        	loc = ReadArchive.ARCH_Stress;
+	        else if(archive.equals("strain"))
+	        	loc = ReadArchive.ARCH_Strain;
+	        else if(archive.equals("plasticstrain"))
+	        	loc = ReadArchive.ARCH_PlasticStrain;
+	        else if(archive.equals("externalwork"))
+	        	loc = ReadArchive.ARCH_ExtWork;
+	        else if(archive.equals("temperature"))
+	        	loc = ReadArchive.ARCH_DeltaTemp;
+	        else if(archive.equals("plasticenergy"))
+	        	loc = ReadArchive.ARCH_PlasticEnergy;
+	        else if(archive.equals("shearcomponents"))
+	        	loc = ReadArchive.ARCH_ShearComponents;
+	        else if(archive.equals("strainenergy"))
+	        	loc = ReadArchive.ARCH_StrainEnergy;
+	        else if(archive.equals("jintegral"))
+	        	cloc = ReadArchive.ARCH_JIntegral;
+	        else if(archive.equals("stressintensity"))
+	        	cloc = ReadArchive.ARCH_StressIntensity;
+	        else if(archive.equals("history1"))
+			{	history = history | 1;
+				loc = 0;
+			}
+	        else if(archive.equals("history2"))
+	        {	history = history | 2;
+				loc = 0;
+			}
+	        else if(archive.equals("history3"))
+	        {	history = history | 4;
+				loc = 0;
+			}
+	        else if(archive.equals("history4"))
+	        {	history = history | 8;
+				loc = 0;
+	        }
+	        else if(archive.equals("thermalenergy"))
+	        	loc = ReadArchive.ARCH_ThermalEnergy;
+	        else if(archive.equals("concentration"))
+	        	loc = ReadArchive.ARCH_Concentration;
+	        else if(archive.equals("energybalance"))
+	        	cloc = ReadArchive.ARCH_BalanceResults;
+	        else if(archive.equals("elementcrossings"))
+	        	loc = ReadArchive.ARCH_ElementCrossings;
+	        else if(archive.equals("rotstrain"))
+	        	loc = ReadArchive.ARCH_RotStrain;
+	        
+	        if(loc<0 && cloc<0)
+	        	throw new Exception("'"+archive+"' is not a valid archiving option: "+args);
+	        
+	        if(loc>0)
+	        	mpmOrder.replace(loc,loc+1,"Y");
+	        if(cloc>0)
+	        	crackOrder.replace(cloc,cloc+1,"Y");
+	    }
+		
+		// replace the history character
+		if(history != origHistory)
+		{	char[] hchr = new char[2];
+			hchr[0] = (char)history;
+			hchr[1] = 0;
+			String hstr = history==0x31 ? "Y" : new String(hchr) ;
+			history = ReadArchive.ARCH_History;
+			mpmOrder.replace(history,history+1,hstr);
+		}
 	}
 
 	// Element (element type)
@@ -731,6 +866,10 @@ public class CmdViewer extends JNCmdTextDocument
 			xml.append(maxTime);
 			xml.append(archiveRoot);
 			xml.append(archiveTime);
+			if(mpmOrder == null) mpmOrder = new StringBuffer("iYYYYYNYYYNNNNNNNN");
+			xml.append("    <MPMArchiveOrder>"+mpmOrder+"</MPMArchiveOrder>\n");
+			if(crackOrder == null) crackOrder = new StringBuffer("iYNNN");
+			xml.append("    <CrackArchiveOrder>"+crackOrder+"</CrackArchiveOrder>\n");
 			
 			// check added xml
 			String more = xmldata.get("MPMHeader");
@@ -741,7 +880,12 @@ public class CmdViewer extends JNCmdTextDocument
 			
 			// MPM Mesh
 			//-----------------------------------------------------------
-			xml.append("  <Mesh>\n");
+			if(mpmMeshToFile)
+				xml.append("  <Mesh output='file'>\n");
+			else
+				xml.append("  <Mesh>\n");
+			
+			xml.append(gridinfo.toXMLString());
 			
 			// check added xml
 			more = xmldata.get("Mesh");

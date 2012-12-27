@@ -15,9 +15,11 @@ NairnFEAMPMViz Plans
 Cammand Development
 -------------------------------------------------------------------
 
-FEA Not Done
+MPM Tasks
 	MPM Region - add property pairs and document
 	MPM Mesh commands
+	
+FEA Not Done
 	EndPath - validate acceptable path
 	Rotate
 	Periodic
@@ -26,8 +28,6 @@ FEA Not Done
 	CrackTip
 	BMPRegion É EndRegion
 	
-MaterialBase recognize new material types (e.g. for hasPlasticStrainForGradient())
-
 -------------------------------------------------------------------
 Development Notes
 -------------------------------------------------------------------
