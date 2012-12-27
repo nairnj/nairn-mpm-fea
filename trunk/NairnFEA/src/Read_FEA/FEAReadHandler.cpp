@@ -210,6 +210,7 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
             x=y=temp=0.;
             matName[0]=0;
             numAttr=attrs.getLength();
+			double aScaling=ReadUnits(attrs,LENGTH_UNITS);
             
             for(i=0;i<numAttr;i++)
             {   value=XMLString::transcode(attrs.getValue(i));
@@ -225,6 +226,8 @@ bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
                 delete [] aName;
                 delete [] value;
             }
+			x *= aScaling;
+			y *= aScaling;
 
             // make node or keypoint
             if(block==NODELIST)

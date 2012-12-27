@@ -576,7 +576,7 @@ Tensor HEIsotropic::GetNormalTensor3D(Tensor *strial,double magnitude_strial)
 int HEIsotropic::MaterialTag(void) { return HEISOTROPIC; }
 
 // return unique, short name for this material
-const char *HEIsotropic::MaterialType(void) { return "Hyperelastic isotropic"; }
+const char *HEIsotropic::MaterialType(void) { return "Hyperelastic Isotropic"; }
 
 // calculate wave speed in mm/sec - needs to be implemented
 double HEIsotropic::WaveSpeed(bool threeD,MPMBase *mptr)

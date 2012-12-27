@@ -54,7 +54,7 @@ MPMMethod USF,#method
 Archive "Results/Disk_"&#method&"_"&#style&"/ASMPM"
 ArchiveTime #maxtime/25
 MaximumTime #maxtime
-PtsPerElement 4
+PtsPerElement 2
 !Damping 1500
 
 GlobalArchive sxx

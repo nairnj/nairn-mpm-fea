@@ -1119,6 +1119,90 @@ void MPMReadHandler::grid()
 	}
 }
 
+
+//-----------------------------------------------------------
+// Make sure axisymmetric has r=0 BCs
+//-----------------------------------------------------------
+void MPMReadHandler::CreateAxisymetricBCs()
+{	// exit it not axisymmetric
+	if(!fmobj->IsAxisymmetric()) return;
+	
+	// skip this feature if not structure grid
+	if(!mpmgrid.IsStructuredGrid()) return;
+	
+	// find nmin
+	double nmin = mpmgrid.xmin/mpmgrid.gridx;
+	if(nmin>1.25) return;
+	
+	// verify grid passes through 0 or delta r
+	double ntest = int(fabs(nmin)+.1);
+	if(!DbleEqual(ntest,fabs(nmin)))
+	   throw SAXException("Axisymetric grid that includes r<1.25dr must have nodes at multiple of dr.");
+	
+	// no need if does not reach r=0
+	if(nmin>0.5*mpmgrid.gridx) return;
+
+	// remove current velocites at r<=0
+	int i;
+	NodalVelBC *lastValidBC = NULL;
+	NodalVelBC *nextBC = firstVelocityBC;
+	while(nextBC != NULL)
+	{	i = nextBC->GetNodeNum();
+		double ni = nd[i]->x/mpmgrid.gridx;
+		if(ni < -0.5 || (ni<0.5 && nextBC->dir==X_DIRECTION))
+		{	// remove this velocity BC
+			if(lastValidBC == NULL)
+			{	// have not found good velocity BC yet
+				firstVelocityBC = (NodalVelBC *)nextBC->GetNextObject();
+				delete nextBC;
+				nextBC = firstVelocityBC;
+			}
+			else
+			{	// remove nextBC in the chain
+				lastValidBC->SetNextObject(nextBC->GetNextObject());
+				delete nextBC;
+				nextBC = (NodalVelBC *)lastValidBC->GetNextObject();
+			}
+		}
+		else
+		{	// this BC is kept
+			lastValidBC = nextBC;
+			nextBC = (NodalVelBC *)nextBC->GetNextObject();
+		}
+	}
+	
+	// reset first and last
+	if(lastValidBC!=NULL)
+		lastVelocityBC = lastValidBC;
+	else
+	{	firstVelocityBC = NULL;
+		lastVelocityBC = NULL;
+	}
+	
+	// create new ones at end of the list
+	int node = (int)ntest + 1;
+	while(node<nnodes)
+	{	// create zero r velocity starting at time 0
+		NodalVelBC *newVelBC=new NodalVelBC(node,X_DIRECTION,CONSTANT_VALUE,0.,0.);
+		
+		// add to linked list
+		if(lastVelocityBC == NULL)
+		{	// first one
+			firstVelocityBC = newVelBC;
+			lastVelocityBC = newVelBC;
+		}
+		else
+		{	// link at the end
+			lastVelocityBC->SetNextObject(newVelBC);
+			lastVelocityBC = newVelBC;
+		}
+		
+		// next node
+		node += mpmgrid.yplane;
+	}
+}
+
+
 //------------------------------------------------------------------
 // If just created a GIMP grid, make all border elements as holes
 //------------------------------------------------------------------

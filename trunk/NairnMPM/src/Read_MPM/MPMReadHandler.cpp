@@ -788,7 +788,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 				throw SAXException("'dof' in fix element must be 1, 2, or 3 for 3D analyses.");
 		}
         else if(dof>2 || dof<0)
-            throw SAXException("'dif' in fix element must be 0, 1, or 2 for 2D analyses.");
+            throw SAXException("'dir' in fix element must be 0, 1, or 2 for 2D analyses.");
         
         // create object and get input
         NodalVelBC *newVelBC=new NodalVelBC(node,dof,style,(double)0.,ftime);
@@ -1047,6 +1047,7 @@ void MPMReadHandler::myEndElement(char *xName)
 		delete velocityBCs;
 		delete concBCs;
 		delete tempBCs;
+		CreateAxisymetricBCs();
 	}
 	
 	else if(strcmp(xName,"ParticleBCs")==0)
