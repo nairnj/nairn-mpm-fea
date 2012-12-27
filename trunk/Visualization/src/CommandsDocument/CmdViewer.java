@@ -422,8 +422,8 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("griddepth"))
 			gridinfo.doGridAxis(args,2);
 		
-		else if(theCmd.equals("gridrect") || theCmd.equals("gridbox"))
-			gridinfo.doGridRectOrBox(args);
+		else if(theCmd.equals("gridrect"))
+			gridinfo.doGridRect(args);
 		
 		else if(theCmd.equals("gridthickness"))
 			gridinfo.doGridThickness(args);
