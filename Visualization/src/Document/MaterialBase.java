@@ -25,8 +25,17 @@ public class MaterialBase
 	public static final int LINEARTRACTIONMATERIAL=13;
 	public static final int CUBICTRACTIONMATERIAL=14;
 	public static final int HILLPLASTIC=15;
-	public static final int LASTMATERIALTYPE=16;
-	public static final int UNKNOWNMATERIAL=17;
+	public static final int JOHNSONCOOK=16;
+	public static final int MGSCGLMATERIAL=17;
+	public static final int SLMATERIAL=18;
+	public static final int WOODMATERIAL=19;
+	public static final int TRILINEARTRACTIONLAW=20;
+	public static final int HEANISOTROPIC=21;
+	public static final int IDEALGAS=22;
+	public static final int COUPLESAWTOOTHTRACTIONLAW=23;
+	public static final int HEISOTROPIC=24;
+	public static final int LASTMATERIALTYPE=25;
+	public static final int UNKNOWNMATERIAL=26;
 	
 	protected int type;
 	protected String name;
@@ -58,7 +67,13 @@ public class MaterialBase
 	// gradient. It is onlu low-strain plasticity materials
 	public boolean hasPlasticStrainForGradient()
 	{ 	switch(type)
-		{	case VONMISES:
+		{	case DUGDALE:
+			case VONMISES:
+			case HILLPLASTIC:
+			case JOHNSONCOOK:
+			case MGSCGLMATERIAL:
+			case SLMATERIAL:
+			case WOODMATERIAL:
 				return true;
 			default:
 				break;

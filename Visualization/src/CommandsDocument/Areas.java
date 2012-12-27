@@ -69,14 +69,13 @@ public class Areas
 	public void StartArea(ArrayList<String> args) throws Exception
 	{
 	    // FEA Only
-	    if(!doc.isFEA())
-	    	throw new Exception("The 'Area' command can only be used in FEA commands.");
+		doc.requiresFEA(args);
 
 	    // verify not nested
 	    if(inArea)
-	    	throw new Exception("FEA mesh Areas cannot be nested.");
+	    	throw new Exception("FEA mesh Areas cannot be nested: "+args);
 	    if(inPath)
-	    	throw new Exception("FEA mesh Areas cannot be inside Paths.");
+	    	throw new Exception("FEA mesh Areas cannot be inside Paths: "+args);
 	    
 	    // activate
 	    inArea = true;
@@ -84,18 +83,18 @@ public class Areas
 	    
 	    // read material by ID
 	    if(args.size()<2)
-		    throw new Exception("'Area' command missing material ID.");
+		    throw new Exception("'Area' command missing material ID: "+args);
 	    String matID = doc.readStringArg(args.get(1));
 		matnum=0;
 	    if(!matID.equals("_NONE_"))
 	    {	matnum = doc.mats.getMatID(matID);
 			if(matnum<=0)
-				throw new Exception("'Area' command has unknown material ID.");
+				throw new Exception("'Area' command has unknown material ID: "+args);
 		}
 		
 		// read thickness
 	    if(args.size()<3)
-		    throw new Exception("'Area' command missing thickness.");
+		    throw new Exception("'Area' command missing thickness: "+args);
 	    thickness = doc.readDoubleArg(args.get(2));
 		
 		// read angle
@@ -111,7 +110,7 @@ public class Areas
 	{
 	    // check in a path (which must be in an area)
 		if(!inArea)
-	    	throw new Exception("'EndArea' not matched by 'Area' command.");
+	    	throw new Exception("'EndArea' not matched by 'Area' command: "+args);
 		
 		// is it acceptable?
 	    
@@ -137,12 +136,11 @@ public class Areas
 	public void StartPath(ArrayList<String> args)  throws Exception
 	{
 	    // FEA Only
-	    if(!doc.isFEA())
-	    	throw new Exception("The 'Path' command can only be used in FEA commands.");
+		doc.requiresFEA(args);
 	    
 	    // verify not nested
 	    if(inPath)
-	    	throw new Exception("FEA mesh Paths cannot be nested.");
+	    	throw new Exception("FEA mesh Paths cannot be nested: "+args);
 	    
 	    // activate
 	    ratio = 1.;
@@ -150,7 +148,7 @@ public class Areas
 		
 	    // read path name
 	    if(args.size()<2)
-		    throw new Exception("'Path' command missing path ID.");
+		    throw new Exception("'Path' command missing path ID: "+args);
 	    pathID = doc.readStringArg(args.get(1));
 	    Integer existingPath = pathIDs.get(pathID);
 		
@@ -158,11 +156,11 @@ public class Areas
 		if(existingPath != null)
 		{	// error if data there to define the path
 			if(args.size()>2)
-				throw new Exception("Duplicate Path name: "+pathID);
+				throw new Exception("Duplicate Path name: "+args);
 			
 			// ... and must be in an Area
 			if(!inArea)
-				throw new Exception("FEA Path reference (to "+pathID+") must be within an Area.");
+				throw new Exception("FEA Path reference (to "+pathID+") must be within an Area: "+args);
 			
 			// add
 			paths.add(pathID);
@@ -172,7 +170,7 @@ public class Areas
 		else
 		{	// read intervals
 			if(args.size()<3)
-				throw new Exception("Path ("+pathID+") missing the number of intervals.");
+				throw new Exception("Path ("+pathID+") missing the number of intervals: "+args);
 			intervals = doc.readIntArg(args.get(2));
 		
 			// read ratio
@@ -196,7 +194,7 @@ public class Areas
 	{
 	    // check in a path (which must be in an area)
 		if(!inPath)
-	    	throw new Exception("'EndPath' not matched by 'Path' command.");
+	    	throw new Exception("'EndPath' not matched by 'Path' command: "+args);
 		
 		// is it acceptable?
 	    
@@ -220,10 +218,11 @@ public class Areas
 	public void AddPaths(ArrayList<String> args)  throws Exception
 	{
 	    // FEA Only
+		doc.requiresFEA(args);
 	    if(!inArea)
-	    	throw new Exception("The 'Paths' command can only be used in Area commands.");
+	    	throw new Exception("The 'Paths' command can only be used in Area commands: "+args);
 	    if(inPath)
-	    	throw new Exception("The 'Paths' command cannot be in another 'Path' command.");
+	    	throw new Exception("The 'Paths' command cannot be in another 'Path' command: "+args);
 	    
 	    // add each one
 	    int i;
@@ -231,7 +230,7 @@ public class Areas
 	    {	String nextPath = doc.readStringArg(args.get(i));
 	    	Integer existingPath = pathIDs.get(nextPath);
 	    	if(existingPath == null)
-	    		throw new Exception("Undefined path ("+nextPath+") referenced in a 'Paths' command.");
+	    		throw new Exception("Undefined path ("+nextPath+") referenced in a 'Paths' command: "+args);
 	    	paths.add(nextPath);
 	    }
 	}
@@ -242,12 +241,11 @@ public class Areas
 	public void AddKeypoint(ArrayList<String> args)  throws Exception
 	{
 	    // FEA Only
-	    if(!doc.isFEA())
-	    	throw new Exception("The 'Keypoint' command can only be used in FEA commands.");
+		doc.requiresFEA(args);
 
 	    // read keypoint name
 	    if(args.size()<2)
-		    throw new Exception("'Keypoint' command missing keypoint ID.");
+		    throw new Exception("'Keypoint' command missing keypoint ID: "+args);
 	    String keyID = doc.readStringArg(args.get(1));
 	    Integer existingKey = keyIDs.get(keyID);
 		
@@ -255,11 +253,11 @@ public class Areas
 		if(existingKey != null)
 		{	// cannot define keypoint here using more arguments
 			if(args.size()>2)
-				throw new Exception("Duplicate keypoint name: "+keyID);
+				throw new Exception("Duplicate keypoint name: "+args);
 			
 			// ... and must be in a Path
 			if(!inPath)
-				throw new Exception("FEA Keypoint reference (to "+keyID+") must be within a Path.");
+				throw new Exception("FEA Keypoint reference (to "+keyID+") must be within a Path: "+args);
 			
 			// add
 			keys.add(keyID);
@@ -269,19 +267,19 @@ public class Areas
 		else
 		{	// x value
 			if(args.size()<3)
-				throw new Exception("Keypoint ("+keyID+") missing x value.");
+				throw new Exception("Keypoint ("+keyID+") missing x value: "+args);
 			double x = doc.readDoubleArg(args.get(2));
 					
 			// y value
 			if(args.size()<4)
-				throw new Exception("Keypoint ("+keyID+") missing y value.");
+				throw new Exception("Keypoint ("+keyID+") missing y value: "+args);
 			double y = doc.readDoubleArg(args.get(3));
 			
 			// look for polar
 			if(args.size()>4)
 			{	String polar = doc.readStringArg(args.get(4));
 				if(!polar.toLowerCase().equals("polar"))
-					throw new Exception("Keypoint ("+keyID+") has invalid parameter #4.");
+					throw new Exception("Keypoint ("+keyID+") has invalid parameter #4: "+args);
 					
 				double theta=Math.PI*y/180.;
 				y=originY+x*Math.sin(theta);
@@ -303,8 +301,7 @@ public class Areas
 	public void AddKeypoints(ArrayList<String> args)  throws Exception
 	{
 	    // FEA Only
-	    if(!inPath)
-	    	throw new Exception("The 'Keypoints' command can only be used in Path commands.");
+		doc.requiresFEA(args);
 	    
 	    // add each one
 	    int i;
@@ -312,7 +309,7 @@ public class Areas
 	    {	String nextKey = doc.readStringArg(args.get(i));
 	    	Integer existingKey = keyIDs.get(nextKey);
 	    	if(existingKey == null)
-	    		throw new Exception("Undefined keypoint ("+existingKey+") referenced in a 'Keypoints' command.");
+	    		throw new Exception("Undefined keypoint ("+existingKey+") referenced in a 'Keypoints' command: "+args);
 	    	keys.add(nextKey);
 	    }
 	}
@@ -368,7 +365,7 @@ public class Areas
 	public void setOrigin(ArrayList<String> args) throws Exception
 	{
 		if(args.size()<3)
-			throw new Exception("'Origin' command requires two coorinates.");
+			throw new Exception("'Origin' command requires two coorinates: "+args);
 		
 		originX = doc.readDoubleArg(args.get(1));
 		originY = doc.readDoubleArg(args.get(2));

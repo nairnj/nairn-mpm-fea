@@ -23,6 +23,7 @@ public class FEABCs
 	
 	private static final int FIXLINE_BC=1;
 	private static final int FIXPOINT_BC=2;
+	private static final int FIXPATH_BC=3;
 	
 	//----------------------------------------------------------------------------
 	// Initialize
@@ -48,26 +49,28 @@ public class FEABCs
 	public void StartFixLine(ArrayList<String> args) throws Exception
 	{
 	    // FEA Only
-	    if(!doc.isFEA())
-	    	throw new Exception("The 'FixLine' command can only be used in FEA commands.");
+		doc.requiresFEA(args);
 
 	    // verify not nested
 	    if(inBC != 0)
-	    	throw new Exception("FixLine and FixPt cannot be nested.");
+	    	throw new Exception("FixLine, FixPoint, SelectLine, and SelectPoint cannot be nested: "+args);
 	    
 	    // one means a path
 	    if(args.size()==2)
 	    {	String pathID = doc.readStringArg(args.get(1));
 	    	if(!doc.areas.hasPath(pathID))
-	    		throw new Exception("'FixLine' uses an undefined path: "+pathID);
+	    		throw new Exception("'"+args.get(0)+"' uses an undefined path: "+args);
 	    	
 	    	// start the command (leave room for option select)
 	    	bcAttrs = "path='"+pathID+"'";
+	    	
+		    inBC = FIXPATH_BC;
+
 	    }
 	    
 	    // needs at least 5 arguments
 	    else if(args.size()<5)
-	    	throw new Exception("'FixLine' has too few parameters.");
+	    	throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
 	    
 	    else
 	    {	// get x1,y1,x2,y2
@@ -84,19 +87,20 @@ public class FEABCs
 	    	bcAttrs = "x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"'";
 	    	if(tolerance > 0.)
 	    		bcAttrs = bcAttrs + " tolerance='" + tolerance + "'";
+	    	
+		    inBC = FIXLINE_BC;
 	    }
 	    
 	    // now in a BC
 	    select = 0;
 	    bcSettings = new StringBuffer("");
-	    inBC = FIXLINE_BC;
 	}
 	
 	// FixLine done, add to xml
 	public void EndFixLine(ArrayList<String> args) throws Exception
 	{
-		if(inBC != FIXLINE_BC)
-			throw new Exception("'EndFixLine' not matched by 'FixLine' command.");
+		if(inBC != FIXLINE_BC && inBC != FIXPATH_BC)
+			throw new Exception("'EndFixLine' not matched by 'FixLine' command: "+args);
 		
 		// append block 
 		xmlbcs.append("    <BCLine "+bcAttrs);
@@ -111,18 +115,17 @@ public class FEABCs
 	public void StartFixPoint(ArrayList<String> args) throws Exception
 	{
 	    // FEA Only
-	    if(!doc.isFEA())
-	    	throw new Exception("The 'FixPoint' command can only be used in FEA commands.");
+		doc.requiresFEA(args);
 
 	    // verify not nested
 	    if(inBC != 0)
-	    	throw new Exception("FixLine and FixPt cannot be nested.");
+	    	throw new Exception("FixLine, FixPoint, SelectLine, and SelectPoint cannot be nested: "+args);
 	    
 	    // one means a keypoint
 	    if(args.size()<3)
 	    {	String keyID = doc.readStringArg(args.get(1));
 	    	if(!doc.areas.hasKeypoint(keyID))
-	    		throw new Exception("'FixPoint' uses an undefined keypoint: "+keyID);
+	    		throw new Exception("'"+args.get(0)+"' uses an undefined keypoint: "+args);
 	    	
 	    	// start the command (leave room for option select)
 	    	bcAttrs = "keypt='"+keyID+"'";
@@ -147,7 +150,7 @@ public class FEABCs
 	public void EndFixPoint(ArrayList<String> args) throws Exception
 	{
 		if(inBC != FIXPOINT_BC)
-			throw new Exception("'EndFixPoint' not matched by 'FixPoint' command.");
+			throw new Exception("'EndFixPoint' not matched by 'FixPoint' command: "+args);
 		
 		// append block 
 		xmlbcs.append("    <BCPt "+bcAttrs);
@@ -161,12 +164,15 @@ public class FEABCs
 	//	#1 is direction, #2 is value
 	public void AddDisplacement(ArrayList<String> args) throws Exception
 	{
+		// FEA only
+		doc.requiresFEA(args);
+		
 		if(inBC == 0)
-			throw new Exception("'Displacement' command must by in 'FixLine' or 'FixPoint' block.");
+			throw new Exception("'Displacement' command must by in 'FixLine' or 'FixPoint' block: "+args);
 		
 		// read direction
 		if(args.size()<2)
-	    	throw new Exception("'Displacement' has too few parameters.");
+	    	throw new Exception("'Displacement' has too few parameters: "+args);
 		int dof = readDirection(args.get(1));
 		bcSettings.append("      <DisBC dof='"+dof+"'");
 		
@@ -184,12 +190,15 @@ public class FEABCs
 	//	#1 is direction, #2 is value
 	public void AddLoad(ArrayList<String> args) throws Exception
 	{
+		// FEA Only (need separate version for Load in MPM commands)
+		doc.requiresFEA(args);
+
 		if(inBC == 0)
-			throw new Exception("'Load' command must by in 'FixLine' or 'FixPoint' block.");
+			throw new Exception("'Load' command must by in 'FixLine' or 'FixPoint' block: "+args);
 		
 		// read direction
 		if(args.size()<3)
-	    	throw new Exception("'Load' has too few parameters.");
+	    	throw new Exception("'Load' has too few parameters: "+args);
 		int dof = readDirection(args.get(1));
 		bcSettings.append("      <LoadBC dof='"+dof+"'");
 		
@@ -207,18 +216,63 @@ public class FEABCs
 		bcSettings.append("/>\n");
 	}
 	
+	// Load nodes (Stress #1,#2,<#3>,<#4>)
+	//	#1 is direction, #2 to #4 are values
+	public void AddStress(ArrayList<String> args) throws Exception
+	{
+		// FEA only
+		doc.requiresFEA(args);
+		
+		if(inBC != FIXPATH_BC)
+			throw new Exception("'Stress' command must by in 'FixLine' block defined by a path: "+args);
+		
+		// read direction
+		if(args.size()<3)
+	    	throw new Exception("'Stress' has too few parameters: "+args);
+		HashMap<String,Integer> options = new HashMap<String,Integer>(2);
+		options.put("n", new Integer(1));
+		options.put("t", new Integer(2));
+		int dof = doc.readIntOption(args.get(1),options,"FEA Stress BC direction");
+		
+		// read it
+		bcSettings.append("      <StressBC dir='"+dof+"'");
+		
+		// up to three stresses
+		double value = doc.readDoubleArg(args.get(2));
+		bcSettings.append(" stress='"+value);
+		if(args.size()>3)
+		{	value = doc.readDoubleArg(args.get(3));
+			bcSettings.append(","+value);
+		}
+		if(args.size()>4)
+		{	value = doc.readDoubleArg(args.get(3));
+			bcSettings.append(","+value);
+		}
+		bcSettings.append("'/>\n");
+	}
+	
+	// select this block
+	public void AddSelect(ArrayList<String> args) throws Exception
+	{
+	    // check in move lines
+	    if(inBC==0)
+	    	throw new Exception("'Select' command must be in boundary condition block:"+args);
+	    
+	    // select this BC
+		select = 1;
+	}
+
 	// Resequence Command x and y or keypoint
 	public void Resequence(ArrayList<String> args) throws Exception
 	{
 	    // FEA Only
-	    if(!doc.isFEA())
-	    	throw new Exception("The 'Resequence' command can only be used in FEA commands.");
+		doc.requiresFEA(args);
 
 	    // one means a keypoint
 	    if(args.size()<3)
 	    {	rsKeyID = doc.readStringArg(args.get(1));
 	    	if(!doc.areas.hasKeypoint(rsKeyID))
-	    		throw new Exception("'Resequence' uses an undefined keypoint: "+rsKeyID);
+	    		throw new Exception("'Resequence' uses an undefined keypoint: "+args);
 	    }
 	    
 	    // must have at least two arguments
@@ -240,7 +294,7 @@ public class FEABCs
 		options.put("z", new Integer(2));
 		
 		// read it
-		int ndir = doc.readIntOption(arg,options,"FEA BC direction");
+		int ndir = doc.readIntOption(arg,options,"FEA BC direction ("+arg+")");
 		return ndir;
 	}
 

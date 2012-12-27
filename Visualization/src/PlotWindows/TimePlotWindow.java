@@ -196,7 +196,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 
 		Hashtable<String,String> props = new Hashtable<String,String>();
 		props.put("object.color",plot2DView.selectPlotColor());
-		props.put("array.name",PlotQuantity.plotName(component)+" (pt "+ptNum+")");
+		props.put("array.name",PlotQuantity.plotName(component,resDoc)+" (pt "+ptNum+")");
 		plot2DView.plotData(x,y,props);
 	}
 	
@@ -278,7 +278,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 		props.put("object.color",plot2DView.selectPlotColor());
 		String extra="";
 		if(matNumOption!=0) extra=" (material "+matNumOption+")";
-		props.put("array.name",PlotQuantity.plotName(component)+extra);
+		props.put("array.name",PlotQuantity.plotName(component,resDoc)+extra);
 		plot2DView.plotData(x,y,props);
 	}
 	
@@ -511,7 +511,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			extra=" (start of crack "+crackNum+")";
 		else
 			extra=" (end of crack "+crackNum+")";
-		props.put("array.name",PlotQuantity.plotName(component)+extra);
+		props.put("array.name",PlotQuantity.plotName(component,resDoc)+extra);
 		plot2DView.plotData(x,y,props);
 	}
 }

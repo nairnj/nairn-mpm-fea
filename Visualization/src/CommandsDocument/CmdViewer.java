@@ -34,13 +34,21 @@ public class CmdViewer extends JNCmdTextDocument
 	// global settings
 	private String title;
 	private String username;
-	private String header;
+	private StringBuffer header;
 	private int np;
 	private int lnameEl;
 	private HashMap<String,String> xmldata = null;
 	public Materials mats = null;
 	public Areas areas = null;
+	public Regions regions = null;
 	private FEABCs feaBCs = null;
+	private StringBuffer outFlags;
+	private int mpmMethod;
+	private String shapeMethod;
+	private String archiveRoot;
+	private String archiveTime;
+	private String timeStep;
+	private String maxTime;
 	
 	// constants
 	public static final int PLANE_STRAIN=0;
@@ -89,6 +97,7 @@ public class CmdViewer extends JNCmdTextDocument
 		// create persistent objects
 		mats = new Materials(this);
 		areas = new Areas(this);
+		regions = new Regions(this);
 		feaBCs = new FEABCs(this);
 	}
 	
@@ -220,19 +229,32 @@ public class CmdViewer extends JNCmdTextDocument
 	{
 		title = "NairnFEAMPMViz Calculations";
 		username = null;
-		header = null;
+		header = new StringBuffer("");
 		np = -1;
 		lnameEl = NO_ELEMENT;
 		xmldata = new HashMap<String,String>(10);
 		mats.initRunSettings();
 		areas.initRunSettings();
+		regions.initRunSettings();
 		feaBCs.initRunSettings();
+		outFlags = null;
+		mpmMethod = 0;
+		shapeMethod = "uGIMP";
+		archiveRoot = "    <ArchiveRoot>Results/data.</ArchiveRoot>\n";
+		archiveTime = "";
+		timeStep = "    <TimeStep units='ms'>1e15</TimeStep>\n";
+		maxTime = "";
 	}
 	
 	// handle commands
 	public void doCommand(String theCmd,ArrayList<String> args) throws Exception
 	{	
-		if(theCmd.equals("title"))
+		if(mats.isInMaterial())
+		{	// commands go to material class when material (keep this option first)
+			mats.doMaterialProperty(theCmd,args);
+		}
+			
+		else if(theCmd.equals("title"))
 		{	// set analysis title
 			if(args.size()<2)
 				throw new Exception("'Title' command does not have a title");
@@ -247,10 +269,38 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		
 		else if(theCmd.equals("header"))
-			header = readVerbatim("endheader");
+			header.append(readVerbatim("endheader"));
+		
+		else if(theCmd.equals("comment"))
+		{	int i;
+			header.append("Comment: ");
+			for(i=1;i<args.size();i++)
+			{	if(i>1) header.append(", ");
+				header.append(readStringArg(args.get(i)));
+			}
+			header.append("\n");
+		}
 		
 		else if(theCmd.equals("analysis"))
 			doAnalysis(args);
+		
+		else if(theCmd.equals("mpmmethod"))
+			doMPMMethod(args);
+		
+		else if(theCmd.equals("archive"))
+			doArchive(args,false);
+		
+		else if(theCmd.equals("archiveunique"))
+			doArchive(args,true);
+		
+		else if(theCmd.equals("archivetime"))
+			doArchiveTime(args);
+		
+		else if(theCmd.equals("timestep"))
+			doTimeStep(args);
+		
+		else if(theCmd.equals("maximumtime"))
+			doMaxTime(args);
 		
 		else if(theCmd.equals("element"))
 			doElement(args);
@@ -285,11 +335,23 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("fixline"))
 			feaBCs.StartFixLine(args);
 		
+		else if(theCmd.equals("selectline"))
+		{	feaBCs.StartFixLine(args);
+			feaBCs.AddSelect(args);
+			feaBCs.EndFixLine(args);
+		}
+		
 		else if(theCmd.equals("endfixline"))
 			feaBCs.EndFixLine(args);
 		
 		else if(theCmd.equals("fixpoint"))
 			feaBCs.StartFixPoint(args);
+		
+		else if(theCmd.equals("selectpoint"))
+		{	feaBCs.StartFixPoint(args);
+			feaBCs.AddSelect(args);
+			feaBCs.EndFixPoint(args);
+		}
 		
 		else if(theCmd.equals("endfixpoint"))
 			feaBCs.EndFixPoint(args);
@@ -300,11 +362,44 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("load"))
 			feaBCs.AddLoad(args);
 		
+		else if(theCmd.equals("stress"))
+			feaBCs.AddStress(args);
+		
 		else if(theCmd.equals("resequence"))
 			feaBCs.Resequence(args);
 		
+		else if(theCmd.equals("select"))
+			feaBCs.AddSelect(args);
+		
 		else if(theCmd.equals("origin"))
 			areas.setOrigin(args);
+		
+		else if(theCmd.equals("material"))
+			mats.StartMaterial(args);
+		
+		else if(theCmd.equals("output"))
+			doOutput(args);
+		
+		else if(theCmd.equals("region"))
+			regions.StartRegion(args);
+		
+		else if(theCmd.equals("endregion"))
+			regions.EndRegion(args);
+		
+		else if(theCmd.equals("hole"))
+			regions.StartHole(args);
+		
+		else if(theCmd.equals("endhole"))
+			regions.EndHole(args);
+		
+		else if(theCmd.equals("rect"))
+			regions.AddRectOrOval(args,"Rect");
+		
+		else if(theCmd.equals("oval"))
+			regions.AddRectOrOval(args,"Oval");
+		
+		else if(theCmd.equals("polypt"))
+			regions.AddPolypoint(args);
 		
 		else
 			super.doCommand(theCmd, args);
@@ -346,6 +441,126 @@ public class CmdViewer extends JNCmdTextDocument
         }
 	}
 	
+	// MPMMethd #1,#2
+	public void doMPMMethod(ArrayList<String> args) throws Exception
+	{
+	    // MPM Only
+		requiresMPM(args);
+
+	    // read analysis type
+		if(args.size()<2)
+			throw new Exception("'MPMMethod' has too few parameters: "+args);
+		
+		// options
+		HashMap<String,Integer> options = new HashMap<String,Integer>(10);
+		options.put("usf", new Integer(0));
+		options.put("usavg", new Integer(2));
+		options.put("szs", new Integer(3));
+		mpmMethod = readIntOption(args.get(1),options,"MPM update method");
+		
+		// shape functions
+		if(args.size()>2)
+		{	String shape = readStringArg(args.get(2)).toLowerCase();
+			if(shape.equals("gimp") || shape.equals("ugimp"))
+				shapeMethod = "uGIMP";
+			else if(shape.equals("cpdi") || shape.equals("lcpdi"))
+				shapeMethod = "lCPDI";
+			else if(shape.equals("qcpdi"))
+				shapeMethod = "qCPDI";
+			else if(shape.equals("classic") || shape.equals("dirac"))
+				shapeMethod = "Dirac";
+			else
+				throw new Exception("The selected MPM shape function method was not recognized: "+args);
+		
+		}
+	}
+	
+	// Archive #1 (if #2 and #3 give, passed to ArchiveTime command
+	public void doArchive(ArrayList<String> args,boolean makeUnique) throws Exception
+	{
+		// MPM Only
+		requiresMPM(args);
+		
+	    // read analysis type
+		if(args.size()<2)
+			throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+		
+		String relPath = readStringArg(args.get(1));
+		if(relPath.length()==0)
+			throw new Exception("'"+args.get(0)+"' path has zero length: "+args);
+		
+		if(makeUnique)
+			archiveRoot = "    <ArchiveRoot unique='1'>"+relPath+"</ArchiveRoot>\n";
+		else
+			archiveRoot = "    <ArchiveRoot>"+relPath+"</ArchiveRoot>\n";
+		
+		// optional element second
+		if(args.size()>2)
+		{	args.remove(1);
+			doArchiveTime(args);
+		}
+	}
+	
+	// ArchiveTime #1,#2 (archive time and optional first archive time)
+	public void doArchiveTime(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+	
+		// read analysis type
+		if(args.size()<2)
+			throw new Exception("'ArchiveTime' has too few parameters: "+args);
+		
+		// archive time
+		double aTime = readDoubleArg(args.get(1));
+		archiveTime = "    <ArchiveTime units='ms'>"+aTime+"</ArchiveTime>\n";
+		
+		// optional first archive time
+		if(args.size()>2)
+		{	double firstArchiveTime = readDoubleArg(args.get(2));
+			archiveTime = archiveTime + "    <FirstArchiveTime units='ms'>"+firstArchiveTime+"</FirstArchiveTime>\n";
+		}
+	}
+	
+	// TimeStep #1,#2,#3 (time step and optional max time and courant factor)
+	public void doTimeStep(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+	
+		// read analysis type
+		if(args.size()<2)
+			throw new Exception("'TimeStep' has too few parameters: "+args);
+		
+		// archive time
+		double aTime = readDoubleArg(args.get(1));
+		timeStep = "    <TimeStep units='ms'>"+aTime+"</TimeStep>\n";
+		
+		// max time
+		if(args.size()>2)
+		{	aTime = readDoubleArg(args.get(2));
+			maxTime = "    <MaxTime units='ms'>"+aTime+"</MaxTime>\n";
+		}
+		
+		// Courant time
+		if(args.size()>3)
+		{	aTime = readDoubleArg(args.get(3));
+			timeStep = timeStep + "    <TimeFactor>"+aTime+"</TimeFactor>\n";
+		}
+	}
+		
+	// TimeStep #1,#2,#3 (time step and optional max time and courant factor)
+	public void doMaxTime(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+	
+		// read analysis type
+		if(args.size()<2)
+			throw new Exception("'MaximumTime' has too few parameters: "+args);
+		
+		// archive time
+		double aTime = readDoubleArg(args.get(1));
+		maxTime = "    <MaxTime units='ms'>"+aTime+"</MaxTime>\n";
+	}
+
 	// Element (element type)
 	public void doElement(ArrayList<String> args) throws Exception
 	{
@@ -395,7 +610,7 @@ public class CmdViewer extends JNCmdTextDocument
 		{	if(args.size()<3)
 				throw new Exception("XMLData command for a material needs to specify a material ID");
 			String matID = readStringArg(args.get(2));
-			mats.StartNewMaterial(matID,newXML);
+			mats.StartXMLMaterial(matID,newXML);
 			return;
 			
 		}
@@ -407,6 +622,64 @@ public class CmdViewer extends JNCmdTextDocument
 		// set value
 		xmldata.put(section,newXML);
 	}
+	
+	// Output command for FEA analysis
+	public void doOutput(ArrayList<String> args) throws Exception
+	{
+	    // FEA Only
+	    requiresFEA(args);
+		
+		// first time set the defaults
+		if(outFlags == null)
+			outFlags = new StringBuffer("YYYYNY");
+	    
+	    // read quantity and option material
+		if(args.size()<3)
+			throw new Exception("'Output' command has too few arguments: "+args);
+		
+		String quant = readStringArg(args.get(1)).toLowerCase();
+		String option = readStringArg(args.get(2)).toLowerCase();
+			
+		// add to flags
+		// enum { DISPLACEMENT_OUT=0,FORCE_OUT,ELEMSTRESS_OUT,AVGSTRESS_OUT,
+	    //                               REACT_OUT,ENERGY_OUT,NUMBER_OUT };
+		if(option.equals("selected"))
+			option="C";
+		else if(option.equals("no"))
+			option="N";
+		else if(option.equals("yes"))
+			option="Y";
+		else
+			throw new Exception("'Output' option must be 'yes', 'no', or 'selected': "+args);
+		
+		int offset;
+		if(quant.equals("displacements"))
+			offset=0;
+		else if(quant.equals("forces"))
+			offset=1;
+		else if(quant.equals("elementstresses"))
+			offset=2;
+		else if(quant.equals("nodalstresses"))
+			offset=3;
+		else if(quant.equals("reactivities"))
+			offset=4;
+		else if(quant.equals("energy"))
+			offset=5;
+		else
+	    	throw new Exception("Unrecognized 'Output' option: "+args);
+		
+		// make the change
+		outFlags.deleteCharAt(offset);
+		outFlags.insert(offset,option);
+		
+		// is there an archive time?
+		if(args.size()>3)
+		{	args.remove(1);
+			args.remove(1);
+			doOutput(args);
+		}
+	}
+
 	
 	// when analysis is done create XML commands
 	public String buildXMLCommands()
@@ -425,6 +698,7 @@ public class CmdViewer extends JNCmdTextDocument
 			xml.append(header);
 		xml.append("    </Description>\n");
 		xml.append("    <Analysis>"+np+"</Analysis>\n");
+		if(outFlags!=null) xml.append("    <Output>"+outFlags+"</Output>\n");
 		xml.append("  </Header>\n\n");
 		
 		// FEA section: Mesh
@@ -438,13 +712,54 @@ public class CmdViewer extends JNCmdTextDocument
 			
 			// done
 			xml.append("  </Mesh>\n\n");
+			
+			// BMPRegion, Body, and Hole blocks
+			xml.append(regions.toXMLString());
 		}
 		
 		// MPM sections: MPMHeader, Mesh, MaterialPoints, CrackList
 		//-----------------------------------------------------------
 		if(isMPM())
-		{
+		{	// MPM Header
+			//-----------------------------------------------------------
+			xml.append("  <MPMHeader>\n");
 			
+			// MPM method and GIMP
+			xml.append("    <MPMMethod>"+mpmMethod+"</MPMMethod>\n");
+			xml.append("    <GIMP type='"+shapeMethod+"'/>\n");
+			xml.append(timeStep);
+			xml.append(maxTime);
+			xml.append(archiveRoot);
+			xml.append(archiveTime);
+			
+			// check added xml
+			String more = xmldata.get("MPMHeader");
+			if(more != null) xml.append(more);
+			
+			// done
+			xml.append("  </MPMHeader>\n\n");
+			
+			// MPM Mesh
+			//-----------------------------------------------------------
+			xml.append("  <Mesh>\n");
+			
+			// check added xml
+			more = xmldata.get("Mesh");
+			if(more != null) xml.append(more);
+			
+			// done
+			xml.append("  </Mesh>\n\n");
+			
+			// MPM Material Points
+			//-----------------------------------------------------------
+			xml.append("  <MaterialPoints>\n"+regions.toXMLString());
+			
+			// check added xml
+			more = xmldata.get("MaterialPoints");
+			if(more != null) xml.append(more);
+			
+			// done
+			xml.append("  </MaterialPoints>\n\n");
 		}
 		
 		// Materials
@@ -464,15 +779,93 @@ public class CmdViewer extends JNCmdTextDocument
 			xml.append("  </GridBCs>\n\n");
 		}
 		
+		else
+		{	String more = xmldata.get("GridBCs");
+		
+			if(more!=null)
+			{	xml.append("  <GridBCs>\n");
+		
+				// check added xml
+				if(more != null) xml.append(more);
+	
+				// done
+				xml.append("  </GridBCs>\n\n");
+			}
+		}
+		
 		// ParticleBCs
 		//-----------------------------------------------------------
+		if(isMPM())
+		{	String more = xmldata.get("ParticleBCs");
 		
-		// FEA: Thermal
-		//-----------------------------------------------------------
-		
-		// MPM: Thermal, Gravity, CustomTasks
-		//-----------------------------------------------------------
+			if(more!=null)
+			{	xml.append("  <ParticleBCs>\n");
+	
+				// check added xml
+				if(more != null) xml.append(more);
 
+				// done
+				xml.append("  </ParticleBCs>\n\n");
+			}
+		}
+	
+		// FEA: Thermal, MPM: Thermal, Gravity, CustomTasks
+		//-----------------------------------------------------------
+		if(isFEA())
+		{	// FEA: Thermal
+			//-----------------------------------------------------------
+			String more = xmldata.get("Thermal");
+			if(more!=null)
+			{	xml.append("  <Thermal>\n");
+
+				// check added xml
+				if(more != null) xml.append(more);
+
+				// done
+			xml.append("  </Thermal>\n\n");
+			}
+		}
+		
+		else
+		{	// MPM: Thermal
+			//-----------------------------------------------------------
+			String more = xmldata.get("Thermal");
+			if(more!=null)
+			{	xml.append("  <Thermal>\n");
+
+				// check added xml
+				if(more != null) xml.append(more);
+
+				// done
+				xml.append("  </Thermal>\n\n");
+			}
+			
+			// MPM: Gravity
+			//-----------------------------------------------------------
+			more = xmldata.get("Gravity");
+			if(more!=null)
+			{	xml.append("  <Gravity>\n");
+
+				// check added xml
+				if(more != null) xml.append(more);
+
+				// done
+				xml.append("  </Gravity>\n\n");
+			}
+			
+			// MPM: CustomTasks
+			//-----------------------------------------------------------
+			more = xmldata.get("CustomTasks");
+			if(more!=null)
+			{	xml.append("  <CustomTasks>\n");
+
+				// check added xml
+				if(more != null) xml.append(more);
+
+				// done
+				xml.append("  </CustomTasks>\n\n");
+			}
+		}
 		
 		// convert to string and return
 		xml.append("</JANFEAInput>\n");
@@ -514,6 +907,25 @@ public class CmdViewer extends JNCmdTextDocument
 	// type of analysis
 	public boolean isFEA() { return np>=0 && np<BEGIN_MPM_TYPES ; }
 	public boolean isMPM() { return np>BEGIN_MPM_TYPES ; }
+	public boolean isMPM3D() { return np==THREED_MPM; }
+	
+	// verify FEA or MPM
+	public void requiresFEA(ArrayList<String> args) throws Exception
+	{	if(isFEA()) return;
+		if(args != null)
+		{	if(args.size()>1)
+				throw new Exception("The command '"+args.get(0)+"' is only allowed in FEA calculations: "+args);
+		}
+		throw new Exception("Some unknown command is only allowed in FEA calculations.");
+	}
+	public void requiresMPM(ArrayList<String> args) throws Exception
+	{	if(isMPM()) return;
+		if(args != null)
+		{	if(args.size()>1)
+				throw new Exception("The command '"+args.get(0)+"' is only allowed in MPM calculations: "+args);
+		}
+		throw new Exception("Some unknown command is only allowed in MPM calculations.");
+	}
 		
 	//----------------------------------------------------------------------------
 	// Actions as inner classes

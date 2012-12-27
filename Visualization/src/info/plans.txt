@@ -2,8 +2,6 @@
 NairnFEAMPMViz Plans
 -------------------------------------------------------------------
 
-¥ Find/Replace (through JNFramework)
-
 ¥ Plot zooming - click to zoom at location
 
 ¥ Plot angle - way to input - most code already looks for it - slider under component
@@ -17,34 +15,18 @@ NairnFEAMPMViz Plans
 Cammand Development
 -------------------------------------------------------------------
 
-Requires commas to delimit arguments but requires space after command
-String variables must end in $ and text may need to be quoted
-Variables do not need the #
-
 FEA Not Done
-	Select
-	Material definitions
-	Output
-	SelectLine
-	SelectPoint
-	Comment
+	MPM Region - add property pairs and document
+	MPM Mesh commands
 	EndPath - validate acceptable path
-	BMPRegion É EndRegion
-	Hole É EndHole
-	Origin
-	Region É EndRegion
-	StreeFreeTemp
-	Temperature
-	Periodic
-	Stress
-	CrackTip
 	Rotate
 	Periodic
+	StressFreeTemp
+	Temperature
+	CrackTip
+	BMPRegion É EndRegion
 	
-Conditionals
-
-NairnFEAMPM allow $ and end of variables (without conflicting with GEDitCOM II)
-MaterialBase recognize new material types (at minimum)
+MaterialBase recognize new material types (e.g. for hasPlasticStrainForGradient())
 
 -------------------------------------------------------------------
 Development Notes

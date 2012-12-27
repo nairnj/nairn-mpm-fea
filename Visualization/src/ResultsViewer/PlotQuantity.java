@@ -200,7 +200,7 @@ public class PlotQuantity extends PlotControl
 				if(arch[ReadArchive.ARCH_Strain]=='Y')
 					quant.addItem(new PlotMenuItem("Strain",MPMEPSX));
 				if(arch[ReadArchive.ARCH_PlasticStrain]=='Y')
-				{	quant.addItem(new PlotMenuItem("Plastic Strain",MPMPLEPSX));
+				{	quant.addItem(new PlotMenuItem("Plastic/L. Cauchy Strain",MPMPLEPSX));
 					if(arch[ReadArchive.ARCH_Strain]=='Y')
 						quant.addItem(new PlotMenuItem("Total Strain",MPMEPSTOTX));
 				}
@@ -607,60 +607,68 @@ public class PlotQuantity extends PlotControl
 	public void setCheckMeshItem() { quant.setSelectedIndex(checkMeshItem); }
 	
 	// name for plot component
-	public static String plotName(int component)
+	public static String plotName(int component,ResultsDocument resDoc)
 	{
+		char xc='x', yc='y', zc='z';
+		if(resDoc!=null)
+		{	if(resDoc.isAxisymmetric())
+			{	xc = 'r';
+				yc = 'z';
+				zc = 't';
+			}
+		}
 		switch(component)
 		{	case MPMSIGMAX:
 			case MESHSIGMAX:
 			case MESHELEMSIGMAX:
-				return "Stress xx";
+				return "Stress "+xc+xc;
 				
 			case MPMSIGMAY:
 			case MESHSIGMAY:
 			case MESHELEMSIGMAY:
-				return "Stress yy";
+				return "Stress "+yc+yc;
 				
 			case MPMSIGMAXY:
 			case MESHSIGMAXY:
 			case MESHELEMSIGMAXY:
-				return "Stress xy";
+				return "Stress "+xc+yc;
 				
 			case MPMSIGMAZ:
 			case MESHSIGMAZ:
 			case MESHELEMSIGMAZ:
-				return "Stress zz";
+				return "Stress "+zc+zc;
 				
 			case MPMEPSX:
 			case MPMEPSTOTX:
 			case MESHSTRAINX:
-				return "Strain xx";
+				return "Strain "+xc+xc;
 				
 			case MPMEPSY:
 			case MPMEPSTOTY:
 			case MESHSTRAINY:
-				return "Strain yy";
+				return "Strain "+yc+yc;
 				
 			case MPMEPSXY:
 			case MPMEPSTOTXY:
 			case MESHSTRAINXY:
-				return "Strain xy";
+				return "Strain "+xc+yc;
 				
 			case MPMEPSZ:
 			case MPMEPSTOTZ:
 			case MESHSTRAINZ:
-				return "Strain zz";
+				return "Strain "+zc+zc;
 				
 			case MPMPLEPSX:
-				return "Plastic Strain xx";
+				return "Plastic/L. Cauchy Strain "+xc+xc;
 				
 			case MPMPLEPSY:
-				return "Plastic Strain yy";
+				return "Plastic/L. Cauchy Strain "+yc+yc;
 				
 			case MPMPLEPSXY:
-				return "Plastic Strain xy";
+				return "Plastic/L. Cauchy Strain "+xc+yc;
 				
 			case MPMPLEPSZ:
-				return "Plastic Strain zz";
+				return "Plastic/L. Cauchy Strain "+zc+zc;
 
 			case MPMENERGY:
 				return "Energy";
@@ -706,38 +714,38 @@ public class PlotQuantity extends PlotControl
 				return "Temperature";
 			
 			case MPMVELX:
-				return "Velocity x";
+				return "Velocity "+xc;
 			
 			case MPMVELY:
-				return "Velocity y";
+				return "Velocity "+yc;
 			
 			case MPMVELVEC:
 				return "Velocity";
 			
 			case MPMDISPX:
 			case MESHDISPX:
-				return "Displacment x";
+				return "Displacment "+xc;
 			
 			case MPMDISPY:
 			case MESHDISPY:
-				return "Displacment y";
+				return "Displacment "+yc;
 			
 			case MPMPOS:
 				return "Position";
 			
 			case MPMPOSX:
-				return "Position x";
+				return "Position "+xc;
 			
 			case MPMPOSY:
-				return "Position y";
+				return "Position "+yc;
 			
 			case MPMDUDY:
 			case MESHDUDY:
-				return "Strain du/dy";
+				return "Strain du/d"+yc;
 			
 			case MPMDVDX:
 			case MESHDVDX:
-				return "Strain dv/dx";
+				return "Strain dv/d"+xc;
 			
 			case MPMHISTORY1:
 			case MPMHISTORY2:
@@ -746,10 +754,10 @@ public class PlotQuantity extends PlotControl
 				return "Material History";
 			
 			case MPMDCDY:
-				return "Conc Gradient dc/dy";
+				return "Conc Gradient dc/d"+yc;
 			
 			case MPMDCDX:
-				return "Conc Gradient dc/dx";
+				return "Conc Gradient dc/d"+xc;
 			
 			case MPMCONCENTRATION:
 				return "Concentration";
@@ -802,10 +810,10 @@ public class PlotQuantity extends PlotControl
 				return "Material Angle";
 			
 			case MESHFORCEX:
-				return "Force x";
+				return "Force "+xc;
 				
 			case MESHFORCEY:
-				return "Force y";
+				return "Force "+yc;
 			
 			case INTERFACETRACTION_N:
 				return "Interface Normal Traction";
