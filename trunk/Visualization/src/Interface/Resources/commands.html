@@ -44,6 +44,9 @@ hr { margin-top: 0pt;
 	padding: 0pt; }
 code { font-size: 12pt;
 	   background-color: #FFFFBB;}
+blockquote { font-size: 12pt;
+       font-family: Courier; }
+	
 </style>
 </head>
 
@@ -53,6 +56,8 @@ code { font-size: 12pt;
 
 <p><b>NairnFEAMPMViz</b> has a built-in <a href="#language">interpretive language</a> for programatically setting up FEA or MPM calculations. This section has a list of all language commands for FEA and MPM calculations. The commands are grouped by logical section. Within each section, they are listed alphabetically. Some commands apply to more than one section and thus may appear in several sections.
 </p>
+
+<p>This &quot;scripting&quot; option for NairnFEAMPMViz is new in version 4.0 and is not yet complete. The scripting <a href="#language">language</a> is based on (and nearly <a href="#compatible">compatible</a>) with the corresponding language in the NairnFEAMPM Mac application. The documentaiton listed below lists all the commands from NairnFEAMPM. The ones that are highlighted in yellow are the ones that been converted to work in NairnFEAMPMViz. The others will be added during development. The conversion is nearly completed for FEA calculations. If used for MPM calculations, many parts of the commands will will need to use the <a href="#xmldata">XMLData command</a> to enter commands not yet supported in the scripting language. Furthermore, a few language features (<i>e.g.</i>, repeat loops and subroutines) are not yet available. See the <a href="#language">language reference</a> section for what is available.</p>
 
 <h2>Command Groupings</h2>
 
@@ -77,6 +82,67 @@ code { font-size: 12pt;
 
 <h2><a name="language"></a>Language Reference</h2>
 
+<h3>Line Syntax</h3>
+
+<p>Each line of the commands to set up FEA or MPM models has the format:</p>
+<blockquote>
+Command #1,#2,#3,#4,...
+</blockquote>
+<p>where Command is the command and #1, #2, etc., are arguments to the command. The command must be separated from the arguments by a space. The arguments must be separated by commas. Leading and trailing spaces in arguments are ignored. Blank lines are ignored. Lines whoe first non-blank character is &quot;'!&quot; are comments and are also ignored.
+</p>
+
+<p>Any argument to any command can be a number, a string, a numeric expression, or a string expression (see next section).</p>
+
+<h3>Variables and Expressions</h3>
+
+<p>The commands can define numeric and string variables. Numeric variable names must begins in a letter or #, contain only letters and numbers or underscores, and have no function name as a substring within the name. String variable are the same except they must end in $. You create variables using the Set command:</p>
+<blockquote>
+Set var = expression
+</blockquote>
+<p>where &quot;expression&quot; is any basic mathematical expression for numeric variables or a string expression for string variables. The &quot;Set&quot; command is optional (<i>i.e.</i>, any line with variable name followed by equals sign is assumed to be a &quot;Set&quot; command.</p>
+
+<p>Numeric expressions use standard operators (+, 0, *, /, ^, and %) and standard precedences unless grouped by parentheses. The expression can use the math functions cos(), sin(), tan(), acos(), asin(), atan(), sqr(), sqrt(), log(), min(), max(), exp(), floor(), ceil(), abs() neg(), and rnd(). String expressions can combine quoted strings and variables with the single operator &amp;. Nummeric variables can be used and they are converted to strings. You cannot embed numeric expressions within string expressions.</p>
+
+
+<h3>Conditionals</h3>
+
+<p>Conditional blocks have the format:</p>
+<blockquote>
+if expr1 == expr2<br>
+   &nbsp;&nbsp;...<br>
+else ifStr expr3 &lt; expr4<br>
+   &nbsp;&nbsp;...<br>
+else ifDef var1<br>
+   &nbsp;&nbsp;...<br>
+else ifNDef var2<br>
+   &nbsp;&nbsp;...<br>
+else<br>
+   &nbsp;&nbsp;...<br>
+endif
+</blockquote>
+<p>In the standard if, the expressions are compared by numeric comparison, unless one or both are strings, in which case string comparison is used. The ifStr command forces string comparison between the expressions. The comparison operaters are =, ==, &quot;is&quot;, !=, &gt;, &gt;=, &lt;, and &lt;=. For numbers, =, ==, and &quot;is&quot; are the same. For strings, = and &quot;is&quot; are case insensitive comparisons and == is case sensitive. An ifDef comparison is true if the variable name given has been defined in at least one Set command. The ifNDef comparison is true if the variable has not been defined in any Set command.</p>
+
+<h3>Repeat Loops</h3>
+
+<p>To be developed.</p>
+
+<h3>Subroutines</h3>
+
+<p>To be developed.</p>
+
+<h3><a name="campatible"></a>Comparison to NairnFEAMPM Language</h3>
+
+<p>The scripting language in NairnFEAMPMViz is based on the corresponding scripting commands in the Mac application NairnFEAMPM. The key difference are:</p>
+<ol>
+<li>String variables are required to end in a $, while in NairnFEAMPM, that is not required, but is allowed.</li>
+<li>The main command on each line must be separeted from arguments by a space and arguments must be delimited by commands. In NairnFEAMPM commands and arguments can be delimited by commas, spaces, or tabs.</li>
+<li>Variables can begin in a letter or a #. In NairnFEAMPM, they <i>must</i> all begin in #.</li>
+<li>String expression can only combine quoted text and variables with the &amp; operator. In NairnFEAMPM, numeric expression can be embedded in string expressions by grouping them in parentheses, but that is not allowed in NairnFEAMPMViz.</li>
+<li>Array variables (using [] after the variable name) is not yet developed for NairnFEAMPMViz.</li>
+</ol>
+<p>When writing command files to use in both applications, you should avoid anything not supported in both applications. The key recommendations are to start all variables in #, to end string variables in $, and to use string expressions allowed in NairnFEAMPMViz.</p>
+
+
 <h2><a name="header"></a>Main Analysis Header</h2>
 
 <p>These commands define the type of analysis (FEA or MPM) and enter comments about the calculations.</p>
@@ -84,12 +150,15 @@ code { font-size: 12pt;
 <ul>
 <li><code>Analysis #1</code><br>
 Define type of analysis to be done. #1 can be &quot;Plane Strain FEA&quot; (or 0), &quot;Plain Stress FEA&quot; (or 1), &quot;Axisymmetric FEA&quot; (or 2), &quot;Plane Strain MPM&quot; (or 10), &quot;Plain Stress FEA&quot; (or 11), &quot;Axisymmetric MPM&quot; (or 12), or &quot;3D MPM&quot;.</li>
-<li><a href="comment.html">Comment</a>: Add a comment to the analysis description.</li>
+<li><code>Comment #1,&lt;#2:gt;,&lt;#3:gt;,&lt;#4:gt;...</code><br>
+Add a comment to the analysis description by evaluating each command and appending to a line beginning in &quot;Comment:&quot;.</li>
 <li><code>Header<br>&nbsp;&nbsp;(lines of text)<br>EndHeader</code><br>
 Enter an analysis description on multiple lines of text.</li>
 <li><code>Name #1</code><br>
 Defines name of the person doing the analysis.</li>
-<li><a href="output.html">Output</a>: Select the desired output results for FEA calculations.</li>
+<li><a name="output"></a><code>Output #1,#2,&lt;#3&gt;,&lt;#4&gt;,...</code><br>
+Select the desired output results for FEA calculations. The arugments appear in pairs. The first of each pair can be &quot;displacements&quot;, &quot;forces&quot;, &quot;elementstresses&quot;, &quot;nodalstresses&quot;, &quot;reactivities&quot;, or &quot;energy&quot; to include those results in output FEA results file. The second of each pair can be &quot;yes&quot; or &quot;no&quot; to include or omit those results, or it can be &quot;selected&quot; to only include results for selected nodes and elements (see <a href="#select">Select</a>, <a href="#selectline">SelectLine</a>, and <a href="#selectpoint">SelectPoint</a> comands).</li>
+
 <li><code>Title #1</code><br>
 Defines a title for the analysis.</li>
 </ul>
@@ -99,17 +168,22 @@ Defines a title for the analysis.</li>
 <p>These commands define many features of MPM calculations such as archiving options and other global MPM settings.</p>
 
 <ul>
-<li><a href="archive.html">Archive</a>: Select archiving folder for MPM calculations.</li>
-<li><a href="archive.html">ArchiveTime</a>: Select archiving frequency for MPM calculations.</li>
+<li><code>Archive #1</code><br>
+Select archiving folder for MPM calculations as relative path from the output file.</li>
+<li><code>ArchiveTime #1,&lt;#2&gt;</code><br>
+Select archiving frequency for MPM calculations. #1 is the archiving time in ms. The option #2 is the time to start archiving (in ms).</li>
 <li><a href="damping.html">Damping</a>: Select factor for damping grid velocities in MPM calculations.</li>
 <li><a href="feedbackdamping.html">FeedbackDamping</a>: Select coefficient for alternative viscous damping of MPM particle velocities.</li>
 <li><a href="globalarchive.html">GlobalArchive</a>: Specify global results to be archived in MPM calculations.</li>
 <li><a href="globalarchive.html">GlobalArchiveTime</a>: Specify time interval for archiving global results.</li>
 <li><a href="leavelimit.html">LeaveLimit</a>: Set action taken when a particle leaves the grid.</li>
-<li><a href="maximumtime.html">MaximumTime</a>: Set time the analysis will stop.</li>
-<li><a href="mpmmethod.html">MPMMethod</a>: Select MPM methods for the calculations.</li>
+<li><a name="maximumtime"></a><code>MaximumTime #1</code><br>
+Set time the MPM calculations will stop in ms.</li>
+<li><code>MPMMethod #1, #2</code><br>
+Select MPM methods for the calculations. #1 is the update method and it can be USF (or 0), USAVG (or 2) or SZS (or 3). #2 is the shape functions method and it can be uGIMP (or GIMP), lCPDI (or CPDI), qCPDI, or Classic (or Dirac).</li>
 <li><a href="ptsperelement.html">PtsPerElement</a>: Select number of material points per element in MPM calculations.</li>
-<li><a href="timestep.html">TimeStep</a>: Time step for MPM calculations.</li>
+<li><code>TimeStep #1,&lt;#2&gt;,&lt;#3&gt;</code><br>
+Set MPM time step parameters. #1 is the time step in ms (choose a high number to have the code pick time step based on material properties). Optional #2 is the maximum time to stop the calculations in ms (which can also be set in the <a href="#maximumtime">Maximum time command</a>). Optional #3 is the Courant-Levy safety factor for the code to adjust the time step (and should be less than 1).</li>
 <li><a href="toarchive.html">ToArchive</a>: Specify results to be archived in MPM calculations.</li>
 </ul>
 
@@ -118,7 +192,10 @@ Defines a title for the analysis.</li>
 <p>The details on the one command in this section explain how to enter properties for materials used in the calculations.</p>
 
 <ul>
-	<li><a name="material">Material</a>: Define a material type.</li>
+	<li><code>Material #1,#2,#3<br>
+	&nbsp;&nbsp;(commands to define properties)<br>
+	Done</code><br>
+	Define a material type. For more details see the materials help topic.</li>
 	<li><a href="tractionlaws.html">Traction Laws</a>: Use the <a href="material.html">Material</a> command to define traction laws.</li>
 </ul>
 
@@ -133,7 +210,8 @@ Defines a title for the analysis.</li>
 
 <li><a href="cylinder.html">Cylinder</a>: Define cylindrical volume of material points or for a hole.</li>
 
-<li><a href="element.html">Element</a>: Define type of element to use in the background grid.</li>
+<li><code>Element #1</code><br>
+Define type of element to use in the MPM background grid. Currently #1 can only be &quot;4 Node Quadrilateral&quot; (or 2) for 2D or axisymmetric MPM and can only be &quot;8 Node Brick&quot; (or 7) for 3D MPM.</li>
 
 <li><a href="intensity.html">Intensity</a>: Map pixel intensities to material types in a <a href="bmpregion.html">BMPRegion</a>.</li>
 
@@ -147,18 +225,23 @@ Defines a title for the analysis.</li>
 
 <li><a href="gridvert.html">GridVert</a>: Set vertical MPM grid parameters.</li>
 
-<li><a href="hole.html">Hole</a> ... <a href="endhole.html">EndHole</a>: Define a region for creating a hole.</li>
+<li><a name="holempm"></a><code>Hole<br>
+&nbsp;&nbsp;(series of <a href="#rectmpm">Rect</a>, <a href="ovalmpm">Oval</a>, or <a href="#polyptmpm">PolyPt</a> commands)<br>
+EndHole</code><br>
+Define a region for creating a hole that will not be assigned material points by any subsequent shape commands.</li>
 
-<li><a href="origin.html">Origin</a>: Set origin to map data in <a href="bmpregion.html">BMPRegion</a> to the grid.</li>
+<li><a name="originmpm"></a>Origin: Set origin to map data in <a href="bmpregion.html">BMPRegion</a> to the grid.</li>
 
-<li><a href="oval.html">Oval</a>: Define oval of material points or for a hole.</li>
+<li><a name="ovalmpm"></a><code>Oval #1,#2,#3,#4</code><br>
+Define oval within the rectangle defined by xmin, xmax, ymin, ymax (for #1 to #4) for the current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
 
-<li><a href="polypt.html">PolyPt</a>: Define polygon of material points or for a hole.</li>
+<li><a name="polyptmpm"></a><code>PolyPt &lt;#1:&gt;,&lt;#2&gt;</code><br>
+Define next point on a polygon shape or if no paramters, close the current polygon shape. If a polygon is open and the end of a <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block, it is automatically closed.</li>
 
-<li><a href="rect.html">Rect</a>: Define rectangle of material points or for a hole.</li>
+<li><a name="rectmpm"></a><code>Rect #1,#2,#3,#4</code><br>
+Define rectangle using xmin, xmax, ymin, ymax (for #1 to #4) for the current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
 
-<li><a href="region.html">Region</a> ... <a href="endregion.html">EndRegion</a>: Define a region for creating material points.</li>
-
+<li><a name="regionmpm"></a>Region ... EndRegion: Define a region for creating material points.</li>
 
 <li><a href="sphere.html">Sphere</a>: Define spherical volume of material points or for a hole.</li>
 
@@ -172,7 +255,7 @@ Defines a title for the analysis.</li>
 <li><a name="area"></a><code>Area #1,#2,&lt;#3&gt;<br>
 &nbsp;&nbsp;(list and/or define <a href="path">paths</a> and <a href="#keypoint">keypoints</a>)<br>
 EndArea</code><br>
-Define an area for mesh generation where #1 is a defined <a href="#material">material ID</a>, #2 is thickness (in mm) (ignored in axisummetric FEA, but still required), and #3 and angle (for anisotropic materials) (it can be a <a href="#function">user-defined function</a>). The commands in the area block should define four paths (to enclose 2D area) or two paths (for a 1D interface). Material ID can be &quot;_NONE_&quot; when the elements will be filled later by <a href="#bmpregionfea">BMPRegion</a> or various shape commands.</li>
+Define an area for mesh generation where #1 is a defined <a href="#material">material ID</a>, #2 is thickness (in mm) (ignored in axisummetric FEA, but still required), and #3 is an angle (for anisotropic materials) (it can be a <a href="#function">user-defined function</a>). The commands in the area block should define four paths (to enclose 2D area) or two paths (for a 1D interface). Material ID can be &quot;_NONE_&quot; when the elements will be filled later by <a href="#bmpregionfea">BMPRegion</a> or various shape commands.</li>
 
 <li><a name="bmpregionfea">BMPRegion</a> ... <a href="endregion.html">EndRegion</a>: Generate elements from an image in a BMP file.</li>
 
@@ -182,7 +265,10 @@ Define type of element to use in subsequent <a href="#area">Area</a> commands. #
 <li><code>FlipTriangles &lt;#1&gt;</code><br>
 Select the direction of trigular elements in meshes that use those elements. #1 is &quot;Yes&quot; or &quot;No&quot; to flip or omit to toggle current setting</li>
 
-<li><a href="hole.html">Hole</a> ... <a href="endhole.html">EndHole</a>: Remove elements using a series of shape commands.</li>
+<li><a name="holefea"></a><code>Hole<br>
+&nbsp;&nbsp;(series of <a href="#rectfea">Rect</a>, <a href="ovalfea">Oval</a>, or <a href="#polyptfea">PolyPt</a> commands)<br>
+EndHole</code><br>
+Define a region for creating a hole that removes elements in the mesh whose material ID was set to &quot;_NONE_&quot;</li>
 
 <li><a name="keypoint"></a><code>Keypoint #1,#2,#3,&lt;#4&gt;</code><br>
 Define a keypoint used in defining <a name="path">Paths</a>. #1 is keypoint ID, #2, and #3 are x and y coordinates (or r and z if axisymmetric). Optional #4 can be &quot;polar&quot; to change #2 and #3 to be R and &theta; to define keypoint using polar coordinates relative to current <a href="#origin">origin</a>.</li>
@@ -193,6 +279,9 @@ Add multiple (and previously) defined keypoints to a <a href="#path">Path</a>.</
 <li><a name="origin"></a><code>Origin #1,#2</code><br>
 Define coordinate system origin for entry of <a href="#keypoint">Keypoints</a> using polar coordinates.</li>
 
+<li><a name="ovalfea"></a><code>Oval #1,#2,#3,#4</code><br>
+Define oval within the rectangle defined by xmin, xmax, ymin, ymax (for #1 to #4) for the current <a href="#regionfea">region</a> or <a href="#holefea">hole</a> block.</li>
+
 <li><a href="path.html"></a><code>Path #1,#2,&lt;#3&gt;<br>
 &nbsp;&nbsp;(list and/or define keypoinst along the path)<br>
 EndPath</code><br>
@@ -201,7 +290,16 @@ Define a path used in defining <a href="#area">Areas</a>. #1 is the ID for the p
 <li><code>Paths #1,#2,...</code><br>
 Add multiple defined paths to an <a href="#area">Area</a>.</li>
 
-<li><a href="region.html">Region</a> ... <a href="endregion.html">EndRegion</a>: Generate elements for a series of shape commands.</li>
+<li><a name="polyptfea"></a><code>PolyPt &lt;#1:&gt;,&lt;#2&gt;</code><br>
+Define next point on a polygon shape or if no paramters, close the current polygon shape. If a polygon is open and the end of a <a href="#regionfea">region</a> or <a href="#holefea">hole</a> block, it is automatically closed.</li>
+
+<li><a name="rectfea"></a><code>Rect #1,#2,#3,#4</code><br>
+Define rectangle using xmin, xmax, ymin, ymax (for #1 to #4) for the current <a href="#regionfea">region</a> or <a href="#holempm">hole</a> block.</li>
+
+<li><a name="regionfea"></a><code>Region #1,#2,&lt;#3:gt;<br>
+&nbsp;&nbsp;(series of <a href="#rectfea">Rect</a>, <a href="rectfea">Oval</a>, or <a href="#polyptfea">PolyPt</a> commands)<br>
+EndRegion</code><br>
+Define a region for assigning material types to elements in the mesh whose material ID was set to &quot;_NONE&quot;. #1 is a defined <a href="#material">material ID</a>, #2 is thickness (in mm) (ignored in axisummetric FEA, but still required), and #3 is an angle (for anisotropic materials) (it can be a <a href="#function">user-defined function</a>).</li>
 
 <li><code>Resequence #1,&lt;#2&gt;</code><br>
 To turn on the option to resequence the nodes, which will minimize the bandwidth of the problem and speed the calculations. If only key #1, it is a keypoint ID. If #1 and #2 are give, the nodes are requenced from the node closest to those x and y coordinates.</li>
@@ -222,9 +320,9 @@ propagation in MPM calculations are:</p>
 <li><a href="crackinterface.html">CrackInterface</a>: Sets custom interface parameters for a specific crack.</li>
 <li><a href="crackthickness.html">CrackThickness</a>: Sets crack thickness; only used or needed when crack have <a href="tractionlaws.html">traction laws</a> or <a href="conduction.html">crack tips release their energy into heat</a>.</li>
 <li><a href="friction.html">Friction</a>: Set crack contact conditions.</li>
-<li><a href="growcrack.html">GrowCrack</a>: Used to extend the current crack to a new point.
+<li><a href="growcrack.html">GrowCrack</a>: Used to extend the current crack to a new point.</li>
 <li><a href="growcrackarc.html">GrowCrackArc</a>: Used to add a curved arc to the current crack.</li>
-<li><a href="growcrackline.html">GrowCrackLine</a>: Used to add a straight line to the current crack.
+<li><a href="growcrackline.html">GrowCrackLine</a>: Used to add a straight line to the current crack.</li>
 <li><a href="jcontour.html">JContour</a>: Used to set some options for the J Integral calculation.</li>
 <li><a href="imperfectinterface.html">ImperfectInterface</a>: Converts cracks to imperfect interface and sets the interfacial properties.</li>
 <li><a href="moveplane.html">MovePlane</a>: Used to set how crack plane particles move.</li>
@@ -363,7 +461,7 @@ Apply displacement conditions to <a href="#fixline">selected nodes</a>. #1 is x 
 EndFixLine</code><br>
 Apply displacement or load conditions to nodes along a line. If only #1 is given, it must be a <a href="#path">path ID</a>. If #1 through #5 are given, #1 to #4 give (x1,y1) and (x2,y2). All nodes along that line ar assigned boundary conditions. The optional #5 is a tolerance to select nodes within that distance from the line.</li>
 
-<li><code>FixPoint #1,&lt;#2&gt;<br>
+<li><a name="fixpoint"></a><code>FixPoint #1,&lt;#2&gt;<br>
 &nbsp;&nbsp;(any number or <a href="#displacement">Displacement</a>, <a href="#load">Load</a>, or <a href="#rotate">Rotate</a> commands)<br>
 &nbsp;&nbsp;(one optional <a href="#select">Select</a> command)<br>
 EndFixPoint</code><br>
@@ -376,13 +474,17 @@ Apply forces to selected nodes. #1 is x or y (or 1, or 2, R, or Z if axisymmetri
 
 <li><a name="rotate"></a>Rotate: Rotate <a href="fixline.html">selected nodes</a> for the purpose of applying skewed boundary conditions.</li>
 
-<li><a name="select"></a>Select: Select the <a href="fixline.html">selected nodes</a> for conditional <a href="output.html">output</a> of results.</li>
+<li><a name="select"></a><code>Select</code><br>
+Select the nodes and/or elements reference by the current <a href="#fixline">FixLine</a> or <a href="#fixpoint">FixPoint</a> boundary condition for conditional <a href="#output">output</a> of results.</li>
 
-<li><a href="selectline.html">SelectLine</a>: Select all nodes on a line for conditional <a href="output.html">output</a> of results.</li>
+<li><a name="selectline"></a><code>SelectLine #1,&lt;#2&gt;,&lt;#3&gt;,&lt;#4&gt;,&lt;#5&gt;</code><br>
+Select all nodes on a line for conditional <a href="#output">output</a> of results. If only #1 is given, it must be a <a href="#path">path ID</a>. If #1 through #5 are given, #1 to #4 give (x1,y1) and (x2,y2). All nodes along that line are selected. The optional #5 is a tolerance to select nodes within that distance from the line.</li>
 
-<li><a href="selectpoint.html">SelectPoint</a>: Select one node for conditional <a href="output.html">output</a> of results.</li>
+<li><a name="selectpoint"></a><code>SelectPoint #1,&lt;#2&gt;</code><br>
+Select one node for conditional <a href="#output">output</a> of results. If only #1 is given, it must be a <a href="#keypoint">keypoint ID</a> that node is selected. If #1 and #2 are given, they define coordinates (in mm) and the node closest to that point is selected.</li>
 
-<li><a name="stress"></a>Stress: Apply stress boundary conditions to faces of <a href="fixline.html">selected elements</a>.</li>
+<li><a name="stress"></a><code>Stress #1,#2,&lt;#3&gt;,&lt;#4&gt;</code><br>
+Apply stress boundary conditions to faces of <a href="#fixline">selected elements</a> which must be selected using a <a href="#path">path ID</a>. #1 is &quot;n&quot; (or 1) or &quot;t&quot; (or 2) for stress to be normal to the edge or tangential; the later is positive when loading the element face in the counter-clockwise direction. #2,&lt;#3&gt;,&lt;#4&gt; are 1 to 3 stresses. Give one stress for constant stress, two stresss for linear variation in stress along the edge, or three stresses for a quadratic variation in stress.</li>
 
 </ul>
 
@@ -410,7 +512,7 @@ Apply forces to selected nodes. #1 is x or y (or 1, or 2, R, or Z if axisymmetri
 <li><a name="xmldata"></a><code>XMLData &lt;#1&gt;,&lt;#2&gt;<br>
 &nbsp;&nbsp;(lines of verbatim XML content)<br>
 EndXMLData</code><br>
-Insert XML data in the interpretation output. #1 indicates the section where the XML content will be inserted and it will be at the end of that section. If #1 is omitted, the XML content is inserted at the end. The section can be any top level section defined for input files (and is case sensitive). If #1 is &quot;Material&quot;, the XML content is assume to completely define a single material. This content is inserted (in definition order) among other materials and #2 must define the <a href="#material">material ID</a>.</li>
+Insert XML data in the interpretation output. #1 indicates the section where the XML content will be inserted and it will be at the end of that section. If #1 is omitted, the XML content is inserted at the end. The section can be any top level section defined for input files (and is case sensitive). If #1 is &quot;Material&quot;, the XML content is assumed to completely define a single material. This content is inserted (in definition order) among other materials and #2 must define the <a href="#material">material ID</a>,. which can be referenced in other commands.</li>
 
 </ul>
 

@@ -1,0 +1,259 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>NairnFEAMPMViz Help</title>
+<style type="text/css">
+h1 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 16pt;
+	background-color: #CCCCCC;
+	font-weight: bold;
+	padding: 6pt; }
+h2 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 14pt;
+	margin-left: 3pt;
+	background-color: #CCCCCC; }
+h3 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt;
+	margin-left: 3pt;
+	color: #005500;}
+p { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt;
+	margin-top: 0pt;
+	margin-left: 12pt;
+	margin-bottom: 6pt; }
+ul { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt;
+	list-style-image: Bullet.png;
+	margin-top: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 28pt; }
+ul li { margin-top: 0pt;
+	margin-bottom: 3pt; }
+ol { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt;
+	margin-left: 28pt;
+	margin-top: 0px;
+	margin-bottom: 0px; }
+ol li { margin-top: 0px;
+	margin-bottom: 3pt; }
+img { vertical-align: middle; }
+hr { margin-top: 0pt;
+	margin-left: 0pt;
+	margin-right: 6pt;
+	padding: 0pt; }
+code { font-size: 12pt;
+	   background-color: #FFFFBB;}
+table { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt;
+	margin-top: 18pt;}
+
+blockquote { font-size: 12pt;
+       font-family: Courier; }
+	
+</style>
+</head>
+
+<body>
+
+<h1>Material Types</h1>
+
+	
+<p>A material is defined in scripting commands using a block that allows you to specify a new material type and define all its properties. The command block format is:</p>
+	
+<blockquote>Material #1,#2,#3<br>
+&nbsp;&nbsp;(Property commands - one per line)<br>
+Done</blockquote>
+	
+<p>where #1 is the ID or Label for the material created by the command. #2 is the material name entered as an string. When other commands refer to this material, they should use parameter #1 (the ID or Label) and not the name. The full name in parameter #2, however, will appear in output results. #3 defines the type of material, which can be entered by name or number (see table below).</p>
+
+<p>The Material command should be followed by lines that contain the material properties. Each property should be on a separate line and when the last property is specified, enter a line with the single Done Command. The various material types expect different properties. See the code project documentation on materials to see the properties expected for each material. To set a property, use the same name as the XML command name (case sensitive) follwed by the value for its argument. For example, to set modulus of isotropic material, use</p>
+
+<blockquote>E 2300</blockquote>
+
+<p>for the equivalent of &lt;E&gt;2300&lt;/E&gt; as an XML command.</p>
+
+<p>The following table list materials supported by NairnFEA or NairnMPM. The addition of new materials is an active development area, expecially for NairnMPM. When a material is supported by NairnFEAMPMViz, you can enter it using a Material block and scripting commands. Those materials are highlighted below. For all other materials, you hae to define them using an XMLData command (see commands help on that command for details). The boxes on the right tell which code supports each material type. For 2D MPM, the first X means it can be used in planar analyses and the second means axisymmetric analyses.</p>
+
+<center>
+<table border="1" cellpadding="2" cellspacing="0" width="90%">
+<tr><th>Name</th><th>#</th><th>Description</th><th>NairnFEA</th><th>2D NairnMPM</th><th>3D NairnMPM</th>
+</tr>
+
+<tr>
+<td colspan="6"><b>Linear Elastic and Hypoelastic (in MPM) Materials</b></td>
+</tr>
+
+<tr>
+<td><code>Isotropic</code></td>
+<td>1</td>
+<td>Linear elastic, isotropic</td>
+<td align="center">X</td><td align="center">XX</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td>Bistable</td>
+<td>10</td>
+<td width="50%">Elastic, isotropic material with two stable states and reversible or irreversible transitions between the two states</td>
+<td align="center"></td><td align="center">X-</td><td align="center"></td>
+</tr>
+
+<tr>
+<td><code>Transverse 1</code></td>
+<td>2</td>
+<td>Linear elastic, transversely isotropic with unique axis perpendicular to plane of the 2D analysis.</td>
+<td align="center">X</td><td align="center">XX</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td><code>Transverse 2</code></td>
+<td>3</td>
+<td width="50%">Linear elastic, transversely isotropic with unique axis in plane of 2D analysis. Unless rotated by &quot;angle&quot; options, the unique material axis is parallel to the <code>y</code> axis for 2D analyses and parallel to the <code>z</code> axis for axisymmetric analyses.</td>
+<td align="center">X</td><td align="center">XX</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td><code>Orthotropic</code></td>
+<td>4</td>
+<td width="50%">Linear elastic, orthotropic material</td>
+<td align="center">X</td><td align="center">XX</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td colspan="6"><b>Hyperelastic Materials</b></td>
+</tr>
+
+<tr>
+<td>Mooney</td>
+<td>8</td>
+<td width="50%">Mooney-Rivlin, hyperelastic, isotropi material. A neo-Hookean material is a special case of this material.</td>
+<td align="center"></td><td align="center">XX</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td>HEIsotropic</td>
+<td>21</td>
+<td width="50%">An isotropic, hyperelastic material. Currently in development and not yet ready for use.</td>
+<td align="center"></td><td align="center">X -</td><td align="center">X -</td>
+</tr>
+
+<tr>
+<td>HEAnisotropic</td>
+<td>21</td>
+<td width="50%">An anisotropic, hyperelastic material. Currently in development and not yet ready for use.</td>
+<td align="center"></td><td align="center">X -</td><td align="center">X -</td>
+</tr>
+
+<tr>
+<td>IdealGas</td>
+<td>22</td>
+<td width="50%">Ideal Gas, as a hyperelastic material.</td>
+<td align="center"></td><td align="center">X X</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td colspan="6"><b>Elastic-Plastic and Hypoelastic (in MPM) Materials</b></td>
+</tr>
+
+<tr>
+<td>VonMises</td>
+<td>9</td>
+<td width="50%">Elastic-plastic material with a Von Mises stress yield criterion and isotropic hardening</td>
+<td align="center"></td><td align="center">XX</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td>HillPlastic</td>
+<td>15</td>
+<td width="50%">Elastic-plastic orthotropic material with a Hill yield criterion and hardening</td>
+<td align="center"></td><td align="center">XX</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td>JohnsonCook</td>
+<td>16</td>
+<td width="50%">Elastic-plastic isotropic Johnson-Cook material with a rate- and temperature-dependent yield stress</td>
+<td align="center"></td><td align="center">X X</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td>MGSCGLMaterial</td>
+<td>17</td>
+<td width="50%">Elastic-plastic isotropic material using the Mie-Gr&#252;neisen equation of state with shear modulus and yield stress from Steinberg, Cochran, and Guinan.</td>
+<td align="center"></td><td align="center">X X</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td>SLMaterial</td>
+<td>18</td>
+<td width="50%">Elastic-plastic isotropic material based on the <a href="../../xmlformat/definematl.html#MGSCGL">MGSCGLMaterial</a> but with the addition of a rate-dependent yield stress term from Steinberg and Lund</td>
+<td align="center"></td><td align="center">X X</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td colspan="6"><b>Viscoelastic Materials</b></td>
+</tr>
+
+<tr>
+<td>Viscoelastic</td>
+<td>6</td>
+<td width="50%">Linear viscoelastic material with sum of relaxation times</td>
+<td align="center"></td><td align="center">X-</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td colspan="6"><b>Specialty Materials</b></td>
+</tr>
+
+<tr>
+<td><code>Interface</code></td>
+<td>5</td>
+<td width="50%">A definition of an imperfect interface</td>
+<td align="center">X</td><td align="center"></td><td align="center"></td>
+</tr>
+
+<tr>
+<td>Rigid</td>
+<td>11</td>
+<td width="50%">Not really a material, but useful for moving boundary conditions</td>
+<td align="center"></td><td align="center">XX</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td colspan="6"><b>Traction Law Materials</b></td>
+</tr>
+
+<tr>
+<td>TriangularTraction</td>
+<td>12</td>
+<td width="50%">A triangular <a href="tractionlaws.html">traction law</a> for use on crack surfaces</td>
+<td align="center"></td><td align="center">X</td><td align="center"></td>
+</tr>
+
+<tr>
+<td>LinearTraction</td>
+<td>13</td>
+<td width="50%">A linear elastic <a href="tractionlaws.html">traction law</a> for use on crack surfaces</td>
+<td align="center"></td><td align="center">X</td><td align="center"></td>
+</tr>
+
+<tr>
+<td>TrilinearTraction</td>
+<td>20</td>
+<td width="50%">A trilinear elastic <a href="tractionlaws.html">traction law</a> for use on crack surfaces</td>
+<td align="center"></td><td align="center">X</td><td align="center"></td>
+</tr>
+
+<tr>
+<td>CubicTraction</td>
+<td>14</td>
+<td width="50%">A cubic <a href="tractionlaws.html">traction law</a> for use on crack surfaces</td>
+<td align="center"></td><td align="center">X</td><td align="center"></td>
+</tr>
+
+</table>
+</center>
+
+
+</body>
+</html>

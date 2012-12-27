@@ -104,7 +104,7 @@ the results will automatically open for visualization.
 and compile the <code>NairnFEA</code> and <code>NairnMPM</code> code engines.
 These code engines can be installed on any platform. The details are not given is this
 help. Instead refer to the code engine web site
-(<code>http://oregonstate.edu/~nairnj/FEAMPM</code>) and to the documentation in the
+(<code>http://code.google.com/p/nairn-mpm-fea/</code>) and to the documentation in the
 code engine source code package.
 </p>
 
@@ -175,12 +175,15 @@ MPM calculation (for simple tensile test). You can <a href="#start">run</a> them
 
 <h2><a name="entercmds"></a>Entering Commands<hr></h2>
 
-<p>Once commands are open, you can edit the commands using basic text editing methods.
-Command files are XML files. This help does not document all the command options.
-For those details, refer to the documentation in the code engine source code package.
-You can save the commands at any time using the &quot;Save&quot; or &quot;Save As...&quot; menu 
-commands (or the &quot;Save&quot; icon). Additional, command files are automatically
-saved whenever you <a href="#start">run a calculation</a>.
+<p>Once commands are open, you can edit the commands using basic text editing methods.</p>
+
+<p>There are two types of command files. First you can enter raw XML data using the XML commands supported by the <code>NairnFEA</code> and <code>NairnMPM</code> code engines This help does not document all the command options.
+For those details, refer to the documentation in the code engine source code package.</p>
+
+<p>The alternate style of commands is a built-in scripting language. These types of commands provide more flexibility in setting up calculations because they can contain things like variable, conditions, <i>etc</i>. When you interpret a script, the commands create XML commands that are sent to the code engines. This feature of NairnFEAMPMViz is still in development, which means not all features are accessible by scripting commands. When the feature you need are available as scripting commands, that approach is preferred. See the help topic on scripting commands for more details.</p>
+
+<p>You can save the commands at any time using the &quot;Save&quot; or &quot;Save As...&quot; menu 
+commands (or the &quot;Save&quot; icon).
 </p>
 
 <p>| <a href="#index">index</a> |</p>
@@ -193,8 +196,7 @@ saved whenever you <a href="#start">run a calculation</a>.
 <ol>
 <li>Choose &quot;Run FEA/MPM Analysis&quot; from the Analyze menu (or click the &quot;Run&quot;
 arrow icon). If the commands have not yet
-been saved to a file, you will have to save them first. If the commands have been changed,
-they will automatically be saved to the current file.
+been saved to a file, you will have to save them first.
 </li>
 
 <li>Next, a file choosing dialog will open for you enter where to save the output results.
@@ -246,6 +248,10 @@ The subsequent steps are identical to
 running a calculation except that once the problem is setup, the calculation will abort,
 the ouput file will be opened for visualization, and the initial mesh will
 appear in a plot window.</p>
+
+<h3>Interpreting Commands</h3>
+
+<p>Choosing the &quot;Interpret Commands...&quot; menu command will display the XML input file in the bottom half of the commands window, but will not launch the code engines. This command is most useful when using scripting commands and you want to verify they are creating the expected XML input file.</p>
 
 <p>| <a href="#index">index</a> |</p>
 

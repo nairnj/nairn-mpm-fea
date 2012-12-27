@@ -299,7 +299,7 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 		else
 		{	Hashtable<String,String> props = new Hashtable<String,String>();
 			props.put("object.color",plot2DView.selectPlotColor());
-			props.put("array.name",PlotQuantity.plotName(component));
+			props.put("array.name",PlotQuantity.plotName(component,resDoc));
 			plot2DView.plotData(x,y,props);
 				
 			// axis labels
@@ -441,7 +441,7 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 			// the plot
 			Hashtable<String,String> props = new Hashtable<String,String>();
 			props.put("object.color",plot2DView.selectPlotColor());
-			props.put("array.name",PlotQuantity.plotName(component)+" "+crackNum);
+			props.put("array.name",PlotQuantity.plotName(component,resDoc)+" "+crackNum);
 			plot2DView.plotData(x,y,props);
 			
 			if(plot2DView.getNumberOfPlots()<2)

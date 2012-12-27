@@ -303,6 +303,22 @@ public class ResultsDocument extends AbstractTableModel
 				matl=new MaterialBase(matName,MaterialBase.CUBICTRACTIONMATERIAL);
 			else if(word1.equals("Elastic-Plastic"))
 				matl=new MaterialBase(matName,MaterialBase.HILLPLASTIC);
+	        else if(word1.equals("M-G,"))
+				matl=new MaterialBase(matName,MaterialBase.MGSCGLMATERIAL);
+			else if(word1.equals("Steinberg-Lund"))
+				matl=new MaterialBase(matName,MaterialBase.SLMATERIAL);
+			else if(word1.equals("Johnson-Cook"))
+				matl=new MaterialBase(matName,MaterialBase.JOHNSONCOOK);
+			else if(word1.equals("Wood"))
+				matl=new MaterialBase(matName,MaterialBase.WOODMATERIAL);
+			else if(word1.equals("Ideal"))
+				matl=new MaterialBase(matName,MaterialBase.IDEALGAS);
+			else if(word1.equals("Hyperelastic"))
+	        {   if(word2.equals("Isotropic"))
+					matl=new MaterialBase(matName,MaterialBase.HEISOTROPIC);
+				else
+					matl=new MaterialBase(matName,MaterialBase.HEANISOTROPIC);
+	        }
 			else
 			{	// try to continue with unknown material type
 				matl=new MaterialBase(matName,MaterialBase.UNKNOWNMATERIAL);

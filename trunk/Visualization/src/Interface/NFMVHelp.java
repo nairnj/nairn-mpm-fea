@@ -27,6 +27,8 @@ public class NFMVHelp extends JNHelpWindow implements ActionListener
 		addToolBarIcon(showTopic,"apphelp","Show main application help information.",this);
 		showTopic=new ImageIcon(baseClass.getResource("Resources/commands-editor.png"));
 		addToolBarIcon(showTopic,"genhelp","Show help on scripting commands.",this);
+		showTopic=new ImageIcon(baseClass.getResource("Resources/materialtypes.png"));
+		addToolBarIcon(showTopic,"mathelp","Show help on material types.",this);
 	}
 	
 	// pick new help topic
@@ -40,6 +42,10 @@ public class NFMVHelp extends JNHelpWindow implements ActionListener
 		
 		else if(theCmd.equals("genhelp"))
 		{	helpURL = JNApplication.main.getClass().getResource("Resources/commands.html");
+		}
+		
+		else if(theCmd.equals("mathelp"))
+		{	helpURL = JNApplication.main.getClass().getResource("Resources/materials.html");
 		}
 		
 		if(helpURL==null)

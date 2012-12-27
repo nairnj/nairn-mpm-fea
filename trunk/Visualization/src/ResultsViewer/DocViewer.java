@@ -142,7 +142,7 @@ public class DocViewer extends JNDocument
 					// manually set to current setting in main window controls
 					controls.plotOpened();
 					int newComponent=controls.getPlotComponent();
-					movieFrame.setTitle(resDoc.name+" ("+PlotQuantity.plotName(newComponent)+")");
+					movieFrame.setTitle(resDoc.name+" ("+PlotQuantity.plotName(newComponent,resDoc)+")");
 					movieFrame.setVisible(true);
 					movieFrame.toFront();
 				}
@@ -153,7 +153,7 @@ public class DocViewer extends JNDocument
 						newComponent=controls.getPlotComponent();
 					else
 						newComponent=movieFrame.movieControls.getPlotComponent();
-					movieFrame.setTitle(resDoc.name+" ("+PlotQuantity.plotName(newComponent)+")");
+					movieFrame.setTitle(resDoc.name+" ("+PlotQuantity.plotName(newComponent,resDoc)+")");
 					movieFrame.setVisible(true);
 					movieFrame.toFront();
 					movieFrame.beginNewIndexNewComponent(controls.getArchiveIndex(),newComponent);
