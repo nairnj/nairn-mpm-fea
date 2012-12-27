@@ -203,16 +203,16 @@ public class CmdViewer extends JNCmdTextDocument
 		// save this document (commands saved before each run - preference would be better)
 		//if(!saveDocument()) return;
 		
-		// check if DTD file
+		// check if XML file
+		soutConsole.clear();
 		int offset=cmdField.getCommands().indexOf("<?xml ");
 		if(offset<0 || offset>10)
 		{	// interpret commands
 			useBackground = doBackground;
 			openMesh = runType;
-			soutConsole.clear();
 			super.runAnalysis();
 			
-			// when done, when launch the analysis
+			// when done, will launch the analysis
 			return;
 		}
 		
