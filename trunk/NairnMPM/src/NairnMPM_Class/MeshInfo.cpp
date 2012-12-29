@@ -19,7 +19,9 @@ MeshInfo mpmgrid;
 MeshInfo::MeshInfo(void)
 {
 	cartesian=UNKNOWN_GRID;
-	horiz=0;					// also flag that used <Grid> command (i.e. structured grid)
+	horiz=0;                        // also flag that used <Grid> command (i.e. structured grid)
+	contactByDisplacements=TRUE;	// contact by displacements
+	positionCutoff=0.8;             // element fraction when contact by positions
 }
 
 #pragma mark MeshInfo:Methods
@@ -56,6 +58,16 @@ void MeshInfo::Output(int pointsPerCell)
 	}
 	else
 		cout << "Non-orthogonal grid" << endl;
+}
+
+// output contact method by displacements or position with a cutoff
+void MeshInfo::OutputContactByDisplacements(void)
+{
+    if(contactByDisplacements)
+		cout << "   (normal cod from displacements)" << endl;
+	else
+		cout << "   (normal cod from position with contact when separated less than " << positionCutoff
+                << " of cell)" << endl;
 }
 
 // check if element is on edge of 2D structured mesh - only needed for GIMP calculations
@@ -387,7 +399,107 @@ double MeshInfo::GetDefaultThickness()
 {	double gthick=GetThickness();
 	return gthick>0. ? gthick : 1.0 ;
 }
+
+// find cutoff distance for contact
+double MeshInfo::GetNormalCODAdjust(Vector *norm,Vector *tang,double delt)
+{
+    // none if contact is by displacements
+    if(contactByDisplacements) return 0.;
+    
+    // otherwise position cuttoff from fraction of perpendicular distance
+    return positionCutoff * GetPerpendicularDistance(norm,tang,delt);
+}
+
+// find hperp distance used in contact calculations in interface force calculations
+// Vector tang and magnitude delt only needed for 3D calculations
+double MeshInfo::GetPerpendicularDistance(Vector *norm,Vector *tang,double delt)
+{
+    double dist = gridx;
+    
+    // Angled path correction method 1: hperp  is distance to ellipsoid through cell corners
+    //    defined by tangent vector. In 3D, also multiply by distance to ellipsoid along
+    //    n X t (which is along z axis for 2D)
+    // In 2D and 3D the dist is equal to grid spacing if gridx=gridy=gridz and therefore this
+    //    whole block gets skipped
+    // See JANOSU-6-60 and JANOSU-6-74
+    if(Is3DGrid())
+    {   if(cartesian!=CUBIC_GRID)
+        {   if(DbleEqual(delt,0.))
+            {   // pick any tangent vector
+                tang->z = 0.;
+                if(!DbleEqual(norm->x,0.0) || !DbleEqual(norm->y,0.0))
+                {   tang->x = norm->y;
+                    tang->y = -norm->x;
+                }
+                else
+                {   // norm = (0,0,1)
+                    tang->x = 1.;
+                    tang->y = 0.;
+                }
+            }
+            Vector t2;
+            t2.x = norm->y*tang->z - norm->z*tang->y;
+            t2.y = norm->z*tang->x - norm->x*tang->z;
+            t2.z = norm->x*tang->y - norm->y*tang->x;
+            double a1 = tang->x/gridx;
+            double b1 = tang->y/gridy;
+            double c1 = tang->z/gridz;
+            double a2 = t2.x/gridx;
+            double b2 = t2.y/gridy;
+            double c2 = t2.z/gridz;
+            dist = gridx*gridy*gridz*sqrt((a1*a1 + b1*b1 + c1*c1)*(a2*a2 + b2*b2 + c2*c2));
+        }
+    }
+    else if(cartesian!=SQUARE_GRID)
+    {   double a=gridx*norm->x;
+        double b=gridy*norm->y;
+        dist = sqrt(a*a + b*b);
+    }
+
+    // Angled path correction method 2: distance to ellipsoid along normal
+    //      defined as hperp
+    // See JANOSU-6-76
+    /*
+    double a=norm->x/mpmgrid.gridx;
+    double b=norm->y/mpmgrid.gridy;
+    if(mpmgrid.Is3DGrid())
+    {   double c=norm->z/mpmgrid.gridz;
+        dist = 1./sqrt(a*a + b*b + c*c);
+    }
+    else
+        dist = 1./sqrt(a*a + b*b);
+    */
+
+    // Angled path correction method 3 (in imperfect interface by cracks paper):
+    //   Find perpendicular distance which gets smaller as interface tilts
+    //   thus the effective surface area increases
+    // See JANOSU-6-23 to 49
+    /*
+    double a=fabs(mpmgrid.gridx*norm->x);
+    double b=fabs(mpmgrid.gridy*norm->y);
+    if(mpmgrid.Is3DGrid())
+    {   // 3D has two cases
+        double c=fabs(mpmgrid.gridz*norm->z);
+        dist = fmax(a,fmax(b,c));
+        if(2.*dist < a+b+c)
+        {   // need alternate formula in this case (i.e., Max(a,b,c) < sum of other two)
+            dist = (1./4.)*(2./a + 2./b + 2/c - a/(b*c) - b/(a*c) - c/(a*b));
+            dist = 1./dist;
+        }
+    }
+    else
+    {   // 2D just take maximum
+        dist = fmax(a,b);
+    }
+    */
 	
+    return dist;
+}
+	
+// return current setting for contact method
+bool MeshInfo::GetContactByDisplacements(void) { return contactByDisplacements; }
+void MeshInfo::SetContactByDisplacements(bool newContact) { contactByDisplacements=newContact; }
+
 
 	
 

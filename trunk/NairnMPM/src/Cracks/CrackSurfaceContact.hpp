@@ -36,7 +36,7 @@ class CrackSurfaceContact
 		double friction,Dn,Dnc,Dt;
 		double materialFriction,materialDn,materialDnc,materialDt;
 		bool hasImperfectInterface,displacementCheck;
-		double positionCutoff,materialContactVmin,rigidGradientBias;
+		double materialContactVmin,rigidGradientBias;
 		short materialContactLaw;
 		int materialNormalMethod;
 		
@@ -61,10 +61,6 @@ class CrackSurfaceContact
 		void SetMoveOnlySurfaces(bool);
 		bool GetPreventPlaneCrosses(void);
 		void SetPreventPlaneCrosses(bool);
-		bool GetContactByDisplacements(void);
-		void SetContactByDisplacements(bool);
-		void SetNormalCODCutoff(double);
-		double GetNormalCODCutoff(void);
 		int GetMaterialContactLaw(int,int);
 		double GetMaterialFriction(int,int);
         void GetMaterialInterface(int,int,double *,double *,double *);
@@ -76,9 +72,7 @@ class CrackSurfaceContact
 		ContactDetails *CrackContactLaw;
 		ContactDetails **mmContact;
 		bool moveOnlySurfaces;
-		bool contactByDisplacements;
         bool preventPlaneCrosses;
-		double normalCODAdjust;
 
 		void TangentialSlipDeltaP(Vector *,Vector *);
 		void NormalSlipDeltaP(Vector *,Vector *);
