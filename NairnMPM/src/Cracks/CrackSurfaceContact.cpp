@@ -17,6 +17,7 @@
 #include "Cracks/CrackHeader.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
 
 // Single global contact law object
 CrackSurfaceContact contact;
@@ -36,8 +37,6 @@ CrackSurfaceContact::CrackSurfaceContact()
 	hasImperfectInterface=FALSE;	// flag for any imperfect interfaces
 	moveOnlySurfaces=TRUE;			// move surfaces, plane moves at midpoint of surfaces
 	preventPlaneCrosses=TRUE;		// if true, move surfaces that cross the crack plane back to the crack plane
-	contactByDisplacements=TRUE;	// contact by displacements
-	positionCutoff=0.8;				// element fraction when contact by positions
 	materialFriction=0.;				// material contact friction
 	materialDn=-1.;						// prefect in tension by default
 	materialDnc=-101.;					// <-100 means not set and should be set same as Dn
@@ -84,10 +83,7 @@ void CrackSurfaceContact::Output(int numberOfCracks)
 	cout << "Contact Detection: Normal dv < 0" << endl;
 #else
 	cout << "Contact Detection: Normal cod < 0 AND normal dv < 0" << endl;
-	if(contactByDisplacements)
-		cout << "   (normal cod from displacements)" << endl;
-	else
-		cout << "   (normal cod from position with contact when separated less than " << positionCutoff << " of cell)" << endl;
+    mpmgrid.OutputContactByDisplacements();
 #endif
 	if(GetMoveOnlySurfaces())
 		cout << "Crack Plane Updating: Average of the crack surfaces" << endl;
@@ -202,10 +198,7 @@ void CrackSurfaceContact::MaterialOutput(void)
 	strcpy(join," & ");
 	if(displacementCheck)
 	{	cout << join << "(Normal cod < 0)" << endl;
-		if(contactByDisplacements)
-			cout << "   (normal cod from displacements)" << endl;
-		else
-			cout << "   (normal cod from position with contact when separated less than " << positionCutoff << " of cell)" << endl;
+        mpmgrid.OutputContactByDisplacements();
 	}
 	else
 		cout << endl;
@@ -307,7 +300,7 @@ void CrackSurfaceContact::AddDisplacementVolume(short vfld,int matfld,NodalPoint
 	if(firstCrack==NULL && maxMaterialFields==1) return;
 	
 	// displacement or position for contact calculations
-	if(contactByDisplacements)
+	if(mpmgrid.GetContactByDisplacements())
 	{	Vector pdisp=mptr->pos;
 		ndpt->AddDisplacement(vfld,matfld,mptr->mp*shape,SubVector(&pdisp,&mptr->origpos));
 	}
@@ -382,8 +375,8 @@ short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVe
 		dispb.y/=massb;
 		
 		// normal cod
-		double dnorm=(dispb.x-dispa.x)*norm.x + (dispb.y-dispa.y)*norm.y;
-		if(!contactByDisplacements) dnorm-=normalCODAdjust;
+		double dnorm=(dispb.x-dispa.x)*norm.x + (dispb.y-dispa.y)*norm.y
+                        - mpmgrid.GetNormalCODAdjust(&norm,NULL,0);
 		if(postUpdate)
 		{	double dvel=(massa+massb)*dotn/(massa*massb);
 			dnorm+=dvel*deltime;
@@ -650,7 +643,14 @@ short CrackSurfaceContact::GetInterfaceForce(NodalPoint *np,Vector *fImp,CrackVe
 	if(CrackContactLaw[number].Dn>=0. || CrackContactLaw[number].Dnc>=0.)
 	{	// normal displacement (unnormalized - missing 1/|norm|)
 		dnunnorm=(db.x-da.x)*norm->x + (db.y-da.y)*norm->y;
-		if(!contactByDisplacements) dnunnorm-=sqrt(norm->x*norm->x+norm->y*norm->y)*normalCODAdjust;
+		if(!mpmgrid.GetContactByDisplacements())
+        {   // assumes always 2D for this crack surface contact
+            // need special case because norm is not normalized here
+            if(mpmgrid.GetCartesian()==SQUARE_GRID)
+                dnunnorm -= sqrt(norm->x*norm->x+norm->y*norm->y)*mpmgrid.positionCutoff*mpmgrid.gridx;
+            else
+                dnunnorm -= mpmgrid.GetNormalCODAdjust(norm,NULL,0);
+        }
 		// Normal traction in g/(mm sec^2) - but different separated or in contact
 		if(dnunnorm>0.)
 		{	// normal direction in tension
@@ -704,12 +704,12 @@ short CrackSurfaceContact::GetInterfaceForce(NodalPoint *np,Vector *fImp,CrackVe
 
 // return SEPARATED if not in contact or IN_CONTACT if now in contact
 // displacement is from a to b (i.e. db-da)
-// norm assummed to be normalized, dvel assumed found using noramlized norm too
+// norm assummed to be normalized, dvel assumed found using normalized norm too
 short CrackSurfaceContact::MaterialContact(Vector *dispa,Vector *dispb,Vector *norm,double dvel,bool postUpdate,double deltime)
 {
 	// normal cod
-	double dnorm=((dispb->x-dispa->x)*norm->x + (dispb->y-dispa->y)*norm->y + (dispb->z-dispa->z)*norm->z);
-	if(!contactByDisplacements) dnorm-=normalCODAdjust;
+	double dnorm=((dispb->x-dispa->x)*norm->x + (dispb->y-dispa->y)*norm->y + (dispb->z-dispa->z)*norm->z)
+                    - mpmgrid.GetNormalCODAdjust(norm,NULL,0);
 	
 	// on post update, adjust by normal velocity difference
 	if(postUpdate) dnorm+=dvel*deltime;
@@ -727,14 +727,6 @@ void CrackSurfaceContact::SetMoveOnlySurfaces(bool moveSurfaces) { moveOnlySurfa
 // return current setting for moving only surfaces
 bool CrackSurfaceContact::GetPreventPlaneCrosses(void) { return preventPlaneCrosses; }
 void CrackSurfaceContact::SetPreventPlaneCrosses(bool preventCross) { preventPlaneCrosses=preventCross; }
-
-// return current setting for contact method
-bool CrackSurfaceContact::GetContactByDisplacements(void) { return contactByDisplacements; }
-void CrackSurfaceContact::SetContactByDisplacements(bool newContact) { contactByDisplacements=newContact; }
-
-// convert fraction to actual position offset for contact by positions
-void CrackSurfaceContact::SetNormalCODCutoff(double meshSize) { normalCODAdjust=positionCutoff*meshSize; }
-double CrackSurfaceContact::GetNormalCODCutoff(void) { return normalCODAdjust; }
 
 // material contact law for field mati to field matj
 int CrackSurfaceContact::GetMaterialContactLaw(int mati,int matj)

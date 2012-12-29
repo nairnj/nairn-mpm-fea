@@ -244,8 +244,6 @@ void CrackVelocityFieldMulti::RezeroNodeTask6(double deltaTime)
 
 #pragma mark MATERIAL CONTACT
 
-#define LIMIT_FORCES
-
 /* Called in multimaterial mode to check contact at nodes with multiple materials
 
 	Input parameters:
@@ -930,20 +928,22 @@ void CrackVelocityFieldMulti::GetVolumeGradient(int matfld,NodalPoint *ndptr,Vec
 		CopyScaleVector(grad,mvf[matfld]->volumeGrad,scale);
 }
 
+
 // Handle interface forces or not (if they are perfect interfces
 // Contact handled here only for perfect interface parts (Dt or Dn < 0), if done return FALSE
 // Imperfect interfaces are handled next
-// maxFn and maxFt below find normal and tangential force for perfect interface for the
-//		direction that is an imperfect interface. One would like to use these forces to limit
-//		the internal force and thereby work better for large Dn and Dt. So far the correction
-//      does not seem to work? (comment or uncomment LIMIT_FORCES to use it)
+// Use LIMIT_FORCES to decide if force is too high as determined by whether or not
+//      the materials position is forced to pass the center of mass position by
+//      the calculated formce
+#define LIMIT_FORCES
 bool CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *norm,double Dn,double Dnc,
                     double Dt,Vector *fImp,double *rawEnergy,double rawSurfaceArea,
 					Vector *delPi,double dotn,bool inContact,bool postUpdate,double mred)
 {
     // normal displacement (norm is normalized) = delta . norm, subtract adjustment when using position
     double deln = DotVectors(delta,norm);
-    if(!contact.GetContactByDisplacements()) deln -= contact.GetNormalCODCutoff();
+    if(!mpmgrid.GetContactByDisplacements())
+        deln -= mpmgrid.positionCutoff*mpmgrid.GetMinCellDimension();
     
     // tangential vector in tang
     Vector tang;
@@ -997,91 +997,32 @@ bool CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *no
 		trn=1.e6*Dnc*deln;
 	}
     
-#endif
+    // get perpendicular distance to correct contact area
+    double dist = mpmgrid.GetPerpendicularDistance(norm, &tang, delt);
+    
+	// scale by minimum volume in perpendicular distance
+    // Now forces are g-mm/sec^2
+	double surfaceArea = rawSurfaceArea/dist;
+	trn *= surfaceArea;
+	trt *= surfaceArea;
+    
+    // find (trn n + trt t)*Ai for force in cartesian coordinates
+    CopyScaleVector(fImp, norm, trn);
+    AddScaledVector(fImp, &tang, trt);
+    
+    // total energy (not increment) is (1/2)(trn dn + trt dt)*Ai in g-mm^2/sec^2
+    // units will be g-mm^2/sec^2
+    *rawEnergy = 0.5*(trn*deln + trt*delt);
+    
+#else
 
     // get perpendicular distance to correct contact area
-    double dist;
+    double dist = mpmgrid.GetPerpendicularDistance(norm, &tang, delt);
     
-    // Angled path correction method 1: hperp  is distance to ellipsoid through cell corners
-    //    defined by tangent vector. In 3D, also multiply by distance to ellipsoid along
-    //    n X t (which is along z axis for 2D)
-    // In 2D and 3D the dist is equal to grid spacing is gridx=gridy=gridz.
-    // See JANOSU-6-60 and JANOSU-6-74
-    if(mpmgrid.Is3DGrid())
-    {   if(DbleEqual(delt,0.))
-        {   // pick any tangent vector
-            tang.z = 0.;
-            if(!DbleEqual(norm->x,0.0) || !DbleEqual(norm->y,0.0))
-            {   tang.x = norm->y;
-                tang.y = -norm->x;
-            }
-            else
-            {   // norm = (0,0,1)
-                tang.x = 1.;
-                tang.y = 0.;
-            }
-        }
-        Vector t2;
-        t2.x = norm->y*tang.z - norm->z*tang.y;
-        t2.y = norm->z*tang.x - norm->x*tang.z;
-        t2.z = norm->x*tang.y - norm->y*tang.x;
-        double a1 = tang.x/mpmgrid.gridx;
-        double b1 = tang.y/mpmgrid.gridy;
-        double c1 = tang.z/mpmgrid.gridz;
-        double a2 = t2.x/mpmgrid.gridx;
-        double b2 = t2.y/mpmgrid.gridy;
-        double c2 = t2.z/mpmgrid.gridz;
-        dist = mpmgrid.gridx*mpmgrid.gridy*mpmgrid.gridz*sqrt((a1*a1 + b1*b1 + c1*c1)*(a2*a2 + b2*b2 + c2*c2));
-    }
-    else
-    {   double a=mpmgrid.gridx*norm->x;
-        double b=mpmgrid.gridy*norm->y;
-        dist = sqrt(a*a + b*b);
-    }
-    
-    // Angled path correction method 2: distance to ellipsoid along normal
-    //      defined as hperp
-    // See JANOSU-6-76
-    /*
-    double a=norm->x/mpmgrid.gridx;
-    double b=norm->y/mpmgrid.gridy;
-    if(mpmgrid.Is3DGrid())
-    {   double c=norm->z/mpmgrid.gridz;
-        dist = 1./sqrt(a*a + b*b + c*c);
-    }
-    else
-        dist = 1./sqrt(a*a + b*b);
-    */
-    
-	// Angled path correction method 3 (in imperfect interface by cracks paper):
-    //   Find perpendicular distance which gets smaller as interface tilts
-    //   thus the effective surface area increases
-    // See JANOSU-6-23 to 49
-    /*
-    double a=fabs(mpmgrid.gridx*norm->x);
-    double b=fabs(mpmgrid.gridy*norm->y);
-    if(mpmgrid.Is3DGrid())
-    {   // 3D has two cases
-        double c=fabs(mpmgrid.gridz*norm->z);
-        dist = fmax(a,fmax(b,c));
-        if(2.*dist < a+b+c)
-        {   // need alternate formula in this case (i.e., Max(a,b,c) < sum of other two)
-            dist = (1./4.)*(2./a + 2./b + 2/c - a/(b*c) - b/(a*c) - c/(a*b));
-            dist = 1./dist;
-        }
-    }
-    else
-    {   // 2D just take maximum
-        dist = fmax(a,b);
-    }
-    */
-	
 	// scale by minimum volume in perpendicular distance
     // Now forces are g-mm/sec^2
 	double surfaceArea = rawSurfaceArea/dist;
 	
-#ifdef LIMIT_FORCES
-    
     // get maximum forces to move current positions to center of mass positions (ignoring ftot)
     AddScaledVector(delPi,norm,-dotn);					// delPi - dotn (n) = dott (t)
     double dott=sqrt(DotVectors(delPi,delPi));
@@ -1135,17 +1076,6 @@ bool CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *no
     
     *rawEnergy = 0.5*(trn*deln + trt*delt);
     
-#else
-	trn *= surfaceArea;
-	trt *= surfaceArea;
-    
-    // find (trn n + trt t)*Ai for force in cartesian coordinates
-    CopyScaleVector(fImp, norm, trn);
-    AddScaledVector(fImp, &tang, trt);
-    
-    // total energy (not increment) is (1/2)(trn dn + trt dt)*Ai in g-mm^2/sec^2
-    // units will be g-mm^2/sec^2
-    *rawEnergy = 0.5*(trn*deln + trt*delt);
 #endif
 	
 	return TRUE;

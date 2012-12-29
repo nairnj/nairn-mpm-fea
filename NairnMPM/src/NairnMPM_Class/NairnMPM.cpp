@@ -479,9 +479,6 @@ void NairnMPM::PreliminaryCalcs(void)
     sprintf(fline,"Adjusted time step (ms): %.7e",1000.*timestep);
     cout << fline << endl;
     
-	// contact law materials and cracks
-	contact.SetNormalCODCutoff(mpmgrid.GetMinCellDimension());
-	
     // prpagation time step and other settings when has cracks
     if(firstCrack!=NULL)
 	{	if(propagate[0])
@@ -552,11 +549,11 @@ void NairnMPM::ValidateOptions(void)
 	{	if(mpmgrid.GetCartesian()!=CUBIC_GRID && mpmgrid.GetCartesian()!=ORTHOGONAL_GRID)
 			throw CommonException("3D calculations require an orthogonal grid","NairnMPM::ValidateOptions");
 		if(ptsPerElement!=1 && ptsPerElement!=8 && ptsPerElement!=27)
-			throw CommonException("3D analysis requires 1 or 8 particles per cell","NairnMPM::ValidateOptions");
+			throw CommonException("3D analysis requires 1 or 8 or 27 particles per cell","NairnMPM::ValidateOptions");
 	}
 	else
 	{	if(ptsPerElement!=1 && ptsPerElement!=4 && ptsPerElement!=9 && ptsPerElement!=16 && ptsPerElement!=25)
-			throw CommonException("2D analysis requires 1 or 4 particles per cell","NairnMPM::ValidateOptions");
+			throw CommonException("2D analysis requires 1, 4, 9, 16, or 25 particles per cell","NairnMPM::ValidateOptions");
 	}
 
     // Axisymmetric requirements and adjustments

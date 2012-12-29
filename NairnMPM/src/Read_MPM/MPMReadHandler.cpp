@@ -486,9 +486,9 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     else if(strcmp(xName,"ContactPosition")==0)
     {	if(block!=CRACKHEADER && block!=MULTIMATERIAL)
 			ThrowCompoundErrorMessage(xName," command found at invalid location.","");
-		contact.SetContactByDisplacements(FALSE);
+		mpmgrid.SetContactByDisplacements(FALSE);
     	input=DOUBLE_NUM;
-        inputPtr=(char *)&contact.positionCutoff;
+        inputPtr=(char *)&mpmgrid.positionCutoff;
     }
 	
     else if(strcmp(xName,"JContour")==0)

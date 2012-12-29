@@ -26,12 +26,14 @@ class MeshInfo
 		double diagx,diagy,diagz;		// cell diagonal
 		int xplane,yplane,zplane;		// node spacings in each plane
 		double xmin,ymin,zmin;			// minimums (if from a grid)
+        double positionCutoff;             // cut off for normal contact when using positiong instead of displacements
 		
 		// constructors
 		MeshInfo(void);
 		
 		// methods
 		void Output(int);
+        void OutputContactByDisplacements(void);
 		bool EdgeElement2D(int);
 		bool EdgeElement3D(int);
 		void ListOfNeighbors2D(int,int *);
@@ -51,12 +53,18 @@ class MeshInfo
 		double GetCellVolume(void);
 		double GetThickness(void);
 		double GetDefaultThickness();
+        double GetNormalCODAdjust(Vector *,Vector *,double);
+        double GetPerpendicularDistance(Vector *,Vector *,double);
+        bool GetContactByDisplacements(void);
+        void SetContactByDisplacements(bool);
 		
 	private:
 		int cartesian;					// non-zero (NOT_CARTESIAN) is a regular grid
 		int totalElems;					// total number of elements
 		int horiz,vert,depth;			// number of elements in that direction (if from a grid)
 		double cellVolume;				// cell volume
+        bool contactByDisplacements;    // TRUE is using displacements, false if need to adjust normal COD
+
 };
 
 extern MeshInfo mpmgrid;
