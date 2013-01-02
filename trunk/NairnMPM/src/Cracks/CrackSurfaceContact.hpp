@@ -56,7 +56,7 @@ class CrackSurfaceContact
 		void Output(int);
 		void CrackOutput(bool,double,double,double,double,int);
 		void MaterialOutput(void);
-		short GetInterfaceForce(NodalPoint *,Vector *,CrackVelocityField *,CrackVelocityField *,Vector *,int,double *);
+		short GetInterfaceForce(NodalPoint *,Vector *,CrackVelocityField *,CrackVelocityField *,Vector *,int,double *,double);
 		bool GetMoveOnlySurfaces(void);
 		void SetMoveOnlySurfaces(bool);
 		bool GetPreventPlaneCrosses(void);

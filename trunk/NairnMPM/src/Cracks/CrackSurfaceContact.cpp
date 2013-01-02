@@ -301,11 +301,14 @@ void CrackSurfaceContact::AddDisplacementVolume(short vfld,int matfld,NodalPoint
 	
 	// displacement or position for contact calculations
 	if(mpmgrid.GetContactByDisplacements())
-	{	Vector pdisp=mptr->pos;
+	{	// extrapolate displacements
+		Vector pdisp=mptr->pos;
 		ndpt->AddDisplacement(vfld,matfld,mptr->mp*shape,SubVector(&pdisp,&mptr->origpos));
 	}
 	else
+	{	// extraplate positions
 		ndpt->AddDisplacement(vfld,matfld,mptr->mp*shape,&mptr->pos);
+	}
 	
 	// add dilated volume, only used by transport tasks, contact, and imperfect interfaces
 	MaterialBase *matptr = theMaterials[mptr->MatID()];
@@ -621,7 +624,7 @@ void CrackSurfaceContact::FrictionalDeltaP(Vector *delP,Vector *norm,int number)
 // Calculate forces at imperfect interfaces and both CrackVelocityFields are present and have particles
 // Return TRUE if imperfect interface or FALSE if not
 short CrackSurfaceContact::GetInterfaceForce(NodalPoint *np,Vector *fImp,CrackVelocityField *cva,
-				CrackVelocityField *cvb,Vector *norm,int number,double *rawEnergy)
+				CrackVelocityField *cvb,Vector *unnorm,int number,double *rawEnergy,double nodalx)
 {
 	// no forces needed if really perfect, was handled by contact momentum change
 	if(CrackContactLaw[number].Dn<0. && CrackContactLaw[number].Dt<0. && CrackContactLaw[number].Dnc<0.)
@@ -637,67 +640,78 @@ short CrackSurfaceContact::GetInterfaceForce(NodalPoint *np,Vector *fImp,CrackVe
 	Vector dispb=cvb->GetCMDisplacement();
 	db.x=dispb.x*mnode;
 	db.y=dispb.y*mnode;
+	
+	// normal vector (assumes 2D because this is for cracks only)
+	Vector norm = *unnorm;
+	ScaleVector(&norm,1./sqrt(norm.x*norm.x+norm.y*norm.y));
 			
-	double dnunnorm,dtunnorm,trn=0.,trt=0.;
+    // Angled path correction (special case because norm is not normalized (2D only)
+	double dist = mpmgrid.GetPerpendicularDistance(&norm, NULL, 0.);
+    
+	// Area correction method (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
+	double vola = cva->GetVolumeNonrigid(),volb = cvb->GetVolumeNonrigid(),voltot=vola+volb;
+	double surfaceArea = sqrt(2.0*fmin(vola,volb)*voltot)/dist;
+	
+    // If axisymmetric, multiply by radial position (vola, volb above were areas)
+    if(fmobj->IsAxisymmetric()) surfaceArea *= nodalx;
+	
+	double dn,dt,trn = 0.,trt = 0.;
 	
 	if(CrackContactLaw[number].Dn>=0. || CrackContactLaw[number].Dnc>=0.)
-	{	// normal displacement (unnormalized - missing 1/|norm|)
-		dnunnorm=(db.x-da.x)*norm->x + (db.y-da.y)*norm->y;
+	{	// normal displacement
+		dn = (db.x-da.x)*norm.x + (db.y-da.y)*norm.y;
 		if(!mpmgrid.GetContactByDisplacements())
-        {   // assumes always 2D for this crack surface contact
-            // need special case because norm is not normalized here
-            if(mpmgrid.GetCartesian()==SQUARE_GRID)
-                dnunnorm -= sqrt(norm->x*norm->x+norm->y*norm->y)*mpmgrid.positionCutoff*mpmgrid.gridx;
-            else
-                dnunnorm -= mpmgrid.GetNormalCODAdjust(norm,NULL,0);
-        }
+		{	// for efficiency used calculated dist
+			dn -= mpmgrid.positionCutoff*dist;
+		}
+		
 		// Normal traction in g/(mm sec^2) - but different separated or in contact
-		if(dnunnorm>0.)
+		if(dn>0.)
 		{	// normal direction in tension
 			if(CrackContactLaw[number].Dn>=0.)
-				trn=1.e6*CrackContactLaw[number].Dn*dnunnorm;
+				trn = 1.e6*CrackContactLaw[number].Dn*dn*surfaceArea;
 			else
 			{	// interface perfect in tension, if also perfect in shear can exit
-				dnunnorm=0.;
 				if(CrackContactLaw[number].Dt<0.) return FALSE;
+				dn = 0.;
 			}
 		}
 		else
 		{	// normal direction in compression
 			if(CrackContactLaw[number].Dnc>=0.)
-				trn=1.e6*CrackContactLaw[number].Dnc*dnunnorm;
+				trn = 1.e6*CrackContactLaw[number].Dnc*dn*surfaceArea;
 			else
 			{	// interface perfect in compression, if also perfect in shear can exit
-				dnunnorm=0.;
 				if(CrackContactLaw[number].Dt<0.) return FALSE;
+				dn = 0.;
 			}
 		}
 	}
 	else
 	{	// perfect in normal direction
-		dnunnorm=0.;
+		dn = 0.;
 	}
 			
 	if(CrackContactLaw[number].Dt>=0.)
-	{	// transverse force (unnormalized - missing 1/|norm|)
-		dtunnorm=(db.x-da.x)*norm->y - (db.y-da.y)*norm->x;
+	{	// transverse force
+		dt = (db.x-da.x)*norm.y - (db.y-da.y)*norm.x;
+		
 		// transverse traction in g/(mm sec^2)
-		trt=1.e6*CrackContactLaw[number].Dt*dtunnorm;
+		trt = 1.e6*CrackContactLaw[number].Dt*dt*surfaceArea;
 	}
 	else
 	{	// perfect in normal direction
-		dtunnorm=0.;
+		dt = 0.;
 	}
 			
 	// find trn n + trt t and finally normalize
-	double norm2=1./(norm->x*norm->x + norm->y*norm->y);	// square because |norm| for trn or trt and |norm| for norm->x,y
-	fImp->x=(trn*norm->x+trt*norm->y)*norm2;
-	fImp->y=(trn*norm->y-trt*norm->x)*norm2;
+	fImp->x = trn*norm.x + trt*norm.y;
+	fImp->y = trn*norm.y - trt*norm.x;
 	
 	// total energy (not increment) is (1/2)(trn dnunnorm + trt dtunnorm)/(norm2*norm2) in g/sec^2
 	// Use norm2 because |norm| for trn and trt and |norm| for dnunnorm and dtunnorm
 	// units wiill be g/sec^2
-	*rawEnergy=(trn*dnunnorm + trt*dtunnorm)*norm2/2.;
+	*rawEnergy = (trn*dn + trt*dt)/2.;
 	
 	return TRUE;
 }
