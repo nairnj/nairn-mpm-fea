@@ -411,7 +411,8 @@ double MeshInfo::GetNormalCODAdjust(Vector *norm,Vector *tang,double delt)
 }
 
 // find hperp distance used in contact calculations in interface force calculations
-// Vector tang and magnitude delt only needed for 3D calculations
+// Vector tang and magnitude delt only needed for 3D calculations. If not known
+// or has zero magnitude, it will use normal vector method instead
 double MeshInfo::GetPerpendicularDistance(Vector *norm,Vector *tang,double delt)
 {
     double dist = gridx;
@@ -421,33 +422,30 @@ double MeshInfo::GetPerpendicularDistance(Vector *norm,Vector *tang,double delt)
     //    n X t (which is along z axis for 2D)
     // In 2D and 3D the dist is equal to grid spacing if gridx=gridy=gridz and therefore this
     //    whole block gets skipped
-    // See JANOSU-6-60 and JANOSU-6-74
+    // See JANOSU-6-60 and JANOSU-6-74 and method #1 in paper
     if(Is3DGrid())
     {   if(cartesian!=CUBIC_GRID)
-        {   if(DbleEqual(delt,0.))
-            {   // pick any tangent vector
-                tang->z = 0.;
-                if(!DbleEqual(norm->x,0.0) || !DbleEqual(norm->y,0.0))
-                {   tang->x = norm->y;
-                    tang->y = -norm->x;
-                }
-                else
-                {   // norm = (0,0,1)
-                    tang->x = 1.;
-                    tang->y = 0.;
-                }
+        {   if(tang==NULL || DbleEqual(delt,0.))
+            {   // rather then try to pick a tangent, use normal only
+				// or use method #2 in paper and below
+				double a=norm->x/mpmgrid.gridx;
+				double b=norm->y/mpmgrid.gridy;
+				double c=norm->z/mpmgrid.gridz;
+				dist = 1./sqrt(a*a + b*b + c*c);
             }
-            Vector t2;
-            t2.x = norm->y*tang->z - norm->z*tang->y;
-            t2.y = norm->z*tang->x - norm->x*tang->z;
-            t2.z = norm->x*tang->y - norm->y*tang->x;
-            double a1 = tang->x/gridx;
-            double b1 = tang->y/gridy;
-            double c1 = tang->z/gridz;
-            double a2 = t2.x/gridx;
-            double b2 = t2.y/gridy;
-            double c2 = t2.z/gridz;
-            dist = gridx*gridy*gridz*sqrt((a1*a1 + b1*b1 + c1*c1)*(a2*a2 + b2*b2 + c2*c2));
+			else
+			{	Vector t2;
+				t2.x = norm->y*tang->z - norm->z*tang->y;
+				t2.y = norm->z*tang->x - norm->x*tang->z;
+				t2.z = norm->x*tang->y - norm->y*tang->x;
+				double a1 = tang->x/gridx;
+				double b1 = tang->y/gridy;
+				double c1 = tang->z/gridz;
+				double a2 = t2.x/gridx;
+				double b2 = t2.y/gridy;
+				double c2 = t2.z/gridz;
+				dist = gridx*gridy*gridz*sqrt((a1*a1 + b1*b1 + c1*c1)*(a2*a2 + b2*b2 + c2*c2));
+			}
         }
     }
     else if(cartesian!=SQUARE_GRID)
@@ -458,8 +456,8 @@ double MeshInfo::GetPerpendicularDistance(Vector *norm,Vector *tang,double delt)
 
     // Angled path correction method 2: distance to ellipsoid along normal
     //      defined as hperp
-    // See JANOSU-6-76
-    /*
+    // See JANOSU-6-76 and method #2 is paper
+	/*
     double a=norm->x/mpmgrid.gridx;
     double b=norm->y/mpmgrid.gridy;
     if(mpmgrid.Is3DGrid())
@@ -468,13 +466,13 @@ double MeshInfo::GetPerpendicularDistance(Vector *norm,Vector *tang,double delt)
     }
     else
         dist = 1./sqrt(a*a + b*b);
-    */
+	*/
 
     // Angled path correction method 3 (in imperfect interface by cracks paper):
     //   Find perpendicular distance which gets smaller as interface tilts
     //   thus the effective surface area increases
-    // See JANOSU-6-23 to 49
-    /*
+    // See JANOSU-6-23 to 49 and method #3 in paper
+	/*
     double a=fabs(mpmgrid.gridx*norm->x);
     double b=fabs(mpmgrid.gridy*norm->y);
     if(mpmgrid.Is3DGrid())
@@ -491,7 +489,7 @@ double MeshInfo::GetPerpendicularDistance(Vector *norm,Vector *tang,double delt)
     {   // 2D just take maximum
         dist = fmax(a,b);
     }
-    */
+	*/
 	
     return dist;
 }

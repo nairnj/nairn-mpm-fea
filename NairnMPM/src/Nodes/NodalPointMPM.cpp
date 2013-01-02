@@ -1131,35 +1131,15 @@ void NodalPoint::AddInterfaceForce(short a,short b,Vector *norm,int crackNumber)
 	
     // Use contact laws to change momenta - returns TRUE or FALSE if adjustment was made
 	double rawEnergy;
-	if(!contact.GetInterfaceForce(this,&fImpInt,cvf[a],cvf[b],norm,crackNumber,&rawEnergy))
+	if(!contact.GetInterfaceForce(this,&fImpInt,cvf[a],cvf[b],norm,crackNumber,&rawEnergy,x))
 		return;
 	
-    // Angled path correction method 1: distance to elipse through cell corners
-    double dxnx = mpmgrid.gridx*norm->x, dyny = mpmgrid.gridy*norm->y ;
-    double dist = sqrt((dxnx*dxnx+dyny*dyny)/(norm->x*norm->x+norm->y*norm->y));
-	
-	// Angled path correction method 2 (in imperfect interface by cracks paper):
-    //   Find perpendicular distance which gets smaller as interface tilts
-	//   thus the surface area increases
-    //double dxnx = fabs(mpmgrid.gridx*norm->x), dyny = fabs(mpmgrid.gridy*norm->y) ;
-	//double dist = fmax(dxnx,dyny)/sqrt(norm->x*norm->x+norm->y*norm->y);
-    
-	// Area correction method 1 (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
-	double vola=cvf[a]->GetVolumeNonrigid(),volb=cvf[b]->GetVolumeNonrigid(),voltot=vola+volb;
-	double surfaceArea=sqrt(2.0*fmin(vola,volb)*voltot)/dist;
-	
-	// Area correction method 2 (in imperfect interface by cracks paper): (2*vmin/vtot)*vtot/dist = 2*vmin/dist
-	//double surfaceArea=2.0*fmin(cvf[a]->UnscaledVolumeNonrigid(),cvf[b]->UnscaledVolumeNonrigid())/dist;
-    
-    // If axisymmetric, multiply by radial position (vola, volb above were areas)
-    if(fmobj->IsAxisymmetric()) surfaceArea *= x;
-	
 	// add total force (in g mm/sec^2)
-	AddFintSpreadTask3(a,MakeVector(fImpInt.x*surfaceArea,fImpInt.y*surfaceArea,0.));
-	AddFintSpreadTask3(b,MakeVector(-fImpInt.x*surfaceArea,-fImpInt.y*surfaceArea,0.));
+	AddFintSpreadTask3(a,MakeVector(fImpInt.x,fImpInt.y,0.));
+	AddFintSpreadTask3(b,MakeVector(-fImpInt.x,-fImpInt.y,0.));
 	
 	// add interface energy in units g-mm^2/sec^2 (multiply by 1e-9 to get J - kg-m^2/sec^2)
-	interfaceEnergy+=rawEnergy*surfaceArea;
+	interfaceEnergy += rawEnergy;
 }
 
 #pragma mark ACCESSORS
