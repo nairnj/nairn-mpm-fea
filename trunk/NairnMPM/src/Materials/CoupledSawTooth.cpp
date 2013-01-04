@@ -22,7 +22,7 @@
     If we require (Tn, Tt) to be gradient of a potential (which this law does)
     we must have single k above (same stiffness in normal and traction). This law
     implies pure mode I and mode II tractions are idential (same cohesive stress
-    oo k dpk and same critical COD of dc).
+    of k dpk and same critical COD of dc).
  
     But I think potential arguments need to be clarified when damage is
     occurring.
@@ -116,7 +116,7 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
     // skip if zero since tractions are zero, and would cause problem if pure linear softening law when deff=0
     // (deff>0 implies upeak[0]>0 even when umidI=0 for pure linear softening)
     if(deff > 0.)
-    {   // stiffness same for both modes keff = (1-D)k = sc(df-dmax)/(dmax*(df-d0) = k d0*(df-dmax)/(dmax*(df-d0)
+    {   // stiffness same for both modes keff = (1-D)k = sc(df-dmax)/(dmax*(df-d0)) = k d0*(df-dmax)/(dmax*(df-d0))
         // Note: prior to deff reaching d0, dmax=upeak[0]=umidI=d0 and  keff = sc/d0 = k
         double keff=sIc*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
         
