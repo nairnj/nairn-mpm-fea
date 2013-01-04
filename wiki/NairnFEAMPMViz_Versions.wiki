@@ -18,7 +18,11 @@ public static final String versionReadable="Version 3.0.0";
 NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The versions currently in this project are as follows:
 
   * Current trunk Version
-    * No changes yet to NairnFEAMPMViz 3.3.0.
+    * has NairnFEAMPMViz 4.0.
+    * Update to handle the new axisymmetric MPM option in NairnMPM.
+    * Started a scripting language similar to NairnFEAMPM (Mac app), which is a much better way to create models than using direct `XML` commands. Most of the FEA commands and some of the MPM commands are done. The scripting language itself is modeled on the NairnFEAMPM language, but still lacks some features of that language. What is present is mostly compatible.
+    * Enhanced help window to document new scripting commands and all material types.
+    * Continuous development of the user interface.
 
   * release-3.0 (25 JAN 2012)
     * has NairnFEAMPMViz 3.3.0.
