@@ -813,10 +813,11 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 <dl>
 
 <dt>&lt;SetDirection&gt;1&lt;/SetDirection&gt;</dt>
-<dd>Values 1 through 7 set various combinations of velocity directions. To create the alternate type of rigid particles that can implement frictional contact, set this value to 8. The options 1 through 7 set grid velocites to various components of the rigid particle velocity by bit-wise selection with first three bits being for x, y, and z directions:
+<dd>Values 1 through 7 set various combinations of velocity directions. To create the alternate type of rigid particles that can implement frictional contact, set this value to 8. The options 1 through 7 set grid velocites to various components of the rigid particle velocity by bit-wise selection with first three bits being for x, y, and z directions (or R, Z, &theta; if axisymmetric):
 <table border="1" cellpadding="0" cellspacing="0" align="center">
 <tr><th>Value</th><th>Binary</th><th>Set Directions</th>
 </tr>
+<tr><td>1</td><td>0x000</td><td>no diretion</td></tr>
 <tr><td>1</td><td>0x001</td><td>x only</td></tr>
 <tr><td>2</td><td>0x010</td><td>y only</td></tr>
 <tr><td>3</td><td>0x011</td><td>x and y</td></tr>
@@ -828,16 +829,16 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 </dd>
     	    	
 <dt>&lt;SetTemperature/&gt;</dt>
-<dd>Set temperature to the particle temperature. This setting has no affect unless the analysis is doing thermal calculations. Can only be used if <code>SetDirection</code> is 0 through 7. Use 0 to having moving heat source; use 1 to 7 to combine moving heat source with velocity boundary conditions.</dd>
+<dd>Set temperature to the particle temperature. This setting has no affect unless the analysis is doing thermal calculations. Can only be used if <code>SetDirection</code> is 0 through 7. Use 0 to having moving heat source only; use 1 to 7 to combine moving heat source with velocity boundary conditions.</dd>
 
 <dt>&lt;SetConcentration/&gt;</dt>
-<dd>Set concentration to the particle concentration entered as a potential from 0 to 1 where 1 is the <a href="#csat">saturation concentration</a> for the particle's material type. This setting has no affect unless the analysis is doing diffusion calculations. Can only be used if <code>SetDirection</code> is 0 through 7. Use 0 to having moving concentration source; use 1 to 7 to combine moving concentration source with velocity boundary conditions.</dd>
+<dd>Set concentration to the particle concentration entered as a potential from 0 to 1 where 1 is the <a href="#csat">saturation concentration</a> for the particle's material type. This setting has no affect unless the analysis is doing diffusion calculations. Can only be used if <code>SetDirection</code> is 0 through 7. Use 0 to having moving concentration source only; use 1 to 7 to combine moving concentration source with velocity boundary conditions.</dd>
 
 
 <dt>&lt;SettingFunction&gt;50*(1-sign(t-10))&lt;/SettingFunction&gt;<br>
 &lt;SettingFunction2&gt;50*(1-sign(t-10))&lt;/SettingFunction2&gt;<br>
 &lt;SettingFunction3&gt;50*(1-sign(t-10))&lt;/SettingFunction3&gt;</dt>
-<dd>By entering <a href="function.html">user-defined functions</a> of time (<code>t</code> in ms) and position (<code>x</code>, <code>y</code>, and <code>z</code> in mm) the rigid particle velocity setting can vary with time and position. The functions should evaluate to the velocity in mm/s. The initial velocity assigned to the rigid particles <a href="definempm.html">when they are created</a> will be ignored.
+<dd>By entering <a href="function.html">user-defined functions</a> of time and position the rigid particle velocity setting can vary with time and position. The functions should evaluate to the velocity in mm/s. The initial velocity assigned to the rigid particles <a href="definempm.html">when they are created</a> will be ignored.
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The three setting functions can set up to three directions. For <code>SetDirection</code> 1 to 7 the functions must be given in order (<code>SettingFunction</code>, <code>SettingFunction2</code>, and <code>SettingFunction3</code>) and apply to the set velocities in order (<i>e.g.</i>, when controlling <code>y</code> and <code>z</code> with <code>SetDirection</code>=6, the <code>SettingFunction</code> is for <code>y</code> direction and <code>SettingFunction2</code> is for <code>z</code> direction). For <code>SetDirection</code> of 8, the three functions are for setting <code>x</code>, <code>y</code>, and <code>z</code> directions and zero to three can be used. Any not controlled will use the initial particle velocity.</dd>
 
 <dt>&lt;ValueFunction&gt;50*(1-sign(t-10))&lt;/ValueFunction&gt;</dt>

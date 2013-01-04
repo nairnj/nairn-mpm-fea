@@ -27,6 +27,8 @@ can also control temperature and concentration.</p>
 <p>Grid-based boundary conditions are used for fixed edges, object symmetry planes, or for applying displacements in small-displacement problems. Fixed edges and symmetry planes apply zero veclocity and are always useful. Application of displacements, however, is limited to small displacements because in large-displacement problems, the particles may move away from the boundary conditions and the conditions will no longer have the correct influence. To apply moving grid-based velocity conditions, see <a href="definematl.html#rigid">rigid material options</a>.
 </p>
 
+<li>When doing axisymmetric MPM, nodes at r=0 will automatically be set to zero velocity in the r directions. You therefore need not set those conditions. Furthermore any non-zero r-velocity conditions you do set, as well as any conditions on nodes with r&lt;0, will be ignored.</li>
+
 <p>All grid-based boundary conditions must be set up within a single <code>&lt;GridBCs&gt;</code> element. The format is
 
 <pre>
