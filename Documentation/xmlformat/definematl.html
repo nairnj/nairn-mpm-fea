@@ -29,7 +29,7 @@
 &lt;/Material&gt;
 </pre>
 
-<p>where <code>Type</code> is the material type (integer) which defines the type of material and <code>Name</code> is any user-defined description of the the material (<200 characters and most be unique among defined materials if you reference them by name). The material properties for each type are defined by subordinate tags within the <code>Material</code> element.
+<p>where <code>Type</code> is the material type (integer) which defines the type of material and <code>Name</code> is any user-defined description of the the material (&lt;200 characters and most be unique among defined materials if you reference them by name). The material properties for each type are defined by subordinate tags within the <code>Material</code> element.
 </p>
 
 <p><a name="usemats"></a>When materials are assigned to <a href="definefeamesh.html">FEA mesh elements</a>, <a href="definempm.html">MPM materials points</a>, <a href="cracks.html">MPM crack tips</a>, or in a few other commands, they can be referenced by number or by name:</p>
@@ -41,8 +41,8 @@
 <dd>In this method, you use <code>matname=&quot;A Name&quot;</code> attributes where <code>&quot;A Name&quot;</code> is a unique material name that matches the name of any defined material in the file. You can use these names even <i>before</i> the materials are defined, but errors will occur if you reference materials that are not eventually defined or if the defined materials do not have unique names.</dd>
 </dl>
 
-<p>All defined materials will appear in the output file in the ordered referenced by name rather than in the order defined in the input file. But, if you do not reference any materials by name, they will appear in the order found in the input file. If some, but not all, materials are referenced by name, those that were not referenced will be output at the end of the materials in the output file by their order in the input file. If you mix material attributes by number and by name, the numbers uses have to refer to how they appear in the output file and not in the input file. For this reason, it is hard to mix the two methods and that approach should be avoided. Finally, if you use both <code>mat</code> and <code>matname</code> attributes in a single command, the <code>matname</code> one will be used and the <code>mat</code> will be ignored.</dd>
-</dl>
+<p>All defined materials will appear in the output file in the ordered referenced by name rather than in the order defined in the input file. But, if you do not reference any materials by name, they will appear in the order found in the input file. If some, but not all, materials are referenced by name, those that were not referenced will be output at the end of the materials in the output file by their order in the input file. If you mix material attributes by number and by name, the numbers uses have to refer to how they appear in the output file and not in the input file. For this reason, it is hard to mix the two methods and that approach should be avoided. Finally, if you use both <code>mat</code> and <code>matname</code> attributes in a single command, the <code>matname</code> one will be used and the <code>mat</code> will be ignored.</p>
+
 
 <p>Certain materials work in NairnFEA and NairnMPM, while others are limited to NairnFEA or NairnMPM. Similarly, not all materials for NairnMPM can be used in 3D calculations. The 2D NairnMPM columns has two marks. The first means it works for planar MPM while the second indicates it works for axisymmetrix MPM. The material types and their supported uses are in the following table:</p>
 
@@ -194,7 +194,6 @@ as a special case.</td>
 <td colspan="6"><b>Traction Law Materials</b></td>
 </tr>
 
-</tr>
 <tr>
 <td><a href="#traction"><code>TriangularTraction</code></a></td>
 <td>12</td>
@@ -224,9 +223,9 @@ as a special case.</td>
 </tr>
 
 <tr>
-<td><code>CoupledSawTooth</code></td>
+<td><a href="#coupled"><code>CoupledSawTooth</code></a></td>
 <td>23</td>
-<td width="50%">A triangular <a href="cracks.html#traction">traction law</a> for use on crack surfaces based on coupled displacement method (not documented yet).</td>
+<td width="50%">A triangular <a href="cracks.html#traction">traction law</a> for use on crack surfaces based on coupled displacement method.</td>
 <td align="center"></td><td align="center">X X</td><td align="center"></td>
 </tr>
 
@@ -1180,7 +1179,7 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 <dd>The slope of the initial elastic portion of the tractional law (k). Enter in units of MPa/mm.</dd>
 
 <dt>&lt;nmix&gt;2&lt;/nmix&gt;</dt>
-<dd>The exponent used in the mixed-mode failure criterion (see below). Enter nmix<=0 to choose infinity, which is decoupled failure criterion.</dd>
+<dd>The exponent used in the mixed-mode failure criterion (see below). Enter nmix&lt;=0 to choose infinity, which is decoupled failure criterion.</dd>
 
 </dl>
 
@@ -1223,7 +1222,7 @@ and then will increase linearly up to &delta;<sub>c</sub> with a slope of
 <p>You must enter exactly 5 of the seven properties for each mode (<i>e.g</i>, for mode I, five of <code>JIc</code>, <code>sigmaI</code>, <code>delIc</code>, <code>kIe</code>, <code>delpkI</code>, <code>sigmaI2</code>, and <code>delpkI2</code>). Furthermore, if one of the 5 is <code>kIe</code> (or <code>kIIe</code> for mode II), then either <code>sigmaI</code> or <code>delpkI</code> (but not both) must be specified. The unspecied parameters will be calculated. The final law must satisfy &delta;<sub>1</sub> &le; &delta;<sub>2</sub> &le; &delta;<sub>c</sub>, &delta;<sub>c</sub> &gt; 0, &sigma;<sub>1</sub> &ge; 0, &sigma;<sub>2</sub> &ge; 0, and &sigma;<sub>1</sub>+&sigma;<sub>2</sub> &gt; 0.
 </p>
 
-<p>These entered traction laws give mode I or mode II traction law for pure mode I or pure mode II loading. The failure under mixed loading uses the same criterion explained <a href="#mixedmode">above</a>.
+<p>These entered traction laws give mode I or mode II traction law for pure mode I or pure mode II loading. The failure under mixed loading uses the same criterion explained <a href="#mixedmode">above</a>.</p>
 
 <p>This law can be imagined as modeling the sum of two processes. The total area for this law is</p> <blockquote>J<sub>total</sub>=(1/2)(&sigma;<sub>1</sub>&delta;<sub>2</sub>+&sigma;<sub>2</sub>(&delta;<sub>c</sub>-&delta;<sub>1</sub>))
 </blockquote>
@@ -1234,9 +1233,35 @@ and then will increase linearly up to &delta;<sub>2</sub> with a slope of
 </p>
 <blockquote>500(&sigma;<sub>1</sub>&delta;<sub>2</sub>-&sigma;<sub>2</sub>&delta;<sub>1</sub>)/(&delta;<sub>2</sub>-&delta;<sub>1</sub>)
 </blockquote>
-<p>Between &delta;<sub>2</sub> and &delta;<sub>c</sub>, it will increase linearly with slope or
+<p>Between &delta;<sub>2</sub> and &delta;<sub>c</sub>, it will increase linearly with slope or</p>
 <blockquote>500&sigma;<sub>2</sub>&delta;<sub>c</sub>/(&delta;<sub>c</sub>-&delta;<sub>2</sub>)
 </blockquote>
+
+<a name="coupled"></a><h2>CoupledSawTooth Traction Law Material</h2>
+
+<p>The material type is <code>Type=23</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. The traction law is the same as for the <a href="#traction">triangular law</a>:
+</p>
+<center><img src = "tritraction.jpg" width = "291" height = "185" alt = "triangular traction law">
+</center>
+<p>except that cod and traction are now effective terms that are related to normal and tangential components of traction and displacement:</p>
+<blockquote>
+Traction = <code>tT<sub>eff</sub></code> where  <code>tT<sub>eff</sub><sup>2</sup> = T<sub>n</sub><sup>2</sup> + T<sub>t</sub><sup>2</sup></code><br>
+cod = <code>&delta;<sub>eff</sub></code> where  &delta;<sub>eff</sub><sup>2</sup> = &delta;<sub>n</sub><sup>2</sup> + &delta;<sub>t</sub><sup>2</sup>
+</blockquote>
+<p>The use of effective terms is meant to account for mixed modeling effects in a single coupled traction law. The properties you enter are as follows:
+</p>
+
+<dl>
+<dt>&lt;sigmaI&gt;10&lt;/sigmaI&gt;, &lt;JIc&gt;10&lt;/JIc&gt;, &lt;delIc&gt;10&lt;/delIc&gt;,  &lt;kIe&gt;200&lt;/kIe&gt;, &lt;delpkI&gt;0.1&lt;/delpkI&gt;</dt>
+<dd>These properties are defined in the <a href="#traction">Triangular Traction Law</a> and they all mean the same thing for this traction law, except they apply now to effective traction and critical effective cod rather than mode I traction and critical cod. <code>JIc</code> is the total energy release rate from area on the effect traction - effective cod curve.</dd>
+
+</dl>
+
+<p>This law can be expressed using damage mechanics by defining an effective slope of <code>k<sub>eff</sub> = (1-D)k</code> where <code>k</code> is the initial slope of the curve and <code>D</code> is a damage parameter. This effective slope describes a line from the origin to the point on the triangular curve corresponding to the maximum displacement seen on the current particle. The effective stiffness is found from</p>
+<blockquote>
+<code>(1-D) = &delta;<sub>pk</sub>*(&delta;<sub>c</sub>-&delta;<sub>max</sub>)/(&delta;<sub>max</sub>*(&delta;<sub>c</sub>-&delta;<sub>pk</sub>))</code>
+</blockquote>
+<p>where <code>&delta;<sub>max</sub></code> is the maximum effective cod seen on the crack particle, except that it is initialized to the peak cod (&delta;<sub>pk</sub>) at the start of the calculations. By this relation, D = 0 until the effective cod passes the peak cod. Thereafter, D increases from 0 at the peak to 1 at the critical cod. Once D is found, the normal and tangential tractions are <code>T<sub>n</sub> = k<sub>eff</sub>&delta;<sub>c</sub></code> and <code>T<sub>t</sub> = k<sub>eff</sub>&delta;<sub>t</sub></code>, which satisfy the effective traction - effective cod law given above. Note that during monotonic loading the traction will remain on the curve. If unloading occurs, however, the tractions follow a line back to the original for the peak cod.</p>
 
 <a name="lineart"></a><h2>Linear Elastic Traction Law Material</h2>
 
@@ -1281,7 +1306,7 @@ and then will increase linearly up to &delta;<sub>2</sub> with a slope of
 <dd>The maximum opening displacement or critical displacement (&delta;<sub>c</sub>) at which debonding occurs. Enter in units of mm.</dd>
 
 <dt>&lt;nmix&gt;2&lt;/nmix&gt;</dt>
-<dd>The exponent used in the mixed-mode failure criterion (see below). Enter nmix<=0 to choose infinity, which is decoupled failure criterion.</dd>
+<dd>The exponent used in the mixed-mode failure criterion (see below). Enter nmix&lt;=0 to choose infinity, which is decoupled failure criterion.</dd>
 
 </dl>
 
