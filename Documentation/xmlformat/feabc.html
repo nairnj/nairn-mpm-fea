@@ -203,7 +203,7 @@ Another use of this command is to verify mesh connectivity. Since disconnected s
 <dt>&lt;DisBC&gt;</dt>
 <dd>Set fixed displacement in one direction to all nodes defined by the shape. The <code>dof</code> can be 1 or <code>x</code> for x axis or 2 or <code>y</code> for y axis. The optional <code>disp</code> sets the magnitude of the displacement in mm. Alternatively, the displacement can be specified with a <code>function</code> attribute set to a <a href="function.html">user-defined function</a> of nodal point position (<code>x</code> and <code>y</code> in mm). When a <code>function</code> is used, it overrides and <code>disp</code> setting. If both <code>disp</code> and <code>function</code> are omitted, the displacement is set to zero. 
 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;Nodes located at <code>r=0</code> in axisymmetric analysis can not move thus should be fixed in the 1 or x direction. Any such nodes not fixed by a boundary condition will automatically be fixed for you.
+&nbsp;&nbsp;&nbsp;&nbsp;Nodes located at <code>r=0</code> in axisymmetric analysis cannot move thus should be fixed in the 1 or x direction. Any such nodes not fixed by a boundary condition will automatically be fixed for you.
 </dd>
 
 <dt>&lt;LoadBC&gt;</dt>
