@@ -18,7 +18,8 @@
 
 CommonArchiveData::CommonArchiveData()
 {
-	inputDir=NULL;			// input directory
+	inputDir=NULL;			// input directory read from input file, but only used for output files
+	outputDir=NULL;			// output directory for creating archive files
 	archiveRoot=NULL;		// root file name (no spaces and does not end in '.')
 	archiveParent=NULL;		// archive parent folder (not ending in '/') or empty for same folder
 	archiveMesh=FALSE;		// list mesh in output file (FALSE) or in files (TRUE)
@@ -45,7 +46,7 @@ void CommonArchiveData::ArchiveNodalPoints(int np)
 	ofstream outfile;
 	
 	if(archiveMesh)
-	{	sprintf(fname,"%s%s_Nodes.txt",inputDir,archiveRoot);
+	{	sprintf(fname,"%s%s_Nodes.txt",outputDir,archiveRoot);
 		outfile.open(fname);
 		if(outfile)
     	{	sprintf(fname,"%s_Nodes.txt",archiveRoot);
@@ -76,7 +77,7 @@ void CommonArchiveData::ArchiveElements(int np)
 	ofstream outfile;
 	
 	if(archiveMesh)
-	{	sprintf(fname,"%s%s_Elems.txt",inputDir,archiveRoot);
+	{	sprintf(fname,"%s%s_Elems.txt",outputDir,archiveRoot);
 		outfile.open(fname);
 		if(outfile)
     	{	sprintf(fname,"%s_Elems.txt",archiveRoot);
@@ -109,7 +110,8 @@ void CommonArchiveData::ArchiveElements(int np)
 void CommonArchiveData::SetArchiveMesh(bool newSetting) { archiveMesh=newSetting; }
 
 // Set path to directory of the input file
-void CommonArchiveData::SetInputDirPath(const char *cmdFile)
+// It is from the file that is read, and this folder is used for all output (so it is really outputDir
+void CommonArchiveData::SetInputDirPath(const char *cmdFile,bool useWorkingDir)
 {
 	// delete old
 	if(inputDir!=NULL) delete [] inputDir;
@@ -133,23 +135,36 @@ void CommonArchiveData::SetInputDirPath(const char *cmdFile)
 	
 	// string from inputDir is directory path for input file
 	// string from &inputDir[strlen(inputDir)+1] is input file name only
+	
+	// use outputDir for saving files; it will either be same as inputDir or empty
+	//	for current working directory
+	if(useWorkingDir)
+	{	// empty to use working directory
+		outputDir = new char[1];
+		outputDir[0] = 0;
+	}
+	else
+	{	// write to same folder as the input file
+		outputDir = inputDir;
+	}
 }
 
-// attach inputDir to possible relative path name (caller must delete)
-char *CommonArchiveData::ExpandInputPath(const char *partialName)
+// Get path for file using outputDir. This will be relative to the input file
+//  unless keyed to workiingDirectory, and then will be relative to that directory instead
+char *CommonArchiveData::ExpandOutputPath(const char *partialName)
 {
 	char *path;
 	
 	// just the name is returned if full path name already
-	if(inputDir==NULL || partialName[0]=='/')
+	if(outputDir==NULL || partialName[0]=='/')
 	{	path=new char[strlen(partialName)+1];
 		strcpy(path,partialName);
 	}
 	
-	// start with inputDir
+	// start with outputDir
 	else
-	{	path=new char[strlen(inputDir)+strlen(partialName)+1];
-		strcpy(path,inputDir);
+	{	path=new char[strlen(outputDir)+strlen(partialName)+1];
+		strcpy(path,outputDir);
 		strcat(path,partialName);
 	}
 	

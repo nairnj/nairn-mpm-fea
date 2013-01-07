@@ -179,11 +179,11 @@ void CommonAnalysis::StartResultsOutput(void)
 }
 
 //Main entry to read file and decode into objects
-int CommonAnalysis::ReadFile(const char *xmlFile)
+int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
 {
 	// set directory of input file
-	archiver->SetInputDirPath(xmlFile);
-    
+	archiver->SetInputDirPath(xmlFile,useWorkingDir);
+	
     // Initialize the XML4C2 system
 	SAX2XMLReader* parser;
     try

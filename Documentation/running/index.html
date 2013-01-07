@@ -126,6 +126,9 @@ NairnFEA [options] input > output
 <dt>-a</dt>
 <dd>Read the input file, set up the mesh and all boundary conditions and then abort before any calculations. This option is useful to check that all commands have created the mesh and boundary conditions correctly before actually doing the analysis in a subsequent run.</dd>
 
+<dt>-w</dt>
+<dd>When this option is not used, relative file names for output files and for input of bmp files are resolved as being relatve to the input file. When this option is used, the file names are resolved instead to the current working directory.</dd>
+
 <dt>-H</dt>
 <dd>Display brief help message and then exit.</dd>
 
@@ -190,6 +193,9 @@ NairnMPM [options] input > output
 
 <dt>-a</dt>
 <dd>Start the analysis, archive the initial conditions, and then abort the calculations. This option is useful to check that all commands have created the mesh, assigned material points, and created boundary conditions correctly before actually doing the analysis in a subsequent run.</dd>
+
+<dt>-w</dt>
+<dd>When this option is not used, relative file names for output files and for input of bmp files are resolved as being relatve to the input file. When this option is used, the file names are resolved instead to the current working directory.</dd>
 
 <dt>-H</dt>
 <dd>display brief help message and then exit.</dd>

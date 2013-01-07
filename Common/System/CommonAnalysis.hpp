@@ -34,7 +34,7 @@ class CommonAnalysis
 		virtual void MyStartResultsOutput(void) = 0;
 	
 		// methods
-		int ReadFile(const char *);
+		int ReadFile(const char *,bool);
 		void StartResultsOutput(void);
 		void CoutCodeVersion(void);
 

@@ -63,14 +63,14 @@ void Orthotropic::PrintTransportProperties(void)
 	
 	// Diffusion constants
 	if(DiffusionTask::active)
-	{   sprintf(mline,"Dx =%12.3g   Dy =%12.3g   Dz =%12.3g mm^2/sec  csat = %9.5lf",diffT,diffA,Dz,concSaturation);
+	{   sprintf(mline,"D1 =%12.3g   D2 =%12.3g   D3 =%12.3g mm^2/sec  csat = %9.5lf",diffT,diffA,Dz,concSaturation);
 		cout << mline << endl;
-	    sprintf(mline,"bx =%12.6g   by =%12.6g   bz =%12.6g 1/wt fr",betax,betay,betaz);
+	    sprintf(mline,"b1 =%12.6g   b2 =%12.6g   b3 =%12.6g 1/wt fr",betax,betay,betaz);
 		cout << mline << endl;
 	}
 	// Conductivity constants
 	if(ConductionTask::active)
-	{   sprintf(mline,"kx =%12.3g   ky =%12.3g   kz =%12.3g W/(m-K)\nCp  =%12.3g J/(kg-K)",
+	{   sprintf(mline,"k1 =%12.3g   k2 =%12.3g   k3 =%12.3g W/(m-K)\nCp  =%12.3g J/(kg-K)",
                     rho*kcondT/1000.,rho*kcondA/1000.,rho*kcondz/1000.,heatCapacity);
 		cout << mline << endl;
 	}

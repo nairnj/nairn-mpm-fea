@@ -32,7 +32,7 @@ class MeshInfo
 		MeshInfo(void);
 		
 		// methods
-		void Output(int);
+		void Output(int,bool);
         void OutputContactByDisplacements(void);
 		bool EdgeElement2D(int);
 		bool EdgeElement3D(int);
