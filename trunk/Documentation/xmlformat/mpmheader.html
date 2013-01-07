@@ -112,7 +112,7 @@ This section defines many MPM analysis parameters; it is required for NairnMPM a
   <dd>This tag lets you set the time at which archiving will start. The data at the start of the calculation will always be archived, but then no archiving will be done until this time is reached. After this time is reached, the archiving will proceed at intervals specified by <a href="#atime"><code>&lt;ArchiveTime&gt;</code></a>. A <a href="#units"><code>units</code> attribute</a> specifies the time units. (<b>Default value: 0 sec</b>)</dd>
   
   <dt><a name="aroot"></a>&lt;ArchiveRoot&gt;</dt>
-  <dd>Unix path name to archive files. It is relative to the current working directory. Gives
+  <dd>Unix path name to archive files. It is relative to the input file or current working directory (depending on the -w option when code is started). Gives
   the start of file name. An extension for the step number will be appended as data is archived.
   For example, the archive root could be '<code>results/root.</code>' and the archived data will be
   in a series of files beginning with '<code>results/root.1</code>'. Nested folders are allowed and

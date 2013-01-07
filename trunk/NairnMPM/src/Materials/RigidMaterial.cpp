@@ -19,6 +19,7 @@
 #include "Materials/RigidMaterial.hpp"
 #include "Read_XML/mathexpr.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"
 
 #pragma mark RigidMaterial::Constructors and Destructors
 
@@ -63,16 +64,22 @@ const char *RigidMaterial::VerifyProperties(int np)
 // print to output window
 void RigidMaterial::PrintMechanicalProperties(void)
 {
+	char xdir='x',ydir='y';
+	if(fmobj->IsAxisymmetric())
+	{	xdir='R';
+		ydir='Z';
+	}
+	
 	if(setDirection&RIGID_MULTIMATERIAL_MODE)
 	{	cout << "Rigid multimaterial with contact" << endl;
         if(function!=NULL)
         {	char *expr=function->Expr('#');
-			cout << "Velocity x = " << expr << endl;
+			cout << "Velocity " << xdir << " = " << expr << endl;
             delete [] expr;
         }
         if(function2!=NULL)
         {	char *expr=function2->Expr('#');
-			cout << "Velocity y = " << expr << endl;
+			cout << "Velocity " << ydir << " = " << expr << endl;
             delete [] expr;
         }
         if(function3!=NULL)
@@ -113,34 +120,34 @@ void RigidMaterial::PrintMechanicalProperties(void)
 			{	if(setDirection&CONTROL_Z_DIRECTION)
                 {   // set x, y and z (unless too few functions)
 					if(numFxns==1)
-                    {   cout << "Velocity in x direction controlled" << endl;
-                        cout << "Velocity x = " << expr << endl;
+                    {   cout << "Velocity in " << xdir << " direction controlled" << endl;
+                        cout << "Velocity " << xdir << " = " << expr << endl;
                     }
 					else if(numFxns==2)
-                    {   cout << "Velocity in x and y directions controlled" << endl;
-                        cout << "Velocity x = " << expr << endl;
-                        cout << "Velocity y = " << expr2 << endl;
+                    {   cout << "Velocity in " << xdir << " and " << ydir << " directions controlled" << endl;
+                        cout << "Velocity " << xdir << " = " << expr << endl;
+                        cout << "Velocity " << ydir << " = " << expr2 << endl;
                     }
 					else
-                    {   cout << "Velocity in x, y, and z directions controlled" << endl;
+                    {   cout << "Velocity in " << xdir << ", " << ydir << ", and z directions controlled" << endl;
                         if(numFxns>2)
-                        {   cout << "Velocity x = " << expr << endl;
-                            cout << "Velocity y = " << expr2 << endl;
+                        {   cout << "Velocity " << xdir << " = " << expr << endl;
+                            cout << "Velocity " << ydir << " = " << expr2 << endl;
                             cout << "Velocity z = " << expr3 << endl;
                         }
                     }
 				}
 				else
-                {   // set x and y (unless to few functions)
+                {   // set x and y (unless too few functions)
 					if(numFxns==1)
-                    {   cout << "Velocity in x direction controlled" << endl;
-                        cout << "Velocity x = " << expr << endl;
+                    {   cout << "Velocity in " << xdir << " direction controlled" << endl;
+                        cout << "Velocity " << xdir << " = " << expr << endl;
                     }
 					else
-                    {   cout << "Velocity in x and y directions controlled" << endl;
+                    {   cout << "Velocity in " << xdir << " and " << ydir << " directions controlled" << endl;
                         if(numFxns>1)
-                        {   cout << "Velocity x = " << expr << endl;
-                            cout << "Velocity y = " << expr2 << endl;
+                        {   cout << "Velocity " << xdir << " = " << expr << endl;
+                            cout << "Velocity " << ydir << " = " << expr2 << endl;
                         }
                     }
 				}
@@ -148,44 +155,44 @@ void RigidMaterial::PrintMechanicalProperties(void)
 			else if(setDirection&CONTROL_Z_DIRECTION)
             {   // set x and z (unless too few functions)
 				if(numFxns==1)
-                {   cout << "Velocity in x direction controlled" << endl;
-                    cout << "Velocity x = " << expr << endl;
+                {   cout << "Velocity in " << xdir << " direction controlled" << endl;
+                    cout << "Velocity " << xdir << " = " << expr << endl;
                 }
 				else
-                {   cout << "Velocity in x and z directions controlled" << endl;
+                {   cout << "Velocity in " << xdir << " and z directions controlled" << endl;
                     if(numFxns>1)
-                    {   cout << "Velocity x = " << expr << endl;
+                    {   cout << "Velocity " << xdir << " = " << expr << endl;
                         cout << "Velocity z = " << expr2 << endl;
                     }
                 }
 			}
 			else
             {   // set x direction only
-				cout << "Velocity in x direction controlled" << endl;
+				cout << "Velocity in " << xdir << " direction controlled" << endl;
                 if(numFxns>=1)
-                    cout << "Velocity x = " << expr << endl;
+                    cout << "Velocity " << xdir << " = " << expr << endl;
             }
 		}
 		else if(setDirection&CONTROL_Y_DIRECTION)
 		{	if(setDirection&CONTROL_Z_DIRECTION)
             {   // set y and z (unless too few functions)
 				if(numFxns==1)
-                {   cout << "Velocity in y direction controlled" << endl;
-                    cout << "Velocity y = " << expr << endl;
+                {   cout << "Velocity in " << ydir << " direction controlled" << endl;
+                    cout << "Velocity " << ydir << " = " << expr << endl;
                 }
 				else
-                {   cout << "Velocity in y and z directions controlled" << endl;
+                {   cout << "Velocity in " << ydir << " and z directions controlled" << endl;
                     if(numFxns>1)
-                    {   cout << "Velocity y = " << expr << endl;
+                    {   cout << "Velocity " << ydir << " = " << expr << endl;
                         cout << "Velocity z = " << expr2 << endl;
                     }
                 }
 			}
 			else
             {   // set y direction only
-                cout << "Velocity in y direction controlled" << endl;
+                cout << "Velocity in " << ydir << " direction controlled" << endl;
                 if(numFxns>=1)
-                    cout << "Velocity y = " << expr << endl;
+                    cout << "Velocity " << ydir << " = " << expr << endl;
             }
 		}
 		else if(setDirection&CONTROL_Z_DIRECTION)

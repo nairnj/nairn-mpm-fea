@@ -26,6 +26,7 @@ int main(int argc,const char *argv[])
     int retval,parmInd;
 	unsigned int optInd;
 	bool abort=FALSE;
+	bool useWorkingDir=FALSE;
 	
 	// ---------------------------------------------
     // 1. Create main analysis object
@@ -63,6 +64,9 @@ int main(int argc,const char *argv[])
 			else if(argv[parmInd][optInd]=='a')
 				abort=TRUE;
 				
+			else if(argv[parmInd][optInd]=='w')
+				useWorkingDir=TRUE;
+			
 			else
 			{   cerr << "\nUnknown " << fmobj->CodeName() << " option '" << argv[parmInd][optInd]
 					 << "' was used.\n";
@@ -79,7 +83,7 @@ int main(int argc,const char *argv[])
     
 	//-------------------------------------------------------------
     // 3. Read the input file, exceptions handled in ReadFile()
-	retval=fmobj->ReadFile(argv[parmInd]);
+	retval=fmobj->ReadFile(argv[parmInd],useWorkingDir);
     if(retval!=noErr) return retval;
 	
 	// ------------------------------------------------------------

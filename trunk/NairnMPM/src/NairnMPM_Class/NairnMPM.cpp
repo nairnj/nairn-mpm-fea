@@ -474,7 +474,7 @@ void NairnMPM::PreliminaryCalcs(void)
     cout << fline << endl;
 	
 	// background grid info
-	mpmgrid.Output(ptsPerElement);
+	mpmgrid.Output(ptsPerElement,IsAxisymmetric());
     
     sprintf(fline,"Adjusted time step (ms): %.7e",1000.*timestep);
     cout << fline << endl;

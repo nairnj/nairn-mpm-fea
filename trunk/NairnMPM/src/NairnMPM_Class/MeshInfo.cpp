@@ -27,7 +27,7 @@ MeshInfo::MeshInfo(void)
 #pragma mark MeshInfo:Methods
 
 // output grid info
-void MeshInfo::Output(int pointsPerCell)
+void MeshInfo::Output(int pointsPerCell,bool isAxisym)
 {
     char fline[200];
 
@@ -36,7 +36,10 @@ void MeshInfo::Output(int pointsPerCell)
 			cout << "Structured";
 		else
 			cout << "Unstructured";
-    	sprintf(fline," orthogonal grid with dx: %g dy: %g",gridx,gridy);
+		if(isAxisym)
+			sprintf(fline," orthogonal grid with dR: %g dZ: %g",gridx,gridy);
+		else
+			sprintf(fline," orthogonal grid with dx: %g dy: %g",gridx,gridy);
 		cout << fline;
 		if(!DbleEqual(gridz,0.))
 		{	sprintf(fline," dz: %g",gridz);
@@ -44,14 +47,17 @@ void MeshInfo::Output(int pointsPerCell)
 		}
 		cout << endl;
 		SetParticleLength(pointsPerCell);
-    	sprintf(fline,"Origin at x: %g y: %g",xmin,ymin);
+		if(isAxisym)
+			sprintf(fline,"Origin at R: %g Z: %g",xmin,ymin);
+		else
+			sprintf(fline,"Origin at x: %g y: %g",xmin,ymin);
 		cout << fline;
 		if(!DbleEqual(gridz,0.))
 		{	sprintf(fline," z: %g",zmin);
 			cout << fline;
 		}
 		cout << endl;
-		if(DbleEqual(gridz,0.))
+		if(DbleEqual(gridz,0.) && !isAxisym)
 		{	sprintf(fline,"Thickness: %g",zmin);
 			cout << fline << endl;
 		}

@@ -31,11 +31,12 @@ class CommonArchiveData
 		bool SetArchiveRoot(char *,bool);
 		char *GetArchiveRoot(void);
 		void SetArchiveMesh(bool);
-		void SetInputDirPath(const char *);
-		char *ExpandInputPath(const char *);
+		void SetInputDirPath(const char *,bool);
+		char *ExpandOutputPath(const char *);
 		
 	protected:
 		char *inputDir,*archiveRoot,*globalFile,*archiveParent;
+		char *outputDir;
 		bool archiveMesh,forceUnique;
 };
 

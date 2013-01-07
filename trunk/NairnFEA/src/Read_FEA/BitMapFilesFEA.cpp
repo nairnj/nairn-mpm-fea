@@ -35,14 +35,14 @@ void FEAReadHandler::TranslateBMPFiles(void)
 	bool setAngles=FALSE;
 	
 	// read image file
-	char *bmpFullPath=archiver->ExpandInputPath(bmpFileName);
+	char *bmpFullPath=archiver->ExpandOutputPath(bmpFileName);
 	ReadBMPFile(bmpFullPath,info,&rows);
 	delete [] bmpFullPath;
 	
 	// angle file name
 	if(bmpAngleFileName[0]>0)
 	{	setAngles=TRUE;
-		char *bmpFullAnglePath=archiver->ExpandInputPath(bmpAngleFileName);
+		char *bmpFullAnglePath=archiver->ExpandOutputPath(bmpAngleFileName);
 		ReadBMPFile(bmpFullAnglePath,angleInfo,&angleRows);
 		if(info.height!=angleInfo.height || info.width!=angleInfo.width)
 			throw SAXException(BMPError("The image file and angle file sizes do not match.",bmpFileName));

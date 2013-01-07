@@ -256,7 +256,7 @@ attribute</a> can specify the length units) with material points The parameters 
 <dl>
 
 <dt><code>&lt;BMP&gt;</code></dt>
-<dd>This tag reads the bit map file specified in the name (as full or relative path name) and
+<dd>This tag reads the bit map file specified in the name (as full or relative path name; when relative, it is relative to the input file or current working directions depending on -w options when code is started) and
 assigns material points to the grid (or element properties in an FEA mesh) based on intensities within the bit map. The <code>width</code>
 and <code>height</code> attributes (an optional <a href="mpmheader.html#units"><code>units</code>
 attribute</a> can specify the length units) define the size of the image. You can specify both a

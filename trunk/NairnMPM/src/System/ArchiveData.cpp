@@ -56,9 +56,9 @@ bool ArchiveData::MakeArchiveFolder(void)
 		{	int folderID=1;
 			while(folderID<1000)
 			{	if(strlen(archiveParent)>0)
-					sprintf(syscmd,"test -d '%s%s/%d'",inputDir,archiveParent,folderID);
+					sprintf(syscmd,"test -d '%s%s/%d'",outputDir,archiveParent,folderID);
 				else
-					sprintf(syscmd,"test -d '%s%d'",inputDir,folderID);
+					sprintf(syscmd,"test -d '%s%d'",outputDir,folderID);
 				int exists=system(syscmd);
 				if(exists!=0) break;			// zero means it already exists
 				folderID++;
@@ -93,7 +93,7 @@ bool ArchiveData::MakeArchiveFolder(void)
 		
 		// now make the folder
     	strcpy(syscmd,"mkdir -p '");
-		strcat(syscmd,inputDir);
+		strcat(syscmd,outputDir);
 		strcat(syscmd,archiveParent);
 		strcat(syscmd,"'");
 		system(syscmd);
@@ -101,10 +101,10 @@ bool ArchiveData::MakeArchiveFolder(void)
 	
 	// copy input commands
 	strcpy(syscmd,"cp '");
-	strcat(syscmd,inputDir);
-	strcat(syscmd,&inputDir[strlen(inputDir)+1]);
+	strcat(syscmd,inputDir);							// input folder
+	strcat(syscmd,&inputDir[strlen(inputDir)+1]);		// input name
 	strcat(syscmd,"' '");
-	strcat(syscmd,inputDir);
+	strcat(syscmd,outputDir);
 	strcat(syscmd,archiveRoot);
 	strcat(syscmd,".fmcmd'");
     system(syscmd);	
@@ -113,12 +113,12 @@ bool ArchiveData::MakeArchiveFolder(void)
 	// If logging progress, keep the temporary file for future use
     FILE *fp;
 #ifdef LOG_PROGRESS
-	logFile=new char[strlen(inputDir)+strlen(archiveRoot)+6];
+	logFile=new char[strlen(outputDir)+strlen(archiveRoot)+6];
 	logStartTime=fmobj->CPUTime();
 #else
-	char *logFile=new char[strlen(inputDir)+strlen(archiveRoot)+6];
+	char *logFile=new char[strlen(outputDir)+strlen(archiveRoot)+6];
 #endif
-	sprintf(logFile,"%s%s.log",inputDir,archiveRoot);
+	sprintf(logFile,"%s%s.log",outputDir,archiveRoot);
     if((fp=fopen(logFile,"w"))==NULL) return false;
 	fclose(fp);
 #ifndef LOG_PROGRESS
@@ -349,8 +349,8 @@ void ArchiveData::CreateGlobalFile(void)
 	}
 	
 	// get relative path name to the file
-	globalFile=new char[strlen(inputDir)+strlen(archiveRoot)+8];
-	sprintf(globalFile,"%s%s.global",inputDir,archiveRoot);
+	globalFile=new char[strlen(outputDir)+strlen(archiveRoot)+8];
+	sprintf(globalFile,"%s%s.global",outputDir,archiveRoot);
 	
     // create and open the file
     if((fp=fopen(globalFile,"w"))==NULL) goto abort;
@@ -395,7 +395,7 @@ void ArchiveData::ArchiveVelocityBCs(BoundaryCondition *firstBC)
 	if(archiveMesh && fmobj->IsThreeD())
 	{	char fname[500];
 		ofstream outfile;
-		sprintf(fname,"%s%s_VelBCs.txt",inputDir,archiveRoot);
+		sprintf(fname,"%s%s_VelBCs.txt",outputDir,archiveRoot);
 		outfile.open(fname);
 		if(outfile)
     	{	sprintf(fname,"%s_VelBCs.txt",archiveRoot);
@@ -436,7 +436,7 @@ void ArchiveData::ArchiveResults(double atime)
 	if(atime>0.9*timestep && atime<firstArchTime) return;
     
     // get relative path name to the file
-    sprintf(fname,"%s%s.%d",inputDir,archiveRoot,fmobj->mstep);
+    sprintf(fname,"%s%s.%d",outputDir,archiveRoot,fmobj->mstep);
     
     // output step number, time, and file name to results file
     for(i=strlen(fname);i>=0;i--)
@@ -980,7 +980,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 	lastVTKArchiveStep=fmobj->mstep;
 	
     // get relative path name to the file
-    sprintf(fname,"%s%s_%d.vtk",inputDir,archiveRoot,fmobj->mstep);
+    sprintf(fname,"%s%s_%d.vtk",outputDir,archiveRoot,fmobj->mstep);
     
     // open the file
 	ofstream afile;
@@ -1131,7 +1131,7 @@ void ArchiveData::ArchiveHistoryFile(double atime,vector< int > quantity)
     char fname[300],fline[600],subline[100];
 	
     // get relative path name to the file
-    sprintf(fname,"%s%s_History_%d.txt",inputDir,archiveRoot,fmobj->mstep);
+    sprintf(fname,"%s%s_History_%d.txt",outputDir,archiveRoot,fmobj->mstep);
     
     // open the file
 	ofstream afile;
