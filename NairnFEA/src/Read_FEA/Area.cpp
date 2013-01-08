@@ -52,7 +52,7 @@ Area::~Area()
 
 // add key point to the last path
 int Area::AddPath(char *pathName)
-{
+{   
 	// someday may allow more general areas
 	if(numPaths>=4) return FALSE;
 	
