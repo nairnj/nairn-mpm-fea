@@ -67,13 +67,15 @@ Done</blockquote>
 	
 <p>where #1 is the ID or Label for the material created by the command. #2 is the material name entered as an string. When other commands refer to this material, they should use parameter #1 (the ID or Label) and not the name. The full name in parameter #2, however, will appear in output results. #3 defines the type of material, which can be entered by name or number (see table below).</p>
 
-<p>The Material command should be followed by lines that contain the material properties. Each property should be on a separate line and when the last property is specified, enter a line with the single Done Command. The various material types expect different properties. See the code project documentation on materials to see the properties expected for each material. To set a property, use the same name as the XML command name (case sensitive) follwed by the value for its argument. For example, to set modulus of isotropic material, use</p>
+<p>The Material command should be followed by lines that contain the material properties. Each property should be on a separate line and when the last property is specified, enter a line with the single Done Command. The various material types expect different properties. See the code project documentation on materials to see the properties expected for each material. To set a property, use the same name as the XML command name (case sensitive) follwed by the value for its argument. For example, to set modulus of an isotropic material, use</p>
 
 <blockquote>E 2300</blockquote>
 
 <p>for the equivalent of &lt;E&gt;2300&lt;/E&gt; as an XML command.</p>
 
-<p>The following table list materials supported by NairnFEA or NairnMPM. The addition of new materials is an active development area, expecially for NairnMPM. When a material is supported by NairnFEAMPMViz, you can enter it using a Material block and scripting commands. Those materials are highlighted below. For all other materials, you hae to define them using an XMLData command (see commands help on that command for details). The boxes on the right tell which code supports each material type. For 2D MPM, the first X means it can be used in planar analyses and the second means axisymmetric analyses.</p>
+<p>The following table list materials supported by NairnFEA or NairnMPM. The addition of new materials is an active development area, expecially for NairnMPM. All the listed materials can be entered using a Material block and scripting commands. For new materials not in the table, you have to define them using an XMLData command (see commands help on that command for details). The boxes on the right tell which code supports each material type. For 2D MPM, the first X means it can be used in planar analyses and the second means it can be used in axisymmetric analyses.</p>
+
+<p>Note: if you need Propagate, AltPropagate, Friction, or color commands, you have to enter that material using an XMLData command rather than a Material block.</p>
 
 <center>
 <table border="1" cellpadding="2" cellspacing="0" width="90%">
@@ -85,38 +87,38 @@ Done</blockquote>
 </tr>
 
 <tr>
-<td><code>Isotropic</code></td>
+<td>Isotropic</td>
 <td>1</td>
 <td>Linear elastic, isotropic</td>
-<td align="center">X</td><td align="center">XX</td><td align="center">X</td>
+<td align="center">X</td><td align="center">X X</td><td align="center">X</td>
 </tr>
 
 <tr>
 <td>Bistable</td>
 <td>10</td>
 <td width="50%">Elastic, isotropic material with two stable states and reversible or irreversible transitions between the two states</td>
-<td align="center"></td><td align="center">X-</td><td align="center"></td>
+<td align="center"></td><td align="center">X -</td><td align="center"></td>
 </tr>
 
 <tr>
-<td><code>Transverse 1</code></td>
+<td>Transverse 1</td>
 <td>2</td>
 <td>Linear elastic, transversely isotropic with unique axis perpendicular to plane of the 2D analysis.</td>
-<td align="center">X</td><td align="center">XX</td><td align="center">X</td>
+<td align="center">X</td><td align="center">X X</td><td align="center">X</td>
 </tr>
 
 <tr>
-<td><code>Transverse 2</code></td>
+<td>Transverse 2</td>
 <td>3</td>
 <td width="50%">Linear elastic, transversely isotropic with unique axis in plane of 2D analysis. Unless rotated by &quot;angle&quot; options, the unique material axis is parallel to the <code>y</code> axis for 2D analyses and parallel to the <code>z</code> axis for axisymmetric analyses.</td>
-<td align="center">X</td><td align="center">XX</td><td align="center">X</td>
+<td align="center">X</td><td align="center">X X</td><td align="center">X</td>
 </tr>
 
 <tr>
-<td><code>Orthotropic</code></td>
+<td>Orthotropic</td>
 <td>4</td>
 <td width="50%">Linear elastic, orthotropic material</td>
-<td align="center">X</td><td align="center">XX</td><td align="center">X</td>
+<td align="center">X</td><td align="center">X X</td><td align="center">X</td>
 </tr>
 
 <tr>
@@ -127,7 +129,7 @@ Done</blockquote>
 <td>Mooney</td>
 <td>8</td>
 <td width="50%">Mooney-Rivlin, hyperelastic, isotropi material. A neo-Hookean material is a special case of this material.</td>
-<td align="center"></td><td align="center">XX</td><td align="center">X</td>
+<td align="center"></td><td align="center">X X</td><td align="center">X</td>
 </tr>
 
 <tr>
@@ -159,14 +161,14 @@ Done</blockquote>
 <td>VonMises</td>
 <td>9</td>
 <td width="50%">Elastic-plastic material with a Von Mises stress yield criterion and isotropic hardening</td>
-<td align="center"></td><td align="center">XX</td><td align="center">X</td>
+<td align="center"></td><td align="center">X X</td><td align="center">X</td>
 </tr>
 
 <tr>
 <td>HillPlastic</td>
 <td>15</td>
 <td width="50%">Elastic-plastic orthotropic material with a Hill yield criterion and hardening</td>
-<td align="center"></td><td align="center">XX</td><td align="center">X</td>
+<td align="center"></td><td align="center">X X</td><td align="center">X</td>
 </tr>
 
 <tr>
@@ -186,7 +188,7 @@ Done</blockquote>
 <tr>
 <td>SLMaterial</td>
 <td>18</td>
-<td width="50%">Elastic-plastic isotropic material based on the <a href="../../xmlformat/definematl.html#MGSCGL">MGSCGLMaterial</a> but with the addition of a rate-dependent yield stress term from Steinberg and Lund</td>
+<td width="50%">Elastic-plastic isotropic material based on the MGSCGLMaterial but with the addition of a rate-dependent yield stress term from Steinberg and Lund</td>
 <td align="center"></td><td align="center">X X</td><td align="center">X</td>
 </tr>
 
@@ -198,7 +200,7 @@ Done</blockquote>
 <td>Viscoelastic</td>
 <td>6</td>
 <td width="50%">Linear viscoelastic material with sum of relaxation times</td>
-<td align="center"></td><td align="center">X-</td><td align="center">X</td>
+<td align="center"></td><td align="center">X -</td><td align="center">X</td>
 </tr>
 
 <tr>
@@ -206,7 +208,7 @@ Done</blockquote>
 </tr>
 
 <tr>
-<td><code>Interface</code></td>
+<td>Interface</td>
 <td>5</td>
 <td width="50%">A definition of an imperfect interface</td>
 <td align="center">X</td><td align="center"></td><td align="center"></td>
@@ -216,7 +218,7 @@ Done</blockquote>
 <td>Rigid</td>
 <td>11</td>
 <td width="50%">Not really a material, but useful for moving boundary conditions</td>
-<td align="center"></td><td align="center">XX</td><td align="center">X</td>
+<td align="center"></td><td align="center">X X</td><td align="center">X</td>
 </tr>
 
 <tr>
@@ -226,29 +228,29 @@ Done</blockquote>
 <tr>
 <td>TriangularTraction</td>
 <td>12</td>
-<td width="50%">A triangular <a href="tractionlaws.html">traction law</a> for use on crack surfaces</td>
-<td align="center"></td><td align="center">X</td><td align="center"></td>
+<td width="50%">A triangular traction law for use on crack surfaces</td>
+<td align="center"></td><td align="center">X X</td><td align="center"></td>
 </tr>
 
 <tr>
 <td>LinearTraction</td>
 <td>13</td>
-<td width="50%">A linear elastic <a href="tractionlaws.html">traction law</a> for use on crack surfaces</td>
-<td align="center"></td><td align="center">X</td><td align="center"></td>
+<td width="50%">A linear elastic traction law for use on crack surfaces</td>
+<td align="center"></td><td align="center">X X</td><td align="center"></td>
 </tr>
 
 <tr>
 <td>TrilinearTraction</td>
 <td>20</td>
-<td width="50%">A trilinear elastic <a href="tractionlaws.html">traction law</a> for use on crack surfaces</td>
-<td align="center"></td><td align="center">X</td><td align="center"></td>
+<td width="50%">A trilinear elastic traction law for use on crack surfaces</td>
+<td align="center"></td><td align="center">X X</td><td align="center"></td>
 </tr>
 
 <tr>
 <td>CubicTraction</td>
 <td>14</td>
-<td width="50%">A cubic <a href="tractionlaws.html">traction law</a> for use on crack surfaces</td>
-<td align="center"></td><td align="center">X</td><td align="center"></td>
+<td width="50%">A cubic traction law for use on crack surfaces</td>
+<td align="center"></td><td align="center">X X</td><td align="center"></td>
 </tr>
 
 </table>

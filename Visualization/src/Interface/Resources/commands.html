@@ -396,8 +396,11 @@ Specify results to be archived in MPM calculations. The list can be in multiple 
 <ul>
 <li><code>Material #1,#2,#3</code><br>
 Usse the <a href="#material">material</a> command methods to define material properties needed for thermal calculations (coefficient of thermal expansion).</li>
-<li>StressFreeTemp: Set the stress free temperature.</li>
-<li>Temperature: Apply temperature to all nodes.
+<li><code>StressFreeTemp #1</code><br>
+Set the stress free temperature; the default is zero.</li>
+<li><code>Temperature #1</code><br>
+Apply temperature to all nodes. Enter a <a href="function">user defined function</a> of nodal position (x and y).
+It is only the difference between temperature and stress free temperature that matters.
 </li>
 </ul>
 
