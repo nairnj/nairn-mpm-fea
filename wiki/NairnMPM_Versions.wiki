@@ -46,6 +46,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * New `HistoryArchive` custom task to archive particle history data to tab-delimited text files.
     * New `AdjustTimeStep` custom task to adjust time step depending on particle state, but only for material types that can calculate a particle-state-dependent wave speed.
     * The skewed velocity condition had little use and has been removed. To get it just apply two conditions for x and y directions separately.
+    * A new `-w` option to map relative files relative to the working directory rather than the input file.
 
   * release-3.0 (25 JAN 2012)
     * Has NairnMPM 8.1.0
