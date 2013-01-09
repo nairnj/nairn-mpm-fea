@@ -53,6 +53,8 @@ public class CmdViewer extends JNCmdTextDocument
 	private StringBuffer mpmOrder;
 	private StringBuffer crackOrder;
 	private boolean mpmMeshToFile;
+	private String feaTemp;
+	private double stressFreeTemp;
 	
 	// constants
 	public static final int PLANE_STRAIN=0;
@@ -253,6 +255,8 @@ public class CmdViewer extends JNCmdTextDocument
 		archiveTime = "";
 		timeStep = "    <TimeStep units='ms'>1e15</TimeStep>\n";
 		maxTime = "";
+		feaTemp = null;
+		stressFreeTemp = 0.;
 	}
 	
 	// handle commands
@@ -427,6 +431,12 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		else if(theCmd.equals("gridthickness"))
 			gridinfo.doGridThickness(args);
+		
+		else if(theCmd.equals("temperature"))
+			doTemperature(args);
+		
+		else if(theCmd.equals("stressfreetemp"))
+			doStressFreeTemp(args);
 		
 		else
 			super.doCommand(theCmd, args);
@@ -815,7 +825,30 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 	}
 
-	
+	// Temperature
+	public void doTemperature(ArrayList<String> args) throws Exception
+	{
+		if(isFEA())
+		{	// Temperature #1 which is a function
+			if(args.size()<2)
+				throw new Exception("'Temperature' command with too few arguments: "+args);
+			
+			feaTemp = readStringArg(args.get(1));
+		}
+		
+		else
+		{	throw new Exception("Temperature command not available for MPM yet: "+args);
+		}
+	}
+
+	// Stress Free Temperature
+	public void doStressFreeTemp(ArrayList<String> args) throws Exception
+	{	if(args.size()<2)
+			throw new Exception("'StressFreeTemp' command with too few arguments: "+args);
+			
+		stressFreeTemp = readDoubleArg(args.get(1));
+	}
+
 	// when analysis is done create XML commands
 	public String buildXMLCommands()
 	{	// start buffer for XML commands
@@ -959,14 +992,20 @@ public class CmdViewer extends JNCmdTextDocument
 		{	// FEA: Thermal
 			//-----------------------------------------------------------
 			String more = xmldata.get("Thermal");
-			if(more!=null)
+			if(more!=null || feaTemp!=null)
 			{	xml.append("  <Thermal>\n");
-
+				
+				if(feaTemp!=null)
+					xml.append("    <Temperature>"+feaTemp+"</Temperature>\n");
+				
+				if(stressFreeTemp!=0.)
+					xml.append("    <StressFreeTemp>"+stressFreeTemp+"</StressFreeTemp>\n");
+					
 				// check added xml
 				if(more != null) xml.append(more);
 
 				// done
-			xml.append("  </Thermal>\n\n");
+				xml.append("  </Thermal>\n\n");
 			}
 		}
 		

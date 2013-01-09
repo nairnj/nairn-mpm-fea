@@ -197,6 +197,8 @@ public class Areas
 	    	throw new Exception("'EndPath' not matched by 'Path' command: "+args);
 		
 		// is it acceptable?
+		if(keys.size()<2)
+	    	throw new Exception("The path misyt have at least two keypoints: "+args);
 	    
 	    // create XML for the current path
 		xmlpaths.append("    <Path id='"+pathID+"' intervals='"+intervals+"'");

@@ -20,11 +20,8 @@ MPM Tasks
 	MPM Mesh commands
 	
 FEA Not Done
-	EndPath - validate acceptable path
 	Rotate
 	Periodic
-	StressFreeTemp
-	Temperature
 	CrackTip
 	BMPRegion É EndRegion
 	

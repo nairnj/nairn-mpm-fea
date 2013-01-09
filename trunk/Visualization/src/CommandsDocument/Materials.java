@@ -57,12 +57,29 @@ public class Materials
 		String matName = doc.readStringArg(args.get(2));
 		
 		// and type
-		HashMap<String,Integer> options = new HashMap<String,Integer>(10);
+		HashMap<String,Integer> options = new HashMap<String,Integer>(25);
 		options.put("isotropic", new Integer(1));
 		options.put("transverse 1", new Integer(2));
 		options.put("transverse 2", new Integer(3));
 		options.put("orthotropic", new Integer(4));
 		options.put("interface", new Integer(5));
+		options.put("viscoelastic", new Integer(6));
+		options.put("mooney", new Integer(8));
+		options.put("vonmises", new Integer(9));
+		options.put("bistable", new Integer(10));
+		options.put("rigid", new Integer(11));
+		options.put("triangulartraction", new Integer(12));
+		options.put("lineartraction", new Integer(13));
+		options.put("cubictraction", new Integer(14));
+		options.put("hillplastic", new Integer(15));
+		options.put("johnsoncook", new Integer(16));
+		options.put("mgscglmaterial", new Integer(17));
+		options.put("slmaterial", new Integer(18));
+		options.put("trilineartraction", new Integer(20));
+		options.put("heanisotropic", new Integer(21));
+		options.put("idealgas", new Integer(22));
+		options.put("coupledsawtooth", new Integer(23));
+		options.put("heisotropic", new Integer(24));
 		int matInt = doc.readIntOption(args.get(3),options,null);
 		if(matInt<0)
 			throw new Exception("'Material' type not supported in scripting commands.\nUse XML method instead: "+args);
@@ -112,6 +129,10 @@ public class Materials
 		// to account for difference in NairnFEAMPM
 		if(prop.equals("a"))
 			prop = "alpha";
+		else if(prop.equals("a0"))
+			prop = "alpha0";
+		else if(prop.equals("ad"))
+			prop = "alphad";
 		else if(prop.equals("aA"))
 			prop = "alphaA";
 		else if(prop.equals("aT"))
@@ -132,6 +153,20 @@ public class Materials
 			prop = "kCondy";
 		else if(prop.equals("kz"))
 			prop = "kCondz";
+		else if(prop.equals("direction"))
+			prop = "SetDirection";
+		else if(prop.equals("temperature"))
+			prop = "SetTemperature";
+		else if(prop.equals("concentration"))
+			prop = "SetConcentration";
+		else if(prop.equals("settingfunction1"))
+			prop = "SettingFunction";
+		
+		// remaining problems
+		// 1. criterion, altcriterion, direction, altdirection, traction, alttraction
+		// 		need to be put in propgate and altprogate commands
+		// 2. color
+		// 3. friction and interface
 		
 		// now add it
 		xmldata.append("    <"+prop+">"+doc.readDoubleArg(args.get(1))+"</"+prop+">\n");
