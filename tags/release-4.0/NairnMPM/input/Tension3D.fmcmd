@@ -1,0 +1,180 @@
+<?xml version='1.0'?>
+<!DOCTYPE JANFEAInput SYSTEM '/Users/jnairn/Programming/Cocoa_Projects/NairnCode/NairnMPM/input/NairnMPM.dtd'>
+<JANFEAInput version="3">
+
+<!-- An input file to test simple tension using 3D anlaysis
+	1. To load by force:
+		a. Comment out rigid particle body
+		b. Include paarticle loads, changing loading function if needed
+	2. To load by rigid particles
+		a. Include rigid partlce body (changing velocity if desired)
+		b. Comment out ParticleBCs
+-->
+
+  <Header>
+    <Description>
+Title: Tensile Loading
+User Name: John Nairn
+Simple tensile loading on a solid bar to test different material types
+and to test various boundary conditions
+    </Description>
+    <Analysis>12</Analysis>
+  </Header>
+
+  <MPMHeader>
+    <ArchiveTime units="ms">.5</ArchiveTime>
+    <TimeFactor>0.4</TimeFactor>
+    <MaxTime units="ms">15</MaxTime>
+    <ArchiveRoot>Results/force/isotropic.</ArchiveRoot>
+    <MPMArchiveOrder>mYYYYNNNNNNNYNNNY</MPMArchiveOrder>
+    <CrackArchiveOrder>mYNNN</CrackArchiveOrder>
+    <GlobalArchiveTime units="ms">0.25</GlobalArchiveTime>
+    <GlobalArchive type="sxx"/>
+    <GlobalArchive type="exx"/>
+    <GlobalArchive type="syy"/>
+    <GlobalArchive type="eyy"/>
+    <GlobalArchive type="szz"/>
+    <GlobalArchive type="ezz"/>
+    <GlobalArchive type="Strain Energy"/>
+    <Damping>500</Damping>
+    <GIMP/>
+  </MPMHeader>
+
+  <Mesh output="file">
+    <Grid xmin="-20" xmax="105" ymin="-5" ymax="25" zmin="-5" zmax="25">
+      <Horiz nx="25" rx="1"/>
+      <Vert ny="6" ry="1"/>
+      <Depth nz="6" rz="1"/>
+    </Grid>
+  </Mesh>
+
+  <MaterialPoints>
+    <Body mat="1" angle="0" thick="1">
+      <Box xmin="0" xmax="100" ymin="0" ymax="20" zmin="0" zmax="20" />
+    </Body>
+<!-- following body pulls with rigid material - element crossings start at about 12 ms -->
+    <Body mat="2" angle="0" thick="1" vx="-100">
+      <Box xmin="-5" xmax="0" ymin="-5" ymax="25" zmin="-5" zmax="25" />
+    </Body>
+  </MaterialPoints>
+
+  <Material Type="1" Name="Isotropic Material">
+    <rho>10</rho>
+    <E>100</E>
+    <nu>0.333333333</nu>
+    <alpha>60</alpha>
+  </Material>
+
+  <Material Type="11" Name="Loading Clamp">
+    <SetDirection>1</SetDirection>
+  </Material>
+
+<!-- Following commented-out materials can not yet do 3D -->
+<!--
+  <Material Type="9" Name="Elastic Plastic Material">
+    <rho>10</rho>
+    <Cp>1256</Cp>
+    <E>100</E>
+    <nu>0.333333333</nu>
+    <alpha>60</alpha>
+    <kCond>0.202</kCond>
+    <yield>0.5</yield>
+    <ET>10</ET>
+  </Material>
+
+  <Material Type="6" Name="Uniaxial Plastic Material">
+    <rho>10</rho>
+    <Cp>1256</Cp>
+    <E>100</E>
+    <nu>0.333333333</nu>
+    <alpha>60</alpha>
+    <kCond>0.202</kCond>
+    <yield>0.5</yield>
+    <ET>10</ET>
+  </Material>
+
+  <Material Type="7" Name="Viscoelastic Material">
+    <rho>10</rho>
+    <K>99.9999998</K>
+    <G0>18.750000005</G0>
+    <alpha>60</alpha>
+    <ntaus>1</ntaus>
+    <Gk>18.750000005</Gk>
+    <tauk>2e-02</tauk>
+  </Material>
+
+  <Material Type="10" Name="Two State Material">
+    <rho>10</rho>
+    <K0>99.9999998</K0>
+    <G0>37.500000009</G0>
+    <alpha0>60</alpha0>
+    <Kd>19.99999996</Kd>
+    <Gd>7.500000002</Gd>
+    <transition>1</transition>
+    <critical>0.25</critical>
+    <DeltaVOffset>-3</DeltaVOffset>
+    <reversible/>
+  </Material>
+
+  <Material Type="2" Name="In-Plane Isotropic Material">
+    <rho>1.5</rho>
+    <EA>1000</EA>
+    <ET>100</ET>
+    <GA>20</GA>
+    <nuA>0.2</nuA>
+    <nuT>0.33</nuT>
+    <alphaA>20</alphaA>
+    <alphaT>60</alphaT>
+  </Material>
+
+  <Material Type="3" Name="Transversely Isotropic Material">
+    <rho>10</rho>
+    <EA>20</EA>
+    <ET>100</ET>
+    <GA>20</GA>
+    <nuA>0.1</nuA>
+    <nuT>0.333333333</nuT>
+    <alphaA>12</alphaA>
+    <alphaT>60</alphaT>
+  </Material>
+
+  <Material Type="4" Name="Orthotropic Material">
+    <rho>1.5</rho>
+    <Ex>100</Ex>
+    <Ey>50</Ey>
+    <Ez>1000</Ez>
+    <Gxy>10</Gxy>
+    <Gxz>20</Gxz>
+    <Gyz>20</Gyz>
+    <nuxy>0.33</nuxy>
+    <nuxz>4e-02</nuxz>
+    <nuyz>3e-02</nuyz>
+    <alphax>20</alphax>
+    <alphay>40</alphay>
+    <alphaz>60</alphaz>
+  </Material>
+
+  <Material Type="11" Name="Skewed Loading Clamp">
+    <SetDirection>3</SetDirection>
+  </Material>
+-->
+
+  <GridBCs>
+    <BCBox xmin="99.9" xmax="100.01" ymin="-10" ymax="30" zmin="-10" zmax="30">
+      <DisBC dir="1" style="1" vel="0"/>
+    </BCBox>
+  </GridBCs>
+
+<!-- Following loads particles at constant loading rate 
+	f(t) = -R*(t-(t-h)*sign(t-h)) will load at rate R until
+			time h and then hold constant. R is N/particle/ms
+-->
+<!--
+  <ParticleBCs>
+	<BCBox xmin="0" xmax="2.5" ymin="-10" ymax="30" zmin="-10" zmax="30">
+      <LoadBC dir="1" style="6" function="-0.625*(t-(t-15)*sign(t-15))" load="-1"/>
+    </BCBox>
+  </ParticleBCs>
+-->
+
+</JANFEAInput>
