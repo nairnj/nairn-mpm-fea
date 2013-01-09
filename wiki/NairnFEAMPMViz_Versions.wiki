@@ -18,14 +18,17 @@ public static final String versionReadable="Version 3.0.0";
 NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The versions currently in this project are as follows:
 
   * Current trunk Version
-    * has NairnFEAMPMViz 4.0.
+    * Working on NairnFEAMPMViz 4.0.
+
+  * release-4.0 (9 JAN 2013)
+    * Has NairnFEAMPMViz 4.0.
     * Update to handle the new axisymmetric MPM option in NairnMPM.
     * Started a scripting language similar to NairnFEAMPM (Mac app), which is a much better way to create models than using direct `XML` commands. Most of the FEA commands and some of the MPM commands are done. The scripting language itself is modeled on the NairnFEAMPM language, but still lacks some features of that language. What is present is mostly compatible.
     * Enhanced help window to document new scripting commands and all material types.
     * Continuous development of the user interface.
 
   * release-3.0 (25 JAN 2012)
-    * has NairnFEAMPMViz 3.3.0.
+    * Has NairnFEAMPMViz 3.3.0.
     * Reorganized the code moving all application details to a separate package.
     * Particle and mesh plots now have their own menu and can change the plot quantity.
     * Time and X-Y plots can add labels, which can be dragged to move and double clicked to edit.
