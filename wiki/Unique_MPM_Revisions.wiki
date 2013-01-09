@@ -52,4 +52,9 @@ Revisions before the start of the table or after the end of table have not been 
 || r374 || 26 JAN 2012 || Release 3.0 tagged. See wiki on NairnMPM versions ||
 || r410 || 1 JUN 2012 || Added ideal gas material ||
 || r430 || 29 AUG 2012 || Added binary tree crack method ||
-|| r468 || 28 SEP 2012 || Adde CPDI, traction BCs, started HEDevelopment branch ||
+|| r468 || 28 SEP 2012 || Added CPDI, traction BCs, started HEDevelopment branch ||
+|| r504 || 29 OCT 2012 || Revised Mooney material for incremental deformation gradient ||
+|| r532 || 7 DEC 2012 || GIMP with other numbers or particles per element ||
+|| r536 || 7 DEC 2012 || Axisymmetric branch brought into main trunk ||
+|| r560 || 19 DEC 2012 || Added energy dissipation calculation to viscoelastic materials ||
+|| r579 || 6 JAN 2013 || Added working directory option ||
