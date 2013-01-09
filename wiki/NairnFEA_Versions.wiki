@@ -22,6 +22,7 @@ NairnFEA was first imported to `GoogleCode.com` as version 2.7.0. The versions c
   * Current trunk Version
     * Has NairnFEA 3.0.0
     * Allows `Body` and `Hole` commands to set elements with no material using shape commands.
+    * A new `-w` option to map relative files relative to the working directory rather than the input file.
  
   * Release-3.0 (25 JAN 2012)
     * Has NairnFEA 2.9.0 
