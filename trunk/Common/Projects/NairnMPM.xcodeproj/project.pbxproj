@@ -1897,7 +1897,7 @@
 		A72A90CE0CD2ADC0001DCFA8 /* Default */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				GCC_MODEL_TUNING = G5;
 				INSTALL_PATH = "$(HOME)/bin";
 				PRODUCT_NAME = ExtractMPM;
@@ -1908,8 +1908,8 @@
 		A7BB15DB09F4555D000A7C91 /* Default */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CODE_SIGN_IDENTITY = "3rd Party Mac Developer Application: John Nairn";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CODE_SIGN_IDENTITY = "";
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREFIX_HEADER = ../../NairnMPM/src/System/MPMPrefix.hpp;
@@ -1928,7 +1928,6 @@
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = NairnMPM;
-				PROVISIONING_PROFILE = "";
 				REZ_EXECUTABLE = YES;
 				SECTORDER_FLAGS = "";
 				WARNING_CFLAGS = "-Wmost";
@@ -1938,8 +1937,8 @@
 		A7BB15DF09F4555D000A7C91 /* Default */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CODE_SIGN_IDENTITY = "3rd Party Mac Developer Application: John Nairn";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CODE_SIGN_IDENTITY = "";
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREFIX_HEADER = ../../NairnFEA/src/System/FEAPrefix.hpp;
@@ -1958,7 +1957,6 @@
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = NairnFEA;
-				PROVISIONING_PROFILE = "";
 				REZ_EXECUTABLE = YES;
 				SECTORDER_FLAGS = "";
 				VALID_ARCHS = "ppc7400 ppc64 ppc970 i386 x86_64 ppc";
@@ -1969,9 +1967,8 @@
 		A7BB15E309F4555D000A7C91 /* Default */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CODE_SIGN_IDENTITY = "3rd Party Mac Developer Application: John Nairn";
-				PROVISIONING_PROFILE = "";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CODE_SIGN_IDENTITY = "";
 				VALID_ARCHS = "ppc7400 ppc64 ppc970 i386 x86_64 ppc";
 			};
 			name = Default;
