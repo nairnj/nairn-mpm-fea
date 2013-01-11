@@ -54,7 +54,7 @@
 
 <h2><a name="VTKArchive"></a>VTKArchive</h2>
 
-<p>A <code>VTKArchive</code> custom task allows <code>NairnMPM</code> to export data extrapolated to the grid during the calculation. The normal archiving of <code>NairnMPM</code> is always particle data. This option is most useful for visualization of grid results from 3D calculations. The files can be read by third-party visualization applications. A good option is the free, multi-platform <a href="http://www.paraview.org">Paraview</a> application. The exported files have been written to work well with <a href="http://www.paraview.org">Paraview</a>. If you export multiple archives in a single run, Paraview can load them as a block and animate the results. There are books and web sites on the use of <a href="http://www.paraview.org">Paraview</a>.</p>
+<p>A <code>VTKArchive</code> custom task allows <code>NairnMPM</code> to export data extrapolated to the grid during the calculation. The normal archiving of <code>NairnMPM</code> is always particle data. This option is most useful for visualization of grid results from 3D calculations. The files can be read by third-party visualization applications. A good option is the free, multi-platform <a href="http://www.paraview.org" target="new">Paraview</a> application. The exported files have been written to work well with <a href="http://www.paraview.org" target="new">Paraview</a>. If you export multiple archives in a single run, Paraview can load them as a block and animate the results. There are books and web sites on the use of <a href="http://www.paraview.org" target="new">Paraview</a>.</p>
 
 <p>The allowed parameters for the <code>VTKArchive</code> custom task are given below. Most parameters simply define a result to archive and thus take no value. They can be entered as an empty <code>XML</code> command such as:
 </p>
@@ -126,7 +126,7 @@
 
 </dl>
 
-<p>Archived vectors will include all components of the vector and applications like <a href="http://www.paraview.org">Paraview</a> can use the magnitude or any single component for constructing graphics. Archived tensors will include all components of the tensor. In <a href="http://www.paraview.org">Paraview</a>, the magnitude and components 0 through 8 or tensors will be listed. The numbers correspond to the following tensor components:</p>
+<p>Archived vectors will include all components of the vector and applications like <a href="http://www.paraview.org" target="new">Paraview</a> can use the magnitude or any single component for constructing graphics. Archived tensors will include all components of the tensor. In <a href="http://www.paraview.org" target="new">Paraview</a>, the magnitude and components 0 through 8 or tensors will be listed. The numbers correspond to the following tensor components:</p>
 <pre>   ( xx   xy   xz )   ( 0  1  2 )
    | yx   yy   yz | = | 3  4  5 |
    ( zx   zy   zz ) = ( 6  7  8 )
