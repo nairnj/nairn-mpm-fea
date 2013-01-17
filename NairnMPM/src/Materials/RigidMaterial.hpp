@@ -42,10 +42,6 @@ class RigidMaterial : public MaterialBase
         virtual void PrintMechanicalProperties(void);
 		virtual int SetField(int,bool,int);
 		
-		// define abstract methods even though not used
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
-		
 		// RigidMaterial only methods
 		bool RigidDirection(int);
 		bool RigidTemperature(void);

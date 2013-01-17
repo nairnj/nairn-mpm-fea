@@ -56,7 +56,7 @@ int maxMaterialFields;		// Maximum velocity fields or number of independent mate
 NairnMPM::NairnMPM()
 {
 	version=9;						// main version
-	subversion=0;					// subversion (must be < 10)
+	subversion=1;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 	mpmApproach=USAVG_METHOD;		// mpm method
 	ptsPerElement=4;				// number of points per element (2D default, 3D changes it to 8)

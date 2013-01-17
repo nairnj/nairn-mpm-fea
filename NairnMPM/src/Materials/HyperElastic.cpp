@@ -144,7 +144,7 @@ double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,
     ep->xy = Fyx + Fxy;                                     // du/dy + dv/dx
     wrot->xy = Fyx - Fxy;                                   // dv/dx - du/dy
 	
-    // ezz  = dFzz*pFzz - 1							// axisymmetric only, otherwise dvzz=0
+    // ezz  = dFzz*pFzz - 1                                 // axisymmetric only, otherwise dvzz=0
 	ep->zz = dFzz*(1. + ep->zz) - 1.;
 
     // increment Left Cauchy tensor B = F.F^T = dF.old B.dF^T

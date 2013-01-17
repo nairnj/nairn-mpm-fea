@@ -48,7 +48,7 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np)
 	int i,numnds,nds[MaxShapeNds];
     double fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds],zDeriv[MaxShapeNds];
 	Vector vel;
-    double dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy;
+    Matrix3 dv;
     
 	// find shape functions and derviatives
 	int iel=ElemID();
@@ -56,30 +56,13 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np)
     
     // Find strain rates at particle from current grid velocities
 	//   and using the velocity field for that particle with each node
-    dvxx=dvyy=dvxy=dvyx=dvzz=dvxz=dvzx=dvyz=dvzy=0.;
     for(i=1;i<=numnds;i++)
 	{	vel=nd[nds[i]]->GetVelocity((short)vfld[i],matfld);
-        dvxx+=vel.x*xDeriv[i];
-        dvyy+=vel.y*yDeriv[i];
-        dvzz+=vel.z*zDeriv[i];
-        dvxy+=vel.x*yDeriv[i];
-        dvyx+=vel.y*xDeriv[i];
-        dvxz+=vel.x*zDeriv[i];
-        dvzx+=vel.z*xDeriv[i];
-        dvyz+=vel.y*zDeriv[i];
-        dvzy+=vel.z*yDeriv[i];
+        dv += Matrix3(vel.x,vel.y,vel.z,xDeriv[i],yDeriv[i],zDeriv[i]);
     }
 	    
     // convert to strain increments
-    dvxx*=strainTime;
-    dvyy*=strainTime;
-	dvzz*=strainTime;
-    dvxy*=strainTime;
-    dvyx*=strainTime;
-    dvxz*=strainTime;
-    dvzx*=strainTime;
-    dvyz*=strainTime;
-    dvzy*=strainTime;
+    dv.Scale(strainTime);
     
 	// find effective particle transport property - find it from the grid results
 	if(transportTasks)
@@ -108,7 +91,7 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np)
 	}
 	
     // update particle strain and stress using its constituitive law
-    matRef->MPMConstLaw(this,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,strainTime,np);
+    matRef->MPMConstitutiveLaw(this,dv,strainTime,np);
 }
 
 // Move position (3D) (in mm)

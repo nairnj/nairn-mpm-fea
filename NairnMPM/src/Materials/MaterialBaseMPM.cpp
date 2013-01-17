@@ -544,6 +544,29 @@ void MaterialBase::ContactOutput(int thisMatID)
 
 #pragma mark MaterialBase::Methods
 
+// To handle elimination of old MPMConstLaw, this passes on to old one
+// unless subclass overrides to use it directly
+void MaterialBase::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np)
+{   if(np==THREED_MPM)
+    {   MPMConstLaw(mptr,dv(0,0),dv(1,1),dv(2,2),dv(0,1),dv(1,0),
+                            dv(0,2),dv(2,0),dv(1,2),dv(2,1),delTime,np);
+    }
+    else
+    {   MPMConstLaw(mptr,dv(0,0),dv(1,1),dv(0,1),dv(1,0),dv(2,2),delTime,np);
+    }
+}
+
+// These methods are now deprecated. All new material should use the single matrix call (and check
+//   np to see if 2D or 3D)
+void MaterialBase::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
+                                double dvzz,double delTime,int np)
+{
+}
+void MaterialBase::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
+                                double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
+{
+}
+
 // MPM call to allow material to change properties depending on particle state
 // The base method assumes angle is only variable and loads possible
 //     rotated meechanical properties (which does nothing unless overridden)
@@ -556,7 +579,7 @@ void MaterialBase::LoadTransportProps(MPMBase *mptr,int np) { return; }
 
 // Implemented in case heat capacity changes with particle state (Cp and Cv)
 // Cp is used in conduction; Cv is rarely used
-// Units mJ/(g-K)
+// Units mJ/(g-K) = J/(kg-m)
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) { return heatCapacity; }
 double MaterialBase::GetHeatCapacityVol(MPMBase *mptr) { return heatCapacityVol; }
 
@@ -1211,7 +1234,7 @@ short MaterialBase::GetMVFIsRigid(int matfld)
 int MaterialBase::GetFieldMatID(int matfld) { return fieldMatIDs[matfld]; }
 
 // Get current relative volume change - only used to convert speific results to actual values when archiving
-// Material with explicit treatment of large deformation might need it (e.g., Hyperelastic)
+// Materials with explicit treatment of large deformation will need it (e.g., Hyperelastic)
 double MaterialBase::GetCurrentRelativeVolume(MPMBase *mptr) { return 1.; }
 
 // If material partitions total strain into elastic and plastic strain saved in ep and eplast, it'

@@ -113,41 +113,23 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np)
 
 #pragma mark IdealGas::Methods
 
-/* For 2D MPM analysis, take increments in strain and calculate new
+/* Take increments in strain and calculate new
     Particle: strains, rotation strain, stresses, strain energy, angle
-    dvij are (gradient rates X time increment) to give deformation gradient change
-	Does not support thermal or moisture strains
-   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
+    du are (gradient rates X time increment) to give deformation gradient change
 */
-void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-								double dvzz,double delTime,int np)
+void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
 {
-	// Update strains and rotations and Left Cauchy strain
-    // get new deformation gradient
-	double detf = IncrementDeformation(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,NULL);
-    
-    // single 2D and 3D law
-    MPMCombinedLaw(mptr,detf);
-}
-
-/* For 3D MPM analysis, take increments in strain and calculate new
- Particle: strains, rotation strain, stresses, strain energy, angle
- dvij are (gradient rates X time increment) to give deformation gradient change
- */
-void IdealGas::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-                           double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
-{
- 	// Update strains and rotations and Left Cauchy strain
+    // Update strains and rotations and Left Cauchy strain
     // get determinent of incremental deformation gradient
-	double detf = IncrementDeformation(mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,NULL);
-   
-    // single 2D and 3D law
-    MPMCombinedLaw(mptr,detf);
-}
-
-// Common parts for both 2D plane strain and 3D law
-void IdealGas::MPMCombinedLaw(MPMBase *mptr,double detf)
-{
+    double detf;
+    if(np == THREED_MPM)
+    {   detf = IncrementDeformation(mptr,du(0,0),du(1,1),du(2,2),du(0,1),du(1,0),du(0,2),du(2,0),
+                                                du(1,2),du(2,1),NULL);
+    }
+    else
+    {   detf = IncrementDeformation(mptr,du(0,0),du(1,1),du(0,1),du(1,0),du(2,2),NULL);
+    }
+    
     // update stress
 	Tensor *sp=mptr->GetStressTensor();
     double mPnsp = sp->xx;

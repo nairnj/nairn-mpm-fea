@@ -41,7 +41,7 @@ class SLMaterial : public MGSCGLMaterial
         virtual const char *VerifyProperties(int);
 				
 		// methods
-		virtual double GetPressureChange(MPMBase *,double &,int);
+		virtual double GetPressureChange(MPMBase *,double &,double,int);
 		virtual double GetYield(MPMBase *,int,double);
  		virtual double GetKPrime(MPMBase *,int,double);
 		double GetEpdot(double);

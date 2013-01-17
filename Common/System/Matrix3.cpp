@@ -91,6 +91,21 @@ Matrix3::Matrix3(double xx,double xy,double yx,double yy,double zz)
 	is2D = TRUE;
 }
 
+// define matrix as outer product of two vectors (x1,y1,z1) and (x2,y2,z2)
+Matrix3::Matrix3(double x1,double y1,double z1,double x2,double y2,double z2)
+{
+	m[0][0] = x1*x2;
+	m[0][1] = x1*y2;
+	m[0][2] = x1*z2;
+	m[1][0] = y1*x2;
+	m[1][1] = y1*y2;
+	m[1][2] = y1*z2;
+	m[2][0] = z1*x2;
+	m[2][1] = z1*y2;
+	m[2][2] = z1*z2;
+	is2D = FALSE;
+}
+
 #pragma mark Matrix3:methods
 
 // zero the matrix

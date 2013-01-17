@@ -83,15 +83,16 @@ class MaterialBase : public LinkedObject
 		void PrintCriterion(int,int);
 #endif
          
-        // Methods (abstract methods must be overridden)
+        // Methods
         virtual void LoadMechProps(int,double,int);
 #ifdef MPM_CODE
         virtual void LoadMechanicalProps(MPMBase *,int);
 		virtual void LoadTransportProps(MPMBase *,int);
 		virtual double GetHeatCapacity(MPMBase *);
 		virtual double GetHeatCapacityVol(MPMBase *);
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int) = 0;
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int) = 0;
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
 #endif
 
 		// Methods (base class only)

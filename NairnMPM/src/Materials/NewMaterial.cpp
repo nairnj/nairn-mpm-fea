@@ -124,15 +124,8 @@ void NewMaterial::PrintMechanicalProperties(void)
 //		by any core methods)
 //double NewMaterial::GetHeatCapacityVol(MPMBase *mptr) { return heatCapacityVol; }
 
-// Apply 2D Constitutive law
-void NewMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double dvzz,double delTime,int np)
-{
-}
-
-// Apply 3D Constitutive law
-void NewMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-        double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
+// Apply Constitutive law, check np to know what type
+void NewMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
 {
 }
 

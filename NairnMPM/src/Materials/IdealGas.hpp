@@ -38,9 +38,7 @@ class IdealGas : public HyperElastic
         void SetInitialParticleState(MPMBase *,int);
  		
 		// methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
-        virtual void MPMCombinedLaw(MPMBase *,double);
+        void MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np);
     
 		// accessors
 		virtual double WaveSpeed(bool,MPMBase *);
