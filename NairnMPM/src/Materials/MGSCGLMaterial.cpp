@@ -172,7 +172,7 @@ void MGSCGLMaterial::PrintMechanicalProperties(void)
 	// yield
 	PrintYieldProperties();
 	
-	// effective CTE (in ppm/K) alpha = rho0 gamma0 Cv / K
+	// effective volumetric CTE (in ppm/K) alpha = rho0 gamma0 Cv / K
 	double effAlpha = (1.e9*heatCapacityVol*gamma0)/C0squared;
 	PrintProperty("a",effAlpha/3.,"");
 	PrintProperty("T0",thermal.reference,"K");
@@ -339,8 +339,8 @@ double MGSCGLMaterial::GetPressureChange(MPMBase *mptr,double &delV,double J,int
     // Want specific pressure or pressure over current density (using J = rho0/rho)
     if(x>0.)
     {   // compression law
-        // denominator = 1 - S1*x - S2*x^2 - S2^x^3
-        double denom = 1./(1. - x*(S1 +x*(S2 + x*S3)));
+        // denominator = 1 - S1*x - S2*x^2 - S3*x^3
+        double denom = 1./(1. - x*(S1 + x*(S2 + x*S3)));
     
         // current effective and reduced (by rho0) bulk modulus
         Keffred = C0squared*(1.-0.5*gamma0*x)*denom*denom;
