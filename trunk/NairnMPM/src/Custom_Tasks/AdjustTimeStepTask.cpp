@@ -90,6 +90,8 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     // get grid dimensions
     double minSize=mpmgrid.GetMinCellDimension()/10.;	// in cm
     
+    //cout << "# start " << timestep;
+    
     // reset globals
     timestep=1.e15;
     propTime=1.e15;
@@ -128,6 +130,8 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     
 	// propagation time step (no less than timestep)
     if(propTime<timestep) propTime=timestep;
+    
+    //cout << " end " << timestep << endl;
 
     return nextTask;
 }

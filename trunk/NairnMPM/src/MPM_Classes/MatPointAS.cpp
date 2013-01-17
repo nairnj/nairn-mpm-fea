@@ -54,7 +54,7 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np)
 	int i,numnds,nds[MaxShapeNds];
     double fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds],zDeriv[MaxShapeNds];
 	Vector vel;
-    double dvrr,dvzz,dvrz,dvzr,dvtt;
+    Matrix3 dv;
     
 	// find shape functions and derviatives
 	int iel=ElemID();
@@ -63,26 +63,17 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np)
     // Find strain rates at particle from current grid velocities
 	//   and using the velocity field for that particle and each node and the right material
     // In axisymmetric x->r, y->z, and z->hoop
-    dvrr=dvzz=dvrz=dvzr=dvtt=0.;
     for(i=1;i<=numnds;i++)
 	{	vel=nd[nds[i]]->GetVelocity((short)vfld[i],matfld);
-        dvrr += vel.x*xDeriv[i];
-        dvzz += vel.y*yDeriv[i];
-        dvrz += vel.x*yDeriv[i];
-        dvzr += vel.y*xDeriv[i];
-        dvtt += vel.x*zDeriv[i];
+        dv += Matrix3(vel.x*xDeriv[i],vel.x*yDeriv[i],vel.y*xDeriv[i],vel.y*yDeriv[i],vel.x*zDeriv[i]);
     }
     
     // save velocity gradient (if needed for J integral calculation)
-    SetVelocityGradient(dvrr,dvzz,dvrz,dvzr,secondPass);
+    SetVelocityGradient(dv(0,0),dv(1,0),dv(0,1),dv(1,0),secondPass);
     
     // convert to strain increments
     // e.g., now dvrr = dvr/dr * dt = d/dr(du/dt) * dt = d/dt(du/dr) * dt = du/dr)
-    dvrr *= strainTime;
-    dvzz *= strainTime;
-    dvrz *= strainTime;
-    dvzr *= strainTime;
-    dvtt *= strainTime;
+    dv.Scale(strainTime);
     
 	// find effective particle transport property - find it from the grid results
 	if(transportTasks)
@@ -111,7 +102,7 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np)
 	}
 	
     // update particle strain and stress using its constituitive law
-    matRef->MPMConstLaw(this,dvrr,dvzz,dvrz,dvzr,dvtt,strainTime,np);
+    matRef->MPMConstitutiveLaw(this,dv,strainTime,np);
 }
 
 #pragma mark MatPoint2D::Accessors

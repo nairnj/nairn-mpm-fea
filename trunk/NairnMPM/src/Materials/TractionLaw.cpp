@@ -64,10 +64,6 @@ double TractionLaw::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod
 {	return 0.;
 }
 
-// define empty methods for constuitive laws that are not used
-void TractionLaw::MPMConstLaw(MPMBase *,double,double,double,double,double,double,int) {}
-void TractionLaw::MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int) {}
-
 #pragma mark TractionLaw::Accessors
 
 // required accessors

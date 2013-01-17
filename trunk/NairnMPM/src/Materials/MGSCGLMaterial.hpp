@@ -20,7 +20,7 @@ class MGSCGLMaterial : public IsoPlasticity
     public:
 		// unique properties
 		double gamma0,GPp,GTp,beta,nhard,yieldMax;
-		double C0,S1,S2;
+		double C0,S1,S2,S3;
         
         // constructors and destructors
 		MGSCGLMaterial();
@@ -36,18 +36,23 @@ class MGSCGLMaterial : public IsoPlasticity
 		virtual void ValidateForUse(int);
 	
 		// methods
-		virtual double GetPressureChange(MPMBase *,double &,int);
+        void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int);
+		virtual double GetPressureChange(MPMBase *,double &,double,int);
 		virtual double GetYield(MPMBase *,int,double);
  		virtual double GetKPrime(MPMBase *,int,double);
 		virtual double GetK2Prime(MPMBase *,double,double);
+        virtual double GetCurrentRelativeVolume(MPMBase *);
 				
 		// accessors
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
         virtual double WaveSpeed(bool,MPMBase *);
+        virtual double CurrentWaveSpeed(bool,MPMBase *);
 		
     protected:
-		double k1,k2,k3,gRhoCv,GPpred,G0red,yldMaxred;
+        double GPpred,G0red,Keffred,Gratio;
+        double yldMaxred;
+        double C0squared;
 
 };
 

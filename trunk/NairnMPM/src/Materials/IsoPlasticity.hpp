@@ -37,11 +37,14 @@ class IsoPlasticity : public IsotropicMat
 		virtual void PrintYieldProperties(void) = 0;							// subclass must provide
 		
 		// methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
-		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
+        void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int);
+        virtual void PlasticityConstLaw(MPMBase *,double,double,double,double,double,double,int,
+                                        double,double,double);
+        virtual void PlasticityConstLaw(MPMBase *,double,double,double,double,double,double,double,double,
+                                        double,double,int,double,double,double);
 		
 		// custom methods: Find yield function and solve for lambda
-		virtual double GetPressureChange(MPMBase *,double &,int);
+		virtual double GetPressureChange(MPMBase *,double &,double,int);
 		virtual double GetMagnitudeS(Tensor *st,int);
 		virtual void GetDfDsigma(double,Tensor *,int);
 		virtual double SolveForLambda(MPMBase *,int,double,Tensor *,double);

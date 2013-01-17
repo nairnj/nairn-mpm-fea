@@ -286,18 +286,6 @@ int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid)
 	return MaterialBase::SetField(fieldNum,multiMaterials,matid);
 }
 
-#pragma mark RigidMaterial::Methods
-
-// does not have 2D constituitive law
-void RigidMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double dvzz,double delTime,int np)
-{}
-
-// Does not have 3D constitutive law
-void RigidMaterial::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-        double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
-{}
-
 #pragma mark RigidMaterial::Accessors
 
 // never called

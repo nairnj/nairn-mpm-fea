@@ -18,6 +18,7 @@ class Matrix3
 		Matrix3(double,double,double,double,double,double,
 						double,double,double);
 		Matrix3(double,double,double,double,double);
+        Matrix3(double,double,double,double,double,double);
 	
 		// printing
 		friend ostream &operator<<(ostream &os, const Matrix3 &);

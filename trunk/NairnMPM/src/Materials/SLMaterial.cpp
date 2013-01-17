@@ -112,7 +112,7 @@ char *SLMaterial::MaterialData(void)
 // Get temperature changed needed in T-dependent yield stress latter
 // Then pass on to super class for pressure calculation
 // Also get shear modulus here since it is not needed until after this is called
-double SLMaterial::GetPressureChange(MPMBase *mptr,double &delV,int np)
+double SLMaterial::GetPressureChange(MPMBase *mptr,double &delV,double J,int np)
 {
 	// thermal term in yield stress
 	TwoUkkT = 2.*Uk/(8.61734e-5*mptr->pPreviousTemperature);			// 2Uk/kT (add 3 digit at end)
@@ -122,7 +122,7 @@ double SLMaterial::GetPressureChange(MPMBase *mptr,double &delV,int np)
 	currentYTred=fmax(YTmin,YTlast);
 
 	// super class handles pressure calculation
-	return MGSCGLMaterial::GetPressureChange(mptr,delV,np);
+	return MGSCGLMaterial::GetPressureChange(mptr,delV,J,np);
 }
 
 // Return yield stress for current conditions (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)

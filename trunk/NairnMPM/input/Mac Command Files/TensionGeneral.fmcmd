@@ -1,24 +1,24 @@
 ! ********** Preamble Section **********
 Title "Low Strain Tensile Loading"Name "John Nairn"
 
-! HeaderHeaderSimple tensile loading on a low-strain, hypoelastic materials
+! HeaderHeaderSimple tensile loading on hypoelastic materials (mostly low-strain materials)
 2D or 3D uniaxial loading by various boundary conditions
 Sides can be free or constrained
-Intended for development of low strain materials
+Intended for development of these materials
 EndHeader! ------------ Parameters ---------------
 
-! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"
+! Analysis type: "Plane Strain MPM", "Plane Stress MPM", "Axisymmetric MPM", or "3D MPM"
 #analysis="Plane Strain MPM"
 
 ! pick a method usually "lCPDI" or "uGIMP"
-#method="uGIMP"
+#method="lCPDI"
 
 ! pick strain update method usually "USF" or "USAVG"
 #update="USF"
 
 ! material options: isotropic, vonmises, bistable, iptrans, normtrans, ortho
 !   viscoelastic, hill, johnson, wood, MGSCGL, SL
-#matID="isotropic"
+#matID="MGSCGL"
 #angle=0					! material angle for anisotopic materials
 
 ! temperature option to test energy coupling
@@ -26,23 +26,31 @@ StressFreeTemp 294
 #startTemp=294
 !Conduction "yes","Mechanical Energy"
 
-! Basic properties (but this do not work for XML materials)
-#Ebase=1000
-#rho=1
-#nuBase=.25
-#aBase=60
+! Basic properties (but these may not work for all materials)
+! Special cases:
+!   For MGSCGL, #Ebase=K=#rho*C0^2, e.g. for Tungsten rho=19.256, C0=4004,
+!				K=0.001 rho C0^2 MPa (rho in g/cm^2, C0 in m/sec)
+!				Pick other properties in the material definition
+#Ebase=308776
+#rho=19.256
+#nuBase=.28
+#aBase=4.5
+!#Ebase=100
+!#rho=1
+!#nuBase=.33
+!#aBase=60
 #yldstrain=1		! in percent
 
 ! Dimensions
 #cell=2
-#length=40			! length (transit time = 1 ms)
+#length=40			! length
 #width=10			! width
 #thick=10			! thickness
 
 ! Load by strain (estimated for force and traction loads)
-#loading="traction"	! Loading = "force", "traction", "rigid", "contact"
+#loading="rigid"	! Loading = "force", "traction", "rigid", "contact", "thermal"
 #fixsides="yes"		! "yes" or "no" for sides fix in y direction (2D) or y and z (3D)
-#strain=5	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus)
+#strain=-50	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
 
 ! Loading rate
 #tmult=10			! number of transit times to load peak
@@ -67,6 +75,11 @@ if #loading="contact"
   endif
   MultimaterialMode 0,enabled,maxgrad,10
   FrictionMM 0
+endif
+
+if #loading="thermal"
+  #deltaT=#strain
+  #strain=0
 endif
 
 ! estimate stress by simple tension
@@ -159,17 +172,19 @@ if #matID="johnson"
 endif
 
 if #matID="MGSCGL"
+  #C0base = sqrt(1000*#Ebase/#rho)
+  #Gbase = 3*#Ebase*(1-2*#nuBase)/(2*(1+#nuBase))
   Material "MGSCGL","Tungsten","MGSCGLMaterial"
-    C0 4004
+    C0 #C0base
     S1 1.35
     S2 0
     gamma0 1.64
-    rho 19.256
+    rho #rho
     yield 2200
-    G 160000
+    G #Gbase
     Cv 134
-	GPpG0 0.01e-3
-	GTpG0 -2.2e-4
+    GPpG0 0.01e-3
+    GTpG0 -2.2e-4
     yieldMax 4000
     betahard 7.7
     nhard 0.13
@@ -186,15 +201,15 @@ if #matID="SL"
     yield 2200
     G 160000
     Cv 134
-	GPpG0 0.01e-3
-	GTpG0 -2.2e-4
+    GPpG0 0.01e-3
+    GTpG0 -2.2e-4
     yieldMax 4000
     betahard 7.7
     nhard 0.13
-	YP 1000
-	Uk 0.31
-	C1 710000
-	C2 0.012
+    YP 1000
+    Uk 0.31
+    C1 710000
+    C2 0.012
   Done
 endif
 
@@ -330,7 +345,7 @@ if #matID="wood"
 endif
 
 ! displacement functions for rigidd materials
-#rfxn = -#disprate&"*(sign("&#time&"-t)-sign(t-"&((1+#hold)*#time)&"))"
+#rfxn = #disprate&"*(sign("&#time&"-t)-sign(t-"&((1+#hold)*#time)&"))"
 
 ! add rigid materials and set damping
 #ke=0
@@ -378,15 +393,15 @@ if #loading="contact"
 endif
 GlobalArchiveTime (1+#hold+#unload)*#time/100
 
+#gleft=-#cell
 if #strain<0
-  #gleft=-4*#cell
+  #gright=#length+4*#cell
   #sides=(int(-#strain*#width/200/#cell)+4)
 else
   #xtra=(int(1.6*#strain*#length/100/#cell)+4)
-  #gleft=-#xtra*#cell
+  #gright=#length+#xtra*#cell
   #sides=4
 endif
-#gright=#length+#cell
 #gbot=-#sides*#cell
 #gtop=#width+#sides*#cell
 #zmin=-#sides*#cell
@@ -424,21 +439,21 @@ endif
 ifStr #loading="rigid"
   if #analysis="3D MPM"
     Region "rigid",1,0,0
-      Box -#cell,0,-#sides*#cell,#width+#sides*#cell,-#sides*#cell,#thick+#sides*#cell
+      Box #length,#length+#cell,-#sides*#cell,#width+#sides*#cell,-#sides*#cell,#thick+#sides*#cell
     EndRegion
   else
     Region "rigid",1,0,#thick
-      Rect -#cell,0,-#sides*#cell,#width+#sides*#cell
+      Rect #length,#length+#cell,-#sides*#cell,#width+#sides*#cell
     EndRegion
   endif
 else if #loading="contact"
   if #analysis="3D MPM"
     Region "rigid",1,0,0
-      Box -#cell,0,-#sides*#cell,#width+#sides*#cell,-#sides*#cell,#thick+#sides*#cell
+      Box #length,#length+#cell,-#sides*#cell,#width+#sides*#cell,-#sides*#cell,#thick+#sides*#cell
     EndRegion
   else
     Region "rigid",1,0,#thick
-      Rect -#cell,0,-#sides*#cell,#width+#sides*#cell
+      Rect #length,#length+#cell,-#sides*#cell,#width+#sides*#cell
     EndRegion
   endif
 else ifStr #loading="force"
@@ -450,14 +465,14 @@ else ifStr #loading="force"
     #tpart="*t"
   endif
   if #analysis="3D MPM"
-    LoadBox 0,0,0,#cell/2,#width,#thick
+    LoadBox #length-#cell/2,0,0,#length,#width,#thick
       LoadType net
-      Load x,function,(-#forcerate)&#tpart,0,-1
+      Load x,function,(#forcerate)&#tpart,0,-1
     EndLoadBox
   else
-    LoadRect 0,#cell/2,0,#width
+    LoadRect #length-#cell/2,#length,0,#width
       LoadType net
-      Load x,function,(-#forcerate)&#tpart,0,-1
+      Load x,function,(#forcerate)&#tpart,0,-1
     EndLoadRect
   endif
 else ifStr #loading="traction"
@@ -468,23 +483,25 @@ else ifStr #loading="traction"
     #tpart="*t"
   endif
   if #analysis="3D MPM"
-    LoadBox 0,0,0,#cell/2,#width,#thick
-      Traction x,4,function,(-#stress/#time)&#tpart,0,-1
+    LoadBox #length-#cell/2,0,0,#length,#width,#thick
+      Traction x,4,function,(#stress/#time)&#tpart,0,-1
     EndLoadBox
   else
-    LoadRect 0,#cell/2,0,#width
-      Traction x,4,function,(-#stress/#time)&#tpart,0,-1
+    LoadRect #length-#cell/2,#length,0,#width
+      Traction x,4,function,(#stress/#time)&#tpart,0,-1
     EndLoadRect
   endif
+else ifStr #loading="thermal"
+  ThermalRamp #deltaT,#time
 endif
 
-! Fixed bottom! set to #length + #cell/2 to only two rows for cells for GIMP
+! Fixed bottom! set to -#cell/2 to only have two rows for cells for GIMP
 if #analysis="3D MPM"
-  MoveBox #length,-#sides*#cell,-#sides*#cell,#length+#cell,#width+#sides*#cell,#thick+#sides*#cell
+  MoveBox -#cell,-#sides*#cell,-#sides*#cell,0,#width+#sides*#cell,#thick+#sides*#cell
     Velocity x,constant,0
   EndMoveBox
 else
-  #midpt=#length+#cell/2
+  #midpt=-#cell/2
   MoveLine #midpt,-#sides*#cell,#midpt,#width+#sides*#cell,#cell
     Velocity x,constant,0
   EndMoveLine
@@ -493,7 +510,19 @@ endif
 ! Fixed sides
 if #fixsides="yes"
   if #analysis="3D MPM"
-    Stop "fixed sides not implemented for 3D yet"
+  	#midpt=-#cell/2
+    MoveBox #gleft,-1.01*#cell,#zmin,#gright,.01*#cell,#zmax
+      Velocity y,constant,0
+    EndMoveBox
+    MoveBox #gleft,#width-.01*#cell,#zmin,#gright,#width+1.01*#cell,#zmax
+      Velocity y,constant,0
+    EndMoveBox
+    MoveBox #gleft,#gbot,-1.01*#cell,#gright,#gtop,.01*#cell
+      Velocity z,constant,0
+    EndMoveBox
+    MoveBox #gleft,#gbot,#thick-.01*#cell,#gright,#gtop,#thick+1.01*#cell
+      Velocity z,constant,0
+    EndMoveBox
   else
     #midpt=-#cell/2
     MoveLine #gleft,#midpt,#gright,#midpt,#cell
@@ -521,7 +550,18 @@ if #analysis="3D MPM"
       <Parameter name='strainenergy'/>
       <Parameter name='plasticenergy'/>
     </Schedule>
+    <Schedule name='AdjustTimeStep'>
+    </Schedule>
   </CustomTasks>
 
+  EndXMLData
+else
+
+  XMLData
+
+  <CustomTasks>
+    <Schedule name='AdjustTimeStep'>
+    </Schedule>
+  </CustomTasks>
   EndXMLData
 endif

@@ -161,7 +161,7 @@ The new terms are set in \code{SetAnalysisProps()} as \code{C13} $=C_{13}$, \cod
 
 \subsection{Rotated Stiffness Equations in MPM}
 
-For orthotropic materials with material angle not zero, the stiffness equations must be rotated counter-clockwise by the material point angle to transpose to the analysis coordinate systems. The material point angle is initialized when the calculations starts. To account for large displacements and rotations, the angle is updated on each time step based on the rotation tensor. The angle thus always reflects the current material orientation. Thus prior to calling \code{MPMConstLaw()}, the equations are rotated (if needed) to obtain:
+For orthotropic materials with material angle not zero, the stiffness equations must be rotated counter-clockwise by the material point angle to transpose to the analysis coordinate systems. The material point angle is initialized when the calculations starts. To account for large displacements and rotations, the angle is updated on each time step based on the rotation tensor. The angle thus always reflects the current material orientation. Thus prior to calling \code{MPMConstitutiveLaw()}, the equations are rotated (if needed) to obtain:
 \begin{equation}
       \vvec{\s{xx}}{\s{yy}}{\t{xy}} = \symmat{\code{mdm[1][1]}}{\code{mdm[1][2]}}
                       {\code{mdm[1][3]}}{\code{mdm[2][2]}}{\code{mdm[2][3]}}{\code{mdm[3][3]}}
