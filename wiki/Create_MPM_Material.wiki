@@ -24,7 +24,8 @@ The following outline shows all materials in `nairn-mpm-fea`as a class hierarchy
           * `VONMISESHARDENING=9`
           * `MGSCGLMATERIAL=17`
             * `SLMATERIAL=18`
-          * `JOHNSONCOOK=16` (verification in progress)
+            * `MGJOHNSONCOOK=15`
+          * `JOHNSONCOOK=16`
         * `BISTABLEISO=10`
       * <font color="green">`TRANSISO1(2)=2,3`</font>
         * <font color="green">`ORTHO=4`</font>
@@ -43,7 +44,7 @@ The following outline shows all materials in `nairn-mpm-fea`as a class hierarchy
       * `COHESIVEZONEMATERIAL=12`
         * `LINEARTRACTIONMATERIAL=13`
         * `TRILINEARTRACTIONMATERIAL=20`
-        * `COUPLEDSAWTOOTHMATERIAL=23` (not documented yet)
+        * `COUPLEDSAWTOOTHMATERIAL=23`
       * `CUBICTRACTIONLAW=14`
 
 == Editing Required in Core Code ==
