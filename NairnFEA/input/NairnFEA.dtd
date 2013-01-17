@@ -101,7 +101,7 @@
 				| alphax | alphay | alphaz | alphaR | alphaZ | alphaT
 				| Dn | Dt )* >
 <!ATTLIST	Material
-			Type (1|2|3|4|5) #REQUIRED
+			Type CDATA #REQUIRED
 			Name CDATA #REQUIRED>
 
 <!-- Region shapes -->

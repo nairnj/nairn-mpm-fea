@@ -19,6 +19,7 @@
 	#include "Materials/HillPlastic.hpp"
 	#include "Materials/WoodMaterial.hpp"
 	#include "Materials/JohnsonCook.hpp"
+    #include "Materials/MGJohnsonCook.hpp"
 	#include "Materials/MGSCGLMaterial.hpp"
 	#include "Materials/SLMaterial.hpp"
 	#include "Materials/Mooney.hpp"
@@ -123,6 +124,9 @@ int MaterialController::AddMaterial(int matID,char *matName)
 			break;
 		case JOHNSONCOOK:
 			newMaterial=new JohnsonCook(matName);
+			break;
+		case MGJOHNSONCOOK:
+			newMaterial=new MGJohnsonCook(matName);
 			break;
 		case MGSCGLMATERIAL:
 			newMaterial=new MGSCGLMaterial(matName);

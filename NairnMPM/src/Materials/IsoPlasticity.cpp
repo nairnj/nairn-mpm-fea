@@ -717,7 +717,14 @@ void IsoPlasticity::BracketSolution(MPMBase *mptr,int np,double strial,Tensor *s
     
     // exception if did not find answer in 20 orders of magnitude in strain rate
     if(step>=20)
-        throw CommonException("Plasticity solution could not be bracketed","IsoPlasticity::BracketSolution");
+    {   cout << "# Material point information that caused the exception:" << endl;
+        mptr->Describe();
+        char errMsg[250];
+        strcpy(errMsg,"Plasticity solution for material type '");
+        strcat(errMsg,name);
+        strcat(errMsg,"' could not be bracketed in 20 steps");
+        throw CommonException(errMsg,"IsoPlasticity::BracketSolution");
+    }
     
     // set upper limits
     *lamNeg = dalpha/SQRT_TWOTHIRDS;

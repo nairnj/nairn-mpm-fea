@@ -169,14 +169,15 @@ void MGSCGLMaterial::PrintMechanicalProperties(void)
 	PrintProperty("GT'/G0",GTp,"K^-1");
 	cout << endl;
 	
-	// yield
-	PrintYieldProperties();
-	
 	// effective volumetric CTE (in ppm/K) alpha = rho0 gamma0 Cv / K
 	double effAlpha = (1.e9*heatCapacityVol*gamma0)/C0squared;
 	PrintProperty("a",effAlpha/3.,"");
 	PrintProperty("T0",thermal.reference,"K");
 	cout <<  endl;
+
+	// yield
+	PrintYieldProperties();
+	
 }
 
 // print just yield properties to output window
