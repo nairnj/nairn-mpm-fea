@@ -201,6 +201,7 @@ MatPtTractionBC = $(src)/Boundary_Conditions/MatPtTractionBC
 Matrix3 = $(com)/System/Matrix3
 MatVelocityField = $(src)/Nodes/MatVelocityField
 MeshInfo = $(src)/NairnMPM_Class/MeshInfo
+MGJohnsonCook = $(src)/Materials/MGJohnsonCook
 MGSCGLMaterial = $(src)/Materials/MGSCGLMaterial
 Mooney = $(src)/Materials/Mooney
 MoreMPMElementBase = $(src)/Elements/MoreMPMElementBase
@@ -310,6 +311,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # MatPointAS.hpp : MatPoint2D.hpp MPMBase.hpp
 # MatPoint2D.hpp : MPMBase.hpp
 # MatPoint3D.hpp : MPMBase.hpp
+# MGJohnsonCook.hpp : MGSCGLMaterial.hpp (IsoPlasticity, IsotropicMat.hpp Elastic.hpp MaterialBase.hpp)
 # Mooney.hpp : HyperElastic.hpp (MaterialBase.hpp)
 # MoveCracksTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # MPMReadHandler.hpp : CommonReadHandler.hpp
@@ -371,7 +373,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		CrackSurfaceContact.o CrackNode.o MaterialInterfaceNode.o MaterialBaseMPM.o Viscoelastic.o JohnsonCook.o \
 		Mooney.o HEAnisotropic.o HEIsotropic.o VonMisesHardening.o BistableIsotropic.o RigidMaterial.o \
 		MatPtLoadBC.o MatPtTractionBC.o MatPtFluxBC.o NodalVelBC.o NodalConcBC.o NodalTempBC.o MoreMPMElementBase.o \
-		NodalPointMPM.o CustomTask.o CalcJKTask.o PropagateTask.o ReverseLoad.o IdealGas.o \
+		NodalPointMPM.o CustomTask.o CalcJKTask.o PropagateTask.o ReverseLoad.o IdealGas.o MGJohnsonCook.o \
 		DiffusionTask.o ConductionTask.o MeshInfo.o TransportTask.o ElementBase3D.o \
 		EightNodeIsoparamBrick.o MatPoint3D.o Elastic.o ElasticMPM.o HyperElastic.o \
 		mathexpr.o ShapeController.o PointController.o RectController.o OvalController.o PolygonController.o \
@@ -445,7 +447,7 @@ MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialControlle
 		$(Elastic).hpp $(HyperElastic).hpp $(NairnMPM).hpp $(TractionLaw).hpp $(CohesiveZone).hpp $(LinearTraction).hpp \
 		$(CubicTraction).hpp $(AnisoPlasticity).hpp $(IsoPlasticity.hpp) $(HillPlastic).hpp $(MGSCGLMaterial).hpp \
 		$(SLMaterial).hpp $(WoodMaterial).hpp $(TrilinearTraction).hpp $(IdealGas).hpp $(CoupledSawTooth).hpp \
-        $(HEIsotropic).hpp
+        $(HEIsotropic).hpp $(MGJohnsonCook).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialController).cpp
 mathexpr.o : $(mathexpr).cpp $(mathexpr).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(mathexpr).cpp
@@ -708,6 +710,9 @@ WoodMaterial.o : $(WoodMaterial).cpp $(dprefix) $(WoodMaterial).hpp $(HillPlasti
 JohnsonCook.o : $(JohnsonCook).cpp $(dprefix) $(JohnsonCook).hpp $(IsoPlasticity).hpp $(IsotropicMat).hpp \
 			$(Elastic).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ThermalRamp).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(JohnsonCook).cpp
+MGJohnsonCook.o : $(MGJohnsonCook).cpp $(dprefix) $(MGJohnsonCook).hpp $(MGSCGLMaterial).hpp $(IsoPlasticity).hpp $(IsotropicMat).hpp \
+			$(Elastic).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ThermalRamp).hpp $(CommonException).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MGJohnsonCook).cpp
 MGSCGLMaterial.o : $(MGSCGLMaterial).cpp $(dprefix) $(MGSCGLMaterial).hpp $(IsoPlasticity).hpp $(IsotropicMat).hpp \
 			$(Elastic).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ConductionTask).hpp \
 			$(DiffusionTask).hpp $(TransportTask).hpp $(ThermalRamp).hpp $(CommonException).hpp

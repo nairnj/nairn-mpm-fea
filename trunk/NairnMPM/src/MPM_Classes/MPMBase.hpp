@@ -142,6 +142,7 @@ class MPMBase : public LinkedObject
 		void SetHistoryDble(double);
 		double GetHistoryDble(int);
 		void SetHistoryDble(int,double);
+        void Describe(void);
     
 		// class methods
 		static void FullStrainUpdate(double,int,int);

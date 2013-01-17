@@ -37,7 +37,8 @@ void ResetElementsTask::Execute(void)
     for(p=0;p<nmpms;p++)
     {	if(!ResetElement(mpm[p]))
 		{	if(warnings.Issue(fmobj->warnParticleLeftGrid,-1)==REACHED_MAX_WARNINGS)
-			{	char errMsg[100];
+            {   mpm[p]->Describe();
+				char errMsg[100];
 			    sprintf(errMsg,"Particle No. %d left the grid\n  (plot x displacement to see it).",p+1);
 				mpm[p]->origpos.x=-1.e6;
 				throw MPMTermination(errMsg,"ResetElementsTask::Execute");

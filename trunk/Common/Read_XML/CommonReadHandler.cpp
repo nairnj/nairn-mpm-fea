@@ -149,7 +149,7 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 		if(strlen(matName)==0)
 			throw SAXException("<Material> must be named using 'Name' atttribute.");
 		if(!matCtrl->AddMaterial(matID,matName))
-			ThrowCatErrorMessage("Invalid material: either undefined or not allowed for current analysis type",matName);
+			ThrowCatErrorMessage("Invalid material: either undefined type or not allowed for current analysis type",matName);
     }
 
 	// begin a material

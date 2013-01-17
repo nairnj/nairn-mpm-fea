@@ -313,6 +313,17 @@ void MPMBase::SetHistoryDble(int index,double history)
 	h[index]=history;
 }
 
+// Decribe for debugging use or output on some errors
+void MPMBase::Describe(void)
+{	cout << "# pt: pos=(" << pos.x << "," << pos.y << "," << pos.z << ") mass=" << mp << 
+                " matl=" << matnum << " elem=" << inElem << endl;
+    cout << "#     vel=(" << vel.x << "," << vel.y << "," << vel.z << ")" << endl;
+    cout << "#       F=" << GetDeformationGradientMatrix() << endl;
+    cout << "# sigmaii=(" << sp.xx << "," << sp.yy << "," << sp.zz << ")" << endl;
+    cout << "#   tauij=(" << sp.xy << "," << sp.xz << "," << sp.yz << ")" << endl;
+}
+
+
 #pragma mark MPMBase Class Methods
 
 /**********************************************************

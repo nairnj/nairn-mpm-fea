@@ -250,6 +250,8 @@
 		A7731E4205B44C5800294E25 /* ThermalRamp.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7731E3C05B44C5800294E25 /* ThermalRamp.hpp */; };
 		A777F71F0A704DBA00446CB5 /* EightNodeIsoparamBrick.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A777F71D0A704DBA00446CB5 /* EightNodeIsoparamBrick.hpp */; };
 		A777F7200A704DBA00446CB5 /* EightNodeIsoparamBrick.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A777F71E0A704DBA00446CB5 /* EightNodeIsoparamBrick.cpp */; };
+		A778E0C216A89B75003D27FE /* MGJohnsonCook.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A778E0C116A89B75003D27FE /* MGJohnsonCook.hpp */; };
+		A778E0C416A89B9C003D27FE /* MGJohnsonCook.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A778E0C316A89B9C003D27FE /* MGJohnsonCook.cpp */; };
 		A77AF2B20D59261700D5313A /* BitMapFilesCommon.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A77AF2B00D59261700D5313A /* BitMapFilesCommon.cpp */; };
 		A77AF2CF0D592A7E00D5313A /* BitMapFilesCommon.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A77AF2B00D59261700D5313A /* BitMapFilesCommon.cpp */; };
 		A77AF31D0D592F6700D5313A /* BMPLevel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A71AC1D70767605F00B944AD /* BMPLevel.cpp */; };
@@ -546,6 +548,8 @@
 		A7731E3C05B44C5800294E25 /* ThermalRamp.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = ThermalRamp.hpp; sourceTree = "<group>"; };
 		A777F71D0A704DBA00446CB5 /* EightNodeIsoparamBrick.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = EightNodeIsoparamBrick.hpp; sourceTree = "<group>"; };
 		A777F71E0A704DBA00446CB5 /* EightNodeIsoparamBrick.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = EightNodeIsoparamBrick.cpp; sourceTree = "<group>"; };
+		A778E0C116A89B75003D27FE /* MGJohnsonCook.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MGJohnsonCook.hpp; sourceTree = "<group>"; };
+		A778E0C316A89B9C003D27FE /* MGJohnsonCook.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MGJohnsonCook.cpp; sourceTree = "<group>"; };
 		A77AA9F003E716420063AF10 /* TransIsotropic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TransIsotropic.hpp; sourceTree = "<group>"; };
 		A77AA9F103E716420063AF10 /* TransIsotropic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TransIsotropic.cpp; sourceTree = "<group>"; };
 		A77AF2B00D59261700D5313A /* BitMapFilesCommon.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BitMapFilesCommon.cpp; sourceTree = "<group>"; };
@@ -1327,10 +1331,12 @@
 				A7CA395603F16F3A0063AF10 /* Viscoelastic.cpp */,
 				A7CD01500E070CBD003470EE /* IsoPlasticity.hpp */,
 				A7CD01510E070CBD003470EE /* IsoPlasticity.cpp */,
-				A747207907BBC6A800456B14 /* VonMisesHardening.hpp */,
 				A747207807BBC6A800456B14 /* VonMisesHardening.cpp */,
+				A747207907BBC6A800456B14 /* VonMisesHardening.hpp */,
 				A712FAB00E54ED8500AF8D78 /* JohnsonCook.hpp */,
 				A712FAB10E54ED8500AF8D78 /* JohnsonCook.cpp */,
+				A778E0C116A89B75003D27FE /* MGJohnsonCook.hpp */,
+				A778E0C316A89B9C003D27FE /* MGJohnsonCook.cpp */,
 				A79013040ECB8F8C0000C289 /* MGSCGLMaterial.hpp */,
 				A79013050ECB8F8C0000C289 /* MGSCGLMaterial.cpp */,
 				A708FDD20F326C1A003FA82B /* SLMaterial.hpp */,
@@ -1500,6 +1506,7 @@
 				6700560A163AFC3600FFE145 /* HistoryArchive.hpp in Headers */,
 				67C3E42F16482C7D00AD5339 /* MatPointAS.hpp in Headers */,
 				67C733C116741ED100698D4F /* Matrix3.hpp in Headers */,
+				A778E0C216A89B75003D27FE /* MGJohnsonCook.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1812,6 +1819,7 @@
 				6700560C163AFC6B00FFE145 /* HistoryArchive.cpp in Sources */,
 				67C3E42E16482C7500AD5339 /* MatPointAS.cpp in Sources */,
 				67C733C016741ED100698D4F /* Matrix3.cpp in Sources */,
+				A778E0C416A89B9C003D27FE /* MGJohnsonCook.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
