@@ -21,7 +21,9 @@ The version number is coded in the constructor of the `NairnMPM.cpp` class:
 NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions currently in this project are as follows:
 
   * Current trunk Version
-    * Working on NairnMPM 9.0.0
+    * Working on NairnMPM 9.1.0
+    * `MGSCGLMaterial` and `SLMaterial` are now large-deformation laws for the equation of state with conventional plasticity using advanced hardening laws for the shear parts.
+    * A new `MGJohnsonCook` material uses a large deformation Mie-Grüneisen law for pressure and Johnson-Cook plasticity model for the shear parts.
 
   * release-3.0 (9 JAN 2013)
     * Has NairnMPM 9.0.0
