@@ -13,11 +13,11 @@
 	
 	Subclasses
 	
-	  Elastic	->	IsotropicMat+	-> IsoPlasticity	-> VonMisesHardening+ (MPM)	
+	  Elastic	->	IsotropicMat+	-> IsoPlasticity+ (MPM)	-> MGEOSMaterial+ (MPM)	
 														-> MGSCGLMaterial+ (MPM) -> SLMaterial+ (MPM)
 									-> BistableIsotropic+ (MPM)
 													
-				->	TransIsotropic+	->	Orthotropic+	-> AnisoPlasticity (MPM)	-> HillPlastic+ (MPM)
+				->	TransIsotropic+	->	Orthotropic+	-> AnisoPlasticity (MPM)    -> HillPlastic+ (MPM)
 					
 	  Viscoelastic+ (MPM)
 					

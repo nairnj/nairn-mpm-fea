@@ -15,13 +15,9 @@
 #ifdef MPM_CODE
 	#include "NairnMPM_Class/NairnMPM.hpp"
 	#include "Materials/Viscoelastic.hpp"
-	#include "Materials/VonMisesHardening.hpp"
 	#include "Materials/HillPlastic.hpp"
 	#include "Materials/WoodMaterial.hpp"
-	#include "Materials/JohnsonCook.hpp"
-    #include "Materials/MGJohnsonCook.hpp"
 	#include "Materials/MGSCGLMaterial.hpp"
-	#include "Materials/SLMaterial.hpp"
 	#include "Materials/Mooney.hpp"
 	#include "Materials/HEAnisotropic.hpp"
     #include "Materials/HEIsotropic.hpp"
@@ -95,8 +91,8 @@ int MaterialController::AddMaterial(int matID,char *matName)
 		case HEISOTROPIC:
 			newMaterial = new HEIsotropic(matName);
 			break;
-		case VONMISESHARDENING:
-			newMaterial=new VonMisesHardening(matName);
+		case ISOPLASTICITY:
+			newMaterial=new IsoPlasticity(matName);
 			break;
 		case BISTABLEISO:
 			newMaterial=new BistableIsotropic(matName);
@@ -122,17 +118,8 @@ int MaterialController::AddMaterial(int matID,char *matName)
 		case WOODMATERIAL:
 			newMaterial=new WoodMaterial(matName);
 			break;
-		case JOHNSONCOOK:
-			newMaterial=new JohnsonCook(matName);
-			break;
-		case MGJOHNSONCOOK:
-			newMaterial=new MGJohnsonCook(matName);
-			break;
-		case MGSCGLMATERIAL:
+		case MGEOSMATERIAL:
 			newMaterial=new MGSCGLMaterial(matName);
-			break;
-		case SLMATERIAL:
-			newMaterial=new SLMaterial(matName);
 			break;
 		case TRILINEARTRACTIONMATERIAL:
 			newMaterial=new TrilinearTraction(matName);

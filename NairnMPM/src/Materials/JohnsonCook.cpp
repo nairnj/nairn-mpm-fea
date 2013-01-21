@@ -4,37 +4,32 @@
     
     Created by John Nairn, August 12, 2008.
     Copyright (c) 2008 John A. Nairn, All rights reserved.
+ 
+    The Johnson-Cook hardening law is
+        (Ajc + Bjc εpnjc) [1 + Cjc ln(dεp/ep0jc) ] (1 - Trmjc)
 ********************************************************************************/
 
 #include "Materials/JohnsonCook.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
-#include "Exceptions/CommonException.hpp"
 
 #pragma mark JohnsonCook::Constructors and Destructors
 
-// Constructors
 JohnsonCook::JohnsonCook() {}
-JohnsonCook::JohnsonCook(char *matName) : IsoPlasticity(matName)
+
+JohnsonCook::JohnsonCook(MaterialBase *pair) : HardeningLawBase(pair)
 {
-    // Ajc is in the yield stress, which is required propertie
-	Bjc=0.;             // in MPa
-	njc=1.;             // dimensionless
-	Cjc=0.;             // dimensionless
-	ep0jc=1.;           // sec^-1
-	Tmjc=1000.;         // Melting point in K relative to thermal.reference
-    mjc=1.;             // dimensionless
+    // Ajc is in the yield stress in HardenLawBase class
+	Bjc = 0.;             // in MPa
+	njc = 1.;             // dimensionless
+	Cjc = 0.;             // dimensionless
+	ep0jc = 1.;           // sec^-1
+	Tmjc = 1000.;         // Melting point in K relative to thermal.reference
+    mjc = 1.;             // dimensionless
 }
 
 #pragma mark JohnsonCook::Initialization
 
-/* If material has new property types, it must override this method and
-	1. Define XML tag in the DTD file
-	2. If xName matches a new property tag, set input to the type
-		of variable (DOUBLE_NUM or INT_NUM) and return pointer
-		to the class variable to be set.
-	c. If no match, call InputMat() of superclass
-*/
 // Read material properties
 char *JohnsonCook::InputMat(char *xName,int &input)
 {
@@ -42,10 +37,9 @@ char *JohnsonCook::InputMat(char *xName,int &input)
     {	input=DOUBLE_NUM;
         return((char *)&Bjc);
     }
-    if(strcmp(xName,"Ajc")==0)
+    else if(strcmp(xName,"Ajc")==0)
     {	input=DOUBLE_NUM;
-        readYield=TRUE;
-        return((char *)&yield);
+       return((char *)&yield);
     }
     else if(strcmp(xName,"njc")==0)
     {	input=DOUBLE_NUM;
@@ -68,42 +62,34 @@ char *JohnsonCook::InputMat(char *xName,int &input)
         return((char *)&mjc);
     }
     
-    return(IsoPlasticity::InputMat(xName,input));
-}
-
-// print mechanical properties to the results
-void JohnsonCook::PrintMechanicalProperties(void)
-{	
-    IsotropicMat::PrintMechanicalProperties();
-	PrintYieldProperties();
+    return HardeningLawBase::InputMat(xName,input);
 }
 
 // print just yield properties to output window
 void JohnsonCook::PrintYieldProperties(void)
 {
-	PrintProperty("A",yield,"");
-	PrintProperty("B",Bjc,"");
-	PrintProperty("n",njc,"");
+    cout << GetHardeningLawName() << endl;
+    MaterialBase::PrintProperty("A",yield,"");
+	MaterialBase::PrintProperty("B",Bjc,"");
+	MaterialBase::PrintProperty("n",njc,"");
     cout << endl;
-	PrintProperty("C",Cjc,"");
-	PrintProperty("ep0",ep0jc,"s^-1");
+	MaterialBase::PrintProperty("C",Cjc,"");
+	MaterialBase::PrintProperty("ep0",ep0jc,"s^-1");
     cout << endl;
-	PrintProperty("Tm",Tmjc,"K");
-    PrintProperty("T0",thermal.reference,"K");
-	PrintProperty("m",mjc,"");
+	MaterialBase::PrintProperty("Tm",Tmjc,"K");
+    MaterialBase::PrintProperty("T0",thermal.reference,"K");
+	MaterialBase::PrintProperty("m",mjc,"");
     cout << endl;
 }
 
-// Private properties used in constitutive law
-// For variable shear and bulk moduli, subclass can overrive
-//		LoadMechanicalProps(MPMBase *mptr,int np) and set new
-//		Gred and Kred
+// Private properties used in hardening law
 void JohnsonCook::InitialLoadMechProps(int makeSpecific,int np)
 {	
 	// reduced prooperties (Units Pa - cm^3/g)
-    Bred = Bjc*1.e6/rho;
+    Bred = Bjc*1.e6/parent->rho;
 	
-	IsoPlasticity::InitialLoadMechProps(makeSpecific,np);
+    // reduced yield stress or Ajc
+	HardeningLawBase::InitialLoadMechProps(makeSpecific,np);
     
     // ignore strain rates below this
     edotMin = Cjc!=0. ? exp(-0.5/Cjc) : 1.e-20 ;
@@ -113,14 +99,18 @@ void JohnsonCook::InitialLoadMechProps(int makeSpecific,int np)
 #pragma mark JohnsonCook:Methods
 
 // State dependent material properties
-void JohnsonCook::LoadMechanicalProps(MPMBase *mptr,int np)
+void JohnsonCook::LoadHardeningLawProps(MPMBase *mptr,int np)
 {
-	// homologous temperature (as named by Johnson and Cook)
+	// homologous temperature (as needed by Johnson and Cook)
 	double hmlgTemp=(mptr->pPreviousTemperature - thermal.reference) / 
                 (Tmjc - thermal.reference);
     
     TjcTerm = hmlgTemp < 0. ? 1. - hmlgTemp : 1. - pow(hmlgTemp,mjc) ;
+    
+    // nothing needed from superclass (HardenLawBase)
 }
+
+#pragma mark JohnsonCook::Law Methods
 
 // Return yield stress for current conditions (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
 // yield = (A + B ep^n + n epdot), where ep=alpint, epdot=dalpha/delTime
@@ -166,12 +156,8 @@ double JohnsonCook::GetK2Prime(MPMBase *mptr,double fnp1,double delTime)
     }
 }
 
+#pragma mark JohnsonCook::Accessors
 
-#pragma mark NewMaterial::Accessors
-
-// Return the material tag
-int JohnsonCook::MaterialTag(void) { return JOHNSONCOOK; }
-
-// return unique, short name for this material
-const char *JohnsonCook::MaterialType(void) { return "Johnson-Cook Material"; }
+// hardening law name
+const char *JohnsonCook::GetHardeningLawName(void) { return "Johnson-Cook hardening"; }
 

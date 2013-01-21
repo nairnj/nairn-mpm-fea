@@ -145,8 +145,8 @@
 <!-- Define material properties -->
 
 <!ELEMENT	Material
-			( rho | E | nu | G | alpha | yield | Ep | beta | yieldMax
-				| EA | ET | GA | nuA | nuT | alphaA | alphaT | betaA | betaT
+			( rho | E | nu | G | alpha | yield | beta | yieldMax
+				| EA | ET | GA | nuA | nuT | alphaA | alphaT | betaA | betaT | Ep
 				| Ex | ER | Ey | EZ | Ez | Gxy | Gyx | GRZ | GZR | Gxz | Gzx 
 				| GRT | GTR | Gyz | Gzy | GZT | GTZ
 				| nuxy | nuyx | nuRZ | nuZR | nuxz | nuzx | nuRT | nuTR | nuyz | nuzy | nuZT | nuTZ
@@ -162,7 +162,7 @@
 				| SettingFunction | SettingFunction2 | SettingFunction3
 				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration
 				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd | P0 | T0
-                | kCondR | kCondZ
+                | kCondR | kCondZ | Hardening
 				| yldxx | yldyy | yldzz | yldxy | yldxz | yldyz | Khard | nhard | color | betahard
 				| Bjc | njc | Cjc | ep0jc | C0 | S1 | S2 | S3 | GPpG0 | GTpG0 | gamma0
 				| Uk | YP | Friction | C1 | C2 | Ajc | mjc | Tmjc | tempC1 | tempC2 )* >
@@ -358,7 +358,7 @@
 <!ELEMENT	yldxy (#PCDATA)>
 <!ELEMENT	yldxz (#PCDATA)>
 <!ELEMENT	yldyz (#PCDATA)>
-<!ELEMENT	Ep (#PCDATA)>
+<!ELEMENT	Hardening (#PCDATA)>
 <!ELEMENT	Khard (#PCDATA)>
 <!ELEMENT	nhard (#PCDATA)>
 <!ELEMENT	Ajc (#PCDATA)>
@@ -370,6 +370,7 @@
 <!ELEMENT	Tmjc (#PCDATA)>
 <!ELEMENT	EA (#PCDATA)>
 <!ELEMENT	ET (#PCDATA)>
+<!ELEMENT	Ep (#PCDATA)>
 <!ELEMENT	GA (#PCDATA)>
 <!ELEMENT	nuA (#PCDATA)>
 <!ELEMENT	nuT (#PCDATA)>

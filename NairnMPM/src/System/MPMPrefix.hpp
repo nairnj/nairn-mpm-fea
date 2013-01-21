@@ -39,6 +39,10 @@ using namespace std;
 #define TRUE 1
 #define FALSE 0
 #define PI_CONSTANT 3.141592653589793
+#define SQRT_TWOTHIRDS 0.8164965809277260
+#define TWOTHIRDS 0.6666666666666667
+#define ONETHIRD 0.3333333333333333
+#define SQRT_EIGHT27THS 0.5443310539518174
 
 // MaxShapeNds - max number non-zero shape functions +1
 #define MaxShapeNds 37

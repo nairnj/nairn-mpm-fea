@@ -11,15 +11,19 @@ EndHeader! ------------ Parameters ---------------
 #analysis="Plane Strain MPM"
 
 ! pick a method usually "lCPDI" or "uGIMP"
-#method="lCPDI"
+#method="uGIMP"
 
 ! pick strain update method usually "USF" or "USAVG"
 #update="USF"
 
-! material options: isotropic, vonmises, bistable, iptrans, normtrans, ortho
-!   viscoelastic, hill, johnson, wood, MGSCGL, SL
-#matID="MGSCGL"
+! material options: isotropic, isoplasticity, ,mgeos, bistable, iptrans, normtrans, ortho
+!   viscoelastic, hill, wood
+#matID="mgeos"
 #angle=0					! material angle for anisotopic materials
+
+! hardening law (if allowed), empty if not
+!	options Linear, Nonlinear, JohnsonCook
+#hardID="SCGL"
 
 ! temperature option to test energy coupling
 StressFreeTemp 294
@@ -35,11 +39,24 @@ StressFreeTemp 294
 #rho=19.256
 #nuBase=.28
 #aBase=4.5
-!#Ebase=100
-!#rho=1
-!#nuBase=.33
-!#aBase=60
-#yldstrain=1		! in percent
+
+#Ebase=100
+#rho=1
+#nuBase=.33
+#aBase=60
+#yldstrain=.5		! in percent
+
+! Copper for use with JohnsonCook hardening
+#Ebase= 120000
+#rho=8.96
+#nuBase=.25
+#aBase=0
+
+! MGEOS developmen
+#Ebase=308776
+#rho=19.256
+#nuBase=.28
+#aBase=4.5
 
 ! Dimensions
 #cell=2
@@ -53,7 +70,7 @@ StressFreeTemp 294
 #strain=-50	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
 
 ! Loading rate
-#tmult=10			! number of transit times to load peak
+#tmult=20			! number of transit times to load peak
 #hold=0				! hold time (multiple of loading time)
 #unload=0		    ! 0 no unload or >0 for unloading time (multiple of loading time, but at same loading rate)
 
@@ -106,15 +123,11 @@ TimeStep 1000,(1+#hold+#unload)*#time,#factor
 ArchiveTime (1+#hold+#unload)*#time/50
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
 #isPlastic="no"
-if #matID="vonmises"
-  #isPlastic="yes"
-else if #matID="johnson"
+if #hardID!=""
   #isPlastic="yes"
 else if #matID="hill"
   #isPlastic="yes"
 else if #matID="wood"
-  #isPlastic="yes"
-else if #matID="MGSCGL"
   #isPlastic="yes"
 else if #matID="SL"
   #isPlastic="yes"
@@ -137,57 +150,88 @@ if #matID="isotropic"
   Done
 endif
 
-if #matID="vonmises"
-  Material "vonmises","Elastic Plastic Material","VonMises"
+if #matID="isoplasticity"
+  Material "isoplasticity","Isotropic Elastic-Plastic Material","IsoPlasticity"
     E #Ebase
     nu #nuBase
     a #aBase
     rho #rho
-    ET #Ebase/8
-    !  ET 0
-    yield abs(#Ebase*#yldstrain/100)
-    !nhard .24
-    !Khard 5300
-    kCond .00202
-    CP .1256
+    if #hardID!=""
+      hardening #hardID
+    endif
+    if #hardID="Linear"
+      yield abs(#Ebase*#yldstrain/100)
+      Khard 100
+      !ET #Ebase/3
+      kCond .00202
+      CP .1256
+    else if #hardID="Nonlinear"
+      yield abs(#Ebase*#yldstrain/200)
+      Khard 5000
+      nhard .24
+      kCond .00202
+      CP .1256
+    else if #hardID="JohnsonCook"
+      ! For Copper use E=120000,rho=8.96,nu=.25,alpha=0
+      Ajc 90
+      Bjc 292
+      njc .31
+      Cjc 0.025
+      ep0jc 1
+      Tmjc 1356
+      mjc 1.09
+      kCond 0.202
+      Cp 383
+    endif
   Done
 endif
 
-if #matID="johnson"
-  Material #matID,"Copper Johnson Cook","johnsoncook"
-    rho 8.96
-    Cp 383
-    E 120000
-    nu .25
-    alpha 0
-    kCond 0.202
-    Ajc 90
-    Bjc 292
-    njc .31
-    Cjc 0.025
-    ep0jc 1
-    Tmjc 1356
-    mjc 1.09
-  Done
-endif
-
-if #matID="MGSCGL"
+if #matID="mgeos"
   #C0base = sqrt(1000*#Ebase/#rho)
   #Gbase = 3*#Ebase*(1-2*#nuBase)/(2*(1+#nuBase))
-  Material "MGSCGL","Tungsten","MGSCGLMaterial"
+  Material #matID,"Tungsten","MGEOSMaterial"
     C0 #C0base
     S1 1.35
     S2 0
+    S3 0
     gamma0 1.64
     rho #rho
-    yield 2200
     G #Gbase
     Cv 134
-    GPpG0 0.01e-3
-    GTpG0 -2.2e-4
-    yieldMax 4000
-    betahard 7.7
-    nhard 0.13
+    if #hardID!=""
+      hardening #hardID
+    endif
+    if #hardID="Linear"
+      !yield abs(#Ebase*#yldstrain/100)
+      !Khard 100
+      !ET #Ebase/3
+      kCond .00202
+    else if #hardID="Nonlinear"
+      yield abs(#Ebase*#yldstrain/200)
+      Khard 5000
+      nhard .24
+      kCond .00202
+    else if #hardID="JohnsonCook"
+      ! For Copper use E=120000,rho=8.96,nu=.25,alpha=0
+      Ajc 90
+      Bjc 292
+      njc .31
+      Cjc 0.025
+      ep0jc 1
+      Tmjc 1356
+      mjc 1.09
+      kCond 0.202
+      Cp 383
+    else if #hardID="SCGL"
+      yield 2200
+      GPpG0 0.01e-3
+      GTpG0 -2.2e-4
+      !GPpG0 0
+      !GTpG0 0
+      yieldMax 4000
+      betahard 7.7
+      nhard 0.13
+    endif
   Done
 endif
 
@@ -510,7 +554,7 @@ endif
 ! Fixed sides
 if #fixsides="yes"
   if #analysis="3D MPM"
-  	#midpt=-#cell/2
+    #midpt=-#cell/2
     MoveBox #gleft,-1.01*#cell,#zmin,#gright,.01*#cell,#zmax
       Velocity y,constant,0
     EndMoveBox
