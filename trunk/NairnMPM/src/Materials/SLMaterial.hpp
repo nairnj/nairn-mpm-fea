@@ -10,20 +10,21 @@
 	"A constitutive model for strain rates from 10^-4 to 10^6 s^-1
 
 	Dependencies
-		MGSCGLMaterial.hpp Isoplasticity.hpp MaterialBase.hpp
+		SCGLHardening.hpp, HardeningLawBase.hpp, MaterialBase.hpp
 ********************************************************************************/
 
-#ifndef SLMATERIAL
+#ifndef _SLMATERIAL_
 
-#define SLMATERIAL 18
+#define _SLMATERIAL_
+
 #define YT_HISTORY 1
 #define EPDOT_HISTORY 2
 #define MAX_ITERATIONS 10
 #define PRECISION_FACTOR 100000.
 
-#include "Materials/MGSCGLMaterial.hpp"
+#include "Materials/SCGLHardening.hpp"
 
-class SLMaterial : public MGSCGLMaterial
+class SLMaterial : public SCGLHardening
 {
     public:
 		// unique properties
@@ -31,27 +32,25 @@ class SLMaterial : public MGSCGLMaterial
         
         // constructors and destructors
 		SLMaterial();
-		SLMaterial(char *matName);
+		SLMaterial(MaterialBase *);
 		
 		// initialize
         virtual char *InputMat(char *,int &);
-		virtual void InitialLoadMechProps(int,int);
-		virtual void PrintYieldProperties(void);
-		virtual char *MaterialData(void);
         virtual const char *VerifyProperties(int);
-				
+        virtual void PrintYieldProperties(void);
+        virtual void InitialLoadMechProps(int,int);
+		//virtual char *MaterialData(void);
+ 				
 		// methods
-		virtual double GetPressureChange(MPMBase *,double &,double,int);
-		virtual double GetYield(MPMBase *,int,double);
- 		virtual double GetKPrime(MPMBase *,int,double);
-		double GetEpdot(double);
-		virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double);
-		virtual void ElasticUpdateFinished(MPMBase *,int,double);
-				
+        virtual double GetShearRatio(MPMBase *,double,double);
+        virtual double GetYield(MPMBase *,int,double);
+        virtual double GetKPrime(MPMBase *,int,double);
+        virtual double GetK2Prime(MPMBase *,double,double);
+        double GetEpdot(double YT);
+        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double);
+   
 		// accessors
-		virtual const char *MaterialType(void);
-		virtual int MaterialTag();
-		virtual double GetHistory(int,char *);
+        virtual const char *GetHardeningLawName(void);
  		
     protected:
 		double YPred,TwoUkkT,C2red,currentYTred,constantYT;

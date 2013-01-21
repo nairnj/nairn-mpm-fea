@@ -127,9 +127,9 @@ as a special case.</td>
 </tr>
 
 <tr>
-<td><a href="#vonmises"><code>VonMises</code></a></td>
+<td><a href="#isoplast"><code>IsoPlasticity</code></a></td>
 <td>9</td>
-<td width="50%">Elastic-plastic isotropic material with a VonMises stress yield criterion and isotropic hardening</td>
+<td width="50%">Small-strain elastic-plastic material with a hardening law</td>
 <td align="center"></td><td align="center">X X</td><td align="center">X</td>
 </tr>
 
@@ -637,9 +637,9 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 </dl>
 
 
-<a name="vonmises"></a><h2>Von Mises Plastic, Isotropic</h2>
+<a name="isoplast"></a><h2>Isotropic, Elastic-Plastic Material</h2>
 
-<p>The material type is <code>Type=9</code>. The material is smaall-strain, isotropic and yields when <code>f=0</code> according to the plastic potential
+<p>The material type is <code>Type=9</code>. This material is small-strain, isotropic and yields when <code>f=0</code> according to the plastic potential
 </p>
 <blockquote>f = ||s|| - sqrt(2/3) * &sigma;<sub>Y</sub>
 </blockquote>

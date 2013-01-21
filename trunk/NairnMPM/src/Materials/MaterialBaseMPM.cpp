@@ -160,6 +160,9 @@ char *MaterialBase::InputMat(char *xName,int &input)
     return((char *)NULL);
 }
 
+// materials that allow hardening laws must override
+void MaterialBase::SetHardeningLaw(char *lawName) {}
+
 // print any properties common to all MPM material types
 void MaterialBase::PrintCommonProperties(void)
 {

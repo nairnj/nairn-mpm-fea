@@ -1,45 +1,45 @@
 /********************************************************************************
-    JohnsonCook.hpp
+    SCGLHardening.hpp
     NairnMPM
-    
-    Created by John Nairn, August 12, 2008.
-    Copyright (c) 2008 John A. Nairn, All rights reserved.
 
-	Dependencies
-		HardeningLawBase.hpp, MaterialBase.hpp
+    Created by John Nairn, 1/18/2103
+    Copyright (c) 2013 John A. Nairn, All rights reserved.
+
+    Dependencies
+        HardeningLawBase.hpp, MaterialBase.hpp
 ********************************************************************************/
 
-#ifndef _JOHNSONCOOKHARDENING_
+#ifndef _SCGLHARDENING_
 
-#define _JOHNSONCOOKHARDENING_
+#define _SCGLHARDENING_
 
 #include "Materials/HardeningLawBase.hpp"
 
-class JohnsonCook : public HardeningLawBase
+class SCGLHardening : public HardeningLawBase
 {
     public:
         // contructors
-        JohnsonCook();
-        JohnsonCook(MaterialBase *);
+        SCGLHardening();
+        SCGLHardening(MaterialBase *);
         
         // initialize
         virtual char *InputMat(char *,int &);
+        virtual const char *VerifyProperties(int);
         virtual void PrintYieldProperties(void);
         virtual void InitialLoadMechProps(int,int);
         
         // hardening law core methods
-        virtual void LoadHardeningLawProps(MPMBase *,int);
+        virtual double GetShearRatio(MPMBase *,double,double);
         virtual double GetYield(MPMBase *,int,double);
         virtual double GetKPrime(MPMBase *,int,double);
         virtual double GetK2Prime(MPMBase *,double,double);
-    
+        
         // accessors
         virtual const char *GetHardeningLawName(void);
     
     protected:
-		double Bjc,Cjc,njc,ep0jc,Tmjc,mjc;
-		double Bred,TjcTerm,edotMin,eminTerm;
-
+        double GPp,GTp,beta,nhard,yieldMax;
+        double GPpred,yldMaxred,Gratio;
 };
 
 #endif

@@ -183,7 +183,7 @@ void AnisoPlasticity::InitialLoadMechProps(int makeSpecific,int np)
 	Orthotropic::InitialLoadMechProps(makeSpecific,np);
 }
 
-#pragma mark VonMisesHardening::Methods
+#pragma mark AnisoPlasticity::Methods
 
 /* For 2D MPM analysis, take increments in strain and calculate new
     Particle: strains, rotation strain, plastic strain, stresses, strain energy, 

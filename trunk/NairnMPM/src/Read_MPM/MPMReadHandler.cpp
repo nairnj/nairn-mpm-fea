@@ -1157,6 +1157,10 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
 			theShape->SetProperty(xData,this);
 			break;
         
+        case HARDENING_LAW_SELECTION:
+            ((MaterialBase *)inputPtr)->SetHardeningLaw(xData);
+            break;
+            
         default:
             break;
     }

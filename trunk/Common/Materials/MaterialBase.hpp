@@ -66,14 +66,15 @@ class MaterialBase : public LinkedObject
         virtual const char *VerifyProperties(int);
 		virtual void InitialLoadMechProps(int,int);
 		virtual void PrintMechanicalProperties(void);
-		void PrintProperty(const char *,double,const char *);
-		void PrintProperty(const char *,bool);
+		static void PrintProperty(const char *,double,const char *);
+		static void PrintProperty(const char *,bool);
 #ifdef MPM_CODE
 		virtual void ValidateForUse(int);
         virtual char *MaterialData(void);
 		virtual void InitialLoadTransProps(void);
 		virtual void PrintTransportProperties(void);
         virtual void SetInitialParticleState(MPMBase *,int);
+        virtual void SetHardeningLaw(char *);
 #endif
 
 		// initialization (base class only)

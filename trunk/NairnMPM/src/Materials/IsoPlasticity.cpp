@@ -14,6 +14,11 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Materials/LinearHardening.hpp"
+#include "Materials/NonlinearHardening.hpp"
+#include "Materials/JohnsonCook.hpp"
+#include "Materials/SCGLHardening.hpp"
+#include "Materials/SLMaterial.hpp"
 
 #pragma mark IsoPlasticity::Constructors and Destructors
 
@@ -23,7 +28,7 @@ IsoPlasticity::IsoPlasticity() {}
 // Constructors
 IsoPlasticity::IsoPlasticity(char *matName) : IsotropicMat(matName)
 {
-	readYield=FALSE;
+    plasticLaw = new LinearHardening(this);
 }
 
 #pragma mark IsoPlasticity::Initialization
@@ -31,36 +36,72 @@ IsoPlasticity::IsoPlasticity(char *matName) : IsotropicMat(matName)
 // Read material properties
 char *IsoPlasticity::InputMat(char *xName,int &input)
 {
-    if(strcmp(xName,"yield")==0)
-    {	input=DOUBLE_NUM;
-        readYield=TRUE;
-        return((char *)&yield);
+    // look for different plastic law
+    if(strcmp(xName,"Hardening")==0)
+    {	input = HARDENING_LAW_SELECTION;
+        return (char *)this;
     }
+   
+    // check plastic law
+    char *ptr = plasticLaw->InputMat(xName,input);
+    if(ptr != NULL) return ptr;
     
+    // otherwise get material properties
     return(IsotropicMat::InputMat(xName,input));
 }
 
 // verify settings and some initial calculations
 const char *IsoPlasticity::VerifyProperties(int np)
-{	
-	// check properties
-	if(!readYield) return "The yield stress is missing";
-
-	// call super class
+{	// call plastic law and then super class
+    const char *ptr = plasticLaw->VerifyProperties(np);
+    if(ptr != NULL) return ptr;
 	return IsotropicMat::VerifyProperties(np);
 }
 
+// change hardening law
+void IsoPlasticity::SetHardeningLaw(char *lawName)
+{
+    // delete old one
+    delete plasticLaw;
+    plasticLaw = NULL;
+    
+    // check options
+    if(strcmp(lawName,"Linear")==0 || strcmp(lawName,"1")==0)
+        plasticLaw = new LinearHardening(this);
+    
+    else if(strcmp(lawName,"Nonlinear")==0 || strcmp(lawName,"2")==0)
+        plasticLaw = new NonlinearHardening(this);
+    
+    else if(strcmp(lawName,"JohnsonCook")==0 || strcmp(lawName,"3")==0)
+        plasticLaw = new JohnsonCook(this);
+    
+    else if(strcmp(lawName,"SCGL")==0 || strcmp(lawName,"4")==0)
+        plasticLaw = new SCGLHardening(this);
+    
+    // did it work
+    if(plasticLaw == NULL)
+    {   char errMsg[250];
+        strcpy(errMsg,"The hardening law '");
+        strcat(errMsg,lawName);
+        strcat(errMsg,"' is not valid");
+        throw CommonException(errMsg,"IsoPlasticity::SetHardeningLaw");
+    }
+        
+}
+
 // Private properties used in constitutive law
-// For variable shear and bulk moduli, subclass can overrive
+// For variable shear and bulk moduli, subclass can override
 //		LoadMechanicalProps(MPMBase *mptr,int np) and set new
 //		Gred and Kred
 // Here gets yldred, Gred, Kred, psRed, psLr2G, and psKred
 void IsoPlasticity::InitialLoadMechProps(int makeSpecific,int np)
 {
+    // hardening law properties
+    plasticLaw->InitialLoadMechProps(makeSpecific,np);
+    
 	// reduced prooperties
-    yldred = yield*1.e6/rho;
 	Gred = C66/rho;
-	Kred = C33/rho - 4.*Gred/3.;	// from C33 = lambda + 2G = K + 4G/3
+	Kred = C33/rho - 4.*Gred/3.;                    // from C33 = lambda + 2G = K + 4G/3
 	
 	// these are terms for plane stress calculations only
 	psRed = 1./(Kred/(2.*Gred) + 2./3.);			// (1-2nu)/(1-nu) for plane stress
@@ -68,6 +109,13 @@ void IsoPlasticity::InitialLoadMechProps(int makeSpecific,int np)
 	psKred = Kred*psRed;							// E/(3(1-v)) to find lambda
 	
 	// nothing needed from superclasses
+}
+
+// print mechanical properties to the results
+void IsoPlasticity::PrintMechanicalProperties(void)
+{	
+    IsotropicMat::PrintMechanicalProperties();
+	plasticLaw->PrintYieldProperties();
 }
 
 // The base class history variable is cummulative equivalent plastic strain
@@ -83,9 +131,16 @@ char *IsoPlasticity::MaterialData(void)
 
 #pragma mark IsoPlasticity:Methods
 
-/* For 2D MPM analysis, take increments in strain and calculate new
-    Particle: strains, rotation strain, plastic strain, stresses, strain energy, 
-		plastic energy, dissipated energy, angle
+// State dependent material properties might be in the hardening law
+void IsoPlasticity::LoadMechanicalProps(MPMBase *mptr,int np)
+{
+    plasticLaw->LoadHardeningLawProps(mptr,np);
+    
+    // no super class (IsotropicMat, Elastic, MaterialBase) needs this method
+}
+
+/* Take increments in strain and calculate new Particle: strains, rotation strain, plastic strain,
+        stresses, strain energy, plastic energy, dissipated energy, angle
     dvij are (gradient rates X time increment) to give deformation gradient change
    For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
    This is general analysis for isotropic plastic material. Subclass must define
@@ -151,10 +206,10 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     stk.xy = st0.xy + dels.xy;
   
     // Calculate plastic potential f = ||s|| - sqrt(2/3)*sy(alpha,rate,...)
-	UpdateTrialAlpha(mptr,np);			// initialize to last value and zero plastic strain rate
+	plasticLaw->UpdateTrialAlpha(mptr,np);			// initialize to last value and zero plastic strain rate
 	double strial = GetMagnitudeS(&stk,np);
-	double ftrial = strial - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime);
-	if(ftrial<0)
+	double ftrial = strial - SQRT_TWOTHIRDS*plasticLaw->GetYield(mptr,np,delTime);
+	if(ftrial<0.)
 	{	// elastic, update stress and strain energy as usual
 	
 		// Add input strain increment to elastic strain on particle
@@ -192,7 +247,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	
 	// Find  lambda for this plastic state
 	// Base class finds it numerically, subclass can override if solvable by more efficient methods
-    double lambdak = SolveForLambdaBracketed(mptr,np,strial,&stk,delTime);
+    double lambdak = plasticLaw->SolveForLambdaBracketed(mptr,np,strial,&stk,Gred,psKred,delTime);
 	
 	// Now have lambda, finish update on this particle
 	if(np==PLANE_STRESS_MPM)
@@ -203,7 +258,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 		stk.xx = (n1-n2)/2.;
 		stk.yy = (n1+n2)/2.;
 		stk.xy = stk.xy/d2;
-		UpdateTrialAlpha(mptr,np,lambdak,GetMagnitudeS(&stk,np));
+		plasticLaw->UpdateTrialAlpha(mptr,np,lambdak,GetMagnitudeS(&stk,np));
 		dels.xx=stk.xx-st0.xx;
 		dels.yy=stk.yy-st0.yy;
 		dels.xy=stk.xy-st0.xy;
@@ -276,7 +331,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     mptr->AddPlastEnergy(dispEnergy);
 	
 	// update internal variables
-	UpdatePlasticInternal(mptr,np);
+	plasticLaw->UpdatePlasticInternal(mptr,np);
 }
 
 // To allow some subclasses to support large deformations, the initial calculation for incremental
@@ -320,9 +375,9 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     stk.xy = st0.xy + dsig[XY];
   
     // Calculate plastic potential f = ||s|| - sqrt(2/3)*sy(alpha,rate,...)
-	UpdateTrialAlpha(mptr,np,(double)0.,(double)1.);			// initialize to last value
+	plasticLaw->UpdateTrialAlpha(mptr,np,(double)0.,(double)1.);			// initialize to last value
 	double strial = GetMagnitudeS(&stk,np);
-	double ftrial = strial - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime);
+	double ftrial = strial - SQRT_TWOTHIRDS*plasticLaw->GetYield(mptr,np,delTime);
 	if(ftrial<0.)
 	{	// elastic, update stress and strain energy as usual
 	
@@ -354,7 +409,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	// Find direction of plastic strain and lambda for this plastic state
 	// Base class finds it numerically, subclass can override if solvable by more efficient meethods
 	GetDfDsigma(strial,&stk,np);
-	double lambdak = SolveForLambdaBracketed(mptr,np,strial,&stk,delTime);
+	double lambdak = plasticLaw->SolveForLambdaBracketed(mptr,np,strial,&stk,Gred,psKred,delTime);
 	
 	// Now have lambda, finish update on this particle
         
@@ -420,7 +475,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     mptr->AddPlastEnergy(dispEnergy);
 	
 	// update internal variables
-	UpdatePlasticInternal(mptr,np);
+	plasticLaw->UpdatePlasticInternal(mptr,np);
 }
 
 #pragma mark IsoPlasticity::Custom Methods
@@ -429,30 +484,10 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 // -3*delV is incremental volume change on this step.
 // J is total volume change at end of step (it is 1 for low-strain materials)
 double IsoPlasticity::GetPressureChange(MPMBase *mptr,double &delV,double J,int np)
-{	return -3.*Kred*delV;
-}
-
-/* Get internal variables while iterating to find lambda
-	Here alpha (in alpint) is cumulative equivalent plastic strain and
-	The increment in alpha is dalpha. dalpha/delTime is plastic strain rate
-	For plane strain and 3D
-		dalpha = lambda sqrt(2/3) df/dsigma::df/dsigma = lambda sqrt(2/3) since df/dsigma is unit vector
-	For plane stress
-		dalpha = lambda sqrt(2/3) fnp1
-	First one is called at start to initialize alpint and dalpha
-*/
-void IsoPlasticity::UpdateTrialAlpha(MPMBase *mptr,int np)
-{	alpint = mptr->GetHistoryDble();
-	dalpha = 0.;
-}
-void IsoPlasticity::UpdateTrialAlpha(MPMBase *mptr,int np,double lambdak,double fnp1)
-{	dalpha = (np==PLANE_STRESS_MPM) ? SQRT_TWOTHIRDS*lambdak*fnp1 : SQRT_TWOTHIRDS*lambdak ;
-	alpint = mptr->GetHistoryDble() + dalpha;
-}
-
-// The prior soltution for lambda tracked the internal variable. Just move to the particle now
-void IsoPlasticity::UpdatePlasticInternal(MPMBase *mptr,int np)
-{	mptr->SetHistoryDble(alpint);
+{   // this low strain material has J = 0 so not good choice to model pressure
+    // dependence in Gp, but law may have temperature dependencd
+    plasticLaw->GetShearRatio(mptr,0.,1.);
+	return -3.*Kred*delV;
 }
 
 // Get magnitude of the deviatoric stress tensor
@@ -506,247 +541,12 @@ void IsoPlasticity::GetDfDsigma(double smag,Tensor *st0,int np)
 	}
 }
 
-/* Solve numerically for lambda
-    This method is not used by the IsoPlasticity class, but it may be used by subclasses
-        by overriding SolveForLambdaBracketed() and calling this instead
-    Uses Newton's law with initial guess being lambda = dalpha/sqrt(2/3). The solution is not
-        bracket, which means it may not be safe. It faster than bracketing when it is safe, but'
-        otherwise should not be used (currently used by SLMaterial and VonMisesHardening)
-    Set alpint and dalpha before calling
-*/
-double IsoPlasticity::SolveForLambda(MPMBase *mptr,int np,double strial,Tensor *stk,double delTime)
-{
-	// initial lambdk from dalpha set before call, often 0, but might be otherwise
-	double lambdak=dalpha/SQRT_TWOTHIRDS;
-	int step=1;
-	
-	if(np==PLANE_STRESS_MPM)
-	{	double n2trial = -stk->xx+stk->yy;
-		n2trial *= n2trial/2;
-		n2trial += 2.*stk->xy*stk->xy;
-		double n1trial = stk->xx+stk->yy;
-		n1trial *= n1trial/6.;
-		while(true)
-		{	// update iterative variables (lambda, alpha, stress)
-			double d1 = (1 + psKred*lambdak);
-			double d2 = (1.+2.*Gred*lambdak);
-			double fnp12 = n1trial/(d1*d1) + n2trial/(d2*d2);
-			double kyld = GetYield(mptr,np,delTime);
-			double glam = 0.5*fnp12 - kyld*kyld/3.;
-			double fnp1 = sqrt(fnp12);
-			double slope = -(psKred*n1trial/(d1*d1*d1) + 2*Gred*n2trial/(d2*d2*d2)) - GetK2Prime(mptr,fnp1,delTime);
-			double delLam = -glam/slope;
-			lambdak += delLam;
-			UpdateTrialAlpha(mptr,np,lambdak,fnp1);
-			
-			// check for convergence
-			if(LambdaConverged(step++,lambdak,delLam)) break;
-		}
-	}
-	else
-	{	while(true)
-		{	// update iterative variables (lambda, alpha)
-			double glam = -SQRT_TWOTHIRDS*GetYield(mptr,np,delTime) + strial - 2*Gred*lambdak;
-			double slope = -2.*Gred - GetKPrime(mptr,np,delTime);
-			double delLam = -glam/slope;
-			lambdak += delLam;
-			UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
- 			
-			// check for convergence
-			if(LambdaConverged(step++,lambdak,delLam)) break;
-		}
-	}
-	return lambdak;
-}
-
-/* Solve numerically for lambda by safe Newton's method (i.e., with bracketing)
-    Subclasses can override for analytical solution is possible or if more efficient method
-        is available (e.g., non-bracketed method in SolveForLambda())
-    the input ftrial is f function when lambda=0 (but not useful in in plane stress)
-*/
-double IsoPlasticity::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,double delTime)
-{
-    double xl,xh;
-    BracketSolution(mptr,np,strial,stk,delTime,&xl,&xh);
-        
-	// initial lambdk midpoint of the brackets
-	double lambdak=0.5*(xl+xh);
-    UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
-    double dxold=fabs(xh-xl);
-    double dx=dxold;
-	int step=1;
-	
-	if(np==PLANE_STRESS_MPM)
-	{	double n2trial = -stk->xx+stk->yy;
-		n2trial *= n2trial/2;
-		n2trial += 2.*stk->xy*stk->xy;
-		double n1trial = stk->xx+stk->yy;
-		n1trial *= n1trial/6.;
-        while(true)
-        {	// update iterative variables (lambda, alpha)
-			double d1 = (1 + psKred*lambdak);
-			double d2 = (1.+2.*Gred*lambdak);
-			double fnp12 = n1trial/(d1*d1) + n2trial/(d2*d2);
-			double kyld = GetYield(mptr,np,delTime);
-			double glam = 0.5*fnp12 - kyld*kyld/3.;
-			double fnp1 = sqrt(fnp12);
-			double slope = -(psKred*n1trial/(d1*d1*d1) + 2*Gred*n2trial/(d2*d2*d2)) - GetK2Prime(mptr,fnp1,delTime);
-            
-            // bisect if Newton out of range
-            if( ((lambdak-xh)*slope-glam) * ((lambdak-xl)*slope-glam) >= 0. ||
-               fabs(2.*glam) > fabs(dxold*slope) )
-            {   dxold = dx;
-                dx = 0.5*(xh-xl);
-                lambdak = xl+dx;
-                if(xl == lambdak) break;    // change in root is negligible
-            }
-            else
-            {   dxold = dx;
-                dx = glam/slope;
-                double temp = lambdak;
-                lambdak -= dx;
-                if(temp == lambdak) break;  // change in root is negligible
-            }
-            
-            // update and check convergence
-            UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
-            if(LambdaConverged(step++,lambdak,dx)) break;
-            
-            // reset limits
-            if(glam < 0.)
-                xl = lambdak;
-            else
-                xh = lambdak;
-        }
-	}
-	else
-	{	while(true)
-        {	// update iterative variables (lambda, alpha)
-            double glam = strial - 2*Gred*lambdak - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime);
-            double slope = -2.*Gred - GetKPrime(mptr,np,delTime);
-            
-            // bisect if Newton out of range
-            if( ((lambdak-xh)*slope-glam) * ((lambdak-xl)*slope-glam) >= 0. ||
-                    fabs(2.*glam) > fabs(dxold*slope) )
-            {   dxold = dx;
-                dx = 0.5*(xh-xl);
-                lambdak = xl+dx;
-                if(xl == lambdak) break;    // change in root is negligible
-            }
-            else
-            {   dxold = dx;
-                dx = glam/slope;
-                double temp = lambdak;
-                lambdak -= dx;
-                if(temp == lambdak) break;  // change in root is negligible
-            }
-            
-            // update and check convergence
-            UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
-            if(LambdaConverged(step++,lambdak,dx)) break;
-            
-            // reset limits
-            if(glam < 0.)
-                xl = lambdak;
-            else
-                xh = lambdak;
-        }
-	}
-    
-    // return final answer
-    // cout << "   lambdak = " << (lambdak*SQRT_TWOTHIRDS/delTime) << endl;
-	return lambdak;
-}
-
-/* Bracket the solution for lambda for safe Newton's method
-    Subclass can override if have faster way to bracket
-    ftrial is 3D or plane strain result for lamda=0 and it is positive
-// Return lamNeg for f<0 (higher lambda) and lamPos where f>0 (lower lambda)
-*/
-void IsoPlasticity::BracketSolution(MPMBase *mptr,int np,double strial,Tensor *stk,double delTime,
-                                        double *lamNeg,double *lamPos)
-{
-    double epdot = 1.,gmax;
-    int step=0;
-    
-    // take lambda = 0 as positive limit (to start)
-    *lamPos = 0.;
-    
-    if(np==PLANE_STRESS_MPM)
-	{	double n2trial = -stk->xx+stk->yy;
-		n2trial *= 0.5*n2trial;
-		n2trial += 2.*stk->xy*stk->xy;
-		double n1trial = stk->xx+stk->yy;
-		n1trial *= n1trial/6.;
-        
-        // find when plane stress term become negative
-        while(step<20)
-        {   // try above
-            dalpha = epdot*delTime;
-            alpint = mptr->GetHistoryDble() + dalpha;
-            double lambdak = dalpha/SQRT_TWOTHIRDS;
-			double d1 = (1 + psKred*lambdak);
-			double d2 = (1.+2.*Gred*lambdak);
-			double fnp12 = n1trial/(d1*d1) + n2trial/(d2*d2);
-			double kyld = GetYield(mptr,np,delTime);
-			gmax = 0.5*fnp12 - kyld*kyld/3.;
-            if(gmax<0.) break;
-            
-            // update positive limit and go to next order of magnitude
-            *lamPos = lambdak;
-            epdot *= 10.;
-            step++;
-        }
-    }
-    else
-    {   // find when strial 2 GRed sqrt(3/2) dalpha - sqrt(2/3)GetYield(alpha+dalpha,dalpha)
-        // becomes negative
-        while(step<20)
-        {   // try above
-            dalpha = epdot*delTime;
-            alpint = mptr->GetHistoryDble() + dalpha;
-            gmax = strial - 2*Gred*dalpha/SQRT_TWOTHIRDS - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime) ;
-            if(gmax<0.) break;
-        
-            // next block
-            *lamPos = dalpha/SQRT_TWOTHIRDS;
-            epdot *= 10.;
-            step++;
-        }
-    }
-    
-    // exception if did not find answer in 20 orders of magnitude in strain rate
-    if(step>=20)
-    {   cout << "# Material point information that caused the exception:" << endl;
-        mptr->Describe();
-        char errMsg[250];
-        strcpy(errMsg,"Plasticity solution for material type '");
-        strcat(errMsg,name);
-        strcat(errMsg,"' could not be bracketed in 20 steps");
-        throw CommonException(errMsg,"IsoPlasticity::BracketSolution");
-    }
-    
-    // set upper limits
-    *lamNeg = dalpha/SQRT_TWOTHIRDS;
-    
-    //cout << "steps: " << step << ", epdot range: " << (*lamPos*SQRT_TWOTHIRDS/delTime) <<
-    //        " to " << (*lamNeg*SQRT_TWOTHIRDS/delTime) << endl;
-}
-
-// decide if the numerical solution for lambda has converged
-// subclass can override to change convergence rules
-bool IsoPlasticity::LambdaConverged(int step,double lambda,double delLam)
-{
-	if(step>20 || fabs(delLam/lambda)<0.0001) return true;
-	return false;
-}
-
 // material can override if history variable changes during elastic update (e.g., history dependent on plastic strain rate now zero)
 void IsoPlasticity::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime)
 {
 }
 
-#pragma mark IsoPlaticity::Accessors
+#pragma mark IsoPlasticity::Accessors
 
 // archive material data for this material type when requested.
 double IsoPlasticity::GetHistory(int num,char *historyPtr)
@@ -761,4 +561,10 @@ double IsoPlasticity::GetHistory(int num,char *historyPtr)
 
 // plastic strain needed to get deformation gradient for this material class
 bool IsoPlasticity::HasPlasticStrainForGradient(void) { return TRUE; }
+
+// Return the material tag
+int IsoPlasticity::MaterialTag(void) { return ISOPLASTICITY; }
+
+// return unique, short name for this material
+const char *IsoPlasticity::MaterialType(void) { return "Isotropic Elastic-Plastic"; }
 
