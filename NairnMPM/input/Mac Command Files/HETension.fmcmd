@@ -11,7 +11,7 @@ Title "Hyperelasstic Tensile Loading"Name "John Nairn"
 ! Header/NotesHeaderUniaxial loadingin the x direction on a hyperelastic material
 EndHeader! ------------ Parameters ---------------
 
-! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"#analysis="Plane Strain MPM"
+! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"#analysis="Plain Strain MPM"
 
 ! Points per element
 #ppe=2
@@ -20,19 +20,20 @@ XMLData MPMHeader
 EndXMLData
 
 ! pick a method usually "lCPDI" or "uGIMP"
-#method="lCPDI"
+#method="uGIMP"
 
 ! pick strain update method usually "USF" or "USAVG"
 #update="USF"
 
 ! Supported materials: "neohookean" (G2=0), "mooney" (G1=G2), heiso
-#matID="neohookean"
+#matID="heiso"
 
 ! Basic properties
 #Ebase=100
 #rho=1
-#nuBase=.2
+#nuBase=.33
 #aBase=60
+#yldstrain=1		! in percent
 
 ! Dimensions
 #cell=2
@@ -41,9 +42,9 @@ EndXMLData
 #thick=10			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading="traction"	! Loading = "rigid", "contact", "force", "traction"
+#loading="rigid"	! Loading = "rigid", "contact", "force", "traction"
 #fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
-#strain=100	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
+#strain=3	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak
@@ -53,7 +54,7 @@ EndXMLData
 ! Damping parameter - for feedback or grid damping
 #damp=0
 #fbdamp=0.0
-#factor=0.05			! time step factor
+#factor=0.1			! time step factor
 
 ! ------------ Calculations ---------------
 
@@ -134,17 +135,15 @@ if #matID="mooney"
 endif
 
 if #matID="heiso"
-  XMLData Material,#matID
-  <Material Type="24" Name="Hyperelastic Isotropic">
-    <rho>1</rho>
-    <G1>41.666666667</G1>
-    <G2>0</G2>
-    <K>55.555555556</K>
-    <alpha>60</alpha>
-    <yield>200</yield>
-    <Ep>25</Ep>
-  </Material>
-  EndXMLData
+  Material #matID,"HE Isotropic Plastic","HEIsotropic"
+    G1 #G1
+    !G2 #G2
+    K #Kbulk
+    a #aBase
+    rho #rho
+    yield abs(#Ebase*#yldstrain/100)
+    Ep 10
+  Done
 endif
 
 ! guess kinetic energy and add feedback damping

@@ -123,7 +123,7 @@ as a special case.</td>
 </tr>
 
 <tr>
-<td colspan="6"><b>Elastic-Plastic and Hypoelastic (in MPM) Materials</b> (small deformation)</td>
+<td colspan="6"><b>Elastic-Plastic and Hypoelastic (in MPM) Materials</b></td>
 </tr>
 
 <tr>
@@ -134,9 +134,9 @@ as a special case.</td>
 </tr>
 
 <tr>
-<td><a href="#JC"><code>JohnsonCook</code></a></td>
-<td>16</td>
-<td width="50%">Elastic-plastic isotropic Johnson-Cook material with a rate- and temperature-dependent yield stress</td>
+<td><a href="#MGEOS"><code>MGEOSMaterial</code></a></td>
+<td>17</td>
+<td width="50%">Elastic-plastic isotropic material using the Mie-Gr&#252;neisen equation of state and a hardening law.</td>
 <td align="center"></td><td align="center">X X</td><td align="center">X</td>
 </tr>
 
@@ -145,24 +145,6 @@ as a special case.</td>
 <td>15</td>
 <td width="50%">Elastic-plastic orthotopic material with a Hill yield criterion and hardening</td>
 <td align="center"></td><td align="center">X -</td><td align="center">X</td>
-</tr>
-
-<tr>
-<td colspan="6"><b>Elastic-Plastic and Hypoelastic (in MPM) Materials</b> (large deformation)</td>
-</tr>
-
-<tr>
-<td><a href="#MGSCGL"><code>MGSCGLMaterial</code></a></td>
-<td>17</td>
-<td width="50%">Elastic-plastic isotropic material using the Mie-Gr&#252;neisen equation of state with shear modulus and yield stress from Steinberg, Cochran, and Guinan.</td>
-<td align="center"></td><td align="center">X X</td><td align="center">X</td>
-</tr>
-
-<tr>
-<td><a href="#SL"><code>SLMaterial</code></a></td>
-<td>18</td>
-<td width="50%">Elastic-plastic isotropic material using the Mie-Gr&#252;neisen equation of state and a rate-dependent yield stress term from Steinberg and Lund</td>
-<td align="center"></td><td align="center">X X</td><td align="center">X</td>
 </tr>
 
 <tr>
@@ -241,7 +223,9 @@ as a special case.</td>
 
 <p>Some materials have history-dependent data that can be archived (see <a href="mpmheader.html">MPM Header</a> for details). Any calculated history data are listed at the end of each material type section. Besides the properties and history data specific to each type of material, there are some properties that are used for all types of materials. These common properties are listed in the next section.</p>
 
-<a name="common"></a><h2>Material Properties for all Material Types</h2>
+<!-- Material  Section -->
+
+<h2><a name="common"></a>Material Properties for all Material Types</h2>
 
 <p>There are some material properties that are common to all material types. These properties are only used in NairnMPM and are not allowed in NairnFEA. The common properties are
 </p>
@@ -334,7 +318,9 @@ as explained <a href="definematl.html#usemats">here</a>. If a node has more than
 
 </dl>
 
-<a name="iso"></a><h2>Linear Elastic, Isotropic</h2>
+<!-- Material  Section -->
+
+<h2><a name="iso"></a>Linear Elastic, Isotropic</h2>
 
 <p>The material type is <code>Type=1</code>. The material is small-strain, isotropic and the type-specific input properties are:</p>
 
@@ -363,7 +349,9 @@ as explained <a href="definematl.html#usemats">here</a>. If a node has more than
     	
 </dl>
     
-<a name="trans1"></a><h2>Linear Elastic, Transversely Isotropic 1</h2>
+<!-- Material  Section -->
+
+<h2><a name="trans1"></a>Linear Elastic, Transversely Isotropic 1</h2>
 
 <p>The material type is <code>Type=2</code>. The material is small-strain, transversely isotropic with the axial direction of the material normal to the analysis plane. The material is isotropic in the plane of the analysis. The type-specific input properties are</p>
 
@@ -413,9 +401,13 @@ as explained <a href="definematl.html#usemats">here</a>. If a node has more than
     	
 </dl>
   
+<!-- Material  Section -->
+
 <a name="trans2"></a><h2>Linear Elastic, Transversely Isotropic 2</h2>
 
 <p>The material type is <code>Type=3</code>. The material is small-strain, transversely isotropic with the axial direction of the material in the <code>y</code> direction of the <code>x-y</code> plane analysis or in the <code>Z</code> direction of the <code>R-Z</code> plane for axisymmetric analysis. This direction can be rotated by using input <code>angle</code> attributes when assigning material properties to material points or to FEA elements. The angle rotates the axial direction clockwise from the initial alignment with the <code>y</code> axis (or <code>Z</code> axis if axisymmetric). The input properties are identical to the previous <a href="#trans1">transversely isotropic material</a>, except that the axial direction of the material has a different orientation.</p>
+
+<!-- Material  Section -->
 
 <a name="ortho"></a><h2>Linear Elastic, Orthotropic</h2>
 
@@ -500,6 +492,8 @@ as explained <a href="definematl.html#usemats">here</a>. If a node has more than
     	
 </dl>
   
+<!-- Material  Section -->
+
 <a name="interface"></a><h2>Imperfect Interface Material</h2>
 
 <p>The material type is <code>Type=5</code> and is used to model imperfect interfaces.  The input properties are</p>
@@ -517,7 +511,9 @@ as explained <a href="definematl.html#usemats">here</a>. If a node has more than
 <p>Imperfect interfaces allow displacement discontinuties along the interface. The discontinuity in the normal direction is &sigma;<sub>n</sub>/D<sub>n</sub> and in the tangential direction is &tau;<sub>t</sub>/D<sub>n</sub> where &sigma;<sub>n</sub> is the normal component of the traction on the interface and &tau;<sub>t</sub> is the tangential component. Interface parameters of D<sub>n</sub> = D<sub>t</sub> = &infin; leads to zero displacement discontinuity or a perfect interface; D<sub>n</sub> = D<sub>t</sub> = 0 leads to zero stress or a debonded interface. All other finite values define an imperfect interface. The interface is linear and thus compressive normal stress will lead to non-physical negative displacement discontinuties or interface overlap. If an interface is in compression, then D<sub>n</sub> should be infinite, at least over regions of compressive stress.</p>
 
     	
-<a name="visc"></a><h2>Linear Viscoelastic, Isotropic</h2>
+<!-- Material  Section -->
+
+<h2><a name="visc"></a>Linear Viscoelastic, Isotropic</h2>
 
 <p>The material type is <code>Type=7</code>. It is a small-strain, linear viscoelastic material with time-dependent shear modulus given by a sum or relaxation times and a time-independent bulk modulus. The input properties are:</p>
 
@@ -564,7 +560,9 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <p>This material tracks history for implementation of linear viscoelastic properties, but currently no history variables are available for archiving.</p>
     
-<a name="mooney"></a><h2>Mooney-Rivlin Hyperelastic, Isotropic</h2>
+<!-- Material  Section -->
+
+<h2><a name="mooney"></a>Mooney-Rivlin Hyperelastic, Isotropic</h2>
 
 <p>The material type is <code>Type=8</code>. It is a large-deformation, isotropic, hyperelastic material. The stresses are defined from the strain energy, which is defined by invariants of the left Cauchy Green Tensor ([B] = [F][F]<sup>T</sup> where [F] is the deformation gradient). In a Mooney-Rivlin material, the strain energy depends on three material properties:</p>
 
@@ -609,7 +607,9 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <p>This material use history #1 to store the volumetric strain (i.e., the determinant of the deformation gradient). The total strain, which is elastic, is stored in the elastic strain variable, but the plastic strain stores the left Cauchy Green tensor.</p>
     
-<a name="heiso"></a><h2>Isotropic, Elastic-Plastic, Hyperelastic Material</h2>
+<!-- Material  Section -->
+
+<h2><a name="heiso"></a>Isotropic, Elastic-Plastic, Hyperelastic Material</h2>
 
 <p>The material type is an isotropic, hyperelastic material with plasticity. It is currently in development.</p>
 
@@ -623,7 +623,9 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 </dl>
 
 
-<a name="heaniso"></a><h2>Anisotropic, Elastic-Plastic, Hyperelastic Material</h2>
+<!-- Material  Section -->
+
+<h2><a name="heaniso"></a>Anisotropic, Elastic-Plastic, Hyperelastic Material</h2>
 
 <p>The material type is a small-strain, anisotropic, hyperelastic material with plasticity. It is currently in development.</p>
 
@@ -637,51 +639,31 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 </dl>
 
 
-<a name="isoplast"></a><h2>Isotropic, Elastic-Plastic Material</h2>
+<!-- Material  Section -->
 
-<p>The material type is <code>Type=9</code>. This material is small-strain, isotropic and yields when <code>f=0</code> according to the plastic potential
-</p>
-<blockquote>f = ||s|| - sqrt(2/3) * &sigma;<sub>Y</sub>
-</blockquote>
-<p>where <code>s</code> is deviatoric stress. Since its magnitude, or <code>||s||</code>, is a stress invariant, this yield condition is isotropic or independent of the material orientation angle. The material also allows isotropic work hardening based on cumulative equivalent plastic strain and implements either linear hardening or one non-linear hardening law. For linear hardening the yield stress is given by
-</p>
+<h2><a name="isoplast"></a>Isotropic, Elastic-Plastic Material</h2>
 
-<blockquote>&sigma;<sub>Y</sub> = &sigma;<sub>Y0</sub> + E<sub>p</sub>&alpha;
-</blockquote>
-
-<p>where <code>&sigma;<sub>Y0</sub></code> is the initial yield stress, <code>Ep</code> is the plastic modulus, and <code>&alpha;</code> is an internal variable that tracks cummulative, equivalent plastic strain (see history variable below). For nonlinear hardening the yield stress is given by</p>
-
-<blockquote>&sigma;<sub>Y</sub> = &sigma;<sub>Y0</sub>(1 + K&alpha;)<sup>n</sup>
-</blockquote>
-
-<p>where <code>K</code> and <code>n</code> are dimensionless hardening parameters. The choice of linear or nonlinear hardening depends on which properties are defined.</p>
+<p>The material type is <code>Type=9</code>. This material is small-strain, isotropic material with plasticity. The plasticity response is handled by selecting a hardening law response.</p>
 
 <p>The possible input properties are:</p>
 
 <dl>
 
-<dt>&lt;yield&gt;1.5&lt;/yield&gt;</dt>
-<dd>The initial yield stress (in MPa). This stress corresponds to the axial stress at yield during uniaxial, 3D loading.</dd>
+<dt>&lt;plasticLaw&gt;Linear&lt;/plasticLaw&gt;</dt>
+<dd>This command selects the <a href="hardeninglaws.html">hardening law</a>. It should be followed by entering yielding properties required by the hardening law.</dd>
     	
-<dt>&lt;Ep&gt;1.5&lt;/Ep&gt;</dt>
-<dd>The plastic modulus (in MPa) for linear hardening. This modulus is the slope of total stress as a function of plastic strain during uniaxial, 3D loading. The default is 0.0 which results in an elastic-perfectly plastic material or a material with no work hardening.</dd>
-
-<dt>&lt;ET&gt;1.5&lt;/ET&gt;</dt>
-<dd>The tangent modulus (in MPa) for linear hardening. This modulus is the slope of total stress as a function of total strain after yielding in uniaxial, 3D loading. The key material property is <code>Ep</code>. Entering <code>ET</code> is provided as a convenience. If you enter it, <code>Ep = E ET/(E-ET)</code> will be calculated for you and override any entry of <code>Ep</code>.</dd>
-
-<dt>&lt;Khard&gt;1500&lt;/Khard&gt; and &lt;nhard&gt;0.29&lt;/nhard&gt;</dt>
-<dd>The dimensionless parameters for nonlinear hardening. If either one of these properties is provided, the material will use nonlinear hardening and any entries for <code>Ep</code> or <code>ET</code> will be ignored; otherwise the material will use linear hardening. Although linear hardening is a subset or nonlinear hardening (<i>i.e.</i>, it is special case for <code>n=1</code> and <code>E<sub>p</sub>=K&sigma;<sub>Y0</sub></code>), it is more efficient to use actual linear hardening whenever <code>n=1</code>.</dd>
-
 <dt>Other Properties</dt>
 <dd>See <a href="#iso">Linear Elastic, Isotopic</a> material.</dd>
 
 </dl>
     
-<h3>History Data for Von Mises Plastic, Isotropic</h3>
+<h3>History Data for Isotropic, Elastic-Plastic Material</h3>
 
-<p>The one history variable is the cummulative equivalent plastic strain, <code>&alpha;</code>, defined as the sum of <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>. This variable can be archived as history variable 1.</p>
+<p>The material has none, but the <a href="hardeninglaws.html">hardening law</a> will have at least one.</p>
     
-<a name="idealgas"></a><h2>Ideal Gas, as a Hyperelastic Material</h2>
+<!-- Material  Section -->
+
+<h2><a name="idealgas"></a>Ideal Gas, as a Hyperelastic Material</h2>
 
 <p>The material type is an ideal gas, implemented as a large-deformation, isotropic, hyperelastic material at finite deformations. Its contitutive law is.</p>
 
@@ -724,7 +706,9 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 
 <p>If the calculation archives strain energy, it tracks work done on the gas particles (in the form of <code>P dV</code> work).</p>
 
-<a name="bistab"></a><h2>Bistable, Isotropic Elastic</h2>
+<!-- Material  Section -->
+
+<h2><a name="bistab"></a>Bistable, Isotropic Elastic</h2>
 
 <p>The material type is <code>Type=10</code>. This material has two small-strain, isotopic states. The first state (state &quot;0&quot;) must be fully defined. Any property omitted for the second state (state &quot;d&quot;) will be assumed to be indentical to the first state. The second state can optionally have an offset volumetric strain to give the deformed state a different zero-stress intercept than the undeformed state. The mechanical properties in the two states are set with:</p>
 
@@ -796,6 +780,8 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 
 <p>History variable 1 will be 0 for the initial state and 1 for the deformed state after a transition.</p>
     
+<!-- Material  Section -->
+
 <h2><a name="rigid"></a>Rigid Material</h2>
 
 <p>The material type is <code>Type=11</code> and it is actually two materials in one, depending on the value for its <code>SetDirection</code> property:</p>
@@ -856,7 +842,9 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 
 <p>If a rigid particle is added to a problem, but it does not set any velocity, temperature, or concentration (<code>SetDirection</code>=0 or omitted and <code>SetTemperature</code> and <code>SetConcentration</code> omitted), it will have no affect on the calculations. It may plot in visualization software and therefore appear to be part of the simulation, but it will be identical to the results that would be obtained if it had never been added to the problem.</p>
 
-<a name="hill"></a><h2>Hill Plastic, Orthotropic Material</h2>
+<!-- Material  Section -->
+
+<h2><a name="hill"></a>Hill Plastic, Orthotropic Material</h2>
 
 <p>The material type is <code>Type=15</code>. This material is a small-strain, elastic-plastic material based on an <a href="#ortho">orthotropic</a> material. The material is elastic plastic, but has an anisotropic crition to allow yielding at different stresses when loaded in different directions. Enter the underlying <a href="#ortho">orthotropic</a> material properties and then enter the direction-dependent yield stresses. Any omitted yield stress will be assumed to be inifinite (<i>i.e.</i>, no yielding in that direction). At least one yield stress is required (otherwise just use an <a href="#ortho">orthotropic</a> material):
 </p>
@@ -939,10 +927,11 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 <p>The history variable is the cummulative equivalent plastic strain defined as the sum of
 <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>. This variable can be archived as history variable 1.</p>
     
-<a name="MGSCGL"></a><h2>Mie-Gr&#252;neisen, Steinberg, Cochran, and Guinan Material</h2>
+<!-- Material  Section -->
 
-<p>The material type is <code>Type=17</code>. This material is large-deformation equation of state for isotropic material with plasticity. The pressure is determined by the Mie-Gr&#252;neisen equation of state. The shear modulus and yield stress use the approach of Steinberg, Cochran, and Guinan.
-<a name="MGEOS"></a>The material properties are for the Mie-Gr&#252;neisen equation of state are:
+<h2><a name="MGEOS"></a>Mie-Gr&#252;neisen Equation of State Material</h2>
+
+<p>The material type is <code>Type=17</code> and is an isotropic material with plasticity. The pressure is determined by the Mie-Gr&#252;neisen equation of state (using large deformation methods in compression). The shear modulus and yielding are handled by small stain methods using a <a href="hardeninglaws.html">hardening law</a>. The material properties for this material are:
 </p>
 
 <dl>
@@ -965,12 +954,9 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 <dt>&lt;G&gt;160000&lt;/G&gt;</dt>
 <dd>Shear modulus, G<sub>0</sub>, at zero pressure and the reference temperature. Enter in units MPa.</dd>
 
-<dt>&lt;GPpG0&gt;0.01e-3&lt;/GPpG0&gt;</dt>
-<dd>G<sub>p</sub>'/G<sub>0</sub> term for pressure dependence of shear modulus and yield stress in Steinberg, Cochran, and Guinan form. Enter in units MPa<sup>-1</sup>.</dd>
-
-<dt>&lt;GTpG0&gt;-2.2e-4&lt;/GTpG0&gt;</dt>
-<dd>G<sub>T</sub>'/G<sub>0</sub> term for temperature dependence of shear modulus and yield stress in Steinberg, Cochran, and Guinan form. Enter in units K<sup>-1</sup>.</dd>
-
+<dt>&lt;plasticLaw&gt;Linear&lt;/plasticLaw&gt;</dt>
+<dd>This command selects the <a href="hardeninglaws.html">hardening law</a>. It should be followed by entering yielding properties required by the hardening law.</dd>
+    	
 <dt>Other Properties</dt>
 <dd>Enter density, &rho;, and heat capacity, C<sub>V</sub>, in <a href="#common">properties common to all materials</a>.
 </dd>
@@ -985,20 +971,13 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
    + &rho;<sub>0</sub>&gamma;<sub>0</sub>e
 </blockquote>
 <p>where e is the internal energy made up of elastic, plastic, and thermal energy.
- The thermal energy depends on temperature relative to a reference temperature; the reference temperature is set using the <a href="mpmheader.html#stressfreetemp"><code>StressFreeTemp</code></a> command and not in the material. When x<0, the material is in tension and the pressure changes to</p>
+ The thermal energy depends on temperature relative to a reference temperature; the reference temperature is set using the <a href="mpmheader.html#stressfreetemp"><code>StressFreeTemp</code></a> command. When x<0, the material is in tension and the pressure changes to</p>
 <blockquote>
    P = &rho;<sub>0</sub>C<sub>0</sub><sup>2</sup>x
    + &rho;<sub>0</sub>&gamma;<sub>0</sub>e
 </blockquote>
  <p>The first term is bulk modulus terms with the low-strain bulk modulus being
  &rho;<sub>0</sub>C<sub>0</sub><sup>2</sup>. For more details on this equation of state see <a href="references.html#Wilkens1999">Wilkens (1999)</a>, page 61 (altough final pressure form here is different but is equivalent if compared as polynomial expansions; this form also includes S<sub>2</sub> and S<sub>3</sub> options while Wilkens only has S = S<sub>1</sub>).
-</p>
-<p>The shear modulus of the material is given by
-</p>
-<blockquote>
-     G = G<sub>0</sub> [ 1 + (G<sub>p</sub>'/G<sub>0</sub>)(P/&eta;<sup>1/3</sup>) + (G<sub>T</sub>'/G<sub>0</sub>)(T-T<sub>0</sub>) ]
-</blockquote>
-<p> where &eta; = 1/(1-x). Here T<sub>0</sub> is the reference temperature for the material that is set using the <a href="mpmheader.html#stressfreetemp"><code>StressFreeTemp</code></a> command. This shear modulus is from Steinberg, Cochran, and Guinan. To omit this option, set <code>GPpG0</code> and <code>GTpG0</code> to zero.
 </p>
 
 <p>This equation of state automatically handles thermal expansion by inclusion of thermal energy in the internal energy. You do not need to enter a thermal expansion coefficient because it is determined by other properties through:
@@ -1011,165 +990,13 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 <p>This material allows isotropic conduction and diffusion by entering isotropic transport properties (<a href="#iso"><code>kCond</code>, <code>D</code>, and <code>beta</code></a>)  and bulk properties (<a href="#common"><code>Cp</code> and <code>csat</code></a>).
 </p>
 
-<p>For plasticity, the yielding (or strength) of this material is determined by analysis from Steinberg, Cochran, and Guinan. The material properties for this yield law are:</p>
+<h3>History Data for Mie-Gr&#252;neisen Equation of State Material</h3>
 
-<dl>
-
-<dt>&lt;yield&gt;2200&lt;/yield&gt;</dt>
-<dd>Initial yield stress (&sigma;<sub>0</sub>) at zero pressure and the reference temperature. Enter in units of MPa.</dd>
-
-<dt>&lt;yieldMax&gt;4000&lt;/yieldMax&gt;</dt>
-<dd>Maximum yield stress. Enter in units of MPa.</dd>
-
-<dt>&lt;betahard&gt;7.7&lt;/betahard&gt;</dt>
-<dd>Yield stress hardening term (see below). It is dimensionless.</dd>
-
-<dt>&lt;nhard&gt;0.13&lt;/nhard&gt;</dt>
-<dd>Exponent on cumulative plastic strain in hardening term (see below). It is dimensionless.</dd>
-
-</dl>
-
-<p>This material yields when <code>f=0</code> according to the plastic potential
-</p>
-<blockquote>
-     f = ||s|| - sqrt(2/3) * &sigma;<sub>Y</sub>
-</blockquote>
-<p>where <code>||s||</code> is the deviatoric or flow stress and the yield stress is given by the hardening law:
-</p>
-<blockquote>
-     &sigma;<sub>y</sub> = &sigma;<sub>0</sub> (1 + &beta; &epsilon;<sub>p</sub><sup>n</sup>) [ 1 + (G<sub>p</sub>'/G<sub>0</sub>)(P/&eta;<sup>1/3</sup>) + (G<sub>T</sub>'/G<sub>0</sub>)(T-T<sub>0</sub>) ]
-</blockquote>
-<p>where &epsilon;<sub>p</sub> is the equivalent plastic strain. The yield stress is limited to the maximum yield stress. See D. J. Steinberg S. G. Cochran, and M. W. Guinan, &quot;A constitutive model for metals applicable at high strain rates&quot; (<i>J. Appl. Phys.</i>, <b>51</b>, 1498-1504 (1989)) for details.
-</p>
-
-<p>Note that plasticity is implemented using J<sub>2</sub> flow theory, which is a theory that assumes <code>f</code> depends on <code>||s||</code> and is independent of pressure. The yield stress, however, has a pressure-dependent term (see <code>(G<sub>p</sub>'/G<sub>0</sub>)</code> term). The effect may be small and it appears that other implementions of this material take this same approach.
-</p>
-
-<h3>History Data for Mie-Gr&#252;neisen, Steinberg, Cochran, and Guinan Material</h3>
-
-<p>The history variable is the cummulative equivalent plastic strain (absolute) defined as the sum of
-<code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>. This variable can be archived as history variable 1.</p>
+<p>The material has none, but the <a href="hardeninglaws.html">hardening law</a> will have at least one.</p>
     
-<a name="SL"></a><h2>Steinberg-Lund Material</h2>
+<!-- Material  Section -->
 
-<p>The material type is <code>Type=18</code>. This material is large deformation, isotropic with plasticity. The pressure is determined by the Mie-Gr&#252;neisen equation of state (see <a href="#MGEOS">above</a> for discussion and for the equation of state material properties). The new feature of this material is a rate- and temperature-dependent yield stress (or strength) term. The material properties afor the yield behaviour are:
-</p>
-
-<dl>
-
-<dt>&lt;C1&gt;0.71e6&lt;/C1&gt;</dt>
-<dd>Material constant in Steinberg-Lund formulation entered in units of 1/sec.</dd>
-
-<dt>&lt;C2&gt;0.012&lt;/C2&gt;</dt>
-<dd>Material constant in Steinberg-Lund formulation entered in units of MPa-sec.</dd>
-
-<dt>&lt;YP&gt;0&lt;/YP&gt;</dt>
-<dd>The Peierls stress and also the maximum rate-dependent yield stress. It has units MPa.</dd>
-
-<dt>&lt;Uk&gt;0.31&lt;/Uk&gt;</dt>
-<dd>An energy associated wtih forming kinks. It has units eV.</dd>
-
-<dt>MGSCGLMaterial Properties</dt>
-<dd>Enter all constituitive properties required for a <a href="#MGEOS">Mie-Gr&#252;neisen equation of state</a> as well as some additional yield properties.
-</dd>
-
-<dt>Other Properties</dt>
-<dd>Enter density, &rho;, and other properties in <a href="#common">properties common to all materials</a>.
-</dd>
-
-</dl>
-
-<p>This material yields when <code>f=0</code> according to the plastic potential
-</p>
-<blockquote>
-     f = ||s|| - sqrt(2/3) * &sigma;<sub>Y</sub>
-</blockquote>
-<p>where <code>||s||</code> is the deviatoric or flow stress and the yield stress is given by the hardening law:
-</p>
-<blockquote>
-     &sigma;<sub>y</sub> = {Y<sub>T</sub>(d&epsilon;<sub>p</sub>/dt,T) + &sigma;<sub>0</sub>(1 + &beta; &epsilon;<sub>p</sub><sup>n</sup>)} [ 1 + (G<sub>p</sub>'/G<sub>0</sub>)(P/&eta;<sup>1/3</sup>) + (G<sub>T</sub>'/G<sub>0</sub>)(T-T<sub>0</sub>) ]
-</blockquote>
-<p>This equation is identical to the <a href="#MGSCGL">MGSCGLMaterial</a> except for the new rate- and temperature-dependent term Y<sub>T</sub>(d&epsilon;<sub>p</sub>/dt,T), which is only defined in inverse form:</p>
-<blockquote>
-d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (1/C<sub>1</sub>)exp[(2U<sub>k</sub>/(kT))(1-(Y<sub>T</sub>/Y<sub>P</sub>))<sup>2</sup>] }<sup>-1</sup>
-</blockquote>
-<p>where &epsilon;<sub>p</sub> is the equivalent plastic strain. This equation is numerically inverted to find Y<sub>T</sub> as a function of strain rate and Y<sub>T</sub> is limited to &le; Y<sub>P</sub>. See D. J. Steinberg and C. M. Lund, &quot;A constitutive model for strain rates from 10<sup>-4</sup> to 10<sup>6</sup>&quot; (<i>J. Appl. Phys.</i>, <b>65</b>, 1528-1533 (1989)) for details.
-</p>
-
-<p>Note that plasticity is implemented using J<sub>2</sub> flow theory, and therefore has the same concerns as the <a href="#MGSCGL">MGSCGLMaterial</a> when the presure-dependent term is non-zero.
-</p>
-
-<h3>History Data for Steinberg-Lund Material</h3>
-
-<p>The three history variables are the cummulative equivalent plastic strain (absolute) defined as the sum of
-<code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>, the current rate- and temperature-dependent yield stress (Y<sub>T</sub>) in MPa, and the current equivalent plastic strain rate (d&epsilon;<sub>p</sub>/dt in 1/sec). These variables can be archived as history variables 1, 2, and/or 3.</p>
-
-<a name="JC"></a><h2>Johnson-Cook Material</h2>
-
-<p>The material type is <code>Type=16</code>. This material is small,strain, isotropic with rate- and temperature-dependent plasticity. The elastic response is derived from small-strain istropic material behaviour with properties:
-</p>
-
-<dl>
-
-<dt>Isotropic Properties</dt>
-<dd>Enter all constituitive properties required for an <a href="#iso">isotropic material</a>.
-</dd>
-
-<dt>Other Properties</dt>
-<dd>Enter density, &rho;, and other properties in <a href="#common">properties common to all materials</a>.
-</dd>
-
-</dl>
-
-<p>The yield (or strength) model is the Johnson-Cook model with parameters:</p>
-
-<dl>
-
-<dt>&lt;Ajc&gt;90&lt;/Ajc&gt;</dt>
-<dd>The initial yield stress at reference rate and temperature. It has units MPa.</dd>
-
-<dt>&lt;Bjc&gt;292&lt;/Bjc&gt;</dt>
-<dd>Hardening term in the yield stress. It has units MPa.</dd>
-
-<dt>&lt;njc&gt;0.31&lt;/njc&gt;</dt>
-<dd>Exponent for power-law hardening term. It is dimensionless.</dd>
-
-<dt>&lt;Cjc&gt;0.025&lt;/Cjc&gt;</dt>
-<dd>Coefficient for rate-dependent term. It is dimensionless</dd>
-
-<dt>&lt;ep0jc&gt;1&lt;/ep0jc&gt;</dt>
-<dd>Reference strain rate for reference yield stress in <code>Ajc</code>. It has units sec<sup>-1</sup>.</dd>
-
-<dt>&lt;Tmjc&gt;1356&lt;/Tmjc&gt;</dt>
-<dd>The material's melting point. It has units degree K.</dd>
-
-<dt>&lt;mjc&gt;1.09&lt;/mjc&gt;</dt>
-<dd>Exponent in the thermal term. It is dimensionless.</dd>
-
-</dl>
-
-<p>This material yields when <code>f=0</code> according to the empirical plastic potential
-</p>
-<blockquote>
-     f = ||s|| - sqrt(2/3) * &sigma;<sub>Y</sub>
-</blockquote>
-<p>where <code>||s||</code> is the deviatoric or flow stress and the yield stress is given by the hardening law:
-</p>
-<blockquote>
-     &sigma;<sub>y</sub> = (Ajc + Bjc &epsilon;<sub>p</sub><sup>njc</sup>) [1 + Cjc ln(d&epsilon;<sub>p</sub>/ep0jc) ] (1 - Tr<sup>mjc</sup>)
-</blockquote>
-<p>where &epsilon;<sub>p</sub> is equivalent plastic strain, d&epsilon;<sub>p</sub> is plastic strain rate, and the reduced temperature (Tr) is given by</p>
-<blockquote>
-     Tr = (T - T<sub>0</sub>) / (Tmjc - T<sub>0</sub>)
-</blockquote>
-<p> and T<sub>0</sub> is the current <a href="mpmheader.html#stressfreetemp">stress free temperature</a>. See G. R. Johnson and W. H. Cook, &quot;A constitutive model and data for metals subjected to large strains, high strain rates ad high temperatures&quot; (<i>Proceedings of the 7th International Symposium on Ballistics</i>, 541-547 (1983)) for details.
-</p>
-
-<h3>History Data for Johnson-Cook Material</h3>
-
-<p>The one history variable is the cummulative equivalent plastic strain, <code>&alpha;</code>, defined as the sum of <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>. This variable can be archived as history variable 1.</p>
-
-<a name="traction"></a><h2>Triangular Traction Law Material</h2>
+<h2><a name="traction"></a>Triangular Traction Law Material</h2>
 
 <p>The material type is <code>Type=12</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. The traction laws in pure mode I or pure mode II each have the following triangular shape:
 </p>
@@ -1216,6 +1043,8 @@ and then will increase linearly up to &delta;<sub>c</sub> with a slope of
 <p>where G<sub>I</sub> and G<sub>II</sub> are areas under mode I and mode II traction laws up to current displacements. Now this failure criterion will mean that failure may occur when normal or shear tractions are nonzero and result in a sudden drop to zero traction. This approach is identical to the one adopted by Thouless <i>et. al</i> to handle mixed-mode loading and appears to work well. There has been work to modify the traction laws so they always approach zero at time of failure (<i>e.g.</i>, work of Hogberg (2006) or Tvergaard and Hutchinson (1994)). These approaches were tried, gave poor results for certain problems, led to non-physical coupling between mode I and mode II, and therefore were abandoned.
 </p>
 
+<!-- Material  Section -->
+
 <a name="trilinear"></a><h2>Trilinear Traction Law Material</h2>
 
 <p>The material type is <code>Type=20</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. The traction laws in pure mode I or pure mode II each have the following trilinear shapes with arbitrarily-specifiable break points:
@@ -1254,6 +1083,8 @@ and then will increase linearly up to &delta;<sub>2</sub> with a slope of
 <blockquote>500&sigma;<sub>2</sub>&delta;<sub>c</sub>/(&delta;<sub>c</sub>-&delta;<sub>2</sub>)
 </blockquote>
 
+<!-- Material  Section -->
+
 <a name="coupled"></a><h2>CoupledSawTooth Traction Law Material</h2>
 
 <p>The material type is <code>Type=23</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. The traction law is the same as for the <a href="#traction">triangular law</a>:
@@ -1280,6 +1111,8 @@ cod = <code>&delta;<sub>eff</sub></code> where  &delta;<sub>eff</sub><sup>2</sup
 </blockquote>
 <p>where <code>&delta;<sub>max</sub></code> is the maximum effective cod seen on the crack particle, except that it is initialized to the peak cod (&delta;<sub>pk</sub>) at the start of the calculations. By this relation, D = 0 until the effective cod passes the peak cod. Thereafter, D increases from 0 at the peak to 1 at the critical cod. Once D is found, the normal and tangential tractions are <code>T<sub>n</sub> = k<sub>eff</sub>&delta;<sub>c</sub></code> and <code>T<sub>t</sub> = k<sub>eff</sub>&delta;<sub>t</sub></code>, which satisfy the effective traction - effective cod law given above. Note that during monotonic loading the traction will remain on the curve. If unloading occurs, however, the tractions follow a line back to the original for the peak cod.</p>
 
+<!-- Material  Section -->
+
 <a name="lineart"></a><h2>Linear Elastic Traction Law Material</h2>
 
 <p>The material type is <code>Type=13</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. This material creates a linear elastic traction law that never fails and therefore never releases energy. The only properties are the slopes for normal and shear opening:
@@ -1299,6 +1132,8 @@ cod = <code>&delta;<sub>eff</sub></code> where  &delta;<sub>eff</sub><sup>2</sup
 
 <p>To create a linear elastic traction law that fails at some critical cod, use a <a href="#traction">triangular traction law material</a> instead and set the properties such that the maximum cod is at the same location as the peak stress (<i>i.e.</i>, &delta;<sub>c</sub> = &sigma;/k or &delta;<sub>pk</sub>=1)
 </p>
+
+<!-- Material  Section -->
 
 <a name="cubic"></a><h2>Cubic Traction Law Material</h2>
 

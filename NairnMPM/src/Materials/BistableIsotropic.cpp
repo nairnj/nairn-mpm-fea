@@ -279,17 +279,15 @@ const char *BistableIsotropic::CurrentProperties(short newState,int np)
 	return err;
 }
 
-// create and return pointer to history variables
-// keep track of state of particle
+// Single short to hold the current particle state
 char *BistableIsotropic::MaterialData(void)
 {
-    char *p;
-    short *h;
-    
     // allocate pointer to a single short
-    p=new char[sizeof(short)];
-    h=(short *)p;
+    char *p=new char[sizeof(short)];
+	
+    short *h=(short *)p;
     *h=INITIAL_STATE;
+	
     return p;
 }
 

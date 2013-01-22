@@ -55,7 +55,10 @@ void LinearHardening::InitialLoadMechProps(int makeSpecific,int np)
     HardeningLawBase::InitialLoadMechProps(makeSpecific,np);
     
     // Use Ep if it was entered and is non-negative
-    if(Ep >= 0.) beta = Ep/yield;
+    if(Ep >= 0.)
+		beta = Ep/yield;
+	else
+		Ep = beta*yield;
     
 	// save some multiplies (it is reduced plastic modulus)
     Epred = yldred*beta;
@@ -67,6 +70,7 @@ void LinearHardening::PrintYieldProperties(void)
     cout << GetHardeningLawName() << endl;
     MaterialBase::PrintProperty("yld",yield,"");
     MaterialBase::PrintProperty("K",beta,"");
+    MaterialBase::PrintProperty("Ep",beta,"");
     cout << endl;
 }
 
@@ -109,6 +113,18 @@ double LinearHardening::SolveForLambdaBracketed(MPMBase *mptr,int np,double stri
     
 	// closed form for plane strain and 3D
 	double lambdak = (strial - SQRT_TWOTHIRDS*(yldred + Epred*alpint))/(2.*(Gred + Epred/3.));
+	UpdateTrialAlpha(mptr,np,lambdak,(double)1.);
+	return lambdak;
+}
+
+// Linear law can do return mapping analytically, except for plane stress
+double LinearHardening::HESolveForLambdaBracketed(MPMBase *mptr,int np,double strial,double Gred,double Ie1bar)
+{
+	// plane stress is not supported yet
+	if(np==PLANE_STRESS_MPM) return 0.0;
+	
+    // Find  lambda for this plastic state
+	double lambdak = (strial - SQRT_TWOTHIRDS*(yldred + Epred*alpint))/(2.*(Gred*Ie1bar + Epred/3.));
 	UpdateTrialAlpha(mptr,np,lambdak,(double)1.);
 	return lambdak;
 }

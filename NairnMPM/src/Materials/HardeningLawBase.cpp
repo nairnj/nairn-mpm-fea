@@ -51,6 +51,11 @@ void HardeningLawBase::InitialLoadMechProps(int makeSpecific,int np)
     yldred = yield*1.e6/parent->rho;
 }
 
+// The base class hardening law has cumulative equivalent plastic strain
+//		(defined as dalpha = sqrt((2/3)||dep||))
+// This should be put in history variable 0
+int HardeningLawBase::HistoryDoublesNeeded(void) { return 1; }
+
 #pragma mark HardeningLawBase::Methods
 
 // In case hardening properties depends on state in subclasses
@@ -322,4 +327,26 @@ bool HardeningLawBase::LambdaConverged(int step,double lambda,double delLam)
 	if(step>20 || fabs(delLam/lambda)<0.0001) return true;
 	return false;
 }
+
+#pragma mark HardeningLawBase::Hyperelastic Return Mapping
+
+// Will need to write this to allow hyperelastic hardening laws
+double HardeningLawBase::HESolveForLambdaBracketed(MPMBase *mptr,int np,double strial,double Gred,double Ie1bar)
+{	return 0.0;
+}
+
+
+#pragma mark HardeningLawBase::Accessors
+
+// IsoPlasticity has now history data, by the hardening law might
+double HardeningLawBase::GetHistory(int num,char *historyPtr)
+{	
+    double history=0.;
+    if(num==1)
+    {	double *cumStrain=(double *)historyPtr;
+        history=*cumStrain;
+    }
+    return history;
+}
+
 

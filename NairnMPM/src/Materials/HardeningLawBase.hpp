@@ -29,6 +29,7 @@ class HardeningLawBase
         virtual void PrintYieldProperties(void) = 0;
         virtual void InitialLoadMechProps(int,int);
         virtual const char *VerifyProperties(int);
+		virtual int HistoryDoublesNeeded(void);
     
         // hardening law core methods
         virtual double GetShearRatio(MPMBase *,double,double);
@@ -42,6 +43,9 @@ class HardeningLawBase
         virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double);
         virtual void BracketSolution(MPMBase *,int,double,Tensor *,double,double,double,double *,double *);
         virtual bool LambdaConverged(int,double,double);
+	
+		// hyperelastic return mapping methods
+		virtual double HESolveForLambdaBracketed(MPMBase *,int,double,double,double);
     
         // Default internal variable as cumlative plastic strain
         virtual void UpdateTrialAlpha(MPMBase *,int);
@@ -49,6 +53,7 @@ class HardeningLawBase
         virtual void UpdatePlasticInternal(MPMBase *,int);
     
         // accessors
+		virtual double GetHistory(int,char *);
         virtual const char *GetHardeningLawName(void) = 0;
     
     protected:

@@ -18,12 +18,12 @@ EndHeader! ------------ Parameters ---------------
 
 ! material options: isotropic, isoplasticity, ,mgeos, bistable, iptrans, normtrans, ortho
 !   viscoelastic, hill, wood
-#matID="mgeos"
+#matID="isoplasticity"
 #angle=0					! material angle for anisotopic materials
 
 ! hardening law (if allowed), empty if not
 !	options Linear, Nonlinear, JohnsonCook
-#hardID="SCGL"
+#hardID="Linear"
 
 ! temperature option to test energy coupling
 StressFreeTemp 294
@@ -35,17 +35,6 @@ StressFreeTemp 294
 !   For MGSCGL, #Ebase=K=#rho*C0^2, e.g. for Tungsten rho=19.256, C0=4004,
 !				K=0.001 rho C0^2 MPa (rho in g/cm^2, C0 in m/sec)
 !				Pick other properties in the material definition
-#Ebase=308776
-#rho=19.256
-#nuBase=.28
-#aBase=4.5
-
-#Ebase=100
-#rho=1
-#nuBase=.33
-#aBase=60
-#yldstrain=.5		! in percent
-
 ! Copper for use with JohnsonCook hardening
 #Ebase= 120000
 #rho=8.96
@@ -58,19 +47,26 @@ StressFreeTemp 294
 #nuBase=.28
 #aBase=4.5
 
+! Main settings
+#Ebase=100
+#rho=1
+#nuBase=.33
+#aBase=60
+#yldstrain=1		! in percent
+
 ! Dimensions
 #cell=2
-#length=40			! length
+#length=10			! length
 #width=10			! width
 #thick=10			! thickness
 
 ! Load by strain (estimated for force and traction loads)
 #loading="rigid"	! Loading = "force", "traction", "rigid", "contact", "thermal"
-#fixsides="yes"		! "yes" or "no" for sides fix in y direction (2D) or y and z (3D)
-#strain=-50	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
+#fixsides="no"		! "yes" or "no" for sides fix in y direction (2D) or y and z (3D)
+#strain=3	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
 
 ! Loading rate
-#tmult=20			! number of transit times to load peak
+#tmult=40			! number of transit times to load peak
 #hold=0				! hold time (multiple of loading time)
 #unload=0		    ! 0 no unload or >0 for unloading time (multiple of loading time, but at same loading rate)
 
@@ -161,7 +157,7 @@ if #matID="isoplasticity"
     endif
     if #hardID="Linear"
       yield abs(#Ebase*#yldstrain/100)
-      Khard 100
+      Ep 10
       !ET #Ebase/3
       kCond .00202
       CP .1256

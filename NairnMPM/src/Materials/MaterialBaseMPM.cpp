@@ -428,7 +428,11 @@ void MaterialBase::ValidateForUse(int np)
 
 // create and return pointer to material-specific data on a particle
 //	using this material. Called once at start of analysis for each
-//	particle
+//	particle.
+// If a material subclass override this method, it is responsible for
+//  creating space for super class history varibles too. There is
+//  no mechanism now for calling super classes to prepend or
+//  append the data.
 char *MaterialBase::MaterialData(void) { return NULL; }
 
 // If needed, a material can initialize particle state
@@ -544,6 +548,22 @@ void MaterialBase::ContactOutput(int thisMatID)
 		currentFriction=(ContactDetails *)currentFriction->nextFriction;
 	}
 }
+
+// create buffer for material data with the requested number of
+// doubles and set eash one to zero
+double *MaterialBase::CreateAndZeroDoubles(int numDoubles)
+{
+	// create buffer
+	double *p=new double[numDoubles];
+	
+	// set all to zero
+	int i;
+	for(i=0;i<numDoubles;i++) p[i] = 0.0;
+	
+	// return pointer
+	return p;
+}
+
 
 #pragma mark MaterialBase::Methods
 

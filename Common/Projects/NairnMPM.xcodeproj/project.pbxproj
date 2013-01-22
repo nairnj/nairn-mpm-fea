@@ -41,6 +41,9 @@
 		67B215D511F96C0C007523EE /* MoveCracksTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B215D311F96C0C007523EE /* MoveCracksTask.cpp */; };
 		67B215F011F96EC7007523EE /* ResetElementsTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B215EE11F96EC7007523EE /* ResetElementsTask.hpp */; };
 		67B215F111F96EC7007523EE /* ResetElementsTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B215EF11F96EC7007523EE /* ResetElementsTask.cpp */; };
+		67B916D116AE15BE00632385 /* MGSCGLMaterial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B916CF16AE15BE00632385 /* MGSCGLMaterial.cpp */; };
+		67B916D216AE15BE00632385 /* MGSCGLMaterial.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B916D016AE15BE00632385 /* MGSCGLMaterial.hpp */; };
+		67B916D416AE15E600632385 /* HEIsotropic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B916D316AE15E600632385 /* HEIsotropic.cpp */; };
 		67BFA35511FB81B70083F95B /* InitializationTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67BFA35311FB81B70083F95B /* InitializationTask.hpp */; };
 		67BFA35611FB81B70083F95B /* InitializationTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67BFA35411FB81B70083F95B /* InitializationTask.cpp */; };
 		67C3E42E16482C7500AD5339 /* MatPointAS.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 673B31CF1636F6CC00FB27DA /* MatPointAS.cpp */; };
@@ -263,7 +266,6 @@
 		A77AF3890D59382500D5313A /* BitMapFilesFEA.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A77AF3880D59382500D5313A /* BitMapFilesFEA.cpp */; };
 		A77CBDEB0608C15600FDE1D6 /* MatPtFluxBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A77CBDE90608C15600FDE1D6 /* MatPtFluxBC.hpp */; };
 		A77CBDEC0608C15600FDE1D6 /* MatPtFluxBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A77CBDEA0608C15600FDE1D6 /* MatPtFluxBC.cpp */; };
-		A77F5ECD15FA6ED8005188E8 /* HEIsotropic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A77F5ECB15FA6ED8005188E8 /* HEIsotropic.cpp */; };
 		A77F5ECE15FA6ED8005188E8 /* HEIsotropic.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A77F5ECC15FA6ED8005188E8 /* HEIsotropic.hpp */; };
 		A77FA043090E76B0007E0B3B /* Utilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A77FA042090E76B0007E0B3B /* Utilities.cpp */; };
 		A77FA046090E76C2007E0B3B /* CSTriangle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A77FA044090E76C2007E0B3B /* CSTriangle.cpp */; };
@@ -280,8 +282,6 @@
 		A78BCA67061C76F1009232A2 /* NodalVelBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A78BCA65061C76F1009232A2 /* NodalVelBC.cpp */; };
 		A78BCB6F061CA059009232A2 /* NodalConcBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A78BCB6D061CA059009232A2 /* NodalConcBC.hpp */; };
 		A78BCB70061CA059009232A2 /* NodalConcBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A78BCB6E061CA059009232A2 /* NodalConcBC.cpp */; };
-		A79013060ECB8F8C0000C289 /* MGSCGLMaterial.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A79013040ECB8F8C0000C289 /* MGSCGLMaterial.hpp */; };
-		A79013070ECB8F8C0000C289 /* MGSCGLMaterial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A79013050ECB8F8C0000C289 /* MGSCGLMaterial.cpp */; };
 		A79115C50720554600B81ECA /* ConductionTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A79115C30720554600B81ECA /* ConductionTask.hpp */; };
 		A79115C60720554600B81ECA /* ConductionTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A79115C40720554600B81ECA /* ConductionTask.cpp */; };
 		A797728F0DA2E4EB00B0C21E /* LinearTraction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A797728D0DA2E4EB00B0C21E /* LinearTraction.hpp */; };
@@ -425,6 +425,9 @@
 		67B215D311F96C0C007523EE /* MoveCracksTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MoveCracksTask.cpp; sourceTree = "<group>"; };
 		67B215EE11F96EC7007523EE /* ResetElementsTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ResetElementsTask.hpp; sourceTree = "<group>"; };
 		67B215EF11F96EC7007523EE /* ResetElementsTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ResetElementsTask.cpp; sourceTree = "<group>"; };
+		67B916CF16AE15BE00632385 /* MGSCGLMaterial.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MGSCGLMaterial.cpp; sourceTree = "<group>"; };
+		67B916D016AE15BE00632385 /* MGSCGLMaterial.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MGSCGLMaterial.hpp; sourceTree = "<group>"; };
+		67B916D316AE15E600632385 /* HEIsotropic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HEIsotropic.cpp; path = Materials/HEIsotropic.cpp; sourceTree = "<group>"; };
 		67BFA35311FB81B70083F95B /* InitializationTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InitializationTask.hpp; sourceTree = "<group>"; };
 		67BFA35411FB81B70083F95B /* InitializationTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InitializationTask.cpp; sourceTree = "<group>"; };
 		67C733BD167412DC00698D4F /* Documentation */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Documentation; path = ../../Documentation; sourceTree = "<group>"; };
@@ -564,7 +567,6 @@
 		A77AF3880D59382500D5313A /* BitMapFilesFEA.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BitMapFilesFEA.cpp; sourceTree = "<group>"; };
 		A77CBDE90608C15600FDE1D6 /* MatPtFluxBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatPtFluxBC.hpp; sourceTree = "<group>"; };
 		A77CBDEA0608C15600FDE1D6 /* MatPtFluxBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPtFluxBC.cpp; sourceTree = "<group>"; };
-		A77F5ECB15FA6ED8005188E8 /* HEIsotropic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HEIsotropic.cpp; path = Materials/HEIsotropic.cpp; sourceTree = "<group>"; };
 		A77F5ECC15FA6ED8005188E8 /* HEIsotropic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = HEIsotropic.hpp; path = Materials/HEIsotropic.hpp; sourceTree = "<group>"; };
 		A77FA041090E76A7007E0B3B /* makefile */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; };
 		A77FA042090E76B0007E0B3B /* Utilities.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = Utilities.cpp; sourceTree = "<group>"; };
@@ -586,8 +588,6 @@
 		A78F82A103EF284B0063AF10 /* FEAReadHandler.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = FEAReadHandler.cpp; sourceTree = "<group>"; };
 		A78F82A203EF284B0063AF10 /* FEAReadHandler.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = FEAReadHandler.hpp; sourceTree = "<group>"; };
 		A78F82AA03EF287E0063AF10 /* FEAPrefix.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FEAPrefix.hpp; sourceTree = "<group>"; };
-		A79013040ECB8F8C0000C289 /* MGSCGLMaterial.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MGSCGLMaterial.hpp; sourceTree = "<group>"; };
-		A79013050ECB8F8C0000C289 /* MGSCGLMaterial.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MGSCGLMaterial.cpp; sourceTree = "<group>"; };
 		A79115C30720554600B81ECA /* ConductionTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ConductionTask.hpp; sourceTree = "<group>"; };
 		A79115C40720554600B81ECA /* ConductionTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConductionTask.cpp; sourceTree = "<group>"; };
 		A797728D0DA2E4EB00B0C21E /* LinearTraction.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LinearTraction.hpp; sourceTree = "<group>"; };
@@ -1152,8 +1152,8 @@
 			children = (
 				A7CD01500E070CBD003470EE /* IsoPlasticity.hpp */,
 				A7CD01510E070CBD003470EE /* IsoPlasticity.cpp */,
-				A79013040ECB8F8C0000C289 /* MGSCGLMaterial.hpp */,
-				A79013050ECB8F8C0000C289 /* MGSCGLMaterial.cpp */,
+				67B916CF16AE15BE00632385 /* MGSCGLMaterial.cpp */,
+				67B916D016AE15BE00632385 /* MGSCGLMaterial.hpp */,
 				A7845CEA0E01D94F00D2378A /* AnisoPlasticity.hpp */,
 				A7845CEB0E01D94F00D2378A /* AnisoPlasticity.cpp */,
 				A7845CEE0E01DAA300D2378A /* HillPlastic.hpp */,
@@ -1175,7 +1175,7 @@
 				A7B6936814325B02006F6A27 /* HEAnisotropic.hpp */,
 				A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */,
 				A77F5ECC15FA6ED8005188E8 /* HEIsotropic.hpp */,
-				A77F5ECB15FA6ED8005188E8 /* HEIsotropic.cpp */,
+				67B916D316AE15E600632385 /* HEIsotropic.cpp */,
 				A743491415792C0300EF8DFA /* IdealGas.hpp */,
 				A743491315792C0300EF8DFA /* IdealGas.cpp */,
 			);
@@ -1505,7 +1505,6 @@
 				A7CD01520E070CBD003470EE /* IsoPlasticity.hpp in Headers */,
 				A71FC0100E377F1F001908F8 /* NewMaterial.hpp in Headers */,
 				A712FAB20E54ED8500AF8D78 /* JohnsonCook.hpp in Headers */,
-				A79013060ECB8F8C0000C289 /* MGSCGLMaterial.hpp in Headers */,
 				A750ED3E0EE9C10E003545A3 /* VTKArchive.hpp in Headers */,
 				A708FDD40F326C1A003FA82B /* SLMaterial.hpp in Headers */,
 				A700094B0F86B75E00FD76C7 /* MatVelocityField.hpp in Headers */,
@@ -1547,6 +1546,7 @@
 				A778E0CA16A8D4F1003D27FE /* NonlinearHardening.hpp in Headers */,
 				A778E0CE16A8D7C0003D27FE /* LinearHardening.hpp in Headers */,
 				A778E0D816AA078B003D27FE /* SCGLHardening.hpp in Headers */,
+				67B916D216AE15BE00632385 /* MGSCGLMaterial.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1820,7 +1820,6 @@
 				A7CD01530E070CBD003470EE /* IsoPlasticity.cpp in Sources */,
 				A71FC00F0E377F1F001908F8 /* NewMaterial.cpp in Sources */,
 				A712FAB30E54ED8500AF8D78 /* JohnsonCook.cpp in Sources */,
-				A79013070ECB8F8C0000C289 /* MGSCGLMaterial.cpp in Sources */,
 				A750ED3F0EE9C10E003545A3 /* VTKArchive.cpp in Sources */,
 				A708FDD50F326C1A003FA82B /* SLMaterial.cpp in Sources */,
 				A700094C0F86B75E00FD76C7 /* MatVelocityField.cpp in Sources */,
@@ -1852,7 +1851,6 @@
 				A743491515792C0300EF8DFA /* IdealGas.cpp in Sources */,
 				A7E8CEA115E6E61800910593 /* CrackLeaf.cpp in Sources */,
 				A7834B5115F000A10043ADB9 /* CoupledSawTooth.cpp in Sources */,
-				A77F5ECD15FA6ED8005188E8 /* HEIsotropic.cpp in Sources */,
 				67E191331602CB2700B34CA9 /* MatPtTractionBC.cpp in Sources */,
 				A734D4FA1610D8C700B9A4B7 /* AdjustTimeStepTask.cpp in Sources */,
 				6700560C163AFC6B00FFE145 /* HistoryArchive.cpp in Sources */,
@@ -1862,6 +1860,8 @@
 				A778E0CC16A8D514003D27FE /* NonlinearHardening.cpp in Sources */,
 				A778E0D016A8D7D9003D27FE /* LinearHardening.cpp in Sources */,
 				A778E0DA16AA07A2003D27FE /* SCGLHardening.cpp in Sources */,
+				67B916D116AE15BE00632385 /* MGSCGLMaterial.cpp in Sources */,
+				67B916D416AE15E600632385 /* HEIsotropic.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
