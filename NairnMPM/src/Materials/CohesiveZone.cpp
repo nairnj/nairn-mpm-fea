@@ -112,7 +112,7 @@ void CohesiveZone::PrintMechanicalProperties(void)
 // history variables:
 // h[0] is max mode I opening (starting at first peak location)
 // h[1] is max mode II opening (starting at first peak location)
-char *CohesiveZone::MaterialData(void)
+char *CohesiveZone::InitHistoryData(void)
 {
     double *p = CreateAndZeroDoubles(2);
 	p[0]=umidI;

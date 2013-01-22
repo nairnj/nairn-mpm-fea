@@ -89,6 +89,11 @@ void HardeningLawBase::UpdatePlasticInternal(MPMBase *mptr,int np)
 {	mptr->SetHistoryDble(alpint);
 }
 
+// Chance to update when in elastic regime
+void HardeningLawBase::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime)
+{
+}
+
 #pragma mark HardeningLawBase::Return Mapping
 
 /* Solve numerically for lambda by Newton's method
@@ -342,9 +347,9 @@ double HardeningLawBase::HESolveForLambdaBracketed(MPMBase *mptr,int np,double s
 double HardeningLawBase::GetHistory(int num,char *historyPtr)
 {	
     double history=0.;
-    if(num==1)
-    {	double *cumStrain=(double *)historyPtr;
-        history=*cumStrain;
+    if(num>0 && num<=HistoryDoublesNeeded())
+    {	double *p=(double *)historyPtr;
+		history = p[num-1];
     }
     return history;
 }

@@ -49,6 +49,9 @@ class SLMaterial : public SCGLHardening
         double GetEpdot(double YT);
         virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double);
    
+		// update
+		virtual void ElasticUpdateFinished(MPMBase *,int,double);
+	
 		// accessors
 		virtual double GetHistory(int,char *);
         virtual const char *GetHardeningLawName(void);

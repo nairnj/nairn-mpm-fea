@@ -37,7 +37,7 @@ class Viscoelastic : public MaterialBase
 		virtual void InitialLoadMechProps(int,int);
 		virtual void PrintMechanicalProperties(void);
 		virtual void ValidateForUse(int);
-		virtual char *MaterialData(void);
+		virtual char *InitHistoryData(void);
     
 		// methods
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);

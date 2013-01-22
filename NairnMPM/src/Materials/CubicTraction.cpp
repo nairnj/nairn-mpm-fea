@@ -55,7 +55,7 @@ void CubicTraction::PrintMechanicalProperties(void)
 }
 
 // history variables are the current peak elastic displacement in mode I or mode II
-char *CubicTraction::MaterialData(void)
+char *CubicTraction::InitHistoryData(void)
 {
 	double *p = CreateAndZeroDoubles(2);
     return (char *)p;

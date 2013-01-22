@@ -433,7 +433,7 @@ void MaterialBase::ValidateForUse(int np)
 //  creating space for super class history varibles too. There is
 //  no mechanism now for calling super classes to prepend or
 //  append the data.
-char *MaterialBase::MaterialData(void) { return NULL; }
+char *MaterialBase::InitHistoryData(void) { return NULL; }
 
 // If needed, a material can initialize particle state
 // For example, ideal gas initializes to base line pressure

@@ -428,7 +428,7 @@ void NairnMPM::PreliminaryCalcs(void)
 		ZeroVector(mpm[p]->GetPFext());
         
         // initialize history-dependent material data on this particle
-        mpm[p]->SetHistoryPtr(theMaterials[matid]->MaterialData());
+        mpm[p]->SetHistoryPtr(theMaterials[matid]->InitHistoryData());
 		
 		// concentration potential
 		if(mpm[p]->pConcentration<0.)

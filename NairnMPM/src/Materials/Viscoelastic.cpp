@@ -162,7 +162,7 @@ void Viscoelastic::InitialLoadMechProps(int makeSpecific,int np)
 
 // create and return pointer to history variables
 // initialize all to zero
-char *Viscoelastic::MaterialData(void)
+char *Viscoelastic::InitHistoryData(void)
 {
     if(ntaus==0) return NULL;
     

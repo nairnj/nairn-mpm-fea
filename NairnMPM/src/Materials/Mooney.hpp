@@ -35,7 +35,7 @@ class Mooney : public HyperElastic
 		virtual const char *VerifyProperties(int);
         virtual void InitialLoadMechProps(int,int);
 		virtual void PrintMechanicalProperties(void);
-        virtual char *MaterialData(void);
+        virtual char *InitHistoryData(void);
  		
 		// methods
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);

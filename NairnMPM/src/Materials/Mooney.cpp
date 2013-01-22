@@ -74,7 +74,7 @@ void Mooney::InitialLoadMechProps(int makeSpecific,int np)
 
 // Store J, which is calculated incrementally, and available for archiving
 // initialize to 1
-char *Mooney::MaterialData(void)
+char *Mooney::InitHistoryData(void)
 {
 	double *p = CreateAndZeroDoubles(1);
 	*p=1.;

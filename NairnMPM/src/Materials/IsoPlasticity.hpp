@@ -32,7 +32,7 @@ class IsoPlasticity : public IsotropicMat
         virtual void SetHardeningLaw(char *);
 		virtual void InitialLoadMechProps(int,int);
         virtual void PrintMechanicalProperties(void);
-		virtual char *MaterialData(void);
+		virtual char *InitHistoryData(void);
 		
 		// methods
         virtual void LoadMechanicalProps(MPMBase *,int);

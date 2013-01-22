@@ -95,7 +95,7 @@ void NewMaterial::PrintMechanicalProperties(void)
 #pragma mark NewMaterial:HistoryVariables
 
 // Initialize history data for a particle (if has any)
-//char *NewMaterial::MaterialData(void) { return NULL; }
+//char *NewMaterial::InitHistoryData(void) { return NULL; }
 
 // Reutrn history data for this material type when requested (if has any)
 //double NewMaterial::GetHistory(int num,char *historyPtr) { return 0.; }

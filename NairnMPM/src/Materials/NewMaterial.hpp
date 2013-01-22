@@ -36,7 +36,7 @@ class NewMaterial : public MaterialBase
         //virtual void SetInitialParticleState(MPMBase *,int);
 	
 		// History-dependent properties
-		//virtual char *MaterialData(void);
+		//virtual char *InitHistoryData(void);
 		//virtual double GetHistory(int,char *);
 		
 		// step methods
