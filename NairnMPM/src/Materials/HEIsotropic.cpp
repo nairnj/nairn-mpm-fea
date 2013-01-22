@@ -149,16 +149,16 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
     
 	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
 	double J2;
-	if(np==PLANE_STRAIN_MPM)
+	if(np==PLANE_STRESS_MPM)
+	{	
+		// first we don't consider a 2D plane stress
+	}
+    else
 	{
         //J2 = Btrial.xx*Btrial.yy - Btrial.xy*Btrial.xy;
       
         //Incremental calculation of J det(F)=det(dF)det(pF)
         J2 = detdF*mptr->GetHistoryDble(J_history);
-	}
-	else
-	{	
-		// first we don't consider a 2D plane stress
 	}
     
     // save new J
@@ -510,7 +510,7 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,
 //  with something else
 double HEIsotropic::GetDilationalTerms(MPMBase *mptr,double J,int np,double &Kse)
 {
-	Kse = Ksp*(0.5*(J*J-1)-log(J));
+	Kse = Ksp*(0.5*(J*J-1.)-log(J));
 	return 0.5*Ksp*(J*J-1.);
 }
 
