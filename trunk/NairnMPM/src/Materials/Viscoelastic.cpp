@@ -164,39 +164,37 @@ void Viscoelastic::InitialLoadMechProps(int makeSpecific,int np)
 // initialize all to zero
 char *Viscoelastic::MaterialData(void)
 {
-    char *p;
-    double **h;
-    int k;
-    
     if(ntaus==0) return NULL;
     
     // allocate array of double pointers (3)
 	int blocks = fmobj->IsThreeD() ? 6 : 3 ;
-    p=new char[sizeof(double *)*blocks];
-    h=(double **)p;
+    char *p = new char[sizeof(double *)*blocks];
+	
+    double **h = (double **)p;
     
     // for each allocate ntaus doubles
     //	h[ij_HISTORY][0] to h[ij_HISTORY][ntaus-1] can be read
     //	in MPMConstLaw() by casting mptr->GetHistoryPtr() pointer as
     //		double **h=(double **)(mptr->GetHistoryPtr())
-    h[XX_HISTORY]=new double[ntaus];
-    h[YY_HISTORY]=new double[ntaus];
-    h[XY_HISTORY]=new double[ntaus];
+    h[XX_HISTORY] = new double[ntaus];
+    h[YY_HISTORY] = new double[ntaus];
+    h[XY_HISTORY] = new double[ntaus];
 	if(blocks==6)
-    {	h[ZZ_HISTORY]=new double[ntaus];
-		h[XZ_HISTORY]=new double[ntaus];
-		h[YZ_HISTORY]=new double[ntaus];
+    {	h[ZZ_HISTORY] = new double[ntaus];
+		h[XZ_HISTORY] = new double[ntaus];
+		h[YZ_HISTORY] = new double[ntaus];
 	}
     
     // initialize to zero
+    int k;
     for(k=0;k<ntaus;k++)
-    {	h[XX_HISTORY][k]=0.;
-        h[YY_HISTORY][k]=0.;
-        h[XY_HISTORY][k]=0.;
+    {	h[XX_HISTORY][k] = 0.;
+        h[YY_HISTORY][k] = 0.;
+        h[XY_HISTORY][k] = 0.;
 		if(blocks==6)
-		{	h[ZZ_HISTORY][k]=0.;
-			h[XZ_HISTORY][k]=0.;
-			h[YZ_HISTORY][k]=0.;
+		{	h[ZZ_HISTORY][k] = 0.;
+			h[XZ_HISTORY][k] = 0.;
+			h[YZ_HISTORY][k] = 0.;
 		}
     }
     

@@ -13,11 +13,9 @@
 
 #define HEISOTROPIC 24
 
-#define J_HISTORY 0
-#define ALPHA_HISTORY 1
-
-
 #include "Materials/HyperElastic.hpp"
+
+class HardeningLawBase;
 
 //enum {G1_PROP=0,G2_PROP=0,KBULK_PROP,CTEE_PROP,HEISOTROPIC_PROPS};
 
@@ -25,14 +23,10 @@ class HEIsotropic : public HyperElastic
 {
     public:
         double G1,G2;
-        double magnitude_strial;
-        // double aI,betaI		// isotropic expanion defined in super classes
-   
-        // Plastic modulus (Ep: slope of unidirectional stress - plastic strain curve) or tangential modulus ET
-        // can enter Ep OR ET for linear hardening or enter beta AND npow for nonlinear hardening
-
-        double Ep;
-        double yield, gyld;
+		// double aI,betaI		// isotropic expanion defined in super classes
+		// JAN: never used as class variable
+        //double magnitude_strial;
+		// JAN: deleted Ep, yield, gyld. First two in hardening law; gyld not used
 
         // constructors and destructors
 		HEIsotropic();
@@ -50,22 +44,12 @@ class HEIsotropic : public HyperElastic
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
     
-        //virtual double GetYield(MPMBase *,int,double,double);
-        virtual double GetYield(MPMBase *,int,double);
-        //virtual double SolveForLambda(MPMBase *,int,double,Tensor *,double);
-        
         Tensor GetTrialStressTensor2D(Tensor *,double);
         Tensor GetTrialStressTensor3D(Tensor *,double);
         Tensor GetNormalTensor2D(Tensor *,double);
         Tensor GetNormalTensor3D(Tensor *,double);
-        //Tensor GetMagnitudeS(double,int);
+		virtual double GetDilationalTerms(MPMBase *,double,int,double &);
     
-    
-        // Default internal variable as cumlative plastic strain
-        virtual void UpdateTrialAlpha(MPMBase *,int);
-        virtual void UpdateTrialAlpha(MPMBase *,int,double,double);
-        virtual void UpdatePlasticInternal(MPMBase *,int);
-				
 		// accessors
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
@@ -74,12 +58,16 @@ class HEIsotropic : public HyperElastic
         virtual double GetMagnitudeS(Tensor *st,int);	
     
     protected:
+		// JAN: deleted yield properties, dalpha, and alpint
         // unique properties
-        double yldred,Gred,Kred;
-        double Epred;
-        double alpint,dalpha;		// internal alpha variable and current increment
-        double G1sp, G2sp;
+        double Gred,Kred;
+        double G1sp,G2sp;
 
+		// JAN: for future new plastic laws, currently hard-coded to linear law
+		HardeningLawBase *plasticLaw;
+	
+		// JAN: J history might move depening on hardening law
+		int J_history;
 };
 
 #endif

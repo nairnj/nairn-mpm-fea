@@ -78,6 +78,9 @@ void IsoPlasticity::SetHardeningLaw(char *lawName)
     else if(strcmp(lawName,"SCGL")==0 || strcmp(lawName,"4")==0)
         plasticLaw = new SCGLHardening(this);
     
+    else if(strcmp(lawName,"SL")==0 || strcmp(lawName,"5")==0)
+        plasticLaw = new SLMaterial(this);
+    
     // did it work
     if(plasticLaw == NULL)
     {   char errMsg[250];
@@ -118,14 +121,11 @@ void IsoPlasticity::PrintMechanicalProperties(void)
 	plasticLaw->PrintYieldProperties();
 }
 
-// The base class history variable is cummulative equivalent plastic strain
-//		(defined as dalpha = sqrt((2/3)||dep||))
-// If super class needs to override this method, always save the first double
-//		for the cumulative plastic strain.
+// The IsoPlasticity has not history data, but its plasticity law might
 char *IsoPlasticity::MaterialData(void)
-{
-	double *p=new double;
-	*p=0.;
+{	int num = plasticLaw->HistoryDoublesNeeded();
+	if(num==0) return NULL;
+	double *p = CreateAndZeroDoubles(2);
 	return (char *)p;
 }
 
@@ -548,15 +548,9 @@ void IsoPlasticity::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime)
 
 #pragma mark IsoPlasticity::Accessors
 
-// archive material data for this material type when requested.
+// IsoPlasticity has now history data, by the hardening law might
 double IsoPlasticity::GetHistory(int num,char *historyPtr)
-{
-    double history=0.;
-    if(num==1)
-    {	double *cumStrain=(double *)historyPtr;
-        history=*cumStrain;
-    }
-    return history;
+{	return plasticLaw->GetHistory(num,historyPtr);
 }
 
 // plastic strain needed to get deformation gradient for this material class

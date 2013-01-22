@@ -114,19 +114,10 @@ void CohesiveZone::PrintMechanicalProperties(void)
 // h[1] is max mode II opening (starting at first peak location)
 char *CohesiveZone::MaterialData(void)
 {
-    // allocate two doubles
-    char *p=new char[2*sizeof(double)];
-    double *h=(double *)p;
-	
-	h[0]=umidI;
-	h[1]=umidII;
-	
-	/*
-	 h[0]=1.;
-	 h[1]=0.;
-	*/
-	
-    return p;
+    double *p = CreateAndZeroDoubles(2);
+	p[0]=umidI;
+	p[1]=umidII;
+    return (char *)p;
 }
 
 #pragma mark CohesiveZone::Traction Law

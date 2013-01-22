@@ -75,6 +75,7 @@ class MaterialBase : public LinkedObject
 		virtual void PrintTransportProperties(void);
         virtual void SetInitialParticleState(MPMBase *,int);
         virtual void SetHardeningLaw(char *);
+		double *CreateAndZeroDoubles(int);
 #endif
 
 		// initialization (base class only)

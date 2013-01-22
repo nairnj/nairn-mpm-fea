@@ -87,9 +87,9 @@ void CoupledSawTooth::PrintMechanicalProperties(void)
 // h is max effective displacement opening (starting at peak location)
 char *CoupledSawTooth::MaterialData(void)
 {
-    double *h=new double;
-    *h=umidI;
-    return (char *)h;
+	double *p = CreateAndZeroDoubles(1);
+    *p = umidI;
+    return (char *)p;
 }
 
 #pragma mark CohesiveZone::Traction Law

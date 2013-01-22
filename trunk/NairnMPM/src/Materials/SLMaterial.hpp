@@ -39,7 +39,7 @@ class SLMaterial : public SCGLHardening
         virtual const char *VerifyProperties(int);
         virtual void PrintYieldProperties(void);
         virtual void InitialLoadMechProps(int,int);
-		//virtual char *MaterialData(void);
+		virtual int HistoryDoublesNeeded(void);
  				
 		// methods
         virtual double GetShearRatio(MPMBase *,double,double);
@@ -50,6 +50,7 @@ class SLMaterial : public SCGLHardening
         virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double);
    
 		// accessors
+		virtual double GetHistory(int,char *);
         virtual const char *GetHardeningLawName(void);
  		
     protected:

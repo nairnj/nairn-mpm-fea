@@ -200,7 +200,7 @@ const char *Path::VerifyBCOption(int command,int axis)
 		return "Can't set boundary conditions or rotate an interior path";
 	
 	// no more checking if stress on edges
-	if(command=LOAD_PATH_EDGES) return NULL;
+	if(command==LOAD_PATH_EDGES) return NULL;
 	
 	// can't set same DOF twice (dof=0 is for rotations)
 	if(bcFlags[axis])

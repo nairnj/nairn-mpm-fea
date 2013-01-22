@@ -46,12 +46,12 @@ char *SLMaterial::InputMat(char *xName,int &input)
         return((char *)&YP);
     }
     
-    else if(strcmp(xName,"C1")==0)
+    else if(strcmp(xName,"C1SL")==0)
     {	input=DOUBLE_NUM;
         return((char *)&C1);
     }
 	
-    else if(strcmp(xName,"C2")==0)
+    else if(strcmp(xName,"C2SL")==0)
     {	input=DOUBLE_NUM;
         return((char *)&C2);
     }
@@ -106,19 +106,10 @@ void SLMaterial::PrintYieldProperties(void)
 	cout << endl;
 }
 
-// The base class history variable is cummulative equivalent plastic strain
+// 0: The base class history variable is cumulative equivalent plastic strain
 //		(defined as dalpha = sqrt((2/3)||dep||))
 // 1: YT (unreduced in MPA), 2: plastic strain rate in sec^-1
-/*
-char *SLMaterial::MaterialData(void)
-{
-	double *p=new double[3];
-	p[0]=0.;
-	p[1]=0.;
-	p[2]=0.;
-	return (char *)p;
-}
-*/
+int SLMaterial::HistoryDoublesNeeded(void) { return 3; }
 
 #pragma mark SLMaterial::Custom Methods
 
@@ -329,8 +320,7 @@ void SLMaterial::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime)
 // hardening law name
 const char *SLMaterial::GetHardeningLawName(void) { return "SL hardening"; }
 
-/*
-// this material has two history variables
+// this hardening law has three history variables
 double SLMaterial::GetHistory(int num,char *historyPtr)
 {
     double history=0.;
@@ -340,5 +330,4 @@ double SLMaterial::GetHistory(int num,char *historyPtr)
 	}
     return history;
 }
-*/
 
