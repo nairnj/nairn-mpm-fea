@@ -51,7 +51,8 @@ class HardeningLawBase
         virtual void UpdateTrialAlpha(MPMBase *,int);
         virtual void UpdateTrialAlpha(MPMBase *,int,double,double);
         virtual void UpdatePlasticInternal(MPMBase *,int);
-    
+		virtual void ElasticUpdateFinished(MPMBase *,int,double);
+	
         // accessors
 		virtual double GetHistory(int,char *);
         virtual const char *GetHardeningLawName(void) = 0;

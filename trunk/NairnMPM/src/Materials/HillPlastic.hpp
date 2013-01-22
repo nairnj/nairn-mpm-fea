@@ -30,7 +30,7 @@ class HillPlastic : public AnisoPlasticity
 		virtual void InitialLoadMechProps(int,int);
 		virtual void PrintYieldProperties(void);
 		virtual const char *VerifyProperties(int);
-		char *MaterialData(void);
+		char *InitHistoryData(void);
 		
 		// plastic potential functions
 		virtual void UpdateTrialAlpha(MPMBase *,int);

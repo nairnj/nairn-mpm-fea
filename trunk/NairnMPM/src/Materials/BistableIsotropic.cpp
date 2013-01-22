@@ -280,7 +280,7 @@ const char *BistableIsotropic::CurrentProperties(short newState,int np)
 }
 
 // Single short to hold the current particle state
-char *BistableIsotropic::MaterialData(void)
+char *BistableIsotropic::InitHistoryData(void)
 {
     // allocate pointer to a single short
     char *p=new char[sizeof(short)];

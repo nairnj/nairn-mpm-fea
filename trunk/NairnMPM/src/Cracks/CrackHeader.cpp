@@ -117,7 +117,7 @@ void CrackHeader::PreliminaryCrackCalcs(void)
 					throw CommonException("Crack segment with material that is not a traction law","CrackHeader::PreliminaryCrackCalcs");
 				
 				// allow traction law to have history dependent data
-				scrk->SetHistoryData(theMaterials[matid]->MaterialData());
+				scrk->SetHistoryData(theMaterials[matid]->InitHistoryData());
 			}
 			
 			// next segment
@@ -260,7 +260,7 @@ short CrackHeader::add(CrackSegment *cs,int whichTip)
     if(tmatnum>=0)
     {	hasTractionLaws=true;
         // history data if needed
-        cs->SetHistoryData(theMaterials[tmatnum]->MaterialData());
+        cs->SetHistoryData(theMaterials[tmatnum]->InitHistoryData());
     }
 	
     numberSegments++;

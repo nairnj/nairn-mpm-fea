@@ -85,7 +85,7 @@ void CoupledSawTooth::PrintMechanicalProperties(void)
 
 // history variables:
 // h is max effective displacement opening (starting at peak location)
-char *CoupledSawTooth::MaterialData(void)
+char *CoupledSawTooth::InitHistoryData(void)
 {
 	double *p = CreateAndZeroDoubles(1);
     *p = umidI;

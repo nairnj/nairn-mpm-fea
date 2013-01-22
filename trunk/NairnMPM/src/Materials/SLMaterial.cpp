@@ -307,13 +307,11 @@ double SLMaterial::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Te
 	
 }
 
-/*
-// Elastic means zero strain rate to YT is zero (or YTmin)
+// Elastic means zero strain rate o YT is zero (or YTmin)
 void SLMaterial::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime)
 {	mptr->SetHistoryDble(YT_HISTORY,(double)0.0);
 	mptr->SetHistoryDble(EPDOT_HISTORY,(double)0.0);
 }
-*/
 
 #pragma mark SLMaterial::Accessors
 

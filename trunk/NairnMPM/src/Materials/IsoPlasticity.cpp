@@ -122,7 +122,7 @@ void IsoPlasticity::PrintMechanicalProperties(void)
 }
 
 // The IsoPlasticity has not history data, but its plasticity law might
-char *IsoPlasticity::MaterialData(void)
+char *IsoPlasticity::InitHistoryData(void)
 {	int num = plasticLaw->HistoryDoublesNeeded();
 	if(num==0) return NULL;
 	double *p = CreateAndZeroDoubles(2);
@@ -541,14 +541,16 @@ void IsoPlasticity::GetDfDsigma(double smag,Tensor *st0,int np)
 	}
 }
 
-// material can override if history variable changes during elastic update (e.g., history dependent on plastic strain rate now zero)
+// material can override if history variable changes during elastic update
+// (e.g., history dependent on plastic strain rate now zero)
+// plastic law might all need it
 void IsoPlasticity::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime)
-{
+{	plasticLaw->ElasticUpdateFinished(mptr,np,delTime);
 }
 
 #pragma mark IsoPlasticity::Accessors
 
-// IsoPlasticity has now history data, by the hardening law might
+// IsoPlasticity has no history data, by the hardening law might
 double IsoPlasticity::GetHistory(int num,char *historyPtr)
 {	return plasticLaw->GetHistory(num,historyPtr);
 }

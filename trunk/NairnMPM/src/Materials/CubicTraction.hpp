@@ -25,7 +25,7 @@ class CubicTraction : public TractionLaw
 		// methods
 		virtual const char *VerifyProperties(int);
 		virtual void PrintMechanicalProperties(void);
-		char *MaterialData(void);
+		char *InitHistoryData(void);
 	
 		// the traction law
 		virtual void CrackTractionLaw(CrackSegment *,double,double,double,double,double);

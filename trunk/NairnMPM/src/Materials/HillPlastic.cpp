@@ -89,7 +89,7 @@ void HillPlastic::PrintYieldProperties(void)
 }
 
 // history is cumulative strain
-char *HillPlastic::MaterialData(void)
+char *HillPlastic::InitHistoryData(void)
 {
 	double *p = CreateAndZeroDoubles(1);
 	return (char *)p;

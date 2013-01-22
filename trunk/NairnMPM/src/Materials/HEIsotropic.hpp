@@ -38,7 +38,7 @@ class HEIsotropic : public HyperElastic
         virtual void ValidateForUse(int);
 		virtual void PrintMechanicalProperties(void);
 		virtual void InitialLoadMechProps(int,int);
-        virtual char *MaterialData(void);
+        virtual char *InitHistoryData(void);
 		
 		// step methods
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);

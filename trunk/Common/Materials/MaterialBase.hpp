@@ -70,7 +70,7 @@ class MaterialBase : public LinkedObject
 		static void PrintProperty(const char *,bool);
 #ifdef MPM_CODE
 		virtual void ValidateForUse(int);
-        virtual char *MaterialData(void);
+        virtual char *InitHistoryData(void);
 		virtual void InitialLoadTransProps(void);
 		virtual void PrintTransportProperties(void);
         virtual void SetInitialParticleState(MPMBase *,int);

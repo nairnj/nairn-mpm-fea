@@ -117,7 +117,7 @@ void HEIsotropic::PrintMechanicalProperties(void)
 
 // JAN: put hardening law properties first and may need more than 1
 // First ones for hardening law. Particle J appended at the end
-char *HEIsotropic::MaterialData(void)
+char *HEIsotropic::InitHistoryData(void)
 {	J_history = plasticLaw->HistoryDoublesNeeded();
 	double *p = CreateAndZeroDoubles(J_history+1);
 	p[J_history]=1.;                // J
@@ -262,17 +262,15 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
     sp->zz = sHydro + (stk.zz-2.*MUbar*dlambda*nk.zz);
     sp->xy = (stk.xy-2.*MUbar*dlambda*nk.xy);
     
-    
     //cout << "EXT B.xx  =    " << B.xx << endl;
     // save on particle
     
     Tensor *pB = mptr->GetElasticLeftCauchyTensor();
-     pB->xx = ((stk.xx-2.*MUbar*dlambda*nk.xx)/Gred+Ie1bar)*J23;
-     pB->yy = ((stk.yy-2.*MUbar*dlambda*nk.yy)/Gred+Ie1bar)*J23;
-     pB->zz = ((stk.zz-2.*MUbar*dlambda*nk.zz)/Gred+Ie1bar)*J23;
-     pB->xy = (stk.xy-2.*MUbar*dlambda*nk.xy)/Gred*J23;
-     //cout << "# in pB plastic  nk.xx  =    " << nk->xx <<"     nk.yy  =    " << nk.yy<<"     nk.zz  =    " << nk.zzß << endl;
-    
+	pB->xx = ((stk.xx-2.*MUbar*dlambda*nk.xx)/Gred+Ie1bar)*J23;
+	pB->yy = ((stk.yy-2.*MUbar*dlambda*nk.yy)/Gred+Ie1bar)*J23;
+	pB->zz = ((stk.zz-2.*MUbar*dlambda*nk.zz)/Gred+Ie1bar)*J23;
+	pB->xy = (stk.xy-2.*MUbar*dlambda*nk.xy)/Gred*J23;
+	//cout << "# in pB plastic  nk.xx  =    " << nk->xx <<"     nk.yy  =    " << nk.yy<<"     nk.zz  =    " << nk.zzß << endl;
         
     // strain energy per unit mass (U/(rho0 V0)) and we are using
     // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
@@ -572,7 +570,7 @@ double HEIsotropic::WaveSpeed(bool threeD,MPMBase *mptr)
 double HEIsotropic::GetHistory(int num,char *historyPtr)
 {
     double history=0.;
-	if(num==1 || num==2)
+	if(num>0 && num<=J_history+1)
 	{	double *p=(double *)historyPtr;
 		history=p[num-1];
 	}
