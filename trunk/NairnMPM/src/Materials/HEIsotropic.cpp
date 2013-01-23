@@ -70,8 +70,8 @@ const char *HEIsotropic::VerifyProperties(int np)
 
 // plane stress not allowed in viscoelasticity
 void HEIsotropic::ValidateForUse(int np)
-{	if(np==PLANE_STRESS_MPM || np==AXISYMMETRIC_MPM)
-    {	throw CommonException("HEIsotropic materials require 2D plane strain or 3D MPM analysis",
+{	if(np==PLANE_STRESS_MPM)
+    {	throw CommonException("HEIsotropic materials cannot be used in plane stress MPM yet",
                                 "HEIsotropic::ValidateForUse");
     }
 	
