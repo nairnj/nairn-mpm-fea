@@ -70,7 +70,7 @@ void LinearHardening::PrintYieldProperties(void)
     cout << GetHardeningLawName() << endl;
     MaterialBase::PrintProperty("yld",yield,"");
     MaterialBase::PrintProperty("K",beta,"");
-    MaterialBase::PrintProperty("Ep",beta,"");
+    MaterialBase::PrintProperty("Ep",Ep,"");
     cout << endl;
 }
 
