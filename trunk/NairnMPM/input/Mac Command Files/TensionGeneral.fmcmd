@@ -18,17 +18,16 @@ EndHeader! ------------ Parameters ---------------
 
 ! material options: isotropic, isoplasticity, ,mgeos, bistable, iptrans, normtrans, ortho
 !   viscoelastic, hill, wood
-#matID="isoplasticity"
+#matID="mgeos"
 #angle=0					! material angle for anisotopic materials
 
 ! hardening law (if allowed), empty if not
 !	options Linear, Nonlinear, JohnsonCook
-#hardID="Linear"
+#hardID="SCGL"
 
 ! temperature option to test energy coupling
 StressFreeTemp 294
 #startTemp=294
-!Conduction "yes","Mechanical Energy"
 
 ! Basic properties (but these may not work for all materials)
 ! Special cases:
@@ -41,12 +40,6 @@ StressFreeTemp 294
 #nuBase=.25
 #aBase=0
 
-! MGEOS developmen
-#Ebase=308776
-#rho=19.256
-#nuBase=.28
-#aBase=4.5
-
 ! Main settings
 #Ebase=100
 #rho=1
@@ -54,16 +47,22 @@ StressFreeTemp 294
 #aBase=60
 #yldstrain=1		! in percent
 
+! MGEOS development
+#Ebase=308776
+#rho=19.256
+#nuBase=.28
+#aBase=4.5
+
 ! Dimensions
 #cell=2
-#length=10			! length
+#length=40			! length
 #width=10			! width
 #thick=10			! thickness
 
 ! Load by strain (estimated for force and traction loads)
 #loading="rigid"	! Loading = "force", "traction", "rigid", "contact", "thermal"
-#fixsides="no"		! "yes" or "no" for sides fix in y direction (2D) or y and z (3D)
-#strain=3	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
+#fixsides="yes"		! "yes" or "no" for sides fix in y direction (2D) or y and z (3D)
+#strain=-50	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak
@@ -80,6 +79,7 @@ StressFreeTemp 294
 ! Analysis type
 Analysis #analysis
 MPMMethod #update,#method
+Conduction "yes","Mechanical Energy"
 
 ! convert to contact
 if #loading="contact"

@@ -299,6 +299,9 @@ double MGSCGLMaterial::GetPressureChange(MPMBase *mptr,double &delV,double J,int
     double e = mptr->GetStrainPlusPlastEnergy()
                 + 1000.*heatCapacityVol*(mptr->pPreviousTemperature - thermal.reference*exp(gamma0*x));
 	double pressure = J*(Keffred*x + gamma0*e);
+	
+	// particle isentropic temperature increment
+	mptr->pTemperature += - gamma0*mptr->pPreviousTemperature*3.*delV;
     
 	// SCGL shear modulus and save Gratio = J G/G0 for later calculations
     // Note: J in Gred and Gratio is so that where they are used, they give

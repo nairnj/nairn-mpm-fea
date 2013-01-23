@@ -225,7 +225,7 @@ TransportTask *ConductionTask::IncrementTransportRate(NodalPoint *ndpt,double sh
 
 // increment particle concentration (time is always timestep)
 TransportTask *ConductionTask::MoveTransportValue(MPMBase *mptr,double deltime)
-{	mptr->pTemperature+=deltime*rate;
+{	mptr->pTemperature += deltime*rate;
 	return nextTask;
 }
 
