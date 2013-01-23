@@ -121,6 +121,7 @@ double SCGLHardening::GetShearRatio(MPMBase *mptr,double pressure,double J)
     double dTemp = mptr->pPreviousTemperature - thermal.reference;
     double neta = pow(1./J,ONETHIRD);
     Gratio = J * (1. + GPpred*pressure/neta + GTp*dTemp);
+	if(Gratio < 0.) Gratio = 0.;
     return Gratio;
 }
 

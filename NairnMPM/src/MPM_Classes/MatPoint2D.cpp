@@ -58,10 +58,6 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np)
     for(i=1;i<=numnds;i++)
 	{	vel=nd[nds[i]]->GetVelocity((short)vfld[i],matfld);
         dv += Matrix3(vel.x*xDeriv[i],vel.x*yDeriv[i],vel.y*xDeriv[i],vel.y*yDeriv[i],0.);
-        //dvxx+=vel.x*xDeriv[i];
-        //dvyy+=vel.y*yDeriv[i];
-        //dvxy+=vel.x*yDeriv[i];
-        //dvyx+=vel.y*xDeriv[i];
     }
 	    
     // save velocity gradient (if needed for J integral calculation)
