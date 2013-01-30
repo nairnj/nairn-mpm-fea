@@ -94,18 +94,16 @@ void CrackVelocityField::AddVolumeGradient(int matfld,MPMBase *mptr,double dNdx,
 #pragma mark TASK 3 METHODS
 
 // Add to internal force
-void CrackVelocityField::AddFintTask3(int matfld,Vector *f) { AddVector(&mvf[matfld]->fint,f); }
+void CrackVelocityField::AddFintTask3(int matfld,Vector *f) { mvf[matfld]->AddFint(f); }
 
 // Add to external force
-void CrackVelocityField::AddFextTask3(int matfld,Vector *f) { AddVector(&mvf[matfld]->fext,f); }
+void CrackVelocityField::AddFextTask3(int matfld,Vector *f) { mvf[matfld]->AddFext(f); }
 
 #pragma mark TASK 5 METHODS
 
 // Increment velocity and acceleration for this material point using one velocity field which must be there
 void CrackVelocityField::IncrementDelvaTask5(int matfld,double fi,Vector *delv,Vector *dela)
-{	double mnode=fi/mvf[matfld]->mass;					// Ni/mass
-	AddScaledVector(delv,&mvf[matfld]->pk,mnode);		// velocity
-	AddScaledVector(dela,&mvf[matfld]->ftot,mnode);		// acceleration
+{   mvf[matfld]->IncrementNodalVelAcc(fi,delv,dela);
 }
 
 #pragma mark TASK 6 METHODS
@@ -117,7 +115,7 @@ void CrackVelocityField::AddMomentumTask6(int matfld,double wt,Vector *vel)
     
     // save velocity if only one point on this node
     if(numberPoints==1)
-		CopyVector(&mvf[matfld]->vk, vel);
+        mvf[matfld]->SetVelocity(vel);
 }
 
 #pragma mark TASK 7 J AND K CALCULATION METHODS
@@ -242,12 +240,12 @@ void CrackVelocityField::SetLocationAndCrack(short vfld,int cnum,int which)
 
 // Get velocity for selected material field
 Vector CrackVelocityField::GetVelocity(int matfld)
-{	return mvf[matfld]->vk;
+{	return mvf[matfld]->GetVelocity();
 }
 
 // Get velocity for selected material field
 Vector CrackVelocityField::GetContactForce(int matfld)
-{	return mvf[matfld]->ftot;
+{	return mvf[matfld]->GetFtot();
 }
 
 // total number of points (rigid and nonrigid included)

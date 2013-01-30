@@ -40,6 +40,7 @@ class HyperElastic : public MaterialBase
 		// Methods (make virtual if any subclass needs them)
         double IncrementDeformation(MPMBase *,double,double,double,double,double,Tensor *);
         double IncrementDeformation(MPMBase *,double,double,double,double,double,double,double,double,double,Tensor *);
+        double IncrementDeformation(MPMBase *,Matrix3,Tensor *,int);
 		double GetResidualStretch(MPMBase *);
     
         // Accessors

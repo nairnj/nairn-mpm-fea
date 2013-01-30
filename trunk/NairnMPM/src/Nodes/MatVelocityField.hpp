@@ -22,10 +22,6 @@ class MatVelocityField
 		int numberPoints;			// number of material points in this field
 		double mass;				// total mass of this field
 		Vector pk;					// momentum
-		Vector vk;					// velocity
-		Vector fint;				// internal force (fint.x is last time step archived for rigid material)
-		Vector fext;				// external force
-		Vector ftot;				// total force or contact force for rigid material
 		Vector disp;				// displacement for contact calculations
 		Vector *volumeGrad;			// mass gradient allocated in multimaterial mode
 		bool rigidField;			// TRUE or FALSE if for rigid contact particles
@@ -43,12 +39,27 @@ class MatVelocityField
 		void AddContactForce(Vector *);
 		void CalcVelocityForStrainUpdate(void);
 		void CalcFtotTask3(double);
+        void AddFint(Vector *);
+        void AddFint(Vector *,double);
+        void AddFext(Vector *);
+        void AddFext(Vector *,double);
+        void UpdateMomentum(double);
+        void IncrementNodalVelAcc(double,Vector *,Vector *);
 	
 		// accessors
 		void Describe(void);
 		void AddContactVolume(double);
 		void SetContactVolume(double);
 		double GetContactVolume(void);
+        void SetVelocity(Vector *);
+        Vector GetVelocity(void);
+        Vector *GetVelocityPtr(void);
+        void SetMomentVelocityDirection(int);
+        void AddMomentVelocityDirection(int,double);
+        void SetFtotDirection(int,double);
+        void AddFtotDirection(int,double,double);
+        Vector GetFtot(void);
+        Vector *GetFtotPtr(void);
 	
 		// class methods
 		static bool ActiveField(MatVelocityField *);
@@ -58,6 +69,10 @@ class MatVelocityField
 	private:
 		double volume;				// only for contact (cracks or multimaterial)
 
+        Vector vk;					// velocity
+        Vector ftot;				// total force or contact force for rigid material
+        Vector fint;				// internal force (fint.x is last time step archived for rigid material)
+        Vector fext;				// external force
 };
 
 #endif

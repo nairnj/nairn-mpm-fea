@@ -117,8 +117,8 @@ void MatPointAS::SetOrigin(Vector *pt)
 
 // return internal force as -mp sigma.deriv * 1000. which converts to g mm/sec^2 or micro N
 void MatPointAS::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
-{	fout.x=-mp*(sp.xx*xDeriv+sp.xy*yDeriv+sp.zz*zDeriv)*1000.;
-	fout.y=-mp*(sp.xy*xDeriv+sp.yy*yDeriv)*1000.;
+{	fout.x=-mp*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+(sp.zz-pressure)*zDeriv)*1000.;
+	fout.y=-mp*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv)*1000.;
 	fout.z=0.;
 }
 

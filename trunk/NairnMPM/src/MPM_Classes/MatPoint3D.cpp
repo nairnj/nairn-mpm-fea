@@ -138,9 +138,9 @@ double MatPoint3D::thickness() { return -1.; }
 
 // calculate internal force as -mp sigma.deriv * 1000.
 void MatPoint3D::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
-{	fout.x=-mp*(sp.xx*xDeriv+sp.xy*yDeriv+sp.xz*zDeriv)*1000.;
-	fout.y=-mp*(sp.xy*xDeriv+sp.yy*yDeriv+sp.yz*zDeriv)*1000.;
-	fout.z=-mp*(sp.xz*xDeriv+sp.yz*yDeriv+sp.zz*zDeriv)*1000.;
+{	fout.x=-mp*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+sp.xz*zDeriv)*1000.;
+	fout.y=-mp*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv+sp.yz*zDeriv)*1000.;
+	fout.z=-mp*(sp.xz*xDeriv+sp.yz*yDeriv+(sp.zz-pressure)*zDeriv)*1000.;
 }
 
 // external force (times a shape function)
@@ -207,6 +207,12 @@ Matrix3 MatPoint3D::GetDeformationGradientMatrix(void)
 	GetDeformationGradient(F);
 	Matrix3 Fm(F[0][0],F[0][1],F[0][2],F[1][0],F[1][1],F[1][2],F[2][0],F[2][1],F[2][2]);
 	return Fm;
+}
+
+// get the symmetric elastic Left-Cauchy tensor in a Matrix3
+Matrix3 MatPoint3D::GetElasticLeftCauchyMatrix(void)
+{   return Matrix3(eplast.xx,eplast.xy,eplast.xz,eplast.xy,eplast.yy,eplast.yz,
+                    eplast.xz,eplast.yz,eplast.zz);
 }
 
 // get deformation gradient, which is stored in strain and rotation tensors

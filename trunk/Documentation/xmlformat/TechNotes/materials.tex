@@ -320,14 +320,13 @@ For a special case, consider an isotropic material with isotropic hardening, a s
 \begin{equation}
       f = \|\dev\| - \sqrt{2\over3} K(\alpha)
 \end{equation}
-where $\dev$ is the deviatoric stress tensor and $K(\alpha)$ defines the tensile yield stress as a function of the hardening variable and possibly other variables ({\it e.g.}, plastic strain rate or temperature, but not pressure). All materials that fit this mold are handled in {\tt NairnMPM} by the {\tt IsoPlasticity} class and often only need minimal coding to implement its yield stress function.
+where $\dev$ is the deviatoric stress tensor and $K(\alpha)$ defines the tensile yield stress as a function of the hardening variable and possibly other variables ({\it e.g.}, plastic strain rate or temperature, but not pressure). All materials that fit this mold are handled in {\tt NairnMPM} by the {\tt IsoPlasticity} class. A new material that only has a different hardening law only needs code for that hardening law by subclassing {\tt HardeningLawBase} class. The only materials that need to subclass {\tt IsoPlasticity} is if they need a different equation of state to handle elastic parts differently.
 
-In terms of total stresses,
-\begin{eqnarray}
-     2J_2 = \|\dev\|^2 & = & {1\over 3}\Bigl( (\s{xx}-\s{yy})^2 + (\s{xx}-\s{zz})^2  + (\s{yy}-\s{zz})^2 \Bigr) + 2\tau_{xy}^2 + 2\tau_{xz}^2 + 2\tau_{yz}^2 \\
-         & = & {2\over3}\Bigl( \s{xx}^2 + \s{yy}^2 + \s{zz}^2 - \s{xx}\s{yy} - \s{xx}\s{zz} - \s{yy}\s{zz}\Bigr) + 2\tau_{xy}^2 + 2\tau_{xz}^2 + 2\tau_{yz}^2
-\end{eqnarray}
-The plastic strain increment simplifies to
+In terms of this  deviatoric stress\begin{equation}
+     2J_2 = \|\dev\|^2 =  s_{xx}^2 + s_{yy}^2  + s_{zz}^2 + 2s_{xy}^2 + 2s_{xz}^2 + 2s_{yz}^2 \\
+ \end{equation}
+During plastic deformation, 
+the plastic strain increment simplifies to
 \begin{equation}
      \lambda \df = \lambda {\dev\over \|\dev\|} = \lambda \ndev
 \end{equation}
@@ -341,11 +340,11 @@ Since $\|\dpl\| = \|\lambda \df\| = \lambda$, this assumption corresponds to
 \end{equation}
 where $\sqrt{2\over3}\|\dpl\|$ is known as the equivalent plastic strain increment. In other words, $\alpha$ is the cumulative equivalent plastic strain. During uniaxial plastic deformation, the equivalent plastic strain will equal the axial plastic strain ({\em i.e.} when $d\varepsilon_{xx}=d\varepsilon$ and $d\varepsilon_{yy}=d\varepsilon_{zz} = -d\varepsilon/2$, $\sqrt{2\over3}\|\dpl\| = d\varepsilon$).
 
-The required deviatoric stress is written as
+Once $\lambda$ is known, the final deviatoric stress is written as
 \begin{equation}
         \dev = \dev_{trial} - \lambda 2G\ndev
 \end{equation}
-By noting that $\dev=\|\dev\|\ndev$ and rearranging
+where $ \dev_{trial}$ is the deviatoric stress calculated be assuming no plastic deformation. By noting that $\dev=\|\dev\|\ndev$ and rearranging
 \begin{equation}
       \dev_{trial} = (\|\dev\| + \lambda 2G)\ndev
 \end{equation}
@@ -353,7 +352,7 @@ which leads to
 \begin{equation}
          \|\dev\| =  \|\dev_{trial}\| - \lambda 2G
 \end{equation}
-The required equation to solve is
+The required equation for finding $\lambda$ thus simplifies to depend only on $\|\dev_{trial}\|$, $G$, and hardening law:
 \begin{equation}
       f^{(k)} = \|\dev\| -  \sqrt{2\over3} K(\alpha^{(k)}) = \|\dev_{trial}\| - \lambda^{(k)} 2G -  \sqrt{2\over3} K(\alpha^{(k)}) = 0
 \end{equation}
@@ -362,9 +361,7 @@ This can be solved in the iterative method above with the specific results of:
         {df^{(k)}\over d\lambda} & = & -2G - \sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda}  = -2G - {2K'(\alpha^{(k)})\over 3} \\
         \alpha^{(k+1)} & = & \alpha^{0} +  \lambda^{(k+1)} \sqrt{2\over3}
 \end{eqnarray}
-where $K'(\alpha^{(k)})$ is the derivative with respect to $\alpha$. A subclass of \code{IsoPlasticity} class can implement this numerical solution simply by providing for calculation of $K(\alpha^{(k)})$ (in \code{GetYield()}) and $\sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda}$ (in \code{GetKPrime()}).
-
-The solution for $\lambda$ is found numerically. The base class uses Newton's method with bracketing; the bracketing is needed because some yield functions are unstable by the unbracketed Newton's method. The solution is done in {\tt SolveForLambdaBracketed()} as follows:
+where $K'(\alpha^{(k)})$ is the derivative with respect to $\alpha$. This solution is implemented by hardening law classes. The {\tt HardeningLawBase} class solves this equation numerically by having a subclass providing for calculation of $K(\alpha^{(k)})$ (in \code{GetYield()}) and $\sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda}$ (in \code{GetKPrime()}). The base class uses Newton's method with bracketing; the bracketing is needed because some yield functions are unstable by the unbracketed Newton's method. The solution is done in {\tt SolveForLambdaBracketed()} as follows:
 
 \begin{enumerate}
 
@@ -376,7 +373,7 @@ The solution for $\lambda$ is found numerically. The base class uses Newton's me
 
 \end{enumerate}
 
-If any subclass material can bracket the solution faster (or find the solution with an unbracketed method), it can override {\tt SolveForLambdaBracketed()} and provide a new method (which may be as simple as calling the unbracketed method in {\tt SolveForLambda()} or devising a better bracketing method in {\tt BracketSolution()}). For example, for a linear hardening law, $\lambda$ can be found in a closed-form expression --- when $K(\alpha)=\sigma_Y + E_p\alpha$, the task is to solve
+If any subclass hardening law can bracket the solution faster (or find the solution with an unbracketed method), it can override {\tt SolveForLambdaBracketed()} and provide a new method (which may be as simple as calling the unbracketed method in {\tt SolveForLambda()} or devising a better bracketing method in {\tt BracketSolution()}). For example, for a linear hardening law, $\lambda$ can be found in a closed-form expression --- when $K(\alpha)=\sigma_Y + E_p\alpha$, the task is to solve
 \begin{equation}
       f =  \|\dev_{trial}\| - \lambda 2G -  \sqrt{2\over3} \left(\sigma_Y + E_p\left(\alpha^{0}+ \lambda \sqrt{2\over3}\right)\right) = 0
 \end{equation}
@@ -385,37 +382,38 @@ The analytical solution is
       \lambda = { \|\dev_{trial}\| - \sqrt{2\over3}\left(\sigma_Y + E_p\alpha^{0} \right) \over  2G +  {2E_p\over3} }
 \end{equation}
 
-\subsection{Plane Strain Analysis for $J_2$ Flow Theory, Isotropic Materials}
+\subsection{Plane Strain and Axisymmetric Analysis for $J_2$ Flow Theory, Isotropic Materials}
 
-Plane strain analysis can follow the above analysis. For many isotropic material models, it is convenient to formulate in terms of bulk and shear moduli ($K$ and $G$). The stress update is
+Plane strain and axisymmetric analysis can follow the above analysis. For isotropic material models, it is convenient to formulate in terms of bulk and shear moduli ($K$ and $G$) and track pressure and deviatoric stress. The stress update is
 \begin{eqnarray}
-       {\Delta V\over 3V} & = & {d\varepsilon_{xx} + d\varepsilon_{yy} + d\varepsilon_{zz} \over 3} - d\er{} \\
-       dP & = & -3K {\Delta V\over 3V} \\
-       d\s{ij}^{trial} & = & 2G \left(d\varepsilon_{ij}^{(tot)} - {\Delta V\over 3V}\right) - dP  \qquad {\rm for\ }i=j=x,y,z\\
-       \tau_{xy} & = & G d\gamma_{xy} \\
+       {\Delta V\over V} & = & d\varepsilon_{xx} + d\varepsilon_{yy} + d\varepsilon_{zz}  - 3d\er{} \\
+       dP & = & -K {\Delta V\over V} \\
+       ds_{ij}^{trial} & = & 2G \left(d\varepsilon_{ij}^{(tot)} - {\Delta V\over 3V}\right)   \qquad {\rm for\ }i=j=x,y,z\\
+       d\tau_{xy} = ds_{xy} & = & G d\gamma_{xy} \\
 \end{eqnarray}
 where
 \begin{equation}
       d\varepsilon_{xx}^{(tot)} = d\varepsilon_{xx} - d\er{}, \quad
       d\varepsilon_{yy}^{(tot)} = d\varepsilon_{yy} - d\er{}, \quad {\rm and}\quad
-      d\varepsilon_{zz}^{(tot)} =  - d\er{}
+      d\varepsilon_{zz}^{(tot)} =  d\varepsilon_{zz} - d\er{}
 \end{equation}
-are the strain increments relative to the increment in residual strain. For isotropic materials, only normal residual strains exist and they are all equal to
+are the strain increments relative to the increment in residual strain (note that in plane strain, $ d\varepsilon_{zz}=0$, but it may be nonzero when axisymmetric). For isotropic materials, only normal residual strains exist and they are all equal to
 \begin{equation}
       d\er{} = \a{}\DT + \b{}\Delta c
 \end{equation}
 If the updated stress has $f<0$, the analysis uses the new stress state.
 
-If $f>0$, the equations in the previous section are used to find $\lambda$. Once $\lambda$ is known, the initial update is modifed using
+If $f>0$, the equations in the previous section are used to find $\lambda$. Once $\lambda$ is known, the initial update is modified using
 \begin{equation}
-     d\s{ij} = d\s{ij}^{trial} - 2G d\varepsilon_{ij}^{p} 
+     ds_{ij} = ds_{ij}^{trial} - 2G d\varepsilon_{ij}^{p} 
 \end{equation}
-By including $\s{zz}$ in the calculations, the out-of-plane stress is correctly updated. In general, the plastic strain will include plastic strain in the $z$ direction. To keep zero total strain in this plane strain analysis, the out-of-plane elastic strain update is set to
+while the pressure update is unchanged.
+By including $\s{zz}$ in the calculations, the out-of-plane stress is correctly updated. In general, the plastic strain will include plastic strain in the $z$ direction, even in plane strain. To keep zero total strain when in plane strain analysis, the out-of-plane elastic strain update will be
 \begin{equation}
        d\varepsilon_{ij}^{e} = -d\varepsilon_{ij}^{p}  
 \end{equation}
 
-For the \code{IsoPlasticity} class (and its subclasses), $K=$ \code{Kred}, $G=$ \code{Gred}, $\a{}=$ \code{CTE3}, and $\b{}=$ \code{CME3}. The default implementation assumes these are constant and they are calculated once in \code{InitialLoadMechProps()}. A subclass can implement non-linear materials two ways. To let $K$, $G$, $\a{}$, and $\b{}$, depend on particle state, calculate their state-dependent values in \code{LoadMechanicalProps()} and/or \code{LoadTransportProps()}. An alternative approach for more complicated materials is to replace the linear calculation of pressure change ($dP$) by overriding \code{GetPressureChange()} and returning a different pressure change. This method is called after finding ${\Delta V/(3V)}$, but before any other calculations. This method should also calculate $G$ (in \code{Gred}) if it depends on particle state. It need not calculate $K$ (in \code{Kred}) because it is not needed except for finding the pressure change.
+For the \code{IsoPlasticity} class, $K=$ \code{Kred}, $G=$ \code{Gred}, $\a{}=$ \code{CTE3}, and $\b{}=$ \code{CME3}. The default implementation assumes these are constant and they are calculated once in \code{InitialLoadMechProps()}. A subclass can implement non-linear materials two ways. To let $K$, $G$, $\a{}$, and $\b{}$, depend on particle state, calculate their state-dependent values in \code{LoadMechanicalProps()} and/or \code{LoadTransportProps()}. An alternative approach for more complicated materials is to replace the pressure calculation by overriding \code{UpdatePressure()} . This method is called after finding ${\Delta V/V}$, but before any other calculations. It must update the particle pressure and particle strain energy due to dilation. It should also calculate $G$ (in \code{Gred}) if it depends on particle state. It need not calculate $K$ (in \code{Kred}) because it is not needed after new pressure is found. 
 
 \subsection{Plane Stress Analysis for $J_2$ Flow Theory, Isotropic Materials}
 
@@ -425,19 +423,20 @@ Unfortunately, plane stress analysis requires some addition steps and always req
 \end{equation}
 Using this relation, the stress update for the in-plane terms only are
 \begin{eqnarray}
-       {\Delta V\over 3V} & = & {d\varepsilon_{xx}^{(tot)} + d\varepsilon_{yy}^{(tot)} + d\varepsilon_{zz}^{(tot)} \over 3} 
-                             = {1\over 3}\left(1-2\nu\over 1-\nu\right)\left(d\varepsilon_{xx}^{(tot)} + d\varepsilon_{yy}^{(tot)}\right)      \label{psDelV} \\
-       dP & = & -3K {\Delta V\over 3V} \\
-       d\s{ij}^{trial} & = & 2G \left(d\varepsilon_{ij}^{(tot)} - {\Delta V\over 3V}\right) - dP  \qquad {\rm for\ }i=j=x,y\\
-       \tau_{xy} & = & G d\gamma_{xy} \\
+       {\Delta V\over V} & = & d\varepsilon_{xx}^{(tot)} + d\varepsilon_{yy}^{(tot)} + d\varepsilon_{zz}^{(tot)}
+                             = \left(1-2\nu\over 1-\nu\right)\left(d\varepsilon_{xx}^{(tot)} + d\varepsilon_{yy}^{(tot)}\right)      \label{psDelV} \\
+       dP & = & -K {\Delta V\over V} \\
+       ds_{ij}^{trial} & = & 2G \left(d\varepsilon_{ij}^{(tot)} - {\Delta V\over 3V}\right)   \qquad {\rm for\ }i=j=x,y \\
+       ds_{zz} & = & dP \\
+       d\tau_{xy} = ds_{xy} & = & G d\gamma_{xy} \\
 \end{eqnarray}
-The \code{IsoPlasticity} class (and its subclasses) and based on $K$ and $G$ (in \code{Kred} and \code{Gred}). For calculation efficiency, two above terms and one term defined below are stored in variables:
+The \code{IsoPlasticity} class is based on $K$ and $G$ (in \code{Kred} and \code{Gred}). For calculation efficiency, two above terms and one term defined below are stored in variables:
 \begin{eqnarray}
        \code{psRed} & = & \left(1-2\nu\over 1-\nu\right) = {1 \over {K\over 2G} + {2\over 3}} \\
        \code{psLr2G} & = & {\nu\over 1-\nu} ={{K\over 2G} - {1\over 3} \over {K\over 2G} + {2\over 3}} \\
        \code{psKred} & = & {E\over 3(1-\nu)} = K*\code{psRed} = {K \over {K\over 2G} + {2\over 3}}
 \end{eqnarray}
-Note that plane stress analysis assumes incrementally linear-elastic response (although the linear terms can depend on particle state) and also needs to know \code{psRed}  \emph{before} finding the pressure change. Materials that override \code{LoadMechanicaProps()} must calculate \code{psRed}, \code{psLr2G}, and \code{psKred} along with \code{Kred} and \code{Gred}. Materials that override \code{GetPressureChange()} instead will need to deal with these terms differently. For such materials, the incremental volumetric strain passed to \code{GetPressureChange()} depends on \code{psRed} (see Eq.~(\ref{psDelV})). The best approach is to set $\code{psRed}=1$ and then scale \code{delV} by the current $(1-2\nu)/(1-\nu)$ in \code{GetPressureChange()}. That method should then leave $\code{psRed}=1$ (because it is no longer needed) and calculate \code{psLr2G} (for normal stress update) and \code{psKred} (for finding $\lambda$) needed in subsequent calculations. It should also calculate \code{Gred}, but \code{Kred} is not needed.
+Note that plane stress analysis assumes incrementally linear-elastic response (although the linear terms can depend on particle state) and also needs to know \code{psRed}  \emph{before} finding the pressure change. Materials that override \code{LoadMechanicaProps()} must calculate \code{psRed}, \code{psLr2G}, and \code{psKred} along with \code{Kred} and \code{Gred}. Materials that override \code{UpdatePressure()} instead will need to deal with these terms differently. For such materials, the incremental volumetric strain passed to \code{UpdatePressure()} depends on \code{psRed} (see Eq.~(\ref{psDelV})). The best approach is to set $\code{psRed}=1$ and then scale \code{delV} by the current $(1-2\nu)/(1-\nu)$ in \code{UpdatePressure()}. That method can leave $\code{psRed}=1$ (because it is no longer needed) and calculate \code{psLr2G} (for normal stress update) and \code{psKred} (for finding $\lambda$) needed in subsequent calculations. It should also calculate \code{Gred}, but \code{Kred} is not needed.
 
 When $f>0$, the process (following Simo and Hughes), effectively (or equivalently) revises $f$ using squares to be
 \begin{equation}
@@ -460,9 +459,10 @@ Now, in this flow theory, the total volume change due to plastic strains is zero
                     \tau_{xy} & {1\over 3}(2\s{yy}-\s{xx}) & 0 \\ 0 & 0 & -{1\over 3}(\s{xx}+\s{yy}) \end{array}\right)
 \end{equation}
 This traceless tensor has inner product
-\begin{equation}
-  \|\dpl\|^2 = \lambda^2 \left( {2\over 3}(\s{xx}^2 + \s{yy}^2 - \s{xx}\s{yy}) + 2\tau_{xy}^2\right) = \lambda^2 \sigma \P\sigma
-\end{equation}
+\begin{eqnarray}
+  \|\dpl\|^2 & = & \lambda^2 \left( {2\over 3}(\s{xx}^2 + \s{yy}^2 - \s{xx}\s{yy}) + 2\tau_{xy}^2\right) = \lambda^2 \sigma \P\sigma \\
+      & = & \lambda^2 \left( s_{xx}^2 + s_{yy}^2 + s_{zz}^2 + 2s_{xy}^2\right)
+\end{eqnarray}
 Requiring $d\alpha$ to equal the equivalent plastic strain increment (as it does in plane strain and 3D), leads to
 \begin{equation}
         d\alpha = \sqrt{2\over3}\lambda \sqrt{\sigma \P\sigma}
@@ -516,6 +516,16 @@ A subclass of \code{IsoPlasticity} class can implement this numerical solution s
        \code{psKred} = { E\over 3(1-\nu)} = {K \over {K\over 2G} + {2\over 3}} 
 \end{equation}
 
+When material class is working in deviatoric stress ($\dev = \vec\sigma+P$), the key terms needed above are
+\begin{eqnarray}
+       \s{xx}^{trial} +  \s{yy}^{trial} & = & s_{xx}^{trial} + s_{yy}^{trial} - 2P_{final} \\
+       -\s{xx}^{trial} +  \s{yy}^{trial}  & = & s_{yy}^{trial} - s_{xx}^{trial} \\
+       s_{xx}^{(n+1)} & = & \s{xx}^{(n+1)} + P_{final} \\
+       s_{yy}^{(n+1)} & = & \s{yy}^{(n+1)} + P_{final} \\
+       s_{zz}^{(n+1)} & = & P_{final} \\
+       s_{xy}^{(n+1)} & = &  \tau_{xy}^{(n+1)} 
+\end{eqnarray}
+
 The special hardening laws that allow a closed-form expression in plane strain will still require numerical solution in plane stress. The example given above used $K(\alpha)=\sigma_Y + E_p\alpha$. The equation for $\lambda$ will be quartic expression. The one key derivative needed, however, simplifies to:
 \begin{equation}
       {1\over3}{dK^2(\alpha^{(k)})\over d\lambda} = \sqrt{8\over27}
@@ -525,11 +535,21 @@ The special hardening laws that allow a closed-form expression in plane strain w
 
 \subsection{3D Analysis for $J_2$ Flow Theory, Isotropic Materials}
 
-This analysis follows the plane strain section except includes direct updates for $\e{zz}$, $\gamma_{xz}$, $\gamma_{yz}$, $\tau_{xz}$, and $\tau_{yz}$. Also the $z$ direction strain increment is $d\varepsilon_{zz}^{(tot)} = d\varepsilon_{zz} - d\er{}$.
+This analysis follows the plane strain and axisymmetric section except includes direct updates for $\gamma_{xz}$, $\gamma_{yz}$, $\tau_{xz}$, and $\tau_{yz}$.
 
 \subsection{Examples of $J_2$ Flow Theory Materials}
 
-From the previous sections, analysis with materials that can use $J_2$ flow theory only require code implementation of the yield stress ($K(\alpha)$) and its derivatives. For plane strain or 3D, the code only needs $\sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda}$. To handle plane stress as well, the code needs ${1\over3}{dK^2(\alpha^{(k)})\over d\lambda}$. When the yield stress depends on strain rate, $\dot{\varepsilon}_p = d\alpha/dt$ where $dt$ is the time step. When evaluating in plane strain or 3D code $\alpha'(\lambda) = \sqrt{2/3}$ and $\dot{\varepsilon}_p'(\lambda) = \sqrt{2/3}/dt$. In plane stress code $\alpha'(\lambda) = \sqrt{2/3}\|\dev\|$ and $\dot{\varepsilon}_p'(\lambda) = \sqrt{2/3}\|\dev\|/dt$
+From the previous sections, analysis with materials that can use $J_2$ flow theory only require code implementation of the yield stress ($K(\alpha)$) and its derivatives. For plane strain or 3D, the code only needs $\sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda}$. To handle plane stress as well, the code needs ${1\over3}{dK^2(\alpha^{(k)})\over d\lambda}$. When the yield stress depends on strain rate, that rate is $\dot{\varepsilon}_p = d\alpha/dt$ where $dt$ is the time step. When evaluating in plane strain or 3D code $\alpha'(\lambda) = \sqrt{2/3}$ and $\dot{\varepsilon}_p'(\lambda) = \sqrt{2/3}/dt$. In plane stress code $\alpha'(\lambda) = \sqrt{2/3}\|\dev\|$ and $\dot{\varepsilon}_p'(\lambda) = \sqrt{2/3}\|\dev\|/dt$.
+
+All hardening laws are implemented as subclasses of the {\tt HardeningLawBase} class. The {\tt Isoplasticity} class, or any of its subclasses, can use any hardening law by picking it when defining material parameters. Those the total  number of available materials in this group is number of hardening laws $\times$ number of  {\tt Isoplasticity} classes. The following sections list the current hardening laws and the equations that are implemented.
+
+\subsubsection{VonMises Material with Linear Work Hardening}
+
+\begin{eqnarray}
+   K(\alpha) & = & \sigma_y(1+\beta\alpha) =  \sigma_y + E_p\alpha \\
+   \sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda} & = & {2\over 3}E_p \\
+   {1\over3}{dK^2(\alpha^{(k)})\over d\lambda} & = & \sqrt{8\over27} (\sigma_y + E_p\alpha)E_p \|\dev\|
+\end{eqnarray}
 
 \subsubsection{VonMises Material with Non-Linear Work Hardening}
 

@@ -105,7 +105,18 @@ void JohnsonCook::LoadHardeningLawProps(MPMBase *mptr,int np)
 	double hmlgTemp=(mptr->pPreviousTemperature - thermal.reference) / 
                 (Tmjc - thermal.reference);
     
-    TjcTerm = hmlgTemp < 0. ? 1. - hmlgTemp : 1. - pow(hmlgTemp,mjc) ;
+    if(hmlgTemp>1.)
+    {   // above the melting point
+        TjcTerm = 0.;
+    }
+    else if(hmlgTemp>0.)
+    {   // between T ref and melting and TjcTerm between 1 (at Tref) and 0 (at T melt)
+        TjcTerm = 1. - pow(hmlgTemp,mjc);
+    }
+    else
+    {   // below T ref or out of range. Pick some number > 1
+        TjcTerm = 1. - hmlgTemp;
+    }
     
     // nothing needed from superclass (HardenLawBase)
 }

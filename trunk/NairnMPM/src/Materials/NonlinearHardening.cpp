@@ -6,7 +6,7 @@
     Copyright (c) 2013 John A. Nairn, All rights reserved.
 
     Hardening Law is
-        sigma = yield (1 + beta ep^npow)
+        sigma = yield (1 + beta ep)^npow
 ********************************************************************************/
 
 #include "Materials/NonlinearHardening.hpp"

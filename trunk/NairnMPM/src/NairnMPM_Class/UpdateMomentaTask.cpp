@@ -9,8 +9,7 @@
  
 		pk(i+1) = pk(i) + ftot(i)*dt
  
-	Input is mvf[]->ftot and output is mvf[]->pk calculated for each
-	velocity field on each node.
+	for each velocity field on each node.
  
 	Once get new momenta, check for material contact and then crack
 	contact. If either changes, change force too to keep consistent with

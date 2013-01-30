@@ -253,6 +253,16 @@ void NodalPoint::CalcTotalMassAndCount(void)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
 			mass+=cvf[i]->GetTotalMassAndCount();
 	}
+    
+    /*
+    if(mass>0. && mass<0.000825*1e-6)
+    {   cout << "# remove mass = " << mass << endl;
+        Describe();
+        InitializeForTimeStep();
+        mass = 0.;
+        Describe();
+    }
+     */
 }
 
 // When has rigid particles, multimaterial mode, and cracks, sum all rigid particles on

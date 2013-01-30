@@ -47,7 +47,7 @@ class SLMaterial : public SCGLHardening
         virtual double GetKPrime(MPMBase *,int,double);
         virtual double GetK2Prime(MPMBase *,double,double);
         double GetEpdot(double YT);
-        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double);
+        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double);
    
 		// update
 		virtual void ElasticUpdateFinished(MPMBase *,int,double);

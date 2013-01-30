@@ -105,7 +105,7 @@ void HardeningLawBase::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime
     Set alpint and dalpha before calling
 */
 double HardeningLawBase::SolveForLambda(MPMBase *mptr,int np,double strial,Tensor *stk,
-                                        double Gred,double psKred,double delTime)
+                                        double Gred,double psKred,double Pfinal,double delTime)
 {
 	// initial lambdk from dalpha set before call, often 0, but might be otherwise
 	double lambdak=dalpha/SQRT_TWOTHIRDS;
@@ -115,7 +115,7 @@ double HardeningLawBase::SolveForLambda(MPMBase *mptr,int np,double strial,Tenso
 	{	double n2trial = -stk->xx+stk->yy;
 		n2trial *= n2trial/2;
 		n2trial += 2.*stk->xy*stk->xy;
-		double n1trial = stk->xx+stk->yy;
+		double n1trial = stk->xx+stk->yy-2.*Pfinal;
 		n1trial *= n1trial/6.;
 		while(true)
 		{	// update iterative variables (lambda, alpha, stress)
@@ -136,16 +136,16 @@ double HardeningLawBase::SolveForLambda(MPMBase *mptr,int np,double strial,Tenso
 	}
 	else
 	{	while(true)
-    {	// update iterative variables (lambda, alpha)
-        double glam = -SQRT_TWOTHIRDS*GetYield(mptr,np,delTime) + strial - 2*Gred*lambdak;
-        double slope = -2.*Gred - GetKPrime(mptr,np,delTime);
-        double delLam = -glam/slope;
-        lambdak += delLam;
-        UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
-        
-        // check for convergence
-        if(LambdaConverged(step++,lambdak,delLam)) break;
-    }
+        {	// update iterative variables (lambda, alpha)
+            double glam = -SQRT_TWOTHIRDS*GetYield(mptr,np,delTime) + strial - 2*Gred*lambdak;
+            double slope = -2.*Gred - GetKPrime(mptr,np,delTime);
+            double delLam = -glam/slope;
+            lambdak += delLam;
+            UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
+            
+            // check for convergence
+            if(LambdaConverged(step++,lambdak,delLam)) break;
+        }
 	}
 	return lambdak;
 }
@@ -156,10 +156,10 @@ double HardeningLawBase::SolveForLambda(MPMBase *mptr,int np,double strial,Tenso
     the input ftrial is f function when lambda=0 (but not useful in in plane stress)
 */
 double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,
-                                                 double Gred,double psKred,double delTime)
+                                                 double Gred,double psKred,double Pfinal,double delTime)
 {
     double xl,xh;
-    BracketSolution(mptr,np,strial,stk,Gred,psKred,delTime,&xl,&xh);
+    BracketSolution(mptr,np,strial,stk,Gred,psKred,Pfinal,delTime,&xl,&xh);
     
 	// initial lambdk midpoint of the brackets
 	double lambdak=0.5*(xl+xh);
@@ -172,7 +172,7 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
 	{	double n2trial = -stk->xx+stk->yy;
 		n2trial *= n2trial/2;
 		n2trial += 2.*stk->xy*stk->xy;
-		double n1trial = stk->xx+stk->yy;
+		double n1trial = stk->xx+stk->yy-2.*Pfinal;
 		n1trial *= n1trial/6.;
         while(true)
         {	// update iterative variables (lambda, alpha)
@@ -201,7 +201,7 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
             }
             
             // update and check convergence
-            UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
+            UpdateTrialAlpha(mptr,np,lambdak,fnp1);
             if(LambdaConverged(step++,lambdak,dx)) break;
             
             // reset limits
@@ -213,36 +213,36 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
 	}
 	else
 	{	while(true)
-    {	// update iterative variables (lambda, alpha)
-        double glam = strial - 2*Gred*lambdak - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime);
-        double slope = -2.*Gred - GetKPrime(mptr,np,delTime);
-        
-        // bisect if Newton out of range
-        if( ((lambdak-xh)*slope-glam) * ((lambdak-xl)*slope-glam) >= 0. ||
-           fabs(2.*glam) > fabs(dxold*slope) )
-        {   dxold = dx;
-            dx = 0.5*(xh-xl);
-            lambdak = xl+dx;
-            if(xl == lambdak) break;    // change in root is negligible
+        {	// update iterative variables (lambda, alpha)
+            double glam = strial - 2*Gred*lambdak - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime);
+            double slope = -2.*Gred - GetKPrime(mptr,np,delTime);
+            
+            // bisect if Newton out of range
+            if( ((lambdak-xh)*slope-glam) * ((lambdak-xl)*slope-glam) >= 0. ||
+               fabs(2.*glam) > fabs(dxold*slope) )
+            {   dxold = dx;
+                dx = 0.5*(xh-xl);
+                lambdak = xl+dx;
+                if(xl == lambdak) break;    // change in root is negligible
+            }
+            else
+            {   dxold = dx;
+                dx = glam/slope;
+                double temp = lambdak;
+                lambdak -= dx;
+                if(temp == lambdak) break;  // change in root is negligible
+            }
+            
+            // update and check convergence
+            UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
+            if(LambdaConverged(step++,lambdak,dx)) break;
+            
+            // reset limits
+            if(glam < 0.)
+                xl = lambdak;
+            else
+                xh = lambdak;
         }
-        else
-        {   dxold = dx;
-            dx = glam/slope;
-            double temp = lambdak;
-            lambdak -= dx;
-            if(temp == lambdak) break;  // change in root is negligible
-        }
-        
-        // update and check convergence
-        UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
-        if(LambdaConverged(step++,lambdak,dx)) break;
-        
-        // reset limits
-        if(glam < 0.)
-            xl = lambdak;
-        else
-            xh = lambdak;
-    }
 	}
     
     // return final answer
@@ -255,7 +255,7 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
     ftrial is 3D or plane strain result for lambda=0 and it is positive
     Return lamNeg for f<0 (higher lambda) and lamPos where f>0 (lower lambda)
 */
-void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor *stk,double Gred,double psKred,
+void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor *stk,double Gred,double psKred,double Pfinal,
                                        double delTime,double *lamNeg,double *lamPos)
 {
     double epdot = 1.,gmax;
@@ -268,19 +268,20 @@ void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor
 	{	double n2trial = -stk->xx+stk->yy;
 		n2trial *= 0.5*n2trial;
 		n2trial += 2.*stk->xy*stk->xy;
-		double n1trial = stk->xx+stk->yy;
+		double n1trial = stk->xx+stk->yy-2.*Pfinal;
 		n1trial *= n1trial/6.;
         
         // find when plane stress term become negative
         while(step<20)
         {   // try above
             dalpha = epdot*delTime;
+            // note that dalpha here is actually dalpha*fnp1
             alpint = mptr->GetHistoryDble() + dalpha;
             double lambdak = dalpha/SQRT_TWOTHIRDS;
 			double d1 = (1 + psKred*lambdak);
 			double d2 = (1.+2.*Gred*lambdak);
 			double fnp12 = n1trial/(d1*d1) + n2trial/(d2*d2);
-			double kyld = GetYield(mptr,np,delTime);
+ 			double kyld = GetYield(mptr,np,delTime);
 			gmax = 0.5*fnp12 - kyld*kyld/3.;
             if(gmax<0.) break;
             

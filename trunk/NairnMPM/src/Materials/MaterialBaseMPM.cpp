@@ -419,7 +419,7 @@ void MaterialBase::ValidateForUse(int np)
 	}
 	
 	if(ConductionTask::active)
-	{	if(heatCapacity<=0.)
+	{	if(heatCapacity<=0. && !Rigid())
 		{	throw CommonException("Thermal conduction cannot be done using materials that have zero heat capacity.",
 								  "MaterialBase::ValidateForUse");
 		}
@@ -1259,6 +1259,13 @@ int MaterialBase::GetFieldMatID(int matfld) { return fieldMatIDs[matfld]; }
 // Get current relative volume change - only used to convert speific results to actual values when archiving
 // Materials with explicit treatment of large deformation will need it (e.g., Hyperelastic)
 double MaterialBase::GetCurrentRelativeVolume(MPMBase *mptr) { return 1.; }
+
+// Copy stress to a read-only tensor variable
+// Subclass material can override, such as to combine pressure and deviatory stress into full stress
+Tensor MaterialBase::GetStress(Tensor *sp,double pressure)
+{   Tensor stress = *sp;
+    return stress;
+}
 
 // If material partitions total strain into elastic and plastic strain saved in ep and eplast, it'
 // should override this method and return TRUE. It is only used when material point is asked for

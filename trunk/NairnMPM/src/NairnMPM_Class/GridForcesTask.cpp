@@ -24,7 +24,7 @@
  
 	Output Variables
 		theMaterials->LoadTransportProperties() - changed if depend on particle state
-		mvf[]->fint, fext, ftot
+		mvf[]: fint, fext, ftot
 		nd[]->fdiff, fcond
 		mpm[]->dispEnergy
 ******************************************************************************************/
@@ -106,7 +106,7 @@ void GridForcesTask::Execute(void)
 				ndptr->AddFintTask3(vfld,matfld,&theFrc);
 			}
             
-			// external force vector
+			// get external force vector and add to velocity field
 			mpmptr->Fext(theFrc,fn[i]);
             ndptr->AddFextTask3(vfld,matfld,&theFrc);
 			
@@ -123,7 +123,7 @@ void GridForcesTask::Execute(void)
 	// Add traction BCs on particles
 	MatPtTractionBC::SetParticleSurfaceTractions(mtime);
 	
-	// traction law forces add to mvf[]->fext
+	// traction law forces add to fext in velocity fields
 	if(fmobj->hasTractionCracks)
 	{	CrackHeader *nextCrack=firstCrack;
 		while(nextCrack!=NULL)
@@ -135,7 +135,7 @@ void GridForcesTask::Execute(void)
 	// crack tip heating adds to fcond
 	if(conduction) conduction->AddCrackTipHeating();
 	
-	// interface forces added to mvf[]->fint and track total interface energy
+	// interface forces added to fint in velocity fields and track total interface energy
     NodalPoint::interfaceEnergy=0.;
     CrackNode::InterfaceOnKnownNodes();
     MaterialInterfaceNode::InterfaceOnKnownNodes();

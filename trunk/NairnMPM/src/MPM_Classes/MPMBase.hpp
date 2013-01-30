@@ -70,6 +70,7 @@ class MPMBase : public LinkedObject
 		virtual double FDiff(double,double,double) = 0;
 		virtual double KineticEnergy(void) = 0;
 		virtual Matrix3 GetDeformationGradientMatrix(void) = 0;
+        virtual Matrix3 GetElasticLeftCauchyMatrix(void) = 0;
         virtual void GetDeformationGradient(double F[][3]) = 0;
         virtual double GetRelativeVolume(void) = 0;
 		virtual double GetVolume(bool) = 0;
@@ -132,6 +133,10 @@ class MPMBase : public LinkedObject
 		double GetExtWork(void);
         double GetStrainPlusPlastEnergy(void);
         Tensor *GetStressTensor(void);
+        Tensor ReadStressTensor(void);
+        void IncrementPressure(double);
+        void SetPressure(double);
+        double GetPressure(void);
 		Tensor *GetStrainTensor(void);
  		Tensor *GetPlasticStrainTensor(void);
         Tensor *GetElasticLeftCauchyTensor(void);
@@ -156,6 +161,7 @@ class MPMBase : public LinkedObject
 		Vector acc;					// acceleration
 		Tensor *velGrad;			// used for J Integral only
 		Tensor sp;					// stress tensor (init 0)
+        double pressure;            // for use if materials wants to, otherwise it is zero
 		Tensor ep;					// total strain tensor (init 0)
 		Tensor eplast;				// plastic strain tensor (init 0)
 		TensorAntisym wrot;			// rotation strain tensor (init 0)
@@ -169,7 +175,7 @@ class MPMBase : public LinkedObject
  		double anglez0;				// initial cw x rotation angle (2D or 3D) (stored in radians)
 		double angley0;				// initial cw y rotation (3D)
 		double anglex0;				// initial cw x rotation (3D)
-        
+    
     private:
 		// variables (changed in MPM time step)
 		int inElem;

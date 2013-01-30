@@ -148,8 +148,8 @@ double MatPoint2D::thickness() { return thick; }
 
 // return internal force as -mp sigma.deriv * 1000. which converts to g mm/sec^2 or micro N
 void MatPoint2D::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
-{	fout.x=-mp*(sp.xx*xDeriv+sp.xy*yDeriv)*1000.;
-	fout.y=-mp*(sp.xy*xDeriv+sp.yy*yDeriv)*1000.;
+{	fout.x=-mp*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv)*1000.;
+	fout.y=-mp*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv)*1000.;
 	fout.z=0.;
 }
 
@@ -214,7 +214,12 @@ Matrix3 MatPoint2D::GetDeformationGradientMatrix(void)
 	Matrix3 Fm(F[0][0],F[0][1],F[1][0],F[1][1],F[2][2]);
 	return Fm;
 }
-	
+
+// get the symmetric elastic Left-Cauchy tensor in a Matrix3
+Matrix3 MatPoint2D::GetElasticLeftCauchyMatrix(void)
+{   return Matrix3(eplast.xx,eplast.xy,eplast.xy,eplast.yy,eplast.zz);
+}
+
 // get deformation gradient, which is stored in strain and rotation tensors
 void MatPoint2D::GetDeformationGradient(double F[][3])
 {

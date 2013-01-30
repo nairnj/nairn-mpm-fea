@@ -236,7 +236,7 @@ double SLMaterial::GetEpdot(double YT)
 
 // Solve numerically for lambda
 // Subclasses can override for analytical solution if possible
-double SLMaterial::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,double Gred,double psKred,double delTime)
+double SLMaterial::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,double Gred,double psKred,double Ptrial,double delTime)
 {
 	if(np==PLANE_STRESS_MPM)
 	{	// not allowed
@@ -253,7 +253,7 @@ double SLMaterial::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Te
 		double gmin = strial - 2.*Gred*dalpha/SQRT_TWOTHIRDS - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime);
 		if(gmin<0.)
 		{	// low strain rate answer between 0 and epdotmin
-			double lambdak=HardeningLawBase::SolveForLambda(mptr,np,strial,stk,Gred,psKred,delTime);
+			double lambdak=HardeningLawBase::SolveForLambda(mptr,np,strial,stk,Gred,psKred,1.,delTime);
 			//cout << "# low strain rate condition " << lambdak << " should be below " << delTime*epdotmin/SQRT_TWOTHIRDS << endl;
 			isConstantYT=false;
 			mptr->SetHistoryDble(YT_HISTORY,currentYTred*parent->rho*1.e-6);
@@ -268,7 +268,7 @@ double SLMaterial::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Te
 		double gmax =  strial - 2.*Gred*dalpha/SQRT_TWOTHIRDS - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime);
 		if(gmax>0.)
 		{	// high string rate answer for rate higher than epmax
-			double lambdak=HardeningLawBase::SolveForLambda(mptr,np,strial,stk,Gred,psKred,delTime);
+			double lambdak=HardeningLawBase::SolveForLambda(mptr,np,strial,stk,Gred,psKred,1.,delTime);
 			//cout << "# high strain rate condition " << lambdak << " should be above " << delTime*epdotmax/SQRT_TWOTHIRDS << endl;
 			isConstantYT=false;
 			mptr->SetHistoryDble(YT_HISTORY,currentYTred*parent->rho*1.e-6);
