@@ -307,6 +307,8 @@ double MGSCGLMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr)
     // compressive volumetric strain x = 1-J
     double J = mptr->GetRelativeVolume();
     double x = 1. - J;
+    
+    // get K/rho0, but this ignores slope of energy term
     double KcurrRed;
     if(x>0.)
     {   // compression law
@@ -320,11 +322,16 @@ double MGSCGLMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr)
     {   // In tension use low-strain bulk modulus
         KcurrRed = C0squared;
     }
+    KcurrRed *= J;          // convert to K/rho
+    
+    // get G/rho at current pressure
     double e = mptr->GetStrainPlusPlastEnergy()
             + 1000.*heatCapacityVol*(mptr->pPreviousTemperature - thermal.reference*exp(gamma0*x));
     double pressure = J*(KcurrRed*x + gamma0*e);
     double GcurrRed = G0red * plasticLaw->GetShearRatio(mptr,pressure,J);
-    return 1000.*sqrt((J*KcurrRed + 4.*GcurrRed/3.)/1000.);
+    
+    // return current save speed
+    return 1000.*sqrt((KcurrRed + 4.*GcurrRed/3.)/1000.);
 }
 
 

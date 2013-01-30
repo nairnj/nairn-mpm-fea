@@ -25,7 +25,6 @@ class HyperElastic : public MaterialBase
     public:
         double Kbulk;               // bulk modulus
 		double aI;                  // thermal expansion isotropic
-        int UofJOption;             // pick U(J) function
 		// double betaI;			// moisture expansion isotopic (in base material)
         
         // constructors and destructors
@@ -48,6 +47,7 @@ class HyperElastic : public MaterialBase
         virtual double GetCurrentRelativeVolume(MPMBase *);
     
     protected:
+        int UofJOption;             // pick U(J) function
         double Ksp;                 // specific bulk modulus
 };
 

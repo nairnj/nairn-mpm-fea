@@ -32,6 +32,8 @@ class AdjustTimeStepTask : public CustomTask
     private:
         double customAdjustTime,nextCustomAdjustTime;
         bool doAdjust;			// flag to adjust time step this step
+        int verbose;            // 0 or 1 to report changes
+        double lastReportedTimeStep;
     
 };
 
