@@ -35,7 +35,7 @@ class MGSCGLMaterial : public IsoPlasticity
 	
 		// methods
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int);
-		virtual double GetPressureChange(MPMBase *,double &,double,int);
+		virtual void UpdatePressure(MPMBase *,double &,double,int);
         virtual double GetCurrentRelativeVolume(MPMBase *);
 				
 		// accessors

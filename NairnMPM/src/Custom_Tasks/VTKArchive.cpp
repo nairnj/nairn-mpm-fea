@@ -267,13 +267,15 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 	unsigned int q;
 	double *vtkquant=vtk[ndmi->num];
 	double theWt=1.;
-	Tensor *ten=NULL,*ten2;
+	Tensor *ten=NULL,*ten2,sp;
 	
 	for(q=0;q<quantity.size();q++)
 	{	switch(quantity[q])
 		{	case VTK_STRESS:
 				theWt=wt*theMaterials[mpnt->MatID()]->rho;
-				ten=mpnt->GetStressTensor();
+				//ten = mpnt->GetStressTensor();
+                sp = mpnt->ReadStressTensor();
+                ten = &sp;
 			case VTK_STRAIN:
 				if(quantity[q]==VTK_STRAIN)
 				{	theWt=wt;

@@ -560,10 +560,11 @@ void ArchiveData::ArchiveResults(double atime)
         int matid = mpm[p]->MatID();
         rho0=theMaterials[matid]->rho;
         rho = rho0/theMaterials[matid]->GetCurrentRelativeVolume(mpm[p]);
-		Tensor *sp=mpm[p]->GetStressTensor();
-        sxx=rho*sp->xx;
-        syy=rho*sp->yy;
-        sxy=rho*sp->xy;
+        //Tensor *sp = mpm[p]->GetStressTensor();
+        Tensor sp = mpm[p]->ReadStressTensor();
+        sxx=rho*sp.xx;
+        syy=rho*sp.yy;
+        sxy=rho*sp.xy;
         if(mpmOrder[ARCH_Stress]=='Y')
         {   *(double *)app=sxx;
             app+=sizeof(double);
@@ -571,17 +572,17 @@ void ArchiveData::ArchiveResults(double atime)
             *(double *)app=syy;
             app+=sizeof(double);
             
-			*(double *)app=rho*sp->zz;
+			*(double *)app=rho*sp.zz;
             app+=sizeof(double);
                 
             *(double *)app=sxy;
             app+=sizeof(double);
 			
 			if(threeD)
-            {	*(double *)app=rho*sp->xz;
+            {	*(double *)app=rho*sp.xz;
 				app+=sizeof(double);
 				
-            	*(double *)app=rho*sp->yz;
+            	*(double *)app=rho*sp.yz;
 				app+=sizeof(double);
 			}
         }

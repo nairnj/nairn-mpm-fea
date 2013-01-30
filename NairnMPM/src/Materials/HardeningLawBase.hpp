@@ -39,9 +39,9 @@ class HardeningLawBase
         virtual double GetK2Prime(MPMBase *,double,double) = 0;
     
         // return mapping methods
-        virtual double SolveForLambda(MPMBase *,int,double,Tensor *,double,double,double);
-        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double);
-        virtual void BracketSolution(MPMBase *,int,double,Tensor *,double,double,double,double *,double *);
+        virtual double SolveForLambda(MPMBase *,int,double,Tensor *,double,double,double,double);
+        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double);
+        virtual void BracketSolution(MPMBase *,int,double,Tensor *,double,double,double,double,double *,double *);
         virtual bool LambdaConverged(int,double,double);
 	
 		// hyperelastic return mapping methods

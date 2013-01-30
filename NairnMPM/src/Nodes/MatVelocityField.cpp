@@ -17,6 +17,7 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Nodes/MatVelocityField.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Boundary_Conditions/BoundaryCondition.hpp"
 
 #pragma mark INITIALIZATION
 
@@ -93,9 +94,33 @@ void MatVelocityField::CalcVelocityForStrainUpdate(void)
 // Calculate total force at a node from current values
 // Now force = m*a in g mm/sec^2 = micro N (because N is kg-m/sec^2)
 void MatVelocityField::CalcFtotTask3(double extDamping)
-{	ftot.x=fint.x+fext.x-extDamping*pk.x;
-	ftot.y=fint.y+fext.y-extDamping*pk.y;
-	ftot.z=fint.z+fext.z-extDamping*pk.z;
+{	ftot.x = fint.x + fext.x - extDamping*pk.x;
+	ftot.y = fint.y + fext.y - extDamping*pk.y;
+	ftot.z = fint.z + fext.z - extDamping*pk.z;
+}
+
+// internal force - add or scale and add
+void MatVelocityField::AddFint(Vector *f) { AddVector(&fint,f); }
+void MatVelocityField::AddFint(Vector *f,double scaled) { AddScaledVector(&fint,f,scaled); }
+
+// internal force - add or scale and add
+void MatVelocityField::AddFext(Vector *f) { AddVector(&fext,f); }
+void MatVelocityField::AddFext(Vector *f,double scaled) { AddScaledVector(&fext,f,scaled); }
+
+// Update momentum for this MPM step
+//  pk(i+1) = pk(i) + ftot * dt
+void MatVelocityField::UpdateMomentum(double timestep)
+{	// update momenta
+    AddScaledVector(&pk,&ftot,timestep);
+}
+
+// on strain updates, increment nodal velocity and acceleration
+// fi is shape function
+void MatVelocityField::IncrementNodalVelAcc(double fi,Vector *delv,Vector *dela)
+{
+    double mnode = fi/mass;					// Ni/mass
+	AddScaledVector(delv,&pk,mnode);		// velocity += p/mass
+	AddScaledVector(dela,&ftot,mnode);		// acceleration += f/mass
 }
 
 #pragma mark ACCESSORS
@@ -111,6 +136,66 @@ void MatVelocityField::AddContactVolume(double vol) { volume += vol; }
 void MatVelocityField::SetContactVolume(double vol) { volume = vol; }
 double MatVelocityField::GetContactVolume(void) { return volume; }
 
+// velocity
+void MatVelocityField::SetVelocity(Vector *vel) { vk = *vel; }
+Vector MatVelocityField::GetVelocity(void) { return vk; }
+Vector *MatVelocityField::GetVelocityPtr(void) { return &vk; }
+
+// moment and velocity zero for on component only
+void MatVelocityField::SetMomentVelocityDirection(int dir)
+{   if(dir==X_DIRECTION)
+    {	pk.x = 0.;
+        vk.x = 0.;
+    }
+    else if(dir==Y_DIRECTION)
+    {	pk.y = 0.;
+        vk.y = 0.;
+    }
+    else
+    {	pk.z = 0.;
+        vk.z = 0.;
+    }
+}
+
+// add moment and velocity for one component only
+void MatVelocityField::AddMomentVelocityDirection(int dir,double vel)
+{   if(dir==X_DIRECTION)
+    {	pk.x += mass*vel;
+        vk.x += vel;
+    }
+    else if(dir==Y_DIRECTION)
+    {	pk.y += mass*vel;
+        vk.y += vel;
+    }
+    else
+    {	pk.z += mass*vel;
+        vk.z += vel;
+    }
+}
+
+// set component of Ftot to -p/dt (used by boundary conditions)
+void MatVelocityField::SetFtotDirection(int dir,double deltime)
+{   if(dir==X_DIRECTION)
+        ftot.x = -pk.x/deltime;
+    else if(dir==Y_DIRECTION)
+        ftot.y = -pk.y/deltime;
+    else
+        ftot.z = -pk.z/deltime;
+}
+
+// add one component of force such that updated momentum will be mass*velocity
+void MatVelocityField::AddFtotDirection(int dir,double deltime,double vel)
+{   if(dir==X_DIRECTION)
+        ftot.x += mass*vel/deltime;
+    else if(dir==Y_DIRECTION)
+        ftot.y += mass*vel/deltime;
+    else
+        ftot.z += mass*vel/deltime;
+}
+
+// total force
+Vector MatVelocityField::GetFtot(void) { return ftot; }
+Vector *MatVelocityField::GetFtotPtr(void) { return &ftot; }
 
 #pragma mark CLASS METHODS
 

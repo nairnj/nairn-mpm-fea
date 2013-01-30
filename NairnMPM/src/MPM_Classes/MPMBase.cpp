@@ -42,6 +42,7 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
         
     // zero stresses and strains
 	ZeroTensor(&sp);
+    pressure = 0.;
 	ZeroTensor(&ep);
 	ZeroTensor(&eplast);
 	ZeroTensorAntisym(&wrot);
@@ -270,15 +271,22 @@ void MPMBase::AddStrainEnergy(double energyInc) { strainEnergy+=energyInc; }
 double MPMBase::GetExtWork(void) { return extWork; }
 double MPMBase::GetStrainPlusPlastEnergy(void) { return strainEnergy+plastEnergy; }
 
-
 // pointers to variables
 Vector *MPMBase::GetPFext(void) { return &pFext; }
 Vector *MPMBase::GetNcpos(void) { return &ncpos; }
 CPDIDomain **MPMBase::GetCPDIInfo(void) { return cpdi; }
 Vector *MPMBase::GetAcc(void) { return &acc; }
 Tensor *MPMBase::GetVelGrad(void) { return velGrad; }
-Tensor *MPMBase::GetStressTensor(void) { return &sp; }
 Tensor *MPMBase::GetStrainTensor(void) { return &ep; }
+
+// material classes only should call GetStressTensor and can change the stress
+// all others should use ReadStressTensor() because that gives materials a chance to
+//  customize the way stresses are stored, such as to separate pressure and deviatoric stress
+Tensor *MPMBase::GetStressTensor(void) { return &sp; }
+Tensor MPMBase::ReadStressTensor(void) { return theMaterials[MatID()]->GetStress(&sp,pressure); }
+void MPMBase::IncrementPressure(double dP) { pressure += dP; }
+void MPMBase::SetPressure(double P) { pressure = P; }
+double MPMBase::GetPressure(void) { return pressure; }
 
 // These methods return pointer to the same symmetric tensor. A material class must
 // decide how it will use the eplast tensor variable and use only that one purpose.
@@ -317,10 +325,14 @@ void MPMBase::SetHistoryDble(int index,double history)
 void MPMBase::Describe(void)
 {	cout << "# pt: pos=(" << pos.x << "," << pos.y << "," << pos.z << ") mass=" << mp << 
                 " matl=" << matnum << " elem=" << inElem << endl;
-    cout << "#     vel=(" << vel.x << "," << vel.y << "," << vel.z << ")" << endl;
-    cout << "#       F=" << GetDeformationGradientMatrix() << endl;
-    cout << "# sigmaii=(" << sp.xx << "," << sp.yy << "," << sp.zz << ")" << endl;
-    cout << "#   tauij=(" << sp.xy << "," << sp.xz << "," << sp.yz << ")" << endl;
+    cout << "#     vel=(" << vel.x*1e-3 << "," << vel.y*1e-3 << "," << vel.z*1e-3 << ") m/sec" << endl;
+    Matrix3 pF = GetDeformationGradientMatrix();
+    cout << "#       F=" << pF << ", |F|=" << pF.determinant() << endl;
+    double rho0=theMaterials[MatID()]->rho;
+    double rho = rho0/theMaterials[MatID()]->GetCurrentRelativeVolume(this);
+    cout << "#       P= " << pressure*rho*1e-6 << " MPa" << endl;
+    cout << "# sigmaii=(" << sp.xx*rho*1e-6 << "," << sp.yy*rho*1e-6 << "," << sp.zz*rho*1e-6 << ") MPa" << endl;
+    cout << "#   tauij=(" << sp.xy*rho*1e-6 << "," << sp.xz*rho*1e-6 << "," << sp.yz*rho*1e-6 << ") MPa" << endl;
 }
 
 

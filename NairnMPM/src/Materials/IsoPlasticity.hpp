@@ -43,12 +43,13 @@ class IsoPlasticity : public IsotropicMat
                                         double,double,int,double,double,double);
 		
 		// custom methods: Find yield function and solve for lambda
-		virtual double GetPressureChange(MPMBase *,double &,double,int);
-		virtual double GetMagnitudeS(Tensor *st,int);
+		virtual void UpdatePressure(MPMBase *,double &,double,int);
+        virtual double GetMagnitudeSFromDev(Tensor *,int);
 		virtual void GetDfDsigma(double,Tensor *,int);
 		virtual void ElasticUpdateFinished(MPMBase *,int,double);
 		
 		// accessors
+        virtual Tensor GetStress(Tensor *,double);
 		virtual double GetHistory(int,char *);
         virtual bool HasPlasticStrainForGradient(void);
         int MaterialTag(void);
@@ -58,6 +59,7 @@ class IsoPlasticity : public IsotropicMat
 		double Gred,Kred;
 		double psRed,psLr2G,psKred;
 		double dfdsxx,dfdsyy,dfdtxy,dfdszz,dfdtxz,dfdtyz;
+        double delVLowStrain;
     
         HardeningLawBase *plasticLaw;
 

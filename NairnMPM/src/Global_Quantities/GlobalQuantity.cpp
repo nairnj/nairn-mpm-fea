@@ -221,7 +221,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 				if(IncludeThisMaterial(matid))
 				{	rho0=theMaterials[matid]->rho;
                     rho = rho0/theMaterials[matid]->GetCurrentRelativeVolume(mpm[p]);
-					value+=rho*Tensor_i(mpm[p]->GetStressTensor(),qid);
+ 					//value+=rho*Tensor_i(mpm[p]->GetStressTensor(),qid);
+                    Tensor sp = mpm[p]->ReadStressTensor();
+ 					value+=rho*Tensor_i(&sp,qid);
 					numAvged++;
 				}
 			}
