@@ -567,7 +567,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <p>The material type is <code>Type=8</code>. It is a large-deformation, isotropic, hyperelastic material. The stresses are defined from the strain energy, which is defined by invariants of the left Cauchy Green Tensor ([B] = [F][F]<sup>T</sup> where [F] is the deformation gradient). In a Mooney-Rivlin material, the strain energy depends on three material properties:</p>
 
 <blockquote>
-2W = G<sub>1</sub>(I<sub>1</sub>-3) + G<sub>2</sub>(I<sub>2</sub>-3) + K(J-1)<sup>2</sup>
+W = (1/2)G<sub>1</sub>(I<sub>1</sub>-3) + (1/2)G<sub>2</sub>(I<sub>2</sub>-3) + U(J)
 </blockquote>
 
 <p>where I<sub>1</sub> = Trace([B])/J<sup>2/3</sup>, I<sub>2</sub> = 0.5(I<sub>1</sub><sup>2</sup>
@@ -580,7 +580,14 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
     	
 <dt>&lt;G2&gt;0.33&lt;/G2&gt;</dt>
 <dd>The G<sub>2</sub> shear modulus (in MPa). The low-strain shear modulus is G<sub>1</sub>+G<sub>2</sub>.</dd>
-    	
+
+<dt>&lt;UJOption&gt;0&lt;/UJOption&gt;</dt>
+<dd>This selects the dilational energy term U(J) and the possible integer values mean:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;0: U(J) = (K/2)((1/2)(J<sup>2</sup>-1) - ln J)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;1: U(J) = (K/2)(J-1)<sup>2</sup><br>
+&nbsp;&nbsp;&nbsp;&nbsp;2: U(J) = (K/2)(ln J)<sup>2</sup><br>
+where K is the bulk modulus and is entered as a separate property. The default (and recommended) option is 0.</dd>
+
 <dt>&lt;K&gt;2.5&lt;/K&gt;</dt>
 <dd>The K modulus (in MPa), which is equal to the low-strain bulk modulus.</dd>
     	

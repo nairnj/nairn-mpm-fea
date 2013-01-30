@@ -38,10 +38,10 @@ class Mooney : public HyperElastic
         virtual char *InitHistoryData(void);
  		
 		// methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int);
     
 		// accessors
+        Tensor GetStress(Tensor *,double);
 		virtual double WaveSpeed(bool,MPMBase *);
 		virtual double ShearWaveSpeed(bool,MPMBase *);
 		virtual const char *MaterialType(void);

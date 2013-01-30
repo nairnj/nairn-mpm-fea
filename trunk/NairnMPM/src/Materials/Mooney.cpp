@@ -33,6 +33,20 @@ void Mooney::PrintMechanicalProperties(void)
 	cout << endl;
 	
 	PrintProperty("a",aI,"");
+    switch(UofJOption)
+    {   case J_MINUS_1_SQUARED:
+            PrintProperty("U(J)",UofJOption,"[ = (K/2)(J-1)^2 ]");
+            break;
+            
+        case LN_J_SQUARED:
+            PrintProperty("U(J)",UofJOption,"[ = (K/2)(ln J)^2 ]");
+            break;
+            
+        case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
+        default:
+            PrintProperty("U(J)",UofJOption,"[ = (K/2)((1/2)(J^2-1) - ln J) ]");
+            break;
+    }
 	cout << endl;
 }
 	
@@ -47,6 +61,11 @@ char *Mooney::InputMat(char *xName,int &input)
     else if(strcmp(xName,"G2")==0)
         return((char *)&G2);
     
+    else if(strcmp(xName,"UJOption")==0)
+    {   input = INT_NUM;
+        return((char *)&UofJOption);
+    }
+    
     return(HyperElastic::InputMat(xName,input));
 }
 
@@ -55,6 +74,9 @@ const char *Mooney::VerifyProperties(int np)
 {
     if(G1<0. || Kbulk < 0. || G2<0.)
 		return "Mooney-Rivlin Hyperelastic material needs non-negative G1, G2, and K";
+    
+    if(UofJOption<HALF_J_SQUARED_MINUS_1_MINUS_LN_J && UofJOption>LN_J_SQUARED)
+		return "Mooney-Rivlin dilational energy (UJOption) must be 0, 1, or 2";
 
 	// call super class
 	return MaterialBase::VerifyProperties(np);
@@ -83,18 +105,18 @@ char *Mooney::InitHistoryData(void)
 
 #pragma mark Mooney::Methods
 
-/* For 2D MPM analysis, take increments in strain and calculate new
-    Particle: strains, rotation strain, stresses, strain energy (per unit mass)
+
+/* Take increments in strain and calculate new Particle: strains, rotation strain,
+        stresses, strain energy,
     dvij are (gradient rates X time increment) to give deformation gradient change
-   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
-   Note that incompressible rubber is not suitable for dynamic calculations because
-    they have an infinite wave speed
+    For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
+    This material tracks pressure and stores deviatoric stress only in particle stress
+        tensor
 */
-void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-								double dvzz,double delTime,int np)
+void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
 {
 	// Update strains and rotations and Left Cauchy strain
-	double detDf = IncrementDeformation(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,NULL);
+	double detDf = IncrementDeformation(mptr,du,NULL,np);
     
     // get pointer to new left Cauchy strain
     Tensor *B = mptr->GetElasticLeftCauchyTensor();
@@ -116,24 +138,33 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
 		double fx,fxp;
 		int iter=1;
         
-        // solution for B.zz in xn
+        // solution for B.zz in xn and J = sqrt(xn*arg)
+        // Solving 0 = 3J^2 Kterm + G1(2*xn-arg2)J^(1/3) + G2*(xn*arg2 - 2*arg)/J^(1/3)
 		while(iter<10)
 		{	xn16 = pow(xn,1./6.);
 			xn12 = sqrt(xn);
             
-            // three options for K term in function
-            // For K(J-1) term
-			//fx = 3.*Ksp*xn*arg*(xn12*arg12-1.); 
-			//fxp = 3.*Ksp*arg*(1.5*arg12*xn12-1.); 
+            switch(UofJOption)
+            {   case J_MINUS_1_SQUARED:
+                    // This is for Kterm = K(J-1)
+                    fx = 3.*Ksp*xn*arg*(xn12*arg12-1.); 
+                    fxp = 3.*Ksp*arg*(1.5*arg12*xn12-1.); 
+                    break;
+                    
+                case LN_J_SQUARED:
+                    // This is for Kterm = K(ln J)/J = (K/2)(ln J^2)/J
+                    fx = 1.5*Ksp*xn12*arg12*log(xn*arg);
+                    fxp = 0.75*Ksp*arg12*(2.+log(arg*xn))/xn12;
+                    break;
+                    
+                case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
+                default:
+                    // This is for Kterm = (K/2)(J-1/J)
+                    fx = 1.5*Ksp*xn12*arg12*(xn*arg-1.);            
+                    fxp = 0.75*Ksp*arg12*(3.*arg*xn-1.)/xn12;
+                    break;
+            }
             
-            // For K(ln J)/J term
-            //fx = 1.5*Ksp*xn12*arg12*log(xn*arg);
-            //fxp = 0.75*Ksp*arg12*(2.+log(arg*xn))/xn12;
-            
-            // For (K/2)(J-1/J) term
-            fx = 1.5*Ksp*xn12*arg12*(xn*arg-1.);            
-            fxp = 0.75*Ksp*arg12*(3.*arg*xn-1.)/xn12;
-           
             // Now add the shear terms
             fx += G1sp*(2.*xn-arg2)*xn16*arg16 + G2sp*(xn*arg2-2.*arg)/(xn16*arg16);
             fxp += G1sp*xn16*arg16*(14.*xn-arg2)/(6.*xn) + G2sp*(2.*arg+5.*xn*arg2)/(6.*xn16*arg16*xn);
@@ -158,56 +189,7 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doubl
         detDf *= dFzz;
 	}
     
-    // Increment J and save it
-    double J = detDf*mptr->GetHistoryDble();
-    mptr->SetHistoryDble(J);
-	
-	// J as determinant of F (or sqrt root of determinant of B) normalized to residual stretch
-	double resStretch = GetResidualStretch(mptr);
-	J /= (resStretch*resStretch*resStretch);
-    
-    // Account for density change in specific stress
-    // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
-	double J23 = pow(J, 2./3.);
-	double J43 = J23*J23;
-	double JforG1 = J23;                   // J^(2/3) to get J*(Cauchy Stress) below
-	double JforG2 = J43;                   // J^(4/3) to get J*(Cauchy Stress) below
-    double Kse;
-	double Kterm = J*GetVolumetricTerms(J,&Kse);
-	
-	// find (Cauchy stress)J/rho0 = (Kirchoff stress)/rho0
-	Tensor *sp=mptr->GetStressTensor();
-	sp->xx = Kterm + (2*B->xx-B->yy-B->zz)*G1sp/(3.*JforG1)
-			+ (B->xx*(B->yy+B->zz)-2*B->yy*B->zz-B->xy*B->xy)*G2sp/(3.*JforG2);
-	sp->yy = Kterm + (2*B->yy-B->xx-B->zz)*G1sp/(3.*JforG1)
-			+ (B->yy*(B->xx+B->zz)-2*B->xx*B->zz-B->xy*B->xy)*G2sp/(3.*JforG2);
-	sp->xy = B->xy*G1sp/JforG1 + (B->zz*B->xy)*G2sp/JforG2;
-	if(np!=PLANE_STRESS_MPM)
-	{	sp->zz = Kterm + (2*B->zz-B->xx-B->yy)*G1sp/(3.*JforG1)
-				+ (B->zz*(B->xx+B->yy)-2*B->xx*B->yy+2.*B->xy*B->xy)*G2sp/(3.*JforG2);
-	}
-	
-	// strain energy per unit mass (U/(rho0 V0)) and we are using
-    // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
-	double I1bar = (B->xx+B->yy+B->zz)/J23;
-	double I2bar = 0.5*(I1bar*I1bar - (B->xx*B->xx+B->yy*B->yy+B->zz*B->zz+2.*B->xy*B->xy)/J43);
-    mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kse));
-}
-
-/* For 3D MPM analysis, take increments in strain and calculate new
-	Particle: strains, rotation strain, stresses, strain energy (per unit mass)
-	dvij are (gradient rates X time increment) to give deformation gradient change
- 
-   Note that incompressible rubber is not suitable for dynamic calculations because
-    they have an infinite wave speed
-*/
-void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-						  double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
-{
-	// Update strains and rotations and Left Cauchy strain
-	double detDf = IncrementDeformation(mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,NULL);
-    
-    // Increment J and save it
+    // Increment J and save it in history data
     double J = detDf*mptr->GetHistoryDble();
     mptr->SetHistoryDble(J);
     
@@ -215,36 +197,58 @@ void Mooney::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doubl
 	double resStretch = GetResidualStretch(mptr);
 	J /= (resStretch*resStretch*resStretch);
     
+    // update pressure
+    double Kse;
+	double Kterm = J*GetVolumetricTerms(J,&Kse);       // times J to get Kirchoff stress
+    mptr->SetPressure(-Kterm);
+    mptr->SetStrainEnergy(Kse);
+	
     // Account for density change in specific stress
     // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
 	double J23 = pow(J, 2./3.);
 	double J43 = J23*J23;
 	double JforG1 = J23;                 // J^(2/3) = J^(5/3)/J to get Kirchoff stress
 	double JforG2 = J43;                 // J^(4/3) = J^(7/3)/J to get Kirchoff stress
-    double Kse;
-	double Kterm = J*GetVolumetricTerms(J,&Kse);       // times J to get Kirchoff stress
-	
-	// find (Cauchy stress)J/rho0 = (Kirchoff stress)/rho0
-    Tensor *B = mptr->GetElasticLeftCauchyTensor();
+    
+	// find deviatoric (Cauchy stress)J/rho0 = deviatoric (Kirchoff stress)/rho0
 	Tensor *sp=mptr->GetStressTensor();
-	sp->xx = Kterm + (2*B->xx-B->yy-B->zz)*G1sp/(3.*JforG1)
-			+ (B->xx*(B->yy+B->zz)-2*B->yy*B->zz-B->xy*B->xy-B->xz*B->xz+2.*B->yz*B->yz)*G2sp/(3.*JforG2);
-	sp->yy = Kterm + (2*B->yy-B->xx-B->zz)*G1sp/(3.*JforG1)
-			+ (B->yy*(B->xx+B->zz)-2*B->xx*B->zz-B->xy*B->xy+2.*B->xz*B->xz-B->yz*B->yz)*G2sp/(3.*JforG2);
-	sp->zz = Kterm + (2*B->zz-B->xx-B->yy)*G1sp/(3.*JforG1)
-			+ (B->zz*(B->xx+B->yy)-2*B->xx*B->yy+2.*B->xy*B->xy-B->xz*B->xz-B->yz*B->yz)*G2sp/(3.*JforG2);
-	sp->xy = B->xy*G1sp/JforG1 + (B->zz*B->xy-B->xz*B->yz)*G2sp/JforG2;
-	sp->xz = B->xz*G1sp/JforG1 + (B->yy*B->xz-B->xy*B->yz)*G2sp/JforG2;
-	sp->yz = B->yz*G1sp/JforG1 + (B->xx*B->yz-B->xy*B->xz)*G2sp/JforG2;
+    
+	sp->xx = (2*B->xx-B->yy-B->zz)*G1sp/(3.*JforG1)
+            + (B->xx*(B->yy+B->zz)-2*B->yy*B->zz-B->xy*B->xy)*G2sp/(3.*JforG2);
+	sp->yy = (2*B->yy-B->xx-B->zz)*G1sp/(3.*JforG1)
+            + (B->yy*(B->xx+B->zz)-2*B->xx*B->zz-B->xy*B->xy)*G2sp/(3.*JforG2);
+	sp->zz = (2*B->zz-B->xx-B->yy)*G1sp/(3.*JforG1)
+            + (B->zz*(B->xx+B->yy)-2*B->xx*B->yy+2.*B->xy*B->xy)*G2sp/(3.*JforG2);
+	sp->xy = B->xy*G1sp/JforG1 + (B->zz*B->xy)*G2sp/JforG2;
+    
+    if(np==THREED_MPM)
+    {   sp->xx += (2.*B->yz*B->yz-B->xz*B->xz)*G2sp/(3.*JforG2);
+        sp->yy += (2.*B->xz*B->xz-B->yz*B->yz)*G2sp/(3.*JforG2);
+        sp->zz -= (B->xz*B->xz+B->yz*B->yz)*G2sp/(3.*JforG2);
+        sp->xy -= B->xz*B->yz*G2sp/JforG2;
+	    sp->xz = B->xz*G1sp/JforG1 + (B->yy*B->xz-B->xy*B->yz)*G2sp/JforG2;
+        sp->yz = B->yz*G1sp/JforG1 + (B->xx*B->yz-B->xy*B->xz)*G2sp/JforG2;
+    }
     
 	// strain energy per unit mass (U/(rho0 V0)) and we are using
     // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
 	double I1bar = (B->xx+B->yy+B->zz)/J23;
 	double I2bar = 0.5*(I1bar*I1bar - (B->xx*B->xx+B->yy*B->yy+B->zz*B->zz+2.*B->xy*B->xy+2*B->xz*B->xz+2.*B->yz*B->yz)/J43);
-    mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.) + Kse));
+    mptr->AddStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.)));
+
 }
 
 #pragma mark Mooney::Accessors
+
+// Copy stress to a read-only tensor variable
+// Subclass material can override, such as to combine pressure and deviatory stress into full stress
+Tensor Mooney::GetStress(Tensor *sp,double pressure)
+{   Tensor stress = *sp;
+    stress.xx -= pressure;
+    stress.yy -= pressure;
+    stress.zz -= pressure;
+    return stress;
+}
 
 // Return the material tag
 int Mooney::MaterialTag(void) { return MOONEYRIVLIN; }

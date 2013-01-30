@@ -19,8 +19,10 @@
 // Constructors
 AdjustTimeStepTask::AdjustTimeStepTask()
 {
-	customAdjustTime=-1.;
-	nextCustomAdjustTime=-1.;
+	customAdjustTime = -1.;
+	nextCustomAdjustTime = -1.;
+    verbose = 0;
+    lastReportedTimeStep = -1;
 }
 
 // Return name of this task
@@ -35,6 +37,10 @@ char *AdjustTimeStepTask::InputParam(char *pName,int &input)
         return (char *)&customAdjustTime;				// assumes in ms
     }
 		
+    if(strcmp(pName,"verbose")==0)
+    {	input=INT_NUM;
+        return (char *)&verbose;
+    }
 	// check remaining commands
     return CustomTask::InputParam(pName,input);
 }
@@ -55,6 +61,10 @@ CustomTask *AdjustTimeStepTask::Initialize(void)
 	}
 	else
 		cout << "same as particle archives" << endl;
+    if(verbose!=0)
+        cout << "   Verbose: yes" << endl;
+    else
+        cout << "   Verbose: no" << endl;
 	
     return nextTask;
 }
@@ -90,7 +100,7 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     // get grid dimensions
     double minSize=mpmgrid.GetMinCellDimension()/10.;	// in cm
     
-    //cout << "# start " << timestep;
+    if(lastReportedTimeStep<0) lastReportedTimeStep = timestep;
     
     // reset globals
     timestep=1.e15;
@@ -131,7 +141,15 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
 	// propagation time step (no less than timestep)
     if(propTime<timestep) propTime=timestep;
     
-    //cout << " end " << timestep << endl;
+    // report if changed by 1% since last reported change
+    if(verbose!=0)
+    {   double ratio = timestep/lastReportedTimeStep;
+        if(ratio < 0.99)
+            cout << "# time step reduced to " << timestep*1000. << " ms" << endl;
+        else if(ratio > 1.01)
+            cout << "# time step increased to " << timestep*1000. << " ms" << endl;
+        lastReportedTimeStep = timestep;
+    }
 
     return nextTask;
 }
