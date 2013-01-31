@@ -194,6 +194,9 @@
 <dt>adjustTime</dt>
 <dd>Enter the time interval for checking the time step and adjusting it if needed (in ms). This parameter is optional; if it is omitted, the time step adjustment is done each time particle data are archived (see <a href="mpmheader.html#atime">ArchiveTime</a> and <a href="mpmheader.html#fatime">FirstArchiveTime</a> commands).</dd>
 
+<dt>verbose</dt>
+<dd>If its integer value is not zero, it will print the new time step whenever it changes by more than 1%. If it is zero, the new time step is silently changed. The default it 0.</dd>
+
 </dl>
 
 <p>This command only has an effect if some particles are using <a href="definematl.html">material classes</a> that respond to <code>CurrentWaveSpeed()</code> and provide a wave speed that changes depending on current particle state. Currently no material supports this option, but it is planned for the future or can be used now by those developing their own materials.</p>

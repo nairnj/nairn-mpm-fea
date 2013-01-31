@@ -103,6 +103,8 @@ void HardeningLawBase::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime
         bracketed, which means it may not be safe. Its faster than bracketing when it is safe, but'
         otherwise should not be used (currently used by LinearHardening and SLHardening)
     Set alpint and dalpha before calling
+    Note: psKred and Pfinal only needed for plane stress, otherwise ignored
+    Hyperelastic can adjust Gred to be mubar = Gred*Ielbar
 */
 double HardeningLawBase::SolveForLambda(MPMBase *mptr,int np,double strial,Tensor *stk,
                                         double Gred,double psKred,double Pfinal,double delTime)
@@ -153,7 +155,9 @@ double HardeningLawBase::SolveForLambda(MPMBase *mptr,int np,double strial,Tenso
 /* Solve numerically for lambda by safe Newton's method (i.e., with bracketing)
     Subclasses can override for analytical solution is possible or if more efficient method
         is available (e.g., non-bracketed method in SolveForLambda())
-    the input ftrial is f function when lambda=0 (but not useful in in plane stress)
+    The input ftrial is f function when lambda=0 (but not useful in in plane stress)
+    Note: psKred and Pfinal only needed for plane stress, otherwise ignored
+    Hyperelastic can adjust Gred to be mubar = Gred*Ielbar
 */
 double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,
                                                  double Gred,double psKred,double Pfinal,double delTime)
@@ -254,6 +258,8 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
     Subclass can override if have faster way to bracket
     ftrial is 3D or plane strain result for lambda=0 and it is positive
     Return lamNeg for f<0 (higher lambda) and lamPos where f>0 (lower lambda)
+    Note: psKred and Pfinal only needed for plane stress, otherwise ignored
+    Hyperelastic can adjust Gred to be mubar = Gred*Ielbar
 */
 void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor *stk,double Gred,double psKred,double Pfinal,
                                        double delTime,double *lamNeg,double *lamPos)
