@@ -455,7 +455,7 @@ void RigidMaterial::SetSettingFunction(char *bcFunction,int functionNum)
 				ThrowSAXException("Duplicate setting function #1");
 			function=new ROperation(bcFunction,4,rmTimeArray);
 			if(function->HasError())
-				ThrowSAXException("Setting function #1is not valid");
+				ThrowSAXException("Setting function #1 is not valid");
 			break;
 		case SETTING_FUNCTION2_BLOCK:
 			if(function==NULL && setDirection!=RIGID_MULTIMATERIAL_MODE)

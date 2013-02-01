@@ -340,14 +340,6 @@ bool HardeningLawBase::LambdaConverged(int step,double lambda,double delLam)
 	return false;
 }
 
-#pragma mark HardeningLawBase::Hyperelastic Return Mapping
-
-// Will need to write this to allow hyperelastic hardening laws
-double HardeningLawBase::HESolveForLambdaBracketed(MPMBase *mptr,int np,double strial,double Gred,double Ie1bar)
-{	return 0.0;
-}
-
-
 #pragma mark HardeningLawBase::Accessors
 
 // IsoPlasticity has now history data, by the hardening law might

@@ -37,9 +37,6 @@ class LinearHardening : public HardeningLawBase
         // return mapping can have fast option
         virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double);
     
-		// hyperelastic return mapping methods
-		virtual double HESolveForLambdaBracketed(MPMBase *,int,double,double,double);
-    
         // accessors
         virtual const char *GetHardeningLawName(void);
     

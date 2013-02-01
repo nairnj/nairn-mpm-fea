@@ -61,11 +61,6 @@ char *Mooney::InputMat(char *xName,int &input)
     else if(strcmp(xName,"G2")==0)
         return((char *)&G2);
     
-    else if(strcmp(xName,"UJOption")==0)
-    {   input = INT_NUM;
-        return((char *)&UofJOption);
-    }
-    
     return(HyperElastic::InputMat(xName,input));
 }
 

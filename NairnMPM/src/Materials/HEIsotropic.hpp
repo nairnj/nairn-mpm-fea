@@ -34,6 +34,7 @@ class HEIsotropic : public HyperElastic
 		
 		// initialize
         virtual char *InputMat(char *,int &);
+        virtual void SetHardeningLaw(char *);
         virtual const char *VerifyProperties(int);
         virtual void ValidateForUse(int);
 		virtual void PrintMechanicalProperties(void);
@@ -44,13 +45,14 @@ class HEIsotropic : public HyperElastic
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
     
-        Tensor GetTrialStressTensor2D(Tensor *,double);
+        Tensor GetTrialDevStressTensor2D(Tensor *,double);
         Tensor GetTrialStressTensor3D(Tensor *,double);
         Tensor GetNormalTensor2D(Tensor *,double);
         Tensor GetNormalTensor3D(Tensor *,double);
-		virtual double GetDilationalTerms(MPMBase *,double,int,double &);
+		virtual void UpdatePressure(MPMBase *,double,int);
     
 		// accessors
+        virtual Tensor GetStress(Tensor *,double);
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
 		virtual double WaveSpeed(bool,MPMBase *);
