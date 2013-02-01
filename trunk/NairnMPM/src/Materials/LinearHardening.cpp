@@ -116,18 +116,6 @@ double LinearHardening::SolveForLambdaBracketed(MPMBase *mptr,int np,double stri
 	return lambdak;
 }
 
-// Linear law can do return mapping analytically, except for plane stress
-double LinearHardening::HESolveForLambdaBracketed(MPMBase *mptr,int np,double strial,double Gred,double Ie1bar)
-{
-	// plane stress is not supported yet
-	if(np==PLANE_STRESS_MPM) return 0.0;
-	
-    // Find  lambda for this plastic state
-	double lambdak = (strial - SQRT_TWOTHIRDS*(yldred + Epred*alpint))/(2.*(Gred*Ie1bar + Epred/3.));
-	UpdateTrialAlpha(mptr,np,lambdak,(double)1.);
-	return lambdak;
-}
-
 #pragma mark LinearHardening::Accessors
 
 // hardening law name

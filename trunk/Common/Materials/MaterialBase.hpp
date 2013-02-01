@@ -148,7 +148,7 @@ class MaterialBase : public LinkedObject
  		Tensor *GetkCondTensor(void);
 		Tensor *GetDiffusionTensor(void);
         virtual double GetCurrentRelativeVolume(MPMBase *);
-        virtual Tensor GetStress(Tensor *sp,double pressure);
+        virtual Tensor GetStress(Tensor *,double);
 #endif
 		
 	protected:

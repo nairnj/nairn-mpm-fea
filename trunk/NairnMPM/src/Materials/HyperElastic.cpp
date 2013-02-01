@@ -35,6 +35,11 @@ char *HyperElastic::InputMat(char *xName,int &input)
     else if(strcmp(xName,"alpha")==0)
         return((char *)&aI);
     
+    else if(strcmp(xName,"UJOption")==0)
+    {   input = INT_NUM;
+        return((char *)&UofJOption);
+    }
+    
     return(MaterialBase::InputMat(xName,input));
 }
 

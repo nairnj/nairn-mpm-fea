@@ -44,9 +44,6 @@ class HardeningLawBase
         virtual void BracketSolution(MPMBase *,int,double,Tensor *,double,double,double,double,double *,double *);
         virtual bool LambdaConverged(int,double,double);
 	
-		// hyperelastic return mapping methods
-		virtual double HESolveForLambdaBracketed(MPMBase *,int,double,double,double);
-    
         // Default internal variable as cumlative plastic strain
         virtual void UpdateTrialAlpha(MPMBase *,int);
         virtual void UpdateTrialAlpha(MPMBase *,int,double,double);
