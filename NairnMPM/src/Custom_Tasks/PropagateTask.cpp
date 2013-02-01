@@ -57,7 +57,7 @@ CustomTask *PropagateTask::PrepareForStep(bool &doPropExtraps)
         // Make sure J and K are available if needed for current criterion
 		CrackHeader *nextCrack=firstCrack;
 		while(nextCrack!=NULL)
-		{	theJKTask->ScheduleJK(nextCrack->CriterionNeeds());
+		{	if(theJKTask!=NULL) theJKTask->ScheduleJK(nextCrack->CriterionNeeds());
 			nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 		}
     }

@@ -124,15 +124,27 @@ void NairnMPM::MPMAnalysis(bool abort)
 	if(firstCrack!=NULL)
 	{	if(propagate[0] || archiver->WillArchiveJK(FALSE))
 		{	if(IsAxisymmetric())
-				throw CommonException("Axisymmetric MPM cannot yet do J Integral calculations.","NairnMPM::ValidateOptions");
-			nextTask=new CalcJKTask();
-			if(propagate[0])
-			{   nextTask=new PropagateTask();
-				theJKTask->nextTask=nextTask;
-			}
-			nextTask->nextTask=theTasks;
-			theTasks=theJKTask;
-			ElementBase::AllocateNeighbors();
+            {   // Until axisymmetric can do J, it can all do propagation by max ctod
+                if((propagate[0]!=NO_PROPAGATION && propagate[0]!=MAXCTODCRITERION) || archiver->WillArchiveJK(FALSE))
+                    throw CommonException("Axisymmetric MPM cannot yet do J Integral calculations.","NairnMPM::ValidateOptions");
+                
+                // allow propagation task only
+                if(propagate[0])
+                {   nextTask=new PropagateTask();
+                    nextTask->nextTask=theTasks;
+                    theTasks=nextTask;
+                }
+            }
+            else
+            {   nextTask=new CalcJKTask();
+                if(propagate[0])
+                {   nextTask=new PropagateTask();
+                    theJKTask->nextTask=nextTask;
+                }
+                nextTask->nextTask=theTasks;
+                theTasks=theJKTask;
+                ElementBase::AllocateNeighbors();
+            }
 		}
 	}
 

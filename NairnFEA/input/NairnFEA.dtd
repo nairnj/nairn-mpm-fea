@@ -314,7 +314,8 @@
 <!ATTLIST	Origin
 			units CDATA "mm"
 			x CDATA #REQUIRED
-			y CDATA #REQUIRED>
+			y CDATA #REQUIRED
+            flipped CDATA #IMPLIED>
 <!ELEMENT	Angle (#PCDATA)>
 <!ELEMENT	Thickness (#PCDATA)>
 <!ATTLIST	Thickness

@@ -37,6 +37,7 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
 		bmpFileName[0]=0;
 		bmpAngleFileName[0]=0;
 		xorig=yorig=0.;
+        yflipped=FALSE;
 		zslice=0.;
 		aScaling=ReadUnits(attrs,LENGTH_UNITS);
         numAttr=attrs.getLength();
@@ -86,6 +87,12 @@ short CommonReadHandler::BMPFileCommonInput(char *xName,const Attributes& attrs,
             else if(strcmp(aName,"z")==0)
 			{	sscanf(value,"%lf",&zslice);
 				zslice*=aScaling;
+			}
+            else if(strcmp(aName,"flipped")==0)
+			{	if(strcmp(value,"yes")==0 || strcmp(value,"Yes")==0 || strcmp(value,"YES")==0 || strcmp(value,"1")==0 )
+                    yflipped=TRUE;
+                else
+                    yflipped=FALSE;
 			}
             delete [] aName;
             delete [] value;

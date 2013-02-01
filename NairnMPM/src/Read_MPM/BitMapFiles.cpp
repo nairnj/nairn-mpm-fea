@@ -127,7 +127,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	
 	// scan mesh and assign material points or angles
     for(ii=1;ii<=nelems;ii++)
-	{	// skip if image not in extend of element box
+	{	// skip if image not in extent of element box
 		elem=theElements[ii-1];
 		if(!elem->IntersectsBox(xorig,yorig,bwidth,bheight,zslice))
 			continue;
@@ -147,7 +147,7 @@ void MPMReadHandler::TranslateBMPFiles(void)
         for(k=0;k<fmobj->ptsPerElement;k++)
 		{	ptFlag=1<<k;
 		
-			// skip if alreadyu filled
+			// skip if already filled
             if(elem->filled&ptFlag) continue;
 			
 			// if point in the view area, then check it
@@ -155,10 +155,16 @@ void MPMReadHandler::TranslateBMPFiles(void)
 					&& (mpos[k].y>=yorig && mpos[k].y<yorig+bheight)
 						 && (mpos[k].z>=zslice-deltaz && mpos[k].z<zslice+deltaz))
 			{	// find range of rows and cols for pixels over this material point
-				rmin=(mpos[k].y-deltay-yorig)/ypw;
-				rmax=(mpos[k].y+deltay-yorig)/ypw;
+                if(yflipped)
+                {   rmin=(yorig+bheight-mpos[k].y-deltay)/ypw;
+                    rmax=(yorig+bheight-mpos[k].y-deltay)/ypw;
+                }
+                else
+                {   rmin=(mpos[k].y-deltay-yorig)/ypw;
+                    rmax=(mpos[k].y+deltay-yorig)/ypw;
+                }
 				r1=BMPIndex(rmin,info.height);
-				r2=BMPIndex(rmax,info.height);
+                r2=BMPIndex(rmax,info.height);
 				if(r2==r1)
 				{	wtr1=wtr2=1.;
 				}
