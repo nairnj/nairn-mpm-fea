@@ -732,7 +732,8 @@
 			units CDATA #IMPLIED
 			x CDATA #REQUIRED
 			y CDATA #REQUIRED
-			z CDATA #IMPLIED>
+			z CDATA #IMPLIED
+			flipped CDATA #IMPLIED>
 <!ELEMENT	Angle (#PCDATA)>
 <!ELEMENT	Thickness (#PCDATA)>
 <!ATTLIST	Thickness

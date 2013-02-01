@@ -78,7 +78,7 @@ void FEAReadHandler::TranslateBMPFiles(void)
 	// scan all elements - fill those that are in the area and have no material yet
 	int matID;
 	BMPLevel *nextLevel;
-		BMPLevel *maxLevel;
+    BMPLevel *maxLevel;
 	double deltax,deltay;
 	double rmin,rmax,wtr1,wtr2,rweight;
 	double cmin,cmax,wtc1,wtc2,weight;
@@ -102,10 +102,16 @@ void FEAReadHandler::TranslateBMPFiles(void)
 		deltay=(elem->GetDeltaY())/2.;
 		
 		// find range of rows and cols for pixels over this element extent
-		rmin=(center.y-deltay-yorig)/ypw;
-		rmax=(center.y+deltay-yorig)/ypw;
+        if(yflipped)
+        {   rmin=(yorig+bheight-center.y-deltay)/ypw;
+            rmax=(yorig+bheight-center.y+deltay)/ypw;
+        }
+        else
+        {   rmin=(center.y-deltay-yorig)/ypw;
+            rmax=(center.y+deltay-yorig)/ypw;
+        }
 		r1=BMPIndex(rmin,info.height);
-		r2=BMPIndex(rmax,info.height);
+        r2=BMPIndex(rmax,info.height);
 		if(r2==r1)
 		{	wtr1=wtr2=1.;
 		}
@@ -136,7 +142,10 @@ void FEAReadHandler::TranslateBMPFiles(void)
 		Vector scanPt;
 		scanPt.z=0.;
 		for(row=r1;row<=r2;row++)
-		{	scanPt.y=ypw*row+yorig;		// actual point
+        {   if(yflipped)
+                scanPt.y = yorig+bheight - ypw*row;		// actual point
+            else
+            	scanPt.y = ypw*row + yorig;		// actual point
 			if(row==r1)
 				rweight=wtr1;
 			else if(row==r2)
@@ -188,7 +197,10 @@ void FEAReadHandler::TranslateBMPFiles(void)
 				double totalWeight=0.;
 				double totalIntensity=0.;
 				for(row=r1;row<=r2;row++)
-				{	scanPt.y=ypw*row+yorig;		// actual point
+                {   if(yflipped)
+                        scanPt.y = yorig+bheight - ypw*row;		// actual point
+                    else
+                        scanPt.y = ypw*row + yorig;		// actual point
 					if(row==r1)
 						rweight=wtr1;
 					else if(row==r2)

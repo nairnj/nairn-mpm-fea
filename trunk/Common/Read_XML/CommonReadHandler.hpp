@@ -129,6 +129,7 @@ class CommonReadHandler : public DefaultHandler
 		
 		// bmp file globals
 		double bwidth,bheight,xorig,yorig,zslice;
+        bool yflipped;
 		double minAngle,minIntensity,angleScale;
 		char bmpFileName[300],bmpAngleFileName[300];
 		unsigned int intensity[256];

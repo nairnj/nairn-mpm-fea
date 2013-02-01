@@ -279,6 +279,8 @@ can be mapped to any point on the mesh using a subordinate <code>&lt;Origin&gt;<
 constant <code>z</code>. A 3D shape can be built up by a series of <code>BMP</code> commands at
 various <code>z</code> locations such as data from X-ray CT slices.
 
+<br><br>If you add a <code>flipped</code> attribute equal to &quot;yes&quot; to an <code>&lt;Origin&gt;</code> command, the origin will move to the upper-left corner of the image with y increasing in the downward direction and x increasing to the right. This change will flip the image in the y direction in the MPM analysis compared to the image graphics.
+
 <br><br>Material points (or FEA element material types) will
 be assigned to various material types as determined by one or more subodinate
 <code>&lt;Intensity&gt;</code> blocks. The atttibutes on each <code>&lt;Intensity&gt;</code> block define the material number (<code>mat</code>, see <a href="definematl.html">Defining Materials</a>;
