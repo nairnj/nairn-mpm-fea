@@ -201,23 +201,24 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
     // Compute Elastic Predictor
     // ============================================
     
+    // Find initial shear energy
+    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
+    double Jprevious = mptr->GetHistoryDble(J_history);
+    double J23 = pow(Jprevious, 2./3.);
+    double I1bar = (pB->xx+pB->yy+pB->zz)/J23;
+    double shearEnergy0 = 0.5*(G1sp*(I1bar-3.));
+    
+    // initial deviatoric stress state
+    Tensor *sp=mptr->GetStressTensor();
+    Tensor st0 = *sp;
+    
 	// Update total deformation gradient, and calculate trial B
     Tensor Btrial;
 	double detdF = IncrementDeformation(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,&Btrial);
     
 	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
-	double J2;
-	if(np==PLANE_STRESS_MPM)
-	{	
-		// first we don't consider a 2D plane stress
-	}
-    else
-	{
-        //J2 = Btrial.xx*Btrial.yy - Btrial.xy*Btrial.xy;
-      
-        //Incremental calculation of J det(F)=det(dF)det(pF)
-        J2 = detdF*mptr->GetHistoryDble(J_history);
-	}
+    // Plain strain and axisymnmetric - Plane stress is blocked
+	double J2 = detdF * Jprevious;
     
     // save new J
     mptr->SetHistoryDble(J_history,J2);  // Stocking J
@@ -231,7 +232,7 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
     UpdatePressure(mptr,J,np);
     
     // Others constants
-    double J23 = pow(J, 2./3.);
+    J23 = pow(J, 2./3.);
     
     // find Trial Specific Kirchoff stress Tensor (Trial_Tau/rho0)
     Tensor stk = GetTrialDevStressTensor2D(&Btrial,J23);
@@ -265,12 +266,10 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
         
         // save on particle
 
-        Tensor *pB = mptr->GetElasticLeftCauchyTensor();
         *pB = B;
         //cout << "# in elastic  B.yy  =    " << Btrial.yy <<"     B.zz  =    " << Btrial.zz << endl;
         
         // Get specifique stress i.e. (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
-        Tensor *sp=mptr->GetStressTensor();
 		
 		// JAN: Just store deviatoric stress
         *sp = stk;
@@ -300,7 +299,6 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
     //cout << "nk.xx  =    " << nk.xx << "nk.xy  =    " << nk.xy << endl;
     
     // update deviatoric stress
-    Tensor *sp=mptr->GetStressTensor();
     sp->xx = stk.xx - 2.*MUbar*dlambda*nk.xx;
     sp->yy = stk.yy - 2.*MUbar*dlambda*nk.yy;
     sp->zz = stk.zz - 2.*MUbar*dlambda*nk.zz;
@@ -309,7 +307,6 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
     //cout << "EXT B.xx  =    " << B.xx << endl;
     // save on particle
     // JAN: reuse stress rather than calculate again
-    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
 	pB->xx = (sp->xx/Gred+Ie1bar)*J23;
 	pB->yy = (sp->yy/Gred+Ie1bar)*J23;
 	pB->zz = (sp->zz/Gred+Ie1bar)*J23;
@@ -319,9 +316,21 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
     // strain energy per unit mass (U/(rho0 V0)) and we are using
     // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
 	// JAN: will need to get elastic and plastic energy
-    double I1bar = (pB->xx+pB->yy+pB->zz)/J23;
-    mptr->AddStrainEnergy(0.5*G1sp*(I1bar-3.));
+    I1bar = (pB->xx+pB->yy+pB->zz)/J23;
+    double shearEnergyFinal = 0.5*G1sp*(I1bar-3.);
+    mptr->AddStrainEnergy(shearEnergyFinal);
+    
+    // get dissipated energy
+    double dgxy = dvxy+dvyx;
+    double eres = resStretch - 1.;
+    double totalEnergy = 0.5*((sp->xx+st0.xx)*(dvxx-eres) + (sp->yy+st0.yy)*(dvyy-eres) + (sp->zz+st0.zz)*(dvzz-eres)+ (sp->xy+st0.xy)*dgxy);
+    double elasticIncrement = shearEnergyFinal - shearEnergy0;
+    double dispEnergy = totalEnergy - elasticIncrement;
 
+	// add plastic energy to the particle - but it is coming out negative here
+	//mptr->AddDispEnergy(dispEnergy);
+    //mptr->AddPlastEnergy(dispEnergy);
+	
 	// JAN: need call to update hardening law properties. Might revise to have in done in the solve method instead
 	// update internal variables
 	plasticLaw->UpdatePlasticInternal(mptr,np);
