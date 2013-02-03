@@ -70,6 +70,7 @@ class HEIsotropic : public HyperElastic
 	
 		// JAN: J history might move depening on hardening law
 		int J_history;
+		int devEnergy_history;
 };
 
 #endif

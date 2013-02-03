@@ -177,8 +177,9 @@ void HEIsotropic::PrintMechanicalProperties(void)
 // First ones for hardening law. Particle J appended at the end
 char *HEIsotropic::InitHistoryData(void)
 {	J_history = plasticLaw->HistoryDoublesNeeded();
-	double *p = CreateAndZeroDoubles(J_history+1);
-	p[J_history]=1.;                // J
+	double *p = CreateAndZeroDoubles(J_history+2);
+	p[J_history]=1.;					// J
+	devEnergy_history = J_history+1;	// shgear energy starts at zero
 	return (char *)p;
 }
 
@@ -201,24 +202,17 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
     // Compute Elastic Predictor
     // ============================================
     
-    // Find initial shear energy
-    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
-    double Jprevious = mptr->GetHistoryDble(J_history);
-    double J23 = pow(Jprevious, 2./3.);
-    double I1bar = (pB->xx+pB->yy+pB->zz)/J23;
-    double shearEnergy0 = 0.5*(G1sp*(I1bar-3.));
-    
     // initial deviatoric stress state
-    Tensor *sp=mptr->GetStressTensor();
+    Tensor *sp = mptr->GetStressTensor();
     Tensor st0 = *sp;
     
 	// Update total deformation gradient, and calculate trial B
-    Tensor Btrial;
-	double detdF = IncrementDeformation(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,&Btrial);
+    Tensor B;
+	double detdF = IncrementDeformation(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,&B);
     
 	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
     // Plain strain and axisymnmetric - Plane stress is blocked
-	double J2 = detdF * Jprevious;
+	double J2 = detdF * mptr->GetHistoryDble(J_history);
     
     // save new J
     mptr->SetHistoryDble(J_history,J2);  // Stocking J
@@ -232,10 +226,10 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
     UpdatePressure(mptr,J,np);
     
     // Others constants
-    J23 = pow(J, 2./3.);
+    double J23 = pow(J, 2./3.);
     
     // find Trial Specific Kirchoff stress Tensor (Trial_Tau/rho0)
-    Tensor stk = GetTrialDevStressTensor2D(&Btrial,J23);
+    Tensor stk = GetTrialDevStressTensor2D(&B,J23);
    
     // Checking for plastic loading
     // ============================================
@@ -259,13 +253,11 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
     //============================
     //ftrial=-1.;
     if(ftrial<=0.)
-        
-        // if elastic
+	{	// if elastic
         //============================
-    {   Tensor B = Btrial;
-        
-        // save on particle
-
+		
+		// save on particle
+		Tensor *pB = mptr->GetElasticLeftCauchyTensor();
         *pB = B;
         //cout << "# in elastic  B.yy  =    " << Btrial.yy <<"     B.zz  =    " << Btrial.zz << endl;
         
@@ -278,7 +270,9 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
         // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
 		// JAN: May need new energy methods
         double I1bar = (B.xx+B.yy+B.zz)/J23;
-        mptr->AddStrainEnergy(0.5*(G1sp*(I1bar-3.)));
+		double shearEnergyFinal = 0.5*(Gred*(I1bar-3.));
+        mptr->AddStrainEnergy(shearEnergyFinal);
+		mptr->SetHistoryDble(devEnergy_history, shearEnergyFinal);
         
         return;
     }
@@ -287,8 +281,7 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
     //=====================================================
     // if plastic
     
-	// JAN: Use hardening law method (will need future expansion for other laws)
-    Tensor B = Btrial;
+	// JAN: Use hardening law method (which can now ue other laws too)
     double Ie1bar = (1./3.)*(B.xx+B.yy+B.zz)/J23;
     double MUbar = Gred*Ie1bar;
     
@@ -307,6 +300,7 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
     //cout << "EXT B.xx  =    " << B.xx << endl;
     // save on particle
     // JAN: reuse stress rather than calculate again
+	Tensor *pB = mptr->GetElasticLeftCauchyTensor();
 	pB->xx = (sp->xx/Gred+Ie1bar)*J23;
 	pB->yy = (sp->yy/Gred+Ie1bar)*J23;
 	pB->zz = (sp->zz/Gred+Ie1bar)*J23;
@@ -315,21 +309,27 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
         
     // strain energy per unit mass (U/(rho0 V0)) and we are using
     // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
-	// JAN: will need to get elastic and plastic energy
-    I1bar = (pB->xx+pB->yy+pB->zz)/J23;
-    double shearEnergyFinal = 0.5*G1sp*(I1bar-3.);
+	// JAN: I1bar = 3 Ie1bar so no need to recalculate
+    //double I1bar = (pB->xx+pB->yy+pB->zz)/J23;
+    double shearEnergyFinal = 1.5*Gred*(Ie1bar-1.);
     mptr->AddStrainEnergy(shearEnergyFinal);
+	
+	// get shear energy change and track for next time step
+    double elasticIncrement = shearEnergyFinal - mptr->GetHistoryDble(devEnergy_history);
+	mptr->SetHistoryDble(devEnergy_history, shearEnergyFinal);
     
     // get dissipated energy
     double dgxy = dvxy+dvyx;
     double eres = resStretch - 1.;
-    double totalEnergy = 0.5*((sp->xx+st0.xx)*(dvxx-eres) + (sp->yy+st0.yy)*(dvyy-eres) + (sp->zz+st0.zz)*(dvzz-eres)+ (sp->xy+st0.xy)*dgxy);
-    double elasticIncrement = shearEnergyFinal - shearEnergy0;
+    double totalEnergy = 0.5*((sp->xx+st0.xx)*(dvxx-eres) + (sp->yy+st0.yy)*(dvyy-eres) + (sp->zz+st0.zz)*(dvzz-eres)
+							  + (sp->xy+st0.xy)*dgxy);
     double dispEnergy = totalEnergy - elasticIncrement;
 
-	// add plastic energy to the particle - but it is coming out negative here
-	//mptr->AddDispEnergy(dispEnergy);
-    //mptr->AddPlastEnergy(dispEnergy);
+	// add plastic energy to the particle - but it is coming out close to zero
+	// The problem is that shear energy is related to trace of B, but trace of B is independent of the amount
+	// of platic deformation?
+	mptr->AddDispEnergy(dispEnergy);
+    mptr->AddPlastEnergy(dispEnergy);
 	
 	// JAN: need call to update hardening law properties. Might revise to have in done in the solve method instead
 	// update internal variables
@@ -469,7 +469,7 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,
         // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
 		// JAN: may need new energy methods
         double I1bar = (B.xx+B.yy+B.zz)/J23;
-        mptr->SetStrainEnergy(0.5*(G1sp*(I1bar-3.)));
+        mptr->SetStrainEnergy(0.5*(Gred*(I1bar-3.)));
         
         return;
     }
@@ -513,7 +513,7 @@ void HEIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,
     // strain energy per unit mass (U/(rho0 V0)) and we are using
     // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
     double I1bar = (B.xx+B.yy+B.zz)/J23;
-    mptr->AddStrainEnergy(0.5*(G1sp*(I1bar-3.)));
+    mptr->AddStrainEnergy(0.5*(Gred*(I1bar-3.)));
     
 	// JAN: need call to update hardening law properties. Might revise to have in done in the solve method instead
 	// update internal variables

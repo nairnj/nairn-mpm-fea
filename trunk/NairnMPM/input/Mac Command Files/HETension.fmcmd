@@ -44,7 +44,7 @@ EndXMLData
 ! Load by stress or by velocity (if stress<=0)
 #loading="rigid"	! Loading = "rigid", "contact", "force", "traction"
 #fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
-#strain=5	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
+#strain=10	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak

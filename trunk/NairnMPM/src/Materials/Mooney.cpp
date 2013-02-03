@@ -110,6 +110,10 @@ char *Mooney::InitHistoryData(void)
 */
 void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
 {
+	// incremental energy (see other places too) and it matches total energy method
+	//Tensor *sporig=mptr->GetStressTensor();
+	//Tensor st0 = *sporig;
+	
 	// Update strains and rotations and Left Cauchy strain
 	double detDf = IncrementDeformation(mptr,du,NULL,np);
     
@@ -192,11 +196,18 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
 	double resStretch = GetResidualStretch(mptr);
 	J /= (resStretch*resStretch*resStretch);
     
+	// incremental energy - save energy
+	//double p0=mptr->GetPressure();
+	
     // update pressure
     double Kse;
 	double Kterm = J*GetVolumetricTerms(J,&Kse);       // times J to get Kirchoff stress
     mptr->SetPressure(-Kterm);
     mptr->SetStrainEnergy(Kse);
+	
+	// incremental energy - dilational part
+    //double dilEnergy = 0.5*((Kterm-p0)*(du(0,0) + du(1,1) + du(2,2)));
+    //mptr->AddPlastEnergy(dilEnergy);
 	
     // Account for density change in specific stress
     // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
@@ -231,6 +242,10 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
 	double I2bar = 0.5*(I1bar*I1bar - (B->xx*B->xx+B->yy*B->yy+B->zz*B->zz+2.*B->xy*B->xy+2*B->xz*B->xz+2.*B->yz*B->yz)/J43);
     mptr->AddStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.)));
 
+	// incremental energy = sehar energy (2D only)
+    //double totalEnergy = 0.5*((sp->xx+st0.xx)*du(0,0) + (sp->yy+st0.yy)*du(1,1) + (sp->zz+st0.zz)*du(2,2)+
+	//						  (sp->xy+st0.xy)*(du(0,1)+du(1,0)));
+    //mptr->AddPlastEnergy(totalEnergy);
 }
 
 #pragma mark Mooney::Accessors
