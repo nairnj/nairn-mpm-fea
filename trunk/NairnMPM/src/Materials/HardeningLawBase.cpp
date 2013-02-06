@@ -58,6 +58,12 @@ int HardeningLawBase::HistoryDoublesNeeded(void) { return 1; }
 
 #pragma mark HardeningLawBase::Methods
 
+// Return (K(alpha)-K(0)), which is used in dissipated energy calculation
+double HardeningLawBase::GetYieldIncrement(MPMBase *mptr,int np,double delTime)
+{
+	return GetYield(mptr,np,delTime) - yldred;
+}
+
 // In case hardening properties depends on state in subclasses
 void HardeningLawBase::LoadHardeningLawProps(MPMBase *mptr,int np) {}
 

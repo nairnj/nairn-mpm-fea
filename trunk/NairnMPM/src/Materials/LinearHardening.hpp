@@ -31,6 +31,7 @@ class LinearHardening : public HardeningLawBase
     
         // hardening law core methods
         virtual double GetYield(MPMBase *,int,double);
+        virtual double GetYieldIncrement(MPMBase *,int,double);
         virtual double GetKPrime(MPMBase *,int,double);
         virtual double GetK2Prime(MPMBase *,double,double);
     

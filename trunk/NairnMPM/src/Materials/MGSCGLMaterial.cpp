@@ -254,9 +254,9 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
     }
 
     // Pressure from bulk modulus and an energy term
-    double e = mptr->GetStrainPlusPlastEnergy()
+    //double e = mptr->GetStrainPlusPlastEnergy()
+    double e = mptr->GetStrainEnergy()
                     + 1000.*heatCapacityVol*(mptr->pPreviousTemperature - thermal.reference*exp(gamma0*x));
-    //double e = mptr->GetStrainPlusPlastEnergy();
 	double P0 = mptr->GetPressure();
     double P = J*(Keffred*x + gamma0*e);
     mptr->SetPressure(P);
@@ -325,7 +325,8 @@ double MGSCGLMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr)
     KcurrRed *= J;          // convert to K/rho
     
     // get G/rho at current pressure
-    double e = mptr->GetStrainPlusPlastEnergy()
+    //double e = mptr->GetStrainPlusPlastEnergy()
+    double e = mptr->GetStrainEnergy()
             + 1000.*heatCapacityVol*(mptr->pPreviousTemperature - thermal.reference*exp(gamma0*x));
     double pressure = J*(KcurrRed*x + gamma0*e);
     double GcurrRed = G0red * plasticLaw->GetShearRatio(mptr,pressure,J);

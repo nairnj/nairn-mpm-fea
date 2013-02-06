@@ -82,6 +82,12 @@ double LinearHardening::GetYield(MPMBase *mptr,int np,double delTime)
 	return yldred + Epred*alpint;
 }
 
+// Return (K(alpha)-K(0)), which is used in dissipated energy calculation
+double LinearHardening::GetYieldIncrement(MPMBase *mptr,int np,double delTime)
+{
+	return Epred*alpint;
+}
+
 // Get derivative of sqrt(2./3.)*yield with respect to lambda for plane strain and 3D
 // ... and using dep/dlambda = sqrt(2./3.)
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)lamda or depdot/dlambda = sqrt(2./3.)/delTime

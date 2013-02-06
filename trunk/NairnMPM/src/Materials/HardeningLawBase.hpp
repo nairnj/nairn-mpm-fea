@@ -35,6 +35,7 @@ class HardeningLawBase
         virtual double GetShearRatio(MPMBase *,double,double);
         virtual void LoadHardeningLawProps(MPMBase *,int);
         virtual double GetYield(MPMBase *,int,double) = 0;
+        virtual double GetYieldIncrement(MPMBase *,int,double);
         virtual double GetKPrime(MPMBase *,int,double) = 0;
         virtual double GetK2Prime(MPMBase *,double,double) = 0;
     
