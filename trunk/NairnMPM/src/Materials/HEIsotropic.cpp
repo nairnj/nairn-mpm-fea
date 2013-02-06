@@ -308,10 +308,16 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     double shearEnergyFinal = 1.5*Gred*(Ie1bar-1.);
     mptr->AddStrainEnergy(shearEnergyFinal);
     
-    // JAN: To do - find disspated energy and perhaps add some more strain/internal energy
-    // Also might want only some converted to heat (which is in AddDispEnergy()
-	//mptr->AddDispEnergy(dispEnergy);
-    //mptr->AddPlastEnergy(dispEnergy);
+    // Plastic or dissipated energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    double qdalphaTerm = dlambda*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime);
+    double dispEnergy = dlambda*(sp->xx*nk.xx + sp->yy*nk.yy + sp->zz*nk.zz + 2.*sp->xy*nk.xy);
+    if(np==THREED_MPM)  dispEnergy += 2.*dlambda*(sp->xz*nk.xz + sp->yz*nk.yz);
+    
+    // increment energies
+    mptr->AddStrainEnergy(qdalphaTerm);
+    dispEnergy -= qdalphaTerm;
+	mptr->AddDispEnergy(dispEnergy);
+    mptr->AddPlastEnergy(dispEnergy);
 	
 	// JAN: need call to update hardening law properties. Might revise to have in done in the solve method instead
 	// update internal variables

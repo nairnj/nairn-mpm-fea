@@ -141,12 +141,12 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
 	// propagation time step (no less than timestep)
     if(propTime<timestep) propTime=timestep;
     
-    // report if changed by 1% since last reported change
+    // report if changed by 5% since last reported change
     if(verbose!=0)
     {   double ratio = timestep/lastReportedTimeStep;
-        if(ratio < 0.99)
+        if(ratio < 0.95)
             cout << "# time step reduced to " << timestep*1000. << " ms" << endl;
-        else if(ratio > 1.01)
+        else if(ratio > 1.05)
             cout << "# time step increased to " << timestep*1000. << " ms" << endl;
         lastReportedTimeStep = timestep;
     }
