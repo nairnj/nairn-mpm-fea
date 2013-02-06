@@ -334,7 +334,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 
     // Plastic or dissipated energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime);
-    double dispEnergy = lambdak*(sp->xx*dfdsxx + sp->yy*dfdsyy + lambdak*sp->zz*dfdszz + 2.*sp->xy*dfdtxy);
+    double dispEnergy = lambdak*(sp->xx*dfdsxx + sp->yy*dfdsyy + sp->zz*dfdszz + 2.*sp->xy*dfdtxy);
 	//double dispEnergy=0.5*((st0.xx+sp->xx)*dexxp
     //                    + (st0.yy+sp->yy)*deyyp
     //                    + (st0.xy+sp->xy)*dgxyp);
@@ -485,7 +485,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 
     // Plastic or dissipated energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime);
-    double dispEnergy = lambdak*(sp->xx*dfdsxx + sp->yy*dfdsyy + lambdak*sp->zz*dfdszz
+    double dispEnergy = lambdak*(sp->xx*dfdsxx + sp->yy*dfdsyy + sp->zz*dfdszz
                                  + 2.*sp->xy*dfdtxy + 2.*sp->xz*dfdtxz + 2.*sp->yz*dfdtyz);
 	//double dispEnergy=0.5*(0.5*((st0.xx+sp->xx)*dexxp
     //                            + (st0.yy+sp->yy)*deyyp
