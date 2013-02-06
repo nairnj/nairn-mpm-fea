@@ -215,7 +215,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     // Calculate plastic potential f = ||s|| - sqrt(2/3)*sy(alpha,rate,...)
 	plasticLaw->UpdateTrialAlpha(mptr,np);			// initialize to last value and zero plastic strain rate
 	double strial = GetMagnitudeSFromDev(&stk,np);
-    double ftrial = strial - SQRT_TWOTHIRDS*plasticLaw->GetYield(mptr,np,delTime);;
+    double ftrial = strial - SQRT_TWOTHIRDS*plasticLaw->GetYield(mptr,np,delTime);
 	if(ftrial<0.)
 	{	// elastic, update stress and strain energy as usual
 	
@@ -332,17 +332,21 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
                         + (st0.yy+sp->yy)*deyyr
                         + (st0.xy+sp->xy)*dgxy));
 
-    // Plastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-	double dispEnergy=0.5*((st0.xx+sp->xx)*dexxp
-                        + (st0.yy+sp->yy)*deyyp
-                        + (st0.xy+sp->xy)*dgxyp);
+    // Plastic or dissipated energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime);
+    double dispEnergy = lambdak*(sp->xx*dfdsxx + sp->yy*dfdsyy + lambdak*sp->zz*dfdszz + 2.*sp->xy*dfdtxy);
+	//double dispEnergy=0.5*((st0.xx+sp->xx)*dexxp
+    //                    + (st0.yy+sp->yy)*deyyp
+    //                    + (st0.xy+sp->xy)*dgxyp);
 	
 	if(np!=PLANE_STRESS_MPM)
     {	mptr->AddStrainEnergy(0.5*(st0.zz+sp->zz)*dezzr);
-		dispEnergy += 0.5*(st0.zz+sp->zz)*dezzp;
+		//dispEnergy += 0.5*(st0.zz+sp->zz)*dezzp;
 	}
 
 	// add plastic energy to the particle
+    mptr->AddStrainEnergy(qdalphaTerm);
+    dispEnergy -= qdalphaTerm;
 	mptr->AddDispEnergy(dispEnergy);
     mptr->AddPlastEnergy(dispEnergy);
 	
@@ -479,15 +483,20 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 							+ (st0.xz+sp->xz)*dgxz
 							+ (st0.xy+sp->xy)*dgxy));
 
-    // Plastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-	double dispEnergy=0.5*(0.5*((st0.xx+sp->xx)*dexxp
-							+ (st0.yy+sp->yy)*deyyp
-							+ (st0.zz+sp->zz)*dezzp
-							+ (st0.yz+sp->yz)*dgyzp
-							+ (st0.xz+sp->xz)*dgxzp
-							+ (st0.xy+sp->xy)*dgxyp));
-
+    // Plastic or dissipated energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime);
+    double dispEnergy = lambdak*(sp->xx*dfdsxx + sp->yy*dfdsyy + lambdak*sp->zz*dfdszz
+                                 + 2.*sp->xy*dfdtxy + 2.*sp->xz*dfdtxz + 2.*sp->yz*dfdtyz);
+	//double dispEnergy=0.5*(0.5*((st0.xx+sp->xx)*dexxp
+    //                            + (st0.yy+sp->yy)*deyyp
+    //                            + (st0.zz+sp->zz)*dezzp
+    //                            + (st0.yz+sp->yz)*dgyzp
+    //                            + (st0.xz+sp->xz)*dgxzp
+    //                            + (st0.xy+sp->xy)*dgxyp));
+    
 	// add plastic energy to the particle
+    mptr->AddStrainEnergy(qdalphaTerm);
+    dispEnergy -= qdalphaTerm;
 	mptr->AddDispEnergy(dispEnergy);
     mptr->AddPlastEnergy(dispEnergy);
 	

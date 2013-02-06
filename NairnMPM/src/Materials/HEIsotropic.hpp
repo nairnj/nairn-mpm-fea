@@ -42,14 +42,19 @@ class HEIsotropic : public HyperElastic
         virtual char *InitHistoryData(void);
 		
 		// step methods
-		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
-		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int);
+		//virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
+		//virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
     
-        Tensor GetTrialDevStressTensor2D(Tensor *,double);
-        Tensor GetTrialStressTensor3D(Tensor *,double);
-        Tensor GetNormalTensor2D(Tensor *,double);
-        Tensor GetNormalTensor3D(Tensor *,double);
-		virtual void UpdatePressure(MPMBase *,double,int);
+        //Tensor GetTrialDevStressTensor2D(Tensor *,double);
+        //Tensor GetTrialStressTensor3D(Tensor *,double);
+        //Tensor GetNormalTensor2D(Tensor *,double);
+        //Tensor GetNormalTensor3D(Tensor *,double);
+    
+        virtual void UpdatePressure(MPMBase *,double,int);
+        Tensor GetTrialDevStressTensor(Tensor *,double,int);
+        virtual double GetMagnitudeS(Tensor *st,int);	
+        Tensor GetNormalTensor(Tensor *,double,int);
     
 		// accessors
         virtual Tensor GetStress(Tensor *,double);
@@ -57,7 +62,6 @@ class HEIsotropic : public HyperElastic
 		virtual int MaterialTag();
 		virtual double WaveSpeed(bool,MPMBase *);
         virtual double GetHistory(int,char *);
-        virtual double GetMagnitudeS(Tensor *st,int);	
     
     protected:
 		// JAN: deleted yield properties, dalpha, and alpint
@@ -70,7 +74,6 @@ class HEIsotropic : public HyperElastic
 	
 		// JAN: J history might move depening on hardening law
 		int J_history;
-		int devEnergy_history;
 };
 
 #endif
