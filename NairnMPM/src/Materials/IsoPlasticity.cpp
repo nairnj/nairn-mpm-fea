@@ -332,24 +332,25 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
                         + (st0.yy+sp->yy)*deyyr
                         + (st0.xy+sp->xy)*dgxy));
 
+	if(np!=PLANE_STRESS_MPM)
+    {	mptr->AddStrainEnergy(0.5*(st0.zz+sp->zz)*dezzr);
+	}
+    
     // Plastic or dissipated energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime);
     double dispEnergy = lambdak*(sp->xx*dfdsxx + sp->yy*dfdsyy + sp->zz*dfdszz + 2.*sp->xy*dfdtxy);
-	//double dispEnergy=0.5*((st0.xx+sp->xx)*dexxp
-    //                    + (st0.yy+sp->yy)*deyyp
-    //                    + (st0.xy+sp->xy)*dgxyp);
 	
-	if(np!=PLANE_STRESS_MPM)
-    {	mptr->AddStrainEnergy(0.5*(st0.zz+sp->zz)*dezzr);
-		//dispEnergy += 0.5*(st0.zz+sp->zz)*dezzp;
-	}
-
-	// add plastic energy to the particle
+    // This material is tracking stored energy only, which means we must add sigma.dep and then subtract
+    // dissipated energy here, with the net result being to add qdalphaTerm
     mptr->AddStrainEnergy(qdalphaTerm);
+    
+	// The total dissipated energy is dispEnergy - qalphaTerm. The cumulative dissipated energy
+    // is tracked in plastic energy. Setting the disp energy allows heating if conduction is on
+    // with mechanical coupling
     dispEnergy -= qdalphaTerm;
 	mptr->AddDispEnergy(dispEnergy);
     mptr->AddPlastEnergy(dispEnergy);
-	
+    
 	// update internal variables
 	plasticLaw->UpdatePlasticInternal(mptr,np);
 }
@@ -477,29 +478,28 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	
     // Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr
-							+ (st0.yy+sp->yy)*deyyr
-							+ (st0.zz+sp->zz)*dezzr
-							+ (st0.yz+sp->yz)*dgyz
-							+ (st0.xz+sp->xz)*dgxz
-							+ (st0.xy+sp->xy)*dgxy));
-
+                               + (st0.yy+sp->yy)*deyyr
+                               + (st0.zz+sp->zz)*dezzr
+                               + (st0.yz+sp->yz)*dgyz
+                               + (st0.xz+sp->xz)*dgxz
+                               + (st0.xy+sp->xy)*dgxy));
+    
     // Plastic or dissipated energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime);
     double dispEnergy = lambdak*(sp->xx*dfdsxx + sp->yy*dfdsyy + sp->zz*dfdszz
                                  + 2.*sp->xy*dfdtxy + 2.*sp->xz*dfdtxz + 2.*sp->yz*dfdtyz);
-	//double dispEnergy=0.5*(0.5*((st0.xx+sp->xx)*dexxp
-    //                            + (st0.yy+sp->yy)*deyyp
-    //                            + (st0.zz+sp->zz)*dezzp
-    //                            + (st0.yz+sp->yz)*dgyzp
-    //                            + (st0.xz+sp->xz)*dgxzp
-    //                            + (st0.xy+sp->xy)*dgxyp));
-    
-	// add plastic energy to the particle
+	
+    // This material is tracking stored energy only, which means we must add sigma.dep and then subtract
+    // dissipated energy here, with the net result being to add qdalphaTerm
     mptr->AddStrainEnergy(qdalphaTerm);
+    
+	// The total dissipated energy is dispEnergy - qalphaTerm. The cumulative dissipated energy
+    // is tracked in plastic energy. Setting the disp energy allows heating if conduction is on
+    // with mechanical coupling
     dispEnergy -= qdalphaTerm;
 	mptr->AddDispEnergy(dispEnergy);
     mptr->AddPlastEnergy(dispEnergy);
-	
+    
 	// update internal variables
 	plasticLaw->UpdatePlasticInternal(mptr,np);
 }

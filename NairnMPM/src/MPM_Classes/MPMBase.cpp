@@ -269,7 +269,6 @@ double MPMBase::GetStrainEnergy(void) { return strainEnergy; }
 void MPMBase::SetStrainEnergy(double energyTot) { strainEnergy=energyTot; }
 void MPMBase::AddStrainEnergy(double energyInc) { strainEnergy+=energyInc; }
 double MPMBase::GetExtWork(void) { return extWork; }
-double MPMBase::GetStrainPlusPlastEnergy(void) { return strainEnergy+plastEnergy; }
 
 // pointers to variables
 Vector *MPMBase::GetPFext(void) { return &pFext; }
