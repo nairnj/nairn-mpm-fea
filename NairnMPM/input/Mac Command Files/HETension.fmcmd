@@ -143,7 +143,7 @@ if #matID="heiso"
     a #aBase
     rho #rho
     yield abs(#Ebase*#yldstrain/100)
-    Ep 10
+    Ep 20
   Done
 endif
 
