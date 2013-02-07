@@ -39,10 +39,12 @@
 \def\deff{d \vec{\varepsilon}_{tot}}
 \def\df{d \vec{f}}
 \def\dfa{d \vec{f}^\alpha}
+\def\dfq{d \vec{f}^q}
 \def\da{d\vec{\alpha}}
 \def\dfW{{\partial f\over \partial W_p}}
 \def\dsig{d \vec{\sigma}}
 \def\DT{\Delta T}
+\def\dq{d\vec q}
 \def\dWp{dW_p}
 \def\e#1{\varepsilon_{#1}}
 \def\ee{\varepsilon}
@@ -232,20 +234,20 @@ For general analysis, begin with an elastic stress increment, $\dsig$, given by
 \begin{equation}
     \dsig = \C \deff 
 \end{equation}
-where $\C$ is the stiffness matrix, $\deff=d\vec\varepsilon-d\vec\varepsilon_{res}$ is total strain increment (using tensorial strains) relative to the residual strain increments. Let $f(\vec{\sigma},\vec{\alpha},...)$ be a plastic potential function that depends on components of stress, possibly on some collection of internal variables ($\vec{\alpha}$) or other parameters. The potential function is defined such that $f=0$ is the yield surface, $f<0$ is the elastic region, and $f>0$ is not allowed.
+where $\C$ is the stiffness matrix, $\deff=d\vec\varepsilon-d\vec\varepsilon_{res}$ is total strain increment (using tensorial strains) relative to the residual strain increments. Let $f(\vec{\sigma},\vec q)$ be a plastic potential function that depends on components of stress, possibly on some collection of internal variables ($\vec q$) or other parameters. The potential function is defined such that $f=0$ is the yield surface, $f<0$ is the elastic region, and $f>0$ is not allowed.
 
-First construct a trial update that assumes elastic deformation only or assumes that $\del=\deff$, $\dpl=0$, and $d\vec\alpha=0$ (in other words all internal variables are associated with plastic strain). The trial $f$ is given by\begin{equation}
-       f_{trial} = f(\vec\sigma + \dsig,\vec\alpha,\dots) = f(\vec\sigma + \C \deff ,\vec\alpha,\dots)
+First construct a trial update that assumes elastic deformation only or assumes that $\del=\deff$, $\dpl=0$, and $d\vec q=0$ (in other words, no plastic deformation). The trial $f$ is given by\begin{equation}
+       f_{trial} = f(\vec\sigma + \dsig,\vec q) = f(\vec\sigma + \C \deff ,\vec q)
 \end{equation}
 If $f_{trial}<0$, the deformation is elastic, the trial increment is accepted, and the analysis is done.
 
 If $f_{trial}>0$, the task is to partition the total strain into elastic and plastic strain, $\deff=\del+\dpl$, such that the final $f$ is zero. In other words, the task is to solve
 \begin{equation}
-     f(\vec\sigma + \C \deff  - \C\dpl,\vec\alpha + \da,\dots) = 0
+     f(\vec\sigma + \C \deff  - \C\dpl,\vec q + \dq) = 0
 \end{equation}
 By the associative flow rule, the increment in plastic strain and internal variables are assumed to be 
 \begin{equation}
-      \dpl = \lambda\df   \qquad {\rm and}\qquad \da = -\lambda \vec h(\sigma,\vec\alpha)
+      \dpl = \lambda\df   \qquad {\rm and}\qquad \dq = -\lambda \vec h(\sigma,\vec q)
 \end{equation}
 where
 \begin{equation}
@@ -253,28 +255,28 @@ where
 \end{equation}
 are the derivatives of $f$ with respect to the components of stress and the internal variables and $\vec h$ is function of stress and internal variable state). Thus, the task is to solve
 \begin{equation}
-     f(\vec\sigma + \C \deff - \lambda\C\df,\vec\alpha -\lambda \vec h,\dots) = 0
+     f(\vec\sigma + \C \deff - \lambda\C\df,\vec q -\lambda \vec h) = 0
 \end{equation}
 for $\lambda$. For arbitrary $f$, this solution may require numerical analysis.
 
 If all increments are small, and $f$ depends only on stress and internal variables, the problem can be expanded around $f_{trial}$ in a Taylor series to give
 \begin{equation}
-    f  = f_{trial} - \lambda\Bigl( \df \cdot \C \df + \dfa \cdot \vec h \Bigr)
+    f  = f_{trial} - \lambda\Bigl( \df \cdot \C \df + \dfq \cdot \vec h \Bigr)
 \end{equation}
 where
 \begin{equation}
-\dfa_i = {\partial f\over \partial\alpha_i}
+\dfq_i = {\partial f\over \partial q_i}
 \end{equation}
 Setting the new $f$ to zero to land on the yield surface, this equation can be solved for $\lambda$ and thus solved to partition the strain increment into elastic and plastic strain. The solution is
 \begin{equation}
-        \lambda = { f_{trial}   \over  \df\cdot \C\df + \dfa \cdot \vec h }     \label{lambdaInitial}
+        \lambda = { f_{trial}   \over  \df\cdot \C\df + \dfq \cdot \vec h }     \label{lambdaInitial}
 \end{equation}
 
 For larger increments or more accurate solution, the problem can be solved iteratively by Newton's method with bracketing. The following method is only used in the code for anisotropic materials because special case results that seem to work well for isotropic materials are given below. Here is method used for anisotropic materials.
 
 \begin{enumerate}
 
-\item Find an initial guess for $\lambda^{(2)}=\lambda$ from the Eq.~(\ref{lambdaInitial}) where $\df$ and $\vec h$ are found from ${\vec\sigma_{trial}}$ or stress when $\lambda=0$ and $\dfa$ is found from initial $\alpha$.
+\item Find an initial guess for $\lambda^{(2)}=\lambda$ from the Eq.~(\ref{lambdaInitial}) where $\df$ and $\vec h$ are found from ${\vec\sigma_{trial}}$ or stress when $\lambda=0$ and $\dfq$ is found from initial $\vec q$.
 
 \item Update stress at initial guess in two steps
 \begin{eqnarray}
@@ -284,29 +286,29 @@ For larger increments or more accurate solution, the problem can be solved itera
 
 \item Find new $\df$ and $\vec h$ using ${\vec\sigma}^{(2)}$ followed by calculation of $f_2$ corresponding to $\lambda_2$:
 \begin{equation}
-     f^{(2)} =  f({\vec\sigma}^{(2)},\alpha^{(0)} - \lambda^{(2)} \vec h({\vec\sigma}^{(2)}),\dots)
+     f^{(2)} =  f({\vec\sigma}^{(2)},\vec q^{(0)} - \lambda^{(2)} \vec h({\vec\sigma}^{(2)}))
 \end{equation}
 
 \item Pick a lower $\lambda$ and calculate $f$:
 \begin{eqnarray}
      \lambda^{(1)} & = & {\lambda^{(2)}\over 2} \\
       {\vec\sigma}^{(1)} & = & {\vec\sigma_{trial}} - \lambda^{(1)}\C\df({\vec\sigma}^{(2)}) \\
-     f^{(1)} & = &  f({\vec\sigma}^{(1)},\alpha^{(0)} - \lambda^{(1)} \vec h({\vec\sigma}^{(2)}),\dots)
+     f^{(1)} & = &  f({\vec\sigma}^{(1)},\vec q^{(0)} - \lambda^{(1)} \vec h({\vec\sigma}^{(2)}))
 \end{eqnarray}
 
 \item Expand the interval $\lambda^{(1)}$ to $\lambda^{(2)}$ as needed until it brackets a solution for $f=0$. The code follows {\tt zbrac()} in ``Numerical Recipes in C'' (page 260). Whenever need new value for $f$, use:
 \begin{eqnarray}
       {\vec\sigma}^{(k)} & = & {\vec\sigma_{trial}} - \lambda^{(k)}\C\df({\vec\sigma}^{(2)}) \\
-     f^{(k)} & = &  f({\vec\sigma}^{(k)},\alpha^{(0)} - \lambda^{(k)} \vec h({\vec\sigma}^{(2)}),\dots)
+     f^{(k)} & = &  f({\vec\sigma}^{(k)},\vec q^{(0)} - \lambda^{(k)} \vec h({\vec\sigma}^{(2)}))
 \end{eqnarray}
 In other words, use the slopes calculated in step 3 above throughout the calculation. Attempts to recalculate the slope on each step tended to cause problems. If the bracketing fails, return the initial $\lambda$ from step 1 as an approximate result.
 
 \item Solve for $\lambda$ using Newton-Raphson method with derivatives and bracketing following {\tt rtsafe()} in ``Numerical Recipes in C'' (page 273). Whenever needed, find $f$ and its derivative from
 \begin{eqnarray}
       {\vec\sigma}^{(k)} & = & {\vec\sigma_{trial}} - \lambda^{(k)}\C\df({\vec\sigma}^{(2)}) \\
-      \alpha^{(k)} & = & \alpha^{(0)} - \lambda^{(k)} \vec h({\vec\sigma}^{(2)}) \\
-      f^{(k)} & = &  f({\vec\sigma}^{(k)},\alpha^{(k)} ,\dots)  \\
-      {df^{(k)}\over d\lambda} & = & -\left( \df({\vec\sigma}^{(2)})\cdot \C\df({\vec\sigma}^{(2)}) + \dfa(\alpha^{(k)}) \cdot \vec h({\vec\sigma}^{(2)})\right) 
+      \vec q^{(k)} & = & \vec q^{(0)} - \lambda^{(k)} \vec h({\vec\sigma}^{(2)}) \\
+      f^{(k)} & = &  f({\vec\sigma}^{(k)},\vec q^{(k)})  \\
+      {df^{(k)}\over d\lambda} & = & -\left( \df({\vec\sigma}^{(2)})\cdot \C\df({\vec\sigma}^{(2)}) + \dfq(\alpha^{(k)}) \cdot \vec h({\vec\sigma}^{(2)})\right) 
 \end{eqnarray}
 Again, the key slopes are found from the initial stress guess in ${\vec\sigma}^{(2)}$. Attempts to update slopes as solution proceeds were less stable and also slower. It might be possible to update slopes after solution, re-bracket the solution and repeat, but it may not improve accuracy much.
 
@@ -318,22 +320,30 @@ Again, the key slopes are found from the initial stress guess in ${\vec\sigma}^{
 
 For a special case, consider an isotropic material with isotropic hardening, a single internal variable, $\alpha$, and assume the plastic potential is a function only of $J_2= (1/2)\|\dev\|^2$ expressed as
 \begin{equation}
-      f = \|\dev\| - \sqrt{2\over3} K(\alpha)
+      f = \|\dev\| - \sqrt{2\over3} K(\alpha) = \|\dev\| - \sqrt{2\over3}(\sigma_y - q)
 \end{equation}
-where $\dev$ is the deviatoric stress tensor and $K(\alpha)$ defines the tensile yield stress as a function of the hardening variable and possibly other variables ({\it e.g.}, plastic strain rate or temperature, but not pressure). All materials that fit this mold are handled in {\tt NairnMPM} by the {\tt IsoPlasticity} class. A new material that only has a different hardening law only needs code for that hardening law by subclassing {\tt HardeningLawBase} class. The only materials that need to subclass {\tt IsoPlasticity} is if they need a different equation of state to handle elastic parts differently.
+where $\dev$ is the deviatoric stress tensor and $K(\alpha)$ defines the tensile yield stress as a function of the hardening variable and possibly other variables ({\it e.g.}, plastic strain rate or temperature, but not pressure). The plastic variable $q$ and $\alpha$ are related by
+\begin{equation}
+      q  = \sigma_y - K(\alpha)
+\end{equation}
+The usual assumption is to take
+\begin{equation}
+        d\alpha = \lambda\sqrt{2\over3}  \quad{\rm which\ implies} 
+        \quad dq = -\lambda K'(\alpha)\sqrt{2\over3}  \quad{\rm and} 
+        \quad h = K'(\alpha)\sqrt{2\over3}
+\end{equation}
+All materials that fit this mold are handled in {\tt NairnMPM} by the {\tt IsoPlasticity} class. The implementation of hardening law ($K(\alpha)$) is handled by a separate subclass of the {\tt HardeningLawBase} class. Combining {\tt IsoPlasticity} class with various hardening laws gives a series of material. The only materials that need to subclass {\tt IsoPlasticity} is if they need a different equation of state to handle elastic parts differently.
 
-In terms of this  deviatoric stress\begin{equation}
+In terms of the deviatoric stress
+\begin{equation}
      2J_2 = \|\dev\|^2 =  s_{xx}^2 + s_{yy}^2  + s_{zz}^2 + 2s_{xy}^2 + 2s_{xz}^2 + 2s_{yz}^2 \\
  \end{equation}
 During plastic deformation, 
 the plastic strain increment simplifies to
 \begin{equation}
-     \lambda \df = \lambda {\dev\over \|\dev\|} = \lambda \ndev
+     \lambda \df = \lambda {\dev_{trial}\over \|\dev_{trial}\|} = \lambda \ndev
 \end{equation}
-The usual assumption is to take
-\begin{equation}
-        d\alpha = \sqrt{2\over3}\thinspace \lambda \qquad{\rm by\ setting} \qquad \vec h = \sqrt{2\over3}\thinspace \|\df\| =  \sqrt{2\over3}
-\end{equation}
+where $ \dev_{trial}$ is the deviatoric stress calculated by assuming no plastic deformation.
 Since $\|\dpl\| = \|\lambda \df\| = \lambda$, this assumption corresponds to
 \begin{equation}
      d\alpha = \sqrt{2\over3}\thinspace \|\dpl\|
@@ -342,15 +352,12 @@ where $\sqrt{2\over3}\|\dpl\|$ is known as the equivalent plastic strain increme
 
 Once $\lambda$ is known, the final deviatoric stress is written as
 \begin{equation}
-        \dev = \dev_{trial} - \lambda 2G\ndev
-\end{equation}
-where $ \dev_{trial}$ is the deviatoric stress calculated be assuming no plastic deformation. By noting that $\dev=\|\dev\|\ndev$ and rearranging
-\begin{equation}
-      \dev_{trial} = (\|\dev\| + \lambda 2G)\ndev
+        \dev = \dev_{trial} - \lambda 2G\ndev = \left(1- {\lambda 2G\over \|\dev_{trial}\|}\right) \dev_{trial}
 \end{equation}
 which leads to
 \begin{equation}
-         \|\dev\| =  \|\dev_{trial}\| - \lambda 2G
+         \|\dev\| =  \|\dev_{trial}\| - \lambda 2G \qquad {\rm and} \qquad 
+         {\dev\over \|\dev\|} = {\dev_{trial}\over \|\dev_{trial}\|}
 \end{equation}
 The required equation for finding $\lambda$ thus simplifies to depend only on $\|\dev_{trial}\|$, $G$, and hardening law:
 \begin{equation}
@@ -536,6 +543,55 @@ The special hardening laws that allow a closed-form expression in plane strain w
 \subsection{3D Analysis for $J_2$ Flow Theory, Isotropic Materials}
 
 This analysis follows the plane strain and axisymmetric section except includes direct updates for $\gamma_{xz}$, $\gamma_{yz}$, $\tau_{xz}$, and $\tau_{yz}$.
+
+\subsection{Thermodynamics Tracking with Plasticity}
+
+Energy tracking in MPM if often for output only. In other words, calculated energies do not affect evolutions of stresses and strains. Some materials, however, may depend on correct energies and some crack calculations do as well. This section considers tracking of internal energy for materials with plasticity.
+
+By first law of thermodynamics, the changed in internal energy in a time step is
+\begin{equation}
+     dU = dw + dq
+\end{equation}
+where $dw$ and $dq$ are work input. The work input is $\vec\sigma\cdot\deff$ (note that energies in {\tt NairnMPM} are stored as energy per unit mass, while these equations are energy per unit reference volume, but when stresses and other terms are replaced by terms normalized to initial density, they all become energy per unit mass). The heat input depends on what happens to energy dissipated by plasticity. First assume the dissipated heat is released from the object and therefore $dq = -d\Phi$ where $d\Phi$ is energy dissipated by plasticity. In low strain materials:
+\begin{equation}
+     d\Phi = \vec\sigma\cdot\dpl + \vec q\cdot d\vec\alpha
+\end{equation}
+If we write (for low strain) $\vec\sigma\cdot\deff = \vec\sigma\cdot(\del+\dpl)$, the change in internal energy when dissipated energy is lost from the object is
+\begin{equation}
+     dU = \vec\sigma\cdot\del - \vec q\cdot d\vec\alpha
+\end{equation}
+which can be interpreted as stored or recoverable energy.
+
+Now, in {\tt NairnMPM}, the plasticity energy need not be lost. It can be logged as dissipated energy (using {\tt AddDispEnergy()}) which becomes a heat source, but only when conduction is activated with mechanical coupling. This dissipated energy will be heat input causing another change in internal energy of
+\begin{equation}
+     dU = \chi d\Phi
+\end{equation}
+where $\chi$ is the fraction of dissipated energy that is logged for conversion into heat. In conduction calculations the subsequent particle temperature will rise by
+\begin{equation}
+     dT = {\chi d\Phi \over C_P}
+\end{equation}
+The corresponding internal energy change will be
+\begin{equation}
+      dU = C_V dT = {\chi C_V\over C_P} d\Phi
+\end{equation}
+Note that you can enter both $C_V$ and $C_P$ for materials. The conduction code uses $C_P$ while $C_V$ is usual choice for increments in internal energy. If $C_V=C_P$ and $\chi=1$ (the defaults). The total change in internal energy after these two steps is
+\begin{equation}
+     dU = \vec\sigma \cdot \deff
+\end{equation}
+or the total work input to the step.
+
+If the only temperature changes that occur in a simulation are the consequence of plasticity, a material can track total internal energy simply by using $dU = \vec\sigma \cdot \deff$ on each time step. This approach will be wrong however if $\chi C_V/C_P \ne 1$, if temperature changes are caused by other phenomena, or if heat is exchanged with the exterior through conduction boundary conditions. In these situations, a material can track total internal energy using
+\begin{equation}
+     dU = \vec\sigma\cdot\del - \vec q\cdot d\vec\alpha + C_V dT
+\end{equation}
+where $dT$ is temperature change on this time step for any sources (which will include heat due to plasticity in prior steps). If needed, $C_V$ can depend on current particle state.
+
+A third alternative is for a material track stored energy only (denoted as $W$ with $dW = \vec\sigma\cdot\del - \vec q\cdot d\vec\alpha$), but when internal energy is needed, the code must add a term due to temperature changes:
+\begin{equation}
+     U = W + \int_{T_0}^{T_f} C_V \thinspace dT
+\end{equation}
+
+ 
 
 \subsection{Examples of $J_2$ Flow Theory Materials}
 
