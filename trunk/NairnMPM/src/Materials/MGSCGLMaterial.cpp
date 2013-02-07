@@ -224,7 +224,7 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
 //  J is total volume change at end of step (but it is 1 for low-strain materials)
 void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
 {
-	// 3*delV is total incremental volumetric strain relative to free-swelling volume
+	// delV is total incremental volumetric strain relative to free-swelling volume
     // J is total volume change - may need to reference to free-swelling volume if that works
 	// Note that swelling looks like a problem because the sums of strains needs to be adjusted
 	//		to stress-free state
@@ -266,7 +266,7 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
     mptr->AddStrainEnergy(-avgP*delV);
      
     // particle isentropic temperature increment
-    mptr->pTemperature += -3.*gamma0*mptr->pPreviousTemperature*delV;
+    mptr->pTemperature += -gamma0*mptr->pPreviousTemperature*delV;
     
 	// SCGL and SL shear modulus and save Gratio = J G/G0 for later calculations
     // Note: J in Gred and Gratio is so that where they are used, they give
