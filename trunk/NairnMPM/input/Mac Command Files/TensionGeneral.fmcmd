@@ -8,7 +8,7 @@ Intended for development of these materials
 EndHeader! ------------ Parameters ---------------
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", "Axisymmetric MPM", or "3D MPM"
-#analysis="Plane Strain MPM"
+#analysis="3D MPM"
 
 ! pick a method usually "lCPDI" or "uGIMP"
 #method="lCPDI"
@@ -18,7 +18,7 @@ EndHeader! ------------ Parameters ---------------
 
 ! material options: isotropic, isoplasticity, ,mgeos, bistable, iptrans, normtrans, ortho
 !   viscoelastic, hill, wood
-#matID="isoplasticity"
+#matID="mgeos"
 #angle=0					! material angle for anisotopic materials
 
 ! hardening law (if allowed), empty if not
@@ -53,6 +53,12 @@ StressFreeTemp 294
 #aBase=60
 #yldstrain=1		! in percent
 
+! MGEOS development
+#Ebase=308776
+#rho=19.256
+#nuBase=.28
+#aBase=4.5
+
 ! Dimensions
 #cell=2
 #length=40			! length
@@ -60,9 +66,9 @@ StressFreeTemp 294
 #thick=10			! thickness
 
 ! Load by strain (estimated for force and traction loads)
-#loading="rigid"	! Loading = "force", "traction", "rigid", "contact", "thermal"
+#loading="thermal"	! Loading = "force", "traction", "rigid", "contact", "thermal"
 #fixsides="no"		! "yes" or "no" for sides fix in y direction (2D) or y and z (3D)
-#strain=3	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
+#strain=100	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak
@@ -79,7 +85,7 @@ StressFreeTemp 294
 ! Analysis type
 Analysis #analysis
 MPMMethod #update,#method
-!Conduction "yes","Mechanical Energy"
+Conduction "yes","Mechanical Energy"
 
 ! convert to contact
 if #loading="contact"

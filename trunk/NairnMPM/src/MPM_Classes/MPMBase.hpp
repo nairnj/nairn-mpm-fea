@@ -131,7 +131,6 @@ class MPMBase : public LinkedObject
 		void SetStrainEnergy(double energyTot);
 		void AddStrainEnergy(double energyInc);
 		double GetExtWork(void);
-        double GetStrainPlusPlastEnergy(void);
         Tensor *GetStressTensor(void);
         Tensor ReadStressTensor(void);
         void IncrementPressure(double);

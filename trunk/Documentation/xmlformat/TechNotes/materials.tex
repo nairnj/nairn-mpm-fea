@@ -1083,13 +1083,13 @@ Constitutive laws for hyperelastic materials always involve the deformation grad
 \end{equation}
 and should store the updated gradient back on strain and rotation tensors on each time step.
 
-Hyperelastic materials with plasticity, still store full deformation gradient as above and thus unlike small-strain plasticity materials, the strain variables describe the total strain and not just the elastic deformationTo have information about elastic and plastic deformation, these materials use the plastic strain variable on the particles ($\vec\ee^{(p)}=${\tt eplast}) to store the symmetric, elastic, left Cauchy-Green tensor ( $\B = \F\F^T$). For convenience, hyperelastic materials can obtain a pointer to this variable using the particle accessor {\tt GetElasticLeftCauchyTensor()}. Because this just returns a pointer to {\tt eplast}, that material cannot also use {\tt GetPlasticStrainTensor()} expecting an option to store different particle state information.
+Hyperelastic materials with plasticity, still store full deformation gradient as above and thus unlike small-strain plasticity materials, the strain variables describe the total strain and not just the elastic deformation. To have information about elastic and plastic deformation, these materials use the plastic strain variable on the particles ($\vec\ee^{(p)}=${\tt eplast}) to store the symmetric, {\em elastic}, left Cauchy-Green tensor ( $\B = \F\F^T$). For convenience, hyperelastic materials can obtain a pointer to this variable using the particle accessor {\tt GetElasticLeftCauchyTensor()}. Because this just returns a pointer to {\tt eplast}, that material cannot also use {\tt GetPlasticStrainTensor()} expecting an option to store different particle state information.
 
 Large deformation MPM requires calculation of specific Cauchy stress ($\vec\sigma$) on each time step, or the Cauchy stress divided by the current density ($\rho$) accounting for volume changes. This required quantity is equivalent to
 \begin{equation}
               {\vec\sigma\over\rho} = {\vec\sigma J\over\rho_0} =  {\vec\tau\over\rho_0}
 \end{equation}
-where $J$ is $\det \F$ and equal to the relative volume change, $\vec\tau$ is the Kirchoff stress, and $\rho_0$ is the initial volume ({\em i.e.}, $\rho_0 = J\rho$). In other words, all hyperelastic materials track the Kirchoff stress normalized to the initial density, which is done by dividing all constitutive law properties by $\rho_0$ at the start of the calculation and then finding Kirchoff in constitutive laws. The output stresses, however, are converted to Cauchy stress using particle $J$.
+where $J$ is $\det \F$ and equal to the relative volume change ($J = V/V_0$), $\vec\tau$ is the Kirchoff stress, and $\rho_0$ is the initial volume ({\em i.e.}, $\rho_0 = J\rho$). In other words, all hyperelastic materials track the Kirchoff stress normalized to the initial density, which is done by dividing all constitutive law properties by $\rho_0$ at the start of the calculation and then finding Kirchoff stress in constitutive laws. The output stresses, however, are converted to true Cauchy stress using particle $J$.
 
 \subsection{Incremental Deformation Gradient}
 
@@ -1101,7 +1101,11 @@ If velocity gradient, $\nabla \vec v$, is constant for the time step, the exact 
 \begin{equation}
     \tens F(t+\Delta t) = \exp(\Delta t \nabla\vec v)\tens F(t) = \tens{dF} \thinspace \tens F(t)
 \end{equation}
-where $\tens{dF}$ is the incremental deformation gradient. An interesting review article on finding the exponential of a matrix is  ``Nineteen Dubious Ways to Compute the Exponential of a Matrix. Twenty Five Years Later.'' (C. Moler and C. Van Loan, {\em SIAM Review}, {\bf 46}, 2003). They conclude no single way is stable and efficient for all problems, but in MPM with sufficiently small time steps, an expansion method should work well
+where
+\begin{equation}
+        \tens{dF} = \exp(\Delta t \nabla\vec v)= {V(t+\Delta t)\over V(t)}
+\end{equation}
+is the incremental deformation gradient. An interesting review article on finding the exponential of a matrix is  ``Nineteen Dubious Ways to Compute the Exponential of a Matrix. Twenty Five Years Later.'' (C. Moler and C. Van Loan, {\em SIAM Review}, {\bf 46}, 2003). They conclude no single way is stable and efficient for all problems, but in MPM with sufficiently small time steps, an expansion method should work well
 \begin{equation}
     \exp(\Delta t \nabla\vec v) = \sum_{k=0}^{k_{max}} {(\nabla u)^k \over k!} 
             = \tens I + \nabla u + \sum_{k=2}^{k_{max}} {(\nabla u)^k \over k!}
@@ -1234,34 +1238,32 @@ The Cauchy (or true stress) is found by differentiating the strain energy to get
      \sigma = {G_1\over J^{5/3}}\left(\B - {I_1\over3}\I\right)
                      +  {G_2\over J^{7/3}}\left(I_1\B - \B^2 - {2I_2\over3}\I\right)   + K(J-1)\I
 \end{equation}
-where $I_1 = J^{2/3}\bar{I_1}$ and $I_2 = J^{4/3}\bar{I_2}$. The stress components explicitly evaluate to:
+where $I_1 = J^{2/3}\bar{I_1}$ and $I_2 = J^{4/3}\bar{I_2}$. The stress components can be divided into pressure, $P$, and deviatoric stress, $\vec s = \vec\sigma+P$, whichexplicitly evaluate to:
 \begin{eqnarray}
-      \s{xx} & = & K(J-1) + G_1{2B_{xx}-B_{yy}-B_{zz}\over 3J^{5/3}}   \nonumber\\
-                  && \qquad\mbox{}    + G_2{B_{xx}(B_{yy}+B_{zz})-2B_{yy}B_{zz}-B_{xy}^2-B_{xz}^2+2B_{yz}^2\over 3J^{7/3} }\\
-      \s{yy} & = & K(J-1) + G_1{2B_{yy}-B_{xx}-B_{zz}\over 3J^{5/3}}   \nonumber\\
-                  && \qquad\mbox{}    + G_2{B_{yy}(B_{xx}+B_{zz})-2B_{xx}B_{zz}-B_{xy}^2+2B_{xz}^2-B_{yz}^2\over 3J^{7/3} }\\
-      \s{zz} & = &  K(J-1) + G_1{2B_{zz}-B_{xx}-B_{yy}\over 3J^{5/3}}   \nonumber\\
-                  && \qquad\mbox{}    + G_2{B_{zz}(B_{xx}+B_{yy})-2B_{xx}B_{yy}+2B_{xy}^2-B_{xz}^2-B_{yz}^2\over 3J^{7/3} }\\
-       \t{xy} & = &  G_1{B_{xy}\over J^{5/3}} + G_2{B_{zz}B_{xy}-B_{xz}B_{yz}\over J^{7/3}}\\
-       \t{xz} & = & G_1{B_{xz}\over J^{5/3}} + G_2{B_{yy}B_{xz}-B_{xy}B_{yz}\over J^{7/3}}\\
-       \t{yz} & = & G_1{B_{yz}\over J^{5/3}} + G_2{B_{xx}B_{yz}-B_{xy}B_{xz}\over J^{7/3}}
+      P & = & -K (J-1) \\
+     s_{xx} & = & G_1{2B_{xx}-B_{yy}-B_{zz}\over 3J^{5/3}} + G_2{B_{xx}(B_{yy}+B_{zz})-2B_{yy}B_{zz}-B_{xy}^2-B_{xz}^2+2B_{yz}^2\over 3J^{7/3} }\\
+      s_{yy} & = & G_1{2B_{yy}-B_{xx}-B_{zz}\over 3J^{5/3}}    + G_2{B_{yy}(B_{xx}+B_{zz})-2B_{xx}B_{zz}-B_{xy}^2+2B_{xz}^2-B_{yz}^2\over 3J^{7/3} }\\
+      s_{zz} & = &  G_1{2B_{zz}-B_{xx}-B_{yy}\over 3J^{5/3}}    + G_2{B_{zz}(B_{xx}+B_{yy})-2B_{xx}B_{yy}+2B_{xy}^2-B_{xz}^2-B_{yz}^2\over 3J^{7/3} }\\
+       s_{xy} & = &  G_1{B_{xy}\over J^{5/3}} + G_2{B_{zz}B_{xy}-B_{xz}B_{yz}\over J^{7/3}}\\
+       s_{xz} & = & G_1{B_{xz}\over J^{5/3}} + G_2{B_{yy}B_{xz}-B_{xy}B_{yz}\over J^{7/3}}\\
+       s_{yz} & = & G_1{B_{yz}\over J^{5/3}} + G_2{B_{xx}B_{yz}-B_{xy}B_{xz}\over J^{7/3}}
 \end{eqnarray}
 
 \subsubsection{Plane Strain and Plane Stress Analysis}
 
-For 2D analysis, $F_{xz}=F_{yz}=F_{zx}=F_{zy}=0$, which leads to zero for corresponding terms in $\B$. The resulting stresses are
+For 2D analysis, $F_{xz}=F_{yz}=F_{zx}=F_{zy}=0$, which leads to zero for corresponding terms in $\B$. The resulting stresses are $ P = -K (J-1)$ and
 \begin{eqnarray}
-      \s{xx} & = & K(J-1) + G_1{2B_{xx}-B_{yy}-B_{zz}\over 3J^{5/3}}  
+      s_{xx} & = &  G_1{2B_{xx}-B_{yy}-B_{zz}\over 3J^{5/3}}  
                     + G_2{B_{xx}(B_{yy}+B_{zz})-2B_{yy}B_{zz}-B_{xy}^2\over 3J^{7/3} }\\
-      \s{yy} & = & K(J-1) + G_1{2B_{yy}-B_{xx}-B_{zz}\over 3J^{5/3}}   
+      s_{yy} & = &  G_1{2B_{yy}-B_{xx}-B_{zz}\over 3J^{5/3}}   
                      + G_2{B_{yy}(B_{xx}+B_{zz})-2B_{xx}B_{zz}-B_{xy}^2\over 3J^{7/3} }\\
-      \s{zz} & = &  K(J-1) + G_1{2B_{zz}-B_{xx}-B_{yy}\over 3J^{5/3}}   
+      s_{zz} & = &   G_1{2B_{zz}-B_{xx}-B_{yy}\over 3J^{5/3}}   
                      + G_2{B_{zz}(B_{xx}+B_{yy})-2B_{xx}B_{yy}+2B_{xy}^2\over 3J^{7/3} }\\
-       \t{xy} & = &  G_1{B_{xy}\over J^{5/3}} + G_2{B_{zz}B_{xy}\over J^{7/3}}\\
-       \t{xz} & = & 0 \\
-       \t{yz} & = & 0
+       s_{xy} & = &  G_1{B_{xy}\over J^{5/3}} + G_2{B_{zz}B_{xy}\over J^{7/3}}\\
+       s_{xz} & = & 0 \\
+       s_{yz} & = & 0
 \end{eqnarray}
-For plane strain analysis $B_{zz}=1$. For plane stress analysis, one has to solve numerically for $B_{zz}$ to get $\s{zz}=0$ and then use that result to find $\e{zz}$ and other stresses.
+For plane strain analysis $B_{zz}=1$. For plane stress analysis, one has to solve numerically for $B_{zz}$ to get $\s{zz}=0$ or $s_{zz}=P$ and then use that result to find $\e{zz}$ and other stresses.
 
 \subsubsection{Alternate Bulk Modulus Term}
 
@@ -1271,12 +1273,72 @@ Two alternative compressibility terms (showing only that term) is
 W = {K\over2}(\ln J)^2  \qquad{\rm and}\qquad W = {K\over2}\left({1\over2}(J^2-1) - \ln J\right)
 \end{equation}
 
-\noindent which gives normal Cauchy (or true stress) terms as
+\noindent which gives normal Cauchy pressure terms of
 \begin{equation}
-     \sigma = K {\ln J\over J}\I  \qquad{\rm and}\qquad \sigma = {K\over 2}\left(J-{1\over J}\right)\I
+     P = -K {\ln J\over J}\I  \qquad{\rm and}\qquad P = - {K\over 2}\left(J-{1\over J}\right)\I
 \end{equation}
 
-\noindent Although these three compressibility terms show some significant differences when $J$ deviates significantly from 1, under most problems, $J$ will stay close to one. Two exceptions could be constrained compression or tension. Here, the only one that works well to very small or large $J$ is the second one above. This one correctly leads to inifinite positive stress as $J\to\infty$ and infinite negative stress as $J\to0$. This later one is the one currently implemented for this material in {\tt NairnMPM}.
+\noindent Although these three compressibility terms show some significant differences when $J$ deviates significantly from 1, under most problems, $J$ will stay close to one. Two exceptions could be constrained compression or tension. Here, the only one that works well to very small or large $J$ is the second one above. This one correctly leads to inifinite positive stress as $J\to\infty$ and infinite negative stress as $J\to0$. This later one is the default for this material in {\tt NairnMPM}.
+
+\subsection{Mie-Gr\"{u}niesen Equation of State}
+
+The Mie-Gr\"{u}niesen Equation of State defines the pressure only and the Kirchoff pressure needed in {\tt NairnMPM} is
+\begin{equation}
+       P = {C_0^2 \eta \left(1 - {1\over 2}\gamma_0 \eta\right) \over (1 - S_1\eta - S_2\eta^2 - S_3 \eta^3)^2} + \gamma_0 U
+\end{equation}
+where $\eta$ is fraction compression and given by
+\begin{equation}
+    \eta = 1 - {\rho_0\over \rho} = 1 - {V\over V_0} = 1 - J
+\end{equation}
+and $\gamma_0$, $C_0$, and $S_i$ are material properties and $U$ is total internal energy. The above equation applies only in compression ($\eta>0$). In tension, the pressure is given by
+\begin{equation}
+      P = C_0^2\eta + \gamma_0 U
+\end{equation}
+
+This equation of state also causes a temperature change of
+\begin{equation}
+     dT = - T \gamma_0 {\rho_0\over \rho} {V(t+\Delta t)-V(t)\over V} + {dq \over C_V}
+\end{equation}
+where $dq$ is dissipated energy that is converted to heat. The first term simplifies to an isentropic temperature change of
+\begin{equation}
+     dT_{dq=0} = - T \gamma_0  {V(t+\Delta t)-V(t)\over V_0} 
+\end{equation}
+The volume change relative to reference volume can be found from
+\begin{equation}
+     {V(t+\Delta t)-V(t)\over V_0} = J\left(1 - {1\over |dF|}\right)
+\end{equation}
+
+Noticing that
+\begin{equation}
+     {dT_{dq=0}\over T} =   \gamma_0  d\eta
+\end{equation}
+The temperature due to isoentropic heating alone can be integrated to
+\begin{equation}
+     T = T_0\exp( \gamma_0  \eta)
+\end{equation}
+Thus the total internal energy change due to temperature changes (assuming $C_V$ is constant) is
+\begin{equation}
+      dU = C_V\bigl(T_0(\exp( \gamma_0  \eta)-1)\bigr) + \Phi
+\end{equation}
+where $\Phi$ is the cumulative dissipated energy due to plasticity. A good method to track total internal energy, assuming all dissipated plastic energy is converted to heat, is to increment it in each time step using:
+\begin{equation}
+      dU = \vec\sigma\cdot\deff + C_V dT_{dq=0}
+\end{equation}
+Alternatively, one can track stored energy only using
+\begin{equation}
+     dW = \vec\sigma\cdot\deff - d\Phi
+\end{equation}
+but when internal energy is needed, find it from
+\begin{equation}
+     U = W + C_V(T-T_0)
+\end{equation}
+
+In compression, $J$ is physically limited to be between 0 and 1, which means $\eta$ is also between 0 and 1. By for most materials that have been fit to this equation of state, the denominator in pressure will be come zero before $eta$ reaches 1. For example, Tungsten has $S_1=1.24$ and $S_2=S_3=0$. The denominator becomes zero when
+\begin{equation}
+     \eta = 1/1.24 = 0.806
+\end{equation}
+If the time step is too large in dynamic code, the compression could potentially pass this value. If that happens for any particle, the results will like be poor; {\tt NairnMPM} prints a warning labeling states beyond the physical limit as ``excessive compression.'' it is good practice to use an adjustable time step when using this material so the time step can get small if the compression gets high.
+
 
 \subsection{Ideal Gas Law}
 

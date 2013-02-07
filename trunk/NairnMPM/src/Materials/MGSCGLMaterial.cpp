@@ -157,10 +157,10 @@ void MGSCGLMaterial::ValidateForUse(int np)
 							  "MGSCGLMaterial::ValidateForUse");
 	}
     
-    if(np==PLANE_STRESS_MPM)
-    {	throw CommonException("MGEOSMaterial material has not yet been updated to do plane stress calculations",
-                              "MGSCGLMaterial::ValidateForUse");
-    }
+    //if(np==PLANE_STRESS_MPM)
+    //{	throw CommonException("MGEOSMaterial material has not yet been updated to do plane stress calculations",
+    //                          "MGSCGLMaterial::ValidateForUse");
+    //}
 	
 	// call super class
 	return IsoPlasticity::ValidateForUse(np);
@@ -177,12 +177,11 @@ void MGSCGLMaterial::ValidateForUse(int np)
 void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
 {
     // Correct for swelling by finding total residual stretch (not incremental)
-	double eresTot=0.,JresStretch=1.,eres=0.,dJresStretch=1.;
+	double eresTot=0.,JresStretch=1.,eres=0.;
 	if(DiffusionTask::active)
     {   eresTot += CME3*(mptr->pPreviousConcentration-DiffusionTask::reference);
         eres += CME3*DiffusionTask::dConcentration;
         JresStretch = (1.+eresTot)*(1.+eresTot)*(1.+eresTot);
-        dJresStretch = (1.+eres)*(1.+eres)*(1.+eres);
     }
 	
 	// Get incremental deformation
@@ -197,9 +196,9 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     // reassign incremental strains
     du = F - pF;
     
-    double dJ = dF.determinant();
-    double Jnew = F.determinant();
-    double delV = Jnew*(1.-1/dJ);
+    double dJ = dF.determinant();                       // = V(k+1)/V(k)
+    double Jnew = F.determinant()/JresStretch;          // = V(k+1)/Vsf(k+1)
+    double delV = Jnew*(1.-1/dJ);                       // = (V(k+1)-V(k))/Vsf(k+1)
     delVLowStrain = du.trace() -  3.*eres;
     
     if(np!=THREED_MPM)
@@ -254,20 +253,20 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
     }
 
     // Pressure from bulk modulus and an energy term
-    //double e = mptr->GetStrainPlusPlastEnergy()
     double e = mptr->GetStrainEnergy()
-                    + 1000.*heatCapacityVol*(mptr->pPreviousTemperature - thermal.reference*exp(gamma0*x));
+                    + 1000.*heatCapacityVol*(mptr->pPreviousTemperature - thermal.reference);
 	double P0 = mptr->GetPressure();
     double P = J*(Keffred*x + gamma0*e);
     mptr->SetPressure(P);
     
-    // energy
+    // particle isentropic temperature increment
+    double dTq0 = -gamma0*mptr->pPreviousTemperature*delV;
+    mptr->pTemperature += dTq0;
+    
+    // energy, which is stored energy only (if this is W, internal energy U = W + CV(T-T0))
     double avgP = 0.5*(P0+P);
     mptr->AddStrainEnergy(-avgP*delV);
      
-    // particle isentropic temperature increment
-    mptr->pTemperature += -gamma0*mptr->pPreviousTemperature*delV;
-    
 	// SCGL and SL shear modulus and save Gratio = J G/G0 for later calculations
     // Note: J in Gred and Gratio is so that where they are used, they give
     //          specific Cauchy stress
@@ -325,9 +324,8 @@ double MGSCGLMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr)
     KcurrRed *= J;          // convert to K/rho
     
     // get G/rho at current pressure
-    //double e = mptr->GetStrainPlusPlastEnergy()
     double e = mptr->GetStrainEnergy()
-            + 1000.*heatCapacityVol*(mptr->pPreviousTemperature - thermal.reference*exp(gamma0*x));
+                    + 1000.*heatCapacityVol*(mptr->pPreviousTemperature - thermal.reference);
     double pressure = J*(KcurrRed*x + gamma0*e);
     double GcurrRed = G0red * plasticLaw->GetShearRatio(mptr,pressure,J);
     

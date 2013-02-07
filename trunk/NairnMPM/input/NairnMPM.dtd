@@ -234,7 +234,7 @@
 <!-- Thermal analysis -->
 
 <!ELEMENT	Thermal
-			( Conduction?, Isothermal?, CrackTipHeating?, EnergyCoupling?) >
+			( Conduction?, CrackTipHeating?, EnergyCoupling?, Isothermal?) >
 
 <!-- Gravity analysis -->
 
