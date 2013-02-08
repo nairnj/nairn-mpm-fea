@@ -117,7 +117,7 @@ void GridForcesTask::Execute(void)
         }
 		
 		// clear coupled dissipated energy
-		if(ConductionTask::energyCoupling) mpmptr->SetDispEnergy(0.);
+		if(ConductionTask::active) mpmptr->SetDispEnergy(0.);
 	}
 	
 	// Add traction BCs on particles

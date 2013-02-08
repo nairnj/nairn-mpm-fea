@@ -27,6 +27,7 @@
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Custom_Tasks/TransportTask.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -89,6 +90,16 @@ void UpdateParticlesTask::Execute(void)
 			
 			// thermal ramp
 			thermal.UpdateParticleTemperature(&mpm[p]->pTemperature,timestep);
+			
+			// energy coupling here if conduction not doing it
+			if(!ConductionTask::active)
+			{	if(ConductionTask::energyCoupling)
+				{	double energy = mpm[p]->GetDispEnergy();									// in uJ/g
+					double Cp=1000.*theMaterials[mpm[p]->MatID()]->GetHeatCapacity(mpm[p]);		// in uJ/(g-K)
+					mpm[p]->pTemperature += energy/Cp;			// in K
+					mpm[p]->SetDispEnergy(0.);
+				}
+			}
 			
 			// update feedback coefficient
 			bodyFrc.TrackAlpha(mpm[p]);

@@ -39,11 +39,11 @@
 </dd>
 
 <dt>&lt;CrackTipHeating/&gt;</dt>
-<dd>This tag will cause energy released by crack growth to be released as a heat source into a condution analysis. This command has no affect unless the <code>&lt;Conduction/&gt;</code> tag is present which means the analysis will be doing coupled thermal conduction calculations. This tag is in development. Currently it should only be used when the thickness of all material points is 1 mm (there will be an option to change or evaluate thickness in the future) and 100% of the fracture energy is converted to heat (there may be an option in the future to control the fraction of energy released as heat).
+<dd>This tag will cause energy released by crack growth to be released as a heat source into a conduction analysis. This command has no affect unless the <code>&lt;Conduction/&gt;</code> tag is present which means the analysis will be doing coupled thermal conduction calculations. This tag is in development. Currently it should only be used when the thickness of all material points is 1 mm (there will be an option to change or evaluate thickness in the future) and 100% of the fracture energy is converted to heat (there may be an option in the future to control the fraction of energy released as heat).
 </dd>
 
 <dt>&lt;EnergyCoupling/&gt;</dt>
-<dd>This tag will cause energy dissipated by a <a href="definematl.html">material's</a> constitutive low to be converted to a heat source that will increase temperature. This is implemented for all plastic materials (e.g., <a href="definematl.html#isoplast">Isotropic Elastic-Plastic</a>, <a href="definematl.html#hill">Hill plastic</a>, and <a href="definematl.html#MGEOS">MGEOS materials</a>), but noo other materials.
+<dd>This tag will cause energy dissipated by a <a href="definematl.html">material's</a> constitutive low to be converted to a heat source that will increase temperature. This is implemented for all plastic materials (e.g., <a href="definematl.html#isoplast">Isotropic Elastic-Plastic</a>, <a href="definematl.html#hill">Hill plastic</a>, and <a href="definematl.html#MGEOS">MGEOS materials</a>). This option can be used with or withoud conduction. When there is no conduction, all temperature rise will remain on the particle.
 </dd>
 
 <dt>&lt;Isothermal&gt;</dt>
