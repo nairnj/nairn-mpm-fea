@@ -32,6 +32,7 @@ class JohnsonCook : public HardeningLawBase
         virtual double GetYield(MPMBase *,int,double);
         virtual double GetKPrime(MPMBase *,int,double);
         virtual double GetK2Prime(MPMBase *,double,double);
+        virtual double GetYieldIncrement(MPMBase *,int,double);
     
         // accessors
         virtual const char *GetHardeningLawName(void);

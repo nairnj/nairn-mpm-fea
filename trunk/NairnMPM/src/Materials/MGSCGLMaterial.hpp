@@ -46,7 +46,7 @@ class MGSCGLMaterial : public IsoPlasticity
 		
     protected:
         double GPpred,G0red,Keffred,Gratio;
-        double C0squared;
+        double C0squared,QAVred;
 
 };
 

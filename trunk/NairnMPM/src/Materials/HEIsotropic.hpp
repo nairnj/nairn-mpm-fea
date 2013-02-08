@@ -42,6 +42,7 @@ class HEIsotropic : public HyperElastic
         virtual char *InitHistoryData(void);
 		
 		// step methods
+        virtual void LoadMechanicalProps(MPMBase *mptr,int np);
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int);
         virtual void UpdatePressure(MPMBase *,double,double,int);
         Tensor GetTrialDevStressTensor(Tensor *,double,int);

@@ -44,6 +44,7 @@ class SLMaterial : public SCGLHardening
 		// methods
         virtual double GetShearRatio(MPMBase *,double,double);
         virtual double GetYield(MPMBase *,int,double);
+    double GetYTred(double);
         virtual double GetKPrime(MPMBase *,int,double);
         virtual double GetK2Prime(MPMBase *,double,double);
         double GetEpdot(double YT);

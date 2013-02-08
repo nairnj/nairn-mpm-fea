@@ -51,6 +51,7 @@ class MeshInfo
         bool Is3DGrid(void);
 		void GetGridPoints(int *,int *,int *);
 		double GetCellVolume(void);
+        double GetAverageCellSize(void);
 		double GetThickness(void);
 		double GetDefaultThickness();
         double GetNormalCODAdjust(Vector *,Vector *,double);
@@ -63,6 +64,7 @@ class MeshInfo
 		int totalElems;					// total number of elements
 		int horiz,vert,depth;			// number of elements in that direction (if from a grid)
 		double cellVolume;				// cell volume
+        double avgCellSize;             // average cell size
         bool contactByDisplacements;    // TRUE is using displacements, false if need to adjust normal COD
 
 };
