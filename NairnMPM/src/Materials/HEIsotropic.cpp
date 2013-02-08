@@ -187,6 +187,14 @@ char *HEIsotropic::InitHistoryData(void)
 
 #pragma mark HEIsotropic:Methods
 
+// State dependent material properties might be in the hardening law
+void HEIsotropic::LoadMechanicalProps(MPMBase *mptr,int np)
+{
+    plasticLaw->LoadHardeningLawProps(mptr,np);
+    
+    // no super class (IsotropicMat, Elastic, MaterialBase) needs this method
+}
+
 /* Take increments in strain and calculate new Particle: strains, rotation strain,
         stresses, strain energy,
     dvij are (gradient rates X time increment) to give deformation gradient change

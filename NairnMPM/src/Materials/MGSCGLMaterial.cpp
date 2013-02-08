@@ -16,6 +16,7 @@
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Materials/HardeningLawBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
 
 #pragma mark MGSCGLMaterial::Constructors and Destructors
 
@@ -201,6 +202,18 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     double delV = Jnew*(1.-1/dJ);                       // = (V(k+1)-V(k))/Vsf(k+1)
     delVLowStrain = du.trace() -  3.*eres;
     
+    // artifical viscosity
+    bool artificialViscosity = TRUE;
+    double A1 = 0.2, A2 = 2.0;
+    QAVred = 0.;
+    double Dkk = (du(0,0)+du(1,1)+du(2,2))/delTime;
+    if(Dkk<0 && artificialViscosity)
+    {   double c = sqrt(Keffred*Jnew*JresStretch/1000.);        // m/sec
+        double divuij = fabs(Dkk);                              // sec^-1
+        double dcell = mpmgrid.GetAverageCellSize();            // mm
+        QAVred = dcell*divuij*(A1*c + 1.e-3*A2*dcell*divuij);   // Pa cm^3/g
+    }
+    
     if(np!=THREED_MPM)
     {   // Finish of shear parts and yield in the base IsoPlasticity class
         PlasticityConstLaw(mptr,du(0,0),du(1,1),du(0,1),du(1,0),du(2,2),delTime,np,delV,Jnew,eres);
@@ -257,7 +270,9 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
                     + 1000.*heatCapacityVol*(mptr->pPreviousTemperature - thermal.reference);
 	double P0 = mptr->GetPressure();
     double P = J*(Keffred*x + gamma0*e);
-    mptr->SetPressure(P);
+    
+    // set final pressure
+    mptr->SetPressure(P+QAVred);
     
     // particle isentropic temperature increment
     double dTq0 = -gamma0*mptr->pPreviousTemperature*delV;

@@ -167,6 +167,15 @@ double JohnsonCook::GetK2Prime(MPMBase *mptr,double fnp1,double delTime)
     }
 }
 
+// Return (K(alpha)-K(0)), which is used in dissipated energy calculation
+// If K(0) in current particle state differs from yldred, will need to override
+double JohnsonCook::GetYieldIncrement(MPMBase *mptr,int np,double delTime)
+{
+    double ep = dalpha/(delTime*ep0jc);
+    double term2 = ep>edotMin ? 1. + Cjc*log(ep) : eminTerm ;
+	return Bred*pow(alpint,njc) * term2 * TjcTerm ;
+}
+
 #pragma mark JohnsonCook::Accessors
 
 // hardening law name

@@ -59,6 +59,7 @@ int HardeningLawBase::HistoryDoublesNeeded(void) { return 1; }
 #pragma mark HardeningLawBase::Methods
 
 // Return (K(alpha)-K(0)), which is used in dissipated energy calculation
+// If K(0) in current particle state differs from yldred, will need to override
 double HardeningLawBase::GetYieldIncrement(MPMBase *mptr,int np,double delTime)
 {
 	return GetYield(mptr,np,delTime) - yldred;

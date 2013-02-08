@@ -160,6 +160,11 @@ double SCGLHardening::GetK2Prime(MPMBase *mptr,double fnp1,double delTime)
     return SQRT_EIGHT27THS*factor*factor*beta*nhard*pow(1.+beta*alpint,2.*nhard-1)*fnp1;
 }
 
+// Return (K(alpha)-K(0)), which is used in dissipated energy calculation
+double SCGLHardening::GetYieldIncrement(MPMBase *mptr,int np,double delTime)
+{   return (fmin(yldred*pow(1.+beta*alpint,nhard),yldMaxred)-yldred)*Gratio;
+}
+
 #pragma mark NonlinearHardening::Accessors
 
 // hardening law name

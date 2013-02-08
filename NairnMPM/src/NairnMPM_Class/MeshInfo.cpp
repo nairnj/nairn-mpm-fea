@@ -296,10 +296,12 @@ void MeshInfo::SetElements(int h,int v,int d,double x,double y,double z)
 	if(depth>0)
 	{	totalElems=horiz*vert*depth;
 		cellVolume=gridx*gridy*gridz;
+        avgCellSize=(gridx+gridy+gridz)/3.;
 	}
 	else
 	{	totalElems=horiz*vert;
 		cellVolume=gridx*gridy*zmin;
+        avgCellSize=(gridx+gridy)/2.;
 	}
 }
 
@@ -392,6 +394,10 @@ void MeshInfo::GetGridPoints(int *ptx,int *pty,int *ptz)
 // cell volume in mm^3
 // Feature that calls this method must require the problem to have a structured <Grid>
 double MeshInfo::GetCellVolume(void) { return cellVolume; }
+
+// cell size in mm
+// Feature that calls this method must require the problem to have a structured <Grid>
+double MeshInfo::GetAverageCellSize(void) { return avgCellSize; }
 
 // grid thickness (or -1. if not structure grid). For 3D return z extent
 double MeshInfo::GetThickness(void)
