@@ -222,9 +222,25 @@ double MPMBase::GetUnscaledVolume(void)
 // Axisymmetric particles override to return mass/rp to get uniform particle mass
 double MPMBase::GetMassForGradient(void) { return mp; }
 
+// return if mterial for this particle includes plastic strainin gradient or if
+// entire deformation is in the elastic strain
+bool MPMBase::HasPlasticStrainForGradient(void)
+{   return theMaterials[MatID()]->HasPlasticStrainForGradient();
+}
+
 // get deformation gradient terms
-double MPMBase::GetDuDy(void) { return (ep.xy+eplast.xy-wrot.xy)/2.; }
-double MPMBase::GetDvDx(void) { return (ep.xy+eplast.xy+wrot.xy)/2.; }
+double MPMBase::GetDuDy(void)
+{   if(theMaterials[MatID()]->HasPlasticStrainForGradient())
+        return (ep.xy+eplast.xy-wrot.xy)/2.;
+    else
+        return (ep.xy-wrot.xy)/2.;
+}
+double MPMBase::GetDvDx(void)
+{   if(theMaterials[MatID()]->HasPlasticStrainForGradient())
+        return (ep.xy+eplast.xy+wrot.xy)/2.;
+    else
+        return (ep.xy+wrot.xy)/2.;
+}
 
 // anglez0 is initial z cw orientation angle (2D and 3D z,y,x scheme)
 double MPMBase::GetRotationZ(void) { return anglez0-0.5*wrot.xy; }
