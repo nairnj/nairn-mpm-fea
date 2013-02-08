@@ -15,6 +15,9 @@
 MPMBase **mpm;		// list of material points
 int nmpms=0;		// number of material points
 
+bool rhoScaling = FALSE;	// modiftf default to no mass scaling. Vincent 
+double rhoScale = 1;		// modiftf default to a value of 1, though not used. Vincent
+
 // class statics
 int MPMBase::currentParticleNum=0;
 

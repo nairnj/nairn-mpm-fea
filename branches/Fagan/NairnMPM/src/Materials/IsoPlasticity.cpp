@@ -634,7 +634,7 @@ double IsoPlasticity::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial
 			{	saving=TRUE;
 				double updating = GetYield(mptr,np,delTime);
 				saving=FALSE;
-			}
+			} //modiftf
             if(LambdaConverged(step++,lambdak,dx)) break;
             
             // reset limits

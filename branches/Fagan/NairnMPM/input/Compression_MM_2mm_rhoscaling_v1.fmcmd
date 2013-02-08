@@ -1,0 +1,148 @@
+<?xml version='1.0'?>
+<!DOCTYPE JANFEAInput SYSTEM '/Users/jnairn/Programming/Cocoa_Projects/nairn-mpm-fea/NairnMPM/input/NairnMPM.dtd'
+[
+   <!ENTITY fileroot 'Compression_MM_2mm_rhoscaling_v1/mm.'>
+   <!ENTITY cs '2'>
+   <!ENTITY T0 '298'>
+   <!ENTITY temp '300'>
+   <!ENTITY rate '-40'> <!-- mm/s -->
+   <!ENTITY time '250'> <!-- ms -->
+   <!ENTITY arch '5'>
+   <!ENTITY garch '2.5'>
+]>
+<JANFEAInput version="3">
+
+<!-- The parameters above are:
+
+     fileroot - path to acrhived files
+     cs - cell size (best to divide evenly in to sample with of 20 mm)
+     T0 - reference temperature
+     temp - particle temperature
+     rate - strain rate in 1/sec (- for tension or + for compression
+     time - total time for text in ms (max strain (in %) = - rate * time / 1000)
+     arch - interval to archive files of results
+     garch - interval to record global results like avg stress and strain
+     
+     A stress-strain curve is found by cross-plotting global results for
+     "sxx mat 1" vs. "exx mat 1"
+-->
+
+  <Header>
+    <Description>
+Title: Microstructure Model Compression Loading
+User Name: Tim Fagan
+1: 200C no plastic heat
+2: 50C
+3: 100C
+4: 150C
+5: 300C
+a1: 298K, now using sto of 10^7, Vincent's dynamic values of alphstar, betastar, k0, rhoc, rhow
+a2: 200C/473K, same as above.
+a3: a1 may be incorrect as sto=10e1? now: 323K, same as above.
+a4: Testing for strain rate = 0.1. sto=10^7, temp = 300K
+a5: Testing for strain rate = 0.1. sto=10^5, temp = 300K
+a6: Testing for strain rate = 0.1. sto=10^3, temp = 300K
+a7: Testing for high strain rate = 4000-s. sto = 10^7, temp = 300K
+a8: Testing for high strain rate = 4000-s. sto = 10^7, temp = 300K (increased resolution =0.5)
+a9: Testing for high strain rate = 4000-s. sto = 10^10, temp = 300K (increased resolution =0.5)
+rhoscaling_v1: testing for rhoscaling ness. strain rate = 0.1.
+    </Description>
+    <Analysis>10</Analysis>
+  </Header>
+
+  <MPMHeader>
+    <MPMMethod>2</MPMMethod>
+    <GIMP/>
+    <ArchiveTime units="ms">&arch;</ArchiveTime>
+    <GlobalArchiveTime units="ms">&arch;</GlobalArchiveTime>
+    <MaxTime units="ms">&time;</MaxTime>
+    <ArchiveRoot>&fileroot;</ArchiveRoot>
+    <MPMArchiveOrder>iYYYYYNYYYNYY?YYYY</MPMArchiveOrder> <!-- additional history variables-->
+    <CrackArchiveOrder>iYNNN</CrackArchiveOrder>
+    <GlobalArchive type="history 1" material="1"/>
+	<GlobalArchive type="history 2" material="1"/>
+	<GlobalArchive type="history 3" material="1"/>
+	<GlobalArchive type="history 4" material="1"/>
+    <GlobalArchive type="temp" material="1"/>
+    <StressFreeTemp>&T0;</StressFreeTemp>
+  </MPMHeader>
+
+  <Mesh output="file">
+    <Grid xmin="-4" xmax="54" ymin="-4" ymax="54">
+      <Horiz cellsize="&cs;"/>
+      <Vert cellsize="&cs;"/>
+    </Grid>
+  </Mesh>
+
+  <MaterialPoints>
+    <Body mat="1" angle="0" thick="5" vx="0" vy="0" temp="&temp;">
+      <Rect xmin="0" xmax="20" ymin="0" ymax="50"/>
+    </Body>
+    <Body mat="2" thick="5" vx="0" vy="&rate;">
+      <Rect xmin="-2" xmax="50" ymin="50" ymax="52"/>
+    </Body>
+	<Body mat="3" thick="5" vx="0" vy="0">
+      <Rect xmin="-2" xmax="50" ymin="-2" ymax="0"/>
+    </Body>
+  </MaterialPoints>
+  
+  <Material Type="29" Name="Copper Dislocation-Based Model">
+
+    <rho>8.96e3</rho>	<!-- Scaled density -->
+    <E>120000</E>
+    <alpha>60</alpha>
+	<!--nu>0.33</nu-->
+    <G>47.4e3</G>
+	<yield>90</yield>
+	
+	<!--Khard>50</Khard>
+	<nhard>1</nhard-->
+	
+	<rhoW>1e13</rhoW>
+	<rhoC>1e14</rhoC>
+	<fo>0.25</fo>
+	<flim>0.06</flim>
+	<fsto>3.2</fsto>
+	<sto>10e7</sto>
+	<m>50</m>
+	<n>10</n>
+	<alp>0.25</alp>
+	<burg>2.56e-10</burg>
+	<K1>10</K1>
+	<alpstar>0.120</alpstar>
+	<betastar>0.006</betastar>
+	<k0>5.8</k0>
+	<rhoScale>1000</rhoScale>	<!-- add the amount of mass scaling here, where: rho above / rhoScale = actual rho -->
+	
+    <kCond>385</kCond>
+    <Cp>386</Cp>
+  </Material>
+
+  <Material Type="11" Name="Loading Clamp Top">
+    <SetDirection>2</SetDirection>
+  </Material>
+  
+  <Material Type="11" Name="Loading Clamp Bottom">
+    <SetDirection>2</SetDirection>
+  </Material>
+
+  <GridBCs>
+    <BCLine x1="0" y1="0" x2="0" y2="50" tolerance="1">
+      <DisBC dir="1" style="1" vel="0"/>
+	  <!--DisBC dir="2" style="1" vel="0"/-->
+    </BCLine>
+  </GridBCs>
+  
+    <Thermal>
+	<Conduction/>
+	<!--EnergyCoupling/-->
+  </Thermal>
+  
+  <CustomTasks>
+    <Schedule name='HistoryArchive'>
+      <Parameter name='1'/>
+    </Schedule>
+  </CustomTasks>
+
+
+</JANFEAInput>
