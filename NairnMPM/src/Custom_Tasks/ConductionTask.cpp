@@ -9,12 +9,13 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Elements/ElementBase.hpp"
-#include "Materials/MaterialBase.hpp"
+#include "Materials/MaterialBase.hpp" 
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Cracks/CrackSegment.hpp"
+#include "Materials/MicrostructureModel.hpp" //modiftf 
 
 // global
 bool ConductionTask::active=FALSE;
@@ -59,7 +60,11 @@ TransportTask *ConductionTask::TransportTimeStep(int matid,double dcell,double *
 // Task 1 Extrapolation of concentration to the grid
 TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape)
 {	double Cp=theMaterials[mptr->MatID()]->GetHeatCapacity(mptr);
-	double rho=theMaterials[mptr->MatID()]->rho;
+	double rho;														
+	if(rhoScaling)													//modiftf Vincent
+		rho=(theMaterials[mptr->MatID()]->rho)/rhoScale;			//modiftf Vincent
+	else															//modiftf Vincent
+		rho=theMaterials[mptr->MatID()]->rho;						// original line
 	double arg=mptr->volume*rho*Cp*shape;
 	ndpt->gTemperature+=mptr->pTemperature*arg;
 	ndpt->gRhoVCp+=arg;
@@ -142,7 +147,11 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double s
 	if(energyCoupling)
 	{	// V * q = 1000 J/sec where J = 1.0e-9 * V (mm^3) * rho (g/cm^3) * specific energy
 		// ...see data archiving for details on units
-		double rho=theMaterials[mptr->MatID()]->rho;
+		double rho;
+		if(rhoScaling)													// modiftf Vincent
+			rho=(theMaterials[mptr->MatID()]->rho)/rhoScale;		// modiftf Vincent
+		else															// modiftf Vincent
+			rho=theMaterials[mptr->MatID()]->rho;				// Original Line
 		ndpt->fcond+=sh*1.0e-6*mptr->volume*rho*mptr->GetDispEnergy()/timestep;
 	}
 	

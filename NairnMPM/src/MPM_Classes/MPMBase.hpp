@@ -176,4 +176,7 @@ class MPMBase : public LinkedObject
 extern MPMBase **mpm;
 extern int nmpms;
 
+extern bool rhoScaling; 		//modiftf if rhoscaling is on or not. Vincent
+extern double rhoScale; 		//modiftf amount of scaling. Vincent
+
 #endif

@@ -12,6 +12,7 @@
 
 #pragma mark MicrostructureModel::Constructors and Destructors
 
+
 // Constructors
 MicrostructureModel::MicrostructureModel()
 {
@@ -37,6 +38,7 @@ MicrostructureModel::MicrostructureModel(char *matName) : IsoPlasticity(matName)
 	disk1=1.;
 	tayM=3.06;
 	MMG=1.;
+
 	// for first step calcs:
 	//fr=-3;
 	//tdl = fr*rhoW+(1-fr)*rhoC;
@@ -173,6 +175,13 @@ char *MicrostructureModel::InputMat(char *xName,int &input)
     {   input=DOUBLE_NUM;
         return((char *)&disk1);
     }
+	
+	// rhoScale for density scaling
+    else if(strcmp(xName,"rhoScale")==0)
+    {   input=DOUBLE_NUM;
+	    rhoScaling=TRUE;
+        return((char *)&rhoScale);
+    }
 
     return(IsoPlasticity::InputMat(xName,input));
 }
@@ -213,8 +222,8 @@ double MicrostructureModel::GetYield(MPMBase *mptr,int np,double delTime)
 		
 		// Calculation of m for temperature dependent strain-rate sensitivity
 		if(ConductionTask::active)
-		{	SHM=30000/mptr->pTemperature;
-			N=14900/mptr->pTemperature;
+		{	SHM=30000/mptr->pPreviousTemperature;
+			N=14900/mptr->pPreviousTemperature;
 		}
 		
 		double rhoc = mptr->archiverhoC;
@@ -322,7 +331,7 @@ double MicrostructureModel::GetK2Prime(MPMBase *mptr,double fnp1,double delTime)
 void MicrostructureModel::UpdatePlasticInternal(MPMBase *mptr,int np)
 {
 		mptr->SetHistoryDble(0,alpint);
-		mptr->SetHistoryDble(YT_HISTORY,mptr->yieldC);
+		mptr->SetHistoryDble(YT_HISTORY,mptr->yieldC*rho/1.e6);
 		//mptr->SetHistoryDble(EPDOT_HISTORY,(double)0.0);
 		mptr->SetHistoryDble(RHOC,mptr->archiverhoC);
 		mptr->SetHistoryDble(RHOW,mptr->archiverhoW);

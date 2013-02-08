@@ -32,7 +32,9 @@ class MicrostructureModel : public IsoPlasticity
 		//dislocation density in cell walls, dislocation density in cell, etc.
         double rhoW,rhoC,fLim,fo,fsto,SHM,N,alp,burg,K1,esal,esbe,disk1,tayM,sto;
 		double fr0,tdl0,dSize0,rhoC0,rhoW0, MMG;
-
+		
+		
+		
         // constructors and destructors
         MicrostructureModel();
         MicrostructureModel(char *);
@@ -74,6 +76,7 @@ class MicrostructureModel : public IsoPlasticity
 		double sigoc;
 		double rstc;	// shear stress in cell;
 		double yieldPrevious;	// previous yield stress
+		
 
 };
 
