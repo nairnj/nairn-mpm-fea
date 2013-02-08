@@ -28,8 +28,16 @@ EndXMLData
 ! Supported materials: "neohookean" (G2=0), "mooney" (G1=G2), heiso
 #matID="heiso"
 
+! hardening law (if allowed) for current material
+!	options Linear, Nonlinear, Nonlinear2
+#hardID="Nonlinear2"
+
+! temperature option to test energy coupling
+StressFreeTemp 294
+#startTemp=294
+
 ! Basic properties
-#Ebase=100
+#Ebase=2000
 #rho=1
 #nuBase=.33
 #aBase=60
@@ -62,6 +70,7 @@ EndXMLData
 Analysis #analysis
 MPMMethod #update,#method
 PtsPerElement #ppe
+!conduction "yes","mechanical energy"
 
 ! convert to contact
 if #loading="contact"
@@ -108,7 +117,7 @@ MaximumTime (1+#hold+#unload)*#time
 ArchiveTime (1+#hold+#unload)*#time/50
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
 ! plastic strain is Left Cauchy Green Strain, history 2 is J or volumetric strain (except some hardening laws)
-ToArchive plasticstrain,history1,history2,plasticenergy
+ToArchive plasticstrain,history1,history2,plasticenergy,temperature
 Comment "Load time = "&#time&" ms"
 Comment "Hold time = "&#hold&" ms"
 
@@ -121,6 +130,8 @@ if #matID="neohookean"
     K #Kbulk
     a #aBase
     rho #rho
+    kCond .202
+    CP 1256
   Done
 endif
 
@@ -132,6 +143,8 @@ if #matID="mooney"
     a #aBase
     rho #rho
     UJOption 0
+    kCond .202
+    CP 1256
   Done
 endif
 
@@ -142,8 +155,22 @@ if #matID="heiso"
     K #Kbulk
     a #aBase
     rho #rho
-    yield abs(#Ebase*#yldstrain/100)
-    Ep 20
+    hardening #hardID
+    if #hardID="Linear"
+      yield abs(#Ebase*#yldstrain/100)
+      Ep #Ebase/10
+    else if #hardID="Nonlinear"
+      yield abs(#Ebase*#yldstrain/200)
+      Khard 5000
+      nhard .24
+    else if #hardID="Nonlinear2"
+      yield abs(#Ebase*#yldstrain/200)
+      Khard 500
+      nhard 3
+    endif
+    UJOption 0
+    kCond .202
+    CP 1256
   Done
 endif
 

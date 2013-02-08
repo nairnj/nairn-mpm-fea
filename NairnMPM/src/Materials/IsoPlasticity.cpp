@@ -16,6 +16,7 @@
 #include "Exceptions/CommonException.hpp"
 #include "Materials/LinearHardening.hpp"
 #include "Materials/NonlinearHardening.hpp"
+#include "Materials/Nonlinear2Hardening.hpp"
 #include "Materials/JohnsonCook.hpp"
 #include "Materials/SCGLHardening.hpp"
 #include "Materials/SLMaterial.hpp"
@@ -71,6 +72,9 @@ void IsoPlasticity::SetHardeningLaw(char *lawName)
     
     else if(strcmp(lawName,"Nonlinear")==0 || strcmp(lawName,"2")==0)
         plasticLaw = new NonlinearHardening(this);
+    
+    else if(strcmp(lawName,"Nonlinear2")==0 || strcmp(lawName,"6")==0)
+        plasticLaw = new Nonlinear2Hardening(this);
     
     else if(strcmp(lawName,"JohnsonCook")==0 || strcmp(lawName,"3")==0)
         plasticLaw = new JohnsonCook(this);

@@ -597,7 +597,7 @@ A third alternative is for a material track stored energy only (denoted as $W$ w
 
 From the previous sections, analysis with materials that can use $J_2$ flow theory only require code implementation of the yield stress ($K(\alpha)$) and its derivatives. For plane strain or 3D, the code only needs $\sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda}$. To handle plane stress as well, the code needs ${1\over3}{dK^2(\alpha^{(k)})\over d\lambda}$. When the yield stress depends on strain rate, that rate is $\dot{\varepsilon}_p = d\alpha/dt$ where $dt$ is the time step. When evaluating in plane strain or 3D code $\alpha'(\lambda) = \sqrt{2/3}$ and $\dot{\varepsilon}_p'(\lambda) = \sqrt{2/3}/dt$. In plane stress code $\alpha'(\lambda) = \sqrt{2/3}\|\dev\|$ and $\dot{\varepsilon}_p'(\lambda) = \sqrt{2/3}\|\dev\|/dt$.
 
-All hardening laws are implemented as subclasses of the {\tt HardeningLawBase} class. The {\tt Isoplasticity} class, or any of its subclasses, can use any hardening law by picking it when defining material parameters. Those the total  number of available materials in this group is number of hardening laws $\times$ number of  {\tt Isoplasticity} classes. The following sections list the current hardening laws and the equations that are implemented.
+All hardening laws are implemented as subclasses of the {\tt HardeningLawBase} class. The {\tt Isoplast\-icity} class, or any of its subclasses, can use any hardening law by picking it when defining material parameters. Those the total  number of available materials in this group is number of hardening laws $\times$ number of  {\tt Isoplasticity} classes. The following sections list the current hardening laws and the equations that are implemented.
 
 \subsubsection{VonMises Material with Linear Work Hardening}
 
@@ -613,6 +613,14 @@ All hardening laws are implemented as subclasses of the {\tt HardeningLawBase} c
    K(\alpha) & = & \sigma_y(1+\beta\alpha)^n \\
    \sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda} & = & {2\over 3} \sigma_y \beta n (1+\beta\alpha)^{n-1} \\
    {1\over3}{dK^2(\alpha^{(k)})\over d\lambda} & = & \sqrt{8\over27} \sigma_y^2 \beta n  (1+\beta\alpha)^{2n-1} \|\dev\|
+\end{eqnarray}
+
+\subsubsection{VonMises Material with Alternate Non-Linear Work Hardening}
+
+\begin{eqnarray}
+   K(\alpha) & = & \sigma_y(1+\beta\alpha^n) \\
+   \sqrt{2\over3}{dK(\alpha^{(k)})\over d\lambda} & = & {2\over 3} \sigma_y \beta n\alpha^{n-1} \\
+   {1\over3}{dK^2(\alpha^{(k)})\over d\lambda} & = & \sqrt{8\over27}\sigma_y^2\beta n\alpha^{n-1}(1+\beta\alpha^n)\|\dev\|
 \end{eqnarray}
 
 \subsubsection{Johnson-Cook}

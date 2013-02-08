@@ -223,6 +223,7 @@ NodalTempBC = $(src)/Boundary_Conditions/NodalTempBC
 NodalVelBC = $(src)/Boundary_Conditions/NodalVelBC
 NodesController = $(com)/Read_XML/NodesController
 NonlinearHardening = $(src)/Materials/NonlinearHardening
+Nonlinear2Hardening = $(src)/Materials/Nonlinear2Hardening
 Orthotropic = $(com)/Materials/Orthotropic
 OvalController = $(com)/Read_XML/OvalController
 ParseController = $(com)/Read_XML/ParseController
@@ -330,6 +331,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # NodalVelBC.hpp : BoundaryCondition.hpp
 # NodesController.hpp : ParseController.hpp
 # NonlinearHardening.hpp: HardeningLawBase.hpp, MaterialBase.hpp
+# Nonlinear2Hardening.hpp: NonlinearHardening.hpp, HardeningLawBase.hpp, MaterialBase.hpp
 # Orthotropic.hpp : TransIsotropic.hpp (Elastic.hpp MaterialBase.hpp)
 # OvalController.hpp : ShapeController.hpp
 # PointController.hpp : ShapeController.hpp
@@ -381,7 +383,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		MatPtLoadBC.o MatPtTractionBC.o MatPtFluxBC.o NodalVelBC.o NodalConcBC.o NodalTempBC.o MoreMPMElementBase.o \
 		NodalPointMPM.o CustomTask.o CalcJKTask.o PropagateTask.o ReverseLoad.o IdealGas.o NonlinearHardening.o \
 		DiffusionTask.o ConductionTask.o MeshInfo.o TransportTask.o ElementBase3D.o SCGLHardening.o \
-		EightNodeIsoparamBrick.o MatPoint3D.o Elastic.o ElasticMPM.o HyperElastic.o \
+		EightNodeIsoparamBrick.o MatPoint3D.o Elastic.o ElasticMPM.o HyperElastic.o Nonlinear2Hardening.o \
 		mathexpr.o ShapeController.o PointController.o RectController.o OvalController.o PolygonController.o \
 		SphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o HistoryArchive.o \
 		TractionLaw.o CohesiveZone.o CoupledSawTooth.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
@@ -564,7 +566,7 @@ UpdateMomentaTask.o : $(UpdateMomentaTask).cpp $(dprefix) $(UpdateMomentaTask).h
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UpdateMomentaTask).cpp
 UpdateParticlesTask.o : $(UpdateParticlesTask).cpp $(dprefix) $(UpdateParticlesTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(TransportTask).hpp $(NodalPoint).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ElementBase).hpp \
-			$(BodyForce).hpp $(ThermalRamp).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp
+			$(BodyForce).hpp $(ThermalRamp).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(ConductionTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UpdateParticlesTask).cpp
 UpdateStrainsLastTask.o : $(UpdateStrainsLastTask).cpp $(dprefix) $(UpdateStrainsLastTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(CrackHeader).hpp $(TransportTask).hpp \
@@ -682,7 +684,7 @@ ElasticMPM.o : $(ElasticMPM).cpp $(dprefix) $(Elastic).hpp $(MaterialBase).hpp $
 IsoPlasticity.o : $(IsoPlasticity).cpp $(dprefix) $(IsoPlasticity).hpp $(IsotropicMat).hpp $(HardeningLawBase).hpp \
 			$(MaterialBase).hpp $(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp $(LinearHardening).hpp \
 			$(TransportTask).hpp $(Elastic).hpp $(CommonException).hpp $(NonlinearHardening).hpp $(JohnsonCook).hpp \
-			$(SCGLHardening).hpp $(SLMaterial).hpp
+			$(SCGLHardening).hpp $(SLMaterial).hpp $(Nonlinear2Hardening).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(IsoPlasticity).cpp
 AnisoPlasticity.o : $(AnisoPlasticity).cpp $(dprefix) $(AnisoPlasticity).hpp $(Orthotropic).hpp $(TransIsotropic).hpp \
 			$(MaterialBase).hpp $(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp \
@@ -697,7 +699,8 @@ Mooney.o : $(Mooney).cpp $(dprefix) $(Mooney).hpp $(MaterialBase).hpp $(HyperEla
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Mooney).cpp
 HEIsotropic.o : $(HEIsotropic).cpp $(dprefix) $(HEIsotropic).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(TransportTask).hpp \
-			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp
+			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp $(HardeningLawBase).hpp $(LinearHardening).hpp \
+			$(NonlinearHardening).hpp $(JohnsonCook).hpp $(SCGLHardening).hpp $(SLMaterial).hpp $(Nonlinear2Hardening).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(HEIsotropic).cpp
 HEAnisotropic.o : $(HEAnisotropic).cpp $(dprefix) $(HEAnisotropic).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(TransportTask).hpp \
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp
@@ -729,13 +732,16 @@ LinearHardening.o : $(LinearHardening).cpp $(dprefix) $(LinearHardening).hpp $(H
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(LinearHardening).cpp
 NonlinearHardening.o : $(NonlinearHardening).cpp $(dprefix) $(NonlinearHardening).hpp $(HardeningLawBase).hpp $(MaterialBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NonlinearHardening).cpp
-JohnsonCook.o : $(JohnsonCook).cpp $(dprefix) $(JohnsonCook).hpp $(NonlinearHardening).hpp $(HardeningLawBase).hpp $(MaterialBase).hpp \
+Nonlinear2Hardening.o : $(Nonlinear2Hardening).cpp $(dprefix) $(Nonlinear2Hardening).hpp $(NonlinearHardening).hpp $(HardeningLawBase).hpp \
+			$(MaterialBase).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Nonlinear2Hardening).cpp
+JohnsonCook.o : $(JohnsonCook).cpp $(dprefix) $(JohnsonCook).hpp $(HardeningLawBase).hpp $(MaterialBase).hpp \
 			$(MPMBase).hpp $(ThermalRamp).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(JohnsonCook).cpp
-SCGLHardening.o : $(SCGLHardening).cpp $(dprefix) $(SCGLHardening).hpp $(NonlinearHardening).hpp $(HardeningLawBase).hpp $(MaterialBase).hpp \
+SCGLHardening.o : $(SCGLHardening).cpp $(dprefix) $(SCGLHardening).hpp $(HardeningLawBase).hpp $(MaterialBase).hpp \
 			$(MPMBase).hpp $(ThermalRamp).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(SCGLHardening).cpp
-SLMaterial.o : $(SLMaterial).cpp $(dprefix) $(SLMaterial).hpp $(SCGLHardening).hpp $(NonlinearHardening).hpp $(HardeningLawBase).hpp \
+SLMaterial.o : $(SLMaterial).cpp $(dprefix) $(SLMaterial).hpp $(SCGLHardening).hpp $(HardeningLawBase).hpp \
             $(MaterialBase).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(SLMaterial).cpp
 

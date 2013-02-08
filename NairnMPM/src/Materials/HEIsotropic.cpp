@@ -12,12 +12,12 @@
 #include "HEIsotropic.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
-// JAN: for hardenling law
 #include "Materials/LinearHardening.hpp"
 #include "Materials/NonlinearHardening.hpp"
 #include "Materials/JohnsonCook.hpp"
 #include "Materials/SCGLHardening.hpp"
 #include "Materials/SLMaterial.hpp"
+#include "Materials/Nonlinear2Hardening.hpp"
 
 #pragma mark HEIsotropic::Constructors and Destructors
 
@@ -75,6 +75,9 @@ void HEIsotropic::SetHardeningLaw(char *lawName)
     
     else if(strcmp(lawName,"Nonlinear")==0 || strcmp(lawName,"2")==0)
         plasticLaw = new NonlinearHardening(this);
+    
+    else if(strcmp(lawName,"Nonlinear2")==0 || strcmp(lawName,"6")==0)
+        plasticLaw = new Nonlinear2Hardening(this);
     
     else if(strcmp(lawName,"JohnsonCook")==0 || strcmp(lawName,"3")==0)
         plasticLaw = new JohnsonCook(this);
