@@ -157,10 +157,10 @@ void MGSCGLMaterial::ValidateForUse(int np)
 							  "MGSCGLMaterial::ValidateForUse");
 	}
     
-    //if(np==PLANE_STRESS_MPM)
-    //{	throw CommonException("MGEOSMaterial material has not yet been updated to do plane stress calculations",
-    //                          "MGSCGLMaterial::ValidateForUse");
-    //}
+    if(np==PLANE_STRESS_MPM)
+    {	throw CommonException("MGEOSMaterial material has not yet been updated to do plane stress calculations",
+                              "MGSCGLMaterial::ValidateForUse");
+    }
 	
 	// call super class
 	return IsoPlasticity::ValidateForUse(np);
