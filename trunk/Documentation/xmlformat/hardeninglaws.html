@@ -54,6 +54,12 @@
 </tr>
 
 <tr>
+<td><a href="#nonlinear2"><code>Nonlinear2</code></a></td>
+<td>2</td>
+<td>Alternate Nonlinear hardening</td>
+</tr>
+
+<tr>
 <td><a href="#johnsoncook"><code>JohnsonCook</code></a></td>
 <td>3</td>
 <td>Johnson Cook hardening law</td>
@@ -113,7 +119,7 @@
 
 <p>In nonlinear hardening the yield stress is given by</p>
 
-<blockquote>&sigma;<sub>Y</sub> = &sigma;<sub>Y0</sub>(1 + K&alpha;<sup>n</sup>)
+<blockquote>&sigma;<sub>Y</sub> = &sigma;<sub>Y0</sub>(1 + K&alpha;)<sup>n</sup>
 </blockquote>
 
 <p>where <code>K</code> and <code>n</code> are dimensionless hardening parameters.</p>
@@ -136,6 +142,15 @@
 <h3>History Data for Nonlinear Hardening</h3>
 
 <p>The one history variable is the cumulative equivalent plastic strain, <code>&alpha;</code>, defined as the sum of <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>. This variable can be archived as history variable 1.</p>
+
+<h2><a name="nonlinear2"></a>Alternate Nonlinear Hardening</h2>
+
+<p>In this alternate nonlinear hardening the yield stress is given by</p>
+
+<blockquote>&sigma;<sub>Y</sub> = &sigma;<sub>Y0</sub>(1 + K&alpha;<sup>n</sup>)
+</blockquote>
+
+<p>where <code>K</code> and <code>n</code> are dimensionless hardening parameters. The input properties and history data are the same as for the <a href="#nonlinear">other nonlinear hardening law</a>.</p>
 
 <h2><a name="johnsoncook"></a>Johnson-Cook Hardening</h2>
 

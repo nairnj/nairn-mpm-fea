@@ -236,10 +236,10 @@ as a special case.</td>
 <dd>The material density (in g/cm<sup>3</sup>) (can be used in NairnFEA files, but it is ignored).</dd>
     	
 <dt>&lt;Cp&gt;1.5&lt;/Cp&gt;</dt>
-<dd>The material constant-pressure heat capacity (in J/(kg-K)). Only used when doing conduction calculations. If only one of <code>Cp</code> and <code>Cv</code> are entered, they will both be set to the one entered value.</dd>
+<dd>The material constant-pressure heat capacity (in J/(kg-K)). It used when doing <a href="thermal.html">conduction calculations and/or coupled mechanical energy</a>. If only one of <code>Cp</code> and <code>Cv</code> are entered, they will both be set to the one entered value.</dd>
     	
 <dt>&lt;Cv&gt;1.5&lt;/Cv&gt;</dt>
-<dd>The material constant-volume heat capacity (in J/(kg-K)). Only used by some materials.  If only one of <code>Cp</code> and <code>Cv</code> are entered, they will both be set to the one entered value</dd>
+<dd>The material constant-volume heat capacity (in J/(kg-K)). Only used by some materials.  If only one of <code>Cp</code> and <code>Cv</code> are entered, they will both be set to the one entered value.</dd>
     	
 <dt><a name="csat"></a>&lt;csat&gt;0.5&lt;/csat&gt;</dt>
 <dd>The material's saturation concentration entered as a weight fraction. Only used when doing diffusion calculations.</dd>
