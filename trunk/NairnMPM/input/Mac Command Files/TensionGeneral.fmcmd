@@ -18,12 +18,12 @@ EndHeader! ------------ Parameters ---------------
 
 ! material options: isotropic, isoplasticity, mgeos, bistable, iptrans, normtrans, ortho
 !   viscoelastic, hill, wood
-#matID="isoplasticity"
+#matID="mgeos"
 #angle=0					! material angle for anisotopic materials
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2, JohnsonCook
-#hardID="Nonlinear2"
+#hardID="Linear"
 
 ! temperature option to test energy coupling
 StressFreeTemp 294
@@ -41,11 +41,6 @@ StressFreeTemp 294
 #aBase=0
 
 ! MGEOS development
-#Ebase=308776
-#rho=19.256
-#nuBase=.28
-#aBase=4.5
-
 ! Main settings
 #Ebase=2000
 #rho=1
@@ -53,16 +48,21 @@ StressFreeTemp 294
 #aBase=60
 #yldstrain=1		! in percent
 
+#Ebase=308776
+#rho=19.256
+#nuBase=.28
+#aBase=4.5
+
 ! Dimensions
 #cell=2
-#length=40			! length
+#length=20			! length
 #width=10			! width
 #thick=10			! thickness
 
 ! Load by strain (estimated for force and traction loads)
-#loading="rigid"	! Loading = "force", "traction", "rigid", "contact", "thermal"
+#loading="thermal"	! Loading = "force", "traction", "rigid", "contact", "thermal"
 #fixsides="no"		! "yes" or "no" for sides fix in y direction (2D) or y and z (3D)
-#strain=3	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
+#strain=100	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak
@@ -207,12 +207,12 @@ if #matID="mgeos"
       !yield abs(#Ebase*#yldstrain/100)
       !Khard 100
       !ET #Ebase/3
-      kCond .00202
+      kCond .202
     else if #hardID="Nonlinear"
       yield abs(#Ebase*#yldstrain/200)
       Khard 5000
       nhard .24
-      kCond .00202
+      kCond .202
     else if #hardID="JohnsonCook"
       ! For Copper use E=120000,rho=8.96,nu=.25,alpha=0
       Ajc 90

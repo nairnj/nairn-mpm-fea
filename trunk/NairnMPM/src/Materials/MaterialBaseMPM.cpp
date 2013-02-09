@@ -157,6 +157,12 @@ char *MaterialBase::InputMat(char *xName,int &input)
         return((char *)&kCond);
 	}
     
+    else if(strcmp(xName,"ArtificialVisc")==0)
+    {	artificialViscosity=TRUE;
+        input=NOT_NUM;
+        return((char *)&artificialViscosity);
+    }
+	
     return((char *)NULL);
 }
 

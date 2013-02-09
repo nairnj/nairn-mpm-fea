@@ -165,8 +165,8 @@ if #matID="heiso"
       nhard .24
     else if #hardID="Nonlinear2"
       yield abs(#Ebase*#yldstrain/200)
-      Khard 500
-      nhard 3
+      Khard 5
+      nhard .24
     endif
     UJOption 0
     kCond .202

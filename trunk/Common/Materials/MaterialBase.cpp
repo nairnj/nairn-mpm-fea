@@ -82,6 +82,9 @@ MaterialBase::MaterialBase(char *matName)
 	heatCapacity=-1.;
 	heatCapacityVol=-1.;
 	lastFriction=NULL;
+    artificialViscosity=FALSE;
+    avA1 = 0.2;
+    avA2 = 2.0;
 #endif
 }
 
