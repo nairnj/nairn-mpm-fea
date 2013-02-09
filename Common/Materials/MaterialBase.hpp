@@ -156,6 +156,8 @@ class MaterialBase : public LinkedObject
 #ifdef MPM_CODE
 		double heatCapacity;			// changed if depends on particle state
 		double heatCapacityVol;			// changed if depends on particle state
+        bool artificialViscosity;       // true to false for artifical viscosity
+        double avA1,avA2;               // artificial viscosity coefficients
 #endif
 	
 		// constants (changed in MPM time step)
