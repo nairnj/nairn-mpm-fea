@@ -209,6 +209,10 @@ void MaterialBase::PrintCommonProperties(void)
 	gamma*=1.e-3;		// convert J/m^2 to N/mm
 	// pCrit3 - dimensionless
 	// gain - no units change
+    
+    // artificial visconsity
+    if(artificialViscosity)
+        cout << "Artificial viscosity on" << endl;
 	
 	// optional color
 	if(red>=0.)
