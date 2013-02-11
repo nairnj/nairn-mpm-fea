@@ -70,7 +70,7 @@ void Orthotropic::PrintTransportProperties(void)
 	}
 	// Conductivity constants
 	if(ConductionTask::active)
-	{   sprintf(mline,"k1 =%12.3g   k2 =%12.3g   k3 =%12.3g W/(m-K)\nCp  =%12.3g J/(kg-K)",
+	{   sprintf(mline,"k1 =%12.3g   k2 =%12.3g   k3 =%12.3g W/(m-K)\nC   =%12.3g J/(kg-K)",
                     rho*kcondT/1000.,rho*kcondA/1000.,rho*kcondz/1000.,heatCapacity);
 		cout << mline << endl;
 	}

@@ -50,9 +50,9 @@ StressFreeTemp 294
 #thick=10			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading="rigid"	! Loading = "rigid", "contact", "force", "traction"
+#loading="thermal"	! Loading = "rigid", "contact", "force", "traction", thermal
 #fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
-#strain=10	        ! Maximum strain (%) (stress needed is estimated for force and tractions)
+#strain=100	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak
@@ -106,6 +106,14 @@ endif
 #time=#tmult*#transit					! time to peak load in ms using tmult
 #disp=#strain*#length/100				! mm of displacement
 #disprate=1000*#disp/#time			    ! displacement rate mm/s using tmult
+
+if #loading="thermal"
+  #deltaT=#strain
+  #strain=0
+  #stress=0
+  #disp=0
+  #disprate=0
+endif
 ! Archiving
 if #fixsides="yes"
   Archive "Results/ConstrainedTension/"&#analysis&"/"&#method&"/"&#loading&"/"&#matID
@@ -142,7 +150,7 @@ if #matID="mooney"
     K #Kbulk
     a #aBase
     rho #rho
-    UJOption 0
+    UJOption 2
     kCond .202
     CP 1256
   Done
@@ -321,6 +329,9 @@ else ifStr #loading="traction"
       Traction x,4,function,(-#stress/#time)&#tpart,0,-1
     EndLoadRect
   endif
+  
+else ifStr #loading="thermal"
+  ThermalRamp #deltaT,#time
   
 endif
 

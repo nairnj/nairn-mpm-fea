@@ -77,7 +77,7 @@ void TransIsotropic::PrintTransportProperties(void)
 	if(ConductionTask::active)
 	{	PrintProperty("ka",rho*kcondA/1000.,"W/(m-K)");
 		PrintProperty("kt",rho*kcondT/1000.,"W/(m-K)");
-		PrintProperty("Cp",heatCapacity,"J/(kg-K)");
+		PrintProperty("C",heatCapacity,"J/(kg-K)");
 		cout << endl;
 	}
 }

@@ -79,8 +79,7 @@ MaterialBase::MaterialBase(char *matName)
 	tractionMat[0]=tractionMat[1]=0;
 	field=-1;
 	kCond=0.;
-	heatCapacity=-1.;
-	heatCapacityVol=-1.;
+	heatCapacity=1.;					// keep one because needed bu ideal gas
 	lastFriction=NULL;
     artificialViscosity=FALSE;
     avA1 = 0.2;

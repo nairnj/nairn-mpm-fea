@@ -120,10 +120,6 @@ void NewMaterial::PrintMechanicalProperties(void)
 // Called by conduction code
 //double NewMaterial::GetHeatCapacity(MPMBase *mptr) { return heatCapacity; }
 
-// Implemented in case heat capacity Cv changes with particle state (but not called
-//		by any core methods)
-//double NewMaterial::GetHeatCapacityVol(MPMBase *mptr) { return heatCapacityVol; }
-
 // Apply Constitutive law, check np to know what type
 void NewMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
 {

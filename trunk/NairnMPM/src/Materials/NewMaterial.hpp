@@ -43,7 +43,6 @@ class NewMaterial : public MaterialBase
         //virtual void LoadMechanicalProps(MPMBase *,int);
 		//virtual void LoadTransportProps(MPMBase *,int);
 		//virtual double GetHeatCapacity(MPMBase *);
-		//virtual double GetHeatCapacityVol(MPMBase *);
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int);
 				
 		// accessors
