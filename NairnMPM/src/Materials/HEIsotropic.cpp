@@ -18,6 +18,7 @@
 #include "Materials/SCGLHardening.hpp"
 #include "Materials/SLMaterial.hpp"
 #include "Materials/Nonlinear2Hardening.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
 
 #pragma mark HEIsotropic::Constructors and Destructors
 
@@ -212,8 +213,8 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     // ============================================
     
 	// Update total deformation gradient, and calculate trial B
-    Tensor B;
-	double detdF = IncrementDeformation(mptr,du,&B,np);
+    Tensor Btrial;
+	double detdF = IncrementDeformation(mptr,du,&Btrial,np);
     
 	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
     // This code handles plane strain, axisymmetric, and 3D - Plane stress is blocked
@@ -223,13 +224,24 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     mptr->SetHistoryDble(J_history,J2);  // Stocking J
     
     // J as determinant of F (or sqrt root of determinant of B) normalized to residual stretch
-	double resStretch = GetResidualStretch(mptr);
-    double resStretch3 = resStretch*resStretch*resStretch;
+	// Must also divide elements of B by resStretch2
+	double dresStretch,resStretch = GetResidualStretch(mptr,dresStretch);
+    double resStretch2 = resStretch*resStretch;
+    double resStretch3 = resStretch2*resStretch;
     double J = J2/resStretch3;
-    //cout << "    #J  =   "<< J<<  endl;
+	Tensor B = Btrial;
+	B.xx /= resStretch2;
+	B.yy /= resStretch2;
+	B.zz /= resStretch2;
+	B.xy /= resStretch2;
+	if(np==THREED_MPM)
+	{	B.xz /= resStretch2;
+		B.yz /= resStretch2;
+	}
 	
-	// JAN: Get hydrostatic stress component in subroutine
-    UpdatePressure(mptr,J,detdF,np);
+	// Get hydrostatic stress component in subroutine
+    double dresStretch3 = dresStretch*dresStretch*dresStretch;
+    UpdatePressure(mptr,J,detdF/dresStretch3,np);
     
     // Others constants
     double J23 = pow(J, 2./3.);
@@ -264,8 +276,7 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
         //============================
 		
 		// save on particle
-        *pB = B;
-        //cout << "# in elastic  B.yy  =    " << Btrial.yy <<"     B.zz  =    " << Btrial.zz << endl;
+        *pB = Btrial;
         
         // Get specifique stress i.e. (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
 		// JAN: Just store deviatoric stress
@@ -315,13 +326,13 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     
     // save on particle
     // JAN: reuse stress rather than calculate again
-	pB->xx = (sp->xx/Gred+Ie1bar)*J23;
-	pB->yy = (sp->yy/Gred+Ie1bar)*J23;
-	pB->zz = (sp->zz/Gred+Ie1bar)*J23;
-	pB->xy = sp->xy/Gred*J23;
+	pB->xx = (sp->xx/Gred+Ie1bar)*J23*resStretch2;
+	pB->yy = (sp->yy/Gred+Ie1bar)*J23*resStretch2;
+	pB->zz = (sp->zz/Gred+Ie1bar)*J23*resStretch2;
+	pB->xy = sp->xy/Gred*J23*resStretch2;
     if(np==THREED_MPM)
-    {   pB->xz = sp->xz/Gred*J23;
-        pB->yz = sp->yz/Gred*J23;
+    {   pB->xz = sp->xz/Gred*J23*resStretch2;
+        pB->yz = sp->yz/Gred*J23*resStretch2;
     }
     
     // strain energy per unit mass (U/(rho0 V0)) and we are using
@@ -339,13 +350,20 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     //double shearEnergyFinal = 1.5*Gred*(Ie1bar-1.);
     //mptr->AddStrainEnergy(shearEnergyFinal);
     
-    // Plastic or dissipated energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    // Plastic or dissipated energy increment per unit mass dQ = (dPhi/(rho0 V0)) (uJ/g)
     double dispEnergy = dlambda*(sp->xx*nk.xx + sp->yy*nk.yy + sp->zz*nk.zz + 2.*sp->xy*nk.xy);
     if(np==THREED_MPM)  dispEnergy += 2.*dlambda*(sp->xz*nk.xz + sp->yz*nk.yz);
     dispEnergy -= dlambda*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime);
     
-    // increment energies
+    // This material is tracking total internal, which means we need
+	//    dU = s.de(total) - dQ
+	// s.de(total) done above, only need dQ
+	// The dQ is subtracted because it shows up in internal energy in the next
+	//    time step in Cv dT term.
     mptr->AddStrainEnergy(-dispEnergy);
+	
+	// track disspated energy in plastic energy and dissipate if for heating
+	// (if mechanical energy is on)
     mptr->AddPlastEnergy(dispEnergy);
 	mptr->AddDispEnergy(dispEnergy);
 	
@@ -356,13 +374,9 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 
 #pragma mark HEIsotropic::Custom Methods
 
-// JAN: To allow better subclassing it is better to separate out calculations
-//  of dilaiton energy. This version finds 1/3 new pressure (i.e. dilational
-//  contribution to normal stress) and an energy term. This approach might
-//  change with experience in using alternative laws
-// Return normal Kirchoff stress/rho_0 and 2U(J)
-// Note: This isolates Ksp to only be used here so subclass can replace wit
-//  with something else
+// To allow better subclassing it is better to separate out calculations
+//  of dilaiton energy. This version updates pressure (i.e. dilational
+//  contribution to normal stress) and adds inremental energy to strain energy
 void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double dJ,int np)
 {
     double Kse;
@@ -370,11 +384,14 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double dJ,int np)
     double P0 = mptr->GetPressure();
     mptr->SetPressure(-Kterm);
     
-    // Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    // internal energy is dU = -P dV + s.de(total) - dPhi + Cv dT
+	// The dPhi is subtracted here because it will show up in next
+	//		time step within Cv dT
+	// Here do hydrostatic terms, deviatoric and dPhi done later
+	// want P dV/(rho V) and here delV = (V(k+1)-V(k))/V(k+1) and tracked P is P/rho (current)
     double avgP = 0.5*(P0-Kterm);
     double delV = 1. - 1./dJ;
-    mptr->AddStrainEnergy(-avgP*delV);
-    //mptr->SetStrainEnergy(Kse);
+    mptr->AddStrainEnergy(-avgP*delV + 1000.*(heatCapacity*ConductionTask::dTemperature));
 }
 
 // get trial deviatoric stress tensor based on trial B

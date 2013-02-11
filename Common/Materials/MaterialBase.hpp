@@ -91,7 +91,6 @@ class MaterialBase : public LinkedObject
         virtual void LoadMechanicalProps(MPMBase *,int);
 		virtual void LoadTransportProps(MPMBase *,int);
 		virtual double GetHeatCapacity(MPMBase *);
-		virtual double GetHeatCapacityVol(MPMBase *);
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
@@ -155,7 +154,6 @@ class MaterialBase : public LinkedObject
 		// variables (changed in MPM time step)
 #ifdef MPM_CODE
 		double heatCapacity;			// changed if depends on particle state
-		double heatCapacityVol;			// changed if depends on particle state
         bool artificialViscosity;       // true to false for artifical viscosity
         double avA1,avA2;               // artificial viscosity coefficients
 #endif

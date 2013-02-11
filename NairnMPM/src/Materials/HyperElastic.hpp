@@ -40,7 +40,7 @@ class HyperElastic : public MaterialBase
         double IncrementDeformation(MPMBase *,double,double,double,double,double,Tensor *);
         double IncrementDeformation(MPMBase *,double,double,double,double,double,double,double,double,double,Tensor *);
         double IncrementDeformation(MPMBase *,Matrix3,Tensor *,int);
-		double GetResidualStretch(MPMBase *);
+		double GetResidualStretch(MPMBase *,double &);
     
         // Accessors
         virtual double GetVolumetricTerms(double,double *);

@@ -126,7 +126,7 @@ void MGSCGLMaterial::PrintMechanicalProperties(void)
 	cout << endl;
 	
 	// effective volumetric CTE (in ppm/K) alpha = rho0 gamma0 Cv / K
-	double effAlpha = (1.e9*heatCapacityVol*gamma0)/C0squared;
+	double effAlpha = (1.e9*heatCapacity*gamma0)/C0squared;
 	PrintProperty("a",effAlpha/3.,"");
 	PrintProperty("T0",thermal.reference,"K");
 	cout <<  endl;
@@ -141,12 +141,9 @@ void MGSCGLMaterial::PrintTransportProperties(void)
 	// Conductivity constants
 	if(ConductionTask::active)
 	{	MaterialBase::PrintTransportProperties();
-		PrintProperty("Cv",heatCapacityVol,"J/(kg-K)");
 	}
-	else
-	{	PrintProperty("Cp",heatCapacity,"J/(kg-K)");
-		PrintProperty("Cv",heatCapacityVol,"J/(kg-K)");
-	}
+	else if(!ConductionTask::energyCoupling)
+		PrintProperty("C",heatCapacity,"J/(kg-K)");
 	cout << endl;
 }
 
@@ -178,11 +175,12 @@ void MGSCGLMaterial::ValidateForUse(int np)
 void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
 {
     // Correct for swelling by finding total residual stretch (not incremental)
-	double eresTot=0.,JresStretch=1.,eres=0.;
+	double eresTot=0.,JresStretch=1.,eres=0.,dJresStretch=1.;
 	if(DiffusionTask::active)
     {   eresTot += CME3*(mptr->pPreviousConcentration-DiffusionTask::reference);
         eres += CME3*DiffusionTask::dConcentration;
         JresStretch = (1.+eresTot)*(1.+eresTot)*(1.+eresTot);
+		dJresStretch = (1.+eres)*(1.+eres)*(1.+eres);
     }
 	
 	// Get incremental deformation
@@ -197,9 +195,9 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     // reassign incremental strains
     du = F - pF;
     
-    double dJ = dF.determinant();                       // = V(k+1)/V(k)
+    double dJ = dF.determinant()/dJresStretch;          // = V(k+1)Vsf(k)/(V(k)Vsf(k+1)
     double Jnew = F.determinant()/JresStretch;          // = V(k+1)/Vsf(k+1)
-    double delV = Jnew*(1.-1/dJ);                       // = (V(k+1)-V(k))/Vsf(k+1)
+    double delV = 1.-1./dJ;								// = (V(k+1)/Vsf(k+1) - V(k)/Vsf(k))/(V(k+1)/Vsf(k+1))
     delVLowStrain = du.trace() -  3.*eres;
     
     // artifical viscosity
@@ -230,8 +228,8 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
 // 4. Call plasticLaw to see if it wants to change the shear modulus
 // 5. Change delV to low strain result for subsequent plasticity calcs
 // Notes:
-//  delV is incremental volume change on this step.
-//  J is total volume change at end of step (but it is 1 for low-strain materials)
+//  delV is relative incremental volume change on this step = (V(k+1)-V(k))/V(k+1)
+//  J is total volume change at end of step
 void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
 {
 	// delV is total incremental volumetric strain relative to free-swelling volume
@@ -264,8 +262,7 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
     }
 
     // Pressure from bulk modulus and an energy term
-    double e = mptr->GetStrainEnergy()
-                    + 1000.*heatCapacityVol*(mptr->pPreviousTemperature - thermal.reference);
+    double e = mptr->GetStrainEnergy();
 	double P0 = mptr->GetPressure();
     double P = J*(Keffred*x + gamma0*e);
     
@@ -276,9 +273,12 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
     double dTq0 = -gamma0*mptr->pPreviousTemperature*delV;
     mptr->pTemperature += dTq0;
     
-    // energy, which is stored energy only (if this is W, internal energy U = W + CV(T-T0))
+    // internal energy is dU = -P dV + s.de(total) - Cv(dT_isoentropic) - dPhi + Cv dT
+	// The Cv(dT_isoentropic) + dPhi are subtracted here because they will show up in next
+	//		time step within Cv dT
+	// Here do hydrostatic terms, deviatoric and dPhi done later
     double avgP = 0.5*(P0+P);
-    mptr->AddStrainEnergy(-avgP*delV);
+    mptr->AddStrainEnergy(-avgP*delV + 1000.*heatCapacity*(ConductionTask::dTemperature - dTq0));
      
 	// SCGL and SL shear modulus and save Gratio = J G/G0 for later calculations
     // Note: J in Gred and Gratio is so that where they are used, they give
@@ -337,8 +337,8 @@ double MGSCGLMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr)
     KcurrRed *= J;          // convert to K/rho
     
     // get G/rho at current pressure
-    double e = mptr->GetStrainEnergy()
-                    + 1000.*heatCapacityVol*(mptr->pPreviousTemperature - thermal.reference);
+    double e = mptr->GetStrainEnergy();
+	//			+ 1000.*heatCapacity*(mptr->pPreviousTemperature - thermal.reference);
     double pressure = J*(KcurrRed*x + gamma0*e);
     double GcurrRed = G0red * plasticLaw->GetShearRatio(mptr,pressure,J);
     

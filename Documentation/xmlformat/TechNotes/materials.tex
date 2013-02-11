@@ -544,54 +544,6 @@ The special hardening laws that allow a closed-form expression in plane strain w
 
 This analysis follows the plane strain and axisymmetric section except includes direct updates for $\gamma_{xz}$, $\gamma_{yz}$, $\tau_{xz}$, and $\tau_{yz}$.
 
-\subsection{Thermodynamics Tracking with Plasticity}
-
-Energy tracking in MPM if often for output only. In other words, calculated energies do not affect evolutions of stresses and strains. Some materials, however, may depend on correct energies and some crack calculations do as well. This section considers tracking of internal energy for materials with plasticity.
-
-By first law of thermodynamics, the changed in internal energy in a time step is
-\begin{equation}
-     dU = dw + dq
-\end{equation}
-where $dw$ and $dq$ are work input. The work input is $\vec\sigma\cdot\deff$ (note that energies in {\tt NairnMPM} are stored as energy per unit mass, while these equations are energy per unit reference volume, but when stresses and other terms are replaced by terms normalized to initial density, they all become energy per unit mass). The heat input depends on what happens to energy dissipated by plasticity. First assume the dissipated heat is released from the object and therefore $dq = -d\Phi$ where $d\Phi$ is energy dissipated by plasticity. In low strain materials:
-\begin{equation}
-     d\Phi = \vec\sigma\cdot\dpl + \vec q\cdot d\vec\alpha
-\end{equation}
-If we write (for low strain) $\vec\sigma\cdot\deff = \vec\sigma\cdot(\del+\dpl)$, the change in internal energy when dissipated energy is lost from the object is
-\begin{equation}
-     dU = \vec\sigma\cdot\del - \vec q\cdot d\vec\alpha
-\end{equation}
-which can be interpreted as stored or recoverable energy.
-
-Now, in {\tt NairnMPM}, the plasticity energy need not be lost. It can be logged as dissipated energy (using {\tt AddDispEnergy()}) which becomes a heat source, but only when conduction is activated with mechanical coupling. This dissipated energy will be heat input causing another change in internal energy of
-\begin{equation}
-     dU = \chi d\Phi
-\end{equation}
-where $\chi$ is the fraction of dissipated energy that is logged for conversion into heat. In conduction calculations the subsequent particle temperature will rise by
-\begin{equation}
-     dT = {\chi d\Phi \over C_P}
-\end{equation}
-The corresponding internal energy change will be
-\begin{equation}
-      dU = C_V dT = {\chi C_V\over C_P} d\Phi
-\end{equation}
-Note that you can enter both $C_V$ and $C_P$ for materials. The conduction code uses $C_P$ while $C_V$ is usual choice for increments in internal energy. If $C_V=C_P$ and $\chi=1$ (the defaults). The total change in internal energy after these two steps is
-\begin{equation}
-     dU = \vec\sigma \cdot \deff
-\end{equation}
-or the total work input to the step.
-
-If the only temperature changes that occur in a simulation are the consequence of plasticity, a material can track total internal energy simply by using $dU = \vec\sigma \cdot \deff$ on each time step. This approach will be wrong however if $\chi C_V/C_P \ne 1$, if temperature changes are caused by other phenomena, or if heat is exchanged with the exterior through conduction boundary conditions. In these situations, a material can track total internal energy using
-\begin{equation}
-     dU = \vec\sigma\cdot\del - \vec q\cdot d\vec\alpha + C_V dT
-\end{equation}
-where $dT$ is temperature change on this time step for any sources (which will include heat due to plasticity in prior steps). If needed, $C_V$ can depend on current particle state.
-
-A third alternative is for a material track stored energy only (denoted as $W$ with $dW = \vec\sigma\cdot\del - \vec q\cdot d\vec\alpha$), but when internal energy is needed, the code must add a term due to temperature changes:
-\begin{equation}
-     U = W + \int_{T_0}^{T_f} C_V \thinspace dT
-\end{equation}
-
- 
 
 \subsection{Examples of $J_2$ Flow Theory Materials}
 
@@ -975,7 +927,7 @@ Some possible hardening laws are
 \end{eqnarray}
 These two laws are identical when $n=1$ and give linear hardening. If $K_1$ is the hardening term when $n=1$ and then a new value of $n$ is selected, the first law can preserve the initial slope, $g'(0)$, by keeping the product constant or setting $K_n = K_1/n$; the second law will always have zero slope when $n\ne1$ and thus cannot match the linear slope. The last equations for $K_n$ give the value of $K_n$ for new $n$ to match the amount of hardening that occurs up to any specified $\alpha$ between the $n=1$ and $n$ laws.
 
-The numerical solution uses the following interative equations
+The numerical solution uses the following iterative equations
 \begin{eqnarray}
        \vec\sigma^{(k)} & = & \vec\sigma^{trial} - \lambda^{(k)}\C\df(\lambda^{(k)}) \\
         \vec h^{(k)} & = & -\R\df(\vec\sigma^{(k)}) \\
@@ -984,6 +936,212 @@ The numerical solution uses the following interative equations
         \lambda^{(k+1)} & = & \lambda^{(k)} - {f^{(k)} \over {df^{(k)}/ d\lambda} } \\
         \vec\alpha^{(k+1)} & = & \vec\alpha^{0} -  \lambda^{(k+1)} \vec h^{(k)}
 \end{eqnarray}
+
+\section{Thermodynamics of Deformation}
+
+\font\bfsym=cmmib10 at 10pt
+\def\st{{\hbox{\bfsym\char'033}}}
+\def\et{{\hbox{\bfsym\char'042}}}
+
+The differential in internal energy per unit mass, $U$, with dissipative and irreversible processes is (Fung, page 347)
+\begin{equation}%
+      dU = dw + dq = {1\over \rho}\thinspace \st\cdot d\et + T \thinspace dS_e
+\end{equation}%
+where $dw$ is work and $dq$ us heat exchange with the exterior (or in the case of position-dependent energies, exchange with surrounding area due to heat conduction. The second form associates work with stress power or strain energy, where $d\et$ is the incremental strain tensor (relative to a stress free state if there are residual strains), and heat flow with $dq = T \thinspace dS_e$ where $dS_e$ is the change in entropy (per unit mass) due to exchange of energy with the exterior. The full change in entropy per unit mass is
+\begin{equation}%
+      dS = dS_e + dS_i = {C_V dT_{ext}\over T} + dS_i
+\end{equation}%
+where $dS_i\ge0$ is entropy change per unit mass due to internal irreversible processes that do not exchange energy with exterior. (Note: it is possible the total $dS$ would differ for materials such as rubbers, but I think this approach is good for most materials in computational mechanics.) 
+
+The Helmholtz free energy per unit mass is
+\begin{equation}%
+     A = U - TS
+\end{equation}%
+with differential
+\begin{equation}%
+    dA = dU - TdS - SdT = {1\over \rho}\thinspace \st\cdot d\et + T dS_e - TdS - SdT
+              = {1\over \rho}\thinspace \st\cdot d\et  - SdT - T dS_i
+\end{equation}%
+
+The goal of {\tt NairnMPM} is to track the most appropriate energies (see below). The challenge is dealing with material-specific dissipation or other isoentropic temperature changes while also allow for external heating through thermal boundary conditions and heat conduction. A given simulation can be described as locally adiabatic or isothermal. It is locally adiabatic if mechanical energy coupling is activated (where mechanical energy coupling means dissipated energy is converted to heat). It is locally isothermal when mechanical energy is off, which implies dissipated energy is lost to the exterior.
+
+\subsection{Locally Adiabatic}
+
+For a locally adiabatic process, $dq=0$ for material-specific mechanisms, but the temperature might increase. Let $dT_S$ be the temperature changes that happen at constant $S$ in the material model. In general problems, $T$ might also increase due to exchange of heat with the exterior through conduction. Let those temperature changes be $dT_{ext}$. The change in internal energy become
+\begin{equation}
+    dU = {1\over \rho}\thinspace \st\cdot d\et + C_V dT_{ext}
+\end{equation}
+But in MPM, the $dT$ on any given time step will be $dT_S+dT_{ext}$ and there is no way to separate them for $dT$ input alone. One solution is to separate them in the particle strain update where $dT_S$ is known:
+\begin{equation}
+    dU = {1\over \rho}\thinspace \st\cdot d\et - C_V dT_S + C_V (dT_S+dT_{ext}) = {1\over \rho}\thinspace \st\cdot d\et + C_V(dT-dT_S)
+\end{equation}
+In a simulation, $dT_S$ can be calculated for a given time step and subtracted from $U$. It will be added back on the next time step through the contribution of $dT_S$ to $dT$. For example, plasticity will dissipate energy $d\Phi$, which will cause temperature change of $dT_S = d\Phi/C_V$. A simulation might prefer to assume that only of fraction of $d\Phi$ leads to heat causing temperature rise. The remained mist be lost to the exterior as heat flow. In this case, the update should still subtract to the total $d\Phi = C_V dT_S$ and the portion that causes temperature rise will be added back in the next time step and the portion that is lost to the exterior will be correctly added as heat flow.
+
+Instead of tracking only total $U$, a material could track total work, $w$, and heat flow, $q$, using updates
+\begin{equation}
+     dw = {1\over \rho}\thinspace \st\cdot d\et \qquad {\rm and} \qquad dq = C_V(dT-dT_S)
+\end{equation}
+When needed, $U = w + q$.
+
+
+For tracking Helmholtz energy, $T dS_e = dq = 0$, giving
+\begin{equation}
+    dA = {1\over \rho}\thinspace \st\cdot d\et + C_V(dT-dT_S) - S dT - T dS_i
+\end{equation}
+This update needs to entropy, which therefore must be tracked separately (using $dS$ from above), but the problem again is that $dT_{ext}$ is not known. A solution similar to that used for internal energy is
+\begin{equation}
+    dS = dS_i + {C_V dT\over T} - {C_V dT_S\over T + dT_S}
+\end{equation}
+Again, the second, isentropic term is subtracted from entropy, but is added back on the next time step (thereby restoring $dS=0$ for that term).
+
+If there is no external heating and the process is reversible, the net results will be
+\begin{equation}
+    dA = {1\over \rho}\thinspace \st\cdot d\et  \qquad{\rm and} \qquad dS = 0
+\end{equation}
+and this result holds for both elastic and plastic materials. If internal energy is needed, it is
+\begin{equation}
+      U = A + TS
+\end{equation}
+For the reversible process with no external heating, $U=A$.
+
+\subsection{Locally Isothermal}
+
+For a locally isothermal process, $dT=0$ due to material processes, although $dT_{ext}$ may still be non zero. if $d\Phi$ is material dissipated energy, then the internal energy change is
+\begin{equation}
+    dU = {1\over \rho}\thinspace \st\cdot d\et - d\Phi + C_V dT = {1\over \rho}\thinspace \st\cdot d\et + C_V(dT-dT_S)
+\end{equation}
+where $dT=dT_{ext}$ in this case. Here $d\Phi$ has been equated to $C_VdT_S$, but $dT_S$ now means the temperature rid that would have happened if the process was adiabatic. The $dU$ update is the same for both locally adiabatic and isothermal processes. Similarly, separate tracking of $w$ and $q$ (see above) is the same.
+
+For tracking Helmholtz energy, $-TdS_e = d\Phi - C_V dT$ (because the dissipated energy leaves the object in the form of heat), which gives
+\begin{equation}
+    dA = {1\over \rho}\thinspace \st\cdot d\et - S dT - T dS_i
+\end{equation}
+The Helmholtz update therefore depends on the simulation type. The difference is the $C_V(dT-dT_S)$ term that is included for locally adiabatic, but omitted for locally isothermal. The entropy update is similar, but should account for isothermal state to be
+\begin{equation}
+    dS = dS_i + {C_V dT-d\Phi\over T} 
+\end{equation}
+
+If the process has no external heating and is reversible, the net increments are
+\begin{equation}
+    dA = {1\over \rho}\thinspace \st\cdot d\et - S dT, \qquad dS = -{d\Phi\over T}  \qquad {\rm and}\qquad U = A + TS
+\end{equation}
+If the process is also elastic
+\begin{equation}
+    dA = {1\over \rho}\thinspace \st\cdot d\et ,\qquad dS = 0  \qquad {\rm and}\qquad U=A
+\end{equation}
+If the process is elastic and reversible, but has external heating, then
+\begin{equation}
+    dA = {1\over \rho}\thinspace \st\cdot d\et - S dT  \qquad {\rm and}\qquad dS = {C_V dT\over T}
+\end{equation}
+If $C_V$ is constant, these can be integrated
+\begin{eqnarray}
+   S & = & C_V \ln {T\over T_0} \\
+   A & = & \int {1\over \rho}\thinspace \st\cdot d\et - C_V\int_{T_0}^T \ln {T\over T_0} dT =
+        \int {1\over \rho}\thinspace \st\cdot d\et  + C_V(T-T_0) - C_V T \ln {T\over T_0}\\
+   U & = & \int {1\over \rho}\thinspace \st\cdot d\et + C_V(T-T_0)
+\end{eqnarray}
+The final $U$ is $w+q$, which is obviously correct and shows the consistency of these updates.
+
+\subsection{$J$ Integral}
+
+The Helmholtz energy and entropy are needed to find $J$ integral, but it can also be written to depend on $U$ and $q$ (note: I derived this approach several years ago and I am not sure if it is found elsewhere besides some of it in a paper by McCartney). Consider a closed contour, $\Gamma$, around a crack tip, as done in  $J$ integral analysis by Rice, and the analogous application of Green's theorem
+\begin{equation}%
+     \int_\Gamma \left(\thinspace A\thinspace dy
+                           - {1\over\rho}\thinspace T_i {\partial u_i\over \partial x} ds\right)
+     = \int_{A^*} \left[  {\partial A\over \partial x} -{1\over\rho}\thinspace
+                 {\partial\over \partial x_j} \left(\sigma_{ij} {\partial u_i\over\partial x}\right)\right]dx\thinspace dy
+                   \label{GreensA}
+\end{equation}%
+where $A^*$ is area within $\Gamma$. Working in the reverse process from Rice for static problems:
+\begin{eqnarray}%
+       {\partial\over\partial x_j}\left( \sigma_{ij}{\partial u_i\over\partial x}\right)
+                 & = &    \sigma_{ij}  {\partial\over\partial x_j}\left({\partial u_i\over\partial x}\right)
+                     +  {\partial u_i\over\partial x}{\partial\sigma_{ij}\over\partial x_j}   \\
+                 & = & \sigma_{ij}  {\partial\over\partial x_j}\left({\partial u_i\over\partial x}\right) \\
+                 & = & {1\over 2} \sigma_{ij}
+                       \left({\partial\over\partial x}{\partial u_i\over\partial x_j}
+                          + {\partial\over\partial x}{\partial u_j\over\partial x_i}\right) \\
+                  & = & \st \cdot {\partial\et\over\partial x}
+\end{eqnarray}%
+The second step uses static equilibrium and the third step uses $\sigma_{ij}=\sigma_{ji}$. The derivative of $A$ is
+\begin{equation}%
+    {\partial A\over\partial x}  = {1\over \rho}\thinspace \st\cdot {\partial\et\over\partial x}
+                - S {\partial T\over\partial x} - T  {\partial S_i\over\partial x}
+\end{equation}%
+Substituting the above two results into Eq.~(\ref{GreensA}) leads to path-independent result (which includes path integral and area integral) of
+\begin{equation}%
+           \int_\Gamma \left(A\thinspace dy - {1\over\rho}\thinspace T_i {\partial u_i\over \partial x} ds\right)
+                        + \int_{A^*}  \left( S {\partial T\over\partial x} + T {\partial S_i\over\partial x} 
+                            \right ) dx \thinspace dy = 0
+\end{equation}%
+McCartney took this result for reversible processes, and suggested $J$ integral of
+\begin{equation}%
+           J = \int_{\Gamma^*} \left(A\thinspace dy
+                     - {1\over\rho}\thinspace T_i {\partial u_i\over \partial x} ds\right)
+                        + \int_{A^*}  S {\partial T\over\partial x}\thinspace dx \thinspace dy
+\end{equation}%
+where $\Gamma^*$ is an open path that starts on one surface of the crack and ends on the other and $A^*$ is the area bounded by $\Gamma^*$ and the crack surface.
+
+To get to internal energy, note that the area integral can be rewritten as
+\begin{equation}%
+           \int_\Gamma \left(A\thinspace dy - {1\over\rho}\thinspace T_i {\partial u_i\over \partial x} ds\right)
+                        + \int_{A^*}  \left(  {\partial( TS)\over\partial x} - T {\partial S_e\over\partial x} 
+                            \right ) dx \thinspace dy = 0
+\end{equation}%
+By Green's theorem
+\begin{equation}%
+         \int_{A^*}    {\partial( TS)\over\partial x}  dx \thinspace dy = \int_\Gamma TS\thinspace dy
+\end{equation}%
+leading to
+\begin{equation}%
+           \int_\Gamma \left(U\thinspace dy - {1\over\rho}\thinspace T_i {\partial u_i\over \partial x} ds\right)
+                        - \int_{A^*}  T {\partial S_e\over\partial x}  dx \thinspace dy = 0
+\end{equation}%
+or
+\begin{equation}%
+           \int_\Gamma \left(\rho\thinspace U\thinspace dy -  T_i {\partial u_i\over \partial x} ds\right)
+                        - \int_{A^*}  {dq\over dx} \thinspace  dx \thinspace dy = 0
+\end{equation}%
+or, for an adiabatic process,
+\begin{equation}%
+      J = \int_{\Gamma^*} \left(\rho\thinspace U\thinspace dy -  T_i {\partial u_i\over \partial x} ds\right)
+\end{equation}%
+These results seem to hold for irreversible processes as well.
+
+In MPM, the calculations need tracking of $U$ and $q$. The needed gradients of $q$ can be found by gradient extrapolation to the grid.
+
+\subsection{Summary}
+
+Here are three alternatives for tracking of energy in computational mechanics (and in {\tt NairnMPM}):
+
+\begin{enumerate}
+
+\item Track internal energy only using
+\begin{equation}
+    dU = {1\over \rho}\thinspace \st\cdot d\et + C_V (dT - dT_S)
+\end{equation}
+
+\item Track work and heat energy using
+\begin{equation}
+    dw = {1\over \rho}\thinspace \st\cdot d\et, \qquad dq = C_V (dT - dT_S)  \qquad {\rm and} \qquad U = w+q
+\end{equation}
+
+\item Track Helmholtz energy and entropy using
+\begin{eqnarray}
+      dA & = & \left\{ \begin{array}{ll}
+                {1\over \rho}\thinspace \st\cdot d\et + C_V(dT-dT_S) - S dT - T dS_i & {\rm locally\ adiabatic} \\
+                {1\over \rho}\thinspace \st\cdot d\et - S dT - T dS_i & {\rm locally\ isothermal}
+                \end{array} \right.\\
+      dS & = & \left\{ \begin{array}{ll}
+                dS_i + {C_V dT\over T} - {C_V dT_S\over T + dT_S} & {\rm locally\ adiabatic} \\
+                dS_i + {C_V dT-d\Phi\over T} & {\rm locally\ isothermal}
+                \end{array} \right. \\
+       U & = & A + TS
+\end{eqnarray}
+
+\end{enumerate}
+
+The advantage of \#1 is that only one item needs to be tracked, but then only one item is known. For example, that approach would not have enough information for the full thermodynamic $J$ integral. The advantage of \#2 is that it has simple updates and can be used for $J$ integral calculations. The disadvantage is the neither $w$ nor $q$ are state functions, which means $A$ and $S$ are not known. The advantage of \#3 is that $A$ and $S$ are state function and if needed they could be used to find $U$ as well. The disadvantage is the the equations are more complex and require different updates for locally adiabatic and isothermal. The current version of {\tt NairnMPM} tracks $w$ in strain energy, $q$ in heat energy, and for plasticity materials tracks $\Phi$ due to plasticity in plastic energy. Future materials development may choose to track $A$ in strain energy and $S$ in heat energy and when needed calculate internal energy. Materials that adopt this approach, however, would not be able to support features that need heat energy, unless they separately track that as well in a history variable.
 
 \section{Viscoelastic Materials}
 
@@ -1231,16 +1389,6 @@ where $G_1$, $G_2$, and $K$ are material properties, $J=\det\F$, and the invaria
 \end{eqnarray}
 For low strains, this material is equivalent for a linear elastic, isotropic material with shear modulus $G_1+G_2$ and bulk modulus $K$. If $G_2=0$, the material is a neo-Hookean material. See below for an alternate compressibility terms. Some hyperelastic rubber models assume incompressible materials, which corresponds to $K\to\infty$; such models do not work in dynamic code (because wave speed is infinite).
 
-To handle thermal and moisture strains, $\F$ is replaced by the deformation relative to the free expansion state:
-\begin{equation}
-     \F^* = {\F\over \lambda_{res}}
-\end{equation}
-where $\lambda_{res}$ is total extension due to free thermal and moisture expansion:
-\begin{equation}
-    1 + \alpha\Delta T + \beta \Delta c
-\end{equation}
-The total effect of expansion stress is included by replacing $J$ in all equations with $J/\lambda_{res}^3$.
-
 The Cauchy (or true stress) is found by differentiating the strain energy to get
 \begin{equation}
      \sigma = {G_1\over J^{5/3}}\left(\B - {I_1\over3}\I\right)
@@ -1272,6 +1420,38 @@ For 2D analysis, $F_{xz}=F_{yz}=F_{zx}=F_{zy}=0$, which leads to zero for corres
        s_{yz} & = & 0
 \end{eqnarray}
 For plane strain analysis $B_{zz}=1$. For plane stress analysis, one has to solve numerically for $B_{zz}$ to get $\s{zz}=0$ or $s_{zz}=P$ and then use that result to find $\e{zz}$ and other stresses.
+
+\subsection{Dealing with Thermal and Moisture Strains}
+
+To handle thermal and moisture strains the deformation is divided into two steps. The first is free expansion to the new stress free volume and then deformation to the final volume. The total deformation will be
+\begin{equation}
+      \F = \F^* \F^{res} = \F^* \lambda_{res}\tens I
+\end{equation}
+where $\lambda_{res}$ is total extension due to free thermal and moisture expansion:
+\begin{equation}
+    1 + \alpha\Delta T + \beta \Delta c
+\end{equation}
+The stresses and energy are found using $\F^*$ instead of $\F$ which is now deformation for the free expansion volume instead of from the initial volume. The net effects are that elements of $\F$ are divided by $\lambda_{res}$ and stress should be found using $J_{eff} = J/\lambda_{res}^3$ and $\B_{eff} = \B/\lambda_{res}^2$.
+
+When doing incremental deformation, $\F_{k+1} = \tens{dF}\thinspace\F_k$ and incremental volume ratio is $dJ = \tens{dF} = V_{k+1}/ V_k$. $J_{eff}$ is $V/V_{sf}$ where $V_{sf}$ is the current stress free volume and it is related to $J$ (as defined above) using
+\begin{equation}
+  J_{eff} = {V\over V_0} {V_0\over V_{sf}} = {J\over J_{res}} = {J\over \lambda_{res}^3}
+\end{equation}
+For incremental deformation, $J_{k+1} = dJ J_k$, but we really want to increment $J_{eff,k+1} = dJ_{eff}J_{eff,k}$, which is\begin{equation}
+     J_{eff,k+1} = {V_{k+1}\over V_{sf,k+1}} = {V_{k+1}\over V_{k}}{V_{sf,k}\over V_{sf,k+1}} {V_{k}\over V_{sf,k}}
+\end{equation}
+which implies that
+\begin{equation}
+      dJ_{eff} = {V_{k+1}\over V_{k}}{V_{sf,k}\over V_{sf,k+1}} = dJ/d\lambda_{res}^3
+\end{equation}
+where
+\begin{equation}
+    d\lambda_{res} = 1 + \alpha dT + \beta dc
+\end{equation}
+where $dT$ and $dc$ are temperature and concentration changes on the current time step.
+
+
+
 
 \subsubsection{Alternate Bulk Modulus Term}
 
@@ -1324,28 +1504,28 @@ The temperature due to isoentropic heating alone can be integrated to
 \begin{equation}
      T = T_0\exp( \gamma_0  \eta)
 \end{equation}
-Thus the total internal energy change due to temperature changes (assuming $C_V$ is constant) is
+Thus the total temperature rise (assuming $C_V$ is constant) is
 \begin{equation}
-      dU = C_V\bigl(T_0(\exp( \gamma_0  \eta)-1)\bigr) + \Phi
+      dT = T_0(\exp( \gamma_0  \eta)-1)\bigr) + {\Phi\over C_V}
 \end{equation}
-where $\Phi$ is the cumulative dissipated energy due to plasticity. A good method to track total internal energy, assuming all dissipated plastic energy is converted to heat, is to increment it in each time step using:
-\begin{equation}
-      dU = \vec\sigma\cdot\deff + C_V dT_{dq=0}
-\end{equation}
-Alternatively, one can track stored energy only using
-\begin{equation}
-     dW = \vec\sigma\cdot\deff - d\Phi
-\end{equation}
-but when internal energy is needed, find it from
-\begin{equation}
-     U = W + C_V(T-T_0)
-\end{equation}
+where $\Phi$ is the cumulative dissipated energy due to plasticity.
 
-In compression, $J$ is physically limited to be between 0 and 1, which means $\eta$ is also between 0 and 1. By for most materials that have been fit to this equation of state, the denominator in pressure will be come zero before $eta$ reaches 1. For example, Tungsten has $S_1=1.24$ and $S_2=S_3=0$. The denominator becomes zero when
+A good when to track internal energy in MPM on each time step is to use
+\begin{equation}
+      dU = \vec\sigma\cdot\deff - C_V dT_{dq=0} - d\Phi + C_V dT
+\end{equation}
+The first term is total internal energy change due to Mie-Gr\"{u}niesen equation of state and plastic deformation. The second and third terms subtract the isentropic temperature rise and dissipated plastic energy. The last term is thermal energy on the current time step. Note that the isoentropic and dissipated energy are not removed; they will appear on the next time step because they will contribute to the $C_VdT$ term. Actually the isoentropic temperature rise does not change internal energy. In this energy tracking, that term is subtracted on one time step and added back in on the next to have net zero affect.
+Note that if a simulation is adiabatic and there are no external heat sources, a simpler update could be
+\begin{equation}
+      dU = \vec\sigma\cdot\deff
+\end{equation}
+But the previous method works in this case too, with the only difference be that the addition some energy is delayed until the next time step.  
+
+In compression, $J$ is physically limited to be between 0 and 1, which means $\eta$ is also between 0 and 1. But for most materials that have been fit to this equation of state, the denominator in pressure will be come zero before $eta$ reaches 1. For example, Tungsten has $S_1=1.24$ and $S_2=S_3=0$. The denominator becomes zero when
 \begin{equation}
      \eta = 1/1.24 = 0.806
 \end{equation}
-If the time step is too large in dynamic code, the compression could potentially pass this value. If that happens for any particle, the results will like be poor; {\tt NairnMPM} prints a warning labeling states beyond the physical limit as ``excessive compression.'' it is good practice to use an adjustable time step when using this material so the time step can get small if the compression gets high.
+If the time step is too large in dynamic code, the compression could potentially pass this value. If that happens for any particle, the results will likely be poor; {\tt NairnMPM} prints a warning labeling states beyond the physical limit as ``excessive compression.'' It is good practice to use an adjustable time step when using this material so the time step can get smaller if the compression gets high.
 
 
 \subsection{Ideal Gas Law}
@@ -1372,7 +1552,7 @@ where $J = \det \F = V/V_0$. The Cauchy stress due to this pressure is $-P\I$, w
 \end{equation}
 where $P_i = P_0T/T_0$ is the initial pressure (when $J=1$). This energy is equal to the energy per unit initial volume for isothermal compression or expansion of an ideal gas:
 \begin{equation}
-    U(J) = - {1\over V_0} \int_{V_0}^V P\thinspace dV = - {nRT\over V_0} \int_{V_0}^V {1\over V}\thinspace dV = - P_i \ln {V\over V_0} = - P_i \ln J
+    U(J) = - {1\over V_0} \int_{V_0}^V P\thinspace dV = - {P_0T\over T_0} \int_{V_0}^V {1\over V}\thinspace dV = - P_i \ln {V\over V_0} = - P_i \ln J
 \end{equation}
 
 For MPM calculations, the code needs a specific Kirchoff stress normalized to $\rho_0$ or
@@ -1395,8 +1575,8 @@ The energy increment associated with this stress change is $dU = -P\thinspace dV
 \end{equation}
 Let deformation gradient for step $n+1$ be
 \begin{equation}
-       \F_{n+1} = \f\cdot\F_n  \quad{\rm where}\quad \f = \I + \Delta t\nabla\vec v
-       \quad{\rm and}\quad J_{n+1} = \det \f J_n
+       \F_{n+1} = \f\cdot\F_n  \quad{\rm where}\quad \f = \exp(\Delta t\nabla\vec v)
+       \quad{\rm and}\quad J_{n+1} = \det \f \thinspace J_n
 \end{equation}
 which leads to
 \begin{equation}
@@ -1411,7 +1591,12 @@ But, $P/\rho$ is $-\tau^{(s)}$ leading to
          \left(\tau_n^{(s)}\det f+\tau_{n+1}^{(s)} \right)
          \left(1 - {1\over\det f}\right)
 \end{equation}
-When conduction with energy coupling is activated, this entire energy is dissipated energy, which can lead to temperature changes.
+
+In {\tt NairnMPM}, the cumulative work is tracked in the particle's plastic energy. The particle's strain energy tracks total internal energy in the gas, which for an ideal gas is
+\begin{equation}
+   U = C_V(T-T_0) + U_0 \qquad {\rm or\ incrementally} \qquad  dU = C_V dT
+\end{equation}
+That energy will depend on the analysis options. The default option is isothermal such that work is done, but there is no temperature rise. The total internal energy change will be zero, which implies all the work is lost as heat. The particle's plastic energy will give the work done and the internal energy (in particle's strain energy) will be zero. The alternate option is to turn mechanical energy option on (with or without conduction). In this mode all the work will be input as heat that will cause a temperature rise. The internal energy (in particle's strain energy) will increase linearly with temperature and the cumulative work (equal to cumulative heat) will be in the particle's plastic energy.
 
 When gas particles are present, they have to be initialized to the pressure (or stress) of
 \begin{equation}
@@ -1419,7 +1604,55 @@ When gas particles are present, they have to be initialized to the pressure (or 
 \end{equation}
 where $T$ is the simulation reference temperature (need not be the gas reference temperature, which can be any desired reference condition). All simulations with gas particles must therefore specify a reference temperature in degrees Kelvin.
 
-When doing conduction and energy coupling, this material needs head capacity and thermal conductivity. Heat capacity is calculated using ideal gas law theory (and any entered heat capacities will be ignored). Thermal conductivity, however, should be entered. The current code assumes conductivity is a temperature-independent property, although conductivity of a gas does vary with temperature. If simulations with large temperature changes of the gas are important, this material will need to be improved to allow temperature-dependent thermal conductivity.
+When doing conduction and/or energy coupling, this material needs heat capacity and thermal conductivity. Heat capacity is calculated using ideal gas law theory ($C_V=(3/2)nR/(\rho_0 V_0)$ for monotonic gas and $C_V=(5/2)nR/(\rho_0 V_0)$ for diatomic gas in J/(kg-K)). Thermal conductivity, is needed. The current code assumes conductivity is a temperature-independent property (as entered), although conductivity of a gas does vary with temperature. If simulations with large temperature changes of the gas are important, this material will need to be improved to allow temperature-dependent thermal conductivity.
+
+To find heat capacity from input parameters, substitute $nR = P_0V_0/T_0$ at reference conditions to get
+\begin{equation}
+     C_V =  {3\over 2} {P_0 \over \rho_0T_0}
+\end{equation}
+for monatomic gas (or replace $3/2$ with $5/2$ for diatomic gas.
+
+\subsection{Van der Waals Gas Law}
+
+The van der Wasls gas material implements a non-ideal gas law as a large deformation, hyperelastic material. It seems to work well for gas confined within a solid or constrained by rigid particles. It does not handle gas dynamics such as irreversible free expansion, but does handle reversible processes including coupled conversion of energy into heat ({\em i.e.}, cooling on expansion and heating on compression).
+
+The van der Wasls gas law is
+\begin{equation}
+    \left(P-{an^2\over V^2}\right)\left({V\over n}-b\right) = RT
+\end{equation}
+The nonideal gas properties are defined by picking any reference pressure, $P_0$, reference temperature, $T_0$, and reference density, $\rho_0$, along with $a$ and $b$. The law can then be transformed to
+pressure of
+\begin{equation}
+    P = \left(P_0-a'\right)\left(1-b'\over J-b'\right){T\over T_0} + {a'\over J^2}
+\end{equation}
+where $J = V/V_0$, $V_0$ is initial particle volume, $a'=an^2/V_0^2$, and $b'=nbV_0$. Writing $P = - dU(J)/dJ$ implies a hyperelastic energy function of
+\begin{equation}
+    U(J) = \left(P_i-a'\right)\left(1-b'\right)\ln (J-b') - {a'\over J}
+\end{equation}
+where $P_i$ is the initial particle pressure (when $J=1$) of
+\begin{equation}
+    P_i = \left(P_0-a'\right){T\over T_0} + {a'}
+\end{equation}
+This energy is equal to the energy per unit initial volume for isothermal compression or expansion of an ideal gas:
+\begin{equation}
+    U(J) = - {1\over V_0} \int_{V_0}^V P\thinspace dV = -  \int_{1}^J \left(\left(P_i-a'\right)\left(1-b'\over J-b'\right) + {a'\over J^2}\right)\thinspace dJ
+    \end{equation}
+
+In {\tt NairnMPM}, the cumulative work is tracked in the particle's plastic energy (which is $=PdV$ work and can tracked the same as for an ideal gas). The particle's strain energy tracks total internal energy in the gas per unit mass, which for a van der Waals gas is
+\begin{equation}
+   U = C_V(T-T_0) - {a'\over  \rho_0 J}
+\end{equation}
+In hyperelastic code, an incremental form is
+\begin{equation}
+   U = C_V dT + {a'\over \rho_0 J^2} dJ
+\end{equation}
+
+For a van der Waals gas, the heat capacity is same as for ideal gas, $C_V=(3/2)nR/(\rho_0 V_0)$ for monatomic (or 5/2 for diatomic gas), the the $n$ is found differently from reference conditions. It can be found as root to
+\begin{equation}
+     {ab\over V_0^2} n^3 - {a\over V_0} n^2 - (P_0b+RT_0)n + P_0V_0 = 0
+\end{equation}
+This $n$ is needed to find $a'$, $'b'$ and $C_V$.
+
 
 \section{Two-State Isotropic Material}
 

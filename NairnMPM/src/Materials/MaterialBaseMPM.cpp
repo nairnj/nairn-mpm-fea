@@ -127,14 +127,9 @@ char *MaterialBase::InputMat(char *xName,int &input)
         return((char *)&delIIc);
     }
     
-	else if(strcmp(xName,"Cp")==0)
+	else if(strcmp(xName,"Cp")==0 || strcmp(xName,"Cv")==0)
     {	input=DOUBLE_NUM;
         return((char *)&heatCapacity);
-    }
-
-	else if(strcmp(xName,"Cv")==0)
-    {	input=DOUBLE_NUM;
-        return((char *)&heatCapacityVol);
     }
 
 	else if(strcmp(xName,"csat")==0)
@@ -323,7 +318,11 @@ void MaterialBase::PrintTransportProperties(void)
 	// Conductivity constants
 	if(ConductionTask::active)
 	{	PrintProperty("k",rho*kCond/1000.,"W/(m-K)");
-		PrintProperty("Cp",heatCapacity,"J/(kg-K)");        // aka mJ/(g-K)
+		PrintProperty("C",heatCapacity,"J/(kg-K)");        // aka mJ/(g-K)
+		cout << endl;
+	}
+	else if(ConductionTask::energyCoupling)
+	{	PrintProperty("C",heatCapacity,"J/(kg-K)");        // aka mJ/(g-K)
 		cout << endl;
 	}
 }
@@ -357,13 +356,6 @@ const char *MaterialBase::PreferredDirection(int style)
 */
 const char *MaterialBase::VerifyProperties(int np)
 {
-	// check which were set of Cp = heatCapacity and Cv = heatCapacityVol
-	// if set only Cp, Cv=Cp, if set only Cv, Cp=Cv, if both set, they are used,
-	//		if neither set, they both are zero
-    // Units mJ/(g-K)
-	if(heatCapacityVol<0.) heatCapacityVol=fmax(heatCapacity,0.);
-	if(heatCapacity<0.) heatCapacity=heatCapacityVol;
-	
     // make conductivity specific (N mm^3/(sec-K-g) = mJ mm^2/(sec-K-g))
     kCond *= (1000./rho);
 
@@ -428,9 +420,9 @@ void MaterialBase::ValidateForUse(int np)
 							  "MaterialBase::ValidateForUse");
 	}
 	
-	if(ConductionTask::active)
+	if(ConductionTask::active || ConductionTask::energyCoupling)
 	{	if(heatCapacity<=0. && !Rigid())
-		{	throw CommonException("Thermal conduction cannot be done using materials that have zero heat capacity.",
+		{	throw CommonException("Thermal conduction and/or mechanical energy cannot be done using materials that have zero heat capacity.",
 								  "MaterialBase::ValidateForUse");
 		}
 	}
@@ -610,11 +602,9 @@ void MaterialBase::LoadMechanicalProps(MPMBase *mptr,int np)
 // Get transport property tensors (if change with particle state)
 void MaterialBase::LoadTransportProps(MPMBase *mptr,int np) { return; }
 
-// Implemented in case heat capacity changes with particle state (Cp and Cv)
-// Cp is used in conduction; Cv is rarely used
+// Implemented in case heat capacity changes with particle state
 // Units mJ/(g-K) = J/(kg-m)
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) { return heatCapacity; }
-double MaterialBase::GetHeatCapacityVol(MPMBase *mptr) { return heatCapacityVol; }
 
 // Correct stress update for rotations using hypoelasticity approach
 // rotD is -wxy of rotation tensor (or minus twice tensorial rotation, i.e. dvxy-dvyx = -(dvyx-dvxy))

@@ -56,12 +56,15 @@ const char *IdealGas::VerifyProperties(int np)
     if(P0 <= 0. || rho <= 0.0 || T0 <= 0.0 )
 		return "Ideal gas material model needs positive parameters P0, rho, and T0";
 	
-	// Ideal gas has heat capacity in J/(kg-K) = mJ/(g-K)
+	// Find ideal gas has heat capacity in J/(kg-K) = mJ/(g-K)
 	// Must set C to Cv to work well with theory, even though output and equations
-	//    for conductivity claim Cp is needed. For Ideal Gas, Cv = 1.5R
-	// This material overrides any attempt to set heat capacity
-	heatCapacity = 1500.*P0/(T0*rho);
-	heatCapacityVol = heatCapacity;
+	//    for conductivity claim Cp is needed. For monotonic Ideal Gas, Cv = 1.5R
+	//	  for diatomic is is 2.5R
+	// If set to >1 is diatomic, otherwise monotonic (which is for not set too)
+	if(heatCapacity>1.)
+		heatCapacity = 2500.*P0/(T0*rho);
+	else
+		heatCapacity = 1500.*P0/(T0*rho);
 	
     // call super class
     return HyperElastic::VerifyProperties(np);
@@ -121,14 +124,7 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
 {
     // Update strains and rotations and Left Cauchy strain
     // get determinent of incremental deformation gradient
-    double detf;
-    if(np == THREED_MPM)
-    {   detf = IncrementDeformation(mptr,du(0,0),du(1,1),du(2,2),du(0,1),du(1,0),du(0,2),du(2,0),
-                                                du(1,2),du(2,1),NULL);
-    }
-    else
-    {   detf = IncrementDeformation(mptr,du(0,0),du(1,1),du(0,1),du(1,0),du(2,2),NULL);
-    }
+    double detf = IncrementDeformation(mptr,du,NULL,np);;
     
     // update stress
 	Tensor *sp=mptr->GetStressTensor();
@@ -146,12 +142,15 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
 	sp->yy = mPsp;
 	sp->zz = mPsp;
 	
-	// internal energy increment per unit mass or dU/(rho0 V0) (uJ/g)
+	// internal energy is tracked in strain energy
+	mptr->AddStrainEnergy(1000.*heatCapacity*ConductionTask::dTemperature);
+	
+	// dissipated energy increment per unit mass or dU/(rho0 V0) (uJ/g) is -P dV found as follows
     // dU/(rho0 V0) = - 0.5 * (pn+p(n+1))/rho0 * (V(n+1)-Vn)/V0, which simplifies to
     double dU = 0.5*(mPnsp*detf + mPsp)*(1.-1/detf);
     
     // increment energies and all is dissipated
-	mptr->AddStrainEnergy(dU);
+	mptr->AddPlastEnergy(dU);
 	mptr->AddDispEnergy(dU);
 }
 

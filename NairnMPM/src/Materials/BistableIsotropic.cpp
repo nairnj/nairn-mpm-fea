@@ -89,7 +89,7 @@ void BistableIsotropic::PrintTransportProperties(void)
 	}
 	// Conductivity constants (Cp is also mJ/(g-K))
 	if(ConductionTask::active)
-	{   sprintf(mline,"k0 =%12.3g W/(m-K)  kd =%12.3g W/(m-K)  Cp  =%12.3g J/(kg-K)",
+	{   sprintf(mline,"k0 =%12.3g W/(m-K)  kd =%12.3g W/(m-K)  C   =%12.3g J/(kg-K)",
                             rho*kCond0/1000.,rho*kCondd/1000.,heatCapacity);
 		cout << mline << endl;
 	}
@@ -432,7 +432,7 @@ double BistableIsotropic::WaveSpeed(bool threeD,MPMBase *mptr)
 double BistableIsotropic::MaximumDiffusion(void) { return max(diffd,diff0)/100.; }
 
 // maximum diffusivity in cm^2/sec
-// specific k is mJ mm^2/(sec-K-g) and Cp is mJ/(g-K) so k/Cp = mm^2/sec * 1e-2 = cm^2/sec
+// specific k is mJ mm^2/(sec-K-g) and Cp is mJ/(g-K) so k/C = mm^2/sec * 1e-2 = cm^2/sec
 double BistableIsotropic::MaximumDiffusivity(void) { return 0.01*max(kCondd,kCond0)/heatCapacity; }
 
 // return material type

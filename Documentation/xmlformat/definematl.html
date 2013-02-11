@@ -235,11 +235,8 @@ as a special case.</td>
 <dt>&lt;rho&gt;1.5&lt;/rho&gt;</dt>
 <dd>The material density (in g/cm<sup>3</sup>) (can be used in NairnFEA files, but it is ignored).</dd>
     	
-<dt>&lt;Cp&gt;1.5&lt;/Cp&gt;</dt>
-<dd>The material constant-pressure heat capacity (in J/(kg-K)). It used when doing <a href="thermal.html">conduction calculations and/or coupled mechanical energy</a>. If only one of <code>Cp</code> and <code>Cv</code> are entered, they will both be set to the one entered value.</dd>
-    	
-<dt>&lt;Cv&gt;1.5&lt;/Cv&gt;</dt>
-<dd>The material constant-volume heat capacity (in J/(kg-K)). Only used by some materials.  If only one of <code>Cp</code> and <code>Cv</code> are entered, they will both be set to the one entered value.</dd>
+<dt>&lt;Cp&gt;1.5&lt;/Cp&gt; or &lt;Cv&gt;1.5&lt;/Cv&gt;</dt>
+<dd>The material's heat capacity (in J/(kg-K)). It is used when doing <a href="thermal.html">conduction calculations and/or coupled mechanical energy</a> and by some material constitutitive laws. Both <code>Cp</code> and <code>Cv</code> set the same (and only) heat capacity used in the MPM calculations. MPM is a strain-drive method, which implies the heat capacity should be interpreted as the constant-volume heat capacity.</dd>
     	
 <dt><a name="csat"></a>&lt;csat&gt;0.5&lt;/csat&gt;</dt>
 <dd>The material's saturation concentration entered as a weight fraction. Only used when doing diffusion calculations.</dd>
@@ -694,6 +691,9 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 <dt>&lt;rho&gt;0.00129&lt;/rho&gt;</dt>
 <dd>The reference density (in g/cm<sup>3</sup>) at reference temperature.  This must be a positive value greather than zero.</dd>
 
+<dt>&lt;Cv&gt;1&lt;/Cv&gt;</dt>
+<dd>If heat capacity is omitted or is less than or equal 1, C<sub>V</sub> is set to (3/2)R for a monotonic gas. If the enter value is greater than 1, C<sub>V</sub> is set to (5/2)R for a diatomic gas.</dd>
+
 <dt>Other Properties (where applicable)</dt>
 <dd>See the <a href="#common">properties common to all materials</a>.</dd>
 
@@ -707,11 +707,14 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 
 <p>where <code>M<sub>g</sub></code> is the molecular weight of the gas (such as 28.97 g/mol for air) and <code>R</code> is the gas constant, R = 8.3144621 J/k/mol.</p>
 
-<p>When thermal conduction is off, this material models isothermal compression and expansion. To model adibatic compression and expansion, turn conduction on and activate energy coupling. The energy will convert to heat resulting in heating during compression or cooling during expansion. See the <a href="thermal.html"><code>Thermal</code></a> command for details. There is no need to enter heat capacity because that term is calculated using ideal gas theory. You do, however, need to enter thermal conductivity. The current implementation uses a temperature independent conductivity, which may change in the future.</p>
+<p>This material stores total internal energy in the particle's strain energy and the cumulative work (in the form of <code>P dV</code> work) in the particle's plastic energy.</p>
 
-<p>Ideal gas particles are fairly stable, but can be made unstable by certain boundary conditions on constraining walls. If stability problems arise, try different boundary conditions. They also do not work for irreversibale processes such as free expansion in to empty space. They are intended to be always bounded by pressure.</p>
+<p>When <a href="thermal.html">mechanical energy coupling</a> is off, this material models isothermal compression and expansion, which implies all work results in heat lost by the object. The problem may include heat input (in thermal coundary conditions), which may cause temperture rises. In other words, this mode only means the gas itself will not cause temperature changes. The internal energy will not change unless there is external heating and the plastic energy will give total work.</p>
 
-<p>If the calculation archives strain energy, it tracks work done on the gas particles (in the form of <code>P dV</code> work).</p>
+<p>To model adiabatic compression and expansion, activate <a href="thermal.html">mechanical energy coupling</a>. The energy will convert to heat resulting in heating during compression or cooling during expansion. You need to enter heat capacity (which can only pick monotonic or diatomic gas) and thermal conductivity. The current implementation uses a temperature independent conductivity, which may change in the future.</p>
+
+<p>Ideal gas particles are fairly stable, but can be made unstable by certain boundary conditions on constraining walls. If stability problems arise, try different boundary conditions. They also do not work for irreversibale processes such as free expansion into empty space. They are intended to be always bounded by pressure.</p>
+
 
 <!-- Material  Section -->
 
