@@ -1102,13 +1102,12 @@ or
            \int_\Gamma \left( U\thinspace dy -  {1\over\rho} T_i {\partial u_i\over \partial x} ds\right)
                         - \int_{A^*}  {dq\over dx} \thinspace  dx \thinspace dy = 0
 \end{equation}%
-or, for an adiabatic process,
+After another Green's theorem:
 \begin{equation}%
-      J = \int_{\Gamma^*} \left(\rho\thinspace U\thinspace dy -  T_i {\partial u_i\over \partial x} ds\right)
+           \int_\Gamma \left( w\thinspace dy -  {1\over\rho} T_i {\partial u_i\over \partial x} ds\right)
+                         = 0
 \end{equation}%
-These results seem to hold for irreversible processes as well.
-
-In MPM, the calculations need tracking of $U$ and $q$. The needed gradients of $q$ can be found by gradient extrapolation to the grid.
+where $w$ is cumulative work. These results seem to hold for irreversible processes as well.
 
 \subsection{Summary}
 

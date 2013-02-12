@@ -609,20 +609,30 @@ void MaterialBase::LoadTransportProps(MPMBase *mptr,int np) { return; }
 // Units mJ/(g-K) = J/(kg-m)
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) { return heatCapacity; }
 
-// increment heat energy using Cv(dT-dTq0) - dPhi, where dT is total temperature increment,
-// dTq0 is temperature rise due to material mechanisms if the process was adiabatic, and
-// dPhi is dissipated heat
+// Increment heat energy using Cv(dT-dTq0) - dPhi, where Cv*dTq0 + dPhi is total
+//		dispated energy (it can by provided as either a temperature rise or an energy)
+// dTq0 is temperature rise due to material mechanisms if the process was adiabatic
+// dPhi is dissipated heat that is converted to temperature rise
 void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,double dPhi)
 {
-    if(!isolatedParticles || !ConductionTask::energyCoupling)
-    {   // for non isolated particle use dq = Cv(dT-dTq0)-dPhi
-        // this is also for isotheral in case material model causes some isoentropic temperature rise as well
-        //    that will later result in non-zero ConductionTask::dTemperature
-        mptr->AddHeatEnergy(1000.*GetHeatCapacity(mptr)*(dT-dTq0) - dPhi);
+	double Cv = 1000.*GetHeatCapacity(mptr);
+	double dispEnergy = Cv*dTq0 + dPhi;
+	
+	// Isolated means no conduction and now thermal ramp (and in future if have othe ways
+	//		to change particle temperature, those are not active either)
+	// In this mode, adiabatic has dq=0 and isothermal releases all as heat
+    if(isolatedParticles)
+	{	if(!ConductionTask::energyCoupling)
+			mptr->AddHeatEnergy(-dispEnergy);
     }
+	else
+	{	// For non isolated particle use dq = Cv(dT-dTq0)-dPhi
+		mptr->AddHeatEnergy(Cv*dT - dispEnergy);
+	}
     
-    // The other case (isolatedParticles && ConductionTask::energyCoupling)
-    // has dq=0 so no update is needed
+	// the dispated energy is added here. It will be ignored is isothermal or
+	// increase particle temperature is adiabatic
+	mptr->AddDispEnergy(dispEnergy);
 }
 
 // Correct stress update for rotations using hypoelasticity approach

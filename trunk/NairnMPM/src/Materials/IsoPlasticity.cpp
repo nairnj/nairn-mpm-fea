@@ -357,11 +357,11 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     //		time step within Cv dT (if adibatic heating occurs)
     // The Cv(dT-dTq0) was done in update pressure
     IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
+	//mptr->AddDispEnergy(dispEnergy);
     
 	// The cumulative dissipated energy is tracked in plastic energy
     // Setting the disp energy allows heating if mechanical energy is on
     mptr->AddPlastEnergy(dispEnergy);
-	mptr->AddDispEnergy(dispEnergy);
     
 	// update internal variables
 	plasticLaw->UpdatePlasticInternal(mptr,np);
@@ -512,11 +512,11 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     //		time step within Cv dT (if adiabatic heating occurs)
     // The Cv(dT-dTq0) was done already in update pressure
     IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
+	//mptr->AddDispEnergy(dispEnergy);
     
 	// The cumulative dissipated energy is tracked in plastic energy
     // Setting the disp energy allows heating if mechanical energy is on
     mptr->AddPlastEnergy(dispEnergy);
-	mptr->AddDispEnergy(dispEnergy);
     
 	// update internal variables
 	plasticLaw->UpdatePlasticInternal(mptr,np);

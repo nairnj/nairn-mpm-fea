@@ -138,6 +138,7 @@ BodyForce = $(src)/Global_Quantities/BodyForce
 BoundaryCondition = $(src)/Boundary_Conditions/BoundaryCondition
 BoxController = $(com)/Read_XML/BoxController
 CalcJKTask = $(src)/Custom_Tasks/CalcJKTask
+CarnotCycle = $(src)/Custom_Tasks/CarnotCycle
 CohesiveZone = $(src)/Materials/CohesiveZone
 CommonAnalysis = $(com)/System/CommonAnalysis
 CommonArchiveData = $(com)/System/CommonArchiveData
@@ -274,6 +275,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # PolyhedronController.hpp : ShapeController.hpp
 # BoxController.hpp : ShapeController.hpp
 # CalcJKTask.hpp : CustomTask.hpp
+# CarnotCycle.hpp : CustomTask.hpp
 # CohesiveZone.hpp : MaterialBase.hpp TractionLaw.hpp
 # ConductionTask.hpp : TransportTask.hpp
 # CoupledSawTooth.hpp : CohesiveZone.hpp MaterialBase.hpp TractionLaw.hpp
@@ -385,7 +387,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		DiffusionTask.o ConductionTask.o MeshInfo.o TransportTask.o ElementBase3D.o SCGLHardening.o \
 		EightNodeIsoparamBrick.o MatPoint3D.o Elastic.o ElasticMPM.o HyperElastic.o Nonlinear2Hardening.o \
 		mathexpr.o ShapeController.o PointController.o RectController.o OvalController.o PolygonController.o \
-		SphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o HistoryArchive.o \
+		SphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o HistoryArchive.o CarnotCycle.o \
 		TractionLaw.o CohesiveZone.o CoupledSawTooth.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o AdjustTimeStepTask.o SLMaterial.o CrackVelocityFieldMulti.o \
 		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o
@@ -592,7 +594,8 @@ MPMReadHandler.o : $(MPMReadHandler).cpp $(dprefix) $(NairnMPM).hpp $(ArchiveDat
 			$(BoundaryCondition).hpp $(NodesController).hpp $(ElementsController).hpp $(ParseController).hpp $(MaterialController).hpp \
 			$(MpsController).hpp $(MaterialController).hpp $(CrackController).hpp $(ElementBase).hpp $(MaterialBase).hpp \
 			$(CrackHeader).hpp $(CrackSegment).hpp $(TransportTask).hpp $(MatPoint3D).hpp $(MatPtTractionBC).hpp $(AdjustTimeStepTask).hpp \
-			$(PolygonController).hpp $(ShapeController).hpp  $(SphereController).hpp $(RigidMaterial).hpp $(VTKArchive).hpp $(HistoryArchive).hpp \
+			$(PolygonController).hpp $(ShapeController).hpp  $(SphereController).hpp $(RigidMaterial).hpp \
+			$(VTKArchive).hpp $(HistoryArchive).hpp $(CarnotCycle).hpp \
 			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(MeshInfo).hpp $(PropagateTask).hpp $(PolyhedronController).hpp \
             $(MatPointAS).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MPMReadHandler).cpp
@@ -693,7 +696,8 @@ AnisoPlasticity.o : $(AnisoPlasticity).cpp $(dprefix) $(AnisoPlasticity).hpp $(O
 Viscoelastic.o : $(Viscoelastic).cpp $(dprefix) $(Viscoelastic).hpp $(MaterialBase).hpp $(MPMBase).hpp \
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(TransportTask).hpp $(CommonException).hpp $(NairnMPM).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Viscoelastic).cpp
-HyperElastic.o : $(HyperElastic).cpp $(dprefix) $(HyperElastic).hpp $(MaterialBase).hpp
+HyperElastic.o : $(HyperElastic).cpp $(dprefix) $(HyperElastic).hpp $(MaterialBase).hpp $(TransportTask).hpp \
+			$(ConductionTask).hpp $(DiffusionTask).hpp $(ThermalRamp).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(HyperElastic).cpp
 Mooney.o : $(Mooney).cpp $(dprefix) $(Mooney).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(TransportTask).hpp \
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp
@@ -821,6 +825,10 @@ HistoryArchive.o : $(HistoryArchive).cpp $(dprefix) $(HistoryArchive).hpp $(Cust
 AdjustTimeStepTask.o : $(AdjustTimeStepTask).cpp $(dprefix) $(AdjustTimeStepTask).hpp $(CustomTask).hpp $(NairnMPM).hpp \
 			$(ArchiveData).hpp $(MeshInfo).hpp $(MaterialBase).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(AdjustTimeStepTask).cpp
+CarnotCycle.o : $(CarnotCycle).cpp $(dprefix) $(CarnotCycle).hpp $(CustomTask).hpp $(NairnMPM).hpp $(ThermalRamp).hpp \
+			$(CommonException).hpp $(MPMTermination).hpp $(MaterialBase).hpp $(MPMBase).hpp $(CustomTask).hpp \
+			$(ConductionTask).hpp $(MaterialBase).hpp $(BodyForce).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CarnotCycle).cpp
 
 # MPM: Elements
 MoreMPMElementBase.o : $(MoreMPMElementBase).cpp $(dprefix) $(ElementBase).hpp $(NodalPoint).hpp $(MPMBase).hpp $(NairnMPM).hpp \
