@@ -24,6 +24,7 @@ class Mooney : public HyperElastic
 {
     public:
         double G1,G2;
+        bool rubber;
 		// double aI,betaI		// isotropic expanion defined in super classes
  
         // constructors and destructors

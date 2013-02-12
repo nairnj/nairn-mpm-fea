@@ -379,8 +379,7 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 //  contribution to normal stress) and adds inremental energy to strain energy
 void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double dJ,int np)
 {
-    double Kse;
-	double Kterm = J*GetVolumetricTerms(J,&Kse);       // times J to get Kirchoff stress
+	double Kterm = J*GetVolumetricTerms(J);       // times J to get Kirchoff stress
     double P0 = mptr->GetPressure();
     mptr->SetPressure(-Kterm);
     

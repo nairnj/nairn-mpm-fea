@@ -159,7 +159,7 @@
 				| KIc | KIIc | JIc | JIIc | gamma | KIexp | KIIexp | delIc | delIIc | delpkI | delpkII
 				| sigmaI2 | sigmaII2 | delpkI2 | delpkII2 | ValueFunction
 				| D | DA | DT | Dx | Dy | Dz | DR | DZ | D0 | Dd | csat 
-				| SettingFunction | SettingFunction2 | SettingFunction3
+				| SettingFunction | SettingFunction2 | SettingFunction3 | IdealRubber
 				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration
 				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd | P0 | T0
                 | kCondR | kCondZ | Hardening | C1SL | C2SL | UJOption | ArtificialVisc
@@ -480,6 +480,7 @@
 <!ELEMENT	tauk (#PCDATA)>
 <!ELEMENT	G1 (#PCDATA)>
 <!ELEMENT	G2 (#PCDATA)>
+<!ELEMENT	IdealRubber EMPTY>
 <!ELEMENT	UJOption (#PCDATA)>
 <!ELEMENT	ArtificialVisc EMPTY>
 <!ELEMENT	Uk (#PCDATA)>
