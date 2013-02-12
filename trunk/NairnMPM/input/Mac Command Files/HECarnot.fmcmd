@@ -1,0 +1,184 @@
+! ********** Introduction **********
+
+! ********** Preamble Section **********
+Title "3D Tensile Test"
+Name "John Nairn"
+
+! Header
+Header
+   MPM Analysis using NairnFEAMPM and NairnMPM
+EndHeader
+
+! "Plane Strain MPM" or "3D MPM"
+#analysis="Plane Strain MPM"
+Analysis #analysis
+MPMMethod USF,lCPDI
+
+! ********** Parameters Section **********
+#matID="idealgas"		! idealgas
+#strain=50				! strain
+#tmult=10
+damping 3200
+
+#cell=5                 ! cell size (cubic cells)
+#ywidth=40              ! width in the y direction (mult of cell)
+#zwidth=40              ! width in the z direction (mult of cell)
+#length=100             ! Length in x direction (mult of cell)
+
+StressFreeTemp 400
+#startTemp=400
+!ThermalRamp 100,3
+conduction "Yes","Mechanical energy"
+
+! calculate time to reach peak state
+#P0=.101
+#T0=288.15
+#rho0=0.001164
+#speed=1000000*sqrt(5000*#P0*#startTemp*#rho0/(3*#T0))
+#transit=1000*#length/#speed             ! transit time in ms
+#time=#tmult*#transit                    ! time to peak load in ms
+#disp=#strain*#length/100                ! mm of displacement
+#disprate=1000*#disp/#time               ! displacement rate mm/s
+
+! Equal strain rates in the three directions and pull both directions
+#ndim=3
+if #analysis="Plane Strain MPM"
+  #ndim=2
+endif
+#xrate = #disprate/2
+#yrate = 0
+#zrate = 0
+!#xrate = #disprate/(2*#ndim)
+!#yrate = 10*#strain*#ywidth/(#time*#ndim)
+!#zrate = 10*#strain*#zwidth/(#time*#ndim)
+
+! Archiving
+Archive "Results/"&#matID
+TimeStep 1000,100*#time,.05
+ArchiveTime #time/20
+ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain,temperature,plasticenergy,plasticstrain
+
+! ********** Materials Section **********
+if #matID="idealgas"
+  Material #matID,"Ideal Gas","idealgas"
+    rho #rho0
+    P0 #P0
+    T0 #T0
+  Done
+endif
+
+Material "wallx","Loading Clamp","Rigid"
+  direction 1
+Done
+
+Material "wally","Wall","Rigid"
+  direction 2
+Done
+
+Material "wallz","Wall","Rigid"
+  direction 4
+Done
+
+! global archive
+GlobalArchive sxx,#matID
+GlobalArchive exx,#matID
+GlobalArchive "Strain Energy",#matID
+GlobalArchive "Heat Energy",#matID
+GlobalArchive "Plastic Energy",#matID			! entropy here
+GlobalArchiveTime #time/100
+
+! ********** Grid and Material Points Section **********
+
+! Extra length for pulling (mult of cell)
+if #strain<0
+  #xcess=2*#cell
+  #ycess=2*#cell
+  #zcess=2*#cell
+else
+  #xcess=int(#strain*#length/(200*#cell)+2)*#cell
+  if #yrate>0
+  	#ycess=int(#strain*#ywidth/(200*#cell)+2)*#cell
+  else
+    #ycess=2*#cell
+  endif
+  if #zrate>0
+  	#zcess=int(#strain*#zwidth/(200*#cell)+2)*#cell
+  else
+    #zcess=2*#cell
+  endif
+endif
+
+#xcells=int((#length+2*#xcess)/#cell+.5)
+#ycells=int((#ywidth+2*#ycess)/#cell+.5)
+#zcells=int((#zwidth+2*#zcess)/#cell+.5)
+GridHoriz #xcells
+GridVert #ycells
+if #analysis="3D MPM"
+  GridDepth #zcells
+  GridRect -#cell,#length+#excess,-2*#cell,#ywidth+2*#cell,-2*#cell,#zwidth+2*#cell
+
+  Region #matID,#xrate,0,0,"temp",#startTemp
+    Box 0,#length,0,#ywidth,0,#zwidth
+  EndRegion
+
+  Region "floor",-#xrate,0,0
+    Box -#cell,0,-2*#cell,#ywidth+2*#cell,-2*#cell,#zwidth+2*#cell
+  EndRegion
+
+  Region "wallybottom",0,-#yrate,0
+    Box 0,#length,-#cell,0,-#cell,#zwidth+#cell
+  EndRegion
+  Region "wallytop",0,#yrate,0
+    Box 0,#length,#ywidth,#ywidth+#cell,-#cell,#zwidth+#cell
+  EndRegion
+  
+  Region "wallzbottom",0,0,-#zrate
+    Box 0,#length,0,#ywidth,-#cell,0
+  EndRegion
+  Region "wallztop",0,0,#zrate
+    Box 0,#length,0,#ywidth,#zwidth,#zwidth+#cell
+  EndRegion
+
+  Region "rigid",#disprate,0,0
+    Box #length,#length+#cell,-2*#cell,#ywidth+2*#cell,-2*#cell,#zwidth+2*#cell
+  EndRegion
+
+else
+  GridThickness #zwidth
+  GridRect -#xcess,#length+#xcess,-#ycess,#ywidth+#ycess
+
+  Region #matID,0,0,#zwidth,"temp",#startTemp
+    Rect 0,#length,0,#ywidth
+  EndRegion
+
+  Region "wally",0,-#yrate,#zwidth
+    Rect -#xcess,#length+#xcess,-#cell,0
+  EndRegion
+  
+  Region "wally",0,#yrate,#zwidth
+    Rect -#xcess,#length+#xcess,#ywidth,#ywidth+#cell
+  EndRegion
+
+  Region "wallx",#xrate,0, #zwidth
+    Rect #length,#length+#cell,-#ycess,#ywidth+#ycess
+  EndRegion
+  
+  Region "wallx",-#xrate,0, #zwidth
+    Rect -#cell,0,-#ycess,#ywidth+#ycess
+  EndRegion
+
+endif
+
+XMLData
+
+  <CustomTasks>
+    <Schedule name='AdjustTimeStep'>
+      <Parameter name='verbose'>1</Parameter>
+    </Schedule>
+    <Schedule name='CarnotCycle'>
+      <Parameter name='V1rel'>1.25</Parameter>
+      <Parameter name='T2'>350</Parameter>
+    </Schedule>
+  </CustomTasks>
+EndXMLData
+
