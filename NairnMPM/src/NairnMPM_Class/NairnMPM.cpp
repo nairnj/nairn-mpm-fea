@@ -524,6 +524,9 @@ void NairnMPM::PreliminaryCalcs(void)
 	// finish isothermal ramp (now that have time step)
 	thermal.SetParameters(timestep);
     
+    // are the particle isolated (i.e., no conduction and no thermal ramp)
+    MaterialBase::isolatedParticles = !ConductionTask::active && !thermal.Active();
+    
     // blank line
     cout << endl;
 }

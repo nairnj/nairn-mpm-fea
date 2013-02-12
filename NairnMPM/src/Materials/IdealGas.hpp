@@ -44,6 +44,7 @@ class IdealGas : public HyperElastic
 		virtual double WaveSpeed(bool,MPMBase *);
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
+        virtual double CurrentWaveSpeed(bool,MPMBase *);
 		
     private:
 	    double P0sp;  // mass specific initial pressure

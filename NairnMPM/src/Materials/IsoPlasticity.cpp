@@ -249,7 +249,10 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 									   + (st0.xy+sp->xy)*dgxy + (st0.zz+sp->zz)*dezzr));
 		}
 		
-		// give material chance to update history variables that change in elastic updates
+        // heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here
+        // and Cv(dT-dTq0) was done in Update pressure
+        
+		// give subclass material chance to update history variables that change in elastic updates
 		ElasticUpdateFinished(mptr,np,delTime);
 		
 		return;
@@ -332,32 +335,33 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	Hypo2DCalculations(mptr,-dwrotxy,dels.xx,dels.yy,dels.xy);
 	
     // Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-    mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr
-                        + (st0.yy+sp->yy)*deyyr
-                        + (st0.xy+sp->xy)*dgxy));
-
+    double strainEnergy = 0.5*((st0.xx+sp->xx)*dexxr
+                               + (st0.yy+sp->yy)*deyyr
+                               + (st0.xy+sp->xy)*dgxy);
 	if(np!=PLANE_STRESS_MPM)
-    {	mptr->AddStrainEnergy(0.5*(st0.zz+sp->zz)*dezzr);
+    {	strainEnergy += 0.5*(st0.zz+sp->zz)*dezzr;
 	}
     
-    // Plastic or dissipated energy increment per unit mass dQ = (dPhi/(rho0 V0)) (uJ/g)
-	// dQ = dispEnergy - qdalphaTerm
-    double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime);
-    double dispEnergy = lambdak*(sp->xx*dfdsxx + sp->yy*dfdsyy + sp->zz*dfdszz + 2.*sp->xy*dfdtxy);
-	
-    // This material is tracking total internal, which means we need
-	//    dU = s.de(total) - dQ = digma.de(elastic) + qdalphaTerm
-	// s.de(elastic) done above, only need to gdalpha term here
-	// The dQ is subtracted because it shows up in internal energy in the next
-	//    time step in Cv dT term.
-    mptr->AddStrainEnergy(qdalphaTerm);
+    // plastic strain work
+    double plastEnergy = lambdak*(sp->xx*dfdsxx + sp->yy*dfdsyy + sp->zz*dfdszz + 2.*sp->xy*dfdtxy);
     
-	// The total dissipated energy is dispEnergy - qalphaTerm. The cumulative dissipated energy
-    // is tracked in plastic energy. Setting the disp energy allows heating if mechanical
-	// energy is on
-    dispEnergy -= qdalphaTerm;
-	mptr->AddDispEnergy(dispEnergy);
+    // total work
+    mptr->AddStrainEnergy(plastEnergy + strainEnergy);
+    
+    // disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
+    double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime);
+    double dispEnergy = plastEnergy - qdalphaTerm;
+    
+    // heat energy is Cv(dT-dTq0) - dPhi
+    // The dPhi is subtracted here because it will show up in next
+    //		time step within Cv dT (if adibatic heating occurs)
+    // The Cv(dT-dTq0) was done in update pressure
+    IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
+    
+	// The cumulative dissipated energy is tracked in plastic energy
+    // Setting the disp energy allows heating if mechanical energy is on
     mptr->AddPlastEnergy(dispEnergy);
+	mptr->AddDispEnergy(dispEnergy);
     
 	// update internal variables
 	plasticLaw->UpdatePlasticInternal(mptr,np);
@@ -430,6 +434,9 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 								+ (st0.xz+sp->xz)*dgxz
 								+ (st0.xy+sp->xy)*dgxy));
 								
+        // heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here
+        // and Cv(dT-dTq0) was done in Update Pressure
+        
 		// give material chance to update history variables that change in elastic updates
 		ElasticUpdateFinished(mptr,np,delTime);
 		
@@ -485,31 +492,31 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 	
     // Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-	mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr
-                               + (st0.yy+sp->yy)*deyyr
-                               + (st0.zz+sp->zz)*dezzr
-                               + (st0.yz+sp->yz)*dgyz
-                               + (st0.xz+sp->xz)*dgxz
-                               + (st0.xy+sp->xy)*dgxy));
+	double strainEnergy = 0.5*((st0.xx+sp->xx)*dexxr + (st0.yy+sp->yy)*deyyr
+                               + (st0.zz+sp->zz)*dezzr + (st0.yz+sp->yz)*dgyz
+                               + (st0.xz+sp->xz)*dgxz + (st0.xy+sp->xy)*dgxy);
     
-    // Plastic or dissipated energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    // plastic strain work
+    double plastEnergy = lambdak*(sp->xx*dfdsxx + sp->yy*dfdsyy + sp->zz*dfdszz
+                                  + 2.*sp->xy*dfdtxy + 2.*sp->xz*dfdtxz + 2.*sp->yz*dfdtyz);
+    
+    // total work
+    mptr->AddStrainEnergy(plastEnergy + strainEnergy);
+    
+    // disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime);
-    double dispEnergy = lambdak*(sp->xx*dfdsxx + sp->yy*dfdsyy + sp->zz*dfdszz
-                                 + 2.*sp->xy*dfdtxy + 2.*sp->xz*dfdtxz + 2.*sp->yz*dfdtyz);
-	
-    // This material is tracking total internal, which means we need
-	//    dU = s.de(total) - dQ = digma.de(elastic) + qdalphaTerm
-	// s.de(elastic) done above, only need to qdalphaTerm here
-	// The dQ is subtracted because it shows up in internal energy in the next
-	//    time step in Cv dT term.
-    mptr->AddStrainEnergy(qdalphaTerm);
+    double dispEnergy = plastEnergy - qdalphaTerm;
     
-	// The total dissipated energy is dispEnergy - qalphaTerm. The cumulative dissipated energy
-    // is tracked in plastic energy. Setting the disp energy allows heating if conduction is on
-    // with mechanical coupling
-    dispEnergy -= qdalphaTerm;
-	mptr->AddDispEnergy(dispEnergy);
+    // heat energy is Cv(dT-dTq0) - dPhi
+    // The dPhi is subtracted here because it will show up in next
+    //		time step within Cv dT (if adiabatic heating occurs)
+    // The Cv(dT-dTq0) was done already in update pressure
+    IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
+    
+	// The cumulative dissipated energy is tracked in plastic energy
+    // Setting the disp energy allows heating if mechanical energy is on
     mptr->AddPlastEnergy(dispEnergy);
+	mptr->AddDispEnergy(dispEnergy);
     
 	// update internal variables
 	plasticLaw->UpdatePlasticInternal(mptr,np);
@@ -531,14 +538,16 @@ void IsoPlasticity::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
     double dP = -Kred*delV;
     mptr->IncrementPressure(dP);
     
-    // internal energy is dU = -P dV + s.de(total) - dPhi + Cv dT
-	// The dPhi is subtracted here because it will show up in next
-	//		time step within Cv dT (if heating occurs)
-	// Here do hydrostatic terms, deviatoric and dPhi done later
+    // work energy is dU = -P dV + s.de(total)
+	// Here do hydrostatic term
     // Internal energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
     double avgP = mptr->GetPressure()-0.5*dP;
-    mptr->AddStrainEnergy(-avgP*delV + 1000.*heatCapacity*ConductionTask::dTemperature);
+    mptr->AddStrainEnergy(-avgP*delV);
 
+    // heat energy is Cv dT  - dPhi
+	// Here do Cv dT term and dPhi is done later
+    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,0.);
+    
     // dependence in Gp, but law may have temperature dependence
     plasticLaw->GetShearRatio(mptr,0.,1.);
 }

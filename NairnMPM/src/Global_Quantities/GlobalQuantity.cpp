@@ -295,8 +295,12 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 			for(p=0;p<nmpms;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	Tensor *ep=mpm[p]->GetStrainTensor();
-					Tensor *eplast=mpm[p]->GetPlasticStrainTensor();
-				    value+=Tensor_i(ep,qid)+Tensor_i(eplast,qid);
+                    if(theMaterials[matid]->HasPlasticStrainForGradient())
+					{   Tensor *eplast=mpm[p]->GetPlasticStrainTensor();
+                        value += Tensor_i(ep,qid)+Tensor_i(eplast,qid);
+                    }
+                    else
+                        value += Tensor_i(ep,qid);
 					numAvged++;
 				}
 			}

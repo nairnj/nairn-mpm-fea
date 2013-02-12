@@ -31,6 +31,7 @@ class ThermalRamp
         // methods
 		void UpdateParticleTemperature(double *,double);
 		void Activate(void);
+        bool Active(void);
 		void SetParameters(double);
 		void CheckDone(double);
 		void Output(void);

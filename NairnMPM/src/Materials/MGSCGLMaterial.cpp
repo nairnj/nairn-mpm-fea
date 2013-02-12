@@ -262,7 +262,7 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
     }
 
     // Pressure from bulk modulus and an energy term
-    double e = mptr->GetStrainEnergy();
+    double e = mptr->GetInternalEnergy();
 	double P0 = mptr->GetPressure();
     double P = J*(Keffred*x + gamma0*e);
     
@@ -270,16 +270,18 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
     mptr->SetPressure(P+QAVred);
     
     // particle isentropic temperature increment
-    double dTq0 = -gamma0*mptr->pPreviousTemperature*delV;
+    double dTq0 = -gamma0*mptr->pPreviousTemperature*J*delV;
     mptr->pTemperature += dTq0;
     
-    // internal energy is dU = -P dV + s.de(total) - Cv(dT_isoentropic) - dPhi + Cv dT
-	// The Cv(dT_isoentropic) + dPhi are subtracted here because they will show up in next
-	//		time step within Cv dT
-	// Here do hydrostatic terms, deviatoric and dPhi done later
+    // work energy is dU = -P dV + s.de(total)
+	// Here do hydrostatic terms, deviatoric later
     double avgP = 0.5*(P0+P);
-    mptr->AddStrainEnergy(-avgP*delV + 1000.*heatCapacity*(ConductionTask::dTemperature - dTq0));
-     
+    mptr->AddStrainEnergy(-avgP*delV);
+    
+    // heat energy is Cv (dT - dTq0) - dPhi
+	// Here do Cv (dT - dTq0) term and dPhi is done later
+    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,dTq0,0.);
+
 	// SCGL and SL shear modulus and save Gratio = J G/G0 for later calculations
     // Note: J in Gred and Gratio is so that where they are used, they give
     //          specific Cauchy stress
@@ -337,8 +339,7 @@ double MGSCGLMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr)
     KcurrRed *= J;          // convert to K/rho
     
     // get G/rho at current pressure
-    double e = mptr->GetStrainEnergy();
-	//			+ 1000.*heatCapacity*(mptr->pPreviousTemperature - thermal.reference);
+    double e = mptr->GetInternalEnergy();
     double pressure = J*(KcurrRed*x + gamma0*e);
     double GcurrRed = G0red * plasticLaw->GetShearRatio(mptr,pressure,J);
     
