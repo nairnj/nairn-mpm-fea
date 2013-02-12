@@ -43,7 +43,7 @@ class HyperElastic : public MaterialBase
 		double GetResidualStretch(MPMBase *,double &);
     
         // Accessors
-        virtual double GetVolumetricTerms(double,double *);
+        virtual double GetVolumetricTerms(double);
         virtual double GetCurrentRelativeVolume(MPMBase *);
     
     protected:

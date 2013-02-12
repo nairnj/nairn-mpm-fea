@@ -8,6 +8,7 @@
 
 #include "Materials/Mooney.hpp"
 #include "MPM_Classes/MPMBase.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
  
 #pragma mark Mooney::Constructors and Destructors
 
@@ -20,6 +21,7 @@ Mooney::Mooney(char *matName) : HyperElastic(matName)
 {
 	G1 = -1.;			// required
 	G2 = 0.;			// zero is neo-Hookean
+    rubber = FALSE;     // not a rubber
 }
 
 #pragma mark Mooney::Initialization
@@ -56,10 +58,16 @@ char *Mooney::InputMat(char *xName,int &input)
     input=DOUBLE_NUM;
     
     if(strcmp(xName,"G1")==0)
-        return((char *)&G1);
+        return (char *)&G1;
     
     else if(strcmp(xName,"G2")==0)
-        return((char *)&G2);
+        return (char *)&G2;
+    
+    else if(strcmp(xName,"IdealRubber")==0)
+    {   input = NOT_NUM;
+        rubber = TRUE;
+        return (char *)&rubber;
+    }
     
     return(HyperElastic::InputMat(xName,input));
 }
@@ -104,15 +112,15 @@ char *Mooney::InitHistoryData(void)
 /* Take increments in strain and calculate new Particle: strains, rotation strain,
         stresses, strain energy,
     dvij are (gradient rates X time increment) to give deformation gradient change
-    For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
+    For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMETRIC_MPM, otherwise dvzz=0
     This material tracks pressure and stores deviatoric stress only in particle stress
         tensor
 */
 void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
 {
-	// incremental energy (see other places too) and it matches total energy method
-	//Tensor *sporig=mptr->GetStressTensor();
-	//Tensor st0 = *sporig;
+	// incremental energy, store initial stress
+	Tensor *sporig=mptr->GetStressTensor();
+	Tensor st0 = *sporig;
 	
 	// Update strains and rotations and Left Cauchy strain
 	double detDf = IncrementDeformation(mptr,du,NULL,np);
@@ -215,19 +223,17 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
 	
 	// account for residual stresses
 	J /= resStretch3;
-	
-	// incremental energy - save energy
-	//double p0=mptr->GetPressure();
+    detDf /= dresStretch;
 	
     // update pressure
-    double Kse;
-	double Kterm = J*GetVolumetricTerms(J,&Kse);       // times J to get Kirchoff stress
+	double p0=mptr->GetPressure();
+	double Kterm = J*GetVolumetricTerms(J);       // times J to get Kirchoff stress
     mptr->SetPressure(-Kterm);
-    mptr->SetStrainEnergy(Kse);
 	
 	// incremental energy - dilational part
-    //double dilEnergy = 0.5*((Kterm-p0)*(du(0,0) + du(1,1) + du(2,2)));
-    //mptr->AddPlastEnergy(dilEnergy);
+    double delV = 1. - 1./detDf;
+    double avgP = 0.5*(p0-Kterm);
+    double dilEnergy = -avgP*delV;
 	
     // Account for density change in specific stress
     // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
@@ -259,15 +265,44 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
 	// strain energy per unit mass (U/(rho0 V0)) and we are using
     // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
 	// Divide B's by resStretch2 to accound for current stress free state
-	double I1bar = (B->xx+B->yy+B->zz)/(resStretch2*J23);
-	double I2bar = 0.5*(I1bar*I1bar - (B->xx*B->xx+B->yy*B->yy+B->zz*B->zz+2.*B->xy*B->xy+2*B->xz*B->xz+2.*B->yz*B->yz)
-										/(J43*resStretch2*resStretch2));
-    mptr->AddStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.)));
+	//double I1bar = (B->xx+B->yy+B->zz)/(resStretch2*J23);
+	//double I2bar = 0.5*(I1bar*I1bar - (B->xx*B->xx+B->yy*B->yy+B->zz*B->zz+2.*B->xy*B->xy+2*B->xz*B->xz+2.*B->yz*B->yz)
+	//									/(J43*resStretch2*resStretch2));
+    //mptr->AddStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.)));
 
-	// incremental energy = sehar energy (2D only)
-    //double totalEnergy = 0.5*((sp->xx+st0.xx)*du(0,0) + (sp->yy+st0.yy)*du(1,1) + (sp->zz+st0.zz)*du(2,2)+
-	//						  (sp->xy+st0.xy)*(du(0,1)+du(1,0)));
-    //mptr->AddPlastEnergy(totalEnergy);
+	// incremental energy = shear energy (2D only)
+    double shearEnergy = 0.5*((sp->xx+st0.xx)*du(0,0) + (sp->yy+st0.yy)*du(1,1) + (sp->zz+st0.zz)*du(2,2)+
+							  (sp->xy+st0.xy)*(du(0,1)+du(1,0)))/resStretch;
+    if(np==THREED_MPM)
+    {   shearEnergy += 0.5*((sp->xz+st0.xz)*(du(0,2)+du(2,0)) + (sp->yz+st0.yz)*(du(1,2)+du(2,1)))/resStretch;
+    }
+    
+    // strain energy
+    double dU = dilEnergy + shearEnergy;
+    mptr->AddStrainEnergy(dU);
+    
+    // thermodynamics depends on whether or not this is a rubber
+    double dT = ConductionTask::dTemperature;
+    if(rubber)
+    {   // just like ideal gas
+        IncrementHeatEnergy(mptr,dT,0.,dU);
+    }
+    else
+    {   // elastic - no heating
+        IncrementHeatEnergy(mptr,dT,0.,0.);
+    }
+    
+    // the plastic energy is not otherwise used, so let's track entropy
+    double dS = 0., Cv = 1000.*GetHeatCapacity(mptr);
+    double Tp = mptr->pPreviousTemperature;
+    if(ConductionTask::energyCoupling)
+    {   double dTS = dU/Cv;
+        dS = Cv*(dT/Tp - dTS/(Tp+dTS));
+    }
+    else
+        dS = (Cv*dT - dU)/Tp;
+	mptr->AddPlastEnergy(dS);
+    
 }
 
 #pragma mark Mooney::Accessors

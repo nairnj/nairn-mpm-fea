@@ -393,7 +393,8 @@ double HyperElastic::GetCurrentRelativeVolume(MPMBase *mptr)
 // Return normal stress term (due to bulk modulus) and the pressure term (i.e. U(J)) for strain energy.
 // Each block of lines is for a different U(J).
 // Any change here must also be made in 2D MPMConstLaw for the numerical solution to find B.zz in plane stress
-double HyperElastic::GetVolumetricTerms(double J,double *Kse)
+// Kse is strain energy, but no longer used
+double HyperElastic::GetVolumetricTerms(double J)
 {
     double Kterm;
     
@@ -401,7 +402,7 @@ double HyperElastic::GetVolumetricTerms(double J,double *Kse)
     {   case J_MINUS_1_SQUARED:
             // This is for *Kse = U(J) = (K/2)(J-1)^2
             Kterm = Ksp*(J-1.);
-            *Kse = 0.5*Kterm*(J-1);
+            //*Kse = 0.5*Kterm*(J-1);
             break;
         
         case LN_J_SQUARED:
@@ -409,7 +410,7 @@ double HyperElastic::GetVolumetricTerms(double J,double *Kse)
             // Zienkiewicz & Taylor recommend not using this one
             double lj = log(J);
             Kterm =Ksp*lj;
-            *Kse = 0.5*Kterm*lj;
+            //*Kse = 0.5*Kterm*lj;
             Kterm /= J;           // = Ksp*(ln J)/J
             break;
         }
@@ -419,7 +420,7 @@ double HyperElastic::GetVolumetricTerms(double J,double *Kse)
             // This is for *Kse = U(J) = (K/2)((1/2)(J^2-1) - ln J)
             // Zienkiewicz & Taylor note that stress is infinite as J->0 and J->infinity for this function, while others are not
             // Simo and Hughes also use this form (see Eq. 9.2.3)
-            *Kse = 0.5*Ksp*(0.5*(J*J-1.)-log(J));
+            //*Kse = 0.5*Ksp*(0.5*(J*J-1.)-log(J));
             Kterm = 0.5*Ksp*(J - 1./J);      // = (Ksp/2)*(J - 1/J)
             break;
     }

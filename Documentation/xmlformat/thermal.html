@@ -43,7 +43,7 @@
 </dd>
 
 <dt>&lt;EnergyCoupling/&gt;</dt>
-<dd>This tag will cause energy dissipated by a <a href="definematl.html">material's</a> constitutive low to be converted to a heat source that will increase temperature. This is implemented for all plastic materials (e.g., <a href="definematl.html#isoplast">Isotropic Elastic-Plastic</a>, <a href="definematl.html#hill">Hill plastic</a>, <a href="definematl.html#MGEOS">MGEOS</a>, <i>etc.</i>). This option can be used with or without conduction. When there is no conduction, all temperature rise will remain on the particle.
+<dd>This tag will cause energy dissipated by a <a href="definematl.html">material's</a> constitutive low to be converted to a heat source that will increase temperature. In other words, the particles will be locally adiabatic. This option can be used with or without conduction. When there is no conduction, all temperature rise will remain on the particle. If this option is omitted, the simulation will be locally isothermal, which means the material response will not cause any change in temperature. This command assumes the materials being used correctly increment heat energy (and most due). The changes in heat energy deende on the type of material. Refer to each <a href="definematl.html">material</a> for more details.
 </dd>
 
 <dt>&lt;Isothermal&gt;</dt>
