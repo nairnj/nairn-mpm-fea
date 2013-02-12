@@ -15,6 +15,7 @@
 #include "Custom_Tasks/VTKArchive.hpp"
 #include "Custom_Tasks/HistoryArchive.hpp"
 #include "Custom_Tasks/AdjustTimeStepTask.hpp"
+#include "Custom_Tasks/CarnotCycle.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
@@ -970,6 +971,10 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
                 }
 				else if(strcmp(value,"AdjustTimeStep")==0)
                 {   nextTask=(CustomTask *)(new AdjustTimeStepTask());
+                    if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
+                }
+				else if(strcmp(value,"CarnotCycle")==0)
+                {   nextTask=(CustomTask *)(new CarnotCycle());
                     if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
                 }
                 else

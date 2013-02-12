@@ -111,7 +111,7 @@ void BodyForce::Output(void)
 }
 
 // return the damping coefficient
-double BodyForce::GetAlpha(void) { return alpha; }
+double BodyForce::GetAlpha(void) { return useFeedback ? alpha : 0. ; }
 
 // initialize to zero
 void BodyForce::TrackAlpha(void)

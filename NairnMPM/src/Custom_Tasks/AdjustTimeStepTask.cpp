@@ -37,10 +37,11 @@ char *AdjustTimeStepTask::InputParam(char *pName,int &input)
         return (char *)&customAdjustTime;				// assumes in ms
     }
 		
-    if(strcmp(pName,"verbose")==0)
+    else if(strcmp(pName,"verbose")==0)
     {	input=INT_NUM;
         return (char *)&verbose;
     }
+	
 	// check remaining commands
     return CustomTask::InputParam(pName,input);
 }

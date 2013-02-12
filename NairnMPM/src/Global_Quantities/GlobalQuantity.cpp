@@ -94,6 +94,8 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 		quantity=KINE_ENERGY;
 	else if(strcmp(quant,"Strain Energy")==0)
 		quantity=STRN_ENERGY;
+	else if(strcmp(quant,"Heat Energy")==0)
+		quantity=HEAT_ENERGY;
 	else if(strcmp(quant,"Interface Energy")==0)
 		quantity=INTERFACE_ENERGY;
 	else if(strcmp(quant,"Energy")==0)
@@ -295,7 +297,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 			for(p=0;p<nmpms;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{	Tensor *ep=mpm[p]->GetStrainTensor();
-                    if(theMaterials[matid]->HasPlasticStrainForGradient())
+                    if(theMaterials[mpm[p]->MatID()]->HasPlasticStrainForGradient())
 					{   Tensor *eplast=mpm[p]->GetPlasticStrainTensor();
                         value += Tensor_i(ep,qid)+Tensor_i(eplast,qid);
                     }
@@ -313,6 +315,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 		case STRN_ENERGY:
 		case TOTL_ENERGY:
 		case POTL_ENERGY:
+		case HEAT_ENERGY:
             threeD = fmobj->IsThreeD();
 			for(p=0;p<nmpms;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
@@ -322,11 +325,16 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 					    case KINE_ENERGY:
 							value+=0.5e-3*mpm[p]->mp*(mpm[p]->vel.x*mpm[p]->vel.x
 																+ mpm[p]->vel.y*mpm[p]->vel.y);
+							if(threeD)
+								value+=0.5e-3*mpm[p]->mp*(mpm[p]->vel.z*mpm[p]->vel.z);
 							if(quantity==KINE_ENERGY) break;
 						case STRN_ENERGY:
 							value+=mpm[p]->mp*mpm[p]->GetStrainEnergy();
 							if(quantity==POTL_ENERGY)
 								value-=1.e-3*mpm[p]->GetExtWork();
+							break;
+						case HEAT_ENERGY:
+							value+=mpm[p]->mp*mpm[p]->GetHeatEnergy();
 							break;
 						default:
 							break;

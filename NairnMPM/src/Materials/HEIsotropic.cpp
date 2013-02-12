@@ -241,7 +241,8 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 	
 	// Get hydrostatic stress component in subroutine
     double dresStretch3 = dresStretch*dresStretch*dresStretch;
-    UpdatePressure(mptr,J,detdF/dresStretch3,np);
+	detdF /= dresStretch3;
+    UpdatePressure(mptr,J,detdF,np);
     
     // Others constants
     double J23 = pow(J, 2./3.);
@@ -255,10 +256,10 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     // Get magnitude of the deviatoric stress tensor
     // ||s|| = sqrt(s.s)
     
-	// JAN: set alpint for particle (not sure where done before)
-	plasticLaw->UpdateTrialAlpha(mptr,np);                  // initialize to last value and zero plastic strain rate
-	// JAN: this not used because found below instead
-    //magnitude_strial = sqrt(0.6666667*(stk.xx*stk.xx+stk.yy*stk.yy+stk.zz*stk.zz-stk.xx*stk.yy-stk.xx*stk.zz-stk.yy*stk.zz)+2*stk.xy*stk.xy);
+	// Set alpint for particle
+	plasticLaw->UpdateTrialAlpha(mptr,np);
+	
+	// Trial stress state
     double magnitude_strial = GetMagnitudeS(&stk,np);
     double gyld = plasticLaw->GetYield(mptr,np,delTime);
     double ftrial = magnitude_strial-SQRT_TWOTHIRDS*gyld;
@@ -293,9 +294,9 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
         {   mptr->AddStrainEnergy(0.5*((st0.yz+sp->yz)*(du(2,1)+du(1,2))
                                        + (st0.xz+sp->xz)*(du(2,0)+du(0,2)))/resStretch);
         }
-        //double I1bar = (B.xx+B.yy+B.zz)/J23;
-		//double shearEnergyFinal = 0.5*(Gred*(I1bar-3.));
-        //mptr->AddStrainEnergy(shearEnergyFinal);
+		
+		// heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here
+        // and Cv(dT-dTq0) was done in Update pressure
         
         return;
     }
@@ -336,39 +337,38 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     }
     
     // strain energy per unit mass (U/(rho0 V0)) and we are using
-    // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
-	// JAN: I1bar = 3 Ie1bar so no need to recalculate
-    //double I1bar = (pB->xx+pB->yy+pB->zz)/J23;
-    mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*du(0,0)
+    double strainEnergy = 0.5*((st0.xx+sp->xx)*du(0,0)
                                + (st0.yy+sp->yy)*du(1,1)
                                + (st0.zz+sp->zz)*du(2,2)
-                               + (st0.xy+sp->xy)*(du(1,0)+du(0,1)))/resStretch);
+                               + (st0.xy+sp->xy)*(du(1,0)+du(0,1)))/resStretch;
     if(np==THREED_MPM)
-    {   mptr->AddStrainEnergy(0.5*((st0.yz+sp->yz)*(du(2,1)+du(1,2))
-                                   + (st0.xz+sp->xz)*(du(2,0)+du(0,2)))/resStretch);
+    {   strainEnergy += 0.5*((st0.yz+sp->yz)*(du(2,1)+du(1,2))
+                                   + (st0.xz+sp->xz)*(du(2,0)+du(0,2)))/resStretch;
     }
-    //double shearEnergyFinal = 1.5*Gred*(Ie1bar-1.);
-    //mptr->AddStrainEnergy(shearEnergyFinal);
     
-    // Plastic or dissipated energy increment per unit mass dQ = (dPhi/(rho0 V0)) (uJ/g)
+    // Plastic work increment per unit mass (dw/(rho0 V0)) (uJ/g)
     double dispEnergy = dlambda*(sp->xx*nk.xx + sp->yy*nk.yy + sp->zz*nk.zz + 2.*sp->xy*nk.xy);
     if(np==THREED_MPM)  dispEnergy += 2.*dlambda*(sp->xz*nk.xz + sp->yz*nk.yz);
+	
+    // total work
+    mptr->AddStrainEnergy(dispEnergy + strainEnergy);
+    
+    // disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
+	// Subtract q.dalpha
     dispEnergy -= dlambda*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime);
     
-    // This material is tracking total internal, which means we need
-	//    dU = s.de(total) - dQ
-	// s.de(total) done above, only need dQ
-	// The dQ is subtracted because it shows up in internal energy in the next
-	//    time step in Cv dT term.
-    mptr->AddStrainEnergy(-dispEnergy);
-	
-	// track disspated energy in plastic energy and dissipate if for heating
-	// (if mechanical energy is on)
+    // heat energy is Cv(dT-dTq0) - dPhi
+    // The dPhi is subtracted here because it will show up in next
+    //		time step within Cv dT (if adibatic heating occurs)
+    // The Cv(dT-dTq0) was done in update pressure
+    IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
+	//mptr->AddDispEnergy(dispEnergy);
+    
+	// The cumulative dissipated energy is tracked in plastic energy
+    // Setting the disp energy allows heating if mechanical energy is on
     mptr->AddPlastEnergy(dispEnergy);
-	mptr->AddDispEnergy(dispEnergy);
-	
-	// JAN: need call to update hardening law properties. Might revise to have in done in the solve method instead
-	// update internal variables
+    
+	// update internal variables in the plastic law
 	plasticLaw->UpdatePlasticInternal(mptr,np);
 }
 
@@ -384,14 +384,16 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double dJ,int np)
     double P0 = mptr->GetPressure();
     mptr->SetPressure(-Kterm);
     
-    // internal energy is dU = -P dV + s.de(total) - dPhi + Cv dT
-	// The dPhi is subtracted here because it will show up in next
-	//		time step within Cv dT
-	// Here do hydrostatic terms, deviatoric and dPhi done later
-	// want P dV/(rho V) and here delV = (V(k+1)-V(k))/V(k+1) and tracked P is P/rho (current)
+    // work energy is dU = -P dV + s.de(total)
+	// Here do hydrostatic term
+    // Internal energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
     double avgP = 0.5*(P0-Kterm);
     double delV = 1. - 1./dJ;
-    mptr->AddStrainEnergy(-avgP*delV + 1000.*(heatCapacity*ConductionTask::dTemperature));
+    mptr->AddStrainEnergy(-avgP*delV);
+	
+    // heat energy is Cv dT  - dPhi
+	// Here do Cv dT term and dPhi is done later
+    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,0.);
 }
 
 // get trial deviatoric stress tensor based on trial B

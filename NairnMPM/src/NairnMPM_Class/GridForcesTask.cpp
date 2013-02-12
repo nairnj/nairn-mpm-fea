@@ -116,7 +116,7 @@ void GridForcesTask::Execute(void)
 				nextTransport=nextTransport->AddForces(ndptr,mpmptr,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
         }
 		
-		// clear coupled dissipated energy
+		// clear coupled dissipated energy if in conduction becaouse done with it this time step
 		if(ConductionTask::active) mpmptr->SetDispEnergy(0.);
 	}
 	

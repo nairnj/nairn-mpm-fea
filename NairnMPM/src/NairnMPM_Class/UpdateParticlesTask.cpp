@@ -97,8 +97,8 @@ void UpdateParticlesTask::Execute(void)
 				{	double energy = mpm[p]->GetDispEnergy();									// in uJ/g
 					double Cp=1000.*theMaterials[mpm[p]->MatID()]->GetHeatCapacity(mpm[p]);		// in uJ/(g-K)
 					mpm[p]->pTemperature += energy/Cp;			// in K
-					mpm[p]->SetDispEnergy(0.);
 				}
+				mpm[p]->SetDispEnergy(0.);
 			}
 			
 			// update feedback coefficient

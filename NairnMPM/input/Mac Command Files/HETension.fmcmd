@@ -30,7 +30,7 @@ EndXMLData
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2
-#hardID="Nonlinear2"
+#hardID="Linear"
 
 ! temperature option to test energy coupling
 StressFreeTemp 294
@@ -50,9 +50,9 @@ StressFreeTemp 294
 #thick=10			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading="thermal"	! Loading = "rigid", "contact", "force", "traction", thermal
+#loading="rigid"	! Loading = "rigid", "contact", "force", "traction", thermal
 #fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
-#strain=100	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
+#strain=25	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak
@@ -70,7 +70,7 @@ StressFreeTemp 294
 Analysis #analysis
 MPMMethod #update,#method
 PtsPerElement #ppe
-!conduction "yes","mechanical energy"
+conduction "yes","mechanical energy"
 
 ! convert to contact
 if #loading="contact"
@@ -222,6 +222,7 @@ GlobalArchive exxe,#matID
 GlobalArchive "Strain Energy",#matID
 GlobalArchive "Kinetic Energy",#matID
 GlobalArchive "Plastic Energy",#matID
+GlobalArchive "Heat Energy",#matID
 if #loading="contact"
   GlobalArchive "contactx"
   GlobalArchive "contacty"

@@ -153,7 +153,7 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
     // and is dissipated (which will cause heating if adiabatic
     // Update is Cv dT - dU
     IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,dU);
-    mptr->AddDispEnergy(dU);
+    //mptr->AddDispEnergy(dU);
         
     // the plastic energy is not otherwise used, so let's track entropy
     double dS = 0., Cv = 1000.*GetHeatCapacity(mptr);

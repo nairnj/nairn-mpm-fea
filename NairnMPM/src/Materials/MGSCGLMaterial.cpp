@@ -271,7 +271,7 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
     
     // particle isentropic temperature increment
     double dTq0 = -gamma0*mptr->pPreviousTemperature*J*delV;
-    mptr->pTemperature += dTq0;
+    //mptr->pTemperature += dTq0;
     
     // work energy is dU = -P dV + s.de(total)
 	// Here do hydrostatic terms, deviatoric later
