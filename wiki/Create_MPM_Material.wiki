@@ -20,12 +20,8 @@ The following outline shows all materials in `nairn-mpm-fea`as a class hierarchy
   * <font color="green">`MaterialBase`</font>
     * <font color="green">`Elastic`</font>
       * <font color="green">`ISOTROPIC=1`</font>
-        * `IsoPlasticity`
-          * `VONMISESHARDENING=9`
+        * `ISOPLASTICTY=9`
           * `MGSCGLMATERIAL=17`
-            * `SLMATERIAL=18`
-            * `MGJOHNSONCOOK=25`
-          * `JOHNSONCOOK=16`
         * `BISTABLEISO=10`
       * <font color="green">`TRANSISO1(2)=2,3`</font>
         * <font color="green">`ORTHO=4`</font>
