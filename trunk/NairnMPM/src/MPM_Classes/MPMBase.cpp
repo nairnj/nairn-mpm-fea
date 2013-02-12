@@ -52,6 +52,7 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
     plastEnergy=0.;
 	dispEnergy=0.;
     strainEnergy=0.;
+    heatEnergy=0.;
 	
 	// for J integral if needed
 	velGrad=NULL;
@@ -285,6 +286,10 @@ double MPMBase::GetStrainEnergy(void) { return strainEnergy; }
 void MPMBase::SetStrainEnergy(double energyTot) { strainEnergy=energyTot; }
 void MPMBase::AddStrainEnergy(double energyInc) { strainEnergy+=energyInc; }
 double MPMBase::GetExtWork(void) { return extWork; }
+double MPMBase::GetHeatEnergy(void) { return heatEnergy; }
+void MPMBase::SetHeatEnergy(double energyTot) { heatEnergy = energyTot; }
+void MPMBase::AddHeatEnergy(double energyInc) { heatEnergy += energyInc; }
+double MPMBase::GetInternalEnergy(void) { return strainEnergy + heatEnergy; }
 
 // pointers to variables
 Vector *MPMBase::GetPFext(void) { return &pFext; }

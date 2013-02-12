@@ -160,7 +160,7 @@ CustomTask *CalcJKTask::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
     {   ndmi->AddUGradient(vfld,wt,ep->xx,mpnt->GetDuDy(),mpnt->GetDvDx(),ep->yy);
     }
     wt*=theMaterials[mpnt->MatID()]->rho;
-    ndmi->AddEnergy(vfld,wt,mpnt->vel.x,mpnt->vel.y,mpnt->GetStrainEnergy()+mpnt->GetPlastEnergy());
+    ndmi->AddEnergy(vfld,wt,mpnt->vel.x,mpnt->vel.y,mpnt->GetInternalEnergy());
     Tensor sp = mpnt->ReadStressTensor();
     ndmi->AddStress(vfld,wt,&sp);
     

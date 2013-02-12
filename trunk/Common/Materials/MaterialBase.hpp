@@ -54,6 +54,7 @@ class MaterialBase : public LinkedObject
 		ContactDetails *lastFriction;
 		static vector<int> fieldMatIDs;
 		static int incrementalDefGradTerms;
+        static bool isolatedParticles;
 #endif
         
         // constructors and destructors
@@ -91,6 +92,7 @@ class MaterialBase : public LinkedObject
         virtual void LoadMechanicalProps(MPMBase *,int);
 		virtual void LoadTransportProps(MPMBase *,int);
 		virtual double GetHeatCapacity(MPMBase *);
+        virtual void IncrementHeatEnergy(MPMBase *,double,double,double);
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);

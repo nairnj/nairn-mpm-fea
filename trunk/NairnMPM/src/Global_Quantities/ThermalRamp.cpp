@@ -37,6 +37,7 @@ void ThermalRamp::UpdateParticleTemperature(double *pTemperature,double delTime)
 
 // turn ramp on (unless already on)
 void ThermalRamp::Activate(void) { isoRamp=TRUE; }
+bool ThermalRamp::Active(void) { return isoRamp; }
 
 // set parameters for ramp at start of MPM analysis
 void ThermalRamp::SetParameters(double delTime)

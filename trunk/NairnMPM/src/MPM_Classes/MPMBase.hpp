@@ -131,6 +131,10 @@ class MPMBase : public LinkedObject
 		double GetStrainEnergy(void);
 		void SetStrainEnergy(double energyTot);
 		void AddStrainEnergy(double energyInc);
+        double GetHeatEnergy(void);
+        void SetHeatEnergy(double energyTot);
+        void AddHeatEnergy(double energyInc);
+        double GetInternalEnergy(void);
 		double GetExtWork(void);
         Tensor *GetStressTensor(void);
         Tensor ReadStressTensor(void);
@@ -168,6 +172,7 @@ class MPMBase : public LinkedObject
 		double plastEnergy;			// total plastic energy
 		double dispEnergy;			// dissipated energy in current step
 		double strainEnergy;		// total strain energy
+        double heatEnergy;          // total heat flow on the particle
 		double extWork;				// total external work
 		char *matData;				// material history if needed (init NULL)
 	

@@ -18,6 +18,9 @@
 #include "Cracks/CrackSurfaceContact.hpp"
 #include <vector>
 
+// global
+bool MaterialBase::isolatedParticles = FALSE;
+
 // class statics for MPM - zero based material IDs when in multimaterial mode
 vector<int> MaterialBase::fieldMatIDs;
 int MaterialBase::incrementalDefGradTerms = 2;			// terms in exponential of deformation gradient
@@ -605,6 +608,22 @@ void MaterialBase::LoadTransportProps(MPMBase *mptr,int np) { return; }
 // Implemented in case heat capacity changes with particle state
 // Units mJ/(g-K) = J/(kg-m)
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) { return heatCapacity; }
+
+// increment heat energy using Cv(dT-dTq0) - dPhi, where dT is total temperature increment,
+// dTq0 is temperature rise due to material mechanisms if the process was adiabatic, and
+// dPhi is dissipated heat
+void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,double dPhi)
+{
+    if(!isolatedParticles || !ConductionTask::energyCoupling)
+    {   // for non isolated particle use dq = Cv(dT-dTq0)-dPhi
+        // this is also for isotheral in case material model causes some isoentropic temperature rise as well
+        //    that will later result in non-zero ConductionTask::dTemperature
+        mptr->AddHeatEnergy(1000.*GetHeatCapacity(mptr)*(dT-dTq0) - dPhi);
+    }
+    
+    // The other case (isolatedParticles && ConductionTask::energyCoupling)
+    // has dq=0 so no update is needed
+}
 
 // Correct stress update for rotations using hypoelasticity approach
 // rotD is -wxy of rotation tensor (or minus twice tensorial rotation, i.e. dvxy-dvyx = -(dvyx-dvxy))

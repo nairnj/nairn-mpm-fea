@@ -142,16 +142,30 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
 	sp->yy = mPsp;
 	sp->zz = mPsp;
 	
-	// internal energy is tracked in strain energy
-	mptr->AddStrainEnergy(1000.*heatCapacity*ConductionTask::dTemperature);
-	
-	// dissipated energy increment per unit mass or dU/(rho0 V0) (uJ/g) is -P dV found as follows
+	// find the -P dV energy per unit mass dU/(rho0 V0) (uJ/g) as follows
     // dU/(rho0 V0) = - 0.5 * (pn+p(n+1))/rho0 * (V(n+1)-Vn)/V0, which simplifies to
     double dU = 0.5*(mPnsp*detf + mPsp)*(1.-1/detf);
     
-    // increment energies and all is dissipated
-	mptr->AddPlastEnergy(dU);
-	mptr->AddDispEnergy(dU);
+    // this energy is tracked in strain energy
+    mptr->AddStrainEnergy(dU);
+    
+    // the same energy is tracked as heat (although it will be zero if adiabatic)
+    // and is dissipated (which will cause heating if adiabatic
+    // Update is Cv dT - dU
+    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,dU);
+    mptr->AddDispEnergy(dU);
+        
+    // the plastic energy is not otherwise used, so let's track entropy
+    double dS = 0., Cv = 1000.*GetHeatCapacity(mptr);
+    double Tp = mptr->pPreviousTemperature;
+    double dT = ConductionTask::dTemperature;
+    if(ConductionTask::energyCoupling)
+    {   double dTS = dU/Cv;
+        dS = Cv*(dT/Tp - dTS/(Tp+dTS));
+    }
+    else
+        dS = (Cv*dT - dU)/Tp;
+	mptr->AddPlastEnergy(dS);
 }
 
 #pragma mark IdealGas::Accessors
@@ -162,13 +176,19 @@ const char *IdealGas::MaterialType(void) { return "Ideal Gas (Hyperelastic)"; }
 // Return the material tag
 int IdealGas::MaterialTag(void) { return IDEALGASMATERIAL; }
 
-// Calculate wave speed in mm/sec. Here using adiabatic bulk modulus at the starting temperature
-// If T rises a lot during compression, the problem may become unstable. The solution is
-// to anticipate and use some time step safety factor. The problem will probably not arise
-// when gas used in conjuctions with solids having much higher wave speeds.
+// Calculate wave speed in mm/sec.
 double IdealGas::WaveSpeed(bool threeD,MPMBase *mptr)
-{	return sqrt(1.6667e9*(P0/rho)*(mptr->pTemperature/T0));
+{   return 1000.*sqrt(1.6667e9*(P0*rho)*(mptr->pTemperature/T0));
 }
+
+// calculate current wave speed in mm/sec. 
+// Only change vs initial wave speed is due to J
+double IdealGas::CurrentWaveSpeed(bool threeD,MPMBase *mptr)
+{   // J = V/V0 = rho0/rho
+    double J = mptr->GetRelativeVolume();
+    return 1000.*sqrt(1.6667e9*(P0*rho/J)*(mptr->pPreviousTemperature/T0));
+}
+
 
 
 
