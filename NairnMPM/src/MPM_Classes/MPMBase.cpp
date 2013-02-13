@@ -225,19 +225,19 @@ double MPMBase::GetMassForGradient(void) { return mp; }
 
 // return if mterial for this particle includes plastic strainin gradient or if
 // entire deformation is in the elastic strain
-bool MPMBase::HasPlasticStrainForGradient(void)
-{   return theMaterials[MatID()]->HasPlasticStrainForGradient();
+bool MPMBase::PartitionsElasticAndPlasticStrain(void)
+{   return theMaterials[MatID()]->PartitionsElasticAndPlasticStrain();
 }
 
 // get deformation gradient terms
 double MPMBase::GetDuDy(void)
-{   if(theMaterials[MatID()]->HasPlasticStrainForGradient())
+{   if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())
         return (ep.xy+eplast.xy-wrot.xy)/2.;
     else
         return (ep.xy-wrot.xy)/2.;
 }
 double MPMBase::GetDvDx(void)
-{   if(theMaterials[MatID()]->HasPlasticStrainForGradient())
+{   if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())
         return (ep.xy+eplast.xy+wrot.xy)/2.;
     else
         return (ep.xy+wrot.xy)/2.;

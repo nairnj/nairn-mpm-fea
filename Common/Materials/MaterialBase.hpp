@@ -135,7 +135,7 @@ class MaterialBase : public LinkedObject
 		virtual void SetFriction(double,int,double,double,double);
 		virtual ContactDetails *GetContactToMaterial(int);
 		virtual void ContactOutput(int);
-        virtual bool HasPlasticStrainForGradient(void);
+        virtual bool PartitionsElasticAndPlasticStrain(void);
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif

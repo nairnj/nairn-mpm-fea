@@ -152,7 +152,7 @@ CustomTask *CalcJKTask::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
     if(!getJKThisStep || isRigid) return nextTask;
     
 	Tensor *ep=mpnt->GetStrainTensor();
-    if(mpnt->HasPlasticStrainForGradient())
+    if(mpnt->PartitionsElasticAndPlasticStrain())
 	{   Tensor *eplast=mpnt->GetPlasticStrainTensor();
         ndmi->AddUGradient(vfld,wt,ep->xx+eplast->xx,mpnt->GetDuDy(),mpnt->GetDvDx(),ep->yy+eplast->yy);
     }

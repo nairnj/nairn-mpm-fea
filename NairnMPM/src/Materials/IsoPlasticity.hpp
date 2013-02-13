@@ -51,7 +51,7 @@ class IsoPlasticity : public IsotropicMat
 		// accessors
         virtual Tensor GetStress(Tensor *,double);
 		virtual double GetHistory(int,char *);
-        virtual bool HasPlasticStrainForGradient(void);
+        virtual bool PartitionsElasticAndPlasticStrain(void);
         int MaterialTag(void);
         const char *MaterialType(void);
 		

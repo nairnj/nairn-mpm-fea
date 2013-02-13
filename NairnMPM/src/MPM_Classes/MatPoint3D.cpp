@@ -219,7 +219,7 @@ Matrix3 MatPoint3D::GetElasticLeftCauchyMatrix(void)
 void MatPoint3D::GetDeformationGradient(double F[][3])
 {
 	// current deformation gradient in 3D
-    if(theMaterials[MatID()]->HasPlasticStrainForGradient())
+    if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())
     {   F[0][0] = 1. + ep.xx + eplast.xx;
         F[1][1] = 1. + ep.yy + eplast.yy;
         F[2][2] = 1. + ep.zz + eplast.zz;

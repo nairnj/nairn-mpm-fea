@@ -97,6 +97,26 @@ char *VTKArchive::InputParam(char *pName,int &input)
 		thisBuffer=-3;
     }
 	
+    else if(strcmp(pName,"pressure")==0)
+    {	q=VTK_PRESSURE;
+		thisBuffer=1;
+    }
+	
+    else if(strcmp(pName,"deltav")==0)
+    {	q=VTK_RELDELTAV;
+		thisBuffer=1;
+    }
+	
+    else if(strcmp(pName,"equivstrain")==0)
+    {	q=VTK_EQUIVSTRAIN;
+		thisBuffer=1;
+    }
+	
+    else if(strcmp(pName,"equivstress")==0)
+    {	q=VTK_EQUIVSTRESS;
+		thisBuffer=1;
+    }
+	
     else if(strcmp(pName,"concentration")==0)
     {	q=VTK_CONCENTRATION;
 		thisBuffer=1;
@@ -109,6 +129,11 @@ char *VTKArchive::InputParam(char *pName,int &input)
 	
     else if(strcmp(pName,"plasticenergy")==0)
     {	q=VTK_PLASTICENERGY;
+		thisBuffer=1;
+    }
+	
+    else if(strcmp(pName,"heatenergy")==0)
+    {	q=VTK_HEATENERGY;
 		thisBuffer=1;
     }
 	
@@ -266,15 +291,38 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 	
 	unsigned int q;
 	double *vtkquant=vtk[ndmi->num];
-	double theWt=1.;
-	Tensor *ten=NULL,*ten2,sp;
+	double theWt=1.,rho,rho0,se;
+	Tensor *ten=NULL,sp;
 	
 	for(q=0;q<quantity.size();q++)
 	{	switch(quantity[q])
 		{	case VTK_STRESS:
-				theWt=wt*theMaterials[mpnt->MatID()]->rho;
-				//ten = mpnt->GetStressTensor();
+            case VTK_PRESSURE:
+            case VTK_EQUIVSTRESS:
+                rho0=theMaterials[mpnt->MatID()]->rho;
+                rho = rho0/theMaterials[mpnt->MatID()]->GetCurrentRelativeVolume(mpnt);
+				theWt=wt*rho;
                 sp = mpnt->ReadStressTensor();
+                if(quantity[q]!=VTK_STRESS)
+                {   theWt *= 1.e-6;         // convert Pa to MPa
+                    switch(quantity[q])
+                    {	case VTK_PRESSURE:
+                            // pressure
+                            *vtkquant += -theWt*(sp.xx+sp.yy+sp.zz)/3.;
+                            break;
+                        case VTK_EQUIVSTRESS:
+                            // equivalent or vonmises stress = sqrt(3 J2)
+                            se = pow(sp.xx-sp.yy,2.) + pow(sp.yy-sp.zz,2.) + pow(sp.xx-sp.zz,2.);
+                            se += 6.*sp.xy*sp.xy;
+                            if(fmobj->IsThreeD()) se += 6.*(sp.xz*sp.xz + sp.yz*sp.yz);
+                            *vtkquant += theWt*sqrt(0.5*se);
+                            break;
+                        default:
+                            break;
+                    }
+                    vtkquant++;
+                    break;
+                }
                 ten = &sp;
 			case VTK_STRAIN:
 				if(quantity[q]==VTK_STRAIN)
@@ -296,18 +344,48 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 				}
 				vtkquant+=6;
 				break;
-			
+            
+            case VTK_RELDELTAV:
+                // Delta V/V0 - small or large strain
+                se = mpnt->GetRelativeVolume();
+                *vtkquant += wt*(se-1.);
+                vtkquant++;
+                break;
+            
+            case VTK_EQUIVSTRAIN:
+            {   ten=mpnt->GetStrainTensor();
+                double tre = (ten->xx+ten->yy+ten->zz)/3.;
+                double exx = ten->xx - tre;
+                double eyy = ten->yy - tre;
+                double ezz = ten->zz - tre;
+                se = exx*exx + eyy*eyy * ezz*ezz + 0.5*ten->xy*ten->xy;
+                if(fmobj->IsThreeD()) se += 0.5*(ten->xz*ten->xz + ten->yz*ten->yz);
+                *vtkquant += wt*sqrt(2.*se/3.);
+                vtkquant++;
+                break;
+            }
+                
 			case VTK_TOTALSTRAIN:
 				ten=mpnt->GetStrainTensor();
-				ten2=mpnt->GetPlasticStrainTensor();
-				vtkquant[0]+=wt*(ten->xx+ten2->xx);
-				vtkquant[1]+=wt*(ten->yy+ten2->yy);
-				vtkquant[2]+=wt*(ten->zz+ten2->zz);
-				vtkquant[3]+=wt*(ten->xy+ten2->xy);
+				vtkquant[0] += wt*ten->xx;
+				vtkquant[1] += wt*ten->yy;
+				vtkquant[2] += wt*ten->zz;
+				vtkquant[3] += wt*ten->xy;
 				if(fmobj->IsThreeD())
-				{	vtkquant[4]+=wt*(ten->xz+ten2->xz);
-					vtkquant[5]+=wt*(ten->yz+ten2->yz);
+				{	vtkquant[4] += wt*ten->xz;
+					vtkquant[5] += wt*ten->yz;
 				}
+                if(mpnt->PartitionsElasticAndPlasticStrain())
+                {   ten=mpnt->GetStrainTensor();
+                    vtkquant[0] += wt*ten->xx;
+                    vtkquant[1] += wt*ten->yy;
+                    vtkquant[2] += wt*ten->zz;
+                    vtkquant[3] += wt*ten->xy;
+                    if(fmobj->IsThreeD())
+                    {	vtkquant[4] += wt*ten->xz;
+                        vtkquant[5] += wt*ten->yz;
+                    }
+                }
 				vtkquant+=6;
 				break;
 

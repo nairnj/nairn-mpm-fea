@@ -48,7 +48,7 @@ class AnisoPlasticity : public Orthotropic
 		virtual void UpdatePlasticInternal(MPMBase *,int) = 0;
     
         // accessors
-        virtual bool HasPlasticStrainForGradient(void);
+        virtual bool PartitionsElasticAndPlasticStrain(void);
 		
    protected:
 		double syxx,syyy,syzz,tyyz,tyxz,tyxy;

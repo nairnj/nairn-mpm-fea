@@ -100,6 +100,8 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 								   + (st0.xy+sp->xy)*dgam) + (st0.zz+sp->zz)*dvzz);
 	}
 	
+    // track heat energy
+    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,0.);
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
@@ -163,4 +165,8 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doub
                             + (st0.yz+sp->yz)*dgamyz
                             + (st0.xz+sp->xz)*dgamxz
                             + (st0.xy+sp->xy)*dgamxy));
+    
+    // track heat energy
+    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,0.);
+
 }
