@@ -87,7 +87,7 @@ CustomTask *CarnotCycle::Initialize(void)
 	// initial settings
 	carnotStep = 0;
 	ConductionTask::energyCoupling = FALSE;
-	MaterialBase::isolatedParticles = FALSE;
+	MaterialBase::isolatedSystemAndParticles = FALSE;
 	
     return nextTask;
 }

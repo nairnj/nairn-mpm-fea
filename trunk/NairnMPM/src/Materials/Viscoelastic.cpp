@@ -289,6 +289,7 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy
 							+(st0.xy+0.5*(dszze+dszzv))*dvzz;
     mptr->AddStrainEnergy(totalEnergy);
     
+    // DEPRECATED - need to convert to heat energy method
     // visous energy is disspated (not sure of thermo here)
     // dissipated energy using viscous stress increment only (which is negative)
 	double dispEnergy=0.5*dsxxv*dvxx + 0.5*dsyyv*dvyy
@@ -407,6 +408,7 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz
 						+ (st0.xz+0.5*delsp[4])*dgamxz + (st0.xy+0.5*delsp[5])*dgamxy;
     mptr->AddStrainEnergy(totalEnergy);
     
+    // DEPRECATED - need to convert to heat energy method
     // dissipated energy using viscous stress increment only (which is negative)
     for(k=0;k<6;k++) delsp[k] -= delspe[k];
 	double dispEnergy = 0.5*delsp[0]*dvxx + 0.5*delsp[1]*dvyy + 0.5*delsp[2]*dvzz

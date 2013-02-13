@@ -309,6 +309,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
         mptr->AddStrainEnergy(0.5*(st0.zz+sp->zz)*dezz);
     }
 	
+    // DEPRECATED - need to convert to heat energy method
 	// add dissipated and plastic energy to the particle
 	mptr->AddDispEnergy(dispEnergy);
     mptr->AddPlastEnergy(dispEnergy);
@@ -513,6 +514,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 								+ (st0.xz+sp->xz)*dgxzp
 								+ (st0.xy+sp->xy)*dgxyp));
 	
+    // DEPRECATED - need to convert to heat energy method
 	// add plastic energy to the particle
 	mptr->AddDispEnergy(dispEnergy);
     mptr->AddPlastEnergy(dispEnergy);
