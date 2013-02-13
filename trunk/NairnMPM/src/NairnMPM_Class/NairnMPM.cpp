@@ -354,6 +354,9 @@ void NairnMPM::PreliminaryCalcs(void)
     double dcell;
     char fline[200];
 	
+    // are the particle isolated (i.e., no conduction and no thermal ramp)
+    MaterialBase::isolatedParticles = !ConductionTask::active && !thermal.Active();
+    
 	// Loop over elements, if needed, to determine type of grid
 	if(mpmgrid.GetCartesian()==UNKNOWN_GRID)
 	{	int userCartesian=FALSE;
@@ -523,9 +526,6 @@ void NairnMPM::PreliminaryCalcs(void)
 	
 	// finish isothermal ramp (now that have time step)
 	thermal.SetParameters(timestep);
-    
-    // are the particle isolated (i.e., no conduction and no thermal ramp)
-    MaterialBase::isolatedParticles = !ConductionTask::active && !thermal.Active();
     
     // blank line
     cout << endl;

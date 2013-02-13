@@ -50,9 +50,9 @@ StressFreeTemp 294
 #thick=10			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading="rigid"	! Loading = "rigid", "contact", "force", "traction", thermal
+#loading="thermal"	! Loading = "rigid", "contact", "force", "traction", thermal
 #fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
-#strain=10	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
+#strain=0	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak
@@ -70,7 +70,7 @@ StressFreeTemp 294
 Analysis #analysis
 MPMMethod #update,#method
 PtsPerElement #ppe
-conduction "yes","isothermal"
+conduction "no","adiabatic"
 
 ! convert to contact
 if #loading="contact"
@@ -263,6 +263,9 @@ else
   GridRect #gleft,#gright,#gbot,#gtop
   
   ! material points
+  Region #matID,0,0,#thick,"temp",#startTemp+100
+    Rect 0,#length/2,0,#width
+  EndRegion
   Region #matID,0,0,#thick
     Rect 0,#length,0,#width
   EndRegion

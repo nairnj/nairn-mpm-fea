@@ -16,6 +16,7 @@
 #include "Exceptions/CommonException.hpp"
 #include "Exceptions/MPMTermination.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
+#include "Global_Quantities/ThermalRamp.hpp"
 #include <vector>
 
 // global
@@ -442,7 +443,14 @@ char *MaterialBase::InitHistoryData(void) { return NULL; }
 
 // If needed, a material can initialize particle state
 // For example, ideal gas initializes to base line pressure
-void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np) { }
+// Such a class must pass on the super class after its own initializations
+void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np)
+{
+	if(isolatedParticles)
+	{	double Cv = 1000.*GetHeatCapacity(mptr);
+		mptr->AddHeatEnergy(Cv*(mptr->pTemperature-thermal.reference));
+	}
+}
 
 // when set, return total number of materials if this is a new one, or 1 if not in multimaterial mode
 int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid)

@@ -53,6 +53,8 @@ void HyperElastic::SetInitialParticleState(MPMBase *mptr,int np)
     
     ZeroTensor(pB);
     pB->xx = pB->yy = pB->zz = 1.;
+	
+	MaterialBase::SetInitialParticleState(mptr,np);
 }
 
 // Constant properties used in constitutive law
