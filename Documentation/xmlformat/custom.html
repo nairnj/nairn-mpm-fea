@@ -85,16 +85,32 @@
 <dd>Archive stress tensor (in MPa).
 </dd>
 
+<dt>pressure</dt>
+<dd>Archive pressure (in MPa).
+</dd>
+
+<dt>equivstress</dt>
+<dd>Archive equivalent stress (also know as von Mises stress) (in MPa).
+</dd>
+
 <dt>strain</dt>
-<dd>Archive strain tensor, which is elastic strain for plasticity materials (absolute).
+<dd>Archive strain tensor, which is elastic strain for materials that partition elastic and plastic strain, but total strain for all others (absolute).
+</dd>
+
+<dt>deltav</dt>
+<dd>Archive relative volume change (V-V<sub>0</sub>)/V<sub>0</sub> (absolute).
+</dd>
+
+<dt>equivstrain</dt>
+<dd>Archive equivalent strain from above strain (absolute).
 </dd>
 
 <dt>plasticstrain</dt>
-<dd>Archive plastic strain tensor (absolute).
+<dd>Archive plastic strain tensor (absolute). Some materials have plastic strain, but hyperelastic materials have left Cauchy Green strain in the particle's plastic strain.
 </dd>
 
 <dt>totalstrain</dt>
-<dd>Archive total strain tensor, which is elastic+plastic strain for plasticity materials (absolute).
+<dd>Archive total strain tensor (absolute, elastic+plastic strain for materials that separate them).
 </dd>
 
 <dt>temperature</dt>
@@ -107,6 +123,10 @@
 
 <dt>strainenergy</dt>
 <dd>Archive strain energy in J.
+</dd>
+
+<dt>heatenergy</dt>
+<dd>Archive heat energy in J.
 </dd>
 
 <dt>plasticenergy</dt>

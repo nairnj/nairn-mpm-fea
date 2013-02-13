@@ -89,6 +89,7 @@ void NewMaterial::PrintMechanicalProperties(void)
 
 // If needed, a material can initialize particle state
 // For example, ideal gas initializes to base line pressure
+// If used, be sure to pass on to superclass when done
 //void NewMaterial::SetInitialParticleState(MPMBase *mptr,int np) {}
 
 

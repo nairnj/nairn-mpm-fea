@@ -97,7 +97,7 @@
 <td><a href="#mooney"><code>Mooney</code></a></td>
 <td>8</td>
 <td width="50%">Mooney-Rivlin, elastic, hyperelastic material. This material includes neo-Hookian
-as a special case.</td>
+and rubber elastic materials as special cases.</td>
 <td align="center"></td><td align="center">X X</td><td align="center">X</td>
 </tr>
 
@@ -585,6 +585,9 @@ W = (1/2)G<sub>1</sub>(I<sub>1</sub>-3) + (1/2)G<sub>2</sub>(I<sub>2</sub>-3) + 
 &nbsp;&nbsp;&nbsp;&nbsp;2: U(J) = (K/2)(ln J)<sup>2</sup><br>
 where K is the bulk modulus and is entered as a separate property. The default (and recommended) option is 0.</dd>
 
+<dt>&lt;IdealRubber/&gt;</dt>
+<dd>Including this command makes the material an ideal rubber elastic material. An ideal rubber means that during isothermal loading, there is no change in internal energy. In other words, all the work is turned into heat. In adiabatic loading, this heat causes the temperature to rise.</dd>
+
 <dt>&lt;K&gt;2.5&lt;/K&gt;</dt>
 <dd>The K modulus (in MPa), which is equal to the low-strain bulk modulus.</dd>
     	
@@ -610,7 +613,13 @@ where K is the bulk modulus and is entered as a separate property. The default (
 <h3>History Data for Mooney-Rivlin Materials</h3>
 
 <p>This material use history #1 to store the volumetric strain (i.e., the determinant of the deformation gradient). The total strain, which is elastic, is stored in the elastic strain variable, but the plastic strain stores the left Cauchy Green tensor.</p>
-    
+
+<p>This material tracks entropy in the plastic energy for the particle. The entropy is net effect of heat flow by external heating, by conduction, or when set to be an ideal rubber, by internal mechanisms. For example, when an ideal rubber is loaded isothermally in tension, the force is related to entropy by</p>
+
+<blockquote>F = -T (dS/dL)<sub>T</sub></blockquote>
+
+<p>An ideal rubber in <code>NairnMPM</code> correctly follows this law.</p>
+
 <!-- Material  Section -->
 
 <h2><a name="heiso"></a>Isotropic, Elastic-Plastic, Hyperelastic Material</h2>
