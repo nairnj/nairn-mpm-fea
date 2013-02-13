@@ -1086,6 +1086,11 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 				case VTK_STRAINENERGY:
 				case VTK_PLASTICENERGY:
 				case VTK_MATERIAL:
+                case VTK_HEATENERGY:
+                case VTK_PRESSURE:
+                case VTK_EQUIVSTRESS:
+                case VTK_RELDELTAV:
+                case VTK_EQUIVSTRAIN:
 					if(vtk==NULL) break;
 					afile << vtkquant[offset] << endl;
 					break;

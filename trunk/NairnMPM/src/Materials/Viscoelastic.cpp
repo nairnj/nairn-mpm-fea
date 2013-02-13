@@ -289,7 +289,7 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy
 							+(st0.xy+0.5*(dszze+dszzv))*dvzz;
     mptr->AddStrainEnergy(totalEnergy);
     
-    // visous energy is disspated
+    // visous energy is disspated (not sure of thermo here)
     // dissipated energy using viscous stress increment only (which is negative)
 	double dispEnergy=0.5*dsxxv*dvxx + 0.5*dsyyv*dvyy
                     +0.5*dtxyv*dgam + 0.5*dszzv*dvzz;

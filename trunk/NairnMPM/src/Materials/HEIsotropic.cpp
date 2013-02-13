@@ -362,7 +362,6 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     //		time step within Cv dT (if adibatic heating occurs)
     // The Cv(dT-dTq0) was done in update pressure
     IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
-	//mptr->AddDispEnergy(dispEnergy);
     
 	// The cumulative dissipated energy is tracked in plastic energy
     // Setting the disp energy allows heating if mechanical energy is on

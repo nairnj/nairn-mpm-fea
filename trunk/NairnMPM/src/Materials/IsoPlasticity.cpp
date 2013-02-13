@@ -357,7 +357,6 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     //		time step within Cv dT (if adibatic heating occurs)
     // The Cv(dT-dTq0) was done in update pressure
     IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
-	//mptr->AddDispEnergy(dispEnergy);
     
 	// The cumulative dissipated energy is tracked in plastic energy
     // Setting the disp energy allows heating if mechanical energy is on
@@ -512,7 +511,6 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     //		time step within Cv dT (if adiabatic heating occurs)
     // The Cv(dT-dTq0) was done already in update pressure
     IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
-	//mptr->AddDispEnergy(dispEnergy);
     
 	// The cumulative dissipated energy is tracked in plastic energy
     // Setting the disp energy allows heating if mechanical energy is on
@@ -616,7 +614,7 @@ double IsoPlasticity::GetHistory(int num,char *historyPtr)
 }
 
 // plastic strain needed to get deformation gradient for this material class
-bool IsoPlasticity::HasPlasticStrainForGradient(void) { return TRUE; }
+bool IsoPlasticity::PartitionsElasticAndPlasticStrain(void) { return TRUE; }
 
 // Return the material tag
 int IsoPlasticity::MaterialTag(void) { return ISOPLASTICITY; }

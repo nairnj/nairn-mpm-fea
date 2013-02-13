@@ -630,8 +630,8 @@ void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,doubl
 		mptr->AddHeatEnergy(Cv*dT - dispEnergy);
 	}
     
-	// the dispated energy is added here. It will be ignored is isothermal or
-	// increase particle temperature is adiabatic
+	// the dispated energy is added here. It will be ignored if isothermal or
+	// increase particle temperature if adiabatic
 	mptr->AddDispEnergy(dispEnergy);
 }
 
@@ -1300,7 +1300,7 @@ Tensor MaterialBase::GetStress(Tensor *sp,double pressure)
 // should override this method and return TRUE. It is only used when material point is asked for
 // its GetDeformationGradient(). When this is TRUE, gradient uses total strain, otherwise it
 // uses only the terms in ep and wrot.
-bool MaterialBase::HasPlasticStrainForGradient(void) { return FALSE; }
+bool MaterialBase::PartitionsElasticAndPlasticStrain(void) { return FALSE; }
 
 
 

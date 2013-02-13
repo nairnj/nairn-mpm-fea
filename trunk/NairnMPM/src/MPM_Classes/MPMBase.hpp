@@ -91,7 +91,7 @@ class MPMBase : public LinkedObject
 		void StopParticle(void);
 		int GetElementCrossings(void);
 		void SetElementCrossings(int);
-        bool HasPlasticStrainForGradient(void);
+        bool PartitionsElasticAndPlasticStrain(void);
 		double GetDuDy(void);
 		double GetDvDx(void);
 		double GetRotationZ(void);
