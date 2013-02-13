@@ -355,7 +355,7 @@ void NairnMPM::PreliminaryCalcs(void)
     char fline[200];
 	
     // are the particle isolated (i.e., no conduction and no thermal ramp)
-    MaterialBase::isolatedParticles = !ConductionTask::active && !thermal.Active();
+    MaterialBase::isolatedSystemAndParticles = !ConductionTask::active && !thermal.Active();
     
 	// Loop over elements, if needed, to determine type of grid
 	if(mpmgrid.GetCartesian()==UNKNOWN_GRID)

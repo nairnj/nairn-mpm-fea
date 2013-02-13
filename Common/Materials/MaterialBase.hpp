@@ -54,7 +54,7 @@ class MaterialBase : public LinkedObject
 		ContactDetails *lastFriction;
 		static vector<int> fieldMatIDs;
 		static int incrementalDefGradTerms;
-        static bool isolatedParticles;
+        static bool isolatedSystemAndParticles;
 #endif
         
         // constructors and destructors
@@ -136,6 +136,7 @@ class MaterialBase : public LinkedObject
 		virtual ContactDetails *GetContactToMaterial(int);
 		virtual void ContactOutput(int);
         virtual bool PartitionsElasticAndPlasticStrain(void);
+        virtual double GetArtificalViscosity(double,double);
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif

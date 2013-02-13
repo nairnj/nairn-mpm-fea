@@ -17,10 +17,11 @@
 #include "Exceptions/MPMTermination.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
 #include <vector>
 
 // global
-bool MaterialBase::isolatedParticles = FALSE;
+bool MaterialBase::isolatedSystemAndParticles = FALSE;
 
 // class statics for MPM - zero based material IDs when in multimaterial mode
 vector<int> MaterialBase::fieldMatIDs;
@@ -446,8 +447,10 @@ char *MaterialBase::InitHistoryData(void) { return NULL; }
 // Such a class must pass on the super class after its own initializations
 void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np)
 {
-	if(isolatedParticles)
-	{	double Cv = 1000.*GetHeatCapacity(mptr);
+	if(isolatedSystemAndParticles)
+    {   // need to add initial heat energy, because special cases in this mode
+        // will ignore the Cv dT term
+		double Cv = 1000.*GetHeatCapacity(mptr);
 		mptr->AddHeatEnergy(Cv*(mptr->pTemperature-thermal.reference));
 	}
 }
@@ -629,7 +632,7 @@ void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,doubl
 	// Isolated means no conduction and now thermal ramp (and in future if have othe ways
 	//		to change particle temperature, those are not active either)
 	// In this mode, adiabatic has dq=0 and isothermal releases all as heat
-    if(isolatedParticles)
+    if(isolatedSystemAndParticles)
 	{	if(!ConductionTask::energyCoupling)
 			mptr->AddHeatEnergy(-dispEnergy);
     }
@@ -638,9 +641,11 @@ void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,doubl
 		mptr->AddHeatEnergy(Cv*dT - dispEnergy);
 	}
     
-	// the dispated energy is added here. It will be ignored if isothermal or
-	// increase particle temperature if adiabatic
-	mptr->AddDispEnergy(dispEnergy);
+	// the dispated energy is added here, but only if adiabatic, in which case it will
+    // converted to particle temperature rise later in the calculations. This temperature
+    // change works with conduction on or off
+    if(ConductionTask::energyCoupling)
+        mptr->AddDispEnergy(dispEnergy);
 }
 
 // Correct stress update for rotations using hypoelasticity approach
@@ -1302,6 +1307,19 @@ double MaterialBase::GetCurrentRelativeVolume(MPMBase *mptr) { return 1.; }
 Tensor MaterialBase::GetStress(Tensor *sp,double pressure)
 {   Tensor stress = *sp;
     return stress;
+}
+
+// Calculate artficial damping where Dkk is the relative volume change rate = (V(k+1)-V(k))/(V(k+1)dt)
+// and c is the current wave speed in m/sec
+double MaterialBase::GetArtificalViscosity(double Dkk,double c)
+{
+    double avred = 0.;
+    if(Dkk<0 && artificialViscosity)
+    {   double divuij = fabs(Dkk);                                  // sec^-1
+        double dcell = mpmgrid.GetAverageCellSize();                // mm
+        avred = dcell*divuij*(avA1*c + 1.e-3*avA2*dcell*divuij);    // Pa cm^3/g
+    }
+    return avred;
 }
 
 // If material partitions total strain into elastic and plastic strain saved in ep and eplast, it'

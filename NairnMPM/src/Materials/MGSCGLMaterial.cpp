@@ -202,12 +202,10 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     
     // artifical viscosity
     QAVred = 0.;
-    double Dkk = (du(0,0)+du(1,1)+du(2,2))/delTime;
-    if(Dkk<0 && artificialViscosity)
+    if(delV<0. && artificialViscosity)
     {   double c = sqrt(Keffred*Jnew*JresStretch/1000.);        // m/sec
-        double divuij = fabs(Dkk);                              // sec^-1
-        double dcell = mpmgrid.GetAverageCellSize();            // mm
-        QAVred = dcell*divuij*(avA1*c + 1.e-3*avA2*dcell*divuij);   // Pa cm^3/g
+        //double Dkk = (du(0,0)+du(1,1)+du(2,2))/delTime;
+        QAVred = GetArtificalViscosity(delV/delTime,c);
     }
     
     if(np!=THREED_MPM)
