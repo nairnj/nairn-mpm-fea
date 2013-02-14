@@ -142,28 +142,23 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
 	sp->yy = mPsp;
 	sp->zz = mPsp;
 	
-	// find the -P dV energy per unit mass dU/(rho0 V0) (uJ/g) as follows
-    // dU/(rho0 V0) = - 0.5 * (pn+p(n+1))/rho0 * (V(n+1)-Vn)/V0, which simplifies to
-    double dU = 0.5*(mPnsp*detf + mPsp)*(1.-1/detf);
+	// find the -P dV energy per unit mass dW/(rho0 V0) (uJ/g) as follows
+    // dW/(rho0 V0) = - 0.5 * (pn+p(n+1))/rho0 * (V(n+1)-Vn)/V0, which simplifies to
+    double dW = 0.5*(mPnsp*detf + mPsp)*(1.-1./detf);
     
     // this energy is tracked in strain energy
-    mptr->AddStrainEnergy(dU);
+    mptr->AddStrainEnergy(dW);
     
     // the same energy is tracked as heat (although it will be zero if adiabatic)
     // and is dissipated (which will cause heating if adiabatic
     // Update is Cv dT - dU
-    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,dU);
+    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,dW);
         
     // the plastic energy is not otherwise used, so let's track entropy
-    double dS = 0., Cv = 1000.*GetHeatCapacity(mptr);
+    double Cv = 1000.*GetHeatCapacity(mptr);
     double Tp = mptr->pPreviousTemperature;
     double dT = ConductionTask::dTemperature;
-    if(ConductionTask::energyCoupling)
-    {   double dTS = dU/Cv;
-        dS = Cv*(dT/Tp - dTS/(Tp+dTS));
-    }
-    else
-        dS = (Cv*dT - dU)/Tp;
+	double dS = (Cv*dT - dW)/Tp;
 	mptr->AddPlastEnergy(dS);
 }
 

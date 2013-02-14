@@ -47,6 +47,7 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Cracks/CrackSegment.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
+#include "Materials/RigidMaterial.hpp"
 
 // global
 bool ConductionTask::active=FALSE;
@@ -109,6 +110,7 @@ bool ConductionTask::IsSystemIsolated(void)
     if(firstTempBC!=NULL) return FALSE;
     
     // check if any active rigid particles set temperature
+	if(RigidMaterial::someSetTemperature) return FALSE;
     
     // must be isolated
     return TRUE;

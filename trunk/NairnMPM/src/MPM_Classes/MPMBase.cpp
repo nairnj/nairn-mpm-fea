@@ -280,6 +280,8 @@ TensorAntisym *MPMBase::GetRotationStrainTensor(void) { return & wrot; }
 double MPMBase::GetPlastEnergy(void) { return plastEnergy; }
 void MPMBase::AddPlastEnergy(double energyInc) { plastEnergy+=energyInc; }
 double MPMBase::GetDispEnergy(void) { return dispEnergy; }
+
+// a material should never call this direction. It is only called in IncrementHeatEnergy.
 void MPMBase::AddDispEnergy(double energyInc) { dispEnergy+=energyInc; }
 void MPMBase::SetDispEnergy(double energy) { dispEnergy=energy; }
 double MPMBase::GetStrainEnergy(void) { return strainEnergy; }

@@ -21,6 +21,8 @@
 #include "Exceptions/CommonException.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 
+bool RigidMaterial::someSetTemperature = FALSE;
+
 #pragma mark RigidMaterial::Constructors and Destructors
 
 // global expression variables
@@ -219,6 +221,8 @@ void RigidMaterial::PrintMechanicalProperties(void)
             delete [] expr;
         }
     }
+	
+	if(setTemperature) someSetTemperature = TRUE;
 	
 	// optional color
 	if(red>=0.)

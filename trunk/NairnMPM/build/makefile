@@ -726,7 +726,7 @@ BistableIsotropic.o : $(BistableIsotropic).cpp $(dprefix) $(BistableIsotropic).h
 			$(MaterialBase).hpp $(Elastic).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BistableIsotropic).cpp
 RigidMaterial.o : $(RigidMaterial).cpp $(dprefix) $(RigidMaterial).hpp $(MaterialBase).hpp $(CommonException).hpp \
-			$(mathexpr).hpp 
+			$(mathexpr).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(RigidMaterial).cpp
     
 # MPM: Hardening Laws
@@ -811,7 +811,7 @@ DiffusionTask.o : $(DiffusionTask).cpp $(dprefix) $(DiffusionTask).hpp $(NairnMP
 			$(MaterialBase).hpp $(NodalConcBC).hpp $(MatPtFluxBC).hpp $(BoundaryCondition).hpp $(MatPtLoadBC).hpp \
 			$(MPMBase).hpp $(NodalPoint).hpp $(TransportTask).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(DiffusionTask).cpp
-ConductionTask.o : $(ConductionTask).cpp $(dprefix) $(NairnMPM).hpp $(ElementBase).hpp $(MaterialBase).hpp \
+ConductionTask.o : $(ConductionTask).cpp $(dprefix) $(NairnMPM).hpp $(ElementBase).hpp $(MaterialBase).hpp $(RigidMaterial).hpp \
 			$(NodalTempBC).hpp $(ConductionTask).hpp $(BoundaryCondition).hpp $(MPMBase).hpp $(ThermalRamp).hpp \
 			$(CrackHeader).hpp $(NodalPoint).hpp $(CrackSegment).hpp $(TransportTask).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ConductionTask).cpp
