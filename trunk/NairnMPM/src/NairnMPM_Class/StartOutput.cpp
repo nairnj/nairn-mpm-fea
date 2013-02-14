@@ -86,12 +86,13 @@ void NairnMPM::MyStartResultsOutput(void)
     
     //---------------------------------------------------
     // Gravity and Damping and Thermal Ramp
-    PrintSection("GRAVITY, DAMPING, AND TRANSPORT");
+    PrintSection("GRAVITY, DAMPING, TRANSPORT, AND THERMAL");
 	bodyFrc.Output();
 	thermal.Output();
 	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
 		nextTransport=nextTransport->TransportOutput();
+    ConductionTask::ThermodynamicsOutput();
     cout << endl;
 
     //---------------------------------------------------
