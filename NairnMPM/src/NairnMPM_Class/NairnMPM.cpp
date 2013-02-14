@@ -36,7 +36,6 @@
 #include "NairnMPM_Class/ResetElementsTask.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
-#include "Boundary_Conditions/NodalTempBC.hpp"
 #include <time.h>
 
 // global analysis object
