@@ -4,6 +4,7 @@
 \usepackage{epstopdf}
 \usepackage{amssymb,amsmath}
 \usepackage[charter]{mathdesign}
+\usepackage{multirow}
 \DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
 
 \textwidth6.5in
@@ -1152,48 +1153,48 @@ This special case assumes the material update never changes particle temperature
 
 The advantage of \#1 is that only one item needs to be tracked, but then only one item is known. For example, that approach would not have enough information for the full thermodynamic $J$ integral. The advantage of \#2 is that it has simple updates and can be used for $J$ integral calculations. The disadvantage is the neither $w$ nor $q$ are state functions, which means $A$ and $S$ are not known. The advantage of \#3 is that $A$ and $S$ are state function and if needed they could be used to find $U$ as well. The disadvantages is that the equations are more complex and require different updates for locally adiabatic and isothermal. The current version of {\tt NairnMPM} tracks $w$ in strain energy, $q$ in heat energy, and for plasticity materials tracks $\Phi$ due to plasticity in plastic energy. Some materials track $S$ as well, but only for information; $S$ is not used in any other calculations.
 
-Finally, table \ref{tdmodes} summarized thermodynamics properties of the various {\tt NairnMPM} modes. The global terms are defined by:
+Finally, table \ref{tdmodes} summarizes thermodynamics properties of the various {\tt NairnMPM} modes. The term $dq$ is heat change on a single particle. The global terms are defined by:
 \begin{equation}
-     dQ = \sum_p dq, \quad dS = \sum_p S_p, \quad T = {1\over n_p}\sum_p T_p, \quad d_cS = \sum_p {dq_{conduction}\over T_p}
+     dQ = \sum_p dq, \quad dS = \sum_p {dq\over T_p}, \quad{\rm and}\quad T = {1\over n_p}\sum_p T_p
 \end{equation}
-An `` isolated'' system means no thermal boundary conditions are being uses, while a ``nonisolated'' system has thermal boundary conditions. ``Isolated'' particles means conduction is turned off, while ``nonisolated'' particles means conduction is on. ``Adiabatic'' means energy coupling is turned on, while ``Isothermal'' means energy coupling is off.
-
+An `` isolated'' system means no thermal boundary conditions are being used, while a ``nonisolated'' system has thermal boundary conditions. ``Isolated'' particles means conduction is turned off, while ``nonisolated'' particles means conduction is on. ``Adiabatic'' means energy coupling is turned on, while ``Isothermal'' means energy coupling is off.
 
 \begin{table}\renewcommand{\arraystretch}{1.2}
 \caption{The changes in particle heat ($dq$), global heat ($dQ$), global entropy ($dS$), irreversible entropy due to heat conduction ($d_cS$), and average temperature ($dT$) for each {\tt NairnMPM} thermodynamics mode. For entropy, all processes other than heat conduction are assumed reversible.}
 \vskip6pt
 \label{tdmodes}
 \centering
-\begin{tabular}{|c|c|c|c|}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
 \hline
-System & Particles & Adiabatic & Isothermal \\
+ &  & \multicolumn{4}{|c|}{Adiabatic} & \multicolumn{4}{|c|}{Isothermal} \\
 \hline
-Isolated & Isolated & $dq=dS=dQ=d_cS=0$$\thinspace^1$ & $dq=-d\Phi$$\thinspace^1$, $dS\ne0$, $dQ\ne0$ \\
- &  & $dT\ne0$ & $d_cS=0$, $dT=0$\\
+System & Particles & dq & dQ & dS & dT & dq & dQ & dS & dT \\
 \hline
-Isolated & Nonisolated & $dq=C_V (dT - dT_{ad})$$\thinspace^2$, $dQ=0$ & $dq=C_V (dT - dT_{ad})$, $dQ\ne0$ \\
- &  & $dS=d_cS\ge0$, $dT\ne0$ & $dS\ne0$, $d_cS\ge0$, $dT=0$$\thinspace^3$\\
+Isolated & Isolated & 0$\thinspace^1$ & 0 & 0 & $\ne0$ & $\ne0$ & $\ne0$ & $\ne0$ & 0 \\
 \hline
-Nonisolated & Isolated & $dq=C_V (dT - dT_{ad})$, $dQ\ne 0$& $dq=C_V (dT - dT_{ad})$, $dQ\ne0$\\
- &  & $dS\ne0$, $d_cS=0$, $dT\ne0$ & $dS\ne0$, $d_cS=0$, $dT\ne0$$\thinspace^4$\\
+Isolated & Nonsolated & $\ne0\thinspace^2$ & 0 & $\ge0\thinspace^2$ & $\ne0$ &
+          $\ne0\thinspace^3$ & $\ne0\thinspace^3$ & $\ne0\thinspace^3$ & $0\thinspace^3$ \\
 \hline
-Nonisolated & Nonisolated & $dq=C_V (dT - dT_{ad})$, $dQ\ne 0$ & $dq=C_V (dT - dT_{ad})$, $dQ\ne0$\\
- &  & $dS\ne0$, $d_cS\ge0$, $dT\ne0$ & $dS\ne0$, $d_cS\ge0$, $dT\ne0$\\
+Nonsolated & Isolated & \multirow{2}{*}{$\ne0$} & \multirow{2}{*}{$\ne0$} & \multirow{2}{*}{$\ne0$}
+      & \multirow{2}{*}{$\ne0\thinspace^4$} & \multirow{2}{*}{$\ne0$} & \multirow{2}{*}{$\ne0$} & 
+      \multirow{2}{*}{$\ne0$} & \multirow{2}{*}{$\ne0\thinspace^4$} \\
+\cline{1-2}
+Nonsolated & Nonsolated & & & & & & & &  \\
 \hline
 \end{tabular}
-
 {\footnotesize
 \begin{enumerate}
 \item If any particles start with a temperature that is different then the stress free temperature, the first
-time step will add $C_V(dT_i-dT_0)$ to the particle heat energy. The above conditions will hold thereafter, but a
+time step will add $dq=C_V(dT_i-dT_0)$ to the particle heat energy. The above conditions will hold thereafter, but a
 constant will be added to $dS$ and $dQ$.
-\item The net results will be that $dq = dq_{conduction}$.
-\item This mode is identical to isolated particles and system if the initial temperature of all particles is equal to the stress-free temperature. Thus, a simulation in this mode should turn off conduction for efficiency when all particles
+\item The $dq$ will be due to conduction only and entropy will increase because conduction is irreversible.
+\item This mode is identical to system and particle isolated if the initial temperature of all particles is equal to the stress-free temperature. Thus, a simulation in this mode should turn off conduction for efficiency when all particles
 are at the stress free temperature.
-\item The only boundary condition possible here is an thermal ramp that applies uniform temperature change to all particles.
+\item When particles are isolated, the only possible thermal boundary condition is a thermal ramp that applies uniform temperature change to all particles. If there is no thermal ramp, then the system is isolated and refer to first mode instead.
 \end{enumerate}
 }
 \end{table}
+
 
 \section{Viscoelastic Materials}
 

@@ -294,26 +294,32 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	}
 
 	// Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-    mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexx
-                        + (st0.yy+sp->yy)*deyy
-                        + (st0.xy+sp->xy)*dgxy));
+	double strainEnergy = 0.5*((st0.xx+sp->xx)*dexx
+							   + (st0.yy+sp->yy)*deyy
+							   + (st0.xy+sp->xy)*dgxy);
 
     // Plastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-	double dispEnergy=0.5*((st0.xx+sp->xx)*dexxp
+	double dispEnergy = 0.5*((st0.xx+sp->xx)*dexxp
                         + (st0.yy+sp->yy)*deyyp
                         + (st0.xy+sp->xy)*dgxyp);
 
     // Extra term for plain strain when there are thermal stresses
     if(np==PLANE_STRAIN_MPM)
-    {   dispEnergy+=0.5*(st0.zz+sp->zz)*dezzp;
-        mptr->AddStrainEnergy(0.5*(st0.zz+sp->zz)*dezz);
+    {   strainEnergy += 0.5*(st0.zz+sp->zz)*dezz;
+		dispEnergy += 0.5*(st0.zz+sp->zz)*dezzp;
     }
 	
-    // DEPRECATED - need to convert to heat energy method
-	// add dissipated and plastic energy to the particle
-	mptr->AddDispEnergy(dispEnergy);
+	// add now
+	mptr->AddStrainEnergy(strainEnergy + dispEnergy);
+	
+	// add dissipated energy to plastic energy to the particle
     mptr->AddPlastEnergy(dispEnergy);
 	
+    // heat energy is Cv(dT-dTq0) - dPhi
+    // The dPhi is subtracted here because it will show up in next
+    //		time step within Cv dT (if adiabatic heating occurs)
+    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,dispEnergy);
+
 	// update internal variables
 	UpdatePlasticInternal(mptr,np);
 }
@@ -499,12 +505,12 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 
     // Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-	mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexx
+	double strainEnergy = 0.5*((st0.xx+sp->xx)*dexx
 							   + (st0.yy+sp->yy)*deyy
 							   + (st0.zz+sp->zz)*dezz
 							   + (st0.yz+sp->yz)*dgyz
 							   + (st0.xz+sp->xz)*dgxz
-							   + (st0.xy+sp->xy)*dgxy));
+							   + (st0.xy+sp->xy)*dgxy);
 	
     // Plastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	double dispEnergy=0.5*(0.5*((st0.xx+sp->xx)*dexxp
@@ -514,17 +520,19 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 								+ (st0.xz+sp->xz)*dgxzp
 								+ (st0.xy+sp->xy)*dgxyp));
 	
-    // DEPRECATED - need to convert to heat energy method
-	// add plastic energy to the particle
-	mptr->AddDispEnergy(dispEnergy);
+	// add now
+	mptr->AddStrainEnergy(strainEnergy + dispEnergy);
+	
+	// add dissipated energy to plastic energy to the particle
     mptr->AddPlastEnergy(dispEnergy);
+	
+    // heat energy is Cv(dT-dTq0) - dPhi
+    // The dPhi is subtracted here because it will show up in next
+    //		time step within Cv dT (if adiabatic heating occurs)
+    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,dispEnergy);
 	
 	// update internal variables
 	UpdatePlasticInternal(mptr,np);
-	
-	//if(MPMBase::currentParticleNum==keyParticle)
-	//{	cout << "#   lam = " << lambda << ", cum ep = " << mptr->GetHistoryDble() << endl;
-	//}
 }
 
 #pragma mark AnisoPlasticity::Custom Methods
