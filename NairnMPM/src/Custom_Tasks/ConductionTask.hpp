@@ -47,6 +47,10 @@ class ConductionTask : public TransportTask
 		// custom methods
 		void AddCrackTipHeating(void);
 		void StartCrackTipHeating(CrackSegment *,Vector &,double);
+    
+        // class methods
+        static void ThermodynamicsOutput(void);
+        static bool IsSystemIsolated(void);
 		
     private:
 };

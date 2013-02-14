@@ -36,6 +36,7 @@
 #include "NairnMPM_Class/ResetElementsTask.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
+#include "Boundary_Conditions/NodalTempBC.hpp"
 #include <time.h>
 
 // global analysis object
@@ -354,8 +355,10 @@ void NairnMPM::PreliminaryCalcs(void)
     double dcell;
     char fline[200];
 	
-    // are the particle isolated (i.e., no conduction and no thermal ramp)
-    MaterialBase::isolatedSystemAndParticles = !ConductionTask::active && !thermal.Active();
+    // are both the system and the particles isolated?
+    if(!ConductionTask::active && ConductionTask::IsSystemIsolated())
+    {   MaterialBase::isolatedSystemAndParticles = TRUE;
+    }
     
 	// Loop over elements, if needed, to determine type of grid
 	if(mpmgrid.GetCartesian()==UNKNOWN_GRID)

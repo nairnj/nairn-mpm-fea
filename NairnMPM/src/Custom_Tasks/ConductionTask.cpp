@@ -46,6 +46,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Cracks/CrackSegment.hpp"
+#include "Global_Quantities/ThermalRamp.hpp"
 
 // global
 bool ConductionTask::active=FALSE;
@@ -76,6 +77,43 @@ TransportTask *ConductionTask::TransportOutput(void)
 		cout << "   Crack tip heating activated" << endl;
 	return nextTask;
 }
+
+// conduction analysis settings
+void ConductionTask::ThermodynamicsOutput(void)
+{   // the system
+    if(ConductionTask::IsSystemIsolated())
+        cout << "System: isolated" << endl;
+    else
+        cout << "System: nonisolated" << endl;;
+    if(active)
+        cout << "Particles: nonisolated";
+    else
+        cout << "Particles: isolated";
+    if(energyCoupling)
+        cout << " and adiabatic" << endl;
+    else
+        cout << " and isothermal" << endl;
+}
+
+// is the system isolated?
+// update this if new thermal BCs are added
+bool ConductionTask::IsSystemIsolated(void)
+{
+    // if has ramp, then is it not isolated
+    if(thermal.Active()) return FALSE;
+    
+    // if no conduction then is isolated
+    if(!active) return TRUE;
+    
+    // if conduction is active, still isolated if no thermal BC
+    if(firstTempBC!=NULL) return FALSE;
+    
+    // check if any active rigid particles set temperature
+    
+    // must be isolated
+    return TRUE;
+}
+
 
 // adjust time for given cell size if needed
 TransportTask *ConductionTask::TransportTimeStep(int matid,double dcell,double *tmin)
