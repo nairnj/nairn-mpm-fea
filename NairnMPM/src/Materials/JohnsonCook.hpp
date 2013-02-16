@@ -33,13 +33,14 @@ class JohnsonCook : public HardeningLawBase
         virtual double GetKPrime(MPMBase *,int,double);
         virtual double GetK2Prime(MPMBase *,double,double);
         virtual double GetYieldIncrement(MPMBase *,int,double);
+        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double);
     
         // accessors
         virtual const char *GetHardeningLawName(void);
     
     protected:
 		double Bjc,Cjc,njc,ep0jc,Tmjc,mjc;
-		double Bred,TjcTerm,edotMin,eminTerm;
+		double Bred,TjcTerm,edotMin,eminTerm,hmlgTemp;
 
 };
 

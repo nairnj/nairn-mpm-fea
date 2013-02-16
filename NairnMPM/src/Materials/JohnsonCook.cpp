@@ -102,7 +102,7 @@ void JohnsonCook::InitialLoadMechProps(int makeSpecific,int np)
 void JohnsonCook::LoadHardeningLawProps(MPMBase *mptr,int np)
 {
 	// homologous temperature (as needed by Johnson and Cook)
-	double hmlgTemp=(mptr->pPreviousTemperature - thermal.reference) / 
+	hmlgTemp=(mptr->pPreviousTemperature - thermal.reference) / 
                 (Tmjc - thermal.reference);
     
     if(hmlgTemp>1.)
@@ -127,6 +127,7 @@ void JohnsonCook::LoadHardeningLawProps(MPMBase *mptr,int np)
 // yield = (A + B ep^n + n epdot), where ep=alpint, epdot=dalpha/delTime
 double JohnsonCook::GetYield(MPMBase *mptr,int np,double delTime)
 {
+    if(hmlgTemp>=1.) return 0.;
     double term1 = yldred + Bred*pow(alpint,njc);
     double ep = dalpha/(delTime*ep0jc);
     double term2 = ep>edotMin ? 1. + Cjc*log(ep) : eminTerm ;
@@ -138,6 +139,7 @@ double JohnsonCook::GetYield(MPMBase *mptr,int np,double delTime)
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)lambda or depdot/dlambda = sqrt(2./3.)/delTime
 double JohnsonCook::GetKPrime(MPMBase *mptr,int np,double delTime)
 {
+    if(hmlgTemp>=1.) return 0.;
     double ep = dalpha/(delTime*ep0jc);
     if(ep>edotMin)
     {   double term1 = yldred + Bred*pow(alpint,njc);
@@ -154,6 +156,7 @@ double JohnsonCook::GetKPrime(MPMBase *mptr,int np,double delTime)
 // Also equal to sqrt(2./3.)*GetYield()*GetKPrime()*fnp1, but in separate call for efficiency
 double JohnsonCook::GetK2Prime(MPMBase *mptr,double fnp1,double delTime)
 {
+    if(hmlgTemp>=1.) return 0.;
     double term1 = yldred + Bred*pow(alpint,njc);
     double ep = dalpha/(delTime*ep0jc);
     if(ep>edotMin)
@@ -171,9 +174,23 @@ double JohnsonCook::GetK2Prime(MPMBase *mptr,double fnp1,double delTime)
 // If K(0) in current particle state differs from yldred, will need to override
 double JohnsonCook::GetYieldIncrement(MPMBase *mptr,int np,double delTime)
 {
+    if(hmlgTemp>=1.) return 0.;
     double ep = dalpha/(delTime*ep0jc);
     double term2 = ep>edotMin ? 1. + Cjc*log(ep) : eminTerm ;
 	return Bred*pow(alpint,njc) * term2 * TjcTerm ;
+}
+
+// watch for temperature above the melting point and zero out the deviatoric stress
+double JohnsonCook::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,
+                                                 double Gred,double psKred,double Pfinal,double delTime)
+{
+    // if melted, return for zero deviatoric stress
+    if(hmlgTemp>=1.)
+    {   return strial/(2.*Gred);
+    }
+    
+    // assume error in bracking is because near melting, convert error to zero deviatoric stress
+    return HardeningLawBase::SolveForLambdaBracketed(mptr,np,strial,stk,Gred,psKred,Pfinal,delTime);
 }
 
 #pragma mark JohnsonCook::Accessors
