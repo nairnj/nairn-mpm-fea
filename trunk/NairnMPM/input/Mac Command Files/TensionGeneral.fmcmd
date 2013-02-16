@@ -18,7 +18,7 @@ EndHeader! ------------ Parameters ---------------
 
 ! material options: isotropic, isoplasticity, mgeos, bistable, iptrans, normtrans, ortho
 !   viscoelastic, hill, wood
-#matID="mgeos"
+#matID="isoplasticity"
 #angle=0					! material angle for anisotopic materials
 
 ! hardening law (if allowed) for current material
@@ -40,18 +40,18 @@ StressFreeTemp 294
 #nuBase=.25
 #aBase=0
 
+! MGEOS development
+#Ebase=308776
+#rho=19.256
+#nuBase=.28
+#aBase=4.5
+
 ! Main settings
 #Ebase=2000
 #rho=1
 #nuBase=.33
 #aBase=60
 #yldstrain=1		! in percent
-
-! MGEOS development
-#Ebase=308776
-#rho=19.256
-#nuBase=.28
-#aBase=4.5
 
 ! Dimensions
 #cell=2
@@ -60,9 +60,9 @@ StressFreeTemp 294
 #thick=10			! thickness
 
 ! Load by strain (estimated for force and traction loads)
-#loading="thermal"	! Loading = "force", "traction", "rigid", "contact", "thermal"
+#loading="rigid"	! Loading = "force", "traction", "rigid", "contact", "thermal"
 #fixsides="no"		! "yes" or "no" for sides fix in y direction (2D) or y and z (3D)
-#strain=100	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
+#strain=3	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak
@@ -147,6 +147,12 @@ if #matID="isotropic"
 endif
 
 if #matID="isoplasticity"
+  Material "isotropic","Isotropic Material","Isotropic"
+    E #Ebase
+    nu #nuBase
+    a #aBase
+    rho #rho
+  Done
   Material "isoplasticity","Isotropic Elastic-Plastic Material","IsoPlasticity"
     E #Ebase
     nu #nuBase
@@ -461,6 +467,9 @@ if #analysis="3D MPM"
   GridRect #gleft,#gright,#gbot,#gtop,#zmin,#zmax
   
   ! material points
+  Region "isotropic",0,0,0,"angle",#angle,"temp",#startTemp
+    Box 0,#length/2,0,#width,0,#thick
+  EndRegion
   Region #matID,0,0,0,"angle",#angle,"temp",#startTemp
     Box 0,#length,0,#width,0,#thick
   EndRegion
@@ -588,6 +597,7 @@ if #analysis="3D MPM"
   <CustomTasks>
     <Schedule name='VTKArchive'>
       <Parameter name='mass'/>
+      <Parameter name='material'/>
       <Parameter name='stress'/>
       <Parameter name='strain'/>
       <Parameter name='velocity'/>

@@ -521,7 +521,10 @@ void NairnMPM::PreliminaryCalcs(void)
 	}
 	
 	// create warnings
-	warnParticleLeftGrid=warnings.CreateWarning("particle left the grid",warnParticleLeftGrid);
+    if(warnParticleLeftGrid==1)
+        warnParticleLeftGrid=warnings.CreateWarning("particle left the grid",warnParticleLeftGrid);
+    else
+        warnParticleLeftGrid=warnings.CreateWarning("first particle left the grid; will continue",warnParticleLeftGrid);
 	
 	// nodal point calculations
 	NodalPoint::PreliminaryCalcs();

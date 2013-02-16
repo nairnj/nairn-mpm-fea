@@ -79,7 +79,7 @@ int MPMWarnings::Issue(int warnKind,int theID)
 	if((warn->numSteps==1 && warn->thisStep) || newID)
 	{   archiver->ForceArchiving();
 		warn->firstStep=fmobj->mstep;
-		cout << "#" << warn->msg;
+		cout << "# " << warn->msg;
 		if(theID>0) cout << " (ID=" << theID << ")";
 		cout << endl;
 		warnResult=GAVE_WARNING;

@@ -172,6 +172,10 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
     double xl,xh;
     BracketSolution(mptr,np,strial,stk,Gred,psKred,Pfinal,delTime,&xl,&xh);
     
+    // if fails to bracket, convert to zero deviatoric stress and continue
+    // This option does not happen in plane stress calculations
+    if(xh>xl) return strial/(2.*Gred);
+    
 	// initial lambdk midpoint of the brackets
 	double lambdak=0.5*(xl+xh);
     UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
@@ -303,6 +307,17 @@ void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor
             epdot *= 10.;
             step++;
         }
+        
+        // exception if did not find answer in 20 orders of magnitude in strain rate
+        if(step>=20)
+        {   cout << "# Material point information that caused the exception:" << endl;
+            mptr->Describe();
+            char errMsg[250];
+            strcpy(errMsg,"Plasticity plane stress solution for material type '");
+            strcat(errMsg,GetHardeningLawName());
+            strcat(errMsg,"' could not be bracketed in 20 steps");
+            throw CommonException(errMsg,"IsoPlasticity::BracketSolution");
+        }
     }
     else
     {   // find when strial 2 GRed sqrt(3/2) dalpha - sqrt(2/3)GetYield(alpha+dalpha,dalpha)
@@ -319,18 +334,17 @@ void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor
             epdot *= 10.;
             step++;
         }
+        
+        // exception if did not find answer in 20 orders of magnitude in strain rate
+        if(step>=20)
+        {   cout << "# " << GetHardeningLawName() << " plastic state could not be bracketed; continue with zeroed dev stress" << endl;
+            
+            // switch to all plastic, which will zero out the deviatoric stress on this particle
+            *lamNeg = 0.;
+            *lamPos = 1.;
+        }
     }
     
-    // exception if did not find answer in 20 orders of magnitude in strain rate
-    if(step>=20)
-    {   cout << "# Material point information that caused the exception:" << endl;
-        mptr->Describe();
-        char errMsg[250];
-        strcpy(errMsg,"Plasticity solution for material type '");
-        strcat(errMsg,GetHardeningLawName());
-        strcat(errMsg,"' could not be bracketed in 20 steps");
-        throw CommonException(errMsg,"IsoPlasticity::BracketSolution");
-    }
     
     // set upper limits
     *lamNeg = dalpha/SQRT_TWOTHIRDS;
