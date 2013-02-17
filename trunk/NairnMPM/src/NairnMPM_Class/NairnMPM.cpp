@@ -68,7 +68,7 @@ NairnMPM::NairnMPM()
 	FractCellTime=.5;				// fraction cell crossed in 1 step at wave speed (CFL convergence condition)
     PropFractCellTime=-1.;          // fracture cell crossed in 1 step for propagation time step (currently not user settable)
 	mstep=0;						// step number
-	warnParticleLeftGrid=1;			// abort when this many leave the grid
+	warnParticleLeftGrid=-1;		// abort when this many leave the grid
 	multiMaterialMode=false;		// multi-material mode
 	hasRigidContactParticles=false;	// rigid contact particles in multimaterial mode
 	
@@ -521,6 +521,10 @@ void NairnMPM::PreliminaryCalcs(void)
 	}
 	
 	// create warnings
+	if(warnParticleLeftGrid<0)
+	{	// use default setting to quit if 1% of particle leave the grid
+		warnParticleLeftGrid = nmpms/100;
+	}
 	warnParticleLeftGrid=warnings.CreateWarning("particle has left the grid",warnParticleLeftGrid);
 	
 	// nodal point calculations
