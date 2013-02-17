@@ -91,6 +91,9 @@ class MPMBase : public LinkedObject
 		void StopParticle(void);
 		int GetElementCrossings(void);
 		void SetElementCrossings(int);
+		void IncrementElementCrossings(void);
+		bool HasLeftTheGrid(void);
+		void SetHasLeftTheGrid(bool);
         bool PartitionsElasticAndPlasticStrain(void);
 		double GetDuDy(void);
 		double GetDvDx(void);
@@ -184,7 +187,7 @@ class MPMBase : public LinkedObject
     private:
 		// variables (changed in MPM time step)
 		int inElem;
-		int elementCrossings;
+		int elementCrossings;		// abs() is # element crossinsgs, when <0 particle has left the grid
 	
 		// constants (not changed in MPM time step)
         int matnum;

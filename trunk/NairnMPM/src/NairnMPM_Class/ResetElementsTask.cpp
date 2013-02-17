@@ -36,12 +36,19 @@ void ResetElementsTask::Execute(void)
 	
     for(p=0;p<nmpms;p++)
     {	if(!ResetElement(mpm[p]))
-		{	if(warnings.Issue(fmobj->warnParticleLeftGrid,-1)==REACHED_MAX_WARNINGS)
-            {   mpm[p]->Describe();
-				char errMsg[100];
-			    sprintf(errMsg,"Particle No. %d left the grid\n  (plot x displacement to see it).",p+1);
-				mpm[p]->origpos.x=-1.e6;
-				throw MPMTermination(errMsg,"ResetElementsTask::Execute");
+		{	// particle has left the grid
+			mpm[p]->IncrementElementCrossings();
+			
+			// enter warning only if this particle did not leave the grid before
+			if(!mpm[p]->HasLeftTheGrid())
+			{	if(warnings.Issue(fmobj->warnParticleLeftGrid,-1)==REACHED_MAX_WARNINGS)
+				{   mpm[p]->Describe();
+					char errMsg[100];
+					sprintf(errMsg,"Particle No. %d left the grid\n  (plot x displacement to see it).",p+1);
+					mpm[p]->origpos.x=-1.e6;
+					throw MPMTermination(errMsg,"ResetElementsTask::Execute");
+				}
+				mpm[p]->SetHasLeftTheGrid(TRUE);
 			}
 		
 			// bring back to the previous element
@@ -89,7 +96,7 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
     return FALSE;
 }
 	
-// Find element for particle. Return FALSE if left
+// Push particle back to its previous element
 // the grid or for GIMP moved to an edge element
 void ResetElementsTask::ReturnToElement(MPMBase *mpt)
 {
@@ -106,7 +113,7 @@ void ResetElementsTask::ReturnToElement(MPMBase *mpt)
 		theElements[elemID]->GetXYZCentroid(&inside);
 	origin=inside;
 	
-	// bisect 10 times
+	// bisect 10 times until inside, if fails, uses above inside
 	for(pass=1;pass<=10;pass++)
 	{	middle.x=(outside.x+inside.x)/2.;
 		middle.y=(outside.y+inside.y)/2.;
@@ -121,7 +128,7 @@ void ResetElementsTask::ReturnToElement(MPMBase *mpt)
 	// move to inside
 	mpt->SetPosition(&inside);
 	
-	// change velocity for movement form starting position to new edge position (but seems to not be good idea)
+	// change velocity for movement from starting position to new edge position (but seems to not be good idea)
 	//mpt->vel.x=(inside.x-origin.x)/timestep;
 	//mpt->vel.y=(inside.y-origin.y)/timestep;
 	//mpt->vel.z=(inside.z-origin.z)/timestep;

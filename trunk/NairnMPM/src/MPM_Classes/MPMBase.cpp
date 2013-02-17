@@ -75,6 +75,7 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
     // PS - when point created, velocity and position and ext force should be set too
 	ZeroVector(&vel);
 	
+	// counts crossing and sign is whether or not left the grid
 	elementCrossings=0;
 }
 
@@ -203,14 +204,19 @@ int MPMBase::ArchiveMatID(void) { return matnum; }		// one based for archiving
 // element ID (convert to zero based)
 int MPMBase::ElemID(void) { return inElem-1; }					// zero based element array in data storage
 void MPMBase::ChangeElemID(int newElem)
-{	inElem=newElem+1;		// set using zero basis
-	elementCrossings++;		// count crossings
+{	inElem=newElem+1;				// set using zero basis
+	IncrementElementCrossings();		// count crossing
 }
 int MPMBase::ArchiveElemID(void) { return inElem; }			// one based for archiving
 
 // return current element crossings for archiving and reset to zero
-int MPMBase::GetElementCrossings(void) { return elementCrossings; }
+int MPMBase::GetElementCrossings(void) { return elementCrossings>=0 ? elementCrossings : -elementCrossings; }
 void MPMBase::SetElementCrossings(int ec) { elementCrossings = ec; }
+void MPMBase::IncrementElementCrossings(void)
+{	elementCrossings = elementCrossings>=0 ? elementCrossings+1 : elementCrossings-1;
+}
+bool MPMBase::HasLeftTheGrid(void) { return elementCrossings<0; }
+void MPMBase::SetHasLeftTheGrid(bool setting) { elementCrossings = setting ? -GetElementCrossings() : GetElementCrossings(); }
 
 // get unscaled volume for use only in contact and imperfect interface calculations
 // return result in mm^3
