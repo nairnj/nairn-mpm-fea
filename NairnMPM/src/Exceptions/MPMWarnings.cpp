@@ -47,7 +47,7 @@ void MPMWarnings::BeginStep(void)
 }
 
 // issue a warning of a certain type
-// but, only count once per step, and display message only on the first step
+// but, only count once per step, and display message only on the first step this warning occurs
 // return SILENT_WARNING, GAVE_WARNING, or REACHED_MAX_WARNINGS
 int MPMWarnings::Issue(int warnKind,int theID)
 {	int warnResult=SILENT_WARNING;
@@ -114,8 +114,8 @@ void MPMWarnings::Report(void)
 		}
 		
 		// this warning
-		cout << warn->numSteps << " steps had " << warn->msg << "." << endl;
-        cout << "First step with this warning was " << warn->firstStep << endl;
+		cout << "The warning '" << warn->msg << "' occured on " << warn->numSteps << " time steps." << endl;
+        cout << "   First such warning warning was on step " << warn->firstStep << endl;
         cout << endl;
 	}
 }
