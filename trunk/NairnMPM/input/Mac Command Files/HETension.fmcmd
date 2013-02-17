@@ -26,11 +26,11 @@ EndXMLData
 #update="USF"
 
 ! Supported materials: "neohookean" (G2=0), "mooney" (G1=G2), heiso
-#matID="neohookean"
+#matID="heiso"
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2
-#hardID="Linear"
+#hardID="Nonlinear"
 
 ! temperature option to test energy coupling
 StressFreeTemp 294
@@ -50,9 +50,9 @@ StressFreeTemp 294
 #thick=10			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading="thermal"	! Loading = "rigid", "contact", "force", "traction", thermal
+#loading="rigid"	! Loading = "rigid", "contact", "force", "traction", thermal
 #fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
-#strain=0	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
+#strain=5	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak
@@ -263,9 +263,6 @@ else
   GridRect #gleft,#gright,#gbot,#gtop
   
   ! material points
-  Region #matID,0,0,#thick,"temp",#startTemp+100
-    Rect 0,#length/2,0,#width
-  EndRegion
   Region #matID,0,0,#thick
     Rect 0,#length,0,#width
   EndRegion

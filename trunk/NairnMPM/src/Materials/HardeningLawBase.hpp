@@ -42,7 +42,6 @@ class HardeningLawBase
         // return mapping methods
         virtual double SolveForLambda(MPMBase *,int,double,Tensor *,double,double,double,double);
         virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double);
-        virtual void BracketSolution(MPMBase *,int,double,Tensor *,double,double,double,double,double *,double *);
         virtual bool LambdaConverged(int,double,double);
 	
         // Default internal variable as cumlative plastic strain
@@ -59,6 +58,8 @@ class HardeningLawBase
         double yield,yldred;
         MaterialBase *parent;
         double alpint,dalpha;
+	
+		virtual void BracketSolution(MPMBase *,int,double,Tensor *,double,double,double,double,double *,double *);
 };
 
 #endif

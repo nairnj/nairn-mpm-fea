@@ -174,7 +174,7 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
     
     // if fails to bracket, convert to zero deviatoric stress and continue
     // This option does not happen in plane stress calculations
-    if(xh>xl) return strial/(2.*Gred);
+    if(xh>xl) return xh;
     
 	// initial lambdk midpoint of the brackets
 	double lambdak=0.5*(xl+xh);
@@ -238,7 +238,7 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
             {   dxold = dx;
                 dx = 0.5*(xh-xl);
                 lambdak = xl+dx;
-                if(xl == lambdak) break;    // change in root is negligible
+ 				if(xl == lambdak) break;    // change in root is negligible
             }
             else
             {   dxold = dx;
@@ -261,7 +261,6 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
 	}
     
     // return final answer
-    // cout << "   lambdak = " << (lambdak*SQRT_TWOTHIRDS/delTime) << endl;
 	return lambdak;
 }
 
@@ -287,7 +286,7 @@ void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor
 		n2trial += 2.*stk->xy*stk->xy;
 		double n1trial = stk->xx+stk->yy-2.*Pfinal;
 		n1trial *= n1trial/6.;
-        
+		
         // find when plane stress term become negative
         while(step<20)
         {   // try above
@@ -300,7 +299,11 @@ void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor
 			double fnp12 = n1trial/(d1*d1) + n2trial/(d2*d2);
  			double kyld = GetYield(mptr,np,delTime);
 			gmax = 0.5*fnp12 - kyld*kyld/3.;
-            if(gmax<0.) break;
+            if(gmax<0.)
+			{	// set upper limits
+				*lamNeg = dalpha/SQRT_TWOTHIRDS;
+				return;
+			}
             
             // update positive limit and go to next order of magnitude
             *lamPos = lambdak;
@@ -309,18 +312,32 @@ void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor
         }
         
         // exception if did not find answer in 20 orders of magnitude in strain rate
-        if(step>=20)
-        {   cout << "# Material point information that caused the exception:" << endl;
-            mptr->Describe();
-            char errMsg[250];
-            strcpy(errMsg,"Plasticity plane stress solution for material type '");
-            strcat(errMsg,GetHardeningLawName());
-            strcat(errMsg,"' could not be bracketed in 20 steps");
-            throw CommonException(errMsg,"IsoPlasticity::BracketSolution");
-        }
+		cout << "# Material point information that caused the exception:" << endl;
+		mptr->Describe();
+		char errMsg[250];
+		strcpy(errMsg,"Plasticity plane stress solution for material type '");
+		strcat(errMsg,GetHardeningLawName());
+		strcat(errMsg,"' could not be bracketed in 20 steps");
+		throw CommonException(errMsg,"IsoPlasticity::BracketSolution");
     }
     else
-    {   // find when strial 2 GRed sqrt(3/2) dalpha - sqrt(2/3)GetYield(alpha+dalpha,dalpha)
+	{	// It must be negative when all plastic or when alphamax = strial/(2.*Gred);
+		// (assuming yield stress  monotonically increases with alpha and epdot and is not zero)
+		// It will usually be closer to zero
+		// Test intervals dx, dx*r, ... dx*r^n where r (>1) is ratio of sizes and dx*r^n = alphamax
+		double dalpha = strial/(2.*Gred);
+		alpint = mptr->GetHistoryDble() + dalpha;
+		if(GetYield(mptr,np,delTime) <= 0.)
+		{	*lamNeg = 0.;
+			*lamPos = dalpha/SQRT_TWOTHIRDS;
+		}
+		
+		// take full range and new Newton's method with bracketing do the binary bisection
+		*lamNeg = dalpha/SQRT_TWOTHIRDS;
+		return;
+						
+		/*
+        // find when strial 2 GRed sqrt(3/2) dalpha - sqrt(2/3)GetYield(alpha+dalpha,dalpha)
         // becomes negative
         while(step<20)
         {   // try above
@@ -343,14 +360,8 @@ void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor
             *lamNeg = 0.;
             *lamPos = 1.;
         }
+		*/
     }
-    
-    
-    // set upper limits
-    *lamNeg = dalpha/SQRT_TWOTHIRDS;
-    
-    //cout << "steps: " << step << ", epdot range: " << (*lamPos*SQRT_TWOTHIRDS/delTime) <<
-    //        " to " << (*lamNeg*SQRT_TWOTHIRDS/delTime) << endl;
 }
 
 // decide if the numerical solution for lambda has converged
