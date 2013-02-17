@@ -283,6 +283,30 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
         dfdsyy = (2.*syy-sxx)/3.;
         dfdszz = -(dfdsxx+dfdsyy);
         dfdtxy = txy;				// tensorial shear strain
+		
+		// If fully plastic, the increment in deviatoric stress should be zero
+		// sxx = sigmaxx+Pfinal = st0.xx, syy = sigmayy+Pfinal = st0.yy, szz = Pfinal
+		// But first two must be wrong because trace is no longer zero?
+		//
+		// This is probably wrong
+		// i.e.:	n1 + 2*Pfinal = st0.xx+st0.yy
+		//			(stk.xx+stk.yy)/d1 - 2*Pfinal*(1/d1-1) = st0.xx+st0.yy
+		// But (stk.xx+stk.yy) = (st0.xx+st0.yy) + 2.*Gred*(dexxr+deyyr-2*thirdDelV)
+		//			(st0.xx+st0.yy)(1/d1-1) - 2*Pfinal*(1/d1-1) = -2.*Gred*(dexxr+deyyr-2*thirdDelV)/d1
+		//			(st0.xx+st0.yy-2*Pfinal)*(1-d1) = -2.*Gred*(dexxr+deyyr-2*thirdDelV)
+		//			B*Kred*lam = 2.*Gred*A    or    lam = 2.*Gred*A/(B*Kred)
+		// where B = st0.xx+st0.yy-2*Pfinal, and A = (dexxr+deyyr-2*thirdDelV)
+		// Then  d1 = 1+2*Gred*A/B, n1 = ((st0.xx+st0.yy) + 2*Gred*A - 2*Pfinal)/d1 = (B+2*Gred*A)*B/(B+2*Gred*A) = B
+		//
+		// Also expect syy-sxx = sigmayy-sigmaxx = st0.yy-st0.xx = n2
+		//			(stk.yy-stk.xx)/d2 = st0.yy-st0.xx
+		//			(st0.yy-st0.xx)/d2 + 2*Gred*(deyyr-dexxr)/d2 = (st0.yy-st0.xx)
+		//			(st0.yy-st0.xx)(d2-1) = - 2*Gred*(deyyr-dexxr)
+		//          lam = (deyyr-dexxr)/(st0.yy-st0.xx)
+		// Then n2 = (st0.yy-st0.xx + 2*Gred*(deyyr-dexxr))/(1+2*Gred*(deyyr-dexxr)/(st0.yy-st0.xx)) = st0.yy-st0.xx
+		//
+		// But these to lam's seem to differ?
+		// We can write 
 	}
     else
     {   // get final direction
