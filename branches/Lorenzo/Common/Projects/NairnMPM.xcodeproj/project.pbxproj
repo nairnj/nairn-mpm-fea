@@ -393,6 +393,12 @@
 		A7F723360A7179C000D23181 /* MatPoint3D.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7F723340A7179C000D23181 /* MatPoint3D.cpp */; };
 		A7F723970A7187F900D23181 /* ElementBase3D.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7F723950A7187F900D23181 /* ElementBase3D.cpp */; };
 		A7F723980A7187F900D23181 /* ElementBase3D.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7F723960A7187F900D23181 /* ElementBase3D.hpp */; };
+		A7FADFEE16D2B70900D08292 /* CamClayModified.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7FADFE816D2B70900D08292 /* CamClayModified.cpp */; };
+		A7FADFEF16D2B70900D08292 /* CamClayModified.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7FADFE916D2B70900D08292 /* CamClayModified.hpp */; };
+		A7FADFF016D2B70900D08292 /* ElasticMatrixCamClay.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7FADFEA16D2B70900D08292 /* ElasticMatrixCamClay.cpp */; };
+		A7FADFF116D2B70900D08292 /* ElasticMatrixCamClay.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7FADFEB16D2B70900D08292 /* ElasticMatrixCamClay.hpp */; };
+		A7FADFF216D2B70900D08292 /* GeoMaterials.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7FADFEC16D2B70900D08292 /* GeoMaterials.cpp */; };
+		A7FADFF316D2B70900D08292 /* GeoMaterials.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7FADFED16D2B70900D08292 /* GeoMaterials.hpp */; };
 		A7FC2031124432B700DEAEF0 /* TrilinearTraction.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7FC202F124432B700DEAEF0 /* TrilinearTraction.hpp */; };
 		A7FC2032124432B700DEAEF0 /* TrilinearTraction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7FC2030124432B700DEAEF0 /* TrilinearTraction.cpp */; };
 /* End PBXBuildFile section */
@@ -699,6 +705,12 @@
 		A7F723340A7179C000D23181 /* MatPoint3D.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPoint3D.cpp; sourceTree = "<group>"; };
 		A7F723950A7187F900D23181 /* ElementBase3D.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = ElementBase3D.cpp; sourceTree = "<group>"; };
 		A7F723960A7187F900D23181 /* ElementBase3D.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = ElementBase3D.hpp; sourceTree = "<group>"; };
+		A7FADFE816D2B70900D08292 /* CamClayModified.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CamClayModified.cpp; path = Materials/CamClayModified.cpp; sourceTree = "<group>"; };
+		A7FADFE916D2B70900D08292 /* CamClayModified.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = CamClayModified.hpp; path = Materials/CamClayModified.hpp; sourceTree = "<group>"; };
+		A7FADFEA16D2B70900D08292 /* ElasticMatrixCamClay.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ElasticMatrixCamClay.cpp; path = Materials/ElasticMatrixCamClay.cpp; sourceTree = "<group>"; };
+		A7FADFEB16D2B70900D08292 /* ElasticMatrixCamClay.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = ElasticMatrixCamClay.hpp; path = Materials/ElasticMatrixCamClay.hpp; sourceTree = "<group>"; };
+		A7FADFEC16D2B70900D08292 /* GeoMaterials.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GeoMaterials.cpp; path = Materials/GeoMaterials.cpp; sourceTree = "<group>"; };
+		A7FADFED16D2B70900D08292 /* GeoMaterials.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = GeoMaterials.hpp; path = Materials/GeoMaterials.hpp; sourceTree = "<group>"; };
 		A7FC202F124432B700DEAEF0 /* TrilinearTraction.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TrilinearTraction.hpp; sourceTree = "<group>"; };
 		A7FC2030124432B700DEAEF0 /* TrilinearTraction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TrilinearTraction.cpp; sourceTree = "<group>"; };
 		F536365A01FF7C620163AF10 /* MPMReadHandler.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = MPMReadHandler.hpp; sourceTree = "<group>"; };
@@ -791,6 +803,7 @@
 				F5F7068E0326ABD00163AF10 /* Materials */,
 				A778E0D216A9CDF9003D27FE /* Hypoelastic_Plastic */,
 				A778E0D316A9CE76003D27FE /* Hyperelastic_Plastic */,
+				A7FADFE616D2B6A100D08292 /* Lorenzo Materials */,
 				A778E0D116A8D9BB003D27FE /* Hardening_Laws */,
 				67D1F371157F932D0010691C /* Traction_Laws */,
 				F5F7068C0326AB830163AF10 /* Elements */,
@@ -1376,6 +1389,19 @@
 			path = ../input;
 			sourceTree = "<group>";
 		};
+		A7FADFE616D2B6A100D08292 /* Lorenzo Materials */ = {
+			isa = PBXGroup;
+			children = (
+				A7FADFE916D2B70900D08292 /* CamClayModified.hpp */,
+				A7FADFE816D2B70900D08292 /* CamClayModified.cpp */,
+				A7FADFEB16D2B70900D08292 /* ElasticMatrixCamClay.hpp */,
+				A7FADFEA16D2B70900D08292 /* ElasticMatrixCamClay.cpp */,
+				A7FADFED16D2B70900D08292 /* GeoMaterials.hpp */,
+				A7FADFEC16D2B70900D08292 /* GeoMaterials.cpp */,
+			);
+			name = "Lorenzo Materials";
+			sourceTree = "<group>";
+		};
 		F5F7068C0326AB830163AF10 /* Elements */ = {
 			isa = PBXGroup;
 			children = (
@@ -1561,6 +1587,9 @@
 				67B916D216AE15BE00632385 /* MGSCGLMaterial.hpp in Headers */,
 				6715DFD216C567350042F15C /* Nonlinear2Hardening.hpp in Headers */,
 				673EC9B716C9EB71007FFEB5 /* CarnotCycle.hpp in Headers */,
+				A7FADFEF16D2B70900D08292 /* CamClayModified.hpp in Headers */,
+				A7FADFF116D2B70900D08292 /* ElasticMatrixCamClay.hpp in Headers */,
+				A7FADFF316D2B70900D08292 /* GeoMaterials.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1878,6 +1907,9 @@
 				67B916D416AE15E600632385 /* HEIsotropic.cpp in Sources */,
 				6715DFD116C567350042F15C /* Nonlinear2Hardening.cpp in Sources */,
 				673EC9B616C9EB71007FFEB5 /* CarnotCycle.cpp in Sources */,
+				A7FADFEE16D2B70900D08292 /* CamClayModified.cpp in Sources */,
+				A7FADFF016D2B70900D08292 /* ElasticMatrixCamClay.cpp in Sources */,
+				A7FADFF216D2B70900D08292 /* GeoMaterials.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
