@@ -42,3 +42,13 @@ svn checkout http://nairn-mpm-fea.googlecode.com/svn/trunk/ nairn-mpm-fea --user
 Here `nairn-mpm-fea` is the name of the folder that will be created with the checked out code. You can use any name you want. Also `YOURUSERNAME` is the username you obtained in step #3 above. After giving this command, you will need to enter the password from step #3 to finish the checkout.
 
 Once you have the code, open the `index.html` file in the Documentation folder to learn how to compile all code, run calculations, and visualize the results.
+
+=Checkout a Branch=
+
+From time to time, `nairn-mpm-fea` will use branches, such as to work on special features or as a coding area for project committers working on their own code features. To check out a branch using a password (which is most common), use:
+
+{{{
+svn checkout https://nairn-mpm-fea.googlecode.com/svn/branches/branch_name nairn-mpm-fea-branch_name --username YOURUSERNAME
+}}}
+
+where `branch_name` is the name of the branch (if `https` does not work, use `http` instead).
