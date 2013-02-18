@@ -159,6 +159,7 @@
 				| KIc | KIIc | JIc | JIIc | gamma | KIexp | KIIexp | delIc | delIIc | delpkI | delpkII
 				| sigmaI2 | sigmaII2 | delpkI2 | delpkII2 | ValueFunction
 				| D | DA | DT | Dx | Dy | Dz | DR | DZ | D0 | Dd | csat 
+                | phi | OCR | lamdaCC | kapaCC | e0 | yref | k0 | Mcc
 				| SettingFunction | SettingFunction2 | SettingFunction3 | IdealRubber
 				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration
 				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd | P0 | T0
@@ -522,6 +523,18 @@
 <!ELEMENT	C2SL (#PCDATA)>
 <!ELEMENT	tempC1 (#PCDATA)>
 <!ELEMENT	tempC2 (#PCDATA)>
+
+<!-- ==============================================
+		Ray Lorenzo Material Properties
+================================================-->
+<!ELEMENT	OCR (#PCDATA)>
+<!ELEMENT	lamdaCC (#PCDATA)>
+<!ELEMENT	kapaCC (#PCDATA)>
+<!ELEMENT	phi (#PCDATA)>
+<!ELEMENT	e0 (#PCDATA)>
+<!ELEMENT	k0 (#PCDATA)>
+<!ELEMENT	yref (#PCDATA)>
+<!ELEMENT	Mcc (#PCDATA)>
 
 <!ELEMENT	pt EMPTY>
 <!ATTLIST	pt
