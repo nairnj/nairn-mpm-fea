@@ -43,7 +43,8 @@ class MGSCGLMaterial : public IsoPlasticity
 		virtual int MaterialTag();
         virtual double WaveSpeed(bool,MPMBase *);
         virtual double CurrentWaveSpeed(bool,MPMBase *);
-		
+		virtual bool SupportsArtificialViscosity(void);
+	
     protected:
         double GPpred,G0red,Keffred,Gratio;
         double C0squared,QAVred;

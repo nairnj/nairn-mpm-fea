@@ -162,7 +162,7 @@
 				| SettingFunction | SettingFunction2 | SettingFunction3 | IdealRubber
 				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration
 				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd | P0 | T0
-                | kCondR | kCondZ | Hardening | C1SL | C2SL | UJOption | ArtificialVisc
+                | kCondR | kCondZ | Hardening | C1SL | C2SL | UJOption | ArtificialVisc | avA1 | avA2
 				| yldxx | yldyy | yldzz | yldxy | yldxz | yldyz | Khard | nhard | color | betahard
 				| Bjc | njc | Cjc | ep0jc | C0 | S1 | S2 | S3 | GPpG0 | GTpG0 | gamma0
 				| Uk | YP | Friction | C1 | C2 | Ajc | mjc | Tmjc | tempC1 | tempC2 )* >
@@ -483,6 +483,8 @@
 <!ELEMENT	IdealRubber EMPTY>
 <!ELEMENT	UJOption (#PCDATA)>
 <!ELEMENT	ArtificialVisc EMPTY>
+<!ELEMENT	avA1 (#PCDATA)>
+<!ELEMENT	avA2 (#PCDATA)>
 <!ELEMENT	Uk (#PCDATA)>
 <!ELEMENT	YP (#PCDATA)>
 <!ELEMENT	K0 (#PCDATA)>

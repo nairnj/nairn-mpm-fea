@@ -137,6 +137,7 @@ class MaterialBase : public LinkedObject
 		virtual void ContactOutput(int);
         virtual bool PartitionsElasticAndPlasticStrain(void);
         virtual double GetArtificalViscosity(double,double);
+		virtual bool SupportsArtificialViscosity(void);
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif
