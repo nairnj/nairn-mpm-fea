@@ -435,8 +435,8 @@ Using this relation, the stress update for the in-plane terms only are
                              = \left(1-2\nu\over 1-\nu\right)\left(d\varepsilon_{xx}^{(tot)} + d\varepsilon_{yy}^{(tot)}\right)      \label{psDelV} \\
        dP & = & -K {\Delta V\over V} \\
        ds_{ij}^{trial} & = & 2G \left(d\varepsilon_{ij}^{(tot)} - {\Delta V\over 3V}\right)   \qquad {\rm for\ }i=j=x,y \\
-       ds_{zz} & = & dP \\
-       d\tau_{xy} = ds_{xy} & = & G d\gamma_{xy} \\
+       ds_{zz}^{trial} = ds_{zz} & = & dP \\
+       d\tau_{xy}^{trial} = ds_{xy}^{trial} & = & G d\gamma_{xy} \\
 \end{eqnarray}
 The \code{IsoPlasticity} class is based on $K$ and $G$ (in \code{Kred} and \code{Gred}). For calculation efficiency, two above terms and one term defined below are stored in variables:
 \begin{eqnarray}
@@ -506,14 +506,14 @@ This general result applied to isotropic materials leads to
 and
 \begin{equation}
     \|\dev\|^2 = \s{n+1}\P\s{n+1} = {{1\over 6}\left( \s{xx}^{trial} +  \s{yy}^{trial} \right)^2 \over \left( 1 + { E\over 3(1-\nu)}\lambda\right)^2}
-             + {{1\over 2}\left( -\s{xx}^{trial} +  \s{yy}^{trial} \right)^2 + 2\tau_{xy}^2 \over \left(1 + 2 G\lambda\right)^2}
+             + {{1\over 2}\left( -\s{xx}^{trial} +  \s{yy}^{trial} \right)^2 + 2{\tau_{xy}^{trial}}^2 \over \left(1 + 2 G\lambda\right)^2}
 \end{equation}
 The task is to find $\lambda$ by Newton's method with the key equations being:
 \begin{eqnarray}
         f^{(k)} & = & {1\over 2}\|\dev^{(k)}\|^2 -  {1\over 3} K^2(\alpha^{(k)}) = 0 \\
         {df^{(k)}\over d\lambda} & = & -\left[{ E\over 3(1-\nu)}{{1\over 6}\left( \s{xx}^{trial} +  \s{yy}^{trial} \right)^2 \over
                                                      \left( 1 + { E\over 3(1-\nu)}\lambda^{(k)}\right)^3}
-             + 2G{{1\over 2}\left( -\s{xx}^{trial} +  \s{yy}^{trial} \right)^2 + 2\tau_{xy}^2 \over \left(1 + 2 G\lambda^{(k)}\right)^3}\right]  
+             + 2G{{1\over 2}\left( -\s{xx}^{trial} +  \s{yy}^{trial} \right)^2 + 2{\tau_{xy}^{trial}}^2 \over \left(1 + 2 G\lambda^{(k)}\right)^3}\right]  
  \nonumber \\
  &&\qquad\mbox{}
                                        - {1\over 3}{dK^2(\alpha^{(k)})\over d\lambda}  \\
