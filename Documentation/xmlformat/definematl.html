@@ -300,12 +300,12 @@ and rubber elastic materials as special cases.</td>
 <dd>Critical crack opening displacement. Only used when there is crack propagation by <a href="mpmheader.html#cracks">criterion</a> 6. Also used by <a href="#traction">traction-law</a> materials.
 </dd>
 
-<dt><a name="artificialvisc"></a>&lt;ArtificialVisc/&gt;, &lt;avA1&gt;.5&lt;/avA1&gt;, and &lt;avA2&gt;2.0&lt;/avA2&gt;</dt>
+<dt><a name="artificialvisc"></a>&lt;ArtificialVisc/&gt;, &lt;avA1&gt;.2&lt;/avA1&gt;, and &lt;avA2&gt;2.0&lt;/avA2&gt;</dt>
 <dd>This first empty tag turns artificial visocsity on, which adds a pressure, Q, related to velocity gradient on the particle. The equation is
 <blockquote>
 Q = &Delta;x*|D<sub>kk</sub>|*(A1*C + A2*&Delta;x*|D<sub>kk</sub>|)
 </blockquote>
-where &Delta;x is the cell size of the mesh, |D<sub>kk</sub>| is the relative volume change rate, C is the bulk wave speed in the material, and A1 and A2 are adjustable constants, which are entered using the above &lt;avA1&gt; and &lt;avA2&gt; commands. The defaults are off, A1=0.5, and A2=2.0.<br>
+where &Delta;x is the cell size of the mesh, |D<sub>kk</sub>| is the relative volume change rate, C is the bulk wave speed in the material, and A1 and A2 are adjustable constants, which are entered using the above &lt;avA1&gt; and &lt;avA2&gt; commands. The defaults are off, A1=0.2, and A2=2.0. It is common, but not required, to choose A2 = 10*A1.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;The artificial viscosity property is supported only in a few materials (as documented under each material). If you use these commands in a material that does not support, and error will result.
 </dd>
 
