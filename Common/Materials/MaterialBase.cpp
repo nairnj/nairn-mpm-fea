@@ -82,7 +82,7 @@ MaterialBase::MaterialBase(char *matName)
 	heatCapacity=1.;					// keep one because needed bu ideal gas
 	lastFriction=NULL;
     artificialViscosity=FALSE;
-    avA1 = 0.2;
+    avA1 = 0.5;
     avA2 = 2.0;
 #endif
 }
@@ -117,6 +117,7 @@ void MaterialBase::PrintMaterial(int num)
 void MaterialBase::PrintMechanicalProperties(void) {}
 
 // print property with units (option) and align to columns for material properties
+// In field of width PROP_COLUMN
 void MaterialBase::PrintProperty(const char *propName,double value,const char *unitsStr)
 {
 	char prop[200];
@@ -164,6 +165,7 @@ void MaterialBase::PrintProperty(const char *propName,double value,const char *u
 }
 
 // print text aligned with material columns, left or right justified
+// In field of width PROP_COLUMN, will use two if needed
 void MaterialBase::PrintProperty(const char *text,bool rightJustify)
 {
 	char prop[200];

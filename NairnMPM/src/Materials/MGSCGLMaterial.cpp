@@ -345,4 +345,6 @@ double MGSCGLMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr)
     return 1000.*sqrt((KcurrRed + 4.*GcurrRed/3.)/1000.);
 }
 
+// if a subclass material supports artificial viscosity, override this and return TRUE
+bool MGSCGLMaterial::SupportsArtificialViscosity(void) { return TRUE; }
 

@@ -157,12 +157,25 @@ char *MaterialBase::InputMat(char *xName,int &input)
         return((char *)&kCond);
 	}
     
-    else if(strcmp(xName,"ArtificialVisc")==0)
-    {	artificialViscosity=TRUE;
-        input=NOT_NUM;
-        return((char *)&artificialViscosity);
-    }
-	
+	// check properties only for some materials
+	if(SupportsArtificialViscosity())
+	{	if(strcmp(xName,"ArtificialVisc")==0)
+		{	artificialViscosity=TRUE;
+			input=NOT_NUM;
+			return((char *)&artificialViscosity);
+		}
+		
+		else if(strcmp(xName,"avA1")==0)
+		{	input=DOUBLE_NUM;
+			return((char *)&avA1);
+		}
+		
+		else if(strcmp(xName,"avA2")==0)
+		{	input=DOUBLE_NUM;
+			return((char *)&avA2);
+		}
+	}
+    
     return((char *)NULL);
 }
 
@@ -212,7 +225,10 @@ void MaterialBase::PrintCommonProperties(void)
     
     // artificial visconsity
     if(artificialViscosity)
-        cout << "Artificial viscosity on" << endl;
+	{	PrintProperty("Artificial viscosity on",FALSE);
+		PrintProperty("AV-A1",avA1,"");
+		PrintProperty("AV-A2",avA1,"");
+	}
 	
 	// optional color
 	if(red>=0.)
@@ -1327,6 +1343,9 @@ double MaterialBase::GetArtificalViscosity(double Dkk,double c)
 // its GetDeformationGradient(). When this is TRUE, gradient uses total strain, otherwise it
 // uses only the terms in ep and wrot.
 bool MaterialBase::PartitionsElasticAndPlasticStrain(void) { return FALSE; }
+
+// if a subclass material supports artificial viscosity, override this and return TRUE
+bool MaterialBase::SupportsArtificialViscosity(void) { return FALSE; }
 
 
 
