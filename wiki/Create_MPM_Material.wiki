@@ -7,7 +7,7 @@ These notes explain how to create a new material class for use in NairnMPM.
 
 = Getting Started =
 
-The first steps are to add a new class to NairnMPM and to allow input command files to use that material. These steps involve creating the source code and some edited of the core code to add the new material class. Those steps are defined in this section.
+The first steps are to add a new class to NairnMPM and to allow input command files to use that material. These steps involve creating the source code and some editing of the core code to add the new material class. Those steps are defined in this section.
 
 == Class Source Code ==
 
@@ -15,13 +15,13 @@ The best way to create the source code is to duplicate the `NewMaterial.cpp` and
 
 == Material Class Hierarchy ==
 
-The following outline shows all materials in `nairn-mpm-fea`as a class hierarchy. Materials in UPPERCASE are actual materials. Materials in mixed case are abstract classes. Materials in <font color="green">green</font> are in both FEA and MPM; materials in <font color="red">red</font> are only in FEA; all the rest are only in MPM. The new material should be inserted into this hierarchy and it should define a new, unique constant (in UPPERCASE) for that material. The current materials use numbers 1 through 24 (except for 6). This new constant should replace the `NEWMATERIAL` constant in the new `.hpp`. Futhermore, to allow this number in input command files, it must be added as an option for the `Material` command in the `DTD` file.
+The following outline shows all materials in `nairn-mpm-fea` as a class hierarchy. Materials in UPPERCASE are actual materials. Materials in mixed case are abstract classes. Materials in <font color="green">green</font> are in both FEA and MPM; materials in <font color="red">red</font> are only in FEA; all the rest are only in MPM. The new material should be inserted into this hierarchy and it should define a new, unique constant (in UPPERCASE) for that material. The current materials use numbers low numbers (starting with 1); those working on custom materials should probably use large number (>100). This new constant should replace the `NEWMATERIAL` constant in the new `.hpp`.
 
   * <font color="green">`MaterialBase`</font>
     * <font color="green">`Elastic`</font>
       * <font color="green">`ISOTROPIC=1`</font>
         * `ISOPLASTICTY=9`
-          * `MGSCGLMATERIAL=17`
+          * `MGEOSMATERIAL=17`
         * `BISTABLEISO=10`
       * <font color="green">`TRANSISO1(2)=2,3`</font>
         * <font color="green">`ORTHO=4`</font>
@@ -31,8 +31,8 @@ The following outline shows all materials in `nairn-mpm-fea`as a class hierarchy
     * `VISCOELASTIC=7`
     * `HyperElastic`
       * `MOONEYRIVLIN=8`
-      * `HEISOTROPIC=24` (in development)
-      * `HEANISOTROPIC=21` (in development)
+      * `HEISOTROPIC=24`
+      * `HEANISOTROPIC=21` (future development)
       * `IDEALGASMATERIAL=22`
     * <font color="red">`INTERFACEPARAMS=5`</font>
     * `RIGIDMATERIAL=11`
@@ -45,7 +45,7 @@ The following outline shows all materials in `nairn-mpm-fea`as a class hierarchy
 
 == Editing Required in Core Code ==
 
-Almost all coding will be done in the new material class files, but for that material to be recognized as an option in NairnMPM, a few places in the core code have to be edited first. Theses should be the only changes need outside the new material class files.
+Almost all coding will be done in the new material class files, but for that material to be recognized as an option in NairnMPM, a few places in the core code have to be edited first. Theses should be the only changes needed outside the new material class files.
 
   # In `MaterialController::AddMaterial(int matID,char ``*``matName)`- - add a new case in the `switch(matID)` section to call the default constructor of the new material when `matID` matches the new material constant defined in the previous section.
   # Include the new material's header file at the top of `Common/Read_XML/MaterialController.cpp`
