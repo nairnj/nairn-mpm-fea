@@ -32,7 +32,7 @@ The following outline shows all materials in `nairn-mpm-fea` as a class hierarch
     * `HyperElastic`
       * `MOONEYRIVLIN=8`
       * `HEISOTROPIC=24`
-        * `HEMGEOSMATERIAL=18`
+        * `HEMGEOSMATERIAL=25`
       * `HEANISOTROPIC=21` (future development)
       * `IDEALGASMATERIAL=22`
     * <font color="red">`INTERFACEPARAMS=5`</font>
