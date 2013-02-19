@@ -154,4 +154,26 @@ double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
 // Maximum diffusivity in cm^2/sec
 //double NewMaterial::MaximumDiffusivity(void) { return 0.; }
 
+// When code needs the stress, it calls this method on the material where sp is point
+// to stress tensor on a particle. The default method thus returns it contents in
+// a new Tensor. Some materials separated track deviatoric stress and pressure. They
+// need to overide and return the full stress tensor. Other materials can use any scheme
+// they want to store stress as long as this method returns the true stress
+//Tensor NewMaterial::GetStress(Tensor *sp,double pressure) { Tensor stress = *sp; return stress; }
+
+// If new material separately track elastic and plastic strain in the particle elastic
+// and plastic strain tensors, include this method and return TRUE. When true,
+// code will sum the strains to get total strains, such as when finding deformation
+// gradient. If FALSE, code will assume total strain is in elastic strain and therefore
+// the subclass can use plastic strain for other uses (e.g. hyperelastic materials
+// usual use it for the Left-Cauchy Green strain.
+//bool NewMaterial::PartitionsElasticAndPlasticStrain(void) { return TRUE; }
+
+// if a subclass material supports artificial viscosity, include this method return TRUE
+// The consititutive law also needs to calculate the artificial viscosity and add
+// it to pressure. A base material class method, GetArtificialViscocity(), does
+// the calculation.
+//bool NewMaterial::SupportsArtificialViscosity(void) { return TRUE; }
+
+
 

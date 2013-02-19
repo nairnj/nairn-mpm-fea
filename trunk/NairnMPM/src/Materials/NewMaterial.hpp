@@ -53,6 +53,9 @@ class NewMaterial : public MaterialBase
         //virtual double CurrentWaveSpeed(bool,MPMBase *);
 		//virtual double MaximumDiffusion(void);
         //virtual double MaximumDiffusivity(void);
+        //Tensor NewMaterial::GetStress(Tensor *sp,double pressure);
+        //bool PartitionsElasticAndPlasticStrain(void);
+        //bool SupportsArtificialViscosity(void)
 		
     protected:
 
