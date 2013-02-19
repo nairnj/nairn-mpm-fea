@@ -22,8 +22,15 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
 
   * Current trunk Version
     * Working on NairnMPM 9.1.0
-    * `MGSCGLMaterial` and `SLMaterial` are now large-deformation laws for the equation of state with conventional plasticity using advanced hardening laws for the shear parts.
-    * A new `MGJohnsonCook` material uses a large deformation Mie-Grüneisen law for pressure and Johnson-Cook plasticity model for the shear parts.
+    * Hardening Laws have been separated from materials to allow one to select them independently - this approach creates a large number of material types. An alternate nonlinear hardening law is among the previously available hardening laws.
+    * `MGSCGLMaterial` has been replaced by `MGEOSMaterial` that use a Mie-Grüneisen law for pressure and can pick any hardening law. This material has also be greatly improved for more accurate tracking of internal energy (as needed in the pressure law) and to allow artificial viscosity useful in shock wave calculations.
+    * `SLMaterial`, `JohnsonCook`, and `VonMises` materials have been eliminated. Instead use the new `IsoPlasticity` or `MGEOSMaterial` and then select any hardening law.
+    * The `HEIsotropic` hyperelastic-plastic material is now fully developed. It can use any hardening law.
+    * A new `HEMGEOSMaterial` implements Mie-Grüneisen law for pressure and hyperelastic methods for shear. It can use any hardening law.
+    * Thermodynamics of deformation is now better modeled. Materials now track work and heat energy separately and their sum is internal energy. Mechanical energy coupling for adiabatic process can now be used with conduction on or off.
+    * The `Mooney` material has an option to model an ideal rubber elastic material that heats on stretching and cooling on contraction. The material also tracks entropy change and during isothermal loading in the new ideal rubber mode, force is given by f = -(dS/dL)<sub>T</sub>. This material now also allows three difference energy function for pressure calculations.
+    * The `IdealGas` material now tracks entropy change.
+    * The `VTKArchive` can archive several new quantities.
 
   * release-3.0 (9 JAN 2013)
     * Has NairnMPM 9.0.0
