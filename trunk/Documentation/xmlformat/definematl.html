@@ -104,8 +104,15 @@ and rubber elastic materials as special cases.</td>
 <tr>
 <td><a href="#heiso"><code>HEIsotropic</code></a></td>
 <td>24</td>
-<td width="50%">Isotropic, elastic-plastic, hyperelastic material (in development).</td>
+<td width="50%">Isotropic, elastic-plastic, hyperelastic material.</td>
 <td align="center"></td><td align="center">X -</td><td align="center">X</td>
+</tr>
+
+<tr>
+<td><a href="#MGEOS"><code>HEMGEOSMaterial</code></a></td>
+<td>25</td>
+<td width="50%">Isotropic, elastic-plastic, hyperelastic material using the Mie-Gr&#252;neisen equation of state and a hardening law.</td>
+<td align="center"></td><td align="center">X X</td><td align="center">X</td>
 </tr>
 
 <tr>
@@ -957,9 +964,9 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
     
 <!-- Material  Section -->
 
-<h2><a name="MGEOS"></a>Mie-Gr&#252;neisen Equation of State Material</h2>
+<h2><a name="MGEOS"></a>Mie-Gr&#252;neisen Equation of State Materials</h2>
 
-<p>The material type is <code>Type=17</code> and is an isotropic material with plasticity. The pressure is determined by the Mie-Gr&#252;neisen equation of state (using large deformation methods in compression). The shear modulus and yielding are handled by small stain methods using a <a href="hardeninglaws.html">hardening law</a>. The material properties for this material are:
+<p>These two material types use <code>Type=17</code> and <code>Type=25</code>. Both are isotropic materials with plasticity and find pressure using the Mie-Gr&#252;neisen equation of state by large deformation methods. The <code>Type=17</code> material uses low-strain, hypoelastic methods for shear and yielding. The <code>Type=25</code> material uses large-deformation for shear and yielding. Both material can use any <a href="hardeninglaws.html">hardening law</a>. The material properties for both these materials are:
 </p>
 
 <dl>
@@ -998,14 +1005,14 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
    (1 - S<sub>1</sub>x - S<sub>2</sub>x<sup>2</sup> - S<sub>3</sub>x<sup>3</sup>)<sup>2</sup>
    + &rho;<sub>0</sub>&gamma;<sub>0</sub>e
 </blockquote>
-<p>where e is the internal energy made up of elastic, plastic, and thermal energy.
- The thermal energy depends on temperature relative to a reference temperature; the reference temperature is set using the <a href="mpmheader.html#stressfreetemp"><code>StressFreeTemp</code></a> command. When x<0, the material is in tension and the pressure changes to</p>
+<p>where e is the internal energy, which is sum of work energy (stored in strain energy) and heat energy.
+ The heat energy depends on temperature relative to a reference temperature; the reference temperature is set using the <a href="mpmheader.html#stressfreetemp"><code>StressFreeTemp</code></a> command. When x<0, the material is in tension and the pressure changes to</p>
 <blockquote>
    P = &rho;<sub>0</sub>C<sub>0</sub><sup>2</sup>x
    + &rho;<sub>0</sub>&gamma;<sub>0</sub>e
 </blockquote>
  <p>The first term is bulk modulus terms with the low-strain bulk modulus being
- &rho;<sub>0</sub>C<sub>0</sub><sup>2</sup>. For more details on this equation of state see <a href="references.html#Wilkens1999">Wilkens (1999)</a>, page 61 (altough final pressure form here is different but is equivalent if compared as polynomial expansions; this form also includes S<sub>2</sub> and S<sub>3</sub> options while Wilkens only has S = S<sub>1</sub>).
+ &rho;<sub>0</sub>C<sub>0</sub><sup>2</sup>. For more details on this equation of state see <a href="references.html#Wilkens1999">Wilkens (1999)</a>, page 61 (although the final pressure form here is different but is equivalent if compared as polynomial expansions; this form also includes S<sub>2</sub> and S<sub>3</sub> options while Wilkens only has S = S<sub>1</sub>).
 </p>
 
 <p>This equation of state automatically handles thermal expansion by inclusion of thermal energy in the internal energy. You do not need to enter a thermal expansion coefficient because it is determined by other properties through:
@@ -1013,14 +1020,14 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 <blockquote>
      &alpha; = (&gamma;<sub>0</sub>C<sub>V</sub>)/(3C<sub>0</sub><sup>2</sup>)
 </blockquote>
-<p>which means you need to enter <a href="#common"><code>Cv</code></a> (note that this is a linear expansion coefficient).</p>
+<p>which means you need to enter <a href="#common"><code>heat capacity</code></a> (note that this is a linear expansion coefficient).</p>
 
-<p>This material allows isotropic conduction and diffusion by entering isotropic transport properties (<a href="#iso"><code>kCond</code>, <code>D</code>, and <code>beta</code></a>)  and bulk properties (<a href="#common"><code>Cp</code> and <code>csat</code></a>).
+<p>This material allows isotropic conduction and diffusion by entering isotropic transport properties (<a href="#iso"><code>kCond</code>, <code>D</code>, and <code>beta</code></a>)  and bulk properties (<a href="#common"><code>heat capacity</code> and <code>csat</code></a>).
 </p>
 
 <h3>History Data for Mie-Gr&#252;neisen Equation of State Material</h3>
 
-<p>The material has none, but the <a href="hardeninglaws.html">hardening law</a> will have at least one.</p>
+<p>The <code>Type=17</code> material has no history variables, but the <a href="hardeninglaws.html">hardening law</a> will have at least one. The <code>Type=17</code> material tracks relative volume in the first history variable after hardening law history variables.</p>
     
 <!-- Material  Section -->
 

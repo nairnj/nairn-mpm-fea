@@ -114,7 +114,7 @@ void SCGLHardening::PrintYieldProperties(void)
 #pragma mark NonlinearHardening::Law Methods
 
 // handle prressure and temperture depence of the shear modulus
-// Find ratio of current shear modulus to G0red including factor of J
+// Find ratio of current shear modulus to initial shear modulus including factor of J
 //  because dealing in Kirchoff stress
 double SCGLHardening::GetShearRatio(MPMBase *mptr,double pressure,double J)
 {
@@ -127,7 +127,7 @@ double SCGLHardening::GetShearRatio(MPMBase *mptr,double pressure,double J)
 
 // Return yield stress for current conditions and it is specific Cauchy stress
 //   (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
-// yield = yldred*(1 + beta ep)^n * Gred/G0red, where ep=alpint
+// yield = yldred*(1 + beta ep)^n * Gratio, where ep=alpint
 // but leading term is limited to yldMaxred
 double SCGLHardening::GetYield(MPMBase *mptr,int np,double delTime)
 {

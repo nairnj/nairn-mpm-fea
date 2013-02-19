@@ -136,12 +136,12 @@ void HEIsotropic::InitialLoadMechProps(int makeSpecific,int np)
 	
 	// MU in specific units using initial rho
 	// for MPM (units N/m^2 cm^3/g)
-	G1sp=G1*1.0e+06/rho;
+	G1sp=G1*1.0e+06/rho;			// kept at this initial value
+	Gred = G1*1.e6/rho;				// may change in some hardening laws
+	
+	// second G is not used yet
     G2sp=0.;
 	
-	// reduced properties
-	Gred = G1*1.e6/rho;
-    
     // call super class for the rest
     HyperElastic::InitialLoadMechProps(makeSpecific,np);
 }
@@ -149,9 +149,6 @@ void HEIsotropic::InitialLoadMechProps(int makeSpecific,int np)
 // print mechanical properties to the results
 void HEIsotropic::PrintMechanicalProperties(void)
 {	
-	// call superclass here if it is not Material base
-	HyperElastic::PrintMechanicalProperties();
-	
     PrintProperty("G1",G1,"");
     PrintProperty("K",Kbulk,"");
     cout << endl;
@@ -175,6 +172,9 @@ void HEIsotropic::PrintMechanicalProperties(void)
     
 	// JAN: print hardening law properties
 	plasticLaw->PrintYieldProperties();
+	
+	// call superclass here if it is not Material base
+	HyperElastic::PrintMechanicalProperties();
 }
 
 // JAN: put hardening law properties first and may need more than 1
@@ -242,7 +242,7 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 	// Get hydrostatic stress component in subroutine
     double dresStretch3 = dresStretch*dresStretch*dresStretch;
 	detdF /= dresStretch3;
-    UpdatePressure(mptr,J,detdF,np);
+    UpdatePressure(mptr,J,detdF,np,resStretch3,delTime);
     
     // Others constants
     double J23 = pow(J, 2./3.);
@@ -376,7 +376,7 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 // To allow better subclassing it is better to separate out calculations
 //  of dilaiton energy. This version updates pressure (i.e. dilational
 //  contribution to normal stress) and adds inremental energy to strain energy
-void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double dJ,int np)
+void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,double resStretch3,double delTime)
 {
 	double Kterm = J*GetVolumetricTerms(J);       // times J to get Kirchoff stress
     double P0 = mptr->GetPressure();
@@ -468,7 +468,7 @@ int HEIsotropic::MaterialTag(void) { return HEISOTROPIC; }
 // return unique, short name for this material
 const char *HEIsotropic::MaterialType(void) { return "Hyperelastic Isotropic"; }
 
-// calculate wave speed in mm/sec - needs to be implemented
+// calculate wave speed in mm/sec
 double HEIsotropic::WaveSpeed(bool threeD,MPMBase *mptr)
 {
     return sqrt(1.e9*(Kbulk+4.*G1/3.)/rho);

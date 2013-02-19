@@ -56,6 +56,8 @@
 		67C733C116741ED100698D4F /* Matrix3.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67C733BF16741ED100698D4F /* Matrix3.hpp */; };
 		67E191331602CB2700B34CA9 /* MatPtTractionBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */; };
 		67E191351602CB3F00B34CA9 /* MatPtTractionBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67E191341602CB3F00B34CA9 /* MatPtTractionBC.hpp */; };
+		67FFAA0B16D31E95003A7C53 /* HEMGEOSMaterial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67FFAA0916D31E95003A7C53 /* HEMGEOSMaterial.cpp */; };
+		67FFAA0C16D31E95003A7C53 /* HEMGEOSMaterial.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67FFAA0A16D31E95003A7C53 /* HEMGEOSMaterial.hpp */; };
 		A700094B0F86B75E00FD76C7 /* MatVelocityField.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A70009490F86B75E00FD76C7 /* MatVelocityField.hpp */; };
 		A700094C0F86B75E00FD76C7 /* MatVelocityField.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A700094A0F86B75E00FD76C7 /* MatVelocityField.cpp */; };
 		A708FDD40F326C1A003FA82B /* SLMaterial.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A708FDD20F326C1A003FA82B /* SLMaterial.hpp */; };
@@ -443,6 +445,8 @@
 		67C733BF16741ED100698D4F /* Matrix3.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Matrix3.hpp; sourceTree = "<group>"; };
 		67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPtTractionBC.cpp; sourceTree = "<group>"; };
 		67E191341602CB3F00B34CA9 /* MatPtTractionBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatPtTractionBC.hpp; sourceTree = "<group>"; };
+		67FFAA0916D31E95003A7C53 /* HEMGEOSMaterial.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HEMGEOSMaterial.cpp; path = Materials/HEMGEOSMaterial.cpp; sourceTree = "<group>"; };
+		67FFAA0A16D31E95003A7C53 /* HEMGEOSMaterial.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = HEMGEOSMaterial.hpp; path = Materials/HEMGEOSMaterial.hpp; sourceTree = "<group>"; };
 		A70009490F86B75E00FD76C7 /* MatVelocityField.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatVelocityField.hpp; sourceTree = "<group>"; };
 		A700094A0F86B75E00FD76C7 /* MatVelocityField.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatVelocityField.cpp; sourceTree = "<group>"; };
 		A708FDD20F326C1A003FA82B /* SLMaterial.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SLMaterial.hpp; sourceTree = "<group>"; };
@@ -1188,6 +1192,8 @@
 				A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */,
 				A77F5ECC15FA6ED8005188E8 /* HEIsotropic.hpp */,
 				67B916D316AE15E600632385 /* HEIsotropic.cpp */,
+				67FFAA0A16D31E95003A7C53 /* HEMGEOSMaterial.hpp */,
+				67FFAA0916D31E95003A7C53 /* HEMGEOSMaterial.cpp */,
 				A743491415792C0300EF8DFA /* IdealGas.hpp */,
 				A743491315792C0300EF8DFA /* IdealGas.cpp */,
 			);
@@ -1561,6 +1567,7 @@
 				67B916D216AE15BE00632385 /* MGSCGLMaterial.hpp in Headers */,
 				6715DFD216C567350042F15C /* Nonlinear2Hardening.hpp in Headers */,
 				673EC9B716C9EB71007FFEB5 /* CarnotCycle.hpp in Headers */,
+				67FFAA0C16D31E95003A7C53 /* HEMGEOSMaterial.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1878,6 +1885,7 @@
 				67B916D416AE15E600632385 /* HEIsotropic.cpp in Sources */,
 				6715DFD116C567350042F15C /* Nonlinear2Hardening.cpp in Sources */,
 				673EC9B616C9EB71007FFEB5 /* CarnotCycle.cpp in Sources */,
+				67FFAA0B16D31E95003A7C53 /* HEMGEOSMaterial.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

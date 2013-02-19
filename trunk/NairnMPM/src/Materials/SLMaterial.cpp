@@ -130,7 +130,7 @@ double SLMaterial::GetShearRatio(MPMBase *mptr,double pressure,double J)
 }
 
 // Return yield stress for current conditions (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
-// yield = (yldred*(1 + beta ep)^n + YT(epdot)) * Gred/G0red, where ep=alpint, epdot=dalpha/delTime
+// yield = (yldred*(1 + beta ep)^n + YT(epdot)) * Gratio, where ep=alpint, epdot=dalpha/delTime
 // but lyldred*(1 + beta ep)^n is limited to yldMaxred and YT(epdot) is limited to YPred
 double SLMaterial::GetYield(MPMBase *mptr,int np,double delTime)
 {

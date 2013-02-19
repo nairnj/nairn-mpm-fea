@@ -50,6 +50,9 @@ void Mooney::PrintMechanicalProperties(void)
             break;
     }
 	cout << endl;
+	
+	// call superclass here if it is not Material base
+	HyperElastic::PrintMechanicalProperties();
 }
 	
 // Read material properties

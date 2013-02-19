@@ -46,7 +46,7 @@ class MGSCGLMaterial : public IsoPlasticity
 		virtual bool SupportsArtificialViscosity(void);
 	
     protected:
-        double GPpred,G0red,Keffred,Gratio;
+        double G0red,Keffred,Gratio;
         double C0squared,QAVred;
 
 };
