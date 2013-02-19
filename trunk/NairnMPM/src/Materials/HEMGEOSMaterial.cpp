@@ -232,7 +232,8 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,dou
     
     // heat energy is Cv (dT - dTq0) - dPhi - |QAVred*delV|
 	// Here do Cv (dT - dTq0) - |QAVred*delV| term and dPhi is done later
-    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,dTq0,fabs(QAVred*delV));
+    //IncrementHeatEnergy(mptr,ConductionTask::dTemperature,dTq0,fabs(QAVred*delV));
+    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,dTq0,0.0);
 	
 	// SCGL and SL shear modulus and save Gratio = J G/G0 for later calculations
     // Note: J in Gred and Gratio is so that where they are used, they give
