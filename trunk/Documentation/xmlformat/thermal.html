@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
 <html>
 
@@ -15,11 +15,11 @@
 <a href="index.html#contents">MPM XML File Contents</a>
 </p>
 
-<h1>Thermal Conduction and Loading</h1>
+<h1>Thermal Conduction and Loading and Thermodynamics</h1>
 
-<p>NairnMPM can do coupled elasticity-thermal conductivity calculations or can apply a constant temperature difference to all particles and calculate the resulting thermal stresses. Thermal conductivity and constant temperature differences can be combined becuase a constant (or isothermal) temperature distribution dues not result in any gradients or any conduction. The following approach to thermal calculations is for NairnMPM only; thermal loading in NairnFEA is applied with a different command. The key temperature is relative to the stress free temperature. This temperature can be set in the <a href="mpmheader.html#stressfreetemp">MPM header block</a> (it is set to zero by default).</p>
+<p>NairnMPM can do coupled elasticity-thermal conductivity calculations, provide thermal boundary conditions, convert various material processes into heat, and/or or can apply a constant temperature difference to all particles. In the presence of these temperature changes and heat input or output, NairnMPM calculations will find thermal stresse and tracks heat flow for <a href="#thermo">valid thermodynamics</a> or, when needed, for tracking thermodynamic quantities. This section is for NairnMPM only; see a separate <a href="feathermal.html"><code>&lt;Thermal&gt;</code></a> block when using NairnFEA.</p>
 
-<p>The format for setting up thermal calculations is:</p>
+<p>Thermal stresses are always calculated relative to the stress free temperature, which is set in the <a href="mpmheader.html#stressfreetemp">MPM header block</a> (it is set to zero by default, but some materials need it to be set to actual, absolute temperature). Other thermal effects are set up with the following block:</p>
 
 <pre>
 &lt;Thermal&gt;
@@ -43,17 +43,57 @@
 </dd>
 
 <dt>&lt;EnergyCoupling/&gt;</dt>
-<dd>This tag will cause energy dissipated by a <a href="definematl.html">material's</a> constitutive low to be converted to a heat source that will increase temperature. In other words, the particles will be locally adiabatic. This option can be used with or without conduction. When there is no conduction, all temperature rise will remain on the particle. If this option is omitted, the simulation will be locally isothermal, which means the material response will not cause any change in temperature. This command assumes the materials being used correctly increment heat energy (and most due). The changes in heat energy deende on the type of material. Refer to each <a href="definematl.html">material</a> for more details.
+<dd>This tag will cause energy dissipated by a <a href="definematl.html">material's</a> constitutive low to be converted to a heat source that will increase temperature. In other words, the particles will be locally adiabatic. This option can be used with or without conduction. When there is no conduction, all temperature rise will remain on the particle.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;If this option is omitted, the simulation will be locally isothermal, which means the material response will not cause any change in temperature. Implicitly all heat is expelled from the body. The changes in heat energy depend on the type of material. Refer to each <a href="definematl.html">material</a> for more details.
 </dd>
 
 <dt>&lt;Isothermal&gt;</dt>
 <dd>This tag specifies the constant temperature difference to apply to each particle. It is expressed as the difference between the stress free temperature and the isothermal temperature in degrees Celsius. The optional <code>time</code> attribute allows the simulation to ramp the temperature difference from zero to the difference supplied in the <code>&lt;Isothermal&gt;</code> value of any time span. Enter the total time (in ms) to reach the final temperature difference. The optional <code>start</code> attribute allows the ramp to start at any time (in ms); if not supplied, the ramp will start at time zero.
 </dd>
 
-<p>Note that rather than ramping up an isothermal temperature change, it is also possible to instantaneous supply a temperature to all particles at the start of the calculations. An instantaneous temperature can be applied either by using an <code>Isothermal</code> command with the ramp time less than zero (or omitted) and by specifiying particle temperature with a <code>temp</code> attribute when <a href="definempm.html">creating material points</a>. An instantaneous temperature change is analogous to impact loading and may cause stress and strain oscillations. It is usually better to ramp up particle temperature difference.
+</dl>
+
+<p>Note that rather than ramping up an isothermal temperature change, it is also possible to instantaneous supply a temperature to all particles at the start of the calculations. An instantaneous temperature can be applied either by using an <code>Isothermal</code> command with the ramp time less than zero (or omitted) or by specifying particle temperature with a <code>temp</code> attribute when <a href="definempm.html">creating material points</a>. An instantaneous temperature change is analogous to impact loading and may cause stress and strain oscillations. It is usually better to ramp up particle temperature difference.
 </p>
 
-</dl>
+<h2><a name="thermo"></a>Thermodynamics Modes in NairnMPM</h2>
+
+<p>By using settings in the &lt;Thermal&gt; section along with optional <a href="dispbc.html#temp">thermal boundary conditions</a>, NairnMPM can do calculations involving heat. In such calculations, it is important to be aware of the thermodynamics of the deformation. The following grid explains the various NairnMPM modes involving heat and describes the behavior of some thermodynamics quantities. In the table <b>dq</b> is cumulative heat flow on a single particle, <b>dQ</b> is heat flow for all particles, <b>dS</b> is total entropy change, and <b>dT</b> is change in average temperature. An &quot;Isolated&quot; system means there are no boundary conditions that can heat or change temperature of particles; a &quot;Nonisolated&quot; has thermal boundary conditions. The &quot;Adiabatic&quot; column is when <code>&lt;EnergyCoupling/&gt;</code> is used; the &quot;Isothermal&quot; is when it is not used.</p>
+
+<table border="1" cellpadding="2" cellspacing="0" width="90%" align="center">
+<tr><th></th><th></th><th colspan="4">Adiabatic</th><th colspan="4">Isothermal</th>
+</tr>
+<tr><th>System</th><th>Conduction</th><th>dq</th><th>dS</th><th>dQ</th><th>dT</th>
+<th>dq</th><th>dS</th><th>dQ</th><th>dT</th>
+</tr>
+<tr><th>Isolated</th><th>No</th>
+<td align="center">0<sup>1</sup></td><td align="center">0</td><td align="center">0</td><td align="center">≠0</td>
+<td align="center">≠0</td><td align="center">≠0</td><td align="center">≠0</td><td align="center">≠0</td>
+</tr>
+<tr><th>Isolated</th><th>Yes</th>
+<td align="center">≠0<sup>1</sup></td><td align="center">0</td><td align="center">≥0</td><td align="center">≠0</td>
+<td align="center">≠0<sup>3</sup></td><td align="center">≠0<sup>3</sup></td>
+<td align="center">≠0<sup>3</sup></td><td align="center">≠0<sup>3</sup></td>
+</tr>
+<tr><th>Nonisolated</th><th>No</th>
+<td rowspan="2" align="center">≠0</td><td  rowspan="2" align="center">≠0</td>
+<td  rowspan="2" align="center">≠0</td><td  rowspan="2" align="center">≠0<sup>4</sup></td>
+<td  rowspan="2" align="center">≠0</td><td  rowspan="2" align="center">≠0</td>
+<td  rowspan="2" align="center">≠0</td><td  rowspan="2" align="center">≠0<sup>4</sup></td>
+</tr>
+<tr><th>Nonisolated</th><th>Yes</th></tr>
+</table>
+
+<ol>
+<li>If any particles start with a temperature that is different then the stress free temperature, the first time step will add dq = CV (dT<sub>i</sub> −dT<sub>i</sub>) to the particle heat energy. The above conditions will hold thereafter, but a constant will be added to dS and dQ.</li>
+
+<li>The dq will be due to conduction only and entropy will increase because conduction is irreversible.</li>
+
+<li>his mode is identical to system and particle isolated if the initial temperature of all particles is equal to the stress-free temperature. Thus, a simulation in this mode should turn off conduction for efficiency when all particles are at the stress free temperature.</li>
+
+<li>When conduction is &quot;No&quot;, the only possible thermal boundary condition is a thermal ramp that applies uniform temperature change to all particles. If there is no thermal ramp, then the system is isolated and refer to first mode instead.</li>
+
+</ol>
 
 <p class="links">
 <a href="../index.html">Home</a> &rarr;

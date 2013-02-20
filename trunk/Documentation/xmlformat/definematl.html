@@ -638,25 +638,61 @@ where K is the bulk modulus and is entered as a separate property. The default (
 
 <!-- Material  Section -->
 
-<h2><a name="heiso"></a>Isotropic, Elastic-Plastic, Hyperelastic Material</h2>
+<h2><a name="heiso"></a>Isotropic, Hyperelastic-Plastic Material</h2>
 
-<p>The material type is an isotropic, hyperelastic material with plasticity. It is currently in development.</p>
+<p>The material type is <code>Type=22</code>. It is a large-deformation, isotropic, hyperelastic-plastic material. The elastic stresses are defined from a strain energy, W, which is defined by invariants of the elastic left Cauchy Green Tensor, [B]=[F][F]<sup>T</sup>, and two material properties:</p>
 
-<p>The possible input properties are:</p>
+<blockquote>
+W = (1/2)G<sub>1</sub>(I<sub>1</sub>-3) + U(J)
+</blockquote>
+
+<p>where I<sub>1</sub> = Trace([B])/J<sup>2/3</sup> and J = Det([F]). The plasticity response is handled by selecting a <a href="hardeninglaws.html">hardening law</a> response. The material properties are:</p>
+
 
 <dl>
+
+<dt>&lt;G1&gt;0.1&lt;/G1&gt;</dt>
+<dd>The G<sub>1</sub> shear modulus (in MPa). It is equal to the low-strain shear modulus.</dd>
+    	
+<dt>&lt;UJOption&gt;0&lt;/UJOption&gt;</dt>
+<dd>This selects the dilational energy term U(J) and the possible integer values mean:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;0: U(J) = (K/2)((1/2)(J<sup>2</sup>-1) - ln J)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;1: U(J) = (K/2)(J-1)<sup>2</sup><br>
+&nbsp;&nbsp;&nbsp;&nbsp;2: U(J) = (K/2)(ln J)<sup>2</sup><br>
+where K is the bulk modulus and is entered as a separate property. The default (and recommended) option is 0.</dd>
+
+<dt>&lt;K&gt;2.5&lt;/K&gt;</dt>
+<dd>The K modulus (in MPa), which is equal to the low-strain bulk modulus.</dd>
+    	
+<dt>&lt;Hardening&gt;Linear&lt;/Hardening&gt;</dt>
+<dd>This command selects the <a href="hardeninglaws.html">hardening law</a>. It should be followed by entering yielding properties required by the hardening law.</dd>
+
+<dt>&lt;alpha&gt;60&lt;/alpha&gt;</dt>
+<dd>The material thermal expansion coefficient (in ppm/C)</dd>
+
+<dt>&lt;beta&gt;60&lt;/beta&gt;</dt>
+<dd>The material concentration expansion coefficient (in strain/wt fraction)</dd>
+
+<dt>&lt;D&gt;400&lt;/D&gt;</dt>
+<dd>Diffusion constant (in mm<sup>2</sup>/sec). Only used when doing diffusion calculations.</dd>
+
+<dt>&lt;kCond&gt;400&lt;/kCond&gt;</dt>
+<dd>Thermal conductivity (in W/(m-K)). Only used when doing conduction calculations. NairnMPM only.</dd>
 
 <dt>Other Properties</dt>
 <dd>See the <a href="#common">properties common to all materials</a>.</dd>
     	
 </dl>
 
+<h3>History Data for Isotropic Hyperelastic-Plastic Materials</h3>
+
+<p>The first history variables are determined by the <a href="hardeninglaws.html">hardening law</a>. After those variables, the next  history variable stores the volumetric strain (<i>i.e.</i>, the determinant of the deformation gradient, [F]). The total strain, which is elastic, is stored in the elastic strain variable, while the plastic strain stores the elastic, left Cauchy Green tensor.</p>
 
 <!-- Material  Section -->
 
 <h2><a name="heaniso"></a>Anisotropic, Elastic-Plastic, Hyperelastic Material</h2>
 
-<p>The material type is a small-strain, anisotropic, hyperelastic material with plasticity. It is currently in development.</p>
+<p>The material type is a large-strain, anisotropic, hyperelastic material with plasticity. It is currently in development.</p>
 
 <p>The possible input properties are:</p>
 
@@ -672,13 +708,13 @@ where K is the bulk modulus and is entered as a separate property. The default (
 
 <h2><a name="isoplast"></a>Isotropic, Elastic-Plastic Material</h2>
 
-<p>The material type is <code>Type=9</code>. This material is small-strain, isotropic material with plasticity. The plasticity response is handled by selecting a hardening law response.</p>
+<p>The material type is <code>Type=9</code>. This material is small-strain, isotropic material with plasticity. The plasticity response is handled by selecting a <a href="hardeninglaws.html">hardening law</a> response.</p>
 
 <p>The possible input properties are:</p>
 
 <dl>
 
-<dt>&lt;plasticLaw&gt;Linear&lt;/plasticLaw&gt;</dt>
+<dt>&lt;Hardening&gt;Linear&lt;/Hardening&gt;</dt>
 <dd>This command selects the <a href="hardeninglaws.html">hardening law</a>. It should be followed by entering yielding properties required by the hardening law.</dd>
     	
 <dt>Other Properties</dt>
@@ -732,14 +768,13 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 
 <p>where <code>M<sub>g</sub></code> is the molecular weight of the gas (such as 28.97 g/mol for air) and <code>R</code> is the gas constant, R = 8.3144621 J/k/mol.</p>
 
-<p>This material stores total internal energy in the particle's strain energy and the cumulative work (in the form of <code>P dV</code> work) in the particle's plastic energy.</p>
+<p>This material stores total work energy (-P dV work) in the particle's strain energy and change in entropy in the particle's plastic energy.</p>
 
-<p>When <a href="thermal.html">mechanical energy coupling</a> is off, this material models isothermal compression and expansion, which implies all work results in heat lost by the object. The problem may include heat input (in thermal coundary conditions), which may cause temperture rises. In other words, this mode only means the gas itself will not cause temperature changes. The internal energy will not change unless there is external heating and the plastic energy will give total work.</p>
+<p>When <a href="thermal.html"><code>EnergyCoupling</code></a> is off, this material models isothermal compression and expansion, which implies all work results in heating or cooling. The amount of heat generated is tracked in the particle's heat energy. The problem may include heat input (in thermal coundary conditions), which may cause temperture rises. In other words, this mode only means the gas itself will not cause temperature changes. The internal energy will not change unless there is external heating and the plastic energy will give total work.</p>
 
-<p>To model adiabatic compression and expansion, activate <a href="thermal.html">mechanical energy coupling</a>. The energy will convert to heat resulting in heating during compression or cooling during expansion. You need to enter heat capacity (which can only pick monotonic or diatomic gas) and thermal conductivity. The current implementation uses a temperature independent conductivity, which may change in the future.</p>
+<p>To model adiabatic compression and expansion, activate <a href="thermal.html"><code>EnergyCoupling</code></a>. This mode will convert work to heat resulting in heating during compression or cooling during expansion. You need to enter heat capacity (which can only pick monotonic or diatomic gas) and thermal conductivity. The current implementation uses a temperature independent conductivity, which may change in the future.</p>
 
-<p>Ideal gas particles are fairly stable, but can be made unstable by certain boundary conditions on constraining walls. If stability problems arise, try different boundary conditions. They also do not work for irreversibale processes such as free expansion into empty space. They are intended to be always bounded by pressure.</p>
-
+<p>Ideal gas particles are fairly stable, but can be made unstable by certain boundary conditions on constraining walls. If stability problems arise, try different boundary conditions. They also do not work for irreversibale processes such as free expansion into empty space. They are intended to be always bounded by stable pressure.</p>
 
 <!-- Material  Section -->
 
@@ -966,7 +1001,7 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 
 <h2><a name="MGEOS"></a>Mie-Gr&#252;neisen Equation of State Materials</h2>
 
-<p>These two material types use <code>Type=17</code> and <code>Type=25</code>. Both are isotropic materials with plasticity and find pressure using the Mie-Gr&#252;neisen equation of state by large deformation methods. The <code>Type=17</code> material uses low-strain, hypoelastic methods for shear and yielding. The <code>Type=25</code> material uses large-deformation for shear and yielding. Both material can use any <a href="hardeninglaws.html">hardening law</a>. The material properties for both these materials are:
+<p>These two material types use <code>Type=17</code> and <code>Type=25</code>. Both are isotropic materials with plasticity and find pressure using the Mie-Gr&#252;neisen equation of state by large deformation methods. The <code>Type=17</code> material uses low-strain, hypoelastic methods for shear and yielding. The <code>Type=25</code> material uses large-deformation for shear and yielding. Both materials can use any <a href="hardeninglaws.html">hardening law</a>. The material properties for both these materials are:
 </p>
 
 <dl>
@@ -989,7 +1024,7 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
 <dt>&lt;G&gt;160000&lt;/G&gt;</dt>
 <dd>Shear modulus, G<sub>0</sub>, at zero pressure and the reference temperature. Enter in units MPa.</dd>
 
-<dt>&lt;plasticLaw&gt;Linear&lt;/plasticLaw&gt;</dt>
+<dt>&lt;Hardening&gt;Linear&lt;/Hardening&gt;</dt>
 <dd>This command selects the <a href="hardeninglaws.html">hardening law</a>. It should be followed by entering yielding properties required by the hardening law.</dd>
     	
 <dt>Other Properties</dt>
@@ -1006,7 +1041,7 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
    + &rho;<sub>0</sub>&gamma;<sub>0</sub>e
 </blockquote>
 <p>where e is the internal energy, which is sum of work energy (stored in strain energy) and heat energy.
- The heat energy depends on temperature relative to a reference temperature; the reference temperature is set using the <a href="mpmheader.html#stressfreetemp"><code>StressFreeTemp</code></a> command. When x<0, the material is in tension and the pressure changes to</p>
+ The heat energy depends on temperature relative to a reference temperature; the reference temperature is set using the <a href="mpmheader.html#stressfreetemp"><code>StressFreeTemp</code></a> command. When x&lt;0, the material is in tension and the pressure changes to</p>
 <blockquote>
    P = &rho;<sub>0</sub>C<sub>0</sub><sup>2</sup>x
    + &rho;<sub>0</sub>&gamma;<sub>0</sub>e
@@ -1014,6 +1049,14 @@ P = J<sup>-1</sup> P<sub>0</sub> T/T<sub>0</sub>
  <p>The first term is bulk modulus terms with the low-strain bulk modulus being
  &rho;<sub>0</sub>C<sub>0</sub><sup>2</sup>. For more details on this equation of state see <a href="references.html#Wilkens1999">Wilkens (1999)</a>, page 61 (although the final pressure form here is different but is equivalent if compared as polynomial expansions; this form also includes S<sub>2</sub> and S<sub>3</sub> options while Wilkens only has S = S<sub>1</sub>).
 </p>
+
+<p>The hyperelastic version uses shear energy function of</p>
+
+<blockquote>
+W = (1/2)G(I<sub>1</sub>-3)
+</blockquote>
+
+<p>which is the first term is same as for a <a href="#mooney">Mooney-Rivlin</a> material.</p>
 
 <p>This equation of state automatically handles thermal expansion by inclusion of thermal energy in the internal energy. You do not need to enter a thermal expansion coefficient because it is determined by other properties through:
 </p>
