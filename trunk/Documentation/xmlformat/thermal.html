@@ -68,12 +68,12 @@
 </tr>
 <tr><th>Isolated</th><th>No</th>
 <td align="center">0<sup>1</sup></td><td align="center">0</td><td align="center">0</td><td align="center">≠0</td>
-<td align="center">≠0</td><td align="center">≠0</td><td align="center">≠0</td><td align="center">≠0</td>
+<td align="center">≠0</td><td align="center">≠0</td><td align="center">≠0</td><td align="center">0</td>
 </tr>
 <tr><th>Isolated</th><th>Yes</th>
 <td align="center">≠0<sup>1</sup></td><td align="center">0</td><td align="center">≥0</td><td align="center">≠0</td>
 <td align="center">≠0<sup>3</sup></td><td align="center">≠0<sup>3</sup></td>
-<td align="center">≠0<sup>3</sup></td><td align="center">≠0<sup>3</sup></td>
+<td align="center">≠0<sup>3</sup></td><td align="center">0<sup>3</sup></td>
 </tr>
 <tr><th>Nonisolated</th><th>No</th>
 <td rowspan="2" align="center">≠0</td><td  rowspan="2" align="center">≠0</td>
@@ -89,7 +89,7 @@
 
 <li>The dq will be due to conduction only and entropy will increase because conduction is irreversible.</li>
 
-<li>his mode is identical to system and particle isolated if the initial temperature of all particles is equal to the stress-free temperature. Thus, a simulation in this mode should turn off conduction for efficiency when all particles are at the stress free temperature.</li>
+<li>This mode is identical to system isolated with no conduction if the initial temperature of all particles is equal to the stress-free temperature. Thus, such a simulation should turn off conduction for efficiency because it is not needed.</li>
 
 <li>When conduction is &quot;No&quot;, the only possible thermal boundary condition is a thermal ramp that applies uniform temperature change to all particles. If there is no thermal ramp, then the system is isolated and refer to first mode instead.</li>
 
