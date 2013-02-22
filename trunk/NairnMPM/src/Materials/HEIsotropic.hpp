@@ -55,6 +55,7 @@ class HEIsotropic : public HyperElastic
 		virtual int MaterialTag();
 		virtual double WaveSpeed(bool,MPMBase *);
         virtual double GetHistory(int,char *);
+        virtual bool SupportsArtificialViscosity(void);
     
     protected:
 		// JAN: deleted yield properties, dalpha, and alpint

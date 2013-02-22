@@ -229,6 +229,10 @@ void MaterialBase::PrintCommonProperties(void)
 		PrintProperty("AV-A1",avA1,"");
 		PrintProperty("AV-A2",avA2,"");
         cout << endl;
+        if(ConductionTask::AVHeating)
+            PrintProperty("    AV heating on",FALSE);
+        else
+            PrintProperty("    AV heating off",FALSE);
 	}
 	
 	// optional color

@@ -13,7 +13,6 @@
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Materials/HardeningLawBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
-#include "NairnMPM_Class/MeshInfo.hpp"
 
 #pragma mark HEMGEOSMaterial::Constructors and Destructors
 
@@ -212,10 +211,11 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,dou
     
     // artifical viscosity
 	double delV = 1. - 1./dJ;
-    double QAVred = 0.;
+    double QAVred = 0.,AVEnergy=0.;
     if(delV<0. && artificialViscosity)
     {   double c = sqrt(Keffred*J*resStretch3/1000.);        // m/sec
         QAVred = GetArtificalViscosity(delV/delTime,c);
+        if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
     }
     
     // set final pressure
@@ -232,7 +232,7 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,dou
     
     // heat energy is Cv (dT - dTq0) - dPhi - |QAVred*delV|
 	// Here do Cv (dT - dTq0) - |QAVred*delV| term and dPhi is done later
-    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,dTq0,fabs(QAVred*delV));
+    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,dTq0,AVEnergy);
 	
 	// SCGL and SL shear modulus and save Gratio = J G/G0 for later calculations
     // Note: J in Gred and Gratio is so that where they are used, they give
@@ -290,6 +290,4 @@ double HEMGEOSMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr)
     return 1000.*sqrt((KcurrRed + 4.*GcurrRed/3.)/1000.);
 }
 
-// if a subclass material supports artificial viscosity, override this and return TRUE
-bool HEMGEOSMaterial::SupportsArtificialViscosity(void) { return TRUE; }
 

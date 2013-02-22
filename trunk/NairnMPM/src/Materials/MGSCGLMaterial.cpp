@@ -16,7 +16,6 @@
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Materials/HardeningLawBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
-#include "NairnMPM_Class/MeshInfo.hpp"
 
 #pragma mark MGSCGLMaterial::Constructors and Destructors
 
@@ -279,7 +278,8 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
     
     // heat energy is Cv (dT - dTq0) - dPhi - QAVred*delV
 	// Here do Cv (dT - dTq0) - QAVred*delV term and dPhi is done later
-    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,dTq0,fabs(QAVred*delV));
+    double AVEnergy = ConductionTask::AVHeating ? fabs(QAVred*delV) : 0. ;
+    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,dTq0,AVEnergy);
 
 	// SCGL and SL shear modulus and save Gratio = J G/G0 for later calculations
     // Note: J in Gred and Gratio is so that where they are used, they give

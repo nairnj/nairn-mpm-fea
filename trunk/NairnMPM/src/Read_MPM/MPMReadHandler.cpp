@@ -904,12 +904,17 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		ConductionTask::crackTipHeating=TRUE;
 	}
 	
-	// Turn on crack tip heating
+	// Turn on adiabatic mode
     else if(strcmp(xName,"EnergyCoupling")==0)
 	{	ValidateCommand(xName,THERMAL,ANY_DIM);
 		ConductionTask::energyCoupling=TRUE;
 	}
 	
+	// Turn off artificial viscosity heating (only on when adibatic)
+    else if(strcmp(xName,"NoAVHeating")==0)
+	{	ValidateCommand(xName,THERMAL,ANY_DIM);
+		ConductionTask::AVHeating=FALSE;
+	}
     //-------------------------------------------------------
     // <Gravity> section
 	

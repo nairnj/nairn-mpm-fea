@@ -41,7 +41,6 @@ class HEMGEOSMaterial : public HEIsotropic
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
 		virtual double CurrentWaveSpeed(bool,MPMBase *);
-		virtual bool SupportsArtificialViscosity(void);
 		
 	protected:
 		double Keffred,Gratio;

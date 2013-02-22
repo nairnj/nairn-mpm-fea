@@ -26,7 +26,7 @@ EndXMLData
 #update="USF"
 
 ! Supported materials: "neohookean" (G2=0), "mooney" (G1=G2), heiso
-#matID="heiso"
+#matID="neohookean"
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2
@@ -51,11 +51,11 @@ StressFreeTemp 294
 
 ! Load by stress or by velocity (if stress<=0)
 #loading="rigid"	! Loading = "rigid", "contact", "force", "traction", thermal
-#fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
-#strain=5	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
+#fixsides="yes"		! Yes to constrain y direction (and z direction if 3D)
+#strain=-70	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
 
 ! Loading rate
-#tmult=40			! number of transit times to load peak
+#tmult=5			! number of transit times to load peak
 #hold=0				! hold time (multiple of loading time)
 #unload=0		    ! 0 no unload or >0 for unloading time (multiple of loading time, but at same loading rate)
 
@@ -70,7 +70,7 @@ StressFreeTemp 294
 Analysis #analysis
 MPMMethod #update,#method
 PtsPerElement #ppe
-conduction "no","adiabatic"
+conduction "no","isothermal"
 
 ! convert to contact
 if #loading="contact"
@@ -140,6 +140,7 @@ if #matID="neohookean"
     rho #rho
     kCond .202
     CP 1256
+    ArtificialVisc on
     !IdealRubber 1
   Done
 endif
@@ -151,7 +152,6 @@ if #matID="mooney"
     K #Kbulk
     a #aBase
     rho #rho
-    UJOption 2
     kCond .202
     CP 1256
   Done

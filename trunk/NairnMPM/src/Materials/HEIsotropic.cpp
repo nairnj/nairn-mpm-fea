@@ -380,18 +380,27 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,double 
 {
 	double Kterm = J*GetVolumetricTerms(J);       // times J to get Kirchoff stress
     double P0 = mptr->GetPressure();
-    mptr->SetPressure(-Kterm);
+    
+    // artifical viscosity
+	double delV = 1. - 1./dJ;
+    double QAVred = 0.,AVEnergy=0.;
+    if(delV<0. && artificialViscosity)
+    {   double c = sqrt(Ksp/1000.);           // m/sec
+        QAVred = GetArtificalViscosity(delV/delTime,c);
+        if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
+    }
+    double Pfinal = -Kterm + QAVred;
+    mptr->SetPressure(Pfinal);
     
     // work energy is dU = -P dV + s.de(total)
 	// Here do hydrostatic term
     // Internal energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-    double avgP = 0.5*(P0-Kterm);
-    double delV = 1. - 1./dJ;
+    double avgP = 0.5*(P0+Pfinal);
     mptr->AddStrainEnergy(-avgP*delV);
 	
     // heat energy is Cv dT  - dPhi
 	// Here do Cv dT term and dPhi is done later
-    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,0.);
+    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,AVEnergy);
 }
 
 // get trial deviatoric stress tensor based on trial B
@@ -485,4 +494,6 @@ double HEIsotropic::GetHistory(int num,char *historyPtr)
     return history;
 }
 
+// if a subclass material supports artificial viscosity, override this and return TRUE
+bool HEIsotropic::SupportsArtificialViscosity(void) { return TRUE; }
 

@@ -53,6 +53,7 @@
 bool ConductionTask::active=FALSE;
 bool ConductionTask::crackTipHeating=FALSE;
 bool ConductionTask::energyCoupling=FALSE;
+bool ConductionTask::AVHeating=TRUE;
 double ConductionTask::dTemperature=0.;
 ConductionTask *conduction=NULL;
 

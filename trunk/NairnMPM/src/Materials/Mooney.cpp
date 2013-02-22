@@ -231,11 +231,22 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
     // update pressure
 	double p0=mptr->GetPressure();
 	double Kterm = J*GetVolumetricTerms(J);       // times J to get Kirchoff stress
-    mptr->SetPressure(-Kterm);
+    
+    // artifical viscosity
+    double delV = 1. - 1./detDf;
+    double QAVred = 0.,AVEnergy=0.;
+    if(delV<0. && artificialViscosity)
+    {   double c = sqrt(Ksp/1000.);           // m/sec
+        QAVred = GetArtificalViscosity(delV/delTime,c);
+        if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
+    }
+    double Pfinal = -Kterm + QAVred;
+    
+    // set the pressure
+    mptr->SetPressure(Pfinal);
 	
 	// incremental energy - dilational part
-    double delV = 1. - 1./detDf;
-    double avgP = 0.5*(p0-Kterm);
+    double avgP = 0.5*(p0+Pfinal);
     double dilEnergy = -avgP*delV;
 	
     // Account for density change in specific stress
@@ -288,11 +299,11 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
     double dT = ConductionTask::dTemperature;
     if(rubber)
     {   // just like ideal gas
-        IncrementHeatEnergy(mptr,dT,0.,dU);
+        IncrementHeatEnergy(mptr,dT,0.,dU+QAVred);
     }
     else
     {   // elastic - no heating
-        IncrementHeatEnergy(mptr,dT,0.,0.);
+        IncrementHeatEnergy(mptr,dT,0.,QAVred);
     }
     
     // the plastic energy is not otherwise used, so let's track entropy
@@ -349,6 +360,9 @@ double Mooney::GetHistory(int num,char *historyPtr)
     }
     return history;
 }
+
+// if a subclass material supports artificial viscosity, override this and return TRUE
+bool Mooney::SupportsArtificialViscosity(void) { return TRUE; }
 
 
 

@@ -48,6 +48,7 @@ class Mooney : public HyperElastic
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
         virtual double GetHistory(int,char *);
+        virtual bool SupportsArtificialViscosity(void);
 		
     protected:
 		double G1sp, G2sp;

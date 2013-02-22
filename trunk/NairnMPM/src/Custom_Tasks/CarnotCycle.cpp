@@ -122,6 +122,7 @@ CustomTask *CarnotCycle::StepCalculation(void)
 	{	case 0:
 			carnotStep = 1;
 			cout << "# Step 1: isothermal expansion" << endl;
+            ConductionTask::energyCoupling = FALSE;
 			break;
 			
 		case 1:
