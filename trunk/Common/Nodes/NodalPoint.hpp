@@ -71,6 +71,7 @@ class NodalPoint : public LinkedObject
 		void AddFintTask3(short,int,Vector *);
 		void AddFintSpreadTask3(short,Vector);
 		void AddFextTask3(short,int,Vector *);
+		void AddTractionTask3(MPMBase *,int,Vector *);
 		void AddFextSpreadTask3(short,Vector);
 		void CalcFtotTask3(double);
 	

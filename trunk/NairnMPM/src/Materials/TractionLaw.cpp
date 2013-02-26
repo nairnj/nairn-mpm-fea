@@ -44,10 +44,10 @@ const char *TractionLaw::VerifyProperties(int np) { return NULL; }
 
 // report debond in same format for all cohesive laws
 // dtime in sec, cs if the debonded segment, fractionI is fraction mode I at time of debond
-void TractionLaw::ReportDebond(double dtime,CrackSegment *cs,double fractionI)
+void TractionLaw::ReportDebond(double dtime,CrackSegment *cs,double fractionI,double Gtotal)
 {
 	cout << "# Debond: t=" << 1000.*dtime << " (x,y) = (" << cs->x << "," <<cs-> y << ")" << 
-				" GI(%) = " << 100.*fractionI << endl;
+				" GI(%) = " << 100.*fractionI << " G = " << Gtotal << endl;
 }
 
 #pragma mark TractionLaw::Traction Law

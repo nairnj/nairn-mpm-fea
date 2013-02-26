@@ -43,6 +43,10 @@
 #include "Cracks/CrackNode.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
+#ifdef LOG_PROGRESS
+#include "System/ArchiveData.hpp"
+#endif
+
 
 #pragma mark CONSTRUCTORS
 

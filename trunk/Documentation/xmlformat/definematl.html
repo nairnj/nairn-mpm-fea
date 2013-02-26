@@ -1171,23 +1171,23 @@ and then will increase linearly up to &delta;<sub>2</sub> with a slope of
 </center>
 <p>except that cod and traction are now effective terms that are related to normal and tangential components of traction and displacement:</p>
 <blockquote>
-Traction = <code>tT<sub>eff</sub></code> where  <code>tT<sub>eff</sub><sup>2</sup> = T<sub>n</sub><sup>2</sup> + T<sub>t</sub><sup>2</sup></code><br>
+Traction = <code>T<sub>eff</sub></code> where  <code>T<sub>eff</sub><sup>2</sup> = T<sub>n</sub><sup>2</sup> + T<sub>t</sub><sup>2</sup></code><br>
 cod = <code>&delta;<sub>eff</sub></code> where  &delta;<sub>eff</sub><sup>2</sup> = &delta;<sub>n</sub><sup>2</sup> + &delta;<sub>t</sub><sup>2</sup>
 </blockquote>
-<p>The use of effective terms is meant to account for mixed modeling effects in a single coupled traction law. The properties you enter are as follows:
+<p>The use of effective terms is meant to account for mixed mode effects in a single coupled traction law. The properties you enter are as follows:
 </p>
 
 <dl>
 <dt>&lt;sigmaI&gt;10&lt;/sigmaI&gt;, &lt;JIc&gt;10&lt;/JIc&gt;, &lt;delIc&gt;10&lt;/delIc&gt;,  &lt;kIe&gt;200&lt;/kIe&gt;, &lt;delpkI&gt;0.1&lt;/delpkI&gt;</dt>
-<dd>These properties are defined in the <a href="#traction">Triangular Traction Law</a> and they all mean the same thing for this traction law, except they apply now to effective traction and critical effective cod rather than mode I traction and critical cod. <code>JIc</code> is the total energy release rate from area on the effect traction - effective cod curve.</dd>
+<dd>These properties are defined in the <a href="#traction">Triangular Traction Law</a> and they all mean the same thing for this traction law, except they apply now to effective traction and critical effective cod rather than mode I traction and critical cod. <code>JIc</code> is the total energy release rate from area on the effective traction - effective cod curve.</dd>
 
 </dl>
 
-<p>This law can be expressed using damage mechanics by defining an effective slope of <code>k<sub>eff</sub> = (1-D)k</code> where <code>k</code> is the initial slope of the curve and <code>D</code> is a damage parameter. This effective slope describes a line from the origin to the point on the triangular curve corresponding to the maximum displacement seen on the current particle. The effective stiffness is found from</p>
+<p>This law can be expressed using damage mechanics by defining an effective slope of <code>k<sub>eff</sub> = (1-D)k</code> where <code>k</code> is the initial slope of the curve and <code>D</code> is a damage parameter. This effective slope describes a line from the origin to the point on the triangular curve corresponding to the maximum displacement seen on the current particle and the effective traction is <code>T<sub>eff</sub> = k<sub>eff</sub>&delta;<sub>eff</sub></code>. The effective stiffness is found from</p>
 <blockquote>
 <code>(1-D) = &delta;<sub>pk</sub>*(&delta;<sub>c</sub>-&delta;<sub>max</sub>)/(&delta;<sub>max</sub>*(&delta;<sub>c</sub>-&delta;<sub>pk</sub>))</code>
 </blockquote>
-<p>where <code>&delta;<sub>max</sub></code> is the maximum effective cod seen on the crack particle, except that it is initialized to the peak cod (&delta;<sub>pk</sub>) at the start of the calculations. By this relation, D = 0 until the effective cod passes the peak cod. Thereafter, D increases from 0 at the peak to 1 at the critical cod. Once D is found, the normal and tangential tractions are <code>T<sub>n</sub> = k<sub>eff</sub>&delta;<sub>c</sub></code> and <code>T<sub>t</sub> = k<sub>eff</sub>&delta;<sub>t</sub></code>, which satisfy the effective traction - effective cod law given above. Note that during monotonic loading the traction will remain on the curve. If unloading occurs, however, the tractions follow a line back to the original for the peak cod.</p>
+<p>where <code>&delta;<sub>c</sub></code> is the critical effective cod and <code>&delta;<sub>max</sub></code> is the maximum effective cod seen on the crack particle, except that it is initialized to the peak cod (&delta;<sub>pk</sub>) at the start of the calculations. By this relation, D = 0 until the effective cod passes the peak cod. Thereafter, D increases from 0 at the peak to 1 at the critical cod. Once D is found, the normal and tangential tractions are <code>T<sub>n</sub> = k<sub>eff</sub>&delta;<sub>n</sub></code> and <code>T<sub>t</sub> = k<sub>eff</sub>&delta;<sub>t</sub></code>, which satisfy the effective traction - effective cod law given above. Note that during monotonic loading the traction will remain on the curve. If unloading occurs, however, the tractions follow a line back to the original from the maximum cod.</p>
 
 <!-- Material  Section -->
 

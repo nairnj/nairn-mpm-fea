@@ -87,8 +87,8 @@ void CoupledSawTooth::PrintMechanicalProperties(void)
 // h is max effective displacement opening (starting at peak location)
 char *CoupledSawTooth::InitHistoryData(void)
 {
-	double *p = CreateAndZeroDoubles(1);
-    *p = umidI;
+	double *p = CreateAndZeroDoubles(5);
+    p[0] = umidI;
     return (char *)p;
 }
 
@@ -104,7 +104,9 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
     // is it debonded
     if(deff > delIc)
     {   cs->SetMatID(0);                        // now debonded
-        ReportDebond(mtime,cs,1.0);
+		
+		// calculate mode mixity
+        ReportDebond(mtime,cs,upeak[3]/(upeak[3]+upeak[4]),1.e-3*(upeak[3]+upeak[4]));
         cs->tract.x = 0.;
         cs->tract.y = 0.;
         return;
@@ -113,7 +115,7 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
     // is it a new peak?
     if(deff > umidI) upeak[0] = deff;
     
-    // skip if zero since tractions are zero, and would cause problem if pure linear softening law when deff=0
+    // skip if deff=zero since tractions are zero, and would cause problem if pure linear softening law when deff=0
     // (deff>0 implies upeak[0]>0 even when umidI=0 for pure linear softening)
     if(deff > 0.)
     {   // stiffness same for both modes keff = (1-D)k = sc(df-dmax)/(dmax*(df-d0)) = k d0*(df-dmax)/(dmax*(df-d0))
@@ -125,6 +127,20 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
         
         Tt = keff*tCod;
     }
+	
+	// track mode mixity
+	// Units tracked GI (in [3]) and GII (in [4]) are microN/mm
+	// Multiply by 1e-3 to get J/m^2
+	if(nCod>upeak[1])
+	{	upeak[3] += Tn*(nCod-upeak[1]);
+		upeak[1] = nCod;
+	}
+	double abstCod=fabs(tCod);
+	if(abstCod>upeak[2])
+	{	double ddt = abstCod - upeak[2];		// d(delta_t)
+		upeak[4] += fabs(Tt)*ddt;
+		upeak[2] = abstCod;
+	}
 	
 	// force is traction times area projected onto x-y plane
 	cs->tract.x=area*(Tn*dy - Tt*dx);

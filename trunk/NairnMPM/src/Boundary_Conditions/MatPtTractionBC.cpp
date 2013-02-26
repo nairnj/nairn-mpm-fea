@@ -11,6 +11,9 @@
 #include "Elements/ElementBase.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Nodes/NodalPoint.hpp"
+#ifdef LOG_PROGRESS
+#include "System/ArchiveData.hpp"
+#endif
 
 // global
 MatPtTractionBC *firstTractionPt=NULL;
@@ -64,7 +67,7 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
     int numnds = CompactCornerNodes(numDnds,corners,cElem,ratio,nds,fn);
     
     // Particle information about field
-    int i,vfld=0;                                           // To support traction near cracks need to calculate for each node
+    int i;
     MaterialBase *matID=theMaterials[mpmptr->MatID()];		// material class object
     int matfld=matID->GetField();                           // material field
     Vector theFrc;
@@ -75,7 +78,9 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
         if(nd[nds[i]]->NumberNonrigidParticles())
         {   // external force vector - tscaled has direction, surface area, and factor 1/2 (2D) or 1/4 (3D) to average the nodes
             CopyScaleVector(&theFrc,&tscaled,tmag*fn[i]);
-            nd[nds[i]]->AddFextTask3(vfld,matfld,&theFrc);
+			
+			// This adds to first active field. Better to find right one here or in NodalPoint
+            nd[nds[i]]->AddTractionTask3(mpmptr,matfld,&theFrc);
         }
     }
    

@@ -22,6 +22,7 @@
 #include "Nodes/CrackVelocityFieldMulti.hpp"
 #include "Nodes/MatVelocityField.hpp"
 #include "Nodes/MaterialInterfaceNode.hpp"
+#include "MPM_Classes/MPMBase.hpp"
 
 // class statics
 double NodalPoint::interfaceEnergy=0.;
@@ -314,6 +315,30 @@ void NodalPoint::AddFintSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFintSpr
 
 // Add to external force (g-mm/sec^2)
 void NodalPoint::AddFextTask3(short vfld,int matfld,Vector *f) { cvf[vfld]->AddFextTask3(matfld,f); }
+
+// Add to traction force (g-mm/sec^2)
+// If cracks, recalculations crossing, but stops at first crack. Tractions new two cracks might have errors
+void NodalPoint::AddTractionTask3(MPMBase *mpmptr,int matfld,Vector *f)
+{
+	// Look for crack crossing and save until later
+	int vfld=0;
+	if(firstCrack!=NULL)
+	{	Vector norm;
+		CrackHeader *nextCrack=firstCrack;
+		while(nextCrack!=NULL)
+		{   vfld=nextCrack->CrackCross(mpmptr->pos.x,mpmptr->pos.y,x,y,&norm);
+			if(vfld!=NO_CRACK) break;
+			nextCrack=(CrackHeader *)nextCrack->GetNextObject();
+		}
+	}
+	
+	// add if an active field
+	if(CrackVelocityField::ActiveField(cvf[vfld]))
+	{	cvf[vfld]->AddFextTask3(matfld,f);
+	}
+	else
+		cout << "# traction needs inactive field" << endl;
+}
 
 // Add to external force spread out over materials for same acceleration on each
 void NodalPoint::AddFextSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFextSpreadTask3(&f); }
