@@ -1198,28 +1198,21 @@ are at the stress free temperature.
 
 \section{Viscoelastic Materials}
 
-The stress-strain relation for an isotropic viscoelastic material in which bulk modulus is independent of time, but shear modulus depends on time and the analysis is 3D (or plane strain by setting $\e{zz}=0$ and ignoring $\t{xz}$ and $\t{yz}$) can be written as
+The stress-strain relation for an isotropic viscoelastic material in which bulk modulus is independent of time, but shear modulus depends on time and the analysis is 3D (or plane strain by setting $\e{zz}=0$ and ignoring $\t{xz}$ and $\t{yz}$ or axisymmetric by ignoring $\t{xz}$ and $\t{yz}$) can be written as
 \begin{eqnarray}
-      \s{xx} & = & K(\e{xx} + \e{yy} + \e{zz} - 3\er{}) + {2\over 3}\int_0^t G(t-\tau)
-                           \left(2 {d\e{xx}\over d\tau} -  {d\e{yy}\over d\tau} - {d\e{zz}\over d\tau}\right) d\tau \\
-      \s{yy} & = & K(\e{xx} + \e{yy} + \e{zz} - 3\er{}) + {2\over 3}\int_0^t G(t-\tau)
-                           \left(2 {d\e{yy}\over d\tau} -  {d\e{xx}\over d\tau} - {d\e{zz}\over d\tau}\right) d\tau \\
-      \s{zz} & = & K(\e{xx} + \e{yy} + \e{zz} - 3\er{}) + {2\over 3}\int_0^t G(t-\tau)
-                           \left(2 {d\e{zz}\over d\tau} - {d\e{xx}\over d\tau} -  {d\e{xx}\over d\tau}\right) d\tau \\
-       \t{xy} & = & \int_0^t G(t-\tau) {d\g{xy}\over d\tau} d\tau \\
-       \t{xz} & = & \int_0^t G(t-\tau) {d\g{xz}\over d\tau} d\tau \\
-       \t{yz} & = & \int_0^t G(t-\tau) {d\g{yz}\over d\tau} d\tau
+      P & = & -K(\e{xx} + \e{yy} + \e{zz} - 3\er{})  \\
+      s_{ij} & = & \int_0^t 2G(t-\tau) {de_{xy}\over d\tau} d\tau
 \end{eqnarray}
-where $\er{} = \a{}\DT + \b{}\Delta c$.
-Now focus on terms like
+where $P$ is pressure, $s_{ij}$ and $e_{ij}$ are elements of the deviatoric stress and strain tensors, and $\er{} = \a{}\DT + \b{}\Delta c$.
+We only need to evaluate terms lis
 \begin{equation}
-       \sigma(t) = \int_0^t G(t-\tau) {d\e{}\over d\tau} d\tau
+       \sigma(t) = \int_0^t G(t-\tau) {d\e{}\over d\tau} d\tau        \label{stressterm}
 \end{equation}
 Writing $\s{i}$ as stress at time $t=i\Delta t$, the stress increment can be written as $\s{i+1}=\s{i}+\Delta \s{i}$ where
 \begin{equation}
     \Delta \s{i} = G(0)\Delta \e{i} + \Delta t \int_0^t G'(t-\tau) {d\e{}\over d\tau} d\tau
 \end{equation}
-where $\Delta \e{i} = \Delta t (d\e{}(i\Delta t)/dt)$ and initially $\Delta \e{0}=0$. Evaluating the integral by the midpoint rule leads to
+where $\Delta \e{i} = \Delta t (d\e{}(i\Delta t)/dt) = \e{i+1}-\e{i}$. Evaluating the integral by the midpoint rule leads to
 \begin{equation}
     \Delta \s{i} = \left(G(0) + {\Delta t\over 2}G'(0)\right)\Delta \e{i} 
                           + \Delta t \sum_{j=1}^{i-1} G'(j\Delta t)\Delta \e{i-j}
@@ -1254,30 +1247,63 @@ Furthermore, because of the properties of exponentials, an update in history var
 \end{eqnarray}
 Nonexponential shear moduli could be implemented, but the history variables would have to be recalculated each time step (rather than the above simple update). Furthermore, since history variables depend on the entire strain history, that history would need to be stored. With exponential shear moduli, only a single history variable is needed for each relaxation time and the strain history does not need to be stored.
 
-Returning to 3D (and plane strain) equations, the process is to define a history variable for each component of strain and for each relaxation time such as
+Returning to 3D (and plane strain) equations, the process is to define a history variable for each component of deviatoric strain and for each relaxation time such as
 \begin{equation}
-      h_{xx,k}^{(i)} = \sum_{j=1}^{i}  -{G_k\over\tau_k} e^{-j\Delta t/\tau_k}\Delta \e{xx,i-j+1}
+      h_{xx,k}^{(i)} = \sum_{j=1}^{i}  -{G_k\over\tau_k} e^{-j\Delta t/\tau_k}\Delta e_{xx,i-j+1}
 \end{equation}
-and similarly for $h_{yy,k}^{(i)}$,  $h_{zz,k}^{(i)}$ (3D), $h_{xy,k}^{(i)}$,  $h_{xz,k}^{(i)}$ (3D),  and $h_{yz,k}^{(i)}$ (3D). Then following strain increments of $d\e{xx}$, $d\e{yy}$,  $d\e{zz}$ (3D), $d\g{xy}$, $d\g{xy}$ (3D), and $d\g{xy}$ (3D), the stress increments are
+and similarly for $h_{yy,k}^{(i)}$,  $h_{zz,k}^{(i)}$ (3D), $h_{xy,k}^{(i)}$,  $h_{xz,k}^{(i)}$ (3D),  and $h_{yz,k}^{(i)}$ (3D). Then following strain increments of $d\e{xx}$, $d\e{yy}$,  $d\e{zz}$ (3D), $d\g{xy}$, $d\g{xy}$, and $d\g{xy}$, $de_{ii}=d\e{ii} - Tr(\et)/3$, $de_{xy}=d\g{xy}/2$, $de_{xz}=d\g{xz}/2$, and $de_{yz}=d\g{yz}/2$, the stress increments are
 \begin{eqnarray}
-      d\s{xx} & = & K(d\e{xx} + d\e{yy} + d\e{zz} - 3\er{}) + {2\over 3}\left(2\Delta\s{xx} - \Delta\s{yy} - \Delta\s{zz}\right) \\
-      d\s{yy} & = & K(d\e{xx} + d\e{yy} + d\e{zz} - 3\er{}) + {2\over 3}\left(2\Delta\s{yy} - \Delta\s{xx}- \Delta\s{zz}\right) \\
-      d\s{zz} & = & K(d\e{xx} +d\e{yy} + d\e{zz} - 3\er{}) + {2\over 3}\left(2\Delta\s{zz} -\Delta\s{yy} - \Delta\s{xx}\right) \\
-      d \t{ij} & = & \Delta\t{ij} 
-\end{eqnarray}
-where
-\begin{eqnarray}
-          \Delta \s{ii} & = & \left(G_e + {\Delta t\over 2}G_e'\right) d\e{ii}
-                          + \Delta t  \sum_{k=1}^n h_{ii,k}^{(i-1)}     \\
-          \Delta \t{ij} & = & \left(G_e + {\Delta t\over 2}G_e'\right) d\g{ij}
+      dP & = & -K(d\e{xx} + d\e{yy} + d\e{zz} - 3\er{}) \\
+      ds_{ij} & = & \left(G_e + {\Delta t\over 2}G_e'\right) de_{ij}
                           + \Delta t  \sum_{k=1}^n h_{ij,k}^{(i-1)} 
 \end{eqnarray}
 The history variables update using
-\begin{eqnarray}
-        h_{ii,k}^{(i)}   & = & e^{-\Delta t/\tau_k}\left(h_{ii,k}^{(i-1)} - {G_k\over\tau_k}d\e{ii}\right)  \\
-        h_{ij,k}^{(i)}   & = & e^{-\Delta t/\tau_k}\left(h_{ij,k}^{(i-1)} - {G_k\over\tau_k}d\g{ij}\right)
-\end{eqnarray}
-Note that in plane strain modeling that $d\e{zz}$ is always zero, which implies that $h_{zz,k}^{(i)} = \Delta\s{zz} = 0$.
+\begin{equation}
+        h_{ij,k}^{(i)}  = e^{-\Delta t/\tau_k}\left(h_{ij,k}^{(i-1)} - {G_k\over\tau_k}de_{ij}\right)  
+\end{equation}
+Note that in plane strain modeling that $d\e{zz}$ is always zero, but $de_{zz} = - Tr(\et)/3$ so $h_{zz,k}^{(i)} \ne 0$. In general, because $\et$ is traceless, $h_{xx,k}^{(i)}+h_{yy,k}^{(i)}+h_{zz,k}^{(i)}=0$, which means instead of tracking $h_{zz,k}^{(i)}$, it can always be found from $-(h_{xx,k}^{(i)}+h_{yy,k}^{(i)})$.
+
+An alternate formulation, although equivalent, in Simo and Hughes begins with Eq.~(\ref{stressterm}) and directly substitutes exponential expansion to get:
+\begin{equation}
+     \sigma(t) = G_0\e{}(t) + \sum_k^n G_k \int_0^t e^{-(t-\tau)/\tau_k} {d\e{}\over d\tau} d\tau
+\end{equation}
+Next, introduce the internal varable, $\alpha_k$, that satisfied
+\begin{equation}
+       {d\alpha_k\over dt} + {\alpha_k\over \tau_k} = {\e{}(t)\over \tau_k}
+\end{equation}
+This first order differential equations (with $\alpha_k(0)=0$) can be solved and integrated by parts to get
+\begin{equation}
+      \alpha_k = \int_0^t e^{-(t-\tau)/\tau_k} {\e{}(\tau)\over \tau_k}d\tau = \e{}(t) - \int_0^t e^{-(t-\tau)/\tau_k} {d\e{}(\tau)\over d\tau}d\tau
+\end{equation}
+Substitution into the stress terms give
+\begin{equation}
+     \sigma(t) = G_0\e{}(t) + \sum_k^n G_k \e{}(t) - \sum_k^n G_k \alpha_k = G_e\e{}(t) -  \sum_k^n G_k \alpha_k
+\end{equation}
+
+A stress increment is now found from
+\begin{equation}
+    \Delta\sigma_i = G_e\Delta\e{i} - \sum_k^n G_k \Delta\alpha_{i,k}
+\end{equation}
+where $\Delta\alpha_{i,k} = \alpha_{i+1,k}-\alpha_{i,k}$. By midpoint integration (with $\e{0}=0$):
+\begin{equation}
+     \alpha_{i,k} = {\Delta t\over \tau_k}\left[ \sum_{j=1}^{i-1} e^{-(i-j)\Delta t/\tau_k} \e{j}  + {\e{i}\over 2}\right]
+\end{equation}
+Therefore
+\begin{equation}
+     \Delta\alpha_{i,k} = {\Delta t\over \tau_k}\left[ \sum_{j=1}^{i} e^{-(i+1-j)\Delta t/\tau_k} \e{j}  - \sum_{j=1}^{i-1} e^{-(i-j)\Delta t/\tau_k} \e{j}  
+             + {\Delta\e{i}\over 2}\right]
+\end{equation}
+Shifting the second term by one and then including $j=1$ term (because $\e{0}=0$) gives
+\begin{equation}
+     \Delta\alpha_{i,k} = {\Delta t\over \tau_k}\left[ \sum_{j=1}^{i} e^{-(i+1-j)\Delta t/\tau_k} \Delta\e{j-1}    
+             + {\Delta\e{i}\over 2}\right]
+\end{equation}
+Reversing the order of the summation give
+\begin{equation}
+     \Delta\alpha_{i,k} = {\Delta t\over \tau_k}\left[ \sum_{j=1}^{i} e^{-j\Delta t/\tau_k} \Delta\e{i-j}    
+             + {\Delta\e{i}\over 2}\right]
+\end{equation}
+
 
 For calculation of stored and dissipated energy, the code splits up the stress increment into elastic and viscous energy. The elastic part is
 \begin{eqnarray}
