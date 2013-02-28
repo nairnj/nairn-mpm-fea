@@ -332,12 +332,29 @@ void NodalPoint::AddTractionTask3(MPMBase *mpmptr,int matfld,Vector *f)
 		}
 	}
 	
-	// add if an active field
-	if(CrackVelocityField::ActiveField(cvf[vfld]))
-	{	cvf[vfld]->AddFextTask3(matfld,f);
+	// we will only look for field 0 or 1 (no interacting cracks allowed)
+	int cfld=-1;
+	if(CrackVelocityField::ActiveField(cvf[0]))
+	{	if(vfld == cvf[0]->location(FIRST_CRACK))
+			cfld = 0;
+		else if(CrackVelocityField::ActiveField(cvf[1]))
+		{	if(vfld == cvf[1]->location(FIRST_CRACK))
+				cfld = 1;
+		}
 	}
-	else
-		cout << "# traction needs inactive field" << endl;
+	else if(CrackVelocityField::ActiveField(cvf[1]))
+	{	if(vfld == cvf[1]->location(FIRST_CRACK))
+			cfld = 1;
+	}
+	
+	// add if an active field
+	if(cfld>=0)
+	{	cvf[cfld]->AddFextTask3(matfld,f);
+	}
+	else 
+	{	// trying switching to zero
+		cout << "# traction needs inactive field: " << vfld << endl;
+	}
 }
 
 // Add to external force spread out over materials for same acceleration on each
@@ -874,7 +891,18 @@ Vector NodalPoint::GetVelocity(short vfld,int matfld)
 {	return cvf[vfld]->GetVelocity(matfld);
 }
 
-// Get velocity for selected field
+// Add total kinetic energy and mass on the grid for all velocity fields to supplied variables
+// in nanoJ (mass in g, vel in mm/sec)
+void NodalPoint::AddKineticEnergyAndMass(double &kineticEnergy,double &totalMass)
+{	int i;
+    for(i=0;i<maxCrackFields;i++)
+	{	if(CrackVelocityField::ActiveField(cvf[i]))
+			cvf[i]->AddKineticEnergyAndMass(kineticEnergy,totalMass);
+	}
+}
+
+
+// Get contact force for selected field
 Vector NodalPoint::GetContactForce(short vfld,int matfld)
 {	return cvf[vfld]->GetContactForce(matfld);
 }

@@ -29,6 +29,7 @@ BodyForce::BodyForce()
 	gravity=FALSE;
 	damping=0.;
 	useFeedback=FALSE;
+	useGridFeedback=TRUE;		// base feedback on grid kinetic energy
 	dampingCoefficient=0.;		// 1/Q in Nose-Hoover feedback
     maxAlpha=-1.;
 	alpha=0.;					// evolving damping coefficient
@@ -114,26 +115,26 @@ void BodyForce::Output(void)
 double BodyForce::GetAlpha(void) { return useFeedback ? alpha : 0. ; }
 
 // initialize to zero
-void BodyForce::TrackAlpha(void)
-{	kineticEnergy=0.;
+bool BodyForce::StartTrackAlpha(bool onTheGrid)
+{	if(onTheGrid != useGridFeedback) return FALSE;
+	kineticEnergy=0.;
 	totalMass=0.;
+	return TRUE;
 }
 
 // increment if has damping using grid velocity extrapolated to the particle
+// only call when feedback is known to be on
 void BodyForce::TrackAlpha(MPMBase *mptr)
 {
-	if(!useFeedback) return;
-	
 	// twice particle kinetic energy in g mm^2/sec^2
 	kineticEnergy+=mptr->KineticEnergy();
 	totalMass+=mptr->mp;
 }
 
 // update alpha normalized to number of particles
+// only call when feedback is known to be on
 void BodyForce::UpdateAlpha(double delTime,double utime)
 {
-	if(!useFeedback) return;
-	
 	// target kinetic energy in micro J
 	double targetEnergy;
 	if(function!=NULL)

@@ -51,7 +51,6 @@ void UpdateParticlesTask::Execute(void)
 	
     // Update particle position, velocity, temp, and conc
 	Vector delv,*acc;
-	bodyFrc.TrackAlpha();       // zero total kinectic energy
     for(p=0;p<nmpms;p++)
 	{	matID=theMaterials[mpm[p]->MatID()];
 		if(!matID->Rigid())
@@ -100,9 +99,6 @@ void UpdateParticlesTask::Execute(void)
 				}
 				mpm[p]->SetDispEnergy(0.);
 			}
-			
-			// update feedback coefficient
-			bodyFrc.TrackAlpha(mpm[p]);
 		}
 		
 		else
@@ -111,8 +107,14 @@ void UpdateParticlesTask::Execute(void)
 		}
 	}
 	
-	// update damping coefficient
-	bodyFrc.UpdateAlpha(timestep,mtime);
+	// track kinetic energy for feedback damping
+	if(bodyFrc.StartTrackAlpha(FALSE))
+    {	for(p=0;p<nmpms;p++)
+		{	if(!matID->Rigid())
+				bodyFrc.TrackAlpha(mpm[p]);
+		}
+		bodyFrc.UpdateAlpha(timestep,mtime);
+	}
 	
 #ifdef _PROFILE_TASKS_
 	totalTaskTime+=fmobj->CPUTime()-beginTime;

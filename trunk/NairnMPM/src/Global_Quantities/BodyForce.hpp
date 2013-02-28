@@ -25,6 +25,7 @@ class BodyForce
 		double damping;				// external damping
 		double dampingCoefficient;	// 1/Q in Nose-Hoover feedback damping
 		short useFeedback;
+		bool useGridFeedback;
         Vector gforce;              // gravity forces
 		
         // constructors and destructors
@@ -37,7 +38,7 @@ class BodyForce
 		double GetDamping(double);
 		void Output(void);
 		double GetAlpha(void);
-		void TrackAlpha(void);
+		bool StartTrackAlpha(bool);
 		void TrackAlpha(MPMBase *);
 		void UpdateAlpha(double,double);
 		void SetTargetFunction(char *);

@@ -1170,7 +1170,6 @@ void CrackVelocityFieldMulti::AddFtot(int dir,double deltime,double vel)
 // total number of non-rigid points
 int CrackVelocityFieldMulti::GetNumberPointsNonrigid(void) { return numberPoints-numberRigidPoints; }
 
-// location for crack in this field
 // total mass all velocity fields (rigid particles mass not counted)
 double CrackVelocityFieldMulti::GetTotalMass(void)
 {	int i;
@@ -1180,6 +1179,21 @@ double CrackVelocityFieldMulti::GetTotalMass(void)
 			mass+=mvf[i]->mass;
 	}
 	return mass;
+}
+
+// total mass and kinetric energy all velocity fields (rigid particles not counted)
+// in g-mm^2/sec^s = nanoJ
+void CrackVelocityFieldMulti::AddKineticEnergyAndMass(double &kineticEnergy,double &totalMass)
+{	int i;
+	for(i=0;i<maxMaterialFields;i++)
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+		{	if(mvf[i]->mass > 0.)
+			{	totalMass += mvf[i]->mass;
+				double magp = DotVectors(&mvf[i]->pk,&mvf[i]->pk);
+				kineticEnergy += 0.5*magp/mvf[i]->mass;
+			}
+		}
+	}
 }
 
 // get volume for all nonrigid materials

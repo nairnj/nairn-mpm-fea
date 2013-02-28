@@ -118,6 +118,18 @@ double CrackVelocityFieldSingle::GetTotalMass(void)
 {	return MatVelocityField::ActiveField(mvf[0]) ? mvf[0]->mass : 0. ;
 }
 
+// total mass and kinetric energy all velocity fields (rigid particles not counted)
+// in g-mm2/sec^2 = nanoJ
+void CrackVelocityFieldSingle::AddKineticEnergyAndMass(double &kineticEnergy,double &totalMass)
+{	if(MatVelocityField::ActiveNonrigidField(mvf[0]))
+	{	if(mvf[0]->mass > 0.)
+		{	totalMass += mvf[0]->mass;
+			double magp = DotVectors(&mvf[0]->pk,&mvf[0]->pk);
+			kineticEnergy += 0.5*magp/mvf[0]->mass;
+		}
+	}
+}
+
 // get volume when only a single material (overridden when might be more)
 double CrackVelocityFieldSingle::GetVolumeNonrigid(void)
 {	return MatVelocityField::ActiveField(mvf[0]) ? mvf[0]->GetContactVolume() : 0. ;

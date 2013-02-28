@@ -87,6 +87,7 @@ class CrackVelocityField
 		int OppositeCrackTo(int,int);
 		void SetLocationAndCrack(short,int,int);
 		virtual double GetTotalMass(void) = 0;
+		virtual void AddKineticEnergyAndMass(double &,double &) = 0;
 		virtual double GetVolumeNonrigid(void) = 0;
 		virtual double GetVolumeTotal(double) = 0;
 		virtual Vector GetCMatMomentum(void) = 0;

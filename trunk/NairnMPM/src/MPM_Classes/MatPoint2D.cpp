@@ -202,7 +202,7 @@ double MatPoint2D::FDiff(double dshdx,double dshdy,double dshdz)
 						+ (Dten->xy*pDiffusion->Dc.x + Dten->yy*pDiffusion->Dc.y)*dshdy);
 }
 
-// return kinetic energy
+// return kinetic energy (g mm^2/sec^2) = nanoJ
 double MatPoint2D::KineticEnergy(void)
 {	return 0.5*mp*(vel.x*vel.x+vel.y*vel.y);
 }

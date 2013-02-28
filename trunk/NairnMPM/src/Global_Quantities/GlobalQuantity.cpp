@@ -92,6 +92,8 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 		quantity=AVG_EYZP;
 	else if(strcmp(quant,"Kinetic Energy")==0)
 		quantity=KINE_ENERGY;
+	else if(strcmp(quant,"Grid Kinetic Energy")==0)
+		quantity=GRID_KINE_ENERGY;
 	else if(strcmp(quant,"Strain Energy")==0)
 		quantity=STRN_ENERGY;
 	else if(strcmp(quant,"Heat Energy")==0)
@@ -532,6 +534,15 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 				value=ftotal.y;
 			else
 				value=ftotal.z;
+			break;
+		}
+		
+		// grid kinetic energy (J)
+		case GRID_KINE_ENERGY:
+		{	double totalMass;
+			for(p=1;p<=nnodes;p++)
+				nd[p]->AddKineticEnergyAndMass(value,totalMass);
+			value *= 1.e-9;
 			break;
 		}
 
