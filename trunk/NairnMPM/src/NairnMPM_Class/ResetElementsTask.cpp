@@ -8,6 +8,12 @@
 	Check if any particles have left their element and if yes, find the new
 		element. If particle reaches edge of the grid either stop the analysis
 		or push it back and try to continue.
+ 
+	Also update alpha for feedback damping. Wanted to have this at the end
+		of time step fro both USF and USAVG. This update used to be in the
+		UpdateParticlesTask, but that had problems when using grid kinetic
+		energy of cohesive zones. Here is betters, especially when using
+		USAVG mode.
 ********************************************************************************/
 
 #include "NairnMPM_Class/ResetElementsTask.hpp"
@@ -16,6 +22,7 @@
 #include "Elements/ElementBase.hpp"
 #include "Exceptions/MPMTermination.hpp"
 #include "Exceptions/MPMWarnings.hpp"
+#include "Global_Quantities/BodyForce.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -34,6 +41,10 @@ void ResetElementsTask::Execute(void)
 #endif
 	int p;
 	
+	// update feedback damping now if needed
+	bodyFrc.UpdateAlpha(timestep,mtime);
+	
+	// loop over particles and check them
     for(p=0;p<nmpms;p++)
     {	if(!ResetElement(mpm[p]))
 		{	// particle has left the grid

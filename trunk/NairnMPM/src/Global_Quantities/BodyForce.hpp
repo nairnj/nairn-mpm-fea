@@ -18,6 +18,7 @@
 
 class ROperation;
 class MPMBase;
+class NodalPoint;
 
 class BodyForce
 {
@@ -38,8 +39,6 @@ class BodyForce
 		double GetDamping(double);
 		void Output(void);
 		double GetAlpha(void);
-		bool StartTrackAlpha(bool);
-		void TrackAlpha(MPMBase *);
 		void UpdateAlpha(double,double);
 		void SetTargetFunction(char *);
         void SetMaxAlpha(double);
@@ -50,7 +49,6 @@ class BodyForce
         ROperation *gridfunction;
 		bool gravity;               // true if gravity turned on
 		double alpha,maxAlpha;
-		double kineticEnergy,totalMass;
 		static double varTime;
 };
 

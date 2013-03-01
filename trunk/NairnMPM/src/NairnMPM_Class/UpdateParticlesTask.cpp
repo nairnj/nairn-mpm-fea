@@ -107,15 +107,6 @@ void UpdateParticlesTask::Execute(void)
 		}
 	}
 	
-	// track kinetic energy for feedback damping
-	if(bodyFrc.StartTrackAlpha(FALSE))
-    {	for(p=0;p<nmpms;p++)
-		{	if(!matID->Rigid())
-				bodyFrc.TrackAlpha(mpm[p]);
-		}
-		bodyFrc.UpdateAlpha(timestep,mtime);
-	}
-	
 #ifdef _PROFILE_TASKS_
 	totalTaskTime+=fmobj->CPUTime()-beginTime;
 #endif

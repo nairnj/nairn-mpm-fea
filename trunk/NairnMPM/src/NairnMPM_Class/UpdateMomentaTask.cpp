@@ -51,12 +51,10 @@ void UpdateMomentaTask::Execute(void)
 #endif
 
 	// Update momenta on all nodes
-	for(int i=1;i<=nnodes;i++)
+	int i;
+	for(i=1;i<=nnodes;i++)
 		nd[i]->UpdateMomentaOnNode(timestep);
 	
-	// for feedback damping using grid kinetic energy, get it now
-	//if(bodyFrc.StartTrackAlpha(TRUE))
-
 	// adjust momenta and forces for multimaterial contact
 	NodalPoint::MaterialContact(fmobj->multiMaterialMode,TRUE,timestep);
 	

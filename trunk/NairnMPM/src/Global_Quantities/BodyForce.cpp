@@ -9,6 +9,7 @@
 #include "Global_Quantities/BodyForce.hpp"
 #include "Read_XML/mathexpr.hpp"
 #include "MPM_Classes/MPMBase.hpp"
+#include "Nodes/NodalPoint.hpp"
 
 // Single global object
 // Handles body forces (now only gravity and damping)
@@ -30,6 +31,7 @@ BodyForce::BodyForce()
 	damping=0.;
 	useFeedback=FALSE;
 	useGridFeedback=TRUE;		// base feedback on grid kinetic energy
+								// provide option to change to allow particle kintic energy instead
 	dampingCoefficient=0.;		// 1/Q in Nose-Hoover feedback
     maxAlpha=-1.;
 	alpha=0.;					// evolving damping coefficient
@@ -114,27 +116,28 @@ void BodyForce::Output(void)
 // return the damping coefficient
 double BodyForce::GetAlpha(void) { return useFeedback ? alpha : 0. ; }
 
-// initialize to zero
-bool BodyForce::StartTrackAlpha(bool onTheGrid)
-{	if(onTheGrid != useGridFeedback) return FALSE;
-	kineticEnergy=0.;
-	totalMass=0.;
-	return TRUE;
-}
-
-// increment if has damping using grid velocity extrapolated to the particle
-// only call when feedback is known to be on
-void BodyForce::TrackAlpha(MPMBase *mptr)
-{
-	// twice particle kinetic energy in g mm^2/sec^2
-	kineticEnergy+=mptr->KineticEnergy();
-	totalMass+=mptr->mp;
-}
-
 // update alpha normalized to number of particles
 // only call when feedback is known to be on
 void BodyForce::UpdateAlpha(double delTime,double utime)
 {
+	if(!useFeedback ) return;
+	
+	// get total kinetic energy
+	double kineticEnergy=0.;
+	double totalMass=0.;
+	if(useGridFeedback)
+	{	int i;
+		for(i=1;i<=nnodes;i++)
+			nd[i]->AddKineticEnergyAndMass(kineticEnergy,totalMass);
+	}
+	else
+	{	int p;
+		for(p=1;p<nmpms;p++)
+		{	kineticEnergy += mpm[p]->KineticEnergy();
+			totalMass += mpm[p]->mp;
+		}
+	}
+	
 	// target kinetic energy in micro J
 	double targetEnergy;
 	if(function!=NULL)
@@ -148,7 +151,7 @@ void BodyForce::UpdateAlpha(double delTime,double utime)
     // for target energy in g mm^2/sec^2 is 1000*targetEnergy
 	// this damping factor has units of 1/mm^2 and extra factor of 2.e3 to make same
 	//    magnitude as previous damping method
-	alpha+=2.*dampingCoefficient*(kineticEnergy-1000.*targetEnergy)*delTime/totalMass;
+	alpha += 2.*dampingCoefficient*(kineticEnergy-1000.*targetEnergy)*delTime/totalMass;
 	if(alpha<0.)
         alpha=0.;
     else if(maxAlpha>0)
