@@ -128,12 +128,12 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
 	double Tn=0.,Tt=0.,GI=0.,GII=0.;
 	double *upeak =(double *)cs->GetHistoryData();
 	
-	// normal force (only if open)
+	// normal force and GI (only if open)
 	if(nCod>0.)
 	{	// is it failed?
 		if(nCod>delIc)
 		{	cs->SetMatID(0);                        // then debonded
-			ReportDebond(mtime,cs,1.0,0.0);
+            GI = JIc;
 		}
 		else
 		{	if(nCod>upeak[0]) upeak[0]=nCod;                        // new peak reached
@@ -150,36 +150,39 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
 		}
 	}
 	
-	// shear (if still bonded)
-	if(cs->MatID()>=0)
-	{	// is it failed?
-		double absTCod=fabs(tCod);
-		if(absTCod>delIIc)
-		{	cs->SetMatID(0);                        // then debonded
-			ReportDebond(mtime,cs,0.0,0.0);
-			Tn=0.;                                          // turn off normal traction when failed
-		}
-		else if(absTCod>0.)
-		{	if(absTCod>upeak[1]) upeak[1]=absTCod;                    // new peak reached either direction
-			double keff=sIIc*(delIIc-upeak[1])/((delIIc-umidII)*upeak[1]);
-			Tt=keff*tCod;
-			
-			// shear energy always
-			if(absTCod<umidII)
-				GII=0.0005*kII1*tCod*tCod;               // now in units of N/m
-			else
-			{	double s2=(delIIc-absTCod)*stress2/(delIIc-umidII);
-				GII=500.*(umidII*stress2 + (absTCod-umidII)*(stress2+s2));      // now in units of N/m
-			}
-		}
-	}
+	// shear force and GII always
+    // is it failed?
+    double absTCod=fabs(tCod);
+    if(absTCod>delIIc)
+    {	cs->SetMatID(0);                                // then debonded
+        GII = JIIc;
+    }
+    else if(absTCod>0.)
+    {	if(absTCod>upeak[1]) upeak[1]=absTCod;          // new peak reached either direction
+        double keff=sIIc*(delIIc-upeak[1])/((delIIc-umidII)*upeak[1]);
+        Tt=keff*tCod;
+        
+        // shear energy always
+        if(absTCod<umidII)
+            GII=0.0005*kII1*tCod*tCod;                  // now in units of N/m
+        else
+        {	double s2=(delIIc-absTCod)*stress2/(delIIc-umidII);
+            GII=500.*(umidII*stress2 + (absTCod-umidII)*(stress2+s2));      // now in units of N/m
+        }
+    }
 	
-	// mixed mode failure? (nmix<=0 uses infinity which means fails when either COD becomes critical)
-	if(cs->MatID()>=0 && nmix>0)
-	{	if(pow(GI/JIc,nmix)+pow(GII/JIIc,nmix) > 1)
+    if(cs->MatID()<0)
+    {   // it failed above in pure mode
+        ReportDebond(mtime, cs, GI/(GI+GII),GI+GII);
+        Tn = 0.;                                       // turn off in tractions, if calculated
+        Tt = 0.;
+    }
+	else if(nmix>0)
+    {   // mixed mode failure? (nmix<=0 uses infinity which means fails when either COD becomes critical)
+		if(pow(GI/JIc,nmix)+pow(GII/JIIc,nmix) > 1)
 		{	cs->SetMatID(0);				// now debonded
 			ReportDebond(mtime,cs,GI/(GI+GII),GI+GII);
-			Tn=0.;
+			Tn=0.;                                       // turn off in tractions, if calculated
 			Tt=0.;
 		}
 	}

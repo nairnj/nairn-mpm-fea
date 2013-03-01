@@ -69,12 +69,12 @@ void CubicTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,do
 	double Tn=0.,Tt=0.,GI=0.,GII=0.;
 	double *upeak =(double *)cs->GetHistoryData();
 	
-	// normal force (only if open)
+	// normal force and GI (only if open)
 	if(nCod>0.)
 	{	// is it failed?
 		if(nCod>delIc)
 		{	cs->SetMatID(0);			// then debonded
-			ReportDebond(mtime,cs,1.0,0.0);
+			GI = JIc;
 		}
 		else
 		{	if(nCod>upeak[0]) upeak[0]=nCod;		// new peak reached
@@ -87,29 +87,33 @@ void CubicTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,do
 		}
 	}
 	
-	// shear (if still bonded)
-	if(cs->MatID()>=0)
-	{	// is it failed?
-		double absTCod=fabs(tCod);
-		if(absTCod>delIIc)
-		{	cs->SetMatID(0);			// then debonded
-			ReportDebond(mtime,cs,0.0,0.0);
-			Tn=0.;						// turn off normal traction when failed
-		}
-		else
-		{	if(absTCod>upeak[1]) upeak[1]=absTCod;		// new peak reached in either direction
-			double keff=kII1*(delIIc-upeak[1])*(delIIc-upeak[1]);
-			Tt=keff*tCod;
-			
-			// get GII for failure law
-			double d=tCod/delIIc;
-			GII=JIIc*d*d*(6.-8.*d+3.*d*d);		// N/m
-		}
-	}
+	// shear force and GII always
+    // is it failed?
+    double absTCod=fabs(tCod);
+    if(absTCod>delIIc)
+    {	cs->SetMatID(0);			// then debonded
+        GII = JIIc;
+    }
+    else
+    {	if(absTCod>upeak[1]) upeak[1]=absTCod;		// new peak reached in either direction
+        double keff=kII1*(delIIc-upeak[1])*(delIIc-upeak[1]);
+        Tt=keff*tCod;
+        
+        // get GII for failure law
+        double d=tCod/delIIc;
+        GII=JIIc*d*d*(6.-8.*d+3.*d*d);		// N/m
+    }
 	
-	// mixed mode failure? (nmix<=0 uses infinity which means fails when either COD becomes critical)
-	if(cs->MatID()>=0 && nmix>0)
-	{	if(pow(GI/JIc,nmix)+pow(GII/JIIc,nmix) > 1)
+    // failure criterion
+    if(cs->MatID()<0)
+    {   // it failed above in pure mode
+        ReportDebond(mtime, cs, GI/(GI+GII),GI+GII);
+        Tn = 0.;                                       // turn off in tractions, if calculated
+        Tt = 0.;
+    }
+	else if(nmix>0)
+    {   // mixed mode failure? (nmix<=0 uses infinity which means fails when either COD becomes critical)
+		if(pow(GI/JIc,nmix)+pow(GII/JIIc,nmix) > 1)
 		{	cs->SetMatID(0);				// now debonded
 			ReportDebond(mtime,cs,GI/(GI+GII),GI+GII);
 			Tn=0.;

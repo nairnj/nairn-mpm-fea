@@ -314,7 +314,7 @@ Vector CrackSegment::GetTangential(double *length)
 // update tractions
 void CrackSegment::UpdateTractions(CrackHeader *theCrack)
 {	
-	// exit if no traction law
+	// exit if no traction law (matnum=0 or less return <0)
 	if(MatID()<0) return;
 	
 	// get tangential unit vector and length
