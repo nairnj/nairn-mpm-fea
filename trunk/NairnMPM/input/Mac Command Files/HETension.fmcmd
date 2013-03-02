@@ -26,7 +26,7 @@ EndXMLData
 #update="USF"
 
 ! Supported materials: "neohookean" (G2=0), "mooney" (G1=G2), heiso
-#matID="neohookean"
+#matID="heiso"
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2
@@ -37,25 +37,25 @@ StressFreeTemp 294
 #startTemp=294
 
 ! Basic properties
-#Ebase=2000
-#rho=1
-#nuBase=.33
+#Ebase=2500
+#rho=1.2
+#nuBase=.4
 #aBase=60
 #yldstrain=1		! in percent
 
 ! Dimensions
 #cell=2
-#length=10			! length
+#length=40			! length
 #width=10			! width
 #thick=10			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
 #loading="rigid"	! Loading = "rigid", "contact", "force", "traction", thermal
-#fixsides="yes"		! Yes to constrain y direction (and z direction if 3D)
-#strain=-70	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
+#fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
+#strain=16	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
 
 ! Loading rate
-#tmult=5			! number of transit times to load peak
+#tmult=40			! number of transit times to load peak
 #hold=0				! hold time (multiple of loading time)
 #unload=0		    ! 0 no unload or >0 for unloading time (multiple of loading time, but at same loading rate)
 
@@ -169,13 +169,13 @@ if #matID="heiso"
       yield abs(#Ebase*#yldstrain/100)
       Ep #Ebase/10
     else if #hardID="Nonlinear"
-      yield abs(#Ebase*#yldstrain/200)
-      Khard 5000
-      nhard .24
+      yield 65
+      Khard 100
+      nhard .1
     else if #hardID="Nonlinear2"
-      yield abs(#Ebase*#yldstrain/200)
-      Khard 5
-      nhard .24
+      yield 40
+      Khard 2
+      nhard .2
     endif
     UJOption 0
     kCond .202
