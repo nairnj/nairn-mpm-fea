@@ -172,16 +172,16 @@ void MPMBase::SetVelocityGradient(double dvxx,double dvyy,double dvxy,double dvy
 {
     if(JTerms!=2) return;
     if(!secondPass)
-    {	velGrad->xx=dvxx;
-        velGrad->yy=dvyy;
-        velGrad->xy=dvxy;
-        velGrad->zz=dvyx;		// yx stored in zz
+    {	velGrad->xx = dvxx;
+        velGrad->yy = dvyy;
+        velGrad->xy = dvxy;
+        velGrad->zz = dvyx;						// yx stored in zz
     }
     else
-    {	velGrad->xx=(velGrad->xx+dvxx)*0.5;
-        velGrad->yy=(velGrad->yy+dvyy)*0.5;
-        velGrad->xy=(velGrad->xy+dvxy)*0.5;
-        velGrad->zz=(velGrad->zz+dvyx)*0.5;		// yx stored in zz
+    {	velGrad->xx = (velGrad->xx+dvxx)*0.5;
+        velGrad->yy = (velGrad->yy+dvyy)*0.5;
+        velGrad->xy = (velGrad->xy+dvxy)*0.5;
+        velGrad->zz = (velGrad->zz+dvyx)*0.5;		// yx stored in zz
     }
 }
 
@@ -235,7 +235,14 @@ bool MPMBase::PartitionsElasticAndPlasticStrain(void)
 {   return theMaterials[MatID()]->PartitionsElasticAndPlasticStrain();
 }
 
-// get deformation gradient terms
+// get deformation gradient terms from full strains
+// used when archiving and by 2D J Integral calculations
+double MPMBase::GetDuDx(void)
+{   if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())
+		return ep.xx+eplast.xx;
+	else
+		return ep.xx;
+}
 double MPMBase::GetDuDy(void)
 {   if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())
         return (ep.xy+eplast.xy-wrot.xy)/2.;
@@ -247,6 +254,18 @@ double MPMBase::GetDvDx(void)
         return (ep.xy+eplast.xy+wrot.xy)/2.;
     else
         return (ep.xy+wrot.xy)/2.;
+}
+double MPMBase::GetDvDy(void)
+{   if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())
+		return ep.yy+eplast.yy;
+	else
+		return ep.yy;
+}
+double MPMBase::GetDwDz(void)
+{   if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())
+		return ep.zz+eplast.zz;
+	else
+		return ep.zz;
 }
 
 // anglez0 is initial z cw orientation angle (2D and 3D z,y,x scheme)

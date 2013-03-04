@@ -1057,7 +1057,6 @@ void MPMReadHandler::myEndElement(char *xName)
 		delete velocityBCs;
 		delete concBCs;
 		delete tempBCs;
-		CreateAxisymetricBCs();
 	}
 	
 	else if(strcmp(xName,"ParticleBCs")==0)
@@ -1108,6 +1107,11 @@ void MPMReadHandler::myEndElement(char *xName)
     else if(EndBMPInput(xName,POINTSBLOCK))
     {   
     }
+	
+	else if(strcmp(xName,"JANFEAInput")==0)
+	{	// all done
+		CreateAxisymetricBCs();
+	}
 }
 
 // Decode block of characters if input!=NO_INPUT

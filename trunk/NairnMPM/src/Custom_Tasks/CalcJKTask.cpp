@@ -39,6 +39,7 @@ CustomTask *CalcJKTask::Initialize(void)
 {
     cout << "J Integral and Stress Intensity calculation activated." << endl;
     cout << "   Rectangular contour 2*(" << JGridSize << "X" << JGridSize << ") elements" << endl;
+	if(JTerms<0) JTerms = fmobj->IsAxisymmetric() ? 2 : 1 ;
 	switch(JTerms)
 	{	case 1:
 			cout << "   Contour integral only";
@@ -151,14 +152,7 @@ CustomTask *CalcJKTask::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
     // skip if already set up
     if(!getJKThisStep || isRigid) return nextTask;
     
-	Tensor *ep=mpnt->GetStrainTensor();
-    if(mpnt->PartitionsElasticAndPlasticStrain())
-	{   Tensor *eplast=mpnt->GetPlasticStrainTensor();
-        ndmi->AddUGradient(vfld,wt,ep->xx+eplast->xx,mpnt->GetDuDy(),mpnt->GetDvDx(),ep->yy+eplast->yy);
-    }
-    else
-    {   ndmi->AddUGradient(vfld,wt,ep->xx,mpnt->GetDuDy(),mpnt->GetDvDx(),ep->yy);
-    }
+	ndmi->AddUGradient(vfld,wt,mpnt->GetDuDx(),mpnt->GetDuDy(),mpnt->GetDvDx(),mpnt->GetDvDy());
     wt*=theMaterials[mpnt->MatID()]->rho;
     ndmi->AddEnergy(vfld,wt,mpnt->vel.x,mpnt->vel.y,mpnt->GetStrainEnergy());
     Tensor sp = mpnt->ReadStressTensor();

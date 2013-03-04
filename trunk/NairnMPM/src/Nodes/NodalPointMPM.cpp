@@ -455,11 +455,11 @@ void NodalPoint::AddUGradient(short vfld,double wt,double dudx,double dudy,doubl
 // Add to kinetic energy and strain energy
 // wt includes density (g/cm^3)
 // Must scale kinetic later by 0.5e-9 to get units N/mm^2 (here is twice g/cm^3 mm^2/sec^2)
-// Must scale work later by 1.e-6 to get N/mm^2 (here is N/m^2)
+// Must scale work later by 1.e-6 to get N/mm^2 (here is g/cm^3 uJ/g = N/m^2)
 void NodalPoint::AddEnergy(short vfld,double wt,double vx,double vy,double work)
-{	DispField *df=cvf[vfld]->df;
-	df->kinetic+=wt*(vx*vx+vy*vy);
-	df->work+=wt*work;
+{	DispField *df = cvf[vfld]->df;
+	df->kinetic += wt*(vx*vx+vy*vy);
+	df->work += wt*work;
 }
 
 // add to nodal stress (in-plane only)

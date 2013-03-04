@@ -25,6 +25,7 @@ CrackLeaf::CrackLeaf(CrackSegment *scrk1,CrackSegment *scrk2)
 #ifdef HIERARCHICAL_CRACKS
     // next leaf in this level
     nextLeaf = NULL;
+	parent = NULL;
     
     // child segment
     child1 = (char *)scrk1;
@@ -58,6 +59,7 @@ CrackLeaf::CrackLeaf(CrackLeaf *leaf1,CrackLeaf *leaf2)
 {
     // next leaf in this level
     nextLeaf = NULL;
+	parent = NULL;
     
     // child leaf
     child1 = (char *)leaf1;

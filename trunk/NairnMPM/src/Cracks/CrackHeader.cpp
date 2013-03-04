@@ -38,10 +38,10 @@ int CrackHeader::warnNodeOnCrack;
 int CrackHeader::warnThreeCracks;
 
 // globals
-CrackHeader *firstCrack;	// first crack
-int JGridSize=2;			// size of J Integral contour
-int JContourType=1;			// future might try different contours
-int JTerms=1;				// number of terms in J Integral calculation
+CrackHeader *firstCrack;		// first crack
+int JGridSize = 2;				// size of J Integral contour
+int JContourType = 1;			// future might try different contours
+int JTerms = -1;				// number of terms in J Integral calculation (default 1 or 2 if axisymmetric)
 
 #ifndef HIERARCHICAL_CRACKS
 
@@ -367,7 +367,7 @@ short CrackHeader::MoveCrack(void)
 
 	// move only surfaces
 	if(contact.GetMoveOnlySurfaces())
-	{	while(scrk!=NULL)
+	{	while(scrk != NULL)
 		{	if(!fixedCrack)
 			{	// move to midpoint between upper and lower surface
 				scrk->MovePosition();
@@ -403,7 +403,7 @@ short CrackHeader::MoveCrack(void)
 #endif
 			
 			// next segments
-			scrk=scrk->nextSeg;
+			scrk = scrk->nextSeg;
 		}
 	}
 	
@@ -417,7 +417,7 @@ short CrackHeader::MoveCrack(void)
 		int nds[MaxShapeNds],numnds;
 		
 		// loop over crack points
-		while(scrk!=NULL)
+		while(scrk != NULL)
 		{	if(!fixedCrack)
 			{	// get element and shape functinos
 				iel=scrk->planeInElem-1;			// now zero based
@@ -518,7 +518,6 @@ short CrackHeader::MoveCrack(void)
 #ifdef HIERARCHICAL_CRACKS
     MoveHierarchy();
 #endif
-	
     return TRUE;
 }
 
@@ -972,7 +971,7 @@ void CrackHeader::JIntegral(void)
     ContourPoint *crackPt,*prevPt,*nextPt;
     int crkTipIdx;
     CrackSegment *tipCrk;
-    double Jx,Jy,Jx1,Jy1,Jx2,Jy2;
+    double Jx,Jy,Jx1,Jy1,Jx2,Jy2,JAS2;
 	Vector crackDir;
 	bool secondTry;
 	
@@ -1146,6 +1145,7 @@ void CrackHeader::JIntegral(void)
 			int dfld = (tipCrk==firstSeg) ? ABOVE_CRACK : BELOW_CRACK;		// initial field
 			nextPt=crackPt;
 			int count=0;			// particles in the nodal fields
+			double r1=1.,r2=1.;
 			while(TRUE)
 			{   // J integral node1 to node2 using field dfld
 				NodalPoint *node1=nextPt->node;
@@ -1160,6 +1160,13 @@ void CrackHeader::JIntegral(void)
 					sfld2=node2->cvf[(int)node2->below]->df;
 					count+=node2->cvf[(int)node2->below]->GetNumberPoints();
 				}
+				/*
+				if(fmobj->IsAxisymmetric())
+				{	r1 = node1->x;		// should divide by a
+					r2 = node2->x;
+				}
+				*/
+				
 				
 				/* Calculate J Integral segment by segment
 				   1 means the start point of the segment, 2 means the end point
@@ -1225,7 +1232,7 @@ void CrackHeader::JIntegral(void)
 				fForJx2=(wd2+kd2)*segNorm.x-termForJx2;
 
 				// add for two endpoints using midpoint rule
-				Jx1+=0.5*(fForJx1+fForJx2)*ds;	// N mm/mm^2
+				Jx1+=0.5*(r1*fForJx1 + r2*fForJx2)*ds;	// N mm/mm^2
 
 				// calculate Jy
 
@@ -1240,7 +1247,7 @@ void CrackHeader::JIntegral(void)
 				fForJy2=(wd2+kd2)*segNorm.y-termForJy2;
 
 				// add for two endpoints using midpoint rule
-				Jy1+=0.5*(fForJy1+fForJy2)*ds; 
+				Jy1+=0.5*(r1*fForJy1 + r2*fForJy2)*ds;
 
 				// on to next segment
 				numSegs--;
@@ -1273,12 +1280,12 @@ void CrackHeader::JIntegral(void)
 
 			/* Task 5: Evaluate J integral from the additional terms (GYJ)
 				if requested */
-			Jx2=Jy2=0.;
+			Jx2 = Jy2 = JAS2 = 0.;
 			if(JTerms==2)
 			{   double rho,xp,yp,carea;
 				double ax,ay,duxdx,duydx,duxdy,duydy;
 				double vx,vy,dvxdx,dvydy,dvxdy,dvydx;
-				double f2ForJx=0.,f2ForJy=0.;
+				double f2ForJx=0.,f2ForJy=0.,f2axisym=0.;
 				count=0;	// number of particles within J-integral contour
 
 				for(int p=0;p<nmpms;p++)
@@ -1288,56 +1295,77 @@ void CrackHeader::JIntegral(void)
 					if(xp>=cxmin && xp<cxmax && yp>=cymin && yp<cymax)
 					{   // (xp,yp) in the contour
 						count++;
+						
 						// Mass density g/cm^3
 						rho=theMaterials[mpm[p]->MatID()]->rho;
+						
 						// Accelerations mm/sec^2
 						Vector *acc=mpm[p]->GetAcc();
 						ax=acc->x;
 						ay=acc->y;
+						
 						// Displacement gradients (dimensionless)
-						Tensor *ep=mpm[p]->GetStrainTensor();
-						duxdx=ep->xx;
-						duydy=ep->yy;
-						duxdy=mpm[p]->GetDuDy();
-						duydx=mpm[p]->GetDvDx();
+						duxdx = mpm[p]->GetDuDx();
+						duydy = mpm[p]->GetDvDy();
+						duxdy = mpm[p]->GetDuDy();
+						duydx = mpm[p]->GetDvDx();
+						
 						// Velocities (mm/sec)
 						vx=mpm[p]->vel.x;
 						vy=mpm[p]->vel.y;
-						// Velocity gradients
+						
+						// Velocity gradients (1/sec)
 						Tensor *velGrad=mpm[p]->GetVelGrad();
 						dvxdx=velGrad->xx;
 						dvydy=velGrad->yy;
 						dvxdy=velGrad->xy;
 						dvydx=velGrad->zz;			// yx stored in zz
-						f2ForJx+=rho*((ax*duxdx+ay*duydx)-(vx*dvxdx+vy*dvydx)); 
-						f2ForJy+=rho*((ax*duxdy+ay*duydy)-(vx*dvxdy+vy*dvydy));
+						
+						// increment the integrands (g/cm^3)(mm/sec^2) = N/m^3 = 1e9 N/mm^3
+						f2ForJx += rho*((ax*duxdx+ay*duydx)-(vx*dvxdx+vy*dvydx)); 
+						f2ForJy += rho*((ax*duxdy+ay*duydy)-(vx*dvxdy+vy*dvydy));
+						
+						if(fmobj->IsAxisymmetric())
+						{	// in axisymmetrix z is theta direction, etheta = u/r. but w=0, az=vz=0
+							// Since w=0, no change to above terms, but have some static terms
+							// Units N/(m^2 mm) = 1e6 N/mm^3
+							// See Broberg, Cracks and Fraction (1999), page 65
+							Tensor *sp=mpm[p]->GetStressTensor();
+							f2axisym += rho*(sp->xx*duxdx - sp->zz*mpm[p]->GetDwDz() + sp->xy*duydx)/xp;
+							
+							// My derivation like Broberg (seems to agree if change my sign)
+							//f2axisym += rho*(sp->xx*duxdx - 2.*sp->zz*duxdx + sp->xy*duydx)/xp;
+							
+							// My derivation, seems same as Bergvist, activate r1, r2 above also
+							//f2axisym += rho*(mpm[p]->GetStrainEnergy() - sp->zz*mpm[p]->GetDwDz());			// divide by a
+						}
 					}
 				}
 				
 				if(count==0)
 					throw "J Integral contour contains no particles";
-				carea=1.e-9*(cxmax-cxmin)*(cymax-cymin)/count;	// area per particle
-				Jx2=f2ForJx*carea;      // Jx2 in Nmm/mm^2 now
-				Jy2=f2ForJy*carea;      // Jy2 in Nmm/mm^2 now
+				carea=1.e-6*(cxmax-cxmin)*(cymax-cymin)/count;	// area per particle
+				Jx2 = 1.e-3*f2ForJx*carea;				// Jx2 in N mm/mm^2 now
+				Jy2 = 1.e-3*f2ForJy*carea;				// Jy2 in N mm/mm^2 now
+				JAS2 = f2axisym*carea;					// JAS2 in N mm/mm^2
 			}
 			
 			/* Task 6: Subtract energy due to tractions or for cracks in contact, subtract
-				energy associated with shear stress (not yet implemented thought)
-				If Jterms==3 or 4, subtract recoverable energy as well for R curve analysis
+				energy associated with shear stress (later not yet implemented thought)
 			*/
 			if(hasTractionLaws)
 			{	tractionEnergy=startSeg->TractionEnergy(&crossPt,crkTipIdx,true);
 				bridgingReleased=startSeg->TractionEnergy(&crossPt,crkTipIdx,false);
 			}
 			else
-			{	// set traction energy to energy due to shear if in contact
+			{	// set traction energy to energy due to shear if in contact (not implemented yet)
 				tractionEnergy=0.;
 				bridgingReleased=0.;
 			}
 			
 			// add the two terms N mm/mm^2
-			Jx=Jx1+Jx2;
-			Jy=Jy1+Jy2;
+			Jx = Jx1 + Jx2;
+			Jy = Jy1 + Jy2;
 
 			/* Jint -- crack-axis components of dynamic J-integral
 				  Jint.x is J1 in archiving and literature and is energy release rate, here
@@ -1347,10 +1375,10 @@ void CrackHeader::JIntegral(void)
 							(archived as J2 when propagation is on)
 			   crackDir -- crack propagating direction cosines from above
 			*/
-			tipCrk->Jint.x= Jx*crackDir.x+Jy*crackDir.y-tractionEnergy;		// Jtip or energy that will be released if crack grows
-			tipCrk->Jint.y=-Jx*crackDir.y+Jy*crackDir.x;			// J2(x)
+			tipCrk->Jint.x = Jx*crackDir.x + Jy*crackDir.y - JAS2 - tractionEnergy;		// Jtip or energy that will be released if crack grows
+			tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;			// J2(x)
 			//tipCrk->Jint.y= Jx*crackDir.x+Jy*crackDir.y;			// store J1(x) in traction zones (archived only when no propagation)
-			tipCrk->Jint.z= tipCrk->Jint.x+bridgingReleased;		// Jrel or energy released in current state
+			tipCrk->Jint.z = tipCrk->Jint.x + bridgingReleased;		// Jrel or energy released in current state
 			
 			// end of try block on J calculation
 			secondTry=FALSE;
@@ -2018,7 +2046,7 @@ void CrackHeader::CFFlatCrossing(double x1,double y1,double x2,double y2,Vector 
     }
 }
 
-// When crack is first create at start of calculations, create all the CrackLeaf
+// When crack is first created at start of calculations, create all the CrackLeaf
 // objects needed to describe the crack as a binary tree starting from
 // the rootleaf
 void CrackHeader::CreateHierarchy(void)
@@ -2049,7 +2077,7 @@ void CrackHeader::CreateHierarchy(void)
         scrk2 = scrk1->nextSeg;
         lastLeaf = leaf;
     }
-    
+	
     // trace up the tree as long as more than 1 leaf is present
     while(numLeaves>1)
     {   CrackLeaf *leaf1 = firstLeaf;
@@ -2066,7 +2094,7 @@ void CrackHeader::CreateHierarchy(void)
             else
                 lastLeaf->nextLeaf = leaf;
             
-            // on to next on
+            // on to next one
             if(leaf2==NULL) break;
             leaf1 = leaf2->nextLeaf;
             if(leaf1!=NULL)
@@ -2078,14 +2106,13 @@ void CrackHeader::CreateHierarchy(void)
     
     // all done, but root is the most recent firstLeaf
     rootLeaf = firstLeaf;
-    
 }
 
-// When crack is first create at start of calculations, create all the CrackLeaf
+// When crack is first created at start of calculations, create all the CrackLeaf
 // objects needed to describe the crack as a binary tree starting from
 // the rootleaf
 void CrackHeader::MoveHierarchy(void)
-{
+{	
     CrackSegment *scrk1 = firstSeg;
     CrackSegment *scrk2 = scrk1->nextSeg;           // firstSeg always exists
     

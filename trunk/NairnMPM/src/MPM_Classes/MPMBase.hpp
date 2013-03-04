@@ -95,8 +95,11 @@ class MPMBase : public LinkedObject
 		bool HasLeftTheGrid(void);
 		void SetHasLeftTheGrid(bool);
         bool PartitionsElasticAndPlasticStrain(void);
-		double GetDuDy(void);
-		double GetDvDx(void);
+		double GetDuDx(void);					// du/dr in axisym
+		double GetDuDy(void);					// du/dz in axisym
+		double GetDvDx(void);					// dw/dr in axisym
+		double GetDvDy(void);					// dw/dz in axisym
+		double GetDwDz(void);					// v/r = etheta in axisym
 		double GetRotationZ(void);
 		double GetRotationY(void);
 		double GetRotationX(void);

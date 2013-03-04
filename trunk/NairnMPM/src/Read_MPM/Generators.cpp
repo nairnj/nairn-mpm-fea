@@ -1127,7 +1127,7 @@ void MPMReadHandler::CreateAxisymetricBCs()
 {	// exit it not axisymmetric
 	if(!fmobj->IsAxisymmetric()) return;
 	
-	// skip this feature if not structure grid
+	// skip this feature if not structured grid
 	if(!mpmgrid.IsStructuredGrid()) return;
 	
 	// find nmin
