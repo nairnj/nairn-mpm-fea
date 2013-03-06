@@ -1154,8 +1154,8 @@
 				6715DFCF16C567350042F15C /* Nonlinear2Hardening.cpp */,
 				A712FAB00E54ED8500AF8D78 /* JohnsonCook.hpp */,
 				A712FAB10E54ED8500AF8D78 /* JohnsonCook.cpp */,
-				A778E0D716AA078A003D27FE /* SCGLHardening.hpp */,
 				A778E0D916AA07A1003D27FE /* SCGLHardening.cpp */,
+				A778E0D716AA078A003D27FE /* SCGLHardening.hpp */,
 				A708FDD20F326C1A003FA82B /* SLMaterial.hpp */,
 				A708FDD30F326C1A003FA82B /* SLMaterial.cpp */,
 			);

@@ -976,7 +976,7 @@ void CrackHeader::JIntegral(void)
     ContourPoint *crackPt,*prevPt,*nextPt;
     int crkTipIdx;
     CrackSegment *tipCrk;
-    double Jx,Jy,Jx1,Jy1,Jx2,Jy2,JAS2;
+    double Jx,Jy,Jx1,Jy1,Jx2,Jy2,JxAS2;
 	Vector crackDir;
 	bool secondTry;
 	
@@ -1001,9 +1001,7 @@ void CrackHeader::JIntegral(void)
 			crkTipIdx++;
             continue;
         }
-#ifndef BROBERG_AS_METHOD_FOR_JR
 		double crackr = tipCrk->x;
-#endif
 		
 		// block to catch problems
 		NodalPoint *phantom=NULL;
@@ -1153,9 +1151,7 @@ void CrackHeader::JIntegral(void)
 			int dfld = (tipCrk==firstSeg) ? ABOVE_CRACK : BELOW_CRACK;		// initial field
 			nextPt=crackPt;
 			int count=0;			// particles in the nodal fields
-#ifndef BROBERG_AS_METHOD_FOR_JR
 			double r1 = 1.,r2 = 1.;
-#endif
 			while(TRUE)
 			{   // J integral node1 to node2 using field dfld
 				NodalPoint *node1=nextPt->node;
@@ -1170,12 +1166,10 @@ void CrackHeader::JIntegral(void)
 					sfld2=node2->cvf[(int)node2->below]->df;
 					count+=node2->cvf[(int)node2->below]->GetNumberPoints();
 				}
-#ifndef BROBERG_AS_METHOD_FOR_JR
 				if(fmobj->IsAxisymmetric())
 				{	r1 = node1->x/crackr;		// divide by a
 					r2 = node2->x/crackr;
 				}
-#endif
 				
 				/* Calculate J Integral segment by segment
 				   1 means the start point of the segment, 2 means the end point
@@ -1261,7 +1255,8 @@ void CrackHeader::JIntegral(void)
 				fForJy2=(wd2+kd2)*segNorm.y-termForJy2;
 
 				// add for two endpoints using midpoint rule
-				Jy1+=0.5*(fForJy1 + fForJy2)*ds;
+                // The r's (=r_i/a) for axisymmetric Jz integral
+				Jy1+=0.5*(r1*fForJy1 + r2*fForJy2)*ds;
 
 				// on to next segment
 				numSegs--;
@@ -1294,7 +1289,7 @@ void CrackHeader::JIntegral(void)
 
 			/* Task 5: Evaluate J integral from the additional terms (GYJ)
 				if requested */
-			Jx2 = Jy2 = JAS2 = 0.;
+			Jx2 = Jy2 = JxAS2 = 0.;
 			if(JTerms==2)
 			{   double rho,xp,yp,carea;
 				double ax,ay,duxdx,duydx,duxdy,duydy;
@@ -1360,7 +1355,7 @@ void CrackHeader::JIntegral(void)
 				carea=1.e-6*(cxmax-cxmin)*(cymax-cymin)/count;	// area per particle in m
 				Jx2 = 1.e-3*f2ForJx*carea;				// Jx2 in N mm/mm^2 now
 				Jy2 = 1.e-3*f2ForJy*carea;				// Jy2 in N mm/mm^2 now
-				JAS2 = f2axisym*carea;					// JAS2 in N mm/mm^2
+				JxAS2 = f2axisym*carea;					// JxAS2 (for Jr in axisymmetric) in N mm/mm^2
 			}
 			
 			/* Task 6: Subtract energy due to tractions or for cracks in contact, subtract
@@ -1377,7 +1372,7 @@ void CrackHeader::JIntegral(void)
 			}
 			
 			// add the two terms N mm/mm^2
-			Jx = Jx1 + Jx2 - JAS2;
+			Jx = Jx1 + Jx2 - JxAS2;
 			Jy = Jy1 + Jy2;
 
 			/* Jint -- crack-axis components of dynamic J-integral
