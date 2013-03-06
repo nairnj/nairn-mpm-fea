@@ -560,7 +560,6 @@ void ArchiveData::ArchiveResults(double atime)
         int matid = mpm[p]->MatID();
         rho0=theMaterials[matid]->rho;
         rho = rho0/theMaterials[matid]->GetCurrentRelativeVolume(mpm[p]);
-        //Tensor *sp = mpm[p]->GetStressTensor();
         Tensor sp = mpm[p]->ReadStressTensor();
         sxx=rho*sp.xx;
         syy=rho*sp.yy;
@@ -668,6 +667,7 @@ void ArchiveData::ArchiveResults(double atime)
         // energies in material point based on energy per unit mass
         // here need mass * U/(rho0 V0)
         // internal units are same as stress: N/m^2 cm^3/g = microJ/g = mJ/kg
+		// note that rho*energy has units J/m^3 = N/m^2 (if rho in g/cm^3)
         if(mpmOrder[ARCH_StrainEnergy]=='Y')
         {   *(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetStrainEnergy();
             app+=sizeof(double);

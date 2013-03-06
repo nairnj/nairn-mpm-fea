@@ -1181,7 +1181,7 @@ double CrackVelocityFieldMulti::GetTotalMass(void)
 	return mass;
 }
 
-// total mass and kinetric energy all velocity fields (rigid particles not counted)
+// total mass and kinetic energy all velocity fields (rigid particles not counted)
 // in g-mm^2/sec^s = nanoJ
 void CrackVelocityFieldMulti::AddKineticEnergyAndMass(double &kineticEnergy,double &totalMass)
 {	int i;

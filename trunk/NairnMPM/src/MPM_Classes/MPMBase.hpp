@@ -142,11 +142,11 @@ class MPMBase : public LinkedObject
         void AddHeatEnergy(double energyInc);
         double GetInternalEnergy(void);
 		double GetExtWork(void);
-        Tensor *GetStressTensor(void);
-        Tensor ReadStressTensor(void);
         void IncrementPressure(double);
         void SetPressure(double);
         double GetPressure(void);
+		Tensor ReadStressTensor(void);
+		Tensor *GetStressTensor(void);
 		Tensor *GetStrainTensor(void);
  		Tensor *GetPlasticStrainTensor(void);
         Tensor *GetElasticLeftCauchyTensor(void);
@@ -186,7 +186,7 @@ class MPMBase : public LinkedObject
  		double anglez0;				// initial cw x rotation angle (2D or 3D) (stored in radians)
 		double angley0;				// initial cw y rotation (3D)
 		double anglex0;				// initial cw x rotation (3D)
-    
+    	
     private:
 		// variables (changed in MPM time step)
 		int inElem;

@@ -453,9 +453,11 @@ void NodalPoint::AddUGradient(short vfld,double wt,double dudx,double dudy,doubl
 }
 
 // Add to kinetic energy and strain energy
-// wt includes density (g/cm^3)
-// Must scale kinetic later by 0.5e-9 to get units N/mm^2 (here is twice g/cm^3 mm^2/sec^2)
-// Must scale work later by 1.e-6 to get N/mm^2 (here is g/cm^3 uJ/g = N/m^2)
+// wt includes density (g/cm^3), if axisymmtric include r for m/radian
+// kinetic energy if twice actual (to save divide by two) and units are
+//		g/cm^3 mm^2/sec^2 = 1e-3 N/m^2 = 1e-3 J/m^3
+//		to get N/mm^2 and account for 1/2, multiply by 0.5*1e-9
+// work has units N/m^2 = J/m^3
 void NodalPoint::AddEnergy(short vfld,double wt,double vx,double vy,double work)
 {	DispField *df = cvf[vfld]->df;
 	df->kinetic += wt*(vx*vx+vy*vy);
@@ -487,16 +489,16 @@ void NodalPoint::CalcStrainField(void)
 		if(df==NULL) continue;
 		
 		mnode=1./cvf[j]->GetTotalMass();
-		df->du.x*=mnode;			// no units
-		df->du.y*=mnode;
-		df->dv.x*=mnode;
-		df->dv.y*=mnode;
-		df->kinetic*=mnode*.5e-9;	// N/mm^2
-		mnode*=1.e-6;
-		df->work*=mnode;			// N/mm^2
-		df->stress.xx*=mnode;		// N/mm^2
-		df->stress.yy*=mnode;
-		df->stress.xy*=mnode;
+		df->du.x *= mnode;			// no units
+		df->du.y *= mnode;
+		df->dv.x *= mnode;
+		df->dv.y *= mnode;
+		mnode *= 1.e-6;
+		df->kinetic *= mnode*.5e-3;			// N/mm^2
+		df->work *= mnode;					// N/mm^2
+		df->stress.xx *= mnode;				// N/mm^2
+		df->stress.yy *= mnode;
+		df->stress.xy *= mnode;
 	}
 }
 

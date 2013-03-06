@@ -26,6 +26,11 @@
 #include "Cracks/CrackLeaf.hpp"
 #endif
 
+// Include to find axisymmetric Jr using Broberg method
+// Comment out to use Bergkvist and Huang method
+// The Broberg one appears to be mush better
+#define BROBERG_AS_METHOD_FOR_JR
+
 using namespace std; 
 
 // class statics
@@ -996,6 +1001,9 @@ void CrackHeader::JIntegral(void)
 			crkTipIdx++;
             continue;
         }
+#ifndef BROBERG_AS_METHOD_FOR_JR
+		double crackr = tipCrk->x;
+#endif
 		
 		// block to catch problems
 		NodalPoint *phantom=NULL;
@@ -1145,7 +1153,9 @@ void CrackHeader::JIntegral(void)
 			int dfld = (tipCrk==firstSeg) ? ABOVE_CRACK : BELOW_CRACK;		// initial field
 			nextPt=crackPt;
 			int count=0;			// particles in the nodal fields
-			double r1=1.,r2=1.;
+#ifndef BROBERG_AS_METHOD_FOR_JR
+			double r1 = 1.,r2 = 1.;
+#endif
 			while(TRUE)
 			{   // J integral node1 to node2 using field dfld
 				NodalPoint *node1=nextPt->node;
@@ -1160,13 +1170,12 @@ void CrackHeader::JIntegral(void)
 					sfld2=node2->cvf[(int)node2->below]->df;
 					count+=node2->cvf[(int)node2->below]->GetNumberPoints();
 				}
-				/*
+#ifndef BROBERG_AS_METHOD_FOR_JR
 				if(fmobj->IsAxisymmetric())
-				{	r1 = node1->x;		// should divide by a
-					r2 = node2->x;
+				{	r1 = node1->x/crackr;		// divide by a
+					r2 = node2->x/crackr;
 				}
-				*/
-				
+#endif
 				
 				/* Calculate J Integral segment by segment
 				   1 means the start point of the segment, 2 means the end point
@@ -1219,7 +1228,8 @@ void CrackHeader::JIntegral(void)
 					dudx2=0.; dudy2=0.; dvdx2=0.; dvdy2=0.;
 				}
 
-				// calculate Jx
+				// calculate Jx (note that dy=segNorm.x and dx=-segNorm.y
+				// or Jr is axisymmetric
 
 				// term (ti*ui,x) (N/mm^2)
 				termForJx1=(sxx1*segNorm.x+sxy1*segNorm.y)*dudx1
@@ -1232,9 +1242,13 @@ void CrackHeader::JIntegral(void)
 				fForJx2=(wd2+kd2)*segNorm.x-termForJx2;
 
 				// add for two endpoints using midpoint rule
+#ifdef BROBERG_AS_METHOD_FOR_JR
+				Jx1+=0.5*(fForJx1 + fForJx2)*ds;		// N mm/mm^2
+#else
 				Jx1+=0.5*(r1*fForJx1 + r2*fForJx2)*ds;	// N mm/mm^2
+#endif
 
-				// calculate Jy
+				// calculate Jy (or Jz if axisymmetric)
 
 				// term ti*ui,y
 				termForJy1=(sxx1*segNorm.x+sxy1*segNorm.y)*dudy1
@@ -1247,7 +1261,7 @@ void CrackHeader::JIntegral(void)
 				fForJy2=(wd2+kd2)*segNorm.y-termForJy2;
 
 				// add for two endpoints using midpoint rule
-				Jy1+=0.5*(r1*fForJy1 + r2*fForJy2)*ds;
+				Jy1+=0.5*(fForJy1 + fForJy2)*ds;
 
 				// on to next segment
 				numSegs--;
@@ -1327,24 +1341,23 @@ void CrackHeader::JIntegral(void)
 						
 						if(fmobj->IsAxisymmetric())
 						{	// in axisymmetrix z is theta direction, etheta = u/r. but w=0, az=vz=0
-							// Since w=0, no change to above terms, but have some static terms
+							// Since w=0, no change to above terms, but have some static terms for Jx=Jr only
 							// Units N/(m^2 mm) = 1e6 N/mm^3
+							Tensor sp = mpm[p]->ReadStressTensor();
+#ifdef BROBERG_AS_METHOD_FOR_JR
 							// See Broberg, Cracks and Fraction (1999), page 65
-							Tensor *sp=mpm[p]->GetStressTensor();
-							f2axisym += rho*(sp->xx*duxdx - sp->zz*mpm[p]->GetDwDz() + sp->xy*duydx)/xp;
-							
-							// My derivation like Broberg (seems to agree if change my sign)
-							//f2axisym += rho*(sp->xx*duxdx - 2.*sp->zz*duxdx + sp->xy*duydx)/xp;
-							
-							// My derivation, seems same as Bergvist, activate r1, r2 above also
-							//f2axisym += rho*(mpm[p]->GetStrainEnergy() - sp->zz*mpm[p]->GetDwDz());			// divide by a
+							f2axisym += rho*(sp.xx*duxdx - sp.zz*mpm[p]->GetDwDz() + sp.xy*duydx)/xp;
+#else
+							// Bergkvist and Huong called J3D/(a dphi)
+							f2axisym += rho*(mpm[p]->GetStrainEnergy() - sp.zz*mpm[p]->GetDwDz())/crackr;
+#endif
 						}
 					}
 				}
 				
 				if(count==0)
 					throw "J Integral contour contains no particles";
-				carea=1.e-6*(cxmax-cxmin)*(cymax-cymin)/count;	// area per particle
+				carea=1.e-6*(cxmax-cxmin)*(cymax-cymin)/count;	// area per particle in m
 				Jx2 = 1.e-3*f2ForJx*carea;				// Jx2 in N mm/mm^2 now
 				Jy2 = 1.e-3*f2ForJy*carea;				// Jy2 in N mm/mm^2 now
 				JAS2 = f2axisym*carea;					// JAS2 in N mm/mm^2
@@ -1364,21 +1377,22 @@ void CrackHeader::JIntegral(void)
 			}
 			
 			// add the two terms N mm/mm^2
-			Jx = Jx1 + Jx2;
+			Jx = Jx1 + Jx2 - JAS2;
 			Jy = Jy1 + Jy2;
 
 			/* Jint -- crack-axis components of dynamic J-integral
 				  Jint.x is J1 in archiving and literature and is energy release rate, here
 						it accounts for traction laws. Friction can be handled but not yet implemented
 				  Jint.y literature J2 - needed only to convert to KI and KII (archive when propagation is off)
+						physcially is J for crack growth normal to crack direction
 				  Jint.z is actual energy released when the crack and traction zone propagate together
 							(archived as J2 when propagation is on)
 			   crackDir -- crack propagating direction cosines from above
 			*/
-			tipCrk->Jint.x = Jx*crackDir.x + Jy*crackDir.y - JAS2 - tractionEnergy;		// Jtip or energy that will be released if crack grows
-			tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;			// J2(x)
-			//tipCrk->Jint.y= Jx*crackDir.x+Jy*crackDir.y;			// store J1(x) in traction zones (archived only when no propagation)
-			tipCrk->Jint.z = tipCrk->Jint.x + bridgingReleased;		// Jrel or energy released in current state
+			tipCrk->Jint.x = Jx*crackDir.x + Jy*crackDir.y - tractionEnergy;		// Jtip or energy that will be released if crack grows
+			tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;						// J2(x) - for growth normal to crack plane
+			//tipCrk->Jint.y = Jx1*crackDir.x + Jy1*crackDir.y;						// J by one term (temporary)
+			tipCrk->Jint.z = tipCrk->Jint.x + bridgingReleased;						// Jrel or energy released in current state
 			
 			// end of try block on J calculation
 			secondTry=FALSE;

@@ -64,7 +64,7 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 		// hoop stress affect on RR, ZZ, and RZ stresses
 		dvzz -= erzz;
 		c1=mdm[1][1]*dvxx + mdm[1][2]*dvyy + mdm[4][1]*dvzz + mdm[1][3]*dgam;
-		c2=mdm[1][2]*dvxx + mdm[2][2]*dvyy + mdm[4][1]*dvzz + mdm[2][3]*dgam;
+		c2=mdm[1][2]*dvxx + mdm[2][2]*dvyy + mdm[4][2]*dvzz + mdm[2][3]*dgam;
 		c3=mdm[1][3]*dvxx + mdm[2][3]*dvyy + mdm[4][3]*dvzz + mdm[3][3]*dgam;
 	}
 	else

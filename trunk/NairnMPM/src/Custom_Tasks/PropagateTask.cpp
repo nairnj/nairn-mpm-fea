@@ -186,7 +186,7 @@ CustomTask *PropagateTask::ParticleExtrapolation(MPMBase *mpnt,short isRigid)
     
     // track total energies in J = N-m
     //	mp is g, stored energy is N/m^2 cm^3/g, vel is mm/sec
-    // strainEnergy 1.0e-6*mp*mpm[p]->GetStrainEnergy()
+    // strainEnergy in J =  1.0e-6*mp*mpm[p]->GetStrainEnergy()
     // plastic 1.0e-6*mp*mpm[p]->GetPlastEnergy()
     // external work 1.e-9*mpm[p]->GetExtWork()
     // kinetic energy 0.5e-9*mp*(vel.x*vel.x+vel.y*vel.y)
