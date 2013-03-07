@@ -26,7 +26,7 @@ EndXMLData
 #update="USF"
 
 ! Supported materials: "neohookean" (G2=0), "mooney" (G1=G2), heiso
-#matID="heiso"
+#matID="mooney"
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2
@@ -43,6 +43,10 @@ StressFreeTemp 294
 #aBase=60
 #yldstrain=1		! in percent
 
+#Ebase=100
+#rho=1.2
+#nubase=0.49
+
 ! Dimensions
 #cell=2
 #length=40			! length
@@ -52,7 +56,7 @@ StressFreeTemp 294
 ! Load by stress or by velocity (if stress<=0)
 #loading="rigid"	! Loading = "rigid", "contact", "force", "traction", thermal
 #fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
-#strain=16	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
+#strain=25	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak
@@ -91,6 +95,8 @@ if #matID="mooney"
   #G1=#G1/2
   #G2=#G1
   #G0=#G1+#G2
+  #G1=2*#G1
+  #G2=2*#G2
 endif
 
 ! estimate stress to reach strain (only used if force or tractions)
