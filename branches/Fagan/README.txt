@@ -26,3 +26,8 @@ for a windows machine, or type
 make SYSTEM=gpu 
 
 for the gpu cluster on CSIRO
+
+
+To download the code to a new location:
+
+svn checkout https://nairn-mpm-fea.googlecode.com/svn/branches/Fagan nairn-mpm-fea-Fagan --username timcfagan@gmail.com.
