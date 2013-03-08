@@ -1,0 +1,52 @@
+#!/bin/bash
+
+###########################
+
+# pbs-script.linuxgpu #
+
+###########################
+
+#PBS -S /bin/bash
+
+#PBS -N Comp_ta9
+
+# Is there a queue for this system?
+# PBS -q cm
+# PBS -q extended
+# comments are added like this Ray
+# PBS comments with PBS require syntax with the space Ray
+
+#PBS -l walltime=02:00:00
+
+#PBS -l nodes=1:ppn=1
+
+#PBS -l vmem=256mb
+
+# PBS -M Tim.Fagan@csiro.au
+
+#PBS -m abe
+
+#       - job is abored: 'a'
+#       - job begins execution: 'b'
+#       - job terminates: 'e'
+
+# Changes directory to your execution directory (Leave as is)
+
+cd $PBS_O_WORKDIR
+
+#For solver in parallel
+module load intel-fc
+module load openmpi
+
+# Set the maximum stack size as unlimited
+
+ulimit -s unlimited
+
+# Stack size per thread
+
+export KMP_STACKSIZE=500m
+export OMP_NUM_THREADS=1
+
+#sph-setup >setup.log 
+./NairnMPM FSP_2D_new_v6.fmcmd > FSP_2D_new_v6.mpm
+#sph-sol > sol.log
