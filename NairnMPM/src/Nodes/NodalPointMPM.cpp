@@ -1556,4 +1556,21 @@ void NodalPoint::GetGridCMVelocitiesTask8(void)
         nd[i]->CalcCMVelocityTask8();
 }
 
+//modiftf #frictionalheating
+void NodalPoint::AddNodalFrictionEnergy(double energy)
+{
+	// Using energy based on Kinetic Energy Loss due to Friction
+	//double squareMomen = (delP.x*delP.x+delP.y*delP.y+delP.z*delP.z)*1e-12; //momentum is in g mm/s
+	//double energy = (0.5*squareMomen)/(mass*1e-3); //mass stored in grams
+	gFrictEnergy=energy; // J or Kg-m^2/s^2. This is the energy generated from friction at the node, for one time step. It is directly applied as a temeprature change, so it is not accumulated here.
+}
+
+double NodalPoint::GetNodalFrictionEnergy(void)
+{
+	return gFrictEnergy;
+}
+//modiftf #frictionalheating
+
+
+
 

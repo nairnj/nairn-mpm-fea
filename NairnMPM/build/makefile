@@ -61,6 +61,9 @@ endif
 ifeq ($(SYSTEM),artemis)
 	xercesSo = /home/edward/xerces/lib/libxerces-c.so
 endif
+ifeq ($(SYSTEM),gpu)
+	xercesSo = /home/fag01b/xercesLibrary/lib/libxerces-c.so
+endif
 
 # 2. Path to xerces headers (if not at default /usr/local/include) 
 headersPath= /usr/local/include
@@ -81,6 +84,9 @@ ifeq ($(SYSTEM),zia)
 endif
 ifeq ($(SYSTEM),artemis)
 	headersPath = /home/edward/xerces/include
+endif
+ifeq ($(SYSTEM),gpu)
+	headersPath = /home/fag01b/xercesLibrary/include
 endif
 
 # 3. Define compiler to use and other commands
@@ -232,6 +238,7 @@ RectController = $(com)/Read_XML/RectController
 ResetElementsTask = $(src)/NairnMPM_Class/ResetElementsTask
 ReverseLoad = $(src)/Custom_Tasks/ReverseLoad
 RigidMaterial = $(src)/Materials/RigidMaterial
+RPM = $(src)/Read_MPM/RPM
 RunCustomTasksTask = $(src)/NairnMPM_Class/RunCustomTasksTask
 ShapeController = $(com)/Read_XML/ShapeController
 SLMaterial = $(src)/Materials/SLMaterial
@@ -376,7 +383,8 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		SphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o HistoryArchive.o \
 		TractionLaw.o CohesiveZone.o CoupledSawTooth.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o AdjustTimeStepTask.o SLMaterial.o CrackVelocityFieldMulti.o \
-		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o MicrostructureModel.o
+		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o \
+		MicrostructureModel.o RPM.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -516,7 +524,7 @@ NairnMPM.o : $(NairnMPM).cpp $(dprefix) $(NairnMPM).hpp $(ArchiveData).hpp $(Com
 			$(GridForcesTask).hpp $(UpdateMomentaTask).hpp $(UpdateParticlesTask).hpp $(UpdateStrainsLastTask).hpp \
 			$(MoveCracksTask).hpp $(ResetElementsTask).hpp $(CommonTask).hpp $(RunCustomTasksTask).hpp $(MatPtTractionBC).hpp \
 			$(UpdateStrainsFirstTask).hpp $(MPMWarnings).hpp $(BoundaryCondition).hpp $(MPMBase).hpp $(MatPtLoadBC).hpp \
-			$(DiffusionTask).hpp $(ConductionTask).hpp $(CustomTask).hpp $(MPMWarnings).hpp $(CrackHeader).hpp \
+			$(DiffusionTask).hpp $(ConductionTask).hpp $(CustomTask).hpp $(MPMWarnings).hpp $(CrackHeader).hpp $(RPM).hpp \
 			$(CrackSurfaceContact).hpp $(MeshInfo).hpp $(TransportTask).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NairnMPM).cpp
 StartOutput.o : $(StartOutput).cpp $(dprefix) $(NairnMPM).hpp $(MaterialBase).hpp $(ThermalRamp).hpp $(ArchiveData).hpp \
@@ -552,7 +560,7 @@ UpdateMomentaTask.o : $(UpdateMomentaTask).cpp $(dprefix) $(UpdateMomentaTask).h
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UpdateMomentaTask).cpp
 UpdateParticlesTask.o : $(UpdateParticlesTask).cpp $(dprefix) $(UpdateParticlesTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(TransportTask).hpp $(NodalPoint).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ElementBase).hpp \
-			$(BodyForce).hpp $(ThermalRamp).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp
+			$(BodyForce).hpp $(ThermalRamp).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(RPM).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UpdateParticlesTask).cpp
 UpdateStrainsLastTask.o : $(UpdateStrainsLastTask).cpp $(dprefix) $(UpdateStrainsLastTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(CrackHeader).hpp $(TransportTask).hpp \
@@ -587,7 +595,7 @@ Generators.o : $(Generators).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hp
 			$(MpsController).hpp $(FourNodeIsoparam).hpp $(ParseController).hpp $(Linear2D).hpp $(NodalPoint).hpp $(BoxController).hpp \
 			$(MeshInfo).hpp $(EightNodeIsoparamBrick).hpp $(ElementBase3D).hpp $(MatPoint3D).hpp $(ShapeController).hpp \
 			$(RectController).hpp $(ArcController).hpp $(NodalPoint2D).hpp $(NodalPoint3D).hpp $(CrackVelocityField).hpp \
-			$(OvalController).hpp $(MatVelocityField).hpp $(ElementsController).hpp $(MatPtTractionBC).hpp
+			$(OvalController).hpp $(MatVelocityField).hpp $(ElementsController).hpp $(MatPtTractionBC).hpp $(RPM).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Generators).cpp
 BitMapFiles.o : $(BitMapFiles).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hpp $(CommonReadHandler).hpp \
 			$(BMPLevel).hpp $(MatPoint2D).hpp $(ElementBase).hpp $(ArchiveData).hpp $(CommonArchiveData).hpp \
@@ -604,6 +612,8 @@ PolyhedronController.o : $(PolyhedronController).cpp $(dprefix) $(PolyhedronCont
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PolyhedronController).cpp
 PolyTriangle.o : $(PolyTriangle).cpp $(dprefix) $(PolyTriangle).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PolyTriangle).cpp
+RPM.o : $(RPM).cpp $(dprefix) $(MaterialBase).hpp $(MPMBase).hpp $(NodalPoint).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(RPM).cpp
 
 # MPM: Exceptions
 MPMTermination.o : $(MPMTermination).cpp $(dprefix) $(MPMTermination).hpp $(CommonException).hpp
@@ -628,11 +638,11 @@ MPMBase.o : $(MPMBase).cpp $(dprefix) $(MPMBase).hpp $(CrackHeader).hpp $(NodalP
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MPMBase).cpp
 MatPoint2D.o : $(MatPoint2D).cpp $(dprefix) $(MatPoint2D).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(MeshInfo).hpp \
 			$(NodalPoint).hpp $(DiffusionTask).hpp $(ConductionTask).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
-			$(MPMTermination).hpp $(CommonException).hpp
+			$(MPMTermination).hpp $(CommonException).hpp $(RPM).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MatPoint2D).cpp
 MatPoint3D.o : $(MatPoint3D).cpp $(dprefix) $(MatPoint3D).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(MeshInfo).hpp \
 			$(NodalPoint).hpp $(DiffusionTask).hpp $(ConductionTask).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
-			$(MPMTermination).hpp $(CommonException).hpp
+			$(MPMTermination).hpp $(CommonException).hpp $(RPM).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MatPoint3D).cpp
 
 # MPM: Cracks

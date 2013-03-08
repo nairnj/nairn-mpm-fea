@@ -39,3 +39,8 @@ bool OvalController::ContainsPoint(Vector& pt)
 
 // type of object
 const char *OvalController::GetShapeName(void) { return "Oval"; }
+
+double OvalController::Returnx0(){return x0;}	// modiftf #rigidbodyrotation
+double OvalController::Returny0(){return y0;}	// modiftf #rigidbodyrotation
+
+

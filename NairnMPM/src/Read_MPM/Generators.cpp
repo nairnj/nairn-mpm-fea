@@ -40,10 +40,12 @@
 #include "Read_XML/ElementsController.hpp"
 #include "Read_XML/MaterialController.hpp"
 
+#include "Read_MPM/RPM.hpp" //modiftf ******** #rigidbodyrotation
 
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
 double pConc,pTemp,Angle,Thick;
+double rpm; 	//modiftf #rigidbodyrotation
 int Nhoriz=0,Nvert=0,Ndepth=0,MatID;
 double cellHoriz=-1.,cellVert=-1.,cellDepth=-1.;
 Vector Vel;
@@ -225,6 +227,15 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				}
                 else if(strcmp(aName,"temp")==0)
                     sscanf(value,"%lf",&pTemp);
+				//modiftf ********** #rigidbodyrotation
+				else if(strcmp(aName,"rpm")==0){
+					sscanf(value,"%lf",&rpm);
+					
+					rotator=new Rpm;
+					rotator->SetRPM(MatID,rpm);
+					rotator->SetVel(Vel);
+				}
+				//modiftf ********** #rigidbodyrotation
                 delete [] aName;
                 delete [] value;
             }
@@ -316,7 +327,18 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		
 		// finish up and if body is done, generate points now
 		if(theShape->FinishSetup())
-		{	MPMPts();
+		{	
+
+			//modiftf ******** #rigidbodyrotation
+			if(Rpm::rpmApplied)									
+			{	if(rotator->CheckRPM(MatID))					
+				{		rotator->xcentre=theShape->Returnx0();	
+						rotator->ycentre=theShape->Returny0();	
+				}
+			}
+			//modiftf ******** #rigidbodyrotation
+
+			MPMPts();
 			delete theShape;
 			theShape=NULL;
 		}

@@ -901,6 +901,14 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		ConductionTask::energyCoupling=TRUE;
 	}
 	
+	//modiftf #frictionalheating ***********
+	// Turn on frictional heating
+    else if(strcmp(xName,"FrictionalHeating")==0)
+	{	ValidateCommand(xName,THERMAL,ANY_DIM);
+		ConductionTask::frictionalHeating=TRUE;
+	}
+	//modiftf #frictionalheating ***********
+	
     //-------------------------------------------------------
     // <Gravity> section
 	

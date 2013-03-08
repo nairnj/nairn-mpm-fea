@@ -22,7 +22,7 @@ class CrackSegment;
 class ConductionTask : public TransportTask
 {
     public:
-		static bool active,crackTipHeating,energyCoupling;
+		static bool active,crackTipHeating,energyCoupling, frictionalHeating; //modiftf #frictionalheating
 		static double dTemperature;
 		
         // constructors and destructors

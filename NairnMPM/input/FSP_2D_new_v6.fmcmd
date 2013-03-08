@@ -1,0 +1,141 @@
+<?xml version='1.0'?>
+<!DOCTYPE JANFEAInput SYSTEM '/Users/jnairn/Programming/Cocoa_Projects/nairn-mpm-fea/NairnMPM/input/NairnMPM.dtd'>
+<JANFEAInput version="3">
+
+  <Header>
+    <Description>
+   v1: checking for friction heat model working
+   v2: decreased translation speed.
+   v3: reduced rortation speed to 900 rpm
+   v4: increased resolution
+   v6: changed to dislocation based material model
+    </Description>
+    <Analysis>10</Analysis>
+  </Header>
+
+  <MPMHeader>
+    <MPMMethod>2</MPMMethod>
+    <GIMP/>
+    <ArchiveTime units="sec">1e-3</ArchiveTime>
+    <TimeStep units="sec">1e-3</TimeStep>
+    <TimeFactor>0.4</TimeFactor>
+    <MaxTime units="sec">10</MaxTime>
+    <ArchiveRoot>FSP_2D_new_v6/FSP.</ArchiveRoot>
+    <MPMArchiveOrder>iYYYYYNYYYNYYYYYYY</MPMArchiveOrder>
+    <CrackArchiveOrder>iYNNN</CrackArchiveOrder>
+    <GlobalArchiveTime units="sec">1e-3</GlobalArchiveTime>
+    <GlobalArchive type="Thermal Energy" material="1"/>
+    <GlobalArchive type="Thermal Energy" material="2"/>
+    <GlobalArchive type="Thermal Energy" material="3"/>
+    <GlobalArchive type="temp" material="1"/>
+    <GlobalArchive type="temp" material="2"/>
+    <GlobalArchive type="temp" material="3"/>
+    <StressFreeTemp>22</StressFreeTemp>
+    <MultiMaterialMode Vmin="1.0" Dcheck="0.0" Normals="0">
+		<Friction>0.3</Friction>
+		<ContactPosition>0.5</ContactPosition>
+	</MultiMaterialMode>
+
+  </MPMHeader>
+
+  <Mesh output="file">
+    <Grid xmin="-25" xmax="55" ymin="-18" ymax="18" thickness="1">
+      <Horiz cellsize="2"/>
+      <Vert cellsize="2"/>
+    </Grid>
+  </Mesh>
+
+  <MaterialPoints>
+	
+    <Body mat="1" thick="1" vx="10" vy="0" temp="22" rpm="900">
+      <Oval xmin="-4" xmax="4" ymin="-4" ymax="4"/>
+    </Body>
+
+	      <Body mat="2" thick="1" vx="0" vy="0" temp="22">
+      <Rect xmin="-20" xmax="50" ymin="-15" ymax="15"/>
+    </Body>
+	
+  </MaterialPoints>
+
+
+
+  <Material Type="11" Name="FSP Deformation Tool">
+    <SetDirection>8</SetDirection>
+  </Material>
+
+    <Material Type="29" Name="Copper Dislocation-Based Model">
+
+    <rho>8.96</rho>
+    <E>120000</E>
+    <alpha>60</alpha>
+	<!--nu>0.33</nu-->
+    <G>47.4e3</G>
+	<yield>90</yield>
+	
+	<!--Khard>50</Khard>
+	<nhard>1</nhard-->
+	
+	<rhoW>1e13</rhoW>
+	<rhoC>1e14</rhoC>
+	<fo>0.25</fo>
+	<flim>0.06</flim>
+	<fsto>3.2</fsto>
+	<sto>10e7</sto>
+	<m>50</m>
+	<n>10</n>
+	<alp>0.25</alp>
+	<burg>2.56e-10</burg>
+	<K1>10</K1>
+	<alpstar>0.120</alpstar>
+	<betastar>0.006</betastar>
+	<k0>5.8</k0>
+	
+    <kCond>385</kCond>
+    <Cp>386</Cp>
+  </Material>
+  
+  <!--Material Type="11" Name="Fixture">
+    <SetDirection>1</SetDirection>
+  </Material-->
+
+  <!-- not used -->
+  <!--Material Type="1" Name="Aluminium Plate">
+    <rho>2.6989</rho>
+    <E>68000</E>
+    <nu>0.36</nu>
+    <alpha>60</alpha>
+	<kCond>210</kCond-->		<!-- Thermal conductivity (in W/(m-K))-->
+	<!--Cp>900</Cp-->			<!-- constant-pressure heat capacity (in J/(kg-K))-->
+  <!--/Material-->
+
+    <GridBCs>	
+    <BCLine x1="50" y1="-15" x2="50" y2="15" tolerance="2"> <!--right-->
+      <DisBC dir="1" style="1" vel="0"/>
+	  <DisBC dir="2" style="1" vel="0"/>
+	  <TempBC style="1" value="22"/>
+    </BCLine>
+	
+	<BCLine x1="-20" y1="15" x2="50" y2="15" tolerance="2"> <!--top wall-->
+      <DisBC dir="1" style="1" vel="0"/>
+	  <DisBC dir="2" style="1" vel="0"/>
+    </BCLine>
+	
+	<BCLine x1="-20" y1="-15" x2="50" y2="-15" tolerance="2"> <!--bottom wall-->
+      <DisBC dir="1" style="1" vel="0"/>
+	  <DisBC dir="2" style="1" vel="0"/>
+    </BCLine>
+	
+    <BCLine x1="-20" y1="-15" x2="-20" y2="15" tolerance="2"> <!--left-->
+      <DisBC dir="1" style="1" vel="0"/>
+      <DisBC dir="2" style="1" vel="0"/>
+    </BCLine>
+	    </GridBCs>	
+ 
+  <Thermal>
+	<Conduction/>
+	<!--EnergyCoupling/-->
+	<FrictionalHeating/>
+  </Thermal>
+  
+
+</JANFEAInput>
