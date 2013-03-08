@@ -27,6 +27,7 @@
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Custom_Tasks/TransportTask.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "Read_MPM/RPM.hpp" // modiftf #rigidbodyrotation
 
 #pragma mark CONSTRUCTORS
 
@@ -79,7 +80,8 @@ void UpdateParticlesTask::Execute(void)
 			//if(!sameField) cout << "see " << p+1 << endl;
 			
 			// update position in mm and velocity in mm/sec
-			mpm[p]->MovePosition(timestep,&delv);
+			//mpm[p]->MovePosition(timestep,&delv);
+			mpm[p]->MovePosition(timestep,&delv, mpm[p]); 	//modiftf #rigidbodyrotation
 			mpm[p]->MoveVelocity(timestep,bodyFrc.GetAlpha(),&delv);
 			
 			// update transport values
@@ -96,9 +98,12 @@ void UpdateParticlesTask::Execute(void)
 		
 		else
 		{	// rigid materials at constant velocity
-			mpm[p]->MovePosition(timestep,&mpm[p]->vel);
+			//mpm[p]->MovePosition(timestep,&mpm[p]->vel);
+			mpm[p]->MovePosition(timestep,&mpm[p]->vel, mpm[p]); //modiftf #rigidbodyrotation
 		}
 	}
+		if(Rpm::rpmApplied)						//modiftf #rigidbodyrotation
+			rotator->UpdateCentre(timestep);	//modiftf #rigidbodyrotation
 	
 	// update damping coefficient
 	bodyFrc.UpdateAlpha(timestep,mtime);

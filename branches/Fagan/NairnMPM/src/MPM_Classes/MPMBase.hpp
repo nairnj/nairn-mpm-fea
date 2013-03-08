@@ -60,7 +60,8 @@ class MPMBase : public LinkedObject
 		virtual void UpdateStrain(double,int,int) = 0;
 		virtual void Fint(Vector &,double,double,double) = 0;
 		virtual void Fext(Vector &,double) = 0;
-        virtual void MovePosition(double,Vector *) = 0;
+        //virtual void MovePosition(double,Vector *) = 0; Replace with below
+        virtual void MovePosition(double,Vector *, MPMBase *) = 0; //modiftf #rigidbodyrotation
         virtual void MoveVelocity(double,double,Vector *) = 0;
 		virtual void SetVelocitySpeed(double) = 0;
 		virtual void AddTemperatureGradient(void) = 0;
@@ -136,7 +137,8 @@ class MPMBase : public LinkedObject
 		void SetHistoryDble(double);
 		double GetHistoryDble(int);
 		void SetHistoryDble(int,double);
-    
+    	double GetParticleFrictionEnergy(void); //modiftf #frictionalheating
+		void AddParticleFrictionEnergy(double); //modiftf #frictionalheating
 		// class methods
 		static void FullStrainUpdate(double,int,int);
 	
@@ -156,6 +158,7 @@ class MPMBase : public LinkedObject
 		double dispEnergy;			// dissipated energy in current step
 		double strainEnergy;		// total strain energy
 		double extWork;				// total external work
+		double frictionEnergy;		// total friction energy if needed modiftf #frictionalheating
 		char *matData;				// material history if needed (init NULL)
 	
 		// constants (not changed in MPM time step)

@@ -297,6 +297,13 @@ bool ShapeController::RequiredBlock(int block) { return block==sourceBlock; }
 char *ShapeController::GetContextInfo(void) { return NULL; }
 
 
+//modiftf ******** #rigidbodyrotation
+// subclasses BodyOvalController and BodyCylinderController override with the real values
+double ShapeController::Returnx0(){return 1;}		// #rigidbodyrotation
+double ShapeController::Returny0(){return 1;}		// #rigidbodyrotation
+double ShapeController::Returnz0(){return 1;}		// #rigidbodyrotation
+
+
 
 
 

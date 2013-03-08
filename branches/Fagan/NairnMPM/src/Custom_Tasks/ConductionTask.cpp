@@ -18,6 +18,7 @@
 #include "Materials/MicrostructureModel.hpp" //modiftf 
 
 // global
+bool ConductionTask::frictionalHeating=FALSE; //modiftf #frictionalheating
 bool ConductionTask::active=FALSE;
 bool ConductionTask::crackTipHeating=FALSE;
 bool ConductionTask::energyCoupling=FALSE;
@@ -155,6 +156,36 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double s
 		ndpt->fcond+=sh*1.0e-6*mptr->volume*rho*mptr->GetDispEnergy()/timestep;
 	}
 	
+	//modiftf #frictionalheating
+	if(frictionalHeating)
+	{
+		double rho=theMaterials[mptr->MatID()]->rho;
+		
+		//Solution based on particle mass:
+		//ndpt->fcond+=sh*1.0e-6*mptr->volume*rho*ndpt->GetNodalFrictionEnergy()/timestep;
+
+		//Solution based on material constant volume heat capacity:
+		//ndpt->fcond+=sh*(1/(mptr->volume*rho*theMaterials[mptr->MatID()]->GetHeatCapacity(mptr)))*ndpt->GetNodalFrictionEnergy();
+		
+		//old
+		//ndpt->fcond+=(sh*ndpt->GetNodalFrictionEnergy())/timestep;
+	//debugtf 
+	/*double datam = ndpt->GetNodalFrictionEnergy();
+	if(datam>0)
+		cout << "volume " << mptr->volume << endl; =6.25
+		cout << "Node " << ndpt->num << " Friction Energy " << datam << endl;*/
+	//debugtf modiftf 
+		
+		// based on actual needed values from John Nairn:
+		// V * q * S, where q (J/s-cm^3), V(mm^3), S(dimensionless).
+		//ndpt->fcond+=(sh*ndpt->GetNodalFrictionEnergy())/(timestep*1e3); //volumes cancel out with remaining 1e-3.
+		//ndpt->fcond+=(ndpt->GetNodalFrictionEnergy()*1e2)/(timestep); //no shape function as from node already. volumes cancel out with remaining 1e2. (old)
+		ndpt->fcond+=(ndpt->GetNodalFrictionEnergy()*1e2)/timestep; //no shape function as from node already. volumes cancel out with remaining 1e2. q is is J/s. (new)
+		//store friction energy on material point?
+		mptr->AddParticleFrictionEnergy(ndpt->GetNodalFrictionEnergy()); // actually nodal values
+   
+	}
+	//modiftf #frictionalheating
 	// if on boundary, get boundary force
 	
 	// next task

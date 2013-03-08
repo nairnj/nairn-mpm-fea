@@ -14,6 +14,7 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Exceptions/MPMTermination.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "Read_MPM/RPM.hpp" //modiftf ******** #rigidbodyrotation
 
 #pragma mark MatPoint3D::Constructors and Destructors
 
@@ -113,8 +114,18 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np)
 
 // Move position (3D) (in mm)
 // external work units g-mm^2/sec^2 (* 10^-9 to get J)
-void MatPoint3D::MovePosition(double delTime,Vector *dv)
-{	double dx=delTime*dv->x;
+void MatPoint3D::MovePosition(double delTime,Vector *dv, MPMBase *mptr)
+{	
+	//modiftf ******** #rigidbodyrotation
+	if(Rpm::rpmApplied) //check if there is any rpm applied
+	{	if(rotator->CheckRPM(MatID()+1)) //add 1 as the function MatID() gives the materialnumber-1
+			{	//rotator->SetRotationAngle(delTime);
+				rotator->AddRPM3(pos.y, pos.x, dv, mptr, delTime, rotator->simTime);
+			}
+	}
+	//modiftf ******** #rigidbodyrotation
+
+	double dx=delTime*dv->x;
 	double dy=delTime*dv->y;
 	double dz=delTime*dv->z;
 	pos.x+=dx;

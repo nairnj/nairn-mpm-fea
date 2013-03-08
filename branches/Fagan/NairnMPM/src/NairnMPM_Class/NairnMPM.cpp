@@ -36,6 +36,7 @@
 #include "NairnMPM_Class/ResetElementsTask.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include <time.h>
+#include "Read_MPM/RPM.hpp"	// modiftf #rigidbodyrotation
 
 // global analysis object
 NairnMPM *fmobj=NULL;
@@ -227,6 +228,8 @@ void NairnMPM::MPMAnalysis(bool abort)
 		
 			// advance time and archive if desired
 			mtime+=timestep;
+			if(Rpm::rpmApplied)			//modiftf #rigidbodyrotation
+				rotator->LogTime(mtime);//modiftf #rigidbodyrotation
 			archiver->ArchiveResults(mtime);
         }
 	}

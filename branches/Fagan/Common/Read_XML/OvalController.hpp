@@ -28,6 +28,9 @@ class OvalController : public ShapeController
     
         // accessors
         virtual const char *GetShapeName();
+		
+		virtual double Returnx0(void); //modiftf ******** #rigidbodyrotation
+		virtual double Returny0(void); //modiftf ******** #rigidbodyrotation
     
     private:
         double x0,y0;

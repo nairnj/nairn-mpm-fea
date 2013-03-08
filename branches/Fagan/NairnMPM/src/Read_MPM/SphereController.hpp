@@ -29,7 +29,8 @@ class SphereController : public ShapeController
         // accessors
 		virtual bool Is2DShape(void);
 		virtual const char *GetShapeName(void);
-	
+		
+
 	protected:
 		double x0,y0,z0;
 };

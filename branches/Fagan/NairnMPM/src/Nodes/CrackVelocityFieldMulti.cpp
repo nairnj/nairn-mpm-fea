@@ -516,7 +516,7 @@ void CrackVelocityFieldMulti::MaterialContact(int nodenum,int vfld,bool postUpda
 				break;
 				
 			case FRICTIONAL:
-                GetFrictionalDeltaMomentum(&delPi,&norm,dotn,maxFriction);
+                GetFrictionalDeltaMomentum(&delPi,&norm,dotn,maxFriction,delPi, nodenum); // incorect use of the velocity function here, delPi is a fill in for the material velocity...
 				break;
             
             case IMPERFECT_INTERFACE:
@@ -833,7 +833,7 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 				break;
 				
 			case FRICTIONAL:
-                GetFrictionalDeltaMomentum(&delPi,&norm,dotn,maxFriction);
+                GetFrictionalDeltaMomentum(&delPi,&norm,dotn,maxFriction,mvf[rigidFld]->vk, nodenum);
 				break;
 				
                 
@@ -898,7 +898,7 @@ void CrackVelocityFieldMulti::RigidMaterialContact(int rigidFld,int nodenum,int 
 
 // Adjust change in momentum for frictional contact in tangential direction
 // If has component of tangential motion, calculate force depending on whether it is sticking or sliding
-void CrackVelocityFieldMulti::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,double dotn,double frictionCoeff)
+void CrackVelocityFieldMulti::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,double dotn,double frictionCoeff, Vector rigidVel, int nodenumber)
 {
     // get tangential vector and its magnitude
     Vector tang;
@@ -920,7 +920,16 @@ void CrackVelocityFieldMulti::GetFrictionalDeltaMomentum(Vector *delPi,Vector *n
         // if this is true, it is sliding and convert to frictional force
         // if not, leave delPi alone in its stick condition
         if(dott > -frictionCoeff*dotn)
-        {	AddScaledVector(norm,&tang,-frictionCoeff);
+        {	
+			//modiftf #frictional heating. Determine heat from q = F.v (in tangential directions)
+						double forcet, velt, Qin; //modiftf #frictionalheating force & velocity in tangent direction and qin	
+						forcet = DotVectors(delPi, &tang); // g.mm/s
+						velt = DotVectors(&rigidVel,&tang); // mm/s
+						Qin = (forcet*velt)*1e-9; // kg.m^2/s^3 (J) 
+						Qin = sqrt(Qin*Qin);
+						nd[nodenumber]->AddNodalFrictionEnergy(Qin);
+						
+			AddScaledVector(norm,&tang,-frictionCoeff);
             CopyScaleVector(delPi,norm,dotn);
         }
     }

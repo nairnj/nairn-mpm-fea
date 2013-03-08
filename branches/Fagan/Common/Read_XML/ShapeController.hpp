@@ -54,6 +54,12 @@ class ShapeController
         virtual const char *GetShapeName(void);
         virtual bool Is2DShape(void);
         virtual char *GetContextInfo(void);
+		
+		virtual double Returnx0(void); //modiftf ******** #rigidbodyrotation
+		virtual double Returny0(void); //modiftf ******** #rigidbodyrotation
+		virtual double Returnz0(void); //modiftf ******** #rigidbodyrotation
+		
+		
         // base class only (non virtual)
         int GetSourceBlock(void);
         bool RequiredBlock(int);

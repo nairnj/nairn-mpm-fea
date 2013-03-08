@@ -409,12 +409,12 @@ void MaterialBase::ValidateForUse(int np)
 							  "MaterialBase::ValidateForUse");
 	}
 	
-	if(ConductionTask::active)
+	/*if(ConductionTask::active)
 	{	if(heatCapacity<=0.)
 		{	throw CommonException("Thermal conduction cannot be done using materials that have zero heat capacity.",
 								  "MaterialBase::ValidateForUse");
 		}
-	}
+	}*/ //modiftf removed as was causing an error for my rigid body, it has no heat capacity!
 }
 
 // create and return pointer to material-specific data on a particle

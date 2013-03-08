@@ -34,7 +34,8 @@ class MatPoint2D : public MPMBase
 		virtual void UpdateStrain(double,int,int);
 		virtual void Fint(Vector &,double,double,double);
 		virtual void Fext(Vector &,double);
-		virtual void MovePosition(double,Vector *);
+		//virtual void MovePosition(double,Vector *); Replace with below
+        virtual void MovePosition(double,Vector *, MPMBase *); //modiftf #rigidbodyrotation
 		virtual void MoveVelocity(double,double,Vector *);
 		virtual void SetVelocitySpeed(double);
 		virtual void AddTemperatureGradient(void);

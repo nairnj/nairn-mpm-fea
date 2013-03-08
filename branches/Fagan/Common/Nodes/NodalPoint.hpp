@@ -35,6 +35,7 @@ class NodalPoint : public LinkedObject
 		double gConcentration;
 		double fdiff;				// diffusion
 		double gRhoVCp;
+		double gFrictEnergy;		// modiftf #frictionalheating energy from friction
 		double fcond;				// conduction
 		unsigned char fixedDirection;
 	
@@ -135,6 +136,8 @@ class NodalPoint : public LinkedObject
 		void CalcTotalMassAndCount(void);
 		void CombineRigidParticles(void);
 		Vector GetTotalContactForce(bool);
+		void AddNodalFrictionEnergy(double); //modiftf #frictionalheating
+		double GetNodalFrictionEnergy(void); //modiftf #frictionalheating
 #else
         void InitForceField(void);
         void PrintAvgStress(void);
