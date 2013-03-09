@@ -1,12 +1,12 @@
 ! ********** Preamble Section **********
 ! This command file does pure shear loading of hyperelastic material.
-! The loading by rigid particle surrrounding the object to provide pur shear displacment
+! The loading by rigid particle surrrounding the object to provide pure shear displacement
 !    on the boundaries
 ! Calculations can be 2D or 3D.
 ! 2D uses separate (but identical materials) for cells in middle and cells next to the
 !    rigid particles. The middles ones are closer to pure shear. This option is not
 !    yet done in 3D
-Title "Simple Shear Loading"Name "John Nairn"
+Title "Pure and Simple Shear Loading"Name "John Nairn"
 
 ! HeaderHeaderPure shear loading on a hyperelastic material
 EndHeader! ------------ Parameters ---------------
@@ -17,7 +17,7 @@ EndHeader! ------------ Parameters ---------------
 ! Points per element
 #ppe=2
 XMLData MPMHeader
-    <DefGradTerms>3</DefGradTerms>
+    <DefGradTerms>2</DefGradTerms>
 EndXMLData
 
 ! pick a method usually "lCPDI" or "uGIMP"
@@ -27,16 +27,19 @@ EndXMLData
 #update="USF"
 
 ! Supported materials: "neohookean" (G2=0), "mooney" (G1=G2), heiso
-#matID="neohookean"
+#matID="heiso"
 
 ! Basic properties
 #Ebase=1000
 #rho=1
 #nuBase=.35
 #aBase=60
+#yldstrain=100
+#hardID="Linear"
+#Ep=0
 
 ! Dimensions (best to keep cube)
-#cell=.5
+#cell=10
 #length=10				! length
 #width=#length			! width
 #thick=#length			! thickness
@@ -47,10 +50,13 @@ EndXMLData
 ! "rigid" or "biaxialdisp" or "biaxialtraction" or "sheartraction"
 ! In biaxial ones, tau = (#sxx-#syy)/2, sigmax = (#sxx+#syy)/2 + #sxy,
 !     sigmay = (#sxx+#syy)/2 - #sxy, gamma = #eyy-#exx
-#bcs="sheartraction"
+! "rigid" + simple="yes" for simple shear, top and bottom displacements only
+#bcs="rigid"
+#simple="yes"
+#edgematerial="no"
 
 ! Loading rate
-#tmult=40			! number of transit times to load peak
+#tmult=1000			! number of transit times to load peak
 
 ! Damping parameter - for feedback or grid
 #damp=0
@@ -62,13 +68,13 @@ EndXMLData
 ! Analysis type
 Analysis #analysis
 MPMMethod #update,#method
+PtsPerElement #ppe
 
 ! get material properties
-if #matID="neohookean"
-  #G1=#Ebase/(2*(1+#nuBase))
-  #G2=0
-else if #matID="mooney"
-  #G1=#Ebase/(4*(1+#nuBase))
+#G1=#Ebase/(2*(1+#nuBase))
+#G2=0
+if #matID="mooney"
+  #G1=#G1/2
   #G2=#G1
 endif
 #Kbulk=#Ebase/(3*(1-2*#nuBase))
@@ -91,10 +97,10 @@ endif
 #disprate=1000*#disp/#time			    ! displacement rate mm/s using tmult
 
 if #bcs="rigid"
-  Comment "Top and bottom displacement = ±"&abs(#disp)&" mm for shear strain of "&#strain&"%"
+  Comment "Top and bottom displacement = +/-"&abs(#disp)&" mm for shear strain of "&#strain&"%"
   Comment "Top and bottom displacement rate = "&(#disprate/1000)&" m/sec"
 else
-  Comment "Uniaxial displacement = ±"&abs(#disp)&" mm for shear strain of "&(2*#strain)&"%"
+  Comment "Uniaxial displacement = +/-"&abs(#disp)&" mm for shear strain of "&(2*#strain)&"%"
   Comment "Uniaxial displacement rate = "&(#disprate/1000)&" m/sec"
 endif
 ! Archiving
@@ -102,7 +108,7 @@ Archive "Results/Shear/"&#analysis&" "&#method&"/"&#matID
 TimeStep 1000,#time,#factor
 MaximumTime #time
 ArchiveTime #time/50
-ToArchive velocity,stress,strain,strainenergy,rotStrain,plasticstrain,history1
+ToArchive velocity,stress,strain,strainenergy,rotStrain,plasticstrain,history1,history2
 
 ! ********** Materials Section **********
 
@@ -141,26 +147,49 @@ if #matID="mooney"
 endif
 
 if #matID="heiso"
-  XMLData Material,#matID
-  <Material Type="24" Name="Hyperelastic Isotropic">
-    <rho>1.0</rho>
-  </Material>
-  EndXMLData
-  XMLData Material,#matID"-#edge"
-  <Material Type="24" Name="Hyperelastic Isotropic Edge">
-    <rho>1.0</rho>
-  </Material>
-  EndXMLData
+  Material #matID,"HE Isotropic Plastic","HEIsotropic"
+    G1 #G1
+    !G2 #G2
+    K #Kbulk
+    a #aBase
+    rho #rho
+    hardening #hardID
+    if #hardID="Linear"
+      yield abs(#Ebase*#yldstrain/100)
+      Ep #Ep
+    endif
+    UJOption 0
+    kCond .202
+    CP 1256
+  Done
+  Material #matID&"-#edge","HE Isotropic Plastic","HEIsotropic"
+    G1 #G1
+    !G2 #G2
+    K #Kbulk
+    a #aBase
+    rho #rho
+    hardening #hardID
+    if #hardID="Linear"
+      yield abs(#Ebase*#yldstrain/100)
+      Ep #Ep
+    endif
+    UJOption 0
+    kCond .202
+    CP 1256
+  Done
 endif
 
 ! displacement functions for rigid materials
 if #bcs="rigid"
-  #rfxn=(2*#disprate/#width)&"*(y-"&(#width/2)&")"
+  !#rfxn=(2*#disprate/#width)&"*(y-"&(#width/2)&")"
+  #rfxn=(2*#disprate/#width)&"*(sign(y)*"&(#width/2)&"-sign(-y)*"&(#width/2)&")"
 
   ! define rigid materials
   Material "rigid","Loading Clamp","Rigid"
     if #analysis="3D MPM"
       direction 7
+    else if #simple="no"
+      direction 3
     else
       direction 3
     endif
@@ -238,10 +267,12 @@ else
   ! material points
   if #bcs="rigid"
     Region "rigid",0,0,#thick
-      Rect -2*#cell,#width+2*#cell,-2*#cell,0
-      Rect -2*#cell,0,-2*#cell,#width+2*#cell
-      Rect #length,#length+2*#cell,-2*#cell,#width+2*#cell
-      Rect -2*#cell,#width+2*#cell,#width,#width+2*#cell
+      Rect -2*#cell,#width+3*#cell,-#cell,0
+      Rect -3*#cell,#width+2*#cell,#width,#width+#cell
+      if #simple="no"
+        Rect -#cell,0,-#cell,#width+#cell
+        Rect #length,#length+#cell,-#cell,#width+#cell
+      endif
     EndRegion
   else if #bcs="biaxialdisp"
     Region "rigidV",0,#disprate,#thick
@@ -287,11 +318,17 @@ else
       Traction shear,2,linear,#stressrate
     EndLoadLine
   endif
-  Region #matID,0,0,#thick
-    Rect 2*#cell,#length-2*#cell,2*#cell,#width-2*#cell
-  EndRegion
-  Region #matID&"-#edge",0,0,#thick
-    Rect 0,#length,0,#width
-  EndRegion
+  if #edgematerial="yes"
+    Region #matID,0,0,#thick
+      Rect 2*#cell,#length-2*#cell,2*#cell,#width-2*#cell
+    EndRegion
+    Region #matID&"-#edge",0,0,#thick
+      Rect 0,#length,0,#width
+    EndRegion
+  else
+    Region #matID,0,0,#thick
+      Rect 0,#length,0,#width
+    EndRegion
+  endif
 endif
 
