@@ -172,9 +172,11 @@ CustomTask *CarnotCycle::StepCalculation(void)
 			break;
 		
 		case 4:
-			// done when T increases to thermal.reference
+			// done when T increases to thermal.reference, or when volume returns to 1
 			if(Tgas>=thermal.reference)
 				throw MPMTermination("Carnot cycle is complete","CarnotCycle::StepCalculation()");
+			//if(Vrel<=1.)
+			//	throw MPMTermination("Carnot cycle is complete","CarnotCycle::StepCalculation()");
 			break;
 		
 		default:

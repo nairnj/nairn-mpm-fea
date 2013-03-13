@@ -393,7 +393,7 @@ short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVe
 	// if separated, then no contact unless possibly needed for an imperfect interface
 	if(inContact==SEPARATED && CrackContactLaw[number].law!=IMPERFECT_INTERFACE) return FALSE;
 	
-	// Now need to change momentum. For imperfect interface, may or may not need a chnage
+	// Now need to change momentum. For imperfect interface, may or may not need a change
 	Vector tang;
 	double dott,mu;
 	
@@ -533,7 +533,7 @@ short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,Vector 
 				{	// prefect in tangential, but imperfect in normal direction
 					NormalSlipDeltaP(delPa,norm);
 					if(fixedCM)
-						NormalSlipDeltaP(delPa,norm);
+						NormalSlipDeltaP(delPb,norm);
 					else
 					{	delPb->x=-delPa->x;
 						delPb->y=-delPa->y;

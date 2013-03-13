@@ -179,12 +179,16 @@ void CrackSegment::AddTractionFext(CrackHeader *theCrack)
 {	// exit if no traction law
 	if(MatID()<0) return;
 	
-	// the second call makes sure the full traction force is applied to both sides
-	// of the crack. It may not be needed (or even be good?)
+	// The first call will add force like Sum f_i T = fnorm T of total traction
+	// If all nodes are used, it is done. But if some nodes do not have a velocity field for
+	//    above the crack, the net result is lower traction then expected. The second
+	//    call speads force to the same nodes (1/fnorm-1) Sum f_i T = T - fnorm T.
+	//    The net result will application of T regardless of number of nodes
 	double fnorm=AddTractionFextSide(theCrack,ABOVE_CRACK,(double)1.);
 	if(fnorm>0. && fnorm<0.999)
 		AddTractionFextSide(theCrack,ABOVE_CRACK,(1./fnorm-1.));
 	
+	// Repeat above calculations for the below the crack field
 	fnorm=AddTractionFextSide(theCrack,BELOW_CRACK,(double)-1.);
 	if(fnorm>0. && fnorm<0.999)
 		AddTractionFextSide(theCrack,ABOVE_CRACK,(1.-1./fnorm));

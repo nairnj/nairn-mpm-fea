@@ -15,7 +15,7 @@ Analysis #analysis
 MPMMethod USF,lCPDI
 
 ! ********** Parameters Section **********
-#matID="idealgas"		! idealgas
+#matID="tungsten"		! idealgas
 #strain=50				! strain
 #tmult=10
 damping 3200
@@ -34,7 +34,11 @@ conduction "Yes","Mechanical energy"
 #P0=.101
 #T0=288.15
 #rho0=0.001164
-#speed=1000000*sqrt(5000*#P0*#startTemp*#rho0/(3*#T0))
+if #matID="idealgas"
+  #speed=1000000*sqrt(5000*#P0*#startTemp*#rho0/(3*#T0))
+else if #matID="tungsten"
+  #speed=3980000
+endif
 #transit=1000*#length/#speed             ! transit time in ms
 #time=#tmult*#transit                    ! time to peak load in ms
 #disp=#strain*#length/100                ! mm of displacement
@@ -64,6 +68,42 @@ if #matID="idealgas"
     rho #rho0
     P0 #P0
     T0 #T0
+  Done
+
+else if #matID="tungsten"
+  #hrod="Linear"
+  Material #matID,"Tungsten","HEMGEOSMaterial"
+    C0 3980
+    S1 1.24
+    S2 0
+    S3 0
+    gamma0 1.54
+    rho 17.6
+    G 160000
+    Cv 134
+    kCond 173
+    ArtificialVisc on
+    Hardening #hrod
+    if #hrod="JohnsonCook"
+      Ajc 1506.96
+      Bjc 176.64
+      Cjc 0.016
+      njc 0.12
+      mjc 1
+      ep0jc 1
+      Tmjc 3600
+    else if #hrod="Linear"
+      !yield 1506.96
+      !Khard 0
+    else
+      Stop "Hardening = "&#hrod&" not available for Tungsten"
+    endif
+    !yield 2200
+    !GPpG0 0.01e-3
+    !GTpG0 -2.2e-4
+    !yieldMax 4000
+    !betahard 7.7
+    !nhard 0.13
   Done
 endif
 
@@ -97,12 +137,12 @@ if #strain<0
 else
   #xcess=int(#strain*#length/(200*#cell)+2)*#cell
   if #yrate>0
-  	#ycess=int(#strain*#ywidth/(200*#cell)+2)*#cell
+    #ycess=int(#strain*#ywidth/(200*#cell)+2)*#cell
   else
     #ycess=2*#cell
   endif
   if #zrate>0
-  	#zcess=int(#strain*#zwidth/(200*#cell)+2)*#cell
+    #zcess=int(#strain*#zwidth/(200*#cell)+2)*#cell
   else
     #zcess=2*#cell
   endif
@@ -169,6 +209,7 @@ else
 
 endif
 
+! for use used 1.25 and 350
 XMLData
 
   <CustomTasks>
