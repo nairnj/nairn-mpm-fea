@@ -983,7 +983,7 @@ void CrackHeader::JIntegral(void)
     /* Calculate J-integrals for the ith crack tip
     */
 	
-	// it may try to contours at each crack tip. First try is at NearestnNode().
+	// it may try two contours at each crack tip. First try is at NearestnNode().
 	// if that path crosses the crack twice, it tries a contour from the next nearest node.
 	secondTry=FALSE;
 	
@@ -1015,6 +1015,15 @@ void CrackHeader::JIntegral(void)
 			gridNode=theElements[gridElem]->NearestNode(tipCrk->x,tipCrk->y,&nextNearest);
 			if(secondTry) gridNode=nextNearest;
 			int numSegs=0;
+			
+			// set material type based on nearest node. Might be better to extrapolate material types to
+			// the segment particle
+			int oldnum = tipCrk->tipMatnum;
+			tipCrk->tipMatnum = nd[gridNode]->GetNodeMaterial(tipCrk->tipMatnum);
+			if(tipCrk->tipMatnum!=oldnum)
+			{	cout << "# crack tip left material " << oldnum
+						<< " and entered material " << tipCrk->tipMatnum << endl;
+			}
 			
 			// step to the edge of the J Integral contour
 			gridNode=theElements[gridElem]->NextNode(gridNode);
@@ -1383,6 +1392,7 @@ void CrackHeader::JIntegral(void)
 				  Jint.z is actual energy released when the crack and traction zone propagate together
 							(archived as J2 when propagation is on)
 			   crackDir -- crack propagating direction cosines from above
+			   Units N/mm, multiply by 1000 to get N/m = J/m^2
 			*/
 			tipCrk->Jint.x = Jx*crackDir.x + Jy*crackDir.y - tractionEnergy;		// Jtip or energy that will be released if crack grows
 			//tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;						// J2(x) - for growth normal to crack plane

@@ -125,8 +125,8 @@ CustomTask *PropagateTask::StepCalculation(void)
                     growTo.x=crkTip->x+grow.x;
                     growTo.y=crkTip->y+grow.y;
 					if(fmobj->dflag[0]==4) growTo.y=0.;			// force cutting simulation to stay in cut plane at 0
-					cout << " at t=" << 1000*mtime << " with J=Jtip+Jzone : " << crkTip->Jint.z <<
-							" = " << crkTip->Jint.x << " + " << crkTip->Jint.z-crkTip->Jint.x << endl;
+					cout << " at t=" << 1000*mtime << " with J=Jtip+Jzone : " << 1000.*crkTip->Jint.z <<
+							" = " << 1000.*crkTip->Jint.x << " + " << 1000.*(crkTip->Jint.z-crkTip->Jint.x) << endl;
                     crkTip=nextCrack->Propagate(growTo,(int)i,theMaterials[inMat-1]->tractionMat[0]);
                     
 					if(crkTip!=NULL)

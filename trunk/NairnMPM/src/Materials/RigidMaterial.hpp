@@ -41,7 +41,7 @@ class RigidMaterial : public MaterialBase
         virtual char *InputMat(char *,int &);
 		virtual const char *VerifyProperties(int);
         virtual void PrintMechanicalProperties(void);
-		virtual int SetField(int,bool,int);
+		virtual int SetField(int,bool,int,int &);
 		
 		// RigidMaterial only methods
 		bool RigidDirection(int);

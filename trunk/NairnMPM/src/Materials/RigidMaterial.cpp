@@ -276,7 +276,7 @@ char *RigidMaterial::InputMat(char *xName,int &input)
 }
 
 // Rigid material uses field only set to be contact material and in multimaterial mode
-int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid)
+int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid,int &activeNum)
 {	// not used if rigid bpundary condition
 	if(setDirection!=RIGID_MULTIMATERIAL_MODE) return fieldNum;
 	
@@ -286,8 +286,9 @@ int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid)
 						  "RigidMaterial::SetField");
 	}
 	
-	// go to superclass
-	return MaterialBase::SetField(fieldNum,multiMaterials,matid);
+	// go to superclass, but not not count this rigid material as an active field
+	int rigidActive;			// dummy variable so activeNum will not change
+	return MaterialBase::SetField(fieldNum,multiMaterials,matid,rigidActive);
 }
 
 #pragma mark RigidMaterial::Accessors

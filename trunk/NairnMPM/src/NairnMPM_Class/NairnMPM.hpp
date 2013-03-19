@@ -20,7 +20,7 @@ class BoundaryCondition;
 
 // global variables
 extern double mtime,propTime,timestep,strainTimestep;
-extern int maxCrackFields,maxMaterialFields;
+extern int maxCrackFields,maxMaterialFields,numActiveMaterials;
 
 class NairnMPM : public CommonAnalysis
 {

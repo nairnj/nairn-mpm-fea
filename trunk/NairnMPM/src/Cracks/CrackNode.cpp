@@ -10,7 +10,7 @@
 	1. When a crack node is detected, an object is created and
 		the constructor saves the momenta for that node.
 	2.	After forces are calculated, the nodal forces are changed to map the
-		initial no[contact momenta to the final contact momenta. This final
+		initial no-contact momenta to the final contact momenta. This final
 		contact momenta is calculated after updating momenta ignoring
 		contact.
 ********************************************************************************/

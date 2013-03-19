@@ -477,15 +477,17 @@ void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np)
 }
 
 // when set, return total number of materials if this is a new one, or 1 if not in multimaterial mode
-int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid)
+int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activeNum)
 {	if(!multiMaterials)
-	{	field=0;
+	{	if(field<0) activeNum++;
+		field=0;
 		fieldNum=1;
 	}
 	else
 	{	if(field<0)
 		{	field=fieldNum;
 			fieldNum++;
+			activeNum++;
 			fieldMatIDs.push_back(matid);
 		}
 	}

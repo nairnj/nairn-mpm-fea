@@ -144,7 +144,7 @@ class MaterialBase : public LinkedObject
 
 		// accessors (base class only)
 #ifdef MPM_CODE
-		virtual int SetField(int,bool,int);
+		virtual int SetField(int,bool,int,int &);
 		static short GetMVFIsRigid(int matfld);
 		static int GetFieldMatID(int matfld);
 		int GetField(void);

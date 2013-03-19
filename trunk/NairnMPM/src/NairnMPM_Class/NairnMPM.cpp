@@ -48,7 +48,8 @@ double strainTimestep;		// half time step when in US_AVG method
 double mtime=0.;			// time for current step (sec)
 double propTime=1e15;		// time interval between propagation calculations (sec)
 int maxCrackFields=1;		// Maximum crack velocity fields at a node in a material (it is MAX_FIELDS_FOR_CRACKS if there are cracks)
-int maxMaterialFields;		// Maximum velocity fields or number of independent materials
+int maxMaterialFields;		// Maximum velocity fields or number of independent materials in multimaterial mode (=1 in single mat mode)
+int numActiveMaterials;		// Number of non-rigid materials used by at least one material point
 
 #pragma mark CONSTRUCTORS
 
@@ -382,6 +383,7 @@ void NairnMPM::PreliminaryCalcs(void)
     
     // loop over material points
 	maxMaterialFields=0;
+	numActiveMaterials=0;
     for(p=0;p<nmpms;p++)
 	{	// verify material is defined and sets if field number (in in multimaterial mode)
 		matid=mpm[p]->MatID();
@@ -389,7 +391,7 @@ void NairnMPM::PreliminaryCalcs(void)
 			throw CommonException("Material point with an undefined material type","NairnMPM::PreliminaryCalcs");
 		if(theMaterials[matid]->isTractionLaw())
 			throw CommonException("Material point with traction-law material","NairnMPM::PreliminaryCalcs");
-		maxMaterialFields=theMaterials[matid]->SetField(maxMaterialFields,multiMaterialMode,matid);
+		maxMaterialFields=theMaterials[matid]->SetField(maxMaterialFields,multiMaterialMode,matid,numActiveMaterials);
 		
 		// nothing left if rigid material is a BC rigid material
 		if(theMaterials[matid]->RigidBC()) continue;
@@ -456,7 +458,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	}
 	
 	// multimaterial checks and contact initialization
-	if(maxMaterialFields==0)
+	if(maxMaterialFields==0 || numActiveMaterials==0)
 		throw CommonException("No material points found with an actual material","NairnMPM::PreliminaryCalcs");
 	else if(maxMaterialFields==1)
 		multiMaterialMode=FALSE;

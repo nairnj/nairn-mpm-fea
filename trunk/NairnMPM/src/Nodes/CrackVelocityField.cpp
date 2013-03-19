@@ -45,7 +45,7 @@ CrackVelocityField::~CrackVelocityField()
 			delete mvf[i];
 	}
 	free(mvf);
-	if(df!=NULL) delete df;
+	DeleteStrainField();
 }
 
 // zero this velocity field, set loc and crackNum for first crack and optionally
@@ -68,7 +68,7 @@ void CrackVelocityField::Zero(short theLoc,int cnum,bool zeroMVFs)
 
 #pragma mark TASK 1 METHODS
 
-// Called on in task 1 - add to momemtum, create material velocity field if needed
+// Called only in task 1 - add to momemtum, create material velocity field if needed
 // If first material point for this velocity field, save the velocity too
 void CrackVelocityField::AddMomentumTask1(int matfld,Vector *addPk,Vector *vel)
 {	if(mvf[matfld]==NULL)
@@ -135,12 +135,29 @@ void CrackVelocityField::CreateStrainField(void)
 	df->stress.yy=0.;
 	df->stress.zz=0.;
 	df->stress.xy=0.;
+	
+	// if more than one material, track material tip to set crack tip material chnages
+	if(numActiveMaterials>1)
+	{	df->matFields=(int *)malloc(sizeof(int)*numActiveMaterials);
+		df->matWeight=(double *)malloc(sizeof(double)*numActiveMaterials);
+		int i;
+		for(i=0;i<numActiveMaterials;i++)
+		{	df->matFields[i] = -1;
+			df->matWeight[i] = 0.;
+		}
+	}
+	else
+	{	df->matFields=NULL;
+		df->matWeight=NULL;
+	}
 }
 
 // create strain field for this crack velocity field
 void CrackVelocityField::DeleteStrainField(void)
 {	if(df!=NULL)
-	{	delete df;
+	{	if(df->matFields!=NULL) delete df->matFields;
+		if(df->matWeight!=NULL) delete df->matWeight;
+		delete df;
 		df=NULL;
 	}
 }
