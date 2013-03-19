@@ -31,6 +31,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * The `Mooney` material has an option to model an ideal rubber elastic material that heats on stretching and cooling on contraction. The material also tracks entropy change and during isothermal loading in the new ideal rubber mode, force is given by f = -(dS/dL)<sub>T</sub>. This material now also allows three difference energy function for pressure calculations.
     * The `IdealGas` material now tracks entropy change.
     * The `VTKArchive` can archive several new quantities.
+    * Crack tips now track material type to all propagation between materials in a composite.
 
   * release-3.0 (9 JAN 2013)
     * Has NairnMPM 9.0.0
