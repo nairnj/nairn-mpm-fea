@@ -19,7 +19,7 @@ enum { SXX=0,SYY,SZZ,SXY,SXZ,SYZ,
 		EXX,EYY,EZZ,EXY,EXZ,EYZ,
 		PEXX,PEYY,PEZZ,PEXY,PEXZ,PEYZ,STRENG,PLENG,TEMP,CONC,
 		DISPX,DISPY,DISPZ,VELX,VELY,VELZ,
-		MAT,J1,J2,KI,KII,MASS,XPOS,YPOS,ZPOS };
+		MAT,J1,J2,KI,KII,MASS,XPOS,YPOS,ZPOS,PRESSURE,EQUIVSTRESS };
 
 // error codes
 enum { noErr=0, NoInputFileErr, BadOptionErr, FileAccessErr, MemoryErr };
@@ -39,7 +39,7 @@ enum { ARCH_JIntegral=2,ARCH_StressIntensity,ARCH_BalanceResults,ARCH_MAXCRACKIT
 
 // prototypes
 char *NextArgument(int,char * const [],int,char);
-void Usage(char *);
+void Usage(const char *);
 int ExtractMPMData(const char *,int,int);
 void VTKLegacy(ostream &,unsigned char *,long,const char *);
 void OutputQuantity(int,unsigned char *,ostream &,short,char);

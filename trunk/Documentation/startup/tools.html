@@ -146,17 +146,19 @@ for <code>ver3</code> archive files.  For <code>ver4</code> archive files or new
 <dt><b>-q</b> <u>data</u></dt>
 <dd>When exporting particle data, the output always includes particle position (<code>x</code>, <code>y</code>, and <code>z</code> (for 3D)), but can include additional data for each <b>-q</b> option. The allowed quantities for particle data are:
 <ul>
-<li>mat for material number
-<li>mass for particle mass (in g)
-<li>velx, velz, and velz for component of velocity vector (in mm/sec)
-<li>dispx, dispy, and dispz for component of displacement vector (in mm)
-<li>sxx, syy, szz, sxy, sxz, and syz for a component of the stress tensor (in Pa)
-<li>exx, eyy, ezz, exy, exz, and eyz for a component of the strain tensor, which is elastic strain for plasticity materials (absolute)
-<li>pexx, peyy, pezz, pexy, pexz, and peyz for a component of the plastic strain tensor (absolute)
-<li>strerg for strain energy (in J)
-<li>plerg for plastic energy (in J)
-<li>temp for temperature (in K)
-<li>conc for concentration (in wt %)
+<li>mat for material number</li>
+<li>mass for particle mass (in g)</li>
+<li>velx, velz, and velz for component of velocity vector (in mm/sec)</li>
+<li>dispx, dispy, and dispz for component of displacement vector (in mm)</li>
+<li>sxx, syy, szz, sxy, sxz, and syz for a component of the stress tensor (in Pa)</li>
+<li>pressure for pressure (in Pa)</li>
+<li>vonmises for von Mises (or equivalent) stress (= sqrt(3 J2)) (in Pa)</li>
+<li>exx, eyy, ezz, exy, exz, and eyz for a component of the strain tensor, which is elastic strain for plasticity materials (absolute)</li>
+<li>pexx, peyy, pezz, pexy, pexz, and peyz for a component of the plastic strain tensor (absolute)</li>
+<li>strerg for strain energy (in J)</li>
+<li>plerg for plastic energy (in J)</li>
+<li>temp for temperature (in K)</li>
+<li>conc for concentration (in wt %)</li>
 </ul>
 <code>XML</code> files always include mat and can include mass; they currently cannot include stress or strain.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;When exporting crack particle data, the output always includes the crack number followed by the crack particle position (<code>x</code>, <code>y</code>, and <code>z</code> (for 3D)), but can include additional data for each <b>-q</b> option. The allowed quantities for crack particle data are:

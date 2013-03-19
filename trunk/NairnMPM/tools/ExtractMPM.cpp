@@ -94,6 +94,10 @@ int main(int argc, char * const argv[])
 					q=SXZ;
 				else if(strcmp(parm,"syz")==0 || strcmp(parm,"szy")==0)
 					q=SYZ;
+                else if(strcmp(parm,"pressure")==0)
+                    q=PRESSURE;
+                else if(strcmp(parm,"vonmises")==0)
+                    q=EQUIVSTRESS;
 				else if(strcmp(parm,"exx")==0)
 					q=EXX;
 				else if(strcmp(parm,"eyy")==0)
@@ -338,7 +342,7 @@ char *NextArgument(int parmInd,char * const argv[],int argc,char option)
 	
 
 // Explain usage of this program
-void Usage(char *msg)
+void Usage(const char *msg)
 {
 	if(msg!=NULL)
 		cout << "\nERROR: " << msg << endl;
@@ -858,11 +862,63 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 		case SXY:
 		case SXZ:
 		case SYZ:
+            // Stress in Pa
 			if(stressOffset>0 && (threeD || quantity[i]<SXZ))
 				OutputDouble((double *)(ap+stressOffset),quantity[i]-SXX,delim,reverseFromInput,os,quantity[i]);
 			else
 				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
 			break;
+        
+        case PRESSURE:
+            // Pressure in Pa
+			if(stressOffset>0)
+            {   double *sxx=(double *)(ap+stressOffset);
+                double *syy=(sxx+SYY-SXX);
+                double *szz=(sxx+SZZ-SXX);
+				if(reverseFromInput)
+				{	Reverse((char *)sxx,sizeof(double));
+					Reverse((char *)syy,sizeof(double));
+					Reverse((char *)szz,sizeof(double));
+				}
+                double pressure = (*sxx+*syy+*szz)/3.;
+				OutputDouble(&pressure,0,delim,false,os,quantity[i]);
+            }
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+            
+        case EQUIVSTRESS:
+            // Equivalent stress = sqrt(3 J2) in Pa (aka vonmises stress)
+            if(stressOffset>0)
+            {   double *sxx=(double *)(ap+stressOffset);
+                double *syy=(sxx+SYY-SXX);
+                double *szz=(sxx+SZZ-SXX);
+                double *sxy=(sxx+SXY-SXX);
+                if(reverseFromInput)
+                {	Reverse((char *)sxx,sizeof(double));
+                    Reverse((char *)syy,sizeof(double));
+                    Reverse((char *)szz,sizeof(double));
+                    Reverse((char *)sxy,sizeof(double));
+                }
+                double *sxz,*syz;
+                if(threeD)
+                {   double *sxz=(sxx+SXZ-SXX);
+                    double *syz=(sxx+SYZ-SXX);
+                    if(reverseFromInput)
+                    {	Reverse((char *)sxz,sizeof(double));
+                        Reverse((char *)syz,sizeof(double));
+                    }
+                }
+                double se = pow(*sxx-*syy,2.) + pow(*syy-*szz,2.) + pow(*sxx-*szz,2.);
+                se += 6.*(*sxy)*(*sxy);
+                if(threeD) se += 6.*((*sxz)*(*sxz) + (*syz)*(*syz));
+                se = sqrt(0.5*se);
+                OutputDouble(&se,0,delim,false,os,quantity[i]);
+            }
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+
 		
 		case EXX:
 		case EYY:
@@ -905,6 +961,10 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 				pPtr+=(quantity[i]-DISPX);
 				double *opPtr=(double *)(ap+origPosOffset);
 				opPtr+=(quantity[i]-DISPX);
+				if(reverseFromInput)
+				{	Reverse((char *)pPtr,sizeof(double));
+					Reverse((char *)opPtr,sizeof(double));
+				}
 				double displacement=*pPtr-*opPtr;
 				OutputDouble(&displacement,0,delim,false,os,quantity[i]);
 			}
