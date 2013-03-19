@@ -25,6 +25,7 @@ bool MaterialBase::isolatedSystemAndParticles = FALSE;
 
 // class statics for MPM - zero based material IDs when in multimaterial mode
 vector<int> MaterialBase::fieldMatIDs;
+vector<int> MaterialBase::activeMatIDs;
 int MaterialBase::incrementalDefGradTerms = 2;			// terms in exponential of deformation gradient
 
 #pragma mark MaterialBase::Initialization
@@ -479,16 +480,22 @@ void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np)
 // when set, return total number of materials if this is a new one, or 1 if not in multimaterial mode
 int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activeNum)
 {	if(!multiMaterials)
-	{	if(field<0) activeNum++;
-		field=0;
-		fieldNum=1;
+	{	if(field<0)
+		{	field=0;
+			activeField=activeNum;
+			fieldNum=1;
+			activeNum++;
+			activeMatIDs.push_back(matid);
+		}
 	}
 	else
 	{	if(field<0)
 		{	field=fieldNum;
+			activeField=activeNum;
 			fieldNum++;
 			activeNum++;
 			fieldMatIDs.push_back(matid);
+			activeMatIDs.push_back(matid);
 		}
 	}
 	return fieldNum;
@@ -496,6 +503,9 @@ int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activ
 
 // -1 if material not in use, otherwise zero-based field number
 int MaterialBase::GetField(void) { return field; }
+
+// -1 if material not in use, otherwise zero-based field number from 0 to numActiveMaterials
+int MaterialBase::GetActiveField(void) { return activeField; }
 
 // maximum diffusion coefficient in cm^2/sec (anisotropic must override) (diff in mm^2/sec)
 double MaterialBase::MaximumDiffusion(void) { return diffusionCon/100.; }
@@ -1320,6 +1330,9 @@ short MaterialBase::GetMVFIsRigid(int matfld)
 
 // convert field number (zero based) to material ID for that field (zero based)
 int MaterialBase::GetFieldMatID(int matfld) { return fieldMatIDs[matfld]; }
+
+// convert active material number (zero based) to material ID for that field (zero based)
+int MaterialBase::GetActiveMatID(int matfld) { return activeMatIDs[matfld]; }
 
 // Get current relative volume change - only used to convert speific results to actual values when archiving
 // Materials with explicit treatment of large deformation will need it (e.g., Hyperelastic)

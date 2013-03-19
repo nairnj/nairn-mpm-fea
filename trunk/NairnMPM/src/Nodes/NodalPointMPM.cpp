@@ -445,69 +445,37 @@ void NodalPoint::DeleteDisp(void)
 }
 
 // Add to displacement gradient and track material type
-void NodalPoint::AddUGradient(short vfld,double wt,double dudx,double dudy,double dvdx,double dvdy,int matid,double mp)
+void NodalPoint::AddUGradient(short vfld,double wt,double dudx,double dudy,double dvdx,double dvdy,int activeMatField,double mp)
 {	DispField *df = cvf[vfld]->df;
 	df->du.x += wt*dudx;
 	df->du.y += wt*dudy;
 	df->dv.x += wt*dvdx;
 	df->dv.y += wt*dvdy;
 	
-	// if more than on material get shape function extrapolaiton to each node
+	// if more than one material get shape function extrapolaiton to each node
 	if(numActiveMaterials>1)
-	{	int i;
-		for(i=0;i<numActiveMaterials;i++)
-		{	if(df->matFields[i]==matid)
-			{	df->matWeight[i] += wt/mp;
-				break;
-			}
-			else if(df->matFields[i]<0)
-			{	df->matFields[i] = matid;
-				df->matWeight[i] += wt/mp;
-				break;
-			}
-		}
-	}
+		df->matWeight[activeMatField] += wt/mp;
 }
 
-// find the material at this node from above and below fields
-// 0 based IDs in matFields, so add one to return 1-based material number
-// The input tipMatNum is already 1 based, return if nothing else found
-int NodalPoint::GetNodeMaterial(int tipMatNum)
-{	// keep same if only one material
-	if(numActiveMaterials==1) return tipMatNum;
-	
-	// find most prevalent material above and below the crack
-	int i,aboveMat=-1,belowMat=-1;
-	double aboveWt=0.,belowWt=0.;
+// add material weights to an array
+// called by crack segment when finding crack tip materials
+// Future might want to keep above and below separte to find interface crack
+void NodalPoint::AddMatWeights(double wt,double *matWeight)
+{	int i;
 	
 	// above the crack
 	DispField *df = cvf[(int)above]->df;
 	if(df!=NULL)
 	{	for(i=0;i<numActiveMaterials;i++)
-		{	if(df->matWeight[i]>aboveWt)
-			{	aboveMat = df->matFields[i];
-				aboveWt = df->matWeight[i];
-			}
-		}
+			matWeight[i] += wt*df->matWeight[i];
 	}
-		
-	// below the crack
+	
+	// above the crack
 	df = cvf[(int)below]->df;
 	if(df!=NULL)
 	{	for(i=0;i<numActiveMaterials;i++)
-		{	if(df->matWeight[i]>belowWt)
-			{	belowMat = df->matFields[i];
-				belowWt = df->matWeight[i];
-			}
-		}
+			matWeight[i] += wt*df->matWeight[i];
 	}
-	
-	// none found
-	if(aboveMat<0 && belowMat<0) return tipMatNum;
-	
-	// if  they differ, might want it to be an interface crack, but now returns
-	// one with highest weight
-	return aboveWt > belowWt ? aboveMat+1 : belowMat+1;
 }
 
 // Add to kinetic energy and strain energy

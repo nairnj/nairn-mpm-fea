@@ -592,6 +592,44 @@ Vector CrackSegment::FTract(double fni)
 	return fout;
 }
 
+// calculate tractions on one side of crack for this segment
+void CrackSegment::FindCrackTipMaterial(void)
+{
+	Vector cspos,ndpos;
+	int i,iel,numnds,nds[MaxShapeNds];
+    double fn[MaxShapeNds];
+	
+	// array to collect weights
+	double *matWeight=(double *)malloc(sizeof(double)*numActiveMaterials);
+	for(i=0;i<numActiveMaterials;i++) matWeight[i] = 0.;
+	
+	// get shape functions
+	cspos.x=x;
+	cspos.y=y;
+	iel=planeInElem;
+	theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cspos,&ndpos,NULL);
+	
+	// extrapolate to particle
+	for(i=1;i<=numnds;i++)
+	{	nd[nds[i]]->AddMatWeights(fn[i],matWeight);
+	}
+	
+	// find largest one
+	int tipMat = -1;
+	double tipWeight=0.;
+	for(i=0;i<numActiveMaterials;i++)
+	{	if(matWeight[i]>tipWeight)
+		{	tipMat = i;
+			tipWeight = matWeight[i];
+		}
+	}
+	
+	// if found one, use it
+	if(tipMat>=0)
+		tipMatnum = MaterialBase::GetActiveMatID(tipMat)+1;
+
+}
+
 #pragma mark PREVENT PLANE CROSSES
 
 // After crack plane moves, verify it has not passed either surface.

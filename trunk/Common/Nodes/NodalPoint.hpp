@@ -99,7 +99,7 @@ class NodalPoint : public LinkedObject
 		void AddDisplacement(short,int,double,Vector *);
 		void AddVolume(short,int,double);
         void AddUGradient(short,double,double,double,double,double,int,double);
-		int GetNodeMaterial(int);
+		void AddMatWeights(double,double *);
         void AddEnergy(short,double,double,double,double);
         void AddStress(short,double,Tensor *);
         Vector GetVelocity(short,int);

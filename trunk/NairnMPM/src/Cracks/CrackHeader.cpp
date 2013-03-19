@@ -1016,11 +1016,10 @@ void CrackHeader::JIntegral(void)
 			if(secondTry) gridNode=nextNearest;
 			int numSegs=0;
 			
-			// set material type based on nearest node. Might be better to extrapolate material types to
-			// the segment particle
+			// set material type based material near the tip.
 			int oldnum = tipCrk->tipMatnum;
-			tipCrk->tipMatnum = nd[gridNode]->GetNodeMaterial(tipCrk->tipMatnum);
-			if(tipCrk->tipMatnum!=oldnum)
+			tipCrk->FindCrackTipMaterial();
+			if(tipCrk->tipMatnum != oldnum)
 			{	cout << "# crack tip left material " << oldnum
 						<< " and entered material " << tipCrk->tipMatnum << endl;
 			}

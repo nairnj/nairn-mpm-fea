@@ -154,7 +154,8 @@ CustomTask *CalcJKTask::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
     
 	// get 2D gradient terms (dimensionless) and track material (if needed)
 	int matid = mpnt->MatID();
-	ndmi->AddUGradient(vfld,wt,mpnt->GetDuDx(),mpnt->GetDuDy(),mpnt->GetDvDx(),mpnt->GetDvDy(),matid,mpnt->mp);
+	int activeMatField = theMaterials[matid]->GetActiveField();
+	ndmi->AddUGradient(vfld,wt,mpnt->GetDuDx(),mpnt->GetDuDy(),mpnt->GetDvDx(),mpnt->GetDvDy(),activeMatField,mpnt->mp);
 	
 	// get a nodal stress (rho*stress has units N/m^2)
     wt *= theMaterials[matid]->rho;

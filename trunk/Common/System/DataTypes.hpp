@@ -61,7 +61,6 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY};
 		double kinetic;
 		double work;
 		Tensor stress;
-		int *matFields;
 		double *matWeight;
 	} DispField;
 	

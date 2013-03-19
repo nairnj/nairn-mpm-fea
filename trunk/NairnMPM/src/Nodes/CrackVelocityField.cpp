@@ -138,25 +138,19 @@ void CrackVelocityField::CreateStrainField(void)
 	
 	// if more than one material, track material tip to set crack tip material chnages
 	if(numActiveMaterials>1)
-	{	df->matFields=(int *)malloc(sizeof(int)*numActiveMaterials);
-		df->matWeight=(double *)malloc(sizeof(double)*numActiveMaterials);
+	{	df->matWeight=(double *)malloc(sizeof(double)*numActiveMaterials);
 		int i;
 		for(i=0;i<numActiveMaterials;i++)
-		{	df->matFields[i] = -1;
 			df->matWeight[i] = 0.;
-		}
 	}
 	else
-	{	df->matFields=NULL;
 		df->matWeight=NULL;
-	}
 }
 
 // create strain field for this crack velocity field
 void CrackVelocityField::DeleteStrainField(void)
 {	if(df!=NULL)
-	{	if(df->matFields!=NULL) delete df->matFields;
-		if(df->matWeight!=NULL) delete df->matWeight;
+	{	if(df->matWeight!=NULL) delete df->matWeight;
 		delete df;
 		df=NULL;
 	}

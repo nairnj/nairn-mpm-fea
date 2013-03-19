@@ -52,7 +52,8 @@ class MaterialBase : public LinkedObject
 		int tractionMat[2];
         double diffusionCon,kCond;			// for isotropic properties
 		ContactDetails *lastFriction;
-		static vector<int> fieldMatIDs;
+		static vector<int> fieldMatIDs;		// 0 to # material in multimatrial mode
+		static vector<int> activeMatIDs;	// 0 to # active, non-rigid fields any mode
 		static int incrementalDefGradTerms;
         static bool isolatedSystemAndParticles;
 #endif
@@ -147,7 +148,9 @@ class MaterialBase : public LinkedObject
 		virtual int SetField(int,bool,int,int &);
 		static short GetMVFIsRigid(int matfld);
 		static int GetFieldMatID(int matfld);
+		static int GetActiveMatID(int matfld);
 		int GetField(void);
+		int GetActiveField(void);
  		Tensor *GetkCondTensor(void);
 		Tensor *GetDiffusionTensor(void);
         virtual double GetCurrentRelativeVolume(MPMBase *);
@@ -168,7 +171,7 @@ class MaterialBase : public LinkedObject
 		double CTE1,CTE2,CTE3;
 #ifdef MPM_CODE
 		double CME1,CME2,CME3;
-		int field;
+		int field,activeField;
 #endif
 };
 

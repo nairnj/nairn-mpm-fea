@@ -136,15 +136,18 @@ were done using non-interacting, traction-loaded cracks.</p>
 <h2>Crack Tip Parameters</h2>
 
 <p> For calculation of crack tip parameters, such as J integral or stress intensity factor, and for
-crack propagation (see <a href="mpmheader.html">MPMHeader</a>), the beginning and/or the end of the
-crack should add a <code>tip</code> attribute. The <code>tip</code> number should be a material
-number (see <a href="definematl.html">Defining Materials</a>). This number is needed to convert
-energy release rate into stress intensity factor (which is currently only correct for isotropic
-materials). Its meaning might change in the future to account for cracks propagating at an interface
-or from one material into another material. If the crack starts or ends with a
+crack propagation (see <a href="mpmheader.html">MPMHeader</a>), the start and/or end of the
+crack should add a <code>tip</code> attribute. The <code>tip</code> number should be the material
+number (see <a href="definematl.html">Defining Materials</a>) for the material containing the crack tip. This number is required to activate crack calculations. If the crack starts or ends with a
 <code>&lt;pt&gt;</code>, use a <code>tip</code> attribute on the first or last point. If the crack
 starts or ends with a <code>&lt;Line&gt;</code> or <code>&lt;Circle&gt;</code>, use the
-<code>start_tip</code> or <code>end_tip</code> attributes for those shapes.</p>
+<code>start_tip</code> and/or <code>end_tip</code> attributes for those shapes.</p>
+
+<p>Whenever J integral is calculated (for archiving or crack propagation), the calculations are only done for crack tips with a defined materiial number. Furthermore, the J integral calculation will extrapolate material type to the crack tip node and change the material numder to the most prominant material if it is different then the current crack tip material number. This calculations allows crack propagation in composites where the crack moves between materials.</p>
+
+<p>When using propagation criterion based on stress intensity factor, the crack tip material type is used to convert
+energy release rate into stress intensity factor. This conversion is currently only correct for isotropic
+materials. Therefore, stress intensity failure criteria should only be used with isotropic materials.</p>
 
 <p>For internal
 cracks both ends of the crack should have a <code>tip</code> attribute; for an edge crack, only the
