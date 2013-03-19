@@ -923,9 +923,9 @@ void CrackVelocityFieldMulti::GetFrictionalDeltaMomentum(Vector *delPi,Vector *n
         {	
 			//modiftf #frictional heating. Determine heat from q = F.v (in tangential directions)
 						double forcet, velt, Qin; //modiftf #frictionalheating force & velocity in tangent direction and qin	
-						forcet = DotVectors(delPi, &tang); // g.mm/s
+						forcet = DotVectors(delPi, &tang); // g.mm/s momentum (removed /timestep as value not here...)
 						velt = DotVectors(&rigidVel,&tang); // mm/s
-						Qin = (forcet*velt)*1e-9; // kg.m^2/s^3 (J) 
+						Qin = (forcet*velt)*1e-9; // kg.m^2/s^2 (J) 
 						Qin = sqrt(Qin*Qin);
 						nd[nodenumber]->AddNodalFrictionEnergy(Qin);
 						

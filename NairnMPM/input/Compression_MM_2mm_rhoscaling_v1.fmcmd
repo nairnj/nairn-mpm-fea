@@ -45,7 +45,9 @@ a6: Testing for strain rate = 0.1. sto=10^3, temp = 300K
 a7: Testing for high strain rate = 4000-s. sto = 10^7, temp = 300K
 a8: Testing for high strain rate = 4000-s. sto = 10^7, temp = 300K (increased resolution =0.5)
 a9: Testing for high strain rate = 4000-s. sto = 10^10, temp = 300K (increased resolution =0.5)
-rhoscaling_v1: testing for rhoscaling ness. strain rate = 0.1.
+rhoscaling_v1: Testing for Rho Scaling. Normal Rho, No Scaling.
+rhoscaling_v2: Testing for Rho Scaling. Increased Rho (x1000), No Scaling.
+rhoscaling_v3: Testing for Rho Scaling. Increased Rho (x1000), Scaling (/1000).
     </Description>
     <Analysis>10</Analysis>
   </Header>
@@ -88,7 +90,7 @@ rhoscaling_v1: testing for rhoscaling ness. strain rate = 0.1.
   
   <Material Type="29" Name="Copper Dislocation-Based Model">
 
-    <rho>8.96e3</rho>	<!-- Scaled density -->
+    <rho>8.96</rho>	<!-- Scaled density if needed -->
     <E>120000</E>
     <alpha>60</alpha>
 	<!--nu>0.33</nu-->
@@ -112,7 +114,7 @@ rhoscaling_v1: testing for rhoscaling ness. strain rate = 0.1.
 	<alpstar>0.120</alpstar>
 	<betastar>0.006</betastar>
 	<k0>5.8</k0>
-	<rhoScale>1000</rhoScale>	<!-- add the amount of mass scaling here, where: rho above / rhoScale = actual rho -->
+	<!--rhoScale>1000</rhoScale-->	<!-- add the amount of mass scaling here, where: rho above / rhoScale = actual rho -->
 	
     <kCond>385</kCond>
     <Cp>386</Cp>
@@ -135,14 +137,14 @@ rhoscaling_v1: testing for rhoscaling ness. strain rate = 0.1.
   
     <Thermal>
 	<Conduction/>
-	<!--EnergyCoupling/-->
+	<EnergyCoupling/>
   </Thermal>
   
-  <CustomTasks>
+  <!--CustomTasks>
     <Schedule name='HistoryArchive'>
       <Parameter name='1'/>
     </Schedule>
-  </CustomTasks>
+  </CustomTasks-->
 
 
 </JANFEAInput>
