@@ -150,7 +150,8 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double s
 		// ...see data archiving for details on units
 		double rho;
 		if(rhoScaling)													// modiftf Vincent
-			rho=(theMaterials[mptr->MatID()]->rho)/rhoScale;		// modiftf Vincent
+			//rho=(theMaterials[mptr->MatID()]->rho)/rhoScale;		// modiftf Vincent
+			rho=(theMaterials[mptr->MatID()]->rho)/1e6;
 		else															// modiftf Vincent
 			rho=theMaterials[mptr->MatID()]->rho;				// Original Line
 		ndpt->fcond+=sh*1.0e-6*mptr->volume*rho*mptr->GetDispEnergy()/timestep;

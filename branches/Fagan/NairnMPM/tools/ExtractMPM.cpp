@@ -821,6 +821,7 @@ void VTKLegacy(ostream &os,unsigned char *ap,long fileLength,const char *mpmFile
 		{	OutputDouble((double *)(ap+posOffset),0,0,reverseFromInput,os,XPOS);
 		    OutputDouble((double *)(ap+posOffset),1,' ',reverseFromInput,os,YPOS);
 		    if(threeD) OutputDouble((double *)(ap+posOffset),2,' ',reverseFromInput,os,ZPOS);
+			else os << " 1"; //modiftf #archiveMM This option enables paraview for 2D data
 			os << endl;
 		}
 		ap+=recSize;
@@ -1244,6 +1245,8 @@ int CalcArchiveSize(int vernum)
 		if(mpmOrder[ARCH_History]&0x02) mpmRecSize+=sizeof(double);
 		if(mpmOrder[ARCH_History]&0x04) mpmRecSize+=sizeof(double);
 		if(mpmOrder[ARCH_History]&0x08) mpmRecSize+=sizeof(double);
+		if(mpmOrder[ARCH_History]&0x10) mpmRecSize+=sizeof(double); //modiftf for additional history variables
+		if(mpmOrder[ARCH_History]&0x20) mpmRecSize+=sizeof(double); //modiftf for additional history variables
 	}
     if(mpmOrder[ARCH_Concentration]=='Y')
 	{	concOffset=mpmRecSize;
