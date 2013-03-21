@@ -16,7 +16,7 @@ public class ElementStressBC extends GridDispBC
 	
 	// initialize
 	ElementStressBC(int elemNnum,int face,String orient,double str1,double str2,double str3)
-	{	super(elemNnum,face-1,FEA_ELEMSTRESSBC,str1,str2,str3);
+	{	super(elemNnum,face-1,FEA_ELEMSTRESSBC,str1,str2,str3,0.);
 	
 		// 0-based elemNum stored in node
 		// 0-based face number stored in dof

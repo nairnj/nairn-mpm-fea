@@ -337,7 +337,7 @@ public class ResultsDocument extends AbstractTableModel
 		{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
 			s.useLocale(Locale.US);
 			int dof,bcID;
-			double bcVal,bcArg,bcAngle;
+			double bcVal,bcArg,bcAngle=0.,bcAngle2=0.;
 			while(s.hasNextInt())
 			{	nodeNum=s.nextInt();
 				dof=s.nextInt();
@@ -347,14 +347,22 @@ public class ResultsDocument extends AbstractTableModel
 					bcVal=s.nextDouble();
 					bcArg=s.nextDouble();
 					bcAngle=0.;
+					System.out.print("angle1: "+s.hasNextDouble()+"\n");
+					
+					// keep reading as long as next item is not integer on the next line
+					// could be a problem if function value looks like an integer
 					if(!s.hasNextInt())
 					{	if(s.hasNextDouble())
-						{	bcAngle=s.nextDouble();
-							if(bcID==BoundaryCondition.FUNCTION_VALUE)
-								s.next();
-						}
+							bcAngle=s.nextDouble();
 					}
-					addGridBC(nodeNum,dof,bcID,bcVal*lengthScale,bcArg*timeScale,bcAngle);
+					if(!s.hasNextInt())
+					{	if(s.hasNextDouble())
+							bcAngle2=s.nextDouble();
+					}
+					if(bcID==BoundaryCondition.FUNCTION_VALUE && !s.hasNextInt())
+						s.next();
+					
+					addGridBC(nodeNum,dof,bcID,bcVal*lengthScale,bcArg*timeScale,bcAngle,bcAngle2);
 				}
 				else
 				{	bcVal=s.nextDouble();
@@ -371,7 +379,7 @@ public class ResultsDocument extends AbstractTableModel
 								bcAngle+=obj.getValue();
 						}
 					}
-					addGridBC(nodeNum,dof,bcID,bcVal*lengthScale,bcArg*timeScale,bcAngle);
+					addGridBC(nodeNum,dof,bcID,bcVal*lengthScale,bcArg*timeScale,bcAngle,bcAngle2);
 				}
 			}
 		}
@@ -879,9 +887,9 @@ public class ResultsDocument extends AbstractTableModel
 	}
 	
 	// add grid BC
-	public void addGridBC(int nodeNum,int dof,int bcID,double bcVal,double bcArg,double bcAngle)
+	public void addGridBC(int nodeNum,int dof,int bcID,double bcVal,double bcArg,double bcAngle,double bcAngle2)
 	{	
-		gridBCs.add(new GridDispBC(nodeNum,dof,bcID,bcVal,bcArg,bcAngle));
+		gridBCs.add(new GridDispBC(nodeNum,dof,bcID,bcVal,bcArg,bcAngle,bcAngle2));
 	}
 	
 	// add nodal load BC

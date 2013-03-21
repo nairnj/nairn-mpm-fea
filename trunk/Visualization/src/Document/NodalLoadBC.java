@@ -12,7 +12,7 @@ public class NodalLoadBC extends GridDispBC
 {
 	// initialize
 	NodalLoadBC(int nodeNum,int bcDof,double theVal,double theAngle)
-	{	super(nodeNum,bcDof,FEA_LOADBC,theVal,0.0,theAngle);
+	{	super(nodeNum,bcDof,FEA_LOADBC,theVal,0.0,theAngle,0.);
 	}
 
 	// draw the boundary conditino

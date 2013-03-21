@@ -10,9 +10,13 @@ import java.awt.geom.*;
 
 public class GridDispBC extends BoundaryCondition
 {
+	protected double angle2;
+	
 	// initialize
-	GridDispBC(int nodeNum,int bcDof,int theID,double theVal,double theArg,double theAngle)
+	GridDispBC(int nodeNum,int bcDof,int theID,double theVal,double theArg,double theAngle,double xyzAngle)
 	{	super(nodeNum,bcDof,theID,theVal,theArg,theAngle);
+		if(dof==SKEWXY_DIRECTION) dof = XY_SKEWED_INPUT;
+		angle2 = xyzAngle;
 	}
 
 	// draw the boundary conditino
@@ -44,11 +48,11 @@ public class GridDispBC extends BoundaryCondition
 		if(style==FEA_DISPBC)
 			rotationAngle=-angle;
 		else
-			rotationAngle = (dof==SKEWXY_DIRECTION) ? -angle : 0.;
+			rotationAngle = (dof==XY_SKEWED_INPUT) ? -angle : 0.;
 		AffineTransform transform=new AffineTransform();
 		switch(dof)
 		{   case X_DIRECTION:
-			case SKEWXY_DIRECTION:
+			case XY_SKEWED_INPUT:
 				if(Math.abs(rotationAngle)<=45.)
 				{	if(nd.x<pv.xyBounds.getCenterX())
 						transform.rotate(-Math.PI/2.);

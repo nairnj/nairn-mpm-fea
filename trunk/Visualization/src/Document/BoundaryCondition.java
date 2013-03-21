@@ -25,6 +25,7 @@ public class BoundaryCondition
 	static final int SKEWXY_DIRECTION=0;	
 	static final int X_DIRECTION=1;
 	static final int Y_DIRECTION=2;
+	static final int XY_SKEWED_INPUT=12;
 		
 	protected int node,dof,style;
 	protected double value,argument,angle;
