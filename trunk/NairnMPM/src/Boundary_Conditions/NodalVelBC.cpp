@@ -24,7 +24,9 @@ NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTi
 		: BoundaryCondition(setStyle,velocity,argTime)
 {
     nodeNum=num;
-    dir = dof==3 ? Z_DIRECTION : dof ;		// change 3 to Z_DIRECTION (4) bit location
+    dir = ConvertToDirectionBits(dof);      // change to x,y,z bits
+    angle1 = 0.;
+    angle2 = 0.;
 	
     // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
     nd[nodeNum]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
@@ -40,7 +42,7 @@ NodalVelBC::~NodalVelBC()
 // Reuse Rigid properties
 BoundaryCondition *NodalVelBC::SetRigidProperties(int num,int dof,int setStyle,double velocity)
 {	// set dir and direction
-    dir = dof==3 ? Z_DIRECTION : dof ;		// change 3 to Z_DIRECTION (4) bit location
+    dir = ConvertToDirectionBits(dof);      // change to x,y,z bits
     
     // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
     nd[num]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
@@ -55,14 +57,57 @@ BoundaryCondition *NodalVelBC::UnsetDirection(void)
 	return (BoundaryCondition *)GetNextObject();
 }
 
+// convert input dof to dir as bits x=1, y=2, z=4
+int NodalVelBC::ConvertToDirectionBits(int dof)
+{
+    switch(dof)
+    {   case X_DIRECTION:
+        case Y_DIRECTION:
+            return dof;
+        case Z_DIRECTION_INPUT:
+            return Z_DIRECTION;
+        case XY_SKEWED_INPUT:
+            return XY_SKEWED_DIRECTION;
+        case XZ_SKEWED_INPUT:
+            return XZ_SKEWED_DIRECTION;
+        case YZ_SKEWED_INPUT:
+            return YZ_SKEWED_DIRECTION;
+        case XYZ_SKEWED_INPUT:
+            return XYZ_SKEWED_DIRECTION;
+        default:
+            return 0;
+    }
+}
+
+// convert dir bits to input dof
+int NodalVelBC::ConvertToInputDof(void)
+{
+    int dof = dir&X_DIRECTION ? 1 : 0;
+    if(dir&Y_DIRECTION)
+    {   // will be 0 or 1
+        dof = dof==0 ? 2 : 12 ;
+    }
+    if(dir&Z_DIRECTION)
+    {   // will be 0, 1, 2, or 12
+        if(dof==0)
+            dof = 3;
+        else if(dof==1)
+            dof = 13;
+        else if(dof==2)
+            dof = 23;
+        else
+            dof = 123;
+    }
+    return dof;
+}
+
 #pragma mark NodalVelBC::Methods
 
 // print it
 BoundaryCondition *NodalVelBC::PrintBC(ostream &os)
 {
     char nline[200];
-	int outdir = dir==Z_DIRECTION ? 3 : dir ;
-	sprintf(nline,"%7d %2d %2d %15.7e %15.7e",nodeNum,outdir,style,value,ftime);
+	sprintf(nline,"%7d %3d %2d %15.7e %15.7e %7.2lf %7.2lf",nodeNum,ConvertToInputDof(),style,value,ftime,angle1,angle2);
     os << nline;
 	PrintFunction(os);
 	return (BoundaryCondition *)GetNextObject();

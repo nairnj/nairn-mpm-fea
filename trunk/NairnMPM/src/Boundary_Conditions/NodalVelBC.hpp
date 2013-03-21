@@ -41,6 +41,8 @@ class NodalVelBC : public BoundaryCondition
 		NodalVelBC *SetGhostVelBC(double);
 		NodalVelBC *InitFtot(double);
 		NodalVelBC *AddFtot(double);
+        int ConvertToDirectionBits(int);
+        int ConvertToInputDof(void);
 	
 		// class methods
 		static void GridMomentumConditions(int);
@@ -48,6 +50,7 @@ class NodalVelBC : public BoundaryCondition
 	
 	protected:
 		double currentValue;
+        double angle1,angle2;
 };
 
 // variables (changed in MPM time step)

@@ -18,12 +18,32 @@ class ROperation;
 // BC directions (x and y are used at bit locations too)
 #define X_DIRECTION 1
 #define Y_DIRECTION 2
+#define XY_SKEWED_DIRECTION 3
 #define Z_DIRECTION 4
+#define XZ_SKEWED_DIRECTION 5
+#define YZ_SKEWED_DIRECTION 6
+#define XYZ_SKEWED_DIRECTION 7
+
+// Higher bits
+#define TEMP_DIRECTION 8
+#define CONC_DIRECTION 16
+
+// non-bit based
+
+// for input only
+#define Z_DIRECTION_INPUT 3
+#define XY_SKEWED_INPUT 12
+#define XZ_SKEWED_INPUT 13
+#define YZ_SKEWED_INPUT 23
+#define XYZ_SKEWED_INPUT 123
+
+// Traction
 #define N_DIRECTION 11
 #define T1_DIRECTION 12
 #define T2_DIRECTION 13
-#define TEMP_DIRECTION 8
-#define CONC_DIRECTION 16
+
+
+// Flux conditions
 #define EXTERNAL_FLUX 1
 #define COUPLED_FLUX 2
 
