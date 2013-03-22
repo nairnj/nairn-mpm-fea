@@ -1,3 +1,21 @@
+! Subroutines
+
+! When rotate the specimen, this checks mesh corners to find limits of rotated space
+Sub CheckPoint #xpt,#ypt
+  #xtest=#cs*#xpt-#sn*#ypt
+  if #xtest<#xmin
+    #xmin=#xtest
+  else if #xtest>#xmax
+    #xmax=#xtest
+  endif
+  #ytest=#sn*#xpt+#cs*#ypt
+  if #ytest<#ymin
+    #ymin=#ytest
+  else if #ytest>#ymax
+    #ymax=#ytest
+  endif
+EndSub
+
 ! ********** Preamble Section **********
 Title "Low Strain Tensile Loading"Name "John Nairn"
 
@@ -18,12 +36,15 @@ EndHeader! ------------ Parameters ---------------
 
 ! material options: isotropic, isoplasticity, mgeos, bistable, iptrans, normtrans, ortho
 !   viscoelastic, hill, wood
-#matID="isoplasticity"
+#matID="isotropic"
 #angle=0					! material angle for anisotopic materials
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2, JohnsonCook
 #hardID="Nonlinear"
+
+! rotate sample to test off-grid loading (2D only)
+#rotate=0
 
 ! temperature option to test energy coupling
 StressFreeTemp 294
@@ -60,7 +81,7 @@ StressFreeTemp 294
 #thick=10			! thickness
 
 ! Load by strain (estimated for force and traction loads)
-#loading="rigid"	! Loading = "force", "traction", "rigid", "contact", "thermal"
+#loading="force"	! Loading = "force", "traction", "rigid", "contact", "thermal"
 #fixsides="no"		! "yes" or "no" for sides fix in y direction (2D) or y and z (3D)
 #strain=3	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
 
@@ -84,7 +105,7 @@ MPMMethod #update,#method
 ! convert to contact
 if #loading="contact"
   if #strain>0
-    Stop "'contact' mode only for compress (could try tension with imperfect interface contact)"
+    Stop "'contact' mode only for compression (could do tension with imperfect interface contact)"
   endif
   MultimaterialMode 0,enabled,maxgrad,10
   FrictionMM 0
@@ -109,6 +130,14 @@ endif
 #time=#tmult*#transit					! time to peak load in ms using tmult
 #disp=#strain*#length/100				! mm of displacement
 #disprate=1000*#disp/#time			    ! displacement rate mm/s using tmult
+
+if #rotate!=0
+  if #analysis="3D MPM"
+    #rotate=0
+  endif
+  #cs=cos(3.14159265*#rotate/180)
+  #sn=-sin(3.14159265*#rotate/180)
+endif
 ! Archiving
 if #fixsides="yes"
   Archive "Results/ConstrainedTension/"&#analysis&" "&#method&"/"&#loading&"/"&#matID
@@ -396,22 +425,34 @@ if #matID="wood"
 endif
 
 ! displacement functions for rigidd materials
-#rfxn = #disprate&"*(sign("&#time&"-t)-sign(t-"&((1+#hold)*#time)&"))"
+#rfxn = "*(sign("&#time&"-t)-sign(t-"&((1+#hold)*#time)&"))"
 
 ! add rigid materials and set damping
 #ke=0
 if #loading="rigid"
   Material "rigid","Loading Clamp","Rigid"
-    direction 1
-    SettingFunction #rfxn
+    if #rotate!=0
+      direction 3
+      SettingFunction (#cs*#disprate)&#rfxn
+      SettingFunction2 (#sn*#disprate)&#rfxn
+    else
+      direction 1
+      SettingFunction #disprate&#rfxn
+    endif
   Done
   Comment "Displacement rate = "&(#disprate/1000)&" m/sec"
   #ke = (1/6)*#rho*#disprate*#disprate*#length*#width*#thick/10^6
   Comment "Base kinetic energy = "&(#ke/10^6)&" J"
 else if #loading="contact"
   Material "rigid","Loading Clamp","Rigid"
-    direction 8
-    SettingFunction #rfxn
+    if #rotate!=0
+      direction 8
+      SettingFunctionx (#cs*#disprate)&#rfxn
+      SettingFunctiony (#sn*#disprate)&#rfxn
+    else
+      direction 8
+      SettingFunction #disprate&#rfxn
+    endif
   Done
 endif
 if #fbdamp>0
@@ -458,6 +499,21 @@ endif
 #zmin=-#sides*#cell
 #zmax=#thick+#sides*#cell
 
+if #rotate!=0
+  #xmin=0.5*(#gleft+#gright)
+  #xmax=#xmin
+  #ymin=0.5*(#gbot+#gtop)
+  #ymax=#ymin
+  GoSub CheckPoint #gleft,#gbot
+  GoSub CheckPoint #gright,#gbot
+  GoSub CheckPoint #gright,#gtop
+  GoSub CheckPoint #gleft,#gtop
+  #gleft=#cell*int(#xmin/#cell)
+  #gright=#cell*int(#xmax/#cell)
+  #gbot=#cell*int(#ymin/#cell)
+  #gtop=#cell*int(#ymax/#cell)
+endif
+
 ! ********** Grid and Material Points Section **********
 GridHoriz int((#gright-#gleft)/#cell+.5)
 GridVert int((#gtop-#gbot)/#cell+.5)
@@ -477,9 +533,18 @@ else
   GridRect #gleft,#gright,#gbot,#gtop
   
   ! material points
-  Region #matID,0,0,#thick,"angle",#angle,"temp",#startTemp
-    Rect 0,#length,0,#width
-  EndRegion
+  if #rotate!=0
+    Region #matID,0,0,#thick,"angle",#angle,"temp",#startTemp
+      PolyPt 0,0
+      PolyPt #cs*#length,#sn*#length
+      PolyPt #cs*#length-#sn*#width,#sn*#length+#cs*#width
+      PolyPt -#sn*#width,#cs*#width
+    EndRegion
+  else
+    Region #matID,0,0,#thick,"angle",#angle,"temp",#startTemp
+      Rect 0,#length,0,#width
+    EndRegion
+  endif
 endif
 
 ! ********** Boundary Condition Section **********
@@ -496,9 +561,18 @@ ifStr #loading="rigid"
       Box #length,#length+#cell,-#sides*#cell,#width+#sides*#cell,-#sides*#cell,#thick+#sides*#cell
     EndRegion
   else
-    Region "rigid",1,0,#thick
-      Rect #length,#length+#cell,-#sides*#cell,#width+#sides*#cell
-    EndRegion
+    if #rotate!=0
+      Region "rigid",1,0,#thick
+        PolyPt #cs*#length+#sn*#sides*#cell,#sn*#length-#cs*#sides*#cell
+        PolyPt #cs*(#length+#cell)+#sn*#sides*#cell,#sn*(#length+#cell)-#cs*#sides*#cell
+        PolyPt #cs*(#length+#cell)-#sn*(#width+#sides*#cell),#sn*(#length+#cell)+#cs*(#width+#sides*#cell)
+        PolyPt #cs*#length-#sn*(#width+#sides*#cell),#sn*#length+#cs*(#width+#sides*#cell)
+      EndRegion
+    else
+      Region "rigid",1,0,#thick
+        Rect #length,#length+#cell,-#sides*#cell,#width+#sides*#cell
+      EndRegion
+    endif
   endif
 else if #loading="contact"
   if #analysis="3D MPM"
@@ -506,9 +580,18 @@ else if #loading="contact"
       Box #length,#length+#cell,-#sides*#cell,#width+#sides*#cell,-#sides*#cell,#thick+#sides*#cell
     EndRegion
   else
-    Region "rigid",1,0,#thick
-      Rect #length,#length+#cell,-#sides*#cell,#width+#sides*#cell
-    EndRegion
+    if #rotate!=0
+      Region "rigid",1,0,#thick
+        PolyPt #cs*#length+#sn*#sides*#cell,#sn*#length-#cs*#sides*#cell
+        PolyPt #cs*(#length+#cell)+#sn*#sides*#cell,#sn*(#length+#cell)-#cs*#sides*#cell
+        PolyPt #cs*(#length+#cell)-#sn*(#width+#sides*#cell),#sn*(#length+#cell)+#cs*(#width+#sides*#cell)
+        PolyPt #cs*#length-#sn*(#width+#sides*#cell),#sn*#length+#cs*(#width+#sides*#cell)
+      EndRegion
+    else
+      Region "rigid",1,0,#thick
+        Rect #length,#length+#cell,-#sides*#cell,#width+#sides*#cell
+      EndRegion
+    endif
   endif
 else ifStr #loading="force"
   #forcerate=#stress*#width*#thick/#time		! total force rate on the end
@@ -523,6 +606,16 @@ else ifStr #loading="force"
       LoadType net
       Load x,function,(#forcerate)&#tpart,0,-1
     EndLoadBox
+  else if #rotate!=0
+    #x1=#cs*(#length-#cell/4)
+    #y1=#sn*(#length-#cell/4)
+    #x2=#cs*(#length-#cell/4)-#sn*#width
+    #y2=#sn*(#length-#cell/4)+#cs*#width
+    LoadLine #x1,#y1,#x2,#y2,#cell/4
+      LoadType net
+      Load x,function,(#cs*#forcerate)&#tpart,0,-1
+      Load y,function,(#sn*#forcerate)&#tpart,0,-1
+    EndLoadLine
   else
     LoadRect #length-#cell/2,#length,0,#width
       LoadType net
@@ -538,12 +631,16 @@ else ifStr #loading="traction"
   endif
   if #analysis="3D MPM"
     LoadBox #length-#cell/2,0,0,#length,#width,#thick
-      Traction x,4,function,(#stress/#time)&#tpart,0,-1
+      Traction x,2,function,(#stress/#time)&#tpart,0,-1
     EndLoadBox
   else
-    LoadRect #length-#cell/2,#length,0,#width
-      Traction x,4,function,(#stress/#time)&#tpart,0,-1
-    EndLoadRect
+    if #rotate!=0
+      Stop "Traction loads cannot be used with rotated specimens (yet)"
+    else
+      LoadRect #length-#cell/2,#length,0,#width
+        Traction x,2,function,(#stress/#time)&#tpart,0,-1
+      EndLoadRect
+    endif
   endif
 else ifStr #loading="thermal"
   ThermalRamp #deltaT,#time
@@ -555,10 +652,20 @@ if #analysis="3D MPM"
     Velocity x,constant,0
   EndMoveBox
 else
-  #midpt=-#cell/2
-  MoveLine #midpt,-#sides*#cell,#midpt,#width+#sides*#cell,#cell
-    Velocity x,constant,0
-  EndMoveLine
+  if #rotate!=0
+    #midpt=-#cs*#cell/2+#sn*#sides*#cell
+    #y1=-#sn*#cell/2-#cs*#sides*#cell
+    #midpt2=-#cs*#cell/2-#sn*(#width+#sides*#cell)
+    #y2=-#sn*#cell/2+#cs*(#width+#sides*#cell)
+    MoveLine #midpt,#y1,#midpt2,#y2,#cell
+      Velocity skewxy,constant,0,0,#rotate
+    EndMoveLine
+  else
+    #midpt=-#cell/2
+    MoveLine #midpt,-#sides*#cell,#midpt,#width+#sides*#cell,#cell
+      Velocity x,constant,0
+    EndMoveLine
+  endif
 endif
 
 ! Fixed sides
@@ -578,14 +685,18 @@ if #fixsides="yes"
       Velocity z,constant,0
     EndMoveBox
   else
-    #midpt=-#cell/2
-    MoveLine #gleft,#midpt,#gright,#midpt,#cell
-      Velocity y,constant,0
-    EndMoveLine
-    #midpt=#width+#cell/2
-    MoveLine #gleft,#midpt,#gright,#midpt,#cell
-      Velocity y,constant,0
-    EndMoveLine
+    if #rotate!=0
+      Stop "Fixed sides cannot be used with rotated specimens (yet)"
+    else
+      #midpt=-#cell/2
+      MoveLine #gleft,#midpt,#gright,#midpt,#cell
+        Velocity y,constant,0
+      EndMoveLine
+      #midpt=#width+#cell/2
+      MoveLine #gleft,#midpt,#gright,#midpt,#cell
+        Velocity y,constant,0
+      EndMoveLine
+    endif
   endif
 endif
 

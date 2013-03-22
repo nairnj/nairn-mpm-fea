@@ -665,6 +665,7 @@
 			time CDATA #IMPLIED
 			ftime CDATA #IMPLIED
 			angle CDATA #IMPLIED
+			angle2 CDATA #IMPLIED
 			function CDATA #IMPLIED>
 
 <!ELEMENT	ConcBC EMPTY>
@@ -700,7 +701,8 @@
 			dof CDATA #REQUIRED
 			style (1|2|3|4|6) "1"
 			time CDATA #IMPLIED
-			angle CDATA #IMPLIED>
+			angle CDATA #IMPLIED
+			angle2 CDATA #IMPLIED>
 
 <!ELEMENT	load (#PCDATA)>
 <!ATTLIST	load

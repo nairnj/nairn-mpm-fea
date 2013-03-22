@@ -25,7 +25,7 @@ class NodalVelBC : public BoundaryCondition
 		Vector *pk;
         
         // constructors and destructors
-        NodalVelBC(int,int,int,double,double);
+        NodalVelBC(int,int,int,double,double,double,double);
 		virtual ~NodalVelBC();
 		virtual BoundaryCondition *UnsetDirection(void);
 		virtual BoundaryCondition *SetRigidProperties(int,int,int,double);
@@ -51,6 +51,7 @@ class NodalVelBC : public BoundaryCondition
 	protected:
 		double currentValue;
         double angle1,angle2;
+		Vector norm;
 };
 
 // variables (changed in MPM time step)

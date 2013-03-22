@@ -497,7 +497,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,BCSHAPE,ANY_DIM);
 		if(!theShape->RequiredBlock(GRIDBCHEADER))
 			ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
-        double dispvel=0.0,ftime=0.0;
+        double dispvel=0.0,ftime=0.0,angle=0.,angle2=0.;
 		int dof=0,style=CONSTANT_VALUE;
 		char *function=NULL;
         numAttr=attrs.getLength();
@@ -512,6 +512,10 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%lf",&ftime);
             else if(strcmp(aName,"style")==0)
                 sscanf(value,"%d",&style);
+            else if(strcmp(aName,"angle")==0)
+                sscanf(value,"%lf",&angle);
+            else if(strcmp(aName,"angle2")==0)
+                sscanf(value,"%lf",&angle2);
             else if(strcmp(aName,"function")==0)
 			{	if(function!=NULL) delete [] function;
 				function=new char[strlen(value)+1];
@@ -521,16 +525,28 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
             delete [] value;
         }
 		if(fmobj->IsThreeD())
-		{	if(dof<1 || dof>3)
-				throw SAXException("'dir' in DisBC element must be 1, 2, or 3 for 3D analyses.");
+		{	if(dof!=1 && dof!=2 && dof!=3 && dof!=12 && dof!=13 && dof!=23 && dof!=123)
+				throw SAXException("'dir' in DisBC element must be 1, 2, 3, 12, 13, 23, or 123 for 3D analyses.");
 		}
-        else if(dof>2 || dof<0)
-            throw SAXException("'dir' in DisBC element must be 0, 1, or 2 for 2D analyses.");
+        else if(dof!=1 && dof!=2 && dof!=12)
+            throw SAXException("'dir' in DisBC element must be 1, 2, or 12 for 2D analyses.");
+		
+		// convert some to single axis
+		if(dof>10)
+		{	if(DbleEqual(angle,0.))
+			{	if(dof==12 || dof==13)
+					dof=1;
+				else if(dof==23)
+					dof=2;
+				else if(dof==123)
+					dof=3;
+			}
+		}
         
         // check all nodes
 		theShape->resetNodeEnumerator();
 		while((i=theShape->nextNode()))
-		{	NodalVelBC *newVelBC=new NodalVelBC(nd[i]->num,dof,style,dispvel,ftime);
+		{	NodalVelBC *newVelBC=new NodalVelBC(nd[i]->num,dof,style,dispvel,ftime,angle,angle2);
 			newVelBC->SetFunction(function);
 			velocityBCs->AddObject(newVelBC);
 		}
@@ -1183,7 +1199,7 @@ void MPMReadHandler::CreateAxisymetricBCs()
 	int node = (int)ntest + 1;
 	while(node<nnodes)
 	{	// create zero r velocity starting at time 0
-		NodalVelBC *newVelBC=new NodalVelBC(node,X_DIRECTION,CONSTANT_VALUE,0.,0.);
+		NodalVelBC *newVelBC=new NodalVelBC(node,X_DIRECTION,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
 		
 		// add to linked list
 		if(lastVelocityBC == NULL)

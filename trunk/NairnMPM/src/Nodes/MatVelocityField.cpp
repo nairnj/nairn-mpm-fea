@@ -141,56 +141,35 @@ void MatVelocityField::SetVelocity(Vector *vel) { vk = *vel; }
 Vector MatVelocityField::GetVelocity(void) { return vk; }
 Vector *MatVelocityField::GetVelocityPtr(void) { return &vk; }
 
-// moment and velocity zero for on component only
-void MatVelocityField::SetMomentVelocityDirection(int dir)
-{   if(dir==X_DIRECTION)
-    {	pk.x = 0.;
-        vk.x = 0.;
-    }
-    else if(dir==Y_DIRECTION)
-    {	pk.y = 0.;
-        vk.y = 0.;
-    }
-    else
-    {	pk.z = 0.;
-        vk.z = 0.;
-    }
+// moment and velocity zero for direction of velocity
+// Let p = (pn.norm) norm + (pt.tang) tang (or same for v)
+// Here we want to remove pn.norm using p - (pn.norm) norm
+void MatVelocityField::SetMomentVelocityDirection(Vector *norm)
+{	double dotn = DotVectors(&pk, norm);
+	AddScaledVector(&pk, norm, -dotn);
+	dotn = DotVectors(&vk, norm);
+	AddScaledVector(&vk, norm, -dotn);
 }
 
 // add moment and velocity for one component only
-void MatVelocityField::AddMomentVelocityDirection(int dir,double vel)
-{   if(dir==X_DIRECTION)
-    {	pk.x += mass*vel;
-        vk.x += vel;
-    }
-    else if(dir==Y_DIRECTION)
-    {	pk.y += mass*vel;
-        vk.y += vel;
-    }
-    else
-    {	pk.z += mass*vel;
-        vk.z += vel;
-    }
+void MatVelocityField::AddMomentVelocityDirection(Vector *norm,double vel)
+{	AddScaledVector(&pk, norm, mass*vel);
+	AddScaledVector(&vk, norm, vel);
 }
 
-// set component of Ftot to -p/dt (used by boundary conditions)
-void MatVelocityField::SetFtotDirection(int dir,double deltime)
-{   if(dir==X_DIRECTION)
-        ftot.x = -pk.x/deltime;
-    else if(dir==Y_DIRECTION)
-        ftot.y = -pk.y/deltime;
-    else
-        ftot.z = -pk.z/deltime;
+// Set component of Ftot to -p/dt in velocity BC direction (used by boundary conditions)
+// Ftot = (Ftot.norm) norm + (Ftot.tang) tang, but not we want
+// Ftotnew = -(pk.norm)/deltime norm + (Ftot.tang) tang
+// Ftotnew = Ftot - (Ftot.norm) norm -(pk.norm)/deltime norm
+void MatVelocityField::SetFtotDirection(Vector *norm,double deltime)
+{   double dotf = DotVectors(&ftot, norm);
+	double dotp = DotVectors(&pk, norm);
+	AddScaledVector(&ftot, norm, -dotf - dotp/deltime);
 }
 
 // add one component of force such that updated momentum will be mass*velocity
-void MatVelocityField::AddFtotDirection(int dir,double deltime,double vel)
-{   if(dir==X_DIRECTION)
-        ftot.x += mass*vel/deltime;
-    else if(dir==Y_DIRECTION)
-        ftot.y += mass*vel/deltime;
-    else
-        ftot.z += mass*vel/deltime;
+void MatVelocityField::AddFtotDirection(Vector *norm,double deltime,double vel)
+{   AddScaledVector(&ftot, norm, mass*vel/deltime);
 }
 
 // total force

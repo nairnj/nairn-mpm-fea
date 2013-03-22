@@ -54,10 +54,10 @@ class MatVelocityField
         void SetVelocity(Vector *);
         Vector GetVelocity(void);
         Vector *GetVelocityPtr(void);
-        void SetMomentVelocityDirection(int);
-        void AddMomentVelocityDirection(int,double);
-        void SetFtotDirection(int,double);
-        void AddFtotDirection(int,double,double);
+        void SetMomentVelocityDirection(Vector *);
+        void AddMomentVelocityDirection(Vector *,double);
+        void SetFtotDirection(Vector *,double);
+        void AddFtotDirection(Vector *,double,double);
         Vector GetFtot(void);
         Vector *GetFtotPtr(void);
 	

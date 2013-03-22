@@ -20,13 +20,13 @@ NodalVelBC *reuseRigidVelocityBC=NULL;
 #pragma mark NodalVelBC::Constructors and Destructors
 
 // MPM Constructors
-NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTime)
+NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTime,double ang1,double ang2)
 		: BoundaryCondition(setStyle,velocity,argTime)
 {
     nodeNum=num;
+    angle1 = ang1;
+    angle2 = ang2;
     dir = ConvertToDirectionBits(dof);      // change to x,y,z bits
-    angle1 = 0.;
-    angle2 = 0.;
 	
     // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
     nd[nodeNum]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
@@ -62,17 +62,27 @@ int NodalVelBC::ConvertToDirectionBits(int dof)
 {
     switch(dof)
     {   case X_DIRECTION:
+			norm = MakeVector(1.,0.,0.);
+            return dof;
         case Y_DIRECTION:
+			norm = MakeVector(0.,1.,0.);
             return dof;
         case Z_DIRECTION_INPUT:
+			norm = MakeVector(0.,0.,1.);
             return Z_DIRECTION;
         case XY_SKEWED_INPUT:
+			norm = MakeVector(cos(PI_CONSTANT*angle1/180.),-sin(PI_CONSTANT*angle1/180.),0.);
             return XY_SKEWED_DIRECTION;
         case XZ_SKEWED_INPUT:
+			norm = MakeVector(cos(PI_CONSTANT*angle1/180.),0,-sin(PI_CONSTANT*angle1/180.));
             return XZ_SKEWED_DIRECTION;
         case YZ_SKEWED_INPUT:
+			norm = MakeVector(0.,cos(PI_CONSTANT*angle1/180.),-sin(PI_CONSTANT*angle1/180.));
             return YZ_SKEWED_DIRECTION;
         case XYZ_SKEWED_INPUT:
+			norm = MakeVector(cos(PI_CONSTANT*angle2/180.)*sin(PI_CONSTANT*angle1/180.),
+								sin(PI_CONSTANT*angle2/180.)*sin(PI_CONSTANT*angle1/180.),
+									cos(PI_CONSTANT*angle1/180.));
             return XYZ_SKEWED_DIRECTION;
         default:
             return 0;
@@ -160,7 +170,7 @@ NodalVelBC *NodalVelBC::PasteNodalVelocities(NodalPoint *nd)
 NodalVelBC *NodalVelBC::ZeroVelBC(double mstime)
 {	// set if has been activated
 	int i = GetNodeNum(mstime);
-	if(i>0) nd[i]->SetMomVel(dir);
+	if(i>0) nd[i]->SetMomVel(&norm);
     return (NodalVelBC *)GetNextObject();
 }
 
@@ -170,7 +180,7 @@ NodalVelBC *NodalVelBC::AddVelBC(double mstime)
 	int i = GetNodeNum(mstime);
 	if(i>0)
 	{	currentValue = BCValue(mstime);
-		nd[i]->AddMomVel(dir,currentValue);
+		nd[i]->AddMomVel(&norm,currentValue);
 	}
     return (NodalVelBC *)GetNextObject();
 }
@@ -202,7 +212,7 @@ NodalVelBC *NodalVelBC::SetGhostVelBC(double mstime)
 NodalVelBC *NodalVelBC::InitFtot(double mstime)
 {	// set if has been activated
 	int i = GetNodeNum(mstime);
-	if(i>0) nd[i]->SetFtot(dir,timestep);
+	if(i>0) nd[i]->SetFtot(&norm,timestep);
 	return (NodalVelBC *)GetNextObject();
 }
 
@@ -212,7 +222,7 @@ NodalVelBC *NodalVelBC::AddFtot(double mstime)
 	int i = GetNodeNum(mstime);
 	if(i>0)
 	{	// use currentValue set earlier in this step
-		nd[i]->AddFtot(dir,timestep,currentValue);
+		nd[i]->AddFtot(&norm,timestep,currentValue);
 	}
 	return (NodalVelBC *)GetNextObject();
 }

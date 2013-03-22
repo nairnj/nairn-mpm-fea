@@ -768,7 +768,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,FIXEDNODES,ANY_DIM);
     	int node=0;
 		int dof=0,style=CONSTANT_VALUE;
-        double ftime=0.;
+        double ftime=0.,angle=0.,angle2=0.;
     	numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   value=XMLString::transcode(attrs.getValue(i));
@@ -781,18 +781,22 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             	sscanf(value,"%d",&style);
             else if(strcmp(aName,"time")==0)
                 sscanf(value,"%lf",&ftime);
+            else if(strcmp(aName,"angle")==0)
+                sscanf(value,"%lf",&angle);
+            else if(strcmp(aName,"angle2")==0)
+                sscanf(value,"%lf",&angle2);
             delete [] aName;
             delete [] value;
         }
 		if(fmobj->IsThreeD())
-		{	if(dof<1 || dof>3)
-				throw SAXException("'dof' in fix element must be 1, 2, or 3 for 3D analyses.");
+		{	if(dof!=1 && dof!=2 && dof!=3 && dof!=12 && dof!=13 && dof!=23 && dof!=123)
+				throw SAXException("'dir' in fix element must be 1, 2, 3, 12, 13, 23, or 123 for 3D analyses.");
 		}
-        else if(dof>2 || dof<0)
-            throw SAXException("'dir' in fix element must be 0, 1, or 2 for 2D analyses.");
+        else if(dof!=1 && dof!=2 && dof!=12)
+            throw SAXException("'dir' in fix element must be 1, 2, or 12 for 2D analyses.");
         
         // create object and get input
-        NodalVelBC *newVelBC=new NodalVelBC(node,dof,style,(double)0.,ftime);
+        NodalVelBC *newVelBC=new NodalVelBC(node,dof,style,(double)0.,ftime,angle,angle2);
 		velocityBCs->AddObject(newVelBC);
 		
 		if(style!=FUNCTION_VALUE)

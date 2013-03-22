@@ -1125,42 +1125,42 @@ void CrackVelocityFieldMulti::CalcVelocityForStrainUpdate(void)
 #pragma mark BOUNDARY CONDITIONS
 
 // zero one component of moment and velocity
-void CrackVelocityFieldMulti::SetMomVel(int dir)
+void CrackVelocityFieldMulti::SetMomVel(Vector *norm)
 {	int i;
     for(i=0;i<maxMaterialFields;i++)
     {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-        {	mvf[i]->SetMomentVelocityDirection(dir);
+        {	mvf[i]->SetMomentVelocityDirection(norm);
         }
     }
 }
 
 // add one component momentum and velocity from BCs
-void CrackVelocityFieldMulti::AddMomVel(int dir,double vel)
+void CrackVelocityFieldMulti::AddMomVel(Vector *norm,double vel)
 {	int i;
     for(i=0;i<maxMaterialFields;i++)
     {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-        {	mvf[i]->AddMomentVelocityDirection(dir,vel);
+        {	mvf[i]->AddMomentVelocityDirection(norm,vel);
         }
     }
 }
 
 // set one component of force to -p(interpolated)/time such that updated momentum
 //    of pk.i + deltime*ftot.i will be zero
-void CrackVelocityFieldMulti::SetFtot(int dir,double deltime)
+void CrackVelocityFieldMulti::SetFtot(Vector *norm,double deltime)
 {	int i;
     for(i=0;i<maxMaterialFields;i++)
     {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-        {	mvf[i]->SetFtotDirection(dir,deltime);
+        {	mvf[i]->SetFtotDirection(norm,deltime);
         }
     }
 }
 
 // add one component of force such that updated momentum will be mass*velocity
-void CrackVelocityFieldMulti::AddFtot(int dir,double deltime,double vel)
+void CrackVelocityFieldMulti::AddFtot(Vector *norm,double deltime,double vel)
 {	int i;
     for(i=0;i<maxMaterialFields;i++)
     {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-        {	mvf[i]->AddFtotDirection(dir,deltime,vel);
+        {	mvf[i]->AddFtotDirection(norm,deltime,vel);
         }
     }
 }

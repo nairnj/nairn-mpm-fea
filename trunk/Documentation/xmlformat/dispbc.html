@@ -163,7 +163,7 @@ calculations <code>'min'</code> and <code>'max'</code> will be limits of useable
 
 <dl>
 <dt>dir</dt>
-<dd>Determines if the <code>x</code> direction (<code>dir=1</code>), the <code>y</code> direction (<code>dir=2</code>), the <code>z</code> direction (<code>dir=3</code>), the <code>R</code> direction when axisymetric (<code>dir=1</code>), or the <code>Z</code> direction when axisymmetric (<code>dir=2</code>) will have the specified velocity.
+<dd>Determines if the <code>x</code> direction (<code>dir=1</code>), the <code>y</code> direction (<code>dir=2</code>), the <code>z</code> direction (<code>dir=3</code>), the <code>R</code> direction when axisymmetric (<code>dir=1</code>), or the <code>Z</code> direction when axisymmetric (<code>dir=2</code>) will have the specified velocity. You can also set velocity in a direction that is not along an axis. For details see help on <a href="#skewed">skewed velocity conditions</a>. 
 </dd>
 
 <dt>vel</dt>
@@ -181,6 +181,29 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 </dd>
 
 </dl>
+
+<a name="skewed"></a><h2>Skewed Velocity Conditions</h2>
+
+<p>Setting the velocity along two direction is not the same as setting the velocity in a direction of that resultant vector. To set a single velocity in a direction that is not along a cartesian axes, you can use:</p>
+
+<pre>
+   &lt;DisBC dir='12' vel='0' style='1' time='0.0' angle-'45' angle2='15'/&gt;
+</pre>
+
+<p>where</p>
+
+<dl>
+<dt>dir</dt>
+<dd>Defines two or three axes by combing <code>dir</code> options from above. It can only be <code>12</code> in 2D or axisymmetric, but can be <code>12</code>, <code>13</code>, <code>23</code>, or <code>123</code> in 3D. The numbers define the two axes in the plane of the direction or the combination <code>123</code> means velocity in any arbitrary polar direction.</dd>
+
+<dt>angle</dt>
+<dd>The normal vector for the velocity direction is rotated clockwise by <code>angle</code> degrees from the first axis in a skew pair. In other words, <code>dir=12</code> applies velocity in the direction (cos(angle), -sin(angle), 0), <code>dir=13</code> applies velocity in the direction (cos(angle), 0, -sin(angle)), and <code>dir=23</code> applies velocity in the direction (0, cos(angle), -sin(angle)). For <code>dir=123</code>, <code>angle</code> is a polar angle as explained next in angle2.</dd>
+
+<dt>angle2</dt>
+<dd>This angle is only used when <code>dir=123</code> and it is the azimuthal angle. The normal vector will be (cos(angle2) sin(angle), sin(angle2) sin(angle), cos(angle)).</dd>
+</dl>
+
+
 
 <a name="style"></a><h2>Boundary Conditions Styles</h2>
 

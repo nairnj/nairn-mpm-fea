@@ -1277,62 +1277,62 @@ void NodalPoint::Describe(void)
 #pragma mark BOUNDARY CONDITION METHODS
 
 // set one component of velocity and momentum to zero
-void NodalPoint::SetMomVel(int dir)
+void NodalPoint::SetMomVel(Vector *norm)
 {
 #ifdef _BC_CRACK_SIDE_ONLY_
 	// just set if on same side of crack
-	cvf[0]->SetMomVel(dir);
+	cvf[0]->SetMomVel(norm);
 #else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
-            cvf[i]->SetMomVel(dir);
+            cvf[i]->SetMomVel(norm);
 	}
 #endif
 }
 
 // Add one component of velocity and momentum at a node (assumes mass already set)
-void NodalPoint::AddMomVel(int dir,double vel)
+void NodalPoint::AddMomVel(Vector *norm,double vel)
 {	
 #ifdef _BC_CRACK_SIDE_ONLY_
 	// just set if on same side of crack
-	cvf[0]->AddMomVel(dir,vel);
+	cvf[0]->AddMomVel(norm,vel);
 #else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
-            cvf[i]->AddMomVel(dir,vel);
+            cvf[i]->AddMomVel(norm,vel);
 	}
 #endif
 }
 
 // set one component of force to -p(interpolated)/time such that updated momentum
 //    of pk.i + deltime*ftot.i will be zero
-void NodalPoint::SetFtot(int dir,double deltime)
+void NodalPoint::SetFtot(Vector *norm,double deltime)
 {	
 #ifdef _BC_CRACK_SIDE_ONLY_
 	// just on same side of the crack
-	cvf[0]->SetFtot(dir,deltime);
+	cvf[0]->SetFtot(norm,deltime);
 #else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
-            cvf[i]->SetFtot(dir,deltime);
+            cvf[i]->SetFtot(norm,deltime);
 	}
 #endif
 }
 
 // set one component of force such that updated momentum will be mass*velocity
-void NodalPoint::AddFtot(int dir,double deltime,double vel)
+void NodalPoint::AddFtot(Vector *norm,double deltime,double vel)
 {	
 #ifdef _BC_CRACK_SIDE_ONLY_
 	// just on same side of the crack
-	cvf[0]->AddFtot(dir,deltime,vel);
+	cvf[0]->AddFtot(norm,deltime,vel);
 #else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
-            cvf[i]->AddFtot(dir,deltime,vel);
+            cvf[i]->AddFtot(norm,deltime,vel);
 	}
 #endif
 }

@@ -116,10 +116,10 @@ class NodalPoint : public LinkedObject
 		void MaterialContactOnNode(bool,double);
         void MaterialInterfaceForce(MaterialInterfaceNode *);
 		void GetVolumeGradient(short,int,Vector *,double);
-        void SetMomVel(int);
-        void AddMomVel(int,double);
-        void SetFtot(int,double);
-        void AddFtot(int,double,double);
+        void SetMomVel(Vector *);
+        void AddMomVel(Vector *,double);
+        void SetFtot(Vector *,double);
+        void AddFtot(Vector *,double,double);
 		void SetFixedDirection(int);
 		void UnsetFixedDirection(int);
 		void CalcTotalMassAndCount(void);
