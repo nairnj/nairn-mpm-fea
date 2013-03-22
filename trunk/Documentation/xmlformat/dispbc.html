@@ -57,9 +57,10 @@ can also control temperature and concentration.</p>
 to those nodes. The other way is to <a href="#sec1">explicitly</a> list each grid point.
 This method is shown in the <code>&lt;DisplacementBCs&gt;</code> section above; it is limited to
 velocity conditions, and is usually generated with other software. You can use both shape commands
-and a <code>&lt;DisplacementBCs&gt;</code> section in the same input file.
-You can apply more than one condition to a node and the resulting boundary condition will be a
-superposition of all assigned conditions.
+and a <code>&lt;DisplacementBCs&gt;</code> section in the same input file.</p>
+
+<p>You can apply more than one condition to a node and the resulting boundary condition will be a
+superposition of all assigned conditions. When applying multply velocity conditions, the combinations must either be in the same direction or in orthogonal directions. For example, when using <a href="#skewed">skewed boundary conditions</a>, you should not apply some in the x direction and others in the skewed x-y or x-z direction, because these two directions are not orthongal. You could apply some in x and some in y direction or some in two different skewed directions whose normals are othogonal.
 </p>
 
 
@@ -305,7 +306,7 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 </dd>
 
 <dt>dof</dt>
-<dd>Determines if the <code>x</code> direction (<code>dof=1</code>), the <code>y</code> direction (<code>dof=2</code>), the <code>z</code> direction (<code>dof=3</code>), the <code>R</code> direction when axisymetric (<code>dir=1</code>), or the <code>Z</code> direction when axisymmetric (<code>dir=2</code>) will have the specified velocity.
+<dd>Determines if the <code>x</code> direction (<code>dof=1</code>), the <code>y</code> direction (<code>dof=2</code>), the <code>z</code> direction (<code>dof=3</code>), the <code>R</code> direction when axisymetric (<code>dir=1</code>), or the <code>Z</code> direction when axisymmetric (<code>dir=2</code>) will have the specified velocity. You can also set velocity in a direction that is not along an axis. For details see help on <a href="#skewed">skewed velocity conditions</a>, which modifies the <code>dof</code> attriute (instead of <code>dir</code>) and adds <code>angle</code> and <code>angle2</code> attibutes to define the skew angle.
 </dd>
 
 <dt>style</dt>
