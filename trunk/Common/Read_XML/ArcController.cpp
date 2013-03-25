@@ -44,14 +44,24 @@ bool ArcController::ContainsPoint(Vector& v)
 
 	// convert to polar coordinates
 	double polarR=sqrt(deltaX*deltaX+deltaY*deltaY);
-	if(polarR>0){
-		sita=acos(deltaX/polarR);
-		if(deltaY<0)  sita=2.0*PI_CONSTANT-sita;
+	if(polarR>0)
+	{	sita=acos(deltaX/polarR);			// 0 to PI
+		if(deltaY<0) sita=2.0*PI_CONSTANT-sita;
 	}
 	
-	if(a==b) R=a;
-	else R=a*b/sqrt(a*a*sin(sita)*sin(sita)+b*b*cos(sita)*cos(sita));
+	if(a==b)
+		R=a;
+	else
+		R=a*b/sqrt(a*a*sin(sita)*sin(sita)+b*b*cos(sita)*cos(sita));
 	
+	// get positive angle only (0 to 2PI)
+	if((sita>=startAngle) && (sita<=endAngle) && (fabs(polarR-R)<=tolerance)) return TRUE;
+	
+	// does arc have negative angles
+	if(startAngle>=0. || deltaY>=0.) return FALSE;
+	
+	// check the negative angle
+	sita -= 2.0*PI_CONSTANT;
 	if((sita>=startAngle) && (sita<=endAngle) && (fabs(polarR-R)<=tolerance)) return TRUE;
 
     return FALSE;

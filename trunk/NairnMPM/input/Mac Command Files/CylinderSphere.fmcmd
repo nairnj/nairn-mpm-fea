@@ -8,6 +8,7 @@
 !    sr = -Po (1 - ri^3/r^3)/(1 - ri^3/r0^3)Ê
 !
 ! This file is in development pending best way to handle boundary conditions
+
 Title "Presurized Cylinder or Sphere"
 Name "John Nairn"
 
@@ -25,19 +26,23 @@ EndHeader
 #outerradius=20         ! outer radius mm (mult of cell)
 #innerradius=10         ! inner radius in mm (mult of cell)
 #thickness=1            ! Thickness in mm (cylinder only)
-#border=4				! distance around the edges (mult of cell)
+#border=10				! distance around the edges (mult of cell)
 
 #ccwAngle=90			! angle in ccw direction (max 90 if axisymmetric or 180 if not)
 #cwAngle=0				! angle in cw direction (max 90 if axisymmetric or 180 if not)
 
 ! Pick material: "isotropic","neohookean"
-#matname="isotropic"
+#matname="neohookean"
 
 ! mass stress (negative of max pressure)
-#pmax=1
+#pmax=500
+
+! load by "force" or "traction"
+#load="traction"
 
 Analysis #type
-MPMMethod USF,GIMP
+MPMMethod USF,CPDI
+LeaveLimit 1
 
 if #type="Place Strain MPM"
   Archive "Results/Cyinder/cylinder"
@@ -83,12 +88,11 @@ else
   Comment "srr = "&(#pmax/(1-#innerradius^3/#outerradius^3))&"*(1-"&(#innerradius^3)&"/r^3)"
 endif
 
-#loadTime=.5
-#maxTime=4*#loadTime
-#prate=#pmax/#loadTime
+#maxTime=.25
+#prate=#pmax/#maxTime
 
 ArchiveTime #maxTime/20
-MaximumTime #maxTime
+TimeStep 1e6,#maxTime,.1
 
 GlobalArchive "sxx"
 GlobalArchive "sxy"
@@ -96,7 +100,7 @@ GlobalArchive "syy"
 GlobalArchive "alpha"
 GlobalArchiveTIme #maxTime/100
 
-FeedbackDamping 10000000
+!FeedbackDamping 10
 
 ! ********** Grid and Material Points Section **********
 #xmax=#outerradius+#border
@@ -147,50 +151,73 @@ Hole
   PolyPt #xmin,#ymin
   PolyPt #outerradius*cos(#cwAngle*#degtorad),#ymin
   PolyPt #outerradius*cos(#cwAngle*#degtorad),-#outerradius*sin(#cwAngle*#degtorad)
-  Oval -#innerradius,#innerradius,-#innerradius,#innerradius
+  if #innerradius>0
+    Oval -#innerradius,#innerradius,-#innerradius,#innerradius
+  endif
 EndRegion
 Region #matname,0,0,#thickness
   Oval -#outerradius,#outerradius,-#outerradius,#outerradius
 EndRegion
 
 ! ********** Optional Calculations Section **********
-#ns=12
-#x[1]=2
-#x[2]=2
-#x[3]=1
-#x[4]=.5
-#x[5]=1
-#x[6]=.5
-#x[7]=.5
-#x[8]=.5
-#x[9]=.5
-#x[10]=.5
-#x[11]=.5
-#x[12]=.5
+if #load="force"
+  if #type="Axisymmetric MPM"
+    #pp=(#prate*#cell/2)&"*D"
+  else
+    #pp=#prate*#cell*#thickness/2
+  endif
+  LoadArc -#outerradius,-#outerradius,#outerradius,#outerradius,-#cwAngle,#ccwAngle,#cell/2
+    Load x,function,#pp&"*t*x/sqrt(x^2+y^2)"
+    Load y,function,#pp&"*t*y/sqrt(x^2+y^2)"
+  EndLoadArc
 
-#xloc=0
-#yloc=0
-#yn=#outerradius-#cell/4
-#xn=#outerradius-#cell/4
-Repeat "#i",1,#ns
-  #xend=#xloc+#x[#i]*#cell
-  LoadLine #xloc,#yn,#xend,#yn
-    Traction "y",3,"linear",#prate
-    Traction "y",3,"linear",-#prate,#loadTime
-  EndLoadLine
-  #xloc=#xend
-  #ind=#ns+1-#i
-  #yn-=#x[#ind]*#cell
+else if #load="traction"
+  if #cell!=2
+    Stop "tractions can only be used for 2 mm cells"
+  endif
+  if #ccwAngle>90
+    Stop "tractions require #ccwAngle<=90"
+  endif
+  if #cwAngle>0
+    Stop "tractions require #cwAngle=0"
+  endif
+  #ns=12
+  #x[1]=2
+  #x[2]=2
+  #x[3]=1
+  #x[4]=.5
+  #x[5]=1
+  #x[6]=.5
+  #x[7]=.5
+  #x[8]=.5
+  #x[9]=.5
+  #x[10]=.5
+  #x[11]=.5
+  #x[12]=.5
+
+  #xloc=0
+  #yloc=0
+  #yn=#outerradius-#cell/4
+  #xn=#outerradius-#cell/4
+  Repeat "#i",1,#ns
+    #xend=#xloc+#x[#i]*#cell
+    LoadLine #xloc,#yn,#xend,#yn
+      Traction "y",3,"linear",#prate
+    EndLoadLine
+    #xloc=#xend
+    #ind=#ns+1-#i
+    #yn-=#x[#ind]*#cell
+    
+    #yend=#yloc+#x[#i]*#cell
+    LoadLine #xn,#yloc,#xn,#yend
+      Traction "x",2,"linear",#prate
+    EndLoadLine
+    #yloc=#yend
+    #ind=#ns+1-#i
+    #xn-=#x[#ind]*#cell
+  EndRepeat
   
-  #yend=#yloc+#x[#i]*#cell
-  LoadLine #xn,#yloc,#xn,#yend
-    Traction "x",2,"linear",#prate
-    Traction "x",2,"linear",-#prate,#loadTime
-  EndLoadLine
-  #yloc=#yend
-  #ind=#ns+1-#i
-  #xn-=#x[#ind]*#cell
-EndRepeat
+endif
 
 if #cwAngle=0
   MoveLine -#cell,-#cell/2,#xmax,-#cell/2,0.51*#cell
