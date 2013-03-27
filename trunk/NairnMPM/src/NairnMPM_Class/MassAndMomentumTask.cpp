@@ -205,10 +205,12 @@ void MassAndMomentumTask::Execute(void)
 			{   mi=theElements[iel]->nodes[i-1];		// 1 based node
 				
 				// look for setting function in one to three directions
+                // GetVectorSetting() returns true if function has set the velocity, otherwise it return FALSE
 				bool hasDir[3];
 				Vector rvel;
 				if(rigid->GetVectorSetting(&rvel,hasDir,mtime,&mpmptr->pos))
-				{	if(hasDir[0])
+                {   // velocity set by 1 to 3 functions as determined by hasDir[i]
+					if(hasDir[0])
 					{	mpmptr->vel.x = rvel.x;
 						SetRigidBCs(mi,X_DIRECTION,rvel.x,0.,
 								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
@@ -228,7 +230,7 @@ void MassAndMomentumTask::Execute(void)
 					}
 				}
 				else
-                {   // set any direction that is being controlled
+                {   // velocity set by particle velocity in selected directions
                     if(rigid->RigidDirection(X_DIRECTION))
 					{	SetRigidBCs(mi,X_DIRECTION,mpmptr->vel.x,0.,
 										(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,

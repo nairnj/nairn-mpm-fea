@@ -238,6 +238,37 @@ Matrix3 Matrix3::Inverse(void) const
 	return inv3;
 }
 
+// Find Eigenvalues and return real and imaginary parts in separate arrays
+// return TRUE is positive definite or FALSE if not
+// Input double pointers must have room for three values
+bool Matrix3::Eigenvalues(double *lamR,double *lamC) const
+{
+    if(is2D)
+    {   double b = -(m[0][0]+m[1][1]);
+        double c = m[0][0]*m[1][1] - m[1][0]*m[0][1];
+        double arg = b*b-4.*c;
+        lamR[2] = m[2][2];
+        lamC[2] = 0.;
+        if(arg>=0)
+        {   arg = sqrt(arg);
+            lamR[0] = 0.5*(-b+arg);
+            lamC[0] = 0.;
+            lamR[1] = 0.5*(-b-arg);
+            lamC[1] = 0.;
+            return TRUE;
+        }
+        else
+        {   arg = sqrt(-arg);
+            lamR[0] = -0.5*b;
+            lamC[0] = 0.5*arg;
+            lamR[1] = lamR[0];
+            lamC[1] = -lamC[1];
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
 #pragma mark Matrix3:operators
 
 // +=

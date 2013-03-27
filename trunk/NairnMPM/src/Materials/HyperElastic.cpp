@@ -366,6 +366,21 @@ double HyperElastic::IncrementDeformation(MPMBase *mptr,Matrix3 du,Tensor *Btria
     return dF.determinant();
 }
 
+/*  Polar decomposition of the deformation gradient on a particle
+ */
+/*
+double HyperElastic::DecomposeDeformation(Matrix3 pF)
+{
+    Matrix3 pFT = pF.Transpose();
+    Matrix3 C = pFT*pF;
+    
+    double I1 = C.trace();
+    double I2 = C.second_invariant();
+    double I3 = C.determinant();
+    
+}
+*/
+
 // Find isotropic stretch for thermal and moisture expansion
 // total residual stretch (1 + alpha dT + beta csat dConcentration)
 // Current assumes isotropic with CTE1 and CME1 expansion coefficients

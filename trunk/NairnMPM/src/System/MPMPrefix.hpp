@@ -45,7 +45,7 @@ using namespace std;
 #define SQRT_EIGHT27THS 0.5443310539518174
 
 // MaxShapeNds - max number non-zero shape functions +1
-#define MaxShapeNds 37
+#define MaxShapeNds 45
 
 // Max number of nodes in an element + 1
 #define MaxElNd 10

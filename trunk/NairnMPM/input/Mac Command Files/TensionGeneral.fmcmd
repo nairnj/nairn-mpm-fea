@@ -81,7 +81,7 @@ StressFreeTemp 294
 #thick=10			! thickness
 
 ! Load by strain (estimated for force and traction loads)
-#loading="force"	! Loading = "force", "traction", "rigid", "contact", "thermal"
+#loading="rigid"	! Loading = "force", "traction", "rigid", "contact", "thermal"
 #fixsides="no"		! "yes" or "no" for sides fix in y direction (2D) or y and z (3D)
 #strain=3	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
 

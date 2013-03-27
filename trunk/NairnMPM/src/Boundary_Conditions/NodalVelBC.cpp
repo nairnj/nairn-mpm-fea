@@ -26,7 +26,8 @@ NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTi
     nodeNum=num;
     angle1 = ang1;
     angle2 = ang2;
-    dir = ConvertToDirectionBits(dof);      // change to x,y,z bits
+    dir = ConvertToDirectionBits(dof);      // change input settings to x,y,z bits
+    SetNormalVector();                   // get normal vector depending on dir and angles
 	
     // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
     nd[nodeNum]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
@@ -42,7 +43,11 @@ NodalVelBC::~NodalVelBC()
 // Reuse Rigid properties
 BoundaryCondition *NodalVelBC::SetRigidProperties(int num,int dof,int setStyle,double velocity)
 {	// set dir and direction
-    dir = ConvertToDirectionBits(dof);      // change to x,y,z bits
+    angle1 = 0.;
+    angle2 = 0.;
+    dir = dof;                          // internal calls already have correct bit settings
+    if(dof!=X_DIRECTION && dof!=Y_DIRECTION && dof!=Z_DIRECTION) cout << "# invalid rigid direction " << dof << endl;
+    SetNormalVector();                  // get normal vector depending on dir and angles
     
     // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
     nd[num]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
@@ -62,32 +67,55 @@ int NodalVelBC::ConvertToDirectionBits(int dof)
 {
     switch(dof)
     {   case X_DIRECTION:
-			norm = MakeVector(1.,0.,0.);
-            return dof;
         case Y_DIRECTION:
-			norm = MakeVector(0.,1.,0.);
             return dof;
         case Z_DIRECTION_INPUT:
-			norm = MakeVector(0.,0.,1.);
             return Z_DIRECTION;
         case XY_SKEWED_INPUT:
-			norm = MakeVector(cos(PI_CONSTANT*angle1/180.),-sin(PI_CONSTANT*angle1/180.),0.);
             return XY_SKEWED_DIRECTION;
         case XZ_SKEWED_INPUT:
-			norm = MakeVector(cos(PI_CONSTANT*angle1/180.),0,-sin(PI_CONSTANT*angle1/180.));
             return XZ_SKEWED_DIRECTION;
         case YZ_SKEWED_INPUT:
-			norm = MakeVector(0.,cos(PI_CONSTANT*angle1/180.),-sin(PI_CONSTANT*angle1/180.));
             return YZ_SKEWED_DIRECTION;
         case XYZ_SKEWED_INPUT:
-			norm = MakeVector(cos(PI_CONSTANT*angle2/180.)*sin(PI_CONSTANT*angle1/180.),
-								sin(PI_CONSTANT*angle2/180.)*sin(PI_CONSTANT*angle1/180.),
-									cos(PI_CONSTANT*angle1/180.));
             return XYZ_SKEWED_DIRECTION;
         default:
             return 0;
     }
 }
+
+// initialize mormal vector depending on direction bits
+void NodalVelBC::SetNormalVector(void)
+{
+    switch(dir)
+    {   case X_DIRECTION:
+			norm = MakeVector(1.,0.,0.);
+            break;
+        case Y_DIRECTION:
+			norm = MakeVector(0.,1.,0.);
+            break;
+        case Z_DIRECTION:
+			norm = MakeVector(0.,0.,1.);
+            break;
+        case XY_SKEWED_DIRECTION:
+			norm = MakeVector(cos(PI_CONSTANT*angle1/180.),-sin(PI_CONSTANT*angle1/180.),0.);
+            break;
+        case XZ_SKEWED_DIRECTION:
+			norm = MakeVector(cos(PI_CONSTANT*angle1/180.),0,-sin(PI_CONSTANT*angle1/180.));
+            break;
+        case YZ_SKEWED_DIRECTION:
+			norm = MakeVector(0.,cos(PI_CONSTANT*angle1/180.),-sin(PI_CONSTANT*angle1/180.));
+            break;
+        case XYZ_SKEWED_DIRECTION:
+			norm = MakeVector(cos(PI_CONSTANT*angle2/180.)*sin(PI_CONSTANT*angle1/180.),
+                              sin(PI_CONSTANT*angle2/180.)*sin(PI_CONSTANT*angle1/180.),
+                              cos(PI_CONSTANT*angle1/180.));
+            break;
+        default:
+            break;
+    }
+}
+
 
 // convert dir bits to input dof
 int NodalVelBC::ConvertToInputDof(void)
