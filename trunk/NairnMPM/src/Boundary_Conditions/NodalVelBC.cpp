@@ -42,11 +42,10 @@ NodalVelBC::~NodalVelBC()
 
 // Reuse Rigid properties
 BoundaryCondition *NodalVelBC::SetRigidProperties(int num,int dof,int setStyle,double velocity)
-{	// set dir and direction
+{	// set dir and direction (cannot yet be skewed directions)
     angle1 = 0.;
     angle2 = 0.;
     dir = dof;                          // internal calls already have correct bit settings
-    if(dof!=X_DIRECTION && dof!=Y_DIRECTION && dof!=Z_DIRECTION) cout << "# invalid rigid direction " << dof << endl;
     SetNormalVector();                  // get normal vector depending on dir and angles
     
     // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
