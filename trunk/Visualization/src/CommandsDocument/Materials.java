@@ -82,7 +82,7 @@ public class Materials
 		options.put("heisotropic", new Integer(24));
 		int matInt = doc.readIntOption(args.get(3),options,null);
 		if(matInt<0)
-			throw new Exception("'Material' type not supported in scripting commands.\nUse XML method instead: "+args);
+			throw new Exception("'Material' type not yet supported in scripting commands.\nUse XML method instead: "+args);
 		
 		// start the command
 		xmldata.append("  <Material Type='"+matInt+"' Name='"+matName+"'>\n");
@@ -164,7 +164,7 @@ public class Materials
 		
 		// remaining problems
 		// 1. criterion, altcriterion, direction, altdirection, traction, alttraction
-		// 		need to be put in propgate and altprogate commands
+		// 		need to be put in propagate and altpropagate commands
 		// 2. color
 		// 3. friction and interface
 		
