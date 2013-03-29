@@ -8,13 +8,13 @@
 
 #include "MPM_Classes/MPMBase.hpp"
 #include "Cracks/CrackHeader.hpp"
-#include "Nodes/NodalPoint.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Materials/MaterialBase.hpp"
 
 // globals
 MPMBase **mpm;		// list of material points
 int nmpms=0;		// number of material points
+int nmpmsNR=0;		// number for last non-rigid material point
 
 // class statics
 int MPMBase::currentParticleNum=0;
@@ -382,22 +382,5 @@ void MPMBase::Describe(void)
     cout << "#   tauij=(" << sp.xy*rho*1e-6 << "," << sp.xz*rho*1e-6 << "," << sp.yz*rho*1e-6 << ") MPa" << endl;
 }
 
-
-#pragma mark MPMBase Class Methods
-
-/**********************************************************
-    Update Strains on all particles
-    Must impose grid velocity BCs and velocity
-		alterations due to contact first
-	secondPass will be TRUE only for USAVG method
-**********************************************************/
-void MPMBase::FullStrainUpdate(double strainTime,int secondPass,int np)
-{
-    NodalPoint::GetGridVelocitiesForStrainUpdate();			// velocities needed for strain update
-	
-	// loop over particles
-	for(MPMBase::currentParticleNum=0;MPMBase::currentParticleNum<nmpms;MPMBase::currentParticleNum++)
-		mpm[MPMBase::currentParticleNum]->UpdateStrain(strainTime,secondPass,np);
-}
 
 

@@ -42,6 +42,7 @@
 ********************************************************************************/
 
 #include "NairnMPM_Class/UpdateStrainsLastTask.hpp"
+#include "NairnMPM_Class/UpdateStrainsFirstTask.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"
@@ -124,7 +125,7 @@ void UpdateStrainsLastTask::Execute(void)
 	NodalVelBC::GridMomentumConditions(FALSE);
 	
 	// update strains based on current velocities
-	MPMBase::FullStrainUpdate(strainTimestep,(fmobj->mpmApproach==USAVG_METHOD),fmobj->np);
+	UpdateStrainsFirstTask::FullStrainUpdate(strainTimestep,(fmobj->mpmApproach==USAVG_METHOD),fmobj->np);
 
 #ifdef _PROFILE_TASKS_
 	totalTaskTime+=fmobj->CPUTime()-beginTime;

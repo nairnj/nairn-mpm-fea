@@ -16,6 +16,8 @@
 #define DEFORMED_VOLUME 0
 #define DEFORMED_AREA 1
 
+class MaterialBase;
+
 // variables for conduction calculations
 typedef struct {
 	Vector DT;			// conc potential gradient (archived * concSaturation)
@@ -56,7 +58,7 @@ class MPMBase : public LinkedObject
         virtual void SetOrigin(Vector *) = 0;
         virtual void SetPosition(Vector *) = 0;
         virtual void SetVelocity(Vector *) = 0;
-		virtual void UpdateStrain(double,int,int) = 0;
+		virtual void UpdateStrain(double,int,int,MaterialBase *,int) = 0;
 		virtual void Fint(Vector &,double,double,double) = 0;
 		virtual void Fext(Vector &,double) = 0;
         virtual void MovePosition(double,Vector *) = 0;
@@ -159,9 +161,6 @@ class MPMBase : public LinkedObject
 		void SetHistoryDble(int,double);
         void Describe(void);
     
-		// class methods
-		static void FullStrainUpdate(double,int,int);
-	
 	protected:
 		// variables (changed in MPM time step)
 		Vector pFext;				// external force
@@ -198,6 +197,6 @@ class MPMBase : public LinkedObject
 
 // Lists of material points from mpm[0] to mpm[nmpms-1]
 extern MPMBase **mpm;
-extern int nmpms;
+extern int nmpms,nmpmsNR;
 
 #endif

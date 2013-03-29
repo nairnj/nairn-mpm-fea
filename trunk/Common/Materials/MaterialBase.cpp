@@ -80,7 +80,7 @@ MaterialBase::MaterialBase(char *matName)
 	field=-1;
 	activeField=-1;
 	kCond=0.;
-	heatCapacity=1.;					// keep one because needed bu ideal gas
+	heatCapacity=1.;					// keep one because needed by ideal gas
 	lastFriction=NULL;
     artificialViscosity=FALSE;
     avA1 = 0.2;

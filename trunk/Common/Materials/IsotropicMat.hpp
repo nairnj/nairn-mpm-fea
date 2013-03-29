@@ -15,7 +15,7 @@
 
 #include "Materials/Elastic.hpp"
 
-enum {E_PROP=0,G_PROP,NU_PROP,A_PROP,ISO_PROPS};
+enum {E_PROP=0,G_PROP,NU_PROP,ISO_PROPS};
 
 class IsotropicMat : public Elastic
 {

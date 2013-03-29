@@ -36,21 +36,10 @@ MatPointAS::MatPointAS(int inElemNum,int theMatl,double angin,double thickin) : 
 #pragma mark MatPointAS:Calculations and Incrementers
 
 // Update Strains for this particle
-// Velocities for all fields on present on the nodes
-void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np)
+// Velocities for all fields are present on the nodes
+// matRef is the material and properties have been loaded, matFld is the material field
+void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,MaterialBase *matRef,int matFld)
 {
-	// this particle's material
-	MaterialBase *matRef=theMaterials[MatID()];
-	
-	// exit if rigid
-	if(matRef->Rigid()) return;
-	
-	// make sure have mechanical properties for this material and angle
-	matRef->LoadMechanicalProps(this,np);
-	
-	// get field number
-	int matfld=matRef->GetField();
-	
 	int i,numnds,nds[MaxShapeNds];
     double fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds],zDeriv[MaxShapeNds];
 	Vector vel;
@@ -64,7 +53,7 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np)
 	//   and using the velocity field for that particle and each node and the right material
     // In axisymmetric x->r, y->z, and z->hoop
     for(i=1;i<=numnds;i++)
-	{	vel=nd[nds[i]]->GetVelocity((short)vfld[i],matfld);
+	{	vel=nd[nds[i]]->GetVelocity((short)vfld[i],matFld);
         dv += Matrix3(vel.x*xDeriv[i],vel.x*yDeriv[i],vel.y*xDeriv[i],vel.y*yDeriv[i],vel.x*zDeriv[i]);
     }
     

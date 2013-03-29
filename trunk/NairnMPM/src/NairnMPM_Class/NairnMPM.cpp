@@ -384,6 +384,7 @@ void NairnMPM::PreliminaryCalcs(void)
     // loop over material points
 	maxMaterialFields=0;
 	numActiveMaterials=0;
+    nmpmsNR=0;
     for(p=0;p<nmpms;p++)
 	{	// verify material is defined and sets if field number (in in multimaterial mode)
 		matid=mpm[p]->MatID();
@@ -419,6 +420,9 @@ void NairnMPM::PreliminaryCalcs(void)
 		{	hasRigidContactParticles=true;
 			continue;
 		}
+        
+        // not a nonrigid particle
+        nmpmsNR = p+1;
         
         // check time step
         crot=theMaterials[matid]->WaveSpeed(IsThreeD(),mpm[p])/10.;		// in cm/sec

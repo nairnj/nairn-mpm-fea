@@ -74,11 +74,11 @@ void GridForcesTask::Execute(void)
 	short vfld;
 	
 	// loop over particles
-    for(int p=0;p<nmpms;p++)
+    for(int p=0;p<nmpmsNR;p++)
 	{	MPMBase *mpmptr=mpm[p];							// material point pointer
 		matID=theMaterials[mpmptr->MatID()];			// material class object
 		
-		// skip if material is rigid
+		// skip if material is rigid (and comes before last nonrigid one)
 		if(matID->Rigid()) continue;
 		
 		// get transport tensors (if needed)

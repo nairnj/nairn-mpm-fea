@@ -25,6 +25,9 @@ class UpdateStrainsFirstTask : public MPMTask
 		// required methods
 		virtual void Execute(void);
 	
+        // class methods
+        static void FullStrainUpdate(double,int,int);
+	
 	protected:
 };
 

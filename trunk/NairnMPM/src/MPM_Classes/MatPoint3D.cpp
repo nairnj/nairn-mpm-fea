@@ -30,21 +30,10 @@ MatPoint3D::MatPoint3D(int inElemNum,int theMatl,double angin) : MPMBase(inElemN
 #pragma mark MatPoint2D:Calculations and Incrementers
 
 // Update Strains for this particle
-// Velocities for all fields on present on the nodes
-void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np)
+// Velocities for all fields are present on the nodes
+// matRef is the material and properties have been loaded, matFld is the material field
+void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,MaterialBase *matRef,int matFld)
 {
-	// material for this particle
-	MaterialBase *matRef=theMaterials[MatID()];
-	
-	// exit if rigid
-	if(matRef->Rigid()) return;
-	
-	// make sure mechanical properties for this material and angle
-	matRef->LoadMechanicalProps(this,np);
-	
-	// material field
-	int matfld=matRef->GetField();
-	
 	int i,numnds,nds[MaxShapeNds];
     double fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds],zDeriv[MaxShapeNds];
 	Vector vel;
@@ -57,7 +46,7 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np)
     // Find strain rates at particle from current grid velocities
 	//   and using the velocity field for that particle with each node
     for(i=1;i<=numnds;i++)
-	{	vel=nd[nds[i]]->GetVelocity((short)vfld[i],matfld);
+	{	vel=nd[nds[i]]->GetVelocity((short)vfld[i],matFld);
         dv += Matrix3(vel.x,vel.y,vel.z,xDeriv[i],yDeriv[i],zDeriv[i]);
     }
 	    

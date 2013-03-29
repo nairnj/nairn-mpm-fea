@@ -558,7 +558,7 @@ MassAndMomentumTask.o : $(MassAndMomentumTask).cpp $(dprefix) $(MassAndMomentumT
 			$(NodalVelBC).hpp $(CommonException).hpp $(NodalTempBC).hpp $(NodalConcBC).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MassAndMomentumTask).cpp
 UpdateStrainsFirstTask.o : $(UpdateStrainsFirstTask).cpp $(dprefix) $(UpdateStrainsFirstTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
-			$(NairnMPM).hpp $(MPMBase).hpp
+			$(NairnMPM).hpp $(MPMBase).hpp $(NodalPoint).hpp $(MaterialBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UpdateStrainsFirstTask).cpp
 GridForcesTask.o : $(GridForcesTask).cpp $(dprefix) $(GridForcesTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(NodalPoint).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ElementBase).hpp $(CrackHeader).hpp \
@@ -576,7 +576,7 @@ UpdateParticlesTask.o : $(UpdateParticlesTask).cpp $(dprefix) $(UpdateParticlesT
 UpdateStrainsLastTask.o : $(UpdateStrainsLastTask).cpp $(dprefix) $(UpdateStrainsLastTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(CrackHeader).hpp $(TransportTask).hpp \
 			$(NodalPoint).hpp $(CrackSurfaceContact).hpp $(NodalVelBC).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
-			$(BoundaryCondition).hpp
+			$(BoundaryCondition).hpp $(UpdateStrainsFirstTask).cpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UpdateStrainsLastTask).cpp
 RunCustomTasksTask.o : $(RunCustomTasksTask).cpp $(dprefix) $(RunCustomTasksTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(NodalPoint).hpp $(CustomTask).hpp \
@@ -644,8 +644,8 @@ BodyForce.o : $(BodyForce).cpp $(dprefix) $(BodyForce).hpp $(mathexpr).hpp $(MPM
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodyForce).cpp
 
 # MPM: MPM_Classes
-MPMBase.o : $(MPMBase).cpp $(dprefix) $(MPMBase).hpp $(CrackHeader).hpp $(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
-            $(MatPtTractionBC).hpp $(MatPtLoadBC).hpp $(BoundaryCondition).hpp $(MaterialBase).hpp
+MPMBase.o : $(MPMBase).cpp $(dprefix) $(MPMBase).hpp $(CrackHeader).hpp $(MaterialBase).hpp \
+            $(MatPtTractionBC).hpp $(MatPtLoadBC).hpp $(BoundaryCondition).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MPMBase).cpp
 MatPoint2D.o : $(MatPoint2D).cpp $(dprefix) $(MatPoint2D).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(MeshInfo).hpp \
 			$(NodalPoint).hpp $(DiffusionTask).hpp $(ConductionTask).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \

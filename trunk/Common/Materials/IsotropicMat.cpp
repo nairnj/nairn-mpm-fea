@@ -18,6 +18,11 @@ IsotropicMat::IsotropicMat(char *matName) : Elastic(matName)
 {
     int i;
     
+    aI = 40;
+    E = -1;
+    G = -1.;
+    nu = -1.;
+    
     for(i=0;i<ISO_PROPS;i++)
         read[i]=0;
 }
@@ -45,9 +50,7 @@ char *IsotropicMat::InputMat(char *xName,int &input)
     }
     
     else if(strcmp(xName,"alpha")==0)
-    {	read[A_PROP]=1;
         return((char *)&aI);
-    }
 
     return MaterialBase::InputMat(xName,input);
 }
