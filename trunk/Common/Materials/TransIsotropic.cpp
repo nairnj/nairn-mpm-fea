@@ -26,6 +26,10 @@ TransIsotropic::TransIsotropic(char *matName,int matID) : Elastic(matName)
 	tiType=matID;
     for(i=0;i<ORTHO_PROPS;i++)
         read[i]=0;
+    
+    nuA=0.33;
+    aA=40;
+    aT=40;
 
 #ifdef MPM_CODE
 	diffA=0.;
@@ -108,25 +112,19 @@ char *TransIsotropic::InputMat(char *xName,int &input)
         return((char *)&GT);
     }
     
-    else if(strcmp(xName,"nuA")==0)
-    {	read[NUA_PROP]=1;
-        return((char *)&nuA);
-    }
-    
     else if(strcmp(xName,"nuT")==0)
     {	read[NUT_PROP]=1;
         return((char *)&nuT);
     }
     
+    else if(strcmp(xName,"nuA")==0)
+        return((char *)&nuA);
+    
     else if(strcmp(xName,"alphaA")==0)
-    {	read[AA_PROP]=1;
         return((char *)&aA);
-    }
     
     else if(strcmp(xName,"alphaT")==0)
-    {	read[AT_PROP]=1;
         return((char *)&aT);
-    }
 
 #ifdef MPM_CODE
     else if(strcmp(xName,"betaA")==0)
