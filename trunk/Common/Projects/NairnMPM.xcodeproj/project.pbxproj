@@ -1993,11 +1993,12 @@
 					../../NairnMPM/src,
 					..,
 					/usr/local/include,
+					"/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include",
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib";
 				LIBRARY_SEARCH_PATHS = "";
 				"Library search paths" = "";
-				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				MACOSX_DEPLOYMENT_TARGET = "";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -2043,6 +2044,8 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CODE_SIGN_IDENTITY = "";
+				ENABLE_OPENMP_SUPPORT = YES;
+				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				VALID_ARCHS = "ppc7400 ppc64 ppc970 i386 x86_64 ppc";
 			};
 			name = Default;

@@ -79,7 +79,10 @@ void ResetElementsTask::Execute(void)
 int ResetElementsTask::ResetElement(MPMBase *mpt)
 {
     // check current element
-    if(theElements[mpt->ElemID()]->PtInElement(mpt->pos)) return TRUE;
+    if(theElements[mpt->ElemID()]->PtInElement(mpt->pos))
+	{	// it has not changed elements
+		return TRUE;
+	}
 	
 	// check neighbors if possible
 	int i=0,j,elemNeighbors[27];
@@ -96,6 +99,7 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
     }
     
     // if still not found, check all elements
+	cout << "not in neighbors" << endl;
     for(i=0;i<nelems;i++)
     {	if(theElements[i]->PtInElement(mpt->pos))
 		{	if(theElements[i]->OnTheEdge()) return FALSE;

@@ -26,8 +26,9 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Nodes/NodalPoint.hpp"
-
 #include "Materials/MaterialBase.hpp"
+
+//#include <omp.h>
 
 #pragma mark CONSTRUCTORS
 
@@ -64,6 +65,8 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
     NodalPoint::GetGridVelocitiesForStrainUpdate();			// velocities needed for strain update
 	
 	// loop over non rigid particles
+//#pragma omp parallel for schedule(static)
+// will need to deal with materials and plastic laws loading properties for this loop
 	for(MPMBase::currentParticleNum=0;MPMBase::currentParticleNum<nmpmsNR;MPMBase::currentParticleNum++)
     {   // next particle
         MPMBase *mptr = mpm[MPMBase::currentParticleNum];
@@ -72,7 +75,7 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
         MaterialBase *matRef=theMaterials[mptr->MatID()];
         
         // exit if rigid (in case some before the last non rigid one)
-        if(matRef->Rigid()) return;
+        if(matRef->Rigid()) continue;
         
         // make sure have mechanical properties for this material and angle
         matRef->LoadMechanicalProps(mptr,np);

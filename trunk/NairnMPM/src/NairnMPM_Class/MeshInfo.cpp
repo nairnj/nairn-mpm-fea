@@ -119,10 +119,11 @@ void MeshInfo::ListOfNeighbors2D(int num,int *neighbor)
 	}
 	
 	// find the column (here 0 is last column and 1 is first column)
+	// element num = (row-1)*Nhoriz + col;		// 1 based
 	int i=0;
 	int col=num % horiz;
-	int below=num-horiz;
-	int above=num+horiz;
+	int below=num-horiz;			// number in row below
+	int above=num+horiz;			// number in row above
 	
 	if(col==1)
 	{	// the element in is the first column having up to 5 neighbors
@@ -182,15 +183,82 @@ void MeshInfo::ListOfNeighbors2D(int num,int *neighbor)
 // If have a structured grid, get the 27 (3D) neighbor elements. The 1-based
 // element numbers are returned and the list is terminated by 0
 // neighbor needs to be size [27]
-// NOT WRITTEN YET
 void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
-{
+{	// exit if not structure grid
 	if(horiz<=0)
 	{	neighbor[0]=0;
 		return;
 	}
 	
+	// col is constant x, row is constant y, and slice is constant z
+	// element # = (slice-1)*Nhoriz*Nvert + (row-1)*Nhoriz + col;  // 1 based
 	int i=0;
+	int perSlice = horiz*vert;			// number in each slice
+	int snum = num % perSlice;			// number in each slice (1-based)
+	int col = snum % horiz;				// x column for this element (1 based
+	
+	// Do each slice
+	int j;
+	for(j=num-perSlice;j<=num+perSlice;j+=perSlice)
+	{	// element numbers in neighboring rows in this slice
+		if(j<1 || j>totalElems) continue;
+		int below = j-horiz;			// element # in row below or ablve
+		int above = j+horiz;
+		
+		if(col==1)
+		{	// the element in is the first column having up to 5 neighbors
+			if(snum>horiz)
+			{	// elements in row below
+				neighbor[i++]=below;
+				neighbor[i++]=below+1;
+			}
+			// elements in same row
+			if(j!=num) neighbor[i++]=j;
+			neighbor[i++]=j+1;
+			if(snum<=perSlice-horiz)
+			{	// elements in row above
+				neighbor[i++]=above+1;
+				neighbor[i++]=above;
+			}
+		}
+	
+		else if(col==0)
+		{	// the element in is the last column having up to 5 neighbors
+			if(snum>horiz)
+			{	// elements in row below
+				neighbor[i++]=below-1;
+				neighbor[i++]=below;
+			}
+			// elements in same row
+			if(j!=num) neighbor[i++]=j;
+			neighbor[i++]=j-1;
+			if(snum<=perSlice-horiz)
+			{	// elements in row above
+				neighbor[i++]=above-1;
+				neighbor[i++]=above;
+			}
+		}
+	
+		else
+		{	// the element is not on the edge
+			if(snum>horiz)
+			{	// elements in row below
+				neighbor[i++]=below-1;
+				neighbor[i++]=below;
+				neighbor[i++]=below+1;
+			}
+			// elements in same row
+			if(j!=num) neighbor[i++]=j;
+			neighbor[i++]=j-1;
+			neighbor[i++]=j+1;
+			if(snum<=perSlice-horiz)
+			{	// elements in row above
+				neighbor[i++]=above-1;
+				neighbor[i++]=above;
+				neighbor[i++]=above+1;
+			}
+		}
+	}
 	
 	// mark the end
 	neighbor[i]=0;
