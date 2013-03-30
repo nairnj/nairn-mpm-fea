@@ -99,7 +99,6 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
     }
     
     // if still not found, check all elements
-	cout << "not in neighbors" << endl;
     for(i=0;i<nelems;i++)
     {	if(theElements[i]->PtInElement(mpt->pos))
 		{	if(theElements[i]->OnTheEdge()) return FALSE;
