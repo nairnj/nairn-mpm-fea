@@ -28,8 +28,8 @@
 
 // Include to find axisymmetric Jr using Broberg method
 // Comment out to use Bergkvist and Huang method
-// The Broberg one appears to be mush better
-//#define BROBERG_AS_METHOD_FOR_JR
+// The Broberg one appears to be much better
+#define BROBERG_AS_METHOD_FOR_JR
 
 using namespace std; 
 
@@ -1394,8 +1394,8 @@ void CrackHeader::JIntegral(void)
 			   Units N/mm, multiply by 1000 to get N/m = J/m^2
 			*/
 			tipCrk->Jint.x = Jx*crackDir.x + Jy*crackDir.y - tractionEnergy;		// Jtip or energy that will be released if crack grows
-			//tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;						// J2(x) - for growth normal to crack plane
-			tipCrk->Jint.y = Jx1*crackDir.x + Jy1*crackDir.y;						// J by one term (temporary)
+			tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;						// J2(x) - for growth normal to crack plane
+			//tipCrk->Jint.y = Jx1*crackDir.x + Jy1*crackDir.y;						// J by one term (temporary)
 			tipCrk->Jint.z = tipCrk->Jint.x + bridgingReleased;						// Jrel or energy released in current state
 			
 			// end of try block on J calculation

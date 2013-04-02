@@ -65,8 +65,6 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
     NodalPoint::GetGridVelocitiesForStrainUpdate();			// velocities needed for strain update
 	
 	// loop over non rigid particles
-//#pragma omp parallel for schedule(static)
-// will need to deal with materials and plastic laws loading properties for this loop
 	for(MPMBase::currentParticleNum=0;MPMBase::currentParticleNum<nmpmsNR;MPMBase::currentParticleNum++)
     {   // next particle
         MPMBase *mptr = mpm[MPMBase::currentParticleNum];
