@@ -30,6 +30,7 @@
 // Comment out to use Bergkvist and Huang method
 // The Broberg one appears to be much better
 #define BROBERG_AS_METHOD_FOR_JR
+//#define JZ_PLANAR
 
 using namespace std; 
 
@@ -1264,7 +1265,11 @@ void CrackHeader::JIntegral(void)
 
 				// add for two endpoints using midpoint rule
                 // The r's (=r_i/a) for axisymmetric Jz integral
+#ifdef JZ_PLANAR
+				Jy1+=0.5*(fForJy1 + fForJy2)*ds;
+#else
 				Jy1+=0.5*(r1*fForJy1 + r2*fForJy2)*ds;
+#endif
 
 				// on to next segment
 				numSegs--;
