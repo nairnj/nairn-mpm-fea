@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="Document"/>
+	<classpathentry kind="src" path="PlotWindows"/>
+	<classpathentry kind="src" path="CommandsDocument"/>
+	<classpathentry kind="src" path="ResultsViewer"/>
+	<classpathentry kind="src" path="MovieViewer"/>
+	<classpathentry kind="src" path="Interface"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/Users/jnairn/Programming/EclipseWorkspace/Packages/lib/JNFramework.jar"/>
+	<classpathentry kind="lib" path="/Users/jnairn/Programming/EclipseWorkspace/Packages/lib/JNPlot2D.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

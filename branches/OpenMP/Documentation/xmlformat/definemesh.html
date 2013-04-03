@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>Defining the Mesh</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+<h1>Defining the MPM background Grid</h1>
+
+<p>
+MPM calculations take place on a background grid of finite elements. The background grid is typically
+a regular grid, but it does not have to be a regular grid. There are two ways to specify the grid.
+One way is to <a href="#sec2">generate</a> the mesh or grid; the other is to
+<a href="#sec1">explicitly list</a> each nodal point and each element..</p>
+
+<p>Each type of grid creation must be subordinate to a <code>&lt;Mesh&gt;</code> element,
+but the methods cannot be mixed. Only one <code>&lt;Mesh&gt;</code> element is allowed in the input
+file and it must <i>either</i> <a href="#sec2">generate</a> the mesh <i>or</i>
+<a href="#sec1">explicitly</a> specify all nodes and elements.
+</p>
+
+<a name="sec2"></a><h2>Generated Mesh</h2>
+
+<p>
+The entire grid is normally generated with <code>XML</code> commands.
+For 2D analyses, the following commands generate a square mesh as a grid:
+</p>
+
+<pre>
+&lt;Mesh output='file'&gt;
+  &lt;Grid units='mm' xmin='0' xmax='100' ymin='0' ymax='50' thickness='1.0'&gt;
+    &lt;Horiz nx='40' rx='1.0'/&gt;
+    &lt;Vert ny='20' ry='1.0'/&gt;
+  &lt;/Grid&gt;
+&lt;/Mesh&gt;
+</pre>
+
+<p>Axisymmetric calculations use <code>x</code> and <code>y</code> limits for <code>R</code> and <code>Z</code> limits. For 3D analyses, the following commands generate an orthogonal mesh of cells:
+</p>
+
+<pre>
+&lt;Mesh output='file'&gt;
+  &lt;Grid units='mm' xmin='0' xmax='100' ymin='0' ymax='50' zmin='0' zmax='50'&gt;
+    &lt;Horiz nx='40' rx='1.0'/&gt;
+    &lt;Vert ny='20' ry='1.0'/&gt;
+    &lt;Depth nz='20' rz='1.0'/&gt;
+  &lt;/Grid&gt;
+&lt;/Mesh&gt;
+</pre>
+
+
+<p>
+where the first four to six attributes (<code>xmin</code>, <code>xmax</code>,
+<code>ymin</code>, <code>ymax</code>, <code>zmin</code>, <code>zmax</code>, code>Rmin</code>, <code>Rmax</code>, <code>Zmin</code>, <code>Zmax</code>) denote
+the extent of the grid in the <code>x</code>, <code>y</code>, <code>z</code>, <code>R</code>, and <code>Z</code> 
+directions, respectively. An optional <a href="mpmheader.html#units"><code>units</code>
+attribute</a> can specify the length units attribute.</p>
+
+<p>The <code>thickness</code> in planar 2D calculations defines the thickness of the grid.
+This attribute is required when doing <a href="mpmheader.html#mmmode">multimaterial</a> contact
+including the optional volume check and when using <a href="mpmloads.html">traction or flux boundary conditions</a>. It is optional in other calculations because
+thickness can be set when <a href="definempm.html">defining material points</a>
+and when <a href="cracks.html">defining cracks</a>. If used, however, all
+material points and cracks will default to the grid thickness. You can enter 
+different values, although it is not recommended (and may change the physics in multimaterial simulations or results to traction or flux boundary conditions). A warning is printed in the output if a crack thickness does not match the grid thickness. Currently no warning is given if material points have different thicknesses.
+</p>
+
+<p>The subordinate tags define the number of elements in each direction:
+</p>
+
+<dl>
+
+<dt>&lt;Horiz nx='40' rx='1.0'/&gt; or &lt;Horiz cellsize='2'/&gt;</dt>
+<dd>This tag defines the mesh in the <code>x</code> direction where
+<code>nx</code> is the number
+of cells and <code>rx</code> is a ratio of cell sizes (currently only <code>rx=1</code> for a regular grid
+is supported). Alternatively, you can set the <code>cellsize</code> (in mm).
+Note: if needed, <code>xmax</code> will be increased to accomodate an integral number of elements
+at the desired size. In axisymmetric calculations the horizontal direction is the radial or <code>R</code> direction.
+</dd>
+
+<dt>&lt;Vert ny="20" ry="1.0"&gt; or &lt;Vert cellsize='2'/&gt;</dt>
+<dd>This tag similarly defines the mesh in the <code>y</code> direction. In axisymmetric calculations the vertical direction is the axial or <code>Z</code> direction.
+<dd>
+
+<dt>&lt;Depth nz="20" rz="1.0"&gt; or &lt;Depth cellsize='2'/&gt;</dt>
+<dd>This tag similarly defines the mesh in the <code>z</code> direction for 3D analyses.
+<dd>
+</dl>
+
+<p>The <code>output</code> attribute on <code>Mesh</code> determines if the nodes and elements should be included in the main output results file or written to separate files in the archive folder. Use the <code>file</code> option to write nodes and elements to separate files or omit the attribute to include them in the main file.
+</p>
+
+
+<a name="sec1"></a><h2>Explicit Mesh Definition</h2>
+
+<p>The alternate approach to defining the mesh is to define all nodal points and all elements in lists within the <code>&lt;Mesh&gt;</code> element as follows:
+</p>
+
+<pre>
+&lt;Mesh output='file'&gt;
+  &lt;NodeList&gt;
+    &lt;pt units='mm' x='0' y='-18'/&gt;
+    &lt;pt x='110' y='-18'/&gt;
+        .
+        .
+        .
+  &lt;/NodeList&gt;
+  
+  &lt;ElementList&gt;
+     &lt;elem type='2'&gt;1,5,69,68&lt;/elem&gt;
+     &lt;elem type='2'&gt;5,6,70,69&lt;/elem&gt;
+        .
+        .
+        .
+  &lt;/ElementList&gt;
+&lt;/Mesh&gt;
+</pre>
+
+<p>The <code>output</code> attribute on <code>Mesh</code> determines if the nodes and elements should be included in the main output text file or written to separate text files in the archive folder. Use the <code>file</code> option to write nodes and elements to separate files or omit the attribute to include them in the main file.
+</p>
+
+
+<p>The <code>&lt;NodeList&gt;</code> must have one <code>&lt;pt&gt;</code> tag for each nodal point.
+The <code>x</code> and <code>y</code> attributes give the coordinates of each point in mm (by default) or in the units specified by the optional <a href="mpmheader.html#units"><code>units</code> attribute</a>. For axisymmetric calculations use <code>x</code> and <code>y</code> for <code>R</code> and <code>Z</code>. For 3D analyses, add a <code>z</code> attribute for the third coordinate.
+</p>
+
+<p>These nodes are connected into elements in the <code>&lt;ElementList&gt;</code>.
+Each element is defined in an <code>&lt;elem&gt;</code> tag. The <code>type='2'</code> attribute means 4-node rectangular elements and is the only one supported for 2D calculations. The node numbers are listed in counter-clockwise direction. The numbers correspond to the above nodal list with the first node being numbered 1. A <code>type='7'</code> attribute means 8-node brick elements and is the only one supported for 3D calculations. The node numbers are listed in counter-clockwise direction for one face and the for the corresponding nodes on the opposite face. The node numbers can be delimited by any white space, commas, colons, semicolons, or any combination of those delimiters.
+</p>
+
+<p><font color="red">Warning</font> - explicitly created meshes cannot run using any <a href="mpmheader.html#GIMP">GIMP</a> methods.
+</p>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+</body>
+
+</html>
+

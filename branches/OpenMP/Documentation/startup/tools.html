@@ -1,0 +1,288 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
+	<title>Obtaining and Compiling the Software</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html">Getting Started</a> &rarr;
+<a href="nairnviz.html">Visualization</a> &rarr;
+Command-Line Tools
+</p>
+
+<h1>Command Line Tools
+</h1>
+
+<p>The following command lines provide extra options for working with <code>NairnFEA</code> and <code>NairnMPM</code>. They can be use as is or used an source code templates for creating new tools:
+</p>
+
+<ol>
+<li><a href="#extractmpm">ExtractMPM</a> - Extract data from NairnMPM archive files and write to various file formats.
+</li>
+
+</ol>
+
+<h1><a name="extractmpm"></a>Using ExtractMPM
+</h1>
+
+<p>This command-line tool will extract particle data from NairnMPM archive files and write them to text, binary or <code>XML</code> files.</p>
+
+<h2>Compiling</h2>
+
+<p>When using MacOS X, you can compile ExtractMPM using that target in the project found at <code>nairn-mpm-fea/Common/Projects/NairnMPM.xcodeproj</code>. On any other system (or alternatively in MacOS X), you can compile using the command line
+</p>
+
+<pre>
+g++ -O3 -o ExtractMPM ExtractMPM.cpp
+</pre>
+
+<p>The <code>-O3</code> options turns on optimization. You can change the <code>-o</code> path name as desired to install the executeable at any location.
+</p>
+
+<h2>Synopsis</h2>
+
+<pre>
+ExtractMPM [-hdDfFTXVsH23PC] [-b format] [-c format] [-m num] [-M num]
+                [-q data] [-n text] [-o path] archive0 archive1 ...
+</pre>
+
+<h2>Description</h2>
+
+<p>ExtractMPM reads the NairnMPM binary archive files in <code>archive0</code>, <code>archive1</code>, <i>etc.</i>, extracts the data selected by the options, and outputs it all to standard output or to file(s) specified in the options.
+</p>
+
+<p>A list of flags and their descriptions:
+</p>
+
+<dl>
+<dt><b>-h</b></dt>
+<dd>Include a header at the beginning of the file. The header has text that describes the content of the file. Each line begins with a key word. The text after the space is the setting for that keyword. The possible keywords are
+<ul>
+<li>Name - optional text if the <b>-n</b> options is used
+<li>Source - name of the input archive file
+<li>Data - space delimited list of columns in the output
+<li>Included_Materials - space delimited list of included materials
+<li>Excluded_Materials - space delimited list of omitted materials
+<li>Format - format of the output numbers (<code>text</code>, <code>xml</code>, <code>double</code>, <code>float</code>)
+<li>Endian - for binary output will be <code>little</code> or <code>big</code>.
+<li>EndHeader - last line of the header
+</ul>
+The header ends with the line feed character (<code>0x0A</code>) after <code>EndHeader</code>. For binary files, the header is padded to be a multiple of 8
+bytes long. For VTK Legacy files, the name (if provided) and source will always be output on the second line of the file (<i>i.e</i>, the <b>-h</b> option is not needed).
+</dd>
+
+<dt><b>-d</b></dt>
+<dd>Output as little Endian binary file with double precision numbers (extension <code>.data</code>)
+</dd>
+
+<dt><b>-D</b></dt>
+<dd>Output as big Endian binary file with double precision numbers (extension <code>.data</code>)
+</dd>
+
+<dt><b>-f</b></dt>
+<dd>Output as little Endian binary file with single precision numbers or floats (extension <code>.data</code>)
+</dd>
+
+<dt><b>-F</b></dt>
+<dd>Output as big Endian binary file with single precision numbers or floats (extension <code>.data</code>)
+</dd>
+
+<dt><b>-T</b></dt>
+<dd>Output as tab-delimited text file (extension <code>.data</code>). This option is the default output mode unless overridden by <b>-d</b>, <b>-D</b>, <b>-f</b>, <b>-F</b>, or <b>-X</b> option.
+</dd>
+
+<dt><b>-X</b></dt>
+<dd>Output an XML file, but see <a href="#xmlExtract">below</a> for details. These files are intended for input to new calculations. (extension <code>.xml</code>).
+</dd>
+
+<dt><b>-V</b></dt>
+<dd>Output as a VTK Legacy file suitable for reading in visualization tools such as <a href="http://www.paraview.org">ParaView</a>. The file will have only particle data, which may limit options in visualizations tools that need cell data. (extension <code>.vtk</code>). See <a href="#paraex">below</a> for example of plotting particle data in <a href="http://www.paraview.org">ParaView</a>.
+</dd>
+
+<dt><b>-H</b></dt>
+<dd>Print synopsis of ExtractMPM with brief description of all
+options and variables.
+</dd>
+
+<dt><b>-2</b></dt>
+<dd>Specify the archive file as one having 2D results. Because 2D results is the default assumption, this option is normally not needed.
+</dd>
+
+<dt><b>-3</b></dt>
+<dd>Specify the archive file as one having 3D results. Only needed
+for <code>ver3</code> archive files.  For <code>ver4</code> archive files or newer it is overridden by the file format specified in the <a href="../outformat/index.html#versionid">archive file's header</a>.
+</dd>
+
+<dt><b>-P</b></dt>
+<dd>Specify to export particle data only. Because particle data export is the default assumption, this option is normally not needed. The selected quantities should be only particle properties.
+</dd>
+
+<dt><b>-C</b></dt>
+<dd>Specify to export crack particle data only. The selected quantities should be only crack particle properties.
+</dd>
+
+<dt><b>-b</b> <u>format</u></dt>
+<dd>Specify the archive <u>format</u> of the file. Only needed for ver3 archive files.  For ver4 archive files or newer it is overridden by the file format specified in the <a href="../outformat/index.html#versionid">archive file's header</a>. See <a href="../outformat/index.html#mpmoutput">MPM output file format</a> information or <a href="../xmlformat/MPMHeader.html#mpmarchive">MPMArchiveOrder command</a> for details on the archive format. The format for a given file will be listed in the <a href="../outformat/index.html#mpmoutput">master text file</a> for that calculation result.
+</dd>
+
+<dt><b>-c</b> <u>format</u></dt>
+<dd>Specify the crack archive <u>format</u> of the file. Only needed for ver3 archive files.  For ver4 archive files or newer it is overridden by the file format specified in the <a href="../outformat/index.html#versionid">archive file's header</a>. See <a href="../outformat/index.html#mpmoutput">MPM output file format</a> information or <a href="../xmlformat/MPMHeader.html#crackarchive">CrackArchiveOrder command</a> for details on the crack archive format. The format for a given file will be listed in the <a href="../outformat/index.html#mpmoutput">master text file</a> for that calculation result.
+</dd>
+</dd>
+
+<dt><b>-m</b> <u>num</u></dt>
+<dd>Omit data for particles with material number <u>num</u>.  More than one use can remove multiple material types.
+</dd>
+
+<dt><b>-M</b> <u>num</u></dt>
+<dd>Include data for particles with material number <u>num</u>. More than one use can include multiple material types. If no <b>-M</b> options are used, then all materials are included. A material that is both included and excluded, will be excluded.
+</dd>
+
+<dt><b>-q</b> <u>data</u></dt>
+<dd>When exporting particle data, the output always includes particle position (<code>x</code>, <code>y</code>, and <code>z</code> (for 3D)), but can include additional data for each <b>-q</b> option. The allowed quantities for particle data are:
+<ul>
+<li>mat for material number</li>
+<li>mass for particle mass (in g)</li>
+<li>velx, velz, and velz for component of velocity vector (in mm/sec)</li>
+<li>dispx, dispy, and dispz for component of displacement vector (in mm)</li>
+<li>sxx, syy, szz, sxy, sxz, and syz for a component of the stress tensor (in Pa)</li>
+<li>pressure for pressure (in Pa)</li>
+<li>vonmises for von Mises (or equivalent) stress (= sqrt(3 J2)) (in Pa)</li>
+<li>exx, eyy, ezz, exy, exz, and eyz for a component of the strain tensor, which is elastic strain for plasticity materials (absolute)</li>
+<li>pexx, peyy, pezz, pexy, pexz, and peyz for a component of the plastic strain tensor (absolute)</li>
+<li>strerg for strain energy (in J)</li>
+<li>plerg for plastic energy (in J)</li>
+<li>temp for temperature (in K)</li>
+<li>conc for concentration (in wt %)</li>
+</ul>
+<code>XML</code> files always include mat and can include mass; they currently cannot include stress or strain.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;When exporting crack particle data, the output always includes the crack number followed by the crack particle position (<code>x</code>, <code>y</code>, and <code>z</code> (for 3D)), but can include additional data for each <b>-q</b> option. The allowed quantities for crack particle data are:
+<ul>
+<li>J1 and J2 for crack tip J integral terms
+<li>KI and KII for crack tip stress intensity factors
+</ul>
+<code>XML</code> files only include crack particle positions and the tip material ID (1 based) if available in the archive file; they currently cannot include J integral or stress intensity factors.
+Any requested particle or crack quantity not in the archive file will be output as zero.
+</dd>
+
+<dt><b>-o</b> <u>path</u></dt>
+<dd>The output will be to standard output unless an output file path is specified in this option. The output file should not include an extension because one will be generated automatically based on the selected file type. When multiple archive files are extracted in a single command, the output
+files will add an index number to this specifed output file name for each additional file (unless this default index number is overridden by the <code>-s</code> option).
+</dd>
+
+<dt><b>-s</b></dt>
+<dd>Include the step number in the output file name. <code>NairnMPM</code> archive files should have the step number as an extension. For example, if you are extracting data to a text file with root name <code>ParticleData</code> from archive file named <code>archive.323</code> while using the <code>-s</code> option, the extracted file name will be <code>ParticleData_323.txt</code>. When extracting multiple files, inclusion of a step number will overide the default index number (see <code>-o</code> option). If two of the multiple files have the same step number, the second one will overwrite the first. This problem will never occur when extracting from multiple files resulting from a single simulation.
+</dd>
+
+<dt><b>-n</b> <u>text</u></dt>
+<dd>The text defines a title or any brief comment about the extracted file. It is output in the header, but only if the <b>-h</b> option is used. For text with spaces, include it in quotes. For VTK Lagacy files it is output on the second line of the file.
+</dd>
+
+</dl>
+
+<h2>Examples</h2>
+
+<p>The following examples are shown as given to the shell:
+
+<dl>
+<dt><code>ExtractMPM -h -o positions arch.57</code></dt>
+<dd>Output particle positions from a <code>ver4</code> or newer archive file (<code>arch.57</code>) to the text file named <code>positions.txt</code> with a header at the beginning of the file.
+</dd>
+
+<dt><code>ExtractMPM -d -b iYYYYNNNNNNNYNNNN -q syy -q szz -o str disks.78</code></dt>
+<dd>Output particle positions and <code>y</code>- and <code>z</code>-direction normal stress from a <code>ver4</code> or newer archive file (disks.78) to a little Endian file of double named
+<code>str.data</code>.
+</dd>
+
+<dt><code>ExtractMPM -hF -q sxx -M 1 -o strxx disks.*</code></dt>
+<dd>Output particle positions and <code>x</code>-direction normal stress from several ver4 archive files (<code>disks.*</code>) to a series big Endian files of floats named
+<code>strxx.data</code>, <code>strxx_1.data</code>, <i>etc.</i>, 
+including headers. The output file will include only data from particles for material number 1.
+The header will help determine which output file came from which archive file.
+</dd>
+
+<dt><code>ExtractMPM -hC -o cracks disks.1289</code></dt>
+<dd>Output crack number and crack particle particle positions from a ver4 archive file to a text file cracks.txt including a header. The output file will include only crack particle data.
+</dd>
+
+</dl>
+
+<p>You only need to specify file formats (in <b>-b</b> and <b>-c</b> options) and dimensionality (in <b>-3</b> option) for <code>ver3</code> archive files. These options will be read from the <a href="../outformat/index.html#versionid">header</a> of <code>ver4</code> or newer files.  The version ID of any archive file can be determined by looking at the first 4 bytes of the file. The ver4 or newer format took effect 25 OCT 2007. See <a href="../outformat/index.html#mpmoutput">MPM output file format</a> information for more details of archive file versions.
+</p>
+
+<p>Since the archive file format is specified in the command, when extracting from multiple <code>ver3</code> archive files in a single command, they must all have the same format. This restriction does not apply when extracting from muultiple <code>ver4</code> or newer files.
+
+<h2><a name="xmlExtract"></a>XML File Extractions</h2>
+
+<p>The use of <code>XML</code> file extractions is to restart <code>NairnMPM</code> calculations with particle results from a previous calculations. As a result, the <code>XML</code> file uses a format intended for defining material points in a <code>NairnMPM</code> input commands file. All material points will be in a single <code>&lt;PointList&gt;</code> structure. Each material point in the structure will have the following format:
+</p>
+<pre>
+   &lt;PointList&gt;
+        . . .
+      &lt;mp matl='1' angle='0' thick='1' wtconc='0' temp='0'&gt;
+        &lt;pt units='mm' x='1.25' y='-11.25'/&gt;
+        &lt;vel units='mm/sec' x='0' y='0'/&gt;
+        &lt;mass m='1e-3'/&gt;
+      &lt;/mp&gt;
+        . . .
+   &lt;/PointList&gt;
+</pre>
+<p>The material number (<code>matl</code>), material angle (<code>angle</code>, if 2D), thickness (<code>thick</code>, if 2D), and  position (<code>pt</code> element) will always be in the extracted file. To include concentration (<code>wtconc</code>) and/or temperature (<code>temp</code>), use the <code>-q conc</code> and <code>-q temp</code> options,  respectively. To include the velocity use the <code>-q velx</code> option (which will include all components of velocity). To include mass (and you normally should) use a <code>-q mass</code> option. Concentraation, temperature, and velocity will only appear if they are in the archive file. All other requested quantities (including other components of velocity) will be ignored.
+</p>
+
+<p>If you only want certain types of material points in the new calculations, use the <code>-m</code> or <code>-M</code> options to select the desired material types. You can include a header with the <code>-h</code> option and it will appear at the beginning of the file in an <code>XML</code> comment structure.
+</p>
+
+<p>Finally, you can use the extracted <code>XML</code> file to define all or some of the material points in a new calculation. First, define the path to the new file in an <code>ENTITY</code> element in the file's <code>DOCTYPE</code> element such as:
+<pre>&lt;!DOCTYPE JANFEAInput SYSTEM '/full path to/NairnMPM.dtd'
+[   &lt;!ENTITY mpfile SYSTEM "path to/pointlist.xml"&gt;
+]&gt;
+</pre>
+<p>where <code>pointlist.xml</code> is the name of the newly extracted <code>XML</code> file.
+Then, import that file in the <code>&lt;MaterialPoints&gt;</code> element such as
+<pre>&lt;MaterialPoints&gt;
+   &amp;mpfile;
+&lt;/MaterialPoints&gt;
+</pre>
+</p>
+
+<h2><a name="paraex"></a>Particle Plots in ParaView</h2>
+
+<p>To get started using <a href="http://www.paraview.org">ParaView</a> for particle plots, try the following example simulation and analysis:
+</p>
+
+<ol>
+
+<li>Run the <code>TwoSpheres.fmcmd</code> example in <code>nairn-mpm-fea/NairnMPM/input</code> and save the results.
+</li>
+<li>Use <code>ExtractMPM</code> on a file from the <code>Results</code> folder with the following command line:
+<pre>ExtractMPM -V -q sxx -q velx -q dispx -n Example -o TwoSpheres spheres.264
+</pre>
+<li>Download, install, and run <a href="htpp://www.paraview.org">ParaView</a>. Use it to open the <code>TwoSpheres.vtk</code> file created by the above extraction. Then:
+<ul>
+<li>Click &quot;Apply&quot; in the object inspector.
+<li>Click or use menu command to add Glyphs.
+<li>Select Glyph Type &quot;Sphere.&quot;
+<li>Enter Radius = 1.25 (1/4 of the 5 mm cell size).
+<li>Scroll down, click to "Edit Scale" and edit it to be 1.
+<li>Click &quot;Apply&quot; to get the particle plot
+</ul>
+</ol>
+
+<p>You should have gotten a plot of two spheres in contact. You can explore all the <a href="http://www.paraview.org">ParaView</a> options for ways to visualize the results. You can color by any of the properties extracted to the file. If you extract multiple files and load them all into <a href="http://www.paraview.org">ParaView</a>, you can animate the results. When extracting results from multiple files in a single simulation, you should use the <code>-s</code> option to include step number in the file name. This method insures that <a href="http://www.paraview.org">ParaView</a> will read the files in the correct order.
+</p>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html">Getting Started</a> &rarr;
+<a href="nairnviz.html">Visualization</a> &rarr;
+Command-Line Tools
+</p>
+
+</body>
+</html>

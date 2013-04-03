@@ -1,0 +1,185 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>Defining Cracks</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+<h1>Defining Cracks</h1>
+
+<p>MPM simulations can have cracks and can have multiple cracks, but cracks are currently only allowed in 2D or axisymmetric analyses. Each crack is defined by a <code>&lt;CrackList&gt;</code> structure. Within each <code>&lt;CrackList&gt;</code> structure, that crack's geometry is defined by a series of line segments, lines, and arcs. The format is:
+
+<pre>
+&lt;CrackList friction='0.1' Dn='200' Dnc='-1' Dnt='200' Dt='5'&gt;
+  &lt;pt units='mm' x='50.5' y='0' tip='1'/&gt;
+  &lt;pt x='53' y='0'/&gt;
+     .
+     .
+     .
+  &lt;pt x='100.5' y='0'/&gt;
+  &lt;Line xmin="102" ymin="0" xmax="130" ymax="10" resolution="5"
+           start_tip="1" end_tip="1"/&gt;
+  &lt;Circle xmin="102" ymin="0" xmax="130" ymax="10" resolution="10"
+           start_tip="1" end_tip="1" start_angle="0" end_angle="90"/&gt;
+  &lt;Thickness&gt;1.0&lt;/Thickness&gt;
+&lt;/CrackList&gt;
+
+</pre>
+
+<p>The attributes to the <code>&lt;CrackList&gt;</code> command are
+</p>
+
+<dl>
+<dt>friction</dt> <dd>The optional <code>friction</code> attribute lets you specify a contact law
+for this crack that is different than the default contact law entered in the <a
+href="mpmheader.html#friction"><code>Friction</code></a> command in the <a href="mpmheader.html">MPM
+Header</a>. Using the same methods described in the <a href="mpmheader.html#friction">MPM Header
+<code>Friction</code> command</a>, you can select a custom contact law for each
+crack.
+</dd>
+
+<dt>Dn, DNc, DNt, Dt</dt>
+<dd>These optional interfacial stiffness attributes let you
+specify an imperfect interface for this crack (in which case it is not a crack but rather a bond
+line in the specimen) that is different than the default contact law entered in the <a
+href="mpmheader.html#friction"><code>Friction</code></a> command in the <a href="mpmheader.html">MPM
+Header</a> (see <a href="mpmheader.html#friction">that command</a> for more details on an imperfect
+interface). If you mix <code>friction</code> and interfacial stiffness attributes, whichever one is
+last will take precedence.</dd>
+</dl>
+
+<p>The crack geometry is specified by a series of
+<code>&lt;pt&gt;</code>, <code>&lt;Line&gt;</code>, and <code>&lt;Circle&gt;</code> commands. The
+crack is defined by drawing each shape and then connecting consecutive shapes with straight
+lines.
+</p>
+
+<dl>
+<dt>pt</dt>
+<dd>Defines a series of points defined by the <code>x</code> and
+<code>y</code> attributes to be connected with line segments. An optional
+<a href="mpmheader.html#units"><code>units</code> attribute</a> can
+specify the length units.</dd>
+
+<dt>Line</dt>
+<dd>Generates a straight line starting from <code>(xmin, ymin)</code> to <code>(xmax, ymax)</code> (nn optional
+<a href="mpmheader.html#units"><code>units</code> attribute</a> can
+specify the length units). The line will be divided into the number of segments defined by the
+<code>resolution</code> attribute.</dd>
+
+<dt>Circle</dt>
+<dd>Generates a curved crack defined by the oval extending from <code>(xmin, ymin)</code>
+to <code>(xmax, ymax)</code> nn optional
+<a href="mpmheader.html#units"><code>units</code> attribute</a> can
+specify the length units). The arc will be divided into the number of segments defined by the
+<code>resolution</code> attribute. The arc will be drawn from <code>start_angle</code> to
+<code>end_angle</code> (entered in degrees with defaults of 0 and 360). The arc is drawn in the
+counter-clockwise direction and <code>angle=0</code> corresponds to the point on the oval in the
+positive <code>x</code> direction.
+</dd>
+</dl>
+
+<p>For axisymmetric analyses enter <code>R</code> and <code>Z</code> corrdinates or limits by using <code>x</code> and <code>y</code> coordinates or <code>xmin</code>, <code>xmax</code>, <code>ymin</code>, and <code>ymax</code> limits.</p>
+
+<p>The <code>Thickness</code> command is used to set the crack thickness
+(the default is 1.0 mm and can have an optional <a href="mpmheader.html#units"><code>units</code> attribute</a>).
+Thickness is only needed for planar calculations and then when the crack surfaces uses tractions laws (see below).</p>
+
+<p>The implementation of explicit cracks in MPM was developed in NairnMPM. The first use of cracks in MPM by CRAMP algorithm is described in <a href="references.html#Nairn2003">Nairn (2003)</a>. The <a href="references.html">references</a> page lists many articles for MPM fracture and crack propagation simulations.</p>
+
+
+<h2><a name="traction"></a>Crack-Surface Traction Laws</h2>
+
+<p>Any section of a crack may be assigned a <a href="definematl.html#traction">traction law material</a> to
+apply traction to the crack surface as a function of crack normal and shear opening displacments.
+You assign a traction to any created segments by adding a <code>mat='n'</code> attribute to any
+<code>pt</code>, <code>Line</code>, or <code>Circle</code> command, where <code>n</code> is
+the <a href="definematl.html#traction">traction law material</a> nummber. Alternatively, you can use a <code>matnam = 'law name'</code> attribute where <code>'law name'</code> is the name of the <a href="definematl.html#traction">traction law material</a> (see <a href="definematl.html#usemats">Defining Materials</a> for details on numbers <i>vs</i>. names). In addition, for planar 2D calculations you must specify the crack thickness using a <code>Thickness</code> command.</p>
+
+<p>The traction law will naturally debond
+if the critical opening displacements are reached. The visualization tools can plot total crack length or
+debonded crack length. Their difference is the length of crack surface with traction law materials still bonded.
+The tools can also plot the opening and shear displacements at the actual crack tip or the traction zone
+tip nearest the crack tip.
+</p>
+
+<p>For normal opening, traction laws only apply traction when a cracked is opened.
+The crack contact mechanics handles the case where the crack surfaces are in contact.
+For shear opening, the traction law applies forces in both directions.
+To avoid conflicts with these tractions, the crack surface contact must use frictionaless sliding.
+In fact any crack with traction laws will automatically convert to a frictionless crack regardless of
+settings you use for the crack's contact condition.
+</p>
+
+<p>Besides creating cracks with traction laws,
+you can also assign traction laws to new crack surfaces that are created when a crack propagates.
+The propagation traction can be assigned globally in the <a href="mpmheader.html#propagate">MPM Header</a> or
+specifically for a <a href="definematl.html#common">given material type</a>. Since a crack that starts with
+no traction laws, but creates them when it propagates, will not automatically convert to a frictionless crack,
+you should be sure that all such cracks are setup to use frictionless crack contact.</p>
+
+<p>Interacting cracks with traction laws are handled, but not validated well. All validation runs
+were done using non-interacting, traction-loaded cracks.</p>
+
+<p>The use of traction laws on MPM cracks is described in <a href="references.html#Nairn2009">Nairn (2009)</a> and used in <a href="references.html#Bardenhagen2011">Bardenhagen <i>et al.</i> (2011)</a> and <a href="references.html#Matsumoto2012">Matsumoto and Nairn (2012)</a>.</p>
+
+<h2>Crack Tip Parameters</h2>
+
+<p> For calculation of crack tip parameters, such as J integral or stress intensity factor, and for
+crack propagation (see <a href="mpmheader.html">MPMHeader</a>), the start and/or end of the
+crack should add a <code>tip</code> attribute. The <code>tip</code> number should be the material
+number (see <a href="definematl.html">Defining Materials</a>) for the material containing the crack tip. This number is required to activate crack calculations. If the crack starts or ends with a
+<code>&lt;pt&gt;</code>, use a <code>tip</code> attribute on the first or last point. If the crack
+starts or ends with a <code>&lt;Line&gt;</code> or <code>&lt;Circle&gt;</code>, use the
+<code>start_tip</code> and/or <code>end_tip</code> attributes for those shapes.</p>
+
+<p>Whenever J integral is calculated (for archiving or crack propagation), the calculations are only done for crack tips with a defined materiial number. Furthermore, the J integral calculation will extrapolate material type to the crack tip node and change the material numder to the most prominant material if it is different then the current crack tip material number. This calculations allows crack propagation in composites where the crack moves between materials.</p>
+
+<p>When using propagation criterion based on stress intensity factor, the crack tip material type is used to convert
+energy release rate into stress intensity factor. This conversion is currently only correct for isotropic
+materials. Therefore, stress intensity failure criteria should only be used with isotropic materials.</p>
+
+<p>For internal
+cracks both ends of the crack should have a <code>tip</code> attribute; for an edge crack, only the
+end within the material should have a <code>tip</code> attribute. Crack tip parameters do not make
+sense when the contact is an imperfect interface.</p>
+
+<p>For cracks that extend outside the object, the recommended approach is to stop the cracking slightly
+before the edge (<i>e.g.</i>, 1/4 to 1/2 a cell from the edge) and define that tip as an "exterior" crack
+tip be setting its <code>tip</code> property to <code>-2</code>. Such tips are virtually extended beyond the
+object during calculations to model a crack through the surface.
+An alternative is simply run the crack beyond the edge ((<i>e.g.</i>, 1/2 to 1 beyond the edge). Such
+crack tips, however, can suffer inaccuracies due to lack of imformation about local velocity fields.
+The result is such crack tips may not move correctly if the object is moving.</p>
+
+<h2>Fixed Cracks</h2>
+
+<p>Any crack can be specified as fixed by using</p>
+
+<pre>
+&lt;CrackList type='fixed'&gt;
+</pre>
+
+<p>Fixed cracks will not translate with the analysis and will not track positions of the crack tip
+surfaces. They are not really for modeling cracks, but rather for modeling certain special effects
+such as etching between two layers (<em>e.g.</em> by specifying a fixed crack with constant crack
+propagation direction). Although calculation of J integral should be OK, a fixed crack can not calculate stress intensity factors (because crack surfaces are not tracked).</p>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+</body>
+
+</html>

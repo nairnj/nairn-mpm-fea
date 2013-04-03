@@ -1,0 +1,96 @@
+<?xml version='1.0'?>
+<!DOCTYPE JANFEAInput SYSTEM "/Users/nairnj/Programming/Cocoa_Projects/nairn-mpm-fea/NairnMPM/input/NairnMPM.dtd"
+[
+ <!ENTITY modulus "1.0">
+ <!ENTITY nu "0.33">
+ <!ENTITY rho "1.5">
+ <!ENTITY vel "2500">
+ <!ENTITY maxtime "20">
+ <!ENTITY atime ".5">
+ <!ENTITY cs "2">
+ <!ENTITY hmax "51">
+ <!ENTITY vmax "24">
+]>
+<JANFEAInput version='3'>
+
+<!-- MPM analysis of two disks that impact an bounce off.
+     The entities above can change some parameters:
+    modulus: modulus of the spheres
+         nu: Poisson's ratio of the spheres
+        rho: density of the spheres
+        vel: velocity of the approach
+    maxtime: time to stop calculation (ms)
+      atime: archive time (ms)
+         cs: cell size in grid (disks have diameter 30mm)
+				(30/cs should be an integer)
+       hmax: semi grid size x direction (divisible by cs and > 45mm)
+       vmax: semi grid size y direction (divisible by cs and > 15mm)
+-->
+
+  <Header>
+    <Description>
+Title: MPM Analysis
+User Name: John Nairn
+Problem: 2D simulation of two identical disks colliding in a head-on impact
+    </Description>
+    <Analysis>10</Analysis>
+  </Header>
+
+  <MPMHeader>
+    <MaxTime units="ms">&maxtime;</MaxTime>
+    <ArchiveTime units="ms">&atime;</ArchiveTime>
+    <ArchiveRoot>Two_Disks_Results/USAVG.</ArchiveRoot>
+    <MPMArchiveOrder>iYYYYNNNNNNNNNNNNY</MPMArchiveOrder>
+    <GlobalArchiveTime units="ms">&atime;</GlobalArchiveTime>
+    <GlobalArchive type="velx" matname="Disk 1"/>
+    <GlobalArchive type="Kinetic Energy"/>
+    <GlobalArchive type="Strain Energy"/>
+    <GIMP/>
+  </MPMHeader>
+
+  <Mesh output="file">
+    <Grid xmin="-&hmax;" xmax="&hmax;" ymin="-&vmax;" ymax="&vmax;">
+      <Horiz cellsize="&cs;"/>
+      <Vert cellsize="&cs;"/>
+    </Grid>
+  </Mesh>
+
+  <MaterialPoints>
+    <Body matname="Disk 1" angle="0" thick="1" vx="&vel;" vy="0">
+      <Oval xmin="-45" xmax="-15" ymin="-15" ymax="15"/>     
+    </Body>
+    <Body matname="Disk 2" angle="0" thick="1" vx="-&vel;" vy="0">
+      <Oval xmin="15" xmax="45" ymin="-15" ymax="15"/>     
+    </Body>
+  </MaterialPoints>
+
+  <Material Type="1" Name="Disk 1">
+    <rho>&rho;</rho>
+    <E>&modulus;</E>
+    <nu>&nu;</nu>
+    <alpha>60</alpha>
+  </Material>
+
+  <Material Type="1" Name="Disk 2">
+    <rho>&rho;</rho>
+    <E>&modulus;</E>
+    <nu>&nu;</nu>
+    <alpha>60</alpha>
+  </Material>
+
+  <GridBCs>
+    <BCLine x1="min-1" y1="min-1" x2="max+1" y2="min-1" tolerance="&cs;">
+      <DisBC dir="2" disp="0"/>
+    </BCLine>
+    <BCLine x1="max+1" y1="min-1" x2="max+1" y2="max+1" tolerance="&cs;">
+      <DisBC dir="1" disp="0"/>
+    </BCLine>
+    <BCLine x1="min-1" y1="max+1" x2="max+1" y2="max+1" tolerance="&cs;">
+      <DisBC dir="2" disp="0"/>
+    </BCLine>
+    <BCLine x1="min-1" y1="min-1" x2="min-1" y2="max+1" tolerance="&cs;">
+      <DisBC dir="1" disp="0"/>
+    </BCLine>
+  </GridBCs>
+
+</JANFEAInput>

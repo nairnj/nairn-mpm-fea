@@ -1,0 +1,76 @@
+-------------------------------------------------------------------
+NairnFEAMPMViz Plans
+-------------------------------------------------------------------
+
+¥ Plot zooming - click to zoom at location
+
+¥ Plot angle - way to input - most code already looks for it - slider under component
+
+¥ Preferences
+	Subelement density in mesh plots
+	Spectra inversion and brightness
+	See NairnFEAMPM preferences
+
+-------------------------------------------------------------------
+Cammand Development
+-------------------------------------------------------------------
+
+MPM Tasks
+	MPM Region - add property pairs and document
+	MPM Mesh commands
+	
+FEA Not Done
+	Rotate
+	Periodic
+	CrackTip
+	BMPRegion É EndRegion
+	
+-------------------------------------------------------------------
+Development Notes
+-------------------------------------------------------------------
+
+¥ Keyboard commands
+	A:
+	B: Background FEA/MPM Analysis (commands window), Delete (2D plot window)
+	C: Copy (2D plot window)
+	D: Analysis Results (movie window, 2D plot window)
+	E: Interpret commands and view XML result
+	shift-E: Export... (2D plot window)
+	F:
+	G: 
+	shift-G: Export Graphics (movie window)
+	H: Hide (Mac only)
+	option-H: Hide Others (Mac Only)
+	I: Inspector (2D plot window)
+	shift-I: Import... (2D plot window)
+	J:
+	K:
+	L: Go to Line (commands window), Add Label (2D plot window)
+	M:
+	shift-M: Export Movie Frames (movie window) 
+	N: new MPM commands file
+	shift-N: new FEA commands file
+	O: Open
+	P: Print (2D plot window)
+	Q: Quit
+	R: Run FEA/MPM Analysis (commands window), Plot Results (results window)
+	S: Save, Save Graphics (2D plot window)
+	T: Test FEA/MPM Analysis (commands window)
+	U:
+	V: Paste (2D plot window)
+	W: Close
+	X: Cut (2D plot window)
+	Y:
+	Z: Undo
+	shift-Z Redo
+	
+	.: Stop
+	,: Preferences (Mac only)
+	1: 100% (movie window)
+	2: 150% (movie window)
+	3: 200% (movie window)
+	4: 300% (movie window)
+	5: 400% (movie window)
+	6: 500% (movie window)
+	7: 700% (movie window)
+	8: 1000% (movie window)

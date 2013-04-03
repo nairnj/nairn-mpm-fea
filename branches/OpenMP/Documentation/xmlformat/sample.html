@@ -1,0 +1,121 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>Sample MPM XML Input File</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+<h1>Sample Input File for MPM Analysis</h1>
+
+<p>The following <code>XML</code> file can be input into NairnMPM to do analysis of two disks colliding and then separating. The grid is 100 by 50 mm and the disks are 30 mm in diameter. Certain parameters of the problem can be set by using the <code>XML</code> <code>ENTITY</code> definitions in the <code>DOCTYPE</code> element at the start of the file. These settings are described in comments in the <code>XML</code> file. When using the default settings, the analysis should only take a few seconds on any reasonable computer.</p>
+
+<pre>
+&lt;?xml version='1.0'?&gt;
+&lt;!DOCTYPE JANFEAInput SYSTEM 'NairnMPM.dtd'
+[
+ &lt;!ENTITY modulus '1.0e-02'&gt;
+ &lt;!ENTITY vel '1000'&gt;
+ &lt;!ENTITY maxtime '0.1'&gt;
+ &lt;!ENTITY atime '2.5e-03'&gt;
+ &lt;!ENTITY nx '30'&gt;
+ &lt;!ENTITY ny '15'&gt;
+]&gt;
+&lt;JANFEAInput version='3'&gt;
+
+&lt;!-- MPM analysis of two disks that impact an bounce off. It is a
+     small analysis to complete rapidly and test the code
+
+     The entities above can change some parameters:
+       modulus: modulus of the spheres
+       vel: velocity of the approach
+       maxtime: time to stop calculation
+       atime: archive time
+       nx,ny: cells in x an y directions. Must each be multiple
+              of 5 and ny = 2*nx
+--&gt;
+
+  &lt;Header&gt;
+    &lt;Description&gt;
+Title: MPM Analysis
+User Name: User Name
+    Two disks colliding
+    &lt;/Description&gt;
+    &lt;Analysis&gt;10&lt;/Analysis&gt;
+  &lt;/Header&gt;
+
+  &lt;MPMHeader&gt;
+    &lt;ArchiveTime&gt;&amp;atime;&lt;/ArchiveTime&gt;
+    &lt;MaxTime&gt;&amp;maxtime;&lt;/MaxTime&gt;
+    &lt;ArchiveRoot&gt;TwoDisks/USAVG.&lt;/ArchiveRoot&gt;
+    &lt;MPMArchiveOrder&gt;mYYYYNNNNNNNN&lt;/MPMArchiveOrder&gt;
+    &lt;GlobalArchiveTime&gt;&amp;atime;&lt;/GlobalArchiveTime&gt;
+    &lt;GlobalArchive type='sxx' material='1'/&gt;
+    &lt;GlobalArchive type='Kinetic Energy'/&gt;
+  &lt;/MPMHeader&gt;
+
+  &lt;Mesh output='file'&gt;
+    &lt;Grid xmin='0' xmax='100' ymin='0' ymax='50'&gt;
+      &lt;Horiz nx='&amp;nx;' rx='1.0'/&gt;
+      &lt;Vert ny='&amp;ny;' ry='1.0'/&gt;
+    &lt;/Grid&gt;
+  &lt;/Mesh&gt;
+
+  &lt;MaterialPoints&gt;
+    &lt;Body mat='1' angle='0' thick='1' vx='&amp;vel;' vy='0'&gt;
+      &lt;Oval xmin='10' xmax='40' ymin='10' ymax='40'/&gt;     
+    &lt;/Body&gt;
+    &lt;Body mat='2' angle='0' thick='1' vx='-&amp;vel;' vy='0'&gt;
+      &lt;Oval xmin='60' xmax='90' ymin='10' ymax='40'/&gt;     
+    &lt;/Body&gt;
+  &lt;/MaterialPoints&gt;
+
+  &lt;Material Type='1' Name='Polymer 1'&gt;
+    &lt;rho&gt;1.5&lt;/rho&gt;
+    &lt;E&gt;&amp;modulus;&lt;/E&gt;
+    &lt;nu&gt;0.33&lt;/nu&gt;
+    &lt;alpha&gt;60&lt;/alpha&gt;
+  &lt;/Material&gt;
+
+  &lt;Material Type='1' Name='Polymer 1'&gt;
+    &lt;rho&gt;1.5&lt;/rho&gt;
+    &lt;E&gt;&amp;modulus;&lt;/E&gt;
+    &lt;nu&gt;0.33&lt;/nu&gt;
+    &lt;alpha&gt;60&lt;/alpha&gt;
+  &lt;/Material&gt;
+
+  &lt;GridBCs&gt;
+    &lt;BCLine x1='0' y1='0' x2='100' y2='0'&gt;
+      &lt;DisBC dir='2' disp='0'/&gt;
+    &lt;/BCLine&gt;
+    &lt;BCLine x1='100' y1='0' x2='100' y2='50'&gt;
+      &lt;DisBC dir='1' disp='0'/&gt;
+    &lt;/BCLine&gt;
+    &lt;BCLine x1='0' y1='50' x2='100' y2='50'&gt;
+      &lt;DisBC dir='2' disp='0'/&gt;
+    &lt;/BCLine&gt;
+    &lt;BCLine x1='0' y1='0' x2='0' y2='50'&gt;
+      &lt;DisBC dir='1' disp='0'/&gt;
+    &lt;/BCLine&gt;
+  &lt;/GridBCs&gt;
+
+&lt;/JANFEAInput&gt;
+</pre>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+</body>
+
+</html>
