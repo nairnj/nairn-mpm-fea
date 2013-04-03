@@ -20,6 +20,11 @@
 #include <math.h>
 #include <vector>
 
+#ifdef _OPENMP
+#define _PARALLEL_
+#include <omp.h>
+#endif
+
 // This includes all data types and some common headers
 #include "System/DataTypes.hpp"
 

@@ -38,7 +38,7 @@ Viscoelastic::Viscoelastic(char *matName) : MaterialBase(matName)
 #pragma mark Viscoelastic::Initialization
 
 // print mechanical properties to output window
-void Viscoelastic::PrintMechanicalProperties(void)
+void Viscoelastic::PrintMechanicalProperties(void) const
 {
     PrintProperty("K",K,"");
 	PrintProperty("G0",G0,"");
@@ -108,7 +108,7 @@ char *Viscoelastic::InputMat(char *xName,int &input)
 }
 
 // verify settings and some initial calculations
-const char *Viscoelastic::VerifyProperties(int np)
+const char *Viscoelastic::VerifyAndLoadProperties(int np)
 {
 	// check properties
     if(currentGk<ntaus || currentTauk<ntaus)
@@ -120,30 +120,12 @@ const char *Viscoelastic::VerifyProperties(int np)
     if(!read[VK_PROP] && !read[VA_PROP])  // Oleg changed !! to &&
 		return "Required bulk modulus or thermal expansion not given.";
     
-	// call super class
-	return MaterialBase::VerifyProperties(np);
-}
-
-// plane stress not allowed in viscoelasticity
-void Viscoelastic::ValidateForUse(int np)
-{	if(np==PLANE_STRESS_MPM || np==AXISYMMETRIC_MPM)
-	{	throw CommonException("Viscoelastic materials require 2D plane strain or 3D MPM analysis",
-							  "Viscoelastic::ValidateForUse");
-	}
-	
-	//call super class (why can't call super class?)
-	return MaterialBase::ValidateForUse(np);
-}
-
-// Private properties used in constitutive law
-void Viscoelastic::InitialLoadMechProps(int makeSpecific,int np)
-{
     int i;
     
     // zero time shear modulus
     Ge=G0;
     dGe=0.0;
-    for(i=0;i<ntaus;i++) 
+    for(i=0;i<ntaus;i++)
     {   Ge+=Gk[i];
         dGe-=Gk[i]/tauk[i];
     }
@@ -156,8 +138,20 @@ void Viscoelastic::InitialLoadMechProps(int makeSpecific,int np)
 	// to absolute CTE and CME
 	CTE=1.e-6*aI;
 	CME=betaI*concSaturation;
+
+	// call super class
+	return MaterialBase::VerifyAndLoadProperties(np);
+}
+
+// plane stress not allowed in viscoelasticity
+void Viscoelastic::ValidateForUse(int np) const
+{	if(np==PLANE_STRESS_MPM || np==AXISYMMETRIC_MPM)
+	{	throw CommonException("Viscoelastic materials require 2D plane strain or 3D MPM analysis",
+							  "Viscoelastic::ValidateForUse");
+	}
 	
-	// nothing to set in superclass
+	//call super class (why can't call super class?)
+	return MaterialBase::ValidateForUse(np);
 }
 
 // create and return pointer to history variables
@@ -210,7 +204,7 @@ char *Viscoelastic::InitHistoryData(void)
    For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 */
 void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double dvzz,double delTime,int np)
+        double dvzz,double delTime,int np,void *properties,ResidualStrains *res)
 {
     /* ---------------------------------------------------
         Add to total strain
@@ -251,8 +245,8 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy
 
 	// stress increment (specific stress)
     double factor23 = 2.0/3.0;
-	double er = CTE*ConductionTask::dTemperature;
-    if(DiffusionTask::active) er += CME*DiffusionTask::dConcentration;
+	double er = CTE*res->dT;
+    if(DiffusionTask::active) er += CME*res->dC;
 	double dilate = Ke*(dvxx+dvyy-3.*er);
 	
     // elastic and viscous components of stree update
@@ -295,7 +289,7 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy
 	double dispEnergy = 0.5*dsxxv*dvxx + 0.5*dsyyv*dvyy
                     +0.5*dtxyv*dgam + 0.5*dszzv*dvzz;
     mptr->AddPlastEnergy(-dispEnergy);
-	IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,-dispEnergy);
+	IncrementHeatEnergy(mptr,res->dT,0.,-dispEnergy);
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
@@ -303,7 +297,7 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy
     dvij are (gradient rates X time increment) to give deformation gradient change
 */
 void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-        double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
+        double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np,void *properties,ResidualStrains *res)
 {
     /* ---------------------------------------------------
         Add to total strain
@@ -361,7 +355,7 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz
 
 	// stress increment (specific stress)
     double factor23=2./3.;
-	double er=CTE*ConductionTask::dTemperature+CME*DiffusionTask::dConcentration;
+	double er=CTE*res->dT+CME*res->dC;
 	double dilate=Ke*(dvxx+dvyy+dvzz-3.*er);
 	
 	double delsp[6];
@@ -414,22 +408,22 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz
 	double dispEnergy = 0.5*delsp[0]*dvxx + 0.5*delsp[1]*dvyy + 0.5*delsp[2]*dvzz
                         + 0.5*delsp[3]*dgamyz + 0.5*delsp[4]*dgamxz + 0.5*delsp[5]*dgamxy;
     mptr->AddPlastEnergy(-dispEnergy);
- 	IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,-dispEnergy);
+ 	IncrementHeatEnergy(mptr,res->dT,0.,-dispEnergy);
 }
 
 #pragma mark Viscoelastic::Accessors
 
 // return material type
-const char *Viscoelastic::MaterialType(void) { return "Viscoelastic"; }
+const char *Viscoelastic::MaterialType(void) const { return "Viscoelastic"; }
 
 // Return the material tag
-int Viscoelastic::MaterialTag(void) { return VISCOELASTIC; }
+int Viscoelastic::MaterialTag(void) const { return VISCOELASTIC; }
 
 /* Calculate wave speed in mm/sec (because G in MPa and rho in g/cm^3)
 	Uses sqrt((K +4Ge/3)/rho) which is probably the maximum wave speed possible
 */
-double Viscoelastic::WaveSpeed(bool threeD,MPMBase *mptr) { return sqrt(1.e3*(Ke + 4.*Ge/3.)/rho); }
+double Viscoelastic::WaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt(1.e3*(Ke + 4.*Ge/3.)/rho); }
 
 // Should support archiving history - if it is useful
-double Viscoelastic::GetHistory(int num,char *historyPtr) { return (double)0; }
+double Viscoelastic::GetHistory(int num,char *historyPtr) const { return (double)0; }
 

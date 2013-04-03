@@ -31,7 +31,8 @@ class MPMTask : public CommonTask
 #endif
 	
 #ifdef _PROFILE_TASKS_
-		void WriteProfileResults(int,double);
+		void WriteProfileResults(int,double,double);
+		void TrackTimes(double,double);
 #endif
 	
 	protected:

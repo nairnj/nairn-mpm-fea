@@ -30,10 +30,6 @@ RunCustomTasksTask::RunCustomTasksTask(const char *name) : MPMTask(name)
 // Run all custom tasks
 void RunCustomTasksTask::Execute(void)
 {
-#ifdef _PROFILE_TASKS_
-	double beginTime=fmobj->CPUTime();
-#endif
-
 	int i,p,iel,matfld,numnds,nds[MaxShapeNds];
 	MaterialBase *matID;
 	double wt,fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds];
@@ -113,7 +109,4 @@ void RunCustomTasksTask::Execute(void)
     while(nextTask!=NULL)
     	nextTask=nextTask->FinishForStep();
 	
-#ifdef _PROFILE_TASKS_
-	totalTaskTime+=fmobj->CPUTime()-beginTime;
-#endif
 }

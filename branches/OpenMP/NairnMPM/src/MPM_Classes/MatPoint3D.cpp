@@ -32,7 +32,7 @@ MatPoint3D::MatPoint3D(int inElemNum,int theMatl,double angin) : MPMBase(inElemN
 // Update Strains for this particle
 // Velocities for all fields are present on the nodes
 // matRef is the material and properties have been loaded, matFld is the material field
-void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,MaterialBase *matRef,int matFld)
+void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld)
 {
 	int i,numnds,nds[MaxShapeNds];
     double fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds],zDeriv[MaxShapeNds];
@@ -53,34 +53,27 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,MaterialBa
     // convert to strain increments
     dv.Scale(strainTime);
     
-	// find effective particle transport property - find it from the grid results
-	if(transportTasks)
-	{	// initialize
-		TransportTask *nextTransport=transportTasks;
-		while(nextTransport!=NULL)
-			nextTransport=nextTransport->ZeroValueExtrap();
-			
-		// loop over nodes
-		for(i=1;i<=numnds;i++)
-		{	nextTransport=transportTasks;
-			while(nextTransport!=NULL)
-				nextTransport=nextTransport->IncrementValueExtrap(nd[nds[i]],fn[i]);
-		}
-		
-		// find change
-		nextTransport=transportTasks;
-		while(nextTransport!=NULL)
-			nextTransport=nextTransport->GetDeltaValue(this);
+	// find effective particle transport properties from grid results
+	ResidualStrains res;
+	res.dT = 0;
+	res.dC = 0.;
+	if(!ConductionTask::active)
+	{	res.dT = pTemperature-pPreviousTemperature;
+		pPreviousTemperature = pTemperature;
+	}
+	else
+	{	for(i=1;i<=numnds;i++)
+		res.dT += conduction->IncrementValueExtrap(nd[nds[i]],fn[i]);
+		res.dT = conduction->GetDeltaValue(this,res.dT);
+	}
+	if(DiffusionTask::active)
+	{	for(i=1;i<=numnds;i++)
+		res.dC += diffusion->IncrementValueExtrap(nd[nds[i]],fn[i]);
+		res.dC = diffusion->GetDeltaValue(this,res.dC);
 	}
 
-	// If thermal ramp, but no conduction, load temperature change into dTemperature variable
-	if(!ConductionTask::active)
-	{	ConductionTask::dTemperature=pTemperature-pPreviousTemperature;
-		pPreviousTemperature=pTemperature;
-	}
-	
     // update particle strain and stress using its constituitive law
-    matRef->MPMConstitutiveLaw(this,dv,strainTime,np);
+    theMaterials[MatID()]->MPMConstitutiveLaw(this,dv,strainTime,np,props,&res);
 }
 
 // Move position (3D) (in mm)

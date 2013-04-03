@@ -17,6 +17,12 @@
 
 class MPMBase;
 
+// plastic law properties
+typedef struct {
+	double alpint;
+	double dalpha;
+} HardeningAlpha;
+
 class HardeningLawBase
 {
     public:
@@ -26,40 +32,41 @@ class HardeningLawBase
     
         // initialize
         virtual char *InputMat(char *,int &);
-        virtual void PrintYieldProperties(void) = 0;
-        virtual void InitialLoadMechProps(int,int);
-        virtual const char *VerifyProperties(int);
-		virtual int HistoryDoublesNeeded(void);
+		virtual const char *VerifyAndLoadProperties(int);
+        virtual void PrintYieldProperties(void) const = 0;
+		virtual int HistoryDoublesNeeded(void) const;
     
-        // hardening law core methods
-        virtual double GetShearRatio(MPMBase *,double,double);
-        virtual void LoadHardeningLawProps(MPMBase *,int);
-        virtual double GetYield(MPMBase *,int,double) = 0;
-        virtual double GetYieldIncrement(MPMBase *,int,double);
-        virtual double GetKPrime(MPMBase *,int,double) = 0;
-        virtual double GetK2Prime(MPMBase *,double,double) = 0;
+        // load properties
+		virtual void *GetCopyOfHardeningProps(MPMBase *,int);
+		virtual void DeleteCopyOfHardeningProps(void *,int) const;
+        virtual double GetShearRatio(MPMBase *,double,double,void *) const;
+	
+		// hardening law core methods
+        virtual double GetYield(MPMBase *,int,double,HardeningAlpha *,void *) const = 0;
+        virtual double GetYieldIncrement(MPMBase *,int,double,HardeningAlpha *,void *) const;
+        virtual double GetKPrime(MPMBase *,int,double,HardeningAlpha *,void *) const = 0;
+        virtual double GetK2Prime(MPMBase *,double,double,HardeningAlpha *,void *) const = 0;
     
         // return mapping methods
-        virtual double SolveForLambda(MPMBase *,int,double,Tensor *,double,double,double,double);
-        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double);
-        virtual bool LambdaConverged(int,double,double);
+        virtual double SolveForLambda(MPMBase *,int,double,Tensor *,double,double,double,double,HardeningAlpha *,void *) const;
+        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double,HardeningAlpha *,void *) const;
+        virtual bool LambdaConverged(int,double,double) const;
 	
         // Default internal variable as cumlative plastic strain
-        virtual void UpdateTrialAlpha(MPMBase *,int);
-        virtual void UpdateTrialAlpha(MPMBase *,int,double,double);
-        virtual void UpdatePlasticInternal(MPMBase *,int);
-		virtual void ElasticUpdateFinished(MPMBase *,int,double);
+        virtual void UpdateTrialAlpha(MPMBase *,int,HardeningAlpha *) const;
+        virtual void UpdateTrialAlpha(MPMBase *,int,double,double,HardeningAlpha *) const;
+        virtual void UpdatePlasticInternal(MPMBase *,int,HardeningAlpha *) const;
+		virtual void ElasticUpdateFinished(MPMBase *,int,double) const;
 	
         // accessors
-		virtual double GetHistory(int,char *);
-        virtual const char *GetHardeningLawName(void) = 0;
+		virtual double GetHistory(int,char *) const;
+        virtual const char *GetHardeningLawName(void) const = 0;
     
     protected:
         double yield,yldred;
         MaterialBase *parent;
-        double alpint,dalpha;
 	
-		virtual void BracketSolution(MPMBase *,int,double,Tensor *,double,double,double,double,double *,double *);
+		virtual void BracketSolution(MPMBase *,int,double,Tensor *,double,double,double,double,double *,double *,HardeningAlpha *a,void *) const;
 };
 
 #endif

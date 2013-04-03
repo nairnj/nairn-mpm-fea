@@ -23,7 +23,6 @@ class ConductionTask : public TransportTask
 {
     public:
 		static bool active,crackTipHeating,energyCoupling,AVHeating;
-		static double dTemperature;
 		
         // constructors and destructors
 		ConductionTask();
@@ -41,8 +40,8 @@ class ConductionTask : public TransportTask
 		virtual TransportTask *IncrementTransportRate(NodalPoint *,double);
 		virtual TransportTask *MoveTransportValue(MPMBase *,double);
 		virtual TransportTask *UpdateNodalValues(double);
-		virtual TransportTask *IncrementValueExtrap(NodalPoint *,double);
-		virtual TransportTask *GetDeltaValue(MPMBase *);
+		virtual double IncrementValueExtrap(NodalPoint *,double) const;
+		virtual double GetDeltaValue(MPMBase *,double) const;
 		
 		// custom methods
 		void AddCrackTipHeating(void);

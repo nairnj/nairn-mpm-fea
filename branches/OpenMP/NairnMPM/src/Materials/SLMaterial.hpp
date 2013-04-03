@@ -24,6 +24,17 @@
 
 #include "Materials/SCGLHardening.hpp"
 
+// plastic law properties
+typedef struct {
+	double Gratio;
+	double TwoUkkT;
+	double currentYTred;
+	double constantYT;
+	bool isConstantYT;
+	double epdotmin;
+	double epdotmax;
+} SLProperties;
+
 class SLMaterial : public SCGLHardening
 {
     public:
@@ -36,32 +47,35 @@ class SLMaterial : public SCGLHardening
 		
 		// initialize
         virtual char *InputMat(char *,int &);
-        virtual const char *VerifyProperties(int);
-        virtual void PrintYieldProperties(void);
-        virtual void InitialLoadMechProps(int,int);
-		virtual int HistoryDoublesNeeded(void);
- 				
+        virtual const char *VerifyAndLoadProperties(int);
+        virtual void PrintYieldProperties(void) const;
+ 		virtual int HistoryDoublesNeeded(void) const;
+		
+		// copy of properties
+		virtual void *GetCopyOfHardeningProps(MPMBase *,int);
+		virtual void DeleteCopyOfHardeningProps(void *,int) const;
+		virtual double GetShearRatio(MPMBase *,double,double,void *) const;
+	
 		// methods
-        virtual double GetShearRatio(MPMBase *,double,double);
-        virtual double GetYield(MPMBase *,int,double);
-    double GetYTred(double);
-        virtual double GetKPrime(MPMBase *,int,double);
-        virtual double GetK2Prime(MPMBase *,double,double);
-        double GetEpdot(double YT);
-        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double);
+        virtual double GetYield(MPMBase *,int,double,HardeningAlpha *,void *) const;
+        virtual double GetKPrime(MPMBase *,int,double,HardeningAlpha *,void *) const;
+        virtual double GetK2Prime(MPMBase *,double,double,HardeningAlpha *a,void *) const;
+	
+		// return mapping
+        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double,HardeningAlpha *a,void *) const;
+		double GetEpdot(double,double) const;
    
 		// update
-		virtual void ElasticUpdateFinished(MPMBase *,int,double);
+		virtual void ElasticUpdateFinished(MPMBase *,int,double) const;
 	
 		// accessors
-		virtual double GetHistory(int,char *);
-        virtual const char *GetHardeningLawName(void);
+		virtual double GetHistory(int,char *) const;
+        virtual const char *GetHardeningLawName(void) const;
  		
     protected:
-		double YPred,TwoUkkT,C2red,currentYTred,constantYT;
-		double epdotmin,epdotmax,YTmin,YTprecision;
-		bool isConstantYT;
-
+		// independent of particle state
+		double YPred,C2red,YTmin,YTprecision;
+	
 };
 
 #endif

@@ -43,28 +43,22 @@ char *NewMaterial::InputMat(char *xName,int &input)
     return(MaterialBase::InputMat(xName,input));
 }
 
-// Verify input properties; if problem return string with an error message
-// If OK, MUST pass on to super class
+// Verify input properties do calculations; if problem return string with an error message
+// If OK, MUST pass on to super class. This is called just before PrintMaterial
 // (see also ValidateForUse() for checks that depend on MPM calculation mode)
-const char *NewMaterial::VerifyProperties(int np)
+const char *NewMaterial::VerifyAndLoadProperties(int np)
 {
 	// check properties
 
 	// must call super class
-	return MaterialBase::VerifyProperties(np);
+	return MaterialBase::VerifyAndLoadProperties(np);
 }
-
-// Initialize constant properties used in constitutive law
-//void NewMaterial::InitialLoadMechProps(int makeSpecific,int np)
-//{
-//	MaterialBase::InitialLoadMechProps(makeSpecific,np);
-//}
 
 // Initialize constant transport properties used in transport calculation
 //void NewMaterial::InitialLoadTransProps(void) {}
 
 // print mechanical properties to the results
-void NewMaterial::PrintMechanicalProperties(void)
+void NewMaterial::PrintMechanicalProperties(void) const
 {	
 	// call superclass here if it is not Material base
 	
@@ -74,12 +68,12 @@ void NewMaterial::PrintMechanicalProperties(void)
 }
 
 // Print transport properties (if activated)
-//void NewMaterial::PrintTransportProperties(void) {}
+//void NewMaterial::PrintTransportProperties(void) const {}
 
 // If MPM analysis not allowed, throw an exception (e.g. 3D not implemented)
 // If OK, MUST pass on to super class
-// (see also VerifyProperties() for generic material property checks)
-//void NewMaterial::ValidateForUse(int np)
+// (see also VerifyAndLoadProperties() for generic material property checks)
+//void NewMaterial::ValidateForUse(int np) const
 //{	if(np==THREED_MPM)
 //	{	throw CommonException("NewMaterial cannot do 3D MPM analysis",
 //							  "NewMaterial::ValidateForUse");
@@ -90,7 +84,7 @@ void NewMaterial::PrintMechanicalProperties(void)
 // If needed, a material can initialize particle state
 // For example, ideal gas initializes to base line pressure
 // If used, be sure to pass on to superclass when done
-//void NewMaterial::SetInitialParticleState(MPMBase *mptr,int np) {}
+//void NewMaterial::SetInitialParticleState(MPMBase *mptr,int np) const {}
 
 
 #pragma mark NewMaterial:HistoryVariables
@@ -99,16 +93,9 @@ void NewMaterial::PrintMechanicalProperties(void)
 //char *NewMaterial::InitHistoryData(void) { return NULL; }
 
 // Reutrn history data for this material type when requested (if has any)
-//double NewMaterial::GetHistory(int num,char *historyPtr) { return 0.; }
+//double NewMaterial::GetHistory(int num,char *historyPtr) const { return 0.; }
 
 #pragma mark NewMaterial:Step Methods
-
-// Calculate material properties that depend on the state of the particle
-// If implemented, MUST pass onto super class
-//void NewMaterial::LoadMechanicalProps(MPMBase *mptr,int np)
-//{
-//	MaterialBase::LoadMechanicalProps(mptr,np);
-//}
 
 // Calculate transport properties that depend on the state of the particle
 // If implemented, MUST pass onto super class
@@ -119,10 +106,10 @@ void NewMaterial::PrintMechanicalProperties(void)
 
 // Implemented in case heat capacity (Cp/heat capacity for conduction) changes with particle state
 // Called by conduction code
-//double NewMaterial::GetHeatCapacity(MPMBase *mptr) { return heatCapacity; }
+//double NewMaterial::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity; }
 
 // Apply Constitutive law, check np to know what type
-void NewMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
+void NewMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res)
 {
 }
 
@@ -131,35 +118,35 @@ void NewMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 #pragma mark NewMaterial::Accessors
 
 // Return the material tag
-int NewMaterial::MaterialTag(void) { return NEWMATERIAL; }
+int NewMaterial::MaterialTag(void) const { return NEWMATERIAL; }
 
 // return unique, short name for this material
-const char *NewMaterial::MaterialType(void) { return "Template Material"; }
+const char *NewMaterial::MaterialType(void) const { return "Template Material"; }
 
 // Calculate maximum wave speed for material in mm/sec.
-double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
+double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; }
 
 // If wave speed changes with particle state, recalculate it here and return result in mm/sec
 // Only needed if wave speed changes with particle state AND if you plan to use the
 // custom task to periodically adjust the time step
-//double MaterialBase::CurrentWaveSpeed(bool threeD,MPMBase *mptr) { return (new wave speed); }
+//double MaterialBase::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const { return (new wave speed); }
 
 // Calculate shear wave speed for material in mm/sec.
 // Used only by silent boundary conditions, which are only for isotropic materials
-//double NewMaterial::ShearWaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
+//double NewMaterial::ShearWaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; }
 
 // Maximum diffusion coefficient in cm^2/sec
-//double NewMaterial::MaximumDiffusion(void) { return 0.; }
+//double NewMaterial::MaximumDiffusion(void) const { return 0.; }
 
 // Maximum diffusivity in cm^2/sec
-//double NewMaterial::MaximumDiffusivity(void) { return 0.; }
+//double NewMaterial::MaximumDiffusivity(void) const { return 0.; }
 
 // When code needs the stress, it calls this method on the material where sp is point
 // to stress tensor on a particle. The default method thus returns it contents in
 // a new Tensor. Some materials separated track deviatoric stress and pressure. They
 // need to overide and return the full stress tensor. Other materials can use any scheme
 // they want to store stress as long as this method returns the true stress
-//Tensor NewMaterial::GetStress(Tensor *sp,double pressure) { Tensor stress = *sp; return stress; }
+//Tensor NewMaterial::GetStress(Tensor *sp,double pressure) const { Tensor stress = *sp; return stress; }
 
 // If new material separately track elastic and plastic strain in the particle elastic
 // and plastic strain tensors, include this method and return TRUE. When true,
@@ -173,7 +160,7 @@ double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
 // The consititutive law also needs to calculate the artificial viscosity and add
 // it to pressure. A base material class method, GetArtificialViscocity(), does
 // the calculation.
-//bool NewMaterial::SupportsArtificialViscosity(void) { return TRUE; }
+//bool NewMaterial::SupportsArtificialViscosity(void) const { return TRUE; }
 
 
 

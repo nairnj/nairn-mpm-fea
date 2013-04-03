@@ -1,4 +1,4 @@
-/******************************************************************************** 
+/********************************************************************************
     ElasticMPM.cpp - more Elastic for MPM code
     NairnMPM
     
@@ -8,7 +8,7 @@
 
 #include "Materials/Elastic.hpp"
 #include "MPM_Classes/MPMBase.hpp"
-#include "Custom_Tasks/ConductionTask.hpp"
+//#include "Custom_Tasks/ConductionTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 
@@ -22,8 +22,11 @@
 	(i.e., du/r on particle and dvzz will be zero if not axisymmetric)
 */
 void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,double dvzz,
-                          double delTime,int np)
+                          double delTime,int np,void *properties,ResidualStrains *res)
 {
+	// cast pointer to material-specific data
+	ElasticProperties *p = (ElasticProperties *)properties;
+	
 	// Add to total strain
 	Tensor *ep=mptr->GetStrainTensor();
     ep->xx+=dvxx;
@@ -33,15 +36,15 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 	double dwrotxy=dvyx-dvxy;
 	
     // residual strains (thermal and moisture)
-	double erxx=me0[1]*ConductionTask::dTemperature;
-	double eryy=me0[2]*ConductionTask::dTemperature;
-	double erxy=me0[3]*ConductionTask::dTemperature;
-	double erzz=CTE3*ConductionTask::dTemperature;
+	double erxx=p->alpha[1]*res->dT;
+	double eryy=p->alpha[2]*res->dT;
+	double erxy=p->alpha[3]*res->dT;
+	double erzz=CTE3*res->dT;
 	if(DiffusionTask::active)
-	{	erxx+=mc0[1]*DiffusionTask::dConcentration;
-		eryy+=mc0[2]*DiffusionTask::dConcentration;
-		erxy+=mc0[3]*DiffusionTask::dConcentration;
-		erzz+=CME3*DiffusionTask::dConcentration;
+	{	erxx+=p->beta[1]*res->dC;
+		eryy+=p->beta[2]*res->dC;
+		erxy+=p->beta[3]*res->dC;
+		erzz+=CME3*res->dC;
 	}
 	
     // moisture and thermal strain and temperature change
@@ -63,29 +66,29 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 		
 		// hoop stress affect on RR, ZZ, and RZ stresses
 		dvzz -= erzz;
-		c1=mdm[1][1]*dvxx + mdm[1][2]*dvyy + mdm[4][1]*dvzz + mdm[1][3]*dgam;
-		c2=mdm[1][2]*dvxx + mdm[2][2]*dvyy + mdm[4][2]*dvzz + mdm[2][3]*dgam;
-		c3=mdm[1][3]*dvxx + mdm[2][3]*dvyy + mdm[4][3]*dvzz + mdm[3][3]*dgam;
+		c1=p->C[1][1]*dvxx + p->C[1][2]*dvyy + p->C[4][1]*dvzz + p->C[1][3]*dgam;
+		c2=p->C[1][2]*dvxx + p->C[2][2]*dvyy + p->C[4][2]*dvzz + p->C[2][3]*dgam;
+		c3=p->C[1][3]*dvxx + p->C[2][3]*dvyy + p->C[4][3]*dvzz + p->C[3][3]*dgam;
 	}
 	else
-    {	c1=mdm[1][1]*dvxx + mdm[1][2]*dvyy + mdm[1][3]*dgam;
-		c2=mdm[1][2]*dvxx + mdm[2][2]*dvyy + mdm[2][3]*dgam;
-		c3=mdm[1][3]*dvxx + mdm[2][3]*dvyy + mdm[3][3]*dgam;
+    {	c1=p->C[1][1]*dvxx + p->C[1][2]*dvyy + p->C[1][3]*dgam;
+		c2=p->C[1][2]*dvxx + p->C[2][2]*dvyy + p->C[2][3]*dgam;
+		c3=p->C[1][3]*dvxx + p->C[2][3]*dvyy + p->C[3][3]*dgam;
 	}
 	Hypo2DCalculations(mptr,-dwrotxy,c1,c2,c3);
     
 	// out of plane stress or strain and energy incrment
 	if(np==PLANE_STRAIN_MPM)
 	{	// need to add back terms to get from reduced cte to actual cte
-		sp->zz += mdm[4][1]*(dvxx+me0[5]*erzz)+mdm[4][2]*(dvyy+me0[6]*erzz)
-					+mdm[4][3]*(dgam+me0[7]*erzz)-mdm[4][4]*erzz;
+		sp->zz += p->C[4][1]*(dvxx+p->alpha[5]*erzz)+p->C[4][2]*(dvyy+p->alpha[6]*erzz)
+					+p->C[4][3]*(dgam+p->alpha[7]*erzz)-p->C[4][4]*erzz;
 		
 		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
 		mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
 								   + (st0.xy+sp->xy)*dgam)-0.5*(st0.zz+sp->zz)*erzz);
 	}
 	else if(np==PLANE_STRESS_MPM)
-	{	ep->zz += mdm[4][1]*dvxx+mdm[4][2]*dvyy+mdm[4][3]*dgam+erzz;
+	{	ep->zz += p->C[4][1]*dvxx+p->C[4][2]*dvyy+p->C[4][3]*dgam+erzz;
 		
 		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
 		mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
@@ -93,7 +96,7 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 	}
 	else
 	{	// axisymmetric hoop stress
-		sp->zz += mdm[4][1]*dvxx + mdm[4][2]*dvyy + mdm[4][4]*dvzz + mdm[4][3]*dgam;
+		sp->zz += p->C[4][1]*dvxx + p->C[4][2]*dvyy + p->C[4][4]*dvzz + p->C[4][3]*dgam;
 		
 		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
 		mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
@@ -101,7 +104,7 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 	}
 	
     // track heat energy
-    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,0.);
+    IncrementHeatEnergy(mptr,res->dT,0.,0.);
 }
 
 /* For 3D MPM analysis, take increments in strain and calculate new
@@ -110,8 +113,11 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
     Assumes linear elastic, uses hypoelastic correction
 */
 void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-        double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
+        double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np,void *properties,ResidualStrains *res)
 {
+	// cast pointer to material-specific data
+	ElasticProperties *p = (ElasticProperties *)properties;
+	
 	// Add to total strain
 	Tensor *ep=mptr->GetStrainTensor();
     ep->xx+=dvxx;
@@ -130,19 +136,19 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doub
 	double dwrotyz=dvzy-dvyz;
 	
     // residual strains (thermal and moisture) (isotropic only)
-	dvxx-=me0[0]*ConductionTask::dTemperature;
-	dvyy-=me0[1]*ConductionTask::dTemperature;
-	dvzz-=me0[2]*ConductionTask::dTemperature;
-	dgamyz-=me0[3]*ConductionTask::dTemperature;
-	dgamxz-=me0[4]*ConductionTask::dTemperature;
-	dgamxy-=me0[5]*ConductionTask::dTemperature;
+	dvxx-=p->alpha[0]*res->dT;
+	dvyy-=p->alpha[1]*res->dT;
+	dvzz-=p->alpha[2]*res->dT;
+	dgamyz-=p->alpha[3]*res->dT;
+	dgamxz-=p->alpha[4]*res->dT;
+	dgamxy-=p->alpha[5]*res->dT;
 	if(DiffusionTask::active)
-	{	dvxx-=mc0[0]*DiffusionTask::dConcentration;
-		dvyy-=mc0[1]*DiffusionTask::dConcentration;
-		dvzz-=mc0[2]*DiffusionTask::dConcentration;
-		dgamyz-=mc0[3]*DiffusionTask::dConcentration;
-		dgamxz-=mc0[4]*DiffusionTask::dConcentration;
-		dgamxy-=mc0[5]*DiffusionTask::dConcentration;
+	{	dvxx-=p->beta[0]*res->dC;
+		dvyy-=p->beta[1]*res->dC;
+		dvzz-=p->beta[2]*res->dC;
+		dgamyz-=p->beta[3]*res->dC;
+		dgamxz-=p->beta[4]*res->dC;
+		dgamxy-=p->beta[5]*res->dC;
 	}
 	
     // save initial stresses
@@ -153,7 +159,7 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doub
 	double delsp[6];
 	int i;
 	for(i=0;i<6;i++)
-		delsp[i]=mdm[i][0]*dvxx + mdm[i][1]*dvyy + mdm[i][2]*dvzz + mdm[i][3]*dgamyz + mdm[i][4]*dgamxz + mdm[i][5]*dgamxy;
+		delsp[i]=p->C[i][0]*dvxx + p->C[i][1]*dvyy + p->C[i][2]*dvzz + p->C[i][3]*dgamyz + p->C[i][4]*dgamxz + p->C[i][5]*dgamxy;
 	
 	// update stress (need to make hypoelastic)
 	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,delsp);
@@ -167,6 +173,6 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doub
                             + (st0.xy+sp->xy)*dgamxy));
     
     // track heat energy
-    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,0.);
+    IncrementHeatEnergy(mptr,res->dT,0.,0.);
 
 }

@@ -24,7 +24,7 @@ CubicTraction::CubicTraction(char *matName) : TractionLaw(matName)
 	The law is sigma = (27 smax/(4 umax^3)) u (umax-u)^2 = k u (umax-u)^2
 	The toughness is Jc = (9000/16) umax smax
 */
-const char *CubicTraction::VerifyProperties(int np)
+const char *CubicTraction::VerifyAndLoadProperties(int np)
 {
 	const char *msg=SetTractionLaw(stress1,delIc,JIc,kI1);
 	if(msg!=NULL) return msg;
@@ -32,11 +32,11 @@ const char *CubicTraction::VerifyProperties(int np)
 	msg=SetTractionLaw(stress2,delIIc,JIIc,kII1);
 	if(msg!=NULL) return msg;
 	
-	return TractionLaw::VerifyProperties(np);
+	return TractionLaw::VerifyAndLoadProperties(np);
 }
 
 // print to output window
-void CubicTraction::PrintMechanicalProperties(void)
+void CubicTraction::PrintMechanicalProperties(void) const
 {
 	PrintProperty("GcI",JIc,"J/m^2");
 	PrintProperty("sigI",stress1,"");
@@ -171,10 +171,10 @@ double CubicTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,double tC
 #pragma mark CubicTraction::Accessors
 
 // Return the material tag
-int CubicTraction::MaterialTag(void) { return CUBICTRACTIONMATERIAL; }
+int CubicTraction::MaterialTag(void) const { return CUBICTRACTIONMATERIAL; }
 
 // return material type
-const char *CubicTraction::MaterialType(void) { return "Cubic Traction Law"; }
+const char *CubicTraction::MaterialType(void) const { return "Cubic Traction Law"; }
 
 // set traction law on initialization
 const char *CubicTraction::SetTractionLaw(double &smax,double &umax,double &G,double &k1)

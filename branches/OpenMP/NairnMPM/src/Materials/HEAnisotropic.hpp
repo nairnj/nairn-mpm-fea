@@ -24,18 +24,17 @@ class HEAnisotropic : public HyperElastic
 		
 		// initialize
         virtual char *InputMat(char *,int &);
-        virtual const char *VerifyProperties(int);
-		virtual void PrintMechanicalProperties(void);
-		virtual void InitialLoadMechProps(int,int);
+        virtual const char *VerifyAndLoadProperties(int);
+		virtual void PrintMechanicalProperties(void) const;
 		
 		// step methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
-		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *);
+		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *);
 				
 		// accessors
-		virtual const char *MaterialType(void);
-		virtual int MaterialTag();
-		virtual double WaveSpeed(bool,MPMBase *);
+		virtual const char *MaterialType(void) const;
+		virtual int MaterialTag() const;
+		virtual double WaveSpeed(bool,MPMBase *) const;
 		
     protected:
 		// unique properties

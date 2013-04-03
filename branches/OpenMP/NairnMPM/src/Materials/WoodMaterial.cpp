@@ -41,36 +41,28 @@ char *WoodMaterial::InputMat(char *xName,int &input)
 }
 
 // verify settings and maybe some initial calculations
-const char *WoodMaterial::VerifyProperties(int np)
+const char *WoodMaterial::VerifyAndLoadProperties(int np)
 {
 	// check at least some yielding
 	if(tempC1<0.)
 		return "tempC1 must be positive";
 	
 	// must call super class
-	return HillPlastic::VerifyProperties(np);
-}
-
-// Constant properties used in constitutive law
-void WoodMaterial::InitialLoadMechProps(int makeSpecific,int np)
-{
-	HillPlastic::InitialLoadMechProps(makeSpecific,np);
+	return HillPlastic::VerifyAndLoadProperties(np);
 }
 
 // print mechanical properties to the results
-void WoodMaterial::PrintMechanicalProperties(void)
+void WoodMaterial::PrintMechanicalProperties(void) const
 {	
     HillPlastic::PrintMechanicalProperties();
 	PrintProperty("tempC1",tempC1,"");
 	PrintProperty("tempC2",tempC2,"C^-1");
 	cout << endl;
-	
-	tempC1/=100.;
-	tempC2/=100.;
 }
 
 #pragma mark WoodMaterial:Methods
 
+/*
 // State dependent material properties
 void WoodMaterial::LoadMechanicalProps(MPMBase *mptr,int np)
 {
@@ -95,14 +87,15 @@ void WoodMaterial::LoadMechanicalProps(MPMBase *mptr,int np)
 	// call superclass
 	HillPlastic::LoadMechanicalProps(mptr,np);
 }
+*/
 
 #pragma mark WoodMaterial::Custom Methods
 
 #pragma mark WoodMaterial::Accessors
 
 // Return the material tag
-int WoodMaterial::MaterialTag(void) { return WOODMATERIAL; }
+int WoodMaterial::MaterialTag(void) const { return WOODMATERIAL; }
 
 // return unique, short name for this material
-const char *WoodMaterial::MaterialType(void) { return "Wood Material"; }
+const char *WoodMaterial::MaterialType(void) const { return "Wood Material"; }
 

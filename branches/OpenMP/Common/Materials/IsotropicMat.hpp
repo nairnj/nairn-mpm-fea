@@ -28,22 +28,22 @@ class IsotropicMat : public Elastic
 		
 		// initialize
         virtual char *InputMat(char *,int &);
-        virtual const char *VerifyProperties(int);
-		virtual void InitialLoadMechProps(int,int);
-		virtual void PrintMechanicalProperties(void);
+        virtual const char *VerifyAndLoadProperties(int);
+		virtual void PrintMechanicalProperties(void) const;
         
+		virtual void FillElasticProperties(ElasticProperties *,int);
 #ifdef MPM_CODE
-        // convert J-integrals into stress intensity factors (YJG)
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int);
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
 #endif
 		
 		// accessors
-		virtual const char *MaterialType(void);
-		virtual int MaterialTag();
+		virtual const char *MaterialType(void) const;
+		virtual int MaterialTag() const;
 #ifdef MPM_CODE
 		virtual void InitialLoadTransProps(void);
-		virtual double WaveSpeed(bool,MPMBase *);
-        virtual double ShearWaveSpeed(bool,MPMBase *);
+		virtual double WaveSpeed(bool,MPMBase *) const;
+        virtual double ShearWaveSpeed(bool,MPMBase *) const;
 #endif
 
     protected:

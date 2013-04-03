@@ -20,7 +20,7 @@ class TransportTask
 {
     public:
         TransportTask *nextTask;
-		double rate,pValueExtrap;
+		double rate;
        
         // constructors and destructors
         TransportTask();
@@ -70,10 +70,10 @@ class TransportTask
 		virtual TransportTask *UpdateNodalValues(double) = 0;
 		
 		// increment transport rate when updating particle strain
-		virtual TransportTask *IncrementValueExtrap(NodalPoint *,double) = 0;
+		virtual double IncrementValueExtrap(NodalPoint *,double) const = 0;
 		
 		// find change in transport value on the particle from grid results
-		virtual TransportTask *GetDeltaValue(MPMBase *) = 0;
+		virtual double GetDeltaValue(MPMBase *,double) const = 0;
 
 };
 

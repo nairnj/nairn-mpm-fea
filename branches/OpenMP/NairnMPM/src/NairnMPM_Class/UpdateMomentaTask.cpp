@@ -46,13 +46,8 @@ UpdateMomentaTask::UpdateMomentaTask(const char *name) : MPMTask(name)
 // Update grid momenta and transport rates
 void UpdateMomentaTask::Execute(void)
 {
-#ifdef _PROFILE_TASKS_
-	double beginTime=fmobj->CPUTime();
-#endif
-
 	// Update momenta on all nodes
-	int i;
-	for(i=1;i<=nnodes;i++)
+	for(int i=1;i<=nnodes;i++)
 		nd[i]->UpdateMomentaOnNode(timestep);
 	
 	// adjust momenta and forces for multimaterial contact
@@ -65,9 +60,5 @@ void UpdateMomentaTask::Execute(void)
 	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
 		nextTransport=nextTransport->TransportRates(timestep);
-	
-#ifdef _PROFILE_TASKS_
-	totalTaskTime+=fmobj->CPUTime()-beginTime;
-#endif
 }
 	

@@ -32,7 +32,7 @@ Orthotropic::Orthotropic(char *matName) : TransIsotropic(matName,ORTHO)
 #pragma mark Orthotropic::Initialization
 
 // print mechanical properties to output window
-void Orthotropic::PrintMechanicalProperties(void)
+void Orthotropic::PrintMechanicalProperties(void) const
 {	
     PrintProperty("E1",Ex,"");
 	PrintProperty("E2",Ey,"");
@@ -57,7 +57,7 @@ void Orthotropic::PrintMechanicalProperties(void)
     
 #ifdef MPM_CODE
 // print transport properties to output window
-void Orthotropic::PrintTransportProperties(void)
+void Orthotropic::PrintTransportProperties(void) const
 {
     char mline[200];
 	
@@ -190,7 +190,7 @@ char *Orthotropic::InputMat(char *xName,int &input)
 }
 
 // calculate properties used in analyses
-const char *Orthotropic::VerifyProperties(int np)
+const char *Orthotropic::VerifyAndLoadProperties(int np)
 {
     // finish input
     if(!read[NUXY_PROP])
@@ -243,21 +243,21 @@ const char *Orthotropic::VerifyProperties(int np)
 	if(err!=NULL) return err;
 	
 	// superclass call
-	return MaterialBase::VerifyProperties(np);
+	return MaterialBase::VerifyAndLoadProperties(np);
 }
 
 #pragma mark Orthotropic::Accessors
 
 // Return the material tag
-int Orthotropic::MaterialTag(void) { return ORTHO; }
+int Orthotropic::MaterialTag(void) const { return ORTHO; }
 
 // return material type
-const char *Orthotropic::MaterialType(void) { return "Orthotropic (3 axis normal to x-y plane)"; }
+const char *Orthotropic::MaterialType(void) const { return "Orthotropic (3 axis normal to x-y plane)"; }
 
 #ifdef MPM_CODE
 
 // calculate maximum wave speed in mm/sec (moduli in MPa, rho in g/cm^3)
-double Orthotropic::WaveSpeed(bool threeD,MPMBase *mptr)
+double Orthotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
 {
     double xx,cnorm,cshear;
     

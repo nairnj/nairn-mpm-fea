@@ -25,7 +25,7 @@ LinearTraction::LinearTraction(char *matName) : CohesiveZone(matName)
 	In terms of k and umax
 	    J = 250 k umax^2,   stress = k umax/2
 */
-const char *LinearTraction::VerifyProperties(int np)
+const char *LinearTraction::VerifyAndLoadProperties(int np)
 {
 	// must always provide k1
 	if(kI1<0. || kII1<0.)
@@ -35,11 +35,11 @@ const char *LinearTraction::VerifyProperties(int np)
 	kI1*=1.0e6;
 	kII1*=1.0e6;
 	
-	return TractionLaw::VerifyProperties(np);
+	return TractionLaw::VerifyAndLoadProperties(np);
 }
 
 // print to output window
-void LinearTraction::PrintMechanicalProperties(void)
+void LinearTraction::PrintMechanicalProperties(void) const
 {
 	PrintProperty("kI",1.0e-6*kI1,"MPa/mm");
 	PrintProperty("kII",1.0e-6*kII1,"MPa/mm");
@@ -94,9 +94,9 @@ double LinearTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,double t
 #pragma mark LinearTraction::Accessors
 
 // return material type
-const char *LinearTraction::MaterialType(void) { return "Linear Elastic Traction"; }
+const char *LinearTraction::MaterialType(void) const { return "Linear Elastic Traction"; }
 
 // Return the material tag
-int LinearTraction::MaterialTag(void) { return LINEARTRACTIONMATERIAL; }
+int LinearTraction::MaterialTag(void) const { return LINEARTRACTIONMATERIAL; }
 
 

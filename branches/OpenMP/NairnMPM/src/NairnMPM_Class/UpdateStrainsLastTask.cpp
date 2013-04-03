@@ -24,21 +24,6 @@
 		rezeroed
  
 	After new extrapolations, update strains on all particles
- 
-	Input Variables
-		mpm[]->ncpos
-		nd[]->vel,fdiff, fcond
- 
-	Output Variables
-		mvf[]->pk, disp
-		nd[]->gTemperature, gConcentration
-		theMaterials[]->LoadMechanicalProps() - changes any properties that depend
-			on particle state
-		MPMBase::currentParticleNum - used in strain update loop
-		mpm[]->sp, ep, eplast, wrot, plastEnergy, dispEnergy, strainEnergy,
-			extWork, matData->, pPreviousTemperature, pPreviousConcentration
-		ConductionTask::dTemperature
-		DiffusionTask::dConcentration
 ********************************************************************************/
 
 #include "NairnMPM_Class/UpdateStrainsLastTask.hpp"
@@ -66,10 +51,6 @@ UpdateStrainsLastTask::UpdateStrainsLastTask(const char *name) : MPMTask(name)
 // Get total grid point forces (except external forces)
 void UpdateStrainsLastTask::Execute(void)
 {
-#ifdef _PROFILE_TASKS_
-	double beginTime=fmobj->CPUTime();
-#endif
-
 	int i,p,iel,matfld,numnds,nds[MaxShapeNds];
 	MaterialBase *matID;
 	double mp,fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds];
@@ -126,8 +107,4 @@ void UpdateStrainsLastTask::Execute(void)
 	
 	// update strains based on current velocities
 	UpdateStrainsFirstTask::FullStrainUpdate(strainTimestep,(fmobj->mpmApproach==USAVG_METHOD),fmobj->np);
-
-#ifdef _PROFILE_TASKS_
-	totalTaskTime+=fmobj->CPUTime()-beginTime;
-#endif
 }

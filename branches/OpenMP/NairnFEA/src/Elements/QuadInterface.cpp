@@ -55,7 +55,7 @@ void QuadInterface::Stiffness(int np)
 	double xpxi,ypxi,dlxi,fn[MaxElNd],temp,asr;
 	Vector xi;
 	
-    // Load nodal coordinates (ce[]) and material props (mdm[][])
+    // Load nodal coordinates (ce[]) and material props (pr.C[][])
     GetProperties(np);
     
     // Zero stiffness (se[][]) and reaction (re[])
@@ -63,8 +63,8 @@ void QuadInterface::Stiffness(int np)
 
 	// basic parameters */
     MaterialBase *matl=theMaterials[material-1];
-	double Dn=matl->mdm[1][1];
-	double Dt=matl->mdm[1][2];
+	double Dn=matl->pr.C[1][1];
+	double Dt=matl->pr.C[1][2];
 	double dx=(ce[3].x-ce[1].x)/2.;
 	double dy=(ce[3].y-ce[1].y)/2.;
 	double dsx=ce[1].x+ce[3].x-2.*ce[2].x;

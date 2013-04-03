@@ -37,26 +37,30 @@ class TransIsotropic : public Elastic
 		
 		// initialize
         virtual char *InputMat(char *,int &);
-        virtual const char *VerifyProperties(int);
-        virtual void PrintMechanicalProperties(void);
+        virtual const char *VerifyAndLoadProperties(int);
+        virtual void PrintMechanicalProperties(void) const;
 #ifdef MPM_CODE
-		virtual void PrintTransportProperties(void);
+		virtual void PrintTransportProperties(void) const;
 #endif
 		
 		// methods
-		virtual void LoadMechProps(int,double,int);
+		void FillElasticProperties2D(ElasticProperties *,int,double,int);
 #ifdef MPM_CODE
-		virtual void LoadMechanicalProps(MPMBase *,int);
+		void FillElasticProperties3D(MPMBase *,ElasticProperties *,int);
+		virtual void *GetCopyOfMechanicalProps(MPMBase *mptr,int np);
+		virtual void DeleteCopyOfMechanicalProps(void *,int) const;
 		virtual void LoadTransportProps(MPMBase *,int);
+#else
+		virtual void LoadMechanicalPropertiesFEA(int,double,int);
 #endif
        
 	   // accessors
-		virtual const char *MaterialType(void);
-		virtual int MaterialTag();
+		virtual const char *MaterialType(void) const;
+		virtual int MaterialTag() const;
 #ifdef MPM_CODE
-        virtual double WaveSpeed(bool,MPMBase *);
-        virtual double MaximumDiffusion(void);
-        virtual double MaximumDiffusivity(void);
+        virtual double WaveSpeed(bool,MPMBase *) const;
+        virtual double MaximumDiffusion(void) const;
+        virtual double MaximumDiffusivity(void) const;
 		virtual double GetDiffZ(void);
 		virtual double GetKcondZ(void);
 #endif
@@ -64,8 +68,10 @@ class TransIsotropic : public Elastic
 	protected:
 #ifdef MPM_CODE
 		double lastTransAngle;
+#else
+		double lastMatAngle;
+		int hasMatProps;
 #endif
-        int hasMatProps;
 	
 	private:
 		int tiType;

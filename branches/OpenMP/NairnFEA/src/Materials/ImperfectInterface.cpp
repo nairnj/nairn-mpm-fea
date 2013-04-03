@@ -18,8 +18,22 @@ ImperfectInterface::ImperfectInterface(char *matName) : MaterialBase(matName)
 
 #pragma mark ImperfectInterface::Initialization
 
+// Set propertties
+const char *ImperfectInterface::VerifyAndLoadProperties(int np)
+{
+	// convert to N/m^3
+	Dn*=1.e9;
+	Dt*=1.e9;
+	
+    // Stiffness matrix
+    pr.C[1][1]=Dn;
+    pr.C[1][2]=Dt;
+	
+	return NULL;
+}
+
 // print mechanical properties to output window
-void ImperfectInterface::PrintMechanicalProperties(void)
+void ImperfectInterface::PrintMechanicalProperties(void) const
 {	
 	PrintProperty("Dn",Dn/1.e9,"");
 	PrintProperty("Dt",Dt/1.e9,"");
@@ -40,22 +54,10 @@ char *ImperfectInterface::InputMat(char *xName,int &input)
     return MaterialBase::InputMat(xName,input);
 }
 
-// makeSpecific divides by density, but only works in MPM code
-void ImperfectInterface::InitialLoadMechProps(int makeSpecific,int np)
-{
-	// convert to N/m^3
-	Dn*=1.e9;
-	Dt*=1.e9;
-	
-    // Stiffness matrix
-    mdm[1][1]=Dn;
-    mdm[1][2]=Dt;
-}
-
 #pragma mark ImperfectInterface::Accessors
 
 // Return the material tag
-int ImperfectInterface::MaterialTag(void) { return INTERFACEPARAMS; }
+int ImperfectInterface::MaterialTag(void) const { return INTERFACEPARAMS; }
 
 // return material type
-const char *ImperfectInterface::MaterialType(void) { return "Interface parameters (in MPa/mm)"; }
+const char *ImperfectInterface::MaterialType(void) const { return "Interface parameters (in MPa/mm)"; }

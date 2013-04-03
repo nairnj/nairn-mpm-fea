@@ -27,11 +27,12 @@ class HillPlastic : public AnisoPlasticity
 		
         // methods
 		char *InputMat(char *,int &);
-		virtual void InitialLoadMechProps(int,int);
-		virtual void PrintYieldProperties(void);
-		virtual const char *VerifyProperties(int);
+		virtual const char *VerifyAndLoadProperties(int);
 		char *InitHistoryData(void);
 		
+		// const methods
+		virtual void PrintYieldProperties(void) const;
+	
 		// plastic potential functions
 		virtual void UpdateTrialAlpha(MPMBase *,int);
 		virtual void UpdateTrialAlpha(MPMBase *,int,double);
@@ -43,9 +44,9 @@ class HillPlastic : public AnisoPlasticity
 		virtual void UpdatePlasticInternal(MPMBase *,int);
 		
 		// accessors
-		virtual const char *MaterialType(void);
-		double GetHistory(int,char *);
-		virtual int MaterialTag();
+		virtual const char *MaterialType(void) const;
+		double GetHistory(int,char *) const;
+		virtual int MaterialTag() const;
 				
     protected:
 		double fTerm,gTerm,hTerm;

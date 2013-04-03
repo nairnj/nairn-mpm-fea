@@ -53,18 +53,30 @@ RigidMaterial::RigidMaterial(char *matName) : MaterialBase(matName)
 #pragma mark RigidMaterial::Initialization
 
 // preliminary calculations (throw CommonException on problem)
-const char *RigidMaterial::VerifyProperties(int np)
+const char *RigidMaterial::VerifyAndLoadProperties(int np)
 {	// is rigid multimaterial, then nothing else allowed
 	if(setDirection&RIGID_MULTIMATERIAL_MODE && (setDirection!=RIGID_MULTIMATERIAL_MODE || setTemperature || setConcentration))
 	{	return "Rigid material for contact in multimaterial mode cannot also set other velocities, temperature, or concentration.";
 	}
 	
+	// force some settings for rigid contact materials
+	if(setDirection&RIGID_MULTIMATERIAL_MODE)
+	{	// in this mode, no boundary conditions can be applied
+		setDirection = RIGID_MULTIMATERIAL_MODE;
+		setConcentration = FALSE;
+		setTemperature = FALSE;
+		if(Vfunction!=NULL)
+		{   delete Vfunction;
+			Vfunction = NULL;
+		}
+	}
+	
 	// to super class
-	return MaterialBase::VerifyProperties(np);
+	return MaterialBase::VerifyAndLoadProperties(np);
 }
 
 // print to output window
-void RigidMaterial::PrintMechanicalProperties(void)
+void RigidMaterial::PrintMechanicalProperties(void) const
 {
 	char xdir='x',ydir='y';
 	if(fmobj->IsAxisymmetric())
@@ -90,14 +102,6 @@ void RigidMaterial::PrintMechanicalProperties(void)
             delete [] expr;
         }
         
-		// in this mode, no boundary conditions can be applied
-		setDirection=RIGID_MULTIMATERIAL_MODE;
-		setConcentration=FALSE;
-		setTemperature=FALSE;
-        if(Vfunction!=NULL)
-        {   delete Vfunction;
-            Vfunction=NULL;
-        }
 	}
 	else
     {   // count velocities with functions
@@ -294,22 +298,22 @@ int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid,int &acti
 #pragma mark RigidMaterial::Accessors
 
 // never called
-double RigidMaterial::WaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
+double RigidMaterial::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; }
 
 // Return the material tag
-int RigidMaterial::MaterialTag(void) { return RIGIDMATERIAL; }
+int RigidMaterial::MaterialTag(void) const { return RIGIDMATERIAL; }
 
 // return material type
-const char *RigidMaterial::MaterialType(void) { return "Rigid Material"; }
+const char *RigidMaterial::MaterialType(void) const { return "Rigid Material"; }
 
 // return TRUE if rigid particle (for contact or for BC)
-bool RigidMaterial::Rigid(void) { return TRUE; }
+bool RigidMaterial::Rigid(void) const { return TRUE; }
 
 // return TRUE if rigid BC particle (not rigid for contact)
-short RigidMaterial::RigidBC(void) { return setDirection!=RIGID_MULTIMATERIAL_MODE; }
+short RigidMaterial::RigidBC(void) const { return setDirection!=RIGID_MULTIMATERIAL_MODE; }
 
 // return TRUE if rigid particle for contact
-short RigidMaterial::RigidContact(void) { return setDirection==RIGID_MULTIMATERIAL_MODE; }
+short RigidMaterial::RigidContact(void) const { return setDirection==RIGID_MULTIMATERIAL_MODE; }
 
 // check if should set this direction
 bool RigidMaterial::RigidDirection(int aDir) { return (setDirection&aDir)==aDir; }

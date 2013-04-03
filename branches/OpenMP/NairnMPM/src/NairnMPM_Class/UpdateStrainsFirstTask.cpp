@@ -6,20 +6,6 @@
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
  
 	Update strains on particles after initial projection to the grid
- 
-	Input Variables
-		mpm[]->ncpos
-		nd[]->vel, gTemperature, gConcentration
- 
-	Output Variables
-		theMaterials[]->LoadMechanicalProps() - changes any properties that depend
-												on particle state
-		MPMBase::currentParticleNum - used in strain update loop
-		mpm[]->sp, ep, eplast, wrot, plastEnergy, dispEnergy, strainEnergy,
-				extWork, matData->, pPreviousTemperature, pPreviousConcentration
-		ConductionTask::dTemperature
-		DiffusionTask::dConcentration
-
 ********************************************************************************/
 
 #include "NairnMPM_Class/UpdateStrainsFirstTask.hpp"
@@ -27,8 +13,6 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Materials/MaterialBase.hpp"
-
-//#include <omp.h>
 
 #pragma mark CONSTRUCTORS
 
@@ -41,15 +25,7 @@ UpdateStrainsFirstTask::UpdateStrainsFirstTask(const char *name) : MPMTask(name)
 // Update strains with just-extrapolated momenta
 void UpdateStrainsFirstTask::Execute(void)
 {
-#ifdef _PROFILE_TASKS_
-	double beginTime=fmobj->CPUTime();
-#endif
-
 	FullStrainUpdate(strainTimestep,FALSE,fmobj->np);
-	
-#ifdef _PROFILE_TASKS_
-	totalTaskTime+=fmobj->CPUTime()-beginTime;
-#endif
 }
 
 #pragma mark MPMBase Class Methods
@@ -65,9 +41,11 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
     NodalPoint::GetGridVelocitiesForStrainUpdate();			// velocities needed for strain update
 	
 	// loop over non rigid particles
-	for(MPMBase::currentParticleNum=0;MPMBase::currentParticleNum<nmpmsNR;MPMBase::currentParticleNum++)
+	// This will not work as parallel when material properties change with particle state
+#pragma omp parallel for
+	for(int p=0;p<nmpmsNR;p++)
     {   // next particle
-        MPMBase *mptr = mpm[MPMBase::currentParticleNum];
+        MPMBase *mptr = mpm[p];
         
         // this particle's material
         MaterialBase *matRef=theMaterials[mptr->MatID()];
@@ -76,9 +54,13 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
         if(matRef->Rigid()) continue;
         
         // make sure have mechanical properties for this material and angle
-        matRef->LoadMechanicalProps(mptr,np);
+		// Must replace with get copy of mechanical properties
+		void *properties = matRef->GetCopyOfMechanicalProps(mptr,np);
         
         // finish on the particle
-		mptr->UpdateStrain(strainTime,secondPass,np,matRef,matRef->GetField());
+		mptr->UpdateStrain(strainTime,secondPass,np,properties,matRef->GetField());
+		
+		// delete properties
+		matRef->DeleteCopyOfMechanicalProps(properties,np);
     }
 }

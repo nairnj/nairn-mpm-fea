@@ -34,14 +34,14 @@ EndHeader! ------------ Parameters ---------------
 ! pick strain update method usually "USF" or "USAVG"
 #update="USF"
 
-! material options: isotropic, isoplasticity, mgeos, bistable, iptrans, normtrans, ortho
-!   viscoelastic, hill, wood
-#matID="isotropic"
+! material options: isotropic, iptrans, normtrans, ortho,isoplasticity, mgeos
+! bistable, viscoelastic, hill, wood
+#matID="bistable"
 #angle=0					! material angle for anisotopic materials
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2, JohnsonCook
-#hardID="Nonlinear"
+#hardID="Linear"
 
 ! rotate sample to test off-grid loading (2D only)
 #rotate=0
@@ -176,12 +176,6 @@ if #matID="isotropic"
 endif
 
 if #matID="isoplasticity"
-  Material "isotropic","Isotropic Material","Isotropic"
-    E #Ebase
-    nu #nuBase
-    a #aBase
-    rho #rho
-  Done
   Material "isoplasticity","Isotropic Elastic-Plastic Material","IsoPlasticity"
     E #Ebase
     nu #nuBase
@@ -309,9 +303,9 @@ if #matID="bistable"
     K0 #Ebase/(3*(1-2*#nuBase))
     G0 #Ebase/(2*(1+#nuBase))
     a0 #aBase
-    Kd #Ebase/(3*(1-2*#nuBase))/5
-    Gd #Ebase/(2*(1+#nuBase))/5
-    DeltaVOffset -3
+    Kd 0.5*#Ebase/(3*(1-2*#nuBase))
+    Gd 0.5*#Ebase/(2*(1+#nuBase))
+    DeltaVOffset 0
     critical #strain/4
     transition dilation
     reversible yes
@@ -522,9 +516,6 @@ if #analysis="3D MPM"
   GridRect #gleft,#gright,#gbot,#gtop,#zmin,#zmax
   
   ! material points
-  Region "isotropic",0,0,0,"angle",#angle,"temp",#startTemp
-    Box 0,#length/2,0,#width,0,#thick
-  EndRegion
   Region #matID,0,0,0,"angle",#angle,"temp",#startTemp
     Box 0,#length,0,#width,0,#thick
   EndRegion

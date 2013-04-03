@@ -25,16 +25,19 @@ char *MaterialBase::InputMat(char *xName,int &input)
 /* calculate properties used in analyses
 	If superclass overrides this method, must call this too
 */
-const char *MaterialBase::VerifyProperties(int np)
-{
-	// in case only need to load some things once, load those mechanical properties now
-	InitialLoadMechProps((int)(np>BEGIN_MPM_TYPES),np);
-
-	return NULL;
+const char *MaterialBase::VerifyAndLoadProperties(int np)
+{	return NULL;
 }
 
 // print any properties common to all FEA material types
-void MaterialBase::PrintCommonProperties(void) {}
+void MaterialBase::PrintCommonProperties(void) const {}
+
+#pragma mark MaterialBase::Methods
+
+// rotate meechanical properties if needed
+void MaterialBase::LoadMechanicalPropertiesFEA(int makeSpecific,double angle,int np) { return; }
+
+#pragma mark MaterialBase::Accessors
 
 /* get transverse stress in plane strain analyses or get transverse strain
     in plane stress analysis

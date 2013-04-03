@@ -27,23 +27,25 @@ class HEMGEOSMaterial : public HEIsotropic
 		
 		// initialize
 		virtual char *InputMat(char *,int &);
-		virtual const char *VerifyProperties(int);
-		virtual void InitialLoadMechProps(int,int);
-		virtual void PrintMechanicalProperties(void);
-		virtual void PrintTransportProperties(void);
-		virtual void ValidateForUse(int);
+		virtual const char *VerifyAndLoadProperties(int);
+	
+		// const methods
+		virtual void PrintMechanicalProperties(void) const;
+		virtual void PrintTransportProperties(void) const;
+		virtual void ValidateForUse(int) const;
 		
 		// methods
-		virtual void UpdatePressure(MPMBase *,double,double,int,double,double);
-		virtual double GetCurrentRelativeVolume(MPMBase *);
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int);
+		virtual void DeleteCopyOfMechanicalProps(void *,int) const;
+		virtual void UpdatePressure(MPMBase *,double,double,int,double,double,HEPlasticProperties *,ResidualStrains *);
+		virtual double GetCurrentRelativeVolume(MPMBase *) const;
 		
 		// accessors
-		virtual const char *MaterialType(void);
-		virtual int MaterialTag();
-		virtual double CurrentWaveSpeed(bool,MPMBase *);
+		virtual const char *MaterialType(void) const;
+		virtual int MaterialTag() const;
+		virtual double CurrentWaveSpeed(bool,MPMBase *) const;
 		
 	protected:
-		double Keffred,Gratio;
 		double C0squared;
 	
 };

@@ -46,7 +46,7 @@ char *HyperElastic::InputMat(char *xName,int &input)
 #pragma mark HyperElastic::Initialize
 
 // Set intial particle Left Cauchy strain tensor to identity
-void HyperElastic::SetInitialParticleState(MPMBase *mptr,int np)
+void HyperElastic::SetInitialParticleState(MPMBase *mptr,int np) const
 {
     // get previous particle B
     Tensor *pB = mptr->GetElasticLeftCauchyTensor();
@@ -58,19 +58,20 @@ void HyperElastic::SetInitialParticleState(MPMBase *mptr,int np)
 }
 
 // Constant properties used in constitutive law
-void HyperElastic::InitialLoadMechProps(int makeSpecific,int np)
+const char *HyperElastic::VerifyAndLoadProperties(int np)
 {
 	// Kbulk in Specific units using initial rho
 	// for MPM (units N/m^2 cm^3/g)
-	Ksp=Kbulk*1.0e+06/rho;
+	Ksp = Kbulk*1.0e+06/rho;
 	
 	// expansion coefficients
 	CTE1 = 1.e-6*aI;
 	CME1 = betaI*concSaturation;
 	
     // call superclass
-    MaterialBase::InitialLoadMechProps(makeSpecific,np);
+    return MaterialBase::VerifyAndLoadProperties(np);
 }
+
 #pragma mark HyperElastic::Methods
 
 //#define OLD_METHOD
@@ -87,7 +88,7 @@ void HyperElastic::InitialLoadMechProps(int makeSpecific,int np)
         Likewise, caller must multiply det(dF) by 1 + dvzz = sqrt(New B.zz/Old B.zz).
  */
 double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,double dvxy,
-                                            double dvyx,double dvzz,Tensor *Btrial)
+                                            double dvyx,double dvzz,Tensor *Btrial) const
 {
 #ifndef OLD_METHOD
 	Matrix3 du(dvxx,dvxy,dvyx,dvyy,dvzz);
@@ -188,7 +189,7 @@ double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,
     Returns |dF|
 */
 double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-                                        double dvxz,double dvzx,double dvyz,double dvzy,Tensor *Btrial)
+                                        double dvxz,double dvzx,double dvyz,double dvzy,Tensor *Btrial) const
 {
 #ifndef OLD_METHOD
 	Matrix3 du(dvxx,dvxy,dvxz,dvyx,dvyy,dvyz,dvzx,dvzy,dvzz);
@@ -309,7 +310,7 @@ double HyperElastic::IncrementDeformation(MPMBase *mptr,double dvxx,double dvyy,
     New B = dF.(Old B).dF^T
     Returns |dF|
 */
-double HyperElastic::IncrementDeformation(MPMBase *mptr,Matrix3 du,Tensor *Btrial,int np)
+double HyperElastic::IncrementDeformation(MPMBase *mptr,Matrix3 du,Tensor *Btrial,int np) const
 {
     // get incremental deformation gradient
 	const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
@@ -368,7 +369,7 @@ double HyperElastic::IncrementDeformation(MPMBase *mptr,Matrix3 du,Tensor *Btria
 
 /*  Polar decomposition of the deformation gradient on a particle
 */
-void HyperElastic::DecomposeDeformation(Matrix3 pF)
+void HyperElastic::DecomposeDeformation(Matrix3 pF) const
 {
     Matrix3 pFT = pF.Transpose();
     Matrix3 C = pFT*pF;
@@ -380,20 +381,20 @@ void HyperElastic::DecomposeDeformation(Matrix3 pF)
 }
 
 // Find isotropic stretch for thermal and moisture expansion
-// total residual stretch (1 + alpha dT + beta csat dConcentration)
+// total residual stretch (1 + alpha dT + beta csat dC)
 // Current assumes isotropic with CTE1 and CME1 expansion coefficients
-double HyperElastic::GetResidualStretch(MPMBase *mptr,double &dresStretch)
+double HyperElastic::GetResidualStretch(MPMBase *mptr,double &dresStretch,ResidualStrains *res) const
 {
-	// total residual stretch (1 + alpha dT(total) + beta csat dConcentration(total))
-	// incremental residual stretch (1 + alpha dT + beta csat dConcentration)
+	// total residual stretch (1 + alpha dT(total) + beta csat dC(total))
+	// incremental residual stretch (1 + alpha dT + beta csat dC)
 	double resStretch = 1.0;
 	double dTemp=mptr->pPreviousTemperature-thermal.reference;
 	resStretch += CTE1*dTemp;
-	dresStretch = 1. + CTE1*ConductionTask::dTemperature;
+	dresStretch = 1. + CTE1*res->dT;
 	if(DiffusionTask::active)
 	{	double dConc=mptr->pPreviousConcentration-DiffusionTask::reference;
 		resStretch += CME1*dConc;
-		dresStretch += CTE1*DiffusionTask::dConcentration;
+		dresStretch += CTE1*res->dC;
 	}
 	return resStretch;
 }
@@ -401,7 +402,7 @@ double HyperElastic::GetResidualStretch(MPMBase *mptr,double &dresStretch)
 // Get current relative volume change = J = det F = lam1 lam2 lam3
 // Need to have this call in material classes to allow small and large deformation material laws
 //  to handle it differently. It is used on archiving to convert Kirchoff Stress/rho0 to Cauchy stress
-double HyperElastic::GetCurrentRelativeVolume(MPMBase *mptr)
+double HyperElastic::GetCurrentRelativeVolume(MPMBase *mptr) const
 {   return mptr->GetRelativeVolume();
 }
 
@@ -409,14 +410,14 @@ double HyperElastic::GetCurrentRelativeVolume(MPMBase *mptr)
 // Each block of lines is for a different U(J).
 // Any change here must also be made in 2D MPMConstLaw for the numerical solution to find B.zz in plane stress
 // Kse is strain energy, but no longer used
-double HyperElastic::GetVolumetricTerms(double J)
+double HyperElastic::GetVolumetricTerms(double J,double Kred) const
 {
     double Kterm;
     
     switch(UofJOption)
     {   case J_MINUS_1_SQUARED:
             // This is for *Kse = U(J) = (K/2)(J-1)^2
-            Kterm = Ksp*(J-1.);
+            Kterm = Kred*(J-1.);
             //*Kse = 0.5*Kterm*(J-1);
             break;
         
@@ -424,9 +425,9 @@ double HyperElastic::GetVolumetricTerms(double J)
         {   // This is for for *Kse = U(J) = (K/2)(ln J)^2
             // Zienkiewicz & Taylor recommend not using this one
             double lj = log(J);
-            Kterm =Ksp*lj;
+            Kterm = Kred*lj;
             //*Kse = 0.5*Kterm*lj;
-            Kterm /= J;           // = Ksp*(ln J)/J
+            Kterm /= J;           // = Kred*(ln J)/J
             break;
         }
         
@@ -435,8 +436,8 @@ double HyperElastic::GetVolumetricTerms(double J)
             // This is for *Kse = U(J) = (K/2)((1/2)(J^2-1) - ln J)
             // Zienkiewicz & Taylor note that stress is infinite as J->0 and J->infinity for this function, while others are not
             // Simo and Hughes also use this form (see Eq. 9.2.3)
-            //*Kse = 0.5*Ksp*(0.5*(J*J-1.)-log(J));
-            Kterm = 0.5*Ksp*(J - 1./J);      // = (Ksp/2)*(J - 1/J)
+            //*Kse = 0.5*Kred*(0.5*(J*J-1.)-log(J));
+            Kterm = 0.5*Kred*(J - 1./J);      // = (Kred/2)*(J - 1/J)
             break;
     }
     

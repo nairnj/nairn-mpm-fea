@@ -27,12 +27,12 @@ class ImperfectInterface : public MaterialBase
         
         // methods
         virtual char *InputMat(char *,int &);
-        virtual void PrintMechanicalProperties(void);
-        virtual void InitialLoadMechProps(int,int);
+		virtual const char *VerifyAndLoadProperties(int);
+        virtual void PrintMechanicalProperties(void) const;
 		
 		// accessors
-		virtual int MaterialTag(void);
-		virtual const char *MaterialType(void);
+		virtual int MaterialTag(void) const;
+		virtual const char *MaterialType(void) const;
 
     private:
 };

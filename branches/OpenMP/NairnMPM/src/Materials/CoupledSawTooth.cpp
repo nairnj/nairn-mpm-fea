@@ -55,7 +55,7 @@ CoupledSawTooth::CoupledSawTooth(char *matName) : CohesiveZone(matName)
     In terms of k and umax
     J = 250 k umax^2,   stress = k umax/2
 */
-const char *CoupledSawTooth::VerifyProperties(int np)
+const char *CoupledSawTooth::VerifyAndLoadProperties(int np)
 {
     // set off mode I settings
 	const char *msg=SetTractionLaw(stress1,kI1,delIc,JIc,umidI);
@@ -65,12 +65,15 @@ const char *CoupledSawTooth::VerifyProperties(int np)
     if(stress2>0. || kII1>0. || delIIc>0. || JIIc>0. || umidII>0.)
         return "Mode II properties not allowed in Coupled Triangular Traction law.";
     
+	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
+	sIc=stress1*1.e6;
+	
     // do not need to call base material class methods
 	return NULL;
 }
 
 // print to output window
-void CoupledSawTooth::PrintMechanicalProperties(void)
+void CoupledSawTooth::PrintMechanicalProperties(void) const
 {
 	PrintProperty("Gc",JIc,"J/m^2");
 	PrintProperty("sig",stress1,"");
@@ -78,9 +81,6 @@ void CoupledSawTooth::PrintMechanicalProperties(void)
 	if(kI1>0.) PrintProperty("k",1.0e-6*kI1,"MPa/mm");
 	PrintProperty("upk",umidI,"mm");
     cout <<  endl;
-    
-	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
-	sIc=stress1*1.e6;
 }
 
 // history variables:
@@ -183,8 +183,8 @@ double CoupledSawTooth::CrackTractionEnergy(CrackSegment *cs,double nCod,double 
 #pragma mark CohesiveZone::Accessors
 
 // return material type
-const char *CoupledSawTooth::MaterialType(void) { return "Coupled Triangular Law"; }
+const char *CoupledSawTooth::MaterialType(void) const { return "Coupled Triangular Law"; }
 
 // Return the material tag
-int CoupledSawTooth::MaterialTag(void) { return COUPLEDSAWTOOTHMATERIAL; }
+int CoupledSawTooth::MaterialTag(void) const { return COUPLEDSAWTOOTHMATERIAL; }
 

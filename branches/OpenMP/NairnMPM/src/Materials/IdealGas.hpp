@@ -31,25 +31,24 @@ class IdealGas : public HyperElastic
         
         // initialize
         virtual char *InputMat(char *,int &);
-		virtual const char *VerifyProperties(int);
-		virtual void ValidateForUse(int);
-        virtual void InitialLoadMechProps(int,int);
-		virtual void PrintMechanicalProperties(void);
-        void SetInitialParticleState(MPMBase *,int);
+		virtual const char *VerifyAndLoadProperties(int);
+	
+		// const methods
+		virtual void ValidateForUse(int) const;
+		virtual void PrintMechanicalProperties(void) const;
+        void SetInitialParticleState(MPMBase *,int) const;
  		
 		// methods
-        virtual void MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np);
+        virtual void MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *,ResidualStrains *);
     
 		// accessors
-		virtual double WaveSpeed(bool,MPMBase *);
-		virtual const char *MaterialType(void);
-		virtual int MaterialTag();
-        virtual double CurrentWaveSpeed(bool,MPMBase *);
+		virtual double WaveSpeed(bool,MPMBase *) const;
+		virtual const char *MaterialType(void) const;
+		virtual int MaterialTag() const;
+        virtual double CurrentWaveSpeed(bool,MPMBase *) const;
 		
     private:
 	    double P0sp;  // mass specific initial pressure
-	    double Psp;   // current specific pressure
-	    double Temp;  // current temperature (in Kelvin)
 };
 
 #endif

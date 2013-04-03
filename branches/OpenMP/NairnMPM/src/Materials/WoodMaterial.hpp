@@ -27,16 +27,12 @@ class WoodMaterial : public HillPlastic
 		
 		// initialize
 		virtual char *InputMat(char *,int &);
-		virtual const char *VerifyProperties(int);
-		virtual void InitialLoadMechProps(int,int);
-		virtual void PrintMechanicalProperties(void);
-		
-		// methods
-		virtual void LoadMechanicalProps(MPMBase *,int);
+		virtual const char *VerifyAndLoadProperties(int);
+		virtual void PrintMechanicalProperties(void) const;
 		
 		// accessors
-		virtual const char *MaterialType(void);
-		virtual int MaterialTag();
+		virtual const char *MaterialType(void) const;
+		virtual int MaterialTag() const;
 		
 	protected:
 	double tempC1,tempC2,currentRatio;

@@ -74,7 +74,7 @@ char *TrilinearTraction::InputMat(char *xName,int &input)
 }
 
 // Calculate properties used in analyses - here trilinear law
-const char *TrilinearTraction::VerifyProperties(int np)
+const char *TrilinearTraction::VerifyAndLoadProperties(int np)
 {
 	const char *msg=SetTLTractionLaw(stress1,kI1,umidI,sI2,uI2,delIc,JIc);
 	if(msg!=NULL) return msg;
@@ -82,11 +82,21 @@ const char *TrilinearTraction::VerifyProperties(int np)
 	msg=SetTLTractionLaw(stress2,kII1,umidII,sII2,uII2,delIIc,JIIc);
 	if(msg!=NULL) return msg;
 	
-	return TractionLaw::VerifyProperties(np);
+	const char *err = TractionLaw::VerifyAndLoadProperties(np);
+	
+	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
+	sIc=stress1*1.e6;
+	sIIc=stress2*1.e6;
+	sIc2=sI2*1.e6;
+	sIIc2=sII2*1.e6;
+	break1is2I = DbleEqual(umidI,uI2);
+	break1is2II = DbleEqual(umidII,uII2);
+	
+	return err;
 }
 
 // print to output window
-void TrilinearTraction::PrintMechanicalProperties(void)
+void TrilinearTraction::PrintMechanicalProperties(void) const
 {
 	PrintProperty("GcI",JIc,"J/m^2");
 	PrintProperty("sigI1",stress1,"");
@@ -110,14 +120,6 @@ void TrilinearTraction::PrintMechanicalProperties(void)
 	
 	PrintProperty("n",nmix,"");
 	cout << endl;
-	
-	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
-	sIc=stress1*1.e6;
-	sIIc=stress2*1.e6;
-	sIc2=sI2*1.e6;
-	sIIc2=sII2*1.e6;
-	break1is2I = DbleEqual(umidI,uI2);
-	break1is2II = DbleEqual(umidII,uII2);
 }
 
 #pragma mark TrilinearTraction::Traction Law
@@ -311,10 +313,10 @@ double TrilinearTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,doubl
 #pragma mark TrilinearTraction::Accessors
 
 // return material type
-const char *TrilinearTraction::MaterialType(void) { return "Trilinear Cohesive Zone"; }
+const char *TrilinearTraction::MaterialType(void) const { return "Trilinear Cohesive Zone"; }
 
 // Return the material tag
-int TrilinearTraction::MaterialTag(void) { return TRILINEARTRACTIONMATERIAL; }
+int TrilinearTraction::MaterialTag(void) const { return TRILINEARTRACTIONMATERIAL; }
 
 /* Calculate properties used in analyses - here triangular law
 	k1 is slope up s1 (MPa/mm)

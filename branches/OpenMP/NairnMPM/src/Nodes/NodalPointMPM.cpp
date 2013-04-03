@@ -86,7 +86,19 @@ void NodalPoint::AddMassTask1(short vfld,int matfld,double mnode) { cvf[vfld]->A
 
 // Add to momentum vector (first pass - allocate cvf[] if needed) (both 2D and 3D)
 short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector *vel)
-{	short vfld=0;
+{
+	// default MPM code when no cracks
+	if(cfld == NULL)
+	{	// add momemtum to velocity field 0 (in g mm/sec)
+		Vector wtvel;
+		cvf[0]->AddMomentumTask1(matfld,CopyScaleVector(&wtvel,vel,wt),vel);
+		return 0;
+	}
+	
+	// Rest is for CRAMP
+	// find velocity field, add momemtum to correct one
+	// return the found velocity field
+	short vfld=0;
 	
 	// only 1 or no cracks, with relevant settings in cfld[0]
 	if(cfld[1].loc==NO_CRACK)

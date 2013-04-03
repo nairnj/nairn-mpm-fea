@@ -15,6 +15,17 @@
 
 #include "Materials/MaterialBase.hpp"
 
+#ifdef MPM_CODE
+// The full stiffness matrix in C
+// alpha and beta are thermal and moisture expansion coefficients
+// although some elements are used for other things
+typedef struct {
+	double C[6][6];
+	double alpha[8];
+	double beta[6];
+} ElasticProperties;
+#endif
+
 class Elastic : public MaterialBase
 {
     public:
@@ -27,8 +38,8 @@ class Elastic : public MaterialBase
         
 		// methods
 #ifdef MPM_CODE
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *);
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif
@@ -36,8 +47,7 @@ class Elastic : public MaterialBase
 	protected:
 		double prop1,prop2;
 #ifdef MPM_CODE
-        double mdm[6][6];
-        double me0[8],mc0[6];
+		ElasticProperties pr;
 		int hasTransProps;			// flag set TRUE whenever transport props have been evaluated
 #else
         double prop3;

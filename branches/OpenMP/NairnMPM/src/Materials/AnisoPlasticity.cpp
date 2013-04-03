@@ -69,22 +69,60 @@ char *AnisoPlasticity::InputMat(char *xName,int &input)
         return((char *)&tyyz);
     }
 	
-	return(Orthotropic::InputMat(xName,input));
+	return Orthotropic::InputMat(xName,input);
 }
 
 // verify settings and some initial calculations
-const char *AnisoPlasticity::VerifyProperties(int np)
+const char *AnisoPlasticity::VerifyAndLoadProperties(int np)
 {
 	// check at least some yielding
 	if(syzz<0. && syxx<0. && syyy<0. && tyxy<0. && tyxz<0. && tyyz<0.)
 		return "No yield stresses were defined";
 
+	// reciprocals of reduced yield stresses
+	if(syxx>=0.)
+    {	syxxred2=rho/(syxx*1.e6);
+		syxxred2*=syxxred2;
+	}
+	else
+		syxxred2=0.;		// 1/inf^2
+	if(syyy>=0.)
+    {	syyyred2=rho/(syyy*1.e6);
+		syyyred2*=syyyred2;
+	}
+	else
+		syyyred2=0.;		// 1/inf^2
+	if(syzz>=0.)
+	{	syzzred2=rho/(syzz*1.e6);
+		syzzred2*=syzzred2;
+	}
+	else
+		syzzred2=0.;		// 1/inf^2
+	if(tyxy)
+	{	tyxyred2=rho/(tyxy*1.e6);
+		tyxyred2*=tyxyred2;
+	}
+	else
+		tyxyred2=0.;		// 1/inf^2
+	if(tyxz)
+	{	tyxzred2=rho/(tyxz*1.e6);
+		tyxzred2*=tyxzred2;
+	}
+	else
+		tyxzred2=0.;		// 1/inf^2
+	if(tyyz)
+	{	tyyzred2=rho/(tyyz*1.e6);
+		tyyzred2*=tyyzred2;
+	}
+	else
+		tyyzred2=0.;		// 1/inf^2
+	
 	// call super class
-	return Orthotropic::VerifyProperties(np);
+	return Orthotropic::VerifyAndLoadProperties(np);
 }
 
 // if cannot be used in current analysis type throw MPMTermination()
-void AnisoPlasticity::ValidateForUse(int np)
+void AnisoPlasticity::ValidateForUse(int np) const
 {	if(np!=PLANE_STRAIN_MPM && np!=THREED_MPM)
 	{	throw CommonException("Anisotropic plasticity materials require 3D or 2D plane strain MPM analysis",
 							  "AnisoPlasticity::ValidateForUse");
@@ -95,14 +133,14 @@ void AnisoPlasticity::ValidateForUse(int np)
 }
 
 // print to output window
-void AnisoPlasticity::PrintMechanicalProperties(void)
+void AnisoPlasticity::PrintMechanicalProperties(void) const
 {	
     Orthotropic::PrintMechanicalProperties();
 	PrintYieldProperties();
 }
 
 // print just yield properties to output window
-void AnisoPlasticity::PrintYieldProperties(void)
+void AnisoPlasticity::PrintYieldProperties(void) const
 {
 	if(syxx>=0.)
 		PrintProperty("yld1",syxx,"");
@@ -139,50 +177,6 @@ void AnisoPlasticity::PrintYieldProperties(void)
     cout << endl;
 }
 
-// Private properties used in constitutive law
-void AnisoPlasticity::InitialLoadMechProps(int makeSpecific,int np)
-{
-	// reciprocals of reduced yield stresses
-	if(syxx>=0.)
-    {	syxxred2=rho/(syxx*1.e6);
-		syxxred2*=syxxred2;
-	}
-	else
-		syxxred2=0.;		// 1/inf^2
-	if(syyy>=0.)
-    {	syyyred2=rho/(syyy*1.e6); 
-		syyyred2*=syyyred2;
-	}
-	else
-		syyyred2=0.;		// 1/inf^2
-	if(syzz>=0.)
-	{	syzzred2=rho/(syzz*1.e6); 
-		syzzred2*=syzzred2;
-	}
-	else
-		syzzred2=0.;		// 1/inf^2
-	if(tyxy)
-	{	tyxyred2=rho/(tyxy*1.e6); 
-		tyxyred2*=tyxyred2;
-	}
-	else
-		tyxyred2=0.;		// 1/inf^2
-	if(tyxz)
-	{	tyxzred2=rho/(tyxz*1.e6); 
-		tyxzred2*=tyxzred2;
-	}
-	else
-		tyxzred2=0.;		// 1/inf^2
-	if(tyyz)
-	{	tyyzred2=rho/(tyyz*1.e6); 
-		tyyzred2*=tyyzred2;
-	}
-	else
-		tyyzred2=0.;		// 1/inf^2
-	
-	Orthotropic::InitialLoadMechProps(makeSpecific,np);
-}
-
 #pragma mark AnisoPlasticity::Methods
 
 /* For 2D MPM analysis, take increments in strain and calculate new
@@ -194,19 +188,19 @@ void AnisoPlasticity::InitialLoadMechProps(int makeSpecific,int np)
 		desired plastic potential using methods GetF(), GetDfDsigma(), and GetDfDWp()
 */
 void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double dvzz,double delTime,int np)
+        double dvzz,double delTime,int np,void *properties,ResidualStrains *res)
 {
     // Effective strain by deducting thermal strain
-	// (note me0[1] and mc0[1] are reduced in plane strain, but CTE3 and CME3 are not)
-	double erxx=me0[1]*ConductionTask::dTemperature;
-	double eryy=me0[2]*ConductionTask::dTemperature;
-	double erxy=me0[3]*ConductionTask::dTemperature;
-	double erzz=CTE3*ConductionTask::dTemperature;
+	// (note pr.alpha[1] and pr.beta[1] are reduced in plane strain, but CTE3 and CME3 are not)
+	double erxx=pr.alpha[1]*res->dT;
+	double eryy=pr.alpha[2]*res->dT;
+	double erxy=pr.alpha[3]*res->dT;
+	double erzz=CTE3*res->dT;
 	if(DiffusionTask::active)
-	{	erxx+=mc0[1]*DiffusionTask::dConcentration;
-		eryy+=mc0[2]*DiffusionTask::dConcentration;
-		erxy+=mc0[3]*DiffusionTask::dConcentration;
-		erzz+=CME3*DiffusionTask::dConcentration;
+	{	erxx+=pr.beta[1]*res->dC;
+		eryy+=pr.beta[2]*res->dC;
+		erxy+=pr.beta[3]*res->dC;
+		erzz+=CME3*res->dC;
 	}
     double dexx=dvxx-erxx;  
     double deyy=dvyy-eryy; 
@@ -215,11 +209,11 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
     // Elastic stress increment
 	Tensor *sp=mptr->GetStressTensor();
     Tensor stk=*sp;
-    stk.xx += mdm[1][1]*dexx+mdm[1][2]*deyy+mdm[1][3]*dgxy;
-    stk.yy += mdm[1][2]*dexx+mdm[2][2]*deyy+mdm[2][3]*dgxy;
-    stk.xy += mdm[1][3]*dexx+mdm[2][3]*deyy+mdm[3][3]*dgxy;
+    stk.xx += pr.C[1][1]*dexx+pr.C[1][2]*deyy+pr.C[1][3]*dgxy;
+    stk.yy += pr.C[1][2]*dexx+pr.C[2][2]*deyy+pr.C[2][3]*dgxy;
+    stk.xy += pr.C[1][3]*dexx+pr.C[2][3]*deyy+pr.C[3][3]*dgxy;
     if(np==PLANE_STRAIN_MPM)
-	{	stk.zz += mdm[4][1]*(dexx+me0[5]*erzz) + mdm[4][2]*(deyy+me0[6]*erzz) + mdm[4][3]*(dgxy+me0[7]*erzz) - mdm[4][4]*erzz;
+	{	stk.zz += pr.C[4][1]*(dexx+pr.alpha[5]*erzz) + pr.C[4][2]*(deyy+pr.alpha[6]*erzz) + pr.C[4][3]*(dgxy+pr.alpha[7]*erzz) - pr.C[4][4]*erzz;
 	}
   
 	// get rotation matrix elements
@@ -235,7 +229,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	double ftrial = GetF(mptr,&stk,np);
 	if(ftrial<0.)
 	{	// elastic, update stress and strain energy as usual
-		Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,delTime,np);
+		Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,delTime,np,properties,res);
 		return; 
     }
     
@@ -261,7 +255,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	else
 	{	// not correct, or used, now
 		dezzp=0.;
-		dezz=mdm[4][1]*(dexx-dexxp) + mdm[4][2]*(deyy-deyyp) + mdm[4][3]*(dgxy-dgxyp) + erzz;
+		dezz=pr.C[4][1]*(dexx-dexxp) + pr.C[4][2]*(deyy-deyyp) + pr.C[4][3]*(dgxy-dgxyp) + erzz;
 	}
     
     // Elastic strain increments on particle
@@ -283,14 +277,14 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	// increment particle stresses
     // Hypoelastic - Eliminate effect of rotation 
     Tensor st0=*sp;			// save previous stress for energy updates below
-    double c1 = mdm[1][1]*dexx+mdm[1][2]*deyy+mdm[1][3]*dgxy;
-    double c2 = mdm[1][2]*dexx+mdm[2][2]*deyy+mdm[2][3]*dgxy;
-    double c3 = mdm[1][3]*dexx+mdm[2][3]*deyy+mdm[3][3]*dgxy;
+    double c1 = pr.C[1][1]*dexx+pr.C[1][2]*deyy+pr.C[1][3]*dgxy;
+    double c2 = pr.C[1][2]*dexx+pr.C[2][2]*deyy+pr.C[2][3]*dgxy;
+    double c3 = pr.C[1][3]*dexx+pr.C[2][3]*deyy+pr.C[3][3]*dgxy;
 	Hypo2DCalculations(mptr,-dwrotxy,c1,c2,c3);
 	
 	// out of plane stress
     if(np==PLANE_STRAIN_MPM)
-	{	sp->zz += mdm[4][1]*(dexx+me0[5]*erzz) + mdm[4][2]*(deyy+me0[6]*erzz) + mdm[4][3]*(dgxy+me0[7]*erzz) + mdm[4][4]*dezz;
+	{	sp->zz += pr.C[4][1]*(dexx+pr.alpha[5]*erzz) + pr.C[4][2]*(deyy+pr.alpha[6]*erzz) + pr.C[4][3]*(dgxy+pr.alpha[7]*erzz) + pr.C[4][4]*dezz;
 	}
 
 	// Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
@@ -318,7 +312,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
     // heat energy is Cv(dT-dTq0) - dPhi
     // The dPhi is subtracted here because it will show up in next
     //		time step within Cv dT (if adiabatic heating occurs)
-    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,dispEnergy);
+    IncrementHeatEnergy(mptr,res->dT,0.,dispEnergy);
 
 	// update internal variables
 	UpdatePlasticInternal(mptr,np);
@@ -330,22 +324,23 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	Assumes linear elastic, uses hypoelastic correction
 */
 void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-								double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
+								double dvxz,double dvzx,double dvyz,double dvzy,
+								  double delTime,int np,void *properties,ResidualStrains *res)
 {
     // Effective strain by deducting thermal strain
-	double erxx=me0[0]*ConductionTask::dTemperature;
-	double eryy=me0[1]*ConductionTask::dTemperature;
-	double erzz=me0[2]*ConductionTask::dTemperature;
-	double eryz=me0[3]*ConductionTask::dTemperature;
-	double erxz=me0[4]*ConductionTask::dTemperature;
-	double erxy=me0[5]*ConductionTask::dTemperature;
+	double erxx=pr.alpha[0]*res->dT;
+	double eryy=pr.alpha[1]*res->dT;
+	double erzz=pr.alpha[2]*res->dT;
+	double eryz=pr.alpha[3]*res->dT;
+	double erxz=pr.alpha[4]*res->dT;
+	double erxy=pr.alpha[5]*res->dT;
 	if(DiffusionTask::active)
-	{	erxx+=mc0[0]*DiffusionTask::dConcentration;
-		eryy+=mc0[1]*DiffusionTask::dConcentration;
-		erzz+=mc0[2]*DiffusionTask::dConcentration;
-		eryz+=mc0[3]*DiffusionTask::dConcentration;
-		erxz+=mc0[4]*DiffusionTask::dConcentration;
-		erxy+=mc0[5]*DiffusionTask::dConcentration;
+	{	erxx+=pr.beta[0]*res->dC;
+		eryy+=pr.beta[1]*res->dC;
+		erzz+=pr.beta[2]*res->dC;
+		eryz+=pr.beta[3]*res->dC;
+		erxz+=pr.beta[4]*res->dC;
+		erxy+=pr.beta[5]*res->dC;
 	}
     double dexx=dvxx-erxx;  
     double deyy=dvyy-eryy; 
@@ -357,12 +352,12 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
     // Elastic stress increment
 	Tensor *sp=mptr->GetStressTensor();
     Tensor stk=*sp;
-    stk.xx += mdm[0][0]*dexx+mdm[0][1]*deyy+mdm[0][2]*dezz+mdm[0][3]*dgyz+mdm[0][4]*dgxz+mdm[0][5]*dgxy;
-    stk.yy += mdm[1][0]*dexx+mdm[1][1]*deyy+mdm[1][2]*dezz+mdm[1][3]*dgyz+mdm[1][4]*dgxz+mdm[1][5]*dgxy;
-    stk.zz += mdm[2][0]*dexx+mdm[2][1]*deyy+mdm[2][2]*dezz+mdm[2][3]*dgyz+mdm[2][4]*dgxz+mdm[2][5]*dgxy;
-    stk.yz += mdm[3][0]*dexx+mdm[3][1]*deyy+mdm[3][2]*dezz+mdm[3][3]*dgyz+mdm[3][4]*dgxz+mdm[3][5]*dgxy;
-    stk.xz += mdm[4][0]*dexx+mdm[4][1]*deyy+mdm[4][2]*dezz+mdm[4][3]*dgyz+mdm[4][4]*dgxz+mdm[4][5]*dgxy;
-    stk.xy += mdm[5][0]*dexx+mdm[5][1]*deyy+mdm[5][2]*dezz+mdm[5][3]*dgyz+mdm[5][4]*dgxz+mdm[5][5]*dgxy;
+    stk.xx += pr.C[0][0]*dexx+pr.C[0][1]*deyy+pr.C[0][2]*dezz+pr.C[0][3]*dgyz+pr.C[0][4]*dgxz+pr.C[0][5]*dgxy;
+    stk.yy += pr.C[1][0]*dexx+pr.C[1][1]*deyy+pr.C[1][2]*dezz+pr.C[1][3]*dgyz+pr.C[1][4]*dgxz+pr.C[1][5]*dgxy;
+    stk.zz += pr.C[2][0]*dexx+pr.C[2][1]*deyy+pr.C[2][2]*dezz+pr.C[2][3]*dgyz+pr.C[2][4]*dgxz+pr.C[2][5]*dgxy;
+    stk.yz += pr.C[3][0]*dexx+pr.C[3][1]*deyy+pr.C[3][2]*dezz+pr.C[3][3]*dgyz+pr.C[3][4]*dgxz+pr.C[3][5]*dgxy;
+    stk.xz += pr.C[4][0]*dexx+pr.C[4][1]*deyy+pr.C[4][2]*dezz+pr.C[4][3]*dgyz+pr.C[4][4]*dgxz+pr.C[4][5]*dgxy;
+    stk.xy += pr.C[5][0]*dexx+pr.C[5][1]*deyy+pr.C[5][2]*dezz+pr.C[5][3]*dgyz+pr.C[5][4]*dgxz+pr.C[5][5]*dgxy;
 	
 	// get rotation matrix elements rzyx[i][j]
 	double z=mptr->GetRotationZ();
@@ -443,15 +438,10 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	double ftrial = GetF(mptr,&stk,np);
 	if(ftrial<0.)
 	{	// elastic, update stress and strain energy as usual
-		Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,delTime,np);
+		Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,delTime,np,properties,res);
 		return; 
     }
     
-	//int keyParticle=-1;
-	//if(MPMBase::currentParticleNum==keyParticle)
-	//{	cout << "# STEP " << fmobj->mstep << ", f = " << ftrial << endl;
-	//}
-	
 	// Find  lambda for this plastic state
 	// This material overrides to custom solution
 	double lambda = SolveForLambdaAP(mptr,np,ftrial,&stk);
@@ -496,12 +486,12 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	// increment particle stresses
 	Tensor st0=*sp;			// save previous stress for energy updates below
 	double dsig[6];
-    dsig[XX] = mdm[0][0]*dexx+mdm[0][1]*deyy+mdm[0][2]*dezz+mdm[0][3]*dgyz+mdm[0][4]*dgxz+mdm[0][5]*dgxy;
-    dsig[YY] = mdm[1][0]*dexx+mdm[1][1]*deyy+mdm[1][2]*dezz+mdm[1][3]*dgyz+mdm[1][4]*dgxz+mdm[1][5]*dgxy;
-    dsig[ZZ] = mdm[2][0]*dexx+mdm[2][1]*deyy+mdm[2][2]*dezz+mdm[2][3]*dgyz+mdm[2][4]*dgxz+mdm[2][5]*dgxy;
-    dsig[YZ] = mdm[3][0]*dexx+mdm[3][1]*deyy+mdm[3][2]*dezz+mdm[3][3]*dgyz+mdm[3][4]*dgxz+mdm[3][5]*dgxy;
-    dsig[XZ] = mdm[4][0]*dexx+mdm[4][1]*deyy+mdm[4][2]*dezz+mdm[4][3]*dgyz+mdm[4][4]*dgxz+mdm[4][5]*dgxy;
-    dsig[XY] = mdm[5][0]*dexx+mdm[5][1]*deyy+mdm[5][2]*dezz+mdm[5][3]*dgyz+mdm[5][4]*dgxz+mdm[5][5]*dgxy;
+    dsig[XX] = pr.C[0][0]*dexx+pr.C[0][1]*deyy+pr.C[0][2]*dezz+pr.C[0][3]*dgyz+pr.C[0][4]*dgxz+pr.C[0][5]*dgxy;
+    dsig[YY] = pr.C[1][0]*dexx+pr.C[1][1]*deyy+pr.C[1][2]*dezz+pr.C[1][3]*dgyz+pr.C[1][4]*dgxz+pr.C[1][5]*dgxy;
+    dsig[ZZ] = pr.C[2][0]*dexx+pr.C[2][1]*deyy+pr.C[2][2]*dezz+pr.C[2][3]*dgyz+pr.C[2][4]*dgxz+pr.C[2][5]*dgxy;
+    dsig[YZ] = pr.C[3][0]*dexx+pr.C[3][1]*deyy+pr.C[3][2]*dezz+pr.C[3][3]*dgyz+pr.C[3][4]*dgxz+pr.C[3][5]*dgxy;
+    dsig[XZ] = pr.C[4][0]*dexx+pr.C[4][1]*deyy+pr.C[4][2]*dezz+pr.C[4][3]*dgyz+pr.C[4][4]*dgxz+pr.C[4][5]*dgxy;
+    dsig[XY] = pr.C[5][0]*dexx+pr.C[5][1]*deyy+pr.C[5][2]*dezz+pr.C[5][3]*dgyz+pr.C[5][4]*dgxz+pr.C[5][5]*dgxy;
 	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 
     // Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
@@ -529,7 +519,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
     // heat energy is Cv(dT-dTq0) - dPhi
     // The dPhi is subtracted here because it will show up in next
     //		time step within Cv dT (if adiabatic heating occurs)
-    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,dispEnergy);
+    IncrementHeatEnergy(mptr,res->dT,0.,dispEnergy);
 	
 	// update internal variables
 	UpdatePlasticInternal(mptr,np);
@@ -561,8 +551,6 @@ double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tens
 	double lambda1=0.5*lambda2;
 	double f1=GetFkFromLambdak(mptr,strial,&stk,lambda1,np);
 	
-	//if(MPMBase::currentParticleNum==5018) cout << "# initial (lambda1,f1) = (" << lambda1 << "," << f1 << ") and (lambda2,f2) = (" << lambda2 << "," << f2 << ")" << endl;
-	
 	// bracket the solution
 	int step=1;
 	while(true)
@@ -584,7 +572,7 @@ double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tens
 		// if fails to bracket in 50 tries, return with single step solution
 		step++;
 		if(step>50)
-		{	//if(MPMBase::currentParticleNum==5018) cout << "# Failed to bracket solution" << endl;
+		{
 			GetDfCdf(mptr,strial,np);
 			UpdateStress(strial,&stk,lambdaInitial,np);
 			GetDfCdf(mptr,&stk,np);
@@ -592,8 +580,6 @@ double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tens
 			return lambdaInitial;
 		}
 	}
-	
-	//if(MPMBase::currentParticleNum==5018) cout << "# bracketed (lambda1,f1) = (" << lambda1 << "," << f1 << ") and (lambda2,f2) = (" << lambda2 << "," << f2 << "), steps = " << step << endl;
 	
 	// order solutions so f1<0
 	if(f1>0.)
@@ -647,14 +633,10 @@ double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tens
 			f2=fk;
 		}
 		
-		//if(MPMBase::currentParticleNum==5018) cout << "# ..." << step << "," << lambdak << "," << fk << endl;
 	}
 	
 	// output df (from initial setting of GetDfCdf()), alpha (here with latest lambda), and lamda (the return vale)
 	UpdateTrialAlpha(mptr,np,lambdak);
-	
-	//UpdateStress(strial,&stk,lambdak,np);
-	//if(MPMBase::currentParticleNum==5018) cout << "# ..." << step << "," << lambdak << "," << GetF(mptr,&stk,np) << endl;
 	
 	return lambdak;
 }
@@ -665,21 +647,21 @@ void AnisoPlasticity::GetDfCdf(MPMBase *mptr,Tensor *stk,int np)
 	// get C df and df C df, which need df/dsig (Function of yield criteria, and normally only current stress in stk)
 	GetDfDsigma(mptr,stk,np);
 	if(np==THREED_MPM)
-	{	Cdfxx = mdm[0][0]*dfdsxx+mdm[0][1]*dfdsyy+mdm[0][2]*dfdszz+mdm[0][3]*dfdtyz+mdm[0][4]*dfdtxz+mdm[0][5]*dfdtxy;
-		Cdfyy = mdm[1][0]*dfdsxx+mdm[1][1]*dfdsyy+mdm[1][2]*dfdszz+mdm[1][3]*dfdtyz+mdm[1][4]*dfdtxz+mdm[1][5]*dfdtxy;
-		Cdfzz = mdm[2][0]*dfdsxx+mdm[2][1]*dfdsyy+mdm[2][2]*dfdszz+mdm[2][3]*dfdtyz+mdm[2][4]*dfdtxz+mdm[2][5]*dfdtxy;
-		Cdfyz = mdm[3][0]*dfdsxx+mdm[3][1]*dfdsyy+mdm[3][2]*dfdszz+mdm[3][3]*dfdtyz+mdm[3][4]*dfdtxz+mdm[3][5]*dfdtxy;
-		Cdfxz = mdm[4][0]*dfdsxx+mdm[4][1]*dfdsyy+mdm[4][2]*dfdszz+mdm[4][3]*dfdtyz+mdm[4][4]*dfdtxz+mdm[4][5]*dfdtxy;
-		Cdfxy = mdm[5][0]*dfdsxx+mdm[5][1]*dfdsyy+mdm[5][2]*dfdszz+mdm[5][3]*dfdtyz+mdm[5][4]*dfdtxz+mdm[5][5]*dfdtxy;
+	{	Cdfxx = pr.C[0][0]*dfdsxx+pr.C[0][1]*dfdsyy+pr.C[0][2]*dfdszz+pr.C[0][3]*dfdtyz+pr.C[0][4]*dfdtxz+pr.C[0][5]*dfdtxy;
+		Cdfyy = pr.C[1][0]*dfdsxx+pr.C[1][1]*dfdsyy+pr.C[1][2]*dfdszz+pr.C[1][3]*dfdtyz+pr.C[1][4]*dfdtxz+pr.C[1][5]*dfdtxy;
+		Cdfzz = pr.C[2][0]*dfdsxx+pr.C[2][1]*dfdsyy+pr.C[2][2]*dfdszz+pr.C[2][3]*dfdtyz+pr.C[2][4]*dfdtxz+pr.C[2][5]*dfdtxy;
+		Cdfyz = pr.C[3][0]*dfdsxx+pr.C[3][1]*dfdsyy+pr.C[3][2]*dfdszz+pr.C[3][3]*dfdtyz+pr.C[3][4]*dfdtxz+pr.C[3][5]*dfdtxy;
+		Cdfxz = pr.C[4][0]*dfdsxx+pr.C[4][1]*dfdsyy+pr.C[4][2]*dfdszz+pr.C[4][3]*dfdtyz+pr.C[4][4]*dfdtxz+pr.C[4][5]*dfdtxy;
+		Cdfxy = pr.C[5][0]*dfdsxx+pr.C[5][1]*dfdsyy+pr.C[5][2]*dfdszz+pr.C[5][3]*dfdtyz+pr.C[5][4]*dfdtxz+pr.C[5][5]*dfdtxy;
 		dfCdf = dfdsxx*Cdfxx + dfdsyy*Cdfyy + dfdszz*Cdfzz + dfdtyz*Cdfyz + dfdtxz*Cdfxz + dfdtxy*Cdfxy;
 	}
 	else
-	{	Cdfxx = mdm[1][1]*dfdsxx + mdm[1][2]*dfdsyy + mdm[1][3]*dfdtxy;
-		Cdfyy = mdm[1][2]*dfdsxx + mdm[2][2]*dfdsyy + mdm[2][3]*dfdtxy;
-		Cdfxy = mdm[1][3]*dfdsxx + mdm[2][3]*dfdsyy + mdm[3][3]*dfdtxy;
+	{	Cdfxx = pr.C[1][1]*dfdsxx + pr.C[1][2]*dfdsyy + pr.C[1][3]*dfdtxy;
+		Cdfyy = pr.C[1][2]*dfdsxx + pr.C[2][2]*dfdsyy + pr.C[2][3]*dfdtxy;
+		Cdfxy = pr.C[1][3]*dfdsxx + pr.C[2][3]*dfdsyy + pr.C[3][3]*dfdtxy;
 		dfCdf = dfdsxx*Cdfxx + dfdsyy*Cdfyy + dfdtxy*Cdfxy;
 		if(np==PLANE_STRAIN_MPM)
-		{	Cdfzz = mdm[4][1]*dfdsxx + mdm[4][2]*dfdsyy + mdm[4][3]*dfdtxy + mdm[4][4]*dfdszz;
+		{	Cdfzz = pr.C[4][1]*dfdsxx + pr.C[4][2]*dfdsyy + pr.C[4][3]*dfdtxy + pr.C[4][4]*dfdszz;
 			dfCdf += dfdszz*Cdfzz;
 		}
 		else

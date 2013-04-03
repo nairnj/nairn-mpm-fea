@@ -34,10 +34,6 @@ InitializationTask::InitializationTask(const char *name) : MPMTask(name)
 //	and find grid momenta
 void InitializationTask::Execute(void)
 {
-#ifdef _PROFILE_TASKS_
-	double beginTime=fmobj->CPUTime();
-#endif
-	
 	int i;
 	
 	// Zero Mass Matrix and vectors
@@ -57,7 +53,4 @@ void InitializationTask::Execute(void)
     // turn off isothermal ramp when done and ramp step initialization
 	thermal.CheckDone(mtime);
 	
-#ifdef _PROFILE_TASKS_
-	totalTaskTime+=fmobj->CPUTime()-beginTime;
-#endif
 }	

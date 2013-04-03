@@ -73,7 +73,7 @@ char *CohesiveZone::InputMat(char *xName,int &input)
 	In terms of k and umax
 	    J = 250 k umax^2,   stress = k umax/2
 */
-const char *CohesiveZone::VerifyProperties(int np)
+const char *CohesiveZone::VerifyAndLoadProperties(int np)
 {
 	const char *msg=SetTractionLaw(stress1,kI1,delIc,JIc,umidI);
 	if(msg!=NULL) return msg;
@@ -81,11 +81,16 @@ const char *CohesiveZone::VerifyProperties(int np)
 	msg=SetTractionLaw(stress2,kII1,delIIc,JIIc,umidII);
 	if(msg!=NULL) return msg;
 	
-	return TractionLaw::VerifyProperties(np);
+	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
+	sIc=stress1*1.e6;
+	sIIc=stress2*1.e6;
+	
+	// go to parent
+	return TractionLaw::VerifyAndLoadProperties(np);
 }
 
 // print to output window
-void CohesiveZone::PrintMechanicalProperties(void)
+void CohesiveZone::PrintMechanicalProperties(void) const
 {
 	PrintProperty("GcI",JIc,"J/m^2");
 	PrintProperty("sigI",stress1,"");
@@ -103,10 +108,6 @@ void CohesiveZone::PrintMechanicalProperties(void)
 	
 	PrintProperty("n",nmix,"");
 	cout << endl;
-	
-	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
-	sIc=stress1*1.e6;
-	sIIc=stress2*1.e6;
 }
 
 // history variables:
@@ -247,10 +248,10 @@ double CohesiveZone::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCo
 #pragma mark CohesiveZone::Accessors
 
 // return material type
-const char *CohesiveZone::MaterialType(void) { return "Triangular Cohesive Zone"; }
+const char *CohesiveZone::MaterialType(void) const { return "Triangular Cohesive Zone"; }
 
 // Return the material tag
-int CohesiveZone::MaterialTag(void) { return COHESIVEZONEMATERIAL; }
+int CohesiveZone::MaterialTag(void) const { return COHESIVEZONEMATERIAL; }
 
 /* calculate properties used in analyses - here triangular law
 	k1 is slope up (MPa/mm)

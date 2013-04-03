@@ -27,35 +27,33 @@ class NewMaterial : public MaterialBase
 		
 		// initialize
         virtual char *InputMat(char *,int &);
-        virtual const char *VerifyProperties(int);
-		//virtual void InitialLoadMechProps(int,int);
+        virtual const char *VerifyAndLoadProperties(int);
 		//virtual void InitialLoadTransProps(void);
-		virtual void PrintMechanicalProperties(void);
-		//virtual void PrintTransportProperties(void);
-		//virtual bool ValidateForUse(int);
-        //virtual void SetInitialParticleState(MPMBase *,int);
+		virtual void PrintMechanicalProperties(void) const;
+		//virtual void PrintTransportProperties(void) const;
+		//virtual bool ValidateForUse(int) const;
+        //virtual void SetInitialParticleState(MPMBase *,int) const;
 	
 		// History-dependent properties
 		//virtual char *InitHistoryData(void);
-		//virtual double GetHistory(int,char *);
+		//virtual double GetHistory(int,char *) const;
 		
 		// step methods
-        //virtual void LoadMechanicalProps(MPMBase *,int);
 		//virtual void LoadTransportProps(MPMBase *,int);
-		//virtual double GetHeatCapacity(MPMBase *);
-        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int);
+		//virtual double GetHeatCapacity(MPMBase *) const;
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *);
 				
 		// accessors
-		virtual const char *MaterialType(void);
-		virtual int MaterialTag();
-		virtual double WaveSpeed(bool,MPMBase *);
-		//virtual double ShearWaveSpeed(bool,MPMBase *);
-        //virtual double CurrentWaveSpeed(bool,MPMBase *);
-		//virtual double MaximumDiffusion(void);
-        //virtual double MaximumDiffusivity(void);
-        //Tensor NewMaterial::GetStress(Tensor *sp,double pressure);
+		virtual const char *MaterialType(void) const;
+		virtual int MaterialTag() const;
+		virtual double WaveSpeed(bool,MPMBase *) const;
+		//virtual double ShearWaveSpeed(bool,MPMBase *) const;
+        //virtual double CurrentWaveSpeed(bool,MPMBase *) const;
+		//virtual double MaximumDiffusion(void) const;
+        //virtual double MaximumDiffusivity(void) const;
+        //Tensor NewMaterial::GetStress(Tensor *sp,double pressure) const;
         //bool PartitionsElasticAndPlasticStrain(void);
-        //bool SupportsArtificialViscosity(void)
+        //bool SupportsArtificialViscosity(void) const;
 		
     protected:
 

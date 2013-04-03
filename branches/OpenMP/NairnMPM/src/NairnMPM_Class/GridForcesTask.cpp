@@ -61,10 +61,6 @@ GridForcesTask::GridForcesTask(const char *name) : MPMTask(name)
 // Get total grid point forces (except external forces)
 void GridForcesTask::Execute(void)
 {
-#ifdef _PROFILE_TASKS_
-	double beginTime=fmobj->CPUTime();
-#endif
-
 	int numnds,nds[MaxShapeNds];
 	MaterialBase *matID;
 	double xfrc,yfrc,zfrc,fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds];
@@ -157,7 +153,4 @@ void GridForcesTask::Execute(void)
 	while(nextTransport!=NULL)
 		nextTransport=nextTransport->SetTransportForceBCs(timestep);
     
-#ifdef _PROFILE_TASKS_
-	totalTaskTime+=fmobj->CPUTime()-beginTime;
-#endif
 }

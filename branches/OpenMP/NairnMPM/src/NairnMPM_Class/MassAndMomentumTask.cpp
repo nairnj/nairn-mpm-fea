@@ -78,9 +78,6 @@ MassAndMomentumTask::MassAndMomentumTask(const char *name) : MPMTask(name)
 	// zero thisfunction in case in 2D analysis
 	for(int i=0;i<MaxShapeNds;i++) zDeriv[i]=0.;
 	
-	// crack locations defaults (in case no cracks)
-	cfld[0].loc=NO_CRACK;
-	cfld[1].loc=NO_CRACK;
 }
 
 #pragma mark REQUIRED METHODS
@@ -89,18 +86,9 @@ MassAndMomentumTask::MassAndMomentumTask(const char *name) : MPMTask(name)
 //	and find grid momenta
 void MassAndMomentumTask::Execute(void)
 {
-#ifdef _PROFILE_TASKS_
-	double beginTime=fmobj->CPUTime();
-#endif
-	
-	int i,p,mi,iel,matfld,numnds,nds[MaxShapeNds];
+	int p,mi,iel,matfld,numnds,nds[MaxShapeNds];
 	MaterialBase *matID;
 	double mp,fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds];
-    CrackHeader *nextCrack;
-    short vfld;
-	TransportTask *nextTransport;
-	MPMBase *mpmptr;
-	NodalPoint *ndptr;
 	
 	// undo dynamic velocity, temp, and conc BCs from rigid materials
 	UnsetRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
@@ -112,7 +100,8 @@ void MassAndMomentumTask::Execute(void)
 	
 	// loop over particles
     for(p=0;p<nmpms;p++)
-	{	mpmptr=mpm[p];							// pointer
+	{
+		MPMBase *mpmptr=mpm[p];					// pointer
 		iel=mpmptr->ElemID();					// element containing this particle
 		matID=theMaterials[mpmptr->MatID()];	// material object for this particle
 		
@@ -141,18 +130,29 @@ void MassAndMomentumTask::Execute(void)
 				theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),mpmptr);
 			
 			// Add particle property to each node in the element
-			for(i=1;i<=numnds;i++)
-			{	ndptr=nd[nds[i]];				// get pointer
+			for(int i=1;i<=numnds;i++)
+			{	
+				NodalPoint *ndptr = nd[nds[i]];				// get pointer
+				short vfld = 0;
 				
-				// Look for crack crossing and save until later
-				if(firstCrack!=NULL)
-				{	int cfound=0;
+				// Regular MPM, adds to velocity field 0
+				if(firstCrack==NULL)
+				{	// momentum vector (and allocate velocity field if needed)
+					ndptr->AddMomentumTask1(matfld,NULL,fn[i]*mp,&mpmptr->vel);
+					mpmptr->vfld[i] = 0;
+				}
+				
+				else
+				{	// in CRAMP, find crack crossing and appropriate velocity field
+					CrackField cfld[2];
+					cfld[0].loc = NO_CRACK;			// NO_CRACK, ABOVE_CRACK, or BELOW_CRACK
+					cfld[1].loc = NO_CRACK;
+					int cfound=0;
 					Vector norm;
-					cfld[0].loc=NO_CRACK;			// NO_CRACK, ABOVE_CRACK, or BELOW_CRACK
-					cfld[1].loc=NO_CRACK;
-					nextCrack=firstCrack;
+					
+					CrackHeader *nextCrack = firstCrack;
 					while(nextCrack!=NULL)
-					{   vfld=nextCrack->CrackCross(mpmptr->pos.x,mpmptr->pos.y,ndptr->x,ndptr->y,&norm);
+					{	vfld = nextCrack->CrackCross(mpmptr->pos.x,mpmptr->pos.y,ndptr->x,ndptr->y,&norm);
 						if(vfld!=NO_CRACK)
 						{	cfld[cfound].loc=vfld;
 							cfld[cfound].norm=norm;
@@ -167,11 +167,11 @@ void MassAndMomentumTask::Execute(void)
 						}
 						nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 					}
+					
+					// momentum vector (and allocate velocity field if needed)
+					vfld = ndptr->AddMomentumTask1(matfld,cfld,fn[i]*mp,&mpmptr->vel);
+					mpmptr->vfld[i] = vfld;
 				}
-				
-				// momentum vector (and allocate velocity field if needed)
-				vfld=ndptr->AddMomentumTask1(matfld,cfld,fn[i]*mp,&mpmptr->vel);
-				mpmptr->vfld[i]=vfld;
 				
 				// crack contact calculations
 				contact.AddDisplacementVolume(vfld,matfld,ndptr,mpmptr,fn[i]);
@@ -185,7 +185,7 @@ void MassAndMomentumTask::Execute(void)
 					ndptr->AddMass(vfld,matfld,mp*fn[i]);
 					
 					// transport calculations
-					nextTransport=transportTasks;
+					TransportTask *nextTransport=transportTasks;
 					while(nextTransport!=NULL)
 						nextTransport=nextTransport->Task1Extrapolation(ndptr,mpmptr,fn[i]);
 				}
@@ -194,14 +194,16 @@ void MassAndMomentumTask::Execute(void)
 					ndptr->AddMassTask1(vfld,matfld,mp*fn[i]);
 				}
 			}
+			
 		}
 		
 		// For Rigid BC materials create velocity BC on each node in the element
 		else
-		{	numnds=theElements[iel]->NumberNodes();
+		{
+			numnds=theElements[iel]->NumberNodes();
 			double rvalue;
 			RigidMaterial *rigid=(RigidMaterial *)matID;
-			for(i=1;i<=numnds;i++)
+			for(int i=1;i<=numnds;i++)
 			{   mi=theElements[iel]->nodes[i-1];		// 1 based node
 				
 				// look for setting function in one to three directions
@@ -273,7 +275,7 @@ void MassAndMomentumTask::Execute(void)
 	RemoveRigidBCs((BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,(BoundaryCondition **)&firstRigidConcBC);
 	
 	// Get total nodal masses and count materials if multimaterial mode
-	for(i=1;i<=nnodes;i++)
+	for(int i=1;i<=nnodes;i++)
 		nd[i]->CalcTotalMassAndCount();
 	
 #ifdef COMBINE_RIGID_MATERIALS
@@ -283,7 +285,7 @@ void MassAndMomentumTask::Execute(void)
 #endif
 	
 	// Find values and gradients for transport tasks
-	nextTransport=transportTasks;
+	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
 		nextTransport=nextTransport->GetValuesAndGradients(mtime);
 	
@@ -297,10 +299,7 @@ void MassAndMomentumTask::Execute(void)
 	// NOTE: Switched order of contact and BCs (8/12/2009)
 	NodalVelBC::GridMomentumConditions(TRUE);
 	
-#ifdef _PROFILE_TASKS_
-	totalTaskTime+=fmobj->CPUTime()-beginTime;
-#endif
-}	
+}
 
 // Set boundary conditions determined by moving rigid paticles
 void MassAndMomentumTask::SetRigidBCs(int mi,int type,double value,double angle,BoundaryCondition **firstBC,

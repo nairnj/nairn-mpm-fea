@@ -48,7 +48,7 @@ char *HillPlastic::InputMat(char *xName,int &input)
 }
 
 // verify settings and some initial calculations
-const char *HillPlastic::VerifyProperties(int np)
+const char *HillPlastic::VerifyAndLoadProperties(int np)
 {
 	double rsxx=0.,rsyy=0.,rszz=0.;
 	
@@ -65,22 +65,18 @@ const char *HillPlastic::VerifyProperties(int np)
 	if(fgh-sqrt(arg)<0.) return "Hill plastic potential is not postive semidefinite (2)";
 	
 	// call super class
-	return AnisoPlasticity::VerifyProperties(np);
-}
-
-// Private properties used in constitutive law
-void HillPlastic::InitialLoadMechProps(int makeSpecific,int np)
-{
-	AnisoPlasticity::InitialLoadMechProps(makeSpecific,np);
+	const char *err = AnisoPlasticity::VerifyAndLoadProperties(np);
 	
 	// combination terms
 	fTerm=(syyyred2 + syzzred2 - syxxred2)/2.;
 	gTerm=(syzzred2 + syxxred2 - syyyred2)/2.;
 	hTerm=(syxxred2 + syyyred2 - syzzred2)/2.;
+	
+	return err;
 }
 
 // print to output window
-void HillPlastic::PrintYieldProperties(void)
+void HillPlastic::PrintYieldProperties(void) const
 {	
     AnisoPlasticity::PrintYieldProperties();
 	PrintProperty("K",Khard,"");
@@ -282,13 +278,13 @@ void HillPlastic::UpdatePlasticInternal(MPMBase *mptr,int np)
 #pragma mark HillPlastic:Accessors
 
 // Return the material tag
-int HillPlastic::MaterialTag(void) { return HILLPLASTIC; }
+int HillPlastic::MaterialTag(void) const { return HILLPLASTIC; }
 
 // return material type
-const char *HillPlastic::MaterialType(void) { return "Elastic-Plastic Hill Material"; }
+const char *HillPlastic::MaterialType(void) const { return "Elastic-Plastic Hill Material"; }
 
 // hardening history - equivalent plastic strain (absolute strain)
-double HillPlastic::GetHistory(int num,char *historyPtr)
+double HillPlastic::GetHistory(int num,char *historyPtr) const
 {
     double history=0.;
 	if(num==1)

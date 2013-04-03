@@ -40,43 +40,39 @@ UpdateParticlesTask::UpdateParticlesTask(const char *name) : MPMTask(name)
 // Update particle position, velocity, temp, and conc
 void UpdateParticlesTask::Execute(void)
 {
-#ifdef _PROFILE_TASKS_
-	double beginTime=fmobj->CPUTime();
-#endif
-
-	int i,p,iel,numnds,matfld,nds[MaxShapeNds];
-	MaterialBase *matID;
-	TransportTask *nextTransport;
+	int numnds;
+	int nds[MaxShapeNds];
 	double fn[MaxShapeNds];
+	Vector delv;
 	
     // Update particle position, velocity, temp, and conc
-	Vector delv,*acc;
-    for(p=0;p<nmpms;p++)
-	{	matID=theMaterials[mpm[p]->MatID()];
+#pragma omp parallel for private(nds,fn,delv,numnds)
+    for(int p=0;p<nmpms;p++)
+	{	MaterialBase *matID=theMaterials[mpm[p]->MatID()];
 		if(!matID->Rigid())
 		{	// get shape functions
-			iel=mpm[p]->ElemID();
+			int iel=mpm[p]->ElemID();
 			theElements[iel]->GetShapeFunctions(&numnds,fn,nds,mpm[p]->GetNcpos(),mpm[p]);
 			
 			// Update particle position and velocity
-			matfld=matID->GetField();
-			acc=mpm[p]->GetAcc();
+			int matfld=matID->GetField();
+			Vector *acc=mpm[p]->GetAcc();
 			ZeroVector(acc);
 			ZeroVector(&delv);
-			nextTransport=transportTasks;
+			TransportTask *nextTransport=transportTasks;
 			while(nextTransport!=NULL)
 				nextTransport=nextTransport->ZeroTransportRate();
-			//int mpmvfld=mpm[p]->vfld[1];
-			//bool sameField=TRUE;
-			for(i=1;i<=numnds;i++)
-			{	nd[nds[i]]->IncrementDelvaTask5((short)mpm[p]->vfld[i],matfld,fn[i],&delv,acc);
-				//if(mpm[p]->vfld[i]!=mpmvfld) sameField=FALSE;
+			
+			// Loop over nodes
+			for(int i=1;i<=numnds;i++)
+			{	// increment velocity and acceleraton
+				nd[nds[i]]->IncrementDelvaTask5((short)mpm[p]->vfld[i],matfld,fn[i],&delv,acc);
+				
+				// increment transport rates
 				nextTransport=transportTasks;
 				while(nextTransport!=NULL)
 					nextTransport=nextTransport->IncrementTransportRate(nd[nds[i]],fn[i]);
 			}
-			
-			//if(!sameField) cout << "see " << p+1 << endl;
 			
 			// update position in mm and velocity in mm/sec
 			mpm[p]->MovePosition(timestep,&delv);
@@ -107,7 +103,4 @@ void UpdateParticlesTask::Execute(void)
 		}
 	}
 	
-#ifdef _PROFILE_TASKS_
-	totalTaskTime+=fmobj->CPUTime()-beginTime;
-#endif
 }

@@ -29,8 +29,8 @@
 
 // global
 bool DiffusionTask::active=FALSE;
-double DiffusionTask::dConcentration = 0.;
 double DiffusionTask::reference = 0.;				// zero-strain concentration
+DiffusionTask *diffusion=NULL;
 
 #pragma mark INITIALIZE
 
@@ -248,17 +248,16 @@ TransportTask *DiffusionTask::UpdateNodalValues(double concTime)
 }
 
 // increment transport rate
-TransportTask *DiffusionTask::IncrementValueExtrap(NodalPoint *ndpt,double shape)
-{	pValueExtrap += ndpt->gConcentration*shape;
-	return nextTask;
+double DiffusionTask::IncrementValueExtrap(NodalPoint *ndpt,double shape) const
+{	return ndpt->gConcentration*shape;
 }
 
 // after extrapolated, find change this update on particle and reset particle
 // property to this grid extrapolated value
-TransportTask *DiffusionTask::GetDeltaValue(MPMBase *mptr)
-{	dConcentration = pValueExtrap-mptr->pPreviousConcentration;
-	mptr->pPreviousConcentration = pValueExtrap;
-	return nextTask;
+double DiffusionTask::GetDeltaValue(MPMBase *mptr,double pConcExtrap) const
+{	double dConcentration = pConcExtrap-mptr->pPreviousConcentration;
+	mptr->pPreviousConcentration = pConcExtrap;
+	return dConcentration;
 }
 
 		

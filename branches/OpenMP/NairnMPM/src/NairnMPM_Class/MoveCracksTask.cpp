@@ -39,10 +39,6 @@ MoveCracksTask::MoveCracksTask(const char *name) : MPMTask(name)
 // Run all custom tasks
 void MoveCracksTask::Execute(void)
 {
-#ifdef _PROFILE_TASKS_
-	double beginTime=fmobj->CPUTime();
-#endif
-
 	// move crack surface in their local velocity fields
 	CrackHeader *nextCrack=firstCrack;
 	while(nextCrack!=NULL)
@@ -84,8 +80,5 @@ void MoveCracksTask::Execute(void)
 		}
 	}
 	
-#ifdef _PROFILE_TASKS_
-	totalTaskTime+=fmobj->CPUTime()-beginTime;
-#endif
 }
 	

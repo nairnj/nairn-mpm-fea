@@ -22,7 +22,6 @@ class DiffusionTask : public TransportTask
 {
     public:
 		static bool active;
-		static double dConcentration;
 		static double reference;
 		
         // constructors and destructors
@@ -41,10 +40,13 @@ class DiffusionTask : public TransportTask
 		virtual TransportTask *IncrementTransportRate(NodalPoint *,double);
 		virtual TransportTask *MoveTransportValue(MPMBase *,double);
 		virtual TransportTask *UpdateNodalValues(double);
-		virtual TransportTask *IncrementValueExtrap(NodalPoint *,double);
-		virtual TransportTask *GetDeltaValue(MPMBase *);
+		virtual double IncrementValueExtrap(NodalPoint *,double) const;
+		virtual double GetDeltaValue(MPMBase *,double) const;
 		
     private:
 };
+
+// globals
+extern DiffusionTask *diffusion;
 
 #endif

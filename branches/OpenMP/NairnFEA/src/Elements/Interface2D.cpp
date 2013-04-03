@@ -39,7 +39,7 @@ void Interface2D::ForceStress(double *rm,int np,int nfree)
 	double pi=3.141592653589793,dsx,dsy,xpxi,ypxi;
     MaterialBase *matl=theMaterials[material-1];
 	
-	// Get stiffness matrix (and also load nodal coordinates (ce[]) and material props (mdm[][]))
+	// Get stiffness matrix (and also load nodal coordinates (ce[]) and material props (pr.C[][]))
 	Stiffness(np);
 	
     // Load nodal displacements into re[]
@@ -73,8 +73,8 @@ void Interface2D::ForceStress(double *rm,int np,int nfree)
 	}
 		
 	// get normal and shear stresses from interface law
-	Dn=matl->mdm[1][1];
-	Dt=matl->mdm[1][2];
+	Dn=matl->pr.C[1][1];
+	Dt=matl->pr.C[1][2];
 	if(nameEl==LINEAR_INTERFACE)
 	{	dx=ce[2].x-ce[1].x;
 		dy=ce[2].y-ce[1].y;

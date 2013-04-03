@@ -26,20 +26,20 @@ class LinearHardening : public HardeningLawBase
     
         // initialize
         virtual char *InputMat(char *,int &);
-        virtual void PrintYieldProperties(void);
-        virtual void InitialLoadMechProps(int,int);
+        virtual void PrintYieldProperties(void) const;
+		virtual const char *VerifyAndLoadProperties(int);
     
         // hardening law core methods
-        virtual double GetYield(MPMBase *,int,double);
-        virtual double GetYieldIncrement(MPMBase *,int,double);
-        virtual double GetKPrime(MPMBase *,int,double);
-        virtual double GetK2Prime(MPMBase *,double,double);
+        virtual double GetYield(MPMBase *,int,double,HardeningAlpha *,void *) const;
+        virtual double GetYieldIncrement(MPMBase *,int,double,HardeningAlpha *,void *) const;
+        virtual double GetKPrime(MPMBase *,int,double,HardeningAlpha *,void *) const;
+        virtual double GetK2Prime(MPMBase *,double,double,HardeningAlpha *,void *) const;
     
         // return mapping can have fast option
-        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double);
+        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double,HardeningAlpha *,void *) const;
     
         // accessors
-        virtual const char *GetHardeningLawName(void);
+        virtual const char *GetHardeningLawName(void) const;
     
     protected:
         double beta,Epred;

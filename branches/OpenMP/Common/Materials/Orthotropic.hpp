@@ -29,17 +29,17 @@ class Orthotropic : public TransIsotropic
         
         // initilize
         virtual char *InputMat(char *,int &);
-        virtual const char *VerifyProperties(int);
-        virtual void PrintMechanicalProperties(void);
+        virtual const char *VerifyAndLoadProperties(int);
+        virtual void PrintMechanicalProperties(void) const;
 #ifdef MPM_CODE
-		virtual void PrintTransportProperties(void);
+		virtual void PrintTransportProperties(void) const;
 #endif
 		
 		// accessors
-		virtual const char *MaterialType(void);
-		virtual int MaterialTag();
+		virtual const char *MaterialType(void) const;
+		virtual int MaterialTag() const;
 #ifdef MPM_CODE
-        virtual double WaveSpeed(bool,MPMBase *);
+        virtual double WaveSpeed(bool,MPMBase *) const;
 		virtual double GetDiffZ(void);
 		virtual double GetKcondZ(void);
 #endif

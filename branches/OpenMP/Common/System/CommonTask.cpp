@@ -29,6 +29,7 @@ CommonTask::CommonTask(const char *name)
 	nextTask=NULL;
 	
 	totalTaskTime=0.;
+	totalTaskETime=0.;
 }
 
 CommonTask::~CommonTask()

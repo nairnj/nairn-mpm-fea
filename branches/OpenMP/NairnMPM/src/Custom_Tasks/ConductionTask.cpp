@@ -27,8 +27,8 @@
 	Update strains last (if used)
 		Update gTemperature on nodes (UpdateNodalValues())
 	Update strains on particles (both places)
-		Extrapolate grid temperature to particle using pValueExtra (IncrementValueExtrap())
-		Find dTemperature = extrapolated value minus previous extrapolated value and then
+		Extrapolate grid temperature to particle using IncrementValueExtrap()
+		Find dT = extrapolated value minus previous extrapolated value and then
 			store extrapolated value in pPreviousTemperature (GetDeltaValue())
 		This task is done because contititutive laws work better when temperature comes
 			from grid extrapolation instead of particle temperature. The current grid
@@ -54,7 +54,6 @@ bool ConductionTask::active=FALSE;
 bool ConductionTask::crackTipHeating=FALSE;
 bool ConductionTask::energyCoupling=FALSE;
 bool ConductionTask::AVHeating=TRUE;
-double ConductionTask::dTemperature=0.;
 ConductionTask *conduction=NULL;
 
 #pragma mark INITIALIZE
@@ -282,17 +281,16 @@ TransportTask *ConductionTask::UpdateNodalValues(double tempTime)
 	return nextTask;
 }
 
-// increment transport rate
-TransportTask *ConductionTask::IncrementValueExtrap(NodalPoint *ndpt,double shape)
-{	pValueExtrap += ndpt->gTemperature*shape;
-	return nextTask;
+// return increment transport rate
+double ConductionTask::IncrementValueExtrap(NodalPoint *ndpt,double shape) const
+{	return ndpt->gTemperature*shape;
 }
 
 // after extrapolated, find change this update on particle
-TransportTask *ConductionTask::GetDeltaValue(MPMBase *mptr)
-{	dTemperature = pValueExtrap-mptr->pPreviousTemperature;
-	mptr->pPreviousTemperature = pValueExtrap;
-	return nextTask;
+double ConductionTask::GetDeltaValue(MPMBase *mptr,double pTempExtrap) const
+{	double dTemperature = pTempExtrap-mptr->pPreviousTemperature;
+	mptr->pPreviousTemperature = pTempExtrap;
+	return dTemperature;
 }
 
 #pragma mark CUSTOM METHODS

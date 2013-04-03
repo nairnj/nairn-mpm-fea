@@ -16,9 +16,6 @@ MPMBase **mpm;		// list of material points
 int nmpms=0;		// number of material points
 int nmpmsNR=0;		// number for last non-rigid material point
 
-// class statics
-int MPMBase::currentParticleNum=0;
-
 #pragma mark MPMBase::Constructors and Destructors
 
 // Constructors

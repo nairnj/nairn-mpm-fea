@@ -70,7 +70,7 @@ char *MGSCGLMaterial::InputMat(char *xName,int &input)
 }
 
 // verify settings and some initial calculations
-const char *MGSCGLMaterial::VerifyProperties(int np)
+const char *MGSCGLMaterial::VerifyAndLoadProperties(int np)
 {	
 	// check properties (need here because IsotropicMat is skipped
 	if(!read[G_PROP]) return "The shear modulus, G0, is missing";
@@ -79,43 +79,34 @@ const char *MGSCGLMaterial::VerifyProperties(int np)
 	CME3=betaI*concSaturation;
 
 	// call plastic law, but skip IsotropicPlasticity and IsotropicMat
-    const char *ptr = plasticLaw->VerifyProperties(np);
+    const char *ptr = plasticLaw->VerifyAndLoadProperties(np);
     if(ptr != NULL) return ptr;
-	return MaterialBase::VerifyProperties(np);
-}
-
-// Constant properties used in constitutive law
-void MGSCGLMaterial::InitialLoadMechProps(int makeSpecific,int np)
-{	
-    // hardening law properties
-    plasticLaw->InitialLoadMechProps(makeSpecific,np);
 	
     // Use in place of C0^2. Units are Pa cm^3/g such that get Pa when multiplied
     //      by a density in g/cm^3
     C0squared = 1000.*C0*C0;
 	
     // Shear modulus with pressure dependence
-	G0red = G*1.e6/rho;         // G0red = G/rho0
-	Gred = G0red;               // Gred = G/rho = G rho0/(rho rho0) = J G0red
-	Kred = C0squared;
-    Keffred = C0squared;
+	G0red = G*1.e6/rho;				// G0red = G/rho0
+	pr.Gred = G0red;				// Gred = G/rho = G rho0/(rho rho0) = J G0red
+	pr.Kred = C0squared;
 	
 	// thermal expansion is handled in EOS in UpdatePressure() so need to set
 	// CTE3 used by Isoplasticity to 0;
 	// Not sure if this material can handle solvent expansion?
 	CTE3=0.;
 	
-	// plane stress correction done in UpdatePressure()
-	psRed=1.;
+	// skip to base class
+	return MaterialBase::VerifyAndLoadProperties(np);
 }
 
 // print mechanical properties to the results
-void MGSCGLMaterial::PrintMechanicalProperties(void)
+void MGSCGLMaterial::PrintMechanicalProperties(void) const
 {
 	// core properties
 	PrintProperty("C0",C0,"m/s");
 	PrintProperty("gam0",gamma0,"");
-	PrintProperty("K",rho*Kred*1e-6,"");
+	PrintProperty("K",rho*pr.Kred*1e-6,"");
     PrintProperty("G0",G,"");
 	cout << endl;
     
@@ -135,7 +126,7 @@ void MGSCGLMaterial::PrintMechanicalProperties(void)
 }
 
 // Print transport properties
-void MGSCGLMaterial::PrintTransportProperties(void)
+void MGSCGLMaterial::PrintTransportProperties(void) const
 {
 	// Conductivity constants
 	if(ConductionTask::active)
@@ -148,7 +139,7 @@ void MGSCGLMaterial::PrintTransportProperties(void)
 }
 
 // if analysis not allowed, throw an exception
-void MGSCGLMaterial::ValidateForUse(int np)
+void MGSCGLMaterial::ValidateForUse(int np) const
 {	
 	if(thermal.reference<=0)
 	{	throw CommonException("MGEOSMaterial material requires the simulation to set the stress free temperature in degrees K",
@@ -167,18 +158,29 @@ void MGSCGLMaterial::ValidateForUse(int np)
 
 #pragma mark MGSCGLMaterial::Custom Methods
 
+// Isotropic material can use read-only initial properties
+void *MGSCGLMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np)
+{
+	PlasticProperties *p = (PlasticProperties *)malloc(sizeof(PlasticProperties));
+	*p = pr;
+ 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np);
+	
+	// Gratio and other properties loaded later
+	return p;
+}
+
 /* To better handle large deformation in the M-G EOS, this method is overridden
     to calculate incremental deformation using large-deformation theory (i.e. from
     exponent of du), find delV, find Jnew, and then call back to Isoplasticity to
     finish shear parts using hypoelasticity
 */
-void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
+void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res)
 {
     // Correct for swelling by finding total residual stretch (not incremental)
 	double eresTot=0.,JresStretch=1.,eres=0.,dJresStretch=1.;
 	if(DiffusionTask::active)
     {   eresTot += CME3*(mptr->pPreviousConcentration-DiffusionTask::reference);
-        eres += CME3*DiffusionTask::dConcentration;
+        eres += CME3*res->dC;
         JresStretch = (1.+eresTot)*(1.+eresTot)*(1.+eresTot);
 		dJresStretch = (1.+eres)*(1.+eres)*(1.+eres);
     }
@@ -199,23 +201,30 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     double Jnew = F.determinant()/JresStretch;          // = V(k+1)/Vsf(k+1)
     double delV = 1.-1./dJ;								// = (V(k+1)/Vsf(k+1) - V(k)/Vsf(k))/(V(k+1)/Vsf(k+1))
     delVLowStrain = du.trace() -  3.*eres;
+	
+	// SCGL and SL chnage shear modulus, here Gratio =  J G/G0
+    // Note: J in Gred and Gratio is so that where they are used, they give
+    //          specific Cauchy stress
+	PlasticProperties *p = (PlasticProperties *)properties;
+	double Gratio = plasticLaw->GetShearRatio(mptr,mptr->GetPressure(),Jnew,p->hardProps);
+	p->Gred = G0red*Gratio;
     
     // artifical viscosity
     QAVred = 0.;
     if(delV<0. && artificialViscosity)
-    {   double c = sqrt(Keffred*Jnew*JresStretch/1000.);        // m/sec
+    {   double c = sqrt(p->Kred*Jnew*JresStretch/1000.);        // m/sec
         //double Dkk = (du(0,0)+du(1,1)+du(2,2))/delTime;
         QAVred = GetArtificalViscosity(delV/delTime,c);
     }
     
     if(np!=THREED_MPM)
     {   // Finish of shear parts and yield in the base IsoPlasticity class
-        PlasticityConstLaw(mptr,du(0,0),du(1,1),du(0,1),du(1,0),du(2,2),delTime,np,delV,Jnew,eres);
+        PlasticityConstLaw(mptr,du(0,0),du(1,1),du(0,1),du(1,0),du(2,2),delTime,np,delV,Jnew,eres,p,res);
     }
     else
     {   // Finish of shear parts and yield in the base IsoPlasticity class
         PlasticityConstLaw(mptr,du(0,0),du(1,1),du(2,2),du(0,1),du(1,0),du(0,2),du(2,0),
-                           du(1,2),du(2,1),delTime,np,delV,Jnew,eres);
+                           du(1,2),du(2,1),delTime,np,delV,Jnew,eres,p,res);
     }
 }
 
@@ -228,7 +237,7 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
 // Notes:
 //  delV is relative incremental volume change on this step = (V(k+1)-V(k))/V(k+1)
 //  J is total volume change at end of step
-void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
+void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,PlasticProperties *p,ResidualStrains *res)
 {
 	// delV is total incremental volumetric strain relative to free-swelling volume
     // J is total volume change - may need to reference to free-swelling volume if that works
@@ -252,17 +261,25 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
         }
         
         // current effective and reduced (by rho0) bulk modulus
-        Keffred = C0squared*(1.-0.5*gamma0*x)*denom*denom;
+        p->Kred = C0squared*(1.-0.5*gamma0*x)*denom*denom;
     }
     else
     {   // In tension use low-strain bulk modulus
-        Keffred = C0squared;
+        p->Kred = C0squared;
     }
+	
+	// update plane stress terms now
+	if(np==PLANE_STRESS_MPM)
+	{	// these are terms for plane stress calculations only
+		p->psRed = 1./(p->Kred/(2.*p->Gred) + 2./3.);					// (1-2nu)/(1-nu) for plane stress
+		p->psLr2G = (p->Kred/(2.*p->Gred) - 1./3.)*p->psRed;			// nu/(1-nu) to find ezz
+		p->psKred = p->Kred*p->psRed;									// E/(3(1-v)) to find lambda
+	}
 
     // Pressure from bulk modulus and an energy term
     double e = mptr->GetInternalEnergy();
 	double P0 = mptr->GetPressure();
-    double P = J*(Keffred*x + gamma0*e);
+    double P = J*(p->Kred*x + gamma0*e);
     
     // set final pressure
     mptr->SetPressure(P+QAVred);
@@ -279,12 +296,7 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
     // heat energy is Cv (dT - dTq0) - dPhi - QAVred*delV
 	// Here do Cv (dT - dTq0) - QAVred*delV term and dPhi is done later
     double AVEnergy = ConductionTask::AVHeating ? fabs(QAVred*delV) : 0. ;
-    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,dTq0,AVEnergy);
-
-	// SCGL and SL shear modulus and save Gratio = J G/G0 for later calculations
-    // Note: J in Gred and Gratio is so that where they are used, they give
-    //          specific Cauchy stress
-    Gred = G0red * plasticLaw->GetShearRatio(mptr,avgP,J);
+    IncrementHeatEnergy(mptr,res->dT,dTq0,AVEnergy);
     
     // reset for small-strain plasticity
     delV = delVLowStrain;
@@ -293,7 +305,7 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np)
 
 // This material is tracking specific Cauchy stress. On archiving need to know volume
 // to get to actual Cauchy stress
-double MGSCGLMaterial::GetCurrentRelativeVolume(MPMBase *mptr)
+double MGSCGLMaterial::GetCurrentRelativeVolume(MPMBase *mptr) const
 {  
     return mptr->GetRelativeVolume();
 }
@@ -301,21 +313,21 @@ double MGSCGLMaterial::GetCurrentRelativeVolume(MPMBase *mptr)
 #pragma mark MGSCGLMaterial::Accessors
 
 // Return the material tag
-int MGSCGLMaterial::MaterialTag(void) { return MGEOSMATERIAL; }
+int MGSCGLMaterial::MaterialTag(void) const { return MGEOSMATERIAL; }
 
 // return unique, short name for this material
-const char *MGSCGLMaterial::MaterialType(void) { return "MGEOS Material"; }
+const char *MGSCGLMaterial::MaterialType(void) const { return "MGEOS Material"; }
 
 /*	calculate wave speed in mm/sec. Uses initial sqrt((K+4G/3)/rho) which is dilational wave speed
     K in Pa is 1000*rho*C0^2, G is in MPa, rho is in g/cm^3
 */
-double MGSCGLMaterial::WaveSpeed(bool threeD,MPMBase *mptr) { return 1000.*sqrt(C0*C0+4000.*G/(3.*rho)); }
+double MGSCGLMaterial::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1000.*sqrt(C0*C0+4000.*G/(3.*rho)); }
 
 /*	calculate current wave speed in mm/sec. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
-    but K and G are current values of rho0*Keffred and rho0*Gred/J (in Pa) so were want
-    1000 sqrt(rho0(Keffred+4Gred/(3J))/(1000 rho0/J))
+    but K and G are current values of rho0*KcurrRed and rho0*Gred/J (in Pa) so were want
+    1000 sqrt(rho0(KcurrRed+4Gred/(3J))/(1000 rho0/J))
  */
-double MGSCGLMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr)
+double MGSCGLMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
 {
     // compressive volumetric strain x = 1-J
     double J = mptr->GetRelativeVolume();
@@ -340,12 +352,12 @@ double MGSCGLMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr)
     // get G/rho at current pressure
     double e = mptr->GetInternalEnergy();
     double pressure = J*(KcurrRed*x + gamma0*e);
-    double GcurrRed = G0red * plasticLaw->GetShearRatio(mptr,pressure,J);
+    double GcurrRed = G0red * plasticLaw->GetShearRatio(mptr,pressure,J,NULL);
     
     // return current save speed
     return 1000.*sqrt((KcurrRed + 4.*GcurrRed/3.)/1000.);
 }
 
 // if a subclass material supports artificial viscosity, override this and return TRUE
-bool MGSCGLMaterial::SupportsArtificialViscosity(void) { return TRUE; }
+bool MGSCGLMaterial::SupportsArtificialViscosity(void) const { return TRUE; }
 

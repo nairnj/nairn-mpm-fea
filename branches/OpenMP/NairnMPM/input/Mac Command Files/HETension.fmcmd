@@ -26,11 +26,11 @@ EndXMLData
 #update="USF"
 
 ! Supported materials: "neohookean" (G2=0), "mooney" (G1=G2), heiso
-#matID="mooney"
+#matID="heiso"
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2
-#hardID="Nonlinear"
+#hardID="Linear"
 
 ! temperature option to test energy coupling
 StressFreeTemp 294
@@ -41,7 +41,7 @@ StressFreeTemp 294
 #rho=1.2
 #nuBase=.4
 #aBase=60
-#yldstrain=1		! in percent
+#yldstrain=10		! in percent
 
 #Ebase=100
 #rho=1.2

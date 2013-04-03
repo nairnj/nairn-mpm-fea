@@ -33,19 +33,19 @@ class HyperElastic : public MaterialBase
     
         // initialize
         virtual char *InputMat(char *,int &);
-        virtual void SetInitialParticleState(MPMBase *,int);
-        virtual void InitialLoadMechProps(int,int);
+		virtual const char *VerifyAndLoadProperties(int);
+        virtual void SetInitialParticleState(MPMBase *,int) const;
     
 		// Methods (make virtual if any subclass needs them)
-        double IncrementDeformation(MPMBase *,double,double,double,double,double,Tensor *);
-        double IncrementDeformation(MPMBase *,double,double,double,double,double,double,double,double,double,Tensor *);
-        double IncrementDeformation(MPMBase *,Matrix3,Tensor *,int);
-		double GetResidualStretch(MPMBase *,double &);
-    void DecomposeDeformation(Matrix3);
+        double IncrementDeformation(MPMBase *,double,double,double,double,double,Tensor *) const;
+        double IncrementDeformation(MPMBase *,double,double,double,double,double,double,double,double,double,Tensor *) const;
+        double IncrementDeformation(MPMBase *,Matrix3,Tensor *,int) const;
+		double GetResidualStretch(MPMBase *,double &,ResidualStrains *) const;
+		void DecomposeDeformation(Matrix3) const;
     
         // Accessors
-        virtual double GetVolumetricTerms(double);
-        virtual double GetCurrentRelativeVolume(MPMBase *);
+        virtual double GetVolumetricTerms(double,double) const;
+        virtual double GetCurrentRelativeVolume(MPMBase *) const;
     
     protected:
         int UofJOption;             // pick U(J) function

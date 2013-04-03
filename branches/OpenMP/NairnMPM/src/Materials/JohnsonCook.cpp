@@ -66,7 +66,7 @@ char *JohnsonCook::InputMat(char *xName,int &input)
 }
 
 // print just yield properties to output window
-void JohnsonCook::PrintYieldProperties(void)
+void JohnsonCook::PrintYieldProperties(void) const
 {
     cout << GetHardeningLawName() << endl;
     MaterialBase::PrintProperty("A",yield,"");
@@ -83,118 +83,137 @@ void JohnsonCook::PrintYieldProperties(void)
 }
 
 // Private properties used in hardening law
-void JohnsonCook::InitialLoadMechProps(int makeSpecific,int np)
+const char *JohnsonCook::VerifyAndLoadProperties(int np)
 {	
 	// reduced prooperties (Units Pa - cm^3/g)
     Bred = Bjc*1.e6/parent->rho;
 	
     // reduced yield stress or Ajc
-	HardeningLawBase::InitialLoadMechProps(makeSpecific,np);
+	HardeningLawBase::VerifyAndLoadProperties(np);
     
     // ignore strain rates below this
     edotMin = Cjc!=0. ? exp(-0.5/Cjc) : 1.e-20 ;
     eminTerm = 1. + Cjc*log(edotMin) ;
+	
+	// base class never has error
+	return NULL;
 }
 
 #pragma mark JohnsonCook:Methods
 
-// State dependent material properties
-void JohnsonCook::LoadHardeningLawProps(MPMBase *mptr,int np)
+// Get copy of particle-state dependent properties
+void *JohnsonCook::GetCopyOfHardeningProps(MPMBase *mptr,int np)
 {
+	JCProperties *p = (JCProperties *)malloc(sizeof(JCProperties));
+	
 	// homologous temperature (as needed by Johnson and Cook)
-	hmlgTemp=(mptr->pPreviousTemperature - thermal.reference) / 
+	p->hmlgTemp=(mptr->pPreviousTemperature - thermal.reference) /
                 (Tmjc - thermal.reference);
     
-    if(hmlgTemp>1.)
+    if(p->hmlgTemp>1.)
     {   // above the melting point
-        TjcTerm = 0.;
+        p->TjcTerm = 0.;
     }
-    else if(hmlgTemp>0.)
+    else if(p->hmlgTemp>0.)
     {   // between T ref and melting and TjcTerm between 1 (at Tref) and 0 (at T melt)
-        TjcTerm = 1. - pow(hmlgTemp,mjc);
+        p->TjcTerm = 1. - pow(p->hmlgTemp,mjc);
     }
     else
     {   // below T ref or out of range. Pick some number > 1
-        TjcTerm = 1. - hmlgTemp;
+        p->TjcTerm = 1. - p->hmlgTemp;
     }
     
     // nothing needed from superclass (HardenLawBase)
+	return p;
+}
+
+// Cast void * to correct pointer and delete it
+void JohnsonCook::DeleteCopyOfHardeningProps(void *properties,int np) const
+{
+	JCProperties *p = (JCProperties *)properties;
+	delete p;
 }
 
 #pragma mark JohnsonCook::Law Methods
 
 // Return yield stress for current conditions (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
 // yield = (A + B ep^n + n epdot), where ep=alpint, epdot=dalpha/delTime
-double JohnsonCook::GetYield(MPMBase *mptr,int np,double delTime)
+double JohnsonCook::GetYield(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-    if(hmlgTemp>=1.) return 0.;
-    double term1 = yldred + Bred*pow(alpint,njc);
-    double ep = dalpha/(delTime*ep0jc);
+	JCProperties *p = (JCProperties *)properties;
+    if(p->hmlgTemp>=1.) return 0.;
+    double term1 = yldred + Bred*pow(a->alpint,njc);
+    double ep = a->dalpha/(delTime*ep0jc);
     double term2 = ep>edotMin ? 1. + Cjc*log(ep) : eminTerm ;
-    return term1 * term2 * TjcTerm ;
+    return term1 * term2 * p->TjcTerm ;
 }
 
 // Get derivative of sqrt(2./3.)*yield with respect to lambda for plane strain and 3D
 // ... and using dep/dlambda = sqrt(2./3.)
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)lambda or depdot/dlambda = sqrt(2./3.)/delTime
-double JohnsonCook::GetKPrime(MPMBase *mptr,int np,double delTime)
+double JohnsonCook::GetKPrime(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-    if(hmlgTemp>=1.) return 0.;
-    double ep = dalpha/(delTime*ep0jc);
+	JCProperties *p = (JCProperties *)properties;
+    if(p->hmlgTemp>=1.) return 0.;
+    double ep = a->dalpha/(delTime*ep0jc);
     if(ep>edotMin)
-    {   double term1 = yldred + Bred*pow(alpint,njc);
+    {   double term1 = yldred + Bred*pow(a->alpint,njc);
         double term2 = 1. + Cjc*log(ep) ;
-        return TWOTHIRDS * TjcTerm * (Bred*njc*pow(alpint,njc-1.)*term2 + Cjc*term1/dalpha ) ;
+        return TWOTHIRDS * p->TjcTerm * (Bred*njc*pow(a->alpint,njc-1.)*term2 + Cjc*term1/a->dalpha ) ;
     }
     else
-        return TWOTHIRDS * TjcTerm * Bred*njc*pow(alpint,njc-1.) * eminTerm ;
+        return TWOTHIRDS * p->TjcTerm * Bred*njc*pow(a->alpint,njc-1.) * eminTerm ;
 }
 
 // Get derivative of (1./3.)*yield^2 with respect to lambda for plane stress only
 // ... and using dep/dlambda = sqrt(2./3.)*fnp1 where ep=alpint
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)*lambda*fnp1 or depdot/dlambda = sqrt(2./3.)*fnp1/delTime
 // Also equal to sqrt(2./3.)*GetYield()*GetKPrime()*fnp1, but in separate call for efficiency
-double JohnsonCook::GetK2Prime(MPMBase *mptr,double fnp1,double delTime)
+double JohnsonCook::GetK2Prime(MPMBase *mptr,double fnp1,double delTime,HardeningAlpha *a,void *properties) const
 {
-    if(hmlgTemp>=1.) return 0.;
-    double term1 = yldred + Bred*pow(alpint,njc);
-    double ep = dalpha/(delTime*ep0jc);
+ 	JCProperties *p = (JCProperties *)properties;
+	if(p->hmlgTemp>=1.) return 0.;
+    double term1 = yldred + Bred*pow(a->alpint,njc);
+    double ep = a->dalpha/(delTime*ep0jc);
     if(ep>edotMin)
     {   double term2 = 1. + Cjc*log(ep) ;
-        return SQRT_EIGHT27THS * term1 * term2 * fnp1 * TjcTerm * TjcTerm *
-                        (Bred*njc*pow(alpint,njc-1.)*term2 + Cjc*term1/dalpha ) ;
+        return SQRT_EIGHT27THS * term1 * term2 * fnp1 * p->TjcTerm * p->TjcTerm *
+                        (Bred*njc*pow(a->alpint,njc-1.)*term2 + Cjc*term1/a->dalpha ) ;
     }
     else
-    {   return SQRT_EIGHT27THS * term1 * fnp1 * TjcTerm * TjcTerm * eminTerm * eminTerm *
-                    (Bred*njc*pow(alpint,njc-1.)) ;
+    {   return SQRT_EIGHT27THS * term1 * fnp1 * p->TjcTerm * p->TjcTerm * eminTerm * eminTerm *
+                    (Bred*njc*pow(a->alpint,njc-1.)) ;
     }
 }
 
 // Return (K(alpha)-K(0)), which is used in dissipated energy calculation
 // If K(0) in current particle state differs from yldred, will need to override
-double JohnsonCook::GetYieldIncrement(MPMBase *mptr,int np,double delTime)
+double JohnsonCook::GetYieldIncrement(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-    if(hmlgTemp>=1.) return 0.;
-    double ep = dalpha/(delTime*ep0jc);
+	JCProperties *p = (JCProperties *)properties;
+    if(p->hmlgTemp>=1.) return 0.;
+    double ep = a->dalpha/(delTime*ep0jc);
     double term2 = ep>edotMin ? 1. + Cjc*log(ep) : eminTerm ;
-	return Bred*pow(alpint,njc) * term2 * TjcTerm ;
+	return Bred*pow(a->alpint,njc) * term2 * p->TjcTerm ;
 }
 
 // watch for temperature above the melting point and zero out the deviatoric stress
 double JohnsonCook::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,
-                                                 double Gred,double psKred,double Pfinal,double delTime)
+							double Gred,double psKred,double Pfinal,double delTime,
+							HardeningAlpha *a,void *properties) const
 {
     // if melted, return for zero deviatoric stress
-    if(hmlgTemp>=1.)
+	JCProperties *p = (JCProperties *)properties;
+    if(p->hmlgTemp>=1.)
     {   return strial/(2.*Gred);
     }
     
     // assume error in bracking is because near melting, convert error to zero deviatoric stress
-    return HardeningLawBase::SolveForLambdaBracketed(mptr,np,strial,stk,Gred,psKred,Pfinal,delTime);
+    return HardeningLawBase::SolveForLambdaBracketed(mptr,np,strial,stk,Gred,psKred,Pfinal,delTime,a,properties);
 }
 
 #pragma mark JohnsonCook::Accessors
 
 // hardening law name
-const char *JohnsonCook::GetHardeningLawName(void) { return "Johnson-Cook hardening"; }
+const char *JohnsonCook::GetHardeningLawName(void) const { return "Johnson-Cook hardening"; }
 

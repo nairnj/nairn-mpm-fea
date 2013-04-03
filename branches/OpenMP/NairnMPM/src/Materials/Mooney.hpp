@@ -33,22 +33,23 @@ class Mooney : public HyperElastic
         
         // initialize
         virtual char *InputMat(char *,int &);
-		virtual const char *VerifyProperties(int);
-        virtual void InitialLoadMechProps(int,int);
-		virtual void PrintMechanicalProperties(void);
-        virtual char *InitHistoryData(void);
+		virtual const char *VerifyAndLoadProperties(int);
+		virtual char *InitHistoryData(void);
+	
+		// const methods
+		virtual void PrintMechanicalProperties(void) const;
  		
 		// methods
-        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int);
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *);
     
 		// accessors
-        virtual Tensor GetStress(Tensor *,double);
-		virtual double WaveSpeed(bool,MPMBase *);
-		virtual double ShearWaveSpeed(bool,MPMBase *);
-		virtual const char *MaterialType(void);
-		virtual int MaterialTag();
-        virtual double GetHistory(int,char *);
-        virtual bool SupportsArtificialViscosity(void);
+        virtual Tensor GetStress(Tensor *,double) const;
+		virtual double WaveSpeed(bool,MPMBase *) const;
+		virtual double ShearWaveSpeed(bool,MPMBase *) const;
+		virtual const char *MaterialType(void) const;
+		virtual int MaterialTag() const;
+        virtual double GetHistory(int,char *) const;
+        virtual bool SupportsArtificialViscosity(void) const;
 		
     protected:
 		double G1sp, G2sp;

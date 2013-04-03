@@ -38,7 +38,6 @@ class MPMBase : public LinkedObject
 		char vfld[MaxShapeNds];
 		TemperatureField *pTemp;
 		DiffusionField *pDiffusion;
-		static int currentParticleNum;					// zero based particle number in some loops
 	
 		// constants (not changed in MPM time step)
         double mp;
@@ -58,7 +57,7 @@ class MPMBase : public LinkedObject
         virtual void SetOrigin(Vector *) = 0;
         virtual void SetPosition(Vector *) = 0;
         virtual void SetVelocity(Vector *) = 0;
-		virtual void UpdateStrain(double,int,int,MaterialBase *,int) = 0;
+		virtual void UpdateStrain(double,int,int,void *,int) = 0;
 		virtual void Fint(Vector &,double,double,double) = 0;
 		virtual void Fext(Vector &,double) = 0;
         virtual void MovePosition(double,Vector *) = 0;

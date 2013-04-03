@@ -42,34 +42,39 @@ char *HardeningLawBase::InputMat(char *xName,int &input)
 }
 
 // verify settings and some initial calculations
-const char *HardeningLawBase::VerifyProperties(int np) { return NULL; }	
-
-// get reduced stress than done
-void HardeningLawBase::InitialLoadMechProps(int makeSpecific,int np)
+const char *HardeningLawBase::VerifyAndLoadProperties(int np)
 {
 	// reduced yield stress
     yldred = yield*1.e6/parent->rho;
+	
+	return NULL;
 }
-
 // The base class hardening law has cumulative equivalent plastic strain
 //		(defined as dalpha = sqrt((2/3)||dep||))
 // This should be put in history variable 0
-int HardeningLawBase::HistoryDoublesNeeded(void) { return 1; }
+int HardeningLawBase::HistoryDoublesNeeded(void) const { return 1; }
 
 #pragma mark HardeningLawBase::Methods
 
-// Return (K(alpha)-K(0)), which is used in dissipated energy calculation
-// If K(0) in current particle state differs from yldred, will need to override
-double HardeningLawBase::GetYieldIncrement(MPMBase *mptr,int np,double delTime)
-{
-	return GetYield(mptr,np,delTime) - yldred;
+// If needed, hardenling law can create properties that depend on particle state
+void *HardeningLawBase::GetCopyOfHardeningProps(MPMBase *mptr,int np)
+{	return NULL;
 }
 
-// In case hardening properties depends on state in subclasses
-void HardeningLawBase::LoadHardeningLawProps(MPMBase *mptr,int np) {}
+// If need, cast void * to correct pointer and delete it
+void HardeningLawBase::DeleteCopyOfHardeningProps(void *properties,int np) const {}
 
 // handle prressure and temperature depence of the shear modulus
-double HardeningLawBase::GetShearRatio(MPMBase *mptr,double pressure,double J) { return 1.; }
+double HardeningLawBase::GetShearRatio(MPMBase *mptr,double pressure,double J,void *p) const { return 1.; }
+
+#pragma mark HardeningLawBase::Law Methods
+
+// Return (K(alpha)-K(0)), which is used in dissipated energy calculation
+// If K(0) in current particle state differs from yldred, will need to override
+double HardeningLawBase::GetYieldIncrement(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
+{
+	return GetYield(mptr,np,delTime,a,properties) - yldred;
+}
 
 #pragma mark HardeningLawBase::Plastic Strain Updates
 
@@ -82,22 +87,22 @@ double HardeningLawBase::GetShearRatio(MPMBase *mptr,double pressure,double J) {
         dalpha = lambda sqrt(2/3) fnp1
     Version with two arguments called at start to initialize alpint and dalpha
 */
-void HardeningLawBase::UpdateTrialAlpha(MPMBase *mptr,int np)
-{	alpint = mptr->GetHistoryDble();
-	dalpha = 0.;
+void HardeningLawBase::UpdateTrialAlpha(MPMBase *mptr,int np,HardeningAlpha *a) const
+{	a->alpint = mptr->GetHistoryDble();
+	a->dalpha = 0.;
 }
-void HardeningLawBase::UpdateTrialAlpha(MPMBase *mptr,int np,double lambdak,double fnp1)
-{	dalpha = (np==PLANE_STRESS_MPM) ? SQRT_TWOTHIRDS*lambdak*fnp1 : SQRT_TWOTHIRDS*lambdak ;
-	alpint = mptr->GetHistoryDble() + dalpha;
+void HardeningLawBase::UpdateTrialAlpha(MPMBase *mptr,int np,double lambdak,double fnp1,HardeningAlpha *a) const
+{	a->dalpha = (np==PLANE_STRESS_MPM) ? SQRT_TWOTHIRDS*lambdak*fnp1 : SQRT_TWOTHIRDS*lambdak ;
+	a->alpint = mptr->GetHistoryDble() + a->dalpha;
 }
 
 // The prior soltution for lambda tracked the internal variable. Just move to the particle now
-void HardeningLawBase::UpdatePlasticInternal(MPMBase *mptr,int np)
-{	mptr->SetHistoryDble(alpint);
+void HardeningLawBase::UpdatePlasticInternal(MPMBase *mptr,int np,HardeningAlpha *a) const
+{	mptr->SetHistoryDble(a->alpint);
 }
 
 // Chance to update when in elastic regime
-void HardeningLawBase::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime)
+void HardeningLawBase::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime) const
 {
 }
 
@@ -114,10 +119,11 @@ void HardeningLawBase::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime
     Hyperelastic can adjust Gred to be mubar = Gred*Ielbar
 */
 double HardeningLawBase::SolveForLambda(MPMBase *mptr,int np,double strial,Tensor *stk,
-                                        double Gred,double psKred,double Pfinal,double delTime)
+							double Gred,double psKred,double Pfinal,double delTime,
+							HardeningAlpha *a,void *p) const
 {
 	// initial lambdk from dalpha set before call, often 0, but might be otherwise
-	double lambdak=dalpha/SQRT_TWOTHIRDS;
+	double lambdak=a->dalpha/SQRT_TWOTHIRDS;
 	int step=1;
 	
 	if(np==PLANE_STRESS_MPM)
@@ -131,13 +137,13 @@ double HardeningLawBase::SolveForLambda(MPMBase *mptr,int np,double strial,Tenso
 			double d1 = (1 + psKred*lambdak);
 			double d2 = (1.+2.*Gred*lambdak);
 			double fnp12 = n1trial/(d1*d1) + n2trial/(d2*d2);
-			double kyld = GetYield(mptr,np,delTime);
+			double kyld = GetYield(mptr,np,delTime,a,p);
 			double glam = 0.5*fnp12 - kyld*kyld/3.;
 			double fnp1 = sqrt(fnp12);
-			double slope = -(psKred*n1trial/(d1*d1*d1) + 2*Gred*n2trial/(d2*d2*d2)) - GetK2Prime(mptr,fnp1,delTime);
+			double slope = -(psKred*n1trial/(d1*d1*d1) + 2*Gred*n2trial/(d2*d2*d2)) - GetK2Prime(mptr,fnp1,delTime,a,p);
 			double delLam = -glam/slope;
 			lambdak += delLam;
-			UpdateTrialAlpha(mptr,np,lambdak,fnp1);
+			UpdateTrialAlpha(mptr,np,lambdak,fnp1,a);
 			
 			// check for convergence
 			if(LambdaConverged(step++,lambdak,delLam)) break;
@@ -146,11 +152,11 @@ double HardeningLawBase::SolveForLambda(MPMBase *mptr,int np,double strial,Tenso
 	else
 	{	while(true)
         {	// update iterative variables (lambda, alpha)
-            double glam = -SQRT_TWOTHIRDS*GetYield(mptr,np,delTime) + strial - 2*Gred*lambdak;
-            double slope = -2.*Gred - GetKPrime(mptr,np,delTime);
+            double glam = -SQRT_TWOTHIRDS*GetYield(mptr,np,delTime,a,p) + strial - 2*Gred*lambdak;
+            double slope = -2.*Gred - GetKPrime(mptr,np,delTime,a,p);
             double delLam = -glam/slope;
             lambdak += delLam;
-            UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
+            UpdateTrialAlpha(mptr,np,lambdak,(double)0.,a);
             
             // check for convergence
             if(LambdaConverged(step++,lambdak,delLam)) break;
@@ -167,10 +173,11 @@ double HardeningLawBase::SolveForLambda(MPMBase *mptr,int np,double strial,Tenso
     Hyperelastic can adjust Gred to be mubar = Gred*Ielbar
 */
 double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,
-                                                 double Gred,double psKred,double Pfinal,double delTime)
+								double Gred,double psKred,double Pfinal,double delTime,
+								HardeningAlpha *a,void *p) const
 {
     double xl,xh;
-    BracketSolution(mptr,np,strial,stk,Gred,psKred,Pfinal,delTime,&xl,&xh);
+    BracketSolution(mptr,np,strial,stk,Gred,psKred,Pfinal,delTime,&xl,&xh,a,p);
     
     // if fails to bracket, convert to zero deviatoric stress and continue
     // This option does not happen in plane stress calculations
@@ -178,7 +185,7 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
     
 	// initial lambdk midpoint of the brackets
 	double lambdak=0.5*(xl+xh);
-    UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
+    UpdateTrialAlpha(mptr,np,lambdak,(double)0.,a);
     double dxold=fabs(xh-xl);
     double dx=dxold;
 	int step=1;
@@ -194,10 +201,10 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
 			double d1 = (1 + psKred*lambdak);
 			double d2 = (1.+2.*Gred*lambdak);
 			double fnp12 = n1trial/(d1*d1) + n2trial/(d2*d2);
-			double kyld = GetYield(mptr,np,delTime);
+			double kyld = GetYield(mptr,np,delTime,a,p);
 			double glam = 0.5*fnp12 - kyld*kyld/3.;
 			double fnp1 = sqrt(fnp12);
-			double slope = -(psKred*n1trial/(d1*d1*d1) + 2*Gred*n2trial/(d2*d2*d2)) - GetK2Prime(mptr,fnp1,delTime);
+			double slope = -(psKred*n1trial/(d1*d1*d1) + 2*Gred*n2trial/(d2*d2*d2)) - GetK2Prime(mptr,fnp1,delTime,a,p);
             
             // bisect if Newton out of range
             if( ((lambdak-xh)*slope-glam) * ((lambdak-xl)*slope-glam) >= 0. ||
@@ -216,7 +223,7 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
             }
             
             // update and check convergence
-            UpdateTrialAlpha(mptr,np,lambdak,fnp1);
+            UpdateTrialAlpha(mptr,np,lambdak,fnp1,a);
             if(LambdaConverged(step++,lambdak,dx)) break;
             
             // reset limits
@@ -229,8 +236,8 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
 	else
 	{	while(true)
         {	// update iterative variables (lambda, alpha)
-            double glam = strial - 2*Gred*lambdak - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime);
-            double slope = -2.*Gred - GetKPrime(mptr,np,delTime);
+            double glam = strial - 2*Gred*lambdak - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime,a,p);
+            double slope = -2.*Gred - GetKPrime(mptr,np,delTime,a,p);
             
             // bisect if Newton out of range
             if( ((lambdak-xh)*slope-glam) * ((lambdak-xl)*slope-glam) >= 0. ||
@@ -249,7 +256,7 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
             }
             
             // update and check convergence
-            UpdateTrialAlpha(mptr,np,lambdak,(double)0.);
+            UpdateTrialAlpha(mptr,np,lambdak,(double)0.,a);
             if(LambdaConverged(step++,lambdak,dx)) break;
             
             // reset limits
@@ -272,7 +279,8 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
     Hyperelastic can adjust Gred to be mubar = Gred*Ielbar
 */
 void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor *stk,double Gred,double psKred,double Pfinal,
-                                       double delTime,double *lamNeg,double *lamPos)
+                                       double delTime,double *lamNeg,double *lamPos,
+									   HardeningAlpha *a,void *p) const
 {
     double epdot = 1.,gmax;
     int step=0;
@@ -290,18 +298,18 @@ void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor
         // find when plane stress term become negative
         while(step<20)
         {   // try above
-            dalpha = epdot*delTime;
+            a->dalpha = epdot*delTime;
             // note that dalpha here is actually dalpha*fnp1
-            alpint = mptr->GetHistoryDble() + dalpha;
-            double lambdak = dalpha/SQRT_TWOTHIRDS;
+            a->alpint = mptr->GetHistoryDble() + a->dalpha;
+            double lambdak = a->dalpha/SQRT_TWOTHIRDS;
 			double d1 = (1 + psKred*lambdak);
 			double d2 = (1.+2.*Gred*lambdak);
 			double fnp12 = n1trial/(d1*d1) + n2trial/(d2*d2);
- 			double kyld = GetYield(mptr,np,delTime);
+ 			double kyld = GetYield(mptr,np,delTime,a,p);
 			gmax = 0.5*fnp12 - kyld*kyld/3.;
             if(gmax<0.)
 			{	// set upper limits
-				*lamNeg = dalpha/SQRT_TWOTHIRDS;
+				*lamNeg = a->dalpha/SQRT_TWOTHIRDS;
 				return;
 			}
             
@@ -326,8 +334,8 @@ void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor
 		// It will usually be closer to zero
 		// Test intervals dx, dx*r, ... dx*r^n where r (>1) is ratio of sizes and dx*r^n = alphamax
 		double dalpha = strial/(2.*Gred);
-		alpint = mptr->GetHistoryDble() + dalpha;
-		if(GetYield(mptr,np,delTime) <= 0.)
+		a->alpint = mptr->GetHistoryDble() + dalpha;
+		if(GetYield(mptr,np,delTime,a,p) <= 0.)
 		{	*lamNeg = 0.;
 			*lamPos = dalpha/SQRT_TWOTHIRDS;
 		}
@@ -335,38 +343,12 @@ void HardeningLawBase::BracketSolution(MPMBase *mptr,int np,double strial,Tensor
 		// take full range and new Newton's method with bracketing do the binary bisection
 		*lamNeg = dalpha/SQRT_TWOTHIRDS;
 		return;
-						
-		/*
-        // find when strial 2 GRed sqrt(3/2) dalpha - sqrt(2/3)GetYield(alpha+dalpha,dalpha)
-        // becomes negative
-        while(step<20)
-        {   // try above
-            dalpha = epdot*delTime;
-            alpint = mptr->GetHistoryDble() + dalpha;
-            gmax = strial - 2*Gred*dalpha/SQRT_TWOTHIRDS - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime) ;
-            if(gmax<0.) break;
-            
-            // next block
-            *lamPos = dalpha/SQRT_TWOTHIRDS;
-            epdot *= 10.;
-            step++;
-        }
-        
-        // exception if did not find answer in 20 orders of magnitude in strain rate
-        if(step>=20)
-        {   cout << "# " << GetHardeningLawName() << " plastic state could not be bracketed; continue with zeroed dev stress" << endl;
-            
-            // switch to all plastic, which will zero out the deviatoric stress on this particle
-            *lamNeg = 0.;
-            *lamPos = 1.;
-        }
-		*/
-    }
+	}
 }
 
 // decide if the numerical solution for lambda has converged
 // subclass can override to change convergence rules
-bool HardeningLawBase::LambdaConverged(int step,double lambda,double delLam)
+bool HardeningLawBase::LambdaConverged(int step,double lambda,double delLam) const
 {
 	if(step>20 || fabs(delLam/lambda)<0.0001) return true;
 	return false;
@@ -375,7 +357,7 @@ bool HardeningLawBase::LambdaConverged(int step,double lambda,double delLam)
 #pragma mark HardeningLawBase::Accessors
 
 // IsoPlasticity has now history data, by the hardening law might
-double HardeningLawBase::GetHistory(int num,char *historyPtr)
+double HardeningLawBase::GetHistory(int num,char *historyPtr) const
 {	
     double history=0.;
     if(num>0 && num<=HistoryDoublesNeeded())

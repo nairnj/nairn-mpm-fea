@@ -33,21 +33,22 @@ class Viscoelastic : public MaterialBase
         
         // innitialization methods
         virtual char *InputMat(char *,int &);
-		virtual const char *VerifyProperties(int);
-		virtual void InitialLoadMechProps(int,int);
-		virtual void PrintMechanicalProperties(void);
-		virtual void ValidateForUse(int);
+		virtual const char *VerifyAndLoadProperties(int);
 		virtual char *InitHistoryData(void);
+	
+		// const methods
+		virtual void PrintMechanicalProperties(void) const;
+		virtual void ValidateForUse(int) const;
     
 		// methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *);
 		
 		// accessors
-        virtual double WaveSpeed(bool,MPMBase *);
-		virtual const char *MaterialType();
-		virtual double GetHistory(int ,char *);
-		virtual int MaterialTag();
+        virtual double WaveSpeed(bool,MPMBase *) const;
+		virtual const char *MaterialType() const;
+		virtual double GetHistory(int ,char *) const;
+		virtual int MaterialTag() const;
 		
     private:
         int currentGk,currentTauk;

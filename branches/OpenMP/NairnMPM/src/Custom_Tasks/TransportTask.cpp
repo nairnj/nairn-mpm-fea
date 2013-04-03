@@ -28,12 +28,6 @@ TransportTask *TransportTask::ZeroTransportRate(void)
 	return nextTask;
 }
 
-// increment transport rate
-TransportTask *TransportTask::ZeroValueExtrap(void)
-{	pValueExtrap=0.;
-	return nextTask;
-}
-
 // Task 1b tasks
 TransportTask *TransportTask::GetValuesAndGradients(double stepTime)
 {

@@ -36,9 +36,6 @@ ResetElementsTask::ResetElementsTask(const char *name) : MPMTask(name)
 // Stop if off the grid
 void ResetElementsTask::Execute(void)
 {
-#ifdef _PROFILE_TASKS_
-	double beginTime=fmobj->CPUTime();
-#endif
 	int p;
 	
 	// update feedback damping now if needed
@@ -67,9 +64,6 @@ void ResetElementsTask::Execute(void)
 		}
     }
 	
-#ifdef _PROFILE_TASKS_
-	totalTaskTime+=fmobj->CPUTime()-beginTime;
-#endif
 }
 
 // Find element for particle. Return FALSE if left

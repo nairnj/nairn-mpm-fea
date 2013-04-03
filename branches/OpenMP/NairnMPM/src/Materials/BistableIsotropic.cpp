@@ -28,7 +28,6 @@ BistableIsotropic::BistableIsotropic(char *matName) : IsotropicMat(matName)
     
     dVii=0.;
     dVcrit=0.;
-    mechState=-1;
 	transState=-1;
     rule=DILATION_RULE;
     reversible=FALSE;
@@ -39,61 +38,6 @@ BistableIsotropic::BistableIsotropic(char *matName) : IsotropicMat(matName)
 }
 
 #pragma mark BistableIsotropic::Initialization
-
-// print mechanical properties to output window
-void BistableIsotropic::PrintMechanicalProperties(void)
-{
-	PrintProperty("Initial:",false);
-	PrintProperty("K",K0,"");
-	PrintProperty("G",G0,"");
-	PrintProperty("a",a0,"");
-	cout << endl;
-	
- 	PrintProperty("Transformed:",false);
-	PrintProperty("K",Kd,"");
-	PrintProperty("G",Gd,"");
-	PrintProperty("a",ad,"");
-	cout << endl;
-    
-    char mline[200];
-	if(rule==DILATION_RULE)
-    {   sprintf(mline,"Dilation transition at dV = %g%c to V offset = %g%c",100.*dVcrit,'%',100.*dVii,'%');
-	}
-	else if(rule==DISTORTION_RULE)
-    {   sprintf(mline,"Distortion transition at sqrt(0.5*e'ij e'ij) = %g%c",100.*dVcrit,'%');
-	}
-	else if(rule==VONMISES_RULE)
-    {   sprintf(mline,"Distortion transition at sqrt(0.5*s'ij s'ij) = %g MPa",dVcrit);
-		dVcrit*=1.e6/rho;			// convert MPa to specific stress
-	}
-		cout << mline << endl;
-    
-    if(reversible)
-        cout << "Reversible" << endl;
-    else
-        cout << "Irreversible" << endl;
-}
-
-    
-// print transport propertie to output window
-void BistableIsotropic::PrintTransportProperties(void)
-{
-    char mline[200];
-	
-	// Diffusion constants
-	if(DiffusionTask::active)
-	{   sprintf(mline,"D0 =%12.3g   Dd =%12.3f mm^2/sec  csat = %9.5lf",diff0,diffd,concSaturation);
-		cout << mline << endl;
-	    sprintf(mline,"b0 =%12.6g   bD =%12.6g 1/wt fr",beta0,betad);
-		cout << mline << endl;
-	}
-	// Conductivity constants (Cp is also mJ/(g-K))
-	if(ConductionTask::active)
-	{   sprintf(mline,"k0 =%12.3g W/(m-K)  kd =%12.3g W/(m-K)  C   =%12.3g J/(kg-K)",
-                            rho*kCond0/1000.,rho*kCondd/1000.,heatCapacity);
-		cout << mline << endl;
-	}
-}
 
 // Read material properties
 char *BistableIsotropic::InputMat(char *xName,int &input)
@@ -109,7 +53,7 @@ char *BistableIsotropic::InputMat(char *xName,int &input)
     {	readbs[KD_PROP]=1;
         return((char *)&Kd);
     }
-   
+	
     // shear
     else if(strcmp(xName,"G0")==0)
     {	readbs[G0_PROP]=1;
@@ -129,7 +73,7 @@ char *BistableIsotropic::InputMat(char *xName,int &input)
     {	readbs[AD_PROP]=1;
         return((char *)&ad);
     }
-
+	
     // cme
     else if(strcmp(xName,"beta0")==0)
     {	readbs[B0_PROP]=1;
@@ -139,7 +83,7 @@ char *BistableIsotropic::InputMat(char *xName,int &input)
     {	readbs[BD_PROP]=1;
         return((char *)&betad);
     }
-
+	
     // diffusion
     else if(strcmp(xName,"D0")==0)
     {	readbs[DIFF0_PROP]=1;
@@ -149,7 +93,7 @@ char *BistableIsotropic::InputMat(char *xName,int &input)
     {	readbs[DIFFD_PROP]=1;
         return((char *)&diffd);
     }
-
+	
     // conductivity
     else if(strcmp(xName,"kCond0")==0)
     {	readbs[KCOND0_PROP]=1;
@@ -159,7 +103,7 @@ char *BistableIsotropic::InputMat(char *xName,int &input)
     {	readbs[KCONDD_PROP]=1;
         return((char *)&kCondd);
     }
-
+	
     // transitions and offsets
     else if(strcmp(xName,"transition")==0)
     {	readbs[TRANSITION_PROP]=1;
@@ -184,19 +128,19 @@ char *BistableIsotropic::InputMat(char *xName,int &input)
         input=NOT_NUM;
         return((char *)&reversible);
     }
-
+	
     return MaterialBase::InputMat(xName,input);
 }
 
 // Verify properties and initial calculations
-const char *BistableIsotropic::VerifyProperties(int np)
+const char *BistableIsotropic::VerifyAndLoadProperties(int np)
 {
     // Require initial properties, but second are optional
     //	They equal first if not provide
     if(!readbs[K0_PROP] || !readbs[G0_PROP] || !readbs[A0_PROP])
 		return "Initial K0, G0, or alpha0 is missing.";
-	if(!readbs[B0_PROP]) beta0=0.;
-		
+	if(!readbs[B0_PROP])
+		beta0=0.;
     if(!readbs[TRANSITION_PROP] || rule<DILATION_RULE || rule>VONMISES_RULE)
 		return "Phase transition rule is missing or invalid.";
     
@@ -217,19 +161,80 @@ const char *BistableIsotropic::VerifyProperties(int np)
     // test validity of each state
     const char *err=CurrentProperties(DEFORMED_STATE,np);
     if(err!=NULL) return err;
+	FillElasticProperties(&pr2,np);
+	
     err=CurrentProperties(INITIAL_STATE,np);
     if(err!=NULL) return err;
+	FillElasticProperties(&pr,np);
 	
     // convert strain rules in percent to absolute strains
-    if(rule!=VONMISES_RULE) dVcrit/=100.;
+    if(rule==VONMISES_RULE)
+		dVcrit*=1.e6/rho;			// convert MPa to specific stress
+	else
+		dVcrit/=100.;
     dVii/=100.;
+	
+	// call super-super class (skip IsotropicMat due to conflicts and Elastic because has none)
+	return MaterialBase::VerifyAndLoadProperties(np);
+}
 
-	// call super-super class
-	return IsotropicMat::VerifyProperties(np);
+// print mechanical properties to output window
+void BistableIsotropic::PrintMechanicalProperties(void) const
+{
+	PrintProperty("Initial:",false);
+	PrintProperty("K",K0,"");
+	PrintProperty("G",G0,"");
+	PrintProperty("a",a0,"");
+	cout << endl;
+	
+ 	PrintProperty("Transformed:",false);
+	PrintProperty("K",Kd,"");
+	PrintProperty("G",Gd,"");
+	PrintProperty("a",ad,"");
+	cout << endl;
+    
+    char mline[200];
+	if(rule==DILATION_RULE)
+    {   sprintf(mline,"Dilation transition at dV = %g%c to V offset = %g%c",100.*dVcrit,'%',100.*dVii,'%');
+	}
+	else if(rule==DISTORTION_RULE)
+    {   sprintf(mline,"Distortion transition at sqrt(0.5*e'ij e'ij) = %g%c",100.*dVcrit,'%');
+	}
+	else if(rule==VONMISES_RULE)
+    {   sprintf(mline,"Distortion transition at sqrt(0.5*s'ij s'ij) = %g MPa",1.e-6*rho*dVcrit);
+	}
+
+	cout << mline << endl;
+    
+    if(reversible)
+        cout << "Reversible" << endl;
+    else
+        cout << "Irreversible" << endl;
+}
+
+    
+// print transport propertie to output window
+void BistableIsotropic::PrintTransportProperties(void) const
+{
+    char mline[200];
+	
+	// Diffusion constants
+	if(DiffusionTask::active)
+	{   sprintf(mline,"D0 =%12.3g   Dd =%12.3f mm^2/sec  csat = %9.5lf",diff0,diffd,concSaturation);
+		cout << mline << endl;
+	    sprintf(mline,"b0 =%12.6g   bD =%12.6g 1/wt fr",beta0,betad);
+		cout << mline << endl;
+	}
+	// Conductivity constants (Cp is also mJ/(g-K))
+	if(ConductionTask::active)
+	{   sprintf(mline,"k0 =%12.3g W/(m-K)  kd =%12.3g W/(m-K)  C   =%12.3g J/(kg-K)",
+                            rho*kCond0/1000.,rho*kCondd/1000.,heatCapacity);
+		cout << mline << endl;
+	}
 }
 
 // 3D not allowed
-void BistableIsotropic::ValidateForUse(int np)
+void BistableIsotropic::ValidateForUse(int np) const
 {	if(np==THREED_MPM || np==AXISYMMETRIC_MPM)
 	{	throw CommonException("BistableIsotropic materials cannot do 3D or Axisymmetric MPM analysis",
 							  "BistableIsotropic::ValidateForUse");
@@ -253,7 +258,6 @@ const char *BistableIsotropic::CurrentProperties(short newState,int np)
 		betaI=beta0;
 		diffusionCon=diff0;
 		kCond=kCond0;
-        normOffset=0.;
     }
     else
     {	K=Kd;
@@ -262,10 +266,6 @@ const char *BistableIsotropic::CurrentProperties(short newState,int np)
 		betaI=betad;
 		diffusionCon=diffd;
 		kCond=kCondd;
-		if(rule==DISTORTION_RULE || rule==VONMISES_RULE)
-			normOffset=0.;
-		else
-			normOffset=dVii/3.;
     }
     
     // analysis properties this state
@@ -293,20 +293,6 @@ char *BistableIsotropic::InitHistoryData(void)
 
 #pragma mark BistableIsotropic::Methods
 
-// fill in stiffness matrix if needed
-void BistableIsotropic::LoadMechanicalProps(MPMBase *mptr,int np)
-{
-	short *state=(short *)(mptr->GetHistoryPtr());     // history pointer is short * with state
-	
-	// if does not have state, load it now
-    if(mechState==*state) return;
-    
-	// load the mechanical properties
-	CurrentProperties(*state,np);
-	InitialLoadMechProps(TRUE,np);
-	mechState=*state;
-}
-
 // fill in transport tensors matrix if needed
 void BistableIsotropic::LoadTransportProps(MPMBase *mptr,int np)
 {
@@ -327,17 +313,18 @@ void BistableIsotropic::LoadTransportProps(MPMBase *mptr,int np)
    For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 */
 void BistableIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double dvzz,double delTime,int np)
+        double dvzz,double delTime,int np,void *properties,ResidualStrains *res)
 {
+    // update in current state
     short *state=(short *)(mptr->GetHistoryPtr()),transition=FALSE;
-    double dmechV,dTrace,ds1,ds2,ds3;
-	Tensor *sp=mptr->GetStressTensor();
-    
-    // update in latest state
-    Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,delTime,np);
+	ElasticProperties *p = *state==INITIAL_STATE ? &pr : &pr2;
+    Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,delTime,np,p,res);
 	
     // Calculate critical value for transition
+    double dmechV,dTrace,ds1,ds2,ds3;
+	Tensor *sp=mptr->GetStressTensor();
 	Tensor *ep=mptr->GetStrainTensor();
+	
 	switch(rule)
 	{	case DILATION_RULE:
 			dmechV=ep->xx+ep->yy+ep->zz;
@@ -387,12 +374,27 @@ void BistableIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double
     // instantaneous change in stress at constant strain (DILATION_RULE only)
     if(transition && rule==DILATION_RULE)
     {	// find changed stress by current constitutive law
-        LoadMechanicalProps(mptr,np);
-		double er=me0[1]*(mptr->pPreviousTemperature-thermal.reference)
-						+ mc0[1]*(mptr->pPreviousConcentration-DiffusionTask::reference);
-		double erzz=CTE3*(mptr->pPreviousTemperature-thermal.reference)
-						+ CME3*(mptr->pPreviousConcentration-DiffusionTask::reference);
+		double normOffset,alphazz,betazz;
+		if(*state==INITIAL_STATE)
+		{	normOffset = 0.;
+			alphazz = 1.e-6*a0;
+			betazz = 1.e-6*beta0;
+			p = &pr;
+		}
+		else
+		{	normOffset = dVii/3.;
+			alphazz = 1.e-6*ad;
+			betazz = 1.e-6*betad;
+			p = &pr2;
+		}
+
+        //LoadMechanicalProps(mptr,np);
+		double er = p->alpha[1]*(mptr->pPreviousTemperature-thermal.reference)
+						+ p->beta[1]*(mptr->pPreviousConcentration-DiffusionTask::reference);
+		double erzz = alphazz*(mptr->pPreviousTemperature-thermal.reference)
+						+ betazz*(mptr->pPreviousConcentration-DiffusionTask::reference);
 		double exx,eyy;
+
 		if(np==PLANE_STRAIN_MPM)
 		{	// need effective offset here for (see JAN048-63)
 			exx=ep->xx-normOffset*(1+nu)-er;
@@ -402,44 +404,44 @@ void BistableIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double
         {	exx=ep->xx-normOffset-er;
 			eyy=ep->yy-normOffset-er;
 		}
-        sp->xx=mdm[1][1]*exx + mdm[1][2]*eyy;
-        sp->yy=mdm[1][2]*exx + mdm[2][2]*eyy;
-        sp->xy=mdm[3][3]*ep->xy;
+        sp->xx=p->C[1][1]*exx + p->C[1][2]*eyy;
+        sp->yy=p->C[1][2]*exx + p->C[2][2]*eyy;
+        sp->xy=p->C[3][3]*ep->xy;
 		if(np==PLANE_STRAIN_MPM)
         {	double ezz=normOffset+erzz;			// because ezz=0 and now do not want effective properties
         	exx=ep->xx-ezz;
 			eyy=ep->yy-ezz;
-			sp->zz=mdm[4][1]*(exx + eyy) - mdm[4][4]*ezz;
+			sp->zz=p->C[4][1]*(exx + eyy) - p->C[4][4]*ezz;
 		}
 		else
-			ep->zz=mdm[4][1]*(exx + eyy)+normOffset+erzz;
+			ep->zz=p->C[4][1]*(exx + eyy)+normOffset+erzz;
     }
 }
 
 #pragma mark BistableIsotropic::Accessors
 
 // Return the material tag
-int BistableIsotropic::MaterialTag(void) { return BISTABLEISO; }
+int BistableIsotropic::MaterialTag(void) const { return BISTABLEISO; }
 
 /*	calculate wave speed in mm/sec (because K,G in MPa and rho in g/cm^3)
 	Uses max sqrt((K +4G/3)/rho) which is dilational wave speed
 */
-double BistableIsotropic::WaveSpeed(bool threeD,MPMBase *mptr)
+double BistableIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
 { return fmax(sqrt(1.e9*(K0+4.*G0/3.)/rho),sqrt(1.e9*(Kd+4.*Gd/3.)/rho));
 }
 
 // maximum diffusion coefficient in cm^2/sec (diff in mm^2/sec)
-double BistableIsotropic::MaximumDiffusion(void) { return max(diffd,diff0)/100.; }
+double BistableIsotropic::MaximumDiffusion(void) const { return max(diffd,diff0)/100.; }
 
 // maximum diffusivity in cm^2/sec
 // specific k is mJ mm^2/(sec-K-g) and Cp is mJ/(g-K) so k/C = mm^2/sec * 1e-2 = cm^2/sec
-double BistableIsotropic::MaximumDiffusivity(void) { return 0.01*max(kCondd,kCond0)/heatCapacity; }
+double BistableIsotropic::MaximumDiffusivity(void) const { return 0.01*max(kCondd,kCond0)/heatCapacity; }
 
 // return material type
-const char *BistableIsotropic::MaterialType(void) { return "Bistable Isotropic"; }
+const char *BistableIsotropic::MaterialType(void) const { return "Bistable Isotropic"; }
 
 // archive material data for this material type when requested.
-double BistableIsotropic::GetHistory(int num,char *historyPtr)
+double BistableIsotropic::GetHistory(int num,char *historyPtr) const
 {
     double history=0.;
     short *state;

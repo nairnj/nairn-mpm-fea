@@ -8,6 +8,7 @@
 
 #include "NairnMPM_Class/MPMTask.hpp"
 #include "System/ArchiveData.hpp"
+#include "NairnMPM/NairnMPM.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -28,12 +29,26 @@ void MPMTask::WriteLogFile(void)
 
 #ifdef _PROFILE_TASKS_
 
+// track times
+void MPMTask::TrackTimes(double beginTime,double beginETime)
+{	totalTaskTime += fmobj->CPUTime()-beginTime;
+	totalTaskETime += fmobj->ElapsedTime()-beginETime;
+}
+
 // report on times
-void MPMTask::WriteProfileResults(int nsteps,double timePerStep)
+void MPMTask::WriteProfileResults(int nsteps,double timePerStep,double eTimePerStep)
 {
 	cout << "Task #" << taskNumber << ": "<< GetTaskName();
-	double taskPerStep=1000.*totalTaskTime/(double)nsteps;
-	cout << ": " << taskPerStep << " ms/step (" << 100.*taskPerStep/timePerStep << "%)" << endl;
+	double taskPerStep = 1000.*totalTaskTime/(double)nsteps;
+	cout << ": " << taskPerStep << " ms CPU/step (" << 100.*taskPerStep/timePerStep << "%)";
+	
+#ifdef _PARALLEL_
+	double eTaskPerStep = 1000.*totalTaskETime/(double)nsteps;
+	cout << ", " << eTaskPerStep << " ms/step (" << 100.*eTaskPerStep/eTimePerStep << "%, "
+			<< totalTaskTime/totalTaskETime << ")";
+#endif
+	
+	cout << endl;
 }
 
 #endif

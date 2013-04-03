@@ -53,7 +53,7 @@ void Interface2D::Stiffness(int np)
 	double fn[MaxElNd],temp,asr;
 	Vector xi;
 	
-    // Load nodal coordinates (ce[]) and material props (mdm[][])
+    // Load nodal coordinates (ce[]) and material props (pr.C[][])
     GetProperties(np);
     
     // Zero stiffness (se[][]) and reaction (re[])
@@ -61,8 +61,8 @@ void Interface2D::Stiffness(int np)
 
 	// basic parameters */
     MaterialBase *matl=theMaterials[material-1];
-	double Dn=matl->mdm[1][1];
-	double Dt=matl->mdm[1][2];
+	double Dn=matl->pr.C[1][1];
+	double Dt=matl->pr.C[1][2];
 	double xpxi=(ce[2].x-ce[1].x)/2;
 	double ypxi=(ce[2].y-ce[1].y)/2;
 	double dlxi=sqrt(xpxi*xpxi + ypxi*ypxi);

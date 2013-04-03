@@ -39,8 +39,8 @@ class RigidMaterial : public MaterialBase
         
         // initialize
         virtual char *InputMat(char *,int &);
-		virtual const char *VerifyProperties(int);
-        virtual void PrintMechanicalProperties(void);
+		virtual const char *VerifyAndLoadProperties(int);
+        virtual void PrintMechanicalProperties(void) const;
 		virtual int SetField(int,bool,int,int &);
 		
 		// RigidMaterial only methods
@@ -53,12 +53,12 @@ class RigidMaterial : public MaterialBase
 		bool IsConstantVelocity(void);
 		
 		// accessors
-		virtual const char *MaterialType(void);
-        virtual double WaveSpeed(bool,MPMBase *);
-		virtual bool Rigid(void);			// override base class to return true
-		virtual short RigidBC(void);		// override base class to return true if appropriate
-		virtual short RigidContact(void);	// override base class to return true if appropriate
-		virtual int MaterialTag();
+		virtual const char *MaterialType(void) const;
+        virtual double WaveSpeed(bool,MPMBase *) const;
+		virtual bool Rigid(void) const;			// override base class to return true
+		virtual short RigidBC(void) const;		// override base class to return true if appropriate
+		virtual short RigidContact(void) const;	// override base class to return true if appropriate
+		virtual int MaterialTag() const;
 		
 	protected:
 		ROperation *function;

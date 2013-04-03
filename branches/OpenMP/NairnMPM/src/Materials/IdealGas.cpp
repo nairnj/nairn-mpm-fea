@@ -27,14 +27,6 @@ IdealGas::IdealGas(char *matName) : HyperElastic(matName)
 
 #pragma mark IdealGas::Initialization
 
-// print mechanical properties output window
-void IdealGas::PrintMechanicalProperties(void)
-{
-	PrintProperty("P0", P0, "");
-	PrintProperty("T0", T0, "");
-	cout << endl;
-}
-	
 // Read material properties
 char *IdealGas::InputMat(char *xName,int &input)
 {
@@ -50,7 +42,7 @@ char *IdealGas::InputMat(char *xName,int &input)
 }
 
 // verify settings and some initial calculations
-const char *IdealGas::VerifyProperties(int np)
+const char *IdealGas::VerifyAndLoadProperties(int np)
 {
 	// make sure all were set
     if(P0 <= 0. || rho <= 0.0 || T0 <= 0.0 )
@@ -66,12 +58,15 @@ const char *IdealGas::VerifyProperties(int np)
 	else
 		heatCapacity = 1500.*P0/(T0*rho);
 	
+	// P0 in specific units for MPM of N/m^2 cm^3/g
+	P0sp=P0*1.0e+06/rho;
+	
     // call super class
-    return HyperElastic::VerifyProperties(np);
+    return HyperElastic::VerifyAndLoadProperties(np);
 }
 
 // if analysis not allowed, throw an exception
-void IdealGas::ValidateForUse(int np)
+void IdealGas::ValidateForUse(int np) const
 {	if(np==PLANE_STRESS_MPM)
 	{	throw CommonException("IdealGas material cannot do 2D plane stress analysis",
 							  "IdealGas::ValidateForUse");
@@ -86,16 +81,17 @@ void IdealGas::ValidateForUse(int np)
 	return HyperElastic::ValidateForUse(np);
 }
 
-// Private properties used in constitutive law
-void IdealGas::InitialLoadMechProps(int makeSpecific,int np)
+// print mechanical properties output window
+void IdealGas::PrintMechanicalProperties(void) const
 {
-	// P0 in specific units for MPM of N/m^2 cm^3/g
-	P0sp=P0*1.0e+06/rho;
+	PrintProperty("P0", P0, "");
+	PrintProperty("T0", T0, "");
+	cout << endl;
 }
 
 // If needed, a material can initialize particle state
 // For example, ideal gas initializes to base line pressure
-void IdealGas::SetInitialParticleState(MPMBase *mptr,int np)
+void IdealGas::SetInitialParticleState(MPMBase *mptr,int np) const
 {
     // The initial state has particle mass mp = Vp * rho at T = thermal.reference
     // Imagine heating from T0 to T holding volume constant and find Kirchoff stress / rho0
@@ -120,11 +116,11 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np)
     Particle: strains, rotation strain, stresses, strain energy, angle
     du are (gradient rates X time increment) to give deformation gradient change
 */
-void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np)
+void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res)
 {
     // Update strains and rotations and Left Cauchy strain
     // get determinent of incremental deformation gradient
-    double detf = IncrementDeformation(mptr,du,NULL,np);;
+    double detf = IncrementDeformation(mptr,du,NULL,np);
     
     // update stress
 	Tensor *sp=mptr->GetStressTensor();
@@ -135,7 +131,7 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
 	//							= P0sp * (Tn/T0) * (T(n+1)/Tn)
 	//							= pn * (T(n+1)/Tn)
 	// (note: pPreviousTemperature is T(n+1))
-	double mPsp = (sp->xx/(1.-ConductionTask::dTemperature/mptr->pPreviousTemperature));
+	double mPsp = (sp->xx/(1.-res->dT/mptr->pPreviousTemperature));
 
 	// store in stress (which is minus the pressure)
 	sp->xx = mPsp;
@@ -152,32 +148,31 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
     // the same energy is tracked as heat (although it will be zero if adiabatic)
     // and is dissipated (which will cause heating if adiabatic
     // Update is Cv dT - dU
-    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,0.,dW);
+    IncrementHeatEnergy(mptr,res->dT,0.,dW);
         
     // the plastic energy is not otherwise used, so let's track entropy
     double Cv = 1000.*GetHeatCapacity(mptr);
     double Tp = mptr->pPreviousTemperature;
-    double dT = ConductionTask::dTemperature;
-	double dS = (Cv*dT - dW)/Tp;
+	double dS = (Cv*res->dT - dW)/Tp;
 	mptr->AddPlastEnergy(dS);
 }
 
 #pragma mark IdealGas::Accessors
 
 // return material type
-const char *IdealGas::MaterialType(void) { return "Ideal Gas (Hyperelastic)"; }
+const char *IdealGas::MaterialType(void) const { return "Ideal Gas (Hyperelastic)"; }
 
 // Return the material tag
-int IdealGas::MaterialTag(void) { return IDEALGASMATERIAL; }
+int IdealGas::MaterialTag(void) const { return IDEALGASMATERIAL; }
 
 // Calculate wave speed in mm/sec.
-double IdealGas::WaveSpeed(bool threeD,MPMBase *mptr)
+double IdealGas::WaveSpeed(bool threeD,MPMBase *mptr) const
 {   return 1000.*sqrt(1.6667e9*(P0*rho)*(mptr->pTemperature/T0));
 }
 
 // calculate current wave speed in mm/sec. 
 // Only change vs initial wave speed is due to J
-double IdealGas::CurrentWaveSpeed(bool threeD,MPMBase *mptr)
+double IdealGas::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
 {   // J = V/V0 = rho0/rho
     double J = mptr->GetRelativeVolume();
     return 1000.*sqrt(1.6667e9*(P0*rho/J)*(mptr->pPreviousTemperature/T0));

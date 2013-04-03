@@ -49,10 +49,10 @@ char *LinearHardening::InputMat(char *xName,int &input)
 }
 
 // get reduced stress than done
-void LinearHardening::InitialLoadMechProps(int makeSpecific,int np)
+const char *LinearHardening::VerifyAndLoadProperties(int np)
 {
     // call first to get reduced yield stress
-    HardeningLawBase::InitialLoadMechProps(makeSpecific,np);
+    HardeningLawBase::VerifyAndLoadProperties(np);
     
     // Use Ep if it was entered and is non-negative
     if(Ep >= 0.)
@@ -62,10 +62,13 @@ void LinearHardening::InitialLoadMechProps(int makeSpecific,int np)
     
 	// save some multiplies (it is reduced plastic modulus)
     Epred = yldred*beta;
+	
+	// base call above never has an error
+	return NULL;
 }
 
 // print just yield properties to output window
-void LinearHardening::PrintYieldProperties(void)
+void LinearHardening::PrintYieldProperties(void) const
 {
     cout << GetHardeningLawName() << endl;
     MaterialBase::PrintProperty("yld",yield,"");
@@ -77,21 +80,21 @@ void LinearHardening::PrintYieldProperties(void)
 #pragma mark LinearHardening::Law Methods
 
 // Return yield stress for current conditions (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
-double LinearHardening::GetYield(MPMBase *mptr,int np,double delTime)
+double LinearHardening::GetYield(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return yldred + Epred*alpint;
+	return yldred + Epred*a->alpint;
 }
 
 // Return (K(alpha)-K(0)), which is used in dissipated energy calculation
-double LinearHardening::GetYieldIncrement(MPMBase *mptr,int np,double delTime)
+double LinearHardening::GetYieldIncrement(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return Epred*alpint;
+	return Epred*a->alpint;
 }
 
 // Get derivative of sqrt(2./3.)*yield with respect to lambda for plane strain and 3D
 // ... and using dep/dlambda = sqrt(2./3.)
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)lamda or depdot/dlambda = sqrt(2./3.)/delTime
-double LinearHardening::GetKPrime(MPMBase *mptr,int np,double delTime)
+double LinearHardening::GetKPrime(MPMBase *mptr,int np,double delTime,HardeningAlpha *,void *properties) const
 {
 	return TWOTHIRDS*Epred;
 }
@@ -100,30 +103,31 @@ double LinearHardening::GetKPrime(MPMBase *mptr,int np,double delTime)
 // ... and using dep/dlambda = sqrt(2./3.)*fnp1 where ep=alpint
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)*lambda*fnp1 or depdot/dlambda = sqrt(2./3.)*fnp1/delTime
 // Also equal to sqrt(2./3.)*GetYield()*GetKPrime()*fnp1, but in separate call for efficiency
-double LinearHardening::GetK2Prime(MPMBase *mptr,double fnp1,double delTime)
+double LinearHardening::GetK2Prime(MPMBase *mptr,double fnp1,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return SQRT_EIGHT27THS*(yldred + Epred*alpint)*Epred*fnp1; 
+	return SQRT_EIGHT27THS*(yldred + Epred*a->alpint)*Epred*fnp1;
 }
 
 #pragma mark HardeningLawBase::Return Mapping
 
 // Linear law can do return mapping analytically, except for plane stress
-double LinearHardening::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,double Gred,double psKred,double Ptrial,double delTime)
+double LinearHardening::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,Tensor *stk,double Gred,
+												double psKred,double Ptrial,double delTime,HardeningAlpha *a,void *p) const
 {
 	// plane stress is numerical
 	if(np==PLANE_STRESS_MPM)
     {   // The unbracketed one is faster and seems stable for this hardening law
-        return HardeningLawBase::SolveForLambda(mptr,np,strial,stk,Gred,psKred,Ptrial,delTime);
+        return HardeningLawBase::SolveForLambda(mptr,np,strial,stk,Gred,psKred,Ptrial,delTime,a,p);
     }
     
 	// closed form for plane strain and 3D
-	double lambdak = (strial - SQRT_TWOTHIRDS*(yldred + Epred*alpint))/(2.*(Gred + Epred/3.));
-	UpdateTrialAlpha(mptr,np,lambdak,(double)1.);
+	double lambdak = (strial - SQRT_TWOTHIRDS*(yldred + Epred*a->alpint))/(2.*(Gred + Epred/3.));
+	UpdateTrialAlpha(mptr,np,lambdak,(double)1.,a);
 	return lambdak;
 }
 
 #pragma mark LinearHardening::Accessors
 
 // hardening law name
-const char *LinearHardening::GetHardeningLawName(void) { return "Linear hardening"; }
+const char *LinearHardening::GetHardeningLawName(void) const { return "Linear hardening"; }
 

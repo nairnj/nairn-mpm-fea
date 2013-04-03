@@ -51,35 +51,24 @@ char *HEAnisotropic::InputMat(char *xName,int &input)
 	NOTE: np is analysis type in case that is important
 */
 // verify settings and maybe some initial calculations
-const char *HEAnisotropic::VerifyProperties(int np)
+const char *HEAnisotropic::VerifyAndLoadProperties(int np)
 {
 	// check properties
 
 	// must call super class
-	return HyperElastic::VerifyProperties(np);
-}
-
-/* Called once at beginning (by VerifyProperties() in MaterialBase). For efficiency,
-	use this method to calculate new terms that are independent of the particle
-	state and thus will remain constant throughout the calculation. When done
-	(or before), pass on to super class (but MaterialBase and Elastic do not need it)
-*/
-// Constant properties used in constitutive law
-void HEAnisotropic::InitialLoadMechProps(int makeSpecific,int np)
-{
-	HyperElastic::InitialLoadMechProps(makeSpecific,np);
+	return HyperElastic::VerifyAndLoadProperties(np);
 }
 
 /* Print all mechanical properties or call parent class and print
 	just the new mechanical properties. Use a format compatible with code
 	that will read results file and similar to style of other materials
 	(need not pass on to MaterialBase or Elastic since they print nothing)
-	NOTE: This is called after VerifyProperties() and InitialLoadMechProps()
+	NOTE: This is called after VerifyAndLoadProperties()
 	Sometimes scaling of properties for internal units is best done here after
 	they are printed.
 */
 // print mechanical properties to the results
-void HEAnisotropic::PrintMechanicalProperties(void)
+void HEAnisotropic::PrintMechanicalProperties(void) const
 {	
 	// call superclass here if it is not Material base
 	HyperElastic::PrintMechanicalProperties();
@@ -99,7 +88,7 @@ void HEAnisotropic::PrintMechanicalProperties(void)
    For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 */
 void HEAnisotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double dvzz,double delTime,int np)
+        double dvzz,double delTime,int np,void *properties,ResidualStrains *res)
 {
 }
 
@@ -112,7 +101,7 @@ void HEAnisotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvx
     dvij are (gradient rates X time increment) to give deformation gradient change
 */
 void HEAnisotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-        double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np)
+        double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np,void *properties,ResidualStrains *res)
 {
 }
 
@@ -121,11 +110,11 @@ void HEAnisotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvz
 #pragma mark HEAnisotropic::Accessors
 
 // Return the material tag
-int HEAnisotropic::MaterialTag(void) { return HEANISOTROPIC; }
+int HEAnisotropic::MaterialTag(void) const { return HEANISOTROPIC; }
 
 // return unique, short name for this material
-const char *HEAnisotropic::MaterialType(void) { return "Hyperelastic Anisotropic"; }
+const char *HEAnisotropic::MaterialType(void) const { return "Hyperelastic Anisotropic"; }
 
 // calculate wave speed in mm/sec - needs to be implemented
-double HEAnisotropic::WaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
+double HEAnisotropic::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; }
 

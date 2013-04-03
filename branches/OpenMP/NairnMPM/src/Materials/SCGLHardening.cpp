@@ -66,33 +66,28 @@ char *SCGLHardening::InputMat(char *xName,int &input)
 }
 
 // verify settings and some initial calculations
-const char *SCGLHardening::VerifyProperties(int np)
+const char *SCGLHardening::VerifyAndLoadProperties(int np)
 {
     // but fails is not order correctly
     if(yieldMax < yield)
     {   return "The maximum yield stress in SCGLHardening law is less than the yield stress";
     }
     
-    return NULL;
-}
-
-// get reduced stress than done
-void SCGLHardening::InitialLoadMechProps(int makeSpecific,int np)
-{   
     // reduced yield stress in base class
-	HardeningLawBase::InitialLoadMechProps(makeSpecific,np);
+	HardeningLawBase::VerifyAndLoadProperties(np);
     
 	// reduced maximum yield stress
 	yldMaxred = yieldMax*1.e6/parent->rho;
     
     // reduce shear modulus pressure dependence
     GPpred = GPp*parent->rho*1.e-6;
-    Gratio = 1.;
-    
+	
+	// base class never has an error
+    return NULL;
 }
 
 // print just yield properties to output window
-void SCGLHardening::PrintYieldProperties(void)
+void SCGLHardening::PrintYieldProperties(void) const
 {
     cout << GetHardeningLawName() << endl;
     
@@ -110,63 +105,87 @@ void SCGLHardening::PrintYieldProperties(void)
 }
 
 
+#pragma mark NonlinearHardening:Methods
 
-#pragma mark NonlinearHardening::Law Methods
+// Get particle-state dependent properties (filled by Get Shear Ratio)
+void *SCGLHardening::GetCopyOfHardeningProps(MPMBase *mptr,int np)
+{
+	SCGLProperties *p = (SCGLProperties *)malloc(sizeof(SCGLProperties));
+	return p;
+}
+	
+// Cast void * to correct pointer and delete it
+void SCGLHardening::DeleteCopyOfHardeningProps(void *properties,int np) const
+{
+	SCGLProperties *p = (SCGLProperties *)properties;
+	delete p;
+}
 
 // handle prressure and temperture depence of the shear modulus
 // Find ratio of current shear modulus to initial shear modulus including factor of J
 //  because dealing in Kirchoff stress
-double SCGLHardening::GetShearRatio(MPMBase *mptr,double pressure,double J)
+// Store results needed later in hardenling law properties
+double SCGLHardening::GetShearRatio(MPMBase *mptr,double pressure,double J,void *properties) const
 {
     double dTemp = mptr->pPreviousTemperature - thermal.reference;
     double neta = pow(1./J,ONETHIRD);
-    Gratio = J * (1. + GPpred*pressure/neta + GTp*dTemp);
+    double Gratio = J * (1. + GPpred*pressure/neta + GTp*dTemp);
 	if(Gratio < 0.) Gratio = 0.;
+	if(properties!=NULL)
+	{	SCGLProperties *p = (SCGLProperties *)properties;
+		p->Gratio = Gratio;
+	}
     return Gratio;
 }
+
+#pragma mark NonlinearHardening::Law Methods
 
 // Return yield stress for current conditions and it is specific Cauchy stress
 //   (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
 // yield = yldred*(1 + beta ep)^n * Gratio, where ep=alpint
 // but leading term is limited to yldMaxred
-double SCGLHardening::GetYield(MPMBase *mptr,int np,double delTime)
+double SCGLHardening::GetYield(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-    return fmin(yldred*pow(1.+beta*alpint,nhard),yldMaxred)*Gratio;
+	SCGLProperties *p = (SCGLProperties *)properties;
+    return fmin(yldred*pow(1.+beta*a->alpint,nhard),yldMaxred)*p->Gratio;
 }
 
 // Get derivative of sqrt(2./3.)*yield with respect to lambda for plane strain and 3D
 // ... and using dep/dlambda = sqrt(2./3.)
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)lamda or depdot/dlambda = sqrt(2./3.)/delTime
 // ... and as specfic Cauchy stress
-double SCGLHardening::GetKPrime(MPMBase *mptr,int np,double delTime)
+double SCGLHardening::GetKPrime(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {	
     // slope zero if in constant max yield condition
-    if(yldred*pow(1.+beta*alpint,nhard)>=yldMaxred) return 0.;
+    if(yldred*pow(1.+beta*a->alpint,nhard)>=yldMaxred) return 0.;
 
     // return slope
-    double factor=yldred*Gratio;
+	SCGLProperties *p = (SCGLProperties *)properties;
+    double factor=yldred*p->Gratio;
     double bfactor = DbleEqual(nhard,1.) ? beta :
-    beta*nhard*pow(1.+beta*alpint,nhard-1.) ;
+    beta*nhard*pow(1.+beta*a->alpint,nhard-1.) ;
     return TWOTHIRDS*factor*bfactor;
 }
 
 // this material does not support plane stress calculations
-double SCGLHardening::GetK2Prime(MPMBase *mptr,double fnp1,double delTime)
+double SCGLHardening::GetK2Prime(MPMBase *mptr,double fnp1,double delTime,HardeningAlpha *a,void *properties) const
 {
     // slope zero if in constant max yield condition
-    if(yldred*pow(1.+beta*alpint,nhard)>=yldMaxred) return 0.;
+    if(yldred*pow(1.+beta*a->alpint,nhard)>=yldMaxred) return 0.;
 
-    double factor=yldred*Gratio;
-    return SQRT_EIGHT27THS*factor*factor*beta*nhard*pow(1.+beta*alpint,2.*nhard-1)*fnp1;
+	SCGLProperties *p = (SCGLProperties *)properties;
+    double factor=yldred*p->Gratio;
+    return SQRT_EIGHT27THS*factor*factor*beta*nhard*pow(1.+beta*a->alpint,2.*nhard-1)*fnp1;
 }
 
 // Return (K(alpha)-K(0)), which is used in dissipated energy calculation
-double SCGLHardening::GetYieldIncrement(MPMBase *mptr,int np,double delTime)
-{   return (fmin(yldred*pow(1.+beta*alpint,nhard),yldMaxred)-yldred)*Gratio;
+double SCGLHardening::GetYieldIncrement(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
+{	SCGLProperties *p = (SCGLProperties *)properties;
+	return (fmin(yldred*pow(1.+beta*a->alpint,nhard),yldMaxred)-yldred)*p->Gratio;
 }
 
 #pragma mark NonlinearHardening::Accessors
 
 // hardening law name
-const char *SCGLHardening::GetHardeningLawName(void) { return "SCGL hardening"; }
+const char *SCGLHardening::GetHardeningLawName(void) const { return "SCGL hardening"; }
 

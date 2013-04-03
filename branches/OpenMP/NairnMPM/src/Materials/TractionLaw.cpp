@@ -21,7 +21,7 @@ TractionLaw::TractionLaw(char *matName) : MaterialBase(matName)
 #pragma mark TractionLaw::Initialization
 
 // do not print the base class transport properties
-void TractionLaw::PrintTransportProperties(void) {}
+void TractionLaw::PrintTransportProperties(void) const {}
 
 // read peak stress in all traction laws
 char *TractionLaw::InputMat(char *xName,int &input)
@@ -67,11 +67,11 @@ double TractionLaw::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod
 #pragma mark TractionLaw::Accessors
 
 // required accessors
-double TractionLaw::WaveSpeed(bool threeD,MPMBase *mptr) { return 1.e-12; }
+double TractionLaw::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; }
 
 // return material type
-const char *TractionLaw::MaterialType(void) { return "Crack Traction Law"; }
+const char *TractionLaw::MaterialType(void) const { return "Crack Traction Law"; }
 
 // check if traciton law material
-bool TractionLaw::isTractionLaw(void) { return TRUE; }
+bool TractionLaw::isTractionLaw(void) const { return TRUE; }
 

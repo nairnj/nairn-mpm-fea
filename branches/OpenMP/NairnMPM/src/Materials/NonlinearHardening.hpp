@@ -22,15 +22,15 @@ class NonlinearHardening : public HardeningLawBase
         NonlinearHardening(MaterialBase *);
     
         virtual char *InputMat(char *,int &);
-        virtual void PrintYieldProperties(void);
+        virtual void PrintYieldProperties(void) const;
     
         // hardening law core methods
-        virtual double GetYield(MPMBase *,int,double);
-        virtual double GetKPrime(MPMBase *,int,double);
-        virtual double GetK2Prime(MPMBase *,double,double);
+        virtual double GetYield(MPMBase *,int,double,HardeningAlpha *,void *) const;
+        virtual double GetKPrime(MPMBase *,int,double,HardeningAlpha *,void *) const;
+        virtual double GetK2Prime(MPMBase *,double,double,HardeningAlpha *,void *) const;
     
         // accessors
-        virtual const char *GetHardeningLawName(void);
+        virtual const char *GetHardeningLawName(void) const;
     
     protected:
         double beta,npow;

@@ -29,7 +29,7 @@ class MatPoint3D : public MPMBase
         virtual void SetPosition(Vector *);
         virtual void SetVelocity(Vector *);
         virtual double thickness(void);
-		virtual void UpdateStrain(double,int,int,MaterialBase *,int);
+		virtual void UpdateStrain(double,int,int,void *,int);
 		virtual void Fint(Vector &,double,double,double);
 		virtual void Fext(Vector &,double fni);
 		virtual void MovePosition(double,Vector *);

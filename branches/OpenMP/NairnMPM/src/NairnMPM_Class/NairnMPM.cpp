@@ -84,7 +84,8 @@ void NairnMPM::StartAnalysis(bool abort)
 {
 	// Active Transport Tasks
 	if(DiffusionTask::active)
-	{	transportTasks=new DiffusionTask();
+	{	diffusion = new DiffusionTask();
+		transportTasks = diffusion;
 	}
 	if(ConductionTask::active)
 	{	conduction=new ConductionTask();
@@ -109,7 +110,11 @@ void NairnMPM::MPMAnalysis(bool abort)
     
     //---------------------------------------------------
 	// initialize
+#ifdef _PARALLEL_
+	startTime = omp_get_wtime();
+#else
     time(&startTime);
+#endif
 	startCPU=clock();
 	
 	//---------------------------------------------------
@@ -272,7 +277,8 @@ void NairnMPM::MPMAnalysis(bool abort)
     cout << fline;
 	
 	if(mstep>0)
-	{	sprintf(fline,"Elapsed Time per Step: %.3lf ms\n",1000.*execTime/((double)mstep));
+	{	double eTimePerStep = 1000.*execTime/((double)mstep);
+		sprintf(fline,"Elapsed Time per Step: %.3lf ms\n",eTimePerStep);
 		cout << fline;
 		
 		double timePerStep=1000.*cpuTime/((double)mstep);
@@ -282,7 +288,7 @@ void NairnMPM::MPMAnalysis(bool abort)
 #ifdef _PROFILE_TASKS_
 		MPMTask *nextMPMTask=firstMPMTask;
 		while(nextMPMTask!=NULL)
-		{	nextMPMTask->WriteProfileResults(mstep,timePerStep);
+		{	nextMPMTask->WriteProfileResults(mstep,timePerStep,eTimePerStep);
 			nextMPMTask=(MPMTask *)nextMPMTask->GetNextTask();
 		}
 #endif
@@ -312,7 +318,14 @@ void NairnMPM::MPMStep(void)
 #ifdef LOG_PROGRESS
 		nextMPMTask->WriteLogFile();
 #endif
+#ifdef _PROFILE_TASKS_
+		double beginTime=fmobj->CPUTime();
+		double beginETime=fmobj->ElapsedTime();
+#endif
 		nextMPMTask->Execute();
+#ifdef _PROFILE_TASKS_
+		nextMPMTask->TrackTimes(beginTime,beginETime);
+#endif
 		nextMPMTask=(MPMTask *)nextMPMTask->GetNextTask();
 #ifdef LOG_PROGRESS
 		archiver->WriteLogFile("           Done",NULL);
@@ -650,15 +663,23 @@ void NairnMPM::Usage()
           <<  endl;
 }
 
-// elapsed CPU time (probably actual time)
+// elapsed actual time
 double NairnMPM::ElapsedTime(void)
-{	time_t currentTime;
+{
+#ifdef _PARALLEL_
+	return omp_get_wtime()-startTime;
+#else
+	time_t currentTime;
     time(&currentTime);
     return (double)difftime(currentTime,startTime);
+#endif
 }
 
 // elapsed CPU time (probably actual time)
-double NairnMPM::CPUTime(void) { return (double)(clock()-startCPU)/CLOCKS_PER_SEC; }
+double NairnMPM::CPUTime(void)
+{
+	return (double)(clock()-startCPU)/CLOCKS_PER_SEC;
+}
 
 // if crack develops tractionlaw, call here to turn it on
 void NairnMPM::SetHasTractionCracks(bool setting) { hasTractionCracks=setting; }

@@ -10,27 +10,6 @@
 		(MPM) or (FEA) indicate only that code, otherwise in both
 	
 	MaterialBase (base class)
-	
-	Subclasses
-	
-	  Elastic	->	IsotropicMat+	-> IsoPlasticity+ (MPM)	-> MGEOSMaterial+ (MPM)	
-														-> MGSCGLMaterial+ (MPM) -> SLMaterial+ (MPM)
-									-> BistableIsotropic+ (MPM)
-													
-				->	TransIsotropic+	->	Orthotropic+	-> AnisoPlasticity (MPM)    -> HillPlastic+ (MPM)
-					
-	  Viscoelastic+ (MPM)
-					
-	  HyperElastic		->	Mooney+ (MPM)
-					
-	  ImperfectInterface+ (FEA)
-					
-	  RigidMaterial+
-	  
-	  TractionLaw (MPM)	->	CohesiveZone+ (MPM)	-> LinearTraction+ (MPM)
-												-> TrilinearTraction+ (MPM)
-                                                -> CoupledSawTooth+ (MPM)
-						->	CubicTraction+ (MPM)
 ****************************************************************************************************************************/
 
 #include "Materials/MaterialBase.hpp"
@@ -96,7 +75,7 @@ MaterialBase::~MaterialBase()
 #pragma mark MaterialBase::Initialization
 
 // print to output window
-void MaterialBase::PrintMaterial(int num)
+void MaterialBase::PrintMaterial(int num) const
 {
 	// material name
     cout << "Material " << num << ": " << name << endl;
@@ -115,7 +94,7 @@ void MaterialBase::PrintMaterial(int num)
 }
 
 // print mechanical properties to output window
-void MaterialBase::PrintMechanicalProperties(void) {}
+void MaterialBase::PrintMechanicalProperties(void) const {}
 
 // print property with units (option) and align to columns for material properties
 // In field of width PROP_COLUMN
@@ -124,18 +103,6 @@ void MaterialBase::PrintProperty(const char *propName,double value,const char *u
 	char prop[200];
 	
 	// name
-	/*
-	strcpy(prop,"");
-	int length=PROP_LABEL_LENGTH-strlen(propName);
-	if(length>0)
-	{	while(length>1)
-		{	strcat(prop," ");
-			length--;
-		}
-	}
-	strcat(prop,propName);
-	if(length>0) strcat(prop," ");
-	*/
 	strcpy(prop,propName);
 	int length=strlen(prop);
 	while(length<PROP_LABEL_LENGTH)
@@ -200,15 +167,6 @@ void MaterialBase::PrintProperty(const char *text,bool rightJustify)
 }
 
     
-// Called before analysis, material can fill in things that never change during the analysis
-// Note: no angle, because cannot depend on material angle
-void MaterialBase::InitialLoadMechProps(int makeSpecific,int np) { return; }
-
 // return material type
-const char *MaterialBase::MaterialType(void) { return "Unknown Material Type"; }
-
-#pragma mark MaterialBase::Methods
-
-// rotate meechanical properties if needed
-void MaterialBase::LoadMechProps(int makeSpecific,double angle,int np) { return; }
+const char *MaterialBase::MaterialType(void) const { return "Unknown Material Type"; }
 

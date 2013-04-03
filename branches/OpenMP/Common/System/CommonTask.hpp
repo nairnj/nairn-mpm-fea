@@ -37,6 +37,7 @@ class CommonTask
 		static int numberOfTasks;
 		int taskNumber;
 		double totalTaskTime;
+		double totalTaskETime;
 };
 
 #endif

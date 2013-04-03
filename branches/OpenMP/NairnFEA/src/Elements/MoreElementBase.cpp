@@ -101,7 +101,7 @@ void ElementBase::IsoparametricStiffness(int np)
 	Vector place;
 	
     // Load nodal coordinates (ce[]), temperature (te[]), and
-	//    material props (mdm[][] and me0[])
+	//    material props (pr.C[][] and pr.alpha[])
     GetProperties(np);
     
     // Zero upper se[][] and re[]
@@ -130,8 +130,8 @@ void ElementBase::IsoparametricStiffness(int np)
             {   ind1=ind1+2;
                 ind2=ind1+1;
                 for(j=1;j<=3;j++)
-                {   bte[ind1][j]=xiDeriv[i]*matl->mdm[1][j]+etaDeriv[i]*matl->mdm[3][j];
-                    bte[ind2][j]=etaDeriv[i]*matl->mdm[2][j]+xiDeriv[i]*matl->mdm[3][j];
+                {   bte[ind1][j]=xiDeriv[i]*matl->pr.C[1][j]+etaDeriv[i]*matl->pr.C[3][j];
+                    bte[ind2][j]=etaDeriv[i]*matl->pr.C[2][j]+xiDeriv[i]*matl->pr.C[3][j];
                 }
 				deltaT+=te[i]*fn[i];
             }
@@ -141,9 +141,9 @@ void ElementBase::IsoparametricStiffness(int np)
             {   ind1=ind1+2;
                 ind2=ind1+1;
                 for(j=1;j<=4;j++)
-                {   bte[ind1][j]=xiDeriv[i]*matl->mdm[1][j]+etaDeriv[i]*matl->mdm[3][j]
-                                                    +asbe[i]*matl->mdm[4][j];
-                    bte[ind2][j]=etaDeriv[i]*matl->mdm[2][j]+xiDeriv[i]*matl->mdm[3][j];
+                {   bte[ind1][j]=xiDeriv[i]*matl->pr.C[1][j]+etaDeriv[i]*matl->pr.C[3][j]
+                                                    +asbe[i]*matl->pr.C[4][j];
+                    bte[ind2][j]=etaDeriv[i]*matl->pr.C[2][j]+xiDeriv[i]*matl->pr.C[3][j];
                 }
 				deltaT+=te[i]*fn[i];
             }
@@ -153,7 +153,7 @@ void ElementBase::IsoparametricStiffness(int np)
                 strains into element load vector */
         for(irow=1;irow<=nst;irow++)
         {   for(j=1;j<=3;j++)
-                re[irow]+=bte[irow][j]*matl->me0[j]*deltaT*dv;
+                re[irow]+=bte[irow][j]*matl->pr.alpha[j]*deltaT*dv;
             
             if(np!=AXI_SYM)
             {   for(jcol=irow;jcol<=nst;jcol++)
@@ -171,7 +171,7 @@ void ElementBase::IsoparametricStiffness(int np)
                 }
             }
             else
-            {   re[irow]+=bte[irow][4]*matl->me0[4]*deltaT*dv;
+            {   re[irow]+=bte[irow][4]*matl->pr.alpha[4]*deltaT*dv;
                 for(jcol=irow;jcol<=nst;jcol++)
                 {   if(IsEven(jcol))
                     {   ind1=jcol/2;
@@ -237,7 +237,7 @@ void ElementBase::IsoparametricForceStress(double *rm,int np,int nfree)
 	Vector place;
 	
     // Load element coordinates (ce[]), noodal temperature (te[]), 
-	//    and material props (mdm[][] and me0[])
+	//    and material props (pr.C[][] and pr.alpha[])
     GetProperties(np);
     
     // Load nodal displacements into re[]
@@ -281,10 +281,10 @@ void ElementBase::IsoparametricForceStress(double *rm,int np,int nfree)
                 B d, avoid multiplications by zero */
 		deltaT=0.;
 		for(i=1;i<=numnds;i++) deltaT+=te[i]*fn[i];
-        etot[1]=-matl->me0[1]*deltaT;
-        etot[2]=-matl->me0[2]*deltaT;
-        etot[3]=-matl->me0[3]*deltaT;
-        etot[4]=-matl->me0[4]*deltaT;
+        etot[1]=-matl->pr.alpha[1]*deltaT;
+        etot[2]=-matl->pr.alpha[2]*deltaT;
+        etot[3]=-matl->pr.alpha[3]*deltaT;
+        etot[4]=-matl->pr.alpha[4]*deltaT;
         ind1=-1;
         for(i=1;i<=numnds;i++)
         {   ind1=ind1+2;
@@ -300,13 +300,13 @@ void ElementBase::IsoparametricForceStress(double *rm,int np,int nfree)
         if(np!=AXI_SYM)
         {   for(i=1;i<=3;i++)
             {	for(j=1;j<=3;j++)
-                    sgp[ngp][i]+=matl->mdm[i][j]*etot[j];
+                    sgp[ngp][i]+=matl->pr.C[i][j]*etot[j];
             }
         }
         else
         {   for(i=1;i<=4;i++)
             {	for(j=1;j<=4;j++)
-                    sgp[ngp][i]+=matl->mdm[i][j]*etot[j];
+                    sgp[ngp][i]+=matl->pr.C[i][j]*etot[j];
             }
         }
 
@@ -325,14 +325,14 @@ void ElementBase::IsoparametricForceStress(double *rm,int np,int nfree)
 
         // Get initial/thermal strain contribution to strain energy
         temp=0.;
-        for(i=1;i<=3;i++) temp+=sgp[ngp][i]*matl->me0[i]*deltaT;
-        if(np==AXI_SYM) temp+=sgp[ngp][4]*matl->me0[4]*deltaT;
+        for(i=1;i<=3;i++) temp+=sgp[ngp][i]*matl->pr.alpha[i]*deltaT;
+        if(np==AXI_SYM) temp+=sgp[ngp][4]*matl->pr.alpha[4]*deltaT;
         strainEnergy-=0.5*temp*dv;
 
         /* When plane strain account for constrained 1D shrinkage effect
                         on strain energy */
         if(np==PLANE_STRAIN)
-            strainEnergy+=0.5*matl->mdm[4][4]*dv*deltaT*deltaT;
+            strainEnergy+=0.5*matl->pr.C[4][4]*dv*deltaT*deltaT;
             
     } // End of quadrature loop
 	
@@ -614,7 +614,7 @@ void ElementBase::MakeQuarterPointNodes(int crackTip,vector<int> &movedNodes) {}
 
 /* Load element properties into globals for this element (for FEA only)
     1. Get nodal coordinates and temperature in ce[] and te[] arrays
-    2. Make sure material mdm[][] and me0[] are defined
+    2. Make sure material pr.C[][] and pr.alpha[] are defined
 */
 void ElementBase::GetProperties(int np)
 {
@@ -630,7 +630,7 @@ void ElementBase::GetProperties(int np)
     
     /* Get mechanical properties that depend on angle
             Currently special case for orthotropic */
-    theMaterials[material-1]->LoadMechProps(FALSE,angle,np);
+    theMaterials[material-1]->LoadMechanicalPropertiesFEA(FALSE,angle,np);
 }
 
 // does element have this node?

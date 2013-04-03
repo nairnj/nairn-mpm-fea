@@ -47,33 +47,31 @@ class BistableIsotropic : public IsotropicMat
 		
 		// initialize
         virtual char *InputMat(char *,int &);
-		virtual const char *VerifyProperties(int);
-		virtual void ValidateForUse(int);
-		virtual void PrintMechanicalProperties(void);
-		virtual void PrintTransportProperties(void);
-        virtual char *InitHistoryData(void);
+		virtual const char *VerifyAndLoadProperties(int);
+		virtual char *InitHistoryData(void);
+		virtual const char *CurrentProperties(short,int);
+	
+		// const methods
+		virtual void ValidateForUse(int) const;
+		virtual void PrintMechanicalProperties(void) const;
+		virtual void PrintTransportProperties(void) const;
         
         // override methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
-        virtual void LoadMechanicalProps(MPMBase *,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *);
         virtual void LoadTransportProps(MPMBase *,int);
 		
-		// custom methods
-        virtual const char *CurrentProperties(short,int);
-		
 		// accessors
-        virtual double WaveSpeed(bool,MPMBase *);
-        virtual double MaximumDiffusion(void);
-        virtual double MaximumDiffusivity(void);
-		virtual const char *MaterialType(void);
-        virtual double GetHistory(int,char *);
-		virtual int MaterialTag();
+        virtual double WaveSpeed(bool,MPMBase *) const;
+        virtual double MaximumDiffusion(void) const;
+        virtual double MaximumDiffusivity(void) const;
+		virtual const char *MaterialType(void) const;
+		virtual double GetHistory(int,char *) const;
+		virtual int MaterialTag() const;
     
     private:
         char readbs[BISTABLE_PROPS];
-        short transState;	// current state loaded for transport properties
-        short mechState;	// current state for mechanical properties
-        double normOffset;	// current normal strain offset
+        short transState;	// current state for transport properties
+		ElasticProperties pr2;
 };
 
 #endif

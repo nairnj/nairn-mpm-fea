@@ -15,6 +15,12 @@
 
 #include "Materials/HardeningLawBase.hpp"
 
+// plastic law properties
+typedef struct {
+	double hmlgTemp;
+	double TjcTerm;
+} JCProperties;
+
 class JohnsonCook : public HardeningLawBase
 {
     public:
@@ -24,23 +30,28 @@ class JohnsonCook : public HardeningLawBase
         
         // initialize
         virtual char *InputMat(char *,int &);
-        virtual void PrintYieldProperties(void);
-        virtual void InitialLoadMechProps(int,int);
-        
+        virtual void PrintYieldProperties(void) const;
+		virtual const char *VerifyAndLoadProperties(int);
+	
+		// copy of properties
+		virtual void *GetCopyOfHardeningProps(MPMBase *,int);
+		virtual void DeleteCopyOfHardeningProps(void *,int) const;
+    
         // hardening law core methods
-        virtual void LoadHardeningLawProps(MPMBase *,int);
-        virtual double GetYield(MPMBase *,int,double);
-        virtual double GetKPrime(MPMBase *,int,double);
-        virtual double GetK2Prime(MPMBase *,double,double);
-        virtual double GetYieldIncrement(MPMBase *,int,double);
-        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double);
+        virtual double GetYield(MPMBase *,int,double,HardeningAlpha *,void *) const;
+        virtual double GetKPrime(MPMBase *,int,double,HardeningAlpha *,void *) const;
+        virtual double GetK2Prime(MPMBase *,double,double,HardeningAlpha *,void *) const;
+        virtual double GetYieldIncrement(MPMBase *,int,double,HardeningAlpha *,void *) const;
+	
+		// return mapping
+        virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double,double,double,double,HardeningAlpha *a,void *) const;
     
         // accessors
-        virtual const char *GetHardeningLawName(void);
+        virtual const char *GetHardeningLawName(void) const;
     
     protected:
 		double Bjc,Cjc,njc,ep0jc,Tmjc,mjc;
-		double Bred,TjcTerm,edotMin,eminTerm,hmlgTemp;
+		double Bred,edotMin,eminTerm;
 
 };
 

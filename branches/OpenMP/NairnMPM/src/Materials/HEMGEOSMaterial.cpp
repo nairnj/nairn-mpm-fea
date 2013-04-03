@@ -74,45 +74,46 @@ char *HEMGEOSMaterial::InputMat(char *xName,int &input)
 }
 
 // verify settings and some initial calculations
-const char *HEMGEOSMaterial::VerifyProperties(int np)
+const char *HEMGEOSMaterial::VerifyAndLoadProperties(int np)
 {
+	// call plastic law first
+    const char *ptr = plasticLaw->VerifyAndLoadProperties(np);
+    if(ptr != NULL) return ptr;
+    
 	// check properties (need here because IsotropicMat is skipped
 	if(G1<0) return "The shear modulus, G1, is missing";
 	
-	// needed because SetAnalysisProps never called
-	CME3=betaI*concSaturation;
+	// MU in specific units using initial rho
+	// for MPM (units N/m^2 cm^3/g)
+	G1sp = G1*1.0e+06/rho;
 	
-	// call super class
-	return HEIsotropic::VerifyProperties(np);
-}
-
-// Constant properties used in constitutive law
-void HEMGEOSMaterial::InitialLoadMechProps(int makeSpecific,int np)
-{
     // Use in place of C0^2. Units are Pa cm^3/g such that get Pa when multiplied
     //      by a density in g/cm^3
+	// Equal to reduced bulk modulus
     C0squared = 1000.*C0*C0;
 	
     // Shear modulus with pressure dependence
-	Kred = C0squared;
-    Keffred = C0squared;
-	Kbulk = 1e-6*rho*C0squared;			// initial bulk modulus in MPa
+	Kbulk = 1e-6*rho*C0squared;			// initial bulk modulus in MPa to print
 	
 	// thermal expansion is handled in EOS in UpdatePressure() so need to set
-	// CTE3 used by HEIsotropic to 0;
-	CTE3=0.;
+	// CTE1 used by HEIsotropic to 0;
+	CTE1 = 0.;
 	
-	// call super class
-	HEIsotropic::InitialLoadMechProps(makeSpecific,np);
+	// needed because SetAnalysisProps never called
+	CME1 = betaI*concSaturation;
+	
+	// skip Hyperelstic methods
+	return MaterialBase::VerifyAndLoadProperties(np);
+
 }
 
 // print mechanical properties to the results
-void HEMGEOSMaterial::PrintMechanicalProperties(void)
+void HEMGEOSMaterial::PrintMechanicalProperties(void) const
 {
 	// core properties
 	PrintProperty("C0",C0,"m/s");
 	PrintProperty("gam0",gamma0,"");
-	PrintProperty("K",rho*Kred*1e-6,"");
+	PrintProperty("K",Kbulk,"");
     PrintProperty("G1",G1,"");
 	cout << endl;
     
@@ -134,7 +135,7 @@ void HEMGEOSMaterial::PrintMechanicalProperties(void)
 }
 
 // Print transport properties
-void HEMGEOSMaterial::PrintTransportProperties(void)
+void HEMGEOSMaterial::PrintTransportProperties(void) const
 {
 	// Conductivity constants
 	if(ConductionTask::active)
@@ -147,7 +148,7 @@ void HEMGEOSMaterial::PrintTransportProperties(void)
 }
 
 // if analysis not allowed, throw an exception
-void HEMGEOSMaterial::ValidateForUse(int np)
+void HEMGEOSMaterial::ValidateForUse(int np) const
 {
 	if(thermal.reference<=0)
 	{	throw CommonException("MGEOSMaterial material requires the simulation to set the stress free temperature in degrees K",
@@ -166,6 +167,23 @@ void HEMGEOSMaterial::ValidateForUse(int np)
 
 #pragma mark MGSCGLMaterial::Custom Methods
 
+// Isotropic material can use read-only initial properties
+void *HEMGEOSMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np)
+{
+	HEPlasticProperties *p = (HEPlasticProperties *)malloc(sizeof(HEPlasticProperties));
+ 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np);
+	// Gred and Kred found in UpdatePressure() - do not use before that
+	return p;
+}
+
+// If need, cast void * to correct pointer and delete it
+void HEMGEOSMaterial::DeleteCopyOfMechanicalProps(void *properties,int np) const
+{
+	HEPlasticProperties *p = (HEPlasticProperties *)properties;
+	plasticLaw->DeleteCopyOfHardeningProps(p->hardProps,np);
+	delete p;
+}
+
 // This method handles the pressure equation of state. Its tasks are
 // 1. Calculate the new pressure
 // 2. Update particle pressure
@@ -173,7 +191,8 @@ void HEMGEOSMaterial::ValidateForUse(int np)
 // 4. Call plasticLaw to see if it wants to change the shear modulus
 // J is total volume change at end of step relative to stress free state (if diffusion)
 // dJ is incremental volume change relative to incremental stress state change (if diffusion)
-void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,double resStretch3,double delTime)
+void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,double resStretch3,double delTime,
+									 HEPlasticProperties *p,ResidualStrains *res)
 {
 	// delV is total incremental volumetric strain relative to free-swelling volume
     // J is total volume change - may need to reference to free-swelling volume if that works
@@ -197,23 +216,23 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,dou
         }
         
         // current effective and reduced (by rho0) bulk modulus
-        Keffred = C0squared*(1.-0.5*gamma0*x)*denom*denom;
+        p->Kred = C0squared*(1.-0.5*gamma0*x)*denom*denom;
     }
     else
     {   // In tension use low-strain bulk modulus
-        Keffred = C0squared;
+        p->Kred = C0squared;
     }
 	
     // Pressure from bulk modulus and an energy term
     double e = mptr->GetInternalEnergy();
 	double P0 = mptr->GetPressure();
-    double P = J*(Keffred*x + gamma0*e);
+    double P = J*(p->Kred*x + gamma0*e);
     
     // artifical viscosity
 	double delV = 1. - 1./dJ;
     double QAVred = 0.,AVEnergy=0.;
     if(delV<0. && artificialViscosity)
-    {   double c = sqrt(Keffred*J*resStretch3/1000.);        // m/sec
+    {   double c = sqrt(p->Kred*J*resStretch3/1000.);        // m/sec
         QAVred = GetArtificalViscosity(delV/delTime,c);
         if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
     }
@@ -232,17 +251,17 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,dou
     
     // heat energy is Cv (dT - dTq0) - dPhi - |QAVred*delV|
 	// Here do Cv (dT - dTq0) - |QAVred*delV| term and dPhi is done later
-    IncrementHeatEnergy(mptr,ConductionTask::dTemperature,dTq0,AVEnergy);
+    IncrementHeatEnergy(mptr,res->dT,dTq0,AVEnergy);
 	
 	// SCGL and SL shear modulus and save Gratio = J G/G0 for later calculations
     // Note: J in Gred and Gratio is so that where they are used, they give
     //          specific Cauchy stress
-    Gred = G1sp * plasticLaw->GetShearRatio(mptr,avgP,J);
+    p->Gred = G1sp * plasticLaw->GetShearRatio(mptr,avgP,J,p->hardProps);
 }
 
 // This material is tracking specific Cauchy stress. On archiving need to know volume
 // to get to actual Cauchy stress
-double HEMGEOSMaterial::GetCurrentRelativeVolume(MPMBase *mptr)
+double HEMGEOSMaterial::GetCurrentRelativeVolume(MPMBase *mptr) const
 {
     return mptr->GetRelativeVolume();
 }
@@ -250,16 +269,16 @@ double HEMGEOSMaterial::GetCurrentRelativeVolume(MPMBase *mptr)
 #pragma mark MGSCGLMaterial::Accessors
 
 // Return the material tag
-int HEMGEOSMaterial::MaterialTag(void) { return HEMGEOSMATERIAL; }
+int HEMGEOSMaterial::MaterialTag(void) const { return HEMGEOSMATERIAL; }
 
 // return unique, short name for this material
-const char *HEMGEOSMaterial::MaterialType(void) { return "Hyperelastic MGEOS Material"; }
+const char *HEMGEOSMaterial::MaterialType(void) const { return "Hyperelastic MGEOS Material"; }
 
 /*	calculate current wave speed in mm/sec. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
  but K and G are current values of rho0*Keffred and rho0*Gred/J (in Pa) so were want
  1000 sqrt(rho0(Keffred+4Gred/(3J))/(1000 rho0/J))
  */
-double HEMGEOSMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr)
+double HEMGEOSMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
 {
     // compressive volumetric strain x = 1-J
     double J = mptr->GetRelativeVolume();
@@ -284,7 +303,8 @@ double HEMGEOSMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr)
     // get G/rho at current pressure
     double e = mptr->GetInternalEnergy();
     double pressure = J*(KcurrRed*x + gamma0*e);
-    double GcurrRed = G1sp * plasticLaw->GetShearRatio(mptr,pressure,J);
+	// MUST FIX
+    double GcurrRed = G1sp * plasticLaw->GetShearRatio(mptr,pressure,J,NULL);
     
     // return current save speed
     return 1000.*sqrt((KcurrRed + 4.*GcurrRed/3.)/1000.);

@@ -27,26 +27,25 @@ class MGSCGLMaterial : public IsoPlasticity
 		
 		// initialize
         virtual char *InputMat(char *,int &);
-		virtual const char *VerifyProperties(int);
-		virtual void InitialLoadMechProps(int,int);
-		virtual void PrintMechanicalProperties(void);
-		virtual void PrintTransportProperties(void);
-		virtual void ValidateForUse(int);
+		virtual const char *VerifyAndLoadProperties(int);
+		virtual void PrintMechanicalProperties(void) const;
+		virtual void PrintTransportProperties(void) const;
+		virtual void ValidateForUse(int) const;
 	
 		// methods
-        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int);
-		virtual void UpdatePressure(MPMBase *,double &,double,int);
-        virtual double GetCurrentRelativeVolume(MPMBase *);
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int);
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *);
+		virtual void UpdatePressure(MPMBase *,double &,double,int,PlasticProperties *,ResidualStrains *);
+        virtual double GetCurrentRelativeVolume(MPMBase *) const;
 				
 		// accessors
-		virtual const char *MaterialType(void);
-		virtual int MaterialTag();
-        virtual double WaveSpeed(bool,MPMBase *);
-        virtual double CurrentWaveSpeed(bool,MPMBase *);
-		virtual bool SupportsArtificialViscosity(void);
+		virtual const char *MaterialType(void) const;
+		virtual int MaterialTag() const;
+        virtual double WaveSpeed(bool,MPMBase *) const;
+        virtual double CurrentWaveSpeed(bool,MPMBase *) const;
+		virtual bool SupportsArtificialViscosity(void) const;
 	
     protected:
-        double G0red,Keffred,Gratio;
         double C0squared,QAVred;
 
 };
