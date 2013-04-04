@@ -22,8 +22,7 @@
 		Divide fcond by gMpCp to get temperature rates (TransportRates())
 	Update Particles Task
 		Each particle: zero rate, extrapolate from nodes to particle, then
-			update particle (ZeroTransportRate(), IncrementTransportRate(),
-			MoveTransportRate()).
+			update particle (IncrementTransportRate(),MoveTransportRate()).
 	Update strains last (if used)
 		Update gTemperature on nodes (UpdateNodalValues())
 	Update strains on particles (both places)
@@ -125,7 +124,7 @@ TransportTask *ConductionTask::TransportTimeStep(int matid,double dcell,double *
 	return nextTask;
 }
 
-#pragma mark TASK EXTRAPOLATION METHODS
+#pragma mark MASS AND MOMENTUM EXTRAPOLATIONS
 
 // Task 1 Extrapolation of concentration to the grid
 TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape)
@@ -193,6 +192,8 @@ void ConductionTask::GetGradients(double stepTime)
 	}
 }
 
+#pragma mark GRID FORCES EXTRAPOLATIONS
+
 // find forces for conduction calculation (N-mm/sec = mJ/sec)
 TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double sh,double dshdx,double dshdy,double dshdz)
 {
@@ -245,6 +246,8 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
 	return nextTask;
 }
 
+#pragma mark UPDATE MOMENTA TASK
+
 // get temperature rates on the nodes
 TransportTask *ConductionTask::TransportRates(double deltime)
 {
@@ -257,29 +260,21 @@ TransportTask *ConductionTask::TransportRates(double deltime)
 	return nextTask;
 }
 		
+#pragma mark UPDATE PARTICLES TASK
+
 // increment temperature rate on the particle
-TransportTask *ConductionTask::IncrementTransportRate(NodalPoint *ndpt,double shape)
+TransportTask *ConductionTask::IncrementTransportRate(NodalPoint *ndpt,double shape,double &rate) const
 {	rate+=ndpt->fcond*shape;			// fcond are temperature rates from TransportRates()
 	return nextTask;
 }
 
 // increment particle concentration (time is always timestep)
-TransportTask *ConductionTask::MoveTransportValue(MPMBase *mptr,double deltime)
+TransportTask *ConductionTask::MoveTransportValue(MPMBase *mptr,double deltime,double rate) const
 {	mptr->pTemperature += deltime*rate;
 	return nextTask;
 }
 
-// if needed for SZS or USAVG, update temperature on the grid (tempTime is always timestep)
-TransportTask *ConductionTask::UpdateNodalValues(double tempTime)
-{
-	// add for each node
-	int i;
-    for(i=1;i<=nnodes;i++)
-	{   if(nd[i]->NumberNonrigidParticles()>0)
-			nd[i]->gTemperature += nd[i]->fcond*tempTime;
-	}
-	return nextTask;
-}
+#pragma mark UPDATE PARTICLE STRAIN TASK
 
 // return increment transport rate
 double ConductionTask::IncrementValueExtrap(NodalPoint *ndpt,double shape) const
@@ -291,6 +286,20 @@ double ConductionTask::GetDeltaValue(MPMBase *mptr,double pTempExtrap) const
 {	double dTemperature = pTempExtrap-mptr->pPreviousTemperature;
 	mptr->pPreviousTemperature = pTempExtrap;
 	return dTemperature;
+}
+
+#pragma mark UPDATE STRAIN LAST TASK
+
+// if needed for SZS or USAVG, update temperature on the grid (tempTime is always timestep)
+TransportTask *ConductionTask::UpdateNodalValues(double tempTime)
+{
+	// add for each node
+	int i;
+    for(i=1;i<=nnodes;i++)
+	{   if(nd[i]->NumberNonrigidParticles()>0)
+        nd[i]->gTemperature += nd[i]->fcond*tempTime;
+	}
+	return nextTask;
 }
 
 #pragma mark CUSTOM METHODS

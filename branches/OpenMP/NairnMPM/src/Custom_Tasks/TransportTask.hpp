@@ -20,7 +20,6 @@ class TransportTask
 {
     public:
         TransportTask *nextTask;
-		double rate;
        
         // constructors and destructors
         TransportTask();
@@ -28,7 +27,6 @@ class TransportTask
         
 		// base methods
 		TransportTask *GetValuesAndGradients(double);
- 		TransportTask *ZeroTransportRate(void);
 		TransportTask *ZeroValueExtrap(void);
        
         // overridable methods
@@ -61,10 +59,10 @@ class TransportTask
 		virtual TransportTask *TransportRates(double) = 0;
 		
 		// increment transport rate
-		virtual TransportTask *IncrementTransportRate(NodalPoint *,double) = 0;
+		virtual TransportTask *IncrementTransportRate(NodalPoint *,double,double &) const = 0;
 		
 		// increment particle transpoprt value
-		virtual TransportTask *MoveTransportValue(MPMBase *,double) = 0;
+		virtual TransportTask *MoveTransportValue(MPMBase *,double,double) const = 0;
 		
 		// if needed for SZS or USAVG, update value on the grid
 		virtual TransportTask *UpdateNodalValues(double) = 0;

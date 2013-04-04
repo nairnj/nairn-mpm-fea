@@ -54,11 +54,12 @@ CustomTask *CustomTask::BeginExtrapolations(void) { return nextTask; }
 // called when done with node and particle extrapolations
 CustomTask *CustomTask::EndExtrapolations(void) { return nextTask; }
 
-// add particle data to a node during extrapolations (ndi is 1-based node number)
+// add particle data to a node during extrapolations (wt is mp*fn[i])
 CustomTask *CustomTask::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,int matfld,double wt,short isRigid)
 { return nextTask; }
 
 // used to extapolate nodal values to particles during extrapolations
+// (this is commented out because not used by any task - if needed, bring it back)
 CustomTask *CustomTask::ParticleCalculation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,int matfld,
                     double fn,double xDeriv,double yDeriv,double zDeriv,short isRigid)
 { return nextTask; }

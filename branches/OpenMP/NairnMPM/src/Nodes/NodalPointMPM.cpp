@@ -464,7 +464,7 @@ void NodalPoint::AddUGradient(short vfld,double wt,double dudx,double dudy,doubl
 	df->dv.x += wt*dvdx;
 	df->dv.y += wt*dvdy;
 	
-	// if more than one material get shape function extrapolaiton to each node
+	// if more than one material get shape function extrapolation to each node
 	if(numActiveMaterials>1)
 		df->matWeight[activeMatField] += wt/mp;
 }
@@ -482,7 +482,7 @@ void NodalPoint::AddMatWeights(double wt,double *matWeight)
 			matWeight[i] += wt*df->matWeight[i];
 	}
 	
-	// above the crack
+	// below the crack
 	df = cvf[(int)below]->df;
 	if(df!=NULL)
 	{	for(i=0;i<numActiveMaterials;i++)
@@ -506,10 +506,10 @@ void NodalPoint::AddEnergy(short vfld,double wt,double vx,double vy,double work)
 // wt includes rho thus stress is N/m^2
 // Must scale by 1e-6 to get N/mm^2
 void NodalPoint::AddStress(short vfld,double wt,Tensor *stress)
-{	DispField *df=cvf[vfld]->df;
-	df->stress.xx+=wt*stress->xx;
-	df->stress.yy+=wt*stress->yy;
-	df->stress.xy+=wt*stress->xy;
+{	DispField *df = cvf[vfld]->df;
+	df->stress.xx += wt*stress->xx;
+	df->stress.yy += wt*stress->yy;
+	df->stress.xy += wt*stress->xy;
 }
 
 // Finish extrapolated strain field terms

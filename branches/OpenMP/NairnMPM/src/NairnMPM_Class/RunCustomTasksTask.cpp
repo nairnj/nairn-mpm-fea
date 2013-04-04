@@ -81,10 +81,12 @@ void RunCustomTasksTask::Execute(void)
                 while(nextTask!=NULL)
                     nextTask=nextTask->NodalExtrapolation(nd[nds[i]],mpm[p],vfld,matfld,wt,isRigid);
 				
-                // possible extrapolation to the particle
+                // possible extrapolation to the particle (but currently not used by any custom task)
+                /*
                 nextTask=theTasks;
                 while(nextTask!=NULL)
                     nextTask=nextTask->ParticleCalculation(nd[nds[i]],mpm[p],vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],isRigid);
+                */
             }
             
             // possible single calculations for each particle

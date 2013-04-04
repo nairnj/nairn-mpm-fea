@@ -220,13 +220,13 @@ TransportTask *DiffusionTask::TransportRates(double deltime)
 }
 		
 // increment concentration rate on the particle
-TransportTask *DiffusionTask::IncrementTransportRate(NodalPoint *ndpt,double shape)
+TransportTask *DiffusionTask::IncrementTransportRate(NodalPoint *ndpt,double shape,double &rate) const
 {	rate += ndpt->fdiff*shape;			// fdiff are concentration rates from TransportRates()
 	return nextTask;
 }
 
 // increment particle concentration
-TransportTask *DiffusionTask::MoveTransportValue(MPMBase *mptr,double deltime)
+TransportTask *DiffusionTask::MoveTransportValue(MPMBase *mptr,double deltime,double rate) const
 {	mptr->pConcentration += deltime*rate;
     if(mptr->pConcentration<0.)
         mptr->pConcentration = 0.;

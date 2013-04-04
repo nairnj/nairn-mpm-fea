@@ -22,12 +22,6 @@ TransportTask::~TransportTask() { }
 
 #pragma mark BASIC METHODS
 
-// increment transport rate
-TransportTask *TransportTask::ZeroTransportRate(void)
-{	rate=0.;
-	return nextTask;
-}
-
 // Task 1b tasks
 TransportTask *TransportTask::GetValuesAndGradients(double stepTime)
 {

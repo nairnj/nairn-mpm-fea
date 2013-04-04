@@ -59,9 +59,10 @@ void UpdateParticlesTask::Execute(void)
 			Vector *acc=mpm[p]->GetAcc();
 			ZeroVector(acc);
 			ZeroVector(&delv);
-			TransportTask *nextTransport=transportTasks;
-			while(nextTransport!=NULL)
-				nextTransport=nextTransport->ZeroTransportRate();
+            double rate[2];         // only two possible transport tasks
+            rate[0] = rate[1] = 0.;
+            int task;
+            TransportTask *nextTransport;
 			
 			// Loop over nodes
 			for(int i=1;i<=numnds;i++)
@@ -70,8 +71,9 @@ void UpdateParticlesTask::Execute(void)
 				
 				// increment transport rates
 				nextTransport=transportTasks;
+                task=0;
 				while(nextTransport!=NULL)
-					nextTransport=nextTransport->IncrementTransportRate(nd[nds[i]],fn[i]);
+					nextTransport=nextTransport->IncrementTransportRate(nd[nds[i]],fn[i],rate[task++]);
 			}
 			
 			// update position in mm and velocity in mm/sec
@@ -80,8 +82,9 @@ void UpdateParticlesTask::Execute(void)
 			
 			// update transport values
 			nextTransport=transportTasks;
+            task=0;
 			while(nextTransport!=NULL)
-				nextTransport=nextTransport->MoveTransportValue(mpm[p],timestep);
+				nextTransport=nextTransport->MoveTransportValue(mpm[p],timestep,rate[task++]);
 			
 			// thermal ramp
 			thermal.UpdateParticleTemperature(&mpm[p]->pTemperature,timestep);

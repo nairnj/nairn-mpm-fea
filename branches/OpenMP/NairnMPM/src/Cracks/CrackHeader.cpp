@@ -1035,6 +1035,13 @@ void CrackHeader::JIntegral(void)
 			}
 			
 			// walk around the countour (0 and 4 are half edges)
+            //        2
+            //    ---------
+            //   |         |
+            // 3 |    *    | 1  * is the crack tip
+            //   |         |
+            //    ----|----
+            //    4     0
 			prevPt=crackPt=new ContourPoint(nd[gridNode]);
 			numSegs++;
 			int numPts=JGridSize;
@@ -1060,8 +1067,9 @@ void CrackHeader::JIntegral(void)
 				cxmin=min(cxmin,nd[gridNode]->x);
 				cxmax=max(cxmax,nd[gridNode]->x);
 				cymin=min(cymin,nd[gridNode]->y);
-				cymax=max(cxmax,nd[gridNode]->y);
+				cymax=max(cymax,nd[gridNode]->y);
 
+                // adjust to half edge when about to do j=4 edge
 				numPts = (j==3) ? JGridSize-1 : 2*JGridSize;
 			}
 			// connect end to start
@@ -1129,7 +1137,7 @@ void CrackHeader::JIntegral(void)
 			if(crkTipIdx==END_OF_CRACK) startSeg=startSeg->nextSeg;
 			
 			// print the contour (for debegging)
-			/*
+            /*
 			cout << "# J Contour from node " << crackPt->node->num << ", cross at (" << crossPt.x << "," << crossPt.y << ") fraction = "
 						<< prevPt->Fraction(crossPt) << " then nodes: " ;
 			nextPt=prevPt->nextPoint;
@@ -1139,7 +1147,7 @@ void CrackHeader::JIntegral(void)
 				if(nextPt==prevPt->nextPoint) break;
 			}
 			cout << endl;
-			*/
+            */
 			
 			// insert nodal point and define start of the path
 			double fract=prevPt->Fraction(crossPt);
@@ -1246,18 +1254,18 @@ void CrackHeader::JIntegral(void)
 
 				// add for two endpoints using midpoint rule
 #ifdef BROBERG_AS_METHOD_FOR_JR
-				Jx1+=0.5*(fForJx1 + fForJx2)*ds;		// N mm/mm^2
+				Jx1 += 0.5*(fForJx1 + fForJx2)*ds;		// N mm/mm^2
 #else
-				Jx1+=0.5*(r1*fForJx1 + r2*fForJx2)*ds;	// N mm/mm^2
+				Jx1 += 0.5*(r1*fForJx1 + r2*fForJx2)*ds;	// N mm/mm^2
 #endif
 
 				// calculate Jy (or Jz if axisymmetric)
 
 				// term ti*ui,y
-				termForJy1=(sxx1*segNorm.x+sxy1*segNorm.y)*dudy1
-						  +(sxy1*segNorm.x+syy1*segNorm.y)*dvdy1;
-				termForJy2=(sxx2*segNorm.x+sxy2*segNorm.y)*dudy2
-						  +(sxy2*segNorm.x+syy2*segNorm.y)*dvdy2;
+				termForJy1 = (sxx1*segNorm.x+sxy1*segNorm.y)*dudy1
+                            +(sxy1*segNorm.x+syy1*segNorm.y)*dvdy1;
+				termForJy2 = (sxx2*segNorm.x+sxy2*segNorm.y)*dudy2
+                            +(sxy2*segNorm.x+syy2*segNorm.y)*dvdy2;
 						  
 				// [(W+K)ny-ti*ui,y]
 				fForJy1=(wd1+kd1)*segNorm.y-termForJy1;
@@ -1387,7 +1395,7 @@ void CrackHeader::JIntegral(void)
 			// add the two terms N mm/mm^2
 			Jx = Jx1 + Jx2 - JxAS2;
 			Jy = Jy1 + Jy2;
-
+ 
 			/* Jint -- crack-axis components of dynamic J-integral
 				  Jint.x is J1 in archiving and literature and is energy release rate, here
 						it accounts for traction laws. Friction can be handled but not yet implemented
@@ -1399,7 +1407,7 @@ void CrackHeader::JIntegral(void)
 			   Units N/mm, multiply by 1000 to get N/m = J/m^2
 			*/
 			tipCrk->Jint.x = Jx*crackDir.x + Jy*crackDir.y - tractionEnergy;		// Jtip or energy that will be released if crack grows
-			tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;						// J2(x) - for growth normal to crack plane
+			tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;                         // J2(x) - for growth normal to crack plane
 			//tipCrk->Jint.y = Jx1*crackDir.x + Jy1*crackDir.y;						// J by one term (temporary)
 			tipCrk->Jint.z = tipCrk->Jint.x + bridgingReleased;						// Jrel or energy released in current state
 			
