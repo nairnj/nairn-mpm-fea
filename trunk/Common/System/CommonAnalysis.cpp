@@ -22,6 +22,7 @@
 // reeading globals
 static bool doSchema=TRUE;
 static bool schemaFullChecking=FALSE;
+extern const char *svninfo;
 
 /********************************************************************************
 	CommonAnalysis: Constructors and Destructor
@@ -59,7 +60,8 @@ void CommonAnalysis::StartResultsOutput(void)
     // Analysis Title
 	PrintAnalysisTitle();
 	cout << "Written by: Nairn Research Group, Oregon State University\n"
-         << "Date: " << __DATE__ << "\n\n";
+         << "Date: " << __DATE__ << "\n"
+         << "Source: " << svninfo << "\n\n";
          
     //--------------------------------------------------
     // Description

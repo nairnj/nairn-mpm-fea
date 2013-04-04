@@ -83,6 +83,8 @@
 		A7313F9B07CF77F90074510B /* CrackNode.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7313F9907CF77F90074510B /* CrackNode.hpp */; };
 		A734D4FA1610D8C700B9A4B7 /* AdjustTimeStepTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A734D4F91610D8C700B9A4B7 /* AdjustTimeStepTask.cpp */; };
 		A734D4FC1610D8DA00B9A4B7 /* AdjustTimeStepTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A734D4FB1610D8DA00B9A4B7 /* AdjustTimeStepTask.hpp */; };
+		A738C0C4170E181D00E4D675 /* svninfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A738C0C3170E181D00E4D675 /* svninfo.cpp */; };
+		A738C0C5170E181D00E4D675 /* svninfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A738C0C3170E181D00E4D675 /* svninfo.cpp */; };
 		A73B09880605FFAE0078D29A /* MaterialBaseFEA.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A73B09870605FFAE0078D29A /* MaterialBaseFEA.cpp */; };
 		A743491515792C0300EF8DFA /* IdealGas.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A743491315792C0300EF8DFA /* IdealGas.cpp */; };
 		A743491615792C0300EF8DFA /* IdealGas.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A743491415792C0300EF8DFA /* IdealGas.hpp */; };
@@ -485,6 +487,7 @@
 		A7313F9907CF77F90074510B /* CrackNode.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = CrackNode.hpp; sourceTree = "<group>"; };
 		A734D4F91610D8C700B9A4B7 /* AdjustTimeStepTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AdjustTimeStepTask.cpp; sourceTree = "<group>"; };
 		A734D4FB1610D8DA00B9A4B7 /* AdjustTimeStepTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = AdjustTimeStepTask.hpp; sourceTree = "<group>"; };
+		A738C0C3170E181D00E4D675 /* svninfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = svninfo.cpp; sourceTree = "<group>"; };
 		A73B09870605FFAE0078D29A /* MaterialBaseFEA.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = MaterialBaseFEA.cpp; sourceTree = "<group>"; };
 		A743491315792C0300EF8DFA /* IdealGas.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IdealGas.cpp; path = Materials/IdealGas.cpp; sourceTree = "<group>"; };
 		A743491415792C0300EF8DFA /* IdealGas.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = IdealGas.hpp; path = Materials/IdealGas.hpp; sourceTree = "<group>"; };
@@ -872,6 +875,7 @@
 				67B213B511F90404007523EE /* CommonTask.cpp */,
 				67C733BF16741ED100698D4F /* Matrix3.hpp */,
 				67C733BE16741ED100698D4F /* Matrix3.cpp */,
+				A738C0C3170E181D00E4D675 /* svninfo.cpp */,
 			);
 			path = System;
 			sourceTree = "<group>";
@@ -1886,6 +1890,7 @@
 				6715DFD116C567350042F15C /* Nonlinear2Hardening.cpp in Sources */,
 				673EC9B616C9EB71007FFEB5 /* CarnotCycle.cpp in Sources */,
 				67FFAA0B16D31E95003A7C53 /* HEMGEOSMaterial.cpp in Sources */,
+				A738C0C4170E181D00E4D675 /* svninfo.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1962,6 +1967,7 @@
 				A715F5A21542066800D53E52 /* MatRegionFEA.cpp in Sources */,
 				671514D215465E8B005F33A9 /* OvalController.cpp in Sources */,
 				671514D91547035D005F33A9 /* PolygonController.cpp in Sources */,
+				A738C0C5170E181D00E4D675 /* svninfo.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
