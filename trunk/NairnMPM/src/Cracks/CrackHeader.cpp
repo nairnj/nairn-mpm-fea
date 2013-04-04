@@ -1060,7 +1060,7 @@ void CrackHeader::JIntegral(void)
 				cxmin=min(cxmin,nd[gridNode]->x);
 				cxmax=max(cxmax,nd[gridNode]->x);
 				cymin=min(cymin,nd[gridNode]->y);
-				cymax=max(cxmax,nd[gridNode]->y);
+				cymax=max(cymax,nd[gridNode]->y);
 
 				numPts = (j==3) ? JGridSize-1 : 2*JGridSize;
 			}
