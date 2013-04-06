@@ -28,7 +28,10 @@ PRVar gTimeArray[1] = { NULL };
 BodyForce::BodyForce()
 {
 	gravity=FALSE;
+	
 	damping=0.;
+	useDamping=FALSE;
+	
 	useFeedback=FALSE;
 	useGridFeedback=TRUE;		// base feedback on grid kinetic energy
 								// provide option to change to allow particle kintic energy instead
@@ -56,14 +59,15 @@ BodyForce::~BodyForce()
 	if(gridfunction!=NULL) delete gridfunction;
 }
 
-// If gravity return TRUE and current forces
-bool BodyForce::GetGravity(double *gx,double *gy,double *gz)
+// If gravity add to input force vector
+void BodyForce::AddGravity(double mp,double wt,Vector *theFrc)
 {
-	if(!gravity) return FALSE;
-    *gx = gforce.x;
-    *gy = gforce.y;
-    *gz = gforce.z;
-	return TRUE;
+	if(!gravity) return;
+	
+	double gscale = mp*wt;
+	theFrc->x += gscale*gforce.x;
+	theFrc->y += gscale*gforce.y;
+	theFrc->z += gscale*gforce.z;
 }
 
 // the damping

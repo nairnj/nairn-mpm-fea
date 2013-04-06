@@ -41,8 +41,8 @@ UpdateParticlesTask::UpdateParticlesTask(const char *name) : MPMTask(name)
 void UpdateParticlesTask::Execute(void)
 {
 	int numnds;
-	int nds[MaxShapeNds];
-	double fn[MaxShapeNds];
+	int nds[maxShapeNodes];
+	double fn[maxShapeNodes];
 	Vector delv;
 	
     // Update particle position, velocity, temp, and conc

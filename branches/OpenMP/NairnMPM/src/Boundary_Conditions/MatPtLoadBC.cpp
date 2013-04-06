@@ -146,7 +146,7 @@ MatPtLoadBC *MatPtLoadBC::MakeConstantLoad(double bctime)
 // compact CPDI surface nodes into arrays
 int MatPtLoadBC::CompactCornerNodes(int numDnds,Vector *corners,int *cElem,double ratio,int *nds,double *fn)
 {	
-    // loop over corners finding all nodes and add to fext
+    // loop over corners finding all nodes and add to force
     // maximum is numDnds nodes with 8 nodes (if 3D) for each
     int i,j,numnds,ncnds=0;
     double cnodes[8*numDnds],twt[8*numDnds];

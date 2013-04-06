@@ -21,8 +21,6 @@
 
 RunCustomTasksTask::RunCustomTasksTask(const char *name) : MPMTask(name)
 {
-	// zero thisfunction in case in 2D analysis
-	for(int i=0;i<MaxShapeNds;i++) zDeriv[i]=0.;
 }
 
 #pragma mark REQUIRED METHODS
@@ -30,9 +28,9 @@ RunCustomTasksTask::RunCustomTasksTask(const char *name) : MPMTask(name)
 // Run all custom tasks
 void RunCustomTasksTask::Execute(void)
 {
-	int i,p,iel,matfld,numnds,nds[MaxShapeNds];
+	int i,p,iel,matfld,numnds,nds[maxShapeNodes];
 	MaterialBase *matID;
-	double wt,fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds];
+	double wt,fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	short vfld,isRigid;
 	
     /* Step 1: Call all tasks. The tasks can do initializations needed

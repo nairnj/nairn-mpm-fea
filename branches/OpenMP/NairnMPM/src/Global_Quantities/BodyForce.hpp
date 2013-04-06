@@ -24,6 +24,7 @@ class BodyForce
 {
     public:
 		double damping;				// external damping
+	bool useDamping;
 		double dampingCoefficient;	// 1/Q in Nose-Hoover feedback damping
 		short useFeedback;
 		bool useGridFeedback;
@@ -35,7 +36,7 @@ class BodyForce
     
         // methods
 		void Activate(void);
-		bool GetGravity(double *,double *,double *);
+		void AddGravity(double,double,Vector *);
 		double GetDamping(double);
 		void Output(void);
 		double GetAlpha(void);

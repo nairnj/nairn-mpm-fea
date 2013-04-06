@@ -50,6 +50,7 @@ double propTime=1e15;		// time interval between propagation calculations (sec)
 int maxCrackFields=1;		// Maximum crack velocity fields at a node in a material (it is MAX_FIELDS_FOR_CRACKS if there are cracks)
 int maxMaterialFields;		// Maximum velocity fields or number of independent materials in multimaterial mode (=1 in single mat mode)
 int numActiveMaterials;		// Number of non-rigid materials used by at least one material point
+int maxShapeNodes=10;		// Maximum number of nodes for a particle (plus 1)
 
 #pragma mark CONSTRUCTORS
 
@@ -634,6 +635,7 @@ bool NairnMPM::ValidAnalysisType(void)
 	if(np==THREED_MPM)
 	{	ptsPerElement=8;				// number of points per element
 		nfree=3;
+		maxShapeNodes=28;				// increase if CPDI is used
 	}
 		
 	return np>BEGIN_MPM_TYPES && np<END_MPM_TYPES;

@@ -40,8 +40,8 @@ MatPointAS::MatPointAS(int inElemNum,int theMatl,double angin,double thickin) : 
 // matRef is the material and properties have been loaded, matFld is the material field
 void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld)
 {
-	int i,numnds,nds[MaxShapeNds];
-    double fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds],zDeriv[MaxShapeNds];
+	int i,numnds,nds[maxShapeNodes];
+    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	Vector vel;
     Matrix3 dv;
     
@@ -99,7 +99,7 @@ void MatPointAS::SetOrigin(Vector *pt)
 }
 
 // return internal force as -mp sigma.deriv * 1000. which converts to g mm/sec^2 or micro N
-void MatPointAS::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
+void MatPointAS::GetFint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
 {	fout.x=-mp*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+(sp.zz-pressure)*zDeriv)*1000.;
 	fout.y=-mp*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv)*1000.;
 	fout.z=0.;

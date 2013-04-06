@@ -45,11 +45,9 @@ class CrackVelocityField
 		virtual double GetTotalMassAndCount(void) = 0;
 		virtual void AddVolumeGradient(int,MPMBase *,double,double,double);
 	
-		void AddFintTask3(int,Vector *);
-		virtual void AddFintSpreadTask3(Vector *) = 0;
-		void AddFextTask3(int,Vector *);
-		virtual void AddFextSpreadTask3(Vector *) = 0;
-		virtual void CalcFtotTask3(double) = 0;
+		void AddFtotTask3(int,Vector *);
+		virtual void AddFtotSpreadTask3(Vector *) = 0;
+		virtual void AddGridDampingTask3(double) = 0;
 	
 		virtual void UpdateMomentaOnField(double) = 0;
 	

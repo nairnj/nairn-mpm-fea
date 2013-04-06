@@ -34,7 +34,8 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	SetAngley0InDegrees(0.0);
 	SetAnglex0InDegrees(0.0);
     
-    for(i=1;i<MaxShapeNds;i++)
+	vfld = (char *)malloc(maxShapeNodes*sizeof(char));
+    for(i=1;i<maxShapeNodes;i++)
         vfld[i]=NO_CRACK;
         
     // zero stresses and strains

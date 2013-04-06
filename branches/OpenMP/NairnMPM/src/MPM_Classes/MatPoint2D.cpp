@@ -33,8 +33,8 @@ MatPoint2D::MatPoint2D(int inElemNum,int theMatl,double angin,double thickin) : 
 // matRef is the material and properties have been loaded, matFld is the material field
 void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld)
 {
-	int i,numnds,nds[MaxShapeNds];
-    double fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds],zDeriv[MaxShapeNds];
+	int i,numnds,nds[maxShapeNodes];
+    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	Vector vel;
     Matrix3 dv;
     
@@ -130,17 +130,16 @@ void MatPoint2D::SetVelocity(Vector *pt)
 double MatPoint2D::thickness() { return thick; }
 
 // return internal force as -mp sigma.deriv * 1000. which converts to g mm/sec^2 or micro N
-void MatPoint2D::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
+void MatPoint2D::GetFint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
 {	fout.x=-mp*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv)*1000.;
 	fout.y=-mp*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv)*1000.;
 	fout.z=0.;
 }
 
-// return external force (times a shape function)
-void MatPoint2D::Fext(Vector &fout,double fni)
-{	fout.x=fni*pFext.x;
-	fout.y=fni*pFext.y;
-	fout.z=0.;
+// add external force (times a shape function)
+void MatPoint2D::AddFext(Vector &fout,double fni)
+{	fout.x += fni*pFext.x;
+	fout.y += fni*pFext.y;
 }
 
 // zero the temperature gradient
@@ -157,9 +156,9 @@ void MatPoint2D::AddTemperatureGradient(Vector *grad)
 }
 
 // return conduction force = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units N-mm/sec)
-double MatPoint2D::FCond(double dshdx,double dshdy,double dshdz)
+double MatPoint2D::FCond(double dshdx,double dshdy,double dshdz,TransportProperties *t)
 {
-	Tensor *kten=theMaterials[MatID()]->GetkCondTensor();
+	Tensor *kten = &(t->kCondTensor);
 	return -mp*GetRelativeVolume()*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y)*dshdx
 						+ (kten->xy*pTemp->DT.x + kten->yy*pTemp->DT.y)*dshdy);
 }
@@ -178,9 +177,9 @@ void MatPoint2D::AddConcentrationGradient(Vector *grad)
 }
 
 // return diffusion force = - V [D] Grad C . Grad S in (mm^3) (mm^2/sec) (1/mm) (1/mm) = mm^3/sec
-double MatPoint2D::FDiff(double dshdx,double dshdy,double dshdz)
+double MatPoint2D::FDiff(double dshdx,double dshdy,double dshdz,TransportProperties *t)
 {
-	Tensor *Dten=theMaterials[MatID()]->GetDiffusionTensor();
+	Tensor *Dten = &(t->diffusionTensor);
 	return -GetVolume(DEFORMED_VOLUME)*((Dten->xx*pDiffusion->Dc.x + Dten->xy*pDiffusion->Dc.y)*dshdx
 						+ (Dten->xy*pDiffusion->Dc.x + Dten->yy*pDiffusion->Dc.y)*dshdy);
 }

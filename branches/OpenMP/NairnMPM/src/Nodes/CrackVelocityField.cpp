@@ -94,10 +94,7 @@ void CrackVelocityField::AddVolumeGradient(int matfld,MPMBase *mptr,double dNdx,
 #pragma mark TASK 3 METHODS
 
 // Add to internal force
-void CrackVelocityField::AddFintTask3(int matfld,Vector *f) { mvf[matfld]->AddFint(f); }
-
-// Add to external force
-void CrackVelocityField::AddFextTask3(int matfld,Vector *f) { mvf[matfld]->AddFext(f); }
+void CrackVelocityField::AddFtotTask3(int matfld,Vector *f) { mvf[matfld]->AddFtot(f); }
 
 #pragma mark TASK 5 METHODS
 

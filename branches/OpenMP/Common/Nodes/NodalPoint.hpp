@@ -68,12 +68,10 @@ class NodalPoint : public LinkedObject
 		void AddMassTask1(short,int,double);
 		void AddVolumeGradient(short,int,MPMBase *,double,double,double);
 	
-		void AddFintTask3(short,int,Vector *);
-		void AddFintSpreadTask3(short,Vector);
-		void AddFextTask3(short,int,Vector *);
+		void AddFtotTask3(short,int,Vector *);
+		void AddFtotSpreadTask3(short,Vector);
 		void AddTractionTask3(MPMBase *,int,Vector *);
-		void AddFextSpreadTask3(short,Vector);
-		void CalcFtotTask3(double);
+		void AddGridDampingTask3(double);
 	
 		void UpdateMomentaOnNode(double);
 	

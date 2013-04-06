@@ -38,11 +38,9 @@ class MatVelocityField
 		void ChangeMatMomentum(Vector *,bool,double);
 		void AddContactForce(Vector *);
 		void CalcVelocityForStrainUpdate(void);
-		void CalcFtotTask3(double);
-        void AddFint(Vector *);
-        void AddFint(Vector *,double);
-        void AddFext(Vector *);
-        void AddFext(Vector *,double);
+		void AddGridDampingTask3(double);
+        void AddFtot(Vector *);
+        void AddFtot(Vector *,double);
         void UpdateMomentum(double);
         void IncrementNodalVelAcc(double,Vector *,Vector *) const;
 	
@@ -71,8 +69,6 @@ class MatVelocityField
 
         Vector vk;					// velocity
         Vector ftot;				// total force or contact force for rigid material
-        Vector fint;				// internal force (fint.x is last time step archived for rigid material)
-        Vector fext;				// external force
 };
 
 #endif

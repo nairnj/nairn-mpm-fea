@@ -416,11 +416,11 @@ short CrackHeader::MoveCrack(void)
 	// move crack plane particles by CM velocity
 	else
 	{	int iel;
-		double fn[MaxShapeNds];
+		double fn[maxShapeNodes];
 		Vector cncpos;
 		int j,nodeCounter;
 		Vector delv,cpos,vcm;
-		int nds[MaxShapeNds],numnds;
+		int nds[maxShapeNodes],numnds;
 		
 		// loop over crack points
 		while(scrk != NULL)
@@ -532,10 +532,10 @@ short CrackHeader::MoveCrack(short side)
 {
     CrackSegment *scrk=firstSeg;
     int iel;
-    double fn[MaxShapeNds],surfaceMass;
+    double fn[maxShapeNodes],surfaceMass;
 	Vector cncpos;
     short js=side-1,nodeCounter,j;
-	int numnds,nds[MaxShapeNds];
+	int numnds,nds[maxShapeNodes];
     Vector delv,cpos;
     
     // loop over crack points
@@ -1486,9 +1486,9 @@ void CrackHeader::CrackTipHeating(void)
 {
     CrackSegment *scrk=firstSeg;
 	int iel;
-	double fn[MaxShapeNds];
+	double fn[maxShapeNodes];
 	Vector cncpos,cpos;
-	int numnds,i,nds[MaxShapeNds];
+	int numnds,i,nds[maxShapeNodes];
     
 	// exit if no segments
     if(scrk==NULL) return;

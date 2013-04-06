@@ -83,8 +83,8 @@ MassAndMomentumTask::MassAndMomentumTask(const char *name) : MPMTask(name)
 //	and find grid momenta
 void MassAndMomentumTask::Execute(void)
 {
-	int nds[MaxShapeNds];
-	double fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds],zDeriv[MaxShapeNds];
+	int nds[maxShapeNodes];
+	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
 	// undo dynamic velocity, temp, and conc BCs from rigid materials
 	UnsetRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,

@@ -172,8 +172,8 @@ void ConductionTask::GetValues(double stepTime)
 void ConductionTask::GetGradients(double stepTime)
 {
     int i,p,iel;
-    double fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds],zDeriv[MaxShapeNds];
-	int numnds,nds[MaxShapeNds];
+    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+	int numnds,nds[maxShapeNodes];
 	
 	// Find gradients on the particles
     for(p=0;p<nmpms;p++)
@@ -186,7 +186,7 @@ void ConductionTask::GetGradients(double stepTime)
 		// Find gradients from current temperatures
 		mpm[p]->AddTemperatureGradient();			// zero gradient on the particle
 		for(i=1;i<=numnds;i++)
-		{	Vector deriv=MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
+		{	Vector deriv = MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
 			mpm[p]->AddTemperatureGradient(ScaleVector(&deriv,nd[nds[i]]->gTemperature));
 		}
 	}
@@ -195,10 +195,11 @@ void ConductionTask::GetGradients(double stepTime)
 #pragma mark GRID FORCES EXTRAPOLATIONS
 
 // find forces for conduction calculation (N-mm/sec = mJ/sec)
-TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double sh,double dshdx,double dshdy,double dshdz)
+TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double sh,double dshdx,
+										 double dshdy,double dshdz,TransportProperties *t)
 {
 	// internal force based on conduction tensor
-	ndpt->fcond += mptr->FCond(dshdx,dshdy,dshdz);
+	ndpt->fcond += mptr->FCond(dshdx,dshdy,dshdz,t);
 	
 	// add source terms
 	

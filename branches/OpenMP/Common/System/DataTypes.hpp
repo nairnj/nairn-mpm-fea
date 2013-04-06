@@ -86,6 +86,13 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY};
 		double ws;
 	} CPDIDomain;
 
+	// Transport Properties
+	// conductivity is divided by rho (in g/mm^3)
+	typedef struct {
+		Tensor diffusionTensor;
+		Tensor kCondTensor;
+	} TransportProperties;
+
 #else
 	// tensor (2D and axisymmetric and plane strain)
 	typedef struct {

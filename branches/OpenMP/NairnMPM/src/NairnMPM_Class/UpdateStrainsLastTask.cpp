@@ -42,8 +42,6 @@
 
 UpdateStrainsLastTask::UpdateStrainsLastTask(const char *name) : MPMTask(name)
 {
-	// zero this in case in 2D analysis
-	for(int i=0;i<MaxShapeNds;i++) zDeriv[i]=0.;
 }
 
 #pragma mark REQUIRED METHODS
@@ -51,9 +49,9 @@ UpdateStrainsLastTask::UpdateStrainsLastTask(const char *name) : MPMTask(name)
 // Get total grid point forces (except external forces)
 void UpdateStrainsLastTask::Execute(void)
 {
-	int i,p,iel,matfld,numnds,nds[MaxShapeNds];
+	int i,p,iel,matfld,numnds,nds[maxShapeNodes];
 	MaterialBase *matID;
-	double mp,fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds];
+	double mp,fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	short vfld;
 	TransportTask *nextTransport;
 	

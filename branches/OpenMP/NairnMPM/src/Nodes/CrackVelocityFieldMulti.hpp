@@ -30,9 +30,8 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void CombineRigidFrom(CrackVelocityFieldMulti *,int);
 		virtual void CopyRigidFrom(CrackVelocityFieldMulti *,int);
 	
-		virtual void AddFintSpreadTask3(Vector *);
-		virtual void AddFextSpreadTask3(Vector *);
-		virtual void CalcFtotTask3(double);
+		virtual void AddFtotSpreadTask3(Vector *);
+		virtual void AddGridDampingTask3(double);
 	
 		virtual void UpdateMomentaOnField(double);
 	

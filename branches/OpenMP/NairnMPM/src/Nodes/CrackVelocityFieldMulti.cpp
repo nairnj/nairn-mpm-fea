@@ -144,16 +144,16 @@ void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int ri
 	
 #pragma mark TASK 3 METHODS
 
-// Add to fint spread out over the materials to each has same extra accerations = f/M
+// Add to force spread out over the materials so each has same extra accerations = f/M
 // only called to add interface force on a crack
-void CrackVelocityFieldMulti::AddFintSpreadTask3(Vector *f)
+void CrackVelocityFieldMulti::AddFtotSpreadTask3(Vector *f)
 {	int i;
 	
 	// special case for only one material
 	if(numberMaterials==1)
 	{	for(i=0;i<maxMaterialFields;i++)
 		{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-			{	mvf[i]->AddFint(f);
+			{	mvf[i]->AddFtot(f);
 				break;
 			}
 		}
@@ -164,43 +164,17 @@ void CrackVelocityFieldMulti::AddFintSpreadTask3(Vector *f)
 	{	double totMass=GetTotalMass();
 		for(i=0;i<maxMaterialFields;i++)
 		{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-				mvf[i]->AddFint(f,mvf[i]->mass/totMass);
+				mvf[i]->AddFtot(f,mvf[i]->mass/totMass);
 		}
 	}
 }
 
-// Add to fext spread out over the materials to each has same extra accerations = f/M
-// Only called for crack traction forces
-void CrackVelocityFieldMulti::AddFextSpreadTask3(Vector *f)
-{	int i;
-	
-	// special case for only one material
-	if(numberMaterials==1)
-	{	for(i=0;i<maxMaterialFields;i++)
-		{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-			{	mvf[i]->AddFext(f);
-				break;
-			}
-		}
-	}
-	
-	// more than one material
-	else
-	{	double totMass=GetTotalMass();
-		for(i=0;i<maxMaterialFields;i++)
-		{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-				mvf[i]->AddFext(f,mvf[i]->mass/totMass);
-		}
-	}
-}
-
-// Calculate total force at a node from current values
-// 		now m*a in g mm/sec^2
-void CrackVelocityFieldMulti::CalcFtotTask3(double extDamping)
+// Add grid dampiong force at a node in g mm/sec^2
+void CrackVelocityFieldMulti::AddGridDampingTask3(double extDamping)
 {	int i;
     for(i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-			mvf[i]->CalcFtotTask3(extDamping);
+			mvf[i]->AddGridDampingTask3(extDamping);
 	}
 }
 

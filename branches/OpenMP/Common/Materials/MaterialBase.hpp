@@ -27,13 +27,6 @@ typedef struct {
 	double dC;
 } ResidualStrains;
 
-// Transport Properties
-// conductivity is divided by rho (in g/mm^3)
-typedef struct {
-	Tensor diffusionTensor;
-	Tensor kCondTensor;
-} TransportProperties;
-
 #else
 
 // C is stiffness matrix and some other things
@@ -168,8 +161,6 @@ class MaterialBase : public LinkedObject
 		virtual int SetField(int,bool,int,int &);
 		int GetField(void) const;
 		int GetActiveField(void) const;
- 		Tensor *GetkCondTensor(void);
-		Tensor *GetDiffusionTensor(void);
         virtual double GetCurrentRelativeVolume(MPMBase *) const;
         virtual Tensor GetStress(Tensor *,double) const;
 #endif

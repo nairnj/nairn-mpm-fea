@@ -16,17 +16,6 @@
  
 	Finally reconcile forces with boundary conditions. Do same for transport
 		tasks.
- 
-	Input Variables
-		mpm[]->ncpos, sp, pFext
-		nd[]->pk
-		bdyFrc.damping
- 
-	Output Variables
-		theMaterials->LoadTransportProperties() - changed if depend on particle state
-		mvf[]: fint, fext, ftot
-		nd[]->fdiff, fcond
-		mpm[]->dispEnergy
 ******************************************************************************************/
 
 #include "NairnMPM_Class/GridForcesTask.hpp"
@@ -52,8 +41,6 @@
 
 GridForcesTask::GridForcesTask(const char *name) : MPMTask(name)
 {
-	// zero this in case in 2D analysis
-	for(int i=0;i<MaxShapeNds;i++) zDeriv[i]=0.;
 }
 
 #pragma mark REQUIRED METHODS
@@ -63,12 +50,11 @@ void GridForcesTask::Execute(void)
 {
 	// need to be private in threads
 	TransportProperties t;
-	
-	int numnds,nds[MaxShapeNds];
-	double xfrc,yfrc,zfrc,fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds];
-	TransportTask *nextTransport;
+	int numnds,nds[maxShapeNodes];
+	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
 	// loop over particles
+//#pragma omp parallel for private(t,numnds,nds,fn,xDeriv,yDeriv,zDeriv)
     for(int p=0;p<nmpmsNR;p++)
 	{	MPMBase *mpmptr=mpm[p];											// material point pointer
 		const MaterialBase *matref = theMaterials[mpmptr->MatID()];		// material class (read only)
@@ -92,28 +78,28 @@ void GridForcesTask::Execute(void)
 		{	short vfld = (short)mpmptr->vfld[i];						// crack velocity field to use
 			NodalPoint *ndptr = nd[nds[i]];								// nodal point pointer
 			
-            // internal force vector (in g mm/sec^2 or micro N)
+            // total force vector (in g mm/sec^2 or micro N)
 			//	(note: stress is specific stress in units N/m^2 cm^3/g
 			//	Multiply by 1000 to make it mm/sec^2)
 			Vector theFrc;
-			mpmptr->Fint(theFrc,xDeriv[i],yDeriv[i],zDeriv[i]);
-			ndptr->AddFintTask3(vfld,matfld,&theFrc);
+			mpmptr->GetFint(theFrc,xDeriv[i],yDeriv[i],zDeriv[i]);
             
-            // body forces (not 3D yet)
-			if(bodyFrc.GetGravity(&xfrc,&yfrc,&zfrc))
-            {   double gscale = mp*fn[i];
-				theFrc = MakeVector(gscale*xfrc,gscale*yfrc,gscale*zfrc);
-				ndptr->AddFintTask3(vfld,matfld,&theFrc);
-			}
+            // add body forces
+			bodyFrc.AddGravity(mp,fn[i],&theFrc);
             
 			// get external force vector and add to velocity field
-			mpmptr->Fext(theFrc,fn[i]);
-            ndptr->AddFextTask3(vfld,matfld,&theFrc);
+			mpmptr->AddFext(theFrc,fn[i]);
 			
-			// transport forces
-			nextTransport=transportTasks;
-			while(nextTransport!=NULL)
-				nextTransport=nextTransport->AddForces(ndptr,mpmptr,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
+			// this is critical section that will change nodal values
+//#pragma omp critical
+			{	// Now add total force to the node
+				ndptr->AddFtotTask3(vfld,matfld,&theFrc);
+			
+				// transport forces
+				TransportTask *nextTransport=transportTasks;
+				while(nextTransport!=NULL)
+					nextTransport=nextTransport->AddForces(ndptr,mpmptr,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],&t);
+			}
         }
 		
 		// clear coupled dissipated energy if in conduction becaouse done with it this time step
@@ -123,7 +109,7 @@ void GridForcesTask::Execute(void)
 	// Add traction BCs on particles
 	MatPtTractionBC::SetParticleSurfaceTractions(mtime);
 	
-	// traction law forces add to fext in velocity fields
+	// Add traction law forces to velocity fields
 	if(fmobj->hasTractionCracks)
 	{	CrackHeader *nextCrack=firstCrack;
 		while(nextCrack!=NULL)
@@ -132,24 +118,26 @@ void GridForcesTask::Execute(void)
 		}
 	}
 	
-	// crack tip heating adds to fcond
+	// Add crack tip heating adds to fcond or conduction force
 	if(conduction) conduction->AddCrackTipHeating();
 	
-	// interface forces added to fint in velocity fields and track total interface energy
+	// Add interface forces added to velocity fields and track total interface energy
     NodalPoint::interfaceEnergy=0.;
     CrackNode::InterfaceOnKnownNodes();
     MaterialInterfaceNode::InterfaceOnKnownNodes();
     
-	// Find grid total forces with external damping
-	double damping = bodyFrc.GetDamping(mtime);		// could move inside loop and make function of nodal position too
-    for(int i=1;i<=nnodes;i++)
-		nd[i]->CalcFtotTask3(damping);
+	// Add grid damping forces
+	if(bodyFrc.useDamping)
+	{	double damping = bodyFrc.GetDamping(mtime);		// could move inside loop and make function of nodal position too
+    	for(int i=1;i<=nnodes;i++)
+			nd[i]->AddGridDampingTask3(damping);
+	}
 	
     // Imposed BCs on ftot to get correct grid BCs for velocity
     NodalVelBC::ConsistentGridForces();
 	
 	// Do similar to transport property BCs
-	nextTransport=transportTasks;
+	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
 		nextTransport=nextTransport->SetTransportForceBCs(timestep);
     

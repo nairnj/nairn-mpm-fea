@@ -35,7 +35,7 @@ class MPMBase : public LinkedObject
 		Vector pos,vel;
 		double pTemperature,pPreviousTemperature;
 		double pConcentration,pPreviousConcentration;	// conc potential (0 to 1) (archived * concSaturation)
-		char vfld[MaxShapeNds];
+		char *vfld;
 		TemperatureField *pTemp;
 		DiffusionField *pDiffusion;
 	
@@ -58,17 +58,17 @@ class MPMBase : public LinkedObject
         virtual void SetPosition(Vector *) = 0;
         virtual void SetVelocity(Vector *) = 0;
 		virtual void UpdateStrain(double,int,int,void *,int) = 0;
-		virtual void Fint(Vector &,double,double,double) = 0;
-		virtual void Fext(Vector &,double) = 0;
+		virtual void GetFint(Vector &,double,double,double) = 0;
+		virtual void AddFext(Vector &,double) = 0;
         virtual void MovePosition(double,Vector *) = 0;
         virtual void MoveVelocity(double,double,Vector *) = 0;
 		virtual void SetVelocitySpeed(double) = 0;
 		virtual void AddTemperatureGradient(void) = 0;
 		virtual void AddTemperatureGradient(Vector *) = 0;
-		virtual double FCond(double,double,double) = 0;
+		virtual double FCond(double,double,double,TransportProperties *) = 0;
 		virtual void AddConcentrationGradient(void) = 0;
 		virtual void AddConcentrationGradient(Vector *) = 0;
-		virtual double FDiff(double,double,double) = 0;
+		virtual double FDiff(double,double,double,TransportProperties *) = 0;
 		virtual double KineticEnergy(void) = 0;
 		virtual Matrix3 GetDeformationGradientMatrix(void) = 0;
         virtual Matrix3 GetElasticLeftCauchyMatrix(void) = 0;

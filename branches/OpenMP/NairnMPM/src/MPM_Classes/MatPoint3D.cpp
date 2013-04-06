@@ -34,8 +34,8 @@ MatPoint3D::MatPoint3D(int inElemNum,int theMatl,double angin) : MPMBase(inElemN
 // matRef is the material and properties have been loaded, matFld is the material field
 void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld)
 {
-	int i,numnds,nds[MaxShapeNds];
-    double fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds],zDeriv[MaxShapeNds];
+	int i,numnds,nds[maxShapeNodes];
+    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	Vector vel;
     Matrix3 dv;
     
@@ -120,17 +120,17 @@ void MatPoint3D::SetVelocity(Vector *v) { vel=*v; }
 double MatPoint3D::thickness() { return -1.; }
 
 // calculate internal force as -mp sigma.deriv * 1000.
-void MatPoint3D::Fint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
+void MatPoint3D::GetFint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
 {	fout.x=-mp*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+sp.xz*zDeriv)*1000.;
 	fout.y=-mp*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv+sp.yz*zDeriv)*1000.;
 	fout.z=-mp*(sp.xz*xDeriv+sp.yz*yDeriv+(sp.zz-pressure)*zDeriv)*1000.;
 }
 
 // external force (times a shape function)
-void MatPoint3D::Fext(Vector &fout,double fni)
-{	fout.x=fni*pFext.x;
-	fout.y=fni*pFext.y;
-	fout.z=fni*pFext.z;
+void MatPoint3D::AddFext(Vector &fout,double fni)
+{	fout.x += fni*pFext.x;
+	fout.y += fni*pFext.y;
+	fout.z += fni*pFext.z;
 }
 
 // zero the temperature gradient
@@ -148,9 +148,9 @@ void MatPoint3D::AddTemperatureGradient(Vector *grad)
 }
 
 // return conduction force = - V [D] Grad T . Grad S
-double MatPoint3D::FCond(double dshdx,double dshdy,double dshdz)
+double MatPoint3D::FCond(double dshdx,double dshdy,double dshdz,TransportProperties *t)
 {
-	Tensor *kten=theMaterials[MatID()]->GetkCondTensor();
+	Tensor *kten = &(t->kCondTensor);
 	return -mp*GetRelativeVolume()*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y + kten->xz*pTemp->DT.z)*dshdx
 						+ (kten->xy*pTemp->DT.x + kten->yy*pTemp->DT.y + kten->yz*pTemp->DT.z)*dshdy
 						+ (kten->xz*pTemp->DT.x + kten->yz*pTemp->DT.y + kten->zz*pTemp->DT.z)*dshdz);
@@ -171,9 +171,9 @@ void MatPoint3D::AddConcentrationGradient(Vector *grad)
 }
 
 // return diffusion force = - V [D] Grad C . Grad S
-double MatPoint3D::FDiff(double dshdx,double dshdy,double dshdz)
+double MatPoint3D::FDiff(double dshdx,double dshdy,double dshdz,TransportProperties *t)
 {
-	Tensor *Dten=theMaterials[MatID()]->GetDiffusionTensor();
+	Tensor *Dten = &(t->diffusionTensor);
 	return -GetVolume(DEFORMED_VOLUME)*((Dten->xx*pDiffusion->Dc.x + Dten->xy*pDiffusion->Dc.y + Dten->xz*pDiffusion->Dc.z)*dshdx
 						+ (Dten->xy*pDiffusion->Dc.x + Dten->yy*pDiffusion->Dc.y + Dten->yz*pDiffusion->Dc.z)*dshdy
 						+ (Dten->xz*pDiffusion->Dc.x + Dten->yz*pDiffusion->Dc.y + Dten->zz*pDiffusion->Dc.z)*dshdz);

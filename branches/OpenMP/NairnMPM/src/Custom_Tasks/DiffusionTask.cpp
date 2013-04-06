@@ -126,8 +126,8 @@ void DiffusionTask::GetValues(double stepTime)
 void DiffusionTask::GetGradients(double stepTime)
 {
     int i,p,iel;
-    double fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds],zDeriv[MaxShapeNds];
-	int numnds,nds[MaxShapeNds];
+    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+	int numnds,nds[maxShapeNodes];
 	
 	// Find gradients on the particles
     for(p=0;p<nmpms;p++)
@@ -147,10 +147,11 @@ void DiffusionTask::GetGradients(double stepTime)
 }
 
 // find forces for diffusion calculation (mm^3/sec)
-TransportTask *DiffusionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double sh,double dshdx,double dshdy,double dshdz)
+TransportTask *DiffusionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double sh,double dshdx,
+										double dshdy,double dshdz,TransportProperties *t)
 {
 	// internal force
-	ndpt->fdiff += mptr->FDiff(dshdx,dshdy,dshdz);
+	ndpt->fdiff += mptr->FDiff(dshdx,dshdy,dshdz,t);
 	
 	// add source terms (should be potential per sec, if c units per second, divide by concSaturation)
 	

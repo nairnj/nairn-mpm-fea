@@ -199,9 +199,9 @@ double CrackSegment::AddTractionFextSide(CrackHeader *theCrack,int side,double s
 {
 	side--;			// convert to 0 or 1 for above and below
 	Vector cspos,ndpos,norm;
-	int i,iel,numnds,nds[MaxShapeNds];
+	int i,iel,numnds,nds[maxShapeNodes];
     short vfld;
-    double fn[MaxShapeNds];
+    double fn[maxShapeNodes];
 	NodalPoint *ndi;
 	double fnorm=0.;
 	
@@ -275,7 +275,7 @@ double CrackSegment::AddTractionFextSide(CrackHeader *theCrack,int side,double s
 		
 		// add if find a field
 		if(vfld>=0)
-		{	nd[nds[i]]->AddFextSpreadTask3(vfld,FTract(sign*fn[i]));
+		{	nd[nds[i]]->AddFtotSpreadTask3(vfld,FTract(sign*fn[i]));
 			fnorm+=fn[i];
 		}
 	}
@@ -599,8 +599,8 @@ void CrackSegment::FindCrackTipMaterial(void)
 	if(numActiveMaterials<=1) return;
 	
 	Vector cspos,ndpos;
-	int i,iel,numnds,nds[MaxShapeNds];
-    double fn[MaxShapeNds];
+	int i,iel,numnds,nds[maxShapeNodes];
+    double fn[maxShapeNodes];
 	
 	// array to collect weights
 	double *matWeight=(double *)malloc(sizeof(double)*numActiveMaterials);

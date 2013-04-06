@@ -1323,12 +1323,6 @@ short MaterialBase::RigidContact(void) const { return FALSE; }
 // check if traciton law material
 bool MaterialBase::isTractionLaw(void) const { return FALSE; }
 
-// return pointer to k conduction tensor (which is normalized to density)
-Tensor *MaterialBase::GetkCondTensor(void) { return &tr.kCondTensor; }
-
-// return pointer to diffusion tensor
-Tensor *MaterialBase::GetDiffusionTensor(void) { return &tr.diffusionTensor; }
-
 // see if material for a material velocity field is rigid (only rigid contact materials can be in a velocity field)
 short MaterialBase::GetMVFIsRigid(int matfld)
 {	return matfld<(int)fieldMatIDs.size() ? theMaterials[fieldMatIDs[matfld]]->Rigid() : FALSE ;

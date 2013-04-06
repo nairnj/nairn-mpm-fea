@@ -25,9 +25,6 @@ class GridForcesTask : public MPMTask
 		// required methods
 		virtual void Execute(void);
 	
-	protected:
-		double zDeriv[MaxShapeNds];
-	
 };
 
 #endif

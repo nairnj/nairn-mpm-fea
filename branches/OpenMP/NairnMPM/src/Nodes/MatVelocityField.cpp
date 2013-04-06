@@ -43,9 +43,7 @@ void MatVelocityField::Zero(void)
 {	mass=0.;
 	ZeroVector(&pk);
 	if(!rigidField)
-	{	ZeroVector(&fint);
-		ZeroVector(&fext);
-		ZeroVector(&ftot);
+	{	ZeroVector(&ftot);
 	}
 	ZeroVector(&vk);
 	ZeroVector(&disp);
@@ -91,21 +89,16 @@ void MatVelocityField::CalcVelocityForStrainUpdate(void)
 	CopyScaleVector(&vk,&pk,1./mass);
 }
 
-// Calculate total force at a node from current values
-// Now force = m*a in g mm/sec^2 = micro N (because N is kg-m/sec^2)
-void MatVelocityField::CalcFtotTask3(double extDamping)
-{	ftot.x = fint.x + fext.x - extDamping*pk.x;
-	ftot.y = fint.y + fext.y - extDamping*pk.y;
-	ftot.z = fint.z + fext.z - extDamping*pk.z;
+// Add grid dampiong force at a node in g mm/sec^2
+void MatVelocityField::AddGridDampingTask3(double extDamping)
+{	ftot.x -= extDamping*pk.x;
+	ftot.y -= extDamping*pk.y;
+	ftot.z -= extDamping*pk.z;
 }
 
 // internal force - add or scale and add
-void MatVelocityField::AddFint(Vector *f) { AddVector(&fint,f); }
-void MatVelocityField::AddFint(Vector *f,double scaled) { AddScaledVector(&fint,f,scaled); }
-
-// internal force - add or scale and add
-void MatVelocityField::AddFext(Vector *f) { AddVector(&fext,f); }
-void MatVelocityField::AddFext(Vector *f,double scaled) { AddScaledVector(&fext,f,scaled); }
+void MatVelocityField::AddFtot(Vector *f) { AddVector(&ftot,f); }
+void MatVelocityField::AddFtot(Vector *f,double scaled) { AddScaledVector(&ftot,f,scaled); }
 
 // Update momentum for this MPM step
 //  pk(i+1) = pk(i) + ftot * dt

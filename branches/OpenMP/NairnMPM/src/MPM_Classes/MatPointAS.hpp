@@ -27,7 +27,7 @@ class MatPointAS : public MatPoint2D
 	
 		// methods
         virtual void UpdateStrain(double,int,int,void *,int);
-        virtual void Fint(Vector &,double,double,double);
+        virtual void GetFint(Vector &,double,double,double);
         virtual void SetOrigin(Vector *);
 		virtual double GetVolume(bool);
         virtual double GetUnscaledVolume(void);

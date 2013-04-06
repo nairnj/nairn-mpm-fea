@@ -62,7 +62,7 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,
             
         case UNIFORM_GIMP:
         {   // uGIMP analysis
-            int ndIDs[MaxShapeNds];
+            int ndIDs[maxShapeNodes];
             GetXiPos(pos,xipos);
             GetGimpNodes(numnds,nds,ndIDs,xipos);
             GimpShapeFunction(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
@@ -72,7 +72,7 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,
             
         case UNIFORM_GIMP_AS:
         {   // uGIMP analysis
-            int ndIDs[MaxShapeNds];
+            int ndIDs[maxShapeNodes];
             GetXiPos(pos,xipos);
             GetGimpNodes(numnds,nds,ndIDs,xipos);
             GimpShapeFunctionAS(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
@@ -139,7 +139,7 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipo
             
         case UNIFORM_GIMP:
         {	// GIMP analysis
-            int ndIDs[MaxShapeNds];
+            int ndIDs[maxShapeNodes];
             GetGimpNodes(numnds,nds,ndIDs,xipos);
             GimpShapeFunction(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
             GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
@@ -148,7 +148,7 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipo
             
         case UNIFORM_GIMP_AS:
         {	// GIMP analysis
-            int ndIDs[MaxShapeNds];
+            int ndIDs[maxShapeNodes];
             GetGimpNodes(numnds,nds,ndIDs,xipos);
             GimpShapeFunctionAS(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
             GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
@@ -227,7 +227,7 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
             
         case UNIFORM_GIMP:
         {	// GIMP analysis
-            int ndIDs[MaxShapeNds];
+            int ndIDs[maxShapeNodes];
             GetXiPos(pos,xipos);
             GetGimpNodes(numnds,nds,ndIDs,xipos);
             GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
@@ -237,7 +237,7 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
             
         case UNIFORM_GIMP_AS:
         {	// GIMP analysis
-            int ndIDs[MaxShapeNds];
+            int ndIDs[maxShapeNodes];
             GetXiPos(pos,xipos);
             GetGimpNodes(numnds,nds,ndIDs,xipos);
             GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
@@ -321,7 +321,7 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
             
         case UNIFORM_GIMP:
         {	// uGIMP analysis
-            int ndIDs[MaxShapeNds];
+            int ndIDs[maxShapeNodes];
             GetGimpNodes(numnds,nds,ndIDs,xipos);
             GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
             GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
@@ -330,7 +330,7 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
             
         case UNIFORM_GIMP_AS:
         {	// uGIMP analysis
-            int ndIDs[MaxShapeNds];
+            int ndIDs[maxShapeNodes];
             GetGimpNodes(numnds,nds,ndIDs,xipos);
             GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
             GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
@@ -732,12 +732,12 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,int *numnds,int
 		else
 		{	if(fn[count]>1.e-10)
 			{	count++;		// keep only if shape is nonzero
-				if(count>=MaxShapeNds)
+				if(count>=maxShapeNodes)
                 {	cout << "# Found " << count-1 << " nodes; need room for remaining nodes:" << endl;
                     for(j=i;j<ncnds;j++)
                     {   cout << "#   node = " << cnodes[j] << ", ws*Si = " << endl;
                     }
-					throw MPMTermination("Too many CPDI nodes found; increase MaxShapeNds in source code at least number of remaining nodes","ElementBase::GetCPDIFunctions");
+					throw MPMTermination("Too many CPDI nodes found; increase maxShapeNodes in source code by at least number of remaining nodes","ElementBase::GetCPDIFunctions");
 				}
 			}
 			nds[count] = cnodes[i];

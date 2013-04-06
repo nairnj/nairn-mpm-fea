@@ -35,25 +35,17 @@ double CrackVelocityFieldSingle::GetTotalMassAndCount(void)
 
 #pragma mark TASK 3 METHODS
 
-// Add to fint spread out over the materials to each has same extra accelerations = f/M_i
+// Add to force spread out over the materials so each has same extra accelerations = f/M_i
 // only called to add interface foces on a crack
-void CrackVelocityFieldSingle::AddFintSpreadTask3(Vector *f)
+void CrackVelocityFieldSingle::AddFtotSpreadTask3(Vector *f)
 {	if(MatVelocityField::ActiveField(mvf[0]))
-		mvf[0]->AddFint(f);
+		mvf[0]->AddFtot(f);
 }
 
-// Add to fext spread out over the materials to each has same extra accelerations = f/M_i
-// Only called for crack traction forces
-void CrackVelocityFieldSingle::AddFextSpreadTask3(Vector *f)
+// Add grid dampiong force at a node in g mm/sec^2
+void CrackVelocityFieldSingle::AddGridDampingTask3(double extDamping)
 {	if(MatVelocityField::ActiveField(mvf[0]))
-		mvf[0]->AddFext(f);
-}
-
-// Calculate total force at a node from current values
-// 		now m*a in g mm/sec^2
-void CrackVelocityFieldSingle::CalcFtotTask3(double extDamping)
-{	if(MatVelocityField::ActiveField(mvf[0]))
-		mvf[0]->CalcFtotTask3(extDamping);
+		mvf[0]->AddGridDampingTask3(extDamping);
 }
 
 #pragma mark TASK 4 METHODS

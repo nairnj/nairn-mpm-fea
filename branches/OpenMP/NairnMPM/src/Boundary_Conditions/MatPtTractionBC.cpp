@@ -90,7 +90,7 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
 
 #pragma mark MatPtTractionBC: Class Methods
 
-// Calculate traction forces applied to particles and add to nodal fext
+// Calculate traction forces applied to particles and add to nodal force
 void MatPtTractionBC::SetParticleSurfaceTractions(double stepTime)
 {
     MatPtTractionBC *nextLoad=firstTractionPt;

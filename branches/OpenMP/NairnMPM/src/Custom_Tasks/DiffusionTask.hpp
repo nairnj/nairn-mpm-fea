@@ -34,7 +34,7 @@ class DiffusionTask : public TransportTask
 		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double);
 		virtual void GetValues(double);
 		virtual void GetGradients(double);
-		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double);
+		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *);
 		virtual TransportTask *SetTransportForceBCs(double);
 		virtual TransportTask *TransportRates(double);
 		virtual TransportTask *IncrementTransportRate(NodalPoint *,double,double &) const;

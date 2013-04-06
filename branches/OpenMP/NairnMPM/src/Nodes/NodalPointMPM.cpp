@@ -320,13 +320,10 @@ void NodalPoint::CombineRigidParticles(void)
 #pragma mark TASK 3 METHODS
 
 // Add to internal force
-void NodalPoint::AddFintTask3(short vfld,int matfld,Vector *f) { cvf[vfld]->AddFintTask3(matfld,f); }
+void NodalPoint::AddFtotTask3(short vfld,int matfld,Vector *f) { cvf[vfld]->AddFtotTask3(matfld,f); }
 
 // Add to internal force spread out over materials for same acceleration on each
-void NodalPoint::AddFintSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFintSpreadTask3(&f); }
-
-// Add to external force (g-mm/sec^2)
-void NodalPoint::AddFextTask3(short vfld,int matfld,Vector *f) { cvf[vfld]->AddFextTask3(matfld,f); }
+void NodalPoint::AddFtotSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFtotSpreadTask3(&f); }
 
 // Add to traction force (g-mm/sec^2)
 // If cracks, recalculations crossing, but stops at first crack. Tractions new two cracks might have errors
@@ -361,7 +358,7 @@ void NodalPoint::AddTractionTask3(MPMBase *mpmptr,int matfld,Vector *f)
 	
 	// add if an active field
 	if(cfld>=0)
-	{	cvf[cfld]->AddFextTask3(matfld,f);
+	{	cvf[cfld]->AddFtotTask3(matfld,f);
 	}
 	else 
 	{	// trying switching to zero
@@ -369,15 +366,12 @@ void NodalPoint::AddTractionTask3(MPMBase *mpmptr,int matfld,Vector *f)
 	}
 }
 
-// Add to external force spread out over materials for same acceleration on each
-void NodalPoint::AddFextSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFextSpreadTask3(&f); }
-
-// Calculate total force at a node from current values (now m*a in g mm/sec^2)
-void NodalPoint::CalcFtotTask3(double extDamping)
+// Add grid dampiong force at a node in g mm/sec^2
+void NodalPoint::AddGridDampingTask3(double extDamping)
 {	int i;
     for(i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->CalcFtotTask3(extDamping);
+			cvf[i]->AddGridDampingTask3(extDamping);
 	}
 }
 
@@ -991,12 +985,12 @@ void NodalPoint::MaterialInterfaceForce(MaterialInterfaceNode *mmnode)
     // add total force (in g mm/sec^2) to material field
     int vfld,mati,matipaired;
     mmnode->GetFieldInfo(&vfld, &mati, &matipaired);
-    cvf[vfld]->AddFintTask3(mati,&fImpInt);
+    cvf[vfld]->AddFtotTask3(mati,&fImpInt);
     
     // add negative force to paired material (in a pair)
     if(matipaired>=0)
     {   ScaleVector(&fImpInt, -1.);
-        cvf[vfld]->AddFintTask3(matipaired,&fImpInt);
+        cvf[vfld]->AddFtotTask3(matipaired,&fImpInt);
     }
     
     // add interface energy in units g-mm^2/sec^2 (multiply by 1e-9 to get J - kg-m^2/sec^2)
@@ -1238,8 +1232,8 @@ void NodalPoint::AddInterfaceForce(short a,short b,Vector *norm,int crackNumber)
 		return;
 	
 	// add total force (in g mm/sec^2)
-	AddFintSpreadTask3(a,MakeVector(fImpInt.x,fImpInt.y,0.));
-	AddFintSpreadTask3(b,MakeVector(-fImpInt.x,-fImpInt.y,0.));
+	AddFtotSpreadTask3(a,MakeVector(fImpInt.x,fImpInt.y,0.));
+	AddFtotSpreadTask3(b,MakeVector(-fImpInt.x,-fImpInt.y,0.));
 	
 	// add interface energy in units g-mm^2/sec^2 (multiply by 1e-9 to get J - kg-m^2/sec^2)
 	interfaceEnergy += rawEnergy;

@@ -169,6 +169,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
         inputPtr=(char *)&bodyFrc.damping;
+		bodyFrc.useDamping=TRUE;
 		
         numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
@@ -224,6 +225,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		ValidateCommand(xName,MPMHEADER,ANY_DIM);
 		ElementBase::useGimp = UNIFORM_GIMP;
 		ElementBase::analysisGimp = UNIFORM_GIMP;
+		maxShapeNodes = fmobj->mpmApproach==THREED_MPM ? 28 : 10 ;
         numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
@@ -232,18 +234,22 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
                 if(strcmp(value,"Dirac")==0 || strcmp(value,"Classic")==0)
                 {   ElementBase::useGimp = POINT_GIMP;
                     ElementBase::analysisGimp = POINT_GIMP;
+					maxShapeNodes = fmobj->mpmApproach==THREED_MPM ? 9 : 5 ;
                 }
                 else if(strcmp(value,"uGIMP")==0 || strcmp(value,"GIMP")==0)
                 {   ElementBase::useGimp = UNIFORM_GIMP;
                     ElementBase::analysisGimp = UNIFORM_GIMP;
+					maxShapeNodes = fmobj->mpmApproach==THREED_MPM ? 28 : 10 ;
                 }
                 else if(strcmp(value,"lCPDI")==0 || strcmp(value,"CPDI")==0)
                 {   ElementBase::useGimp = LINEAR_CPDI;
                     ElementBase::analysisGimp = LINEAR_CPDI;
+					maxShapeNodes = fmobj->mpmApproach==THREED_MPM ? 45 : 16 ;
                 }
                 else if(strcmp(value,"qCPDI")==0)
                 {   ElementBase::useGimp = QUADRATIC_CPDI;
                     ElementBase::analysisGimp = QUADRATIC_CPDI;
+					maxShapeNodes = fmobj->mpmApproach==THREED_MPM ? 45 : 16 ;
                 }
                 else
                     throw SAXException("GIMP type must be Dirac, uGIMP, lCPDI, or qCPDI.");
