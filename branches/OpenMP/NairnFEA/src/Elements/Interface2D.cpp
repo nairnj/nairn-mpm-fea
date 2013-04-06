@@ -184,17 +184,17 @@ void Interface2D::IncrementStiffnessElements(double dStiff,double *fn,
 #pragma mark Interface2D: accessors
 
 // number of sides in this element
-int Interface2D::NumberSides(void) { return 2; }
+int Interface2D::NumberSides(void) const { return 2; }
 
 // thickness which may be in a subclass
-double Interface2D::GetThickness(void) { return thickness; }
+double Interface2D::GetThickness(void) const { return thickness; }
 void Interface2D::SetThickness(double thick) { thickness = thick; }
 
 //	Interface element area is zero
-double Interface2D::GetArea(void) { return 0.; }
+double Interface2D::GetArea(void) const { return 0.; }
 
 //	Interface element area is zero
-double Interface2D::GetVolume(void) { return 0.; }
+double Interface2D::GetVolume(void) const { return 0.; }
 
 // Bulk FEA element (some element may override with no)
 bool Interface2D::BulkElement(void) { return FALSE; }

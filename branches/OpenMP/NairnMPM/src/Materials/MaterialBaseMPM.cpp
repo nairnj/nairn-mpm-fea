@@ -196,7 +196,7 @@ const char *MaterialBase::VerifyAndLoadProperties(int np)
     kCond *= (1000./rho);
 	
 	// in case only need to load some things once, load those mechanical properties now
-	InitialLoadTransProps();
+	FillTransportProperties(&tr);
 	
 	// convert MPa sqrt(m) to MPa sqrt(mm)
 	KIc*=31.62277660168379;
@@ -397,23 +397,23 @@ const char *MaterialBase::PreferredDirection(int style)
 // Called before analysis, material can fill in things that never change during the analysis
 // Note: no angle, because can not depend on material angle
 // Here fills in isotropic properties, materials with different anisotropic properties should override
-void MaterialBase::InitialLoadTransProps(void)
+void MaterialBase::FillTransportProperties(TransportProperties *t)
 {
 	// diffusion tensor (xx, yy, xy order)
-	diffusionTensor.xx=diffusionCon;
-	diffusionTensor.yy=diffusionCon;
-	diffusionTensor.zz=diffusionCon;
-	diffusionTensor.xy=0.;
-	diffusionTensor.xz=0.;
-	diffusionTensor.yz=0.;
+	t->diffusionTensor.xx=diffusionCon;
+	t->diffusionTensor.yy=diffusionCon;
+	t->diffusionTensor.zz=diffusionCon;
+	t->diffusionTensor.xy=0.;
+	t->diffusionTensor.xz=0.;
+	t->diffusionTensor.yz=0.;
 	
 	// conductivity tensor (xx, yy, xy order) normalized to rho
-	kCondTensor.xx = kCond;
-	kCondTensor.yy = kCond;
-	kCondTensor.zz = kCond;
-	kCondTensor.xy = 0.;
-	kCondTensor.xz = 0.;
-	kCondTensor.yz = 0.;
+	t->kCondTensor.xx = kCond;
+	t->kCondTensor.yy = kCond;
+	t->kCondTensor.zz = kCond;
+	t->kCondTensor.xy = 0.;
+	t->kCondTensor.xz = 0.;
+	t->kCondTensor.yz = 0.;
 }
 
 /* This is called after PreliminaryCalcs() and just before first MPM time step and it
@@ -492,11 +492,13 @@ int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activ
 	else
 	{	if(field<0)
 		{	field=fieldNum;
-			activeField=activeNum;
 			fieldNum++;
-			activeNum++;
 			fieldMatIDs.push_back(matid);
-			activeMatIDs.push_back(matid);
+			if(activeNum>=0)
+			{	activeField=activeNum;
+				activeNum++;
+				activeMatIDs.push_back(matid);
+			}
 		}
 	}
 	return fieldNum;
@@ -619,7 +621,7 @@ double *MaterialBase::CreateAndZeroDoubles(int numDoubles) const
 
 // To handle elimination of old MPMConstLaw, this passes on to old one
 // unless subclass overrides to use it directly
-void MaterialBase::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,ResidualStrains *res)
+void MaterialBase::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,ResidualStrains *res) const
 {   if(np==THREED_MPM)
     {   MPMConstLaw(mptr,dv(0,0),dv(1,1),dv(2,2),dv(0,1),dv(1,0),
                             dv(0,2),dv(2,0),dv(1,2),dv(2,1),delTime,np,properties,res);
@@ -632,16 +634,16 @@ void MaterialBase::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,in
 // These methods are now deprecated. All new material should use the single matrix call (and check
 //   np to see if 2D or 3D)
 void MaterialBase::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-                                double dvzz,double delTime,int np,void *properties,ResidualStrains *res)
+                                double dvzz,double delTime,int np,void *properties,ResidualStrains *res) const
 {
 }
 void MaterialBase::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-                                double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np,void *properties,ResidualStrains *res)
+                                double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np,void *properties,ResidualStrains *res) const
 {
 }
 
 // Get copy of properties that depend on material state
-void *MaterialBase::GetCopyOfMechanicalProps(MPMBase *mptr,int np)
+void *MaterialBase::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
 {	return NULL;
 }
 
@@ -651,7 +653,7 @@ void MaterialBase::DeleteCopyOfMechanicalProps(void *properties,int np) const
 }
 
 // Get transport property tensors (if change with particle state)
-void MaterialBase::LoadTransportProps(MPMBase *mptr,int np) { return; }
+void MaterialBase::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t) const { *t = tr; }
 
 // Implemented in case heat capacity changes with particle state
 // Units mJ/(g-K) = J/(kg-m)
@@ -690,7 +692,7 @@ void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,doubl
 // dsxx, dsyy, and dtxy are unrotated updates to sxx, syy, and txy
 // This methods increments particle angle, rotational strain, and in-plane stresses
 // This update by a midpoint rule update is documented in Mathematica notes (HypoUpdate.nb)
-void MaterialBase::Hypo2DCalculations(MPMBase *mptr,double rotD,double dsxx,double dsyy,double dtxy)
+void MaterialBase::Hypo2DCalculations(MPMBase *mptr,double rotD,double dsxx,double dsyy,double dtxy) const
 {
 	mptr->IncrementRotationStrain(-rotD);
 	
@@ -712,7 +714,7 @@ void MaterialBase::Hypo2DCalculations(MPMBase *mptr,double rotD,double dsxx,doub
 // dsig[6] on initial stress updates in order (xx,yy,zz,yz,xz,xy)
 // This methods increments particle angles (will), rotational strains, and stresses
 // This linear approximation to a midpoint rule update is documented in Mathematica notes (HypoUpdate.nb)
-void MaterialBase::Hypo3DCalculations(MPMBase *mptr,double dwxy,double dwxz,double dwyz,double *dsig)
+void MaterialBase::Hypo3DCalculations(MPMBase *mptr,double dwxy,double dwxz,double dwyz,double *dsig) const
 {
 	// rotational strains
 	mptr->IncrementRotationStrain(dwxy,dwxz,dwyz);
@@ -1322,10 +1324,10 @@ short MaterialBase::RigidContact(void) const { return FALSE; }
 bool MaterialBase::isTractionLaw(void) const { return FALSE; }
 
 // return pointer to k conduction tensor (which is normalized to density)
-Tensor *MaterialBase::GetkCondTensor(void) { return &kCondTensor; }
+Tensor *MaterialBase::GetkCondTensor(void) { return &tr.kCondTensor; }
 
 // return pointer to diffusion tensor
-Tensor *MaterialBase::GetDiffusionTensor(void) { return &diffusionTensor; }
+Tensor *MaterialBase::GetDiffusionTensor(void) { return &tr.diffusionTensor; }
 
 // see if material for a material velocity field is rigid (only rigid contact materials can be in a velocity field)
 short MaterialBase::GetMVFIsRigid(int matfld)

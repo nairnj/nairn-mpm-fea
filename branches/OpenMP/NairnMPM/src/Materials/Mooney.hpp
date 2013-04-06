@@ -40,7 +40,7 @@ class Mooney : public HyperElastic
 		virtual void PrintMechanicalProperties(void) const;
  		
 		// methods
-        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *);
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
     
 		// accessors
         virtual Tensor GetStress(Tensor *,double) const;

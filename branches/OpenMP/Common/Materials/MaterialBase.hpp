@@ -27,6 +27,13 @@ typedef struct {
 	double dC;
 } ResidualStrains;
 
+// Transport Properties
+// conductivity is divided by rho (in g/mm^3)
+typedef struct {
+	Tensor diffusionTensor;
+	Tensor kCondTensor;
+} TransportProperties;
+
 #else
 
 // C is stiffness matrix and some other things
@@ -57,8 +64,6 @@ class MaterialBase : public LinkedObject
 #else
 		int criterion[2];
         double KIc,KIIc,KIexp,KIIexp,JIc,JIIc,gamma,delIc,delIIc,nmix;
-		Tensor diffusionTensor;
-		Tensor kCondTensor;                 // divided by rho (in g/mm^3)
 		double pCrit3,gain,initSpeed;
 		double initTime,maxLength;
 		int constantDirection;
@@ -86,7 +91,7 @@ class MaterialBase : public LinkedObject
 		virtual void PrintMechanicalProperties(void) const;
 #ifdef MPM_CODE
 		virtual char *InitHistoryData(void);
-		virtual void InitialLoadTransProps(void);
+		virtual void FillTransportProperties(TransportProperties *);
 		virtual void SetHardeningLaw(char *);
 		virtual void ValidateForUse(int) const;
 		virtual void PrintTransportProperties(void) const;
@@ -103,22 +108,22 @@ class MaterialBase : public LinkedObject
          
         // Methods
 #ifdef MPM_CODE
-		virtual void LoadTransportProps(MPMBase *,int);
-		virtual void *GetCopyOfMechanicalProps(MPMBase *,int);
+		virtual void GetTransportProps(MPMBase *,int,TransportProperties *) const;
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int) const;
 		virtual void DeleteCopyOfMechanicalProps(void *,int) const;
 		virtual double GetHeatCapacity(MPMBase *) const;
         virtual void IncrementHeatEnergy(MPMBase *,double,double,double) const;
-        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *);
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *);
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *);
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
 #else
 		virtual void LoadMechanicalPropertiesFEA(int,double,int);
 #endif
 
 		// Methods (base class only)
 #ifdef MPM_CODE
-		void Hypo2DCalculations(MPMBase *,double,double,double,double);
-		void Hypo3DCalculations(MPMBase *,double,double,double,double *);
+		void Hypo2DCalculations(MPMBase *,double,double,double,double) const;
+		void Hypo3DCalculations(MPMBase *,double,double,double,double *) const;
 #endif
 
         // base class fracture methods
@@ -185,6 +190,7 @@ class MaterialBase : public LinkedObject
 		double heatCapacity;			// changed if depends on particle state
         bool artificialViscosity;       // true to false for artifical viscosity
         double avA1,avA2;               // artificial viscosity coefficients
+		TransportProperties tr;			// transport tensors
 #endif
 	
 		// constants (changed in MPM time step)

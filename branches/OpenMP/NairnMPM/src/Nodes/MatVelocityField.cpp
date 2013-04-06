@@ -116,11 +116,15 @@ void MatVelocityField::UpdateMomentum(double timestep)
 
 // on strain updates, increment nodal velocity and acceleration
 // fi is shape function
-void MatVelocityField::IncrementNodalVelAcc(double fi,Vector *delv,Vector *dela)
+void MatVelocityField::IncrementNodalVelAcc(double fi,Vector *delv,Vector *dela) const
 {
     double mnode = fi/mass;					// Ni/mass
-	AddScaledVector(delv,&pk,mnode);		// velocity += p/mass
-	AddScaledVector(dela,&ftot,mnode);		// acceleration += f/mass
+	delv->x += pk.x*mnode;					// velocity += p/mass
+	delv->y += pk.y*mnode;
+	delv->z += pk.z*mnode;
+	dela->x += ftot.x*mnode;				// acceleration += f/mass
+	dela->y += ftot.y*mnode;
+	dela->z += ftot.z*mnode;
 }
 
 #pragma mark ACCESSORS

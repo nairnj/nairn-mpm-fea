@@ -50,7 +50,7 @@ EightNodeIsoparamBrick::EightNodeIsoparamBrick(int eNum,int *eNode) : ElementBas
 // must use second method which assume orthogonal elements
 void EightNodeIsoparamBrick::ShapeFunction(Vector *xi,int getDeriv,
 		double *sfxn,double *xiDeriv,double *etaDeriv,Vector *eNodes,
-                double *outDetjac,double *outAsr,double *asbe)
+                double *outDetjac,double *outAsr,double *asbe) const
 {
     double temp1,temp2,temp3;
     int i;
@@ -67,7 +67,7 @@ void EightNodeIsoparamBrick::ShapeFunction(Vector *xi,int getDeriv,
 // get just shape functions and optionally derivative wrt x and y
 // General for shape funciton, but derivatives assumes a rectangular mesh
 void EightNodeIsoparamBrick::ShapeFunction(Vector *xi,int getDeriv,double *sfxn,
-											double *xDeriv,double *yDeriv,double *zDeriv)
+											double *xDeriv,double *yDeriv,double *zDeriv) const
 {
     double temp1,temp2,temp3;
     int i;
@@ -156,7 +156,7 @@ int EightNodeIsoparamBrick::Orthogonal(double *dx,double *dy,double *dz)
 }
 
 // find dimensionless position, but assumes an orthogonal element
-void EightNodeIsoparamBrick::GetXiPos(Vector *pos,Vector *xipos)
+void EightNodeIsoparamBrick::GetXiPos(Vector *pos,Vector *xipos) const
 {
 	xipos->x=(2.*pos->x-xmin-xmax)/GetDeltaX();
 	xipos->y=(2.*pos->y-ymin-ymax)/GetDeltaY();
@@ -168,7 +168,7 @@ void EightNodeIsoparamBrick::GetXiPos(Vector *pos,Vector *xipos)
 // Get GIMP nodes around an element #num, but only where shape functions are nonzero
 // assumed to be properly numbered regular 3D array
 // load nodes into nds[1]... and node ID (0-63) into ndIDs[0]...
-void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos)
+void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos) const
 {
 	// quadrant barriers assuming 8 particles
 	double lp = mpmgrid.lp;
@@ -898,7 +898,7 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 // assumed to be properly numbered regular 3D array
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-63)
 void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
-						double *xDeriv,double *yDeriv,double *zDeriv)
+						double *xDeriv,double *yDeriv,double *zDeriv) const
 {
 	int i;
 	double xp,yp,zp,Svpx,Svpy,Svpz,dSvpx,dSvpy,dSvpz,xsign,ysign,zsign,argx=0.,argy=0.,argz=0.;
@@ -998,10 +998,10 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,
 short EightNodeIsoparamBrick::ElementName(void) { return(EIGHT_NODE_ISO_BRICK); }
 
 // number of nodes in this element
-int EightNodeIsoparamBrick::NumberNodes(void) { return 8; }
+int EightNodeIsoparamBrick::NumberNodes(void) const { return 8; }
 
 // Get x-y area, z thickness, or volumne - all orthogonal brick
-double EightNodeIsoparamBrick::GetArea(void) { return (xmax-xmin)*(ymax-ymin); }
-double EightNodeIsoparamBrick::GetVolume(void) { return (xmax-xmin)*(ymax-ymin)*(zmax-zmin); }
-double EightNodeIsoparamBrick::GetThickness(void) { return zmax-zmin; }
+double EightNodeIsoparamBrick::GetArea(void) const { return (xmax-xmin)*(ymax-ymin); }
+double EightNodeIsoparamBrick::GetVolume(void) const { return (xmax-xmin)*(ymax-ymin)*(zmax-zmin); }
+double EightNodeIsoparamBrick::GetThickness(void) const { return zmax-zmin; }
 

@@ -28,8 +28,8 @@ class HEAnisotropic : public HyperElastic
 		virtual void PrintMechanicalProperties(void) const;
 		
 		// step methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *);
-		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
 				
 		// accessors
 		virtual const char *MaterialType(void) const;

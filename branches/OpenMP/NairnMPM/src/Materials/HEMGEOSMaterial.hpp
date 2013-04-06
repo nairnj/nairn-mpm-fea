@@ -35,9 +35,9 @@ class HEMGEOSMaterial : public HEIsotropic
 		virtual void ValidateForUse(int) const;
 		
 		// methods
-		virtual void *GetCopyOfMechanicalProps(MPMBase *,int);
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int) const;
 		virtual void DeleteCopyOfMechanicalProps(void *,int) const;
-		virtual void UpdatePressure(MPMBase *,double,double,int,double,double,HEPlasticProperties *,ResidualStrains *);
+		virtual void UpdatePressure(MPMBase *,double,double,int,double,double,HEPlasticProperties *,ResidualStrains *) const;
 		virtual double GetCurrentRelativeVolume(MPMBase *) const;
 		
 		// accessors

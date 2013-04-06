@@ -58,8 +58,9 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 	
 	if(style==SILENT)
 	{	// silent assumes isotropic material
-		matptr->LoadTransportProps(mpm[ptNum-1],fmobj->np);
-		Tensor *D=matptr->GetDiffusionTensor();			// in mm^2/sec
+		TransportProperties t;
+		matptr->GetTransportProps(mpm[ptNum-1],fmobj->np,&t);
+		Tensor *D = &(t.diffusionTensor);
         
         // get in mm/sec
 		fluxMagX = D->xx*mpmptr->pDiffusion->Dc.x + D->xy*mpmptr->pDiffusion->Dc.y;

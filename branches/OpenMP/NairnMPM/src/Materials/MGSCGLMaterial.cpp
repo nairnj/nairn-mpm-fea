@@ -159,7 +159,7 @@ void MGSCGLMaterial::ValidateForUse(int np) const
 #pragma mark MGSCGLMaterial::Custom Methods
 
 // Isotropic material can use read-only initial properties
-void *MGSCGLMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np)
+void *MGSCGLMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
 {
 	PlasticProperties *p = (PlasticProperties *)malloc(sizeof(PlasticProperties));
 	*p = pr;
@@ -174,7 +174,7 @@ void *MGSCGLMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np)
     exponent of du), find delV, find Jnew, and then call back to Isoplasticity to
     finish shear parts using hypoelasticity
 */
-void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res)
+void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
     // Correct for swelling by finding total residual stretch (not incremental)
 	double eresTot=0.,JresStretch=1.,eres=0.,dJresStretch=1.;
@@ -200,21 +200,21 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     double dJ = dF.determinant()/dJresStretch;          // = V(k+1)Vsf(k)/(V(k)Vsf(k+1)
     double Jnew = F.determinant()/JresStretch;          // = V(k+1)/Vsf(k+1)
     double delV = 1.-1./dJ;								// = (V(k+1)/Vsf(k+1) - V(k)/Vsf(k))/(V(k+1)/Vsf(k+1))
-    delVLowStrain = du.trace() -  3.*eres;
+	PlasticProperties *p = (PlasticProperties *)properties;
+    p->delVLowStrain = du.trace() -  3.*eres;
 	
 	// SCGL and SL chnage shear modulus, here Gratio =  J G/G0
     // Note: J in Gred and Gratio is so that where they are used, they give
     //          specific Cauchy stress
-	PlasticProperties *p = (PlasticProperties *)properties;
 	double Gratio = plasticLaw->GetShearRatio(mptr,mptr->GetPressure(),Jnew,p->hardProps);
 	p->Gred = G0red*Gratio;
     
     // artifical viscosity
-    QAVred = 0.;
+    p->QAVred = 0.;
     if(delV<0. && artificialViscosity)
     {   double c = sqrt(p->Kred*Jnew*JresStretch/1000.);        // m/sec
         //double Dkk = (du(0,0)+du(1,1)+du(2,2))/delTime;
-        QAVred = GetArtificalViscosity(delV/delTime,c);
+        p->QAVred = GetArtificalViscosity(delV/delTime,c);
     }
     
     if(np!=THREED_MPM)
@@ -237,7 +237,7 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
 // Notes:
 //  delV is relative incremental volume change on this step = (V(k+1)-V(k))/V(k+1)
 //  J is total volume change at end of step
-void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,PlasticProperties *p,ResidualStrains *res)
+void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,PlasticProperties *p,ResidualStrains *res) const
 {
 	// delV is total incremental volumetric strain relative to free-swelling volume
     // J is total volume change - may need to reference to free-swelling volume if that works
@@ -282,7 +282,7 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,P
     double P = J*(p->Kred*x + gamma0*e);
     
     // set final pressure
-    mptr->SetPressure(P+QAVred);
+    mptr->SetPressure(P+p->QAVred);
     
     // particle isentropic temperature increment
     double dTq0 = -gamma0*mptr->pPreviousTemperature*J*delV;
@@ -295,11 +295,11 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,P
     
     // heat energy is Cv (dT - dTq0) - dPhi - QAVred*delV
 	// Here do Cv (dT - dTq0) - QAVred*delV term and dPhi is done later
-    double AVEnergy = ConductionTask::AVHeating ? fabs(QAVred*delV) : 0. ;
+    double AVEnergy = ConductionTask::AVHeating ? fabs(p->QAVred*delV) : 0. ;
     IncrementHeatEnergy(mptr,res->dT,dTq0,AVEnergy);
     
     // reset for small-strain plasticity
-    delV = delVLowStrain;
+    delV = p->delVLowStrain;
     
 }
 

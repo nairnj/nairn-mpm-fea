@@ -27,18 +27,20 @@ class Lagrange2D : public Quad2D
 	
 		// prototypes
 		virtual short ElementName(void);
-		virtual int NumberNodes(void);
-		virtual double GetArea(void);
+		virtual int NumberNodes(void) const;
+		virtual double GetArea(void) const;
 		virtual void ShapeFunction(Vector *,int,double *,double *,double *,
-							   Vector *,double *,double *,double *);
+							   Vector *,double *,double *,double *) const;
 #ifdef FEA_CODE
 		virtual void ExtrapolateGaussStressToNodes(double [][5]);
 #endif
 #ifdef MPM_CODE
-		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *);
+		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *) const;
 		virtual void FindExtent(void);
 		virtual int Orthogonal(double *,double *,double *);
-		virtual void GetXiPos(Vector *,Vector *);
+	
+		// const methods
+		virtual void GetXiPos(Vector *,Vector *) const;
 #endif
 	
 };

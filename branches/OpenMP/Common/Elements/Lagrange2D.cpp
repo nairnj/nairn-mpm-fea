@@ -55,7 +55,7 @@ Lagrange2D::Lagrange2D(int eNum,int *eNode,int eMat,double eAng,double eThick) :
 */
 void Lagrange2D::ShapeFunction(Vector *xi,int getDeriv,
 									  double *sfxn,double *xiDeriv,double *etaDeriv,Vector *eNodes,
-									  double *outDetjac,double *outAsr,double *asbe)
+									  double *outDetjac,double *outAsr,double *asbe) const
 {
 	sfxn[0]=(xi->x-1.)*xi->x * (xi->y-1.)*xi->y/4.;		// (-1,-1)
 	sfxn[1]=(xi->x+1.)*xi->x * (xi->y-1.)*xi->y/4.;		// (1,-1)
@@ -183,7 +183,7 @@ void Lagrange2D::ExtrapolateGaussStressToNodes(double sgp[][5])
 // get shape functions and optionally derivatives wrt x and y, but derivatives only work
 // if it is a regular array. Shape functions are general
 void Lagrange2D::ShapeFunction(Vector *xi,int getDeriv,double *sfxn,
-									 double *xDeriv,double *yDeriv,double *zDeriv)
+									 double *xDeriv,double *yDeriv,double *zDeriv) const
 {
 	sfxn[0]=0.25 * (xi->x-1.)*xi->x * (xi->y-1.)*xi->y;		// (-1,-1)
 	sfxn[1]=0.25 * (xi->x+1.)*xi->x * (xi->y-1.)*xi->y;		// (1,-1)
@@ -289,7 +289,7 @@ void Lagrange2D::FindExtent(void)
  
 	Only used in MPM
 */
-void Lagrange2D::GetXiPos(Vector *pos,Vector *xipos)
+void Lagrange2D::GetXiPos(Vector *pos,Vector *xipos) const
 {
 	// analytical solution for parallelograms
 	if(pgElement)
@@ -336,7 +336,7 @@ int Lagrange2D::Orthogonal(double *dx,double *dy,double *dz)
 #pragma mark Lagrange2D: accessors
 
 // trick into 8 node temporarily for area calculation
-double Lagrange2D::GetArea(void)
+double Lagrange2D::GetArea(void) const
 {	useForNumberNodes=8;
 	double theArea = Quad2D::GetArea();
 	useForNumberNodes=9;
@@ -347,4 +347,4 @@ double Lagrange2D::GetArea(void)
 short Lagrange2D::ElementName(void) { return NINE_NODE_LAGRANGE; }
 
 // number of nodes in this element
-int Lagrange2D::NumberNodes(void) { return useForNumberNodes; }
+int Lagrange2D::NumberNodes(void) const { return useForNumberNodes; }

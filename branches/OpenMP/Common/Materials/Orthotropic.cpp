@@ -269,8 +269,8 @@ double Orthotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
 }
 
 // diffusion and conductivity in the z direction
-double Orthotropic::GetDiffZ(void) { return Dz; }
-double Orthotropic::GetKcondZ(void) { return kcondz; }
+double Orthotropic::GetDiffZ(void) const { return Dz; }
+double Orthotropic::GetKcondZ(void) const { return kcondz; }
 
 #endif
 

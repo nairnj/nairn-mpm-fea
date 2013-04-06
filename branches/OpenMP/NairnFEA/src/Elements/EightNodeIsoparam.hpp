@@ -23,10 +23,12 @@ class EightNodeIsoparam : public Quad2D
         
         // prototypes
         virtual short ElementName(void);
-        virtual int NumberNodes(void);
-        virtual void ShapeFunction(Vector *,int,double *,double *,double *,
-                                Vector *,double *,double *,double *);
 		virtual void ExtrapolateGaussStressToNodes(double [][5]);
+	
+		// const methods
+		virtual int NumberNodes(void) const;
+		virtual void ShapeFunction(Vector *,int,double *,double *,double *,
+										Vector *,double *,double *,double *) const;
 };
 
 #endif

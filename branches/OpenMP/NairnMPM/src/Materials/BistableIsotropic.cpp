@@ -162,10 +162,12 @@ const char *BistableIsotropic::VerifyAndLoadProperties(int np)
     const char *err=CurrentProperties(DEFORMED_STATE,np);
     if(err!=NULL) return err;
 	FillElasticProperties(&pr2,np);
+	FillTransportProperties(&tr2);
 	
     err=CurrentProperties(INITIAL_STATE,np);
     if(err!=NULL) return err;
 	FillElasticProperties(&pr,np);
+	// transport gets done in material base
 	
     // convert strain rules in percent to absolute strains
     if(rule==VONMISES_RULE)
@@ -294,16 +296,10 @@ char *BistableIsotropic::InitHistoryData(void)
 #pragma mark BistableIsotropic::Methods
 
 // fill in transport tensors matrix if needed
-void BistableIsotropic::LoadTransportProps(MPMBase *mptr,int np)
+void BistableIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t) const
 {
 	short *state=(short *)(mptr->GetHistoryPtr());     // history pointer is short * with state
-	
-    // check if needed
-    if(transState==*state) return;
-    
-	// load these transport properties
-    InitialLoadTransProps();
-    transState=*state;
+	*t = *state==INITIAL_STATE ? tr : tr2;
 }
 
 /* For 2D MPM analysis, take increments in strain and calculate new
@@ -313,12 +309,12 @@ void BistableIsotropic::LoadTransportProps(MPMBase *mptr,int np)
    For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 */
 void BistableIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double dvzz,double delTime,int np,void *properties,ResidualStrains *res)
+        double dvzz,double delTime,int np,void *properties,ResidualStrains *res) const
 {
     // update in current state
     short *state=(short *)(mptr->GetHistoryPtr()),transition=FALSE;
-	ElasticProperties *p = *state==INITIAL_STATE ? &pr : &pr2;
-    Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,delTime,np,p,res);
+	const ElasticProperties *p = *state==INITIAL_STATE ? &pr : &pr2;
+    Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,delTime,np,(void *)p,res);
 	
     // Calculate critical value for transition
     double dmechV,dTrace,ds1,ds2,ds3;

@@ -61,48 +61,48 @@ GridForcesTask::GridForcesTask(const char *name) : MPMTask(name)
 // Get total grid point forces (except external forces)
 void GridForcesTask::Execute(void)
 {
+	// need to be private in threads
+	TransportProperties t;
+	
 	int numnds,nds[MaxShapeNds];
-	MaterialBase *matID;
 	double xfrc,yfrc,zfrc,fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds];
 	TransportTask *nextTransport;
-	Vector theFrc;
-	NodalPoint *ndptr;
-	short vfld;
 	
 	// loop over particles
     for(int p=0;p<nmpmsNR;p++)
-	{	MPMBase *mpmptr=mpm[p];							// material point pointer
-		matID=theMaterials[mpmptr->MatID()];			// material class object
+	{	MPMBase *mpmptr=mpm[p];											// material point pointer
+		const MaterialBase *matref = theMaterials[mpmptr->MatID()];		// material class (read only)
 		
 		// skip if material is rigid (and comes before last nonrigid one)
-		if(matID->Rigid()) continue;
+		if(matref->Rigid()) continue;
 		
 		// get transport tensors (if needed)
 		if(transportTasks!=NULL)
-			matID->LoadTransportProps(mpmptr,fmobj->np);
+			matref->GetTransportProps(mpmptr,fmobj->np,&t);
 		
-        double mp=mpmptr->mp;					// in g
-		int matfld=matID->GetField();           // material field
+        double mp = mpmptr->mp;					// in g
+		int matfld = matref->GetField();           // material field
 		
         // find shape functions and derviatives
- 		theElements[mpmptr->ElemID()]->
-				GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
+		const ElementBase *elemref = theElements[mpmptr->ElemID()];
+ 		elemref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
 		
         // Add particle property to each node in the element
         for(int i=1;i<=numnds;i++)
-		{	vfld=(short)mpmptr->vfld[i];					// crack velocity field to use
-			ndptr=nd[nds[i]];								// nodal point pointer
+		{	short vfld = (short)mpmptr->vfld[i];						// crack velocity field to use
+			NodalPoint *ndptr = nd[nds[i]];								// nodal point pointer
 			
             // internal force vector (in g mm/sec^2 or micro N)
 			//	(note: stress is specific stress in units N/m^2 cm^3/g
 			//	Multiply by 1000 to make it mm/sec^2)
+			Vector theFrc;
 			mpmptr->Fint(theFrc,xDeriv[i],yDeriv[i],zDeriv[i]);
 			ndptr->AddFintTask3(vfld,matfld,&theFrc);
             
             // body forces (not 3D yet)
 			if(bodyFrc.GetGravity(&xfrc,&yfrc,&zfrc))
-            {   double gscale=mp*fn[i];
-				theFrc=MakeVector(gscale*xfrc,gscale*yfrc,gscale*zfrc);
+            {   double gscale = mp*fn[i];
+				theFrc = MakeVector(gscale*xfrc,gscale*yfrc,gscale*zfrc);
 				ndptr->AddFintTask3(vfld,matfld,&theFrc);
 			}
             
@@ -141,7 +141,7 @@ void GridForcesTask::Execute(void)
     MaterialInterfaceNode::InterfaceOnKnownNodes();
     
 	// Find grid total forces with external damping
-	double damping=bodyFrc.GetDamping(mtime);		// could move inside loop and make function of nodal position too
+	double damping = bodyFrc.GetDamping(mtime);		// could move inside loop and make function of nodal position too
     for(int i=1;i<=nnodes;i++)
 		nd[i]->CalcFtotTask3(damping);
 	

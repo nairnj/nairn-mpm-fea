@@ -23,9 +23,9 @@ class QuadInterface : public Interface2D
         
         // prototypes
         virtual short ElementName(void);
-        virtual int NumberNodes(void);
+        virtual int NumberNodes(void) const;
         virtual void ShapeFunction(Vector *,int,double *,double *,double *,
-                                    Vector *,double *,double *,double *);
+                                    Vector *,double *,double *,double *) const;
 		void Stiffness(int);
 		virtual int FaceNodes(void);
 };

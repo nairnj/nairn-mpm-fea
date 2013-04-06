@@ -62,7 +62,7 @@ FourNodeIsoparam::FourNodeIsoparam(int eNum,int *eNode,int eMat,double eAng,doub
 */
 void FourNodeIsoparam::ShapeFunction(Vector *xi,int getDeriv,
 		double *sfxn,double *xiDeriv,double *etaDeriv,Vector *eNodes,
-                double *outDetjac,double *outAsr,double *asbe)
+                double *outDetjac,double *outAsr,double *asbe) const
 {
     double temp1,temp2,jac[3][3],detjac,asr;
     int i;
@@ -179,7 +179,7 @@ void FourNodeIsoparam::ExtrapolateGaussStressToNodes(double sgp[][5])
 // if it is a regular array. Shape functions are general
 // For axisymmetric MPM, make sure zDeriv is not NULL and load with shape function/rp
 void FourNodeIsoparam::ShapeFunction(Vector *xi,int getDeriv,double *sfxn,
-										double *xDeriv,double *yDeriv,double *zDeriv)
+										double *xDeriv,double *yDeriv,double *zDeriv) const
 {
     double temp1,temp2,dx,dy,rp;
 	int i;
@@ -250,7 +250,7 @@ void FourNodeIsoparam::FindExtent(void)
 	
 	Only used in MPM
 */
-void FourNodeIsoparam::GetXiPos(Vector *pos,Vector *xipos)
+void FourNodeIsoparam::GetXiPos(Vector *pos,Vector *xipos) const
 {
 	// analytical solution for parallelograms
 	if(pgElement)
@@ -308,7 +308,7 @@ int FourNodeIsoparam::Orthogonal(double *dx,double *dy,double *dz)
 // Get GIMP nodes around an element #num, but only where shape functions is non zero
 // assumed to be properly numbered regular array
 // load nodes into nds[1]... and node IDs (0-15) into ndIDs[0]...
-void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos)
+void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos) const
 {
 	// quadrant barriers assuming 4 particles
 	double lp = mpmgrid.lp;
@@ -424,7 +424,7 @@ void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipo
 // assumed to be properly numbered regular array
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
 void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
-					double *xDeriv,double *yDeriv,double *zDeriv)
+					double *xDeriv,double *yDeriv,double *zDeriv) const
 {
 	int i;
 	double xp,yp,Svpx,Svpy,dSvpx,dSvpy,xsign,ysign,argx=0.,argy=0.;
@@ -497,7 +497,7 @@ void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int ge
 // assumed to be properly numbered regular array
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
 void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
-										 double *xDeriv,double *yDeriv,double *zDeriv)
+										 double *xDeriv,double *yDeriv,double *zDeriv) const
 {
 #ifdef NONRADIAL_GIMP_AS
 	GimpShapeFunction(xi,numnds,ndIDs,getDeriv,sfxn,xDeriv,yDeriv,zDeriv);
@@ -683,4 +683,4 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 short FourNodeIsoparam::ElementName(void) { return(FOUR_NODE_ISO); }
 
 // number of nodes in this element
-int FourNodeIsoparam::NumberNodes(void) { return 4; }
+int FourNodeIsoparam::NumberNodes(void) const { return 4; }

@@ -23,11 +23,13 @@ class SixNodeTriangle : public Quad2D
         
         // prototypes
         virtual short ElementName(void);
-        virtual int NumberNodes(void);
-        virtual int NumberSides(void);
         virtual void ShapeFunction(Vector *,int,double *,double *,double *,
-                                Vector *,double *,double *,double *);
+                                Vector *,double *,double *,double *) const;
 		virtual void ExtrapolateGaussStressToNodes(double [][5]);
+	
+		// const methods
+		virtual int NumberNodes(void) const;
+		virtual int NumberSides(void) const;
 };
 
 #endif

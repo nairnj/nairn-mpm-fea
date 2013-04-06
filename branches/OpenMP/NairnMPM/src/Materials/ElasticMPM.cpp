@@ -22,7 +22,7 @@
 	(i.e., du/r on particle and dvzz will be zero if not axisymmetric)
 */
 void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,double dvzz,
-                          double delTime,int np,void *properties,ResidualStrains *res)
+                          double delTime,int np,void *properties,ResidualStrains *res) const
 {
 	// cast pointer to material-specific data
 	ElasticProperties *p = (ElasticProperties *)properties;
@@ -113,7 +113,7 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
     Assumes linear elastic, uses hypoelastic correction
 */
 void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-        double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np,void *properties,ResidualStrains *res)
+        double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np,void *properties,ResidualStrains *res) const
 {
 	// cast pointer to material-specific data
 	ElasticProperties *p = (ElasticProperties *)properties;

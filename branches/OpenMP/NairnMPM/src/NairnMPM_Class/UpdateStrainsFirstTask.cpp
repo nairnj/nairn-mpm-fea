@@ -48,7 +48,7 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
         MPMBase *mptr = mpm[p];
         
         // this particle's material
-        MaterialBase *matRef=theMaterials[mptr->MatID()];
+        const MaterialBase *matRef = theMaterials[mptr->MatID()];
         
         // exit if rigid (in case some before the last non rigid one)
         if(matRef->Rigid()) continue;

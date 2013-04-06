@@ -20,7 +20,6 @@ WoodMaterial::WoodMaterial(char *matName) : HillPlastic(matName)
 {
 	tempC1=100.;
 	tempC2=0.;
-	currentRatio=1.;
 }
 
 #pragma mark WoodMaterial::Initialization
@@ -47,47 +46,40 @@ const char *WoodMaterial::VerifyAndLoadProperties(int np)
 	if(tempC1<0.)
 		return "tempC1 must be positive";
 	
+	// convert from percent to absolute scale
+	tempC1/=100.;
+	tempC2/=100.;
+	
 	// must call super class
-	return HillPlastic::VerifyAndLoadProperties(np);
+	return AnisoPlasticity::VerifyAndLoadProperties(np);
 }
 
 // print mechanical properties to the results
 void WoodMaterial::PrintMechanicalProperties(void) const
 {	
     HillPlastic::PrintMechanicalProperties();
-	PrintProperty("tempC1",tempC1,"");
-	PrintProperty("tempC2",tempC2,"C^-1");
+	PrintProperty("tempC1",tempC1*100,"");
+	PrintProperty("tempC2",tempC2*100,"C^-1");
 	cout << endl;
 }
 
 #pragma mark WoodMaterial:Methods
 
-/*
-// State dependent material properties
-void WoodMaterial::LoadMechanicalProps(MPMBase *mptr,int np)
+// Isotropic material can use read-only initial properties
+void *WoodMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
 {
+	AnisoPlasticProperties *p = (AnisoPlasticProperties *)AnisoPlasticity::GetCopyOfMechanicalProps(mptr,np);
+	
 	// calculate new ratio for reference conditions to current conditions
 	double newRatio = (tempC1 + tempC2*(mptr->pPreviousTemperature-273.15));
+	int i,j;
+	for(i=0;i<6;i++)
+		for(j=0;j<6;j++)
+			p->ep->C[i][j] *= newRatio;
 	
-	// scale by new ratio (after unscaling by previos ratio)
-	double newScale=newRatio/currentRatio;
-	C11*=newScale;
-	C12*=newScale;
-	C13*=newScale;
-	C22*=newScale;
-	C23*=newScale;
-	C33*=newScale;
-	C44*=newScale;
-	C55*=newScale;
-	C66*=newScale;
-	
-	// remember the ratio
-	currentRatio=newRatio;
-	
-	// call superclass
-	HillPlastic::LoadMechanicalProps(mptr,np);
+	return p;
 }
-*/
+	
 
 #pragma mark WoodMaterial::Custom Methods
 

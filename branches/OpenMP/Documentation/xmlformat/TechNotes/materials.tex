@@ -136,7 +136,7 @@ The plane strain stiffness equations for in-plane stresses are
 	 \er{xx} + \v{zx}\er{zz} \\
 	\er{yy} + \v{zy}\er{zz} \end{array}\right)
 \end{equation}
-which is equivalent to using reduce expansion properties
+which is equivalent to using reduced expansion properties
 \begin{equation}
 \left(\begin{array}{c} \err{xx} \\ \err{yy}  \end{array}\right)
        =  \left(\begin{array}{c}
@@ -152,7 +152,7 @@ The reduced expansion coefficients are
 \end{eqnarray}%
 These elements are calculated in \code{SetAnalysisProps()} as \code{C11} $=C_{11}$, \code{C12}  $=C_{12}$, \code{C22} $=C_{22}$, and \code{C66} $=C_{66}$. The reduced expansion coefficients are set as \code{CTE1} $=\a{xx}^{(r)}$, \code{CTE2} $=\a{yy}^{(r)}$, \code{CME1} $=\b{xx}^{(r)}$, and \code{CME2} $=\b{yy}^{(r)}$, also in \code{SetAnalysisProps()}.
 
-In plane strain analysis, $\e{zz}=0$, but $\s{zz}\ne0$. The out-of-plane strain is found from the 3D stiffness matrix by setting $\e{zz}=0$:
+In plane strain analysis, $\e{zz}=0$, but $\s{zz}\ne0$. The out-of-plane stress is found from the 3D stiffness matrix by setting $\e{zz}=0$:
 \begin{eqnarray}
             \s{zz} & = & C_{13}\bigl(\e{xx} -(\a{xx}^{(r)}-\v{zx}\a{zz})\DT - (\b{xx}^{(r)}-\v{zx}\b{zz})\Delta c\bigr)
  \nonumber\\
@@ -160,70 +160,70 @@ In plane strain analysis, $\e{zz}=0$, but $\s{zz}\ne0$. The out-of-plane strain 
                      +C_{23}\bigl(\e{yy} -(\a{yy}^{(r)}-\v{zy}\a{zz})\DT-(\b{yy}^{(r)}-\v{zy}\b{zz})\Delta c\bigr) 
                      -C_{33} \er{zz}
 \end{eqnarray}
-The new terms are set in \code{SetAnalysisProps()} as \code{C13} $=C_{13}$, \code{C23} $=C_{23}$, and \code{C33} $=C_{33}$. Notice that this equation needs actual residual expansion coefficients and thus the reduced expansion coefficients must be {\em undreduced} but subtracting terms. For these calculates (more details in next section), the following expansion properties are set as \code{CTE3} $=\a{zz}$, \code{CME3} $=\b{zz}$, \code{prop1} $=\v{zx}$, and \code{prop2} $=\v{zy}$.
+The new terms are set in \code{SetAnalysisProps()} as \code{C13} $=C_{13}$, \code{C23} $=C_{23}$, and \code{C33} $=C_{33}$. Notice that this equation needs actual residual expansion coefficients and thus the reduced expansion coefficients must be {\em unreduced} by subtracting terms. For these calculations (more details in next section), the following expansion properties are set as \code{CTE3} $=\a{zz}$, \code{CME3} $=\b{zz}$, \code{prop1} $=\v{zx}$, and \code{prop2} $=\v{zy}$.
 
 \subsection{Rotated Stiffness Equations in MPM}
 
 For orthotropic materials with material angle not zero, the stiffness equations must be rotated counter-clockwise by the material point angle to transpose to the analysis coordinate systems. The material point angle is initialized when the calculations starts. To account for large displacements and rotations, the angle is updated on each time step based on the rotation tensor. The angle thus always reflects the current material orientation. Thus prior to calling \code{MPMConstitutiveLaw()}, the equations are rotated (if needed) to obtain:
 \begin{equation}
-      \vvec{\s{xx}}{\s{yy}}{\t{xy}} = \symmat{\code{pr.C[1][1]}}{\code{pr.C[1][2]}}
-                      {\code{pr.C[1][3]}}{\code{pr.C[2][2]}}{\code{pr.C[2][3]}}{\code{pr.C[3][3]}}
+      \vvec{\s{xx}}{\s{yy}}{\t{xy}} = \symmat{\code{C[1][1]}}{\code{C[1][2]}}
+                      {\code{C[1][3]}}{\code{C[2][2]}}{\code{C[2][3]}}{\code{C[3][3]}}
           \vvec{\e{xx} - \er{xx}}{\e{yy} - \er{yy}}{\g{xx}-\er{xy}}
  \end{equation}
  where the rotated residual strains (which become reduced residual strains when in plane strain) are
 \begin{equation}
 \left(\begin{array}{c} \er{xx} \\ \er{yy} \\ \er{xy} \end{array}\right)
        =  \left(\begin{array}{c}
-	\code{pr.alpha[1]}\DT + \code{pr.beta[1]}\Delta c \\
-	\code{pr.alpha[2]}\DT + \code{pr.beta[2]}\Delta c \\
-	\code{pr.alpha[3]}\DT + \code{pr.beta[3]}\Delta c  \end{array}\right)
+	\code{alpha[1]}\DT + \code{beta[1]}\Delta c \\
+	\code{alpha[2]}\DT + \code{beta[2]}\Delta c \\
+	\code{alpha[3]}\DT + \code{beta[3]}\Delta c  \end{array}\right)
 \end{equation}
- The rotated elements are found by standard in-plane rotation in the counter-clockwise direction in \code{LoadMechanicalPropertiesFEA()}. Rotation is only needed for anistotropic materials. For isotropic materials, the \code{pr.C[][]}, \code{pr.alpha[]}, and \code{pr.beta[]} elements are calculated once for zero rotation angle. The elements of \code{pr.C[][]} are also made specific by dividing by material density. The constitutive law should only use specific properties to have the proper specific stress.
+ The rotated elements are found by standard in-plane rotation in the counter-clockwise direction in \code{LoadMechanicalPropertiesFEA()}. Rotation is only needed for anistotropic materials. For isotropic materials, the \code{C[][]}, \code{alpha[]}, and \code{beta[]} elements are calculated once for zero rotation angle. The elements of \code{C[][]} are also made specific by dividing by material density. The constitutive law should only use specific properties to have the proper specific stress.
  
 Calculation of out-of-plane values requires rotation of the 3D stiffness matrix counter-clockwise around the $z$ axis. The results for plane stress are
 \begin{eqnarray}
-     \e{zz} & = & \code{pr.C[4][1]} (\e{xx} - \er{xx}) +  \code{pr.C[4][2]}(\e{yy} -\er{yy}) 
+     \e{zz} & = & \code{C[4][1]} (\e{xx} - \er{xx}) +  \code{C[4][2]}(\e{yy} -\er{yy}) 
      \nonumber \\
      && \qquad\qquad\mbox{}
-                 + \code{pr.C[4][3]}(\g{xy}-\er{xy})  + \er{zz}
+                 + \code{C[4][3]}(\g{xy}-\er{xy})  + \er{zz}
 \end{eqnarray}
 where 
 \begin{eqnarray}
- \code{pr.C[4][1]} & = &-\left({C_{13}\over C_{33}}\cos^2\theta + {C_{23}\over C_{33}}\sin^2\theta\right)
+ \code{C[4][1]} & = &-\left({C_{13}\over C_{33}}\cos^2\theta + {C_{23}\over C_{33}}\sin^2\theta\right)
         = \code{C13}\cos^2\theta + \code{C23}\sin^2\theta  \\
- \code{pr.C[4][2]} & = &-\left({C_{13}\over C_{33}}\sin^2\theta + {C_{23}\over C_{33}}\cos^2\theta\right)
+ \code{C[4][2]} & = &-\left({C_{13}\over C_{33}}\sin^2\theta + {C_{23}\over C_{33}}\cos^2\theta\right)
         = \code{C13}\sin^2\theta + \code{C23}\cos^2\theta  \\
- \code{pr.C[4][3]} & = &  \left({C_{13}\over C_{33}} - {C_{23}\over C_{33}}\right)\sin\theta\cos\theta
+ \code{C[4][3]} & = &  \left({C_{13}\over C_{33}} - {C_{23}\over C_{33}}\right)\sin\theta\cos\theta
         = -(\code{C13}-\code{C23})\sin\theta\cos\theta
 \end{eqnarray}
-and \code{CTE3} = \code{pr.alpha[4]} $=\a{zz}$ and \code{CME3} = \code{pr.beta[4]} $=\b{zz}$ hold out-of-plane thermal expansion coefficients needed to find $\er{zz}$, which was defined earlier.
+and \code{CTE3} = \code{alpha[4]} $=\a{zz}$ and \code{CME3} = \code{beta[4]} $=\b{zz}$ hold out-of-plane thermal expansion coefficients needed to find $\er{zz}$, which was defined earlier.
 
-The problem in plane strain is that the calculation of $\s{zz}$ requires rotated expansion coefficients while the \code{pr.alpha[1]} to \code{pr.alpha[3]}  and \code{pr.beta[1]} to \code{pr.beta[3]} have rotated {\em reduced\/} expansion coefficients. The solution is to define some new terms such that
+The problem in plane strain is that the calculation of $\s{zz}$ requires rotated expansion coefficients while the \code{alpha[1]} to \code{alpha[3]}  and \code{beta[1]} to \code{beta[3]} have rotated {\em reduced\/} expansion coefficients. The solution is to define some new terms such that
 \begin{eqnarray}
-     \s{zz} & = & \code{pr.C[4][1]} (\e{xx} -(\err{xx}-\code{pr.alpha[5]}\er{zz}))
-                         +  \code{pr.C[4][2]}(\e{yy} -(\err{yy}-\code{pr.alpha[6]}\er{zz})) 
+     \s{zz} & = & \code{C[4][1]} (\e{xx} -(\err{xx}-\code{alpha[5]}\er{zz}))
+                         +  \code{C[4][2]}(\e{yy} -(\err{yy}-\code{alpha[6]}\er{zz})) 
      \nonumber \\
      && \qquad\qquad\mbox{}
-                 + \code{pr.C[4][3]}(\g{xx}-(\err{xy}-\code{pr.alpha[7]}\er{zz}))  - \code{pr.C[4][4]} \er{zz}
+                 + \code{C[4][3]}(\g{xx}-(\err{xy}-\code{alpha[7]}\er{zz}))  - \code{C[4][4]} \er{zz}
 \end{eqnarray}
 where
 \begin{eqnarray}
- \rho\thinspace \code{pr.C[4][1]} & = &C_{13}\cos^2\theta + C_{23}\sin^2\theta
+ \rho\thinspace \code{C[4][1]} & = &C_{13}\cos^2\theta + C_{23}\sin^2\theta
             = \code{C13}\cos^2\theta + \code{C23}\sin^2\theta  \\
- \rho\thinspace \code{pr.C[4][2]} & = &C_{13}\sin^2\theta + C_{23}\cos^2\theta
+ \rho\thinspace \code{C[4][2]} & = &C_{13}\sin^2\theta + C_{23}\cos^2\theta
              = \code{C13}\sin^2\theta + \code{C23}\cos^2\theta  \\
- \rho\thinspace \code{pr.C[4][3]} & = & - \left(C_{13} - C_{23}\right)\sin\theta\cos\theta
+ \rho\thinspace \code{C[4][3]} & = & - \left(C_{13} - C_{23}\right)\sin\theta\cos\theta
              =  -(\code{C13}-\code{C23})\sin\theta\cos\theta \\
- \rho\thinspace \code{pr.C[4][4]} & = & C_{33}  \\
-  \code{pr.alpha[5]} & = &\v{zx}\cos^2\theta + \v{zy}\sin^2\theta
+ \rho\thinspace \code{C[4][4]} & = & C_{33}  \\
+  \code{alpha[5]} & = &\v{zx}\cos^2\theta + \v{zy}\sin^2\theta
          = \code{prop1}\cos^2\theta + \code{prop2}\sin^2\theta  \\
-  \code{pr.alpha[6]} & = &\v{zx}\sin^2\theta + \v{zy}\cos^2\theta
+  \code{alpha[6]} & = &\v{zx}\sin^2\theta + \v{zy}\cos^2\theta
         = \code{prop1}\sin^2\theta + \code{prop2}\cos^2\theta  \\
-  \code{pr.alpha[7]} & = & - 2\left(\v{zx} - \v{zy}\right)\sin\theta\cos\theta 
+  \code{alpha[7]} & = & - 2\left(\v{zx} - \v{zy}\right)\sin\theta\cos\theta 
        =  -2(\code{prop1}-\code{prop2})\sin\theta\cos\theta
 \end{eqnarray}
-Again, \code{CTE3} = \code{pr.alpha[4]} $=\a{zz}$ and \code{CME3} = \code{pr.beta[4]} $=\b{zz}$ hold out-of-plane expansion coefficients needed to find $\er{zz}$, which was defined earlier.
-In these terms, $\err{xx}-\code{pr.alpha[5]}\er{zz}$ (and similarly for ($yy$, 6) and ($xy$, 7) pairs) evaluate to the rotated, but {\em unreduced\/} expansion strains. The angle $\theta$ is the material angle on the material point, which is a clockwise rotation from the analysis axes.
+Again, \code{CTE3} = \code{alpha[4]} $=\a{zz}$ and \code{CME3} = \code{beta[4]} $=\b{zz}$ hold out-of-plane expansion coefficients needed to find $\er{zz}$, which was defined earlier.
+In these terms, $\err{xx}-\code{alpha[5]}\er{zz}$ (and similarly for ($yy$, 6) and ($xy$, 7) pairs) evaluate to the rotated, but {\em unreduced\/} expansion strains. The angle $\theta$ is the material angle on the material point, which is a clockwise rotation from the analysis axes.
 
 \subsection{Rotated Stiffness Equations in FEA}
 
@@ -421,7 +421,7 @@ By including $\s{zz}$ in the calculations, the out-of-plane stress is correctly 
        d\varepsilon_{ij}^{e} = -d\varepsilon_{ij}^{p}  
 \end{equation}
 
-For the \code{IsoPlasticity} class, $K=$ \code{Kred}, $G=$ \code{Gred}, $\a{}=$ \code{CTE3}, and $\b{}=$ \code{CME3}. The default implementation assumes these are constant and they are calculated once in \code{VeriofyAndLoadProperties()}. A subclass can implement non-linear materials two ways. To let $K$, $G$, $\a{}$, and $\b{}$, depend on particle state, calculate their state-dependent values in \code{LoadMechanicalProps()} and/or \code{LoadTransportProps()}. An alternative approach for more complicated materials is to replace the pressure calculation by overriding \code{UpdatePressure()} . This method is called after finding ${\Delta V/V}$, but before any other calculations. It must update the particle pressure and particle strain energy due to dilation. It should also calculate $G$ (in \code{Gred}) if it depends on particle state. It need not calculate $K$ (in \code{Kred}) because it is not needed after new pressure is found. 
+For the \code{IsoPlasticity} class, $K=$ \code{Kred}, $G=$ \code{Gred}, $\a{}=$ \code{CTE3}, and $\b{}=$ \code{CME3}. The default implementation assumes these are constant and they are calculated once in \code{VeriofyAndLoadProperties()}. A subclass can implement non-linear materials two ways. To let $K$, $G$, $\a{}$, and $\b{}$, depend on particle state, calculate their state-dependent values in \code{LoadMechanicalProps()} and/or \code{GetTransportProps()}. An alternative approach for more complicated materials is to replace the pressure calculation by overriding \code{UpdatePressure()} . This method is called after finding ${\Delta V/V}$, but before any other calculations. It must update the particle pressure and particle strain energy due to dilation. It should also calculate $G$ (in \code{Gred}) if it depends on particle state. It need not calculate $K$ (in \code{Kred}) because it is not needed after new pressure is found. 
 
 \subsection{Plane Stress Analysis for $J_2$ Flow Theory, Isotropic Materials}
 
@@ -601,32 +601,36 @@ All hardening laws are implemented as subclasses of the {\tt HardeningLawBase} c
                    \bigl(1-(T^*)^m\bigr)^2   \|\dev\|
 \end{eqnarray}
 
-\subsection{Anisotropic Plane Strain Analysis}
+\subsection{Anisotropic 2D Plane Strain and Axisymmetric Analysis}
 
-In general plane strain analysis, the matrix equation for update needs an extra term (only needed when there are residual stresses)
+In general plane strain or axisymmetric analysis, the matrix equation for update is:
 \begin{equation}
     \dsig = \C \deff +\cex
 \end{equation}
 The key terms are
 \begin{eqnarray}
-      \C & = & \left(\begin{array}{cccc} \code{pr.C[1][1]}  & \code{pr.C[1][2]}  & \thinspace\code{pr.C[1][3]}  & 0   \\
-                    \code{pr.C[1][2]}  & \code{pr.C[2][2]}  & \thinspace\code{pr.C[2][3]}  & 0 \\
-                            \code{pr.C[4][1]}  & \code{pr.C[4][2]}  & \thinspace\code{pr.C[4][3]}  & \code{pr.C[4][4]}  \\
-                 \code{pr.C[1][3]}  & \code{pr.C[2][3]}  & \thinspace\code{pr.C[3][3]}  & 0 \end{array}\right)  \\
-      \cex & = & (0, \thinspace 0, \thinspace (\code{pr.C[4][1]}\code{pr.alpha[5]}
-              + \code{pr.C[4][2]}\code{pr.alpha[6]}+\code{pr.C[4][3]}\code{pr.alpha[7]})\er{zz}, \thinspace 0,) \\
-      \deff & = & \left(d\e{xx} - \err{xx}, \thinspace d\e{yy} - \err{yy}, \thinspace -  \er{zz}, 
+      \C & = & \left(\begin{array}{cccc} \code{C[1][1]}  & \code{C[1][2]}  & \thinspace\code{C[1][3]}  & 0   \\
+                    \code{C[1][2]}  & \code{C[2][2]}  & \thinspace\code{C[2][3]}  & 0 \\
+                            \code{C[4][1]}  & \code{C[4][2]}  & \thinspace\code{C[4][3]}  & \code{C[4][4]}  \\
+                 \code{C[1][3]}  & \code{C[2][3]}  & \thinspace\code{C[3][3]}  & 0 \end{array}\right)  \\
+      \deff & = & \left(d\e{xx} - \err{xx}, \thinspace d\e{yy} - \err{yy}, \thinspace d\e{zz} -  \er{zz}, 
               \thinspace d\g{xy}-\err{xy}\right) \\
       \df & = & (df_{xx}, \thinspace df_{yy}, \thinspace df_{zz}, \thinspace df_{xy})
                   = \left({\partial f\over \sigma_{xx}}, \thinspace {\partial f\over \sigma_{yy}}, \thinspace {\partial f\over \sigma_{zz}},
                                 {\partial f\over \tau_{xy}}\right)  \\
 \left(\begin{array}{c} \err{xx} \\ \err{yy} \\ \er{zz} \\ \err{xy} \end{array}\right)
        & = &  \left(\begin{array}{c}
-	\code{pr.alpha[1]}\DT + \code{pr.beta[1]}\Delta c \\
-	\code{pr.alpha[2]}\DT + \code{pr.beta[2]}\Delta c \\
+	\code{alpha[1]}\DT + \code{beta[1]}\Delta c \\
+	\code{alpha[2]}\DT + \code{beta[2]}\Delta c \\
 	\a{zz}\DT + \b{zz}\Delta c \\
-	\code{pr.alpha[3]}\DT + \code{pr.beta[3]}\Delta c  \end{array}\right) 
+	\code{alpha[3]}\DT + \code{beta[3]}\Delta c  \end{array}\right) 
  \end{eqnarray}
+The term $d\e{zz}$ is zero for plane strain, but incremental hoop strain of axisymmetry, while the term $\cex$ is zero for axisymmetry but is needed for plane strain analysis to compensate for use of reduced thermal and moisture expansion coefficients in the $x$-$y$ terms. The only non-zero component is:
+\begin{equation}
+      \cex[3] = \bigl(\code{C[4][1]}\code{alpha[5]}
+              + \code{C[4][2]}\code{alpha[6]}+\code{C[4][3]}\code{alpha[7]}\bigr)\er{zz} 
+\end{equation}
+Note that in the code, $\code{alpha[5]}$ to $\code{alpha[7]}$ hold out-of=plane Poisson ratios (or rotated ratios) and not thermal expansion coefficient.
 This formulation is using engineering shear strains. 
  
  The plastic strain increments are:
@@ -646,88 +650,25 @@ The elastic strain increments are:
 The specific stress increments are
 \begin{equation}
       \vvec{d\s{xx}}{d\s{yy}}{d\t{xy}} = \left(\begin{array}{ccc}
-      		\code{pr.C[1][1]} & \code{pr.C[1][2]} & \code{pr.C[1][3]}  \\
-      		\code{pr.C[1][2]} & \code{pr.C[2][2]} & \code{pr.C[2][3]}  \\
-      		\code{pr.C[1][3]} & \code{pr.C[2][3]} & \code{pr.C[3][3]} 
+      		\code{C[1][1]} & \code{C[1][2]} & \code{C[1][3]}  \\
+      		\code{C[1][2]} & \code{C[2][2]} & \code{C[2][3]}  \\
+      		\code{C[1][3]} & \code{C[2][3]} & \code{C[3][3]} 
            \end{array}\right)
           \vvec{d\varepsilon_{xx}^{(e)}  - \err{xx}}{d\varepsilon_{yy}^{(e)}  -\err{yy}}{d\g{xx}^{(e)}-\err{xy}}
  \end{equation}
 For plane strain analysis, $d\sigma_{zz}$ is similar to an elastic material using elastic strains:
  \begin{eqnarray}
-     d\s{zz} & = & \code{pr.C[4][1]} \Bigl(d\e{xx}^{(e)} -(\err{xx}-\code{pr.alpha[5]}\er{zz})\Bigr)
-                         +  \code{pr.C[4][2]}\Bigl(d\e{yy}^{(e)} -(\err{yy}-\code{pr.alpha[6]}\er{zz})\Bigr) 
+     d\s{zz} & = & \code{C[4][1]} \Bigl(d\e{xx}^{(e)} -(\err{xx}-\code{alpha[5]}\er{zz})\Bigr)
+                         +  \code{C[4][2]}\Bigl(d\e{yy}^{(e)} -(\err{yy}-\code{alpha[6]}\er{zz})\Bigr) 
      \nonumber \\
      && \qquad\qquad\mbox{}
-                 + \code{pr.C[4][3]}\Bigl(d\g{xx}^{(e)}-(\err{xy}-\code{pr.alpha[7]}\er{zz})\Bigr)  - \code{pr.C[4][4]}(d\e{zz}^{(e)}-\er{})
+                 + \code{C[4][3]}\Bigl(d\g{xx}^{(e)}-(\err{xy}-\code{alpha[7]}\er{zz})\Bigr)  - \code{C[4][4]}(d\e{zz}^{(e)}-\er{})
 \end{eqnarray}
 The $d\e{zz}^{(e)}$ term may be non zero even though it is plane strain. The total $z$ direction strain is zero because $d\e{zz}^{(e)} = -d\e{zz}^{(p)}$.
 
-\subsection{Anisotropic Plane Stress Analysis}
+\subsection{Anisotropic 2D Plane Stress Analysis}
 
-(This section is probably wrong and needs to redone as in isotropic plane stress, if it is possible)
-
-For plane stress analysis of an anisotropic material when the $x$-$y$ axis may not line up with the material axes (but the $z$ axis does)
-\begin{eqnarray}
-      \C & = & \left(\begin{array}{ccc}
-      		\code{pr.C[1][1]} & \code{pr.C[1][2]} & 2\thinspace\code{pr.C[1][3]}  \\
-      		\code{pr.C[1][2]} & \code{pr.C[2][2]} & 2\thinspace\code{pr.C[2][3]}  \\
-      		\code{pr.C[1][3]} & \code{pr.C[2][3]} & 2\thinspace\code{pr.C[3][3]} 
-           \end{array}\right)  \\
-      \cex & = & (0, \thinspace 0, \thinspace 0) \\
-      \deff & = & \left(d\e{xx} - \er{xx}, \thinspace d\e{yy} - \er{yy}, \thinspace {d\g{xy}-\er{xy}\over 2}\right) \\
-      \df & = & (df_{xx}, \thinspace df_{yy}, \thinspace df_{xy})
-                  = \left({\partial f\over \sigma_{xx}}, \thinspace {\partial f\over \sigma_{yy}},
-                                {\partial f\over \tau_{xy}}\right) \\
-       \left(\begin{array}{c} \er{xx} \\ \er{yy} \\ \er{xy} \end{array}\right)
-       & = & \left(\begin{array}{c}
-	\code{pr.alpha[1]}\DT + \code{pr.beta[1]}\Delta c \\
-	\code{pr.alpha[2]}\DT + \code{pr.beta[2]}\Delta c \\
-	\code{pr.alpha[3]}\DT + \code{pr.beta[3]}\Delta c  \end{array}\right)
- \end{eqnarray}
- The $1/2$ on shear strain is to convert to tensorial shear strain. The $2$'s on the third column of $\C$  are to get correct stress when using tensorial shear strain. The solution is $\lambda=f_{trial}/B$ where
- \begin{eqnarray}
-        B & = &  df_{xx}\left( \code{pr.C[1][1]}df_{xx} + \code{pr.C[1][2]}df_{yy} 
-                                                      + 2\thinspace\code{pr.C[1][3]}df_{xy} \right)
- \nonumber\\
- &&\qquad\mbox{}
-                           +df_{yy}\left( \code{pr.C[1][2]}df_{xx} + \code{pr.C[2][2]}df_{yy} 
-                                                      + 2\thinspace\code{pr.C[2][3]}df_{xy} \right)
-\nonumber\\
- &&\qquad\mbox{}
-                           + df_{xy}\left(\code{pr.C[1][3]}df_{xx} + \code{pr.C[2][3]}df_{yy} 
-                                                      + 2\thinspace\code{pr.C[3][3]}df_{xy} \right) - \dfa \cdot \vec{h}
-\end{eqnarray}
-An anisotropic, plastic material only needs to provide results for $\df$ and $\dfa\cdot\vec h$.
-
-The plastic strain increments are:
-\begin{equation}
-       d\varepsilon_{xx}^{(p)} = \lambda df_{xx}, \quad
-       d\varepsilon_{yy}^{(p)} = \lambda df_{yy}, \quad
-       d\gamma_{xy}^{(p)} = 2 \lambda df_{xy}, \quad  {\rm and} \quad
-       d\varepsilon_{zz}^{(p)} = 0
-\end{equation}
-The elastic strain increments are:
-\begin{equation}
-       d\varepsilon_{xx}^{(e)} = d\varepsilon_{xx} -\lambda df_{xx}, \quad
-       d\varepsilon_{yy}^{(e)} = d\varepsilon_{yy} -\lambda df_{yy}, \quad   {\rm and} \quad
-       d\gamma_{xy}^{(e)} = d\gamma_{xy} - 2 \lambda df_{xy} \quad
-\end{equation}
-The specific stress increments are
-\begin{equation}
-      \vvec{d\s{xx}}{d\s{yy}}{d\t{xy}} = \left(\begin{array}{ccc}
-      		\code{pr.C[1][1]} & \code{pr.C[1][2]} & \code{pr.C[1][3]}  \\
-      		\code{pr.C[1][2]} & \code{pr.C[2][2]} & \code{pr.C[2][3]}  \\
-      		\code{pr.C[1][3]} & \code{pr.C[2][3]} & \code{pr.C[3][3]} 
-           \end{array}\right)
-             \vvec{d\varepsilon_{xx}^{(e)}  - \er{xx}}{d\varepsilon_{yy}^{(e)}  -\er{yy}}{d\g{xy}^{(e)}-\er{xy}}
- \end{equation}
-For plane stress analysis, $d\sigma_{zz}=0$ and the $\varepsilon_{zz}$ update is the same as for an elastic material (there is no yielding in the $z$ direction) using elastic strains:
-\begin{eqnarray}
-     \e{zz} & = & \code{pr.C[4][1]} (\e{xx}^{(e)} - \er{xx}) +  \code{pr.C[4][2]}(\e{yy}^{(e)} -\er{yy}) 
-     \nonumber \\
-     && \qquad\qquad\mbox{}
-                 + \code{pr.C[4][3]}(\g{xy}^{(e)}-\er{xy})  + \er{zz}
-\end{eqnarray}
+Plane stress analysis is currently not supported for anisotropic plastic materials.
 
 \subsection{Anisotropic 3D Analysis}
 
@@ -737,7 +678,7 @@ In 3D strain analysis, the matrix equation for update is
 \end{equation}
 The key terms are
 \begin{eqnarray}
-      \C & = & \code{pr.C[i][j]} \quad {\rm for\ }\code{i}=0,5\ {\rm and\ }\code{j}=0,5 \\
+      \C & = & \code{C[i][j]} \quad {\rm for\ }\code{i}=0,5\ {\rm and\ }\code{j}=0,5 \\
        \deff & = & \biggl(d\e{xx} - \err{xx}, \thinspace d\e{yy} - \err{yy}, \thinspace  d\e{yy}-  \er{zz}, 
              \thinspace d\g{yz}-\err{yz},  \nonumber\\
              && \qquad\mbox{} \thinspace d\g{xz}-\err{xz},  \thinspace d\g{xy}-\err{xy}\biggr) \\
@@ -746,12 +687,12 @@ The key terms are
                                 {\partial f\over \tau_{yz}}, {\partial f\over \tau_{xz}}, {\partial f\over \tau_{xy}}\right)  \\
 \left(\begin{array}{c} \err{xx} \\ \err{yy} \\ \err{zz} \\  \err{yz} \\ \err{xz} \\ \err{xy} \end{array}\right)
        & = &  \left(\begin{array}{c}
-	\code{pr.alpha[0]}\DT + \code{pr.beta[0]}\Delta c \\
-	\code{pr.alpha[1]}\DT + \code{pr.beta[1]}\Delta c \\
-	\code{pr.alpha[2]}\DT + \code{pr.beta[2]}\Delta c \\
-	\code{pr.alpha[3]}\DT + \code{pr.beta[3]}\Delta c \\
-	\code{pr.alpha[4]}\DT + \code{pr.beta[4]}\Delta c \\
-	\code{pr.alpha[5]}\DT + \code{pr.beta[5]}\Delta c 
+	\code{alpha[0]}\DT + \code{beta[0]}\Delta c \\
+	\code{alpha[1]}\DT + \code{beta[1]}\Delta c \\
+	\code{alpha[2]}\DT + \code{beta[2]}\Delta c \\
+	\code{alpha[3]}\DT + \code{beta[3]}\Delta c \\
+	\code{alpha[4]}\DT + \code{beta[4]}\Delta c \\
+	\code{alpha[5]}\DT + \code{beta[5]}\Delta c 
  \end{array}\right) 
  \end{eqnarray}
 This formulation is using engineering shear strains. 
@@ -778,7 +719,7 @@ The elastic strain increments are:
 \end{equation}
 The specific stress increments are
 \begin{equation}
-      \fvvec{d\s{xx}}{d\s{yy}}{d\s{zz}}{d\t{yz}}{d\t{xz}}{d\t{xy}} = \Biggl(\code{pr.C[i][j]} \quad {\rm for\ }\code{i}=0,5\ {\rm and\ }\code{j}=0,5\Biggr)
+      \fvvec{d\s{xx}}{d\s{yy}}{d\s{zz}}{d\t{yz}}{d\t{xz}}{d\t{xy}} = \Biggl(\code{C[i][j]} \quad {\rm for\ }\code{i}=0,5\ {\rm and\ }\code{j}=0,5\Biggr)
           \fvvec{d\varepsilon_{xx}^{(e)}  - \err{xx}}{d\varepsilon_{yy}^{(e)}  -\err{yy}}{d\varepsilon_{zz}^{(e)}  -\err{zz}}
                              {d\g{yz}^{(e)}-\err{yz}}{d\g{xz}^{(e)}-\err{xz}}{d\g{xy}^{(e)}-\err{xy}}
  \end{equation}
@@ -1794,7 +1735,7 @@ with out-of-plane strain given  by
             \e{zz} = -{C_{12}\over C_{11}}(\e{xx}- {\Delta\over 3} -\er{}) - {C_{12}\over C_{11}}(\e{yy} - {\Delta\over 3}-\er{}) 
                    + {\Delta\over 3}  + \er{}
 \end{equation}
-For the super-class \code{Isotropic} material, the needed terms are stored as \code{pr.C[1][1]} = \code{pr.C[2][2]} $= Q_{xx}/\rho$,  \code{pr.C[1][2]} $= Q_{xy}/\rho$,  \code{pr.C[3][3]} $= Q_{xyxy}/\rho$,  \code{pr.C[4][1]} =  \code{pr.C[4][2]}$= -C_{12}/C_{11}$,  \code{pr.alpha[1]} = \code{pr.alpha[2]} = \code{pr.alpha[4]} = \code{CTE3}  $=\a{}$, \code{pr.beta[1]} = \code{pr.beta[2]} = \code{pr.beta[4]} = \code{CME3}  $=\b{}$, \code{pr.C[1][3]} = \code{pr.C[2][3]} = \code{pr.alpha[3]} =\code{pr.beta[3]} $=0$, and \code{normOffset} $=\Delta/3$.
+For the super-class \code{Isotropic} material, the needed terms are stored as \code{C[1][1]} = \code{C[2][2]} $= Q_{xx}/\rho$,  \code{C[1][2]} $= Q_{xy}/\rho$,  \code{C[3][3]} $= Q_{xyxy}/\rho$,  \code{C[4][1]} =  \code{C[4][2]}$= -C_{12}/C_{11}$,  \code{alpha[1]} = \code{alpha[2]} = \code{alpha[4]} = \code{CTE3}  $=\a{}$, \code{beta[1]} = \code{beta[2]} = \code{beta[4]} = \code{CME3}  $=\b{}$, \code{C[1][3]} = \code{C[2][3]} = \code{alpha[3]} =\code{beta[3]} $=0$, and \code{normOffset} $=\Delta/3$.
 
 \subsection{Plane Strain Equations}
 
@@ -1810,7 +1751,7 @@ The plane strain stiffness equations for in-plane stresses are
                             +C_{12}\left(\e{yy} - {\Delta\over 3} -\er{}\DT\right) 
                             -C_{11}\left({\Delta\over 3} +\er{}\right) 
 \end{equation}
-For the super-class \code{Isotropic} material, the needed terms are stored as \code{pr.C[1][1]} = \code{pr.C[2][2]} = \code{pr.C[4][4]} $= C_{11}/\rho$,  \code{pr.C[1][2]} $= C_{12}/\rho$,  \code{pr.C[3][3]} $= C_{66}/\rho$,  \code{pr.C[4][1]} =  \code{pr.C[4][2]} $= C_{12}/\rho$, \code{pr.alpha[1]} = \code{pr.alpha[2]} $=\a{}(1+\v{})$, \code{pr.beta[1]} = \code{pr.beta[2]} $=\b{}(1+\v{})$, \code{pr.alpha[4]} = \code{CTE3} $=\a{}$, \code{pr.beta[4]} = \code{CME3} $=\b{}$, \code{pr.alpha[5]} = \code{pr.alpha[6]} $=\nu$, \code{pr.C[1][3]} = \code{pr.C[2][3]} = \code{pr.C[4][3]} = \code{pr.alpha[3]} = \code{pr.alpha[7]} $=0$, \code{normOffset} $=\Delta/3$, and \code{nu} = $\v{}$.
+For the super-class \code{Isotropic} material, the needed terms are stored as \code{C[1][1]} = \code{C[2][2]} = \code{C[4][4]} $= C_{11}/\rho$,  \code{C[1][2]} $= C_{12}/\rho$,  \code{C[3][3]} $= C_{66}/\rho$,  \code{C[4][1]} =  \code{C[4][2]} $= C_{12}/\rho$, \code{alpha[1]} = \code{alpha[2]} $=\a{}(1+\v{})$, \code{beta[1]} = \code{beta[2]} $=\b{}(1+\v{})$, \code{alpha[4]} = \code{CTE3} $=\a{}$, \code{beta[4]} = \code{CME3} $=\b{}$, \code{alpha[5]} = \code{alpha[6]} $=\nu$, \code{C[1][3]} = \code{C[2][3]} = \code{C[4][3]} = \code{alpha[3]} = \code{alpha[7]} $=0$, \code{normOffset} $=\Delta/3$, and \code{nu} = $\v{}$.
 
 \subsection{Special Cases for $E=0$}
 

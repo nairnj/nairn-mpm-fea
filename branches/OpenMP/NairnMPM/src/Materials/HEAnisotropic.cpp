@@ -88,7 +88,7 @@ void HEAnisotropic::PrintMechanicalProperties(void) const
    For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 */
 void HEAnisotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double dvzz,double delTime,int np,void *properties,ResidualStrains *res)
+        double dvzz,double delTime,int np,void *properties,ResidualStrains *res) const
 {
 }
 
@@ -101,7 +101,7 @@ void HEAnisotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvx
     dvij are (gradient rates X time increment) to give deformation gradient change
 */
 void HEAnisotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-        double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np,void *properties,ResidualStrains *res)
+        double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np,void *properties,ResidualStrains *res) const
 {
 }
 

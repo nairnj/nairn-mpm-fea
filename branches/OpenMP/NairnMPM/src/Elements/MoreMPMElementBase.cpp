@@ -50,7 +50,7 @@ ElementBase::~ElementBase()
   NOTE: Crack update and tractions methods call this method too and do not need to save xipos.
     Those calls have mpmptr==NULL
 */
-void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,Vector *xipos,MPMBase *mpmptr)
+void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,Vector *xipos,MPMBase *mpmptr) const
 {
     switch(useGimp)
     {   case POINT_GIMP:
@@ -128,7 +128,7 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *pos,
 	recalculate the ones found at the begnning of the time step using precalculated xipos
     or CPDI info
 */
-void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipos,MPMBase *mpmptr)
+void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipos,MPMBase *mpmptr) const
 {
     switch(useGimp)
     {   case POINT_GIMP:
@@ -203,7 +203,7 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipo
         therefore need the xipos calculated in this first call (or need CPDI calculations)
 */
 void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,Vector *pos,Vector *xipos,
-									double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr)
+									double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr) const
 {
     switch(useGimp)
     {   case POINT_GIMP:
@@ -298,7 +298,7 @@ void ElementBase::GetShapeFunctionsAndGradients(int *numnds,double *fn,int *nds,
     of CPDI info.
  */
 void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipos,
-                                    double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr)
+                                    double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr) const
 {
     switch(useGimp)
     {   case POINT_GIMP:
@@ -382,7 +382,7 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
 	output: xipos is dimensionless position
 	only used in MPM and only here if non-rectangular elements
 */
-void ElementBase::GetXiPos(Vector *pos,Vector *xipos)
+void ElementBase::GetXiPos(Vector *pos,Vector *xipos) const
 {
     double xt,yt,dxxi,dxeta,dyxi,dyeta;
     double deter,dxi,deta,dist;
@@ -589,7 +589,7 @@ void ElementBase::MPMPoints(short numPerElement,Vector *mpos)
 // assumed to be properly numbered regular array
 // load nodes into nds[1]... and node IDs (0-15) into ndIDs[0]...
 // Elements that support GIMP must override
-void ElementBase::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos)
+void ElementBase::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos) const
 {
 }
 
@@ -598,7 +598,7 @@ void ElementBase::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos)
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
 // Elements that support GIMP must override
 void ElementBase::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
-										 double *xDeriv,double *yDeriv,double *zDeriv)
+										 double *xDeriv,double *yDeriv,double *zDeriv) const
 {
 }
 
@@ -607,12 +607,12 @@ void ElementBase::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeri
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
 // Only that elements that support axisymmetric GIMP must override
 void ElementBase::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
-									double *xDeriv,double *yDeriv,double *zDeriv)
+									double *xDeriv,double *yDeriv,double *zDeriv) const
 {
 }
 
 // Ignore zero shape functions in GIMP, but only need to check remote nodes
-void ElementBase::GimpCompact(int *numnds,int *nds,double *sfxn,double *xDeriv,double *yDeriv,double *zDeriv)
+void ElementBase::GimpCompact(int *numnds,int *nds,double *sfxn,double *xDeriv,double *yDeriv,double *zDeriv) const
 {
 	int local=NumberNodes();
 	int i,found=local;
@@ -645,7 +645,7 @@ bool ElementBase::OnTheEdge(void)
 // cpdi[i]->ws - shape function weights (numNds of them)
 // cpdi[i]->wg - gradient weights (numNds of them)
 void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,int *numnds,int *nds,
-								   double *fn,double *xDeriv,double *yDeriv,double *zDeriv)
+								   double *fn,double *xDeriv,double *yDeriv,double *zDeriv) const
 {
 	int i,j;
 	
@@ -755,7 +755,7 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,int *numnds,int
 }
 
 // by non-element methods that need access to grid shape functions only, and those methods are protected
-void ElementBase::GridShapeFunctions(int *numnds,int *nds,Vector *xipos,double *fn)
+void ElementBase::GridShapeFunctions(int *numnds,int *nds,Vector *xipos,double *fn) const
 {
     GetNodes(numnds,nds);
     ShapeFunction(xipos,FALSE,&fn[1],NULL,NULL,NULL);
@@ -766,18 +766,18 @@ void ElementBase::GridShapeFunctions(int *numnds,int *nds,Vector *xipos,double *
 /* Get list of nodes for this element and the number of nodes
 	nodes will be in nds[1]...
 */
-void ElementBase::GetNodes(int *numnds,int *nds)
+void ElementBase::GetNodes(int *numnds,int *nds) const
 {
 	int i;
-	*numnds=NumberNodes();
+	*numnds = NumberNodes();
 	for(i=1;i<=*numnds;i++)
-	   nds[i]=nodes[i-1];
+	   nds[i] = nodes[i-1];
 }
 
 /* Load nodal coordinates into eNodes[1]...
 	input numnds and nds from previous call to GetNodes()
 */
-void ElementBase::GetCoordinates(Vector *eNodes,int numnds,int *nds)
+void ElementBase::GetCoordinates(Vector *eNodes,int numnds,int *nds) const
 {
 	int i;
 	for(i=1;i<=numnds;i++)
@@ -792,7 +792,7 @@ void ElementBase::GetCoordinates(Vector *eNodes,int numnds,int *nds)
     numerical solution to find natural coordinates.
 	Only needed for non-rectangular elements
 */
-void ElementBase::GetCentroid(Vector *xipos)
+void ElementBase::GetCentroid(Vector *xipos) const
 {
     xipos->x=0.;
     xipos->y=0.;

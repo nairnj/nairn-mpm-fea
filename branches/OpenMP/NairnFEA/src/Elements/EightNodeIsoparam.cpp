@@ -39,7 +39,7 @@ EightNodeIsoparam::EightNodeIsoparam(int eNum,int *eNode,int eMat,double eAng,do
 */
 void EightNodeIsoparam::ShapeFunction(Vector *xi,int getDeriv,
 		double *sfxn,double *xiDeriv,double *etaDeriv,Vector *eNodes,
-                double *outDetjac,double *outAsr,double *asbe)
+                double *outDetjac,double *outAsr,double *asbe) const
 {
 	double temp1,temp2,asr;
 	double jac[3][3],detjac;
@@ -198,5 +198,5 @@ void EightNodeIsoparam::ExtrapolateGaussStressToNodes(double sgp[][5])
 short EightNodeIsoparam::ElementName(void) { return(EIGHT_NODE_ISO); }
 
 // number of nodes in this element
-int EightNodeIsoparam::NumberNodes(void) { return 8; }
+int EightNodeIsoparam::NumberNodes(void) const { return 8; }
 

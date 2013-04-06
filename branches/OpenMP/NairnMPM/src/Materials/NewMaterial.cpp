@@ -55,7 +55,7 @@ const char *NewMaterial::VerifyAndLoadProperties(int np)
 }
 
 // Initialize constant transport properties used in transport calculation
-//void NewMaterial::InitialLoadTransProps(void) {}
+//void NewMaterial::FillTransportProperties(TransportProperties *) {}
 
 // print mechanical properties to the results
 void NewMaterial::PrintMechanicalProperties(void) const
@@ -98,10 +98,8 @@ void NewMaterial::PrintMechanicalProperties(void) const
 #pragma mark NewMaterial:Step Methods
 
 // Calculate transport properties that depend on the state of the particle
-// If implemented, MUST pass onto super class
-//void NewMaterial::LoadTransportProps(MPMBase *mptr,int np) {}
+//void NewMaterial::LoadTransportProps(MPMBase *mptr,int np,TransportProperties *t) const {}
 //{
-//	MaterialBase::LoadTransportProps(mptr,np);
 //}
 
 // Implemented in case heat capacity (Cp/heat capacity for conduction) changes with particle state
@@ -109,7 +107,7 @@ void NewMaterial::PrintMechanicalProperties(void) const
 //double NewMaterial::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity; }
 
 // Apply Constitutive law, check np to know what type
-void NewMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res)
+void NewMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
 }
 

@@ -157,7 +157,7 @@ void Quad2D::AdjustMidSideNode(int tip,int mid,int end,vector<int> &movedNodes)
 #pragma mark Quad2D: accessors
 
 // thickness which may be in a subclass
-double Quad2D::GetThickness(void) { return thickness; }
+double Quad2D::GetThickness(void) const { return thickness; }
 void Quad2D::SetThickness(double thick) { thickness = thick; }
 
 // face nodes
@@ -166,7 +166,7 @@ int Quad2D::FaceNodes(void) { return 3; }
 /*	Calculate area of element (in mm^2 because nodes in mm)
 	nodes is pointer to 0-based array NodalPoints
 */
-double Quad2D::GetArea(void)
+double Quad2D::GetArea(void) const
 {
 	short i,ns=NumberSides(),nn=NumberNodes()-1;
 	double area;
@@ -187,5 +187,5 @@ double Quad2D::GetArea(void)
 }
 
 //	Calculate volume of element (in mm^3 because nodes in mm)
-double Quad2D::GetVolume(void) { return thickness*GetArea(); }
+double Quad2D::GetVolume(void) const { return thickness*GetArea(); }
 

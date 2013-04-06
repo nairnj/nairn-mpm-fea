@@ -80,42 +80,41 @@ class ElementBase : public LinkedObject
         
         // prototypes for abstract methods (must override)
         virtual short ElementName(void) = 0;
-        virtual int NumberNodes(void) = 0;
-        virtual double GetArea(void) = 0;
-        virtual double GetVolume(void) = 0;
 		virtual int FaceNodes(void) = 0;
         virtual short PtInElement(Vector &) = 0;
-        virtual void ShapeFunction(Vector *,int,double *,double *,double *,
-                                    Vector *,double *,double *,double *) = 0;
+	
+		// const prototypes
+		virtual int NumberNodes(void) const = 0;
+		virtual double GetArea(void) const = 0;
+		virtual double GetVolume(void) const = 0;
+		virtual void ShapeFunction(Vector *,int,double *,double *,double *,
+									Vector *,double *,double *,double *) const = 0;
 #ifdef MPM_CODE
-		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *) = 0;
-		virtual void GetGimpNodes(int *,int *,int *,Vector *);
-		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *);
-		virtual void GimpShapeFunctionAS(Vector *,int,int *,int,double *,double *,double *,double *);
+		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *) const = 0;
+	
+		virtual void GetGimpNodes(int *,int *,int *,Vector *) const;
+		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *) const;
+		virtual void GimpShapeFunctionAS(Vector *,int,int *,int,double *,double *,double *,double *) const;
 #endif
 									
         // prototypes of methods defined in ElementBase class (but may override)
 		virtual void PrintElement(ostream &,int);
-		virtual double GetThickness(void);
         virtual void SetThickness(double);
 		virtual void GetXYZCentroid(Vector *);
-        virtual double GetCenterX(void);
-		virtual double GetDeltaX(void);
-		virtual double GetDeltaY(void);
-		virtual double GetDeltaZ(void);
 		virtual bool IntersectsBox(double,double,double,double,double);
-        virtual int NumberSides(void);
 		int NodeIndex(int);
         virtual void FindExtent(void);
 		virtual void FindCentroid(Vector *);
+	
+		// const methods
+		virtual double GetCenterX(void) const;
+		virtual double GetDeltaX(void) const;
+		virtual double GetDeltaY(void) const;
+		virtual double GetDeltaZ(void) const;
+		virtual double GetThickness(void) const;
+		virtual int NumberSides(void) const;
+
 #ifdef MPM_CODE
-		virtual void GetShapeFunctions(int *,double *,int *,Vector *,Vector *,MPMBase *);
-		virtual void GetShapeFunctions(int *,double *,int *,Vector *,MPMBase *);
-		virtual void GetShapeGradients(int *,double *,int *,Vector *,double *,double *,double *,MPMBase *);
-		virtual void GetShapeFunctionsAndGradients(int *,double *,int *,Vector *,Vector *,double *,double *,double *,MPMBase *);
-		virtual void GimpCompact(int *,int *,double *,double *,double *,double *);
-		virtual void GetCPDIFunctions(int,CPDIDomain **,int *,int *,double *,double *,double *,double *);
-        virtual void GridShapeFunctions(int *,int *,Vector *,double *);
 		virtual bool OnTheEdge(void);
 		virtual void GetListOfNeighbors(int *);
 		virtual int NextNode(int);
@@ -125,8 +124,17 @@ class ElementBase : public LinkedObject
 		virtual int Orthogonal(double *,double *,double *);
         virtual int NearestNode(double,double,int *);
         virtual void MPMPoints(short,Vector *);
-		virtual void GetXiPos(Vector *,Vector *);
 		virtual void GetPosition(Vector *,Vector *);
+	
+		// const methods
+		virtual void GetShapeFunctions(int *,double *,int *,Vector *,Vector *,MPMBase *) const;
+		virtual void GetShapeFunctions(int *,double *,int *,Vector *,MPMBase *) const;
+		virtual void GetShapeGradients(int *,double *,int *,Vector *,double *,double *,double *,MPMBase *) const;
+		virtual void GetShapeFunctionsAndGradients(int *,double *,int *,Vector *,Vector *,double *,double *,double *,MPMBase *) const;
+		virtual void GridShapeFunctions(int *,int *,Vector *,double *) const;
+		virtual void GimpCompact(int *,int *,double *,double *,double *,double *) const;
+		virtual void GetXiPos(Vector *,Vector *) const;
+		virtual void GetCPDIFunctions(int,CPDIDomain **,int *,int *,double *,double *,double *,double *) const;
 #else
 		virtual bool HasNode(int);
 		virtual void DecrementNodeNums(int);
@@ -170,9 +178,9 @@ class ElementBase : public LinkedObject
 #endif
 
 #ifdef MPM_CODE
-        virtual void GetCentroid(Vector *);
-        virtual void GetCoordinates(Vector *,int,int *);
-		virtual void GetNodes(int *,int *);
+        virtual void GetCentroid(Vector *) const;
+        virtual void GetCoordinates(Vector *,int,int *) const;
+		virtual void GetNodes(int *,int *) const;
 #endif
 
 };

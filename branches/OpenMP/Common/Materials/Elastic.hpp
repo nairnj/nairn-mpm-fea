@@ -38,8 +38,8 @@ class Elastic : public MaterialBase
         
 		// methods
 #ifdef MPM_CODE
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *);
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif
@@ -48,7 +48,6 @@ class Elastic : public MaterialBase
 		double prop1,prop2;
 #ifdef MPM_CODE
 		ElasticProperties pr;
-		int hasTransProps;			// flag set TRUE whenever transport props have been evaluated
 #else
         double prop3;
 #endif

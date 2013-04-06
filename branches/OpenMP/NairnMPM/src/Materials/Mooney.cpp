@@ -112,7 +112,7 @@ char *Mooney::InitHistoryData(void)
     This material tracks pressure and stores deviatoric stress only in particle stress
         tensor
 */
-void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res)
+void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
 	// incremental energy, store initial stress
 	Tensor *sporig=mptr->GetStressTensor();

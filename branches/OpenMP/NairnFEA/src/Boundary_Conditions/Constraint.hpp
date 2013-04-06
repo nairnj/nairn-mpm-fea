@@ -26,7 +26,7 @@ class Constraint : public LinkedObject
 		Constraint *MapNodes(int *);
 		
 		// Accessors
-		int NumberNodes(void);
+		int NumberNodes(void) const;
 		int NodalDof(int,int);
 		double GetQ(void);
 		double GetCoeff(int);

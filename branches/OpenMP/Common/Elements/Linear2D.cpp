@@ -27,7 +27,7 @@ Linear2D::Linear2D(int eNum,int *eNode,int eMat,double eAng,double eThick) :
 	node is pointer to 0-based array NodalPoints
 	Assumes nodes[NumberNodes()] = nodes[0]
 */
-double Linear2D::GetArea(void)
+double Linear2D::GetArea(void) const
 {
     int i,ns=NumberSides();
     double area;
@@ -41,7 +41,7 @@ double Linear2D::GetArea(void)
 }
 
 //	Calculate volume of element (in mm^3 because nodes in mm)
-double Linear2D::GetVolume(void) { return thickness*GetArea(); }
+double Linear2D::GetVolume(void) const { return thickness*GetArea(); }
 
 /*	Use ray crossing algorithm to find out if a point (pt.x,pt.y) is in an element
 	nd is pointer to 1-based array NodalPoints
@@ -90,7 +90,7 @@ void Linear2D::CalcEdgeLoads(double *re,int iedge,int ndir,double *fload,int np)
 #pragma mark Linear2D::Acessors
 
 // thickness which may be in a subclass
-double Linear2D::GetThickness(void) { return thickness; }
+double Linear2D::GetThickness(void) const { return thickness; }
 void Linear2D::SetThickness(double thick) { thickness = thick; }
 
 // face nodes

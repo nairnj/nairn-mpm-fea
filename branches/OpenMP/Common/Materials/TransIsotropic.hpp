@@ -39,17 +39,18 @@ class TransIsotropic : public Elastic
         virtual char *InputMat(char *,int &);
         virtual const char *VerifyAndLoadProperties(int);
         virtual void PrintMechanicalProperties(void) const;
+	virtual void FillTransportProperties(TransportProperties *);
 #ifdef MPM_CODE
 		virtual void PrintTransportProperties(void) const;
 #endif
 		
 		// methods
-		void FillElasticProperties2D(ElasticProperties *,int,double,int);
+		void FillElasticProperties2D(ElasticProperties *,int,double,int) const;
 #ifdef MPM_CODE
-		void FillElasticProperties3D(MPMBase *,ElasticProperties *,int);
-		virtual void *GetCopyOfMechanicalProps(MPMBase *mptr,int np);
+		void FillElasticProperties3D(MPMBase *,ElasticProperties *,int) const;
+		virtual void *GetCopyOfMechanicalProps(MPMBase *mptr,int np) const;
 		virtual void DeleteCopyOfMechanicalProps(void *,int) const;
-		virtual void LoadTransportProps(MPMBase *,int);
+		virtual void GetTransportProps(MPMBase *,int,TransportProperties *) const;
 #else
 		virtual void LoadMechanicalPropertiesFEA(int,double,int);
 #endif
@@ -61,14 +62,12 @@ class TransIsotropic : public Elastic
         virtual double WaveSpeed(bool,MPMBase *) const;
         virtual double MaximumDiffusion(void) const;
         virtual double MaximumDiffusivity(void) const;
-		virtual double GetDiffZ(void);
-		virtual double GetKcondZ(void);
+		virtual double GetDiffZ(void) const;
+		virtual double GetKcondZ(void) const;
 #endif
 		
 	protected:
-#ifdef MPM_CODE
-		double lastTransAngle;
-#else
+#ifdef FEA_CODE
 		double lastMatAngle;
 		int hasMatProps;
 #endif

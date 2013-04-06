@@ -47,12 +47,12 @@ class HEIsotropic : public HyperElastic
 		virtual void PrintMechanicalProperties(void) const;
 		
 		// step methods
-		virtual void *GetCopyOfMechanicalProps(MPMBase *,int);
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int) const;
 		virtual void DeleteCopyOfMechanicalProps(void *,int) const;
 	
 		// constitutive law
-        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *);
-        virtual void UpdatePressure(MPMBase *,double,double,int,double,double,HEPlasticProperties *,ResidualStrains *);
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+        virtual void UpdatePressure(MPMBase *,double,double,int,double,double,HEPlasticProperties *,ResidualStrains *) const;
         Tensor GetTrialDevStressTensor(Tensor *,double,int,double) const;
         virtual double GetMagnitudeS(Tensor *st,int) const;
         Tensor GetNormalTensor(Tensor *,double,int) const;

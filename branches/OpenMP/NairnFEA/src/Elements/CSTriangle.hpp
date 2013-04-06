@@ -23,12 +23,14 @@ class CSTriangle : public Linear2D
         
         // prototypes
         virtual short ElementName(void);
-        virtual int NumberNodes(void);
-        virtual int NumberSides(void);
-        virtual void ShapeFunction(Vector *,int,double *,double *,double *,
-                                    Vector *,double *,double *,double *);
 		void Stiffness(int);
 		void ForceStress(double *,int,int);
+	
+		// const methods
+		virtual int NumberNodes(void) const;
+		virtual int NumberSides(void) const;
+		virtual void ShapeFunction(Vector *,int,double *,double *,double *,
+									Vector *,double *,double *,double *) const;
 };
 
 #endif

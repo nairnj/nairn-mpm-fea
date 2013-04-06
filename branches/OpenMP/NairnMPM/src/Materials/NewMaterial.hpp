@@ -28,7 +28,7 @@ class NewMaterial : public MaterialBase
 		// initialize
         virtual char *InputMat(char *,int &);
         virtual const char *VerifyAndLoadProperties(int);
-		//virtual void InitialLoadTransProps(void);
+		//virtual void FillTransportProperties(TransportProperties *);
 		virtual void PrintMechanicalProperties(void) const;
 		//virtual void PrintTransportProperties(void) const;
 		//virtual bool ValidateForUse(int) const;
@@ -39,9 +39,9 @@ class NewMaterial : public MaterialBase
 		//virtual double GetHistory(int,char *) const;
 		
 		// step methods
-		//virtual void LoadTransportProps(MPMBase *,int);
+		//virtual voidv GetTransportProps(MPMBase *,int,TransportProperties *) const;
 		//virtual double GetHeatCapacity(MPMBase *) const;
-        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *);
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 				
 		// accessors
 		virtual const char *MaterialType(void) const;

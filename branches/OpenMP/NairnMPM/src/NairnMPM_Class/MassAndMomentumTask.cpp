@@ -75,9 +75,6 @@
 
 MassAndMomentumTask::MassAndMomentumTask(const char *name) : MPMTask(name)
 {
-	// zero thisfunction in case in 2D analysis
-	for(int i=0;i<MaxShapeNds;i++) zDeriv[i]=0.;
-	
 }
 
 #pragma mark REQUIRED METHODS
@@ -86,9 +83,8 @@ MassAndMomentumTask::MassAndMomentumTask(const char *name) : MPMTask(name)
 //	and find grid momenta
 void MassAndMomentumTask::Execute(void)
 {
-	int p,mi,iel,matfld,numnds,nds[MaxShapeNds];
-	MaterialBase *matID;
-	double mp,fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds];
+	int nds[MaxShapeNds];
+	double fn[MaxShapeNds],xDeriv[MaxShapeNds],yDeriv[MaxShapeNds],zDeriv[MaxShapeNds];
 	
 	// undo dynamic velocity, temp, and conc BCs from rigid materials
 	UnsetRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
@@ -99,25 +95,28 @@ void MassAndMomentumTask::Execute(void)
 				  (BoundaryCondition **)&firstRigidConcBC,(BoundaryCondition **)&reuseRigidConcBC);
 	
 	// loop over particles
-    for(p=0;p<nmpms;p++)
-	{
-		MPMBase *mpmptr=mpm[p];					// pointer
-		iel=mpmptr->ElemID();					// element containing this particle
-		matID=theMaterials[mpmptr->MatID()];	// material object for this particle
+    for(int p=0;p<nmpms;p++)
+	{	int numnds,mi;
+		MPMBase *mpmptr = mpm[p];									// pointer
+		int iel = mpmptr->ElemID();									// element containing this particle
+		const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
 		
 		// normal materials
 		if(!matID->RigidBC())
-		{	mp=mpmptr->mp;                      // material point mass in g
-			matfld=matID->GetField();           // material velocity field
+		{	double mp = mpmptr->mp;							// material point mass in g
+			int matfld = matID->GetField();					// material velocity field
 			
 			// get nodes and shape function for material point p
 			if(fmobj->multiMaterialMode)
-			{	theElements[iel]->GetShapeFunctionsAndGradients(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
+			{	theElements[iel]->GetShapeFunctionsAndGradients(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),
+																xDeriv,yDeriv,zDeriv,mpmptr);
 				
 				// for particles that are multimaterial rigid materials, set their velocity
 				if(matID->Rigid())
 				{	Vector newvel;
 					bool hasDir[3];
+					
+					// GetVectorSetting using global variables and therefore can only be for one thread at a time
  					if(((RigidMaterial *)matID)->GetVectorSetting(&newvel,hasDir,mtime,&mpmptr->pos))
                     {   // change velocity if functions being used, otherwise keep velocity constant
 						if(hasDir[0]) mpmptr->vel.x = newvel.x;
@@ -133,13 +132,13 @@ void MassAndMomentumTask::Execute(void)
 			for(int i=1;i<=numnds;i++)
 			{	
 				NodalPoint *ndptr = nd[nds[i]];				// get pointer
-				short vfld = 0;
+				short vfld;
+				CrackField *cfldptr;
 				
 				// Regular MPM, adds to velocity field 0
 				if(firstCrack==NULL)
-				{	// momentum vector (and allocate velocity field if needed)
-					ndptr->AddMomentumTask1(matfld,NULL,fn[i]*mp,&mpmptr->vel);
-					mpmptr->vfld[i] = 0;
+				{	cfldptr = NULL;
+					vfld = 0;
 				}
 				
 				else
@@ -147,6 +146,7 @@ void MassAndMomentumTask::Execute(void)
 					CrackField cfld[2];
 					cfld[0].loc = NO_CRACK;			// NO_CRACK, ABOVE_CRACK, or BELOW_CRACK
 					cfld[1].loc = NO_CRACK;
+					cfldptr = &cfld[0];
 					int cfound=0;
 					Vector norm;
 					
@@ -168,10 +168,15 @@ void MassAndMomentumTask::Execute(void)
 						nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 					}
 					
-					// momentum vector (and allocate velocity field if needed)
-					vfld = ndptr->AddMomentumTask1(matfld,cfld,fn[i]*mp,&mpmptr->vel);
-					mpmptr->vfld[i] = vfld;
 				}
+				
+				// the rest changes nd[i] and because threads might cross, this section can only have one
+				// thread at a time
+			
+				// momentum vector (and allocate velocity field if needed)
+				// changes ndptr and therefore only one thread at a time
+				vfld = ndptr->AddMomentumTask1(matfld,cfldptr,fn[i]*mp,&mpmptr->vel);
+				mpmptr->vfld[i] = vfld;
 				
 				// crack contact calculations
 				contact.AddDisplacementVolume(vfld,matfld,ndptr,mpmptr,fn[i]);

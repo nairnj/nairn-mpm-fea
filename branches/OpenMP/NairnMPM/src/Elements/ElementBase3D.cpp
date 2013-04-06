@@ -55,7 +55,7 @@ void ElementBase3D::GetXYZCentroid(Vector *center)
 }
 
 // depth - 3D element return z extent
-double ElementBase3D::GetDeltaZ(void) { return zmax-zmin; }
+double ElementBase3D::GetDeltaZ(void) const { return zmax-zmin; }
 bool ElementBase3D::IntersectsBox(double xorig,double yorig,double xlength,double ylength,double zslice)
 {	if(zslice<zmin) return false;
 	if(zslice>zmax) return false;

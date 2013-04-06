@@ -29,11 +29,14 @@ class Linear2D : public ElementBase
         
         // prototypes
 		virtual int FaceNodes(void);
-        virtual double GetArea(void);
-		virtual double GetVolume(void);
         virtual short PtInElement(Vector &);
-        virtual double GetThickness(void);
-    virtual void SetThickness(double);
+		virtual void SetThickness(double);
+	
+		// const methods
+		virtual double GetThickness(void) const;
+		virtual double GetArea(void) const;
+		virtual double GetVolume(void) const;
+	
 #ifdef FEA_CODE
 		virtual void CalcEdgeLoads(double *,int,int,double *,int);
 #endif

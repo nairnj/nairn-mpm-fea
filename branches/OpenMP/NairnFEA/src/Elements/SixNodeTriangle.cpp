@@ -37,7 +37,7 @@ SixNodeTriangle::SixNodeTriangle(int eNum,int *eNode,int eMat,double eAng,double
 */
 void SixNodeTriangle::ShapeFunction(Vector *xi,int getDeriv,
 		double *sfxn,double *xiDeriv,double *etaDeriv,Vector *eNodes,
-                double *outDetjac,double *outAsr,double *asbe)
+                double *outDetjac,double *outAsr,double *asbe) const
 {
 	double jac[3][3],detjac,asr,temp1,temp2;
 	int i;
@@ -137,8 +137,8 @@ void SixNodeTriangle::ExtrapolateGaussStressToNodes(double sgp[][5])
 short SixNodeTriangle::ElementName(void) { return(ISO_TRIANGLE); }
 
 // number of nodes in this element
-int SixNodeTriangle::NumberNodes(void) { return 6; }
+int SixNodeTriangle::NumberNodes(void) const { return 6; }
 
 // number of sides in this element (override if differs)
-int SixNodeTriangle::NumberSides(void) { return(3); }
+int SixNodeTriangle::NumberSides(void) const { return(3); }
 

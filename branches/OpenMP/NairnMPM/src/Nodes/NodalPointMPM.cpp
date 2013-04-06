@@ -396,7 +396,7 @@ void NodalPoint::UpdateMomentaOnNode(double timestep)
 #pragma mark TASK 5 METHODS
 
 // Increment velocity and acceleration for this material point using one velocity field
-void NodalPoint::IncrementDelvaTask5(short vfld,int matfld,double fi,Vector *delv,Vector *dela)
+void NodalPoint::IncrementDelvaTask5(short vfld,int matfld,double fi,Vector *delv,Vector *dela) const
 {	cvf[vfld]->IncrementDelvaTask5(matfld,fi,delv,dela);
 }
 

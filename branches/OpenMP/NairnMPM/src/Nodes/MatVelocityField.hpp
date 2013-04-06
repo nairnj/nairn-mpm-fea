@@ -44,7 +44,7 @@ class MatVelocityField
         void AddFext(Vector *);
         void AddFext(Vector *,double);
         void UpdateMomentum(double);
-        void IncrementNodalVelAcc(double,Vector *,Vector *);
+        void IncrementNodalVelAcc(double,Vector *,Vector *) const;
 	
 		// accessors
 		void Describe(void);

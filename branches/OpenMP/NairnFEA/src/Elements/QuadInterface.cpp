@@ -33,7 +33,7 @@ QuadInterface::QuadInterface(int eNum,int *eNode,int eMat,double eAng,double eTh
 */
 void QuadInterface::ShapeFunction(Vector *xi,int getDeriv,
 		double *sfxn,double *xiDeriv,double *etaDeriv,Vector *eNodes,
-                double *outDetjac,double *outAsr,double *asbe)
+                double *outDetjac,double *outAsr,double *asbe) const
 {
 	// shape functions
 	sfxn[0]=(xi->x*xi->x-xi->x)/2.;
@@ -101,7 +101,7 @@ void QuadInterface::Stiffness(int np)
 short QuadInterface::ElementName(void) { return QUAD_INTERFACE; }
 
 // number of nodes in this element
-int QuadInterface::NumberNodes(void) { return 6; }
+int QuadInterface::NumberNodes(void) const { return 6; }
 
 // face nodes
 int QuadInterface::FaceNodes(void) { return 3; }

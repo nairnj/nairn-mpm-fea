@@ -23,6 +23,8 @@ typedef struct {
 	double psLr2G;
 	double psKred;
 	void *hardProps;
+	double delVLowStrain;
+	double QAVred;
 } PlasticProperties;
 
 class HardeningLawBase;
@@ -46,19 +48,19 @@ class IsoPlasticity : public IsotropicMat
         virtual void PrintMechanicalProperties(void) const;
 		
 		// methods
-		virtual void *GetCopyOfMechanicalProps(MPMBase *,int);
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int) const;
 		virtual void DeleteCopyOfMechanicalProps(void *,int) const;
-		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *);
+		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
         virtual void PlasticityConstLaw(MPMBase *,double,double,double,double,double,double,int,
-                                        double,double,double,PlasticProperties *,ResidualStrains *);
+                                        double,double,double,PlasticProperties *,ResidualStrains *) const;
         virtual void PlasticityConstLaw(MPMBase *,double,double,double,double,double,double,double,double,
-                                        double,double,int,double,double,double,PlasticProperties *,ResidualStrains *);
+                                        double,double,int,double,double,double,PlasticProperties *,ResidualStrains *) const;
 		
 		// custom methods: Find yield function and solve for lambda
-		virtual void UpdatePressure(MPMBase *,double &,double,int,PlasticProperties *,ResidualStrains *);
-        virtual double GetMagnitudeSFromDev(Tensor *,int);
-		virtual void GetDfDsigma(double,Tensor *,int);
-		virtual void ElasticUpdateFinished(MPMBase *,int,double);
+		virtual void UpdatePressure(MPMBase *,double &,double,int,PlasticProperties *,ResidualStrains *) const;
+        virtual double GetMagnitudeSFromDev(Tensor *,int) const;
+		virtual void GetDfDsigma(double,Tensor *,int,Tensor *) const;
+		virtual void ElasticUpdateFinished(MPMBase *,int,double) const;
 		
 		// accessors
         virtual Tensor GetStress(Tensor *,double) const;
@@ -69,10 +71,7 @@ class IsoPlasticity : public IsotropicMat
 		
     protected:
 		PlasticProperties pr;
-		double dfdsxx,dfdsyy,dfdtxy,dfdszz,dfdtxz,dfdtyz;
-        double delVLowStrain;
 		double G0red;
-    
         HardeningLawBase *plasticLaw;
 
 };

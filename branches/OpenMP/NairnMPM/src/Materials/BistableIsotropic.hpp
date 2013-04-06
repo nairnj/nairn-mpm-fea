@@ -57,8 +57,8 @@ class BistableIsotropic : public IsotropicMat
 		virtual void PrintTransportProperties(void) const;
         
         // override methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *);
-        virtual void LoadTransportProps(MPMBase *,int);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+        virtual void GetTransportProps(MPMBase *,int,TransportProperties *) const;
 		
 		// accessors
         virtual double WaveSpeed(bool,MPMBase *) const;
@@ -72,6 +72,7 @@ class BistableIsotropic : public IsotropicMat
         char readbs[BISTABLE_PROPS];
         short transState;	// current state for transport properties
 		ElasticProperties pr2;
+		TransportProperties tr2;
 };
 
 #endif

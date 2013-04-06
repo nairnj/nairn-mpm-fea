@@ -15,6 +15,17 @@
 
 #include "Materials/Orthotropic.hpp"
 
+// plastic law properties
+typedef struct {
+	ElasticProperties *ep;
+	double aint;
+	double minush;
+	Tensor dfds;
+	double dfCdf;
+	Tensor Cdf;
+	double rzyx[6][6];			// 3D rotation matrix calcualted once per step
+} AnisoPlasticProperties;
+
 class AnisoPlasticity : public Orthotropic
 {
     public:
@@ -31,20 +42,25 @@ class AnisoPlasticity : public Orthotropic
 		virtual void PrintYieldProperties(void) const;
 			
 		// methods
-		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *);
-		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *);
-		virtual double SolveForLambdaAP(MPMBase *mptr,int,double,Tensor *);
-		virtual double GetFkFromLambdak(MPMBase *,Tensor *,Tensor *,double,int);
-		virtual void GetDfCdf(MPMBase *,Tensor *,int);
-		virtual void UpdateStress(Tensor *,Tensor *,double,int);
+		void *GetCopyOfMechanicalProps(MPMBase *,int) const;
+		void DeleteCopyOfMechanicalProps(void *,int) const;
+		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+		virtual double SolveForLambdaAP(MPMBase *mptr,int,double,Tensor *,AnisoPlasticProperties *p) const;
+		virtual double GetFkFromLambdak(MPMBase *,Tensor *,Tensor *,double,int,AnisoPlasticProperties *) const;
+		virtual void UpdateStress(Tensor *,Tensor *,double,int,AnisoPlasticProperties *p) const;
+	
+		// Hill methods
+		virtual double GetMagnitudeRotatedHill(Tensor *,Tensor *,int,AnisoPlasticProperties *) const;
+		virtual void GetDfCdf(Tensor *,int,AnisoPlasticProperties *p) const;
+		virtual void GetDfDsigma(Tensor *,int,AnisoPlasticProperties *p) const;
  		
-		// subclass must provide platic potential functions
-		virtual void UpdateTrialAlpha(MPMBase *,int) = 0;
-		virtual void UpdateTrialAlpha(MPMBase *,int,double) = 0;
-		virtual double GetF(MPMBase *,Tensor *,int) = 0;
-		virtual void GetDfDsigma(MPMBase *,Tensor *,int) = 0;
-		virtual double GetDfAlphaDotH(MPMBase *,int,Tensor *) = 0;
-		virtual void UpdatePlasticInternal(MPMBase *,int) = 0;
+		// hardening term methods (move to hardening law class when want more hardening options)
+		virtual void UpdateTrialAlpha(MPMBase *,int,AnisoPlasticProperties *) const = 0;
+		virtual void UpdateTrialAlpha(MPMBase *,int,double,AnisoPlasticProperties *p) const = 0;
+		virtual double GetYield(AnisoPlasticProperties *p) const = 0;
+		virtual double GetDfAlphaDotH(MPMBase *,int,Tensor *,AnisoPlasticProperties *p) const = 0;
+		virtual void UpdatePlasticInternal(MPMBase *,int,AnisoPlasticProperties *p) const = 0;
     
         // accessors
         virtual bool PartitionsElasticAndPlasticStrain(void);
@@ -52,11 +68,7 @@ class AnisoPlasticity : public Orthotropic
    protected:
 		double syxx,syyy,syzz,tyyz,tyxz,tyxy;
 		double syxxred2,syyyred2,syzzred2,tyyzred2,tyxzred2,tyxyred2;		// equal to 1/yield^2 and reduced
-		double dfdsxx,dfdsyy,dfdszz,dfdtyz,dfdtxz,dfdtxy;
-		double dfdsxxrot,dfdsyyrot,dfdszzrot,dfdtyzrot,dfdtxzrot,dfdtxyrot;
-		double Cdfxx,Cdfyy,Cdfzz,Cdfyz,Cdfxz,Cdfxy,dfCdf;
-		double cos2t,sin2t,costsint;										// 2D rotation terms calculated once per step
-		double rzyx[6][6];													// 3D rotation matrix calcualted once per step
+		double fTerm,gTerm,hTerm;
 
 };
 

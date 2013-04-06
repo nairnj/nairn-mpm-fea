@@ -116,7 +116,7 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np) const
     Particle: strains, rotation strain, stresses, strain energy, angle
     du are (gradient rates X time increment) to give deformation gradient change
 */
-void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res)
+void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
     // Update strains and rotations and Left Cauchy strain
     // get determinent of incremental deformation gradient

@@ -41,8 +41,8 @@ class Viscoelastic : public MaterialBase
 		virtual void ValidateForUse(int) const;
     
 		// methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *);
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *);
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
 		
 		// accessors
         virtual double WaveSpeed(bool,MPMBase *) const;

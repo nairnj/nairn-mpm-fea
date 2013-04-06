@@ -104,16 +104,6 @@ const char *IsotropicMat::VerifyAndLoadProperties(int np)
 	return MaterialBase::VerifyAndLoadProperties(np);
 }
 
-#ifdef MPM_CODE
-// Call base class to set diffusion and moisture tensors, but set flag thay
-// they are set first
-void IsotropicMat::InitialLoadTransProps(void)
-{
-	hasTransProps=TRUE;
-	MaterialBase::InitialLoadTransProps();
-}
-#endif
-
 #pragma mark IsotropicMat::Methods
 
 // Fill ElasticProperties variable with current particle state
@@ -233,8 +223,8 @@ void IsotropicMat::FillElasticProperties(ElasticProperties *p,int np)
 #ifdef MPM_CODE
 
 // Isotropic material can use read-only initial properties
-void *IsotropicMat::GetCopyOfMechanicalProps(MPMBase *mptr,int np)
-{	return &pr;
+void *IsotropicMat::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
+{	return (void *)&pr;
 }
 
 /* d -- crack opening displacement near crack tip, d.y--opening, d.x--shear

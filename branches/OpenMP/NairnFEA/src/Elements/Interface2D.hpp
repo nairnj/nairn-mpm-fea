@@ -24,16 +24,18 @@ class Interface2D : public ElementBase
 		Interface2D(int,int *,int,double,double);
 		
         // prototypes
-        virtual int NumberSides(void);
-        virtual double GetArea(void);
-		virtual double GetVolume(void);
 		virtual bool BulkElement(void);
         virtual short PtInElement(Vector &);
-        virtual double GetThickness(void);
         virtual void SetThickness(double);  
 		virtual void Stiffness(int);
 		virtual void IncrementStiffnessElements(double,double *,double,double,double,double,double);
 		virtual void ForceStress(double *,int,int);
+	
+		// const methods
+		virtual double GetThickness(void) const;
+		virtual double GetArea(void) const;
+		virtual double GetVolume(void) const;
+		virtual int NumberSides(void) const;
 	
 	private:
 		void InterfaceTraction(int,int,double,double,double,double,double);

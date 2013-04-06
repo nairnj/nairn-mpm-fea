@@ -60,7 +60,7 @@ int Constraint::GetBandWidth(int nbase,int nfree)
 #pragma mark Constraint: Accessors
 
 // number of noddes in the constraint
-int Constraint::NumberNodes(void) { return (int)nodes.size(); }
+int Constraint::NumberNodes(void) const { return (int)nodes.size(); }
 
 // nodal DOF and coefficient (i is 1-based but stored here 0 based)
 int Constraint::NodalDof(int i,int nfree) { return nfree*(nodes[i-1]-1)+dof; }

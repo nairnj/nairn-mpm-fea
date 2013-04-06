@@ -18,9 +18,6 @@ Elastic::Elastic() {}
 
 Elastic::Elastic(char *matName) : MaterialBase(matName)
 {
-#ifdef MPM_CODE
-	hasTransProps=FALSE;
-#endif
 }
 
 #pragma mark Elastic::Methods

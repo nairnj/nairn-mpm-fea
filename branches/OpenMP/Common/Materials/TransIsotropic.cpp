@@ -207,11 +207,11 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
 #ifdef MPM_CODE
 
 // Isotropic material can use read-only initial properties
-void *TransIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np)
+void *TransIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
 {
 	// if isotropic in 2D plane, use initial properties
 	if(MaterialTag()==TRANSISO1 && np!=THREED_MPM)
-		return &pr;
+		return (void *)&pr;
 	
 	// create new elastic properties
 	ElasticProperties *p = (ElasticProperties *)malloc(sizeof(ElasticProperties));
@@ -232,7 +232,7 @@ void TransIsotropic::DeleteCopyOfMechanicalProps(void *properties,int np) const
 }
 
 // Fill ElasticProperties variable with current particle state
-void TransIsotropic::FillElasticProperties3D(MPMBase *mptr,ElasticProperties *p,int np)
+void TransIsotropic::FillElasticProperties3D(MPMBase *mptr,ElasticProperties *p,int np) const
 {
 	/* Rotation of the stiffness matrix requires Rz(-z).Ry(-y).Rx(-z).C.Rx^T(-x).Ry^T(-y).Rz^T(-z)
 		Doing matrix math here would be 7*6*6 = 252 multiplications.
@@ -419,7 +419,11 @@ void TransIsotropic::FillElasticProperties3D(MPMBase *mptr,ElasticProperties *p,
 
 // Fill the object in the material class
 void TransIsotropic::LoadMechanicalPropertiesFEA(int makeSpecific,double angle,int np)
-{	FillElasticProperties2D(&pr,FALSE,angle,np);
+{	// if filled with same angle then no need to fill again
+	if(hasMatProps && DbleEqual(angle,lastMatAngle)) return;
+	lastMatAngle=angle;
+	hasMatProps=TRUE;
+	FillElasticProperties2D(&pr,FALSE,angle,np);
 }
 
 #endif
@@ -428,14 +432,8 @@ void TransIsotropic::LoadMechanicalPropertiesFEA(int makeSpecific,double angle,i
 // makeSpecific divides by density, but only used in MPM code
 // Used by TranIsoptropic 2 and by Orthotropic
 // angle is in radians
-void TransIsotropic::FillElasticProperties2D(ElasticProperties *p,int makeSpecific,double angle,int np)
+void TransIsotropic::FillElasticProperties2D(ElasticProperties *p,int makeSpecific,double angle,int np) const
 {
-#ifdef FEA_CODE
-    if(hasMatProps && DbleEqual(angle,lastMatAngle)) return;
-    lastMatAngle=angle;
-    hasMatProps=TRUE;
-#endif
-
     // If angle not zero do rotation
     if(!DbleEqual(angle,0.))
 	{	// analysis axes are ccw from material axes (note the -sin(ang))
@@ -476,8 +474,9 @@ void TransIsotropic::FillElasticProperties2D(ElasticProperties *p,int makeSpecif
 		p->beta[2]=s2*CME1+c2*CME2;
 		p->beta[3]=2.*cssn*(CME1-CME2);
 		p->beta[4]=CME3;
+		
 #endif
-
+		
 		// initial strains - all thermal and strain per temperature change
 		p->alpha[1]=c2*CTE1+s2*CTE2;
 		p->alpha[2]=s2*CTE1+c2*CTE2;
@@ -561,58 +560,60 @@ void TransIsotropic::FillElasticProperties2D(ElasticProperties *p,int makeSpecif
 }
 
 #ifdef MPM_CODE
+
+// Called before analysis, material can fill in things that never change during the analysis
+// Note: no angle, because can not depend on material angle
+// Here fills in isotropic properties, materials with different anisotropic properties should override
+void TransIsotropic::FillTransportProperties(TransportProperties *t)
+{
+	if(MaterialTag()==TRANSISO1)
+	{	t->diffusionTensor.xx = diffT;
+		t->diffusionTensor.yy = diffT;
+		t->kCondTensor.xx = kcondT;
+		t->kCondTensor.yy = kcondT;
+	}
+	else
+	{	t->diffusionTensor.xx=diffT;
+		t->diffusionTensor.yy=diffA;
+		t->kCondTensor.xx = kcondT;
+		t->kCondTensor.yy = kcondA;
+	}
+	t->diffusionTensor.xx = GetDiffZ();
+	t->kCondTensor.zz = GetKcondZ();
+	t->diffusionTensor.xy = 0.;
+	t->diffusionTensor.xz = 0.;
+	t->diffusionTensor.yz = 0.;
+	t->kCondTensor.xy = 0.;
+	t->kCondTensor.xz = 0.;
+	t->kCondTensor.yz = 0.;
+}
+
 // fill in specific transport tensor if necessary
 // Used by TranIsoptropic 1 and 2 and by Orthotropic
-void TransIsotropic::LoadTransportProps(MPMBase *mptr,int np)
+void TransIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t) const
 {	
 	if(np!=THREED_MPM)
-	{	double angle=mptr->GetRotationZ();
-		
+	{	// if isotropic in 2D plane, use initial properties
 		if(MaterialTag()==TRANSISO1)
-		{	// isotropic in the plane thus force angle to be zero
-			if(hasTransProps) return;
-			angle=0.;
+		{	*t = tr;
+			return;
 		}
-		else
-		{	if(hasTransProps && DbleEqual(angle,lastTransAngle)) return;
-		}
-		lastTransAngle=angle;
-		hasTransProps=TRUE;
 
-		// If angle not zero do rotation
-		if(!DbleEqual(angle,0.))
-		{	// analysis axes are ccw from material axes (note the -sin(ang))
-			double cs=cos(angle);
-			double c2=cs*cs;
-			double sn=-sin(angle);
-			double s2=sn*sn;
-			double cssn=cs*sn;
+		// analysis axes are ccw from material axes (note the -sin(ang))
+		double angle=mptr->GetRotationZ();
+		double cs=cos(angle);
+		double c2=cs*cs;
+		double sn=-sin(angle);
+		double s2=sn*sn;
+		double cssn=cs*sn;
 
-			// diffusion and conductivity tensors
-			diffusionTensor.xx=diffA*s2 + diffT*c2;
-			diffusionTensor.yy=diffA*c2 + diffT*s2;
-			diffusionTensor.xy=(diffT-diffA)*cssn;
-			kCondTensor.xx = kcondA*s2 + kcondT*c2;
-			kCondTensor.yy = kcondA*c2 + kcondT*s2;
-			kCondTensor.xy = (kcondT-kcondA)*cssn;
-		}
-		
-		else
-		{	if(MaterialTag()==TRANSISO1)
-			{	diffusionTensor.xx=diffT;
-				diffusionTensor.yy=diffT;
-				kCondTensor.xx = kcondT;
-				kCondTensor.yy = kcondT;
-			}
-			else
-			{	diffusionTensor.xx=diffT;
-				diffusionTensor.yy=diffA;
-				kCondTensor.xx = kcondT;
-				kCondTensor.yy = kcondA;
-			}
-			diffusionTensor.xy=0.;
-			kCondTensor.xy=0.;
-		}
+		// diffusion and conductivity tensors
+		t->diffusionTensor.xx=diffA*s2 + diffT*c2;
+		t->diffusionTensor.yy=diffA*c2 + diffT*s2;
+		t->diffusionTensor.xy=(diffT-diffA)*cssn;
+		t->kCondTensor.xx = kcondA*s2 + kcondT*c2;
+		t->kCondTensor.yy = kcondA*c2 + kcondT*s2;
+		t->kCondTensor.xy = (kcondT-kcondA)*cssn;
 	}
 	
 	else
@@ -640,27 +641,27 @@ void TransIsotropic::LoadTransportProps(MPMBase *mptr,int np)
 		double sx2=sx*sx;
 		double cx2=cx*cx;
 		
-		double diffz=GetDiffZ();
+		double diffz = GetDiffZ();
 		
-		diffusionTensor.xx=cy2*cz2*diffT + diffA*(-(cz2*sx2*sy2) + cx2*sz2) + diffz*(cx2*cz2*sy2 - sx2*sz2);
-		diffusionTensor.xy=-(cy2*cz*diffT*sz) + diffz*(cx*sx*sy - cz*sx2*sz - cx2*cz*sy2*sz) + diffA*(cx*sx*sy + cx2*cz*sz + cz*sx2*sy2*sz);
-		diffusionTensor.xz=cy*cz*diffT*sy + cy*diffz*(-(cx2*cz*sy) + cx*sx*sz) + cy*diffA*(cz*sx2*sy + cx*sx*sz);
+		t->diffusionTensor.xx=cy2*cz2*diffT + diffA*(-(cz2*sx2*sy2) + cx2*sz2) + diffz*(cx2*cz2*sy2 - sx2*sz2);
+		t->diffusionTensor.xy=-(cy2*cz*diffT*sz) + diffz*(cx*sx*sy - cz*sx2*sz - cx2*cz*sy2*sz) + diffA*(cx*sx*sy + cx2*cz*sz + cz*sx2*sy2*sz);
+		t->diffusionTensor.xz=cy*cz*diffT*sy + cy*diffz*(-(cx2*cz*sy) + cx*sx*sz) + cy*diffA*(cz*sx2*sy + cx*sx*sz);
 		
-		diffusionTensor.yy=cy2*diffT*sz2 + diffz*(-(cz2*sx2) + cx2*sy2*sz2) + diffA*(cx2*cz2 - sx2*sy2*sz2);
-		diffusionTensor.yz=-(cy*diffT*sy*sz) + cy*diffz*(cx*cz*sx + cx2*sy*sz) + cy*diffA*(cx*cz*sx - sx2*sy*sz);
+		t->diffusionTensor.yy=cy2*diffT*sz2 + diffz*(-(cz2*sx2) + cx2*sy2*sz2) + diffA*(cx2*cz2 - sx2*sy2*sz2);
+		t->diffusionTensor.yz=-(cy*diffT*sy*sz) + cy*diffz*(cx*cz*sx + cx2*sy*sz) + cy*diffA*(cx*cz*sx - sx2*sy*sz);
 		
-		diffusionTensor.zz=cx2*cy2*diffz - cy2*diffA*sx2 + diffT*sy2;
+		t->diffusionTensor.zz=cx2*cy2*diffz - cy2*diffA*sx2 + diffT*sy2;
 		
 		double kz=GetKcondZ();
 		
-		kCondTensor.xx=cy2*cz2*kcondT + kcondA*(-(cz2*sx2*sy2) + cx2*sz2) + kz*(cx2*cz2*sy2 - sx2*sz2);
-		kCondTensor.xy=-(cy2*cz*kcondT*sz) + kz*(cx*sx*sy - cz*sx2*sz - cx2*cz*sy2*sz) + kcondA*(cx*sx*sy + cx2*cz*sz + cz*sx2*sy2*sz);
-		kCondTensor.xz=cy*cz*kcondT*sy + cy*kz*(-(cx2*cz*sy) + cx*sx*sz) + cy*kcondA*(cz*sx2*sy + cx*sx*sz);
+		t->kCondTensor.xx=cy2*cz2*kcondT + kcondA*(-(cz2*sx2*sy2) + cx2*sz2) + kz*(cx2*cz2*sy2 - sx2*sz2);
+		t->kCondTensor.xy=-(cy2*cz*kcondT*sz) + kz*(cx*sx*sy - cz*sx2*sz - cx2*cz*sy2*sz) + kcondA*(cx*sx*sy + cx2*cz*sz + cz*sx2*sy2*sz);
+		t->kCondTensor.xz=cy*cz*kcondT*sy + cy*kz*(-(cx2*cz*sy) + cx*sx*sz) + cy*kcondA*(cz*sx2*sy + cx*sx*sz);
 		
-		kCondTensor.yy=cy2*kcondT*sz2 + kz*(-(cz2*sx2) + cx2*sy2*sz2) + kcondA*(cx2*cz2 - sx2*sy2*sz2);
-		kCondTensor.yz=-(cy*kcondT*sy*sz) + cy*kz*(cx*cz*sx + cx2*sy*sz) + cy*kcondA*(cx*cz*sx - sx2*sy*sz);
+		t->kCondTensor.yy=cy2*kcondT*sz2 + kz*(-(cz2*sx2) + cx2*sy2*sz2) + kcondA*(cx2*cz2 - sx2*sy2*sz2);
+		t->kCondTensor.yz=-(cy*kcondT*sy*sz) + cy*kz*(cx*cz*sx + cx2*sy*sz) + cy*kcondA*(cx*cz*sx - sx2*sy*sz);
 		
-		kCondTensor.zz=cx2*cy2*kz - cy2*kcondA*sx2 + kcondT*sy2;
+		t->kCondTensor.zz=cx2*cy2*kz - cy2*kcondA*sx2 + kcondT*sy2;
 	}
 }
 #endif
@@ -704,8 +705,8 @@ double TransIsotropic::MaximumDiffusion(void) const { return max(diffA,diffT)/10
 double TransIsotropic::MaximumDiffusivity(void) const { return 0.01*max(kcondA,kcondT)/heatCapacity; }
 
 // diffusion and conductivity in the z direction
-double TransIsotropic::GetDiffZ(void) { return MaterialTag()==TRANSISO1 ? diffA : diffT; }
-double TransIsotropic::GetKcondZ(void) { return MaterialTag()==TRANSISO1 ? kcondA : kcondT; }
+double TransIsotropic::GetDiffZ(void) const { return MaterialTag()==TRANSISO1 ? diffA : diffT; }
+double TransIsotropic::GetKcondZ(void) const { return MaterialTag()==TRANSISO1 ? kcondA : kcondT; }
 
 #endif
 

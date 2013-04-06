@@ -39,13 +39,13 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     Matrix3 dv;
     
 	// find shape functions and derviatives
-	int iel=ElemID();
-	theElements[iel]->GetShapeGradients(&numnds,fn,nds,&ncpos,xDeriv,yDeriv,zDeriv,this);
+	const ElementBase *elemRef = theElements[ElemID()];
+	elemRef->GetShapeGradients(&numnds,fn,nds,&ncpos,xDeriv,yDeriv,zDeriv,this);
     
     // Find strain rates at particle from current grid velocities
 	//   and using the velocity field for that particle and each node and the right material
     for(i=1;i<=numnds;i++)
-	{	vel=nd[nds[i]]->GetVelocity((short)vfld[i],matFld);
+	{	vel = nd[nds[i]]->GetVelocity((short)vfld[i],matFld);
         dv += Matrix3(vel.x*xDeriv[i],vel.x*yDeriv[i],vel.y*xDeriv[i],vel.y*yDeriv[i],0.);
     }
 	    
@@ -75,7 +75,8 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	}
 	
     // update particle strain and stress using its constituitive law
-    theMaterials[MatID()]->MPMConstitutiveLaw(this,dv,strainTime,np,props,&res);
+	const MaterialBase *matRef = theMaterials[MatID()];
+    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,&res);
  }
 
 // Move position (2D) (in mm)

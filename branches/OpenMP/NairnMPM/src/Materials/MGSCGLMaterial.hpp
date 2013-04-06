@@ -33,9 +33,9 @@ class MGSCGLMaterial : public IsoPlasticity
 		virtual void ValidateForUse(int) const;
 	
 		// methods
-		virtual void *GetCopyOfMechanicalProps(MPMBase *,int);
-        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *);
-		virtual void UpdatePressure(MPMBase *,double &,double,int,PlasticProperties *,ResidualStrains *);
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int) const;
+        virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+		virtual void UpdatePressure(MPMBase *,double &,double,int,PlasticProperties *,ResidualStrains *) const;
         virtual double GetCurrentRelativeVolume(MPMBase *) const;
 				
 		// accessors
@@ -46,7 +46,7 @@ class MGSCGLMaterial : public IsoPlasticity
 		virtual bool SupportsArtificialViscosity(void) const;
 	
     protected:
-        double C0squared,QAVred;
+        double C0squared;
 
 };
 

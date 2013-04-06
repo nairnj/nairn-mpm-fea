@@ -168,7 +168,7 @@ char *HEIsotropic::InitHistoryData(void)
 #pragma mark HEIsotropic:Methods
 
 // Isotropic material can use read-only initial properties
-void *HEIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np)
+void *HEIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
 {
 	HEPlasticProperties *p = (HEPlasticProperties *)malloc(sizeof(HEPlasticProperties));
  	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np);
@@ -193,7 +193,7 @@ void HEIsotropic::DeleteCopyOfMechanicalProps(void *properties,int np) const
     This material tracks pressure and stores deviatoric stress only in particle stress
         tensor
 */
-void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res)
+void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
 	HEPlasticProperties *p = (HEPlasticProperties *)properties;
 
@@ -370,7 +370,7 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 //  of dilaiton energy. This version updates pressure (i.e. dilational
 //  contribution to normal stress) and adds inremental energy to strain energy
 void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,double resStretch3,
-								 double delTime,HEPlasticProperties *p,ResidualStrains *res)
+								 double delTime,HEPlasticProperties *p,ResidualStrains *res) const
 {
 	double Kterm = J*GetVolumetricTerms(J,p->Kred);       // times J to get Kirchoff stress
     double P0 = mptr->GetPressure();

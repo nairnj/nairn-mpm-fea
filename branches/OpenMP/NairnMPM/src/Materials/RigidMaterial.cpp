@@ -291,7 +291,7 @@ int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid,int &acti
 	}
 	
 	// go to superclass, but not not count this rigid material as an active field
-	int rigidActive;			// dummy variable so activeNum will not change
+	int rigidActive=-1;			// <0 to not get pushed onto activeMatIDs
 	return MaterialBase::SetField(fieldNum,multiMaterials,matid,rigidActive);
 }
 

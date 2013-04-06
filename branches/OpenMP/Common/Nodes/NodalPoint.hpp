@@ -77,7 +77,7 @@ class NodalPoint : public LinkedObject
 	
 		void UpdateMomentaOnNode(double);
 	
-		void IncrementDelvaTask5(short,int,double,Vector *,Vector *);
+		void IncrementDelvaTask5(short,int,double,Vector *,Vector *) const;
 	
 		void RezeroNodeTask6(double);
 		void AddMomentumTask6(short,int,double,Vector *);

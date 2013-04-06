@@ -33,7 +33,7 @@ LinearInterface::LinearInterface(int eNum,int *eNode,int eMat,double eAng,double
 */
 void LinearInterface::ShapeFunction(Vector *xi,int getDeriv,
 		double *sfxn,double *xiDeriv,double *etaDeriv,Vector *eNodes,
-                double *outDetjac,double *outAsr,double *asbe)
+                double *outDetjac,double *outAsr,double *asbe) const
 {
 	// shape functions
 	sfxn[0]=(1.-xi->x)/2.;
@@ -93,7 +93,7 @@ void Interface2D::Stiffness(int np)
 short LinearInterface::ElementName(void) { return LINEAR_INTERFACE; }
 
 // number of nodes in this element
-int LinearInterface::NumberNodes(void) { return 4; }
+int LinearInterface::NumberNodes(void) const { return 4; }
 
 // face nodes
 int LinearInterface::FaceNodes(void) { return 2; }

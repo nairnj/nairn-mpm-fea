@@ -33,7 +33,7 @@ class IsotropicMat : public Elastic
         
 		virtual void FillElasticProperties(ElasticProperties *,int);
 #ifdef MPM_CODE
-		virtual void *GetCopyOfMechanicalProps(MPMBase *,int);
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int) const;
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
 #endif
 		
@@ -41,7 +41,6 @@ class IsotropicMat : public Elastic
 		virtual const char *MaterialType(void) const;
 		virtual int MaterialTag() const;
 #ifdef MPM_CODE
-		virtual void InitialLoadTransProps(void);
 		virtual double WaveSpeed(bool,MPMBase *) const;
         virtual double ShearWaveSpeed(bool,MPMBase *) const;
 #endif

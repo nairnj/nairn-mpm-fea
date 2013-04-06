@@ -595,6 +595,9 @@ Vector CrackSegment::FTract(double fni)
 // calculate tractions on one side of crack for this segment
 void CrackSegment::FindCrackTipMaterial(void)
 {
+	// if only one active material, it cannot change
+	if(numActiveMaterials<=1) return;
+	
 	Vector cspos,ndpos;
 	int i,iel,numnds,nds[MaxShapeNds];
     double fn[MaxShapeNds];

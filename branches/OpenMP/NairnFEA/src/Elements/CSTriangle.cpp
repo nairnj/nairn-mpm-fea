@@ -31,10 +31,10 @@ CSTriangle::CSTriangle(int eNum,int *eNode,int eMat,double eAng,double eThick) :
 short CSTriangle::ElementName(void) { return CS_TRIANGLE; }
 
 // number of nodes in this element
-int CSTriangle::NumberNodes(void) { return 3; }
+int CSTriangle::NumberNodes(void) const { return 3; }
 
 // number of sides in this element
-int CSTriangle::NumberSides(void) { return 3; }
+int CSTriangle::NumberSides(void) const { return 3; }
 
 /*  Load shape functions and optionally their derivatives into arrays
     All arrays are 0 based (pass &(*)[1] to get 1-based results)
@@ -50,7 +50,7 @@ int CSTriangle::NumberSides(void) { return 3; }
 */
 void CSTriangle::ShapeFunction(Vector *xi,int getDeriv,
 		double *sfxn,double *xiDeriv,double *etaDeriv,Vector *eNodes,
-                double *outDetjac,double *outAsr,double *asbe)
+                double *outDetjac,double *outAsr,double *asbe) const
 {
 	double ai,aj,ak,bi,bj,bk,ci,cj,ck,twicearea;
 	

@@ -168,7 +168,7 @@ void HEMGEOSMaterial::ValidateForUse(int np) const
 #pragma mark MGSCGLMaterial::Custom Methods
 
 // Isotropic material can use read-only initial properties
-void *HEMGEOSMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np)
+void *HEMGEOSMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
 {
 	HEPlasticProperties *p = (HEPlasticProperties *)malloc(sizeof(HEPlasticProperties));
  	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np);
@@ -192,7 +192,7 @@ void HEMGEOSMaterial::DeleteCopyOfMechanicalProps(void *properties,int np) const
 // J is total volume change at end of step relative to stress free state (if diffusion)
 // dJ is incremental volume change relative to incremental stress state change (if diffusion)
 void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,double resStretch3,double delTime,
-									 HEPlasticProperties *p,ResidualStrains *res)
+									 HEPlasticProperties *p,ResidualStrains *res) const
 {
 	// delV is total incremental volumetric strain relative to free-swelling volume
     // J is total volume change - may need to reference to free-swelling volume if that works

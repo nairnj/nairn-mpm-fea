@@ -40,8 +40,8 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     Matrix3 dv;
     
 	// find shape functions and derviatives
-	int iel=ElemID();
-	theElements[iel]->GetShapeGradients(&numnds,fn,nds,&ncpos,xDeriv,yDeriv,zDeriv,this);
+	const ElementBase *elemRef = theElements[ElemID()];
+	elemRef->GetShapeGradients(&numnds,fn,nds,&ncpos,xDeriv,yDeriv,zDeriv,this);
     
     // Find strain rates at particle from current grid velocities
 	//   and using the velocity field for that particle with each node
@@ -73,7 +73,8 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	}
 
     // update particle strain and stress using its constituitive law
-    theMaterials[MatID()]->MPMConstitutiveLaw(this,dv,strainTime,np,props,&res);
+    const MaterialBase *matRef = theMaterials[MatID()];
+    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,&res);
 }
 
 // Move position (3D) (in mm)

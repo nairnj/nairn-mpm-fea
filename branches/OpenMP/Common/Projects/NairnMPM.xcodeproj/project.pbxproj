@@ -21,6 +21,7 @@
 		6715DFD216C567350042F15C /* Nonlinear2Hardening.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6715DFD016C567350042F15C /* Nonlinear2Hardening.hpp */; };
 		673EC9B616C9EB71007FFEB5 /* CarnotCycle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 673EC9B416C9EB71007FFEB5 /* CarnotCycle.cpp */; };
 		673EC9B716C9EB71007FFEB5 /* CarnotCycle.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 673EC9B516C9EB71007FFEB5 /* CarnotCycle.hpp */; };
+		67A90CC1170F75C40028554A /* svninfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A738C0CC170E192800E4D675 /* svninfo.cpp */; };
 		67B213B611F90404007523EE /* CommonTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B213B411F90404007523EE /* CommonTask.hpp */; };
 		67B213B711F90404007523EE /* CommonTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B213B511F90404007523EE /* CommonTask.cpp */; };
 		67B213B811F90404007523EE /* CommonTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B213B411F90404007523EE /* CommonTask.hpp */; };
@@ -1966,6 +1967,7 @@
 				A715F5A21542066800D53E52 /* MatRegionFEA.cpp in Sources */,
 				671514D215465E8B005F33A9 /* OvalController.cpp in Sources */,
 				671514D91547035D005F33A9 /* PolygonController.cpp in Sources */,
+				67A90CC1170F75C40028554A /* svninfo.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

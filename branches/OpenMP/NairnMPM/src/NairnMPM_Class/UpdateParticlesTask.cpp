@@ -48,14 +48,14 @@ void UpdateParticlesTask::Execute(void)
     // Update particle position, velocity, temp, and conc
 #pragma omp parallel for private(nds,fn,delv,numnds)
     for(int p=0;p<nmpms;p++)
-	{	MaterialBase *matID=theMaterials[mpm[p]->MatID()];
-		if(!matID->Rigid())
+	{	const MaterialBase *matRef=theMaterials[mpm[p]->MatID()];
+		if(!matRef->Rigid())
 		{	// get shape functions
-			int iel=mpm[p]->ElemID();
-			theElements[iel]->GetShapeFunctions(&numnds,fn,nds,mpm[p]->GetNcpos(),mpm[p]);
+			const ElementBase *elemRef = theElements[mpm[p]->ElemID()];
+			elemRef->GetShapeFunctions(&numnds,fn,nds,mpm[p]->GetNcpos(),mpm[p]);
 			
 			// Update particle position and velocity
-			int matfld=matID->GetField();
+			int matfld=matRef->GetField();
 			Vector *acc=mpm[p]->GetAcc();
 			ZeroVector(acc);
 			ZeroVector(&delv);
@@ -67,7 +67,8 @@ void UpdateParticlesTask::Execute(void)
 			// Loop over nodes
 			for(int i=1;i<=numnds;i++)
 			{	// increment velocity and acceleraton
-				nd[nds[i]]->IncrementDelvaTask5((short)mpm[p]->vfld[i],matfld,fn[i],&delv,acc);
+				const NodalPoint *ndptr = nd[nds[i]];
+				ndptr->IncrementDelvaTask5((short)mpm[p]->vfld[i],matfld,fn[i],&delv,acc);
 				
 				// increment transport rates
 				nextTransport=transportTasks;
@@ -93,7 +94,7 @@ void UpdateParticlesTask::Execute(void)
 			if(!ConductionTask::active)
 			{	if(ConductionTask::energyCoupling)
 				{	double energy = mpm[p]->GetDispEnergy();									// in uJ/g
-					double Cp=1000.*theMaterials[mpm[p]->MatID()]->GetHeatCapacity(mpm[p]);		// in uJ/(g-K)
+					double Cp=1000.*matRef->GetHeatCapacity(mpm[p]);		// in uJ/(g-K)
 					mpm[p]->pTemperature += energy/Cp;			// in K
 				}
 				mpm[p]->SetDispEnergy(0.);

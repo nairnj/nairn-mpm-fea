@@ -26,7 +26,7 @@ EndXMLData
 #update="USF"
 
 ! Supported materials: "neohookean" (G2=0), "mooney" (G1=G2), heiso
-#matID="heiso"
+#matID="mooney"
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2

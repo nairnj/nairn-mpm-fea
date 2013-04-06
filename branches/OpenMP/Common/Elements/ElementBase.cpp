@@ -98,7 +98,7 @@ void ElementBase::FindCentroid(Vector *center)
 #pragma mark ElementBase::Accessors
 
 // thickness which may be in a subclass
-double ElementBase::GetThickness(void) { return (double)1.; }
+double ElementBase::GetThickness(void) const { return (double)1.; }
 void ElementBase::SetThickness(double thick) { }
 
 // centroid (but possibly may not be in the element if it is distorted
@@ -109,10 +109,10 @@ void ElementBase::GetXYZCentroid(Vector *center)
 }
 
 // depth - 3D element return z extent
-double ElementBase::GetCenterX(void) { return 0.5*(xmax+xmin); }
-double ElementBase::GetDeltaX(void) { return xmax-xmin; }
-double ElementBase::GetDeltaY(void) { return ymax-ymin; }
-double ElementBase::GetDeltaZ(void) { return GetThickness(); }
+double ElementBase::GetCenterX(void) const { return 0.5*(xmax+xmin); }
+double ElementBase::GetDeltaX(void) const { return xmax-xmin; }
+double ElementBase::GetDeltaY(void) const { return ymax-ymin; }
+double ElementBase::GetDeltaZ(void) const { return GetThickness(); }
 bool ElementBase::IntersectsBox(double xorig,double yorig,double xlength,double ylength,double zslice)
 {	if(xmax<xorig) return false;
 	if(xmin>xorig+xlength) return false;
@@ -122,7 +122,7 @@ bool ElementBase::IntersectsBox(double xorig,double yorig,double xlength,double 
 }
 
 // number of sides in this element (override if differs)
-int ElementBase::NumberSides(void) { return 4; }
+int ElementBase::NumberSides(void) const { return 4; }
 
 // return 0-based node number for node i where i is 1 to numnds
 int ElementBase::NodeIndex(int i) { return nodes[i-1]-1; }

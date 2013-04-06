@@ -28,7 +28,6 @@ class MassAndMomentumTask : public MPMTask
 		virtual void Execute(void);
 	
 	protected:
-		double zDeriv[MaxShapeNds];
 		
 		void SetRigidBCs(int,int,double,double,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);
 		void RemoveRigidBCs(BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);

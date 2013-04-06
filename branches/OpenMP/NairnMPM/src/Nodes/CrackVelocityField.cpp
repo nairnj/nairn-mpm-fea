@@ -102,7 +102,7 @@ void CrackVelocityField::AddFextTask3(int matfld,Vector *f) { mvf[matfld]->AddFe
 #pragma mark TASK 5 METHODS
 
 // Increment velocity and acceleration for this material point using one velocity field which must be there
-void CrackVelocityField::IncrementDelvaTask5(int matfld,double fi,Vector *delv,Vector *dela)
+void CrackVelocityField::IncrementDelvaTask5(int matfld,double fi,Vector *delv,Vector *dela) const
 {   mvf[matfld]->IncrementNodalVelAcc(fi,delv,dela);
 }
 
