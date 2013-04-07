@@ -16,6 +16,7 @@ int numConstraints=0;
 
 // baseNodes is contrained node, dofNum is 1 or 2 for x or y
 // must set lambda number later
+// not thread safe due to push_back()
 Constraint::Constraint(int baseNode,int dofNum)
 {
 	nodes.push_back(baseNode);
@@ -27,6 +28,7 @@ Constraint::Constraint(int baseNode,int dofNum)
 #pragma mark Constraint: Methods
 
 // Enter as right side of constrain equation, but add as -factor*node
+// not thread safe due to push_back()
 void Constraint::AddNode(int node,double factor)
 {
 	nodes.push_back(node);

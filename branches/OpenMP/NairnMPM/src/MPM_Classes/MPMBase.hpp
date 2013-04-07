@@ -28,6 +28,12 @@ typedef struct {
 	Vector Dc;			// conc potential gradient (archived * concSaturation)
 } DiffusionField;
 
+// buffer for grid forces
+typedef struct {
+	int nodeNum;
+	double *forces;
+} GridForceBuffer;
+
 class MPMBase : public LinkedObject
 {
     public:
@@ -38,6 +44,7 @@ class MPMBase : public LinkedObject
 		char *vfld;
 		TemperatureField *pTemp;
 		DiffusionField *pDiffusion;
+		GridForceBuffer *gFrc;
 	
 		// constants (not changed in MPM time step)
         double mp;
@@ -51,7 +58,8 @@ class MPMBase : public LinkedObject
 		void AllocateTemperature(void);
 		void AllocateJStructures(void);
         bool AllocateCPDIStructures(int,bool);
-        
+		bool AllocateGridForceBuffers(int);
+    
         // virtual methods
         virtual double thickness(void) = 0;
         virtual void SetOrigin(Vector *) = 0;

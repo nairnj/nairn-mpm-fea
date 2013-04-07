@@ -44,6 +44,7 @@ const char *VTKArchive::TaskName(void) { return "Archive grid results to VTK fil
 
 // Read task parameter - if pName is valid, set input for type
 //    and return pointer to the class variable
+// not thread safe due to push_back()
 char *VTKArchive::InputParam(char *pName,int &input)
 {
 	int q=-1,thisBuffer=0;

@@ -39,8 +39,8 @@ class NodalVelBC : public BoundaryCondition
 		NodalVelBC *ZeroVelBC(double);
 		NodalVelBC *AddVelBC(double);
 		NodalVelBC *SetGhostVelBC(double);
-		NodalVelBC *InitFtot(double);
-		NodalVelBC *AddFtot(double);
+		NodalVelBC *InitFtotDirection(double);
+		NodalVelBC *AddFtotDirection(double);
         int ConvertToDirectionBits(int);
         void SetNormalVector(void);
         int ConvertToInputDof(void);

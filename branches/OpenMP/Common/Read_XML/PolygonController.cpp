@@ -37,6 +37,7 @@ void PolygonController::SetParameter(const char *aName,const char *value)
 }
 
 // called after initialization is done
+// not thread safe due to push_back()
 bool PolygonController::FinishParameter(void)
 {	xpt.push_back(xparm);
 	ypt.push_back(yparm);
@@ -48,6 +49,7 @@ bool PolygonController::FinishSetup(void) {	return FALSE; }
 
 // return if has enough parameters to use. If yes, close the  polygon
 // Warning - only call once, just before use and exception if fails
+// not thread safe due to push_back()
 bool PolygonController::HasAllParameters(void)
 {	if(xpt.size()<3) return FALSE;
 	xpt.push_back(xpt[0]);

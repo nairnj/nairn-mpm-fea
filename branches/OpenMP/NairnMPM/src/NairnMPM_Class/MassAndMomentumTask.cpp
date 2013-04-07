@@ -279,29 +279,53 @@ void MassAndMomentumTask::Execute(void)
 	RemoveRigidBCs((BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,(BoundaryCondition **)&firstRigidTempBC);
 	RemoveRigidBCs((BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,(BoundaryCondition **)&firstRigidConcBC);
 	
-	// Get total nodal masses and count materials if multimaterial mode
-	for(int i=1;i<=nnodes;i++)
-		nd[i]->CalcTotalMassAndCount();
-	
 #ifdef COMBINE_RIGID_MATERIALS
-	// combine rigid fields if necessary
-	if(firstCrack!=NULL && fmobj->multiMaterialMode && fmobj->hasRigidContactParticles)
-		NodalPoint::CombineRigidMaterials();
+	bool combineRigid = firstCrack!=NULL && fmobj->multiMaterialMode && fmobj->hasRigidContactParticles;
 #endif
 	
-	// Find values and gradients for transport tasks
+	// Post mass and momentum extrapolation calculations on nodes
+	// Each pass in this loop should be independent
+#pragma omp parrallel for
+	for(int i=1;i<=nnodes;i++)
+	{	// node reference
+		NodalPoint *ndptr = nd[i];
+		
+		// Get total nodal masses and count materials if multimaterial mode
+		ndptr->CalcTotalMassAndCount();
+	
+#ifdef COMBINE_RIGID_MATERIALS
+		// combine rigid fields if necessary
+		if(combineRigid)
+			ndptr->CombineRigidParticles()
+#endif
+		// multimaterial contact
+		if(fmobj->multiMaterialMode)
+			ndptr->MaterialContactOnNode(FALSE,timestep);
+		
+		// crack contact
+		if(firstCrack!=NULL)
+			ndptr->CrackContact(TRUE,FALSE,0.);
+		
+		// get transport values on nodes
+		TransportTask *nextTransport=transportTasks;
+		while(nextTransport!=NULL)
+			nextTransport = nextTransport->GetNodalValue(ndptr);
+	}
+	
+	// Impose transport BCs and extrapolate gradients to the particles
 	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
-		nextTransport=nextTransport->GetValuesAndGradients(mtime);
+	{	nextTransport->ImposeValueBCs(mtime);
+		nextTransport = nextTransport->GetGradients(mtime);
+	}
 	
 	// Adjust momenta for multimaterial contact
-	NodalPoint::MaterialContact(fmobj->multiMaterialMode,FALSE,timestep);
+	//NodalPoint::MaterialContact(fmobj->multiMaterialMode,FALSE,timestep);
 	
 	// Adjust momenta for crack contact
-	CrackHeader::ContactConditions(TRUE);
+	//CrackHeader::ContactConditions(TRUE);
 	
 	// Impose velocity BCs
-	// NOTE: Switched order of contact and BCs (8/12/2009)
 	NodalVelBC::GridMomentumConditions(TRUE);
 	
 }

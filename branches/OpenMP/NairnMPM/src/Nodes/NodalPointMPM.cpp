@@ -257,8 +257,9 @@ void NodalPoint::AddVolumeGradient(short vfld,int matfld,MPMBase *mptr,double dN
 		cvf[vfld]->AddVolumeGradient(matfld,mptr,dNdx,dNdy,dNdz);
 }
 
-// Calculate total mass. Calculations might need to exclude nodes whose
-// mass is too small in crack calculations
+// Calculate total mass and count number of materials on this node
+// Changes only this->numberMaterials and then only if in multimaterial mode
+// Calculations might need to exclude nodes whose mass is too small in crack calculations
 void NodalPoint::CalcTotalMassAndCount(void)
 {	int i;
 	mass=0.;
@@ -323,6 +324,7 @@ void NodalPoint::CombineRigidParticles(void)
 void NodalPoint::AddFtotTask3(short vfld,int matfld,Vector *f) { cvf[vfld]->AddFtotTask3(matfld,f); }
 
 // Add to internal force spread out over materials for same acceleration on each
+// Only called by AddTractionForce() and CrackInterfaceForce()
 void NodalPoint::AddFtotSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFtotSpreadTask3(&f); }
 
 // Add to traction force (g-mm/sec^2)
@@ -1314,31 +1316,31 @@ void NodalPoint::AddMomVel(Vector *norm,double vel)
 
 // set one component of force to -p(interpolated)/time such that updated momentum
 //    of pk.i + deltime*ftot.i will be zero
-void NodalPoint::SetFtot(Vector *norm,double deltime)
+void NodalPoint::SetFtotDirection(Vector *norm,double deltime)
 {	
 #ifdef _BC_CRACK_SIDE_ONLY_
 	// just on same side of the crack
-	cvf[0]->SetFtot(norm,deltime);
+	cvf[0]->SetFtotDirection(norm,deltime);
 #else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
-            cvf[i]->SetFtot(norm,deltime);
+            cvf[i]->SetFtotDirection(norm,deltime);
 	}
 #endif
 }
 
 // set one component of force such that updated momentum will be mass*velocity
-void NodalPoint::AddFtot(Vector *norm,double deltime,double vel)
+void NodalPoint::AddFtotDirection(Vector *norm,double deltime,double vel)
 {	
 #ifdef _BC_CRACK_SIDE_ONLY_
 	// just on same side of the crack
-	cvf[0]->AddFtot(norm,deltime,vel);
+	cvf[0]->AddFtotDirection(norm,deltime,vel);
 #else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
-            cvf[i]->AddFtot(norm,deltime,vel);
+            cvf[i]->AddFtotDirection(norm,deltime,vel);
 	}
 #endif
 }
@@ -1377,15 +1379,6 @@ void NodalPoint::MaterialContact(bool multiMaterials,bool postUpdate,double delt
 		nd[i]->MaterialContactOnNode(postUpdate,deltime);
 	}
 }
-
-// adjust momenta at overlaping material velocity fields
-void NodalPoint::CombineRigidMaterials(void)
-{	// combine rigid materials across cracks
-	int i;
-	for(i=1;i<=nnodes;i++)
-		nd[i]->CombineRigidParticles();
-}
-
 
 // Find Grid point velocities
 void NodalPoint::GetGridVelocitiesForStrainUpdate(void)

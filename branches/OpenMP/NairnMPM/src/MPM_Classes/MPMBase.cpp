@@ -34,9 +34,13 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	SetAngley0InDegrees(0.0);
 	SetAnglex0InDegrees(0.0);
     
+	// space to hold velocity fields
 	vfld = (char *)malloc(maxShapeNodes*sizeof(char));
     for(i=1;i<maxShapeNodes;i++)
         vfld[i]=NO_CRACK;
+	
+	// space to hold grid forces in a buffer
+	gFrc = (GridForceBuffer *)malloc((maxShapeNodes-1)*sizeof(GridForceBuffer));
         
     // zero stresses and strains
 	ZeroTensor(&sp);
@@ -136,6 +140,21 @@ bool MPMBase::AllocateCPDIStructures(int gimpType,bool isThreeD)
     return TRUE;
         
 }
+
+// allocate buffer for grid force extrapolation
+bool MPMBase::AllocateGridForceBuffers(int numTransport)
+{
+	int numForces = 3+numTransport;
+	
+    // create memory for force buffers
+	for(int i=0;i<maxShapeNodes-1;i++)
+    {	gFrc[i].forces = (double *)malloc(numForces*sizeof(double));
+		if(gFrc[i].forces == NULL) return FALSE;
+	}
+	
+	return TRUE;
+}
+
 
 // Destructor (and it is virtual)
 MPMBase::~MPMBase() { }

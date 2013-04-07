@@ -435,7 +435,7 @@ void NairnMPM::PreliminaryCalcs(void)
 			continue;
 		}
         
-        // not a nonrigid particle
+        // now a nonrigid particle
         nmpmsNR = p+1;
         
         // check time step
@@ -466,13 +466,20 @@ void NairnMPM::PreliminaryCalcs(void)
         theMaterials[matid]->SetInitialParticleState(mpm[p],np);
 		
 		// Transport property time steps
+		int numTransport = 0;
 		TransportTask *nextTransport=transportTasks;
 		while(nextTransport!=NULL)
+		{	numTransport++;
 			nextTransport=nextTransport->TransportTimeStep(matid,dcell,&tmin);
+		}
         
         // CPDI domain data
         if(!mpm[p]->AllocateCPDIStructures(ElementBase::useGimp,IsThreeD()))
             throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryCalcs");
+		
+		// Grid forces buffer
+		if(!mpm[p]->AllocateGridForceBuffers(numTransport))
+            throw CommonException("Out of memory allocating grid forces buffer","NairnMPM::PreliminaryCalcs");
 	}
 	
 	// multimaterial checks and contact initialization
@@ -521,9 +528,8 @@ void NairnMPM::PreliminaryCalcs(void)
 		maxCrackFields=MAX_FIELDS_FOR_CRACKS;
 		
 		// warnings
-		CrackHeader::warnThreeFields=warnings.CreateWarning("crack node with three velocity fields",-1L);
-		CrackHeader::warnNodeOnCrack=warnings.CreateWarning("mesh node on a crack",-1L);
-		CrackHeader::warnThreeCracks=warnings.CreateWarning("node with three cracks or unexpected velocity fields",-1L);
+		CrackHeader::warnNodeOnCrack=warnings.CreateWarning("mesh node on a crack",-1L,5);
+		CrackHeader::warnThreeCracks=warnings.CreateWarning("node with three cracks or unexpected velocity fields",-1L,0);
 	}
 	
 	// create warnings
@@ -531,7 +537,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	{	// use default setting to quit if 1% of particle leave the grid
 		warnParticleLeftGrid = nmpms/100;
 	}
-	warnParticleLeftGrid=warnings.CreateWarning("particle has left the grid",warnParticleLeftGrid);
+	warnParticleLeftGrid=warnings.CreateWarning("particle has left the grid",warnParticleLeftGrid,0);
 	
 	// nodal point calculations
 	NodalPoint::PreliminaryCalcs();

@@ -97,8 +97,16 @@ void MatVelocityField::AddGridDampingTask3(double extDamping)
 }
 
 // internal force - add or scale and add
-void MatVelocityField::AddFtot(Vector *f) { AddVector(&ftot,f); }
-void MatVelocityField::AddFtot(Vector *f,double scaled) { AddScaledVector(&ftot,f,scaled); }
+void MatVelocityField::AddFtot(Vector *f)
+{	ftot.x += f->x;
+	ftot.y += f->y;
+	ftot.z += f->z;
+}
+void MatVelocityField::AddFtotScaled(Vector *f,double scaled)
+{	ftot.x += f->x*scaled;
+	ftot.y += f->y*scaled;
+	ftot.z += f->z*scaled;
+}
 
 // Update momentum for this MPM step
 //  pk(i+1) = pk(i) + ftot * dt

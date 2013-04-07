@@ -55,8 +55,9 @@ void CrackVelocityFieldMulti::AddVolumeGradient(int matfld,MPMBase *mptr,double 
 	mvf[matfld]->volumeGrad->z+=Vp*dNdz;
 }
 
-// Count number of materials, and return total mass
-// Get mass only of non-rigid materials, but count them all
+// Count number of materials in each crack velocity field on this node
+// Sum mass in an fields and return the result
+// Get mass only of non-rigid materials, but count rigid materials in number of materials
 double CrackVelocityFieldMulti::GetTotalMassAndCount(void)
 {	int i;
 	double mass=0.;
@@ -64,7 +65,7 @@ double CrackVelocityFieldMulti::GetTotalMassAndCount(void)
 	{	if(MatVelocityField::ActiveField(mvf[i]))
 		{	numberMaterials++;
 			if(!mvf[i]->rigidField)
-				mass+=mvf[i]->mass;
+				mass += mvf[i]->mass;
 		}
 	}
 	return mass;
@@ -145,7 +146,7 @@ void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int ri
 #pragma mark TASK 3 METHODS
 
 // Add to force spread out over the materials so each has same extra accerations = f/M
-// only called to add interface force on a crack
+// Only called by AddTractionForce() and CrackInterfaceForce()
 void CrackVelocityFieldMulti::AddFtotSpreadTask3(Vector *f)
 {	int i;
 	
@@ -164,7 +165,7 @@ void CrackVelocityFieldMulti::AddFtotSpreadTask3(Vector *f)
 	{	double totMass=GetTotalMass();
 		for(i=0;i<maxMaterialFields;i++)
 		{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-				mvf[i]->AddFtot(f,mvf[i]->mass/totMass);
+				mvf[i]->AddFtotScaled(f,mvf[i]->mass/totMass);
 		}
 	}
 }
@@ -1120,7 +1121,7 @@ void CrackVelocityFieldMulti::AddMomVel(Vector *norm,double vel)
 
 // set one component of force to -p(interpolated)/time such that updated momentum
 //    of pk.i + deltime*ftot.i will be zero
-void CrackVelocityFieldMulti::SetFtot(Vector *norm,double deltime)
+void CrackVelocityFieldMulti::SetFtotDirection(Vector *norm,double deltime)
 {	int i;
     for(i=0;i<maxMaterialFields;i++)
     {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
@@ -1130,7 +1131,7 @@ void CrackVelocityFieldMulti::SetFtot(Vector *norm,double deltime)
 }
 
 // add one component of force such that updated momentum will be mass*velocity
-void CrackVelocityFieldMulti::AddFtot(Vector *norm,double deltime,double vel)
+void CrackVelocityFieldMulti::AddFtotDirection(Vector *norm,double deltime,double vel)
 {	int i;
     for(i=0;i<maxMaterialFields;i++)
     {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))

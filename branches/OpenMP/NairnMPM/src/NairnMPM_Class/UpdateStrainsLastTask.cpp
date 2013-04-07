@@ -49,34 +49,32 @@ UpdateStrainsLastTask::UpdateStrainsLastTask(const char *name) : MPMTask(name)
 // Get total grid point forces (except external forces)
 void UpdateStrainsLastTask::Execute(void)
 {
-	int i,p,iel,matfld,numnds,nds[maxShapeNodes];
-	MaterialBase *matID;
+	int numnds,nds[maxShapeNodes];
 	double mp,fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
-	short vfld;
-	TransportTask *nextTransport;
 	
 	// zero again (which finds new positions for rigid particles)
-	for(i=1;i<=nnodes;i++)
+	for(int i=1;i<=nnodes;i++)
 		nd[i]->RezeroNodeTask6(timestep);
 	
 	// loop over non-rigid particles
-	for(p=0;p<nmpms;p++)
-	{	matID=theMaterials[mpm[p]->MatID()];
-		if(matID->Rigid()) continue;            // skip rigid BCs and rigid contact materials
+	for(int p=0;p<nmpms;p++)
+	{	const MaterialBase *matref = theMaterials[mpm[p]->MatID()];
+		if(matref->Rigid()) continue;            // skip rigid BCs and rigid contact materials
+		
 		mp=mpm[p]->mp;			// in g
-		matfld=matID->GetField();
+		int matfld = matref->GetField();
 		
 		// find shape functions (why ever need gradients?)
-		iel=mpm[p]->ElemID();
+		const ElementBase *elref = theElements[mpm[p]->ElemID()];
 		if(fmobj->multiMaterialMode)
         {   // Need gradients for volume gradient
-            theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
+            elref->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
         }
 		else
-			theElements[iel]->GetShapeFunctions(&numnds,fn,nds,mpm[p]->GetNcpos(),mpm[p]);
+			elref->GetShapeFunctions(&numnds,fn,nds,mpm[p]->GetNcpos(),mpm[p]);
 		
-		for(i=1;i<=numnds;i++)
-		{	vfld=(short)mpm[p]->vfld[i];
+		for(int i=1;i<=numnds;i++)
+		{	short vfld = (short)mpm[p]->vfld[i];
 			
 			// velocity from updated velocities
 			nd[nds[i]]->AddMomentumTask6(vfld,matfld,fn[i]*mp,&mpm[p]->vel);
@@ -90,7 +88,7 @@ void UpdateStrainsLastTask::Execute(void)
 	}
 	
 	// update nodal values for transport properties (when coupled to strain)
-	nextTransport=transportTasks;
+	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
 		nextTransport=nextTransport->UpdateNodalValues(timestep);
 	
@@ -100,7 +98,7 @@ void UpdateStrainsLastTask::Execute(void)
 	// adjust momenta for crack contact
 	CrackHeader::ContactConditions(FALSE);
 	
-	// import grid boundary conditions
+	// impose grid boundary conditions
 	NodalVelBC::GridMomentumConditions(FALSE);
 	
 	// update strains based on current velocities

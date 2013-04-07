@@ -48,8 +48,8 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		// boundary conditions
         virtual void SetMomVel(Vector *);
         virtual void AddMomVel(Vector *,double);
-        virtual void SetFtot(Vector *,double);
-        virtual void AddFtot(Vector *,double,double);
+        virtual void SetFtotDirection(Vector *,double);
+        virtual void AddFtotDirection(Vector *,double,double);
 	
 		// accessors
 		virtual int GetNumberPointsNonrigid(void);

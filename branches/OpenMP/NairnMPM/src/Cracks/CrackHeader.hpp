@@ -58,7 +58,6 @@ class CrackHeader : public LinkedObject
 		static int codInterval;					// 0 or 1
 		static double bezArg[4];
 		static double bezDer[4];
-		static int warnThreeFields;
 		static int warnNodeOnCrack;
 		static int warnThreeCracks;
 		
@@ -116,7 +115,7 @@ class CrackHeader : public LinkedObject
 		int CriterionNeeds(void);
 		void GetCOD(CrackSegment *,Vector &,bool);
 		void CrackTipAndDirection(int,CrackSegment **,Vector &);
-		void TractionFext(void);
+		void AddTractionForce(void);
 		bool GetHasTractionLaws(void);
 		void GetInitialDirection(CrackSegment *,Vector &);
 		void InterpolatePosition(int,CrackSegment **,Vector &,bool);

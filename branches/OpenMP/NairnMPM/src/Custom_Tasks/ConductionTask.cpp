@@ -11,8 +11,9 @@
 		Set gTemperature, gMpCp, fcond on node to zero;
 	Mass and Momentum Task
 		Extrapolate gTemperature and gMpCp (Task1Extrapolation())
-		Divide gTemperature by gMpCp and impose grid T BCs (GetValues())
-		Find grad T on particle (GetGradients())
+		Divide gTemperature by gMpCp (GetNodalValue()
+		Impose grid T BCs (ImposeValueBCs())
+		Find grad T on particles (GetGradients())
 	Grid Forces Task
 		Extrapolate conductivity force to fcond (AddForces())
 			(include heat sources, and energy coupling)
@@ -135,16 +136,19 @@ TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr
 	return nextTask;
 }
 
-// Task 1b - get grid temperatures and impose grid-based concentration BCs
-void ConductionTask::GetValues(double stepTime)
-{
-	// convert to actual temperatures
-	int i;
-    for(i=1;i<=nnodes;i++)
-	{   if(nd[i]->NumberNonrigidParticles()>0)
-			nd[i]->gTemperature /= nd[i]->gMpCp;
-	}
+// Task 1b - get grid temperature on one node
+TransportTask *ConductionTask::GetNodalValue(NodalPoint *ndptr)
+{   if(ndptr->NumberNonrigidParticles()>0)
+		ndptr->gTemperature /= ndptr->gMpCp;
+	return nextTask;
+}
 
+
+// Task 1b - impose grid-based temperature BCs
+void ConductionTask::ImposeValueBCs(double stepTime)
+{
+	int i;
+		
 	// Copy no-BC temperature
     NodalTempBC *nextBC=firstTempBC;
     while(nextBC!=NULL)
@@ -169,27 +173,30 @@ void ConductionTask::GetValues(double stepTime)
 }
 
 // Task 1b - get gradients in Vp * cp on particles
-void ConductionTask::GetGradients(double stepTime)
+TransportTask *ConductionTask::GetGradients(double stepTime)
 {
-    int i,p,iel;
-    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	int numnds,nds[maxShapeNodes];
+    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
 	// Find gradients on the particles
-    for(p=0;p<nmpms;p++)
-	{	if(theMaterials[mpm[p]->MatID()]->Rigid()) continue;
+#pragma omp parallel for private(numnds,nds,fn,xDeriv,yDeriv,zDeriv)
+    for(int p=0;p<nmpms;p++)
+	{	// skip rigid particles
+		if(theMaterials[mpm[p]->MatID()]->Rigid()) continue;
 	
 		// find shape functions and derviatives
-		iel=mpm[p]->ElemID();
-		theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
+		const ElementBase *elref = theElements[mpm[p]->ElemID()];
+		elref->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
 		
 		// Find gradients from current temperatures
 		mpm[p]->AddTemperatureGradient();			// zero gradient on the particle
-		for(i=1;i<=numnds;i++)
+		for(int i=1;i<=numnds;i++)
 		{	Vector deriv = MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
 			mpm[p]->AddTemperatureGradient(ScaleVector(&deriv,nd[nds[i]]->gTemperature));
 		}
 	}
+	
+	return nextTask;
 }
 
 #pragma mark GRID FORCES EXTRAPOLATIONS
@@ -298,7 +305,7 @@ TransportTask *ConductionTask::UpdateNodalValues(double tempTime)
 	int i;
     for(i=1;i<=nnodes;i++)
 	{   if(nd[i]->NumberNonrigidParticles()>0)
-        nd[i]->gTemperature += nd[i]->fcond*tempTime;
+			nd[i]->gTemperature += nd[i]->fcond*tempTime;
 	}
 	return nextTask;
 }

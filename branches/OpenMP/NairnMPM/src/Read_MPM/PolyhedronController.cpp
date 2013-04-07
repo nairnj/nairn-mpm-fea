@@ -26,6 +26,7 @@ PolyhedronController::~PolyhedronController()
 }
 
 // set from  arbitrary string data
+// not thread safe due to push_back()
 void PolyhedronController::SetProperty(char *bData,CommonReadHandler *reader)
 {
 	int i;

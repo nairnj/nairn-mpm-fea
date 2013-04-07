@@ -236,20 +236,20 @@ NodalVelBC *NodalVelBC::SetGhostVelBC(double mstime)
 }
 
 // superpose x, y, or z velocity
-NodalVelBC *NodalVelBC::InitFtot(double mstime)
+NodalVelBC *NodalVelBC::InitFtotDirection(double mstime)
 {	// set if has been activated
 	int i = GetNodeNum(mstime);
-	if(i>0) nd[i]->SetFtot(&norm,timestep);
+	if(i>0) nd[i]->SetFtotDirection(&norm,timestep);
 	return (NodalVelBC *)GetNextObject();
 }
 
 // superpose x, y, or z velocity
-NodalVelBC *NodalVelBC::AddFtot(double mstime)
+NodalVelBC *NodalVelBC::AddFtotDirection(double mstime)
 {	// set if has been activated
 	int i = GetNodeNum(mstime);
 	if(i>0)
 	{	// use currentValue set earlier in this step
-		nd[i]->AddFtot(&norm,timestep,currentValue);
+		nd[i]->AddFtotDirection(&norm,timestep,currentValue);
 	}
 	return (NodalVelBC *)GetNextObject();
 }
@@ -341,11 +341,11 @@ void NodalVelBC::ConsistentGridForces(void)
     // Second set force to -p(interpolated)/timestep
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-		nextBC = nextBC->InitFtot(mstime);
+		nextBC = nextBC->InitFtotDirection(mstime);
     
     // Now add each superposed velocity BC at incremented time
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-		nextBC = nextBC->AddFtot(mstime);
+		nextBC = nextBC->AddFtotDirection(mstime);
 }
 

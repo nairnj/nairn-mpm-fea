@@ -76,6 +76,7 @@ FEAReadHandler::~FEAReadHandler()
 ********************************************************************************/
 
 // Custom FEA element start
+// not thread safe due to push_back()
 bool FEAReadHandler::myStartElement(char *xName,const Attributes& attrs)
 {   
     char *value,*aName;
@@ -1093,10 +1094,8 @@ void FEAReadHandler::ResequenceNodes(void)
 	delete [] revMap;
 }
 
-/********************************************************************************
-	 Find periodics nodes if requested
-********************************************************************************/
-
+//Find periodics nodes if requested
+// not thread safe due to push_back()
 void FEAReadHandler::FindPeriodicNodes(void)
 {
 	vector< int > xPeriodicNodes;	// pairs of nodes periodic in x

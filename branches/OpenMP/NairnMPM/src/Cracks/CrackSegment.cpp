@@ -195,6 +195,7 @@ void CrackSegment::AddTractionFext(CrackHeader *theCrack)
 }
 
 // calculate tractions on one side of crack for this segment
+// add forces to material velocity fields on one side of the crack
 double CrackSegment::AddTractionFextSide(CrackHeader *theCrack,int side,double sign)
 {
 	side--;			// convert to 0 or 1 for above and below

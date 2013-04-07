@@ -39,7 +39,6 @@ double CrackHeader::codLocation;
 int CrackHeader::codInterval;
 double CrackHeader::bezArg[4];
 double CrackHeader::bezDer[4];
-int CrackHeader::warnThreeFields;
 int CrackHeader::warnNodeOnCrack;
 int CrackHeader::warnThreeCracks;
 
@@ -606,7 +605,7 @@ void CrackHeader::UpdateCrackTractions(void)
 }
 
 // called in forces step for each crack to convert crack tractions laws into external forces
-void CrackHeader::TractionFext(void)
+void CrackHeader::AddTractionForce(void)
 {
 	if(!hasTractionLaws) return;
 	CrackSegment *cs=firstSeg;

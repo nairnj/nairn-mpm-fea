@@ -40,13 +40,12 @@ UpdateParticlesTask::UpdateParticlesTask(const char *name) : MPMTask(name)
 // Update particle position, velocity, temp, and conc
 void UpdateParticlesTask::Execute(void)
 {
-	int numnds;
-	int nds[maxShapeNodes];
+	int numnds,nds[maxShapeNodes];
 	double fn[maxShapeNodes];
 	Vector delv;
 	
     // Update particle position, velocity, temp, and conc
-#pragma omp parallel for private(nds,fn,delv,numnds)
+#pragma omp parallel for private(numnds,nds,fn,delv)
     for(int p=0;p<nmpms;p++)
 	{	const MaterialBase *matRef=theMaterials[mpm[p]->MatID()];
 		if(!matRef->Rigid())

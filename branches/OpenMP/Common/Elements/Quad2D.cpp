@@ -127,6 +127,7 @@ void Quad2D::MakeQuarterPointNodes(int crackTip,vector<int> &movedNodes)
 }
 
 // move mid side node to quarter point, but only if was not moved before
+// not thread safe due to push_back()
 void Quad2D::AdjustMidSideNode(int tip,int mid,int end,vector<int> &movedNodes)
 {
 	// check if node was already moved

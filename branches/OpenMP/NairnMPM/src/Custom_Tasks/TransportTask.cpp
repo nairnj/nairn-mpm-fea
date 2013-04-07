@@ -20,16 +20,6 @@ TransportTask::TransportTask()
 // Destructor (and it is virtual)
 TransportTask::~TransportTask() { }
 
-#pragma mark BASIC METHODS
-
-// Task 1b tasks
-TransportTask *TransportTask::GetValuesAndGradients(double stepTime)
-{
-	GetValues(stepTime);
-	GetGradients(stepTime);
-	return nextTask;
-}
-
 #pragma mark STANDARD METHODS
 
 // transport analysis settings

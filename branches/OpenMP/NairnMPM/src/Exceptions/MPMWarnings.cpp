@@ -23,13 +23,20 @@ MPMWarnings::MPMWarnings()
 }
 
 // add a warning
-int MPMWarnings::CreateWarning(const char *message,int abortStep)
+// not thread safe due to push_back()
+int MPMWarnings::CreateWarning(const char *message,int abortStep,int maxIDs)
 {
 	WarningsData *newWarning = new WarningsData;
 	newWarning->numSteps=0;
 	newWarning->msg=new char[strlen(message)+1];
 	newWarning->maxIssues=abortStep;
 	strcpy(newWarning->msg,message);
+	if(maxIDs==0)
+		newWarning->issuedIDs = NULL;
+	else
+	{	newWarning->issuedIDs = (int *)malloc((maxIDs+1)*sizeof(int));
+		newWarning->issuedIDs[0] = 0;
+	}
 	warningSet.push_back(newWarning);
 	return warningSet.size()-1;
 }
@@ -49,6 +56,7 @@ void MPMWarnings::BeginStep(void)
 // issue a warning of a certain type
 // but, only count once per step, and display message only on the first step this warning occurs
 // return SILENT_WARNING, GAVE_WARNING, or REACHED_MAX_WARNINGS
+// not thread safe due to push_back()
 int MPMWarnings::Issue(int warnKind,int theID)
 {	int warnResult=SILENT_WARNING;
 	
@@ -58,18 +66,23 @@ int MPMWarnings::Issue(int warnKind,int theID)
 	// check the warning
 	WarningsData *warn=warningSet[warnKind];
 	
-	// will output warning if first time or if first time for this ID
+	// will output warning if first time or if first time for this ID for warnding that use IDs
 	bool newID=FALSE;
-	if(theID>0)
-	{	int i;
+	if(theID>0 && warn->issuedIDs!=NULL)
+	{	int i=0;
 		newID=TRUE;
-		for(i=0;i<(int)warn->issuedIDs.size();i++)
+		while(warn->issuedIDs[i]!=0)
 		{	if(theID==warn->issuedIDs[i])
 			{	newID=FALSE;
 				break;
 			}
+			i++;
 		}
-		if(newID) warn->issuedIDs.push_back(theID);
+		if(newID)
+		{	// warning - when create warning, better save room for all possible IDs
+			warn->issuedIDs[i]=theID;
+			warn->issuedIDs[i+1]=0;
+		}
 	}
 	
 	// increment number of steps (first time on each step)

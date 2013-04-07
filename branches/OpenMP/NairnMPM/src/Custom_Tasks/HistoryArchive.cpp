@@ -26,6 +26,7 @@ const char *HistoryArchive::TaskName(void) { return "Archive particle history da
 
 // Read task parameter - if pName is valid, set input for type
 //    and return pointer to the class variable
+// not thread safe due to push_back()
 char *HistoryArchive::InputParam(char *pName,int &input)
 {
     if(strcmp(pName,"archiveTime")==0)

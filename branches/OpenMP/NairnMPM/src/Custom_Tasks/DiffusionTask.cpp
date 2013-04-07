@@ -77,15 +77,17 @@ TransportTask *DiffusionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,
 }
 
 // Get grid concentrations and impose grid-based concentration BCs
-void DiffusionTask::GetValues(double stepTime)
-{
-	// convert to actual concentrations
-	int i;
-    for(i=1;i<=nnodes;i++)
-	{   if(nd[i]->NumberNonrigidParticles()>0)
-			nd[i]->gConcentration/=nd[i]->gVolume;
-	}
+TransportTask *DiffusionTask::GetNodalValue(NodalPoint *ndptr)
+{	if(ndptr->NumberNonrigidParticles()>0)
+		ndptr->gConcentration /= ndptr->gVolume;
+	return nextTask;
+}
 
+// Get grid concentrations and impose grid-based concentration BCs
+void DiffusionTask::ImposeValueBCs(double stepTime)
+{
+	int i;
+	
 	// Copy no-BC concentration
     NodalConcBC *nextBC=firstConcBC;
     while(nextBC!=NULL)
@@ -123,27 +125,29 @@ void DiffusionTask::GetValues(double stepTime)
 }
 
 // Get gradients in Vp * cp on particles
-void DiffusionTask::GetGradients(double stepTime)
+TransportTask *DiffusionTask::GetGradients(double stepTime)
 {
-    int i,p,iel;
-    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	int numnds,nds[maxShapeNodes];
+    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
 	// Find gradients on the particles
-    for(p=0;p<nmpms;p++)
+#pragma omp parallel for private(numnds,nd,fn,xDeriv,yDeriv,zDeriv)
+    for(int p=0;p<nmpms;p++)
 	{	if(theMaterials[mpm[p]->MatID()]->Rigid()) continue;
 	
 		// find shape functions and derviatives
-		iel=mpm[p]->ElemID();
-		theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
+		const ElementBase *elref = theElements[mpm[p]->ElemID()];
+		elref->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
 		
 		// Find gradients from current concentrations
 		mpm[p]->AddConcentrationGradient();			// zero gradient on the particle
-		for(i=1;i<=numnds;i++)
+		for(int i=1;i<=numnds;i++)
 		{	Vector deriv=MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
 			mpm[p]->AddConcentrationGradient(ScaleVector(&deriv,nd[nds[i]]->gConcentration));
 		}
 	}
+	
+	return nextTask;
 }
 
 // find forces for diffusion calculation (mm^3/sec)

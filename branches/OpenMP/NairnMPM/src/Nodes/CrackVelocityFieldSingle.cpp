@@ -36,7 +36,7 @@ double CrackVelocityFieldSingle::GetTotalMassAndCount(void)
 #pragma mark TASK 3 METHODS
 
 // Add to force spread out over the materials so each has same extra accelerations = f/M_i
-// only called to add interface foces on a crack
+// Only called by AddTractionForce() and CrackInterfaceForce()
 void CrackVelocityFieldSingle::AddFtotSpreadTask3(Vector *f)
 {	if(MatVelocityField::ActiveField(mvf[0]))
 		mvf[0]->AddFtot(f);
@@ -92,13 +92,13 @@ void CrackVelocityFieldSingle::AddMomVel(Vector *norm,double vel)
 
 // set one component of force to -p(interpolated)/time such that updated momentum
 //    of pk.i + deltime*ftot.i will be zero
-void CrackVelocityFieldSingle::SetFtot(Vector *norm,double deltime)
+void CrackVelocityFieldSingle::SetFtotDirection(Vector *norm,double deltime)
 {	if(MatVelocityField::ActiveField(mvf[0]))
         mvf[0]->SetFtotDirection(norm,deltime);
 }
 
 // add one component of force such that updated momentum will be mass*velocity
-void CrackVelocityFieldSingle::AddFtot(Vector *norm,double deltime,double vel)
+void CrackVelocityFieldSingle::AddFtotDirection(Vector *norm,double deltime,double vel)
 {	if(MatVelocityField::ActiveField(mvf[0]))
         mvf[0]->AddFtotDirection(norm,deltime,vel);
 }

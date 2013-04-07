@@ -116,8 +116,8 @@ class NodalPoint : public LinkedObject
 		void GetVolumeGradient(short,int,Vector *,double);
         void SetMomVel(Vector *);
         void AddMomVel(Vector *,double);
-        void SetFtot(Vector *,double);
-        void AddFtot(Vector *,double,double);
+        void SetFtotDirection(Vector *,double);
+        void AddFtotDirection(Vector *,double,double);
 		void SetFixedDirection(int);
 		void UnsetFixedDirection(int);
 		void CalcTotalMassAndCount(void);
@@ -131,7 +131,6 @@ class NodalPoint : public LinkedObject
 		// class methods
 #ifdef MPM_CODE
 		static void PreliminaryCalcs(void);
-		static void CombineRigidMaterials(void);
 		static void MaterialContact(bool,bool,double);
 		static void GetGridVelocitiesForStrainUpdate(void);
 		static void GetGridCMVelocitiesTask8(void);

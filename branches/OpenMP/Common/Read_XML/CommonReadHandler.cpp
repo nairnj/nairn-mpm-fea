@@ -602,6 +602,7 @@ double CommonReadHandler::ReadGridPoint(char *value,double distScaling,double ax
 
 // decode string delimited by white space, commands, or tabs and add intervening numbers
 // to the input vector (which is cleared first). Any other characters trigger an error
+// not thread safe due to push_back()
 bool CommonReadHandler::GetFreeFormatNumbers(char *nData,vector<double> &values,double scaling)
 {
 	int offset=0,numOffset=0;

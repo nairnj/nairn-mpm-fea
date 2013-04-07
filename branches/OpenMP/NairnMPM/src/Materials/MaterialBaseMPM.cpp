@@ -479,6 +479,7 @@ void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np) const
 }
 
 // when set, return total number of materials if this is a new one, or 1 if not in multimaterial mode
+// not thread safe due to push_back()
 int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activeNum)
 {	if(!multiMaterials)
 	{	if(field<0)
@@ -1171,8 +1172,8 @@ void MaterialBase::RotateDirection(Vector *crackDir,double cosTheta,double sinTh
 
 // Get crack propagation angle by solving the equation 
 // of strain energy density criterion numerically
-double 
-MaterialBase::CrackPropagationAngleFromStrainEnergyDensityCriterion(double k,
+// not thread safe due to push_back()
+double MaterialBase::CrackPropagationAngleFromStrainEnergyDensityCriterion(double k,
                                                        double KI, double KII)
 {
   double theta=0.0;

@@ -25,10 +25,6 @@ class TransportTask
         TransportTask();
         virtual ~TransportTask();
         
-		// base methods
-		TransportTask *GetValuesAndGradients(double);
-		TransportTask *ZeroValueExtrap(void);
-       
         // overridable methods
 		virtual TransportTask *TransportOutput(void);
 		
@@ -43,11 +39,14 @@ class TransportTask
 		// Task 1 Extrapolation of transport property to the grid
 		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double) = 0;
 
-		// Get grid values and impose grid-based BCs
-		virtual void GetValues(double) = 0;
+		// Get grid values
+		virtual TransportTask *GetNodalValue(NodalPoint *) = 0;
 		
+		// impose grid-based BCs
+		virtual void ImposeValueBCs(double) = 0;
+	
 		// Get transport property gradient on the particles
-		virtual void GetGradients(double) = 0;
+		virtual TransportTask *GetGradients(double) = 0;
 		
 		// find forces for transport calculation
 		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *) = 0;

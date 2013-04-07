@@ -20,7 +20,7 @@ typedef struct {
 	// variables (changed in MPM time step)
 	short thisStep;				// was there a warning this step yet?
 	int numSteps;				// how many steps had this warning
-	vector< int > issuedIDs;	// list of IDS for this warning
+	int *issuedIDs;				// zero terminated list of IDS for this warning
 	int firstStep;				// first step with this warning
 	
 	// constants (not changed in MPM time step)
@@ -33,7 +33,7 @@ class MPMWarnings
     public:
         // constructors and destructors
         MPMWarnings();
-		int CreateWarning(const char *,int);
+		int CreateWarning(const char *,int,int);
 		
 		// methods
 		void BeginStep(void);
