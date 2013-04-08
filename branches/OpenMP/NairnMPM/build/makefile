@@ -555,7 +555,8 @@ InitializationTask.o : $(InitializationTask).cpp $(dprefix) $(InitializationTask
 MassAndMomentumTask.o : $(MassAndMomentumTask).cpp $(dprefix) $(MassAndMomentumTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(NodalPoint).hpp $(MatPtLoadBC).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ElementBase).hpp \
 			$(RigidMaterial).hpp $(CrackHeader).hpp $(CrackSurfaceContact).hpp $(TransportTask).hpp $(BoundaryCondition).hpp \
-			$(NodalVelBC).hpp $(CommonException).hpp $(NodalTempBC).hpp $(NodalConcBC).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp
+			$(NodalVelBC).hpp $(CommonException).hpp $(NodalTempBC).hpp $(NodalConcBC).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
+            $(CrackNode).hpp $(MaterialInterfaceNode).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MassAndMomentumTask).cpp
 UpdateStrainsFirstTask.o : $(UpdateStrainsFirstTask).cpp $(dprefix) $(UpdateStrainsFirstTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(MPMBase).hpp $(NodalPoint).hpp $(MaterialBase).hpp
@@ -576,7 +577,7 @@ UpdateParticlesTask.o : $(UpdateParticlesTask).cpp $(dprefix) $(UpdateParticlesT
 UpdateStrainsLastTask.o : $(UpdateStrainsLastTask).cpp $(dprefix) $(UpdateStrainsLastTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(CrackHeader).hpp $(TransportTask).hpp \
 			$(NodalPoint).hpp $(CrackSurfaceContact).hpp $(NodalVelBC).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
-			$(BoundaryCondition).hpp $(UpdateStrainsFirstTask).cpp
+			$(BoundaryCondition).hpp $(UpdateStrainsFirstTask).cpp $(CrackNode).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UpdateStrainsLastTask).cpp
 RunCustomTasksTask.o : $(RunCustomTasksTask).cpp $(dprefix) $(RunCustomTasksTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(NodalPoint).hpp $(CustomTask).hpp \
