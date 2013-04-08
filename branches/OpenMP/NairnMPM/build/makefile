@@ -98,16 +98,18 @@ CP= cp
 #     CFLAGS are flags passed to compiled for each source file. If must contain -c and
 #		can add any other needed options. Some flags found useful in this project are
 #            -O3 = optimize most -O0 = not optimized
-#            -g = debuggin info  -pg = profiling
+#            -fopenmp = enable OpenMP compile (link too)
+#            -g = debugging info  -pg = profiling
 #            -arch i386 = compile architecture (MacOS X only, other archs are x86_64, ppc, and ppc64)
 #     LFLAGS are flags passed at link time. The default is empty. Some flags found useful
 #       in this project are
+#            -fopenmp = enable OpenMP link (compile too)
 #            -arch i386 = link architecture (MacOS X only, other archs are x86_64, ppc, and ppc64)
 #            -pg = profiling
-#     If using -arch or -pg, must have in both CFLAGS and LFLAGS. For MacOS X, the specified arch
+#     If using -fopenmp, -arch, or -pg, must have in both CFLAGS and LFLAGS. For MacOS X, the specified arch
 #       must match the xerces library used for linking
-CFLAGS= -c -O3
-LFLAGS=
+CFLAGS= -c -O3 -fopenmp
+LFLAGS= -fopenmp
 
 # 5. Define executable destination
 #     output = relative or full path to save executable or to find it for a subsequent make install

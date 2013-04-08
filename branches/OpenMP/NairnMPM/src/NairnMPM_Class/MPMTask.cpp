@@ -8,7 +8,7 @@
 
 #include "NairnMPM_Class/MPMTask.hpp"
 #include "System/ArchiveData.hpp"
-#include "NairnMPM/NairnMPM.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"
 
 #pragma mark CONSTRUCTORS
 

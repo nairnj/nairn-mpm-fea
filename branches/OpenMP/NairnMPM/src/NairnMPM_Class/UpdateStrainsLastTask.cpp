@@ -37,7 +37,6 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
-
 #include "Cracks/CrackNode.hpp"
 
 #pragma mark CONSTRUCTORS

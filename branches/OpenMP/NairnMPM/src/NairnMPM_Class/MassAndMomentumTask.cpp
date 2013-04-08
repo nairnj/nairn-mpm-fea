@@ -63,7 +63,6 @@
 #include "Exceptions/CommonException.hpp"
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Boundary_Conditions/NodalConcBC.hpp"
-
 #include "Cracks/CrackNode.hpp"
 #include "Nodes/MaterialInterfaceNode.hpp"
 
