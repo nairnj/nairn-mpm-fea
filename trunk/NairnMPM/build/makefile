@@ -246,6 +246,7 @@ SLMaterial = $(src)/Materials/SLMaterial
 SphereController = $(src)/Read_MPM/SphereController
 StartOutput = $(src)/NairnMPM_Class/StartOutput
 StrX = $(com)/Exceptions/StrX
+svninfo = $(com)/System/svninfo
 ThermalRamp = $(src)/Global_Quantities/ThermalRamp
 TractionLaw = $(src)/Materials/TractionLaw
 TransIsotropic = $(com)/Materials/TransIsotropic
@@ -372,7 +373,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 
 # -------------------------------------------------------------------------
 # all compiled objects
-objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtilities.o CommonTask.o \
+objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtilities.o CommonTask.o svninfo.o \
 		CommonException.o ElementBase.o Linear2D.o FourNodeIsoparam.o MaterialBase.o Matrix3.o \
 		CommonReadHandler.o ParseController.o ElementsController.o NodesController.o \
 		LineController.o MaterialController.o IsotropicMat.o TransIsotropic.o BoxController.o \
@@ -419,6 +420,8 @@ CommonTask.o : $(CommonTask).cpp $(dprefix) $(CommonTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonTask).cpp
 Matrix3.o : $(Matrix3).cpp $(dprefix)
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Matrix3).cpp
+svninfo.o : $(svninfo).cpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(svninfo).cpp
 
 # Common: Read_XML
 CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).hpp $(NairnMPM).hpp $(MaterialController).hpp \
