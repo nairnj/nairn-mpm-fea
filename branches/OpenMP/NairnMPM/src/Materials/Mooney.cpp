@@ -90,7 +90,7 @@ const char *Mooney::VerifyAndLoadProperties(int np)
 	G2sp=G2*1.0e+06/rho;
 	
 	// call super class
-	return MaterialBase::VerifyAndLoadProperties(np);
+	return HyperElastic::VerifyAndLoadProperties(np);
 }
 
 // Store J, which is calculated incrementally, and available for archiving

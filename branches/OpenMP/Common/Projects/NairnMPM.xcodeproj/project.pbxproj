@@ -1990,6 +1990,7 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CODE_SIGN_IDENTITY = "";
+				ENABLE_OPENMP_SUPPORT = NO;
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = s;
 				GCC_PREFIX_HEADER = ../../NairnMPM/src/System/MPMPrefix.hpp;
@@ -2047,7 +2048,7 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CODE_SIGN_IDENTITY = "";
-				ENABLE_OPENMP_SUPPORT = YES;
+				ENABLE_OPENMP_SUPPORT = NO;
 				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				VALID_ARCHS = "ppc7400 ppc64 ppc970 i386 x86_64 ppc";
 			};
