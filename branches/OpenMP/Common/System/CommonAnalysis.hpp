@@ -49,10 +49,11 @@ class CommonAnalysis
 		static bool IsThreeD(int);
 		bool IsAxisymmetric(void);
 		static bool IsAxisymmetric(int);
+        void SetNumberOfProcessors(int);
 		
 	protected:
 		bool validate,reverseBytes;
-		int version,subversion,buildnumber;
+		int version,subversion,buildnumber,numProcs;
 		char *description;
 };
 

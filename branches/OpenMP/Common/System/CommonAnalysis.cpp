@@ -61,7 +61,12 @@ void CommonAnalysis::StartResultsOutput(void)
 	PrintAnalysisTitle();
 	cout << "Written by: Nairn Research Group, Oregon State University\n"
         << "Date: " << __DATE__ << "\n"
-        << "Source: " << svninfo << "\n\n";
+        << "Source: " << svninfo << "\n"
+#ifdef _PARALLEL_
+        << "Processors: " << numProcs << "\n"
+#endif
+        << endl;
+    
          
     //--------------------------------------------------
     // Description
@@ -303,6 +308,9 @@ bool CommonAnalysis::IsThreeD(int otherNp) { return otherNp==THREED_MPM; }
 // is it axisynmmetric (FEA or MPM)
 bool CommonAnalysis::IsAxisymmetric(void) { return np==AXI_SYM || np==AXISYMMETRIC_MPM; }
 bool CommonAnalysis::IsAxisymmetric(int otherNp) { return otherNp==AXI_SYM || otherNp==AXISYMMETRIC_MPM; }
+
+// set number of processes (0 for serial code)
+void CommonAnalysis::SetNumberOfProcessors(int npr) { numProcs = npr; }
 
 /********************************************************************************
 	Methods to keep Xerces contact in fewer files

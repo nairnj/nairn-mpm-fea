@@ -27,6 +27,7 @@ int main(int argc,const char *argv[])
 	unsigned int optInd;
 	bool abort=FALSE;
 	bool useWorkingDir=FALSE;
+    int numProcs=0;
 	
 	// ---------------------------------------------
     // 1. Create main analysis object
@@ -46,7 +47,8 @@ int main(int argc,const char *argv[])
     // Check for options
     for(parmInd=1;parmInd<argc && argv[parmInd][0]=='-';parmInd++)
 	{	// each option in the argument
-		for(optInd=1;optInd<strlen(argv[parmInd]);optInd++)
+        unsigned arglen = strlen(argv[parmInd]);
+		for(optInd=1;optInd<arglen;optInd++)
 		{	// Help request
 			if(argv[parmInd][optInd]=='H')
 			{	fmobj->Usage();
@@ -67,6 +69,13 @@ int main(int argc,const char *argv[])
 			else if(argv[parmInd][optInd]=='w')
 				useWorkingDir=TRUE;
 			
+			else if(argv[parmInd][optInd]=='n' && optInd==arglen-2 && argv[parmInd][optInd+1]=='p' && parmInd<argc-2)
+            {   // get number in next argument
+                parmInd++;
+                sscanf(argv[parmInd],"%d",&numProcs);
+                break;
+            }
+ 			
 			else
 			{   cerr << "\nUnknown " << fmobj->CodeName() << " option '" << argv[parmInd][optInd]
 					 << "' was used.\n";
@@ -80,6 +89,20 @@ int main(int argc,const char *argv[])
     {	fmobj->Usage();
         return NoInputErr;
     }
+    
+    // set number of processors
+#ifdef _PARALLEL_
+    int maxProcs = max(omp_get_max_threads(),omp_get_num_procs());
+    if(numProcs>0)
+    {   if(numProcs > maxProcs) numProcs = maxProcs;
+        omp_set_num_threads(numProcs);
+    }
+    else
+        numProcs = maxProcs;
+#else
+    numProcs = 0;
+#endif
+    fmobj->SetNumberOfProcessors(numProcs);
     
 	//-------------------------------------------------------------
     // 3. Read the input file, exceptions handled in ReadFile()

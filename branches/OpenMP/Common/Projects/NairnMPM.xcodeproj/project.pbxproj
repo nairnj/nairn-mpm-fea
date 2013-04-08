@@ -1978,6 +1978,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				ENABLE_OPENMP_SUPPORT = NO;
 				GCC_MODEL_TUNING = G5;
 				INSTALL_PATH = "$(HOME)/bin";
 				PRODUCT_NAME = ExtractMPM;
@@ -1990,7 +1991,7 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CODE_SIGN_IDENTITY = "";
-				ENABLE_OPENMP_SUPPORT = NO;
+				ENABLE_OPENMP_SUPPORT = YES;
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = s;
 				GCC_PREFIX_HEADER = ../../NairnMPM/src/System/MPMPrefix.hpp;
@@ -2018,6 +2019,7 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CODE_SIGN_IDENTITY = "";
+				ENABLE_OPENMP_SUPPORT = NO;
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_OPTIMIZATION_LEVEL = s;
 				GCC_PREFIX_HEADER = ../../NairnFEA/src/System/FEAPrefix.hpp;
