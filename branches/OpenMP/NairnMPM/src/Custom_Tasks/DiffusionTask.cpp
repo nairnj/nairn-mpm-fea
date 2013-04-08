@@ -130,12 +130,10 @@ TransportTask *DiffusionTask::GetGradients(double stepTime)
 	int numnds,nds[maxShapeNodes];
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
-	// Find gradients on the particles
+	// Find gradients on the nonrigid particles
 #pragma omp parallel for private(numnds,nd,fn,xDeriv,yDeriv,zDeriv)
-    for(int p=0;p<nmpms;p++)
-	{	if(theMaterials[mpm[p]->MatID()]->Rigid()) continue;
-	
-		// find shape functions and derviatives
+    for(int p=0;p<nmpmsNR;p++)
+	{	// find shape functions and derviatives
 		const ElementBase *elref = theElements[mpm[p]->ElemID()];
 		elref->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
 		
@@ -151,15 +149,21 @@ TransportTask *DiffusionTask::GetGradients(double stepTime)
 }
 
 // find forces for diffusion calculation (mm^3/sec)
-TransportTask *DiffusionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double sh,double dshdx,
+TransportTask *DiffusionTask::AddForces(double *fdiffBuffer,MPMBase *mptr,double sh,double dshdx,
 										double dshdy,double dshdz,TransportProperties *t)
 {
 	// internal force
-	ndpt->fdiff += mptr->FDiff(dshdx,dshdy,dshdz,t);
+	*fdiffBuffer = mptr->FDiff(dshdx,dshdy,dshdz,t);
 	
 	// add source terms (should be potential per sec, if c units per second, divide by concSaturation)
 	
 	// return next task
+	return nextTask;
+}
+
+// copy force from buffer to node
+TransportTask *DiffusionTask::AddForcesFromBuffer(NodalPoint *ndptr,double fdiff)
+{	ndptr->fdiff += fdiff;
 	return nextTask;
 }
 

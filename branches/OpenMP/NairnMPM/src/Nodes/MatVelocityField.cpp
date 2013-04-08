@@ -78,7 +78,9 @@ void MatVelocityField::ChangeMatMomentum(Vector *delP,bool postUpdate,double del
 // Here just sum momenta applied to non-rigid materials. To get forces, this result
 //	is multiplied by -1/timestep
 void MatVelocityField::AddContactForce(Vector *delP)
-{	AddVector(&ftot,delP);
+{	ftot.x += delP->x;
+	ftot.y += delP->y;
+	ftot.z += delP->z;
 }
 
 // Calculate velocity at a node from current momentum and mass matrix in all velocity fields
@@ -106,6 +108,11 @@ void MatVelocityField::AddFtotScaled(Vector *f,double scaled)
 {	ftot.x += f->x*scaled;
 	ftot.y += f->y*scaled;
 	ftot.z += f->z*scaled;
+}
+void MatVelocityField::AddFtotFromBuffer(double *f)
+{	ftot.x += f[0];
+	ftot.y += f[1];
+	ftot.z += f[2];
 }
 
 // Update momentum for this MPM step
@@ -139,7 +146,7 @@ void MatVelocityField::Describe(void)
 // volume for contact calculations
 void MatVelocityField::AddContactVolume(double vol) { volume += vol; }
 void MatVelocityField::SetContactVolume(double vol) { volume = vol; }
-double MatVelocityField::GetContactVolume(void) { return volume; }
+double MatVelocityField::GetContactVolume(void) const { return volume; }
 
 // velocity
 void MatVelocityField::SetVelocity(Vector *vel) { vk = *vel; }
@@ -184,11 +191,14 @@ Vector *MatVelocityField::GetFtotPtr(void) { return &ftot; }
 #pragma mark CLASS METHODS
 
 // return true if references field is active in this time step
-bool MatVelocityField::ActiveField(MatVelocityField *mvf) { return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0) ; }
+bool MatVelocityField::ActiveField(MatVelocityField *mvf)
+{ return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0) ; }
 
 // return true if references field that is active and is not for rigid materials
-bool MatVelocityField::ActiveNonrigidField(MatVelocityField *mvf) { return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0 && !mvf->rigidField) ; }
+bool MatVelocityField::ActiveNonrigidField(MatVelocityField *mvf)
+{ return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0 && !mvf->rigidField) ; }
 
 // return true if references field that is active and is not for rigid materials
-bool MatVelocityField::ActiveRigidField(MatVelocityField *mvf) { return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0 && mvf->rigidField) ; }
+bool MatVelocityField::ActiveRigidField(MatVelocityField *mvf)
+{ return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0 && mvf->rigidField) ; }
 

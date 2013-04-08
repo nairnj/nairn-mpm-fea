@@ -126,7 +126,6 @@ class CrackHeader : public LinkedObject
         CrackSegment *Propagate(Vector &,int,int);
 		
 		// class methods
-		static void ContactConditions(int);
 		static void SetCodLocation(double);
         static double Triangle(double,double,double,double,double,double);
 

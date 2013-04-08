@@ -40,6 +40,7 @@ class MatVelocityField
 		void CalcVelocityForStrainUpdate(void);
 		void AddGridDampingTask3(double);
         void AddFtot(Vector *);
+		void AddFtotFromBuffer(double *);
         void AddFtotScaled(Vector *,double);
         void UpdateMomentum(double);
         void IncrementNodalVelAcc(double,Vector *,Vector *) const;
@@ -48,7 +49,7 @@ class MatVelocityField
 		void Describe(void);
 		void AddContactVolume(double);
 		void SetContactVolume(double);
-		double GetContactVolume(void);
+		double GetContactVolume(void) const;
         void SetVelocity(Vector *);
         Vector GetVelocity(void);
         Vector *GetVelocityPtr(void);

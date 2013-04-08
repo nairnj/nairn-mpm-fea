@@ -49,7 +49,8 @@ class TransportTask
 		virtual TransportTask *GetGradients(double) = 0;
 		
 		// find forces for transport calculation
-		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *) = 0;
+		virtual TransportTask *AddForces(double *,MPMBase *,double,double,double,double,TransportProperties *) = 0;
+		virtual TransportTask *AddForcesFromBuffer(NodalPoint *,double) = 0;
 
 		// adjust forces at grid points with transport BCs
 		virtual TransportTask *SetTransportForceBCs(double) = 0;

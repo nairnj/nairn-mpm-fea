@@ -96,6 +96,9 @@ void CrackVelocityField::AddVolumeGradient(int matfld,MPMBase *mptr,double dNdx,
 // Add to internal force
 void CrackVelocityField::AddFtotTask3(int matfld,Vector *f) { mvf[matfld]->AddFtot(f); }
 
+// Add to internal force
+void CrackVelocityField::AddFtotFromBuffer(int matfld,double *f) { mvf[matfld]->AddFtotFromBuffer(f); }
+
 #pragma mark TASK 5 METHODS
 
 // Increment velocity and acceleration for this material point using one velocity field which must be there
@@ -199,10 +202,13 @@ bool CrackVelocityField::GetCMVelocityTask8(Vector *velCM)
 #pragma mark MATERIAL CONTACT AND INTERFACES IN SUBCLASSES
 
 // Called in multimaterial mode to check contact at nodes with multiple materials
-void CrackVelocityField::MaterialContact(int nodenum,int vfld,bool postUpdate,double deltime) { return; }
+void CrackVelocityField::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,double deltime,bool postUpdate,
+											  MaterialInterfaceNode **first,MaterialInterfaceNode **last)
+{ return;
+}
 
 // retrieve mass gradient (overridden in CrackVelocityFieldMulti where it is needed
-void CrackVelocityField::GetVolumeGradient(int matfld,NodalPoint *ndptr,Vector *grad,double scale) { ZeroVector(grad); }
+void CrackVelocityField::GetVolumeGradient(int matfld,const NodalPoint *ndptr,Vector *grad,double scale) const { ZeroVector(grad); }
 
 #pragma mark PROPERTIES FOR CRACK AND MATERIAL CONTACT
 
@@ -289,10 +295,12 @@ void CrackVelocityField::SumAndClearRigidContactForces(Vector *fcontact,bool) {}
 #pragma mark CLASS METHODS
 
 // return true if referenced field is active in this time step
-bool CrackVelocityField::ActiveField(CrackVelocityField *cvf) { return cvf==NULL ? (bool)FALSE : (cvf->numberPoints>0) ; }
+bool CrackVelocityField::ActiveField(CrackVelocityField *cvf)
+{ return cvf==NULL ? (bool)FALSE : (cvf->numberPoints>0) ; }
 
 // return true if referenced field is active AND has some non-rigid particles
-bool CrackVelocityField::ActiveNonrigidField(CrackVelocityField *cvf) { return cvf==NULL ? (bool)FALSE : (cvf->GetNumberPointsNonrigid()>0) ; }
+bool CrackVelocityField::ActiveNonrigidField(CrackVelocityField *cvf)
+{ return cvf==NULL ? (bool)FALSE : (cvf->GetNumberPointsNonrigid()>0) ; }
 
 // create single or multi material crack velocity field as needed
 CrackVelocityField *CrackVelocityField::CreateCrackVelocityField(short theLoc,int cnum)

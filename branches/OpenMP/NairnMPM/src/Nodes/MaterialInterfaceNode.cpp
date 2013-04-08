@@ -13,19 +13,19 @@
 #include "Nodes/MaterialInterfaceNode.hpp"
 
 // global point to contact conditions
-MaterialInterfaceNode *MaterialInterfaceNode::currentNode=NULL;
+MaterialInterfaceNode *MaterialInterfaceNode::currentIntNode=NULL;
 
 #pragma mark MaterialInterfaceNode: Constructors and Destructors
 
 // Constructors
 MaterialInterfaceNode::MaterialInterfaceNode(NodalPoint *nd,int vf,int i,int j,
-                                                Vector *fImp,double iEnergy)
+						Vector *fImp,double iEnergy,MaterialInterfaceNode *last)
 {
 	theNode=nd;                 // the node with an interface
     vfld = vf;                  // the crack velocity field
     mati = i;                   // the material velocity field
     matipaired = j;             // the other material (or -1 if more than one other material)
-	prevBC=currentNode;
+	prevBC = last;
     CopyVector(&traction, fImp);
     energy = iEnergy;
 }
@@ -60,15 +60,15 @@ void MaterialInterfaceNode::GetFieldInfo(int *cvf,int *i,int *j)
 #pragma mark CrackNode: Class methods
 
 // Delete all dynamically created contact BCs and restore
-// currentNode to NULL - called in Task 0 or initialization
+// currentIntNode to NULL - called in Task 0 or initialization
 void MaterialInterfaceNode::RemoveInterfaceNodes(void)
 {
 	MaterialInterfaceNode *prevBC;
 	
-	while(currentNode!=NULL)
-	{	prevBC=currentNode->GetPrevBC();
-		delete currentNode;
-		currentNode=prevBC;
+	while(currentIntNode!=NULL)
+	{	prevBC = currentIntNode->GetPrevBC();
+		delete currentIntNode;
+		currentIntNode = prevBC;
 	}
 }
 
@@ -76,9 +76,9 @@ void MaterialInterfaceNode::RemoveInterfaceNodes(void)
 // and track interface energy
 void MaterialInterfaceNode::InterfaceOnKnownNodes(void)
 {
-	MaterialInterfaceNode *prevBC=currentNode;
+	MaterialInterfaceNode *prevBC = currentIntNode;
 	while(prevBC!=NULL)
-		prevBC=prevBC->InterfaceForce();
+		prevBC = prevBC->InterfaceForce();
 }
 
 

@@ -19,10 +19,10 @@ class MaterialInterfaceNode
 {
     public:
         // variables (changed in MPM time step)
-        static MaterialInterfaceNode *currentNode;
+        static MaterialInterfaceNode *currentIntNode;
     
         // constructors and destructors
-        MaterialInterfaceNode(NodalPoint *,int,int,int,Vector *,double);
+        MaterialInterfaceNode(NodalPoint *,int,int,int,Vector *,double,MaterialInterfaceNode *);
     
         // methods
         MaterialInterfaceNode *InterfaceForce(void);

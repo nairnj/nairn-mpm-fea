@@ -129,17 +129,17 @@ void MatPoint2D::SetVelocity(Vector *pt)
 // thickness (in mm)
 double MatPoint2D::thickness() { return thick; }
 
-// return internal force as -mp sigma.deriv * 1000. which converts to g mm/sec^2 or micro N
-void MatPoint2D::GetFint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
-{	fout.x=-mp*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv)*1000.;
-	fout.y=-mp*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv)*1000.;
-	fout.z=0.;
-}
-
+// Find internal force as -mp sigma.deriv * 1000. which converts to g mm/sec^2 or micro N
 // add external force (times a shape function)
-void MatPoint2D::AddFext(Vector &fout,double fni)
-{	fout.x += fni*pFext.x;
-	fout.y += fni*pFext.y;
+// Store in buffer
+// (note: stress is specific stress in units N/m^2 cm^3/g, Multiply by 1000 to make it mm/sec^2)
+void MatPoint2D::GetFintPlusFext(int nodeID,int nodeNum,double fni,double xDeriv,double yDeriv,double zDeriv)
+{	
+	gFrc[nodeID].nodeNum = nodeNum;
+	double mpug = mp*1000.;
+	gFrc[nodeID].forces[0] = -mpug*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv) + fni*pFext.x;
+	gFrc[nodeID].forces[1] = -mpug*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv) + fni*pFext.y;
+	gFrc[nodeID].forces[2] = 0.0;
 }
 
 // zero the temperature gradient

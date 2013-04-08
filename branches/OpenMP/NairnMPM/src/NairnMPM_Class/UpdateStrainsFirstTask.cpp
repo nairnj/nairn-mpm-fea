@@ -40,8 +40,9 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 {
     NodalPoint::GetGridVelocitiesForStrainUpdate();			// velocities needed for strain update
 	
-	// loop over non rigid particles
-	// This will not work as parallel when material properties change with particle state
+	// loop over nonrigid particles
+	// This works as parallel when material properties change with particle state because
+	//	all such materials should create a copy of material properties in the threads
 #pragma omp parallel for
 	for(int p=0;p<nmpmsNR;p++)
     {   // next particle
@@ -49,9 +50,6 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
         
         // this particle's material
         const MaterialBase *matRef = theMaterials[mptr->MatID()];
-        
-        // exit if rigid (in case some before the last non rigid one)
-        if(matRef->Rigid()) continue;
         
         // make sure have mechanical properties for this material and angle
 		// Must replace with get copy of mechanical properties

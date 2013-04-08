@@ -38,6 +38,8 @@
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
 
+#include "Cracks/CrackNode.hpp"
+
 #pragma mark CONSTRUCTORS
 
 UpdateStrainsLastTask::UpdateStrainsLastTask(const char *name) : MPMTask(name)
@@ -56,11 +58,9 @@ void UpdateStrainsLastTask::Execute(void)
 	for(int i=1;i<=nnodes;i++)
 		nd[i]->RezeroNodeTask6(timestep);
 	
-	// loop over non-rigid particles
-	for(int p=0;p<nmpms;p++)
+	// loop over nonrigid particles
+	for(int p=0;p<nmpmsNR;p++)
 	{	const MaterialBase *matref = theMaterials[mpm[p]->MatID()];
-		if(matref->Rigid()) continue;            // skip rigid BCs and rigid contact materials
-		
 		mp=mpm[p]->mp;			// in g
 		int matfld = matref->GetField();
 		
@@ -93,10 +93,10 @@ void UpdateStrainsLastTask::Execute(void)
 		nextTransport=nextTransport->UpdateNodalValues(timestep);
 	
 	// adjust momenta for multimaterial contack
-	NodalPoint::MaterialContact(fmobj->multiMaterialMode,FALSE,timestep);
+	NodalPoint::MaterialContactAllNodes(fmobj->multiMaterialMode,FALSE,timestep);
 	
 	// adjust momenta for crack contact
-	CrackHeader::ContactConditions(FALSE);
+	if(firstCrack!=NULL) CrackNode::ContactOnKnownNodes();
 	
 	// impose grid boundary conditions
 	NodalVelBC::GridMomentumConditions(FALSE);

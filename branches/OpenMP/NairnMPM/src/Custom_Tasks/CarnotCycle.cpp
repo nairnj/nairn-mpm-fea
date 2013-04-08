@@ -103,13 +103,9 @@ CustomTask *CarnotCycle::StepCalculation(void)
 	int numgas = 0;
 	double Tgas = 0.;
     
-    // loop over material points
-    for(p=0;p<nmpms;p++)
-	{	// verify material is defined and sets if field number (in in multimaterial mode)
-		matID=theMaterials[mpm[p]->MatID()];	// material object for this particle
-		if(matID->Rigid()) continue;
-		
-        numgas++;
+    // loop over nonrigid material points
+    for(p=0;p<nmpmsNR;p++)
+	{	numgas++;
 		Vrel += mpm[p]->GetRelativeVolume();
 		Tgas += mpm[p]->pPreviousTemperature;
 	}

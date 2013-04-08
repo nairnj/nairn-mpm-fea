@@ -178,13 +178,10 @@ TransportTask *ConductionTask::GetGradients(double stepTime)
 	int numnds,nds[maxShapeNodes];
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
-	// Find gradients on the particles
+	// Find gradients on the nonrigid particles
 #pragma omp parallel for private(numnds,nds,fn,xDeriv,yDeriv,zDeriv)
-    for(int p=0;p<nmpms;p++)
-	{	// skip rigid particles
-		if(theMaterials[mpm[p]->MatID()]->Rigid()) continue;
-	
-		// find shape functions and derviatives
+    for(int p=0;p<nmpmsNR;p++)
+	{	// find shape functions and derviatives
 		const ElementBase *elref = theElements[mpm[p]->ElemID()];
 		elref->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
 		
@@ -202,11 +199,11 @@ TransportTask *ConductionTask::GetGradients(double stepTime)
 #pragma mark GRID FORCES EXTRAPOLATIONS
 
 // find forces for conduction calculation (N-mm/sec = mJ/sec)
-TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double sh,double dshdx,
+TransportTask *ConductionTask::AddForces(double *fcondBuffer,MPMBase *mptr,double sh,double dshdx,
 										 double dshdy,double dshdz,TransportProperties *t)
 {
 	// internal force based on conduction tensor
-	ndpt->fcond += mptr->FCond(dshdx,dshdy,dshdz,t);
+	*fcondBuffer =  mptr->FCond(dshdx,dshdy,dshdz,t);
 	
 	// add source terms
 	
@@ -214,10 +211,16 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double s
 	if(energyCoupling)
 	{	// V * q heat energy is mp (g) * specific energy (uJ/g) = uJ
 		// To get mJ/sec, divide timestep (sec) and times 1e-3
-		ndpt->fcond += sh*1.0e-3*mptr->mp*mptr->GetDispEnergy()/timestep;
+		*fcondBuffer += sh*1.0e-3*mptr->mp*mptr->GetDispEnergy()/timestep;
 	}
 	
 	// next task
+	return nextTask;
+}
+
+// copy force from buffer to node
+TransportTask *ConductionTask::AddForcesFromBuffer(NodalPoint *ndptr,double fcond)
+{	ndptr->fcond += fcond;
 	return nextTask;
 }
 

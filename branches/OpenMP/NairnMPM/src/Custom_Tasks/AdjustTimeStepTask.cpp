@@ -107,13 +107,10 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     timestep=1.e15;
     propTime=1.e15;
     
-    // loop over material points
-    for(p=0;p<nmpms;p++)
-	{	// verify material is defined and sets if field number (in in multimaterial mode)
+    // loop over nonrigid material points
+    for(p=0;p<nmpmsNR;p++)
+	{	// material id
 		matid=mpm[p]->MatID();
-		
-		// skip rigid materials
-		if(theMaterials[matid]->Rigid()) continue;
         
 		// element and mp properties
 		if(fmobj->IsThreeD())

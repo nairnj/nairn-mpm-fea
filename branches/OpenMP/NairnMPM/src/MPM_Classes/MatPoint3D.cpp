@@ -120,17 +120,16 @@ void MatPoint3D::SetVelocity(Vector *v) { vel=*v; }
 double MatPoint3D::thickness() { return -1.; }
 
 // calculate internal force as -mp sigma.deriv * 1000.
-void MatPoint3D::GetFint(Vector &fout,double xDeriv,double yDeriv,double zDeriv)
-{	fout.x=-mp*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+sp.xz*zDeriv)*1000.;
-	fout.y=-mp*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv+sp.yz*zDeriv)*1000.;
-	fout.z=-mp*(sp.xz*xDeriv+sp.yz*yDeriv+(sp.zz-pressure)*zDeriv)*1000.;
-}
-
-// external force (times a shape function)
-void MatPoint3D::AddFext(Vector &fout,double fni)
-{	fout.x += fni*pFext.x;
-	fout.y += fni*pFext.y;
-	fout.z += fni*pFext.z;
+// add external force (times a shape function)
+// store in buffer
+// (note: stress is specific stress in units N/m^2 cm^3/g, Multiply by 1000 to make it mm/sec^2)
+void MatPoint3D::GetFintPlusFext(int nodeID,int nodeNum,double fni,double xDeriv,double yDeriv,double zDeriv)
+{	
+	gFrc[nodeID].nodeNum = nodeNum;
+	double mpug = mp*1000.;
+	gFrc[nodeID].forces[0] = -mpug*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+sp.xz*zDeriv) + fni*pFext.x;
+	gFrc[nodeID].forces[1] = -mpug*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv+sp.yz*zDeriv) + fni*pFext.y;
+	gFrc[nodeID].forces[2] = -mpug*(sp.xz*xDeriv+sp.yz*yDeriv+(sp.zz-pressure)*zDeriv) + fni*pFext.z;
 }
 
 // zero the temperature gradient

@@ -20,6 +20,7 @@
 #ifdef MPM_CODE
 class CrackSegment;
 class MaterialInterfaceNode;
+class CrackNode;
 #include "Nodes/CrackVelocityField.hpp"
 #endif
 
@@ -69,6 +70,7 @@ class NodalPoint : public LinkedObject
 		void AddVolumeGradient(short,int,MPMBase *,double,double,double);
 	
 		void AddFtotTask3(short,int,Vector *);
+		void AddFtotFromBuffer(short,int,double *);
 		void AddFtotSpreadTask3(short,Vector);
 		void AddTractionTask3(MPMBase *,int,Vector *);
 		void AddGridDampingTask3(double);
@@ -107,13 +109,13 @@ class NodalPoint : public LinkedObject
         short GetCMVelocity(Vector *);
         void CalcStrainField(void);
         void Interpolate(NodalPoint *,NodalPoint *,double,bool);
-        void CrackContact(int,bool,double);
+        void CrackContact(bool,double,CrackNode **,CrackNode **);
 		void CrackContactThree(int,bool,double);
 		void CrackInterfaceForce(void);
 		void InterfaceForceThree(int);
-		void MaterialContactOnNode(bool,double);
+		void MaterialContactOnNode(double,bool,MaterialInterfaceNode **,MaterialInterfaceNode **);
         void MaterialInterfaceForce(MaterialInterfaceNode *);
-		void GetVolumeGradient(short,int,Vector *,double);
+		void GetVolumeGradient(short,int,Vector *,double) const;
         void SetMomVel(Vector *);
         void AddMomVel(Vector *,double);
         void SetFtotDirection(Vector *,double);
@@ -131,7 +133,7 @@ class NodalPoint : public LinkedObject
 		// class methods
 #ifdef MPM_CODE
 		static void PreliminaryCalcs(void);
-		static void MaterialContact(bool,bool,double);
+		static void MaterialContactAllNodes(bool,bool,double);
 		static void GetGridVelocitiesForStrainUpdate(void);
 		static void GetGridCMVelocitiesTask8(void);
 #endif

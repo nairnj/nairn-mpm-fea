@@ -37,10 +37,10 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 	
 		virtual void RezeroNodeTask6(double);
 	
-		virtual void MaterialContact(int,int,bool,double);
+		virtual void MaterialContactOnCVF(NodalPoint *,int,double,bool,MaterialInterfaceNode **,MaterialInterfaceNode **);
         virtual void GetFrictionalDeltaMomentum(Vector *,Vector *,double,double);
-		virtual void GetVolumeGradient(int,NodalPoint *,Vector *,double);
-		virtual void RigidMaterialContact(int,int,int,bool,double);
+		virtual void GetVolumeGradient(int,const NodalPoint *,Vector *,double) const;
+		virtual void RigidMaterialContactOnCVF(int,NodalPoint *,int,double,bool,MaterialInterfaceNode **,MaterialInterfaceNode **);
 		virtual bool GetInterfaceForcesForNode(Vector *,Vector *,double,double,
 										   double,Vector *,double *,double,Vector *,double,bool,bool,double);
 		virtual void CalcVelocityForStrainUpdate(void);
@@ -57,9 +57,9 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual double GetTotalMass(void);
 		virtual void AddKineticEnergyAndMass(double &,double &);
 		virtual double GetVolumeNonrigid(void);
-		virtual double GetVolumeTotal(double);
+		virtual double GetVolumeTotal(double) const;
 		virtual Vector GetCMatMomentum(void);
-		virtual Vector GetCMDisplacement(void);
+		virtual Vector GetCMDisplacement(void) const;
 		virtual Vector GetCMatFtot(void);
 		virtual MatVelocityField *GetRigidMaterialField(int *);
 		virtual void ChangeMomentum(Vector *,bool,double);

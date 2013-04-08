@@ -396,9 +396,10 @@ void NairnMPM::PreliminaryCalcs(void)
 	double minSize=mpmgrid.GetMinCellDimension()/10.;                   // in cm
     
     // loop over material points
-	maxMaterialFields=0;
-	numActiveMaterials=0;
-    nmpmsNR=0;
+	maxMaterialFields = 0;
+	numActiveMaterials = 0;
+    nmpmsNR = 0;
+	int firstRigidPt = -1;
     for(p=0;p<nmpms;p++)
 	{	// verify material is defined and sets if field number (in in multimaterial mode)
 		matid=mpm[p]->MatID();
@@ -409,7 +410,10 @@ void NairnMPM::PreliminaryCalcs(void)
 		maxMaterialFields=theMaterials[matid]->SetField(maxMaterialFields,multiMaterialMode,matid,numActiveMaterials);
 		
 		// nothing left if rigid material is a BC rigid material
-		if(theMaterials[matid]->RigidBC()) continue;
+		if(theMaterials[matid]->RigidBC())
+		{	if(firstRigidPt<0) firstRigidPt=p;
+			continue;
+		}
 	
 		// element and mp properties
 		if(IsThreeD())
@@ -432,6 +436,7 @@ void NairnMPM::PreliminaryCalcs(void)
         // mass will be in mm^3 and will be particle volume
 		if(theMaterials[matid]->Rigid())
 		{	hasRigidContactParticles=true;
+			if(firstRigidPt<0) firstRigidPt=p;
 			continue;
 		}
         
@@ -480,6 +485,33 @@ void NairnMPM::PreliminaryCalcs(void)
 		// Grid forces buffer
 		if(!mpm[p]->AllocateGridForceBuffers(numTransport))
             throw CommonException("Out of memory allocating grid forces buffer","NairnMPM::PreliminaryCalcs");
+	}
+	
+	// reorder NonRigid followed by (Rigid Contact and Rigid BCs intermized)
+	if(firstRigidPt<nmpmsNR && firstRigidPt>=0)
+	{	p = firstRigidPt;
+		
+		// loop until reach end of non-rigid materials
+		while(p<nmpmsNR)
+		{	matid=mpm[p]->MatID();
+			if(theMaterials[matid]->Rigid())
+			{	// if rigid particle, switch with particle at nmpmsNR-1
+				MPMBase *temp = mpm[p];
+				mpm[p] = mpm[nmpmsNR-1];
+				mpm[nmpmsNR-1] = temp;
+				nmpmsNR--;
+				
+				// back up to new last nonrigid
+				while(nmpmsNR>=0)
+				{	matid=mpm[nmpmsNR-1]->MatID();
+					if(!theMaterials[matid]->Rigid()) break;
+					nmpmsNR--;
+				}
+			}
+			
+			// next particle
+			p++;
+		}
 	}
 	
 	// multimaterial checks and contact initialization

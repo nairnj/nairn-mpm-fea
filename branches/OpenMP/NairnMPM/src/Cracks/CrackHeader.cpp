@@ -1317,9 +1317,9 @@ void CrackHeader::JIntegral(void)
 				double f2ForJx=0.,f2ForJy=0.,f2axisym=0.;
 				count=0;	// number of particles within J-integral contour
 
-				for(int p=0;p<nmpms;p++)
-				{	if(theMaterials[mpm[p]->MatID()]->Rigid()) continue;
-					xp=mpm[p]->pos.x;
+				// integrate nonrigid particles
+				for(int p=0;p<nmpmsNR;p++)
+				{	xp=mpm[p]->pos.x;
 					yp=mpm[p]->pos.y;
 					if(xp>=cxmin && xp<cxmax && yp>=cymin && yp<cymax)
 					{   // (xp,yp) in the contour
@@ -1406,8 +1406,8 @@ void CrackHeader::JIntegral(void)
 			   Units N/mm, multiply by 1000 to get N/m = J/m^2
 			*/
 			tipCrk->Jint.x = Jx*crackDir.x + Jy*crackDir.y - tractionEnergy;		// Jtip or energy that will be released if crack grows
-			//tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;                         // J2(x) - for growth normal to crack plane
-			tipCrk->Jint.y = Jx1*crackDir.x + Jy1*crackDir.y;						// J by one term (temporary)
+			tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;                         // J2(x) - for growth normal to crack plane
+			//tipCrk->Jint.y = Jx1*crackDir.x + Jy1*crackDir.y;						// J by one term (temporary)
 			tipCrk->Jint.z = tipCrk->Jint.x + bridgingReleased;						// Jrel or energy released in current state
 			
 			// end of try block on J calculation
@@ -2380,30 +2380,6 @@ double CrackHeader::GetThickness(void) { return thickness; }
 double *CrackHeader::GetThicknessPtr(void) { return &thickness; }
 
 #pragma mark CrackHeader: Class methods
-
-#include "System/ArchiveData.hpp"
-/*
-	Check for contact on crack surfaces.
-	
-	As explained in nodalVelBC::GridMomentumConditions(), the
-	first pass has makeCopy=TRUE which copies initial
-	velocites/momenta. On second pass, the acceleration/force
-	is adjusted to be consistent with the nodal velocities
-*/
-void CrackHeader::ContactConditions(int makeCopy)
-{
-	if(firstCrack==NULL) return;
-	
-	// look for crack contact in these momenta
-	int i;
-	if(makeCopy)
-	{	for(i=1;i<=nnodes;i++)
-		{	nd[i]->CrackContact(makeCopy,FALSE,0.);
-		}
-	}
-	else
-		CrackNode::ContactOnKnownNodes();
-}
 
 // Find location for spline interpolation on crack surfaces
 void CrackHeader::SetCodLocation(double t)

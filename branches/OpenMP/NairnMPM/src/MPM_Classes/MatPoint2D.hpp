@@ -30,8 +30,7 @@ class MatPoint2D : public MPMBase
         virtual void SetVelocity(Vector *);
         virtual double thickness(void);
 		virtual void UpdateStrain(double,int,int,void *,int);
-		virtual void GetFint(Vector &,double,double,double);
-		virtual void AddFext(Vector &,double);
+		virtual void GetFintPlusFext(int,int,double,double,double,double);
 		virtual void MovePosition(double,Vector *);
 		virtual void MoveVelocity(double,double,Vector *);
 		virtual void SetVelocitySpeed(double);

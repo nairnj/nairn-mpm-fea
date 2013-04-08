@@ -19,10 +19,10 @@ class CrackNode
 {
     public:
 		// variables (changed in MPM time step)
-		static CrackNode *currentNode;
+		static CrackNode *currentCNode;
 
         // constructors and destructors
-        CrackNode(NodalPoint *);
+        CrackNode(NodalPoint *,CrackNode *);
 		
 		// methods
 		CrackNode *NodalContact(void);

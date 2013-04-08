@@ -51,7 +51,7 @@ void UpdateMomentaTask::Execute(void)
 		nd[i]->UpdateMomentaOnNode(timestep);
 	
 	// adjust momenta and forces for multimaterial contact
-	NodalPoint::MaterialContact(fmobj->multiMaterialMode,TRUE,timestep);
+	NodalPoint::MaterialContactAllNodes(fmobj->multiMaterialMode,TRUE,timestep);
 	
 	// adjust momenta and forces for crack contact on known nodes
 	CrackNode::CrackContactTask4(timestep);

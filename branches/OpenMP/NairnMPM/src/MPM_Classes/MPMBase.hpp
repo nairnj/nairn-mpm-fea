@@ -66,8 +66,7 @@ class MPMBase : public LinkedObject
         virtual void SetPosition(Vector *) = 0;
         virtual void SetVelocity(Vector *) = 0;
 		virtual void UpdateStrain(double,int,int,void *,int) = 0;
-		virtual void GetFint(Vector &,double,double,double) = 0;
-		virtual void AddFext(Vector &,double) = 0;
+		virtual void GetFintPlusFext(int,int,double,double,double,double) = 0;
         virtual void MovePosition(double,Vector *) = 0;
         virtual void MoveVelocity(double,double,Vector *) = 0;
 		virtual void SetVelocitySpeed(double) = 0;
@@ -203,6 +202,7 @@ class MPMBase : public LinkedObject
 };
 
 // Lists of material points from mpm[0] to mpm[nmpms-1]
+// order such that nonrigid are from mpm[0] to mpm[nmpmsNR-1] and rest are rigid
 extern MPMBase **mpm;
 extern int nmpms,nmpmsNR;
 

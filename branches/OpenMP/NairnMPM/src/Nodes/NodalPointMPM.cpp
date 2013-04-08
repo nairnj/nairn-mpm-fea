@@ -323,6 +323,9 @@ void NodalPoint::CombineRigidParticles(void)
 // Add to internal force
 void NodalPoint::AddFtotTask3(short vfld,int matfld,Vector *f) { cvf[vfld]->AddFtotTask3(matfld,f); }
 
+// Add to internal force
+void NodalPoint::AddFtotFromBuffer(short vfld,int matfld,double *f) { cvf[vfld]->AddFtotFromBuffer(matfld,f); }
+
 // Add to internal force spread out over materials for same acceleration on each
 // Only called by AddTractionForce() and CrackInterfaceForce()
 void NodalPoint::AddFtotSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFtotSpreadTask3(&f); }
@@ -962,17 +965,20 @@ Vector NodalPoint::GetTotalContactForce(bool clearForces)
 #pragma mark MATERIAL CONTACT
 
 // Called in multimaterial mode to check contact at nodes with multiple materials
-void NodalPoint::MaterialContactOnNode(bool postUpdate,double deltime)
+// On first call in time step, first and last on pointers to MaterialInterfaceNode * because those
+//		objects are created for later interface calculations
+// postUpdate is TRUE when called between momentum update and particle update and otherwise is FALSE
+void NodalPoint::MaterialContactOnNode(double deltime,bool postUpdate,MaterialInterfaceNode **first,MaterialInterfaceNode **last)
 {
 	// check each crack velocity field on this node
 	for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->MaterialContact(num,i,postUpdate,deltime);
+			cvf[i]->MaterialContactOnCVF(this,i,deltime,postUpdate,first,last);
 	}
 }
 
 // retrieve -2*scale*(mass gradient) for material matfld in velocity field vfld
-void NodalPoint::GetVolumeGradient(short vfld,int matfld,Vector *grad,double scale)
+void NodalPoint::GetVolumeGradient(short vfld,int matfld,Vector *grad,double scale) const
 {	cvf[vfld]->GetVolumeGradient(matfld,this,grad,scale);
 }
 
@@ -1003,7 +1009,7 @@ void NodalPoint::MaterialInterfaceForce(MaterialInterfaceNode *mmnode)
 #pragma mark CRACK SURFACE CONTACT
 
 // Look for crack contact and adjust accordingly.
-void NodalPoint::CrackContact(int makeCopy,bool postUpdate,double deltime)
+void NodalPoint::CrackContact(bool postUpdate,double deltime,CrackNode **first,CrackNode **last)
 {	// Nothing to do if not near a crack contact surface: Possible fields are
 	//  1. Those with no contacts: [0], [1], [3], [0]&[3], [1]&[2]
 	//  2. Those with contacts: [0]&[1], [1]&[3], [0]&[1]&[2], [0]&[1]&[3], [1]&[2]&[3], and [0]&[1]&[2]&[3]
@@ -1018,10 +1024,11 @@ void NodalPoint::CrackContact(int makeCopy,bool postUpdate,double deltime)
 	if(!has0 && !has3) return;	// True for [1] and [1]&[2]
 	
 	// store references to this node for future use
-	if(makeCopy)
-	{	CrackNode::currentNode=new CrackNode(this);
-		if(CrackNode::currentNode==NULL) throw CommonException("Memory error allocating storage for a crack node.",
+	if(first!=NULL)
+	{	*last = new CrackNode(this,*last);
+		if(*last==NULL) throw CommonException("Memory error allocating storage for a crack node.",
 															   "NodalPoint::CrackContact");
+		if(*first==NULL) *first = *last;
 	}
 	
 	// between [0] and [1]
@@ -1367,16 +1374,16 @@ void NodalPoint::PreliminaryCalcs(void)
 }
 
 // adjust momenta at overlaping material velocity fields
-// multimaterial mode only
-void NodalPoint::MaterialContact(bool multiMaterials,bool postUpdate,double deltime)
+// multimaterial mode only and only after update (i.e., not need to do interface)
+void NodalPoint::MaterialContactAllNodes(bool multiMaterials,bool postUpdate,double deltime)
 {	if(!multiMaterials) return;
 	
 	// implement material contact here
 	int i;
 	for(i=1;i<=nnodes;i++)
-	{	// Each node calls cvf[]->MaterialContact() for each crack velocity
+	{	// Each node calls cvf[]->MaterialContactOnCVF() for each crack velocity
 		//	field on that node
-		nd[i]->MaterialContactOnNode(postUpdate,deltime);
+		nd[i]->MaterialContactOnNode(deltime,postUpdate,NULL,NULL);
 	}
 }
 

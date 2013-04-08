@@ -64,6 +64,9 @@
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Boundary_Conditions/NodalConcBC.hpp"
 
+#include "Cracks/CrackNode.hpp"
+#include "Nodes/MaterialInterfaceNode.hpp"
+
 // to ignore crack interactions (only valid if 1 crack or non-interacting cracks)
 //#define IGNORE_CRACK_INTERACTIONS
 
@@ -284,32 +287,56 @@ void MassAndMomentumTask::Execute(void)
 #endif
 	
 	// Post mass and momentum extrapolation calculations on nodes
-	// Each pass in this loop should be independent
-#pragma omp parrallel for
-	for(int i=1;i<=nnodes;i++)
-	{	// node reference
-		NodalPoint *ndptr = nd[i];
+#pragma omp parallel
+	{
+		// variables for each thread
+		CrackNode *firstCrackNode=NULL,*lastCrackNode=NULL;
+		MaterialInterfaceNode *firstInterfaceNode=NULL,*lastInterfaceNode=NULL;
 		
-		// Get total nodal masses and count materials if multimaterial mode
-		ndptr->CalcTotalMassAndCount();
-	
-#ifdef COMBINE_RIGID_MATERIALS
-		// combine rigid fields if necessary
-		if(combineRigid)
-			ndptr->CombineRigidParticles()
-#endif
-		// multimaterial contact
-		if(fmobj->multiMaterialMode)
-			ndptr->MaterialContactOnNode(FALSE,timestep);
+		// Each pass in this loop should be independent
+#pragma omp for
+		for(int i=1;i<=nnodes;i++)
+		{	// node reference
+			NodalPoint *ndptr = nd[i];
+			
+			// Get total nodal masses and count materials if multimaterial mode
+			ndptr->CalcTotalMassAndCount();
 		
-		// crack contact
-		if(firstCrack!=NULL)
-			ndptr->CrackContact(TRUE,FALSE,0.);
+	#ifdef COMBINE_RIGID_MATERIALS
+			// combine rigid fields if necessary
+			if(combineRigid)
+				ndptr->CombineRigidParticles()
+	#endif
+			// multimaterial contact
+			if(fmobj->multiMaterialMode)
+				ndptr->MaterialContactOnNode(timestep,FALSE,&firstInterfaceNode,&lastInterfaceNode);
+			
+			// crack contact
+			if(firstCrack!=NULL)
+				ndptr->CrackContact(FALSE,0.,&firstCrackNode,&lastCrackNode);
+			
+			// get transport values on nodes
+			TransportTask *nextTransport=transportTasks;
+			while(nextTransport!=NULL)
+				nextTransport = nextTransport->GetNodalValue(ndptr);
+		}
 		
-		// get transport values on nodes
-		TransportTask *nextTransport=transportTasks;
-		while(nextTransport!=NULL)
-			nextTransport = nextTransport->GetNodalValue(ndptr);
+#pragma omp critical
+		{
+			// link up crack nodes
+			if(lastCrackNode != NULL)
+			{	if(CrackNode::currentCNode != NULL)
+					firstCrackNode->SetPrevBC(CrackNode::currentCNode);
+				CrackNode::currentCNode = lastCrackNode;
+			}
+			
+			// link up interface nodes
+			if(lastInterfaceNode != NULL)
+			{	if(MaterialInterfaceNode::currentIntNode != NULL)
+					firstInterfaceNode->SetPrevBC(MaterialInterfaceNode::currentIntNode);
+				MaterialInterfaceNode::currentIntNode = lastInterfaceNode;
+			}
+		}
 	}
 	
 	// Impose transport BCs and extrapolate gradients to the particles
@@ -319,11 +346,7 @@ void MassAndMomentumTask::Execute(void)
 		nextTransport = nextTransport->GetGradients(mtime);
 	}
 	
-	// Adjust momenta for multimaterial contact
-	//NodalPoint::MaterialContact(fmobj->multiMaterialMode,FALSE,timestep);
-	
-	// Adjust momenta for crack contact
-	//CrackHeader::ContactConditions(TRUE);
+	// used to call class methods for material contact and crack contact here
 	
 	// Impose velocity BCs
 	NodalVelBC::GridMomentumConditions(TRUE);

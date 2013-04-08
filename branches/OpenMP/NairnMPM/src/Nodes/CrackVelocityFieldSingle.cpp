@@ -128,7 +128,7 @@ double CrackVelocityFieldSingle::GetVolumeNonrigid(void)
 }
 
 // get volume when only a single material (overridden when might be more)
-double CrackVelocityFieldSingle::GetVolumeTotal(double ndr)
+double CrackVelocityFieldSingle::GetVolumeTotal(double ndr) const
 {	return MatVelocityField::ActiveField(mvf[0]) ? mvf[0]->GetContactVolume() : 0. ;
 }
 
@@ -144,7 +144,7 @@ Vector CrackVelocityFieldSingle::GetCMatMomentum(void)
 }
 
 // get center of mass displacement (actually sum of displacement*mass so displacement is vector/total mass)
-Vector CrackVelocityFieldSingle::GetCMDisplacement(void)
+Vector CrackVelocityFieldSingle::GetCMDisplacement(void) const
 {	if(MatVelocityField::ActiveField(mvf[0]))
 		return mvf[0]->disp;
 	else

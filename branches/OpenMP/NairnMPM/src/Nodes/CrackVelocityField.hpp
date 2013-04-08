@@ -46,6 +46,7 @@ class CrackVelocityField
 		virtual void AddVolumeGradient(int,MPMBase *,double,double,double);
 	
 		void AddFtotTask3(int,Vector *);
+		void AddFtotFromBuffer(int,double *);
 		virtual void AddFtotSpreadTask3(Vector *) = 0;
 		virtual void AddGridDampingTask3(double) = 0;
 	
@@ -69,8 +70,8 @@ class CrackVelocityField
 		void AddVolume(int,double);
 	
 		// methods
-		virtual void MaterialContact(int,int,bool,double);
-		virtual void GetVolumeGradient(int,NodalPoint *,Vector *,double);
+		virtual void MaterialContactOnCVF(NodalPoint *,int,double,bool,MaterialInterfaceNode **,MaterialInterfaceNode **);
+		virtual void GetVolumeGradient(int,const NodalPoint *,Vector *,double) const;
 		virtual void CalcVelocityForStrainUpdate(void) = 0;
 	
 		// boundary conditions
@@ -87,9 +88,9 @@ class CrackVelocityField
 		virtual double GetTotalMass(void) = 0;
 		virtual void AddKineticEnergyAndMass(double &,double &) = 0;
 		virtual double GetVolumeNonrigid(void) = 0;
-		virtual double GetVolumeTotal(double) = 0;
+		virtual double GetVolumeTotal(double) const = 0;
 		virtual Vector GetCMatMomentum(void) = 0;
-		virtual Vector GetCMDisplacement(void) = 0;
+		virtual Vector GetCMDisplacement(void) const = 0;
 		virtual Vector GetCMatFtot(void) = 0;
 		virtual void ChangeMomentum(Vector *,bool,double) = 0;
 		virtual int CopyFieldMomenta(Vector *,int) = 0;

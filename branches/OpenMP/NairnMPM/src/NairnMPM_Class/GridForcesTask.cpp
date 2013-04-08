@@ -53,82 +53,69 @@ void GridForcesTask::Execute(void)
 	int numnds,nds[maxShapeNodes];
 	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
-	// loop over particles (if made parallel, very close due to needed critical or atomic sections
+	// loop over non-rigid particles - this parallel part changes only particle p
+	// forces are stored on buffer, which are sent to nodes in next non-parallel loop
 #pragma omp parallel for private(t,numnds,nds,fn,xDeriv,yDeriv,zDeriv)
     for(int p=0;p<nmpmsNR;p++)
 	{	MPMBase *mpmptr=mpm[p];											// material point pointer
 		const MaterialBase *matref = theMaterials[mpmptr->MatID()];		// material class (read only)
 		
-		// skip if material is rigid (and comes before last nonrigid one)
-		if(matref->Rigid()) continue;
-		
 		// get transport tensors (if needed)
 		if(transportTasks!=NULL)
 			matref->GetTransportProps(mpmptr,fmobj->np,&t);
 		
-        double mp = mpmptr->mp;					// in g
-		//int matfld = matref->GetField();           // material field
-		
         // find shape functions and derviatives
 		const ElementBase *elemref = theElements[mpmptr->ElemID()];
  		elemref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
+		mpmptr->vfld[0] = numnds;			// save number of nodes
 		
-        // Add particle property to each node in the element
-		mpmptr->vfld[0] = numnds;
+        // Add particle property to buffer on the material point (needed to allow parallel code)
         for(int i=1;i<=numnds;i++)
-		{	//short vfld = (short)mpmptr->vfld[i];						// crack velocity field to use
-			//NodalPoint *ndptr = nd[nds[i]];							// nodal point pointer
-			
-            // total force vector (in g mm/sec^2 or micro N)
-			//	(note: stress is specific stress in units N/m^2 cm^3/g
-			//	Multiply by 1000 to make it mm/sec^2)
-			Vector theFrc;
-			mpmptr->GetFint(theFrc,xDeriv[i],yDeriv[i],zDeriv[i]);
+		{	// total force vector = internal + external forces
+			//	(in g mm/sec^2 or micro N)
+			int i0 = i-1;
+			mpmptr->GetFintPlusFext(i0,nds[i],fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
             
             // add body forces
-			bodyFrc.AddGravity(mp,fn[i],&theFrc);
-            
-			// get external force vector and add to velocity field
-			mpmptr->AddFext(theFrc,fn[i]);
+			bodyFrc.AddGravity(mpmptr->mp,fn[i],mpmptr->gFrc[i0].forces);
 			
-			// load into force buffer
-			int i0 = i-1;
-			mpmptr->gFrc[i0].nodeNum = nds[i];
-			mpmptr->gFrc[i0].forces[0] = theFrc.x;
-			mpmptr->gFrc[i0].forces[1] = theFrc.y;
-			mpmptr->gFrc[i0].forces[2] = theFrc.z;
-			
-			// this is critical section that will change nodal values
-			
-			/*
-			// Now add total force to the node
-			ndptr->AddFtotTask3(vfld,matfld,&theFrc);
-		
 			// transport forces
-			TransportTask *nextTransport=transportTasks;
-			while(nextTransport!=NULL)
-				nextTransport=nextTransport->AddForces(ndptr,mpmptr,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],&t);
-			*/
+			if(transportTasks!=NULL)
+			{	double *transportForce = &(mpmptr->gFrc[i0].forces[2]);
+				TransportTask *nextTransport=transportTasks;
+				while(nextTransport!=NULL)
+				{	transportForce++;
+					nextTransport=nextTransport->AddForces(transportForce,mpmptr,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],&t);
+				}
+			}
         }
 		
 		// clear coupled dissipated energy if in conduction becaouse done with it this time step
 		if(ConductionTask::active) mpmptr->SetDispEnergy(0.);
 	}
 	
+	// Now that parallel loop is over, sweep nonrigid particle buffers onto the nodes
 	for(int p=0;p<nmpmsNR;p++)
 	{	MPMBase *mpmptr=mpm[p];											// material point pointer
 		const MaterialBase *matref = theMaterials[mpmptr->MatID()];		// material class (read only)
-		
-		// skip if material is rigid (and comes before last nonrigid one)
-		if(matref->Rigid()) continue;
-		int matfld = matref->GetField();           // material field
+		int matfld = matref->GetField();								// material field
 		
         // Add particle property to each node in the element
-        for(int i=0;i<(int)mpmptr->vfld[0];i++)
-		{	short vfld = (short)mpmptr->vfld[i+1];						// crack velocity field to use
+		numnds = (int)mpmptr->vfld[0];
+        for(int i=0;i<numnds;i++)
+		{	short vfld = (short)mpmptr->vfld[i+1];								// crack velocity field to use
 			NodalPoint *ndptr = nd[mpmptr->gFrc[i].nodeNum];					// nodal point pointer
-			Vector theFrc = MakeVector(mpmptr->gFrc[i].forces[0],mpmptr->gFrc[i].forces[1],mpmptr->gFrc[i].forces[2]);
-			ndptr->AddFtotTask3(vfld,matfld,&theFrc);
+			ndptr->AddFtotFromBuffer(vfld,matfld,mpmptr->gFrc[i].forces);
+			
+			// transport forces
+			if(transportTasks!=NULL)
+			{	double *transportForce = &(mpmptr->gFrc[i].forces[2]);
+				TransportTask *nextTransport=transportTasks;
+				while(nextTransport!=NULL)
+				{	transportForce++;
+					nextTransport=nextTransport->AddForcesFromBuffer(ndptr,*transportForce);
+				}
+			}
 		}
 	}
 	
