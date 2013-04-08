@@ -183,6 +183,7 @@ RectController = $(com)/Read_XML/RectController
 ShapeController = $(com)/Read_XML/ShapeController
 SixNodeTriangle = $(src)/Elements/SixNodeTriangle
 StrX = $(com)/Exceptions/StrX
+svninfo = $(com)/System/svninfo
 TransIsotropic = $(com)/Materials/TransIsotropic
 Utilities = $(src)/System/Utilities
 
@@ -241,7 +242,7 @@ dprefix = $(src)/System/FEAPrefix.hpp $(com)/System/DataTypes.hpp \
 
 # -------------------------------------------------------------------------
 # all compiled objects
-objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtilities.o \
+objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtilities.o svninfo.0 \
 		CommonException.o ElementBase.o Linear2D.o FourNodeIsoparam.o MaterialBase.o \
 		CommonReadHandler.o ParseController.o ElementsController.o NodesController.o \
 		LineController.o MaterialController.o IsotropicMat.o TransIsotropic.o BoxController.o \
@@ -277,6 +278,8 @@ LinkedObject.o : $(LinkedObject).cpp $(dprefix)
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(LinkedObject).cpp
 CommonUtilities.o : $(CommonUtilities).cpp $(dprefix)
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonUtilities).cpp
+svninfo.o : $(svninfo).cpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(svninfo).cpp
 
 # Common: Read_XML
 CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).hpp $(NairnFEA).hpp \
