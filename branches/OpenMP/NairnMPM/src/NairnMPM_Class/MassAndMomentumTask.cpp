@@ -87,16 +87,24 @@ void MassAndMomentumTask::Execute(void)
 {
 	int nds[maxShapeNodes];
 	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+    
+    // Set rigid BC contact material velocities first (so loop can be parallel when rest is ready)
+    if(nmpmsRC>nmpmsNR)
+    {   Vector newvel;
+        bool hasDir[3];
+        for(int p=nmpmsNR;p<nmpmsRC;p++)
+        {   MPMBase *mpmptr = mpm[p];
+            const RigidMaterial *matID = (RigidMaterial *)theMaterials[mpm[p]->MatID()];
+            if(matID->GetVectorSetting(&newvel,hasDir,mtime,&mpmptr->pos))
+            {   // change velocity if functions being used, otherwise keep velocity constant
+                if(hasDir[0]) mpmptr->vel.x = newvel.x;
+                if(hasDir[1]) mpmptr->vel.y = newvel.y;
+                if(hasDir[2]) mpmptr->vel.z = newvel.z;
+            }
+        }
+    }
 	
-	// undo dynamic velocity, temp, and conc BCs from rigid materials
-	UnsetRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
-				  (BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
-	UnsetRigidBCs((BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,
-				  (BoundaryCondition **)&firstRigidTempBC,(BoundaryCondition **)&reuseRigidTempBC);
-	UnsetRigidBCs((BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,
-				  (BoundaryCondition **)&firstRigidConcBC,(BoundaryCondition **)&reuseRigidConcBC);
-	
-	// loop over particles
+	// loop over non rigid and rigid contact materials
     for(int p=0;p<nmpmsRC;p++)
 	{	MPMBase *mpmptr = mpm[p];							// pointer
 		double mp = mpmptr->mp;								// material point mass in g
@@ -110,20 +118,6 @@ void MassAndMomentumTask::Execute(void)
 		if(fmobj->multiMaterialMode)
 		{	elref->GetShapeFunctionsAndGradients(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),
 															xDeriv,yDeriv,zDeriv,mpmptr);
-			
-			// for particles that are multimaterial rigid materials, set their velocity
-			if(matID->Rigid())
-			{	Vector newvel;
-				bool hasDir[3];
-				
-				// GetVectorSetting uses global variables and therefore can only be for one thread at a time
-				if(((RigidMaterial *)matID)->GetVectorSetting(&newvel,hasDir,mtime,&mpmptr->pos))
-				{   // change velocity if functions being used, otherwise keep velocity constant
-					if(hasDir[0]) mpmptr->vel.x = newvel.x;
-					if(hasDir[1]) mpmptr->vel.y = newvel.y;
-					if(hasDir[2]) mpmptr->vel.z = newvel.z;
-				}
-			}
 		}
 		else
 			elref->GetShapeFunctions(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),mpmptr);
@@ -171,10 +165,9 @@ void MassAndMomentumTask::Execute(void)
 			
 			// add momentum(3)
 			// if(firstCrack==NULL && maxMaterialFields==1) displacement(3) volume(1)
-			// if(if(fmobj->multiMaterialMode) volume gradiaent(3)
+			// if(if(fmobj->multiMaterialMode) volume gradient(3)
 			// mass (1)
-			// each transport task (2 each)
-			// max buffer 13, min buffer 4
+			// transport tasks (2 each active)
 			
 			// momentum vector (and allocate velocity field if needed)
 			// changes ndptr and therefore only one thread at a time
@@ -204,6 +197,14 @@ void MassAndMomentumTask::Execute(void)
 		}
 	}
 		
+	// undo dynamic velocity, temp, and conc BCs from rigid materials
+	UnsetRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
+				  (BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
+	UnsetRigidBCs((BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,
+				  (BoundaryCondition **)&firstRigidTempBC,(BoundaryCondition **)&reuseRigidTempBC);
+	UnsetRigidBCs((BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,
+				  (BoundaryCondition **)&firstRigidConcBC,(BoundaryCondition **)&reuseRigidConcBC);
+	
 	// For Rigid BC materials create velocity BC on each node in the element
 	for(int p=nmpmsRC;p<nmpms;p++)
 	{	MPMBase *mpmptr = mpm[p];										// pointer

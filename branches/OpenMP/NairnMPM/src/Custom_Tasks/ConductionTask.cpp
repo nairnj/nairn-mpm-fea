@@ -62,7 +62,7 @@ ConductionTask *conduction=NULL;
 ConductionTask::ConductionTask()
 {	// allocate diffusion data on each particle
     int p;
-	for(p=0;p<nmpms;p++)
+	for(p=0;p<nmpmsNR;p++)
 		mpm[p]->AllocateTemperature();
 }
 
@@ -198,7 +198,7 @@ TransportTask *ConductionTask::GetGradients(double stepTime)
 
 #pragma mark GRID FORCES EXTRAPOLATIONS
 
-// find forces for conduction calculation (N-mm/sec = mJ/sec)
+// find forces for conduction calculation (N-mm/sec = mJ/sec) (non-rigid particles only)
 TransportTask *ConductionTask::AddForces(double *fcondBuffer,MPMBase *mptr,double sh,double dshdx,
 										 double dshdy,double dshdz,TransportProperties *t)
 {

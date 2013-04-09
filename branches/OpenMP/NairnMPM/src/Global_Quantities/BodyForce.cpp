@@ -136,7 +136,7 @@ void BodyForce::UpdateAlpha(double delTime,double utime)
 	}
 	else
 	{	int p;
-		for(p=1;p<nmpms;p++)
+		for(p=1;p<nmpmsNR;p++)
 		{	kineticEnergy += mpm[p]->KineticEnergy();
 			totalMass += mpm[p]->mp;
 		}

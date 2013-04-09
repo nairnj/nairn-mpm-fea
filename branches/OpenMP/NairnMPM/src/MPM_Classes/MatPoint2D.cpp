@@ -142,20 +142,21 @@ void MatPoint2D::GetFintPlusFext(int nodeID,int nodeNum,double fni,double xDeriv
 	gFrc[nodeID].forces[2] = 0.0;
 }
 
-// zero the temperature gradient
+// zero the temperature gradient (non-rigid particles only)
 void MatPoint2D::AddTemperatureGradient(void)
 {	pTemp->DT.x=0.;
     pTemp->DT.y=0.;
 	pTemp->DT.z=0.;
 }
 
-// add to the temperature gradient
+// add to the temperature gradient (non-rigid particles only)
 void MatPoint2D::AddTemperatureGradient(Vector *grad)
 {	pTemp->DT.x+=grad->x;
     pTemp->DT.y+=grad->y;
 }
 
 // return conduction force = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units N-mm/sec)
+//  (non-rigid particles only)
 double MatPoint2D::FCond(double dshdx,double dshdy,double dshdz,TransportProperties *t)
 {
 	Tensor *kten = &(t->kCondTensor);
@@ -163,20 +164,21 @@ double MatPoint2D::FCond(double dshdx,double dshdy,double dshdz,TransportPropert
 						+ (kten->xy*pTemp->DT.x + kten->yy*pTemp->DT.y)*dshdy);
 }
 
-// zero the concentration gradient
+// zero the concentration gradient (non-rigid particles only)
 void MatPoint2D::AddConcentrationGradient(void)
 {	pDiffusion->Dc.x=0.;
     pDiffusion->Dc.y=0.;
 	pDiffusion->Dc.z=0.;
 }
 
-// add to the concentration gradient (1/mm)
+// add to the concentration gradient (1/mm) (non-rigid particles only)
 void MatPoint2D::AddConcentrationGradient(Vector *grad)
 {	pDiffusion->Dc.x+=grad->x;
     pDiffusion->Dc.y+=grad->y;
 }
 
 // return diffusion force = - V [D] Grad C . Grad S in (mm^3) (mm^2/sec) (1/mm) (1/mm) = mm^3/sec
+// (non-rigid particles only)
 double MatPoint2D::FDiff(double dshdx,double dshdy,double dshdz,TransportProperties *t)
 {
 	Tensor *Dten = &(t->diffusionTensor);

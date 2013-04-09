@@ -48,7 +48,7 @@ class RigidMaterial : public MaterialBase
 		bool RigidTemperature(void);
 		bool RigidConcentration(void);
 		bool GetValueSetting(double *,double,Vector *);
-		bool GetVectorSetting(Vector *,bool *,double,Vector *);
+		bool GetVectorSetting(Vector *,bool *,double,Vector *) const;
 		void SetSettingFunction(char *,int);
 		bool IsConstantVelocity(void);
 		

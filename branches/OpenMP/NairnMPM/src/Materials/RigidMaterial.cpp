@@ -356,7 +356,7 @@ bool RigidMaterial::IsConstantVelocity(void)
 
 // get vector from one to three functions and the directions being set in hasDir
 // If no directions set or no functions in place return false
-bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vector *pos)
+bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vector *pos) const
 {
     // false if nothing is set
     if(setDirection==0) return false;

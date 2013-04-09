@@ -132,14 +132,14 @@ void MatPoint3D::GetFintPlusFext(int nodeID,int nodeNum,double fni,double xDeriv
 	gFrc[nodeID].forces[2] = -mpug*(sp.xz*xDeriv+sp.yz*yDeriv+(sp.zz-pressure)*zDeriv) + fni*pFext.z;
 }
 
-// zero the temperature gradient
+// zero the temperature gradient (non-rigid particles only)
 void MatPoint3D::AddTemperatureGradient(void)
 {	pTemp->DT.x=0.;
     pTemp->DT.y=0.;
     pTemp->DT.z=0.;
 }
 
-// add to the concentration gradient
+// add to the concentration gradient (non-rigid particles only)
 void MatPoint3D::AddTemperatureGradient(Vector *grad)
 {	pTemp->DT.x+=grad->x;
     pTemp->DT.y+=grad->y;

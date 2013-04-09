@@ -60,8 +60,8 @@ void UpdateStrainsLastTask::Execute(void)
 	// loop over nonrigid particles
 	for(int p=0;p<nmpmsNR;p++)
 	{	const MaterialBase *matref = theMaterials[mpm[p]->MatID()];
-		mp=mpm[p]->mp;			// in g
 		int matfld = matref->GetField();
+        mp=mpm[p]->mp;                              // in g
 		
 		// find shape functions (why ever need gradients?)
 		const ElementBase *elref = theElements[mpm[p]->ElemID()];
@@ -75,6 +75,10 @@ void UpdateStrainsLastTask::Execute(void)
 		for(int i=1;i<=numnds;i++)
 		{	short vfld = (short)mpm[p]->vfld[i];
 			
+			// add momentum(3)
+			// if(firstCrack==NULL && maxMaterialFields==1) displacement(3) volume(1)
+			// if(if(fmobj->multiMaterialMode) volume gradient(3)
+            
 			// velocity from updated velocities
 			nd[nds[i]]->AddMomentumTask6(vfld,matfld,fn[i]*mp,&mpm[p]->vel);
 			

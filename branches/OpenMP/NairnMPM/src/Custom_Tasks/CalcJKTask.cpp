@@ -25,7 +25,7 @@ CalcJKTask::CalcJKTask()
 {	theJKTask=this;
 	// allocate J integral data on each particle
     int p;
-	for(p=0;p<nmpms;p++)
+	for(p=0;p<nmpmsNR;p++)
 		mpm[p]->AllocateJStructures();
 }
 

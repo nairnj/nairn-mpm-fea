@@ -119,7 +119,7 @@ bool CreateFunction(char *&eqn)
 
 // create extra function of x,y,Z (or r=x and z=y) or D and T for polar coordinates from x and y
 // only allowed if CreateFunction(expr) was already called and not deleted
-// called should DeleteFunction(i) when done using it
+// caller should DeleteFunction(i) when done using it
 // can be 1, 2, or 3
 bool CreateFunction(char *&eqn,int i)
 {

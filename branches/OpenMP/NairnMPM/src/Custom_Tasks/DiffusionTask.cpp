@@ -38,7 +38,7 @@ DiffusionTask *diffusion=NULL;
 DiffusionTask::DiffusionTask()
 {	// allocate diffusion data on each particle
     int p;
-	for(p=0;p<nmpms;p++)
+	for(p=0;p<nmpmsNR;p++)
 		mpm[p]->AllocateDiffusion();
 }
 
@@ -148,7 +148,7 @@ TransportTask *DiffusionTask::GetGradients(double stepTime)
 	return nextTask;
 }
 
-// find forces for diffusion calculation (mm^3/sec)
+// find forces for diffusion calculation (mm^3/sec) (non-rigid particles only)
 TransportTask *DiffusionTask::AddForces(double *fdiffBuffer,MPMBase *mptr,double sh,double dshdx,
 										double dshdy,double dshdz,TransportProperties *t)
 {

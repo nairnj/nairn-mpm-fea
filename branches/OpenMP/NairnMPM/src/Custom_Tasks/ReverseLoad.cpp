@@ -168,16 +168,14 @@ CustomTask *ReverseLoad::FinishForStep(void)
 					
 					// reverse rigid particles at constant velocity
 					int p;
-					for(p=0;p<nmpms;p++)
-					{	MaterialBase *mat = theMaterials[mpm[p]->MatID()];
-						if(mat->Rigid())
-						{	if(((RigidMaterial *)mat)->IsConstantVelocity())
-							{	if(style==REVERSE)
-									mpm[p]->ReverseParticle();
-								else
-									mpm[p]->StopParticle();
-							}
-						}
+					for(p=nmpmsNR;p<nmpms;p++)
+					{	RigidMaterial *mat = (RigidMaterial *)theMaterials[mpm[p]->MatID()];
+                        if(mat->IsConstantVelocity())
+                        {	if(style==REVERSE)
+                                mpm[p]->ReverseParticle();
+                            else
+                                mpm[p]->StopParticle();
+                        }
 					}
 					
                 }

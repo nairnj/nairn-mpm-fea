@@ -44,7 +44,7 @@
 
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
-double pConc,pTemp,Angle,Thick;
+double pConc,pTempSet,Angle,Thick;
 int Nhoriz=0,Nvert=0,Ndepth=0,MatID;
 double cellHoriz=-1.,cellVert=-1.,cellDepth=-1.;
 Vector Vel;
@@ -191,7 +191,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
         {   Thick=mpmgrid.GetDefaultThickness();
             Angle=Vel.x=Vel.y=Vel.z=0.0;
 			pConc=0.0;
-			pTemp=thermal.reference;
+			pTempSet = thermal.reference;
             numAttr=attrs.getLength();
 			rotationAxes[0]=0;			// no rotations yet
             for(i=0;i<numAttr;i++)
@@ -225,7 +225,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 						throw SAXException("Material point weight fraction concentration must be >= 0");
 				}
                 else if(strcmp(aName,"temp")==0)
-                    sscanf(value,"%lf",&pTemp);
+                    sscanf(value,"%lf",&pTempSet);
                 delete [] aName;
                 delete [] value;
             }
@@ -854,7 +854,7 @@ void MPMReadHandler::MPMPts(void)
                     newMpt->SetOrigin(&ppos[k]);
 					newMpt->SetVelocity(&Vel);
 					SetMptAnglesFromFunctions(numRotations,&ppos[k],newMpt);
-					mpCtrl->AddMaterialPoint(newMpt,pConc,pTemp);
+					mpCtrl->AddMaterialPoint(newMpt,pConc,pTempSet);
                 }
                 theElements[i-1]->filled|=ptFlag;
             }

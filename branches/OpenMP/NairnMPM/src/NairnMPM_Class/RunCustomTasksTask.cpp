@@ -56,11 +56,10 @@ void RunCustomTasksTask::Execute(void)
         while(nextTask!=NULL)
             nextTask=nextTask->BeginExtrapolations();
         
-        // particle loop
-        for(p=0;p<nmpms;p++)
+        // particle loop or nonrigid and rigid contact particles
+        for(p=0;p<nmpmsRC;p++)
         {   // Load element coordinates
 			matID=theMaterials[mpm[p]->MatID()];
-			if(matID->RigidBC()) continue;			// skip boundary condition particle always
 			isRigid=matID->Rigid();					// if TRUE, will be rigid contact particle
 			matfld=matID->GetField();
 			

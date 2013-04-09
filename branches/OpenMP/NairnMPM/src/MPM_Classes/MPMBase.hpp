@@ -174,7 +174,7 @@ class MPMBase : public LinkedObject
 		CPDIDomain **cpdi;          // Should makle pointer and allocate only what is needed
         Vector *faceArea;           // make pointer then needed
 		Vector acc;					// acceleration
-		Tensor *velGrad;			// used for J Integral only
+		Tensor *velGrad;			// used for J Integral only on non-rigid particles only
 		Tensor sp;					// stress tensor (init 0)
         double pressure;            // for use if materials wants to, otherwise it is zero
 		Tensor ep;					// total strain tensor (init 0)

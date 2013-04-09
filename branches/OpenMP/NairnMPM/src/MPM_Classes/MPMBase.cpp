@@ -60,7 +60,7 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
     strainEnergy=0.;
     heatEnergy=0.;
 	
-	// for J integral if needed
+	// for J integral if needed (on non-rigid only)
 	velGrad=NULL;
 	
 	// material data is needed
@@ -97,7 +97,7 @@ void MPMBase::AllocateDiffusion(void)
 	ZeroVector(&pDiffusion->Dc);
 }
 
-// allocation diffusion data if need in this calculations
+// allocation velGrad tensor data if need in this calculations (non rigid only)
 void MPMBase::AllocateJStructures(void)
 {	velGrad=new Tensor;
 }
