@@ -204,6 +204,6 @@ class MPMBase : public LinkedObject
 // Lists of material points from mpm[0] to mpm[nmpms-1]
 // order such that nonrigid are from mpm[0] to mpm[nmpmsNR-1] and rest are rigid
 extern MPMBase **mpm;
-extern int nmpms,nmpmsNR;
+extern int nmpms,nmpmsNR,nmpmsRC;
 
 #endif

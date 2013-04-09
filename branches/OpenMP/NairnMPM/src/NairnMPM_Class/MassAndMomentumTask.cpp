@@ -97,184 +97,188 @@ void MassAndMomentumTask::Execute(void)
 				  (BoundaryCondition **)&firstRigidConcBC,(BoundaryCondition **)&reuseRigidConcBC);
 	
 	// loop over particles
-    for(int p=0;p<nmpms;p++)
-	{	int numnds,mi;
-		MPMBase *mpmptr = mpm[p];									// pointer
-		int iel = mpmptr->ElemID();									// element containing this particle
-		const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
+    for(int p=0;p<nmpmsRC;p++)
+	{	MPMBase *mpmptr = mpm[p];							// pointer
+		double mp = mpmptr->mp;								// material point mass in g
 		
-		// normal materials
-		if(!matID->RigidBC())
-		{	double mp = mpmptr->mp;							// material point mass in g
-			int matfld = matID->GetField();					// material velocity field
+		const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
+		int matfld = matID->GetField();									// material velocity field
+		
+		// get nodes and shape function for material point p
+		int numnds;
+		const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
+		if(fmobj->multiMaterialMode)
+		{	elref->GetShapeFunctionsAndGradients(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),
+															xDeriv,yDeriv,zDeriv,mpmptr);
 			
-			// get nodes and shape function for material point p
-			if(fmobj->multiMaterialMode)
-			{	theElements[iel]->GetShapeFunctionsAndGradients(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),
-																xDeriv,yDeriv,zDeriv,mpmptr);
+			// for particles that are multimaterial rigid materials, set their velocity
+			if(matID->Rigid())
+			{	Vector newvel;
+				bool hasDir[3];
 				
-				// for particles that are multimaterial rigid materials, set their velocity
-				if(matID->Rigid())
-				{	Vector newvel;
-					bool hasDir[3];
-					
-					// GetVectorSetting using global variables and therefore can only be for one thread at a time
- 					if(((RigidMaterial *)matID)->GetVectorSetting(&newvel,hasDir,mtime,&mpmptr->pos))
-                    {   // change velocity if functions being used, otherwise keep velocity constant
-						if(hasDir[0]) mpmptr->vel.x = newvel.x;
-						if(hasDir[1]) mpmptr->vel.y = newvel.y;
-						if(hasDir[2]) mpmptr->vel.z = newvel.z;
+				// GetVectorSetting uses global variables and therefore can only be for one thread at a time
+				if(((RigidMaterial *)matID)->GetVectorSetting(&newvel,hasDir,mtime,&mpmptr->pos))
+				{   // change velocity if functions being used, otherwise keep velocity constant
+					if(hasDir[0]) mpmptr->vel.x = newvel.x;
+					if(hasDir[1]) mpmptr->vel.y = newvel.y;
+					if(hasDir[2]) mpmptr->vel.z = newvel.z;
+				}
+			}
+		}
+		else
+			elref->GetShapeFunctions(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),mpmptr);
+		
+		// Add particle property to each node in the element
+		for(int i=1;i<=numnds;i++)
+		{	NodalPoint *ndptr = nd[nds[i]];				// get pointer
+			short vfld;
+			CrackField *cfldptr;
+			
+			// Regular MPM, adds to velocity field 0
+			if(firstCrack==NULL)
+			{	cfldptr = NULL;
+				vfld = 0;
+			}
+			
+			else
+			{	// in CRAMP, find crack crossing and appropriate velocity field
+				CrackField cfld[2];
+				cfld[0].loc = NO_CRACK;			// NO_CRACK, ABOVE_CRACK, or BELOW_CRACK
+				cfld[1].loc = NO_CRACK;
+				cfldptr = &cfld[0];
+				int cfound=0;
+				Vector norm;
+				
+				CrackHeader *nextCrack = firstCrack;
+				while(nextCrack!=NULL)
+				{	vfld = nextCrack->CrackCross(mpmptr->pos.x,mpmptr->pos.y,ndptr->x,ndptr->y,&norm);
+					if(vfld!=NO_CRACK)
+					{	cfld[cfound].loc=vfld;
+						cfld[cfound].norm=norm;
+#ifdef IGNORE_CRACK_INTERACTIONS
+						cfld[cfound].crackNum=1;	// appears to always be same crack, and stop when found one
+						break;
+#else
+						cfld[cfound].crackNum=nextCrack->GetNumber();
+						cfound++;
+						if(cfound>1) break;			// stop if found two, if there are more then two, physics will be off
+#endif
 					}
+					nextCrack=(CrackHeader *)nextCrack->GetNextObject();
+				}
+				
+			}
+			
+			// add momentum(3)
+			// if(firstCrack==NULL && maxMaterialFields==1) displacement(3) volume(1)
+			// if(if(fmobj->multiMaterialMode) volume gradiaent(3)
+			// mass (1)
+			// each transport task (2 each)
+			// max buffer 13, min buffer 4
+			
+			// momentum vector (and allocate velocity field if needed)
+			// changes ndptr and therefore only one thread at a time
+			vfld = ndptr->AddMomentumTask1(matfld,cfldptr,fn[i]*mp,&mpmptr->vel);
+			mpmptr->vfld[i] = vfld;
+			
+			// crack contact calculations
+			contact.AddDisplacementVolume(vfld,matfld,ndptr,mpmptr,fn[i]);
+			
+			// material contact calculations
+			ndptr->AddVolumeGradient(vfld,matfld,mpmptr,xDeriv[i],yDeriv[i],zDeriv[i]);
+			
+			// more for non-rigid contact materials
+			if(!matID->Rigid())
+			{	// add to lumped mass matrix
+				ndptr->AddMass(vfld,matfld,mp*fn[i]);
+				
+				// transport calculations
+				TransportTask *nextTransport=transportTasks;
+				while(nextTransport!=NULL)
+					nextTransport=nextTransport->Task1Extrapolation(ndptr,mpmptr,fn[i]);
+			}
+			else
+			{	// for rigid particles, let the crack velocity field know
+				ndptr->AddMassTask1(vfld,matfld,mp*fn[i]);
+			}
+		}
+	}
+		
+	// For Rigid BC materials create velocity BC on each node in the element
+	for(int p=nmpmsRC;p<nmpms;p++)
+	{	MPMBase *mpmptr = mpm[p];										// pointer
+		
+		const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
+		RigidMaterial *rigid=(RigidMaterial *)matID;
+
+		const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
+		int numnds=elref->NumberNodes();
+		
+		double rvalue;
+		for(int i=1;i<=numnds;i++)
+		{   int mi=elref->nodes[i-1];		// 1 based node
+			
+			// look for setting function in one to three directions
+			// GetVectorSetting() returns true if function has set the velocity, otherwise it return FALSE
+			bool hasDir[3];
+			Vector rvel;
+			if(rigid->GetVectorSetting(&rvel,hasDir,mtime,&mpmptr->pos))
+			{   // velocity set by 1 to 3 functions as determined by hasDir[i]
+				if(hasDir[0])
+				{	mpmptr->vel.x = rvel.x;
+					SetRigidBCs(mi,X_DIRECTION,rvel.x,0.,
+							(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
+							(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
+				}
+				if(hasDir[1])
+				{	mpmptr->vel.y = rvel.y;
+					SetRigidBCs(mi,Y_DIRECTION,rvel.y,0.,
+								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
+								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
+				}
+				if(hasDir[2])
+				{	mpmptr->vel.z = rvel.z;
+					SetRigidBCs(mi,Z_DIRECTION,rvel.z,0.,
+								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
+								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
 			}
 			else
-				theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),mpmptr);
-			
-			// Add particle property to each node in the element
-			for(int i=1;i<=numnds;i++)
-			{	
-				NodalPoint *ndptr = nd[nds[i]];				// get pointer
-				short vfld;
-				CrackField *cfldptr;
-				
-				// Regular MPM, adds to velocity field 0
-				if(firstCrack==NULL)
-				{	cfldptr = NULL;
-					vfld = 0;
+			{   // velocity set by particle velocity in selected directions
+				if(rigid->RigidDirection(X_DIRECTION))
+				{	SetRigidBCs(mi,X_DIRECTION,mpmptr->vel.x,0.,
+									(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
+									(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
-				
-				else
-				{	// in CRAMP, find crack crossing and appropriate velocity field
-					CrackField cfld[2];
-					cfld[0].loc = NO_CRACK;			// NO_CRACK, ABOVE_CRACK, or BELOW_CRACK
-					cfld[1].loc = NO_CRACK;
-					cfldptr = &cfld[0];
-					int cfound=0;
-					Vector norm;
-					
-					CrackHeader *nextCrack = firstCrack;
-					while(nextCrack!=NULL)
-					{	vfld = nextCrack->CrackCross(mpmptr->pos.x,mpmptr->pos.y,ndptr->x,ndptr->y,&norm);
-						if(vfld!=NO_CRACK)
-						{	cfld[cfound].loc=vfld;
-							cfld[cfound].norm=norm;
-#ifdef IGNORE_CRACK_INTERACTIONS
-							cfld[cfound].crackNum=1;	// appears to always be same crack, and stop when found one
-							break;
-#else
-							cfld[cfound].crackNum=nextCrack->GetNumber();
-							cfound++;
-							if(cfound>1) break;			// stop if found two, if there are more then two, physics will be off
-#endif
-						}
-						nextCrack=(CrackHeader *)nextCrack->GetNextObject();
-					}
-					
-				}
-				
-				// the rest changes nd[i] and because threads might cross, this section can only have one
-				// thread at a time
-			
-				// momentum vector (and allocate velocity field if needed)
-				// changes ndptr and therefore only one thread at a time
-				vfld = ndptr->AddMomentumTask1(matfld,cfldptr,fn[i]*mp,&mpmptr->vel);
-				mpmptr->vfld[i] = vfld;
-				
-				// crack contact calculations
-				contact.AddDisplacementVolume(vfld,matfld,ndptr,mpmptr,fn[i]);
-				
-				// material contact calculations
-                ndptr->AddVolumeGradient(vfld,matfld,mpmptr,xDeriv[i],yDeriv[i],zDeriv[i]);
-				
-				// more for non-rigid contact materials
-				if(!matID->Rigid())
-				{	// add to lumped mass matrix
-					ndptr->AddMass(vfld,matfld,mp*fn[i]);
-					
-					// transport calculations
-					TransportTask *nextTransport=transportTasks;
-					while(nextTransport!=NULL)
-						nextTransport=nextTransport->Task1Extrapolation(ndptr,mpmptr,fn[i]);
-				}
-				else
-				{	// for rigid particles, let the crack velocity field know
-					ndptr->AddMassTask1(vfld,matfld,mp*fn[i]);
-				}
-			}
-			
-		}
-		
-		// For Rigid BC materials create velocity BC on each node in the element
-		else
-		{
-			numnds=theElements[iel]->NumberNodes();
-			double rvalue;
-			RigidMaterial *rigid=(RigidMaterial *)matID;
-			for(int i=1;i<=numnds;i++)
-			{   mi=theElements[iel]->nodes[i-1];		// 1 based node
-				
-				// look for setting function in one to three directions
-                // GetVectorSetting() returns true if function has set the velocity, otherwise it return FALSE
-				bool hasDir[3];
-				Vector rvel;
-				if(rigid->GetVectorSetting(&rvel,hasDir,mtime,&mpmptr->pos))
-                {   // velocity set by 1 to 3 functions as determined by hasDir[i]
-					if(hasDir[0])
-					{	mpmptr->vel.x = rvel.x;
-						SetRigidBCs(mi,X_DIRECTION,rvel.x,0.,
+				if(rigid->RigidDirection(Y_DIRECTION))
+				{	SetRigidBCs(mi,Y_DIRECTION,mpmptr->vel.y,0.,
 								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
-					}
-					if(hasDir[1])
-					{	mpmptr->vel.y = rvel.y;
-						SetRigidBCs(mi,Y_DIRECTION,rvel.y,0.,
-									(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
-									(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
-					}
-					if(hasDir[2])
-					{	mpmptr->vel.z = rvel.z;
-						SetRigidBCs(mi,Z_DIRECTION,rvel.z,0.,
-									(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
-									(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
-					}
 				}
-				else
-                {   // velocity set by particle velocity in selected directions
-                    if(rigid->RigidDirection(X_DIRECTION))
-					{	SetRigidBCs(mi,X_DIRECTION,mpmptr->vel.x,0.,
-										(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
-										(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
-					}
-					if(rigid->RigidDirection(Y_DIRECTION))
-					{	SetRigidBCs(mi,Y_DIRECTION,mpmptr->vel.y,0.,
-									(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
-									(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
-					}
-					if(rigid->RigidDirection(Z_DIRECTION))
-					{	SetRigidBCs(mi,Z_DIRECTION,mpmptr->vel.z,0.,
-									(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
-									(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
-					}
-				}
-				
-				// temperature
-				if(rigid->RigidTemperature())
-				{	if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pTemperature=rvalue;
-					SetRigidBCs(mi,TEMP_DIRECTION,mpmptr->pTemperature,0.,
-								(BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,
-								(BoundaryCondition **)&firstRigidTempBC,(BoundaryCondition **)&reuseRigidTempBC);
-				}
-				
-				// concentration
-				if(rigid->RigidConcentration())
-				{	if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pConcentration=rvalue;
-					SetRigidBCs(mi,CONC_DIRECTION,mpmptr->pConcentration,0.,
-								(BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,
-								(BoundaryCondition **)&firstRigidConcBC,(BoundaryCondition **)&reuseRigidConcBC);
+				if(rigid->RigidDirection(Z_DIRECTION))
+				{	SetRigidBCs(mi,Z_DIRECTION,mpmptr->vel.z,0.,
+								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
+								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
 			}
+			
+			// temperature
+			if(rigid->RigidTemperature())
+			{	if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pTemperature=rvalue;
+				SetRigidBCs(mi,TEMP_DIRECTION,mpmptr->pTemperature,0.,
+							(BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,
+							(BoundaryCondition **)&firstRigidTempBC,(BoundaryCondition **)&reuseRigidTempBC);
+			}
+			
+			// concentration
+			if(rigid->RigidConcentration())
+			{	if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pConcentration=rvalue;
+				SetRigidBCs(mi,CONC_DIRECTION,mpmptr->pConcentration,0.,
+							(BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,
+							(BoundaryCondition **)&firstRigidConcBC,(BoundaryCondition **)&reuseRigidConcBC);
+			}
 		}
-    }
+	}
 	
 	// if any left over rigid BCs, delete them now
 	RemoveRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,(BoundaryCondition **)&firstRigidVelocityBC);

@@ -514,6 +514,41 @@ void NairnMPM::PreliminaryCalcs(void)
 		}
 	}
 	
+	// reorder rigid particles as (Rigid Contact, Rigid BCs)
+	nmpmsRC = nmpmsNR;
+	if(hasRigidContactParticles)
+	{	// back up to new last rigid contact particle
+		nmpmsRC = nmpms;
+		while(nmpmsRC > nmpmsNR)
+		{	matid = mpm[nmpmsRC-1]->MatID();
+			if(!theMaterials[matid]->RigidBC()) break;
+			nmpmsRC--;
+		}
+		
+		// loop until reach end of rigid contact
+		p = nmpmsNR;
+		while(p < nmpmsRC)
+		{	matid=mpm[p]->MatID();
+			if(theMaterials[matid]->RigidBC())
+			{	// if rigid BC particle, switch with rigid contact particle at nmpmsRC-1
+				MPMBase *temp = mpm[p];
+				mpm[p] = mpm[nmpmsRC-1];
+				mpm[nmpmsRC-1] = temp;
+				nmpmsRC--;
+				
+				// back up to new last nonrigid
+				while(nmpmsRC > nmpmsNR)
+				{	matid=mpm[nmpmsRC-1]->MatID();
+					if(!theMaterials[matid]->RigidBC()) break;
+					nmpmsRC--;
+				}
+			}
+			
+			// next particle
+			p++;
+		}
+	}
+
 	// multimaterial checks and contact initialization
 	if(maxMaterialFields==0 || numActiveMaterials==0)
 		throw CommonException("No material points found with an actual material","NairnMPM::PreliminaryCalcs");

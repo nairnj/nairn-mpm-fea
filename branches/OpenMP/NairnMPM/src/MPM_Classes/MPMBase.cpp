@@ -15,6 +15,7 @@
 MPMBase **mpm;		// list of material points
 int nmpms=0;		// number of material points
 int nmpmsNR=0;		// number for last non-rigid material point
+int nmpmsRC=0;		// number for last rigid contact material
 
 #pragma mark MPMBase::Constructors and Destructors
 
@@ -40,6 +41,9 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
         vfld[i]=NO_CRACK;
 	
 	// space to hold grid forces in a buffer
+	// size per particle is (4+8f)*(maxShapeNodes-1) where f is number of force in buffer
+	// e.g., 3D GIMP, f=5 gives 44*27 = 1188 bytes (i.e., 10 GB for 10 million particles)
+	// 3.g., 3D GIMP, f=13 gives 108*27 = 2916 bytes (i.e., 30 GB for 10 million particles)
 	gFrc = (GridForceBuffer *)malloc((maxShapeNodes-1)*sizeof(GridForceBuffer));
         
     // zero stresses and strains
