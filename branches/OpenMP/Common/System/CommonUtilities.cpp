@@ -75,6 +75,24 @@ int Reverse(char *nptr,int nlen)
     return nlen;
 }
 
+/************************************************************
+	Factor integer num into prime factors (not including 1)
+************************************************************/
+
+void PrimeFactors(int num,vector<int> &factors)
+{	int maxFactor = (int)(sqrt((double)num)+.001);
+	for(int i=2;i<=maxFactor;i++)
+	{	// does i go into num evenly?
+		if((num % i) == 0)
+		{	factors.push_back(i);
+			PrimeFactors(num/i, factors);
+			return;
+		}
+	}
+	// if did not find any factors, it is a prime
+	factors.push_back(num);
+}
+
 #pragma mark Vector Functions
 
 // return vector from components

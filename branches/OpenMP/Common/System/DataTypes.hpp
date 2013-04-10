@@ -132,6 +132,7 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY};
 void PrintSection(const char *text);
 int DbleEqual(double,double);
 int Reverse(char *,int);
+void PrimeFactors(int,vector<int> &);
 
 Vector MakeVector(double,double,double);
 Vector *ZeroVector(Vector *);

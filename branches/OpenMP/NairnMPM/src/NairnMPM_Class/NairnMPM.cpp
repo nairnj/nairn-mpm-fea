@@ -564,6 +564,9 @@ void NairnMPM::PreliminaryCalcs(void)
 	// propagation time step (no less than timestep)
     if(propTime<timestep) propTime=timestep;
 	
+	// create patches
+	mpmgrid.CreatePatches(np,numProcs);
+	
     // Print particle information oand other preliminary calc results
     PrintSection("FULL MASS MATRIX");
     
@@ -682,6 +685,11 @@ void NairnMPM::ValidateOptions(void)
 	{	if(!mpmgrid.CanDoGIMP())
 			throw CommonException("Multimaterial mode is not allowed unless using a generated regular mesh","NairnMPM::ValidateOptions");
 	}
+
+#ifdef _PARALLEL_
+	if(!mpmgrid.CanDoGIMP())
+		throw CommonException("Multicore parallel code requires a generated regular mesh","NairnMPM::ValidateOptions");
+#endif
 	
 	// check each material type (but only if it is used it at least one material point)
 	int i;

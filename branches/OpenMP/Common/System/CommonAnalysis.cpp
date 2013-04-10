@@ -24,9 +24,7 @@ static bool doSchema=TRUE;
 static bool schemaFullChecking=FALSE;
 extern const char *svninfo;
 
-/********************************************************************************
-	CommonAnalysis: Constructors and Destructor
-********************************************************************************/
+#pragma mark CommonAnalysis: Constructors and Destructor
 
 CommonAnalysis::CommonAnalysis()
 {
@@ -49,9 +47,7 @@ CommonAnalysis::~CommonAnalysis()
 	delete [] description;
 }
 
-/********************************************************************************
-	CommonAnalysis: methods
-********************************************************************************/
+#pragma mark CommonAnalysis: methods
 
 // start results file before proceeding to analysis
 void CommonAnalysis::StartResultsOutput(void)
@@ -280,9 +276,7 @@ void CommonAnalysis::CoutCodeVersion(void)
 	delete [] name;
 }
 
-/********************************************************************************
-	CommonAnalysis: accessors
-********************************************************************************/
+#pragma mark CommonAnalysis: accessors
 
 // validation option
 void CommonAnalysis::SetValidate(bool setting) { validate=setting; }
@@ -312,9 +306,7 @@ bool CommonAnalysis::IsAxisymmetric(int otherNp) { return otherNp==AXI_SYM || ot
 // set number of processes (0 for serial code)
 void CommonAnalysis::SetNumberOfProcessors(int npr) { numProcs = npr; }
 
-/********************************************************************************
-	Methods to keep Xerces contact in fewer files
-********************************************************************************/
+#pragma mark Methods to keep Xerces contact in fewer files
 
 // throw an SAXException
 void ThrowSAXException(const char *msg)
@@ -327,6 +319,8 @@ void ThrowSAXException(const char *frmt,const char *msg)
 	sprintf(eline,frmt,msg);
 	throw SAXException(eline);
 }
+
+
 
 
 

@@ -36,6 +36,7 @@ void MeshInfo::Output(int pointsPerCell,bool isAxisym)
 			cout << "Structured";
 		else
 			cout << "Unstructured";
+		
 		if(isAxisym)
 			sprintf(fline," orthogonal grid with dR: %g dZ: %g",gridx,gridy);
 		else
@@ -46,7 +47,9 @@ void MeshInfo::Output(int pointsPerCell,bool isAxisym)
 			cout << fline;
 		}
 		cout << endl;
+		
 		SetParticleLength(pointsPerCell);
+		
 		if(isAxisym)
 			sprintf(fline,"Origin at R: %g Z: %g",xmin,ymin);
 		else
@@ -57,10 +60,24 @@ void MeshInfo::Output(int pointsPerCell,bool isAxisym)
 			cout << fline;
 		}
 		cout << endl;
+		
 		if(DbleEqual(gridz,0.) && !isAxisym)
 		{	sprintf(fline,"Thickness: %g",zmin);
 			cout << fline << endl;
 		}
+
+#ifdef _PARALLEL_
+		if(isAxisym)
+			sprintf(fline,"Patch Grid R: %d Z: %d",xpnum,ypnum);
+		else
+			sprintf(fline,"Patch Grid x: %d y: %d",xpnum,ypnum);
+		cout << fline;
+		if(!DbleEqual(gridz,0.))
+		{	sprintf(fline," z: %d",zpnum);
+			cout << fline;
+		}
+		cout << endl;
+#endif
 	}
 	else
 		cout << "Non-orthogonal grid" << endl;
@@ -308,6 +325,104 @@ int MeshInfo::FindElementFromPoint(Vector *pt)
     // return result
     return theElem;
 }
+
+void MeshInfo::CreatePatches(int np,int numProcs)
+{
+	// get prime factors in ascending order
+	vector<int> factors;
+	unsigned ndim = np==THREED_MPM ? 3 : 2 ;
+#ifdef _PARALLEL_
+	PrimeFactors(numProcs,factors);
+	while(factors.size()<ndim) factors.push_back(1);
+	while(factors.size()>ndim)
+	{	std::sort(factors.begin(),factors.end());
+		int newFactor = factors[0]*factors[1];
+		factors.erase(factors.begin());
+		factors[0]=newFactor;
+	}
+	std::sort(factors.begin(),factors.end());
+#else
+	for(unsigned j=0;j<ndim;j++) factors.push_back(1);
+#endif
+	
+	// convert to numbers of elements in each direction and use larger
+	// prime factors in the longer directions
+	int xsize,ysize,zsize;
+	
+	if(ndim==2)
+	{	if(horiz>vert)
+		{	xpnum = factors[1];
+			ypnum = factors[0];
+		}
+		else
+		{	xpnum = factors[0];
+			ypnum = factors[1];
+		}
+		zpnum=1;
+		zsize=1;
+	}
+	else
+	{	if(horiz>vert && horiz>depth)
+		{	xpnum = factors[2];
+			if(vert>depth)
+			{	ypnum = factors[1];
+				zpnum = factors[0];
+			}
+			else
+			{	zpnum = factors[0];
+				ypnum = factors[1];
+			}
+		}
+		else if(vert>horiz && vert>depth)
+		{	ypnum = factors[2];
+			if(horiz>depth)
+			{	xpnum = factors[1];
+				zpnum = factors[0];
+			}
+			else
+			{	zpnum = factors[0];
+				xpnum = factors[1];
+			}
+		}
+		else
+		{	zpnum = factors[2];
+			if(horiz>vert)
+			{	xpnum = factors[1];
+				ypnum = factors[0];
+			}
+			else
+			{	ypnum = factors[0];
+				xpnum = factors[1];
+			}
+		}
+		zsize = max(depth/zpnum,1);
+	}
+	xsize = max(horiz/xpnum,1);
+	ysize = max(vert/ypnum,1);
+	
+	// create the patches
+	int i,j,k;
+	int x1,x2,y1,y2,z1=1,z2;
+	for(k=1;k<=zpnum;k++)
+	{	z2 = k==zpnum ? depth : z1+zsize-1;
+		y1 = 1;
+		for(j=1;j<=ypnum;j++)
+		{	y2 = j==ypnum ? vert : y1+ysize-1;
+			x1 = 1;
+			for(i=1;i<=xpnum;i++)
+			{	x2 = i==xpnum ? horiz : x1+xsize-1;
+				
+				// patch x1 to x2 and y1 to y2
+				cout << "(" << x1 << "-" << x2 << "),(" << y1 << "-" << y2 << "),("  << z1 << "-" << z2 << ")" << endl;
+				
+				x1 = x2+1;
+			}
+			y1 = y2+1;
+		}
+		z1 = z2+1;
+	}
+}
+
 
 #pragma mark MeshInfo:Accessors
 

@@ -63,7 +63,7 @@ class NairnMPM : public CommonAnalysis
         void SetCFLCondition(double);
         double GetCFLCondition(void);
         double GetPropagationCFLCondition(void);
-    
+	
     protected:
         double FractCellTime;			// fraction of cell crossed at wave speed (<1)
         double PropFractCellTime;       // separate fraction of cell crossed for propagation time steps (currently not settable)

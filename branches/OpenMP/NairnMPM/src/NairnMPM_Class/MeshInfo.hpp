@@ -39,6 +39,7 @@ class MeshInfo
 		void ListOfNeighbors2D(int,int *);
 		void ListOfNeighbors3D(int,int *);
         int FindElementFromPoint(Vector *);
+		void CreatePatches(int,int);
 		
 		// Accessors
 		void SetCartesian(int,double,double,double);
@@ -66,6 +67,7 @@ class MeshInfo
 		double cellVolume;				// cell volume
         double avgCellSize;             // average cell size
         bool contactByDisplacements;    // TRUE is using displacements, false if need to adjust normal COD
+		int xpnum,ypnum,zpnum;			// patch grid size
 
 };
 
