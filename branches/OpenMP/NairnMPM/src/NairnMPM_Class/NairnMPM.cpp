@@ -36,6 +36,7 @@
 #include "NairnMPM_Class/ResetElementsTask.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
+#include "Patches/GridPatch.hpp"
 #include <time.h>
 
 // global analysis object
@@ -565,7 +566,9 @@ void NairnMPM::PreliminaryCalcs(void)
     if(propTime<timestep) propTime=timestep;
 	
 	// create patches
-	mpmgrid.CreatePatches(np,numProcs);
+	patches = mpmgrid.CreatePatches(np,numProcs);
+    if(patches==NULL)
+		throw CommonException("Out of memory creating the patches","NairnMPM::PreliminaryCalcs");
 	
     // Print particle information oand other preliminary calc results
     PrintSection("FULL MASS MATRIX");

@@ -13,6 +13,8 @@
 
 #define _MESHINFO_
 
+class GridPatch;
+
 // grid type - all 3D ones above the marker
 enum {	UNKNOWN_GRID=-1,NOT_CARTESIAN=0,SQUARE_GRID,RECTANGULAR_GRID,
 			BEGIN_3D_GRIDS,CUBIC_GRID,ORTHOGONAL_GRID };
@@ -39,7 +41,7 @@ class MeshInfo
 		void ListOfNeighbors2D(int,int *);
 		void ListOfNeighbors3D(int,int *);
         int FindElementFromPoint(Vector *);
-		void CreatePatches(int,int);
+		GridPatch **CreatePatches(int,int);
 		
 		// Accessors
 		void SetCartesian(int,double,double,double);

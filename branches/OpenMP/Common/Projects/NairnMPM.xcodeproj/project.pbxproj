@@ -312,6 +312,8 @@
 		A7A44BE40A11287600978858 /* MPMPrefix.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7A44BE30A11287600978858 /* MPMPrefix.hpp */; };
 		A7A598240C56CA2B003DF165 /* FEABoundaryCondition.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7A598220C56CA2B003DF165 /* FEABoundaryCondition.hpp */; };
 		A7A598250C56CA2B003DF165 /* FEABoundaryCondition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7A598230C56CA2B003DF165 /* FEABoundaryCondition.cpp */; };
+		A7B45CF61715D354003FDED6 /* GridPatch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7B45CF51715D354003FDED6 /* GridPatch.cpp */; };
+		A7B45CF81715D36E003FDED6 /* GridPatch.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7B45CF71715D36E003FDED6 /* GridPatch.hpp */; };
 		A7B5ECAA072437850027119D /* NodalTempBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7B5ECA8072437850027119D /* NodalTempBC.hpp */; };
 		A7B5ECAB072437850027119D /* NodalTempBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7B5ECA9072437850027119D /* NodalTempBC.cpp */; };
 		A7B6936914325B02006F6A27 /* HEAnisotropic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */; };
@@ -628,6 +630,8 @@
 		A7A75796042249480063AF10 /* Gauss.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = Gauss.cpp; sourceTree = "<group>"; };
 		A7B38BAD0510BA920063AF10 /* MPMTermination.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = MPMTermination.cpp; sourceTree = "<group>"; };
 		A7B38BAE0510BA920063AF10 /* MPMTermination.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = MPMTermination.hpp; sourceTree = "<group>"; };
+		A7B45CF51715D354003FDED6 /* GridPatch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GridPatch.cpp; path = Patches/GridPatch.cpp; sourceTree = "<group>"; };
+		A7B45CF71715D36E003FDED6 /* GridPatch.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = GridPatch.hpp; path = Patches/GridPatch.hpp; sourceTree = "<group>"; };
 		A7B5ECA8072437850027119D /* NodalTempBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = NodalTempBC.hpp; sourceTree = "<group>"; };
 		A7B5ECA9072437850027119D /* NodalTempBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NodalTempBC.cpp; sourceTree = "<group>"; };
 		A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HEAnisotropic.cpp; path = Materials/HEAnisotropic.cpp; sourceTree = "<group>"; };
@@ -802,6 +806,7 @@
 				67D1F371157F932D0010691C /* Traction_Laws */,
 				F5F7068C0326AB830163AF10 /* Elements */,
 				A7731E4705B44C7F00294E25 /* Nodes */,
+				A7B45CF31715D2FB003FDED6 /* Patches */,
 				A7731E3405B44C2C00294E25 /* Global_Quantities */,
 				F5F7068F0326ABE70163AF10 /* MPM_Classes */,
 				A73274B105B7174600F1D150 /* Cracks */,
@@ -1311,6 +1316,15 @@
 			path = Numerical;
 			sourceTree = "<group>";
 		};
+		A7B45CF31715D2FB003FDED6 /* Patches */ = {
+			isa = PBXGroup;
+			children = (
+				A7B45CF71715D36E003FDED6 /* GridPatch.hpp */,
+				A7B45CF51715D354003FDED6 /* GridPatch.cpp */,
+			);
+			name = Patches;
+			sourceTree = "<group>";
+		};
 		A7BD09A20618D8B50006BA43 /* Boundary_Conditions */ = {
 			isa = PBXGroup;
 			children = (
@@ -1572,6 +1586,7 @@
 				6715DFD216C567350042F15C /* Nonlinear2Hardening.hpp in Headers */,
 				673EC9B716C9EB71007FFEB5 /* CarnotCycle.hpp in Headers */,
 				67FFAA0C16D31E95003A7C53 /* HEMGEOSMaterial.hpp in Headers */,
+				A7B45CF81715D36E003FDED6 /* GridPatch.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1891,6 +1906,7 @@
 				673EC9B616C9EB71007FFEB5 /* CarnotCycle.cpp in Sources */,
 				67FFAA0B16D31E95003A7C53 /* HEMGEOSMaterial.cpp in Sources */,
 				A738C0CD170E192800E4D675 /* svninfo.cpp in Sources */,
+				A7B45CF61715D354003FDED6 /* GridPatch.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -10,6 +10,7 @@
 *********************************************************************/
 
 #include "MeshInfo.hpp"
+#include "GridPatch.hpp"
 
 // global class for grid information
 MeshInfo mpmgrid;
@@ -326,7 +327,7 @@ int MeshInfo::FindElementFromPoint(Vector *pt)
     return theElem;
 }
 
-void MeshInfo::CreatePatches(int np,int numProcs)
+GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 {
 	// get prime factors in ascending order
 	vector<int> factors;
@@ -399,8 +400,14 @@ void MeshInfo::CreatePatches(int np,int numProcs)
 	}
 	xsize = max(horiz/xpnum,1);
 	ysize = max(vert/ypnum,1);
+    
+    // alloc space for patches - exit on memory error
+    int totalPatches = xpnum*ypnum*zpnum;
+    GridPatch **patch = (GridPatch **)malloc(totalPatches*sizeof(GridPatch));
+    if(patch==NULL) return NULL;
 	
 	// create the patches
+    int pnum=0;
 	int i,j,k;
 	int x1,x2,y1,y2,z1=1,z2;
 	for(k=1;k<=zpnum;k++)
@@ -413,7 +420,8 @@ void MeshInfo::CreatePatches(int np,int numProcs)
 			{	x2 = i==xpnum ? horiz : x1+xsize-1;
 				
 				// patch x1 to x2 and y1 to y2
-				cout << "(" << x1 << "-" << x2 << "),(" << y1 << "-" << y2 << "),("  << z1 << "-" << z2 << ")" << endl;
+                patch[pnum] = new GridPatch(x1,x2,y1,y2,z1,z2);
+                pnum++;
 				
 				x1 = x2+1;
 			}
@@ -421,6 +429,9 @@ void MeshInfo::CreatePatches(int np,int numProcs)
 		}
 		z1 = z2+1;
 	}
+    
+    // return array of patches
+    return patch;
 }
 
 
