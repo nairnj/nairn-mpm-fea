@@ -16,9 +16,11 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Cracks/CrackSegment.hpp"
 #include "Materials/MicrostructureModel.hpp" //modiftf 
+#include "Read_MPM/RPM.hpp" //modiftf #hardcodedheat
 
 // global
 bool ConductionTask::frictionalHeating=FALSE; //modiftf #frictionalheating
+bool ConductionTask::hardCodedHeat=FALSE; //modiftf #hardcodedheat
 bool ConductionTask::active=FALSE;
 bool ConductionTask::crackTipHeating=FALSE;
 bool ConductionTask::energyCoupling=FALSE;
@@ -187,6 +189,73 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double s
    
 	}
 	//modiftf #frictionalheating
+	
+	//modiftf #hardcodedheat
+	if(hardCodedHeat)
+	{
+		// Variable power input
+			double revpm = 900;						// Change this for various radial velocities
+			double WW = (revpm*2*PI_CONSTANT)/60;
+		
+		// find tore from shear stress:
+			Tensor *particleStress = mptr->GetStressTensor();
+			//double Tore = particleStress->yy; //what is the shear stress term?
+			//double Tore = 13.2e6;
+			double rho=theMaterials[mptr->MatID()]->rho;
+			double Tore = mptr->yieldC*rho/sqrt(3); // The shear yield stress (Pascals)
+		
+		// find position of particle relative to tool centre
+			double X=mptr->pos.x-rotator->getxCentre();		// to store relative x position
+			double Y=mptr->pos.y-rotator->getyCentre();		// to store relative y position
+			//double Z=mptr->pos.z;							// to store relative z position
+			double Z=mptr->pos.z-rotator->getzDepth();
+			
+			// for Convective Flux
+			double XX = mptr->pos.x;
+			double YY = mptr->pos.y;
+			
+			// For Radial Input Power
+			double r2 = (pow(Y,2)+pow(X,2));
+			double r1 = sqrt(r2)*(1.0e-1)/(0.1);  // account for radius stored in mm->cm and particle spacing (cm).
+
+			// for varibale power use below:
+			double inpower = Tore*WW*1e-6*r1;
+			
+			
+			
+			// 
+			if(Z>=-0.5&&Z<3.5)	 // pin heat flux
+			{	if((r2)<=(pow(2.5,2))) // 0.5 + outside radius of pin EDIT FOR PIN RADIUS
+				{	ndpt->fcond+=mptr->volume*inpower*sh;}
+				//cout << "1. pos.z: " << mptr->pos.z << " tool z depth: " << rotator->getzDepth() << endl;}
+			}
+			
+			else if(Z>=3.5)	// Just under Shoulder begins EDIT FOR HEIGHT OF PIN
+			{	if((r2)<=(pow(6.5,2))) // Exact radius of Shoulder EDIT FOR SHOULDER RADIUS
+				{	ndpt->fcond+=mptr->volume*inpower*sh;}
+				//cout << "2. pos.z: " << mptr->pos.z << " tool z depth: " << rotator->getzDepth() << endl;}
+			}
+		
+			
+			// Convective Flux at sides and top -> 15W/m2 = 15e-4W/cm2 -> 15e-3W/cm^3. As this is a coefficient * temperature difference, where 22 is room temp.
+			
+			// version John Mikhail (JM)			
+			//if(XX<1.5||XX>200.5||YY<0.5||YY>49.5||Z>7.5)
+			//{	ndpt->fcond-=mptr->volume*0.015*sh*(mptr->pTemperature-24);	// V * q * S, where q (J/s-cm^3), V(mm^3), S(dimensionless).
+				//cout << mptr->pos.x << " " << mptr->pos.y << " " << mptr->pos.z << endl;
+			//}
+			
+				
+			// Backing Plate
+			// version John Mikhail (JM) and Sri Lathabai (SL)
+			//if(Z<2.5) //<2
+			//{	ndpt->fcond-=mptr->volume*0.5*sh*(mptr->pTemperature-24);	// V * q * S, where q (J/s-cm^3), V(mm^3), S(dimensionless).
+				//cout << mptr->pos.x << " " << mptr->pos.y << " " << mptr->pos.z << endl;
+			//}	
+	
+	}
+	// modiftf #hardcodedheat
+	
 	// if on boundary, get boundary force
 	
 	// next task

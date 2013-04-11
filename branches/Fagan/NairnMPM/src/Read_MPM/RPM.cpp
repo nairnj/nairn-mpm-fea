@@ -22,7 +22,9 @@ Rpm::Rpm()
 {
 	rpmApplied=TRUE;
 	simTime=0.0;
-	xcentre=ycentre=zcentre=0.0;
+	xcentre=zcentre=0.0; 					// initial position of x centre EDIT
+	ycentre = 0.0; 							// initial position of y centre EDIT
+	zDepth = 6.0;							// initial position of bottom of pin EDIT
 	rpm=materialID=0.0;
 	velSet.x=velSet.y=velSet.z=0.0;
 	simTime=0.0;
@@ -109,24 +111,29 @@ void Rpm::AddRPM3(double &posy, double &posx, Vector *vel, MPMBase *mptr, double
 
 	// untab the "EDIT" regions for 3D FSP...
 	
-	// 2D
-	vel->x=velSet.x;						// reset velocities
-	vel->y=velSet.y;
+	// 2D EDIT
+	//vel->x=velSet.x;						// reset velocities
+	//vel->y=velSet.y;
 
 	
-	// 3D
-	//vel->x=0;						// zero velocities
-	//vel->y=0;
-	//vel->z=0;
+	// 3D EDIT
+	vel->x=0;						// zero velocities
+	vel->y=0;
+	vel->z=0;
 	
 	
 	// EDIT FOR PLUNGE AND DWELL **************************
-	//if(timer>timestep&&timer<=4*timestep) //create plunge stage
-	//		vel->z=-400e5;
+	//if(timer>timestep&&timer<=516*timestep) //create plunge stage 0.5 res
+	//if(timer>timestep&&timer<=1031*timestep) //create plunge stage 1.0 res
+	if(timer>timestep&&timer<=103*timestep) //create plunge stage 1.0 res with ^5 density
+		vel->z=-1000;
+			
 									// difference in time between the two is dwell stage
 	// EDIT FOR TRANSLATION *******************************
-	//if(timer>=7*timestep)			// create translate stage
-	//		vel->x=20e5;
+	//if(timer>=550*timestep)			// create translate stage
+	//if(timer>=1100*timestep)			// create translate stage
+	//if(timer>=110*timestep)			// create translate stage
+			vel->x=100;
 	
 	vel->x-=phi*sy;					// add new velocity vector for rotation
 	vel->y+=phi*sx;
@@ -144,16 +151,23 @@ void Rpm::SetVel(Vector VelGen)
 
 void Rpm::UpdateCentre(double timestep)
 {
-	// 2D no plunge or dwell
-	xcentre+=(timestep*velSet.x);
-	ycentre+=(timestep*velSet.y);
+	// 2D no plunge or dwell (tab out for 3D)
+	//xcentre+=(timestep*velSet.x);
+	//ycentre+=(timestep*velSet.y);
 	
-	// 3D FSP with plunge or dwell
+	//Keep in mind, currently with 3D sims, the rotating piece must start at (0,0)
+	
+	// 3D FSP with plunge or dwell (tab out for 2D)
 	// must be calculated as the velocity in x is changed for translation stage. 
 	// change times for translation stage above
 	// EDIT FOR TRANSLATION *******************************
-	//if(rotator->simTime>=7*timestep)
-	//		xcentre+=(timestep*20e5);
+	//if(rotator->simTime>=550*timestep)
+	//if(rotator->simTime>=1100*timestep)
+	if(rotator->simTime<=103*timestep)
+			zDepth -=(timestep*1000);
+			
+	if(rotator->simTime>=110*timestep)
+			xcentre+=(timestep*100);
 }
 
 void Rpm::LogTime(double currentTime)
@@ -161,5 +175,8 @@ void Rpm::LogTime(double currentTime)
 	simTime=currentTime;
 }
 
-
+// function for #hardcodedheat in ConductionTask.cpp
+double Rpm::getxCentre(){return xcentre;}
+double Rpm::getyCentre(){return ycentre;}
+double Rpm::getzDepth(){return zDepth;}
 

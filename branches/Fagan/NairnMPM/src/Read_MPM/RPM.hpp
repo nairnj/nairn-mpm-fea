@@ -17,7 +17,7 @@ class Rpm
         double thick;
 		static bool rpmApplied;
 		double phi, sx, sy, rotx, roty;
-		double xcentre, ycentre, zcentre;
+		double xcentre, ycentre, zcentre, zDepth;
 		double rpm, materialID;
 		Vector velSet;
 		double simTime;
@@ -38,7 +38,9 @@ class Rpm
 		void SetVel(Vector);
 		void UpdateCentre(double);
 		void LogTime(double);
-
+		double getxCentre(void);
+		double getyCentre(void);
+		double getzDepth(void);
 
 };
 

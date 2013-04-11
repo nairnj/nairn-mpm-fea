@@ -311,7 +311,12 @@ void IsoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvz
     // Calculate plastic potential f = ||s|| - sqrt(2/3)*sy(alpha,rate,...)
 	UpdateTrialAlpha(mptr,np,(double)0.,(double)1.);			// initialize to last value
 	double strial = GetMagnitudeS(&stk,np);
+	//debugtf
+	if(mptr->currentParticleNum==60290&&alpint>1.8)
+		cout << " START ftrial Check ********************* START ftrial Check" << endl; //debugtf
 	double ftrial = strial - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime);
+	if(mptr->currentParticleNum==60290&&alpint>1.8)
+		cout << " END ftrial Check ******************* END ftrial Check" << endl; //debugtf
 	if(ftrial<0.)
 	{	// elastic, update stress and strain energy as usual
 	
@@ -530,8 +535,12 @@ double IsoPlasticity::SolveForLambda(MPMBase *mptr,int np,double strial,Tensor *
 		}
 	}
 	else
-	{	while(true)
+	{	if(mptr->currentParticleNum==60290&&alpint>1.8)
+			cout << "START Solve for Lambda ********************* START Solve for Lambda" << endl; //debugtf
+		while(true)
 		{	// update iterative variables (lambda, alpha)
+			if(mptr->currentParticleNum==60290&&alpint>1.8)
+				cout << " Solve for Lambda Step = " << step << " ********************* Solve for Lambda Step = " << step << endl; //debugtf
 			double glam = -SQRT_TWOTHIRDS*GetYield(mptr,np,delTime) + strial - 2*Gred*lambdak;
 			double slope = -2.*Gred - GetKPrime(mptr,np,delTime);
 			double delLam = -glam/slope;
@@ -541,6 +550,8 @@ double IsoPlasticity::SolveForLambda(MPMBase *mptr,int np,double strial,Tensor *
 			// check for convergence
 			if(LambdaConverged(step++,lambdak,delLam)) break;
 		}
+		if(mptr->currentParticleNum==60290&&alpint>1.8)
+			cout << "END Solve for Lambda ********************* END Solve for Lambda" << endl; //debugtf
 	}
 	return lambdak;
 }
@@ -606,8 +617,12 @@ double IsoPlasticity::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial
         }
 	}
 	else
-	{	while(true)
+	{	if(mptr->currentParticleNum==60290&&alpint>1.8)
+			cout << "START Solve for Lambda Bracketed ********************* START Solve for Lambda Bracketed" << endl; //debugtf
+		while(true)
         {	// update iterative variables (lambda, alpha)
+			if(mptr->currentParticleNum==60290&&alpint>1.8)
+				cout << " Solve for Lambda Bracketed, Step = " << step << " ********************* Solve for Lambda Bracketed, Step = " << step << endl; //debugtf
             double glam = strial - 2*Gred*lambdak - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime);
             double slope = -2.*Gred - GetKPrime(mptr,np,delTime);
             
@@ -632,7 +647,11 @@ double IsoPlasticity::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial
 			// rerun to store history variables for Microstructure Material
 			if(LambdaConverged(step,lambdak,dx)) 
 			{	saving=TRUE;
+				if(mptr->currentParticleNum==60290&&alpint>1.8)
+					cout << " START SAVING VALUES **************************** START SAVING VALUES " << endl; //debugtf
 				double updating = GetYield(mptr,np,delTime);
+				if(mptr->currentParticleNum==60290&&alpint>1.8)
+					cout << " END SAVING VALUES **************************** END SAVING VALUES " << endl; //debugtf
 				saving=FALSE;
 			} //modiftf
             if(LambdaConverged(step++,lambdak,dx)) break;
@@ -658,7 +677,7 @@ double IsoPlasticity::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial
 void IsoPlasticity::BracketSolution(MPMBase *mptr,int np,double strial,Tensor *stk,double delTime,
                                         double *lamNeg,double *lamPos)
 {
-    double epdot = 1.,gmax;
+    double epdot = 1.,gmax; //modiftf changed from 1 to 0.0001
     int step=0;
     
     // take lambda = 0 as positive limit (to start)
@@ -693,10 +712,14 @@ void IsoPlasticity::BracketSolution(MPMBase *mptr,int np,double strial,Tensor *s
     else
     {   // find when strial 2 GRed sqrt(3/2) dalpha - sqrt(2/3)GetYield(alpha+dalpha,dalpha)
         // becomes negative
-        while(step<20)
+		if(mptr->currentParticleNum==60290&&alpint>1.8)
+			cout << "START to Bracket Solution ********************* START to Bracket Solution" << endl; //debugtf
+        while(step<20) //modiftf changed from 20 to 70
         {   // try above
             dalpha = epdot*delTime;
             alpint = mptr->GetHistoryDble() + dalpha;
+			if(mptr->currentParticleNum==60290&&alpint>1.8)
+				cout << " Bracketing Solution, Step = " << step << " ********************* Bracketing Solution, Step = " << step << endl; //debugtf
             gmax = strial - 2*Gred*dalpha/SQRT_TWOTHIRDS - SQRT_TWOTHIRDS*GetYield(mptr,np,delTime) ;
             if(gmax<0.) break;
         
@@ -705,12 +728,29 @@ void IsoPlasticity::BracketSolution(MPMBase *mptr,int np,double strial,Tensor *s
             epdot *= 10.;
             step++;
         }
+		if(mptr->currentParticleNum==60290&&alpint>1.8)
+			cout << "END Bracketing Solution ********************* END Bracketing Solution" << endl; //debugtf
     }
     
     // exception if did not find answer in 20 orders of magnitude in strain rate
-    if(step>=20)
-        throw CommonException("Plasticity solution could not be bracketed","IsoPlasticity::BracketSolution");
-    
+    if(step>=20) //modiftf changed from 20 to 70
+        {	cout << "Particle Number " << mptr->currentParticleNum << endl;
+			cout << "rhoC " << mptr->archiverhoC << endl;
+			cout << "rhoW " << mptr->archiverhoW << endl;
+			cout << "cum. strain " << alpint << endl;
+			cout << "strain rate " << dalpha/delTime << endl;
+			cout << "epdot " << epdot << endl;
+			cout << "yieldC " << mptr->yieldC << endl;
+			cout << "yieldP " << mptr->yieldP << endl;
+			cout << "pPreviousTemperature " << mptr->pPreviousTemperature << endl;
+			cout << "strial " << strial << endl;
+			cout << "2*Gred*dalpha/SQRT_TWOTHIRDS " << 2*Gred*dalpha/SQRT_TWOTHIRDS << endl;
+			cout << "1) GetYield(mptr,np,delTime) " << GetYield(mptr,np,delTime) << endl;
+			//boolean checking = TRUE;
+			cout << "2) GetYield(mptr,np,delTime) " << GetYield(mptr,np,delTime) << endl;
+		throw CommonException("Plasticity solution could not be bracketed","IsoPlasticity::BracketSolution");
+    } // modiftf for debugging
+	
     // set upper limits
     *lamNeg = dalpha/SQRT_TWOTHIRDS;
     
