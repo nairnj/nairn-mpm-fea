@@ -909,6 +909,17 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	}
 	//modiftf #frictionalheating ***********
 	
+	//modiftf #hardcodedheat ***********
+	// Turn on hard coded heating
+    else if(strcmp(xName,"HardCodedHeat")==0)
+	{	ValidateCommand(xName,THERMAL,ANY_DIM);
+		ConductionTask::hardCodedHeat=TRUE;
+	}
+	//modiftf #hardcodedheat ***********
+	
+	
+	
+	
     //-------------------------------------------------------
     // <Gravity> section
 	

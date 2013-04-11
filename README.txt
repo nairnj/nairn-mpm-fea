@@ -3,7 +3,7 @@ This version of NairnMPM includes:
 Rotation of a cylinder(3D) or circle (2D)
 Dislocation Based material model
 work based frictional heating
-
+hard coded heat input
 
 
 To upload modified documents to the branch:
@@ -31,3 +31,11 @@ for the gpu cluster on CSIRO
 To download the code to a new location:
 
 svn checkout https://nairn-mpm-fea.googlecode.com/svn/branches/Fagan nairn-mpm-fea-Fagan --username timcfagan@gmail.com.
+
+To extract the ExtractMPM file go to NairnMPM/tools then type:
+
+g++ -o ExtractMPM ExtractMPM.cpp
+
+or if on cluster
+
+g++ -o ExtractMPM ExtractMPM_Cluster.cpp
