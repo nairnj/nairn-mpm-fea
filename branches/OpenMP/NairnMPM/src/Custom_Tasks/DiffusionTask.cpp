@@ -37,8 +37,8 @@ DiffusionTask *diffusion=NULL;
 // Constructors
 DiffusionTask::DiffusionTask()
 {	// allocate diffusion data on each particle
-    int p;
-	for(p=0;p<nmpmsNR;p++)
+    // done before know number of nonrigid, so do on all
+	for(int p=0;p<nmpms;p++)
 		mpm[p]->AllocateDiffusion();
 }
 
@@ -127,21 +127,23 @@ void DiffusionTask::ImposeValueBCs(double stepTime)
 // Get gradients in Vp * cp on particles
 TransportTask *DiffusionTask::GetGradients(double stepTime)
 {
-	int numnds,nds[maxShapeNodes];
+	int nds[maxShapeNodes];
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
 	// Find gradients on the nonrigid particles
-#pragma omp parallel for private(numnds,nd,fn,xDeriv,yDeriv,zDeriv)
+#pragma omp parallel for private(nd,fn,xDeriv,yDeriv,zDeriv)
     for(int p=0;p<nmpmsNR;p++)
 	{	// find shape functions and derviatives
+        MPMBase *mptr = mpm[p];
 		const ElementBase *elref = theElements[mpm[p]->ElemID()];
-		elref->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
+        int i,numnds;
+		elref->GetShapeGradients(&numnds,fn,nds,mptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mptr);
 		
 		// Find gradients from current concentrations
-		mpm[p]->AddConcentrationGradient();			// zero gradient on the particle
-		for(int i=1;i<=numnds;i++)
+		mptr->AddConcentrationGradient();			// zero gradient on the particle
+		for(i=1;i<=numnds;i++)
 		{	Vector deriv=MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
-			mpm[p]->AddConcentrationGradient(ScaleVector(&deriv,nd[nds[i]]->gConcentration));
+			mptr->AddConcentrationGradient(ScaleVector(&deriv,nd[nds[i]]->gConcentration));
 		}
 	}
 	
@@ -149,21 +151,15 @@ TransportTask *DiffusionTask::GetGradients(double stepTime)
 }
 
 // find forces for diffusion calculation (mm^3/sec) (non-rigid particles only)
-TransportTask *DiffusionTask::AddForces(double *fdiffBuffer,MPMBase *mptr,double sh,double dshdx,
+TransportTask *DiffusionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double sh,double dshdx,
 										double dshdy,double dshdz,TransportProperties *t)
 {
 	// internal force
-	*fdiffBuffer = mptr->FDiff(dshdx,dshdy,dshdz,t);
+	ndptr->fdiff += mptr->FDiff(dshdx,dshdy,dshdz,t);
 	
 	// add source terms (should be potential per sec, if c units per second, divide by concSaturation)
 	
 	// return next task
-	return nextTask;
-}
-
-// copy force from buffer to node
-TransportTask *DiffusionTask::AddForcesFromBuffer(NodalPoint *ndptr,double fdiff)
-{	ndptr->fdiff += fdiff;
 	return nextTask;
 }
 

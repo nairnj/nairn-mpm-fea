@@ -28,12 +28,6 @@ typedef struct {
 	Vector Dc;			// conc potential gradient (archived * concSaturation)
 } DiffusionField;
 
-// buffer for grid forces
-typedef struct {
-	int nodeNum;
-	double *forces;
-} GridForceBuffer;
-
 class MPMBase : public LinkedObject
 {
     public:
@@ -44,7 +38,6 @@ class MPMBase : public LinkedObject
 		char *vfld;
 		TemperatureField *pTemp;
 		DiffusionField *pDiffusion;
-		GridForceBuffer *gFrc;
 	
 		// constants (not changed in MPM time step)
         double mp;
@@ -58,7 +51,6 @@ class MPMBase : public LinkedObject
 		void AllocateTemperature(void);
 		void AllocateJStructures(void);
         bool AllocateCPDIStructures(int,bool);
-		bool AllocateGridForceBuffers(int);
     
         // virtual methods
         virtual double thickness(void) = 0;
@@ -66,14 +58,14 @@ class MPMBase : public LinkedObject
         virtual void SetPosition(Vector *) = 0;
         virtual void SetVelocity(Vector *) = 0;
 		virtual void UpdateStrain(double,int,int,void *,int) = 0;
-		virtual void GetFintPlusFext(int,int,double,double,double,double) = 0;
+		virtual void GetFintPlusFext(Vector *,double,double,double,double) = 0;
         virtual void MovePosition(double,Vector *) = 0;
         virtual void MoveVelocity(double,double,Vector *) = 0;
 		virtual void SetVelocitySpeed(double) = 0;
-		virtual void AddTemperatureGradient(void) = 0;
+		virtual void AddTemperatureGradient(void);
 		virtual void AddTemperatureGradient(Vector *) = 0;
 		virtual double FCond(double,double,double,TransportProperties *) = 0;
-		virtual void AddConcentrationGradient(void) = 0;
+		virtual void AddConcentrationGradient(void);
 		virtual void AddConcentrationGradient(Vector *) = 0;
 		virtual double FDiff(double,double,double,TransportProperties *) = 0;
 		virtual double KineticEnergy(void) = 0;

@@ -70,7 +70,6 @@ class NodalPoint : public LinkedObject
 		void AddVolumeGradient(short,int,MPMBase *,double,double,double);
 	
 		void AddFtotTask3(short,int,Vector *);
-		void AddFtotFromBuffer(short,int,double *);
 		void AddFtotSpreadTask3(short,Vector);
 		void AddTractionTask3(MPMBase *,int,Vector *);
 		void AddGridDampingTask3(double);

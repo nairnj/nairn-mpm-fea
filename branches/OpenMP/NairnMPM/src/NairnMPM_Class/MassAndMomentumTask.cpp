@@ -113,7 +113,7 @@ void MassAndMomentumTask::Execute(void)
 		int matfld = matID->GetField();									// material velocity field
 		
 		// get nodes and shape function for material point p
-		int numnds;
+		int i,numnds;
 		const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
 		if(fmobj->multiMaterialMode)
 		{	elref->GetShapeFunctionsAndGradients(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),
@@ -123,11 +123,11 @@ void MassAndMomentumTask::Execute(void)
 			elref->GetShapeFunctions(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),mpmptr);
 		
 		// Add particle property to each node in the element
-		for(int i=1;i<=numnds;i++)
-		{	NodalPoint *ndptr = nd[nds[i]];				// get pointer
+		for(i=1;i<=numnds;i++)
+        {   NodalPoint *ndptr = nd[nds[i]];				// get pointer
 			short vfld;
 			CrackField *cfldptr;
-			
+            
 			// Regular MPM, adds to velocity field 0
 			if(firstCrack==NULL)
 			{	cfldptr = NULL;
@@ -163,21 +163,14 @@ void MassAndMomentumTask::Execute(void)
 				
 			}
 			
-			// add momentum(3)
-			// if(firstCrack==NULL && maxMaterialFields==1) displacement(3) volume(1)
-			// if(if(fmobj->multiMaterialMode) volume gradient(3)
-			// mass (1)
-			// transport tasks (2 each active)
-			
 			// momentum vector (and allocate velocity field if needed)
-			// changes ndptr and therefore only one thread at a time
 			vfld = ndptr->AddMomentumTask1(matfld,cfldptr,fn[i]*mp,&mpmptr->vel);
 			mpmptr->vfld[i] = vfld;
 			
-			// crack contact calculations
+			// crack contact calculations (only if cracks or multimaterial mode)
 			contact.AddDisplacementVolume(vfld,matfld,ndptr,mpmptr,fn[i]);
 			
-			// material contact calculations
+ 			// material contact calculations (only if multimaterial mode)
 			ndptr->AddVolumeGradient(vfld,matfld,mpmptr,xDeriv[i],yDeriv[i],zDeriv[i]);
 			
 			// more for non-rigid contact materials
@@ -196,7 +189,7 @@ void MassAndMomentumTask::Execute(void)
 			}
 		}
 	}
-		
+    
 	// undo dynamic velocity, temp, and conc BCs from rigid materials
 	UnsetRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 				  (BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
@@ -305,12 +298,12 @@ void MassAndMomentumTask::Execute(void)
 			
 			// Get total nodal masses and count materials if multimaterial mode
 			ndptr->CalcTotalMassAndCount();
-		
-	#ifdef COMBINE_RIGID_MATERIALS
+
+#ifdef COMBINE_RIGID_MATERIALS
 			// combine rigid fields if necessary
 			if(combineRigid)
 				ndptr->CombineRigidParticles()
-	#endif
+#endif
 			// multimaterial contact
 			if(fmobj->multiMaterialMode)
 				ndptr->MaterialContactOnNode(timestep,FALSE,&firstInterfaceNode,&lastInterfaceNode);
@@ -342,19 +335,17 @@ void MassAndMomentumTask::Execute(void)
 			}
 		}
 	}
-	
+    
 	// Impose transport BCs and extrapolate gradients to the particles
 	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
-	{	nextTransport->ImposeValueBCs(mtime);
+    {   nextTransport->ImposeValueBCs(mtime);
 		nextTransport = nextTransport->GetGradients(mtime);
 	}
 	
 	// used to call class methods for material contact and crack contact here
-	
 	// Impose velocity BCs
 	NodalVelBC::GridMomentumConditions(TRUE);
-	
 }
 
 // Set boundary conditions determined by moving rigid paticles

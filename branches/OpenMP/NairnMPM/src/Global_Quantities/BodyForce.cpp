@@ -60,14 +60,14 @@ BodyForce::~BodyForce()
 }
 
 // If gravity add to material point force buffer
-void BodyForce::AddGravity(double mp,double wt,double *mpFrc)
+void BodyForce::AddGravity(Vector *theFrc,double mp,double wt)
 {
 	if(!gravity) return;
 	
 	double gscale = mp*wt;
-	mpFrc[0] += gscale*gforce.x;
-	mpFrc[1] += gscale*gforce.y;
-	mpFrc[2] += gscale*gforce.z;
+	theFrc->x += gscale*gforce.x;
+	theFrc->x += gscale*gforce.y;
+	theFrc->x += gscale*gforce.z;
 }
 
 // the damping

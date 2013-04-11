@@ -34,7 +34,7 @@ void NodesController::AddNode(double x,double y,double z,double temp)
 	else
 		newNode=new NodalPoint2D(numObjects+1,x,y);
 	AddObject(newNode);
-	newNode->gTemperature=temp;
+	newNode->gTemperature = temp;
 }
 
 // assemble into array used in the code

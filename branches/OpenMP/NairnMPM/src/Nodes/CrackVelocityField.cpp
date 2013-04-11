@@ -96,9 +96,6 @@ void CrackVelocityField::AddVolumeGradient(int matfld,MPMBase *mptr,double dNdx,
 // Add to internal force
 void CrackVelocityField::AddFtotTask3(int matfld,Vector *f) { mvf[matfld]->AddFtot(f); }
 
-// Add to internal force
-void CrackVelocityField::AddFtotFromBuffer(int matfld,double *f) { mvf[matfld]->AddFtotFromBuffer(f); }
-
 #pragma mark TASK 5 METHODS
 
 // Increment velocity and acceleration for this material point using one velocity field which must be there

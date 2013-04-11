@@ -55,10 +55,10 @@ void GridForcesTask::Execute(void)
 	
 	// loop over non-rigid particles - this parallel part changes only particle p
 	// forces are stored on buffer, which are sent to nodes in next non-parallel loop
-#pragma omp parallel for private(t,numnds,nds,fn,xDeriv,yDeriv,zDeriv)
     for(int p=0;p<nmpmsNR;p++)
 	{	MPMBase *mpmptr=mpm[p];											// material point pointer
 		const MaterialBase *matref = theMaterials[mpmptr->MatID()];		// material class (read only)
+        int matfld = matref->GetField(); 
 		
 		// get transport tensors (if needed)
 		if(transportTasks!=NULL)
@@ -70,53 +70,31 @@ void GridForcesTask::Execute(void)
 		mpmptr->vfld[0] = numnds;			// save number of nodes
 		
         // Add particle property to buffer on the material point (needed to allow parallel code)
+        short vfld;
+        NodalPoint *ndptr;
         for(int i=1;i<=numnds;i++)
-		{	// total force vector = internal + external forces
+		{	vfld = (short)mpmptr->vfld[i];					// crack velocity field to use
+			ndptr = nd[nds[i]];								// nodal point pointer
+            
+			// total force vector = internal + external forces
 			//	(in g mm/sec^2 or micro N)
-			int i0 = i-1;
-			mpmptr->GetFintPlusFext(i0,nds[i],fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
+            Vector theFrc;
+			mpmptr->GetFintPlusFext(&theFrc,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
             
             // add body forces
-			bodyFrc.AddGravity(mpmptr->mp,fn[i],mpmptr->gFrc[i0].forces);
+			bodyFrc.AddGravity(&theFrc,mpmptr->mp,fn[i]);
+            
+            // add to total force
+            ndptr->AddFtotTask3(vfld,matfld,&theFrc);
 			
 			// transport forces
-			if(transportTasks!=NULL)
-			{	double *transportForce = &(mpmptr->gFrc[i0].forces[2]);
-				TransportTask *nextTransport=transportTasks;
-				while(nextTransport!=NULL)
-				{	transportForce++;
-					nextTransport=nextTransport->AddForces(transportForce,mpmptr,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],&t);
-				}
-			}
+            TransportTask *nextTransport=transportTasks;
+            while(nextTransport!=NULL)
+                nextTransport=nextTransport->AddForces(ndptr,mpmptr,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],&t);
         }
 		
 		// clear coupled dissipated energy if in conduction becaouse done with it this time step
 		if(ConductionTask::active) mpmptr->SetDispEnergy(0.);
-	}
-	
-	// Now that parallel loop is over, sweep nonrigid particle buffers onto the nodes
-	for(int p=0;p<nmpmsNR;p++)
-	{	MPMBase *mpmptr=mpm[p];											// material point pointer
-		const MaterialBase *matref = theMaterials[mpmptr->MatID()];		// material class (read only)
-		int matfld = matref->GetField();								// material field
-		
-        // Add particle property to each node in the element
-		numnds = (int)mpmptr->vfld[0];
-        for(int i=0;i<numnds;i++)
-		{	short vfld = (short)mpmptr->vfld[i+1];								// crack velocity field to use
-			NodalPoint *ndptr = nd[mpmptr->gFrc[i].nodeNum];					// nodal point pointer
-			ndptr->AddFtotFromBuffer(vfld,matfld,mpmptr->gFrc[i].forces);
-			
-			// transport forces
-			if(transportTasks!=NULL)
-			{	double *transportForce = &(mpmptr->gFrc[i].forces[2]);
-				TransportTask *nextTransport=transportTasks;
-				while(nextTransport!=NULL)
-				{	transportForce++;
-					nextTransport=nextTransport->AddForcesFromBuffer(ndptr,*transportForce);
-				}
-			}
-		}
 	}
 	
 	// Add traction BCs on particles

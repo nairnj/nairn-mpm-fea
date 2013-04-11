@@ -40,12 +40,6 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
     for(i=1;i<maxShapeNodes;i++)
         vfld[i]=NO_CRACK;
 	
-	// space to hold grid forces in a buffer
-	// size per particle is (4+8f)*(maxShapeNodes-1) where f is number of force in buffer
-	// e.g., 3D GIMP, f=5 gives 44*27 = 1188 bytes (i.e., 10 GB for 10 million particles)
-	// 3.g., 3D GIMP, f=13 gives 108*27 = 2916 bytes (i.e., 30 GB for 10 million particles)
-	gFrc = (GridForceBuffer *)malloc((maxShapeNodes-1)*sizeof(GridForceBuffer));
-        
     // zero stresses and strains
 	ZeroTensor(&sp);
     pressure = 0.;
@@ -145,21 +139,6 @@ bool MPMBase::AllocateCPDIStructures(int gimpType,bool isThreeD)
         
 }
 
-// allocate buffer for grid force extrapolation
-bool MPMBase::AllocateGridForceBuffers(int numTransport)
-{
-	int numForces = 3+numTransport;
-	
-    // create memory for force buffers
-	for(int i=0;i<maxShapeNodes-1;i++)
-    {	gFrc[i].forces = (double *)malloc(numForces*sizeof(double));
-		if(gFrc[i].forces == NULL) return FALSE;
-	}
-	
-	return TRUE;
-}
-
-
 // Destructor (and it is virtual)
 MPMBase::~MPMBase() { }
 
@@ -216,6 +195,20 @@ void MPMBase::SetConcentration(double pConc,double pRefConc)
 void MPMBase::SetTemperature(double pTempSet,double pRefTemp)
 {	pTemperature=pTempSet;
 	pPreviousTemperature=pRefTemp;
+}
+
+// zero the temperature gradient (non-rigid particles only)
+void MPMBase::AddTemperatureGradient(void)
+{   pTemp->DT.x=0.;
+    pTemp->DT.y=0.;
+	pTemp->DT.z=0.;
+}
+
+// zero the concentration gradient
+void MPMBase::AddConcentrationGradient(void)
+{	pDiffusion->Dc.x=0.;
+    pDiffusion->Dc.y=0.;
+    pDiffusion->Dc.z=0.;
 }
 
 // material ID (convert to zero based)

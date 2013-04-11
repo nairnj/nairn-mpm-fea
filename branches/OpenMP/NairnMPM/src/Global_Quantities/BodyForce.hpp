@@ -36,7 +36,7 @@ class BodyForce
     
         // methods
 		void Activate(void);
-		void AddGravity(double,double,double *);
+		void AddGravity(Vector *,double,double);
 		double GetDamping(double);
 		void Output(void);
 		double GetAlpha(void);

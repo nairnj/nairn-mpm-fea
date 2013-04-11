@@ -61,8 +61,8 @@ ConductionTask *conduction=NULL;
 // Constructors
 ConductionTask::ConductionTask()
 {	// allocate diffusion data on each particle
-    int p;
-	for(p=0;p<nmpmsNR;p++)
+    // done before known number of nonrigid, so do on all
+	for(int p=0;p<nmpms;p++)
 		mpm[p]->AllocateTemperature();
 }
 
@@ -129,10 +129,10 @@ TransportTask *ConductionTask::TransportTimeStep(int matid,double dcell,double *
 
 // Task 1 Extrapolation of concentration to the grid
 TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape)
-{	double Cp=theMaterials[mptr->MatID()]->GetHeatCapacity(mptr);   // mJ/(g-K)
-	double arg = mptr->mp*Cp*shape;                                 // mJ/K
-	ndpt->gTemperature+=mptr->pTemperature*arg;                     // mJ
-	ndpt->gMpCp+=arg;                                               // mJ/K
+{	double Cp = theMaterials[mptr->MatID()]->GetHeatCapacity(mptr);   // mJ/(g-K)
+	double arg = mptr->mp*Cp*shape;                                   // mJ/K
+	ndpt->gTemperature += mptr->pTemperature*arg;                     // mJ
+	ndpt->gMpCp += arg;                                               // mJ/K
 	return nextTask;
 }
 
@@ -159,15 +159,15 @@ void ConductionTask::ImposeValueBCs(double stepTime)
     nextBC=firstTempBC;
     while(nextBC!=NULL)
 	{   i=nextBC->GetNodeNum(mstime);
-		if(i!=0) nd[i]->gTemperature=0.;
+		if(i!=0) nd[i]->gTemperature = 0.;
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
     }
 	
     // Now add all temperature to nodes with temperature BCs
     nextBC=firstTempBC;
     while(nextBC!=NULL)
-	{   i=nextBC->GetNodeNum(mstime);
-		if(i!=0) nd[i]->gTemperature+=nextBC->BCValue(mstime);
+	{   i = nextBC->GetNodeNum(mstime);
+		if(i!=0) nd[i]->gTemperature += nextBC->BCValue(mstime);
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
     }
 }
@@ -175,21 +175,23 @@ void ConductionTask::ImposeValueBCs(double stepTime)
 // Task 1b - get gradients in Vp * cp on particles
 TransportTask *ConductionTask::GetGradients(double stepTime)
 {
-	int numnds,nds[maxShapeNodes];
+	int nds[maxShapeNodes];
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
 	// Find gradients on the nonrigid particles
-#pragma omp parallel for private(numnds,nds,fn,xDeriv,yDeriv,zDeriv)
+#pragma omp parallel for private(nds,fn,xDeriv,yDeriv,zDeriv)
     for(int p=0;p<nmpmsNR;p++)
 	{	// find shape functions and derviatives
-		const ElementBase *elref = theElements[mpm[p]->ElemID()];
-		elref->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
+        MPMBase *mptr = mpm[p];
+		const ElementBase *elref = theElements[mptr->ElemID()];
+        int i,numnds;
+		elref->GetShapeGradients(&numnds,fn,nds,mptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mptr);
 		
 		// Find gradients from current temperatures
-		mpm[p]->AddTemperatureGradient();			// zero gradient on the particle
-		for(int i=1;i<=numnds;i++)
+		mptr->AddTemperatureGradient();			// zero gradient on the particle
+		for(i=1;i<=numnds;i++)
 		{	Vector deriv = MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
-			mpm[p]->AddTemperatureGradient(ScaleVector(&deriv,nd[nds[i]]->gTemperature));
+			mptr->AddTemperatureGradient(ScaleVector(&deriv,nd[nds[i]]->gTemperature));
 		}
 	}
 	
@@ -199,11 +201,11 @@ TransportTask *ConductionTask::GetGradients(double stepTime)
 #pragma mark GRID FORCES EXTRAPOLATIONS
 
 // find forces for conduction calculation (N-mm/sec = mJ/sec) (non-rigid particles only)
-TransportTask *ConductionTask::AddForces(double *fcondBuffer,MPMBase *mptr,double sh,double dshdx,
+TransportTask *ConductionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double sh,double dshdx,
 										 double dshdy,double dshdz,TransportProperties *t)
 {
 	// internal force based on conduction tensor
-	*fcondBuffer =  mptr->FCond(dshdx,dshdy,dshdz,t);
+	ndptr->fcond += mptr->FCond(dshdx,dshdy,dshdz,t);
 	
 	// add source terms
 	
@@ -211,16 +213,10 @@ TransportTask *ConductionTask::AddForces(double *fcondBuffer,MPMBase *mptr,doubl
 	if(energyCoupling)
 	{	// V * q heat energy is mp (g) * specific energy (uJ/g) = uJ
 		// To get mJ/sec, divide timestep (sec) and times 1e-3
-		*fcondBuffer += sh*1.0e-3*mptr->mp*mptr->GetDispEnergy()/timestep;
+		ndptr->fcond += sh*1.0e-3*mptr->mp*mptr->GetDispEnergy()/timestep;
 	}
 	
 	// next task
-	return nextTask;
-}
-
-// copy force from buffer to node
-TransportTask *ConductionTask::AddForcesFromBuffer(NodalPoint *ndptr,double fcond)
-{	ndptr->fcond += fcond;
 	return nextTask;
 }
 

@@ -133,20 +133,12 @@ double MatPoint2D::thickness() { return thick; }
 // add external force (times a shape function)
 // Store in buffer
 // (note: stress is specific stress in units N/m^2 cm^3/g, Multiply by 1000 to make it mm/sec^2)
-void MatPoint2D::GetFintPlusFext(int nodeID,int nodeNum,double fni,double xDeriv,double yDeriv,double zDeriv)
+void MatPoint2D::GetFintPlusFext(Vector *theFrc,double fni,double xDeriv,double yDeriv,double zDeriv)
 {	
-	gFrc[nodeID].nodeNum = nodeNum;
 	double mpug = mp*1000.;
-	gFrc[nodeID].forces[0] = -mpug*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv) + fni*pFext.x;
-	gFrc[nodeID].forces[1] = -mpug*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv) + fni*pFext.y;
-	gFrc[nodeID].forces[2] = 0.0;
-}
-
-// zero the temperature gradient (non-rigid particles only)
-void MatPoint2D::AddTemperatureGradient(void)
-{	pTemp->DT.x=0.;
-    pTemp->DT.y=0.;
-	pTemp->DT.z=0.;
+	theFrc->x = -mpug*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv) + fni*pFext.x;
+	theFrc->y = -mpug*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv) + fni*pFext.y;
+	theFrc->z = 0.0;
 }
 
 // add to the temperature gradient (non-rigid particles only)
@@ -162,13 +154,6 @@ double MatPoint2D::FCond(double dshdx,double dshdy,double dshdz,TransportPropert
 	Tensor *kten = &(t->kCondTensor);
 	return -mp*GetRelativeVolume()*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y)*dshdx
 						+ (kten->xy*pTemp->DT.x + kten->yy*pTemp->DT.y)*dshdy);
-}
-
-// zero the concentration gradient (non-rigid particles only)
-void MatPoint2D::AddConcentrationGradient(void)
-{	pDiffusion->Dc.x=0.;
-    pDiffusion->Dc.y=0.;
-	pDiffusion->Dc.z=0.;
 }
 
 // add to the concentration gradient (1/mm) (non-rigid particles only)

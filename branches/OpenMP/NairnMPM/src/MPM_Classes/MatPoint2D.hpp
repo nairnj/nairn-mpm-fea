@@ -30,14 +30,12 @@ class MatPoint2D : public MPMBase
         virtual void SetVelocity(Vector *);
         virtual double thickness(void);
 		virtual void UpdateStrain(double,int,int,void *,int);
-		virtual void GetFintPlusFext(int,int,double,double,double,double);
+		virtual void GetFintPlusFext(Vector *,double,double,double,double);
 		virtual void MovePosition(double,Vector *);
 		virtual void MoveVelocity(double,double,Vector *);
 		virtual void SetVelocitySpeed(double);
-		virtual void AddTemperatureGradient(void);
 		virtual void AddTemperatureGradient(Vector *);
 		virtual double FCond(double,double,double,TransportProperties *);
-		virtual void AddConcentrationGradient(void);
 		virtual void AddConcentrationGradient(Vector *);
 		virtual double FDiff(double,double,double,TransportProperties *);
 		virtual double KineticEnergy(void);

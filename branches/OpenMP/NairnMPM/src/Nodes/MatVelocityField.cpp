@@ -109,11 +109,6 @@ void MatVelocityField::AddFtotScaled(Vector *f,double scaled)
 	ftot.y += f->y*scaled;
 	ftot.z += f->z*scaled;
 }
-void MatVelocityField::AddFtotFromBuffer(double *f)
-{	ftot.x += f[0];
-	ftot.y += f[1];
-	ftot.z += f[2];
-}
 
 // Update momentum for this MPM step
 //  pk(i+1) = pk(i) + ftot * dt

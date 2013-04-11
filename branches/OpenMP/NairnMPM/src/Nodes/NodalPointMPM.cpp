@@ -323,9 +323,6 @@ void NodalPoint::CombineRigidParticles(void)
 // Add to internal force
 void NodalPoint::AddFtotTask3(short vfld,int matfld,Vector *f) { cvf[vfld]->AddFtotTask3(matfld,f); }
 
-// Add to internal force
-void NodalPoint::AddFtotFromBuffer(short vfld,int matfld,double *f) { cvf[vfld]->AddFtotFromBuffer(matfld,f); }
-
 // Add to internal force spread out over materials for same acceleration on each
 // Only called by AddTractionForce() and CrackInterfaceForce()
 void NodalPoint::AddFtotSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFtotSpreadTask3(&f); }

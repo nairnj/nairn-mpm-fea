@@ -24,10 +24,10 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+#include <omp.h>
 
 #ifdef _OPENMP
 #define _PARALLEL_
-#include <omp.h>
 #endif
 
 // For c++89 compliance

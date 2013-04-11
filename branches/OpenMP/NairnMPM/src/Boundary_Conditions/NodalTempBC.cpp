@@ -57,13 +57,13 @@ BoundaryCondition *NodalTempBC::PrintBC(ostream &os)
 // save nodal temperature and zero it
 NodalTempBC *NodalTempBC::CopyNodalTemperature(NodalPoint *nd)
 {
-	temperatureNoBC=nd->gTemperature;
+	temperatureNoBC = nd->gTemperature;
 	return (NodalTempBC *)GetNextObject();
 }
 
 // restore nodal temperature and get initial force to cancel no-BC result
 NodalTempBC *NodalTempBC::PasteNodalTemperature(NodalPoint *nd)
 {
-	nd->gTemperature=temperatureNoBC;
+	nd->gTemperature = temperatureNoBC;
 	return (NodalTempBC *)GetNextObject();
 }

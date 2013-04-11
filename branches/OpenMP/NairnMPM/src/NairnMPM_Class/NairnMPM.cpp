@@ -483,9 +483,6 @@ void NairnMPM::PreliminaryCalcs(void)
         if(!mpm[p]->AllocateCPDIStructures(ElementBase::useGimp,IsThreeD()))
             throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryCalcs");
 		
-		// Grid forces buffer
-		if(!mpm[p]->AllocateGridForceBuffers(numTransport))
-            throw CommonException("Out of memory allocating grid forces buffer","NairnMPM::PreliminaryCalcs");
 	}
 	
 	// reorder NonRigid followed by (Rigid Contact and Rigid BCs intermized)
@@ -549,7 +546,7 @@ void NairnMPM::PreliminaryCalcs(void)
 			p++;
 		}
 	}
-
+    
 	// multimaterial checks and contact initialization
 	if(maxMaterialFields==0 || numActiveMaterials==0)
 		throw CommonException("No material points found with an actual material","NairnMPM::PreliminaryCalcs");
@@ -566,9 +563,9 @@ void NairnMPM::PreliminaryCalcs(void)
     if(propTime<timestep) propTime=timestep;
 	
 	// create patches
-	patches = mpmgrid.CreatePatches(np,numProcs);
-    if(patches==NULL)
-		throw CommonException("Out of memory creating the patches","NairnMPM::PreliminaryCalcs");
+	//patches = mpmgrid.CreatePatches(np,numProcs);
+    //if(patches==NULL)
+	//	throw CommonException("Out of memory creating the patches","NairnMPM::PreliminaryCalcs");
 	
     // Print particle information oand other preliminary calc results
     PrintSection("FULL MASS MATRIX");

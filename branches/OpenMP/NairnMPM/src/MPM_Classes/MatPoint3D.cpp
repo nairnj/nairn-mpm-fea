@@ -123,20 +123,12 @@ double MatPoint3D::thickness() { return -1.; }
 // add external force (times a shape function)
 // store in buffer
 // (note: stress is specific stress in units N/m^2 cm^3/g, Multiply by 1000 to make it mm/sec^2)
-void MatPoint3D::GetFintPlusFext(int nodeID,int nodeNum,double fni,double xDeriv,double yDeriv,double zDeriv)
+void MatPoint3D::GetFintPlusFext(Vector *theFrc,double fni,double xDeriv,double yDeriv,double zDeriv)
 {	
-	gFrc[nodeID].nodeNum = nodeNum;
 	double mpug = mp*1000.;
-	gFrc[nodeID].forces[0] = -mpug*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+sp.xz*zDeriv) + fni*pFext.x;
-	gFrc[nodeID].forces[1] = -mpug*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv+sp.yz*zDeriv) + fni*pFext.y;
-	gFrc[nodeID].forces[2] = -mpug*(sp.xz*xDeriv+sp.yz*yDeriv+(sp.zz-pressure)*zDeriv) + fni*pFext.z;
-}
-
-// zero the temperature gradient (non-rigid particles only)
-void MatPoint3D::AddTemperatureGradient(void)
-{	pTemp->DT.x=0.;
-    pTemp->DT.y=0.;
-    pTemp->DT.z=0.;
+	theFrc->x = -mpug*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+sp.xz*zDeriv) + fni*pFext.x;
+	theFrc->y = -mpug*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv+sp.yz*zDeriv) + fni*pFext.y;
+	theFrc->z = -mpug*(sp.xz*xDeriv+sp.yz*yDeriv+(sp.zz-pressure)*zDeriv) + fni*pFext.z;
 }
 
 // add to the concentration gradient (non-rigid particles only)
@@ -153,13 +145,6 @@ double MatPoint3D::FCond(double dshdx,double dshdy,double dshdz,TransportPropert
 	return -mp*GetRelativeVolume()*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y + kten->xz*pTemp->DT.z)*dshdx
 						+ (kten->xy*pTemp->DT.x + kten->yy*pTemp->DT.y + kten->yz*pTemp->DT.z)*dshdy
 						+ (kten->xz*pTemp->DT.x + kten->yz*pTemp->DT.y + kten->zz*pTemp->DT.z)*dshdz);
-}
-
-// zero the concentration gradient
-void MatPoint3D::AddConcentrationGradient(void)
-{	pDiffusion->Dc.x=0.;
-    pDiffusion->Dc.y=0.;
-    pDiffusion->Dc.z=0.;
 }
 
 // add to the concentration gradient

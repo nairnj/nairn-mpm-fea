@@ -623,9 +623,9 @@ void ElementBase::GetProperties(int np)
     // Load nodal coordinates (in m)
     for(i=1;i<=NumberNodes();i++)
     {   ind=nodes[i-1];
-        ce[i].x=nd[ind]->x/1000.;
-        ce[i].y=nd[ind]->y/1000.;
-		te[i]=nd[ind]->gTemperature;
+        ce[i].x = nd[ind]->x/1000.;
+        ce[i].y = nd[ind]->y/1000.;
+		te[i] = nd[ind]->gTemperature;
     }
     
     /* Get mechanical properties that depend on angle

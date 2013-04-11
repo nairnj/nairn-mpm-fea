@@ -102,13 +102,12 @@ void MatPointAS::SetOrigin(Vector *pt)
 // add external force (times a shape function)
 // Store in buffer
 // (note: stress is specific stress in units N/m^2 cm^3/g, Multiply by 1000 to make it mm/sec^2)
-void MatPointAS::GetFintPlusFext(int nodeID,int nodeNum,double fni,double xDeriv,double yDeriv,double zDeriv)
+void MatPointAS::GetFintPlusFext(Vector *theFrc,double fni,double xDeriv,double yDeriv,double zDeriv)
 {
-	gFrc[nodeID].nodeNum = nodeNum;
 	double mpug = mp*1000.;
-	gFrc[nodeID].forces[0] = -mpug*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+(sp.zz-pressure)*zDeriv) + fni*pFext.x;
-	gFrc[nodeID].forces[1] = -mpug*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv) + fni*pFext.y;
-	gFrc[nodeID].forces[2] = 0.0;
+	theFrc->x = -mpug*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+(sp.zz-pressure)*zDeriv) + fni*pFext.x;
+	theFrc->y = -mpug*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv) + fni*pFext.y;
+	theFrc->z = 0.0;
 }
 
 // get dilated current volume using current deformation gradient
