@@ -1,0 +1,146 @@
+<?xml version='1.0'?>
+<!DOCTYPE JANFEAInput SYSTEM '/Users/jnairn/Programming/Cocoa_Projects/nairn-mpm-fea/NairnMPM/input/NairnMPM.dtd'
+[
+   <!ENTITY fileroot 'HPT_3D_v3/HPT.'>
+   <!ENTITY cs '0.5'>
+   <!ENTITY T0 '22'>
+   <!ENTITY temp '22'>
+   <!ENTITY rate '0'>
+   <!ENTITY time '300e3'> 
+   <!ENTITY arch '0.75e3'>
+   <!ENTITY garch '0.75e3'>
+   <!ENTITY rpm '1'>
+]>
+<JANFEAInput version="3">
+
+<!-- The parameters above are:
+
+     fileroot - path to acrhived files
+     cs - cell size (best to divide evenly in to sample with of 20 mm)
+     T0 - reference temperature
+     temp - particle temperature
+     rate - strain rate in 1/sec (- for tension or + for compression
+     time - total time for text in ms (max strain (in %) = - rate * time / 1000)
+     arch - interval to archive files of results
+     garch - interval to record global results like avg stress and strain
+     
+     A stress-strain curve is found by cross-plotting global results for
+     "sxx mat 1" vs. "exx mat 1"
+-->
+
+  <Header>
+    <Description>
+Title: Johnson Cook Tensile Loading
+User Name: John Nairn
+v1: Testing for HPT
+v2: changed boundary condition at interface of tool and workpiece (2 to 7)
+v3: Geometry from paper.
+	</Description>
+    <Analysis>12</Analysis>
+  </Header>
+
+  <MPMHeader>
+    <MPMMethod>2</MPMMethod>
+    <GIMP/>
+    <ArchiveTime units="ms">&arch;</ArchiveTime>
+    <GlobalArchiveTime units="ms">&arch;</GlobalArchiveTime>
+    <MaxTime units="ms">&time;</MaxTime>
+    <ArchiveRoot>&fileroot;</ArchiveRoot>
+    <MPMArchiveOrder>iYYYYYNYYYNYY?YYYY</MPMArchiveOrder> <!-- additional history variables-->
+    <CrackArchiveOrder>iYNNN</CrackArchiveOrder>
+    <GlobalArchive type="history 1" material="2"/>
+    <GlobalArchive type="history 2" material="2"/>
+    <GlobalArchive type="history 3" material="2"/>
+    <GlobalArchive type="history 4" material="2"/>
+    <GlobalArchive type="temp" material="1"/>
+    <StressFreeTemp>&T0;</StressFreeTemp>
+	<!--MultiMaterialMode Vmin="1.0" Dcheck="0.0" Normals="0">
+		<Friction>1.0</Friction>
+		<ContactPosition>0.8</ContactPosition>
+	</MultiMaterialMode-->
+  </MPMHeader>
+
+  <Mesh output="file">
+    <Grid xmin="-5" xmax="5" ymin="-5" ymax="5" zmin="-1" zmax="3">
+      <Horiz cellsize="&cs;"/>
+      <Vert cellsize="&cs;"/>
+	  <Depth cellsize="&cs;"/>
+    </Grid>
+  </Mesh>
+
+  <MaterialPoints>
+    <Body mat="1" angle="0" vx="0" vy="0" temp="&temp;">
+      <Cylinder xmin="-4" xmax="4" ymin="-4" ymax="4" zmin="0" zmax="1" axis="3"/>
+    </Body>
+	
+	 <Body mat="2" vx="0" vz="0" vy="0" rpm="&rpm;">
+	 <Cylinder xmin="-4" xmax="4" ymin="-4" ymax="4" zmin="1" zmax="2" axis="3"/>
+    </Body>	
+	
+	
+	</MaterialPoints>
+
+    <Material Type="29" Name="Copper Dislocation-Based Model">
+
+    <rho>8.96e8</rho>
+    <E>120000</E>
+    <alpha>60</alpha>
+	<!--nu>0.33</nu-->
+    <G>47.4e3</G>
+	<yield>90</yield>
+	
+	<!--Khard>50</Khard>
+	<nhard>1</nhard-->
+	
+	<rhoW>1e13</rhoW>
+	<rhoC>1e14</rhoC>
+	<fo>0.25</fo>
+	<flim>0.06</flim>
+	<fsto>3.2</fsto>
+	<sto>10e7</sto>
+	<m>50</m>
+	<n>10</n>
+	<alp>0.25</alp>
+	<burg>2.56e-10</burg>
+	<K1>10</K1>
+	<alpstar>0.120</alpstar>
+	<betastar>0.006</betastar>
+	<k0>5.8</k0>
+	
+    <kCond>385</kCond>
+    <Cp>386e-8</Cp>
+  </Material>
+  
+  <!--Material Type="11" Name="HPT Rotating Tool">
+    <SetDirection>8</SetDirection>
+  </Material-->
+  
+  <Material Type="11" Name="HPT Rotating Tool">
+    <SetDirection>7</SetDirection>
+  </Material>
+  
+
+  <GridBCs>
+    <BCBox x1="min" y1="min" x2="max" y2="max" z1="-1" z2="0" tolerance="*0.1">
+	  <DisBC dir="1" disp="0"/>
+      <DisBC dir="2" disp="0"/>
+	  <DisBC dir="3" disp="0"/>
+    </BCBox>
+  </GridBCs>
+   
+   <!--ParticleBCs>                            
+    <BCBox xmin="-10" xmax="10" ymin="-10" ymax="10" zmin="20" zmax="21" tolerance="*.3">
+      <net/>
+      <LoadBC dir="2" load="-628318.5"/> 
+    </BCBox>
+  </ParticleBCs--> 
+  
+  
+	
+    <Thermal>
+	<Conduction/>
+	<!--EnergyCoupling/-->
+  </Thermal>
+  
+
+</JANFEAInput>

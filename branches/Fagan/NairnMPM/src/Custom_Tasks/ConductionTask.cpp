@@ -202,7 +202,7 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double s
 			//double Tore = particleStress->yy; //what is the shear stress term?
 			//double Tore = 13.2e6;
 			double rho=theMaterials[mptr->MatID()]->rho;
-			double Tore = mptr->yieldC*rho/sqrt(3); // The shear yield stress (Pascals)
+			double Tore = mptr->yieldC*rho/sqrt(3); // The shear yield stress from Microstructure Model(Pascals)
 		
 		// find position of particle relative to tool centre
 			double X=mptr->pos.x-rotator->getxCentre();		// to store relative x position

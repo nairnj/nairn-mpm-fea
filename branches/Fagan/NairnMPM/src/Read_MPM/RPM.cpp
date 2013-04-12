@@ -24,7 +24,7 @@ Rpm::Rpm()
 	simTime=0.0;
 	xcentre=zcentre=0.0; 					// initial position of x centre EDIT
 	ycentre = 0.0; 							// initial position of y centre EDIT
-	zDepth = 6.0;							// initial position of bottom of pin EDIT
+	zDepth = 20.0;							// initial position of bottom of pin EDIT
 	rpm=materialID=0.0;
 	velSet.x=velSet.y=velSet.z=0.0;
 	simTime=0.0;
@@ -125,15 +125,17 @@ void Rpm::AddRPM3(double &posy, double &posx, Vector *vel, MPMBase *mptr, double
 	// EDIT FOR PLUNGE AND DWELL **************************
 	//if(timer>timestep&&timer<=516*timestep) //create plunge stage 0.5 res
 	//if(timer>timestep&&timer<=1031*timestep) //create plunge stage 1.0 res
-	if(timer>timestep&&timer<=103*timestep) //create plunge stage 1.0 res with ^5 density
-		vel->z=-1000;
+	//if(timer>timestep&&timer<=103*timestep) //create plunge stage 1.0 res with ^5 density
+	if(timer>timestep&&timer<=103*timestep) // HPT plunge stage 1.0 res with ^5 density
+		vel->z=-0.1333; //HPT
+		//vel->z=-1000; // FSP
 			
 									// difference in time between the two is dwell stage
 	// EDIT FOR TRANSLATION *******************************
 	//if(timer>=550*timestep)			// create translate stage
 	//if(timer>=1100*timestep)			// create translate stage
 	//if(timer>=110*timestep)			// create translate stage
-			vel->x=100;
+			//vel->x=100;
 	
 	vel->x-=phi*sy;					// add new velocity vector for rotation
 	vel->y+=phi*sx;
@@ -160,14 +162,15 @@ void Rpm::UpdateCentre(double timestep)
 	// 3D FSP with plunge or dwell (tab out for 2D)
 	// must be calculated as the velocity in x is changed for translation stage. 
 	// change times for translation stage above
-	// EDIT FOR TRANSLATION *******************************
+	
+	// EDIT FOR TRANSLATION AND HEAT FLUX *******************************
 	//if(rotator->simTime>=550*timestep)
 	//if(rotator->simTime>=1100*timestep)
-	if(rotator->simTime<=103*timestep)
-			zDepth -=(timestep*1000);
+	//if(rotator->simTime<=103*timestep) // for HARD CODED HEAT FLUX EDIT
+		//	zDepth -=(timestep*1000);
 			
-	if(rotator->simTime>=110*timestep)
-			xcentre+=(timestep*100);
+	//if(rotator->simTime>=110*timestep) // for FSP TRANSLATION EDIT
+		//	xcentre+=(timestep*100);
 }
 
 void Rpm::LogTime(double currentTime)
