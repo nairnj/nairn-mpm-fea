@@ -191,23 +191,24 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 	}
 	
 	// col is constant x, row is constant y, and slice is constant z
-	// element # = (slice-1)*Nhoriz*Nvert + (row-1)*Nhoriz + col;  // 1 based
+	// element # = (slice-1)*Nhoriz*Nvert + (row-1)*Nhoriz + col;  // if all 1 based
 	int i=0;
 	int perSlice = horiz*vert;			// number in each slice
-	int snum = num % perSlice;			// number in each slice (1-based)
-	int col = snum % horiz;				// x column for this element (1 based
+	int snum = (num-1) % perSlice;      // index in element's slice (0 to horiz*vert-1)
+	int col = snum % horiz;				// x column for this element (0 to horiz-1)
 	
 	// Do each slice
 	int j;
+    // 1-based element number below, at, and above element num
 	for(j=num-perSlice;j<=num+perSlice;j+=perSlice)
 	{	// element numbers in neighboring rows in this slice
 		if(j<1 || j>totalElems) continue;
-		int below = j-horiz;			// element # in row below or ablve
+		int below = j-horiz;			// element # in row below or above
 		int above = j+horiz;
 		
-		if(col==1)
-		{	// the element in is the first column having up to 5 neighbors
-			if(snum>horiz)
+		if(col==0)
+		{	// the element is in the first column having up to 5 neighbors
+			if(snum>=horiz)
 			{	// elements in row below
 				neighbor[i++]=below;
 				neighbor[i++]=below+1;
@@ -215,16 +216,16 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 			// elements in same row
 			if(j!=num) neighbor[i++]=j;
 			neighbor[i++]=j+1;
-			if(snum<=perSlice-horiz)
+			if(snum<perSlice-horiz)
 			{	// elements in row above
 				neighbor[i++]=above+1;
 				neighbor[i++]=above;
 			}
 		}
 	
-		else if(col==0)
+		else if(col==horiz-1)
 		{	// the element in is the last column having up to 5 neighbors
-			if(snum>horiz)
+			if(snum>=horiz)
 			{	// elements in row below
 				neighbor[i++]=below-1;
 				neighbor[i++]=below;
@@ -232,7 +233,7 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 			// elements in same row
 			if(j!=num) neighbor[i++]=j;
 			neighbor[i++]=j-1;
-			if(snum<=perSlice-horiz)
+			if(snum<perSlice-horiz)
 			{	// elements in row above
 				neighbor[i++]=above-1;
 				neighbor[i++]=above;
@@ -241,7 +242,7 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 	
 		else
 		{	// the element is not on the edge
-			if(snum>horiz)
+			if(snum>=horiz)
 			{	// elements in row below
 				neighbor[i++]=below-1;
 				neighbor[i++]=below;
@@ -251,7 +252,7 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 			if(j!=num) neighbor[i++]=j;
 			neighbor[i++]=j-1;
 			neighbor[i++]=j+1;
-			if(snum<=perSlice-horiz)
+			if(snum<perSlice-horiz)
 			{	// elements in row above
 				neighbor[i++]=above-1;
 				neighbor[i++]=above;
