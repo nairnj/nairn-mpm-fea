@@ -119,9 +119,9 @@ void MeshInfo::ListOfNeighbors2D(int num,int *neighbor)
 	}
 	
 	// find the column (here 0 is last column and 1 is first column)
-	// element num = (row-1)*Nhoriz + col;		// 1 based
+	// element num = (row-1)*Nhoriz + col;		// if all 1 based
 	int i=0;
-	int col=num % horiz;
+	int col=num % horiz;            // column for element (1 to horiz-1, then 0 for other edge)
 	int below=num-horiz;			// number in row below
 	int above=num+horiz;			// number in row above
 	
