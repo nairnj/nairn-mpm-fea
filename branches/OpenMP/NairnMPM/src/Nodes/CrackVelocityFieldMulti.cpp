@@ -36,12 +36,38 @@ void CrackVelocityFieldMulti::ZeroMatFields(void)
 	numberRigidPoints=0;
 }
 
+// match materical velocity fields
+void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **gmvf)
+{	for(int i=0;i<maxMaterialFields;i++)
+	{	if(gmvf[i]==NULL) continue;
+		
+		if(mvf[i]==NULL)
+		{	mvf[i]=new MatVelocityField(gmvf[i]->rigidField);
+			if(mvf[i]==NULL) throw CommonException("Memory error allocating material velocity field.",
+											   "CrackVelocityField::MatchGhostFields");
+		}
+		
+		mvf[i]->Zero();
+	}
+	numberMaterials=0;
+	numberRigidPoints=0;
+}
+
 #pragma mark TASK 1 METHODS
 
+// Called in intitation to preallocate material velocituy fields
+void CrackVelocityFieldMulti::AddMatVelocityField(int matfld)
+{	if(mvf[matfld]==NULL)
+	{	mvf[matfld]=new MatVelocityField(MaterialBase::GetMVFIsRigid(matfld));
+		if(mvf[matfld]==NULL) throw CommonException("Memory error allocating material velocity field.",
+												"CrackVelocityFieldMulti::AddMomentumTask1");
+	}
+}
+
 // add "mass" for rigid particle (task 1) - it counts particles too
-void CrackVelocityFieldMulti::AddMassTask1(int matfld,double mnode)
+void CrackVelocityFieldMulti::AddMassTask1(int matfld,double mnode,int numPts)
 {	mvf[matfld]->mass += mnode;
-	numberRigidPoints++;
+	numberRigidPoints += numPts;
 }
 
 // Add to mass gradient
@@ -53,6 +79,13 @@ void CrackVelocityFieldMulti::AddVolumeGradient(int matfld,MPMBase *mptr,double 
 	mvf[matfld]->volumeGrad->x+=Vp*dNdx;
 	mvf[matfld]->volumeGrad->y+=Vp*dNdy;
 	mvf[matfld]->volumeGrad->z+=Vp*dNdz;
+}
+
+// call this when copy from ghost to real node to sume gradients
+void CrackVelocityFieldMulti::CopyVolumeGradient(int matfld,Vector *grad)
+{	mvf[matfld]->volumeGrad->x += grad->x;
+	mvf[matfld]->volumeGrad->y += grad->y;
+	mvf[matfld]->volumeGrad->z += grad->z;
 }
 
 // Count number of materials in each crack velocity field on this node
@@ -143,6 +176,14 @@ void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int ri
 	CopyVector(mvf[rigidFieldNum]->volumeGrad,rmvf->volumeGrad);
 }
 	
+// Copy mass and momentum from ghost node to real node
+void CrackVelocityFieldMulti::CopyMassAndMomentum(NodalPoint *real,int vfld)
+{	for(int matfld=0;matfld<maxMaterialFields;matfld++)
+	{	if(mvf[matfld]!=NULL)
+			mvf[matfld]->CopyMassAndMomentum(real,vfld,matfld);
+	}
+}
+
 #pragma mark TASK 3 METHODS
 
 // Add to force spread out over the materials so each has same extra accerations = f/M
@@ -172,10 +213,17 @@ void CrackVelocityFieldMulti::AddFtotSpreadTask3(Vector *f)
 
 // Add grid dampiong force at a node in g mm/sec^2
 void CrackVelocityFieldMulti::AddGridDampingTask3(double extDamping)
-{	int i;
-    for(i=0;i<maxMaterialFields;i++)
+{	for(int i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 			mvf[i]->AddGridDampingTask3(extDamping);
+	}
+}
+
+// Copy grid forces ghost node to the real node (nonrigid only)
+void CrackVelocityFieldMulti::CopyGridForces(NodalPoint *real,int vfld)
+{	for(int matfld=0;matfld<maxMaterialFields;matfld++)
+	{	if(mvf[matfld]!=NULL)
+			mvf[matfld]->CopyGridForces(real,vfld,matfld);
 	}
 }
 

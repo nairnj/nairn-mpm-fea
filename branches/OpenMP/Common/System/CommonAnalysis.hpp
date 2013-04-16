@@ -50,7 +50,9 @@ class CommonAnalysis
 		bool IsAxisymmetric(void);
 		static bool IsAxisymmetric(int);
         void SetNumberOfProcessors(int);
-    
+		int GetNumberOfProcessors(void);
+		int GetTotalNumberOfPatches(void);
+	
 	protected:
 		bool validate,reverseBytes;
 		int version,subversion,buildnumber,numProcs;

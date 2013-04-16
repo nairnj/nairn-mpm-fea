@@ -55,7 +55,10 @@ class NodalPoint : public LinkedObject
        
         // constructors and destructors
         NodalPoint(int);
-        virtual ~NodalPoint();
+#ifdef MPM_CODE
+		NodalPoint(NodalPoint *);
+#endif
+		virtual ~NodalPoint();
         
         // methods - general and abstract
         virtual void PrintNodalPoint(ostream &) = 0;
@@ -63,16 +66,23 @@ class NodalPoint : public LinkedObject
 #ifdef MPM_CODE
         // methods - MPM only
 		void InitializeForTimeStep();
+		void CopyFieldInitialization(NodalPoint *);
+		void UseTheseFields(CrackVelocityField **);
+		short AddCrackVelocityField(int,CrackField *);
+		void AddMatVelocityField(short,int);
 	
-		short AddMomentumTask1(int,CrackField *,double,Vector *);
+		void AddMomentumTask1(short,int,double,Vector *,int);
 		void AddMass(short,int,double);
-		void AddMassTask1(short,int,double);
+		void AddMassTask1(short,int,double,int);
 		void AddVolumeGradient(short,int,MPMBase *,double,double,double);
+		void CopyVolumeGradient(short,int,Vector *);
+		void CopyMassAndMomentum(NodalPoint *);
 	
 		void AddFtotTask3(short,int,Vector *);
 		void AddFtotSpreadTask3(short,Vector);
 		void AddTractionTask3(MPMBase *,int,Vector *);
 		void AddGridDampingTask3(double);
+		void CopyGridForces(NodalPoint *);
 	
 		void UpdateMomentaOnNode(double);
 	

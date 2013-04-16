@@ -9,8 +9,11 @@
 		none
 *********************************************************************/
 
-#include "MeshInfo.hpp"
-#include "GridPatch.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
+
+// NEWINCLUDE
+#include "Patches/GridPatch.hpp"
+#include "MPM_Classes/MPMBase.hpp"
 
 // global class for grid information
 MeshInfo mpmgrid;
@@ -67,7 +70,7 @@ void MeshInfo::Output(int pointsPerCell,bool isAxisym)
 			cout << fline << endl;
 		}
 
-#ifdef _PARALLEL_
+#ifdef _OPENMP
 		if(isAxisym)
 			sprintf(fline,"Patch Grid R: %d Z: %d",xpnum,ypnum);
 		else
@@ -124,6 +127,23 @@ bool MeshInfo::EdgeElement3D(int num)
 	if(xz_face<=horiz || xz_face>horiz*(vert-1)) return TRUE;
 	
 	return FALSE;
+}
+
+// check if node is on beyond end of row, column or rank (1-based), dir is 'x','y', 'z'
+// Feature that calls this method must require the problem to have a structured <Grid>
+bool MeshInfo::EdgeNode(int num,char dir)
+{
+	switch(dir)
+	{	case 'x':
+			return num >= horiz+1;
+		case 'y':
+			return num >= vert+1;
+		case 'z':
+			return num >= depth+1;
+		default:
+			break;
+	}
+	return TRUE;
 }
 
 // If have a structured grid, get the eight 2D neighbor elements. The 1-based
@@ -209,23 +229,24 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 	}
 	
 	// col is constant x, row is constant y, and slice is constant z
-	// element # = (slice-1)*Nhoriz*Nvert + (row-1)*Nhoriz + col;  // 1 based
+	// element # = (slice-1)*Nhoriz*Nvert + (row-1)*Nhoriz + col;  // if all 1 based
 	int i=0;
 	int perSlice = horiz*vert;			// number in each slice
-	int snum = num % perSlice;			// number in each slice (1-based)
-	int col = snum % horiz;				// x column for this element (1 based
+	int snum = (num-1) % perSlice;      // index in element's slice (0 to horiz*vert-1)
+	int col = snum % horiz;				// x column for this element (0 to horiz-1)
 	
 	// Do each slice
 	int j;
+    // 1-based element number below, at, and above element num
 	for(j=num-perSlice;j<=num+perSlice;j+=perSlice)
 	{	// element numbers in neighboring rows in this slice
 		if(j<1 || j>totalElems) continue;
-		int below = j-horiz;			// element # in row below or ablve
+		int below = j-horiz;			// element # in row below or above
 		int above = j+horiz;
 		
-		if(col==1)
-		{	// the element in is the first column having up to 5 neighbors
-			if(snum>horiz)
+		if(col==0)
+		{	// the element is in the first column having up to 5 neighbors
+			if(snum>=horiz)
 			{	// elements in row below
 				neighbor[i++]=below;
 				neighbor[i++]=below+1;
@@ -233,16 +254,16 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 			// elements in same row
 			if(j!=num) neighbor[i++]=j;
 			neighbor[i++]=j+1;
-			if(snum<=perSlice-horiz)
+			if(snum<perSlice-horiz)
 			{	// elements in row above
 				neighbor[i++]=above+1;
 				neighbor[i++]=above;
 			}
 		}
-	
-		else if(col==0)
+		
+		else if(col==horiz-1)
 		{	// the element in is the last column having up to 5 neighbors
-			if(snum>horiz)
+			if(snum>=horiz)
 			{	// elements in row below
 				neighbor[i++]=below-1;
 				neighbor[i++]=below;
@@ -250,16 +271,16 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 			// elements in same row
 			if(j!=num) neighbor[i++]=j;
 			neighbor[i++]=j-1;
-			if(snum<=perSlice-horiz)
+			if(snum<perSlice-horiz)
 			{	// elements in row above
 				neighbor[i++]=above-1;
 				neighbor[i++]=above;
 			}
 		}
-	
+		
 		else
 		{	// the element is not on the edge
-			if(snum>horiz)
+			if(snum>=horiz)
 			{	// elements in row below
 				neighbor[i++]=below-1;
 				neighbor[i++]=below;
@@ -269,7 +290,7 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 			if(j!=num) neighbor[i++]=j;
 			neighbor[i++]=j-1;
 			neighbor[i++]=j+1;
-			if(snum<=perSlice-horiz)
+			if(snum<perSlice-horiz)
 			{	// elements in row above
 				neighbor[i++]=above-1;
 				neighbor[i++]=above;
@@ -327,12 +348,19 @@ int MeshInfo::FindElementFromPoint(Vector *pt)
     return theElem;
 }
 
+// Create the patches for the grid
+// Return pointer to a 0-based listed or patches[0] ... pathes[numProcs-1]
+// Return NULL on memory error
 GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 {
+	// serial or single thread is simpler
+	if(numProcs<=1)
+	{	return CreateOnePatch(np);
+	}
+	
 	// get prime factors in ascending order
 	vector<int> factors;
 	unsigned ndim = np==THREED_MPM ? 3 : 2 ;
-#ifdef _PARALLEL_
 	PrimeFactors(numProcs,factors);
 	while(factors.size()<ndim) factors.push_back(1);
 	while(factors.size()>ndim)
@@ -342,14 +370,9 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 		factors[0]=newFactor;
 	}
 	std::sort(factors.begin(),factors.end());
-#else
-	for(unsigned j=0;j<ndim;j++) factors.push_back(1);
-#endif
 	
 	// convert to numbers of elements in each direction and use larger
 	// prime factors in the longer directions
-	int xsize,ysize,zsize;
-	
 	if(ndim==2)
 	{	if(horiz>vert)
 		{	xpnum = factors[1];
@@ -360,7 +383,7 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 			ypnum = factors[1];
 		}
 		zpnum=1;
-		zsize=1;
+		zPatchSize=1;
 	}
 	else
 	{	if(horiz>vert && horiz>depth)
@@ -396,10 +419,10 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 				xpnum = factors[1];
 			}
 		}
-		zsize = max(depth/zpnum,1);
+		zPatchSize = max(int(depth/zpnum+.5),1);
 	}
-	xsize = max(horiz/xpnum,1);
-	ysize = max(vert/ypnum,1);
+	xPatchSize = max(int(horiz/xpnum+.5),1);
+	yPatchSize = max(int(vert/ypnum+.5),1);
     
     // alloc space for patches - exit on memory error
     int totalPatches = xpnum*ypnum*zpnum;
@@ -411,16 +434,18 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 	int i,j,k;
 	int x1,x2,y1,y2,z1=1,z2;
 	for(k=1;k<=zpnum;k++)
-	{	z2 = k==zpnum ? depth : z1+zsize-1;
+	{	z2 = k==zpnum ? depth : z1+zPatchSize-1;
 		y1 = 1;
 		for(j=1;j<=ypnum;j++)
-		{	y2 = j==ypnum ? vert : y1+ysize-1;
+		{	y2 = j==ypnum ? vert : y1+yPatchSize-1;
 			x1 = 1;
 			for(i=1;i<=xpnum;i++)
-			{	x2 = i==xpnum ? horiz : x1+xsize-1;
+			{	x2 = i==xpnum ? horiz : x1+xPatchSize-1;
 				
-				// patch x1 to x2 and y1 to y2
+				// patch x1 to x2 and y1 to y2 (1 based)
+				cout << "\n- Patch " << pnum << ":" << i << "-" << j << "-" << k << ":";
                 patch[pnum] = new GridPatch(x1,x2,y1,y2,z1,z2);
+				if(!patch[pnum]->CreateGhostNodes()) return NULL;
                 pnum++;
 				
 				x1 = x2+1;
@@ -429,13 +454,77 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 		}
 		z1 = z2+1;
 	}
-    
+	
+	// fill patches with particles
+	int pn;
+	for(int p=0;p<nmpms;p++)
+	{	pn = GetPatchForElement(mpm[p]->ElemID());
+		if(pn<0 || pn>=totalPatches)
+		{	cout << "particle in element " << mpm[p]->ElemID() << " to patch " << pn << endl;
+			continue;
+		}
+		patch[pn]->AddParticle(mpm[p]);
+	}
+	
     // return array of patches
     return patch;
 }
 
+// Create a single patches for the grid and patch has no ghost nodes
+// Return pointer to a 0-based listed or patches[0]
+// Return NULL on memory error
+GridPatch **MeshInfo::CreateOnePatch(int np)
+{
+	// a single patch
+	xpnum = ypnum = zpnum = 1;
+	
+	xPatchSize = horiz;
+	yPatchSize = vert;
+	zPatchSize = np==THREED_MPM ? depth : 1 ;
+    
+    // alloc space for patches - exit on memory error
+    GridPatch **patch = (GridPatch **)malloc(sizeof(GridPatch));
+    if(patch==NULL) return NULL;
+	
+	// one patch an no ghost nodes
+	patch[0] = new GridPatch(1,xPatchSize,1,yPatchSize,1,zPatchSize);
+	if(!patch[0]->CreateGhostNodes()) return NULL;
+	
+	// fill patch with particles
+	for(int p=0;p<nmpms;p++) patch[0]->AddParticle(mpm[p]);
+    
+    // return array with the one patch
+    return patch;
+}
 
 #pragma mark MeshInfo:Accessors
+
+// given zero based element number, return patch number
+int MeshInfo::GetPatchForElement(int iel)
+{
+	int row,col,rank;
+	int prow,pcol,prank;
+	
+	if(depth>0)
+	{	// 3D
+		int perSlice = horiz*vert;		// number in each slice
+		rank = iel/perSlice;
+		int snum = iel % perSlice;		// number in slice (0 to horz*vert-1)
+		col = snum % horiz;				// col 0 to horiz-1
+		row = snum/horiz;				// zero based
+		pcol = min(col/xPatchSize,xpnum-1);
+		prow = min(row/yPatchSize,ypnum-1);
+		prank = min(rank/zPatchSize,zpnum-1);
+		return xpnum*ypnum*prank + xpnum*prow + pcol;
+	}
+	
+	// 2D
+	col = iel % horiz;			// col 0 to horiz-1
+	row = iel/horiz;			// zero based
+	pcol = min(col/xPatchSize,xpnum-1);
+	prow = min(row/yPatchSize,ypnum-1);
+	return xpnum*prow + pcol;
+}
 
 // set grid style (zcell=0 if 2D grid)
 // Options: style=0 (NOT_CARTESIAN) means not aligned with x,y,z axes

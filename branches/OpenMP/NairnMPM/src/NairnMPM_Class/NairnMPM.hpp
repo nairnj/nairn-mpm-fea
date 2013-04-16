@@ -69,7 +69,7 @@ class NairnMPM : public CommonAnalysis
         double PropFractCellTime;       // separate fraction of cell crossed for propagation time steps (currently not settable)
 
 	private:
-#ifdef _PARALLEL_
+#ifdef _OPENMP
 		double startTime;
 #else
 		time_t startTime;			// timers

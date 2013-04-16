@@ -24,6 +24,10 @@
 #include "Exceptions/MPMWarnings.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 
+// NEWINCLUDE
+#include "Patches/GridPatch.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
+
 #pragma mark CONSTRUCTORS
 
 ResetElementsTask::ResetElementsTask(const char *name) : MPMTask(name)
@@ -36,34 +40,69 @@ ResetElementsTask::ResetElementsTask(const char *name) : MPMTask(name)
 // Stop if off the grid
 void ResetElementsTask::Execute(void)
 {
-	int p;
-	
 	// update feedback damping now if needed
 	bodyFrc.UpdateAlpha(timestep,mtime);
+
+	// This block shoul be made parallel
+	// But when do so, need method to move particle  between patches while keeping threads indpendent
+	int totalPatches = fmobj->GetTotalNumberOfPatches();
 	
-	// loop over particles and check them
-    for(p=0;p<nmpms;p++)
-    {	if(!ResetElement(mpm[p]))
-		{	// particle has left the grid
-			mpm[p]->IncrementElementCrossings();
-			
-			// enter warning only if this particle did not leave the grid before
-			if(!mpm[p]->HasLeftTheGrid())
-			{	if(warnings.Issue(fmobj->warnParticleLeftGrid,-1)==REACHED_MAX_WARNINGS)
-				{   mpm[p]->Describe();
-					char errMsg[100];
-					sprintf(errMsg,"Particle No. %d left the grid\n  (plot x displacement to see it).",p+1);
-					mpm[p]->origpos.x=-1.e6;
-					throw MPMTermination(errMsg,"ResetElementsTask::Execute");
+	int status;
+	MPMBase *mptr,*prevMptr,*nextMptr;
+	for(int pn=0;pn<totalPatches;pn++)
+	{	for(int block=0;block<3;block++)
+		{	// get first material point in this block
+			mptr = patches[pn]->GetFirstBlockPointer(block);
+			prevMptr = NULL;		// previous one of this tyep in current patch
+			while(mptr!=NULL)
+			{	//int oldElem = mptr->ElemID()+1;
+				status = ResetElement(mptr);
+				
+				if(status==LEFT_GRID)
+				{	// particle has left the grid
+					mptr->IncrementElementCrossings();
+				
+					// enter warning only if this particle did not leave the grid before
+					if(!mptr->HasLeftTheGrid())
+					{	if(warnings.Issue(fmobj->warnParticleLeftGrid,-1)==REACHED_MAX_WARNINGS)
+						{	// print message and quit
+							mptr->Describe();
+							char errMsg[100];
+							sprintf(errMsg,"Particle has left the grid\n  (plot x displacement to see it).");
+							mptr->origpos.x=-1.e6;
+							throw MPMTermination(errMsg,"ResetElementsTask::Execute");
+						}
+						
+						// set this particle has left the grid once
+						mptr->SetHasLeftTheGrid(TRUE);
+					}
+				
+					// bring back to the previous element
+					ReturnToElement(mptr);
 				}
-				mpm[p]->SetHasLeftTheGrid(TRUE);
+				
+				else if(status==NEW_ELEMENT && totalPatches>1)
+				{	int newpn = mpmgrid.GetPatchForElement(mptr->ElemID());
+					if(pn != newpn)
+					{	// next material point read before move the particle
+						nextMptr = (MPMBase *)mptr->GetNextObject();
+						
+						// move particle mptr
+						patches[pn]->RemoveParticleAfter(mptr,prevMptr);
+						patches[newpn]->AddParticle(mptr);
+						
+						// next material point is now after the prevMptr, which stays the same, which may be NULL
+						mptr = nextMptr;
+						continue;
+					}
+				}
+				
+				// next material point and update previous particle
+				prevMptr = mptr;
+				mptr = (MPMBase *)mptr->GetNextObject();
 			}
-		
-			// bring back to the previous element
-			ReturnToElement(mpm[p]);
 		}
-    }
-	
+	}
 }
 
 // Find element for particle. Return FALSE if left
@@ -75,7 +114,7 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
     // check current element
     if(theElements[mpt->ElemID()]->PtInElement(mpt->pos))
 	{	// it has not changed elements
-		return TRUE;
+		return SAME_ELEMENT;
 	}
 	
 	// check neighbors if possible
@@ -84,10 +123,10 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
 	while(elemNeighbors[i]!=0)
 	{	j=elemNeighbors[i]-1;
     	if(theElements[j]->PtInElement(mpt->pos))
-		{	if(theElements[j]->OnTheEdge()) return FALSE;
-			if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return FALSE;
+		{	if(theElements[j]->OnTheEdge()) return LEFT_GRID;
+			if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
 			mpt->ChangeElemID(j);
-			return TRUE;
+			return NEW_ELEMENT;
 		}
 		i++;
     }
@@ -95,13 +134,14 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
     // if still not found, check all elements
     for(i=0;i<nelems;i++)
     {	if(theElements[i]->PtInElement(mpt->pos))
-		{	if(theElements[i]->OnTheEdge()) return FALSE;
-			if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return FALSE;
+		{	if(theElements[i]->OnTheEdge()) return LEFT_GRID;
+			if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
 			mpt->ChangeElemID(i);
-			return TRUE;
+			return NEW_ELEMENT;
 		}
     }
-    return FALSE;
+	
+    return LEFT_GRID;
 }
 	
 // Push particle back to its previous element

@@ -8,9 +8,7 @@
 
 #include "NodalPoint3D.hpp"
 
-/********************************************************************************
-	NodalPoin3Dt: Constructors and Destructor
-********************************************************************************/
+#pragma mark NodalPoin3D: Constructors and Destructor
 
 NodalPoint3D::NodalPoint3D(int nodeNum,double xPt,double yPt,double zPt)
 		 : NodalPoint(nodeNum)
@@ -20,9 +18,11 @@ NodalPoint3D::NodalPoint3D(int nodeNum,double xPt,double yPt,double zPt)
 	z=zPt;
 }
 
-/********************************************************************************
-	NodalPoint2D: Methods
-********************************************************************************/
+#ifdef MPM_CODE
+NodalPoint3D::NodalPoint3D(NodalPoint *real) : NodalPoint(real) {}
+#endif
+
+#pragma mark NodalPoint3D: Methods
 
 // write node to output file
 void NodalPoint3D::PrintNodalPoint(ostream &os)

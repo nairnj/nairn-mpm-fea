@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		6700560A163AFC3600FFE145 /* HistoryArchive.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67005609163AFC3600FFE145 /* HistoryArchive.hpp */; };
 		6700560C163AFC6B00FFE145 /* HistoryArchive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6700560B163AFC6B00FFE145 /* HistoryArchive.cpp */; };
+		67083427171717FB007AD581 /* GhostNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67083425171717FB007AD581 /* GhostNode.cpp */; };
+		67083428171717FB007AD581 /* GhostNode.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67083426171717FB007AD581 /* GhostNode.hpp */; };
 		671514D115465E8B005F33A9 /* OvalController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 671514D015465E8B005F33A9 /* OvalController.cpp */; };
 		671514D215465E8B005F33A9 /* OvalController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 671514D015465E8B005F33A9 /* OvalController.cpp */; };
 		671514D415465EAD005F33A9 /* OvalController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 671514D315465EAD005F33A9 /* OvalController.hpp */; };
@@ -407,6 +409,8 @@
 		08FB7796FE84155DC02AAC07 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; tabWidth = 4; };
 		67005609163AFC3600FFE145 /* HistoryArchive.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HistoryArchive.hpp; sourceTree = "<group>"; };
 		6700560B163AFC6B00FFE145 /* HistoryArchive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HistoryArchive.cpp; sourceTree = "<group>"; };
+		67083425171717FB007AD581 /* GhostNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GhostNode.cpp; path = Patches/GhostNode.cpp; sourceTree = "<group>"; };
+		67083426171717FB007AD581 /* GhostNode.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = GhostNode.hpp; path = Patches/GhostNode.hpp; sourceTree = "<group>"; };
 		671514D015465E8B005F33A9 /* OvalController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OvalController.cpp; sourceTree = "<group>"; };
 		671514D315465EAD005F33A9 /* OvalController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = OvalController.hpp; sourceTree = "<group>"; };
 		671514D61547035D005F33A9 /* PolygonController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PolygonController.cpp; sourceTree = "<group>"; };
@@ -1321,6 +1325,8 @@
 			children = (
 				A7B45CF71715D36E003FDED6 /* GridPatch.hpp */,
 				A7B45CF51715D354003FDED6 /* GridPatch.cpp */,
+				67083426171717FB007AD581 /* GhostNode.hpp */,
+				67083425171717FB007AD581 /* GhostNode.cpp */,
 			);
 			name = Patches;
 			sourceTree = "<group>";
@@ -1587,6 +1593,7 @@
 				673EC9B716C9EB71007FFEB5 /* CarnotCycle.hpp in Headers */,
 				67FFAA0C16D31E95003A7C53 /* HEMGEOSMaterial.hpp in Headers */,
 				A7B45CF81715D36E003FDED6 /* GridPatch.hpp in Headers */,
+				67083428171717FB007AD581 /* GhostNode.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1907,6 +1914,7 @@
 				67FFAA0B16D31E95003A7C53 /* HEMGEOSMaterial.cpp in Sources */,
 				A738C0CD170E192800E4D675 /* svninfo.cpp in Sources */,
 				A7B45CF61715D354003FDED6 /* GridPatch.cpp in Sources */,
+				67083427171717FB007AD581 /* GhostNode.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

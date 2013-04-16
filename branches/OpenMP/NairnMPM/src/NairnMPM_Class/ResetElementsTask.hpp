@@ -15,6 +15,8 @@
 
 #include "NairnMPM_Class/MPMTask.hpp"
 
+enum { SAME_ELEMENT,NEW_ELEMENT,LEFT_GRID };
+
 class MPMBase;
 
 class ResetElementsTask : public MPMTask

@@ -58,7 +58,7 @@ void CommonAnalysis::StartResultsOutput(void)
 	cout << "Written by: Nairn Research Group, Oregon State University\n"
         << "Date: " << __DATE__ << "\n"
         << "Source: " << svninfo << "\n"
-#ifdef _PARALLEL_
+#ifdef _OPENMP
         << "Processors: " << numProcs << "\n"
 #endif
         << endl;
@@ -305,6 +305,8 @@ bool CommonAnalysis::IsAxisymmetric(int otherNp) { return otherNp==AXI_SYM || ot
 
 // set number of processes (0 for serial code)
 void CommonAnalysis::SetNumberOfProcessors(int npr) { numProcs = npr; }
+int CommonAnalysis::GetNumberOfProcessors(void) { return numProcs; }
+int CommonAnalysis::GetTotalNumberOfPatches(void) { return numProcs>1 ? numProcs : 1 ; }
 
 #pragma mark Methods to keep Xerces contact in fewer files
 

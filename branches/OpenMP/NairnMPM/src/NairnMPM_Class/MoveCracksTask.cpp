@@ -58,7 +58,7 @@ void MoveCracksTask::Execute(void)
 	// if moving crack plane in cm velocity field, get those velocities now
 	if(!contact.GetMoveOnlySurfaces()) NodalPoint::GetGridCMVelocitiesTask8();
 	
-	// Move crack plane by one of two methods. When moving only surfce, the plane will move to average
+	// Move crack plane by one of two methods. When moving only surface, the plane will move to average
 	// of the two surfaces
 	// After moving, crack plane is check for crossing, if that option is activated
 	nextCrack=firstCrack;

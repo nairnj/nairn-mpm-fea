@@ -19,6 +19,12 @@
 #include "Exceptions/CommonException.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 
+// NEWINCLUDE
+#include "Cracks/CrackHeader.hpp"
+
+// NEWINCLUDE
+#include "Nodes/NodalPoint.hpp"
+
 #pragma mark INITIALIZATION
 
 // Constructors
@@ -54,13 +60,59 @@ void MatVelocityField::Zero(void)
 
 #pragma mark METHODS
 
-// add to momentum in task one. Save velocity for the first point in case only
+// add to momentum in task 1. Save velocity for the first point in case only
 // has one point (for more accurate velocity calculation)
 // Momentum is g-mm/sec
-void MatVelocityField::AddMomentumTask1(Vector *addPk,Vector *vel)
+void MatVelocityField::AddMomentumTask1(Vector *addPk,Vector *vel,int numPts)
 {	AddVector(&pk,addPk);
-	numberPoints++;
+	numberPoints += numPts;
 	if(numberPoints==1) vk=*vel;
+}
+
+// copy mass and momentum from ghost to real node
+void MatVelocityField::CopyMassAndMomentum(NodalPoint *real,int vfld,int matfld)
+{
+	// skip if none
+	if(numberPoints==0) return;
+	
+	// momentum
+	if(numberPoints==1)
+		real->AddMomentumTask1((short)vfld,matfld,mass,&vk,1);
+	else
+		real->AddMomentumTask1((short)vfld,matfld,1.,&pk,numberPoints);
+			
+	// if cracks and multimaterial mode
+	if(firstCrack!=NULL || maxMaterialFields>1)
+	{	real->AddDisplacement((short)vfld,matfld,1.,&disp);
+		real->AddVolume((short)vfld,matfld,volume);
+	}
+	
+	// volume gradient
+	real->CopyVolumeGradient((short)vfld,matfld,volumeGrad);
+
+	// if multimaterial mode
+	if(!rigidField)
+	{	// mass
+		real->AddMass((short)vfld,matfld,mass);
+		
+		// transport properties
+	}
+	else
+	{	// mass to count particles
+		real->AddMassTask1((short)vfld,matfld,mass,numberPoints);
+	}
+}
+
+// Copy grid forces ghost node to the real node (nonrigid only)
+void MatVelocityField::CopyGridForces(NodalPoint *real,int vfld,int matfld)
+{	
+	// skip if none
+	if(numberPoints==0) return;
+	
+	// Ftot
+	real->AddFtotTask3(vfld,matfld,&ftot);
+	
+	// transport tasks
 }
 
 // in response to contact, change the momentum

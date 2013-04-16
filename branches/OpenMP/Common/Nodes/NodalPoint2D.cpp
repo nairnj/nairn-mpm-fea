@@ -8,9 +8,7 @@
 
 #include "NodalPoint2D.hpp"
 
-/********************************************************************************
-	NodalPoint: Constructors and Destructor
-********************************************************************************/
+#pragma mark NodalPoint: Constructors and Destructor
 
 NodalPoint2D::NodalPoint2D(int nodeNum,double xPt,double yPt)
 		 : NodalPoint(nodeNum)
@@ -20,9 +18,11 @@ NodalPoint2D::NodalPoint2D(int nodeNum,double xPt,double yPt)
 	z=0.;
 }
 
-/********************************************************************************
-	NodalPoint2D: Methods
-********************************************************************************/
+#ifdef MPM_CODE
+NodalPoint2D::NodalPoint2D(NodalPoint *real) : NodalPoint(real) {}
+#endif
+
+#pragma mark NodalPoint2D: Methods
 
 // write node to output file
 void NodalPoint2D::PrintNodalPoint(ostream &os)

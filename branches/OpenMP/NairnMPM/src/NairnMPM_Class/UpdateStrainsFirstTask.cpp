@@ -43,7 +43,7 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
 	// loop over nonrigid particles
 	// This works as parallel when material properties change with particle state because
 	//	all such materials should create a copy of material properties in the threads
-#pragma omp parallel for
+//#pragma omp parallel for
 	for(int p=0;p<nmpmsNR;p++)
     {   // next particle
         MPMBase *mptr = mpm[p];

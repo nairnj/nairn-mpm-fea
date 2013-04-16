@@ -127,10 +127,11 @@ class ElementBase : public LinkedObject
 		virtual void GetPosition(Vector *,Vector *);
 	
 		// const methods
-		virtual void GetShapeFunctions(int *,double *,int *,Vector *,Vector *,MPMBase *) const;
+		virtual void GetShapeFunctionData(MPMBase *) const;
+		virtual void GetShapeFunctionNodes(int *,int *,Vector *,MPMBase *mpmptr) const;
 		virtual void GetShapeFunctions(int *,double *,int *,Vector *,MPMBase *) const;
 		virtual void GetShapeGradients(int *,double *,int *,Vector *,double *,double *,double *,MPMBase *) const;
-		virtual void GetShapeFunctionsAndGradients(int *,double *,int *,Vector *,Vector *,double *,double *,double *,MPMBase *) const;
+		virtual void GetShapeFunctionsForCracks(int *,double *,int *,Vector *,Vector *) const;
 		virtual void GridShapeFunctions(int *,int *,Vector *,double *) const;
 		virtual void GimpCompact(int *,int *,double *,double *,double *,double *) const;
 		virtual void GetXiPos(Vector *,Vector *) const;

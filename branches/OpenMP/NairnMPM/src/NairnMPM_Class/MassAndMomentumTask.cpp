@@ -38,7 +38,7 @@
 		mpm[]->vel of rigid particles (only in multimaterial mode)
 		mpm[]->volume (dilated volume if needed)
 		mpm[]->vfld[]
-		Allocate cvf[] and their mvf[] as needed
+		cvf[] and their mvf[] are created during initilization
 			mvf[]->pk, vk, numberPoints, mass
 			mvf[]->disp, volume (if contact might happen)
 			mvf[]->volumeGrad (if multimaterial mode)
@@ -65,6 +65,13 @@
 #include "Boundary_Conditions/NodalConcBC.hpp"
 #include "Cracks/CrackNode.hpp"
 #include "Nodes/MaterialInterfaceNode.hpp"
+
+// NEWINCLUDE
+#include "Patches/GridPatch.hpp"
+// temporary
+#ifdef LOG_PROGRESS
+#include "System/ArchiveData.hpp"
+#endif
 
 // to ignore crack interactions (only valid if 1 crack or non-interacting cracks)
 //#define IGNORE_CRACK_INTERACTIONS
@@ -104,92 +111,86 @@ void MassAndMomentumTask::Execute(void)
         }
     }
 	
-	// loop over non rigid and rigid contact materials
-    for(int p=0;p<nmpmsRC;p++)
-	{	MPMBase *mpmptr = mpm[p];							// pointer
-		double mp = mpmptr->mp;								// material point mass in g
-		
-		const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
-		int matfld = matID->GetField();									// material velocity field
-		
-		// get nodes and shape function for material point p
-		int i,numnds;
-		const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
-		if(fmobj->multiMaterialMode)
-		{	elref->GetShapeFunctionsAndGradients(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),
-															xDeriv,yDeriv,zDeriv,mpmptr);
-		}
-		else
-			elref->GetShapeFunctions(&numnds,fn,nds,&mpmptr->pos,mpmptr->GetNcpos(),mpmptr);
-		
-		// Add particle property to each node in the element
-		for(i=1;i<=numnds;i++)
-        {   NodalPoint *ndptr = nd[nds[i]];				// get pointer
-			short vfld;
-			CrackField *cfldptr;
-            
-			// Regular MPM, adds to velocity field 0
-			if(firstCrack==NULL)
-			{	cfldptr = NULL;
-				vfld = 0;
-			}
-			
-			else
-			{	// in CRAMP, find crack crossing and appropriate velocity field
-				CrackField cfld[2];
-				cfld[0].loc = NO_CRACK;			// NO_CRACK, ABOVE_CRACK, or BELOW_CRACK
-				cfld[1].loc = NO_CRACK;
-				cfldptr = &cfld[0];
-				int cfound=0;
-				Vector norm;
-				
-				CrackHeader *nextCrack = firstCrack;
-				while(nextCrack!=NULL)
-				{	vfld = nextCrack->CrackCross(mpmptr->pos.x,mpmptr->pos.y,ndptr->x,ndptr->y,&norm);
-					if(vfld!=NO_CRACK)
-					{	cfld[cfound].loc=vfld;
-						cfld[cfound].norm=norm;
-#ifdef IGNORE_CRACK_INTERACTIONS
-						cfld[cfound].crackNum=1;	// appears to always be same crack, and stop when found one
-						break;
+	// loop over non-rigid and rigid contact particles - this parallel part changes only particle p
+	// mass, momenta, ect are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
+/*
+#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
+	{
+#ifdef _OPENMP
+		int pn = omp_get_thread_num();
 #else
-						cfld[cfound].crackNum=nextCrack->GetNumber();
-						cfound++;
-						if(cfound>1) break;			// stop if found two, if there are more then two, physics will be off
+		int pn = 0;
 #endif
+*/
+	int tp = fmobj->GetTotalNumberOfPatches();
+	for(int pn=0;pn<tp;pn++)
+	{
+		for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
+		{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
+			while(mpmptr!=NULL)
+			{	double mp = mpmptr->mp;								// material point mass in g
+			
+				const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
+				int matfld = matID->GetField();									// material velocity field
+				
+				// get nodes and shape function for material point p
+				int i,numnds;
+				const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
+				if(fmobj->multiMaterialMode)
+					elref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
+				else
+					elref->GetShapeFunctions(&numnds,fn,nds,mpmptr->GetNcpos(),mpmptr);
+				
+				// Add particle property to each node in the element
+				short vfld;
+				NodalPoint *ndptr;
+				for(i=1;i<=numnds;i++)
+				{
+#ifdef _OPENMP
+					ndptr = patches[pn]->GetNodePointer(nds[i]);
+#else
+					ndptr = nd[nds[i]];
+#endif
+					// momentum vector (and allocate velocity field if needed)
+					vfld = mpmptr->vfld[i];
+					ndptr->AddMomentumTask1(vfld,matfld,fn[i]*mp,&mpmptr->vel,1);
+					
+					// crack contact calculations (only if cracks or multimaterial mode)
+					contact.AddDisplacementVolume(vfld,matfld,ndptr,mpmptr,fn[i]);
+					
+					// material contact calculations (only if multimaterial mode)
+					ndptr->AddVolumeGradient(vfld,matfld,mpmptr,xDeriv[i],yDeriv[i],zDeriv[i]);
+					
+					// more for non-rigid contact materials
+					if(block==FIRST_NONRIGID)
+					{	// add to lumped mass matrix
+						ndptr->AddMass(vfld,matfld,mp*fn[i]);
+						
+						// transport calculations
+						TransportTask *nextTransport=transportTasks;
+						while(nextTransport!=NULL)
+							nextTransport=nextTransport->Task1Extrapolation(ndptr,mpmptr,fn[i]);
 					}
-					nextCrack=(CrackHeader *)nextCrack->GetNextObject();
+					else
+					{	// for rigid particles, let the crack velocity field know
+						ndptr->AddMassTask1(vfld,matfld,mp*fn[i],1);
+					}
+					
 				}
 				
-			}
-			
-			// momentum vector (and allocate velocity field if needed)
-			vfld = ndptr->AddMomentumTask1(matfld,cfldptr,fn[i]*mp,&mpmptr->vel);
-			mpmptr->vfld[i] = vfld;
-			
-			// crack contact calculations (only if cracks or multimaterial mode)
-			contact.AddDisplacementVolume(vfld,matfld,ndptr,mpmptr,fn[i]);
-			
- 			// material contact calculations (only if multimaterial mode)
-			ndptr->AddVolumeGradient(vfld,matfld,mpmptr,xDeriv[i],yDeriv[i],zDeriv[i]);
-			
-			// more for non-rigid contact materials
-			if(!matID->Rigid())
-			{	// add to lumped mass matrix
-				ndptr->AddMass(vfld,matfld,mp*fn[i]);
-				
-				// transport calculations
-				TransportTask *nextTransport=transportTasks;
-				while(nextTransport!=NULL)
-					nextTransport=nextTransport->Task1Extrapolation(ndptr,mpmptr,fn[i]);
-			}
-			else
-			{	// for rigid particles, let the crack velocity field know
-				ndptr->AddMassTask1(vfld,matfld,mp*fn[i]);
+				// next non-rigid material point
+				mpmptr = (MPMBase *)mpmptr->GetNextObject();
 			}
 		}
 	}
     
+	// reduction of ghost node forces to real nodes
+	int totalPatches = fmobj->GetTotalNumberOfPatches();
+	if(totalPatches>1)
+	{	for(int pn=0;pn<totalPatches;pn++)
+			patches[pn]->MassAndMomentumReduction();
+	}
+	
 	// undo dynamic velocity, temp, and conc BCs from rigid materials
 	UnsetRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 				  (BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
@@ -284,14 +285,14 @@ void MassAndMomentumTask::Execute(void)
 #endif
 	
 	// Post mass and momentum extrapolation calculations on nodes
-#pragma omp parallel
+//#pragma omp parallel
 	{
 		// variables for each thread
 		CrackNode *firstCrackNode=NULL,*lastCrackNode=NULL;
 		MaterialInterfaceNode *firstInterfaceNode=NULL,*lastInterfaceNode=NULL;
 		
 		// Each pass in this loop should be independent
-#pragma omp for
+//#pragma omp for
 		for(int i=1;i<=nnodes;i++)
 		{	// node reference
 			NodalPoint *ndptr = nd[i];
@@ -317,8 +318,8 @@ void MassAndMomentumTask::Execute(void)
 			while(nextTransport!=NULL)
 				nextTransport = nextTransport->GetNodalValue(ndptr);
 		}
-		
-#pragma omp critical
+
+//#pragma omp critical
 		{
 			// link up crack nodes
 			if(lastCrackNode != NULL)

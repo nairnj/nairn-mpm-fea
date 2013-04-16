@@ -12,9 +12,7 @@
 int nnodes=0;			// number of nodes
 NodalPoint **nd;		// list of nodes
 
-/********************************************************************************
-	NodalPoint: Constructors and Destructor
-********************************************************************************/
+#pragma mark NodalPoint: Constructors and Destructor
 
 NodalPoint::NodalPoint(int nodeNum)
 {
@@ -25,11 +23,29 @@ NodalPoint::NodalPoint(int nodeNum)
 #endif
 }
 
-// Destructor
-#ifdef FEA_CODE
+#ifdef MPM_CODE
+
+// create ghost node that is a copy of source node
+NodalPoint::NodalPoint(NodalPoint *real)
+{
+	num = real->num;
+	x = real->x;
+	y = real->y;
+	z = real->z;
+	fixedDirection=0;
+	cvf=NULL;
+	
+	// this called later for real nodes
+	PrepareForFields();
+}
+
+#else
+
+// FEA Destructor
 NodalPoint::~NodalPoint()
 {
 }
+
 #endif
 
 

@@ -15,6 +15,8 @@
 
 #define MAX_FIELDS_FOR_CRACKS 4
 
+class NodalPoint;
+
 class MatVelocityField
 {
 	public:
@@ -34,7 +36,9 @@ class MatVelocityField
 		void Zero(void);
 		
 		// methods
-		void AddMomentumTask1(Vector *,Vector *);
+		void AddMomentumTask1(Vector *,Vector *,int);
+		void CopyMassAndMomentum(NodalPoint *,int,int);
+		void CopyGridForces(NodalPoint *,int,int);
 		void ChangeMatMomentum(Vector *,bool,double);
 		void AddContactForce(Vector *);
 		void CalcVelocityForStrainUpdate(void);

@@ -45,7 +45,7 @@ void UpdateParticlesTask::Execute(void)
 	Vector delv;
 	
     // Update particle position, velocity, temp, and conc
-#pragma omp parallel for private(numnds,nds,fn,delv)
+//#pragma omp parallel for private(numnds,nds,fn,delv)
     for(int p=0;p<nmpmsNR;p++)
 	{	// get shape functions
         const ElementBase *elemRef = theElements[mpm[p]->ElemID()];

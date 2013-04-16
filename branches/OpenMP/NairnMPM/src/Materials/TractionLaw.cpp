@@ -40,7 +40,7 @@ char *TractionLaw::InputMat(char *xName,int &input)
 }
 
 // do not need to call base material class methods
-const char *TractionLaw::VerifyProperties(int np) { return NULL; }
+const char *TractionLaw::VerifyAndLoadProperties(int np) { return NULL; }
 
 // report debond in same format for all cohesive laws
 // dtime in sec, cs if the debonded segment, fractionI is fraction mode I at time of debond

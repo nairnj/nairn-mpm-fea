@@ -42,7 +42,7 @@ void MPMTask::WriteProfileResults(int nsteps,double timePerStep,double eTimePerS
 	double taskPerStep = 1000.*totalTaskTime/(double)nsteps;
 	cout << ": " << taskPerStep << " ms CPU/step (" << 100.*taskPerStep/timePerStep << "%)";
 	
-#ifdef _PARALLEL_
+#ifdef _OPENMP
 	double eTaskPerStep = 1000.*totalTaskETime/(double)nsteps;
 	cout << ", " << eTaskPerStep << " ms/step (" << 100.*eTaskPerStep/eTimePerStep << "%, "
 			<< totalTaskTime/totalTaskETime << ")";

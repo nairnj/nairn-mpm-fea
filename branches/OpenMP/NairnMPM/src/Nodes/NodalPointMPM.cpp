@@ -29,7 +29,7 @@ double NodalPoint::interfaceEnergy=0.;
 
 #pragma mark INITIALIZATION
 
-// Destructor
+// MPM Destructor
 NodalPoint::~NodalPoint()
 {
 	if(cvf!=NULL)
@@ -76,35 +76,21 @@ void NodalPoint::InitializeForTimeStep(void)
 	fcond=0.;
 }
 
-#pragma mark TASK 1 METHODS
+#pragma mark TASK 0 METHODS
 
-// Add mass for selected field
-void NodalPoint::AddMass(short vfld,int matfld,double mnode) { cvf[vfld]->AddMass(matfld,mnode); }
-
-// for rigid particles, adding mass is counting number of rigid particles
-void NodalPoint::AddMassTask1(short vfld,int matfld,double mnode) { cvf[vfld]->AddMassTask1(matfld,mnode); }
-
-// Add to momentum vector (first pass - allocate cvf[] if needed) (both 2D and 3D)
-short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector *vel)
+// When there are cracks, call this method to allocate crack and material velocity fields
+// that are needed on this time step. Called once in initialization task
+short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 {
-	// default MPM code when no cracks
-	if(cfld == NULL)
-	{	// add momemtum to velocity field 0 (in g mm/sec)
-		Vector wtvel;
-		cvf[0]->AddMomentumTask1(matfld,CopyScaleVector(&wtvel,vel,wt),vel);
-		return 0;
-	}
-	
-	// Rest is for CRAMP
-	// find velocity field, add momemtum to correct one
-	// return the found velocity field
+	// CRAMP calculation
+	// find and return velocity field, allocate memory if needed
 	short vfld=0;
 	
 	// only 1 or no cracks, with relevant settings in cfld[0]
 	if(cfld[1].loc==NO_CRACK)
 	{	switch(cfld[0].loc)
 		{	case NO_CRACK:
-				vfld=0;
+				vfld = 0;
 				break;
 			case ABOVE_CRACK:
 			case BELOW_CRACK:
@@ -130,7 +116,7 @@ short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector 
 					else
 					{	// it can only be field 0
 						vfld=0;
-						
+					
 						// Here means both above and below crack for field [1], which can only happen is a
 						// node is on a crack
 						if(warnings.Issue(CrackHeader::warnNodeOnCrack,11)==GAVE_WARNING) Describe();
@@ -140,7 +126,7 @@ short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector 
 							cvf[0]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
 					}
 				}
-						
+				
 				// Here means found a new crack, which hopefully will be appropriate for cvf[2]
 				// Here means cvf[1]->crackNumber(FIRST_CRACK)!=cfld[0].crackNum
 				else
@@ -163,7 +149,7 @@ short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector 
 						else
 						{	// it can only be field 0
 							vfld=0;
-						
+							
 							// Here means both above and below crack for field [2], which can only happen is a
 							// node is on a crack
 							if(warnings.Issue(CrackHeader::warnNodeOnCrack,12)==GAVE_WARNING) Describe();
@@ -189,7 +175,6 @@ short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector 
 		}
 	}
 	
-	// two fields - currently only allows one field and thus cannot handle nodes on interacting cracks
 	// two fields are always put into cvf[3] and it is only field with alternate crack information
 	else
 	{	if(!CrackVelocityField::ActiveField(cvf[3]))
@@ -197,7 +182,7 @@ short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector 
 			if(cvf[3]==NULL)
 			{	cvf[3]=CrackVelocityField::CreateCrackVelocityField(cfld[0].loc,cfld[0].crackNum);
 				if(cvf[3]==NULL) throw CommonException("Memory error allocating crack velocity field 3.",
-														  "NodalPoint::AddMomentumTask1");
+													   "NodalPoint::AddMomentumTask1");
 			}
 			else
 				cvf[3]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
@@ -243,18 +228,63 @@ short NodalPoint::AddMomentumTask1(int matfld,CrackField *cfld,double wt,Vector 
 		cvf[vfld]->AddNormals(&cfld[1].norm,SECOND_CRACK);
 	}
 	
-    // add momemtum to selected field (in g mm/sec)
-	Vector wtvel;
-	cvf[vfld]->AddMomentumTask1(matfld,CopyScaleVector(&wtvel,vel,wt),vel);
-	
 	// return crack velocity field that was used
 	return vfld;
 }
 
+// When there are cracks or multimedia, call this method to allocate material velocity fields
+// that are needed on this time step. Called onlyb in initialization task
+void NodalPoint::AddMatVelocityField(short vfld,int matfld)
+{	cvf[vfld]->AddMatVelocityField(matfld);
+}
+
+// Copy volume gradient when copying from ghost to real node
+void NodalPoint::CopyFieldInitialization(NodalPoint *real)
+{	real->UseTheseFields(cvf);
+}
+
+// Create fields in this node that match the supplied fields
+void NodalPoint::UseTheseFields(CrackVelocityField **gcvf)
+{	
+	for(int i=0;i<maxCrackFields;i++)
+	{	if(gcvf[i]==NULL) continue;
+		
+		if(cvf[i]==NULL)
+		{	// create on in ghost that is not here
+			cvf[i]=CrackVelocityField::CreateCrackVelocityField(0,0);
+			if(cvf[i]==NULL) throw CommonException("Memory error allocating crack velocity field 3.",
+												   "NodalPoint::UseTheseFields");
+		}
+		
+		// make these match
+		cvf[i]->MatchGhostFields(gcvf[i]);
+	}
+}
+
+#pragma mark TASK 1 METHODS
+
+// Add to momentum vector to selected field (in g mm/sec)(both 2D and 3D)
+void NodalPoint::AddMomentumTask1(short vfld,int matfld,double wt,Vector *vel,int numPts)
+{	Vector wtvel;
+	cvf[vfld]->AddMomentumTask1(matfld,CopyScaleVector(&wtvel,vel,wt),vel,numPts);
+}
+
 // Add mass for selected field
+void NodalPoint::AddMass(short vfld,int matfld,double mnode) { cvf[vfld]->AddMass(matfld,mnode); }
+
+// for rigid particles, adding mass is counting number of rigid particles
+void NodalPoint::AddMassTask1(short vfld,int matfld,double mnode,int numPts) { cvf[vfld]->AddMassTask1(matfld,mnode,numPts); }
+
+// Add volume gradient for selected field
 void NodalPoint::AddVolumeGradient(short vfld,int matfld,MPMBase *mptr,double dNdx,double dNdy,double dNdz)
 {	if(fmobj->multiMaterialMode)
 		cvf[vfld]->AddVolumeGradient(matfld,mptr,dNdx,dNdy,dNdz);
+}
+
+// Copy volume gradient when copying from ghost to real node
+void NodalPoint::CopyVolumeGradient(short vfld,int matfld,Vector *grad)
+{	if(fmobj->multiMaterialMode)
+		cvf[vfld]->CopyVolumeGradient(matfld,grad);
 }
 
 // Calculate total mass and count number of materials on this node
@@ -318,10 +348,29 @@ void NodalPoint::CombineRigidParticles(void)
 	}
 }
 
+// copy ghost node mass an momentum to real node
+void NodalPoint::CopyMassAndMomentum(NodalPoint *real)
+{	for(int vfld=0;vfld<maxCrackFields;vfld++)
+	{	if(CrackVelocityField::ActiveField(cvf[vfld]))
+			cvf[vfld]->CopyMassAndMomentum(real,vfld);
+	}
+}
+
 #pragma mark TASK 3 METHODS
 
 // Add to internal force
-void NodalPoint::AddFtotTask3(short vfld,int matfld,Vector *f) { cvf[vfld]->AddFtotTask3(matfld,f); }
+void NodalPoint::AddFtotTask3(short vfld,int matfld,Vector *f)
+{	if(cvf[vfld]==NULL) throw "NULL crack velocity field in grid forces test";
+	cvf[vfld]->AddFtotTask3(matfld,f);
+}
+
+// copy ghost node forces to real node (nonrigid only)
+void NodalPoint::CopyGridForces(NodalPoint *real)
+{	for(int vfld=0;vfld<maxCrackFields;vfld++)
+	{	if(CrackVelocityField::ActiveNonrigidField(cvf[vfld]))
+			cvf[vfld]->CopyGridForces(real,vfld);
+	}
+}
 
 // Add to internal force spread out over materials for same acceleration on each
 // Only called by AddTractionForce() and CrackInterfaceForce()
@@ -365,6 +414,7 @@ void NodalPoint::AddTractionTask3(MPMBase *mpmptr,int matfld,Vector *f)
 	else 
 	{	// trying switching to zero
 		cout << "# traction needs inactive field: " << vfld << endl;
+		throw "Invalid traction force";
 	}
 }
 
@@ -407,7 +457,7 @@ void NodalPoint::RezeroNodeTask6(double deltaTime)
     }
 }
 
-// Add 2 momentum on second pass for selected field that must be there
+// Add to momentum on second pass for selected field that must be there
 void NodalPoint::AddMomentumTask6(short vfld,int matfld,double wt,Vector *vel)
 {	cvf[vfld]->AddMomentumTask6(matfld,wt,vel);
 }

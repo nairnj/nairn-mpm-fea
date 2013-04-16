@@ -28,7 +28,7 @@ class MeshInfo
 		double diagx,diagy,diagz;		// cell diagonal
 		int xplane,yplane,zplane;		// node spacings in each plane
 		double xmin,ymin,zmin;			// minimums (if from a grid)
-        double positionCutoff;             // cut off for normal contact when using positiong instead of displacements
+        double positionCutoff;          // cut off for normal contact when using positiong instead of displacements
 		
 		// constructors
 		MeshInfo(void);
@@ -38,12 +38,15 @@ class MeshInfo
         void OutputContactByDisplacements(void);
 		bool EdgeElement2D(int);
 		bool EdgeElement3D(int);
+		bool EdgeNode(int,char);
 		void ListOfNeighbors2D(int,int *);
 		void ListOfNeighbors3D(int,int *);
         int FindElementFromPoint(Vector *);
 		GridPatch **CreatePatches(int,int);
-		
+		GridPatch **CreateOnePatch(int);
+	
 		// Accessors
+		int GetPatchForElement(int);
 		void SetCartesian(int,double,double,double);
 		void SetElements(int,int,int,double,double,double);
 		void SetParticleLength(int);
@@ -70,6 +73,7 @@ class MeshInfo
         double avgCellSize;             // average cell size
         bool contactByDisplacements;    // TRUE is using displacements, false if need to adjust normal COD
 		int xpnum,ypnum,zpnum;			// patch grid size
+		int xPatchSize,yPatchSize,zPatchSize;		// patch sizes in elements (last may differ)
 
 };
 

@@ -21,6 +21,9 @@ class NodalPoint3D : public NodalPoint
        
         // constructors and destructors
 		NodalPoint3D(int,double,double,double);
+#ifdef MPM_CODE
+		NodalPoint3D(NodalPoint *);
+#endif
 		
 		// methods
         virtual void PrintNodalPoint(ostream &);

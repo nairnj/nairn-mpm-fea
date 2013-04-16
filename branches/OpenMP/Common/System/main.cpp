@@ -91,7 +91,12 @@ int main(int argc,const char *argv[])
     }
     
     // set number of processors
-#ifdef _PARALLEL_
+#ifdef _OPENMP
+#ifdef _OMPTEST
+	// use any number of processors, but atleast one
+	if(numProcs==0) numProcs=1;
+#else
+	// pick number of processors, but no more than number available
     int maxProcs = max(omp_get_max_threads(),omp_get_num_procs());
     if(numProcs>0)
     {   if(numProcs > maxProcs) numProcs = maxProcs;
@@ -99,7 +104,9 @@ int main(int argc,const char *argv[])
     }
     else
         numProcs = maxProcs;
+#endif
 #else
+	// zero mean omp is disabled
     numProcs = 0;
 #endif
     fmobj->SetNumberOfProcessors(numProcs);

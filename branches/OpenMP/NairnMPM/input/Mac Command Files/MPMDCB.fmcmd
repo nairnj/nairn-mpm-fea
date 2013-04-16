@@ -1,0 +1,173 @@
+! ********** Preamble Section **********
+! This command file does a double cantilever beam specimen to test crack methods
+
+! ********** Preamble Section **********
+Title "DCB Specimen"
+Name "John Nairn"
+
+! ------------ Parameters ---------------
+
+! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"
+#analysis="Plane Strain MPM"
+Processors 2
+
+! Points per element
+#ppe=2
+XMLData MPMHeader
+    <DefGradTerms>2</DefGradTerms>
+EndXMLData
+
+! pick a method usually "lCPDI" or "uGIMP"
+#method="uGIMP"
+
+! pick strain update method usually "USF" or "USAVG"
+#update="USF"
+
+! Supported materials: "isotropic"
+#matID="isotropic"
+
+! temperature option to test energy coupling
+StressFreeTemp 294
+#startTemp=294
+
+! Basic properties
+#Ebase=100
+#rho=1.2
+#nuBase=.33
+#aBase=60
+
+! Dimensions
+#cwidth=2				! cell width
+#cheight=2				! cell height
+#length=100				! Length in mm (mult of cwidth)
+#depth=12				! Depth in mm (mult of cheight)
+#width=1				! Width in mm
+
+! crack properties
+#tip=50					! crack tip location
+
+! Load by stress or by velocity (if stress<=0)
+#loading="force"		! Loading = "rigid", "force", "traction"
+#rate=1				 ! fraction on axial wave speed
+#endDisp=1				! end deflection in mm
+
+! Loading rate
+#hold=2				! hold time (multiple of loading time)
+#unload=0		    ! 0 no unload or >0 for unloading time (multiple of loading time, but at same loading rate)
+
+! Damping parameter - for feedback or grid damping
+#damp=0
+#fbdamp=0.0
+#factor=0.4			! time step factor
+
+! ------------ Calculations ---------------
+! Header
+Header
+Double cantilever beam (DCB) specimen
+EndHeader
+
+Analysis "Plane Strain MPM"
+MPMMethod USF,"uGIMP"
+
+! Loading rate - end deflection one arm per unit load is L^3/(3EI) 
+#crack=#length-#tip
+#armI=#width*#depth^3/12
+#defl=#crack^3/(3*#Ebase*#armI)			! mm/N
+
+! gave wave speed
+if #matID="isotropic"
+  #wave=sqrt(1000*#Ebase/#rho)			! m/s = mm/msec
+endif
+
+#rate=#rate*#wave/100					! end rate in mm/msec
+if #loading="force"
+   ! #defl*(force rate) is end deflection in mm/msec = #rate
+   #forcerate=#rate/#defl
+endif
+
+! loading time
+#loadtime=#endDisp/#rate				! msec
+#maxTime=#loadtime*(1+#hold+#unload)
+
+! ********** MPM Header **********
+Archive "Results/DCB-"&#matID&"-"&#method&"/"&#loading
+TimeStep 1000,#maxTime,#factor
+ArchiveTime #maxTime/50
+ToArchive velocity,stress,strain,rotstrain
+ToArchive strainenergy,externalwork,stressintensity,jintegral
+
+GlobalArchive syy
+
+Damping #damp
+
+!Propagate "critical err"
+!Propagate "none"
+!Friction "none"
+!MovePlane avg
+! ********** MATERIALS SECTION **********
+if #matID="isotropic"
+
+  Material #matID,"Polymer","Isotropic"    E #Ebase    nu #nuBase    a #aBase    rho #rho
+    JIc 0.02
+  Done
+
+endif
+! ********** GRID SECTION ***********
+#ledge=#cwidth			! left edge extra space (mult of cwidth)
+#redge=2*#cwidth		! right edge extra space (mult of cwidth)
+#top=6*#cheight			! top and bottom extra space (mult of cheight)
+
+! horizontal and verticle number of cells
+#horiz=(#length+#ledge+#redge)/#cwidth
+#vert=(#depth+#top)/#cheight
+
+GridThickness #width
+GridHoriz #horiz
+GridVert 2*#vert
+GridRect -#ledge,#length+#redge,-#depth-#top,#depth+#top! ********* MATERIAL POINT SECTION *****
+Region #matID,0,0,#width
+  Rect 0,#length,-#depth,#depthEndRegion
+
+! ********* CRACKS SECTION *****
+#res=int(#crack/#cwidth)+1
+NewCrack #tip+(#cwidth/10),-1e-6,#matID
+GrowCrackLine #length-#cwidth/4,-1e-6,#res,"exterior"
+! ***** BOUNDARY CONDITION SECTION *****
+MoveLine -#ledge,-#depth-#top,-#ledge,#depth+#top,#cwidth/10
+  Velocity x,constant,0
+  Velocity y,constant,0
+EndMoveLine
+
+! time part
+!    = t for t < loadtime
+!    = loadTime for loadtime < t < endhold
+!    = loadTime - (t-holdtime) for t > endhold
+#endhold=#loadtime*(1+#hold)
+#ftime="t*sign("&#loadtime&"-t)+"&#loadtime&"*sign(t-"&#loadtime&")"
+if #unload>0
+  #ftime = #ftime&"(t-"&#endhold&")*sign(t-"&#endhold&")"
+endif
+! end loads on beam armsif #loading="force"
+  LoadRect #length-(#cwidth/2),#length,0,#depth
+    Load y,function,#forcerate&"("&#ftime&")"
+  EndLoadRect  LoadRect #length-(#cwidth/2),#length,-#depth,0
+    Load y,function,(-#forcerate)&"("&#ftime&")"
+  EndLoadRect
+else if #loading="traction"
+	Stop "traction not ready yet"
+else if #loading="rigid"
+  Stop "rigid not ready yet"
+  Material "rigid","Rigid Grip","Rigid"
+    direction 2
+  Done
+  Region "rigid",0,#rvel,#width
+    Rect #length-2*#cwidth,#length,#depth,#depth+#cheight
+  EndRegion
+  Region "rigid",0,-#rvel,#width
+    Rect #length-2*#cwidth,#length,-#depth-#cheight,-#depth
+  EndRegion
+EndIf
+
+CustomTask ReverseLoad
+Parameter style,"continue"
+Parameter maxLength,100

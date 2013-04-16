@@ -16,6 +16,12 @@
 // crashed in the time step
 //#define LOG_PROGRESS
 
+// Define to test multiple patches, but not be in parallel
+// This overrides incompatiible omp calls but does not deactivate #pragma omp,
+// which therefore should be comment out. Also assume omp is enable to
+// _OPENMP is defined, even though not being used
+#define _OMPTEST
+
 // C includes
 // Used to have <stdio.h>
 #include <cstdio>
@@ -25,10 +31,6 @@
 #include <math.h>
 #include <vector>
 #include <omp.h>
-
-#ifdef _OPENMP
-#define _PARALLEL_
-#endif
 
 // For c++89 compliance
 using namespace std;

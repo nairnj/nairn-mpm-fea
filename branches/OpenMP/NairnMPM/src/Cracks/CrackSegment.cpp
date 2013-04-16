@@ -209,7 +209,7 @@ double CrackSegment::AddTractionFextSide(CrackHeader *theCrack,int side,double s
 	cspos.x=surfx[side];
 	cspos.y=surfy[side];
 	iel=surfInElem[side];
-	theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cspos,&ndpos,NULL);
+	theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cspos,&ndpos);
 	for(i=1;i<=numnds;i++)
 	{	ndi=nd[nds[i]];
 		vfld=theCrack->CrackCross(cspos.x,cspos.y,ndi->x,ndi->y,&norm);
@@ -611,7 +611,7 @@ void CrackSegment::FindCrackTipMaterial(void)
 	cspos.x=x;
 	cspos.y=y;
 	iel=planeInElem;
-	theElements[iel]->GetShapeFunctions(&numnds,fn,nds,&cspos,&ndpos,NULL);
+	theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cspos,&ndpos);
 	
 	// extrapolate to particle
 	for(i=1;i<=numnds;i++)

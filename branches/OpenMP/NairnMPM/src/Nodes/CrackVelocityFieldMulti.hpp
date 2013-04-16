@@ -22,15 +22,20 @@ class CrackVelocityFieldMulti : public CrackVelocityField
         // constructors and destructors
 		CrackVelocityFieldMulti(short,int);
 		virtual void ZeroMatFields(void);
+		virtual void AddMatVelocityField(int);
+		virtual void MatchMatVelocityFields(MatVelocityField **);
 	
 		// specific task methods
-		virtual void AddMassTask1(int,double);
+		virtual void AddMassTask1(int,double,int);
 		virtual double GetTotalMassAndCount(void);
 		virtual void AddVolumeGradient(int,MPMBase *,double,double,double);
+		virtual void CopyVolumeGradient(int,Vector *);
 		virtual void CombineRigidFrom(CrackVelocityFieldMulti *,int);
 		virtual void CopyRigidFrom(CrackVelocityFieldMulti *,int);
+		virtual void CopyMassAndMomentum(NodalPoint *,int);
 	
 		virtual void AddFtotSpreadTask3(Vector *);
+		virtual void CopyGridForces(NodalPoint *,int);
 		virtual void AddGridDampingTask3(double);
 	
 		virtual void UpdateMomentaOnField(double);

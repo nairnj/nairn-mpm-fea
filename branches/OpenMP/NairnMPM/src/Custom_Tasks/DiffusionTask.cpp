@@ -131,7 +131,7 @@ TransportTask *DiffusionTask::GetGradients(double stepTime)
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
 	// Find gradients on the nonrigid particles
-#pragma omp parallel for private(nd,fn,xDeriv,yDeriv,zDeriv)
+//#pragma omp parallel for private(nd,fn,xDeriv,yDeriv,zDeriv)
     for(int p=0;p<nmpmsNR;p++)
 	{	// find shape functions and derviatives
         MPMBase *mptr = mpm[p];

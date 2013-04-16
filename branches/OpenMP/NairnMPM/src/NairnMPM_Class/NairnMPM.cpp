@@ -36,8 +36,11 @@
 #include "NairnMPM_Class/ResetElementsTask.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
-#include "Patches/GridPatch.hpp"
 #include <time.h>
+
+// NEWINCLUDE
+#include "Patches/GridPatch.hpp"
+
 
 // global analysis object
 NairnMPM *fmobj=NULL;
@@ -112,7 +115,7 @@ void NairnMPM::MPMAnalysis(bool abort)
     
     //---------------------------------------------------
 	// initialize
-#ifdef _PARALLEL_
+#ifdef _OPENMP
 	startTime = omp_get_wtime();
 #else
     time(&startTime);
@@ -562,10 +565,10 @@ void NairnMPM::PreliminaryCalcs(void)
 	// propagation time step (no less than timestep)
     if(propTime<timestep) propTime=timestep;
 	
-	// create patches
-	//patches = mpmgrid.CreatePatches(np,numProcs);
-    //if(patches==NULL)
-	//	throw CommonException("Out of memory creating the patches","NairnMPM::PreliminaryCalcs");
+	// create patches or a single patch
+	patches = mpmgrid.CreatePatches(np,numProcs);
+    if(patches==NULL)
+		throw CommonException("Out of memory creating the patches","NairnMPM::PreliminaryCalcs");
 	
     // Print particle information oand other preliminary calc results
     PrintSection("FULL MASS MATRIX");
@@ -686,7 +689,7 @@ void NairnMPM::ValidateOptions(void)
 			throw CommonException("Multimaterial mode is not allowed unless using a generated regular mesh","NairnMPM::ValidateOptions");
 	}
 
-#ifdef _PARALLEL_
+#ifdef _OPENMP
 	if(!mpmgrid.CanDoGIMP())
 		throw CommonException("Multicore parallel code requires a generated regular mesh","NairnMPM::ValidateOptions");
 #endif
@@ -749,7 +752,7 @@ void NairnMPM::Usage()
 // elapsed actual time
 double NairnMPM::ElapsedTime(void)
 {
-#ifdef _PARALLEL_
+#ifdef _OPENMP
 	return omp_get_wtime()-startTime;
 #else
 	time_t currentTime;

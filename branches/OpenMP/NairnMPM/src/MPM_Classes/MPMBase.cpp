@@ -36,6 +36,7 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	SetAnglex0InDegrees(0.0);
     
 	// space to hold velocity fields
+	// these only change if there are cracks
 	vfld = (char *)malloc(maxShapeNodes*sizeof(char));
     for(i=1;i<maxShapeNodes;i++)
         vfld[i]=NO_CRACK;

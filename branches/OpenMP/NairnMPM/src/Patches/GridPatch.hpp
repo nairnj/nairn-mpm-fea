@@ -14,6 +14,10 @@
 #define _GRIDPATCH_
 
 class MPMBase;
+class GhostNode;
+class NodalPoint;
+
+enum { FIRST_NONRIGID=0,FIRST_RIGID_CONTACT,FIRST_RIGID_BC };
 
 class GridPatch
 {
@@ -22,12 +26,32 @@ class GridPatch
     
         // constructors and destructors
         GridPatch(int,int,int,int,int,int);
+		bool CreateGhostNodes(void);
     
+		// methods
+		void InitializeForTimeStep(void);
+		void InitializationReduction(void);
+		void MassAndMomentumReduction(void);
+		void GridForcesReduction(void);
+		void AddParticle(MPMBase *);
+		void RemoveParticleAfter(MPMBase *,MPMBase *);
+	
+		// accessors
+		MPMBase *GetFirstBlockPointer(int);
+		NodalPoint *GetNodePointer(int);
+	
     private:
-        int xmin,xmax,ymin,ymax,zmin,zmax;      // element ranges
+        int x0,x1,y0,y1,z0,z1;					// element ranges (0-based row, col, rank)
+		int xn,yn,zn;							// node count in each direction
+		int numGhosts;							// total number of GhostNodes in 0 based list
+		GhostNode **ghosts;						// 0 based points to the ghost nodes
         MPMBase *firstNR;                       // first non-rigid particle
         MPMBase *firstRC;                       // first rigid contact particle
         MPMBase *firstRBC;                      // first rigid BC particle
+		int interiorRow;
+		int fullRow;
+		int basePartial;
+		int baseTop;
 };
 
 extern GridPatch **patches;

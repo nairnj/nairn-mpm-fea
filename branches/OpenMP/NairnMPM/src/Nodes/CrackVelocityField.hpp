@@ -37,15 +37,21 @@ class CrackVelocityField
         virtual ~CrackVelocityField();
 		virtual void Zero(short,int,bool);
 		virtual void ZeroMatFields() = 0;
+		virtual void AddMatVelocityField(int);
+		virtual void MatchGhostFields(CrackVelocityField *);
+		virtual void MatchMatVelocityFields(MatVelocityField **);
 		
 		// specific task methods
-		void AddMomentumTask1(int,Vector *,Vector *);
+		virtual void AddMomentumTask1(int,Vector *,Vector *,int);
 		virtual void AddMass(int,double);
-		virtual void AddMassTask1(int,double);
+		virtual void AddMassTask1(int,double,int);
 		virtual double GetTotalMassAndCount(void) = 0;
 		virtual void AddVolumeGradient(int,MPMBase *,double,double,double);
+		virtual void CopyVolumeGradient(int,Vector *);
+		virtual void CopyMassAndMomentum(NodalPoint *,int);
 	
 		void AddFtotTask3(int,Vector *);
+		virtual void CopyGridForces(NodalPoint *,int);
 		virtual void AddFtotSpreadTask3(Vector *) = 0;
 		virtual void AddGridDampingTask3(double) = 0;
 	
@@ -84,6 +90,7 @@ class CrackVelocityField
 		int crackNumber(int);
 		int OppositeCrackTo(int,int);
 		void SetLocationAndCrack(short,int,int);
+		MatVelocityField **GetMaterialVelocityFields(void);
 		virtual double GetTotalMass(void) = 0;
 		virtual void AddKineticEnergyAndMass(double &,double &) = 0;
 		virtual double GetVolumeNonrigid(void) = 0;

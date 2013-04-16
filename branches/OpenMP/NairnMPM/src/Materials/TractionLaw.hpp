@@ -26,7 +26,7 @@ class TractionLaw : public MaterialBase
 		
 		// methods
         virtual char *InputMat(char *,int &);
-		virtual const char *VerifyProperties(int);
+		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintTransportProperties(void) const;
 		virtual void ReportDebond(double,CrackSegment *,double,double);
 		

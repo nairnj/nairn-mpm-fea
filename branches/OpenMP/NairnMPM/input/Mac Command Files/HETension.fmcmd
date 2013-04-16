@@ -12,7 +12,7 @@ Title "Hyperelasstic Tensile Loading"Name "John Nairn"
 EndHeader! ------------ Parameters ---------------
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"#analysis="Plane Strain MPM"
-Processors 4
+Processors 6
 
 ! Points per element
 #ppe=2
@@ -21,13 +21,13 @@ XMLData MPMHeader
 EndXMLData
 
 ! pick a method usually "lCPDI" or "uGIMP"
-#method="lCPDI"
+#method="uGIMP"
 
 ! pick strain update method usually "USF" or "USAVG"
 #update="USF"
 
 ! Supported materials: "neohookean" (G2=0), "mooney" (G1=G2), heiso
-#matID="mooney"
+#matID="heiso"
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2
@@ -246,7 +246,7 @@ if #strain<0
 else
   #xtra=(int(1.6*#strain*#length/100/#cell)+4)
   #gleft=-#xtra*#cell
-  #sides=4
+  #sides=2
 endif
 #gright=#length+#cell
 #gbot=-#sides*#cell
