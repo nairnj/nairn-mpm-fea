@@ -162,55 +162,55 @@ void NairnMPM::MPMAnalysis(bool abort)
 	lastMPMTask=firstMPMTask=(MPMTask *)new InitializationTask("Initialization");
 	
 	// TASK 1: MASS MATRIX
-	nextMPMTask=(MPMTask *)new MassAndMomentumTask("Mass matrix and momentum extrapolation");
+	nextMPMTask=(MPMTask *)new MassAndMomentumTask("Mass/momentum_extrapolation");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
 	
 	// TASK 2: UPDATE STRAINS FIRST AND USAVG
     if(mpmApproach==USF_METHOD || mpmApproach==USAVG_METHOD)
-	{	nextMPMTask=(MPMTask *)new UpdateStrainsFirstTask("Update strains first");
+	{	nextMPMTask=(MPMTask *)new UpdateStrainsFirstTask("Update_strains_first");
 		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 		lastMPMTask=nextMPMTask;
 	}
 	
 	// TASK 3: FORCES
-	nextMPMTask=(MPMTask *)new GridForcesTask("Get grid forces");
+	nextMPMTask=(MPMTask *)new GridForcesTask("Grid_forces");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
     
 	// TASK 4: UPDATE MOMENTA
-	nextMPMTask=(MPMTask *)new UpdateMomentaTask("Update momenta");
+	nextMPMTask=(MPMTask *)new UpdateMomentaTask("Update_momenta");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
     
 	// TASK 5: UPDATE PARTICLES
-	nextMPMTask=(MPMTask *)new UpdateParticlesTask("Update particles");
+	nextMPMTask=(MPMTask *)new UpdateParticlesTask("Update_particles");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
 	
 	// TASK 6: UPDATE STRAINS LAST AND USAVG
 	if(mpmApproach==SZS_METHOD || mpmApproach==USAVG_METHOD)
-	{	nextMPMTask=(MPMTask *)new UpdateStrainsLastTask("Update strains last");
+	{	nextMPMTask=(MPMTask *)new UpdateStrainsLastTask("Update_strains_last");
 		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 		lastMPMTask=nextMPMTask;
 	}
 	
 	// TASK 7: CUSTOM TASKS
 	if(theTasks!=NULL)
-	{	nextMPMTask=(MPMTask *)new RunCustomTasksTask("Run custom tasks");
+	{	nextMPMTask=(MPMTask *)new RunCustomTasksTask("Run_custom_tasks");
 		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 		lastMPMTask=nextMPMTask;
 	}
 	
 	// TASK 8a: MOVE CRACKS
 	if(firstCrack!=NULL)
-	{	nextMPMTask=(MPMTask *)new MoveCracksTask("Move cracks");
+	{	nextMPMTask=(MPMTask *)new MoveCracksTask("Move_cracks");
 		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 		lastMPMTask=nextMPMTask;
 	}
 	
 	// TASK 8b: RESET ELEMEMTS
-	nextMPMTask=(MPMTask *)new ResetElementsTask("Reset elements");
+	nextMPMTask=(MPMTask *)new ResetElementsTask("Reset_elements");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
 	
