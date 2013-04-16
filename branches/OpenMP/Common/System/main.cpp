@@ -106,7 +106,7 @@ int main(int argc,const char *argv[])
         numProcs = maxProcs;
 #endif
 #else
-	// zero mean omp is disabled
+	// zero means omp is disabled
     numProcs = 0;
 #endif
     fmobj->SetNumberOfProcessors(numProcs);

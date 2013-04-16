@@ -171,8 +171,10 @@ ElementBase3D = $(src)/Elements/ElementBase3D
 ElementsController = $(com)/Read_XML/ElementsController
 FourNodeIsoparam = $(com)/Elements/FourNodeIsoparam
 Generators = $(src)/Read_MPM/Generators
+GhostNode = $(src)/Patches/GhostNode
 GlobalQuantity = $(src)/Global_Quantities/GlobalQuantity
 GridForcesTask = $(src)/NairnMPM_Class/GridForcesTask
+GridPatch = $(src)/Patches/GridPatch
 HardeningLawBase = $(src)/Materials/HardeningLawBase
 HEAnisotropic = $(src)/Materials/HEAnisotropic
 HEIsotropic = $(src)/Materials/HEIsotropic
@@ -396,7 +398,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		TractionLaw.o CohesiveZone.o CoupledSawTooth.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o AdjustTimeStepTask.o SLMaterial.o CrackVelocityFieldMulti.o \
 		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o \
-        HEMGEOSMaterial.o
+        HEMGEOSMaterial.o GridPatch.o GhostNode.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -860,6 +862,14 @@ NodalPointMPM.o : $(NodalPointMPM).cpp $(dprefix) $(NodalPoint).hpp $(NairnMPM).
 			$(CrackNode).hpp $(MeshInfo).hpp $(CrackSegment).hpp $(CrackHeader).hpp $(CrackVelocityField).hpp \
 			$(MatVelocityField).hpp $(BoundaryCondition).hpp $(CrackVelocityFieldMulti).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NodalPointMPM).cpp
+
+# MPM: Patches
+GridPatch.o : $(GridPatch).cpp $(dprefix) $(GridPatch).hpp $(GhostNode).hpp $(MeshInfo).hpp $(NodalPoint).hpp \
+			$(MPMBase).hpp $(MaterialBase).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(GridPatch).cpp
+GhostNode.o : $(GhostNode).cpp $(dprefix) $(GhostNode).hpp $(GridPatch).hpp $(MeshInfo).hpp $(NodalPoint).hpp \
+			$(NodalPoint2D).hpp $(NodalPoint3D).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(GhostNode).cpp
 
 
 # -------------------------------------------------------------------------

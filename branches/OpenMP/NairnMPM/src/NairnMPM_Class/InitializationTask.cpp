@@ -45,8 +45,8 @@ void InitializationTask::Execute(void)
 	warnings.BeginStep();
 
 	// zero all nodal variables
-/*
-	if(fmobj->GetTotalNumberOfPatches()>1)
+	int tp = fmobj->GetTotalNumberOfPatches();
+	if(tp>1)
 	{
 #pragma omp parallel
 		{
@@ -54,12 +54,12 @@ void InitializationTask::Execute(void)
 			patches[patch]->InitializeForTimeStep();
 		}
 	}
-*/
-	int tp = fmobj->GetTotalNumberOfPatches();
+    /*
 	if(tp>1)
 	{	for(int pn=0;pn<tp;pn++)
 			patches[pn]->InitializeForTimeStep();
 	}
+     */
 	else
 	{	// either serial or no ghost nodes need initialization
 		for(int i=1;i<=nnodes;i++)

@@ -10,6 +10,7 @@
 *********************************************************************/
 
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include <algorithm>
 
 // NEWINCLUDE
 #include "Patches/GridPatch.hpp"

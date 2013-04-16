@@ -43,7 +43,7 @@ void ResetElementsTask::Execute(void)
 	// update feedback damping now if needed
 	bodyFrc.UpdateAlpha(timestep,mtime);
 
-	// This block shoul be made parallel
+	// This block should be made parallel
 	// But when do so, need method to move particle  between patches while keeping threads indpendent
 	int totalPatches = fmobj->GetTotalNumberOfPatches();
 	
