@@ -141,9 +141,10 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
 			return NEW_ELEMENT;
 		}
     }
+ 
+    return LEFT_GRID;
 */
 	
-    return LEFT_GRID;
     if(mpmgrid.IsStructuredGrid())
     {   try
         {   // calculate from coordinates

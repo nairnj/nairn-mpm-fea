@@ -219,7 +219,7 @@ int MPMBase::ArchiveMatID(void) { return matnum; }		// one based for archiving
 // element ID (convert to zero based)
 int MPMBase::ElemID(void) { return inElem-1; }					// zero based element array in data storage
 void MPMBase::ChangeElemID(int newElem)
-{	inElem=newElem+1;				// set using zero basis
+{	inElem=newElem+1;                   // set using zero basis
 	IncrementElementCrossings();		// count crossing
 }
 int MPMBase::ArchiveElemID(void) { return inElem; }			// one based for archiving
