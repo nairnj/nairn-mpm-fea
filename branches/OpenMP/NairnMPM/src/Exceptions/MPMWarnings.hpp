@@ -19,11 +19,10 @@ enum { SILENT_WARNING=0, GAVE_WARNING, REACHED_MAX_WARNINGS };
 typedef struct {
 	// variables (changed in MPM time step)
 	short thisStep;				// was there a warning this step yet?
-	int numSteps;				// how many steps had this warning
-	int *issuedIDs;				// zero terminated list of IDS for this warning
 	int firstStep;				// first step with this warning
-	
-	// constants (not changed in MPM time step)
+	int numSteps;				// how many steps had this warning
+    int numWarnings;            // how many total warnings happened
+	int *issuedIDs;				// zero terminated list of IDS for this warning
 	int maxIssues;				// abort if reach this number of steps with this warning
 	char *msg;					// warning message
 } WarningsData;

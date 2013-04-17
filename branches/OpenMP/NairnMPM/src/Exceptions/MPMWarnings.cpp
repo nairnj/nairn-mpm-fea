@@ -28,8 +28,9 @@ int MPMWarnings::CreateWarning(const char *message,int abortStep,int maxIDs)
 {
 	WarningsData *newWarning = new WarningsData;
 	newWarning->numSteps=0;
+	newWarning->numWarnings=0;
+	newWarning->maxIssues=abortStep;                        // quit on this number (or -1 to not quit)
 	newWarning->msg=new char[strlen(message)+1];
-	newWarning->maxIssues=abortStep;
 	strcpy(newWarning->msg,message);
 	if(maxIDs==0)
 		newWarning->issuedIDs = NULL;
@@ -66,7 +67,7 @@ int MPMWarnings::Issue(int warnKind,int theID)
 	// check the warning
 	WarningsData *warn=warningSet[warnKind];
 	
-	// will output warning if first time or if first time for this ID for warnding that use IDs
+	// will output warning if first time or if first time for this ID for warning that use IDs
 	bool newID=FALSE;
 	if(theID>0 && warn->issuedIDs!=NULL)
 	{	int i=0;
@@ -87,6 +88,9 @@ int MPMWarnings::Issue(int warnKind,int theID)
 	
 	// increment number of steps (first time on each step)
 	if(warn->thisStep) warn->numSteps++;
+    
+    // increment total number of warnings
+    warn->numWarnings++;
 	
 	// if first time in analysis, print message and force archiving
 	if((warn->numSteps==1 && warn->thisStep) || newID)
@@ -102,8 +106,10 @@ int MPMWarnings::Issue(int warnKind,int theID)
 	warn->thisStep=FALSE;
 	
 	// abort if reach maximum issues
-	if(warn->numSteps>=warn->maxIssues && warn->maxIssues>0)
+	if(warn->numWarnings>=warn->maxIssues && warn->maxIssues>0)
 		warnResult=REACHED_MAX_WARNINGS;
+    
+    // return result
 	return warnResult;
 }
 
@@ -129,6 +135,7 @@ void MPMWarnings::Report(void)
 		// this warning
 		cout << "The warning '" << warn->msg << "' occured on " << warn->numSteps << " time steps." << endl;
         cout << "   First such warning warning was on step " << warn->firstStep << endl;
+        cout << "   Total number of warnings was " << warn->numWarnings << endl;
         cout << endl;
 	}
 }

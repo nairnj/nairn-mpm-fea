@@ -230,8 +230,9 @@ void MPMBase::SetElementCrossings(int ec) { elementCrossings = ec; }
 void MPMBase::IncrementElementCrossings(void)
 {	elementCrossings = elementCrossings>=0 ? elementCrossings+1 : elementCrossings-1;
 }
-bool MPMBase::HasLeftTheGrid(void) { return elementCrossings<0; }
-void MPMBase::SetHasLeftTheGrid(bool setting) { elementCrossings = setting ? -GetElementCrossings() : GetElementCrossings(); }
+// negative element crossings means the particle previously left the grid
+bool MPMBase::HasLeftTheGridBefore(void) { return elementCrossings<0; }
+void MPMBase::SetHasLeftTheGridBefore(bool setting) { elementCrossings = setting ? -GetElementCrossings() : GetElementCrossings(); }
 
 // get unscaled volume for use only in contact and imperfect interface calculations
 // return result in mm^3

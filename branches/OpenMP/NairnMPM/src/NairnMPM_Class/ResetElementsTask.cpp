@@ -63,7 +63,7 @@ void ResetElementsTask::Execute(void)
 					mptr->IncrementElementCrossings();
 				
 					// enter warning only if this particle did not leave the grid before
-					if(!mptr->HasLeftTheGrid())
+					if(!mptr->HasLeftTheGridBefore())
 					{	if(warnings.Issue(fmobj->warnParticleLeftGrid,-1)==REACHED_MAX_WARNINGS)
 						{	// print message and quit
 							mptr->Describe();
@@ -74,7 +74,7 @@ void ResetElementsTask::Execute(void)
 						}
 						
 						// set this particle has left the grid once
-						mptr->SetHasLeftTheGrid(TRUE);
+						mptr->SetHasLeftTheGridBefore(TRUE);
 					}
 				
 					// bring back to the previous element
@@ -116,7 +116,8 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
 	{	// it has not changed elements
 		return SAME_ELEMENT;
 	}
-	
+    
+/*
 	// check neighbors if possible
 	int i=0,j,elemNeighbors[27];
 	theElements[mpt->ElemID()]->GetListOfNeighbors(elemNeighbors);
@@ -140,7 +141,33 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
 			return NEW_ELEMENT;
 		}
     }
+*/
 	
+    return LEFT_GRID;
+    if(mpmgrid.IsStructuredGrid())
+    {   try
+        {   // calculate from coordinates
+            int j = mpmgrid.FindElementFromPoint(&mpt->pos)-1;
+            if(theElements[j]->OnTheEdge()) return LEFT_GRID;
+			if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
+            mpt->ChangeElemID(j);
+            return NEW_ELEMENT;
+        }
+        catch(...)
+        {   return LEFT_GRID;
+        }
+    }
+	
+    // for unstructured grid, have to check all elements
+    for(int i=0;i<nelems;i++)
+    {	if(theElements[i]->PtInElement(mpt->pos))
+        {	if(theElements[i]->OnTheEdge()) return LEFT_GRID;
+            if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
+            mpt->ChangeElemID(i);
+            return NEW_ELEMENT;
+        }
+    }
+    
     return LEFT_GRID;
 }
 	
@@ -148,24 +175,23 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
 // the grid or for GIMP moved to an edge element
 void ResetElementsTask::ReturnToElement(MPMBase *mpt)
 {
-	Vector outside=mpt->pos;
-    int elemID=mpt->ElemID();
-	Vector inside,middle,origin;
+	Vector outside = mpt->pos;
+    int elemID = mpt->ElemID();
+	Vector inside,middle;
 	int pass;
 	
 	// try to retrace position, if fails, take element centroid
-	inside.x=outside.x-timestep*mpt->vel.x;
-	inside.y=outside.y-timestep*mpt->vel.y;
-	inside.z=outside.z-timestep*mpt->vel.z;
+	inside.x = outside.x - timestep*mpt->vel.x;
+	inside.y = outside.y - timestep*mpt->vel.y;
+	inside.z = outside.z - timestep*mpt->vel.z;
 	if(!theElements[elemID]->PtInElement(inside))
 		theElements[elemID]->GetXYZCentroid(&inside);
-	origin=inside;
 	
 	// bisect 10 times until inside, if fails, uses above inside
 	for(pass=1;pass<=10;pass++)
-	{	middle.x=(outside.x+inside.x)/2.;
-		middle.y=(outside.y+inside.y)/2.;
-		middle.z=(outside.z+inside.z)/2.;
+	{	middle.x = (outside.x+inside.x)/2.;
+		middle.y = (outside.y+inside.y)/2.;
+		middle.z = (outside.z+inside.z)/2.;
 		
 		if(theElements[elemID]->PtInElement(middle))
 			inside=middle;

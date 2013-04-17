@@ -219,7 +219,7 @@ void MeshInfo::ListOfNeighbors2D(int num,int *neighbor)
 	neighbor[i]=0;
 }
 
-// If have a structured grid, get the 27 (3D) neighbor elements. The 1-based
+// If have a structured grid, get the 226 (3D) neighbor elements. The 1-based
 // element numbers are returned and the list is terminated by 0
 // neighbor needs to be size [27]
 void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
@@ -238,7 +238,7 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 	
 	// Do each slice
 	int j;
-    // 1-based element number below, at, and above element num
+    // 1-based element numbers below, at, and above element num
 	for(j=num-perSlice;j<=num+perSlice;j+=perSlice)
 	{	// element numbers in neighboring rows in this slice
 		if(j<1 || j>totalElems) continue;
@@ -270,8 +270,8 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 				neighbor[i++]=below;
 			}
 			// elements in same row
-			if(j!=num) neighbor[i++]=j;
 			neighbor[i++]=j-1;
+			if(j!=num) neighbor[i++]=j;
 			if(snum<perSlice-horiz)
 			{	// elements in row above
 				neighbor[i++]=above-1;
@@ -288,8 +288,8 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 				neighbor[i++]=below+1;
 			}
 			// elements in same row
-			if(j!=num) neighbor[i++]=j;
 			neighbor[i++]=j-1;
+			if(j!=num) neighbor[i++]=j;
 			neighbor[i++]=j+1;
 			if(snum<perSlice-horiz)
 			{	// elements in row above
@@ -308,7 +308,7 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 // throws empty exception if not a structured grid (horiz<0) or if point is not in the grid
 int MeshInfo::FindElementFromPoint(Vector *pt)
 {
-    int theElem = 0;
+    int theElem;
     
     // error if not structured grid
     if(horiz<0) throw "";
@@ -320,7 +320,7 @@ int MeshInfo::FindElementFromPoint(Vector *pt)
 		else
 			throw "";
 	}
-    int row = (int)((pt->y-ymin)/gridy);
+    int row = (int)((pt->y-ymin)/gridy);        // zero-based row # from 0 to vert-1
 	if(row<0 || row>=vert)
 	{	if(pt->y == ymin+vert*gridy)
 			row = vert-1;
@@ -330,7 +330,7 @@ int MeshInfo::FindElementFromPoint(Vector *pt)
     
     // 3D
     if(gridz > 0.)
-    {   int zrow = (int)((pt->z-zmin)/gridz);
+    {   int zrow = (int)((pt->z-zmin)/gridz);   // zero-based row # from 0 to depth-1
 		if(zrow<0 || zrow>=depth)
 		{	if(pt->z == zmin+depth*gridz)
 				zrow = depth-1;

@@ -601,8 +601,8 @@ void NairnMPM::PreliminaryCalcs(void)
 		maxCrackFields=MAX_FIELDS_FOR_CRACKS;
 		
 		// warnings
-		CrackHeader::warnNodeOnCrack=warnings.CreateWarning("mesh node on a crack",-1L,5);
-		CrackHeader::warnThreeCracks=warnings.CreateWarning("node with three cracks or unexpected velocity fields",-1L,0);
+		CrackHeader::warnNodeOnCrack=warnings.CreateWarning("mesh node on a crack",-1,5);
+		CrackHeader::warnThreeCracks=warnings.CreateWarning("node with three cracks or unexpected velocity fields",-1,0);
 	}
 	
 	// create warnings

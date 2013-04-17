@@ -92,8 +92,8 @@ class MPMBase : public LinkedObject
 		int GetElementCrossings(void);
 		void SetElementCrossings(int);
 		void IncrementElementCrossings(void);
-		bool HasLeftTheGrid(void);
-		void SetHasLeftTheGrid(bool);
+		bool HasLeftTheGridBefore(void);
+		void SetHasLeftTheGridBefore(bool);
         bool PartitionsElasticAndPlasticStrain(void);
 		double GetDuDx(void);					// du/dr in axisym
 		double GetDuDy(void);					// du/dz in axisym
