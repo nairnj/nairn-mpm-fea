@@ -24,6 +24,9 @@
 #include "Nodes/MaterialInterfaceNode.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 
+// NEWINCLUDE
+#include "Custom_Tasks/TransportTask.hpp"
+
 // class statics
 double NodalPoint::interfaceEnergy=0.;
 
@@ -239,15 +242,15 @@ void NodalPoint::AddMatVelocityField(short vfld,int matfld)
 }
 
 // Copy volume gradient when copying from ghost to real node
-void NodalPoint::CopyFieldInitialization(NodalPoint *real)
-{	real->UseTheseFields(cvf);
+void NodalPoint::CopyFieldInitialization(NodalPoint *ghost)
+{	ghost->UseTheseFields(cvf);
 }
 
-// Create fields in this node that match the supplied fields
-void NodalPoint::UseTheseFields(CrackVelocityField **gcvf)
+// Create fields in this this node that match the supplied fields
+void NodalPoint::UseTheseFields(CrackVelocityField **rcvf)
 {	
 	for(int i=0;i<maxCrackFields;i++)
-	{	if(gcvf[i]==NULL) continue;
+	{	if(rcvf[i]==NULL) continue;
 		
 		if(cvf[i]==NULL)
 		{	// create on in ghost that is not here
@@ -257,11 +260,67 @@ void NodalPoint::UseTheseFields(CrackVelocityField **gcvf)
 		}
 		
 		// make these match
-		cvf[i]->MatchGhostFields(gcvf[i]);
+		cvf[i]->MatchRealFields(rcvf[i]);
 	}
 }
 
 #pragma mark TASK 1 METHODS
+
+// ndptr->AddMomentumTask1(vfld,matfld,fn[i]*mp,&mpmptr->vel,1);
+
+// In mass and momentum task
+// 1. Add momentum
+// 2. If cracks or multimaterials, add displacements and volume
+// 3. If multimaterials, add volume gradient
+void NodalPoint::AddMassMomentum(MPMBase *mptr,short vfld,int matfld,double shape,double dNdx,double dNdy,double dNdz,
+								 int numPts,bool nonRigid)
+{
+	// add momentum
+	double mp = mptr->mp;
+	double fnmp = shape*mp;
+	Vector wtvel;
+	cvf[vfld]->AddMomentumTask1(matfld,CopyScaleVector(&wtvel,&mptr->vel,fnmp),&mptr->vel,numPts);
+	
+	// crack contact calculations
+	// (only if cracks or multimaterial mode, i.e., contact is being done)
+	if(firstCrack!=NULL || fmobj->multiMaterialMode)
+	{	// displacement or position for contact calculations
+		if(mpmgrid.GetContactByDisplacements())
+		{	// extrapolate displacements
+			Vector pdisp=mptr->pos;
+			cvf[vfld]->AddDisplacement(matfld,fnmp,SubVector(&pdisp,&mptr->origpos));
+		}
+		else
+		{	// extraplate positions
+			cvf[vfld]->AddDisplacement(matfld,fnmp,&mptr->pos);
+		}
+		
+		// add dilated volume, only used by transport tasks, contact, and imperfect interfaces
+		if(nonRigid)
+			cvf[vfld]->AddVolume(matfld,shape*mptr->GetVolume(DEFORMED_AREA));
+		else
+			cvf[vfld]->AddVolume(matfld,shape*mptr->GetUnscaledVolume());
+
+		// material contact calculations (only if multimaterial mode)
+		if(fmobj->multiMaterialMode)
+			cvf[vfld]->AddVolumeGradient(matfld,mptr,dNdx,dNdy,dNdz);
+	}
+	
+	// more for non-rigid contact materials
+	if(nonRigid)
+	{	// add to lumped mass matrix
+		cvf[vfld]->AddMass(matfld,fnmp);
+		
+		// transport calculations
+		TransportTask *nextTransport=transportTasks;
+		while(nextTransport!=NULL)
+			nextTransport=nextTransport->Task1Extrapolation(this,mptr,shape);
+	}
+	else
+	{	// for rigid particles, let the crack velocity field know
+		cvf[vfld]->AddMassTask1(matfld,fnmp,1);
+	}
+}
 
 // Add to momentum vector to selected field (in g mm/sec)(both 2D and 3D)
 void NodalPoint::AddMomentumTask1(short vfld,int matfld,double wt,Vector *vel,int numPts)

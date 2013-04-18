@@ -38,7 +38,7 @@ class CrackVelocityField
 		virtual void Zero(short,int,bool);
 		virtual void ZeroMatFields() = 0;
 		virtual void AddMatVelocityField(int);
-		virtual void MatchGhostFields(CrackVelocityField *);
+		virtual void MatchRealFields(CrackVelocityField *);
 		virtual void MatchMatVelocityFields(MatVelocityField **);
 		
 		// specific task methods

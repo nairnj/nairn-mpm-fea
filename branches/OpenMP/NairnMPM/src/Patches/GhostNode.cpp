@@ -15,7 +15,7 @@
 
 // Constructors
 // Create for node at zero-based (row,col) grid position
-GhostNode::GhostNode(int row,int col,bool interiorRow,bool interiorCol,bool is2D)
+GhostNode::GhostNode(int row,int col,bool interiorRow,bool interiorCol)
 {
 	// create ghost node for the real node
 	int xbase = row*mpmgrid.yplane;			// node at start of this row
@@ -31,28 +31,79 @@ GhostNode::GhostNode(int row,int col,bool interiorRow,bool interiorCol,bool is2D
 	bool makeGhost = real!=NULL;
 	if(makeGhost)
 	{	if(mpmgrid.EdgeNode(row+1,'y'))
-		{	// top row - no if top-right of grid or interior column
-			if(mpmgrid.EdgeNode(col+1,'x') || interiorCol)
+		{	// top row - no ghost if top-right of grid or interior column
+			if(interiorCol || mpmgrid.EdgeNode(col+1,'x'))
 				makeGhost = FALSE;
 		}
 		else if(mpmgrid.EdgeNode(col+1,'x') && interiorRow)
-		{	// right edge - no unless top of ths patch
+		{	// right edge or interior row needs no ghost
 			makeGhost = FALSE;
 		}
 	}
 	
 	// create ghost node now
 	if(makeGhost)
-	{	if(is2D)
-			ghost = new NodalPoint2D(real);
-		else
-			ghost = new NodalPoint3D(real);
-	}
+		ghost = new NodalPoint2D(real);
 	else
 		ghost = NULL;
 		
 	cout << "...... node = " << realNode << "," << ghost << "," << real << "," << (real==ghost) << endl;
 }
+
+// Create for node at zero-based (row,col) grid position
+GhostNode::GhostNode(int row,int col,int rank,bool interiorRow,bool interiorCol,bool interiorRank)
+{
+	// create ghost node for the real node
+	int xbase = rank*mpmgrid.zplane + row*mpmgrid.yplane;		// node at start of this row
+	int realNode = xbase+col+1;
+	
+	// get the real node
+	if(row>=0 && col>=0 && rank>=0 && !mpmgrid.EdgeNode(row,'y') && !mpmgrid.EdgeNode(col,'x') && !mpmgrid.EdgeNode(rank,'z'))
+		real = nd[realNode];
+	else
+		real = NULL;
+	
+	// should we create a ghost node
+	bool makeGhost = real!=NULL;
+	if(makeGhost)
+	{	if(mpmgrid.EdgeNode(rank+1,'z'))
+		{	// apex rank
+			if(interiorRow && interiorCol)
+			{	// no ghost for interior node on rank edge
+				makeGhost = FALSE;
+			}
+			else if(mpmgrid.EdgeNode(row+1,'y'))
+			{	// no ghost on y edge or on top-right edge of grid
+				if(interiorCol || mpmgrid.EdgeNode(col+1,'x'))
+					makeGhost = FALSE;
+			}
+			else if(mpmgrid.EdgeNode(col+1,'x') && interiorRow)
+			{	// no ghost on x edge (top-right handled above)
+				makeGhost = FALSE;
+			}
+		}
+		else if(interiorRank)
+		{	if(mpmgrid.EdgeNode(row+1,'y'))
+			{	// top row - no ghost if interior column
+				if(interiorCol || mpmgrid.EdgeNode(col+1,'x'))
+					makeGhost = FALSE;
+			}
+			else if(mpmgrid.EdgeNode(col+1,'x') && interiorRow)
+			{	// right edge or interior row needs no ghost
+				makeGhost = FALSE;
+			}
+		}
+	}
+	
+	// create ghost node now
+	if(makeGhost)
+		ghost = new NodalPoint3D(real);
+	else
+		ghost = NULL;
+	
+	cout << "...... node = " << realNode << "," << ghost << "," << real << "," << (real==ghost) << endl;
+}
+
 
 #pragma mark GhostNode: Methods
 
@@ -69,10 +120,10 @@ void GhostNode::InitializeForTimeStep()
 	}
 }
 
-// copy allocated velocity fields to real nodes
+// copy allocated velocity fields from real node to ghost node
 void GhostNode::InitializationReduction(void)
 {	if(ghost!=NULL)
-		ghost->CopyFieldInitialization(real);
+		real->CopyFieldInitialization(ghost);
 }
 
 // When Grid Forces task is done transfer ghost node force to real nodes

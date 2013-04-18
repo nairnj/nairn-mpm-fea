@@ -46,6 +46,7 @@ void InitializationTask::Execute(void)
 
 	// zero all nodal variables
 	int tp = fmobj->GetTotalNumberOfPatches();
+    /*
 	if(tp>1)
 	{
 #pragma omp parallel
@@ -54,12 +55,11 @@ void InitializationTask::Execute(void)
 			patches[patch]->InitializeForTimeStep();
 		}
 	}
-    /*
+     */
 	if(tp>1)
 	{	for(int pn=0;pn<tp;pn++)
 			patches[pn]->InitializeForTimeStep();
 	}
-     */
 	else
 	{	// either serial or no ghost nodes need initialization
 		for(int i=1;i<=nnodes;i++)
@@ -76,6 +76,7 @@ void InitializationTask::Execute(void)
 	}
 	
 	// allocate crack and material velocity fields needed for time step
+	// can't be parallel unless add critical section for nodes that might be ghost nodesin any patch
 	if(firstCrack!=NULL || maxMaterialFields>1)
 	{	int nds[maxShapeNodes];
 		for(int pn=0;pn<tp;pn++)
@@ -95,12 +96,9 @@ void InitializationTask::Execute(void)
 					short vfld;
 					NodalPoint *ndptr;
 					for(i=1;i<=numnds;i++)
-					{
-#ifdef _OPENMP
-						ndptr = patches[pn]->GetNodePointer(nds[i]);
-#else
+					{	// use real node in this look
 						ndptr = nd[nds[i]];
-#endif
+						
 						if(firstCrack==NULL)
 						{	vfld=0;
 						}
@@ -118,14 +116,14 @@ void InitializationTask::Execute(void)
 								if(vfld!=NO_CRACK)
 								{	cfld[cfound].loc=vfld;
 									cfld[cfound].norm=norm;
-	#ifdef IGNORE_CRACK_INTERACTIONS
+#ifdef IGNORE_CRACK_INTERACTIONS
 									cfld[cfound].crackNum=1;	// appears to always be same crack, and stop when found one
 									break;
-	#else
+#else
 									cfld[cfound].crackNum=nextCrack->GetNumber();
 									cfound++;
 									if(cfound>1) break;			// stop if found two, if there are more then two, physics will be off
-	#endif
+#endif
 								}
 								nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 							}
@@ -147,7 +145,7 @@ void InitializationTask::Execute(void)
 			}
 		}
     
-		// reduction of ghost node forces to real nodes
+		// reduction of real nodes to ghost nodes
 		if(tp>1)
 		{	for(int pn=0;pn<tp;pn++)
 				patches[pn]->InitializationReduction();

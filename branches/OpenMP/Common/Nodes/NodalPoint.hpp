@@ -21,6 +21,7 @@
 class CrackSegment;
 class MaterialInterfaceNode;
 class CrackNode;
+class TransportTask;
 #include "Nodes/CrackVelocityField.hpp"
 #endif
 
@@ -71,6 +72,7 @@ class NodalPoint : public LinkedObject
 		short AddCrackVelocityField(int,CrackField *);
 		void AddMatVelocityField(short,int);
 	
+		void AddMassMomentum(MPMBase *,short,int,double,double,double,double,int,bool);
 		void AddMomentumTask1(short,int,double,Vector *,int);
 		void AddMass(short,int,double);
 		void AddMassTask1(short,int,double,int);

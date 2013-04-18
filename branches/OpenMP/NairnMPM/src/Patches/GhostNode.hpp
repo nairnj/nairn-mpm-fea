@@ -20,7 +20,8 @@ class GhostNode
 	public:
     
 		// constructors and destructors
-		GhostNode(int,int,bool,bool,bool);
+		GhostNode(int,int,bool,bool);
+		GhostNode(int,int,int,bool,bool,bool);
 	
 		// methods
 		void InitializeForTimeStep();

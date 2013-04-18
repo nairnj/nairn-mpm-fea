@@ -52,23 +52,31 @@ GridPatch::GridPatch(int xmin,int xmax,int ymin,int ymax,int zmin,int zmax)
 // Create all ghost nodes
 bool GridPatch::CreateGhostNodes(void)
 {
-	int i,j;
+	int i,j,k;
 	
 	// partial counts
-	interiorRow = 2*ghostRows+1;
-	fullRow = xn + interiorRow;
-	basePartial = ghostRows*fullRow;
-	baseTop = basePartial + yn*interiorRow;
+	interiorRow = 2*ghostRows+1;					// midrow count (2D patch) AND # of bottom/base+top/apex rows
+	fullRow = xn + interiorRow;						// top and bottom row counts, 2D patch
+	basePartial = ghostRows*fullRow;				// start of mid rows, 2D patch (0 based)
+	baseTop = basePartial + yn*interiorRow;			// start ot top full rows, 2D patch (0 based)
+	interiorRank = interiorRow*(fullRow+yn);		// midblock rank count, 3D patch (same as total in 2D patch)
+	fullRank = fullRow*(yn + interiorRow);			// base and apex rank counts, 3D patch
 	
 	// create ghost nodes
 	if(zn<=0)
 	{	// 2D = one rank
 		numGhosts = interiorRow*(fullRow+yn);
-		ghosts = (GhostNode **)malloc(numGhosts*sizeof(GhostNode));
-		if(ghosts==NULL) return FALSE;
-		cout << "... gtot = " << numGhosts << endl;
-		
-		// row by row
+	}
+	else
+	{	// 3D ranks
+		numGhosts = interiorRow*fullRank + zn*interiorRank;
+	}
+	ghosts = (GhostNode **)malloc(numGhosts*sizeof(GhostNode));
+	if(ghosts==NULL) return FALSE;
+	cout << "... gtot = " << numGhosts << endl;
+
+	if(zn<=0)
+	{	// r2D row by row
 		int row,col,g=0;
 		for(i=-ghostRows;i<=yn+ghostRows;i++)
 		{	row = y0+i;					// 0 based grid row
@@ -78,15 +86,32 @@ bool GridPatch::CreateGhostNodes(void)
 				if(i>=0 && i<yn && j>=0 && j<xn) continue;
 				col = x0+j;				// 0 based gid row
 				cout << "...(" << g << "," << row << "," << col << ")" << endl;
-				ghosts[g] = new GhostNode(row,col,i>=0 && i<yn,j>=0 && j<xn,TRUE);
+				ghosts[g] = new GhostNode(row,col,i>=0 && i<yn,j>=0 && j<xn);
 				if(ghosts[g]==NULL) return FALSE;
 				g++;
 			}
 		}
 	}
-	
 	else
-	{	// 3D ranks
+	{	// rank by row by row
+		int row,col,rank,g=0;
+		for(k=-ghostRows;k<=zn+ghostRows;k++)
+		{	rank = z0+k;					// 0 based grid rank
+			cout << "... begin rank on z rank = " << rank << endl;
+			for(i=-ghostRows;i<=yn+ghostRows;i++)
+			{	row = y0+i;					// 0 based grid row
+				cout << endl;
+				for(j=-ghostRows;j<=xn+ghostRows;j++)
+				{	// skip interior nodes
+					if(i>=0 && i<yn && j>=0 && j<xn && k>=0 && k<zn) continue;
+					col = x0+j;				// 0 based gid row
+					cout << "...(" << g << "," << row << "," << col << "," << rank << ")" << endl;
+					ghosts[g] = new GhostNode(row,col,rank,i>=0 && i<yn,j>=0 && j<xn,k>=0 && k<zn);
+					if(ghosts[g]==NULL) return FALSE;
+					g++;
+				}
+			}
+		}
 	}
 
 	return TRUE;

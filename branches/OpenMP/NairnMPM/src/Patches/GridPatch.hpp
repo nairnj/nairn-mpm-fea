@@ -52,6 +52,8 @@ class GridPatch
 		int fullRow;
 		int basePartial;
 		int baseTop;
+		int interiorRank;
+		int fullRank;
 };
 
 extern GridPatch **patches;

@@ -80,7 +80,7 @@ void CrackVelocityField::AddMatVelocityField(int matfld) {}
 
 // Make sure this crack velocituy field matches a ghost one
 // Called during time step initialization if needed (i.e., cracks and/or multimaterial mode)
-void CrackVelocityField::MatchGhostFields(CrackVelocityField *gcvf)
+void CrackVelocityField::MatchRealFields(CrackVelocityField *gcvf)
 {	// crack details
 	loc[0] = gcvf->loc[0];
 	loc[1] = gcvf->loc[1];

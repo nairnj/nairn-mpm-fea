@@ -37,14 +37,14 @@ void CrackVelocityFieldMulti::ZeroMatFields(void)
 }
 
 // match materical velocity fields
-void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **gmvf)
+void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **rmvf)
 {	for(int i=0;i<maxMaterialFields;i++)
-	{	if(gmvf[i]==NULL) continue;
+	{	if(rmvf[i]==NULL) continue;
 		
 		if(mvf[i]==NULL)
-		{	mvf[i]=new MatVelocityField(gmvf[i]->rigidField);
+		{	mvf[i]=new MatVelocityField(rmvf[i]->rigidField);
 			if(mvf[i]==NULL) throw CommonException("Memory error allocating material velocity field.",
-											   "CrackVelocityField::MatchGhostFields");
+											   "CrackVelocityField::MatchRealFields");
 		}
 		
 		mvf[i]->Zero();

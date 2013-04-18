@@ -57,6 +57,7 @@ void GridForcesTask::Execute(void)
 	
 	// loop over non-rigid particles - this parallel part changes only particle p
 	// forces are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
+	/*
 #pragma omp parallel private(t,numnds,nds,fn,xDeriv,yDeriv,zDeriv)
 	{
 #ifdef _OPENMP
@@ -64,11 +65,10 @@ void GridForcesTask::Execute(void)
 #else
 		int pn = 0;
 #endif
-        /*
+	 */
 	int tp = fmobj->GetTotalNumberOfPatches();
 	for(int pn=0;pn<tp;pn++)
 	{
-         */
 		MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(FIRST_NONRIGID);
 		while(mpmptr!=NULL)
 		{	const MaterialBase *matref = theMaterials[mpmptr->MatID()];		// material class (read only)

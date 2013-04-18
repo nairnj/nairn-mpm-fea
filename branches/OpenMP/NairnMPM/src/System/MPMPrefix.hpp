@@ -20,7 +20,7 @@
 // This overrides incompatiible omp calls but does not deactivate #pragma omp,
 // which therefore should be comment out. Also assume omp is enable to
 // _OPENMP is defined, even though not being used
-//#define _OMPTEST
+#define _OMPTEST
 
 // C includes
 // Used to have <stdio.h>

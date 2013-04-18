@@ -376,48 +376,59 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 	// prime factors in the longer directions
 	if(ndim==2)
 	{	if(horiz>vert)
-		{	xpnum = factors[1];
+		{	// x longer than y
+			xpnum = factors[1];
 			ypnum = factors[0];
 		}
 		else
-		{	xpnum = factors[0];
+		{	// y longer than x
 			ypnum = factors[1];
+			xpnum = factors[0];
 		}
 		zpnum=1;
 		zPatchSize=1;
 	}
 	else
 	{	if(horiz>vert && horiz>depth)
-		{	xpnum = factors[2];
+		{	//	x > y and z
+			xpnum = factors[2];
 			if(vert>depth)
-			{	ypnum = factors[1];
+			{	// x > y > z
+				ypnum = factors[1];
 				zpnum = factors[0];
 			}
 			else
-			{	zpnum = factors[0];
-				ypnum = factors[1];
+			{	// x > z > y
+				zpnum = factors[1];
+				ypnum = factors[0];
 			}
 		}
 		else if(vert>horiz && vert>depth)
-		{	ypnum = factors[2];
+		{	// y > x and z
+			ypnum = factors[2];
 			if(horiz>depth)
-			{	xpnum = factors[1];
+			{	// y > x > z
+				xpnum = factors[1];
 				zpnum = factors[0];
 			}
 			else
-			{	zpnum = factors[0];
-				xpnum = factors[1];
+			{	// y > z > x
+				zpnum = factors[1];
+				xpnum = factors[0];
 			}
 		}
 		else
-		{	zpnum = factors[2];
+		{	// z > x and z
+			zpnum = factors[2];
 			if(horiz>vert)
-			{	xpnum = factors[1];
+			{	// z > x > y
+				xpnum = factors[1];
 				ypnum = factors[0];
 			}
 			else
-			{	ypnum = factors[0];
-				xpnum = factors[1];
+			{	// z > y > x
+				ypnum = factors[1];
+				xpnum = factors[0];
 			}
 		}
 		zPatchSize = max(int(depth/zpnum+.5),1);
@@ -471,7 +482,7 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
     return patch;
 }
 
-// Create a single patches for the grid and patch has no ghost nodes
+// Create a single patch for the grid and patch has no ghost nodes
 // Return pointer to a 0-based listed or patches[0]
 // Return NULL on memory error
 GridPatch **MeshInfo::CreateOnePatch(int np)
@@ -487,7 +498,7 @@ GridPatch **MeshInfo::CreateOnePatch(int np)
     GridPatch **patch = (GridPatch **)malloc(sizeof(GridPatch));
     if(patch==NULL) return NULL;
 	
-	// one patch an no ghost nodes
+	// one patch and no ghost nodes
 	patch[0] = new GridPatch(1,xPatchSize,1,yPatchSize,1,zPatchSize);
 	if(!patch[0]->CreateGhostNodes()) return NULL;
 	
@@ -500,7 +511,7 @@ GridPatch **MeshInfo::CreateOnePatch(int np)
 
 #pragma mark MeshInfo:Accessors
 
-// given zero based element number, return patch number
+// given zero based element number, return zero-based patch number
 int MeshInfo::GetPatchForElement(int iel)
 {
 	int row,col,rank;
@@ -509,7 +520,7 @@ int MeshInfo::GetPatchForElement(int iel)
 	if(depth>0)
 	{	// 3D
 		int perSlice = horiz*vert;		// number in each slice
-		rank = iel/perSlice;
+		rank = iel/perSlice;			// zero based
 		int snum = iel % perSlice;		// number in slice (0 to horz*vert-1)
 		col = snum % horiz;				// col 0 to horiz-1
 		row = snum/horiz;				// zero based

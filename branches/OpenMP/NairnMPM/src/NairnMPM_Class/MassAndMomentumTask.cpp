@@ -113,6 +113,7 @@ void MassAndMomentumTask::Execute(void)
 	
 	// loop over non-rigid and rigid contact particles - this parallel part changes only particle p
 	// mass, momenta, ect are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
+	/*
 #pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
 	{
 #ifdef _OPENMP
@@ -120,15 +121,14 @@ void MassAndMomentumTask::Execute(void)
 #else
 		int pn = 0;
 #endif
-        /*
+	 */
 	int tp = fmobj->GetTotalNumberOfPatches();
 	for(int pn=0;pn<tp;pn++)
 	{
-         */
 		for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
 		{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
 			while(mpmptr!=NULL)
-			{	double mp = mpmptr->mp;								// material point mass in g
+			{	//double mp = mpmptr->mp;								// material point mass in g
 			
 				const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
 				int matfld = matID->GetField();									// material velocity field
@@ -153,6 +153,12 @@ void MassAndMomentumTask::Execute(void)
 #endif
 					// momentum vector (and allocate velocity field if needed)
 					vfld = mpmptr->vfld[i];
+					ndptr->AddMassMomentum(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],
+										   1,block==FIRST_NONRIGID);
+
+					
+					/*
+					vfld = mpmptr->vfld[i];
 					ndptr->AddMomentumTask1(vfld,matfld,fn[i]*mp,&mpmptr->vel,1);
 					
 					// crack contact calculations (only if cracks or multimaterial mode)
@@ -175,6 +181,7 @@ void MassAndMomentumTask::Execute(void)
 					{	// for rigid particles, let the crack velocity field know
 						ndptr->AddMassTask1(vfld,matfld,mp*fn[i],1);
 					}
+					*/
 					
 				}
 				
