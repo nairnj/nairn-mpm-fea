@@ -75,8 +75,8 @@ void InitializationTask::Execute(void)
 		
 	}
 	
-	// allocate crack and material velocity fields needed for time step
-	// can't be parallel unless add critical section for nodes that might be ghost nodesin any patch
+	// allocate crack and material velocity fields needed for time step on real nodes
+	// can't be parallel unless add critical section for nodes that might be ghost nodes in any patch
 	if(firstCrack!=NULL || maxMaterialFields>1)
 	{	int nds[maxShapeNodes];
 		for(int pn=0;pn<tp;pn++)

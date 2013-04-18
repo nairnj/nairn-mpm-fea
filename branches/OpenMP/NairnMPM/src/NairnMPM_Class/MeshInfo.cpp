@@ -498,11 +498,10 @@ GridPatch **MeshInfo::CreateOnePatch(int np)
     GridPatch **patch = (GridPatch **)malloc(sizeof(GridPatch));
     if(patch==NULL) return NULL;
 	
-	// one patch and no ghost nodes
-	patch[0] = new GridPatch(1,xPatchSize,1,yPatchSize,1,zPatchSize);
-	if(!patch[0]->CreateGhostNodes()) return NULL;
+	// one patch but no ghost nodes
+	patch[0] = new GridPatch(1,xPatchSize,1,yPatchSize,1,0);
 	
-	// fill patch with particles
+	// fill patch with all particles
 	for(int p=0;p<nmpms;p++) patch[0]->AddParticle(mpm[p]);
     
     // return array with the one patch

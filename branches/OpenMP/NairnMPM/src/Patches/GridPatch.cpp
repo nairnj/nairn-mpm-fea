@@ -47,6 +47,7 @@ GridPatch::GridPatch(int xmin,int xmax,int ymin,int ymax,int zmin,int zmax)
 	firstRBC = NULL;
 	
 	ghosts = NULL;
+	numGhosts=0;
 }
 
 // Create all ghost nodes
@@ -217,45 +218,51 @@ void GridPatch::RemoveParticleAfter(MPMBase *mptr,MPMBase *prevMptr)
 //	as appropriate for this patch
 NodalPoint *GridPatch::GetNodePointer(int num)
 {
-	// 2D Only for now
-	
 	// if single patch, use the real node
 	if(ghosts==NULL) return nd[num];
 	
-	// get rwo column in this patch
-	int col = (num-1)%mpmgrid.yplane;			// row, col in global grid
-	int row = (num-1)/mpmgrid.yplane;
-	col -= x0;									// zero based within the patch
-	row -= y0;
-	
-	// is it an owned node?
-	if(row>=0 && row<yn && col>=0 && col<xn) return nd[num];
-	
-	// is it out of this patch
-	if(row<-ghostRows || row>yn+ghostRows || col<-ghostRows || col>xn+ghostRows)
-		throw "Need ghost node that is outside this patch";
-	
 	// look for ghost node
-	int g;
+	int g,col,row;
 	
-	if(row<0)
-	{	// ghost in full rows near the bottom
-		g = (row+ghostRows)*fullRow + ghostRows + col;
-	}
-	
-	else if(row<yn)
-	{	// ghost within partial rows
-		if(col<0)
-			g = basePartial + row*interiorRow + ghostRows + col ;
+	// 2D
+	if(zn<=0)
+	{	// get rwo column in this patch
+		col = (num-1)%mpmgrid.yplane;			// row, col in global grid
+		row = (num-1)/mpmgrid.yplane;
+		col -= x0;									// zero based within the patch
+		row -= y0;
+		
+		// is it an owned node?
+		if(row>=0 && row<yn && col>=0 && col<xn) return nd[num];
+		
+		// is it out of this patch
+		if(row<-ghostRows || row>yn+ghostRows || col<-ghostRows || col>xn+ghostRows)
+			throw "Need ghost node that is outside this patch";
+		
+		if(row<0)
+		{	// ghost in full rows near the bottom
+			g = (row+ghostRows)*fullRow + ghostRows + col;
+		}
+		
+		else if(row<yn)
+		{	// ghost within partial rows
+			if(col<0)
+				g = basePartial + row*interiorRow + ghostRows + col ;
+			else
+				g = basePartial + row*interiorRow + ghostRows + col - xn;
+		}
+		
 		else
-			g = basePartial + row*interiorRow + ghostRows + col - xn;
+		{	// top full rows
+			g = baseTop + (row-yn)*fullRow + +ghostRows + col;
+		}
 	}
 	
 	else
-	{	// top full rows
-		g = baseTop + (row-yn)*fullRow + +ghostRows + col;
+	{	// 3D patch
+		g=-1;
 	}
-	
+
 	// if ghosts[g] has ghost node return it, otherwise return real node
 	// a ghosts[g] with no nodes should not reach here
 	if(g<0 || g>=numGhosts)
