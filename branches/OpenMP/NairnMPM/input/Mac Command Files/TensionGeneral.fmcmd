@@ -26,7 +26,7 @@ Intended for development of these materials
 EndHeader! ------------ Parameters ---------------
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", "Axisymmetric MPM", or "3D MPM"
-#analysis="Plane Strain MPM"
+#analysis="3D MPM"
 
 ! pick a method usually "lCPDI" or "uGIMP"
 #method="uGIMP"
@@ -36,7 +36,7 @@ EndHeader! ------------ Parameters ---------------
 
 ! material options: isotropic, iptrans, normtrans, ortho,isoplasticity, mgeos
 ! bistable, viscoelastic, hill, wood
-#matID="hill"
+#matID="iptrans"
 #angle=0					! material angle for anisotopic materials
 
 ! hardening law (if allowed) for current material
@@ -100,6 +100,7 @@ StressFreeTemp 294
 ! Analysis type
 Analysis #analysis
 MPMMethod #update,#method
+Processors 2
 !Conduction "yes","Mechanical Energy"
 
 ! convert to contact
@@ -486,7 +487,7 @@ if #strain<0
 else
   #xtra=(int(1.6*#strain*#length/100/#cell)+4)
   #gright=#length+#xtra*#cell
-  #sides=4
+  #sides=1
 endif
 #gbot=-#sides*#cell
 #gtop=#width+#sides*#cell

@@ -499,7 +499,7 @@ GridPatch **MeshInfo::CreateOnePatch(int np)
     if(patch==NULL) return NULL;
 	
 	// one patch but no ghost nodes
-	patch[0] = new GridPatch(1,xPatchSize,1,yPatchSize,1,0);
+	patch[0] = new GridPatch(1,xPatchSize,1,yPatchSize,1,np==THREED_MPM ? depth : 0);
 	
 	// fill patch with all particles
 	for(int p=0;p<nmpms;p++) patch[0]->AddParticle(mpm[p]);

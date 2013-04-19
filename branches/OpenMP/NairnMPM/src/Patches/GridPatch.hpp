@@ -54,6 +54,8 @@ class GridPatch
 		int baseTop;
 		int interiorRank;
 		int fullRank;
+        int baseInterior;
+        int baseApex;
 };
 
 extern GridPatch **patches;

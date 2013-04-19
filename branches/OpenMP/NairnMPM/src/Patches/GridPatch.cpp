@@ -59,9 +59,8 @@ bool GridPatch::CreateGhostNodes(void)
 	interiorRow = 2*ghostRows+1;					// midrow count (2D patch) AND # of bottom/base+top/apex rows
 	fullRow = xn + interiorRow;						// top and bottom row counts, 2D patch
 	basePartial = ghostRows*fullRow;				// start of mid rows, 2D patch (0 based)
-	baseTop = basePartial + yn*interiorRow;			// start ot top full rows, 2D patch (0 based)
-	interiorRank = interiorRow*(fullRow+yn);		// midblock rank count, 3D patch (same as total in 2D patch)
-	fullRank = fullRow*(yn + interiorRow);			// base and apex rank counts, 3D patch
+	baseTop = basePartial + yn*interiorRow;			// start of top full rows, 2D patch (0 based)
+    cout << "... base partial " << basePartial << ", base top " << baseTop << endl;
 	
 	// create ghost nodes
 	if(zn<=0)
@@ -70,7 +69,12 @@ bool GridPatch::CreateGhostNodes(void)
 	}
 	else
 	{	// 3D ranks
+        interiorRank = interiorRow*(fullRow+yn);		// midblock rank count, 3D patch (same as total in 2D patch)
+        fullRank = fullRow*(yn + interiorRow);			// base and apex rank counts, 3D patch
+        baseInterior = ghostRows*fullRank;              // start of interior ranks, 3D patch (0 based)
+        baseApex = baseInterior + zn*interiorRank;      // start of top full ranks, 3D patch (0 based)
 		numGhosts = interiorRow*fullRank + zn*interiorRank;
+        cout << "... base interior " << baseInterior << ", base apex " << baseApex << endl;
 	}
 	ghosts = (GhostNode **)malloc(numGhosts*sizeof(GhostNode));
 	if(ghosts==NULL) return FALSE;
@@ -98,7 +102,7 @@ bool GridPatch::CreateGhostNodes(void)
 		int row,col,rank,g=0;
 		for(k=-ghostRows;k<=zn+ghostRows;k++)
 		{	rank = z0+k;					// 0 based grid rank
-			cout << "... begin rank on z rank = " << rank << endl;
+			cout << "\n**** begin rank on z rank = " << rank << endl;
 			for(i=-ghostRows;i<=yn+ghostRows;i++)
 			{	row = y0+i;					// 0 based grid row
 				cout << endl;
@@ -227,7 +231,7 @@ NodalPoint *GridPatch::GetNodePointer(int num)
 	// 2D
 	if(zn<=0)
 	{	// get rwo column in this patch
-		col = (num-1)%mpmgrid.yplane;			// row, col in global grid
+		col = (num-1)%mpmgrid.yplane;               // row, col in global grid
 		row = (num-1)/mpmgrid.yplane;
 		col -= x0;									// zero based within the patch
 		row -= y0;
@@ -254,13 +258,59 @@ NodalPoint *GridPatch::GetNodePointer(int num)
 		
 		else
 		{	// top full rows
-			g = baseTop + (row-yn)*fullRow + +ghostRows + col;
+			g = baseTop + (row-yn)*fullRow + ghostRows + col;
 		}
 	}
 	
 	else
 	{	// 3D patch
-		g=-1;
+        int rank = (num-1)/mpmgrid.zplane;           // 0-based rank in global grid
+        int rnum = (num-1)%mpmgrid.zplane;           // 0-based number in rank
+		col = (rnum-1)%mpmgrid.yplane;               // 0-baed row, col in global grid
+		row = (rnum-1)/mpmgrid.yplane;
+		col -= x0;									// zero based within the patch
+		row -= y0;
+        rank -= z0;
+        
+		// is it an owned node?
+		if(row>=0 && row<yn && col>=0 && col<xn && rank>=0 && rank<zn) return nd[num];
+        
+		// is it out of this patch
+		if(row<-ghostRows || row>yn+ghostRows || col<-ghostRows || col>xn+ghostRows || rank<-ghostRows || rank>zn+ghostRows)
+        {   cout << num << " to (" << row << "," << col << "," << rank << ")" << endl;
+			throw "Need ghost node that is outside this patch";
+        }
+        
+        if(rank<0)
+        {   // ghost in full slices below bass of the element
+            g = (rank+ghostRows)*fullRank + (row+ghostRows)*fullRow + ghostRows + col;
+        }
+        else if(rank<zn)
+        {   // ghost within partial slices
+            int baseRank = baseInterior + rank*interiorRank;
+            if(row<0)
+            {	// ghost in full rows near the bottom
+                g = baseRank + (row+ghostRows)*fullRow + ghostRows + col;
+            }
+            
+            else if(row<yn)
+            {	// ghost within partial rows
+                if(col<0)
+                    g = baseRank + basePartial + row*interiorRow + ghostRows + col ;
+                else
+                    g = baseRank + basePartial + row*interiorRow + ghostRows + col - xn;
+            }
+            
+            else
+            {	// top full rows
+                g = baseRank + baseTop + (row-yn)*fullRow + ghostRows + col;
+            }
+        }
+        
+        else
+        {   // ghost in full slices above the patch
+            g = baseApex + (rank-zn)*fullRank + (row+ghostRows)*fullRow + ghostRows + col;
+        }
 	}
 
 	// if ghosts[g] has ghost node return it, otherwise return real node
