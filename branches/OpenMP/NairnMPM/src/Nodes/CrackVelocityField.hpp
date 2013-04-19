@@ -49,6 +49,9 @@ class CrackVelocityField
 		virtual void AddVolumeGradient(int,MPMBase *,double,double,double);
 		virtual void CopyVolumeGradient(int,Vector *);
 		virtual void CopyMassAndMomentum(NodalPoint *,int);
+        virtual void CopyMassAndMomentumLast(NodalPoint *,int);
+        virtual void RezeroNodeTask6(double) = 0;
+        void AddMomentumTask6(int,double,Vector *);
 	
 		void AddFtotTask3(int,Vector *);
 		virtual void CopyGridForces(NodalPoint *,int);
@@ -58,9 +61,6 @@ class CrackVelocityField
 		virtual void UpdateMomentaOnField(double) = 0;
 	
 		void IncrementDelvaTask5(int,double,Vector *,Vector *) const;
-	
-		virtual void RezeroNodeTask6(double) = 0;
-		void AddMomentumTask6(int,double,Vector *);
 	
 		void CreateStrainField(void);
 		void DeleteStrainField(void);

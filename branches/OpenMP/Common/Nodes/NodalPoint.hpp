@@ -73,12 +73,16 @@ class NodalPoint : public LinkedObject
 		void AddMatVelocityField(short,int);
 	
 		void AddMassMomentum(MPMBase *,short,int,double,double,double,double,int,bool);
+        void AddMassMomentumLast(MPMBase *,short,int,double,double,double,double);
 		void AddMomentumTask1(short,int,double,Vector *,int);
 		void AddMass(short,int,double);
 		void AddMassTask1(short,int,double,int);
 		void AddVolumeGradient(short,int,MPMBase *,double,double,double);
 		void CopyVolumeGradient(short,int,Vector *);
 		void CopyMassAndMomentum(NodalPoint *);
+        void CopyMassAndMomentumLast(NodalPoint *);
+        void RezeroNodeTask6(double);
+        void AddMomentumTask6(short,int,double,Vector *);
 	
 		void AddFtotTask3(short,int,Vector *);
 		void AddFtotSpreadTask3(short,Vector);
@@ -90,8 +94,6 @@ class NodalPoint : public LinkedObject
 	
 		void IncrementDelvaTask5(short,int,double,Vector *,Vector *) const;
 	
-		void RezeroNodeTask6(double);
-		void AddMomentumTask6(short,int,double,Vector *);
 	
 		short IncrementDelvSideTask8(short,int,double,Vector *,double *,CrackSegment *);
 		void SurfaceCrossesCracks(double,double,double,double,CrackField *);

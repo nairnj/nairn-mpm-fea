@@ -558,6 +558,9 @@ void NairnMPM::PreliminaryCalcs(void)
 	else
 		contact.MaterialContactPairs(maxMaterialFields);
 	
+    // ghost particles will need to now this setting when creating patches
+    if(firstCrack!=NULL) maxCrackFields=MAX_FIELDS_FOR_CRACKS;
+    
     // verify time step and make smaller if needed
     if(tmin<timestep) timestep=tmin;
 	strainTimestep = (mpmApproach==USAVG_METHOD) ? timestep/2. : timestep ;
@@ -597,8 +600,6 @@ void NairnMPM::PreliminaryCalcs(void)
 				hasTractionCracks=TRUE;
 			nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 		}
-		
-		maxCrackFields=MAX_FIELDS_FOR_CRACKS;
 		
 		// warnings
 		CrackHeader::warnNodeOnCrack=warnings.CreateWarning("mesh node on a crack",-1,5);

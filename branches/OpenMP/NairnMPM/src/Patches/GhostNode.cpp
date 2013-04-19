@@ -110,9 +110,7 @@ GhostNode::GhostNode(int row,int col,int rank,bool interiorRow,bool interiorCol,
 // initialize ghost nodes for next time step
 void GhostNode::InitializeForTimeStep()
 {	if(ghost!=NULL)
-	{	// If has ghost, initialize it
 		ghost->InitializeForTimeStep();
-	}
 }
 
 // copy allocated velocity fields from real node to ghost node
@@ -125,6 +123,18 @@ void GhostNode::InitializationReduction(void)
 void GhostNode::MassAndMomentumReduction(void)
 {	if(ghost!=NULL)
 		ghost->CopyMassAndMomentum(real);
+}
+
+// initialize ghost nodes for next time step
+void GhostNode::RezeroNodeTask6(double delTime)
+{	if(ghost!=NULL)
+        ghost->RezeroNodeTask6(delTime);
+}
+
+// When Grid Forces task is done transfer ghost node force to real nodes
+void GhostNode::MassAndMomentumReductionLast(void)
+{	if(ghost!=NULL)
+        ghost->CopyMassAndMomentumLast(real);
 }
 
 // When Grid Forces task is done transfer ghost node force to real nodes

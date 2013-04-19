@@ -43,6 +43,7 @@ void InitializationTask::Execute(void)
 {
 	// Zero Mass Matrix and vectors
 	warnings.BeginStep();
+    
 
 	// zero all nodal variables on real nodes
 	int tp = fmobj->GetTotalNumberOfPatches();
@@ -149,7 +150,7 @@ void InitializationTask::Execute(void)
     
 		// reduction of real nodes to ghost nodes
 		if(tp>1)
-		{	for(int pn=0;pn<tp;pn++)
+        {   for(int pn=0;pn<tp;pn++)
 				patches[pn]->InitializationReduction();
 		}
 	}

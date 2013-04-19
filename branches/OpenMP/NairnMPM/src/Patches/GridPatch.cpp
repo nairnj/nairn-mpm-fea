@@ -124,13 +124,10 @@ bool GridPatch::CreateGhostNodes(void)
 
 #pragma mark GridPatch: Methods
 
-// initialize real and ghost nodes for next time step
+// initialize ghost nodes for next time step
 void GridPatch::InitializeForTimeStep()
-{
-	// initialize ghost nodes
-	for(int i=0;i<numGhosts;i++)
+{   for(int i=0;i<numGhosts;i++)
 		ghosts[i]->InitializeForTimeStep();
-	
 }
 
 // When initialization is done, copy velocity field to real nodes
@@ -139,11 +136,22 @@ void GridPatch::InitializationReduction(void)
 		ghosts[i]->InitializationReduction();
 }
 
-
 // When Grid Forces task is done transfer ghost node force to real nodes
 void GridPatch::MassAndMomentumReduction(void)
 {	for(int i=0;i<numGhosts;i++)
 		ghosts[i]->MassAndMomentumReduction();
+}
+
+// initialize ghost nodes for next time step
+void GridPatch::RezeroNodeTask6(double delTime)
+{   for(int i=0;i<numGhosts;i++)
+        ghosts[i]->RezeroNodeTask6(delTime);
+}
+
+// When Grid Forces task is done transfer ghost node force to real nodes
+void GridPatch::MassAndMomentumReductionLast(void)
+{	for(int i=0;i<numGhosts;i++)
+        ghosts[i]->MassAndMomentumReductionLast();
 }
 
 // When Grid Forces task is done transfer ghost node force to real nodes

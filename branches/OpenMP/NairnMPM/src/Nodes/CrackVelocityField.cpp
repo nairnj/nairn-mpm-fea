@@ -30,7 +30,7 @@ CrackVelocityField::CrackVelocityField(short theLoc,int cnum)
 	for(i=0;i<maxMaterialFields;i++)
 		mvf[i]=NULL;
 	
-	// in single material mode, create the one material velocity field
+	// in single material mode, always create the one material velocity field
 	if(maxMaterialFields==1)
 	{	mvf[0]=new MatVelocityField(FALSE);
 		if(mvf[0]==NULL) throw CommonException("Memory error allocating material velocity field.",
@@ -78,23 +78,23 @@ void CrackVelocityField::Zero(short theLoc,int cnum,bool zeroMVFs)
 // Called in intitation to preallocate material velocituy fields
 void CrackVelocityField::AddMatVelocityField(int matfld) {}
 
-// Make sure this crack velocituy field matches a ghost one
+// Make sure this crack velocity field on ghost node matches a real one
 // Called during time step initialization if needed (i.e., cracks and/or multimaterial mode)
-void CrackVelocityField::MatchRealFields(CrackVelocityField *gcvf)
+void CrackVelocityField::MatchRealFields(CrackVelocityField *rcvf)
 {	// crack details
-	loc[0] = gcvf->loc[0];
-	loc[1] = gcvf->loc[1];
-	crackNum[0] = gcvf->crackNum[0];
-	crackNum[1] = gcvf->crackNum[1];
-	CopyVector(&norm[0],&gcvf->norm[0]);
-	CopyVector(&norm[1],&gcvf->norm[0]);
-	MatchMatVelocityFields(gcvf->GetMaterialVelocityFields());
+	loc[0] = rcvf->loc[0];
+	loc[1] = rcvf->loc[1];
+	crackNum[0] = rcvf->crackNum[0];
+	crackNum[1] = rcvf->crackNum[1];
+	CopyVector(&norm[0],&rcvf->norm[0]);
+	CopyVector(&norm[1],&rcvf->norm[1]);
+	MatchMatVelocityFields(rcvf->GetMaterialVelocityFields());
 }
 
-// match materical velocity fields
-void CrackVelocityField::MatchMatVelocityFields(MatVelocityField **gmvf) {}
+// match material velocity fields (only needed in multimaterial node
+void CrackVelocityField::MatchMatVelocityFields(MatVelocityField **rmvf) {}
 
-#pragma mark TASK 1 METHODS
+#pragma mark TASK 1 and 6 METHODS
 
 // Called only in task 1 - add to momemtum and count number of material points
 // If first material point for this velocity field, save the velocity too
@@ -123,6 +123,21 @@ void CrackVelocityField::CopyMassAndMomentum(NodalPoint *real,int vfld)
 {	if(mvf[0]!=NULL) mvf[0]->CopyMassAndMomentum(real,vfld,0);
 }
 
+// Add to momentum vector (second pass after fields so not need to count points)
+void CrackVelocityField::AddMomentumTask6(int matfld,double wt,Vector *vel)
+{	// momentum
+	AddScaledVector(&mvf[matfld]->pk,vel,wt);		// in g mm/sec
+    
+    // save velocity if only one point on this node
+    if(numberPoints==1)
+        mvf[matfld]->SetVelocity(vel);
+}
+
+// Copy mass and momentum from ghost to real node
+void CrackVelocityField::CopyMassAndMomentumLast(NodalPoint *real,int vfld)
+{	if(mvf[0]!=NULL) mvf[0]->CopyMassAndMomentumLast(real,vfld,0);
+}
+
 #pragma mark TASK 3 METHODS
 
 // Add to internal force
@@ -141,16 +156,6 @@ void CrackVelocityField::IncrementDelvaTask5(int matfld,double fi,Vector *delv,V
 }
 
 #pragma mark TASK 6 METHODS
-
-// Add to momentum vector (second pass after fields so not need to count points)
-void CrackVelocityField::AddMomentumTask6(int matfld,double wt,Vector *vel)
-{	// momentum
-	AddScaledVector(&mvf[matfld]->pk,vel,wt);		// in g mm/sec
-    
-    // save velocity if only one point on this node
-    if(numberPoints==1)
-        mvf[matfld]->SetVelocity(vel);
-}
 
 #pragma mark TASK 7 J AND K CALCULATION METHODS
 

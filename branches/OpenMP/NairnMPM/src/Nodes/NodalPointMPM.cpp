@@ -241,12 +241,12 @@ void NodalPoint::AddMatVelocityField(short vfld,int matfld)
 {	cvf[vfld]->AddMatVelocityField(matfld);
 }
 
-// Copy volume gradient when copying from ghost to real node
+// When has crack and multimaterial velocity fields, make sure ghost node has copy of needed fields
 void NodalPoint::CopyFieldInitialization(NodalPoint *ghost)
 {	ghost->UseTheseFields(cvf);
 }
 
-// Create fields in this this node that match the supplied fields
+// Create fields on this this node that match the supplied fields
 void NodalPoint::UseTheseFields(CrackVelocityField **rcvf)
 {	
 	for(int i=0;i<maxCrackFields;i++)
@@ -264,14 +264,14 @@ void NodalPoint::UseTheseFields(CrackVelocityField **rcvf)
 	}
 }
 
-#pragma mark TASK 1 METHODS
-
-// ndptr->AddMomentumTask1(vfld,matfld,fn[i]*mp,&mpmptr->vel,1);
+#pragma mark TASK 1 AND 6 METHODS
 
 // In mass and momentum task
 // 1. Add momentum
 // 2. If cracks or multimaterials, add displacements and volume
 // 3. If multimaterials, add volume gradient
+// 4. Add mass
+// 5. Transport tasks (for non-rigid only
 void NodalPoint::AddMassMomentum(MPMBase *mptr,short vfld,int matfld,double shape,double dNdx,double dNdy,double dNdz,
 								 int numPts,bool nonRigid)
 {
@@ -322,6 +322,56 @@ void NodalPoint::AddMassMomentum(MPMBase *mptr,short vfld,int matfld,double shap
 	}
 }
 
+// copy ghost node mass an momentum to real node
+void NodalPoint::CopyMassAndMomentum(NodalPoint *real)
+{	for(int vfld=0;vfld<maxCrackFields;vfld++)
+    {	if(CrackVelocityField::ActiveField(cvf[vfld]))
+            cvf[vfld]->CopyMassAndMomentum(real,vfld);
+    }
+}
+
+// In 2nd mass and momentum extrapolation when update strains last (and only for non-rigid particles)
+// 1. Add momentum
+// 2. If cracks or multimaterials, add displacements and volume
+// 3. If multimaterials, add volume gradient
+void NodalPoint::AddMassMomentumLast(MPMBase *mptr,short vfld,int matfld,double shape,double dNdx,double dNdy,double dNdz)
+{
+	// add momentum
+	double mp = mptr->mp;
+	double fnmp = shape*mp;
+	cvf[vfld]->AddMomentumTask6(matfld,fnmp,&mptr->vel);
+	
+	// crack contact calculations
+	// (only if cracks or multimaterial mode, i.e., contact is being done)
+	if(firstCrack!=NULL || fmobj->multiMaterialMode)
+	{	// displacement or position for contact calculations
+		if(mpmgrid.GetContactByDisplacements())
+		{	// extrapolate displacements
+			Vector pdisp=mptr->pos;
+			cvf[vfld]->AddDisplacement(matfld,fnmp,SubVector(&pdisp,&mptr->origpos));
+		}
+		else
+		{	// extraplate positions
+			cvf[vfld]->AddDisplacement(matfld,fnmp,&mptr->pos);
+		}
+		
+		// add dilated volume, only used by transport tasks, contact, and imperfect interfaces
+        cvf[vfld]->AddVolume(matfld,shape*mptr->GetVolume(DEFORMED_AREA));
+        
+		// material contact calculations (only if multimaterial mode)
+		if(fmobj->multiMaterialMode)
+			cvf[vfld]->AddVolumeGradient(matfld,mptr,dNdx,dNdy,dNdz);
+	}
+}
+
+// copy ghost node mass an momentum to real node
+void NodalPoint::CopyMassAndMomentumLast(NodalPoint *real)
+{	for(int vfld=0;vfld<maxCrackFields;vfld++)
+    {	if(CrackVelocityField::ActiveField(cvf[vfld]))
+            cvf[vfld]->CopyMassAndMomentumLast(real,vfld);
+    }
+}
+
 // Add to momentum vector to selected field (in g mm/sec)(both 2D and 3D)
 void NodalPoint::AddMomentumTask1(short vfld,int matfld,double wt,Vector *vel,int numPts)
 {	Vector wtvel;
@@ -336,14 +386,12 @@ void NodalPoint::AddMassTask1(short vfld,int matfld,double mnode,int numPts) { c
 
 // Add volume gradient for selected field
 void NodalPoint::AddVolumeGradient(short vfld,int matfld,MPMBase *mptr,double dNdx,double dNdy,double dNdz)
-{	if(fmobj->multiMaterialMode)
-		cvf[vfld]->AddVolumeGradient(matfld,mptr,dNdx,dNdy,dNdz);
+{	cvf[vfld]->AddVolumeGradient(matfld,mptr,dNdx,dNdy,dNdz);
 }
 
 // Copy volume gradient when copying from ghost to real node
 void NodalPoint::CopyVolumeGradient(short vfld,int matfld,Vector *grad)
-{	if(fmobj->multiMaterialMode)
-		cvf[vfld]->CopyVolumeGradient(matfld,grad);
+{	cvf[vfld]->CopyVolumeGradient(matfld,grad);
 }
 
 // Calculate total mass and count number of materials on this node
@@ -356,16 +404,6 @@ void NodalPoint::CalcTotalMassAndCount(void)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
 			mass+=cvf[i]->GetTotalMassAndCount();
 	}
-    
-    /*
-    if(mass>0. && mass<0.000825*1e-6)
-    {   cout << "# remove mass = " << mass << endl;
-        Describe();
-        InitializeForTimeStep();
-        mass = 0.;
-        Describe();
-    }
-     */
 }
 
 // When has rigid particles, multimaterial mode, and cracks, sum all rigid particles on
@@ -404,14 +442,6 @@ void NodalPoint::CombineRigidParticles(void)
 		{	// copy rigid material from field i to field ji
 			((CrackVelocityFieldMulti *)cvf[j])->CopyRigidFrom((CrackVelocityFieldMulti *)cvf[i],rigidFieldNum);
 		}
-	}
-}
-
-// copy ghost node mass an momentum to real node
-void NodalPoint::CopyMassAndMomentum(NodalPoint *real)
-{	for(int vfld=0;vfld<maxCrackFields;vfld++)
-	{	if(CrackVelocityField::ActiveField(cvf[vfld]))
-			cvf[vfld]->CopyMassAndMomentum(real,vfld);
 	}
 }
 

@@ -82,14 +82,15 @@ void MatVelocityField::CopyMassAndMomentum(NodalPoint *real,int vfld,int matfld)
 		real->AddMomentumTask1((short)vfld,matfld,1.,&pk,numberPoints);
 			
 	// if cracks and multimaterial mode
-	if(firstCrack!=NULL || maxMaterialFields>1)
+	if(firstCrack!=NULL || fmobj->multiMaterialMode)
 	{	real->AddDisplacement((short)vfld,matfld,1.,&disp);
 		real->AddVolume((short)vfld,matfld,volume);
+        
+        // volume gradient
+        if(fmobj->multiMaterialMode)
+            real->CopyVolumeGradient((short)vfld,matfld,volumeGrad);
 	}
 	
-	// volume gradient
-	real->CopyVolumeGradient((short)vfld,matfld,volumeGrad);
-
 	// if multimaterial mode
 	if(!rigidField)
 	{	// mass
@@ -100,6 +101,29 @@ void MatVelocityField::CopyMassAndMomentum(NodalPoint *real,int vfld,int matfld)
 	else
 	{	// mass to count particles
 		real->AddMassTask1((short)vfld,matfld,mass,numberPoints);
+	}
+}
+
+// copy mass and momentum from ghost to real node
+void MatVelocityField::CopyMassAndMomentumLast(NodalPoint *real,int vfld,int matfld)
+{
+	// skip if none or rigid
+	if(numberPoints==0 || rigidField) return;
+	
+	// momentum
+	if(numberPoints==1)
+		real->AddMomentumTask6((short)vfld,matfld,mass,&vk);
+	else
+		real->AddMomentumTask6((short)vfld,matfld,1.,&pk);
+    
+	// if cracks and multimaterial mode
+	if(firstCrack!=NULL || fmobj->multiMaterialMode)
+	{	real->AddDisplacement((short)vfld,matfld,1.,&disp);
+		real->AddVolume((short)vfld,matfld,volume);
+        
+        // volume gradient
+        if(fmobj->multiMaterialMode)
+            real->CopyVolumeGradient((short)vfld,matfld,volumeGrad);
 	}
 }
 

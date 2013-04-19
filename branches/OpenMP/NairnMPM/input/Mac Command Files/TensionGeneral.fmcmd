@@ -33,7 +33,7 @@ Processors 4
 #method="uGIMP"
 
 ! pick strain update method usually "USF" or "USAVG"
-#update="USF"
+#update="USAVG"
 
 ! material options: isotropic, iptrans, normtrans, ortho,isoplasticity, mgeos
 ! bistable, viscoelastic, hill, wood
@@ -76,7 +76,7 @@ StressFreeTemp 294
 #yldstrain=1		! in percent
 
 ! Dimensions
-#cell=1
+#cell=2
 #length=20			! length
 #width=10			! width
 #thick=10			! thickness

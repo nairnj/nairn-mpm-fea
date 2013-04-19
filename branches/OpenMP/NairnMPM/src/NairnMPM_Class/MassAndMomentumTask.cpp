@@ -112,7 +112,7 @@ void MassAndMomentumTask::Execute(void)
     }
 	
 	// loop over non-rigid and rigid contact particles - this parallel part changes only particle p
-	// mass, momenta, ect are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
+	// mass, momenta, etc are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
 #pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
 	{
 #ifdef _OPENMP
@@ -185,7 +185,7 @@ void MassAndMomentumTask::Execute(void)
 					
 				}
 				
-				// next non-rigid material point
+				// next material point
 				mpmptr = (MPMBase *)mpmptr->GetNextObject();
 			}
 		}

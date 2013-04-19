@@ -33,6 +33,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void CombineRigidFrom(CrackVelocityFieldMulti *,int);
 		virtual void CopyRigidFrom(CrackVelocityFieldMulti *,int);
 		virtual void CopyMassAndMomentum(NodalPoint *,int);
+        virtual void CopyMassAndMomentumLast(NodalPoint *,int);
 	
 		virtual void AddFtotSpreadTask3(Vector *);
 		virtual void CopyGridForces(NodalPoint *,int);

@@ -36,7 +36,7 @@ void CrackVelocityFieldMulti::ZeroMatFields(void)
 	numberRigidPoints=0;
 }
 
-// match materical velocity fields
+// match materical velocity fields on ghost node to those on a real node
 void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **rmvf)
 {	for(int i=0;i<maxMaterialFields;i++)
 	{	if(rmvf[i]==NULL) continue;
@@ -53,7 +53,7 @@ void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **rmvf)
 	numberRigidPoints=0;
 }
 
-#pragma mark TASK 1 METHODS
+#pragma mark TASK 1 AND 6 METHODS
 
 // Called in intitation to preallocate material velocituy fields
 void CrackVelocityFieldMulti::AddMatVelocityField(int matfld)
@@ -184,6 +184,37 @@ void CrackVelocityFieldMulti::CopyMassAndMomentum(NodalPoint *real,int vfld)
 	}
 }
 
+// zero momentum and displacement at a node for new calculations
+// but can do the calculation for rigid particles here
+void CrackVelocityFieldMulti::RezeroNodeTask6(double deltaTime)
+{	int i;
+    for(i=0;i<maxMaterialFields;i++)
+    {	if(MatVelocityField::ActiveField(mvf[i]))
+        {	if(!mvf[i]->rigidField)
+            {	ZeroVector(&mvf[i]->pk);
+                ZeroVector(&mvf[i]->disp);
+                if(mvf[i]->volumeGrad!=NULL) ZeroVector(mvf[i]->volumeGrad);
+            }
+            else
+            {   // for rigid particles, keep initial pk
+                // can project displacement using current velocity because
+                // particle mass is its volume
+                // dnew = Sum (Vp*fpi*(d + v dt)) = dold + Sum (Vp*fpi*v*dt) = dold + pk*dt
+                AddScaledVector(&mvf[i]->disp,&mvf[i]->pk,deltaTime);
+            }
+            mvf[i]->SetContactVolume(0.);
+        }
+    }
+}
+
+// Copy mass and momentum from ghost node to real node
+void CrackVelocityFieldMulti::CopyMassAndMomentumLast(NodalPoint *real,int vfld)
+{	for(int matfld=0;matfld<maxMaterialFields;matfld++)
+    {	if(mvf[matfld]!=NULL)
+            mvf[matfld]->CopyMassAndMomentumLast(real,vfld,matfld);
+    }
+}
+
 #pragma mark TASK 3 METHODS
 
 // Add to force spread out over the materials so each has same extra accerations = f/M
@@ -237,31 +268,6 @@ void CrackVelocityFieldMulti::UpdateMomentaOnField(double timestep)
     for(i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
             mvf[i]->UpdateMomentum(timestep);
-    }
-}
-
-#pragma mark TASK 6 METHODS
-
-// zero momentum and displacement at a node for new calculations
-// but can do the calculation for rigid particles here
-void CrackVelocityFieldMulti::RezeroNodeTask6(double deltaTime)
-{	int i;
-    for(i=0;i<maxMaterialFields;i++)
-    {	if(MatVelocityField::ActiveField(mvf[i]))
-		{	if(!mvf[i]->rigidField)
-			{	ZeroVector(&mvf[i]->pk);
-				ZeroVector(&mvf[i]->disp);
-				if(mvf[i]->volumeGrad!=NULL) ZeroVector(mvf[i]->volumeGrad);
-			}
-			else
-            {   // for rigid particles, keep initial pk
-				// can project displacement using current velocity because
-				// particle mass is its volume
-				// dnew = Sum (Vp*fpi*(d + v dt)) = dold + Sum (Vp*fpi*v*dt) = dold + pk*dt
-				AddScaledVector(&mvf[i]->disp,&mvf[i]->pk,deltaTime);
-			}
-			mvf[i]->SetContactVolume(0.);
-		}
     }
 }
 

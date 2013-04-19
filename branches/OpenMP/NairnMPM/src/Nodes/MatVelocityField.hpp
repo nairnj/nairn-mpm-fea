@@ -38,6 +38,7 @@ class MatVelocityField
 		// methods
 		void AddMomentumTask1(Vector *,Vector *,int);
 		void CopyMassAndMomentum(NodalPoint *,int,int);
+        void CopyMassAndMomentumLast(NodalPoint *,int,int);
 		void CopyGridForces(NodalPoint *,int,int);
 		void ChangeMatMomentum(Vector *,bool,double);
 		void AddContactForce(Vector *);

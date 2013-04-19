@@ -39,6 +39,9 @@
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Cracks/CrackNode.hpp"
 
+// NEWINCLUDE
+#include "Patches/GridPatch.hpp"
+
 #pragma mark CONSTRUCTORS
 
 UpdateStrainsLastTask::UpdateStrainsLastTask(const char *name) : MPMTask(name)
@@ -50,46 +53,86 @@ UpdateStrainsLastTask::UpdateStrainsLastTask(const char *name) : MPMTask(name)
 // Get total grid point forces (except external forces)
 void UpdateStrainsLastTask::Execute(void)
 {
-	int numnds,nds[maxShapeNodes];
-	double mp,fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+	int nds[maxShapeNodes];
+	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
-	// zero again (which finds new positions for rigid particles)
-	for(int i=1;i<=nnodes;i++)
-		nd[i]->RezeroNodeTask6(timestep);
-	
-	// loop over nonrigid particles
-	for(int p=0;p<nmpmsNR;p++)
-	{	const MaterialBase *matref = theMaterials[mpm[p]->MatID()];
-		int matfld = matref->GetField();
-        mp=mpm[p]->mp;                              // in g
+#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
+	{
+#pragma omp for
+        // zero again (which finds new positions for rigid particles)
+		for(int i=1;i<=nnodes;i++)
+			nd[i]->RezeroNodeTask6(timestep);
 		
-		// find shape functions (why ever need gradients?)
-		const ElementBase *elref = theElements[mpm[p]->ElemID()];
-		if(fmobj->multiMaterialMode)
-        {   // Need gradients for volume gradient
-            elref->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
+#ifdef _OPENMP
+		int pn = omp_get_thread_num();
+#else
+		int pn = 0;
+#endif
+        /*
+        int tp = fmobj->GetTotalNumberOfPatches();
+        for(int pn=0;pn<tp;pn++)
+        {
+        */
+        
+        // zero ghost nodes on this patch
+		patches[pn]->RezeroNodeTask6(timestep);
+        
+        // loop over non-rigid particles only - this parallel part changes only particle p
+        // mass, momenta, etc are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
+        MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(FIRST_NONRIGID);
+        while(mpmptr!=NULL)
+        {   const MaterialBase *matref = theMaterials[mpmptr->MatID()];
+            int matfld = matref->GetField();
+            
+            // find shape functions (why ever need gradients?)
+            const ElementBase *elref = theElements[mpmptr->ElemID()];
+            int numnds;
+            if(fmobj->multiMaterialMode)
+            {   // Need gradients for volume gradient
+                elref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
+            }
+            else
+                elref->GetShapeFunctions(&numnds,fn,nds,mpmptr->GetNcpos(),mpmptr);
+            
+            short vfld;
+            NodalPoint *ndptr;
+            for(int i=1;i<=numnds;i++)
+            {
+#ifdef _OPENMP
+                ndptr = patches[pn]->GetNodePointer(nds[i]);
+#else
+                ndptr = nd[nds[i]];
+#endif
+                vfld = (short)mpmptr->vfld[i];
+                ndptr->AddMassMomentumLast(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
+                
+                // add momentum(3)
+                // if(firstCrack==NULL && maxMaterialFields==1) displacement(3) volume(1)
+                // if(if(fmobj->multiMaterialMode) volume gradient(3)
+                
+                // velocity from updated velocities
+                //ndptr->AddMomentumTask6(vfld,matfld,fn[i]*mpmptr->mp,&mpmptr->vel);
+                
+                // add updated displacement and volume (if cracks, not 3D)
+                //contact.AddDisplacementVolume(vfld,matfld,nd[nds[i]],mpm[p],fn[i]);
+                
+                // material contact calculations
+                //nd[nds[i]]->AddVolumeGradient(vfld,matfld,mpm[p],xDeriv[i],yDeriv[i],zDeriv[i]);
+            }
+            
+            // next non-rigid material point
+            mpmptr = (MPMBase *)mpmptr->GetNextObject();
         }
-		else
-			elref->GetShapeFunctions(&numnds,fn,nds,mpm[p]->GetNcpos(),mpm[p]);
-		
-		for(int i=1;i<=numnds;i++)
-		{	short vfld = (short)mpm[p]->vfld[i];
-			
-			// add momentum(3)
-			// if(firstCrack==NULL && maxMaterialFields==1) displacement(3) volume(1)
-			// if(if(fmobj->multiMaterialMode) volume gradient(3)
-            
-			// velocity from updated velocities
-			nd[nds[i]]->AddMomentumTask6(vfld,matfld,fn[i]*mp,&mpm[p]->vel);
-			
-			// add updated displacement and volume (if cracks, not 3D)
-			contact.AddDisplacementVolume(vfld,matfld,nd[nds[i]],mpm[p],fn[i]);
-            
-            // material contact calculations
-			nd[nds[i]]->AddVolumeGradient(vfld,matfld,mpm[p],xDeriv[i],yDeriv[i],zDeriv[i]);
-		}
 	}
 	
+	// reduction of ghost node forces to real nodes
+	int totalPatches = fmobj->GetTotalNumberOfPatches();
+	if(totalPatches>1)
+	{	for(int pn=0;pn<totalPatches;pn++)
+            patches[pn]->MassAndMomentumReductionLast();
+	}
+	
+    // grid temperature is never updated unless needed here
 	// update nodal values for transport properties (when coupled to strain)
 	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)

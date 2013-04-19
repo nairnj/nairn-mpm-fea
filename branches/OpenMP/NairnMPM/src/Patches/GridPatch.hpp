@@ -32,6 +32,8 @@ class GridPatch
 		void InitializeForTimeStep(void);
 		void InitializationReduction(void);
 		void MassAndMomentumReduction(void);
+        void MassAndMomentumReductionLast(void);
+        void RezeroNodeTask6(double);
 		void GridForcesReduction(void);
 		void AddParticle(MPMBase *);
 		void RemoveParticleAfter(MPMBase *,MPMBase *);

@@ -27,6 +27,8 @@ class GhostNode
 		void InitializeForTimeStep();
 		void InitializationReduction(void);
 		void MassAndMomentumReduction(void);
+        void MassAndMomentumReductionLast(void);
+        void RezeroNodeTask6(double);
 		void GridForcesReduction(void);
 	
 		// accessors
