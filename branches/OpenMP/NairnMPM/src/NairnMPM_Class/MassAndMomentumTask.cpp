@@ -113,7 +113,6 @@ void MassAndMomentumTask::Execute(void)
 	
 	// loop over non-rigid and rigid contact particles - this parallel part changes only particle p
 	// mass, momenta, ect are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
-	/*
 #pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
 	{
 #ifdef _OPENMP
@@ -121,10 +120,11 @@ void MassAndMomentumTask::Execute(void)
 #else
 		int pn = 0;
 #endif
-	 */
+        /*
 	int tp = fmobj->GetTotalNumberOfPatches();
 	for(int pn=0;pn<tp;pn++)
 	{
+         */
 		for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
 		{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
 			while(mpmptr!=NULL)
@@ -292,14 +292,14 @@ void MassAndMomentumTask::Execute(void)
 #endif
 	
 	// Post mass and momentum extrapolation calculations on nodes
-//#pragma omp parallel
+#pragma omp parallel
 	{
 		// variables for each thread
 		CrackNode *firstCrackNode=NULL,*lastCrackNode=NULL;
 		MaterialInterfaceNode *firstInterfaceNode=NULL,*lastInterfaceNode=NULL;
 		
 		// Each pass in this loop should be independent
-//#pragma omp for
+#pragma omp for
 		for(int i=1;i<=nnodes;i++)
 		{	// node reference
 			NodalPoint *ndptr = nd[i];
@@ -326,7 +326,7 @@ void MassAndMomentumTask::Execute(void)
 				nextTransport = nextTransport->GetNodalValue(ndptr);
 		}
 
-//#pragma omp critical
+#pragma omp critical
 		{
 			// link up crack nodes
 			if(lastCrackNode != NULL)

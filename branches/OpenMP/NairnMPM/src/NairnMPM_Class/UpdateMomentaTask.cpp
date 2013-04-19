@@ -47,6 +47,7 @@ UpdateMomentaTask::UpdateMomentaTask(const char *name) : MPMTask(name)
 void UpdateMomentaTask::Execute(void)
 {
 	// Update momenta on all nodes
+#pragma omp parallel for
 	for(int i=1;i<=nnodes;i++)
 		nd[i]->UpdateMomentaOnNode(timestep);
 	
