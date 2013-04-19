@@ -7,7 +7,7 @@ Name "John Nairn"
 
 ! ------------ Parameters ---------------
 
-! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"
+! Analysis type: "Plane Strain MPM", "Plane Stress MPM"
 #analysis="Plane Strain MPM"
 Processors 2
 
@@ -48,7 +48,7 @@ StressFreeTemp 294
 
 ! Load by stress or by velocity (if stress<=0)
 #loading="force"		! Loading = "rigid", "force", "traction"
-#rate=1				 ! fraction on axial wave speed
+#rate=.2				! fraction on axial wave speed
 #endDisp=1				! end deflection in mm
 
 ! Loading rate
@@ -66,8 +66,8 @@ Header
 Double cantilever beam (DCB) specimen
 EndHeader
 
-Analysis "Plane Strain MPM"
-MPMMethod USF,"uGIMP"
+Analysis #analysis
+MPMMethod #update,#method
 
 ! Loading rate - end deflection one arm per unit load is L^3/(3EI) 
 #crack=#length-#tip
@@ -90,7 +90,7 @@ endif
 #maxTime=#loadtime*(1+#hold+#unload)
 
 ! ********** MPM Header **********
-Archive "Results/DCB-"&#matID&"-"&#method&"/"&#loading
+Archive "Results/DCB/"&#analysis&" "&#method&"/"&#loading&"/"&#matID
 TimeStep 1000,#maxTime,#factor
 ArchiveTime #maxTime/50
 ToArchive velocity,stress,strain,rotstrain
@@ -149,8 +149,10 @@ if #unload>0
 endif
 ! end loads on beam armsif #loading="force"
   LoadRect #length-(#cwidth/2),#length,0,#depth
+    LoadType net
     Load y,function,#forcerate&"("&#ftime&")"
   EndLoadRect  LoadRect #length-(#cwidth/2),#length,-#depth,0
+    LoadType net
     Load y,function,(-#forcerate)&"("&#ftime&")"
   EndLoadRect
 else if #loading="traction"

@@ -44,35 +44,33 @@ void InitializationTask::Execute(void)
 	// Zero Mass Matrix and vectors
 	warnings.BeginStep();
 
-	// zero all nodal variables
+	// zero all nodal variables on real nodes
 	int tp = fmobj->GetTotalNumberOfPatches();
-    /*
-	if(tp>1)
+//#pragma omp parallel for
 	{
-#pragma omp parallel
-		{
-			int patch = omp_get_thread_num();
-			patches[patch]->InitializeForTimeStep();
-		}
-	}
-     */
-	if(tp>1)
-	{	for(int pn=0;pn<tp;pn++)
-			patches[pn]->InitializeForTimeStep();
-	}
-	else
-	{	// either serial or no ghost nodes need initialization
+//#pragma omp for
 		for(int i=1;i<=nnodes;i++)
 			nd[i]->InitializeForTimeStep();
-	}
-	
-	// particle calculations
-    for(int p=0;p<nmpmsRC;p++)
-	{	MPMBase *mpmptr = mpm[p];										// pointer
-			
-		const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
-		elref->GetShapeFunctionData(mpmptr);
 		
+/*
+		int patch = omp_get_thread_num();
+		patches[patch]->InitializeForTimeStep();
+*/
+		
+		// if needed, initialize ghost nodes too
+		if(tp>1)
+		{	for(int pn=0;pn<tp;pn++)
+				patches[pn]->InitializeForTimeStep();
+		}
+		
+		// particle calculations
+//#pragma omp for
+		for(int p=0;p<nmpmsRC;p++)
+		{	MPMBase *mpmptr = mpm[p];										// pointer
+			const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
+			elref->GetShapeFunctionData(mpmptr);
+			
+		}
 	}
 	
 	// allocate crack and material velocity fields needed for time step on real nodes
@@ -96,7 +94,7 @@ void InitializationTask::Execute(void)
 					short vfld;
 					NodalPoint *ndptr;
 					for(i=1;i<=numnds;i++)
-					{	// use real node in this look
+					{	// use real node in this loop
 						ndptr = nd[nds[i]];
 						
 						if(firstCrack==NULL)

@@ -37,7 +37,7 @@ EndHeader! ------------ Parameters ---------------
 ! material options: isotropic, iptrans, normtrans, ortho,isoplasticity, mgeos
 ! bistable, viscoelastic, hill, wood
 #matID="iptrans"
-#angle=0					! material angle for anisotopic materials
+#angle=45					! material angle for anisotopic materials
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2, JohnsonCook
@@ -93,14 +93,14 @@ StressFreeTemp 294
 ! Damping parameter - for feedback or regular, depending on BCs
 #damp=0
 #fbdamp=0.0
-#factor=0.1			! time step factor
+#factor=0.4			! time step factor
 
 ! ------------ Calculations ---------------
 
 ! Analysis type
 Analysis #analysis
 MPMMethod #update,#method
-Processors 2
+Processors 6
 !Conduction "yes","Mechanical Energy"
 
 ! convert to contact

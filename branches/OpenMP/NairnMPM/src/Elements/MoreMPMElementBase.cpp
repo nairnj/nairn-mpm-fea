@@ -47,7 +47,6 @@ void ElementBase::GetShapeFunctionData(MPMBase *mpmptr) const
     {   case POINT_GIMP:
         case UNIFORM_GIMP:
         case UNIFORM_GIMP_AS:
-        	// Load element noodes, dimensionless position, and shape functinos
             GetXiPos(&mpmptr->pos,mpmptr->GetNcpos());
             break;
             

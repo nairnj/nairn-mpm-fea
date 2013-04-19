@@ -34,8 +34,8 @@ GridPatch::GridPatch(int xmin,int xmax,int ymin,int ymax,int zmin,int zmax)
     y1 = ymax-1;
     z0 = zmin-1;			  // = 0 if 2D patch
     z1 = zmax-1;              // = -1 if 2D patch
-    cout << " (" << x0+1 << "-" << x1+1 << "),(" << y0+1 << "-" << y1+1 << "),("  << z0+1 << "-" << z1+1 << ")" << endl;
-	cout << "----------------------------------------------------------------" << endl;
+    //cout << " (" << x0+1 << "-" << x1+1 << "),(" << y0+1 << "-" << y1+1 << "),("  << z0+1 << "-" << z1+1 << ")" << endl;
+	//cout << "----------------------------------------------------------------" << endl;
 	
 	xn = x1-x0+1;		// number of elements in x direction (xn+1 nodes)
 	yn = y1-y0+1;		// number of elements in y direction (yn+1 nodes)
@@ -60,7 +60,7 @@ bool GridPatch::CreateGhostNodes(void)
 	fullRow = xn + interiorRow;						// top and bottom row counts, 2D patch
 	basePartial = ghostRows*fullRow;				// start of mid rows, 2D patch (0 based)
 	baseTop = basePartial + yn*interiorRow;			// start of top full rows, 2D patch (0 based)
-    cout << "... base partial " << basePartial << ", base top " << baseTop << endl;
+    //cout << "... base partial " << basePartial << ", base top " << baseTop << endl;
 	
 	// create ghost nodes
 	if(zn<=0)
@@ -74,23 +74,23 @@ bool GridPatch::CreateGhostNodes(void)
         baseInterior = ghostRows*fullRank;              // start of interior ranks, 3D patch (0 based)
         baseApex = baseInterior + zn*interiorRank;      // start of top full ranks, 3D patch (0 based)
 		numGhosts = interiorRow*fullRank + zn*interiorRank;
-        cout << "... base interior " << baseInterior << ", base apex " << baseApex << endl;
+        //cout << "... base interior " << baseInterior << ", base apex " << baseApex << endl;
 	}
 	ghosts = (GhostNode **)malloc(numGhosts*sizeof(GhostNode));
 	if(ghosts==NULL) return FALSE;
-	cout << "... gtot = " << numGhosts << endl;
+	//cout << "... gtot = " << numGhosts << endl;
 
 	if(zn<=0)
 	{	// r2D row by row
 		int row,col,g=0;
 		for(i=-ghostRows;i<=yn+ghostRows;i++)
 		{	row = y0+i;					// 0 based grid row
-			cout << endl;
+			//cout << endl;
 			for(j=-ghostRows;j<=xn+ghostRows;j++)
 			{	// skip interior nodes
 				if(i>=0 && i<yn && j>=0 && j<xn) continue;
 				col = x0+j;				// 0 based gid row
-				cout << "...(" << g << "," << row << "," << col << ")" << endl;
+				//cout << "...(" << g << "," << row << "," << col << ")" << endl;
 				ghosts[g] = new GhostNode(row,col,i>=0 && i<yn,j>=0 && j<xn);
 				if(ghosts[g]==NULL) return FALSE;
 				g++;
@@ -102,15 +102,15 @@ bool GridPatch::CreateGhostNodes(void)
 		int row,col,rank,g=0;
 		for(k=-ghostRows;k<=zn+ghostRows;k++)
 		{	rank = z0+k;					// 0 based grid rank
-			cout << "\n**** begin rank on z rank = " << rank << endl;
+			//cout << "\n**** begin rank on z rank = " << rank << endl;
 			for(i=-ghostRows;i<=yn+ghostRows;i++)
 			{	row = y0+i;					// 0 based grid row
-				cout << endl;
+				//cout << endl;
 				for(j=-ghostRows;j<=xn+ghostRows;j++)
 				{	// skip interior nodes
 					if(i>=0 && i<yn && j>=0 && j<xn && k>=0 && k<zn) continue;
 					col = x0+j;				// 0 based gid row
-					cout << "...(" << g << "," << row << "," << col << "," << rank << ")" << endl;
+					//cout << "...(" << g << "," << row << "," << col << "," << rank << ")" << endl;
 					ghosts[g] = new GhostNode(row,col,rank,i>=0 && i<yn,j>=0 && j<xn,k>=0 && k<zn);
 					if(ghosts[g]==NULL) return FALSE;
 					g++;
@@ -127,30 +127,8 @@ bool GridPatch::CreateGhostNodes(void)
 // initialize real and ghost nodes for next time step
 void GridPatch::InitializeForTimeStep()
 {
-	// initialize owned nodes
-	int i,j,k,rank,base;
-	if(zn<=0)
-	{	// 2D grid
-		for(j=y0;j<=y1;j++)
-		{	k = j*mpmgrid.yplane + 1;
-			for(i=x0;i<=x1;i++)
-				nd[k+i]->InitializeForTimeStep();
-		}
-	}
-	else
-	{	// 3D grid
-		for(k=z0;k<=z1;k++)
-		{	rank = k*mpmgrid.zplane;
-			for(j=y0;j<=y1;j++)
-			{	base = rank + j*mpmgrid.yplane + 1;
-				for(i=x0;i<=x1;i++)
-					nd[base+i]->InitializeForTimeStep();
-			}
-		}
-	}
-	
-	// initialize ghost nodes and more real nodes
-	for(i=0;i<numGhosts;i++)
+	// initialize ghost nodes
+	for(int i=0;i<numGhosts;i++)
 		ghosts[i]->InitializeForTimeStep();
 	
 }
@@ -264,10 +242,10 @@ NodalPoint *GridPatch::GetNodePointer(int num)
 	
 	else
 	{	// 3D patch
-        int rank = (num-1)/mpmgrid.zplane;           // 0-based rank in global grid
-        int rnum = (num-1)%mpmgrid.zplane;           // 0-based number in rank
-		col = (rnum-1)%mpmgrid.yplane;               // 0-baed row, col in global grid
-		row = (rnum-1)/mpmgrid.yplane;
+        int rank = (num-1)/mpmgrid.zplane;          // 0-based rank in global grid
+        int rnum = (num-1)%mpmgrid.zplane;          // 0-based number in rank
+		col = rnum%mpmgrid.yplane;					// 0-baed row, col in global grid
+		row = rnum/mpmgrid.yplane;
 		col -= x0;									// zero based within the patch
 		row -= y0;
         rank -= z0;

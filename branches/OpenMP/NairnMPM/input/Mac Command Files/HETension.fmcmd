@@ -123,9 +123,9 @@ if #loading="thermal"
 endif
 ! Archiving
 if #fixsides="yes"
-  Archive "Results/ConstrainedTension/"&#analysis&"/"&#method&"/"&#loading&"/"&#matID
+  Archive "Results/HEConstrainedTension/"&#analysis&"-"&#method&"/"&#loading&"/"&#matID
 else
-  Archive "Results/Tension/"&#analysis&"/"&#method&"/"&#loading&"/"&#matID
+  Archive "Results/HETension/"&#analysis&"-"&#method&"/"&#loading&"/"&#matID
 endif
 TimeStep 1000,(1+#hold+#unload)*#time,#factor
 MaximumTime (1+#hold+#unload)*#time

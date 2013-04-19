@@ -47,7 +47,7 @@ GhostNode::GhostNode(int row,int col,bool interiorRow,bool interiorCol)
 	else
 		ghost = NULL;
 		
-	cout << "...... node = " << realNode << "," << ghost << "," << real << "," << (real==ghost) << endl;
+	//cout << "...... node = " << realNode << "," << ghost << "," << real << "," << (real==ghost) << endl;
 }
 
 // Create for node at zero-based (row,col) grid position
@@ -101,22 +101,17 @@ GhostNode::GhostNode(int row,int col,int rank,bool interiorRow,bool interiorCol,
 	else
 		ghost = NULL;
 	
-	cout << "...... node = " << realNode << "," << ghost << "," << real << "," << (real==ghost) << endl;
+	//cout << "...... node = " << realNode << "," << ghost << "," << real << "," << (real==ghost) << endl;
 }
 
 
 #pragma mark GhostNode: Methods
 
-// initialize real and ghost nodes for next time step
+// initialize ghost nodes for next time step
 void GhostNode::InitializeForTimeStep()
-{
-	if(ghost!=NULL)
-	{	// If has ghost, initialize it (real is done by owner)
+{	if(ghost!=NULL)
+	{	// If has ghost, initialize it
 		ghost->InitializeForTimeStep();
-	}
-	else if(real!=NULL)
-	{	// if no ghost, but a real it is edge node and needs initialization
-		real->InitializeForTimeStep();
 	}
 }
 

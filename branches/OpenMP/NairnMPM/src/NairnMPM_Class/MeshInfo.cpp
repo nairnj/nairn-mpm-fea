@@ -455,7 +455,7 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 			{	x2 = i==xpnum ? horiz : x1+xPatchSize-1;
 				
 				// patch x1 to x2 and y1 to y2 (1 based)
-				cout << "\n- Patch " << pnum << ":" << i << "-" << j << "-" << k << ":";
+				//cout << "\n- Patch " << pnum << ":" << i << "-" << j << "-" << k << ":";
                 patch[pnum] = new GridPatch(x1,x2,y1,y2,z1,z2);
 				if(!patch[pnum]->CreateGhostNodes()) return NULL;
                 pnum++;
@@ -526,7 +526,7 @@ int MeshInfo::GetPatchForElement(int iel)
 		pcol = min(col/xPatchSize,xpnum-1);
 		prow = min(row/yPatchSize,ypnum-1);
 		prank = min(rank/zPatchSize,zpnum-1);
-		return xpnum*ypnum*prank + xpnum*prow + pcol;
+		return xpnum*(ypnum*prank + prow) + pcol;
 	}
 	
 	// 2D
