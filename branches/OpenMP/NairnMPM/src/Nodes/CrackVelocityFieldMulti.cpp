@@ -933,8 +933,8 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 		// store contact force in rigid particle ftot
 		// if !postUpdate, gets only force after mass and momentum extrapolation
 		// if always gets also after particle update and second strain update (if activated)
-		if(!postUpdate)
-			mvf[rigidFld]->AddContactForce(&delPi);
+		//if(!postUpdate)
+        mvf[rigidFld]->AddContactForce(&delPi);
 	}
 }
 

@@ -56,24 +56,23 @@ void UpdateStrainsLastTask::Execute(void)
 	int nds[maxShapeNodes];
 	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
-//#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
-//	{
-//#pragma omp for
+#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
+	{
+#pragma omp for
         // zero again (which finds new positions for rigid particles)
 		for(int i=1;i<=nnodes;i++)
 			nd[i]->RezeroNodeTask6(timestep);
 		
-		/*
 #ifdef _OPENMP
 		int pn = omp_get_thread_num();
 #else
 		int pn = 0;
 #endif
-	 */
+/*
 	int tp = fmobj->GetTotalNumberOfPatches();
 	for(int pn=0;pn<tp;pn++)
 	{
-        
+*/
         // zero ghost nodes on this patch
 		patches[pn]->RezeroNodeTask6(timestep);
         

@@ -47,31 +47,30 @@ void InitializationTask::Execute(void)
 	// Zero Mass Matrix and vectors
 	warnings.BeginStep();
 
-	// zero all nodal variables on real nodes
 	int tp = fmobj->GetTotalNumberOfPatches();
-//#pragma omp parallel
+#pragma omp parallel
 	{
-//#pragma omp for
+        // zero all nodal variables on real nodes
+#pragma omp for
 		for(int i=1;i<=nnodes;i++)
 			nd[i]->InitializeForTimeStep();
 		
-        /*
+        // zero ghost nodes in patch for this thread
 #ifdef _OPENMP
 		int pn = omp_get_thread_num();
 #else
 		int pn = 0;
 #endif
 		patches[pn]->InitializeForTimeStep();
-         */
-		
+/*		
 		// if needed, initialize ghost nodes too
 		if(tp>1)
 		{	for(int pn=0;pn<tp;pn++)
 				patches[pn]->InitializeForTimeStep();
 		}
-		
+*/		
 		// particle calculations
-//#pragma omp for
+#pragma omp for
 		for(int p=0;p<nmpmsRC;p++)
 		{	MPMBase *mpmptr = mpm[p];										// pointer
 			const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
@@ -81,7 +80,7 @@ void InitializationTask::Execute(void)
 			catch(CommonException term)
 			{	if(initErr==NULL)
 				{
-//#pragma omp critical
+#pragma omp critical
 					initErr = new CommonException(term);
 				}
 			}

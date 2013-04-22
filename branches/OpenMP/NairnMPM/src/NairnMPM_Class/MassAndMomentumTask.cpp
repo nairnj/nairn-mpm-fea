@@ -115,18 +115,18 @@ void MassAndMomentumTask::Execute(void)
 	
 	// loop over non-rigid and rigid contact particles - this parallel part changes only particle p
 	// mass, momenta, etc are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
-//#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
-	/*
+/*
+	int tp = fmobj->GetTotalNumberOfPatches();
+	for(int pn=0;pn<tp;pn++)
+	{
+*/
+#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
 	{
 #ifdef _OPENMP
 		int pn = omp_get_thread_num();
 #else
 		int pn = 0;
 #endif
-         */
-	int tp = fmobj->GetTotalNumberOfPatches();
-	for(int pn=0;pn<tp;pn++)
-	{
 		try
 		{	for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
 			{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
@@ -147,11 +147,11 @@ void MassAndMomentumTask::Execute(void)
 					NodalPoint *ndptr;
 					for(i=1;i<=numnds;i++)
 					{
-	#ifdef _OPENMP
+#ifdef _OPENMP
 						ndptr = patches[pn]->GetNodePointer(nds[i]);
-	#else
+#else
 						ndptr = nd[nds[i]];
-	#endif
+#endif
 						// momentum vector (and allocate velocity field if needed)
 						vfld = mpmptr->vfld[i];
 						ndptr->AddMassMomentum(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],
@@ -167,7 +167,7 @@ void MassAndMomentumTask::Execute(void)
 		catch(CommonException err)
 		{	if(massErr==NULL)
 			{
-//#pragma omp critical
+#pragma omp critical
 				massErr = new CommonException(err);
 			}
 		}
@@ -277,14 +277,14 @@ void MassAndMomentumTask::Execute(void)
 #endif
 	
 	// Post mass and momentum extrapolation calculations on nodes
-//#pragma omp parallel
+#pragma omp parallel
 	{
 		// variables for each thread
 		CrackNode *firstCrackNode=NULL,*lastCrackNode=NULL;
 		MaterialInterfaceNode *firstInterfaceNode=NULL,*lastInterfaceNode=NULL;
 		
 		// Each pass in this loop should be independent
-//#pragma omp for
+#pragma omp for
 		for(int i=1;i<=nnodes;i++)
 		{	// node reference
 			NodalPoint *ndptr = nd[i];
@@ -314,13 +314,13 @@ void MassAndMomentumTask::Execute(void)
 			catch(CommonException err)
 			{	if(massErr==NULL)
 				{
-//#pragma omp critical
+#pragma omp critical
 					massErr = new CommonException(err);
 				}
 			}
 		}
 
-//#pragma omp critical
+#pragma omp critical
 		{
 			// link up crack nodes
 			if(lastCrackNode != NULL)

@@ -27,6 +27,9 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 
+// NEWINCLUDE
+#include "Exceptions/CommonException.hpp"
+
 // global
 bool DiffusionTask::active=FALSE;
 double DiffusionTask::reference = 0.;				// zero-strain concentration
@@ -134,25 +137,38 @@ void DiffusionTask::ImposeValueBCs(double stepTime)
 // Get gradients in Vp * cp on particles
 TransportTask *DiffusionTask::GetGradients(double stepTime)
 {
+    CommonException *transErr = NULL;
 	int nds[maxShapeNodes];
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
 	// Find gradients on the nonrigid particles
-//#pragma omp parallel for private(nd,fn,xDeriv,yDeriv,zDeriv)
+#pragma omp parallel for private(nds,fn,xDeriv,yDeriv,zDeriv)
     for(int p=0;p<nmpmsNR;p++)
-	{	// find shape functions and derviatives
-        MPMBase *mptr = mpm[p];
-		const ElementBase *elref = theElements[mpm[p]->ElemID()];
-        int i,numnds;
-		elref->GetShapeGradients(&numnds,fn,nds,mptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mptr);
-		
-		// Find gradients from current concentrations
-		mptr->AddConcentrationGradient();			// zero gradient on the particle
-		for(i=1;i<=numnds;i++)
-		{	Vector deriv=MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
-			mptr->AddConcentrationGradient(ScaleVector(&deriv,nd[nds[i]]->gConcentration));
-		}
+	{	try
+        {   // find shape functions and derviatives
+            MPMBase *mptr = mpm[p];
+            const ElementBase *elref = theElements[mptr->ElemID()];
+            int i,numnds;
+            elref->GetShapeGradients(&numnds,fn,nds,mptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mptr);
+            
+            // Find gradients from current concentrations
+            mptr->AddConcentrationGradient();			// zero gradient on the particle
+            for(i=1;i<=numnds;i++)
+            {	Vector deriv=MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
+                mptr->AddConcentrationGradient(ScaleVector(&deriv,nd[nds[i]]->gConcentration));
+            }
+        }
+        catch(CommonException err)
+        {   if(transErr!=NULL)
+            {
+#pragma omp critical
+                transErr = new CommonException(err);
+            }
+        }
 	}
+    
+    // throw any errors
+    if(transErr!=NULL) throw *transErr;
 	
 	return nextTask;
 }
@@ -172,9 +188,7 @@ TransportTask *DiffusionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double s
 
 // copy diffusion forces from ghost node to real node
 TransportTask *DiffusionTask::CopyForces(NodalPoint *ndptr,NodalPoint *ghostNdptr)
-{
-	// internal force based on diffusion tensor
-	ndptr->fdiff += ghostNdptr->fcond;
+{	ndptr->fdiff += ghostNdptr->fdiff;
 	return nextTask;
 }
 

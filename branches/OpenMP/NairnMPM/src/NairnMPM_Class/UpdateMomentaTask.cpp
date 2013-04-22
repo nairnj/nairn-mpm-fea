@@ -46,7 +46,7 @@ UpdateMomentaTask::UpdateMomentaTask(const char *name) : MPMTask(name)
 // Update grid momenta and transport rates
 void UpdateMomentaTask::Execute(void)
 {
-//#pragma omp parallel for
+#pragma omp parallel for
 	for(int i=1;i<=nnodes;i++)
 	{	NodalPoint *ndptr = nd[i];
 		ndptr->UpdateMomentaOnNode(timestep);

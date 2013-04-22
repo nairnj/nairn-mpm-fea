@@ -27,7 +27,7 @@ int main(int argc,const char *argv[])
 	unsigned int optInd;
 	bool abort=FALSE;
 	bool useWorkingDir=FALSE;
-    int numProcs=0;
+    int numProcs=1;
 	
 	// ---------------------------------------------
     // 1. Create main analysis object
@@ -90,13 +90,13 @@ int main(int argc,const char *argv[])
         return NoInputErr;
     }
     
-    // set number of processors
+    // set number of processors (default 1)
 #ifdef _OPENMP
 #ifdef _OMPTEST
-	// use any number of processors, but atleast one
-	if(numProcs==0) numProcs=1;
+    if(numProcs<1) numProcs=1;
 #else
 	// pick number of processors, but no more than number available
+    // if set to 0, will set to maximum number
     int maxProcs = max(omp_get_max_threads(),omp_get_num_procs());
     if(numProcs>0)
     {   if(numProcs > maxProcs) numProcs = maxProcs;

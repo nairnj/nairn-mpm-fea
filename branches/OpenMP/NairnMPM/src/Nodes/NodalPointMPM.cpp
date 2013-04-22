@@ -271,7 +271,7 @@ void NodalPoint::UseTheseFields(CrackVelocityField **rcvf)
 // 2. If cracks or multimaterials, add displacements and volume
 // 3. If multimaterials, add volume gradient
 // 4. Add mass
-// 5. Transport tasks (for non-rigid only
+// 5. Transport tasks (for non-rigid only)
 void NodalPoint::AddMassMomentum(MPMBase *mptr,short vfld,int matfld,double shape,double dNdx,double dNdy,double dNdz,
 								 int numPts,bool nonRigid)
 {
@@ -310,6 +310,11 @@ void NodalPoint::AddMassMomentum(MPMBase *mptr,short vfld,int matfld,double shap
 	if(nonRigid)
 	{	// add to lumped mass matrix
 		cvf[vfld]->AddMass(matfld,fnmp);
+        
+        // transport calculations
+        TransportTask *nextTransport=transportTasks;
+        while(nextTransport!=NULL)
+            nextTransport=nextTransport->Task1Extrapolation(this,mptr,shape);
 	}
 	else
 	{	// for rigid particles, let the crack velocity field know

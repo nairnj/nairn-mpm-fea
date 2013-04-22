@@ -49,6 +49,9 @@
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Materials/RigidMaterial.hpp"
 
+// NEWINCLUDE
+#include "Exceptions/CommonException.hpp"
+
 // global
 bool ConductionTask::active=FALSE;
 bool ConductionTask::crackTipHeating=FALSE;
@@ -182,25 +185,38 @@ void ConductionTask::ImposeValueBCs(double stepTime)
 // Task 1b - get gradients in Vp * cp on particles
 TransportTask *ConductionTask::GetGradients(double stepTime)
 {
+    CommonException *transErr = NULL;
 	int nds[maxShapeNodes];
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
 	// Find gradients on the nonrigid particles
-//#pragma omp parallel for private(nds,fn,xDeriv,yDeriv,zDeriv)
+#pragma omp parallel for private(nds,fn,xDeriv,yDeriv,zDeriv)
     for(int p=0;p<nmpmsNR;p++)
-	{	// find shape functions and derviatives
-        MPMBase *mptr = mpm[p];
-		const ElementBase *elref = theElements[mptr->ElemID()];
-        int i,numnds;
-		elref->GetShapeGradients(&numnds,fn,nds,mptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mptr);
-		
-		// Find gradients from current temperatures
-		mptr->AddTemperatureGradient();			// zero gradient on the particle
-		for(i=1;i<=numnds;i++)
-		{	Vector deriv = MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
-			mptr->AddTemperatureGradient(ScaleVector(&deriv,nd[nds[i]]->gTemperature));
-		}
-	}
+	{	try
+        {   // find shape functions and derviatives
+            MPMBase *mptr = mpm[p];
+            const ElementBase *elref = theElements[mptr->ElemID()];
+            int i,numnds;
+            elref->GetShapeGradients(&numnds,fn,nds,mptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mptr);
+            
+            // Find gradients from current temperatures
+            mptr->AddTemperatureGradient();			// zero gradient on the particle
+            for(i=1;i<=numnds;i++)
+            {	Vector deriv = MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
+                mptr->AddTemperatureGradient(ScaleVector(&deriv,nd[nds[i]]->gTemperature));
+            }
+        }
+        catch(CommonException err)
+        {   if(transErr!=NULL)
+            {
+#pragma omp critical
+                transErr = new CommonException(err);
+            }
+        }
+    }
+    
+    // throw any errors
+    if(transErr!=NULL) throw *transErr;
 	
 	return nextTask;
 }
@@ -229,9 +245,7 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double 
 
 // copy conduction forces from ghost node to real node
 TransportTask *ConductionTask::CopyForces(NodalPoint *ndptr,NodalPoint *ghostNdptr)
-{
-	// internal force based on conduction tensor
-	ndptr->fcond += ghostNdptr->fcond;
+{	ndptr->fcond += ghostNdptr->fcond;
 	return nextTask;
 }
 
