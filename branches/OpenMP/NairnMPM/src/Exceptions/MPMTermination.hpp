@@ -21,7 +21,7 @@ class MPMTermination : public CommonException
         // constructors and destructors
         MPMTermination();
         MPMTermination(const char *,const char *);
-    
+	
         // methods
         void Display(int,double);
 		void Display(void);

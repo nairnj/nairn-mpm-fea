@@ -11,7 +11,6 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Cracks/CrackHeader.hpp"
-#include "Exceptions/MPMTermination.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "System/ArchiveData.hpp"
 #include "Elements/ElementBase.hpp"
@@ -25,6 +24,10 @@
 #ifdef HIERARCHICAL_CRACKS
 #include "Cracks/CrackLeaf.hpp"
 #endif
+
+// NEWINCLUDE
+#include "Exceptions/CommonException.hpp"
+
 
 // Include to find axisymmetric Jr using Broberg method
 // Comment out to use Bergkvist and Huang method
@@ -1085,7 +1088,7 @@ void CrackHeader::JIntegral(void)
 			while(TRUE)
 			{   // error if grid not alng x and y axes
 				if(nextPt->orient==ANGLED)
-				{	throw MPMTermination("The J Contour is not along x and y axes.",
+				{	throw CommonException("The J Contour is not along x and y axes.",
 									"CrackHeader::JIntegral");
 				}
 				
@@ -1100,13 +1103,13 @@ void CrackHeader::JIntegral(void)
 					if(SegmentsCross(nextPt,p3,p4,&crossPt1))
 					{	crossCount++;
 						if(crossCount>2)
-						{	throw MPMTermination("More than 2 crossings between J-path and a crack",
+						{	throw CommonException("More than 2 crossings between J-path and a crack",
 									"CrackHeader::JIntegral");
 						}
 						else if(crossCount==2)
 						{	if(!(DbleEqual(crossPt.x,crossPt1.x)&&DbleEqual(crossPt.y,crossPt1.y)))
 							{	if(secondTry)
-								{   throw MPMTermination("Two different crossings between J-path and a crack",
+								{   throw CommonException("Two different crossings between J-path and a crack",
 															"CrackHeader::JIntegral");
 								}
 								else
@@ -1128,7 +1131,7 @@ void CrackHeader::JIntegral(void)
 				if(nextPt==crackPt) break;
 			}
 			if(crossCount<1)
-			{   throw MPMTermination("A crack does not cross its J path",
+			{   throw CommonException("A crack does not cross its J path",
 						"CrackHeader::JIntegral");
 			}
 			
@@ -1413,7 +1416,7 @@ void CrackHeader::JIntegral(void)
 			// end of try block on J calculation
 			secondTry=FALSE;
 		}
-		catch(MPMTermination term)
+		catch(CommonException term)
 		{	throw term;
 		}
 		catch(const char *msg)

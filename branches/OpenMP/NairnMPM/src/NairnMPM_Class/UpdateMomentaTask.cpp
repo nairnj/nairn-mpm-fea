@@ -46,20 +46,22 @@ UpdateMomentaTask::UpdateMomentaTask(const char *name) : MPMTask(name)
 // Update grid momenta and transport rates
 void UpdateMomentaTask::Execute(void)
 {
-	// Update momenta on all nodes
-#pragma omp parallel for
+//#pragma omp parallel for
 	for(int i=1;i<=nnodes;i++)
-		nd[i]->UpdateMomentaOnNode(timestep);
-	
-	// adjust momenta and forces for multimaterial contact
-	NodalPoint::MaterialContactAllNodes(fmobj->multiMaterialMode,TRUE,timestep);
-	
+	{	NodalPoint *ndptr = nd[i];
+		ndptr->UpdateMomentaOnNode(timestep);
+		
+		if(fmobj->multiMaterialMode)
+			ndptr->MaterialContactOnNode(timestep,TRUE,NULL,NULL);
+		
+		// get grid transport rates (update transport properties when particle state updated)
+		TransportTask *nextTransport=transportTasks;
+		while(nextTransport!=NULL)
+			nextTransport=nextTransport->TransportRates(ndptr,timestep);
+	}
+		
 	// adjust momenta and forces for crack contact on known nodes
 	CrackNode::CrackContactTask4(timestep);
 	
-	// get grid transport rates (update transport properties when particle state updated)
-	TransportTask *nextTransport=transportTasks;
-	while(nextTransport!=NULL)
-		nextTransport=nextTransport->TransportRates(timestep);
 }
 	

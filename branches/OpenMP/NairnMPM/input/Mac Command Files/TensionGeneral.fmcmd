@@ -26,14 +26,13 @@ Intended for development of these materials
 EndHeader! ------------ Parameters ---------------
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", "Axisymmetric MPM", or "3D MPM"
-#analysis="3D MPM"
-Processors 4
+#analysis="Plane Strain MPM"
 
 ! pick a method usually "lCPDI" or "uGIMP"
 #method="uGIMP"
 
 ! pick strain update method usually "USF" or "USAVG"
-#update="USAVG"
+#update="USF"
 
 ! material options: isotropic, iptrans, normtrans, ortho,isoplasticity, mgeos
 ! bistable, viscoelastic, hill, wood
@@ -101,6 +100,7 @@ StressFreeTemp 294
 ! Analysis type
 Analysis #analysis
 MPMMethod #update,#method
+Processors 6
 !Conduction "yes","Mechanical Energy"
 
 ! convert to contact
@@ -141,9 +141,9 @@ if #rotate!=0
 endif
 ! Archiving
 if #fixsides="yes"
-  Archive "Results/ConstrainedTension/"&#analysis&" "&#method&"/"&#loading&"/"&#matID
+  Archive "Results/ConstrainedTension/"&#analysis&"-"&#method&"-"&#update&"/"&#loading&"/"&#matID
 else
-  Archive "Results/Tension/"&#analysis&" "&#method&"/"&#loading&"/"&#matID
+  Archive "Results/Tension/"&#analysis&"-"&#method&"-"&#update&"/"&#loading&"/"&#matID
 endif
 TimeStep 1000,(1+#hold+#unload)*#time,#factor
 ArchiveTime (1+#hold+#unload)*#time/50
@@ -693,7 +693,7 @@ if #fixsides="yes"
 endif
 
 ! 3D Archived
-if #analysis="3D MPM VTK"
+if #analysis="3D MPM"
   XMLData
 
   <CustomTasks>

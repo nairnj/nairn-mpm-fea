@@ -14,7 +14,6 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Exceptions/CommonException.hpp"
-#include "Exceptions/MPMTermination.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"

@@ -77,7 +77,6 @@ class NodalPoint : public LinkedObject
 		void AddMomentumTask1(short,int,double,Vector *,int);
 		void AddMass(short,int,double);
 		void AddMassTask1(short,int,double,int);
-		void AddVolumeGradient(short,int,MPMBase *,double,double,double);
 		void CopyVolumeGradient(short,int,Vector *);
 		void CopyMassAndMomentum(NodalPoint *);
         void CopyMassAndMomentumLast(NodalPoint *);
@@ -146,7 +145,6 @@ class NodalPoint : public LinkedObject
 		// class methods
 #ifdef MPM_CODE
 		static void PreliminaryCalcs(void);
-		static void MaterialContactAllNodes(bool,bool,double);
 		static void GetGridVelocitiesForStrainUpdate(void);
 		static void GetGridCMVelocitiesTask8(void);
 #endif

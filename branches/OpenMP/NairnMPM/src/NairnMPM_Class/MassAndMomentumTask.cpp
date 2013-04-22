@@ -92,10 +92,12 @@ MassAndMomentumTask::MassAndMomentumTask(const char *name) : MPMTask(name)
 //	and find grid momenta
 void MassAndMomentumTask::Execute(void)
 {
+	CommonException *massErr = NULL;
 	int nds[maxShapeNodes];
 	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
     
     // Set rigid BC contact material velocities first (so loop can be parallel when rest is ready)
+	// GetVectorSetting() uses globals and therefore can't be parallel
     if(nmpmsRC>nmpmsNR)
     {   Vector newvel;
         bool hasDir[3];
@@ -113,83 +115,66 @@ void MassAndMomentumTask::Execute(void)
 	
 	// loop over non-rigid and rigid contact particles - this parallel part changes only particle p
 	// mass, momenta, etc are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
-#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
+//#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
+	/*
 	{
 #ifdef _OPENMP
 		int pn = omp_get_thread_num();
 #else
 		int pn = 0;
 #endif
-        /*
+         */
 	int tp = fmobj->GetTotalNumberOfPatches();
 	for(int pn=0;pn<tp;pn++)
 	{
-         */
-		for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
-		{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
-			while(mpmptr!=NULL)
-			{	//double mp = mpmptr->mp;								// material point mass in g
-			
-				const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
-				int matfld = matID->GetField();									// material velocity field
-				
-				// get nodes and shape function for material point p
-				int i,numnds;
-				const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
-				if(fmobj->multiMaterialMode)
-					elref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
-				else
-					elref->GetShapeFunctions(&numnds,fn,nds,mpmptr->GetNcpos(),mpmptr);
-				
-				// Add particle property to each node in the element
-				short vfld;
-				NodalPoint *ndptr;
-				for(i=1;i<=numnds;i++)
-				{
-#ifdef _OPENMP
-					ndptr = patches[pn]->GetNodePointer(nds[i]);
-#else
-					ndptr = nd[nds[i]];
-#endif
-					// momentum vector (and allocate velocity field if needed)
-					vfld = mpmptr->vfld[i];
-					ndptr->AddMassMomentum(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],
-										   1,block==FIRST_NONRIGID);
-
+		try
+		{	for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
+			{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
+				while(mpmptr!=NULL)
+				{	const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
+					int matfld = matID->GetField();									// material velocity field
 					
-					/*
-					vfld = mpmptr->vfld[i];
-					ndptr->AddMomentumTask1(vfld,matfld,fn[i]*mp,&mpmptr->vel,1);
-					
-					// crack contact calculations (only if cracks or multimaterial mode)
-					contact.AddDisplacementVolume(vfld,matfld,ndptr,mpmptr,fn[i]);
-					
-					// material contact calculations (only if multimaterial mode)
-					ndptr->AddVolumeGradient(vfld,matfld,mpmptr,xDeriv[i],yDeriv[i],zDeriv[i]);
-					
-					// more for non-rigid contact materials
-					if(block==FIRST_NONRIGID)
-					{	// add to lumped mass matrix
-						ndptr->AddMass(vfld,matfld,mp*fn[i]);
-						
-						// transport calculations
-						TransportTask *nextTransport=transportTasks;
-						while(nextTransport!=NULL)
-							nextTransport=nextTransport->Task1Extrapolation(ndptr,mpmptr,fn[i]);
-					}
+					// get nodes and shape function for material point p
+					int i,numnds;
+					const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
+					if(fmobj->multiMaterialMode)
+						elref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
 					else
-					{	// for rigid particles, let the crack velocity field know
-						ndptr->AddMassTask1(vfld,matfld,mp*fn[i],1);
-					}
-					*/
+						elref->GetShapeFunctions(&numnds,fn,nds,mpmptr->GetNcpos(),mpmptr);
 					
+					// Add particle property to each node in the element
+					short vfld;
+					NodalPoint *ndptr;
+					for(i=1;i<=numnds;i++)
+					{
+	#ifdef _OPENMP
+						ndptr = patches[pn]->GetNodePointer(nds[i]);
+	#else
+						ndptr = nd[nds[i]];
+	#endif
+						// momentum vector (and allocate velocity field if needed)
+						vfld = mpmptr->vfld[i];
+						ndptr->AddMassMomentum(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],
+											   1,block==FIRST_NONRIGID);
+
+					}
+					
+					// next material point
+					mpmptr = (MPMBase *)mpmptr->GetNextObject();
 				}
-				
-				// next material point
-				mpmptr = (MPMBase *)mpmptr->GetNextObject();
+			}
+		}
+		catch(CommonException err)
+		{	if(massErr==NULL)
+			{
+//#pragma omp critical
+				massErr = new CommonException(err);
 			}
 		}
 	}
+	
+	// throw now - only possible error is too many CPDI nodes in 3D
+	if(massErr!=NULL) throw *massErr;
     
 	// reduction of ghost node forces to real nodes
 	int totalPatches = fmobj->GetTotalNumberOfPatches();
@@ -292,41 +277,50 @@ void MassAndMomentumTask::Execute(void)
 #endif
 	
 	// Post mass and momentum extrapolation calculations on nodes
-#pragma omp parallel
+//#pragma omp parallel
 	{
 		// variables for each thread
 		CrackNode *firstCrackNode=NULL,*lastCrackNode=NULL;
 		MaterialInterfaceNode *firstInterfaceNode=NULL,*lastInterfaceNode=NULL;
 		
 		// Each pass in this loop should be independent
-#pragma omp for
+//#pragma omp for
 		for(int i=1;i<=nnodes;i++)
 		{	// node reference
 			NodalPoint *ndptr = nd[i];
 			
-			// Get total nodal masses and count materials if multimaterial mode
-			ndptr->CalcTotalMassAndCount();
+			try
+			{	// Get total nodal masses and count materials if multimaterial mode
+				ndptr->CalcTotalMassAndCount();
 
 #ifdef COMBINE_RIGID_MATERIALS
-			// combine rigid fields if necessary
-			if(combineRigid)
-				ndptr->CombineRigidParticles()
+				// combine rigid fields if necessary
+				if(combineRigid)
+					ndptr->CombineRigidParticles()
 #endif
-			// multimaterial contact
-			if(fmobj->multiMaterialMode)
-				ndptr->MaterialContactOnNode(timestep,FALSE,&firstInterfaceNode,&lastInterfaceNode);
-			
-			// crack contact
-			if(firstCrack!=NULL)
-				ndptr->CrackContact(FALSE,0.,&firstCrackNode,&lastCrackNode);
-			
-			// get transport values on nodes
-			TransportTask *nextTransport=transportTasks;
-			while(nextTransport!=NULL)
-				nextTransport = nextTransport->GetNodalValue(ndptr);
+				// multimaterial contact
+				if(fmobj->multiMaterialMode)
+					ndptr->MaterialContactOnNode(timestep,FALSE,&firstInterfaceNode,&lastInterfaceNode);
+				
+				// crack contact
+				if(firstCrack!=NULL)
+					ndptr->CrackContact(FALSE,0.,&firstCrackNode,&lastCrackNode);
+				
+				// get transport values on nodes
+				TransportTask *nextTransport=transportTasks;
+				while(nextTransport!=NULL)
+					nextTransport = nextTransport->GetNodalValue(ndptr);
+			}
+			catch(CommonException err)
+			{	if(massErr==NULL)
+				{
+//#pragma omp critical
+					massErr = new CommonException(err);
+				}
+			}
 		}
 
-#pragma omp critical
+//#pragma omp critical
 		{
 			// link up crack nodes
 			if(lastCrackNode != NULL)
@@ -343,6 +337,9 @@ void MassAndMomentumTask::Execute(void)
 			}
 		}
 	}
+	
+	// throw any errors
+	if(massErr!=NULL) throw *massErr;
     
 	// Impose transport BCs and extrapolate gradients to the particles
 	TransportTask *nextTransport=transportTasks;

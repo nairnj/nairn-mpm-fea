@@ -25,10 +25,12 @@
 #include "Cracks/CrackHeader.hpp"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
-#include "Exceptions/MPMTermination.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/RigidMaterial.hpp"
+
+// NEWINCLUDE
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark INITIALIZE
 
@@ -108,6 +110,7 @@ CustomTask *ReverseLoad::Initialize(void)
 }
 
 // Called when custom tasks are all done on a step
+// throw CommonException() to end simulation
 CustomTask *ReverseLoad::FinishForStep(void)
 {
     CrackHeader *nextCrack;
@@ -118,7 +121,7 @@ CustomTask *ReverseLoad::FinishForStep(void)
     // exit if done or no need
     if(reversed)
 	{	if(style==REVERSE && mtime>finalTime)
-			throw MPMTermination("Load or displacement has returned to zero","ReverseLoad::FinishForStep");
+			throw CommonException("Load or displacement has returned to zero","ReverseLoad::FinishForStep");
 		return nextTask;
 	}
 	
@@ -135,7 +138,7 @@ CustomTask *ReverseLoad::FinishForStep(void)
             if(nextCrack->Length()>finalLength)
 			{	// is ABORT, then exit analysis now
 				if(style==ABORT)
-					throw MPMTermination("Crack has reached specified length","ReverseLoad::FinishForStep");
+					throw CommonException("Crack has reached specified length","ReverseLoad::FinishForStep");
 					
             	// stop propgation
                 propagateTask->ArrestGrowth(TRUE);

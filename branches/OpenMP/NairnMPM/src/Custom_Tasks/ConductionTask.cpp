@@ -127,12 +127,19 @@ TransportTask *ConductionTask::TransportTimeStep(int matid,double dcell,double *
 
 #pragma mark MASS AND MOMENTUM EXTRAPOLATIONS
 
-// Task 1 Extrapolation of concentration to the grid
+// Task 1 Extrapolation of temperature to the grid
 TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape)
 {	double Cp = theMaterials[mptr->MatID()]->GetHeatCapacity(mptr);   // mJ/(g-K)
 	double arg = mptr->mp*Cp*shape;                                   // mJ/K
 	ndpt->gTemperature += mptr->pTemperature*arg;                     // mJ
 	ndpt->gMpCp += arg;                                               // mJ/K
+	return nextTask;
+}
+
+// Task 1 reduction of ghost node to real node for temperature on the grid
+TransportTask *ConductionTask::Task1Reduction(NodalPoint *ndpt,NodalPoint *ghostNdpt)
+{	ndpt->gTemperature += ghostNdpt->gTemperature;                    // mJ
+	ndpt->gMpCp += ghostNdpt->gMpCp;                                  // mJ/K
 	return nextTask;
 }
 
@@ -220,6 +227,15 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double 
 	return nextTask;
 }
 
+// copy conduction forces from ghost node to real node
+TransportTask *ConductionTask::CopyForces(NodalPoint *ndptr,NodalPoint *ghostNdptr)
+{
+	// internal force based on conduction tensor
+	ndptr->fcond += ghostNdptr->fcond;
+	return nextTask;
+}
+
+
 // adjust forces at grid points with temperature BCs to have rates be correct
 // to carry extrapolated temperatures (before impose BCs) to the correct
 // one selected by grid based BC
@@ -255,15 +271,11 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
 
 #pragma mark UPDATE MOMENTA TASK
 
-// get temperature rates on the nodes
-TransportTask *ConductionTask::TransportRates(double deltime)
+// get temperature rates node
+TransportTask *ConductionTask::TransportRates(NodalPoint *ndptr,double deltime)
 {
-	// convert forces to temperature rates
-	int i;
-    for(i=1;i<=nnodes;i++)
-	{   if(nd[i]->NumberNonrigidParticles()>0)
-			nd[i]->fcond /= nd[i]->gMpCp;
-	}
+	if(ndptr->NumberNonrigidParticles()>0)
+		ndptr->fcond /= ndptr->gMpCp;
 	return nextTask;
 }
 		
@@ -271,7 +283,7 @@ TransportTask *ConductionTask::TransportRates(double deltime)
 
 // increment temperature rate on the particle
 TransportTask *ConductionTask::IncrementTransportRate(NodalPoint *ndpt,double shape,double &rate) const
-{	rate+=ndpt->fcond*shape;			// fcond are temperature rates from TransportRates()
+{	rate += ndpt->fcond*shape;			// fcond are temperature rates from TransportRates()
 	return nextTask;
 }
 

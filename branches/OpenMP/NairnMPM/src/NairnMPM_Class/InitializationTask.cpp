@@ -28,6 +28,7 @@
 #include "Elements/ElementBase.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Materials/MaterialBase.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -41,45 +42,58 @@ InitializationTask::InitializationTask(const char *name) : MPMTask(name)
 //	and find grid momenta
 void InitializationTask::Execute(void)
 {
+	CommonException *initErr = NULL;
+	
 	// Zero Mass Matrix and vectors
 	warnings.BeginStep();
-    
 
 	// zero all nodal variables on real nodes
 	int tp = fmobj->GetTotalNumberOfPatches();
-#pragma omp parallel
+//#pragma omp parallel
 	{
-#pragma omp for
+//#pragma omp for
 		for(int i=1;i<=nnodes;i++)
 			nd[i]->InitializeForTimeStep();
 		
+        /*
 #ifdef _OPENMP
 		int pn = omp_get_thread_num();
 #else
 		int pn = 0;
 #endif
 		patches[pn]->InitializeForTimeStep();
+         */
 		
-        /*
 		// if needed, initialize ghost nodes too
 		if(tp>1)
 		{	for(int pn=0;pn<tp;pn++)
 				patches[pn]->InitializeForTimeStep();
 		}
-         */
 		
 		// particle calculations
-#pragma omp for
+//#pragma omp for
 		for(int p=0;p<nmpmsRC;p++)
 		{	MPMBase *mpmptr = mpm[p];										// pointer
 			const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
-			elref->GetShapeFunctionData(mpmptr);
+			try
+			{	elref->GetShapeFunctionData(mpmptr);
+			}
+			catch(CommonException term)
+			{	if(initErr==NULL)
+				{
+//#pragma omp critical
+					initErr = new CommonException(term);
+				}
+			}
 			
 		}
 	}
 	
+	// was there an error?
+	if(initErr!=NULL) throw *initErr;
+	
 	// allocate crack and material velocity fields needed for time step on real nodes
-	// can't be parallel unless add critical section for nodes that might be ghost nodes in any patch
+	// can't be parallel unless add critical section any place a real node is changed
 	if(firstCrack!=NULL || maxMaterialFields>1)
 	{	int nds[maxShapeNodes];
 		for(int pn=0;pn<tp;pn++)

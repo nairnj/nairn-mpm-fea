@@ -1082,6 +1082,15 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					break;
 				}
 				
+				case VTK_BCFORCES:
+					if(nd[i]->fixedDirection&XYZ_SKEWED_DIRECTION)
+					{	//Vector fbc = nd[i]->GetCMatFtot();
+						//afile << fbc.x << " " << fbc.y << " " << fbc.z << endl;
+					}
+					else
+						afile << "0. 0. 0." << endl;
+					break;
+				
 				case VTK_CONCENTRATION:
 				case VTK_STRAINENERGY:
 				case VTK_PLASTICENERGY:

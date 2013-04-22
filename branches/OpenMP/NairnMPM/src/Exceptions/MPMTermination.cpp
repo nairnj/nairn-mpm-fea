@@ -8,9 +8,7 @@
 
 #include "Exceptions/MPMTermination.hpp"
 
-/*******************************************************************
-	MPMTermination: Constructors and Destructors
-*******************************************************************/
+#pragma mark MPMTermination: Constructors and Destructors
 
 // Constructors
 MPMTermination::MPMTermination()
@@ -23,9 +21,7 @@ MPMTermination::MPMTermination(const char *errMsg,const char *inCode) : CommonEx
     errID=MPMTerm;
 }
 
-/*******************************************************************
-	MPMTermination: Constructors and Destructors
-*******************************************************************/
+#pragma mark MPMTermination: Constructors and Destructors
 
 // display message and step info
 void MPMTermination::Display(int mstep,double mtime)

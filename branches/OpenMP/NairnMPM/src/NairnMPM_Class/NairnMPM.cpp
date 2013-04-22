@@ -17,7 +17,6 @@
 #include "Cracks/CrackHeader.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Exceptions/CommonException.hpp"
-#include "Exceptions/MPMTermination.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
@@ -238,7 +237,7 @@ void NairnMPM::MPMAnalysis(bool abort)
 			archiver->ArchiveResults(mtime);
         }
 	}
-	catch(MPMTermination term)
+	catch(CommonException term)
 	{	// calculation stopped, but still report results
 		mtime+=timestep;
 		archiver->ForceArchiving();
@@ -246,12 +245,6 @@ void NairnMPM::MPMAnalysis(bool abort)
 		cout << endl;
 		PrintSection("ABNORMAL TERMINATION");
 		term.Display(mstep,mtime);
-	}
-	catch(CommonException err)
-	{	// fatal error - exit to main
-		cout << endl;
-		PrintSection("ABNORMAL ERROR");
-		throw err;
 	}
 	catch(const char *errMsg)
 	{	// string error - exit to main

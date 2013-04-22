@@ -10,6 +10,7 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Nodes/NodalPoint2D.hpp"
 #include "Nodes/NodalPoint3D.hpp"
+#include "Custom_Tasks/TransportTask.hpp"
 
 #pragma mark INITIALIZATION
 
@@ -122,7 +123,13 @@ void GhostNode::InitializationReduction(void)
 // When Grid Forces task is done transfer ghost node force to real nodes
 void GhostNode::MassAndMomentumReduction(void)
 {	if(ghost!=NULL)
-		ghost->CopyMassAndMomentum(real);
+	{	ghost->CopyMassAndMomentum(real);
+		
+		// transport calculations
+		TransportTask *nextTransport=transportTasks;
+		while(nextTransport!=NULL)
+			nextTransport=nextTransport->Task1Reduction(real,ghost);
+	}
 }
 
 // initialize ghost nodes for next time step
@@ -140,7 +147,13 @@ void GhostNode::MassAndMomentumReductionLast(void)
 // When Grid Forces task is done transfer ghost node force to real nodes
 void GhostNode::GridForcesReduction(void)
 {	if(ghost!=NULL)
-		ghost->CopyGridForces(real);
+	{	ghost->CopyGridForces(real);
+		
+		// transport forces
+		TransportTask *nextTransport=transportTasks;
+		while(nextTransport!=NULL)
+			nextTransport=nextTransport->CopyForces(real,ghost);
+	}
 }
 
 #pragma mark GhostNode: Accessors

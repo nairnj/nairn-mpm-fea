@@ -107,7 +107,7 @@ void CrackVelocityField::AddMomentumTask1(int matfld,Vector *addPk,Vector *vel,i
 }
 
 // add to mass (task 1) and field was allocated (if needed) in AddCrackVelocityField()
-void CrackVelocityField::AddMass(int matfld,double mnode) { mvf[matfld]->mass+=mnode; }
+void CrackVelocityField::AddMass(int matfld,double mnode) { mvf[matfld]->mass += mnode; }
 
 // add "mass" for  rigid particle (task 1) (only functions in CrackVelocityFieldMulti)
 void CrackVelocityField::AddMassTask1(int matfld,double mnode,int numPts) { }

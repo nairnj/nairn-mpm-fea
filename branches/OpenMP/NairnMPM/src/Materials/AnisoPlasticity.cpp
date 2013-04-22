@@ -147,7 +147,7 @@ const char *AnisoPlasticity::VerifyAndLoadProperties(int np)
 	return Orthotropic::VerifyAndLoadProperties(np);
 }
 
-// if cannot be used in current analysis type throw MPMTermination()
+// if cannot be used in current analysis type throw CommonException()
 void AnisoPlasticity::ValidateForUse(int np) const
 {	if(np==PLANE_STRESS_MPM)
 	{	throw CommonException("Anisotropic plasticity materials cannot use 2D plane stress MPM analysis",

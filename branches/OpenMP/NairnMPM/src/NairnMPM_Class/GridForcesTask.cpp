@@ -38,6 +38,7 @@
 
 // NEWINCLUDE
 #include "Patches/GridPatch.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -50,6 +51,8 @@ GridForcesTask::GridForcesTask(const char *name) : MPMTask(name)
 // Get total grid point forces (except external forces)
 void GridForcesTask::Execute(void)
 {
+	CommonException *forceErr = NULL;
+	
 	// need to be private in threads
 	TransportProperties t;
 	int numnds,nds[maxShapeNodes];
@@ -57,6 +60,7 @@ void GridForcesTask::Execute(void)
 	
 	// loop over non-rigid particles - this parallel part changes only particle p
 	// forces are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
+	/*
 #pragma omp parallel private(t,numnds,nds,fn,xDeriv,yDeriv,zDeriv)
 	{
 #ifdef _OPENMP
@@ -64,59 +68,70 @@ void GridForcesTask::Execute(void)
 #else
 		int pn = 0;
 #endif
-        /*
+	 */
 	int tp = fmobj->GetTotalNumberOfPatches();
 	for(int pn=0;pn<tp;pn++)
 	{
-         */
-		MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(FIRST_NONRIGID);
-		while(mpmptr!=NULL)
-		{	const MaterialBase *matref = theMaterials[mpmptr->MatID()];		// material class (read only)
-			int matfld = matref->GetField(); 
-			
-			// get transport tensors (if needed)
-			if(transportTasks!=NULL)
-				matref->GetTransportProps(mpmptr,fmobj->np,&t);
-			
-			// find shape functions and derviatives
-			const ElementBase *elemref = theElements[mpmptr->ElemID()];
-			elemref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
-			
-			// Add particle property to buffer on the material point (needed to allow parallel code)
-			short vfld;
-			NodalPoint *ndptr;
-			for(int i=1;i<=numnds;i++)
-			{	vfld = (short)mpmptr->vfld[i];					// crack velocity field to use
+		try
+		{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(FIRST_NONRIGID);
+			while(mpmptr!=NULL)
+			{	const MaterialBase *matref = theMaterials[mpmptr->MatID()];		// material class (read only)
+				int matfld = matref->GetField(); 
 				
-				// total force vector = internal + external forces
-				//	(in g mm/sec^2 or micro N)
-				Vector theFrc;
-				mpmptr->GetFintPlusFext(&theFrc,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
+				// get transport tensors (if needed)
+				if(transportTasks!=NULL)
+					matref->GetTransportProps(mpmptr,fmobj->np,&t);
 				
-				// add body forces
-				bodyFrc.AddGravity(&theFrc,mpmptr->mp,fn[i]);
+				// find shape functions and derviatives
+				const ElementBase *elemref = theElements[mpmptr->ElemID()];
+				elemref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
 				
-				// add to total force to nodal point
-#ifdef _OPENMP
-				ndptr = patches[pn]->GetNodePointer(nds[i]);
-#else
-				ndptr = nd[nds[i]];
-#endif
-				ndptr->AddFtotTask3(vfld,matfld,&theFrc);
+				// Add particle property to buffer on the material point (needed to allow parallel code)
+				short vfld;
+				NodalPoint *ndptr;
+				for(int i=1;i<=numnds;i++)
+				{	vfld = (short)mpmptr->vfld[i];					// crack velocity field to use
+					
+					// total force vector = internal + external forces
+					//	(in g mm/sec^2 or micro N)
+					Vector theFrc;
+					mpmptr->GetFintPlusFext(&theFrc,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
+					
+					// add body forces
+					bodyFrc.AddGravity(&theFrc,mpmptr->mp,fn[i]);
+					
+					// add the total force to nodal point
+	#ifdef _OPENMP
+					ndptr = patches[pn]->GetNodePointer(nds[i]);
+	#else
+					ndptr = nd[nds[i]];
+	#endif
+					ndptr->AddFtotTask3(vfld,matfld,&theFrc);
+					
+					// transport forces
+					TransportTask *nextTransport=transportTasks;
+					while(nextTransport!=NULL)
+						nextTransport=nextTransport->AddForces(ndptr,mpmptr,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],&t);
+				}
 				
-				// transport forces
-				TransportTask *nextTransport=transportTasks;
-				while(nextTransport!=NULL)
-					nextTransport=nextTransport->AddForces(ndptr,mpmptr,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],&t);
+				// clear coupled dissipated energy if in conduction because done with it this time step
+				if(ConductionTask::active) mpmptr->SetDispEnergy(0.);
+				
+				// next material point
+				mpmptr = (MPMBase *)mpmptr->GetNextObject();
 			}
-			
-			// clear coupled dissipated energy if in conduction becaouse done with it this time step
-			if(ConductionTask::active) mpmptr->SetDispEnergy(0.);
-			
-			// next material point
-			mpmptr = (MPMBase *)mpmptr->GetNextObject();
+		}
+		catch(CommonException err)
+		{	if(forceErr==NULL)
+			{
+//#pragma omp critical
+				forceErr = new CommonException(err);
+			}
 		}
 	}
+	
+	// throw errors now
+	if(forceErr!=NULL) throw *forceErr;
 	
 	// reduction of ghost node forces to real nodes
 	int totalPatches = fmobj->GetTotalNumberOfPatches();
@@ -140,7 +155,7 @@ void GridForcesTask::Execute(void)
 	// Add crack tip heating adds to fcond or conduction force
 	if(conduction) conduction->AddCrackTipHeating();
 	
-	// Add interface forces added to velocity fields and track total interface energy
+	// Add interface forces to velocity fields and track total interface energy
     NodalPoint::interfaceEnergy=0.;
     CrackNode::InterfaceOnKnownNodes();
     MaterialInterfaceNode::InterfaceOnKnownNodes();

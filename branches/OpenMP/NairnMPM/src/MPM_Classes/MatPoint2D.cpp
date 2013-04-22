@@ -13,8 +13,10 @@
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
-#include "Exceptions/MPMTermination.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
+
+// NEWINCLUDE
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark MatPoint2D::Constructors and Destructors
 
@@ -234,6 +236,7 @@ double MatPoint2D::GetVolume(bool volumeType)
 // To support CPDI find nodes in the particle domain, find their element,
 // their natural coordinates, and weighting values for gradient calculations
 // Should be done only once per time step
+// throws CommonException() if particle corner has left the grid
 void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 {
 	// get particle 2D deformation gradient
@@ -365,7 +368,7 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 		}
 	}
 	catch(...)
-	{	throw MPMTermination("A CPDI partical domain node has left the grid.","MatPoint2D::GetCPDINodesAndWeights");
+	{	throw CommonException("A CPDI partical domain node has left the grid.","MatPoint2D::GetCPDINodesAndWeights");
 	}
     
     // traction BC area saves 1/2 surface area of particle domain on the various edges
@@ -378,6 +381,7 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 // To support traction boundary conditions, find the deformed edge, natural coordinates of
 // the corners along the edge, elements for those edges, and a normal vector in direction
 // of the traction
+// throws CommonException() in edge has left the grid
 double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
 {
     *numDnds = 2;
@@ -435,7 +439,7 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
             theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
         }
         catch(...)
-        {	throw MPMTermination("A Traction edge node has left the grid.","MatPoint2D::GetTractionInfo");
+        {	throw CommonException("A Traction edge node has left the grid.","MatPoint2D::GetTractionInfo");
         }
 		
 		// get edge vector

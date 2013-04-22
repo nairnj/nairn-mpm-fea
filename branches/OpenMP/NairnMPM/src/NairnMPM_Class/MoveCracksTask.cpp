@@ -24,9 +24,11 @@
 
 #include "NairnMPM_Class/MoveCracksTask.hpp"
 #include "Cracks/CrackHeader.hpp"
-#include "Exceptions/MPMTermination.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
+
+// NEWINCLUDE
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -37,6 +39,7 @@ MoveCracksTask::MoveCracksTask(const char *name) : MPMTask(name)
 #pragma mark REQUIRED METHODS
 
 // Run all custom tasks
+// throws CommonException() in crack surface or position has left the grid
 void MoveCracksTask::Execute(void)
 {
 	// move crack surface in their local velocity fields
@@ -45,12 +48,12 @@ void MoveCracksTask::Execute(void)
 	{   if(!nextCrack->MoveCrack(ABOVE_CRACK))
 		{	char errMsg[100];
 			sprintf(errMsg,"Crack No. %d surface (above) has left the grid.",nextCrack->GetNumber());
-			throw MPMTermination(errMsg,"NairnMPM::MPMStep");
+			throw CommonException(errMsg,"NairnMPM::MPMStep");
 		}	
 		if(!nextCrack->MoveCrack(BELOW_CRACK))
 		{	char errMsg[100];
 			sprintf(errMsg,"Crack No. %d surface (below) has left the grid.",nextCrack->GetNumber());
-			throw MPMTermination(errMsg,"NairnMPM::MPMStep");
+			throw CommonException(errMsg,"NairnMPM::MPMStep");
 		}
 		nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 	}
@@ -66,7 +69,7 @@ void MoveCracksTask::Execute(void)
 	{   if(!nextCrack->MoveCrack())
 		{	char errMsg[100];
 			sprintf(errMsg,"Crack No. %d position or surface has left the grid.",nextCrack->GetNumber());
-			throw MPMTermination(errMsg,"NairnMPM::MPMStep");
+			throw CommonException(errMsg,"NairnMPM::MPMStep");
 		}
 		nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 	}

@@ -18,7 +18,6 @@
 #include "Custom_Tasks/CarnotCycle.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Exceptions/CommonException.hpp"
-#include "Exceptions/MPMTermination.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"
@@ -170,9 +169,9 @@ CustomTask *CarnotCycle::StepCalculation(void)
 		case 4:
 			// done when T increases to thermal.reference, or when volume returns to 1
 			if(Tgas>=thermal.reference)
-				throw MPMTermination("Carnot cycle is complete","CarnotCycle::StepCalculation()");
+				throw CommonException("Carnot cycle is complete","CarnotCycle::StepCalculation()");
 			//if(Vrel<=1.)
-			//	throw MPMTermination("Carnot cycle is complete","CarnotCycle::StepCalculation()");
+			//	throw CommonException("Carnot cycle is complete","CarnotCycle::StepCalculation()");
 			break;
 		
 		default:

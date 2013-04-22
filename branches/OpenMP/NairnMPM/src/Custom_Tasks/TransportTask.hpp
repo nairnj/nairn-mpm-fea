@@ -38,6 +38,7 @@ class TransportTask
 		
 		// Task 1 Extrapolation of transport property to the grid
 		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double) = 0;
+		virtual TransportTask *Task1Reduction(NodalPoint *,NodalPoint *) = 0;
 
 		// Get grid values
 		virtual TransportTask *GetNodalValue(NodalPoint *) = 0;
@@ -50,12 +51,13 @@ class TransportTask
 		
 		// find forces for transport calculation
 		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *) = 0;
+	virtual TransportTask *CopyForces(NodalPoint *,NodalPoint *) = 0;
 
 		// adjust forces at grid points with transport BCs
 		virtual TransportTask *SetTransportForceBCs(double) = 0;
 		
 		// find transport rates on the nodes
-		virtual TransportTask *TransportRates(double) = 0;
+		virtual TransportTask *TransportRates(NodalPoint *,double) = 0;
 		
 		// increment transport rate
 		virtual TransportTask *IncrementTransportRate(NodalPoint *,double,double &) const = 0;

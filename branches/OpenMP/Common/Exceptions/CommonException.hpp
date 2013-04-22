@@ -28,8 +28,10 @@ class CommonException
         void Display(int,double);
         void Display(void);
         int ErrorCode(void);
-		char *Message(void) ;
-		  
+		void SetErrorCode(int);
+		char *Message(void);
+		char *InCode(void);
+	
     protected:
         char *msg,*code;
         int errID;

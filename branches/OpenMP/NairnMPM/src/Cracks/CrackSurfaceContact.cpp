@@ -291,33 +291,6 @@ void CrackSurfaceContact::MaterialContactPairs(int maxFields)
 	}
 }
 
-#pragma mark CrackSurfaceContact: Extrapolation Methods
-
-// In task 1, track displacements or position and track volume of the entire crack velocity field
-// Alwasy done if any cracks or more than one material in multimaterial mode
-void CrackSurfaceContact::AddDisplacementVolume(short vfld,int matfld,NodalPoint *ndpt,MPMBase *mptr,double shape)
-{	// exit if has no cracks and is in single material mode (i.e., no contact being done)
-	if(firstCrack==NULL && maxMaterialFields==1) return;
-	
-	// displacement or position for contact calculations
-	if(mpmgrid.GetContactByDisplacements())
-	{	// extrapolate displacements
-		Vector pdisp=mptr->pos;
-		ndpt->AddDisplacement(vfld,matfld,mptr->mp*shape,SubVector(&pdisp,&mptr->origpos));
-	}
-	else
-	{	// extraplate positions
-		ndpt->AddDisplacement(vfld,matfld,mptr->mp*shape,&mptr->pos);
-	}
-	
-	// add dilated volume, only used by transport tasks, contact, and imperfect interfaces
-	MaterialBase *matptr = theMaterials[mptr->MatID()];
-	if(matptr->Rigid())
-		ndpt->AddVolume(vfld,matfld,shape*mptr->GetUnscaledVolume());
-	else
-		ndpt->AddVolume(vfld,matfld,shape*mptr->GetVolume(DEFORMED_AREA));
-}
-
 #pragma mark CrackSurfaceContact: Contact Calculations
 
 // return TRUE if any contact being done

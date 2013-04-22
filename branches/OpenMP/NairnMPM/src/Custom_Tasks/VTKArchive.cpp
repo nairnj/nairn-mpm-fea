@@ -98,6 +98,12 @@ char *VTKArchive::InputParam(char *pName,int &input)
 		thisBuffer=-3;
     }
 	
+    else if(strcmp(pName,"reactionforce")==0)
+    {	q=VTK_BCFORCES;
+		// no buffer since no need to extrapolate
+		thisBuffer=-3;
+    }
+	
     else if(strcmp(pName,"pressure")==0)
     {	q=VTK_PRESSURE;
 		thisBuffer=1;

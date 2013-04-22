@@ -26,15 +26,19 @@ EndXMLData
 ! Supported materials: "isotropic"
 #matID="isotropic"
 
+! Traction law for pre-existing crack or new crack (or "" to omit)
+#tractID="triangular"
+
 ! temperature option to test energy coupling
 StressFreeTemp 294
 #startTemp=294
 
 ! Basic properties
-#Ebase=100
+#Ebase=2500
 #rho=1.2
 #nuBase=.33
 #aBase=60
+#JIc=250
 
 ! Dimensions
 #cwidth=2				! cell width
@@ -45,18 +49,20 @@ StressFreeTemp 294
 
 ! crack properties
 #tip=50					! crack tip location
+#trtip=40				! for additional traction law crack surface
 
 ! Load by stress or by velocity (if stress<=0)
 #loading="force"		! Loading = "rigid", "force", "traction"
-#rate=.2				! fraction on axial wave speed
-#endDisp=1				! end deflection in mm
+#rate=.05				! fraction on axial wave speed
+#endDisp=2				! end deflection in mm
+#propagate=""	        ! empty for none, or "critical err"
 
 ! Loading rate
-#hold=2				! hold time (multiple of loading time)
+#hold=0				! hold time (multiple of loading time)
 #unload=0		    ! 0 no unload or >0 for unloading time (multiple of loading time, but at same loading rate)
 
 ! Damping parameter - for feedback or grid damping
-#damp=0
+#damp=1000
 #fbdamp=0.0
 #factor=0.4			! time step factor
 
@@ -81,8 +87,8 @@ endif
 
 #rate=#rate*#wave/100					! end rate in mm/msec
 if #loading="force"
-   ! #defl*(force rate) is end deflection in mm/msec = #rate
-   #forcerate=#rate/#defl
+  ! #defl*(force rate) is end deflection in mm/msec = #rate
+  #forcerate=#rate/#defl
 endif
 
 ! loading time
@@ -90,29 +96,65 @@ endif
 #maxTime=#loadtime*(1+#hold+#unload)
 
 ! ********** MPM Header **********
-Archive "Results/DCB/"&#analysis&" "&#method&"/"&#loading&"/"&#matID
+Archive "Results/DCB/"&#analysis&" "&#method&"-"&#update&"/"&#loading&"/"&#matID
 TimeStep 1000,#maxTime,#factor
 ArchiveTime #maxTime/50
 ToArchive velocity,stress,strain,rotstrain
 ToArchive strainenergy,externalwork,stressintensity,jintegral
 
 GlobalArchive syy
+GlobalArchive eyy
+GlobalArchive "Strain Energy"
+GlobalArchive "Kinetic Energy"
 
-Damping #damp
+if #fbdamp>0
+  FeedbackDamping #fbdamp
+  GlobalArchive alpha
+endif
+if #damp>0
+  Damping #damp
+endif
 
-!Propagate "critical err"
-!Propagate "none"
-!Friction "none"
-!MovePlane avg
-! ********** MATERIALS SECTION **********
+! ********** MATERIALS SECTION **********
 if #matID="isotropic"
 
   Material #matID,"Polymer","Isotropic"    E #Ebase    nu #nuBase    a #aBase    rho #rho
-    JIc 0.02
+    JIc #JIc
   Done
 
 endif
-! ********** GRID SECTION ***********
+
+if #tractID="cubic"
+
+  Material,#tractID,"Cubic Traction Law","CubicTraction"
+    JIc #JIc
+    sigmaI 50
+    JIIc #JIc
+    sigmaII 50
+  Done
+
+else if #tractID="triangular"
+
+  Material,#tractID,"Triangular Traction Law","TriangularTraction"
+    JIc #JIc
+    sigmaI 1
+    delpkI .1
+    JIIc #JIc
+    sigmaII 1
+    delpkII .1
+  Done
+
+endif
+! propagation
+if #propagate!=""
+  if #tractID!=""
+    Propagate #propagate,"default",#tractID
+  else
+    Propagate #propagate
+  endif
+endif
+
+! ********** GRID SECTION ***********
 #ledge=#cwidth			! left edge extra space (mult of cwidth)
 #redge=2*#cwidth		! right edge extra space (mult of cwidth)
 #top=6*#cheight			! top and bottom extra space (mult of cheight)
@@ -130,10 +172,15 @@ Region #matID,0,0,#width
 
 ! ********* CRACKS SECTION *****
 #res=int(#crack/#cwidth)+1
-NewCrack #tip+(#cwidth/10),-1e-6,#matID
-GrowCrackLine #length-#cwidth/4,-1e-6,#res,"exterior"
+NewCrack #length-#cwidth/4,-1e-6,"exterior"
+GrowCrackLine #tip+(#cwidth/10),-1e-6,#res,#matID
+
+if #trtip>0
+  #res=int(2*#trtip/#cwidth)+1
+  GrowCrackLine #tip-#trtip+(#cwidth/10),-1e-6,#res,#matID,#tractID
+endif
 ! ***** BOUNDARY CONDITION SECTION *****
-MoveLine -#ledge,-#depth-#top,-#ledge,#depth+#top,#cwidth/10
+MoveLine -#cwidth/2,-#depth-#top,-#cwidth/2,#depth+#top,0.51*#cwidth
   Velocity x,constant,0
   Velocity y,constant,0
 EndMoveLine
@@ -156,7 +203,7 @@ endif
     Load y,function,(-#forcerate)&"("&#ftime&")"
   EndLoadRect
 else if #loading="traction"
-	Stop "traction not ready yet"
+  Stop "traction not ready yet"
 else if #loading="rigid"
   Stop "rigid not ready yet"
   Material "rigid","Rigid Grip","Rigid"
@@ -170,6 +217,3 @@ else if #loading="rigid"
   EndRegion
 EndIf
 
-CustomTask ReverseLoad
-Parameter style,"continue"
-Parameter maxLength,100

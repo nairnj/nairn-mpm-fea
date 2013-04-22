@@ -12,8 +12,10 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
-#include "Exceptions/MPMTermination.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+
+// NEWINCLUDE
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark MatPoint3D::Constructors and Destructors
 
@@ -231,6 +233,7 @@ double MatPoint3D::GetVolume(bool volumeType)
 
 // to support CPDI return nodes for corners (or for 9 nodes) and weights for shape functions
 //	and shape function gradients
+// throws CommonException() if particle corner has left the grid
 void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 {
 	// get particle 2D deformation gradient
@@ -337,7 +340,7 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 		cpdi[7]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y + r1.y*r3.x + r2.y*r3.x - r1.x*r3.y - r2.x*r3.y)*Vp;
 	}
 	catch(...)
-	{	throw MPMTermination("A CPDI partical domain node has left the grid.","MatPoint3D::GetCPDINodesAndWeights");
+	{	throw CommonException("A CPDI particle domain node has left the grid.","MatPoint3D::GetCPDINodesAndWeights");
 	}
     
     // traction BC area saves 1/4 the total face area
@@ -363,6 +366,7 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 // To support traction boundary conditions, find the deformed edge, natural coordinates of
 // the corners around the face, elements for those faces, and a normal vector in direction
 // of the traction. Input vectors need to be length 4
+// throws CommonException() in traction edge as left the grid
 double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
 {
     *numDnds = 4;
@@ -455,7 +459,7 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
             theElements[cElem[3]]->GetXiPos(&c4,&corners[3]);
         }
         catch(...)
-        {	throw MPMTermination("A Traction edge node has left the grid.","MatPoint2D::GetTractionInfo");
+        {	throw CommonException("A Traction edge node has left the grid.","MatPoint2D::GetTractionInfo");
         }
     }
     else

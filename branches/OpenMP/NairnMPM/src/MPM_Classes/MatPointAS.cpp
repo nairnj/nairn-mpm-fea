@@ -20,8 +20,10 @@
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
-#include "Exceptions/MPMTermination.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
+
+// NEWINCLUDE
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark MatPointAS::Constructors and Destructors
 
@@ -141,6 +143,7 @@ double MatPointAS::GetUnscaledVolume(void)
 // their natural coordinates, and weighting values for gradient calculations
 // Should be done only once per time step and here only for axisynmmetric
 // and linear CPDI
+// throws CommonException() if particle corner has left the grid
 void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
 {
 	// get particle 2D deformation gradient
@@ -227,7 +230,7 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
 	}
 		
 	catch(...)
-	{	throw MPMTermination("A CPDI partical domain node has left the grid.","MatPoint2D::GetCPDINodesAndWeights");
+	{	throw CommonException("A CPDI partical domain node has left the grid.","MatPointAS::GetCPDINodesAndWeights");
 	}
     
     // traction BC area saves 1/2 surface area of particle domain on the various edges
@@ -241,6 +244,7 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
 // the corners along the edge, elements for those edges, and a normal vector in direction
 // of the traction
 // return ratio of second nodal weight to first one
+// throws CommonException() if traction edge has left the grid
 double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
 {
     *numDnds = 2;
@@ -351,7 +355,7 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 		theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
 	}
 	catch(...)
-	{	throw MPMTermination("A Traction edge node has left the grid.","MatPointAS::GetTractionInfo");
+	{	throw CommonException("A Traction edge node has left the grid.","MatPointAS::GetTractionInfo");
 	}
 	
     // get traction normal vector by radial integral for first node no the edge

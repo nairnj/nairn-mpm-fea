@@ -95,8 +95,6 @@ void MatVelocityField::CopyMassAndMomentum(NodalPoint *real,int vfld,int matfld)
 	if(!rigidField)
 	{	// mass
 		real->AddMass((short)vfld,matfld,mass);
-		
-		// transport properties
 	}
 	else
 	{	// mass to count particles
@@ -135,8 +133,6 @@ void MatVelocityField::CopyGridForces(NodalPoint *real,int vfld,int matfld)
 	
 	// Ftot
 	real->AddFtotTask3(vfld,matfld,&ftot);
-	
-	// transport tasks
 }
 
 // in response to contact, change the momentum

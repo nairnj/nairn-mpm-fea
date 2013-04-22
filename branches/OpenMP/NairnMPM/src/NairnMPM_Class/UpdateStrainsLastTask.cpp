@@ -56,23 +56,23 @@ void UpdateStrainsLastTask::Execute(void)
 	int nds[maxShapeNodes];
 	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
-#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
-	{
-#pragma omp for
+//#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
+//	{
+//#pragma omp for
         // zero again (which finds new positions for rigid particles)
 		for(int i=1;i<=nnodes;i++)
 			nd[i]->RezeroNodeTask6(timestep);
 		
+		/*
 #ifdef _OPENMP
 		int pn = omp_get_thread_num();
 #else
 		int pn = 0;
 #endif
-        /*
-        int tp = fmobj->GetTotalNumberOfPatches();
-        for(int pn=0;pn<tp;pn++)
-        {
-        */
+	 */
+	int tp = fmobj->GetTotalNumberOfPatches();
+	for(int pn=0;pn<tp;pn++)
+	{
         
         // zero ghost nodes on this patch
 		patches[pn]->RezeroNodeTask6(timestep);
@@ -105,19 +105,7 @@ void UpdateStrainsLastTask::Execute(void)
 #endif
                 vfld = (short)mpmptr->vfld[i];
                 ndptr->AddMassMomentumLast(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
-                
-                // add momentum(3)
-                // if(firstCrack==NULL && maxMaterialFields==1) displacement(3) volume(1)
-                // if(if(fmobj->multiMaterialMode) volume gradient(3)
-                
-                // velocity from updated velocities
-                //ndptr->AddMomentumTask6(vfld,matfld,fn[i]*mpmptr->mp,&mpmptr->vel);
-                
-                // add updated displacement and volume (if cracks, not 3D)
-                //contact.AddDisplacementVolume(vfld,matfld,nd[nds[i]],mpm[p],fn[i]);
-                
-                // material contact calculations
-                //nd[nds[i]]->AddVolumeGradient(vfld,matfld,mpm[p],xDeriv[i],yDeriv[i],zDeriv[i]);
+
             }
             
             // next non-rigid material point
@@ -138,8 +126,11 @@ void UpdateStrainsLastTask::Execute(void)
 	while(nextTransport!=NULL)
 		nextTransport=nextTransport->UpdateNodalValues(timestep);
 	
-	// adjust momenta for multimaterial contack
-	NodalPoint::MaterialContactAllNodes(fmobj->multiMaterialMode,FALSE,timestep);
+	// adjust momenta for multimaterial contact
+	if(fmobj->multiMaterialMode)
+	{	for(int i=1;i<=nnodes;i++)
+			nd[i]->MaterialContactOnNode(timestep,TRUE,NULL,NULL);
+	}
 	
 	// adjust momenta for crack contact
 	if(firstCrack!=NULL) CrackNode::ContactOnKnownNodes();

@@ -128,7 +128,6 @@
 		A766703905862EB600F56460 /* CustomTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A72498D104FCF5EB0063AF10 /* CustomTask.hpp */; };
 		A766703A05862EB600F56460 /* PropagateTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A72498D304FCF5EB0063AF10 /* PropagateTask.hpp */; };
 		A766703B05862EB600F56460 /* ReverseLoad.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A72498D504FCF5EB0063AF10 /* ReverseLoad.hpp */; };
-		A766703C05862EB600F56460 /* MPMTermination.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7B38BAE0510BA920063AF10 /* MPMTermination.hpp */; };
 		A766703E05862EB600F56460 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 08FB7796FE84155DC02AAC07 /* main.cpp */; settings = {ATTRIBUTES = (); }; };
 		A766704005862EB600F56460 /* NairnMPM.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F58CCE1A01A98D950163AF2F /* NairnMPM.cpp */; };
 		A766704105862EB600F56460 /* MPMReadHandler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F536365B01FF7C620163AF10 /* MPMReadHandler.cpp */; };
@@ -158,7 +157,6 @@
 		A766705E05862EB600F56460 /* CustomTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A72498D004FCF5EB0063AF10 /* CustomTask.cpp */; };
 		A766705F05862EB600F56460 /* PropagateTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A72498D204FCF5EB0063AF10 /* PropagateTask.cpp */; };
 		A766706005862EB600F56460 /* ReverseLoad.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A72498D404FCF5EB0063AF10 /* ReverseLoad.cpp */; };
-		A766706105862EB600F56460 /* MPMTermination.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7B38BAD0510BA920063AF10 /* MPMTermination.cpp */; };
 		A766739F05863A1700F56460 /* NairnFEA.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A78F829E03EF284B0063AF10 /* NairnFEA.hpp */; };
 		A76673A005863A1700F56460 /* FEAReadHandler.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A78F82A203EF284B0063AF10 /* FEAReadHandler.hpp */; };
 		A76673A105863A1700F56460 /* FEAPrefix.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A78F82AA03EF287E0063AF10 /* FEAPrefix.hpp */; };
@@ -632,8 +630,6 @@
 		A7A7578F042249260063AF10 /* NodalLoad.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = NodalLoad.cpp; sourceTree = "<group>"; };
 		A7A75790042249260063AF10 /* NodalLoad.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = NodalLoad.hpp; sourceTree = "<group>"; };
 		A7A75796042249480063AF10 /* Gauss.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = Gauss.cpp; sourceTree = "<group>"; };
-		A7B38BAD0510BA920063AF10 /* MPMTermination.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = MPMTermination.cpp; sourceTree = "<group>"; };
-		A7B38BAE0510BA920063AF10 /* MPMTermination.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = MPMTermination.hpp; sourceTree = "<group>"; };
 		A7B45CF51715D354003FDED6 /* GridPatch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GridPatch.cpp; path = Patches/GridPatch.cpp; sourceTree = "<group>"; };
 		A7B45CF71715D36E003FDED6 /* GridPatch.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = GridPatch.hpp; path = Patches/GridPatch.hpp; sourceTree = "<group>"; };
 		A7B5ECA8072437850027119D /* NodalTempBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = NodalTempBC.hpp; sourceTree = "<group>"; };
@@ -1115,8 +1111,6 @@
 		A7731E2705B44BB900294E25 /* Exceptions */ = {
 			isa = PBXGroup;
 			children = (
-				A7B38BAE0510BA920063AF10 /* MPMTermination.hpp */,
-				A7B38BAD0510BA920063AF10 /* MPMTermination.cpp */,
 				A747207707BBC6A800456B14 /* MPMWarnings.hpp */,
 				A747207607BBC6A800456B14 /* MPMWarnings.cpp */,
 			);
@@ -1492,7 +1486,6 @@
 				A766703905862EB600F56460 /* CustomTask.hpp in Headers */,
 				A766703A05862EB600F56460 /* PropagateTask.hpp in Headers */,
 				A766703B05862EB600F56460 /* ReverseLoad.hpp in Headers */,
-				A766703C05862EB600F56460 /* MPMTermination.hpp in Headers */,
 				A7731E2B05B44BDE00294E25 /* ArchiveData.hpp in Headers */,
 				A7731E3105B44C0100294E25 /* GlobalQuantity.hpp in Headers */,
 				A7731E3E05B44C5800294E25 /* BodyForce.hpp in Headers */,
@@ -1809,7 +1802,6 @@
 				A766705E05862EB600F56460 /* CustomTask.cpp in Sources */,
 				A766705F05862EB600F56460 /* PropagateTask.cpp in Sources */,
 				A766706005862EB600F56460 /* ReverseLoad.cpp in Sources */,
-				A766706105862EB600F56460 /* MPMTermination.cpp in Sources */,
 				A7731E3005B44C0100294E25 /* GlobalQuantity.cpp in Sources */,
 				A7731E3D05B44C5800294E25 /* BodyForce.cpp in Sources */,
 				A7731E3F05B44C5800294E25 /* CrackSurfaceContact.cpp in Sources */,

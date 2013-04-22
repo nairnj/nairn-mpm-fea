@@ -103,7 +103,7 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 					if(cvf[1]==NULL)
 					{	cvf[1]=CrackVelocityField::CreateCrackVelocityField(cfld[0].loc,cfld[0].crackNum);
 						if(cvf[1]==NULL) throw CommonException("Memory error allocating crack velocity field 1.",
-															   "NodalPoint::AddMomentumTask1");
+															   "NodalPoint::AddCrackVelocityField");
 					}
 					else
 						cvf[1]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
@@ -138,7 +138,7 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 					{	if(cvf[2]==NULL)
 						{	cvf[2]=CrackVelocityField::CreateCrackVelocityField(cfld[0].loc,cfld[0].crackNum);
 							if(cvf[2]==NULL) throw CommonException("Memory error allocating crack velocity field 2.",
-																   "NodalPoint::AddMomentumTask1");
+																   "NodalPoint::AddCrackVelocityField");
 						}
 						else
 							cvf[2]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
@@ -185,7 +185,7 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 			if(cvf[3]==NULL)
 			{	cvf[3]=CrackVelocityField::CreateCrackVelocityField(cfld[0].loc,cfld[0].crackNum);
 				if(cvf[3]==NULL) throw CommonException("Memory error allocating crack velocity field 3.",
-													   "NodalPoint::AddMomentumTask1");
+													   "NodalPoint::AddCrackVelocityField");
 			}
 			else
 				cvf[3]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
@@ -310,11 +310,6 @@ void NodalPoint::AddMassMomentum(MPMBase *mptr,short vfld,int matfld,double shap
 	if(nonRigid)
 	{	// add to lumped mass matrix
 		cvf[vfld]->AddMass(matfld,fnmp);
-		
-		// transport calculations
-		TransportTask *nextTransport=transportTasks;
-		while(nextTransport!=NULL)
-			nextTransport=nextTransport->Task1Extrapolation(this,mptr,shape);
 	}
 	else
 	{	// for rigid particles, let the crack velocity field know
@@ -383,11 +378,6 @@ void NodalPoint::AddMass(short vfld,int matfld,double mnode) { cvf[vfld]->AddMas
 
 // for rigid particles, adding mass is counting number of rigid particles
 void NodalPoint::AddMassTask1(short vfld,int matfld,double mnode,int numPts) { cvf[vfld]->AddMassTask1(matfld,mnode,numPts); }
-
-// Add volume gradient for selected field
-void NodalPoint::AddVolumeGradient(short vfld,int matfld,MPMBase *mptr,double dNdx,double dNdy,double dNdz)
-{	cvf[vfld]->AddVolumeGradient(matfld,mptr,dNdx,dNdy,dNdz);
-}
 
 // Copy volume gradient when copying from ghost to real node
 void NodalPoint::CopyVolumeGradient(short vfld,int matfld,Vector *grad)
@@ -1038,8 +1028,7 @@ bool NodalPoint::GetCMVelocityTask8(Vector *vk)
 
 #pragma mark INCREMENTERS
 
-// Add displacements to selected field, but in task 6, add rigid particle velocity
-// to all crack fields (will have vfld<0)
+// Add displacements to selected field
 void NodalPoint::AddDisplacement(short vfld,int matfld,double wt,Vector *pdisp)
 {	cvf[vfld]->AddDisplacement(matfld,wt,pdisp);
 }
@@ -1104,6 +1093,7 @@ Vector NodalPoint::GetTotalContactForce(bool clearForces)
 // On first call in time step, first and last on pointers to MaterialInterfaceNode * because those
 //		objects are created for later interface calculations
 // postUpdate is TRUE when called between momentum update and particle update and otherwise is FALSE
+// throws CommonException() on memory error or rigid material problem
 void NodalPoint::MaterialContactOnNode(double deltime,bool postUpdate,MaterialInterfaceNode **first,MaterialInterfaceNode **last)
 {
 	// check each crack velocity field on this node
@@ -1507,20 +1497,6 @@ void NodalPoint::PreliminaryCalcs(void)
 {	int i;
     for(i=1;i<=nnodes;i++)
         nd[i]->PrepareForFields();
-}
-
-// adjust momenta at overlaping material velocity fields
-// multimaterial mode only and only after update (i.e., not need to do interface)
-void NodalPoint::MaterialContactAllNodes(bool multiMaterials,bool postUpdate,double deltime)
-{	if(!multiMaterials) return;
-	
-	// implement material contact here
-	int i;
-	for(i=1;i<=nnodes;i++)
-	{	// Each node calls cvf[]->MaterialContactOnCVF() for each crack velocity
-		//	field on that node
-		nd[i]->MaterialContactOnNode(deltime,postUpdate,NULL,NULL);
-	}
 }
 
 // Find Grid point velocities

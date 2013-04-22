@@ -44,7 +44,6 @@ class CrackSurfaceContact
         CrackSurfaceContact();
     
         // methods
-		void AddDisplacementVolume(short,int,NodalPoint *,MPMBase *,double);
 		short HasContact(int);
 		short IsImperfect(int);
 #ifndef _BC_CRACK_SIDE_ONLY_

@@ -32,12 +32,14 @@ class DiffusionTask : public TransportTask
 		virtual const char *TaskName(void);
 		virtual TransportTask *TransportTimeStep(int,double,double *);
 		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double);
+		virtual TransportTask *Task1Reduction(NodalPoint *,NodalPoint *);
 		virtual TransportTask *GetNodalValue(NodalPoint *);
 		virtual void ImposeValueBCs(double);
 		virtual TransportTask *GetGradients(double);
 		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *);
+		virtual TransportTask *CopyForces(NodalPoint *,NodalPoint *);
 		virtual TransportTask *SetTransportForceBCs(double);
-		virtual TransportTask *TransportRates(double);
+		virtual TransportTask *TransportRates(NodalPoint *,double);
 		virtual TransportTask *IncrementTransportRate(NodalPoint *,double,double &) const;
 		virtual TransportTask *MoveTransportValue(MPMBase *,double,double) const;
 		virtual TransportTask *UpdateNodalValues(double);

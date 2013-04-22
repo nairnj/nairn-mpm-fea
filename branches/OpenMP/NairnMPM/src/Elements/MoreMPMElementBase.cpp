@@ -11,8 +11,10 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MPMBase.hpp"
-#include "Exceptions/MPMTermination.hpp"
 #include "Materials/MaterialBase.hpp"
+
+// NEWINCLUDE
+#include "Exceptions/CommonException.hpp"
 
 #define MAXITER 100
 
@@ -40,6 +42,7 @@ ElementBase::~ElementBase()
 
 /* Find dimensionless position first of particle or find
 	CPDI info. THis is called during initialization of each time step.
+  throws CommonException() if CPDI particle corner has left the grid
 */
 void ElementBase::GetShapeFunctionData(MPMBase *mpmptr) const
 {
@@ -151,6 +154,7 @@ void ElementBase::GetShapeFunctionNodes(int *numnds,int *nds,Vector *xipos,MPMBa
  NOTE: This is called at various places in the time step when shape functions are needed. It should
 	recalculate the ones found at the begnning of the time step using precalculated xipos
     or CPDI info, which are found in initialization
+ throws CommonException() if too many CPDI nodes
 */
 void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipos,MPMBase *mpmptr) const
 {
@@ -220,7 +224,8 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipo
    NOTE: This is called at various places in the time step when gradients are needed. It should
     recalculate the ones found at the beginning of the time step using the precalculated xipos
     or CPDI info, which are found in the initialization task
- */
+   throws CommonException() if too many CPDI nodes
+*/
 void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipos,
                                     double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr) const
 {
@@ -568,6 +573,7 @@ bool ElementBase::OnTheEdge(void)
 // cpdi[i]->inElem - the element they are in
 // cpdi[i]->ws - shape function weights (numNds of them)
 // cpdi[i]->wg - gradient weights (numNds of them)
+// throws CommonException() if too many CPDI nodes
 void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,int *numnds,int *nds,
 								   double *fn,double *xDeriv,double *yDeriv,double *zDeriv) const
 {
@@ -661,7 +667,7 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,int *numnds,int
                     for(j=i;j<ncnds;j++)
                     {   cout << "#   node = " << cnodes[j] << ", ws*Si = " << endl;
                     }
-					throw MPMTermination("Too many CPDI nodes found; increase maxShapeNodes in source code by at least number of remaining nodes","ElementBase::GetCPDIFunctions");
+					throw CommonException("Too many CPDI nodes found; increase maxShapeNodes in source code by at least number of remaining nodes","ElementBase::GetCPDIFunctions");
 				}
 			}
 			nds[count] = cnodes[i];
@@ -885,6 +891,7 @@ void ElementBase::RestoreGimp(void) { useGimp = analysisGimp; }
 
 // on start up initialize number of CPDI nodes (if needed)
 // done here in case need more initializations in the future
+// throws CommonException() if CPDI type is not allowed
 void ElementBase::InitializeCPDI(bool isThreeD)
 {
     if(isThreeD)
@@ -892,7 +899,7 @@ void ElementBase::InitializeCPDI(bool isThreeD)
         {   numCPDINodes = 8;
         }
         else if(useGimp == QUADRATIC_CPDI)
-        {	throw MPMTermination("qCPDI is not yet implemented for 3D (use lCPDI instead).","MatPoint3D::GetCPDINodesAndWeights");
+        {	throw CommonException("qCPDI is not yet implemented for 3D (use lCPDI instead).","ElementBase::InitializeCPDI");
         }
     }
     else

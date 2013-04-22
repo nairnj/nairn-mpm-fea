@@ -76,6 +76,13 @@ TransportTask *DiffusionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,
 	return nextTask;
 }
 
+// Task 1 reduction of ghost node to real node for concentration on the grid
+TransportTask *DiffusionTask::Task1Reduction(NodalPoint *ndpt,NodalPoint *ghostNdpt)
+{	ndpt->gConcentration += ghostNdpt->gConcentration;                    // mJ
+	ndpt->gVolume += ghostNdpt->gVolume;                                  // mJ/K
+	return nextTask;
+}
+
 // Get grid concentrations and impose grid-based concentration BCs
 TransportTask *DiffusionTask::GetNodalValue(NodalPoint *ndptr)
 {	if(ndptr->NumberNonrigidParticles()>0)
@@ -163,6 +170,14 @@ TransportTask *DiffusionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double s
 	return nextTask;
 }
 
+// copy diffusion forces from ghost node to real node
+TransportTask *DiffusionTask::CopyForces(NodalPoint *ndptr,NodalPoint *ghostNdptr)
+{
+	// internal force based on diffusion tensor
+	ndptr->fdiff += ghostNdptr->fcond;
+	return nextTask;
+}
+
 // adjust forces at grid points with concentration BCs to have rates be correct
 // to carry extrapolated concentrations (before impose BCs) to the correct
 // one selected by grid based BC
@@ -205,21 +220,17 @@ TransportTask *DiffusionTask::SetTransportForceBCs(double deltime)
 
 // find concentration rates on the nodes, but since these are potentials they are limited
 // to 0 to 1 or limited to 0 < gConcentration + fdiff*deltime < 1
-TransportTask *DiffusionTask::TransportRates(double deltime)
+TransportTask *DiffusionTask::TransportRates(NodalPoint *ndptr,double deltime)
 {
-	// convert forces to concentration rates
-	int i;
-    for(i=1;i<=nnodes;i++)
-	{   if(nd[i]->NumberNonrigidParticles()>0)
-		{	nd[i]->fdiff /= nd[i]->gVolume;
-            /*
-			double concTest = nd[i]->gConcentration + nd[i]->fdiff*deltime;
-			if(concTest<0.)
-				nd[i]->fdiff = -nd[i]->gConcentration/deltime;          // will evolve to 0
-			else if(concTest>1.)
-				nd[i]->fdiff = (1.-nd[i]->gConcentration)/deltime;      // will evolve to 1
-            */
-		}
+	if(ndptr->NumberNonrigidParticles()>0)
+	{	ndptr->fdiff /= ndptr->gVolume;
+		/*
+		double concTest = ndptr->gConcentration + ndptr->fdiff*deltime;
+		if(concTest<0.)
+			ndptr->fdiff = -ndptr->gConcentration/deltime;          // will evolve to 0
+		else if(concTest>1.)
+			ndptr->fdiff = (1.-ndptr->gConcentration)/deltime;      // will evolve to 1
+		*/
 	}
 	return nextTask;
 }

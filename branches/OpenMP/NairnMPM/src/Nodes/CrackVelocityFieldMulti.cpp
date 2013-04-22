@@ -10,12 +10,15 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Nodes/CrackVelocityFieldMulti.hpp"
 #include "Nodes/MaterialInterfaceNode.hpp"
-#include "Exceptions/MPMTermination.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"
+
+// NEWINCLUDE
+#include "Exceptions/CommonException.hpp"
+
 
 #pragma mark INITIALIZATION
 
@@ -37,6 +40,7 @@ void CrackVelocityFieldMulti::ZeroMatFields(void)
 }
 
 // match materical velocity fields on ghost node to those on a real node
+// throws CommonException() on memory error
 void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **rmvf)
 {	for(int i=0;i<maxMaterialFields;i++)
 	{	if(rmvf[i]==NULL) continue;
@@ -56,6 +60,7 @@ void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **rmvf)
 #pragma mark TASK 1 AND 6 METHODS
 
 // Called in intitation to preallocate material velocituy fields
+// throws CommonException() on memory error
 void CrackVelocityFieldMulti::AddMatVelocityField(int matfld)
 {	if(mvf[matfld]==NULL)
 	{	mvf[matfld]=new MatVelocityField(MaterialBase::GetMVFIsRigid(matfld));
@@ -76,9 +81,9 @@ void CrackVelocityFieldMulti::AddMassTask1(int matfld,double mnode,int numPts)
 //		faster there because that is called less while this is called for every node-particle pair
 void CrackVelocityFieldMulti::AddVolumeGradient(int matfld,MPMBase *mptr,double dNdx,double dNdy,double dNdz)
 {	double Vp = mptr->GetVolume(DEFORMED_AREA);
-	mvf[matfld]->volumeGrad->x+=Vp*dNdx;
-	mvf[matfld]->volumeGrad->y+=Vp*dNdy;
-	mvf[matfld]->volumeGrad->z+=Vp*dNdz;
+	mvf[matfld]->volumeGrad->x += Vp*dNdx;
+	mvf[matfld]->volumeGrad->y += Vp*dNdy;
+	mvf[matfld]->volumeGrad->z += Vp*dNdz;
 }
 
 // call this when copy from ghost to real node to sume gradients
@@ -106,6 +111,7 @@ double CrackVelocityFieldMulti::GetTotalMassAndCount(void)
 
 // copy rigid material from another velocity field (cvfm) and add to mvf[rigidFieldNum] in this cvf
 // This is only called if COMBINE_RIGID_MATERIALS is defined
+// throws CommoneException() in more than one rigid material type
 void CrackVelocityFieldMulti::CombineRigidFrom(CrackVelocityFieldMulti *cvfm,int rigidFieldNum)
 {
 	// get other field, exit if none, or error if different one
@@ -113,7 +119,7 @@ void CrackVelocityFieldMulti::CombineRigidFrom(CrackVelocityFieldMulti *cvfm,int
 	MatVelocityField *rmvf=cvfm->GetRigidMaterialField(&otherRigidNum);
 	if(rmvf==NULL) return;
 	if(otherRigidNum!=rigidFieldNum)
-		throw MPMTermination("Two different rigid materials on the same node","CrackVelocityFieldMulti::MaterialContact");
+		throw CommonException("Two different rigid materials on the same node","CrackVelocityFieldMulti::MaterialContact");
 	
 	// add number of rigid points and total points this crack velocity field
 	numberRigidPoints+=rmvf->numberPoints;
@@ -131,6 +137,7 @@ void CrackVelocityFieldMulti::CombineRigidFrom(CrackVelocityFieldMulti *cvfm,int
 
 // Copy rigid material from another velocity field (cvfm) to this field (creating if needed)
 // This is only called if COMBINE_RIGID_MATERIALS is defined
+// throws CommonException on material velocity allocation memory error
 void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int rigidFieldNum)
 {	
 	/*
@@ -194,6 +201,7 @@ void CrackVelocityFieldMulti::RezeroNodeTask6(double deltaTime)
             {	ZeroVector(&mvf[i]->pk);
                 ZeroVector(&mvf[i]->disp);
                 if(mvf[i]->volumeGrad!=NULL) ZeroVector(mvf[i]->volumeGrad);
+				mvf[i]->SetContactVolume(0.);
             }
             else
             {   // for rigid particles, keep initial pk
@@ -202,7 +210,6 @@ void CrackVelocityFieldMulti::RezeroNodeTask6(double deltaTime)
                 // dnew = Sum (Vp*fpi*(d + v dt)) = dold + Sum (Vp*fpi*v*dt) = dold + pk*dt
                 AddScaledVector(&mvf[i]->disp,&mvf[i]->pk,deltaTime);
             }
-            mvf[i]->SetContactVolume(0.);
         }
     }
 }
@@ -285,6 +292,9 @@ void CrackVelocityFieldMulti::UpdateMomentaOnField(double timestep)
 	On first call in time step, first and last on pointers to MaterialInterfaceNode * because those
 		objects are created for later interface calculations
 	postUpdate is TRUE when called between momentum update and particle update and otherwise is FALSE
+ throws CommonException() if
+	a. more than one rigid material
+	b. memory error making interface node
 */
 void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,double deltime,bool postUpdate,
 												   MaterialInterfaceNode **first,MaterialInterfaceNode **last)
@@ -306,7 +316,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 			}
 			else if(rigidMat>0)
 			{	// rigid material, but not allowed if already had another rigid material
-				throw MPMTermination("Two different rigid materials in contact on the same node",
+				throw CommonException("Two different rigid materials in contact on the same node",
 												"CrackVelocityFieldMulti::MaterialContact");
 			}
 			else
@@ -643,6 +653,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 // Called in multimaterial mode to check contact at nodes with multiple materials and here
 // means exactly one is a rigid material
 //	(no rigid materials handled in MaterialContactOnCVF(), two rigid materials is an error)
+// throws CommonException() if memory error making interface node
 void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint *ndptr,int vfld,double deltime,bool postUpdate,
 												   MaterialInterfaceNode **first,MaterialInterfaceNode **last)
 {
@@ -920,7 +931,10 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 		mvf[i]->ChangeMatMomentum(&delPi,postUpdate,deltime);
 		
 		// store contact force in rigid particle ftot
-		mvf[rigidFld]->AddContactForce(&delPi);
+		// if !postUpdate, gets only force after mass and momentum extrapolation
+		// if always gets also after particle update and second strain update (if activated)
+		if(!postUpdate)
+			mvf[rigidFld]->AddContactForce(&delPi);
 	}
 }
 

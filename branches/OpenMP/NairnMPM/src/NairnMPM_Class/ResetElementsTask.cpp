@@ -20,13 +20,13 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Elements/ElementBase.hpp"
-#include "Exceptions/MPMTermination.hpp"
 #include "Exceptions/MPMWarnings.hpp"
 #include "Global_Quantities/BodyForce.hpp"
 
 // NEWINCLUDE
 #include "Patches/GridPatch.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -40,11 +40,13 @@ ResetElementsTask::ResetElementsTask(const char *name) : MPMTask(name)
 // Stop if off the grid
 void ResetElementsTask::Execute(void)
 {
+	CommonException *resetErr = NULL;
+	
 	// update feedback damping now if needed
 	bodyFrc.UpdateAlpha(timestep,mtime);
 
 	// This block should be made parallel
-	// But when do so, need method to move particle  between patches while keeping threads indpendent
+	// But when do so, need method to move particle  between patches while keeping threads independent
 	int totalPatches = fmobj->GetTotalNumberOfPatches();
 	
 	int status;
@@ -65,12 +67,14 @@ void ResetElementsTask::Execute(void)
 					// enter warning only if this particle did not leave the grid before
 					if(!mptr->HasLeftTheGridBefore())
 					{	if(warnings.Issue(fmobj->warnParticleLeftGrid,-1)==REACHED_MAX_WARNINGS)
-						{	// print message and quit
-							mptr->Describe();
-							char errMsg[100];
-							sprintf(errMsg,"Particle has left the grid\n  (plot x displacement to see it).");
-							mptr->origpos.x=-1.e6;
-							throw MPMTermination(errMsg,"ResetElementsTask::Execute");
+						{	// print message and log error
+							if(resetErr==NULL)
+							{	mptr->Describe();
+								char errMsg[100];
+								sprintf(errMsg,"Particle has left the grid\n  (plot x displacement to see it).");
+								mptr->origpos.x=-1.e6;
+								resetErr = new CommonException(errMsg,"ResetElementsTask::Execute");
+							}
 						}
 						
 						// set this particle has left the grid once
@@ -84,7 +88,7 @@ void ResetElementsTask::Execute(void)
 				else if(status==NEW_ELEMENT && totalPatches>1)
 				{	int newpn = mpmgrid.GetPatchForElement(mptr->ElemID());
 					if(pn != newpn)
-					{	// next material point read before move the particle
+					{	// next material point read before move this particle
 						nextMptr = (MPMBase *)mptr->GetNextObject();
 						
 						// move particle mptr
@@ -103,6 +107,9 @@ void ResetElementsTask::Execute(void)
 			}
 		}
 	}
+	
+	// if error occurred then throw it
+	if(resetErr) throw *resetErr;
 }
 
 // Find element for particle. Return FALSE if left

@@ -55,9 +55,9 @@ StressFreeTemp 294
 #thick=10			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading="rigid"	! Loading = "rigid", "contact", "force", "traction", thermal
+#loading="contact"	! Loading = "rigid", "contact", "force", "traction", thermal
 #fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
-#strain=25	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
+#strain=-25	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak
@@ -123,9 +123,9 @@ if #loading="thermal"
 endif
 ! Archiving
 if #fixsides="yes"
-  Archive "Results/HEConstrainedTension/"&#analysis&"-"&#method&"/"&#loading&"/"&#matID
+  Archive "Results/HEConstrainedTension/"&#analysis&"-"&#method&"-"&#update&"/"&#loading&"/"&#matID
 else
-  Archive "Results/HETension/"&#analysis&"-"&#method&"/"&#loading&"/"&#matID
+  Archive "Results/HETension/"&#analysis&"-"&#method&"-"&#update&"/"&#loading&"/"&#matID
 endif
 TimeStep 1000,(1+#hold+#unload)*#time,#factor
 MaximumTime (1+#hold+#unload)*#time

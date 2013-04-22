@@ -8,9 +8,7 @@
 
 #include "Exceptions/CommonException.hpp"
 
-/*******************************************************************
-	CommonException: Constructors and Destructors
-*******************************************************************/
+#pragma mark CommonException: Constructors and Destructors
 
 // Constructors
 CommonException::CommonException()
@@ -29,9 +27,7 @@ CommonException::CommonException(const char *errMsg,const char *inCode)
     errID=MPMErr;
 }
 
-/*******************************************************************
-	CommonException: Methods
-*******************************************************************/
+#pragma mark CommonException: Methods
 
 // display message and step info
 void CommonException::Display(int mstep,double mtime)
@@ -47,7 +43,11 @@ void CommonException::Display(void)
 
 // get the error code
 int CommonException::ErrorCode(void) { return errID; }
+void CommonException::SetErrorCode(int err) { errID = err; }
 
 // get just the message
 char *CommonException::Message(void) { return msg; }
+
+// get just the message
+char *CommonException::InCode(void) { return code; }
 
