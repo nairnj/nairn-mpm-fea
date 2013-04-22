@@ -92,7 +92,7 @@ CustomTask *CalcJKTask::StepCalculation(void)
 
     CrackHeader *nextCrack=firstCrack;
     while(nextCrack!=NULL)
-    {   nextCrack->JIntegral();         // crack-axis components of J-integral
+	{	nextCrack->JIntegral();         // crack-axis components of J-integral
         
         // if material known, find KI and KII for crack tips
         if(getJKThisStep & NEED_K)

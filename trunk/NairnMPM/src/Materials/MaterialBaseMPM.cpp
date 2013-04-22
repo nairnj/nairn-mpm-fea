@@ -491,11 +491,13 @@ int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activ
 	else
 	{	if(field<0)
 		{	field=fieldNum;
-			activeField=activeNum;
 			fieldNum++;
-			activeNum++;
 			fieldMatIDs.push_back(matid);
-			activeMatIDs.push_back(matid);
+			if(activeNum>=0)
+			{	activeField=activeNum;
+				activeNum++;
+				activeMatIDs.push_back(matid);
+			}
 		}
 	}
 	return fieldNum;

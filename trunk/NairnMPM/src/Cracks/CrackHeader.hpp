@@ -108,9 +108,8 @@ class CrackHeader : public LinkedObject
 		double *GetThicknessPtr(void);
     
         // calculate J-integral (YJG)
-        int inMat;                        // material ID of crack
+		void JIntegral(void);				// J-Integral calculation
         bool SegmentsCross(ContourPoint *,Vector &,Vector &,Vector *);
-        void JIntegral(void);      	  // J-Integral calculation
 		CrackSegment *GetCrackTip(int);
 		CrackSegment *GetAdjToCrackTip(int);
 		int GetWhichTip(CrackSegment *);

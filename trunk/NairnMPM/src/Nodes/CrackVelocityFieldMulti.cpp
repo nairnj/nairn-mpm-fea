@@ -229,6 +229,7 @@ void CrackVelocityFieldMulti::RezeroNodeTask6(double deltaTime)
 			{	ZeroVector(&mvf[i]->pk);
 				ZeroVector(&mvf[i]->disp);
 				if(mvf[i]->volumeGrad!=NULL) ZeroVector(mvf[i]->volumeGrad);
+				mvf[i]->SetContactVolume(0.);
 			}
 			else
             {   // for rigid particles, keep initial pk
@@ -237,7 +238,6 @@ void CrackVelocityFieldMulti::RezeroNodeTask6(double deltaTime)
 				// dnew = Sum (Vp*fpi*(d + v dt)) = dold + Sum (Vp*fpi*v*dt) = dold + pk*dt
 				AddScaledVector(&mvf[i]->disp,&mvf[i]->pk,deltaTime);
 			}
-			mvf[i]->SetContactVolume(0.);
 		}
     }
 }
