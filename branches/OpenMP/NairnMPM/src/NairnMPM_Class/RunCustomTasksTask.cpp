@@ -49,6 +49,8 @@ void RunCustomTasksTask::Execute(void)
 	
     /* Step 2: Extrapolate particle info to grid if needed for
 			any custom task
+	   This loop is not parallel. It should be avoided except by custom tasks
+			that only run periodically (such as for archiving)
 	*/
     if(needExtrapolations)
     {	// call each task for initialization prior to extrapolations
@@ -78,18 +80,7 @@ void RunCustomTasksTask::Execute(void)
                 while(nextTask!=NULL)
                     nextTask=nextTask->NodalExtrapolation(nd[nds[i]],mpm[p],vfld,matfld,wt,isRigid);
 				
-                // possible extrapolation to the particle (but currently not used by any custom task)
-                /*
-                nextTask=theTasks;
-                while(nextTask!=NULL)
-                    nextTask=nextTask->ParticleCalculation(nd[nds[i]],mpm[p],vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],isRigid);
-                */
-            }
-            
-            // possible single calculations for each particle
-            nextTask=theTasks;
-            while(nextTask!=NULL)
-                nextTask=nextTask->ParticleExtrapolation(mpm[p],isRigid);
+             }
         }
         
         // finished with extrapolations

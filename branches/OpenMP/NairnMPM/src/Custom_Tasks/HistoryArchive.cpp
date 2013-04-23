@@ -97,6 +97,7 @@ CustomTask *HistoryArchive::Initialize(void)
 }
 
 // called when MPM step is getting ready to do custom tasks
+// does not use exrapolations so no need to set
 CustomTask *HistoryArchive::PrepareForStep(bool &needExtraps)
 {
 	if(customArchiveTime > 0.)

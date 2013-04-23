@@ -15,6 +15,9 @@
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackSegment.hpp"
 
+// NEWINCLUDE
+#include "Elements/ElementBase.hpp"
+
 // Global
 CalcJKTask *theJKTask=NULL;
 
@@ -57,12 +60,10 @@ CustomTask *CalcJKTask::Initialize(void)
 }
 
 // called when MPM step is getting ready to do custom tasks
-CustomTask *CalcJKTask::PrepareForStep(bool &doCrackExtraps)
+// has its own extrapolations for speed
+CustomTask *CalcJKTask::PrepareForStep(bool &needExtraps)
 {
-	if((getJKThisStep=archiver->WillArchiveJK(TRUE)))
-    {	// if archiving J or K, need this task's extrapolations
-    	doCrackExtraps=TRUE;
-    }
+	getJKThisStep=archiver->WillArchiveJK(TRUE);
     return nextTask;
 }
 
@@ -86,7 +87,57 @@ CustomTask *CalcJKTask::StepCalculation(void)
     // skip if not needed
     if(!getJKThisStep) return nextTask;
     
-    int i,inMat;
+    // set up strain fields for crack extrapolations
+    int i;
+    for(i=1;i<=nnodes;i++)
+        nd[i]->ZeroDisp();
+	
+	int nds[maxShapeNodes];
+	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+	
+	// particle loop or nonrigid and rigid contact particles
+	for(int p=0;p<nmpmsNR;p++)
+	{	MPMBase *mpnt = mpm[p];
+		
+		// Load element coordinates
+		const MaterialBase *matref = theMaterials[mpnt->MatID()];
+		
+		// find shape functions and derviatives
+		int numnds;
+		const ElementBase *elref = theElements[mpnt->ElemID()];
+		elref->GetShapeGradients(&numnds,fn,nds,mpnt->GetNcpos(),xDeriv,yDeriv,zDeriv,mpnt);
+		
+		// Add particle property to each node in the element
+		for(i=1;i<=numnds;i++)
+		{   // global mass matrix
+			short vfld=(short)mpnt->vfld[i];				// velocity field to use
+			double fnmp=fn[i]*mpnt->mp;
+			
+			// possible extrapolation to the nodes
+			NodalPoint *ndmi = nd[nds[i]];
+			
+			// get 2D gradient terms (dimensionless) and track material (if needed)
+			int activeMatField = matref->GetActiveField();
+			ndmi->AddUGradient(vfld,fnmp,mpnt->GetDuDx(),mpnt->GetDuDy(),mpnt->GetDvDx(),mpnt->GetDvDy(),activeMatField,mpnt->mp);
+			
+			// get a nodal stress (rho*stress has units N/m^2)
+			fnmp *= matref->rho;
+			Tensor sp = mpnt->ReadStressTensor();
+			ndmi->AddStress(vfld,fnmp,&sp);
+			
+			// get energy and rho*energy has units J/m^3 = N/m^2
+			// In axisymmetric, energy density is 2 pi m U/(2 pi rp Ap), but since m = rho rp Ap
+			//		energy density it still rho*energy
+			ndmi->AddEnergy(vfld,fnmp,mpnt->vel.x,mpnt->vel.y,mpnt->GetStrainEnergy());
+			
+		}
+	}
+	
+    // finish strain fields
+    for(i=1;i<=nnodes;i++)
+        nd[i]->CalcStrainField();
+	
+	int inMat;
     Vector d,C;
     CrackSegment *crkTip;
 
@@ -130,56 +181,3 @@ CustomTask *CalcJKTask::StepCalculation(void)
 //   use FALSE, NEED_J, NEED_JANDK, or NEED_J+NEED_K (NEED_K alone no good)
 void CalcJKTask::ScheduleJK(int newNeed) { getJKThisStep|=newNeed; }
 
-#pragma mark TASK EXTRAPOLATION METHODS
-
-// initialize for crack extrapolations
-CustomTask *CalcJKTask::BeginExtrapolations(void)
-{
-    // skip if already set up
-    if(!getJKThisStep) return nextTask;
-	
-    // set up strain fields for crack extrapolations
-    int i;
-    for(i=1;i<=nnodes;i++)
-        nd[i]->ZeroDisp();
-    
-    return nextTask;
-}
-
-// add particle data to a node
-CustomTask *CalcJKTask::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short vfld,int matfld,double wt,short isRigid)
-{
-    // skip if already set up
-    if(!getJKThisStep || isRigid) return nextTask;
-    
-	// get 2D gradient terms (dimensionless) and track material (if needed)
-	int matid = mpnt->MatID();
-	int activeMatField = theMaterials[matid]->GetActiveField();
-	ndmi->AddUGradient(vfld,wt,mpnt->GetDuDx(),mpnt->GetDuDy(),mpnt->GetDvDx(),mpnt->GetDvDy(),activeMatField,mpnt->mp);
-	
-	// get a nodal stress (rho*stress has units N/m^2)
-    wt *= theMaterials[matid]->rho;
-    Tensor sp = mpnt->ReadStressTensor();
-    ndmi->AddStress(vfld,wt,&sp);
-    
-	// get energy and rho*energy has units J/m^3 = N/m^2
-	// In axisymmetric, energy density is 2 pi m U/(2 pi rp Ap), but since m = rho rp Ap
-	//		energy density it still rho*energy
-    ndmi->AddEnergy(vfld,wt,mpnt->vel.x,mpnt->vel.y,mpnt->GetStrainEnergy());
-	
-    return nextTask;
-}
-
-// initialize for crack extrapolations
-CustomTask *CalcJKTask::EndExtrapolations(void)
-{
-    // skip if already set up
-    if(!getJKThisStep) return nextTask;
-    
-    // finish strain fields
-	int i;
-    for(i=1;i<=nnodes;i++)
-        nd[i]->CalcStrainField();
-    
-    return nextTask;
-}

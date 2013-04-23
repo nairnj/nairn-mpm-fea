@@ -45,14 +45,14 @@ CustomTask *PropagateTask::Initialize(void)
 
 // called when MPM step is getting ready to do custom tasks
 // This tasks only exists if propagation is turned on
-CustomTask *PropagateTask::PrepareForStep(bool &doPropExtraps)
+CustomTask *PropagateTask::PrepareForStep(bool &needExtraps)
 {
     theResult=NOGROWTH;
     
     if(mtime+timestep>=nextPropTime && !arrested)
     {	// ready to do crack propagation
-    	doPropCalcs=doPropExtraps=TRUE;
-        nextPropTime+=propTime;
+    	doPropCalcs = TRUE;
+        nextPropTime += propTime;
         
         // Make sure J and K are available if needed for current criterion
 		CrackHeader *nextCrack=firstCrack;
@@ -70,15 +70,36 @@ CustomTask *PropagateTask::PrepareForStep(bool &doPropExtraps)
 // Calculate J and K at crack tips
 CustomTask *PropagateTask::StepCalculation(void)
 {
+    // if not needed, just exit
+    if(!doPropCalcs) return nextTask;
+	
+	// particle extrapolation if needed
+    totalPlastic = 0.;
+    totalPotential = 0.;
+	for(int p=0;p<nmpmsNR;p++)
+	{   MPMBase *mpnt = mpm[p];
+		
+		// track total energies in J = N-m
+		//	mp is g, stored energy is N/m^2 cm^3/g, vel is mm/sec
+		// strainEnergy in J =  1.0e-6*mp*mpm[p]->GetStrainEnergy()
+		// plastic 1.0e-6*mp*mpm[p]->GetPlastEnergy()
+		// external work 1.e-9*mpm[p]->GetExtWork()
+		// kinetic energy 0.5e-9*mp*(vel.x*vel.x+vel.y*vel.y)
+		
+		// plastic energy per unit thickness (units of N) (only needed in some crack growth)
+		double mp = mpnt->mp;
+		totalPlastic += 1.0e-3*mp*mpnt->GetPlastEnergy()/mpnt->thickness();
+		totalPotential += 1.0e-3*(mp*mpnt->GetStrainEnergy()
+								+ 0.5e-3*mp*(mpnt->vel.x*mpnt->vel.x+mpnt->vel.y*mpnt->vel.y)
+								- 1.e-3*mpnt->GetExtWork())/mpnt->thickness();
+	}
+    
     CrackHeader *nextCrack;
     CrackSegment *crkTip;
     double cSize;
     int i,inMat;
     Vector tipDir,growTo,grow;
     int tipElem;
-    
-    // if not needed, just exit
-    if(!doPropCalcs) return nextTask;
     
     // loop over cracks
     nextCrack=firstCrack;
@@ -163,42 +184,4 @@ CustomTask *PropagateTask::StepCalculation(void)
 // turn crack propagation task on or off
 void PropagateTask::ArrestGrowth(int newArrest) { arrested=newArrest; }
 bool PropagateTask::Arrested(void) { return arrested; }
-
-#pragma mark TASK EXTRAPOLATION METHODS
-
-// initialize for crack extrapolations
-CustomTask *PropagateTask::BeginExtrapolations(void)
-{
-    // skip if already set up
-    if(!doPropCalcs) return nextTask;
-
-    totalPlastic=0.;
-    totalPotential=0.;
-    
-    return nextTask;
-}
-
-// add particle data to some calculation
-CustomTask *PropagateTask::ParticleExtrapolation(MPMBase *mpnt,short isRigid)
-{
-    // skip if not needed
-    if(!doPropCalcs || isRigid) return nextTask;
-    
-    // track total energies in J = N-m
-    //	mp is g, stored energy is N/m^2 cm^3/g, vel is mm/sec
-    // strainEnergy in J =  1.0e-6*mp*mpm[p]->GetStrainEnergy()
-    // plastic 1.0e-6*mp*mpm[p]->GetPlastEnergy()
-    // external work 1.e-9*mpm[p]->GetExtWork()
-    // kinetic energy 0.5e-9*mp*(vel.x*vel.x+vel.y*vel.y)
-    
-    // plastic energy per unit thickness (units of N) (only needed in some crack growth)
-    double mp=mpnt->mp;
-    totalPlastic+=1.0e-3*mp*mpnt->GetPlastEnergy()/mpnt->thickness();
-    totalPotential+=1.0e-3*(mp*mpnt->GetStrainEnergy()
-        + 0.5e-3*mp*(mpnt->vel.x*mpnt->vel.x+mpnt->vel.y*mpnt->vel.y)
-        - 1.e-3*mpnt->GetExtWork())/mpnt->thickness();
-    
-    return nextTask;
-}
-
 

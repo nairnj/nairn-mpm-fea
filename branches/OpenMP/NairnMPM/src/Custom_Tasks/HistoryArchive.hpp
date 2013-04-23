@@ -26,6 +26,7 @@ public:
 	virtual const char *TaskName(void);
 	virtual char *InputParam(char *,int &);
 	virtual CustomTask *Initialize(void);
+	
 	virtual CustomTask *PrepareForStep(bool &);
 	virtual CustomTask *StepCalculation(void);
 	

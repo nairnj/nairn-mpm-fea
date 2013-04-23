@@ -26,12 +26,14 @@ class VTKArchive : public CustomTask
 		virtual const char *TaskName(void);
 		virtual char *InputParam(char *,int &);
         virtual CustomTask *Initialize(void);
+	
         virtual CustomTask *PrepareForStep(bool &);
+		virtual CustomTask *StepCalculation(void);
         virtual CustomTask *FinishForStep(void);
+	
         virtual CustomTask *BeginExtrapolations(void);
         virtual CustomTask *EndExtrapolations(void);
         virtual CustomTask *NodalExtrapolation(NodalPoint *,MPMBase *,short,int,double,short);
-        virtual CustomTask *StepCalculation(void);
         
     private:
 		vector< int > quantity;

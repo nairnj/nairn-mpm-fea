@@ -605,6 +605,49 @@ void NodalPoint::AddUGradient(short vfld,double wt,double dudx,double dudy,doubl
 		df->matWeight[activeMatField] += wt/mp;
 }
 
+// add to nodal stress (in-plane only)
+// wt includes rho thus stress is N/m^2
+// Must scale by 1e-6 to get N/mm^2
+void NodalPoint::AddStress(short vfld,double wt,Tensor *stress)
+{	DispField *df = cvf[vfld]->df;
+	df->stress.xx += wt*stress->xx;
+	df->stress.yy += wt*stress->yy;
+	df->stress.xy += wt*stress->xy;
+}
+
+// Add to kinetic energy and strain energy
+// wt includes density (g/cm^3), if axisymmtric include r for m/radian
+// kinetic energy if twice actual (to save divide by two) and units are
+//		g/cm^3 mm^2/sec^2 = 1e-3 N/m^2 = 1e-3 J/m^3
+//		to get N/mm^2 and account for 1/2, multiply by 0.5*1e-9
+// work has units N/m^2 = J/m^3
+void NodalPoint::AddEnergy(short vfld,double wt,double vx,double vy,double work)
+{	DispField *df = cvf[vfld]->df;
+	df->kinetic += wt*(vx*vx+vy*vy);
+	df->work += wt*work;
+}
+
+/*
+// Copy J integral terms from ghost node to real node
+void NodalPoint::CopyUGradientStressEnergy(NodalPoint *real)
+{	for(int vfld=0;vfld<maxCrackFields;vfld++)
+	{	if(CrackVelocityField::ActiveField(cvf[vfld]))
+		{	DispField *gdf = cvf[vfld]->df;
+			DispField *rdf = real->cvf[vfld]->df;
+			rdf->du.x += gdf->du.x;
+			rdf->du.y += gdf->du.y;
+			rdf->dv.x += gdf->dv.x;
+			rdf->dv.y += gdf->dv.y;
+			rdf->stress.xx += gdf->stress.xx;
+			rdf->stress.yy += gdf->stress.yy;
+			rdf->stress.xy += gdf->stress.xy;
+			rdf->kinetic += gdf->kinetic;
+			rdf->work += gdf->work;
+		}
+	}
+}
+*/
+
 // add material weights to an array
 // called by crack segment when finding crack tip materials
 // Future might want to keep above and below separte to find interface crack
@@ -624,28 +667,6 @@ void NodalPoint::AddMatWeights(double wt,double *matWeight)
 	{	for(i=0;i<numActiveMaterials;i++)
 			matWeight[i] += wt*df->matWeight[i];
 	}
-}
-
-// Add to kinetic energy and strain energy
-// wt includes density (g/cm^3), if axisymmtric include r for m/radian
-// kinetic energy if twice actual (to save divide by two) and units are
-//		g/cm^3 mm^2/sec^2 = 1e-3 N/m^2 = 1e-3 J/m^3
-//		to get N/mm^2 and account for 1/2, multiply by 0.5*1e-9
-// work has units N/m^2 = J/m^3
-void NodalPoint::AddEnergy(short vfld,double wt,double vx,double vy,double work)
-{	DispField *df = cvf[vfld]->df;
-	df->kinetic += wt*(vx*vx+vy*vy);
-	df->work += wt*work;
-}
-
-// add to nodal stress (in-plane only)
-// wt includes rho thus stress is N/m^2
-// Must scale by 1e-6 to get N/mm^2
-void NodalPoint::AddStress(short vfld,double wt,Tensor *stress)
-{	DispField *df = cvf[vfld]->df;
-	df->stress.xx += wt*stress->xx;
-	df->stress.yy += wt*stress->yy;
-	df->stress.xy += wt*stress->xy;
 }
 
 // Finish extrapolated strain field terms

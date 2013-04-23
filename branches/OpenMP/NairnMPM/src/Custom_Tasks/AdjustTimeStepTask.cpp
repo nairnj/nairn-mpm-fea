@@ -71,6 +71,7 @@ CustomTask *AdjustTimeStepTask::Initialize(void)
 }
 
 // called when MPM step is getting ready to do custom tasks
+// never uses extrapolations so no need to set needExtraps
 CustomTask *AdjustTimeStepTask::PrepareForStep(bool &needExtraps)
 {
 	if(customAdjustTime>0.)
@@ -84,7 +85,6 @@ CustomTask *AdjustTimeStepTask::PrepareForStep(bool &needExtraps)
 	else
 		doAdjust=archiver->WillArchive();
     
-    needExtraps = FALSE;
     return nextTask;
 }
 

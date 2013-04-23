@@ -31,9 +31,8 @@ class PropagateTask : public CustomTask
         // standard methods
 		virtual const char *TaskName(void);
         virtual CustomTask *Initialize(void);
+	
         virtual CustomTask *PrepareForStep(bool &);
-        virtual CustomTask *BeginExtrapolations(void);
-        virtual CustomTask *ParticleExtrapolation(MPMBase *,short);
         virtual CustomTask *StepCalculation(void);
         
         // special methods

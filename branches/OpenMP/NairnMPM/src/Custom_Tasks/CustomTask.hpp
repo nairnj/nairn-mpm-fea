@@ -25,19 +25,21 @@ class CustomTask
         CustomTask();
         virtual ~CustomTask();
         
-        // standard methods
+        // initialize
 		virtual const char *TaskName(void);
         virtual char *InputParam(char *,int &);
         virtual CustomTask *Initialize(void);
+	
+		// run the task
         virtual CustomTask *PrepareForStep(bool &);
-        virtual CustomTask *FinishForStep(void);
-        virtual CustomTask *BeginExtrapolations(void);
-        virtual CustomTask *EndExtrapolations(void);
-        virtual CustomTask *NodalExtrapolation(NodalPoint *,MPMBase *,short,int,double,short);
-        virtual CustomTask *ParticleCalculation(NodalPoint *,MPMBase *,short,int,double,double,double,double,short);
-        virtual CustomTask *ParticleExtrapolation(MPMBase *,short);
         virtual CustomTask *StepCalculation(void);
-        
+		virtual CustomTask *FinishForStep(void);
+	
+		// for particle to node extrapolations
+		virtual CustomTask *BeginExtrapolations(void);
+		virtual CustomTask *NodalExtrapolation(NodalPoint *,MPMBase *,short,int,double,short);
+		virtual CustomTask *EndExtrapolations(void);
+    
     private:
 };
 
