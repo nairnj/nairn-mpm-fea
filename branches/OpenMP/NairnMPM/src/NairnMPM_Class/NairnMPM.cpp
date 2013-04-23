@@ -35,11 +35,8 @@
 #include "NairnMPM_Class/ResetElementsTask.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
-#include <time.h>
-
-// NEWINCLUDE
 #include "Patches/GridPatch.hpp"
-
+#include <time.h>
 
 // global analysis object
 NairnMPM *fmobj=NULL;

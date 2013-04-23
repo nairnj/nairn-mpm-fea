@@ -13,8 +13,6 @@
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
-
-// NEWINCLUDE
 #include "Exceptions/CommonException.hpp"
 
 #pragma mark MatPoint3D::Constructors and Destructors

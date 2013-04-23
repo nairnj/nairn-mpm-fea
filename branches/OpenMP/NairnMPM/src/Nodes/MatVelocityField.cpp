@@ -18,11 +18,7 @@
 #include "Nodes/MatVelocityField.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
-
-// NEWINCLUDE
 #include "Cracks/CrackHeader.hpp"
-
-// NEWINCLUDE
 #include "Nodes/NodalPoint.hpp"
 
 #pragma mark INITIALIZATION

@@ -20,13 +20,11 @@
 #include "Cracks/CrackNode.hpp"
 #include "Nodes/NodalPoint2D.hpp"
 #include "MPM_Classes/MPMBase.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #ifdef HIERARCHICAL_CRACKS
 #include "Cracks/CrackLeaf.hpp"
 #endif
-
-// NEWINCLUDE
-#include "Exceptions/CommonException.hpp"
 
 
 // Include to find axisymmetric Jr using Broberg method

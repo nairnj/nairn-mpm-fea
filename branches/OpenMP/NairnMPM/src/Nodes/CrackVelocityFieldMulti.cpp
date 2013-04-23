@@ -15,8 +15,6 @@
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"
-
-// NEWINCLUDE
 #include "Exceptions/CommonException.hpp"
 
 

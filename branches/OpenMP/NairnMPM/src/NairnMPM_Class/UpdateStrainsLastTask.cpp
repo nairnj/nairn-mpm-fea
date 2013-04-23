@@ -38,8 +38,6 @@
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Cracks/CrackNode.hpp"
-
-// NEWINCLUDE
 #include "Patches/GridPatch.hpp"
 
 #pragma mark CONSTRUCTORS

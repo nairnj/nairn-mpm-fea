@@ -26,8 +26,6 @@
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
-
-// NEWINCLUDE
 #include "Exceptions/CommonException.hpp"
 
 #pragma mark CONSTRUCTORS

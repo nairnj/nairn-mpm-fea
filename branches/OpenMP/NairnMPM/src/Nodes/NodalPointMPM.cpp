@@ -23,8 +23,6 @@
 #include "Nodes/MatVelocityField.hpp"
 #include "Nodes/MaterialInterfaceNode.hpp"
 #include "MPM_Classes/MPMBase.hpp"
-
-// NEWINCLUDE
 #include "Custom_Tasks/TransportTask.hpp"
 
 // class statics

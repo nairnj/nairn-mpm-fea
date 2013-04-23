@@ -10,11 +10,9 @@
 *********************************************************************/
 
 #include "NairnMPM_Class/MeshInfo.hpp"
-#include <algorithm>
-
-// NEWINCLUDE
 #include "Patches/GridPatch.hpp"
 #include "MPM_Classes/MPMBase.hpp"
+#include <algorithm>
 
 // global class for grid information
 MeshInfo mpmgrid;

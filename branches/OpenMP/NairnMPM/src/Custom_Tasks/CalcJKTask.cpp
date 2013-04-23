@@ -14,8 +14,6 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackSegment.hpp"
-
-// NEWINCLUDE
 #include "Elements/ElementBase.hpp"
 #include "Patches/GridPatch.hpp"
 

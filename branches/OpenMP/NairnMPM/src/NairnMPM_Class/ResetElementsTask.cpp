@@ -22,8 +22,6 @@
 #include "Elements/ElementBase.hpp"
 #include "Exceptions/MPMWarnings.hpp"
 #include "Global_Quantities/BodyForce.hpp"
-
-// NEWINCLUDE
 #include "Patches/GridPatch.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Exceptions/CommonException.hpp"

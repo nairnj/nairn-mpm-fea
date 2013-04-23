@@ -26,8 +26,6 @@
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Nodes/NodalPoint.hpp"
-
-// NEWINCLUDE
 #include "Exceptions/CommonException.hpp"
 
 // global

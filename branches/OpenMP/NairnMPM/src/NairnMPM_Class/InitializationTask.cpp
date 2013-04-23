@@ -21,8 +21,6 @@
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
 #include "Cracks/CrackNode.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
-
-// NEWINCLUDE
 #include "Patches/GridPatch.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Elements/ElementBase.hpp"

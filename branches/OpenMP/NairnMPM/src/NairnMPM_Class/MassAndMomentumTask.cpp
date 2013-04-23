@@ -65,10 +65,8 @@
 #include "Boundary_Conditions/NodalConcBC.hpp"
 #include "Cracks/CrackNode.hpp"
 #include "Nodes/MaterialInterfaceNode.hpp"
-
-// NEWINCLUDE
 #include "Patches/GridPatch.hpp"
-// temporary
+
 #ifdef LOG_PROGRESS
 #include "System/ArchiveData.hpp"
 #endif

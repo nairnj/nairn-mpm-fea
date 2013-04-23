@@ -32,13 +32,11 @@
 #include "Cracks/CrackNode.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
+#include "Patches/GridPatch.hpp"
+#include "Exceptions/CommonException.hpp"
 #ifdef LOG_PROGRESS
 #include "System/ArchiveData.hpp"
 #endif
-
-// NEWINCLUDE
-#include "Patches/GridPatch.hpp"
-#include "Exceptions/CommonException.hpp"
 
 #pragma mark CONSTRUCTORS
 

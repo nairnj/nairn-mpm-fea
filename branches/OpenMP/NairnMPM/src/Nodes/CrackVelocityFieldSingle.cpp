@@ -12,8 +12,6 @@
 #include "Exceptions/CommonException.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
-
-// NEWINCLUDE
 #include "Cracks/CrackHeader.hpp"
 
 #pragma mark INITIALIZATION

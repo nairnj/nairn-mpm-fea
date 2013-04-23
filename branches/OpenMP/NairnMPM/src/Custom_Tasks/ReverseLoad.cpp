@@ -28,8 +28,6 @@
 #include "Materials/MaterialBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/RigidMaterial.hpp"
-
-// NEWINCLUDE
 #include "Exceptions/CommonException.hpp"
 
 #pragma mark INITIALIZE

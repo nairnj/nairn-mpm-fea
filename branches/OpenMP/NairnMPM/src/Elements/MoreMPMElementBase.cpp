@@ -12,8 +12,6 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/MaterialBase.hpp"
-
-// NEWINCLUDE
 #include "Exceptions/CommonException.hpp"
 
 #define MAXITER 100

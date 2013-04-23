@@ -48,8 +48,6 @@
 #include "Cracks/CrackSegment.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Materials/RigidMaterial.hpp"
-
-// NEWINCLUDE
 #include "Exceptions/CommonException.hpp"
 
 // global
