@@ -83,6 +83,7 @@ void NodalPoint::InitializeForTimeStep(void)
 
 // When there are cracks, call this method to allocate crack and material velocity fields
 // that are needed on this time step. Called once in initialization task
+// throws CommonException() on meory error
 short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 {
 	// CRAMP calculation
@@ -97,20 +98,20 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 				break;
 			case ABOVE_CRACK:
 			case BELOW_CRACK:
-				// First try to use cvf[1]. It can be used if empty or if already there for same crack and location
-				if(!CrackVelocityField::ActiveField(cvf[1]))
-				{	// cvf[1] is empty
-					if(cvf[1]==NULL)
-					{	cvf[1]=CrackVelocityField::CreateCrackVelocityField(cfld[0].loc,cfld[0].crackNum);
-						if(cvf[1]==NULL) throw CommonException("Memory error allocating crack velocity field 1.",
-															   "NodalPoint::AddCrackVelocityField");
-					}
-					else
-						cvf[1]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
+				// if cvf[1] is empty, then use it now
+				if(!CrackVelocityField::ActiveCrackField(cvf[1]))
+                {   if(cvf[1]==NULL)
+                    {	cvf[1]=CrackVelocityField::CreateCrackVelocityField(cfld[0].loc,cfld[0].crackNum);
+                        if(cvf[1]==NULL) 
+                            throw CommonException("Memory error allocating crack velocity field #1","NodalPoint::AddCrackVelocityField"); 
+                    }
+                    else
+                        cvf[1]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
 					vfld=1;
 				}
 				
-				// if the one crack crossed is same crack as cvf[1], then it should go in field [0] or field [1]
+                // if cvf[1] is not empty, but refers to same crack, the two options are:
+                //  a. same location so use it OR b. different location which means node on crack warning
 				else if(cvf[1]->crackNumber(FIRST_CRACK)==cfld[0].crackNum)
 				{	if(cvf[1]->location(FIRST_CRACK)==cfld[0].loc)
 					{	// found another point for [1]
@@ -119,31 +120,34 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 					else
 					{	// it can only be field 0
 						vfld=0;
-					
-						// Here means both above and below crack for field [1], which can only happen is a
-						// node is on a crack
-						if(warnings.Issue(CrackHeader::warnNodeOnCrack,11)==GAVE_WARNING) Describe();
-						
-						// tell field [0] it has crack from field 1 (but info currently not used)
-						if(cvf[0]->location(FIRST_CRACK)==NO_CRACK)
-							cvf[0]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
+
+						// Here means both above and below crack for field [1], which can only happen if a
+                        // node is on a crack
+                        if(warnings.Issue(CrackHeader::warnNodeOnCrack,11)==GAVE_WARNING) Describe();
+                    
+                        // tell field [0] it has crack from field 1 (but info currently not used)
+                        if(cvf[0]->location(FIRST_CRACK)==NO_CRACK)
+                            cvf[0]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
 					}
 				}
 				
 				// Here means found a new crack, which hopefully will be appropriate for cvf[2]
 				// Here means cvf[1]->crackNumber(FIRST_CRACK)!=cfld[0].crackNum
 				else
-				{	// create [2] is possible, otherwise see if same crack or not
-					if(!CrackVelocityField::ActiveField(cvf[2]))
-					{	if(cvf[2]==NULL)
-						{	cvf[2]=CrackVelocityField::CreateCrackVelocityField(cfld[0].loc,cfld[0].crackNum);
-							if(cvf[2]==NULL) throw CommonException("Memory error allocating crack velocity field 2.",
-																   "NodalPoint::AddCrackVelocityField");
-						}
-						else
-							cvf[2]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
+				{	// if cvf[2] is empty, then use it now
+					if(!CrackVelocityField::ActiveCrackField(cvf[2]))
+					{   if(cvf[2]==NULL)
+                        {	cvf[2]=CrackVelocityField::CreateCrackVelocityField(cfld[0].loc,cfld[0].crackNum);
+                            if(cvf[2]==NULL)
+                                throw CommonException("Memory error allocating crack velocity field #2","NodalPoint::AddCrackVelocityField"); 
+                        }
+                        else
+                            cvf[2]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
 						vfld=2;
 					}
+                    
+                    // if cvf[2] is not empty, but refers to same crack, the two options are:
+                    //  a. same location so use it OR b. different location which means node on crack warning
 					else if(cvf[2]->crackNumber(FIRST_CRACK)==cfld[0].crackNum)
 					{	if(cvf[2]->location(FIRST_CRACK)==cfld[0].loc)
 						{	// found another point for [2]
@@ -152,25 +156,27 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 						else
 						{	// it can only be field 0
 							vfld=0;
-							
-							// Here means both above and below crack for field [2], which can only happen is a
-							// node is on a crack
-							if(warnings.Issue(CrackHeader::warnNodeOnCrack,12)==GAVE_WARNING) Describe();
-							
-							// tell field [0] it has crack from field 2 (but info currently not used)
-							if(cvf[0]->location(SECOND_CRACK)==NO_CRACK)
-								cvf[0]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,SECOND_CRACK);
+
+							// Here means both above and below crack for field [2], which can only happen if a
+                            // node is on a crack
+                            if(warnings.Issue(CrackHeader::warnNodeOnCrack,12)==GAVE_WARNING) Describe();
+                                
+                            // tell field [0] it has crack from field 2 (but info currently not used)
+                            if(cvf[0]->location(SECOND_CRACK)==NO_CRACK)
+                                cvf[0]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,SECOND_CRACK);
 						}
 					}
+                    
+                    // here means crack differs from both cvf[1] and cvf[2] so it is a third crack on this node
 					else
 					{	// found a third crack at this node, try to use [0] and issue warning
 						vfld=0;
 						warnings.Issue(CrackHeader::warnThreeCracks,11);
-					}
+ 					}
 				}
 				
 				// add the crack normals to selected field
-				cvf[vfld]->AddNormals(&cfld[0].norm,FIRST_CRACK);
+                cvf[vfld]->AddNormals(&cfld[0].norm,FIRST_CRACK);
 				
 				break;
 			default:
@@ -180,12 +186,12 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 	
 	// two fields are always put into cvf[3] and it is only field with alternate crack information
 	else
-	{	if(!CrackVelocityField::ActiveField(cvf[3]))
+	{	if(!CrackVelocityField::ActiveCrackField(cvf[3]))
 		{	// store in any order
 			if(cvf[3]==NULL)
 			{	cvf[3]=CrackVelocityField::CreateCrackVelocityField(cfld[0].loc,cfld[0].crackNum);
-				if(cvf[3]==NULL) throw CommonException("Memory error allocating crack velocity field 3.",
-													   "NodalPoint::AddCrackVelocityField");
+				if(cvf[3]==NULL)
+                    throw CommonException("Memory error allocating crack velocity field #3","NodalPoint::AddCrackVelocityField"); 
 			}
 			else
 				cvf[3]->SetLocationAndCrack(cfld[0].loc,cfld[0].crackNum,FIRST_CRACK);
@@ -253,7 +259,7 @@ void NodalPoint::UseTheseFields(CrackVelocityField **rcvf)
 	{	if(rcvf[i]==NULL) continue;
 		
 		if(cvf[i]==NULL)
-		{	// create on in ghost that is not here
+		{	// create one in ghost that if not here
 			cvf[i]=CrackVelocityField::CreateCrackVelocityField(0,0);
 			if(cvf[i]==NULL) throw CommonException("Memory error allocating crack velocity field 3.",
 												   "NodalPoint::UseTheseFields");

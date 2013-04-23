@@ -77,14 +77,13 @@ void InitializationTask::Execute(void)
 			try
 			{	elref->GetShapeFunctionData(mpmptr);
 			}
-			catch(CommonException term)
+			catch(CommonException err)
 			{	if(initErr==NULL)
 				{
 #pragma omp critical
-					initErr = new CommonException(term);
+					initErr = new CommonException(err);
 				}
-			}
-			
+			}			
 		}
 	}
 	
@@ -92,76 +91,79 @@ void InitializationTask::Execute(void)
 	if(initErr!=NULL) throw *initErr;
 	
 	// allocate crack and material velocity fields needed for time step on real nodes
-	// can't be parallel unless add critical section any place a real node is changed
+    // tried critical sections when nodes changes, but it was slower
+    // can't use ghost nodes, because need to test all on real nodes
 	if(firstCrack!=NULL || maxMaterialFields>1)
-	{	int nds[maxShapeNodes];
+	{   int nds[maxShapeNodes];
+
 		for(int pn=0;pn<tp;pn++)
 		{
-			for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
-			{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
-				while(mpmptr!=NULL)
-				{	const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
-					int matfld = matID->GetField();									// material velocity field
-					
-					// get nodes and shape function for material point p
-					int i,numnds;
-					const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
-					elref->GetShapeFunctionNodes(&numnds,nds,mpmptr->GetNcpos(),mpmptr);
-					
-					// Add particle property to each node in the element
-					short vfld;
-					NodalPoint *ndptr;
-					for(i=1;i<=numnds;i++)
-					{	// use real node in this loop
-						ndptr = nd[nds[i]];
-						
-						if(firstCrack==NULL)
-						{	vfld=0;
-						}
-						else
-						{	// in CRAMP, find crack crossing and appropriate velocity field
-							CrackField cfld[2];
-							cfld[0].loc = NO_CRACK;			// NO_CRACK, ABOVE_CRACK, or BELOW_CRACK
-							cfld[1].loc = NO_CRACK;
-							int cfound=0;
-							Vector norm;
-							
-							CrackHeader *nextCrack = firstCrack;
-							while(nextCrack!=NULL)
-							{	vfld = nextCrack->CrackCross(mpmptr->pos.x,mpmptr->pos.y,ndptr->x,ndptr->y,&norm);
-								if(vfld!=NO_CRACK)
-								{	cfld[cfound].loc=vfld;
-									cfld[cfound].norm=norm;
+           // do non-rigid and rigid contact materials in patch pn
+            for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
+            {   MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
+                while(mpmptr!=NULL)
+                {	const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
+                    int matfld = matID->GetField();									// material velocity field
+                    
+                    // get nodes and shape function for material point p
+                    int i,numnds;
+                    const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
+                    elref->GetShapeFunctionNodes(&numnds,nds,mpmptr->GetNcpos(),mpmptr);
+                    
+                    // Add particle property to each node in the element
+                    short vfld;
+                    NodalPoint *ndptr;
+                    for(i=1;i<=numnds;i++)
+                    {	// use real node in this loop
+                        ndptr = nd[nds[i]];
+                        
+                        if(firstCrack==NULL)
+                        {	vfld=0;
+                        }
+                        else
+                        {	// in CRAMP, find crack crossing and appropriate velocity field
+                            CrackField cfld[2];
+                            cfld[0].loc = NO_CRACK;			// NO_CRACK, ABOVE_CRACK, or BELOW_CRACK
+                            cfld[1].loc = NO_CRACK;
+                            int cfound=0;
+                            Vector norm;
+                            
+                            CrackHeader *nextCrack = firstCrack;
+                            while(nextCrack!=NULL)
+                            {	vfld = nextCrack->CrackCross(mpmptr->pos.x,mpmptr->pos.y,ndptr->x,ndptr->y,&norm);
+                                if(vfld!=NO_CRACK)
+                                {	cfld[cfound].loc=vfld;
+                                    cfld[cfound].norm=norm;
 #ifdef IGNORE_CRACK_INTERACTIONS
-									cfld[cfound].crackNum=1;	// appears to always be same crack, and stop when found one
-									break;
+                                    cfld[cfound].crackNum=1;	// appears to always be same crack, and stop when found one
+                                    break;
 #else
-									cfld[cfound].crackNum=nextCrack->GetNumber();
-									cfound++;
-									if(cfound>1) break;			// stop if found two, if there are more then two, physics will be off
+                                    cfld[cfound].crackNum=nextCrack->GetNumber();
+                                    cfound++;
+                                    if(cfound>1) break;			// stop if found two, if there are more then two, physics will be off
 #endif
-								}
-								nextCrack=(CrackHeader *)nextCrack->GetNextObject();
-							}
-								
-							
-							// momentum vector (and allocate velocity field if needed)
-							vfld = ndptr->AddCrackVelocityField(matfld,cfld);
-							mpmptr->vfld[i] = vfld;
-						}
-						
-						// make sure material velocity field is created too
-						if(maxMaterialFields>1)
-							ndptr->AddMatVelocityField(vfld,matfld);
-					}
-					
-					// next non-rigid material point
-					mpmptr = (MPMBase *)mpmptr->GetNextObject();
-				}
-			}
+                                }
+                                nextCrack=(CrackHeader *)nextCrack->GetNextObject();
+                            }
+                                
+                            
+                            // momentum vector (and allocate velocity field if needed)
+                            vfld = ndptr->AddCrackVelocityField(matfld,cfld);
+                            mpmptr->vfld[i] = vfld;
+                        }
+                        
+                        // make sure material velocity field is created too
+                        if(maxMaterialFields>1)
+                            ndptr->AddMatVelocityField(vfld,matfld);
+                    }
+                    
+                    // next non-rigid material point
+                    mpmptr = (MPMBase *)mpmptr->GetNextObject();
+                }
+            }
 		}
     
-		// reduction of real nodes to ghost nodes
+		// copy fields on real nodes to ghost nodes
 		if(tp>1)
         {   for(int pn=0;pn<tp;pn++)
 				patches[pn]->InitializationReduction();

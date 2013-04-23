@@ -110,6 +110,7 @@ class CrackVelocityField
 	
 		// class methods
 		static bool ActiveField(CrackVelocityField *);
+        static bool ActiveCrackField(CrackVelocityField *);
 		static bool ActiveNonrigidField(CrackVelocityField *cvf);
 		static CrackVelocityField *CreateCrackVelocityField(short,int);
 	
@@ -117,6 +118,7 @@ class CrackVelocityField
 		// variables (changed in MPM time step)
 		int numberPoints;			// total number of materials points in this field/field [0] changed to sum of all in task 8
 		MatVelocityField **mvf;		// material velocity fields
+        bool hasCrackPoints;        // shows a particle sees this field during initialization
 		// unscaled nonrigid volume (ignores dilation) only used for imperfect interface forces and material contact
 		// unscaleRigidVolume is due to rigid contaft materials (type 8) (always zero unless multimaterial mode)
 };

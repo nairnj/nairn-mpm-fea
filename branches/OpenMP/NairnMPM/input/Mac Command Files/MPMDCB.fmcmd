@@ -9,7 +9,7 @@ Name "John Nairn"
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM"
 #analysis="Plane Strain MPM"
-Processors 1
+Processors 4
 
 ! Points per element
 #ppe=2

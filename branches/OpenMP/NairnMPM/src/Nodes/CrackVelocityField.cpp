@@ -39,7 +39,7 @@ CrackVelocityField::CrackVelocityField(short theLoc,int cnum)
 		
 	// clear all data
 	Zero(theLoc,cnum,FALSE);
-	
+	hasCrackPoints=TRUE;
 	df=NULL;
 }
 
@@ -69,6 +69,7 @@ void CrackVelocityField::Zero(short theLoc,int cnum,bool zeroMVFs)
 	ZeroVector(&norm[FIRST_CRACK]);
 	ZeroVector(&norm[SECOND_CRACK]);
 	numberPoints=0;
+    hasCrackPoints=FALSE;
 	
 	// can't call when constructing because subclass not ready yet for this
 	// pure virtual method
@@ -289,6 +290,7 @@ int CrackVelocityField::OppositeCrackTo(int cnum,int side)
 void CrackVelocityField::SetLocationAndCrack(short vfld,int cnum,int which)
 {	loc[which]=vfld;
 	crackNum[which]=cnum;
+    hasCrackPoints=TRUE;
 }
 
 // Get material velocity fields
@@ -339,6 +341,10 @@ void CrackVelocityField::SumAndClearRigidContactForces(Vector *fcontact,bool) {}
 // return true if referenced field is active in this time step
 bool CrackVelocityField::ActiveField(CrackVelocityField *cvf)
 { return cvf==NULL ? (bool)FALSE : (cvf->numberPoints>0) ; }
+
+// return true if referenced field is active in this time step during velocity field allocation
+bool CrackVelocityField::ActiveCrackField(CrackVelocityField *cvf)
+{ return cvf==NULL ? (bool)FALSE : cvf->hasCrackPoints ; }
 
 // return true if referenced field is active AND has some non-rigid particles
 bool CrackVelocityField::ActiveNonrigidField(CrackVelocityField *cvf)

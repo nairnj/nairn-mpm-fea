@@ -63,9 +63,11 @@ void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **rmvf)
 // throws CommonException() on memory error
 void CrackVelocityFieldMulti::AddMatVelocityField(int matfld)
 {	if(mvf[matfld]==NULL)
-	{	mvf[matfld]=new MatVelocityField(MaterialBase::GetMVFIsRigid(matfld));
-		if(mvf[matfld]==NULL) throw CommonException("Memory error allocating material velocity field.",
-												"CrackVelocityFieldMulti::AddMomentumTask1");
+	{   mvf[matfld]=new MatVelocityField(MaterialBase::GetMVFIsRigid(matfld));
+        if(mvf[matfld]==NULL)
+        {   throw CommonException("Memory error allocating material velocity field.",
+												"CrackVelocityFieldMulti::AddMatVelocityField");
+        }
 	}
 }
 
