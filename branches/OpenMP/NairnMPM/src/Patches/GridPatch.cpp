@@ -160,6 +160,24 @@ void GridPatch::GridForcesReduction(void)
 		ghosts[i]->GridForcesReduction();
 }
 
+// initialize ghost nodes for next time step
+void GridPatch::ZeroDisp()
+{   for(int i=0;i<numGhosts;i++)
+        ghosts[i]->ZeroDisp();
+}
+
+// When Grid Forces task is done transfer ghost node force to real nodes
+void GridPatch::JKTaskReduction(void)
+{	for(int i=0;i<numGhosts;i++)
+        ghosts[i]->JKTaskReduction();
+}
+
+// initialize ghost nodes for next time step
+void GridPatch::DeleteDisp(void)
+{   for(int i=0;i<numGhosts;i++)
+        ghosts[i]->DeleteDisp();
+}
+
 // add particle to this patch - it is put at the beginning
 void GridPatch::AddParticle(MPMBase *mptr)
 {

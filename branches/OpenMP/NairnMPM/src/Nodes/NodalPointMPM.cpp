@@ -582,6 +582,17 @@ void NodalPoint::ZeroDisp(void)
 	}
 }
 
+// Initialize fields on a ghost node for grid extrapolations for strains, etc.
+void NodalPoint::ZeroDisp(NodalPoint *real)
+{	
+	int i;
+	for(i=0;i<maxCrackFields;i++)
+	{	if(CrackVelocityField::ActiveNonrigidField(real->cvf[i]))
+            cvf[i]->CreateStrainField();
+	}
+}
+
+
 // delete any strain fields that were created
 void NodalPoint::DeleteDisp(void)
 {
@@ -589,6 +600,16 @@ void NodalPoint::DeleteDisp(void)
 	for(i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
 			cvf[i]->DeleteStrainField();
+	}
+}
+
+// delete any strain fields that were created in a ghost node
+void NodalPoint::DeleteDisp(NodalPoint *real)
+{
+	int i;
+	for(i=0;i<maxCrackFields;i++)
+	{	if(CrackVelocityField::ActiveNonrigidField(real->cvf[i]))
+            cvf[i]->DeleteStrainField();
 	}
 }
 
@@ -627,13 +648,13 @@ void NodalPoint::AddEnergy(short vfld,double wt,double vx,double vy,double work)
 	df->work += wt*work;
 }
 
-/*
 // Copy J integral terms from ghost node to real node
 void NodalPoint::CopyUGradientStressEnergy(NodalPoint *real)
 {	for(int vfld=0;vfld<maxCrackFields;vfld++)
-	{	if(CrackVelocityField::ActiveField(cvf[vfld]))
+    {   CrackVelocityField *rcvf = real->cvf[vfld];
+		if(CrackVelocityField::ActiveField(rcvf))
 		{	DispField *gdf = cvf[vfld]->df;
-			DispField *rdf = real->cvf[vfld]->df;
+			DispField *rdf = rcvf->df;
 			rdf->du.x += gdf->du.x;
 			rdf->du.y += gdf->du.y;
 			rdf->dv.x += gdf->dv.x;
@@ -643,10 +664,15 @@ void NodalPoint::CopyUGradientStressEnergy(NodalPoint *real)
 			rdf->stress.xy += gdf->stress.xy;
 			rdf->kinetic += gdf->kinetic;
 			rdf->work += gdf->work;
+            
+            // if more than one material get shape function extrapolation to each node
+            if(numActiveMaterials>1)
+            {   for(int i=0;i<numActiveMaterials;i++)
+                    rdf->matWeight[i] += gdf->matWeight[i];
+            }
 		}
 	}
 }
-*/
 
 // add material weights to an array
 // called by crack segment when finding crack tip materials

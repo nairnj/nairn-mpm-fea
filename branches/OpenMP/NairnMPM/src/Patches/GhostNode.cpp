@@ -156,6 +156,24 @@ void GhostNode::GridForcesReduction(void)
 	}
 }
 
+// initialize ghost nodes for next time step
+void GhostNode::ZeroDisp(void)
+{	if(ghost!=NULL)
+        ghost->ZeroDisp(real);
+}
+
+// When Grid Forces task is done transfer ghost node force to real nodes
+void GhostNode::JKTaskReduction(void)
+{	if(ghost!=NULL)
+        ghost->CopyUGradientStressEnergy(real);
+}
+
+// initialize ghost nodes for next time step
+void GhostNode::DeleteDisp(void)
+{	if(ghost!=NULL)
+        ghost->DeleteDisp(real);
+}
+
 #pragma mark GhostNode: Accessors
 
 // if has ghost node return it, otherwise return real node

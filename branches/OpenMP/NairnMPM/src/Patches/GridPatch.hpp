@@ -35,6 +35,9 @@ class GridPatch
         void MassAndMomentumReductionLast(void);
         void RezeroNodeTask6(double);
 		void GridForcesReduction(void);
+        void ZeroDisp(void);
+        void JKTaskReduction(void);
+        void DeleteDisp(void);
 		void AddParticle(MPMBase *);
 		void RemoveParticleAfter(MPMBase *,MPMBase *);
 	

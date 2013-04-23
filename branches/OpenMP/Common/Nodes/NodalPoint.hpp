@@ -104,7 +104,10 @@ class NodalPoint : public LinkedObject
 		// specific task methods
 		void PrepareForFields(void);
         void ZeroDisp(void);
+        void ZeroDisp(NodalPoint *);
+        void CopyUGradientStressEnergy(NodalPoint *);
         void DeleteDisp(void);
+        void DeleteDisp(NodalPoint *);
 		int NumberParticles(void);
 		int NumberNonrigidParticles(void);
 		void Describe(void);

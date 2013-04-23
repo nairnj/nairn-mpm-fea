@@ -54,6 +54,7 @@ void RunCustomTasksTask::Execute(void)
 	*/
     if(needExtrapolations)
     {	// call each task for initialization prior to extrapolations
+        cout << "# custom extrapolations" << endl;
     	nextTask=theTasks;
         while(nextTask!=NULL)
             nextTask=nextTask->BeginExtrapolations();

@@ -27,6 +27,8 @@ PropagateTask::PropagateTask()
 {
     propagateTask=this;
     arrested=FALSE;
+    totalPlastic = 0.;
+    totalPotential = 0.;
 }
 
 // Return name of this task
@@ -53,11 +55,13 @@ CustomTask *PropagateTask::PrepareForStep(bool &needExtraps)
     {	// ready to do crack propagation
     	doPropCalcs = TRUE;
         nextPropTime += propTime;
+        doEnergyBalanceCalcs = FALSE;
         
         // Make sure J and K are available if needed for current criterion
+        // also see if need totalPlastic and totalPotential
 		CrackHeader *nextCrack=firstCrack;
 		while(nextCrack!=NULL)
-		{	if(theJKTask!=NULL) theJKTask->ScheduleJK(nextCrack->CriterionNeeds());
+		{	if(theJKTask!=NULL) theJKTask->ScheduleJK(nextCrack->CriterionNeeds(doEnergyBalanceCalcs));
 			nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 		}
     }
@@ -74,25 +78,27 @@ CustomTask *PropagateTask::StepCalculation(void)
     if(!doPropCalcs) return nextTask;
 	
 	// particle extrapolation if needed
-    totalPlastic = 0.;
-    totalPotential = 0.;
-	for(int p=0;p<nmpmsNR;p++)
-	{   MPMBase *mpnt = mpm[p];
-		
-		// track total energies in J = N-m
-		//	mp is g, stored energy is N/m^2 cm^3/g, vel is mm/sec
-		// strainEnergy in J =  1.0e-6*mp*mpm[p]->GetStrainEnergy()
-		// plastic 1.0e-6*mp*mpm[p]->GetPlastEnergy()
-		// external work 1.e-9*mpm[p]->GetExtWork()
-		// kinetic energy 0.5e-9*mp*(vel.x*vel.x+vel.y*vel.y)
-		
-		// plastic energy per unit thickness (units of N) (only needed in some crack growth)
-		double mp = mpnt->mp;
-		totalPlastic += 1.0e-3*mp*mpnt->GetPlastEnergy()/mpnt->thickness();
-		totalPotential += 1.0e-3*(mp*mpnt->GetStrainEnergy()
-								+ 0.5e-3*mp*(mpnt->vel.x*mpnt->vel.x+mpnt->vel.y*mpnt->vel.y)
-								- 1.e-3*mpnt->GetExtWork())/mpnt->thickness();
-	}
+    if(doEnergyBalanceCalcs)
+    {   totalPlastic = 0.;
+        totalPotential = 0.;
+        for(int p=0;p<nmpmsNR;p++)
+        {   MPMBase *mpnt = mpm[p];
+            
+            // track total energies in J = N-m
+            //	mp is g, stored energy is N/m^2 cm^3/g, vel is mm/sec
+            // strainEnergy in J =  1.0e-6*mp*mpm[p]->GetStrainEnergy()
+            // plastic 1.0e-6*mp*mpm[p]->GetPlastEnergy()
+            // external work 1.e-9*mpm[p]->GetExtWork()
+            // kinetic energy 0.5e-9*mp*(vel.x*vel.x+vel.y*vel.y)
+            
+            // plastic energy per unit thickness (units of N) (only needed energy balance crack growth)
+            double mp = mpnt->mp;
+            totalPlastic += 1.0e-3*mp*mpnt->GetPlastEnergy()/mpnt->thickness();
+            totalPotential += 1.0e-3*(mp*mpnt->GetStrainEnergy()
+                                    + 0.5e-3*mp*(mpnt->vel.x*mpnt->vel.x+mpnt->vel.y*mpnt->vel.y)
+                                    - 1.e-3*mpnt->GetExtWork())/mpnt->thickness();
+        }
+    }
     
     CrackHeader *nextCrack;
     CrackSegment *crkTip;

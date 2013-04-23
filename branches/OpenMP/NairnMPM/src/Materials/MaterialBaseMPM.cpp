@@ -776,7 +776,7 @@ Vector MaterialBase::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 
 // Determine what calculations are needed for the propagation criterion
 // in this material - must match needs in ShouldPropagate() routine
-int MaterialBase::CriterionNeeds(int critIndex)
+int MaterialBase::CriterionNeeds(int critIndex,bool &usesEnergyBalance)
 {
 	switch(criterion[critIndex])
 	{	case MAXHOOPSTRESS:
@@ -789,6 +789,7 @@ int MaterialBase::CriterionNeeds(int critIndex)
 			return FALSE;
 		
 		case TOTALENERGYBALANCE:
+            usesEnergyBalance = TRUE;
 		case CRITICALERR:
 			return NEED_J;
 			

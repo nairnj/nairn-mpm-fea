@@ -157,7 +157,7 @@ void InitializationTask::Execute(void)
                             ndptr->AddMatVelocityField(vfld,matfld);
                     }
                     
-                    // next non-rigid material point
+                    // next material point
                     mpmptr = (MPMBase *)mpmptr->GetNextObject();
                 }
             }

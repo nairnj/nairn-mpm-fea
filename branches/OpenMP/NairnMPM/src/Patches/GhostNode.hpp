@@ -30,6 +30,9 @@ class GhostNode
         void MassAndMomentumReductionLast(void);
         void RezeroNodeTask6(double);
 		void GridForcesReduction(void);
+        void ZeroDisp(void);
+        void JKTaskReduction(void);
+        void DeleteDisp(void);
 	
 		// accessors
 		NodalPoint *GetNodePointer(void);

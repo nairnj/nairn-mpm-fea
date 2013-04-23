@@ -17,6 +17,7 @@
 
 // NEWINCLUDE
 #include "Elements/ElementBase.hpp"
+#include "Patches/GridPatch.hpp"
 
 // Global
 CalcJKTask *theJKTask=NULL;
@@ -78,6 +79,12 @@ CustomTask *CalcJKTask::FinishForStep(void)
     for(i=1;i<=nnodes;i++)
         nd[i]->DeleteDisp();
         
+    int totalPatches = fmobj->GetTotalNumberOfPatches();
+    if(totalPatches>1)
+    {	for(i=0;i<totalPatches;i++)
+            patches[i]->DeleteDisp();
+    }
+    
     return nextTask;
 }
 
@@ -87,56 +94,86 @@ CustomTask *CalcJKTask::StepCalculation(void)
     // skip if not needed
     if(!getJKThisStep) return nextTask;
     
+    int nds[maxShapeNodes];
+    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+    
     // set up strain fields for crack extrapolations
-    int i;
-    for(i=1;i<=nnodes;i++)
-        nd[i]->ZeroDisp();
+#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
+    {
+#pragma omp for
+        for(int i=1;i<=nnodes;i++)
+            nd[i]->ZeroDisp();
 	
-	int nds[maxShapeNodes];
-	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
-	
-	// particle loop or nonrigid and rigid contact particles
-	for(int p=0;p<nmpmsNR;p++)
-	{	MPMBase *mpnt = mpm[p];
+#ifdef _OPENMP
+		int pn = omp_get_thread_num();
+#else
+		int pn = 0;
+#endif
+        
+        // zero displacement fields on ghost nodes
+        patches[pn]->ZeroDisp();
+        
+        // loop over non-rigid particles in patch
+        MPMBase *mpnt = patches[pn]->GetFirstBlockPointer(FIRST_NONRIGID);
+        while(mpnt!=NULL)
+        {   // material reference
+            const MaterialBase *matref = theMaterials[mpnt->MatID()];
 		
-		// Load element coordinates
-		const MaterialBase *matref = theMaterials[mpnt->MatID()];
+            // find shape functions and derviatives
+            int numnds;
+            const ElementBase *elref = theElements[mpnt->ElemID()];
+            elref->GetShapeGradients(&numnds,fn,nds,mpnt->GetNcpos(),xDeriv,yDeriv,zDeriv,mpnt);
 		
-		// find shape functions and derviatives
-		int numnds;
-		const ElementBase *elref = theElements[mpnt->ElemID()];
-		elref->GetShapeGradients(&numnds,fn,nds,mpnt->GetNcpos(),xDeriv,yDeriv,zDeriv,mpnt);
-		
-		// Add particle property to each node in the element
-		for(i=1;i<=numnds;i++)
-		{   // global mass matrix
-			short vfld=(short)mpnt->vfld[i];				// velocity field to use
-			double fnmp=fn[i]*mpnt->mp;
+            // Add particle property to each node in the element
+            NodalPoint *ndmi;
+            short vfld;
+            double fnmp;
+            for(int i=1;i<=numnds;i++)
+            {   // global mass matrix
+                vfld=(short)mpnt->vfld[i];				// velocity field to use
+                fnmp=fn[i]*mpnt->mp;
 			
-			// possible extrapolation to the nodes
-			NodalPoint *ndmi = nd[nds[i]];
+#ifdef _OPENMP
+                ndmi = patches[pn]->GetNodePointer(nds[i]);
+#else
+                ndmi = nd[nds[i]];
+#endif
 			
-			// get 2D gradient terms (dimensionless) and track material (if needed)
-			int activeMatField = matref->GetActiveField();
-			ndmi->AddUGradient(vfld,fnmp,mpnt->GetDuDx(),mpnt->GetDuDy(),mpnt->GetDvDx(),mpnt->GetDvDy(),activeMatField,mpnt->mp);
+                // get 2D gradient terms (dimensionless) and track material (if needed)
+                int activeMatField = matref->GetActiveField();
+                ndmi->AddUGradient(vfld,fnmp,mpnt->GetDuDx(),mpnt->GetDuDy(),mpnt->GetDvDx(),mpnt->GetDvDy(),activeMatField,mpnt->mp);
 			
-			// get a nodal stress (rho*stress has units N/m^2)
-			fnmp *= matref->rho;
-			Tensor sp = mpnt->ReadStressTensor();
-			ndmi->AddStress(vfld,fnmp,&sp);
+                // get a nodal stress (rho*stress has units N/m^2)
+                fnmp *= matref->rho;
+                Tensor sp = mpnt->ReadStressTensor();
+                ndmi->AddStress(vfld,fnmp,&sp);
 			
-			// get energy and rho*energy has units J/m^3 = N/m^2
-			// In axisymmetric, energy density is 2 pi m U/(2 pi rp Ap), but since m = rho rp Ap
-			//		energy density it still rho*energy
-			ndmi->AddEnergy(vfld,fnmp,mpnt->vel.x,mpnt->vel.y,mpnt->GetStrainEnergy());
+                // get energy and rho*energy has units J/m^3 = N/m^2
+                // In axisymmetric, energy density is 2 pi m U/(2 pi rp Ap), but since m = rho rp Ap
+                //		energy density it still rho*energy
+                ndmi->AddEnergy(vfld,fnmp,mpnt->vel.x,mpnt->vel.y,mpnt->GetStrainEnergy());
 			
-		}
-	}
-	
+            }
+            
+            // next non-rigid material point
+            mpnt = (MPMBase *)mpnt->GetNextObject();
+        }
+    }
+        
+    // copy ghost to real nodes
+    int totalPatches = fmobj->GetTotalNumberOfPatches();
+    if(totalPatches>1)
+    {	for(int j=0;j<totalPatches;j++)
+            patches[j]->JKTaskReduction();
+    }
+ 	
     // finish strain fields
-    for(i=1;i<=nnodes;i++)
+#pragma omp parallel for
+    for(int i=1;i<=nnodes;i++)
         nd[i]->CalcStrainField();
-	
+    
+    // No Do the J Integral calculations
+    
 	int inMat;
     Vector d,C;
     CrackSegment *crkTip;
@@ -147,7 +184,7 @@ CustomTask *CalcJKTask::StepCalculation(void)
         
         // if material known, find KI and KII for crack tips
         if(getJKThisStep & NEED_K)
-        {   for(i=START_OF_CRACK;i<=END_OF_CRACK;i++)
+        {   for(int i=START_OF_CRACK;i<=END_OF_CRACK;i++)
             {   crkTip=nextCrack->GetCrackTip(i);
                 inMat=crkTip->tipMatnum;
                 if(inMat>0)

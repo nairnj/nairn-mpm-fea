@@ -27,7 +27,7 @@ EndXMLData
 #matID="isotropic"
 
 ! Traction law for pre-existing crack or new crack (or "" to omit)
-#tractID="triangular"
+#tractID=""
 
 ! temperature option to test energy coupling
 StressFreeTemp 294
@@ -38,7 +38,7 @@ StressFreeTemp 294
 #rho=1.2
 #nuBase=.33
 #aBase=60
-#JIc=250
+#JIc=500
 
 ! Dimensions
 #cwidth=2				! cell width
@@ -49,13 +49,13 @@ StressFreeTemp 294
 
 ! crack properties
 #tip=50					! crack tip location
-#trtip=40				! for additional traction law crack surface
+#trtip=0				! for additional traction law crack surface
 
 ! Load by stress or by velocity (if stress<=0)
 #loading="force"		! Loading = "rigid", "force", "traction"
 #rate=.05				! fraction on axial wave speed
 #endDisp=2				! end deflection in mm
-#propagate=""	        ! empty for none, or "critical err"
+#propagate="critical err"	        ! empty for none, or "critical err"
 
 ! Loading rate
 #hold=0				! hold time (multiple of loading time)
@@ -177,7 +177,11 @@ GrowCrackLine #tip+(#cwidth/10),-1e-6,#res,#matID
 
 if #trtip>0
   #res=int(2*#trtip/#cwidth)+1
-  GrowCrackLine #tip-#trtip+(#cwidth/10),-1e-6,#res,#matID,#tractID
+  if #tractID!=""
+    GrowCrackLine #tip-#trtip+(#cwidth/10),-1e-6,#res,#matID,#tractID
+  else
+    GrowCrackLine #tip-#trtip+(#cwidth/10),-1e-6,#res,#matID
+  endif
 endif
 ! ***** BOUNDARY CONDITION SECTION *****
 MoveLine -#cwidth/2,-#depth-#top,-#cwidth/2,#depth+#top,0.51*#cwidth

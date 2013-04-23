@@ -112,7 +112,7 @@ class CrackHeader : public LinkedObject
 		CrackSegment *GetCrackTip(int);
 		CrackSegment *GetAdjToCrackTip(int);
 		int GetWhichTip(CrackSegment *);
-		int CriterionNeeds(void);
+		int CriterionNeeds(bool &);
 		void GetCOD(CrackSegment *,Vector &,bool);
 		void CrackTipAndDirection(int,CrackSegment **,Vector &);
 		void AddTractionForce(void);

@@ -2342,7 +2342,7 @@ bool CrackHeader::GetHasTractionLaws(void) { return hasTractionLaws; }
 
 // Deterimine what needs this crack tip has to do propagation calculation
 // Return 0 (no need), NEED_JANDK, or NEED_J
-int CrackHeader::CriterionNeeds(void)
+int CrackHeader::CriterionNeeds(bool &totalEnergyNeeded)
 {
 	int thisCrackNeeds=0;
 	int crkTipIdx;
@@ -2357,9 +2357,9 @@ int CrackHeader::CriterionNeeds(void)
 		if(tipCrk->tipMatnum<0) continue;
 		
 		// check crack tip material criterion (and alternate criterion if there)
-		thisCrackNeeds|=theMaterials[tipCrk->tipMatnum-1]->CriterionNeeds(0);
+		thisCrackNeeds|=theMaterials[tipCrk->tipMatnum-1]->CriterionNeeds(0,totalEnergyNeeded);
 		if(GetAllowAlternate(crkTipIdx))
-			thisCrackNeeds|=theMaterials[tipCrk->tipMatnum-1]->CriterionNeeds(1);
+			thisCrackNeeds|=theMaterials[tipCrk->tipMatnum-1]->CriterionNeeds(1,totalEnergyNeeded);
 	}
 	
 	// return the result
