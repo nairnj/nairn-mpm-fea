@@ -61,17 +61,8 @@ void UpdateStrainsLastTask::Execute(void)
 		for(int i=1;i<=nnodes;i++)
 			nd[i]->RezeroNodeTask6(timestep);
 		
-#ifdef _OPENMP
-		int pn = omp_get_thread_num();
-#else
-		int pn = 0;
-#endif
-/*
-	int tp = fmobj->GetTotalNumberOfPatches();
-	for(int pn=0;pn<tp;pn++)
-	{
-*/
         // zero ghost nodes on this patch
+        int pn = GetPatchNumber();
 		patches[pn]->RezeroNodeTask6(timestep);
         
         // loop over non-rigid particles only - this parallel part changes only particle p
@@ -94,15 +85,12 @@ void UpdateStrainsLastTask::Execute(void)
             short vfld;
             NodalPoint *ndptr;
             for(int i=1;i<=numnds;i++)
-            {
-#ifdef _OPENMP
-                ndptr = patches[pn]->GetNodePointer(nds[i]);
-#else
-                ndptr = nd[nds[i]];
-#endif
+            {   // get node pointer
+                ndptr = GetNodePointer(pn,nds[i]);
+                
+                // add mass and momentum this task
                 vfld = (short)mpmptr->vfld[i];
                 ndptr->AddMassMomentumLast(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
-
             }
             
             // next non-rigid material point

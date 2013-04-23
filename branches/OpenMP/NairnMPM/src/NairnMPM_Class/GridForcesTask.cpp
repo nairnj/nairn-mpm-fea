@@ -58,18 +58,11 @@ void GridForcesTask::Execute(void)
 	
 	// loop over non-rigid particles - this parallel part changes only particle p
 	// forces are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
-/*
-    int tp = fmobj->GetTotalNumberOfPatches();
-    for(int pn=0;pn<tp;pn++)
-    {
-*/
 #pragma omp parallel private(t,numnds,nds,fn,xDeriv,yDeriv,zDeriv)
 	{
-#ifdef _OPENMP
-		int pn = omp_get_thread_num();
-#else
-		int pn = 0;
-#endif
+        // patch for this thread
+        int pn = GetPatchNumber();
+        
 		try
 		{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(FIRST_NONRIGID);
 			while(mpmptr!=NULL)
@@ -99,11 +92,7 @@ void GridForcesTask::Execute(void)
 					bodyFrc.AddGravity(&theFrc,mpmptr->mp,fn[i]);
 					
 					// add the total force to nodal point
-#ifdef _OPENMP
-					ndptr = patches[pn]->GetNodePointer(nds[i]);
-#else
-					ndptr = nd[nds[i]];
-#endif
+                    ndptr = GetNodePointer(pn,nds[i]);
 					ndptr->AddFtotTask3(vfld,matfld,&theFrc);
 					
 					// transport forces

@@ -9,11 +9,15 @@
 #include "NairnMPM_Class/MPMTask.hpp"
 #include "System/ArchiveData.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
+#include "Patches/GridPatch.hpp"
+#include "Nodes/NodalPoint.hpp"
 
-#pragma mark CONSTRUCTORS
+#pragma mark MPMTask::Constructors
 
 // constructor
 MPMTask::MPMTask(const char *name) : CommonTask(name) {}
+
+#pragma mark MPMTask::Progress and Profiling Methods
 
 #ifdef LOG_PROGRESS
 
@@ -55,3 +59,24 @@ void MPMTask::WriteProfileResults(int nsteps,double timePerStep,double eTimePerS
 
 #endif
 
+#pragma mark MPMTASK::Static Parallel Methods
+
+// get patch number of the current thread (or 0 if not parallel
+int MPMTask::GetPatchNumber(void)
+{
+#ifdef _OPENMP
+    return omp_get_thread_num();
+#else
+    return 0;
+#endif
+}
+
+// get pointer to node, which might be a ghost node in parallel code
+NodalPoint *MPMTask::GetNodePointer(int pn,int nodeNum)
+{
+#ifdef _OPENMP
+    return patches[pn]->GetNodePointer(nodeNum);
+#else
+    return nd[nodeNum];
+#endif
+}

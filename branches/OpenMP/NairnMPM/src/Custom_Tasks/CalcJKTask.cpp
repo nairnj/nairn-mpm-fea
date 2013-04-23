@@ -16,6 +16,7 @@
 #include "Cracks/CrackSegment.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Patches/GridPatch.hpp"
+#include "NairnMPM_Class/MPMTask.hpp"
 
 // Global
 CalcJKTask *theJKTask=NULL;
@@ -102,13 +103,8 @@ CustomTask *CalcJKTask::StepCalculation(void)
         for(int i=1;i<=nnodes;i++)
             nd[i]->ZeroDisp();
 	
-#ifdef _OPENMP
-		int pn = omp_get_thread_num();
-#else
-		int pn = 0;
-#endif
-        
         // zero displacement fields on ghost nodes
+        int pn = MPMTask::GetPatchNumber();
         patches[pn]->ZeroDisp();
         
         // loop over non-rigid particles in patch
@@ -130,12 +126,9 @@ CustomTask *CalcJKTask::StepCalculation(void)
             {   // global mass matrix
                 vfld=(short)mpnt->vfld[i];				// velocity field to use
                 fnmp=fn[i]*mpnt->mp;
-			
-#ifdef _OPENMP
-                ndmi = patches[pn]->GetNodePointer(nds[i]);
-#else
-                ndmi = nd[nds[i]];
-#endif
+                
+                // get node pointer
+                ndmi = MPMTask::GetNodePointer(pn,nds[i]);
 			
                 // get 2D gradient terms (dimensionless) and track material (if needed)
                 int activeMatField = matref->GetActiveField();

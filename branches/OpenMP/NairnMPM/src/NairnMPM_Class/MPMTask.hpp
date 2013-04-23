@@ -13,6 +13,8 @@
 
 #define _MPMTASK_
 
+class NodalPoint;
+
 // activate to track time in each task and print results at the end
 #define _PROFILE_TASKS_
 
@@ -35,6 +37,10 @@ class MPMTask : public CommonTask
 		void TrackTimes(double,double);
 #endif
 	
+        // class methods
+        static int GetPatchNumber();
+        static NodalPoint *GetNodePointer(int,int);
+    
 	protected:
 	
 };

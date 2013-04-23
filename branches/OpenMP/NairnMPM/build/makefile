@@ -555,7 +555,8 @@ StartOutput.o : $(StartOutput).cpp $(dprefix) $(NairnMPM).hpp $(MaterialBase).hp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(StartOutput).cpp
 MeshInfo.o : $(MeshInfo).cpp $(dprefix) $(MeshInfo).hpp $(GridPatch).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MeshInfo).cpp
-MPMTask.o : $(MPMTask).cpp $(dprefix) $(MPMTask).hpp $(CommonTask).hpp $(ArchiveData).hpp $(CommonArchiveData).hpp
+MPMTask.o : $(MPMTask).cpp $(dprefix) $(MPMTask).hpp $(CommonTask).hpp $(ArchiveData).hpp $(CommonArchiveData).hpp $(GridPatch).hpp \
+            $(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MPMTask).cpp
 InitializationTask.o : $(InitializationTask).cpp $(dprefix) $(InitializationTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(NodalPoint).hpp $(MPMWarnings).hpp $(MatPtLoadBC).hpp $(CrackNode).hpp $(ThermalRamp).hpp \
@@ -813,7 +814,7 @@ CustomTask.o : $(CustomTask).cpp $(dprefix) $(CustomTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CustomTask).cpp
 CalcJKTask.o : $(CalcJKTask).cpp $(dprefix) $(CalcJKTask).hpp $(MaterialBase).hpp $(CustomTask).hpp $(GridPatch).hpp \
 			$(ArchiveData).cpp $(CommonArchiveData).hpp $(NodalPoint).hpp $(NairnMPM).hpp $(MPMBase).hpp $(ElementBase).hpp \
-			$(CrackHeader).hpp $(CrackSegment).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
+			$(CrackHeader).hpp $(CrackSegment).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(MPMTask).hpp $(CommonTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CalcJKTask).cpp
 PropagateTask.o : $(PropagateTask).cpp $(dprefix) $(PropagateTask).hpp $(CalcJKTask).hpp $(NairnMPM).hpp \
 			$(MaterialBase).hpp $(ElementBase).hpp $(CustomTask).hpp $(MPMBase).hpp $(ConductionTask).hpp \

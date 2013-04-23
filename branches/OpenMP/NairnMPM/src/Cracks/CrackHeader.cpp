@@ -1084,10 +1084,9 @@ void CrackHeader::JIntegral(void)
 			nextPt=crackPt;
 			CrackSegment *startSeg=firstSeg,*endSeg;
 			while(TRUE)
-			{   // error if grid not alng x and y axes
+			{   // error if grid not along x and y axes
 				if(nextPt->orient==ANGLED)
-				{	throw CommonException("The J Contour is not along x and y axes.",
-									"CrackHeader::JIntegral");
+				{	throw "The J Contour is not along x and y axes.";
 				}
 				
 				//p3,p4--two end points of eack crack segment
@@ -1101,14 +1100,12 @@ void CrackHeader::JIntegral(void)
 					if(SegmentsCross(nextPt,p3,p4,&crossPt1))
 					{	crossCount++;
 						if(crossCount>2)
-						{	throw CommonException("More than 2 crossings between J-path and a crack",
-									"CrackHeader::JIntegral");
+						{	throw "More than 2 crossings between J-path and a crack";
 						}
 						else if(crossCount==2)
 						{	if(!(DbleEqual(crossPt.x,crossPt1.x)&&DbleEqual(crossPt.y,crossPt1.y)))
 							{	if(secondTry)
-								{   throw CommonException("Two different crossings between J-path and a crack",
-															"CrackHeader::JIntegral");
+								{   throw "Two different crossings between J-path and a crack";
 								}
 								else
 									throw "";
@@ -1129,8 +1126,7 @@ void CrackHeader::JIntegral(void)
 				if(nextPt==crackPt) break;
 			}
 			if(crossCount<1)
-			{   throw CommonException("A crack does not cross its J path",
-						"CrackHeader::JIntegral");
+			{   throw "A crack does not cross its J path";
 			}
 			
 			// find crack particle closer to the crack tipstart
@@ -1413,9 +1409,6 @@ void CrackHeader::JIntegral(void)
 			
 			// end of try block on J calculation
 			secondTry=FALSE;
-		}
-		catch(CommonException term)
-		{	throw term;
 		}
 		catch(const char *msg)
 		{	// throwing "" signals to try again with the next nearest node

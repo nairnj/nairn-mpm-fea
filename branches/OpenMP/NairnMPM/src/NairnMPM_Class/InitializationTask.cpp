@@ -54,19 +54,9 @@ void InitializationTask::Execute(void)
 			nd[i]->InitializeForTimeStep();
 		
         // zero ghost nodes in patch for this thread
-#ifdef _OPENMP
-		int pn = omp_get_thread_num();
-#else
-		int pn = 0;
-#endif
+        int pn = GetPatchNumber();
 		patches[pn]->InitializeForTimeStep();
-/*		
-		// if needed, initialize ghost nodes too
-		if(tp>1)
-		{	for(int pn=0;pn<tp;pn++)
-				patches[pn]->InitializeForTimeStep();
-		}
-*/		
+
 		// particle calculations
 #pragma omp for
 		for(int p=0;p<nmpmsRC;p++)

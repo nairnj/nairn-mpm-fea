@@ -113,18 +113,10 @@ void MassAndMomentumTask::Execute(void)
 	
 	// loop over non-rigid and rigid contact particles - this parallel part changes only particle p
 	// mass, momenta, etc are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
-/*
-	int tp = fmobj->GetTotalNumberOfPatches();
-	for(int pn=0;pn<tp;pn++)
-	{
-*/
 #pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
 	{
-#ifdef _OPENMP
-		int pn = omp_get_thread_num();
-#else
-		int pn = 0;
-#endif
+        // thread for patch pn
+		int pn = GetPatchNumber();
 		try
 		{	for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
 			{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
@@ -144,12 +136,9 @@ void MassAndMomentumTask::Execute(void)
 					short vfld;
 					NodalPoint *ndptr;
 					for(i=1;i<=numnds;i++)
-					{
-#ifdef _OPENMP
-						ndptr = patches[pn]->GetNodePointer(nds[i]);
-#else
-						ndptr = nd[nds[i]];
-#endif
+					{   // get node pointer
+                        ndptr = GetNodePointer(pn,nds[i]);
+                        
 						// momentum vector (and allocate velocity field if needed)
 						vfld = mpmptr->vfld[i];
 						ndptr->AddMassMomentum(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],
