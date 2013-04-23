@@ -37,7 +37,7 @@ CrackVelocityField::CrackVelocityField(short theLoc,int cnum)
 											   "CrackVelocityField::CrackVelocityField");
 	}
 		
-	// clear all data
+	// clear all data (except hasCrackPoints)
 	Zero(theLoc,cnum,FALSE);
 	hasCrackPoints=TRUE;
 	df=NULL;
