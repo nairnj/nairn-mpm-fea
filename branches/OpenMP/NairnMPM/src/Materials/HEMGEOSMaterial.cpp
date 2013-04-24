@@ -167,10 +167,11 @@ void HEMGEOSMaterial::ValidateForUse(int np) const
 
 #pragma mark MGSCGLMaterial::Custom Methods
 
-// Isotropic material can use read-only initial properties
+// Get plastic properties or NULL on memory error
 void *HEMGEOSMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
 {
 	HEPlasticProperties *p = (HEPlasticProperties *)malloc(sizeof(HEPlasticProperties));
+	if(p==NULL) throw CommonException("Memory error copying material properties","HEMGEOSMaterial::GetCopyOfMechanicalProps");
  	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np);
 	// Gred and Kred found in UpdatePressure() - do not use before that
 	return p;

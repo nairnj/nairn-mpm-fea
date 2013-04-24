@@ -167,10 +167,11 @@ char *HEIsotropic::InitHistoryData(void)
 
 #pragma mark HEIsotropic:Methods
 
-// Isotropic material can use read-only initial properties
+// Get elastic and plastic properties, return null on error
 void *HEIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
 {
 	HEPlasticProperties *p = (HEPlasticProperties *)malloc(sizeof(HEPlasticProperties));
+	if(p==NULL) throw CommonException("Memory error copying material properties","HEIsotropic::GetCopyOfMechanicalProps");
  	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np);
 	double Gratio = plasticLaw->GetShearRatio(mptr,mptr->GetPressure(),1.,p->hardProps);
 	p->Gred = G1sp*Gratio;

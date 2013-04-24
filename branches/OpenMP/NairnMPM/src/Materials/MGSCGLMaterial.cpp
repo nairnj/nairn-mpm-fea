@@ -162,6 +162,7 @@ void MGSCGLMaterial::ValidateForUse(int np) const
 void *MGSCGLMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
 {
 	PlasticProperties *p = (PlasticProperties *)malloc(sizeof(PlasticProperties));
+	if(p==NULL) throw CommonException("Memory error copying material properties","MGSCGLMaterial::GetCopyOfMechanicalProps");
 	*p = pr;
  	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np);
 	

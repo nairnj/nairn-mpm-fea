@@ -12,6 +12,7 @@
 
 #include "Materials/SLMaterial.hpp"
 #include "MPM_Classes/MPMBase.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark SLMaterial::Constructors and Destructors
 
@@ -110,6 +111,7 @@ int SLMaterial::HistoryDoublesNeeded(void) const { return 3; }
 void *SLMaterial::GetCopyOfHardeningProps(MPMBase *mptr,int np)
 {
 	SLProperties *p = (SLProperties *)malloc(sizeof(SLProperties));
+	if(p==NULL) throw CommonException("Memory error copying material properties","SLMaterial::GetCopyOfHardeningProps");
 	return p;
 }
 

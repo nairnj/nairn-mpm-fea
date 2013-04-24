@@ -12,6 +12,7 @@
 #include "Materials/JohnsonCook.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark JohnsonCook::Constructors and Destructors
 
@@ -105,6 +106,7 @@ const char *JohnsonCook::VerifyAndLoadProperties(int np)
 void *JohnsonCook::GetCopyOfHardeningProps(MPMBase *mptr,int np)
 {
 	JCProperties *p = (JCProperties *)malloc(sizeof(JCProperties));
+	if(p==NULL) throw CommonException("Memory error copying material properties","JohnsonCook::GetCopyOfHardeningProps");
 	
 	// homologous temperature (as needed by Johnson and Cook)
 	p->hmlgTemp=(mptr->pPreviousTemperature - thermal.reference) /

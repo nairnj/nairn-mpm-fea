@@ -205,14 +205,16 @@ void AnisoPlasticity::PrintYieldProperties(void) const
 
 #pragma mark AnisoPlasticity::Methods
 
-// Isotropic material can use read-only initial properties
+// Get current anisotropic properties (NULL on memry error)
 void *AnisoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
 {
 	// full plastic properties
 	AnisoPlasticProperties *p = (AnisoPlasticProperties *)malloc(sizeof(AnisoPlasticProperties));
+	if(p==NULL) throw CommonException("Memory error copying material properties","AnisoPlasticity::GetCopyOfMechanicalProps");
 	
 	// create new elastic properties
 	p->ep = (ElasticProperties *)malloc(sizeof(ElasticProperties));
+	if(p->ep==NULL) throw CommonException("Memory error copying material properties","AnisoPlasticity::GetCopyOfMechanicalProps");
 	if(np!=THREED_MPM)
 		FillElasticProperties2D(p->ep,TRUE,mptr->GetRotationZ(),np);
 	else

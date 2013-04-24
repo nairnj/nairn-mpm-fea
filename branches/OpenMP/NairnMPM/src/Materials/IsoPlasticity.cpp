@@ -127,6 +127,7 @@ char *IsoPlasticity::InitHistoryData(void)
 void *IsoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
 {
 	PlasticProperties *p = (PlasticProperties *)malloc(sizeof(PlasticProperties));
+	if(p==NULL) throw CommonException("Memory error copying material properties","IsoPlasticity::GetCopyOfMechanicalProps");
 	*p = pr;
  	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np);
 	double Gratio = plasticLaw->GetShearRatio(mptr,mptr->GetPressure(),1.,p->hardProps);

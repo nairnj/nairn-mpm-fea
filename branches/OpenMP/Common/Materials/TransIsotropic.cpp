@@ -11,6 +11,7 @@
 	#include "Custom_Tasks/ConductionTask.hpp"
 	#include "Custom_Tasks/DiffusionTask.hpp"
 	#include "MPM_Classes/MPMBase.hpp"
+	#include "Exceptions/CommonException.hpp"
 #endif
 
 #pragma mark TransIsotropic::Constructors and Destructors
@@ -215,6 +216,7 @@ void *TransIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
 	
 	// create new elastic properties
 	ElasticProperties *p = (ElasticProperties *)malloc(sizeof(ElasticProperties));
+	if(p==NULL) throw CommonException("Memory error copying material properties","TransIsotropic::GetCopyOfMechanicalProps");
 	if(np!=THREED_MPM)
 		FillElasticProperties2D(p,TRUE,mptr->GetRotationZ(),np);
 	else

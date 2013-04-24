@@ -34,6 +34,7 @@
 #include "Custom_Tasks/TransportTask.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Cracks/CrackNode.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -46,19 +47,34 @@ UpdateMomentaTask::UpdateMomentaTask(const char *name) : MPMTask(name)
 // Update grid momenta and transport rates
 void UpdateMomentaTask::Execute(void)
 {
+	CommonException *umErr = NULL;
+	
 #pragma omp parallel for
 	for(int i=1;i<=nnodes;i++)
 	{	NodalPoint *ndptr = nd[i];
 		ndptr->UpdateMomentaOnNode(timestep);
 		
 		if(fmobj->multiMaterialMode)
-			ndptr->MaterialContactOnNode(timestep,TRUE,NULL,NULL);
+		{	try
+			{	ndptr->MaterialContactOnNode(timestep,TRUE,NULL,NULL);
+			}
+			catch(CommonException err)
+			{	if(umErr==NULL)
+				{
+#pragma omp critical
+					umErr = new CommonException(err);
+				}
+			}
+		}
 		
 		// get grid transport rates (update transport properties when particle state updated)
 		TransportTask *nextTransport=transportTasks;
 		while(nextTransport!=NULL)
 			nextTransport=nextTransport->TransportRates(ndptr,timestep);
 	}
+	
+	// throw error now
+	if(umErr!=NULL) throw *umErr;
 		
 	// adjust momenta and forces for crack contact on known nodes
 	CrackNode::CrackContactTask4(timestep);

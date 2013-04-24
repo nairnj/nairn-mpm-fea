@@ -13,6 +13,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Materials/MaterialBase.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -38,6 +39,8 @@ void UpdateStrainsFirstTask::Execute(void)
  **********************************************************/
 void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,int np)
 {
+	CommonException *usfErr = NULL;
+	
     NodalPoint::GetGridVelocitiesForStrainUpdate();			// velocities needed for strain update
 	
 	// loop over nonrigid particles
@@ -51,14 +54,26 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
         // this particle's material
         const MaterialBase *matRef = theMaterials[mptr->MatID()];
         
-        // make sure have mechanical properties for this material and angle
-		// Must replace with get copy of mechanical properties
-		void *properties = matRef->GetCopyOfMechanicalProps(mptr,np);
-        
-        // finish on the particle
-		mptr->UpdateStrain(strainTime,secondPass,np,properties,matRef->GetField());
-		
-		// delete properties
-		matRef->DeleteCopyOfMechanicalProps(properties,np);
+		try
+		{	// make sure have mechanical properties for this material and angle
+			// Must replace with get copy of mechanical properties
+			void *properties = matRef->GetCopyOfMechanicalProps(mptr,np);
+			
+			// finish on the particle
+			mptr->UpdateStrain(strainTime,secondPass,np,properties,matRef->GetField());
+			
+			// delete properties
+			matRef->DeleteCopyOfMechanicalProps(properties,np);
+		}
+		catch(CommonException err)
+		{	if(usfErr==NULL)
+			{
+#pragma omp critical
+				usfErr = new CommonException(err);
+			}
+		}
     }
+	
+	// throw error if it occurred
+	if(usfErr!=NULL) throw *usfErr;
 }

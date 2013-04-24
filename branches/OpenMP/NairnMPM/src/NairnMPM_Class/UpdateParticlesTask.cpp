@@ -28,6 +28,7 @@
 #include "Custom_Tasks/TransportTask.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -40,6 +41,8 @@ UpdateParticlesTask::UpdateParticlesTask(const char *name) : MPMTask(name)
 // Update particle position, velocity, temp, and conc
 void UpdateParticlesTask::Execute(void)
 {
+	CommonException *upErr = NULL;
+	
 	int numnds,nds[maxShapeNodes];
 	double fn[maxShapeNodes];
 	Vector delv;
@@ -47,58 +50,72 @@ void UpdateParticlesTask::Execute(void)
     // Update particle position, velocity, temp, and conc
 #pragma omp parallel for private(numnds,nds,fn,delv)
     for(int p=0;p<nmpmsNR;p++)
-	{	// get shape functions
-        const ElementBase *elemRef = theElements[mpm[p]->ElemID()];
-        elemRef->GetShapeFunctions(&numnds,fn,nds,mpm[p]->GetNcpos(),mpm[p]);
-        
-        // Update particle position and velocity
-        const MaterialBase *matRef=theMaterials[mpm[p]->MatID()];
-        int matfld=matRef->GetField();
-        
-        Vector *acc=mpm[p]->GetAcc();
-        ZeroVector(acc);
-        ZeroVector(&delv);
-        double rate[2];         // only two possible transport tasks
-        rate[0] = rate[1] = 0.;
-        int task;
-        TransportTask *nextTransport;
-        
-        // Loop over nodes
-        for(int i=1;i<=numnds;i++)
-        {	// increment velocity and acceleraton
-            const NodalPoint *ndptr = nd[nds[i]];
-            ndptr->IncrementDelvaTask5((short)mpm[p]->vfld[i],matfld,fn[i],&delv,acc);
-            
-            // increment transport rates
-            nextTransport=transportTasks;
-            task=0;
-            while(nextTransport!=NULL)
-                nextTransport=nextTransport->IncrementTransportRate(nd[nds[i]],fn[i],rate[task++]);
-        }
-        
-        // update position in mm and velocity in mm/sec
-        mpm[p]->MovePosition(timestep,&delv);
-        mpm[p]->MoveVelocity(timestep,bodyFrc.GetAlpha(),&delv);
-        
-        // update transport values
-        nextTransport=transportTasks;
-        task=0;
-        while(nextTransport!=NULL)
-            nextTransport=nextTransport->MoveTransportValue(mpm[p],timestep,rate[task++]);
-        
-        // thermal ramp
-        thermal.UpdateParticleTemperature(&mpm[p]->pTemperature,timestep);
-        
-        // energy coupling here if conduction not doing it
-        if(!ConductionTask::active)
-        {	if(ConductionTask::energyCoupling)
-            {	double energy = mpm[p]->GetDispEnergy();				// in uJ/g
-                double Cp=1000.*matRef->GetHeatCapacity(mpm[p]);		// in uJ/(g-K)
-                mpm[p]->pTemperature += energy/Cp;                      // in K
-            }
-            mpm[p]->SetDispEnergy(0.);
-        }
+	{	MPMBase *mpmptr = mpm[p];
+		
+		try
+		{	// get shape functions
+			const ElementBase *elemRef = theElements[mpmptr->ElemID()];
+			elemRef->GetShapeFunctions(&numnds,fn,nds,mpmptr->GetNcpos(),mpmptr);
+			
+			// Update particle position and velocity
+			const MaterialBase *matRef=theMaterials[mpmptr->MatID()];
+			int matfld=matRef->GetField();
+			
+			Vector *acc=mpmptr->GetAcc();
+			ZeroVector(acc);
+			ZeroVector(&delv);
+			double rate[2];         // only two possible transport tasks
+			rate[0] = rate[1] = 0.;
+			int task;
+			TransportTask *nextTransport;
+			
+			// Loop over nodes
+			for(int i=1;i<=numnds;i++)
+			{	// increment velocity and acceleraton
+				const NodalPoint *ndptr = nd[nds[i]];
+				ndptr->IncrementDelvaTask5((short)mpmptr->vfld[i],matfld,fn[i],&delv,acc);
+				
+				// increment transport rates
+				nextTransport=transportTasks;
+				task=0;
+				while(nextTransport!=NULL)
+					nextTransport=nextTransport->IncrementTransportRate(nd[nds[i]],fn[i],rate[task++]);
+			}
+			
+			// update position in mm and velocity in mm/sec
+			mpmptr->MovePosition(timestep,&delv);
+			mpmptr->MoveVelocity(timestep,bodyFrc.GetAlpha(),&delv);
+			
+			// update transport values
+			nextTransport=transportTasks;
+			task=0;
+			while(nextTransport!=NULL)
+				nextTransport=nextTransport->MoveTransportValue(mpmptr,timestep,rate[task++]);
+			
+			// thermal ramp
+			thermal.UpdateParticleTemperature(&mpmptr->pTemperature,timestep);
+			
+			// energy coupling here if conduction not doing it
+			if(!ConductionTask::active)
+			{	if(ConductionTask::energyCoupling)
+				{	double energy = mpmptr->GetDispEnergy();				// in uJ/g
+					double Cp=1000.*matRef->GetHeatCapacity(mpmptr);		// in uJ/(g-K)
+					mpmptr->pTemperature += energy/Cp;                      // in K
+				}
+				mpmptr->SetDispEnergy(0.);
+			}
+		}
+		catch(CommonException err)
+		{	if(upErr==NULL)
+			{
+#pragma omp critical
+				upErr = new CommonException(err);
+			}
+		}
     }
+	
+	// throw any errors
+	if(upErr!=NULL) throw *upErr;
     
     // rigid materials move at their current velocity
     for(int p=nmpmsNR;p<nmpms;p++)

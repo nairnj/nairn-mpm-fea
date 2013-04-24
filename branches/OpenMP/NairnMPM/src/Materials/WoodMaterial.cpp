@@ -69,6 +69,7 @@ void WoodMaterial::PrintMechanicalProperties(void) const
 void *WoodMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
 {
 	AnisoPlasticProperties *p = (AnisoPlasticProperties *)AnisoPlasticity::GetCopyOfMechanicalProps(mptr,np);
+	if(p==NULL) throw CommonException("Memory error copying material properties","WoodMaterial::GetCopyOfMechanicalProps");
 	
 	// calculate new ratio for reference conditions to current conditions
 	double newRatio = (tempC1 + tempC2*(mptr->pPreviousTemperature-273.15));

@@ -11,6 +11,7 @@
 #include "Materials/SCGLHardening.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "MPM_Classes/MPMBase.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark NonlinearHardening::Constructors and Destructors
 
@@ -111,6 +112,7 @@ void SCGLHardening::PrintYieldProperties(void) const
 void *SCGLHardening::GetCopyOfHardeningProps(MPMBase *mptr,int np)
 {
 	SCGLProperties *p = (SCGLProperties *)malloc(sizeof(SCGLProperties));
+	if(p==NULL) throw CommonException("Memory error copying material properties","SCGLHardening::GetCopyOfHardeningProps");
 	return p;
 }
 	

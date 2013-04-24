@@ -39,6 +39,7 @@
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Cracks/CrackNode.hpp"
 #include "Patches/GridPatch.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark CONSTRUCTORS
 
@@ -51,52 +52,67 @@ UpdateStrainsLastTask::UpdateStrainsLastTask(const char *name) : MPMTask(name)
 // Get total grid point forces (except external forces)
 void UpdateStrainsLastTask::Execute(void)
 {
+	CommonException *uslErr = NULL;
+	
 	int nds[maxShapeNodes];
 	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	
 #pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
 	{
+		try
+		{
 #pragma omp for
-        // zero again (which finds new positions for rigid particles)
-		for(int i=1;i<=nnodes;i++)
-			nd[i]->RezeroNodeTask6(timestep);
-		
-        // zero ghost nodes on this patch
-        int pn = GetPatchNumber();
-		patches[pn]->RezeroNodeTask6(timestep);
-        
-        // loop over non-rigid particles only - this parallel part changes only particle p
-        // mass, momenta, etc are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
-        MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(FIRST_NONRIGID);
-        while(mpmptr!=NULL)
-        {   const MaterialBase *matref = theMaterials[mpmptr->MatID()];
-            int matfld = matref->GetField();
-            
-            // find shape functions (why ever need gradients?)
-            const ElementBase *elref = theElements[mpmptr->ElemID()];
-            int numnds;
-            if(fmobj->multiMaterialMode)
-            {   // Need gradients for volume gradient
-                elref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
-            }
-            else
-                elref->GetShapeFunctions(&numnds,fn,nds,mpmptr->GetNcpos(),mpmptr);
-            
-            short vfld;
-            NodalPoint *ndptr;
-            for(int i=1;i<=numnds;i++)
-            {   // get node pointer
-                ndptr = GetNodePointer(pn,nds[i]);
-                
-                // add mass and momentum this task
-                vfld = (short)mpmptr->vfld[i];
-                ndptr->AddMassMomentumLast(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
-            }
-            
-            // next non-rigid material point
-            mpmptr = (MPMBase *)mpmptr->GetNextObject();
-        }
+			// zero again (which finds new positions for rigid particles)
+			for(int i=1;i<=nnodes;i++)
+				nd[i]->RezeroNodeTask6(timestep);
+			
+			// zero ghost nodes on this patch
+			int pn = GetPatchNumber();
+			patches[pn]->RezeroNodeTask6(timestep);
+			
+			// loop over non-rigid particles only - this parallel part changes only particle p
+			// mass, momenta, etc are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
+			MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(FIRST_NONRIGID);
+			while(mpmptr!=NULL)
+			{   const MaterialBase *matref = theMaterials[mpmptr->MatID()];
+				int matfld = matref->GetField();
+				
+				// find shape functions (why ever need gradients?)
+				const ElementBase *elref = theElements[mpmptr->ElemID()];
+				int numnds;
+				if(fmobj->multiMaterialMode)
+				{   // Need gradients for volume gradient
+					elref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
+				}
+				else
+					elref->GetShapeFunctions(&numnds,fn,nds,mpmptr->GetNcpos(),mpmptr);
+				
+				short vfld;
+				NodalPoint *ndptr;
+				for(int i=1;i<=numnds;i++)
+				{   // get node pointer
+					ndptr = GetNodePointer(pn,nds[i]);
+					
+					// add mass and momentum this task
+					vfld = (short)mpmptr->vfld[i];
+					ndptr->AddMassMomentumLast(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
+				}
+				
+				// next non-rigid material point
+				mpmptr = (MPMBase *)mpmptr->GetNextObject();
+			}
+		}
+		catch(CommonException err)
+		{	if(uslErr==NULL)
+			{
+#pragma omp critical
+				uslErr = new CommonException(err);
+			}
+		}
 	}
+	
+	// throw errors now
+	if(uslErr!=NULL) throw *uslErr;
 	
 	// reduction of ghost node forces to real nodes
 	int totalPatches = fmobj->GetTotalNumberOfPatches();

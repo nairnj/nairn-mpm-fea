@@ -12,7 +12,7 @@ Title "Hyperelasstic Tensile Loading"Name "John Nairn"
 EndHeader! ------------ Parameters ---------------
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"#analysis="Plane Strain MPM"
-Processors 4
+!Processors 1
 
 ! Points per element
 #ppe=2
