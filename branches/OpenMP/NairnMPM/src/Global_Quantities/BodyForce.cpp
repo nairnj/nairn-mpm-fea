@@ -66,8 +66,8 @@ void BodyForce::AddGravity(Vector *theFrc,double mp,double wt)
 	
 	double gscale = mp*wt;
 	theFrc->x += gscale*gforce.x;
-	theFrc->x += gscale*gforce.y;
-	theFrc->x += gscale*gforce.z;
+	theFrc->y += gscale*gforce.y;
+	theFrc->z += gscale*gforce.z;
 }
 
 // the damping
