@@ -1407,7 +1407,7 @@ void CrackVelocityFieldMulti::Describe(void)
 	int i;
 	for(i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveField(mvf[i]))
-			mvf[i]->Describe();
+			mvf[i]->Describe(i);
 	}
 }
 
