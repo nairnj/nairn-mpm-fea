@@ -203,7 +203,8 @@ void MatVelocityField::IncrementNodalVelAcc(double fi,Vector *delv,Vector *dela)
 // for debugging
 void MatVelocityField::Describe(int fldnum)
 {
-	cout << "#      " << fldnum << ". Material Field: n="<<  numberPoints << " mass=" << mass << endl;
+	cout << "#      " << fldnum << ". Material Field: n="<<  numberPoints << " mass=" << mass ;
+    cout << " p=(" << pk.x << "," << pk.y << "," << pk.z << ")" << endl;
 }
 
 // volume for contact calculations
