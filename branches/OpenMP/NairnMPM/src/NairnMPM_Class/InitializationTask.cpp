@@ -4,13 +4,6 @@
 
 	Created by John Nairn on July 22, 2010
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
- 
-	Input Variables
-		none
- 
-	Output Variables
-		mpm[]->pFext
-		thermal.isoRamp
 ********************************************************************************/
 
 #include "NairnMPM_Class/InitializationTask.hpp"

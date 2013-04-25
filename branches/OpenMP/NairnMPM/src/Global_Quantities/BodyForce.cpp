@@ -49,6 +49,7 @@ BodyForce::BodyForce()
 // turn gravity on (initially zero forces)
 void BodyForce::Activate(void)
 {
+    // zero to start, components get set directly by BodyXForce, etc., XML commands
     ZeroVector(&gforce);
 	gravity=TRUE;
 }
