@@ -173,6 +173,6 @@ int CrackVelocityFieldSingle::PasteFieldMomenta(Vector *holdPk,int offset)
 void CrackVelocityFieldSingle::Describe(void)
 {	CrackVelocityField::Describe();
 	cout << "#     single material" << endl;
-	mvf[0]->Describe();
+	mvf[0]->Describe(0);
 }
 	
