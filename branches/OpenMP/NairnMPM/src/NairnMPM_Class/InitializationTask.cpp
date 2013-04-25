@@ -51,7 +51,7 @@ void InitializationTask::Execute(void)
 		patches[pn]->InitializeForTimeStep();
 
 		// particle calculations
-#pragma omp for
+#pragma omp for nowait
 		for(int p=0;p<nmpmsRC;p++)
 		{	MPMBase *mpmptr = mpm[p];										// pointer
 			const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle

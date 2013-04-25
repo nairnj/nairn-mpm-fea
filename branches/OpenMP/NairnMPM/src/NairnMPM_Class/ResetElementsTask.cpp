@@ -50,13 +50,12 @@ void ResetElementsTask::Execute(void)
 	int status;
 	MPMBase *mptr,*prevMptr,*nextMptr;
 	for(int pn=0;pn<totalPatches;pn++)
-	{	for(int block=0;block<3;block++)
+	{	for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_BC;block++)
 		{	// get first material point in this block
 			mptr = patches[pn]->GetFirstBlockPointer(block);
-			prevMptr = NULL;		// previous one of this tyep in current patch
+			prevMptr = NULL;		// previous one of this type in current patch
 			while(mptr!=NULL)
-			{	//int oldElem = mptr->ElemID()+1;
-				status = ResetElement(mptr);
+			{	status = ResetElement(mptr);
 				
 				if(status==LEFT_GRID)
 				{	// particle has left the grid
@@ -72,6 +71,7 @@ void ResetElementsTask::Execute(void)
 								sprintf(errMsg,"Particle has left the grid\n  (plot x displacement to see it).");
 								mptr->origpos.x=-1.e6;
 								resetErr = new CommonException(errMsg,"ResetElementsTask::Execute");
+								throw *resetErr;
 							}
 						}
 						

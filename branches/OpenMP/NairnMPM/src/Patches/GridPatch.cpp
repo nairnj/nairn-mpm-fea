@@ -205,7 +205,7 @@ void GridPatch::RemoveParticleAfter(MPMBase *mptr,MPMBase *prevMptr)
 	MPMBase *nextMptr = (MPMBase *)mptr->GetNextObject();
 	
 	if(prevMptr!=NULL)
-	{	// removing one in the middle or and the end of linked list
+	{	// removing one in the middle or at the end of linked list
 		prevMptr->SetNextObject(nextMptr);
 	}
 	else

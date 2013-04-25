@@ -271,7 +271,7 @@ void MassAndMomentumTask::Execute(void)
 		MaterialInterfaceNode *firstInterfaceNode=NULL,*lastInterfaceNode=NULL;
 		
 		// Each pass in this loop should be independent
-#pragma omp for
+#pragma omp for nowait
 		for(int i=1;i<=nnodes;i++)
 		{	// node reference
 			NodalPoint *ndptr = nd[i];
