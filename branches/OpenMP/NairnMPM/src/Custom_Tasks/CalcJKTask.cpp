@@ -94,12 +94,14 @@ CustomTask *CalcJKTask::StepCalculation(void)
     if(!getJKThisStep) return nextTask;
     
     int nds[maxShapeNodes];
-    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+    double fn[maxShapeNodes];
+	//double xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
     
     // set up strain fields for crack extrapolations
-#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
-    {
-        for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
+//#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
+#pragma omp parallel private(nds,fn)
+    {	// in case 2D planar
+        //for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
         
 #pragma omp for
         for(int i=1;i<=nnodes;i++)
@@ -118,7 +120,8 @@ CustomTask *CalcJKTask::StepCalculation(void)
             // find shape functions and derviatives
             int numnds;
             const ElementBase *elref = theElements[mpnt->ElemID()];
-            elref->GetShapeGradients(&numnds,fn,nds,mpnt->GetNcpos(),xDeriv,yDeriv,zDeriv,mpnt);
+            //elref->GetShapeGradients(&numnds,fn,nds,mpnt->GetNcpos(),xDeriv,yDeriv,zDeriv,mpnt);
+			elref->GetShapeFunctions(&numnds,fn,nds,mpnt->GetNcpos(),mpnt);
 		
             // Add particle property to each node in the element
             NodalPoint *ndmi;

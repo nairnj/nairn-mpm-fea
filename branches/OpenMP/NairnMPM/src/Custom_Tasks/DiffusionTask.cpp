@@ -139,6 +139,7 @@ TransportTask *DiffusionTask::GetGradients(double stepTime)
 	int nds[maxShapeNodes];
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
     
+	// in case 2D planar
     for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
 	
 	// Find gradients on the nonrigid particles

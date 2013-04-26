@@ -28,12 +28,14 @@ RunCustomTasksTask::RunCustomTasksTask(const char *name) : MPMTask(name)
 // Run all custom tasks
 void RunCustomTasksTask::Execute(void)
 {
-	int i,p,iel,matfld,numnds,nds[maxShapeNodes];
-	MaterialBase *matID;
-	double wt,fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+	int matfld,numnds,nds[maxShapeNodes];
+	const MaterialBase *matID;
+	double fnmp,fn[maxShapeNodes];
+	//double xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	short vfld,isRigid;
     
-    for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
+	// in case 2D planar
+    //for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
 	
     /* Step 1: Call all tasks. The tasks can do initializations needed
 			for this step. If any task needs nodal extrapolations
@@ -61,26 +63,29 @@ void RunCustomTasksTask::Execute(void)
             nextTask=nextTask->BeginExtrapolations();
         
         // particle loop or nonrigid and rigid contact particles
-        for(p=0;p<nmpmsRC;p++)
-        {   // Load element coordinates
-			matID=theMaterials[mpm[p]->MatID()];
+        for(int p=0;p<nmpmsRC;p++)
+		{	MPMBase *mpmptr = mpm[p];
+			
+           // Load element coordinates
+			matID=theMaterials[mpmptr->MatID()];
 			isRigid=matID->Rigid();					// if TRUE, will be rigid contact particle
 			matfld=matID->GetField();
 			
             // find shape functions and derviatives
-			iel=mpm[p]->ElemID();
-			theElements[iel]->GetShapeGradients(&numnds,fn,nds,mpm[p]->GetNcpos(),xDeriv,yDeriv,zDeriv,mpm[p]);
+			const ElementBase *elref = theElements[mpmptr->ElemID()];
+			//elref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
+			elref->GetShapeFunctions(&numnds,fn,nds,mpmptr->GetNcpos(),mpmptr);
             
 			// Add particle property to each node in the element
-            for(i=1;i<=numnds;i++)
+            for(int i=1;i<=numnds;i++)
             {   // global mass matrix
-				vfld=(short)mpm[p]->vfld[i];				// velocity field to use
-                wt=fn[i]*mpm[p]->mp;
+				vfld=(short)mpmptr->vfld[i];				// velocity field to use
+                fnmp=fn[i]*mpmptr->mp;
                 
                 // possible extrapolation to the nodes
                 nextTask=theTasks;
                 while(nextTask!=NULL)
-                    nextTask=nextTask->NodalExtrapolation(nd[nds[i]],mpm[p],vfld,matfld,wt,isRigid);
+                    nextTask=nextTask->NodalExtrapolation(nd[nds[i]],mpmptr,vfld,matfld,fnmp,isRigid);
 				
              }
         }

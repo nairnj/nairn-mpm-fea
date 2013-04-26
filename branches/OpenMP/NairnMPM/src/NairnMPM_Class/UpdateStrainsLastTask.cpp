@@ -59,6 +59,7 @@ void UpdateStrainsLastTask::Execute(void)
 	
 #pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
 	{
+		// in case 2D planar
         for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
         
 		try

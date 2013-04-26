@@ -44,6 +44,8 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	Vector vel;
     Matrix3 dv;
+	
+	// don't need to zero zDeriv because always set in axisymmetric shape functions
     
 	// find shape functions and derviatives
 	const ElementBase *elemRef = theElements[ElemID()];

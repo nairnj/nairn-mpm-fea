@@ -59,7 +59,7 @@ void GridForcesTask::Execute(void)
 	// loop over non-rigid particles - this parallel part changes only particle p
 	// forces are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
 #pragma omp parallel private(t,numnds,nds,fn,xDeriv,yDeriv,zDeriv)
-	{
+	{	// in case 2D planar
         for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
         
         // patch for this thread
