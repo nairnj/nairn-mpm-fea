@@ -99,6 +99,8 @@ CustomTask *CalcJKTask::StepCalculation(void)
     // set up strain fields for crack extrapolations
 #pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
     {
+        for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
+        
 #pragma omp for
         for(int i=1;i<=nnodes;i++)
             nd[i]->ZeroDisp();

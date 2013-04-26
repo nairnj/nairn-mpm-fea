@@ -115,6 +115,8 @@ void MassAndMomentumTask::Execute(void)
 	// mass, momenta, etc are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
 #pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
 	{
+        for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
+        
         // thread for patch pn
 		int pn = GetPatchNumber();
 		try

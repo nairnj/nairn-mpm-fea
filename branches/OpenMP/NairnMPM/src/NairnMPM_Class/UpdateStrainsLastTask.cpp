@@ -59,6 +59,8 @@ void UpdateStrainsLastTask::Execute(void)
 	
 #pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
 	{
+        for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
+        
 		try
 		{
 #pragma omp for

@@ -1108,7 +1108,7 @@ void NodalPoint::CalcVelocityForStrainUpdate(void)
 
 // Get velocity for selected field
 Vector NodalPoint::GetVelocity(short vfld,int matfld)
-{	return cvf[vfld]->GetVelocity(matfld);
+{   return cvf[vfld]->GetVelocity(matfld);
 }
 
 // Add total kinetic energy and mass on the grid for all velocity fields to supplied variables

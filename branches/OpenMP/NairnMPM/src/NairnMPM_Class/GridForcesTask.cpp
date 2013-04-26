@@ -60,6 +60,8 @@ void GridForcesTask::Execute(void)
 	// forces are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
 #pragma omp parallel private(t,numnds,nds,fn,xDeriv,yDeriv,zDeriv)
 	{
+        for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
+        
         // patch for this thread
         int pn = GetPatchNumber();
         

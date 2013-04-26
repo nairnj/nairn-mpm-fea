@@ -32,6 +32,8 @@ void RunCustomTasksTask::Execute(void)
 	MaterialBase *matID;
 	double wt,fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	short vfld,isRigid;
+    
+    for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
 	
     /* Step 1: Call all tasks. The tasks can do initializations needed
 			for this step. If any task needs nodal extrapolations

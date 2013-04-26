@@ -186,9 +186,11 @@ TransportTask *ConductionTask::GetGradients(double stepTime)
     CommonException *transErr = NULL;
 	int nds[maxShapeNodes];
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+    
+    for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
 	
 	// Find gradients on the nonrigid particles
-#pragma omp parallel for private(nds,fn,xDeriv,yDeriv,zDeriv)
+#pragma omp parallel for private(nds,fn,xDeriv,yDeriv) firstprivate(zDeriv)
     for(int p=0;p<nmpmsNR;p++)
 	{	try
         {   // find shape functions and derviatives
