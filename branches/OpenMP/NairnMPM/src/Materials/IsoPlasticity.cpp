@@ -71,7 +71,7 @@ const char *IsoPlasticity::VerifyAndLoadProperties(int np)
 
 // change hardening law
 void IsoPlasticity::SetHardeningLaw(char *lawName)
-{
+{   
     // delete old one
     delete plasticLaw;
     plasticLaw = NULL;
@@ -97,13 +97,7 @@ void IsoPlasticity::SetHardeningLaw(char *lawName)
     
     // did it work
     if(plasticLaw == NULL)
-    {   char errMsg[250];
-        strcpy(errMsg,"The hardening law '");
-        strcat(errMsg,lawName);
-        strcat(errMsg,"' is not valid");
-        throw CommonException(errMsg,"IsoPlasticity::SetHardeningLaw");
-    }
-        
+        ThrowSAXException("The hardening law '%s' is not valid",lawName);
 }
 
 // print mechanical properties to the results
@@ -123,13 +117,18 @@ char *IsoPlasticity::InitHistoryData(void)
 
 #pragma mark IsoPlasticity:Methods
 
+// buffer size for mechanical properties
+int IsoPlasticity::SizeOfMechanicalProperties(int &altBufferSize) const
+{   altBufferSize = plasticLaw->SizeOfHardeningProps();
+    return sizeof(PlasticProperties);
+}
+
 // Isotropic material can use read-only initial properties
-void *IsoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
+void *IsoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
 {
-	PlasticProperties *p = (PlasticProperties *)malloc(sizeof(PlasticProperties));
-	if(p==NULL) throw CommonException("Memory error copying material properties","IsoPlasticity::GetCopyOfMechanicalProps");
+	PlasticProperties *p = (PlasticProperties *)matBuffer;
 	*p = pr;
- 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np);
+ 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np,altBuffer);
 	double Gratio = plasticLaw->GetShearRatio(mptr,mptr->GetPressure(),1.,p->hardProps);
 	p->Gred = G0red*Gratio;
 	
@@ -141,14 +140,6 @@ void *IsoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
 	}
 
 	return p;
-}
-
-// If need, cast void * to correct pointer and delete it
-void IsoPlasticity::DeleteCopyOfMechanicalProps(void *properties,int np) const
-{
-	PlasticProperties *p = (PlasticProperties *)properties;
-	plasticLaw->DeleteCopyOfHardeningProps(p->hardProps,np);
-	delete p;
 }
 
 /* Take increments in strain and calculate new Particle: strains, rotation strain, plastic strain,

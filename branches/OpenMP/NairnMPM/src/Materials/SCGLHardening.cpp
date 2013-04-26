@@ -108,11 +108,13 @@ void SCGLHardening::PrintYieldProperties(void) const
 
 #pragma mark NonlinearHardening:Methods
 
+// size of hardening law properties needed in strain updates
+int SCGLHardening::SizeOfHardeningProps(void) const { return sizeof(SCGLProperties); }
+
 // Get particle-state dependent properties (filled by Get Shear Ratio)
-void *SCGLHardening::GetCopyOfHardeningProps(MPMBase *mptr,int np)
+void *SCGLHardening::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer)
 {
-	SCGLProperties *p = (SCGLProperties *)malloc(sizeof(SCGLProperties));
-	if(p==NULL) throw CommonException("Memory error copying material properties","SCGLHardening::GetCopyOfHardeningProps");
+	SCGLProperties *p = (SCGLProperties *)altBuffer;
 	return p;
 }
 	

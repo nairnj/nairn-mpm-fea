@@ -107,11 +107,13 @@ int SLMaterial::HistoryDoublesNeeded(void) const { return 3; }
 
 #pragma mark SLMaterial:Methods
 
+// size of hardening law properties needed in strain updates
+int SLMaterial::SizeOfHardeningProps(void) const { return sizeof(SLProperties); }
+
 // Get particle-state dependent properties (filled by Get Shear Ratio)
-void *SLMaterial::GetCopyOfHardeningProps(MPMBase *mptr,int np)
+void *SLMaterial::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer)
 {
-	SLProperties *p = (SLProperties *)malloc(sizeof(SLProperties));
-	if(p==NULL) throw CommonException("Memory error copying material properties","SLMaterial::GetCopyOfHardeningProps");
+	SLProperties *p = (SLProperties *)altBuffer;
 	return p;
 }
 

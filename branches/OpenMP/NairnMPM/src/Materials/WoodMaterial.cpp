@@ -66,17 +66,16 @@ void WoodMaterial::PrintMechanicalProperties(void) const
 #pragma mark WoodMaterial:Methods
 
 // Isotropic material can use read-only initial properties
-void *WoodMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
+void *WoodMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
 {
-	AnisoPlasticProperties *p = (AnisoPlasticProperties *)AnisoPlasticity::GetCopyOfMechanicalProps(mptr,np);
-	if(p==NULL) throw CommonException("Memory error copying material properties","WoodMaterial::GetCopyOfMechanicalProps");
+	AnisoPlasticProperties *p = (AnisoPlasticProperties *)AnisoPlasticity::GetCopyOfMechanicalProps(mptr,np,matBuffer,altBuffer);
 	
 	// calculate new ratio for reference conditions to current conditions
 	double newRatio = (tempC1 + tempC2*(mptr->pPreviousTemperature-273.15));
 	int i,j;
 	for(i=0;i<6;i++)
 		for(j=0;j<6;j++)
-			p->ep->C[i][j] *= newRatio;
+			p->ep.C[i][j] *= newRatio;
 	
 	return p;
 }

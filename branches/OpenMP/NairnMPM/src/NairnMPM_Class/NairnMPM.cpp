@@ -348,7 +348,7 @@ void NairnMPM::PreliminaryCalcs(void)
     double area,volume,rho,crot,tst,tmin=1e15;
     double dcell;
     char fline[200];
-	
+    
     // are both the system and the particles isolated?
     if(!ConductionTask::active && ConductionTask::IsSystemIsolated())
     {   MaterialBase::isolatedSystemAndParticles = TRUE;
@@ -562,6 +562,9 @@ void NairnMPM::PreliminaryCalcs(void)
 	patches = mpmgrid.CreatePatches(np,numProcs);
     if(patches==NULL)
 		throw CommonException("Out of memory creating the patches","NairnMPM::PreliminaryCalcs");
+    
+    // create buffers for copies of material properties
+    UpdateStrainsFirstTask::CreatePropertyBuffers(GetTotalNumberOfPatches());
 	
     // Print particle information oand other preliminary calc results
     PrintSection("FULL MASS MATRIX");

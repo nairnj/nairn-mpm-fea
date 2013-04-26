@@ -26,6 +26,9 @@ bool MaterialBase::isolatedSystemAndParticles = FALSE;
 vector<int> MaterialBase::fieldMatIDs;
 vector<int> MaterialBase::activeMatIDs;
 int MaterialBase::incrementalDefGradTerms = 2;			// terms in exponential of deformation gradient
+int MaterialBase::maxPropertyBufferSize = 0.;           // maximum buffer size needed among active materials to get copy of mechanical properties
+int MaterialBase::maxAltBufferSize = 0.;                // maximum optional buffer size needed for more properties (e.g., hardenling law)
+
 
 #pragma mark MaterialBase::Initialization
 
@@ -487,6 +490,9 @@ int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activ
 			fieldNum=1;
 			activeNum++;
 			activeMatIDs.push_back(matid);
+            int altBuffer,matBuffer = SizeOfMechanicalProperties(altBuffer);
+            if(matBuffer > maxPropertyBufferSize) maxPropertyBufferSize = matBuffer;
+            if(altBuffer > maxAltBufferSize) maxAltBufferSize = altBuffer;
 		}
 	}
 	else
@@ -498,6 +504,9 @@ int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activ
 			{	activeField=activeNum;
 				activeNum++;
 				activeMatIDs.push_back(matid);
+                int altBuffer,matBuffer = SizeOfMechanicalProperties(altBuffer);
+                if(matBuffer > maxPropertyBufferSize) maxPropertyBufferSize = matBuffer;
+                if(altBuffer > maxAltBufferSize) maxAltBufferSize = altBuffer;
 			}
 		}
 	}
@@ -642,14 +651,15 @@ void MaterialBase::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz
 {
 }
 
-// Get copy of properties that depend on material state
-void *MaterialBase::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
-{	return NULL;
+// buffer size for mechanical properties
+int MaterialBase::SizeOfMechanicalProperties(int &altBufferSize) const
+{   altBufferSize = 0;
+    return 0;
 }
 
-// If need, cast void * to correct pointer and delete it
-void MaterialBase::DeleteCopyOfMechanicalProps(void *properties,int np) const
-{	
+// Get copy of properties that depend on material state
+void *MaterialBase::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
+{	return NULL;
 }
 
 // Get transport property tensors (if change with particle state)

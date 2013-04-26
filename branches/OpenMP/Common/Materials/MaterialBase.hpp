@@ -71,6 +71,8 @@ class MaterialBase : public LinkedObject
 		static vector<int> activeMatIDs;	// 0 to # active, non-rigid fields any mode
 		static int incrementalDefGradTerms;
         static bool isolatedSystemAndParticles;
+        static int maxPropertyBufferSize;
+        static int maxAltBufferSize;
 #endif
         
         // constructors and destructors
@@ -102,8 +104,8 @@ class MaterialBase : public LinkedObject
         // Methods
 #ifdef MPM_CODE
 		virtual void GetTransportProps(MPMBase *,int,TransportProperties *) const;
-		virtual void *GetCopyOfMechanicalProps(MPMBase *,int) const;
-		virtual void DeleteCopyOfMechanicalProps(void *,int) const;
+        virtual int SizeOfMechanicalProperties(int &) const;
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *) const;
 		virtual double GetHeatCapacity(MPMBase *) const;
         virtual void IncrementHeatEnergy(MPMBase *,double,double,double) const;
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;

@@ -33,7 +33,7 @@ class MGSCGLMaterial : public IsoPlasticity
 		virtual void ValidateForUse(int) const;
 	
 		// methods
-		virtual void *GetCopyOfMechanicalProps(MPMBase *,int) const;
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *) const;
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 		virtual void UpdatePressure(MPMBase *,double &,double,int,PlasticProperties *,ResidualStrains *) const;
         virtual double GetCurrentRelativeVolume(MPMBase *) const;

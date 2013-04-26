@@ -18,6 +18,8 @@
 class UpdateStrainsFirstTask : public MPMTask
 {
 	public:
+        static void **matBuffer;
+        static void **altBuffer;
 	
 		// constructor
 		UpdateStrainsFirstTask(const char *);
@@ -27,6 +29,7 @@ class UpdateStrainsFirstTask : public MPMTask
 	
         // class methods
         static void FullStrainUpdate(double,int,int);
+        static void CreatePropertyBuffers(int);
 	
 	protected:
 };

@@ -31,7 +31,7 @@ class WoodMaterial : public HillPlastic
 		virtual void PrintMechanicalProperties(void) const;
 		
 		// methods
-		void *GetCopyOfMechanicalProps(MPMBase *,int) const;
+		void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *) const;
 	
 		// accessors
 		virtual const char *MaterialType(void) const;

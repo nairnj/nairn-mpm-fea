@@ -62,6 +62,7 @@ void MPMTask::WriteProfileResults(int nsteps,double timePerStep,double eTimePerS
 #pragma mark MPMTASK::Static Parallel Methods
 
 // get patch number of the current thread (or 0 if not parallel
+// same as thread num in loops that are not using patches
 int MPMTask::GetPatchNumber(void)
 {
 #ifdef _OPENMP

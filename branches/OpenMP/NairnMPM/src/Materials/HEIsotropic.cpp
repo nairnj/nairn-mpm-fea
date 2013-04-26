@@ -61,7 +61,7 @@ char *HEIsotropic::InputMat(char *xName,int &input)
 
 // change hardening law
 void HEIsotropic::SetHardeningLaw(char *lawName)
-{
+{   
     // delete old one
     delete plasticLaw;
     plasticLaw = NULL;
@@ -167,24 +167,21 @@ char *HEIsotropic::InitHistoryData(void)
 
 #pragma mark HEIsotropic:Methods
 
+// buffer size for mechanical properties
+int HEIsotropic::SizeOfMechanicalProperties(int &altBufferSize) const
+{   altBufferSize = plasticLaw->SizeOfHardeningProps();
+    return sizeof(HEPlasticProperties);
+}
+
 // Get elastic and plastic properties, return null on error
-void *HEIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
+void *HEIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
 {
-	HEPlasticProperties *p = (HEPlasticProperties *)malloc(sizeof(HEPlasticProperties));
-	if(p==NULL) throw CommonException("Memory error copying material properties","HEIsotropic::GetCopyOfMechanicalProps");
- 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np);
+	HEPlasticProperties *p = (HEPlasticProperties *)matBuffer;
+ 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np,altBuffer);
 	double Gratio = plasticLaw->GetShearRatio(mptr,mptr->GetPressure(),1.,p->hardProps);
 	p->Gred = G1sp*Gratio;
 	p->Kred = Ksp;
 	return p;
-}
-
-// If need, cast void * to correct pointer and delete it
-void HEIsotropic::DeleteCopyOfMechanicalProps(void *properties,int np) const
-{
-	HEPlasticProperties *p = (HEPlasticProperties *)properties;
-	plasticLaw->DeleteCopyOfHardeningProps(p->hardProps,np);
-	delete p;
 }
 
 /* Take increments in strain and calculate new Particle: strains, rotation strain,

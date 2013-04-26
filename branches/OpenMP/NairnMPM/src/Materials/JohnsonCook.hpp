@@ -34,7 +34,8 @@ class JohnsonCook : public HardeningLawBase
 		virtual const char *VerifyAndLoadProperties(int);
 	
 		// copy of properties
-		virtual void *GetCopyOfHardeningProps(MPMBase *,int);
+        virtual int SizeOfHardeningProps(void) const;
+		virtual void *GetCopyOfHardeningProps(MPMBase *,int,void *);
 		virtual void DeleteCopyOfHardeningProps(void *,int) const;
     
         // hardening law core methods

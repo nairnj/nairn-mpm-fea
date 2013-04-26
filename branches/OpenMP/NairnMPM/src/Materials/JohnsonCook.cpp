@@ -102,11 +102,13 @@ const char *JohnsonCook::VerifyAndLoadProperties(int np)
 
 #pragma mark JohnsonCook:Methods
 
+// size of hardening law properties needed in strain updates
+int JohnsonCook::SizeOfHardeningProps(void) const { return sizeof(JCProperties); }
+
 // Get copy of particle-state dependent properties
-void *JohnsonCook::GetCopyOfHardeningProps(MPMBase *mptr,int np)
+void *JohnsonCook::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer)
 {
-	JCProperties *p = (JCProperties *)malloc(sizeof(JCProperties));
-	if(p==NULL) throw CommonException("Memory error copying material properties","JohnsonCook::GetCopyOfHardeningProps");
+	JCProperties *p = (JCProperties *)altBuffer;
 	
 	// homologous temperature (as needed by Johnson and Cook)
 	p->hmlgTemp=(mptr->pPreviousTemperature - thermal.reference) /

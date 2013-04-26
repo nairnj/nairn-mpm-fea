@@ -33,7 +33,7 @@ class IsotropicMat : public Elastic
         
 		virtual void FillElasticProperties(ElasticProperties *,int);
 #ifdef MPM_CODE
-		virtual void *GetCopyOfMechanicalProps(MPMBase *,int) const;
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *) const;
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
 #endif
 		

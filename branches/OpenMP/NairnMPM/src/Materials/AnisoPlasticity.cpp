@@ -205,30 +205,24 @@ void AnisoPlasticity::PrintYieldProperties(void) const
 
 #pragma mark AnisoPlasticity::Methods
 
-// Get current anisotropic properties (NULL on memry error)
-void *AnisoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
-{
-	// full plastic properties
-	AnisoPlasticProperties *p = (AnisoPlasticProperties *)malloc(sizeof(AnisoPlasticProperties));
-	if(p==NULL) throw CommonException("Memory error copying material properties","AnisoPlasticity::GetCopyOfMechanicalProps");
-	
-	// create new elastic properties
-	p->ep = (ElasticProperties *)malloc(sizeof(ElasticProperties));
-	if(p->ep==NULL) throw CommonException("Memory error copying material properties","AnisoPlasticity::GetCopyOfMechanicalProps");
-	if(np!=THREED_MPM)
-		FillElasticProperties2D(p->ep,TRUE,mptr->GetRotationZ(),np);
-	else
-		FillElasticProperties3D(mptr,p->ep,np);
-	
-	return p;
+// buffer size for mechanical properties
+int AnisoPlasticity::SizeOfMechanicalProperties(int &altBufferSize) const
+{   altBufferSize = 0;
+    return sizeof(AnisoPlasticProperties);
 }
 
-// If need, cast void * to correct pointer and delete it
-void AnisoPlasticity::DeleteCopyOfMechanicalProps(void *properties,int np) const
+// Get current anisotropic properties (NULL on memry error)
+void *AnisoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
 {
-	AnisoPlasticProperties *p = (AnisoPlasticProperties *)properties;
-	delete p->ep;
-	delete p;
+	// full plastic properties
+	AnisoPlasticProperties *p = (AnisoPlasticProperties *)matBuffer;
+	
+	if(np!=THREED_MPM)
+		FillElasticProperties2D(&(p->ep),TRUE,mptr->GetRotationZ(),np);
+	else
+		FillElasticProperties3D(mptr,&(p->ep),np);
+	
+	return p;
 }
 
 /* For 2D MPM analysis, take increments in strain and calculate new
@@ -246,15 +240,15 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	
     // Effective strain by deducting thermal strain
 	// (note ep->alpha[1] and ep->beta[1] are reduced in plane strain, but CTE3 and CME3 are not)
-	ElasticProperties *r = p->ep;
-	double erxx = r->alpha[1]*res->dT;
-	double eryy = r->alpha[2]*res->dT;
-	double erxy = r->alpha[3]*res->dT;
+	ElasticProperties r = p->ep;
+	double erxx = r.alpha[1]*res->dT;
+	double eryy = r.alpha[2]*res->dT;
+	double erxy = r.alpha[3]*res->dT;
 	double erzz = CTE3*res->dT;
 	if(DiffusionTask::active)
-	{	erxx += r->beta[1]*res->dC;
-		eryy += r->beta[2]*res->dC;
-		erxy += r->beta[3]*res->dC;
+	{	erxx += r.beta[1]*res->dC;
+		eryy += r.beta[2]*res->dC;
+		erxy += r.beta[3]*res->dC;
 		erzz += CME3*res->dC;
 	}
     double dexx = dvxx-erxx;  
@@ -265,13 +259,13 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
     // Elastic stress increment
 	Tensor *sp = mptr->GetStressTensor();
     Tensor stk = *sp;
-    stk.xx += r->C[1][1]*dexx+r->C[1][2]*deyy+r->C[1][3]*dgxy;
-    stk.yy += r->C[1][2]*dexx+r->C[2][2]*deyy+r->C[2][3]*dgxy;
-    stk.xy += r->C[1][3]*dexx+r->C[2][3]*deyy+r->C[3][3]*dgxy;
-	stk.zz += r->C[4][1]*dexx + r->C[4][2]*deyy + r->C[4][3]*dgxy + r->C[4][4]*dezz;
+    stk.xx += r.C[1][1]*dexx+r.C[1][2]*deyy+r.C[1][3]*dgxy;
+    stk.yy += r.C[1][2]*dexx+r.C[2][2]*deyy+r.C[2][3]*dgxy;
+    stk.xy += r.C[1][3]*dexx+r.C[2][3]*deyy+r.C[3][3]*dgxy;
+	stk.zz += r.C[4][1]*dexx + r.C[4][2]*deyy + r.C[4][3]*dgxy + r.C[4][4]*dezz;
     if(np==PLANE_STRAIN_MPM)
-	{	stk.zz += r->C[4][1]*r->alpha[5]*erzz + r->C[4][2]*r->alpha[6]*erzz
-					+ r->C[4][3]*r->alpha[7]*erzz;
+	{	stk.zz += r.C[4][1]*r.alpha[5]*erzz + r.C[4][2]*r.alpha[6]*erzz
+					+ r.C[4][3]*r.alpha[7]*erzz;
 	}
   
 	// get rotation matrix elements and evaluate sin() and cos() once per update
@@ -293,7 +287,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	double ftrial = sAstrial - GetYield(p);
 	if(ftrial<0.)
 	{	// elastic, update stress and strain energy as usual
-		Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,delTime,np,r,res);
+		Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,delTime,np,&r,res);
 		return; 
     }
     
@@ -331,15 +325,15 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	// increment particle stresses
     // Hypoelastic - Eliminate effect of rotation 
     Tensor st0=*sp;			// save previous stress for energy updates below
-    double c1 = r->C[1][1]*dexx+r->C[1][2]*deyy+r->C[1][3]*dgxy;
-    double c2 = r->C[1][2]*dexx+r->C[2][2]*deyy+r->C[2][3]*dgxy;
-    double c3 = r->C[1][3]*dexx+r->C[2][3]*deyy+r->C[3][3]*dgxy;
+    double c1 = r.C[1][1]*dexx+r.C[1][2]*deyy+r.C[1][3]*dgxy;
+    double c2 = r.C[1][2]*dexx+r.C[2][2]*deyy+r.C[2][3]*dgxy;
+    double c3 = r.C[1][3]*dexx+r.C[2][3]*deyy+r.C[3][3]*dgxy;
 	Hypo2DCalculations(mptr,-dwrotxy,c1,c2,c3);
 	
 	// out of plane stress
     if(np==PLANE_STRAIN_MPM)
-	{	sp->zz += r->C[4][1]*(dexx+r->alpha[5]*erzz) + r->C[4][2]*(deyy+r->alpha[6]*erzz)
-					+ r->C[4][3]*(dgxy+r->alpha[7]*erzz) + r->C[4][4]*dezz;
+	{	sp->zz += r.C[4][1]*(dexx+r.alpha[5]*erzz) + r.C[4][2]*(deyy+r.alpha[6]*erzz)
+					+ r.C[4][3]*(dgxy+r.alpha[7]*erzz) + r.C[4][4]*dezz;
 	}
 
 	// Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
@@ -381,20 +375,20 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	AnisoPlasticProperties *p = (AnisoPlasticProperties *)properties;
 	
     // Effective strain by deducting thermal strain
-	ElasticProperties *r = p->ep;
-	double erxx=r->alpha[0]*res->dT;
-	double eryy=r->alpha[1]*res->dT;
-	double erzz=r->alpha[2]*res->dT;
-	double eryz=r->alpha[3]*res->dT;
-	double erxz=r->alpha[4]*res->dT;
-	double erxy=r->alpha[5]*res->dT;
+	ElasticProperties r = p->ep;
+	double erxx=r.alpha[0]*res->dT;
+	double eryy=r.alpha[1]*res->dT;
+	double erzz=r.alpha[2]*res->dT;
+	double eryz=r.alpha[3]*res->dT;
+	double erxz=r.alpha[4]*res->dT;
+	double erxy=r.alpha[5]*res->dT;
 	if(DiffusionTask::active)
-	{	erxx+=r->beta[0]*res->dC;
-		eryy+=r->beta[1]*res->dC;
-		erzz+=r->beta[2]*res->dC;
-		eryz+=r->beta[3]*res->dC;
-		erxz+=r->beta[4]*res->dC;
-		erxy+=r->beta[5]*res->dC;
+	{	erxx+=r.beta[0]*res->dC;
+		eryy+=r.beta[1]*res->dC;
+		erzz+=r.beta[2]*res->dC;
+		eryz+=r.beta[3]*res->dC;
+		erxz+=r.beta[4]*res->dC;
+		erxy+=r.beta[5]*res->dC;
 	}
     double dexx=dvxx-erxx;  
     double deyy=dvyy-eryy; 
@@ -406,12 +400,12 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
     // Elastic stress increment
 	Tensor *sp=mptr->GetStressTensor();
     Tensor stk=*sp;
-    stk.xx += r->C[0][0]*dexx+r->C[0][1]*deyy+r->C[0][2]*dezz+r->C[0][3]*dgyz+r->C[0][4]*dgxz+r->C[0][5]*dgxy;
-    stk.yy += r->C[1][0]*dexx+r->C[1][1]*deyy+r->C[1][2]*dezz+r->C[1][3]*dgyz+r->C[1][4]*dgxz+r->C[1][5]*dgxy;
-    stk.zz += r->C[2][0]*dexx+r->C[2][1]*deyy+r->C[2][2]*dezz+r->C[2][3]*dgyz+r->C[2][4]*dgxz+r->C[2][5]*dgxy;
-    stk.yz += r->C[3][0]*dexx+r->C[3][1]*deyy+r->C[3][2]*dezz+r->C[3][3]*dgyz+r->C[3][4]*dgxz+r->C[3][5]*dgxy;
-    stk.xz += r->C[4][0]*dexx+r->C[4][1]*deyy+r->C[4][2]*dezz+r->C[4][3]*dgyz+r->C[4][4]*dgxz+r->C[4][5]*dgxy;
-    stk.xy += r->C[5][0]*dexx+r->C[5][1]*deyy+r->C[5][2]*dezz+r->C[5][3]*dgyz+r->C[5][4]*dgxz+r->C[5][5]*dgxy;
+    stk.xx += r.C[0][0]*dexx+r.C[0][1]*deyy+r.C[0][2]*dezz+r.C[0][3]*dgyz+r.C[0][4]*dgxz+r.C[0][5]*dgxy;
+    stk.yy += r.C[1][0]*dexx+r.C[1][1]*deyy+r.C[1][2]*dezz+r.C[1][3]*dgyz+r.C[1][4]*dgxz+r.C[1][5]*dgxy;
+    stk.zz += r.C[2][0]*dexx+r.C[2][1]*deyy+r.C[2][2]*dezz+r.C[2][3]*dgyz+r.C[2][4]*dgxz+r.C[2][5]*dgxy;
+    stk.yz += r.C[3][0]*dexx+r.C[3][1]*deyy+r.C[3][2]*dezz+r.C[3][3]*dgyz+r.C[3][4]*dgxz+r.C[3][5]*dgxy;
+    stk.xz += r.C[4][0]*dexx+r.C[4][1]*deyy+r.C[4][2]*dezz+r.C[4][3]*dgyz+r.C[4][4]*dgxz+r.C[4][5]*dgxy;
+    stk.xy += r.C[5][0]*dexx+r.C[5][1]*deyy+r.C[5][2]*dezz+r.C[5][3]*dgyz+r.C[5][4]*dgxz+r.C[5][5]*dgxy;
 	
 	// get rotation matrix elements p->rzyx[i][j]
 	double z=mptr->GetRotationZ();
@@ -494,7 +488,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	double ftrial = sAstrial - GetYield(p);
 	if(ftrial<0.)
 	{	// elastic, update stress and strain energy as usual
-		Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,delTime,np,r,res);
+		Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvzz,dvxy,dvyx,dvxz,dvzx,dvyz,dvzy,delTime,np,&r,res);
 		return; 
     }
     
@@ -542,12 +536,12 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	// increment particle stresses
 	Tensor st0=*sp;			// save previous stress for energy updates below
 	double dsig[6];
-    dsig[XX] = r->C[0][0]*dexx+r->C[0][1]*deyy+r->C[0][2]*dezz+r->C[0][3]*dgyz+r->C[0][4]*dgxz+r->C[0][5]*dgxy;
-    dsig[YY] = r->C[1][0]*dexx+r->C[1][1]*deyy+r->C[1][2]*dezz+r->C[1][3]*dgyz+r->C[1][4]*dgxz+r->C[1][5]*dgxy;
-    dsig[ZZ] = r->C[2][0]*dexx+r->C[2][1]*deyy+r->C[2][2]*dezz+r->C[2][3]*dgyz+r->C[2][4]*dgxz+r->C[2][5]*dgxy;
-    dsig[YZ] = r->C[3][0]*dexx+r->C[3][1]*deyy+r->C[3][2]*dezz+r->C[3][3]*dgyz+r->C[3][4]*dgxz+r->C[3][5]*dgxy;
-    dsig[XZ] = r->C[4][0]*dexx+r->C[4][1]*deyy+r->C[4][2]*dezz+r->C[4][3]*dgyz+r->C[4][4]*dgxz+r->C[4][5]*dgxy;
-    dsig[XY] = r->C[5][0]*dexx+r->C[5][1]*deyy+r->C[5][2]*dezz+r->C[5][3]*dgyz+r->C[5][4]*dgxz+r->C[5][5]*dgxy;
+    dsig[XX] = r.C[0][0]*dexx+r.C[0][1]*deyy+r.C[0][2]*dezz+r.C[0][3]*dgyz+r.C[0][4]*dgxz+r.C[0][5]*dgxy;
+    dsig[YY] = r.C[1][0]*dexx+r.C[1][1]*deyy+r.C[1][2]*dezz+r.C[1][3]*dgyz+r.C[1][4]*dgxz+r.C[1][5]*dgxy;
+    dsig[ZZ] = r.C[2][0]*dexx+r.C[2][1]*deyy+r.C[2][2]*dezz+r.C[2][3]*dgyz+r.C[2][4]*dgxz+r.C[2][5]*dgxy;
+    dsig[YZ] = r.C[3][0]*dexx+r.C[3][1]*deyy+r.C[3][2]*dezz+r.C[3][3]*dgyz+r.C[3][4]*dgxz+r.C[3][5]*dgxy;
+    dsig[XZ] = r.C[4][0]*dexx+r.C[4][1]*deyy+r.C[4][2]*dezz+r.C[4][3]*dgyz+r.C[4][4]*dgxz+r.C[4][5]*dgxy;
+    dsig[XY] = r.C[5][0]*dexx+r.C[5][1]*deyy+r.C[5][2]*dezz+r.C[5][3]*dgyz+r.C[5][4]*dgxz+r.C[5][5]*dgxy;
 	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 
     // Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
@@ -630,28 +624,28 @@ void AnisoPlasticity::GetDfCdf(Tensor *stk,int np,AnisoPlasticProperties *p) con
 {
 	// get C df and df C df, which need df/dsig (Function of yield criteria, and normally only current stress in stk)
 	GetDfDsigma(stk,np,p);
-	ElasticProperties *r = p->ep;
+	ElasticProperties r = p->ep;
 	if(np==THREED_MPM)
-	{	p->Cdf.xx = r->C[0][0]*p->dfds.xx+r->C[0][1]*p->dfds.yy+r->C[0][2]*p->dfds.zz
-						+r->C[0][3]*p->dfds.yz+r->C[0][4]*p->dfds.xz+r->C[0][5]*p->dfds.xy;
-		p->Cdf.yy = r->C[1][0]*p->dfds.xx+r->C[1][1]*p->dfds.yy+r->C[1][2]*p->dfds.zz
-						+r->C[1][3]*p->dfds.yz+r->C[1][4]*p->dfds.xz+r->C[1][5]*p->dfds.xy;
-		p->Cdf.zz = r->C[2][0]*p->dfds.xx+r->C[2][1]*p->dfds.yy+r->C[2][2]*p->dfds.zz
-						+r->C[2][3]*p->dfds.yz+r->C[2][4]*p->dfds.xz+r->C[2][5]*p->dfds.xy;
-		p->Cdf.yz = r->C[3][0]*p->dfds.xx+r->C[3][1]*p->dfds.yy+r->C[3][2]*p->dfds.zz
-						+r->C[3][3]*p->dfds.yz+r->C[3][4]*p->dfds.xz+r->C[3][5]*p->dfds.xy;
-		p->Cdf.xz = r->C[4][0]*p->dfds.xx+r->C[4][1]*p->dfds.yy+r->C[4][2]*p->dfds.zz
-						+r->C[4][3]*p->dfds.yz+r->C[4][4]*p->dfds.xz+r->C[4][5]*p->dfds.xy;
-		p->Cdf.xy = r->C[5][0]*p->dfds.xx+r->C[5][1]*p->dfds.yy+r->C[5][2]*p->dfds.zz
-						+r->C[5][3]*p->dfds.yz+r->C[5][4]*p->dfds.xz+r->C[5][5]*p->dfds.xy;
+	{	p->Cdf.xx = r.C[0][0]*p->dfds.xx+r.C[0][1]*p->dfds.yy+r.C[0][2]*p->dfds.zz
+						+r.C[0][3]*p->dfds.yz+r.C[0][4]*p->dfds.xz+r.C[0][5]*p->dfds.xy;
+		p->Cdf.yy = r.C[1][0]*p->dfds.xx+r.C[1][1]*p->dfds.yy+r.C[1][2]*p->dfds.zz
+						+r.C[1][3]*p->dfds.yz+r.C[1][4]*p->dfds.xz+r.C[1][5]*p->dfds.xy;
+		p->Cdf.zz = r.C[2][0]*p->dfds.xx+r.C[2][1]*p->dfds.yy+r.C[2][2]*p->dfds.zz
+						+r.C[2][3]*p->dfds.yz+r.C[2][4]*p->dfds.xz+r.C[2][5]*p->dfds.xy;
+		p->Cdf.yz = r.C[3][0]*p->dfds.xx+r.C[3][1]*p->dfds.yy+r.C[3][2]*p->dfds.zz
+						+r.C[3][3]*p->dfds.yz+r.C[3][4]*p->dfds.xz+r.C[3][5]*p->dfds.xy;
+		p->Cdf.xz = r.C[4][0]*p->dfds.xx+r.C[4][1]*p->dfds.yy+r.C[4][2]*p->dfds.zz
+						+r.C[4][3]*p->dfds.yz+r.C[4][4]*p->dfds.xz+r.C[4][5]*p->dfds.xy;
+		p->Cdf.xy = r.C[5][0]*p->dfds.xx+r.C[5][1]*p->dfds.yy+r.C[5][2]*p->dfds.zz
+						+r.C[5][3]*p->dfds.yz+r.C[5][4]*p->dfds.xz+r.C[5][5]*p->dfds.xy;
 		p->dfCdf = p->dfds.xx*p->Cdf.xx + p->dfds.yy*p->Cdf.yy + p->dfds.zz*p->Cdf.zz
 						+ p->dfds.yz*p->Cdf.yz + p->dfds.xz*p->Cdf.xz + p->dfds.xy*p->Cdf.xy;
 	}
 	else
-	{	p->Cdf.xx = r->C[1][1]*p->dfds.xx + r->C[1][2]*p->dfds.yy + r->C[1][3]*p->dfds.xy;
-		p->Cdf.yy = r->C[1][2]*p->dfds.xx + r->C[2][2]*p->dfds.yy + r->C[2][3]*p->dfds.xy;
-		p->Cdf.xy = r->C[1][3]*p->dfds.xx + r->C[2][3]*p->dfds.yy + r->C[3][3]*p->dfds.xy;
-		p->Cdf.zz = r->C[4][1]*p->dfds.xx + r->C[4][2]*p->dfds.yy + r->C[4][3]*p->dfds.xy + r->C[4][4]*p->dfds.zz;
+	{	p->Cdf.xx = r.C[1][1]*p->dfds.xx + r.C[1][2]*p->dfds.yy + r.C[1][3]*p->dfds.xy;
+		p->Cdf.yy = r.C[1][2]*p->dfds.xx + r.C[2][2]*p->dfds.yy + r.C[2][3]*p->dfds.xy;
+		p->Cdf.xy = r.C[1][3]*p->dfds.xx + r.C[2][3]*p->dfds.yy + r.C[3][3]*p->dfds.xy;
+		p->Cdf.zz = r.C[4][1]*p->dfds.xx + r.C[4][2]*p->dfds.yy + r.C[4][3]*p->dfds.xy + r.C[4][4]*p->dfds.zz;
 		p->dfCdf = p->dfds.xx*p->Cdf.xx + p->dfds.yy*p->Cdf.yy + p->dfds.xy*p->Cdf.xy + p->dfds.zz*p->Cdf.zz;;
 	}
 }

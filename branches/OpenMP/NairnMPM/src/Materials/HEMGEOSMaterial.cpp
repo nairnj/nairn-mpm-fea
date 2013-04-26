@@ -168,21 +168,12 @@ void HEMGEOSMaterial::ValidateForUse(int np) const
 #pragma mark MGSCGLMaterial::Custom Methods
 
 // Get plastic properties or NULL on memory error
-void *HEMGEOSMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
+void *HEMGEOSMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
 {
-	HEPlasticProperties *p = (HEPlasticProperties *)malloc(sizeof(HEPlasticProperties));
-	if(p==NULL) throw CommonException("Memory error copying material properties","HEMGEOSMaterial::GetCopyOfMechanicalProps");
- 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np);
+	HEPlasticProperties *p = (HEPlasticProperties *)matBuffer;
+ 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np,altBuffer);
 	// Gred and Kred found in UpdatePressure() - do not use before that
 	return p;
-}
-
-// If need, cast void * to correct pointer and delete it
-void HEMGEOSMaterial::DeleteCopyOfMechanicalProps(void *properties,int np) const
-{
-	HEPlasticProperties *p = (HEPlasticProperties *)properties;
-	plasticLaw->DeleteCopyOfHardeningProps(p->hardProps,np);
-	delete p;
 }
 
 // This method handles the pressure equation of state. Its tasks are

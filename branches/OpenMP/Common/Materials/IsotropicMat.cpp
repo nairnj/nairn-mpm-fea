@@ -223,7 +223,7 @@ void IsotropicMat::FillElasticProperties(ElasticProperties *p,int np)
 #ifdef MPM_CODE
 
 // Isotropic material can use read-only initial properties
-void *IsotropicMat::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
+void *IsotropicMat::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
 {	return (void *)&pr;
 }
 

@@ -56,8 +56,11 @@ int HardeningLawBase::HistoryDoublesNeeded(void) const { return 1; }
 
 #pragma mark HardeningLawBase::Methods
 
+// size of hardening law properties needed in strain updates
+int HardeningLawBase::SizeOfHardeningProps(void) const { return 0; }
+
 // If needed, hardenling law can create properties that depend on particle state
-void *HardeningLawBase::GetCopyOfHardeningProps(MPMBase *mptr,int np)
+void *HardeningLawBase::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer)
 {	return NULL;
 }
 

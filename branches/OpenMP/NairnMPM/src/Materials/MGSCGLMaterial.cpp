@@ -159,12 +159,11 @@ void MGSCGLMaterial::ValidateForUse(int np) const
 #pragma mark MGSCGLMaterial::Custom Methods
 
 // Isotropic material can use read-only initial properties
-void *MGSCGLMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
+void *MGSCGLMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
 {
-	PlasticProperties *p = (PlasticProperties *)malloc(sizeof(PlasticProperties));
-	if(p==NULL) throw CommonException("Memory error copying material properties","MGSCGLMaterial::GetCopyOfMechanicalProps");
+	PlasticProperties *p = (PlasticProperties *)matBuffer;
 	*p = pr;
- 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np);
+ 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np,altBuffer);
 	
 	// Gratio and other properties loaded later
 	return p;

@@ -52,7 +52,8 @@ class SLMaterial : public SCGLHardening
  		virtual int HistoryDoublesNeeded(void) const;
 		
 		// copy of properties
-		virtual void *GetCopyOfHardeningProps(MPMBase *,int);
+        virtual int SizeOfHardeningProps(void) const;
+		virtual void *GetCopyOfHardeningProps(MPMBase *,int,void *);
 		virtual void DeleteCopyOfHardeningProps(void *,int) const;
 		virtual double GetShearRatio(MPMBase *,double,double,void *) const;
 	

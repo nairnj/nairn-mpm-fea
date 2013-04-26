@@ -48,8 +48,8 @@ class IsoPlasticity : public IsotropicMat
         virtual void PrintMechanicalProperties(void) const;
 		
 		// methods
-		virtual void *GetCopyOfMechanicalProps(MPMBase *,int) const;
-		virtual void DeleteCopyOfMechanicalProps(void *,int) const;
+        virtual int SizeOfMechanicalProperties(int &) const;
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *) const;
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
         virtual void PlasticityConstLaw(MPMBase *,double,double,double,double,double,double,int,
                                         double,double,double,PlasticProperties *,ResidualStrains *) const;

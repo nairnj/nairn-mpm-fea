@@ -17,7 +17,7 @@
 
 // plastic law properties
 typedef struct {
-	ElasticProperties *ep;
+	ElasticProperties ep;
 	double aint;
 	double minush;
 	Tensor dfds;
@@ -42,8 +42,8 @@ class AnisoPlasticity : public Orthotropic
 		virtual void PrintYieldProperties(void) const;
 			
 		// methods
-		void *GetCopyOfMechanicalProps(MPMBase *,int) const;
-		void DeleteCopyOfMechanicalProps(void *,int) const;
+        virtual int SizeOfMechanicalProperties(int &) const;
+		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *) const;
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
 		virtual double SolveForLambdaAP(MPMBase *mptr,int,double,Tensor *,AnisoPlasticProperties *p) const;

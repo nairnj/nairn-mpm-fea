@@ -207,30 +207,26 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
 
 #ifdef MPM_CODE
 
+// buffer size for mechanical properties
+int TransIsotropic::SizeOfMechanicalProperties(int &altBufferSize) const
+{   altBufferSize = 0;
+    return sizeof(ElasticProperties);
+}
+
 // Isotropic material can use read-only initial properties
-void *TransIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np) const
+void *TransIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
 {
 	// if isotropic in 2D plane, use initial properties
 	if(MaterialTag()==TRANSISO1 && np!=THREED_MPM)
 		return (void *)&pr;
 	
 	// create new elastic properties
-	ElasticProperties *p = (ElasticProperties *)malloc(sizeof(ElasticProperties));
-	if(p==NULL) throw CommonException("Memory error copying material properties","TransIsotropic::GetCopyOfMechanicalProps");
+	ElasticProperties *p = (ElasticProperties *)matBuffer;
 	if(np!=THREED_MPM)
 		FillElasticProperties2D(p,TRUE,mptr->GetRotationZ(),np);
 	else
 		FillElasticProperties3D(mptr,p,np);
 	return p;
-}
-
-// If need, cast void * to correct pointer and delete it
-void TransIsotropic::DeleteCopyOfMechanicalProps(void *properties,int np) const
-{
-	if(MaterialTag()==TRANSISO1 && np!=THREED_MPM) return;
-	
-	ElasticProperties *p = (ElasticProperties *)properties;
-	delete p;
 }
 
 // Fill ElasticProperties variable with current particle state

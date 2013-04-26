@@ -36,12 +36,12 @@ EndHeader! ------------ Parameters ---------------
 
 ! material options: isotropic, iptrans, normtrans, ortho,isoplasticity, mgeos
 ! bistable, viscoelastic, hill, wood
-#matID="hill"
+#matID="isoplasticity"
 #angle=0					! material angle for anisotopic materials
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2, JohnsonCook
-#hardID="nonlinear"
+#hardID="Linear"
 
 ! rotate sample to test off-grid loading (2D only)
 #rotate=0

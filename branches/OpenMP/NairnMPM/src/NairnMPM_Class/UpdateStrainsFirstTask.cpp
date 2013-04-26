@@ -15,6 +15,10 @@
 #include "Materials/MaterialBase.hpp"
 #include "Exceptions/CommonException.hpp"
 
+// one copy of property buffers for each thread
+void **UpdateStrainsFirstTask::matBuffer = NULL;
+void **UpdateStrainsFirstTask::altBuffer = NULL;
+
 #pragma mark CONSTRUCTORS
 
 UpdateStrainsFirstTask::UpdateStrainsFirstTask(const char *name) : MPMTask(name)
@@ -29,20 +33,49 @@ void UpdateStrainsFirstTask::Execute(void)
 	FullStrainUpdate(strainTimestep,FALSE,fmobj->np);
 }
 
-#pragma mark MPMBase Class Methods
+#pragma mark UpdateStrainFirstTask Class Methods
+
+// create buffers large enough for all active materials and plastic laws
+// need one for each thread
+void UpdateStrainsFirstTask::CreatePropertyBuffers(int numThreads)
+{
+    matBuffer = (void **)malloc(numThreads*sizeof(void *));
+    if(matBuffer==NULL)
+        throw CommonException("Out of memory allocating memory for propery buffers","UpdateStrainsFirstTask::CreatePropertyBuffers");
+    altBuffer = (void **)malloc(numThreads*sizeof(void *));
+    if(altBuffer==NULL)
+        throw CommonException("Out of memory allocating memory for propery buffers","UpdateStrainsFirstTask::CreatePropertyBuffers");
+    
+    for(int i=0;i<numThreads;i++)
+    {   if(MaterialBase::maxPropertyBufferSize>0)
+        {   matBuffer[i] = (void *)malloc(MaterialBase::maxPropertyBufferSize);
+            if(matBuffer[i]==NULL)
+                throw CommonException("Out of memory allocating memory for propery buffers","UpdateStrainsFirstTask::CreatePropertyBuffers");
+        }
+        else
+            matBuffer[i]=NULL;
+        if(MaterialBase::maxAltBufferSize>0)
+        {   altBuffer[i] = (void *)malloc(MaterialBase::maxAltBufferSize);
+            if(altBuffer[i]==NULL)
+                throw CommonException("Out of memory allocating memory for propery buffers","UpdateStrainsFirstTask::CreatePropertyBuffers");
+        }
+        else
+            altBuffer[i]=NULL;
+    }
+}
 
 /**********************************************************
- Update Strains on all particles
- Must impose grid velocity BCs and velocity
- alterations due to contact first
- secondPass will be TRUE only for USAVG method
- **********************************************************/
+    Update Strains on all particles
+    Must impose grid velocity BCs and velocity
+        alterations due to contact first
+    secondPass will be TRUE only for USAVG method
+**********************************************************/
 void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,int np)
 {
 	CommonException *usfErr = NULL;
 	
     NodalPoint::GetGridVelocitiesForStrainUpdate();			// velocities needed for strain update
-	
+    
 	// loop over nonrigid particles
 	// This works as parallel when material properties change with particle state because
 	//	all such materials should create a copy of material properties in the threads
@@ -56,14 +89,11 @@ void UpdateStrainsFirstTask::FullStrainUpdate(double strainTime,int secondPass,i
         
 		try
 		{	// make sure have mechanical properties for this material and angle
-			// Must replace with get copy of mechanical properties
-			void *properties = matRef->GetCopyOfMechanicalProps(mptr,np);
+            int tn = GetPatchNumber();
+			void *properties = matRef->GetCopyOfMechanicalProps(mptr,np,matBuffer[tn],altBuffer[tn]);
 			
 			// finish on the particle
 			mptr->UpdateStrain(strainTime,secondPass,np,properties,matRef->GetField());
-			
-			// delete properties
-			matRef->DeleteCopyOfMechanicalProps(properties,np);
 		}
 		catch(CommonException err)
 		{	if(usfErr==NULL)
