@@ -128,7 +128,7 @@ void InitializationTask::Execute(void)
                             }
                                 
                             
-                            // momentum vector (and allocate velocity field if needed)
+                            // find (and allocate if needed) the velocity field
                             vfld = ndptr->AddCrackVelocityField(matfld,cfld);
                             mpmptr->vfld[i] = vfld;
                         }

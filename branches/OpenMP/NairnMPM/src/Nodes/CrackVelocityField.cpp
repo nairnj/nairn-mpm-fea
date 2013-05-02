@@ -142,7 +142,7 @@ void CrackVelocityField::CopyMassAndMomentumLast(NodalPoint *real,int vfld)
 #pragma mark TASK 3 METHODS
 
 // Add to internal force
-void CrackVelocityField::AddFtotTask3(int matfld,Vector *f) { if(mvf[matfld]==NULL) cout << "mNULL"; mvf[matfld]->AddFtot(f); }
+void CrackVelocityField::AddFtotTask3(int matfld,Vector *f) { mvf[matfld]->AddFtot(f); }
 
 // Copy grid forces from ghost node to real node (nonrigid only)
 void CrackVelocityField::CopyGridForces(NodalPoint *real,int vfld)

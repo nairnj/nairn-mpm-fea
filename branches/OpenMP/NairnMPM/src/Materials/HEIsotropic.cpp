@@ -87,13 +87,7 @@ void HEIsotropic::SetHardeningLaw(char *lawName)
     
     // did it work
     if(plasticLaw == NULL)
-    {   char errMsg[250];
-        strcpy(errMsg,"The hardening law '");
-        strcat(errMsg,lawName);
-        strcat(errMsg,"' is not valid");
-        throw CommonException(errMsg,"IsoPlasticity::SetHardeningLaw");
-    }
-    
+        ThrowSAXException("The hardening law '%s' is not valid",lawName);
 }
 
 // verify settings and maybe some initial calculations
