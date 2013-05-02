@@ -37,7 +37,8 @@ CrackVelocityField::CrackVelocityField(short theLoc,int cnum)
 											   "CrackVelocityField::CrackVelocityField");
 	}
 		
-	// clear all data (except hasCrackPoints)
+	// clear all data.
+    // But creating it, implies it has points so set hasCrackPoints to TRUE
 	Zero(theLoc,cnum,FALSE);
 	hasCrackPoints=TRUE;
 	df=NULL;
@@ -100,7 +101,7 @@ void CrackVelocityField::MatchMatVelocityFields(MatVelocityField **rmvf) {}
 // Called only in task 1 - add to momemtum and count number of material points
 // If first material point for this velocity field, save the velocity too
 void CrackVelocityField::AddMomentumTask1(int matfld,Vector *addPk,Vector *vel,int numPts)
-{	if(mvf[matfld]==NULL) throw "encoutered missing material velocity field";
+{	// should have been allocated if needed in initialization step
 	mvf[matfld]->AddMomentumTask1(addPk,vel,numPts);
 	
 	// count points in this crack velocity field during task 1

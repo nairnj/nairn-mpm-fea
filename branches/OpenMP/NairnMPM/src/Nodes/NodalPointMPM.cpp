@@ -64,7 +64,7 @@ void NodalPoint::PrepareForFields()
 void NodalPoint::InitializeForTimeStep(void)
 {	
 	for(int i=0;i<maxCrackFields;i++)
-	{	if(CrackVelocityField::ActiveField(cvf[i]))
+	{	if(cvf[i]!=NULL)
 			cvf[i]->Zero(0,0,TRUE);
 	}
 	
@@ -119,7 +119,7 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 					{	// it can only be field 0
 						vfld=0;
 
-						// Here means both above and below crack for field [1], which can only happen if a
+						// Here means both above and below same crack for field [1], which can only happen if a
                         // node is on a crack
                         if(warnings.Issue(CrackHeader::warnNodeOnCrack,11)==GAVE_WARNING) Describe();
                     
@@ -257,7 +257,7 @@ void NodalPoint::UseTheseFields(CrackVelocityField **rcvf)
 	{	if(rcvf[i]==NULL) continue;
 		
 		if(cvf[i]==NULL)
-		{	// create one in ghost that if not here
+		{	// create one in ghost node if not there already
 			cvf[i]=CrackVelocityField::CreateCrackVelocityField(0,0);
 			if(cvf[i]==NULL) throw CommonException("Memory error allocating crack velocity field 3.",
 												   "NodalPoint::UseTheseFields");
@@ -1191,6 +1191,8 @@ void NodalPoint::MaterialInterfaceForce(MaterialInterfaceNode *mmnode)
 #pragma mark CRACK SURFACE CONTACT
 
 // Look for crack contact and adjust accordingly.
+// first and last are only non-NULL in mass and momentum task and this method will create
+//      a crack node for any nodes that need to do crack contact
 void NodalPoint::CrackContact(bool postUpdate,double deltime,CrackNode **first,CrackNode **last)
 {	// Nothing to do if not near a crack contact surface: Possible fields are
 	//  1. Those with no contacts: [0], [1], [3], [0]&[3], [1]&[2]

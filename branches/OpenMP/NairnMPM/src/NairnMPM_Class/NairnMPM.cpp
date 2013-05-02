@@ -57,8 +57,8 @@ int maxShapeNodes=10;		// Maximum number of nodes for a particle (plus 1)
 // Constructor
 NairnMPM::NairnMPM()
 {
-	version=9;						// main version
-	subversion=1;					// subversion (must be < 10)
+	version=10;						// main version
+	subversion=0;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 	mpmApproach=USAVG_METHOD;		// mpm method
 	ptsPerElement=4;				// number of points per element (2D default, 3D changes it to 8)

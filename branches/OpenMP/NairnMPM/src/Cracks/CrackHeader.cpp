@@ -164,9 +164,13 @@ short CrackHeader::add(CrackSegment *cs)
     else
 	{	// no need to add a zero length segment
 		if(DbleEqual(cs->x,lastSeg->x) && DbleEqual(cs->y,lastSeg->y))
-		{	// but maybe want new tip material
+		{	// but maybe want new tip material or traction law
 			if(cs->tipMatnum>0)
 				lastSeg->tipMatnum=cs->tipMatnum;
+            if(cs->MatID()>=0)
+            {   lastSeg->SetMatID(cs->MatID()+1);
+                hasTractionLaws=TRUE;
+            }
 			return TRUE;
 		}
     	lastSeg->nextSeg=cs;
@@ -183,7 +187,7 @@ short CrackHeader::add(CrackSegment *cs)
 	if(cs->planeInElem==0) return FALSE;
 	
 	// has it put traction laws on this crack
-	if(cs->MatID()>=0) hasTractionLaws=true;
+	if(cs->MatID()>=0) hasTractionLaws=TRUE;
 	
    return TRUE;
 }

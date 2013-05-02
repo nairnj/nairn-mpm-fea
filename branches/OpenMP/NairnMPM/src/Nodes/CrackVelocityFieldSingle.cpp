@@ -137,7 +137,15 @@ Vector CrackVelocityFieldSingle::GetCMatMomentum(void) { return mvf[0]->pk; }
 Vector CrackVelocityFieldSingle::GetCMDisplacement(void) const { return mvf[0]->disp; }
 
 // get center of mass momentum for all material fields in this crack velocity field
-Vector CrackVelocityFieldSingle::GetCMatFtot(void) { return mvf[0]->GetFtot(); }
+Vector CrackVelocityFieldSingle::GetCMatFtot(void)
+{   if(mvf[0]->numberPoints>0)
+        return mvf[0]->GetFtot();
+	else
+	{	Vector fk;
+		ZeroVector(&fk);
+		return fk;
+	}
+}
 
 /* in response to crack contact, change moment by changing velocity of all materials
 	the same amount
