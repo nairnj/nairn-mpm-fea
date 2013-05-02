@@ -56,8 +56,8 @@ int numActiveMaterials;		// Number of non-rigid materials used by at least one m
 // Constructor
 NairnMPM::NairnMPM()
 {
-	version=9;						// main version
-	subversion=1;					// subversion (must be < 10)
+	version=10;						// main version
+	subversion=0;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 	mpmApproach=USAVG_METHOD;		// mpm method
 	ptsPerElement=4;				// number of points per element (2D default, 3D changes it to 8)
@@ -70,8 +70,8 @@ NairnMPM::NairnMPM()
     PropFractCellTime=-1.;          // fracture cell crossed in 1 step for propagation time step (currently not user settable)
 	mstep=0;						// step number
 	warnParticleLeftGrid=-1;		// abort when this many leave the grid
-	multiMaterialMode=false;		// multi-material mode
-	hasRigidContactParticles=false;	// rigid contact particles in multimaterial mode
+	multiMaterialMode=FALSE;		// multi-material mode
+	hasRigidContactParticles=FALSE;	// rigid contact particles in multimaterial mode
 	
 	// initialize objects
 	archiver=new ArchiveData();		// archiving object

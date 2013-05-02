@@ -167,6 +167,10 @@ short CrackHeader::add(CrackSegment *cs)
 		{	// but maybe want new tip material
 			if(cs->tipMatnum>0)
 				lastSeg->tipMatnum=cs->tipMatnum;
+            if(cs->MatID()>=0)
+            {   lastSeg->SetMatID(cs->MatID()+1);
+                hasTractionLaws=TRUE;
+            }
 			return TRUE;
 		}
     	lastSeg->nextSeg=cs;
@@ -183,7 +187,7 @@ short CrackHeader::add(CrackSegment *cs)
 	if(cs->planeInElem==0) return FALSE;
 	
 	// has it put traction laws on this crack
-	if(cs->MatID()>=0) hasTractionLaws=true;
+	if(cs->MatID()>=0) hasTractionLaws=TRUE;
 	
    return TRUE;
 }
@@ -1399,8 +1403,8 @@ void CrackHeader::JIntegral(void)
 			   Units N/mm, multiply by 1000 to get N/m = J/m^2
 			*/
 			tipCrk->Jint.x = Jx*crackDir.x + Jy*crackDir.y - tractionEnergy;		// Jtip or energy that will be released if crack grows
-			//tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;						// J2(x) - for growth normal to crack plane
-			tipCrk->Jint.y = Jx1*crackDir.x + Jy1*crackDir.y;						// J by one term (temporary)
+			tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;						// J2(x) - for growth normal to crack plane
+			//tipCrk->Jint.y = Jx1*crackDir.x + Jy1*crackDir.y;						// J by one term (temporary)
 			tipCrk->Jint.z = tipCrk->Jint.x + bridgingReleased;						// Jrel or energy released in current state
 			
 			// end of try block on J calculation

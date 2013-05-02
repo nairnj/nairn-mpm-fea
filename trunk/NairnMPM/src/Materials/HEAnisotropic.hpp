@@ -18,6 +18,8 @@
 class HEAnisotropic : public HyperElastic
 {
     public:
+    double G1,G2,E,E1,E2,G3,G1sp,G2sp,G3sp,THETA0,E1sp,E2sp;
+    
         // constructors and destructors
 		HEAnisotropic();
 		HEAnisotropic(char *matName);
@@ -27,10 +29,10 @@ class HEAnisotropic : public HyperElastic
         virtual const char *VerifyProperties(int);
 		virtual void PrintMechanicalProperties(void);
 		virtual void InitialLoadMechProps(int,int);
+        virtual char *InitHistoryData(void);
 		
 		// step methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int);
-		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int);
+    virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int);
 				
 		// accessors
 		virtual const char *MaterialType(void);
