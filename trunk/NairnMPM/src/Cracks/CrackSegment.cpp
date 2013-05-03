@@ -336,6 +336,7 @@ void CrackSegment::UpdateTractions(CrackHeader *theCrack)
 	double area = fmobj->IsAxisymmetric() ? x*dl : theCrack->GetThickness()*dl ;
 	TractionLaw *theLaw=(TractionLaw *)theMaterials[MatID()];
 	theLaw->CrackTractionLaw(this,nCod,tCod,t.x,t.y,area);
+	
 }
 
 // Calculate energy in the traction law for this segment if in traction
