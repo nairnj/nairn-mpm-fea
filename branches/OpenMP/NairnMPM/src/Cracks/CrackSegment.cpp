@@ -175,48 +175,50 @@ bool CrackSegment::MoveSurfacePosition(short side,double xpt,double ypt,bool has
 }
 
 // calculate tractions due to this segment
-void CrackSegment::AddTractionFext(CrackHeader *theCrack)
+void CrackSegment::AddTractionForceSeg(CrackHeader *theCrack)
 {	// exit if no traction law
 	if(MatID()<0) return;
 	
 	// The first call will add force like Sum f_i T = fnorm T of total traction
 	// If all nodes are used, it is done. But if some nodes do not have a velocity field for
 	//    above the crack, the net result is lower traction then expected. The second
-	//    call speads force to the same nodes (1/fnorm-1) Sum f_i T = T - fnorm T.
+	//    call speads force to the same nodes (1/fnorm -1) Sum f_i T = T - fnorm T.
 	//    The net result will application of T regardless of number of nodes
-	double fnorm=AddTractionFextSide(theCrack,ABOVE_CRACK,(double)1.);
+	double fnorm=AddTractionForceSegSide(theCrack,ABOVE_CRACK,(double)1.);
 	if(fnorm>0. && fnorm<0.999)
-		AddTractionFextSide(theCrack,ABOVE_CRACK,(1./fnorm-1.));
+		AddTractionForceSegSide(theCrack,ABOVE_CRACK,(1./fnorm-1.));
 	
-	// Repeat above calculations for the below the crack field
-	fnorm=AddTractionFextSide(theCrack,BELOW_CRACK,(double)-1.);
+	// Repeat above calculations for the below the crack field, with -T
+	fnorm=AddTractionForceSegSide(theCrack,BELOW_CRACK,(double)-1.);
 	if(fnorm>0. && fnorm<0.999)
-		AddTractionFextSide(theCrack,ABOVE_CRACK,(1.-1./fnorm));
+		AddTractionForceSegSide(theCrack,ABOVE_CRACK,(1.-1./fnorm));
 }
 
 // calculate tractions on one side of crack for this segment
 // add forces to material velocity fields on one side of the crack
-double CrackSegment::AddTractionFextSide(CrackHeader *theCrack,int side,double sign)
+double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,double sign)
 {
-	side--;			// convert to 0 or 1 for above and below
-	Vector cspos,ndpos,norm;
-	int i,iel,numnds,nds[maxShapeNodes];
-    short vfld;
+	Vector cspos,norm;
+	int numnds,nds[maxShapeNodes];
     double fn[maxShapeNodes];
+    short vfld;
 	NodalPoint *ndi;
-	double fnorm=0.;
+	double fnorm = 0.;
 	
-	cspos.x=surfx[side];
-	cspos.y=surfy[side];
-	iel=surfInElem[side];
-	theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cspos,&ndpos);
-	for(i=1;i<=numnds;i++)
-	{	ndi=nd[nds[i]];
-		vfld=theCrack->CrackCross(cspos.x,cspos.y,ndi->x,ndi->y,&norm);
+	side--;			// convert to 0 or 1 for above and below
+	cspos.x = surfx[side];
+	cspos.y = surfy[side];
+	const ElementBase *elref = theElements[surfInElem[side]];
+	elref->GetShapeFunctionsForCracks(&numnds,fn,nds,&cspos);
+	
+	// loop of all nodes see by this crack surface particle
+	for(int i=1;i<=numnds;i++)
+	{	ndi = nd[nds[i]];
+		vfld = theCrack->CrackCross(cspos.x,cspos.y,ndi->x,ndi->y,&norm);
         
 		if(vfld>NO_CRACK)
 		{	// a crossing field - to use it, must find correct field and crack number in a velocity field
-			// traction laws may not handle multiple cracks or interacting fields correctly, but try to do something
+			// traction laws do not handle multiple cracks or interacting fields correctly, but try to do something
 			//  1. Possible: [0], [1], [3], [0]&[3], [1]&[2], [0]&[1], [1]&[3], [0]&[1]&[2],
 			//			[0]&[1]&[3], [1]&[2]&[3], and [0]&[1]&[2]&[3]
 			//  2. Never occurs [2], [0]&[2], [2]&[3], [0]&[2]&[3]
@@ -224,20 +226,20 @@ double CrackSegment::AddTractionFextSide(CrackHeader *theCrack,int side,double s
 			if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[1]))
 			{	// Node with: [1], [1]&[2], [0]&[1], [1]&[3], [0]&[1]&[2], [0]&[1]&[3], [1]&[2]&[3], or [0]&[1]&[2]&[3]
 				if(vfld==ndi->cvf[1]->location(FIRST_CRACK) && cnum==ndi->cvf[1]->crackNumber(FIRST_CRACK))
-				{	// this means field one is correct - single crack calcs will always get here if the field is active
-					vfld=1;
+				{	// this means field one is correct - single crack calcs should always get here if the field is active
+					vfld = 1;
 				}
 				else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[2]))
 				{	// Node with: [1]&[2], [0]&[1]&[2], [1]&[2]&[3], or [0]&[1]&[2]&[3]
 					if(vfld==ndi->cvf[2]->location(FIRST_CRACK) && cnum==ndi->cvf[2]->crackNumber(FIRST_CRACK))
 					{	// this means there are two cracks here and this crack should add to field [2]
-						vfld=2;
+						vfld = 2;
 					}
 					else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[3]))
 					{	if((vfld==ndi->cvf[3]->location(FIRST_CRACK) && cnum==ndi->cvf[3]->crackNumber(FIRST_CRACK)) || 
 							(vfld==ndi->cvf[3]->location(SECOND_CRACK) && cnum==ndi->cvf[3]->crackNumber(SECOND_CRACK)))
 						{	// this means there are two cracks here and this crack should add to field [3]
-							vfld=3;
+							vfld = 3;
 						}
 					}
 				}
@@ -246,13 +248,13 @@ double CrackSegment::AddTractionFextSide(CrackHeader *theCrack,int side,double s
 					if((vfld==ndi->cvf[3]->location(FIRST_CRACK) && cnum==ndi->cvf[3]->crackNumber(FIRST_CRACK)) || 
 					   (vfld==ndi->cvf[3]->location(SECOND_CRACK) && cnum==ndi->cvf[3]->crackNumber(SECOND_CRACK)))
 					{	// this means there are two cracks here and this crack should add to field [3]
-						vfld=3;
+						vfld = 3;
 					}
 				}
 				else
 				{	// none are correct, sometimes [0] is correct in this case
 					// Use [0], but might want a warning to be issued
-					vfld=0;
+					vfld = 0;
 				}
 			}
 			else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[3]))
@@ -260,24 +262,24 @@ double CrackSegment::AddTractionFextSide(CrackHeader *theCrack,int side,double s
 				if((vfld==ndi->cvf[3]->location(FIRST_CRACK) && cnum==ndi->cvf[3]->crackNumber(FIRST_CRACK)) || 
 				   (vfld==ndi->cvf[3]->location(SECOND_CRACK) && cnum==ndi->cvf[3]->crackNumber(SECOND_CRACK)))
 				{	// this means there are two cracks here and this crack should add to field [3]
-					vfld=3;
+					vfld = 3;
 				}
 				else
 				{	// none are correct, sometimes [0] is correct in this case
 					// Use [0], but might want a warning to be issued
-					vfld=0;
+					vfld = 0;
 				}
 			}
 			else
 			{	// Node with [0] only - empty field for this traction, no need to add force
-				vfld=-1;
+				vfld = -1;
 			}
 		}
 		
 		// add if find a field
 		if(vfld>=0)
-		{	nd[nds[i]]->AddFtotSpreadTask3(vfld,FTract(sign*fn[i]));
-			fnorm+=fn[i];
+		{	ndi->AddFtotSpreadTask3(vfld,FTract(sign*fn[i]));
+			fnorm += fn[i];
 		}
 	}
 	
@@ -337,6 +339,7 @@ void CrackSegment::UpdateTractions(CrackHeader *theCrack)
 	double area = fmobj->IsAxisymmetric() ? x*dl : theCrack->GetThickness()*dl ;
 	TractionLaw *theLaw=(TractionLaw *)theMaterials[MatID()];
 	theLaw->CrackTractionLaw(this,nCod,tCod,t.x,t.y,area);
+
 }
 
 // Calculate energy in the traction law for this segment if in traction
@@ -599,7 +602,7 @@ void CrackSegment::FindCrackTipMaterial(void)
 	// if only one active material, it cannot change
 	if(numActiveMaterials<=1) return;
 	
-	Vector cspos,ndpos;
+	Vector cspos;
 	int i,iel,numnds,nds[maxShapeNodes];
     double fn[maxShapeNodes];
 	
@@ -611,7 +614,7 @@ void CrackSegment::FindCrackTipMaterial(void)
 	cspos.x=x;
 	cspos.y=y;
 	iel=planeInElem;
-	theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cspos,&ndpos);
+	theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cspos);
 	
 	// extrapolate to particle
 	for(i=1;i<=numnds;i++)

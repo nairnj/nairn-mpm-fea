@@ -113,7 +113,7 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
     }
     
     // is it a new peak?
-    if(deff > umidI) upeak[0] = deff;
+    if(deff > upeak[0]) upeak[0] = deff;
     
     // skip if deff=zero since tractions are zero, and would cause problem if pure linear softening law when deff=0
     // (deff>0 implies upeak[0]>0 even when umidI=0 for pure linear softening)
@@ -145,6 +145,7 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
 	// force is traction times area projected onto x-y plane
 	cs->tract.x=area*(Tn*dy - Tt*dx);
 	cs->tract.y=area*(-Tn*dx - Tt*dy);
+	
 }
 
 // return total energy (which is needed for path independent J) under traction law curve

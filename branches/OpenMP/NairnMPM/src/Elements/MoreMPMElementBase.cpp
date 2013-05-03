@@ -68,45 +68,37 @@ void ElementBase::GetShapeFunctionData(MPMBase *mpmptr) const
 	See GetShapeFunctions() if need to change
   NOTE: This is only called by crack update and do not need to save xipos.
 */
-void ElementBase::GetShapeFunctionsForCracks(int *numnds,double *fn,int *nds,Vector *pos,Vector *xipos) const
+void ElementBase::GetShapeFunctionsForCracks(int *numnds,double *fn,int *nds,Vector *pos) const
 {
+	Vector xipos;
+	int ndIDs[maxShapeNodes];
+	
     switch(useGimp)
     {   case POINT_GIMP:
         	// Load element noodes, dimensionless position, and shape functinos
             GetNodes(numnds,nds);
-            GetXiPos(pos,xipos);
-            ShapeFunction(xipos,FALSE,&fn[1],NULL,NULL,NULL);
+            GetXiPos(pos,&xipos);
+            ShapeFunction(&xipos,FALSE,&fn[1],NULL,NULL,NULL);
             break;
             
-        case UNIFORM_GIMP:
-        {   // uGIMP analysis
-            int ndIDs[maxShapeNodes];
-            GetXiPos(pos,xipos);
-            GetGimpNodes(numnds,nds,ndIDs,xipos);
-            GimpShapeFunction(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
-            GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
-            break;
-        }
-            
-        case UNIFORM_GIMP_AS:
-        {   // uGIMP analysis
-            int ndIDs[maxShapeNodes];
-            GetXiPos(pos,xipos);
-            GetGimpNodes(numnds,nds,ndIDs,xipos);
-            GimpShapeFunctionAS(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
-            GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
-            break;
-        }
-			
         case LINEAR_CPDI:
-		case LINEAR_CPDI_AS:
         case QUADRATIC_CPDI:
-		{	int newGimp = fmobj->IsAxisymmetric() ? UNIFORM_GIMP_AS : UNIFORM_GIMP ;
-			ChangeGimp(newGimp);
-			GetShapeFunctionsForCracks(numnds,fn,nds,pos,xipos);
-			RestoreGimp();
-			break;
-		}
+			// since no material point, CPDI uses GIMP method
+        case UNIFORM_GIMP:
+            GetXiPos(pos,&xipos);
+            GetGimpNodes(numnds,nds,ndIDs,&xipos);
+            GimpShapeFunction(&xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
+            GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
+            break;
+            
+		case LINEAR_CPDI_AS:
+			// since no material point, CPDI uses GIMP method
+        case UNIFORM_GIMP_AS:
+            GetXiPos(pos,&xipos);
+            GetGimpNodes(numnds,nds,ndIDs,&xipos);
+            GimpShapeFunctionAS(&xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
+            GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
+            break;
      }
 }
 

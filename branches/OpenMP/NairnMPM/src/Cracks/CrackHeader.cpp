@@ -198,7 +198,7 @@ short CrackHeader::add(CrackSegment *cs)
     1. Add new segment at start or end
     2. Adjust firstSeg or lastSeg and nextSeg near the end points
     3. Set tipMatnum new segment to previous tip and set previous one to -1
-    4. Transfer Crack tip propoerties to new crack tip
+    4. Transfer Crack tip properties to new crack tip
     5. Locate element for new crack tip
 */
 short CrackHeader::add(CrackSegment *cs,int whichTip)
@@ -421,7 +421,6 @@ short CrackHeader::MoveCrack(void)
 	else
 	{	int iel;
 		double fn[maxShapeNodes];
-		Vector cncpos;
 		int j,nodeCounter;
 		Vector delv,cpos,vcm;
 		int nds[maxShapeNodes],numnds;
@@ -433,7 +432,7 @@ short CrackHeader::MoveCrack(void)
 				iel=scrk->planeInElem-1;			// now zero based
 				cpos.x=scrk->x;
 				cpos.y=scrk->y;
-				theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cpos,&cncpos);
+				theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cpos);
 				
 				// initialize
 				ZeroVector(&delv);
@@ -537,7 +536,6 @@ short CrackHeader::MoveCrack(short side)
     CrackSegment *scrk=firstSeg;
     int iel;
     double fn[maxShapeNodes],surfaceMass;
-	Vector cncpos;
     short js=side-1,nodeCounter,j;
 	int numnds,nds[maxShapeNodes];
     Vector delv,cpos;
@@ -549,7 +547,7 @@ short CrackHeader::MoveCrack(short side)
 			iel=scrk->surfInElem[js]-1;			// now zero based
 			cpos.x=scrk->surfx[js];
 			cpos.y=scrk->surfy[js];
-			theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cpos,&cncpos);
+			theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cpos);
             
 			// initialize
 			ZeroVector(&delv);
@@ -615,7 +613,7 @@ void CrackHeader::AddTractionForce(void)
 	if(!hasTractionLaws) return;
 	CrackSegment *cs=firstSeg;
 	while(cs!=NULL)
-	{	cs->AddTractionFext(this);
+	{	cs->AddTractionForceSeg(this);
 		cs=cs->nextSeg;
 	}
 }
@@ -1484,7 +1482,7 @@ void CrackHeader::CrackTipHeating(void)
     CrackSegment *scrk=firstSeg;
 	int iel;
 	double fn[maxShapeNodes];
-	Vector cncpos,cpos;
+	Vector cpos;
 	int numnds,i,nds[maxShapeNodes];
     
 	// exit if no segments
@@ -1495,7 +1493,7 @@ void CrackHeader::CrackTipHeating(void)
 	{	iel=scrk->planeInElem-1;		// now zero based
 		cpos.x=scrk->x;
 		cpos.y=scrk->y;
-		theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cpos,&cncpos);
+		theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cpos);
 	
         // Add crack particle heating to each node in the element
         for(i=1;i<=numnds;i++)

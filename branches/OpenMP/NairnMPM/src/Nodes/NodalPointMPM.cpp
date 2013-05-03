@@ -465,7 +465,7 @@ void NodalPoint::CopyGridForces(NodalPoint *real)
 void NodalPoint::AddFtotSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFtotSpreadTask3(&f); }
 
 // Add to traction force (g-mm/sec^2)
-// If cracks, recalculations crossing, but stops at first crack. Tractions new two cracks might have errors
+// If cracks, recalculates crossing, but stops at first crack. Tractions near two cracks might have errors
 void NodalPoint::AddTractionTask3(MPMBase *mpmptr,int matfld,Vector *f)
 {
 	// Look for crack crossing and save until later
