@@ -322,7 +322,7 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     sp->xy = stk.xy - 2.*MUbar*dlambda*nk.xy;
     if(np==THREED_MPM)
     {   sp->xz = stk.xz - 2.*MUbar*dlambda*nk.xz;
-        sp->xz = stk.yz - 2.*MUbar*dlambda*nk.yz;
+        sp->yz = stk.yz - 2.*MUbar*dlambda*nk.yz;
     }
     
     // save on particle

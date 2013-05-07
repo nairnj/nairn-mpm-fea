@@ -56,8 +56,8 @@ int numActiveMaterials;		// Number of non-rigid materials used by at least one m
 // Constructor
 NairnMPM::NairnMPM()
 {
-	version=10;						// main version
-	subversion=0;					// subversion (must be < 10)
+	version=9;						// main version
+	subversion=2;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 	mpmApproach=USAVG_METHOD;		// mpm method
 	ptsPerElement=4;				// number of points per element (2D default, 3D changes it to 8)
