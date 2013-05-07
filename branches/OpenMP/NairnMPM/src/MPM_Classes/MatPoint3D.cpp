@@ -15,6 +15,10 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Exceptions/CommonException.hpp"
 
+static double r1s[8]={-1.,1.,1.,-1.,-1.,1.,1.,-1.};
+static double r2s[8]={-1.,-1.,1.,1.,-1.,-1.,1.,1.};
+static double r3s[8]={-1.,-1.,-1.,-1.,1.,1.,1.,1.};
+
 #pragma mark MatPoint3D::Constructors and Destructors
 
 // Constructors
@@ -259,58 +263,18 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
     double Vp = 8.*(r1.x * (r2.y*r3.z - r2.z*r3.y)
                     + r1.y * (r2.z*r3.x - r2.x*r3.z)
                      + r1.z * (r2.x*r3.y - r2.y*r3.x) );
-	
+    
 	// always LINEAR_CPDI
     
 	try
-	{	// nodes at 8 node
-		c.x = pos.x-r1.x-r2.x-r3.x;
-		c.y = pos.y-r1.y-r2.y-r3.y;
-		c.z = pos.z-r1.z-r2.z-r3.z;
-		cpdi[0]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-		theElements[cpdi[0]->inElem]->GetXiPos(&c,&cpdi[0]->ncpos);
-		
-		c.x = pos.x+r1.x-r2.x-r3.x;
-		c.y = pos.y+r1.y-r2.y-r3.y;
-		c.z = pos.z+r1.z-r2.z-r3.z;
-		cpdi[1]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-		theElements[cpdi[1]->inElem]->GetXiPos(&c,&cpdi[1]->ncpos);
-		
-		c.x = pos.x+r1.x+r2.x-r3.x;
-		c.y = pos.y+r1.y+r2.y-r3.y;
-		c.z = pos.z+r1.z+r2.z-r3.z;
-		cpdi[2]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-		theElements[cpdi[2]->inElem]->GetXiPos(&c,&cpdi[2]->ncpos);
-		
-		c.x = pos.x-r1.x+r2.x-r3.x;
-		c.y = pos.y-r1.y+r2.y-r3.y;
-		c.z = pos.z-r1.z+r2.z-r3.z;
-		cpdi[3]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-		theElements[cpdi[3]->inElem]->GetXiPos(&c,&cpdi[3]->ncpos);
-		
-		c.x = pos.x-r1.x-r2.x+r3.x;
-		c.y = pos.y-r1.y-r2.y+r3.y;
-		c.z = pos.z-r1.z-r2.z+r3.z;
-		cpdi[4]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-		theElements[cpdi[4]->inElem]->GetXiPos(&c,&cpdi[4]->ncpos);
-		
-		c.x = pos.x+r1.x-r2.x+r3.x;
-		c.y = pos.y+r1.y-r2.y+r3.y;
-		c.z = pos.z+r1.z-r2.z+r3.z;
-		cpdi[5]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-		theElements[cpdi[5]->inElem]->GetXiPos(&c,&cpdi[5]->ncpos);
-		
-		c.x = pos.x+r1.x+r2.x+r3.x;
-		c.y = pos.y+r1.y+r2.y+r3.y;
-		c.z = pos.z+r1.z+r2.z+r3.z;
-		cpdi[6]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-		theElements[cpdi[6]->inElem]->GetXiPos(&c,&cpdi[6]->ncpos);
-		
-		c.x = pos.x-r1.x+r2.x+r3.x;
-		c.y = pos.y-r1.y+r2.y+r3.y;
-		c.z = pos.z-r1.z+r2.z+r3.z;
-		cpdi[7]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
-		theElements[cpdi[7]->inElem]->GetXiPos(&c,&cpdi[7]->ncpos);
+	{	// find all 8 corner nodes
+        for(int i=0;i<8;i++)
+        {   c.x = pos.x + r1s[i]*r1.x + r2s[i]*r2.x + r3s[i]*r3.x;
+            c.y = pos.y + r1s[i]*r1.y + r2s[i]*r2.y + r3s[i]*r3.y;
+            c.z = pos.z + r1s[i]*r1.z + r2s[i]*r2.z + r3s[i]*r3.z;
+            cpdi[i]->inElem = mpmgrid.FindElementFromPoint(&c)-1;
+            theElements[cpdi[i]->inElem]->GetXiPos(&c,&cpdi[i]->ncpos);
+        }
 
 		// gradient weighting values
 		Vp = 1./Vp;
@@ -339,9 +303,11 @@ void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
 		cpdi[7]->wg.y = (r1.z*r2.x - r1.x*r2.z - r1.z*r3.x - r2.z*r3.x + r1.x*r3.z + r2.x*r3.z)*Vp;
 		cpdi[7]->wg.z = (-(r1.y*r2.x) + r1.x*r2.y + r1.y*r3.x + r2.y*r3.x - r1.x*r3.y - r2.x*r3.y)*Vp;
 	}
-	catch(...)
-	{	throw CommonException("A CPDI particle domain node has left the grid.","MatPoint3D::GetCPDINodesAndWeights");
-	}
+    catch(CommonException err)
+    {   char msg[200];
+        sprintf(msg,"A CPDI particle domain node has left the grid: %s",err.Message());
+        throw CommonException(msg,"MatPoint3D::GetCPDINodesAndWeights");
+    }
     
     // traction BC area saves 1/4 the total face area
     if(faceArea!=NULL)
@@ -458,8 +424,10 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
             cElem[3] = mpmgrid.FindElementFromPoint(&c4)-1;
             theElements[cElem[3]]->GetXiPos(&c4,&corners[3]);
         }
-        catch(...)
-        {	throw CommonException("A Traction edge node has left the grid.","MatPoint2D::GetTractionInfo");
+        catch(CommonException err)
+        {   char msg[200];
+            sprintf(msg,"A Traction edge node has left the grid: %s",err.Message());
+            throw CommonException(msg,"MatPoint3D::GetTractionInfo");
         }
     }
     else

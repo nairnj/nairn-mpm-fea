@@ -60,7 +60,7 @@ class TransportTask
 		virtual TransportTask *TransportRates(NodalPoint *,double) = 0;
 		
 		// increment transport rate
-		virtual TransportTask *IncrementTransportRate(NodalPoint *,double,double &) const = 0;
+		virtual TransportTask *IncrementTransportRate(const NodalPoint *,double,double &) const = 0;
 		
 		// increment particle transpoprt value
 		virtual TransportTask *MoveTransportValue(MPMBase *,double,double) const = 0;

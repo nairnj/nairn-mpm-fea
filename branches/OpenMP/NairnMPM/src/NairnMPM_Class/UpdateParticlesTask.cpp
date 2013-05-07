@@ -79,7 +79,7 @@ void UpdateParticlesTask::Execute(void)
 				nextTransport=transportTasks;
 				task=0;
 				while(nextTransport!=NULL)
-					nextTransport=nextTransport->IncrementTransportRate(nd[nds[i]],fn[i],rate[task++]);
+					nextTransport=nextTransport->IncrementTransportRate(ndptr,fn[i],rate[task++]);
 			}
 			
 			// update position in mm and velocity in mm/sec

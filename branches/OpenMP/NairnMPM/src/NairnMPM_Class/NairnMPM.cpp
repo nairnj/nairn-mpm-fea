@@ -431,6 +431,10 @@ void NairnMPM::PreliminaryCalcs(void)
 		if(theMaterials[matid]->Rigid())
 		{	hasRigidContactParticles=true;
 			if(firstRigidPt<0) firstRigidPt=p;
+            
+            // CPDI domain data
+            if(!mpm[p]->AllocateCPDIStructures(ElementBase::useGimp,IsThreeD()))
+                throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryCalcs");
 			continue;
 		}
         

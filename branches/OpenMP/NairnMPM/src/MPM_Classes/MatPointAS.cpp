@@ -229,9 +229,11 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
 		cpdi[3]->wg.z = tipwt;
 	}
 		
-	catch(...)
-	{	throw CommonException("A CPDI partical domain node has left the grid.","MatPointAS::GetCPDINodesAndWeights");
-	}
+    catch(CommonException err)
+    {   char msg[200];
+        sprintf(msg,"A CPDI particle domain node has left the grid: %s",err.Message());
+        throw CommonException(msg,"MatPointAS::GetCPDINodesAndWeights");
+    }
     
     // traction BC area saves 1/2 surface area of particle domain on the various edges
     if(faceArea!=NULL)
@@ -354,9 +356,11 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 		cElem[1] = mpmgrid.FindElementFromPoint(&c2)-1;
 		theElements[cElem[1]]->GetXiPos(&c2,&corners[1]);
 	}
-	catch(...)
-	{	throw CommonException("A Traction edge node has left the grid.","MatPointAS::GetTractionInfo");
-	}
+    catch(CommonException err)
+    {   char msg[200];
+        sprintf(msg,"A Traction edge node has left the grid: %s",err.Message());
+        throw CommonException(msg,"MatPointAS::GetTractionInfo");
+    }
 	
     // get traction normal vector by radial integral for first node no the edge
     ZeroVector(tscaled);

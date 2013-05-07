@@ -37,7 +37,7 @@ void InitializationTask::Execute(void)
 	
 	// Zero Mass Matrix and vectors
 	warnings.BeginStep();
-
+    
 	int tp = fmobj->GetTotalNumberOfPatches();
 #pragma omp parallel
 	{
@@ -48,12 +48,12 @@ void InitializationTask::Execute(void)
 		
         // zero ghost nodes in patch for this thread
         int pn = GetPatchNumber();
-		patches[pn]->InitializeForTimeStep();
+ 		patches[pn]->InitializeForTimeStep();
 
 		// particle calculations
 #pragma omp for nowait
 		for(int p=0;p<nmpmsRC;p++)
-		{	MPMBase *mpmptr = mpm[p];										// pointer
+        {   MPMBase *mpmptr = mpm[p];                                       // pointer
 			const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
 			try
 			{	elref->GetShapeFunctionData(mpmptr);
@@ -64,12 +64,13 @@ void InitializationTask::Execute(void)
 #pragma omp critical
 					initErr = new CommonException(err);
 				}
-			}			
+			}
 		}
 	}
 	
 	// was there an error?
 	if(initErr!=NULL) throw *initErr;
+    
 	
 	// allocate crack and material velocity fields needed for time step on real nodes
     // tried critical sections when nodes changes, but it was slower
@@ -150,7 +151,7 @@ void InitializationTask::Execute(void)
 				patches[pn]->InitializationReduction();
 		}
 	}
-	
+    	
     // Update forces applied to particles
 	MatPtLoadBC::SetParticleFext(mtime);
 	

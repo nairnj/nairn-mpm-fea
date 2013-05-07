@@ -297,7 +297,7 @@ TransportTask *ConductionTask::TransportRates(NodalPoint *ndptr,double deltime)
 #pragma mark UPDATE PARTICLES TASK
 
 // increment temperature rate on the particle
-TransportTask *ConductionTask::IncrementTransportRate(NodalPoint *ndpt,double shape,double &rate) const
+TransportTask *ConductionTask::IncrementTransportRate(const NodalPoint *ndpt,double shape,double &rate) const
 {	rate += ndpt->fcond*shape;			// fcond are temperature rates from TransportRates()
 	return nextTask;
 }

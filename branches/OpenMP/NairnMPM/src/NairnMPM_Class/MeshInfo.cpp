@@ -12,6 +12,7 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Patches/GridPatch.hpp"
 #include "MPM_Classes/MPMBase.hpp"
+#include "Exceptions/CommonException.hpp"
 #include <algorithm>
 
 // global class for grid information
@@ -303,27 +304,34 @@ void MeshInfo::ListOfNeighbors3D(int num,int *neighbor)
 }
 
 // For structured grid only, find element from location and return result (1-based element number)
-// throws empty exception if not a structured grid (horiz<0) or if point is not in the grid
+// throws CommonException() if not a structured grid (horiz<0) or if point is not in the grid
 int MeshInfo::FindElementFromPoint(Vector *pt)
 {
     int theElem;
     
     // error if not structured grid
-    if(horiz<0) throw "";
+    if(horiz<0) throw CommonException("(not a structured grid)","");
     
     int col = (int)((pt->x-xmin)/gridx);		// zero-based column # from 0 to horiz-1
 	if(col<0 || col>=horiz)
 	{	if(pt->x == xmin+horiz*gridx)
 			col = horiz-1;
 		else
-			throw "";
+        {   char msg[100];
+            sprintf(msg,"column for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
+			throw CommonException(msg,"");
+        }
 	}
+    
     int row = (int)((pt->y-ymin)/gridy);        // zero-based row # from 0 to vert-1
 	if(row<0 || row>=vert)
 	{	if(pt->y == ymin+vert*gridy)
 			row = vert-1;
 		else
-			throw "";
+        {   char msg[100];
+            sprintf(msg,"row for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
+            throw CommonException(msg,"");
+        }
 	}
     
     // 3D
@@ -333,7 +341,10 @@ int MeshInfo::FindElementFromPoint(Vector *pt)
 		{	if(pt->z == zmin+depth*gridz)
 				zrow = depth-1;
 			else
-				throw "";
+            {   char msg[100];
+                sprintf(msg,"rank for point (%lf,%lf,%lf)",pt->x,pt->y,pt->z);
+                throw CommonException(msg,"");
+            }
 		}
         theElem = horiz*(zrow*vert + row) + col + 1;
     }
