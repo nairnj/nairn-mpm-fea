@@ -906,7 +906,6 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,
 	// L is the cell spacing, 2*lp is the current particle size.
 	// assuming the particle size is the same in x, y and z direction in element coordinate
 	// the deformation of the particle is not considered yet.
-	// assumes 8 particles per element
 	double lp = mpmgrid.lp;
 	double q1 = lp,q2 = 2.-lp, q3 = 2.+lp;
 

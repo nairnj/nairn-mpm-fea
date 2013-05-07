@@ -349,7 +349,6 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
     
 	// The cumulative dissipated energy is tracked in plastic energy
-    // Setting the disp energy allows heating if mechanical energy is on
     mptr->AddPlastEnergy(dispEnergy);
     
 	// update internal variables in the plastic law

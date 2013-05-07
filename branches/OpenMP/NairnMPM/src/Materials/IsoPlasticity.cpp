@@ -386,7 +386,6 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
     
 	// The cumulative dissipated energy is tracked in plastic energy
-    // Setting the disp energy allows heating if mechanical energy is on
     mptr->AddPlastEnergy(dispEnergy);
     
 	// update internal variables
