@@ -251,7 +251,7 @@ double HardeningLawBase::SolveForLambdaBracketed(MPMBase *mptr,int np,double str
  				if(xl == lambdak) break;    // change in root is negligible
             }
             else
-            {   dxold = dx;
+            {   dxold = dx; 
                 dx = glam/slope;
                 double temp = lambdak;
                 lambdak -= dx;

@@ -464,6 +464,12 @@ void NodalPoint::CopyGridForces(NodalPoint *real)
 // Only called by AddTractionForce() and CrackInterfaceForce()
 void NodalPoint::AddFtotSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFtotSpreadTask3(&f); }
 
+#ifdef USE_FEXT
+
+void NodalPoint::AddFextSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFextSpreadTask3(&f); }
+
+#endif
+
 // Add to traction force (g-mm/sec^2)
 // If cracks, recalculates crossing, but stops at first crack. Tractions near two cracks might have errors
 void NodalPoint::AddTractionTask3(MPMBase *mpmptr,int matfld,Vector *f)

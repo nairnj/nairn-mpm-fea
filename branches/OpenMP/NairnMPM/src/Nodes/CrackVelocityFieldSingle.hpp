@@ -27,6 +27,9 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		virtual double GetTotalMassAndCount(void);
 	
 		virtual void AddFtotSpreadTask3(Vector *);
+#ifdef USE_FEXT
+		virtual void AddFextSpreadTask3(Vector *);
+#endif
 		virtual void AddGridDampingTask3(double);
 	
 		virtual void UpdateMomentaOnField(double);

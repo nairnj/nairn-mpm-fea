@@ -85,6 +85,9 @@ class NodalPoint : public LinkedObject
 	
 		void AddFtotTask3(short,int,Vector *);
 		void AddFtotSpreadTask3(short,Vector);
+#ifdef USE_FEXT
+		void AddFextSpreadTask3(short,Vector);
+#endif
 		void AddTractionTask3(MPMBase *,int,Vector *);
 		void AddGridDampingTask3(double);
 		void CopyGridForces(NodalPoint *);

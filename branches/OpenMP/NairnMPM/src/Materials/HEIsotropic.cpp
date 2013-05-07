@@ -290,8 +290,8 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     //=====================================================
     // if plastic
     
-	// JAN: Use hardening law method (which can now ue other laws too)
-    double Ie1bar = (1./3.)*(B.xx+B.yy+B.zz)/J23;
+	// JAN: Use hardening law method (which can now use other laws too)
+    double Ie1bar = (B.xx+B.yy+B.zz)/(3.*J23);
     double MUbar = p->Gred*Ie1bar;
     
     // Find  lambda for this plastic state
@@ -301,24 +301,26 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     //cout << "nk.xx  =    " << nk.xx << "nk.xy  =    " << nk.xy << endl;
     
     // update deviatoric stress
-    sp->xx = stk.xx - 2.*MUbar*dlambda*nk.xx;
-    sp->yy = stk.yy - 2.*MUbar*dlambda*nk.yy;
-    sp->zz = stk.zz - 2.*MUbar*dlambda*nk.zz;
-    sp->xy = stk.xy - 2.*MUbar*dlambda*nk.xy;
-    if(np==THREED_MPM)
-    {   sp->xz = stk.xz - 2.*MUbar*dlambda*nk.xz;
-        sp->xz = stk.yz - 2.*MUbar*dlambda*nk.yz;
+	double twoMuLam = 2.*MUbar*dlambda;
+    sp->xx = stk.xx - twoMuLam*nk.xx;
+    sp->yy = stk.yy - twoMuLam*nk.yy;
+    sp->zz = stk.zz - twoMuLam*nk.zz;
+    sp->xy = stk.xy - twoMuLam*nk.xy;
+    if(np == THREED_MPM)
+    {   sp->xz = stk.xz - twoMuLam*nk.xz;
+        sp->xz = stk.yz - twoMuLam*nk.yz;
     }
     
     // save on particle
     // JAN: reuse stress rather than calculate again
-	pB->xx = (sp->xx/p->Gred+Ie1bar)*J23*resStretch2;
-	pB->yy = (sp->yy/p->Gred+Ie1bar)*J23*resStretch2;
-	pB->zz = (sp->zz/p->Gred+Ie1bar)*J23*resStretch2;
-	pB->xy = sp->xy/p->Gred*J23*resStretch2;
-    if(np==THREED_MPM)
-    {   pB->xz = sp->xz/p->Gred*J23*resStretch2;
-        pB->yz = sp->yz/p->Gred*J23*resStretch2;
+	double J23term = J23*resStretch2;
+	pB->xx = (sp->xx/p->Gred+Ie1bar)*J23term;
+	pB->yy = (sp->yy/p->Gred+Ie1bar)*J23term;
+	pB->zz = (sp->zz/p->Gred+Ie1bar)*J23term;
+	pB->xy = sp->xy*J23term/p->Gred;
+    if(np == THREED_MPM)
+    {   pB->xz = sp->xz*J23term/p->Gred;
+        pB->yz = sp->yz*J23term/p->Gred;
     }
     
     // strain energy per unit mass (U/(rho0 V0)) and we are using
@@ -393,15 +395,20 @@ Tensor HEIsotropic::GetTrialDevStressTensor(Tensor *B,double J23,int np,double G
 {
     // Trial specific Kirchhoff Stress Tensor
     Tensor strial;
-    ZeroTensor(&strial);
-    strial.xx = 1./3.*Gred*(2.*B->xx-B->yy-B->zz)/J23;
-    strial.yy = 1./3.*Gred*(2.*B->yy-B->xx-B->zz)/J23;
-    strial.zz = 1./3.*Gred*(2.*B->zz-B->xx-B->yy)/J23;
+	double J23normal = 3.*J23;
+    strial.xx = Gred*(2.*B->xx-B->yy-B->zz)/J23normal;
+    strial.yy = Gred*(2.*B->yy-B->xx-B->zz)/J23normal;
+    //strial.zz = Gred*(2.*B->zz-B->xx-B->yy)/J23normal;
+	strial.zz = -(strial.xx+strial.yy);
     strial.xy = Gred*B->xy/J23;
     if(np==THREED_MPM)
     {   strial.xz = Gred*B->xz/J23;
         strial.yz = Gred*B->yz/J23;
     }
+	else
+	{	strial.xz = 0.;
+		strial.yz = 0.;
+	}
     
     return strial;
 }
@@ -430,7 +437,6 @@ Tensor HEIsotropic::GetNormalTensor(Tensor *strial,double magnitude_strial,int n
 {
     // Trial specific Kirchhoff Stress Tensor
     Tensor n;
-    ZeroTensor(&n);
     n.xx = strial->xx/magnitude_strial;
     n.yy = strial->yy/magnitude_strial;
     n.zz = strial->zz/magnitude_strial;
@@ -439,6 +445,10 @@ Tensor HEIsotropic::GetNormalTensor(Tensor *strial,double magnitude_strial,int n
     {   n.xz = strial->xz/magnitude_strial;
         n.yz = strial->yz/magnitude_strial;
     }
+	else
+	{	n.xz = 0.;
+		n.yz = 0.;
+	}
     //cout << "strial.yy  =    " << strial->yy << "      strial.zz  =    " << strial->zz << "magnitude_strial  =    " << magnitude_strial << endl;
     //cout << "n.xx  =    " << n.xx << "n.xy  =    " << n.xy << endl;
     return n;

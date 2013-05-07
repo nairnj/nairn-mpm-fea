@@ -249,6 +249,14 @@ void CrackVelocityFieldMulti::AddFtotSpreadTask3(Vector *f)
 	}
 }
 
+#ifdef USE_FEXT
+
+void CrackVelocityFieldMulti::AddFextSpreadTask3(Vector *f)
+{ throw CommonException("Fext not allowed in multimaterial mode","CrackVelocityFieldMulti::AddFextSpreadTask3");
+}
+
+#endif
+
 // Add grid dampiong force at a node in g mm/sec^2
 void CrackVelocityFieldMulti::AddGridDampingTask3(double extDamping)
 {	for(int i=0;i<maxMaterialFields;i++)

@@ -56,6 +56,9 @@ class CrackVelocityField
 		void AddFtotTask3(int,Vector *);
 		virtual void CopyGridForces(NodalPoint *,int);
 		virtual void AddFtotSpreadTask3(Vector *) = 0;
+#ifdef USE_FEXT
+		virtual void AddFextSpreadTask3(Vector *) = 0;
+#endif
 		virtual void AddGridDampingTask3(double) = 0;
 	
 		virtual void UpdateMomentaOnField(double) = 0;

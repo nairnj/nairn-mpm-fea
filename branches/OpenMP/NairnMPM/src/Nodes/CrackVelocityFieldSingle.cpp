@@ -42,6 +42,15 @@ void CrackVelocityFieldSingle::AddFtotSpreadTask3(Vector *f)
 		mvf[0]->AddFtot(f);
 }
 
+#ifdef USE_FEXT
+
+void CrackVelocityFieldSingle::AddFextSpreadTask3(Vector *f)
+{	if(mvf[0]->numberPoints>0)
+		AddVector(&(mvf[0]->fext),f);
+}
+
+#endif
+
 // Add grid dampiong force at a node in g mm/sec^2
 void CrackVelocityFieldSingle::AddGridDampingTask3(double extDamping)
 {	if(mvf[0]->numberPoints>0)

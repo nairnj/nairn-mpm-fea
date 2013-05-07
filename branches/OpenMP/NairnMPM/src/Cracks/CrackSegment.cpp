@@ -278,7 +278,12 @@ double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,doub
 		
 		// add if find a field
 		if(vfld>=0)
-		{	ndi->AddFtotSpreadTask3(vfld,FTract(sign*fn[i]));
+		{
+#ifdef USE_FEXT
+			ndi->AddFextSpreadTask3(vfld,FTract(sign*fn[i]));
+#else
+			ndi->AddFtotSpreadTask3(vfld,FTract(sign*fn[i]));
+#endif
 			fnorm += fn[i];
 		}
 	}

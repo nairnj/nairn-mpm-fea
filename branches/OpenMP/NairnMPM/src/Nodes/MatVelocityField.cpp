@@ -46,6 +46,9 @@ void MatVelocityField::Zero(void)
 	ZeroVector(&pk);
 	if(!rigidField)
 	{	ZeroVector(&ftot);
+#ifdef USE_FEXT
+		ZeroVector(&fext);
+#endif
 	}
 	ZeroVector(&vk);
 	ZeroVector(&disp);
@@ -164,6 +167,11 @@ void MatVelocityField::AddGridDampingTask3(double extDamping)
 {	ftot.x -= extDamping*pk.x;
 	ftot.y -= extDamping*pk.y;
 	ftot.z -= extDamping*pk.z;
+#ifdef USE_FEXT
+	ftot.x += fext.x;
+	ftot.y += fext.y;
+	ftot.z += fext.z;
+#endif
 }
 
 // internal force - add or scale and add

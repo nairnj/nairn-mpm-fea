@@ -150,7 +150,9 @@ void GridForcesTask::Execute(void)
     MaterialInterfaceNode::InterfaceOnKnownNodes();
     
 	// Add grid damping forces
+#ifndef USE_FEXT
 	if(bodyFrc.useDamping)
+#endif
 	{	double damping = bodyFrc.GetDamping(mtime);		// could move inside loop and make function of nodal position too
     	for(int i=1;i<=nnodes;i++)
 			nd[i]->AddGridDampingTask3(damping);
