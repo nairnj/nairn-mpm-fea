@@ -78,6 +78,7 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	
 	// counts crossing and sign is whether or not left the grid
 	elementCrossings=0;
+    
 }
 
 // allocation diffusion data if need in this calculations
@@ -118,7 +119,7 @@ bool MPMBase::AllocateCPDIStructures(int gimpType,bool isThreeD)
     for(i=0;i<cpdiSize;i++)
     {   cpdi[i] = new CPDIDomain;
         cpdi[i]->wg.z = 0.;             // set zero once for 2D calculations
-        cpdi[0]->ncpos.z = 0.;          // set zero once for 2D calculations
+        cpdi[i]->ncpos.z = 0.;          // set zero once for 2D calculations
 		
 		// weights constant except for axisymmetric CPDI
 		if(gimpType==LINEAR_CPDI)

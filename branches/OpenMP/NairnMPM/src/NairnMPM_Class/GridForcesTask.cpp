@@ -77,7 +77,7 @@ void GridForcesTask::Execute(void)
 				
 				// find shape functions and derviatives
 				const ElementBase *elemref = theElements[mpmptr->ElemID()];
-				elemref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
+				elemref->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,mpmptr);
 				
 				// Add particle property to buffer on the material point (needed to allow parallel code)
 				short vfld;

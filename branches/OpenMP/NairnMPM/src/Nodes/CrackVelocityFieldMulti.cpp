@@ -37,7 +37,7 @@ void CrackVelocityFieldMulti::ZeroMatFields(void)
 	numberRigidPoints=0;
 }
 
-// match materical velocity fields on ghost node to those on a real node
+// match material velocity fields on ghost node to those on a real node
 // throws CommonException() on memory error
 void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **rmvf)
 {	for(int i=0;i<maxMaterialFields;i++)
@@ -46,7 +46,7 @@ void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **rmvf)
 		if(mvf[i]==NULL)
 		{	mvf[i]=new MatVelocityField(rmvf[i]->rigidField);
 			if(mvf[i]==NULL) throw CommonException("Memory error allocating material velocity field.",
-											   "CrackVelocityField::MatchRealFields");
+											   "CrackVelocityFieldMulti::MatchMatVelocityFields");
 		}
 		
 		mvf[i]->Zero();
@@ -1232,7 +1232,7 @@ void CrackVelocityFieldMulti::AddFtotDirection(Vector *norm,double deltime,doubl
 int CrackVelocityFieldMulti::GetNumberPointsNonrigid(void) { return numberPoints-numberRigidPoints; }
 
 // total mass all velocity fields (rigid particles mass not counted)
-double CrackVelocityFieldMulti::GetTotalMass(void)
+double CrackVelocityFieldMulti::GetTotalMass(void) const
 {	int i;
 	double mass=0;
 	for(i=0;i<maxMaterialFields;i++)
@@ -1409,7 +1409,7 @@ int CrackVelocityFieldMulti::PasteFieldMomenta(Vector *holdPk,int offset)
 }
 
 // for debugging
-void CrackVelocityFieldMulti::Describe(void)
+void CrackVelocityFieldMulti::Describe(void) const
 {	CrackVelocityField::Describe();
 	cout << "#     multimaterial: nmat= " << numberMaterials << " nrigidpts= " << numberRigidPoints << endl;
 	int i;

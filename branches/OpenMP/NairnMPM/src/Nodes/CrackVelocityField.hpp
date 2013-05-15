@@ -94,7 +94,7 @@ class CrackVelocityField
 		int OppositeCrackTo(int,int);
 		void SetLocationAndCrack(short,int,int);
 		MatVelocityField **GetMaterialVelocityFields(void);
-		virtual double GetTotalMass(void) = 0;
+		virtual double GetTotalMass(void) const = 0;
 		virtual void AddKineticEnergyAndMass(double &,double &) = 0;
 		virtual double GetVolumeNonrigid(void) = 0;
 		virtual double GetVolumeTotal(double) const = 0;
@@ -108,7 +108,7 @@ class CrackVelocityField
 		Vector GetContactForce(int);
 		virtual int GetNumberPoints(void);
 		virtual int GetNumberPointsNonrigid(void);
-		virtual void Describe(void);
+		virtual void Describe(void) const;
 		virtual void SumAndClearRigidContactForces(Vector *,bool);
 	
 		// class methods

@@ -45,7 +45,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
         virtual void AddFtotDirection(Vector *,double,double);
 	
 		// accessors
-		virtual double GetTotalMass(void);
+		virtual double GetTotalMass(void) const;
 		virtual void AddKineticEnergyAndMass(double &,double &);
 		virtual double GetVolumeNonrigid(void);
 		virtual double GetVolumeTotal(double) const;
@@ -55,7 +55,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		virtual void ChangeMomentum(Vector *,bool,double);
 		virtual int CopyFieldMomenta(Vector *,int);
 		virtual int PasteFieldMomenta(Vector *,int);
-		virtual void Describe(void);
+		virtual void Describe(void) const;
 	
 };
 

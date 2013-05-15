@@ -81,7 +81,7 @@ bool GridPatch::CreateGhostNodes(void)
 	//cout << "... gtot = " << numGhosts << endl;
 
 	if(zn<=0)
-	{	// r2D row by row
+	{	// 2D row by row
 		int row,col,g=0;
 		for(i=-ghostRows;i<=yn+ghostRows;i++)
 		{	row = y0+i;					// 0 based grid row
@@ -286,7 +286,7 @@ NodalPoint *GridPatch::GetNodePointer(int num)
         }
         
         if(rank<0)
-        {   // ghost in full slices below bass of the element
+        {   // ghost in full slices below base of the element
             g = (rank+ghostRows)*fullRank + (row+ghostRows)*fullRow + ghostRows + col;
         }
         else if(rank<zn)
@@ -333,6 +333,121 @@ NodalPoint *GridPatch::GetNodePointer(int num)
 	
 	return thePtr;
 }
+
+// return pointer to real or ghost node for 1=based node number num in the global grid
+//	as appropriate for this patch
+NodalPoint *GridPatch::GetNodePointer(int num,bool debug)
+{
+	// if single patch, use the real node
+	if(ghosts==NULL) return nd[num];
+	
+	// look for ghost node
+	int g,col,row;
+	
+	// 2D
+	if(zn<=0)
+	{	// get rwo column in this patch
+		col = (num-1)%mpmgrid.yplane;               // row, col in global grid
+		row = (num-1)/mpmgrid.yplane;
+		col -= x0;									// zero based within the patch
+		row -= y0;
+		
+		// is it an owned node?
+		if(row>=0 && row<yn && col>=0 && col<xn) return nd[num];
+		
+		// is it out of this patch
+		if(row<-ghostRows || row>yn+ghostRows || col<-ghostRows || col>xn+ghostRows)
+			throw "Need ghost node that is outside this patch";
+		
+		if(row<0)
+		{	// ghost in full rows near the bottom
+			g = (row+ghostRows)*fullRow + ghostRows + col;
+		}
+		
+		else if(row<yn)
+		{	// ghost within partial rows
+			if(col<0)
+				g = basePartial + row*interiorRow + ghostRows + col ;
+			else
+				g = basePartial + row*interiorRow + ghostRows + col - xn;
+		}
+		
+		else
+		{	// top full rows
+			g = baseTop + (row-yn)*fullRow + ghostRows + col;
+		}
+	}
+	
+	else
+	{	// 3D patch
+        int rank = (num-1)/mpmgrid.zplane;          // 0-based rank in global grid
+        int rnum = (num-1)%mpmgrid.zplane;          // 0-based number in rank
+		col = rnum%mpmgrid.yplane;					// 0-baed row, col in global grid
+		row = rnum/mpmgrid.yplane;
+        cout << "row,col,rank = " << row << "," << col << "," << rank << endl;
+		col -= x0;									// zero based within the patch
+		row -= y0;
+        rank -= z0;
+        cout << "patch row,col,rank = " << row << "," << col << "," << rank << endl;
+        
+		// is it an owned node?
+		if(row>=0 && row<yn && col>=0 && col<xn && rank>=0 && rank<zn) return nd[num];
+        
+		// is it out of this patch
+		if(row<-ghostRows || row>yn+ghostRows || col<-ghostRows || col>xn+ghostRows || rank<-ghostRows || rank>zn+ghostRows)
+        {   cout << num << " to (" << row << "," << col << "," << rank << ")" << endl;
+			throw "Need ghost node that is outside this patch";
+        }
+        
+        if(rank<0)
+        {   // ghost in full slices below base of the element
+            g = (rank+ghostRows)*fullRank + (row+ghostRows)*fullRow + ghostRows + col;
+        }
+        else if(rank<zn)
+        {   // ghost within partial slices
+            int baseRank = baseInterior + rank*interiorRank;
+            if(row<0)
+            {	// ghost in full rows near the bottom
+                g = baseRank + (row+ghostRows)*fullRow + ghostRows + col;
+            }
+            
+            else if(row<yn)
+            {	// ghost within partial rows
+                if(col<0)
+                    g = baseRank + basePartial + row*interiorRow + ghostRows + col ;
+                else
+                    g = baseRank + basePartial + row*interiorRow + ghostRows + col - xn;
+            }
+            
+            else
+            {	// top full rows
+                g = baseRank + baseTop + (row-yn)*fullRow + ghostRows + col;
+            }
+        }
+        
+        else
+        {   // ghost in full slices above the patch
+            g = baseApex + (rank-zn)*fullRank + (row+ghostRows)*fullRow + ghostRows + col;
+        }
+	}
+    
+	// if ghosts[g] has ghost node return it, otherwise return real node
+	// a ghosts[g] with no nodes should not reach here
+	if(g<0 || g>=numGhosts)
+	{	cout << "ghost for node " << num << " out of range (" << g << ") for (" << row << "," << col << ")"
+        << ") from (" << y0 << "," << x0 << ")" << endl;
+		throw "ghost index out of range";
+	}
+	NodalPoint *thePtr = ghosts[g]->GetNodePointer();
+	if(thePtr==NULL)
+	{	cout << "NULL pointer for " << g << " node " << num << " at (" << row << "," << col
+        << ") from (" << y0 << "," << x0 << ")" << endl;
+		throw "NULL node pointer";
+	}
+	
+	return thePtr;
+}
+
 
 // return material point pointer by ID 0 to 2  or FIRST_NONRIGID=0,FIRST_RIGID_CONTACT,FIRST_RIGID_BC
 MPMBase *GridPatch::GetFirstBlockPointer(int block)

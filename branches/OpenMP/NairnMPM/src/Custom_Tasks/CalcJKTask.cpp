@@ -120,8 +120,8 @@ CustomTask *CalcJKTask::StepCalculation(void)
             // find shape functions and derviatives
             int numnds;
             const ElementBase *elref = theElements[mpnt->ElemID()];
-            //elref->GetShapeGradients(&numnds,fn,nds,mpnt->GetNcpos(),xDeriv,yDeriv,zDeriv,mpnt);
-			elref->GetShapeFunctions(&numnds,fn,nds,mpnt->GetNcpos(),mpnt);
+            //elref->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,mpnt);
+			elref->GetShapeFunctions(&numnds,fn,nds,mpnt);
 		
             // Add particle property to each node in the element
             NodalPoint *ndmi;

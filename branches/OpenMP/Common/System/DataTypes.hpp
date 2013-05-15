@@ -136,16 +136,16 @@ void PrimeFactors(int,vector<int> &);
 
 Vector MakeVector(double,double,double);
 Vector *ZeroVector(Vector *);
-Vector *CopyVector(Vector *,Vector *);
-Vector *ScaleVector(Vector *,double);
-Vector *CopyScaleVector(Vector *,Vector *,double);
-Vector *AddVector(Vector *,Vector *);
-Vector *SubVector(Vector *,Vector *);
-Vector *AddScaledVector(Vector *,Vector *,double);
-Vector *CrossProduct(Vector *,Vector *,Vector *);
-double DotVectors(Vector *,Vector *);
-double DotVectors2D(Vector *,Vector *);
-void PrintVector(const char *,Vector *);
+Vector *CopyVector(Vector *,const Vector *);
+Vector *ScaleVector(Vector *,const double);
+Vector *CopyScaleVector(Vector *,const Vector *,const double);
+Vector *AddVector(Vector *,const Vector *);
+Vector *SubVector(Vector *,const Vector *);
+Vector *AddScaledVector(Vector *,const Vector *,const double);
+Vector *CrossProduct(Vector *,const Vector *,const Vector *);
+double DotVectors(const Vector *,const Vector *);
+double DotVectors2D(const Vector *,const Vector *);
+void PrintVector(const char *,const Vector *);
 
 Tensor *ZeroTensor(Tensor *);
 Tensor *AddTensor(Tensor *,Tensor *);

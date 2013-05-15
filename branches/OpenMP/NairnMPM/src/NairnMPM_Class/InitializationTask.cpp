@@ -48,7 +48,7 @@ void InitializationTask::Execute(void)
 		
         // zero ghost nodes in patch for this thread
         int pn = GetPatchNumber();
- 		patches[pn]->InitializeForTimeStep();
+        patches[pn]->InitializeForTimeStep();
 
 		// particle calculations
 #pragma omp for nowait

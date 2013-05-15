@@ -111,7 +111,7 @@ Vector *ZeroVector(Vector *v)
 }
 
 // copy vector and return pointer to new one
-Vector *CopyVector(Vector *v,Vector *oldv)
+Vector *CopyVector(Vector *v,const Vector *oldv)
 {	v->x=oldv->x;
 	v->y=oldv->y;
 	v->z=oldv->z;
@@ -119,7 +119,7 @@ Vector *CopyVector(Vector *v,Vector *oldv)
 }
 
 // scale a vector and return pointer to changed vector
-Vector *ScaleVector(Vector *v,double scale)
+Vector *ScaleVector(Vector *v,const double scale)
 {	v->x*=scale;
 	v->y*=scale;
 	v->z*=scale;
@@ -127,7 +127,7 @@ Vector *ScaleVector(Vector *v,double scale)
 }
 
 // scale a vector and copy to new one, then return pointer to new v
-Vector *CopyScaleVector(Vector *v,Vector *oldv,double scale)
+Vector *CopyScaleVector(Vector *v,const Vector *oldv,const double scale)
 {	v->x=scale*oldv->x;
 	v->y=scale*oldv->y;
 	v->z=scale*oldv->z;
@@ -135,7 +135,7 @@ Vector *CopyScaleVector(Vector *v,Vector *oldv,double scale)
 }
 
 // add vector toadd to vector v and return pointer to changed v
-Vector *AddVector(Vector *v,Vector *toadd)
+Vector *AddVector(Vector *v,const Vector *toadd)
 {	v->x+=toadd->x;
 	v->y+=toadd->y;
 	v->z+=toadd->z;
@@ -143,7 +143,7 @@ Vector *AddVector(Vector *v,Vector *toadd)
 }
 
 // sub vector toadd from vector v and return pointer to changed v
-Vector *SubVector(Vector *v,Vector *toadd)
+Vector *SubVector(Vector *v,const Vector *toadd)
 {	v->x-=toadd->x;
 	v->y-=toadd->y;
 	v->z-=toadd->z;
@@ -151,7 +151,7 @@ Vector *SubVector(Vector *v,Vector *toadd)
 }
 
 // add vector toadd scaled by scale to vector v and return pointer to changed v
-Vector *AddScaledVector(Vector *v,Vector *toadd,double scale)
+Vector *AddScaledVector(Vector *v,const Vector *toadd,const double scale)
 {	v->x+=toadd->x*scale;
 	v->y+=toadd->y*scale;
 	v->z+=toadd->z*scale;
@@ -159,17 +159,17 @@ Vector *AddScaledVector(Vector *v,Vector *toadd,double scale)
 }
 
 // Dot product of two vectors (if used for 2D make sure z's are zero)
-double DotVectors(Vector *v1,Vector *v2)
+double DotVectors(const Vector *v1,const Vector *v2)
 {	return v1->x*v2->x + v1->y*v2->y + v1->z*v2->z ;
 }
 
 // Dot prodiuct of two 2D vectors
-double DotVectors2D(Vector *v1,Vector *v2)
+double DotVectors2D(const Vector *v1,const Vector *v2)
 {	return v1->x*v2->x + v1->y*v2->y ;
 }
 
 // Vector cross product of two vectors in a third vector
-Vector *CrossProduct(Vector *cp,Vector *a,Vector *b)
+Vector *CrossProduct(Vector *cp,const Vector *a,const Vector *b)
 {	cp->x = a->y*b->z - b->y*a->z ;
 	cp->y = b->x*a->z - a->x*b->z ;
 	cp->z = a->x*b->y - b->x*a->y ;
@@ -177,7 +177,7 @@ Vector *CrossProduct(Vector *cp,Vector *a,Vector *b)
 }
 
 // Print vector to cout when debugging
-void PrintVector(const char *label,Vector *v)
+void PrintVector(const char *label,const Vector *v)
 {	if(strlen(label)>0) cout << label;
 	cout << "(" << v->x << ", " << v->y << ", " << v->z << ") ";
 }

@@ -73,8 +73,8 @@ void RunCustomTasksTask::Execute(void)
 			
             // find shape functions and derviatives
 			const ElementBase *elref = theElements[mpmptr->ElemID()];
-			//elref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
-			elref->GetShapeFunctions(&numnds,fn,nds,mpmptr->GetNcpos(),mpmptr);
+			//elref->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,mpmptr);
+			elref->GetShapeFunctions(&numnds,fn,nds,mpmptr);
             
 			// Add particle property to each node in the element
             for(int i=1;i<=numnds;i++)

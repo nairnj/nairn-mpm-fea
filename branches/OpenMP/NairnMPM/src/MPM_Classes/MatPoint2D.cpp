@@ -42,7 +42,7 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     
 	// find shape functions and derviatives
 	const ElementBase *elemRef = theElements[ElemID()];
-	elemRef->GetShapeGradients(&numnds,fn,nds,&ncpos,xDeriv,yDeriv,zDeriv,this);
+	elemRef->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,this);
     
     // Find strain rates at particle from current grid velocities
 	//   and using the velocity field for that particle and each node and the right material

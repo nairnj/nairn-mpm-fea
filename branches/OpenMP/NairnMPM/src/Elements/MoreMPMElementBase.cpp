@@ -146,18 +146,19 @@ void ElementBase::GetShapeFunctionNodes(int *numnds,int *nds,Vector *xipos,MPMBa
     or CPDI info, which are found in initialization
  throws CommonException() if too many CPDI nodes
 */
-void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipos,MPMBase *mpmptr) const
+void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,MPMBase *mpmptr) const
 {
     switch(useGimp)
     {   case POINT_GIMP:
         	// load coordinates if not already done
             GetNodes(numnds,nds);
-            ShapeFunction(xipos,FALSE,&fn[1],NULL,NULL,NULL);
+            ShapeFunction(mpmptr->GetNcpos(),FALSE,&fn[1],NULL,NULL,NULL);
             break;
             
         case UNIFORM_GIMP:
         {	// GIMP analysis
             int ndIDs[maxShapeNodes];
+            Vector *xipos = mpmptr->GetNcpos();
             GetGimpNodes(numnds,nds,ndIDs,xipos);
             GimpShapeFunction(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
             GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
@@ -167,6 +168,7 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipo
         case UNIFORM_GIMP_AS:
         {	// GIMP analysis
             int ndIDs[maxShapeNodes];
+            Vector *xipos = mpmptr->GetNcpos();
             GetGimpNodes(numnds,nds,ndIDs,xipos);
             GimpShapeFunctionAS(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
             GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
@@ -216,7 +218,7 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,Vector *xipo
     or CPDI info, which are found in the initialization task
    throws CommonException() if too many CPDI nodes
 */
-void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipos,
+void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,
                                     double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr) const
 {
     switch(useGimp)
@@ -226,7 +228,7 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
             
             // special case for regular mesh
             if(mpmgrid.GetCartesian()>0)
-                ShapeFunction(xipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+                ShapeFunction(mpmptr->GetNcpos(),TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
             else
             {	// Load element coordinates
                 Vector ce[MaxElNd];
@@ -234,13 +236,14 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
                 GetCoordinates(ce,*numnds,nds);
                 
                 // find shape functions and derviatives
-                ShapeFunction(xipos,BMATRIX,&fn[1],&xDeriv[1],&yDeriv[1],&ce[1],NULL,NULL,&fnh[1]);
+                ShapeFunction(mpmptr->GetNcpos(),BMATRIX,&fn[1],&xDeriv[1],&yDeriv[1],&ce[1],NULL,NULL,&fnh[1]);
             }
             break;
             
         case UNIFORM_GIMP:
         {	// uGIMP analysis
             int ndIDs[maxShapeNodes];
+            Vector *xipos = mpmptr->GetNcpos();
             GetGimpNodes(numnds,nds,ndIDs,xipos);
             GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
             GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
@@ -250,6 +253,7 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
         case UNIFORM_GIMP_AS:
         {	// uGIMP analysis
             int ndIDs[maxShapeNodes];
+            Vector *xipos = mpmptr->GetNcpos();
             GetGimpNodes(numnds,nds,ndIDs,xipos);
             GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
             GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
@@ -262,33 +266,33 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,Vector *xipo
         {   if(theMaterials[mpmptr->MatID()]->Rigid())
 			{	int newGimp = fmobj->IsAxisymmetric() ? UNIFORM_GIMP_AS : UNIFORM_GIMP ;
 				ChangeGimp(newGimp);
-                GetShapeGradients(numnds,fn,nds,xipos,xDeriv,yDeriv,zDeriv,mpmptr);
+                GetShapeGradients(numnds,fn,nds,xDeriv,yDeriv,zDeriv,mpmptr);
                 RestoreGimp();
-                break;
             }
-            GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+            else
+            {   GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),numnds,nds,fn,xDeriv,yDeriv,zDeriv);
 			
-            /*
-             cout << "CPDI Recall Compacted: " << endl;
-             int i;
-             for(i=1;i<=*numnds;i++)
-             {   cout << "  node = " << nds[i] << ", Phiip = " << fn[i] ;
-             cout << ", gx = " << xDeriv[i] << ", gy = " << yDeriv[i] << endl;
-             }
-             
-             GetNodes(numnds,nds);
-             Vector rpos = mpmptr->pos;
-             Vector rxipos;
-             GetXiPos(&rpos,&rxipos);
-             ShapeFunction(&rxipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
-             
-             cout << "   Recall Regular Shape and Gradients: " << endl;
-             int j;
-             for(j=1;j<=*numnds;j++)
-             {   cout << "     node = " << nds[j] << ", Phiip = " << fn[j] << ", gx = " << xDeriv[j] << ", gy = " << yDeriv[j] << endl;
-             }
-             */
-            
+                /*
+                 cout << "CPDI Recall Compacted: " << endl;
+                 int i;
+                 for(i=1;i<=*numnds;i++)
+                 {   cout << "  node = " << nds[i] << ", Phiip = " << fn[i] ;
+                 cout << ", gx = " << xDeriv[i] << ", gy = " << yDeriv[i] << endl;
+                 }
+                 
+                 GetNodes(numnds,nds);
+                 Vector rpos = mpmptr->pos;
+                 Vector rxipos;
+                 GetXiPos(&rpos,&rxipos);
+                 ShapeFunction(&rxipos,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+                 
+                 cout << "   Recall Regular Shape and Gradients: " << endl;
+                 int j;
+                 for(j=1;j<=*numnds;j++)
+                 {   cout << "     node = " << nds[j] << ", Phiip = " << fn[j] << ", gx = " << xDeriv[j] << ", gy = " << yDeriv[j] << endl;
+                 }
+                 */
+            }
             break;
 		}
     }
@@ -669,7 +673,7 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,int *numnds,int
 			}
 		}
 	}
-	if(fn[count]<1.e-10) count--;
+	if(fn[count]<=1.e-10) count--;
 	*numnds = count;
 	
 }

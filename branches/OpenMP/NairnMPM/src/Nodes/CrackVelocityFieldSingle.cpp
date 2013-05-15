@@ -115,7 +115,7 @@ void CrackVelocityFieldSingle::AddFtotDirection(Vector *norm,double deltime,doub
 #pragma mark ACCESSORS
 
 // total mass all velocity fields
-double CrackVelocityFieldSingle::GetTotalMass(void)
+double CrackVelocityFieldSingle::GetTotalMass(void) const
 {	return mvf[0]->numberPoints>0 ? mvf[0]->mass : 0. ;
 }
 
@@ -187,7 +187,7 @@ int CrackVelocityFieldSingle::PasteFieldMomenta(Vector *holdPk,int offset)
 }
 
 // for debugging
-void CrackVelocityFieldSingle::Describe(void)
+void CrackVelocityFieldSingle::Describe(void) const
 {	CrackVelocityField::Describe();
 	cout << "#     single material" << endl;
 	mvf[0]->Describe(0);

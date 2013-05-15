@@ -53,7 +53,7 @@ class MatVelocityField
         void IncrementNodalVelAcc(double,Vector *,Vector *) const;
 	
 		// accessors
-		void Describe(int);
+		void Describe(int) const;
 		void AddContactVolume(double);
 		void SetContactVolume(double);
 		double GetContactVolume(void) const;

@@ -80,7 +80,7 @@ void MatVelocityField::CopyMassAndMomentum(NodalPoint *real,int vfld,int matfld)
 	else
 		real->AddMomentumTask1((short)vfld,matfld,1.,&pk,numberPoints);
 			
-	// if cracks and multimaterial mode
+	// if cracks and/or multimaterial mode
 	if(firstCrack!=NULL || fmobj->multiMaterialMode)
 	{	real->AddDisplacement((short)vfld,matfld,1.,&disp);
 		real->AddVolume((short)vfld,matfld,volume);
@@ -90,7 +90,7 @@ void MatVelocityField::CopyMassAndMomentum(NodalPoint *real,int vfld,int matfld)
             real->CopyVolumeGradient((short)vfld,matfld,volumeGrad);
 	}
 	
-	// if multimaterial mode
+	// if rigid particle in multimaterial mode
 	if(!rigidField)
 	{	// mass
 		real->AddMass((short)vfld,matfld,mass);
@@ -209,7 +209,7 @@ void MatVelocityField::IncrementNodalVelAcc(double fi,Vector *delv,Vector *dela)
 #pragma mark ACCESSORS
 
 // for debugging
-void MatVelocityField::Describe(int fldnum)
+void MatVelocityField::Describe(int fldnum) const
 {
 	cout << "#      " << fldnum << ". Material Field: n="<<  numberPoints << " mass=" << mass ;
     cout << " p=(" << pk.x << "," << pk.y << "," << pk.z << ")" << endl;

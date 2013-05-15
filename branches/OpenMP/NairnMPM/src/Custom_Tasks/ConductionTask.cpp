@@ -198,7 +198,7 @@ TransportTask *ConductionTask::GetGradients(double stepTime)
             MPMBase *mptr = mpm[p];
             const ElementBase *elref = theElements[mptr->ElemID()];
             int i,numnds;
-            elref->GetShapeGradients(&numnds,fn,nds,mptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mptr);
+            elref->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,mptr);
             
             // Find gradients from current temperatures
             mptr->AddTemperatureGradient();			// zero gradient on the particle

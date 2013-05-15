@@ -55,7 +55,7 @@ void UpdateParticlesTask::Execute(void)
 		try
 		{	// get shape functions
 			const ElementBase *elemRef = theElements[mpmptr->ElemID()];
-			elemRef->GetShapeFunctions(&numnds,fn,nds,mpmptr->GetNcpos(),mpmptr);
+			elemRef->GetShapeFunctions(&numnds,fn,nds,mpmptr);
 			
 			// Update particle position and velocity
 			const MaterialBase *matRef=theMaterials[mpmptr->MatID()];
@@ -68,12 +68,18 @@ void UpdateParticlesTask::Execute(void)
 			rate[0] = rate[1] = 0.;
 			int task;
 			TransportTask *nextTransport;
+            short vfld;
 			
 			// Loop over nodes
 			for(int i=1;i<=numnds;i++)
 			{	// increment velocity and acceleraton
 				const NodalPoint *ndptr = nd[nds[i]];
-				ndptr->IncrementDelvaTask5((short)mpmptr->vfld[i],matfld,fn[i],&delv,acc);
+                vfld = (short)mpmptr->vfld[i];
+				ndptr->IncrementDelvaTask5(vfld,matfld,fn[i],&delv,acc);
+                //if(delv.x!=delv.x || delv.y!=delv.y || delv.z!=delv.z)
+                //{   cout << "bad material velocity field being read" << endl;
+                //    ndptr->Describe();
+                //}
 				
 				// increment transport rates
 				nextTransport=transportTasks;

@@ -85,10 +85,10 @@ void UpdateStrainsLastTask::Execute(void)
 				int numnds;
 				if(fmobj->multiMaterialMode)
 				{   // Need gradients for volume gradient
-					elref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
+					elref->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,mpmptr);
 				}
 				else
-					elref->GetShapeFunctions(&numnds,fn,nds,mpmptr->GetNcpos(),mpmptr);
+					elref->GetShapeFunctions(&numnds,fn,nds,mpmptr);
 				
 				short vfld;
 				NodalPoint *ndptr;

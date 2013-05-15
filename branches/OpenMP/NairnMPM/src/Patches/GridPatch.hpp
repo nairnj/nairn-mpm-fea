@@ -44,6 +44,7 @@ class GridPatch
 		// accessors
 		MPMBase *GetFirstBlockPointer(int);
 		NodalPoint *GetNodePointer(int);
+        NodalPoint *GetNodePointer(int,bool);
 	
     private:
         int x0,x1,y0,y1,z0,z1;					// element ranges (0-based row, col, rank)

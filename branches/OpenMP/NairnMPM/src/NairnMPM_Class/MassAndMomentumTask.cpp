@@ -91,8 +91,8 @@ MassAndMomentumTask::MassAndMomentumTask(const char *name) : MPMTask(name)
 void MassAndMomentumTask::Execute(void)
 {
 	CommonException *massErr = NULL;
-	int nds[maxShapeNodes];
-	double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+    double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
+    int nds[maxShapeNodes];
     
     // Set rigid BC contact material velocities first (so loop can be parallel when rest is ready)
 	// GetVectorSetting() uses globals and therefore can't be parallel
@@ -113,13 +113,15 @@ void MassAndMomentumTask::Execute(void)
 	
 	// loop over non-rigid and rigid contact particles - this parallel part changes only particle p
 	// mass, momenta, etc are stored on ghost nodes, which are sent to real nodes in next non-parallel loop
-#pragma omp parallel private(nds,fn,xDeriv,yDeriv,zDeriv)
+    //for(int pn=0;pn<4;pn++)
+#pragma omp parallel private(fn,xDeriv,yDeriv,zDeriv,nds)
 	{
+        // thread for patch pn
+		int pn = GetPatchNumber();
+        
 		// in case 2D planar
         for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
         
-        // thread for patch pn
-		int pn = GetPatchNumber();
 		try
 		{	for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
 			{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
@@ -131,9 +133,9 @@ void MassAndMomentumTask::Execute(void)
 					int i,numnds;
 					const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
 					if(fmobj->multiMaterialMode)
-						elref->GetShapeGradients(&numnds,fn,nds,mpmptr->GetNcpos(),xDeriv,yDeriv,zDeriv,mpmptr);
+						elref->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,mpmptr);
 					else
-						elref->GetShapeFunctions(&numnds,fn,nds,mpmptr->GetNcpos(),mpmptr);
+						elref->GetShapeFunctions(&numnds,fn,nds,mpmptr);
 					
 					// Add particle property to each node in the element
 					short vfld;
@@ -146,7 +148,6 @@ void MassAndMomentumTask::Execute(void)
 						vfld = mpmptr->vfld[i];
 						ndptr->AddMassMomentum(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],
 											   1,block==FIRST_NONRIGID);
-
 					}
 					
 					// next material point
@@ -172,7 +173,7 @@ void MassAndMomentumTask::Execute(void)
 	{	for(int pn=0;pn<totalPatches;pn++)
 			patches[pn]->MassAndMomentumReduction();
 	}
-	
+    	
 	// undo dynamic velocity, temp, and conc BCs from rigid materials
 	UnsetRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 				  (BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
@@ -341,6 +342,40 @@ void MassAndMomentumTask::Execute(void)
 	// used to call class methods for material contact and crack contact here
 	// Impose velocity BCs
 	NodalVelBC::GridMomentumConditions(TRUE);
+
+    //-------------------------- Debugging ------------------
+    /*
+    for(int pn=0;pn<totalPatches;pn++)
+    {   MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(FIRST_NONRIGID);
+        while(mpmptr!=NULL)
+        {   // find shape functions and derviatives
+            int numnds;
+            const ElementBase *elemref = theElements[mpmptr->ElemID()];
+            elemref->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,mpmptr);
+            
+            // Add particle property to buffer on the material point (needed to allow parallel code)
+            short vfld;
+            NodalPoint *ndptr;
+            for(int i=1;i<=numnds;i++)
+            {	vfld = (short)mpmptr->vfld[i];  // crack velocity field to use
+                
+                // add the total force to nodal point
+                if(nd[nds[i]]->NumberParticles()==0)
+                {   cout << "Step #" << fmobj->mstep << endl;
+                    cout << "mass and momentum second pass has no particles in patch " << pn << endl;
+                    ndptr = patches[pn]->GetNodePointer(nds[i],true);
+                    cout << "g=" << ndptr << ", r=" << nd[nds[i]] << ", is real=" << (ndptr==nd[nds[i]]) << ", nds[i]=" << nds[i] << endl;
+                    ndptr->Describe();
+                    cout << endl;
+                }
+            }
+
+            // next material point
+            mpmptr = (MPMBase *)mpmptr->GetNextObject();
+        }
+    }
+    */
+    //-------------------------- Debugging ------------------
 }
 
 // Set boundary conditions determined by moving rigid paticles

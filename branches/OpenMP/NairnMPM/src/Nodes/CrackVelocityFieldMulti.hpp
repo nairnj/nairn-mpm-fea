@@ -63,7 +63,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		// accessors
 		virtual int GetNumberPointsNonrigid(void);
 		virtual void SumAndClearRigidContactForces(Vector *,bool);
-		virtual double GetTotalMass(void);
+		virtual double GetTotalMass(void) const;
 		virtual void AddKineticEnergyAndMass(double &,double &);
 		virtual double GetVolumeNonrigid(void);
 		virtual double GetVolumeTotal(double) const;
@@ -74,7 +74,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual void ChangeMomentum(Vector *,bool,double);
 		virtual int CopyFieldMomenta(Vector *,int);
 		virtual int PasteFieldMomenta(Vector *,int);
-		virtual void Describe(void);
+		virtual void Describe(void) const;
 	
 	private:
 		// variables (changed in MPM time step)

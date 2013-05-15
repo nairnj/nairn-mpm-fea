@@ -314,7 +314,7 @@ int CrackVelocityField::GetNumberPoints(void) { return numberPoints; }
 int CrackVelocityField::GetNumberPointsNonrigid(void) { return numberPoints; }
 
 // for debugging
-void CrackVelocityField::Describe(void)
+void CrackVelocityField::Describe(void) const
 {
 	cout << "# Crack Field: npts="<<  numberPoints << " mass=" << GetTotalMass()
 		<< " vol=" << GetVolumeTotal(1.) << endl;

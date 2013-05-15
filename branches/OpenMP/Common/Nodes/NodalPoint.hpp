@@ -113,7 +113,7 @@ class NodalPoint : public LinkedObject
         void DeleteDisp(NodalPoint *);
 		int NumberParticles(void);
 		int NumberNonrigidParticles(void);
-		void Describe(void);
+		void Describe(void) const;
 		void AddDisplacement(short,int,double,Vector *);
 		void AddVolume(short,int,double);
         void AddUGradient(short,double,double,double,double,double,int,double);

@@ -1463,7 +1463,7 @@ int NodalPoint::NumberNonrigidParticles(void)
 }
 
 // describe velocity field
-void NodalPoint::Describe(void)
+void NodalPoint::Describe(void) const
 {	cout << "# node=" << num << " pt=(" << x << "," << y << "," << z << ") mass=" << mass << endl;
 	
 	cout << "#  active crack velocity fields:" << endl;
