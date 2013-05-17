@@ -296,6 +296,8 @@
 		A79772900DA2E4EB00B0C21E /* LinearTraction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A797728E0DA2E4EB00B0C21E /* LinearTraction.cpp */; };
 		A79AD68F14C8EFB800993169 /* libxerces-c-3.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A79AD68E14C8EFB800993169 /* libxerces-c-3.1.dylib */; };
 		A79AD69014C8F12A00993169 /* libxerces-c-3.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A79AD68E14C8EFB800993169 /* libxerces-c-3.1.dylib */; };
+		A79D0A2D1744267300321C74 /* TorusController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A79D0A2C1744267300321C74 /* TorusController.cpp */; };
+		A79D0A301744268600321C74 /* TorusController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A79D0A2F1744268600321C74 /* TorusController.hpp */; };
 		A79E3D310A1A80BF00378F5C /* MeshInfo.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A79E3D2F0A1A80BE00378F5C /* MeshInfo.hpp */; };
 		A79E3D320A1A80BF00378F5C /* MeshInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A79E3D300A1A80BE00378F5C /* MeshInfo.cpp */; };
 		A79E8AF60D6F7D8700B8AB58 /* TractionLaw.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A79E8AF40D6F7D8700B8AB58 /* TractionLaw.hpp */; };
@@ -612,6 +614,8 @@
 		A797728D0DA2E4EB00B0C21E /* LinearTraction.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LinearTraction.hpp; sourceTree = "<group>"; };
 		A797728E0DA2E4EB00B0C21E /* LinearTraction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LinearTraction.cpp; sourceTree = "<group>"; };
 		A79AD68E14C8EFB800993169 /* libxerces-c-3.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libxerces-c-3.1.dylib"; path = "/usr/local/lib/libxerces-c-3.1.dylib"; sourceTree = "<absolute>"; };
+		A79D0A2C1744267300321C74 /* TorusController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TorusController.cpp; sourceTree = "<group>"; };
+		A79D0A2F1744268600321C74 /* TorusController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TorusController.hpp; sourceTree = "<group>"; };
 		A79E3D2F0A1A80BE00378F5C /* MeshInfo.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MeshInfo.hpp; sourceTree = "<group>"; };
 		A79E3D300A1A80BE00378F5C /* MeshInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MeshInfo.cpp; sourceTree = "<group>"; };
 		A79E8AF40D6F7D8700B8AB58 /* TractionLaw.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TractionLaw.hpp; sourceTree = "<group>"; };
@@ -1069,6 +1073,8 @@
 				A767E03408B14CAA004540AB /* CrackController.cpp */,
 				A76FD9320C6CE89300A07DBF /* SphereController.hpp */,
 				A76FD9330C6CE89300A07DBF /* SphereController.cpp */,
+				A79D0A2F1744268600321C74 /* TorusController.hpp */,
+				A79D0A2C1744267300321C74 /* TorusController.cpp */,
 				A7E1FF9912D78BCE0074E568 /* PolyhedronController.hpp */,
 				A7E1FF9A12D78BCE0074E568 /* PolyhedronController.cpp */,
 				A7E100A312D7D0B50074E568 /* PolyTriangle.hpp */,
@@ -1587,6 +1593,7 @@
 				67FFAA0C16D31E95003A7C53 /* HEMGEOSMaterial.hpp in Headers */,
 				A7B45CF81715D36E003FDED6 /* GridPatch.hpp in Headers */,
 				67083428171717FB007AD581 /* GhostNode.hpp in Headers */,
+				A79D0A301744268600321C74 /* TorusController.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1907,6 +1914,7 @@
 				A738C0CD170E192800E4D675 /* svninfo.cpp in Sources */,
 				A7B45CF61715D354003FDED6 /* GridPatch.cpp in Sources */,
 				67083427171717FB007AD581 /* GhostNode.cpp in Sources */,
+				A79D0A2D1744267300321C74 /* TorusController.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

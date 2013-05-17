@@ -135,7 +135,7 @@ class ElementBase : public LinkedObject
 		virtual void GridShapeFunctions(int *,int *,Vector *,double *) const;
 		virtual void GimpCompact(int *,int *,double *,double *,double *,double *) const;
 		virtual void GetXiPos(Vector *,Vector *) const;
-		virtual void GetCPDIFunctions(int,CPDIDomain **,int *,int *,double *,double *,double *,double *) const;
+		virtual int GetCPDIFunctions(int *,double *,double *,double *,double *,MPMBase *) const;
 #else
 		virtual bool HasNode(int);
 		virtual void DecrementNodeNums(int);
@@ -161,8 +161,6 @@ class ElementBase : public LinkedObject
 #endif
 		// class methods
 #ifdef MPM_CODE
-		static void ChangeGimp(int);
-		static void RestoreGimp(void);
 		static void AllocateNeighbors(void);
         static void InitializeCPDI(bool);
 #else

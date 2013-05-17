@@ -343,39 +343,6 @@ void MassAndMomentumTask::Execute(void)
 	// Impose velocity BCs
 	NodalVelBC::GridMomentumConditions(TRUE);
 
-    //-------------------------- Debugging ------------------
-    /*
-    for(int pn=0;pn<totalPatches;pn++)
-    {   MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(FIRST_NONRIGID);
-        while(mpmptr!=NULL)
-        {   // find shape functions and derviatives
-            int numnds;
-            const ElementBase *elemref = theElements[mpmptr->ElemID()];
-            elemref->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,mpmptr);
-            
-            // Add particle property to buffer on the material point (needed to allow parallel code)
-            short vfld;
-            NodalPoint *ndptr;
-            for(int i=1;i<=numnds;i++)
-            {	vfld = (short)mpmptr->vfld[i];  // crack velocity field to use
-                
-                // add the total force to nodal point
-                if(nd[nds[i]]->NumberParticles()==0)
-                {   cout << "Step #" << fmobj->mstep << endl;
-                    cout << "mass and momentum second pass has no particles in patch " << pn << endl;
-                    ndptr = patches[pn]->GetNodePointer(nds[i],true);
-                    cout << "g=" << ndptr << ", r=" << nd[nds[i]] << ", is real=" << (ndptr==nd[nds[i]]) << ", nds[i]=" << nds[i] << endl;
-                    ndptr->Describe();
-                    cout << endl;
-                }
-            }
-
-            // next material point
-            mpmptr = (MPMBase *)mpmptr->GetNextObject();
-        }
-    }
-    */
-    //-------------------------- Debugging ------------------
 }
 
 // Set boundary conditions determined by moving rigid paticles

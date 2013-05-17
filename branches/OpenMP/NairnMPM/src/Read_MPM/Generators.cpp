@@ -26,6 +26,7 @@
 #include "Read_XML/RectController.hpp"
 #include "Read_XML/OvalController.hpp"
 #include "Read_XML/BoxController.hpp"
+#include "Read_MPM/TorusController.hpp"
 #include "Read_MPM/MpsController.hpp"
 #include "Elements/FourNodeIsoparam.hpp"
 #include "Elements/EightNodeIsoparamBrick.hpp"
@@ -280,7 +281,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
     //-----------------------------------------------------------
     else if(strcmp(xName,"Oval")==0 || strcmp(xName,"Rect")==0 || strcmp(xName,"Polygon")==0
 				|| strcmp(xName,"Sphere")==0 || strcmp(xName,"Box")==0 || strcmp(xName,"Cylinder")==0
-				|| strcmp(xName,"Polyhedron")==0 )
+				|| strcmp(xName,"Polyhedron")==0 || strcmp(xName,"Torus")==0)
 	{	if(strcmp(xName,"Rect")==0)
 		{	ValidateCommand(xName,BODYPART,MUST_BE_2D);
             theShape = new RectController(BODYPART);
@@ -296,6 +297,10 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
  		else if(strcmp(xName,"Sphere")==0)
 		{	ValidateCommand(xName,BODYPART,MUST_BE_3D);
 			theShape = new SphereController(BODYPART);
+		}
+ 		else if(strcmp(xName,"Torus")==0)
+		{	ValidateCommand(xName,BODYPART,MUST_BE_3D);
+			theShape = new TorusController(BODYPART);
 		}
 		else if(strcmp(xName,"Polygon")==0)
 		{	ValidateCommand(xName,BODYPART,MUST_BE_2D);

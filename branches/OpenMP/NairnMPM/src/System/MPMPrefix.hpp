@@ -22,7 +22,7 @@
 // _OPENMP is defined, even though not being used
 //#define _OMPTEST
 
-// Activate to test traction laws add first before combine with ftot
+// Activate to test traction laws add first before combining with ftot
 //#define USE_FEXT
 
 // C includes

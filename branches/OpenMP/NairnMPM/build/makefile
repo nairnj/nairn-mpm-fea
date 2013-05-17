@@ -251,6 +251,7 @@ StartOutput = $(src)/NairnMPM_Class/StartOutput
 StrX = $(com)/Exceptions/StrX
 svninfo = $(com)/System/svninfo
 ThermalRamp = $(src)/Global_Quantities/ThermalRamp
+TorusController = $(src)/Read_MPM/TorusController
 TractionLaw = $(src)/Materials/TractionLaw
 TransIsotropic = $(com)/Materials/TransIsotropic
 TransportTask = $(src)/Custom_Tasks/TransportTask
@@ -354,6 +355,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # SCGLHardening.hpp : HardeningLawBase.hpp, MaterialBase.hpp
 # SLMaterial.hpp :  SCGLHardening.hpp, HardeningLawBase.hpp, MaterialBase.hpp
 # SphereController.hpp : ShapeController.hpp
+# TorusController.hpp : ShapeController.hpp
 # TractionLaw.hpp : MaterialBase.hpp
 # TransIsotropic.hpp : Elastic.hpp (MaterialBase.hpp)
 # TrilinearTraction : MaterialBase.hpp TractionLaw.hpp CohesiveZone.hpp
@@ -377,7 +379,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # all compiled objects
 objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtilities.o CommonTask.o svninfo.o \
 		CommonException.o ElementBase.o Linear2D.o FourNodeIsoparam.o MaterialBase.o Matrix3.o \
-		CommonReadHandler.o ParseController.o ElementsController.o NodesController.o \
+		CommonReadHandler.o ParseController.o ElementsController.o NodesController.o TorusController.o \
 		LineController.o MaterialController.o IsotropicMat.o TransIsotropic.o BoxController.o \
 		Orthotropic.o NodalPoint.o NodalPoint2D.o NodalPoint3D.o ArchiveData.o NairnMPM.o MPMTask.o \
 		InitializationTask.o MassAndMomentumTask.o UpdateStrainsFirstTask.o GridForcesTask.o UpdateMomentaTask.o \
@@ -623,7 +625,8 @@ Generators.o : $(Generators).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hp
 			$(MpsController).hpp $(FourNodeIsoparam).hpp $(ParseController).hpp $(Linear2D).hpp $(NodalPoint).hpp $(BoxController).hpp \
 			$(MeshInfo).hpp $(EightNodeIsoparamBrick).hpp $(ElementBase3D).hpp $(MatPoint3D).hpp $(ShapeController).hpp \
 			$(RectController).hpp $(ArcController).hpp $(NodalPoint2D).hpp $(NodalPoint3D).hpp $(CrackVelocityField).hpp \
-			$(OvalController).hpp $(MatVelocityField).hpp $(ElementsController).hpp $(MatPtTractionBC).hpp $(MatPointAS).hpp 
+			$(OvalController).hpp $(MatVelocityField).hpp $(ElementsController).hpp $(MatPtTractionBC).hpp $(MatPointAS).hpp \
+            $(TorusController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Generators).cpp
 BitMapFiles.o : $(BitMapFiles).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hpp $(CommonReadHandler).hpp \
 			$(BMPLevel).hpp $(MatPoint2D).hpp $(MatPointAS).hpp $(ElementBase).hpp $(ArchiveData).hpp $(CommonArchiveData).hpp \
@@ -636,6 +639,8 @@ CrackController.o : $(CrackController).cpp $(dprefix) $(CrackController).hpp $(P
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackController).cpp
 SphereController.o : $(SphereController).cpp $(dprefix) $(SphereController).hpp $(ShapeController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(SphereController).cpp
+TorusController.o : $(TorusController).cpp $(dprefix) $(TorusController).hpp $(ShapeController).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TorusController).cpp
 PolyhedronController.o : $(PolyhedronController).cpp $(dprefix) $(PolyhedronController).hpp $(ShapeController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PolyhedronController).cpp
 PolyTriangle.o : $(PolyTriangle).cpp $(dprefix) $(PolyTriangle).hpp

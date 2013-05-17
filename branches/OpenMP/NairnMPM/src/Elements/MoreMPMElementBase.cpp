@@ -54,6 +54,8 @@ void ElementBase::GetShapeFunctionData(MPMBase *mpmptr) const
         case LINEAR_CPDI:
 		case LINEAR_CPDI_AS:
         case QUADRATIC_CPDI:
+            if(theMaterials[mpmptr->MatID()]->Rigid())
+                GetXiPos(&mpmptr->pos,mpmptr->GetNcpos());
 			mpmptr->GetCPDINodesAndWeights(useGimp);
             break;
     }
@@ -129,7 +131,7 @@ void ElementBase::GetShapeFunctionNodes(int *numnds,int *nds,Vector *xipos,MPMBa
 		case LINEAR_CPDI_AS:
         case QUADRATIC_CPDI:
 		{	double fn[maxShapeNodes];
-			GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),numnds,nds,fn,NULL,NULL,NULL);
+			*numnds = GetCPDIFunctions(nds,fn,NULL,NULL,NULL,mpmptr);
             break;
 		}
     }
@@ -178,7 +180,7 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,MPMBase *mpm
         case LINEAR_CPDI:
 		case LINEAR_CPDI_AS:
         case QUADRATIC_CPDI:
-        {   GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),numnds,nds,fn,NULL,NULL,NULL);
+        {   *numnds = GetCPDIFunctions(nds,fn,NULL,NULL,NULL,mpmptr);
             
             /*
              cout << "CPDI Recall Compacted: " << endl;
@@ -265,12 +267,17 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,
 		case QUADRATIC_CPDI:
         {   if(theMaterials[mpmptr->MatID()]->Rigid())
 			{	int newGimp = fmobj->IsAxisymmetric() ? UNIFORM_GIMP_AS : UNIFORM_GIMP ;
-				ChangeGimp(newGimp);
-                GetShapeGradients(numnds,fn,nds,xDeriv,yDeriv,zDeriv,mpmptr);
-                RestoreGimp();
+                int ndIDs[maxShapeNodes];
+                Vector *xipos = mpmptr->GetNcpos();
+                GetGimpNodes(numnds,nds,ndIDs,xipos);
+                if(newGimp == UNIFORM_GIMP)
+                    GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+                else
+                    GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+                GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
             }
             else
-            {   GetCPDIFunctions(ElementBase::numCPDINodes,mpmptr->GetCPDIInfo(),numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+            {   *numnds = GetCPDIFunctions(nds,fn,xDeriv,yDeriv,zDeriv,mpmptr);
 			
                 /*
                  cout << "CPDI Recall Compacted: " << endl;
@@ -568,25 +575,25 @@ bool ElementBase::OnTheEdge(void)
 // cpdi[i]->ws - shape function weights (numNds of them)
 // cpdi[i]->wg - gradient weights (numNds of them)
 // throws CommonException() if too many CPDI nodes
-void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,int *numnds,int *nds,
-								   double *fn,double *xDeriv,double *yDeriv,double *zDeriv) const
+int ElementBase::GetCPDIFunctions(int *nds,double *fn,double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr) const
 {
-	int i,j;
-	
-	// maximum is numDnds nodes with 8 nodes for each
-	int cnodes[numDnds*8],ncnds=0;		// corner nodes and counter for those nodes
-	double wsSi[numDnds*8];				// hold ws * Si(xa)
-	Vector wgSi[numDnds*8];				// hold wg * Si(xa)
+	int i,j,numnds;
+	CPDIDomain **cpdi = mpmptr->GetCPDIInfo();
+    
+	// Need 8X8 for linear CPDI in 3D, 8X4 for linear in 2D and 9X4 for quadratic in 2D (max is 64)
+	int cnodes[64],ncnds=0;         // corner nodes and counter for those nodes
+	double wsSi[64];				// hold ws * Si(xa)
+	Vector wgSi[64];				// hold wg * Si(xa)
 	
 	// loop over the domain nodes
-	for(i=0;i<numDnds;i++)
+	for(i=0;i<numCPDINodes;i++)
 	{	// get straight grid shape functions
 		ElementBase *elem = theElements[cpdi[i]->inElem];
-		elem->GetNodes(numnds,nds);
+		elem->GetNodes(&numnds,nds);
 		elem->ShapeFunction(&cpdi[i]->ncpos,FALSE,&fn[1],NULL,NULL,NULL);
 		
 		// loop over shape grid shape functions and collect in arrays
-		for(j=1;j<=*numnds;j++)
+		for(j=1;j<=numnds;j++)
 		{   cnodes[ncnds] = nds[j];
 			wsSi[ncnds] = cpdi[i]->ws*fn[j];
 			if(xDeriv!=NULL) CopyScaleVector(&wgSi[ncnds], &cpdi[i]->wg, fn[j]);
@@ -630,13 +637,21 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,int *numnds,int
 			if(xDeriv!=NULL) wgSi[i+k]=cmpWgSi;
 		}
 	}
-	
+
     /*
-	if(xDeriv!=NULL)
-	{	cout << "Sorted: " << endl;
-		for(i=0;i<ncnds;i++)
-		{   cout << "# node = " << cnodes[i] << ", ws*Si = " << wsSi[i] << ", wgx*Si = " << wgSi[i].x << ", wgy*Si = " << wgSi[i].y << endl;
-		}
+ 	if(xDeriv!=NULL)
+    {   for(j=1;j<ncnds;j++)
+        {   if(cnodes[j]<cnodes[j-1])
+            {
+#pragma omp critical
+                {   cout << "Not Sorted: " << endl;
+                    for(i=0;i<ncnds;i++)
+                    {   cout << "# node = " << cnodes[i] << ", ws*Si = " << wsSi[i] << ", wgx*Si = " << wgSi[i].x << ", wgy*Si = " << wgSi[i].y << endl;
+                    }
+                }
+                break;
+            }
+        }
 	}
     */
 	
@@ -674,8 +689,7 @@ void ElementBase::GetCPDIFunctions(int numDnds,CPDIDomain **cpdi,int *numnds,int
 		}
 	}
 	if(fn[count]<=1.e-10) count--;
-	*numnds = count;
-	
+	return count;
 }
 
 // by non-element methods that need access to grid shape functions only, and those methods are protected
@@ -878,10 +892,6 @@ void ElementBase::AllocateNeighbors(void)
     for(i=0;i<nelems;i++)
         theElements[i]->AllocateNeighborsArray();
 }
-
-// change GIMP to get different shape functions, then restore when done
-void ElementBase::ChangeGimp(int newGimp) { useGimp = newGimp; }
-void ElementBase::RestoreGimp(void) { useGimp = analysisGimp; }
 
 // on start up initialize number of CPDI nodes (if needed)
 // done here in case need more initializations in the future

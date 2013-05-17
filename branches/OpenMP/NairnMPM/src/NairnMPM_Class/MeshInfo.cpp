@@ -384,13 +384,13 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 	// convert to numbers of elements in each direction and use larger
 	// prime factors in the longer directions
 	if(ndim==2)
-	{	if(horiz>vert)
-		{	// x longer than y
+	{	if(horiz>=vert)
+		{	// x >= y
 			xpnum = factors[1];
 			ypnum = factors[0];
 		}
 		else
-		{	// y longer than x
+		{	// y > x
 			ypnum = factors[1];
 			xpnum = factors[0];
 		}
@@ -398,30 +398,30 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 		zPatchSize=1;
 	}
 	else
-	{	if(horiz>vert && horiz>depth)
-		{	//	x > y and z
+    {   if(horiz>=vert && horiz>=depth)
+		{	//	x >= y and z
 			xpnum = factors[2];
-			if(vert>depth)
-			{	// x > y > z
+			if(vert>=depth)
+			{	// x >= y >= z
 				ypnum = factors[1];
 				zpnum = factors[0];
 			}
 			else
-			{	// x > z > y
+			{	// x >= z > y
 				zpnum = factors[1];
 				ypnum = factors[0];
 			}
 		}
-		else if(vert>horiz && vert>depth)
-		{	// y > x and z
+		else if(vert>=horiz && vert>=depth)
+		{	// y >= x and z
 			ypnum = factors[2];
-			if(horiz>depth)
-			{	// y > x > z
+			if(horiz>=depth)
+			{	// y >= x >= z
 				xpnum = factors[1];
 				zpnum = factors[0];
 			}
 			else
-			{	// y > z > x
+			{	// y >= z > x
 				zpnum = factors[1];
 				xpnum = factors[0];
 			}
@@ -429,8 +429,8 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 		else
 		{	// z > x and z
 			zpnum = factors[2];
-			if(horiz>vert)
-			{	// z > x > y
+			if(horiz>=vert)
+			{	// z > x >= y
 				xpnum = factors[1];
 				ypnum = factors[0];
 			}

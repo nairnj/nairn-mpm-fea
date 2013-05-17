@@ -239,7 +239,7 @@ double MatPoint3D::GetVolume(bool volumeType)
 //	and shape function gradients
 // throws CommonException() if particle corner has left the grid
 void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
-{
+{   
 	// get particle 2D deformation gradient
 	double pF[3][3];
 	GetDeformationGradient(pF);
