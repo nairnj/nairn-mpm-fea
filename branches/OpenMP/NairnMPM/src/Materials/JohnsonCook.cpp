@@ -86,6 +86,9 @@ void JohnsonCook::PrintYieldProperties(void) const
 // Private properties used in hardening law
 const char *JohnsonCook::VerifyAndLoadProperties(int np)
 {	
+    if(Tmjc <= thermal.reference)
+        return "The melting temperature must be >= the reference temperature";
+    
 	// reduced prooperties (Units Pa - cm^3/g)
     Bred = Bjc*1.e6/parent->rho;
 	
@@ -123,8 +126,8 @@ void *JohnsonCook::GetCopyOfHardeningProps(MPMBase *mptr,int np,void *altBuffer)
         p->TjcTerm = 1. - pow(p->hmlgTemp,mjc);
     }
     else
-    {   // below T ref or out of range. Pick some number > 1
-        p->TjcTerm = 1. - p->hmlgTemp;
+    {   // below T ref or out of range. Pick some number >= 1
+        p->TjcTerm = 1.;
     }
     
     // nothing needed from superclass (HardenLawBase)
