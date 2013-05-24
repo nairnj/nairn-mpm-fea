@@ -1,6 +1,6 @@
 /*********************************************************************
     NairnFEA.cpp
-    Nairn Research Group FEA Code
+    nairn-mpm-fea
     
     Created by John Nairn on Mar 12 2003.
     Copyright (c) 2003 John A. Nairn, All rights reserved.
@@ -617,11 +617,9 @@ void NairnFEA::EnergyResults(void)
 ********************************************************************************/
 
 // return name, caller should delete
-char *NairnFEA::CodeName(void)
+const char *NairnFEA::CodeName(void) const
 {
-	char *name=new char[9];
-	strcpy(name,"NairnFEA");
-	return name;
+	return "NairnFEA";
 }
 
 // Explain usage of this program

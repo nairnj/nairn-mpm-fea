@@ -1,6 +1,6 @@
 /********************************************************************************
     BistableIsotropic.cpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Apr 11 2003.
     Copyright (c) 2003 John A. Nairn, All rights reserved.

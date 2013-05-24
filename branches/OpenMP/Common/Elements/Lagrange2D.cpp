@@ -1,6 +1,6 @@
 /********************************************************************************
 	Lagrange2D.cpp
-	NairnFEA
+	nairn-mpm-fea
 
 	Created by John Nairn on 7 Feb 2011.
 	Copyright (c) 2011 John A. Nairn, All rights reserved.

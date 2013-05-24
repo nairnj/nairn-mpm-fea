@@ -1,9 +1,9 @@
 /********************************************************************************
- IdealGas.cpp
- NairnMPM
- 
- Created by Edward Le and Peter Mackenzie on May 26, 2012.
- Copyright (c) 2003 John A. Nairn, All rights reserved.
+    IdealGas.cpp
+    nairn-mpm-fea
+
+    Created by Edward Le and Peter Mackenzie on May 26, 2012.
+    Copyright (c) 2003 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
 #include "Materials/IdealGas.hpp"

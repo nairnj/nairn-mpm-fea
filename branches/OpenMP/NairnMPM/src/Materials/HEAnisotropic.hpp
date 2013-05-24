@@ -1,6 +1,6 @@
 /********************************************************************************
     HEAnisotropic.hpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn, Sept 27, 2011.
     Copyright (c) 2011 John A. Nairn, All rights reserved.

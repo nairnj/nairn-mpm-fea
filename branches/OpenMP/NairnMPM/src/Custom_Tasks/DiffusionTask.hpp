@@ -1,6 +1,6 @@
 /********************************************************************************
     DiffusionTask.hpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Mon Mar 08 2004
     Copyright (c) 2003 John A. Nairn, All rights reserved.

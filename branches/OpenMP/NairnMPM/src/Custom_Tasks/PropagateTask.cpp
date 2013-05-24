@@ -1,6 +1,6 @@
 /********************************************************************************
     PropagateTask.cpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Mon Aug 18 2003.
     Copyright (c) 2003 John A. Nairn, All rights reserved.

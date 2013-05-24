@@ -1,6 +1,6 @@
 /*********************************************************************
     NairnMPM.hpp
-    Nairn Research Group MPM Code
+    nairn-mpm-fea
     
     Created by jnairn on Mon Nov 19 2001.
     Copyright (c) 2001, All rights reserved.
@@ -14,6 +14,9 @@
 #ifndef _NAIRNMPM_
 
 #define _NAIRNMPM_
+
+// include to use OSPartciculas name instead of NairnMPM
+#define _OSParticulas_
 
 class MPMBase;
 class BoundaryCondition;
@@ -56,7 +59,7 @@ class NairnMPM : public CommonAnalysis
 		// accessors
 		virtual void PrintAnalysisTitle(void);
 		virtual void PrintAnalysisType(void);
-		virtual char *CodeName(void);
+		virtual const char *CodeName(void) const;
 		virtual bool ValidAnalysisType(void);
 		virtual void SetHasTractionCracks(bool);
         double *GetCFLPtr(void);

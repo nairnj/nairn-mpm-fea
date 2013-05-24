@@ -1,6 +1,6 @@
 /********************************************************************************
     CommonAnalysis.hpp
-    NairnFEA and NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Jan 13, 2006
     Copyright (c) 2006 John A. Nairn, All rights reserved.
@@ -29,7 +29,7 @@ class CommonAnalysis
 		// abstract methods
 		virtual void PrintAnalysisTitle(void) = 0;
 		virtual void PrintAnalysisType(void) = 0;
-		virtual char *CodeName(void) = 0;
+		virtual const char *CodeName(void) const = 0;
 		virtual bool ValidAnalysisType(void) = 0;
 		virtual void MyStartResultsOutput(void) = 0;
 	

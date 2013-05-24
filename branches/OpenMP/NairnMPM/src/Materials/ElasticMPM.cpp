@@ -1,6 +1,6 @@
 /********************************************************************************
     ElasticMPM.cpp - more Elastic for MPM code
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Jan 24 2007.
     Copyright (c) 2007 John A. Nairn, All rights reserved.

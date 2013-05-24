@@ -17,11 +17,11 @@ Output Files
 
 <h1>Output Files</h1>
 
-<p>Finite element calculations using NairnFEA or material point method simulations using NairnMPM are written to one or more files. Visualization of results requires additional software to extract and plot the results. If you have a Macintosh computer with MacOS 10.4 or newer, all reults can be visualized using <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html">NairnFEAMPM</a>. For other systems, you can use the java-based visualization tool (NairnFEAMPMViz) provided with the source code. Finally, you can use information on this page to write your own tools to extract results from output files for analysis and plotting. This page documents:</p>
+<p>Finite element calculations using NairnFEA or material point method simulations using OSParticulas (or NairnMPM) are written to one or more files. Visualization of results requires additional software to extract and plot the results. If you have a Macintosh computer with MacOS 10.4 or newer, all reults can be visualized using <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html">NairnFEAMPM</a>. For other systems, you can use the java-based visualization tool (NairnFEAMPMViz) provided with the source code. Finally, you can use information on this page to write your own tools to extract results from output files for analysis and plotting. This page documents:</p>
 
 <ul>
 <li><a href="#feaoutput">NairnFEA output file</a></li>
-<li><a href="#mpmoutput">NairnMPM output and archive files</a>.
+<li><a href="#mpmoutput">OSParticulas/NairnMPM output and archive files</a>.
 <ul class="lev2args">
 <li><a href="#versionid">Archive File Header</a></li>
 <li><a href="#archsize">Record Size</a></li>
@@ -37,7 +37,7 @@ Output Files
 
 <p>The only unusual result is for <a href="../xmlformat/definefeamesh.html">imperfect interface elements</a>. Since these elements are not solid elements, they cannot define all components of the tensor. Instead, there is only a traction vector normal to the interfacial surface. The normal component of the traction vector is output as <code>sigma(xx)</code> (or <code>sigma(rr)</code> for axisymmetric analyses). The tangential component of the traction vector is output as <code>sigma(xy)</code> (or <code>sigma(rz)</code> for axisymmetric analyses).</p>
 
-<h1><a name="mpmoutput"></a>NairnMPM Output File</h1>
+<h1><a name="mpmoutput"></a>OSParticulas/NairnMPM Output File</h1>
 
 <p>
 The results of MPM calculations are output to a master text file and to a series of binary or text archive files. The text file defines the problem (lists the nodes, elements, materials, initial cracks, boundary conditions, <i>etc.</i>), describes the archive file format, and has a list of all archived files. The nodes, elements, and boundary conditions may be in the text file or in separate text files along with the archive files. When in separate files, the master text file will list the path to the needed file. The binary archive files have information about the solution for each material point. If there are cracks, the archive files also include the current crack locations and any calculated crack fracture parameters.

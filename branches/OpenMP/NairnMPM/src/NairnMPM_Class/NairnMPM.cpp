@@ -1,6 +1,6 @@
 /*********************************************************************
     NairnMPM.cpp
-    Nairn Research Group MPM Code
+    nairn-mpm-fea
     
     Created by jnairn on Mon Nov 19 2001.
     Copyright (c) 2001 John A. Nairn, All rights reserved.
@@ -57,9 +57,15 @@ int maxShapeNodes=10;		// Maximum number of nodes for a particle (plus 1)
 // Constructor
 NairnMPM::NairnMPM()
 {
+#ifdef _OSParticulas_
+	version=1;						// main version
+	subversion=0;					// subversion (must be < 10)
+	buildnumber=0;					// build number
+#else
 	version=10;						// main version
 	subversion=0;					// subversion (must be < 10)
 	buildnumber=0;					// build number
+#endif
 	mpmApproach=USAVG_METHOD;		// mpm method
 	ptsPerElement=4;				// number of points per element (2D default, 3D changes it to 8)
 	propagate[0]=propagate[1]=NO_PROPAGATION;						// default crack propagation type
@@ -291,7 +297,7 @@ void NairnMPM::MPMAnalysis(bool abort)
     
     //---------------------------------------------------
     // Trailer
-    cout << "\n***** NairnMPM RUN COMPLETED\n";
+    cout << "\n***** " << CodeName() << " RUN COMPLETED\n";
 }
 
 // Main analysis loop for MPM analysis
@@ -702,12 +708,14 @@ void NairnMPM::ValidateOptions(void)
 
 #pragma mark ACCESSORS
 
-// return name, caller should delete
-char *NairnMPM::CodeName(void)
+// return name
+const char *NairnMPM::CodeName(void) const
 {
-	char *name=new char[9];
-	strcpy(name,"NairnMPM");
-	return name;
+#ifdef _OSParticulas_
+    return "OSParticulas";
+#else
+	return "NairnMPM";
+#endif
 }
 
 // verify analysis type

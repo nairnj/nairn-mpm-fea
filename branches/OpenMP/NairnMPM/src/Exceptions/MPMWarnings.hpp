@@ -1,6 +1,6 @@
 /********************************************************************************
     MPMWarnings.hpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Tues Feb 08 2005.
     Copyright (c) 2005 John A. Nairn, All rights reserved.    

@@ -1,6 +1,6 @@
 /********************************************************************************
     BMPLevel.hpp
-    NairnMPM
+    nairn-mpm-fea
 
     Created by John Nairn on Thu Dec 8 2004.
     Copyright (c) 2004 RSAC Software. All rights reserved.

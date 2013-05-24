@@ -1,6 +1,6 @@
 /********************************************************************************
     CoupledSawTooth.hpp
-    NairnMPM
+    nairn-mpm-fea
 
     Created by John Nairn on 8/30/12.
     Copyright (c) 2102 John A. Nairn, All rights reserved.

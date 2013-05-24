@@ -1,6 +1,6 @@
 /********************************************************************************
     CommonAnalysis.cpp
-    NairnFEA and NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Jan 13, 2006.
     Copyright (c) 2006 John A. Nairn, All rights reserved.
@@ -271,9 +271,7 @@ int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
 // print conde version to standard output
 void CommonAnalysis::CoutCodeVersion(void)
 {
-	char *name=CodeName();
-	cout << name << " " << version << "." << subversion << " build " << buildnumber << endl;
-	delete [] name;
+	cout << CodeName() << " " << version << "." << subversion << " build " << buildnumber << endl;
 }
 
 #pragma mark CommonAnalysis: accessors

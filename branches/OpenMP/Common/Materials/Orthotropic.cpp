@@ -1,6 +1,6 @@
 /********************************************************************************
     Orthotropic.cpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Tue Jan 28 2003.
     Copyright (c) 2001 John A. Nairn, All rights reserved.

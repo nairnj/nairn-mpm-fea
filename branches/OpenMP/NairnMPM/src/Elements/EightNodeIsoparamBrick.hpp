@@ -1,6 +1,6 @@
 /******************************************************************
 	EightNodeIsoparamBrick.hpp
-	NairnMPM
+	nairn-mpm-fea
 
 	Created by John Nairn on 7/20/06.
 	Copyright 2006 RSAC Software. All rights reserved.

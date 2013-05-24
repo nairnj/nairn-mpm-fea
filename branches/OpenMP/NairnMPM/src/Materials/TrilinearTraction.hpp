@@ -1,6 +1,6 @@
 /********************************************************************************
 	TrilinearTraction.hpp
-	NairnMPM
+	nairn-mpm-fea
 
 	Created by John Nairn on 9/17/10.
 	Copyright (c) 2010 John A. Nairn, All rights reserved.

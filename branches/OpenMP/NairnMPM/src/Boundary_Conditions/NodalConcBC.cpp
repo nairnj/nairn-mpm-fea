@@ -1,6 +1,6 @@
 /********************************************************************************
     NodalConcBC.cpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Thu Apr 1 2004.
     Copyright (c) 2004 John A. Nairn, All rights reserved.

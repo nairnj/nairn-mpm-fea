@@ -1,6 +1,6 @@
 /*********************************************************************************************
     ConductionTask.cpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Fri Oct 15 2004
     Copyright (c) 2004 John A. Nairn, All rights reserved.

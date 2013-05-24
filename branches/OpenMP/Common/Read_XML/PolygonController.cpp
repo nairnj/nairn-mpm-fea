@@ -1,6 +1,6 @@
 /********************************************************************************
     PolygonController.cpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on 8/10/07.
     Copyright (c) 2007 John A. Nairn, All rights reserved.

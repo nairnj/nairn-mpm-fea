@@ -1,6 +1,6 @@
 /********************************************************************************
     CommonReadHandler.hpp
-    NairnFEA and NairnMPM codes
+    nairn-mpm-fea
     
     Created by John Nairn on Jan 13 2006.
     Copyright (c) 2006 John A. Nairn. All rights reserved.    

@@ -1,6 +1,6 @@
 /********************************************************************************
     CrackNode.cpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on 2/24/05.
     Copyright (c) 2005 John A. Nairn, All rights reserved.

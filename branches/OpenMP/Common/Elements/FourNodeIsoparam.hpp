@@ -1,6 +1,6 @@
 /********************************************************************************
     FourNodeIsoparam.hpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Wed Jan 24 2002.
     Copyright (c) 2001 John A. Nairn, All rights reserved.

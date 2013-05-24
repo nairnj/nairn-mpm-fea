@@ -1,6 +1,6 @@
 /********************************************************************************
 	CarnotCycle.cpp
-	NairnMPM
+	nairn-mpm-fea
 
 	Created by John Nairn on 2/11/13.
 	Copyright (c) 2012 John A. Nairn, All rights reserved.

@@ -1,6 +1,6 @@
 /********************************************************************************
 	MGSCGLMaterial.cpp
-	NairnMPM
+	nairn-mpm-fea
 
 	Created by John Nairn, Feb 18, 2013.
 	Copyright (c) 2013 John A. Nairn, All rights reserved.

@@ -1,6 +1,6 @@
 /********************************************************************************
     CohesiveZone.cpp
-    NairnMPM
+    nairn-mpm-fea
  
 	This material is based on mixed mode cohesive law with saw tooth traction
 	laws. For mixed mode behavior, it uses method advocated by Thouless, which

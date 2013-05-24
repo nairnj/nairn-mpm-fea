@@ -1,6 +1,6 @@
 /********************************************************************************
     MatPtLoadBC.hpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Tues Feb 5 2002.
     Copyright (c) 2001 John A. Nairn, All rights reserved.

@@ -1,6 +1,6 @@
 /********************************************************************************
     ImperfectInterface.cpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Jan 08 2006.
     Copyright (c) 2006 John A. Nairn, All rights reserved.

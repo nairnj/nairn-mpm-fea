@@ -1,6 +1,6 @@
 /********************************************************************************
     OvalController.cpp
-    NairnFEA and NairnMPM
+    nairn-mpm-fea
 
     Created by John Nairn on 4/23/12.
     Copyright (c) 2012 John A. Nairn, All rights reserved.

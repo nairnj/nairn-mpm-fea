@@ -1,6 +1,6 @@
 /********************************************************************************
     MatPtFluxBC.hpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Wed Mar 17 2004.
     Copyright (c) 2001 John A. Nairn, All rights reserved.

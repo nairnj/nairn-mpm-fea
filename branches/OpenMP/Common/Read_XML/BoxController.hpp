@@ -1,6 +1,6 @@
 /********************************************************************************
     BoxController.hpp
-    NairnFEA and NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on 8/30/07.
     Copyright (c) 2003 John A. Nairn, All rights reserved.

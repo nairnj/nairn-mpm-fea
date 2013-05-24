@@ -1,6 +1,6 @@
 /********************************************************************************
     AdjustTimeStepTask.cpp
-    NairnMPM
+    nairn-mpm-fea
 
     Created by John Nairn on 9/24/12.
     Copyright (c) 2012 John A. Nairn, All rights reserved.

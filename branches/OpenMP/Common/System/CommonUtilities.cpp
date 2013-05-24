@@ -1,6 +1,6 @@
 /********************************************************************************
     CommonUtilities.hpp
-    NairnFEA and NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on 1/12/06.
     Copyright (c) 2006 John A. Nairn, All rights reserved.

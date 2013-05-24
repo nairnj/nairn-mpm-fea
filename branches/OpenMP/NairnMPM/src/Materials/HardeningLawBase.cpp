@@ -1,6 +1,6 @@
 /********************************************************************************
     HardeningLawBase.cpp
-    NairnMPM
+    nairn-mpm-fea
 
     Created by John Nairn, 1/17/2103
     Copyright (c) 2013 John A. Nairn, All rights reserved.

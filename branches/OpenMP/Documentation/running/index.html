@@ -4,7 +4,7 @@
 
 <head>
 	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
-	<title>Running NairnMPM</title>
+	<title>Running OSParticulas/NairnMPM</title>
 	<link rel="stylesheet" type="text/css" href="../help.css">
 </head>
 
@@ -16,9 +16,9 @@
 Running
 </p>
 
-<h1>Running NairnFEA and NairnMPM</h1>
+<h1>Running NairnFEA and OSParticulas/NairnMPM</h1>
 
-<p>This page has information on running <code>NairnFEA</code> finite element calculations and <code>NairnMPM</code> material point method calculations. If you just compiled the code, it includes information on doing a test <a href="#trialFEA">FEA</a> or <a href="#trialMPM">MPM</a> calculation.
+<p>This page has information on running <code>NairnFEA</code> finite element calculations and <code>OSParticulas (or <code>NairnMPM</code>) material point method calculations. If you just compiled the code, it includes information on doing a test <a href="#trialFEA">FEA</a> or <a href="#trialMPM">MPM</a> calculation.
 The options for running calculations are:
 </p>
 
@@ -30,7 +30,7 @@ The options for running calculations are:
 <li>Command-Line Execution on any Platform
 <ul>
 <li><a href="#runFEA">Running <code>NairnFEA</code> calculations</a>
-<li><a href="#runMPM">Running <code>NairnMPM</code> calculations</a>
+<li><a href="#runMPM">Running <code>OSParticulas</code> (or <code>NairnMPM</code> calculations</a>
 </li>
 </ul>
 </li>
@@ -39,7 +39,7 @@ The options for running calculations are:
 
 <h1><a name="macosx"></a>Running Using <b>NairnFEAMPM</b> (Macintosh OS X only)</h1>
 
-<p>If you are using a Mac (with MacOS 10.4 or newer, Tiger), you can go to the <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html"><b>NairnFEAMPM</b> web site</a> and download a complete package that lets you create input files using a command language or raw <code>XML</code> commands, run calculations, and visualize the results. This package only works in MacOS X and does not include the <code>NairnFEA</code> or <code>NairnMPM</code> source code.
+<p>If you are using a Mac (with MacOS 10.4 or newer, Tiger), you can go to the <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html"><b>NairnFEAMPM</b> web site</a> and download a complete package that lets you create input files using a command language or raw <code>XML</code> commands, run calculations, and visualize the results. This package only works in MacOS X and does not include the <code>NairnFEA</code>, <code>OSParticulas</code>, or <code>NairnMPM</code> source code.
 </p>
 
 <p>If you are working directly with the source code, you can also run calculations using <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html"><b>NairnFEAMPM</b></a>, but there are few settings that are important
@@ -47,7 +47,7 @@ The options for running calculations are:
 
 <ul>
 
-<li>The downloaded <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html"><b>NairnFEAMPM</b></a> containts the <code>NairnFEA</code> and <code>NairnMPM</code> binaries and <code>DTD</code> files within the application. If you are recompiling the code, you will want <b>NairnFEAMPM</b> to use your new versions rather than these default versions. To make this change:
+<li>The downloaded <a href="http://oregonstate.edu/~nairnj/NairnFEAMPM/index.html"><b>NairnFEAMPM</b></a> contains the <code>NairnFEA</code> and <code>NairnMPM</code> binaries and <code>DTD</code> files within the application. If you are recompiling the code, you will want <b>NairnFEAMPM</b> to use your new versions rather than these default versions. To make this change:
 <ol class="alpha">
 <li>Start <b>NairnFEAMPM</b>
 <li>Choose &quot;NairnFEAMPM &rarr; Preferences...&quot; menu command
@@ -66,7 +66,7 @@ The options for running calculations are:
 
 <h1><a name="javaviz"></a>Running Using NairnFEAMPMViz Java Application (any platform)</h1>
 
-<p>You can run and visualize <code>NairnFEA</code> and <code>NairnMPM</code> calculations on any platform using the <b>NairnFEAMPMViz</b> Java application (<b>note</b>: if you are using a Mac (with MacOS 10.4 or newer, Tiger), <b>NairnFEAMPMViz</b> will work, but the recommendation is to use <a href="#macosx"><b>NairnFEAMPM</b></a> because it faster and has more features). <b>NairnFEAMPMViz</b> started out only as a visualization tool, but now it lets you create and edit input XML files, launch calculation tasks, and visualize the results.
+<p>You can run and visualize <code>NairnFEA</code> and <code>OSParticulas</code> (or <code>NairnMPM</code>) calculations on any platform using the <b>NairnFEAMPMViz</b> Java application (<b>note</b>: if you are using a Mac (with MacOS 10.4 or newer, Tiger), <b>NairnFEAMPMViz</b> will work, but the recommendation is to use <a href="#macosx"><b>NairnFEAMPM</b></a> because it faster and has more features). <b>NairnFEAMPMViz</b> started out only as a visualization tool, but now it lets you create and edit input XML files, launch calculation tasks, and visualize the results.
 <p>
 
 <p><b>NairnFEAMPMViz</b> is a Java application and therefore to run it, you need it's jar file. This file is not included in the <code>Nairn-MPM-FEA</code> package. You have two options:</p>
@@ -82,11 +82,11 @@ The options for running calculations are:
 
 <ul>
 
-<li>The first time you run <b>NairnFEAMPMViz</b>, you have to tell the application the location of the <code>NairnFEA</code> and <code>NairnMPM</code> code engines and of a Unix shell. The steps are
+<li>The first time you run <b>NairnFEAMPMViz</b>, you have to tell the application the location of the <code>NairnFEA</code> and <code>OSParticulas</code> (or <code>NairnMPM</code>) code engines and of a Unix shell. The steps are
 <ol class="alpha">
 <li>Choose &quot;Preferences...&quot; menu command or click the &quot;Prefs&quot; icon</li>
 <li>Click the &quot;Code&quot; tab</li>
-<li>Click the first five &quot;Change...&quot; buttons and locate the <code>NairnMPM</code> executable, the <code>NairnMPM.dtd</code> file, the <code>NairnFEA</code> executable, the <code>NairnFEA.dtd</code> file, and the <code>bash</code> shell command, respectively. In Windows, the <code>bash</code> command will be in the <code>bin</code> folder of the root <code>cygwin</code> folder; in other systems, it will be in the <code>/bin</code> folder.</li>
+<li>Click the first five &quot;Change...&quot; buttons and locate the <code>OSParticulas</code> (or <code>NairnMPM</code>) executable, the <code>NairnMPM.dtd</code> file, the <code>NairnFEA</code> executable, the <code>NairnFEA.dtd</code> file, and the <code>bash</code> shell command, respectively. In Windows, the <code>bash</code> command will be in the <code>bin</code> folder of the root <code>cygwin</code> folder; in other systems, it will be in the <code>/bin</code> folder.</li>
 <li>Optionally click the last &quot;Change...&quot; button and select a work space directory. When a directory is selected, <b>NairnFEAMPMViz</b> will default to this directory when opening and saving files.
 </ol>
 </li>
@@ -154,7 +154,7 @@ Multiple options can use separate options, such as <code>-v -r</code> , or combi
 
 <pre>
 cd nairn-mpm-fea/NairnFEA/input
-./NairnMPM Cantilever.fmcmd > output.fea
+./NairnFEA Cantilever.fmcmd > output.fea
 </pre>
 
 <p>The sample FEA calculation of an end-loaded cantilever beam will finish quickly. The file <code>output.fea</code> will have the text output results.
@@ -166,14 +166,15 @@ cd nairn-mpm-fea/NairnFEA/input
 <img src = "beam.jpg" alt = "beam example" align="center"/>
 </center>
 
-<h1><a name="runMPM"></a>Running NairnMPM</h1>
+<h1><a name="runMPM"></a>Running OSParticulas (or NairnMPM)</h1>
 
 <h2>Command-Line Execution</h2>
 <p>
-You can run NairnMPM from a Unix or Linux command line using:
+You can run OSParticulas (or NairnMPM) from a Unix or Linux command line using:
 </p>
 
 <pre>
+OSParticulas [options] input > output
 NairnMPM [options] input > output
 </pre>
 
@@ -210,7 +211,7 @@ Multiple options can use separate options, such as <code>-v -r</code> , or combi
 <dd>The path name of the input <code>XML</code> file. The preferred extension for the input files is &quot;<code>.fmcmd</code>&quot;.</dd>
 
 <dt>output</dt>
-<dd>The name of the output text file. The output of NairnMPM is to standard output and redirection should be used to save the output to a file. The output file should be saved in the current working directory to insure correct relative paths between the output file and the archive files. The preferred extension for the output file is &quot;<code>.mpm</code>&quot;.</dd>
+<dd>The name of the output text file. The output of OSParticulas (or NairnMPM) is to standard output and redirection should be used to save the output to a file. The output file should be saved in the current working directory to insure correct relative paths between the output file and the archive files. The preferred extension for the output file is &quot;<code>.mpm</code>&quot;.</dd>
 
 </dl>
 
@@ -218,6 +219,13 @@ Multiple options can use separate options, such as <code>-v -r</code> , or combi
 
 <p>After <a href="../startup/index.html">compiling</a> the code, you can do a trial run with the following commands:
 </p>
+    
+<pre>
+cd nairn-mpm-fea/NairnMPM/input
+./OSParticulas TwoDisks.fmcmd > output.mpm
+</pre>
+
+<p>or</p>
 
 <pre>
 cd nairn-mpm-fea/NairnMPM/input

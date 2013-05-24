@@ -1,6 +1,6 @@
 /********************************************************************************
     CrackLeaf.cpp
-    NairnMPM
+    nairn-mpm-fea
 
     Created by John Nairn on Wed Aug 22 2012
     Copyright (c) 2012 John A. Nairn, All rights reserved.

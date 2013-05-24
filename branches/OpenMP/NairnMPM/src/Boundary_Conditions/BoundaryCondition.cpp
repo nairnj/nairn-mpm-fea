@@ -1,6 +1,6 @@
 /********************************************************************************
     BoundaryCondition.cpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Mon Mar 29 2004.
     Copyright (c) 2001 John A. Nairn, All rights reserved.

@@ -58,7 +58,7 @@ MaterialController::~MaterialController()
 #pragma mark MaterialController: Methods
 
 /* Create new material
-	When a new material is added to NairnMPM or NairnFEA, you must include the
+	When a new material is added, you must include the
 	header above and add a case below to create a new material when the matID
 	calls for the new type. All other issues on implementing the material
 	should be possible in the new material class alone, without modifying

@@ -1,6 +1,6 @@
 /********************************************************************************
     More NodalPoint.cpp for MPM only
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Mar 17 2003.
     Copyright (c) 2003 John A. Nairn, All rights reserved.

@@ -1,6 +1,6 @@
 /********************************************************************************
     CommonArchiveData.hpp
-    NairnFEA and NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Jan 15, 2006
     Copyright (c) 2006 John A. Nairn, All rights reserved.

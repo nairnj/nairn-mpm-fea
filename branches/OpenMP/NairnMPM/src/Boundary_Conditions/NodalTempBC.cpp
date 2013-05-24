@@ -1,6 +1,6 @@
 /********************************************************************************
     NodalTempBC.cpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Oct 18 2004.
     Copyright (c) 2004 John A. Nairn, All rights reserved.

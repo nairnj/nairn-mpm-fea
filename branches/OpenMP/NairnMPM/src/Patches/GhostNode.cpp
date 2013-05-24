@@ -1,6 +1,6 @@
 /********************************************************************************
 	GridNode.cpp
-	NairnMPM
+	nairn-mpm-fea
 
 	Created by John Nairn on 4/11/13.
 	Copyright (c) 2013 John A. Nairn, All rights reserved.

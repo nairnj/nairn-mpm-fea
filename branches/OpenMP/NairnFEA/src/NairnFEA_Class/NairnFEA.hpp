@@ -55,7 +55,7 @@ class NairnFEA : public CommonAnalysis
 		// accessors
 		virtual void PrintAnalysisTitle(void);
 		virtual void PrintAnalysisType(void);
-		virtual char *CodeName(void);
+		virtual const char *CodeName(void) const;
 		virtual bool ValidAnalysisType(void);
 };
 

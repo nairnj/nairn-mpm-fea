@@ -792,7 +792,7 @@ void VTKLegacy(ostream &os,unsigned char *ap,long fileLength,const char *mpmFile
 	if(headerName!=NULL)
 		os << headerName;
 	else
-		os << "NairnMPM particle data";
+		os << "OSParticulas/NairnMPM particle data";
 	os << " from file ";
 	os << mpmFile ;
 	if(archiveTimeMs>-0.5)

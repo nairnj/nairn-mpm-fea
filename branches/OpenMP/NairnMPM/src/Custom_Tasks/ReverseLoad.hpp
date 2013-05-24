@@ -1,6 +1,6 @@
 /********************************************************************************
     ReverseLoad.hpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Wed Aug 20 2003.
     Copyright (c) 2003 John A. Nairn, All rights reserved.

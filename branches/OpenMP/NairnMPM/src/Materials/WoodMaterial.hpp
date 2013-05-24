@@ -1,6 +1,6 @@
 /********************************************************************************
 	WoodMaterial.hpp
-	NairnMPM
+	nairn-mpm-fea
  
 	Created by John Nairn on 6/4/10.
 	Copyright 2010 Oregon State University. All rights reserved.

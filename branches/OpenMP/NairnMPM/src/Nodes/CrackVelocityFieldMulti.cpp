@@ -1,6 +1,6 @@
 /********************************************************************************
 	CrackVelocityFieldMulti.cpp
-	NairnMPM
+	nairn-mpm-fea
 
 	Created by John Nairn on 21 August 2009.
 	Copyright (c) 2009 John A. Nairn, All rights reserved.

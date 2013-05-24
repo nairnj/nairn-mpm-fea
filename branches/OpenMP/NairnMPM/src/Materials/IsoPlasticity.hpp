@@ -1,6 +1,6 @@
 /********************************************************************************
     IsoPlasticity.hpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn, June 16, 2008.
     Copyright (c) 2008 John A. Nairn, All rights reserved.

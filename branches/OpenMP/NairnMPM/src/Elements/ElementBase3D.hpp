@@ -1,6 +1,6 @@
 /********************************************************************************
     ElementBase3D.hpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on John Nairn on 7/20/06.
     Copyright (c) 2001 John A. Nairn, All rights reserved.

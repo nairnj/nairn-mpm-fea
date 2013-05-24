@@ -1,6 +1,6 @@
 /********************************************************************************
 	PolyhedronController.hpp
-	NairnMPM
+	nairn-mpm-fea
 
 	Created by John Nairn on 1/7/11.
 	Copyright (c) 2011 John A. Nairn, All rights reserved.

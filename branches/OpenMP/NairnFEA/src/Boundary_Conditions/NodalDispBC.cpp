@@ -1,6 +1,6 @@
 /********************************************************************************
     NodalDispBC.cpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Wed Jan 31 2002.
     Copyright (c) 2001 John A. Nairn, All rights reserved.

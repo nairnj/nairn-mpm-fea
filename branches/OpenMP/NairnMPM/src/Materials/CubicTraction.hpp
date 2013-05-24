@@ -1,6 +1,6 @@
 /********************************************************************************
     CubicTraction.hpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on 4/6/08.
     Copyright (c) 2008 John A. Nairn, All rights reserved.

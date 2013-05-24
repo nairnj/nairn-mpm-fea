@@ -1,6 +1,6 @@
 /********************************************************************************
     VTKArchive.cpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on 12/5/08.
     Copyright (c) 2008 John A. Nairn, All rights reserved.

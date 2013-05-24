@@ -1,7 +1,7 @@
 /********************************************************************************
     Generators.cpp - extra code for MPMReadHandler.cpp to generate mesh
         from xml commands (instead of from point by point commands)
-    NairnMPM
+    nairn-mpm-fea
 
     Created by John Nairn on Thu Apr 11 2002.
     Copyright (c) 2002 RSAC Software. All rights reserved.

@@ -1,6 +1,6 @@
 /********************************************************************************
     TorusController.hpp
-    NairnMPM
+    nairn-mpm-fea
 
     Created by John Nairn on 5/15/13.
     Copyright (c) 2013 John A. Nairn, All rights reserved.

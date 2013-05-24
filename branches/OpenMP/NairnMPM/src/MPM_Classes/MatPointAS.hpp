@@ -1,6 +1,6 @@
 /********************************************************************************
 	MatPointAS.hpp
-	NairnMPM
+	nairn-mpm-fea
 
 	Created by John Nairn on 10/23/12.
 	Copyright (c) 2012 John A. Nairn, All rights reserved.

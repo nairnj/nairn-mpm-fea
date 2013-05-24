@@ -1,6 +1,6 @@
 /********************************************************************************
     JohnsonCook.hpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn, August 12, 2008.
     Copyright (c) 2008 John A. Nairn, All rights reserved.

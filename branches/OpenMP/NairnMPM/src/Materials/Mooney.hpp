@@ -1,6 +1,6 @@
 /********************************************************************************
     Mooney.hpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Fri Feb 28 2003.
     Copyright (c) 2003 John A. Nairn, All rights reserved.

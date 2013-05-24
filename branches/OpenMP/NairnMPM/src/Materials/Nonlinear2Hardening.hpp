@@ -1,6 +1,6 @@
 /********************************************************************************
 	Nonlinear2Hardening.hpp
-	NairnMPM
+	nairn-mpm-fea
 
 	Created by John Nairn, 2/8/2103
 	Copyright (c) 2013 John A. Nairn, All rights reserved.

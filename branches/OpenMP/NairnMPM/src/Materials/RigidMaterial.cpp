@@ -1,6 +1,6 @@
 /********************************************************************************
     RigidMaterial.cpp
-    NairnMPM
+    nairn-mpm-fea
     
     Created by John Nairn on Nov 15 2004.
     Copyright (c) 2004 John A. Nairn, All rights reserved.

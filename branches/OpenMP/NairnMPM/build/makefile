@@ -30,7 +30,7 @@
 #
 # Each of these can changed by editing or can be overriden at make time with syntax such as
 #
-# make CFLAGS="-c -arch x86_64" LFLAGS="-arch x84_64" output="~/Desktop/NairnFEA" SYSTEM=mac
+# make CFLAGS="-c -arch x86_64" LFLAGS="-arch x84_64" output="~/Desktop/NairnMPM" SYSTEM=mac
 #
 # -------------------------------------------------------------------------
 # 1. Path and/or command to link to xerces library
