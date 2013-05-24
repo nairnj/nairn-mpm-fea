@@ -16,7 +16,7 @@
 #define _NAIRNMPM_
 
 // include to use OSPartciculas name instead of NairnMPM
-#define _OSParticulas_
+//#define _OSParticulas_
 
 class MPMBase;
 class BoundaryCondition;
