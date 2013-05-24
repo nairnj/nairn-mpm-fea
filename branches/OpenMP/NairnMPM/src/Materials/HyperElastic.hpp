@@ -41,7 +41,6 @@ class HyperElastic : public MaterialBase
         double IncrementDeformation(MPMBase *,double,double,double,double,double,double,double,double,double,Tensor *) const;
         double IncrementDeformation(MPMBase *,Matrix3,Tensor *,int) const;
 		double GetResidualStretch(MPMBase *,double &,ResidualStrains *) const;
-		void DecomposeDeformation(Matrix3) const;
     
         // Accessors
         virtual double GetVolumetricTerms(double,double) const;

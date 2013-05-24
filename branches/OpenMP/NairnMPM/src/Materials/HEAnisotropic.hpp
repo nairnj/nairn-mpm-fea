@@ -13,6 +13,9 @@
 
 #define HEANISOTROPIC 21
 
+#define J_HISTORY 0
+#define THETA12_HISTORY 1
+
 #include "Materials/HyperElastic.hpp"
 
 class HEAnisotropic : public HyperElastic
@@ -25,11 +28,12 @@ class HEAnisotropic : public HyperElastic
 		// initialize
         virtual char *InputMat(char *,int &);
         virtual const char *VerifyAndLoadProperties(int);
+        void ValidateForUse(int np) const;
 		virtual void PrintMechanicalProperties(void) const;
+        char *InitHistoryData(void);
 		
 		// step methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
-		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+        void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 				
 		// accessors
 		virtual const char *MaterialType(void) const;

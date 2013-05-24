@@ -31,7 +31,10 @@ class Matrix3
 		Matrix3 Exponential(int) const;
 		void Scale(double);
 		Matrix3 Inverse(void) const;
-        bool Eigenvalues(double *) const;
+        Matrix3 Eigenvalues(void) const;
+        Matrix3 Eigenvectors(Matrix3 &) const;
+        Matrix3 RightStretch(Matrix3 &) const;
+        Matrix3 Rotation(Matrix3 &,Matrix3 &) const;
 	
 		// operators
 		Matrix3 &operator+=(const Matrix3 &);
