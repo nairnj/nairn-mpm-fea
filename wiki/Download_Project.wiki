@@ -1,6 +1,8 @@
 #summary Downloading the nairn-mpm-fea project
 #labels Featured,Getting_Started
 
+<font color="red">This page has been moved to <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Download_Source_Code">OSUPDocs Wiki</a></font>
+
 = Introduction =
 
 You must use `Subversion` (or `svn`) on your local computer to download the entire `nairn-mpm-fea` project from `GoogleCode.com`. The `svn` package is available for Mac and Linux as a command-line tool (see <a href="http://subversion.tigris.org/">tigris.org</a> if you need to install it). For Windows, one solution is to [Windows_Setup set up `cygwin`] and use its version of `svn`. In each platform there may by other `svn` options as well, but this page is based on the command-line approach.
