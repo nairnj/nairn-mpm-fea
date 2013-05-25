@@ -1,6 +1,8 @@
 #summary List of available versions for check out
 #labels NairnMPM,NairnFEA
 
+<font color="red">This page has been moved to <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Download_Source_Code">OSUPDocs Wiki</a></font>
+
 = Introduction =
 
 The main `trunk` of the project contains the working code; a [Download_Project standard check out] gets this version. Since this code is computational mechanics research software, the main `trunk` may occasionally have issues or incomplete features. To help avoid such issues, various complete releases are `tagged` and can be checked out instead while waiting for main `trunk` to reach a stable condition.
