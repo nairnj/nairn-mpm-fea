@@ -66,6 +66,7 @@ The other uses one or more commands that generate the material points. Both thes
       &lt;Sphere units='mm' xmin='10' xmax='40' ymin='10' ymax='40' zmin='0' zmax='10'/&gt;     
       &lt;Box units='mm' xmin='10' xmax='40' ymin='10' ymax='40' zmin='0' zmax='10'/&gt;     
       &lt;Cylinder units='mm' xmin='10' xmax='40' ymin='10' ymax='40' zmin='0' zmax='10' axis='3'/&gt;     
+      &lt;Torus units='mm' xmin='10' xmax='40' ymin='10' ymax='40' zmin='0' zmax='10' axis='2'/&gt;     
       &lt;Polyhedron&gt;
           &lt;faces style="15482637"&gt;
  1.496206e+002  2.879507e+000  1.775602e+002
@@ -236,8 +237,7 @@ attribute</a> can specify the length units) with material points The parameters 
  <dd>Fills or empties the torus bounded by the parameters <code>xmin</code>, <code>xmax</code>, 
   <code>ymin</code>, <code>ymax</code>, <code>zmin</code>, and <code>zmax</code>
   (an optional <a href="mpmheader.html#units"><code>units</code> attribute</a> can specify the length units)
-  with material points. The <code>axis</code> attribute specifies the normal direction to the plane of the torus as in the 1
-  (for <code>x</code>), 2 (for <code>y</code>) or 3 (for <code>z</code>) direction (default is 3 if not specified). The bounds for the directions in the plane of the torus (<i>e.g.</i>, x and y bounds when <code>axis</code> is 3) define an ellipsoid (or circle if the bounds have the same separation) that runs through the center of the torodial ring. The bounds in the direction of the axis define top and bottom for the cross-section of the torodial ring. The cross section will be a circle with radius given by half the distance between the top and bottom. To have an eliptical cross section, you can specify a <code>radius</code> attribute to define the radius of the cross section in the plane of the torus (while top and bottom give radius of the cross section in the axis direction).</dd>
+  with material points. The <code>axis</code> attribute specifies the normal direction to the plane of the torus as in the 1 (for <code>x</code>), 2 (for <code>y</code>) or 3 (for <code>z</code>) direction (default is 3 if not specified). The bounds for the directions in the plane of the torus (<i>e.g.</i>, x and y bounds when <code>axis</code> is 3) define an ellipsoid (or circle if the bounds have the same separation) that runs through the center of the torodial ring. The bounds in the direction of the axis define top and bottom for the cross-section of the torodial ring. The cross section will be a circle with radius given by half the distance between the top and bottom. To have an eliptical cross section, you can specify a <code>radius</code> attribute to define the radius of the cross section in the plane of the torus (while top and bottom give radius of the cross section in the axis direction).</dd>
   
   <dt><code>&lt;Polyhedron&gt;</code></dt>
   <dd>Fills or empties an arbitrary 3D shape specified by describing the object as a collection of triangular faces. The faces are specified with one or more <a href="#faces"><code>faces</code></a> commands subordinate to the <code>Polyhedron</code> command.

@@ -23,7 +23,7 @@
 //#define _OMPTEST
 
 // Activate to test traction laws add first before combining with ftot
-//#define USE_FEXT
+#define USE_FEXT
 
 // C includes
 // Used to have <stdio.h>

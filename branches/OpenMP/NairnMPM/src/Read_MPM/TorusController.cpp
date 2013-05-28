@@ -48,7 +48,7 @@ bool TorusController::FinishSetup(void)
     ymid = (ymin+ymax)/2.;
     zmid = (zmin+zmax)/2.;
     
-    // radii
+    // radii squared
     a2 = xmax-xmid;
     a2 *= a2;
     b2 = ymax-ymid;
@@ -73,21 +73,40 @@ bool TorusController::FinishSetup(void)
 // Deterine if point in box or cylinder
 bool TorusController::ContainsPoint(Vector& v)
 {
+	// R is distance along line from plane midpoint to plane elipse
+	// rpos is distance from plane midpoint to the point in the plane
+	double R;
+	
     if(axis==1)
     {   if(v.x>xmax || v.x<xmin) return FALSE;
-        double R = sqrt(c2 + (v.y-ymid)*(v.y-ymid)/b2*(1.-c2/b2));
+		if(DbleEqual(v.y-ymid,0.))
+			R = sqrt(c2);
+		else
+		{	double m = (v.z-zmid)/(v.y-ymid);
+			R = sqrt((1.+m*m)/(1./b2 + m*m/c2));
+		}
         double rpos = sqrt((v.z-zmid)*(v.z-zmid)+(v.y-ymid)*(v.y-ymid));
         return (R-rpos)*(R-rpos)/d2 + (v.x-xmid)*(v.x-xmid)/a2 <= 1.;
     }
     else if(axis==2)
     {   if(v.y>ymax || v.y<ymin) return FALSE;
-        double R = sqrt(c2 + (v.x-xmid)*(v.x-xmid)/a2*(1.-c2/a2));
+		if(DbleEqual(v.x-xmid,0.))
+			R = sqrt(c2);
+		else
+		{	double m = (v.z-zmid)/(v.x-xmid);
+			R = sqrt((1.+m*m)/(1./a2 + m*m/c2));
+		}
         double rpos = sqrt((v.x-xmid)*(v.x-xmid)+(v.z-zmid)*(v.z-zmid));
-        return (R-rpos)*(R-rpos)/d2 + (v.z-zmid)*(v.z-zmid)/c2 <= 1.;
+        return (R-rpos)*(R-rpos)/d2 + (v.y-zmid)*(v.y-zmid)/b2 <= 1.;
     }
     else
     {   if(v.z>zmax || v.z<zmin) return FALSE;
-        double R = sqrt(b2 + (v.x-xmid)*(v.x-xmid)/a2*(1.-b2/a2));
+		if(DbleEqual(v.x-xmid,0.))
+			R = sqrt(b2);
+		else
+		{	double m = (v.y-ymid)/(v.x-xmid);
+			R = sqrt((1.+m*m)/(1./a2 + m*m/b2));
+		}
         double rpos = sqrt((v.x-xmid)*(v.x-xmid)+(v.y-ymid)*(v.y-ymid));
         return (R-rpos)*(R-rpos)/d2 + (v.z-zmid)*(v.z-zmid)/c2 <= 1.;
     }

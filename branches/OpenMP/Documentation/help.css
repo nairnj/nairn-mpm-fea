@@ -1,13 +1,9 @@
- /* element selectors */*  { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular }BODY { background-color: #ffffff; }
-
-/* body for hom page only */body.home {
+/* element selectors */*  { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular }BODY { background-color: #ffffff; }
+/* body for home page only */body.home {
 	background-color: #FFFFFF;
 	background-image: url(Background.jpg);
 	background-repeat: no-repeat;
-	background-position: center top;
-}
-
-/* section elements */H1 {
+	background-position: center top;}/* section elements */H1 {
 	font-size: 14pt;
 	font-weight: bold;
   	border-bottom: solid;
@@ -31,10 +27,7 @@ blockquote {
 	font-size: 10pt;
 	line-height: 1.5;
 	margin-left: 36pt;
-}
-
-/* used at top of bottom of pages for return links */
-p.links {
+}/* used at top of bottom of pages for return links */p.links {
 	margin-left: 0pt;
 	border: solid;
 	border-width: thin;
@@ -47,98 +40,66 @@ p.links {
 }code {
 	font-family: Courier;
 	font-size: 9pt;
-}
-
-table {
+}table {
 	border-collapse: collapse;
 	border: 1px solid gray;
-}
-td {
+}td {
 	border: 1px solid gray;
 	padding: 6px;
 	line-height: 1.3;
 	vertical-align: top;
-}
-th {
+}th {
 	border: 1px solid gray;
 	padding: 6px;
-}
-
-/* unordered lists  */ul {
+}/* unordered lists  */ul {
 	font-size: 9pt;
 	line-height: 1.5;
 	list-style-type: square;
 	margin-left: -6pt;
-}
-
-/* second level - new symbol and indented */
-ul.lev2 {
+}/* second level - new symbol and indented */ul.lev2 {
 	list-style-type: circle;
 	margin-left: -12pt;
-}
-
-/* second level within dl - new symbol, indented, top less */
-ul.lev2args {
+}/* second level within dl - new symbol, indented, top less */ul.lev2args {
 	list-style-type: circle;
 	margin-top: 2pt;
 	margin-left: -12pt;
 	margin-bottom: 3pt;
-}
-
-/* unordered lists  */ol {
+}/* ordered lists  */ol {
 	font-size: 9pt;
 	line-height: 1.5;
 	margin-left: -6pt;
-}
-
-/* for index into FEA and MPM files elements */
-ol.index {
+}/* for index into FEA and MPM files elements */ol.index {
 	line-height: 1.2;
-}
-
-/* for index into FEA and MPM files elements */
-ol.indexsub {
+}/* for index into FEA and MPM files elements */ol.indexsub {
 	margin-top: 3pt;
 	margin-left: -12pt;
 	line-height: 1.2;
 	list-style-type: lower-alpha;
-}
-
-ol li {
+}ol li {
 	margin-bottom: 3pt;
-}
-
-/* level 2 lists with letters */
-ol.alpha  {
+}/* level 2 lists with letters */ol.alpha  {
 	list-style-type: lower-alpha;
 	margin-top: 2pt;
 	margin-left: -12pt;
 }
-/* definition lists */dl {
+/* definition lists */dl {
 	font-size: 9pt;
 	line-height: 1.5;
-}
-
-/* DL with  tags */dl dt {
+}/* DL with  tags */dl dt {
 	margin-left: 15px;
 	font-family: Courier;
 }dl dd {
 	margin-left: 28px;
 	margin-bottom: 3px;
 	line-height: 1.3;
-}
-
-/* preformatted text */
-pre {
+}/* preformatted text */pre {
 	margin-left: 18px;
 	font-size: 9pt;
 	font-family: Courier;
-}
-
-/* predformatted with smaller top margin
+}/* predformatted with smaller top margin
    in file format section */pre.near {
 	margin-top: 3px;
-}/* styles */
+}p.osupdocs {	margin-left: 10px;	margin-right: 10px;	border: solid 1px #A1A5A9; 	color: red;	background-color: #eeeeee;}/* styles */
 .warn  {
 	color: red;
 }
