@@ -39,8 +39,8 @@ class TransIsotropic : public Elastic
         virtual char *InputMat(char *,int &);
         virtual const char *VerifyAndLoadProperties(int);
         virtual void PrintMechanicalProperties(void) const;
-	virtual void FillTransportProperties(TransportProperties *);
 #ifdef MPM_CODE
+        virtual void FillTransportProperties(TransportProperties *);
 		virtual void PrintTransportProperties(void) const;
 #endif
 		

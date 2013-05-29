@@ -34,7 +34,7 @@ double Nonlinear2Hardening::GetYield(MPMBase *mptr,int np,double delTime,Hardeni
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)lamda or depdot/dlambda = sqrt(2./3.)/delTime
 double Nonlinear2Hardening::GetKPrime(MPMBase *mptr,int np,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return TWOTHIRDS*yldred*beta*npow*pow(a->alpint,npow-1) ;
+	return TWOTHIRDS*yldred*beta*npow*pow(a->alpint,npow-1.) ;
 }
 
 // Get derivative of (1./3.)*yield^2 with respect to lambda for plane stress only
@@ -43,7 +43,9 @@ double Nonlinear2Hardening::GetKPrime(MPMBase *mptr,int np,double delTime,Harden
 // Also equal to sqrt(2./3.)*GetYield()*GetKPrime()*fnp1, but in separate call for efficiency
 double Nonlinear2Hardening::GetK2Prime(MPMBase *mptr,double fnp1,double delTime,HardeningAlpha *a,void *properties) const
 {
-	return SQRT_EIGHT27THS*yldred*yldred*beta*npow*(1.+beta*pow(a->alpint,npow))*pow(a->alpint,npow-1)*fnp1;
+    if(DbleEqual(a->alpint,0.)) return 0.;
+    double alphan = pow(a->alpint,npow);
+	return SQRT_EIGHT27THS*yldred*yldred*beta*npow*(1.+beta*alphan)*alphan*fnp1/a->alpint;
 }
 
 #pragma mark NonlinearHardening::Accessors

@@ -26,7 +26,7 @@ Intended for development of these materials
 EndHeader! ------------ Parameters ---------------
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", "Axisymmetric MPM", or "3D MPM"
-#analysis="Plane Strain MPM"
+#analysis="Plane Stress MPM"
 
 ! pick a method usually "lCPDI" or "uGIMP"
 #method="uGIMP"
@@ -199,7 +199,7 @@ if #matID="isoplasticity"
     else if #hardID="Nonlinear2"
       yield abs(#Ebase*#yldstrain/100)
       Khard 1
-      nhard .24
+      nhard .5
       kCond .202
       CP 1256
     else if #hardID="JohnsonCook"

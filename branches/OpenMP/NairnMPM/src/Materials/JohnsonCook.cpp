@@ -177,8 +177,9 @@ double JohnsonCook::GetKPrime(MPMBase *mptr,int np,double delTime,HardeningAlpha
 // ... and epdot = dalpha/delTime with dalpha = sqrt(2./3.)*lambda*fnp1 or depdot/dlambda = sqrt(2./3.)*fnp1/delTime
 // Also equal to sqrt(2./3.)*GetYield()*GetKPrime()*fnp1, but in separate call for efficiency
 double JohnsonCook::GetK2Prime(MPMBase *mptr,double fnp1,double delTime,HardeningAlpha *a,void *properties) const
-{
- 	JCProperties *p = (JCProperties *)properties;
+{   
+    if(DbleEqual(a->alpint,0.)) return 0.;
+	JCProperties *p = (JCProperties *)properties;
 	if(p->hmlgTemp>=1.) return 0.;
     double term1 = yldred + Bred*pow(a->alpint,njc);
     double ep = a->dalpha/(delTime*ep0jc);

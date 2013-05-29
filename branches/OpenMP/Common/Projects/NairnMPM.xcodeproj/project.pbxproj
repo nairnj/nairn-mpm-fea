@@ -381,6 +381,8 @@
 		A7D1A710090693DE0033D510 /* NodalLoadController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7D1A70C090693DE0033D510 /* NodalLoadController.hpp */; };
 		A7D1E5820749581A00BC2956 /* RigidMaterial.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7D1E5800749581A00BC2956 /* RigidMaterial.hpp */; };
 		A7D1E5830749581A00BC2956 /* RigidMaterial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7D1E5810749581A00BC2956 /* RigidMaterial.cpp */; };
+		A7D62D2817557EE0008FA00A /* MatPtHeatFluxBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7D62D2717557EE0008FA00A /* MatPtHeatFluxBC.cpp */; };
+		A7D62D2A175582E0008FA00A /* MatPtHeatFluxBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7D62D29175582E0008FA00A /* MatPtHeatFluxBC.hpp */; };
 		A7DDE95E0BCBFA01005CC32D /* mathexpr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7DDE95C0BCBFA01005CC32D /* mathexpr.cpp */; };
 		A7DDE95F0BCBFA01005CC32D /* mathexpr.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7DDE95D0BCBFA01005CC32D /* mathexpr.hpp */; };
 		A7DDE9600BCBFA01005CC32D /* mathexpr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7DDE95C0BCBFA01005CC32D /* mathexpr.cpp */; };
@@ -693,6 +695,8 @@
 		A7D1E5810749581A00BC2956 /* RigidMaterial.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RigidMaterial.cpp; sourceTree = "<group>"; };
 		A7D5DB42041028D50063AF10 /* Mooney.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Mooney.hpp; path = Materials/Mooney.hpp; sourceTree = "<group>"; };
 		A7D5DB43041028D50063AF10 /* Mooney.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Mooney.cpp; path = Materials/Mooney.cpp; sourceTree = "<group>"; };
+		A7D62D2717557EE0008FA00A /* MatPtHeatFluxBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPtHeatFluxBC.cpp; sourceTree = "<group>"; };
+		A7D62D29175582E0008FA00A /* MatPtHeatFluxBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatPtHeatFluxBC.hpp; sourceTree = "<group>"; };
 		A7D66AC30611EAB90096AB29 /* Cantilever.fmcmd */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.xml; path = Cantilever.fmcmd; sourceTree = "<group>"; };
 		A7DDE95C0BCBFA01005CC32D /* mathexpr.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = mathexpr.cpp; sourceTree = "<group>"; };
 		A7DDE95D0BCBFA01005CC32D /* mathexpr.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = mathexpr.hpp; sourceTree = "<group>"; };
@@ -1342,6 +1346,8 @@
 				67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */,
 				A77CBDE90608C15600FDE1D6 /* MatPtFluxBC.hpp */,
 				A77CBDEA0608C15600FDE1D6 /* MatPtFluxBC.cpp */,
+				A7D62D29175582E0008FA00A /* MatPtHeatFluxBC.hpp */,
+				A7D62D2717557EE0008FA00A /* MatPtHeatFluxBC.cpp */,
 				A78BCA64061C76F1009232A2 /* NodalVelBC.hpp */,
 				A78BCA65061C76F1009232A2 /* NodalVelBC.cpp */,
 				A78BCB6D061CA059009232A2 /* NodalConcBC.hpp */,
@@ -1594,6 +1600,7 @@
 				A7B45CF81715D36E003FDED6 /* GridPatch.hpp in Headers */,
 				67083428171717FB007AD581 /* GhostNode.hpp in Headers */,
 				A79D0A301744268600321C74 /* TorusController.hpp in Headers */,
+				A7D62D2A175582E0008FA00A /* MatPtHeatFluxBC.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1915,6 +1922,7 @@
 				A7B45CF61715D354003FDED6 /* GridPatch.cpp in Sources */,
 				67083427171717FB007AD581 /* GhostNode.cpp in Sources */,
 				A79D0A2D1744267300321C74 /* TorusController.cpp in Sources */,
+				A7D62D2817557EE0008FA00A /* MatPtHeatFluxBC.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

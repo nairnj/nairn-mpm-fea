@@ -1,12 +1,12 @@
 /********************************************************************************
-    MatPtFluxBC.cpp
+    MatPtHeatFluxBC.cpp
     nairn-mpm-fea
-    
-    Created by John Nairn on Wed Mar 17 2004.
-    Copyright (c) 2001 John A. Nairn, All rights reserved.
+
+    Created by John Nairn on May 28, 2013.
+    Copyright (c) 2013 John A. Nairn, All rights reserved.
 ********************************************************************************/
 
-#include "Boundary_Conditions/MatPtFluxBC.hpp"
+#include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
@@ -15,20 +15,20 @@
 #include "Nodes/NodalPoint.hpp"
 
 // global
-MatPtFluxBC *firstFluxPt=NULL;
+MatPtHeatFluxBC *firstHeatFluxPt=NULL;
 
-#pragma mark MatPtFluxBC: Constructors and Destructors
+#pragma mark MatPtHeatFluxBC: Constructors and Destructors
 
 // Constructors
-MatPtFluxBC::MatPtFluxBC(int num,int dof,int sty,int edge) : MatPtLoadBC(num,dof,sty)
+MatPtHeatFluxBC::MatPtHeatFluxBC(int num,int dof,int sty,int edge) : MatPtLoadBC(num,dof,sty)
 {
 	face = edge;
 }
 
-#pragma mark MatPtFluxBC: Methods
+#pragma mark MatPtHeatFluxBC: Methods
 
 // print to output
-BoundaryCondition *MatPtFluxBC::PrintBC(ostream &os)
+BoundaryCondition *MatPtHeatFluxBC::PrintBC(ostream &os)
 {
     char nline[200];
     
@@ -39,13 +39,13 @@ BoundaryCondition *MatPtFluxBC::PrintBC(ostream &os)
     return (BoundaryCondition *)GetNextObject();
 }
 
-// increment external load on a particle
+// increment external heat flux on a particle
 // input is analysis time in seconds
-// (only called when diffusion is active)
-MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
+// (only called when conduction is active)
+MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
 {
     // condition value
-	// flux BC in kg/(m^2-sec) - find J/rho in units of mm/sec
+	// heat flux BC in kg/(m^2-sec) - find J/rho in units of mm/sec
 	MPMBase *mpmptr = mpm[ptNum-1];
     MaterialBase *matptr = theMaterials[mpmptr->MatID()];
 	double csatrho = matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
@@ -96,5 +96,5 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
         }
     }
 	
-    return (MatPtFluxBC *)GetNextObject();
+    return (MatPtHeatFluxBC *)GetNextObject();
 }

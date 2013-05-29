@@ -42,6 +42,7 @@
 #include "Elements/ElementBase.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Boundary_Conditions/NodalTempBC.hpp"
+#include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 #include "Cracks/CrackHeader.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Nodes/NodalPoint.hpp"
@@ -280,6 +281,10 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
     }
 	
 	// --------- heat flux BCs -------------
+    
+	MatPtHeatFluxBC *nextFlux=firstHeatFluxPt;
+    while(nextFlux!=NULL)
+    	nextFlux = nextFlux->AddMPHeatFlux(deltime);
 	
 	return nextTask;
 }

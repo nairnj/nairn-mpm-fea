@@ -21,15 +21,15 @@
 #include <vector>
 #include <omp.h>
 
+// For c++89 compliance
+using namespace std;
+
 // This includes all data types and some common headers
 #include "System/DataTypes.hpp"
 
 // math utilities
 #define fmin(a,b) (((a)>(b))?(b):(a))
 #define fmax(a,b) (((a)>(b))?(a):(b))
-
-// For c++89 compliance
-using namespace std;
 
 // general constants
 #define TRUE 1
