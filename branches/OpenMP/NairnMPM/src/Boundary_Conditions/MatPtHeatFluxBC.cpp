@@ -91,7 +91,7 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
 		// time variable (t) is replaced by particle temperature
 		varTime = mpmptr->pPreviousTemperature;
 		GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
-		double currentValue = fabs(function->Val());
+		double currentValue = function->Val();
 		
 		// user should provide in W/m^2 = N/(m-sec), divide by 1000 to get N/(mm-sec)
 		fluxMag.x = 0.001*currentValue;
