@@ -14,6 +14,7 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Boundary_Conditions/BoundaryCondition.hpp"
 
 static double r1s[8]={-1.,1.,1.,-1.,-1.,1.,1.,-1.};
 static double r2s[8]={-1.,-1.,1.,1.,-1.,-1.,1.,1.};
@@ -144,7 +145,9 @@ void MatPoint3D::AddTemperatureGradient(Vector *grad)
     pTemp->DT.z+=grad->z;
 }
 
-// return conduction force = - V [D] Grad T . Grad S
+// return conduction force = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units N-mm/sec)
+// and k/rho0 is stored in k in units (N mm^3/(sec-K-g))
+//  (non-rigid particles only)
 double MatPoint3D::FCond(double dshdx,double dshdy,double dshdz,TransportProperties *t)
 {
 	Tensor *kten = &(t->kCondTensor);
@@ -337,6 +340,7 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 {
     *numDnds = 4;
     double faceWt;
+	Vector e1,e2;
 	
 	// always UNIFORM_GIMP or LINEAR_CPDI
     
@@ -347,6 +351,7 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
         double r2y = mpmgrid.party;
 		double r3z = mpmgrid.partz;
         
+		// edges are c1 to c2 to c4 to c3
         Vector c1,c2,c3,c4;
         switch(face)
         {	case 1:
@@ -429,12 +434,21 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
             sprintf(msg,"A Traction edge node has left the grid: %s",err.Message());
             throw CommonException(msg,"MatPoint3D::GetTractionInfo");
         }
+		
+		if(dof==N_DIRECTION)
+		{	e1 = c2;
+			SubVector(&e1,&c1);
+			e2 = c3;
+			SubVector(&e2,&c1);
+		}
     }
     else
     {   // get deformed corners, but get element and natural coordinates
         //  from CPDI info because corners have moved by here for any
         //  simulations that update strains between initial extrapolation
         //  and the grid forces calculation
+		
+		// edges are d1 to d2 to d4 to d3
         int d1,d2,d3,d4;
         switch(face)
         {	case 1:
@@ -505,9 +519,19 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 		else
 			faceWt = faceArea->z;
         
+		// get edge vector
+		if(dof==N_DIRECTION)
+		{	theElements[cElem[1]]->GetPosition(&corners[1],&e1);
+			theElements[cElem[2]]->GetPosition(&corners[2],&e2);
+			Vector e0;
+			theElements[cElem[0]]->GetPosition(&corners[0],&e0);
+			SubVector(&e1,&e0);
+			SubVector(&e2,&e0);
+		}
     }
 	
     // get traction normal vector
+	
     ZeroVector(tscaled);
 	switch(dof)
 	{	case 1:
@@ -518,12 +542,22 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
             // normal is y direction
             tscaled->y = faceWt;
             break;
+		case N_DIRECTION:
+		{	Vector cp;
+			CrossProduct(&cp,&e1,&e2);
+			double enorm = sqrt(DotVectors(&cp,&cp));
+			tscaled->x = cp.x*faceWt/enorm;
+			tscaled->y = cp.y*faceWt/enorm;
+			tscaled->z = cp.z*faceWt/enorm;
+			break;
+		}
 		default:
 			// normal is z direction (not used here)
             tscaled->z = faceWt;
 			break;
 	}
 	
+	// always 1 in 3D (used in AS)
 	return 1.;
 }
 

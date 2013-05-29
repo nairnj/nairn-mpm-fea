@@ -46,7 +46,8 @@ class MPMReadHandler : public CommonReadHandler
     
     private:
         //  Private data members
-		ParseController *velocityBCs,*concBCs,*tempBCs,*mpLoadCtrl,*mpTractionCtrl,*mpConcFluxCtrl;
+		ParseController *velocityBCs,*concBCs,*tempBCs,*mpLoadCtrl,*mpTractionCtrl;
+		ParseController *mpConcFluxCtrl,*mpHeatFluxCtrl;
         char *currentTask;
         
 		void grid(void);

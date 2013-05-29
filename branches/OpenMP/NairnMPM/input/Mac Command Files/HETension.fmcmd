@@ -11,7 +11,7 @@ Title "Hyperelasstic Tensile Loading"Name "John Nairn"
 ! Header/NotesHeaderUniaxial loading in the x direction on a hyperelastic material
 EndHeader! ------------ Parameters ---------------
 
-! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"#analysis="Plane Strain MPM"
+! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"#analysis="3D MPM"
 Processors 1
 
 ! Points per element
@@ -55,9 +55,9 @@ StressFreeTemp 294
 #thick=10			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading="contact"	! Loading = "rigid", "contact", "force", "traction", thermal
+#loading="traction"	! Loading = "rigid", "contact", "force", "traction", thermal
 #fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
-#strain=-25	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
+#strain=10	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak

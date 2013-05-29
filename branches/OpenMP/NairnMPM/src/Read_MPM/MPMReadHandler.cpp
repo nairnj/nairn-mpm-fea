@@ -31,6 +31,7 @@
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
+#include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 #include "Read_XML/NodesController.hpp"
 #include "Read_XML/ElementsController.hpp"
 #include "Read_XML/ParseController.hpp"
@@ -825,6 +826,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		mpLoadCtrl=new ParseController();
 		mpTractionCtrl=new ParseController();
 		mpConcFluxCtrl=new ParseController();
+		mpHeatFluxCtrl=new ParseController();
     }
 
     // Loads on material points
@@ -1073,9 +1075,11 @@ void MPMReadHandler::myEndElement(char *xName)
 	{	firstLoadedPt=(MatPtLoadBC *)mpLoadCtrl->firstObject;
 		firstTractionPt=(MatPtTractionBC *)mpTractionCtrl->firstObject;
 		firstFluxPt=(MatPtFluxBC *)mpConcFluxCtrl->firstObject;
+		firstHeatFluxPt=(MatPtHeatFluxBC *)mpHeatFluxCtrl->firstObject;
 		delete mpLoadCtrl;
 		delete mpTractionCtrl;
 		delete mpConcFluxCtrl;
+		delete mpHeatFluxCtrl;
 	}
 	
     else if(strcmp(xName,"MaterialPoints")==0)

@@ -35,6 +35,7 @@
 #include "NairnMPM_Class/ResetElementsTask.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
+#include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 #include "Patches/GridPatch.hpp"
 #include <time.h>
 
@@ -643,7 +644,7 @@ void NairnMPM::ValidateOptions(void)
 	}
     else
     {   // in Classic MPM or POINT_GIMP, cannot use traction BCs
-        if(firstTractionPt!=NULL || firstFluxPt!=NULL)
+        if(firstTractionPt!=NULL || firstFluxPt!=NULL || firstHeatFluxPt!=NULL)
 			throw CommonException("Traction and flux boundary conditions require use of a GIMP MPM method.","NairnMPM::ValidateOptions");
     }
     

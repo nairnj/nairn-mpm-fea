@@ -18,6 +18,7 @@
 #include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
+#include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
@@ -643,8 +644,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 
     // Read into load/traction boundary conditions (direction,style,values)
 	//  or concentration flux BC on current shape
-    else if(strcmp(xName,"LoadBC")==0 || strcmp(xName,"ConcFluxBC")==0 || strcmp(xName,"TractionBC")==0)
-	{	if(strcmp(xName,"LoadBC")==0 || strcmp(xName,"TractionBC")==0)
+    else if(strcmp(xName,"LoadBC")==0 || strcmp(xName,"ConcFluxBC")==0 || strcmp(xName,"TractionBC")==0 || strcmp(xName,"HeatFluxBC")==0)
+	{	if(strcmp(xName,"LoadBC")==0)
 			ValidateCommand(xName,BCSHAPE,ANY_DIM);
 		else
 			ValidateCommand(xName,BCSHAPE,ANY_DIM);
@@ -678,11 +679,16 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		if(fmobj->IsThreeD())
         {   // checks for 3D
 			if(dof<1 || dof>3)
-			{	throw SAXException("'dir' in <LoadBC>, <TractionBC>, or <ConcFluxBC> must be 1-3 for 3D analyses.");
+			{	if(strcmp(xName,"TractionBC")==0)
+				{	if(dof!=11)
+						throw SAXException("'dir' in <TractionBC> must be 1-3 or 11 for 3D analyses.");
+				}
+				if(strcmp(xName,"LoadBC")==0)
+					throw SAXException("'dir' in <LoadBC> must be 1-3 for 3D analyses.");
 			}
-            if(strcmp(xName,"TractionBC")==0)
+            if(strcmp(xName,"TractionBC")==0 || strcmp(xName,"ConcFluxBC")==0 || strcmp(xName,"HeatFluxBC")==0)
             {	if(face<1 || face>6)
-                    throw SAXException("'face' in <TractionBC> element must be 1 to 6 for 3D analyses.");
+                    throw SAXException("'face' in <TractionBC>, <ConcFluxBC>, or <HeatFluxBC> element must be 1 to 6 for 3D analyses.");
             }
 		}
         else
@@ -692,12 +698,15 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				{	throw SAXException("'dir' in <LoadBC> or <ConcFluxBC> must be 1 or 2 and in <TractionBC> must be 1, 2, 11, or 12 for 2D analyses.");
 				}
 			}
-            if(strcmp(xName,"TractionBC")==0)
+            if(strcmp(xName,"TractionBC")==0 || strcmp(xName,"ConcFluxBC")==0 || strcmp(xName,"HeatFluxBC")==0)
             {	if(face<1 || face>4)
-                    throw SAXException("'face' in <TractionBC> element must be 1 to 4 for 3D analyses.");
+                    throw SAXException("'face' in <TractionBC>, <ConcFluxBC>, or <HeatFluxBC> element must be 1 to 4 for 2D analyses.");
             }
         }
-
+		
+		// flux can only be 1 or 2
+		if((dof<1 || dof>2) && (strcmp(xName,"ConcFluxBC")==0 || strcmp(xName,"HeatFluxBC")==0))
+			throw SAXException("'dir' in <ConcFluxBC> or <HeatFluxBC> element must be 1 or 2.");
 		
 		// separate search depending on type
 		if(strcmp(xName,"LoadBC")==0)
@@ -734,8 +743,6 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		else if(strcmp(xName,"ConcFluxBC")==0)
         {	if(dof==2 && style!=FUNCTION_VALUE)
 				throw SAXException("Coupled concentration flux condition must use function style");
-			else if(style==SILENT && fmobj->IsThreeD())
-				throw SAXException("Silent <ConcFluxBC> is currently only available in 2D analyses.");
 				
 			// check each material point
 			MatPtFluxBC *newFluxBC;
@@ -746,6 +753,21 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				newFluxBC->ftime=ftime;
 				newFluxBC->SetFunction(function);
 				mpConcFluxCtrl->AddObject(newFluxBC);
+			}
+		}
+		else if(strcmp(xName,"HeatFluxBC")==0)
+        {	if(dof==2 && style!=FUNCTION_VALUE)
+				throw SAXException("Coupled heat flux condition must use function style");
+			
+			// check each material point
+			MatPtHeatFluxBC *newFluxBC;
+			theShape->resetParticleEnumerator();
+			while((i=theShape->nextParticle())>=0)
+			{   newFluxBC=new MatPtHeatFluxBC(i+1,dof,style,face);
+				newFluxBC->value=load;
+				newFluxBC->ftime=ftime;
+				newFluxBC->SetFunction(function);
+				mpHeatFluxCtrl->AddObject(newFluxBC);
 			}
 		}
 		if(function!=NULL) delete [] function;

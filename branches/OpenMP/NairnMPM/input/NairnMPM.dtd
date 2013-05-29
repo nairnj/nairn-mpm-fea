@@ -189,7 +189,7 @@
 <!-- BC Shapes -->
 
 <!ELEMENT	BCLine
-			( DisBC | ConcBC | LoadBC | ConcFluxBC | TempBC | net | perParticle | TractionBC )*>
+			( DisBC | ConcBC | LoadBC | ConcFluxBC | HeatFluxBC | TempBC | net | perParticle | TractionBC )*>
 <!ATTLIST	BCLine
 			units CDATA #IMPLIED
 			x1 CDATA #REQUIRED
@@ -199,7 +199,7 @@
 			tolerance CDATA #IMPLIED>
 			
 <!ELEMENT	BCArc
-			( DisBC | ConcBC | LoadBC | ConcFluxBC | TempBC | net | perParticle | TractionBC )*>
+			( DisBC | ConcBC | LoadBC | ConcFluxBC | HeatFluxBC | TempBC | net | perParticle | TractionBC )*>
 <!ATTLIST	BCArc
 			units CDATA #IMPLIED
 			x1 CDATA #REQUIRED
@@ -211,7 +211,7 @@
 			end CDATA #IMPLIED>
 			
 <!ELEMENT	LdRect
-			( LoadBC | ConcFluxBC | DisBC | TempBC | ConcBC | net | perParticle | TractionBC )*>
+			( LoadBC | ConcFluxBC | HeatFluxBC | DisBC | TempBC | ConcBC | net | perParticle | TractionBC )*>
 <!ATTLIST	LdRect
 			units CDATA #IMPLIED
 			xmin CDATA #REQUIRED
@@ -220,7 +220,7 @@
 			ymax CDATA #REQUIRED>
 
 <!ELEMENT	BCBox
-			( DisBC | LoadBC | TempBC | ConcBC | ConcFluxBC | net | perParticle | TractionBC )*>
+			( DisBC | LoadBC | TempBC | ConcBC | ConcFluxBC | HeatFluxBC | net | perParticle | TractionBC )*>
 <!ATTLIST	BCBox
 			units CDATA #IMPLIED
 			xmin CDATA #REQUIRED
@@ -694,6 +694,15 @@
 			style (1|2|3|4|5|6) "1"
 			time CDATA #IMPLIED
 			bath CDATA #IMPLIED
+			face CDATA #IMPLIED
+			function CDATA #IMPLIED>
+
+<!ELEMENT	HeatFluxBC EMPTY>
+<!ATTLIST	HeatFluxBC
+			dir CDATA #REQUIRED
+			value CDATA #IMPLIED
+			style (1|2|3|4|5|6) "1"
+			time CDATA #IMPLIED
 			face CDATA #IMPLIED
 			function CDATA #IMPLIED>
 

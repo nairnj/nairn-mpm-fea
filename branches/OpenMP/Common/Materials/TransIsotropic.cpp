@@ -190,7 +190,7 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
 	if(err!=NULL) return err;
 
 #ifdef MPM_CODE
-    // make conductivity specific (N mm^3/(sec-K-g))
+    // make conductivity (input as (N/(sec-K)) specific (N mm^3/(sec-K-g))
     kcondA *= (1000./rho);
     kcondT *= (1000./rho);
 #endif

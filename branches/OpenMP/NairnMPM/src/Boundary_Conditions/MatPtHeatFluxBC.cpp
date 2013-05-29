@@ -43,37 +43,58 @@ BoundaryCondition *MatPtHeatFluxBC::PrintBC(ostream &os)
 // input is analysis time in seconds
 // (only called when conduction is active)
 MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
-{
+{	
     // condition value
-	// heat flux BC in kg/(m^2-sec) - find J/rho in units of mm/sec
+	// flux BC in W/m^2 = N/(m-sec), but need mJ/(mm^2-sec) = N/(mm-sec) = (1/1000) N/(m-sec)
 	MPMBase *mpmptr = mpm[ptNum-1];
     MaterialBase *matptr = theMaterials[mpmptr->MatID()];
-	double csatrho = matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
-	double fluxMagX,fluxMagY=0.;
+	
+	// Flux is a scalar and we need int_(face) F Ni(x) dA
+	// Since F is constant, only need integral which is done by CPDI methods
+	//		which has be generalized to work for GIMP too
+	// We use X_DIRECTION for bcDIR for efficiency. For Silent BC, change to
+	//      Normal direction to all caculation of n
+	Vector fluxMag;
+	ZeroVector(&fluxMag);
     int bcDir=X_DIRECTION;
 	
 	if(style==SILENT)
-	{	// silent assumes isotropic material
-		TransportProperties t;
+	{	TransportProperties t;
 		matptr->GetTransportProps(mpm[ptNum-1],fmobj->np,&t);
-		Tensor *D = &(t.diffusionTensor);
+		Tensor *k = &(t.kCondTensor);
         
-        // get in mm/sec
-		fluxMagX = D->xx*mpmptr->pDiffusion->Dc.x + D->xy*mpmptr->pDiffusion->Dc.y;
-        fluxMagY = D->xy*mpmptr->pDiffusion->Dc.x + D->yy*mpmptr->pDiffusion->Dc.y;
+        // k is k/rho0 (N mm^3/(sec-K-g)), Dt in K/mm, k Dt (N mm^2/(sec-g))
+		if(fmobj->IsThreeD())
+		{	fluxMag.x = k->xx*mpmptr->pTemp->DT.x + k->xy*mpmptr->pTemp->DT.y + k->xz*mpmptr->pTemp->DT.z;
+			fluxMag.y = k->xy*mpmptr->pTemp->DT.x + k->yy*mpmptr->pTemp->DT.y + k->yz*mpmptr->pTemp->DT.z;
+			fluxMag.x = k->xz*mpmptr->pTemp->DT.x + k->yz*mpmptr->pTemp->DT.y + k->zz*mpmptr->pTemp->DT.z;
+		}
+		else
+		{	fluxMag.x = k->xx*mpmptr->pTemp->DT.x + k->xy*mpmptr->pTemp->DT.y;
+			fluxMag.y = k->xy*mpmptr->pTemp->DT.x + k->yy*mpmptr->pTemp->DT.y;
+		}
+		
+		// remove 1000/rho0 scaling on k to get N/(mm-sec)
+		ScaleVector(&fluxMag,0.001*matptr->rho);
+		
+		// need to get normal vector from cpdi functions below
         bcDir = N_DIRECTION;
 	}
 	else if(direction==EXTERNAL_FLUX)
 	{	double mstime=1000.*bctime;
-		fluxMagX = BCValue(mstime)/csatrho;
+		
+		// user should provide in W/m^2 = N/(m-sec), divide by 1000 to get N/(mm-sec)
+		fluxMag.x = 0.001*BCValue(mstime);
 	}
 	else
-    {   // coupled surface flux and ftime is bath concentration
-		varTime = mpmptr->pConcentration-ftime;
+    {   // coupled surface flux
+		// time variable (t) is replaced by particle temperature
+		varTime = mpmptr->pPreviousTemperature;
 		GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
 		double currentValue = fabs(function->Val());
-		if(varTime>0.) currentValue=-currentValue;
-		fluxMagX = currentValue/csatrho;
+		
+		// user should provide in W/m^2 = N/(m-sec), divide by 1000 to get N/(mm-sec)
+		fluxMag.x = 0.001*currentValue;
 	}
 	
 	// get corners and direction from material point
@@ -92,9 +113,10 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
     for(i=1;i<=numnds;i++)
     {   // skip empty nodes
         if(nd[nds[i]]->NumberNonrigidParticles())
-		{	nd[nds[i]]->fdiff += (fluxMagX*tscaled.x + fluxMagY*tscaled.y)*fn[i];
+		{	nd[nds[i]]->fcond += DotVectors(&fluxMag,&tscaled)*fn[i];
         }
     }
+	
 	
     return (MatPtHeatFluxBC *)GetNextObject();
 }

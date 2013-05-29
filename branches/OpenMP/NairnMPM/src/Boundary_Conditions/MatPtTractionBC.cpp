@@ -56,6 +56,8 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
 	double tmag = BCValue(mstime);
 	
 	// get corners and direction from material point
+	// note 3D has four corners on face and 2D has 2
+	// direction is x, y, z, N, or T1 (T1 not allowed in 3D)
 	int cElem[4],numDnds;
 	Vector corners[4],tscaled;
 	double ratio = mpmptr->GetTractionInfo(face,direction,cElem,corners,&tscaled,&numDnds);

@@ -45,35 +45,55 @@ BoundaryCondition *MatPtFluxBC::PrintBC(ostream &os)
 MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 {
     // condition value
-	// flux BC in kg/(m^2-sec) - find J/rho in units of mm/sec
+	// flux BC in kg/(m^2-sec) - find Flux/rho in units of mm/sec
 	MPMBase *mpmptr = mpm[ptNum-1];
     MaterialBase *matptr = theMaterials[mpmptr->MatID()];
-	double csatrho = matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
-	double fluxMagX,fluxMagY=0.;
+	double csatrho;
+	
+	// Flux is a scalar and we need int_(face) F Ni(x) dA
+	// Since F is constant, only need integral which is done by CPDI methods
+	//		which has be generalized to work for GIMP too
+	// We use X_DIRECTION for bcDIR for efficiency. For Silent BC, change to
+	//      Normal direction to all caculation of n
+	Vector fluxMag;
+	ZeroVector(&fluxMag);
     int bcDir=X_DIRECTION;
 	
 	if(style==SILENT)
-	{	// silent assumes isotropic material
-		TransportProperties t;
+	{	TransportProperties t;
 		matptr->GetTransportProps(mpm[ptNum-1],fmobj->np,&t);
 		Tensor *D = &(t.diffusionTensor);
         
-        // get in mm/sec
-		fluxMagX = D->xx*mpmptr->pDiffusion->Dc.x + D->xy*mpmptr->pDiffusion->Dc.y;
-        fluxMagY = D->xy*mpmptr->pDiffusion->Dc.x + D->yy*mpmptr->pDiffusion->Dc.y;
+        // D in mm^2/sec, Dc in 1/mm
+		if(fmobj->IsThreeD())
+		{	fluxMag.x = D->xx*mpmptr->pDiffusion->Dc.x + D->xy*mpmptr->pDiffusion->Dc.y + D->xz*mpmptr->pDiffusion->Dc.z;
+			fluxMag.y = D->xy*mpmptr->pDiffusion->Dc.x + D->yy*mpmptr->pDiffusion->Dc.y + D->yz*mpmptr->pDiffusion->Dc.z;
+			fluxMag.x = D->xz*mpmptr->pDiffusion->Dc.x + D->yz*mpmptr->pDiffusion->Dc.y + D->zz*mpmptr->pDiffusion->Dc.z;
+		}
+		else
+		{	fluxMag.x = D->xx*mpmptr->pDiffusion->Dc.x + D->xy*mpmptr->pDiffusion->Dc.y;
+			fluxMag.x = D->xy*mpmptr->pDiffusion->Dc.x + D->yy*mpmptr->pDiffusion->Dc.y;
+		}
         bcDir = N_DIRECTION;
 	}
 	else if(direction==EXTERNAL_FLUX)
 	{	double mstime=1000.*bctime;
-		fluxMagX = BCValue(mstime)/csatrho;
+		// csatrho = rho V csat/V0 = solvent mass per reference volume
+		// units are kg cm^3/(m^2-g-sec) = mm/sec
+		csatrho = matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
+		fluxMag.x = BCValue(mstime)/csatrho;
 	}
 	else
     {   // coupled surface flux and ftime is bath concentration
-		varTime = mpmptr->pConcentration-ftime;
+		// time variable (t) is replaced by c-cbath, where c is the particle potention and cbath and bath potential
+		varTime = mpmptr->pPreviousConcentration-ftime;
 		GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
 		double currentValue = fabs(function->Val());
 		if(varTime>0.) currentValue=-currentValue;
-		fluxMagX = currentValue/csatrho;
+		// csatrho = rho V csat/V0 = solvent mass per reference volume
+		// units are kg cm^3/(m^2-g-sec) = mm/sec
+ 		csatrho = matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
+		fluxMag.x = currentValue/csatrho;
 	}
 	
 	// get corners and direction from material point
@@ -92,7 +112,7 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
     for(i=1;i<=numnds;i++)
     {   // skip empty nodes
         if(nd[nds[i]]->NumberNonrigidParticles())
-		{	nd[nds[i]]->fdiff += (fluxMagX*tscaled.x + fluxMagY*tscaled.y)*fn[i];
+		{	nd[nds[i]]->fdiff += DotVectors(&fluxMag,&tscaled)*fn[i];
         }
     }
 	

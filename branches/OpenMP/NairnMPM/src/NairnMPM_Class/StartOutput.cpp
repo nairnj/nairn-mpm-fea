@@ -23,6 +23,7 @@
 #include "Boundary_Conditions/MatPtLoadBC.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
+#include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 #include "Cracks/CrackHeader.hpp"
 
 /*********************************************************************
@@ -230,6 +231,16 @@ void NairnMPM::MyStartResultsOutput(void)
 		cout << " Node   ID   Temp (-----)   Arg (ms/ms^-1)  Function\n"
 		<< "------------------------------------------------------\n";
 		nextBC=firstTempBC;
+		while(nextBC!=NULL)
+			nextBC=nextBC->PrintBC(cout);
+		cout << endl;
+		
+		//---------------------------------------------------
+		// Heat Flux Material Points
+		PrintSection("MATERIAL POINTS WITH HEAT FLUX");
+		cout << " Point  DOF Face ID   Flux (W/m^2)    Arg (ms/ms^-1)  Function\n"
+		<< "---------------------------------------------------------------\n";
+		nextBC=(BoundaryCondition *)firstHeatFluxPt;
 		while(nextBC!=NULL)
 			nextBC=nextBC->PrintBC(cout);
 		cout << endl;

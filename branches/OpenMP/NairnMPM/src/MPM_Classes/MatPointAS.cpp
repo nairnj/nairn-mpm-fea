@@ -394,6 +394,7 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 			break;
 	}
 	
+	// return ratio of second nodal weight to first one
 	return ratio;
 }
 

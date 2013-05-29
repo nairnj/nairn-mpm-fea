@@ -150,6 +150,7 @@ void MatPoint2D::AddTemperatureGradient(Vector *grad)
 }
 
 // return conduction force = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units N-mm/sec)
+// and k/rho0 is stored in k in units (N mm^3/(sec-K-g))
 //  (non-rigid particles only)
 double MatPoint2D::FCond(double dshdx,double dshdy,double dshdz,TransportProperties *t)
 {
@@ -537,6 +538,7 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 			break;
 	}
 	
+	// always 1 in 2D planar (used in AS)
 	return 1.;
 }
 	
