@@ -212,7 +212,7 @@ load boundary conditions and have no effect on other boundary conditions, includ
   <dd>Set condition to <code>(value)*cos[t*(time)]</code> where <code>t</code> is current time (in ms) and <code>(time)</code> has units 1/ms.</dd>
   
   <dt>Style=5 (silent boundary)</dt>
-  <dd>Set the boundary to absorbing boundary conditions. The intent of a silent boundary is to eliminate reflected waves at a free edge and mimic a sample in a semi-infinite domain. The silent boundary must have normal vector in <code>x</code> or <code>y</code> direction (or in <code>R</code> or <code>Z</code> direction for axisymmetric MPM). The <code>dir</code> attribute specifies the direction of the normal vector. There is no need to specify a <code>load</code> or <code>time</code> argument. This boundary condition currently only works for linear elastic, isotropic materials and it requires a regular grid. Silent boundary conditions are only allowed for particle loads. See <a href="references.html#Shen2005">Shen and Chen</a> for details on their development.
+  <dd>Set the boundary to absorbing boundary conditions. The intent of a silent boundary is to eliminate reflected waves at a free edge and mimic a sample in a semi-infinite domain. The silent boundary must have normal vector in <code>x</code> or <code>y</code> direction (or in <code>R</code> or <code>Z</code> direction for axisymmetric MPM). The <code>dir</code> attribute specifies the direction of the normal vector. There is no need to specify a <code>load</code> or <code>time</code> argument. This boundary condition currently only works for linear elastic, isotropic materials and it requires a regular grid. Silent boundary conditions are only allowed for particle load and flux conditions. See <a href="references.html#Shen2005">Shen and Chen</a> for details on their development.
   </dd>
   
   <dt><a name="function"></a>Style=6 (user-defined function)</dt>
@@ -221,7 +221,7 @@ load boundary conditions and have no effect on other boundary conditions, includ
 
 <a name="hflux"></a><h2>Generated Heat Flux Conditions</h2>
 
-<p>When doing conduction calculations, you can set surface heat flux boundary conditions on particles (which are expected to be particles near the surface). Any surface particles with no boundary conditions will implement zero-flux boundary conditions; there is no use in setting zero flux conditions There are three-options for setting non-zero flux conditions:
+<p>When doing conduction calculations, you can set surface heat flux boundary conditions on particles (which are expected to be particles near the surface). Any surface particles with no boundary conditions will implement zero-flux boundary conditions; there is no use in setting zero flux conditions. <font color="red">Warning</font>: The use of heat flux conditions requires that you set the grid thickness to match the boundary particle's thickness. There are two options for setting non-zero flux conditions, which are determined by the <code>dir</code> attribute:
 </p>
 
 <h3>Externally Applied Flux</h3>
@@ -245,7 +245,7 @@ load boundary conditions and have no effect on other boundary conditions, includ
 <dd>The face of the original particle domain that in on the boundary and has the concentration flux. In 2D, the faces are the edges numbered 1 through 4 in the counter-clockwise direction with the bottom edge being number 1. In 3D, 1 to 4 are the same faces (<i>i.e.</i>, faces with normals (0,-1,0), (1,0,0), (0,1,0), and (-1,0,0) on the original particle domain, respectively), 5 is the bottom (with normal (0,0,-1)), and 6 is the top (with normal (0,0,1)).</dd>
 
 <dt>style</dt>
-<dd>Defines the type of flux using <a href="#style">standard styles</a>. <a href="#silenthflux">See below</a> for meaning of the <code>silent</code>.</dd>
+<dd>Defines the type of flux using <a href="#style">standard styles</a>.  The <code>silent</code> option has a special meaning and is used to set natural flux determined by <code>(k grad T).n</code> on particles on the edge with the boundary condition. It should enable simulation of heat flow through materials.</dd>
 
 <dt>value and time</dt>
 <dd>These arguments are used with the chosen <a href="#style">style</a>. The resulting external flux should be in W/m^2. Positive flux is into the object and negative is out of the object.</dd>
@@ -287,35 +287,23 @@ load boundary conditions and have no effect on other boundary conditions, includ
 
 </dl>
 
-
-<h3><a name="silenthflux"></a>Silent Surface Heat Flux</h3>
-
-<p>This option sets the surface heat flux to the natural flux determined by <code>(k grad T).n</code> on particles on the edge with the boundary condition. It should enable simulation of heat flow through materials.
-</p>
+<p>Two uses of this flux condition are to implement convective and/or radiative boundary conditions. In convective cooling or heating, the function could be</p>
 
 <pre>
-    &lt;HeatFluxBC dir='1' face='2' style='5'/&gt;
+     function = h*(T<sub>0</sub> - t)
 </pre>
 
+<p>where <code>h</code> is heat transfer coefficient (in W/(m^2 K)), T<sub>0</sub> is a reservoir temperature, and <code>t</code> is used for surface particle temperature. In radiative cooling or heating, the flux function could be the Stefan-Boltzman law:</p>
 
-<p>where</p>
+<pre>
+     function = &sigma;*&epsilon;*(T<sub>0</sub><sup>4</sup> - t<sup>4</sup>)
+</pre>
 
-<dl>
-
-<dt>dir</dt>
-<dd>Must be 1.</dd>
-
-<dt>face</dt>
-<dd>The face with the flux is as defined <a href="#hfluxface">above</a>.</dd>
-
-<dt>style</dt>
-<dd>Must be 5 meaning the condition is a silent boundary condition</dd>
-
-</dl>
+<p>where &sigma; = 5.6704e-8 W/(m^2 K^4) is the Stefan-Boltzman constant and &epsilon; (<1) is the emissivity. In these functions, the physical terms should be replaced by their numerical values. If desired, however, they could also be functions themselves, such as to have <code>h</code> a function of <code>t</code> or surface particle temperature. They cannot, however, depend on time, because <code>t</code> is used here for particle temperature instead of time.</p>
 
 <a name="flux"></a><h2>Generated Concentration Flux Conditions</h2>
 	
-<p>When doing diffusion calculations, you can set surface flux boundary conditions on particles (which are expected to be particles near the surface). Any surface particles with no boundary conditions will implement zero-flux boundary conditions; there is no use in setting zero flux conditions There are three-options for setting non-zero flux conditions:
+<p>When doing diffusion calculations, you can set surface flux boundary conditions on particles (which are expected to be particles near the surface). Any surface particles with no boundary conditions will implement zero-flux boundary conditions; there is no use in setting zero flux conditions. <font color="red">Warning</font>: The use of concentration flux conditions requires that you set the grid thickness to match the boundary particle's thickness. There are two options for setting non-zero flux conditions, which are determined by the <code>dir</code> attribute:
 </p>
 	
 <h3>Externally Applied Flux</h3>
@@ -339,7 +327,7 @@ load boundary conditions and have no effect on other boundary conditions, includ
 <dd>The face of the original particle domain that in on the boundary and has the concentration flux. In 2D, the faces are the edges numbered 1 through 4 in the counter-clockwise direction with the bottom edge being number 1. In 3D, 1 to 4 are the same faces (<i>i.e.</i>, faces with normals (0,-1,0), (1,0,0), (0,1,0), and (-1,0,0) on the original particle domain, respectively), 5 is the bottom (with normal (0,0,-1)), and 6 is the top (with normal (0,0,1)).</dd>
 		
 <dt>style</dt>
-<dd>Defines the type of flux using <a href="#style">standard styles</a>. <a href="#silentflux">See below</a> for meaning of the <code>silent</code>.</dd>
+<dd>Defines the type of flux using <a href="#style">standard styles</a>. The <code>silent</code> option has a special meaning and is used to set natural flux determined by <code>(D grad c).n</code> on particles on the edge with the boundary condition. It should enable simulation of solvent flow through materials.</dd>
 		
 <dt>value and time</dt>
 <dd>These arguments are used with the chosen <a href="#style">style</a>. The resulting external flux should be in kg/(m^2-sec). Positive flux is to into the object and negative is out of the object. For isotropic material with applied flux <code>J</code>, the expected output concentration gradient is <code>dc/dn = J/(&rho; D)</code>, where <code>n</code> is coordinate normal to the surface. The resulting <code>dc/dn</code> may differ however, if concentration on the edge with defined flux approaches the saturation concentration.</dd>
@@ -369,7 +357,7 @@ load boundary conditions and have no effect on other boundary conditions, includ
 <dd>Must be 2 to indicate a coupled surface flux.</dd>
 		
 <dt>face</dt>
-<dd>The face with the flux isas defined <a href="#fluxface">above</a>.</dd>
+<dd>The face with the flux is as defined <a href="#fluxface">above</a>.</dd>
 		
 <dt>style</dt>
 <dd>Must be 6 meaning the condition is specified in a function (see below)</dd>
@@ -382,32 +370,8 @@ load boundary conditions and have no effect on other boundary conditions, includ
 <dd>The concentration potential (0 to 1) of the surrounding reservoir bath. Note that the bath is specified as a concentration potential (c/csat) and not actual weight fraction concentation.</dd>
 		
 </dl>
-	
-<h3><a name="silentflux"></a>Silent Surface Flux</h3>
-	
-<p>This option sets the surface flux to the natural flux determined by <code>(D grad c).n</code> on particles on the edge with the boundary condition. It should enable simulation of flux through materials.
-</p>
-	
-<pre>
-    &lt;ConcFluxBC dir='1' face='2' style='5'/&gt;
-</pre>
-	
-<p>where</p>
-	
-<dl>
-		
-<dt>dir</dt>
-<dd>Must be 1.</dd>
-		
-<dt>face</dt>
-<dd>The face with the flux is as defined <a href="#fluxface">above</a>.</dd>
-		
-<dt>style</dt>
-<dd>Must be 5 meaning the condition is a silent boundary condition</dd>
-		
-</dl>
-	
 
+<p>Note that because <code>t</code> is used for particle concentration, a couple surface flux function cannot depend on time.</p>
 
 <a name="sec1"></a><h2>Explicit Particle Loading</h2>
 

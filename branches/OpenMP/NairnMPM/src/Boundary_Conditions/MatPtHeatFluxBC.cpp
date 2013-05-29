@@ -117,6 +117,5 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
         }
     }
 	
-	
     return (MatPtHeatFluxBC *)GetNextObject();
 }
