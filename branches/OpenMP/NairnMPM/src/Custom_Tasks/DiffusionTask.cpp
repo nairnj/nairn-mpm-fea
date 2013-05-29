@@ -228,7 +228,7 @@ TransportTask *DiffusionTask::SetTransportForceBCs(double deltime)
 	
 	MatPtFluxBC *nextFlux=firstFluxPt;
     while(nextFlux!=NULL)
-    	nextFlux = nextFlux->AddMPFlux(deltime);
+    	nextFlux = nextFlux->AddMPFlux(mtime);
 
 	return nextTask;
 }

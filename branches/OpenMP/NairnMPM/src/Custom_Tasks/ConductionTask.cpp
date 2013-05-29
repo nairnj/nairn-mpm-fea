@@ -284,7 +284,7 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
     
 	MatPtHeatFluxBC *nextFlux=firstHeatFluxPt;
     while(nextFlux!=NULL)
-    	nextFlux = nextFlux->AddMPHeatFlux(deltime);
+    	nextFlux = nextFlux->AddMPHeatFlux(mtime);
 	
 	return nextTask;
 }
