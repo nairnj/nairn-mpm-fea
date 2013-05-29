@@ -26,8 +26,8 @@ User Name: User Name
 	<GIMP/>
   </MPMHeader>
 
-  <Mesh>
-    <Grid xmin="-45" xmax="45" ymin="-35" ymax="35">
+  <Mesh output="file">
+    <Grid xmin="-45" xmax="45" ymin="-35" ymax="35" thickness='5'>
       <Horiz nx="54" rx="1.0"/>
       <Vert ny="42" ry="1.0"/>
     </Grid>
