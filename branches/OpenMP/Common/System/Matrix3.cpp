@@ -238,30 +238,18 @@ Matrix3 Matrix3::Inverse(void) const
 	return inv3;
 }
 
-// Find Eigenvalues and return real and imaginary parts in separate arrays
-// return TRUE is positive definite or FALSE if not  
-// Input double pointers must have room for three values
-
+// Find Eigenvalues of positive definite material return in a diagonal matrix
 Matrix3 Matrix3::Eigenvalues(void) const
 {
-    
-    
-    
     if(is2D)
-    {   double b = -(m[0][0]+m[1][1]);
+    {   // solving x^2 + bx + c = 0 (see Numerical Recipes in C, page 156)
+        double b = -(m[0][0]+m[1][1]);
         double c = m[0][0]*m[1][1] - m[1][0]*m[0][1];
-        double arg = sqrt(b*b-4.*c);
-        /*if(arg<0)
-         {   if(fabs(arg/b)>1.e-12) return "FALSE";
-         arg = 0.;
-         }*/
-        
-        //arg = sqrt(arg);
-        Matrix3 Eigenvals(0.5*(-b+arg),0.,0.,0.,0.5*(-b-arg),0.,0.,0.,m[2][2]);
+        double arg = sqrt(b*b-4.*c);            // assume positive
+        double lam1 = b>0 ? -0.5*(b+arg) : -0.5*(b-arg) ;
+        double lam2 = c/lam1;
+        Matrix3 Eigenvals(lam1,0.,0.,lam2,m[2][2]);
         return Eigenvals;
-        
-        
-        
     }
     else
     {
@@ -319,20 +307,31 @@ Matrix3 Matrix3::Eigenvalues(void) const
     }
 }
 
-
 // Find Eigenvectors and return three vectors represented in a matrix
-// return TRUE is positive definite or FALSE if not
-
+// Input is matrix with eigenvalues of this matrix on the diagonal
 Matrix3 Matrix3::Eigenvectors(Matrix3 &Eigenvals) const
 {
     Matrix3 &Eigenvecs();
     
     if(is2D)
-    {
-        
-        Matrix3 Eigenvecs(1,2,3,4,5,6,7,8,9);
-        
-        return Eigenvecs;
+    {   if(Eigenvals(0,0)==m[0][0])
+        {   if(Eigenvals(1,1)==m[1][1])
+            {   Matrix3 Eigenvecs(1.,0.,0.,1.,1.);
+                return Eigenvecs;
+            }
+            else
+            {   Matrix3 Eigenvecs(1.,0.,1.,-m[1][0]/(m[1][1]-Eigenvals(1,1)),1.);
+                return Eigenvecs;
+            }
+        }
+        else if(Eigenvals(1,1)==m[1][1])
+        {   Matrix3 Eigenvecs(-m[0][1]/(m[0][0]-Eigenvals(0,0)),1.,0.,1.,1.);
+            return Eigenvecs;
+        }
+        else
+        {   Matrix3 Eigenvecs(-m[0][1]/(m[0][0]-Eigenvals(0,0)),1.,1.,-m[1][0]/(m[1][1]-Eigenvals(1,1)),1.);
+            return Eigenvecs;
+        }
     }
     
     else
