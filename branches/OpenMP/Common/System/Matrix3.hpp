@@ -31,10 +31,12 @@ class Matrix3
 		Matrix3 Exponential(int) const;
 		void Scale(double);
 		Matrix3 Inverse(void) const;
-        Matrix3 Eigenvalues(void) const;
-        Matrix3 Eigenvectors(Matrix3 &) const;
-        Matrix3 RightStretch(Matrix3 &) const;
-        Matrix3 Rotation(Matrix3 &,Matrix3 &) const;
+        Vector Eigenvalues(void) const;
+        Matrix3 RightDecompose(Matrix3 *) const;
+    
+        Matrix3 Eigenvectors(const Vector &) const;
+        Matrix3 RightStretch(const Vector &) const;
+        Matrix3 Rotation(const Vector &,const Matrix3 &) const;
 	
 		// operators
 		Matrix3 &operator+=(const Matrix3 &);
@@ -48,8 +50,9 @@ class Matrix3
 	
 		// accessors
 		void set(double);
-		void set(int,int,double);
 		void set(double c[][3]);
+        void set(double,double,double,double,double);
+        void set(double,double,double,double,double,double,double,double,double);
         void setIs2D(bool);
     
         // read only accessors

@@ -239,219 +239,252 @@ Matrix3 Matrix3::Inverse(void) const
 }
 
 // Find Eigenvalues of positive definite material return in a diagonal matrix
-Matrix3 Matrix3::Eigenvalues(void) const
+Vector Matrix3::Eigenvalues(void) const
 {
+    Vector lam;
+    
     if(is2D)
     {   // solving x^2 + bx + c = 0 (see Numerical Recipes in C, page 156)
         double b = -(m[0][0]+m[1][1]);
         double c = m[0][0]*m[1][1] - m[1][0]*m[0][1];
         double arg = sqrt(b*b-4.*c);            // assume positive
-        double lam1 = b>0 ? -0.5*(b+arg) : -0.5*(b-arg) ;
-        double lam2 = c/lam1;
-        Matrix3 Eigenvals(lam1,0.,0.,lam2,m[2][2]);
-        return Eigenvals;
+        lam.x = b>0 ? -0.5*(b+arg) : -0.5*(b-arg) ;
+        lam.y = c/lam.x;
+        lam.z = m[2][2];
     }
     else
-    {
-        //  ****  Only for positive define matrix *****
-        // coefficients for c(z) = det(zI-M) = z^3 - c0 - c1 z - c2 z^2
-        double c0,c1,c2;
-        double m1,n,t;
-        characteristics(c0,c1,c2);
-        c0=-c0;
-        c1=-c1;
-        c2=-c2;
+    {   // See Numerical Recipes in C, page 157 for z^3 + a1 z^2 + a2 z + a3
+        // Solving z^3 + (-determinant()) + second_invariant() z + (-trace()) z^2
+        double a1 = -trace();
+        double a2 = second_invariant();
+        double a3 = -determinant();
         
-        cout << "   Verif   I1  =    " << -c2 << "   I2  =    " <<   c1 << "   I3  =    " <<   -c0 << endl;
-        cout << "   c2  =    " << c2 << "   c1  =    " <<   c1 << "   c0  =    " <<   c0 << endl;
+        double Q = (a1*a1-3.*a2)/9.;
+        double R = (a1*(2.*a1*a1-9.*a2)+27.*a3)/54.;
+        double lambda = -a1/3.;
         
-        double onethird=1./3.;
-        double pi = 3.14159265358979;
-        
-        double TOL3=0.00001;
-        
-        double c2_2 = pow(c2, 2.);
-        double c2_3 = pow(c2, 3.);
-        double b=c1-c2_2/3.;
-        double c=2./27.*(c2_3)-c2*c1/3.+c0;
-        
-        cout << "   Verif   c2^2  =    " << c2_2 << "   C2^3  =    " <<   c2_3 << "   b  =    " <<   b << "   c  =    " <<   c <<endl;
-        
-        double c_onethird = pow(c, onethird);
-        
-        if(fabs(b)<=TOL3)
-        {
-            Matrix3 Eigenvals(sqrt(-c_onethird-c2/3),0,0,0,sqrt(-c_onethird-c2/3),0,0,0,sqrt(-c_onethird-c2/3));
-            return Eigenvals;
+        // if Q^3-R^2 >=0 has three real roots and that is assumed here
+        if(fabs(Q) < 1.e-14)
+        {   // assume Q is zero and has three identical roots (R must be zero too)
+            lam.x = lam.y = lam.z = lambda;
         }
         else
-        {
-            m1=2.*sqrt(-b/3.);
-            n=3*c/(m1*b);
-            if (n<0.)
-            {
-                t=atan(sqrt(1-n*n)/n)/3+pi;
-            }
-            else
-            {
-                t=atan(sqrt(1-n*n)/n)/3;
-            }
+        {   double theta = acos(R/sqrt(Q*Q*Q))/3.;
+            double arg = -2.*sqrt(Q);
+            double angle = 2.0943951023931953;       // 2 pi/3
             
-            Matrix3 Eigenvals(sqrt(m1*cos(t)-c2/3),0,0,0,sqrt(m1*cos(t+2*pi/3)-c2/3),0,0,0,sqrt(m1*cos(t+4*pi/3)-c2/3));
-            //Matrix3 Eigenvals(1.,0,0,0,2.,0,0,0,5.4);
-            
-            return Eigenvals;
-            cout << "   In Matrix3 - Verif   m  =    " << m << "   n  =    " <<n << "   t  =    " <<t << endl;
-            
+            lam.x = arg*cos(theta) + lambda;
+            theta += angle;
+            lam.y = arg*cos(theta) + lambda;
+            lam.z = arg*cos(theta+angle) + lambda;
         }
     }
+    
+    return lam;
 }
 
-// Find Eigenvectors and return three vectors represented in a matrix
-// Input is matrix with eigenvalues of this matrix on the diagonal
-Matrix3 Matrix3::Eigenvectors(Matrix3 &Eigenvals) const
+// Find Eigenvectors and return three normalized vectors represented in columns of a matrix
+// Input is Vector with eigenvalues of this matrix on the diagonal
+// Current not used and 2D never tested - check before use
+// Also return vectors are not always normalized
+Matrix3 Matrix3::Eigenvectors(const Vector &Eigenvals) const
 {
-    Matrix3 &Eigenvecs();
+    Matrix3 Eigenvecs;
     
     if(is2D)
-    {   if(Eigenvals(0,0)==m[0][0])
-        {   if(Eigenvals(1,1)==m[1][1])
-            {   Matrix3 Eigenvecs(1.,0.,0.,1.,1.);
+    {   if(Eigenvals.x==m[0][0])
+        {   // e1 = (1,0,0)
+            if(Eigenvals.y==m[1][1])
+            {   // e2 = (1,0,0) also
+                Eigenvecs.set(1.,0.,0.,1.,1.);
                 return Eigenvecs;
             }
             else
-            {   Matrix3 Eigenvecs(1.,0.,1.,-m[1][0]/(m[1][1]-Eigenvals(1,1)),1.);
-                return Eigenvecs;
+            {   // e2 = (1,-m10/(m11-lam.y),0)
+                Eigenvecs.set(1.,1.,0.,-m[1][0]/(m[1][1]-Eigenvals.y),1.);
             }
         }
-        else if(Eigenvals(1,1)==m[1][1])
-        {   Matrix3 Eigenvecs(-m[0][1]/(m[0][0]-Eigenvals(0,0)),1.,0.,1.,1.);
-            return Eigenvecs;
+        else if(Eigenvals.y==m[1][1])
+        {   // e2 = (0,1,0)
+            // e1 = (-m01/(m00-lam.x),1,0)
+            Eigenvecs.set(-m[0][1]/(m[0][0]-Eigenvals.x),0.,1.,1.,1.);
         }
         else
-        {   Matrix3 Eigenvecs(-m[0][1]/(m[0][0]-Eigenvals(0,0)),1.,1.,-m[1][0]/(m[1][1]-Eigenvals(1,1)),1.);
-            return Eigenvecs;
+        {   // e1 = (-m01/(m00-lam.x),1,0)
+            // e2 = (1,-m10/(m11-lam.y),0)
+            Eigenvecs.set(-m[0][1]/(m[0][0]-Eigenvals.x),1.,1.,-m[1][0]/(m[1][1]-Eigenvals.y),1.);
         }
     }
     
     else
-    {
-        
-        if (Eigenvals(0,0)==m[0][0])
-        {
-            if  (Eigenvals(1,1)==m[1][1])
-            {
-                Matrix3 Eigenvecs(1.,0.,0.,0,1.,0.,0.,0.,1.);
-                
+    {   // ********* Warning - this is 2D only as well **********
+        if(Eigenvals.x==m[0][0])
+        {   // e1 = (1,0,0)
+            if(Eigenvals.y==m[1][1])
+            {   // e2 = (1,0,0) also
+                Eigenvecs.set(1.,0.,0.,0,1.,0.,0.,0.,1.);
                 return Eigenvecs;
             }
             
             else
-            {
-                Matrix3 Eigenvecs(1.,0.,0.,1,-m[1][0]/(m[1][1]-Eigenvals(1,1)),0.,0.,0.,1.);
-                // N1=[1 0 0;0 -C(2,1)/(C(2,2)-X(2)) 0;0 0 1];
-                //Matrix3 Eigenvecs(2.,0.,0.,0,0.,0.,0.,0.,0.);
-                return Eigenvecs;
+            {   // e2 = (1,-m10/(m11-lam.y),0)
+                Eigenvecs.set(1.,1.,0.,0.,-m[1][0]/(m[1][1]-Eigenvals.y),0.,0.,0.,1.);
             }
         }
         
+        if(Eigenvals.y==m[1][1])
+        {   // e2 = (0,1,0)
+            // e1 = (-m01/(m00-lam.x),1,0)
+            Eigenvecs.set(-m[0][1]/(m[0][0]-Eigenvals.x),0.,0.,1.,1.,0.,0.,0.,1.);
+        }
         else
-            
-        {
-            if (Eigenvals(1,1)==m[1][1])
-            {
-                Matrix3 Eigenvecs(-m[0][1]/(m[0][0]-Eigenvals(0,0)),1.,0.,0,1.,0.,0.,0.,1.);
-                //Matrix3 Eigenvecs(3.,0.,0.,0,0.,0.,0.,0.,0.);
-                return Eigenvecs;
-            }
-            else
-            {
-                Matrix3 Eigenvecs(-m[0][1]/(m[0][0]-Eigenvals(0,0)),1.,0.,1,-m[1][0]/(m[1][1]-Eigenvals(1,1)),0.,0.,0.,1.);
-                //Matrix3 Eigenvecs(4.,0.,0.,0,0.,0.,0.,0.,0.);
-                
-                // Normalisation of the Eigenvectors
-                //
-                double n1=sqrt(Eigenvecs(0,0)*Eigenvecs(0,0)+Eigenvecs(1,0)*Eigenvecs(1,0)+Eigenvecs(2,0)*Eigenvecs(2,0));
-                double n2=sqrt(Eigenvecs(0,1)*Eigenvecs(0,1)+Eigenvecs(1,1)*Eigenvecs(1,1)+Eigenvecs(2,1)*Eigenvecs(2,1));
-                double n3=sqrt(Eigenvecs(0,2)*Eigenvecs(0,2)+Eigenvecs(1,2)*Eigenvecs(1,2)+Eigenvecs(2,2)*Eigenvecs(2,2));
-                
-                Eigenvecs(0,0)=Eigenvecs(0,0)/n1;
-                Eigenvecs(1,0)=Eigenvecs(1,0)/n1;
-                Eigenvecs(2,0)=Eigenvecs(2,0)/n1;
-                
-                Eigenvecs(0,1)=Eigenvecs(0,1)/n2;
-                Eigenvecs(1,1)=Eigenvecs(1,1)/n2;
-                Eigenvecs(2,1)=Eigenvecs(2,1)/n2;
-                
-                Eigenvecs(0,2)=Eigenvecs(0,2)/n3;
-                Eigenvecs(1,2)=Eigenvecs(1,2)/n3;
-                Eigenvecs(2,2)=Eigenvecs(2,2)/n3;
-                
-                //N=[N1(:,1)/sqrt(N1(1,1)^2+N1(2,1)^2+N1(3,1)^2),N1(:,2)/sqrt(N1(1,2)^2+N1(2,2)^2+N1(3,2)^2),N1(:,3)/sqrt(N1(1,3)^2+N1(2,3)^2+N1(3,3)^2)];
-                
-                return Eigenvecs;
-                
-            }
-            
+        {   // e1 = (-m01/(m00-lam.x),1,0)
+            // e2 = (1,-m10/(m11-lam.y),0)
+            Eigenvecs.set(-m[0][1]/(m[0][0]-Eigenvals.x),1.,0.,1,-m[1][0]/(m[1][1]-Eigenvals.y),0.,0.,0.,1.);
         }
     }
     
+    // Normalisation of the Eigenvectors in the columns
+    double n1=sqrt(Eigenvecs(0,0)*Eigenvecs(0,0)+Eigenvecs(1,0)*Eigenvecs(1,0)+Eigenvecs(2,0)*Eigenvecs(2,0));
+    double n2=sqrt(Eigenvecs(0,1)*Eigenvecs(0,1)+Eigenvecs(1,1)*Eigenvecs(1,1)+Eigenvecs(2,1)*Eigenvecs(2,1));
+    double n3=sqrt(Eigenvecs(0,2)*Eigenvecs(0,2)+Eigenvecs(1,2)*Eigenvecs(1,2)+Eigenvecs(2,2)*Eigenvecs(2,2));
+    
+    Eigenvecs(0,0) /= n1;
+    Eigenvecs(1,0) /= n1;
+    Eigenvecs(2,0) /= n1;
+    
+    Eigenvecs(0,1) /= n2;
+    Eigenvecs(1,1) /= n2;
+    Eigenvecs(2,1) /= n2;
+    
+    Eigenvecs(0,2) /= n3;
+    Eigenvecs(1,2) /= n3;
+    Eigenvecs(2,2) /= n3;
+    
+    return Eigenvecs;
 }
 
-Matrix3 Matrix3::RightStretch(Matrix3 &Eigenvals) const
+// Decompose F in into roation and right-stretch matrix F = R*U
+// The target matrix is assumed to be F
+// Function returns R and optionally R (if point is not NULL)
+Matrix3 Matrix3::RightDecompose(Matrix3 *R) const
 {
-    // Matrix3 &Rot();
+    if(is2D)
+    {   // 2D has simple formulae
+        double Fsum = m[0][0]+m[1][1];
+        double Fdif = m[0][1]-m[1][0];
+        double denom = sqrt(Fsum*Fsum+Fdif*Fdif);
+        Fsum /= denom;
+        Fdif /= denom;
+        
+        // U is R^T * F
+        Matrix3 U(Fsum*m[0][0]-Fdif*m[1][0],Fsum*m[0][1]-Fdif*m[1][1],
+                  Fdif*m[0][0]+Fsum*m[1][0],Fdif*m[0][1]+Fsum*m[1][1],m[2][2]);
+        
+        // if R pointer not NULL, return it too
+        if(R!=NULL)
+        {   R->set(Fsum,Fdif,-Fdif,Fsum,1.);
+        }
+        
+        return U;
+    }
     
-    //  Matrix3 m2 = m*m;  Could I use an operateur defined in matrix here???? *****
+    // rest is for 3D matrix
     
-    double m2[3][3];
+    // Get C and C^2
+    Matrix3 C = Transpose()*(*this);
+    Matrix3 C2 = C*C;
     
+    // Eigenvalues of C are lamda^2
+    Vector Eigenvals = C.Eigenvalues();
+    double lam1 = sqrt(Eigenvals.x);
+    double lam2 = sqrt(Eigenvals.y);
+    double lam3 = sqrt(Eigenvals.z);
     
-    m2[0][0]=m[0][0]*m[0][0]+m[0][1]*m[1][0]+m[0][2]*m[2][0];
-    m2[0][1]=m[0][0]*m[0][1]+m[0][1]*m[1][1]+m[0][2]*m[2][1];
-    m2[0][2]=m[0][0]*m[0][2]+m[0][1]*m[1][2]+m[0][2]*m[2][2];
+    // invariants of U
+    double i1 = lam1+lam2+lam3;
+    double i2 = lam1*lam2+lam1*lam3+lam2*lam3;
+    double i3 = lam1*lam2*lam3;
     
-    m2[1][0]=m[1][0]*m[0][0]+m[1][1]*m[1][0]+m[1][2]*m[2][0];
-    m2[1][1]=m[1][0]*m[0][1]+m[1][1]*m[1][1]+m[1][2]*m[2][1];
-    m2[1][2]=m[1][0]*m[0][2]+m[1][1]*m[1][2]+m[1][2]*m[2][2];
+    // set coefficients
+    double d1 = 1./(i1*i2-i3);
+    double c2 = -d1;                    // coefficient of C2
+    double c1 = (i1*i1-i2)*d1;          // coefficient of C
+    double cI = i1*i3*d1;               // coefficient of I
     
-    m2[2][0]=m[2][0]*m[0][0]+m[2][1]*m[1][0]+m[2][2]*m[2][0];
-    m2[2][1]=m[2][0]*m[0][1]+m[2][1]*m[1][1]+m[2][2]*m[2][1];
-    m2[2][2]=m[2][0]*m[0][2]+m[2][1]*m[1][2]+m[2][2]*m[2][2];
+    // Get U = (1/d1)*(-C^2 + (i1*i1-i2)*C + i1*i3*I)
+    Matrix3 U(c2*C2(0,0)+c1*C(0,0)+cI,c2*C2(0,1)+c1*C(0,1),c2*C2(0,2)+c1*C(0,2),
+                   c2*C2(1,0)+c1*C(1,0),c2*C2(1,1)+c1*C(1,1)+cI,c2*C2(1,2)+c1*C(1,2),
+                   c2*C2(2,0)+c1*C(2,0),c2*C2(2,1)+c1*C(2,1),c2*C2(2,2)+c1*C(2,2)+cI);
     
-    // cout << "   In Matrix3 - Verif   input m  =    " << m[0][0] << "   m2  =    " << m2[0][0] << endl;
+    // if R pointer not NULL, find R too
+    if(R!=NULL)
+    {   c1 = 1/i3;                      // coefficient of C
+        double cU = -i1*c1;             // coefficient of U
+        cI = i2*c1;                     // coefficient of I
+        // Get Uinv = (1/i3)*(C - i1*U + i2*I)
+        Matrix3 Uinv(c1*C(0,0)+cU*U(0,0)+cI,c1*C(0,1)+cU*U(0,1),c1*C(0,2)+cU*U(0,2),
+                     c1*C(1,0)+cU*U(1,0),c1*C(1,1)+cU*U(1,1)+cI,c1*C(1,2)+cU*U(1,2),
+                     c1*C(2,0)+cU*U(2,0),c1*C(2,1)+cU*U(2,1),c1*C(2,2)+cU*U(2,2)+cI);
+        
+        // R = FU^-1
+        *R = (*this)*Uinv;
+    }
     
-    double i1=Eigenvals(0,0)+Eigenvals(1,1)+Eigenvals(2,2);
-    double i2=Eigenvals(0,0)*Eigenvals(1,1)+Eigenvals(0,0)*Eigenvals(2,2)+Eigenvals(1,1)*Eigenvals(2,2);
-    double i3=Eigenvals(0,0)*Eigenvals(1,1)*Eigenvals(2,2);
-    double d1=i1*i2-i3;
-    
-    Matrix3 RightStretch(1/d1*(-m2[0][0]+(i1*i1-i2)*m[0][0]+i1*i3),1/d1*(-m2[0][1]+(i1*i1-i2)*m[0][1]),1/d1*(-m2[0][2]+(i1*i1-i2)*m[0][2]),1/d1*(-m2[1][0]+(i1*i1-i2)*m[1][0]),1/d1*(-m2[1][1]+(i1*i1-i2)*m[1][1]+i1*i3),1/d1*(-m2[1][2]+(i1*i1-i2)*m[1][2]),1/d1*(-m2[2][0]+(i1*i1-i2)*m[2][0]),1/d1*(-m2[2][1]+(i1*i1-i2)*m[2][1]),1/d1*(-m2[2][2]+(i1*i1-i2)*m[2][2]+i1*i3));
-    //cout << "   In Matrix3 - Verif   Rot(0,0)  =    " << Rot(0,0) << "   Rotation(0,2)  =    " << Rot(2,0) << endl;
-    
-    cout << "   RightStretch  =    " << RightStretch <<  endl;
-    return RightStretch;
-    
+    return U;
 }
 
-Matrix3 Matrix3::Rotation(Matrix3 &Eigenvals,Matrix3 &U) const
+// Get right-stretch matrix or U in F = R*U
+// The target matrix is assumed to be C = FT*F
+// Input Eigenvalues are for matrix C
+Matrix3 Matrix3::RightStretch(const Vector &Eigenvals) const
+{
+    // Get C^2
+    Matrix3 C2 = *this;
+    C2 *= *this;
+    
+    double lam1 = sqrt(Eigenvals.x);
+    double lam2 = sqrt(Eigenvals.y);
+    double lam3 = sqrt(Eigenvals.z);
+    
+    double i1 = lam1+lam2+lam3;
+    double i2 = lam1*lam2+lam1*lam3+lam2*lam3;
+    double i3 = lam1*lam2*lam3;
+    double d1 = i1*i2-i3;
+    double c2 = -1/d1;
+    double c1 = (i1*i1-i2)/d1;
+    double cI = i1*i3/d1;
+    
+    // Return U = (1/d1)*(-C^2 + (i1*i1-i2)*C + i1*i3*I)
+    if(is2D)
+    {   return Matrix3(c2*C2(0,0)+c1*m[0][0]+cI,c2*C2(0,1)+c1*m[0][1],
+                       c2*C2(1,0)+c1*m[1][0],c2*C2(1,1)+c1*m[1][1]+cI,
+                       c2*C2(2,2)+c1*m[2][2]+cI);
+    }
+    else
+    {   return Matrix3(c2*C2(0,0)+c1*m[0][0]+cI,c2*C2(0,1)+c1*m[0][1],c2*C2(0,2)+c1*m[0][2],
+                       c2*C2(1,0)+c1*m[1][0],c2*C2(1,1)+c1*m[1][1]+cI,c2*C2(1,2)+c1*m[1][2],
+                       c2*C2(2,0)+c1*m[2][0],c2*C2(2,1)+c1*m[2][1],c2*C2(2,2)+c1*m[2][2]+cI);
+    }
+}
+
+// Get Rotation Matrix using target matrix F
+// Eigenvals are for matrix X and matrix U calculated by RightStretch()
+Matrix3 Matrix3::Rotation(const Vector &Eigenvals,const Matrix3 &U) const
 {
     // Matrix m = F here;
     
     double U1[3][3];
     
-    
-    double i1=Eigenvals(0,0)+Eigenvals(1,1)+Eigenvals(2,2);
-    double i2=Eigenvals(0,0)*Eigenvals(1,1)+Eigenvals(0,0)*Eigenvals(2,2)+Eigenvals(1,1)*Eigenvals(2,2);
-    double i3=Eigenvals(0,0)*Eigenvals(1,1)*Eigenvals(2,2);
-    
-    // cout << "   In Matrix3 - Verif   input m  =    " << m[0][0] << "   m2  =    " << m2[0][0] << endl;
+    double lam1 = sqrt(Eigenvals.x);
+    double lam2 = sqrt(Eigenvals.y);
+    double lam3 = sqrt(Eigenvals.z);
+    double i1=lam1+lam2+lam3;
+    double i2=lam1*lam2+lam1*lam3+lam2*lam3;
+    double i3=lam1*lam2*lam3;
     
     //   Calculation of inv U
-    
-    
     //   U1=1/i3*(C-i1*U+i2*eye(3));
-    
     U1[0][0] = 1/i3*(m[0][0]*m[0][0]+m[1][0]*m[1][0]+m[2][0]*m[2][0]-i1*U(0,0)+i2);
     U1[0][1] = 1/i3*(m[0][0]*m[0][1]+m[1][0]*m[1][1]+m[2][0]*m[2][1]-i1*U(0,1));
     U1[0][2] = 1/i3*(m[0][0]*m[0][2]+m[1][0]*m[1][2]+m[2][0]*m[2][2]-i1*U(0,2));
@@ -464,8 +497,11 @@ Matrix3 Matrix3::Rotation(Matrix3 &Eigenvals,Matrix3 &U) const
     U1[2][1] = 1/i3*(m[0][2]*m[0][1]+m[1][2]*m[1][1]+m[2][2]*m[2][1]-i1*U(2,1));
     U1[2][2] = 1/i3*(m[0][2]*m[0][2]+m[1][2]*m[1][2]+m[2][2]*m[2][2]-i1*U(2,2)+i2);
     
+    Matrix3 Ui;
+    Ui.set(U1);
+    cout << Ui*U << endl;
     
-    
+    // R = F Uinv
     Matrix3 Rotation(m[0][0]*U1[0][0]+m[0][1]*U1[1][0]+m[0][2]*U1[2][0],
                      m[0][0]*U1[0][1]+m[0][1]*U1[1][1]+m[0][2]*U1[2][1],
                      m[0][0]*U1[0][2]+m[0][1]*U1[1][2]+m[0][2]*U1[2][2],
@@ -476,9 +512,7 @@ Matrix3 Matrix3::Rotation(Matrix3 &Eigenvals,Matrix3 &U) const
                      m[2][0]*U1[0][1]+m[2][1]*U1[1][1]+m[2][2]*U1[2][1],
                      m[2][0]*U1[0][2]+m[2][1]*U1[1][2]+m[2][2]*U1[2][2]);
     
-    cout << "   Rotation  =    " << Rotation <<  endl;
     return Rotation;
-    
 }
 
 #pragma mark Matrix3:operators
@@ -594,7 +628,7 @@ void Matrix3::get(double c[][3]) const
 	}
 }
 
-// set this object to contents of an array
+// set this object to contents of an array and makes it 3D
 void Matrix3::set(double c[][3])
 {	int i,j;
 	for(i=0;i<3;i++)
@@ -604,14 +638,44 @@ void Matrix3::set(double c[][3])
 	is2D = FALSE;
 }
 
-// is this a 2D matrix?
-bool Matrix3::getIs2D(void) const { return is2D; }
-void Matrix3::setIs2D(bool new2D)
-{   is2D = new2D;
+// set this object to five elements and make it 2D
+void Matrix3::set(double c0,double c1,double c2,double c3,double c4)
+{	m[0][0] = c0;
+    m[0][1] = c1;
+    m[1][0] = c2;
+    m[1][1] = c3;
+    m[2][2] = c4;
     m[0][2] = 0.;
     m[1][2] = 0.;
     m[2][0] = 0.;
     m[2][1] = 0.;
+    is2D = TRUE;
+}
+
+// set this object to six elements and make it 3D
+void Matrix3::set(double c00,double c01,double c02,double c10,double c11,double c12,double c20,double c21,double c22)
+{	m[0][0] = c00;
+    m[0][1] = c01;
+    m[0][2] = c02;
+    m[1][0] = c10;
+    m[1][1] = c11;
+    m[1][2] = c12;
+    m[2][0] = c20;
+    m[2][1] = c21;
+    m[2][2] = c22;
+    is2D = FALSE;
+}
+
+// is this a 2D matrix?
+bool Matrix3::getIs2D(void) const { return is2D; }
+void Matrix3::setIs2D(bool new2D)
+{   is2D = new2D;
+    if(is2D)
+    {   m[0][2] = 0.;
+        m[1][2] = 0.;
+        m[2][0] = 0.;
+        m[2][1] = 0.;
+    }
 }
 
 // trace
@@ -634,7 +698,7 @@ double Matrix3::second_invariant(void) const
 	return ii;
 }
 
-// coefficients for c(z) = det(zI-M) = z^3 - c0 - c1 z - c2 z^2
+// Characteristic equation c(z) = det(zI-M) = z^3 - c0 - c1 z - c2 z^2
 void Matrix3::characteristics(double &c0,double &c1,double &c2) const
 {
 	c2 = trace();
