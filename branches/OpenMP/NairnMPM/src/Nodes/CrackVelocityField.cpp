@@ -317,7 +317,7 @@ int CrackVelocityField::GetNumberPointsNonrigid(void) { return numberPoints; }
 void CrackVelocityField::Describe(void) const
 {
 	cout << "# Crack Field: npts="<<  numberPoints << " mass=" << GetTotalMass()
-		<< " vol=" << GetVolumeTotal(1.) << endl;
+		<< " vol=" << GetVolumeTotal(NULL) << endl;
 	if(crackNum[0]>0)
 	{	cout << "#     crack 1=#" << crackNum[0] << ", loc=";
 		if(loc[0]==ABOVE_CRACK) cout << "above"; else cout << "below";

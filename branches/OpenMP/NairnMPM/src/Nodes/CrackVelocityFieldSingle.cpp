@@ -135,7 +135,7 @@ double CrackVelocityFieldSingle::GetVolumeNonrigid(void)
 }
 
 // get volume when only a single material (overridden when might be more)
-double CrackVelocityFieldSingle::GetVolumeTotal(double ndr) const
+double CrackVelocityFieldSingle::GetVolumeTotal(NodalPoint *ndptr) const
 {	return mvf[0]->numberPoints>0 ? mvf[0]->GetContactVolume() : 0. ;
 }
 

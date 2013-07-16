@@ -396,7 +396,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
             
             // 1. check nodal volume (this is turned off by setting the materialContactVmin to zero)
             //    (warning: 2D must set grid thickness if it is not 1)
-            if(GetVolumeTotal(ndptr->x)/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
+            if(GetVolumeTotal(ndptr)/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
             
             // 2. ignore very small mass nodes - may not be needed
             if(massRatio<1.e-6 || massRatio>0.999999) continue;
@@ -641,7 +641,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 		
 		// on post update contact, do not change nodes with boundary conditions
 		unsigned char fixedDirection=ndptr->fixedDirection;
-		if(postUpdate && fixedDirection)
+		if(postUpdate && (fixedDirection&XYZ_SKEWED_DIRECTION))
 		{	if(fixedDirection&X_DIRECTION) delPi.x=0.;
 			if(fixedDirection&Y_DIRECTION) delPi.y=0.;
 			if(fixedDirection&Z_DIRECTION) delPi.z=0.;
@@ -717,7 +717,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
             
             // 1. check nodal volume (this is turned off by setting the materialContactVmin to zero)
             //    (warning: 2D must set grid thickness if it is not 1)
-            if(GetVolumeTotal(ndptr->x)/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
+            if(GetVolumeTotal(ndptr)/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
             
             // 2. ignore very small interactions
             double volRatio=voli/(rigidVolume+GetVolumeNonrigid());
@@ -929,7 +929,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 		
 		// on post update contact, do not change nodes with boundary conditions
 		unsigned char fixedDirection=ndptr->fixedDirection;
-		if(postUpdate && fixedDirection)
+		if(postUpdate && (fixedDirection&XYZ_SKEWED_DIRECTION))
 		{	if(fixedDirection&X_DIRECTION) delPi.x=0.;
 			if(fixedDirection&Y_DIRECTION) delPi.y=0.;
 			if(fixedDirection&Z_DIRECTION) delPi.z=0.;
@@ -976,15 +976,19 @@ void CrackVelocityFieldMulti::GetFrictionalDeltaMomentum(Vector *delPi,Vector *n
     }
 }
 
-// retrieve volume gradient
+// retrieve volume gradient, but set components zero on symmetry planes
 void CrackVelocityFieldMulti::GetVolumeGradient(int matfld,const NodalPoint *ndptr,Vector *grad,double scale) const
 {
 	if(fmobj->IsAxisymmetric())
-	{	double nr=ndptr->x/mpmgrid.gridx;
-		int n = fabs(nr)<0.01 ? 0 : 1 ;
-		if(n==0)
+	{	// Need special case here to insure grad->z is zero (it is non-zero in volumeGrad to to use of
+		//   z component in extr axisymmetric shape function
+		if(ndptr->fixedDirection&XSYMMETRYPLANE_DIRECTION)
 		{	grad->x=0.;
 			grad->y = mvf[matfld]->volumeGrad->y>=0. ? scale : -scale ;
+		}
+		else if(ndptr->fixedDirection&YSYMMETRYPLANE_DIRECTION)
+		{	grad->y = 0.;
+			grad->x = mvf[matfld]->volumeGrad->x>=0. ? scale : -scale ;
 		}
 		else
 		{	grad->x = scale*mvf[matfld]->volumeGrad->x;
@@ -993,7 +997,11 @@ void CrackVelocityFieldMulti::GetVolumeGradient(int matfld,const NodalPoint *ndp
 		grad->z=0.;
 	}
 	else
-		CopyScaleVector(grad,mvf[matfld]->volumeGrad,scale);
+	{	CopyScaleVector(grad,mvf[matfld]->volumeGrad,scale);
+		if(ndptr->fixedDirection&XSYMMETRYPLANE_DIRECTION) grad->x = 0.;
+		if(ndptr->fixedDirection&YSYMMETRYPLANE_DIRECTION) grad->y = 0.;
+		if(ndptr->fixedDirection&ZSYMMETRYPLANE_DIRECTION) grad->z = 0.;
+	}
 }
 
 
@@ -1271,17 +1279,19 @@ double CrackVelocityFieldMulti::GetVolumeNonrigid(void)
 // get total volume for all materials
 // WARNING: this doubles the volume for axisymmetric nodes at r=0
 //   to enable volume screening to work
-double CrackVelocityFieldMulti::GetVolumeTotal(double ndr) const
+double CrackVelocityFieldMulti::GetVolumeTotal(NodalPoint *ndptr) const
 {	int i;
 	double volume = 0.;
 	for(i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveField(mvf[i]))
 			volume += mvf[i]->GetContactVolume();
 	}
-	if(fmobj->IsAxisymmetric())
-	{	double nr=ndr/mpmgrid.gridx;
-		int n = fabs(nr)<0.01 ? 0 : 1 ;
-		if(n==0) volume *= 2.;
+	
+	// correct for on symmetry plane(s)
+	if(ndptr!=NULL)
+	{	if(ndptr->fixedDirection&XSYMMETRYPLANE_DIRECTION) volume *= 2.;
+		if(ndptr->fixedDirection&YSYMMETRYPLANE_DIRECTION) volume *= 2.;
+		if(ndptr->fixedDirection&ZSYMMETRYPLANE_DIRECTION) volume *= 2.;
 	}
 	return volume;
 }

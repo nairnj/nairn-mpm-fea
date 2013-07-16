@@ -27,6 +27,9 @@ class ROperation;
 // Higher bits
 #define TEMP_DIRECTION 8
 #define CONC_DIRECTION 16
+#define XSYMMETRYPLANE_DIRECTION 32
+#define YSYMMETRYPLANE_DIRECTION 64
+#define ZSYMMETRYPLANE_DIRECTION 128
 
 // non-bit based
 

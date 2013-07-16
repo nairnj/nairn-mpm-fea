@@ -27,7 +27,7 @@ NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTi
     angle1 = ang1;
     angle2 = ang2;
     dir = ConvertToDirectionBits(dof);      // change input settings to x,y,z bits
-    SetNormalVector();                   // get normal vector depending on dir and angles
+    SetNormalVector();						// get normal vector depending on dir and angles
 	
     // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
     nd[nodeNum]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions

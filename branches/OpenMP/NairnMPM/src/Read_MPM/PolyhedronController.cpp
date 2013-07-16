@@ -29,7 +29,7 @@ PolyhedronController::~PolyhedronController()
 // not thread safe due to push_back()
 void PolyhedronController::SetProperty(char *bData,CommonReadHandler *reader)
 {
-	int i;
+	int i,numfaces;
 	vector<double> pts;
 	Vector box[8],xn,yn,zn,origin;
 	
@@ -43,7 +43,7 @@ void PolyhedronController::SetProperty(char *bData,CommonReadHandler *reader)
 		case TRICLINIC_VECTORS:
 		{	// requires 12 points
 			if(pts.size()!=12)
-                throw SAXException("Invalid data block passed to a <Polyhedron> object - too few points");
+                throw SAXException("Invalid data block passed to a <Polyhedron> object - wrong number of points");
 			
 			// Find origin, vectors and make sure first four are points
 			origin = MakeVector(pts[0],pts[1],pts[2]);
@@ -87,7 +87,7 @@ void PolyhedronController::SetProperty(char *bData,CommonReadHandler *reader)
 		}
 		case BOX_CORNERS:
 			if(pts.size()!=24)
-                throw SAXException("Invalid data block passed to a <Polyhedron> object - too few points");
+                throw SAXException("Invalid data block passed to a <Polyhedron> object - wrong number of points");
 			
 			// get box corners in standard order (first 4 one face, second four opposite face)
 			for(i=0;i<8;i++)
@@ -114,6 +114,32 @@ void PolyhedronController::SetProperty(char *bData,CommonReadHandler *reader)
 			faces.push_back(new PolyTriangle(box[3],box[4],box[7]));
 			
 			break;
+		
+		case PYRAMID:
+			// 12 is tetrahdron, 15 is square-bottom pyramid
+			if(pts.size()!=12 && pts.size()!=15)
+                throw SAXException("Invalid data block passed to a <Polyhedron> object -wrong number of points");
+			
+			// get corner vectors
+			// 0 is apex, rest are ccw around the base (not sure if ccw or cw matters)
+			numfaces = pts.size()==12 ? 4 : 5 ;
+			for(i=0;i<numfaces;i++)
+				box[i] = MakeVector(pts[3*i],pts[3*i+1],pts[3*i+2]);
+			
+			// face from apex
+			faces.push_back(new PolyTriangle(box[0],box[1],box[2]));
+			faces.push_back(new PolyTriangle(box[0],box[2],box[3]));
+			if(numfaces==4)
+			{	faces.push_back(new PolyTriangle(box[0],box[3],box[1]));
+				faces.push_back(new PolyTriangle(box[1],box[2],box[3]));
+			}
+			else
+			{	faces.push_back(new PolyTriangle(box[0],box[3],box[4]));
+				faces.push_back(new PolyTriangle(box[0],box[4],box[1]));
+				faces.push_back(new PolyTriangle(box[1],box[2],box[3]));
+				faces.push_back(new PolyTriangle(box[3],box[4],box[1]));
+			}
+			break;
 			
 		default:
 			// invalid style
@@ -129,6 +155,8 @@ void PolyhedronController::SetParameter(const char *aName,const char *value)
             style = TRICLINIC_POINTS;
         else if(strcmp(value,"trivectors")==0)
             style = TRICLINIC_VECTORS;
+		else if(strcmp(value,"pyramid")==0)
+			style = PYRAMID;
         else if(strlen(value)==8)
         {	int i;
             for(i=0;i<8;i++)
@@ -173,7 +201,7 @@ bool PolyhedronController::FinishSetup(void) {	return FALSE; }
 #pragma mark PolyhedronController: methods
 
 // return true if point is in this body
-// To handle edges, this assumes he faces enclose and area with no open
+// To handle edges, this assumes the faces enclose and area with no open
 // space.
 bool PolyhedronController::ContainsPoint(Vector& pt)
 {	

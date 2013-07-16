@@ -17,7 +17,7 @@
 
 class PolyTriangle;
 
-enum { NO_FACES=0,TRICLINIC_POINTS,TRICLINIC_VECTORS,BOX_CORNERS } ;
+enum { NO_FACES=0,TRICLINIC_POINTS,TRICLINIC_VECTORS,BOX_CORNERS,PYRAMID } ;
 
 class PolyhedronController : public ShapeController
 {

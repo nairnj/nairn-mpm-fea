@@ -246,14 +246,17 @@ attribute</a> can specify the length units) with material points The parameters 
   <dt><a name="faces"></a><code>&lt;faces style='tripts'&gt;</code></dt>
   <dd> The <code>faces</code> command has a set of options (specfied in the <code>style</code> attribute) to help in entering certain geometries. These options will grow as needed to solve new problems as they arise. For example, it would be easy to handle any number of connected triangular faces, but that option is not yet programmed. Here are the currently available options:
   <ul>
+  <li><code>style='pyramid'</code>: define a pyramid shape for which the first point is the apex of the pyramid and the remaining 3 or 4 points define the base. With 3 base points (4 total points), the shape is a tetrahedron; with 4 base points (5 total points), the shape is a pyramid with a quadrilaterial base. If the 4 base points are not coplanar, the base will have two face triangles connected by a line between the 1st and 3rd points.
+  <center><img src="pyramid.jpg" alt="Pyramid Shape"></center>
+  </li>
   <li><code>style='tripts'</code> or <code>style='trivectors'</code>: define a triclinic shape, which is an eight-corned box for which opposite faces are parallel, but the corners need not meet at right angles. For this style, you specify 4 points (or 12 coordinates). For <code>tripts</code>, the 4 points are the points labeled in the figure below. For <code>trivectors</code>, the first point is point 1 (the origin) and the remaining three points are the vectors between the shape's origin that point.
-  <center><img src="triclinic.jpg" alt="Triclinic Shape" width="300" height="173"></center>
+  <center><img src="triclinic.jpg" alt="Triclinic Shape" height="150"></center>
   </li>
   <li><code>style='15482637'</code>: define an arbitrarily shaped 8-corner box. The provided numbers map the order of the provided 8 points (or 24 coordinates) to the standard order shown in the figure below.
-  <center><img src="arbbox.jpg" alt="8 Corner Box" width="444" height="142"></center>
+  <center><img src="arbbox.jpg" alt="8 Corner Box" height="125"></center>
   </li>
   </ul>
-  Between the <code>&lt;faces&gt;</code> and the <code>&lt;/faces&gt;</code> commands, all the data needed for the selected style are entered in a free format. The only requirements are the the correct number of valid numeric data points for the choosen style are provided and that the points are delimited by white space, commas, colons, and/or semicolons. The number of points per line does not matter and multiple delimiters between number can be used if desired.
+  Between the <code>&lt;faces&gt;</code> and the <code>&lt;/faces&gt;</code> commands, all the data needed for the selected style are entered in a free format. The only requirements are the the correct number of valid numeric data points for the choosen style are provided and that the points are delimited by white space, commas, colons, and/or semicolons. The number of points per line does not matter and multiple delimiters between numbers can be used if desired.
   </dd>
   
   </dl>

@@ -1124,7 +1124,7 @@ void MPMReadHandler::myEndElement(char *xName)
 	
 	else if(strcmp(xName,"JANFEAInput")==0)
 	{	// all done
-		CreateAxisymetricBCs();
+		CreateSymmetryBCs();
 	}
 }
 

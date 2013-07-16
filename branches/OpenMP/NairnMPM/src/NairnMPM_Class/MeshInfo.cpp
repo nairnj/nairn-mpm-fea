@@ -13,6 +13,7 @@
 #include "Patches/GridPatch.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Boundary_Conditions/BoundaryCondition.hpp"
 #include <algorithm>
 
 // global class for grid information
@@ -518,6 +519,26 @@ GridPatch **MeshInfo::CreateOnePatch(int np)
 }
 
 #pragma mark MeshInfo:Accessors
+
+// get some info needed for symmetry BCs
+double MeshInfo::GetParametersForBCs(int axis,double *gmin,double *gmax)
+{
+	if(axis==X_DIRECTION)
+	{	*gmin = xmin;
+		*gmax = xmin + horiz*gridx;
+		return gridx;
+	}
+	else if(axis==Y_DIRECTION)
+	{	*gmin = ymin;
+		*gmax = ymin + vert*gridy;
+		return gridy;
+	}
+	else
+	{	*gmin = zmin;
+		*gmax = zmin + depth*gridz;
+		return gridz;
+	}
+}
 
 // given zero based element number, return zero-based patch number
 int MeshInfo::GetPatchForElement(int iel)

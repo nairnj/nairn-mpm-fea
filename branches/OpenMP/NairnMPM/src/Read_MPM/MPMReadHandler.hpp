@@ -42,8 +42,9 @@ class MPMReadHandler : public CommonReadHandler
         void DisplacementBCs(void);				// Generate Displacement BCs
         void LoadBCs(void);						// Set load BCs
 		char *LastBC(char *);
-		void CreateAxisymetricBCs();
-    
+		void CreateSymmetryBCs();
+		void CreateSymmetryBCPlane(int,double,int);
+   
     private:
         //  Private data members
 		ParseController *velocityBCs,*concBCs,*tempBCs,*mpLoadCtrl,*mpTractionCtrl;

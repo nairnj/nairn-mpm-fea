@@ -46,6 +46,8 @@
 
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
+double Xsym,Ysym,Zsym;
+int xsymdir=0,ysymdir=0,zsymdir=0;
 double pConc,pTempSet,Angle,Thick;
 int Nhoriz=0,Nvert=0,Ndepth=0,MatID;
 double cellHoriz=-1.,cellVert=-1.,cellDepth=-1.;
@@ -141,6 +143,15 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%lf",&Rhoriz);
             else if(strcmp(aName,"cellsize")==0)
                 sscanf(value,"%lf",&cellHoriz);
+            else if(strcmp(aName,"sym")==0)
+			{	sscanf(value,"%lf",&Xsym);
+				if(!xsymdir) xsymdir = -1;
+			}
+            else if(strcmp(aName,"symdir")==0)
+			{	double symdir;
+				sscanf(value,"%lf",&symdir);
+				xsymdir = symdir<0. ? -1 : +1 ;
+			}
             delete [] aName;
             delete [] value;
         }
@@ -158,6 +169,15 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%lf",&Rvert);
  			else if(strcmp(aName,"cellsize")==0)
                 sscanf(value,"%lf",&cellVert);
+            else if(strcmp(aName,"sym")==0)
+			{	sscanf(value,"%lf",&Ysym);
+				if(!ysymdir) ysymdir = -1;
+			}
+            else if(strcmp(aName,"symdir")==0)
+			{	double symdir;
+				sscanf(value,"%lf",&symdir);
+				ysymdir = symdir<0. ? -1 : +1 ;
+			}
            	delete [] aName;
             delete [] value;
         }
@@ -175,6 +195,15 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%lf",&Rdepth);
             else if(strcmp(aName,"cellsize")==0)
                 sscanf(value,"%lf",&cellDepth);
+            else if(strcmp(aName,"sym")==0)
+			{	sscanf(value,"%lf",&Zsym);
+				if(!zsymdir) zsymdir = -1;
+			}
+            else if(strcmp(aName,"symdir")==0)
+			{	double symdir;
+				sscanf(value,"%lf",&symdir);
+				zsymdir = symdir<0. ? -1 : +1 ;
+			}
            	delete [] aName;
             delete [] value;
         }
@@ -1166,34 +1195,75 @@ void MPMReadHandler::grid()
 //-----------------------------------------------------------
 // Make sure axisymmetric has r=0 BCs
 //-----------------------------------------------------------
-void MPMReadHandler::CreateAxisymetricBCs()
-{	// exit it not axisymmetric
-	if(!fmobj->IsAxisymmetric()) return;
+void MPMReadHandler::CreateSymmetryBCs()
+{	// exit it not axisymmetric and no symmetry planes
+	if(fmobj->IsAxisymmetric())
+	{	Xsym = 0.;				// only r=0 is allowed
+		xsymdir = -1;			// to left, by extra BCs not created
+		
+		// verify grid passes through 0 or delta r if within 1.25 nodes of origin
+		double nmin = mpmgrid.xmin/mpmgrid.gridx;
+		if(nmin<=1.25)
+		{	double ntest = int(fabs(nmin)+.1);			// int part ad double (small number fo round off error)
+			if(!DbleEqual(ntest,fabs(nmin)))
+				throw SAXException("Axisymetric grid that includes r<1.25dr must have nodes at multiple of dr.");
+		}
+	}
+	else if(!xsymdir && !ysymdir && !zsymdir)
+		return;
 	
-	// skip this feature if not structured grid
+	// synmetry conditions require a structured grid
 	if(!mpmgrid.IsStructuredGrid()) return;
 	
-	// find nmin
-	double nmin = mpmgrid.xmin/mpmgrid.gridx;
-	if(nmin>1.25) return;
-	
-	// verify grid passes through 0 or delta r
-	double ntest = int(fabs(nmin)+.1);
-	if(!DbleEqual(ntest,fabs(nmin)))
-	   throw SAXException("Axisymetric grid that includes r<1.25dr must have nodes at multiple of dr.");
-	
-	// no need if does not reach r=0
-	if(nmin>0.5*mpmgrid.gridx) return;
+	// allow one plane in each direction
+	if(xsymdir)
+		CreateSymmetryBCPlane(X_DIRECTION,Xsym,xsymdir);
+	if(ysymdir)
+		CreateSymmetryBCPlane(Y_DIRECTION,Ysym,ysymdir);
+	if(zsymdir && mpmgrid.Is3DGrid())
+		CreateSymmetryBCPlane(Z_DIRECTION,Zsym,zsymdir);
+}
 
-	// remove current velocites at r<=0
+//-----------------------------------------------------------
+// Create symmetry BCs at minimum side of an axis
+// For axisymmetric these are at r=0
+//-----------------------------------------------------------
+void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
+{
+	// read grid parameters
+	double gridmin,gridmax;
+	double gridsize = mpmgrid.GetParametersForBCs(axis,&gridmin,&gridmax);
+	
+	// find symmetry node location relative to edge of the grid
+	double nmin = symdir<0 ? (gridmin-gridsym)/gridsize : (gridsym-gridmax)/gridsize;
+	
+	// no need if does not reach that plane (i.e., gridsym<gridmin or gridsym>gridmax
+	if(nmin>0.1*gridsize) return;
+	
+	// symmetry plane must be along grid line
+	double ntest = int(fabs(nmin)+.1);			// positive integer as a double
+	if(!DbleEqual(ntest,fabs(nmin)))
+		throw SAXException("Symmetry plane in a grid is not along a grid line.");
+
+	// remove current velocites at beyond the symmetry plane
 	int i;
+	double ni;
 	NodalVelBC *lastValidBC = NULL;
 	NodalVelBC *nextBC = firstVelocityBC;
 	while(nextBC != NULL)
 	{	i = nextBC->GetNodeNum();
-		double ni = nd[i]->x/mpmgrid.gridx;
-		if(ni < -0.5 || (ni<0.5 && nextBC->dir==X_DIRECTION))
+		if(axis==X_DIRECTION)
+			ni = (nd[i]->x-gridsym)/gridsize;
+		else if(axis==Y_DIRECTION)
+			ni = (nd[i]->y-gridsym)/gridsize;
+		else if(axis==Z_DIRECTION)
+			ni = (nd[i]->z-gridsym)/gridsize;
+		if(symdir>0) ni = -ni;
+		if(ni<0.5 && nextBC->dir==axis)
 		{	// remove this velocity BC
+			nextBC->UnsetDirection();
+			
+			// adjust in the list
 			if(lastValidBC == NULL)
 			{	// have not found good velocity BC yet
 				firstVelocityBC = (NodalVelBC *)nextBC->GetNextObject();
@@ -1222,27 +1292,119 @@ void MPMReadHandler::CreateAxisymetricBCs()
 		lastVelocityBC = NULL;
 	}
 	
-	// create new ones at end of the list
-	int node = (int)ntest + 1;
-	while(node<nnodes)
-	{	// create zero r velocity starting at time 0
-		NodalVelBC *newVelBC=new NodalVelBC(node,X_DIRECTION,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
-		
-		// add to linked list
-		if(lastVelocityBC == NULL)
-		{	// first one
-			firstVelocityBC = newVelBC;
-			lastVelocityBC = newVelBC;
+	// create new ones at end of the list, with special case for eaxh axis
+	if(axis==X_DIRECTION)
+	{	int node = int((gridsym-gridmin)/gridsize+.1) + 1;
+		while(node<=nnodes)
+		{	// create zero x (or r) velocity starting at time 0 on the symmetry plane
+			NodalVelBC *newVelBC=new NodalVelBC(node,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+			nd[node]->SetFixedDirection(XSYMMETRYPLANE_DIRECTION);
+			
+			// add to linked list
+			if(lastVelocityBC == NULL)
+			{	// first one
+				firstVelocityBC = newVelBC;
+				lastVelocityBC = newVelBC;
+			}
+			else
+			{	// link at the end
+				lastVelocityBC->SetNextObject(newVelBC);
+				lastVelocityBC = newVelBC;
+			}
+			
+			// create neighboring BC for zero x (might be better to implement Jim's symmetry BC here)
+			// but not needed if axisymmtric
+			if(!fmobj->IsAxisymmetric())
+			{	int neighbor = node + symdir;
+				if(neighbor>0 && neighbor<=nnodes)
+				{	newVelBC=new NodalVelBC(neighbor,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+				
+					// link at the end
+					lastVelocityBC->SetNextObject(newVelBC);
+					lastVelocityBC = newVelBC;
+				}
+			}
+			
+			// next node
+			node += mpmgrid.yplane;
 		}
-		else
-		{	// link at the end
-			lastVelocityBC->SetNextObject(newVelBC);
-			lastVelocityBC = newVelBC;
-		}
-		
-		// next node
-		node += mpmgrid.yplane;
 	}
+	
+	else if(axis==Y_DIRECTION)
+	{	int row = int((gridsym-gridmin)/gridsize+.1);			// zero based
+		int node,node0 = row*mpmgrid.yplane+1;
+		while(node0<nnodes)
+		{	node = node0;
+			for(i=0;i<mpmgrid.yplane;i++)
+			{	// create zero x (or r) velocity starting at time 0 on the symmetry plane
+				NodalVelBC *newVelBC=new NodalVelBC(node,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+				nd[node]->SetFixedDirection(YSYMMETRYPLANE_DIRECTION);
+				
+				// add to linked list
+				if(lastVelocityBC == NULL)
+				{	// first one
+					firstVelocityBC = newVelBC;
+					lastVelocityBC = newVelBC;
+				}
+				else
+				{	// link at the end
+					lastVelocityBC->SetNextObject(newVelBC);
+					lastVelocityBC = newVelBC;
+				}
+				
+				// create neighboring BC for zero y (might be better to implement Jim's symmetry BC here)
+				int neighbor = node + symdir*mpmgrid.yplane;
+				if(neighbor>0 && neighbor<=nnodes)
+				{	newVelBC=new NodalVelBC(neighbor,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+				
+					// link at the end
+					lastVelocityBC->SetNextObject(newVelBC);
+					lastVelocityBC = newVelBC;
+				}
+			
+				// next node
+				node++;
+			}
+			if(!mpmgrid.Is3DGrid()) break;
+			node0 += mpmgrid.zplane;
+		}
+	}
+	
+	if(axis==Z_DIRECTION)
+	{	int rank = int((gridsym-gridmin)/gridsize+.1);			// zero based
+		int node = rank*mpmgrid.zplane + 1;
+		for(i=0;i<mpmgrid.zplane;i++)
+		{	// create zero x (or r) velocity starting at time 0 on the symmetry plane
+			NodalVelBC *newVelBC=new NodalVelBC(node,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+			nd[node]->SetFixedDirection(ZSYMMETRYPLANE_DIRECTION);
+			
+			// add to linked list
+			if(lastVelocityBC == NULL)
+			{	// first one
+				firstVelocityBC = newVelBC;
+				lastVelocityBC = newVelBC;
+			}
+			else
+			{	// link at the end
+				lastVelocityBC->SetNextObject(newVelBC);
+				lastVelocityBC = newVelBC;
+			}
+			
+			// create neighboring BC for zero z (might be better to implement Jim's symmetry BC here)
+			int neighbor = node + symdir*mpmgrid.zplane;
+			if(neighbor>0 && neighbor<=nnodes)
+			{	newVelBC=new NodalVelBC(neighbor,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+				
+				// link at the end
+				lastVelocityBC->SetNextObject(newVelBC);
+				lastVelocityBC = newVelBC;
+			}
+			
+			// next node
+			node++;
+		}
+	}
+
 }
 
 

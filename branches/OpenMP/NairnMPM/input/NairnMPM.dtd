@@ -573,18 +573,24 @@
 <!ATTLIST	Horiz
 			nx CDATA #IMPLIED
 			cellsize CDATA #IMPLIED
+			sym CDATA #IMPLIED
+			symdir CDATA #IMPLIED
 			rx CDATA "1.0">
 
 <!ELEMENT	Vert EMPTY>
 <!ATTLIST	Vert
 			ny CDATA #IMPLIED
 			cellsize CDATA #IMPLIED
+			sym CDATA #IMPLIED
+			symdir CDATA #IMPLIED
 			ry CDATA "1.0">
 			
 <!ELEMENT	Depth EMPTY>
 <!ATTLIST	Depth
 			nz CDATA #IMPLIED
 			cellsize CDATA #IMPLIED
+			sym CDATA #IMPLIED
+			symdir CDATA #IMPLIED
 			rz CDATA "1.0">
 			
 <!ELEMENT	vel EMPTY>

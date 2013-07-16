@@ -38,7 +38,7 @@ class NodalPoint : public LinkedObject
 		double fdiff;				// diffusion
 		double gMpCp;
 		double fcond;				// conduction
-		unsigned char fixedDirection;
+		unsigned short fixedDirection;
 	
 		static double interfaceEnergy;		// total tracked each time step
 #endif

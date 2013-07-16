@@ -1299,7 +1299,7 @@ void NodalPoint::AdjustContact(short a,short b,Vector *norm,int crackNumber,bool
 		return;
 	
 	// on post update contact, do not change nodes with boundary conditions
-	if(postUpdate && fixedDirection)
+	if(postUpdate && (fixedDirection&XYZ_SKEWED_DIRECTION))
 	{	if(fixedDirection&X_DIRECTION)
 		{	delPa.x=0.;
 			delPb.x=0.;
@@ -1323,7 +1323,7 @@ void NodalPoint::AdjustContact(short a,short b,Vector *norm,int crackNumber,bool
 		return;
 	
 	// on post update contact, do not change nodes with boundary conditions
-	if(postUpdate && fixedDirection)
+	if(postUpdate && (fixedDirection&XYZ_SKEWED_DIRECTION))
 	{	if(fixedDirection&X_DIRECTION) delP.x=0.;
 		if(fixedDirection&Y_DIRECTION) delP.y=0.;
 		if(fixedDirection&Z_DIRECTION) delP.z=0.;
@@ -1551,7 +1551,8 @@ void NodalPoint::SetFixedDirection(int dir)
 // Unmark a direction as fixed by velocity BC
 // Assume 1 means x, 2 means y, 4 means z
 void NodalPoint::UnsetFixedDirection(int dir)
-{	fixedDirection^=dir;
+{	if(fixedDirection&dir)
+		fixedDirection^=dir;
 }
 
 #pragma mark CLASS METHODS

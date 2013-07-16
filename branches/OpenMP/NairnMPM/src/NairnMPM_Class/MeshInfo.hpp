@@ -46,6 +46,7 @@ class MeshInfo
 		GridPatch **CreateOnePatch(int);
 	
 		// Accessors
+		double GetParametersForBCs(int axis,double *,double *);
 		int GetPatchForElement(int);
 		void SetCartesian(int,double,double,double);
 		void SetElements(int,int,int,double,double,double);
