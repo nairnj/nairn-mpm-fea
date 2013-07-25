@@ -87,7 +87,7 @@ of cells and <code>rx</code> is a ratio of cell sizes (currently only <code>rx=1
 is supported). Alternatively, you can set the <code>cellsize</code> (in mm).
 Note: if needed, <code>xmax</code> will be increased to accomodate an integral number of elements
 at the desired cell size. In axisymmetric calculations the horizontal direction is the radial or <code>R</code> direction.<br><br>
-The <code>sym</code> and <code>symdir</code> attributes let you create a <a href="#symmetry">symmetry plane</a> along the <code>x</code> axis. See <a href="#symmetry">below</a> for details. Note that in axisymmetric calculations, a symmetry plane at <code>r=0</code> is implied by axisymmetry. You need not set <code>sym</code> = 0 and any <code>sym</code> or <code>symdir</code> that is set will be ignored. Axisymmetry can set a symmetry plane along the <code>Z</code> axis in the Vert command, if appropriate.
+The <code>sym</code> and <code>symdir</code> attributes let you create a <a href="#symmetry">symmetry plane</a> along the <code>x</code> axis. See <a href="#symmetry">below</a> for details. Note that in axisymmetric calculations, a symmetry plane at <code>r=0</code> is implied by axisymmetry. You need not set <code>sym</code> = 0 and any <code>sym</code> or <code>symdir</code> that is set will be ignored. Axisymmetrc calculations can only set a symmetry plane along the <code>Z</code> (using the <code>Vert</code> command), if appropriate.
 </dd>
 
 <dt>&lt;Vert ny="20" ry="1.0"&gt; or &lt;Vert cellsize='2'/&gt;</dt>
