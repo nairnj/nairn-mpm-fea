@@ -304,7 +304,7 @@ void CrackVelocityFieldMulti::UpdateMomentaOnField(double timestep)
 	a. more than one rigid material
 	b. memory error making interface node
 */
-void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,double deltime,bool postUpdate,
+void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,double deltime,int callType,
 												   MaterialInterfaceNode **first,MaterialInterfaceNode **last)
 {
 	// exit if no contact
@@ -336,7 +336,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 	
 	// if exactly one rigid material, then special case for contact laws and then done
 	if(rigidMat>=0)
-	{	RigidMaterialContactOnCVF(rigidMat,ndptr,vfld,deltime,postUpdate,first,last);
+	{	RigidMaterialContactOnCVF(rigidMat,ndptr,vfld,deltime,callType,first,last);
 		return;
 	}
 	
@@ -348,6 +348,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 	
 	// loop over each material
 	bool hasInterfaceEnergy = FALSE;
+	bool postUpdate = callType != MASS_MOMENTUM_CALL;
 	for(i=0;i<maxMaterialFields;i++)
     {	if(!MatVelocityField::ActiveField(mvf[i])) continue;
 		
@@ -662,7 +663,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 // means exactly one is a rigid material
 //	(no rigid materials handled in MaterialContactOnCVF(), two rigid materials is an error)
 // throws CommonException() if memory error making interface node
-void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint *ndptr,int vfld,double deltime,bool postUpdate,
+void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint *ndptr,int vfld,double deltime,int callType,
 												   MaterialInterfaceNode **first,MaterialInterfaceNode **last)
 {
 	// get rigid material volume for contact and actual volume
@@ -680,6 +681,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 	
 	// loop over each material (skipping the one rigid material)
 	int i;
+	bool postUpdate = callType != MASS_MOMENTUM_CALL;
 	for(i=0;i<maxMaterialFields;i++)
     {	if(!MatVelocityField::ActiveField(mvf[i]) || i==rigidFld) continue;
 		
@@ -939,10 +941,24 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 		mvf[i]->ChangeMatMomentum(&delPi,postUpdate,deltime);
 		
 		// store contact force in rigid particle ftot
-		// if !postUpdate, gets only force after mass and momentum extrapolation
-		// if always gets also after particle update and second strain update (if activated)
-		//if(!postUpdate)
-        mvf[rigidFld]->AddContactForce(&delPi);
+		// By developer flag can get various combinations of forces, otherwise gets the total
+		switch(fmobj->dflag[2])
+		{	case 0:
+				mvf[rigidFld]->AddContactForce(&delPi);
+				break;
+			case 1:
+				if(callType==MASS_MOMENTUM_CALL) mvf[rigidFld]->AddContactForce(&delPi);
+				break;
+			case 2:
+				if(callType!=UPDATE_STRAINS_LAST_CALL) mvf[rigidFld]->AddContactForce(&delPi);
+				break;
+			case 3:
+				if(callType!=UPDATE_MOMENTUM_CALL) mvf[rigidFld]->AddContactForce(&delPi);
+				break;
+			default:
+				mvf[rigidFld]->AddContactForce(&delPi);
+				break;
+		}
 	}
 }
 

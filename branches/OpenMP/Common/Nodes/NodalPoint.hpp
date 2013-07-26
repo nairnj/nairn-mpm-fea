@@ -131,7 +131,7 @@ class NodalPoint : public LinkedObject
 		void CrackContactThree(int,bool,double);
 		void CrackInterfaceForce(void);
 		void InterfaceForceThree(int);
-		void MaterialContactOnNode(double,bool,MaterialInterfaceNode **,MaterialInterfaceNode **);
+		void MaterialContactOnNode(double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
         void MaterialInterfaceForce(MaterialInterfaceNode *);
 		void GetVolumeGradient(short,int,Vector *,double) const;
         void SetMomVel(Vector *);

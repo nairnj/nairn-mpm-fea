@@ -291,7 +291,7 @@ void MassAndMomentumTask::Execute(void)
 #endif
 				// multimaterial contact
 				if(fmobj->multiMaterialMode)
-					ndptr->MaterialContactOnNode(timestep,FALSE,&firstInterfaceNode,&lastInterfaceNode);
+					ndptr->MaterialContactOnNode(timestep,MASS_MOMENTUM_CALL,&firstInterfaceNode,&lastInterfaceNode);
 				
 				// crack contact
 				if(firstCrack!=NULL)

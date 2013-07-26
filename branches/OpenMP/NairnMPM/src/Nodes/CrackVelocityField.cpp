@@ -243,7 +243,7 @@ bool CrackVelocityField::GetCMVelocityTask8(Vector *velCM)
 #pragma mark MATERIAL CONTACT AND INTERFACES IN SUBCLASSES
 
 // Called in multimaterial mode to check contact at nodes with multiple materials
-void CrackVelocityField::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,double deltime,bool postUpdate,
+void CrackVelocityField::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,double deltime,int callType,
 											  MaterialInterfaceNode **first,MaterialInterfaceNode **last)
 { return;
 }

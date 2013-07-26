@@ -133,7 +133,7 @@ void UpdateStrainsLastTask::Execute(void)
 	// adjust momenta for multimaterial contact
 	if(fmobj->multiMaterialMode)
 	{	for(int i=1;i<=nnodes;i++)
-			nd[i]->MaterialContactOnNode(timestep,TRUE,NULL,NULL);
+			nd[i]->MaterialContactOnNode(timestep,UPDATE_STRAINS_LAST_CALL,NULL,NULL);
 	}
 	
 	// adjust momenta for crack contact

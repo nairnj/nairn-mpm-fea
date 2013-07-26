@@ -56,7 +56,7 @@ void UpdateMomentaTask::Execute(void)
 		
 		if(fmobj->multiMaterialMode)
 		{	try
-			{	ndptr->MaterialContactOnNode(timestep,TRUE,NULL,NULL);
+			{	ndptr->MaterialContactOnNode(timestep,UPDATE_MOMENTUM_CALL,NULL,NULL);
 			}
 			catch(CommonException err)
 			{	if(umErr==NULL)

@@ -16,6 +16,10 @@
 #define FIRST_CRACK 0
 #define SECOND_CRACK 1
 
+#define MASS_MOMENTUM_CALL 1
+#define UPDATE_MOMENTUM_CALL 2
+#define UPDATE_STRAINS_LAST_CALL 4
+
 #include "Nodes/MatVelocityField.hpp"
 
 class MPMBase;
@@ -78,7 +82,7 @@ class CrackVelocityField
 		void AddVolume(int,double);
 	
 		// methods
-		virtual void MaterialContactOnCVF(NodalPoint *,int,double,bool,MaterialInterfaceNode **,MaterialInterfaceNode **);
+		virtual void MaterialContactOnCVF(NodalPoint *,int,double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
 		virtual void GetVolumeGradient(int,const NodalPoint *,Vector *,double) const;
 		virtual void CalcVelocityForStrainUpdate(void) = 0;
 	

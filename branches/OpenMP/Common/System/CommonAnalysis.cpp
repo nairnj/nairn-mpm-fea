@@ -36,8 +36,8 @@ CommonAnalysis::CommonAnalysis()
 	np=-1;						// analysis method to be set
 	nfree=2;					// 2D analysis
 	
-	// current uses
-	// dflag[0] - affects normal calcualtion in contact
+	// If non-zero, this flags can change the calculation
+	// dflag[0] - affects normal output in CommandAnalysis.hpp for current uses
 	int i;
 	for(i=0;i<NUMBER_DEVELOPMENT_FLAGS;i++) dflag[i]=0;
 }
@@ -72,11 +72,17 @@ void CommonAnalysis::StartResultsOutput(void)
 	/* development flags
 	 *
 	 *	Current Flags in Use in MPM Code
-	 *   [0]==1 - use MPM standard contact where each material finds normal from its own gradietn
+	 *   [0]==1 - use MPM standard contact where each material finds normal from its own gradient
 	 *   [0]==2 - find normal by averaging the volume gradient of the two contacting materials
-	 *   [0]==4 - cutting simulations - find normal for tool angle and the angle (interger only)
-	 *				is in flag [1]
-	 *   [1]==rake angle - cutting simulations when [0]==4
+	 *   [0]==3 - normal along x, y or z and set by [1] == +/- 1, 2, 3 if (1,0,0) rotated [1] about z axis
+	 *   [0]==4 - cutting simulations - find normal from tool angle where the angle in [1] (interger only)
+	 *   [0]==5 - for radial normal vector
+	 *
+	 *   [1]==parameter for [0]==3 or 4
+	 *
+	 *   [2]==1 - Rigid contact force from mass and momentum extrapolation only
+	 *   [2]==2 - Rigid contact force from mass and momentum and update momentum tasks
+	 *   [2]==3 - Rigid contact force from mass and momentum and update strain last tasks
 	 */
 	int i;
 	bool hasFlags=FALSE;

@@ -1156,12 +1156,12 @@ Vector NodalPoint::GetTotalContactForce(bool clearForces)
 //		objects are created for later interface calculations
 // postUpdate is TRUE when called between momentum update and particle update and otherwise is FALSE
 // throws CommonException() on memory error or rigid material problem
-void NodalPoint::MaterialContactOnNode(double deltime,bool postUpdate,MaterialInterfaceNode **first,MaterialInterfaceNode **last)
+void NodalPoint::MaterialContactOnNode(double deltime,int callType,MaterialInterfaceNode **first,MaterialInterfaceNode **last)
 {
 	// check each crack velocity field on this node
 	for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->MaterialContactOnCVF(this,i,deltime,postUpdate,first,last);
+			cvf[i]->MaterialContactOnCVF(this,i,deltime,callType,first,last);
 	}
 }
 
