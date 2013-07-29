@@ -619,6 +619,9 @@ void Matrix3::set(double constant)
 	is2D = constant==0. ? TRUE : FALSE ;
 }
 
+// set one element (0 based indices)
+void Matrix3::set(int row,int col,double value) { m[row][col] = value; }
+
 // copy this object to an array
 void Matrix3::get(double c[][3]) const
 {	int i,j;
@@ -627,6 +630,9 @@ void Matrix3::get(double c[][3]) const
 			c[i][j] = m[i][j];
 	}
 }
+
+// get one element (0 based indices)
+void Matrix3::get(int row,int col,double *value) const { *value = m[row][col]; }
 
 // set this object to contents of an array and makes it 3D
 void Matrix3::set(double c[][3])

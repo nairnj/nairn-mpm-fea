@@ -2083,7 +2083,7 @@
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
 				CODE_SIGN_IDENTITY = "";
 				ENABLE_OPENMP_SUPPORT = NO;
-				GCC_VERSION = 4.8;
+				GCC_VERSION = "";
 				VALID_ARCHS = "ppc7400 ppc64 ppc970 i386 x86_64 ppc";
 			};
 			name = Default;

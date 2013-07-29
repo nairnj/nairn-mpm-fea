@@ -50,6 +50,7 @@ class Matrix3
 	
 		// accessors
 		void set(double);
+        void set(int,int,double);
 		void set(double c[][3]);
         void set(double,double,double,double,double);
         void set(double,double,double,double,double,double,double,double,double);
@@ -57,6 +58,7 @@ class Matrix3
     
         // read only accessors
         void get(double c[][3]) const;
+        void get(int,int,double *) const;
         bool getIs2D(void) const;
         double determinant(void) const;
         double second_invariant(void) const;
