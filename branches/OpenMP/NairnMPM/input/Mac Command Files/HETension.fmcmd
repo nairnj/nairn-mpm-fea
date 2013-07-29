@@ -21,7 +21,7 @@ XMLData MPMHeader
 EndXMLData
 
 ! pick a method usually "lCPDI" or "uGIMP"
-#method="uGIMP"
+#method="lCPDI"
 
 ! pick strain update method usually "USF" or "USAVG"
 #update="USAVG"
@@ -80,7 +80,7 @@ if #loading="contact"
   XMLData,"Header"
     <DevelFlag Number='0'>3</DevelFlag>
     <DevelFlag Number='1'>-1</DevelFlag>
-    <DevelFlag Number='2'>2</DevelFlag>
+    <DevelFlag Number='2'>0</DevelFlag>
   EndXMLData
 endif
 

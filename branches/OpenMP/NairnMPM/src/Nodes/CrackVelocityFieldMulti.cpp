@@ -941,21 +941,26 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 		mvf[i]->ChangeMatMomentum(&delPi,postUpdate,deltime);
 		
 		// store contact force in rigid particle ftot
+		// There are three times this is called in an MPM Step
+		//  1. After mass and momentum task extrapolation to the grid
+		//  2. After updating momenta on the nodes
+		//  3. After second momentum extrpolation to the grid (USAVG and USL only)
 		// By developer flag can get various combinations of forces, otherwise gets the total
 		switch(fmobj->dflag[2])
 		{	case 0:
-				mvf[rigidFld]->AddContactForce(&delPi);
+				// Default - after update momentum only
+				if(callType==UPDATE_MOMENTUM_CALL) mvf[rigidFld]->AddContactForce(&delPi);
 				break;
 			case 1:
+				// after mass and moment only
 				if(callType==MASS_MOMENTUM_CALL) mvf[rigidFld]->AddContactForce(&delPi);
 				break;
 			case 2:
-				if(callType!=UPDATE_STRAINS_LAST_CALL) mvf[rigidFld]->AddContactForce(&delPi);
-				break;
-			case 3:
-				if(callType!=UPDATE_MOMENTUM_CALL) mvf[rigidFld]->AddContactForce(&delPi);
+				// after second momentum extrapolation only
+				if(callType==UPDATE_STRAINS_LAST_CALL) mvf[rigidFld]->AddContactForce(&delPi);
 				break;
 			default:
+				// after every call
 				mvf[rigidFld]->AddContactForce(&delPi);
 				break;
 		}

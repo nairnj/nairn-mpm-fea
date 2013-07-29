@@ -130,8 +130,14 @@ void ElementBase::GetShapeFunctionNodes(int *numnds,int *nds,Vector *xipos,MPMBa
         case LINEAR_CPDI:
 		case LINEAR_CPDI_AS:
         case QUADRATIC_CPDI:
-		{	double fn[maxShapeNodes];
-			*numnds = GetCPDIFunctions(nds,fn,NULL,NULL,NULL,mpmptr);
+        {   if(theMaterials[mpmptr->MatID()]->Rigid())
+			{	int ndIDs[maxShapeNodes];
+				GetGimpNodes(numnds,nds,ndIDs,xipos);
+			}
+			else
+			{	double fn[maxShapeNodes];
+				*numnds = GetCPDIFunctions(nds,fn,NULL,NULL,NULL,mpmptr);
+			}
             break;
 		}
     }
@@ -266,15 +272,14 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,
 		case LINEAR_CPDI_AS:
 		case QUADRATIC_CPDI:
         {   if(theMaterials[mpmptr->MatID()]->Rigid())
-			{	int newGimp = fmobj->IsAxisymmetric() ? UNIFORM_GIMP_AS : UNIFORM_GIMP ;
-                int ndIDs[maxShapeNodes];
+			{	int ndIDs[maxShapeNodes];
                 Vector *xipos = mpmptr->GetNcpos();
                 GetGimpNodes(numnds,nds,ndIDs,xipos);
-                if(newGimp == UNIFORM_GIMP)
-                    GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
-                else
+                if(fmobj->IsAxisymmetric())
                     GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
-                GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
+                else
+					GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+				GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
             }
             else
             {   *numnds = GetCPDIFunctions(nds,fn,xDeriv,yDeriv,zDeriv,mpmptr);

@@ -143,7 +143,7 @@ void MassAndMomentumTask::Execute(void)
 					for(i=1;i<=numnds;i++)
 					{   // get node pointer
                         ndptr = GetNodePointer(pn,nds[i]);
-                        
+						
 						// momentum vector (and allocate velocity field if needed)
 						vfld = mpmptr->vfld[i];
 						ndptr->AddMassMomentum(mpmptr,vfld,matfld,fn[i],xDeriv[i],yDeriv[i],zDeriv[i],

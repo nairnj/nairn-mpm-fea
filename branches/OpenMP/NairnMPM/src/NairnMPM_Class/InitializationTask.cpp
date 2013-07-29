@@ -71,7 +71,6 @@ void InitializationTask::Execute(void)
 	// was there an error?
 	if(initErr!=NULL) throw *initErr;
     
-	
 	// allocate crack and material velocity fields needed for time step on real nodes
     // tried critical sections when nodes changes, but it was slower
     // can't use ghost nodes, because need to test all on real nodes
