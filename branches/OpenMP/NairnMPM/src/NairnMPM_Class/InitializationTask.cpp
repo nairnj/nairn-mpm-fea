@@ -50,7 +50,8 @@ void InitializationTask::Execute(void)
         int pn = GetPatchNumber();
         patches[pn]->InitializeForTimeStep();
 
-		// particle calculations
+		// particle calculations get xipos for particles and if doing CPDI
+        // precalculate CPDI info needed for subsequent shape functions
 #pragma omp for nowait
 		for(int p=0;p<nmpmsRC;p++)
         {   MPMBase *mpmptr = mpm[p];                                       // pointer
@@ -72,14 +73,15 @@ void InitializationTask::Execute(void)
 	if(initErr!=NULL) throw *initErr;
     
 	// allocate crack and material velocity fields needed for time step on real nodes
-    // tried critical sections when nodes changes, but it was slower
+    // tried critical sections when nodes changed, but it was slower
     // can't use ghost nodes, because need to test all on real nodes
 	if(firstCrack!=NULL || maxMaterialFields>1)
 	{   int nds[maxShapeNodes];
+        double fn[maxShapeNodes];
 
 		for(int pn=0;pn<tp;pn++)
 		{
-           // do non-rigid and rigid contact materials in patch pn
+            // do non-rigid and rigid contact materials in patch pn
             for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
             {   MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
                 while(mpmptr!=NULL)
@@ -89,7 +91,10 @@ void InitializationTask::Execute(void)
                     // get nodes and shape function for material point p
                     int i,numnds;
                     const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
-                    elref->GetShapeFunctionNodes(&numnds,nds,mpmptr->GetNcpos(),mpmptr);
+                    
+                    // don't actually need shape functions, but need to screen out zero shape function
+                    // like done in subsequent tasks, otherwise node numbers will not align correctly
+                    elref->GetShapeFunctions(&numnds,fn,nds,mpmptr);
                     
                     // Add particle property to each node in the element
                     short vfld;

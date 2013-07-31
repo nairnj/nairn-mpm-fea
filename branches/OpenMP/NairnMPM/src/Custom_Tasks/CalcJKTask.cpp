@@ -111,7 +111,7 @@ CustomTask *CalcJKTask::StepCalculation(void)
         int pn = MPMTask::GetPatchNumber();
         patches[pn]->ZeroDisp();
         
-        // loop over non-rigid particles in patch
+        // loop over only non-rigid particles in patch
         MPMBase *mpnt = patches[pn]->GetFirstBlockPointer(FIRST_NONRIGID);
         while(mpnt!=NULL)
         {   // material reference

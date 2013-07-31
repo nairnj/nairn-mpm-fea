@@ -252,7 +252,7 @@ void CrackVelocityFieldMulti::AddFtotSpreadTask3(Vector *f)
 #ifdef USE_FEXT
 
 void CrackVelocityFieldMulti::AddFextSpreadTask3(Vector *f)
-{ throw CommonException("Fext not allowed in multimaterial mode","CrackVelocityFieldMulti::AddFextSpreadTask3");
+{   throw CommonException("Fext not allowed in multimaterial mode","CrackVelocityFieldMulti::AddFextSpreadTask3");
 }
 
 #endif

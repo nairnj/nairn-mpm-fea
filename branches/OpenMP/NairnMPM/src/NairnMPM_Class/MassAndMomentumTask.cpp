@@ -89,7 +89,7 @@ MassAndMomentumTask::MassAndMomentumTask(const char *name) : MPMTask(name)
 // Get mass matrix, find dimensionless particle locations,
 //	and find grid momenta
 void MassAndMomentumTask::Execute(void)
-{
+{   
 	CommonException *massErr = NULL;
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
     int nds[maxShapeNodes];
@@ -126,7 +126,7 @@ void MassAndMomentumTask::Execute(void)
 		{	for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
 			{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
 				while(mpmptr!=NULL)
-				{	const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
+                {   const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
 					int matfld = matID->GetField();									// material velocity field
 					
 					// get nodes and shape function for material point p
@@ -156,7 +156,7 @@ void MassAndMomentumTask::Execute(void)
 			}
 		}
 		catch(CommonException err)
-		{	if(massErr==NULL)
+        {   if(massErr==NULL)
 			{
 #pragma omp critical
 				massErr = new CommonException(err);

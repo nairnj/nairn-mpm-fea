@@ -128,7 +128,6 @@ class ElementBase : public LinkedObject
 	
 		// const methods
 		virtual void GetShapeFunctionData(MPMBase *) const;
-		virtual void GetShapeFunctionNodes(int *,int *,Vector *,MPMBase *mpmptr) const;
 		virtual void GetShapeFunctions(int *,double *,int *,MPMBase *) const;
 		virtual void GetShapeGradients(int *,double *,int *,double *,double *,double *,MPMBase *) const;
 		virtual void GetShapeFunctionsForCracks(int *,double *,int *,Vector *) const;

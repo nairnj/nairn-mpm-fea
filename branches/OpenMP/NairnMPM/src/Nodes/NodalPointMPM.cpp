@@ -283,6 +283,17 @@ void NodalPoint::AddMassMomentum(MPMBase *mptr,short vfld,int matfld,double shap
 	double mp = mptr->mp;
 	double fnmp = shape*mp;
 	Vector wtvel;
+    
+    // crash with KERN_INVALID_ADDRESS at 0x0000000000000000 might meean NULL field encountered
+    /*
+    if(cvf[vfld]==0)
+    {   cout << "\n NULL field for vfld=" << vfld << endl;
+        Describe();
+        mptr->Describe();
+        throw CommonException("NULL crack velocity field","NodalPoint::AddMassMomentum()");
+    }
+     */
+    
 	cvf[vfld]->AddMomentumTask1(matfld,CopyScaleVector(&wtvel,&mptr->vel,fnmp),&mptr->vel,numPts);
 	
 	// crack contact calculations
@@ -656,8 +667,8 @@ void NodalPoint::AddEnergy(short vfld,double wt,double vx,double vy,double work)
 void NodalPoint::CopyUGradientStressEnergy(NodalPoint *real)
 {	for(int vfld=0;vfld<maxCrackFields;vfld++)
     {   CrackVelocityField *rcvf = real->cvf[vfld];
-		if(CrackVelocityField::ActiveField(rcvf))
-		{	DispField *gdf = cvf[vfld]->df;
+		if(CrackVelocityField::ActiveNonrigidField(rcvf))
+        {   DispField *gdf = cvf[vfld]->df;
 			DispField *rdf = rcvf->df;
 			rdf->du.x += gdf->du.x;
 			rdf->du.y += gdf->du.y;
@@ -672,7 +683,8 @@ void NodalPoint::CopyUGradientStressEnergy(NodalPoint *real)
             // if more than one material get shape function extrapolation to each node
             if(numActiveMaterials>1)
             {   for(int i=0;i<numActiveMaterials;i++)
-                    rdf->matWeight[i] += gdf->matWeight[i];
+                {   rdf->matWeight[i] += gdf->matWeight[i];
+                }
             }
 		}
 	}

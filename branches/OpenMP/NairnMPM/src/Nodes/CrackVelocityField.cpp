@@ -177,7 +177,7 @@ void CrackVelocityField::CreateStrainField(void)
 	df->stress.zz=0.;
 	df->stress.xy=0.;
 	
-	// if more than one material, track material tip to set crack tip material chnages
+	// if more than one material, track material tip to set crack tip material changes
 	if(numActiveMaterials>1)
 	{	df->matWeight=(double *)malloc(sizeof(double)*numActiveMaterials);
 		int i;
