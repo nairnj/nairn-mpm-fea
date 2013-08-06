@@ -30,8 +30,9 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		virtual double GetTotalMassAndCount(void);
 		virtual void AddVolumeGradient(int,MPMBase *,double,double,double);
 		virtual void CopyVolumeGradient(int,Vector *);
-		virtual void CombineRigidFrom(CrackVelocityFieldMulti *,int);
-		virtual void CopyRigidFrom(CrackVelocityFieldMulti *,int);
+#ifdef COMBINE_RIGID_MATERIALS
+		virtual void CopyRigidFrom(MatVelocityField *,int);
+#endif
 		virtual void CopyMassAndMomentum(NodalPoint *,int);
         virtual void CopyMassAndMomentumLast(NodalPoint *,int);
 	

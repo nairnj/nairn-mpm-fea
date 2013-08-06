@@ -74,10 +74,6 @@
 // to ignore crack interactions (only valid if 1 crack or non-interacting cracks)
 //#define IGNORE_CRACK_INTERACTIONS
 
-// uncomment to project rigid velocity fields to all crack velocity fields
-// Only does anything when have cracks, in multimaterial mode, and has rigid contact particles
-//#define COMBINE_RIGID_MATERIALS
-
 #pragma mark CONSTRUCTORS
 
 MassAndMomentumTask::MassAndMomentumTask(const char *name) : MPMTask(name)
@@ -281,14 +277,15 @@ void MassAndMomentumTask::Execute(void)
 			NodalPoint *ndptr = nd[i];
 			
 			try
-			{	// Get total nodal masses and count materials if multimaterial mode
+            {
+#ifdef COMBINE_RIGID_MATERIALS
+                // combine rigid fields if necessary
+                if(combineRigid)
+                    ndptr->CopyRigidParticleField();
+#endif
+				// Get total nodal masses and count materials if multimaterial mode
 				ndptr->CalcTotalMassAndCount();
 
-#ifdef COMBINE_RIGID_MATERIALS
-				// combine rigid fields if necessary
-				if(combineRigid)
-					ndptr->CombineRigidParticles()
-#endif
 				// multimaterial contact
 				if(fmobj->multiMaterialMode)
 					ndptr->MaterialContactOnNode(timestep,MASS_MOMENTUM_CALL,&firstInterfaceNode,&lastInterfaceNode);

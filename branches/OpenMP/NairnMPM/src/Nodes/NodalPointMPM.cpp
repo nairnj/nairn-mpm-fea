@@ -416,44 +416,29 @@ void NodalPoint::CalcTotalMassAndCount(void)
 	}
 }
 
-// When has rigid particles, multimaterial mode, and cracks, sum all rigid particles on
-//	this node and transfer copy to all crack velocity fields
-// This is only called if COMBINE_RIGID_MATERIALS is defined
-void NodalPoint::CombineRigidParticles(void)
-{	int i,j;
-	
-	// find first material velocity field for rigid particles
-	// a node can only have one rigid material, otherwise the contact algorithm fails
-	// thus finding first is enough
-	MatVelocityField *rmvf=NULL;
-	int rigidFieldNum;
-	for(i=0;i<maxCrackFields;i++)
-	{	if(CrackVelocityField::ActiveField(cvf[i]))
-		{	rmvf=((CrackVelocityFieldMulti *)cvf[i])->GetRigidMaterialField(&rigidFieldNum);
-			if(rmvf!=NULL) break;
-		}
-	}
-	
-	// if none, then done
-	if(rmvf==NULL) return;
-	
-	// sum other fields with this same rigid material into that materials field in cvf[i]
-	// since 0 to i-1 do not have rigid material, only need to look from i+1 to end
-	for(j=i+1;j<maxCrackFields;j++)
-	{	if(CrackVelocityField::ActiveField(cvf[j]))
-		{	// copy rigid material from field j to field i
-			((CrackVelocityFieldMulti *)cvf[i])->CombineRigidFrom((CrackVelocityFieldMulti *)cvf[j],rigidFieldNum);
-		}
-	}
-	
-	// transfer the summed result to all other fields
-	for(j=0;j<maxCrackFields;j++)
-	{	if(j!=i && CrackVelocityField::ActiveField(cvf[j]))
-		{	// copy rigid material from field i to field ji
-			((CrackVelocityFieldMulti *)cvf[j])->CopyRigidFrom((CrackVelocityFieldMulti *)cvf[i],rigidFieldNum);
+#ifdef COMBINE_RIGID_MATERIALS
+
+// When has rigid particles, multimaterial mode, and cracks, copy all rigid particles in
+//   field [0] to other fields
+// This is only called with option to copy rigid materials to all crack fields
+void NodalPoint::CopyRigidParticleField(void)
+{
+    // if field [0] has no rigid particles, then nothing to copy
+    int rigidFieldNum;
+    MatVelocityField *rigidField = ((CrackVelocityFieldMulti *)cvf[0])->GetRigidMaterialField(&rigidFieldNum);
+    if(rigidField==NULL) return;
+    
+	// transfer the rigid field to all other crack fields
+    int i;
+	for(i=1;i<maxCrackFields;i++)
+	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
+		{	// copy rigid material from field 0 to field i
+			((CrackVelocityFieldMulti *)cvf[i])->CopyRigidFrom(rigidField,rigidFieldNum);
 		}
 	}
 }
+
+#endif
 
 #pragma mark TASK 3 METHODS
 

@@ -25,6 +25,10 @@
 // Activate to test traction laws add first before combining with ftot
 //#define USE_FEXT
 
+// uncomment to project rigid velocity fields to all crack velocity fields
+// Has no affect unless the simulation has cracks, is in multimaterial mode, AND has rigid contact particles
+#define COMBINE_RIGID_MATERIALS
+
 // C includes
 // Used to have <stdio.h>
 #include <cstdio>

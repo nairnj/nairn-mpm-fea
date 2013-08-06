@@ -372,6 +372,7 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
         xPos=pos->x;
         yPos=pos->y;
         zPos=pos->z;
+        hasDir[0] = hasDir[1] = hasDir[2] = false;
 	
 		if(function!=NULL)
         {	vel->x=function->Val();

@@ -106,6 +106,13 @@ void InitializationTask::Execute(void)
                         if(firstCrack==NULL)
                         {	vfld=0;
                         }
+#ifdef COMBINE_RIGID_MATERIALS
+                        else if(block==FIRST_RIGID_CONTACT)
+                        {   // when combining rigid particles, extrapolate all to field 0 and later
+                            // copy to other active fields
+                            vfld=0;
+                        }
+#endif
                         else
                         {	// in CRAMP, find crack crossing and appropriate velocity field
                             CrackField cfld[2];

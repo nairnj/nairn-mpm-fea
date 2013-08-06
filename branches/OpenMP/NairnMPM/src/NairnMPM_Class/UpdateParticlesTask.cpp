@@ -76,8 +76,9 @@ void UpdateParticlesTask::Execute(void)
 				const NodalPoint *ndptr = nd[nds[i]];
                 vfld = (short)mpmptr->vfld[i];
 				ndptr->IncrementDelvaTask5(vfld,matfld,fn[i],&delv,acc);
+                
                 //if(delv.x!=delv.x || delv.y!=delv.y || delv.z!=delv.z)
-                //{   cout << "bad material velocity field being read" << endl;
+                //{   cout << "\n# Bad material velocity field being read for vfld = " << vfld << endl;
                 //    ndptr->Describe();
                 //}
 				

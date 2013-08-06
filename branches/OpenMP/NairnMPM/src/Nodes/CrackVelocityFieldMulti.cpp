@@ -94,8 +94,7 @@ void CrackVelocityFieldMulti::CopyVolumeGradient(int matfld,Vector *grad)
 }
 
 // Count number of materials in each crack velocity field on this node
-// Sum mass in an fields and return the result
-// Get mass only of non-rigid materials, but count rigid materials in number of materials
+// Sum mass (only of non-rigid materials) and return the result
 double CrackVelocityFieldMulti::GetTotalMassAndCount(void)
 {	int i;
 	double mass=0.;
@@ -109,79 +108,45 @@ double CrackVelocityFieldMulti::GetTotalMassAndCount(void)
 	return mass;
 }
 
-// copy rigid material from another velocity field (cvfm) and add to mvf[rigidFieldNum] in this cvf
-// This is only called if COMBINE_RIGID_MATERIALS is defined
-// throws CommoneException() in more than one rigid material type
-void CrackVelocityFieldMulti::CombineRigidFrom(CrackVelocityFieldMulti *cvfm,int rigidFieldNum)
-{
-	// get other field, exit if none, or error if different one
-	int otherRigidNum;
-	MatVelocityField *rmvf=cvfm->GetRigidMaterialField(&otherRigidNum);
-	if(rmvf==NULL) return;
-	if(otherRigidNum!=rigidFieldNum)
-		throw CommonException("Two different rigid materials on the same node","CrackVelocityFieldMulti::MaterialContact");
-	
-	// add number of rigid points and total points this crack velocity field
-	numberRigidPoints+=rmvf->numberPoints;
-	numberPoints+=rmvf->numberPoints;
-	
-	// add unscaled volume to this crack velocity field (deprecated, need to fix)
-	//unscaledRigidVolume+=cvfm->UnscaledVolumeRigid();
-	
-	// sum momentum, displacement, and mass grad (velocity is same) into material velocity field
-	mvf[rigidFieldNum]->numberPoints+=rmvf->numberPoints;
-	AddVector(&mvf[rigidFieldNum]->pk,&rmvf->pk);
-	AddVector(&mvf[rigidFieldNum]->disp,&rmvf->disp);
-	AddVector(mvf[rigidFieldNum]->volumeGrad,rmvf->volumeGrad);
-}
+#ifdef COMBINE_RIGID_MATERIALS
 
-// Copy rigid material from another velocity field (cvfm) to this field (creating if needed)
-// This is only called if COMBINE_RIGID_MATERIALS is defined
+// Copy rigid material from field [0] to this field (creating if needed)
+// This is only called when rigid material extrapolate to all crack fields, and this is only possible
+//      when has cracks, is multimaterial mode, AND has rigid particles
 // throws CommonException on material velocity allocation memory error
-void CrackVelocityFieldMulti::CopyRigidFrom(CrackVelocityFieldMulti *cvfm,int rigidFieldNum)
+void CrackVelocityFieldMulti::CopyRigidFrom(MatVelocityField *rmvf,int rigidFieldNum)
 {	
-	/*
-	// create only if already in this field
-	if(mvf[rigidFieldNum]==NULL) return;
-	if(mvf[rigidFieldNum]->numberPoints==0) return;
-	
-	// current valiues
-	int initialRigidPoints=mvf[rigidFieldNum]->numberPoints;
-	unscaledRigidVolume-=UnscaledVolumeRigid();
-	*/
-	
-	// create material field if needed
-	int initialRigidPoints=0;
-	//double initialRigidVolume=0.;
+	// create material field in this crack velocity field if needed, otherwise, just be sure it is zeroed.
 	if(mvf[rigidFieldNum]==NULL)
-	{	mvf[rigidFieldNum]=new MatVelocityField(TRUE);
+	{	mvf[rigidFieldNum] = new MatVelocityField(TRUE);
 		if(mvf[rigidFieldNum]==NULL) throw CommonException("Memory error allocating material velocity field.",
 													"CrackVelocityFieldMulti::CopyRigidFrom");
-		numberMaterials++;					// just added a material to this crack velocity field
 	}
 	else
-	{	initialRigidPoints=mvf[rigidFieldNum]->numberPoints;
-		// initialRigidVolume=UnscaledVolumeRigid(); deprecated need to fix
-		if(initialRigidPoints==0) numberMaterials++;
+    {   mvf[rigidFieldNum]->rigidField = FALSE;
+		mvf[rigidFieldNum]->Zero();
+        mvf[rigidFieldNum]->rigidField = TRUE;
 	}
 	
-	// reference to source field
-	MatVelocityField *rmvf = cvfm->mvf[rigidFieldNum];
-	
 	// add number rigid points this crack velocity field
-	numberRigidPoints += rmvf->numberPoints-initialRigidPoints;
-	numberPoints += rmvf->numberPoints-initialRigidPoints;
+	numberRigidPoints += rmvf->numberPoints;
+	numberPoints += rmvf->numberPoints;
 	
-	// add unscaled volume to this crack velocity field (may be wrong due to recent change in unscaled volumes)
-	//unscaledRigidVolume+=cvfm->UnscaledVolumeRigid()-initialRigidVolume; deprecated need to fix
-	
-	// copy momentum, displacement, and mass grad (velocity is same) into material velocity field
-	mvf[rigidFieldNum]->numberPoints = rmvf->numberPoints;
-	CopyVector(&mvf[rigidFieldNum]->pk,&rmvf->pk);
-    mvf[rigidFieldNum]->SetVelocity(rmvf->GetVelocityPtr());
+	// copy all extrapolated items
+    
+    // momentum, number of points, and velocity (if needed)
+    mvf[rigidFieldNum]->AddMomentumTask1(&rmvf->pk,rmvf->GetVelocityPtr(),rmvf->numberPoints);
+    
+    // mass and volume
+	mvf[rigidFieldNum]->mass = rmvf->mass;
+	mvf[rigidFieldNum]->AddContactVolume(rmvf->GetContactVolume());
+    
+    // displacement and volume gradient
 	CopyVector(&mvf[rigidFieldNum]->disp,&rmvf->disp);
 	CopyVector(mvf[rigidFieldNum]->volumeGrad,rmvf->volumeGrad);
 }
+
+#endif
 	
 // Copy mass and momentum from ghost node to real node
 void CrackVelocityFieldMulti::CopyMassAndMomentum(NodalPoint *real,int vfld)
@@ -1365,7 +1330,6 @@ void CrackVelocityFieldMulti::SumAndClearRigidContactForces(Vector *fcontact,boo
 }
 
 // get first active rigid field or return NULL. Also return number in rigidFieldNum
-// This is only called if COMBINE_RIGID_MATERIALS is defined
 MatVelocityField *CrackVelocityFieldMulti::GetRigidMaterialField(int *rigidFieldNum)
 {
 	// if none return NULL
