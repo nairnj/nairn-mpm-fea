@@ -38,10 +38,11 @@ EndHeader! ------------ Parameters ---------------
 ! bistable, viscoelastic, hill, wood
 #matID="isoplasticity"
 #angle=0					! material angle for anisotopic materials
+#matID="WPC-PE"
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2, JohnsonCook
-#hardID="Linear"
+#hardID="Nonlinear"
 
 ! rotate sample to test off-grid loading (2D only)
 #rotate=0
@@ -83,7 +84,7 @@ StressFreeTemp 294
 ! Load by strain (estimated for force and traction loads)
 #loading="rigid"	! Loading = "force", "traction", "rigid", "contact", "thermal"
 #fixsides="no"		! "yes" or "no" for sides fix in y direction (2D) or y and z (3D)
-#strain=3	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
+#strain=6	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
 
 ! Loading rate
 #tmult=40			! number of transit times to load peak
@@ -175,6 +176,20 @@ if #matID="isotropic"
     rho #rho
   Done
 endif
+
+if #matID="WPC-PE"
+  Material "WPC-PE","PE","IsoPlasticity"
+    E #Ebase
+    nu .33
+    a 60
+    rho 1.0
+    hardening "Nonlinear2"
+    yield 3.9
+    Khard #khard
+    nhard #nhard
+  Done
+endif
+
 
 if #matID="isoplasticity"
   Material "isoplasticity","Isotropic Elastic-Plastic Material","IsoPlasticity"
