@@ -20,6 +20,7 @@ NodalVelBC *reuseRigidVelocityBC=NULL;
 #pragma mark NodalVelBC::Constructors and Destructors
 
 // MPM Constructors
+// Warning: dof must be Z_DIRECTION_INPUT (=4) to get Z axis velocity and not Z_DIRECTION (=3)
 NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTime,double ang1,double ang2)
 		: BoundaryCondition(setStyle,velocity,argTime)
 {

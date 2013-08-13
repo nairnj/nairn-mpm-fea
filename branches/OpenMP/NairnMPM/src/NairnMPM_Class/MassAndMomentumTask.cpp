@@ -360,7 +360,8 @@ void MassAndMomentumTask::SetRigidBCs(int mi,int type,double value,double angle,
 			if(*reuseRigidBC!=NULL)
 				newBC=(*reuseRigidBC)->SetRigidProperties(mi,type,CONSTANT_VALUE,value);
 			else
-			{	newBC=(BoundaryCondition *)(new NodalVelBC(mi,type,CONSTANT_VALUE,value,(double)0.,(double)0.,(double)0.));
+            {   int newType = type == Z_DIRECTION ? Z_DIRECTION_INPUT : type ;
+				newBC=(BoundaryCondition *)(new NodalVelBC(mi,newType,CONSTANT_VALUE,value,(double)0.,(double)0.,(double)0.));
 				if(newBC==NULL) throw CommonException("Memory error allocating rigid particle boundary condition.",
 													  "NairnMPM::SetRigidBCs");
 			}

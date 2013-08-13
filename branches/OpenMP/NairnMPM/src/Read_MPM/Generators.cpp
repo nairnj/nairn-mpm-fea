@@ -1375,7 +1375,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 		int node = rank*mpmgrid.zplane + 1;
 		for(i=0;i<mpmgrid.zplane;i++)
 		{	// create zero x (or r) velocity starting at time 0 on the symmetry plane
-			NodalVelBC *newVelBC=new NodalVelBC(node,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+			NodalVelBC *newVelBC=new NodalVelBC(node,Z_DIRECTION_INPUT,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
 			nd[node]->SetFixedDirection(ZSYMMETRYPLANE_DIRECTION);
 			
 			// add to linked list
@@ -1393,7 +1393,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 			// create neighboring BC for zero z (might be better to implement Jim's symmetry BC here)
 			int neighbor = node + symdir*mpmgrid.zplane;
 			if(neighbor>0 && neighbor<=nnodes)
-			{	newVelBC=new NodalVelBC(neighbor,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+			{	newVelBC=new NodalVelBC(neighbor,Z_DIRECTION_INPUT,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
 				
 				// link at the end
 				lastVelocityBC->SetNextObject(newVelBC);

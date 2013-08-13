@@ -54,12 +54,6 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 	//   and using the velocity field for that particle with each node
     for(i=1;i<=numnds;i++)
 	{	vel=nd[nds[i]]->GetVelocity((short)vfld[i],matFld);
-#ifdef CHECK_NAN
-        if(fabs(vel.z)>5000.)
-        {   nd[nds[i]]->Describe();
-            throw CommonException("high velocity","");
-        }
-#endif
         dv += Matrix3(vel.x,vel.y,vel.z,xDeriv[i],yDeriv[i],zDeriv[i]);
     }
 	    
