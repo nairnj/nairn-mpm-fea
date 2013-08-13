@@ -1139,7 +1139,8 @@ Vector NodalPoint::GetTotalContactForce(bool clearForces)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
 			cvf[i]->SumAndClearRigidContactForces(&fcontact,clearForces);
 	}
-	double scale=-1.e-6/timestep;
+	double scale = -1.e-6/timestep;
+	if(fmobj->dflag[2]==3) scale = -1.e-6;
 	fcontact.x*=scale;
 	fcontact.y*=scale;
 	fcontact.z*=scale;

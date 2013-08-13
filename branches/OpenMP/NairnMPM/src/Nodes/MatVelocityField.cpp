@@ -154,6 +154,14 @@ void MatVelocityField::AddContactForce(Vector *delP)
 	ftot.z += delP->z;
 }
 
+// Find contact foce on a rigid field by summing internal forces of non-rigid
+// material velocity fields
+void MatVelocityField::AddContactForceUsingFint(Vector *fint)
+{	ftot.x += fint->x;
+	ftot.y += fint->y;
+	ftot.z += fint->z;
+}
+
 // Calculate velocity at a node from current momentum and mass matrix in all velocity fields
 // Velocity is mm/sec
 void MatVelocityField::CalcVelocityForStrainUpdate(void)
