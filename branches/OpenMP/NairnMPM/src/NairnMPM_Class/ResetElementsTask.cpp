@@ -68,7 +68,7 @@ void ResetElementsTask::Execute(void)
 							if(resetErr==NULL)
 							{	mptr->Describe();
 								char errMsg[100];
-								sprintf(errMsg,"Particle has left the grid\n  (plot x displacement to see it).");
+								sprintf(errMsg,"Too many particles have left the grid\n  (plot x displacement to see last one).");
 								mptr->origpos.x=-1.e6;
 								resetErr = new CommonException(errMsg,"ResetElementsTask::Execute");
 								throw *resetErr;

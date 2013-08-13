@@ -615,7 +615,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	{	// use default setting to quit if 1% of particle leave the grid
 		warnParticleLeftGrid = nmpms/100;
 	}
-	warnParticleLeftGrid=warnings.CreateWarning("particle has left the grid",warnParticleLeftGrid,0);
+	warnParticleLeftGrid=warnings.CreateWarning("particle has left the grid warning",warnParticleLeftGrid,0);
 	
 	// nodal point calculations
 	NodalPoint::PreliminaryCalcs();

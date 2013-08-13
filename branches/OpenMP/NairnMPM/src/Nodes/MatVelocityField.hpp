@@ -45,7 +45,6 @@ class MatVelocityField
 		void CopyGridForces(NodalPoint *,int,int);
 		void ChangeMatMomentum(Vector *,bool,double);
 		void AddContactForce(Vector *);
-		void AddContactForceUsingFint(Vector *);
 		void CalcVelocityForStrainUpdate(void);
 		void AddGridDampingTask3(double);
         void AddFtot(Vector *);

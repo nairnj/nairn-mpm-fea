@@ -133,7 +133,7 @@ void MPMWarnings::Report(void)
 		}
 		
 		// this warning
-		cout << "The warning '" << warn->msg << "' occured on " << warn->numSteps << " time steps." << endl;
+		cout << "The warning '" << warn->msg << "' occurred on " << warn->numSteps << " time steps." << endl;
         cout << "   First such warning warning was on step " << warn->firstStep << endl;
         cout << "   Total number of warnings was " << warn->numWarnings << endl;
         cout << endl;

@@ -215,7 +215,7 @@ int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
     }
 
     catch(const XMLException& toCatch)
-    {   cerr << "\nAn error occured while initializing Xerces: "
+    {   cerr << "\nAn error occurred while initializing Xerces: "
             << StrX(toCatch.getMessage()) << endl;
         return XercesInitErr;
     }

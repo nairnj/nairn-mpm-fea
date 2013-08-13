@@ -124,7 +124,7 @@ void MatVelocityField::CopyMassAndMomentumLast(NodalPoint *real,int vfld,int mat
 	}
 }
 
-// Copy grid forces ghost node to the real node (nonrigid only)
+// Copy grid forces from this ghost node to the real node (nonrigid only)
 void MatVelocityField::CopyGridForces(NodalPoint *real,int vfld,int matfld)
 {	
 	// skip if none
@@ -152,14 +152,6 @@ void MatVelocityField::AddContactForce(Vector *delP)
 {	ftot.x += delP->x;
 	ftot.y += delP->y;
 	ftot.z += delP->z;
-}
-
-// Find contact foce on a rigid field by summing internal forces of non-rigid
-// material velocity fields
-void MatVelocityField::AddContactForceUsingFint(Vector *fint)
-{	ftot.x += fint->x;
-	ftot.y += fint->y;
-	ftot.z += fint->z;
 }
 
 // Calculate velocity at a node from current momentum and mass matrix in all velocity fields
