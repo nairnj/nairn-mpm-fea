@@ -203,7 +203,7 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,dou
 		
         // law not valid if denominator passes zero
         if(denom<0)
-        {   cout << "#Excessive x = " << x << endl;
+        {   cout << "# Excessive x = " << x << endl;
             mptr->Describe();
         }
         

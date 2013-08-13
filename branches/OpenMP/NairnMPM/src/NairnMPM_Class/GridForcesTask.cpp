@@ -97,6 +97,12 @@ void GridForcesTask::Execute(void)
                     ndptr = GetNodePointer(pn,nds[i]);
 					ndptr->AddFtotTask3(vfld,matfld,&theFrc);
 					
+#ifdef CHECK_NAN
+                    if(theFrc.x!=theFrc.x || theFrc.y!=theFrc.y || theFrc.z!=theFrc.z)
+                    {   cout << "\n# GridForcesTask::Execute: bad nodal force vfld = " << vfld << ", matfld = " << matfld << endl;
+                        ndptr->Describe();
+                    }
+#endif
 					// transport forces
 					TransportTask *nextTransport=transportTasks;
 					while(nextTransport!=NULL)

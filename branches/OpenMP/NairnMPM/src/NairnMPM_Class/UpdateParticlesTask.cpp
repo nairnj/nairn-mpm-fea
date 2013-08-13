@@ -76,11 +76,13 @@ void UpdateParticlesTask::Execute(void)
 				const NodalPoint *ndptr = nd[nds[i]];
                 vfld = (short)mpmptr->vfld[i];
 				ndptr->IncrementDelvaTask5(vfld,matfld,fn[i],&delv,acc);
-                
-                //if(delv.x!=delv.x || delv.y!=delv.y || delv.z!=delv.z)
-                //{   cout << "\n# Bad material velocity field being read for vfld = " << vfld << endl;
-                //    ndptr->Describe();
-                //}
+
+#ifdef CHECK_NAN
+                if(delv.x!=delv.x || delv.y!=delv.y || delv.z!=delv.z)
+                {   cout << "\n# UpdateParticlesTask::Execute: bad material velocity field for vfld = " << vfld << endl;
+                    ndptr->Describe();
+                }
+#endif
 				
 				// increment transport rates
 				nextTransport=transportTasks;

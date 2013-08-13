@@ -90,7 +90,7 @@ void MassAndMomentumTask::Execute(void)
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
     int nds[maxShapeNodes];
     
-    // Set rigid BC contact material velocities first (so loop can be parallel when rest is ready)
+    // Set rigid BC contact material velocities first (so loop can be parallel)
 	// GetVectorSetting() uses globals and therefore can't be parallel
     if(nmpmsRC>nmpmsNR)
     {   Vector newvel;
