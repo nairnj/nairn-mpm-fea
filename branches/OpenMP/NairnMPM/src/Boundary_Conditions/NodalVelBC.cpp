@@ -259,9 +259,11 @@ NodalVelBC *NodalVelBC::SuperposeFtotDirection(double mstime)
 	return (NodalVelBC *)GetNextObject();
 }
 
-// when getting total reaction force, add freaction to inptu vector
-NodalVelBC *NodalVelBC::AddReactionForce(Vector *totalReaction)
-{	AddVector(totalReaction,&freaction);
+// when getting total reaction force, add freaction to input vector
+// if matchID==0 include it, otherwise include only in matchID equals bcID
+NodalVelBC *NodalVelBC::AddReactionForce(Vector *totalReaction,int matchID)
+{	if(bcID==matchID || matchID==0)
+		AddVector(totalReaction,&freaction);
 	return (NodalVelBC *)GetNextObject();
 }
 
@@ -362,9 +364,10 @@ void NodalVelBC::ConsistentGridForces(void)
 
 /**********************************************************
 	Sum all reaction forces for all velocity BCs
+	If ID is not zero, only includes those with matching ID
 	Result is in micro Newtons
 */
-Vector NodalVelBC::TotalReactionForce(void)
+Vector NodalVelBC::TotalReactionForce(int matchID)
 {
 	Vector reactionTotal;
 	ZeroVector(&reactionTotal);
@@ -372,7 +375,7 @@ Vector NodalVelBC::TotalReactionForce(void)
     
     // First restore initial nodal values
     while(nextBC!=NULL)
-		nextBC=nextBC->AddReactionForce(&reactionTotal);
+		nextBC=nextBC->AddReactionForce(&reactionTotal,matchID);
 	
 	return reactionTotal;
 }

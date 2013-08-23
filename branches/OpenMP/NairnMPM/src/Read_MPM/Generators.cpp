@@ -533,7 +533,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		if(!theShape->RequiredBlock(GRIDBCHEADER))
 			ValidateCommand(xName,BAD_BLOCK,ANY_DIM);
         double dispvel=0.0,ftime=0.0,angle=0.,angle2=0.;
-		int dof=0,style=CONSTANT_VALUE;
+		int dof=0,style=CONSTANT_VALUE,velID=0;
 		char *function=NULL;
         numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
@@ -556,6 +556,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 				function=new char[strlen(value)+1];
 				strcpy(function,value);
 			}
+            else if(strcmp(aName,"id")==0)
+                sscanf(value,"%d",&velID);
             delete [] aName;
             delete [] value;
         }
@@ -583,6 +585,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		while((i=theShape->nextNode()))
 		{	NodalVelBC *newVelBC=new NodalVelBC(nd[i]->num,dof,style,dispvel,ftime,angle,angle2);
 			newVelBC->SetFunction(function);
+			newVelBC->SetID(velID);
 			velocityBCs->AddObject(newVelBC);
 		}
 		if(function!=NULL) delete [] function;
@@ -1292,7 +1295,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 		lastVelocityBC = NULL;
 	}
 	
-	// create new ones at end of the list, with special case for eaxh axis
+	// create new ones at end of the list, with special case for each axis
 	if(axis==X_DIRECTION)
 	{	int node = int((gridsym-gridmin)/gridsize+.1) + 1;
 		while(node<=nnodes)

@@ -28,6 +28,7 @@ BoundaryCondition::BoundaryCondition(int bcStyle,double bcValue,double bcTime)
 	offset=0.;
 	function=NULL;
 	scale=1.;				// scale function calculation only
+	bcID=0;
 }
 
 // Reuse Rigid properties (subclass set other properties) and return this for calling function use
@@ -36,6 +37,7 @@ BoundaryCondition *BoundaryCondition::SetRigidProperties(int num,int dof,int bcS
     style=bcStyle;
     value=bcValue;
 	ftime=0.;
+	bcID=0.;
 	return (BoundaryCondition *)this;
 }
 
@@ -160,5 +162,10 @@ void BoundaryCondition::GetPosition(double *xpos,double *ypos,double *zpos,doubl
 	*zpos=nd[i]->z;
 	*rot=0.;
 }
+
+// Boundary condition ID may be used for some purpose by certain conditions
+// Be sure to set it whenever create or reuse a boundary conditions
+int BoundaryCondition::GetID(void) { return bcID; }
+void BoundaryCondition::SetID(int newID) { bcID = newID; }
 
 

@@ -182,7 +182,8 @@ void MassAndMomentumTask::Execute(void)
 	for(int p=nmpmsRC;p<nmpms;p++)
 	{	MPMBase *mpmptr = mpm[p];										// pointer
 		
-		const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
+		int matid0 = mpmptr->MatID();
+		const MaterialBase *matID = theMaterials[matid0];				// material object for this particle
 		RigidMaterial *rigid=(RigidMaterial *)matID;
 
 		const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
@@ -200,19 +201,19 @@ void MassAndMomentumTask::Execute(void)
 			{   // velocity set by 1 to 3 functions as determined by hasDir[i]
 				if(hasDir[0])
 				{	mpmptr->vel.x = rvel.x;
-					SetRigidBCs(mi,X_DIRECTION,rvel.x,0.,
+					SetRigidBCs(mi,matid0,X_DIRECTION,rvel.x,0.,
 							(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 							(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
 				if(hasDir[1])
 				{	mpmptr->vel.y = rvel.y;
-					SetRigidBCs(mi,Y_DIRECTION,rvel.y,0.,
+					SetRigidBCs(mi,matid0,Y_DIRECTION,rvel.y,0.,
 								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
 				if(hasDir[2])
 				{	mpmptr->vel.z = rvel.z;
-					SetRigidBCs(mi,Z_DIRECTION,rvel.z,0.,
+					SetRigidBCs(mi,matid0,Z_DIRECTION,rvel.z,0.,
 								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
@@ -220,17 +221,17 @@ void MassAndMomentumTask::Execute(void)
 			else
 			{   // velocity set by particle velocity in selected directions
 				if(rigid->RigidDirection(X_DIRECTION))
-				{	SetRigidBCs(mi,X_DIRECTION,mpmptr->vel.x,0.,
+				{	SetRigidBCs(mi,matid0,X_DIRECTION,mpmptr->vel.x,0.,
 									(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 									(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
 				if(rigid->RigidDirection(Y_DIRECTION))
-				{	SetRigidBCs(mi,Y_DIRECTION,mpmptr->vel.y,0.,
+				{	SetRigidBCs(mi,matid0,Y_DIRECTION,mpmptr->vel.y,0.,
 								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
 				if(rigid->RigidDirection(Z_DIRECTION))
-				{	SetRigidBCs(mi,Z_DIRECTION,mpmptr->vel.z,0.,
+				{	SetRigidBCs(mi,matid0,Z_DIRECTION,mpmptr->vel.z,0.,
 								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
@@ -239,7 +240,7 @@ void MassAndMomentumTask::Execute(void)
 			// temperature
 			if(rigid->RigidTemperature())
 			{	if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pTemperature=rvalue;
-				SetRigidBCs(mi,TEMP_DIRECTION,mpmptr->pTemperature,0.,
+				SetRigidBCs(mi,matid0,TEMP_DIRECTION,mpmptr->pTemperature,0.,
 							(BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,
 							(BoundaryCondition **)&firstRigidTempBC,(BoundaryCondition **)&reuseRigidTempBC);
 			}
@@ -247,7 +248,7 @@ void MassAndMomentumTask::Execute(void)
 			// concentration
 			if(rigid->RigidConcentration())
 			{	if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pConcentration=rvalue;
-				SetRigidBCs(mi,CONC_DIRECTION,mpmptr->pConcentration,0.,
+				SetRigidBCs(mi,matid0,CONC_DIRECTION,mpmptr->pConcentration,0.,
 							(BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,
 							(BoundaryCondition **)&firstRigidConcBC,(BoundaryCondition **)&reuseRigidConcBC);
 			}
@@ -343,7 +344,7 @@ void MassAndMomentumTask::Execute(void)
 }
 
 // Set boundary conditions determined by moving rigid paticles
-void MassAndMomentumTask::SetRigidBCs(int mi,int type,double value,double angle,BoundaryCondition **firstBC,
+void MassAndMomentumTask::SetRigidBCs(int mi,int matid0,int type,double value,double angle,BoundaryCondition **firstBC,
 						   BoundaryCondition **lastBC,BoundaryCondition **firstRigidBC,BoundaryCondition **reuseRigidBC)
 {
 	BoundaryCondition *newBC=NULL;
@@ -389,7 +390,11 @@ void MassAndMomentumTask::SetRigidBCs(int mi,int type,double value,double angle,
 			
 		default:
 			break;
+		
 	}
+	
+	// set BC id in case needed to 1-based material number
+	newBC->SetID(matid0+1);
 	
 	// *firstBC and *lastBC are first and last of this type
 	// *firstRigidBC will save the first one

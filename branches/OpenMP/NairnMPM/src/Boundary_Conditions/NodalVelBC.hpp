@@ -41,7 +41,7 @@ class NodalVelBC : public BoundaryCondition
 		NodalVelBC *SetGhostVelBC(double);
 		NodalVelBC *InitFtotDirection(double);
 		NodalVelBC *SuperposeFtotDirection(double);
-		NodalVelBC *AddReactionForce(Vector *);
+		NodalVelBC *AddReactionForce(Vector *,int);
         int ConvertToDirectionBits(int);
         void SetNormalVector(void);
         int ConvertToInputDof(void);
@@ -49,7 +49,7 @@ class NodalVelBC : public BoundaryCondition
 		// class methods
 		static void GridMomentumConditions(int);
 		static void ConsistentGridForces(void);
-		static Vector TotalReactionForce(void);
+		static Vector TotalReactionForce(int);
 	
 	protected:
 		double currentValue;

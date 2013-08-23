@@ -77,11 +77,14 @@ class BoundaryCondition : public LinkedObject
 		virtual char *GetFunctionString(void);
 		virtual void PrintFunction(ostream &);
 		virtual void GetPosition(double *,double *,double *,double *);
+		int GetID(void);
+		void SetID(int);
 	
 	protected:
 		ROperation *function;
 		static double varTime,varXValue,varYValue,varZValue,varRotValue;
 		double scale;
+		int bcID;
 };
 
 #endif

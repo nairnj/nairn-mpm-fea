@@ -21,7 +21,7 @@ XMLData MPMHeader
 EndXMLData
 
 ! pick a method usually "lCPDI" or "uGIMP"
-#method="uGIMP"
+#method="lCPDI"
 
 ! pick strain update method usually "USF" or "USAVG"
 #update="USF"
@@ -56,7 +56,7 @@ StressFreeTemp 294
 #strain=-10	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
 
 ! Loading rate
-#tmult=160			! number of transit times to load peak
+#tmult=40			! number of transit times to load peak
 #hold=0				! hold time (multiple of loading time)
 #unload=0		    ! 0 no unload or >0 for unloading time (multiple of loading time, but at same loading rate)
 
@@ -234,6 +234,11 @@ if #loading="contact"
   if #analysis="3D MPM"
     GlobalArchive "contactz"
   endif
+  GlobalArchive "reactionx"
+  GlobalArchive "reactiony"
+else if #loading="rigid"
+  GlobalArchive "reactionx","rigid"
+  GlobalArchive "reactiony","rigid"
   GlobalArchive "reactionx"
   GlobalArchive "reactiony"
 endif

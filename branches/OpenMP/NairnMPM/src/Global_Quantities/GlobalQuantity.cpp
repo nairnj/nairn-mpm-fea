@@ -546,7 +546,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 		case TOT_REACTX:
 		case TOT_REACTY:
 		case TOT_REACTZ:
-		{	Vector freaction = NodalVelBC::TotalReactionForce();
+		{	// find force for BCs with provided ID
+			Vector freaction = NodalVelBC::TotalReactionForce(whichMat);
+			
 			// pick the component
 			if(quantity==TOT_REACTX)
 				value = 1.e-6*freaction.x;
