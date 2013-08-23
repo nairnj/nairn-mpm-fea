@@ -156,7 +156,7 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
     else if(strcmp(xName,"color")==0)
     {	if(block!=MATERIAL)
 			throw SAXException("<color> must be within a <Material> definition.");
-		float redClr=-1.,greenClr=-1.,blueClr=-1.;
+		float redClr=-1.,greenClr=-1.,blueClr=-1.,alpha=1.;
 		char *aName,*value;
     	int i,numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
@@ -168,6 +168,8 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
                 sscanf(value,"%f",&greenClr);
             else if(strcmp(aName,"blue")==0)
                 sscanf(value,"%f",&blueClr);
+            else if(strcmp(aName,"alpha")==0)
+                sscanf(value,"%f",&alpha);
             delete [] aName;
             delete [] value;
         }
@@ -177,7 +179,9 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 			if(blueClr<0.) blueClr=redClr;
 			if(greenClr>1.) greenClr=1.;
 			if(blueClr>1.) blueClr=1.;
-			matCtrl->SetMatColor(redClr,greenClr,blueClr);
+            if(alpha<0.) alpha=0.;
+            if(alpha>1.) alpha=1.;
+			matCtrl->SetMatColor(redClr,greenClr,blueClr,alpha);
 		}
 	}
 	

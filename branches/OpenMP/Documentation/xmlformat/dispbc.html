@@ -157,7 +157,7 @@ calculations <code>'min'</code> and <code>'max'</code> will be limits of useable
 </p>
 
 <pre>
-   &lt;DisBC dir='1' vel='0' style='1' time='0.0' function='sin(t)'/&gt;
+   &lt;DisBC dir='1' vel='0' style='1' time='0.0' function='sin(t)' id='-1'/&gt;
 </pre>
 
 <p>where</p>
@@ -181,6 +181,9 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 <dd>When using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of time (<code>t</code> in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, <code>z</code>, <code>R</code>, <code>Z</code>, <code>D</code>, and <code>T</code> in mm). The function should evaluate to velocity in mm/s.
 </dd>
 
+<dt>id</dt>
+<dd>This attribute sets an <code>id</code> for the node that can be used to sum only forces on certain nodes when <a href="mpmheader.html#globalarchive">global archiving reaction forces</a>. It must be negative.</dd>
+
 </dl>
 
 <a name="skewed"></a><h2>Skewed Velocity Conditions</h2>
@@ -191,11 +194,18 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
    &lt;DisBC dir='12' vel='0' style='1' time='0.0' angle-'45' angle2='15'/&gt;
 </pre>
 
-<p>where</p>
+or
+
+<pre>
+   &lt;fix node='4' dof='12' style='1' time='0.0' angle-'45' angle2='15'&gt;velocity&lt;/fix&gt;
+</pre>
+
+
+<p>where the changes are</p>
 
 <dl>
-<dt>dir</dt>
-<dd>Defines two or three axes by combing <code>dir</code> options from above. It can only be <code>12</code> in 2D or axisymmetric, but can be <code>12</code>, <code>13</code>, <code>23</code>, or <code>123</code> in 3D. The numbers define the two axes in the plane of the direction or the combination <code>123</code> means velocity in any arbitrary polar direction.</dd>
+<dt>dir or dof</dt>
+<dd>Defines two or three axes. It can only be <code>12</code> in 2D or axisymmetric, but can be <code>12</code>, <code>13</code>, <code>23</code>, or <code>123</code> in 3D. The numbers define the two axes in the plane of the direction or the combination <code>123</code> means velocity in any arbitrary polar direction.</dd>
 
 <dt>angle</dt>
 <dd>The normal vector for the velocity direction is rotated clockwise by <code>angle</code> degrees from the first axis in a skew pair. In other words, <code>dir=12</code> applies velocity in the direction (cos(angle), -sin(angle), 0), <code>dir=13</code> applies velocity in the direction (cos(angle), 0, -sin(angle)), and <code>dir=23</code> applies velocity in the direction (0, cos(angle), -sin(angle)). For <code>dir=123</code>, <code>angle</code> is a polar angle as explained next in angle2.</dd>
@@ -295,7 +305,7 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 </p>
 
 <pre>
-   &lt;fix node='4' dof='1' style='1' time='0.0'&gt;velocity&lt;/fix&gt;
+   &lt;fix node='4' dof='1' style='1' time='0.0' id='-1'&gt;velocity&lt;/fix&gt;
 </pre>
 
 <p>where</p>
@@ -306,7 +316,7 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 </dd>
 
 <dt>dof</dt>
-<dd>Determines if the <code>x</code> direction (<code>dof=1</code>), the <code>y</code> direction (<code>dof=2</code>), the <code>z</code> direction (<code>dof=3</code>), the <code>R</code> direction when axisymetric (<code>dir=1</code>), or the <code>Z</code> direction when axisymmetric (<code>dir=2</code>) will have the specified velocity. You can also set velocity in a direction that is not along an axis. For details see help on <a href="#skewed">skewed velocity conditions</a>, which modifies the <code>dof</code> attriute (instead of <code>dir</code>) and adds <code>angle</code> and <code>angle2</code> attibutes to define the skew angle.
+<dd>Determines if the <code>x</code> direction (<code>dof=1</code>), the <code>y</code> direction (<code>dof=2</code>), the <code>z</code> direction (<code>dof=3</code>), the <code>R</code> direction when axisymetric (<code>dof=1</code>), or the <code>Z</code> direction when axisymmetric (<code>dof=2</code>) will have the specified velocity. You can also set velocity in a direction that is not along an axis. For details see help on <a href="#skewed">skewed velocity conditions</a>, which modifies the <code>dof</code> attribute and adds <code>angle</code> and <code>angle2</code> attibutes to define the skew angle.
 </dd>
 
 <dt>style</dt>
@@ -316,6 +326,10 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 <dt>time</dt>
 <dd>A time parameter used for various <a href="#style">styles</a> described in the next section. If this attribute is omitted, it is assumed to be 0.0.
 </dd>
+
+<dt>id</dt>
+<dd>This attribute sets an <code>id</code> for the node that can be used to sum only forces on certain nodes when <a href="mpmheader.html#globalarchive">global archiving reaction forces</a>. It must be negative.</dd>
+
 
 </dl>
 

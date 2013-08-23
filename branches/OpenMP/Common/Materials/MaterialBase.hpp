@@ -51,7 +51,7 @@ class MaterialBase : public LinkedObject
 		// constants (not changed in MPM time step)
         char *name;
         double rho,concSaturation,betaI;
-		float red,green,blue;
+		float red,green,blue,alpha;
 #ifdef FEA_CODE
 		ElasticProperties pr;
 #else

@@ -138,6 +138,7 @@ class NodalPoint : public LinkedObject
         void AddMomVel(Vector *,double);
         void SetFtotDirection(Vector *,double,Vector *);
         void AddFtotDirection(Vector *,double,double,Vector *);
+        Vector GetCMatMomentum(void);
 		void SetFixedDirection(int);
 		void UnsetFixedDirection(int);
 		void CalcTotalMassAndCount(void);

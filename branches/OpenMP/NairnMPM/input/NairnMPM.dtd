@@ -507,7 +507,8 @@
 <!ATTLIST	color
 			red CDATA #REQUIRED
 			green CDATA #IMPLIED
-			blue CDATA #IMPLIED>
+			blue CDATA #IMPLIED
+            alpha CDATA #IMPLIED>
 <!ELEMENT	betahard (#PCDATA)>
 <!ELEMENT	C0 (#PCDATA)>
 <!ELEMENT	S1 (#PCDATA)>
@@ -684,7 +685,8 @@
 			ftime CDATA #IMPLIED
 			angle CDATA #IMPLIED
 			angle2 CDATA #IMPLIED
-			function CDATA #IMPLIED>
+			function CDATA #IMPLIED
+            id CDATA #IMPLIED>
 
 <!ELEMENT	ConcBC EMPTY>
 <!ATTLIST	ConcBC
@@ -729,7 +731,8 @@
 			style (1|2|3|4|6) "1"
 			time CDATA #IMPLIED
 			angle CDATA #IMPLIED
-			angle2 CDATA #IMPLIED>
+			angle2 CDATA #IMPLIED
+            id CDATA #IMPLIED>
 
 <!ELEMENT	load (#PCDATA)>
 <!ATTLIST	load

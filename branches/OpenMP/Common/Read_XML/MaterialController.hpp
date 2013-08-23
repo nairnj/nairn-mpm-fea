@@ -31,7 +31,7 @@ class MaterialController : public ParseController
 		int AddMaterial(int,char *);
 		const char *SetMaterialArray(void);
 		char *InputPointer(char *,int &);
-		void SetMatColor(float,float,float);
+		void SetMatColor(float,float,float,float);
 #ifdef MPM_CODE
 		void SetCriterion(int,int);
 		void SetDirection(int,int);

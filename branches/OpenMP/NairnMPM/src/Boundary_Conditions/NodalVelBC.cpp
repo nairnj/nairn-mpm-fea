@@ -20,7 +20,8 @@ NodalVelBC *reuseRigidVelocityBC=NULL;
 #pragma mark NodalVelBC::Constructors and Destructors
 
 // MPM Constructors
-// Warning: dof must be Z_DIRECTION_INPUT (=4) to get Z axis velocity and not Z_DIRECTION (=3)
+// Warning: dof must be Z_DIRECTION_INPUT (=3) to get Z axis velocity and not Z_DIRECTION (=4)
+//          input numbers are 1,2,3,12,13,23,123
 NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTime,double ang1,double ang2)
 		: BoundaryCondition(setStyle,velocity,argTime)
 {
@@ -42,6 +43,7 @@ NodalVelBC::~NodalVelBC()
 }
 
 // Reuse Rigid properties
+// Warning: dof must be BC type and not input type
 BoundaryCondition *NodalVelBC::SetRigidProperties(int num,int dof,int setStyle,double velocity)
 {	// set dir and direction (cannot yet be skewed directions)
     angle1 = 0.;
@@ -49,7 +51,7 @@ BoundaryCondition *NodalVelBC::SetRigidProperties(int num,int dof,int setStyle,d
     dir = dof;                          // internal calls already have correct bit settings
     SetNormalVector();                  // get normal vector depending on dir and angles
     
-    // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
+    // old dir==0 was skewed condition, now do by setting two velocities, thus never 0 here
     nd[num]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
 	
 	// finish in base class (nodenum set there)
@@ -63,6 +65,7 @@ BoundaryCondition *NodalVelBC::UnsetDirection(void)
 }
 
 // convert input dof to dir as bits x=1, y=2, z=4
+// input options as 1,2,3,12,13,23,123 and changes to bitwise settings
 int NodalVelBC::ConvertToDirectionBits(int dof)
 {
     switch(dof)
@@ -80,11 +83,14 @@ int NodalVelBC::ConvertToDirectionBits(int dof)
         case XYZ_SKEWED_INPUT:
             return XYZ_SKEWED_DIRECTION;
         default:
+            throw CommonException("Invalid velocity input direction (should be 1,2,3,12,13,23, or 123).",
+                                  "NodalVelBC::ConvertToDirectionBits");
             return 0;
     }
 }
 
 // initialize mormal vector depending on direction bits
+// dir is 1 to 7 (3 axis bits can be set)
 void NodalVelBC::SetNormalVector(void)
 {
     switch(dir)
@@ -112,12 +118,15 @@ void NodalVelBC::SetNormalVector(void)
                               cos(PI_CONSTANT*angle1/180.));
             break;
         default:
+            throw CommonException("Invalid direction bits (should be 0x000 to 0x111).",
+                                  "NodalVelBC::SetNormalVector");
             break;
     }
 }
 
 
 // convert dir bits to input dof
+// only used with printing velocity BCs to output stream
 int NodalVelBC::ConvertToInputDof(void)
 {
     int dof = dir&X_DIRECTION ? 1 : 0;
@@ -247,7 +256,7 @@ NodalVelBC *NodalVelBC::InitFtotDirection(double mstime)
 	return (NodalVelBC *)GetNextObject();
 }
 
-// superpose x, y, or z velocity
+// superpose force in direction normal
 // add force for this BC to freaction
 NodalVelBC *NodalVelBC::SuperposeFtotDirection(double mstime)
 {	// set if has been activated

@@ -242,9 +242,10 @@ void MatVelocityField::AddMomentVelocityDirection(Vector *norm,double vel)
 }
 
 // Set component of Ftot to -p/dt in velocity BC direction (used by boundary conditions)
-// Ftot = (Ftot.norm) norm + (Ftot.tang) tang, but not we want
+// Ftot = (Ftot.norm) norm + (Ftot.tang) tang, but now we want
 // Ftotnew = -(pk.norm)/deltime norm + (Ftot.tang) tang
-// Ftotnew = Ftot - (Ftot.norm) norm -(pk.norm)/deltime norm
+// Ftotnew = Ftot - (Ftot.norm) norm - (pk.norm)/deltime norm
+// The reaction due to BC is -(pk.norm)/deltime norm
 //
 // Note that is have same norm on same node, the net result have first pass is
 //    Ftot1 = -(pk.norm)/deltime norm + (Ftot.tang) tang

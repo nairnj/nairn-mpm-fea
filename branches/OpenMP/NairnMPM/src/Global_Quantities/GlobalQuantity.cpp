@@ -162,7 +162,7 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 	}
 	
 	// set name
-	if(whichMat>0)
+	if(whichMat!=0)
 		sprintf(nameStr,"%s mat %d",quant,whichMat);
 	else
 		strcpy(nameStr,quant);

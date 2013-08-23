@@ -774,7 +774,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     else if(strcmp(xName,"fix")==0)
 	{	ValidateCommand(xName,FIXEDNODES,ANY_DIM);
     	int node=0;
-		int dof=0,style=CONSTANT_VALUE;
+		int dof=0,style=CONSTANT_VALUE,velID=0;;
         double ftime=0.,angle=0.,angle2=0.;
     	numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
@@ -792,6 +792,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
                 sscanf(value,"%lf",&angle);
             else if(strcmp(aName,"angle2")==0)
                 sscanf(value,"%lf",&angle2);
+            else if(strcmp(aName,"id")==0)
+                sscanf(value,"%d",&velID);
             delete [] aName;
             delete [] value;
         }
@@ -801,9 +803,13 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		}
         else if(dof!=1 && dof!=2 && dof!=12)
             throw SAXException("'dir' in fix element must be 1, 2, or 12 for 2D analyses.");
+        if(velID>0)
+            throw SAXException("'id' for velocity boundary conditions must be <= 0.");
         
         // create object and get input
+        // note that dof is input style (1,2,3,12,13,23, or 123)
         NodalVelBC *newVelBC=new NodalVelBC(node,dof,style,(double)0.,ftime,angle,angle2);
+        newVelBC->SetID(velID);
 		velocityBCs->AddObject(newVelBC);
 		
 		if(style!=FUNCTION_VALUE)

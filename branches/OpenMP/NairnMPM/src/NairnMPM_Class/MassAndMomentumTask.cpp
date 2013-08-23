@@ -171,6 +171,7 @@ void MassAndMomentumTask::Execute(void)
 	}
     	
 	// undo dynamic velocity, temp, and conc BCs from rigid materials
+    // and get pointer to first empty on in reuseRigid...BC
 	UnsetRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 				  (BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 	UnsetRigidBCs((BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,
@@ -361,7 +362,7 @@ void MassAndMomentumTask::SetRigidBCs(int mi,int matid0,int type,double value,do
 			if(*reuseRigidBC!=NULL)
 				newBC=(*reuseRigidBC)->SetRigidProperties(mi,type,CONSTANT_VALUE,value);
 			else
-            {   int newType = type == Z_DIRECTION ? Z_DIRECTION_INPUT : type ;
+            {   int newType = type==Z_DIRECTION ? Z_DIRECTION_INPUT : type ;
 				newBC=(BoundaryCondition *)(new NodalVelBC(mi,newType,CONSTANT_VALUE,value,(double)0.,(double)0.,(double)0.));
 				if(newBC==NULL) throw CommonException("Memory error allocating rigid particle boundary condition.",
 													  "NairnMPM::SetRigidBCs");
@@ -407,22 +408,22 @@ void MassAndMomentumTask::SetRigidBCs(int mi,int matid0,int type,double value,do
 	}
 	else
 	{	if(*reuseRigidBC!=NULL)
-	{	// next object of last BC is already set
-		// firstRigidBC is already valid
-		// advance to reuse next one (or could get to NULL if all used up)
-		*reuseRigidBC=(BoundaryCondition *)(*reuseRigidBC)->GetNextObject();
-	}
-	else
-	{	// created a new one or ran out of ones to reuse
-		(*lastBC)->SetNextObject(newBC);
-		if(*firstRigidBC==NULL) *firstRigidBC=newBC;
-	}
+        {	// next object of last BC is already set
+            // firstRigidBC is already valid
+            // advance to reuse next one (or could get to NULL if all used up)
+            *reuseRigidBC=(BoundaryCondition *)(*reuseRigidBC)->GetNextObject();
+        }
+        else
+        {	// created a new one or ran out of ones to reuse
+            (*lastBC)->SetNextObject(newBC);
+            if(*firstRigidBC==NULL) *firstRigidBC=newBC;
+        }
 	}
 	*lastBC=newBC;
 }
 
 // Remove any dynamically created boundary conditions
-// that are no longer needed
+//    that are no longer needed
 void MassAndMomentumTask::RemoveRigidBCs(BoundaryCondition **firstBC,BoundaryCondition **lastBC,BoundaryCondition **firstRigidBC)
 {
 	// exit if none
@@ -452,7 +453,8 @@ void MassAndMomentumTask::RemoveRigidBCs(BoundaryCondition **firstBC,BoundaryCon
 }
 
 // Unset nodal dof for rigid BCs so can try to reuse
-// them without needing new memory allocations
+//   them without needing new memory allocations
+// No rigid BCs are deleted and when done, reuseRigidBC is set to first empty on
 void MassAndMomentumTask::UnsetRigidBCs(BoundaryCondition **firstBC,BoundaryCondition **lastBC,
 							 BoundaryCondition **firstRigidBC,BoundaryCondition **reuseRigidBC)
 {

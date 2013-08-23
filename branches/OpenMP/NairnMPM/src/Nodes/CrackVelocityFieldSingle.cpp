@@ -99,7 +99,7 @@ void CrackVelocityFieldSingle::AddMomVel(Vector *norm,double vel)
         mvf[0]->AddMomentVelocityDirection(norm,vel);
 }
 
-// set one component of force to -p(interpolated)/time such that updated momentum
+// set force in direction norm to -p(interpolated)/time such that updated momentum
 //    of pk.i + deltime*ftot.i will be zero
 void CrackVelocityFieldSingle::SetFtotDirection(Vector *norm,double deltime,Vector *freaction)
 {	if(mvf[0]->numberPoints>0)

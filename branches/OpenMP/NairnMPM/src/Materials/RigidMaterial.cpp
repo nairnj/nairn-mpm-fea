@@ -231,7 +231,7 @@ void RigidMaterial::PrintMechanicalProperties(void) const
 	// optional color
 	if(red>=0.)
 	{	char mline[200];
-		sprintf(mline,"color= %g, %g, %g",red,green,blue);
+		sprintf(mline,"color= %g, %g, %g, %g",red,green,blue,alpha);
 		cout << mline << endl;
 	}
 }

@@ -1508,8 +1508,8 @@ void NodalPoint::AddMomVel(Vector *norm,double vel)
 #endif
 }
 
-// set one component of force to -p(interpolated)/time such that updated momentum
-//    of pk.i + deltime*ftot.i will be zero
+// set force in direction norm to -p(interpolated)/time such that updated momentum
+//    of pk.i + deltime*ftot.i will be zero in that direction
 void NodalPoint::SetFtotDirection(Vector *norm,double deltime,Vector *freaction)
 {	
 #ifdef _BC_CRACK_SIDE_ONLY_
@@ -1538,6 +1538,25 @@ void NodalPoint::AddFtotDirection(Vector *norm,double deltime,double vel,Vector 
 	}
 #endif
 }
+
+// get center of mass momentum for all nonrigid material fields in all crack velocity fields
+Vector NodalPoint::GetCMatMomentum(void)
+{	Vector pk;
+#ifdef _BC_CRACK_SIDE_ONLY_
+    pk = cvf[0]->GetCMatMomentum();
+#else
+	ZeroVector(&pk);
+	int i;
+	for(i=0;i<maxCrackFields;i++)
+	{   if(CrackVelocityField::ActiveField(cvf[i]))
+        {   Vector cpk = cvf[i]->GetCMatMomentum();
+            AddVector(&pk,&cpk);
+        }
+	}
+#endif
+    return pk;
+}
+
 
 // Mark a direction as fixed by velocity BC
 // Assume 1 means x, 2 means y, 4 means z

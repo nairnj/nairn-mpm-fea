@@ -902,7 +902,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 			if(fixedDirection&Y_DIRECTION) delPi.y=0.;
 			if(fixedDirection&Z_DIRECTION) delPi.z=0.;
 		}
-		
+        
 		// change momenta
 		mvf[i]->ChangeMatMomentum(&delPi,postUpdate,deltime);
 		
@@ -1201,8 +1201,8 @@ void CrackVelocityFieldMulti::AddMomVel(Vector *norm,double vel)
     }
 }
 
-// set one component of force to -p(interpolated)/time such that updated momentum
-//    of pk.i + deltime*ftot.i will be zero
+// set force in direction norm to -p(interpolated)/time such that updated momentum
+//    of pk.i + deltime*ftot.i will be zero along norm
 void CrackVelocityFieldMulti::SetFtotDirection(Vector *norm,double deltime,Vector *freaction)
 {	int i;
     for(i=0;i<maxMaterialFields;i++)

@@ -209,10 +209,11 @@ char *MaterialController::InputPointer(char *property,int &input)
 }
 
 // set material color (optional)
-void MaterialController::SetMatColor(float red,float green,float blue)
+void MaterialController::SetMatColor(float red,float green,float blue,float alpha)
 {	((MaterialBase *)lastObject)->red=red;
 	((MaterialBase *)lastObject)->green=green;
 	((MaterialBase *)lastObject)->blue=blue;
+	((MaterialBase *)lastObject)->alpha=alpha;
 }
 
 #ifdef MPM_CODE

@@ -567,6 +567,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		}
         else if(dof!=1 && dof!=2 && dof!=12)
             throw SAXException("'dir' in DisBC element must be 1, 2, or 12 for 2D analyses.");
+        if(velID>0)
+            throw SAXException("'id' for velocity boundary conditions must be <= 0.");
 		
 		// convert some to single axis
 		if(dof>10)
@@ -581,6 +583,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		}
         
         // check all nodes
+        // note that dof is input style (1,2,3,12,13,23, or 123)
 		theShape->resetNodeEnumerator();
 		while((i=theShape->nextNode()))
 		{	NodalVelBC *newVelBC=new NodalVelBC(nd[i]->num,dof,style,dispvel,ftime,angle,angle2);
@@ -1373,6 +1376,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 		}
 	}
 	
+    // must convert dof to Z_DIRECTION_INPUT when create nodal velocity BC
 	if(axis==Z_DIRECTION)
 	{	int rank = int((gridsym-gridmin)/gridsize+.1);			// zero based
 		int node = rank*mpmgrid.zplane + 1;
