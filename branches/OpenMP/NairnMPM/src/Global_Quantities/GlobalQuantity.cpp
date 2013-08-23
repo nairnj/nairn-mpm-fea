@@ -19,6 +19,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "System/ArchiveData.hpp"
+#include "Boundary_Conditions/NodalVelBC.hpp"
 
 // Single global contact law object
 GlobalQuantity *firstGlobal=NULL;
@@ -140,6 +141,12 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 		quantity=TOT_FCONY;
 	else if(strcmp(quant,"contactz")==0)
 		quantity=TOT_FCONZ;
+	else if(strcmp(quant,"reactionx")==0 || strcmp(quant,"reactionR")==0)
+		quantity=TOT_REACTX;
+	else if(strcmp(quant,"reactiony")==0 || strcmp(quant,"reactionZ")==0)
+		quantity=TOT_REACTY;
+	else if(strcmp(quant,"reactionz")==0)
+		quantity=TOT_REACTZ;
 	else
 	{	quantity=UNKNOWN_QUANTITY;
 	
@@ -533,6 +540,20 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 				value=ftotal.y;
 			else
 				value=ftotal.z;
+			break;
+		}
+		
+		case TOT_REACTX:
+		case TOT_REACTY:
+		case TOT_REACTZ:
+		{	Vector freaction = NodalVelBC::TotalReactionForce();
+			// pick the component
+			if(quantity==TOT_REACTX)
+				value = 1.e-6*freaction.x;
+			else if(quantity==TOT_REACTY)
+				value = 1.e-6*freaction.y;
+			else
+				value = 1.e-6*freaction.z;
 			break;
 		}
 		

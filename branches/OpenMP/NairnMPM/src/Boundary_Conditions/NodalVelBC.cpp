@@ -236,22 +236,32 @@ NodalVelBC *NodalVelBC::SetGhostVelBC(double mstime)
 	return (NodalVelBC *)GetNextObject();
 }
 
-// superpose x, y, or z velocity
+// Initialize ftot to -(pk.norm/deltime) norm in each material velocity field
+// freaction will be sum over all material velocity fields for this BC only
+// freaction will be zero for second BC on same node with same norm
+// total reaction on node us sum of freaction over all BCs
 NodalVelBC *NodalVelBC::InitFtotDirection(double mstime)
 {	// set if has been activated
 	int i = GetNodeNum(mstime);
-	if(i>0) nd[i]->SetFtotDirection(&norm,timestep);
+	if(i>0) nd[i]->SetFtotDirection(&norm,timestep,&freaction);
 	return (NodalVelBC *)GetNextObject();
 }
 
 // superpose x, y, or z velocity
-NodalVelBC *NodalVelBC::AddFtotDirection(double mstime)
+// add force for this BC to freaction
+NodalVelBC *NodalVelBC::SuperposeFtotDirection(double mstime)
 {	// set if has been activated
 	int i = GetNodeNum(mstime);
 	if(i>0)
 	{	// use currentValue set earlier in this step
-		nd[i]->AddFtotDirection(&norm,timestep,currentValue);
+		nd[i]->AddFtotDirection(&norm,timestep,currentValue,&freaction);
 	}
+	return (NodalVelBC *)GetNextObject();
+}
+
+// when getting total reaction force, add freaction to inptu vector
+NodalVelBC *NodalVelBC::AddReactionForce(Vector *totalReaction)
+{	AddVector(totalReaction,&freaction);
 	return (NodalVelBC *)GetNextObject();
 }
 
@@ -338,7 +348,7 @@ void NodalVelBC::ConsistentGridForces(void)
 	{	i=nextBC->GetNodeNum();
 		nextBC=nextBC->PasteNodalVelocities(nd[i]);
     }
-    
+	
     // Second set force to -p(interpolated)/timestep
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
@@ -347,6 +357,25 @@ void NodalVelBC::ConsistentGridForces(void)
     // Now add each superposed velocity BC at incremented time
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-		nextBC = nextBC->AddFtotDirection(mstime);
+		nextBC = nextBC->SuperposeFtotDirection(mstime);
 }
+
+/**********************************************************
+	Sum all reaction forces for all velocity BCs
+	Result is in micro Newtons
+*/
+Vector NodalVelBC::TotalReactionForce(void)
+{
+	Vector reactionTotal;
+	ZeroVector(&reactionTotal);
+    NodalVelBC *nextBC=firstVelocityBC;
+    
+    // First restore initial nodal values
+    while(nextBC!=NULL)
+		nextBC=nextBC->AddReactionForce(&reactionTotal);
+	
+	return reactionTotal;
+}
+	
+
 

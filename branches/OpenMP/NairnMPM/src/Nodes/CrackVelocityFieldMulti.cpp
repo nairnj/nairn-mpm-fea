@@ -1203,21 +1203,21 @@ void CrackVelocityFieldMulti::AddMomVel(Vector *norm,double vel)
 
 // set one component of force to -p(interpolated)/time such that updated momentum
 //    of pk.i + deltime*ftot.i will be zero
-void CrackVelocityFieldMulti::SetFtotDirection(Vector *norm,double deltime)
+void CrackVelocityFieldMulti::SetFtotDirection(Vector *norm,double deltime,Vector *freaction)
 {	int i;
     for(i=0;i<maxMaterialFields;i++)
     {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-        {	mvf[i]->SetFtotDirection(norm,deltime);
+        {	mvf[i]->SetFtotDirection(norm,deltime,freaction);
         }
     }
 }
 
 // add one component of force such that updated momentum will be mass*velocity
-void CrackVelocityFieldMulti::AddFtotDirection(Vector *norm,double deltime,double vel)
+void CrackVelocityFieldMulti::AddFtotDirection(Vector *norm,double deltime,double vel,Vector *freaction)
 {	int i;
     for(i=0;i<maxMaterialFields;i++)
     {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-        {	mvf[i]->AddFtotDirection(norm,deltime,vel);
+        {	mvf[i]->AddFtotDirection(norm,deltime,vel,freaction);
         }
     }
 }

@@ -101,15 +101,15 @@ void CrackVelocityFieldSingle::AddMomVel(Vector *norm,double vel)
 
 // set one component of force to -p(interpolated)/time such that updated momentum
 //    of pk.i + deltime*ftot.i will be zero
-void CrackVelocityFieldSingle::SetFtotDirection(Vector *norm,double deltime)
+void CrackVelocityFieldSingle::SetFtotDirection(Vector *norm,double deltime,Vector *freaction)
 {	if(mvf[0]->numberPoints>0)
-        mvf[0]->SetFtotDirection(norm,deltime);
+        mvf[0]->SetFtotDirection(norm,deltime,freaction);
 }
 
 // add one component of force such that updated momentum will be mass*velocity
-void CrackVelocityFieldSingle::AddFtotDirection(Vector *norm,double deltime,double vel)
+void CrackVelocityFieldSingle::AddFtotDirection(Vector *norm,double deltime,double vel,Vector *freaction)
 {	if(mvf[0]->numberPoints>0)
-        mvf[0]->AddFtotDirection(norm,deltime,vel);
+        mvf[0]->AddFtotDirection(norm,deltime,vel,freaction);
 }
 
 #pragma mark ACCESSORS

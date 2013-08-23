@@ -40,7 +40,8 @@ class NodalVelBC : public BoundaryCondition
 		NodalVelBC *AddVelBC(double);
 		NodalVelBC *SetGhostVelBC(double);
 		NodalVelBC *InitFtotDirection(double);
-		NodalVelBC *AddFtotDirection(double);
+		NodalVelBC *SuperposeFtotDirection(double);
+		NodalVelBC *AddReactionForce(Vector *);
         int ConvertToDirectionBits(int);
         void SetNormalVector(void);
         int ConvertToInputDof(void);
@@ -48,11 +49,13 @@ class NodalVelBC : public BoundaryCondition
 		// class methods
 		static void GridMomentumConditions(int);
 		static void ConsistentGridForces(void);
+		static Vector TotalReactionForce(void);
 	
 	protected:
 		double currentValue;
         double angle1,angle2;
 		Vector norm;
+		Vector freaction;
 };
 
 // variables (changed in MPM time step)

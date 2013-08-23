@@ -1510,31 +1510,31 @@ void NodalPoint::AddMomVel(Vector *norm,double vel)
 
 // set one component of force to -p(interpolated)/time such that updated momentum
 //    of pk.i + deltime*ftot.i will be zero
-void NodalPoint::SetFtotDirection(Vector *norm,double deltime)
+void NodalPoint::SetFtotDirection(Vector *norm,double deltime,Vector *freaction)
 {	
 #ifdef _BC_CRACK_SIDE_ONLY_
 	// just on same side of the crack
-	cvf[0]->SetFtotDirection(norm,deltime);
+	cvf[0]->SetFtotDirection(norm,deltime,freaction);
 #else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
-            cvf[i]->SetFtotDirection(norm,deltime);
+            cvf[i]->SetFtotDirection(norm,deltime,freaction);
 	}
 #endif
 }
 
 // set one component of force such that updated momentum will be mass*velocity
-void NodalPoint::AddFtotDirection(Vector *norm,double deltime,double vel)
+void NodalPoint::AddFtotDirection(Vector *norm,double deltime,double vel,Vector *freaction)
 {	
 #ifdef _BC_CRACK_SIDE_ONLY_
 	// just on same side of the crack
-	cvf[0]->AddFtotDirection(norm,deltime,vel);
+	cvf[0]->AddFtotDirection(norm,deltime,vel,freaction);
 #else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
-            cvf[i]->AddFtotDirection(norm,deltime,vel);
+            cvf[i]->AddFtotDirection(norm,deltime,vel,freaction);
 	}
 #endif
 }

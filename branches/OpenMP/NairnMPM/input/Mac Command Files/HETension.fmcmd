@@ -21,7 +21,7 @@ XMLData MPMHeader
 EndXMLData
 
 ! pick a method usually "lCPDI" or "uGIMP"
-#method="lCPDI"
+#method="uGIMP"
 
 ! pick strain update method usually "USF" or "USAVG"
 #update="USF"
@@ -234,6 +234,8 @@ if #loading="contact"
   if #analysis="3D MPM"
     GlobalArchive "contactz"
   endif
+  GlobalArchive "reactionx"
+  GlobalArchive "reactiony"
 endif
 GlobalArchiveTime (1+#hold+#unload)*#time/100
 

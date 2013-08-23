@@ -245,15 +245,29 @@ void MatVelocityField::AddMomentVelocityDirection(Vector *norm,double vel)
 // Ftot = (Ftot.norm) norm + (Ftot.tang) tang, but not we want
 // Ftotnew = -(pk.norm)/deltime norm + (Ftot.tang) tang
 // Ftotnew = Ftot - (Ftot.norm) norm -(pk.norm)/deltime norm
-void MatVelocityField::SetFtotDirection(Vector *norm,double deltime)
+//
+// Note that is have same norm on same node, the net result have first pass is
+//    Ftot1 = -(pk.norm)/deltime norm + (Ftot.tang) tang
+// Then on second pass, dotf = -(pk.norm)/deltime to give same result
+//    Ftot2 = (-(pk.norm)/deltime+(pk.norm)/deltime-(pk.norm)/deltime) norm + (Ftot.tang) tang
+//          = -(pk.norm)/deltime norm + (Ftot.tang) tang
+// But might have physical issues if component of norm overlap on the save node such as
+//    x axis ans  skew xy or xz on the same node
+void MatVelocityField::SetFtotDirection(Vector *norm,double deltime,Vector *freaction)
 {   double dotf = DotVectors(&ftot, norm);
 	double dotp = DotVectors(&pk, norm);
-	AddScaledVector(&ftot, norm, -dotf - dotp/deltime);
+	// the change in force is (-dotf - dotp/deltime) norm, which is zero for second BC with same norm
+	CopyScaleVector(freaction,norm,-dotf - dotp/deltime);
+	AddVector(&ftot,freaction);
 }
 
 // add one component of force such that updated momentum will be mass*velocity
-void MatVelocityField::AddFtotDirection(Vector *norm,double deltime,double vel)
-{   AddScaledVector(&ftot, norm, mass*vel/deltime);
+void MatVelocityField::AddFtotDirection(Vector *norm,double deltime,double vel,Vector *freaction)
+{	// the change in force is (mass*vel/deltime) norm
+	Vector deltaF;
+	CopyScaleVector(&deltaF,norm,mass*vel/deltime);
+	AddVector(&ftot,&deltaF);
+	AddVector(freaction,&deltaF);
 }
 
 // total force
