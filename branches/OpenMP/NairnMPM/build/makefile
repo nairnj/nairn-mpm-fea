@@ -89,12 +89,12 @@ endif
 #     CP is path/options to copy command (used only in make install
 CC= g++
 ifeq ($(SYSTEM),carbon)
-    CC= /usr/bin/g++
+    CC= /usr/local/gcc48/bin/g++
 endif
 RM= rm
 CP= cp
 
-# 4. Compiler options -c=compile only, -O3=optimize most -O0=not optimized -g=debugging info
+# 4. Compiler options -c=compile only is required, others are optional
 #     CFLAGS are flags passed to compile each source file. If must contain -c and
 #	  can add any other needed options. Some flags found useful in this project are
 #            -O3 = optimize most -O0 = not optimized

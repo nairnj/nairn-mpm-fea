@@ -113,7 +113,7 @@ void NairnFEA::FEAAnalysis()
 	ForcesOnEdges();
 
 #pragma mark --- TASK 2: GET STIFFNESS MATRIX
-
+    // allocate and fill global stiffness matrix, st[][], and reaction vector, rm[]
     times[1]=CPUTime();
     BuildStiffnessMatrix();
 

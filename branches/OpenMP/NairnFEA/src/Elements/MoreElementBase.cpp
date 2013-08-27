@@ -85,7 +85,7 @@ void ElementBase::Stiffness(int np) { IsoparametricStiffness(np); }
 void ElementBase::ForceStress(double *rm,int np,int nfree)
 {	IsoparametricForceStress(rm,np,nfree); }
 
-/*	Calculate Stiffness Matrix
+/*	Calculate Element Stiffness Matrix, se[] global, and reaction vector, re[] global
 	Generalized here for any isoparametric element using
             Gaussian Quadrature integration with numgaus
             points stored in placeXi, placeEta and weight arrays.
