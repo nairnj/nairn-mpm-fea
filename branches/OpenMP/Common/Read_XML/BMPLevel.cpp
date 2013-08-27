@@ -39,10 +39,8 @@ BMPLevel::BMPLevel(int matnum,int setmin,int setmax)
 	BMPLevel: Methods
 *******************************************************************/
 
-// see if matches level
-int BMPLevel::Material(unsigned char intensity)
-{	return (intensity>=imin && intensity<=imax) ? mat : -1;	}
-
+// if intensity is range for this level, add to weight and return mat
+// otherwise return -1
 int BMPLevel::Material(unsigned char intensity,double pweight)
 {
 	if(intensity>=imin && intensity<=imax)
@@ -67,3 +65,12 @@ BMPLevel *BMPLevel::MaximumWeight(double& maxweight,BMPLevel **maxLevel)
 	}
 	return (BMPLevel *)nextObject;
 }
+
+/*******************************************************************
+    BMPLevel: Accessors
+*******************************************************************/
+
+// see if matches level and return mat if does, otherwise return -1
+int BMPLevel::Material(unsigned char intensity) const
+{	return (intensity>=imin && intensity<=imax) ? mat : -1;	}
+

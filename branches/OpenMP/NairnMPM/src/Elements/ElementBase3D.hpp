@@ -28,7 +28,7 @@ class ElementBase3D : public ElementBase
 		virtual int FaceNodes(void);
 		virtual void GetXYZCentroid(Vector *);
 		virtual double GetDeltaZ(void) const;
-		virtual bool IntersectsBox(double,double,double,double,double);
+		virtual bool IntersectsBox(double,double,double,double,double) const;
 		virtual bool OnTheEdge(void);
 		virtual void GetListOfNeighbors(int *);
 };

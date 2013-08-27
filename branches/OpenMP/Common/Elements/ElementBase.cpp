@@ -113,7 +113,7 @@ double ElementBase::GetCenterX(void) const { return 0.5*(xmax+xmin); }
 double ElementBase::GetDeltaX(void) const { return xmax-xmin; }
 double ElementBase::GetDeltaY(void) const { return ymax-ymin; }
 double ElementBase::GetDeltaZ(void) const { return GetThickness(); }
-bool ElementBase::IntersectsBox(double xorig,double yorig,double xlength,double ylength,double zslice)
+bool ElementBase::IntersectsBox(double xorig,double yorig,double xlength,double ylength,double zslice) const
 {	if(xmax<xorig) return false;
 	if(xmin>xorig+xlength) return false;
 	if(ymax<yorig) return false;

@@ -20,5 +20,5 @@ LinkedObject::LinkedObject()
 ********************************************************************************/
 
 // next object
-LinkedObject *LinkedObject::GetNextObject(void) { return nextObject; }
+LinkedObject *LinkedObject::GetNextObject(void) const { return nextObject; }
 void LinkedObject::SetNextObject(LinkedObject *obj) { nextObject=obj; }

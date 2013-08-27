@@ -124,6 +124,13 @@ void MPMReadHandler::TranslateBMPFiles(void)
 		semiscale=2.*pow((double)fmobj->ptsPerElement,1./3.);
 	else
 		semiscale=2.*sqrt((double)fmobj->ptsPerElement);
+    
+    /* Parallelizing the following loop will speed up check meshes on Mac
+        1. Will need copy of levels for each block (or pass copy of weight to BMPLevel methods)
+            see BMPLevel methods: ClearWeight(),Material(double,double), MaximumWeight(double)
+        2. mpCtrl->AddMaterialPoint() will need critical block
+        3. FunctionValue() when setting angles uses globals they are problem for parallel
+    */
 	
 	// scan mesh and assign material points or angles
     for(ii=1;ii<=nelems;ii++)

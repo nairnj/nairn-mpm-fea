@@ -101,7 +101,7 @@ class ElementBase : public LinkedObject
 		virtual void PrintElement(ostream &,int);
         virtual void SetThickness(double);
 		virtual void GetXYZCentroid(Vector *);
-		virtual bool IntersectsBox(double,double,double,double,double);
+		virtual bool IntersectsBox(double,double,double,double,double) const;
 		int NodeIndex(int);
         virtual void FindExtent(void);
 		virtual void FindCentroid(Vector *);
@@ -123,7 +123,7 @@ class ElementBase : public LinkedObject
 		virtual void AllocateNeighborsArray(void);
 		virtual int Orthogonal(double *,double *,double *);
         virtual int NearestNode(double,double,int *);
-        virtual void MPMPoints(short,Vector *);
+        virtual void MPMPoints(short,Vector *) const;
 		virtual void GetPosition(Vector *,Vector *);
 	
 		// const methods

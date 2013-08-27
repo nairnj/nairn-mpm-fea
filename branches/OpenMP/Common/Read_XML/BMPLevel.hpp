@@ -24,10 +24,13 @@ class BMPLevel : public LinkedObject
         BMPLevel();
 		BMPLevel(int,int,int);
         
-		int Material(unsigned char);
+        // methods
 		int Material(unsigned char,double);
 		BMPLevel *ClearWeight(void);
 		BMPLevel *MaximumWeight(double&,BMPLevel **);
+    
+        // accessors
+        int Material(unsigned char) const;
 		
     private:
 		double weight;

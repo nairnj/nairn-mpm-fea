@@ -23,7 +23,7 @@ class LinkedObject
 		
 		// methods
 		void SetNextObject(LinkedObject *);
-		LinkedObject *GetNextObject(void);
+		LinkedObject *GetNextObject(void) const;
 };
 
 #endif

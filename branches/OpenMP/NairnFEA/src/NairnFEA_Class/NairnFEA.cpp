@@ -235,7 +235,7 @@ void NairnFEA::ForcesOnEdges(void)
 	Row i -------------->	st[1][i]	st[2][i]	st[3][i]	st[4][i]    ...
 										st[1][i+1]	st[2][i+1]	st[3][i+1]	...
 										
-	For row i, scond index=i and vary first from 1 to nband
+	For row i, second index=i and vary first from 1 to nband
 	For col, first index 1 to nband and second from i to i-nband+1
 				(note second index may go negative near edge of matrix)
 ***********************************************************************************/

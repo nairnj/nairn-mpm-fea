@@ -294,7 +294,7 @@ void ElementBase::GetXiPos(Vector *pos,Vector *xipos) const
 }
 
 // return dimensionless location for material points
-void ElementBase::MPMPoints(short numPerElement,Vector *mpos)
+void ElementBase::MPMPoints(short numPerElement,Vector *mpos) const
 {
     int i,j,k;
     double fxn[MaxElNd],row,zrow;
