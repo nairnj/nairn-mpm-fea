@@ -227,21 +227,23 @@ void NairnFEA::ForcesOnEdges(void)
 		that has only upper half of the matrix and only possible nonzero element
 	    
 	if j>=i
-		Kij=st[j-i+1][i] for j-i+1 <= nband otherwise Kij=0
+		Kij=st[i][j-i+1] for j-i+1 <= nband otherwise Kij=0
 	if j<i
-		Kij=st[i-j+1][j] for i-j+1 <= nband otherwise Kij=0
+		Kij=st[j][i-j+1] for i-j+1 <= nband otherwise Kij=0
 	
 	Elements of upper half matrix stored as follows:
 							Col i
 							---------
-	st[1][i-2]	st[2][i-2]	st[3][i-2]	st[4][i-2]	st[5][i-2]	st[6][i-2]	...
-				st[1][i-1]	st[2][i-1]	st[3][i-1]	st[4][i-1]	st[5][i-1]	...
-	Row i -------------->	st[1][i]	st[2][i]	st[3][i]	st[4][i]    ...
-										st[1][i+1]	st[2][i+1]	st[3][i+1]	...
+	st[i-2][1]	st[i-2][2]	st[i-2][3]	st[i-2][4]	st[i-2][5]	st[i-2][6]	...
+				st[i-1][1]	st[i-1][2]	st[i-1][3]	st[i-1][4]	st[i-1][5]	...
+	Row i -------------->	st[i][1]	st[i][2]	st[i][3]	st[i][4]    ...
+										st[i+1][1]	st[i+1][2]	st[i+1][3]	...
 										
-	For row i, second index=i and vary first from 1 to nband
-	For col, first index 1 to nband and second from i to i-nband+1
-				(note second index may go negative near edge of matrix)
+	For row i, first index=i and vary second from 1 to nband
+                (note near bottom of matrix, non-zero elements stop at edge,
+                    but memory beyond edge is there and zeroed)
+	For col i, second index 1 to nband and first from i down to i-nband+1
+				(note second index may go negative near top of matrix)
 ***********************************************************************************/
 
 void NairnFEA::BuildStiffnessMatrix(void)
@@ -251,8 +253,8 @@ void NairnFEA::BuildStiffnessMatrix(void)
     
     // allocate memory for stiffness matrix and zero it
 	
-	// st[] are points to diagonal columns of the stiffness matrix
-    st=new double *[nband+1];
+	// st[] are points to rows of the stiffness matrix
+    st=new double *[nsize+1];
     if(st==NULL) throw CommonException("Out of memory creating stiffness matrix",
 											"NairnFEA::BuildStiffnessMatrix");
 											
@@ -261,13 +263,13 @@ void NairnFEA::BuildStiffnessMatrix(void)
     if(stiffnessMemory==NULL) throw CommonException("Out of memory creating stiffness matrix",
 											"NairnFEA::BuildStiffnessMatrix");
 											
-	// allocate each column
+	// allocate each row
 	int baseAddr=0;
-    for(i=1;i<=nband;i++)
+    for(i=1;i<=nsize;i++)
 	{	st[i]=&stiffnessMemory[baseAddr];
 		st[i]--;					// to make it 1 based
-		baseAddr+=nsize;
-        for(j=1;j<=nsize;j++) st[i][j]=0.;
+		baseAddr+=nband;
+        for(j=1;j<=nband;j++) st[i][j]=0.;
     }
     
     // Loop over all elements
@@ -295,7 +297,7 @@ void NairnFEA::BuildStiffnessMatrix(void)
                             ind=mj-mi+1;
                             if(ind>0)
                             {	nj=nj0+jj;
-                                st[ind][mi]+=se[ni][nj];
+                                st[mi][ind]+=se[ni][nj];
                             }
                         }
                     }
@@ -325,7 +327,7 @@ void NairnFEA::BuildStiffnessMatrix(void)
 			mj=nbase+nextConstraint->GetLambdaNum();		// mj > mi always
 			for(i=1;i<=numnds;i++)
 			{   mi=nextConstraint->NodalDof(i,nfree);
-				st[mj-mi+1][mi]+=nextConstraint->GetCoeff(i);
+				st[mi][mj-mi+1]+=nextConstraint->GetCoeff(i);
 			}
 			rm[mj]+=nextConstraint->GetQ();
 			nextConstraint=(Constraint *)nextConstraint->GetNextObject();

@@ -9,15 +9,14 @@
 // prototype
 int gelbnd(double **,int,int,double *,double *,int);
 
-/***********************************************************
-    Subroutine to solve a linear system defined by
+/*  Subroutine to solve a linear system defined by
             ax=r
     where a is band diagonal and symmetric stored in
-    band storage format such that aij=a[j-i+1][i] and
+    band storage format such that aij=a[i][j-i+1] and
     storage includes only elements with
             1 <= j-i+1 <= nband
     where nband is bandwidth of the matrix. In other words
-            a[k][i] = ai,i+k-1
+            a[i][k] = ai,i+k-1
 
     Input parameters
         a: matrix in band symmetric storage
@@ -32,14 +31,14 @@ int gelbnd(double **,int,int,double *,double *,int);
         r: solution to linear system
         return value: 0 if no errors
                 -1 if reduction is getting too severe
-                1 if diagonal or pivot is 0
+                 1 if diagonal is 0
 
     Method
         Gaussian elimination with no pivoting which means
-    diagonal elements better be OK
+        diagonal elements better be OK
  
-	Some personal notes found at JANOSU-4-197
-***********************************************************/
+	Some personal notes found at JANOSU-4-197 and JANOSU-7-1
+*/
 
 int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
 {
@@ -49,8 +48,8 @@ int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
     // Check for trival unit band length problem
     if(nband==1)
     {	for(i=1;i<=n;i++)
-        {   if(a[1][i]==0.) return 1;
-            r[i]/=a[1][i];
+        {   if(a[i][1]==0.) return 1;
+            r[i]/=a[i][1];
         }
         return ierr;
     }
@@ -64,12 +63,12 @@ int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
     if(iflag==0)
     {   
     	// Make copy of the diagonal elements
-        for(i=1;i<=n;i++) work[i] = a[1][i];
+        for(i=1;i<=n;i++) work[i] = a[i][1];
         
         // Forward reduction of coefficient matrix in remaining n-1 rows
         for(i=1; i<=n-1; i++)
 		{	// Check for over reduced or bad matrix
-            double Uii = a[1][i];                    // Now Uii since row i has been reduced
+            double Uii = a[i][1];                    // Now Uii since row i has been reduced
 			if(Uii == 0.)
 			{	// singular matrix - give up with an error
 				return 1;
@@ -92,40 +91,38 @@ int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
 			// Changes only row k  and aik, input is aik, Uii
 #pragma omp parallel for
             for(int j=2; j<=jend; j++)
-			{	// aik = a[k-i+1][i] = a[j][i]
-            	double Uim,Uik = a[j][i];			// Now Uik since row i has been reduced, but not converted to Lki yet
+			{	// aik = a[i][k-i+1] = a[i][j]
+            	double Uim,Uik = a[i][j];			// Now Uik since row i has been reduced, but not converted to Lki yet
 				
 				// if zero, nothing to do, otherwise do a reduction
                 if(Uik != 0.)
 				{	double UikOverUii = Uik/Uii;
                     int k = j+imin1;				// reducing row k
 					
-					// in row k, need to reduce elements m = k+1 to n to
+					// in row k, need to reduce elements m = k to n to
 					//     akm = akm - (Uik/Uii)*Uim
 					// but because matrix is banded, we can only need m-k<=nband-1 or m<=k+nband-1
 					// Let j2 run from j to jend and counter ind from 1 to jend-j+1, then m = k+ind-1 = k+j2-j
-					//	   akm = a[m-k+1][k] = a[ind][k]
-					//     aim = a[m-i+1][i] = a[j2][i]
+					//	   akm = a[k][m-k+1] = a[k][ind]
+					//     aim = a[i][m-i+1] = a[i][j2]
                     int ind = 0;
 					for(int j2=j; j2<=jend; j2++)
                     {	ind++;						// m-k+1
-                        Uim = a[j2][i];				// Now Ui,j2-i+1 = Uim since row i has been reduced
+                        Uim = a[i][j2];				// Now Ui,j2-i+1 = Uim since row i has been reduced
                         if(Uim != 0.)
-                            a[ind][k] -= UikOverUii*Uim;
+                            a[k][ind] -= UikOverUii*Uim;
                     }
-					
-					// convert element in previous row to Lki
-                    //a[j][i] = UikOverUii;		// Now Uik/Uii = Lki
                 }
             }
 			
+            // separate loop to avoid parallel conflicts in above loop
 #pragma omp parallel for
             for(int j=2; j<=jend; j++)
 			{	// convert element in previous row to Lki
-				a[j][i] /= Uii;		// Now Uik/Uii = Lki
+				a[i][j] /= Uii;		// Now Uik/Uii = Lki
 			}
 			
-			// Elements through a[][i+1] now fully reduced to row i+1 of U (with off-diagonals to Lki = Uik/Uii)
+			// Elements through a[i+1][] now fully reduced to row i+1 of U (with off-diagonals to Lki = Uik/Uii)
         }
 		
 		// As reduced, a[1][i] is diagonal element Uii and a[j][i] is Li+j-1,i
@@ -136,24 +133,26 @@ int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
     for(i=1; i<=n; i++)
     {	int imin1 = i-1;
         int jend = fmin(nband,n-imin1);
+        double yi = r[i];
 		
 		// Let k = i+j-1, then k from i+1 to end
 #pragma omp parallel for
         for(int j=2; j<=jend; j++)
-        {   double Lki = a[j][i];			// Lki or loop Li+1,i to end
+        {   double Lki = a[i][j];			// Lki or loop Li+1,i to end
             if(Lki!=0.)
-			{	r[imin1+j] -= Lki*r[i];		// changing r[i+1] to r[i-1+jend] in parallel
+			{	r[imin1+j] -= Lki*yi;		// changing r[i+1] to r[i-1+jend] in parallel
             }
         }
 		
 		// r[i+1] has been converted to yi
 		
 		// No longer need yi in r[i], so scale now by diagonal r[i] = yi/Uii
-        r[i] /= a[1][i];
+        // which is used in back substitution to account for Lki being in aik
+        r[i] /= a[i][1];
     }
 
     // Solve for unknowns by back substitution and put the answer back into r
-	// Solve U x = y
+	// Solve Ux = y
 	// First xn = yn/Unn = rn from above forward reduction
 	// Find rest xi = ri - Sum_{k=i+1,n} Lki xk
     for(i=n-1; i>=1; i--)
@@ -164,7 +163,7 @@ int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
         double sum = 0.;
 #pragma omp parallel for reduction(+:sum)
         for(int j=2; j<=jend; j++)
-        {   double Lki = a[j][i];				// From decomposition is Lki
+        {   double Lki = a[i][j];				// From decomposition is Lki
             if(Lki!=0.)
                 sum += Lki*r[imin1+j];			// summand Lki*xk now in r[i+1] to r[i-1+jend] in parallel
         }

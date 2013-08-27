@@ -210,7 +210,7 @@ int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
 		//  Create a SAX parser object.
 		parser=XMLReaderFactory::createXMLReader();
 		
-		// Validation (1st means yes or no, 2nd means to skip if no DTD, even if yes)
+		// Validation (first means yes or no, second means to skip if no DTD, even if yes)
 		parser->setFeature(XMLString::transcode("http://xml.org/sax/features/validation"),GetValidate());
 		parser->setFeature(XMLString::transcode("http://apache.org/xml/features/validation/dynamic"),true);
 		if(!GetValidate())

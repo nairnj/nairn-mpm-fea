@@ -74,24 +74,24 @@ NodalDispBC *NodalDispBC::FixOrRotate(double **st,double *rm,int nsize,int nband
     
     // Fixed displacement at nodeNum in direction of magnitude bcValue
     if(direction>0)
-    {   /* Subtract bcValue*col(j) from right side of system
-                    and set fixed displacement */
+    {   // Subtract bcValue*col(j) from right side of system
+        //     and set fixed displacement
         i=nfree*(nodeNum-1)+direction;		// fixed DOF
         if(bcValue!=0.)
         {   jend=fmin(nsize,i+nband-1);
-            for(j=i+1;j<=jend;j++) rm[j]-=bcValue*st[j-i+1][i];
+            for(j=i+1;j<=jend;j++) rm[j]-=bcValue*st[i][j-i+1];
             jend=fmax(1,i-nband+1);
-            for(j=i-1;j>=jend;j--) rm[j]-=bcValue*st[i-j+1][j];
+            for(j=i-1;j>=jend;j--) rm[j]-=bcValue*st[j][i-j+1];
         }
         rm[i]=bcValue;
 
         // Zero row and column i and put 1 on diagonal
         for(j=2;j<=nband;j++)
         {   jend=i-j+1;
-            if(jend>=1) st[j][jend]=0.;		// zeros col i
-            st[j][i]=0.;					// zeros row i
+            if(jend>=1) st[jend][j]=0.;		// zeros col i
+            st[i][j]=0.;					// zeros row i
         }
-        st[1][i]=1.;
+        st[i][1]=1.;
     }
 
     /* If direction==0 then rotate nodeNum buy alpha degrees.
@@ -112,28 +112,28 @@ NodalDispBC *NodalDispBC::FixOrRotate(double **st,double *rm,int nsize,int nband
         jend=fmin(nband,jj);
         for(j=3;j<=jend;j++)
         {   rowj=jj-j+1;
-            siii=st[j-1][rowj];
-            sijj=st[j][rowj];
-            st[j-1][rowj]=cs*siii-sn*sijj;
-            st[j][rowj]=sn*siii+cs*sijj;
+            siii=st[rowj][j-1];
+            sijj=st[rowj][j];
+            st[rowj][j-1]=cs*siii-sn*sijj;
+            st[rowj][j]=sn*siii+cs*sijj;
         }
 
         // Form TKTt in rows ii and jj (except near diagonals)
         jend=fmin(nband,nsize-ii+1);
         for(j=3;j<=jend;j++)
-        {   siij=st[j][ii];
-            sjjj=st[j-1][jj];
-            st[j][ii]=cs*siij-sn*sjjj;
-            st[j-1][jj]=sn*siij+cs*sjjj;
+        {   siij=st[ii][j];
+            sjjj=st[jj][j-1];
+            st[ii][j]=cs*siij-sn*sjjj;
+            st[jj][j-1]=sn*siij+cs*sjjj;
         }
 
         // Do diagonal terms
-        siiii=st[1][ii];
-        siijj=st[2][ii];
-        sjjjj=st[1][jj];
-        st[1][ii]=siiii*c2+sjjjj*s2-2*siijj*cssn;
-        st[1][jj]=siiii*s2+sjjjj*c2+2*siijj*cssn;
-        st[2][ii]=(siiii-sjjjj)*cssn+siijj*(c2-s2);
+        siiii=st[ii][1];
+        siijj=st[ii][2];
+        sjjjj=st[jj][1];
+        st[ii][1]=siiii*c2+sjjjj*s2-2*siijj*cssn;
+        st[jj][1]=siiii*s2+sjjjj*c2+2*siijj*cssn;
+        st[ii][2]=(siiii-sjjjj)*cssn+siijj*(c2-s2);
 
         // Transform right side vector
         rii=rm[ii];

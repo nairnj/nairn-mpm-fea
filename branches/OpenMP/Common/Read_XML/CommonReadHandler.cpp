@@ -363,7 +363,7 @@ void CommonReadHandler::ReadTagNumber(int *myval,const Attributes& attrs)
     }
 }
 
-// Read 1st 'units' attribute and return a scaling factor an input quantity
+// Read first 'units' attribute and return a scaling factor an input quantity
 //     to convert to standard analysis units
 // The options are for time, length, and velocity units
 // If no 'units' found or invalid one found, return 1.
