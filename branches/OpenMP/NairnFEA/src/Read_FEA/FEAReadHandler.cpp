@@ -29,6 +29,7 @@
 #include "Read_FEA/NodalLoadController.hpp"
 #include "Read_FEA/ConstraintController.hpp"
 #include "Boundary_Conditions/Constraint.hpp"
+#include <algorithm>
 
 /********************************************************************************
 	FEAReadHandler: Constructors and Destructor

@@ -37,6 +37,8 @@ class CommonAnalysis
 		int ReadFile(const char *,bool);
 		void StartResultsOutput(void);
 		void CoutCodeVersion(void);
+		double CPUTime(void);
+		double ElapsedTime(void);
 
 		// accessors
 		void SetValidate(bool);
@@ -57,6 +59,13 @@ class CommonAnalysis
 		bool validate,reverseBytes;
 		int version,subversion,buildnumber,numProcs;
 		char *description;
+	
+#ifdef _OPENMP
+		double startTime;
+#else
+		time_t startTime;			// timers
+#endif
+		clock_t startCPU;
 };
 
 // Input types

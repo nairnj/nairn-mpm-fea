@@ -185,6 +185,15 @@ void CommonAnalysis::StartResultsOutput(void)
 	
 	// finish with analysis specific items
 	MyStartResultsOutput();
+	
+	//---------------------------------------------------
+	// initialize timers
+#ifdef _OPENMP
+	startTime = omp_get_wtime();
+#else
+    time(&startTime);
+#endif
+	startCPU=clock();
 }
 
 //Main entry to read file and decode into objects
@@ -278,6 +287,24 @@ int CommonAnalysis::ReadFile(const char *xmlFile,bool useWorkingDir)
 void CommonAnalysis::CoutCodeVersion(void)
 {
 	cout << CodeName() << " " << version << "." << subversion << " build " << buildnumber << endl;
+}
+
+// elapsed actual time
+double CommonAnalysis::ElapsedTime(void)
+{
+#ifdef _OPENMP
+	return omp_get_wtime()-startTime;
+#else
+	time_t currentTime;
+    time(&currentTime);
+    return (double)difftime(currentTime,startTime);
+#endif
+}
+
+// elapsed CPU time
+double CommonAnalysis::CPUTime(void)
+{
+	return (double)(clock()-startCPU)/CLOCKS_PER_SEC;
 }
 
 #pragma mark CommonAnalysis: accessors

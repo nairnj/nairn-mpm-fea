@@ -53,8 +53,6 @@ class NairnMPM : public CommonAnalysis
 		void SetForceBCs(void);
 		void ValidateOptions(void);
 		void Usage(void);
-		double CPUTime(void);
-		double ElapsedTime(void);
     
 		// accessors
 		virtual void PrintAnalysisTitle(void);
@@ -70,14 +68,6 @@ class NairnMPM : public CommonAnalysis
     protected:
         double FractCellTime;			// fraction of cell crossed at wave speed (<1)
         double PropFractCellTime;       // separate fraction of cell crossed for propagation time steps (currently not settable)
-
-	private:
-#ifdef _OPENMP
-		double startTime;
-#else
-		time_t startTime;			// timers
-#endif
-		clock_t startCPU;
 };
 
 extern NairnMPM *fmobj;

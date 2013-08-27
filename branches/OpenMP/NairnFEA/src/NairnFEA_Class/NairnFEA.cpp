@@ -81,7 +81,7 @@ void NairnFEA::FEAAnalysis()
 
 #pragma mark --- TASK 0: INITIALIZE
     // start timer
-    times[0]=clock();
+    times[0]=CPUTime();
     
     // get problem size and other initialization
     nsize=nnodes*nfree + numConstraints;
@@ -114,7 +114,7 @@ void NairnFEA::FEAAnalysis()
 
 #pragma mark --- TASK 2: GET STIFFNESS MATRIX
 
-    times[1]=clock();
+    times[1]=CPUTime();
     BuildStiffnessMatrix();
 
 #pragma mark --- TASK 3: DISPLACEMENT BCs
@@ -126,7 +126,7 @@ void NairnFEA::FEAAnalysis()
     
 #pragma mark --- TASK 4: INVERT STIFFNESS MATRIX
     // Solve linear system for nodal displacements
-    times[2]=clock();
+    times[2]=CPUTime();
     work=new double[nsize+1];
     result=gelbnd(st,nsize,nband,rm,work,0);
     if(result==1)
@@ -148,7 +148,9 @@ void NairnFEA::FEAAnalysis()
     
 #pragma mark --- TASK 6: OUTPUT RESULTS
 
-    times[3]=clock();
+	// time to here for performance evaluation
+    double execTime=ElapsedTime();						// elpased time in secs
+    times[3]=CPUTime();
     
     // Print Displacements
     DisplacementResults();
@@ -167,13 +169,15 @@ void NairnFEA::FEAAnalysis()
     EnergyResults();
     
     // execution times
-    times[4]=clock();
+    times[4]=CPUTime();
     PrintSection("EXECUTION TIMES AND MEMORY");
-    cout << "1. Allocate Memory: " << (times[1]-times[0])/CLOCKS_PER_SEC << " secs" << endl;		
-    cout << "2. Build Stiffness Matrix: " << (times[2]-times[1])/CLOCKS_PER_SEC << " secs" << endl;
-    cout << "3. Solve Linear System: " << (times[3]-times[2])/CLOCKS_PER_SEC << " secs" << endl;
-    cout << "4. Write Results to Window: " << (times[4]-times[3])/CLOCKS_PER_SEC << " secs" << endl;
-    cout << "5. Total Execution Time: " << (times[4]-times[0])/CLOCKS_PER_SEC << " secs" << endl;
+    cout << "1. Allocate Memory: " << (times[1]-times[0]) << " secs" << endl;		
+    cout << "2. Build Stiffness Matrix: " << (times[2]-times[1]) << " secs" << endl;
+    cout << "3. Solve Linear System: " << (times[3]-times[2]) << " secs" << endl;
+    cout << "4. Write Results: " << (times[4]-times[3]) << " secs" << endl;
+    cout << "5. Total Execution CPU Time: " << times[3] << " secs" << endl;
+    cout << "6. Total Execution Elapsed Time: " << execTime << " secs" << endl;
+	cout << "7. Scaling: " << times[3]/execTime << endl;
     
     //---------------------------------------------------
     // Trailer

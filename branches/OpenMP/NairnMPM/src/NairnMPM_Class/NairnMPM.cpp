@@ -116,15 +116,6 @@ void NairnMPM::MPMAnalysis(bool abort)
     char fline[100];
     CustomTask *nextTask;
     
-    //---------------------------------------------------
-	// initialize
-#ifdef _OPENMP
-	startTime = omp_get_wtime();
-#else
-    time(&startTime);
-#endif
-	startCPU=clock();
-	
 	//---------------------------------------------------
 	// Do Preliminary MPM Calculations
 	PreliminaryCalcs();
@@ -754,24 +745,6 @@ void NairnMPM::Usage()
             "                   (default is to skip validation)\n\n"
             "See http://oregonstate.edu/nairnj for documentation.\n\n"
           <<  endl;
-}
-
-// elapsed actual time
-double NairnMPM::ElapsedTime(void)
-{
-#ifdef _OPENMP
-	return omp_get_wtime()-startTime;
-#else
-	time_t currentTime;
-    time(&currentTime);
-    return (double)difftime(currentTime,startTime);
-#endif
-}
-
-// elapsed CPU time (probably actual time)
-double NairnMPM::CPUTime(void)
-{
-	return (double)(clock()-startCPU)/CLOCKS_PER_SEC;
 }
 
 // if crack develops tractionlaw, call here to turn it on
