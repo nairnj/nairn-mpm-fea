@@ -247,7 +247,7 @@ dprefix = $(src)/System/FEAPrefix.hpp $(com)/System/DataTypes.hpp \
 
 # -------------------------------------------------------------------------
 # all compiled objects
-objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtilities.o svninfo.0 \
+objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtilities.o svninfo.o \
 		CommonException.o ElementBase.o Linear2D.o FourNodeIsoparam.o MaterialBase.o \
 		CommonReadHandler.o ParseController.o ElementsController.o NodesController.o \
 		LineController.o MaterialController.o IsotropicMat.o TransIsotropic.o BoxController.o \
