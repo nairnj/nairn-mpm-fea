@@ -8,7 +8,6 @@
 #       carbon - OSU carbon/hedera cluster (the default)
 #		mpm - OSU machine
 #       cygwin - Standard cygwin install in Windows
-#       cluster2 - Grant Smith's cluster at U of Utah
 #       inferno - C-SAFE cluster at U of Utah
 #       zia - A Debian linux machine
 # Other options are
@@ -47,9 +46,6 @@ endif
 ifeq ($(SYSTEM),cygwin)
 	xercesSo = -L/usr/local/lib -lxerces-c
 endif
-ifeq ($(SYSTEM),cluster2)
-	xercesSo = /app/software/Xerces/lib/libxerces-c.so
-endif
 ifeq ($(SYSTEM),inferno)
 	xercesSo = /usr/sci/projects/SCIRun/Thirdparty/1.22/Linux/gcc-3.2-32bit/lib/libxerces-c.so
 endif
@@ -64,9 +60,6 @@ ifeq ($(SYSTEM),carbon)
 endif
 ifeq ($(SYSTEM),mpm)
 	headersPath = /usr/include
-endif
-ifeq ($(SYSTEM),cluster2)
-	headersPath = /app/software/Xerces/includ
 endif
 ifeq ($(SYSTEM),inferno)
 	headersPath = /usr/sci/projects/SCIRun/Thirdparty/1.22/Linux/gcc-3.2-32bit/include
@@ -114,7 +107,7 @@ ioutput = ~/bin
 
 # 7. Define paths to all files (relative to 'makefile')
 #     These are usually not changed unless you reorganize the code
-#     The comment com option is needed if you follow the suggest Eclipse procedure
+#     The commented com option is needed if you follow the suggested Eclipse procedure
 src = ../src
 com = ../../Common
 #com = ../../NairnMPM/Common

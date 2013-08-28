@@ -8,10 +8,8 @@
 #       carbon - OSU carbon/hedera cluster (the default)
 #       mpm - OSU machine
 #       cygwin - Standard cygwin install in Windows
-#       cluster2 - Grant Smith's cluster at U of Utah
 #       inferno - C-SAFE cluster at U of Utah
 #       zia - A Debian linux machine
-#       artemis - for Edward Le on FP Innovations cluster
 # Other options are
 #    make clean - to remove all compiled objects
 #    make install - to copy compiled code to desired installation destination
@@ -25,12 +23,12 @@
 # 4. $(CFLAGS) is the gcc compiler options
 #    $(LFLAGS) is the gcc linking options
 # 5. $(output) is path to save executable
+#    $(dtdpath) is path to save DTD file
 # 6. $(ioutput) is path to install executable
 # 7. $(src) and $(com) are paths to parts of the source code
 #
 # Each of these can changed by editing or can be overriden at make time with syntax such as
-#
-# make CFLAGS="-c -arch x86_64" LFLAGS="-arch x84_64" output="~/Desktop/NairnMPM" SYSTEM=mac
+# and are documented more in the numbered section below
 #
 # -------------------------------------------------------------------------
 # 1. Path and/or command to link to xerces library
@@ -49,17 +47,11 @@ endif
 ifeq ($(SYSTEM),cygwin)
 	xercesSo = -L/usr/local/lib -lxerces-c
 endif
-ifeq ($(SYSTEM),cluster2)
-	xercesSo = /app/software/Xerces/lib/libxerces-c.so
-endif
 ifeq ($(SYSTEM),inferno)
 	xercesSo = /usr/sci/projects/SCIRun/Thirdparty/1.22/Linux/gcc-3.2-32bit/lib/libxerces-c.so
 endif
 ifeq ($(SYSTEM),zia)
 	xercesSo = /usr/lib/libxerces-c.so
-endif
-ifeq ($(SYSTEM),artemis)
-	xercesSo = /home/edward/xerces/lib/libxerces-c.so
 endif
 
 # 2. Path to xerces headers (if not at default /usr/local/include) 
@@ -70,17 +62,11 @@ endif
 ifeq ($(SYSTEM),mpm)
 	headersPath = /usr/include
 endif
-ifeq ($(SYSTEM),cluster2)
-	headersPath = /app/software/Xerces/includ
-endif
 ifeq ($(SYSTEM),inferno)
 	headersPath = /usr/sci/projects/SCIRun/Thirdparty/1.22/Linux/gcc-3.2-32bit/include
 endif
 ifeq ($(SYSTEM),zia)
 	headersPath = /usr/include/xercesc
-endif
-ifeq ($(SYSTEM),artemis)
-	headersPath = /home/edward/xerces/include
 endif
 
 # 3. Define compiler to use and other commands
@@ -117,12 +103,12 @@ LFLAGS= -fopenmp
 output = ../input/NairnMPM
 dtdpath = ../input/NairnMPM.dtd
 
-# 7. Define paths to all files (relative to 'makefile')
+# 6. Define paths to all files (relative to 'makefile')
 #     These are usually not changed unless you reorganize the code
 ioutput = ~/bin
 
 # 7. Define paths to all files (relative to 'makefile')
-#     The comment com option is needed if you follow the suggested Eclipse procedure
+#     The commented com option is needed if you follow the suggested Eclipse procedure
 src = ../src
 com = ../../Common
 #com = ../Common
