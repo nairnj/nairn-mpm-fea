@@ -1,6 +1,8 @@
 #summary Setting up cygwin to download and and use nairn-mpm-fea.
 #labels Featured,Getting_Started
 
+<font color="red">This page has been moved to <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Compiling_in_Windows#Installing_xerces">OSUPDocs Wiki</a></font>
+
 = Introduction =
 
 The `nairn-mpm-fea` projects runs well in Windows by using the <a href="http://www.cygwin.com">cygwin</a> system. You can download this project, compile the code, run calculations, and visualize the results.
