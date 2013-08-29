@@ -2,19 +2,3 @@
 #labels Featured,Getting_Started
 
 <font color="red">This page has been moved to <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Compiling_in_Windows#Installing_and_Setting_Up_cygwin">OSUPDocs Wiki</a></font>
-
-= Setting up `cygwin` =
-
-The recommended approach to using `nairn-mpm-fea` in Windows is to use `cygwin` and this page gives the step-by-step process for the required setup. This process has been verified in Windows XP, Windows Vista and Windows 7 (although you may need the latest `cygwin 1.7` for Windows 7).
-
-  # Download the <a href="http://www.cygwin.com">cygwin setup.exe</a> application and run it (to install `cygwin` or, if you already have `cygwin` installed, you still might need to install plug-ins listed below, if you do not have them already).
-  # Follow the default options until you reach the "Packages" step of the `cygwin` setup wizard. In that step, expand the "Devel" category and select:
-    * `g++` - the gnu c++ compiler
-    * `gdb` - the gnu debugger (optional)
-    * `make` - program for making files (the `NairnMPM` and `NairnFEA` binaries)
-    * `Subversion` - the version control system needed to download code from `GoogleCode.com`.
-  # Next, expand the "Net" category and select:
-    * `openssh` - ssh command for secure remote connections (optional).
-  # Finally, expand the "Editors" section and select  a command-line editer (_e.g._, `vim`). Such an editor is useful because editing `cygwin` files with Microsoft software (_e.g._, `NotePad`) can seriously corrupt files by changing line endings for Unix-style line feeds to Windows style carriage returns and line feeds.
-
-The basic `cygwin` should now be set up. You can run it to open a `cygwin` command-line window and browse your files. By the default, all `cygwin` files will be in the folder `C:\cygwin`. Your home folder will usually be at `/home/YOURUSERNAME`. You are now ready to [Download_Project download the code].
