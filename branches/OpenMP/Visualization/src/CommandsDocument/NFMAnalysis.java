@@ -44,7 +44,7 @@ public class NFMAnalysis  implements Runnable
 	//----------------------------------------------------------------------------
 	
 	// Run FEA or MPM analysis
-	public void runNFMAnalysis(boolean doBackground,int runType,String xmlData,ConsolePane sout)
+	public void runNFMAnalysis(boolean doBackground,int runType,String xmlData,ConsolePane sout,int processors)
 	{
 		// set the xml data
 		cmds = xmlData;
@@ -136,6 +136,11 @@ public class NFMAnalysis  implements Runnable
 		// options (-a to abort after setup, -v to validate)
 		if(runType==RUN_CHECK_MESH) shell.append(" -a");
 		if(doValidate) shell.append(" -v");
+		
+		// processors
+		if(processors>1)
+		{	shell.append(" -np "+processors);
+		}
 			
 		String inName = tmpFile.getName();
 		if(inName.indexOf(' ')>=0)

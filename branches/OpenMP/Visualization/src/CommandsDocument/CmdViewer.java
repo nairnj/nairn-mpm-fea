@@ -8,6 +8,7 @@
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Scanner;
 
 import javax.swing.*;
 
@@ -36,6 +37,7 @@ public class CmdViewer extends JNCmdTextDocument
 	private String username;
 	private StringBuffer header;
 	private int np;
+	private int processors=1;
 	private int lnameEl;
 	private HashMap<String,String> xmldata = null;
 	public Materials mats = null;
@@ -217,9 +219,23 @@ public class CmdViewer extends JNCmdTextDocument
 			// when done, will launch the analysis
 			return;
 		}
+		else
+		{	// look for processors command in XML commands
+			processors = 1;
+			offset = cmdField.getCommands().indexOf("<!--processors ");
+			if(offset>0)
+			{	int endoffset = cmdField.getCommands().indexOf("-->",offset);
+				if(endoffset>0)
+				{	String procs = cmdField.getCommands().substring(offset+15,endoffset);
+					Scanner getProcs=new Scanner(procs);
+					if(getProcs.hasNextInt()) processors =  getProcs.nextInt();
+					if(processors<1) processors = 1;
+				}
+			}
+		}
 		
 		// launch analysis with DTD commands in the field
-		nfmAnalysis.runNFMAnalysis(doBackground,runType,cmdField.getCommands(),soutConsole);
+		nfmAnalysis.runNFMAnalysis(doBackground,runType,cmdField.getCommands(),soutConsole,processors);
 	}
 	
 	// when analysis is done, proceed with calculations (if OKO)
@@ -228,7 +244,7 @@ public class CmdViewer extends JNCmdTextDocument
 		if(status==false) return;
 		
 		// launch analysis with DTD commands in the field
-		nfmAnalysis.runNFMAnalysis(useBackground,openMesh,buildXMLCommands(),soutConsole);
+		nfmAnalysis.runNFMAnalysis(useBackground,openMesh,buildXMLCommands(),soutConsole,processors);
 	}
 	
 	// initialize variables when intepreting commands
@@ -292,6 +308,11 @@ public class CmdViewer extends JNCmdTextDocument
 				header.append(readStringArg(args.get(i)));
 			}
 			header.append("\n");
+		}
+		
+		else if(theCmd.equals("processors"))
+		{	processors = readIntArg(args.get(1));
+			if(processors<1) processors = 1;
 		}
 		
 		else if(theCmd.equals("analysis"))
