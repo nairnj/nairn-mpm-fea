@@ -36,16 +36,15 @@ Area #matname$,#thick
     Keypoint "BotRight",#length,0
   EndPath
   Path "Right",#vert
-    Keypoint "BotRight"
+    Keypoints "BotRight"
     Keypoint "TopRight",#length,#depth
   EndPath
   Path "Top",#horiz
-    Keypoint "TopRight"
+    Keypoints "TopRight"
     Keypoint "TopLeft",0,#depth
   EndPath
   Path "Left",#vert
-    Keypoint "TopLeft"
-    Keypoint "BotLeft"
+    Keypoints "TopLeft","BotLeft"
   EndPath
 EndArea
 Resequence "BotRight"
