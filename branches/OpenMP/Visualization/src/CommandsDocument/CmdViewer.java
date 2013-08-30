@@ -57,6 +57,7 @@ public class CmdViewer extends JNCmdTextDocument
 	private boolean mpmMeshToFile;
 	private String feaTemp;
 	private double stressFreeTemp;
+	private boolean stopCommand;
 	
 	// constants
 	public static final int PLANE_STRAIN=0;
@@ -241,7 +242,7 @@ public class CmdViewer extends JNCmdTextDocument
 	// when analysis is done, proceed with calculations (if OKO)
 	public void analysisFinished(boolean status)
 	{	// give up on error
-		if(status==false) return;
+		if(status==false || stopCommand==true) return;
 		
 		// launch analysis with DTD commands in the field
 		nfmAnalysis.runNFMAnalysis(useBackground,openMesh,buildXMLCommands(),soutConsole,processors);
@@ -273,6 +274,7 @@ public class CmdViewer extends JNCmdTextDocument
 		maxTime = "";
 		feaTemp = null;
 		stressFreeTemp = 0.;
+		stopCommand = false;
 	}
 	
 	// handle commands
@@ -458,6 +460,11 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		else if(theCmd.equals("stressfreetemp"))
 			doStressFreeTemp(args);
+		
+		else if(theCmd.equals("stop"))
+		{	super.doCommand(theCmd,args);
+			stopCommand = true;
+		}
 		
 		else
 			super.doCommand(theCmd, args);
