@@ -88,20 +88,36 @@ blockquote { font-size: 12pt;
 <blockquote>
 Command #1,#2,#3,#4,...
 </blockquote>
-<p>where Command is the command and #1, #2, etc., are arguments to the command. The command must be separated from the arguments by a space. The arguments must be separated by commas. Leading and trailing spaces in arguments are ignored. Blank lines are ignored. Lines whoe first non-blank character is &quot;'!&quot; are comments and are also ignored.
+<p>where Command is the command and #1, #2, etc., are arguments to the command. The command
+must be separated from the arguments by a space. The arguments must be separated by commas.
+Leading and trailing spaces in arguments are ignored. Blank lines are ignored.
+Lines whose first non-blank character is &quot;!&quot; are comments and are also ignored.
 </p>
 
-<p>Any argument to any command can be a number, a string, a numeric expression, or a string expression (see next section).</p>
+<p>Any argument to any command can be a number, a string, a numeric expression, or a
+string expression (see next section).</p>
 
 <h3>Variables and Expressions</h3>
 
-<p>The commands can define numeric and string variables. Numeric variable names must begins in a letter or #, contain only letters and numbers or underscores, and have no function name as a substring within the name. String variable are the same except they must end in $. You create variables using the Set command:</p>
+<p>The commands can define numeric and string variables. Numeric variable names must begins
+in a letter or #, contain only letters and numbers or underscores, and have no
+function name as a substring within the name. String variable are the same except they must
+end in $. You create variables using the Set command:</p>
 <blockquote>
 Set var = expression
 </blockquote>
-<p>where &quot;expression&quot; is any basic mathematical expression for numeric variables or a string expression for string variables. The &quot;Set&quot; command is optional (<i>i.e.</i>, any line with variable name followed by equals sign is assumed to be a &quot;Set&quot; command.</p>
+<p>where &quot;expression&quot; is any basic mathematical expression for numeric variables
+or a string expression for string variables. The &quot;Set&quot; command is
+optional (<i>i.e.</i>, any line with variable name followed by equals sign is assumed
+to be a &quot;Set&quot; command.</p>
 
-<p>Numeric expressions use standard operators (+, 0, *, /, ^, and %) and standard precedences unless grouped by parentheses. The expression can use the math functions cos(), sin(), tan(), acos(), asin(), atan(), sqr(), sqrt(), log(), min(), max(), exp(), floor(), ceil(), abs() neg(), and rnd(). String expressions can combine quoted strings and variables with the single operator &amp;. Nummeric variables can be used and they are converted to strings. You cannot embed numeric expressions within string expressions.</p>
+<p>Numeric expressions use standard operators (+, 0, *, /, ^, and %) and standard precedences
+unless grouped by parentheses. The expression can use the math
+functions cos(), sin(), tan(), acos(), asin(), atan(), cosh(), sinh(), tanh(), sqrt(),
+log(), log10(), exp(), abs() int(), sign(), and rand(). String expressions can
+combine quoted strings and variables with the single operator &amp;. Nummeric variables
+can be used and they are converted to strings. You cannot embed numeric expressions
+within string expressions.</p>
 
 
 <h3>Conditionals</h3>
@@ -120,7 +136,14 @@ else<br>
    &nbsp;&nbsp;...<br>
 endif
 </blockquote>
-<p>In the standard if, the expressions are compared by numeric comparison, unless one or both are strings, in which case string comparison is used. The ifStr command forces string comparison between the expressions. The comparison operaters are =, ==, &quot;is&quot;, !=, &gt;, &gt;=, &lt;, and &lt;=. For numbers, =, ==, and &quot;is&quot; are the same. For strings, = and &quot;is&quot; are case insensitive comparisons and == is case sensitive. An ifDef comparison is true if the variable name given has been defined in at least one Set command. The ifNDef comparison is true if the variable has not been defined in any Set command.</p>
+<p>In the standard if, the expressions are compared by numeric comparison, unless one or
+both are strings, in which case string comparison is used. The ifStr command forces string
+comparison between the expressions. The comparison operaters
+are =, ==, &quot;is&quot;, !=, &gt;, &gt;=, &lt;, and &lt;=. For numbers, =, ==, and &quot;is&quot; are
+the same. For strings, = and &quot;is&quot; are case insensitive comparisons
+and == is case sensitive. An ifDef comparison is true if the variable name
+given has been defined in at least one Set command. The ifNDef comparison is true if the variable
+has not been defined in any Set command.</p>
 
 <h3>Repeat Loops</h3>
 
@@ -129,6 +152,23 @@ endif
 <h3>Subroutines</h3>
 
 <p>To be developed.</p>
+
+<h3>Debugging Commands</h3>
+
+The following commands are not used to generate input command files, but can be useful in debugging scripts:
+
+<ul>
+<li><code>Write #1,#2,...</code><br>
+Write each argument (string or number or expression) to the output console.
+</li>
+<li><code>Stop #1,#2,...</code><br>
+Write each argument (string or number or expression) to
+the output console and then stop the calculations.
+</li>
+<li><code>Clear</code><br>
+Clear all text from the output console.
+</li>
+</ul>
 
 <h3><a name="campatible"></a>Comparison to NairnFEAMPM Language</h3>
 
@@ -347,9 +387,9 @@ Specify crack parameters to be archived in MPM calculations. The list can be in 
 
 <p>Crack in FEA calculations are set up by configuring the mesh to include a crack. A crack can be internal to the mesh or, for symmetric loading, can be on an edge of the mesh and defined with the help of boundary conditions. These two crack geometries are illustrated here:</p>
 <center>
-<img src = "../Images/ccfull.jpg" width = "190" height = "192" alt = "" align="top"/>
+<img src = "ccfull.jpg" width = "190" height = "192" alt = "" align="top"/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<img src = "../Images/cchalf.jpg" width = "201" height = "228" alt = "" align="top"/>
+<img src = "cchalf.jpg" width = "201" height = "228" alt = "" align="top"/>
 </center>
 <p>The crack plane edges must be collinear and of equal length (&Delta;a). When a calculation with cracks is done, the Crack Closure... command (in NairnFEAMPM) can be used to calculate crack tip energy release rate.</p>
 <p>The one command to alter crack tip geometry is
