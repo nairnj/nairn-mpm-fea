@@ -1,0 +1,146 @@
+! ********** PREAMBLE SECTION **********
+Title "MPM Analysis"
+Name "User Name"
+
+! Header
+Header
+Two disks or blocks with normal impact
+The contact is handle my multimaterial MPM methgods
+EndHeader
+
+Analysis "Plane Stress MPM"
+
+! ********** PARAMTERS SECTION **********
+! dimensions (width and height multiple of cell)
+#width=200
+#height=60
+#thick=1
+#cell=5
+#lwidth=50
+#lheight=50
+#rwidth=50
+#rheight=50
+#sepcells=6
+#disks$="yes"					! disks (yes) or blocks (no)
+
+! Disk properties
+#Edisk=1000					! E in MPa
+#rhodisk=1.5					! density in g/cm^3
+
+! calculate wave speed and impact at some fraction of that speed
+#vwave=1000*sqrt(1000*#Edisk/#rhodisk)
+#wspd=#vwave/1000
+Comment "E = "&#Edisk&" MPa, rho = "&#rhodisk&" g/cm^3, wave spd = "&#wspd&" m/sec"
+#linit=0.1					! fraction of wave speed left
+#rinit=0.1					! fraction of wave speed right
+
+! from separation, find disk lower-left origins
+if #sepcells!=2*int(#sepcells/2)
+  #sepleft=(#sepcells-1)*#cell
+  #sepright=(#sepcells+1)*#cell
+else
+  #sepleft=#sepcells*#cell
+  #sepright=#sepcells*#cell
+endif
+#lx=(#width-#sepleft)/2-#lwidth
+#rx=(#width+#sepright)/2
+#ly=int((#height-#lheight)/(2*#cell))*#cell
+#ry=int((#height-#rheight)/(2*#cell))*#cell
+
+#travel=#width/4
+#lspeed=#linit*#vwave				! speed in mm/s left
+#rspeed=#rinit*#vwave				! speed in mm/s right
+#mxtime=1000*#travel/#lspeed	    		! total time in ms
+
+MPMmethod "USAVG","GIMP"
+Archive "TwoDisks/disksUSAVG"
+ArchiveTime #mxtime/50
+MaximumTime #mxtime
+ToArchive velocity,stress,strain,strainenergy,rotstrain
+!MultimaterialMode 0,1,0
+!ContactPosition 0.8
+
+XMLData "MPMHeader"
+    <GlobalArchiveTime units="ms">0.0387298</GlobalArchiveTime>
+    <GlobalArchive type="sxx" material="1"/>
+    <GlobalArchive type="sxx" material="2"/>
+    <GlobalArchive type="velx" material="1"/>
+    <GlobalArchive type="velx" material="2"/>
+    <Damping>0</Damping>
+    <MultiMaterialMode Vmin="0" Dcheck="1" Normals="0">
+      <Friction>0</Friction>
+      <ContactPosition>0.8</ContactPosition>
+    </MultiMaterialMode>
+EndXMLData
+
+! ********** MATERIALS SECTION **********
+Material "Left","Polymer Left",1
+  E #Edisk
+  nu .33
+  a 60
+  rho #rhodisk
+Done
+
+Material "Right","Polymer Right",1
+  E #Edisk
+  nu .33
+  a 60
+  rho #rhodisk
+Done
+
+!GlobalArchive sxx,Left
+!GlobalArchive sxx,Right
+!GlobalArchive velx,Left
+!GlobalArchive velx,Right
+
+! ********** GRID SECTION **********
+GridHoriz #width/#cell
+GridVert #height/#cell
+GridThickness #thick
+GridRect 0,#width,0,#height
+
+Region "Left",#lspeed,0,#thick
+  if #disks$="yes"
+    Oval #lx,#lx+#lwidth,#ly,#ly+#lheight
+  else
+    Rect #lx,#lx+#lwidth,#ly,#ly+#lheight
+  endif
+EndRegion
+
+Region "Right",-#rspeed,0,#thick
+  if #disks$="yes"
+    Oval #rx,#rx+#rwidth,#ry,#ry+#rheight
+  else
+    Rect #rx,#rx+#rwidth,#ry,#ry+#rheight
+  endif
+EndRegion
+
+! ********** BOUNDARY CONDITIONS SECTION **********
+! fixed nodes on the boundary
+!MoveLine 0,0,#width,0
+!	Velocity y,constant,0
+!EndMoveLine
+!MoveLine #width,0,#width,#height
+!	Velocity x,constant,0
+!EndMoveLine
+!MoveLine 0,#height,#width,#height
+!	Velocity y,constant,0
+!EndMoveLine
+!MoveLine 0,0,0,#height
+!	Velocity x,constant,0
+!EndMoveLine
+XMLData "GridBCs"
+    <BCLine x1="0" y1="0" x2="200" y2="0">
+      <DisBC dir="2" style="1" vel="0"/>
+    </BCLine>
+    <BCLine x1="200" y1="0" x2="200" y2="60">
+      <DisBC dir="1" style="1" vel="0"/>
+    </BCLine>
+    <BCLine x1="0" y1="60" x2="200" y2="60">
+      <DisBC dir="2" style="1" vel="0"/>
+    </BCLine>
+    <BCLine x1="0" y1="0" x2="0" y2="60">
+      <DisBC dir="1" style="1" vel="0"/>
+    </BCLine>
+EndXMLData
+
