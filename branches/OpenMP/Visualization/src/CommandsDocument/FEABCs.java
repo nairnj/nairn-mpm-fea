@@ -245,7 +245,7 @@ public class FEABCs
 			bcSettings.append(","+value);
 		}
 		if(args.size()>4)
-		{	value = doc.readDoubleArg(args.get(3));
+		{	value = doc.readDoubleArg(args.get(4));
 			bcSettings.append(","+value);
 		}
 		bcSettings.append("'/>\n");
