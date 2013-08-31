@@ -18,6 +18,8 @@
 
 <h1>Defining the FEA Mesh</h1>
 
+<p class="osupdocs">Deprecated documentation: the new version is in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/FEA_Input_Files#Defining_the_FEA_Mesh">OSUPDocs wiki</a> (see Defining the FEA Mesh).</p>
+
 <p>FEA calculations are done within a mesh of elements. There are two ways to specify the mesh. One way is to <a href="#sec1">explicitly list</a> each nodal point and each element. The other method is to use <code>XML</code> commands that <a href="#sec2">generate</a> the mesh.</p>
 
 <p>Each type of mesh creation must be subordinate to a <code>&lt;Mesh&gt;</code> element, but the methods cannot be mixed. Only one <code>&lt;Mesh&gt;</code> element is allowed in the input file and it must either <a href="#sec1">explicitly</a> specify the mesh or use commands to <a href="#sec2">generate</a> the mesh
