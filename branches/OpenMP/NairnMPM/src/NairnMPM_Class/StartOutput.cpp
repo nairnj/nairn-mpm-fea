@@ -17,13 +17,13 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
-#include "Boundary_Conditions/NodalConcBC.hpp"
-#include "Boundary_Conditions/NodalTempBC.hpp"
+//#include "Boundary_Conditions/NodalConcBC.hpp"
+//#include "Boundary_Conditions/NodalTempBC.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
-#include "Boundary_Conditions/MatPtLoadBC.hpp"
-#include "Boundary_Conditions/MatPtTractionBC.hpp"
-#include "Boundary_Conditions/MatPtFluxBC.hpp"
-#include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
+//#include "Boundary_Conditions/MatPtLoadBC.hpp"
+//#include "Boundary_Conditions/MatPtTractionBC.hpp"
+//#include "Boundary_Conditions/MatPtFluxBC.hpp"
+//#include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 #include "Cracks/CrackHeader.hpp"
 
 /*********************************************************************
@@ -178,71 +178,4 @@ void NairnMPM::MyStartResultsOutput(void)
         archiver->ArchiveVelocityBCs(firstVelocityBC);
     }
     
-    //---------------------------------------------------
-    // Loaded Material Points
-    if(firstLoadedPt!=NULL)
-    {   PrintSection("MATERIAL POINTS WITH EXTERNAL FORCES");
-        cout << "Point   DOF ID     Load (N)     Arg (ms/ms^-1)  Function\n"
-        << "----------------------------------------------------------\n";
-        nextBC=(BoundaryCondition *)firstLoadedPt;
-        while(nextBC!=NULL)
-            nextBC=nextBC->PrintBC(cout);
-        cout << endl;
-    }
-	
-	//---------------------------------------------------
-    // Traction Loaded Material Points
-    if(firstTractionPt!=NULL)
-    {   PrintSection("MATERIAL POINTS WITH TRACTIONS");
-        cout << "Point   DOF Face ID   Stress (MPa)    Arg (ms/ms^-1)  Function\n"
-        << "----------------------------------------------------------------\n";
-        nextBC=(BoundaryCondition *)firstTractionPt;
-        while(nextBC!=NULL)
-            nextBC=nextBC->PrintBC(cout);
-        cout << endl;
-    }
-	
-   //---------------------------------------------------
-    // Diffusion boundary conditions
-	if(DiffusionTask::active)
-	{   PrintSection("NODAL POINTS WITH FIXED CONCENTRATIONS");
-		cout << "  Node  ID    Conc (/csat)   Arg (ms/ms^-1)  Function\n"
-		<< "------------------------------------------------------\n";
-		nextBC=firstConcBC;
-		while(nextBC!=NULL)
-			nextBC=nextBC->PrintBC(cout);
-		cout << endl;
-		
-		//---------------------------------------------------
-		// Concentration Flux Material Points
-		PrintSection("MATERIAL POINTS WITH CONCENTRATION FLUX");
-		cout << " Point  DOF Face ID   Flux (mm/sec)   Arg (ms/ms^-1)  Function\n"
-		<< "---------------------------------------------------------------\n";
-		nextBC=(BoundaryCondition *)firstFluxPt;
-		while(nextBC!=NULL)
-			nextBC=nextBC->PrintBC(cout);
-		cout << endl;
-	}
-	
-	//---------------------------------------------------
-    // Conduction boundary conditions
-	if(ConductionTask::active)
-	{   PrintSection("NODAL POINTS WITH FIXED TEMPERATURES");
-		cout << " Node   ID   Temp (-----)   Arg (ms/ms^-1)  Function\n"
-		<< "------------------------------------------------------\n";
-		nextBC=firstTempBC;
-		while(nextBC!=NULL)
-			nextBC=nextBC->PrintBC(cout);
-		cout << endl;
-		
-		//---------------------------------------------------
-		// Heat Flux Material Points
-		PrintSection("MATERIAL POINTS WITH HEAT FLUX");
-		cout << " Point  DOF Face ID   Flux (W/m^2)    Arg (ms/ms^-1)  Function\n"
-		<< "---------------------------------------------------------------\n";
-		nextBC=(BoundaryCondition *)firstHeatFluxPt;
-		while(nextBC!=NULL)
-			nextBC=nextBC->PrintBC(cout);
-		cout << endl;
-	}
 }

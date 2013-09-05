@@ -37,6 +37,8 @@
 #include "Boundary_Conditions/MatPtFluxBC.hpp"
 #include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 #include "Patches/GridPatch.hpp"
+#include "Boundary_Conditions/NodalConcBC.hpp"
+#include "Boundary_Conditions/NodalTempBC.hpp"
 #include <time.h>
 
 // global analysis object
@@ -490,9 +492,15 @@ void NairnMPM::PreliminaryCalcs(void)
 			if(theMaterials[matid]->Rigid())
 			{	// if rigid particle, switch with particle at nmpmsNR-1
 				MPMBase *temp = mpm[p];
-				mpm[p] = mpm[nmpmsNR-1];
-				mpm[nmpmsNR-1] = temp;
-				nmpmsNR--;
+				mpm[p] = mpm[nmpmsNR-1];		// move last nonrigid (#nmpmsNR) to position p (p+1)
+				mpm[nmpmsNR-1] = temp;			// move rigid particle (p+1) to rigid domain (#nmpmNR)
+				nmpmsNR--;						// now 0-based pointer of previous NR particle
+				
+				// fix particle based boundary conditions
+				ReorderPtBCs(firstLoadedPt,p,nmpmsNR);
+				ReorderPtBCs(firstTractionPt,p,nmpmsNR);
+				ReorderPtBCs(firstFluxPt,p,nmpmsNR);
+				ReorderPtBCs(firstHeatFluxPt,p,nmpmsNR);
 				
 				// back up to new last nonrigid
 				while(nmpmsNR>=0)
@@ -500,6 +508,7 @@ void NairnMPM::PreliminaryCalcs(void)
 					if(!theMaterials[matid]->Rigid()) break;
 					nmpmsNR--;
 				}
+				
 			}
 			
 			// next particle
@@ -568,6 +577,78 @@ void NairnMPM::PreliminaryCalcs(void)
     // create buffers for copies of material properties
     UpdateStrainsFirstTask::CreatePropertyBuffers(GetTotalNumberOfPatches());
 	
+	//---------------------------------------------------
+	// Finish Results File
+	BoundaryCondition *nextBC;
+	
+    //---------------------------------------------------
+    // Loaded Material Points
+    if(firstLoadedPt!=NULL)
+    {   PrintSection("MATERIAL POINTS WITH EXTERNAL FORCES");
+        cout << "Point   DOF ID     Load (N)     Arg (ms/ms^-1)  Function\n"
+        << "----------------------------------------------------------\n";
+        nextBC=(BoundaryCondition *)firstLoadedPt;
+        while(nextBC!=NULL)
+            nextBC=nextBC->PrintBC(cout);
+        cout << endl;
+    }
+	
+	//---------------------------------------------------
+    // Traction Loaded Material Points
+    if(firstTractionPt!=NULL)
+    {   PrintSection("MATERIAL POINTS WITH TRACTIONS");
+        cout << "Point   DOF Face ID   Stress (MPa)    Arg (ms/ms^-1)  Function\n"
+        << "----------------------------------------------------------------\n";
+        nextBC=(BoundaryCondition *)firstTractionPt;
+        while(nextBC!=NULL)
+            nextBC=nextBC->PrintBC(cout);
+        cout << endl;
+    }
+	
+	//---------------------------------------------------
+    // Diffusion boundary conditions
+	if(DiffusionTask::active)
+	{   PrintSection("NODAL POINTS WITH FIXED CONCENTRATIONS");
+		cout << "  Node  ID    Conc (/csat)   Arg (ms/ms^-1)  Function\n"
+		<< "------------------------------------------------------\n";
+		nextBC=firstConcBC;
+		while(nextBC!=NULL)
+			nextBC=nextBC->PrintBC(cout);
+		cout << endl;
+		
+		//---------------------------------------------------
+		// Concentration Flux Material Points
+		PrintSection("MATERIAL POINTS WITH CONCENTRATION FLUX");
+		cout << " Point  DOF Face ID   Flux (mm/sec)   Arg (ms/ms^-1)  Function\n"
+		<< "---------------------------------------------------------------\n";
+		nextBC=(BoundaryCondition *)firstFluxPt;
+		while(nextBC!=NULL)
+			nextBC=nextBC->PrintBC(cout);
+		cout << endl;
+	}
+	
+	//---------------------------------------------------
+    // Conduction boundary conditions
+	if(ConductionTask::active)
+	{   PrintSection("NODAL POINTS WITH FIXED TEMPERATURES");
+		cout << " Node   ID   Temp (-----)   Arg (ms/ms^-1)  Function\n"
+		<< "------------------------------------------------------\n";
+		nextBC=firstTempBC;
+		while(nextBC!=NULL)
+			nextBC=nextBC->PrintBC(cout);
+		cout << endl;
+		
+		//---------------------------------------------------
+		// Heat Flux Material Points
+		PrintSection("MATERIAL POINTS WITH HEAT FLUX");
+		cout << " Point  DOF Face ID   Flux (W/m^2)    Arg (ms/ms^-1)  Function\n"
+		<< "---------------------------------------------------------------\n";
+		nextBC=(BoundaryCondition *)firstHeatFluxPt;
+		while(nextBC!=NULL)
+			nextBC=nextBC->PrintBC(cout);
+		cout << endl;
+	}
+
     // Print particle information oand other preliminary calc results
     PrintSection("FULL MASS MATRIX");
     
@@ -616,6 +697,13 @@ void NairnMPM::PreliminaryCalcs(void)
     
     // blank line
     cout << endl;
+}
+
+// When NR particle p2 moves to p1, reset any point-based BCs that use that point
+void NairnMPM::ReorderPtBCs(MatPtLoadBC *firstBC,int p1,int p2)
+{
+	while(firstBC!=NULL)
+		firstBC = firstBC->ReorderPtNum(p1,p2);
 }
 
 // Called just before time steps start

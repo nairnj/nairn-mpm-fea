@@ -20,6 +20,7 @@
 
 class MPMBase;
 class BoundaryCondition;
+class MatPtLoadBC;
 
 // global variables
 extern double mtime,propTime,timestep,strainTimestep;
@@ -50,6 +51,7 @@ class NairnMPM : public CommonAnalysis
 		void MPMAnalysis(bool);
 		void MPMStep(void);
 		void PreliminaryCalcs(void);
+		void ReorderPtBCs(MatPtLoadBC *,int,int);
 		void SetForceBCs(void);
 		void ValidateOptions(void);
 		void Usage(void);

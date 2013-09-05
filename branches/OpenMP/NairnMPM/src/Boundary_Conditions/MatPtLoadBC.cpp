@@ -26,6 +26,17 @@ MatPtLoadBC::MatPtLoadBC(int num,int dof,int sty)
 						// it is assumed z if not x (=1) or y (=2)
 }
 
+// When particles reordered, fix point num if needed
+// norigid particle p2+1 just moved to p1+1 and rigid particle
+//		p1+1 moved to p2+1
+MatPtLoadBC *MatPtLoadBC::ReorderPtNum(int p1, int p2)
+{	if(ptNum==p2+1)
+		ptNum = p1+1;
+	else if(ptNum==p1+1)
+		ptNum = p2+1;
+	return (MatPtLoadBC *)GetNextObject();
+}
+
 #pragma mark MatPtLoadBC: Methods
 
 // print to output

@@ -23,7 +23,8 @@ class MatPtLoadBC: public BoundaryCondition
         
         // constructors and destructors
         MatPtLoadBC(int,int,int);
-        
+		MatPtLoadBC *ReorderPtNum(int,int);
+    
         // virtual methods
         virtual BoundaryCondition *PrintBC(ostream &);
 		virtual void GetPosition(double *,double *,double *,double *);
