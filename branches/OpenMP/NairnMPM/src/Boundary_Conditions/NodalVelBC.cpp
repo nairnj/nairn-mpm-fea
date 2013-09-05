@@ -30,6 +30,7 @@ NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTi
     angle2 = ang2;
     dir = ConvertToDirectionBits(dof);      // change input settings to x,y,z bits
     SetNormalVector();						// get normal vector depending on dir and angles
+    ZeroVector(&freaction);
 	
     // old dir==0 was skwed condition, now do by setting two velocities, thus never 0 here
     nd[nodeNum]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
@@ -252,6 +253,7 @@ NodalVelBC *NodalVelBC::SetGhostVelBC(double mstime)
 NodalVelBC *NodalVelBC::InitFtotDirection(double mstime)
 {	// set if has been activated
 	int i = GetNodeNum(mstime);
+    ZeroVector(&freaction);
 	if(i>0) nd[i]->SetFtotDirection(&norm,timestep,&freaction);
 	return (NodalVelBC *)GetNextObject();
 }

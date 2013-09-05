@@ -949,7 +949,7 @@ void ArchiveData::GlobalArchive(double atime)
 	GlobalQuantity *nextGlobal=firstGlobal;
 	while(nextGlobal!=NULL)
 	    nextGlobal=nextGlobal->AppendQuantity(fline);
-	
+    
 	// append to global results file
 	ofstream global;
 	try
