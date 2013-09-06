@@ -124,8 +124,8 @@ if #fixsides="yes"
 else
   Archive "Results/HETension/"&#analysis&"-"&#method&"-"&#update&"/"&#loading&"/"&#matID
 endif
-TimeStep 1000,(1+#hold+#unload)*#time,#factor
-MaximumTime (1+#hold+#unload)*#time
+!TimeStep 1000,(1+#hold+#unload)*#time,#factor
+!MaximumTime (1+#hold+#unload)*#time
 ArchiveTime (1+#hold+#unload)*#time/50
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
 ! plastic strain is Left Cauchy Green Strain, history 2 is J or volumetric strain (except some hardening laws)

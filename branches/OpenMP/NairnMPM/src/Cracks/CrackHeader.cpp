@@ -1285,7 +1285,8 @@ void CrackHeader::JIntegral(void)
 				if(nextPt==crackPt) break;
 			}
 			if(count==0)
-			{	nextPt=crackPt;
+			{	/*
+                nextPt=crackPt;
 				NodalPoint *node1=nextPt->node;
 				cout << "# J Contour intersects crack at " << node1->x << "," << node1->y << " fraction " << fract << endl;
 				int dfld = (tipCrk==firstSeg) ? ABOVE_CRACK : BELOW_CRACK;		// initial field
@@ -1303,6 +1304,7 @@ void CrackHeader::JIntegral(void)
 					nextPt=nextPt->nextPoint;
 					if(nextPt==crackPt) break;
 				}
+                */
 				throw "Section of the J Integral contour was in empty space";
 			}
 
