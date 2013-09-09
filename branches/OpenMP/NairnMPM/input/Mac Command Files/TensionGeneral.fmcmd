@@ -1,27 +1,8 @@
-! Subroutines
-
-! When rotate the specimen, this checks mesh corners to find limits of rotated space
-Sub CheckPoint #xpt,#ypt
-  #xtest=#cs*#xpt-#sn*#ypt
-  if #xtest<#xmin
-    #xmin=#xtest
-  else if #xtest>#xmax
-    #xmax=#xtest
-  endif
-  #ytest=#sn*#xpt+#cs*#ypt
-  if #ytest<#ymin
-    #ymin=#ytest
-  else if #ytest>#ymax
-    #ymax=#ytest
-  endif
-EndSub
-
 ! ********** Preamble Section **********
 Title "Low Strain Tensile Loading"Name "John Nairn"
 
-! HeaderHeaderSimple tensile loading on hypoelastic materials (mostly low-strain materials)
+! HeaderHeaderSimple tensile loading on various materials
 2D or 3D uniaxial loading by various boundary conditions
-Sides can be free or constrained
 Intended for development of these materials
 EndHeader! ------------ Parameters ---------------
 
