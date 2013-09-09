@@ -16,8 +16,11 @@ Cammand Development
 -------------------------------------------------------------------
 
 MPM Tasks
-	MPM Region - add property pairs and document
-	MPM Mesh commands
+	TensionTest - particle BCs
+	MPM grid BCs
+		MoveArc, Temperature, Concentration (links in Docs)
+	MPM Cracks
+	Remaining unimplemented material properties
 	
 FEA Not Done
 	Rotate

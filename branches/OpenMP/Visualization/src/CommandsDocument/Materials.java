@@ -106,7 +106,7 @@ public class Materials
 	}
 	
 	// in material mode
-	public void doMaterialProperty(String theCmd,ArrayList<String> args) throws Exception
+	public void doMaterialProperty(String theCmd,ArrayList<String> args,CmdViewer parent) throws Exception
 	{
 		// is it done
 		if(theCmd.equals("done"))
@@ -123,9 +123,7 @@ public class Materials
 		
 		String prop = args.get(0);
 				
-		// these commands require an integer
-		
-		// the rest are "Property double" but some need special cases
+		// These are "Property double" but need special case for prperty name
 		// to account for difference in NairnFEAMPM
 		if(prop.equals("a"))
 			prop = "alpha";
@@ -153,22 +151,130 @@ public class Materials
 			prop = "kCondy";
 		else if(prop.equals("kz"))
 			prop = "kCondz";
-		else if(prop.equals("direction"))
-			prop = "SetDirection";
-		else if(prop.equals("temperature"))
-			prop = "SetTemperature";
-		else if(prop.equals("concentration"))
-			prop = "SetConcentration";
-		else if(prop.equals("settingfunction1"))
-			prop = "SettingFunction";
 		
-		// remaining problems
-		// 1. criterion, altcriterion, direction, altdirection, traction, alttraction
-		// 		need to be put in propagate and altpropagate commands
-		// 2. color
-		// 3. friction and interface
+		// these commands require an integer
+		else if(prop.toLowerCase().equals("ujoption"))
+		{	prop = "UJOpion";
+			// 0, 1, or 2
+			int value = doc.readIntArg(args.get(1));
+			if(value<0 || value>2)
+				throw new Exception("'UJOption' must integer 0, 1, or 2:\n"+args);
+			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("idealrubber"))
+		{	prop = "IdealRubber";
+			// 0 or 1
+			int value = doc.readIntArg(args.get(1));
+			if(value<0 || value>1)
+				throw new Exception("'IdealRubber' property must integer 0 or 1:\n"+args);
+			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("transition"))
+		{	prop = "transition";
+			// 1, 2, or 3
+			int value = doc.readIntArg(args.get(1));
+			if(value<1 || value>3)
+				throw new Exception("'transition' property must integer 1, 2, or 3:\n"+args);
+			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("reversible"))
+		{	prop = "reversible";
+			// 0 or 1 (or no or yes)
+			HashMap<String,Integer> options = new HashMap<String,Integer>(2);
+			options.put("no", new Integer(0));
+			options.put("yes", new Integer(1));
+			int value = doc.readIntOption(args.get(1),options,"reversible property");
+			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("direction"))
+		{	prop = "SetDirection";
+			// 0 to 8
+			int value = doc.readIntArg(args.get(1));
+			if(value<0 || value>8)
+				throw new Exception("Rigid 'direction' property must integer 0 to 8:\n"+args);
+			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("temperature"))
+		{	prop = "SetTemperature";
+			// 0 or 1
+			int value = doc.readIntArg(args.get(1));
+			if(value<0 || value>1)
+				throw new Exception("Rigid 'SetTemperature' property must integer 0 or 1:\n"+args);
+			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("concentration"))
+		{	prop = "SetConcentration";
+			// 0 or 1
+			int value = doc.readIntArg(args.get(1));
+			if(value<0 || value>1)
+				throw new Exception("Rigid 'SetConcentration' property must integer 0 or 1:\n"+args);
+			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			return;
+		}
 		
-		// now add it
+		// These require special handling
+		else if(prop.toLowerCase().equals("friction"))
+		{	xmldata.append(parent.doFriction(args,2));
+			return;
+		}
+		else if(prop.toLowerCase().equals("interface"))
+		{	xmldata.append(parent.doImperfectInterface(args,2));
+			return;
+		}
+		
+		// remaining to be implemented
+		else if(prop.toLowerCase().equals("color"))
+		{	throw new Exception("Scripted color material property not implemented yet");
+		}
+		else if(prop.toLowerCase().equals("artificialvisc"))
+		{	throw new Exception("Scripted ArtificialVisc material property not implemented yet");
+		}
+		else if(prop.toLowerCase().equals("criterion"))
+		{	throw new Exception("Scripted criterion material property not implemented yet");
+		}
+		else if(prop.toLowerCase().equals("altcriterion"))
+		{	throw new Exception("Scripted altcriterion material property not implemented yet");
+		}
+		else if(prop.toLowerCase().equals("direction"))
+		{	throw new Exception("Scripted direction material property not implemented yet");
+		}
+		else if(prop.toLowerCase().equals("altdirection"))
+		{	throw new Exception("Scripted altdirection material property not implemented yet");
+		}
+		else if(prop.toLowerCase().equals("traction"))
+		{	throw new Exception("Scripted traction material property not implemented yet");
+		}
+		else if(prop.toLowerCase().equals("alttraction"))
+		{	throw new Exception("Scripted alttraction material property not implemented yet");
+		}
+		else if(prop.toLowerCase().equals("settingfunction") || 
+				prop.toLowerCase().equals("settingfunction1") ||
+				prop.toLowerCase().equals("settingfunctionx"))
+		{	xmldata.append("    <SettingFunction>"+doc.readStringArg(args.get(1))+"</SettingFunction>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("settingfunction2") ||
+				prop.toLowerCase().equals("settingfunctiony"))
+		{	xmldata.append("    <SettingFunction2>"+doc.readStringArg(args.get(1))+"</SettingFunction2>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("settingfunction3") ||
+				prop.toLowerCase().equals("settingfunctionz"))
+		{	xmldata.append("    <SettingFunction3>"+doc.readStringArg(args.get(1))+"</SettingFunction3>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("valuefunction"))
+		{	xmldata.append("    <ValueFunction>"+doc.readStringArg(args.get(1))+"</ValueFunction>\n");
+			return;
+		}
+		
+		// now add it (if not done already)
 		xmldata.append("    <"+prop+">"+doc.readDoubleArg(args.get(1))+"</"+prop+">\n");
 	}
 	

@@ -213,18 +213,35 @@ Defines a title for the analysis.</li>
 <ul>
 <li><code>Archive #1</code><br>
 Select archiving folder for MPM calculations as relative path from the output file.</li>
+<li><code>ArchiveUnique #1</code><br>
+Same as Archive command excepts creates unique subfolder to prevent overwriting of previous results.</li>
 <li><code>ArchiveTime #1,&lt;#2&gt;</code><br>
 Select archiving frequency for MPM calculations. #1 is the archiving time in ms. The option #2 is the time to start archiving (in ms).</li>
-<li>Damping: Select factor for damping grid velocities in MPM calculations.</li>
-<li>FeedbackDamping: Select coefficient for alternative viscous damping of MPM particle velocities.</li>
-<li>GlobalArchive: Specify global results to be archived in MPM calculations.</li>
-<li>GlobalArchiveTime: Specify time interval for archiving global results.</li>
-<li>LeaveLimit: Set action taken when a particle leaves the grid.</li>
+<li><code>Damping #1</code><br>
+Select factor for damping grid velocities in MPM calculations. #1 is factor or is a
+<a href="#function">user-defined function</a>.
+Both in units of 1/sec.</li>
+<li><code>FeedbackDamping #1,&lt;#2:gt;,&lt#3:gt;</code><br>
+Select coefficient for alternative viscous damping of MPM particle velocities. #1 is feedback coefficient
+in units of 1/mm<sup>2</sup>. Option #2 is target kinetic energy (it can be
+<a href="#function">user-defined function</a>) in micro joules. Optional
+#3 is maximum damping factor in units 1/sec (default is to have no maximum).
+</li>
+<li><code>GlobalArchive #1,&lt;#2&gt;</code><br>
+Specify global result to be archived in #1. If #2 is provided and can material ID
+to archive this result only for particles of that material.</li>
+<li><code>GlobalArchiveTime #1</code><br>
+Specify time interval for archiving global results. #1 is the glboal archiving time in ms.</li>
+<li><code>LeaveLimit #1</code><br>
+Set number of particles allowed to leave the grid (#1) before an analysis is stop.
+If command is omitted, the limit is 1% of the particles.</li>
 <li><a name="maximumtime"></a><code>MaximumTime #1</code><br>
 Set time the MPM calculations will stop in ms.</li>
-<li><code>MPMMethod #1, #2</code><br>
+<li><code>MPMMethod #1,#2</code><br>
 Select MPM methods for the calculations. #1 is the update method and it can be USF (or 0), USAVG (or 2) or SZS (or 3). #2 is the shape functions method and it can be uGIMP (or GIMP), lCPDI (or CPDI), qCPDI, or Classic (or Dirac).</li>
-<li>PtsPerElement: Select number of material points per element in MPM calculations.</li>
+<li><code>PtsPerElement #1</code>
+Select number of material points per element (#1) in MPM calculations. The default is 4 for 2D and 
+8 for 3D.</li>
 <li><code>TimeStep #1,&lt;#2&gt;,&lt;#3&gt;</code><br>
 Set MPM time step parameters. #1 is the time step in ms (choose a high number to have the code pick time step based on material properties). Optional #2 is the maximum time to stop the calculations in ms (which can also be set in the <a href="#maximumtime">Maximum time command</a>). Optional #3 is the Courant-Levy safety factor for the code to adjust the time step (and should be less than 1).</li>
 <li><code>ToArchive #1,&lt;#2&gt;,...</code><br>
@@ -250,7 +267,9 @@ Specify results to be archived in MPM calculations. The list can be in multiple 
 <ul>
 <li><a name="bmpregion"></a>BMPRegion ... EndRegion: Create material points from an image in a BMP file.</li>
 
-<li>Box: Define cubical volume of material points or for a hole.</li>
+<li><code>Box #1,#2,#3,#4,#5,#6</code><br>
+Define cubical volume using xmin, xmax, ymin, ymax, zmin, and zmax (for #1 to #6) for the current
+<a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
 
 <li>Cylinder: Define cylindrical volume of material points or for a hole.</li>
 
@@ -266,31 +285,46 @@ Set depth or z-direction MPM grid parameters. #1 is the number of cells. #2 is f
 Set horizontal or x-direction MPM grid parameters (r direction is axisymetric). #1 is the number of cells. #2 is for variable element size, but is currently ignored.</li>
 
 <li><code>GridRect #1,#2,#3,#4,&lt;#5&gt;,&lt;#6&gt;</code><br>
-Set rectangle for 2D MPM grid or box for 3D MPM. #1 to #4 are x minimum. x maximum, y minimum, and y maximum for the rectangle (or R and Z limits if axisymmetric). #5 and #5 are for z minimum and z maximum if 3D calculations. Use <a href="#gridhoriz">GridHoriz</a>, <a href="#gridvert">GridVert</a>, and <a href="#griddepth">GridDepth</a> to set number of cells in each direction.</li>
+Set rectangle for 2D MPM grid or box for 3D MPM. #1 to #4 are x minimum. x maximum, y minimum,
+and y maximum for the rectangle (or R and Z limits if axisymmetric). #5 and #5 are for z minimum
+and z maximum if 3D calculations. Use <a href="#gridhoriz">GridHoriz</a>,
+<a href="#gridvert">GridVert</a>, and <a href="#griddepth">GridDepth</a> to set number of
+cells in each direction.</li>
 
 <li><code>GridThickness #1</code><br>
 Set thickness for 2D MPM grid (in mm). It is only needed for some command and for 2D planar calculations.</li>
 
 <li><a name="gridvert"></a><code>GridVert #1,&lt;#2&gt;</code><br>
-Set vertical or y-direction MPM grid parameters (Z direction is axisymetric). #1 is the number of cells. #2 is for variable element size, but is currently ignored.</li>
+Set vertical or y-direction MPM grid parameters (Z direction is axisymetric).
+#1 is the number of cells. #2 is for variable element size, but is currently ignored.</li>
 
 <li><a name="holempm"></a><code>Hole<br>
 &nbsp;&nbsp;(series of <a href="#rectmpm">Rect</a>, <a href="ovalmpm">Oval</a>, or <a href="#polyptmpm">PolyPt</a> commands)<br>
 EndHole</code><br>
-Define a region for creating a hole that will not be assigned material points by any subsequent shape commands.</li>
+Define a region for creating a hole that will not be assigned material points by any
+subsequent shape commands.</li>
 
-<li><a name="originmpm"></a>Origin: Set origin to map data in <a href="#bmpregion">BMPRegion</a> to the grid.</li>
+<li><a name="originmpm"></a>Origin: Set origin to map data in <a href="#bmpregion">BMPRegion</a> to
+the grid.</li>
 
 <li><a name="ovalmpm"></a><code>Oval #1,#2,#3,#4</code><br>
-Define oval within the rectangle defined by xmin, xmax, ymin, ymax (for #1 to #4) for the current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
+Define oval within the rectangle defined by xmin, xmax, ymin, ymax (for #1 to #4) for the
+current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
 
 <li><a name="polyptmpm"></a><code>PolyPt &lt;#1:&gt;,&lt;#2&gt;</code><br>
-Define next point on a polygon shape or if no paramters, close the current polygon shape. If a polygon is open and the end of a <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block, it is automatically closed.</li>
+Define next point on a polygon shape or if no paramters, close the current polygon shape.
+If a polygon is open and the end of a <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block, it is automatically closed.</li>
 
 <li><a name="rectmpm"></a><code>Rect #1,#2,#3,#4</code><br>
-Define rectangle using xmin, xmax, ymin, ymax (for #1 to #4) for the current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
+Define rectangle using xmin, xmax, ymin, ymax (for #1 to #4) for the current
+<a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
 
-<li><a name="regionmpm"></a>Region ... EndRegion: Define a region for creating material points.</li>
+<li><a name="regionmpm"></a><code>Region #1,#2,#3,#4,(#5,#6)<br>
+    ...<br>
+EndRegion</code><br>
+Define a region for creating material points. #1 is material ID. (#2,#3) are velocities in x and y
+direciton  (in mm/sec). For 2D, #4 is thickness in mm. For 3D, #4 is velocity in z direction (in mm/sec).
+(#5,#6) are one or more pairs where #5 is angle, conc, or temp and #6 is its value for the particles.</li>
 
 <li>Sphere: Define spherical volume of material points or for a hole.</li>
 
@@ -304,7 +338,12 @@ Define rectangle using xmin, xmax, ymin, ymax (for #1 to #4) for the current <a 
 <li><a name="area"></a><code>Area #1,#2,&lt;#3&gt;<br>
 &nbsp;&nbsp;(list and/or define <a href="path">paths</a> and <a href="#keypoint">keypoints</a>)<br>
 EndArea</code><br>
-Define an area for mesh generation where #1 is a defined <a href="#material">material ID</a>, #2 is thickness (in mm) (ignored in axisummetric FEA, but still required), and #3 is an angle (for anisotropic materials) (it can be a <a href="#function">user-defined function</a>). The commands in the area block should define four paths (to enclose 2D area) or two paths (for a 1D interface). Material ID can be &quot;_NONE_&quot; when the elements will be filled later by <a href="#bmpregionfea">BMPRegion</a> or various shape commands.</li>
+Define an area for mesh generation where #1 is a defined <a href="#material">material ID</a>,
+#2 is thickness (in mm) (ignored in axisummetric FEA, but still required), and
+#3 is an angle (for anisotropic materials) (it can be a <a href="#function">user-defined function</a>).
+The commands in the area block should define four paths (to enclose 2D area) or
+two paths (for a 1D interface). Material ID can be &quot;_NONE_&quot; when the
+elements will be filled later by <a href="#bmpregionfea">BMPRegion</a> or various shape commands.</li>
 
 <li><a name="bmpregionfea">BMPRegion</a> ... EndRegion: Generate elements from an image in a BMP file.</li>
 
@@ -317,7 +356,8 @@ Select the direction of trigular elements in meshes that use those elements. #1 
 <li><a name="holefea"></a><code>Hole<br>
 &nbsp;&nbsp;(series of <a href="#rectfea">Rect</a>, <a href="ovalfea">Oval</a>, or <a href="#polyptfea">PolyPt</a> commands)<br>
 EndHole</code><br>
-Define a region for creating a hole that removes elements in the mesh whose material ID was set to &quot;_NONE_&quot;</li>
+Define a region for creating a hole that removes elements in the mesh whose material
+ID was set to &quot;_NONE_&quot;</li>
 
 <li><a name="keypoint"></a><code>Keypoint #1,#2,#3,&lt;#4&gt;</code><br>
 Define a keypoint used in defining <a name="path">Paths</a>. #1 is keypoint ID, #2, and #3 are x and y coordinates (or r and z if axisymmetric). Optional #4 can be &quot;polar&quot; to change #2 and #3 to be R and &theta; to define keypoint using polar coordinates relative to current <a href="#origin">origin</a>.</li>
@@ -340,18 +380,27 @@ Define a path used in defining <a href="#area">Areas</a>. #1 is the ID for the p
 Add multiple defined paths to an <a href="#area">Area</a>.</li>
 
 <li><a name="polyptfea"></a><code>PolyPt &lt;#1:&gt;,&lt;#2&gt;</code><br>
-Define next point on a polygon shape or if no paramters, close the current polygon shape. If a polygon is open and the end of a <a href="#regionfea">region</a> or <a href="#holefea">hole</a> block, it is automatically closed.</li>
+Define next point on a polygon shape or if no paramters, close the current polygon shape. If a polygon is open and
+the end of a <a href="#regionfea">region</a> or <a href="#holefea">hole</a> block, it
+is automatically closed.</li>
 
 <li><a name="rectfea"></a><code>Rect #1,#2,#3,#4</code><br>
-Define rectangle using xmin, xmax, ymin, ymax (for #1 to #4) for the current <a href="#regionfea">region</a> or <a href="#holempm">hole</a> block.</li>
+Define rectangle using xmin, xmax, ymin, ymax (for #1 to #4) for the
+current <a href="#regionfea">region</a> or <a href="#holempm">hole</a> block.</li>
 
 <li><a name="regionfea"></a><code>Region #1,#2,&lt;#3:gt;<br>
 &nbsp;&nbsp;(series of <a href="#rectfea">Rect</a>, <a href="rectfea">Oval</a>, or <a href="#polyptfea">PolyPt</a> commands)<br>
 EndRegion</code><br>
-Define a region for assigning material types to elements in the mesh whose material ID was set to &quot;_NONE&quot;. #1 is a defined <a href="#material">material ID</a>, #2 is thickness (in mm) (ignored in axisummetric FEA, but still required), and #3 is an angle (for anisotropic materials) (it can be a <a href="#function">user-defined function</a>).</li>
+Define a region for assigning material types to elements in the mesh whose
+material ID was set to &quot;_NONE&quot;. #1 is a defined <a href="#material">material ID</a>,
+#2 is thickness (in mm) (ignored in axisummetric FEA, but still required),
+and #3 is an angle (for anisotropic materials)
+(it can be a <a href="#function">user-defined function</a>).</li>
 
 <li><code>Resequence #1,&lt;#2&gt;</code><br>
-To turn on the option to resequence the nodes, which will minimize the bandwidth of the problem and speed the calculations. If only key #1, it is a keypoint ID. If #1 and #2 are give, the nodes are requenced from the node closest to those x and y coordinates.</li>
+To turn on the option to resequence the nodes, which will minimize the bandwidth of
+the problem and speed the calculations. If only key #1, it is a keypoint ID.
+If #1 and #2 are give, the nodes are requenced from the node closest to those x and y coordinates.</li>
 
 </ul>
 
@@ -400,16 +449,43 @@ Specify crack parameters to be archived in MPM calculations. The list can be in 
 
 <h2><a name="mmmode"></a>Multimaterial MPM Calculations</h2>
 
-<p>NairnMPM can use multimaterial mode where each material has its own velocity field and intersections between materials on nodes are resolved using various contact mechanics models. The key commands to use this mode are:</p>
+<p>NairnMPM can use multimaterial mode where each material has its own velocity field
+and intersections between materials on nodes are resolved using various contact
+mechanics models. The key commands to use this mode are:</p>
 
 <ul>
-<li>ContactPosition: Determines method for detecting contact when using particle displacements.</li>
-<li>Friction: When used within a <a href="#material">material</a>, it can set specific material-material friction properties.</li>
-<li>FrictionMM: Set multimaterial mode friction properties.</li>
-<li>ImperfectInterfaceMM and Interface: Set properties for contact to model an imperfect interface.</li>
-<li>MultimaterialMode: Sets to use multimaterial modes and sets some options.</li>
+<li><code>ContactPosition #1</code><br>
+Determines method for detecting contact when using particle displacements. Usually omitted
+when all surfaces start
+out in contact or 0.8 for moving into contact (default is omitted).</li>
+<li><code>Friction #1,#2</code><br>
+When this command is used within a <a href="#material">material</a>, it can set specific
+material-material friction properties. #1 is same as for FrictionMM command and #2 is
+material ID. Otherwise materials use the default settings from a FrictionMM 
+or ImperfectInterfaceMM command.</li>
+<li><code>FrictionMM #1</code><br>
+Set default multimaterial mode friction properties. #1 is friction coefficient, &quot;stick&quot; for stick
+contact, &quot;single&quot; (or &quot;ignore&quot;) to revert to single velocity field, or &quot;none&quot;
+for frictionless (same as 0) (default 0).</li>
+<li><code>Interface #1,#2,#3,#4</code><br>
+When this command is used within a <a href="#material">material</a>, it can set specific
+material-material imperfect interface properties. #1 to #3 are same as for ImperfectInterfaceMM
+command (except that #3 is required) #4 is
+material ID. Otherwise materials use the default settings from a FrictionMM
+ or ImperfectInterfaceMM command.. </li>
+<li><code>ImperfectInterfaceMM #1,#2,&lt;#3&gt;</code><br>
+Set properties for contact to model an imperfect interface. #1 is Dt and #2 is #Dn for tangential and
+normal interface parameters. If #3 is given, #2 is
+Dnt and #3 is Dnc for normal interface parameters in tension an compression. All are in MPa/mm.</li>
+<li><code>MultimaterialMode &lt;#1&gt;,&lt;#2&gt;,&lt;#3&gt;,&lt;#4&gt;</code><br>
+Sets to use multimaterial modes and sets some options. #1 is minimum relative volume to allow contact (default 0.0).
+#2 is &quot;enabled&quot; (or &quot;yes&quot; or 1) or &quot;disabled&quot; (or &quot;no&quot; or 0)
+for detection of contact using particle displacements (default &quot;disabled&quot;). #3 is
+&quot;maxgrad&quot; (or 0), &quot;maxvol&quot; (or 1), &quot;avggrad&quot; (or 2), or
+quot;owngrad&quot; (or 3) to determine the method used to find surface normals during
+contact calculations (default &quot;avggrad&quot;). #4 sets bias factor to use rigid normal when contact
+is with rigid materials (default 1).</li>
 </ul>
-
 
 
 <h2><a name="thermal"></a>Thermal Calculations</h2>
@@ -420,16 +496,19 @@ Specify crack parameters to be archived in MPM calculations. The list can be in 
 
 <ul>
 <li>Conduction: Turn on thermal conductivity calculations and define heat source options.</li>
-<li>GlobalArchive: To archive average temperature or total thermal energy.</li>
+<li><code>GlobalArchive</code><br>
+To archive average temperature or total thermal energy.</li>
 <li>Intensity: To set initial temperature of particles created using a <a name="#bmpregion">BMPRegion</a>.</li>
 <li><code>Material #1,#2,#3</code><br>
 Use the <a href="#material">material</a> command to define material properties needed for conduction calculations (conductivity, heat capactiy, coefficient of thermal expansion, <i>etc.</i>).</li>
-<li>StressFreeTemp: Set the stress free temperature.</li>
+<li><code>StressFreeTemp #1</code><br>
+Set the stress free temperature to #1.</li>
 <li>Temperature: Apply temperature boundary conditions to selected nodes.
 </li>
 <li>ThermalRamp: Apply isothermal temperature difference over a specified time and optionally define the stress-free temperature.</li>
 <li>RampStart: Set the start time for application of a thermal ramp.</li>
-<li>Region ... EndRegion: To set initial particle temperature when creating material points.</li>
+<li><code>Region ... EndRegion</code><br>
+To set initial particle temperature when <a href="#regionmpm">creating material points</a>.</li>
 <li><code>ToArchive #1,&lt;#2&gt;,...</code><br>
 Specify results to be archived in MPM calculations. The list can be in multiple arguments and/or in multiple ToArchive commands. The archiving options related to thermal calculations are temperature and thermalenergy.</li>
 </ul>
@@ -457,11 +536,14 @@ It is only the difference between temperature and stress free temperature that m
 <li>ConcentrationFlux: Apply concentration flux conditions to selected particles.
 </li>
 <li>Diffusion: To turn on diffusion calculations.</li>
-<li>GlobalArchive: To archive total weight fracture concentration.</li>
-<li>Intensity: To set initial concentration of particles created using a <a name="#bmpregion">BMPRegion</a>.</li>
+<li><code>GlobalArchive</code><br>
+To archive total weight fracture concentration.</li>
+<li>Intensity: To set initial concentration of particles created using a
+<a name="#bmpregion">BMPRegion</a>.</li>
 <li><code>Material #1,#2,#3</code><br>
 Use the <a href="#material">material</a> command to define material properties needed for diffusion calculations (diffusion constant, saturation concentration, coefficient of concentration expansion, <i>etc.</i>).</li>
-<li>Region ... EndRegion: To set initial particle concentration when creating material points.</li>
+<li><code>Region ... EndRegion</code><br>
+To set initial particle concentration when <a href="#regionmpm">creating material points</a>.</li>
 <li><code>ToArchive #1,&lt;#2&gt;,...</code><br>
 Specify results to be archived in MPM calculations. The list can be in multiple arguments and/or in multiple ToArchive commands. The archiving option related to diffusion calculations is concentration (which includes concentration gradients).</li>
 </ul>
@@ -473,6 +555,11 @@ Specify results to be archived in MPM calculations. The list can be in multiple 
 <h3>MPM Boundary Conditions</h3>
 
 <ul>
+
+<li><code>BoundaryID &lt;#1&gt;</code><br>
+Set ID for velocity boundary condition for use when global archiving reaction forces. #1
+should be negative. If omitted it is set to 0 (which means ID is not set).</li>
+
 <li>Concentration: Apply concentration conditions to selected nodes.
 </li>
 
@@ -493,16 +580,29 @@ Specify results to be archived in MPM calculations. The list can be in multiple 
 
 <li>MoveArc ... EndMoveArc: Apply velocity, temperature, or concentration conditions to nodes along an arc.</li>
 
-<li>MoveBox ... EndMoveBox: Apply velocity, temperature, or concentration conditions to nodes within a 3D box.</li>
+<li><code>MoveBox #1,#2,#3,#4,#5,#6,&lt;#7;&gt;<br>
+    ...<br>
+EndMoveBox</code><br>
+Apply velocity, temperature, or concentration conditions to nodes within a 3D box with corners
+(#1,#2,#3) and (#4,#5,#6). If #7 is used it mut be x, y, or z (or 1, 2, or 3) and will convert
+box to cylinder with axis along the specified direction.</li>
 
-<li>MoveLine ... EndMoveLine: Apply velocity, temperature, or concentration conditions to nodes along a line.</li>
+<li><code>MoveLine #1,#2,#3,#4,&lt;#5&gt;<br>
+    ...<br>
+EndMoveLine</code><br>
+Apply velocity, temperature, or concentration conditions to nodes along a line from (#1,#2) to
+(#3,#4) with optional tolerance #5.</li>
 
 <li>Temperature: apply temperature conditions to selected nodes.
 </li>
 
 <li>Traction: Apply traction to surfaces of selected particles.</li>
 
-<li>Velocity: Apply velocity conditions to selected nodes.</li>
+<li><code>Velocity #1,#2,&lt;#3&gt;,&lt;#4&gt;,&lt;#5&gt;,&lt;#6&gt;</code><br>
+Apply velocity conditions to currently selected nodes. #1 is direction (x, t, z, skewxy, skewxz,
+skewyz, skewxyz, or skewrz).
+#2 is style with #3 and #4 optional arguments. If #1 is skewxy, skewxz, skewyz, or skewrz, #5 is skew angle.
+If #1 is skewxyz, #6 is second angle</li>
 </ul>
 
 <h3>FEA Boundary Conditions</h3>

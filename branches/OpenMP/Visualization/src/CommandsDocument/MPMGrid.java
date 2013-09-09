@@ -51,7 +51,7 @@ public class MPMGrid
 	    
 	    // needs one
 	    if(args.size()<2)
-	    	throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+	    	throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 	    
 	    // number of cells
 	    ncells[axis] = doc.readIntArg(args.get(1));
@@ -62,7 +62,7 @@ public class MPMGrid
 	    
 	    // validity?
 	    if(ncells[axis]<1 || ratios[axis]==0.)
-	    	throw new Exception("The grid parameters are invalid: "+args);
+	    	throw new Exception("The grid parameters are invalid:\n"+args);
 	}
 	
 	// GridRect xmin,xmax,ymin,ymax (zmin,zmax if 3D)
@@ -73,7 +73,7 @@ public class MPMGrid
 
 	    // needs at least 5 arguments
 	    if(args.size()<5)
-	    	throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+	    	throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 	    
 	    // limits
 	    hasGrid = true;
@@ -96,9 +96,9 @@ public class MPMGrid
 	    // z axis
 	    if(doc.isMPM3D())
 		{	if(args.size()<7)
-		    	throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
-	    	zmin = doc.readDoubleArg(args.get(3));
-	    	zmax = doc.readDoubleArg(args.get(4));
+		    	throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
+	    	zmin = doc.readDoubleArg(args.get(5));
+	    	zmax = doc.readDoubleArg(args.get(6));
 		    if(zmax < zmin)
 		    {	temp = zmin;
 		    	zmin = zmax;
@@ -115,11 +115,11 @@ public class MPMGrid
 	    
 	    // needs one
 	    if(args.size()<2)
-	    	throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+	    	throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 	    
 	    thickness = doc.readDoubleArg(args.get(1));
 	    if(thickness<=0.)
-	    	throw new Exception("The grid thickness must be positive: "+args);
+	    	throw new Exception("The grid thickness must be positive:\n"+args);
 	}
 	    
 	//----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ public class MPMGrid
 		xml.append(" xmin='"+xmin+"' xmax='"+xmax+"'");
 		xml.append(" ymin='"+ymin+"' ymax='"+ymax+"'");
 		if(doc.isMPM3D())
-			xml.append(" zmin='"+xmin+"' xmax='"+zmax+"'");
+			xml.append(" zmin='"+zmin+"' zmax='"+zmax+"'");
 		else if(thickness>0.)
 			xml.append(" thickness='"+thickness+"'");
 		xml.append(">\n");

@@ -45,6 +45,7 @@ public class CmdViewer extends JNCmdTextDocument
 	public Regions regions = null;
 	public MPMGrid gridinfo = null;
 	private FEABCs feaBCs = null;
+	private MPMGridBCs mpmGridBCs = null;
 	private StringBuffer outFlags;
 	private int mpmMethod;
 	private String shapeMethod;
@@ -52,12 +53,24 @@ public class CmdViewer extends JNCmdTextDocument
 	private String archiveTime;
 	private String timeStep;
 	private String maxTime;
+	private String globalArchive;
+	private String damping;
+	private String fbDamping;
+	private String leaveLimit;
+	private String ptsPerElement;
 	private StringBuffer mpmOrder;
 	private StringBuffer crackOrder;
 	private boolean mpmMeshToFile;
 	private String feaTemp;
 	private double stressFreeTemp;
 	private boolean stopCommand;
+	private double MMVmin;
+	private int MMDcheck;
+	private int MMNormals;		// <0 means no multimaterial mode
+	private double MMRigidBias;
+	private String ContactPosition;
+	private String FrictionMM;
+	private String Friction;
 	
 	// constants
 	public static final int PLANE_STRAIN=0;
@@ -109,6 +122,7 @@ public class CmdViewer extends JNCmdTextDocument
 		regions = new Regions(this);
 		feaBCs = new FEABCs(this);
 		gridinfo = new MPMGrid(this);
+		mpmGridBCs = new MPMGridBCs(this);
 	}
 	
 	// make menu bar on launch
@@ -262,6 +276,7 @@ public class CmdViewer extends JNCmdTextDocument
 		regions.initRunSettings();
 		feaBCs.initRunSettings();
 		gridinfo.initRunSettings();
+		mpmGridBCs.initRunSettings();
 		mpmMeshToFile = true;
 		outFlags = null;
 		mpmOrder = null;
@@ -272,9 +287,21 @@ public class CmdViewer extends JNCmdTextDocument
 		archiveTime = "";
 		timeStep = "    <TimeStep units='ms'>1e15</TimeStep>\n";
 		maxTime = "";
+		globalArchive="";
 		feaTemp = null;
 		stressFreeTemp = 0.;
 		stopCommand = false;
+		damping = null;
+		fbDamping = null;
+		leaveLimit = null;
+		ptsPerElement = null;
+		MMVmin = 0.0;
+		MMDcheck = 0;
+		MMNormals = -1;
+		MMRigidBias = 1.0;
+		ContactPosition = null;
+		FrictionMM = null;
+		Friction = null;
 	}
 	
 	// handle commands
@@ -282,7 +309,7 @@ public class CmdViewer extends JNCmdTextDocument
 	{	
 		if(mats.isInMaterial())
 		{	// commands go to material class when material (keep this option first)
-			mats.doMaterialProperty(theCmd,args);
+			mats.doMaterialProperty(theCmd,args,this);
 		}
 			
 		else if(theCmd.equals("title"))
@@ -326,6 +353,9 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("archive"))
 			doArchive(args,false);
 		
+		else if(theCmd.equals("globalarchive"))
+			doGlobalArchive(args);
+		
 		else if(theCmd.equals("toarchive"))
 			doToArchive(args);
 		
@@ -335,6 +365,9 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("archivetime"))
 			doArchiveTime(args);
 		
+		else if(theCmd.equals("globalarchivetime"))
+			doGlobalArchiveTime(args);
+
 		else if(theCmd.equals("timestep"))
 			doTimeStep(args);
 		
@@ -410,6 +443,36 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("select"))
 			feaBCs.AddSelect(args);
 		
+		else if(theCmd.equals("moveline"))
+			mpmGridBCs.StartMoveLine(args);
+		
+		else if(theCmd.equals("movearc"))
+			mpmGridBCs.StartMoveLine(args);
+		
+		else if(theCmd.equals("movebox"))
+			mpmGridBCs.StartMoveBox(args);
+		
+		else if(theCmd.equals("endmoveline"))
+			mpmGridBCs.EndMoveBlock(args,MPMGridBCs.MOVELINE_BC);
+		
+		else if(theCmd.equals("endmovearc"))
+			mpmGridBCs.EndMoveBlock(args,MPMGridBCs.MOVEARC_BC);
+		
+		else if(theCmd.equals("endmovebox"))
+			mpmGridBCs.EndMoveBlock(args,MPMGridBCs.MOVEBOX_BC);
+		
+		else if(theCmd.equals("boundaryid"))
+			mpmGridBCs.SetBoundaryID(args);
+		
+		else if(theCmd.equals("velocity"))
+			mpmGridBCs.AddVelocity(args);
+		
+		else if(theCmd.equals("concentration"))
+			mpmGridBCs.AddConcentration(args);
+
+		else if(theCmd.equals("temperature"))
+			mpmGridBCs.AddTemperature(args);
+
 		else if(theCmd.equals("origin"))
 			areas.setOrigin(args);
 		
@@ -440,6 +503,9 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("polypt"))
 			regions.AddPolypoint(args);
 		
+		else if(theCmd.equals("box"))
+			regions.AddBox(args);
+		
 		else if(theCmd.equals("gridhoriz"))
 			gridinfo.doGridAxis(args,0);
 		
@@ -461,6 +527,36 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("stressfreetemp"))
 			doStressFreeTemp(args);
 		
+		else if(theCmd.equals("damping"))
+			doDamping(args);
+		
+		else if(theCmd.equals("feedbackdamping"))
+			doFBDamping(args);
+		
+		else if(theCmd.equals("leavelimit"))
+			doLeaveLimit(args);
+		
+		else if(theCmd.equals("ptsperelement"))
+			doPtsPerElement(args);
+		
+		else if(theCmd.equals("multimaterialmode"))
+			doMultimaterialMode(args);
+		
+		else if(theCmd.equals("contactposition"))
+			doContactPosition(args);
+		
+		else if(theCmd.equals("friction"))
+			doFriction(args,0);
+		
+		else if(theCmd.equals("imperfectinterface"))
+			doImperfectInterface(args,0);
+		
+		else if(theCmd.equals("frictionmm"))
+			doFriction(args,1);
+		
+		else if(theCmd.equals("imperfectinterfacemm"))
+			doImperfectInterface(args,1);
+
 		else if(theCmd.equals("stop"))
 		{	super.doCommand(theCmd,args);
 			stopCommand = true;
@@ -540,7 +636,7 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 	}
 	
-	// Archive #1 (if #2 and #3 give, passed to ArchiveTime command
+	// Archive #1 (if #2 and #3 give, passed to ArchiveTime command)
 	public void doArchive(ArrayList<String> args,boolean makeUnique) throws Exception
 	{
 		// MPM Only
@@ -565,7 +661,41 @@ public class CmdViewer extends JNCmdTextDocument
 			doArchiveTime(args);
 		}
 	}
-	
+
+	// GlobalArchive #1,#2 for type and optional material ID
+	public void doGlobalArchive(ArrayList<String> args) throws Exception
+	{
+		// MPM Only
+		requiresMPM(args);
+		
+	    // read analysis type
+		if(args.size()<2)
+			throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+		
+		String type = readStringArg(args.get(1));
+		if(type.length()==0)
+			throw new Exception("'"+args.get(0)+"' quantity to archive has zero length: "+args);
+		
+		// optional material ID
+		int matnum=0;
+		if(args.size()>2)
+		{	matnum = mats.getMatID(readStringArg(args.get(2)));
+			if(matnum<=0)
+			{	if(type.equals("reactionx") || type.equals("reactionx") ||
+							type.equals("reactionz") || type.equals("reactionr"))
+				{	matnum = readIntArg(args.get(2));
+				}
+				else
+					throw new Exception("'"+args.get(0)+"' command has unknown material ID: "+args);
+			}
+
+			globalArchive = globalArchive + "    <GlobalArchive type='"+type+
+							"' material='"+matnum+"'/>\n";
+		}
+		else
+			globalArchive = globalArchive + "    <GlobalArchive type='"+type+"'/>\n";
+	}
+
 	// ArchiveTime #1,#2 (archive time and optional first archive time)
 	public void doArchiveTime(ArrayList<String> args) throws Exception
 	{	// MPM Only
@@ -586,7 +716,21 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 	}
 	
-	// TimeStep #1,#2,#3 (time step and optional max time and courant factor)
+	// ArchiveTime #1,#2 (archive time and optional first archive time)
+	public void doGlobalArchiveTime(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+	
+		// read analysis type
+		if(args.size()<2)
+			throw new Exception("'GlobalArchiveTime' has too few parameters: "+args);
+		
+		// archive time
+		double aTime = readDoubleArg(args.get(1));
+		globalArchive = globalArchive+"    <GlobalArchiveTime units='ms'>"+aTime+"</GlobalArchiveTime>\n";
+	}
+	
+	// TimeStep #1,#2,#3 (time step and optional max time and Courant factor)
 	public void doTimeStep(ArrayList<String> args) throws Exception
 	{	// MPM Only
 		requiresMPM(args);
@@ -877,6 +1021,226 @@ public class CmdViewer extends JNCmdTextDocument
 		stressFreeTemp = readDoubleArg(args.get(1));
 	}
 
+	// Damping #1 (number of function)
+	public void doDamping(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+	
+		// read analysis type
+		if(args.size()<2)
+			throw new Exception("'Damping' has too few parameters: "+args);
+		
+		// damping factor
+		String damp = readStringArg(args.get(1));
+		damping = "    <Damping>"+damp+"</Damping>\n";
+	}
+	
+	// MultimaterialMode Vmin,Dcheck,Normals,RigidBias
+	public void doMultimaterialMode(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+		
+		// turn it on
+		MMNormals = 2;		// avggrad default
+		
+		// Vmin
+		if(args.size()>1)
+		{	MMVmin = readDoubleArg(args.get(1));
+			if(MMVmin<0.) MMVmin = 0.;
+		}
+		
+		// Dcheck
+		if(args.size()>2)
+		{	HashMap<String,Integer> options = new HashMap<String,Integer>(4);
+			options.put("enabled", new Integer(1));
+			options.put("yes", new Integer(1));
+			options.put("disabled", new Integer(0));
+			options.put("no", new Integer(0));
+			MMDcheck = readIntOption(args.get(2),options,"Displacement check option");
+		}
+		
+		// Normals
+		if(args.size()>3)
+		{	HashMap<String,Integer> options = new HashMap<String,Integer>(4);
+			options.put("maxgrad", new Integer(0));
+			options.put("maxvol", new Integer(1));
+			options.put("avggrad", new Integer(2));
+			options.put("owngrad", new Integer(3));
+			MMNormals = readIntOption(args.get(3),options,"Normals option");
+		}
+		
+		// Rigid Bias
+		if(args.size()>4)
+		{	MMRigidBias = readDoubleArg(args.get(4));
+			if(MMRigidBias<0.) MMRigidBias = 0.;
+		}
+	}
+	
+	// ContactPosition Value
+	public void doContactPosition(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+		
+		// read analysis type
+		if(args.size()<2)
+			throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+		
+		double cp = readDoubleArg(args.get(1));
+		ContactPosition = "      <ContactPosition>"+cp+"</ContactPosition>\n";
+	}
+	
+	// Friction (number or stick, single (ignore), none),<material ID (only as material prop)>
+	// MMMode = 0 (cracks), 1 (multimaterial), 2 (material property)
+	public String doFriction(ArrayList<String> args,int MMMode) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+		
+		// read analysis type
+		if(args.size()<2)
+			throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+		
+		// see if nonnegative number
+		double frict = 0.;
+		try
+		{	frict = readDoubleArg(args.get(1));
+			if(frict<0)
+				throw new Exception("The friction coefficient must be positive: "+args);
+		}
+		catch(Exception e)
+		{	HashMap<String,Integer> options = new HashMap<String,Integer>(4);
+			options.put("stick", new Integer(0));
+			options.put("single", new Integer(1));
+			options.put("ignore", new Integer(1));
+			options.put("none", new Integer(2));
+			int foption = readIntOption(args.get(1),options,"Friction setting");
+			if(foption==0)
+				frict = -5.;			// number between -1 and -9
+			else if(foption==1)
+				frict = -11.;			// number <-10
+			else
+				frict = 0.0;			// frictionless
+		}
+		
+		// material property needs material ID
+		if(MMMode==2)
+		{	if(args.size()<3)
+				throw new Exception("'"+args.get(0)+"' as material property has too few parameters: "+args);
+		
+			int matnum = mats.getMatID(readStringArg(args.get(2)));
+			if(matnum<=0)
+				throw new Exception("'"+args.get(0)+"' as material property has unknown material ID: "+args);
+			
+			String cmd = "    <Friction mat='"+matnum+"'>"+frict+"</Friction>\n";
+			return cmd;
+		}
+		
+		// Friction for cracks or multimaterial mode
+		String cmd = "      <Friction>"+frict+"</Friction>\n";
+		if(MMMode==1)
+			FrictionMM = cmd;
+		else
+			Friction = cmd;
+		return null;
+	}
+	
+	// ImperfectInterface Dt,Dn,<Dnc>
+	// MMMode = 0 (cracks), 1 (multimaterial), 2 (material property)
+	public String doImperfectInterface(ArrayList<String> args,int MMMode) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+		
+		// read analysis type
+		if(args.size()<3 || (MMMode==2 && args.size()<5))
+			throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+		
+		// read doubles
+		double Dt = readDoubleArg(args.get(1));
+		double Dnt = readDoubleArg(args.get(2));
+		double Dnc=0.;
+		String cmd;
+		if(args.size()>3)
+			Dnc = readDoubleArg(args.get(3));
+		
+		if(MMMode==2)
+		{	// get material ID
+			int matnum = mats.getMatID(readStringArg(args.get(4)));
+			if(matnum<=0)
+				throw new Exception("'"+args.get(0)+"' as material property has unknown material ID: "+args);
+			
+			cmd = "    <Friction Dt='"+Dt+"' Dnt='"+Dnt+"' Dnc='"+Dnc+
+					"' mat='"+matnum+"'>11</Friction>\n";
+		}
+		else
+		{	if(args.size()>3)
+				cmd = "      <Friction Dt='"+Dt+"' Dnt='"+Dnt+"' Dnc='"+Dnc+"'>11</Friction>\n";
+			else
+				cmd = "      <Friction Dt='"+Dt+"' Dn='"+Dnt+"'>11</Friction>\n";
+		
+			if(MMMode==1)
+				FrictionMM = cmd;
+			else
+				Friction = cmd;
+		}
+		
+		return cmd;
+	}
+		
+	// FeedbackDamping #1,#2,#3 (number,function,number)
+	public void doFBDamping(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+	
+		// read analysis type
+		if(args.size()<2)
+			throw new Exception("'FeedbackDamping' has too few parameters: "+args);
+		
+		// archive time
+		double damp = readDoubleArg(args.get(1));
+		String target = null;
+		double maxdamp = -1.;
+		if(args.size()>2)
+			target = readStringArg(args.get(2));
+		if(args.size()>3)
+			maxdamp = readDoubleArg(args.get(3));
+		
+		if(target==null)
+			fbDamping = "    <FeedbackDamping>"+damp+"</FeedbackDamping>\n";
+		else if(maxdamp<0.)
+			fbDamping = "    <FeedbackDamping target='"+target+"'>"+damp+"</FeedbackDamping>\n";
+		else
+		{	fbDamping = "    <FeedbackDamping target='"+target+"' max='"+maxdamp+
+								"'>"+damp+"</FeedbackDamping>\n";
+		}
+	}
+	
+	// LeaveLimit #1 (integer)
+	public void doLeaveLimit(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+	
+		// read analysis type
+		if(args.size()<2)
+			throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+		
+		// damping factor
+		int leave = readIntArg(args.get(1));
+		leaveLimit = "    <LeaveLimit>"+leave+"</LeaveLimit>\n";
+	}
+	
+	// PtsPerElement #1 (integer)
+	public void doPtsPerElement(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+	
+		// read analysis type
+		if(args.size()<2)
+			throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+		
+		// damping factor
+		int pts = readIntArg(args.get(1));
+		ptsPerElement = "    <MatlPtsPerElement>"+pts+"</MatlPtsPerElement>\n";
+	}
+	
 	// when analysis is done create XML commands
 	public String buildXMLCommands()
 	{	// start buffer for XML commands
@@ -923,6 +1287,7 @@ public class CmdViewer extends JNCmdTextDocument
 			// MPM method and GIMP
 			xml.append("    <MPMMethod>"+mpmMethod+"</MPMMethod>\n");
 			xml.append("    <GIMP type='"+shapeMethod+"'/>\n");
+			if(ptsPerElement!=null) xml.append(ptsPerElement);
 			xml.append(timeStep);
 			xml.append(maxTime);
 			xml.append(archiveRoot);
@@ -931,6 +1296,29 @@ public class CmdViewer extends JNCmdTextDocument
 			xml.append("    <MPMArchiveOrder>"+mpmOrder+"</MPMArchiveOrder>\n");
 			if(crackOrder == null) crackOrder = new StringBuffer("iYNNN");
 			xml.append("    <CrackArchiveOrder>"+crackOrder+"</CrackArchiveOrder>\n");
+			
+			// global archive
+			if(globalArchive.length()>0)
+				xml.append(globalArchive);
+			
+			// damping, leave limit
+			if(damping!=null) xml.append(damping);
+			if(fbDamping!=null) xml.append(fbDamping);
+			if(leaveLimit!=null) xml.append(leaveLimit);
+			
+			// Multimaterial mode <MultiMaterialMode Vmin='0.0' Dcheck='0' Normals='0' RigidBias='100'>
+			// Subordinate friction and contact position
+			if(MMNormals>=0)
+			{	xml.append("    <MultiMaterialMode Vmin='"+MMVmin+"' Dcheck='"+MMDcheck+
+							"' Normals='"+MMNormals+"' RigidBias='"+MMRigidBias+"'>\n");
+				if(FrictionMM!=null) xml.append(FrictionMM);
+				if(ContactPosition!=null) xml.append(ContactPosition);
+				xml.append("    </MultiMaterialMode>\n");
+			}
+			
+			// stress free temperature
+			if(stressFreeTemp!=0.)
+				xml.append("    <StressFreeTemp>"+stressFreeTemp+"</StressFreeTemp>\n");
 			
 			// check added xml
 			String more = xmldata.get("MPMHeader");
@@ -974,34 +1362,21 @@ public class CmdViewer extends JNCmdTextDocument
 		// GridBCs
 		//-----------------------------------------------------------
 		if(isFEA())
-		{	xml.append("  <GridBCs>\n"+feaBCs.toXMLString());
-		
-			// check added xml
-			String more = xmldata.get("GridBCs");
-			if(more != null) xml.append(more);
-		
-			// done
-			xml.append("  </GridBCs>\n\n");
-		}
-		
+			xml.append("  <GridBCs>\n"+feaBCs.toXMLString());
 		else
-		{	String more = xmldata.get("GridBCs");
+			xml.append("  <GridBCs>\n"+mpmGridBCs.toXMLString());
 		
-			if(more!=null)
-			{	xml.append("  <GridBCs>\n");
+		// check added xml
+		String more = xmldata.get("GridBCs");
+		if(more != null) xml.append(more);
 		
-				// check added xml
-				if(more != null) xml.append(more);
-	
-				// done
-				xml.append("  </GridBCs>\n\n");
-			}
-		}
+		// done
+		xml.append("  </GridBCs>\n\n");
 		
 		// ParticleBCs
 		//-----------------------------------------------------------
 		if(isMPM())
-		{	String more = xmldata.get("ParticleBCs");
+		{	more = xmldata.get("ParticleBCs");
 		
 			if(more!=null)
 			{	xml.append("  <ParticleBCs>\n");
@@ -1019,7 +1394,7 @@ public class CmdViewer extends JNCmdTextDocument
 		if(isFEA())
 		{	// FEA: Thermal
 			//-----------------------------------------------------------
-			String more = xmldata.get("Thermal");
+			more = xmldata.get("Thermal");
 			if(more!=null || feaTemp!=null)
 			{	xml.append("  <Thermal>\n");
 				
@@ -1040,7 +1415,7 @@ public class CmdViewer extends JNCmdTextDocument
 		else
 		{	// MPM: Thermal
 			//-----------------------------------------------------------
-			String more = xmldata.get("Thermal");
+			more = xmldata.get("Thermal");
 			if(more!=null)
 			{	xml.append("  <Thermal>\n");
 
@@ -1077,6 +1452,10 @@ public class CmdViewer extends JNCmdTextDocument
 				xml.append("  </CustomTasks>\n\n");
 			}
 		}
+		
+		// check added xml
+		more = xmldata.get("end");
+		if(more != null) xml.append(more);
 		
 		// convert to string and return
 		xml.append("</JANFEAInput>\n");

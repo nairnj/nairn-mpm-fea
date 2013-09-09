@@ -347,7 +347,6 @@ public class ResultsDocument extends AbstractTableModel
 					bcVal=s.nextDouble();
 					bcArg=s.nextDouble();
 					bcAngle=0.;
-					System.out.print("angle1: "+s.hasNextDouble()+"\n");
 					
 					// keep reading as long as next item is not integer on the next line
 					// could be a problem if function value looks like an integer

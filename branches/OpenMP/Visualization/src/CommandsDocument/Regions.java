@@ -42,23 +42,24 @@ public class Regions
 	
 	// start FEA Region #1,#2,<#3>
 	// 		#1 is material, #2 is thickness, #3 is material angle function
-	// or MPM Region #1,#2,#3,#4,#5
+	// or MPM Region #1,#2,#3,#4,(#5,#6 pairs)
+	//   #1 is material, (#2,#3)=(vx,vy), #5=thickness or vz
 	public void StartRegion(ArrayList<String> args) throws Exception
 	{
 		// verify not nested
 		if(inRegion != 0)
-		    throw new Exception("Regions, Holes, and BMPRegions cannot be nested: "+args);
+		    throw new Exception("Regions, Holes, and BMPRegions cannot be nested:\n"+args);
 		
 	    // activate
 	    inRegion = REGION_BLOCK;
 	    
 	    // read material by ID
 	    if(args.size()<2)
-		    throw new Exception("'Region' command missing material ID: "+args);
+		    throw new Exception("'Region' command missing material ID:\n"+args);
 	    String matID = doc.readStringArg(args.get(1));
 	    int matnum = doc.mats.getMatID(matID);
 		if(matnum<=0)
-			throw new Exception("'Region' command has unknown material ID: "+args);
+			throw new Exception("'Region' command has unknown material ID:\n"+args);
 		
 	    // MPM or FEA
 		if(doc.isMPM())
@@ -66,7 +67,7 @@ public class Regions
 		
 			// read two velocities
 			if(args.size()<4)
-		    	throw new Exception("'Region' command missing two few arguments: "+args);
+		    	throw new Exception("'Region' command missing two few arguments:\n"+args);
 			double velx = doc.readDoubleArg(args.get(2));
 			double vely = doc.readDoubleArg(args.get(3));
 			
@@ -84,6 +85,22 @@ public class Regions
 				xmlRegions.append(" thick='"+thick+"'");
 			
 			// extra pairs (angle, temp, conc)
+			int nextSize = 5;
+			while(args.size()>nextSize)
+			{	// get property
+				String prop = doc.readStringArg(args.get(nextSize)).toLowerCase();
+				if(!prop.equals("angle") && !prop.equals("temp") && !prop.equals("conc"))
+					throw new Exception("Region '"+prop+"' property not recogonized:\n"+args);
+				
+				// need next one
+				if(args.size()<nextSize+2)
+					throw new Exception("Region '"+prop+"' property missing a value:\n"+args);
+				double dvalue = doc.readDoubleArg(args.get(nextSize+1));
+				
+				// add it and increment
+				xmlRegions.append(" "+prop+"='"+dvalue+"'");
+				nextSize += 2;
+			}
 			
 			// end region tag
 			xmlRegions.append(">\n");
@@ -94,7 +111,7 @@ public class Regions
 		    
 			// read thickness
 		    if(args.size()<3)
-			    throw new Exception("'Region' command missing thickness: "+args);
+			    throw new Exception("'Region' command missing thickness:\n"+args);
 		    double thickness = doc.readDoubleArg(args.get(2));
 		    
 		    // start tag
@@ -111,7 +128,7 @@ public class Regions
 		}
 		
 		else
-			throw new Exception("'Region' command not allowed before analysis type is set: "+args);
+			throw new Exception("'Region' command not allowed before analysis type is set:\n"+args);
 	}
 
 	// end current region
@@ -119,7 +136,7 @@ public class Regions
 	{
 		// must be in region
 		if(inRegion != REGION_BLOCK)
-			throw new Exception("'EndRegion' command when not in a region: "+args);
+			throw new Exception("'EndRegion' command when not in a region:\n"+args);
 		
 		// active polygon
 		if(inPoly == true)
@@ -137,7 +154,7 @@ public class Regions
 	{
 		// verify not nested
 		if(inRegion != 0)
-			throw new Exception("Regions, Holes, and BMPRegions cannot be nested: "+args);
+			throw new Exception("Regions, Holes, and BMPRegions cannot be nested:\n"+args);
 		    
 		// activate
 		inRegion = HOLE_BLOCK;
@@ -152,7 +169,7 @@ public class Regions
 	{
 		// must be in region
 		if(inRegion != HOLE_BLOCK)
-			throw new Exception("'EndHole' command when not in a hole: "+args);
+			throw new Exception("'EndHole' command when not in a hole:\n"+args);
 		
 		// active polygon
 		if(inPoly == true)
@@ -169,13 +186,15 @@ public class Regions
 	public void AddRectOrOval(ArrayList<String> args,String shape) throws Exception
 	{	// times not allowed
 		if(inRegion == 0)
-			throw new Exception("'"+shape+"' command is only allowed within a region block: "+args);
+			throw new Exception("'"+shape+"' command is only allowed within a region block:\n"+args);
 		if(inPoly == true)
-			throw new Exception("'"+shape+"' command is not allowed in a polygon block: "+args);
+			throw new Exception("'"+shape+"' command is not allowed in a polygon block:\n"+args);
+		if(doc.isMPM3D())
+			throw new Exception("'PolyPt' command is only allowed within 2D MPM:\n"+args);
 		
 		// four numbers
-		if(args.size()<0)
-			throw new Exception("'"+shape+"' command has too few parameters: "+args);
+		if(args.size()<5)
+			throw new Exception("'"+shape+"' command has too few parameters:\n"+args);
 		double xmin = doc.readDoubleArg(args.get(1));
 		double xmax = doc.readDoubleArg(args.get(2));
 		double ymin = doc.readDoubleArg(args.get(3));
@@ -185,14 +204,16 @@ public class Regions
 		xmlRegions.append(indent+"  <"+shape+" units='mm' xmin='"+xmin+"' xmax='"+xmax+"'");
 		xmlRegions.append(" ymin='"+ymin+"' ymax='"+ymax+"'/>\n");
 	}
-	
+
 	// add point to polygon
 	public void AddPolypoint(ArrayList<String> args) throws Exception
 	{	// times not allowed
 		if(inRegion == 0)
-			throw new Exception("'PolyPt' command is only allowed within a polygon sequence: "+args);
+			throw new Exception("'PolyPt' command is only allowed within a polygon sequence:\n"+args);
 		if(inPoly==false && args.size()<2)
-			throw new Exception("Empty 'PolyPt' command only allowed in a polygon sequence: "+args);
+			throw new Exception("Empty 'PolyPt' command only allowed in a polygon sequence:\n"+args);
+		if(doc.isMPM3D())
+			throw new Exception("'PolyPt' command is only allowed within 2D MPM:\n"+args);
 		
 		// start a polygon
 		if(inPoly == false)
@@ -209,7 +230,7 @@ public class Regions
 		
 		// needs two arguments
 		if(args.size()<3)
-			throw new Exception("'PolyPt' command has too few parameters: "+args);
+			throw new Exception("'PolyPt' command has too few parameters:\n"+args);
 		double x = doc.readDoubleArg(args.get(1));
 		double y = doc.readDoubleArg(args.get(2));
 		
@@ -217,6 +238,30 @@ public class Regions
 		xmlRegions.append(indent+"    <pt units='mm' x='"+x+"' y='"+y+"'/>\n");
 	}
 
+	// add shape for Rect #1,#2,#3,#4
+	public void AddBox(ArrayList<String> args) throws Exception
+	{	// times not allowed
+		if(inRegion == 0)
+			throw new Exception("'Box' command is only allowed within a region block:\n"+args);
+		if(!doc.isMPM3D())
+			throw new Exception("'Box' command is only allowed within 3D MPM:\n"+args);
+		
+		// four numbers
+		if(args.size()<7)
+			throw new Exception("'Box' command has too few parameters: "+args);
+		double xmin = doc.readDoubleArg(args.get(1));
+		double xmax = doc.readDoubleArg(args.get(2));
+		double ymin = doc.readDoubleArg(args.get(3));
+		double ymax = doc.readDoubleArg(args.get(4));
+		double zmin = doc.readDoubleArg(args.get(5));
+		double zmax = doc.readDoubleArg(args.get(6));
+		
+		// add it
+		xmlRegions.append(indent+"  <Box units='mm' xmin='"+xmin+"' xmax='"+xmax+"'");
+		xmlRegions.append(" ymin='"+ymin+"' ymax='"+ymax+"'");
+		xmlRegions.append(" zmin='"+zmin+"' zmax='"+zmax+"'/>\n");
+	}
+	
 	//----------------------------------------------------------------------------
 	// Accessors
 	//----------------------------------------------------------------------------
