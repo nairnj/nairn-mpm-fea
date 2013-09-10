@@ -49,6 +49,23 @@ void VonMisesHardening::PrintYieldProperties(void)
     cout << endl;
 }
 
+// The base class history variable is cummulative equivalent plastic strain
+//		(defined as dalpha = sqrt((2/3)||dep||))
+// 1: Yield (in PA), 2: RhoC 3: RhoW 4: Cell Size 5: Total Dislocation Density 6: plastic strain rate in sec^-1 (empty) 7: volume fraction (empty)
+char *VonMisesHardening::MaterialData(void)
+{
+	double *p=new double[2];
+	p[0]=0.;
+	p[1]=0.;
+	p[2]=0.;
+	//p[3]=0.;
+	//p[4]=0.;
+	//p[5]=0.;
+	//p[6]=0.;
+	//p[7]=0.;
+	return (char *)p;
+}
+
 // Read material properties
 char *VonMisesHardening::InputMat(char *xName,int &input)
 {
@@ -102,7 +119,58 @@ void VonMisesHardening::InitialLoadMechProps(int makeSpecific,int np)
 // Return yield stress for current conditions (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
 double VonMisesHardening::GetYield(MPMBase *mptr,int np,double delTime)
 {
-	return linearHardening ? yldred + Epred*alpint : yldred*pow(1.+beta*alpint,npow) ;
+	
+	// modiftf #temperature-dependent-yield-stress
+	//Temperature Dependent Shear Stress:
+		// Copper (C10200 Oxygen-free Copper) attempt 1	
+		if(alpint>0)
+		{
+		double Tore = 0;
+		double pTemp = mptr->pTemperature; // get the current temperature of the particle
+		
+		// create linear interpolations to determine the shear yield stress
+		if (pTemp<=24)
+			Tore = 242e6;	
+		else if(pTemp<=100)
+			Tore = -0.30387e6*(pTemp-24)+242e6;
+		else if(pTemp<=150)
+			Tore = -0.34641e6*(pTemp-100)+219.39e6;
+		else if(pTemp<=200)
+			Tore = -0.34641e6*(pTemp-150)+202.07e6;
+		else if(pTemp<=250)
+			Tore = -0.34641e6*(pTemp-200)+184.75e6;
+		else if(pTemp<=300)
+			Tore = -0.46188e6*(pTemp-250)+167.43e6;
+		else if(pTemp<=350)
+			Tore = -0.63509e6*(pTemp-300)+144.34e6;
+		else if(pTemp<=400)
+			Tore = -0.80829e6*(pTemp-350)+112.58e6;
+		else if(pTemp<=450)
+			Tore = -0.86603e6*(pTemp-400)+72.17e6;
+		else if(pTemp<=500)
+			Tore = -0.26558e6*(pTemp-450)+28.87e6;
+		else if(pTemp<=550)
+			Tore = -0.12702e6*(pTemp-500)+15.59e6;
+		else if(pTemp<=600)
+			Tore = -0.09238e6*(pTemp-550)+9.24e6;
+		else if(pTemp<=625)
+			Tore = -0.03464e6*(pTemp-600)+4.62e6;
+		else if(pTemp<=650)
+			Tore = -0.08083e6*(pTemp-625)+3.75e6;
+		else if(pTemp<=675)
+			Tore = -0.06928e6*(pTemp-650)+1.73e6;
+		else 
+			Tore=0;
+			
+			mptr->yieldC = sqrt(3)*Tore/rho; 
+			return mptr->yieldC;  					//return the temperature dependent yield stress
+		}	
+		// modiftf #temperature-dependent-yield-stress	
+			
+	else 
+		return linearHardening ? yldred + Epred*alpint : yldred*pow(1.+beta*alpint,npow) ;
+	
+	
 }
 
 // Get derivative of sqrt(2./3.)*yield with respect to lambda for plane strain and 3D
@@ -139,6 +207,18 @@ double VonMisesHardening::SolveForLambdaBracketed(MPMBase *mptr,int np,double st
 	return lambdak;
 }
 
+void VonMisesHardening::UpdatePlasticInternal(MPMBase *mptr,int np)
+{
+		mptr->SetHistoryDble(0,alpint);
+		mptr->SetHistoryDble(YT_HISTORY,mptr->yieldC*rho/1.e6);
+		mptr->SetHistoryDble(EPDOT_HISTORY,1.); // no delTime variable to apply...
+		//mptr->SetHistoryDble(RHOC,mptr->archiverhoC);
+		//mptr->SetHistoryDble(RHOW,mptr->archiverhoW);
+		//mptr->SetHistoryDble(DSIZE,mptr->archiveDSize);
+		//mptr->SetHistoryDble(TDL,mptr->archiveTDL);
+		//mptr->SetHistoryDble(FR,mptr->fr);
+}
+
 #pragma mark VonMises::Accessors
 
 // Return the material tag
@@ -147,3 +227,15 @@ int VonMisesHardening::MaterialTag(void) { return VONMISESHARDENING; }
 // return material type
 const char *VonMisesHardening::MaterialType(void) { return "Von Mises Hardening Plastic"; }
 
+
+// over-riding base class IsPlasticity
+// this material has three additional history variables
+double VonMisesHardening::GetHistory(int num,char *historyPtr)
+{
+    double history=0.;
+	if(num==1 || num==2 || num==3 ) //|| num==4 || num==5 || num==6)
+	{	double *cumStrain=(double *)historyPtr;
+		history=cumStrain[num-1];
+	}
+	return history;
+}

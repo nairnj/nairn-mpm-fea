@@ -219,6 +219,9 @@ double MicrostructureModel::GetYield(MPMBase *mptr,int np,double delTime)
 		//	mptr->archiveDSize=dSize0;
 		}
 		
+		if(alpint<0.01)
+			return yldred;
+		
 		
 		// Calculation of m for temperature dependent strain-rate sensitivity
 		if(ConductionTask::active)
@@ -226,39 +229,30 @@ double MicrostructureModel::GetYield(MPMBase *mptr,int np,double delTime)
 			N=14900/mptr->pPreviousTemperature;
 		}
 		
-		if(mptr->currentParticleNum==60290&&alpint>1.8){
-		cout << "1: SHM " << SHM << endl;
-		cout << "2: N " << N << endl;}
 		
 		double rhoc = mptr->archiverhoC;
 		double rhow = mptr->archiverhoW;
 		
-		if(mptr->currentParticleNum==60290&&alpint>1.8){
-		cout << "3: rhoc " << rhoc << endl;
-		cout << "4: rhow " << rhow << endl;}
 		
 		
 		// update rhoc/w from previous increment
 			rhow += mptr->rhoWDot*delTime;
 			rhoc += mptr->rhoCDot*delTime;
-		
-		if(mptr->currentParticleNum==60290&&alpint>1.8){
-		cout << "5: rhoc " << rhoc << endl;
-		cout << "6: rhow " << rhow << endl;}
 			
+		// make sure dislocation density is never less than 0
+		if(rhow<0)
+			rhow=0;
+		if(rhoc<0)
+			rhoc=0;	
+		
+		
 		
 		// update values for strain and strain rate
 		eqss = SQRT_THREE*alpint;
 		rss = tayM*eqss;
 		eqssra = SQRT_THREE*(dalpha/delTime);
 		rssra = tayM*eqssra;
-		
-		if(mptr->currentParticleNum==60290&&alpint>1.8){
-		cout << "7: eqss " << eqss << endl;
-		cout << "8: rss " << rss << endl;
-		cout << "9: eqssra " << eqssra << endl;
-		cout << "10: rssra " << rssra << endl;
-		}
+
 		
 		// update value of volume fraction
 		mptr->fr = fLim + (fo-fLim)*exp(-1.*rss/fsto);
@@ -266,41 +260,20 @@ double MicrostructureModel::GetYield(MPMBase *mptr,int np,double delTime)
 		double tdl = mptr->fr*rhow+(1.-mptr->fr)*rhoc;
 		double dSize = K1/sqrt(tdl);
 		
-		if(mptr->currentParticleNum==60290&&alpint>1.8){
-		cout << "11: mptr->fr " << mptr->fr << endl;
-		cout << "12: tdl " << tdl << endl;
-		cout << "13: dSize " << dSize << endl;
-		}
-		
-		
 		double rhowDot,rhocDot = 0;
 		
 		// update dislocation density evolution rate in cell wall and cell interior
-		if(rssra!=0)
+		if(!DbleEqual(rssra,0.))
 		{	wAdd = (6.*esbe*rssra*pow(1-mptr->fr,TWOTHIRDS))/(burg*dSize*mptr->fr);
 			wRem = (SQRT_THREE*esbe*rssra*(1.-mptr->fr)*sqrt(rhow))/(mptr->fr*burg);
 			wDis = -disk1*pow(rssra/sto,-1./N)*rssra*rhow;
 			rhowDot = wAdd+wRem+wDis;
 			
-			if(mptr->currentParticleNum==60290&&alpint>1.8){
-		cout << "14: wAdd " << wAdd << endl;
-		cout << "15: wRem " << wRem << endl;
-		cout << "16: wDis " << wDis << endl;
-		cout << "17: rhowDot " << rhowDot << endl;
-		}
-			
 			cAdd = esal*SQRT_ONETHIRD*(sqrt(rhow)/burg)*rssra;
 			cRem = -esbe*((6.*rssra)/(burg*dSize*pow(1.-mptr->fr,ONETHIRD)));
 			cDis = -disk1*pow(rssra/sto,-1./N)*rssra*rhoc;
 			rhocDot = cAdd+cRem+cDis;
-			
-			if(mptr->currentParticleNum==60290&&alpint>1.8){
-		cout << "18: cAdd " << cAdd << endl;
-		cout << "19: cRem " << cRem << endl;
-		cout << "20: cDis " << cDis << endl;
-		cout << "21: rhocDot " << rhocDot << endl;
-		}
-		
+
 		}
 			
 
@@ -312,26 +285,13 @@ double MicrostructureModel::GetYield(MPMBase *mptr,int np,double delTime)
 		sigow=alp*MMG*burg*sqrt(rhow);
 		rstw=sigow*pow(rssra/sto,1./SHM);
 		
-		if(mptr->currentParticleNum==60290&&alpint>1.8){ //alpint_>1.94123e+1
-		cout << "22: sigoc " << sigoc << endl;
-		cout << "23: rstc " << rstc << endl;
-		cout << "24: sigow " << sigow << endl;
-		cout << "25: rstw " << rstw << endl;
-		}
-		
+
 		// update stress
 		rst=mptr->fr*rstw+(1.-mptr->fr)*rstc;
 		mptr->yieldP = mptr->yieldC;
 		mptr->yieldC = tayM*rst*(SQRT_THREE/rho);
 		//mptr->yieldC *= SQRT_THREE/rho;
 		mptr->yieldC += yldred;
-		
-		if(mptr->currentParticleNum==60290&&alpint>1.8){
-		cout << "26: rst " << rst << endl;
-		cout << "27: mptr->yieldP " << mptr->yieldP << endl;
-		cout << "28: mptr->yieldC " << mptr->yieldC << endl;
-		cout << "29: mptr->yieldC " << mptr->yieldC << endl;
-		}
 		
 		// save data if saving:
 		if(saving)
@@ -355,7 +315,7 @@ double MicrostructureModel::GetYield(MPMBase *mptr,int np,double delTime)
 double MicrostructureModel::GetKPrime(MPMBase *mptr,int np,double delTime)
 { 
 	//if(dalpha>0.00000001||dalpha<-0.00000001)
-	if(dalpha!=0)
+	if(!DbleEqual(dalpha,0.))
 		return (mptr->yieldC-mptr->yieldP)/(dalpha*rho);
 	else 
 		return 0;

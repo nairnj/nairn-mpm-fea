@@ -17,6 +17,9 @@
 *********************************************************************/
 
 #include "ExtractMPM.hpp"
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h> //modiftf for bragg gpu
 
 // Global variable settings
 char fileFormat='T';
@@ -47,6 +50,9 @@ int angleOffset=-1,posOffset=-1,stressOffset=-1,strainOffset=-1;
 int crackPosOffset=-1,jIntOffset=-1,kSifOffset=-1;
 int velocityOffset=-1,origPosOffset=-1,plStrainOffset=-1;
 int tempOffset=-1,concOffset=-1,strainEnergyOffset=-1,plasticEnergyOffset=-1;
+int rhocOffset=-1, rhowOffset=-1, tdlOffset=-1, dsizeOffset=-1;		// modiftf #archiveMM
+int eqplstrainOffset=-1, flowstressOffset=-1, epsrateOffset=-1;						// modiftf #archiveMM
+int historyOffset=-1; //modiftf #archiveHistory
 
 #pragma mark MAIN AND INPUT PARAMETERS
 
@@ -154,14 +160,50 @@ int main(int argc, char * const argv[])
 					q=KII;
 				else if(strcmp(parm,"mass")==0)
 					q=MASS;
+				//modiftf #archiveMM	
+				else if(strcmp(parm,"rhoc")==0)
+					q=RHOC;
+				else if(strcmp(parm,"rhow")==0)
+					q=RHOW;	
+				else if(strcmp(parm,"tdl")==0)
+					q=TDL;	
+				else if(strcmp(parm,"dsize")==0)
+					q=DSIZE;
+				else if(strcmp(parm,"epstr")==0)
+					q=EQPLSTRAIN;
+				else if(strcmp(parm,"fs")==0)
+					q=FLOWSTRESS;
+				else if(strcmp(parm,"epsrate")==0)
+					q=EPSRATE;	
+				//modiftf #archiveMM
+				//modiftf #archiveHistory
+				else if(strcmp(parm,"hist")==0)
+				{	q=HISTORY;	
+					for(int i=44;i<=49;i++){
+					quantity.push_back(i);}
+					quantityName.push_back("hist1");
+					quantityName.push_back("hist2");
+					quantityName.push_back("hist3");
+					quantityName.push_back("hist4");
+					quantityName.push_back("hist5");
+					quantityName.push_back("hist6");
+				}
+				//modiftf #archiveHistory
 				else
 				{   cerr << "ExtractMPM option 'q' argument of '" << parm << "' is not recognized" << endl;
 					return BadOptionErr;
 				}
 				
+				//modiftf #archiveHistory
+				if(strcmp(parm,"hist")==0)
+					break;
+				//modiftf #archiveHistory
+					
 				quantity.push_back(q);
 				quantityName.push_back(parm);
+				
 				break;
+				
 			}
 
 			// exclude material (must be m, space, number)
@@ -367,6 +409,7 @@ void Usage(char *msg)
 			"                              extension in the output file name\n"
             "    -P                 Extract particle data only (the default)\n"
             "    -q name            Add column with named quantity\n"
+			"		-> options are: epstr, epsrate, fs, rhoc, rhow, tdl, dsize etc...\n"
             "    -T                 Output as tab-delimited text file (the default)\n"
             "    -V                 Output as VTK Legacy file (particle date only)\n"
             "    -X                 Output as XML file\n"
@@ -835,8 +878,9 @@ void VTKLegacy(ostream &os,unsigned char *ap,long fileLength,const char *mpmFile
 	for(i=0;i<quantity.size();i++)
 	{	os << "SCALARS " << quantityName[i] << " double 1" << endl;
 		os << "LOOKUP_TABLE default" << endl;
+		//os << "quantity[i] " << quantity[i] << " HISTORYNUM " << HISTORY << endl; //debugtf
 		
-		ap=origap;
+		ap=origap; //comtf ap is the filename?
 		for(p=0;p<nummpms;p++)
 		{	short matnum=pointMatnum(ap);
 			if(matnum<0) break;
@@ -929,7 +973,7 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 			
 		case TEMP:
 			if(tempOffset>0)
-				OutputDouble((double *)(ap+tempOffset),0,delim,reverseFromInput,os,quantity[i]);
+				OutputDouble((double *)(ap+tempOffset),0,delim,reverseFromInput,os,quantity[i]);//os << " tempOffset " << tempOffset; //debugtf
 			else
 				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
 			break;
@@ -950,6 +994,97 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 		case MASS:
 			OutputDouble((double *)(ap+sizeof(int)),0,delim,reverseFromInput,os,quantity[i]);
 			break;
+			
+		// modiftf #archiveMM Must change the sizeof parameter?	
+		case RHOC:
+		if(rhocOffset>0)
+				OutputDouble((double *)(ap+rhocOffset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+
+		case RHOW:
+			if(rhowOffset>0)
+				OutputDouble((double *)(ap+rhowOffset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+
+		case TDL:
+			if(tdlOffset>0)
+				OutputDouble((double *)(ap+tdlOffset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+
+		case DSIZE:
+			if(dsizeOffset>0)
+				OutputDouble((double *)(ap+dsizeOffset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+
+		case EQPLSTRAIN:
+			if(eqplstrainOffset>0)
+				OutputDouble((double *)(ap+eqplstrainOffset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+
+		case FLOWSTRESS:
+			if(flowstressOffset>0)
+				OutputDouble((double *)(ap+flowstressOffset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+		case EPSRATE:
+			if(epsrateOffset>0)
+				OutputDouble((double *)(ap+epsrateOffset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;	
+		// modiftf #archiveMM
+		//modiftf #archiveHistory
+		case HISTORY:
+			if(historyOffset>0)
+				OutputDouble((double *)(ap+historyOffset),quantity[i]-HISTORY,delim,reverseFromInput,os,quantity[i]);
+				//os << " H1 " << " historyOffset " << historyOffset;
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);//os << " H1";
+			break;
+		case HISTORY+1:
+			if(historyOffset>0)
+				OutputDouble((double *)(ap+historyOffset),quantity[i]-HISTORY,delim,reverseFromInput,os,quantity[i]);
+				//os << " H2 " << " historyOffset " << historyOffset;
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);//os << " H2";
+			break;
+		case HISTORY+2:
+			if(historyOffset>0)
+				OutputDouble((double *)(ap+historyOffset),quantity[i]-HISTORY,delim,reverseFromInput,os,quantity[i]);
+				//os << " H3 " << " historyOffset " << historyOffset;
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+		case HISTORY+3:
+			if(historyOffset>0)
+				OutputDouble((double *)(ap+historyOffset),quantity[i]-HISTORY,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+		case HISTORY+5:
+			if(historyOffset>0)
+				OutputDouble((double *)(ap+historyOffset),quantity[i]-HISTORY,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+		case HISTORY+6:
+			if(historyOffset>0)
+				OutputDouble((double *)(ap+historyOffset),quantity[i]-HISTORY,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+		//modiftf #archiveHistory
 			
 		default:
 			OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
@@ -1239,9 +1374,12 @@ int CalcArchiveSize(int vernum)
         mpmRecSize+=sizeof(double);
 	}
     if(mpmOrder[ARCH_History]=='Y')
+	{	historyOffset=mpmRecSize;
         mpmRecSize+=sizeof(double);
+	}
 	else if(mpmOrder[ARCH_History]!='N')
-	{	if(mpmOrder[ARCH_History]&0x01) mpmRecSize+=sizeof(double);
+	{	historyOffset=mpmRecSize;
+		if(mpmOrder[ARCH_History]&0x01) mpmRecSize+=sizeof(double); //cout << mpmRecSize << endl; //debugtf
 		if(mpmOrder[ARCH_History]&0x02) mpmRecSize+=sizeof(double);
 		if(mpmOrder[ARCH_History]&0x04) mpmRecSize+=sizeof(double);
 		if(mpmOrder[ARCH_History]&0x08) mpmRecSize+=sizeof(double);
@@ -1262,7 +1400,37 @@ int CalcArchiveSize(int vernum)
 		else
 			mpmRecSize+=sizeof(double);
 	}
-		
+	// modiftf #archiveMM
+	if(mpmOrder[ARCH_RHOC]=='Y')
+	{	rhocOffset=mpmRecSize;
+        mpmRecSize+=sizeof(double);
+	}
+	if(mpmOrder[ARCH_RHOW]=='Y')
+     {	rhowOffset=mpmRecSize;
+        mpmRecSize+=sizeof(double);
+	}
+	if(mpmOrder[ARCH_TDL]=='Y')
+    {	tdlOffset=mpmRecSize;
+        mpmRecSize+=sizeof(double);
+	}
+	if(mpmOrder[ARCH_DSIZE]=='Y')
+    {	dsizeOffset=mpmRecSize;
+        mpmRecSize+=sizeof(double);
+	}
+	if(mpmOrder[ARCH_EQPLSTRAIN]=='Y')
+    {	eqplstrainOffset=mpmRecSize;
+        mpmRecSize+=sizeof(double);
+	}
+	if(mpmOrder[ARCH_FLOWSTRESS]=='Y')
+    {	flowstressOffset=mpmRecSize;
+        mpmRecSize+=sizeof(double);
+	}
+	if(mpmOrder[ARCH_EPSRATE]=='Y')
+    {	epsrateOffset=mpmRecSize;
+        mpmRecSize+=sizeof(double);
+	}
+	// modiftf #archiveMM
+	
     // check what will be there for crack segments
  	crackPosOffset=sizeof(int)+sizeof(double)+sizeof(short)+2;
 	

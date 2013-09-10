@@ -13,6 +13,9 @@
 
 #define VONMISESHARDENING 9
 
+#define YT_HISTORY 1
+#define EPDOT_HISTORY 2
+
 #include "Materials/IsoPlasticity.hpp"
 
 class VonMisesHardening : public IsoPlasticity
@@ -33,16 +36,19 @@ class VonMisesHardening : public IsoPlasticity
 		virtual void InitialLoadMechProps(int,int);
 		virtual void PrintMechanicalProperties(void);
 		virtual void PrintYieldProperties(void);
+		virtual char *MaterialData(void);
 				
 		// override plastic potential functions
 		virtual double GetYield(MPMBase *,int,double);
  		virtual double GetKPrime(MPMBase *,int,double);
 		virtual double GetK2Prime(MPMBase *,double,double);
 		virtual double SolveForLambdaBracketed(MPMBase *,int,double,Tensor *,double);
+		virtual void UpdatePlasticInternal(MPMBase *,int);
        
 		// accessors
 		virtual const char *MaterialType(void);
 		virtual int MaterialTag();
+		virtual double GetHistory(int,char *);
 		
     protected:
         // specific values of yield strength & plastic modulus 

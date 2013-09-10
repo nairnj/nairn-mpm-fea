@@ -331,7 +331,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 
 			//modiftf ******** #rigidbodyrotation
 			if(Rpm::rpmApplied && !fmobj->IsThreeD())									
-			{	if(rotator->CheckRPM(MatID))					
+			{	if(rotator->CheckRPM(MatID) && !fmobj->IsThreeD()) //not working for threeD right now, must set centre manually...				
 				{		rotator->xcentre=theShape->Returnx0();	
 						rotator->ycentre=theShape->Returny0();	
 				}
