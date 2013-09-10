@@ -986,7 +986,6 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 				else if(strcmp(value,"VTKArchive")==0)
                 {   nextTask=(CustomTask *)(new VTKArchive());
                     if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
-					archiver->SetDoingVTKArchive(TRUE);
                 }
 				else if(strcmp(value,"HistoryArchive")==0)
                 {   nextTask=(CustomTask *)(new HistoryArchive());

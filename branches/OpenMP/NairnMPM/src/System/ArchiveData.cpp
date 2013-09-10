@@ -38,8 +38,11 @@ ArchiveData::ArchiveData()
 	threeD=FALSE;			// three D calculations
     SetMPMOrder("mYYYYYNYYYNNNNNNNN");		// byte order + defaults + 16 items
     SetCrackOrder("mYNNN");					// byte order + defaults + 3 items
-	lastVTKArchiveStep=0;
-	doingVTKArchive=FALSE;
+    
+    // contact archive to coordinate with global contact archiving
+	lastArchiveContactStep=0;               // last time contact force was archived
+	doingArchiveContact=FALSE;
+    ZeroVector(&lastContactForce);
 }
 
 // create archive folder
@@ -977,8 +980,6 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 											vector< char * > quantityName,double **vtk)
 {
     char fname[300],fline[300];
-	int archiveStepInterval=fmobj->mstep-lastVTKArchiveStep;
-	lastVTKArchiveStep=fmobj->mstep;
 	
     // get relative path name to the file
     sprintf(fname,"%s%s_%d.vtk",outputDir,archiveRoot,fmobj->mstep);
@@ -1027,7 +1028,14 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 	unsigned int q;
 	double *vtkquant=NULL;
 	double scale=1.;
-	ZeroVector(&lastContactForce);
+    
+    // contact force special case
+    int archiveStepInterval=1;
+    if(GetDoingArchiveContact())
+    {   archiveStepInterval=fmobj->mstep-lastArchiveContactStep;
+        lastArchiveContactStep=fmobj->mstep;
+        ZeroVector(&lastContactForce);
+    }
 	
 	for(q=0;q<quantity.size();q++)
 	{	// header for next quantity
@@ -1074,7 +1082,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					break;
 				
 				case VTK_RIGIDCONTACTFORCES:
-				{	Vector fcontact=nd[i]->GetTotalContactForce(TRUE);
+                {   Vector fcontact=nd[i]->GetTotalContactForce(TRUE);
 					ScaleVector(&fcontact,-1./(double)archiveStepInterval);		// force of rigid particles on the object
 					// average over steps since last archive
 					afile << fcontact.x << " " << fcontact.y << " " << fcontact.z << endl;
@@ -1309,13 +1317,13 @@ void ArchiveData::SetMPMOrder(const char *xData) { strcpy(mpmOrder,xData); }
 void ArchiveData::SetCrackOrder(const char *xData) { strcpy(crackOrder,xData); }
 bool ArchiveData::PointArchive(int orderBit) { return mpmOrder[orderBit]=='Y'; }
 bool ArchiveData::CrackArchive(int orderBit) { return crackOrder[orderBit]=='Y'; }
-void ArchiveData::SetDoingVTKArchive(bool setting) { doingVTKArchive=setting; }
-bool ArchiveData::GetDoingVTKArchive(void) { return doingVTKArchive; }
+void ArchiveData::SetDoingArchiveContact(bool setting) { doingArchiveContact=setting; }
+bool ArchiveData::GetDoingArchiveContact(void) { return doingArchiveContact; }
 
 // get interval since last VTK archive. Reset if not doing VTK archiving, otherwise reset in ArchiveVTKFile
-int ArchiveData::GetVTKArchiveStepInterval(void)
-{	int archiveStepInterval=fmobj->mstep-lastVTKArchiveStep;
-	if(!doingVTKArchive) lastVTKArchiveStep=fmobj->mstep;
+int ArchiveData::GetArchiveContactStepInterval(void)
+{	int archiveStepInterval=fmobj->mstep-lastArchiveContactStep;
+	if(!doingArchiveContact) lastArchiveContactStep=fmobj->mstep;
 	return archiveStepInterval;
 }
 

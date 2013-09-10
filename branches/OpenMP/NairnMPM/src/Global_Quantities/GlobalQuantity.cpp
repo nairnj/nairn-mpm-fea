@@ -510,8 +510,21 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 		case TOT_FCONX:
 		case TOT_FCONY:
 		case TOT_FCONZ:
-		{	int totalSteps=archiver->GetVTKArchiveStepInterval();
-			bool clearForces=!archiver->GetDoingVTKArchive();
+        {   // Three options
+            //   1. VTK active, but not doing contact
+            //   2. VTK inactive
+            //   3. VTK active and archiving contact
+            // When 1 and 2, all contact stuff here, which means must
+            //     a. update lastArchiveContactStep, which is done in GetArchiveContactStepInterval
+            //     b. clear force after reading
+            //     c. totalSteps will never be zero, so no need to track last contact force
+            // When 3
+            //     a. VTK archiving tracks lastArchiveContactStep
+            //     b. Do clear force (it is cleared on each VTK archive)
+            //     c. VTK archiving will also set lastContactForce in case get here just after VTK archiving
+            //          (since global archiving done after step is done
+			int totalSteps=archiver->GetArchiveContactStepInterval();
+			bool clearForces=!archiver->GetDoingArchiveContact();
 			Vector ftotal;
 			ZeroVector(&ftotal);
 			
@@ -521,14 +534,10 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 				{	Vector fcontact=nd[p]->GetTotalContactForce(clearForces);
 					AddVector(&ftotal,&fcontact);
 				}
-				ScaleVector(&ftotal,-1./(double)totalSteps);		// force of rigid particles on the object
-				if(clearForces)
-				{	// store in archiver if VTK archive is not doing it
-					archiver->SetLastContactForce(ftotal);
-				}
+				ScaleVector(&ftotal,-1./(double)totalSteps);           // force of rigid particles on the object (per step)
 			}
 			else
-			{	// if doing VTK archive, this will fail if it is not archiving contact forces
+			{	// VTK task just found contact force, so use it here
 				ftotal=archiver->GetLastContactForce();
 			}
 			// if totalSteps==0 and clearForces, then must be zero, as initialized above

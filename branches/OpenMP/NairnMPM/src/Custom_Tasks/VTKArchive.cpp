@@ -33,8 +33,8 @@ int dummyArg;
 // Constructors
 VTKArchive::VTKArchive()
 {
-	customArchiveTime=-1.;
-	nextCustomArchiveTime=-1.;
+	customArchiveTime=-1.;          // input in ms, stored in sec
+	nextCustomArchiveTime=-1.;      // input in ms, stored in sec
 	bufferSize=0;
 	vtk=NULL;
 }
@@ -95,6 +95,7 @@ char *VTKArchive::InputParam(char *pName,int &input)
     else if(strcmp(pName,"contactforce")==0)
     {	q=VTK_RIGIDCONTACTFORCES;
 		// no buffer since no need to extrapolate
+        archiver->SetDoingArchiveContact(TRUE);
 		thisBuffer=-3;
     }
 	

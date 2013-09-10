@@ -72,9 +72,9 @@ class ArchiveData : public CommonArchiveData
 		void SetCrackOrder(const char *);
 		bool PointArchive(int);
 		bool CrackArchive(int);
-		void SetDoingVTKArchive(bool);
-		bool GetDoingVTKArchive(void);
-		int GetVTKArchiveStepInterval(void);
+		void SetDoingArchiveContact(bool);
+		bool GetDoingArchiveContact(void);
+		int GetArchiveContactStepInterval(void);
 		Vector GetLastContactForce(void);
 		void SetLastContactForce(Vector);
 	
@@ -87,8 +87,8 @@ class ArchiveData : public CommonArchiveData
 		char mpmOrder[50];						// flags for archiving of particles
 		char crackOrder[20];					// flags for archiving of crack particles
 		char archHeader[HEADER_LENGTH+1];		// compiler header information once
-		int lastVTKArchiveStep;					// last time VTK archive was written
-		bool doingVTKArchive;					// true if VTK archiving is active
+		int lastArchiveContactStep;					// last time VTK archive was written
+		bool doingArchiveContact;					// true if VTK archiving is active
 		float *timeStamp;						// pointer to header location for time
 		Vector lastContactForce;				// last contact force archived
 #ifdef LOG_PROGRESS

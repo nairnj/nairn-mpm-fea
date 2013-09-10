@@ -7,7 +7,7 @@ Intended for development of these materials
 EndHeader! ------------ Parameters ---------------
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", "Axisymmetric MPM", or "3D MPM"
-#analysis="Plane Stress MPM"
+#analysis="3D MPM"
 
 ! pick a method usually "lCPDI" or "uGIMP"
 #method="uGIMP"
@@ -17,9 +17,9 @@ EndHeader! ------------ Parameters ---------------
 
 ! material options: isotropic, iptrans, normtrans, ortho,isoplasticity, mgeos
 ! bistable, viscoelastic, hill, wood
-#matID="isoplasticity"
+#matID="isotropic"
 #angle=0					! material angle for anisotopic materials
-#matID="WPC-PE"
+!#matID="WPC-PE"
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2, JohnsonCook
@@ -50,7 +50,7 @@ StressFreeTemp 294
 #aBase=4.5
 
 ! Main settings
-#Ebase=100
+#Ebase=1000
 #rho=1
 #nuBase=.33
 #aBase=60
@@ -63,12 +63,12 @@ StressFreeTemp 294
 #thick=10			! thickness
 
 ! Load by strain (estimated for force and traction loads)
-#loading="rigid"	! Loading = "force", "traction", "rigid", "contact", "thermal"
+#loading="contact"	! Loading = "force", "traction", "rigid", "contact", "thermal"
 #fixsides="no"		! "yes" or "no" for sides fix in y direction (2D) or y and z (3D)
-#strain=6	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
+#strain=-5	        ! Maximum strain (%) (stress needed is estimated for force and tractions use base modulus) of dT if thermal
 
 ! Loading rate
-#tmult=40			! number of transit times to load peak
+#tmult=20			! number of transit times to load peak
 #hold=0				! hold time (multiple of loading time)
 #unload=0		    ! 0 no unload or >0 for unloading time (multiple of loading time, but at same loading rate)
 
@@ -82,7 +82,7 @@ StressFreeTemp 294
 ! Analysis type
 Analysis #analysis
 MPMMethod #update,#method
-!Processors 6
+Processors 4
 !Conduction "yes","Mechanical Energy"
 
 ! convert to contact
@@ -131,21 +131,6 @@ TimeStep 1000,(1+#hold+#unload)*#time,#factor
 ArchiveTime (1+#hold+#unload)*#time/50
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
 #isPlastic="no"
-if #hardID!=""
-  #isPlastic="yes"
-else if #matID="hill"
-  #isPlastic="yes"
-else if #matID="wood"
-  #isPlastic="yes"
-else if #matID="SL"
-  #isPlastic="yes"
-endif
-if #isPlastic="yes"
-  ToArchive plasticstrain,plasticenergy,history1,temperature
-endif
-if #matID="bistable"
-  ToArchive history1
-endif
 
 ! ********** Materials Section **********
 
@@ -159,6 +144,7 @@ if #matID="isotropic"
 endif
 
 if #matID="WPC-PE"
+  #isPlastic="yes"
   Material "WPC-PE","PE","IsoPlasticity"
     E #Ebase
     nu .33
@@ -173,6 +159,7 @@ endif
 
 
 if #matID="isoplasticity"
+  #isPlastic="yes"
   Material "isoplasticity","Isotropic Elastic-Plastic Material","IsoPlasticity"
     E #Ebase
     nu #nuBase
@@ -214,6 +201,7 @@ if #matID="isoplasticity"
 endif
 
 if #matID="mgeos"
+  #isPlastic="yes"
   #C0base = sqrt(1000*#Ebase/#rho)
   #Gbase = 3*#Ebase*(1-2*#nuBase)/(2*(1+#nuBase))
   Material #matID,"Tungsten","MGEOSMaterial"
@@ -262,28 +250,6 @@ if #matID="mgeos"
   Done
 endif
 
-if #matID="SL"
-  Material #matID,"Tungsten","SLMaterial"
-    C0 4004
-    S1 1.35
-    S2 0
-    gamma0 1.64
-    rho 19.256
-    yield 2200
-    G 160000
-    Cv 134
-    GPpG0 0.01e-3
-    GTpG0 -2.2e-4
-    yieldMax 4000
-    betahard 7.7
-    nhard 0.13
-    YP 1000
-    Uk 0.31
-    C1 710000
-    C2 0.012
-  Done
-endif
-
 if #matID="viscoelastic"
   Material "viscoelastic","Viscoelastic Material","Viscoelastic"
     K #Ebase/(3*(1-2*#nuBase))
@@ -296,6 +262,7 @@ if #matID="viscoelastic"
 endif
 
 if #matID="bistable"
+  ToArchive history1
   Material "bistable","Two State Material","Bistable"
     K0 #Ebase/(3*(1-2*#nuBase))
     G0 #Ebase/(2*(1+#nuBase))
@@ -355,6 +322,7 @@ if #matID="ortho"
 endif
 
 if #matID="hill"
+  #isPlastic="yes"
   Material "hill","Orthotropic Hill Plastic",15
     Ex #Ebase
     Ey #Ebase/3
@@ -379,6 +347,7 @@ if #matID="hill"
 endif
 
 if #matID="wood"
+  #isPlastic="yes"
   XMLData Material,"wood"
   <Material Type="19" Name="Orthotropic Wood Material">
     <rho>10</rho>
@@ -413,6 +382,10 @@ if #matID="wood"
     <tempC2>-.1994</tempC2>
   </Material>
   EndXMLData
+endif
+
+if #isPlastic="yes"
+  ToArchive plasticstrain,plasticenergy,history1,temperature
 endif
 
 ! displacement functions for rigidd materials
@@ -472,7 +445,9 @@ if #isPlastic="yes"
 endif
 if #loading="contact"
   GlobalArchive "contactx"
-  GlobalArchive "contacty"
+  GlobalArchive "reactionx",-1
+else
+  GlobalArchive "reactionx",-1
 endif
 GlobalArchiveTime (1+#hold+#unload)*#time/100
 
@@ -635,6 +610,7 @@ else ifStr #loading="thermal"
 endif
 
 ! Fixed bottom! set to -#cell/2 to only have two rows for cells for GIMP
+BoundaryID -1
 if #analysis="3D MPM"
   MoveBox -#cell,-#sides*#cell,-#sides*#cell,0,#width+#sides*#cell,#thick+#sides*#cell
     Velocity x,constant,0
@@ -655,6 +631,7 @@ else
     EndMoveLine
   endif
 endif
+BoundaryID
 
 ! Fixed sides
 if #fixsides="yes"
@@ -690,32 +667,16 @@ endif
 
 ! 3D Archived
 if #analysis="3D MPM"
-  XMLData
-
-  <CustomTasks>
-    <Schedule name='VTKArchive'>
-      <Parameter name='mass'/>
-      <Parameter name='material'/>
-      <Parameter name='stress'/>
-      <Parameter name='strain'/>
-      <Parameter name='velocity'/>
-      <Parameter name='plasticstrain'/>
-      <Parameter name='displacement'/>
-      <Parameter name='strainenergy'/>
-      <Parameter name='plasticenergy'/>
-    </Schedule>
-    <Schedule name='AdjustTimeStep'>
-    </Schedule>
-  </CustomTasks>
-
-  EndXMLData
-else
-
-  XMLData
-
-  <CustomTasks>
-    <Schedule name='AdjustTimeStep'>
-    </Schedule>
-  </CustomTasks>
-  EndXMLData
+  CustomTask "VTKArchive"
+  Parameter "mass"
+  Parameter "material"
+  Parameter "stress"
+  Parameter "strain"
+  Parameter "velocity"
+  Parameter "displacement"
+  Parameter "strainenergy"
+  if #isPlastic="yes"
+    Parameter "plasticstrain"
+    Parameter "plasticenergy"
+  endif
 endif
