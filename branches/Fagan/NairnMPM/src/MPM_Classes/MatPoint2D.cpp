@@ -112,7 +112,7 @@ void MatPoint2D::MovePosition(double delTime,Vector *dv, MPMBase *mptr)
 	if(Rpm::rpmApplied) //check if there is any rpm applied
 	{	if(rotator->CheckRPM(MatID()+1)) //add 1 as the function MatID() gives the materialnumber-1
 			{	//rotator->SetRotationAngle(delTime);
-				rotator->AddRPM3(pos.y, pos.x, dv, mptr, delTime, rotator->simTime);
+				rotator->AddRPM3(pos.z, pos.y, pos.x, dv, mptr, delTime, rotator->simTime);
 			}
 	}
 	//modiftf ******** #rigidbodyrotation

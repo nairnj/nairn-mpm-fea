@@ -94,6 +94,25 @@ void JohnsonCook::PrintYieldProperties(void)
     cout << endl;
 }
 
+// The base class history variable is cummulative equivalent plastic strain
+//		(defined as dalpha = sqrt((2/3)||dep||))
+// 1: Yield (in PA), 2: RhoC 3: RhoW 4: Cell Size 5: Total Dislocation Density 6: plastic strain rate in sec^-1 (empty) 7: volume fraction (empty)
+char *JohnsonCook::MaterialData(void)
+{
+	double *p=new double[2];
+	p[0]=0.;
+	p[1]=0.;
+	p[2]=0.;
+	//p[3]=0.;
+	//p[4]=0.;
+	//p[5]=0.;
+	//p[6]=0.;
+	//p[7]=0.;
+	return (char *)p;
+}
+
+
+
 // Private properties used in constitutive law
 // For variable shear and bulk moduli, subclass can overrive
 //		LoadMechanicalProps(MPMBase *mptr,int np) and set new
@@ -129,7 +148,8 @@ double JohnsonCook::GetYield(MPMBase *mptr,int np,double delTime)
     double term1 = yldred + Bred*pow(alpint,njc);
     double ep = dalpha/(delTime*ep0jc);
     double term2 = ep>edotMin ? 1. + Cjc*log(ep) : eminTerm ;
-    return term1 * term2 * TjcTerm ;
+	mptr->yieldC = term1 * term2 * TjcTerm ;
+    return mptr->yieldC ;
 }
 
 // Get derivative of sqrt(2./3.)*yield with respect to lambda for plane strain and 3D
@@ -166,6 +186,17 @@ double JohnsonCook::GetK2Prime(MPMBase *mptr,double fnp1,double delTime)
     }
 }
 
+void JohnsonCook::UpdatePlasticInternal(MPMBase *mptr,int np)
+{
+		mptr->SetHistoryDble(0,alpint);
+		mptr->SetHistoryDble(YT_HISTORY,mptr->yieldC*rho/1.e6);
+		mptr->SetHistoryDble(EPDOT_HISTORY,1.); // no delTime variable to apply...
+		//mptr->SetHistoryDble(RHOC,mptr->archiverhoC);
+		//mptr->SetHistoryDble(RHOW,mptr->archiverhoW);
+		//mptr->SetHistoryDble(DSIZE,mptr->archiveDSize);
+		//mptr->SetHistoryDble(TDL,mptr->archiveTDL);
+		//mptr->SetHistoryDble(FR,mptr->fr);
+}
 
 #pragma mark NewMaterial::Accessors
 
@@ -174,4 +205,16 @@ int JohnsonCook::MaterialTag(void) { return JOHNSONCOOK; }
 
 // return unique, short name for this material
 const char *JohnsonCook::MaterialType(void) { return "Johnson-Cook Material"; }
+
+// over-riding base class IsPlasticity
+// this material has three additional history variables
+double JohnsonCook::GetHistory(int num,char *historyPtr)
+{
+    double history=0.;
+	if(num==1 || num==2 || num==3 ) //|| num==4 || num==5 || num==6)
+	{	double *cumStrain=(double *)historyPtr;
+		history=cumStrain[num-1];
+	}
+	return history;
+}
 
