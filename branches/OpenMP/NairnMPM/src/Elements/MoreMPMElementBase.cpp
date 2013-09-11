@@ -435,6 +435,7 @@ void ElementBase::MPMPoints(short numPerElement,Vector *mpos) const
                 }
                 break;
             default:
+                throw "Invalid number of material points per element.";
                 break;
         }
     }

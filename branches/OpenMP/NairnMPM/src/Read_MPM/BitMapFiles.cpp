@@ -133,164 +133,169 @@ void MPMReadHandler::TranslateBMPFiles(void)
     */
 	
 	// scan mesh and assign material points or angles
-    for(ii=1;ii<=nelems;ii++)
-	{	// skip if image not in extent of element box
-		elem=theElements[ii-1];
-		if(!elem->IntersectsBox(xorig,yorig,bwidth,bheight,zslice))
-			continue;
-		
-		// load point coordinates
-		elem->MPMPoints(fmobj->ptsPerElement,mpos);
-	
-		// half the extent of the volume of a particle
-		deltax=(elem->GetDeltaX())/semiscale;
-		deltay=(elem->GetDeltaY())/semiscale;
-		if(fmobj->IsThreeD())
-			deltaz=elem->GetDeltaZ()/semiscale;
-		else
-			deltaz=1.;
-		if(deltaz<0.) deltaz=1.;
-		
-        for(k=0;k<fmobj->ptsPerElement;k++)
-		{	ptFlag=1<<k;
-		
-			// skip if already filled
-            if(elem->filled&ptFlag) continue;
-			
-			// if point in the view area, then check it
-			if((mpos[k].x>=xorig && mpos[k].x<xorig+bwidth)
-					&& (mpos[k].y>=yorig && mpos[k].y<yorig+bheight)
-						 && (mpos[k].z>=zslice-deltaz && mpos[k].z<zslice+deltaz))
-			{	// find range of rows and cols for pixels over this material point
-                if(yflipped)
-                {   rmin=(yorig+bheight-mpos[k].y-deltay)/ypw;
-                    rmax=(yorig+bheight-mpos[k].y-deltay)/ypw;
-                }
-                else
-                {   rmin=(mpos[k].y-deltay-yorig)/ypw;
-                    rmax=(mpos[k].y+deltay-yorig)/ypw;
-                }
-				r1=BMPIndex(rmin,info.height);
-                r2=BMPIndex(rmax,info.height);
-				if(r2==r1)
-				{	wtr1=wtr2=1.;
-				}
-				else
-				{	// fractional weight for first and last row in case not all within the extent
-					wtr1=(double)(r1+1)-rmin;
-					wtr2=rmax-(double)r2;
-				}
-				cmin=(mpos[k].x-deltax-xorig)/xpw;
-				cmax=(mpos[k].x+deltax-xorig)/xpw;
-				c1=BMPIndex(cmin,info.width);
-				c2=BMPIndex(cmax,info.width);
-				if(c2==c1)
-				{	wtc1=wtc2=1.;
-				}
-				else
-				{	// fractional weight for first and last col in case not all within the extent
-					wtc1=(double)(c1+1)-cmin;
-					wtc2=cmax-(double)c2;
-				}
-				
-				// find material ID or none (a hole)
-				// clear material weights
-				nextLevel=firstLevel;
-				while(nextLevel!=NULL) nextLevel=nextLevel->ClearWeight();
+    try
+    {   for(ii=1;ii<=nelems;ii++)
+        {	// skip if image not in extent of element box
+            elem=theElements[ii-1];
+            if(!elem->IntersectsBox(xorig,yorig,bwidth,bheight,zslice))
+                continue;
+            
+            // load point coordinates
+            elem->MPMPoints(fmobj->ptsPerElement,mpos);
+        
+            // half the extent of the volume of a particle
+            deltax=(elem->GetDeltaX())/semiscale;
+            deltay=(elem->GetDeltaY())/semiscale;
+            if(fmobj->IsThreeD())
+                deltaz=elem->GetDeltaZ()/semiscale;
+            else
+                deltaz=1.;
+            if(deltaz<0.) deltaz=1.;
+            
+            for(k=0;k<fmobj->ptsPerElement;k++)
+            {	ptFlag=1<<k;
+            
+                // skip if already filled
+                if(elem->filled&ptFlag) continue;
+                
+                // if point in the view area, then check it
+                if((mpos[k].x>=xorig && mpos[k].x<xorig+bwidth)
+                        && (mpos[k].y>=yorig && mpos[k].y<yorig+bheight)
+                             && (mpos[k].z>=zslice-deltaz && mpos[k].z<zslice+deltaz))
+                {	// find range of rows and cols for pixels over this material point
+                    if(yflipped)
+                    {   rmin=(yorig+bheight-mpos[k].y-deltay)/ypw;
+                        rmax=(yorig+bheight-mpos[k].y-deltay)/ypw;
+                    }
+                    else
+                    {   rmin=(mpos[k].y-deltay-yorig)/ypw;
+                        rmax=(mpos[k].y+deltay-yorig)/ypw;
+                    }
+                    r1=BMPIndex(rmin,info.height);
+                    r2=BMPIndex(rmax,info.height);
+                    if(r2==r1)
+                    {	wtr1=wtr2=1.;
+                    }
+                    else
+                    {	// fractional weight for first and last row in case not all within the extent
+                        wtr1=(double)(r1+1)-rmin;
+                        wtr2=rmax-(double)r2;
+                    }
+                    cmin=(mpos[k].x-deltax-xorig)/xpw;
+                    cmax=(mpos[k].x+deltax-xorig)/xpw;
+                    c1=BMPIndex(cmin,info.width);
+                    c2=BMPIndex(cmax,info.width);
+                    if(c2==c1)
+                    {	wtc1=wtc2=1.;
+                    }
+                    else
+                    {	// fractional weight for first and last col in case not all within the extent
+                        wtc1=(double)(c1+1)-cmin;
+                        wtc2=cmax-(double)c2;
+                    }
+                    
+                    // find material ID or none (a hole)
+                    // clear material weights
+                    nextLevel=firstLevel;
+                    while(nextLevel!=NULL) nextLevel=nextLevel->ClearWeight();
 
-				// add weights
-				for(row=r1;row<=r2;row++)
-				{	if(row==r1)
-						rweight=wtr1;
-					else if(row==r2)
-						rweight=wtr2;
-					else
-						rweight=1.;
-					for(col=c1;col<=c2;col++)
-					{	if(col==c1)
-							weight=rweight*wtc1;
-						else if(col==c2)
-							weight=rweight*wtc2;
-						else
-							weight=rweight;
-						
-						// find material at this level
-						// (note: last level with matID=0 catches empty space)
-						nextLevel=firstLevel;
-						while(nextLevel!=NULL)
-						{	matID=nextLevel->Material(rows[row][col],weight);
-							if(matID>=0) break;
-							nextLevel=(BMPLevel *)nextLevel->GetNextObject();
-						}
-					}
-				}
-				
-				// find maximum weight (matID=0 means max is empty space)
-				weight=0.;
-				maxLevel=NULL;
-				nextLevel=firstLevel;
-				while(nextLevel!=NULL) nextLevel=nextLevel->MaximumWeight(weight,&maxLevel);
-				if(maxLevel!=NULL)
-				{	matID=maxLevel->mat;
-					nextLevel=maxLevel;
-				}
-				else
-					matID=-1;
+                    // add weights
+                    for(row=r1;row<=r2;row++)
+                    {	if(row==r1)
+                            rweight=wtr1;
+                        else if(row==r2)
+                            rweight=wtr2;
+                        else
+                            rweight=1.;
+                        for(col=c1;col<=c2;col++)
+                        {	if(col==c1)
+                                weight=rweight*wtc1;
+                            else if(col==c2)
+                                weight=rweight*wtc2;
+                            else
+                                weight=rweight;
+                            
+                            // find material at this level
+                            // (note: last level with matID=0 catches empty space)
+                            nextLevel=firstLevel;
+                            while(nextLevel!=NULL)
+                            {	matID=nextLevel->Material(rows[row][col],weight);
+                                if(matID>=0) break;
+                                nextLevel=(BMPLevel *)nextLevel->GetNextObject();
+                            }
+                        }
+                    }
+                    
+                    // find maximum weight (matID=0 means max is empty space)
+                    weight=0.;
+                    maxLevel=NULL;
+                    nextLevel=firstLevel;
+                    while(nextLevel!=NULL) nextLevel=nextLevel->MaximumWeight(weight,&maxLevel);
+                    if(maxLevel!=NULL)
+                    {	matID=maxLevel->mat;
+                        nextLevel=maxLevel;
+                    }
+                    else
+                        matID=-1;
 
-				// create a material point if one at this spot using matID and nextLevel
-				// Note that empty spaced is not marked as filled which allows superposition of
-				// images with different materials. If want to forcefully create a hole that
-				// cannot be filled by subsequent image, will need to define a new material
-				// type that can have matID for a hole. It will not create a point, but will mark
-				// the location as filled
-				if(matID>0)
-				{	if(fmobj->IsThreeD())
-						newMpt=new MatPoint3D(ii,matID,nextLevel->angle);
-					else if(fmobj->IsAxisymmetric())
-						newMpt=new MatPointAS(ii,matID,nextLevel->angle,mpos[k].x);
-					else
-						newMpt=new MatPoint2D(ii,matID,nextLevel->angle,nextLevel->thickness);
-					newMpt->SetPosition(&mpos[k]);
-					newMpt->SetOrigin(&mpos[k]);
-					newMpt->SetVelocity(&nextLevel->vel);
-					mpCtrl->AddMaterialPoint(newMpt,nextLevel->concentration,nextLevel->temperature);
-					
-					// is there an angle image?
-					if(setAngles)
-					{	// weight average of scanned pixels
-						double totalWeight=0.;
-						double totalIntensity=0.;
-						for(row=r1;row<=r2;row++)
-						{	if(row==r1)
-								rweight=wtr1;
-							else if(row==r2)
-								rweight=wtr2;
-							else
-								rweight=1.;
-							for(col=c1;col<=c2;col++)
-							{	if(col==c1)
-									weight=rweight*wtc1;
-								else if(col==c2)
-									weight=rweight*wtc2;
-								else
-									weight=rweight;
-								
-								totalIntensity+=weight*angleRows[row][col];
-								totalWeight+=weight;
-							}
-						}
-						totalIntensity/=totalWeight;
-						double matAngle=minAngle+(totalIntensity-minIntensity)*angleScale;
-						newMpt->SetAnglez0InDegrees(matAngle);
-					}
-					else
-					{	// If had Rotate commands then use them
-						SetMptAnglesFromFunctions(numRotations,&mpos[k],newMpt);
-					}
-					elem->filled|=ptFlag;
-				}
+                    // create a material point if one at this spot using matID and nextLevel
+                    // Note that empty spaced is not marked as filled which allows superposition of
+                    // images with different materials. If want to forcefully create a hole that
+                    // cannot be filled by subsequent image, will need to define a new material
+                    // type that can have matID for a hole. It will not create a point, but will mark
+                    // the location as filled
+                    if(matID>0)
+                    {	if(fmobj->IsThreeD())
+                            newMpt=new MatPoint3D(ii,matID,nextLevel->angle);
+                        else if(fmobj->IsAxisymmetric())
+                            newMpt=new MatPointAS(ii,matID,nextLevel->angle,mpos[k].x);
+                        else
+                            newMpt=new MatPoint2D(ii,matID,nextLevel->angle,nextLevel->thickness);
+                        newMpt->SetPosition(&mpos[k]);
+                        newMpt->SetOrigin(&mpos[k]);
+                        newMpt->SetVelocity(&nextLevel->vel);
+                        mpCtrl->AddMaterialPoint(newMpt,nextLevel->concentration,nextLevel->temperature);
+                        
+                        // is there an angle image?
+                        if(setAngles)
+                        {	// weight average of scanned pixels
+                            double totalWeight=0.;
+                            double totalIntensity=0.;
+                            for(row=r1;row<=r2;row++)
+                            {	if(row==r1)
+                                    rweight=wtr1;
+                                else if(row==r2)
+                                    rweight=wtr2;
+                                else
+                                    rweight=1.;
+                                for(col=c1;col<=c2;col++)
+                                {	if(col==c1)
+                                        weight=rweight*wtc1;
+                                    else if(col==c2)
+                                        weight=rweight*wtc2;
+                                    else
+                                        weight=rweight;
+                                    
+                                    totalIntensity+=weight*angleRows[row][col];
+                                    totalWeight+=weight;
+                                }
+                            }
+                            totalIntensity/=totalWeight;
+                            double matAngle=minAngle+(totalIntensity-minIntensity)*angleScale;
+                            newMpt->SetAnglez0InDegrees(matAngle);
+                        }
+                        else
+                        {	// If had Rotate commands then use them
+                            SetMptAnglesFromFunctions(numRotations,&mpos[k],newMpt);
+                        }
+                        elem->filled|=ptFlag;
+                    }
+                }
             }
         }
+    }
+    catch(const char *msg)
+    {   throw SAXException(msg);
     }
 	
 	// clean up

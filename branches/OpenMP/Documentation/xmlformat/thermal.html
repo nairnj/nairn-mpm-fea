@@ -17,6 +17,8 @@
 
 <h1>Thermal Conduction and Loading and Thermodynamics</h1>
 
+<p class="osupdocs">Deprecated documentation: the new version is in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Thermal_Calculations">OSUPDocs wiki</a></p>
+
 <p>NairnMPM can do coupled elasticity-thermal conductivity calculations, provide thermal boundary conditions, convert various material processes into heat, and/or or can apply a constant temperature difference to all particles. In the presence of these temperature changes and heat input or output, NairnMPM calculations will find thermal stresse and tracks heat flow for <a href="#thermo">valid thermodynamics</a> or, when needed, for tracking thermodynamic quantities. This section is for NairnMPM only; see a separate <a href="feathermal.html"><code>&lt;Thermal&gt;</code></a> block when using NairnFEA.</p>
 
 <p>Thermal stresses are always calculated relative to the stress free temperature, which is set in the <a href="mpmheader.html#stressfreetemp">MPM header block</a> (it is set to zero by default, but some materials need it to be set to actual, absolute temperature). Other thermal effects are set up with the following block:</p>

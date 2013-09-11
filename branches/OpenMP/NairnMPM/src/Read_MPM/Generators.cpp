@@ -899,28 +899,33 @@ void MPMReadHandler::MPMPts(void)
 		}
 	}
 
-    for(i=1;i<=nelems;i++)
-	{	theElements[i-1]->MPMPoints(fmobj->ptsPerElement,ppos);
-        for(k=0;k<fmobj->ptsPerElement;k++)
-		{	ptFlag=1<<k;
-            if(theElements[i-1]->filled&ptFlag) continue;
-            if(theShape->ContainsPoint(ppos[k]))
-			{	if(MatID>0)
-				{	if(fmobj->IsThreeD())
-						newMpt=new MatPoint3D(i,MatID,Angle);
-					else if(fmobj->IsAxisymmetric())
-						newMpt=new MatPointAS(i,MatID,Angle,ppos[k].x);
-					else
-						newMpt=new MatPoint2D(i,MatID,Angle,Thick);
-                    newMpt->SetPosition(&ppos[k]);
-                    newMpt->SetOrigin(&ppos[k]);
-					newMpt->SetVelocity(&Vel);
-					SetMptAnglesFromFunctions(numRotations,&ppos[k],newMpt);
-					mpCtrl->AddMaterialPoint(newMpt,pConc,pTempSet);
+    try 
+    {   for(i=1;i<=nelems;i++)
+        {	theElements[i-1]->MPMPoints(fmobj->ptsPerElement,ppos);
+            for(k=0;k<fmobj->ptsPerElement;k++)
+            {	ptFlag=1<<k;
+                if(theElements[i-1]->filled&ptFlag) continue;
+                if(theShape->ContainsPoint(ppos[k]))
+                {	if(MatID>0)
+                    {	if(fmobj->IsThreeD())
+                            newMpt=new MatPoint3D(i,MatID,Angle);
+                        else if(fmobj->IsAxisymmetric())
+                            newMpt=new MatPointAS(i,MatID,Angle,ppos[k].x);
+                        else
+                            newMpt=new MatPoint2D(i,MatID,Angle,Thick);
+                        newMpt->SetPosition(&ppos[k]);
+                        newMpt->SetOrigin(&ppos[k]);
+                        newMpt->SetVelocity(&Vel);
+                        SetMptAnglesFromFunctions(numRotations,&ppos[k],newMpt);
+                        mpCtrl->AddMaterialPoint(newMpt,pConc,pTempSet);
+                    }
+                    theElements[i-1]->filled|=ptFlag;
                 }
-                theElements[i-1]->filled|=ptFlag;
             }
         }
+    }
+    catch(const char *msg)
+    {   throw SAXException(msg);
     }
 }
 
