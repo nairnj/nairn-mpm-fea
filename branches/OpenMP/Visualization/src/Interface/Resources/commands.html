@@ -628,7 +628,9 @@ Apply displacement or load conditions to a single node. If only #1 is given, it 
 <li><a name="load"></a><code>Load #1,#2</code><br>
 Apply forces to selected nodes. #1 is x or y (or 1, or 2, R, or Z if axisymmetric) to specify the direction of the applied force. #2 is the applied force (in N). It can be specified by a number or by a <a href="#function">user-defined function</a> of nodal point position.</li>
 
-<li>Periodic: Set up calculations to be periodic in the <code>x</code> direction..</li>
+<li><code>Periodic #1,&lt;#2&gt;,&lt;#3&gt;,&lt;#4&gt;</code><br>
+Set up calculations to be periodic where #1 is the direction (x, y, or Z), #2 and #4 are 
+Delta or Slope (or Shear) and the corresponding #3 and #5 are their settings.</li>
 
 <li><a name="rotate"></a>Rotate: Rotate selected nodes for the purpose of applying skewed boundary conditions.</li>
 

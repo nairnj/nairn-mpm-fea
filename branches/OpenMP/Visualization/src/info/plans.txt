@@ -24,9 +24,10 @@ MPM Tasks
 	
 FEA Not Done
 	Rotate
-	Periodic
 	CrackTip
 	BMPRegion É EndRegion
+
+Support entities
 	
 -------------------------------------------------------------------
 Development Notes

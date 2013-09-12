@@ -20,6 +20,7 @@ public class FEABCs
 	private String rsKeyID;
 	private double rsx;
 	private double rsy;
+	private String periodic;
 	
 	private static final int FIXLINE_BC=1;
 	private static final int FIXPOINT_BC=2;
@@ -38,6 +39,7 @@ public class FEABCs
 	{	inBC = 0;
 		xmlbcs = new StringBuffer("");
 		rsKeyID = null;
+		periodic = null;
 	}
 	
 	//----------------------------------------------------------------------------
@@ -216,6 +218,51 @@ public class FEABCs
 		bcSettings.append("/>\n");
 	}
 	
+	// Periodic BCs (Periodic #1,(#2,#3),(#4,#5))
+	//	#1 is direction, #2 and # 4 are Delta, Shear, or Slope, #3 and #5 are values
+	public void AddPeriodic(ArrayList<String> args) throws Exception
+	{
+		// FEA Only (need separate version for Load in MPM commands)
+		doc.requiresFEA(args);
+		
+		// read direction
+		if(args.size()<2)
+	    	throw new Exception("'Periodic' has too few parameters: "+args);
+		if(doc.readStringArg(args.get(1)).equalsIgnoreCase("r"))
+	    	throw new Exception("'Periodic' cannot be in the radial direction: "+args);
+		int dof = readDirection(args.get(1));
+		
+		// pairs
+		boolean hasDelta = false,hasSlope = false;
+		double delta=0.,slope=0.;
+		int pnum = 2;
+		while(args.size()>pnum+1)
+		{	String prop = doc.readStringArg(args.get(pnum)).toLowerCase();
+			double value = doc.readDoubleArg(args.get(pnum+1));
+			if(prop.equals("delta"))
+			{	hasDelta = true;
+				delta = value;
+			}
+			else if(prop.equals("shear") || prop.equals("slope"))
+			{	hasSlope = true;
+				slope = value;
+			}
+			pnum += 2;
+		}
+		
+		String prefix = periodic==null ? "    <Periodic dof='"+dof+"'" :
+							periodic+"    <Periodic dof='"+dof+"'";
+		if(hasDelta && hasSlope)
+			periodic = prefix + " delta='"+delta+"' slope='"+slope+"'/>\n";
+		else if(hasDelta)
+			periodic = prefix + " delta='"+delta+"'/>\n";
+		else if(hasSlope)
+			periodic = prefix + " slope='"+slope+"'/>\n";
+		else
+			periodic = prefix + "/>\n";
+	}
+
+	
 	// Load nodes (Stress #1,#2,<#3>,<#4>)
 	//	#1 is direction, #2 to #4 are values
 	public void AddStress(ArrayList<String> args) throws Exception
@@ -287,7 +334,7 @@ public class FEABCs
 	// read argument and convert to FEA direction
 	public int readDirection(String arg) throws Exception
 	{	// options
-		HashMap<String,Integer> options = new HashMap<String,Integer>(5);
+		HashMap<String,Integer> options = new HashMap<String,Integer>(4);
 		options.put("x", new Integer(1));
 		options.put("r", new Integer(1));
 		options.put("y", new Integer(2));
@@ -305,13 +352,17 @@ public class FEABCs
 	// return xml data
 	public String toXMLString()
 	{	if(rsKeyID == null)
-			return xmlbcs.toString();
+		{	if(periodic==null)
+				return xmlbcs.toString();
+			else
+				return xmlbcs.toString()+"\n"+periodic;
+		}
 	
-		String reseq;
+		String reseq = periodic==null ? "" : "\n"+periodic+"\n";
 		if(rsKeyID.length()==0)
-			reseq = "    <Resequence x='"+rsx+"' y='"+rsy+"'/>\n";
+			reseq = reseq+"    <Resequence x='"+rsx+"' y='"+rsy+"'/>\n";
 		else
-			reseq = "    <Resequence keypt='"+rsKeyID+"'/>\n";
+			reseq = reseq+"    <Resequence keypt='"+rsKeyID+"'/>\n";
 		return xmlbcs.toString()+reseq;
 	}
 
