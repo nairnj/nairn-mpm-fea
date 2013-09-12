@@ -444,7 +444,9 @@ Specify crack parameters to be archived in MPM calculations. The list can be in 
 <p>The one command to alter crack tip geometry is
 </p>
 <ul>
-<li>CrackTip: Create quarter-point elements at the crack tip.</li>
+<li><code>CrackTip #1,&lt;#2&gt;</code><br>
+Create quarter-point elements at the crack tip. Is one argument, #1 is a keypoint ID for the crack tip.
+If two arguments the node closet to (#1,#2) (in mm) is the crack tip.</li>
 </ul>
 
 <h2><a name="mmmode"></a>Multimaterial MPM Calculations</h2>

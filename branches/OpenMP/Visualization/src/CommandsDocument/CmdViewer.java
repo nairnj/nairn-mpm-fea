@@ -440,6 +440,9 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("periodic"))
 			feaBCs.AddPeriodic(args);
 		
+		else if(theCmd.equals("cracktip"))
+			feaBCs.CrackTip(args);
+		
 		else if(theCmd.equals("resequence"))
 			feaBCs.Resequence(args);
 		

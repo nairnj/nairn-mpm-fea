@@ -21,6 +21,7 @@ public class FEABCs
 	private double rsx;
 	private double rsy;
 	private String periodic;
+	private String cracktip;
 	
 	private static final int FIXLINE_BC=1;
 	private static final int FIXPOINT_BC=2;
@@ -40,6 +41,7 @@ public class FEABCs
 		xmlbcs = new StringBuffer("");
 		rsKeyID = null;
 		periodic = null;
+		cracktip = null;
 	}
 	
 	//----------------------------------------------------------------------------
@@ -236,9 +238,13 @@ public class FEABCs
 		boolean hasDelta = false,hasSlope = false;
 		double delta=0.,slope=0.;
 		int pnum = 2;
-		while(args.size()>pnum+1)
+		while(args.size()>pnum)
 		{	String prop = doc.readStringArg(args.get(pnum)).toLowerCase();
-			double value = doc.readDoubleArg(args.get(pnum+1));
+			double value = 0.;
+			if(args.size()>pnum+1)
+				value = doc.readDoubleArg(args.get(pnum+1));
+			else
+		    	throw new Exception("'Periodic' has an unpaired setting option: "+args);
 			if(prop.equals("delta"))
 			{	hasDelta = true;
 				delta = value;
@@ -331,6 +337,29 @@ public class FEABCs
 	    }
 	}
 	
+	// CrackTip Command x and y or keypoint
+	public void CrackTip(ArrayList<String> args) throws Exception
+	{
+	    // FEA Only
+		doc.requiresFEA(args);
+
+	    // one means a keypoint
+	    if(args.size()<3)
+	    {	String keyid = doc.readStringArg(args.get(1));
+	    	if(!doc.areas.hasKeypoint(keyid))
+	    		throw new Exception("'CrackTip' uses an undefined keypoint: "+args);
+	    	cracktip = "    <Cracktip keypt='"+keyid+"'/>\n";
+	    }
+	    
+	    // must have at least two arguments
+	    else
+	    {	// get x,y
+	    	double cx = doc.readDoubleArg(args.get(1));
+	    	double cy = doc.readDoubleArg(args.get(2));
+	    	cracktip = "    <Cracktip x='"+cx+"' y='"+cy+"'/>\n";
+	    }
+	}
+
 	// read argument and convert to FEA direction
 	public int readDirection(String arg) throws Exception
 	{	// options
@@ -349,21 +378,21 @@ public class FEABCs
 	// Accessors
 	//----------------------------------------------------------------------------
 	
-	// return xml data
+	// return xml data in valid order
 	public String toXMLString()
-	{	if(rsKeyID == null)
-		{	if(periodic==null)
-				return xmlbcs.toString();
+	{	StringBuffer xml = new StringBuffer("");
+		if(cracktip!= null) xml.append(cracktip+"\n");
+		xml.append(xmlbcs.toString());
+		if(periodic!=null) xml.append("\n"+periodic);
+		if(rsKeyID!=null)
+		{	String reseq;
+			if(rsKeyID.length()==0)
+				reseq = "\n    <Resequence x='"+rsx+"' y='"+rsy+"'/>\n";
 			else
-				return xmlbcs.toString()+"\n"+periodic;
+				reseq = "\n    <Resequence keypt='"+rsKeyID+"'/>\n";
+			xml.append(reseq);
 		}
-	
-		String reseq = periodic==null ? "" : "\n"+periodic+"\n";
-		if(rsKeyID.length()==0)
-			reseq = reseq+"    <Resequence x='"+rsx+"' y='"+rsy+"'/>\n";
-		else
-			reseq = reseq+"    <Resequence keypt='"+rsKeyID+"'/>\n";
-		return xmlbcs.toString()+reseq;
+		return xml.toString();
 	}
 
 }
