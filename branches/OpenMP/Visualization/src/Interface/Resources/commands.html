@@ -365,8 +365,9 @@ Define a keypoint used in defining <a name="path">Paths</a>. #1 is keypoint ID, 
 <li><code>Keypoints  #1,#2,...</code><br>
 Add multiple (and previously) defined keypoints to a <a href="#path">Path</a>.</li>
 
-<li><a name="origin"></a><code>Origin #1,#2</code><br>
-Define coordinate system origin for entry of <a href="#keypoint">Keypoints</a> using polar coordinates.</li>
+<li><a name="origin"></a><code>Origin #1,&lt;#2&gt;</code><br>
+Define coordinate system origin for entry of <a href="#keypoint">Keypoints</a> using polar coordinates.
+If only #1 is given is is keypoint ID; if #1 and #2 are both give they are (x,y) coordinates of the origin.</li>
 
 <li><a name="ovalfea"></a><code>Oval #1,#2,#3,#4</code><br>
 Define oval within the rectangle defined by xmin, xmax, ymin, ymax (for #1 to #4) for the current <a href="#regionfea">region</a> or <a href="#holefea">hole</a> block.</li>
@@ -612,7 +613,11 @@ If #1 is skewxyz, #6 is second angle</li>
 <ul>
 
 <li><a name="displacement"></a><code>Displacement #1,&lt;#2&gt;</code><br>
-Apply displacement conditions to <a href="#fixline">selected nodes</a>. #1 is x or y (or 1 or 2) to specify the direction of the applied displacement (they can R or Z for axisymmetric FEA). #2 specfies magnitude of the displacement in mm. It can be specified by a number or by a <a href="#function">user-defined function</a> of nodal point position, entered as quoted text. If #2 is omitted, the default displacement is 0 (<i>i.e.</i>, a fixed node).</li>
+Apply displacement conditions to <a href="#fixline">selected nodes</a>. #1 is x or y (or 1 or 2) to
+specify the direction of the applied displacement (they can R or Z for axisymmetric FEA).
+#2 specfies magnitude of the displacement in mm.
+It can be specified by a number or by a <a href="#function">user-defined function</a> of nodal point position,
+entered as quoted text. If #2 is omitted, the default displacement is 0 (<i>i.e.</i>, a fixed node).</li>
 
 <li><a name="fixline"></a><code>FixLine #1,&lt;#2&gt;,&lt;#3&gt;,&lt;#4&gt;,&lt;#5&gt;<br>
 &nbsp;&nbsp;(any number or <a href="#displacement">Displacement</a>, <a href="#load">Load</a>, or <a href="#rotate">Rotate</a> commands)<br>
@@ -634,7 +639,9 @@ Apply forces to selected nodes. #1 is x or y (or 1, or 2, R, or Z if axisymmetri
 Set up calculations to be periodic where #1 is the direction (x, y, or Z), #2 and #4 are 
 Delta or Slope (or Shear) and the corresponding #3 and #5 are their settings.</li>
 
-<li><a name="rotate"></a>Rotate: Rotate selected nodes for the purpose of applying skewed boundary conditions.</li>
+<li><a name="rotate"></a><code>Rotate #1,#2</code><br>
+Rotate selected nodes for the purpose of applying skewed displacement boundary conditions.
+#1 must be z (or 3). #2 is the clockwise angle.</li>
 
 <li><a name="select"></a><code>Select</code><br>
 Select the nodes and/or elements reference by the current <a href="#fixline">FixLine</a> or <a href="#fixpoint">FixPoint</a> boundary condition for conditional <a href="#output">output</a> of results.</li>

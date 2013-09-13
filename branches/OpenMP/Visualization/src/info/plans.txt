@@ -15,6 +15,10 @@ NairnFEAMPMViz Plans
 Cammand Development
 -------------------------------------------------------------------
 
+FEA Not Done
+	BMPRegion É EndRegion - code and document
+	Some kind of FEA DTD file documentation with links
+
 MPM Tasks
 	TensionTest - particle BCs (intersperse XMLData option needed)
 	MPM grid BCs
@@ -22,11 +26,6 @@ MPM Tasks
 	MPM Cracks
 	Remaining unimplemented material properties
 	
-FEA Not Done
-	Rotate and document it
-	BMPRegion É EndRegion
-	Some kind of FEA DTD file documentation with links
-
 Languuage
 	Repeat loops
 	Subroutines

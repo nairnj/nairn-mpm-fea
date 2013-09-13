@@ -466,11 +466,14 @@ public class ResultsDocument extends AbstractTableModel
 					dof=s.nextInt();
 					bcLoad=s.nextDouble();
 					bcAngle=0.;
-					for(i=0;i<gridBCs.size();i++)
-					{	GridDispBC obj=gridBCs.get(i);
-						if(obj.rotates(nodeNum))
-							bcAngle+=obj.getValue();
-					}
+					
+					// looks for angle, but it shouldnot be read
+					//for(i=0;i<gridBCs.size();i++)
+					//{	GridDispBC obj=gridBCs.get(i);
+					//	if(obj.rotates(nodeNum))
+					//		bcAngle+=obj.getValue();
+					//}
+					
 					addNodalLoadBC(nodeNum,dof,bcLoad,bcAngle);
 				}
 			}

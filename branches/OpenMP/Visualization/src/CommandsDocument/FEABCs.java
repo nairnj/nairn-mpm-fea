@@ -304,6 +304,28 @@ public class FEABCs
 		bcSettings.append("'/>\n");
 	}
 	
+	// Rotate nodes (Rotate #1,#2)
+	//	#1 is z,Z, or 3, #2 is cw angle
+	public void AddRotate(ArrayList<String> args) throws Exception
+	{
+		// FEA Only (need separate version rotate in BMPRegion)
+		doc.requiresFEA(args);
+
+		if(inBC == 0)
+			throw new Exception("'Rotate' command must by in 'FixLine' or 'FixPoint' block: "+args);
+		
+		// read direction
+		if(args.size()<3)
+	    	throw new Exception("'Rotate' has too few parameters: "+args);
+		String dof = doc.readStringArg(args.get(1)).toLowerCase();
+		if(!dof.equals("z") && !dof.equals("3"))
+	    	throw new Exception("'Rotate' must be about the z axis: "+args);
+		
+		// read value
+		double value = doc.readDoubleArg(args.get(2));
+		bcSettings.append("      <rotate axis='3' angle='"+value+"'/>\n");
+	}
+	
 	// select this block
 	public void AddSelect(ArrayList<String> args) throws Exception
 	{

@@ -34,7 +34,7 @@ public class Areas
 	private StringBuffer xmlpaths;
 
 	// keypoints
-	private HashMap<String,Integer> keyIDs;
+	private HashMap<String,ArrayList<Object>> keyIDs;
 	private StringBuffer xmlkeys;
 	
 	//----------------------------------------------------------------------------
@@ -52,7 +52,7 @@ public class Areas
 		flipTriangles = 0;
 		elType = ElementBase.EIGHT_NODE_ISO;
 		pathIDs = new HashMap<String,Integer>(20);
-		keyIDs = new HashMap<String,Integer>(50);
+		keyIDs = new HashMap<String,ArrayList<Object>>(50);
 		originX = 0.;
 		originY = 0.;
 		xmlkeys = new StringBuffer("");
@@ -249,7 +249,7 @@ public class Areas
 	    if(args.size()<2)
 		    throw new Exception("'Keypoint' command missing keypoint ID: "+args);
 	    String keyID = doc.readStringArg(args.get(1));
-	    Integer existingKey = keyIDs.get(keyID);
+	    ArrayList<Object> existingKey = keyIDs.get(keyID);
 		
 		// pre-existing keypoint
 		if(existingKey != null)
@@ -257,7 +257,7 @@ public class Areas
 			if(args.size()>2)
 				throw new Exception("Duplicate keypoint name: "+args);
 			
-			// ... and must be in a Path
+			// ... and if a keypoint, must be in a Path
 			if(!inPath)
 				throw new Exception("FEA Keypoint reference (to "+keyID+") must be within a Path: "+args);
 			
@@ -289,7 +289,11 @@ public class Areas
 			}
 			
 			// add to list
-			keyIDs.put(keyID, new Integer(keyIDs.size()));
+			ArrayList<Object> newKey = new ArrayList<Object>(3);
+			newKey.add(new Integer(keyIDs.size()));
+			newKey.add(new Double(x));
+			newKey.add(new Double(y));
+			keyIDs.put(keyID, newKey);
 
 			// add to path
 			if(inPath) keys.add(keyID);
@@ -309,7 +313,7 @@ public class Areas
 	    int i;
 	    for(i=1;i<args.size();i++)
 	    {	String nextKey = doc.readStringArg(args.get(i));
-	    	Integer existingKey = keyIDs.get(nextKey);
+	    	ArrayList<Object> existingKey = keyIDs.get(nextKey);
 	    	if(existingKey == null)
 	    		throw new Exception("Undefined keypoint ("+existingKey+") referenced in a 'Keypoints' command: "+args);
 	    	keys.add(nextKey);
@@ -359,18 +363,33 @@ public class Areas
 	
 	// see if has defined keypoint
 	public boolean hasKeypoint(String anID)
-	{	Integer exists = keyIDs.get(anID);
+	{	ArrayList<Object> exists = keyIDs.get(anID);
 		return exists == null ? false : true ;
 	}
 	
-	// Origin #1, #2
+	// Origin #1, #2 or #1
 	public void setOrigin(ArrayList<String> args) throws Exception
 	{
-		if(args.size()<3)
-			throw new Exception("'Origin' command requires two coorinates: "+args);
-		
-		originX = doc.readDoubleArg(args.get(1));
-		originY = doc.readDoubleArg(args.get(2));
+	    // must have at least two arguments
+	    if(args.size()<2)
+			throw new Exception("'Origin' command requires one keypoint or two coordinates: "+args);
+	    
+	    // one means a keypoint
+	    else if(args.size()<3)
+	    {	String originID = doc.readStringArg(args.get(1));
+	    	ArrayList<Object> existingKey = keyIDs.get(originID);
+	    	if(existingKey==null)
+	    		throw new Exception("'Origin' uses an undefined keypoint: "+args);
+	    	Double d=(Double)existingKey.get(1);
+	    	originX = d.doubleValue();
+	    	d=(Double)existingKey.get(2);
+	    	originY = d.doubleValue();
+	    }
+	    
+	    else
+		{	originX = doc.readDoubleArg(args.get(1));
+			originY = doc.readDoubleArg(args.get(2));
+		}
 	}
 
 }

@@ -440,6 +440,9 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("load"))
 			feaBCs.AddLoad(args);
 		
+		else if(theCmd.equals("rotate"))
+			feaBCs.AddRotate(args);
+		
 		else if(theCmd.equals("stress"))
 			feaBCs.AddStress(args);
 		
