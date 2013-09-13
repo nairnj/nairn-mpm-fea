@@ -98,6 +98,10 @@ Region "Left",#lspeed,0,#thick
   endif
 EndRegion
 
+XMLData "MaterialPoints"
+  <!-- Hello World -->
+EndXMLData
+
 Region "Right",-#rspeed,0,#thick
   if #disks$="yes"
     Oval #rx,#rx+#rwidth,#ry,#ry+#rheight
