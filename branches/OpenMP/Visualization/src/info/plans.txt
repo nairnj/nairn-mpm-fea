@@ -15,19 +15,30 @@ NairnFEAMPMViz Plans
 Cammand Development
 -------------------------------------------------------------------
 
+Entity
+	Support in commands (maybe more in both codes)
+		ArchiveTime - archive time and first archive time
+		GlobalArchiveTime - the time
+		Maximum Time - the time (add as second arg to TimeStep)
+	Need method to get double or entity
+	Document entity (both MPM and FEA in one)
+	
 MPM Tasks
-	TensionTest - particle BCs
+	TensionTest - particle BCs (intersperse XMLData option needed)
 	MPM grid BCs
 		MoveArc, Temperature, Concentration (links in Docs)
 	MPM Cracks
 	Remaining unimplemented material properties
 	
 FEA Not Done
-	Rotate
-	CrackTip
+	Rotate and document it
 	BMPRegion É EndRegion
+	Some kind of FEA DTD file with links
 
-Support entities
+Languuage
+	Repeat loops
+	Subroutines
+	Array variables
 	
 -------------------------------------------------------------------
 Development Notes

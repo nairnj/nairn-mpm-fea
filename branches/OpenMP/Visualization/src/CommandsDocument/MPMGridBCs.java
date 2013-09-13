@@ -257,6 +257,11 @@ public class MPMGridBCs
 		boundaryID = doc.readIntArg(args.get(1));
 	}
 
+	// insert XML
+	public void AddXML(String rawXML)
+	{	xmlbcs.append(rawXML);
+	}
+
 	//----------------------------------------------------------------------------
 	// Accessors
 	//----------------------------------------------------------------------------

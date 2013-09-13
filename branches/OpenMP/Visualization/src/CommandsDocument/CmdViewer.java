@@ -9,6 +9,7 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.Set;
 
 import javax.swing.*;
 
@@ -40,6 +41,7 @@ public class CmdViewer extends JNCmdTextDocument
 	private int processors=1;
 	private int lnameEl;
 	private HashMap<String,String> xmldata = null;
+	private HashMap<String,String> entities = null;
 	public Materials mats = null;
 	public Areas areas = null;
 	public Regions regions = null;
@@ -271,6 +273,7 @@ public class CmdViewer extends JNCmdTextDocument
 		np = -1;
 		lnameEl = NO_ELEMENT;
 		xmldata = new HashMap<String,String>(10);
+		entities = new HashMap<String,String>(10);
 		mats.initRunSettings();
 		areas.initRunSettings();
 		regions.initRunSettings();
@@ -379,6 +382,9 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		else if(theCmd.equals("xmldata"))
 			doXmldata(args);
+		
+		else if(theCmd.equals("entity"))
+			doEntity(args);
 		
 		else if(theCmd.equals("area"))
 			areas.StartArea(args);
@@ -938,12 +944,40 @@ public class CmdViewer extends JNCmdTextDocument
 			
 		}
 		
+		// check GridBCs block and intersperse
+		else if(section.equals("GridBCs"))
+		{	if(isFEA())
+				feaBCs.AddXML(newXML);
+			else
+				mpmGridBCs.AddXML(newXML);
+			return;
+		}
+		
+		// check MaterialPoints block and intersperse
+		else if(section.equals("MaterialPoints"))
+		{	if(isFEA())
+				regions.AddXML(newXML);
+			else
+				regions.AddXML(newXML);
+			return;
+		}
+		
 		// check previous option
 		String currentXML = xmldata.get(section);
 		if(currentXML != null) newXML = currentXML+newXML;
 		
 		// set value
 		xmldata.put(section,newXML);
+	}
+	
+	// Add an entity
+	public void doEntity(ArrayList<String> args) throws Exception
+	{	// read entity and value
+		if(args.size()<3)
+			throw new Exception("'Entity' command has too few arguments: "+args);
+		String ent = readStringArg(args.get(1));
+		String val = readStringArg(args.get(2));
+		entities.put(ent, val);
 	}
 	
 	// Output command for FEA analysis
@@ -1250,8 +1284,23 @@ public class CmdViewer extends JNCmdTextDocument
 	// when analysis is done create XML commands
 	public String buildXMLCommands()
 	{	// start buffer for XML commands
+		String more;
 		StringBuffer xml = new StringBuffer("<?xml version='1.0'?>\n");
-		xml.append("<!DOCTYPE JANFEAInput SYSTEM 'pathto.dtd'>\n");
+		xml.append("<!DOCTYPE JANFEAInput SYSTEM 'pathto.dtd'");
+		if(entities.size()>0)
+		{	xml.append("\n[\n");
+			Set<String> keys = entities.keySet();
+			String [] allkeys = new String [entities.size()];
+			allkeys = keys.toArray(allkeys);
+			int i;
+			for(i=0;i<entities.size();i++)
+			{	String value = entities.get(allkeys[i]);
+				xml.append("  <!ENTITY "+allkeys[i]+" \""+value+"\">\n");
+			}
+			xml.append("]>\n");
+		}
+		else
+			xml.append(">\n");
 		xml.append("<JANFEAInput version='3'>\n\n");
 		
 		// Header
@@ -1273,7 +1322,7 @@ public class CmdViewer extends JNCmdTextDocument
 		{	xml.append("  <Mesh>\n"+areas.toXMLString());
 		
 			// check added xml
-			String more = xmldata.get("Mesh");
+			more = xmldata.get("Mesh");
 			if(more != null) xml.append(more);
 			
 			// done
@@ -1327,7 +1376,7 @@ public class CmdViewer extends JNCmdTextDocument
 				xml.append("    <StressFreeTemp>"+stressFreeTemp+"</StressFreeTemp>\n");
 			
 			// check added xml
-			String more = xmldata.get("MPMHeader");
+			more = xmldata.get("MPMHeader");
 			if(more != null) xml.append(more);
 			
 			// done
@@ -1352,12 +1401,6 @@ public class CmdViewer extends JNCmdTextDocument
 			// MPM Material Points
 			//-----------------------------------------------------------
 			xml.append("  <MaterialPoints>\n"+regions.toXMLString());
-			
-			// check added xml
-			more = xmldata.get("MaterialPoints");
-			if(more != null) xml.append(more);
-			
-			// done
 			xml.append("  </MaterialPoints>\n\n");
 		}
 		
@@ -1371,10 +1414,6 @@ public class CmdViewer extends JNCmdTextDocument
 			xml.append("  <GridBCs>\n"+feaBCs.toXMLString());
 		else
 			xml.append("  <GridBCs>\n"+mpmGridBCs.toXMLString());
-		
-		// check added xml
-		String more = xmldata.get("GridBCs");
-		if(more != null) xml.append(more);
 		
 		// done
 		xml.append("  </GridBCs>\n\n");

@@ -359,6 +359,11 @@ public class FEABCs
 	    	cracktip = "    <Cracktip x='"+cx+"' y='"+cy+"'/>\n";
 	    }
 	}
+	
+	// insert XML
+	public void AddXML(String rawXML)
+	{	xmlbcs.append(rawXML);
+	}
 
 	// read argument and convert to FEA direction
 	public int readDirection(String arg) throws Exception

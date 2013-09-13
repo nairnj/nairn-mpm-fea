@@ -262,6 +262,11 @@ public class Regions
 		xmlRegions.append(" zmin='"+zmin+"' zmax='"+zmax+"'/>\n");
 	}
 	
+	// insert XML
+	public void AddXML(String rawXML)
+	{	xmlRegions.append(rawXML);
+	}
+
 	//----------------------------------------------------------------------------
 	// Accessors
 	//----------------------------------------------------------------------------
