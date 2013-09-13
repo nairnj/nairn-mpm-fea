@@ -718,12 +718,12 @@ public class CmdViewer extends JNCmdTextDocument
 			throw new Exception("'ArchiveTime' has too few parameters: "+args);
 		
 		// archive time
-		double aTime = readDoubleArg(args.get(1));
+		Object aTime = readNumberOrEntityArg(args.get(1),false);
 		archiveTime = "    <ArchiveTime units='ms'>"+aTime+"</ArchiveTime>\n";
 		
 		// optional first archive time
 		if(args.size()>2)
-		{	double firstArchiveTime = readDoubleArg(args.get(2));
+		{	Object firstArchiveTime = readNumberOrEntityArg(args.get(2),false);
 			archiveTime = archiveTime + "    <FirstArchiveTime units='ms'>"+firstArchiveTime+"</FirstArchiveTime>\n";
 		}
 	}
@@ -738,7 +738,7 @@ public class CmdViewer extends JNCmdTextDocument
 			throw new Exception("'GlobalArchiveTime' has too few parameters: "+args);
 		
 		// archive time
-		double aTime = readDoubleArg(args.get(1));
+		Object aTime = readNumberOrEntityArg(args.get(1),false);
 		globalArchive = globalArchive+"    <GlobalArchiveTime units='ms'>"+aTime+"</GlobalArchiveTime>\n";
 	}
 	
@@ -778,7 +778,7 @@ public class CmdViewer extends JNCmdTextDocument
 			throw new Exception("'MaximumTime' has too few parameters: "+args);
 		
 		// archive time
-		double aTime = readDoubleArg(args.get(1));
+		Object aTime = readNumberOrEntityArg(args.get(1),false);
 		maxTime = "    <MaxTime units='ms'>"+aTime+"</MaxTime>\n";
 	}
 	
@@ -1560,6 +1560,29 @@ public class CmdViewer extends JNCmdTextDocument
 				throw new Exception("The command '"+args.get(0)+"' is only allowed in MPM calculations: "+args);
 		}
 		throw new Exception("Some unknown command is only allowed in MPM calculations.");
+	}
+	
+	// return Double object or look for entity
+	public Object readNumberOrEntityArg(String text,boolean isInt) throws Exception
+	{	Object arg = readStringOrDoubleArg(text);
+		if(arg.getClass().equals(Double.class))
+		{	if(isInt)
+			{	Integer intarg = new Integer(((Double)arg).intValue());
+				return intarg;
+			}
+			return arg;
+		}
+		
+		// Strip & and ; if there
+		String ent = (String)arg;
+		if(ent.startsWith("&") && ent.endsWith(";"))
+			ent = ent.substring(1, ent.length()-1);
+		System.out.println(ent);
+		
+		// look for valid entity
+		if(entities.get(ent)==null)
+			throw new Exception("The argument '"+text+"'\nis neither a number nor a valid entity");
+		return "&"+ent+";";
 	}
 		
 	//----------------------------------------------------------------------------
