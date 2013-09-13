@@ -17,6 +17,8 @@
 
 <h1>FEA Boundary Conditions</h1>
 
+<p class="osupdocs">Deprecated documentation: the new version is in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/FEA_Boundary_Conditions">OSUPDocs wiki</a>.</p>
+
 <p>FEA calculations require mesh-based boundary conditions. There are two ways to specify the boundary conditions. One way is to <a href="#sec1">explicitly list</a> each nodal point displacement, each nodal point load, and each element edge stress. The other approach is to use <code>XML</code> commands that <a href="#sec2">generate</a> the boundary conditions. This method is usually done in conjuction with commands that <a href="definefeamesh.html#sec2">generate the mesh</a>.</p>
 
 <p>Each type of boundary condition creation must be subordinate to a <code>&lt;GridBCs&gt;</code> element. Although the two methods can be mixed, they are normally not mixed. Only one <code>&lt;GridBCs&gt;</code> element is allowed in the input file.</p>
@@ -36,7 +38,6 @@
    
    &lt;<a href="#LoadBCs"><code>LoadBCs</code></a>&gt;
      &lt;load node='5' dof='1'&gt;45&lt;/load&gt;
-     &lt;rotate node='5' axis='3'&gt;45&lt;/rotate&gt;
    &lt;/LoadBCs&gt;
    
    &lt;<a href="#EdgeBCs"><code>EdgeBCs</code></a>&gt;
@@ -55,7 +56,19 @@
 <p>where the the various sections set different types of boundary conditions.
 </p>
 
- 
+<dl>
+
+<dt><a href="DisplacementBCs"></a>&lt;DisplacementBCs&gt;</dt>
+<dd>This command can set fixed displacement boundary conditions on nodes. Subordinate to the command can be any number of <code>&lt;fix&gt;</code> and <code>&lt;rotate&gt;</code> commands. The <code>&lt;fix&gt;</code> commands specify a <code>node</code> (by number) and the direction that is fixed with <code>dof</code> of x (or 1) for x direction or y or (2) for y direction (or R and Z directions if axisymmetric). The value of the <code>&lt;fix&gt;</code> tag is the fixed displacement in mm.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;The <code>&lt;rotate&gt;</code> tag can be used to apply skewed displacement (or load) boundary conditions that are in some direction that is not along the x or y axis. The method is to rotate the node first using a <code>&lt;rotate&gt;</code> command where the <code>node</code> attribute gives the node to rotate and the <code>axis</code> attribute is the axis of rotation, which must be 3 or z for 2D calculations or for rotation about the z axis. The value of the <code>&lt;rotate&gt;</code> tag is the angle to rotate in the clockwise direction in degress. Alternatively, the angle can be set using an <code>angle</code> attribute. Any rotated node can only be rotated once. After rotating a node, you can apply displacement boundary conditions in the rotated coordinate system.<dd>
+
+<dt><a href="LoadBCs"></a>&lt;LoadBCs&gt;</dt>
+<dd>This command is used to apply loads directly to nodes. Subordinate to the command can be any number of <code>&lt;load&gt;</code> commands. The <code>&lt;load&gt;</code> commands specify a <code>node</code> (by number) and the direction of the load with <code>dof</code> of x (or 1) for x direction or y (or 2) for y direction (or R and Z directions if axisymmetric). The value of the <code>&lt;load&gt;</code> tag is the applied load in N. You can apply skewed loads, or loads not in the x or y direction, by finding the (x,y) coordinates of the load vector and applying two loads to the same node.
+
+<dt><a href="LoadBCs"></a>&lt;EdgeBCs&gt;</dt>
+<dd>This commandEdgeBCsis used to apply stress to edges of elements. Subordinate to the command can be <code>&lt;stress&gt;</code> commands. Each <code>&lt;stress&gt;</code> command specifies an element (using <code>elem</code>), a <code>face</code> of the element, and a direction (using <code>dir</code> with setting 1 or n for normal stress or 2 or t for tangential or shear stress). The value of the <code>&lt;stress&gt;</code> tag should be 1 to 3 stresses (in MPa), separated by commas, to allow applying constant or variable stress. If three stresses are given, the entered values correspond to the applied stress at the endpoints and in the middle of the face and stresses vary quadratically through these three points. If only two stresses are given, the stress will vary linearly between the endpoints of the face. If only one stress is given, the stress will be constant. The element faces are numbered around the element in the counter-clockwise direction starting with 1.</dd>
+
+
 <dt><a name="Periodic"></a>&lt;Periodic&gt;</dt>
 <dd>This options runs calculations that are periodic in strain in just the <code>x</code> direction, just the <code>y</code> direction, or in both the <code>x</code> and <code>y</code> directions. For axisymmetric problems the calculations can only be periodic in the <code>z</code> direction. Many researchers use symmetry-based displacement conditions for periodic calculations, but that approach cannot handle problems where plane sections do not remain plane even though the structure and strains are still periodic. These periodic conditions are more advanced than such symmetry conditions and essential for some problems such as shear strain applied to a periodic composite material.
 
@@ -191,7 +204,7 @@ Another use of this command is to verify mesh connectivity. Since disconnected s
 <dd>Apply stress in one direction to edges of all elements along a path (<i>i.e.</i>, it can only be used by in a <a href="#BCLine"><code>BCLine</code></a> defined using a path). The stress can be normal (with <code>dir</code> of 1 or <code>n</code>) or tangential to the edges (with <code>dir</code> of 2 or <code>t</code>). The stress is specifed in MPa in a <code>stress</code> attribute. There can be 1 to 3 comma delimited stresses. One gives a constant stress, two gives linear variation in stress between path end points, and three allows a quadratic variation in stress through those three values. The stress currently cannot be set with a <a href="function.html">user-defined function</a>, but that option could be added if needed,</dd>
 
 <dt>&lt;rotate&gt;</dt>
-<dd>This command lets you rotate the degrees of freedom at all nodes  defined by the shape. Enter the rotation <code>axis</code> (which must be 3 or <code>z</code> for 2D problems) and the clockwise rotation <code>angle</code> in degrees. Once node(s) are rotated, you can specify displacement or load boundary conditions in the rotated coordinates. Rotation does not affect stress boundary conditions.</dd>
+<dd>This command lets you rotate the degrees of freedom at all nodes defined by the shape. Enter the rotation <code>axis</code> (which must be 3 or <code>z</code> for 2D problems) and the clockwise rotation <code>angle</code> in degrees. Once node(s) are rotated, you can specify displacement boundary conditions in the rotated coordinates. Rotation does not affect stress or load boundary conditions.</dd>
 
 </dl>
 

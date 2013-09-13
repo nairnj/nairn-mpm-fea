@@ -156,7 +156,7 @@ NodalDispBC *NodalDispBC::Unrotate(double *rm,int nfree)
 	{   // unrotate at nodeNum reaction
 		ii=nfree*(nodeNum-1)+1;
 		jj=ii+1;
-		alpha=-PI_CONSTANT*angle/180.;
+		alpha/Users/jnairn/Programming/Cocoa_Projects/nairn-mpm-fea-openmp/NairnFEA/src/Boundary_Conditions/EdgeBC.hpp=-PI_CONSTANT*angle/180.;
 		cs=cos(alpha);
 		sn=sin(alpha);
 		rii=rm[ii];

@@ -503,9 +503,6 @@
 		A743CB3C0607732800CEC2E8 /* EdgeBC.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = EdgeBC.hpp; sourceTree = "<group>"; };
 		A747207607BBC6A800456B14 /* MPMWarnings.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = MPMWarnings.cpp; sourceTree = "<group>"; };
 		A747207707BBC6A800456B14 /* MPMWarnings.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = MPMWarnings.hpp; sourceTree = "<group>"; };
-		A748009504FD33590063AF10 /* MPMDCB.fmcmd */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = MPMDCB.fmcmd; sourceTree = "<group>"; };
-		A748009604FD33590063AF10 /* Tension.fmcmd */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Tension.fmcmd; sourceTree = "<group>"; };
-		A748009704FD33590063AF10 /* TwoDisks.fmcmd */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = TwoDisks.fmcmd; sourceTree = "<group>"; };
 		A74AC35008EAF89E00454E1E /* Area.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Area.hpp; sourceTree = "<group>"; };
 		A74AC35108EAF89E00454E1E /* Area.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Area.cpp; sourceTree = "<group>"; };
 		A74E8B090729B7E60065FC30 /* EightNodeIsoparam.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = EightNodeIsoparam.hpp; sourceTree = "<group>"; };
@@ -660,8 +657,6 @@
 		A7BD5D6F0972C6A100D0CCDA /* LinearInterface.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = LinearInterface.hpp; sourceTree = "<group>"; };
 		A7BD5D700972C6A100D0CCDA /* QuadInterface.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = QuadInterface.cpp; sourceTree = "<group>"; };
 		A7BD5D710972C6A100D0CCDA /* QuadInterface.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = QuadInterface.hpp; sourceTree = "<group>"; };
-		A7C18EE40EEEFF2C00DC1949 /* Tension3D.fmcmd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = Tension3D.fmcmd; sourceTree = "<group>"; };
-		A7C18EE50EEEFF2C00DC1949 /* TwoSpheres.fmcmd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = TwoSpheres.fmcmd; sourceTree = "<group>"; };
 		A7C474560C87457900A3ED03 /* NodalPoint2D.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = NodalPoint2D.hpp; sourceTree = "<group>"; };
 		A7C474570C87457900A3ED03 /* NodalPoint2D.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NodalPoint2D.cpp; sourceTree = "<group>"; };
 		A7C474600C87459700A3ED03 /* NodalPoint3D.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = NodalPoint3D.hpp; sourceTree = "<group>"; };
@@ -678,7 +673,6 @@
 		A7C77A3A09869F28001BE128 /* FEAArchiveData.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = FEAArchiveData.cpp; sourceTree = "<group>"; };
 		A7C77A3B09869F28001BE128 /* FEAArchiveData.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = FEAArchiveData.hpp; sourceTree = "<group>"; };
 		A7C77A3E09869F46001BE128 /* FEAStartResults.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = FEAStartResults.cpp; sourceTree = "<group>"; };
-		A7C83BFF060A5ABF002A93ED /* Diffusion.fmcmd */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.xml; path = Diffusion.fmcmd; sourceTree = "<group>"; };
 		A7C954F7044717540063AF10 /* BistableIsotropic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BistableIsotropic.hpp; sourceTree = "<group>"; };
 		A7C954F8044717540063AF10 /* BistableIsotropic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BistableIsotropic.cpp; sourceTree = "<group>"; };
 		A7CA395603F16F3A0063AF10 /* Viscoelastic.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = Viscoelastic.cpp; sourceTree = "<group>"; };
@@ -697,7 +691,6 @@
 		A7D5DB43041028D50063AF10 /* Mooney.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Mooney.cpp; path = Materials/Mooney.cpp; sourceTree = "<group>"; };
 		A7D62D2717557EE0008FA00A /* MatPtHeatFluxBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPtHeatFluxBC.cpp; sourceTree = "<group>"; };
 		A7D62D29175582E0008FA00A /* MatPtHeatFluxBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatPtHeatFluxBC.hpp; sourceTree = "<group>"; };
-		A7D66AC30611EAB90096AB29 /* Cantilever.fmcmd */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.xml; path = Cantilever.fmcmd; sourceTree = "<group>"; };
 		A7DDE95C0BCBFA01005CC32D /* mathexpr.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = mathexpr.cpp; sourceTree = "<group>"; };
 		A7DDE95D0BCBFA01005CC32D /* mathexpr.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = mathexpr.hpp; sourceTree = "<group>"; };
 		A7DE477A11B97CD400FDEFE6 /* WoodMaterial.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = WoodMaterial.hpp; sourceTree = "<group>"; };
@@ -1267,12 +1260,6 @@
 			isa = PBXGroup;
 			children = (
 				A7F04606060F6C7E0060AE2F /* NairnMPM.dtd */,
-				A748009504FD33590063AF10 /* MPMDCB.fmcmd */,
-				A748009604FD33590063AF10 /* Tension.fmcmd */,
-				A7C83BFF060A5ABF002A93ED /* Diffusion.fmcmd */,
-				A748009704FD33590063AF10 /* TwoDisks.fmcmd */,
-				A7C18EE40EEEFF2C00DC1949 /* Tension3D.fmcmd */,
-				A7C18EE50EEEFF2C00DC1949 /* TwoSpheres.fmcmd */,
 			);
 			name = input;
 			path = ../../NairnMPM/input;
@@ -1406,7 +1393,6 @@
 			isa = PBXGroup;
 			children = (
 				A7F04627060F79120060AE2F /* NairnFEA.dtd */,
-				A7D66AC30611EAB90096AB29 /* Cantilever.fmcmd */,
 			);
 			name = input;
 			path = ../input;
