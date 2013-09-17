@@ -46,9 +46,6 @@ class NodalPoint : public LinkedObject
 		// constants (not changed in MPM time step)
         double x,y,z;
         int	num;
-#ifdef MPM_CODE
-        char above,below;
-#endif
 
 #ifdef FEA_CODE
         ForceField *fs;
@@ -107,6 +104,7 @@ class NodalPoint : public LinkedObject
 		// specific task methods
 		void PrepareForFields(void);
         void ZeroDisp(void);
+		int GetFieldForCrack(int,int,DispField **,DispField *);
         void ZeroDisp(NodalPoint *);
         void CopyUGradientStressEnergy(NodalPoint *);
         void DeleteDisp(void);
@@ -126,7 +124,7 @@ class NodalPoint : public LinkedObject
 		void CalcVelocityForStrainUpdate(void);
         short GetCMVelocity(Vector *);
         void CalcStrainField(void);
-        void Interpolate(NodalPoint *,NodalPoint *,double,bool);
+        void Interpolate(NodalPoint *,NodalPoint *,double,bool,int);
         void CrackContact(bool,double,CrackNode **,CrackNode **);
 		void CrackContactThree(int,bool,double);
 		void CrackInterfaceForce(void);
@@ -163,6 +161,7 @@ class NodalPoint : public LinkedObject
 #ifdef MPM_CODE
         //methods - MPM only
 		void AverageStrain(DispField *,DispField *,DispField *,double);
+		int WeightAverageStrain(int,int,DispField *);
         void AdjustContact(short,short,Vector *,int,bool,double);
 		void AddInterfaceForce(short,short,Vector *,int);
 #endif

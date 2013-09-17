@@ -544,15 +544,15 @@ short CrackHeader::MoveCrack(short side)
     while(scrk!=NULL)
 	{	if(!fixedCrack)
 		{	// get element
-			iel=scrk->surfInElem[js]-1;			// now zero based
-			cpos.x=scrk->surfx[js];
-			cpos.y=scrk->surfy[js];
+			iel = scrk->surfInElem[js]-1;			// now zero based
+			cpos.x = scrk->surfx[js];
+			cpos.y = scrk->surfy[js];
 			theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cpos);
             
 			// initialize
 			ZeroVector(&delv);
-			surfaceMass=0;
-			nodeCounter=0;
+			surfaceMass = 0;
+			nodeCounter = 0;
 			
 			// renormalize shape functions in case missing some nodes
 			/*
@@ -1162,12 +1162,13 @@ void CrackHeader::JIntegral(void)
 			crackPt=new ContourPoint(phantom);
 			crackPt->SetNextPoint(prevPt->nextPoint);
 			prevPt->SetNextPoint(crackPt);
-			phantom->Interpolate(prevPt->node,crackPt->nextPoint->node,fract,(tipCrk==firstSeg));				
+			phantom->Interpolate(prevPt->node,crackPt->nextPoint->node,fract,(tipCrk==firstSeg),number);
 				
 			/* Task 4: Loop over all segments and evaluate J integral (from the primary term)
 				Transform to crack plane and save results
 			*/
 			DispField *sfld1,*sfld2;
+			DispField work1,work2;
 			Jx1=Jy1=0.0;			// J-integral components from the first term
 			double tractionEnergy=0.,bridgingReleased=0.;
 			numSegs>>=1;			// half the segments
@@ -1179,16 +1180,12 @@ void CrackHeader::JIntegral(void)
 			{   // J integral node1 to node2 using field dfld
 				NodalPoint *node1=nextPt->node;
 				NodalPoint *node2=nextPt->nextPoint->node;
-				if(dfld==ABOVE_CRACK)
-				{	sfld1=node1->cvf[(int)node1->above]->df;
-					sfld2=node2->cvf[(int)node2->above]->df;
-					count+=node2->cvf[(int)node2->above]->GetNumberPoints();
-				}
-				else
-				{	sfld1=node1->cvf[(int)node1->below]->df;
-					sfld2=node2->cvf[(int)node2->below]->df;
-					count+=node2->cvf[(int)node2->below]->GetNumberPoints();
-				}
+				
+				// get above and below crack fields
+				node1->GetFieldForCrack(number,dfld,&sfld1,&work1);
+				count += node2->GetFieldForCrack(number,dfld,&sfld2,&work2);
+				
+				// get r for axisymmetric calcs
 				if(fmobj->IsAxisymmetric())
 				{	r1 = node1->x/crackr;		// divide by a
 					r2 = node2->x/crackr;
@@ -1244,7 +1241,7 @@ void CrackHeader::JIntegral(void)
 				{	wd2=0.; kd2=0.; sxx2=0.; syy2=0.; sxy2=0.;
 					dudx2=0.; dudy2=0.; dvdx2=0.; dvdy2=0.;
 				}
-
+				
 				// calculate Jx (note that dy=segNorm.x and dx=-segNorm.y
 				// or Jr is axisymmetric
 
@@ -1285,9 +1282,9 @@ void CrackHeader::JIntegral(void)
 				Jy1+=0.5*(r1*fForJy1 + r2*fForJy2)*ds;
 #endif
 
-				// on to next segment
+				// on to next segment (switch field at mid point)
 				numSegs--;
-				if(numSegs<=0)
+				if(numSegs==0)
 					dfld = (dfld==ABOVE_CRACK) ? BELOW_CRACK : ABOVE_CRACK;
 				nextPt=nextPt->nextPoint;
 				if(nextPt==crackPt) break;
@@ -1303,9 +1300,9 @@ void CrackHeader::JIntegral(void)
 				{   // J integral node1 to node2 using field dfld
 					NodalPoint *node2=nextPt->nextPoint->node;
 					if(dfld==ABOVE_CRACK)
-						cout << "#  node " << node2->num << " count above " << node2->cvf[(int)node2->above]->GetNumberPoints() << endl;
+						cout << "#  node " << node2->num <<  endl;
 					else
-						cout << "#  node " << node2->num << " count below " << node2->cvf[(int)node2->below]->GetNumberPoints() << endl;
+						cout << "#  node " << node2->num <<  endl;
 					numSegs--;
 					if(numSegs<=0)
 						dfld = (dfld==ABOVE_CRACK) ? BELOW_CRACK : ABOVE_CRACK;

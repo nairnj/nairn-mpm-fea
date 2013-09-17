@@ -277,6 +277,11 @@ short CrackVelocityField::location(int which) { return loc[which]; }
 // crack number for this field
 int CrackVelocityField::crackNumber(int which) { return crackNum[which]; }
 
+// location and crack for this field
+bool CrackVelocityField::crackAndLocation(int which,int cnum,int side)
+{	return crackNum[which]==cnum && loc[which]==side;
+}
+
 // if has crack matching supplied number and side, return the other crack, else return -1
 int CrackVelocityField::OppositeCrackTo(int cnum,int side)
 {	if(crackNum[FIRST_CRACK]==cnum)
@@ -309,6 +314,7 @@ Vector CrackVelocityField::GetContactForce(int matfld)
 
 // total number of points (rigid and nonrigid included)
 int CrackVelocityField::GetNumberPoints(void) { return numberPoints; }
+void CrackVelocityField::SetNumberPoints(int numpts) { numberPoints = numpts; }
 
 // total number of non-rigid points (override in CrackVelocityFieldMulti)
 int CrackVelocityField::GetNumberPointsNonrigid(void) { return numberPoints; }

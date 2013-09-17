@@ -107,8 +107,8 @@ int CrackSegment::FindElement(short side)
 // return true or false in bothSurfaces if both surfaces actually moved
 void CrackSegment::MovePosition(void)
 {	
-	x+=dxPlane;
-	y+=dyPlane;
+	x += dxPlane;
+	y += dyPlane;
     //x=(surfx[0]+surfx[1])/2.;
     //y=(surfy[0]+surfy[1])/2.;
 }
@@ -130,18 +130,18 @@ bool CrackSegment::MoveSurfacePosition(short side,double xpt,double ypt,bool has
 	if(side==ABOVE_CRACK)
 	{	// above crack is first
 		if(hasNodes)
-		{	surfx[j]+=xpt;			// move
-			surfy[j]+=ypt;
-			dxPlane=xpt;			// save until below is done next
-			dyPlane=ypt;
-			aboveMass=surfaceMass;
+		{	surfx[j] += xpt;			// move
+			surfy[j] += ypt;
+			dxPlane = xpt;			// save until below is done next
+			dyPlane = ypt;
+			aboveMass = surfaceMass;
 		}
 		else
-		{	dxPlane=0.;
-			dyPlane=0.;
-			aboveMass=0.;
+		{	dxPlane = 0.;
+			dyPlane = 0.;
+			aboveMass = 0.;
 		}
-		hadAboveNodes=hasNodes;
+		hadAboveNodes = hasNodes;
 	}
 	else
 	{	// below crack is second
@@ -149,25 +149,25 @@ bool CrackSegment::MoveSurfacePosition(short side,double xpt,double ypt,bool has
 		//			also move top along if it had no nodes
 		// ... else if no nodes, move along with the top field (if it had one)
 		if(hasNodes)
-		{	surfx[j]+=xpt;			// move
-			surfy[j]+=ypt;
+		{	surfx[j] += xpt;			// move
+			surfy[j] += ypt;
 			
 			if(hadAboveNodes)
-			{	double sumMass=aboveMass+surfaceMass;
-				dxPlane=(aboveMass*dxPlane+surfaceMass*xpt)/sumMass;	// had nodes above and below the crack, find the average
-				dyPlane=(aboveMass*dyPlane+surfaceMass*ypt)/sumMass;
+			{	double sumMass = aboveMass+surfaceMass;
+				dxPlane = (aboveMass*dxPlane+surfaceMass*xpt)/sumMass;	// had nodes above and below the crack, find the average
+				dyPlane = (aboveMass*dyPlane+surfaceMass*ypt)/sumMass;
 			}
 			else
-			{	dxPlane=xpt;					// internal point only had nodes below the crack
-				dyPlane=ypt;
-				surfx[ABOVE_CRACK-1]+=xpt;		// move above by (xpt,ypt) too
-				surfy[ABOVE_CRACK-1]+=ypt;
-				movedOther=TRUE;				// in case it moved elements too
+			{	dxPlane = xpt;					// internal point only had nodes below the crack
+				dyPlane = ypt;
+				surfx[ABOVE_CRACK-1] += xpt;	// move above by (xpt,ypt) too
+				surfy[ABOVE_CRACK-1] += ypt;
+				movedOther = TRUE;				// in case it moved elements too
 			}
 		}
 		else if(hadAboveNodes)
-		{	surfx[j]+=dxPlane;				// only had nodes above the crack, move both by (dxPlane,dyPlane)
-			surfy[j]+=dyPlane;
+		{	surfx[j] += dxPlane;				// only had nodes above the crack, move both by (dxPlane,dyPlane)
+			surfy[j] += dyPlane;
 		}
 	}
 	
