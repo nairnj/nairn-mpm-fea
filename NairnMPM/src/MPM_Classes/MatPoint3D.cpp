@@ -117,23 +117,40 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np)
 void MatPoint3D::MovePosition(double delTime,Vector *dv, MPMBase *mptr)
 {	
 	//modiftf ******** #rigidbodyrotation
-	if(Rpm::rpmApplied) //check if there is any rpm applied
+	double dx, dy, dz;
+
+    if(Rpm::rpmApplied) //check if there is any rpm applied
 	{	if(rotator->CheckRPM(MatID()+1)) //add 1 as the function MatID() gives the materialnumber-1
 			{	//rotator->SetRotationAngle(delTime);
 				rotator->AddRPM3(pos.z, pos.y, pos.x, dv, mptr, delTime, rotator->simTime);
 			}
+
+		dx=delTime*dv->x;     //updated dv from rotator goes into extWork below, or passed dv also goes into position change below.
+		dy=delTime*dv->y;
+		dz=delTime*dv->z;
+
+		if(!rotator->CheckRPM(MatID()+1)) //modiftf for convergence of rigid tool rotation.
+		{
+			pos.x+=dx;
+			pos.y+=dy;
+			pos.z+=dz;
+		}
+
+
 	}
 	//modiftf ******** #rigidbodyrotation
 
-	double dx=delTime*dv->x;
-	double dy=delTime*dv->y;
-	double dz=delTime*dv->z;
-	if(!rotator->CheckRPM(MatID()+1)) //modiftf for convergence of rigid tool rotation.
+	else
 	{
+		dx=delTime*dv->x;
+		dy=delTime*dv->y;
+		dz=delTime*dv->z;
+
 		pos.x+=dx;
 		pos.y+=dy;
 		pos.z+=dz;
 	}
+
     extWork+=dx*pFext.x+dy*pFext.y+dz*pFext.z;
 }
 
