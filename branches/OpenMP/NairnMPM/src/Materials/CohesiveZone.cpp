@@ -30,12 +30,12 @@ CohesiveZone::CohesiveZone(char *matName) : TractionLaw(matName)
 {
 	// mode I cohesive law (all others set to -1 in superclasses)
 	// others are: stress1,delIc,JIc
-	kI1=-1.;			// kIe
+	kI1=-1.;			// kIe (keep <0 for linear softening)
 	umidI=-1.;
 	
 	// mode II cohesive law (all others set to -1 in superclasses)
 	// others are: stress2,delIIc,JIIc
-	kII1=-1;			// kIIe
+	kII1=-1;			// kIIe (keep <0 for linear softening)
 	umidII=-1.;
 }
 
@@ -143,7 +143,9 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
 			
 			// get GI for failure law
 			if(nCod<umidI)
+            {   // note that linear softening never because umidI=0
 				GI=0.0005*kI1*nCod*nCod;                             // now in units of N/m
+            }
 			else
 			{	double s2=(delIc-nCod)*stress1/(delIc-umidI);
 				GI=500.*(umidI*stress1 + (nCod-umidI)*(stress1+s2));        // now in units of N/m
@@ -165,7 +167,9 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
         
         // shear energy always
         if(absTCod<umidII)
+        {   // note that linear softening never because umidII=0
             GII=0.0005*kII1*tCod*tCod;                  // now in units of N/m
+        }
         else
         {	double s2=(delIIc-absTCod)*stress2/(delIIc-umidII);
             GII=500.*(umidII*stress2 + (absTCod-umidII)*(stress2+s2));      // now in units of N/m
@@ -207,7 +211,8 @@ double CohesiveZone::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCo
 	// normal energy only if opened
 	if(nCod>0.)
 	{	if(nCod<umidI)
-		{	double Tn=kI1*nCod;
+        {   // note that linear softening never because umidI=0
+			double Tn=kI1*nCod;
 			tEnergy=0.5e-6*Tn*nCod;					// now in units of N/mm
 		}
 		else
@@ -218,7 +223,8 @@ double CohesiveZone::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCo
 	
 	// shear energy always
 	if(fabs(tCod)<umidII)
-	{	double Tt=kII1*tCod;
+    {   // note that linear softening never because umidI=0
+		double Tt=kII1*tCod;
 		tEnergy+=0.5e-6*Tt*tCod;                         // now in units of N/mm
 	}
 	else
@@ -262,28 +268,28 @@ int CohesiveZone::MaterialTag(void) const { return COHESIVEZONEMATERIAL; }
 */
 const char *CohesiveZone::SetTractionLaw(double &s1,double &k1,double &u2,double &G,double &u1)
 {
-	// specify k1, s1, and G, but not u2
+	// specify s1 and G, but not u2
 	if(u2<0.)
 	{	if(s1<0. || G<0.)
 			return "Must supply exactly two of delIc, sigmaI, JIc and exactly two of delIIc, sigmaII, JIIc.";
 		u2=G/(500.*s1);
 	}
 	
-	// specify k1, u2, and G, but not s1
+	// specify u2 and G, but not s1
 	else if(s1<0.)
 	{	if(G<0.)
 			return "Must supply exactly two of delIc, sigmaI, JIc and exactly two of delIIc, sigmaII, JIIc.";
 		s1=G/(500.*u2);
 	}
 	
-	// specify k1, u2, and s1, but not G
+	// specify u2 and s1, but not G
 	else if(G<0.)
 	{	G=500.*s1*u2;
 	}
 	
 	// specified them all, which is an error
 	else
-	{	return "Must supply exactly two of delIc, sigmaI, JIc and exactly two of delIIc, sigmaII, JIIc.";
+	{	return "Can only supply exactly two of delIc, sigmaI, JIc and exactly two of delIIc, sigmaII, JIIc.";
 	}
 	
 	// If neither k1 nor u1 provided, set peak to u1/u2=.225926299 to best match Needelman Cubic law energy
@@ -312,7 +318,7 @@ const char *CohesiveZone::SetTractionLaw(double &s1,double &k1,double &u2,double
 	
 	// specified both, which is an error
 	else
-	{	return "Must supply at most one of kIe and delpkI and one of kIIe and delpkII";
+	{	return "Can only supply one of kIe and delpkI and one of kIIe and delpkII";
 	}
 	
 	// verify final u1 is acceptable

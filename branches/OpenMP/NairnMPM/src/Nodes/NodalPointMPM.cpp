@@ -562,24 +562,75 @@ void NodalPoint::ZeroDisp(void)
 	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
 			cvf[i]->CreateStrainField();
 	}
-	 
-	// Five possibitilies (s), (s,a), (s,b), (a,b), (b,a) where
+    
+    int below2,above2;
+    int altAbove=4,altBelow=4;
+    int altAbove2=4,altBelow2=4;
+    
+    // Above and below for crack number 1
+	// Five possibilities for crack 1: (s), (s,a), (s,b), (a,b), (b,a) where
 	//	s is same side of crack, a and b are above and below.
 	// Field [1], if present, tells which is above or below
-	// This calculation assumes only 1 crack which means the J Contour
-	//  should not cross more than one crack
+    // When done [0]&[2] are above or below while [1]&[3] are the other
 	if(!CrackVelocityField::ActiveNonrigidField(cvf[1]))
 	{	// only field [0] so both are zero
-		above=below=0;
+		above=0;
+        below=0;
+        if(CrackVelocityField::ActiveNonrigidField(cvf[2]))
+        {   altBelow=2;
+            altAbove=2;
+        }
 	}
 	else if(cvf[1]->location(FIRST_CRACK)==ABOVE_CRACK)
 	{	below=0;
+        if(CrackVelocityField::ActiveNonrigidField(cvf[2])) altBelow=2;
 		above=1;
+        if(CrackVelocityField::ActiveNonrigidField(cvf[3])) altAbove=3;
 	}
 	else
 	{	below=1;
+        if(CrackVelocityField::ActiveNonrigidField(cvf[3])) altBelow=3;
 		above=0;
+        if(CrackVelocityField::ActiveNonrigidField(cvf[2])) altAbove=2;
 	}
+    
+    // Above and below for crack number 2
+    // field [2]&[3] are above or below and [0]&[1] are the other
+    if(CrackVelocityField::ActiveNonrigidField(cvf[2]))
+    {   if(cvf[2]->location(SECOND_CRACK)==ABOVE_CRACK)
+        {   below2=0;
+            if(CrackVelocityField::ActiveNonrigidField(cvf[1])) altBelow2=1;
+            above2=2;
+            if(CrackVelocityField::ActiveNonrigidField(cvf[3])) altAbove2=3;
+        }
+        else
+        {   below2=2;
+            if(CrackVelocityField::ActiveNonrigidField(cvf[3])) altBelow2=3;
+            above2=0;
+            if(CrackVelocityField::ActiveNonrigidField(cvf[1])) altAbove2=1;
+        }
+    }
+    else if(CrackVelocityField::ActiveNonrigidField(cvf[3]))
+    {   if(cvf[3]->location(SECOND_CRACK)==ABOVE_CRACK)
+        {   below2=0;
+            if(CrackVelocityField::ActiveNonrigidField(cvf[1])) altBelow2=1;
+            above2=3;               // 2 is inactive and not an alternate
+        }
+        else
+        {   below2=3;               // 2 is inactive and not an alternate
+            above2=0;
+            if(CrackVelocityField::ActiveNonrigidField(cvf[1])) altAbove2=1;
+        }
+    }
+    else
+    {   below2=0;
+        above2=0;
+        if(CrackVelocityField::ActiveNonrigidField(cvf[1]))
+        {   altBelow2=1;
+            altAbove2=1;
+        }
+    }
+
 }
 
 // Initialize fields on a ghost node for grid extrapolations for strains, etc.

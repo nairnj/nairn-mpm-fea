@@ -986,7 +986,7 @@ void CrackHeader::JIntegral(void)
     /* Calculate J-integrals for the ith crack tip
     */
 	
-	// it may try two contours at each crack tip. First try is at NearestnNode().
+	// it may try two contours at each crack tip. First try is at NearestNode().
 	// if that path crosses the crack twice, it tries a contour from the next nearest node.
 	secondTry=FALSE;
 	
@@ -1101,11 +1101,10 @@ void CrackHeader::JIntegral(void)
 					p4.y=endSeg->y;
 					if(SegmentsCross(nextPt,p3,p4,&crossPt1))
 					{	crossCount++;
-						if(crossCount>2)
-						{	throw "More than 2 crossings between J-path and a crack";
-						}
-						else if(crossCount==2)
-						{	if(!(DbleEqual(crossPt.x,crossPt1.x)&&DbleEqual(crossPt.y,crossPt1.y)))
+						if(crossCount==2)
+                        {   // error unless  new crossPt is the same, which implies endpoints for two adjacent segments
+                            // two identical endpoints are accepted, but otherwise an error
+							if(!(DbleEqual(crossPt.x,crossPt1.x)&&DbleEqual(crossPt.y,crossPt1.y)))
 							{	if(secondTry)
 								{   throw "Two different crossings between J-path and a crack";
 								}
@@ -1113,8 +1112,13 @@ void CrackHeader::JIntegral(void)
 									throw "";
 							}
 						}
+						else if(crossCount>2)
+                        {   // only gets here if found endpoints before and not cannot be another matching endpoint
+							throw "More than 2 crossings between J-path and a crack";
+						}
 						else
-						{   prevPt=nextPt;
+                        {   // save crossing point and segment
+						    prevPt=nextPt;
 							crossPt.x=crossPt1.x;
 							crossPt.y=crossPt1.y;
 							startSeg=endSeg->prevSeg;
@@ -1124,9 +1128,13 @@ void CrackHeader::JIntegral(void)
 					p3.y=p4.y;
 					endSeg=endSeg->nextSeg;
 				}
+                
+                // on the next in contour or exit when done
 				nextPt=nextPt->nextPoint;
 				if(nextPt==crackPt) break;
 			}
+            
+            // Error if never cross the crack
 			if(crossCount<1)
 			{   throw "A crack does not cross its J path";
 			}

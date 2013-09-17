@@ -55,9 +55,11 @@ This section lists each task in NairnMPM outlining only those parts relevant to 
 
 Each nodal point is permanently assigned field [0] and that field is zeroed. Any material velocity fields in field [0] that were used in the last step are also zeroed. If the previous step allocated fields [1], [2], or [3], they are deleted. 
 
+For each material point, find the crack velocity field (${\tt vfld}=0,\ 1,\ 2$, or $3$) by checking the line crossings of all cracks (if there are no cracks {\tt vfld} is always 0). This task was moved to initialization when code went parallel. It is one of the largest tasks that is not parallelized.
+
 \subsection{Task 1: Project Momentum and Mass to the Grid}
 
-For each material point, find the crack velocity field (${\tt vfld}=0,\ 1,\ 2$, or $3$) by checking line crossing of all cracks (if there are no cracks {\tt vfld} is always 0). Also determine the appropriate material field ({\tt matfld}) from the material assigned to that material point. Add the momentum and mass to material velocity field {\tt matfld} of crack velocity field {\tt vfld} and store {\tt vfld} for that material point. For crack contact and imperfect interface calculations, project the displacement (or position) and undeformed volume for crack velocity field {\tt vfld} to the grid. This displacement and undeformed volume treats all materials in the crack velocity field as a single material velocity field.
+For each material point, look for the crack velocity field and determine the appropriate material field ({\tt matfld}) from the material assigned to that material point. Add the momentum and mass to material velocity field {\tt matfld} of crack velocity field {\tt vfld} . For crack contact and imperfect interface calculations, project the displacement (or position) and undeformed volume for crack velocity field {\tt vfld} to the grid. This displacement and undeformed volume treats all materials in the crack velocity field as a single material velocity field.
 
 \subsection{Task 2: Contact and Optional Update Strains First}
 

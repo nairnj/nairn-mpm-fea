@@ -112,14 +112,14 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
         return;
     }
     
-    // is it a new peak?
+    // is it a new peak? (note that upeak = max(max opening, umidI or peak stress opening)
     if(deff > upeak[0]) upeak[0] = deff;
     
     // skip if deff=zero since tractions are zero, and would cause problem if pure linear softening law when deff=0
     // (deff>0 implies upeak[0]>0 even when umidI=0 for pure linear softening)
     if(deff > 0.)
     {   // stiffness same for both modes keff = (1-D)k = sc(df-dmax)/(dmax*(df-d0)) = k d0*(df-dmax)/(dmax*(df-d0))
-        // Note: prior to deff reaching d0, dmax=upeak[0]=umidI=d0 and  keff = sc/d0 = k
+        // Note: prior to deff reaching d0, all dmax=upeak[0]=umidI=d0 are equal and keff = sc/d0 = k
         double keff=sIc*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
         
         // normal force (only if open, closed handled by crack contact)
@@ -161,7 +161,8 @@ double CoupledSawTooth::CrackTractionEnergy(CrackSegment *cs,double nCod,double 
     double deff = sqrt(nCod*nCod + tCod*tCod);
     
     if(deff < umidI)
-    {	double T=kI1*deff;
+    {   // note that linear softening never here because umidI=0
+    	double T=kI1*deff;
         tEnergy=0.5e-6*T*deff;					// now in units of N/mm
     }
     else

@@ -152,7 +152,9 @@ void TrilinearTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCo
 			
 			// get GI for failure law
 			if(nCod<umidI)
+            {   // note that initial linear softening never because umidI=0
 				GI=0.0005*kI1*nCod*nCod;                             // now in units of N/m
+            }
 			else if(nCod<=uI2)
 			{	if(break1is2I)
 					GI=500.*stress1*umidI;
@@ -190,7 +192,9 @@ void TrilinearTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCo
         
         // get GII for failure law
         if(absTCod<umidII)
+        {   // note that initial linear softening never because umidI=0
             GII=0.0005*kII1*tCod*tCod;                             // now in units of N/m
+        }
         else if(absTCod<=uII2)
         {	if(break1is2II)
                 GII=500.*stress2*umidII;
@@ -241,7 +245,8 @@ double TrilinearTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,doubl
 	// normal energy only if opened
 	if(nCod>0.)
 	{	if(nCod<umidI)
-		{	double Tn=kI1*nCod;
+        {   // note that initial linear softening never because umidI=0
+			double Tn=kI1*nCod;
 			tEnergy=0.5e-6*Tn*nCod;					// now in units of N/mm
 		}
 		else if(nCod<=uI2)
@@ -261,7 +266,8 @@ double TrilinearTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,doubl
 	// shear energy always
 	double absTCod=fabs(tCod);
 	if(absTCod<umidII)
-	{	double Tt=kII1*tCod;
+    {   // note that initial linear softening never because umidI=0
+		double Tt=kII1*tCod;
 		tEnergy+=0.5e-6*Tt*tCod;                         // now in units of N/mm
 	}
 	else if(absTCod<=uII2)
@@ -322,7 +328,7 @@ int TrilinearTraction::MaterialTag(void) const { return TRILINEARTRACTIONMATERIA
 	k1 is slope up s1 (MPa/mm)
 	s1 is peak stress (MPa) = k1 u1
 	u1 is displacement at s1 peak stress (relative to u3 or 0 to 1)
-	s1 is second break point stress (MPa)
+	s2 is second break point stress (MPa)
 	u2 is displacement at s2 stress (relative to u3 or 0 to 1)
 	u3 is final displacement (mm)
 	G is toughness (J/m^2) = 500 (s1 u2 _ s2 u3 - s2 u1)
@@ -333,14 +339,17 @@ const char *TrilinearTraction::SetTLTractionLaw(double &s1,double &k1,double &u1
 	// if k1 is provided, s1 or u1 (but not both) must be there too
 	if(k1>0.)
 	{	if(s1>=0. && u1>=0.)
-			return "Cannot specify all three of sigmaI(II), kI(II)e, and umidI(II) for each mode";
+			return "Can only specify two of sigmaI(II), kI(II)e, and umidI(II) for each mode";
 		else if(s1<0. && u1<0.)
-			return "Must specify exactly one of sigmaI(II) and umidI(II) for a mode where you specify kI(II)e";
+			return "Must specify either sigmaI(II) or umidI(II) for a mode where you specify kI(II)e";
 		else if(s1<0.)
 			s1=k1*u1;
 		else
 			u1=s1/k1;
 	}
+    
+    // if k1 not provided (<1) it is calculated, but it cannot but one of s1 and u1 must be nonzero
+    // to start with linear softening, need u1=0 and s1>0
 	else if(s1<=0. && u1<=0.)
 		return "Must specify at least one of sigmaI(II), kI(II)e, and umidI(II) for each mode";
 	
