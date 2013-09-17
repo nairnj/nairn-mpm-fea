@@ -23,7 +23,7 @@ make SYSTEM=cygwin
 
 for a windows machine, or type
 
-make SYSTEM=gpu 
+make SYSTEM=gpu
 
 for the gpu cluster on CSIRO
 
@@ -39,3 +39,16 @@ g++ -o ExtractMPM ExtractMPM.cpp
 or if on cluster
 
 g++ -o ExtractMPM ExtractMPM_Cluster.cpp
+
+
+
+
+
+To extract particle data using the new ExtractMPMUltimate6, type:
+
+./ExtractMPMUltimate6 -V -q hist -o <file name to create> -s <file extension>
+
+
+The -q gives the data to show, which must be stored to be converted. 
+The options can be temp, mat, hist etc look in documentation for others. 
+The variable I've added to this Extract version is "hist" for the stored history variables. View these vtk output files in paraview.
