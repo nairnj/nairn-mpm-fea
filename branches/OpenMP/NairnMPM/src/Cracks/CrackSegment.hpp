@@ -25,8 +25,8 @@ class CrackSegment
 {
     public:
         double x,y,origx,origy;
-        double surfx[2],surfy[2];
         int planeInElem,surfInElem[2];
+        double surfx[2],surfy[2];
         CrackSegment *nextSeg,*prevSeg;
         Vector Jint,sif,tract;
         int tipMatnum;					// crack tip material (not a traction law)
@@ -60,7 +60,7 @@ class CrackSegment
 		void StartCrackTipHeating(double,double);
 		double HeatRate(void);
 		double ForwardArea(double,double,int);
-		Vector SlightlyMoved(int);
+		Vector SlightlyMovedIfNotMovedYet(int);
 		int MatID(void);
 		void SetMatID(int);
 		void AddTractionForceSeg(CrackHeader *);

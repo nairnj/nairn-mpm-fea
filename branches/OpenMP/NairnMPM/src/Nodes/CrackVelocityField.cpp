@@ -202,19 +202,16 @@ void CrackVelocityField::DeleteStrainField(void)
 // Increment velocity when moving crack surface. This called after CM and total mass
 // is stored in the first non-empty material field
 short CrackVelocityField::IncrementDelvTask8(double fi,Vector *delV,double *fieldMass)
-{	// skip low mass node
+{	// skip low mass node (this number might be critical)
+    // 1.e-6 seemed to be too small
 	double totalMass=GetTotalMass();
-	if(totalMass/(*fieldMass)<1.e-6) return FALSE;			// skip low mass
+	if(totalMass/(*fieldMass)<1.e-5) return FALSE;			// skip low mass
+    
+    // increment velocity
 	Vector totalPk=GetCMatMomentum();
 	AddScaledVector(delV,&totalPk,fi/totalMass);			// increment
 	*fieldMass=totalMass;
 	return TRUE;
-	/*
-	*fieldMass=GetTotalMass();
-	Vector totalPk=GetCMatMomentum();
-	AddScaledVector(delV,&totalPk,fi);			// increment
-	return TRUE;
-	*/
 }
 
 // Collect momenta and add to vector when finding CM velocity to move crack planes

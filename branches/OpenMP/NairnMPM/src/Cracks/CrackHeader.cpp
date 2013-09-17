@@ -531,6 +531,7 @@ short CrackHeader::MoveCrack(void)
 }
 
 // Move one crack surface according to current velocities
+// side==ABOVE_CRACK (1) or BELOW_CRACK (2)
 short CrackHeader::MoveCrack(short side)
 {
     CrackSegment *scrk=firstSeg;
@@ -574,13 +575,15 @@ short CrackHeader::MoveCrack(short side)
 			{	if(nd[nds[j]]->IncrementDelvSideTask8(side,number,fn[j],&delv,&surfaceMass,scrk))
 					nodeCounter++;
 			}
-			
+            
 			// delv is Sum(fi vi) = Sum(fi pi/mi) and surfaceMass = Sum(fi mi)
-			if(nodeCounter>0)
-			{	ScaleVector(&delv,timestep);
-			}
+            // convert to displacement move
+			ScaleVector(&delv,timestep);
+            
+            //if(scrk==firstSeg && fabs(delv.y)>.01)
+            //    cout << "# " << number << "," << side << "," << delv.y << "," << nodeCounter << endl;
 			
-			// move it (if returns true, check location of other side)
+			// move it (if returns true, check location of other side for element move)
 			if(scrk->MoveSurfacePosition(side,delv.x,delv.y,(nodeCounter>0),surfaceMass))		// in mm
 			{	if(!scrk->FindElement(ABOVE_CRACK)) return FALSE;
 			}

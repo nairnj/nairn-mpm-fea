@@ -36,7 +36,7 @@ CrackSurfaceContact::CrackSurfaceContact()
 	Dt=-1.;						// perfect in shear by default
 	hasImperfectInterface=FALSE;	// flag for any imperfect interfaces
 	moveOnlySurfaces=TRUE;			// move surfaces, plane moves at midpoint of surfaces
-	preventPlaneCrosses=TRUE;		// if true, move surfaces that cross the crack plane back to the crack plane
+	preventPlaneCrosses=FALSE;		// if true, move surfaces that cross the crack plane back to the crack plane
 	materialFriction=0.;				// material contact friction
 	materialDn=-1.;						// prefect in tension by default
 	materialDnc=-101.;					// <-100 means not set and should be set same as Dn

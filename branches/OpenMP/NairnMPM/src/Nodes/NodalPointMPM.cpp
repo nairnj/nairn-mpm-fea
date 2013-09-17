@@ -606,7 +606,8 @@ int NodalPoint::GetFieldForCrack(int crackNum,int side,DispField **dfld,DispFiel
 		
 		// a third other crack - average [0] and [3] of other two cracks
 		else
-		{	throw "Averaging [0] and [3] fields for third crack not programmed yet";
+		{	*dfld = workFld;
+			count = WeightAverageStrain(0,3,workFld);
 		}
 	}
 	
@@ -641,17 +642,31 @@ int NodalPoint::GetFieldForCrack(int crackNum,int side,DispField **dfld,DispFiel
 		
 
 	// 3. The with two cracks using [2]: [1]&[2], [0]&[1]&[2], [1]&[2]&[3] and [0]&[1]&[2]&[3]
-	//		Has [1] and [2] and possible [0] and [3]
+	//		Has [1] and [2] and possibly [0] and [3]
 	else if(active2)
 	{	// the right crack is first crack
 		if(cvf[1]->crackNumber(FIRST_CRACK)==crackNum)
 		{	if(cvf[1]->location(FIRST_CRACK)==side)
-			{	// average [1] and [3] for second crack
-				throw "Avergining [1] and [3] for crack in [2] not programmed yet";
+			{	// average [1] and [3] for second crack (or just [1] if [3] missing)
+                if(active3)
+                {	*dfld = workFld;
+                    count = WeightAverageStrain(1,3,workFld);
+                }
+                else
+                {	*dfld = cvf[1]->df;
+                    count = cvf[1]->GetNumberPoints();
+                }
 			}
 			else
-			{	// average [0] and [2] for second crack
-				throw "Avergining [0] and [2] for crack in [2] not programmed yet";
+			{	// average [0] and [2] for second crack (or just [2] is [0] missing)
+                if(active0)
+                {	*dfld = workFld;
+                    count = WeightAverageStrain(0,2,workFld);
+                }
+                else
+                {	*dfld = cvf[2]->df;
+                    count = cvf[2]->GetNumberPoints();
+                }
 			}
 		}
 		
@@ -680,7 +695,7 @@ int NodalPoint::GetFieldForCrack(int crackNum,int side,DispField **dfld,DispFiel
 			}
 		}
 		
-		// two different cracks found so average [0],[1],[2],and [3]
+		// this field has two cracks and neither match current crack so average [0], [1], and [3]
 		else
 		{	throw "Avergining [0],[1],[2], and [3] for two other cracks not programmed yet";
 		}
@@ -741,15 +756,13 @@ int NodalPoint::GetFieldForCrack(int crackNum,int side,DispField **dfld,DispFiel
 			}
 		}
 		
-		// this field has two cracks and neither match this crack [0], [1], and [3]
+		// this field has two cracks and neither match current crack so average [0], [1], and [3]
 		else
 		{	throw "Avergining [0],[1], and [3] for two other cracks not programmed yet";
 		}
 	}
 	
 	// 5. Never occurs: [2], [0]&[2], [2]&[3], [0]&[2]&[3]
-	
-	if(count==0) cout << "# no field found" << endl;
 	
 	// return the number
 	return count;
@@ -1055,13 +1068,14 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	double x1=seg->surfx[side-1];
 	double y1=seg->surfy[side-1];
 	
-	// check in field [1] if it is for crack crackNumber
+	// 1. Has field [1] (may have [0], [2], and [3] as well)
+    //      Only can use [1] f it matches crackNumber
 	if(CrackVelocityField::ActiveNonrigidField(cvf[1]))
 	{	if(cvf[1]->crackNumber(FIRST_CRACK)==crackNumber)
 		{	if(side==cvf[1]->location(FIRST_CRACK))
 			{	vfld=1;
 				
-				// maybe switch [1] to [3]
+				// maybe switch [1] to [3] (but only if [3] is present)
 				if(CrackVelocityField::ActiveNonrigidField(cvf[3]))
 				{	// if line crosses second crack in [3], switch to [3]
 					int otherCrack=cvf[3]->OppositeCrackTo(crackNumber,side);
@@ -1071,7 +1085,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 					}
 				}
 				else if(SurfaceCrossesOtherCrack(x1,y1,x,y,crackNumber))
-					vfld=3;
+					vfld=3;     // need it but missing
 			}
 			else
 			{	vfld=0;
@@ -1083,15 +1097,16 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 					   vfld=2;
 				}
 				else if(SurfaceCrossesOtherCrack(x1,y1,x,y,crackNumber))
-					vfld=2;
+					vfld=2;          // need it but missing
 			}
 		}
 	}
 	
-	// if not found in [1], check in [2]
+	// 2. Has field [2] (may have [0], [1], and [3] as well)
+    //      Only can use [2] if it matches crackNumber
 	if(vfld<0 && CrackVelocityField::ActiveNonrigidField(cvf[2]))
 	{	if(cvf[2]->crackNumber(FIRST_CRACK)==crackNumber)
-		{	if(side==cvf[2]->location(FIRST_CRACK))
+        {   if(side==cvf[2]->location(FIRST_CRACK))
 			{	vfld=2;
 		
 				// maybe switch [2] to [3]
@@ -1104,7 +1119,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 					}
 				}
 				else if(SurfaceCrossesOtherCrack(x1,y1,x,y,crackNumber))
-					vfld=3;
+					vfld=3;             // need it but missing
 			}
 			else
 			{	vfld=0;
@@ -1116,22 +1131,24 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 						vfld=1;
 				}
 				else if(SurfaceCrossesOtherCrack(x1,y1,x,y,crackNumber))
-					vfld=1;
+					vfld=1;                 // need it but missing
 			}
 		}
 	}
 	
+	// 2. Has field [3]
+    //      Only can use [3] if it matches crackNumber
 	// if not found in [1] or [2], look in [3]
 	if(vfld<0 && CrackVelocityField::ActiveNonrigidField(cvf[3]))
 	{	// verify has correct field and retreive other crack
 		int otherCrack=cvf[3]->OppositeCrackTo(crackNumber,side);
 		if(otherCrack>0)
-		{	// if crack found, then can use [3] is crosses the other crack in [3]
+		{	// if crack found, then can use [3] if crosses the other crack in [3]
 			if(SurfaceCrossesOneCrack(x1,y1,x,y,otherCrack)!=NO_CRACK)
 				vfld=3;
 		}
 		else
-		{	// when not found, try to see if cross path other crack to [1] or [2]
+		{	// when not found, try to see if cross path other crack than [1] or [2]
 			otherCrack=cvf[3]->OppositeCrackTo(crackNumber,ABOVE_CRACK+BELOW_CRACK-side);
 			if(otherCrack>0)
 			{	if(CrackVelocityField::ActiveNonrigidField(cvf[1]))
@@ -1157,16 +1174,19 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	
 	// if still not found, see if [0] can be used
 	if(vfld<0 && CrackVelocityField::ActiveNonrigidField(cvf[0]))
-	{	Vector moved=seg->SlightlyMoved(side);
+	{	Vector moved=seg->SlightlyMovedIfNotMovedYet(side);
 		CrackField cfld[2];
 		SurfaceCrossesCracks(moved.x,moved.y,x,y,cfld);
         //cout << "#Active on node " << num << ": " << CrackVelocityField::ActiveNonrigidField(cvf[0]) << "," <<
         //                       CrackVelocityField::ActiveNonrigidField(cvf[1]) << endl;
         //cout << "#Side " << side << " (" << x1 << "," << y1 << ") to (" << moved.x << "," << moved.y << ")" << endl;
 		if(cfld[0].loc==NO_CRACK)
+        {   // no crack found so use field [0]
 			vfld=0;
+        }
 		else if(cfld[1].loc==NO_CRACK)
-		{	// only one crack was found - does it match [1] or [2]
+        {   // one crack found (since second says NO_CRACK)
+			//   but does the one crack match an existing field?
 			if(CrackVelocityField::ActiveNonrigidField(cvf[1]))
 			{	if(cfld[0].crackNum==cvf[1]->crackNumber(FIRST_CRACK))
 				{	if(cfld[0].loc==cvf[1]->location(FIRST_CRACK))
@@ -1183,6 +1203,10 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 						vfld=0;				// if surface particle was on the crack
 				}
 			}
+            
+            // Note that failure means neither [1] nor [2] are available
+            // Probably common in GIMP when surface cross crack to remote GIMP node not
+            //      seen by particles from that side of the crack too
 		}
 		else if(CrackVelocityField::ActiveNonrigidField(cvf[3]))
 		{	// found two cracks, but only use if same two cracks that are in [3]
@@ -1669,19 +1693,24 @@ int NodalPoint::NumberNonrigidParticles(void)
 
 // describe velocity field
 void NodalPoint::Describe(void) const
-{	cout << "# node=" << num << " pt=(" << x << "," << y << "," << z << ") mass=" << mass << endl;
+{	cout << "#  node=" << num << " pt=(" << x << "," << y << "," << z << ") mass=" << mass << endl;
 	
-	cout << "#  active crack velocity fields:" << endl;
+    bool active = false;
 	int i;
 	int totalParticles=0,numFields=0;
 	for(i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-		{	cout << "#  " << i << ". ";
+        {   if(!active)
+            {   cout << "#  active crack velocity fields:" << endl;
+                active=true;
+            }
+			cout << "#  " << i << ". ";
 			cvf[i]->Describe();
 			totalParticles+=cvf[i]->GetNumberPoints();
 			numFields++;
 		}
 	}
+    if(!active) cout << "#  no active crack velocity fields (might be in initialization)" << endl;
 }
 	
 #pragma mark BOUNDARY CONDITION METHODS

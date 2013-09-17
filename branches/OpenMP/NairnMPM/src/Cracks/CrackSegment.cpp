@@ -158,11 +158,11 @@ bool CrackSegment::MoveSurfacePosition(short side,double xpt,double ypt,bool has
 				dyPlane = (aboveMass*dyPlane+surfaceMass*ypt)/sumMass;
 			}
 			else
-			{	dxPlane = xpt;					// internal point only had nodes below the crack
+			{	dxPlane = xpt;					// only had nodes below the crack
 				dyPlane = ypt;
 				surfx[ABOVE_CRACK-1] += xpt;	// move above by (xpt,ypt) too
 				surfy[ABOVE_CRACK-1] += ypt;
-				movedOther = TRUE;				// in case it moved elements too
+				movedOther = TRUE;				// in case above moved elements now (check on return)
 			}
 		}
 		else if(hadAboveNodes)
@@ -733,22 +733,22 @@ bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool thereIsAnothe
 	double cod=sqrt(dxs*dxs+dys*dys)/segLength;
 	if(cod>1.) return !thereIsAnotherSegement;
 
-	// distance crack particle to intersection place (relative to segment length)
+	// distance crack particle to intersection plane (relative to segment length)
 	double t=(dxs*dxp+dys*dyp)/segLength;
 	
 	// if less than 0 and at first of two internal segments, return to try the next segment instead
 	if(t<0. && thereIsAnotherSegement) return false;
 	
 	// distance surface to crack plane (relative to segment length)
-	//double n=(dxs*dyp-dys*dxp)*dir/segLength;
+	double n=(dxs*dyp-dys*dxp)*dir/segLength;
 	
 	// if pretty close or negative, then do not move to plane and hope velocity fields will resolve on their own
 	// or if first of two internal segments, try the other one
-	//if(n<1.e-6) return !thereIsAnotherSegement;
+	if(n<1.e-5) return !thereIsAnotherSegement;
 	
 	// restrict terminal segments
 	if(prevSeg==NULL || nextSeg==NULL)
-	{	if(t<0.) t=0.;
+    {   if(t<0.) t=0.;
 	}
 	
 	// restrict to intersect within this segment
@@ -757,74 +757,11 @@ bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool thereIsAnothe
 	else if(t<-1.)
 		t=-1.;
 	
-	// if -1 < t < 1, might want to screen out small movements using the n check which used to be above
-	
-	//if(x>16.)
-	//	cout << "# move side " << side << " from (" << surfx[j] << "," << surfy[j] << ") to (";
-	
 	// move to crack plane and a little more in normal direction
 	surfx[j]=x+t*dxp-1.0e-12*dir*dyp;
 	surfy[j]=y+t*dyp+1.0e-12*dir*dxp;
 	
-	//if(x>16.)
-	//	cout <<  surfx[j] << "," << surfy[j] << "), (dxp,dyp) = (" << dxp << "," << dyp << ") near (x,y) = (" << x << "," << y << ")" << endl;
-	
 	return true;
-	
-	/* old method moved along the COD See JAN-OSU-4, pg 82
-	 
-	 int c1=side-1;
-	 int c2=1-c1;
-	 double dxc=surfx[c2]-surfx[c1],dyc=surfy[c2]-surfy[c1];
-	 double t;
-	 
-	 // separate cases depending on segment orientation
-	 if(fabs(dxp)>fabs(dyp))
-	 {	double slopeDiff=dxp*dyc-dyp*dxc;
-	 if(fabs(slopeDiff/dxp)<1.e-6)
-	 {	// close to parallel
-	 double p2=dxp*dxp+dyp*dyp;
-	 t=(dxp*(surfx[c1]-x)+dyp*(surfy[c1]-y))/p2;
-	 }
-	 else if(fabs(dxc)<1.e-8)
-	 {	// vertical cod
-	 t=(surfx[c1]-x)/dxp;
-	 }
-	 else
-	 t=(dyc*(surfx[c1]-x)-dxc*(surfy[c1]-y))/slopeDiff;
-	 }
-	 else
-	 {	double slopeDiff=dyp*dxc-dxp*dyc;
-	 if(fabs(slopeDiff/dyp)<1.e-6)
-	 {	// close to parallel
-	 double p=dxp*dxp+dyp*dyp;
-	 t=(dxp*(surfx[c1]-x)+dyp*(surfy[c1]-y))/p;
-	 }
-	 else if(fabs(dyc)<1.e-8)
-	 {	// horizontal cod
-	 t=(surfy[c1]-y)/dyp;
-	 }
-	 else
-	 t=(dxc*(surfy[c1]-y)-dyc*(surfx[c1]-x))/slopeDiff;
-	 }
-	 
-	 // if not in this segment, exit (unless end segment)
-	 cout << " t=" << t << endl;
-	 if(t<0.)
-	 {	if(thereIsAnotherSegement) return false;
-	 t=0.;
-	 }
-	 else
-	 {	// keep within this segment
-	 t=fmin(t,1.0);
-	 }
-	 
-	 surfx[c1]=x+t*dxp;
-	 surfy[c1]=y+t*dyp;
-	 
-	 return true;
-	 
-	 */
 }
 
 // if decide no longer need to track surfaces, can call this method to collapse surface
@@ -916,7 +853,7 @@ void CrackSegment::CreateSegmentExtents(bool isFirstSeg)
 
 // move above or below position slightly in the direction of the normal
 // if it has already moved, then do not bother
-Vector CrackSegment::SlightlyMoved(int side)
+Vector CrackSegment::SlightlyMovedIfNotMovedYet(int side)
 {
 	Vector moved;
 	moved.x=surfx[side-1];
