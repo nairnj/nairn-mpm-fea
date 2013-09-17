@@ -24,7 +24,7 @@ Rpm::Rpm()
 	simTime=0.0;
 	xcentre= 0.0; 					// initial position of x centre EDIT
 	ycentre = 0.0; 							// initial position of y centre EDIT
-	zcentre= 12.25;					// depends for cs.
+	zcentre= 12.25;					// depends for cs. COMMENT FOR HPT
 	zDepth = 0.0;							// initial position of bottom of pin EDIT
 	rpm=materialID=0.0;
 	velSet.x=velSet.y=velSet.z=0.0;
@@ -113,6 +113,7 @@ void Rpm::AddRPM3(double &posz, double &posy, double &posx, Vector *vel, MPMBase
 	sz = posz - zcentre;
 	
 	//carry out initial rotation about y-axis, usually 2-3 degrees. And plunge, here only for away from plate.
+ //START HERE FOR 3D ROTATION
 	if(timer==0)
 	{	//zcentre=12.5;
 		
@@ -122,7 +123,7 @@ void Rpm::AddRPM3(double &posz, double &posy, double &posx, Vector *vel, MPMBase
 		posz+=sx*sin(angle)+sz*cos(angle)-sz;
 		
 		//now apply the initial plunge if needed (outside of plate)
-		posz-=0.05;
+		posz-=0.04;
 		
 		ux = -sin(angle);
 		uz = cos(angle);
@@ -136,13 +137,12 @@ void Rpm::AddRPM3(double &posz, double &posy, double &posx, Vector *vel, MPMBase
 	
 	
 	
-	/* can the centre point be on a different plane, NO.
-	Therefore each plane of particles must have it's own centre for each of x,y,z.
-	Can have one point accounting for the centre, and then a fixed displacement for each other plane.
-	Assume the centre is at the middle of the tool.
-	This will be difficult to differentiate between the different layers, so may use a few rigid bodies to model the tool
+	// can the centre point be on a different plane, NO.
+	//Therefore each plane of particles must have it's own centre for each of x,y,z.
+	//Can have one point accounting for the centre, and then a fixed displacement for each other plane.
+	//Assume the centre is at the middle of the tool.
+	//This will be difficult to differentiate between the different layers, so may use a few rigid bodies to model the tool
 	
-	*/
 	
 	//sx = 
 	//sy = 
@@ -172,7 +172,7 @@ void Rpm::AddRPM3(double &posz, double &posy, double &posx, Vector *vel, MPMBase
 	posx+=timestep*2.1167;
 	
 	} //end 3D rotation
-	
+	//END HERE FOR 3D ROTATION
 	
 	
 	
@@ -211,23 +211,27 @@ void Rpm::AddRPM3(double &posz, double &posy, double &posx, Vector *vel, MPMBase
 	//if(timer>=90.)				//create tool retraction stage
 	//	vel->z=0.5;
 
-	//vel->x-=phi*sy;					// add new velocity vector for rotation
-	//vel->y+=phi*sx;
+/* // START here for HPT
+
+	vel->x-=phi*sy;					// add new velocity vector for rotation
+	vel->y+=phi*sx;
 	
 	
 	//**************************************************
 	// section to update particle position so to avoid lack of convergence:
 	
-	//rotx=sx*cos(phi)-sy*sin(phi);	// new position relative to a zero origin
-	//roty=sx*sin(phi)+sy*cos(phi);
+	rotx=sx*cos(phi)-sy*sin(phi);	// new position relative to a zero origin
+	roty=sx*sin(phi)+sy*cos(phi);
 	
 	// rotation in x-y
-	//posx+=sx*cos(phi*timestep)-sy*sin(phi*timestep)-sx;					// apply displacement to original position
-	//posy+=sx*sin(phi*timestep)+sy*cos(phi*timestep)-sy;
+	posx+=sx*cos(phi*timestep)-sy*sin(phi*timestep)-sx;					// apply displacement to original position
+	posy+=sx*sin(phi*timestep)+sy*cos(phi*timestep)-sy;
 	
 	//posx+=timestep*2.1167;												// TRANSLATION
 	
 	//cout << "vel x = " << vel->x << " vely = " << vel->y << endl;
+*/ // END HERE FOR HPT
+
 }
 
 
@@ -259,12 +263,12 @@ void Rpm::UpdateCentre(double timestep)
 			
 	//if(rotator->simTime>=35.&&rotator->simTime<90.) // for FSP TRANSLATION EDIT
 	//if(rotator->simTime>=0) // for FSP TRANSLATION EDIT
-
+ //START HERE FOR 3D ROTATION
 		if(rotator->simTime>0)
 			xcentre+=(timestep*2.1167);
 		else   // if(rotator->simTime==0)	
-		zcentre-=0.05;
-	
+		zcentre-=0.04;
+	//END HERE FOR 3D ROTATION
 	//cout << "Sim time = " << simTime << " x-centre = " << xcentre << " y-centre = " << ycentre << endl;
 	//if(rotator->simTime>=90.) // for HARD CODED HEAT FLUX EDIT
 		//	zDepth +=(timestep*0.5);

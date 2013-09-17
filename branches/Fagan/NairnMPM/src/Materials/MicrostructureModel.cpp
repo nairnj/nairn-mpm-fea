@@ -241,9 +241,9 @@ double MicrostructureModel::GetYield(MPMBase *mptr,int np,double delTime)
 			
 		// make sure dislocation density is never less than 0
 		if(rhow<0)
-			rhow=0;
+			rhow=1;
 		if(rhoc<0)
-			rhoc=0;	
+			rhoc=1;	
 		
 		
 		

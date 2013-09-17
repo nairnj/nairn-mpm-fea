@@ -9,11 +9,12 @@
 #PBS -S /bin/bash
 
 # PBS -N FSP_3D_new_v9
-# PBS -N HPT_3D_v6g
+# PBS -N 3D_v10
 # PBS -N FSP_exp3_v42
-# PBS -N RPMTEST_v1
-#PBS -N FSP_exp4_v24
+# PBS -N TEST_v1
+#PBS -N FSP_exp4_v30
 # PBS -N 3DRotationTest_v1
+
 
 # Is there a queue for this system?
 # PBS -q cm
@@ -21,7 +22,7 @@
 # comments are added like this Ray
 # PBS comments with PBS require syntax with the space Ray
 
-#PBS -l walltime=320:00:00
+#PBS -l walltime=90:00:00
 # PBS -l walltime=00:30:00
 
 #PBS -l nodes=1:ppn=1
@@ -53,13 +54,9 @@ ulimit -s unlimited
 export KMP_STACKSIZE=500m
 export OMP_NUM_THREADS=1
 
-#sph-setup >setup.log 
-# ./NairnMPM FSP_3D_new_v9.fmcmd > FSP_3D_new_v9.mpm
-# ./NairnMPM HPT_3D_v6g.fmcmd > HPT_3D_v6g.mpm
-# ./NairnMPM RPMTEST_v1.fmcmd > RPMTEST_v1.mpm 
+./NairnMPM FSP_3D_Cu_exp4_v30.fmcmd > FSP_3D_Cu_exp4_v30.mpm
 
-./NairnMPM FSP_3D_Cu_exp4_v24.fmcmd > FSP_3D_Cu_exp4_v24.mpm
+# ./NairnMPM HPT_3D_v10.fmcmd > HPT_3D_v10.mpm
 
-# ./NairnMPM 3DRotationTest_v1.fmcmd > 3DRotationTest_v1.mpm
 
-#sph-sol > sol.log
+
