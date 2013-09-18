@@ -17,6 +17,11 @@ public static final String versionReadable="Version 3.0.0";
 
 NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The versions currently in this project are as follows:
 
+  * OpenMP Branch - this branch started to make parallel code. It is the current main branch (main trunk sill listed below). This Java app is added extensive support for scripted files instead of only editing XML files
+    * Working on NairnFEAMPMViz 5.0.
+    * XML and script command to launch parallel calculations
+    * FEA script commands complete (except for BMPRegion)
+
   * Current trunk Version
     * Working on NairnFEAMPMViz 4.0.
 
