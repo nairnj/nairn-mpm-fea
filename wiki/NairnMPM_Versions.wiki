@@ -21,6 +21,7 @@ The version number is coded in the constructor of the `NairnMPM.cpp` class:
 NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions currently in this project are as follows:
 
   * OpenMP Branch - this branch was started on April 2, 2013 to make parallel code and is now temporary main development branch (the current trunk is listed below). It has lots of changes. Materials use buffers. Problem divided into patches and uses ghost nodes. Particles reordered by type and some loops divided by type (e.g., rigid velocities). Crack velocity field calculation done in the initiation phase. Other changes in this branch are
+    * Working on NairnMPM 10.0.0
     * May 16: Torus object for 3D
     * May 22: Changed Johnson-Cook when above TM to be better
     * May 29: Heat flux BCs
