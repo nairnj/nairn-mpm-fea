@@ -20,8 +20,19 @@ The version number is coded in the constructor of the `NairnMPM.cpp` class:
 
 NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions currently in this project are as follows:
 
+  * OpenMP Branch - this branch was started on April 2, 2013 to make parallel code and is now temporary main development branch (the current trunk is listed below). It has lots of changes. Materials use buffers. Problem divided into patches and uses ghost nodes. Particles reordered by type and some loops divided by type (e.g., rigid velocities). Crack velocity field calculation done in the initiation phase. Other changes in this branch are
+    * May 16: Torus object for 3D
+    * May 22: Changed Johnson-Cook when above TM to be better
+    * May 29: Heat flux BCs
+    * July 26: Pyramid object for 3D and designation of symmetry planes for improved contact calculations.
+    * Aug 6: Rigid contact materials all combined to single crack velocity field which is much better for rigid material within a crack. In the future might want regular materials to ignore cracks too (to wedge open crack with metal, for example).
+    * Aug 13: Fixed bug in rigid particle z direction and z symmetry planes
+    * Aug 23: Added option to track reaction forces at velocity and/or at rigid particle BCs. Also improved tracking of contact forces to use only post-update contact calculations (which agrees much better with expectations).
+    * Sept 17: J integral approximately deals with interacting cracks by averaging velocities field of other cracks it encounters along the J contour. This change also fixed a velocity field bug that has long been in J calculations, but probably caused very small errors.
+
   * Current trunk Version
-    * Working on NairnMPM 9.1.0
+    * Working on NairnMPM 9.2.0
+    * Prints svn revision number of code used in output files
     * Hardening Laws have been separated from materials to allow one to select them independently - this approach creates a large number of material types. An alternate nonlinear hardening law is among the previously available hardening laws.
     * `MGSCGLMaterial` has been replaced by `MGEOSMaterial` that use a Mie-Grüneisen law for pressure and can pick any hardening law. This material has also be greatly improved for more accurate tracking of internal energy (as needed in the pressure law) and to allow artificial viscosity useful in shock wave calculations.
     * `SLMaterial`, `JohnsonCook`, and `VonMises` materials have been eliminated. Instead use the new `IsoPlasticity` or `MGEOSMaterial` and then select any hardening law.
@@ -32,6 +43,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * The `IdealGas` material now tracks entropy change.
     * The `VTKArchive` can archive several new quantities.
     * Crack tips now track material type to all propagation between materials in a composite.
+    * Fixed bug in J calculation
 
   * release-3.0 (9 JAN 2013)
     * Has NairnMPM 9.0.0
