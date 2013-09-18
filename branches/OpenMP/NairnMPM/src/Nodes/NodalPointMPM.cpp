@@ -695,9 +695,19 @@ int NodalPoint::GetFieldForCrack(int crackNum,int side,DispField **dfld,DispFiel
 			}
 		}
 		
-		// this field has two cracks and neither match current crack so average [0], [1], and [3]
+		// this field has two cracks and neither match current crack so average [0], [1], [2], and [3]
+		else if(!active0 && !active3)
+		{	*dfld = workFld;
+			count = WeightAverageStrain(0,1,workFld);
+		}
+		else if(active0 && active3)
+		{	throw "Averaging [0],[1],[2], and [3] for two other cracks not programmed yet";
+		}
+		else if(active0)
+		{	throw "Averaging [0],[1], and [2] for two other cracks not programmed yet";
+		}
 		else
-		{	throw "Avergining [0],[1],[2], and [3] for two other cracks not programmed yet";
+		{	throw "Averaging [1],[2], and [3] for two other cracks not programmed yet";
 		}
 	}
     
@@ -757,8 +767,12 @@ int NodalPoint::GetFieldForCrack(int crackNum,int side,DispField **dfld,DispFiel
 		}
 		
 		// this field has two cracks and neither match current crack so average [0], [1], and [3]
+		else if(!active0)
+		{	*dfld = workFld;
+			count = WeightAverageStrain(1,3,workFld);
+		}
 		else
-		{	throw "Avergining [0],[1], and [3] for two other cracks not programmed yet";
+		{	throw "Averaging [0],[1], and [3] for two other cracks not programmed yet";
 		}
 	}
 	
