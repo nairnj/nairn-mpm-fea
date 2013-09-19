@@ -41,9 +41,9 @@ class Mooney : public HyperElastic
  		
 		// methods
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
-		virtual Vector ConvertJToK(Vector,Vector,Vector,int);
     
 		// accessors
+        virtual Vector ConvertJToK(Vector,Vector,Vector,int);
         virtual Tensor GetStress(Tensor *,double) const;
 		virtual double WaveSpeed(bool,MPMBase *) const;
 		virtual double ShearWaveSpeed(bool,MPMBase *) const;

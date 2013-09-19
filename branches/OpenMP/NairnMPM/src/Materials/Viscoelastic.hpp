@@ -45,6 +45,7 @@ class Viscoelastic : public MaterialBase
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
 		
 		// accessors
+        virtual Vector ConvertJToK(Vector,Vector,Vector,int);
         virtual double WaveSpeed(bool,MPMBase *) const;
 		virtual const char *MaterialType() const;
 		virtual double GetHistory(int ,char *) const;

@@ -411,6 +411,12 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz
  	IncrementHeatEnergy(mptr,res->dT,0.,-dispEnergy);
 }
 
+// convert J to K using isotropic method
+Vector Viscoelastic::ConvertJToK(Vector d,Vector C,Vector J0,int np)
+{	double nuLS = (3.*Ke-2.*Ge)/(6.*Ke+2.*Ge);
+	return IsotropicJToK(d,C,J0,np,nuLS,Ge*1.e-6);
+}
+
 #pragma mark Viscoelastic::Accessors
 
 // return material type

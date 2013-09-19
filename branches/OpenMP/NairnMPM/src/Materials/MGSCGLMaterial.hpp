@@ -37,9 +37,9 @@ class MGSCGLMaterial : public IsoPlasticity
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 		virtual void UpdatePressure(MPMBase *,double &,double,int,PlasticProperties *,ResidualStrains *) const;
         virtual double GetCurrentRelativeVolume(MPMBase *) const;
-		virtual Vector ConvertJToK(Vector,Vector,Vector,int);
 				
 		// accessors
+        virtual Vector ConvertJToK(Vector,Vector,Vector,int);
 		virtual const char *MaterialType(void) const;
 		virtual int MaterialTag() const;
         virtual double WaveSpeed(bool,MPMBase *) const;

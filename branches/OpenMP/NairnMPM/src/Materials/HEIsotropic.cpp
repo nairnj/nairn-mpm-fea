@@ -454,13 +454,13 @@ Tensor HEIsotropic::GetNormalTensor(Tensor *strial,double magnitude_strial,int n
     return n;
 }
 
+#pragma mark HEIsotropic::Accessors
+
 // convert J to K using isotropic method
 Vector HEIsotropic::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 {	double nuLS = (3.*Kbulk-2.*G1)/(6.*Kbulk+2.*G1);
 	return IsotropicJToK(d,C,J0,np,nuLS,G1);
 }
-
-#pragma mark HEIsotropic::Accessors
 
 // Copy stress to a read-only tensor variable
 // Subclass material can override, such as to combine pressure and deviatory stress into full stress

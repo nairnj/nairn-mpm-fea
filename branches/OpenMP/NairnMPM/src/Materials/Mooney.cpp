@@ -311,14 +311,14 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     
 }
 
+#pragma mark Mooney::Accessors
+
 // convert J to K using isotropic method
 Vector Mooney::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 {	double GLS = G1+G2;
 	double nuLS = (3.*Kbulk-2.*GLS)/(6.*Kbulk+2.*GLS);
 	return IsotropicJToK(d,C,J0,np,nuLS,GLS);
 }
-
-#pragma mark Mooney::Accessors
 
 // Copy stress to a read-only tensor variable
 // Subclass material can override, such as to combine pressure and deviatory stress into full stress
