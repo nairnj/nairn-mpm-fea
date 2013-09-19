@@ -56,6 +56,7 @@ class HEIsotropic : public HyperElastic
         Tensor GetTrialDevStressTensor(Tensor *,double,int,double) const;
         virtual double GetMagnitudeS(Tensor *st,int) const;
         Tensor GetNormalTensor(Tensor *,double,int) const;
+		virtual Vector ConvertJToK(Vector,Vector,Vector,int);
     
 		// accessors
         virtual Tensor GetStress(Tensor *,double) const;

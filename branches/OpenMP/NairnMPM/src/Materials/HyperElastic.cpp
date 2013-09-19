@@ -430,6 +430,5 @@ double HyperElastic::GetVolumetricTerms(double J,double Kred) const
     
     // return result
     return Kterm;
-}  
-
+}
 

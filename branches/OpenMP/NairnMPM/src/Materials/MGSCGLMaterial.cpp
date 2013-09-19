@@ -122,7 +122,6 @@ void MGSCGLMaterial::PrintMechanicalProperties(void) const
 	cout <<  endl;
     
     plasticLaw->PrintYieldProperties();
-
 }
 
 // Print transport properties
@@ -308,6 +307,13 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,P
 double MGSCGLMaterial::GetCurrentRelativeVolume(MPMBase *mptr) const
 {  
     return mptr->GetRelativeVolume();
+}
+
+// convert J to K using isotropic method
+Vector MGSCGLMaterial::ConvertJToK(Vector d,Vector C,Vector J0,int np)
+{	double KLS = rho*pr.Kred*1e-6;			// MPa
+	double nuLS = (3.*KLS-2.*G)/(6.*KLS+2.*G);
+	return IsotropicJToK(d,C,J0,np,nuLS,G);
 }
 
 #pragma mark MGSCGLMaterial::Accessors

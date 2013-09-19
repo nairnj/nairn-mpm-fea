@@ -125,6 +125,7 @@ class MaterialBase : public LinkedObject
 #ifdef MPM_CODE
 		virtual MaterialBase *SetFinalPropagate(void);
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
+		virtual Vector IsotropicJToK(Vector,Vector,Vector,int,double,double);
 		virtual int CriterionNeeds(int,bool &);
         virtual int ShouldPropagate(CrackSegment *,Vector &,CrackHeader *,int,int);
         virtual bool ControlCrackSpeed(CrackSegment *,double &);

@@ -227,58 +227,9 @@ void *IsotropicMat::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffe
 {	return (void *)&pr;
 }
 
-/* d -- crack opening displacement near crack tip, d.y--opening, d.x--shear
-     C -- crack propagating velocity
-    J0 -- J integral components
-*/
+// convert J to K using isotropic method
 Vector IsotropicMat::ConvertJToK(Vector d,Vector C,Vector J0,int np)
-{ 
-    double Cs2,Cd2,C2;
-    double B1,B2,A1,A2,A3,A4,DC;
-    double kf=0.,term1,term2;
-    double dx,dy,J0x,J0y;
-    Vector SIF;
-
-    dx=d.x;
-    dy=d.y;
-    J0x=fabs(J0.x);                        // J0.x should be always positive
-    J0y=J0.y;
-
-    if(np==PLANE_STRAIN_MPM)
-        kf=3.-4.*nu;
-    else if(np==PLANE_STRESS_MPM)
-        kf=(3.-nu)/(1.+nu);
-
-    C2=C.x*C.x+C.y*C.y;                    // square of crack velocity
-    if(!DbleEqual(sqrt(C2),0.0)) {         // dynamic crack
-        Cs2=1.e+3*G/rho;                   // now in m^2/sec^2
-        Cd2=Cs2*(kf+1.)/(kf-1.);
-        B1=sqrt(1.-C2/Cd2);
-        B2=sqrt(1.-C2/Cs2);
-        DC=4*B1*B2-(1.+B2*B2)*(1.+B2*B2);
-        A1=B1*(1.-B2*B2)/DC;
-        A2=B2*(1.-B2*B2)/DC;
-        A3=1./B2;
-        term1=0.5*(4.*B1*B2+(1.+B2*B2)*(1.+B2*B2))*(2.+B1+B2)/sqrt((1.+B1)*(1.+B2));
-        A4=(B1-B2)*(1.-B2*B2)*(term1-2.*(1.+B2*B2))/DC/DC;
-    }
-    else {                                // stationary crack
-        B1=B2=1.0;
-        A3=1.;
-        A1=A2=A4=(kf+1.)/4.;
-    }
-
-    term2=dy*dy*B2+dx*dx*B1;
-    if(DbleEqual(term2,0.0)) {            // COD=0
-       SIF.x=0.0;
-       SIF.y=0.0;
-    }
-    else {
-       SIF.x=dy*sqrt(2*G*J0x*B2/A1/term2);
-       SIF.y=dx*sqrt(2*G*J0x*B1/A2/term2);
-    }
-    
-    return SIF;
+{	return IsotropicJToK(d,C,J0,np,nu,G);
 }
 
 #endif

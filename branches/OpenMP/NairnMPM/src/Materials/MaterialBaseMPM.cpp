@@ -784,6 +784,64 @@ Vector MaterialBase::ConvertJToK(Vector d,Vector C,Vector J0,int np)
    return SIF;
 }
 
+// Convert J to K assuming an isotropic material
+// d -- crack opening displacement near crack tip, d.y--opening, d.x--shear
+// C -- crack propagating velocity
+// J0 -- J integral components in J0.x and J0.y
+// np -- PLANE_STRESS_MPM or PLANE_STRAIN_MPM (asysymtry not certain, current reverts to plane strain)
+// nuLS and GLS -- low strain Poisson's ratio and shear modulus (in MPa)
+Vector MaterialBase::IsotropicJToK(Vector d,Vector C,Vector J0,int np,double nuLS,double GLS)
+{
+    double Cs2,Cd2,C2;
+    double B1,B2,A1,A2,A3,A4,DC;
+    double term1,term2;
+    Vector SIF;
+	
+    double dx = d.x;
+    double dy = d.y;
+    double J0x = fabs(J0.x);                        // J0.x should be always positive
+    double J0y = J0.y;
+	
+	double kf=0.;
+    if(np==PLANE_STRESS_MPM)
+        kf=(3.-nuLS)/(1.+nuLS);
+	else
+        kf=3.-4.*nuLS;
+	
+    C2 = C.x*C.x+C.y*C.y;				// square of crack velocity
+	// dynamic or stationary crack
+    if(!DbleEqual(sqrt(C2),0.0)) 
+	{	Cs2=1.e+3*GLS/rho;				// now in m^2/sec^2
+        Cd2=Cs2*(kf+1.)/(kf-1.);
+        B1=sqrt(1.-C2/Cd2);
+        B2=sqrt(1.-C2/Cs2);
+        DC=4*B1*B2-(1.+B2*B2)*(1.+B2*B2);
+        A1=B1*(1.-B2*B2)/DC;
+        A2=B2*(1.-B2*B2)/DC;
+        A3=1./B2;
+        term1=0.5*(4.*B1*B2+(1.+B2*B2)*(1.+B2*B2))*(2.+B1+B2)/sqrt((1.+B1)*(1.+B2));
+        A4=(B1-B2)*(1.-B2*B2)*(term1-2.*(1.+B2*B2))/DC/DC;
+    }
+    else
+	{	B1=B2=1.0;
+        A3=1.;
+        A1=A2=A4=(kf+1.)/4.;
+    }
+	
+    term2=dy*dy*B2+dx*dx*B1;
+	// special case for zero COD
+    if(DbleEqual(term2,0.0))
+	{	SIF.x = 0.0;
+		SIF.y = 0.0;
+    }
+    else
+	{	SIF.x = dy*sqrt(2*GLS*J0x*B2/A1/term2);
+		SIF.y = dx*sqrt(2*GLS*J0x*B1/A2/term2);
+    }
+    
+    return SIF;
+}
+
 // Determine what calculations are needed for the propagation criterion
 // in this material - must match needs in ShouldPropagate() routine
 int MaterialBase::CriterionNeeds(int critIndex,bool &usesEnergyBalance)
@@ -1145,10 +1203,11 @@ bool MaterialBase::SelectDirection(CrackSegment *crkTip,Vector &crackDir,CrackHe
 	return TRUE;
 }
 
-/* find hoop direction unit vector relative to crack direction. Vector in hoop direction will by 
-		(crackDir.x*hoopDir.x - crackDir.y*hoopDir.y, crackDir.x*hoopDir.y + crackDir.y*hoopDir.x)
+/* find hoop direction unit vector relative to crack direction. 
 	If theta is the ccw rotation of hoop direction relative to crack tip direction, then
 		hooopDir = (cos(theta), sin(theta))
+	To get vector in hoop direction later use;
+		(crackDir.x*hoopDir.x - crackDir.y*hoopDir.y, crackDir.x*hoopDir.y + crackDir.y*hoopDir.x)
 */
 void MaterialBase::HoopDirection(double KI,double KII,Vector *hoopDir)
 {
