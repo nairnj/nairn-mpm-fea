@@ -30,6 +30,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Aug 13: Fixed bug in rigid particle z direction and z symmetry planes
     * Aug 23: Added option to track reaction forces at velocity and/or at rigid particle BCs. Also improved tracking of contact forces to use only post-update contact calculations (which agrees much better with expectations).
     * Sept 17: J integral approximately deals with interacting cracks by averaging velocities field of other cracks it encounters along the J contour. This change also fixed a velocity field bug that has long been in J calculations, but probably caused very small errors.
+    * Sept 22: New traction law to apply constant normal stress on crack surfaces.
 
   * Current trunk Version
     * Working on NairnMPM 9.2.0
