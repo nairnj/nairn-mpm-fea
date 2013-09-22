@@ -223,6 +223,7 @@ PointController = $(com)/Read_XML/PointController
 PolygonController = $(com)/Read_XML/PolygonController
 PolyhedronController = $(src)/Read_MPM/PolyhedronController
 PolyTriangle = $(src)/Read_MPM/PolyTriangle
+PressureLaw = $(src)/Materials/PressureLaw
 PropagateTask = $(src)/Custom_Tasks/PropagateTask
 Quad2D = $(com)/Elements/Quad2D
 RectController = $(com)/Read_XML/RectController
@@ -332,6 +333,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # OvalController.hpp : ShapeController.hpp
 # PointController.hpp : ShapeController.hpp
 # PolygonController.hpp : ShapeController.hpp
+# PresureLaw.hpp : MaterialBase.hpp TractionLaw.hpp
 # PropagateTask.hpp : CustomTask.hpp
 # Quad2D.hpp : ElementBase.hpp
 # RectController.hpp : ShapeController.hpp
@@ -386,7 +388,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		TractionLaw.o CohesiveZone.o CoupledSawTooth.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o AdjustTimeStepTask.o SLMaterial.o CrackVelocityFieldMulti.o \
 		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o \
-        HEMGEOSMaterial.o GridPatch.o GhostNode.o MatPtHeatFluxBC.o
+        HEMGEOSMaterial.o GridPatch.o GhostNode.o MatPtHeatFluxBC.o PressureLaw.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -451,7 +453,7 @@ OvalController.o : $(OvalController).cpp $(dprefix) $(OvalController).hpp $(Shap
 PolygonController.o : $(PolygonController).cpp $(dprefix) $(PolygonController).hpp $(ShapeController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PolygonController).cpp
 MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialController).hpp $(ParseController).hpp \
-		$(IsotropicMat).hpp $(TransIsotropic).hpp $(Orthotropic).hpp $(Viscoelastic).hpp \
+		$(IsotropicMat).hpp $(TransIsotropic).hpp $(Orthotropic).hpp $(Viscoelastic).hpp $(PressureLaw).hpp \
 		$(Mooney).hpp $(HEAnisotropic).hpp $(BistableIsotropic).hpp $(RigidMaterial).hpp $(MaterialBase).hpp \
 		$(Elastic).hpp $(HyperElastic).hpp $(NairnMPM).hpp $(TractionLaw).hpp $(CohesiveZone).hpp $(LinearTraction).hpp \
 		$(CubicTraction).hpp $(AnisoPlasticity).hpp $(IsoPlasticity.hpp) $(HillPlastic).hpp $(MGSCGLMaterial).hpp \
@@ -606,7 +608,7 @@ MPMReadHandler.o : $(MPMReadHandler).cpp $(dprefix) $(NairnMPM).hpp $(ArchiveDat
 			$(PolygonController).hpp $(ShapeController).hpp  $(SphereController).hpp $(RigidMaterial).hpp \
 			$(VTKArchive).hpp $(HistoryArchive).hpp $(CarnotCycle).hpp $(MatPtHeatFluxBC).hpp \
 			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(MeshInfo).hpp $(PropagateTask).hpp $(PolyhedronController).hpp \
-            $(MatPointAS).hpp 
+            $(MatPointAS).hpp $(PressureLaw).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MPMReadHandler).cpp
 Generators.o : $(Generators).cpp $(dprefix) $(NairnMPM).hpp $(MPMReadHandler).hpp $(CommonReadHandler).hpp \
 			$(MPMBase).hpp $(ElementBase).hpp $(MatPoint2D).hpp $(NodalConcBC).hpp $(NodalTempBC).hpp $(NodalVelBC).hpp \
@@ -769,6 +771,9 @@ TractionLaw.o : $(TractionLaw).cpp $(dprefix) $(TractionLaw).hpp $(MaterialBase)
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TractionLaw).cpp
 CohesiveZone.o : $(CohesiveZone).cpp $(dprefix) $(CohesiveZone).hpp $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CohesiveZone).cpp
+PressureLaw.o : $(PressureLaw).cpp $(dprefix) $(PressureLaw).hpp $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp \
+			$(CrackHeader).hpp $(mathexpr).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PressureLaw).cpp
 CoupledSawTooth.o : $(CoupledSawTooth).cpp $(dprefix) $(CoupledSawTooth).hpp $(CohesiveZone).hpp $(TractionLaw).hpp $(MaterialBase).hpp \
             $(CrackSegment).hpp $(CrackHeader).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CoupledSawTooth).cpp

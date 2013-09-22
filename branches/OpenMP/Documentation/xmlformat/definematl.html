@@ -222,6 +222,13 @@ and rubber elastic materials as special cases.</td>
 <td align="center"></td><td align="center">X X</td><td align="center"></td>
 </tr>
 
+<tr>
+<td><a href="#plaw"><code>PressureLaw</code></a></td>
+<td>26</td>
+<td width="50%">A constant stress <a href="cracks.html#traction">traction law</a> for use on crack surfaces, such as pressure loaded cracks.</td>
+<td align="center"></td><td align="center">X X</td><td align="center"></td>
+</tr>
+
 </table>
 
 
@@ -1216,6 +1223,21 @@ cod = <code>&delta;<sub>eff</sub></code> where  &delta;<sub>eff</sub><sup>2</sup
 
 <p>To create a linear elastic traction law that fails at some critical cod, use a <a href="#traction">triangular traction law material</a> instead and set the properties such that the maximum cod is at the same location as the peak stress (<i>i.e.</i>, &delta;<sub>c</sub> = &sigma;/k or &delta;<sub>pk</sub>=1)
 </p>
+
+<!-- Material  Section -->
+
+<a name="plaw"></a><h2>Pressure Traction Law Material</h2>
+
+<p>The material type is <code>Type=26</code>. This material is a traction law material for crack surfaces and therefore can only be used on <a href="cracks.html">cracks</a> or when creating new crack surfaces by the <a href="mpmheader.html#propagate"><code>Propagate</code></a> option. This material creates a constant stress that is normal to the crack surface. It models a pressure loaded crack. The stress can be entered in one of two ways:
+</p>
+
+<dl>
+
+<dt>&lt;stress&gt;-100&lt;/stress&gt;</dt>
+<dd>Enter constant normal stress (in MPa). Use negative stress for a pressure loaded crack.</dd>
+<dt>&lt;function&gt;-100*t&lt;/function&gt;</dt>
+<dd>Alternatively, the stress can be entered as a <a href="function.html">user-defined function</a> of time (giving  stress in MPa). If a function is used, any entered <code>&lt;stress&gt;</code> property is ignored.</dd>
+</dl>
 
 <!-- Material  Section -->
 

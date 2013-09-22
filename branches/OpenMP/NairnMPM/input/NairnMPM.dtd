@@ -154,7 +154,7 @@
 				| betax | betay | betaz | betaR | betaZ
 				| K | G0 | ntaus | Gk | tauk | xGrow | yGrow
 				| G1 | G2 | speed | gain | p | maxLength | Propagate | AltPropagate | initTime
-				| K0 | Kd | Gd | alpha0 | alphad | transition | critical | DeltaVOffset
+				| K0 | Kd | Gd | alpha0 | alphad | transition | critical | DeltaVOffset | stress | function
 				| reversible | irreversible | beta0 | betad | sigmaI | sigmaII | kIe | kIIe | nmix
 				| KIc | KIIc | JIc | JIIc | gamma | KIexp | KIIexp | delIc | delIIc | delpkI | delpkII
 				| sigmaI2 | sigmaII2 | delpkI2 | delpkII2 | ValueFunction
@@ -429,6 +429,8 @@
 <!ELEMENT	sigmaI2 (#PCDATA)>
 <!ELEMENT	sigmaII (#PCDATA)>
 <!ELEMENT	sigmaII2 (#PCDATA)>
+<!ELEMENT	stress (#PCDATA)>
+<!ELEMENT	function (#PCDATA)>
 <!ELEMENT	kIe (#PCDATA)>
 <!ELEMENT	kIIe (#PCDATA)>
 <!ELEMENT	delpkI (#PCDATA)>

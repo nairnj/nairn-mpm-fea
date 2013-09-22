@@ -25,7 +25,7 @@ void CrackController::AddCrack(CrackHeader *newCrack)
 	AddObject(newCrack);
 }
 
-// Create new material
+// Add new segment
 int CrackController::AddSegment(CrackSegment *newSegment)
 {
 	return ((CrackHeader *)lastObject)->add(newSegment);

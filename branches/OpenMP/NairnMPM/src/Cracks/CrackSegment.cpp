@@ -198,87 +198,152 @@ void CrackSegment::AddTractionForceSeg(CrackHeader *theCrack)
 // add forces to material velocity fields on one side of the crack
 double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,double sign)
 {
-	Vector cspos,norm;
+	Vector norm;
 	int numnds,nds[maxShapeNodes];
     double fn[maxShapeNodes];
     short vfld;
 	NodalPoint *ndi;
 	double fnorm = 0.;
 	
+	Vector cspos = SlightlyMovedIfNotMovedYet(side);
 	side--;			// convert to 0 or 1 for above and below
-	cspos.x = surfx[side];
-	cspos.y = surfy[side];
 	const ElementBase *elref = theElements[surfInElem[side]];
 	elref->GetShapeFunctionsForCracks(&numnds,fn,nds,&cspos);
 	
-	// loop of all nodes see by this crack surface particle
+	// loop over all nodes seen by this crack surface particle
 	for(int i=1;i<=numnds;i++)
 	{	ndi = nd[nds[i]];
 		vfld = theCrack->CrackCross(cspos.x,cspos.y,ndi->x,ndi->y,&norm);
-        
+		
 		if(vfld>NO_CRACK)
 		{	// a crossing field - to use it, must find correct field and crack number in a velocity field
-			// traction laws do not handle multiple cracks or interacting fields correctly, but try to do something
 			//  1. Possible: [0], [1], [3], [0]&[3], [1]&[2], [0]&[1], [1]&[3], [0]&[1]&[2],
 			//			[0]&[1]&[3], [1]&[2]&[3], and [0]&[1]&[2]&[3]
 			//  2. Never occurs [2], [0]&[2], [2]&[3], [0]&[2]&[3]
 			int cnum=theCrack->GetNumber();
+			int otherCrack;
+			int cside=vfld,expectSide,otherSide;
+			vfld=-1;
 			if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[1]))
 			{	// Node with: [1], [1]&[2], [0]&[1], [1]&[3], [0]&[1]&[2], [0]&[1]&[3], [1]&[2]&[3], or [0]&[1]&[2]&[3]
-				if(vfld==ndi->cvf[1]->location(FIRST_CRACK) && cnum==ndi->cvf[1]->crackNumber(FIRST_CRACK))
-				{	// this means field one is correct - single crack calcs should always get here if the field is active
-					vfld = 1;
-				}
-				else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[2]))
-				{	// Node with: [1]&[2], [0]&[1]&[2], [1]&[2]&[3], or [0]&[1]&[2]&[3]
-					if(vfld==ndi->cvf[2]->location(FIRST_CRACK) && cnum==ndi->cvf[2]->crackNumber(FIRST_CRACK))
-					{	// this means there are two cracks here and this crack should add to field [2]
-						vfld = 2;
+				if(cnum==ndi->cvf[1]->crackNumber(FIRST_CRACK))
+				{	if(cside==ndi->cvf[1]->location(FIRST_CRACK))
+					{	vfld = 1;
+						// switch to [3] if also matches and line crosses the other crack and side
+						if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[3]))
+						{	// Node with: [1]&[3], or [0]&[1]&[3]
+							otherCrack = ndi->cvf[3]->OppositeCrackTo(cnum,cside,&expectSide);
+							if(otherCrack>0)
+							{	otherSide = ndi->SurfaceCrossesOneCrack(cspos.x,cspos.y,ndi->x,ndi->y,otherCrack);
+								if(otherSide==expectSide)
+									vfld=3;
+							}
+						}
 					}
-					else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[3]))
-					{	if((vfld==ndi->cvf[3]->location(FIRST_CRACK) && cnum==ndi->cvf[3]->crackNumber(FIRST_CRACK)) || 
-							(vfld==ndi->cvf[3]->location(SECOND_CRACK) && cnum==ndi->cvf[3]->crackNumber(SECOND_CRACK)))
-						{	// this means there are two cracks here and this crack should add to field [3]
-							vfld = 3;
+					else
+					{	vfld = 0;
+						// switch to [2] if also matches that field
+						if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[2]))
+						{	// check if crosses crack 2 with [2]'s side
+							otherCrack = ndi->cvf[2]->crackNumber(FIRST_CRACK);
+							otherSide = ndi->SurfaceCrossesOneCrack(cspos.x,cspos.y,ndi->x,ndi->y,otherCrack);
+							if(otherSide==ndi->cvf[2]->location(FIRST_CRACK))
+								vfld=2;
 						}
 					}
 				}
+				else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[2]))
+				{	// Node with: [1]&[2], [0]&[1]&[2], [1]&[2]&[3], or [0]&[1]&[2]&[3]
+					if(cnum==ndi->cvf[2]->crackNumber(FIRST_CRACK))
+					{	if(cside==ndi->cvf[2]->location(FIRST_CRACK))
+						{	vfld = 2;
+							// switch to [3] if also matches and line crosses the other crack with its side
+							if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[3]))
+							{	// Node with: [1]&[3], or [0]&[1]&[3]
+								otherCrack = ndi->cvf[3]->OppositeCrackTo(cnum,cside,&expectSide);
+								if(otherCrack>0)
+								{	otherSide = ndi->SurfaceCrossesOneCrack(cspos.x,cspos.y,ndi->x,ndi->y,otherCrack);
+									if(otherSide==expectSide)
+										vfld=3;
+								}
+							}
+						}
+						else
+						{	vfld = 0;
+							// check if crosses crack 1 with [1]'s side
+							otherCrack = ndi->cvf[1]->crackNumber(FIRST_CRACK);
+							otherSide = ndi->SurfaceCrossesOneCrack(cspos.x,cspos.y,ndi->x,ndi->y,otherCrack);
+							if(otherSide==ndi->cvf[1]->location(FIRST_CRACK))
+								vfld=1;
+						}
+					}
+					// here means neither [1] nor [2] has this crack, so [3] can't either,
+					// and can't confirm [0], so it is skipped (vfld stays -1)
+				}
 				else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[3]))
-				{	// Node with: [1], [0]&[1], [1]&[3], or [0]&[1]&[3]
-					if((vfld==ndi->cvf[3]->location(FIRST_CRACK) && cnum==ndi->cvf[3]->crackNumber(FIRST_CRACK)) || 
-					   (vfld==ndi->cvf[3]->location(SECOND_CRACK) && cnum==ndi->cvf[3]->crackNumber(SECOND_CRACK)))
-					{	// this means there are two cracks here and this crack should add to field [3]
-						vfld = 3;
+				{	// Node with: [1]&[3], or [0]&[1]&[3]
+					if(cnum==ndi->cvf[3]->crackNumber(FIRST_CRACK))
+					{	if(cside==ndi->cvf[3]->location(FIRST_CRACK))
+							vfld = 3;
+						else
+							vfld = 0;
+					}
+					else if(cnum==ndi->cvf[3]->crackNumber(SECOND_CRACK))
+					{	if(cside==ndi->cvf[3]->location(SECOND_CRACK))
+							vfld = 3;
+						else
+							vfld = 0;
+					}
+					// if matches neither crack, keep at -1
+					
+					// switch to [1] if appropriate
+					if(vfld==0)
+					{	// check if crosses crack 1 with [1]'s side
+						otherCrack = ndi->cvf[1]->crackNumber(FIRST_CRACK);
+						otherSide = ndi->SurfaceCrossesOneCrack(cspos.x,cspos.y,ndi->x,ndi->y,otherCrack);
+						if(otherSide==ndi->cvf[1]->location(FIRST_CRACK))
+							vfld=1;
 					}
 				}
-				else
-				{	// none are correct, sometimes [0] is correct in this case
-					// Use [0], but might want a warning to be issued
-					vfld = 0;
-				}
 			}
+			
 			else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[3]))
-			{	// Node with: [3], [0]&[3]
-				if((vfld==ndi->cvf[3]->location(FIRST_CRACK) && cnum==ndi->cvf[3]->crackNumber(FIRST_CRACK)) || 
-				   (vfld==ndi->cvf[3]->location(SECOND_CRACK) && cnum==ndi->cvf[3]->crackNumber(SECOND_CRACK)))
-				{	// this means there are two cracks here and this crack should add to field [3]
-					vfld = 3;
+			{	// Node with: [0], [3], [0]&[3]
+				if(cnum==ndi->cvf[3]->crackNumber(FIRST_CRACK))
+				{	if(cside==ndi->cvf[3]->location(FIRST_CRACK))
+						vfld = 3;
+					else
+						vfld = 0;			// only option since [1]&[2] are inactive
 				}
-				else
-				{	// none are correct, sometimes [0] is correct in this case
-					// Use [0], but might want a warning to be issued
-					vfld = 0;
+				else if(cnum==ndi->cvf[3]->crackNumber(SECOND_CRACK))
+				{	if(cside==ndi->cvf[3]->location(SECOND_CRACK))
+						vfld = 3;
+					else
+						vfld = 0;			// only option since [1]&[2] are inactive
 				}
+				// if matches neither crack, keep at -1
 			}
+			
 			else
-			{	// Node with [0] only - empty field for this traction, no need to add force
-				vfld = -1;
+			{	// means only [0] is active. If node is near the crack tip then probably want
+				// to use it for both sides of the crack
+				if(theCrack->NodeNearTip(ndi,0.25))
+				{	vfld = 0;
+				}
 			}
+			
+			// if vfld=-1, then did not find field to use
+			// it might be possible that [0] is OK, but maybe only at the crack tip and hard to know
+			//    otherwise; decision is to add no force (with vfld=-1)
+			
+			// if [0], is it active?
+			if(vfld==0 && !CrackVelocityField::ActiveNonrigidField(ndi->cvf[0]))
+			   vfld = -1;
 		}
 		
 		// add if find a field
 		if(vfld>=0)
-		{
+		{	
 #ifdef USE_FEXT
 			ndi->AddFextSpreadTask3(vfld,FTract(sign*fn[i]));
 #else

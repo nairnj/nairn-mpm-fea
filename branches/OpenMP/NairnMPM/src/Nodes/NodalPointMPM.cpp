@@ -1081,6 +1081,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	
 	double x1=seg->surfx[side-1];
 	double y1=seg->surfy[side-1];
+	int otherSide;
 	
 	// 1. Has field [1] (may have [0], [2], and [3] as well)
     //      Only can use [1] f it matches crackNumber
@@ -1092,7 +1093,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 				// maybe switch [1] to [3] (but only if [3] is present)
 				if(CrackVelocityField::ActiveNonrigidField(cvf[3]))
 				{	// if line crosses second crack in [3], switch to [3]
-					int otherCrack=cvf[3]->OppositeCrackTo(crackNumber,side);
+					int otherCrack=cvf[3]->OppositeCrackTo(crackNumber,side,&otherSide);
 					if(otherCrack>0)
 					{	if(SurfaceCrossesOneCrack(x1,y1,x,y,otherCrack)!=NO_CRACK)
 							vfld=3;
@@ -1126,7 +1127,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 				// maybe switch [2] to [3]
 				if(CrackVelocityField::ActiveNonrigidField(cvf[3]))
 				{	// if line crosses second crack in [3], switch to [3]
-					int otherCrack=cvf[3]->OppositeCrackTo(crackNumber,side);
+					int otherCrack=cvf[3]->OppositeCrackTo(crackNumber,side,&otherSide);
 					if(otherCrack>0)
 					{	if(SurfaceCrossesOneCrack(x1,y1,x,y,otherCrack)!=NO_CRACK)
 							vfld=3;
@@ -1155,7 +1156,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	// if not found in [1] or [2], look in [3]
 	if(vfld<0 && CrackVelocityField::ActiveNonrigidField(cvf[3]))
 	{	// verify has correct field and retreive other crack
-		int otherCrack=cvf[3]->OppositeCrackTo(crackNumber,side);
+		int otherCrack=cvf[3]->OppositeCrackTo(crackNumber,side,&otherSide);
 		if(otherCrack>0)
 		{	// if crack found, then can use [3] if crosses the other crack in [3]
 			if(SurfaceCrossesOneCrack(x1,y1,x,y,otherCrack)!=NO_CRACK)
@@ -1163,7 +1164,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 		}
 		else
 		{	// when not found, try to see if cross path other crack than [1] or [2]
-			otherCrack=cvf[3]->OppositeCrackTo(crackNumber,ABOVE_CRACK+BELOW_CRACK-side);
+			otherCrack=cvf[3]->OppositeCrackTo(crackNumber,ABOVE_CRACK+BELOW_CRACK-side,&otherSide);
 			if(otherCrack>0)
 			{	if(CrackVelocityField::ActiveNonrigidField(cvf[1]))
 				{	if(otherCrack==cvf[1]->crackNumber(FIRST_CRACK))

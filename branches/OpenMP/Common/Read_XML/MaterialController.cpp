@@ -24,6 +24,7 @@
 	#include "Materials/BistableIsotropic.hpp"
 	#include "Materials/RigidMaterial.hpp"
 	#include "Materials/CohesiveZone.hpp"
+	#include "Materials/PressureLaw.hpp"
     #include "Materials/CoupledSawTooth.hpp"
 	#include "Materials/LinearTraction.hpp"
 	#include "Materials/CubicTraction.hpp"
@@ -103,6 +104,9 @@ int MaterialController::AddMaterial(int matID,char *matName)
 			break;
 		case COHESIVEZONEMATERIAL:
 			newMaterial=new CohesiveZone(matName);
+			break;
+		case PRESSURELAWMATERIAL:
+			newMaterial=new PressureLaw(matName);
 			break;
 		case COUPLEDSAWTOOTHMATERIAL:
 			newMaterial=new CoupledSawTooth(matName);

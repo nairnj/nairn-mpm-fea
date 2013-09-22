@@ -26,7 +26,6 @@
 #include "Cracks/CrackLeaf.hpp"
 #endif
 
-
 // Include to find axisymmetric Jr using Broberg method
 // Comment out to use Bergkvist and Huang method
 // The Broberg one appears to be much better
@@ -1515,6 +1514,25 @@ void CrackHeader::CrackTipHeating(void)
 	}
 }
 
+/* see if node is within tolerance (cell dimensions) of the crack tip
+	needs regular grid, otherwise returns FALSE
+*/
+bool CrackHeader::NodeNearTip(NodalPoint *ndi,double tol)
+{
+	if(!mpmgrid.IsStructuredGrid()) return FALSE;
+    CrackSegment *scrk=firstSeg;
+	double dx = (ndi->x-scrk->x)/mpmgrid.gridx;
+	double dy = (ndi->y-scrk->y)/mpmgrid.gridy;
+	double dist = sqrt(dx*dx+dy*dy);
+	if(dist<tol) return TRUE;
+    scrk=lastSeg;
+	dx = (ndi->x-scrk->x)/mpmgrid.gridx;
+	dy = (ndi->y-scrk->y)/mpmgrid.gridy;
+	dist = sqrt(dx*dx+dy*dy);
+	if(dist<tol) return TRUE;
+	return FALSE;
+}
+
 #pragma mark GLOBAL EXTENT CRACKS
 
 // Determine if line from particle (1) to node (2) crosses this crack
@@ -1729,7 +1747,7 @@ void CrackHeader::CheckExtents(double cx,double cy)
 // This method uses hierarchical crack in a binary tree
 short CrackHeader::CrackCross(double x1,double y1,double x2,double y2,Vector *norm)
 {
-    // recursive method to travese tree hierarchy
+    // recursive method to traverse tree hierarchy
     return CrackCrossLeaf(rootLeaf,x1,y1,x2,y2,norm,NO_CRACK);
 }
 

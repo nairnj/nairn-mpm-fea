@@ -280,13 +280,20 @@ bool CrackVelocityField::crackAndLocation(int which,int cnum,int side)
 }
 
 // if has crack matching supplied number and side, return the other crack, else return -1
-int CrackVelocityField::OppositeCrackTo(int cnum,int side)
+int CrackVelocityField::OppositeCrackTo(int cnum,int side,int *otherSide)
 {	if(crackNum[FIRST_CRACK]==cnum)
-		return (side==loc[FIRST_CRACK]) ? crackNum[SECOND_CRACK] : -1 ;
+	{	if(side==loc[FIRST_CRACK])
+		{	*otherSide = loc[SECOND_CRACK];
+			return crackNum[SECOND_CRACK];
+		}
+	}
 	else if(crackNum[SECOND_CRACK]==cnum)
-		return (side==loc[SECOND_CRACK]) ? crackNum[FIRST_CRACK] : -1 ;
-	else
-		return -1;
+	{	if(side==loc[SECOND_CRACK])
+		{	*otherSide = loc[FIRST_CRACK];
+			return crackNum[FIRST_CRACK];
+		}
+	}
+	return -1;
 }
 		
 // set both at once

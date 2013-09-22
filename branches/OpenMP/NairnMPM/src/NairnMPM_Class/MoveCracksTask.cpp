@@ -36,8 +36,8 @@ MoveCracksTask::MoveCracksTask(const char *name) : MPMTask(name)
 
 #pragma mark REQUIRED METHODS
 
-// Run all custom tasks
-// throws CommonException() in crack surface or position has left the grid
+// Run this task to move cracks and update tactions
+// throws CommonException() if crack surface or position has left the grid
 void MoveCracksTask::Execute(void)
 {
 	// move crack surface in their local velocity fields

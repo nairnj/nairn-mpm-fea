@@ -96,7 +96,7 @@ class CrackVelocityField
 		short location(int);
 		int crackNumber(int);
 		bool crackAndLocation(int,int,int);
-		int OppositeCrackTo(int,int);
+		int OppositeCrackTo(int,int,int *);
 		void SetLocationAndCrack(short,int,int);
 		MatVelocityField **GetMaterialVelocityFields(void);
 		virtual double GetTotalMass(void) const = 0;

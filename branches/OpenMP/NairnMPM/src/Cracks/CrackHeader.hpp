@@ -31,6 +31,7 @@
 class CrackSegment;
 class ContourPoint;
 class CrackLeaf;
+class NodalPoint;
 
 #define START_OF_CRACK 0
 #define END_OF_CRACK 1
@@ -86,6 +87,7 @@ class CrackHeader : public LinkedObject
 		void SetContact(double,double,double,double);
 		void Output(void);
 		void Describe(void);
+		bool NodeNearTip(NodalPoint *,double);
 
 #ifdef HIERARCHICAL_CRACKS
         void CreateHierarchy(void);
