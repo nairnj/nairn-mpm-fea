@@ -16,6 +16,7 @@
 #include "Materials/MaterialBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
 
 
 #pragma mark INITIALIZATION
@@ -313,7 +314,8 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 	}
 	
 	// loop over each material
-	bool hasInterfaceEnergy = FALSE;
+    Vector Ftdt;
+	bool hasInterfaceEnergy = FALSE, hasFriction;
 	bool postUpdate = callType != MASS_MOMENTUM_CALL;
 	for(i=0;i<maxMaterialFields;i++)
     {	if(!MatVelocityField::ActiveField(mvf[i])) continue;
@@ -540,7 +542,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 				break;
 				
 			case FRICTIONAL:
-                GetFrictionalDeltaMomentum(&delPi,&norm,dotn,maxFriction);
+                GetFrictionalDeltaMomentum(&delPi,&norm,dotn,maxFriction,&Ftdt,&hasFriction);
 				break;
             
             case IMPERFECT_INTERFACE:
@@ -646,6 +648,8 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 		CopyScaleVector(&rvel, &mvf[rigidFld]->pk, 1./actualRigidVolume);
 	
 	// loop over each material (skipping the one rigid material)
+    Vector Ftdt;
+    bool hasFriction;
 	int i;
 	bool postUpdate = callType != MASS_MOMENTUM_CALL;
 	for(i=0;i<maxMaterialFields;i++)
@@ -849,7 +853,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 				break;
 				
 			case FRICTIONAL:
-                GetFrictionalDeltaMomentum(&delPi,&norm,dotn,maxFriction);
+                GetFrictionalDeltaMomentum(&delPi,&norm,dotn,maxFriction,&Ftdt,&hasFriction);
 				break;
 				
                 
@@ -907,42 +911,35 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 		mvf[i]->ChangeMatMomentum(&delPi,postUpdate,deltime);
 		
 		// store contact force in rigid particle ftot
-		// There are three times this is called in an MPM Step
-		//  0. (default) After updating momenta on the nodes
-		//  1. After mass and momentum task extrapolation to the grid
-		//  2. After second momentum extrpolation to the grid (USAVG and USL only)
-		//  other. After every contact calculation
-		// By developer flag can get various types of contact forces, otherwise gets the total
-		switch(fmobj->dflag[2])
-		{	case 0:
-				// Default - after update momentum only
-				if(callType==UPDATE_MOMENTUM_CALL) mvf[rigidFld]->AddContactForce(&delPi);
-				break;
-			case 1:
-				// after mass and moment only
-				if(callType==MASS_MOMENTUM_CALL) mvf[rigidFld]->AddContactForce(&delPi);
-				break;
-			case 2:
-				// after second momentum extrapolation only
-				if(callType==UPDATE_STRAINS_LAST_CALL) mvf[rigidFld]->AddContactForce(&delPi);
-				break;
-			default:
-				// after every call
-				mvf[rigidFld]->AddContactForce(&delPi);
-				break;
-		}
+		// There are three times this is called in an MPM Step, but to get correct force,
+        //    this calculation must only be done during momentum update
+        if(callType==UPDATE_MOMENTUM_CALL)
+        {   mvf[rigidFld]->AddContactForce(&delPi);
+            
+            // if conduction on add frictional heating
+            if(hasFriction && conduction)
+            {   // find |(vr-vi).Ftdt| *1e-6/deltime
+                CopyScaleVector(&delPi,&mvf[i]->pk,-1/massi);   // -vr
+                AddVector(&delPi,&rvel);                        // +vr
+                double qrate = DotVectors(&Ftdt,&delPi);        // (vr-vi).Ftdt
+                //ndptr->fcond += fabs(1.e-6*qrate/deltime);      // scale and absolute value
+            }
+        }
 	}
 }
 
 // Adjust change in momentum for frictional contact in tangential direction
 // If has component of tangential motion, calculate force depending on whether it is sticking or sliding
-void CrackVelocityFieldMulti::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,double dotn,double frictionCoeff)
+// When frictional sliding, find tangential force (times dt) and set flag, if not set flag false
+void CrackVelocityFieldMulti::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,double dotn,double frictionCoeff,
+                                                            Vector *Ftdt,bool *hasFriction)
 {
     // get tangential vector and its magnitude
     Vector tang;
     CopyVector(&tang,delPi);
     AddScaledVector(&tang,norm,-dotn);
     double tangMag = sqrt(DotVectors(&tang,&tang));
+    *hasFriction = FALSE;
     
     // if has tangential motion, see if sticking or sliding
     if(!DbleEqual(tangMag,0.))
@@ -960,6 +957,11 @@ void CrackVelocityFieldMulti::GetFrictionalDeltaMomentum(Vector *delPi,Vector *n
         if(dott > -frictionCoeff*dotn)
         {	AddScaledVector(norm,&tang,-frictionCoeff);
             CopyScaleVector(delPi,norm,dotn);
+            
+            // get frictional part - this is g mm^2/sec^2 = nJ
+            // As heat source need mJ/sec of multiply by 1e-6/timestep
+            CopyScaleVector(Ftdt,&tang,-frictionCoeff*dotn);
+            *hasFriction = TRUE;
         }
     }
 }
