@@ -17,7 +17,6 @@ Cammand Development
 
 FEA Not Done
 	BMPRegion É EndRegion - code and document
-	Some kind of FEA DTD file documentation with links
 
 MPM Tasks
 	TensionTest - particle BCs (intersperse XMLData option needed)
@@ -28,12 +27,14 @@ MPM Tasks
 		GrowCrackArc
 		settings commands
 	Remaining unimplemented material properties
+	BMPRegion
+	3D Regions
 	
 Language
 	Repeat loops
 	Subroutines
 	Array variables
-	Allow conditions in material propertties
+	See in NairnFEAMPM can allow same commands and assignments in materials
 
 Entity
 	Look for other commands to support (both codes)

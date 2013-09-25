@@ -315,7 +315,15 @@ public class CmdViewer extends JNCmdTextDocument
 	{	
 		if(mats.isInMaterial())
 		{	// commands go to material class when material (keep this option first)
-			mats.doMaterialProperty(theCmd,args,this);
+			
+			// but first see if language control command
+			// (which means cannot match any material property)
+			try
+			{	super.doCommand(theCmd, args);
+			}
+			catch(Exception e)
+			{	mats.doMaterialProperty(theCmd,args,this);
+			}
 		}
 			
 		else if(theCmd.equals("title"))
