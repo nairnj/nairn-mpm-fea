@@ -30,6 +30,11 @@
 // Comment out to use Bergkvist and Huang method
 // The Broberg one appears to be much better
 #define BROBERG_AS_METHOD_FOR_JR
+
+// Include to store J using 1 temp in J2. Calculation should use
+// two terms to get that results in J1
+//#define RECORD_ONE_AND_TWO_TERM_RESULTS
+
 //#define JZ_PLANAR
 
 using namespace std; 
@@ -1415,7 +1420,9 @@ void CrackHeader::JIntegral(void)
 			*/
 			tipCrk->Jint.x = Jx*crackDir.x + Jy*crackDir.y - tractionEnergy;		// Jtip or energy that will be released if crack grows
 			tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;                         // J2(x) - for growth normal to crack plane
-			//tipCrk->Jint.y = Jx1*crackDir.x + Jy1*crackDir.y;						// J by one term (temporary)
+#ifdef RECORD_ONE_AND_TWO_TERM_RESULTS
+			tipCrk->Jint.y = Jx1*crackDir.x + Jy1*crackDir.y;						// J by one term (temporary)
+#endif
 			tipCrk->Jint.z = tipCrk->Jint.x + bridgingReleased;						// Jrel or energy released in current state
 			
 			// end of try block on J calculation

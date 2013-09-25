@@ -1,0 +1,146 @@
+! ********** Introduction **********
+
+! ********** Preamble Section **********
+Title "Penny Shaped Crack"
+Name "John Nairn"
+
+! Header
+Header
+   Test J integral for axisymmetric calculation
+   of a penny shaped crack
+EndHeader
+
+Analysis "Axisymmetric MPM"
+MPMMethod USAVG,GIMP
+Processors 2
+
+! ********** Parameters Section **********
+#maxTime=.1		! time at max load
+#loadtime=1		! to to get to max load as fraction of #maxTime
+
+#ncells=5		! number of cells in 1 mm
+
+#radius=2               ! radius of cylinder in mm (mult of cell)
+#height=5               ! semi height in mm (mult of cell)
+#border=2		! cells around the edges
+
+#crack=1		! correction factors below only work for #crack/#radius=0.5
+
+#stress=100		! Applied stress
+#rBC$="ZeroStress"		! ZeroStress or anything else for ZeroDisp on outer radial surface
+#crackBC$="pressure"		! or "pressure" loaded crack
+
+JContour 2,2
+#shift=.5		! crack shift in cells from mid grid line
+#tipshift=.1		! shift of crack tip from node in cells
+
+#Em=2500
+#vm=0.33
+#matname$="polymer"
+#fbDamping=0		! 100000 time 0 or 2500000 time .5
+
+! ********** Make the settings **********
+#cell=1/#ncells         ! cell size (square cells)
+
+Archive "Results/Penny"
+ArchiveTime #maxTime*(1+#loadtime)/40
+MaximumTime #maxTime*(1+#loadtime)
+
+ToArchive JIntegral,StressIntensity,velocity,stress,strain,rotstrain,strainenergy
+
+! global archive and damping
+GlobalArchive "sZZ"
+GlobalArchiveTime #maxTime*(1+#loadtime)/200
+GlobalArchive "Grid Kinetic Energy"
+
+if #fbDamping>0
+  GlobalArchive "alpha"
+  FeedbackDamping #fbDamping
+endif
+
+! comment on theoretical results
+#GI=4000*(1-#vm*#vm)*#crack*#stress*#stress/(3.14159286*#Em)
+if #rBC$="zeroStress"
+  #corr=1.072^2
+  #feacor=1.16071
+else
+  #corr=1.048^2
+  #feacor=1.09829
+endif
+Comment "Sneedon and Tait GI,inf = "&#GI
+#GIcor=#GI*#corr
+Comment "Sneedon and Tait GI,cor = "&#GIcor
+#GIcor=#GI*#feacor
+Comment "FEA GI = "&#GIcor
+
+! ********** Materials Section **********
+
+Material "polymer","Polymer","Isotropic"
+  E #Em
+  nu #vm
+  a 60
+  rho 1.2
+Done
+
+! ********** Grid and Material Points Section **********
+
+GridHoriz int((#radius+#border*#cell)/#cell+.1)
+GridVert int((2*#height+2*#border*#cell)/#cell+.1)
+GridRect 0,#radius+#border*#cell,-#height-#border*#cell,#height+#border*#cell
+
+Region #matname$,0,0,1
+  Rect 0,#radius,-#height,#height
+EndRegion
+
+! ********** Optional Calculations Section **********
+if #loadtime>0
+  #ltime=#loadtime*#maxTime
+  #stime=-#stress/#ltime
+  #fxn$=#stime&"*(t+sign(t-"&#ltime&")*("&#ltime&"-t))"
+endif
+
+! apply pressure traction law to crack or stress free crack
+if #crackBC$="pressure"
+  Material "pressure","Contact Pressure","pressuretraction"
+    if #loadtime>0
+      function #fxn$
+    else
+      stress -#stress
+    endif
+  Done
+  
+  NewCrack #crack-#tipshift*#cell,#shift*#cell,#matname$
+  GrowCrackLine #cell/4,#shift*#cell,int(2/#cell+1),"exterior","pressure"
+else
+  NewCrack #crack-#tipshift*#cell,#shift*#cell,#matname$
+  GrowCrackLine #cell/4,#shift*#cell,int(2/#cell+1),"exterior"
+endif
+
+! ********** Boundary Condition Section **********
+
+if #crackBC$!="pressure"
+  if #loadtime>0
+    #time=#loadtime*#maxTime
+    LoadLine 0,#height,#radius,#height,#cell/2
+      Traction "y",3,"linear",#stress/#time
+      Traction "y",3,"linear",-#stress/#time,#time
+    EndLoadLine
+    LoadLine 0,-#height,#radius,-#height,#cell/2
+      Traction "y",1,"linear",-#stress/#time
+      Traction "y",3,"linear",#stress/#time,#time
+    EndLoadLine
+  else
+    LoadLine 0,#height,#radius,#height,#cell/2
+      Traction "y",3,"constant",#stress
+    EndLoadLine
+    LoadLine 0,-#height,#radius,-#height,#cell/2
+      Traction "y",1,"constant",-#stress
+    EndLoadLine
+  endif
+endif
+
+if #rBC$!="ZeroStress"
+  MoveLine #radius,-#height,#radius,#height
+    Velocity x,"constant"
+  EndMoveLine
+endif
