@@ -48,6 +48,7 @@ public class CmdViewer extends JNCmdTextDocument
 	public MPMGrid gridinfo = null;
 	private FEABCs feaBCs = null;
 	private MPMGridBCs mpmGridBCs = null;
+	private Cracks cracks = null;
 	private StringBuffer outFlags;
 	private int mpmMethod;
 	private String shapeMethod;
@@ -125,6 +126,7 @@ public class CmdViewer extends JNCmdTextDocument
 		feaBCs = new FEABCs(this);
 		gridinfo = new MPMGrid(this);
 		mpmGridBCs = new MPMGridBCs(this);
+		cracks = new Cracks(this);
 	}
 	
 	// make menu bar on launch
@@ -280,6 +282,7 @@ public class CmdViewer extends JNCmdTextDocument
 		feaBCs.initRunSettings();
 		gridinfo.initRunSettings();
 		mpmGridBCs.initRunSettings();
+		cracks.initRunSettings();
 		mpmMeshToFile = true;
 		outFlags = null;
 		mpmOrder = null;
@@ -571,6 +574,18 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		else if(theCmd.equals("imperfectinterfacemm"))
 			doImperfectInterface(args,1);
+
+		else if(theCmd.equals("jcontour"))
+			cracks.doJContour(args);
+		
+		else if(theCmd.equals("newcrack"))
+			cracks.StartCrack(args);
+
+		else if(theCmd.equals("growcrack"))
+			cracks.GrowCrack(args,0);
+
+		else if(theCmd.equals("growcrackline"))
+			cracks.GrowCrack(args,1);
 
 		else if(theCmd.equals("stop"))
 		{	super.doCommand(theCmd,args);
@@ -917,7 +932,7 @@ public class CmdViewer extends JNCmdTextDocument
 		lnameEl = readIntOption(args.get(1),options,"Element type");
 		
 		if(!ElementBase.CompatibleElements(lnameEl,oldnameEl,np))
-		{	throw new Exception("Element type ("+args.get(1)+") not allowed or incompatible with other elements.");
+		{	throw new Exception("Element type ("+args.get(1)+") not allowed or\nincompatible with other elements.");
 		}
 		
 		// pass to FEA areas
@@ -977,7 +992,7 @@ public class CmdViewer extends JNCmdTextDocument
 	public void doEntity(ArrayList<String> args) throws Exception
 	{	// read entity and value
 		if(args.size()<3)
-			throw new Exception("'Entity' command has too few arguments: "+args);
+			throw new Exception("'Entity' command has too few arguments:\n"+args);
 		String ent = readStringArg(args.get(1));
 		String val = readStringArg(args.get(2));
 		entities.put(ent, val);
@@ -995,7 +1010,7 @@ public class CmdViewer extends JNCmdTextDocument
 	    
 	    // read quantity and option material
 		if(args.size()<3)
-			throw new Exception("'Output' command has too few arguments: "+args);
+			throw new Exception("'Output' command has too few arguments:\n"+args);
 		
 		String quant = readStringArg(args.get(1)).toLowerCase();
 		String option = readStringArg(args.get(2)).toLowerCase();
@@ -1010,7 +1025,7 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(option.equals("yes"))
 			option="Y";
 		else
-			throw new Exception("'Output' option must be 'yes', 'no', or 'selected': "+args);
+			throw new Exception("'Output' option must be 'yes', 'no', or 'selected':\n"+args);
 		
 		int offset;
 		if(quant.equals("displacements"))
@@ -1364,6 +1379,10 @@ public class CmdViewer extends JNCmdTextDocument
 			if(fbDamping!=null) xml.append(fbDamping);
 			if(leaveLimit!=null) xml.append(leaveLimit);
 			
+			// cracks
+			more = cracks.getSettings();
+			if(more != null) xml.append(more);
+			
 			// Multimaterial mode <MultiMaterialMode Vmin='0.0' Dcheck='0' Normals='0' RigidBias='100'>
 			// Subordinate friction and contact position
 			if(MMNormals>=0)
@@ -1405,6 +1424,10 @@ public class CmdViewer extends JNCmdTextDocument
 			//-----------------------------------------------------------
 			xml.append("  <MaterialPoints>\n"+regions.toXMLString());
 			xml.append("  </MaterialPoints>\n\n");
+			
+			// MPM Cracks
+			more = cracks.getCrackList();
+			if(more!=null) xml.append(more);
 		}
 		
 		// Materials

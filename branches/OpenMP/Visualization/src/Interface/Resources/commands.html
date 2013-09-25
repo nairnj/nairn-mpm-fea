@@ -419,13 +419,26 @@ propagation in MPM calculations are:</p>
 <li>CrackInterface: Sets custom interface parameters for a specific crack.</li>
 <li>CrackThickness: Sets crack thickness; only used or needed when crack have traction laws or crack tips release their energy into heat.</li>
 <li>Friction: Set crack contact conditions.</li>
-<li>GrowCrack: Used to extend the current crack to a new point.</li>
+<li><code>GrowCrack #1,#2,&lt;#3&gt;,&lt;#4&gt;</code><br>
+Extend current crack to (#1,#2) in one segment. #3 can be crack tip material,
+&quot;exterior&quot; (for crack
+that extends beyond object), or invalid ID (no material). #4 is traction law material.</li>
 <li>GrowCrackArc: Used to add a curved arc to the current crack.</li>
-<li>GrowCrackLine: Used to add a straight line to the current crack.</li>
-<li>JContour: Used to set some options for the J Integral calculation.</li>
+<li><code>GrowCrackLine #1,#2,#3,&lt;#4&gt;,&lt;#5&gt;</code><br>
+Extend current crack to (#1,#2) along a line with #3 segments. #4 can be crack tip material,
+&quot;exterior&quot; (for crack
+that extends beyond object), or invalid ID (no material). #5 is traction law material.</li>
+<li>GrowCrackArc: Used to add a curved arc to the current crack.</li>
+<li><code>JContour #1,&lt;#2&gt;</code><br>
+Used to set size of J integral contoour (#1 in cells) and whether J integral uses one
+or two terms (#2 = 1 or 2).</li>
 <li>ImperfectInterface: Converts cracks to imperfect interface and sets the interfacial properties.</li>
 <li>MovePlane: Used to set how crack plane particles move.</li>
-<li>NewCrack: Used to start a new explicit crack.</li>
+<li><code>NewCrack #1,#2,&lt;#3&gt;,&lt;#4&gt;,&lt;#5&gt;</code><br>
+Start new crack at (#1,#2). #3 can be crack tip material, &quot;fixed&quot; (to be fixed crack),
+&quot;exterior&quot; (for crack
+that extends beyond object), or &quot;free&quot; (no material). #4 can be friction setting or
+&quot;traction&quot;. If #4 is &quot;traction&quot;, #5 is traction law material.</li>
 <li>Propagate: Set rule for crack propagation and optional propagation direction.</li>
 <li>PropagateLength: Determines the amount of crack growth each time the crack propagates.</li>
 <li><code>ToArchive #1,&lt;#2&gt;,...</code><br>

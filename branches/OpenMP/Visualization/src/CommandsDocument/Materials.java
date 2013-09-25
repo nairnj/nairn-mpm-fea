@@ -80,6 +80,7 @@ public class Materials
 		options.put("idealgas", new Integer(22));
 		options.put("coupledsawtooth", new Integer(23));
 		options.put("heisotropic", new Integer(24));
+		options.put("pressuretraction", new Integer(26));
 		int matInt = doc.readIntOption(args.get(3),options,null);
 		if(matInt<0)
 			throw new Exception("'Material' type not yet supported in scripting commands.\nUse XML method instead: "+args);
@@ -271,6 +272,10 @@ public class Materials
 		}
 		else if(prop.toLowerCase().equals("valuefunction"))
 		{	xmldata.append("    <ValueFunction>"+doc.readStringArg(args.get(1))+"</ValueFunction>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("function"))
+		{	xmldata.append("    <function>"+doc.readStringArg(args.get(1))+"</function>\n");
 			return;
 		}
 		

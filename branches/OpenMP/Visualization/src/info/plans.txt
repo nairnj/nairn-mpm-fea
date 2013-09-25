@@ -24,12 +24,16 @@ MPM Tasks
 	MPM grid BCs
 		MoveArc, Temperature, Concentration (links in Docs)
 	MPM Cracks
+		GrowCrackLine handle friction option
+		GrowCrackArc
+		settings commands
 	Remaining unimplemented material properties
 	
-Languuage
+Language
 	Repeat loops
 	Subroutines
 	Array variables
+	Allow conditions in material propertties
 
 Entity
 	Look for other commands to support (both codes)
