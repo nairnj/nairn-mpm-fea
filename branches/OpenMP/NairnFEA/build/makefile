@@ -8,6 +8,7 @@
 #       carbon - OSU carbon/hedera cluster (the default)
 #		mpm - OSU machine
 #       cygwin - Standard cygwin install in Windows
+#       cygwinbin - Standard cygwin install using cygwin binary xerces
 #       inferno - C-SAFE cluster at U of Utah
 #       zia - A Debian linux machine
 # Other options are
@@ -46,6 +47,9 @@ endif
 ifeq ($(SYSTEM),cygwin)
 	xercesSo = -L/usr/local/lib -lxerces-c
 endif
+ifeq ($(SYSTEM),cygwinbin)
+	xercesSo = -L/lib -lxerces-c
+endif
 ifeq ($(SYSTEM),inferno)
 	xercesSo = /usr/sci/projects/SCIRun/Thirdparty/1.22/Linux/gcc-3.2-32bit/lib/libxerces-c.so
 endif
@@ -60,6 +64,9 @@ ifeq ($(SYSTEM),carbon)
 endif
 ifeq ($(SYSTEM),mpm)
 	headersPath = /usr/include
+endif
+ifeq ($(SYSTEM),cygwinbin)
+	headersPath= /usr/include
 endif
 ifeq ($(SYSTEM),inferno)
 	headersPath = /usr/sci/projects/SCIRun/Thirdparty/1.22/Linux/gcc-3.2-32bit/include
