@@ -42,7 +42,7 @@ CrackSurfaceContact::CrackSurfaceContact()
 	materialDnc=-101.;					// <-100 means not set and should be set same as Dn
 	materialDt=-1.;						// perfect in shear by default
 	materialContactVmin=0.0;			// cutoff to kick in other contact checks
-	displacementCheck=FALSE;			// if implementing check on displacement or position (last thing)
+	displacementCheck=TRUE;			// if implementing check on displacement or position (last thing)
 	materialNormalMethod=AVERAGE_MAT_VOLUME_GRADIENTS;		// method to find normals in multimaterial contact
 	rigidGradientBias=1.;				// Use rigid gradient unless material volume gradient is this much higher (only normal method 2)
 }
