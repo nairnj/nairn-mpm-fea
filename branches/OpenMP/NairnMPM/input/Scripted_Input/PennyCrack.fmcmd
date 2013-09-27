@@ -12,13 +12,14 @@ EndHeader
 
 Analysis "Axisymmetric MPM"
 MPMMethod USAVG,GIMP
-Processors 2
+Processors 4
 
 ! ********** Parameters Section **********
 #maxTime=.1		! time at max load
 #loadtime=1		! to to get to max load as fraction of #maxTime
 
 #ncells=5		! number of cells in 1 mm
+#cell=1/#ncells         ! cell size (square cells)
 
 #radius=2               ! radius of cylinder in mm (mult of cell)
 #height=5               ! semi height in mm (mult of cell)
@@ -26,21 +27,20 @@ Processors 2
 
 #crack=1		! correction factors below only work for #crack/#radius=0.5
 
-#stress=100		! Applied stress
+#stress=1		! Applied stress
 #rBC$="ZeroStress"		! ZeroStress or anything else for ZeroDisp on outer radial surface
-#crackBC$="pressure"		! or "pressure" loaded crack
+#crackBC$="none"		! or "pressure" loaded crack
 
 JContour 2,2
-#shift=.5		! crack shift in cells from mid grid line
-#tipshift=.1		! shift of crack tip from node in cells
+#shift=#cell/100		! crack shift in cells from mid grid line
+#tipshift=#cell/10		! shift of crack tip from node in cells
 
 #Em=2500
 #vm=0.33
 #matname$="polymer"
-#fbDamping=0		! 100000 time 0 or 2500000 time .5
+#fbDamping=0		! 100000 when #loadtime=0
 
 ! ********** Make the settings **********
-#cell=1/#ncells         ! cell size (square cells)
 
 Archive "Results/Penny"
 ArchiveTime #maxTime*(1+#loadtime)/40
@@ -109,11 +109,11 @@ if #crackBC$="pressure"
     endif
   Done
   
-  NewCrack #crack-#tipshift*#cell,#shift*#cell,#matname$
-  GrowCrackLine #cell/4,#shift*#cell,int(2/#cell+1),"exterior","pressure"
+  NewCrack #crack-#tipshift,#shift,#matname$
+  GrowCrackLine #cell/4,#shift*#cell,int(2*#crack/#cell+1),"exterior","pressure"
 else
-  NewCrack #crack-#tipshift*#cell,#shift*#cell,#matname$
-  GrowCrackLine #cell/4,#shift*#cell,int(2/#cell+1),"exterior"
+  NewCrack #crack-#tipshift,#shift,#matname$
+  GrowCrackLine #cell/4,#shift,int(2*#crack/#cell+1),"exterior"
 endif
 
 ! ********** Boundary Condition Section **********
