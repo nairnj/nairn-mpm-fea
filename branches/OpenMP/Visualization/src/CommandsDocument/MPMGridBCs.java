@@ -151,7 +151,7 @@ public class MPMGridBCs
 	// Velocity (skewed),type,arg1,arg2,angle1,<angle2>
 	public void AddVelocity(ArrayList<String> args) throws Exception
 	{
-		// FEA only
+		// MPM only
 		doc.requiresMPM(args);
 		
 		if(inBC == 0)

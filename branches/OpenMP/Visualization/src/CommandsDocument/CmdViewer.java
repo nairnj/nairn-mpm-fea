@@ -48,6 +48,7 @@ public class CmdViewer extends JNCmdTextDocument
 	public MPMGrid gridinfo = null;
 	private FEABCs feaBCs = null;
 	private MPMGridBCs mpmGridBCs = null;
+	private MPMParticleBCs mpmParticleBCs = null;
 	private Cracks cracks = null;
 	private StringBuffer outFlags;
 	private int mpmMethod;
@@ -126,6 +127,7 @@ public class CmdViewer extends JNCmdTextDocument
 		feaBCs = new FEABCs(this);
 		gridinfo = new MPMGrid(this);
 		mpmGridBCs = new MPMGridBCs(this);
+		mpmParticleBCs = new MPMParticleBCs(this);
 		cracks = new Cracks(this);
 	}
 	
@@ -282,6 +284,7 @@ public class CmdViewer extends JNCmdTextDocument
 		feaBCs.initRunSettings();
 		gridinfo.initRunSettings();
 		mpmGridBCs.initRunSettings();
+		mpmParticleBCs.initRunSettings();
 		cracks.initRunSettings();
 		mpmMeshToFile = true;
 		outFlags = null;
@@ -449,7 +452,11 @@ public class CmdViewer extends JNCmdTextDocument
 			feaBCs.AddDisplacement(args);
 		
 		else if(theCmd.equals("load"))
-			feaBCs.AddLoad(args);
+		{	if(isFEA())
+				feaBCs.AddLoad(args);
+			else
+				mpmParticleBCs.AddCondition(args, MPMParticleBCs.ADD_LOAD);
+		}
 		
 		else if(theCmd.equals("rotate"))
 			feaBCs.AddRotate(args);
@@ -499,6 +506,21 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("temperature"))
 			mpmGridBCs.AddTemperature(args);
 
+		else if(theCmd.equals("loadline"))
+			mpmParticleBCs.StartLoadLine(args);
+		
+		else if(theCmd.equals("endloadline"))
+			mpmParticleBCs.EndLoadBlock(args,MPMParticleBCs.LOADLINE_BC);
+		
+		else if(theCmd.equals("traction"))
+			mpmParticleBCs.AddCondition(args,MPMParticleBCs.ADD_TRACTION);
+		
+		else if(theCmd.equals("heatflux"))
+			mpmParticleBCs.AddCondition(args,MPMParticleBCs.ADD_HEATFLUX);
+		
+		else if(theCmd.equals("concentrationflux"))
+			mpmParticleBCs.AddCondition(args,MPMParticleBCs.ADD_CONCENTRATIONFLUX);
+		
 		else if(theCmd.equals("origin"))
 			areas.setOrigin(args);
 		
@@ -1455,17 +1477,14 @@ public class CmdViewer extends JNCmdTextDocument
 		// ParticleBCs
 		//-----------------------------------------------------------
 		if(isMPM())
-		{	more = xmldata.get("ParticleBCs");
+		{	xml.append("  <ParticleBCs>\n"+mpmParticleBCs.toXMLString());
 		
-			if(more!=null)
-			{	xml.append("  <ParticleBCs>\n");
-	
-				// check added xml
-				if(more != null) xml.append(more);
-
-				// done
-				xml.append("  </ParticleBCs>\n\n");
-			}
+			// xml data
+			more = xmldata.get("ParticleBCs");
+			if(more != null) xml.append(more);
+			
+			// done
+			xml.append("  </ParticleBCs>\n\n");
 		}
 	
 		// FEA: Thermal, MPM: Thermal, Gravity, CustomTasks

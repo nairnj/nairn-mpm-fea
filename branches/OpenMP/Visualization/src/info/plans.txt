@@ -21,14 +21,17 @@ FEA Not Done
 MPM Tasks
 	TensionTest - particle BCs (intersperse XMLData option needed)
 	MPM grid BCs
-		MoveArc, Temperature, Concentration (links in Docs)
+		MoveArc, Temperature, Concentration
 	MPM Cracks
 		GrowCrackLine handle friction option
 		GrowCrackArc
 		settings commands
+	MPMParticleBCs
+		LoadArc,LoadRect,LoadBox
 	Remaining unimplemented material properties
 	BMPRegion
 	3D Regions
+	Plot traction BCs
 	
 Language
 	Repeat loops

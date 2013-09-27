@@ -512,34 +512,58 @@ is with rigid materials (default 1).</li>
 
 <ul>
 <li>Conduction: Turn on thermal conductivity calculations and define heat source options.</li>
+
 <li><code>GlobalArchive</code><br>
 To archive average temperature or total thermal energy.</li>
-<li>Intensity: To set initial temperature of particles created using a <a name="#bmpregion">BMPRegion</a>.</li>
+
+<li><code>HeatFlux external,#1,#2,#3,&lt;#4&gt;</code><br>
+Apply heat flux to selected particles on face #1 with style #2 and
+arguments in #3 and #4.</li>
+
+<li>Intensity: To set initial temperature of particles created using
+a <a name="#bmpregion">BMPRegion</a>.</li>
+
 <li><code>Material #1,#2,#3</code><br>
-Use the <a href="#material">material</a> command to define material properties needed for conduction calculations (conductivity, heat capactiy, coefficient of thermal expansion, <i>etc.</i>).</li>
+Use the <a href="#material">material</a> command to define material
+properties needed for conduction calculations (conductivity, heat capactiy,
+coefficient of thermal expansion, <i>etc.</i>).</li>
+
 <li><code>StressFreeTemp #1</code><br>
 Set the stress free temperature to #1.</li>
+
 <li>Temperature: Apply temperature boundary conditions to selected nodes.
 </li>
-<li>ThermalRamp: Apply isothermal temperature difference over a specified time and optionally define the stress-free temperature.</li>
+
+<li>ThermalRamp: Apply isothermal temperature difference over a specified
+time and optionally define the stress-free temperature.</li>
+
 <li>RampStart: Set the start time for application of a thermal ramp.</li>
+
 <li><code>Region ... EndRegion</code><br>
 To set initial particle temperature when <a href="#regionmpm">creating material points</a>.</li>
+
 <li><code>ToArchive #1,&lt;#2&gt;,...</code><br>
-Specify results to be archived in MPM calculations. The list can be in multiple arguments and/or in multiple ToArchive commands. The archiving options related to thermal calculations are temperature and thermalenergy.</li>
+Specify results to be archived in MPM calculations. The list can be in multiple arguments
+and/or in multiple ToArchive commands. The archiving options related to thermal
+calculations are temperature and thermalenergy.</li>
 </ul>
 
 <h3>FEA Thermal Calculations</h3>
 
 <ul>
 <li><code>Material #1,#2,#3</code><br>
-Usse the <a href="#material">material</a> command methods to define material properties needed for thermal calculations (coefficient of thermal expansion).</li>
+Usse the <a href="#material">material</a> command methods to define material properties
+needed for thermal calculations (coefficient of thermal expansion).</li>
+
 <li><code>StressFreeTemp #1</code><br>
 Set the stress free temperature; the default is zero.</li>
+
 <li><code>Temperature #1</code><br>
-Apply temperature to all nodes. Enter a <a href="function">user defined function</a> of nodal position (x and y).
+Apply temperature to all nodes. Enter a <a href="function">user defined function</a>
+of nodal position (x and y).
 It is only the difference between temperature and stress free temperature that matters.
 </li>
+
 </ul>
 
 <h2><a name="conc"></a>Diffusion Calculations</h2>
@@ -549,19 +573,32 @@ It is only the difference between temperature and stress free temperature that m
 <ul>
 <li>Concentration: Apply concentration conditions to selected nodes.
 </li>
-<li>ConcentrationFlux: Apply concentration flux conditions to selected particles.
-</li>
+
+<li><code>ConcentrationFlux external,#1,#2,#3,&lt;#4&gt;</code><br>
+Apply concentratation flux to selected particles on face #1 with style #2 and
+arguments in #3 and #4.</li>
+
 <li>Diffusion: To turn on diffusion calculations.</li>
+
 <li><code>GlobalArchive</code><br>
 To archive total weight fracture concentration.</li>
+
 <li>Intensity: To set initial concentration of particles created using a
 <a name="#bmpregion">BMPRegion</a>.</li>
+
 <li><code>Material #1,#2,#3</code><br>
-Use the <a href="#material">material</a> command to define material properties needed for diffusion calculations (diffusion constant, saturation concentration, coefficient of concentration expansion, <i>etc.</i>).</li>
+Use the <a href="#material">material</a> command to define material properties needed
+for diffusion calculations (diffusion constant, saturation concentration, coefficient
+of concentration expansion, <i>etc.</i>).</li>
+
 <li><code>Region ... EndRegion</code><br>
 To set initial particle concentration when <a href="#regionmpm">creating material points</a>.</li>
+
 <li><code>ToArchive #1,&lt;#2&gt;,...</code><br>
-Specify results to be archived in MPM calculations. The list can be in multiple arguments and/or in multiple ToArchive commands. The archiving option related to diffusion calculations is concentration (which includes concentration gradients).</li>
+Specify results to be archived in MPM calculations. The list can be in multiple
+arguments and/or in multiple ToArchive commands. The archiving option related to
+diffusion calculations is concentration (which includes concentration gradients).</li>
+
 </ul>
 
 <h2><a name="bconds"></a>Applying Boundary Conditions</h2>
@@ -579,32 +616,42 @@ should be negative. If omitted it is set to 0 (which means ID is not set).</li>
 <li>Concentration: Apply concentration conditions to selected nodes.
 </li>
 
-<li>ConcentrationFlux: Apply concentration flux conditions to selected particles.
-</li>
+<li><code>ConcentrationFlux external,#1,#2,#3,&lt;#4&gt;</code><br>
+Apply concentratation flux to selected particles on face #1 with style #2 and
+arguments in #3 and #4.</li>
 
 <li>Gravity: Apply body forces to all particles for simulations within a constant graviational field.</li>
 
-<li>Load: Apply force to selected particles.</li>
+<li><code>HeatFlux external,#1,#2,#3,&lt;#4&gt;</code><br>
+Apply heat flux to selected particles on face #1 with style #2 and
+arguments in #3 and #4.</li>
+
+<li><code>Load #1,#2,#3,&lt;#4&gt;</code><br>
+Apply force to selected particles in direction #1 with style #2 and arguments in #3 and #4.</li>
 
 <li>LoadArc ... EndLoadArc: Apply force or concentration flux conditions to particles near an arc.</li>
 
 <li>LoadBox ... EndLoadBox: Apply force or concentration flux conditions to particles within a 3D box.</li>
 
-<li>LoadLine ... EndLoadLine: Apply force or concentration flux conditions to particles near a line.</li>
+<li><code>LoadLine #1,#2,#3,#4,&lt;#5&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+EndLoadLine</code><br>
+Apply force or flux conditions to particles near a line from (#1,#2) to (#3,#4) with tolerance
+#5.</li>
 
 <li>LoadRect ... EndLoadRect: Apply force or concentration flux conditions to particles within a rectangle.</li>
 
 <li>MoveArc ... EndMoveArc: Apply velocity, temperature, or concentration conditions to nodes along an arc.</li>
 
 <li><code>MoveBox #1,#2,#3,#4,#5,#6,&lt;#7;&gt;<br>
-    ...<br>
+&nbsp;&nbsp;&nbsp;&nbsp;...<br>
 EndMoveBox</code><br>
 Apply velocity, temperature, or concentration conditions to nodes within a 3D box with corners
 (#1,#2,#3) and (#4,#5,#6). If #7 is used it mut be x, y, or z (or 1, 2, or 3) and will convert
 box to cylinder with axis along the specified direction.</li>
 
 <li><code>MoveLine #1,#2,#3,#4,&lt;#5&gt;<br>
-    ...<br>
+&nbsp;&nbsp;&nbsp;&nbsp;...<br>
 EndMoveLine</code><br>
 Apply velocity, temperature, or concentration conditions to nodes along a line from (#1,#2) to
 (#3,#4) with optional tolerance #5.</li>
@@ -612,7 +659,9 @@ Apply velocity, temperature, or concentration conditions to nodes along a line f
 <li>Temperature: apply temperature conditions to selected nodes.
 </li>
 
-<li>Traction: Apply traction to surfaces of selected particles.</li>
+<li><code>Traction #1,#2,#3,#4,&lt;#5&gt;</code><br>
+Apply traction to selected particles in direction #1 on face #2 with style #3 and
+arguments in #4 and #5.</li>
 
 <li><code>Velocity #1,#2,&lt;#3&gt;,&lt;#4&gt;,&lt;#5&gt;,&lt;#6&gt;</code><br>
 Apply velocity conditions to currently selected nodes. #1 is direction (x, t, z, skewxy, skewxz,
