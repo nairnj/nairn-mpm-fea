@@ -16,7 +16,7 @@ Processors 4
 
 ! ********** Parameters Section **********
 #maxTime=.1		! time at max load
-#loadtime=1		! to to get to max load as fraction of #maxTime
+#loadtime=0		! to to get to max load as fraction of #maxTime
 
 #ncells=5		! number of cells in 1 mm
 #cell=1/#ncells         ! cell size (square cells)
