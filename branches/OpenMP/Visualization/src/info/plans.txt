@@ -15,32 +15,46 @@ NairnFEAMPMViz Plans
 Cammand Development
 -------------------------------------------------------------------
 
-FEA Not Done
-	BMPRegion É EndRegion - code and document
+Commands not done
+	BMPRegion - FEA and MPM
+		Intensity
+		Origin
+	Cylinder
+	Sphere
+	Cracks
+		Propagate
+		PropagateLength
+		AltPropagate
+		MovePlane
+		ContactPosition for cracks
+		ImperfectInterface
+		CrackInterface
+		CrackThickness
+		Friction
+		GrowCrackArc
+		GrowCrackLine handle friction option
+	LoadArc
+	LoadBox
+	LoadRect
+	CustomTask
+	Parameter
 
 MPM Tasks
-	TensionTest - particle BCs (intersperse XMLData option needed)
-	MPM grid BCs
-		MoveArc, Temperature, Concentration
-	MPM Cracks
-		GrowCrackLine handle friction option
-		GrowCrackArc
-		settings commands
-	MPMParticleBCs
-		LoadArc,LoadRect,LoadBox
 	Remaining unimplemented material properties
-	BMPRegion
-	3D Regions
 	Plot traction BCs
+	Silent BCs
+
+FEA Tasks
+	Crack Closure Calculations
 	
 Language
 	Repeat loops
 	Subroutines
 	Array variables
-	See in NairnFEAMPM can allow same commands and assignments in materials
+	See if NairnFEAMPM can allow same commands and assignments in materials
 
 Entity
-	Look for other commands to support (both codes)
+	Look for other commands to support its use (both codes)
 	
 -------------------------------------------------------------------
 Development Notes

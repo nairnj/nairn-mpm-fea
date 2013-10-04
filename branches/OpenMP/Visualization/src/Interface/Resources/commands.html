@@ -245,7 +245,12 @@ Select number of material points per element (#1) in MPM calculations. The defau
 <li><code>TimeStep #1,&lt;#2&gt;,&lt;#3&gt;</code><br>
 Set MPM time step parameters. #1 is the time step in ms (choose a high number to have the code pick time step based on material properties). Optional #2 is the maximum time to stop the calculations in ms (which can also be set in the <a href="#maximumtime">Maximum time command</a>). Optional #3 is the Courant-Levy safety factor for the code to adjust the time step (and should be less than 1).</li>
 <li><code>ToArchive #1,&lt;#2&gt;,...</code><br>
-Specify results to be archived in MPM calculations. The list can be in multiple arguments and/or in multiple ToArchive commands. The archiving options are velocity, stress, strain, plasticstrain, externalwork, temperature, plasticenergy, shearcomponents, strainenergy, jintegral, stressintensity, history1, history2, history3, history4, thermalenergy, concentration (which includes concentration gradients), energybalance, elementcrossings, and rotstrain.</li>
+Specify results to be archived in MPM calculations. The list can be in multiple arguments
+and/or in multiple ToArchive commands. The archiving options are velocity,
+stress, strain, plasticstrain, externalwork, temperature, plasticenergy,
+shearcomponents, strainenergy, jintegral, stressintensity, history1,
+history2, history3, history4, thermalenergy, concentration
+(which includes concentration gradients), energybalance, elementcrossings, and rotstrain.</li>
 </ul>
 
 <h2><a name="materials"></a>Defining Materials</h2>
@@ -256,8 +261,7 @@ Specify results to be archived in MPM calculations. The list can be in multiple 
 	<li><a name="material"></a><code>Material #1,#2,#3<br>
 	&nbsp;&nbsp;(commands to define properties)<br>
 	Done</code><br>
-	Define a material type. For more details see the materials help topic.</li>
-	<li>Traction Laws: Use the Material command to define traction laws.</li>
+	Define a material type or traction law. For more details see the materials help topic.</li>
 </ul>
 
 <h2><a name="grid"></a>Defining the MPM Grid with Material Points</h2>
@@ -511,7 +515,9 @@ is with rigid materials (default 1).</li>
 <h3>MPM Thermal Calculations</h3>
 
 <ul>
-<li>Conduction: Turn on thermal conductivity calculations and define heat source options.</li>
+<li><code>Conduction #1,&lt;#2&gt;,...</code><br>
+Turn on thermal conductivity calculations and define heat source options. #1 is yes or no. Additional
+parameters are &quot;Adiabatic&quot;, &quot;Isothermal&quot; or &quot;Crack Tips&quot;.</li>
 
 <li><code>GlobalArchive</code><br>
 To archive average temperature or total thermal energy.</li>
@@ -531,13 +537,15 @@ coefficient of thermal expansion, <i>etc.</i>).</li>
 <li><code>StressFreeTemp #1</code><br>
 Set the stress free temperature to #1.</li>
 
-<li>Temperature: Apply temperature boundary conditions to selected nodes.
+<li><code>Temperature #1,#2,&lt;#3:gt;</code><br>
+Apply temperature boundary conditions to selected nodes. The style is #1 and arguments in #2 and #3.
 </li>
 
-<li>ThermalRamp: Apply isothermal temperature difference over a specified
-time and optionally define the stress-free temperature.</li>
+<li><code>ThermalRamp #1,&lt;#2&gt;</code><br>
+Apply isothermal temperature difference of #1 over a specified time (#2 in ms).</li>
 
-<li>RampStart: Set the start time for application of a thermal ramp.</li>
+<li><code>RampStart #1</code><br>
+Set the start time (#1 in ms) for application of a thermal ramp.</li>
 
 <li><code>Region ... EndRegion</code><br>
 To set initial particle temperature when <a href="#regionmpm">creating material points</a>.</li>
@@ -571,14 +579,17 @@ It is only the difference between temperature and stress free temperature that m
 <p>These commands are used to do diffusion calculations (MPM only):</p>
 
 <ul>
-<li>Concentration: Apply concentration conditions to selected nodes.
+<li><code>Concentration #1,#2,&lt;#3:gt;</code><br>
+Apply concentration conditions to selected nodes. The style is #1 and arguments in #2 and #3.
 </li>
 
 <li><code>ConcentrationFlux external,#1,#2,#3,&lt;#4&gt;</code><br>
 Apply concentratation flux to selected particles on face #1 with style #2 and
 arguments in #3 and #4.</li>
 
-<li>Diffusion: To turn on diffusion calculations.</li>
+<li><code>Diffusion #1,&lt;#2&gt;</code><br>
+To turn on diffusion calculations. #1 is yes or no to activate diffusion. #2 can specify
+a reference concentration between 0 and 1 (default is 0).</li>
 
 <li><code>GlobalArchive</code><br>
 To archive total weight fracture concentration.</li>
@@ -613,14 +624,20 @@ diffusion calculations is concentration (which includes concentration gradients)
 Set ID for velocity boundary condition for use when global archiving reaction forces. #1
 should be negative. If omitted it is set to 0 (which means ID is not set).</li>
 
-<li>Concentration: Apply concentration conditions to selected nodes.
+<li><code>Concentration #1,#2,&lt;#3:gt;</code><br>
+Apply concentration conditions to selected nodes. The style is #1 and arguments in #2 and #3.
 </li>
 
 <li><code>ConcentrationFlux external,#1,#2,#3,&lt;#4&gt;</code><br>
 Apply concentratation flux to selected particles on face #1 with style #2 and
 arguments in #3 and #4.</li>
 
-<li>Gravity: Apply body forces to all particles for simulations within a constant graviational field.</li>
+<li><code>Gravity &lt;#1&gt;,&lt;#2&gt;,&lt;#3&gt;</code><br>
+Apply body forces to all particles for simulations within a constant graviational field
+where #1, #2, and #3 are the accelerations due to gravity (in m/sec<sup>2</sup>) in the x, y, and z
+directions, respectively (#1 and #2 are for R and Z directions in axisymmetric calculations). If all
+are omitted, this commands activates gravity with setting (0,-9.8,0). If command is not used,
+there is no gravity.</li>
 
 <li><code>HeatFlux external,#1,#2,#3,&lt;#4&gt;</code><br>
 Apply heat flux to selected particles on face #1 with style #2 and
@@ -641,7 +658,11 @@ Apply force or flux conditions to particles near a line from (#1,#2) to (#3,#4) 
 
 <li>LoadRect ... EndLoadRect: Apply force or concentration flux conditions to particles within a rectangle.</li>
 
-<li>MoveArc ... EndMoveArc: Apply velocity, temperature, or concentration conditions to nodes along an arc.</li>
+<li><code>MoveArc #1,#2,#3,#4,#5,#6,&lt;#7&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+EndMoveArc</code><br>
+Apply velocity, temperature, or concentration conditions to nodes along an inside oval with corners at
+(#1,#2) and (#3,#4) draw between angles #5 and #6 (in dergrees) with optional tolerance #5.</li>
 
 <li><code>MoveBox #1,#2,#3,#4,#5,#6,&lt;#7;&gt;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;...<br>
@@ -656,7 +677,8 @@ EndMoveLine</code><br>
 Apply velocity, temperature, or concentration conditions to nodes along a line from (#1,#2) to
 (#3,#4) with optional tolerance #5.</li>
 
-<li>Temperature: apply temperature conditions to selected nodes.
+<li><code>Temperature #1,#2,&lt;#3:gt;</code><br>
+Apply temperature boundary conditions to selected nodes. The style is #1 and arguments in #2 and #3.
 </li>
 
 <li><code>Traction #1,#2,#3,#4,&lt;#5&gt;</code><br>

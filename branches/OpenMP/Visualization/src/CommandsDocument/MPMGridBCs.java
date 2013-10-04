@@ -26,6 +26,9 @@ public class MPMGridBCs
 	public static final int MOVEARC_BC=2;
 	public static final int MOVEBOX_BC=3;
 	
+	public static final int ADD_TEMPERATURE=1;
+	public static final int ADD_CONCENTRATION=2;
+	
 	//----------------------------------------------------------------------------
 	// Initialize
 	//----------------------------------------------------------------------------
@@ -45,9 +48,10 @@ public class MPMGridBCs
 	// Methods
 	//----------------------------------------------------------------------------
 	
-	// start grid BC line
+	// start grid BC line or arc
 	// MoveLine x1,y1,x2,y2,(tolerance)
-	public void StartMoveLine(ArrayList<String> args) throws Exception
+	// MoveArc x1,y1,x2,y2,start,end,(tolerance)
+	public void StartMoveLine(ArrayList<String> args,int theType) throws Exception
 	{
 	    // MPM Only
 		doc.requiresMPM(args);
@@ -57,7 +61,7 @@ public class MPMGridBCs
 	    	throw new Exception("MoveLine, MoveArc, and MoveBox cannot be nested:\n"+args);
 	    
 	    // needs at least 4 arguments
-	    if(args.size()<5)
+	    if((theType==MOVELINE_BC && args.size()<5) || (theType==MOVEARC_BC && args.size()<7))
 	    	throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 	    
 	    // get x1,y1,x2,y2
@@ -65,21 +69,34 @@ public class MPMGridBCs
 	    double y1 = doc.readDoubleArg(args.get(2));
 	    double x2 = doc.readDoubleArg(args.get(3));
 	    double y2 = doc.readDoubleArg(args.get(4));
-	    	
-	    // get optional tolerance
-	    double tolerance = -1.;
-	    if(args.size()>5)
-	    	tolerance = doc.readDoubleArg(args.get(5));
 	    
-    	bcAttrs = "<BCLine x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"'";
+	    double tolerance = -1.,startAng=0.,endAng=0.;
+	    if(theType==MOVELINE_BC)
+	    {	// get optional tolerance
+	    	if(args.size()>5)
+	    		tolerance = doc.readDoubleArg(args.get(5));
+	    	bcAttrs = "<BCLine x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"'";
+		    inBC = MOVELINE_BC;
+		    bcCmd = "BCLine";
+	    }
+	    else
+	    {	// angles
+	    	startAng = doc.readDoubleArg(args.get(5));
+	    	endAng = doc.readDoubleArg(args.get(6));
+	    	if(args.size()>7)
+	    		tolerance = doc.readDoubleArg(args.get(7));
+	    	bcAttrs = "<BCArc x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"' start='"
+	    					+startAng+"' end='"+endAng+"'";
+		    inBC = MOVEARC_BC;
+		    bcCmd = "BCArc";
+	    }
+	    
+	    // optional tolerance
     	if(tolerance > 0.)
     		bcAttrs = bcAttrs + " tolerance='" + tolerance + "'>\n";
     	else
     		bcAttrs = bcAttrs + ">\n";
         bcSettings = new StringBuffer("");
-    	
-	    inBC = MOVELINE_BC;
-	    bcCmd = "BCLine";
  	}
 	
 	// start grid BC line
@@ -93,7 +110,7 @@ public class MPMGridBCs
 		// MPM Only
 		doc.requiresMPM(args);
 		if(!doc.isMPM3D())
-			throw new Exception("MoveBoxonly allowedin 3D MPM:\n"+args);
+			throw new Exception("MoveBox only allowed in 3D MPM:\n"+args);
 
 		// verify not nested
 		if(inBC != 0)
@@ -232,15 +249,62 @@ public class MPMGridBCs
 	}
 
 	// add velocity condition
-	public void AddTemperature(ArrayList<String> args) throws Exception
-	{	throw new Exception("Temperature command not implemented yet");		
+	public void AddTempConc(ArrayList<String> args,int theType) throws Exception
+	{			
+		// MPM only
+		doc.requiresMPM(args);
+		
+		if(inBC == 0)
+			throw new Exception("'"+args.get(0)+"' command must by in 'MoveLine', 'MoveArc', or 'MoveBox' block:\n"+args);
+		
+		// always needs #1 and #2
+		if(args.size()<3)
+	    	throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
+		
+		// read style
+		HashMap<String,Integer> options = new HashMap<String,Integer>(5);
+		options.put("constant", new Integer(1));
+		options.put("linear", new Integer(2));
+		options.put("sine", new Integer(3));
+		options.put("cosine", new Integer(4));
+		options.put("function", new Integer(6));
+		int style = doc.readIntOption(args.get(1),options,"Temperature or concentration style");
+		
+		// read arg1 and arg2
+		double arg1=0.,arg2=0.;
+		String function = null;
+		boolean hasArg2 = false;
+		
+		// arg1
+		if(args.size()>2)
+		{	if(style==6)
+				function = doc.readStringArg(args.get(2));
+			else
+				arg1 = doc.readDoubleArg(args.get(2));
+		}
+		
+		// arg2
+		if(args.size()>3)
+		{	hasArg2 = true;
+			arg2 = doc.readDoubleArg(args.get(3));
+		}
+				
+		// add to xml
+		if(theType==ADD_TEMPERATURE)
+			bcSettings.append("      <TempBC");
+		else
+			bcSettings.append("      <ConcBC");
+		bcSettings.append(" style='"+style+"'");
+		if(style==6)
+			bcSettings.append(" function='"+function+"'");
+		else
+			bcSettings.append(" value='"+arg1+"'");
+		if(hasArg2) bcSettings.append(" time='"+arg2+"'");
+		
+		bcSettings.append("/>\n");
 	}
 
 	// add velocity condition
-	public void AddConcentration(ArrayList<String> args) throws Exception
-	{	throw new Exception("Concentration command not implemented yet");
-	}
-	
 	// set boundary ID
 	public void SetBoundaryID(ArrayList<String> args) throws Exception
 	{

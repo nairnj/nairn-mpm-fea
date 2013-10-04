@@ -62,11 +62,17 @@ public class CmdViewer extends JNCmdTextDocument
 	private String fbDamping;
 	private String leaveLimit;
 	private String ptsPerElement;
+	private String diffusion;
+	private String conduction;
+	private String gravity;
 	private StringBuffer mpmOrder;
 	private StringBuffer crackOrder;
 	private boolean mpmMeshToFile;
 	private String feaTemp;
 	private double stressFreeTemp;
+	private double rampTime;
+	private double rampStart;
+	private double rampDiff;
 	private boolean stopCommand;
 	private double MMVmin;
 	private int MMDcheck;
@@ -299,11 +305,16 @@ public class CmdViewer extends JNCmdTextDocument
 		globalArchive="";
 		feaTemp = null;
 		stressFreeTemp = 0.;
+		rampStart = -1.;
+		rampTime = -2.;
 		stopCommand = false;
 		damping = null;
 		fbDamping = null;
 		leaveLimit = null;
 		ptsPerElement = null;
+		diffusion = null;
+		conduction = null;
+		gravity = null;
 		MMVmin = 0.0;
 		MMDcheck = 0;
 		MMNormals = -1;
@@ -477,10 +488,10 @@ public class CmdViewer extends JNCmdTextDocument
 			feaBCs.AddSelect(args);
 		
 		else if(theCmd.equals("moveline"))
-			mpmGridBCs.StartMoveLine(args);
+			mpmGridBCs.StartMoveLine(args,MPMGridBCs.MOVELINE_BC);
 		
 		else if(theCmd.equals("movearc"))
-			mpmGridBCs.StartMoveLine(args);
+			mpmGridBCs.StartMoveLine(args,MPMGridBCs.MOVEARC_BC);
 		
 		else if(theCmd.equals("movebox"))
 			mpmGridBCs.StartMoveBox(args);
@@ -501,10 +512,10 @@ public class CmdViewer extends JNCmdTextDocument
 			mpmGridBCs.AddVelocity(args);
 		
 		else if(theCmd.equals("concentration"))
-			mpmGridBCs.AddConcentration(args);
+			mpmGridBCs.AddTempConc(args,MPMGridBCs.ADD_CONCENTRATION);
 
 		else if(theCmd.equals("temperature"))
-			mpmGridBCs.AddTemperature(args);
+			mpmGridBCs.AddTempConc(args,MPMGridBCs.ADD_TEMPERATURE);
 
 		else if(theCmd.equals("loadline"))
 			mpmParticleBCs.StartLoadLine(args);
@@ -575,6 +586,12 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("stressfreetemp"))
 			doStressFreeTemp(args);
 		
+		else if(theCmd.equals("thermalramp"))
+			doThermalRamp(args);
+		
+		else if(theCmd.equals("rampstart"))
+			doRampStart(args);
+		
 		else if(theCmd.equals("damping"))
 			doDamping(args);
 		
@@ -583,6 +600,15 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		else if(theCmd.equals("leavelimit"))
 			doLeaveLimit(args);
+		
+		else if(theCmd.equals("diffusion"))
+			doDiffusion(args);
+		
+		else if(theCmd.equals("conduction"))
+			doConduction(args);
+		
+		else if(theCmd.equals("gravity"))
+			doGravity(args);
 		
 		else if(theCmd.equals("ptsperelement"))
 			doPtsPerElement(args);
@@ -670,7 +696,7 @@ public class CmdViewer extends JNCmdTextDocument
 
 	    // read analysis type
 		if(args.size()<2)
-			throw new Exception("'MPMMethod' has too few parameters: "+args);
+			throw new Exception("'MPMMethod' has too few parameters:\n"+args);
 		
 		// options
 		HashMap<String,Integer> options = new HashMap<String,Integer>(10);
@@ -691,7 +717,7 @@ public class CmdViewer extends JNCmdTextDocument
 			else if(shape.equals("classic") || shape.equals("dirac"))
 				shapeMethod = "Dirac";
 			else
-				throw new Exception("The selected MPM shape function method was not recognized: "+args);
+				throw new Exception("The selected MPM shape function method was not recognized:\n"+args);
 		
 		}
 	}
@@ -704,11 +730,11 @@ public class CmdViewer extends JNCmdTextDocument
 		
 	    // read analysis type
 		if(args.size()<2)
-			throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
 		String relPath = readStringArg(args.get(1));
 		if(relPath.length()==0)
-			throw new Exception("'"+args.get(0)+"' path has zero length: "+args);
+			throw new Exception("'"+args.get(0)+"' path has zero length:\n"+args);
 		
 		if(makeUnique)
 			archiveRoot = "    <ArchiveRoot unique='1'>"+relPath+"</ArchiveRoot>\n";
@@ -730,11 +756,11 @@ public class CmdViewer extends JNCmdTextDocument
 		
 	    // read analysis type
 		if(args.size()<2)
-			throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
 		String type = readStringArg(args.get(1));
 		if(type.length()==0)
-			throw new Exception("'"+args.get(0)+"' quantity to archive has zero length: "+args);
+			throw new Exception("'"+args.get(0)+"' quantity to archive has zero length:\n"+args);
 		
 		// optional material ID
 		int matnum=0;
@@ -746,7 +772,7 @@ public class CmdViewer extends JNCmdTextDocument
 				{	matnum = readIntArg(args.get(2));
 				}
 				else
-					throw new Exception("'"+args.get(0)+"' command has unknown material ID: "+args);
+					throw new Exception("'"+args.get(0)+"' command has unknown material ID:\n"+args);
 			}
 
 			globalArchive = globalArchive + "    <GlobalArchive type='"+type+
@@ -763,7 +789,7 @@ public class CmdViewer extends JNCmdTextDocument
 	
 		// read analysis type
 		if(args.size()<2)
-			throw new Exception("'ArchiveTime' has too few parameters: "+args);
+			throw new Exception("'ArchiveTime' has too few parameters:\n"+args);
 		
 		// archive time
 		Object aTime = readNumberOrEntityArg(args.get(1),false);
@@ -783,7 +809,7 @@ public class CmdViewer extends JNCmdTextDocument
 	
 		// read analysis type
 		if(args.size()<2)
-			throw new Exception("'GlobalArchiveTime' has too few parameters: "+args);
+			throw new Exception("'GlobalArchiveTime' has too few parameters:\n"+args);
 		
 		// archive time
 		Object aTime = readNumberOrEntityArg(args.get(1),false);
@@ -797,7 +823,7 @@ public class CmdViewer extends JNCmdTextDocument
 	
 		// read analysis type
 		if(args.size()<2)
-			throw new Exception("'TimeStep' has too few parameters: "+args);
+			throw new Exception("'TimeStep' has too few parameters:\n"+args);
 		
 		// archive time
 		double aTime = readDoubleArg(args.get(1));
@@ -823,7 +849,7 @@ public class CmdViewer extends JNCmdTextDocument
 	
 		// read analysis type
 		if(args.size()<2)
-			throw new Exception("'MaximumTime' has too few parameters: "+args);
+			throw new Exception("'MaximumTime' has too few parameters:\n"+args);
 		
 		// archive time
 		Object aTime = readNumberOrEntityArg(args.get(1),false);
@@ -838,7 +864,7 @@ public class CmdViewer extends JNCmdTextDocument
 	    
 	    // needs at least one
 	    if(args.size()<2)
-	    	throw new Exception("'ToArchive' has too few parameters: "+args);
+	    	throw new Exception("'ToArchive' has too few parameters:\n"+args);
 	    
 	    // first time
     	int i;
@@ -919,7 +945,7 @@ public class CmdViewer extends JNCmdTextDocument
 	        	loc = ReadArchive.ARCH_RotStrain;
 	        
 	        if(loc<0 && cloc<0)
-	        	throw new Exception("'"+archive+"' is not a valid archiving option: "+args);
+	        	throw new Exception("'"+archive+"' is not a valid archiving option:\n"+args);
 	        
 	        if(loc>0)
 	        	mpmOrder.replace(loc,loc+1,"Y");
@@ -1071,7 +1097,7 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(quant.equals("energy"))
 			offset=5;
 		else
-	    	throw new Exception("Unrecognized 'Output' option: "+args);
+	    	throw new Exception("Unrecognized 'Output' option:\n"+args);
 		
 		// make the change
 		outFlags.deleteCharAt(offset);
@@ -1091,7 +1117,7 @@ public class CmdViewer extends JNCmdTextDocument
 		if(isFEA())
 		{	// Temperature #1 which is a function
 			if(args.size()<2)
-				throw new Exception("'Temperature' command with too few arguments: "+args);
+				throw new Exception("'Temperature' command with too few arguments:\n"+args);
 			
 			feaTemp = readStringArg(args.get(1));
 		}
@@ -1104,11 +1130,39 @@ public class CmdViewer extends JNCmdTextDocument
 	// Stress Free Temperature
 	public void doStressFreeTemp(ArrayList<String> args) throws Exception
 	{	if(args.size()<2)
-			throw new Exception("'StressFreeTemp' command with too few arguments: "+args);
+			throw new Exception("'StressFreeTemp' command with too few arguments:\n"+args);
 			
 		stressFreeTemp = readDoubleArg(args.get(1));
 	}
 
+	// ThermalRamp (diff),<(time)>
+	public void doThermalRamp(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+		
+		if(args.size()<2)
+			throw new Exception("'ThermalRamp' command with too few arguments:\n"+args);
+			
+		rampDiff = readDoubleArg(args.get(1));
+		
+		rampTime = -1.;
+		if(args.size()>2)
+		{	rampTime = readDoubleArg(args.get(2));
+			if(rampTime<=0.) rampTime = -1.;
+		}
+	}
+	
+	// RampStart (start time)
+	public void doRampStart(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+		
+		if(args.size()<2)
+			throw new Exception("'RampStart' command with too few arguments:\n"+args);
+			
+		rampStart = readDoubleArg(args.get(1));
+	}
+	
 	// Damping #1 (number of function)
 	public void doDamping(ArrayList<String> args) throws Exception
 	{	// MPM Only
@@ -1116,7 +1170,7 @@ public class CmdViewer extends JNCmdTextDocument
 	
 		// read analysis type
 		if(args.size()<2)
-			throw new Exception("'Damping' has too few parameters: "+args);
+			throw new Exception("'Damping' has too few parameters:\n"+args);
 		
 		// damping factor
 		String damp = readStringArg(args.get(1));
@@ -1171,7 +1225,7 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		// read analysis type
 		if(args.size()<2)
-			throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
 		double cp = readDoubleArg(args.get(1));
 		ContactPosition = "      <ContactPosition>"+cp+"</ContactPosition>\n";
@@ -1185,14 +1239,14 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		// read analysis type
 		if(args.size()<2)
-			throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
 		// see if nonnegative number
 		double frict = 0.;
 		try
 		{	frict = readDoubleArg(args.get(1));
 			if(frict<0)
-				throw new Exception("The friction coefficient must be positive: "+args);
+				throw new Exception("The friction coefficient must be positive:\n"+args);
 		}
 		catch(Exception e)
 		{	HashMap<String,Integer> options = new HashMap<String,Integer>(4);
@@ -1212,11 +1266,11 @@ public class CmdViewer extends JNCmdTextDocument
 		// material property needs material ID
 		if(MMMode==2)
 		{	if(args.size()<3)
-				throw new Exception("'"+args.get(0)+"' as material property has too few parameters: "+args);
+				throw new Exception("'"+args.get(0)+"' as material property has too few parameters:\n"+args);
 		
 			int matnum = mats.getMatID(readStringArg(args.get(2)));
 			if(matnum<=0)
-				throw new Exception("'"+args.get(0)+"' as material property has unknown material ID: "+args);
+				throw new Exception("'"+args.get(0)+"' as material property has unknown material ID:\n"+args);
 			
 			String cmd = "    <Friction mat='"+matnum+"'>"+frict+"</Friction>\n";
 			return cmd;
@@ -1239,7 +1293,7 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		// read analysis type
 		if(args.size()<3 || (MMMode==2 && args.size()<5))
-			throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
 		// read doubles
 		double Dt = readDoubleArg(args.get(1));
@@ -1253,7 +1307,7 @@ public class CmdViewer extends JNCmdTextDocument
 		{	// get material ID
 			int matnum = mats.getMatID(readStringArg(args.get(4)));
 			if(matnum<=0)
-				throw new Exception("'"+args.get(0)+"' as material property has unknown material ID: "+args);
+				throw new Exception("'"+args.get(0)+"' as material property has unknown material ID:\n"+args);
 			
 			cmd = "    <Friction Dt='"+Dt+"' Dnt='"+Dnt+"' Dnc='"+Dnc+
 					"' mat='"+matnum+"'>11</Friction>\n";
@@ -1280,7 +1334,7 @@ public class CmdViewer extends JNCmdTextDocument
 	
 		// read analysis type
 		if(args.size()<2)
-			throw new Exception("'FeedbackDamping' has too few parameters: "+args);
+			throw new Exception("'FeedbackDamping' has too few parameters:\n"+args);
 		
 		// archive time
 		double damp = readDoubleArg(args.get(1));
@@ -1308,13 +1362,109 @@ public class CmdViewer extends JNCmdTextDocument
 	
 		// read analysis type
 		if(args.size()<2)
-			throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
 		// damping factor
 		int leave = readIntArg(args.get(1));
 		leaveLimit = "    <LeaveLimit>"+leave+"</LeaveLimit>\n";
 	}
 	
+	// Diffusion #1,<#2>
+	public void doDiffusion(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+	
+		// read analysis type
+		if(args.size()<2)
+			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
+		
+		// damping factor
+		String option = readStringArg(args.get(1));
+		if(option.toLowerCase().equals("no"))
+		{	diffusion = null;
+			return;
+		}
+		else if(!option.toLowerCase().equals("yes"))
+			throw new Exception("'"+args.get(0)+"' first parameter must be yes or no:\n"+args);
+		
+		double ref=0.;
+		if(args.size()>2)
+		{	ref = readDoubleArg(args.get(2));
+			if(ref<0. || ref>1.)
+				throw new Exception("'"+args.get(0)+"' second parameter must be 0 to 1:\n"+args);
+		}
+
+		// the command
+		diffusion = "    <Diffusion reference='"+ref+"/>\n";
+	}
+	
+	// Conduction (yes or no),<adibatic (or mechanical energy) or isothermal or "Crack Tips">
+	public void doConduction(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+	
+		// read analysis type
+		if(args.size()<2)
+			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
+		
+		// yes or no
+		boolean hasConduction;
+		String option = readStringArg(args.get(1));
+		if(option.toLowerCase().equals("no"))
+			hasConduction = false;
+		else if(option.toLowerCase().equals("yes"))
+			hasConduction = true;
+		else
+			throw new Exception("'"+args.get(0)+"' first parameter must be yes or no:\n"+args);
+		
+		// options
+		boolean hasCoupling = false;
+		boolean hasTips = false;
+		HashMap<String,Integer> options = new HashMap<String,Integer>(4);
+		options.put("adiabatic", new Integer(1));
+		options.put("mechanical energy", new Integer(1));
+		options.put("isothermal", new Integer(2));
+		options.put("crack tips", new Integer(3));
+		
+		// each one
+		int arg = 2;
+		while(args.size()>arg)
+		{	int opt = readIntOption(args.get(arg),options,"Conduction option");
+			if(opt==1)
+				hasCoupling = true;
+			else if(opt==2)
+				hasCoupling = false;
+			else if(opt==3)
+				hasTips = true;
+			arg++;
+		}
+		
+		// <Conduction/>, <CrackTipHeating/>, <EnergyCoupling/>
+		if(hasConduction)
+			conduction = "    <Conduction/>\n";
+		else
+			conduction = "";
+		if(hasCoupling) conduction = conduction + "    <EnergyCoupling/>\n";
+		if(hasTips) conduction = conduction + "    <CrackTipHeating/>\n";
+	}
+
+	// Gravity <#1>,<#2>,<#3>
+	public void doGravity(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+	
+		// defaults
+		double gx=0.,gy=-9800.,gz=0.;
+		
+		if(args.size()>1) gx = 1000.*readDoubleArg(args.get(1));
+		if(args.size()>2) gy = 1000.*readDoubleArg(args.get(2));
+		if(args.size()>3) gz = 1000.*readDoubleArg(args.get(3));
+
+		// the command
+		gravity = "    <BodyXForce>"+gx+"</BodyXForce>\n"+
+					"    <BodyYForce>"+gy+"</BodyYForce>\n"+
+					"    <BodyZForce>"+gz+"</BodyZForce>\n";
+	}
 	// PtsPerElement #1 (integer)
 	public void doPtsPerElement(ArrayList<String> args) throws Exception
 	{	// MPM Only
@@ -1322,7 +1472,7 @@ public class CmdViewer extends JNCmdTextDocument
 	
 		// read analysis type
 		if(args.size()<2)
-			throw new Exception("'"+args.get(0)+"' has too few parameters: "+args);
+			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
 		// damping factor
 		int pts = readIntArg(args.get(1));
@@ -1404,10 +1554,11 @@ public class CmdViewer extends JNCmdTextDocument
 			if(globalArchive.length()>0)
 				xml.append(globalArchive);
 			
-			// damping, leave limit
+			// damping, leave limit, diffusion
 			if(damping!=null) xml.append(damping);
 			if(fbDamping!=null) xml.append(fbDamping);
 			if(leaveLimit!=null) xml.append(leaveLimit);
+			if(diffusion!=null) xml.append(diffusion);
 			
 			// cracks
 			more = cracks.getSettings();
@@ -1493,7 +1644,7 @@ public class CmdViewer extends JNCmdTextDocument
 		{	// FEA: Thermal
 			//-----------------------------------------------------------
 			more = xmldata.get("Thermal");
-			if(more!=null || feaTemp!=null)
+			if(more!=null || feaTemp!=null || stressFreeTemp!=0.)
 			{	xml.append("  <Thermal>\n");
 				
 				if(feaTemp!=null)
@@ -1501,7 +1652,7 @@ public class CmdViewer extends JNCmdTextDocument
 				
 				if(stressFreeTemp!=0.)
 					xml.append("    <StressFreeTemp>"+stressFreeTemp+"</StressFreeTemp>\n");
-					
+				
 				// check added xml
 				if(more != null) xml.append(more);
 
@@ -1514,9 +1665,21 @@ public class CmdViewer extends JNCmdTextDocument
 		{	// MPM: Thermal
 			//-----------------------------------------------------------
 			more = xmldata.get("Thermal");
-			if(more!=null)
+			if(more!=null || conduction!=null || rampTime>-1.5)
 			{	xml.append("  <Thermal>\n");
 
+				// conduction
+				if(conduction!=null) xml.append(conduction);
+				
+				// <Isothermal time="(time)" start="(start time)">(diff)</Isothermal>
+				if(rampTime>-1.5)
+				{	xml.append("    <Isothermal");
+					if(rampTime>0.) xml.append(" time='"+rampTime+"'");
+					if(rampStart>0.) xml.append(" start='"+rampStart+"'");
+					xml.append(">"+rampDiff+"</Isothermal>\n");
+				}
+					
+			
 				// check added xml
 				if(more != null) xml.append(more);
 
@@ -1527,10 +1690,11 @@ public class CmdViewer extends JNCmdTextDocument
 			// MPM: Gravity
 			//-----------------------------------------------------------
 			more = xmldata.get("Gravity");
-			if(more!=null)
+			if(more!=null || gravity!=null)
 			{	xml.append("  <Gravity>\n");
 
 				// check added xml
+				if(gravity != null) xml.append(gravity);
 				if(more != null) xml.append(more);
 
 				// done
@@ -1602,7 +1766,7 @@ public class CmdViewer extends JNCmdTextDocument
 	{	if(isFEA()) return;
 		if(args != null)
 		{	if(args.size()>1)
-				throw new Exception("The command '"+args.get(0)+"' is only allowed in FEA calculations: "+args);
+				throw new Exception("The command '"+args.get(0)+"' is only allowed in FEA calculations:\n"+args);
 		}
 		throw new Exception("Some unknown command is only allowed in FEA calculations.");
 	}
@@ -1610,7 +1774,7 @@ public class CmdViewer extends JNCmdTextDocument
 	{	if(isMPM()) return;
 		if(args != null)
 		{	if(args.size()>1)
-				throw new Exception("The command '"+args.get(0)+"' is only allowed in MPM calculations: "+args);
+				throw new Exception("The command '"+args.get(0)+"' is only allowed in MPM calculations:\n"+args);
 		}
 		throw new Exception("Some unknown command is only allowed in MPM calculations.");
 	}
