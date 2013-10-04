@@ -16,9 +16,9 @@ Processors 4
 
 ! ********** Parameters Section **********
 #maxTime=.1		! time at max load
-#loadtime=0		! to to get to max load as fraction of #maxTime
+#loadtime=1		! to to get to max load as fraction of #maxTime
 
-#ncells=5		! number of cells in 1 mm
+#ncells=10		! number of cells in 1 mm
 #cell=1/#ncells         ! cell size (square cells)
 
 #radius=2               ! radius of cylinder in mm (mult of cell)
@@ -29,16 +29,16 @@ Processors 4
 
 #stress=1		! Applied stress
 #rBC$="ZeroStress"		! ZeroStress or anything else for ZeroDisp on outer radial surface
-#crackBC$="none"		! or "pressure" loaded crack
+#crackBC$="pressure"		! or "pressure" loaded crack
 
 JContour 2,2
-#shift=#cell/100		! crack shift in cells from mid grid line
+#shift=0.5*#cell		! crack shift in cells from mid grid line
 #tipshift=#cell/10		! shift of crack tip from node in cells
 
 #Em=2500
 #vm=0.33
 #matname$="polymer"
-#fbDamping=0		! 100000 when #loadtime=0
+#fbDamping=0			! 100000 when #loadtime=0
 
 ! ********** Make the settings **********
 
@@ -110,7 +110,7 @@ if #crackBC$="pressure"
   Done
   
   NewCrack #crack-#tipshift,#shift,#matname$
-  GrowCrackLine #cell/4,#shift*#cell,int(2*#crack/#cell+1),"exterior","pressure"
+  GrowCrackLine #cell/4,#shift,int(2*#crack/#cell+1),"exterior","pressure"
 else
   NewCrack #crack-#tipshift,#shift,#matname$
   GrowCrackLine #cell/4,#shift,int(2*#crack/#cell+1),"exterior"
