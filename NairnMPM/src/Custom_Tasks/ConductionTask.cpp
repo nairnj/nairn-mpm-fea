@@ -183,8 +183,9 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndpt,MPMBase *mptr,double s
 		// V * q * S, where q (J/s-cm^3), V(mm^3), S(dimensionless).
 		//ndpt->fcond+=(sh*ndpt->GetNodalFrictionEnergy())/(timestep*1e3); //volumes cancel out with remaining 1e-3.
 		//ndpt->fcond+=(ndpt->GetNodalFrictionEnergy()*1e2)/(timestep); //no shape function as from node already. volumes cancel out with remaining 1e2. (old)
-		ndpt->fcond+=(ndpt->GetNodalFrictionEnergy()*1e2)/timestep; //no shape function as from node already. volumes cancel out with remaining 1e2. q is is J/s. (new)
+		//ndpt->fcond+=(ndpt->GetNodalFrictionEnergy()*1e2)/timestep; //no shape function as from node already. volumes cancel out with remaining 1e2. q is is J/s. (new)
 		//store friction energy on material point?
+		ndpt->fcond+=(ndpt->GetNodalFrictionEnergy()*1e3)/(1e8*timestep);  // should be 1e8 not 1e0
 		mptr->AddParticleFrictionEnergy(ndpt->GetNodalFrictionEnergy()); // actually nodal values
    
 	}

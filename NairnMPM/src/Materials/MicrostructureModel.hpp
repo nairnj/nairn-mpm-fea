@@ -76,6 +76,7 @@ class MicrostructureModel : public IsoPlasticity
 		double sigoc;
 		double rstc;	// shear stress in cell;
 		double yieldPrevious;	// previous yield stress
+		double timeStep;	// the time increment for when archiving the strain rate.
 		
 
 };

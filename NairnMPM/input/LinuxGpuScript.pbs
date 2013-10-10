@@ -12,7 +12,7 @@
 # PBS -N 3D_v10
 # PBS -N FSP_exp3_v42
 # PBS -N TEST_v1
-#PBS -N FSP_exp4_v30
+#PBS -N FSP_v29fc_JC
 # PBS -N 3DRotationTest_v1
 
 
@@ -22,7 +22,7 @@
 # comments are added like this Ray
 # PBS comments with PBS require syntax with the space Ray
 
-#PBS -l walltime=90:00:00
+#PBS -l walltime=330:00:00
 # PBS -l walltime=00:30:00
 
 #PBS -l nodes=1:ppn=1
@@ -54,7 +54,7 @@ ulimit -s unlimited
 export KMP_STACKSIZE=500m
 export OMP_NUM_THREADS=1
 
-./NairnMPM FSP_3D_Cu_exp4_v30.fmcmd > FSP_3D_Cu_exp4_v30.mpm
+./NairnMPM FSP_3D_Cu_exp4_v29fc_JC.fmcmd > FSP_3D_Cu_exp4_v29fc_JC.mpm
 
 # ./NairnMPM HPT_3D_v10.fmcmd > HPT_3D_v10.mpm
 
