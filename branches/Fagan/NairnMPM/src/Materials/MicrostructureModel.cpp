@@ -38,6 +38,7 @@ MicrostructureModel::MicrostructureModel(char *matName) : IsoPlasticity(matName)
 	disk1=1.;
 	tayM=3.06;
 	MMG=1.;
+	timeStep=1;
 
 	// for first step calcs:
 	//fr=-3;
@@ -217,6 +218,7 @@ double MicrostructureModel::GetYield(MPMBase *mptr,int np,double delTime)
 			mptr->archiverhoW=rhoW0;
 		//	mptr->archiveTDL=tdl0;
 		//	mptr->archiveDSize=dSize0;
+			timeStep = delTime; //save the time increment to archive strain rate later. The timestep does not change over the simulation.
 		}
 		
 		if(alpint<0.01)
@@ -352,7 +354,8 @@ void MicrostructureModel::UpdatePlasticInternal(MPMBase *mptr,int np)
 		mptr->SetHistoryDble(RHOC,mptr->archiverhoC);
 		mptr->SetHistoryDble(RHOW,mptr->archiverhoW);
 		mptr->SetHistoryDble(DSIZE,mptr->archiveDSize);
-		mptr->SetHistoryDble(TDL,mptr->archiveTDL);
+		//mptr->SetHistoryDble(TDL,mptr->archiveTDL);
+		mptr->SetHistoryDble(5,dalpha/timeStep);
 		//mptr->SetHistoryDble(FR,mptr->fr);
 }
 
