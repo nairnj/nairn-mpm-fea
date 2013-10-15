@@ -52,6 +52,7 @@ MaterialBase::MaterialBase(char *matName)
     KIexp=KIIexp=2.;
     criterion[0]=criterion[1]=UNSPECIFIED;
 	constantDirection=FALSE;
+	constantTip=FALSE;
 	growDir.x=0.;
 	growDir.y=0.;
 	matPropagateDirection[0]=matPropagateDirection[1]=UNSPECIFIED;

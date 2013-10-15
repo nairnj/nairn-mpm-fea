@@ -1028,7 +1028,7 @@ void CrackHeader::JIntegral(void)
 			
 			// set material type based material near the tip.
 			int oldnum = tipCrk->tipMatnum;
-			tipCrk->FindCrackTipMaterial();
+			tipCrk->FindCrackTipMaterial(oldnum);
 			if(tipCrk->tipMatnum != oldnum)
 			{	cout << "# crack tip left material " << oldnum
 						<< " and entered material " << tipCrk->tipMatnum << endl;

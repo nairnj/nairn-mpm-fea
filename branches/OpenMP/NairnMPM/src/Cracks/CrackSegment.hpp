@@ -65,7 +65,7 @@ class CrackSegment
 		void SetMatID(int);
 		void AddTractionForceSeg(CrackHeader *);
 		double AddTractionForceSegSide(CrackHeader *,int,double);
-		void FindCrackTipMaterial(void);
+		void FindCrackTipMaterial(int);
 		void UpdateTractions(CrackHeader *);
 		Vector GetTangential(double *);
 		double TractionEnergy(Vector *,int,bool);

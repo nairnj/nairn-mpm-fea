@@ -32,7 +32,7 @@ Processors 4
 #crackBC$="pressure"		! or "pressure" loaded crack
 
 JContour 2,2
-#shift=0.5*#cell		! crack shift in cells from mid grid line
+#shift=#cell/1000		! crack shift in cells from mid grid line
 #tipshift=#cell/10		! shift of crack tip from node in cells
 
 #Em=2500

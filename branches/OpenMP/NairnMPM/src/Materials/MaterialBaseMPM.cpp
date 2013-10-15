@@ -134,6 +134,11 @@ char *MaterialBase::InputMat(char *xName,int &input)
     {	input=DOUBLE_NUM;
         return((char *)&delIIc);
     }
+	
+	else if(strcmp(xName,"constantTip")==0)
+	{	input=INT_NUM;
+		return((char *)&constantTip);
+	}
     
 	else if(strcmp(xName,"Cp")==0 || strcmp(xName,"Cv")==0)
     {	input=DOUBLE_NUM;
@@ -1392,6 +1397,9 @@ short MaterialBase::RigidContact(void) const { return FALSE; }
 
 // check if traciton law material
 bool MaterialBase::isTractionLaw(void) const { return FALSE; }
+
+// check if keeps crack tip
+int MaterialBase::KeepsCrackTip(void) const { return constantTip; }
 
 // see if material for a material velocity field is rigid (only rigid contact materials can be in a velocity field)
 short MaterialBase::GetMVFIsRigid(int matfld)

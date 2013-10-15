@@ -314,6 +314,10 @@ and rubber elastic materials as special cases.</td>
 <dd>Critical crack opening displacement. Only used when there is crack propagation by <a href="mpmheader.html#cracks">criterion</a> 6. Also used by <a href="#traction">traction-law</a> materials.
 </dd>
 
+<dt>&lt;constantTip&gt;0&lt;/constantTip&gt;</dt>
+<dd>Set to 0 or 1 where 1 means the crack tip will always uses that material even if the crack is in or moves to another material. This property is useful to have multiple cracks in the same material with different fracture properties by defining multiple materials that are identical except for fracture properties, defining problem with one of those materials, but use other materials for each crack tip's material. Default is 0.</li> 
+
+
 <dt><a name="artificialvisc"></a>&lt;ArtificialVisc/&gt;, &lt;avA1&gt;.2&lt;/avA1&gt;, and &lt;avA2&gt;2.0&lt;/avA2&gt;</dt>
 <dd>This first empty tag turns artificial visocsity on, which adds a pressure, Q, related to velocity gradient on the particle, but only when it is compressing. The equation is
 <blockquote>

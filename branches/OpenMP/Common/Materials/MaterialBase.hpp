@@ -59,7 +59,8 @@ class MaterialBase : public LinkedObject
         double KIc,KIIc,KIexp,KIIexp,JIc,JIIc,gamma,delIc,delIIc,nmix;
 		double pCrit3,gain,initSpeed;
 		double initTime,maxLength;
-		int constantDirection;
+		bool constantDirection;
+		int constantTip;
 		Vector growDir;
 		int matPropagateDirection[2];
 		int tractionMat[2];
@@ -149,6 +150,7 @@ class MaterialBase : public LinkedObject
 		virtual short RigidBC(void) const;
 		virtual short RigidContact(void) const;
 		virtual bool isTractionLaw(void) const;
+		virtual int KeepsCrackTip(void) const;
 		virtual void SetFriction(double,int,double,double,double);
 		virtual ContactDetails *GetContactToMaterial(int);
 		virtual void ContactOutput(int);
