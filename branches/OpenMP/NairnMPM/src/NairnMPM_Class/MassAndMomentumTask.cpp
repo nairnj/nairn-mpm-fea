@@ -158,6 +158,9 @@ void MassAndMomentumTask::Execute(void)
 				massErr = new CommonException(err);
 			}
 		}
+        catch(...)
+        {   cout << "unknown throw found" << endl;
+        }
 	}
 	
 	// throw now - only possible error is too many CPDI nodes in 3D

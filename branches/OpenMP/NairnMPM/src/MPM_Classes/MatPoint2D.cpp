@@ -409,7 +409,7 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
                 break;
                 
             case 2:
-                // right edgt
+                // right edge
                 c1.x = c2.x = pos.x+r1x;
                 c1.y = pos.y-r2y;
                 c2.y = pos.y+r2y;

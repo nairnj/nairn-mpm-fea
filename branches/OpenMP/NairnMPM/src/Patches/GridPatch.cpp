@@ -18,6 +18,7 @@
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/MaterialBase.hpp"
+#include "Exceptions/CommonException.hpp"
 
 // globals
 GridPatch **patches;            // list of patches (or NULL if only one patch or if serial)
@@ -245,7 +246,7 @@ NodalPoint *GridPatch::GetNodePointer(int num)
 		
 		// is it out of this patch
 		if(row<-ghostRows || row>yn+ghostRows || col<-ghostRows || col>xn+ghostRows)
-			throw "Need ghost node that is outside this patch";
+			throw CommonException("Need ghost node that is outside this patch (i.e., increase ghost rows)","GridPatch::GetNodePointer");
 		
 		if(row<0)
 		{	// ghost in full rows near the bottom
@@ -282,7 +283,7 @@ NodalPoint *GridPatch::GetNodePointer(int num)
 		// is it out of this patch
 		if(row<-ghostRows || row>yn+ghostRows || col<-ghostRows || col>xn+ghostRows || rank<-ghostRows || rank>zn+ghostRows)
         {   cout << num << " to (" << row << "," << col << "," << rank << ")" << endl;
-			throw "Need ghost node that is outside this patch";
+			throw CommonException("Need ghost node that is outside this patch (i.e., increase ghost rows)","GridPatch::GetNodePointer");
         }
         
         if(rank<0)
@@ -322,13 +323,13 @@ NodalPoint *GridPatch::GetNodePointer(int num)
 	if(g<0 || g>=numGhosts)
 	{	cout << "ghost for node " << num << " out of range (" << g << ") for (" << row << "," << col << ")"
 				<< ") from (" << y0 << "," << x0 << ")" << endl;
-		throw "ghost index out of range";
+		throw CommonException("ghost index out of range","GridPatch::GetNodePointer");
 	}
 	NodalPoint *thePtr = ghosts[g]->GetNodePointer();
 	if(thePtr==NULL)
 	{	cout << "NULL pointer for " << g << " node " << num << " at (" << row << "," << col
 				<< ") from (" << y0 << "," << x0 << ")" << endl;
-		throw "NULL node pointer";
+		throw CommonException("NULL node pointer","GridPatch::GetNodePointer");
 	}
 	
 	return thePtr;
@@ -357,7 +358,7 @@ NodalPoint *GridPatch::GetNodePointer(int num,bool debug)
 		
 		// is it out of this patch
 		if(row<-ghostRows || row>yn+ghostRows || col<-ghostRows || col>xn+ghostRows)
-			throw "Need ghost node that is outside this patch";
+			throw CommonException("Need ghost node that is outside this patch (i.e., increase ghost rows)","GridPatch::GetNodePointer");
 		
 		if(row<0)
 		{	// ghost in full rows near the bottom
@@ -396,7 +397,7 @@ NodalPoint *GridPatch::GetNodePointer(int num,bool debug)
 		// is it out of this patch
 		if(row<-ghostRows || row>yn+ghostRows || col<-ghostRows || col>xn+ghostRows || rank<-ghostRows || rank>zn+ghostRows)
         {   cout << num << " to (" << row << "," << col << "," << rank << ")" << endl;
-			throw "Need ghost node that is outside this patch";
+			throw CommonException("Need ghost node that is outside this patch (i.e., increase ghost rows)","GridPatch::GetNodePointer");
         }
         
         if(rank<0)
@@ -436,13 +437,13 @@ NodalPoint *GridPatch::GetNodePointer(int num,bool debug)
 	if(g<0 || g>=numGhosts)
 	{	cout << "ghost for node " << num << " out of range (" << g << ") for (" << row << "," << col << ")"
         << ") from (" << y0 << "," << x0 << ")" << endl;
-		throw "ghost index out of range";
+		throw CommonException("ghost index out of range","GridPatch::GetNodePointer");
 	}
 	NodalPoint *thePtr = ghosts[g]->GetNodePointer();
 	if(thePtr==NULL)
 	{	cout << "NULL pointer for " << g << " node " << num << " at (" << row << "," << col
         << ") from (" << y0 << "," << x0 << ")" << endl;
-		throw "NULL node pointer";
+		throw CommonException("NULL node pointer","GridPatch::GetNodePointer");
 	}
 	
 	return thePtr;

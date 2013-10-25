@@ -24,7 +24,7 @@ EndXMLData
 #method="lCPDI"
 
 ! pick strain update method usually "USF" or "USAVG"
-#update="USF"
+#update="USAVG"
 
 ! Supported materials: "neohookean" (G2=0), "mooney" (G1=G2), heiso
 #matID="neohookean"
@@ -38,7 +38,7 @@ StressFreeTemp 294
 #startTemp=294
 
 ! Basic properties
-#Ebase=2500
+#Ebase=100
 #rho=1.2
 #nuBase=.4
 #aBase=60
@@ -51,9 +51,9 @@ StressFreeTemp 294
 #thick=10			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading="rigid"	! Loading = "rigid", "contact", "force", "traction", thermal
+#loading="traction"	! Loading = "rigid", "contact", "force", "traction", thermal
 #fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
-#strain=-10	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
+#strain=20	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
 
 ! Loading rate
 #tmult=160			! number of transit times to load peak

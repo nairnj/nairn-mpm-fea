@@ -11,6 +11,7 @@
 #include "Nodes/NodalPoint2D.hpp"
 #include "Nodes/NodalPoint3D.hpp"
 #include "Custom_Tasks/TransportTask.hpp"
+#include "Exceptions/CommonException.hpp"
 
 #pragma mark INITIALIZATION
 
@@ -179,7 +180,7 @@ void GhostNode::DeleteDisp(void)
 // if has ghost node return it, otherwise return real node
 NodalPoint *GhostNode::GetNodePointer(void)
 {	if(ghost==NULL && real==NULL)
-		throw "double NULL ghost node";
+		throw CommonException("double NULL ghost node","GhostNode::GetNodePointer");
 	return ghost!=NULL ? ghost : real ;
 }
 

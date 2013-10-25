@@ -162,6 +162,7 @@ class NodalPoint : public LinkedObject
         //methods - MPM only
 		void AverageStrain(DispField *,DispField *,DispField *,double);
 		int WeightAverageStrain(int,int,DispField *);
+    int WeightAverageStrain(int fld1,int fld2,int fld3,DispField *dest);
         void AdjustContact(short,short,Vector *,int,bool,double);
 		void AddInterfaceForce(short,short,Vector *,int);
 #endif

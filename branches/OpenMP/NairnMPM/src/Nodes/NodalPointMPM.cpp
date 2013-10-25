@@ -444,7 +444,7 @@ void NodalPoint::CopyRigidParticleField(void)
 
 // Add to internal force
 void NodalPoint::AddFtotTask3(short vfld,int matfld,Vector *f)
-{	if(cvf[vfld]==NULL) throw "NULL crack velocity field in grid forces test";
+{	if(cvf[vfld]==NULL) throw CommonException("NULL crack velocity field in grid forces test","NodalPoint::AddFtotTask3");
 	cvf[vfld]->AddFtotTask3(matfld,f);
 }
 
@@ -471,41 +471,49 @@ void NodalPoint::AddFextSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFextSpr
 void NodalPoint::AddTractionTask3(MPMBase *mpmptr,int matfld,Vector *f)
 {
 	// Look for crack crossing and save until later
-	int vfld=0;
 	if(firstCrack!=NULL)
 	{	Vector norm;
 		CrackHeader *nextCrack=firstCrack;
+        int vfld=0,cfld=-1;
 		while(nextCrack!=NULL)
 		{   vfld=nextCrack->CrackCross(mpmptr->pos.x,mpmptr->pos.y,x,y,&norm);
 			if(vfld!=NO_CRACK) break;
 			nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 		}
-	}
 	
-	// we will only look for field 0 or 1 (no interacting cracks allowed)
-	int cfld=-1;
-	if(CrackVelocityField::ActiveField(cvf[0]))
-	{	if(vfld == cvf[0]->location(FIRST_CRACK))
-			cfld = 0;
-		else if(CrackVelocityField::ActiveField(cvf[1]))
-		{	if(vfld == cvf[1]->location(FIRST_CRACK))
-				cfld = 1;
-		}
-	}
-	else if(CrackVelocityField::ActiveField(cvf[1]))
-	{	if(vfld == cvf[1]->location(FIRST_CRACK))
-			cfld = 1;
-	}
+        // vfld will be 0, 1, or 2 for no crack, above crack, or below crack
+        
+        // we will only look for field 0 or 1 (no interacting cracks allowed)
+        if(CrackVelocityField::ActiveField(cvf[0]))
+        {	if(vfld == cvf[0]->location(FIRST_CRACK))
+                cfld = 0;
+            else if(CrackVelocityField::ActiveField(cvf[1]))
+            {	if(vfld == cvf[1]->location(FIRST_CRACK))
+                    cfld = 1;
+            }
+        }
+        else if(CrackVelocityField::ActiveField(cvf[1]))
+        {	if(vfld == cvf[1]->location(FIRST_CRACK))
+                cfld = 1;
+        }
 	
-	// add if an active field
-	if(cfld>=0)
-	{	cvf[cfld]->AddFtotTask3(matfld,f);
-	}
-	else 
-	{	// trying switching to zero
-		cout << "# traction needs inactive field: " << vfld << endl;
-		throw "Invalid traction force";
-	}
+        // add if an active field
+        if(cfld>=0)
+        {	cvf[cfld]->AddFtotTask3(matfld,f);
+        }
+        else 
+        {	// found inactive field - but may not be error
+            cout << "# material point traction needs inactive nodal field: " << vfld << endl;
+            mpmptr->Describe();
+            Describe();
+            throw CommonException("Invalid velocity field needed for traction force","NodalPoint::AddTractionTask3");
+        }
+    }
+    
+    else if(CrackVelocityField::ActiveField(cvf[0]))
+    {   // no cracks - use field 0
+        cvf[0]->AddFtotTask3(matfld,f);
+    }
 }
 
 // Add grid dampiong force at a node in g mm/sec^2
@@ -578,7 +586,7 @@ int NodalPoint::GetFieldForCrack(int crackNum,int side,DispField **dfld,DispFiel
 	bool active3 = CrackVelocityField::ActiveNonrigidField(cvf[3]);
 	
 	// 1. Those with unknown crack or just double crack: [0], [3], [0]&[3]
-	//       [0] and [3[ possible, but not [2]
+	//       [0] and [3] possible, but not [2]
 	if(!active1)
 	{	// Must be [0] only so use it for above and below
 		if(!active3)
@@ -611,7 +619,7 @@ int NodalPoint::GetFieldForCrack(int crackNum,int side,DispField **dfld,DispFiel
 		}
 	}
 	
-	// 2. Those with one known crack (no [2] or [3]): [1], [0]&[1]
+	// 2. Those with one known crack in [1] but no [2] or [3]: [1], [0]&[1]
 	//		Has [1] and possibly [0]
 	else if(!active2 && !active3)
 	{	// the right crack is this known crack
@@ -641,7 +649,7 @@ int NodalPoint::GetFieldForCrack(int crackNum,int side,DispField **dfld,DispFiel
 	}
 		
 
-	// 3. The with two cracks using [2]: [1]&[2], [0]&[1]&[2], [1]&[2]&[3] and [0]&[1]&[2]&[3]
+	// 3. Those with two cracks using [2]: [1]&[2], [0]&[1]&[2], [1]&[2]&[3] and [0]&[1]&[2]&[3]
 	//		Has [1] and [2] and possibly [0] and [3]
 	else if(active2)
 	{	// the right crack is first crack
@@ -696,23 +704,26 @@ int NodalPoint::GetFieldForCrack(int crackNum,int side,DispField **dfld,DispFiel
 		}
 		
 		// this field has two cracks and neither match current crack so average [0], [1], [2], and [3]
+        // it always as [1] and [2], but what about [0] and [3]?
 		else if(!active0 && !active3)
 		{	*dfld = workFld;
-			count = WeightAverageStrain(0,1,workFld);
+			count = WeightAverageStrain(1,2,workFld);
 		}
 		else if(active0 && active3)
 		{	throw "Averaging [0],[1],[2], and [3] for two other cracks not programmed yet";
 		}
 		else if(active0)
-		{	throw "Averaging [0],[1], and [2] for two other cracks not programmed yet";
+		{	*dfld = workFld;
+			count = WeightAverageStrain(0,1,2,workFld);
 		}
 		else
-		{	throw "Averaging [1],[2], and [3] for two other cracks not programmed yet";
+		{	*dfld = workFld;
+			count = WeightAverageStrain(1,2,3,workFld);
 		}
 	}
     
-	// 4. Those left with double crack field but no [2]: [1]&[3], [0]&[1]&[3],
-	//		Has [1] and [3] and possible [0]
+	// 4. Those left with double crack field with [1] and [3] but no [2]: [1]&[3], [0]&[1]&[3],
+	//		Has [1] and [3] and possibly [0]
 	else
 	{	// check field [1] to see if first cracks
 		if(cvf[1]->crackNumber(FIRST_CRACK)==crackNum)
@@ -767,12 +778,14 @@ int NodalPoint::GetFieldForCrack(int crackNum,int side,DispField **dfld,DispFiel
 		}
 		
 		// this field has two cracks and neither match current crack so average [0], [1], and [3]
+        // always has [1] and [3], but what about [0]
 		else if(!active0)
 		{	*dfld = workFld;
 			count = WeightAverageStrain(1,3,workFld);
 		}
 		else
-		{	throw "Averaging [0],[1], and [3] for two other cracks not programmed yet";
+		{	*dfld = workFld;
+			count = WeightAverageStrain(0,1,3,workFld);
 		}
 	}
 	
@@ -1070,6 +1083,33 @@ int NodalPoint::WeightAverageStrain(int fld1,int fld2,DispField *dest)
 	dest->stress.xy = fract*src2->stress.xy + (1.-fract)*src1->stress.xy;
 	
 	return cvf[fld1]->GetNumberPoints() + cvf[fld2]->GetNumberPoints();
+}
+
+// Weight average two fields and store in destination field
+// fld1 and fld2 are assumed active with mass
+int NodalPoint::WeightAverageStrain(int fld1,int fld2,int fld3,DispField *dest)
+{	//cout << "# avg " << fld1 << "," << fld2 << "," << cvf[fld1] << "," << cvf[fld2] << endl;
+	double wt1 = cvf[fld1]->GetTotalMass();
+	DispField *src1 = cvf[fld1]->df;
+	double wt2 = cvf[fld2]->GetTotalMass();
+	DispField *src2 = cvf[fld2]->df;
+	double wt3 = cvf[fld3]->GetTotalMass();
+	DispField *src3 = cvf[fld3]->df;
+    double wttot = wt1+wt2+wt3;
+    double f1 = wt1/wttot, f2 = wt2/wttot, f3 = wt3/wttot;
+	
+	dest->du.x = f2*src2->du.x + f1*src1->du.x + f3*src3->du.x;
+	dest->du.y = f2*src2->du.y + f1*src1->du.y + f3*src3->du.y;
+	dest->dv.x = f2*src2->dv.x + f1*src1->dv.x + f3*src3->dv.x;
+	dest->dv.y = f2*src2->dv.y + f1*src1->dv.y + f3*src3->dv.y;
+	dest->kinetic = f2*src2->kinetic + f1*src1->kinetic + f3*src3->kinetic;
+	dest->work = f2*src2->work + f1*src1->work+ f3*src3->work;
+	dest->stress.xx = f2*src2->stress.xx + f1*src1->stress.xx + f3*src3->stress.xx;
+	dest->stress.yy = f2*src2->stress.yy + f1*src1->stress.yy + f3*src3->stress.yy;
+	dest->stress.zz = f2*src2->stress.zz + f1*src1->stress.zz + f3*src3->stress.zz;
+	dest->stress.xy = f2*src2->stress.xy + f1*src1->stress.xy + f3*src3->stress.xy;
+	
+	return cvf[fld1]->GetNumberPoints() + cvf[fld2]->GetNumberPoints() + cvf[fld3]->GetNumberPoints();
 }
 
 #pragma mark TASK 8 METHODS

@@ -141,7 +141,10 @@ CustomTask *PropagateTask::StepCalculation(void)
 						cout << "# propagation (alt)";
 				}
 				if(shouldGo==GROWNOW)
-                {   theResult=GROWNOW;
+                {   // crack number and tip
+                    cout << " crack-tip " << nextCrack->GetNumber() << "-" << i;
+                    
+                    theResult=GROWNOW;
                     tipElem=crkTip->planeInElem-1;
                     if(fabs(tipDir.x)>fabs(tipDir.y))
                         cSize=theElements[tipElem]->xmax-theElements[tipElem]->xmin;
