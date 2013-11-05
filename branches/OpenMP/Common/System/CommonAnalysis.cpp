@@ -83,6 +83,8 @@ void CommonAnalysis::StartResultsOutput(void)
 	 *   [2]==1 - Rigid contact force from mass and momentum extrapolation only
 	 *   [2]==2 - Rigid contact force from mass and momentum and update momentum tasks
 	 *   [2]==3 - Rigid contact force from mass and momentum and update strain last tasks
+     *
+     *   [3]==xxyyzz - custom patch method for parrallel (ignored if xx*yy*zz != numProcs)
 	 */
 	int i;
 	bool hasFlags=FALSE;

@@ -553,7 +553,8 @@ StartOutput.o : $(StartOutput).cpp $(dprefix) $(NairnMPM).hpp $(MaterialBase).hp
 			$(NodalTempBC).hpp $(NodalVelBC).hpp $(MatPtLoadBC).hpp $(MatPtFluxBC).hpp $(CrackHeader).hpp $(MatPtHeatFluxBC).hpp \
 			$(TransportTask).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(MatPtTractionBC).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(StartOutput).cpp
-MeshInfo.o : $(MeshInfo).cpp $(dprefix) $(MeshInfo).hpp $(GridPatch).hpp $(MPMBase).hpp $(CommonException).hpp $(BoundaryCondition).hpp
+MeshInfo.o : $(MeshInfo).cpp $(dprefix) $(MeshInfo).hpp $(GridPatch).hpp $(MPMBase).hpp $(CommonException).hpp \
+			$(BoundaryCondition).hpp $(NairnMPM).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MeshInfo).cpp
 MPMTask.o : $(MPMTask).cpp $(dprefix) $(MPMTask).hpp $(CommonTask).hpp $(ArchiveData).hpp $(CommonArchiveData).hpp $(GridPatch).hpp \
             $(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp

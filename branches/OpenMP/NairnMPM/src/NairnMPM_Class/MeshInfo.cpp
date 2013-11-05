@@ -14,6 +14,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
+#include "NairnMPM_Class/NairnMPM.hpp"
 #include <algorithm>
 
 // global class for grid information
@@ -368,6 +369,17 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 	if(numProcs<=1)
 	{	return CreateOnePatch(np);
 	}
+    
+    // custom patching
+    if(fmobj->dflag[3]>0)
+    {   // decode from flag as xxyyzz
+        xpnum = fmobj->dflag[3]/10000;
+        ypnum = (fmobj->dflag[3]-xpnum*10000)/100;
+        zpnum = (fmobj->dflag[3]-xpnum*10000-ypnum*100);
+        if(xpnum*ypnum*zpnum != numProcs) xpnum = -1;
+    }
+    else
+        xpnum = -1;
 	
 	// get prime factors in ascending order
 	vector<int> factors;
@@ -381,70 +393,76 @@ GridPatch **MeshInfo::CreatePatches(int np,int numProcs)
 		factors[0]=newFactor;
 	}
 	std::sort(factors.begin(),factors.end());
-	
-	// convert to numbers of elements in each direction and use larger
-	// prime factors in the longer directions
-	if(ndim==2)
-	{	if(horiz>=vert)
-		{	// x >= y
-			xpnum = factors[1];
-			ypnum = factors[0];
-		}
-		else
-		{	// y > x
-			ypnum = factors[1];
-			xpnum = factors[0];
-		}
-		zpnum=1;
-		zPatchSize=1;
-	}
-	else
-    {   if(horiz>=vert && horiz>=depth)
-		{	//	x >= y and z
-			xpnum = factors[2];
-			if(vert>=depth)
-			{	// x >= y >= z
-				ypnum = factors[1];
-				zpnum = factors[0];
-			}
-			else
-			{	// x >= z > y
-				zpnum = factors[1];
-				ypnum = factors[0];
-			}
-		}
-		else if(vert>=horiz && vert>=depth)
-		{	// y >= x and z
-			ypnum = factors[2];
-			if(horiz>=depth)
-			{	// y >= x >= z
-				xpnum = factors[1];
-				zpnum = factors[0];
-			}
-			else
-			{	// y >= z > x
-				zpnum = factors[1];
-				xpnum = factors[0];
-			}
-		}
-		else
-		{	// z > x and z
-			zpnum = factors[2];
-			if(horiz>=vert)
-			{	// z > x >= y
-				xpnum = factors[1];
-				ypnum = factors[0];
-			}
-			else
-			{	// z > y > x
-				ypnum = factors[1];
-				xpnum = factors[0];
-			}
-		}
-		zPatchSize = max(int(depth/zpnum+.5),1);
-	}
+    
+    if(xpnum<0)
+    {   // convert to numbers of elements in each direction and use larger
+        // prime factors in the longer directions
+        if(ndim==2)
+        {	if(horiz>=vert)
+            {	// x >= y
+                xpnum = factors[1];
+                ypnum = factors[0];
+            }
+            else
+            {	// y > x
+                ypnum = factors[1];
+                xpnum = factors[0];
+            }
+            zpnum=1;
+        }
+        else
+        {   if(horiz>=vert && horiz>=depth)
+            {	//	x >= y and z
+                xpnum = factors[2];
+                if(vert>=depth)
+                {	// x >= y >= z
+                    ypnum = factors[1];
+                    zpnum = factors[0];
+                }
+                else
+                {	// x >= z > y
+                    zpnum = factors[1];
+                    ypnum = factors[0];
+                }
+            }
+            else if(vert>=horiz && vert>=depth)
+            {	// y >= x and z
+                ypnum = factors[2];
+                if(horiz>=depth)
+                {	// y >= x >= z
+                    xpnum = factors[1];
+                    zpnum = factors[0];
+                }
+                else
+                {	// y >= z > x
+                    zpnum = factors[1];
+                    xpnum = factors[0];
+                }
+            }
+            else
+            {	// z > x and z
+                zpnum = factors[2];
+                if(horiz>=vert)
+                {	// z > x >= y
+                    xpnum = factors[1];
+                    ypnum = factors[0];
+                }
+                else
+                {	// z > y > x
+                    ypnum = factors[1];
+                    xpnum = factors[0];
+                }
+            }
+        }
+    }
+    
+    // get patch sizes
 	xPatchSize = max(int(horiz/xpnum+.5),1);
 	yPatchSize = max(int(vert/ypnum+.5),1);
+    if(ndim==2)
+        zPatchSize = 1;
+    else
+        zPatchSize = max(int(depth/zpnum+.5),1);
     
     // alloc space for patches - exit on memory error
     int totalPatches = xpnum*ypnum*zpnum;
