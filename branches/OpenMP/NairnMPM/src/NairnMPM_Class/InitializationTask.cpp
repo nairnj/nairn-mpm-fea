@@ -76,44 +76,47 @@ void InitializationTask::Execute(void)
     // tried critical sections when nodes changed, but it was slower
     // can't use ghost nodes, because need to test all on real nodes
 	if(firstCrack!=NULL || maxMaterialFields>1)
-	{   int nds[maxShapeNodes];
-        double fn[maxShapeNodes];
-
-		for(int pn=0;pn<tp;pn++)
-		{
+	{
+#pragma omp parallel
+        {
+            int nds[maxShapeNodes];
+            double fn[maxShapeNodes];
+            
+            //for(int pn=0;pn<tp;pn++)
+            int pn = GetPatchNumber();
+		
             // do non-rigid and rigid contact materials in patch pn
             for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
-            {   MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
+            {   // get material point (only in this patch)
+                MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
+                
                 while(mpmptr!=NULL)
                 {	const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
-                    int matfld = matID->GetField();									// material velocity field
+                    const int matfld = matID->GetField();                           // material velocity field
                     
                     // get nodes and shape function for material point p
-                    int i,numnds;
                     const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
                     
                     // don't actually need shape functions, but need to screen out zero shape function
                     // like done in subsequent tasks, otherwise node numbers will not align correctly
+                    // only think used from return are numnds and nds
+                    int numnds;
                     elref->GetShapeFunctions(&numnds,fn,nds,mpmptr);
                     
                     // Add particle property to each node in the element
-                    short vfld;
-                    NodalPoint *ndptr;
-                    for(i=1;i<=numnds;i++)
+                    for(int i=1;i<=numnds;i++)
                     {	// use real node in this loop
-                        ndptr = nd[nds[i]];
+                        NodalPoint *ndptr = nd[nds[i]];
                         
-                        if(firstCrack==NULL)
-                        {	vfld=0;
-                        }
+                        // always zero when no cracks
+                        short vfld = 0;
 #ifdef COMBINE_RIGID_MATERIALS
-                        else if(block==FIRST_RIGID_CONTACT)
-                        {   // when combining rigid particles, extrapolate all to field 0 and later
-                            // copy to other active fields
-                            vfld=0;
-                        }
+                        // when combining rigid particles, extrapolate all to field 0 and later
+                        // copy to other active fields
+                        if(firstCrack!=NULL && block!=FIRST_RIGID_CONTACT)
+#else
+                        if(firstCrack!=NULL)
 #endif
-                        else
                         {	// in CRAMP, find crack crossing and appropriate velocity field
                             CrackField cfld[2];
                             cfld[0].loc = NO_CRACK;			// NO_CRACK, ABOVE_CRACK, or BELOW_CRACK
@@ -141,13 +144,38 @@ void InitializationTask::Execute(void)
                                 
                             
                             // find (and allocate if needed) the velocity field
-                            vfld = ndptr->AddCrackVelocityField(matfld,cfld);
+                            // Use vfld=0 if no cracks found
+                            if(cfound>0)
+                            {   // In parallel, this is critical code
+#pragma omp critical
+                                {   try
+                                    {   vfld = ndptr->AddCrackVelocityField(matfld,cfld);
+                                    }
+                                    catch(CommonException err)
+                                    {   if(initErr==NULL)
+                                            initErr = new CommonException(err);
+                                    }
+                                }
+                            }
+                            
+                            // set material point velocity field for this node
                             mpmptr->vfld[i] = vfld;
                         }
                         
                         // make sure material velocity field is created too
-                        if(maxMaterialFields>1)
-                            ndptr->AddMatVelocityField(vfld,matfld);
+                        if(maxMaterialFields>1 && ndptr->NeedsMatVelocityField(vfld,matfld))
+                        {   // If parallel, this is critical code
+#pragma omp critical
+                            {   try
+                                {   ndptr->AddMatVelocityField(vfld,matfld);
+                                }
+                                catch(CommonException err)
+                                {   if(initErr==NULL)
+                                        initErr = new CommonException(err);
+                                }
+                            }
+                            
+                        }
                     }
                     
                     // next material point
@@ -156,7 +184,10 @@ void InitializationTask::Execute(void)
             }
 		}
     
-		// copy fields on real nodes to ghost nodes
+        // was there an error?
+        if(initErr!=NULL) throw *initErr;
+
+		// copy crack and material fields on real nodes to ghost nodes
 		if(tp>1)
         {   for(int pn=0;pn<tp;pn++)
 				patches[pn]->InitializationReduction();

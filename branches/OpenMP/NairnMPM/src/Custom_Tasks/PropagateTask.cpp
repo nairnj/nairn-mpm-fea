@@ -152,12 +152,20 @@ CustomTask *PropagateTask::StepCalculation(void)
                         cSize=theElements[tipElem]->ymax-theElements[tipElem]->ymin;
                     grow.x=cellsPerPropagationStep*cSize*tipDir.x;
                     grow.y=cellsPerPropagationStep*cSize*tipDir.y;
-                    growTo.x=crkTip->x+grow.x;
-                    growTo.y=crkTip->y+grow.y;
-					if(fmobj->dflag[0]==4) growTo.y=0.;			// force cutting simulation to stay in cut plane at 0
 					cout << " at t=" << 1000*mtime << " with J=Jtip+Jzone : " << 1000.*crkTip->Jint.z <<
 							" = " << 1000.*crkTip->Jint.x << " + " << 1000.*(crkTip->Jint.z-crkTip->Jint.x) << endl;
-                    crkTip=nextCrack->Propagate(growTo,(int)i,theMaterials[inMat-1]->tractionMat[0]);
+                    
+                    // if jump is .7 or more cells, make more than 1 segment
+                    int iseg,numSegs = 1;
+                    if(cellsPerPropagationStep>.7) numSegs= 2*(cellsPerPropagationStep+.25);
+                    CrackSegment *newCrkTip;
+                    for(iseg=1;iseg<=numSegs;iseg++)
+                    {   growTo.x=crkTip->x+(double)iseg*grow.x/(double)numSegs;
+                        growTo.y=crkTip->y+(double)iseg*grow.y/(double)numSegs;
+                        if(fmobj->dflag[0]==4) growTo.y=0.;			// force cutting simulation to stay in cut plane at 0
+                        newCrkTip=nextCrack->Propagate(growTo,(int)i,theMaterials[inMat-1]->tractionMat[0]);
+                    }
+                    crkTip = newCrkTip;
                     
 					if(crkTip!=NULL)
 					{	// check if crack speed is being controlled

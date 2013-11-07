@@ -79,6 +79,7 @@ void CrackVelocityField::Zero(short theLoc,int cnum,bool zeroMVFs)
 
 // Called in intitation to preallocate material velocituy fields
 void CrackVelocityField::AddMatVelocityField(int matfld) {}
+bool CrackVelocityField::NeedsMatVelocityField(int matfld) const { return FALSE; }
 
 // Make sure this crack velocity field on ghost node matches a real one
 // Called during time step initialization if needed (i.e., cracks and/or multimaterial mode)

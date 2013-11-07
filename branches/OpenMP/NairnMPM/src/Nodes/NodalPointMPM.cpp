@@ -245,6 +245,11 @@ void NodalPoint::AddMatVelocityField(short vfld,int matfld)
 {	cvf[vfld]->AddMatVelocityField(matfld);
 }
 
+// precheck to avoid too much critical code in parallel block
+bool NodalPoint::NeedsMatVelocityField(short vfld,int matfld) const
+{   return cvf[vfld]->NeedsMatVelocityField(matfld);
+}
+
 // When has crack and multimaterial velocity fields, make sure ghost node has copy of needed fields
 void NodalPoint::CopyFieldInitialization(NodalPoint *ghost)
 {	ghost->UseTheseFields(cvf);

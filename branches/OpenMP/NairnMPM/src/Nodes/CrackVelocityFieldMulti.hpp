@@ -23,6 +23,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		CrackVelocityFieldMulti(short,int);
 		virtual void ZeroMatFields(void);
 		virtual void AddMatVelocityField(int);
+        virtual bool NeedsMatVelocityField(int) const;
 		virtual void MatchMatVelocityFields(MatVelocityField **);
 	
 		// specific task methods

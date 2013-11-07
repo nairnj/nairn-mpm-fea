@@ -70,6 +70,9 @@ void CrackVelocityFieldMulti::AddMatVelocityField(int matfld)
 	}
 }
 
+// to avoid too much critical code, see if need to add mat velocity field first
+bool CrackVelocityFieldMulti::NeedsMatVelocityField(int matfld) const { return mvf[matfld]==NULL; }
+
 // add "mass" for rigid particle (task 1) - it counts particles too
 void CrackVelocityFieldMulti::AddMassTask1(int matfld,double mnode,int numPts)
 {	mvf[matfld]->mass += mnode;

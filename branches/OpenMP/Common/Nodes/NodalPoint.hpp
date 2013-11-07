@@ -68,6 +68,7 @@ class NodalPoint : public LinkedObject
 		void UseTheseFields(CrackVelocityField **);
 		short AddCrackVelocityField(int,CrackField *);
 		void AddMatVelocityField(short,int);
+        bool NeedsMatVelocityField(short,int) const;
 	
 		void AddMassMomentum(MPMBase *,short,int,double,double,double,double,int,bool);
         void AddMassMomentumLast(MPMBase *,short,int,double,double,double,double);
