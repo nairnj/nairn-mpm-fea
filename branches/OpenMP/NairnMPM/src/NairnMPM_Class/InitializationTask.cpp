@@ -77,13 +77,13 @@ void InitializationTask::Execute(void)
     // can't use ghost nodes, because need to test all on real nodes
 	if(firstCrack!=NULL || maxMaterialFields>1)
 	{
-#pragma omp parallel
+//#pragma omp parallel
         {
             int nds[maxShapeNodes];
             double fn[maxShapeNodes];
             
-            //for(int pn=0;pn<tp;pn++)
-            int pn = GetPatchNumber();
+            for(int pn=0;pn<tp;pn++) {
+            //int pn = GetPatchNumber();
 		
             // do non-rigid and rigid contact materials in patch pn
             for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
@@ -147,7 +147,7 @@ void InitializationTask::Execute(void)
                             // Use vfld=0 if no cracks found
                             if(cfound>0)
                             {   // In parallel, this is critical code
-#pragma omp critical
+//#pragma omp critical
                                 {   try
                                     {   vfld = ndptr->AddCrackVelocityField(matfld,cfld);
                                     }
@@ -165,7 +165,7 @@ void InitializationTask::Execute(void)
                         // make sure material velocity field is created too
                         if(maxMaterialFields>1 && ndptr->NeedsMatVelocityField(vfld,matfld))
                         {   // If parallel, this is critical code
-#pragma omp critical
+//#pragma omp critical
                             {   try
                                 {   ndptr->AddMatVelocityField(vfld,matfld);
                                 }
@@ -182,6 +182,7 @@ void InitializationTask::Execute(void)
                     mpmptr = (MPMBase *)mpmptr->GetNextObject();
                 }
             }
+            }           // end for loop when not in parallel
 		}
     
         // was there an error?
