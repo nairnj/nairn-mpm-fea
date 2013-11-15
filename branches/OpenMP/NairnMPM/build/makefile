@@ -519,7 +519,7 @@ CrackVelocityField.o : $(CrackVelocityField).cpp $(dprefix) $(CrackVelocityField
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackVelocityField).cpp
 CrackVelocityFieldMulti.o : $(CrackVelocityFieldMulti).cpp $(dprefix) $(CrackVelocityFieldMulti).hpp $(CrackVelocityField).hpp \
 			$(MatVelocityField).hpp $(NairnMPM).hpp $(NodalPoint).hpp $(CommonException).hpp $(MeshInfo).hpp $(BoundaryCondition).hpp \
-			$(MaterialInterfaceNode).hpp $(MPMBase).hpp
+			$(MaterialInterfaceNode).hpp $(MPMBase).hpp $(ConductionTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackVelocityFieldMulti).cpp
 CrackVelocityFieldSingle.o : $(CrackVelocityFieldSingle).cpp $(dprefix) $(CrackVelocityFieldSingle).hpp $(CrackVelocityField).hpp \
 			$(MatVelocityField).hpp $(NairnMPM).hpp $(NodalPoint).hpp $(CommonException).hpp $(MeshInfo).hpp $(BoundaryCondition).hpp \
@@ -691,8 +691,9 @@ CrackSegment.o : $(CrackSegment).cpp $(dprefix) $(CrackSegment).hpp $(MaterialBa
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackSegment).cpp
 ContourPoint.o : $(ContourPoint).cpp $(dprefix) $(ContourPoint).hpp $(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ContourPoint).cpp
-CrackSurfaceContact.o : $(CrackSurfaceContact).cpp $(dprefix) $(CrackSurfaceContact).hpp $(NodalPoint).hpp $(NairnMPM).hpp\
-			$(MPMBase).hpp $(CrackHeader).hpp $(MaterialBase).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(MeshInfo).hpp
+CrackSurfaceContact.o : $(CrackSurfaceContact).cpp $(dprefix) $(CrackSurfaceContact).hpp $(NodalPoint).hpp $(NairnMPM).hpp \
+			$(MPMBase).hpp $(CrackHeader).hpp $(MaterialBase).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(MeshInfo).hpp \
+            $(ConductionTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackSurfaceContact).cpp
 CrackNode.o : $(CrackNode).cpp $(dprefix) $(CrackNode).hpp $(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackNode).cpp

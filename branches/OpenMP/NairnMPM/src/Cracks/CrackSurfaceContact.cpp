@@ -18,6 +18,7 @@
 #include "Materials/MaterialBase.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
 
 // Single global contact law object
 CrackSurfaceContact contact;
@@ -393,6 +394,22 @@ short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVe
 				if(dott>mu*dotn)
 				{	AddScaledVector(&norm,&tang,mu);
 					CopyScaleVector(delPa,&norm,dotn);
+                    
+                    // get frictional part - this is g mm^2/sec^2 = nJ
+                    // Note: only add frictional heater during momentum update (when friction
+                    //   force is appropriate) and only if conduction is on.
+                    if(postUpdate && conduction && ConductionTask::crackContactHeating)
+                    {   if(np->NumberNonrigidParticles()>0)
+                        {   Vector Ftdt;
+                            CopyScaleVector(&Ftdt,&tang,mu*dotn);
+                            double qrate = (massa+massb)*DotVectors2D(&Ftdt,delPa)/(massa*massb);
+                            
+                            // As heat source need mJ/sec or multiply by 1e-6/timestep
+                            // Because this is after transport rates are calculated, need
+                            //      to divide by gMpCp as well
+                            np->fcond += fabs(1.e-6*qrate/deltime)/np->gMpCp;
+                        }
+                    }
 				}
 			}
             break;

@@ -23,6 +23,7 @@ class ConductionTask : public TransportTask
 {
     public:
 		static bool active,crackTipHeating,energyCoupling,AVHeating;
+        static bool crackContactHeating,matContactHeating;
 		
         // constructors and destructors
 		ConductionTask();

@@ -923,6 +923,18 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		ConductionTask::crackTipHeating=TRUE;
 	}
 	
+	// Turn on crack tip heating
+    else if(strcmp(xName,"CrackContactHeating")==0)
+	{	ValidateCommand(xName,THERMAL,MUST_BE_2D);
+		ConductionTask::crackContactHeating=TRUE;
+	}
+	
+	// Turn on crack tip heating
+    else if(strcmp(xName,"ContactHeating")==0)
+	{	ValidateCommand(xName,THERMAL,ANY_DIM);
+		ConductionTask::matContactHeating=TRUE;
+	}
+	
 	// Turn on adiabatic mode
     else if(strcmp(xName,"EnergyCoupling")==0)
 	{	ValidateCommand(xName,THERMAL,ANY_DIM);

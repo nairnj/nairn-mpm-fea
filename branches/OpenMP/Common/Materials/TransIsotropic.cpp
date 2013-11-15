@@ -404,12 +404,12 @@ void TransIsotropic::FillElasticProperties3D(MPMBase *mptr,ElasticProperties *p,
 	p->alpha[4] = (CTE1*cz*s2y)/2. + CTE2*(-(cz*s2y*sx2)/2. - cx*cy*sx*sz) + CTE3*(-(cx2*cz*s2y)/2. + cx*cy*sx*sz);
 	p->alpha[5] = -(CTE1*cy2*s2z)/2. + CTE3*((s2z*sx2)/2. - c2z*cx*sx*sy - (cx2*s2z*sy2)/2.) + CTE2*((cx2*s2z)/2. + c2z*cx*sx*sy - (s2z*sx2*sy2)/2.);
 	
-	p->alpha[0] = CME1*cy2*cz2 + CME2*(cx*s2z*sx*sy + cz2*sx2*sy2 + cx2*sz2) + CME3*(-(cx*s2z*sx*sy) + cx2*cz2*sy2 + sx2*sz2);
-	p->alpha[1] = CME1*cy2*sz2 + CME3*(cz2*sx2 + cx*s2z*sx*sy + cx2*sy2*sz2) + CME2*(cx2*cz2 - cx*s2z*sx*sy + sx2*sy2*sz2);
-	p->alpha[2] = CME3*cx2*cy2 + CME2*cy2*sx2 + CME1*sy2;
-	p->alpha[3] = -(CME1*s2y*sz)/2. + CME3*(cx*cy*cz*sx + (cx2*s2y*sz)/2.) + CME2*(-(cx*cy*cz*sx) + (s2y*sx2*sz)/2.);
-	p->alpha[4] = (CME1*cz*s2y)/2. + CME2*(-(cz*s2y*sx2)/2. - cx*cy*sx*sz) + CME3*(-(cx2*cz*s2y)/2. + cx*cy*sx*sz);
-	p->alpha[5] =-(CME1*cy2*s2z)/2. + CME3*((s2z*sx2)/2. - c2z*cx*sx*sy - (cx2*s2z*sy2)/2.) + CME2*((cx2*s2z)/2. + c2z*cx*sx*sy - (s2z*sx2*sy2)/2.);
+	p->beta[0] = CME1*cy2*cz2 + CME2*(cx*s2z*sx*sy + cz2*sx2*sy2 + cx2*sz2) + CME3*(-(cx*s2z*sx*sy) + cx2*cz2*sy2 + sx2*sz2);
+	p->beta[1] = CME1*cy2*sz2 + CME3*(cz2*sx2 + cx*s2z*sx*sy + cx2*sy2*sz2) + CME2*(cx2*cz2 - cx*s2z*sx*sy + sx2*sy2*sz2);
+	p->beta[2] = CME3*cx2*cy2 + CME2*cy2*sx2 + CME1*sy2;
+	p->beta[3] = -(CME1*s2y*sz)/2. + CME3*(cx*cy*cz*sx + (cx2*s2y*sz)/2.) + CME2*(-(cx*cy*cz*sx) + (s2y*sx2*sz)/2.);
+	p->beta[4] = (CME1*cz*s2y)/2. + CME2*(-(cz*s2y*sx2)/2. - cx*cy*sx*sz) + CME3*(-(cx2*cz*s2y)/2. + cx*cy*sx*sz);
+	p->beta[5] =-(CME1*cy2*s2z)/2. + CME3*((s2z*sx2)/2. - c2z*cx*sx*sy - (cx2*s2z*sy2)/2.) + CME2*((cx2*s2z)/2. + c2z*cx*sx*sy - (s2z*sx2*sy2)/2.);
 
 }
 

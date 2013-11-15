@@ -54,6 +54,8 @@
 // global
 bool ConductionTask::active=FALSE;
 bool ConductionTask::crackTipHeating=FALSE;
+bool ConductionTask::crackContactHeating=FALSE;
+bool ConductionTask::matContactHeating=FALSE;
 bool ConductionTask::energyCoupling=FALSE;
 bool ConductionTask::AVHeating=TRUE;
 ConductionTask *conduction=NULL;
@@ -78,6 +80,10 @@ TransportTask *ConductionTask::TransportOutput(void)
 {	TransportTask::TransportOutput();
 	if(crackTipHeating)
 		cout << "   Crack tip heating activated" << endl;
+	if(crackContactHeating)
+		cout << "   Crack surface frictional heating activated" << endl;
+	if(matContactHeating)
+		cout << "   Material contact frictional heating activated" << endl;
 	return nextTask;
 }
 

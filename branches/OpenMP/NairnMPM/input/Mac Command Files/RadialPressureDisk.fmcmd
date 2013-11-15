@@ -11,8 +11,9 @@ Header
 EndHeader
 
 Analysis "Axisymmetric MPM"
-#method="uGIMP"
+#method="ugimp"
 MPMMethod USF,#method
+Processors 4
 
 ! ********** Parameters Section **********
 #length=50                  ! Length in mm
@@ -55,6 +56,7 @@ Archive "Results/Disk_"&#method&"_"&#style&"/ASMPM"
 ArchiveTime #maxtime/25
 MaximumTime #maxtime
 PtsPerElement 2
+!FeedbackDamping .2
 !Damping 1500
 
 GlobalArchive sxx
@@ -63,6 +65,8 @@ GlobalArchive syy
 GlobalArchive eyye
 GlobalArchive szz
 GlobalArchive ezze
+!GlobalArchive alpha
+GlobalArchive "Grid Kinetic Energy"
 
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
 ! plastic strain is Left Cauchy Green Strain, history 1 is J or volumetric strain

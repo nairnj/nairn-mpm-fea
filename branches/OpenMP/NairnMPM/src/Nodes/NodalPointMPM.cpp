@@ -1488,6 +1488,8 @@ void NodalPoint::MaterialInterfaceForce(MaterialInterfaceNode *mmnode)
 // Look for crack contact and adjust accordingly.
 // first and last are only non-NULL in mass and momentum task and this method will create
 //      a crack node for any nodes that need to do crack contact
+// poastUpdate is only TRUE when called in the momentum update (and the expectation is that
+//      the forces at that time or the contact forces and used for friction)
 void NodalPoint::CrackContact(bool postUpdate,double deltime,CrackNode **first,CrackNode **last)
 {	// Nothing to do if not near a crack contact surface: Possible fields are
 	//  1. Those with no contacts: [0], [1], [3], [0]&[3], [1]&[2]

@@ -234,7 +234,7 @@
 <!-- Thermal analysis -->
 
 <!ELEMENT	Thermal
-			( Conduction?, CrackTipHeating?, EnergyCoupling?, NoAVHeating?, Isothermal? ) >
+			( Conduction?, CrackTipHeating?, EnergyCoupling?, NoAVHeating?, Isothermal?, CrackContactHeating?, ContactHeating? ) >
 
 <!-- Gravity analysis -->
 
@@ -343,6 +343,8 @@
 			reference CDATA #IMPLIED>
 <!ELEMENT	Conduction EMPTY>
 <!ELEMENT	CrackTipHeating EMPTY>
+<!ELEMENT	CrackContactHeating EMPTY>
+<!ELEMENT	ContactHeating EMPTY>
 <!ELEMENT	EnergyCoupling EMPTY>
 <!ELEMENT	NoAVHeating EMPTY>
 
