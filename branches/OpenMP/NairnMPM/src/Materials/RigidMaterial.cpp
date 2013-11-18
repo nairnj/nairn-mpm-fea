@@ -21,6 +21,8 @@
 #include "Exceptions/CommonException.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 
+extern double timestep;
+
 bool RigidMaterial::someSetTemperature = FALSE;
 
 #pragma mark RigidMaterial::Constructors and Destructors
@@ -30,7 +32,8 @@ double RigidMaterial::varTime=0.;
 double RigidMaterial::xPos=0.;
 double RigidMaterial::yPos=0.;
 double RigidMaterial::zPos=0.;
-PRVar rmTimeArray[4] = { NULL,NULL,NULL,NULL };
+double RigidMaterial::delTime=0.;
+PRVar rmTimeArray[5] = { NULL,NULL,NULL,NULL,NULL };
 
 // Constructors
 RigidMaterial::RigidMaterial()
@@ -372,6 +375,7 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
         xPos=pos->x;
         yPos=pos->y;
         zPos=pos->z;
+		delTime=1000.*timestep;
         hasDir[0] = hasDir[1] = hasDir[2] = false;
 	
 		if(function!=NULL)
@@ -451,11 +455,13 @@ void RigidMaterial::SetSettingFunction(char *bcFunction,int functionNum)
 		ThrowSAXException("Setting function of time and position is missing");
 	
 	// create time variable if needed
+	int numVars = 5;
 	if(rmTimeArray[0]==NULL)
 	{	rmTimeArray[0]=new RVar("t",&varTime);
 		rmTimeArray[1]=new RVar("x",&xPos);
 		rmTimeArray[2]=new RVar("y",&yPos);
 		rmTimeArray[3]=new RVar("z",&zPos);
+		rmTimeArray[4]=new RVar("dt",&delTime);
 	}
 	
 	// set one to three functions in order in check them
@@ -463,7 +469,7 @@ void RigidMaterial::SetSettingFunction(char *bcFunction,int functionNum)
 	{	case SETTING_FUNCTION_BLOCK:
 			if(function!=NULL)
 				ThrowSAXException("Duplicate setting function #1");
-			function=new ROperation(bcFunction,4,rmTimeArray);
+			function=new ROperation(bcFunction,numVars,rmTimeArray);
 			if(function->HasError())
 				ThrowSAXException("Setting function #1 is not valid");
 			break;
@@ -472,7 +478,7 @@ void RigidMaterial::SetSettingFunction(char *bcFunction,int functionNum)
 				ThrowSAXException("Cannot set function #2 before function #1 unless rigid contact material");
 			if(function2!=NULL)
 				ThrowSAXException("Duplicate setting function #2");
-			function2=new ROperation(bcFunction,4,rmTimeArray);
+			function2=new ROperation(bcFunction,numVars,rmTimeArray);
 			if(function2->HasError())
 				ThrowSAXException("Setting function #2 is not valid");
 			break;
@@ -481,14 +487,14 @@ void RigidMaterial::SetSettingFunction(char *bcFunction,int functionNum)
 				ThrowSAXException("Cannot set function #3 before functions #1 and #2 unless rigid contact material");
 			if(function3!=NULL)
 				ThrowSAXException("Duplicate setting function #3");
-			function3=new ROperation(bcFunction,4,rmTimeArray);
+			function3=new ROperation(bcFunction,numVars,rmTimeArray);
 			if(function3->HasError())
 				ThrowSAXException("Setting function #3 is not valid");
 			break;
         case VALUE_FUNCTION_BLOCK:
             if(Vfunction!=NULL)
 				ThrowSAXException("Duplicate value setting function");
-			Vfunction=new ROperation(bcFunction,4,rmTimeArray);
+			Vfunction=new ROperation(bcFunction,numVars,rmTimeArray);
 			if(Vfunction->HasError())
 				ThrowSAXException("Value setting function is not valid");
 			break;

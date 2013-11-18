@@ -65,7 +65,7 @@ class RigidMaterial : public MaterialBase
 		ROperation *function2;
 		ROperation *function3;
         ROperation *Vfunction;
-		static double varTime,xPos,yPos,zPos;
+		static double varTime,xPos,yPos,zPos,delTime;
 };
 
 #endif

@@ -85,11 +85,13 @@ Changes by John Nairn, April 2007
 #define MAX_FUNCTIONS 3
 
 double xvalue,yvalue,zvalue,dvalue,thetavalue;
-PRVar vararray[7];
+int numVars = 8;
+PRVar vararray[8];
 PROperation op=NULL;
 PROperation opex[2]={NULL,NULL};
 
 // create function of x,y,z (or R=x and Z=y in axisymmetric) or D and T for polar coordinates from x and y
+// and dt (used in rigid velocities)
 // deletes input string and replaced with formatted expression
 // called should DeleteFunction() when done using it
 bool CreateFunction(char *&eqn)
@@ -102,9 +104,10 @@ bool CreateFunction(char *&eqn)
 	vararray[4]=new RVar("D",&dvalue);
 	vararray[5]=new RVar("T",&thetavalue);
 	vararray[6]=new RVar("z",&zvalue);
+	vararray[7]=new RVar("dt",&zvalue);
 	
 	// create the function
-	op=new ROperation(eqn,7,vararray);
+	op=new ROperation(eqn,numVars,vararray);
 	
 	if(op->HasError())
 	{	DeleteFunction();
@@ -130,7 +133,7 @@ bool CreateFunction(char *&eqn,int i)
 	if(op==NULL || i>MAX_FUNCTIONS || i<2) return false;
 	
 	// create the function
-	opex[i-2]=new ROperation(eqn,7,vararray);
+	opex[i-2]=new ROperation(eqn,numVars,vararray);
 	
 	if(opex[i-2]->HasError())
 	{	DeleteFunction(i);
@@ -147,13 +150,9 @@ bool CreateFunction(char *&eqn,int i)
 void DeleteFunction(void)
 {
 	if(op==NULL) return;
-	delete vararray[0];
-	delete vararray[1];
-	delete vararray[2];
-	delete vararray[3];
-	delete vararray[4];
-	delete vararray[5];
-	delete vararray[6];
+	int i;
+	for(i=0;i<numVars;i++)
+		delete vararray[i];
 	delete op;
 	op=NULL;
 }
