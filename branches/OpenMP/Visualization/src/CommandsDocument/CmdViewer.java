@@ -1420,11 +1420,15 @@ public class CmdViewer extends JNCmdTextDocument
 		// options
 		boolean hasCoupling = false;
 		boolean hasTips = false;
+		boolean hasFriction = false;
+		boolean hasCrackFriction = false;
 		HashMap<String,Integer> options = new HashMap<String,Integer>(4);
 		options.put("adiabatic", new Integer(1));
 		options.put("mechanical energy", new Integer(1));
 		options.put("isothermal", new Integer(2));
 		options.put("crack tips", new Integer(3));
+		options.put("friction", new Integer(4));
+		options.put("crack friction", new Integer(5));
 		
 		// each one
 		int arg = 2;
@@ -1436,6 +1440,10 @@ public class CmdViewer extends JNCmdTextDocument
 				hasCoupling = false;
 			else if(opt==3)
 				hasTips = true;
+			else if(opt==4)
+				hasFriction = true;
+			else if(opt==5)
+				hasCrackFriction = true;
 			arg++;
 		}
 		
@@ -1446,6 +1454,8 @@ public class CmdViewer extends JNCmdTextDocument
 			conduction = "";
 		if(hasCoupling) conduction = conduction + "    <EnergyCoupling/>\n";
 		if(hasTips) conduction = conduction + "    <CrackTipHeating/>\n";
+		if(hasFriction) conduction = conduction + "    <ContactHeating/>\n";
+		if(hasCrackFriction) conduction = conduction + "    <CrackContactHeating/>\n";
 	}
 
 	// Gravity <#1>,<#2>,<#3>
