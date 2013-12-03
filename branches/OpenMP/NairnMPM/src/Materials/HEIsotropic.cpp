@@ -155,6 +155,7 @@ void HEIsotropic::PrintMechanicalProperties(void) const
 char *HEIsotropic::InitHistoryData(void)
 {	J_history = plasticLaw->HistoryDoublesNeeded();
 	double *p = CreateAndZeroDoubles(J_history+1);
+    plasticLaw->InitPlasticHistoryData(p);
 	p[J_history]=1.;					// J
 	return (char *)p;
 }

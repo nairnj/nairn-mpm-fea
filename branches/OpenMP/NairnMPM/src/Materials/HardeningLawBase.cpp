@@ -54,6 +54,9 @@ const char *HardeningLawBase::VerifyAndLoadProperties(int np)
 // This should be put in history variable 0
 int HardeningLawBase::HistoryDoublesNeeded(void) const { return 1; }
 
+// initialize any non-zero history data needed in this plastic law
+void HardeningLawBase::InitPlasticHistoryData(double *p) const {}
+
 #pragma mark HardeningLawBase::Methods
 
 // size of hardening law properties needed in strain updates
@@ -359,7 +362,7 @@ bool HardeningLawBase::LambdaConverged(int step,double lambda,double delLam) con
 
 #pragma mark HardeningLawBase::Accessors
 
-// IsoPlasticity has now history data, by the hardening law might
+// IsoPlasticity has no history data, but the hardening law might (and are all assumed doubles here)
 double HardeningLawBase::GetHistory(int num,char *historyPtr) const
 {	
     double history=0.;

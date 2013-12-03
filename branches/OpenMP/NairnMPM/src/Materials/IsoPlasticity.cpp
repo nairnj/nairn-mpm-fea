@@ -112,7 +112,8 @@ char *IsoPlasticity::InitHistoryData(void)
 {	int num = plasticLaw->HistoryDoublesNeeded();
 	if(num==0) return NULL;
 	double *p = CreateAndZeroDoubles(num);
-	return (char *)p;
+	plasticLaw->InitPlasticHistoryData(p);
+    return (char *)p;
 }
 
 #pragma mark IsoPlasticity:Methods

@@ -35,6 +35,7 @@ class HardeningLawBase
 		virtual const char *VerifyAndLoadProperties(int);
         virtual void PrintYieldProperties(void) const = 0;
 		virtual int HistoryDoublesNeeded(void) const;
+        virtual void InitPlasticHistoryData(double *) const;
     
         // load properties
         virtual int SizeOfHardeningProps(void) const;
