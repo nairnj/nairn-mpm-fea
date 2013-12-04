@@ -40,30 +40,30 @@ StressFreeTemp 294
 ! Basic properties
 #Ebase=100
 #rho=1.2
-#nuBase=.4
+#nuBase=.3
 #aBase=60
 #yldstrain=10		! in percent
 
 ! Dimensions
-#cell=2
-#length=40			! length
-#width=10			! width
-#thick=10			! thickness
+#cell=.1
+#length=1			! length
+#width=1			! width
+#thick=1			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading="traction"	! Loading = "rigid", "contact", "force", "traction", thermal
-#fixsides="no"		! Yes to constrain y direction (and z direction if 3D)
-#strain=20	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
+#loading="contact"	! Loading = "rigid", "contact", "force", "traction", thermal
+#fixsides="yes"		! Yes to constrain y direction (and z direction if 3D)
+#strain=100	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
 
 ! Loading rate
-#tmult=160			! number of transit times to load peak
+#tmult=30			! number of transit times to load peak
 #hold=0				! hold time (multiple of loading time)
 #unload=0		    ! 0 no unload or >0 for unloading time (multiple of loading time, but at same loading rate)
 
 ! Damping parameter - for feedback or grid damping
 #damp=0
 #fbdamp=0.0
-#factor=0.1			! time step factor
+#factor=0.01			! time step factor
 
 ! ------------ Calculations ---------------
 
@@ -76,11 +76,10 @@ conduction "no","isothermal"
 ! convert to contact
 if #loading="contact"
   MultimaterialMode 0,enabled,maxgrad,100
-  !ImperfectInterfaceMM 0,100
+  ImperfectInterfaceMM 0,1e15
   XMLData,"Header"
     <DevelFlag Number='0'>3</DevelFlag>
     <DevelFlag Number='1'>-1</DevelFlag>
-    <DevelFlag Number='2'>0</DevelFlag>
   EndXMLData
 endif
 
@@ -124,7 +123,7 @@ if #fixsides="yes"
 else
   Archive "Results/HETension/"&#analysis&"-"&#method&"-"&#update&"/"&#loading&"/"&#matID
 endif
-!TimeStep 1000,(1+#hold+#unload)*#time,#factor
+TimeStep 1000,(1+#hold+#unload)*#time,#factor
 !MaximumTime (1+#hold+#unload)*#time
 ArchiveTime (1+#hold+#unload)*#time/50
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
