@@ -243,7 +243,7 @@ void BistableIsotropic::ValidateForUse(int np) const
 	}
 	
 	// call super class (why can't call super class?)
-	return IsotropicMat::ValidateForUse(np);
+	IsotropicMat::ValidateForUse(np);
 }
 
 // calculate properties for give state

@@ -30,7 +30,7 @@ class HEAnisotropic : public HyperElastic
 		// initialize
         virtual char *InputMat(char *,int &);
         virtual const char *VerifyAndLoadProperties(int);
-        void ValidateForUse(int np) const;
+        virtual void ValidateForUse(int np) const;
 		virtual void PrintMechanicalProperties(void) const;
         char *InitHistoryData(void);
 		

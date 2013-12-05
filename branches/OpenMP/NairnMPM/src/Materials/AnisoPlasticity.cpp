@@ -155,7 +155,7 @@ void AnisoPlasticity::ValidateForUse(int np) const
 	}
 	
 	// call super class (why can't call super class?)
-	return Orthotropic::ValidateForUse(np);
+	Orthotropic::ValidateForUse(np);
 }
 
 // print to output window

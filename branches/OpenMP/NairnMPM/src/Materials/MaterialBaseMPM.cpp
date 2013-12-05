@@ -402,7 +402,7 @@ const char *MaterialBase::PreferredDirection(int style)
 }
 
 // Called before analysis, material can fill in things that never change during the analysis
-// Note: no angle, because can not depend on material angle
+// Note: no angle, because cannot depend on material angle
 // Here fills in isotropic properties, materials with different anisotropic properties should override
 void MaterialBase::FillTransportProperties(TransportProperties *t)
 {

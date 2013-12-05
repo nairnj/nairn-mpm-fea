@@ -245,6 +245,7 @@ SphereController = $(src)/Read_MPM/SphereController
 StartOutput = $(src)/NairnMPM_Class/StartOutput
 StrX = $(com)/Exceptions/StrX
 svninfo = $(com)/System/svninfo
+TaitLiquid = $(src)/Materials/TaitLiquid
 ThermalRamp = $(src)/Global_Quantities/ThermalRamp
 TorusController = $(src)/Read_MPM/TorusController
 TractionLaw = $(src)/Materials/TractionLaw
@@ -352,6 +353,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # SCGLHardening.hpp : HardeningLawBase.hpp, MaterialBase.hpp
 # SLMaterial.hpp :  SCGLHardening.hpp, HardeningLawBase.hpp, MaterialBase.hpp
 # SphereController.hpp : ShapeController.hpp
+# TaitLiquid.hpp : HyperElastic.hpp (MaterialBase.hpp)
 # TorusController.hpp : ShapeController.hpp
 # TractionLaw.hpp : MaterialBase.hpp
 # TransIsotropic.hpp : Elastic.hpp (MaterialBase.hpp)
@@ -388,7 +390,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		Mooney.o HEAnisotropic.o HEIsotropic.o BistableIsotropic.o RigidMaterial.o HardeningLawBase.o LinearHardening.o \
 		MatPtLoadBC.o MatPtTractionBC.o MatPtFluxBC.o NodalVelBC.o NodalConcBC.o NodalTempBC.o MoreMPMElementBase.o \
 		NodalPointMPM.o CustomTask.o CalcJKTask.o PropagateTask.o ReverseLoad.o IdealGas.o NonlinearHardening.o \
-		DiffusionTask.o ConductionTask.o MeshInfo.o TransportTask.o ElementBase3D.o SCGLHardening.o \
+		DiffusionTask.o ConductionTask.o MeshInfo.o TransportTask.o ElementBase3D.o SCGLHardening.o TaitLiquid.o \
 		EightNodeIsoparamBrick.o MatPoint3D.o Elastic.o ElasticMPM.o HyperElastic.o Nonlinear2Hardening.o \
 		mathexpr.o ShapeController.o PointController.o RectController.o OvalController.o PolygonController.o \
 		SphereController.o ArcController.o MatVelocityField.o CrackVelocityField.o HistoryArchive.o CarnotCycle.o \
@@ -464,7 +466,7 @@ MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialControlle
 		$(Mooney).hpp $(HEAnisotropic).hpp $(BistableIsotropic).hpp $(RigidMaterial).hpp $(MaterialBase).hpp \
 		$(Elastic).hpp $(HyperElastic).hpp $(NairnMPM).hpp $(TractionLaw).hpp $(CohesiveZone).hpp $(LinearTraction).hpp \
 		$(CubicTraction).hpp $(AnisoPlasticity).hpp $(IsoPlasticity.hpp) $(HillPlastic).hpp $(MGSCGLMaterial).hpp \
-		$(WoodMaterial).hpp $(TrilinearTraction).hpp $(IdealGas).hpp $(CoupledSawTooth).hpp \
+		$(WoodMaterial).hpp $(TrilinearTraction).hpp $(IdealGas).hpp $(CoupledSawTooth).hpp $(TaitLiquid).hpp \
         $(HEIsotropic).hpp $(HEMGEOSMaterial).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialController).cpp
 mathexpr.o : $(mathexpr).cpp $(mathexpr).hpp
@@ -738,6 +740,9 @@ HEAnisotropic.o : $(HEAnisotropic).cpp $(dprefix) $(HEAnisotropic).hpp $(Materia
 IdealGas.o : $(IdealGas).cpp $(dprefix) $(IdealGas).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(TransportTask).hpp \
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp $(ThermalRamp).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(IdealGas).cpp
+TaitLiquid.o : $(TaitLiquid).cpp $(dprefix) $(TaitLiquid).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(MPMBase).hpp \
+			$(CommonException).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TaitLiquid).cpp
 HillPlastic.o : $(HillPlastic).cpp $(dprefix) $(HillPlastic).hpp $(AnisoPlasticity).hpp $(Orthotropic).hpp \
 			$(TransIsotropic).hpp $(MaterialBase).hpp $(Elastic).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(HillPlastic).cpp

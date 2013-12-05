@@ -151,7 +151,7 @@ void MGSCGLMaterial::ValidateForUse(int np) const
     }
 	
 	// call super class
-	return IsoPlasticity::ValidateForUse(np);
+	IsoPlasticity::ValidateForUse(np);
 }
 
 

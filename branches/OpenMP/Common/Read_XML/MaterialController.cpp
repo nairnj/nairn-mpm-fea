@@ -30,6 +30,7 @@
 	#include "Materials/CubicTraction.hpp"
 	#include "Materials/TrilinearTraction.hpp"
     #include "Materials/IdealGas.hpp"
+    #include "Materials/TaitLiquid.hpp"
 	#include "Materials/HEMGEOSMaterial.hpp"
 #else
 	#include "Materials/ImperfectInterface.hpp"
@@ -131,6 +132,9 @@ int MaterialController::AddMaterial(int matID,char *matName)
 			break;
 		case IDEALGASMATERIAL:
 			newMaterial=new IdealGas(matName);
+			break;
+		case TAITLIQUID:
+			newMaterial=new TaitLiquid(matName);
 			break;
 		case HEMGEOSMATERIAL:
 			newMaterial=new HEMGEOSMaterial(matName);

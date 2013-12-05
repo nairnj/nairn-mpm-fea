@@ -103,6 +103,8 @@
 		A74E8C290729C8A00065FC30 /* MoreMPMElementBase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A74E8BDF0729C5BE0065FC30 /* MoreMPMElementBase.cpp */; };
 		A750ED3E0EE9C10E003545A3 /* VTKArchive.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A750ED3C0EE9C10E003545A3 /* VTKArchive.hpp */; };
 		A750ED3F0EE9C10E003545A3 /* VTKArchive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A750ED3D0EE9C10E003545A3 /* VTKArchive.cpp */; };
+		A75B5901184FBA030011ADAE /* TaitLiquid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A75B58FF184FBA030011ADAE /* TaitLiquid.cpp */; };
+		A75B5902184FBA030011ADAE /* TaitLiquid.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A75B5900184FBA030011ADAE /* TaitLiquid.hpp */; };
 		A75FFB801033577F0048082E /* CrackVelocityField.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A75FFB7E1033577F0048082E /* CrackVelocityField.hpp */; };
 		A75FFB811033577F0048082E /* CrackVelocityField.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A75FFB7F1033577F0048082E /* CrackVelocityField.cpp */; };
 		A766701C05862EB600F56460 /* NairnMPM.hpp in Headers */ = {isa = PBXBuildFile; fileRef = F58CCE1801A989A50163AF2F /* NairnMPM.hpp */; };
@@ -518,6 +520,8 @@
 		A753E1DD03EEE6630063AF10 /* StrX.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = StrX.hpp; sourceTree = "<group>"; };
 		A758DC0003E9A92C0063AF10 /* Orthotropic.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = Orthotropic.cpp; sourceTree = "<group>"; };
 		A758DC0103E9A92C0063AF10 /* Orthotropic.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = Orthotropic.hpp; sourceTree = "<group>"; };
+		A75B58FF184FBA030011ADAE /* TaitLiquid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TaitLiquid.cpp; path = Materials/TaitLiquid.cpp; sourceTree = "<group>"; };
+		A75B5900184FBA030011ADAE /* TaitLiquid.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = TaitLiquid.hpp; path = Materials/TaitLiquid.hpp; sourceTree = "<group>"; };
 		A75FFB7E1033577F0048082E /* CrackVelocityField.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CrackVelocityField.hpp; sourceTree = "<group>"; };
 		A75FFB7F1033577F0048082E /* CrackVelocityField.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CrackVelocityField.cpp; sourceTree = "<group>"; };
 		A766706705862EB600F56460 /* NairnMPM */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = NairnMPM; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1212,6 +1216,8 @@
 				67FFAA0916D31E95003A7C53 /* HEMGEOSMaterial.cpp */,
 				A743491415792C0300EF8DFA /* IdealGas.hpp */,
 				A743491315792C0300EF8DFA /* IdealGas.cpp */,
+				A75B5900184FBA030011ADAE /* TaitLiquid.hpp */,
+				A75B58FF184FBA030011ADAE /* TaitLiquid.cpp */,
 			);
 			name = Hyperelastic_Plastic;
 			sourceTree = "<group>";
@@ -1594,6 +1600,7 @@
 				A79D0A301744268600321C74 /* TorusController.hpp in Headers */,
 				A7D62D2A175582E0008FA00A /* MatPtHeatFluxBC.hpp in Headers */,
 				6741B24917EDFF1300CFADC7 /* PressureLaw.hpp in Headers */,
+				A75B5902184FBA030011ADAE /* TaitLiquid.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1917,6 +1924,7 @@
 				A79D0A2D1744267300321C74 /* TorusController.cpp in Sources */,
 				A7D62D2817557EE0008FA00A /* MatPtHeatFluxBC.cpp in Sources */,
 				6741B24817EDFF1300CFADC7 /* PressureLaw.cpp in Sources */,
+				A75B5901184FBA030011ADAE /* TaitLiquid.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

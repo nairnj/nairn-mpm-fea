@@ -151,7 +151,7 @@ void Viscoelastic::ValidateForUse(int np) const
 	}
 	
 	//call super class (why can't call super class?)
-	return MaterialBase::ValidateForUse(np);
+	MaterialBase::ValidateForUse(np);
 }
 
 // create and return pointer to history variables

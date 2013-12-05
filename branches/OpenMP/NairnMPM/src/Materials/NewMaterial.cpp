@@ -6,9 +6,6 @@
     Copyright (c) 2008 John A. Nairn, All rights reserved.
  
 	See Create_MPM_Material for details in google code web site wiki
-
-	Dependencies
-		MaterialBase.hpp
 ********************************************************************************/
 
 #include "NewMaterial.hpp"
@@ -70,24 +67,22 @@ void NewMaterial::PrintMechanicalProperties(void) const
 // Print transport properties (if activated)
 //void NewMaterial::PrintTransportProperties(void) const {}
 
-// If MPM analysis not allowed, throw an exception (e.g. 3D not implemented)
-// If OK, MUST pass on to super class
-// (see also VerifyAndLoadProperties() for generic material property checks)
-//void NewMaterial::ValidateForUse(int np) const
+// if analysis not allowed, throw a CommonException
+// Call super class when checks are done
+//bool NewMaterial::ValidateForUse(int np) const
 //{	if(np==THREED_MPM)
 //	{	throw CommonException("NewMaterial cannot do 3D MPM analysis",
 //							  "NewMaterial::ValidateForUse");
 //	}
-//	return MaterialBase::ValidateForUse(np);
+//	MaterialBase::ValidateForUse(np);
 //}
+
+#pragma mark NewMaterial:HistoryVariables
 
 // If needed, a material can initialize particle state
 // For example, ideal gas initializes to base line pressure
 // If used, be sure to pass on to superclass when done
 //void NewMaterial::SetInitialParticleState(MPMBase *mptr,int np) const {}
-
-
-#pragma mark NewMaterial:HistoryVariables
 
 // Initialize history data for a particle (if has any)
 //char *NewMaterial::InitHistoryData(void) { return NULL; }
@@ -96,6 +91,16 @@ void NewMaterial::PrintMechanicalProperties(void) const
 //double NewMaterial::GetHistory(int num,char *historyPtr) const { return 0.; }
 
 #pragma mark NewMaterial:Step Methods
+
+// Return buffer size and buffer size for hardenling law (if used)
+//int MaterialBase::SizeOfMechanicalProperties(int &altBufferSize) const
+//{   return 0;
+//}
+
+// Get copy of properties in the material class that depend on material state
+//void *MaterialBase::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
+//{	return NULL;
+//}
 
 // Calculate transport properties that depend on the state of the particle
 //void NewMaterial::LoadTransportProps(MPMBase *mptr,int np,TransportProperties *t) const {}
@@ -115,11 +120,11 @@ void NewMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 
 #pragma mark NewMaterial::Accessors
 
-// Return the material tag
-int NewMaterial::MaterialTag(void) const { return NEWMATERIAL; }
-
 // return unique, short name for this material
 const char *NewMaterial::MaterialType(void) const { return "Template Material"; }
+
+// Return the material tag
+int NewMaterial::MaterialTag(void) const { return NEWMATERIAL; }
 
 // Calculate maximum wave speed for material in mm/sec.
 double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; }

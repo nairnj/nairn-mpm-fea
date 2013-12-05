@@ -78,7 +78,7 @@ void IdealGas::ValidateForUse(int np) const
 	}
 	
 	// call super class (why can't call super class?)
-	return HyperElastic::ValidateForUse(np);
+	HyperElastic::ValidateForUse(np);
 }
 
 // print mechanical properties output window

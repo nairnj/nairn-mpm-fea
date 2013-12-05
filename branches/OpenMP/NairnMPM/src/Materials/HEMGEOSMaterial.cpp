@@ -161,7 +161,7 @@ void HEMGEOSMaterial::ValidateForUse(int np) const
     }
 	
 	// call super class
-	return HEIsotropic::ValidateForUse(np);
+	HEIsotropic::ValidateForUse(np);
 }
 
 
