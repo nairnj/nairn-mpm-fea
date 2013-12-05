@@ -135,8 +135,10 @@ class NodalPoint : public LinkedObject
 		void GetVolumeGradient(short,int,Vector *,double) const;
         void SetMomVel(Vector *);
         void AddMomVel(Vector *,double);
+		void ReflectMomVel(Vector *,NodalPoint *);
         void SetFtotDirection(Vector *,double,Vector *);
         void AddFtotDirection(Vector *,double,double,Vector *);
+		void ReflectFtotDirection(Vector *,double,NodalPoint *,Vector *);
         Vector GetCMatMomentum(void);
 		void SetFixedDirection(int);
 		void UnsetFixedDirection(int);

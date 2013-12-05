@@ -41,8 +41,10 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		// boundary conditions
         virtual void SetMomVel(Vector *);
         virtual void AddMomVel(Vector *,double);
+		virtual void ReflectMomVel(Vector *,CrackVelocityField *);
         virtual void SetFtotDirection(Vector *,double,Vector *);
         virtual void AddFtotDirection(Vector *,double,double,Vector *);
+		virtual void ReflectFtotDirection(Vector *,double,CrackVelocityField *,Vector *);
 	
 		// accessors
 		virtual double GetTotalMass(void) const;

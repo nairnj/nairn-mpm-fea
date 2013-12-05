@@ -163,7 +163,7 @@ void MassAndMomentumTask::Execute(void)
         }
 	}
 	
-	// throw now - only possible error is too many CPDI nodes in 3D
+	// throw now - only possible error if too many CPDI nodes in 3D
 	if(massErr!=NULL) throw *massErr;
     
 	// reduction of ghost node forces to real nodes
@@ -174,7 +174,7 @@ void MassAndMomentumTask::Execute(void)
 	}
     	
 	// undo dynamic velocity, temp, and conc BCs from rigid materials
-    // and get pointer to first empty on in reuseRigid...BC
+    // and get pointer to first empty one in reuseRigid...BC
 	UnsetRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 				  (BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 	UnsetRigidBCs((BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,

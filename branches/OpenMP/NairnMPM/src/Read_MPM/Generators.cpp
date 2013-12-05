@@ -46,8 +46,8 @@
 
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
-double Xsym,Ysym,Zsym;
-int xsymdir=0,ysymdir=0,zsymdir=0;
+double Xsym,Ysym,Zsym,Xsymmax,Ysymmax,Zsymmax;
+int xsymdir=0,ysymdir=0,zsymdir=0,xsymmaxdir=0,ysymmaxdir=0,zsymmaxdir=0;
 double pConc,pTempSet,Angle,Thick;
 int Nhoriz=0,Nvert=0,Ndepth=0,MatID;
 double cellHoriz=-1.,cellVert=-1.,cellDepth=-1.;
@@ -143,14 +143,13 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%lf",&Rhoriz);
             else if(strcmp(aName,"cellsize")==0)
                 sscanf(value,"%lf",&cellHoriz);
-            else if(strcmp(aName,"sym")==0)
+            else if(strcmp(aName,"symmin")==0)
 			{	sscanf(value,"%lf",&Xsym);
-				if(!xsymdir) xsymdir = -1;
+				xsymdir = -1;
 			}
-            else if(strcmp(aName,"symdir")==0)
-			{	double symdir;
-				sscanf(value,"%lf",&symdir);
-				xsymdir = symdir<0. ? -1 : +1 ;
+            else if(strcmp(aName,"symmax")==0)
+			{	sscanf(value,"%lf",&Xsymmax);
+				xsymmaxdir = +1;
 			}
             delete [] aName;
             delete [] value;
@@ -169,14 +168,13 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%lf",&Rvert);
  			else if(strcmp(aName,"cellsize")==0)
                 sscanf(value,"%lf",&cellVert);
-            else if(strcmp(aName,"sym")==0)
+            else if(strcmp(aName,"symmin")==0)
 			{	sscanf(value,"%lf",&Ysym);
-				if(!ysymdir) ysymdir = -1;
+				ysymdir = -1;
 			}
-            else if(strcmp(aName,"symdir")==0)
-			{	double symdir;
-				sscanf(value,"%lf",&symdir);
-				ysymdir = symdir<0. ? -1 : +1 ;
+            else if(strcmp(aName,"symmax")==0)
+			{	sscanf(value,"%lf",&Ysymmax);
+				ysymmaxdir = +1;
 			}
            	delete [] aName;
             delete [] value;
@@ -195,14 +193,13 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
                 sscanf(value,"%lf",&Rdepth);
             else if(strcmp(aName,"cellsize")==0)
                 sscanf(value,"%lf",&cellDepth);
-            else if(strcmp(aName,"sym")==0)
+            else if(strcmp(aName,"symmin")==0)
 			{	sscanf(value,"%lf",&Zsym);
-				if(!zsymdir) zsymdir = -1;
+				zsymdir = -1;
 			}
-            else if(strcmp(aName,"symdir")==0)
-			{	double symdir;
-				sscanf(value,"%lf",&symdir);
-				zsymdir = symdir<0. ? -1 : +1 ;
+            else if(strcmp(aName,"symmax")==0)
+			{	sscanf(value,"%lf",&Zsymmax);
+				zsymmaxdir = +1;
 			}
            	delete [] aName;
             delete [] value;
@@ -1220,8 +1217,6 @@ void MPMReadHandler::CreateSymmetryBCs()
 				throw SAXException("Axisymetric grid that includes r<1.25dr must have nodes at multiple of dr.");
 		}
 	}
-	else if(!xsymdir && !ysymdir && !zsymdir)
-		return;
 	
 	// synmetry conditions require a structured grid
 	if(!mpmgrid.IsStructuredGrid()) return;
@@ -1229,10 +1224,16 @@ void MPMReadHandler::CreateSymmetryBCs()
 	// allow one plane in each direction
 	if(xsymdir)
 		CreateSymmetryBCPlane(X_DIRECTION,Xsym,xsymdir);
+	if(xsymmaxdir)
+		CreateSymmetryBCPlane(X_DIRECTION,Xsymmax,xsymmaxdir);
 	if(ysymdir)
 		CreateSymmetryBCPlane(Y_DIRECTION,Ysym,ysymdir);
+	if(ysymmaxdir)
+		CreateSymmetryBCPlane(Y_DIRECTION,Ysymmax,ysymmaxdir);
 	if(zsymdir && mpmgrid.Is3DGrid())
 		CreateSymmetryBCPlane(Z_DIRECTION,Zsym,zsymdir);
+	if(zsymmaxdir && mpmgrid.Is3DGrid())
+		CreateSymmetryBCPlane(Z_DIRECTION,Zsymmax,zsymmaxdir);
 }
 
 //-----------------------------------------------------------
@@ -1241,14 +1242,15 @@ void MPMReadHandler::CreateSymmetryBCs()
 //-----------------------------------------------------------
 void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 {
-	// read grid parameters
+	// read grid parameters (min, max, and cell size in direction)
 	double gridmin,gridmax;
 	double gridsize = mpmgrid.GetParametersForBCs(axis,&gridmin,&gridmax);
 	
 	// find symmetry node location relative to edge of the grid
+	// nmin = -cells from symmetry plane to the edge
 	double nmin = symdir<0 ? (gridmin-gridsym)/gridsize : (gridsym-gridmax)/gridsize;
 	
-	// no need if does not reach that plane (i.e., gridsym<gridmin or gridsym>gridmax
+	// no need if does not reach that plane (i.e., gridsym<gridmin or gridsym>gridmax)
 	if(nmin>0.1*gridsize) return;
 	
 	// symmetry plane must be along grid line
@@ -1256,7 +1258,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 	if(!DbleEqual(ntest,fabs(nmin)))
 		throw SAXException("Symmetry plane in a grid is not along a grid line.");
 
-	// remove current velocites at beyond the symmetry plane
+	// remove current velocites at or beyond the symmetry plane
 	int i;
 	double ni;
 	NodalVelBC *lastValidBC = NULL;
@@ -1323,13 +1325,16 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 				lastVelocityBC = newVelBC;
 			}
 			
-			// create neighboring BC for zero x (might be better to implement Jim's symmetry BC here)
+			// create neighboring BC for velocity reflected in x
 			// but not needed if axisymmtric
 			if(!fmobj->IsAxisymmetric())
 			{	int neighbor = node + symdir;
 				if(neighbor>0 && neighbor<=nnodes)
 				{	newVelBC=new NodalVelBC(neighbor,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
 				
+					// reflected node
+					newVelBC->SetReflectedNode(node - symdir);
+					
 					// link at the end
 					lastVelocityBC->SetNextObject(newVelBC);
 					lastVelocityBC = newVelBC;
@@ -1363,10 +1368,13 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 					lastVelocityBC = newVelBC;
 				}
 				
-				// create neighboring BC for zero y (might be better to implement Jim's symmetry BC here)
+				// create neighboring BC for velocity reflected in y
 				int neighbor = node + symdir*mpmgrid.yplane;
 				if(neighbor>0 && neighbor<=nnodes)
 				{	newVelBC=new NodalVelBC(neighbor,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+					
+					// reflected node
+					newVelBC->SetReflectedNode(node - symdir*mpmgrid.yplane);
 				
 					// link at the end
 					lastVelocityBC->SetNextObject(newVelBC);
@@ -1402,10 +1410,13 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 				lastVelocityBC = newVelBC;
 			}
 			
-			// create neighboring BC for zero z (might be better to implement Jim's symmetry BC here)
+			// create neighboring BC for neighboring BC for velocity reflected in z
 			int neighbor = node + symdir*mpmgrid.zplane;
 			if(neighbor>0 && neighbor<=nnodes)
 			{	newVelBC=new NodalVelBC(neighbor,Z_DIRECTION_INPUT,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+				
+				// reflected node
+				newVelBC->SetReflectedNode(node - symdir*mpmgrid.zplane);
 				
 				// link at the end
 				lastVelocityBC->SetNextObject(newVelBC);

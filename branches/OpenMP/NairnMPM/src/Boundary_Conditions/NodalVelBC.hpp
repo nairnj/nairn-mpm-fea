@@ -45,6 +45,7 @@ class NodalVelBC : public BoundaryCondition
         int ConvertToDirectionBits(int);
         void SetNormalVector(void);
         int ConvertToInputDof(void);
+		void SetReflectedNode(int);
 	
 		// class methods
 		static void GridMomentumConditions(int);
@@ -56,6 +57,7 @@ class NodalVelBC : public BoundaryCondition
         double angle1,angle2;
 		Vector norm;
 		Vector freaction;
+		int reflectedNode;
 };
 
 // variables (changed in MPM time step)

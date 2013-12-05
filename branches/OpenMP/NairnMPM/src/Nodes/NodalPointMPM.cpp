@@ -1807,6 +1807,22 @@ void NodalPoint::AddMomVel(Vector *norm,double vel)
 #endif
 }
 
+// Reflect one component of velocity and momentum from a node
+void NodalPoint::ReflectMomVel(Vector *norm,NodalPoint *ndptr)
+{
+#ifdef _BC_CRACK_SIDE_ONLY_
+	// just set if on same side of crack
+	not programmed yet
+#else
+	// only field zero, which assumes no cracks near the symmetry plane
+	if(CrackVelocityField::ActiveField(cvf[0]))
+	{	if(CrackVelocityField::ActiveField(ndptr->cvf[0]))
+			cvf[0]->ReflectMomVel(norm,ndptr->cvf[0]);
+	}
+#endif
+}
+
+
 // set force in direction norm to -p(interpolated)/time such that updated momentum
 //    of pk.i + deltime*ftot.i will be zero in that direction
 void NodalPoint::SetFtotDirection(Vector *norm,double deltime,Vector *freaction)
@@ -1834,6 +1850,21 @@ void NodalPoint::AddFtotDirection(Vector *norm,double deltime,double vel,Vector 
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
             cvf[i]->AddFtotDirection(norm,deltime,vel,freaction);
+	}
+#endif
+}
+
+// set one component of force such that updated momentum will match reflected node
+void NodalPoint::ReflectFtotDirection(Vector *norm,double deltime,NodalPoint *ndptr,Vector *freaction)
+{
+#ifdef _BC_CRACK_SIDE_ONLY_
+	// just on same side of the crack
+	not programmed yet
+#else
+	// only field zero, which assumes no cracks near the symmetry plane
+	if(CrackVelocityField::ActiveField(cvf[0]))
+	{	if(CrackVelocityField::ActiveField(ndptr->cvf[0]))
+			cvf[0]->ReflectFtotDirection(norm,deltime,ndptr->cvf[0],freaction);
 	}
 #endif
 }

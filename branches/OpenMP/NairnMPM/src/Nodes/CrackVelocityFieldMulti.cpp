@@ -1228,6 +1228,20 @@ void CrackVelocityFieldMulti::AddMomVel(Vector *norm,double vel)
     }
 }
 
+// Reflect one component of velocity and momentum from a node
+void CrackVelocityFieldMulti::ReflectMomVel(Vector *norm,CrackVelocityField *rcvf)
+{	int i;
+	MatVelocityField **rmvf = rcvf->GetMaterialVelocityFields();
+    for(i=0;i<maxMaterialFields;i++)
+    {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+		{	if(MatVelocityField::ActiveNonrigidField(rmvf[i]))
+			{	double rvel = -DotVectors(norm,&rmvf[i]->pk)/rmvf[i]->mass;
+				mvf[i]->AddMomentVelocityDirection(norm,rvel);
+			}
+		}
+	}
+}
+
 // set force in direction norm to -p(interpolated)/time such that updated momentum
 //    of pk.i + deltime*ftot.i will be zero along norm
 void CrackVelocityFieldMulti::SetFtotDirection(Vector *norm,double deltime,Vector *freaction)
@@ -1247,6 +1261,20 @@ void CrackVelocityFieldMulti::AddFtotDirection(Vector *norm,double deltime,doubl
         {	mvf[i]->AddFtotDirection(norm,deltime,vel,freaction);
         }
     }
+}
+
+// add one component of force such that updated momentum will be mass*velocity
+void CrackVelocityFieldMulti::ReflectFtotDirection(Vector *norm,double deltime,CrackVelocityField *rcvf,Vector *freaction)
+{	int i;
+	MatVelocityField **rmvf = rcvf->GetMaterialVelocityFields();
+    for(i=0;i<maxMaterialFields;i++)
+    {	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+		{	if(MatVelocityField::ActiveNonrigidField(rmvf[i]))
+			{	double rvel = -DotVectors(norm,&rmvf[i]->pk)/rmvf[i]->mass;
+				mvf[i]->AddFtotDirection(norm,deltime,rvel,freaction);
+			}
+		}
+	}
 }
 
 #pragma mark ACCESSORS

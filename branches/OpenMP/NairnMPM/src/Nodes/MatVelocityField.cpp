@@ -226,7 +226,7 @@ Vector MatVelocityField::GetVelocity(void) { return vk; }
 Vector *MatVelocityField::GetVelocityPtr(void) { return &vk; }
 
 // moment and velocity zero for direction of velocity
-// Let p = (pn.norm) norm + (pt.tang) tang (or same for v)
+// Let pk = (pk.norm) norm + (pk.tang) tang (or same for vk)
 // Here we want to remove pn.norm using p - (pn.norm) norm
 void MatVelocityField::SetMomentVelocityDirection(Vector *norm)
 {	double dotn = DotVectors(&pk, norm);
@@ -235,7 +235,7 @@ void MatVelocityField::SetMomentVelocityDirection(Vector *norm)
 	AddScaledVector(&vk, norm, -dotn);
 }
 
-// add moment and velocity for one component only
+// add moment and velocity from velocity for one component only
 void MatVelocityField::AddMomentVelocityDirection(Vector *norm,double vel)
 {	AddScaledVector(&pk, norm, mass*vel);
 	AddScaledVector(&vk, norm, vel);
@@ -244,21 +244,20 @@ void MatVelocityField::AddMomentVelocityDirection(Vector *norm,double vel)
 // Set component of Ftot to -p/dt in velocity BC direction (used by boundary conditions)
 // Ftot = (Ftot.norm) norm + (Ftot.tang) tang, but now we want
 // Ftotnew = -(pk.norm)/deltime norm + (Ftot.tang) tang
-// Ftotnew = Ftot - (Ftot.norm) norm - (pk.norm)/deltime norm
-// The reaction due to BC is -(pk.norm)/deltime norm
+// Ftotnew = Ftot - ((Ftot.norm) + (pk.norm)/deltime) norm
 //
-// Note that is have same norm on same node, the net result have first pass is
+// Note that if have same norm on same node, the net result after first pass is
 //    Ftot1 = -(pk.norm)/deltime norm + (Ftot.tang) tang
 // Then on second pass, dotf = -(pk.norm)/deltime to give same result
 //    Ftot2 = (-(pk.norm)/deltime+(pk.norm)/deltime-(pk.norm)/deltime) norm + (Ftot.tang) tang
 //          = -(pk.norm)/deltime norm + (Ftot.tang) tang
-// But might have physical issues if component of norm overlap on the save node such as
-//    x axis ans  skew xy or xz on the same node
+// But might have physical issues if components of norm overlap on the same node such as
+//    x axis and  skew xy or xz on the same node
 void MatVelocityField::SetFtotDirection(Vector *norm,double deltime,Vector *freaction)
 {   double dotf = DotVectors(&ftot, norm);
 	double dotp = DotVectors(&pk, norm);
-	// the change in force is (-dotf - dotp/deltime) norm, which is zero for second BC with same norm
-	CopyScaleVector(freaction,norm,-dotf - dotp/deltime);
+	// the change in force is (-dotf-dotp/deltime) norm, which is zero for second BC with same norm
+	CopyScaleVector(freaction,norm,-dotf-dotp/deltime);
 	AddVector(&ftot,freaction);
 }
 

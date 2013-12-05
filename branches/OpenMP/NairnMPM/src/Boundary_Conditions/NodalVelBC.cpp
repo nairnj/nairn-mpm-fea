@@ -25,7 +25,8 @@ NodalVelBC *reuseRigidVelocityBC=NULL;
 NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTime,double ang1,double ang2)
 		: BoundaryCondition(setStyle,velocity,argTime)
 {
-    nodeNum=num;
+    nodeNum = num;
+	reflectedNode = -1;
     angle1 = ang1;
     angle2 = ang2;
     dir = ConvertToDirectionBits(dof);      // change input settings to x,y,z bits
@@ -123,7 +124,7 @@ void NodalVelBC::SetNormalVector(void)
                                   "NodalVelBC::SetNormalVector");
             break;
     }
-}
+ }
 
 
 // convert dir bits to input dof
@@ -217,8 +218,15 @@ NodalVelBC *NodalVelBC::AddVelBC(double mstime)
 {	// set if has been activated
 	int i = GetNodeNum(mstime);
 	if(i>0)
-	{	currentValue = BCValue(mstime);
-		nd[i]->AddMomVel(&norm,currentValue);
+	{	if(reflectedNode<0)
+		{	// scalar value in norm direction
+			currentValue = BCValue(mstime);
+			nd[i]->AddMomVel(&norm,currentValue);
+		}
+		else
+		{	// reflect one component at a symmetry plane
+			nd[i]->ReflectMomVel(&norm,nd[reflectedNode]);
+		}
 	}
     return (NodalVelBC *)GetNextObject();
 }
@@ -263,9 +271,14 @@ NodalVelBC *NodalVelBC::InitFtotDirection(double mstime)
 NodalVelBC *NodalVelBC::SuperposeFtotDirection(double mstime)
 {	// set if has been activated
 	int i = GetNodeNum(mstime);
-	if(i>0)
-	{	// use currentValue set earlier in this step
-		nd[i]->AddFtotDirection(&norm,timestep,currentValue,&freaction);
+	{	if(reflectedNode<0)
+		{	// use currentValue set earlier in this step
+			nd[i]->AddFtotDirection(&norm,timestep,currentValue,&freaction);
+		}
+		else
+		{	// use reflected velocity
+			nd[i]->ReflectFtotDirection(&norm,timestep,nd[reflectedNode],&freaction);
+		}
 	}
 	return (NodalVelBC *)GetNextObject();
 }
@@ -277,6 +290,9 @@ NodalVelBC *NodalVelBC::AddReactionForce(Vector *totalReaction,int matchID)
 		AddVector(totalReaction,&freaction);
 	return (NodalVelBC *)GetNextObject();
 }
+
+// On symmetry plane set velocity to minus component of the reflected node
+void NodalVelBC::SetReflectedNode(int ghost) { reflectedNode = ghost; }
 
 #pragma mark NodelVelBC::Class Methods
 
@@ -311,7 +327,7 @@ void NodalVelBC::GridMomentumConditions(int makeCopy)
     NodalVelBC *nextBC;
 	double mstime;
     
-	// convert time to ms, use time and beginning or end of time step
+	// convert time to ms, use time at beginning or end of time step
     // On first pass (when true), copy nodal momenta before anything changed
     //	(may make multiple copies, but that is OK)
 	if(makeCopy)
@@ -351,19 +367,19 @@ void NodalVelBC::GridMomentumConditions(int makeCopy)
 void NodalVelBC::ConsistentGridForces(void)
 {
     int i;
-    NodalVelBC *nextBC=firstVelocityBC;
+    NodalVelBC *nextBC = firstVelocityBC;
     
 	// advanced time in msec
-	double mstime=1000.*(mtime+timestep);
+	double mstime = 1000.*(mtime+timestep);
 	
     // First restore initial nodal values
     while(nextBC!=NULL)
-	{	i=nextBC->GetNodeNum();
-		nextBC=nextBC->PasteNodalVelocities(nd[i]);
+	{	i = nextBC->GetNodeNum();
+		nextBC = nextBC->PasteNodalVelocities(nd[i]);
     }
 	
     // Second set force to -p(interpolated)/timestep
-    nextBC=firstVelocityBC;
+    nextBC = firstVelocityBC;
     while(nextBC!=NULL)
 		nextBC = nextBC->InitFtotDirection(mstime);
     

@@ -90,8 +90,10 @@ class CrackVelocityField
 		// boundary conditions
         virtual void SetMomVel(Vector *) = 0;
         virtual void AddMomVel(Vector *,double) = 0;
+		virtual void ReflectMomVel(Vector *,CrackVelocityField *) = 0;
         virtual void SetFtotDirection(Vector *,double,Vector *) = 0;
         virtual void AddFtotDirection(Vector *,double,double,Vector *) = 0;
+		virtual void ReflectFtotDirection(Vector *,double,CrackVelocityField *,Vector *) = 0;
 	
 		// accessors
 		short location(int);
