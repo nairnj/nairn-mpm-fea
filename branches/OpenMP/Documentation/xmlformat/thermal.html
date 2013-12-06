@@ -28,7 +28,7 @@
   &lt;Conduction/&gt;
   &lt;CrackTipHeating/&gt;
   &lt;CrackContactHeating/&gt;
-  &lt;MatContactHeating/&gt;
+  &lt;ContactHeating/&gt;
   &lt;EnergyCoupling/&gt;
   &lt;NoAVHeating/&gt;
   &lt;Isothermal time="5" start="2"&gt;-200&lt;/Isothermal&gt;
@@ -47,7 +47,7 @@
 <dd>This tag will cause energy released by crack growth to be released as a heat source into a conduction analysis. This command has no affect unless the <code>&lt;Conduction/&gt;</code> tag is present which means the analysis will be doing coupled thermal conduction calculations. When using this command, you must be sure to s<a href="cracks.html">et the crack thickness</a> to the appropriate value. Currently 100% of the fracture energy is converted to heat (there may be an option in the future to control the fraction of energy released as heat).
 </dd>
 
-<dt>&lt;MatContactHeating/&gt;</dt>
+<dt>&lt;ContactHeating/&gt;</dt>
 <dd>This tag will activate conversion of the work of frictional sliding between materials in multimaterial mode into heat.</dd>
 
 <dt>&lt;CrackContactHeating/&gt;</dt>

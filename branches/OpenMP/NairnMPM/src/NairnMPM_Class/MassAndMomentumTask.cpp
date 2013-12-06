@@ -89,7 +89,8 @@ void MassAndMomentumTask::Execute(void)
 	CommonException *massErr = NULL;
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
     int nds[maxShapeNodes];
-    
+
+#pragma mark ... UPDATE RIGID CONTACT PARTICLES
     // Set rigid BC contact material velocities first (so loop can be parallel)
 	// GetVectorSetting() uses globals and therefore can't be parallel
     if(nmpmsRC>nmpmsNR)
@@ -118,6 +119,7 @@ void MassAndMomentumTask::Execute(void)
 		// in case 2D planar
         for(int i=0;i<maxShapeNodes;i++) zDeriv[i] = 0.;
         
+#pragma mark ... EXTRAPOLATE NONRIGID PARTICLES
 		try
 		{	for(int block=FIRST_NONRIGID;block<=FIRST_RIGID_CONTACT;block++)
 			{	MPMBase *mpmptr = patches[pn]->GetFirstBlockPointer(block);
@@ -172,7 +174,8 @@ void MassAndMomentumTask::Execute(void)
 	{	for(int pn=0;pn<totalPatches;pn++)
 			patches[pn]->MassAndMomentumReduction();
 	}
-    	
+    
+#pragma mark ... RIGID BOUNARY CONDITIONS
 	// undo dynamic velocity, temp, and conc BCs from rigid materials
     // and get pointer to first empty one in reuseRigid...BC
 	UnsetRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
@@ -263,6 +266,8 @@ void MassAndMomentumTask::Execute(void)
 	RemoveRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,(BoundaryCondition **)&firstRigidVelocityBC);
 	RemoveRigidBCs((BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,(BoundaryCondition **)&firstRigidTempBC);
 	RemoveRigidBCs((BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,(BoundaryCondition **)&firstRigidConcBC);
+	
+	// locate BCs with reflected nodes
 	
 #ifdef COMBINE_RIGID_MATERIALS
 	bool combineRigid = firstCrack!=NULL && fmobj->multiMaterialMode && fmobj->hasRigidContactParticles;
