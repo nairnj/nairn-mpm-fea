@@ -12,7 +12,10 @@ Title "Hyperelasstic Tensile Loading"Name "John Nairn"
 EndHeader! ------------ Parameters ---------------
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"#analysis="Plane Strain MPM"
-Processors 4
+Processors 2
+XMLData "Header"
+    <DevelFlag Number='3'>010201</DevelFlag>
+EndXMLData
 
 ! Points per element
 #ppe=2
@@ -51,19 +54,28 @@ StressFreeTemp 294
 #thick=1			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading="contact"	! Loading = "rigid", "contact", "force", "traction", thermal
-#fixsides="yes"		! Yes to constrain y direction (and z direction if 3D)
-#strain=100	        ! Maximum strain (%) (stress needed is estimated for force and tractions) od dT is thermal
+#loading="traction"	! Loading = "rigid", "force", "traction", thermal, "contact"
+
+! "symmetry" to constrain y direction (and z direction if 3D), "No" for no contraint
+! "BC1" or "BC2" to use one or two layers of BCs instead of symmetry planes
+! #base can be "symmetry" for symmetry plane, "BC1" for 1 layer or "BC2" for two layers
+#fixsides="no"
+#base="symmetry"	
+
+! test settings
+#gridStrain=400		! room in grid (ignored if #strain<0)
+#strain=200	        ! Maximum strain (%) (stress needed is estimated for force and tractions), or dT for thermal
+#relRate=1			! Displacement rate as percent of wave speed of material (if >0)
+#tmult=30			! Load in this number of transit times (if #relRate<0)
+#factor=0.1			! time step factor
 
 ! Loading rate
-#tmult=30			! number of transit times to load peak
 #hold=0				! hold time (multiple of loading time)
 #unload=0		    ! 0 no unload or >0 for unloading time (multiple of loading time, but at same loading rate)
 
 ! Damping parameter - for feedback or grid damping
 #damp=0
 #fbdamp=0.0
-#factor=0.01			! time step factor
 
 ! ------------ Calculations ---------------
 
@@ -86,29 +98,33 @@ endif
 ! base line calculations
 #G1=#Ebase/(2*(1+#nuBase))
 #G2=0
-#G0=#G1+#G2
 #Kbulk=#Ebase/(3*(1-2*#nuBase))
 if #matID="mooney"
   #G1=#G1/2
   #G2=#G1
-  #G0=#G1+#G2
-  #G1=2*#G1
-  #G2=2*#G2
 endif
+#G0=#G1+#G2
 
 ! estimate stress to reach strain (only used if force or tractions)
-if #fixsides="no"
+if #fixsides!="symmetry"
   #stress=#Ebase*#strain/100
 else
   #stress=#Kbulk*#strain/100
 endif
 
 ! calculate time to reach peak state
-#speed=1000*sqrt(1000*(#Kbulk+4*#G0/3)/#rho)	! wave speed
-#transit=1000*#length/#speed			! transit time in ms
-#time=#tmult*#transit					! time to peak load in ms using tmult
-#disp=#strain*#length/100				! mm of displacement
-#disprate=1000*#disp/#time			    ! displacement rate mm/s using tmult
+#speed=1000*sqrt(1000*(#Kbulk+4*#G0/3)/#rho)	! wave speed (mm/sec)
+
+#disp=#strain*#length/100				! mm of displacement to get to strain
+if #relRate>0
+  #disprate=#relRate*#speed/100			! dispacement rate (mm/sec)
+  #time=1000*#disp/#disprate			! time to peak load in ms
+else
+  #transit=1000*#length/#speed			! transit time in ms
+  #time=#tmult*#transit					! time to peak load in ms using tmult
+  #disprate=1000*#disp/#time			! displacement rate mm/sec using tmult
+  #relRate=100*#dispRate/#speed
+endif
 
 if #loading="thermal"
   #deltaT=#strain
@@ -118,7 +134,7 @@ if #loading="thermal"
   #disprate=0
 endif
 ! Archiving
-if #fixsides="yes"
+if #fixsides="symmetry"
   Archive "Results/HEConstrainedTension/"&#analysis&"-"&#method&"-"&#update&"/"&#loading&"/"&#matID
 else
   Archive "Results/HETension/"&#analysis&"-"&#method&"-"&#update&"/"&#loading&"/"&#matID
@@ -187,7 +203,7 @@ if #matID="heiso"
 endif
 
 ! guess kinetic energy and add feedback damping
-Comment "Displacement rate = "&(#disprate/1000)&" m/sec"
+Comment "Displacement rate = "&(#disprate/1000)&" m/sec ("&#relRate&"% of wave speed)"
 ! velocity is linear form 0 to disprate in x
 #ke = (1/6)*#rho*#disprate*#disprate*#length*#width*#thick/10^6
 Comment "Base kinetic energy = "&(#ke/10^6)&" J"
@@ -233,18 +249,17 @@ if #loading="contact"
   if #analysis="3D MPM"
     GlobalArchive "contactz"
   endif
-  GlobalArchive "reactionx"
 else if #loading="rigid"
   GlobalArchive "reactionx","rigid"
-  GlobalArchive "reactionx",-1
 endif
+GlobalArchive "reactionx",-101
 GlobalArchiveTime (1+#hold+#unload)*#time/100
 
 if #strain<0
   #gleft=-4*#cell
   #sides=(int(-#strain*#width/200/#cell)+4)
 else
-  #xtra=(int(1.6*#strain*#length/100/#cell)+4)
+  #xtra=(int(#gridStrain*#length/100/#cell)+4)
   #gleft=-#xtra*#cell
   #sides=2
 endif
@@ -255,10 +270,22 @@ endif
 #zmax=#thick+#sides*#cell
 
 ! ********** Grid and Material Points Section **********
-GridHoriz int((#gright-#gleft)/#cell+.5)
-GridVert int((#gtop-#gbot)/#cell+.5)
+if #base="symmetry"
+  GridHoriz int((#gright-#gleft)/#cell+.5),#length,1
+else
+  GridHoriz int((#gright-#gleft)/#cell+.5)
+endif
+if #fixsides="symmetry"
+  GridVert int((#gtop-#gbot)/#cell+.5),0,-1,#width
+else
+  GridVert int((#gtop-#gbot)/#cell+.5)
+endif
 if #analysis="3D MPM"
-  GridDepth int((#zmax-#zmin)/#cell+.5)
+  if #fixsides="symmetry"
+    GridDepth int((#zmax-#zmin)/#cell+.5),0,-1,#thick
+  else
+    GridDepth int((#zmax-#zmin)/#cell+.5)
+  endif
   GridRect #gleft,#gright,#gbot,#gtop,#zmin,#zmax
   
   ! material points
@@ -345,41 +372,62 @@ else ifStr #loading="thermal"
 endif
 
 ! Fixed bottom! set to #length + #cell/2 to only two rows for cells for GIMP
-BoundaryID -1
-if #analysis="3D MPM"
-  MoveBox #length,-#sides*#cell,-#sides*#cell,#length+#cell,#width+#sides*#cell,#thick+#sides*#cell
-    Velocity x,constant,0
-  EndMoveBox
-else
-  #midpt=#length+#cell/2
-  MoveLine #midpt,-#sides*#cell,#midpt,#width+#sides*#cell,#cell
-    Velocity x,constant,0
-  EndMoveLine
+if #base!="symmetry"
+  BoundaryID -101
+  if #analysis="3D MPM"
+    if #base="BC1"
+      #bcell=#cell/2
+    else
+      #bcell=#cell
+    endif
+    MoveBox #length,-#sides*#cell,-#sides*#cell,#length+#bcell,#width+#sides*#cell,#thick+#sides*#cell
+      Velocity x,constant,0
+    EndMoveBox
+  else
+    if #base="BC1"
+      #midpt=#length
+    else
+      #midpt=#length+#cell/2
+    endif
+    MoveLine #midpt,-#sides*#cell,#midpt,#width+#sides*#cell,0.55*#cell
+      Velocity x,constant,0
+    EndMoveLine
+  endif
+  BoundaryID
 endif
-BoundaryID
 
 ! Fixed sides
-if #fixsides="yes"
+if chars("\2\"&#fixsides)="BC"
+  if #fixsides="BC1"
+  	#bcell=#cell/2
+  else
+  	#bcell=#cell
+  endif
   if #analysis="3D MPM"
-    MoveBox #gleft,-#cell,#zmin,#gright,0,#zmax
+    MoveBox #gleft,-#bcell,#zmin,#gright,0.1*#cell,#zmax
       Velocity y,constant,0
     EndMoveBox
-    MoveBox #gleft,#width,#zmin,#gright,#width+#cell,#zmax
+    MoveBox #gleft,#width,#zmin,#gright,#width+#bcell,#zmax
       Velocity y,constant,0
     EndMoveBox
-    MoveBox #gleft,#gbot,-#cell,#gright,#gtop,0
+    MoveBox #gleft,#gbot,-#bcell,#gright,#gtop,0.1*#cell
       Velocity z,constant,0
     EndMoveBox
-    MoveBox #gleft,#gbot,#thick,#gright,#gtop,#thick+#cell
+    MoveBox #gleft,#gbot,#thick,#gright,#gtop,#thick+#bcell
       Velocity z,constant,0
     EndMoveBox
   else
-    #midpt=-#cell/2
-    MoveLine #gleft,#midpt,#gright,#midpt,#cell
+    if #fixsides="BC2"
+      #midpt1=-#cell/2
+      #midpt2=#width+#cell/2
+    else
+      #midpt1=0
+      #midpt2=#width
+    endif
+    MoveLine #gleft,#midpt1,#gright,#midpt1,0.55*#cell
       Velocity y,constant,0
     EndMoveLine
-    #midpt=#width+#cell/2
-    MoveLine #gleft,#midpt,#gright,#midpt,#cell
+    MoveLine #gleft,#midpt2,#gright,#midpt2,0.55*#cell
       Velocity y,constant,0
     EndMoveLine
   endif

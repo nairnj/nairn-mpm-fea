@@ -17,7 +17,7 @@
 
 <h1>Defining the MPM background Grid</h1>
 
-<p class="osupdocs">Deprecated documentation: the new version is in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/FEA_Input_Files#MPM_Grid_Generation">OSUPDocs wiki</a>.</p>
+<p class="osupdocs">Deprecated documentation: the new version is in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Grid_Generation">OSUPDocs wiki</a>.</p>
 
 <p>
 MPM calculations take place on a background grid of finite elements. The background grid is typically
@@ -82,14 +82,14 @@ different values, although it is not recommended (and may change the physics in 
 
 <dl>
 
-<dt>&lt;Horiz nx='40' rx='1.0' sym='0' symdir='-1'/&gt; or &lt;Horiz cellsize='2' sym='0' symdir='-1'/&gt;</dt>
+<dt>&lt;Horiz nx='40' rx='1.0' symmin='0' symmax='100'/&gt; or &lt;Horiz cellsize='2' symmin='0' symmax='50'/&gt;</dt>
 <dd>This tag defines the mesh in the <code>x</code> direction where
 <code>nx</code> is the number
 of cells and <code>rx</code> is a ratio of cell sizes (currently only <code>rx=1</code> for a regular grid
 is supported). Alternatively, you can set the <code>cellsize</code> (in mm).
 Note: if needed, <code>xmax</code> will be increased to accomodate an integral number of elements
 at the desired cell size. In axisymmetric calculations the horizontal direction is the radial or <code>R</code> direction.<br><br>
-The <code>sym</code> and <code>symdir</code> attributes let you create a <a href="#symmetry">symmetry plane</a> along the <code>x</code> axis. See <a href="#symmetry">below</a> for details. Note that in axisymmetric calculations, a symmetry plane at <code>r=0</code> is implied by axisymmetry. You need not set <code>sym</code> = 0 and any <code>sym</code> or <code>symdir</code> that is set will be ignored. Axisymmetrc calculations can only set a symmetry plane along the <code>Z</code> (using the <code>Vert</code> command), if appropriate.
+The <code>symmin</code> and <code>symmax</code> attributes let you create one or two <a href="#symmetry">symmetry planes</a> along the <code>x</code> axis. See <a href="#symmetry">below</a> for details. Note that in axisymmetric calculations, a symmetry plane at <code>r=0</code> is implied by axisymmetry. Any <code>symmin</code> you enter will be ignored, but you can set a plane at <code>symmax</code>.
 </dd>
 
 <dt>&lt;Vert ny="20" ry="1.0"&gt; or &lt;Vert cellsize='2'/&gt;</dt>
@@ -106,16 +106,7 @@ The <code>sym</code> and <code>symdir</code> attributes let you create a <a href
 
 <a name="symmetry"></a><h3>Symmetry Planes</h3>
 
-<p>By using <code>sym</code> and <code>symdir</code> attributes on <code>Horiz</code>, <code>Vert</code>, or <code>Depth</code> commands, you can create a symmetry plane along one or more axes. The plane is located at <code>x</code> (or <code>y</code> or <code>z</code>) = <code>sym</code>. If <code>symdir</code> = -1 (or is omitted), the plane is at the minimum edge for the coordinate; if <code>symdir</code> = +1, the plane is at the maximum edge. The creation of a symmetry plane will do the following:</p>
-
-<ol>
-<li>Delete all velocity boundary conditions in the specified axis direction that are beyond the symmetry plane because they are not needed (<i>i.e.</i>, at values &le; <code>sym</code> for <code>symdir</code> = -1 or &ge; <code>sym</code> for <code>symdir</code> = +1).</li>
-<li>Create boundary condition for every node in the plane at <code>sym</code> with velocity in the axis direction set to zero. Note that the symmetry plane must fall on a plane of nodes in the grid, otherwise an error will result.</li>
-<li>Create a second layer of boundary conditions one element from the symmetry plane (<i>i.e.</i>, at <code>sym + symdir*cell</code> where <code>cell</code> is the cell size along the axis) also with velocity in the axis direction set to zero (this second layer of boundary conditions may be handled differently in the future, but currently they are standard zero velocity boundary conditions). A second layer of boundary conditions is needed for best results when using GIMP or CPDI shape functions.</li>
-<li>Whenever contact occurs for a node on the plane at <code>sym</code>, the volume gradient in the symmetry direction is set to zero and the volume is doubled.</li>
-</ol>
-
-<p>Symmetry planes are designed to be actual symmetry planes. In other words, the real problem you are trying to solve is where the full object is the object on one side of the symmetry plane combined with its reflection on the opposite side. Although you can manually create pseudo-symmetry planes by creating two rows of zero velocity boundary conditions, the manual approach will not handle contact correctly. When contact may occur on the symmetry plane, the code needs to explicitly know about those plans so it can adjust volumes and volume gradients to account for symmetry. The above approach to symmetry achieves that goal (<i>i.e.</i>, item #4 above). Although setting a symmetry plane seems to be a short cut to setting zero velocity boundary conditions on an edge, if that edge correspond to a real edge of the object and not to a symmetry plane, you should manually create those boundary conditions rather than use a symmetry plane. In other words, the mechanics (especially contact) at an edge are different than at a symmetry plane.</p>
+<p>By using <code>symmin</code> and <code>symmax</code> attributes on <code>Horiz</code>, <code>Vert</code>, or <code>Depth</code> commands, you can create one or two symmetry plane along one or more axes. These planes are needed to correctly model contact along a symmetry plane and to better handle zero-velocity boundary conditions, such as at a wall. The details have be moved to the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Grid_Generation#Symmetry_Planes">on-line OSUPDocs Wiki</a>.
 
 <a name="sec1"></a><h2>Explicit Mesh Definition</h2>
 

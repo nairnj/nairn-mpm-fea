@@ -1223,24 +1223,24 @@ void MPMReadHandler::CreateSymmetryBCs()
 	
 	// allow one plane in each direction
 	if(xsymdir)
-		CreateSymmetryBCPlane(X_DIRECTION,Xsym,xsymdir);
+		CreateSymmetryBCPlane(X_DIRECTION,Xsym,xsymdir,-100);
 	if(xsymmaxdir)
-		CreateSymmetryBCPlane(X_DIRECTION,Xsymmax,xsymmaxdir);
+		CreateSymmetryBCPlane(X_DIRECTION,Xsymmax,xsymmaxdir,-101);
 	if(ysymdir)
-		CreateSymmetryBCPlane(Y_DIRECTION,Ysym,ysymdir);
+		CreateSymmetryBCPlane(Y_DIRECTION,Ysym,ysymdir,-200);
 	if(ysymmaxdir)
-		CreateSymmetryBCPlane(Y_DIRECTION,Ysymmax,ysymmaxdir);
+		CreateSymmetryBCPlane(Y_DIRECTION,Ysymmax,ysymmaxdir,-201);
 	if(zsymdir && mpmgrid.Is3DGrid())
-		CreateSymmetryBCPlane(Z_DIRECTION,Zsym,zsymdir);
+		CreateSymmetryBCPlane(Z_DIRECTION,Zsym,zsymdir,-300);
 	if(zsymmaxdir && mpmgrid.Is3DGrid())
-		CreateSymmetryBCPlane(Z_DIRECTION,Zsymmax,zsymmaxdir);
+		CreateSymmetryBCPlane(Z_DIRECTION,Zsymmax,zsymmaxdir,-301);
 }
 
 //-----------------------------------------------------------
 // Create symmetry BCs at minimum side of an axis
 // For axisymmetric these are at r=0
 //-----------------------------------------------------------
-void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
+void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir,int velID)
 {
 	// read grid parameters (min, max, and cell size in direction)
 	double gridmin,gridmax;
@@ -1312,6 +1312,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 		{	// create zero x (or r) velocity starting at time 0 on the symmetry plane
 			NodalVelBC *newVelBC=new NodalVelBC(node,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
 			nd[node]->SetFixedDirection(XSYMMETRYPLANE_DIRECTION);
+            newVelBC->SetID(velID);
 			
 			// add to linked list
 			if(lastVelocityBC == NULL)
@@ -1327,10 +1328,11 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 			
 			// create neighboring BC for velocity reflected in x
 			// but not needed if axisymmtric
-			if(!fmobj->IsAxisymmetric())
+			if(!fmobj->IsAxisymmetric() || symdir>0)
 			{	int neighbor = node + symdir;
 				if(neighbor>0 && neighbor<=nnodes)
 				{	newVelBC=new NodalVelBC(neighbor,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+                    newVelBC->SetID(velID);
 				
 					// reflected node
 					newVelBC->SetReflectedNode(node - symdir);
@@ -1355,6 +1357,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 			{	// create zero x (or r) velocity starting at time 0 on the symmetry plane
 				NodalVelBC *newVelBC=new NodalVelBC(node,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
 				nd[node]->SetFixedDirection(YSYMMETRYPLANE_DIRECTION);
+                newVelBC->SetID(velID);
 				
 				// add to linked list
 				if(lastVelocityBC == NULL)
@@ -1372,6 +1375,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 				int neighbor = node + symdir*mpmgrid.yplane;
 				if(neighbor>0 && neighbor<=nnodes)
 				{	newVelBC=new NodalVelBC(neighbor,axis,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+                    newVelBC->SetID(velID);
 					
 					// reflected node
 					newVelBC->SetReflectedNode(node - symdir*mpmgrid.yplane);
@@ -1397,6 +1401,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 		{	// create zero x (or r) velocity starting at time 0 on the symmetry plane
 			NodalVelBC *newVelBC=new NodalVelBC(node,Z_DIRECTION_INPUT,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
 			nd[node]->SetFixedDirection(ZSYMMETRYPLANE_DIRECTION);
+            newVelBC->SetID(velID);
 			
 			// add to linked list
 			if(lastVelocityBC == NULL)
@@ -1414,6 +1419,7 @@ void MPMReadHandler::CreateSymmetryBCPlane(int axis,double gridsym,int symdir)
 			int neighbor = node + symdir*mpmgrid.zplane;
 			if(neighbor>0 && neighbor<=nnodes)
 			{	newVelBC=new NodalVelBC(neighbor,Z_DIRECTION_INPUT,CONSTANT_VALUE,(double)0.,(double)0.,(double)0.,(double)0.);
+                newVelBC->SetID(velID);
 				
 				// reflected node
 				newVelBC->SetReflectedNode(node - symdir*mpmgrid.zplane);

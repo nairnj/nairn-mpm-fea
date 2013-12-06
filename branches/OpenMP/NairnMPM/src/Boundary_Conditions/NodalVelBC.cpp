@@ -27,6 +27,7 @@ NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTi
 {
     nodeNum = num;
 	reflectedNode = -1;
+    mirrorSpacing = 0;                      // nodal spacing in direction of object for rigid particle BCs only
     angle1 = ang1;
     angle2 = ang2;
     dir = ConvertToDirectionBits(dof);      // change input settings to x,y,z bits
@@ -55,6 +56,9 @@ BoundaryCondition *NodalVelBC::SetRigidProperties(int num,int dof,int setStyle,d
     
     // old dir==0 was skewed condition, now do by setting two velocities, thus never 0 here
     nd[num]->SetFixedDirection(dir);		// x, y, or z (1,2,4) directions
+    
+    // not reflected yet
+    reflectedNode = -1;
 	
 	// finish in base class (nodenum set there)
 	return BoundaryCondition::SetRigidProperties(num,dof,setStyle,velocity);
@@ -218,38 +222,48 @@ NodalVelBC *NodalVelBC::AddVelBC(double mstime)
 {	// set if has been activated
 	int i = GetNodeNum(mstime);
 	if(i>0)
-	{	if(reflectedNode<0)
+    {   currentValue = BCValue(mstime);
+		if(reflectedNode<0)
 		{	// scalar value in norm direction
-			currentValue = BCValue(mstime);
 			nd[i]->AddMomVel(&norm,currentValue);
 		}
 		else
 		{	// reflect one component at a symmetry plane
+            nd[i]->AddMomVel(&norm,2.*currentValue);
 			nd[i]->ReflectMomVel(&norm,nd[reflectedNode]);
 		}
 	}
     return (NodalVelBC *)GetNextObject();
 }
 
-// change to a ghost BC
-NodalVelBC *NodalVelBC::SetGhostVelBC(double mstime)
-{   // this will need to by BC property
-    // distance in nd[] array to neighbors in direction dir, verified stays in grid
-    int ghost = -1;         
-
+// For rigid BC, see if it has a refleceted node
+NodalVelBC *NodalVelBC::SetMirroredVelBC(double mstime)
+{
+    // exit if not doing mirroring
+    if(mirrorSpacing==0) return (NodalVelBC *)GetNextObject();
+    
     // set if has been activated
 	int i = GetNodeNum(mstime);
-	if(i>0 && nd[i]->NumberParticles())
-	{	// see if neighbor in ghost direction fixes same dof
-		if(nd[i+ghost]->fixedDirection&dir)
-		{	// second node must by unfixed and have points
-			int mirror = i+2*ghost;
-			if(nd[mirror]->fixedDirection==0 && nd[mirror]->NumberParticles()>0)
-			{	// found node to mirror
-				//cout << "# node " << mirror << " vs. " << i ;
-                // get CM mass from pk on node mirror
-			}
-		}
+    if(i>0)
+    {   // look at neighbor in mirror direction if node i has particles and neighbor is in the grid
+        int neighbor = i+mirrorSpacing;
+        if(nd[i]->NumberParticles() && neighbor>0 && neighbor<=nnodes)
+        {	// see if neighbor fixes same dof
+            if(nd[neighbor]->fixedDirection&dir)
+            {	// the next node in mirror direction if in the grid
+                int mirror = neighbor+mirrorSpacing;
+                if(mirror>0 && mirror<=nnodes)
+                {   // it should not fix the direection and should have particles
+                    if((nd[mirror]->fixedDirection&dir)==0 && nd[mirror]->NumberParticles()>0)
+                    {   // maybe should verify neighbor is for same rigid material, but needs to check all BCs for their ID
+                        
+                        // found node to reflect
+                        //cout << "#    node " << mirror << " from " << i << " through " << neighbor << endl;
+                        reflectedNode = mirror;
+                    }
+                }
+            }
+        }
 	}
 	return (NodalVelBC *)GetNextObject();
 }
@@ -277,6 +291,7 @@ NodalVelBC *NodalVelBC::SuperposeFtotDirection(double mstime)
 		}
 		else
 		{	// use reflected velocity
+            nd[i]->AddFtotDirection(&norm,timestep,2.*currentValue,&freaction);
 			nd[i]->ReflectFtotDirection(&norm,timestep,nd[reflectedNode],&freaction);
 		}
 	}
@@ -292,7 +307,7 @@ NodalVelBC *NodalVelBC::AddReactionForce(Vector *totalReaction,int matchID)
 }
 
 // On symmetry plane set velocity to minus component of the reflected node
-void NodalVelBC::SetReflectedNode(int ghost) { reflectedNode = ghost; }
+void NodalVelBC::SetReflectedNode(int mirrored) { reflectedNode = mirrored; }
 
 #pragma mark NodelVelBC::Class Methods
 
@@ -351,12 +366,6 @@ void NodalVelBC::GridMomentumConditions(int makeCopy)
     while(nextBC!=NULL)
 		nextBC = nextBC->AddVelBC(mstime);
 	
-	// check for ghosts
-    /*
-    nextBC=firstVelocityBC;
-    while(nextBC!=NULL)
-		nextBC = nextBC->SetGhostVelBC(mstime);
-    */
 }
 
 /**********************************************************

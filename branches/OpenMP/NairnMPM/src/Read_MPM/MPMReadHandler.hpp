@@ -43,7 +43,7 @@ class MPMReadHandler : public CommonReadHandler
         void LoadBCs(void);						// Set load BCs
 		char *LastBC(char *);
 		void CreateSymmetryBCs();
-		void CreateSymmetryBCPlane(int,double,int);
+		void CreateSymmetryBCPlane(int,double,int,int);
    
     private:
         //  Private data members

@@ -21,7 +21,7 @@ TaitLiquid::TaitLiquid() {}
 // then fill in any new initialization.
 TaitLiquid::TaitLiquid(char *matName) : HyperElastic(matName)
 {
-    viscosity = 0.;
+    viscosity = -1.;
 }
 
 #pragma mark TaitLiquid::Initialization
@@ -49,7 +49,7 @@ const char *TaitLiquid::VerifyAndLoadProperties(int np)
     if(Kbulk <= 0. || viscosity<0.)
 		return "TaitLiquid material model needs positive K and zero or positive viscosity";
     
-	// Viscoity in Specific units using initial rho (times 2)
+	// Viscosity in Specific units using initial rho (times 2)
 	// for MPM (units N sec/m^2 cm^3/g) (1 cP = 0.001 N sec/m^2)
 	Etasp = 0.002*viscosity/rho;
     

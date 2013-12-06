@@ -175,7 +175,7 @@ void MassAndMomentumTask::Execute(void)
 			patches[pn]->MassAndMomentumReduction();
 	}
     
-#pragma mark ... RIGID BOUNARY CONDITIONS
+#pragma mark ... RIGID BOUNDARY CONDITIONS
 	// undo dynamic velocity, temp, and conc BCs from rigid materials
     // and get pointer to first empty one in reuseRigid...BC
 	UnsetRigidBCs((BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
@@ -267,12 +267,11 @@ void MassAndMomentumTask::Execute(void)
 	RemoveRigidBCs((BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,(BoundaryCondition **)&firstRigidTempBC);
 	RemoveRigidBCs((BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,(BoundaryCondition **)&firstRigidConcBC);
 	
-	// locate BCs with reflected nodes
-	
 #ifdef COMBINE_RIGID_MATERIALS
 	bool combineRigid = firstCrack!=NULL && fmobj->multiMaterialMode && fmobj->hasRigidContactParticles;
 #endif
 	
+#pragma mark ... POST EXTRAPOLATION TASKS
 	// Post mass and momentum extrapolation calculations on nodes
 #pragma omp parallel
 	{
@@ -339,12 +338,23 @@ void MassAndMomentumTask::Execute(void)
 	// throw any errors
 	if(massErr!=NULL) throw *massErr;
     
+#pragma mark ... IMPOSE BOUNDARY CONDITIONS
+    
 	// Impose transport BCs and extrapolate gradients to the particles
 	TransportTask *nextTransport=transportTasks;
 	while(nextTransport!=NULL)
     {   nextTransport->ImposeValueBCs(mtime);
 		nextTransport = nextTransport->GetGradients(mtime);
 	}
+	
+	// locate BCs with reflected nodes
+    if(firstRigidVelocityBC!=NULL)
+    {   NodalVelBC *nextBC=firstRigidVelocityBC;
+        double mstime=1000.*mtime;
+        //cout << "# Find Reflected Nodes" << endl;
+        while(nextBC!=NULL)
+            nextBC = nextBC->SetMirroredVelBC(mstime);
+    }
 	
 	// used to call class methods for material contact and crack contact here
 	// Impose velocity BCs

@@ -38,7 +38,7 @@ class NodalVelBC : public BoundaryCondition
         NodalVelBC *PasteNodalVelocities(NodalPoint *);
 		NodalVelBC *ZeroVelBC(double);
 		NodalVelBC *AddVelBC(double);
-		NodalVelBC *SetGhostVelBC(double);
+		NodalVelBC *SetMirroredVelBC(double);
 		NodalVelBC *InitFtotDirection(double);
 		NodalVelBC *SuperposeFtotDirection(double);
 		NodalVelBC *AddReactionForce(Vector *,int);
@@ -57,6 +57,7 @@ class NodalVelBC : public BoundaryCondition
         double angle1,angle2;
 		Vector norm;
 		Vector freaction;
+        int mirrorSpacing;
 		int reflectedNode;
 };
 
