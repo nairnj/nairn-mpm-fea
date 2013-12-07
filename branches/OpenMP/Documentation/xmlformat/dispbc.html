@@ -182,7 +182,16 @@ This attribute is optional; when omitted, the default value is 0.0.</dd>
 </dd>
 
 <dt>id</dt>
-<dd>This attribute sets an <code>id</code> for the node that can be used to sum only forces on certain nodes when <a href="mpmheader.html#globalarchive">global archiving reaction forces</a>. It must be negative.</dd>
+<dd>This attribute sets an <code>id</code> for the node that can be used to sum only forces on certain nodes when <a href="mpmheader.html#globalarchive">global archiving reaction forces</a>. It must be negative. Note that boundary conditions created by <a href="definemesh.html#symmetry">symmetry planes</a> will have the following ids:
+<ul class="lev2args">
+<li>-10: plane a minimum x edge
+<li>-11: plane a maximum x edge
+<li>-20: plane a minimum x edge
+<li>-21: plane a maximum x edge
+<li>-30: plane a minimum x edge
+<li>-31: plane a maximum x edge
+</ul>
+Other boundary conditions should not use these ids unless either there are no  <a href="definemesh.html#symmetry">symmetry planes</a> or you want the other boundary conditions lumped in with the symmetry plane boundary conditions.</dd>
 
 </dl>
 

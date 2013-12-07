@@ -252,7 +252,7 @@ if #loading="contact"
 else if #loading="rigid"
   GlobalArchive "reactionx","rigid"
 endif
-GlobalArchive "reactionx",-101
+GlobalArchive "reactionx",-11
 GlobalArchiveTime (1+#hold+#unload)*#time/100
 
 if #strain<0
@@ -373,7 +373,7 @@ endif
 
 ! Fixed bottom! set to #length + #cell/2 to only two rows for cells for GIMP
 if #base!="symmetry"
-  BoundaryID -101
+  BoundaryID -11
   if #analysis="3D MPM"
     if #base="BC1"
       #bcell=#cell/2

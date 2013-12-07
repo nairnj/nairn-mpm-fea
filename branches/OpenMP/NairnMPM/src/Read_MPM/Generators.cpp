@@ -1223,17 +1223,17 @@ void MPMReadHandler::CreateSymmetryBCs()
 	
 	// allow one plane in each direction
 	if(xsymdir)
-		CreateSymmetryBCPlane(X_DIRECTION,Xsym,xsymdir,-100);
+		CreateSymmetryBCPlane(X_DIRECTION,Xsym,xsymdir,-10);
 	if(xsymmaxdir)
-		CreateSymmetryBCPlane(X_DIRECTION,Xsymmax,xsymmaxdir,-101);
+		CreateSymmetryBCPlane(X_DIRECTION,Xsymmax,xsymmaxdir,-11);
 	if(ysymdir)
-		CreateSymmetryBCPlane(Y_DIRECTION,Ysym,ysymdir,-200);
+		CreateSymmetryBCPlane(Y_DIRECTION,Ysym,ysymdir,-20);
 	if(ysymmaxdir)
-		CreateSymmetryBCPlane(Y_DIRECTION,Ysymmax,ysymmaxdir,-201);
+		CreateSymmetryBCPlane(Y_DIRECTION,Ysymmax,ysymmaxdir,-21);
 	if(zsymdir && mpmgrid.Is3DGrid())
-		CreateSymmetryBCPlane(Z_DIRECTION,Zsym,zsymdir,-300);
+		CreateSymmetryBCPlane(Z_DIRECTION,Zsym,zsymdir,-30);
 	if(zsymmaxdir && mpmgrid.Is3DGrid())
-		CreateSymmetryBCPlane(Z_DIRECTION,Zsymmax,zsymmaxdir,-301);
+		CreateSymmetryBCPlane(Z_DIRECTION,Zsymmax,zsymmaxdir,-31);
 }
 
 //-----------------------------------------------------------
