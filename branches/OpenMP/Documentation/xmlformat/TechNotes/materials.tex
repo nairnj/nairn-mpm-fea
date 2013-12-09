@@ -1552,7 +1552,7 @@ The ideal gas properties are defined by picking any reference pressure, $P_0$, r
 \end{equation}
 We can now eliminate $n$ and $R$ to derive
 \begin{equation}
-    P = P_0{V_0\over V}{T\over T_0} = P_0 {T\over T_0} {1\over J}
+    P = P_0{V_0\over V}{T\over T_0} = P_0 {T\over T_0} {1\over J} \label{geniglaw}
 \end{equation}
 where $J = \det \F = V/V_0$. The Cauchy stress due to this pressure is $-P\I$, which implies hyperelastic energy function determined from:
 \begin{equation}
@@ -1604,7 +1604,7 @@ But, $P/\rho$ is $-\tau^{(s)}$ leading to
 
 In {\tt NairnMPM}, the cumulative work, $w$, is tracked in the particle's strain energy and cumulative heat, $q$, in the heat energy (heat energy will be zero for adiabatic or $-w$  for isothermal). The internal energy is $U = w + q$. The incremental work is $dw = dU/(\rho_0 V_0)$ term above. Because plastic energy has no other use, it is used in this material to track the change in entropy using
 \begin{equation}
-      dS 0=\left\{ \begin{array}{ll}
+      dS =\left\{ \begin{array}{ll}
                 d_iS + {C_V dT\over T} - {C_V dT_{ad}\over T + dT_{ad}} & {\rm locally\ adiabatic} \\
                 d_iS + {C_V dT-d\Phi\over T} & {\rm locally\ isothermal}
                 \end{array} \right. \\
@@ -1660,6 +1660,38 @@ where $\gamma=C_P/C_V=5/3$. An undocumented custom task in {\tt NairnMPM} can su
 \end{equation}
 where $T_1$ is the hot reservoir and $T_2$ is the cold one.
 
+\subsection{Isothermal {\em vs.} Adiabatic {\em vs.} General Constitutive Law}
+
+Equation (\ref{geniglaw}) can be rewritten as an increment in pressure from initial pressure $P_0$ at temperature $T_0$:
+\begin{equation}
+    P - P_0 = \kappa_0\left[\left(J_{res}\over J\right)-1\right]
+\end{equation}
+where $\kappa_0$ is the bulk modulus at $P_0$:
+\begin{equation}
+   {1\over \kappa_0} = -{1\over V_0} \left({\partial V_0\over \partial P}\right)_T = {1\over P_0}
+\end{equation}
+and
+\begin{equation}
+    J = {V(P,T)\over V(P_0,T_0)}={V\over V_0} \qquad{\rm and}\qquad J_{res} = {V(P_0,T)\over V(P_0.T_0)} = {T\over T_0}
+\end{equation}
+Here $J_{res}$ is the volume ratio for free thermal expansion at reference pressure $P_0$. For an isothermal process $J_{res}=1$. For a (reversible) adiabatic compression or expansion, the temperature change is:
+\begin{equation}
+       T = {T_0\over J^{\gamma-1}} \qquad{\rm and}\qquad J_{res} = {1\over J^{\gamma-1}}
+\end{equation}
+Two special cases of the general law, therefore, are:
+\begin{eqnarray}
+   P - P_0 & = & \kappa_0\left[\left(1\over J\right)-1\right]  \qquad{\rm isothermal} \\
+   P - P_0 & = & \kappa_0\left[\left(1\over J\right)^\gamma-1\right]  \qquad{\rm adiabatic} \\
+\end{eqnarray}
+But if code implements either of these laws, it will be restricted to either isothermal or adiabatic conditions only. The preferred approach is to implement the general law because it includes both these limits as special cases and can be used for nonisothermal, nonadiabatic simulations as well. When using a general law, however, each  material point must correctly change its temperature according to how much energy should be converted into heat for a given increment in deformation. For an ideal case undergoing in increment in volume of $dV$, the temperature change is
+\begin{equation}
+    dT = -{P dV\over C_V} = -{nRT \over C_V}{dV \over V} = -{nRT \over C_V}{\rho\over\rho_0}{dV \over V_0}
+\end{equation}
+In other words, all the work is converted into heat. Also notice that this result can be written
+\begin{equation}
+    {dT\over T} = {nR \over C_V}{1\over J}d\eta = {\gamma_0\over J}d\eta = -\gamma_0{dJ\over J} \qquad{\rm where}\qquad \eta = 1 - {\rho_0\over \rho} = 1 - J
+\end{equation}
+This result is similar to the solid material in the Mie-Gr\"{u}niesen equation state, except for the $J$ in the denominator. For a monatoic ideal gas $\gamma_0=2/3$; for a diatomic gas $\gamma_0=2/5$; for both $\gamma_0=\gamma-1$.
 
 
 \subsection{Van der Waals Gas Law}

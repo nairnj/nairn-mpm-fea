@@ -32,6 +32,7 @@ class RigidMaterial : public MaterialBase
 		bool setTemperature;
 		bool setConcentration;
 		static bool someSetTemperature;
+		int mirrored;
 		
         // constructors and destructors
         RigidMaterial();

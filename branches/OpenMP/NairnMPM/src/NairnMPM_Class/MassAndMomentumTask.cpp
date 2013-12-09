@@ -208,19 +208,19 @@ void MassAndMomentumTask::Execute(void)
 			{   // velocity set by 1 to 3 functions as determined by hasDir[i]
 				if(hasDir[0])
 				{	mpmptr->vel.x = rvel.x;
-					SetRigidBCs(mi,matid0,X_DIRECTION,rvel.x,0.,
+					SetRigidBCs(mi,matid0,X_DIRECTION,rvel.x,0.,rigid->mirrored,
 							(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 							(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
 				if(hasDir[1])
 				{	mpmptr->vel.y = rvel.y;
-					SetRigidBCs(mi,matid0,Y_DIRECTION,rvel.y,0.,
+					SetRigidBCs(mi,matid0,Y_DIRECTION,rvel.y,0.,rigid->mirrored,
 								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
 				if(hasDir[2])
 				{	mpmptr->vel.z = rvel.z;
-					SetRigidBCs(mi,matid0,Z_DIRECTION,rvel.z,0.,
+					SetRigidBCs(mi,matid0,Z_DIRECTION,rvel.z,0.,rigid->mirrored,
 								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
@@ -228,17 +228,17 @@ void MassAndMomentumTask::Execute(void)
 			else
 			{   // velocity set by particle velocity in selected directions
 				if(rigid->RigidDirection(X_DIRECTION))
-				{	SetRigidBCs(mi,matid0,X_DIRECTION,mpmptr->vel.x,0.,
+				{	SetRigidBCs(mi,matid0,X_DIRECTION,mpmptr->vel.x,0.,rigid->mirrored,
 									(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 									(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
 				if(rigid->RigidDirection(Y_DIRECTION))
-				{	SetRigidBCs(mi,matid0,Y_DIRECTION,mpmptr->vel.y,0.,
+				{	SetRigidBCs(mi,matid0,Y_DIRECTION,mpmptr->vel.y,0.,rigid->mirrored,
 								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
 				if(rigid->RigidDirection(Z_DIRECTION))
-				{	SetRigidBCs(mi,matid0,Z_DIRECTION,mpmptr->vel.z,0.,
+				{	SetRigidBCs(mi,matid0,Z_DIRECTION,mpmptr->vel.z,0.,rigid->mirrored,
 								(BoundaryCondition **)&firstVelocityBC,(BoundaryCondition **)&lastVelocityBC,
 								(BoundaryCondition **)&firstRigidVelocityBC,(BoundaryCondition **)&reuseRigidVelocityBC);
 				}
@@ -247,7 +247,7 @@ void MassAndMomentumTask::Execute(void)
 			// temperature
 			if(rigid->RigidTemperature())
 			{	if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pTemperature=rvalue;
-				SetRigidBCs(mi,matid0,TEMP_DIRECTION,mpmptr->pTemperature,0.,
+				SetRigidBCs(mi,matid0,TEMP_DIRECTION,mpmptr->pTemperature,0.,0,
 							(BoundaryCondition **)&firstTempBC,(BoundaryCondition **)&lastTempBC,
 							(BoundaryCondition **)&firstRigidTempBC,(BoundaryCondition **)&reuseRigidTempBC);
 			}
@@ -255,7 +255,7 @@ void MassAndMomentumTask::Execute(void)
 			// concentration
 			if(rigid->RigidConcentration())
 			{	if(rigid->GetValueSetting(&rvalue,mtime,&mpmptr->pos)) mpmptr->pConcentration=rvalue;
-				SetRigidBCs(mi,matid0,CONC_DIRECTION,mpmptr->pConcentration,0.,
+				SetRigidBCs(mi,matid0,CONC_DIRECTION,mpmptr->pConcentration,0.,0,
 							(BoundaryCondition **)&firstConcBC,(BoundaryCondition **)&lastConcBC,
 							(BoundaryCondition **)&firstRigidConcBC,(BoundaryCondition **)&reuseRigidConcBC);
 			}
@@ -363,8 +363,9 @@ void MassAndMomentumTask::Execute(void)
 }
 
 // Set boundary conditions determined by moving rigid paticles
-void MassAndMomentumTask::SetRigidBCs(int mi,int matid0,int type,double value,double angle,BoundaryCondition **firstBC,
-						   BoundaryCondition **lastBC,BoundaryCondition **firstRigidBC,BoundaryCondition **reuseRigidBC)
+void MassAndMomentumTask::SetRigidBCs(int mi,int matid0,int type,double value,double angle,int mirrored,
+									  BoundaryCondition **firstBC,BoundaryCondition **lastBC,
+									  BoundaryCondition **firstRigidBC,BoundaryCondition **reuseRigidBC)
 {
 	BoundaryCondition *newBC=NULL;
 	
@@ -385,6 +386,7 @@ void MassAndMomentumTask::SetRigidBCs(int mi,int matid0,int type,double value,do
 				if(newBC==NULL) throw CommonException("Memory error allocating rigid particle boundary condition.",
 													  "NairnMPM::SetRigidBCs");
 			}
+			((NodalVelBC *)newBC)->SetMirrorSpacing(mirrored);
 			break;
 			
 		case TEMP_DIRECTION:

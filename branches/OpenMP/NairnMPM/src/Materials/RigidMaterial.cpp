@@ -51,6 +51,7 @@ RigidMaterial::RigidMaterial(char *matName) : MaterialBase(matName)
 	function3=NULL;
     Vfunction=NULL;
 	rho=1000.;
+	mirrored=0;
 }
 
 #pragma mark RigidMaterial::Initialization
@@ -215,6 +216,11 @@ void RigidMaterial::PrintMechanicalProperties(void) const
         if(expr!=NULL) delete [] expr;
         if(expr2!=NULL) delete [] expr2;
         if(expr3!=NULL) delete [] expr3;
+		
+		if(mirrored<0)
+			cout << "Velocity mirrored at minimum edge" << endl;
+		else if(mirrored>0)
+			cout << "Velocity mirrored at maximum edge" << endl;
 	}
 	
 	if(setTemperature || setConcentration)
@@ -277,6 +283,11 @@ char *RigidMaterial::InputMat(char *xName,int &input)
 	else if(strcmp(xName,"ValueFunction")==0)
 	{	input=VALUE_FUNCTION_BLOCK;
 		return((char *)this);
+	}
+    
+	else if(strcmp(xName,"mirrored")==0)
+	{	input=INT_NUM;
+		return((char *)&mirrored);
 	}
     
     return (char *)NULL;

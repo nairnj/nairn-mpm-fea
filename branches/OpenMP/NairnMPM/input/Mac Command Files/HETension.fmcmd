@@ -12,7 +12,7 @@ Title "Hyperelasstic Tensile Loading"Name "John Nairn"
 EndHeader! ------------ Parameters ---------------
 
 ! Analysis type: "Plane Strain MPM", "Plane Stress MPM", or "3D MPM"#analysis="Plane Strain MPM"
-Processors 2
+Processors 1
 XMLData "Header"
     <DevelFlag Number='3'>010201</DevelFlag>
 EndXMLData
@@ -48,13 +48,13 @@ StressFreeTemp 294
 #yldstrain=10		! in percent
 
 ! Dimensions
-#cell=.1
+#cell=.5
 #length=1			! length
 #width=1			! width
 #thick=1			! thickness
 
 ! Load by stress or by velocity (if stress<=0)
-#loading="traction"	! Loading = "rigid", "force", "traction", thermal, "contact"
+#loading="rigid"	! Loading = "rigid", "force", "traction", thermal, "contact"
 
 ! "symmetry" to constrain y direction (and z direction if 3D), "No" for no contraint
 ! "BC1" or "BC2" to use one or two layers of BCs instead of symmetry planes
@@ -63,11 +63,11 @@ StressFreeTemp 294
 #base="symmetry"	
 
 ! test settings
-#gridStrain=400		! room in grid (ignored if #strain<0)
-#strain=200	        ! Maximum strain (%) (stress needed is estimated for force and tractions), or dT for thermal
-#relRate=1			! Displacement rate as percent of wave speed of material (if >0)
+#gridStrain=1200		! room in grid (ignored if #strain<0)
+#strain=800	        ! Maximum strain (%) (stress needed is estimated for force and tractions), or dT for thermal
+#relRate=10			! Displacement rate as percent of wave speed of material (if >0)
 #tmult=30			! Load in this number of transit times (if #relRate<0)
-#factor=0.1			! time step factor
+#factor=0.05			! time step factor
 
 ! Loading rate
 #hold=0				! hold time (multiple of loading time)
@@ -226,6 +226,7 @@ if #loading="rigid"
   Material "rigid","Loading Clamp","Rigid"
     direction 1
     SettingFunction #rfxn
+    mirrored -1
   Done
 else if #loading="contact"
   Material "rigid","Loading Clamp","Rigid"
@@ -297,9 +298,18 @@ else
   GridRect #gleft,#gright,#gbot,#gtop
   
   ! material points
-  Region #matID,0,0,#thick
-    Rect 0,#length,0,#width
-  EndRegion
+  if 1=1
+    Region #matID,0,0,#thick
+      Rect 0,#length,0,#width
+    EndRegion
+  else
+    Repeat "#x",0,#length-#cell/4,#cell/2
+      #velx=-#disprate*(#length-#x+#cell/4)/#length
+      Region #matID,#velx,0,#thick
+        Rect #x,#x+#cell/2,0,#width
+      EndRegion
+    EndRepeat
+  endif
 endif
 
 ! ********** Boundary Condition Section **********
@@ -399,9 +409,9 @@ endif
 ! Fixed sides
 if chars("\2\"&#fixsides)="BC"
   if #fixsides="BC1"
-  	#bcell=#cell/2
+    #bcell=#cell/2
   else
-  	#bcell=#cell
+    #bcell=#cell
   endif
   if #analysis="3D MPM"
     MoveBox #gleft,-#bcell,#zmin,#gright,0.1*#cell,#zmax

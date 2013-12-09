@@ -29,7 +29,7 @@ class MassAndMomentumTask : public MPMTask
 	
 	protected:
 		
-		void SetRigidBCs(int,int,int,double,double,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);
+		void SetRigidBCs(int,int,int,double,double,int,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);
 		void RemoveRigidBCs(BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);
 		void UnsetRigidBCs(BoundaryCondition **,BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);
 		void CountBCs(BoundaryCondition **,BoundaryCondition **,BoundaryCondition **);

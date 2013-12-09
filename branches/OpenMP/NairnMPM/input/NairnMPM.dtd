@@ -160,7 +160,7 @@
 				| sigmaI2 | sigmaII2 | delpkI2 | delpkII2 | ValueFunction | viscosity
 				| D | DA | DT | Dx | Dy | Dz | DR | DZ | D0 | Dd | csat | constantTip
 				| SettingFunction | SettingFunction2 | SettingFunction3 | IdealRubber
-				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration
+				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration | mirrored
 				| kCondA | kCondT | kCondx | kCondy | kCondz | kCond0 | kCondd | P0 | T0
                 | kCondR | kCondZ | Hardening | C1SL | C2SL | UJOption | ArtificialVisc | avA1 | avA2
 				| yldxx | yldyy | yldzz | yldxy | yldxz | yldyz | Khard | nhard | color | betahard
@@ -507,6 +507,7 @@
 <!ELEMENT	reversible EMPTY>
 <!ELEMENT	irreversible EMPTY>
 <!ELEMENT	SetDirection (#PCDATA)>
+<!ELEMENT	mirrored (#PCDATA)>
 <!ELEMENT	SetTemperature EMPTY>
 <!ELEMENT	SetConcentration EMPTY>
 <!ELEMENT	color EMPTY>

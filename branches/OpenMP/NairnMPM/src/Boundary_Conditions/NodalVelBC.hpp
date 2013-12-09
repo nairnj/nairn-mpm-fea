@@ -46,6 +46,7 @@ class NodalVelBC : public BoundaryCondition
         void SetNormalVector(void);
         int ConvertToInputDof(void);
 		void SetReflectedNode(int);
+		void SetMirrorSpacing(int);
 	
 		// class methods
 		static void GridMomentumConditions(int);

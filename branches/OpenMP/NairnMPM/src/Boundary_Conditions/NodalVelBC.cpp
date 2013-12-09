@@ -10,6 +10,7 @@
 #include "Nodes/NodalPoint.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
 
 // Nodal velocity BC globals
 NodalVelBC *firstVelocityBC=NULL;
@@ -27,7 +28,7 @@ NodalVelBC::NodalVelBC(int num,int dof,int setStyle,double velocity,double argTi
 {
     nodeNum = num;
 	reflectedNode = -1;
-    mirrorSpacing = 0;                      // nodal spacing in direction of object for rigid particle BCs only
+    mirrorSpacing = 0;                      // +1 shift higher nodes, -1 shift lower, 0 no mirroring
     angle1 = ang1;
     angle2 = ang2;
     dir = ConvertToDirectionBits(dof);      // change input settings to x,y,z bits
@@ -59,6 +60,7 @@ BoundaryCondition *NodalVelBC::SetRigidProperties(int num,int dof,int setStyle,d
     
     // not reflected yet
     reflectedNode = -1;
+    mirrorSpacing = 0;                      // +1 shift higher nodes, -1 shift lower, 0 no mirroring
 	
 	// finish in base class (nodenum set there)
 	return BoundaryCondition::SetRigidProperties(num,dof,setStyle,velocity);
@@ -308,6 +310,29 @@ NodalVelBC *NodalVelBC::AddReactionForce(Vector *totalReaction,int matchID)
 
 // On symmetry plane set velocity to minus component of the reflected node
 void NodalVelBC::SetReflectedNode(int mirrored) { reflectedNode = mirrored; }
+
+// On rigid particle set spacing to mirrored node
+void NodalVelBC::SetMirrorSpacing(int mirrored)
+{
+	mirrorSpacing = 0;
+	if(mirrored==0) return;
+	if(!mpmgrid.IsStructuredGrid()) return;
+	
+	switch(dir)
+    {   case X_DIRECTION:
+			mirrorSpacing = mirrored<0 ? mpmgrid.xplane : -mpmgrid.xplane ;
+            break;
+        case Y_DIRECTION:
+			mirrorSpacing = mirrored<0 ? mpmgrid.yplane : -mpmgrid.yplane ;
+            break;
+        case Z_DIRECTION:
+			mirrorSpacing = mirrored<0 ? mpmgrid.zplane : -mpmgrid.zplane ;
+            break;
+		default:
+			break;
+	}
+
+}
 
 #pragma mark NodelVelBC::Class Methods
 
