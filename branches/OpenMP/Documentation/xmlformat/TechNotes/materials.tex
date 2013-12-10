@@ -1539,7 +1539,7 @@ If the time step is too large in dynamic code, the compression could potentially
 
 This equation of state has no thermal expansion coefficient, but thermal expansion occurs naturally with proper tracking of heat flow and temperature. The volumetric thermal expansion coefficient from input properties is:
 \begin{equation}
-     \beta_{eff} = {\rho_0 \gamma_0 C_V\over K}
+     \beta_{eff} = {\rho_0 \gamma_0 C_V\over K} \qquad{\rm or}\qquad \gamma_0 = {K\beta_{eff}\over \rho_0 C_V}
 \end{equation}
 The isoentropic temperature rise (using $J=\rho_0/\rho$) becomes
 \begin{equation}
@@ -1547,7 +1547,7 @@ The isoentropic temperature rise (using $J=\rho_0/\rho$) becomes
 \end{equation}
 The heating rate ($dq/dt$) per unit volume becomes
 \begin{equation}
-    {dq\over dt} = \rho C_V dT_{dq=0} = -K \beta_{eff}T \left({V(t+\Delta t)-V(t)\over V} \right) = -T {\tens{M}}\cdot {d\vec{\varepsilon}\over dt} 
+    {dq\over dt} = \rho C_V dT_{dq=0} = -K \beta_{eff}T \left({V(t+\Delta t)-V(t)\over V\Delta t} \right) = -T {\tens{M}}\cdot {d\vec{\varepsilon}\over dt} 
 \end{equation}
 where $\tens{M}=K\vec{\beta}_{eff}$ is the stress-temperature tensor. This result is the standard result for energy flow in small-strain thermoelasticity for an elastic material ({\em e.g.}, see linear thermolasticity by D.~E.~Carlson).
 
@@ -1694,7 +1694,7 @@ Here $J_{res}$ is the volume ratio for free thermal expansion at reference press
 Two special cases of the general law, therefore, are:
 \begin{eqnarray}
    P - P_0 & = & \kappa_0\left[\left(1\over J\right)-1\right]  \qquad{\rm isothermal} \\
-   P - P_0 & = & \kappa_0\left[\left(1\over J\right)^\gamma-1\right]  \qquad{\rm adiabatic} \\
+   P - P_0 & = & \kappa_0\left[\left(1\over J\right)^\gamma-1\right]  \qquad{\rm adiabatic}
 \end{eqnarray}
 But if code implements either of these laws, it will be restricted to either isothermal or adiabatic conditions only. The preferred approach is to implement the general law because it includes both these limits as special cases and can be used for nonisothermal, nonadiabatic simulations as well. When using a general law, however, each  material point must correctly change its temperature according to how much energy should be converted into heat for a given increment in deformation. For an ideal case undergoing in increment in volume of $dV$, the temperature change is
 \begin{equation}

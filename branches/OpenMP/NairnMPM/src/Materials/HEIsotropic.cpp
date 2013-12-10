@@ -212,8 +212,8 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 	// Must also divide elements of B by resStretch2
 	double dresStretch,resStretch = GetResidualStretch(mptr,dresStretch,res);
     double resStretch2 = resStretch*resStretch;
-    double resStretch3 = resStretch2*resStretch;
-    double J = J2/resStretch3;
+    double Jres = resStretch2*resStretch;
+    double J = J2/Jres;
 	Tensor B = Btrial;
 	B.xx /= resStretch2;
 	B.yy /= resStretch2;
@@ -225,9 +225,7 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 	}
 	
 	// Get hydrostatic stress component in subroutine
-    double dresStretch3 = dresStretch*dresStretch*dresStretch;
-	detdF /= dresStretch3;
-    UpdatePressure(mptr,J,detdF,np,resStretch3,delTime,p,res);
+    UpdatePressure(mptr,J,detdF,np,Jres,delTime,p,res);
     
     // Others constants
     double J23 = pow(J, 2./3.);
@@ -362,18 +360,22 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 
 // To allow better subclassing it is better to separate out calculations
 //  of dilaiton energy. This version updates pressure (i.e. dilational
-//  contribution to normal stress) and adds inremental energy to strain energy
-void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,double resStretch3,
+//  contribution to normal stress) and adds incremental energy to strain energy
+// Jtot = V(T,c)/V0(Trec,cref), Jres = V0(T,c)/V0(Tref,cref) for free expansion, J = V(T,c)/V0(T,c)
+// Jn+1 = (detdF/detdFres) Jn, Jresn+1 = detdFres Jresn, Jtot = detdF Jtotn
+// Here Tref and cref are starting conditions and T and c are current temperature and moisture
+void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,double Jres,
 								 double delTime,HEPlasticProperties *p,ResidualStrains *res) const
 {
 	double Kterm = J*GetVolumetricTerms(J,p->Kred);       // times J to get Kirchoff stress
     double P0 = mptr->GetPressure();
     
     // artifical viscosity
-	double delV = 1. - 1./dJ;
+	// delV is total incremental volumetric strain = total Delta(V)/V
+	double delV = 1. - 1./detdF;
     double QAVred = 0.,AVEnergy=0.;
     if(delV<0. && artificialViscosity)
-    {   double c = sqrt(p->Kred/1000.);           // m/sec
+	{	double c = sqrt(p->Kred/1000.);           // m/sec
         QAVred = GetArtificalViscosity(delV/delTime,c);
         if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
     }

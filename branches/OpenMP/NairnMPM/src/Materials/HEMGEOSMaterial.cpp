@@ -181,12 +181,13 @@ void *HEMGEOSMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBu
 // 2. Update particle pressure
 // 3. Increment the particle energy due to dilation
 // 4. Call plasticLaw to see if it wants to change the shear modulus
-// J is total volume change at end of step relative to stress free state (if diffusion)
-// dJ is incremental volume change relative to incremental stress state change (if diffusion)
-void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,double resStretch3,double delTime,
-									 HEPlasticProperties *p,ResidualStrains *res) const
+// J is Jtot/Jres, detdF is detdFtot/detdFres
+// Jtot = V(T,c)/V0(Trec,cref), Jres = V0(T,c)/V0(Tref,cref) for free expansion, J = V(T,c)/V0(T,c)
+// Jn+1 = (detdF/detdFres) Jn, Jresn+1 = detdFres Jresn, Jtot = detdF Jtotn
+// Here Tref and cref are starting conditions and T and c are current temperature and moisture
+void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,double Jres,
+									 double delTime,HEPlasticProperties *p,ResidualStrains *res) const
 {
-	// delV is total incremental volumetric strain relative to free-swelling volume
     // J is total volume change - may need to reference to free-swelling volume if that works
 	// Note that swelling looks like a problem because the sums of strains needs to be adjusted
 	//		to stress-free state
@@ -221,10 +222,13 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,dou
     double P = J*(p->Kred*x + gamma0*e);
     
     // artifical viscosity
-	double delV = 1. - 1./dJ;
+	// Jtot is total J
+	// delV is total incremental volumetric strain = total Delta(V)/V
+	double Jtot = J*Jres;
+	double delV = 1. - 1./detdF;
     double QAVred = 0.,AVEnergy=0.;
     if(delV<0. && artificialViscosity)
-    {   double c = sqrt(p->Kred*J*resStretch3/1000.);        // m/sec
+    {   double c = sqrt(p->Kred*Jtot/1000.);        // m/sec
         QAVred = GetArtificalViscosity(delV/delTime,c);
         if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
     }
@@ -233,8 +237,7 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double dJ,int np,dou
     mptr->SetPressure(P+QAVred);
     
     // particle isentropic temperature increment
-    double dTq0 = -gamma0*mptr->pPreviousTemperature*J*delV;
-    //mptr->pTemperature += dTq0;
+    double dTq0 = -Jtot*gamma0*mptr->pPreviousTemperature*delV;
     
     // work energy is dU = -P dV + s.de(total)
 	// Here do hydrostatic terms, deviatoric later

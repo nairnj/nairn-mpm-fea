@@ -121,13 +121,10 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     // account for residual stresses
 	double dresStretch,resStretch = GetResidualStretch(mptr,dresStretch,res);
 	double Jres = resStretch*resStretch*resStretch;
-    double detdFres = dresStretch*dresStretch*dresStretch;
     double J = Jtot/Jres;
-    detdF /= detdFres;
 
     // new pressure from Tait equation
     double pressure = TAIT_C*Ksp*(exp((1.-J)/TAIT_C)-1.);
-    //double pressure = Ksp*(pow(Jtot,-7.)-1.);
     mptr->SetPressure(pressure);
     
     // viscosity term = 2 eta (0.5(grad v) + 0.5*(grad V)^T - (1/3) tr(grad v) I)
@@ -160,10 +157,10 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
         sp->yz = shear(1,2);
     }
     
-    // particle isentropic temperature increment dT/T = - gamma0 (del(J)/J)
-    // dJ/J = 1. - 1/detdF (relative to stress free change)
+    // particle isentropic temperature increment dT/T = - J gamma0 (del(J)/J)
+    // dJ/J = 1. - 1/detdF (=Delta(V)/V for total volume)
     double delV = 1. - 1./detdF;
-    double dTq0 = -gamma0*mptr->pPreviousTemperature*delV;
+    double dTq0 = -Jtot*gamma0*mptr->pPreviousTemperature*delV;
     
     // heat energy is Cv (dT - dTq0) - dPhi
 	// Here do Cv (dT - dTq0)
