@@ -22,7 +22,6 @@ TaitLiquid::TaitLiquid() {}
 TaitLiquid::TaitLiquid(char *matName) : HyperElastic(matName)
 {
     viscosity = -1.;
-    gamma0 = 6;             // = gamma-1 in adibatic liquid laws
 }
 
 #pragma mark TaitLiquid::Initialization
@@ -38,11 +37,6 @@ char *TaitLiquid::InputMat(char *xName,int &input)
         return((char *)&viscosity);
     }
 	
-    else if(strcmp(xName,"gamma0")==0)
-    {	input=DOUBLE_NUM;
-        return((char *)&gamma0);
-    }
-    
     return HyperElastic::InputMat(xName,input);
 }
 
@@ -59,10 +53,8 @@ const char *TaitLiquid::VerifyAndLoadProperties(int np)
 	// for MPM (units N sec/m^2 cm^3/g) (1 cP = 0.001 N sec/m^2)
 	Etasp = 0.002*viscosity/rho;
     
-    // volumetric CTE
-    alphaV = 3.e-6*aI;
-    
     // heating gamma0
+    double alphaV = 3.e-6*aI;
     gamma0 = 1000.*Kbulk*alphaV/(rho*heatCapacity);
     
 	// must call super class
@@ -128,15 +120,14 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 	
     // account for residual stresses
 	double dresStretch,resStretch = GetResidualStretch(mptr,dresStretch,res);
-	double resStretch2 = resStretch*resStretch;
-	double Jres = resStretch2*resStretch;
-    double dresStretch2 = dresStretch*dresStretch;
-    double detdJres = dresStretch2*dresStretch;
+	double Jres = resStretch*resStretch*resStretch;
+    double detdFres = dresStretch*dresStretch*dresStretch;
+    double J = Jtot/Jres;
+    detdF /= detdFres;
 
     // new pressure from Tait equation
-    double pressure = TAIT_C*Ksp*(exp((1.-Jtot/Jres)/TAIT_C)-1.);
-    //double pressure = Ksp*(pow(Jtot,-(gamma0+1.))-1.);
-    //double pressure = Ksp*((Jres/Jtot)-1.);
+    double pressure = TAIT_C*Ksp*(exp((1.-J)/TAIT_C)-1.);
+    //double pressure = Ksp*(pow(Jtot,-7.)-1.);
     mptr->SetPressure(pressure);
     
     // viscosity term = 2 eta (0.5(grad v) + 0.5*(grad V)^T - (1/3) tr(grad v) I)
@@ -169,9 +160,8 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
         sp->yz = shear(1,2);
     }
     
-    // particle isentropic temperature increment del(Jres)/Jres = - gamma0 (del(J)/J)
-    // del(Jres)/Jres = 1 - 1/detdJres
-    // dJ/J = 1. - 1/detdF;
+    // particle isentropic temperature increment dT/T = - gamma0 (del(J)/J)
+    // dJ/J = 1. - 1/detdF (relative to stress free change)
     double delV = 1. - 1./detdF;
     double dTq0 = -gamma0*mptr->pPreviousTemperature*delV;
     

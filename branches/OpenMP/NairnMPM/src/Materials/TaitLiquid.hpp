@@ -49,7 +49,6 @@ class TaitLiquid : public HyperElastic
     protected:
         int J_history;
         double Etasp;
-        double alphaV;
     
 };
 

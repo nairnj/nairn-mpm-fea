@@ -64,7 +64,6 @@ XMLData Material,"liquid"
   <Material Type="27" Name="Water">
     <K>2200</K>
     <viscosity>1</viscosity>
-    <gamma0>6</gamma0>
     <rho>1</rho>
     <kCond>0</kCond>
     <Cv>418.13</Cv>
