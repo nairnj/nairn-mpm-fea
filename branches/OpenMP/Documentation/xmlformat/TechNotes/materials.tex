@@ -1537,6 +1537,19 @@ In compression, $J$ is physically limited to be between 0 and 1, which means $\e
 \end{equation}
 If the time step is too large in dynamic code, the compression could potentially pass this value. If that happens for any particle, the results will likely be poor; {\tt NairnMPM} prints a warning labeling states beyond the physical limit as ``excessive compression.'' It is good practice to use an adjustable time step when using this material so the time step can get smaller if the compression gets high.
 
+This equation of state has no thermal expansion coefficient, but thermal expansion occurs naturally with proper tracking of heat flow and temperature. The volumetric thermal expansion coefficient from input properties is:
+\begin{equation}
+     \beta_{eff} = {\rho_0 \gamma_0 C_V\over K}
+\end{equation}
+The isoentropic temperature rise (using $J=\rho_0/\rho$) becomes
+\begin{equation}
+     dT_{dq=0} = - {K\beta_{eff}T\over \rho C_V}  \left({V(t+\Delta t)-V(t)\over V} \right)    \label{mgdt}
+\end{equation}
+The heating rate ($dq/dt$) per unit volume becomes
+\begin{equation}
+    {dq\over dt} = \rho C_V dT_{dq=0} = -K \beta_{eff}T \left({V(t+\Delta t)-V(t)\over V} \right) = -T {\tens{M}}\cdot {d\vec{\varepsilon}\over dt} 
+\end{equation}
+where $\tens{M}=K\vec{\beta}_{eff}$ is the stress-temperature tensor. This result is the standard result for energy flow in small-strain thermoelasticity for an elastic material ({\em e.g.}, see linear thermolasticity by D.~E.~Carlson).
 
 \subsection{Ideal Gas Law}
 
@@ -1691,8 +1704,7 @@ In other words, all the work is converted into heat. Also notice that this resul
 \begin{equation}
     {dT\over T} = {nR \over C_V}{1\over J}d\eta = {\gamma_0\over J}d\eta = -\gamma_0{dJ\over J} \qquad{\rm where}\qquad \eta = 1 - {\rho_0\over \rho} = 1 - J
 \end{equation}
-This result is similar to the solid material in the Mie-Gr\"{u}niesen equation state, except for the $J$ in the denominator. For a monatoic ideal gas $\gamma_0=2/3$; for a diatomic gas $\gamma_0=2/5$; for both $\gamma_0=\gamma-1$.
-
+For a monatoic ideal gas $\gamma_0=2/3$; for a diatomic gas $\gamma_0=2/5$; for both $\gamma_0=\gamma-1$. This result is identical to elasticity theory and Eq.~(\ref{mgdt}) by using $K=P$, $\beta_{eff}=1/T$ and $C_V = (3/2)nR/(\rho V)$ (or 5/2 for diatomic gas).
 
 \subsection{Van der Waals Gas Law}
 

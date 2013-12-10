@@ -22,6 +22,7 @@ TaitLiquid::TaitLiquid() {}
 TaitLiquid::TaitLiquid(char *matName) : HyperElastic(matName)
 {
     viscosity = -1.;
+    gamma0 = 6;             // = gamma-1 in adibatic liquid laws
 }
 
 #pragma mark TaitLiquid::Initialization
@@ -37,6 +38,11 @@ char *TaitLiquid::InputMat(char *xName,int &input)
         return((char *)&viscosity);
     }
 	
+    else if(strcmp(xName,"gamma0")==0)
+    {	input=DOUBLE_NUM;
+        return((char *)&gamma0);
+    }
+    
     return HyperElastic::InputMat(xName,input);
 }
 
@@ -53,6 +59,12 @@ const char *TaitLiquid::VerifyAndLoadProperties(int np)
 	// for MPM (units N sec/m^2 cm^3/g) (1 cP = 0.001 N sec/m^2)
 	Etasp = 0.002*viscosity/rho;
     
+    // volumetric CTE
+    alphaV = 3.e-6*aI;
+    
+    // heating gamma0
+    gamma0 = 1000.*Kbulk*alphaV/(rho*heatCapacity);
+    
 	// must call super class
 	return HyperElastic::VerifyAndLoadProperties(np);
 }
@@ -65,6 +77,7 @@ void TaitLiquid::PrintMechanicalProperties(void) const
 	PrintProperty("eta",viscosity,"cP");
 	PrintProperty("a",aI,"");
     cout << endl;
+    PrintProperty("gam0",gamma0,"");
 }
 
 // if analysis not allowed, throw a CommonException
@@ -108,16 +121,22 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     
 	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
     // This code handles plane strain, axisymmetric, and 3D - Plane stress is blocked
-	double J2 = detdF * mptr->GetHistoryDble(J_history);
+	double Jtot = detdF * mptr->GetHistoryDble(J_history);
     
     // save new J
-    mptr->SetHistoryDble(J_history,J2);  // Stocking J
+    mptr->SetHistoryDble(J_history,Jtot);  // Stocking J
 	
     // account for residual stresses
-    double Jres = 1.0;
+	double dresStretch,resStretch = GetResidualStretch(mptr,dresStretch,res);
+	double resStretch2 = resStretch*resStretch;
+	double Jres = resStretch2*resStretch;
+    double dresStretch2 = dresStretch*dresStretch;
+    double detdJres = dresStretch2*dresStretch;
 
     // new pressure from Tait equation
-    double pressure = TAIT_C*Ksp*(exp((1.-J2/Jres)/TAIT_C)-1.);
+    double pressure = TAIT_C*Ksp*(exp((1.-Jtot/Jres)/TAIT_C)-1.);
+    //double pressure = Ksp*(pow(Jtot,-(gamma0+1.))-1.);
+    //double pressure = Ksp*((Jres/Jtot)-1.);
     mptr->SetPressure(pressure);
     
     // viscosity term = 2 eta (0.5(grad v) + 0.5*(grad V)^T - (1/3) tr(grad v) I)
@@ -149,6 +168,18 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     {   sp->xz = shear(0,2);
         sp->yz = shear(1,2);
     }
+    
+    // particle isentropic temperature increment del(Jres)/Jres = - gamma0 (del(J)/J)
+    // del(Jres)/Jres = 1 - 1/detdJres
+    // dJ/J = 1. - 1/detdF;
+    double delV = 1. - 1./detdF;
+    double dTq0 = -gamma0*mptr->pPreviousTemperature*delV;
+    
+    // heat energy is Cv (dT - dTq0) - dPhi
+	// Here do Cv (dT - dTq0)
+    // dPhi is lost due to shear term (but should it be added)
+    IncrementHeatEnergy(mptr,res->dT,dTq0,0.);
+
 }
 
 #pragma mark TaitLiquid::Custom Methods

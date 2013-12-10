@@ -21,6 +21,7 @@ class TaitLiquid : public HyperElastic
     public:
         // unique properties
         double viscosity;
+        double gamma0;
     
         // constructors and destructors
         TaitLiquid();
@@ -48,6 +49,7 @@ class TaitLiquid : public HyperElastic
     protected:
         int J_history;
         double Etasp;
+        double alphaV;
     
 };
 

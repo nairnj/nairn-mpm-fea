@@ -683,7 +683,7 @@ void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,doubl
 	double Cv = 1000.*GetHeatCapacity(mptr);
 	double dispEnergy = Cv*dTq0 + dPhi;
 	
-	// Isolated means no conduction and now thermal ramp (and in future if have othe ways
+	// Isolated means no conduction and no thermal ramp (and in future if have other ways
 	//		to change particle temperature, those are not active either)
 	// In this mode, adiabatic has dq=0 and isothermal releases all as heat
     if(isolatedSystemAndParticles)

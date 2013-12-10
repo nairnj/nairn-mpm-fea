@@ -368,22 +368,22 @@ double HyperElastic::IncrementDeformation(MPMBase *mptr,Matrix3 du,Tensor *Btria
 }
 
 // Find isotropic stretch for thermal and moisture expansion
-// total residual stretch (1 + alpha dT + beta csat dC)
-// Current assumes isotropic with CTE1 and CME1 expansion coefficients
+// total residual stretch exp(alpha dT + beta csat dC)
+// Current assumes isotropic with constant CTE1 and CME1 expansion coefficients
 double HyperElastic::GetResidualStretch(MPMBase *mptr,double &dresStretch,ResidualStrains *res) const
 {
-	// total residual stretch (1 + alpha dT(total) + beta csat dC(total))
+	// total residual stretch exp(alpha dT(total) + beta csat dC(total))
 	// incremental residual stretch (1 + alpha dT + beta csat dC)
-	double resStretch = 1.0;
 	double dTemp=mptr->pPreviousTemperature-thermal.reference;
-	resStretch += CTE1*dTemp;
-	dresStretch = 1. + CTE1*res->dT;
+	double resStretch = CTE1*dTemp;
+	dresStretch = CTE1*res->dT;
 	if(DiffusionTask::active)
 	{	double dConc=mptr->pPreviousConcentration-DiffusionTask::reference;
-		resStretch += CME1*dConc;
+		resStretch += exp(CME1*dConc);
 		dresStretch += CTE1*res->dC;
 	}
-	return resStretch;
+    dresStretch = exp(dresStretch);
+	return exp(resStretch);
 }
 
 // Get current relative volume change = J = det F = lam1 lam2 lam3

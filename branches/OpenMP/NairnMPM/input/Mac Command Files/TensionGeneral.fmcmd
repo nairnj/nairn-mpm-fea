@@ -17,7 +17,7 @@ EndHeader! ------------ Parameters ---------------
 
 ! material options: isotropic, iptrans, normtrans, ortho,isoplasticity, mgeos
 ! bistable, viscoelastic, hill, wood
-#matID="isotropic"
+#matID="mgeos"
 #angle=0					! material angle for anisotopic materials
 !#matID="WPC-PE"
 
@@ -55,6 +55,11 @@ StressFreeTemp 294
 #nuBase=.33
 #aBase=60
 #yldstrain=1		! in percent
+! MGEOS development
+#Ebase=308776
+#rho=19.256
+#nuBase=.28
+#aBase=4.5
 
 ! Dimensions
 #cell=2
