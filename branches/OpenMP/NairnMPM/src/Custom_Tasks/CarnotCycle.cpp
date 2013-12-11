@@ -85,7 +85,7 @@ CustomTask *CarnotCycle::Initialize(void)
 	
 	// initial settings
 	carnotStep = 0;
-	ConductionTask::energyCoupling = FALSE;
+	ConductionTask::adiabatic = FALSE;
 	MaterialBase::isolatedSystemAndParticles = FALSE;
 	
     return nextTask;
@@ -117,7 +117,7 @@ CustomTask *CarnotCycle::StepCalculation(void)
 	{	case 0:
 			carnotStep = 1;
 			cout << "# Step 1: isothermal expansion" << endl;
-            ConductionTask::energyCoupling = FALSE;
+            ConductionTask::adiabatic = FALSE;
 			break;
 			
 		case 1:
@@ -125,7 +125,7 @@ CustomTask *CarnotCycle::StepCalculation(void)
 			if(Vrel >= V1rel)
 			{	// switch to adibatic expanion
 				carnotStep = 2;
-				ConductionTask::energyCoupling = TRUE;
+				ConductionTask::adiabatic = TRUE;
 				cout << "# Step 2: adibatic expansion" << endl;
 			}
 			break;
@@ -135,7 +135,7 @@ CustomTask *CarnotCycle::StepCalculation(void)
 			if(Tgas<=T2)
 			{	// switch to pause
 				carnotStep = 3;
-				ConductionTask::energyCoupling = FALSE;
+				ConductionTask::adiabatic = FALSE;
 				V2rel = Vrel;
 				
 				// find velocity
@@ -161,7 +161,7 @@ CustomTask *CarnotCycle::StepCalculation(void)
 			if(Vrel <= V3rel)
 			{	// switch to adibatic compression
 				carnotStep = 4;
-				ConductionTask::energyCoupling = TRUE;
+				ConductionTask::adiabatic = TRUE;
 				cout << "# Step 4: adibatic compression" << endl;
 			}
 			break;

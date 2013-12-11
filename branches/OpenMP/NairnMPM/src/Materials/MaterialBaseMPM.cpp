@@ -376,7 +376,7 @@ void MaterialBase::PrintTransportProperties(void) const
 		PrintProperty("C",heatCapacity,"J/(kg-K)");        // aka mJ/(g-K)
 		cout << endl;
 	}
-	else if(ConductionTask::energyCoupling)
+	else if(ConductionTask::adiabatic)
 	{	PrintProperty("C",heatCapacity,"J/(kg-K)");        // aka mJ/(g-K)
 		cout << endl;
 	}
@@ -455,7 +455,7 @@ void MaterialBase::ValidateForUse(int np) const
 							  "MaterialBase::ValidateForUse");
 	}
 	
-	if(ConductionTask::active || ConductionTask::energyCoupling)
+	if(ConductionTask::active || ConductionTask::adiabatic)
 	{	if(heatCapacity<=0. && !Rigid())
 		{	throw CommonException("Thermal conduction and/or mechanical energy cannot be done using materials that have zero heat capacity.",
 								  "MaterialBase::ValidateForUse");
@@ -687,18 +687,25 @@ void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,doubl
 	//		to change particle temperature, those are not active either)
 	// In this mode, adiabatic has dq=0 and isothermal releases all as heat
     if(isolatedSystemAndParticles)
-	{	if(!ConductionTask::energyCoupling)
+    {   // Here dText = 0
+        // If adiabatic, dq = 0 (nothing to add)
+        // If isothermal dq = -Cv dTq0 - dPhi
+        // (i.e., not relying on balance in the next time step
+		if(!ConductionTask::adiabatic)
 			mptr->AddHeatEnergy(-dispEnergy);
     }
 	else
 	{	// For non isolated particle use dq = Cv(dT-dTq0)-dPhi
+        // If adiabatic, the Cv dT term in next step will include Cv dTq0 + dPhi from
+        //    this step to give global dq = 0. If isothermal, it will not and
+        //    dq will be disspated energy
 		mptr->AddHeatEnergy(Cv*dT - dispEnergy);
 	}
     
-	// the dispated energy is added here, but only if adiabatic, in which case it will
+	// The dispated energy is added here, but only if adiabatic, in which case it will
     // converted to particle temperature rise later in the calculations. This temperature
     // change works with conduction on or off
-    if(ConductionTask::energyCoupling)
+    if(ConductionTask::adiabatic)
         mptr->AddDispEnergy(dispEnergy);
 }
 

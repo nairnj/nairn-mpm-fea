@@ -301,7 +301,7 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     // the plastic energy is not otherwise used, so let's track entropy
     double dS = 0., Cv = 1000.*GetHeatCapacity(mptr);
     double Tp = mptr->pPreviousTemperature;
-    if(ConductionTask::energyCoupling)
+    if(ConductionTask::adiabatic)
     {   double dTS = dU/Cv;
         dS = Cv*(res->dT/Tp - dTS/(Tp+dTS));
     }

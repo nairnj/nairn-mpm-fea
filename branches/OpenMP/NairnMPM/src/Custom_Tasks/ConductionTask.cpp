@@ -56,7 +56,7 @@ bool ConductionTask::active=FALSE;
 bool ConductionTask::crackTipHeating=FALSE;
 bool ConductionTask::crackContactHeating=FALSE;
 bool ConductionTask::matContactHeating=FALSE;
-bool ConductionTask::energyCoupling=FALSE;
+bool ConductionTask::adiabatic=FALSE;
 bool ConductionTask::AVHeating=TRUE;
 ConductionTask *conduction=NULL;
 
@@ -98,7 +98,7 @@ void ConductionTask::ThermodynamicsOutput(void)
         cout << "Particles: nonisolated";
     else
         cout << "Particles: isolated";
-    if(energyCoupling)
+    if(adiabatic)
         cout << " and adiabatic" << endl;
     else
         cout << " and isothermal" << endl;
@@ -241,7 +241,7 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double 
 	// add source terms
 	
 	// if coupled to material dissipated energy, add and then zero dissipated energy
-	if(energyCoupling)
+	if(adiabatic)
 	{	// V * q heat energy is mp (g) * specific energy (uJ/g) = uJ
 		// To get mJ/sec, divide timestep (sec) and times 1e-3
 		ndptr->fcond += sh*1.0e-3*mptr->mp*mptr->GetDispEnergy()/timestep;

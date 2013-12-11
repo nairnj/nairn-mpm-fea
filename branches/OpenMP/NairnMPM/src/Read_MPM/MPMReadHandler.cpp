@@ -938,7 +938,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	// Turn on adiabatic mode
     else if(strcmp(xName,"EnergyCoupling")==0)
 	{	ValidateCommand(xName,THERMAL,ANY_DIM);
-		ConductionTask::energyCoupling=TRUE;
+		ConductionTask::adiabatic=TRUE;
 	}
 	
 	// Turn off artificial viscosity heating (only on when adibatic)

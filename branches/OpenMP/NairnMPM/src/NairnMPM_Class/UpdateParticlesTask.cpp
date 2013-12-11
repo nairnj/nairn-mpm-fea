@@ -106,10 +106,10 @@ void UpdateParticlesTask::Execute(void)
 			
 			// energy coupling here if conduction not doing it
 			if(!ConductionTask::active)
-			{	if(ConductionTask::energyCoupling)
+			{	if(ConductionTask::adiabatic)
 				{	double energy = mpmptr->GetDispEnergy();				// in uJ/g
-					double Cp=1000.*matRef->GetHeatCapacity(mpmptr);		// in uJ/(g-K)
-					mpmptr->pTemperature += energy/Cp;                      // in K
+					double Cv=1000.*matRef->GetHeatCapacity(mpmptr);		// in uJ/(g-K)
+					mpmptr->pTemperature += energy/Cv;                      // in K
 				}
 				mpmptr->SetDispEnergy(0.);
 			}
