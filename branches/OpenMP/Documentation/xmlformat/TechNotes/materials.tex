@@ -1419,7 +1419,7 @@ For 2D analysis, $F_{xz}=F_{yz}=F_{zx}=F_{zy}=0$, which leads to zero for corres
 \end{eqnarray}
 For plane strain analysis $B_{zz}=1$. For plane stress analysis, one has to solve numerically for $B_{zz}$ to get $\s{zz}=0$ or $s_{zz}=P$ and then use that result to find $\e{zz}$ and other stresses.
 
-\subsection{Dealing with Thermal and Moisture Strains}
+\subsubsection{Dealing with Thermal and Moisture Strains}
 
 To handle thermal and moisture strains the deformation is divided into two steps. The first is free expansion to the new stress free volume and then deformation to the final volume. The total deformation will be
 \begin{equation}
@@ -1445,9 +1445,6 @@ where
 \end{equation}
 where $dT$ and $dc$ are temperature and concentration changes on the current time step.
 
-
-
-
 \subsubsection{Alternate Bulk Modulus Term}
 
 Two alternative compressibility terms (showing only that term) is
@@ -1462,6 +1459,21 @@ W = {K\over2}(\ln J)^2  \qquad{\rm and}\qquad W = {K\over2}\left({1\over2}(J^2-1
 \end{equation}
 
 \noindent Although these three compressibility terms show some significant differences when $J$ deviates significantly from 1, under most problems, $J$ will stay close to one. Two exceptions could be constrained compression or tension. Here, the only one that works well to very small or large $J$ is the second one above. This one correctly leads to inifinite positive stress as $J\to\infty$ and infinite negative stress as $J\to0$. This later one is the default for this material in {\tt NairnMPM}.
+
+\subsubsection{Tangent Bulk Modulus}
+
+The incremental bulk modulus is
+\begin{equation}
+   {1\over K(P)} = - {d\ln V\over dP} = - {d\ln J\over dP}  \qquad{\rm or} \qquad K = -J {dP\over dJ}
+\end{equation}
+The various bulk moduli are
+\begin{eqnarray}
+   P = -K_0(J-1) &\qquad{\rm gives}\qquad & K = K_0 J \\
+   P = -K_0 {\ln J\over J} &\qquad{\rm gives}\qquad& K_0{1-\ln J\over J^2}\\
+   P = - {K_0\over 2}\left(J-{1\over J}\right) &\qquad{\rm gives}\qquad& K = {K_0\over 2}\left(J + {1\over J}\right)
+\end{eqnarray}
+
+
 
 \subsection{Mie-Gr\"{u}niesen Equation of State}
 

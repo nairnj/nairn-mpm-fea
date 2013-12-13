@@ -16,7 +16,7 @@ MPMMethod USF,lCPDI
 
 ! ********** Parameters Section **********
 #matID="liquid"		    ! can be "ideal gas" or "liquid"
-#strain=-25				! strain
+#strain=-50				! strain
 #tmult=20
 
 #cell=5                 ! cell size (cubic cells)
@@ -47,9 +47,9 @@ endif
 
 ! Archiving
 Archive "Results/"&#matID
-TimeStep 1000,#time,.1
+TimeStep 1000,#time,.05
 ArchiveTime #time/40
-ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain,temperature,plasticenergy,plasticstrain,history1
+ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain,temperature,history1
 
 ! ********** Materials Section **********
 if #matID="idealgas"
@@ -79,11 +79,11 @@ Done
 
 Material "floor","Wall","Rigid"
   direction 1
+  mirrored -1
 Done
 
 Material "wally","Wall","Rigid"
   direction 2
-  mirrored -1
 Done
 
 Material "wallz","Wall","Rigid"

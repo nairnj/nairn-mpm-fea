@@ -160,7 +160,8 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     // particle isentropic temperature increment dT/T = - J gamma0 (del(J)/J)
     // dJ/J = 1. - 1/detdF (=Delta(V)/V for total volume)
     double delV = 1. - 1./detdF;
-    double dTq0 = -Jtot*gamma0*mptr->pPreviousTemperature*delV;
+	double JKratio = Jtot;
+	double dTq0 = -JKratio*gamma0*mptr->pPreviousTemperature*delV;
     
     // heat energy is Cv (dT - dTq0) - dPhi
 	// Here do Cv (dT - dTq0)

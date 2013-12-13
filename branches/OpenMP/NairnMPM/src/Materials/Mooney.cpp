@@ -35,6 +35,7 @@ void Mooney::PrintMechanicalProperties(void) const
 	cout << endl;
 	
 	PrintProperty("a",aI,"");
+	PrintProperty("gam0",gamma0,"");
     switch(UofJOption)
     {   case J_MINUS_1_SQUARED:
             PrintProperty("U(J)",UofJOption,"[ = (K/2)(J-1)^2 ]");
@@ -88,6 +89,10 @@ const char *Mooney::VerifyAndLoadProperties(int np)
 	// for MPM (units N/m^2 cm^3/g)
 	G1sp=G1*1.0e+06/rho;
 	G2sp=G2*1.0e+06/rho;
+	
+    // heating gamma0
+    double alphaV = 3.e-6*aI;
+    gamma0 = 1000.*Kbulk*alphaV/(rho*heatCapacity);
 	
 	// call super class
 	return HyperElastic::VerifyAndLoadProperties(np);
@@ -214,11 +219,11 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 	}
     
     // Increment J and save it in history data
-    double J = detDf*mptr->GetHistoryDble();
-    mptr->SetHistoryDble(J);
+    double Jtot = detDf*mptr->GetHistoryDble();
+    mptr->SetHistoryDble(Jtot);
 	
 	// account for residual stresses
-	J /= resStretch3;
+	double J = Jtot/resStretch3;
 	
     // update pressure
 	double p0=mptr->GetPressure();
@@ -268,7 +273,7 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
         sp->yz = B->yz*G1eff/JforG1 + (B->xx*B->yz-B->xy*B->xz)*G2eff/JforG2;
     }
     
-	// strain energy per unit mass (U/(rho0 V0)) and we are using
+	// work energy per unit mass (U/(rho0 V0)) and we are using
     // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
 	// Divide B's by resStretch2 to accound for current stress free state
 	//double I1bar = (B->xx+B->yy+B->zz)/(resStretch2*J23);
@@ -286,28 +291,34 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     // strain energy
     double dU = dilEnergy + shearEnergy;
     mptr->AddWorkEnergy(dU);
+	
+	// particle isentropic temperature increment
+	double JKratio;				// = rho_0 K/(rho K_0)
+	switch(UofJOption)
+	{   case J_MINUS_1_SQUARED:
+			JKratio = Jtot*Jtot;
+			break;
+			
+		case LN_J_SQUARED:
+			JKratio = (1-log(Jtot))/Jtot;
+			break;
+			
+		case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
+		default:
+			JKratio = Jtot*Jtot+1;
+			break;
+	}
+    double dTq0 = -JKratio*gamma0*mptr->pPreviousTemperature*delV;
     
     // thermodynamics depends on whether or not this is a rubber
     if(rubber)
     {   // just like ideal gas
-        IncrementHeatEnergy(mptr,res->dT,0.,dU+QAVred);
+        IncrementHeatEnergy(mptr,res->dT,dTq0,dU+QAVred);
     }
     else
     {   // elastic - no heating
-        IncrementHeatEnergy(mptr,res->dT,0.,QAVred);
+        IncrementHeatEnergy(mptr,res->dT,dTq0,QAVred);
     }
-    
-    // the plastic energy is not otherwise used, so let's track entropy
-    double dS = 0., Cv = 1000.*GetHeatCapacity(mptr);
-    double Tp = mptr->pPreviousTemperature;
-    if(ConductionTask::adiabatic)
-    {   double dTS = dU/Cv;
-        dS = Cv*(res->dT/Tp - dTS/(Tp+dTS));
-    }
-    else
-        dS = (Cv*res->dT - dU)/Tp;
-	mptr->AddPlastEnergy(dS);
-    
 }
 
 #pragma mark Mooney::Accessors

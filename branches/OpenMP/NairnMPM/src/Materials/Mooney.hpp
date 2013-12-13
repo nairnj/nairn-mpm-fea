@@ -54,6 +54,7 @@ class Mooney : public HyperElastic
 		
     protected:
 		double G1sp, G2sp;
+		double gamma0;
 };
 
 #endif
