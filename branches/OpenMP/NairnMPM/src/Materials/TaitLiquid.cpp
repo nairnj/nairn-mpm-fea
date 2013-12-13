@@ -11,6 +11,8 @@
 #include "Materials/TaitLiquid.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Custom_Tasks/DiffusionTask.hpp"
+#include "Global_Quantities/ThermalRamp.hpp"
 
 #pragma mark TaitLiquid::Constructors and Destructors
 
@@ -124,7 +126,7 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     double J = Jtot/Jres;
 
     // new pressure from Tait equation
-    double pressure = TAIT_C*Ksp*(exp((1.-J)/TAIT_C)-1.);
+    double pressure = TAIT_C*Ksp*(exp((1.-J)/TAIT_C)-1.) ;
     mptr->SetPressure(pressure);
     
     // viscosity term = 2 eta (0.5(grad v) + 0.5*(grad V)^T - (1/3) tr(grad v) I)
@@ -157,11 +159,11 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
         sp->yz = shear(1,2);
     }
     
-    // particle isentropic temperature increment dT/T = - J gamma0 (del(J)/J)
-    // dJ/J = 1. - 1/detdF (=Delta(V)/V for total volume)
+    // particle isentropic temperature increment dT/T = - J (K/K0) gamma0 Delta(V)/V
+    // Delta(V)/V = 1. - 1/detdF (total volume)
+	double Kratio = J*(1.+pressure/(TAIT_C*Ksp));
     double delV = 1. - 1./detdF;
-	double JKratio = Jtot;
-	double dTq0 = -JKratio*gamma0*mptr->pPreviousTemperature*delV;
+	double dTq0 = -Jtot*Kratio*gamma0*mptr->pPreviousTemperature*delV;
     
     // heat energy is Cv (dT - dTq0) - dPhi
 	// Here do Cv (dT - dTq0)
@@ -184,6 +186,21 @@ int TaitLiquid::MaterialTag(void) const { return TAITLIQUID; }
 double TaitLiquid::WaveSpeed(bool threeD,MPMBase *mptr) const
 {
     return sqrt(1.e9*(Kbulk)/rho);
+}
+
+// Calculate current wave speed in mm/sec for a deformed particle
+double TaitLiquid::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
+{
+    double J = mptr->GetRelativeVolume();
+	double dTemp=mptr->pPreviousTemperature-thermal.reference;
+	double resStretch = CTE1*dTemp;
+	if(DiffusionTask::active)
+	{	double dConc=mptr->pPreviousConcentration-DiffusionTask::reference;
+		resStretch += exp(CME1*dConc);
+	}
+	double Jres = exp(3.*resStretch);
+    double Kratio = (J/Jres)*(1.+mptr->GetPressure()/(TAIT_C*Ksp));
+    return sqrt(1.e9*(Kbulk*Kratio)/rho);
 }
 
 // Copy stress to a read-only tensor variable after combininng deviatoric and pressure

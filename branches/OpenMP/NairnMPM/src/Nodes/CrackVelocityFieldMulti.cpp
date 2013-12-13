@@ -689,7 +689,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
         }
         else
             maxFriction=contact.GetMaterialFriction(i,rigidFld);
-		
+        
 		// some variables
 		Vector norm,delPi;
 		double dotn,massi=mvf[i]->mass,voli=mvf[i]->GetContactVolume();

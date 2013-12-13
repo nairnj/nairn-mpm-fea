@@ -43,6 +43,7 @@ class TaitLiquid : public HyperElastic
         virtual const char *MaterialType(void) const;
         virtual int MaterialTag() const;
         virtual double WaveSpeed(bool,MPMBase *) const;
+        virtual double CurrentWaveSpeed(bool,MPMBase *) const;
         virtual Tensor GetStress(Tensor *sp,double pressure) const;
         
     protected:

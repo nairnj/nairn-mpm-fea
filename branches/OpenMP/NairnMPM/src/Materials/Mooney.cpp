@@ -130,7 +130,7 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     Tensor *B = mptr->GetElasticLeftCauchyTensor();
 	
     // account for residual stresses
-	// Divid J bt resStretch3 adn elements of B by resStretch2
+	// Divide J bt resStretch3 adn elements of B by resStretch2
 	double dresStretch,resStretch = GetResidualStretch(mptr,dresStretch,res);
 	double resStretch2 = resStretch*resStretch;
 	double resStretch3 = resStretch2*resStretch;
@@ -293,22 +293,22 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     mptr->AddWorkEnergy(dU);
 	
 	// particle isentropic temperature increment
-	double JKratio;				// = rho_0 K/(rho K_0)
+	double Kratio;				// = rho_0 K/(rho K_0)
 	switch(UofJOption)
 	{   case J_MINUS_1_SQUARED:
-			JKratio = Jtot*Jtot;
+			Kratio = J;
 			break;
 			
 		case LN_J_SQUARED:
-			JKratio = (1-log(Jtot))/Jtot;
+			Kratio = (1-log(J))/J;
 			break;
 			
 		case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
 		default:
-			JKratio = Jtot*Jtot+1;
+			Kratio = J + 1./J;
 			break;
 	}
-    double dTq0 = -JKratio*gamma0*mptr->pPreviousTemperature*delV;
+    double dTq0 = -Jtot*Kratio*gamma0*mptr->pPreviousTemperature*delV;
     
     // thermodynamics depends on whether or not this is a rubber
     if(rubber)

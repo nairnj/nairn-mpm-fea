@@ -95,18 +95,20 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 		quantity=KINE_ENERGY;
 	else if(strcmp(quant,"Grid Kinetic Energy")==0)
 		quantity=GRID_KINE_ENERGY;
-	else if(strcmp(quant,"Strain Energy")==0)
-		quantity=STRN_ENERGY;
+	else if(strcmp(quant,"Strain Energy")==0 || strcmp(quant,"Work Energy")==0)
+		quantity=WORK_ENERGY;
 	else if(strcmp(quant,"Heat Energy")==0)
 		quantity=HEAT_ENERGY;
+	else if(strcmp(quant,"Entropy")==0)
+		quantity=ENTROPY_ENERGY;
+	else if(strcmp(quant,"Internal Energy")==0)
+		quantity=INTERNAL_ENERGY;
+	else if(strcmp(quant,"Helmholz Energy")==0)
+		quantity=HELMHOLZ_ENERGY;
 	else if(strcmp(quant,"Interface Energy")==0)
 		quantity=INTERFACE_ENERGY;
-	else if(strcmp(quant,"Energy")==0)
-		quantity=TOTL_ENERGY;
 	else if(strcmp(quant,"External Work")==0)
 		quantity=EXTL_WORK;
-	else if(strcmp(quant,"Potential Energy")==0)
-		quantity=POTL_ENERGY;
 	else if(strcmp(quant,"Plastic Energy")==0)
 		quantity=PLAS_ENERGY;
 	else if(strcmp(quant,"velx")==0 || strcmp(quant,"velR")==0)
@@ -320,30 +322,37 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 		
 		// energies (Volume*energy) in J
 		case KINE_ENERGY:
-		case STRN_ENERGY:
-		case TOTL_ENERGY:
-		case POTL_ENERGY:
+		case WORK_ENERGY:
 		case HEAT_ENERGY:
+        case ENTROPY_ENERGY:
+        case INTERNAL_ENERGY:
+        case HELMHOLZ_ENERGY:
             threeD = fmobj->IsThreeD();
 			for(p=0;p<nmpms;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
                 {   switch(quantity)
-					{   case TOTL_ENERGY:
-						case POTL_ENERGY:
-					    case KINE_ENERGY:
-							value+=0.5e-3*mpm[p]->mp*(mpm[p]->vel.x*mpm[p]->vel.x
+                    {   case KINE_ENERGY:
+							value += 0.5e-3*mpm[p]->mp*(mpm[p]->vel.x*mpm[p]->vel.x
 																+ mpm[p]->vel.y*mpm[p]->vel.y);
 							if(threeD)
-								value+=0.5e-3*mpm[p]->mp*(mpm[p]->vel.z*mpm[p]->vel.z);
-							if(quantity==KINE_ENERGY) break;
-						case STRN_ENERGY:
-							value+=mpm[p]->mp*mpm[p]->GetWorkEnergy();
-							if(quantity==POTL_ENERGY)
-								value-=1.e-3*mpm[p]->GetExtWork();
+								value += 0.5e-3*mpm[p]->mp*(mpm[p]->vel.z*mpm[p]->vel.z);
+                            break;
+						case WORK_ENERGY:
+							value += mpm[p]->mp*mpm[p]->GetWorkEnergy();
 							break;
 						case HEAT_ENERGY:
-							value+=mpm[p]->mp*mpm[p]->GetHeatEnergy();
+							value += mpm[p]->mp*mpm[p]->GetHeatEnergy();
 							break;
+						case ENTROPY_ENERGY:
+							value += mpm[p]->mp*mpm[p]->GetEntropy();
+                            break;
+						case INTERNAL_ENERGY:
+							value += mpm[p]->mp*(mpm[p]->GetWorkEnergy()+mpm[p]->GetHeatEnergy());
+                            break;
+						case HELMHOLZ_ENERGY:
+							value += mpm[p]->mp*(mpm[p]->GetWorkEnergy()+mpm[p]->GetHeatEnergy()
+                                                 - mpm[p]->pPreviousTemperature*mpm[p]->GetEntropy());
+                            break;
 						default:
 							break;
 					}
