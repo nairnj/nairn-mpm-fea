@@ -126,8 +126,14 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     double J = Jtot/Jres;
 
     // new pressure from Tait equation
+	double p0=mptr->GetPressure();
     double pressure = TAIT_C*Ksp*(exp((1.-J)/TAIT_C)-1.) ;
     mptr->SetPressure(pressure);
+    
+	// incremental energy - dilational part
+    double avgP = 0.5*(p0+pressure);
+    double delV = 1. - 1./detdF;
+    double workEnergy = -avgP*delV;
     
     // viscosity term = 2 eta (0.5(grad v) + 0.5*(grad V)^T - (1/3) tr(grad v) I)
     Matrix3 shear;
@@ -159,16 +165,21 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
         sp->yz = shear(1,2);
     }
     
+    // shear work = tau.du = tau.tau*delTime/Etasp
+    double shearWork = sp->xx*sp->xx + sp->yy*sp->yy + sp->zz*sp->zz + 2.*sp->xy*sp->xy;
+    if(np==THREED_MPM) shearWork += 2.*(sp->xz*sp->xz + sp->yz*sp->yz);
+    shearWork *= delTime/Etasp;
+    mptr->AddWorkEnergy(workEnergy+shearWork);
+    
     // particle isentropic temperature increment dT/T = - J (K/K0) gamma0 Delta(V)/V
     // Delta(V)/V = 1. - 1/detdF (total volume)
 	double Kratio = J*(1.+pressure/(TAIT_C*Ksp));
-    double delV = 1. - 1./detdF;
 	double dTq0 = -Jtot*Kratio*gamma0*mptr->pPreviousTemperature*delV;
     
-    // heat energy is Cv (dT - dTq0) - dPhi
+    // heat energy is Cv (dT - dTq0) -dPhi
 	// Here do Cv (dT - dTq0)
-    // dPhi is lost due to shear term (but should it be added)
-    IncrementHeatEnergy(mptr,res->dT,dTq0,0.);
+    // dPhi = shearWork is lost due to shear term
+    IncrementHeatEnergy(mptr,res->dT,dTq0,shearWork);
 
 }
 
