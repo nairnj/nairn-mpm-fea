@@ -242,7 +242,7 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,
     // work energy is dU = -P dV + s.de(total)
 	// Here do hydrostatic terms, deviatoric later
     double avgP = 0.5*(P0+P);
-    mptr->AddStrainEnergy(-avgP*delV);
+    mptr->AddWorkEnergy(-avgP*delV);
     
     // heat energy is Cv (dT - dTq0) - dPhi - |QAVred*delV|
 	// Here do Cv (dT - dTq0) - |QAVred*delV| term and dPhi is done later

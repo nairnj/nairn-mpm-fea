@@ -219,14 +219,13 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 	
 	// account for residual stresses
 	J /= resStretch3;
-    detDf /= dresStretch;
 	
     // update pressure
 	double p0=mptr->GetPressure();
 	double Kterm = J*GetVolumetricTerms(J,Ksp);       // times J to get Kirchoff stress
     
     // artifical viscosity
-    double delV = 1. - 1./detDf;
+    double delV = 1. - 1./detDf;                        // total volume change
     double QAVred = 0.,AVEnergy=0.;
     if(delV<0. && artificialViscosity)
     {   double c = sqrt(Ksp/1000.);           // m/sec
@@ -275,18 +274,18 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 	//double I1bar = (B->xx+B->yy+B->zz)/(resStretch2*J23);
 	//double I2bar = 0.5*(I1bar*I1bar - (B->xx*B->xx+B->yy*B->yy+B->zz*B->zz+2.*B->xy*B->xy+2*B->xz*B->xz+2.*B->yz*B->yz)
 	//									/(J43*resStretch2*resStretch2));
-    //mptr->AddStrainEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.)));
+    //mptr->AddWorkEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.)));
 
-	// incremental energy = shear energy (2D only)
+	// incremental work energy = shear energy
     double shearEnergy = 0.5*((sp->xx+st0.xx)*du(0,0) + (sp->yy+st0.yy)*du(1,1) + (sp->zz+st0.zz)*du(2,2)+
-							  (sp->xy+st0.xy)*(du(0,1)+du(1,0)))/resStretch;
+							  (sp->xy+st0.xy)*(du(0,1)+du(1,0)));
     if(np==THREED_MPM)
-    {   shearEnergy += 0.5*((sp->xz+st0.xz)*(du(0,2)+du(2,0)) + (sp->yz+st0.yz)*(du(1,2)+du(2,1)))/resStretch;
+    {   shearEnergy += 0.5*((sp->xz+st0.xz)*(du(0,2)+du(2,0)) + (sp->yz+st0.yz)*(du(1,2)+du(2,1)));
     }
     
     // strain energy
     double dU = dilEnergy + shearEnergy;
-    mptr->AddStrainEnergy(dU);
+    mptr->AddWorkEnergy(dU);
     
     // thermodynamics depends on whether or not this is a rubber
     if(rubber)

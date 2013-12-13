@@ -147,7 +147,7 @@ CustomTask *CalcJKTask::StepCalculation(void)
                 // get energy and rho*energy has units J/m^3 = N/m^2
                 // In axisymmetric, energy density is 2 pi m U/(2 pi rp Ap), but since m = rho rp Ap
                 //		energy density it still rho*energy
-                ndmi->AddEnergy(vfld,fnmp,mpnt->vel.x,mpnt->vel.y,mpnt->GetStrainEnergy());
+                ndmi->AddEnergy(vfld,fnmp,mpnt->vel.x,mpnt->vel.y,mpnt->GetWorkEnergy());
 			
             }
             

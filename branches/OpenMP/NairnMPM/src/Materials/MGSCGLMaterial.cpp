@@ -176,12 +176,12 @@ void *MGSCGLMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuf
 void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
     // Correct for swelling by finding total residual stretch (not incremental)
-	double eresTot=0.,JresStretch=1.,eres=0.,dJresStretch=1.;
+	double eresTot=0.,JresStretch=1.,eres=0.,detdFres=1.;
 	if(DiffusionTask::active)
     {   eresTot += CME3*(mptr->pPreviousConcentration-DiffusionTask::reference);
         eres += CME3*res->dC;
         JresStretch = (1.+eresTot)*(1.+eresTot)*(1.+eresTot);
-		dJresStretch = (1.+eres)*(1.+eres)*(1.+eres);
+		detdFres = (1.+eres)*(1.+eres)*(1.+eres);
     }
 	
 	// Get incremental deformation
@@ -196,9 +196,10 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     // reassign incremental strains
     du = F - pF;
     
-    double dJ = dF.determinant()/dJresStretch;          // = V(k+1)Vsf(k)/(V(k)Vsf(k+1)
+    double detdF = dF.determinant();                    // = V(k+1)/V(k)
+    double delVtot = 1. - 1./detdF;                     // = (V(k+1)-V(k))/V(k+1)
+    double delV = 1. - detdFres/detdF;                  // = (V(k+1)/Vsf(k+1) - V(k)/Vsf(k))/(V(k+1)/Vsf(k+1))
     double Jnew = F.determinant()/JresStretch;          // = V(k+1)/Vsf(k+1)
-    double delV = 1.-1./dJ;								// = (V(k+1)/Vsf(k+1) - V(k)/Vsf(k))/(V(k+1)/Vsf(k+1))
 	PlasticProperties *p = (PlasticProperties *)properties;
     p->delVLowStrain = du.trace() -  3.*eres;
 	
@@ -210,10 +211,10 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     
     // artifical viscosity
     p->QAVred = 0.;
-    if(delV<0. && artificialViscosity)
+    if(delVtot<0. && artificialViscosity)
     {   double c = sqrt(p->Kred*Jnew*JresStretch/1000.);        // m/sec
         //double Dkk = (du(0,0)+du(1,1)+du(2,2))/delTime;
-        p->QAVred = GetArtificalViscosity(delV/delTime,c);
+        p->QAVred = GetArtificalViscosity(delVtot/delTime,c);
     }
     
     if(np!=THREED_MPM)
@@ -236,7 +237,7 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
 // Notes:
 //  delV is relative incremental volume change on this step = (V(k+1)-V(k))/V(k+1)
 //  J is total volume change at end of step
-void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,PlasticProperties *p,ResidualStrains *res) const
+void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,PlasticProperties *p,ResidualStrains *res,double eres) const
 {
 	// delV is total incremental volumetric strain relative to free-swelling volume
     // J is total volume change - may need to reference to free-swelling volume if that works
@@ -284,13 +285,13 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,P
     mptr->SetPressure(P+p->QAVred);
     
     // particle isentropic temperature increment
+    delV += 3.*eres;        // need total volume change now (better to use delVtot, but not available here without more calcs)
     double dTq0 = -gamma0*mptr->pPreviousTemperature*J*delV;
-    //mptr->pTemperature += dTq0;
     
     // work energy is dU = -P dV + s.de(total)
 	// Here do hydrostatic terms, deviatoric later
     double avgP = 0.5*(P0+P);
-    mptr->AddStrainEnergy(-avgP*delV);
+    mptr->AddWorkEnergy(-avgP*delV);
     
     // heat energy is Cv (dT - dTq0) - dPhi - QAVred*delV
 	// Here do Cv (dT - dTq0) - QAVred*delV term and dPhi is done later

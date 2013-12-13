@@ -52,8 +52,9 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
     extWork=0.;
     plastEnergy=0.;
 	dispEnergy=0.;
-    strainEnergy=0.;
+    workEnergy=0.;
     heatEnergy=0.;
+    entropy=0;
 	
 	// for J integral if needed (on non-rigid only)
 	velGrad=NULL;
@@ -329,14 +330,22 @@ double MPMBase::GetDispEnergy(void) { return dispEnergy; }
 // a material should never call this direction. It is only called in IncrementHeatEnergy.
 void MPMBase::AddDispEnergy(double energyInc) { dispEnergy+=energyInc; }
 void MPMBase::SetDispEnergy(double energy) { dispEnergy=energy; }
-double MPMBase::GetStrainEnergy(void) { return strainEnergy; }
-void MPMBase::SetStrainEnergy(double energyTot) { strainEnergy=energyTot; }
-void MPMBase::AddStrainEnergy(double energyInc) { strainEnergy+=energyInc; }
+
+double MPMBase::GetWorkEnergy(void) { return workEnergy; }
+void MPMBase::SetWorkEnergy(double energyTot) { workEnergy=energyTot; }
+void MPMBase::AddWorkEnergy(double energyInc) { workEnergy+=energyInc; }
+
 double MPMBase::GetExtWork(void) { return extWork; }
+
 double MPMBase::GetHeatEnergy(void) { return heatEnergy; }
 void MPMBase::SetHeatEnergy(double energyTot) { heatEnergy = energyTot; }
 void MPMBase::AddHeatEnergy(double energyInc) { heatEnergy += energyInc; }
-double MPMBase::GetInternalEnergy(void) { return strainEnergy + heatEnergy; }
+
+void MPMBase::SetEntropy(double entropyTot) { entropy = entropyTot; }
+double MPMBase::GetEntropy(void) { return entropy; }
+void MPMBase::AddEntropy(double entropyInc) { entropy += entropyInc; }
+
+double MPMBase::GetInternalEnergy(void) { return workEnergy + heatEnergy; }
 
 // pointers to variables
 Vector *MPMBase::GetPFext(void) { return &pFext; }

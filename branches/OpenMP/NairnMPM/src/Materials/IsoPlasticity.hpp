@@ -57,7 +57,7 @@ class IsoPlasticity : public IsotropicMat
                                         double,double,int,double,double,double,PlasticProperties *,ResidualStrains *) const;
 		
 		// custom methods: Find yield function and solve for lambda
-		virtual void UpdatePressure(MPMBase *,double &,double,int,PlasticProperties *,ResidualStrains *) const;
+		virtual void UpdatePressure(MPMBase *,double &,double,int,PlasticProperties *,ResidualStrains *,double) const;
         virtual double GetMagnitudeSFromDev(Tensor *,int) const;
 		virtual void GetDfDsigma(double,Tensor *,int,Tensor *) const;
 		virtual void ElasticUpdateFinished(MPMBase *,int,double) const;

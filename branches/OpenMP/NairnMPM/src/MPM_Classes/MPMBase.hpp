@@ -133,16 +133,19 @@ class MPMBase : public LinkedObject
 		Vector *GetAcc(void);
 		Tensor *GetVelGrad(void);
 		double GetPlastEnergy(void);
-		void AddPlastEnergy(double energyInc);
+		void AddPlastEnergy(double);
 		double GetDispEnergy(void);
-		void AddDispEnergy(double energyInc);
-		void SetDispEnergy(double energy);
-		double GetStrainEnergy(void);
-		void SetStrainEnergy(double energyTot);
-		void AddStrainEnergy(double energyInc);
+		void AddDispEnergy(double);
+		void SetDispEnergy(double);
+		double GetWorkEnergy(void);
+		void SetWorkEnergy(double);
+		void AddWorkEnergy(double);
         double GetHeatEnergy(void);
-        void SetHeatEnergy(double energyTot);
-        void AddHeatEnergy(double energyInc);
+        void SetHeatEnergy(double);
+        void AddHeatEnergy(double);
+        double GetEntropy(void);
+        void SetEntropy(double);
+        void AddEntropy(double);
         double GetInternalEnergy(void);
 		double GetExtWork(void);
         void IncrementPressure(double);
@@ -177,8 +180,9 @@ class MPMBase : public LinkedObject
 		TensorAntisym wrot;			// rotation strain tensor (init 0)
 		double plastEnergy;			// total plastic energy
 		double dispEnergy;			// dissipated energy in current step
-		double strainEnergy;		// total strain energy
+		double workEnergy;		// total work energy
         double heatEnergy;          // total heat flow on the particle
+        double entropy;             // total entropy on the particle
 		double extWork;				// total external work
 		char *matData;				// material history if needed (init NULL)
 	

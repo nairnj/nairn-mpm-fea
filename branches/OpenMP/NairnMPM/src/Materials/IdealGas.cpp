@@ -143,18 +143,12 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
     double dW = 0.5*(mPnsp*detf + mPsp)*(1.-1./detf);
     
     // this energy is tracked in strain energy
-    mptr->AddStrainEnergy(dW);
+    mptr->AddWorkEnergy(dW);
     
     // the same energy is tracked as heat (although it will be zero if adiabatic)
     // and is dissipated (which will cause heating if adiabatic
     // Update is Cv dT - dU
     IncrementHeatEnergy(mptr,res->dT,0.,dW);
-        
-    // the plastic energy is not otherwise used, so let's track entropy
-    double Cv = 1000.*GetHeatCapacity(mptr);
-    double Tp = mptr->pPreviousTemperature;
-	double dS = (Cv*res->dT - dW)/Tp;
-	mptr->AddPlastEnergy(dS);
 }
 
 #pragma mark IdealGas::Accessors

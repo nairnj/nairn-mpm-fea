@@ -482,6 +482,7 @@ void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np) const
         // will ignore the Cv dT term
 		double Cv = 1000.*GetHeatCapacity(mptr);
 		mptr->AddHeatEnergy(Cv*(mptr->pTemperature-thermal.reference));
+        // initial entropy kept to zero, could add something here if ever needed
 	}
 }
 
@@ -674,14 +675,14 @@ void MaterialBase::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t
 // Units mJ/(g-K) = J/(kg-m)
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity; }
 
-// Increment heat energy using Cv(dT-dTq0) - dPhi, where Cv*dTq0 + dPhi is total
+// Increment heat energy using Cv(dT-dTq0) - dPhi, where Cv*dTq0 + dPhi = Cv dTad is total
 //		dispated energy (it can by provided as either a temperature rise or an energy)
 // dTq0 is temperature rise due to material mechanisms if the process was adiabatic
-// dPhi is dissipated heat that is converted to temperature rise
+// dPhi is dissipated energy that is converted to temperature rise
 void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,double dPhi) const
 {
 	double Cv = 1000.*GetHeatCapacity(mptr);
-	double dispEnergy = Cv*dTq0 + dPhi;
+	double dispEnergy = Cv*dTq0 + dPhi;                     // = Cv dTad
 	
 	// Isolated means no conduction and no thermal ramp (and in future if have other ways
 	//		to change particle temperature, those are not active either)
@@ -689,20 +690,29 @@ void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,doubl
     if(isolatedSystemAndParticles)
     {   // Here dText = 0
         // If adiabatic, dq = 0 (nothing to add)
-        // If isothermal dq = -Cv dTq0 - dPhi
-        // (i.e., not relying on balance in the next time step
+        // If isothermal dq = -Cv dTad
 		if(!ConductionTask::adiabatic)
-			mptr->AddHeatEnergy(-dispEnergy);
+        {   mptr->AddHeatEnergy(-dispEnergy);
+            mptr->AddEntropy(-dispEnergy/mptr->pPreviousTemperature);
+        }
     }
 	else
-	{	// For non isolated particle use dq = Cv(dT-dTq0)-dPhi
-        // If adiabatic, the Cv dT term in next step will include Cv dTq0 + dPhi from
-        //    this step to give global dq = 0. If isothermal, it will not and
-        //    dq will be disspated energy
-		mptr->AddHeatEnergy(Cv*dT - dispEnergy);
+	{	// For non isolated particle use dq = Cv(dT-dTad)
+        // If adiabatic, the Cv dT term in next step will include Cv dTad from
+        //    this step to give particle dq = 0. If isothermal, it will not and
+        //    dq will be disspated heat
+        double totalHeat = Cv*dT - dispEnergy;
+		mptr->AddHeatEnergy(totalHeat);
+        if(ConductionTask::adiabatic)
+        {   double dTad = dispEnergy/Cv;
+            mptr->AddEntropy(Cv*dT/mptr->pPreviousTemperature - dispEnergy/(mptr->pPreviousTemperature+dTad));
+        }
+        else
+        {   mptr->AddEntropy(totalHeat/mptr->pPreviousTemperature);
+        }
 	}
     
-	// The dispated energy is added here, but only if adiabatic, in which case it will
+	// The dispated energy is added here, but only if adiabatic, in which case it will be
     // converted to particle temperature rise later in the calculations. This temperature
     // change works with conduction on or off
     if(ConductionTask::adiabatic)

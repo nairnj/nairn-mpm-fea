@@ -196,7 +196,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 
 	// allow arbitrary equation of state for pressure
     double P0 = mptr->GetPressure();
-	UpdatePressure(mptr,delV,Jnew,np,p,res);
+	UpdatePressure(mptr,delV,Jnew,np,p,res,eres);
     double Pfinal = mptr->GetPressure();
 	
     // Deviatoric stress increment
@@ -234,22 +234,17 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 		// increment deviatoric stress (Units N/m^2  cm^3/g) (pressure not needed here)
 		Hypo2DCalculations(mptr,-dwrotxy,dels.xx,dels.yy,dels.xy);
 		
-		// strain energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
+		// work energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
         // energy units are also Pa cm^3/g, i.e., same as stress units
         sp->zz = stk.zz;
-		if(np==PLANE_STRAIN_MPM)
-        {   mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr + (st0.yy+sp->yy)*deyyr
-									   + (st0.xy+sp->xy)*dgxy + (st0.zz+sp->zz)*dezzr));
-		}
-		else if(np==PLANE_STRESS_MPM)
-		{	ep->zz += eres - p->psLr2G*(dexxr+deyyr);
-			mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr + (st0.yy+sp->yy)*deyyr
-								+ (st0.xy+sp->xy)*dgxy));
+        if(np==AXISYMMETRIC_MPM)
+		{	ep->zz += dvzz;
+			mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
+									   + (st0.xy+sp->xy)*dgxy + (st0.zz+sp->zz)*dvzz));
 		}
 		else
-		{	ep->zz += dvzz;
-			mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr + (st0.yy+sp->yy)*deyyr
-									   + (st0.xy+sp->xy)*dgxy + (st0.zz+sp->zz)*dezzr));
+        {   mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
+									   + (st0.xy+sp->xy)*dgxy));
 		}
 		
         // heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here
@@ -362,19 +357,19 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
         
 	Hypo2DCalculations(mptr,-dwrotxy,dels.xx,dels.yy,dels.xy);
 	
-    // Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-    double strainEnergy = 0.5*((st0.xx+sp->xx)*dexxr
-                               + (st0.yy+sp->yy)*deyyr
+    // Elastic work increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx
+                               + (st0.yy+sp->yy)*dvyy
                                + (st0.xy+sp->xy)*dgxy);
-	if(np!=PLANE_STRESS_MPM)
-    {	strainEnergy += 0.5*(st0.zz+sp->zz)*dezzr;
+	if(np==AXISYMMETRIC_MPM)
+    {	workEnergy += 0.5*(st0.zz+sp->zz)*dvzz;
 	}
     
     // plastic strain work
     double plastEnergy = lambdak*(sp->xx*dfds.xx + sp->yy*dfds.yy + sp->zz*dfds.zz + 2.*sp->xy*dfds.xy);
     
     // total work
-    mptr->AddStrainEnergy(plastEnergy + strainEnergy);
+    mptr->AddWorkEnergy(plastEnergy + workEnergy);
     
     // disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime,&alpha,p->hardProps);
@@ -414,7 +409,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	double dwrotyz=dvzy-dvyz;
 	
 	// allow arbitrary equation of state for pressure
-	UpdatePressure(mptr,delV,Jnew,np,p,res);
+	UpdatePressure(mptr,delV,Jnew,np,p,res,eres);
 	
     // Elastic deviatoric stress increment
 	Tensor *ep=mptr->GetStrainTensor();
@@ -454,10 +449,10 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 		// update stress (need to make hypoelastic)
 		Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 		
-		// strain energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-		mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*dexxr
-								+ (st0.yy+sp->yy)*deyyr
-								+ (st0.zz+sp->zz)*dezzr
+		// work energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+		mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx
+								+ (st0.yy+sp->yy)*dvyy
+								+ (st0.zz+sp->zz)*dvzz
 								+ (st0.yz+sp->yz)*dgyz
 								+ (st0.xz+sp->xz)*dgxz
 								+ (st0.xy+sp->xy)*dgxy));
@@ -520,9 +515,9 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	dsig[XY] -= p->Gred*dgxyp;
 	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 	
-    // Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-	double strainEnergy = 0.5*((st0.xx+sp->xx)*dexxr + (st0.yy+sp->yy)*deyyr
-                               + (st0.zz+sp->zz)*dezzr + (st0.yz+sp->yz)*dgyz
+    // work energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvzz
+                               + (st0.zz+sp->zz)*dvzz + (st0.yz+sp->yz)*dgyz
                                + (st0.xz+sp->xz)*dgxz + (st0.xy+sp->xy)*dgxy);
     
     // plastic strain work
@@ -530,7 +525,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
                                   + 2.*sp->xy*dfds.xy + 2.*sp->xz*dfds.xz + 2.*sp->yz*dfds.yz);
     
     // total work
-    mptr->AddStrainEnergy(plastEnergy + strainEnergy);
+    mptr->AddWorkEnergy(plastEnergy + workEnergy);
     
     // disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime,&alpha,p->hardProps);
@@ -561,16 +556,16 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 // Notes:
 //  delV is incremental volume change on this step.
 //  J is total volume change at end of step (but it is 1 for low-strain materials)
-void IsoPlasticity::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,PlasticProperties *p,ResidualStrains *res) const
+void IsoPlasticity::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,PlasticProperties *p,ResidualStrains *res,double eres) const
 {   // pressure change
     double dP = -p->Kred*delV;
     mptr->IncrementPressure(dP);
     
     // work energy is dU = -P dV + s.de(total)
 	// Here do hydrostatic term
-    // Internal energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    // Work energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
     double avgP = mptr->GetPressure()-0.5*dP;
-    mptr->AddStrainEnergy(-avgP*delV);
+    mptr->AddWorkEnergy(-avgP*(delV+3.*eres));
 
     // heat energy is Cv dT  - dPhi
 	// Here do Cv dT term and dPhi is done later

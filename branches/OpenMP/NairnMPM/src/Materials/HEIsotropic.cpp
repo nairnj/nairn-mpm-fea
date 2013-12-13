@@ -267,16 +267,15 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 		// JAN: Just store deviatoric stress
         *sp = stk;
         
-        // strain energy per unit mass (U/(rho0 V0)) and we are using
+        // work energy per unit mass (U/(rho0 V0)) and we are using
         // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
-		// JAN: May need new energy methods
-        mptr->AddStrainEnergy(0.5*((st0.xx+sp->xx)*du(0,0)
+        mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*du(0,0)
                                    + (st0.yy+sp->yy)*du(1,1)
                                    + (st0.zz+sp->zz)*du(2,2)
-                                   + (st0.xy+sp->xy)*(du(1,0)+du(0,1)))/resStretch);
+                                   + (st0.xy+sp->xy)*(du(1,0)+du(0,1))));
         if(np==THREED_MPM)
-        {   mptr->AddStrainEnergy(0.5*((st0.yz+sp->yz)*(du(2,1)+du(1,2))
-                                       + (st0.xz+sp->xz)*(du(2,0)+du(0,2)))/resStretch);
+        {   mptr->AddWorkEnergy(0.5*((st0.yz+sp->yz)*(du(2,1)+du(1,2))
+                                       + (st0.xz+sp->xz)*(du(2,0)+du(0,2))));
         }
 		
 		// heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here
@@ -323,13 +322,13 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     }
     
     // strain energy per unit mass (U/(rho0 V0)) and we are using
-    double strainEnergy = 0.5*((st0.xx+sp->xx)*du(0,0)
+    double workEnergy = 0.5*((st0.xx+sp->xx)*du(0,0)
                                + (st0.yy+sp->yy)*du(1,1)
                                + (st0.zz+sp->zz)*du(2,2)
-                               + (st0.xy+sp->xy)*(du(1,0)+du(0,1)))/resStretch;
+                               + (st0.xy+sp->xy)*(du(1,0)+du(0,1)));
     if(np==THREED_MPM)
-    {   strainEnergy += 0.5*((st0.yz+sp->yz)*(du(2,1)+du(1,2))
-                                   + (st0.xz+sp->xz)*(du(2,0)+du(0,2)))/resStretch;
+    {   workEnergy += 0.5*((st0.yz+sp->yz)*(du(2,1)+du(1,2))
+                                   + (st0.xz+sp->xz)*(du(2,0)+du(0,2)));
     }
     
     // Plastic work increment per unit mass (dw/(rho0 V0)) (uJ/g)
@@ -337,7 +336,7 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     if(np==THREED_MPM)  dispEnergy += 2.*dlambda*(sp->xz*nk.xz + sp->yz*nk.yz);
 	
     // total work
-    mptr->AddStrainEnergy(dispEnergy + strainEnergy);
+    mptr->AddWorkEnergy(dispEnergy + workEnergy);
     
     // disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
 	// Subtract q.dalpha
@@ -386,7 +385,7 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,doub
 	// Here do hydrostatic term
     // Internal energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
     double avgP = 0.5*(P0+Pfinal);
-    mptr->AddStrainEnergy(-avgP*delV);
+    mptr->AddWorkEnergy(-avgP*delV);
 	
     // heat energy is Cv dT  - dPhi
 	// Here do Cv dT term and dPhi is done later

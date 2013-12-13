@@ -253,7 +253,8 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	}
     double dexx = dvxx-erxx;  
     double deyy = dvyy-eryy;
-    double dgxy = dvxy+dvyx-erxy;
+    double dgam = dvxy+dvyx;
+    double dgxy = dgam-erxy;
 	double dezz = dvzz-erzz;
 
     // Elastic stress increment
@@ -337,10 +338,10 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	}
 
 	// Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-	double strainEnergy = 0.5*((st0.xx+sp->xx)*dexx
-							   + (st0.yy+sp->yy)*deyy
-							   + (st0.xy+sp->xy)*dgxy
-							   + (st0.zz+sp->zz)*dezz);
+	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx
+							   + (st0.yy+sp->yy)*dvyy
+							   + (st0.xy+sp->xy)*dgam
+							   + (st0.zz+sp->zz)*dvzz);
 
     // Plastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	double dispEnergy = 0.5*((st0.xx+sp->xx)*dexxp
@@ -349,7 +350,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 						+ (st0.zz+sp->zz)*dezzp);
 
 	// add now
-	mptr->AddStrainEnergy(strainEnergy + dispEnergy);
+	mptr->AddWorkEnergy(workEnergy + dispEnergy);
 	
 	// add dissipated energy to plastic energy to the particle
     mptr->AddPlastEnergy(dispEnergy);
@@ -393,9 +394,12 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
     double dexx=dvxx-erxx;  
     double deyy=dvyy-eryy; 
 	double dezz=dvzz-erzz;
-    double dgyz=dvyz+dvzy-eryz;
-    double dgxz=dvxz+dvzx-erxz;
-    double dgxy=dvxy+dvyx-erxy;
+    double dgamyz=dvyz+dvzy;
+    double dgamxz=dvxz+dvzx;
+    double dgamxy=dvxy+dvyx;
+    double dgyz=dgamyz-eryz;
+    double dgxz=dgamxz-erxz;
+    double dgxy=dgamxy-erxy;
 	
     // Elastic stress increment
 	Tensor *sp=mptr->GetStressTensor();
@@ -544,13 +548,13 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
     dsig[XY] = r.C[5][0]*dexx+r.C[5][1]*deyy+r.C[5][2]*dezz+r.C[5][3]*dgyz+r.C[5][4]*dgxz+r.C[5][5]*dgxy;
 	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 
-    // Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-	double strainEnergy = 0.5*((st0.xx+sp->xx)*dexx
-							   + (st0.yy+sp->yy)*deyy
-							   + (st0.zz+sp->zz)*dezz
-							   + (st0.yz+sp->yz)*dgyz
-							   + (st0.xz+sp->xz)*dgxz
-							   + (st0.xy+sp->xy)*dgxy);
+    // Elastic work increment per unit mass (dU/(rho0 V0)) (uJ/g)
+	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx
+							   + (st0.yy+sp->yy)*dvyy
+							   + (st0.zz+sp->zz)*dvzz
+							   + (st0.yz+sp->yz)*dgamyz
+							   + (st0.xz+sp->xz)*dgamxz
+							   + (st0.xy+sp->xy)*dgamxy);
 	
     // Plastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
 	double dispEnergy=0.5*(0.5*((st0.xx+sp->xx)*dexxp
@@ -561,7 +565,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 								+ (st0.xy+sp->xy)*dgxyp));
 	
 	// add now
-	mptr->AddStrainEnergy(strainEnergy + dispEnergy);
+	mptr->AddWorkEnergy(workEnergy + dispEnergy);
 	
 	// add dissipated energy to plastic energy to the particle
     mptr->AddPlastEnergy(dispEnergy);

@@ -86,7 +86,7 @@ CustomTask *PropagateTask::StepCalculation(void)
             
             // track total energies in J = N-m
             //	mp is g, stored energy is N/m^2 cm^3/g, vel is mm/sec
-            // strainEnergy in J =  1.0e-6*mp*mpm[p]->GetStrainEnergy()
+            // workEnergy in J =  1.0e-6*mp*mpm[p]->GetWorkEnergy()
             // plastic 1.0e-6*mp*mpm[p]->GetPlastEnergy()
             // external work 1.e-9*mpm[p]->GetExtWork()
             // kinetic energy 0.5e-9*mp*(vel.x*vel.x+vel.y*vel.y)
@@ -94,7 +94,7 @@ CustomTask *PropagateTask::StepCalculation(void)
             // plastic energy per unit thickness (units of N) (only needed energy balance crack growth)
             double mp = mpnt->mp;
             totalPlastic += 1.0e-3*mp*mpnt->GetPlastEnergy()/mpnt->thickness();
-            totalPotential += 1.0e-3*(mp*mpnt->GetStrainEnergy()
+            totalPotential += 1.0e-3*(mp*mpnt->GetWorkEnergy()
                                     + 0.5e-3*mp*(mpnt->vel.x*mpnt->vel.x+mpnt->vel.y*mpnt->vel.y)
                                     - 1.e-3*mpnt->GetExtWork())/mpnt->thickness();
         }

@@ -130,8 +130,8 @@ char *VTKArchive::InputParam(char *pName,int &input)
 		thisBuffer=1;
     }
 	
-    else if(strcmp(pName,"strainenergy")==0)
-    {	q=VTK_STRAINENERGY;
+    else if(strcmp(pName,"strainenergy")==0 || strcmp(pName,"workenergy"))
+    {	q=VTK_WORKENERGY;
 		thisBuffer=1;
     }
 	
@@ -417,8 +417,8 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 				vtkquant++;
 				break;
 				
-			case VTK_STRAINENERGY:
-				*vtkquant+=wt*1.0e-6*mpnt->mp*mpnt->GetStrainEnergy();
+			case VTK_WORKENERGY:
+				*vtkquant+=wt*1.0e-6*mpnt->mp*mpnt->GetWorkEnergy();
 				vtkquant++;
 				break;
 				

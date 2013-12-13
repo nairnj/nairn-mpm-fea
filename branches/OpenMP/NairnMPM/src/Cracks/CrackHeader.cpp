@@ -1377,7 +1377,7 @@ void CrackHeader::JIntegral(void)
 							f2axisym += rho*(sp.xx*duxdx - sp.zz*mpm[p]->GetDwDz() + sp.xy*duydx)/xp;
 #else
 							// Bergkvist and Huong called J3D/(a dphi)
-							f2axisym += rho*(mpm[p]->GetStrainEnergy() - sp.zz*mpm[p]->GetDwDz())/crackr;
+							f2axisym += rho*(mpm[p]->GetWorkEnergy() - sp.zz*mpm[p]->GetDwDz())/crackr;
 #endif
 						}
 					}

@@ -337,7 +337,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 								value+=0.5e-3*mpm[p]->mp*(mpm[p]->vel.z*mpm[p]->vel.z);
 							if(quantity==KINE_ENERGY) break;
 						case STRN_ENERGY:
-							value+=mpm[p]->mp*mpm[p]->GetStrainEnergy();
+							value+=mpm[p]->mp*mpm[p]->GetWorkEnergy();
 							if(quantity==POTL_ENERGY)
 								value-=1.e-3*mpm[p]->GetExtWork();
 							break;

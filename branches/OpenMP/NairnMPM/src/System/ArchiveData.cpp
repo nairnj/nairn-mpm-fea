@@ -672,7 +672,7 @@ void ArchiveData::ArchiveResults(double atime)
         // internal units are same as stress: N/m^2 cm^3/g = microJ/g = mJ/kg
 		// note that rho*energy has units J/m^3 = N/m^2 (if rho in g/cm^3)
         if(mpmOrder[ARCH_StrainEnergy]=='Y')
-        {   *(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetStrainEnergy();
+        {   *(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetWorkEnergy();
             app+=sizeof(double);
         }
         
@@ -1100,7 +1100,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					break;
 				
 				case VTK_CONCENTRATION:
-				case VTK_STRAINENERGY:
+				case VTK_WORKENERGY:
 				case VTK_PLASTICENERGY:
 				case VTK_MATERIAL:
                 case VTK_HEATENERGY:
