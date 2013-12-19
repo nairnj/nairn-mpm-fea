@@ -29,7 +29,7 @@ public class MaterialPoint
 	public double x,y,origx,origy,velx,vely;
 	public double deltaTemp,plastEnergy,dudy,dvdx,strainEnergy;
 	public double history1,history2,history3,history4,concentration,dcdx,dcdy;
-	public double extWork,thermalEnergy;
+	public double workEnergy,heatEnergy;
 	public int elementCrossings;
 	public double[] sigma;
 	public double[] eps;
@@ -253,10 +253,10 @@ public class MaterialPoint
 		}
 		
 		// external work (cumulative) in J (not converted for units)
-		if(mpmOrder[ReadArchive.ARCH_ExtWork]=='Y')
-			extWork=bb.getDouble();
+		if(mpmOrder[ReadArchive.ARCH_WorkEnergy]=='Y')
+			workEnergy=bb.getDouble();
 		else
-			extWork=0.;
+			workEnergy=0.;
 		
 		// temperature (C) (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_DeltaTemp]=='Y')
@@ -317,10 +317,10 @@ public class MaterialPoint
 		}
 		
 		// thermal energy (not converted for units)
-		if(mpmOrder[ReadArchive.ARCH_ThermalEnergy]=='Y')
-			thermalEnergy=bb.getDouble();
+		if(mpmOrder[ReadArchive.ARCH_HeatEnergy]=='Y')
+			heatEnergy=bb.getDouble();
 		else
-			thermalEnergy=0.;
+			heatEnergy=0.;
 			
 		// element crossings (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_ElementCrossings]=='Y')
@@ -529,7 +529,6 @@ public class MaterialPoint
 				break;
 		
 			// Energy (totals are getting this point only)
-			case PlotQuantity.MPMTOTPOTENERGY:
 			case PlotQuantity.MPMTOTENERGY:
 			case PlotQuantity.MPMENERGY:
 			case PlotQuantity.MPMTOTSTRENERGY:
@@ -542,12 +541,11 @@ public class MaterialPoint
 				if(component==PlotQuantity.MPMKINENERGY || component==PlotQuantity.MPMTOTKINENERGY) theValue=0.;
 				// mass in g, vel in mm/msec (once converted by current scales) -> Joules
 				theValue+=0.5e-3*mass*(velx*velx+vely*vely)*doc.timeScale/doc.lengthScale;
-				if(component==PlotQuantity.MPMTOTPOTENERGY) theValue-=extWork;
 				break;
 			
-			case PlotQuantity.MPMTOTEXTWORK:
-			case PlotQuantity.MPMEXTWORK:
-				theValue=extWork;
+			case PlotQuantity.MPMTOTWORKENERGY:
+			case PlotQuantity.MPMWORKENERGY:
+				theValue=workEnergy;
 				break;
 			
 			case PlotQuantity.MPMTOTPLASTICENERGY:
@@ -555,9 +553,9 @@ public class MaterialPoint
 				theValue=plastEnergy;
 				break;
 			
-			case PlotQuantity.MPMTOTTHERMALENERGY:
-			case PlotQuantity.MPMTHERMALENERGY:
-				theValue=thermalEnergy;
+			case PlotQuantity.MPMTOTHEATENERGY:
+			case PlotQuantity.MPMHEATENERGY:
+				theValue=heatEnergy;
 				break;
 			
 			case PlotQuantity.MPMTEMPERATURE:

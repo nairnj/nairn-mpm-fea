@@ -339,19 +339,17 @@ public class ControlPanel extends JPanel
 			case PlotQuantity.MPMENERGY:
 				theComponent=PlotQuantity.MPMTOTENERGY;
 				break;
-			case PlotQuantity.MPMEXTWORK:
-				theComponent=PlotQuantity.MPMTOTEXTWORK;
+			case PlotQuantity.MPMWORKENERGY:
+				theComponent=PlotQuantity.MPMTOTWORKENERGY;
 				break;
 			case PlotQuantity.MPMPLASTICENERGY:
 				theComponent=PlotQuantity.MPMTOTPLASTICENERGY;
 				break;
-			case PlotQuantity.MPMTHERMALENERGY:
-				theComponent=PlotQuantity.MPMTOTTHERMALENERGY;
+			case PlotQuantity.MPMHEATENERGY:
+				theComponent=PlotQuantity.MPMTOTHEATENERGY;
 				break;
 			case PlotQuantity.MPMELEMENTCROSSINGS:
 				theComponent=PlotQuantity.MPMTOTELEMENTCROSSINGS;
-				break;
-			case PlotQuantity.MPMTOTPOTENERGY:
 				break;
 			default:
 				break;

@@ -247,9 +247,9 @@ Set MPM time step parameters. #1 is the time step in ms (choose a high number to
 <li><code>ToArchive #1,&lt;#2&gt;,...</code><br>
 Specify results to be archived in MPM calculations. The list can be in multiple arguments
 and/or in multiple ToArchive commands. The archiving options are velocity,
-stress, strain, plasticstrain, externalwork, temperature, plasticenergy,
+stress, strain, plasticstrain, workenergy, temperature, plasticenergy,
 shearcomponents, strainenergy, jintegral, stressintensity, history1,
-history2, history3, history4, thermalenergy, concentration
+history2, history3, history4, heatenergy, concentration
 (which includes concentration gradients), energybalance, elementcrossings, and rotstrain.</li>
 </ul>
 
@@ -520,7 +520,7 @@ Turn on thermal conductivity calculations and define heat source options. #1 is 
 parameters are &quot;Adiabatic&quot;, &quot;Isothermal&quot; or &quot;Crack Tips&quot;.</li>
 
 <li><code>GlobalArchive</code><br>
-To archive average temperature or total thermal energy.</li>
+To archive average temperature, total heat energy, or total entropy.</li>
 
 <li><code>HeatFlux external,#1,#2,#3,&lt;#4&gt;</code><br>
 Apply heat flux to selected particles on face #1 with style #2 and
@@ -553,7 +553,7 @@ To set initial particle temperature when <a href="#regionmpm">creating material 
 <li><code>ToArchive #1,&lt;#2&gt;,...</code><br>
 Specify results to be archived in MPM calculations. The list can be in multiple arguments
 and/or in multiple ToArchive commands. The archiving options related to thermal
-calculations are temperature and thermalenergy.</li>
+calculations are temperature and heatenergy.</li>
 </ul>
 
 <h3>FEA Thermal Calculations</h3>

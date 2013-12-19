@@ -42,14 +42,14 @@ public class PlotQuantity extends PlotControl
 	static final int MPMPOSX=25;
 	static final int MPMPOSY=26;
 	static final int MPMEXPRESSION=27;
-	static final int MPMEXTWORK=28;
+	static final int MPMWORKENERGY=28;
 	static final int MPMPLASTICENERGY=29;
 	static final int MPMTEMPERATURE=30;
 	static final int MPMDVDX=31;
 	static final int MPMDUDY=32;
 	static final int MPMHISTORYOLD=33;
-	static final int MPMTOTEXTWORK=34;
-	static final int MPMTOTPOTENERGY=35;
+	static final int MPMTOTWORKENERGY=34;
+	static final int MPMTOTPOTENERGY=35;				// no longer used
 	static final int MPMTOTPLASTICENERGY=36;
     static final int MPMJ1=37;
 	static final int MPMJ2=38;
@@ -66,8 +66,8 @@ public class PlotQuantity extends PlotControl
 	static final int MPMCRACKABSORB=49;
 	static final int MPMNORMALCTOD=50;
 	static final int MPMSHEARCTOD=51;
-	static final int MPMTHERMALENERGY=52;
-	static final int MPMTOTTHERMALENERGY=53;
+	static final int MPMHEATENERGY=52;
+	static final int MPMTOTHEATENERGY=53;
 	static final int MPMCRACKPROFILE=54;
 	static final int MPMOPENINGFRACTION=55;
 	static final int MPMSHEARFRACTION=56;
@@ -217,10 +217,10 @@ public class PlotQuantity extends PlotControl
 					
 				if(arch[ReadArchive.ARCH_PlasticEnergy]=='Y')
 					quant.addItem(new PlotMenuItem("Plastic Energy",MPMPLASTICENERGY));
-				if(arch[ReadArchive.ARCH_ExtWork]=='Y')
-					quant.addItem(new PlotMenuItem("External Work",MPMEXTWORK));
-				if(arch[ReadArchive.ARCH_ThermalEnergy]=='Y')
-					quant.addItem(new PlotMenuItem("Thermal Energy",MPMTHERMALENERGY));
+				if(arch[ReadArchive.ARCH_WorkEnergy]=='Y')
+					quant.addItem(new PlotMenuItem("Work Energy",MPMWORKENERGY));
+				if(arch[ReadArchive.ARCH_HeatEnergy]=='Y')
+					quant.addItem(new PlotMenuItem("Heat Energy",MPMHEATENERGY));
 					
 				if(arch[ReadArchive.ARCH_Velocity]=='Y')
 					quant.addItem(new PlotMenuItem("Velocity",MPMVELX));
@@ -478,16 +478,15 @@ public class PlotQuantity extends PlotControl
 			case MPMENERGY:
 			case MPMSTRENERGY:
 			case MPMKINENERGY:
-			case MPMEXTWORK:
+			case MPMWORKENERGY:
 			case MPMPLASTICENERGY:
-			case MPMTHERMALENERGY:
+			case MPMHEATENERGY:
 			case MPMTOTSTRENERGY:
 			case MPMTOTKINENERGY:
 			case MPMTOTENERGY:
-			case MPMTOTEXTWORK:
-			case MPMTOTPOTENERGY:
+			case MPMTOTWORKENERGY:
 			case MPMTOTPLASTICENERGY:
-			case MPMTOTTHERMALENERGY:
+			case MPMTOTHEATENERGY:
 			case MESHSTRAINENERGY:
 				return "Energy (J)";
 			
@@ -680,14 +679,14 @@ public class PlotQuantity extends PlotControl
 			case MPMKINENERGY:
 				return "KineticEnergy";
 
-			case MPMEXTWORK:
-				return "External Work";
+			case MPMWORKENERGY:
+				return "Work Energy";
 
 			case MPMPLASTICENERGY:
 				return "Plastic Energy";
 
-			case MPMTHERMALENERGY:
-				return "Thermal Energy";
+			case MPMHEATENERGY:
+				return "Heat Energy";
 
 			case MPMTOTSTRENERGY:
 				return "Total Strain Energy";
@@ -698,16 +697,13 @@ public class PlotQuantity extends PlotControl
 			case MPMTOTENERGY:
 				return "Total Energy";
 				
-			case MPMTOTEXTWORK:
-				return "Total External Work";
-				
-			case MPMTOTPOTENERGY:
-				return "Total Potential Energy";
+			case MPMTOTWORKENERGY:
+				return "Total Work Work";
 				
 			case MPMTOTPLASTICENERGY:
 				return "Total Plastic Energy";
 						
-			case MPMTOTTHERMALENERGY:
+			case MPMTOTHEATENERGY:
 				return "Total Thermal Energy";
 						
 			case MPMTEMPERATURE:

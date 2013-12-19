@@ -903,8 +903,8 @@ public class CmdViewer extends JNCmdTextDocument
 	        	loc = ReadArchive.ARCH_Strain;
 	        else if(archive.equals("plasticstrain"))
 	        	loc = ReadArchive.ARCH_PlasticStrain;
-	        else if(archive.equals("externalwork"))
-	        	loc = ReadArchive.ARCH_ExtWork;
+	        else if(archive.equals("workenergy"))
+	        	loc = ReadArchive.ARCH_WorkEnergy;
 	        else if(archive.equals("temperature"))
 	        	loc = ReadArchive.ARCH_DeltaTemp;
 	        else if(archive.equals("plasticenergy"))
@@ -933,8 +933,8 @@ public class CmdViewer extends JNCmdTextDocument
 	        {	history = history | 8;
 				loc = 0;
 	        }
-	        else if(archive.equals("thermalenergy"))
-	        	loc = ReadArchive.ARCH_ThermalEnergy;
+	        else if(archive.equals("heatenergy"))
+	        	loc = ReadArchive.ARCH_HeatEnergy;
 	        else if(archive.equals("concentration"))
 	        	loc = ReadArchive.ARCH_Concentration;
 	        else if(archive.equals("energybalance"))

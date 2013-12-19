@@ -145,9 +145,9 @@ public class TimePlotOptions extends PlotControl
 			{	case PlotQuantity.MPMSTRENERGY:
 				case PlotQuantity.MPMKINENERGY:
 				case PlotQuantity.MPMENERGY:
-				case PlotQuantity.MPMEXTWORK:
+				case PlotQuantity.MPMWORKENERGY:
 				case PlotQuantity.MPMPLASTICENERGY:
-				case PlotQuantity.MPMTHERMALENERGY:
+				case PlotQuantity.MPMHEATENERGY:
 				case PlotQuantity.MPMELEMENTCROSSINGS:
 					plotPoint.setEnabled(true);
 					if(plotPoint.isSelected())

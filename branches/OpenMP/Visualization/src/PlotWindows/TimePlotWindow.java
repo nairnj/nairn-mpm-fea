@@ -79,10 +79,9 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			{	case PlotQuantity.MPMTOTSTRENERGY:
 				case PlotQuantity.MPMTOTKINENERGY:
 				case PlotQuantity.MPMTOTENERGY:
-				case PlotQuantity.MPMTOTEXTWORK:
-				case PlotQuantity.MPMTOTPOTENERGY:
+				case PlotQuantity.MPMTOTWORKENERGY:
 				case PlotQuantity.MPMTOTPLASTICENERGY:
-				case PlotQuantity.MPMTOTTHERMALENERGY:
+				case PlotQuantity.MPMTOTHEATENERGY:
 				case PlotQuantity.MPMTOTELEMENTCROSSINGS:
 					plotTotalEnergy(false);
 					break;

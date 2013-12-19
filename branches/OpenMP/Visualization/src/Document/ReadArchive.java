@@ -21,7 +21,7 @@ public class ReadArchive
 	static final int ARCH_Strain=4;
 	static final int ARCH_PlasticStrain=5;
 	static final int ARCH_OldOrigPosition=6;
-	static final int ARCH_ExtWork=7;
+	static final int ARCH_WorkEnergy=7;
 	static final int ARCH_DeltaTemp=8;
 	static final int ARCH_PlasticEnergy=9;
 	static final int ARCH_ver2Empty=10;
@@ -29,7 +29,7 @@ public class ReadArchive
 	static final int ARCH_StrainEnergy=12;
 	static final int ARCH_History=13;
 	static final int ARCH_Concentration=14;
-	static final int ARCH_ThermalEnergy=15;
+	static final int ARCH_HeatEnergy=15;
 	static final int ARCH_ElementCrossings=16;
 	static final int ARCH_RotStrain=17;
 	static final int ARCH_MAXMPMITEMS=18;
@@ -208,7 +208,7 @@ public class ReadArchive
 			mpmRecSize+=4*sizeofDouble;
 		if(mpmOrder[ARCH_OldOrigPosition]=='Y')
 			mpmRecSize+=2*sizeofDouble;
-		if(mpmOrder[ARCH_ExtWork]=='Y')
+		if(mpmOrder[ARCH_WorkEnergy]=='Y')
 			mpmRecSize+=sizeofDouble;
 		if(mpmOrder[ARCH_DeltaTemp]=='Y')
 			mpmRecSize+=sizeofDouble;
@@ -231,7 +231,7 @@ public class ReadArchive
 		}
 		if(mpmOrder[ARCH_Concentration]=='Y')
 			mpmRecSize+=3*sizeofDouble;
-		if(mpmOrder[ARCH_ThermalEnergy]=='Y')
+		if(mpmOrder[ARCH_HeatEnergy]=='Y')
 			mpmRecSize+=sizeofDouble;
 		if(mpmOrder[ARCH_ElementCrossings]=='Y')
 			mpmRecSize+=sizeofInt;
