@@ -373,11 +373,11 @@ void MaterialBase::PrintTransportProperties(void) const
 	// Conductivity constants
 	if(ConductionTask::active)
 	{	PrintProperty("k",rho*kCond/1000.,"W/(m-K)");
-		PrintProperty("C",heatCapacity,"J/(kg-K)");        // aka mJ/(g-K)
+		PrintProperty("Cv",heatCapacity,"J/(kg-K)");        // aka mJ/(g-K)
 		cout << endl;
 	}
 	else if(ConductionTask::adiabatic)
-	{	PrintProperty("C",heatCapacity,"J/(kg-K)");        // aka mJ/(g-K)
+	{	PrintProperty("Cv",heatCapacity,"J/(kg-K)");        // aka mJ/(g-K)
 		cout << endl;
 	}
 }
@@ -681,7 +681,8 @@ double MaterialBase::GetCpHeatCapacity(MPMBase *mptr) const { return GetHeatCapa
 
 // A material can override to set Cp/Cv ratio
 // From thermodyanamics Cp-Cv = (3K CTE ^2T/rho) where CTE is linear CTE 
-double MaterialBase::GetCpMinusCv(MPMBase *mptr) const { return 1; }
+// Units mJ/(g-K) = J/(kg-m)
+double MaterialBase::GetCpMinusCv(MPMBase *mptr) const { return 0; }
 
 // Increment heat energy using Cv(dT-dTq0) - dPhi, where Cv*dTq0 + dPhi = Cv dTad is total
 //		dispated energy (it can by provided as either a temperature rise or an energy)

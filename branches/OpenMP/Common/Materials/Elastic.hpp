@@ -48,6 +48,7 @@ class Elastic : public MaterialBase
 		double prop1,prop2;
 #ifdef MPM_CODE
 		ElasticProperties pr;
+		double Cadota;
 #else
         double prop3;
 #endif

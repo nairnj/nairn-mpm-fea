@@ -93,6 +93,10 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
         C13=-(v13+v12*v23)/(1.-v21*v12);			// equal to -C13/C33
         C23=-(v23+v21*v13)/(1.-v21*v12);			// equal to -C23/C33
         C33=e3*(1.-v21*v12)/xx;
+		
+#ifdef MPM_CODE
+		Cadota = C11*a1*a1+C22*a2*a2+C33*a3*a3+2.*(C12*a2*a1-C33*C13*a3*a1-C33*C23*a3*a2);
+#endif
     }
 	
     // 2D plane strain properties
@@ -126,6 +130,10 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
         C13=e3*(v13+v12*v23)/xx;
         C23=e3*(v23+v21*v13)/xx;
         C33=e3*(1.-v21*v12)/xx;
+		
+#ifdef MPM_CODE
+		Cadota = C11*a1*a1+C22*a2*a2+C33*a3*a3+2.*(C12*a2*a1+C13*a3*a1+C23*a3*a2);
+#endif
     }
     
     /* Full 3D stiffness matrix or axisymmetric matrix components
@@ -148,6 +156,7 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
         CME1=beta1;
         CME2=beta2;
         CME3=beta3;
+		Cadota = C11*a1*a1+C22*a2*a2+C33*a3*a3+2.*(C12*a2*a1+C13*a3*a1+C23*a3*a2);
 #endif
     }
     
