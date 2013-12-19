@@ -22,7 +22,7 @@ enum {VK_PROP=0,VA_PROP,VISCO_PROPS};
 class Viscoelastic : public MaterialBase
 {
     public:
-    double G0,K,aI;
+        double G0,K,aI;
         // double betaI;        // defined in superclass
         int ntaus;
         double *Gk,*tauk;
@@ -43,6 +43,7 @@ class Viscoelastic : public MaterialBase
 		// methods
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+        virtual double GetCpMinusCv(MPMBase *) const;
 		
 		// accessors
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
@@ -53,7 +54,7 @@ class Viscoelastic : public MaterialBase
 		
     private:
         int currentGk,currentTauk;
-		double Ge,dGe,CTE,CME,Ke;
+		double Ge,dGe,CTE,CME,Ke,Ka2sp;
         char read[VISCO_PROPS];
         
 };

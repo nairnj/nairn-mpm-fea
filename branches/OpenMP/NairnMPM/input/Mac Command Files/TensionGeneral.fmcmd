@@ -17,7 +17,7 @@ EndHeader! ------------ Parameters ---------------
 
 ! material options: isotropic, iptrans, normtrans, ortho,isoplasticity, mgeos
 ! bistable, viscoelastic, hill, wood
-#matID="mgeos"
+#matID="isotropic"
 #angle=0					! material angle for anisotopic materials
 !#matID="WPC-PE"
 
@@ -88,7 +88,7 @@ StressFreeTemp 294
 Analysis #analysis
 MPMMethod #update,#method
 Processors 4
-!Conduction "yes","Mechanical Energy"
+Conduction "yes","Adiabatic"
 
 ! convert to contact
 if #loading="contact"

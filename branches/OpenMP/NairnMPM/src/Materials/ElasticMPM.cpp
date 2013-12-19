@@ -18,7 +18,9 @@
 // If orthotropic = (C11*a11+C12*a22+C13*a33, C21*a11+C22*a22+C23*a33, C31*a11+C32*a22+C33*a33).(a11,a22,a33)T/rho
 //                = (C11*a11^2+(C12+C21)*a22*a11+(C13_C31)*a33*a11+C22*a22^2+(C23+C32)*a33*a22+C33*a33^2)T/rho
 // Units mJ/(g-K) = J/(kg-m)
-//double Elastic::GetCpMinusCv(MPMBase *mptr) const { return Cdota*mptr->pPreviousTemperature/rho; }
+double Elastic::GetCpMinusCv(MPMBase *mptr) const
+{   return mptr!=NULL ? Cadota*mptr->pPreviousTemperature : Cadota*thermal.reference;
+}
 
 
 /* For 2D MPM analysis, take increments in strain and calculate new

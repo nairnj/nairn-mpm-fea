@@ -111,7 +111,8 @@ void NewMaterial::PrintMechanicalProperties(void) const
 // Called by conduction code
 //double NewMaterial::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity; }
 
-// Id desired, return Cp-Cv per unit mass
+// A material can override to set Cp-Cv in mJ/(g-K) = J/(kg-m)
+// mptr will be NULL when printing material properties
 //double NewMaterial::GetCpMinusCv(MPMBase *mptr) const { return 1; }
 
 // Apply Constitutive law, check np to know what type

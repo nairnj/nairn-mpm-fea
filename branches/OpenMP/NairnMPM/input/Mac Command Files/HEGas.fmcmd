@@ -27,7 +27,7 @@ MPMMethod USF,lCPDI
 StressFreeTemp 300
 #startTemp=300
 !ThermalRamp 100,3
-conduction "No","Isothermal"
+conduction "Yes","Isothermal"
 
 ! calculate wave speed (mm/sec)
 if #matID="idealgas"

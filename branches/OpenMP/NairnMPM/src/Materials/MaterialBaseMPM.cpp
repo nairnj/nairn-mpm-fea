@@ -374,10 +374,12 @@ void MaterialBase::PrintTransportProperties(void) const
 	if(ConductionTask::active)
 	{	PrintProperty("k",rho*kCond/1000.,"W/(m-K)");
 		PrintProperty("Cv",heatCapacity,"J/(kg-K)");        // aka mJ/(g-K)
+		PrintProperty("Cp",heatCapacity+GetCpMinusCv(NULL),"J/(kg-K)");        // aka mJ/(g-K)
 		cout << endl;
 	}
 	else if(ConductionTask::adiabatic)
 	{	PrintProperty("Cv",heatCapacity,"J/(kg-K)");        // aka mJ/(g-K)
+        // Cp only used in conduction so not printed here when conduction is off
 		cout << endl;
 	}
 }
@@ -679,9 +681,9 @@ double MaterialBase::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity;
 // For Cp heat capacity
 double MaterialBase::GetCpHeatCapacity(MPMBase *mptr) const { return GetHeatCapacity(mptr)+GetCpMinusCv(mptr); }
 
-// A material can override to set Cp/Cv ratio
-// From thermodyanamics Cp-Cv = (3K CTE ^2T/rho) where CTE is linear CTE 
-// Units mJ/(g-K) = J/(kg-m)
+// A material can override to set Cp-Cv in mJ/(g-K) = J/(kg-m)
+// From thermodyanamics Cp-Cv = (3K CTE ^2T/rho) where CTE is linear CTE
+// (if mptr==NULL, can use stress free temperature instead)
 double MaterialBase::GetCpMinusCv(MPMBase *mptr) const { return 0; }
 
 // Increment heat energy using Cv(dT-dTq0) - dPhi, where Cv*dTq0 + dPhi = Cv dTad is total

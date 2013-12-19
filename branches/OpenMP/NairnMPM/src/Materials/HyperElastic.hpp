@@ -41,6 +41,7 @@ class HyperElastic : public MaterialBase
         double IncrementDeformation(MPMBase *,double,double,double,double,double,double,double,double,double,Tensor *) const;
         double IncrementDeformation(MPMBase *,Matrix3,Tensor *,int) const;
 		double GetResidualStretch(MPMBase *,double &,ResidualStrains *) const;
+        virtual double GetCpMinusCv(MPMBase *) const;
     
         // Accessors
         virtual double GetVolumetricTerms(double,double) const;
@@ -49,6 +50,7 @@ class HyperElastic : public MaterialBase
     protected:
         int UofJOption;             // pick U(J) function
         double Ksp;                 // specific bulk modulus
+        double Ka2sp;               // For Cp-Cv
 };
 
 #endif

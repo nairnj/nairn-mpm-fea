@@ -112,7 +112,7 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np) const
 #pragma mark IdealGas::Methods
 
 // To get per unit mass = nR/(rho0 V0)
-double IdealGas::GetCpMinusCv(MPMBase *mptr) const { return CpMinusCv; }
+double IdealGas::GetCpMinusCv(MPMBase *) const { return CpMinusCv; }
 
 /* Take increments in strain and calculate new
     Particle: strains, rotation strain, stresses, strain energy, angle

@@ -83,7 +83,7 @@ StressFreeTemp 294
 Analysis #analysis
 MPMMethod #update,#method
 PtsPerElement #ppe
-conduction "no","isothermal"
+conduction "yes","isothermal"
 
 ! convert to contact
 if #loading="contact"

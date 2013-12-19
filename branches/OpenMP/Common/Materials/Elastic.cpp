@@ -95,13 +95,16 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
         C33=e3*(1.-v21*v12)/xx;
 		
 #ifdef MPM_CODE
-		Cadota = C11*a1*a1+C22*a2*a2+C33*a3*a3+2.*(C12*a2*a1-C33*C13*a3*a1-C33*C23*a3*a2);
+        double C113D = e1*(1.-v23*v32)/xx;
+        double C123D = e2*(v12+v13*v32)/xx;
+        double C223D = e2*(1.-v13*v31)/xx;
+		Cadota = 0.001*(C113D*a1*a1+C223D*a2*a2+C33*a3*a3 + 2.*(C123D*a2*a1-C33*(C13*a3*a1+C23*a3*a2)))/rho;
 #endif
     }
 	
     // 2D plane strain properties
     else if(np==PLANE_STRAIN || np==PLANE_STRAIN_MPM)
-    {	xx=1.-v13*v31-v23*v32-v12*v21-v12*v23*v31-v13*v32*v21;
+    {	xx=1.-v13*v31-v23*v32-v12*v21-2.*v12*v23*v31;
         C11=e1*(1.-v23*v32)/xx;
         C12=e2*(v12+v13*v32)/xx;
         C22=e2*(1.-v13*v31)/xx;
@@ -126,13 +129,12 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
 #endif
 		
 		// for calculating sigma(zz) in MPM
-		xx=1.-v13*v31-v23*v32-v12*v21-2.*v13*v32*v21;
         C13=e3*(v13+v12*v23)/xx;
         C23=e3*(v23+v21*v13)/xx;
         C33=e3*(1.-v21*v12)/xx;
 		
 #ifdef MPM_CODE
-		Cadota = C11*a1*a1+C22*a2*a2+C33*a3*a3+2.*(C12*a2*a1+C13*a3*a1+C23*a3*a2);
+		Cadota = 0.001*(C11*a1*a1+C22*a2*a2+C33*a3*a3+2.*(C12*a2*a1+C13*a3*a1+C23*a3*a2))/rho;
 #endif
     }
     
@@ -156,7 +158,7 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
         CME1=beta1;
         CME2=beta2;
         CME3=beta3;
-		Cadota = C11*a1*a1+C22*a2*a2+C33*a3*a3+2.*(C12*a2*a1+C13*a3*a1+C23*a3*a2);
+		Cadota = 0.001*(C11*a1*a1+C22*a2*a2+C33*a3*a3+2.*(C12*a2*a1+C13*a3*a1+C23*a3*a2)/rho);
 #endif
     }
     

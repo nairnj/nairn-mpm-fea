@@ -38,6 +38,7 @@ class Elastic : public MaterialBase
         
 		// methods
 #ifdef MPM_CODE
+        virtual double GetCpMinusCv(MPMBase *) const;
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
 #else

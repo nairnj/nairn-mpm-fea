@@ -12,6 +12,7 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Global_Quantities/ThermalRamp.hpp"
 
 #pragma mark Viscoelastic::Constructors and Destructors
 
@@ -139,6 +140,9 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
 	CTE=1.e-6*aI;
 	CME=betaI*concSaturation;
 
+    // for Cp-Cv
+    Ka2sp = 0.001*Ke*CTE1*CTE1/rho;
+	
 	// call super class
 	return MaterialBase::VerifyAndLoadProperties(np);
 }
@@ -409,6 +413,13 @@ void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz
 Vector Viscoelastic::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 {	double nuLS = (3.*Ke-2.*Ge)/(6.*Ke+2.*Ge);
 	return IsotropicJToK(d,C,J0,np,nuLS,Ge*1.e-6);
+}
+
+// From thermodyanamics Cp-Cv = 9 K a^2 T/rho
+// Units mJ/(g-K) = J/(kg-m)
+// Here using K0 and rho0 - could modify if needed
+double Viscoelastic::GetCpMinusCv(MPMBase *mptr) const
+{   return mptr!=NULL ? Ka2sp*mptr->pPreviousTemperature : Ka2sp*thermal.reference;
 }
 
 #pragma mark Viscoelastic::Accessors

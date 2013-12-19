@@ -67,6 +67,9 @@ const char *HyperElastic::VerifyAndLoadProperties(int np)
 	// expansion coefficients
 	CTE1 = 1.e-6*aI;
 	CME1 = betaI*concSaturation;
+    
+    // for Cp-Cv
+    Ka2sp = 0.001*Ksp*CTE1*CTE1;
 	
     // call superclass
     return MaterialBase::VerifyAndLoadProperties(np);
@@ -430,5 +433,12 @@ double HyperElastic::GetVolumetricTerms(double J,double Kred) const
     
     // return result
     return Kterm;
+}
+
+// From thermodyanamics Cp-Cv = 9 K a^2 T/rho
+// Units mJ/(g-K) = J/(kg-m)
+// Here using K0 and rho0 - could modify if needed
+double HyperElastic::GetCpMinusCv(MPMBase *mptr) const
+{   return mptr!=NULL ? Ka2sp*mptr->pPreviousTemperature : Ka2sp*thermal.reference;
 }
 
