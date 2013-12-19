@@ -565,7 +565,7 @@ void IsoPlasticity::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,Pl
 	// Here do hydrostatic term
     // Work energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
     double avgP = mptr->GetPressure()-0.5*dP;
-    mptr->AddWorkEnergy(-avgP*(delV+3.*eres));
+    mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-3.*avgP*eres);
 
     // heat energy is Cv dT  - dPhi
 	// Here do Cv dT term and dPhi is done later

@@ -23,9 +23,9 @@ class BoundaryCondition;
 
 // Archiving options for material points
 enum { ARCH_Velocity=2,ARCH_Stress,ARCH_Strain,ARCH_PlasticStrain,
-            ARCH_OldOrigPosition,ARCH_ExtWork,ARCH_DeltaTemp,ARCH_PlasticEnergy,
+            ARCH_OldOrigPosition,ARCH_WorkEnergy,ARCH_DeltaTemp,ARCH_PlasticEnergy,
             ARCH_ver2Empty, ARCH_ShearComponents, ARCH_StrainEnergy,
-            ARCH_History, ARCH_Concentration,ARCH_ThermalEnergy,ARCH_ElementCrossings,
+            ARCH_History, ARCH_Concentration,ARCH_HeatEnergy,ARCH_ElementCrossings,
             ARCH_RotStrain, ARCH_MAXMPMITEMS };
 
 // Archiving options for crack segments

@@ -135,6 +135,10 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     double delV = 1. - 1./detdF;
     double workEnergy = -avgP*delV;
     
+	// incremental residual energy
+	double delVres = 1. - 1./(dresStretch*dresStretch*dresStretch);
+	double resEnergy = -avgP*delVres;
+	
     // viscosity term = 2 eta (0.5(grad v) + 0.5*(grad V)^T - (1/3) tr(grad v) I)
     Matrix3 shear;
     double c[3][3];
@@ -169,7 +173,7 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     double shearWork = sp->xx*sp->xx + sp->yy*sp->yy + sp->zz*sp->zz + 2.*sp->xy*sp->xy;
     if(np==THREED_MPM) shearWork += 2.*(sp->xz*sp->xz + sp->yz*sp->yz);
     shearWork *= delTime/Etasp;
-    mptr->AddWorkEnergy(workEnergy+shearWork);
+    mptr->AddWorkEnergyAndResidualEnergy(workEnergy+shearWork,resEnergy);
     
     // particle isentropic temperature increment dT/T = - J (K/K0) gamma0 Delta(V)/V
     // Delta(V)/V = 1. - 1/detdF (total volume)

@@ -108,6 +108,8 @@ class MaterialBase : public LinkedObject
         virtual int SizeOfMechanicalProperties(int &) const;
 		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *) const;
 		virtual double GetHeatCapacity(MPMBase *) const;
+		virtual double GetCpHeatCapacity(MPMBase *) const;
+		virtual double GetCpMinusCv(MPMBase *) const;
         virtual void IncrementHeatEnergy(MPMBase *,double,double,double) const;
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;

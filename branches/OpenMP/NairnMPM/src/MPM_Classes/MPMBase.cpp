@@ -48,11 +48,11 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	ZeroTensor(&eplast);
 	ZeroTensorAntisym(&wrot);
     
-    // zero work and energies
-    extWork=0.;
+    // zero energies
     plastEnergy=0.;
 	dispEnergy=0.;
     workEnergy=0.;
+    resEnergy=0.;
     heatEnergy=0.;
     entropy=0;
 	
@@ -335,7 +335,16 @@ double MPMBase::GetWorkEnergy(void) { return workEnergy; }
 void MPMBase::SetWorkEnergy(double energyTot) { workEnergy=energyTot; }
 void MPMBase::AddWorkEnergy(double energyInc) { workEnergy+=energyInc; }
 
-double MPMBase::GetExtWork(void) { return extWork; }
+void MPMBase::AddWorkEnergyAndResidualEnergy(double energyInc,double resInc)
+{	workEnergy+=energyInc;
+	resEnergy+=resInc;
+}
+
+double MPMBase::GetResidualEnergy(void) { return resEnergy; }
+void MPMBase::SetResidualEnergy(double resInc) { resEnergy=resInc; }
+void MPMBase::AddResidualEnergy(double resInc) { resEnergy+=resInc; }
+
+double MPMBase::GetStrainEnergy(void) { return workEnergy - resEnergy; }
 
 double MPMBase::GetHeatEnergy(void) { return heatEnergy; }
 void MPMBase::SetHeatEnergy(double energyTot) { heatEnergy = energyTot; }

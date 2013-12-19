@@ -15,7 +15,7 @@ Analysis #analysis
 MPMMethod USF,lCPDI
 
 ! ********** Parameters Section **********
-#matID="liquid"		    ! can be "ideal gas" or "liquid"
+#matID="idealgas"		    ! can be "idealgas" or "liquid"
 #strain=-50				! strain
 #tmult=20
 
@@ -27,10 +27,10 @@ MPMMethod USF,lCPDI
 StressFreeTemp 300
 #startTemp=300
 !ThermalRamp 100,3
-conduction "No","Adiabatic"
+conduction "No","Isothermal"
 
 ! calculate wave speed (mm/sec)
-if #matID="gas"
+if #matID="idealgas"
   #P0=.101
   #T0=288.15
   #rho0=0.001164
@@ -49,7 +49,7 @@ endif
 Archive "Results/"&#matID
 TimeStep 1000,#time,.05
 ArchiveTime #time/40
-ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain,temperature,history1
+ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain,temperature,history1,heatenergy
 
 ! ********** Materials Section **********
 if #matID="idealgas"

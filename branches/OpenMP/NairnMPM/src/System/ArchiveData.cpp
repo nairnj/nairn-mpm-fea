@@ -240,7 +240,7 @@ void ArchiveData::CalcArchiveSize(void)
         mpmRecSize+=tensorSize;
     if(mpmOrder[ARCH_PlasticStrain]=='Y')
         mpmRecSize+=tensorSize;
-    if(mpmOrder[ARCH_ExtWork]=='Y')
+    if(mpmOrder[ARCH_WorkEnergy]=='Y')
         mpmRecSize+=sizeof(double);
     if(mpmOrder[ARCH_DeltaTemp]=='Y')
         mpmRecSize+=sizeof(double);
@@ -260,7 +260,7 @@ void ArchiveData::CalcArchiveSize(void)
 	}
     if(mpmOrder[ARCH_Concentration]=='Y')
         mpmRecSize+=sizeof(double)+vectorSize;
-    if(mpmOrder[ARCH_ThermalEnergy]=='Y')
+    if(mpmOrder[ARCH_HeatEnergy]=='Y')
         mpmRecSize+=sizeof(double);
     if(mpmOrder[ARCH_ElementCrossings]=='Y')
         mpmRecSize+=sizeof(int);
@@ -638,8 +638,8 @@ void ArchiveData::ArchiveResults(double atime)
         }
         
         // external work (cumulative) in J
-        if(mpmOrder[ARCH_ExtWork]=='Y')
-        {   *(double *)app=mpm[p]->GetExtWork()*1.e-9;
+        if(mpmOrder[ARCH_WorkEnergy]=='Y')
+		{	*(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetWorkEnergy();
             app+=sizeof(double);
         }
                 
@@ -672,7 +672,7 @@ void ArchiveData::ArchiveResults(double atime)
         // internal units are same as stress: N/m^2 cm^3/g = microJ/g = mJ/kg
 		// note that rho*energy has units J/m^3 = N/m^2 (if rho in g/cm^3)
         if(mpmOrder[ARCH_StrainEnergy]=='Y')
-        {   *(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetWorkEnergy();
+        {   *(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetStrainEnergy();
             app+=sizeof(double);
         }
         
@@ -733,13 +733,13 @@ void ArchiveData::ArchiveResults(double atime)
 			}
        }
 		
-        // thermal energy in J (approximate - assume low dT)
-		// want (mass/rho0) * rho0 Cp dT^2 / (2 T0)
-		// or mass (g) Cp (J/(g-K)) dT^2 (K^2) / (2 T0 (K)) for Joules
-        if(mpmOrder[ARCH_ThermalEnergy]=='Y')
-		{	double deltaT=(mpm[p]->pTemperature-thermal.reference);
-			double Cp=theMaterials[mpm[p]->MatID()]->GetHeatCapacity(mpm[p]);		// in mJ/(g-K)
-            *(double *)app = 1.e-3*mpm[p]->mp*Cp*deltaT*deltaT/(2.*thermal.reference);
+        // total heat energy (Volume*energy) in J
+        // energies in material point based on energy per unit mass
+        // here need mass * U/(rho0 V0)
+        // internal units are same as stress: N/m^2 cm^3/g = microJ/g = mJ/kg
+		// note that rho*energy has units J/m^3 = N/m^2 (if rho in g/cm^3)
+        if(mpmOrder[ARCH_HeatEnergy]=='Y')
+        {   *(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetHeatEnergy();
             app+=sizeof(double);
         }
 		
@@ -834,8 +834,8 @@ void ArchiveData::ArchiveResults(double atime)
 				}
             }
             
-            // external work (cumulative) in J
-            if(mpmOrder[ARCH_ExtWork]=='Y')
+            // work energy (cumulative) in J
+            if(mpmOrder[ARCH_WorkEnergy]=='Y')
                 app+=Reverse(app,sizeof(double));
                     
             // temperature
@@ -876,7 +876,7 @@ void ArchiveData::ArchiveResults(double atime)
             }
 			
             // total strain energy
-            if(mpmOrder[ARCH_ThermalEnergy]=='Y')
+            if(mpmOrder[ARCH_HeatEnergy]=='Y')
                 app+=Reverse(app,sizeof(double));
 
             // element crossings

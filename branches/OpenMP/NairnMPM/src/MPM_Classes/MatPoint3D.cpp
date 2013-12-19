@@ -93,7 +93,6 @@ void MatPoint3D::MovePosition(double delTime,Vector *dv)
 	pos.x+=dx;
     pos.y+=dy;
     pos.z+=dz;
-    extWork+=dx*pFext.x+dy*pFext.y+dz*pFext.z;
 }
 
 // Move velocity (3D) (in mm/sec) possible with damping

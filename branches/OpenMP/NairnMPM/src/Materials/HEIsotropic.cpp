@@ -223,9 +223,10 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 	{	B.xz /= resStretch2;
 		B.yz /= resStretch2;
 	}
+	double detdFres = dresStretch*dresStretch*dresStretch;
 	
 	// Get hydrostatic stress component in subroutine
-    UpdatePressure(mptr,J,detdF,np,Jres,delTime,p,res);
+    UpdatePressure(mptr,J,detdF,np,Jres,delTime,p,res,detdFres);
     
     // Others constants
     double J23 = pow(J, 2./3.);
@@ -362,9 +363,10 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 //  contribution to normal stress) and adds incremental energy to strain energy
 // Jtot = V(T,c)/V0(Trec,cref), Jres = V0(T,c)/V0(Tref,cref) for free expansion, J = V(T,c)/V0(T,c)
 // Jn+1 = (detdF/detdFres) Jn, Jresn+1 = detdFres Jresn, Jtot = detdF Jtotn
+// detdFres = (1+dres)^3 (approximately)
 // Here Tref and cref are starting conditions and T and c are current temperature and moisture
 void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,double Jres,
-								 double delTime,HEPlasticProperties *p,ResidualStrains *res) const
+								 double delTime,HEPlasticProperties *p,ResidualStrains *res,double detdFres) const
 {
 	double Kterm = J*GetVolumetricTerms(J,p->Kred);       // times J to get Kirchoff stress
     double P0 = mptr->GetPressure();
@@ -385,7 +387,9 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,doub
 	// Here do hydrostatic term
     // Internal energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
     double avgP = 0.5*(P0+Pfinal);
-    mptr->AddWorkEnergy(-avgP*delV);
+	double delVres = 1. - 1./detdFres;
+    mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-avgP*delVres);
+	
 	
     // heat energy is Cv dT  - dPhi
 	// Here do Cv dT term and dPhi is done later

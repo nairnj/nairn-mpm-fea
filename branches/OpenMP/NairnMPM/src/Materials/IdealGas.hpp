@@ -39,7 +39,8 @@ class IdealGas : public HyperElastic
         void SetInitialParticleState(MPMBase *,int) const;
  		
 		// methods
-        virtual void MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *,ResidualStrains *) const;
+		virtual double GetCpMinusCv(MPMBase *) const;
+		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
     
 		// accessors
 		virtual double WaveSpeed(bool,MPMBase *) const;
@@ -49,6 +50,7 @@ class IdealGas : public HyperElastic
 		
     private:
 	    double P0sp;  // mass specific initial pressure
+		double CpMinusCv;
 };
 
 #endif

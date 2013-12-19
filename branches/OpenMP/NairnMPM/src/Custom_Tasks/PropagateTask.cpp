@@ -94,9 +94,10 @@ CustomTask *PropagateTask::StepCalculation(void)
             // plastic energy per unit thickness (units of N) (only needed energy balance crack growth)
             double mp = mpnt->mp;
             totalPlastic += 1.0e-3*mp*mpnt->GetPlastEnergy()/mpnt->thickness();
-            totalPotential += 1.0e-3*(mp*mpnt->GetWorkEnergy()
-                                    + 0.5e-3*mp*(mpnt->vel.x*mpnt->vel.x+mpnt->vel.y*mpnt->vel.y)
-                                    - 1.e-3*mpnt->GetExtWork())/mpnt->thickness();
+            //totalPotential += 1.0e-3*(mp*mpnt->GetStrainEnergy()
+            //                        + 0.5e-3*mp*(mpnt->vel.x*mpnt->vel.x+mpnt->vel.y*mpnt->vel.y)
+            //                        - 1.e-3*mpnt->GetExtWork())/mpnt->thickness();
+			throw "external work is no longer available";
         }
     }
     

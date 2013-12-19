@@ -111,6 +111,9 @@ void NewMaterial::PrintMechanicalProperties(void) const
 // Called by conduction code
 //double NewMaterial::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity; }
 
+// Id desired, return Cp-Cv per unit mass
+//double NewMaterial::GetCpMinusCv(MPMBase *mptr) const { return 1; }
+
 // Apply Constitutive law, check np to know what type
 void NewMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {

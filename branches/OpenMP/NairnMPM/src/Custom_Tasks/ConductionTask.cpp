@@ -137,7 +137,7 @@ TransportTask *ConductionTask::TransportTimeStep(int matid,double dcell,double *
 
 // Task 1 Extrapolation of temperature to the grid
 TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape)
-{	double Cp = theMaterials[mptr->MatID()]->GetHeatCapacity(mptr);   // mJ/(g-K)
+{	double Cp = theMaterials[mptr->MatID()]->GetCpHeatCapacity(mptr);   // mJ/(g-K)
 	double arg = mptr->mp*Cp*shape;                                   // mJ/K
 	ndpt->gTemperature += mptr->pTemperature*arg;                     // mJ
 	ndpt->gMpCp += arg;                                               // mJ/K

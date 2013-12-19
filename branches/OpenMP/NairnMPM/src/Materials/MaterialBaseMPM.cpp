@@ -671,9 +671,17 @@ void *MaterialBase::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffe
 // Get transport property tensors (if change with particle state)
 void MaterialBase::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t) const { *t = tr; }
 
+// Get Cv heat capacity
 // Implemented in case heat capacity changes with particle state
 // Units mJ/(g-K) = J/(kg-m)
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity; }
+
+// For Cp heat capacity
+double MaterialBase::GetCpHeatCapacity(MPMBase *mptr) const { return GetHeatCapacity(mptr)+GetCpMinusCv(mptr); }
+
+// A material can override to set Cp/Cv ratio
+// From thermodyanamics Cp-Cv = (3K CTE ^2T/rho) where CTE is linear CTE 
+double MaterialBase::GetCpMinusCv(MPMBase *mptr) const { return 1; }
 
 // Increment heat energy using Cv(dT-dTq0) - dPhi, where Cv*dTq0 + dPhi = Cv dTad is total
 //		dispated energy (it can by provided as either a temperature rise or an energy)

@@ -52,7 +52,7 @@ class HEIsotropic : public HyperElastic
 	
 		// constitutive law
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
-        virtual void UpdatePressure(MPMBase *,double,double,int,double,double,HEPlasticProperties *,ResidualStrains *) const;
+        virtual void UpdatePressure(MPMBase *,double,double,int,double,double,HEPlasticProperties *,ResidualStrains *,double) const;
         Tensor GetTrialDevStressTensor(Tensor *,double,int,double) const;
         virtual double GetMagnitudeS(Tensor *st,int) const;
         Tensor GetNormalTensor(Tensor *,double,int) const;

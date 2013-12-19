@@ -43,6 +43,7 @@ class NewMaterial : public MaterialBase
         //virtual void *MaterialBase::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
 		//virtual void GetTransportProps(MPMBase *,int,TransportProperties *) const;
 		//virtual double GetHeatCapacity(MPMBase *) const;
+		// virtual double NewMaterial::GetCpMinusCv(MPMBase *mptr) const;
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 				
 		// accessors

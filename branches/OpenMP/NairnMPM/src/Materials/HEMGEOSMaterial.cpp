@@ -184,9 +184,10 @@ void *HEMGEOSMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBu
 // J is Jtot/Jres, detdF is detdFtot/detdFres
 // Jtot = V(T,c)/V0(Trec,cref), Jres = V0(T,c)/V0(Tref,cref) for free expansion, J = V(T,c)/V0(T,c)
 // Jn+1 = (detdF/detdFres) Jn, Jresn+1 = detdFres Jresn, Jtot = detdF Jtotn
+// detdFres = (1+dres)^3 (approximately)
 // Here Tref and cref are starting conditions and T and c are current temperature and moisture
 void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,double Jres,
-									 double delTime,HEPlasticProperties *p,ResidualStrains *res) const
+									 double delTime,HEPlasticProperties *p,ResidualStrains *res,double detdFres) const
 {
     // J is total volume change - may need to reference to free-swelling volume if that works
 	// Note that swelling looks like a problem because the sums of strains needs to be adjusted
@@ -242,7 +243,8 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,
     // work energy is dU = -P dV + s.de(total)
 	// Here do hydrostatic terms, deviatoric later
     double avgP = 0.5*(P0+P);
-    mptr->AddWorkEnergy(-avgP*delV);
+	double delVres = 1. - 1./detdFres;
+    mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-avgP*delVres);
     
     // heat energy is Cv (dT - dTq0) - dPhi - |QAVred*delV|
 	// Here do Cv (dT - dTq0) - |QAVred*delV| term and dPhi is done later

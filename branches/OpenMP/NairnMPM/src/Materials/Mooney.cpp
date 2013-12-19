@@ -246,6 +246,10 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     double avgP = 0.5*(p0+Pfinal);
     double dilEnergy = -avgP*delV;
 	
+	// incremental residual energy
+	double delVres = 1. - 1./(dresStretch*dresStretch*dresStretch);
+	double resEnergy = -avgP*delVres;
+	
     // Account for density change in specific stress
     // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
 	double J23 = pow(J, 2./3.);
@@ -273,14 +277,6 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
         sp->yz = B->yz*G1eff/JforG1 + (B->xx*B->yz-B->xy*B->xz)*G2eff/JforG2;
     }
     
-	// work energy per unit mass (U/(rho0 V0)) and we are using
-    // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
-	// Divide B's by resStretch2 to accound for current stress free state
-	//double I1bar = (B->xx+B->yy+B->zz)/(resStretch2*J23);
-	//double I2bar = 0.5*(I1bar*I1bar - (B->xx*B->xx+B->yy*B->yy+B->zz*B->zz+2.*B->xy*B->xy+2*B->xz*B->xz+2.*B->yz*B->yz)
-	//									/(J43*resStretch2*resStretch2));
-    //mptr->AddWorkEnergy(0.5*(G1sp*(I1bar-3.) + G2sp*(I2bar-3.)));
-
 	// incremental work energy = shear energy
     double shearEnergy = 0.5*((sp->xx+st0.xx)*du(0,0) + (sp->yy+st0.yy)*du(1,1) + (sp->zz+st0.zz)*du(2,2)+
 							  (sp->xy+st0.xy)*(du(0,1)+du(1,0)));
@@ -290,7 +286,7 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     
     // strain energy
     double dU = dilEnergy + shearEnergy;
-    mptr->AddWorkEnergy(dU);
+    mptr->AddWorkEnergyAndResidualEnergy(dU,resEnergy);
 	
 	// particle isentropic temperature increment
 	double Kratio;				// = rho_0 K/(rho K_0)

@@ -1281,7 +1281,7 @@ int CalcArchiveSize(int vernum)
 	{	plStrainOffset=mpmRecSize;
         mpmRecSize+=tensorSize;
 	}
-    if(mpmOrder[ARCH_ExtWork]=='Y')
+    if(mpmOrder[ARCH_WorkEnergy]=='Y')
         mpmRecSize+=sizeof(double);
     if(mpmOrder[ARCH_DeltaTemp]=='Y')
 	{	tempOffset=mpmRecSize;
@@ -1309,7 +1309,7 @@ int CalcArchiveSize(int vernum)
 	{	concOffset=mpmRecSize;
         mpmRecSize+=sizeof(double)+vectorSize;
 	}
-    if(mpmOrder[ARCH_ThermalEnergy]=='Y')
+    if(mpmOrder[ARCH_HeatEnergy]=='Y')
         mpmRecSize+=sizeof(double);
     if(mpmOrder[ARCH_ElementCrossings]=='Y')
         mpmRecSize+=sizeof(int);

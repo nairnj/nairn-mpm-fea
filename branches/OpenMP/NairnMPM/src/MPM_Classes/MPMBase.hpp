@@ -140,6 +140,11 @@ class MPMBase : public LinkedObject
 		double GetWorkEnergy(void);
 		void SetWorkEnergy(double);
 		void AddWorkEnergy(double);
+		double GetResidualEnergy(void);
+		void SetResidualEnergy(double);
+		void AddResidualEnergy(double);
+		void AddWorkEnergyAndResidualEnergy(double,double);
+		double GetStrainEnergy(void);
         double GetHeatEnergy(void);
         void SetHeatEnergy(double);
         void AddHeatEnergy(double);
@@ -147,7 +152,6 @@ class MPMBase : public LinkedObject
         void SetEntropy(double);
         void AddEntropy(double);
         double GetInternalEnergy(void);
-		double GetExtWork(void);
         void IncrementPressure(double);
         void SetPressure(double);
         double GetPressure(void);
@@ -180,10 +184,10 @@ class MPMBase : public LinkedObject
 		TensorAntisym wrot;			// rotation strain tensor (init 0)
 		double plastEnergy;			// total plastic energy
 		double dispEnergy;			// dissipated energy in current step
-		double workEnergy;		// total work energy
+		double workEnergy;			// total work energy  sigma.de
         double heatEnergy;          // total heat flow on the particle
         double entropy;             // total entropy on the particle
-		double extWork;				// total external work
+		double resEnergy;			// total residual energy sigma.dres
 		char *matData;				// material history if needed (init NULL)
 	
 		// constants (not changed in MPM time step)

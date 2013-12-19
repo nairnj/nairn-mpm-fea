@@ -48,15 +48,14 @@ const char *IdealGas::VerifyAndLoadProperties(int np)
     if(P0 <= 0. || rho <= 0.0 || T0 <= 0.0 )
 		return "Ideal gas material model needs positive parameters P0, rho, and T0";
 	
-	// Find ideal gas has heat capacity in J/(kg-K) = mJ/(g-K)
-	// Must set C to Cv to work well with theory, even though output and equations
-	//    for conductivity claim Cp is needed. For monotonic Ideal Gas, Cv = 1.5R
-	//	  for diatomic is is 2.5R
+	// Find ideal gas has Cv heat capacity in J/(kg-K) = mJ/(g-K)
+	// For monotonic Ideal Gas, Cv = 1.5R for diatomic gas is 2.5R
 	// If set to >1 is diatomic, otherwise monotonic (which is for not set too)
 	if(heatCapacity>1.)
 		heatCapacity = 2500.*P0/(T0*rho);
 	else
 		heatCapacity = 1500.*P0/(T0*rho);
+	CpMinusCv= 1000.*P0/(T0*rho);
 	
 	// P0 in specific units for MPM of N/m^2 cm^3/g
 	P0sp=P0*1.0e+06/rho;
@@ -112,6 +111,9 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np) const
 
 #pragma mark IdealGas::Methods
 
+// To get per unit mass = nR/(rho0 V0)
+double IdealGas::GetCpMinusCv(MPMBase *mptr) const { return CpMinusCv; }
+
 /* Take increments in strain and calculate new
     Particle: strains, rotation strain, stresses, strain energy, angle
     du are (gradient rates X time increment) to give deformation gradient change
@@ -142,7 +144,7 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
     // dW/(rho0 V0) = - 0.5 * (pn+p(n+1))/rho0 * (V(n+1)-Vn)/V0, which simplifies to
     double dW = 0.5*(mPnsp*detf + mPsp)*(1.-1./detf);
     
-    // this energy is tracked in strain energy
+    // this energy is tracked in work energy and no residual energy is tracked
     mptr->AddWorkEnergy(dW);
     
     // the same energy is tracked as heat (although it will be zero if adiabatic)

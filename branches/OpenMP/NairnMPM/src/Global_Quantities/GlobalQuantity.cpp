@@ -95,9 +95,9 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 		quantity=KINE_ENERGY;
 	else if(strcmp(quant,"Grid Kinetic Energy")==0)
 		quantity=GRID_KINE_ENERGY;
-	else if(strcmp(quant,"Strain Energy")==0 || strcmp(quant,"Work Energy")==0)
-		quantity=WORK_ENERGY;
-	else if(strcmp(quant,"Heat Energy")==0)
+	else if(strcmp(quant,"Strain Energy")==0)
+		quantity=STRAIN_ENERGY;
+	else if(strcmp(quant,"Heat Energy")==0 || strcmp(quant,"Thermal Energy")==0)
 		quantity=HEAT_ENERGY;
 	else if(strcmp(quant,"Entropy")==0)
 		quantity=ENTROPY_ENERGY;
@@ -107,8 +107,8 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 		quantity=HELMHOLZ_ENERGY;
 	else if(strcmp(quant,"Interface Energy")==0)
 		quantity=INTERFACE_ENERGY;
-	else if(strcmp(quant,"External Work")==0)
-		quantity=EXTL_WORK;
+	else if(strcmp(quant,"Work Energy")==0)
+		quantity=WORK_ENERGY;
 	else if(strcmp(quant,"Plastic Energy")==0)
 		quantity=PLAS_ENERGY;
 	else if(strcmp(quant,"velx")==0 || strcmp(quant,"velR")==0)
@@ -123,8 +123,6 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 		quantity=AVG_DISPY;
 	else if(strcmp(quant,"dispz")==0)
 		quantity=AVG_DISPZ;
-	else if(strcmp(quant,"Thermal Energy")==0)
-		quantity=TOTL_THERMALENERGY;
 	else if(strcmp(quant,"temp")==0)
 		quantity=AVG_TEMP;
 	else if(strcmp(quant,"concentration")==0)
@@ -323,6 +321,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 		// energies (Volume*energy) in J
 		case KINE_ENERGY:
 		case WORK_ENERGY:
+		case STRAIN_ENERGY:
 		case HEAT_ENERGY:
         case ENTROPY_ENERGY:
         case INTERNAL_ENERGY:
@@ -339,6 +338,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
                             break;
 						case WORK_ENERGY:
 							value += mpm[p]->mp*mpm[p]->GetWorkEnergy();
+							break;
+						case STRAIN_ENERGY:
+							value += mpm[p]->mp*mpm[p]->GetStrainEnergy();
 							break;
 						case HEAT_ENERGY:
 							value += mpm[p]->mp*mpm[p]->GetHeatEnergy();
@@ -366,15 +368,6 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 			value=1.e-9*NodalPoint::interfaceEnergy;
 			break;
 			
-		// work in J
-		case EXTL_WORK:
-			for(p=0;p<nmpms;p++)
-			{	if(IncludeThisMaterial(mpm[p]->MatID()))
-					value+=mpm[p]->GetExtWork();
-			}
-			value*=1.e-9;
-			break;
-		
 		// energies (Volume*energy) in J
 		case PLAS_ENERGY:
             threeD = fmobj->IsThreeD();
@@ -386,19 +379,6 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 			value*=1.e-6;
 			break;
 		
-		// work in J
-		case TOTL_THERMALENERGY:
-			double deltaT,Cp;
-            threeD = fmobj->IsThreeD();
-			for(p=0;p<nmpms;p++)
-			{	if(IncludeThisMaterial(mpm[p]->MatID()))
-				{	deltaT=(mpm[p]->pTemperature-thermal.reference);
-					Cp=theMaterials[mpm[p]->MatID()]->GetHeatCapacity(mpm[p]);              // in mJ/(g-K)
-					value += 1.e-3*mpm[p]->mp*Cp*deltaT*deltaT/(2.*thermal.reference);      // J
-				}
-			}
-			break;
-			
 		// velocity x in mm/sec
 		case AVG_VELX:
 			for(p=0;p<nmpms;p++)

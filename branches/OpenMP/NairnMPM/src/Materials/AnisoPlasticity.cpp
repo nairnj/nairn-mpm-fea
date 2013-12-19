@@ -349,8 +349,14 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
                         + (st0.xy+sp->xy)*dgxyp
 						+ (st0.zz+sp->zz)*dezzp);
 
+	// Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+	double resEnergy = 0.5*((st0.xx+sp->xx)*erxx
+							+ (st0.yy+sp->yy)*eryy
+							+ (st0.xy+sp->xy)*erxy
+							+ (st0.zz+sp->zz)*erzz);
+	
 	// add now
-	mptr->AddWorkEnergy(workEnergy + dispEnergy);
+	mptr->AddWorkEnergyAndResidualEnergy(workEnergy + dispEnergy,resEnergy);
 	
 	// add dissipated energy to plastic energy to the particle
     mptr->AddPlastEnergy(dispEnergy);
@@ -564,8 +570,16 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 								+ (st0.xz+sp->xz)*dgxzp
 								+ (st0.xy+sp->xy)*dgxyp));
 	
+	// Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+	double resEnergy = 0.5*((st0.xx+sp->xx)*erxx
+							+ (st0.yy+sp->yy)*eryy
+							+ (st0.zz+sp->zz)*erzz
+							+ (st0.yz+sp->yz)*eryz
+							+ (st0.xz+sp->xz)*erxz
+							+ (st0.xy+sp->xy)*erxy);
+	
 	// add now
-	mptr->AddWorkEnergy(workEnergy + dispEnergy);
+	mptr->AddWorkEnergyAndResidualEnergy(workEnergy + dispEnergy,resEnergy);
 	
 	// add dissipated energy to plastic energy to the particle
     mptr->AddPlastEnergy(dispEnergy);

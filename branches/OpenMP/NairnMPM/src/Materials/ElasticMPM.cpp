@@ -77,31 +77,29 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 	}
 	Hypo2DCalculations(mptr,-dwrotxy,c1,c2,c3);
     
-	// out of plane stress or strain and energy incrment
+	// work and resdiaul strain energu increments
+	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy + (st0.xy+sp->xy)*dgam);
+	double resEnergy = 0.5*((st0.xx+sp->xx)*erxx + (st0.yy+sp->yy)*eryy + (st0.xy+sp->xy)*erxy);
 	if(np==PLANE_STRAIN_MPM)
 	{	// need to add back terms to get from reduced cte to actual cte
 		sp->zz += p->C[4][1]*(dvxx+p->alpha[5]*erzz)+p->C[4][2]*(dvyy+p->alpha[6]*erzz)
 					+p->C[4][3]*(dgam+p->alpha[7]*erzz)-p->C[4][4]*erzz;
 		
-		// work energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
-		mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
-								   + (st0.xy+sp->xy)*dgam));
+		// extra residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
+		resEnergy += 0.5*(st0.zz+sp->zz)*erzz;
 	}
 	else if(np==PLANE_STRESS_MPM)
 	{	ep->zz += p->C[4][1]*dvxx+p->C[4][2]*dvyy+p->C[4][3]*dgam+erzz;
-		
-		// work energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
-		mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
-								   + (st0.xy+sp->xy)*dgam));
 	}
 	else
 	{	// axisymmetric hoop stress
 		sp->zz += p->C[4][1]*dvxx + p->C[4][2]*dvyy + p->C[4][4]*dvzz + p->C[4][3]*dgam;
 		
-		// work energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
-		mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
-								   + (st0.xy+sp->xy)*dgam) + (st0.zz+sp->zz)*dvzz);
+		// extra work and residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
+		workEnergy += 0.5*(st0.zz+sp->zz)*dvzz;
+		resEnergy += 0.5*(st0.zz+sp->zz)*erzz;
 	}
+	mptr->AddWorkEnergyAndResidualEnergy(workEnergy, resEnergy);
 	
     // track heat energy
     IncrementHeatEnergy(mptr,res->dT,0.,0.);
@@ -136,20 +134,28 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doub
 	double dwrotyz=dvzy-dvyz;
 	
     // residual strains (thermal and moisture) (isotropic only)
-	double dvxxeff = dvzz-p->alpha[0]*res->dT;
-	double dvyyeff = dvyy-p->alpha[1]*res->dT;
-	double dvzzeff = dvzz-p->alpha[2]*res->dT;
-	double dgamyzeff = dgamyz-p->alpha[3]*res->dT;
-	double dgamxzeff = dgamxz-p->alpha[4]*res->dT;
-	double dgamxyeff = dgamxy-p->alpha[5]*res->dT;
+	double exxr = p->alpha[0]*res->dT;
+	double eyyr = p->alpha[1]*res->dT;
+	double ezzr = p->alpha[2]*res->dT;
+	double eyzr = p->alpha[3]*res->dT;
+	double exzr = p->alpha[4]*res->dT;
+	double exyr = p->alpha[5]*res->dT;
 	if(DiffusionTask::active)
-	{	dvxxeff -= p->beta[0]*res->dC;
-		dvyyeff -= p->beta[1]*res->dC;
-		dvzzeff -= p->beta[2]*res->dC;
-		dgamyzeff -= p->beta[3]*res->dC;
-		dgamxzeff -= p->beta[4]*res->dC;
-		dgamxyeff -= p->beta[5]*res->dC;
+	{	exxr += p->beta[0]*res->dC;
+		eyyr += p->beta[1]*res->dC;
+		ezzr += p->beta[2]*res->dC;
+		eyzr += p->beta[3]*res->dC;
+		exzr += p->beta[4]*res->dC;
+		exyr += p->beta[5]*res->dC;
 	}
+	
+	// effective strains
+	double dvxxeff = dvzz-exxr;
+	double dvyyeff = dvyy-eyyr;
+	double dvzzeff = dvzz-ezzr;
+	double dgamyzeff = dgamyz-eyzr;
+	double dgamxzeff = dgamxz-exzr;
+	double dgamxyeff = dgamxy-exyr;
 	
     // save initial stresses
 	Tensor *sp=mptr->GetStressTensor();
@@ -167,12 +173,13 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doub
 	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,delsp);
 	
 	// work energy increment per unit mass (dU/(rho0 V0))
-    mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx
-                            + (st0.yy+sp->yy)*dvyy
-                            + (st0.zz+sp->zz)*dvzz
-                            + (st0.yz+sp->yz)*dgamyz
-                            + (st0.xz+sp->xz)*dgamxz
-                            + (st0.xy+sp->xy)*dgamxy));
+    mptr->AddWorkEnergyAndResidualEnergy(
+						0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
+                            + (st0.zz+sp->zz)*dvzz  + (st0.yz+sp->yz)*dgamyz
+                            + (st0.xz+sp->xz)*dgamxz + (st0.xy+sp->xy)*dgamxy),
+						0.5*((st0.xx+sp->xx)*exxr + (st0.yy+sp->yy)*eyyr
+							 + (st0.zz+sp->zz)*ezzr  + (st0.yz+sp->yz)*eyzr
+							 + (st0.xz+sp->xz)*exzr + (st0.xy+sp->xy)*exyr));
     
     // track heat energy
     IncrementHeatEnergy(mptr,res->dT,0.,0.);

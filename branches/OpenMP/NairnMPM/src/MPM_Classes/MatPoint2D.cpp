@@ -88,7 +88,6 @@ void MatPoint2D::MovePosition(double delTime,Vector *dv)
 	double dy=delTime*dv->y;
 	pos.x+=dx;
     pos.y+=dy;
-    extWork+=dx*pFext.x+dy*pFext.y;
 }
 
 // Move velocity (2D) (in mm/sec) possibly with damping

@@ -272,11 +272,11 @@ double plstrainyz - y-z plane plastic shear strain (dimensionless) (3D only)
 <dd>This setting should always be <code>N</code> otherwise the archive file has an unsupported or invalid format.
 </dd>
 
-<dt>Byte 8: Particle external work</dt>
-<dd>Setting <code>Y</code> stores total external work (which is only non-zero if the material point had an applied external force):
+<dt>Byte 8: Particle work energy</dt>
+<dd>Setting <code>Y</code> stores total work energy (or cummulative &sigma;.d&epsilon;):
 
 <pre class="near">
-double extwork - cumulative external work (J)
+double workEnergy - cumulative work energy (J)
 </pre>
 </dd>
 
@@ -357,11 +357,11 @@ double dcdz - particle concentration gradient (dc/dz) (3D only)
 </pre>
 </dd>
 
-<dt>Byte 16: Particle thermal energy</dt>
-<dd>Setting <code>Y</code> stores approximate energy to to temperature change:
+<dt>Byte 16: Particle heat energy</dt>
+<dd>Setting <code>Y</code> stores particle heat energy:
 
 <pre class="near">
-double thermalEnergy - cumulative thermal energy (J)
+double heatEnergy - cumulative thermal energy (J)
 </pre>
 </dd>
 

@@ -31,7 +31,7 @@
 	Input Variables
 		theElements[], firstCrack..., transportTask...
 		mpm[]->vel, pTemperature, pConcentration, volume
-		theMaterial[]->GetHeatCapacity()
+		theMaterial[]->GetCpHeatCapacity()
 		
 	Output Variables
 		mpm[]->ncpos
