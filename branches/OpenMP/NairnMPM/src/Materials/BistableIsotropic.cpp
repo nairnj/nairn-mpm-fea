@@ -35,6 +35,8 @@ BistableIsotropic::BistableIsotropic(char *matName) : IsotropicMat(matName)
 	kCond0=0;
 	beta0=0.;
 	betad=0.;
+	a0=40.;
+	ad=0.;
 }
 
 #pragma mark BistableIsotropic::Initialization

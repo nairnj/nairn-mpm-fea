@@ -10,12 +10,12 @@ Header
 EndHeader
 
 ! "Plane Strain MPM" or "3D MPM"
-#analysis="Plane Strain MPM"
-Analysis #analysis
+#analysis$="Plane Strain MPM"
+Analysis #analysis$
 MPMMethod USF,lCPDI
 
 ! ********** Parameters Section **********
-#matID="idealgas"		    ! can be "idealgas" or "liquid"
+#matID$="idealgas"		    ! can be "idealgas" or "liquid"
 #strain=-50				! strain
 #tmult=20
 
@@ -30,7 +30,7 @@ StressFreeTemp 300
 conduction "Yes","Isothermal"
 
 ! calculate wave speed (mm/sec)
-if #matID="idealgas"
+if #matID$="idealgas"
   #P0=.101
   #T0=288.15
   #rho0=0.001164
@@ -46,14 +46,14 @@ endif
 #disprate=1000*#disp/#time               ! displacement rate mm/s
 
 ! Archiving
-Archive "Results/"&#matID
+Archive "Results/"&#matID$
 TimeStep 1000,#time,.05
 ArchiveTime #time/40
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain,temperature,history1,heatenergy
 
 ! ********** Materials Section **********
-if #matID="idealgas"
-  Material #matID,"Ideal Gas","idealgas"
+if #matID$="idealgas"
+  Material #matID$,"Ideal Gas","idealgas"
     rho #rho0
     P0 #P0
     T0 #T0
@@ -91,10 +91,10 @@ Material "wallz","Wall","Rigid"
 Done
 
 ! global archive
-GlobalArchive sxx,#matID
-GlobalArchive exx,#matID
-GlobalArchive "Strain Energy",#matID
-GlobalArchive "Plastic Energy",#matID			! entropy here
+GlobalArchive sxx,#matID$
+GlobalArchive exx,#matID$
+GlobalArchive "Strain Energy",#matID$
+GlobalArchive "Entropy",#matID$
 GlobalArchiveTime #time/100
 
 ! ********** Grid and Material Points Section **********
@@ -111,11 +111,11 @@ endif
 #xcells=int((#length+#excess)/#cell+.5)+1
 GridHoriz #xcells
 GridVert #ycells
-if #analysis="3D MPM"
+if #analysis$="3D MPM"
   GridDepth #zcells
   GridRect -#cell,#length+#excess,-2*#cell,#ywidth+2*#cell,-2*#cell,#zwidth+2*#cell
 
-  Region #matID,0,0,0,"temp",#startTemp
+  Region #matID$,0,0,0,"temp",#startTemp
     Box 0,#length,0,#ywidth,0,#zwidth
   EndRegion
 
@@ -140,7 +140,7 @@ else
   GridThickness #zwidth
   GridRect -#cell,#length+#excess,-2*#cell,#ywidth+2*#cell
 
-  Region #matID,0,0,#zwidth,"temp",#startTemp
+  Region #matID$,0,0,#zwidth,"temp",#startTemp
     Rect 0,#length,0,#ywidth
   EndRegion
 
@@ -158,12 +158,5 @@ else
   EndRegion
 endif
 
-XMLData
-
-  <CustomTasks>
-    <Schedule name='AdjustTimeStep'>
-      <Parameter name='verbose'>1</Parameter>
-    </Schedule>
-  </CustomTasks>
-EndXMLData
-
+CustomTask AdjustTimeStep
+Parameter verbose,1

@@ -17,6 +17,8 @@
 
 <h1>Scheduling Custom Tasks</h1>
 
+<p class="osupdocs">Deprecated documentation: this section, and all hardening law definitions, is in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Input_Files#Custom_Tasks">OSUPDocs Wiki</a>.</p>
+
 <p>NairnMPM supports custom tasks that are performed at the end of each time step. The tasks can range from simple calculations to iterations over all material points and nodes. Some built-in operations (such as <a href="mpmheader.html#propagate">crack propagation</a>, <a href="mpmheader.html#diffusion">diffusion</a>, and <a href="thermal.html">conduction</a>) are handled by custom tasks and are automatically scheduled by other commands. Alternatively custom tasks can be written by users working with NairnMPM source code and then scheduled when needed.</p>
 
 <p>The format for scheduling any available custom task is as follows:</p>
