@@ -26,6 +26,11 @@ public class MPMGridBCs
 	public static final int MOVEARC_BC=2;
 	public static final int MOVEBOX_BC=3;
 	
+	public static final int LOADLINE_BC=11;
+	public static final int LOADARC_BC=12;
+	public static final int LOADRECT_BC=14;
+	public static final int LOADBOX_BC=13;
+	
 	public static final int ADD_TEMPERATURE=1;
 	public static final int ADD_CONCENTRATION=2;
 	
@@ -57,11 +62,14 @@ public class MPMGridBCs
 		doc.requiresMPM(args);
 
 	    // verify not nested
-	    if(inBC != 0)
+		if(inBC!=0 && theType<LOADLINE_BC)
 	    	throw new Exception("MoveLine, MoveArc, and MoveBox cannot be nested:\n"+args);
+		else if(doc.mpmParticleBCs.getInBC()!=0 && theType>=LOADLINE_BC)
+	    	throw new Exception("LoadLine, LoadArc, LoadRect, and LoadBox cannot be nested:\n"+args);
 	    
 	    // needs at least 4 arguments
-	    if((theType==MOVELINE_BC && args.size()<5) || (theType==MOVEARC_BC && args.size()<7))
+	    if(((theType==MOVELINE_BC || theType==LOADLINE_BC) && args.size()<5)
+	    		|| ((theType==MOVEARC_BC || theType==LOADARC_BC) && args.size()<7))
 	    	throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 	    
 	    // get x1,y1,x2,y2
@@ -71,13 +79,28 @@ public class MPMGridBCs
 	    double y2 = doc.readDoubleArg(args.get(4));
 	    
 	    double tolerance = -1.,startAng=0.,endAng=0.;
-	    if(theType==MOVELINE_BC)
+	    if(theType==MOVELINE_BC || theType==LOADLINE_BC)
 	    {	// get optional tolerance
 	    	if(args.size()>5)
 	    		tolerance = doc.readDoubleArg(args.get(5));
-	    	bcAttrs = "<BCLine x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"'";
-		    inBC = MOVELINE_BC;
-		    bcCmd = "BCLine";
+	    	if(theType==MOVELINE_BC)
+	    	{	bcAttrs = "<BCLine x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"'";
+	    		if(tolerance > 0.)
+	    			bcAttrs = bcAttrs + " tolerance='" + tolerance + "'>\n";
+	    		else
+	    			bcAttrs = bcAttrs + ">\n";
+	    		bcSettings = new StringBuffer("");
+	    		inBC = MOVELINE_BC;
+	    		bcCmd = "BCLine";
+	    	}
+	    	else
+		    {	String theAttrs = "<BCLine x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"'";
+	   			if(tolerance > 0.)
+	   				theAttrs = theAttrs + " tolerance='" + tolerance + "'>\n";
+	   			else
+	   				theAttrs = theAttrs + ">\n";
+	   			doc.mpmParticleBCs.SetLoadLine(theAttrs,MPMParticleBCs.LOADLINE_BC,"BCLine");
+		    }
 	    }
 	    else
 	    {	// angles
@@ -85,36 +108,42 @@ public class MPMGridBCs
 	    	endAng = doc.readDoubleArg(args.get(6));
 	    	if(args.size()>7)
 	    		tolerance = doc.readDoubleArg(args.get(7));
-	    	bcAttrs = "<BCArc x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"' start='"
-	    					+startAng+"' end='"+endAng+"'";
-		    inBC = MOVEARC_BC;
-		    bcCmd = "BCArc";
+	    	if(theType==MOVEARC_BC)
+	    	{	bcAttrs = "<BCArc x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"' start='"
+	    						+startAng+"' end='"+endAng+"'";
+	    		if(tolerance > 0.)
+	    			bcAttrs = bcAttrs + " tolerance='" + tolerance + "'>\n";
+	    		else
+	    			bcAttrs = bcAttrs + ">\n";
+	    		bcSettings = new StringBuffer("");
+	    		inBC = MOVEARC_BC;
+	    		bcCmd = "BCArc";
+	    	}
+	    	else
+	    	{	String theAttrs = "<BCArc x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"' start='"
+								+startAng+"' end='"+endAng+"'";
+	    		if(tolerance > 0.)
+	    			theAttrs = theAttrs + " tolerance='" + tolerance + "'>\n";
+	    		else
+	    			theAttrs = theAttrs + ">\n";
+	   			doc.mpmParticleBCs.SetLoadLine(theAttrs,MPMParticleBCs.LOADARC_BC,"BCArc");
+	    	}
 	    }
-	    
-	    // optional tolerance
-    	if(tolerance > 0.)
-    		bcAttrs = bcAttrs + " tolerance='" + tolerance + "'>\n";
-    	else
-    		bcAttrs = bcAttrs + ">\n";
-        bcSettings = new StringBuffer("");
  	}
 	
 	// start grid BC line
-	public void StartMoveArc(ArrayList<String> args) throws Exception
-	{	throw new Exception("MoveArc command not implemented yet.");
-	}
-	
-	// start grid BC line
-	public void StartMoveBox(ArrayList<String> args) throws Exception
+	public void StartMoveBox(ArrayList<String> args,int theType) throws Exception
 	{	
 		// MPM Only
 		doc.requiresMPM(args);
 		if(!doc.isMPM3D())
-			throw new Exception("MoveBox only allowed in 3D MPM:\n"+args);
+			throw new Exception("MoveBox and LoadBox only allowed in 3D MPM:\n"+args);
 
 		// verify not nested
-		if(inBC != 0)
+		if(inBC != 0 && theType==MOVEBOX_BC)
 			throw new Exception("MoveLine, MoveArc, and MoveBox cannot be nested:\n"+args);
+		else if(doc.mpmParticleBCs.getInBC()!=0 && theType==LOADBOX_BC)
+			throw new Exception("LoadLine, LoadArc, LoadRect, and LoadBox cannot be nested:\n"+args);
     
 		// needs at least 6 arguments
 		if(args.size()<7)
@@ -137,18 +166,27 @@ public class MPMGridBCs
 			options.put("z", new Integer(3));
 			axis = doc.readIntOption(args.get(7),options,"Cylinder axis");
 			if(axis<1 || axis>3)
-				throw new Exception("'MoveBox' cylinder axis is not valis:\n"+args);
+				throw new Exception("'"+args.get(0)+"' cylinder axis is not valid:\n"+args);
 		}
     
-		bcAttrs = "<BCBox xmin='"+x1+"' ymin='"+y1+"' zmin='"+z1+"' xmax='"+x2+"' ymax='"+y2+"' zmax='"+z2+"'";
-		if(axis > 0)
-			bcAttrs = bcAttrs + " axis='" + axis + "'>\n";
+		if(theType==MOVEBOX_BC)
+		{	bcAttrs = "<BCBox xmin='"+x1+"' ymin='"+y1+"' zmin='"+z1+"' xmax='"+x2+"' ymax='"+y2+"' zmax='"+z2+"'";
+			if(axis > 0)
+				bcAttrs = bcAttrs + " axis='" + axis + "'>\n";
+			else
+				bcAttrs = bcAttrs + ">\n";
+			bcSettings = new StringBuffer("");
+			inBC = MOVEBOX_BC;
+			bcCmd = "BCBox";
+		}
 		else
-			bcAttrs = bcAttrs + ">\n";
-		bcSettings = new StringBuffer("");
-	
-		inBC = MOVEBOX_BC;
-		bcCmd = "BCBox";
+		{	String theAttrs = "<BCBox xmin='"+x1+"' ymin='"+y1+"' zmin='"+z1+"' xmax='"+x2+"' ymax='"+y2+"' zmax='"+z2+"'";
+			if(axis > 0)
+				theAttrs = theAttrs + " axis='" + axis + "'>\n";
+			else
+				theAttrs = theAttrs + ">\n";
+			doc.mpmParticleBCs.SetLoadLine(theAttrs,MPMParticleBCs.LOADBOX_BC,"BCBox");
+		}
 	}
 
 	// MoveLine, MoveArc, or MoveBox is done

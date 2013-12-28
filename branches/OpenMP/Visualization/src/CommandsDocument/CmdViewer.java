@@ -48,8 +48,8 @@ public class CmdViewer extends JNCmdTextDocument
 	public MPMGrid gridinfo = null;
 	private FEABCs feaBCs = null;
 	private MPMGridBCs mpmGridBCs = null;
-	private MPMParticleBCs mpmParticleBCs = null;
-	private Cracks cracks = null;
+	public MPMParticleBCs mpmParticleBCs = null;
+	public Cracks cracks = null;
 	private StringBuffer outFlags;
 	private int mpmMethod;
 	private String shapeMethod;
@@ -80,7 +80,7 @@ public class CmdViewer extends JNCmdTextDocument
 	private double MMRigidBias;
 	private String ContactPosition;
 	private String FrictionMM;
-	private String Friction;
+	private StringBuffer customTasks;
 	
 	// constants
 	public static final int PLANE_STRAIN=0;
@@ -321,7 +321,7 @@ public class CmdViewer extends JNCmdTextDocument
 		MMRigidBias = 1.0;
 		ContactPosition = null;
 		FrictionMM = null;
-		Friction = null;
+		customTasks = new StringBuffer("");
 	}
 	
 	// handle commands
@@ -494,7 +494,7 @@ public class CmdViewer extends JNCmdTextDocument
 			mpmGridBCs.StartMoveLine(args,MPMGridBCs.MOVEARC_BC);
 		
 		else if(theCmd.equals("movebox"))
-			mpmGridBCs.StartMoveBox(args);
+			mpmGridBCs.StartMoveBox(args,MPMGridBCs.MOVEBOX_BC);
 		
 		else if(theCmd.equals("endmoveline"))
 			mpmGridBCs.EndMoveBlock(args,MPMGridBCs.MOVELINE_BC);
@@ -518,10 +518,31 @@ public class CmdViewer extends JNCmdTextDocument
 			mpmGridBCs.AddTempConc(args,MPMGridBCs.ADD_TEMPERATURE);
 
 		else if(theCmd.equals("loadline"))
-			mpmParticleBCs.StartLoadLine(args);
+			mpmGridBCs.StartMoveLine(args,MPMGridBCs.LOADLINE_BC);
+		
+		else if(theCmd.equals("loadarc"))
+			mpmGridBCs.StartMoveLine(args,MPMGridBCs.LOADARC_BC);
+		
+		else if(theCmd.equals("loadbox"))
+			mpmGridBCs.StartMoveBox(args,MPMGridBCs.LOADBOX_BC);
+		
+		else if(theCmd.equals("loadrect"))
+			mpmParticleBCs.StartLoadRect(args);
+		
+		else if(theCmd.equals("loadtype"))
+			mpmParticleBCs.doLoadType(args);
 		
 		else if(theCmd.equals("endloadline"))
 			mpmParticleBCs.EndLoadBlock(args,MPMParticleBCs.LOADLINE_BC);
+		
+		else if(theCmd.equals("endloadarc"))
+			mpmParticleBCs.EndLoadBlock(args,MPMParticleBCs.LOADARC_BC);
+		
+		else if(theCmd.equals("endloadrect"))
+			mpmParticleBCs.EndLoadBlock(args,MPMParticleBCs.LOADRECT_BC);
+		
+		else if(theCmd.equals("endloadbox"))
+			mpmParticleBCs.EndLoadBlock(args,MPMParticleBCs.LOADBOX_BC);
 		
 		else if(theCmd.equals("traction"))
 			mpmParticleBCs.AddCondition(args,MPMParticleBCs.ADD_TRACTION);
@@ -631,6 +652,9 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("imperfectinterfacemm"))
 			doImperfectInterface(args,1);
 
+		else if(theCmd.equals("crackinterface"))
+			doImperfectInterface(args,3);
+
 		else if(theCmd.equals("jcontour"))
 			cracks.doJContour(args);
 		
@@ -642,6 +666,27 @@ public class CmdViewer extends JNCmdTextDocument
 
 		else if(theCmd.equals("growcrackline"))
 			cracks.GrowCrack(args,1);
+		
+		else if(theCmd.equals("crackthickness"))
+			cracks.doCrackThickness(args);
+		
+		else if(theCmd.equals("propagate"))
+			cracks.doPropagate(args,false);
+		
+		else if(theCmd.equals("altpropagate"))
+			cracks.doPropagate(args,true);
+		
+		else if(theCmd.equals("moveplane"))
+			cracks.doMovePlane(args);
+		
+		else if(theCmd.equals("propagatelength"))
+			cracks.doProagateLength(args);
+		
+		else if(theCmd.equals("customtask"))
+			doCustomTask(args);
+
+		else if(theCmd.equals("parameter"))
+			doParameter(args);
 
 		else if(theCmd.equals("stop"))
 		{	super.doCommand(theCmd,args);
@@ -1000,7 +1045,7 @@ public class CmdViewer extends JNCmdTextDocument
 	// Valid are: Header, Mesh, MPMHeader, MaterialPoints, CrackList, Material (must have ID)
 	//		GridBCs, ParticleBCs, Thermal, Gravity, CustomTasks, end (just append to end)
 	public void doXmldata(ArrayList<String> args) throws Exception
-	{
+	{	
 		String section = "end";
 		if(args.size()>1)
 			section = readStringArg(args.get(1));
@@ -1232,7 +1277,7 @@ public class CmdViewer extends JNCmdTextDocument
 	}
 	
 	// Friction (number or stick, single (ignore), none),<material ID (only as material prop)>
-	// MMMode = 0 (cracks), 1 (multimaterial), 2 (material property)
+	// MMMode = 0 (cracks), 1 (multimaterial), 2 (material property), 3 an attribute
 	public String doFriction(ArrayList<String> args,int MMMode) throws Exception
 	{	// MPM Only
 		requiresMPM(args);
@@ -1280,13 +1325,15 @@ public class CmdViewer extends JNCmdTextDocument
 		String cmd = "      <Friction>"+frict+"</Friction>\n";
 		if(MMMode==1)
 			FrictionMM = cmd;
+		else if(MMMode==0)
+			cracks.setFriction(cmd);
 		else
-			Friction = cmd;
+			return " frict='"+frict+"'";
 		return null;
 	}
 	
 	// ImperfectInterface Dt,Dn,<Dnc>
-	// MMMode = 0 (cracks), 1 (multimaterial), 2 (material property)
+	// MMMode = 0 (cracks), 1 (multimaterial), 2 (material property), 3 (CrackInterface commmand)
 	public String doImperfectInterface(ArrayList<String> args,int MMMode) throws Exception
 	{	// MPM Only
 		requiresMPM(args);
@@ -1312,6 +1359,13 @@ public class CmdViewer extends JNCmdTextDocument
 			cmd = "    <Friction Dt='"+Dt+"' Dnt='"+Dnt+"' Dnc='"+Dnc+
 					"' mat='"+matnum+"'>11</Friction>\n";
 		}
+		else if(MMMode==3)
+		{	if(args.size()>3)
+				cracks.setCrackFriction(args," Dt='"+Dt+"' Dnt='"+Dnt+"' Dnc='"+Dnc+"'");
+			else
+				cracks.setCrackFriction(args," Dt='"+Dt+"' Dnt='"+Dnt+"'");
+			return null;
+		}
 		else
 		{	if(args.size()>3)
 				cmd = "      <Friction Dt='"+Dt+"' Dnt='"+Dnt+"' Dnc='"+Dnc+"'>11</Friction>\n";
@@ -1321,7 +1375,7 @@ public class CmdViewer extends JNCmdTextDocument
 			if(MMMode==1)
 				FrictionMM = cmd;
 			else
-				Friction = cmd;
+				cracks.setFriction(cmd);
 		}
 		
 		return cmd;
@@ -1457,7 +1511,50 @@ public class CmdViewer extends JNCmdTextDocument
 		if(hasFriction) conduction = conduction + "    <ContactHeating/>\n";
 		if(hasCrackFriction) conduction = conduction + "    <CrackContactHeating/>\n";
 	}
-
+	
+	// CustomTask name
+	public void doCustomTask(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+		
+		// read task name
+		if(args.size()<2)
+			throw new Exception("'"+args.get(0)+"' is missing a custom task name:\n"+args);
+		String taskName = readStringArg(args.get(1));
+		
+		// finish last task
+		if(customTasks.length()>0)
+		{	customTasks.append("    </Schedule>\n");
+		}
+		
+		// start new custom task
+		customTasks.append("    <Schedule name='"+taskName+"'>\n");
+	}
+	
+	// Parameter #1,<#2>
+	public void doParameter(ArrayList<String> args) throws Exception
+	{	// MPM Only
+		requiresMPM(args);
+		
+		// must be in custom task
+		if(customTasks.length()==0)
+			throw new Exception("'"+args.get(0)+"' must can after CustomTask command:\n"+args);
+		
+		// read task name
+		if(args.size()<2)
+			throw new Exception("'"+args.get(0)+"' is missing the parameter name:\n"+args);
+		String paramName = readStringArg(args.get(1));
+		
+		// single parameter
+		if(args.size()==2)
+		{	customTasks.append("      <Parameter name='"+paramName+"'/>\n");
+		}
+		else
+		{	String value = readStringArg(args.get(2));
+			customTasks.append("      <Parameter name='"+paramName+"'>"+value+"</Parameter>\n");
+		}
+	}
+	
 	// Gravity <#1>,<#2>,<#3>
 	public void doGravity(ArrayList<String> args) throws Exception
 	{	// MPM Only
@@ -1571,7 +1668,7 @@ public class CmdViewer extends JNCmdTextDocument
 			if(diffusion!=null) xml.append(diffusion);
 			
 			// cracks
-			more = cracks.getSettings();
+			more = cracks.getSettings(MMNormals,ContactPosition);
 			if(more != null) xml.append(more);
 			
 			// Multimaterial mode <MultiMaterialMode Vmin='0.0' Dcheck='0' Normals='0' RigidBias='100'>
@@ -1714,8 +1811,14 @@ public class CmdViewer extends JNCmdTextDocument
 			// MPM: CustomTasks
 			//-----------------------------------------------------------
 			more = xmldata.get("CustomTasks");
-			if(more!=null)
+			if(customTasks.length()>0 || more!=null)
 			{	xml.append("  <CustomTasks>\n");
+			
+				// add tasks
+				if(customTasks.length()>0)
+				{	xml.append(customTasks);
+					xml.append("    </Schedule>\n");
+				}
 
 				// check added xml
 				if(more != null) xml.append(more);

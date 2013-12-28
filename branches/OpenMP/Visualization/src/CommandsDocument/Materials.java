@@ -14,7 +14,10 @@ public class Materials
 	private int numMats;
 	private StringBuffer xmldata;
 	private boolean inMaterial;
+	private int matType;
 	private CmdViewer doc;
+	private int criterion,direction,traction;
+	private int altCriterion,altDirection,altTraction;
 	
 	//----------------------------------------------------------------------------
 	// Initialize
@@ -31,6 +34,12 @@ public class Materials
 		numMats = 0;
 		xmldata = new StringBuffer("");
 		inMaterial = false;
+		criterion = -1;
+		direction = -1;
+		traction = -1;
+		altCriterion = -1;
+		altDirection = -1;
+		altTraction = -1;
 	}
 	
 	//----------------------------------------------------------------------------
@@ -81,12 +90,12 @@ public class Materials
 		options.put("coupledsawtooth", new Integer(23));
 		options.put("heisotropic", new Integer(24));
 		options.put("pressuretraction", new Integer(26));
-		int matInt = doc.readIntOption(args.get(3),options,null);
-		if(matInt<0)
+		matType = doc.readIntOption(args.get(3),options,null);
+		if(matType<0)
 			throw new Exception("'Material' type not yet supported in scripting commands.\nUse XML method instead: "+args);
 		
 		// start the command
-		xmldata.append("  <Material Type='"+matInt+"' Name='"+matName+"'>\n");
+		xmldata.append("  <Material Type='"+matType+"' Name='"+matName+"'>\n");
 		inMaterial = true;
 	}
 	
@@ -111,7 +120,19 @@ public class Materials
 	{
 		// is it done
 		if(theCmd.equals("done"))
-		{	xmldata.append("  </Material>\n\n");
+		{	if(criterion>=0)
+			{	xmldata.append("    <Propagate criterion='"+criterion+"'");
+				if(direction>=0) xmldata.append(" direction='"+direction+"'");
+				if(traction>=0) xmldata.append(" traction='"+traction+"'");
+				xmldata.append("/>\n");
+			}
+			if(altCriterion>=0)
+			{	xmldata.append("    <AltPropagate criterion='"+altCriterion+"'");
+				if(altDirection>=0) xmldata.append(" direction='"+altDirection+"'");
+				if(altTraction>=0) xmldata.append(" traction='"+altTraction+"'");
+				xmldata.append("/>\n");
+			}
+			xmldata.append("  </Material>\n\n");
 			inMaterial = false;
 			return;
 		}
@@ -192,14 +213,52 @@ public class Materials
 			return;
 		}
 		else if(prop.toLowerCase().equals("direction"))
-		{	prop = "SetDirection";
-			// 0 to 8
-			int value = doc.readIntArg(args.get(1));
-			if(value<0 || value>8)
-				throw new Exception("Rigid 'direction' property must integer 0 to 8:\n"+args);
-			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+		{	if(matType==11)
+			{	// in rigid material
+				prop = "SetDirection";
+				// 0 to 8
+				int value = doc.readIntArg(args.get(1));
+				if(value<0 || value>8)
+					throw new Exception("Rigid 'direction' property must integer 0 to 8:\n"+args);
+				xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			}
+			else
+			{	// crack growth direction
+				direction = doc.cracks.decodeDirection(args.get(1));
+			}
 			return;
 		}
+		else if(prop.toLowerCase().equals("altdirection"))
+		{	// alt crack growth direction
+			altDirection = doc.cracks.decodeDirection(args.get(1));
+			return;
+		}
+		else if(prop.toLowerCase().equals("criterion"))
+		{	// propagation criterion
+			criterion = doc.cracks.decodeCriterion(args.get(1));
+			return;
+		}
+		else if(prop.toLowerCase().equals("altcriterion"))
+		{	// propagation criterion
+			altCriterion = doc.cracks.decodeCriterion(args.get(1));
+			return;
+		}
+		else if(prop.toLowerCase().equals("traction"))
+		{	String tract = doc.readStringArg(args.get(1));
+			traction = doc.mats.getMatID(tract);
+			if(traction==-1) traction = doc.readIntArg(args.get(1));
+			if(traction<=0)
+				throw new Exception("'"+args.get(0)+"' material property has unknown traction law material:\n"+args);
+			return;
+		}
+		else if(prop.toLowerCase().equals("alttraction"))
+		{	String tract = doc.readStringArg(args.get(1));
+			altTraction = doc.mats.getMatID(tract);
+			if(altTraction==-1)
+				throw new Exception("'"+args.get(0)+"' material property has unknown traction law material:\n"+args);
+			return;
+		}
+		
 		else if(prop.toLowerCase().equals("temperature"))
 		{	prop = "SetTemperature";
 			// 0 or 1
@@ -215,6 +274,15 @@ public class Materials
 			int value = doc.readIntArg(args.get(1));
 			if(value<0 || value>1)
 				throw new Exception("Rigid 'SetConcentration' property must integer 0 or 1:\n"+args);
+			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("mirrored"))
+		{	prop = "mirrored";
+			//-1, 0, or 1
+			int value = doc.readIntArg(args.get(1));
+			if(value<-1) value = -1;
+			if(value>1) value = 1;
 			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
 			return;
 		}
@@ -236,24 +304,7 @@ public class Materials
 		else if(prop.toLowerCase().equals("artificialvisc"))
 		{	throw new Exception("Scripted ArtificialVisc material property not implemented yet");
 		}
-		else if(prop.toLowerCase().equals("criterion"))
-		{	throw new Exception("Scripted criterion material property not implemented yet");
-		}
-		else if(prop.toLowerCase().equals("altcriterion"))
-		{	throw new Exception("Scripted altcriterion material property not implemented yet");
-		}
-		else if(prop.toLowerCase().equals("direction"))
-		{	throw new Exception("Scripted direction material property not implemented yet");
-		}
-		else if(prop.toLowerCase().equals("altdirection"))
-		{	throw new Exception("Scripted altdirection material property not implemented yet");
-		}
-		else if(prop.toLowerCase().equals("traction"))
-		{	throw new Exception("Scripted traction material property not implemented yet");
-		}
-		else if(prop.toLowerCase().equals("alttraction"))
-		{	throw new Exception("Scripted alttraction material property not implemented yet");
-		}
+		// setting functions
 		else if(prop.toLowerCase().equals("settingfunction") || 
 				prop.toLowerCase().equals("settingfunction1") ||
 				prop.toLowerCase().equals("settingfunctionx"))

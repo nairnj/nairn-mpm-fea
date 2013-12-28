@@ -18,7 +18,6 @@ public class MPMParticleBCs
 	private String bcAttrs;
 	private String bcCmd;
 	private StringBuffer bcSettings;
-
 	private int inBC;
 
 	public static final int LOADLINE_BC=1;
@@ -49,44 +48,41 @@ public class MPMParticleBCs
 	// Initialize
 	//----------------------------------------------------------------------------
 	
-	// start particle BC line
-	// LoadLine x1,y1,x2,y2,(tolerance)
-	public void StartLoadLine(ArrayList<String> args) throws Exception
-	{
-	    // MPM Only
+	// finish Load line and load arc decoded in grid BCs
+	public void SetLoadLine(String theAttrs,int theType,String theCmd)
+	{	bcAttrs = theAttrs;
+		inBC = theType;
+		bcCmd = theCmd;
+		bcSettings = new StringBuffer("");
+	}
+
+	// start grid BC line
+	public void StartLoadRect(ArrayList<String> args) throws Exception
+	{	
+		// MPM Only
 		doc.requiresMPM(args);
 
-	    // verify not nested
-	    if(inBC != 0)
-	    	throw new Exception("LoadLine, LoadArc, LoadRect, and LoadBox cannot be nested:\n"+args);
-	    
-	    // needs at least 4 arguments
-	    if(args.size()<5)
-	    	throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
-	    
-	    // get x1,y1,x2,y2
-	    double x1 = doc.readDoubleArg(args.get(1));
-	    double y1 = doc.readDoubleArg(args.get(2));
-	    double x2 = doc.readDoubleArg(args.get(3));
-	    double y2 = doc.readDoubleArg(args.get(4));
-	    	
-	    // get optional tolerance
-	    double tolerance = -1.;
-	    if(args.size()>5)
-	    	tolerance = doc.readDoubleArg(args.get(5));
-	    
-    	bcAttrs = "<BCLine x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"'";
-    	if(tolerance > 0.)
-    		bcAttrs = bcAttrs + " tolerance='" + tolerance + "'>\n";
-    	else
-    		bcAttrs = bcAttrs + ">\n";
-        bcSettings = new StringBuffer("");
+		// verify not nested
+		if(inBC != 0)
+			throw new Exception("LoadLine, LoadArc, LoadRect, and LoadBox cannot be nested:\n"+args);
+    
+		// needs at least 5 arguments
+		if(args.size()<5)
+			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
+    
+		// get xmin,xmax,ymin,ymax
+		double xmin = doc.readDoubleArg(args.get(1));
+		double xmax = doc.readDoubleArg(args.get(2));
+		double ymin = doc.readDoubleArg(args.get(3));
+		double ymax = doc.readDoubleArg(args.get(4));
     	
-	    inBC = LOADLINE_BC;
-	    bcCmd = "BCLine";
- 	}
+		bcAttrs = "<LdRect xmin='"+xmin+"' xmax='"+xmax+"' ymin='"+ymin+"' ymax='"+ymax+"'>\n";
+		bcSettings = new StringBuffer("");
+		inBC = LOADRECT_BC;
+		bcCmd = "LdRect";
+	}
 
-	// MoveLine, MoveArc, or MoveBox is done
+	// LoadLine, LoadArc, LoadRect or LoadBox is done
 	public void EndLoadBlock(ArrayList<String> args,int endType) throws Exception
 	{
 		if(inBC != endType)
@@ -214,6 +210,29 @@ public class MPMParticleBCs
 		bcSettings.append("/>\n");
 	}
 	
+	public void doLoadType(ArrayList<String> args) throws Exception
+	{
+		// MPM only
+		doc.requiresMPM(args);
+	
+		if(inBC == 0)
+			throw new Exception("'"+args.get(0)+"' command must by in 'LoadLine',\n'LoadArc', 'LoadRect', or 'LoadBox' block:\n"+args);
+		
+		// always needs #1, #2, and #3 (those with face need #4 to)
+		if(args.size()<2)
+	    	throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
+		
+		String netType = doc.readStringArg(args.get(1)).toLowerCase();
+		
+		if(netType.equals("net"))
+			bcSettings.append("      <net/>\n");
+		else if(netType.equals("perparticle"))
+			bcSettings.append("      <perParticle/>\n");
+		else
+	    	throw new Exception("'"+args.get(0)+"' has an invalid options:\n"+args);
+
+	}
+	
 	//----------------------------------------------------------------------------
 	// Accessors
 	//----------------------------------------------------------------------------
@@ -221,6 +240,10 @@ public class MPMParticleBCs
 	// return xml data
 	public String toXMLString()
 	{	return xmlbcs.toString();
+	}
+	
+	public int getInBC()
+	{	return inBC;
 	}
 
 }

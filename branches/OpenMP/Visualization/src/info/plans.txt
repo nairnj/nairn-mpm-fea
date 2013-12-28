@@ -21,26 +21,10 @@ Commands not done
 		Origin
 	Cylinder
 	Sphere
-	Cracks
-		Propagate
-		PropagateLength
-		AltPropagate
-		MovePlane
-		ContactPosition for cracks
-		ImperfectInterface
-		CrackInterface
-		CrackThickness
-		Friction
-		GrowCrackArc
-		GrowCrackLine handle friction option
-	LoadArc
-	LoadBox
-	LoadRect
-	CustomTask
-	Parameter
+	GrowCrackArc
+	Material color and artificial viscosity properties
 
 MPM Tasks
-	Remaining unimplemented material properties
 	Plot traction BCs
 	Silent BCs
 

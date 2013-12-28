@@ -418,11 +418,24 @@ If #1 and #2 are give, the nodes are requenced from the node closest to those x 
 propagation in MPM calculations are:</p>
 
 <ul>
-<li>AltPropagate: Set a second rule for crack propagation and optional propagation direction for models with competing fracture modes.</li>
-<li>ContactPosition: Determines method for detecting contact when using particle displacements.</li>
-<li>CrackInterface: Sets custom interface parameters for a specific crack.</li>
-<li>CrackThickness: Sets crack thickness; only used or needed when crack have traction laws or crack tips release their energy into heat.</li>
-<li>Friction: Set crack contact conditions.</li>
+<li><code>AltPropagate #1,&lt;#2&gt;,&lt;#3&gt;</code><br>
+Set a second rule for crack propagation with competing fracture modes. The parameters are the
+save as for the Propagate command below.</li>
+<li><code>ContactPosition #1</code><br>
+Determines method for detecting crack contact when using particle displacements. Usually omitted
+when all cracks start
+out in contact or 0.8 for moving into contact (default is omitted).</li>
+<li><code>CrackInterface #1,#2,&lt;#3&gt;</code><br>
+Set current crack to use custom imperfect interface properties. #1 is Dt and #2 is #Dn for tangential and
+normal interface parameters. If #3 is given, #2 is
+Dnt and #3 is Dnc for normal interface parameters in tension an compression. All are in MPa/mm.
+<li><code>CrackThickness #1</code><br>
+Sets crack thickness to #1 (in mm); only used or needed when crack has traction laws or crack tips
+release their energy into heat.</li>
+<li><code>Friction #1</code><br>
+Set default crack contact friction properties. #1 is friction coefficient, &quot;stick&quot; for stick
+contact, &quot;single&quot; (or &quot;ignore&quot;) to revert to single velocity field, or &quot;none&quot;
+for frictionless (same as 0) (default 0).</li>
 <li><code>GrowCrack #1,#2,&lt;#3&gt;,&lt;#4&gt;</code><br>
 Extend current crack to (#1,#2) in one segment. #3 can be crack tip material,
 &quot;exterior&quot; (for crack
@@ -436,15 +449,27 @@ that extends beyond object), or invalid ID (no material). #5 is traction law mat
 <li><code>JContour #1,&lt;#2&gt;</code><br>
 Used to set size of J integral contoour (#1 in cells) and whether J integral uses one
 or two terms (#2 = 1 or 2).</li>
-<li>ImperfectInterface: Converts cracks to imperfect interface and sets the interfacial properties.</li>
-<li>MovePlane: Used to set how crack plane particles move.</li>
+<li><code>ImperfectInterface #1,#2,&lt;#3&gt;</code><br>
+Set default properties for crack surfaces to model an imperfect interface. #1 is Dt and #2 is #Dn for tangential and
+normal interface parameters. If #3 is given, #2 is
+Dnt and #3 is Dnc for normal interface parameters in tension an compression. All are in MPa/mm.
+<li><code>MovePlane #1,&lt;#2&gt;</code><br>
+Used to set how crack plane particles move where #1 is "avg" or "cm" to move to average of crack surfaces
+or to move in the center of mass velocity field, and #2 is "yes" or "no" to prevent crack surfaces from
+crossing the main crack plane.</li>
 <li><code>NewCrack #1,#2,&lt;#3&gt;,&lt;#4&gt;,&lt;#5&gt;</code><br>
 Start new crack at (#1,#2). #3 can be crack tip material, &quot;fixed&quot; (to be fixed crack),
 &quot;exterior&quot; (for crack
 that extends beyond object), or &quot;free&quot; (no material). #4 can be friction setting or
 &quot;traction&quot;. If #4 is &quot;traction&quot;, #5 is traction law material.</li>
-<li>Propagate: Set rule for crack propagation and optional propagation direction.</li>
-<li>PropagateLength: Determines the amount of crack growth each time the crack propagates.</li>
+<li><code>Propagate #1,&lt;#2&gt;,&lt;#3&gt;</code><br>
+Activate and select crack propagation method. #1 is criterion (by name or number 0="none",
+1="max energy release", 2="steady state", 3="energy balance", 4="energy density", 5="ellipical",
+6="max ctod", and 7="critical err"), #2 is crack growth direction (by name or number 0="default",
+1="self similar", 2="cod normal", 3="cod hoop", 4="initial" and it is 0 if omitted), and optional
+#3 (for a material ID) is to leave traction law in wake of propagaion.</li>
+<li><code>PropagateLength #1</code><br>
+Determines the amount of crack growth each time a crack propagates, where #1 is relative to cell dimensions</li>
 <li><code>ToArchive #1,&lt;#2&gt;,...</code><br>
 Specify crack parameters to be archived in MPM calculations. The list can be in multiple arguments and/or in multiple ToArchive commands. The archiving options for crack paramters are jintegral, stressintensity, and energybalance.</li>
 </ul>
@@ -646,9 +671,18 @@ arguments in #3 and #4.</li>
 <li><code>Load #1,#2,#3,&lt;#4&gt;</code><br>
 Apply force to selected particles in direction #1 with style #2 and arguments in #3 and #4.</li>
 
-<li>LoadArc ... EndLoadArc: Apply force or concentration flux conditions to particles near an arc.</li>
+<li><code>LoadArc #1,#2,#3,#4,#5,#6,&lt;#7&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+EndLoadArc</code><br>
+Apply force, traction, or flux conditions to nodes along an arc inside an oval with corners at
+(#1,#2) and (#3,#4) drawn between angles #5 and #6 (in dergrees) with optional tolerance #7.</li>
 
-<li>LoadBox ... EndLoadBox: Apply force or concentration flux conditions to particles within a 3D box.</li>
+<li><code>LoadBox #1,#2,#3,#4,#5,#6,&lt;#7;&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+EndLoadBox</code><br>
+Apply force or concentration flux conditions to particles within a 3D box with corners
+(#1,#2,#3) and (#4,#5,#6). If #7 is used it mut be x, y, or z (or 1, 2, or 3) and will convert
+box to cylinder with axis along the specified direction.</li>
 
 <li><code>LoadLine #1,#2,#3,#4,&lt;#5&gt;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;...<br>
@@ -656,13 +690,20 @@ EndLoadLine</code><br>
 Apply force or flux conditions to particles near a line from (#1,#2) to (#3,#4) with tolerance
 #5.</li>
 
-<li>LoadRect ... EndLoadRect: Apply force or concentration flux conditions to particles within a rectangle.</li>
+<li><code>LoadRect #1,#2,#3,#4,&lt;#5&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+EndLoadRect</code><br>
+Apply force or flux conditions to particles in rectange with x range #1 to #2 and y range from
+#3 to #4.</li>
+
+<li><code>LoadType #1</code><br>
+Specify loads in current shape command as "net" loads or "perParticle" loads.</li>
 
 <li><code>MoveArc #1,#2,#3,#4,#5,#6,&lt;#7&gt;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;...<br>
 EndMoveArc</code><br>
-Apply velocity, temperature, or concentration conditions to nodes along an inside oval with corners at
-(#1,#2) and (#3,#4) draw between angles #5 and #6 (in dergrees) with optional tolerance #5.</li>
+Apply velocity, temperature, or concentration conditions to nodes along an arc inside an oval with corners at
+(#1,#2) and (#3,#4) draw between angles #5 and #6 (in dergrees) with optional tolerance #7.</li>
 
 <li><code>MoveBox #1,#2,#3,#4,#5,#6,&lt;#7;&gt;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;...<br>
@@ -746,10 +787,13 @@ Apply stress boundary conditions to faces of <a href="#fixline">selected element
 <p>These commands are used to schedule custom tasks that are run at the end of each time step in MPM calculations.</p>
 
 <ul>
-<li>CustomTask: Schedule a custom task and documentation on all possible custom tasks.
+<li><code>CustomTask #1</code><br>
+Schedule a custom task with name in #1.
 </li>
 
-<li>Parameter: set a parameter for the current custom task.
+<li><code>Parameter #1,&lt;#2&gt;</code><br>
+Add parameter with name #1 to the current custom task with value #2, which is optional becaause some
+custom taks parameters do not take a value.
 </li>
 
 </ul>
