@@ -238,17 +238,18 @@ public class Regions
 		xmlRegions.append(indent+"    <pt units='mm' x='"+x+"' y='"+y+"'/>\n");
 	}
 
-	// add shape for Rect #1,#2,#3,#4
-	public void AddBox(ArrayList<String> args) throws Exception
+	// add shape for Box #1,#2,#3,#4,#5,#6 or Sphere
+	// Cylinder #1,#2,#3,#4,#5,#6,#7,#8
+	public void AddBox(ArrayList<String> args,String shape) throws Exception
 	{	// times not allowed
 		if(inRegion == 0)
-			throw new Exception("'Box' command is only allowed within a region block:\n"+args);
+			throw new Exception("'"+shape+"' command is only allowed within a region block:\n"+args);
 		if(!doc.isMPM3D())
-			throw new Exception("'Box' command is only allowed within 3D MPM:\n"+args);
+			throw new Exception("'"+shape+"' command is only allowed within 3D MPM:\n"+args);
 		
 		// four numbers
 		if(args.size()<7)
-			throw new Exception("'Box' command has too few parameters: "+args);
+			throw new Exception("'"+shape+"' command has too few parameters: "+args);
 		double xmin = doc.readDoubleArg(args.get(1));
 		double xmax = doc.readDoubleArg(args.get(2));
 		double ymin = doc.readDoubleArg(args.get(3));
@@ -257,9 +258,17 @@ public class Regions
 		double zmax = doc.readDoubleArg(args.get(6));
 		
 		// add it
-		xmlRegions.append(indent+"  <Box units='mm' xmin='"+xmin+"' xmax='"+xmax+"'");
+		xmlRegions.append(indent+"  <"+shape+" units='mm' xmin='"+xmin+"' xmax='"+xmax+"'");
 		xmlRegions.append(" ymin='"+ymin+"' ymax='"+ymax+"'");
-		xmlRegions.append(" zmin='"+zmin+"' zmax='"+zmax+"'/>\n");
+		xmlRegions.append(" zmin='"+zmin+"' zmax='"+zmax+"'");
+		if(shape.equals("Cylinder"))
+		{	if(args.size()<8)
+				throw new Exception("'"+shape+"' command has too few parameters: "+args);
+			xmlRegions.append(" axis='"+doc.readIntArg(args.get(7))+"'");
+			if(args.size()>8)
+				xmlRegions.append(" radius='"+doc.readDoubleArg(args.get(8))+"'");
+		}
+		xmlRegions.append("/>\n");
 	}
 	
 	// insert XML

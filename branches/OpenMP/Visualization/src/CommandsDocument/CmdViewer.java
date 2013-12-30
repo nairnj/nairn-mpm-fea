@@ -584,7 +584,13 @@ public class CmdViewer extends JNCmdTextDocument
 			regions.AddPolypoint(args);
 		
 		else if(theCmd.equals("box"))
-			regions.AddBox(args);
+			regions.AddBox(args,"Box");
+		
+		else if(theCmd.equals("cylinder"))
+			regions.AddBox(args,"Cylinder");
+		
+		else if(theCmd.equals("sphere"))
+			regions.AddBox(args,"Sphere");
 		
 		else if(theCmd.equals("gridhoriz"))
 			gridinfo.doGridAxis(args,0);
@@ -1619,6 +1625,8 @@ public class CmdViewer extends JNCmdTextDocument
 		xml.append("    </Description>\n");
 		xml.append("    <Analysis>"+np+"</Analysis>\n");
 		if(outFlags!=null) xml.append("    <Output>"+outFlags+"</Output>\n");
+		more = xmldata.get("Header");
+		if(more != null) xml.append(more);
 		xml.append("  </Header>\n\n");
 		
 		// FEA section: Mesh
@@ -1946,7 +1954,7 @@ public class CmdViewer extends JNCmdTextDocument
 	{	private static final long serialVersionUID = 1L;
 
 		public InterpretCommandsAction()
-		{	super("Interpret Commands...",KeyEvent.VK_E);
+		{	super("Interpret Commands...",KeyEvent.VK_I);
 		}
  
 		public void actionPerformed(ActionEvent e) { runNFMAnalysis(false,NFMAnalysis.INTERPRET_ONLY); }

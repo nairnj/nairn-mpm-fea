@@ -13,6 +13,10 @@ public class MPMGrid
 	private CmdViewer doc;
 	private int[] ncells;
 	private double[] ratios;
+	private double[] symmin;
+	private double[] symmax;
+	private boolean[] hasmin;
+	private boolean[] hasmax;
 	private double xmin,xmax,ymin,ymax,zmin,zmax;
 	private boolean hasGrid;
 	double thickness;
@@ -26,6 +30,10 @@ public class MPMGrid
 		doc = cmdDoc;
 		ncells = new int[3];
 		ratios = new double[3];
+		symmin = new double[3];
+		symmax = new double[3];
+		hasmin = new boolean[3];
+		hasmax = new boolean[3];
 	}
 	
 	public void initRunSettings()
@@ -36,6 +44,12 @@ public class MPMGrid
 		ratios[1] = 1.;
 		ratios[2] = 1.;
 		thickness = -1.;
+		hasmin[0] = false;
+		hasmin[1] = false;
+		hasmin[2] = false;
+		hasmax[0] = false;
+		hasmax[1] = false;
+		hasmax[2] = false;
 		hasGrid = false;
 	}
 	
@@ -55,14 +69,35 @@ public class MPMGrid
 	    
 	    // number of cells
 	    ncells[axis] = doc.readIntArg(args.get(1));
+	    ratios[axis] = 1.;
 	    
-	    // ratios
+	    // symmetry planes
 	    if(args.size()>2)
-	    	ratios[axis] = doc.readDoubleArg(args.get(2));
-	    
-	    // validity?
-	    if(ncells[axis]<1 || ratios[axis]==0.)
-	    	throw new Exception("The grid parameters are invalid:\n"+args);
+	    {	double sym = doc.readDoubleArg(args.get(2));
+	    	int symdir = -1;
+	    	if(args.size()>3) symdir = doc.readIntArg(args.get(3));
+	    	if(symdir==-1)
+	    	{	hasmin[axis]=true;
+	    		symmin[axis]=sym;
+	    	}
+	    	else if(symdir==1)
+	    	{	hasmax[axis]=true;
+	    		symmax[axis]=sym;
+	    	}
+	    	else
+	    		throw new Exception("'"+args.get(0)+"' has invalid symmetry direction:\n"+args);
+	    	if(args.size()>4)
+	    	{	sym = doc.readDoubleArg(args.get(4));
+	    		if(symdir==-1)
+	    		{	hasmax[axis]=true;
+	    			symmax[axis]=sym;
+	    		}
+	    		else if(symdir==1)
+	    		{	hasmin[axis]=true;
+	    			symmin[axis]=sym;
+	    		}
+	    	}
+	    }
 	}
 	
 	// GridRect xmin,xmax,ymin,ymax (zmin,zmax if 3D)
@@ -141,10 +176,20 @@ public class MPMGrid
 		xml.append(">\n");
 		
 		// Horiz, Vert, Depth elements
-		xml.append("      <Horiz nx='"+ncells[0]+"' rx='1'/>\n");
-		xml.append("      <Vert ny='"+ncells[1]+"' ry='1'/>\n");
+		xml.append("      <Horiz nx='"+ncells[0]+"'");
+		if(hasmin[0]) xml.append(" symmin='"+symmin[0]+"'");
+		if(hasmax[0]) xml.append(" symmax='"+symmax[0]+"'");
+		xml.append("/>\n");
+		xml.append("      <Vert ny='"+ncells[1]+"'");
+		if(hasmin[1]) xml.append(" symmin='"+symmin[1]+"'");
+		if(hasmax[1]) xml.append(" symmax='"+symmax[1]+"'");
+		xml.append("/>\n");
 		if(doc.isMPM3D())
-			xml.append("      <Depth nz='"+ncells[2]+"' rz='1'/>\n");
+		{	xml.append("      <Depth nz='"+ncells[2]+"'");
+			if(hasmin[2]) xml.append(" symmin='"+symmin[2]+"'");
+			if(hasmax[2]) xml.append(" symmax='"+symmax[2]+"'");
+			xml.append("/>\n");
+		}
 		
 		// End Grid
 		xml.append("    </Grid>\n");

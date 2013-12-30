@@ -2,6 +2,12 @@
 NairnFEAMPMViz Plans
 -------------------------------------------------------------------
 
+¥ MPM Plotting
+	Plot traction BCs
+	Silent BCs
+	
+¥ FEA Crack Closure Calculations
+
 ¥ Plot zooming - click to zoom at location
 
 ¥ Plot angle - way to input - most code already looks for it - slider under component
@@ -16,24 +22,15 @@ Cammand Development
 -------------------------------------------------------------------
 
 Commands not done
+	GrowCrackArc
 	BMPRegion - FEA and MPM
 		Intensity
 		Origin
-	Cylinder
-	Sphere
-	GrowCrackArc
 	Material color and artificial viscosity properties
 
-MPM Tasks
-	Plot traction BCs
-	Silent BCs
-
-FEA Tasks
-	Crack Closure Calculations
-	
 Language
 	Repeat loops
-	Subroutines
+	Subroutines (use in Hypotension)
 	Array variables
 	See if NairnFEAMPM can allow same commands and assignments in materials
 
@@ -45,18 +42,18 @@ Development Notes
 -------------------------------------------------------------------
 
 ¥ Keyboard commands
-	A:
+	A: Select All
 	B: Background FEA/MPM Analysis (commands window), Delete (2D plot window)
-	C: Copy (2D plot window)
+	C: Copy
 	D: Analysis Results (movie window, 2D plot window)
-	E: Interpret commands and view XML result
+	E: 
 	shift-E: Export... (2D plot window)
-	F:
-	G: 
+	F: Find
+	G: Find Again
 	shift-G: Export Graphics (movie window)
 	H: Hide (Mac only)
 	option-H: Hide Others (Mac Only)
-	I: Inspector (2D plot window)
+	I: Interpret commands and view XML result (commands window), Inspector (2D plot window)
 	shift-I: Import... (2D plot window)
 	J:
 	K:
@@ -66,15 +63,15 @@ Development Notes
 	N: new MPM commands file
 	shift-N: new FEA commands file
 	O: Open
-	P: Print (2D plot window)
+	P: Print
 	Q: Quit
 	R: Run FEA/MPM Analysis (commands window), Plot Results (results window)
 	S: Save, Save Graphics (2D plot window)
 	T: Test FEA/MPM Analysis (commands window)
 	U:
-	V: Paste (2D plot window)
+	V: Paste
 	W: Close
-	X: Cut (2D plot window)
+	X: Cut
 	Y:
 	Z: Undo
 	shift-Z Redo

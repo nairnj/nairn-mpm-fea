@@ -275,18 +275,23 @@ history2, history3, history4, heatenergy, concentration
 Define cubical volume using xmin, xmax, ymin, ymax, zmin, and zmax (for #1 to #6) for the current
 <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
 
-<li>Cylinder: Define cylindrical volume of material points or for a hole.</li>
+<li><code>Cylinder #1,#2,#3,#4,#5,#6,#7,&lt;#8&gt;</code><br>
+Define cylindrical volume using xmin, xmax, ymin, ymax, zmin, and zmax (for #1 to #6) along axis #7 (1, 2, or 3) for the current
+<a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.Option #8 converts to cone with relative radius (-1 to 1) at the top (if >0)
+or at the bottom (if < 0)</li>
 
 <li><code>Element #1</code><br>
 Define type of element to use in the MPM background grid. Currently #1 can only be &quot;4 Node Quadrilateral&quot; (or 2) for 2D or axisymmetric MPM and can only be &quot;8 Node Brick&quot; (or 7) for 3D MPM.</li>
 
 <li>Intensity: Map pixel intensities to material types in a <a href="#bmpregion">BMPRegion</a>.</li>
 
-<li><a name="griddepth"></a><code>GridDepth #1,&lt;#2&gt;</code><br>
-Set depth or z-direction MPM grid parameters. #1 is the number of cells. #2 is for variable element size, but is currently ignored.</li>
+<li><a name="griddepth"></a><code>GridDepth #1,&lt;#2&gt;,&lt;#3&gt;,&lt;#4&gt;</code><br>
+Set depth or z-direction MPM grid parameters. #1 is the number of cells.
+#2 and #4 set symmetry plane locations with edge for first plane in #3 (-1 or 1 for min or max edge).</li>
 
-<li><a name="griddhoriz"></a><code>GridHoriz #1,&lt;#2&gt;</code><br>
-Set horizontal or x-direction MPM grid parameters (r direction is axisymetric). #1 is the number of cells. #2 is for variable element size, but is currently ignored.</li>
+<li><a name="griddhoriz"></a><code>GridHoriz #1,&lt;#2&gt;,&lt;#3&gt;,&lt;#4&gt;</code><br>
+Set horizontal or x-direction MPM grid parameters (r direction is axisymetric). #1 is the number of cells.
+#2 and #4 set symmetry plane locations with edge for first plane in #3 (-1 or 1 for min or max edge).</li>
 
 <li><code>GridRect #1,#2,#3,#4,&lt;#5&gt;,&lt;#6&gt;</code><br>
 Set rectangle for 2D MPM grid or box for 3D MPM. #1 to #4 are x minimum. x maximum, y minimum,
@@ -298,9 +303,9 @@ cells in each direction.</li>
 <li><code>GridThickness #1</code><br>
 Set thickness for 2D MPM grid (in mm). It is only needed for some command and for 2D planar calculations.</li>
 
-<li><a name="gridvert"></a><code>GridVert #1,&lt;#2&gt;</code><br>
-Set vertical or y-direction MPM grid parameters (Z direction is axisymetric).
-#1 is the number of cells. #2 is for variable element size, but is currently ignored.</li>
+<li><a name="gridvert"></a><code>GridVert #1,&lt;#2&gt;,&lt;#3&gt;,&lt;#4&gt;</code><br>
+Set vertical or y-direction MPM grid parameters (Z direction is axisymetric). #1 is the number of cells.
+#2 and #4 set symmetry plane locations with edge for first plane in #3 (-1 or 1 for min or max edge).</li>
 
 <li><a name="holempm"></a><code>Hole<br>
 &nbsp;&nbsp;(series of <a href="#rectmpm">Rect</a>, <a href="ovalmpm">Oval</a>, or <a href="#polyptmpm">PolyPt</a> commands)<br>
@@ -330,7 +335,9 @@ Define a region for creating material points. #1 is material ID. (#2,#3) are vel
 direciton  (in mm/sec). For 2D, #4 is thickness in mm. For 3D, #4 is velocity in z direction (in mm/sec).
 (#5,#6) are one or more pairs where #5 is angle, conc, or temp and #6 is its value for the particles.</li>
 
-<li>Sphere: Define spherical volume of material points or for a hole.</li>
+<li><code>Sphere #1,#2,#3,#4,#5,#6</code><br>
+Define spherical volume using xmin, xmax, ymin, ymax, zmin, and zmax (for #1 to #6) for the current
+<a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
 
 </ul>
 
