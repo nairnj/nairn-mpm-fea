@@ -142,7 +142,7 @@ void HEMGEOSMaterial::PrintTransportProperties(void) const
 	{	MaterialBase::PrintTransportProperties();
 	}
 	else if(!ConductionTask::adiabatic)
-	{	PrintProperty("C",heatCapacity,"J/(kg-K)");
+	{	PrintProperty("Cv",heatCapacity,"J/(kg-K)");
 		cout << endl;
 	}
 }
