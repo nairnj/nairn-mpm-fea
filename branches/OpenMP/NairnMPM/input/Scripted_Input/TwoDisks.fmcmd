@@ -8,31 +8,48 @@ Two disks or blocks with normal impact
 The contact is handle my multimaterial MPM methgods
 EndHeader
 
-Analysis "Plane Stress MPM"
+! Analysis can be "Plane Stress MPM", "Plane Strain MPM", or "3D MPM"
+#analysis$="Plane Stress MPM"
+
+! Strain update method "USAVG" or "USF"
+#update$="USAVG"
+
+! Shape functions "uGIMP" or "lCDPI"
+#method$="uGIMP"
 
 ! ********** PARAMTERS SECTION **********
 ! dimensions (width and height multiple of cell)
+#cell=5
 #width=200
 #height=60
-#thick=1
-#cell=5
+#sepcells=6
+
 #lwidth=50
 #lheight=50
+
 #rwidth=50
 #rheight=50
-#sepcells=6
-#disks$="yes"					! disks (yes) or blocks (no)
+
+#thick=1
+#shape$="Round"			! "Round" or "Square" for disks/spheres or blocks
 
 ! Disk properties
 #Edisk=1000					! E in MPa
-#rhodisk=1.5					! density in g/cm^3
+#rhodisk=1.5				! density in g/cm^3
+#model$="Hypo"				! "Hypo" or "Neo" for hypoelastic or neohookean
+
+! velocity control
+#linit=0.1					! fraction of wave speed left
+#rinit=0.1					! fraction of wave speed right
+
+!-------------- Begin Calculations ---------------------
+
+Analysis #analysis$
 
 ! calculate wave speed and impact at some fraction of that speed
 #vwave=1000*sqrt(1000*#Edisk/#rhodisk)
 #wspd=#vwave/1000
 Comment "E = "&#Edisk&" MPa, rho = "&#rhodisk&" g/cm^3, wave spd = "&#wspd&" m/sec"
-#linit=0.1					! fraction of wave speed left
-#rinit=0.1					! fraction of wave speed right
 
 ! from separation, find disk lower-left origins
 if #sepcells!=2*int(#sepcells/2)
@@ -50,10 +67,14 @@ endif
 #travel=#width/4
 #lspeed=#linit*#vwave				! speed in mm/s left
 #rspeed=#rinit*#vwave				! speed in mm/s right
-#mxtime=1000*#travel/#lspeed	    		! total time in ms
+#mxtime=1000*#travel/#lspeed	    ! total time in ms
 
-MPMmethod "USAVG","GIMP"
-Archive "TwoDisks/disksUSAVG"
+MPMmethod #update$,#method$
+if #analysis$="3D MPM"
+  Archive "Results/"&#shape$&"3D/"&#model$&"/"&#update$&"-"&#method$
+else
+  Archive "Results/"&#shape$&"/"&#model$&"/"&#update$&"-"&#method$
+endif
 ArchiveTime #mxtime/50
 MaximumTime #mxtime
 ToArchive velocity,stress,strain,strainenergy,rotstrain
@@ -64,19 +85,33 @@ MultimaterialMode 0,"enabled","avggrad"
 ContactPosition 0.8
 
 ! ********** MATERIALS SECTION **********
-Material "Left","Polymer Left",1
-  E #Edisk
-  nu .33
-  a 60
-  rho #rhodisk
-Done
-
-Material "Right","Polymer Right",1
-  E #Edisk
-  nu .33
-  a 60
-  rho #rhodisk
-Done
+if #model$="Hypo"
+  Material "Left","Polymer Left",1
+    E #Edisk
+    nu .33
+    alpha 60
+    rho #rhodisk
+  Done
+  Material "Right","Polymer Right",1
+    E #Edisk
+    nu .33
+    alpha 60
+    rho #rhodisk
+  Done
+else
+  Material "Left","IPolymer","Mooney"
+    K #Edisk/(3*(1-2*.33))
+    G1 #Edisk/(2*(1+.33))
+    alpha 60
+    rho #rhodisk
+  Done
+  Material "Right","IPolymer","Mooney"
+    K #Edisk/(3*(1-2*.33))
+    G1 #Edisk/(2*(1+.33))
+    alpha 60
+    rho #rhodisk
+  Done
+endif
 
 GlobalArchiveTime #mxtime/100
 GlobalArchive "sxx","Left"
@@ -85,43 +120,46 @@ GlobalArchive "velx","Left"
 GlobalArchive "velx","Right"
 
 ! ********** GRID SECTION **********
-GridHoriz #width/#cell
-GridVert #height/#cell
-GridThickness #thick
-GridRect 0,#width,0,#height
-
-Region "Left",#lspeed,0,#thick
-  if #disks$="yes"
-    Oval #lx,#lx+#lwidth,#ly,#ly+#lheight
-  else
-    Rect #lx,#lx+#lwidth,#ly,#ly+#lheight
-  endif
-EndRegion
-
-XMLData "MaterialPoints"
-  <!-- Hello World -->
-EndXMLData
-
-Region "Right",-#rspeed,0,#thick
-  if #disks$="yes"
-    Oval #rx,#rx+#rwidth,#ry,#ry+#rheight
-  else
-    Rect #rx,#rx+#rwidth,#ry,#ry+#rheight
-  endif
-EndRegion
-
-! ********** BOUNDARY CONDITIONS SECTION **********
-! fixed nodes on the boundary
-MoveLine 0,0,#width,0
-  Velocity y,constant,0
-EndMoveLine
-MoveLine #width,0,#width,#height
-  Velocity x,constant,0
-EndMoveLine
-MoveLine 0,#height,#width,#height
-  Velocity y,constant,0
-EndMoveLine
-MoveLine 0,0,0,#height
-  Velocity x,constant,0
-EndMoveLine
+GridHoriz #width/#cell,0,-1,#width
+GridVert #height/#cell,0,-1,#height
+if #analysis$="3D MPM"
+  GridDepth #height/#cell,0,-1,#height
+  GridRect 0,#width,0,#height,0,#height
+  
+  Region "Left",#lspeed,0,0
+    if #shape$="Round"
+      Sphere #lx,#lx+#lwidth,#ly,#ly+#lheight,#ly,#ly+#lheight
+    else
+      Rect #lx,#lx+#lwidth,#ly,#ly+#lheight,#ly,#ly+#lheight
+    endif
+  EndRegion
+  
+  Region "Right",-#rspeed,0,#thick
+    if #shape$="Round"
+      Sphere #rx,#rx+#rwidth,#ry,#ry+#rheight,#ry,#ry+#rheight
+    else
+      Rect #rx,#rx+#rwidth,#ry,#ry+#rheight,#ry,#ry+#rheight
+    endif
+  EndRegion
+else
+  GridThickness #thick
+  GridRect 0,#width,0,#height
+  
+  Region "Left",#lspeed,0,#thick
+    if #shape$="Round"
+      Oval #lx,#lx+#lwidth,#ly,#ly+#lheight
+    else
+      Rect #lx,#lx+#lwidth,#ly,#ly+#lheight
+    endif
+  EndRegion
+  
+  Region "Right",-#rspeed,0,#thick
+    if #shape$="Round"
+      Oval #rx,#rx+#rwidth,#ry,#ry+#rheight
+    else
+      Rect #rx,#rx+#rwidth,#ry,#ry+#rheight
+    endif
+  EndRegion
+  
+endif
 

@@ -126,21 +126,21 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doub
 	ElasticProperties *p = (ElasticProperties *)properties;
 	
 	// Add to total strain
-	Tensor *ep=mptr->GetStrainTensor();
-    ep->xx+=dvxx;
-    ep->yy+=dvyy;
-    ep->zz+=dvzz;
-    double dgamxy=dvxy+dvyx;
-    ep->xy+=dgamxy;
-    double dgamxz=dvxz+dvzx;
-    ep->xz+=dgamxz;
-    double dgamyz=dvyz+dvzy;
-    ep->yz+=dgamyz;
+	Tensor *ep = mptr->GetStrainTensor();
+    ep->xx += dvxx;
+    ep->yy += dvyy;
+    ep->zz += dvzz;
+    double dgamxy = dvxy+dvyx;
+    ep->xy += dgamxy;
+    double dgamxz = dvxz+dvzx;
+    ep->xz += dgamxz;
+    double dgamyz = dvyz+dvzy;
+    ep->yz += dgamyz;
 	
 	// rotational strain increments (particle updated by Hypo3D)
-	double dwrotxy=dvyx-dvxy;
-	double dwrotxz=dvzx-dvxz;
-	double dwrotyz=dvzy-dvyz;
+	double dwrotxy = dvyx-dvxy;
+	double dwrotxz = dvzx-dvxz;
+	double dwrotyz = dvzy-dvyz;
 	
     // residual strains (thermal and moisture) (isotropic only)
 	double exxr = p->alpha[0]*res->dT;
@@ -159,7 +159,7 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doub
 	}
 	
 	// effective strains
-	double dvxxeff = dvzz-exxr;
+	double dvxxeff = dvxx-exxr;
 	double dvyyeff = dvyy-eyyr;
 	double dvzzeff = dvzz-ezzr;
 	double dgamyzeff = dgamyz-eyzr;
