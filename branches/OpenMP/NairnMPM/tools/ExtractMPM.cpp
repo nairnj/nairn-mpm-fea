@@ -388,6 +388,21 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 {
 	int i;
 	
+	// skip non archive (all archives end in .# where # is integer)
+	i = strlen(mpmFile)-1;
+	while(i>0 && mpmFile[i]!='.')
+	{	if(mpmFile[i]<'0' || mpmFile[i]>'9')
+		{	cout << "File '" << mpmFile <<"' is not an MPM archive file" << endl;
+			return noErr;
+		}
+		i--;
+	}
+	if(i==0)
+	{	cout << "File '" << mpmFile <<"' is not an MPM archive file" << endl;
+		return noErr;
+	}
+	
+	// open the file
 	FILE *fp;
 	if((fp=fopen(mpmFile,"r"))==NULL)
 	{	cerr << "Input file '" << mpmFile << "' could not be opened" << endl;
