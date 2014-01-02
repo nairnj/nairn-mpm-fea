@@ -687,6 +687,9 @@ public class CmdViewer extends JNCmdTextDocument
 		else if(theCmd.equals("growcrackline"))
 			cracks.GrowCrack(args,1);
 		
+		else if(theCmd.equals("growcrackarc"))
+			cracks.GrowCrack(args,2);
+		
 		else if(theCmd.equals("crackthickness"))
 			cracks.doCrackThickness(args);
 		
@@ -714,7 +717,9 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		
 		else
+		{	//System.out.println(args);
 			super.doCommand(theCmd, args);
+		}
 	}
 	
 	// Analysis (type),(element)

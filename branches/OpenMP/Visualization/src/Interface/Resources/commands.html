@@ -511,7 +511,11 @@ Extend current crack to (#1,#2) in one segment. #3 can be crack tip material,
 &quot;exterior&quot; (for crack
 that extends beyond object), or invalid ID (no material). #4 is traction law material.</li>
 
-<li>GrowCrackArc: Used to add a curved arc to the current crack.</li>
+<li><code>GrowCrackArc #1,#2,#3,#4,#5,#6,#7,&lt;#8&gt;,&lt;#9&gt;</code><br>
+Grow crack along arc in elipse bounded by (#1,#2) and (#3,#4) from angle #6 to #7 using #5 segments.
+#8 can be crack tip material,
+&quot;exterior&quot; (for crack
+that extends beyond object), or invalid ID (no material). #9 is traction law material.</li>
 
 <li><code>GrowCrackLine #1,#2,#3,&lt;#4&gt;,&lt;#5&gt;</code><br>
 Extend current crack to (#1,#2) along a line with #3 segments. #4 can be crack tip material,

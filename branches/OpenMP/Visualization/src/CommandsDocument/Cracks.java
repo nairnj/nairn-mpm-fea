@@ -150,7 +150,8 @@ public class Cracks
 	}
 	
 	// 0: GrowCrack x,y,<tip>,<mat>
-	// 1: GrowCrackLine x,y,resolution,<tip>,<mat
+	// 1: GrowCrackLine x,y,segs,<tip>,<mat>
+	// 2: GrowCrackArc x1,y1,x2,y2,segs,ang1,ang2,<tip>,<mat>
 	// <tip> = material ID (invalid OK if #5 is there) (tip= or end_tip=)
 	// <mat> - traction material (mat=)
 	public void GrowCrack(ArrayList<String> args,int option) throws Exception
@@ -166,17 +167,37 @@ public class Cracks
 			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		double ptx = doc.readDoubleArg(args.get(1));
 		double pty = doc.readDoubleArg(args.get(2));
-		
+
 		// align params
 		int param=3;
 		
-		// segments (GrowCrackLine)
+		// Arc gets two more coordinates
+		double ptx2=0.,pty2=0.;
+		if(option==2)
+		{	if(args.size()<5)
+				throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
+			ptx2 = doc.readDoubleArg(args.get(3));
+			pty2 = doc.readDoubleArg(args.get(4));
+			param = 5;
+		}
+		
+		// segments (GrowCrackLine and GrowCrackArc)
 		int segs=1;
 		if(option>0)
 		{	if(args.size()>param)
 			{	segs = doc.readIntArg(args.get(param));
 				param++;
 			}
+		}
+		
+		// angles (GrowCrackArc)
+		double ang1=0.,ang2=0.;
+		if(option==2)
+		{	if(args.size()<param+2)
+				throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
+			ang1 = doc.readDoubleArg(args.get(param));
+			ang2 = doc.readDoubleArg(args.get(param+1));
+			param += 2;
 		}
 		
 		// material ID (error only if #3 is absent)
@@ -209,17 +230,34 @@ public class Cracks
 		{	currentCrack.append("    <Line x='"+ptx+"' y='"+pty+"'");
 			if(tip!=-1) currentCrack.append(" tip='"+tip+"'");
 		}
-		else
+		else if(option==1)
 		{	currentCrack.append("    <Line xmin='"+cx+"' ymin='"+cy+"'");
 			currentCrack.append(" xmax='"+ptx+"' ymax='"+pty+"' resolution='"+segs+"'");
+			if(tip!=-1) currentCrack.append(" end_tip='"+tip+"'");
+		}
+		else
+		{	currentCrack.append("    <Circle xmin='"+ptx+"' ymin='"+pty+"'");
+			currentCrack.append(" xmax='"+ptx2+"' ymax='"+pty2+"' resolution='"+segs+"'");
+			currentCrack.append(" start_angle='"+ang1+"' end_angle='"+ang2+"'");
 			if(tip!=-1) currentCrack.append(" end_tip='"+tip+"'");
 		}
 		if(mat!=-1) currentCrack.append(" mat='"+mat+"'");
 		currentCrack.append("/>\n");
 		
 		// save location
-		cx = ptx;
-		cy = pty;
+		if(option==2)
+		{	// find the final point on the elipse
+			//double xmid = 0.5*(ptx+ptx2);
+			//double ymid = 0.5*(pty+pty2);
+			//double ea = 0.5*(ptx2-ptx);
+			//double eb = 0.5*(pty2-pty);
+			cx = ptx2;
+			cy = ptx2;
+		}
+		else
+		{	cx = ptx;
+			cy = pty;
+		}
 	}
 	
 	// set global friction command

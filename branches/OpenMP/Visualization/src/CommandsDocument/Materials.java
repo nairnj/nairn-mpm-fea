@@ -145,7 +145,7 @@ public class Materials
 		
 		String prop = args.get(0);
 				
-		// These are "Property double" but need special case for prperty name
+		// These are "Property double" but need special case for property name
 		// to account for difference in NairnFEAMPM
 		if(prop.equals("a"))
 			prop = "alpha";
@@ -203,13 +203,15 @@ public class Materials
 			return;
 		}
 		else if(prop.toLowerCase().equals("reversible"))
-		{	prop = "reversible";
-			// 0 or 1 (or no or yes)
+		{	// 0 or 1 (or no or yes)
 			HashMap<String,Integer> options = new HashMap<String,Integer>(2);
 			options.put("no", new Integer(0));
 			options.put("yes", new Integer(1));
 			int value = doc.readIntOption(args.get(1),options,"reversible property");
-			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			if(value==1)
+				xmldata.append("    <reversible/>\n");
+			else
+				xmldata.append("    <irreversible/>\n");
 			return;
 		}
 		else if(prop.toLowerCase().equals("direction"))
@@ -258,7 +260,6 @@ public class Materials
 				throw new Exception("'"+args.get(0)+"' material property has unknown traction law material:\n"+args);
 			return;
 		}
-		
 		else if(prop.toLowerCase().equals("temperature"))
 		{	prop = "SetTemperature";
 			// 0 or 1
@@ -296,15 +297,28 @@ public class Materials
 		{	xmldata.append(parent.doImperfectInterface(args,2));
 			return;
 		}
-		
-		// remaining to be implemented
 		else if(prop.toLowerCase().equals("color"))
-		{	throw new Exception("Scripted color material property not implemented yet");
+		{	double red = doc.readDoubleArg(args.get(1));
+			double blue=red,green=red,alpha=1.;
+			if(args.size()>2)
+			{	if(args.size()<4)
+					throw new Exception("Color material needs, 1, 3, or 4 values.");
+				green = doc.readDoubleArg(args.get(3));
+				blue = doc.readDoubleArg(args.get(2));
+				if(args.size()>4) alpha = doc.readDoubleArg(args.get(4));
+			}
+			xmldata.append("    <color red='"+red+"' green='"+green+
+								"' blue='"+blue+"' alhpa='"+alpha+"'/>\n");
+			return;
 		}
 		else if(prop.toLowerCase().equals("artificialvisc"))
-		{	throw new Exception("Scripted ArtificialVisc material property not implemented yet");
+		{	String value = doc.readStringArg(args.get(1)).toLowerCase();
+			if(!value.equals("on") && !value.equals("off"))
+				throw new Exception("ArtificialVisc must be on or off.");
+			if(value.equals("on"))
+				xmldata.append("    <ArtificialVisc/>\n");
+			return;
 		}
-		// setting functions
 		else if(prop.toLowerCase().equals("settingfunction") || 
 				prop.toLowerCase().equals("settingfunction1") ||
 				prop.toLowerCase().equals("settingfunctionx"))

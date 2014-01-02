@@ -18,18 +18,16 @@ NairnFEAMPMViz Plans
 	See NairnFEAMPM preferences
 
 -------------------------------------------------------------------
-Cammand Development
+Scripting Development
 -------------------------------------------------------------------
 
-Commands not done
-	GrowCrackArc
-	Material color and artificial viscosity properties
+See if NairnFEAMPM can allow same commands and assignments in materials
 
 Language
 	Subroutines (use in Hypotension)
-	Maintain library to loading (both codes)
-	Array variables
-	See if NairnFEAMPM can allow same commands and assignments in materials
+	Array variables (allow [] in name, preprocess expressions for []'s, string variables '$'?)
+	Support @ expressions
+	Maintain library of subroutines to load (both codes)
 
 Entity
 	Look for other commands to support its use (both codes)
