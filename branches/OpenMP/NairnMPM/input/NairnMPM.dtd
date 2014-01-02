@@ -604,8 +604,9 @@
 <!ELEMENT	vel EMPTY>
 <!ATTLIST	vel
 			units CDATA #IMPLIED
-			x CDATA "0.0"
-			y CDATA "0.0">
+			x CDATA #IMPLIED
+			y CDATA #IMPLIED
+			z CDATA #IMPLIED>
 
 <!ELEMENT	mass EMPTY>
 <!ATTLIST	mass
