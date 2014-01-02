@@ -57,7 +57,9 @@ blockquote { font-size: 12pt;
 <p><b>NairnFEAMPMViz</b> has a built-in <a href="#language">interpretive language</a> for programatically setting up FEA or MPM calculations. This section has a list of all language commands for FEA and MPM calculations. The commands are grouped by logical section. Within each section, they are listed alphabetically. Some commands apply to more than one section and thus may appear in several sections.
 </p>
 
-<p>This &quot;scripting&quot; option for NairnFEAMPMViz is new in version 4.0 and is not yet complete. The scripting <a href="#language">language</a> is based on (and nearly <a href="#compatible">compatible</a>) with the corresponding language in the NairnFEAMPM Mac application. The documentaiton listed below lists all the commands from NairnFEAMPM. The ones that are highlighted in yellow are the ones that been converted to work in NairnFEAMPMViz. The others will be added during development. The conversion is nearly completed for FEA calculations. If used for MPM calculations, many parts of the commands will will need to use the <a href="#xmldata">XMLData command</a> to enter commands not yet supported in the scripting language. Furthermore, a few language features (<i>e.g.</i>, repeat loops and subroutines) are not yet available. See the <a href="#language">language reference</a> section for what is available.</p>
+<p>This &quot;scripting&quot; option for NairnFEAMPMViz is new in version 4.0 and is not yet complete.
+The scripting <a href="#language">language</a> is based on (and nearly <a href="#compatible">compatible</a>) with the corresponding language in the NairnFEAMPM Mac application. The documentaiton listed below lists all the commands from NairnFEAMPM. The ones that are highlighted in yellow are the ones that been converted to work in NairnFEAMPMViz. The others will be added during development. The conversion is nearly completed for FEA calculations. If used for MPM calculations, many parts of the commands will will need to use the <a href="#xmldata">XMLData command</a> to enter commands not yet supported in the scripting language.
+Furthermore, a few language features (<i>e.g.</i>, subroutines) are not yet available. See the <a href="#language">language reference</a> section for what is available.</p>
 
 <h2>Command Groupings</h2>
 
@@ -147,7 +149,33 @@ has not been defined in any Set command.</p>
 
 <h3>Repeat Loops</h3>
 
-<p>To be developed.</p>
+<p>Repeat loops are allowed and hove the format:</a>
+
+<blockquote>
+Repeat "#x",start,end,&lt;step;gt;<br>
+  &nbsp;&nbsp;(commands in the loop)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;...<br>
+  &nbsp;&nbsp;break<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;...<br>
+  &nbsp;&nbsp;Repeat "#y",start,end,<step><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;(commands in nested loop)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;continue<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;Repeat<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(commands in nested continuous loop)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;breakAll<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;EndRepeat<br>
+  &nbsp;&nbsp;EndRepeat<br>
+EndRepeat
+</blockquote>
+
+<p>The loop argument is in the first parameter (and quoted). The range and optional step size are
+in the next three. A Repeat command with no arguments will repeat forever.
+The break command breaks the current loop. The breakAll command breaks out of all nested
+loops. A continue command goes to next item in the current loop.</p>
 
 <h3>Subroutines</h3>
 
@@ -269,7 +297,11 @@ history2, history3, history4, heatenergy, concentration
 <p>These commands are used to define the background MPM grid and to define material points within that grid.</p>
 
 <ul>
-<li><a name="bmpregion"></a>BMPRegion ... EndRegion: Create material points from an image in a BMP file.</li>
+<li><a name="bmpregion"></a><code>BMPRegion #1,#2,&lt;#3&gt;,&lt;#4&gt;<br>
+   ...<br>
+EndRegion</code><br>
+Create FEA elements or material points from an image in a BMP file. #1 is path for image file name. #2 and #3
+give width and height of the image. Optional #4 is path to angle mask file.</li>
 
 <li><code>Box #1,#2,#3,#4,#5,#6</code><br>
 Define cubical volume using xmin, xmax, ymin, ymax, zmin, and zmax (for #1 to #6) for the current
@@ -283,7 +315,12 @@ or at the bottom (if < 0)</li>
 <li><code>Element #1</code><br>
 Define type of element to use in the MPM background grid. Currently #1 can only be &quot;4 Node Quadrilateral&quot; (or 2) for 2D or axisymmetric MPM and can only be &quot;8 Node Brick&quot; (or 7) for 3D MPM.</li>
 
-<li>Intensity: Map pixel intensities to material types in a <a href="#bmpregion">BMPRegion</a>.</li>
+<li><code>Intensity #1,#2,#3,&lt;#4,#5&gt;,...</code><br>
+Map pixel gray scale values in <a href="#bmpregion">BMPRegion</a> in the range #2 to #3 to material in #1. Optional pairs (#4,#5) can set
+initial particle or element properties.</li>
+
+<li><code>Intensity "angles",#2,#3,#4,#5</code><br>
+Map pixel gray scale values in <a href="#bmpregion">BMPRegion</a> to angle by linearly interpolating the line through (#2,#3) and (#4,#5).</li>
 
 <li><a name="griddepth"></a><code>GridDepth #1,&lt;#2&gt;,&lt;#3&gt;,&lt;#4&gt;</code><br>
 Set depth or z-direction MPM grid parameters. #1 is the number of cells.
@@ -313,8 +350,9 @@ EndHole</code><br>
 Define a region for creating a hole that will not be assigned material points by any
 subsequent shape commands.</li>
 
-<li><a name="originmpm"></a>Origin: Set origin to map data in <a href="#bmpregion">BMPRegion</a> to
-the grid.</li>
+<li><code>Origin #1,#2,&lt;#3&gt;,&lt;#4&gt;</code></br>
+Set origin to map data in <a href="#bmpregion">BMPRegion</a> to
+the grid. Optional #4 can be "yes" to flip image along its y axis.</li>
 
 <li><a name="ovalmpm"></a><code>Oval #1,#2,#3,#4</code><br>
 Define oval within the rectangle defined by xmin, xmax, ymin, ymax (for #1 to #4) for the
@@ -334,6 +372,11 @@ EndRegion</code><br>
 Define a region for creating material points. #1 is material ID. (#2,#3) are velocities in x and y
 direciton  (in mm/sec). For 2D, #4 is thickness in mm. For 3D, #4 is velocity in z direction (in mm/sec).
 (#5,#6) are one or more pairs where #5 is angle, conc, or temp and #6 is its value for the particles.</li>
+
+<li><code>Rotate #1,#2</code><br>
+To rotate about axis #1 (x,y,z,1,2,or 3) by angle #2 (can be function) for materials in the current region.
+#1 can be "reset" to remove
+all previous rotations. Up to three pairs can be entered in one command in 3D calculations.</li>
 
 <li><code>Sphere #1,#2,#3,#4,#5,#6</code><br>
 Define spherical volume using xmin, xmax, ymin, ymax, zmin, and zmax (for #1 to #6) for the current
@@ -356,7 +399,11 @@ The commands in the area block should define four paths (to enclose 2D area) or
 two paths (for a 1D interface). Material ID can be &quot;_NONE_&quot; when the
 elements will be filled later by <a href="#bmpregionfea">BMPRegion</a> or various shape commands.</li>
 
-<li><a name="bmpregionfea">BMPRegion</a> ... EndRegion: Generate elements from an image in a BMP file.</li>
+<li><a name="bmpregionfea"></a><code>BMPRegion #1,#2,&lt;#3&gt;,&lt;#4&gt;<br>
+   ...<br>
+EndRegion</code><br>
+Create FEA elements from an image in a BMP file. #1 is path for image file name. #2 and #3
+give width and height of the image. Optional #4 is path to angle mask file.</li>
 
 <li><code>Element #1</code><br>
 Define type of element to use in subsequent <a href="#area">Area</a> commands. #1 can be &quot;3 Node Triangle&quot; (or 1), &quot;4 Node Quadrilateral&quot; (or 2), &quot;8 Node Quadrilateral&quot; (or 3), 6 Node Triangle&quot; (or 4), &quot;4 Node Interface&quot; (or 5), 6 Node Interface&quot; (or 6), or &quot;9 Node Lagrange&quot; (or 8)</li>
@@ -370,8 +417,20 @@ EndHole</code><br>
 Define a region for creating a hole that removes elements in the mesh whose material
 ID was set to &quot;_NONE_&quot;</li>
 
+<li><code>Intensity #1,#2,#3,&lt;#4,#5&gt;,...</code><br>
+Map pixel gray scale values in <a href="#bmpregionfea">BMPRegion</a> in the range #2 to #3
+to material in #1. Optional pairs (#4,#5) can set
+initial particle or element properties.</li>
+
+<li><code>Intensity "angles",#2,#3,#4,#5</code><br>
+Map pixel gray scale values in <a href="#bmpregionfea">BMPRegion</a> to angle by
+linearly interpolating the line through (#2,#3) and (#4,#5).</li>
+
 <li><a name="keypoint"></a><code>Keypoint #1,#2,#3,&lt;#4&gt;</code><br>
-Define a keypoint used in defining <a name="path">Paths</a>. #1 is keypoint ID, #2, and #3 are x and y coordinates (or r and z if axisymmetric). Optional #4 can be &quot;polar&quot; to change #2 and #3 to be R and &theta; to define keypoint using polar coordinates relative to current <a href="#origin">origin</a>.</li>
+Define a keypoint used in defining <a name="path">Paths</a>. #1 is keypoint ID, #2, and #3 are x and y
+coordinates (or r and z if axisymmetric). Optional #4 can be &quot;polar&quot; to
+change #2 and #3 to be R and &theta; to define keypoint using polar coordinates relative
+to current <a href="#origin">origin</a>.</li>
 
 <li><code>Keypoints  #1,#2,...</code><br>
 Add multiple (and previously) defined keypoints to a <a href="#path">Path</a>.</li>
@@ -379,6 +438,10 @@ Add multiple (and previously) defined keypoints to a <a href="#path">Path</a>.</
 <li><a name="origin"></a><code>Origin #1,&lt;#2&gt;</code><br>
 Define coordinate system origin for entry of <a href="#keypoint">Keypoints</a> using polar coordinates.
 If only #1 is given is is keypoint ID; if #1 and #2 are both give they are (x,y) coordinates of the origin.</li>
+
+<li><code>Origin #1,#2,&lt;#3&gt;,&lt;#4&gt;</code></br>
+Set origin to map data in <a href="#bmpregionfea">BMPRegion</a> to
+the grid. Optional #4 can be "yes" to flip image along its y axis.</li>
 
 <li><a name="ovalfea"></a><code>Oval #1,#2,#3,#4</code><br>
 Define oval within the rectangle defined by xmin, xmax, ymin, ymax (for #1 to #4) for the current <a href="#regionfea">region</a> or <a href="#holefea">hole</a> block.</li>
@@ -447,12 +510,14 @@ for frictionless (same as 0) (default 0).</li>
 Extend current crack to (#1,#2) in one segment. #3 can be crack tip material,
 &quot;exterior&quot; (for crack
 that extends beyond object), or invalid ID (no material). #4 is traction law material.</li>
+
 <li>GrowCrackArc: Used to add a curved arc to the current crack.</li>
+
 <li><code>GrowCrackLine #1,#2,#3,&lt;#4&gt;,&lt;#5&gt;</code><br>
 Extend current crack to (#1,#2) along a line with #3 segments. #4 can be crack tip material,
 &quot;exterior&quot; (for crack
 that extends beyond object), or invalid ID (no material). #5 is traction law material.</li>
-<li>GrowCrackArc: Used to add a curved arc to the current crack.</li>
+
 <li><code>JContour #1,&lt;#2&gt;</code><br>
 Used to set size of J integral contoour (#1 in cells) and whether J integral uses one
 or two terms (#2 = 1 or 2).</li>
@@ -478,7 +543,8 @@ Activate and select crack propagation method. #1 is criterion (by name or number
 <li><code>PropagateLength #1</code><br>
 Determines the amount of crack growth each time a crack propagates, where #1 is relative to cell dimensions</li>
 <li><code>ToArchive #1,&lt;#2&gt;,...</code><br>
-Specify crack parameters to be archived in MPM calculations. The list can be in multiple arguments and/or in multiple ToArchive commands. The archiving options for crack paramters are jintegral, stressintensity, and energybalance.</li>
+Specify crack parameters to be archived in MPM calculations. The list can be in multiple arguments and/or in multiple ToArchive commands.
+The archiving options for crack paramters are jintegral, stress, and energybalance.</li>
 </ul>
 
 
@@ -558,7 +624,8 @@ To archive average temperature, total heat energy, or total entropy.</li>
 Apply heat flux to selected particles on face #1 with style #2 and
 arguments in #3 and #4.</li>
 
-<li>Intensity: To set initial temperature of particles created using
+<li><code>Intensity</code><br>
+To set initial temperature of particles created using
 a <a name="#bmpregion">BMPRegion</a>.</li>
 
 <li><code>Material #1,#2,#3</code><br>
@@ -626,7 +693,8 @@ a reference concentration between 0 and 1 (default is 0).</li>
 <li><code>GlobalArchive</code><br>
 To archive total weight fracture concentration.</li>
 
-<li>Intensity: To set initial concentration of particles created using a
+<li><code>Intensity</code><br>
+To set initial concentration of particles created using a
 <a name="#bmpregion">BMPRegion</a>.</li>
 
 <li><code>Material #1,#2,#3</code><br>

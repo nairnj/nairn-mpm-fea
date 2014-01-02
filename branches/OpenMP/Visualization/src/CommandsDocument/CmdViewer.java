@@ -470,7 +470,11 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		
 		else if(theCmd.equals("rotate"))
-			feaBCs.AddRotate(args);
+		{	if(isFEA())
+				feaBCs.AddRotate(args);
+			else
+				regions.AddRotate(args);
+		}
 		
 		else if(theCmd.equals("stress"))
 			feaBCs.AddStress(args);
@@ -554,7 +558,14 @@ public class CmdViewer extends JNCmdTextDocument
 			mpmParticleBCs.AddCondition(args,MPMParticleBCs.ADD_CONCENTRATIONFLUX);
 		
 		else if(theCmd.equals("origin"))
-			areas.setOrigin(args);
+		{	if(regions.isInBMPRegion())
+				regions.setOrigin(args);
+			else
+				areas.setOrigin(args);
+		}
+		
+		else if(theCmd.equals("intensity"))
+			regions.AddIntensity(args);
 		
 		else if(theCmd.equals("material"))
 			mats.StartMaterial(args);
@@ -564,6 +575,9 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		else if(theCmd.equals("region"))
 			regions.StartRegion(args);
+		
+		else if(theCmd.equals("bmpregion"))
+			regions.StartBMPRegion(args);
 		
 		else if(theCmd.equals("endregion"))
 			regions.EndRegion(args);

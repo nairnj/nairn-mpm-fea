@@ -23,14 +23,11 @@ Cammand Development
 
 Commands not done
 	GrowCrackArc
-	BMPRegion - FEA and MPM
-		Intensity
-		Origin
 	Material color and artificial viscosity properties
 
 Language
-	Repeat loops
 	Subroutines (use in Hypotension)
+	Maintain library to loading (both codes)
 	Array variables
 	See if NairnFEAMPM can allow same commands and assignments in materials
 
