@@ -17,30 +17,35 @@ EndHeader
 ! Shape functions "uGIMP" or "lCDPI"
 #method$="uGIMP"
 
+! "yes" or "no" to use contact in multimaterial mode
+#contact$="yes"
+
 ! ********** PARAMTERS SECTION **********
 ! dimensions (width and height multiple of cell)
 #cell=5
+
+! analysis space
 #width=200
 #height=60
 #sepcells=6
 
+! left ball or block
 #lwidth=50
 #lheight=50
+#linit=0.07			! fraction of wave speed left
 
+! right ball or block
 #rwidth=50
 #rheight=50
+#rinit=0.07			! fraction of wave speed right
 
 #thick=1
 #shape$="Round"			! "Round" or "Square" for disks/spheres or blocks
 
 ! Disk properties
-#Edisk=1000					! E in MPa
-#rhodisk=1.5				! density in g/cm^3
-#model$="Hypo"				! "Hypo" or "Neo" for hypoelastic or neohookean
-
-! velocity control
-#linit=0.1					! fraction of wave speed left
-#rinit=0.1					! fraction of wave speed right
+#Edisk=1000			! E in MPa
+#rhodisk=1.5			! density in g/cm^3
+#model$="Neo"			! "Hypo" or "Neo" for hypoelastic or neohookean
 
 !-------------- Begin Calculations ---------------------
 
@@ -64,10 +69,15 @@ endif
 #ly=int((#height-#lheight)/(2*#cell))*#cell
 #ry=int((#height-#rheight)/(2*#cell))*#cell
 
-#travel=#width/4
-#lspeed=#linit*#vwave				! speed in mm/s left
-#rspeed=#rinit*#vwave				! speed in mm/s right
-#mxtime=1000*#travel/#lspeed	    ! total time in ms
+#lspeed=#linit*#vwave		    ! speed in mm/s left
+#rspeed=#rinit*#vwave		    ! speed in mm/s right
+Comment "Left speed = "&(#lspeed/1000)&" m/sec"
+Comment "Right speed = "&(#rspeed/1000)&" m/sec"
+
+! estimate time to contact and bounce off
+! assume masses or the same, they then exchange velocites
+#travel=#sepcells*#cell+#width/4
+#mxtime=1000*#travel/(#lspeed+#rspeed)	    ! total time in ms
 
 MPMmethod #update$,#method$
 if #analysis$="3D MPM"
@@ -79,10 +89,11 @@ ArchiveTime #mxtime/50
 MaximumTime #mxtime
 ToArchive velocity,stress,strain,strainenergy,rotstrain
 
-Damping 0
-
-MultimaterialMode 0,"enabled","avggrad"
-ContactPosition 0.8
+! Use contact?
+if #contact$="yes"
+  MultimaterialMode 0,"enabled","avggrad"
+  ContactPosition 0.8
+endif
 
 ! ********** MATERIALS SECTION **********
 if #model$="Hypo"
@@ -142,6 +153,7 @@ if #analysis$="3D MPM"
     endif
   EndRegion
 else
+
   GridThickness #thick
   GridRect 0,#width,0,#height
   
@@ -160,6 +172,5 @@ else
       Rect #rx,#rx+#rwidth,#ry,#ry+#rheight
     endif
   EndRegion
-  
 endif
 

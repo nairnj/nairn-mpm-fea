@@ -47,6 +47,8 @@ int angleOffset=-1,posOffset=-1,stressOffset=-1,strainOffset=-1;
 int crackPosOffset=-1,jIntOffset=-1,kSifOffset=-1;
 int velocityOffset=-1,origPosOffset=-1,plStrainOffset=-1;
 int tempOffset=-1,concOffset=-1,strainEnergyOffset=-1,plasticEnergyOffset=-1;
+int history1Offset=-1,history2Offset=-1,history3Offset=-1,history4Offset=-1;
+int workEnergyOffset=-1,heatEnergyOffset=-1;
 
 #pragma mark MAIN AND INPUT PARAMETERS
 
@@ -158,6 +160,18 @@ int main(int argc, char * const argv[])
 					q=KII;
 				else if(strcmp(parm,"mass")==0)
 					q=MASS;
+				else if(strcmp(parm,"hist1")==0)
+					q=HIST1;
+				else if(strcmp(parm,"hist2")==0)
+					q=HIST2;
+				else if(strcmp(parm,"hist3")==0)
+					q=HIST3;
+				else if(strcmp(parm,"hist4")==0)
+					q=HIST4;
+				else if(strcmp(parm,"work")==0)
+					q=WORKENERGY;
+				else if(strcmp(parm,"heat")==0)
+					q=HEATENERGY;
 				else
 				{   cerr << "ExtractMPM option 'q' argument of '" << parm << "' is not recognized" << endl;
 					return BadOptionErr;
@@ -365,19 +379,21 @@ void Usage(const char *msg)
             "    -H                 Show this help and exit\n"
             "    -m num             Exclude this material\n"
             "    -M num             Include only this material\n"
+            "    -n name            Title or name to be in the header\n"
             "    -o path            Output file name with no extension\n"
 			"		                       (quoted if name has spaces)\n"
 			"    -s                 Include step number from input file numeric\n"
 			"                              extension in the output file name\n"
             "    -P                 Extract particle data only (the default)\n"
             "    -q name            Add column with named quantity\n"
+            "    -s                 Include step number in output file name\n"
             "    -T                 Output as tab-delimited text file (the default)\n"
             "    -V                 Output as VTK Legacy file (particle date only)\n"
             "    -X                 Output as XML file\n"
             "    -2                 Input file has 2D data (the default)\n"
             "    -3                 Input file has 3D data (only used for 'ver3' files)\n"
 			"\n"
-            "See http://oregonstate.edu/nairnj for documentation.\n\n"
+            "See http://osupdocs.forestry.oregonstate.edu/index.php/ExtractMPM for documentation.\n\n"
           <<  endl;
 }
 
@@ -839,7 +855,10 @@ void VTKLegacy(ostream &os,unsigned char *ap,long fileLength,const char *mpmFile
 		if(!skipThisPoint(matnum))
 		{	OutputDouble((double *)(ap+posOffset),0,0,reverseFromInput,os,XPOS);
 		    OutputDouble((double *)(ap+posOffset),1,' ',reverseFromInput,os,YPOS);
-		    if(threeD) OutputDouble((double *)(ap+posOffset),2,' ',reverseFromInput,os,ZPOS);
+		    if(threeD)
+                OutputDouble((double *)(ap+posOffset),2,' ',reverseFromInput,os,ZPOS);
+            else
+                os << " 0";         // so ParaView can do 2D data
 			os << endl;
 		}
 		ap+=recSize;
@@ -1023,6 +1042,48 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 		
 		case MASS:
 			OutputDouble((double *)(ap+sizeof(int)),0,delim,reverseFromInput,os,quantity[i]);
+			break;
+        
+        case HIST1:
+            if(history1Offset>0)
+                OutputDouble((double *)(ap+history1Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+        case HIST2:
+            if(history2Offset>0)
+                OutputDouble((double *)(ap+history2Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+        case HIST3:
+            if(history3Offset>0)
+                OutputDouble((double *)(ap+history3Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+        case HIST4:
+            if(history4Offset>0)
+                OutputDouble((double *)(ap+history4Offset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+        
+        case WORKENERGY:
+            if(workEnergyOffset>0)
+                OutputDouble((double *)(ap+workEnergyOffset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
+			
+        case HEATENERGY:
+            if(heatEnergyOffset>0)
+                OutputDouble((double *)(ap+heatEnergyOffset),0,delim,reverseFromInput,os,quantity[i]);
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
 			break;
 			
 		default:
@@ -1297,7 +1358,9 @@ int CalcArchiveSize(int vernum)
         mpmRecSize+=tensorSize;
 	}
     if(mpmOrder[ARCH_WorkEnergy]=='Y')
+    {   workEnergyOffset=mpmRecSize;
         mpmRecSize+=sizeof(double);
+    }
     if(mpmOrder[ARCH_DeltaTemp]=='Y')
 	{	tempOffset=mpmRecSize;
         mpmRecSize+=sizeof(double);
@@ -1313,19 +1376,35 @@ int CalcArchiveSize(int vernum)
         mpmRecSize+=sizeof(double);
 	}
     if(mpmOrder[ARCH_History]=='Y')
+    {   history1Offset=mpmRecSize;
         mpmRecSize+=sizeof(double);
+    }
 	else if(mpmOrder[ARCH_History]!='N')
-	{	if(mpmOrder[ARCH_History]&0x01) mpmRecSize+=sizeof(double);
-		if(mpmOrder[ARCH_History]&0x02) mpmRecSize+=sizeof(double);
-		if(mpmOrder[ARCH_History]&0x04) mpmRecSize+=sizeof(double);
-		if(mpmOrder[ARCH_History]&0x08) mpmRecSize+=sizeof(double);
+	{	if(mpmOrder[ARCH_History]&0x01)
+        {   history1Offset=mpmRecSize;
+            mpmRecSize+=sizeof(double);
+        }
+		if(mpmOrder[ARCH_History]&0x02)
+        {   history2Offset=mpmRecSize;
+            mpmRecSize+=sizeof(double);
+        }
+		if(mpmOrder[ARCH_History]&0x04)
+        {   history3Offset=mpmRecSize;
+            mpmRecSize+=sizeof(double);
+        }
+		if(mpmOrder[ARCH_History]&0x08)
+        {   history4Offset=mpmRecSize;
+            mpmRecSize+=sizeof(double);
+        }
 	}
     if(mpmOrder[ARCH_Concentration]=='Y')
 	{	concOffset=mpmRecSize;
         mpmRecSize+=sizeof(double)+vectorSize;
 	}
     if(mpmOrder[ARCH_HeatEnergy]=='Y')
+    {   heatEnergyOffset=mpmRecSize;
         mpmRecSize+=sizeof(double);
+    }
     if(mpmOrder[ARCH_ElementCrossings]=='Y')
         mpmRecSize+=sizeof(int);
     if(mpmOrder[ARCH_RotStrain]=='Y')
