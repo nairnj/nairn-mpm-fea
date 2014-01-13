@@ -68,6 +68,7 @@ public class MaterialPoint
 	}
 	
 	// return shape for the particle at current location
+	// (xpt,ypt) are pixel locations and (radiix,radiiy) are pixel sizes
 	public Shape particleShape(ResultsDocument resDoc,double xpt,double ypt,double radiix,double radiiy,
 								boolean showSquarePts,boolean transformPts)
 	{	// depends on setting

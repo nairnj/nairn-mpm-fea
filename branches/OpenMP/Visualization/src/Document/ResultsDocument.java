@@ -48,6 +48,7 @@ public class ResultsDocument extends AbstractTableModel
 	public char[] feaArchFormat = {'N','N','N','N','N','N' };
 	public double xmin,xmax,ymin,ymax,zmin,zmax;			// mesh bounds
 	public double dxmin,dxmax,dymin,dymax;					// displaced mesh bounds
+	// cell dimension in any direction will be cellMinSide*iscale
 	public double cellMinSide,xscale=1.,yscale=1.,zscale=1;
 	public int np;
 	public DocViewer docCtrl;
@@ -401,7 +402,27 @@ public class ResultsDocument extends AbstractTableModel
 					bcArg=s.nextDouble();
 					if(bcID==BoundaryCondition.FUNCTION_VALUE)
 						s.next();
-					addParticleBC(nodeNum,dof,bcID,bcLoad,bcArg);
+					addParticleBC(nodeNum,dof,0,bcID,bcLoad,bcArg);
+				}
+			}
+			
+			bcs=section("MATERIAL POINTS WITH TRACTIONS");
+			lineStart=findNextLine(bcs,"-----");
+			if(lineStart>0 && lineStart<bcs.length())
+			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
+				s.useLocale(Locale.US);
+				int dof,bcID,bcFace;
+				double bcLoad,bcArg;
+				while(s.hasNextInt())
+				{	nodeNum=s.nextInt();		// particle number here
+					dof=s.nextInt();
+					bcFace=s.nextInt();
+					bcID=s.nextInt();
+					bcLoad=s.nextDouble();
+					bcArg=s.nextDouble();
+					if(bcID==BoundaryCondition.FUNCTION_VALUE)
+						s.next();
+					addParticleBC(nodeNum,dof,bcFace,bcID,bcLoad,bcArg);
 				}
 			}
 			
@@ -422,7 +443,9 @@ public class ResultsDocument extends AbstractTableModel
 				}
 			}
 			if(gridInfo!=null)
-			{	sline=new Scanner(gridInfo).useDelimiter("[ :]");
+			{	// read grid info and find relative cell sides
+				// mininimum side scale is 1 and other are relative to that side
+				sline=new Scanner(gridInfo).useDelimiter("[ :]");
 				sline.useLocale(Locale.US);
 				if(sline.hasNextDouble())
 					xscale=sline.nextDouble()*lengthScale;
@@ -434,17 +457,37 @@ public class ResultsDocument extends AbstractTableModel
 					yscale=sline.nextDouble()*lengthScale;
 				else
 					yscale=xscale;
-				if(xscale>yscale)
-				{	xscale/=yscale;
-					yscale=1.;
-				}
-				else
-				{	yscale/=xscale;
-					xscale=1.;
-				}
 				if(is3D())
 				{	if(sline.hasNext()) sline.next();
-					if(sline.hasNextDouble()) zscale=sline.nextDouble()*lengthScale;
+					if(sline.hasNextDouble())
+						zscale=sline.nextDouble()*lengthScale;
+					else
+						zscale=xscale;
+					if(zscale<xscale && zscale<yscale)
+					{	xscale/=zscale;
+						yscale/=zscale;
+						zscale=1;
+					}
+					else if(yscale<xscale)
+					{	xscale/=yscale;
+						zscale/=yscale;
+						yscale=1.;
+					}
+					else
+					{	yscale/=xscale;
+						zscale/=xscale;
+						xscale=1.;
+					}
+				}
+				else
+				{	if(xscale>yscale)
+					{	xscale/=yscale;
+						yscale=1.;
+					}
+					else
+					{	yscale/=xscale;
+						xscale=1.;
+					}
 				}
 			}
 		}
@@ -907,9 +950,9 @@ public class ResultsDocument extends AbstractTableModel
 	}
 
 	// add particle BC
-	public void addParticleBC(int partNum,int dof,int bcID,double bcVal,double bcArg)
+	public void addParticleBC(int partNum,int dof,int bcFace,int bcID,double bcVal,double bcArg)
 	{	
-		particleBCs.add(new ParticleBC(partNum,dof,bcID,bcVal,bcArg));
+		particleBCs.add(new ParticleBC(partNum,dof,bcFace,bcID,bcVal,bcArg));
 	}
 	
 	// add archive file if it exists

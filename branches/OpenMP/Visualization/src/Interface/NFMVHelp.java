@@ -29,6 +29,8 @@ public class NFMVHelp extends JNHelpWindow implements ActionListener
 		addToolBarIcon(showTopic,"genhelp","Show help on scripting commands.",this);
 		showTopic=new ImageIcon(baseClass.getResource("Resources/materialtypes.png"));
 		addToolBarIcon(showTopic,"mathelp","Show help on material types.",this);
+		showTopic=new ImageIcon(baseClass.getResource("Resources/osupdoc-wiki.png"));
+		addToolBarIcon(showTopic,"osupdocs","Open OSUPDocs wiki site in your browser.",this);
 	}
 	
 	// pick new help topic
@@ -46,6 +48,11 @@ public class NFMVHelp extends JNHelpWindow implements ActionListener
 		
 		else if(theCmd.equals("mathelp"))
 		{	helpURL = JNApplication.main.getClass().getResource("Resources/materials.html");
+		}
+		
+		else if(theCmd.equals("osupdocs"))
+		{	JNApplication.showInBrowser("http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page");
+			return;
 		}
 		
 		if(helpURL==null)

@@ -29,7 +29,7 @@ public class Areas
 	private double ratio;
 	private int intervals;
 	private String pathID;
-	private HashMap<String,Integer> pathIDs;
+	private HashMap<String,ArrayList<Object>> pathIDs;
 	private ArrayList<String> keys;				// in current path
 	private StringBuffer xmlpaths;
 
@@ -51,7 +51,7 @@ public class Areas
 		inPath = false;
 		flipTriangles = 0;
 		elType = ElementBase.EIGHT_NODE_ISO;
-		pathIDs = new HashMap<String,Integer>(20);
+		pathIDs = new HashMap<String,ArrayList<Object>>(20);
 		keyIDs = new HashMap<String,ArrayList<Object>>(50);
 		originX = 0.;
 		originY = 0.;
@@ -150,7 +150,7 @@ public class Areas
 	    if(args.size()<2)
 		    throw new Exception("'Path' command missing path ID: "+args);
 	    pathID = doc.readStringArg(args.get(1));
-	    Integer existingPath = pathIDs.get(pathID);
+	    ArrayList<Object> existingPath = pathIDs.get(pathID);
 		
 		// pre-existing path
 		if(existingPath != null)
@@ -178,7 +178,10 @@ public class Areas
 				ratio = doc.readDoubleArg(args.get(3));
 			
 			// add to list
-			pathIDs.put(pathID, new Integer(pathIDs.size()));
+			ArrayList<Object> pathData = new ArrayList<Object>(5);
+			pathData.add(new Integer(intervals));
+			pathData.add(new Double(ratio));
+			pathIDs.put(pathID, pathData);
 			
 			// if area add there to
 			if(inArea) paths.add(pathID);
@@ -213,7 +216,18 @@ public class Areas
 	    
 	    // now done
 	    inPath = false;
-		
+	    
+	    // finish path data with the keypoints
+	    ArrayList<Object> pathData = pathIDs.get(pathID);
+	    pathData.add(keys.get(0));
+	    if(keys.size()==2)
+	    {	pathData.add("");
+	    	pathData.add(keys.get(1));
+	    }
+	    else
+	    {	pathData.add(keys.get(1));
+    		pathData.add(keys.get(2));
+	    }
 	}
 	
 	// Add Paths (any number) to current area
@@ -230,7 +244,7 @@ public class Areas
 	    int i;
 	    for(i=1;i<args.size();i++)
 	    {	String nextPath = doc.readStringArg(args.get(i));
-	    	Integer existingPath = pathIDs.get(nextPath);
+	    	ArrayList<Object> existingPath = pathIDs.get(nextPath);
 	    	if(existingPath == null)
 	    		throw new Exception("Undefined path ("+nextPath+") referenced in a 'Paths' command: "+args);
 	    	paths.add(nextPath);
@@ -357,14 +371,46 @@ public class Areas
 
 	// see if has defined path
 	public boolean hasPath(String anID)
-	{	Integer exists = pathIDs.get(anID);
+	{	ArrayList<Object> exists = pathIDs.get(anID);
 		return exists == null ? false : true ;
+	}
+	
+	// get path property (intervals, ratios, first, middle, or last
+	public String getPathProperty(String anID,String prop)
+	{	ArrayList<Object> pathData = pathIDs.get(anID);
+		if(pathData==null) return null;
+	    System.out.println(pathData);
+		if(prop.equals("intervals"))
+			return pathData.get(0).toString();
+		else if(prop.equals("ratio"))
+			return pathData.get(1).toString();
+		else if(prop.equals("first"))
+			return (String)pathData.get(2);
+		else if(prop.equals("middle"))
+			return (String)pathData.get(3);
+		else if(prop.equals("last"))
+			return (String)pathData.get(4);
+		else
+			return null;
 	}
 	
 	// see if has defined keypoint
 	public boolean hasKeypoint(String anID)
 	{	ArrayList<Object> exists = keyIDs.get(anID);
 		return exists == null ? false : true ;
+	}
+	
+	// get key point property (x, y, or z) (or null is invalid)
+	public String getKeypointProperty(String anID,String prop)
+	{	ArrayList<Object> keyData = keyIDs.get(anID);
+		if(keyData==null) return null;
+		if(prop.equals("x"))
+			return keyData.get(0).toString();
+		else if(prop.equals("y"))
+			return keyData.get(1).toString();
+		else if(prop.equals("z"))
+			return "0";
+		return null;
 	}
 	
 	// Origin #1, #2 or #1

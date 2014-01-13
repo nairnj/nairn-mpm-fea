@@ -1611,6 +1611,52 @@ public class CmdViewer extends JNCmdTextDocument
 		ptsPerElement = "    <MatlPtsPerElement>"+pts+"</MatlPtsPerElement>\n";
 	}
 	
+	// convert @ expression to Double
+	public Double getAtDouble(String s)
+	{	// get as string and see if a number
+		String expr = getAtString(s);
+		if(expr==null) return null;
+		try
+		{	return new Double(Double.parseDouble(expr));
+		}
+		catch(Exception e)
+		{
+		}
+		return null;
+	}
+	
+	// convert @ expression to String
+	public String getAtString(String s)
+	{	// split at periods
+		String[] atoms = s.substring(1).split("[.]");
+		
+		// process them
+		try
+		{	int i=0;
+			while(i<atoms.length)
+			{	String nextAtom = atoms[i];
+		
+				// read key points
+				if(nextAtom.equals("key"))
+				{	// make sure has data
+					i+=2;
+					return areas.getKeypointProperty(readStringArg(atoms[i-1]),readStringArg(atoms[i]));
+				}
+				else if(nextAtom.equals("path"))
+				{	// make sure has data
+					i+=2;
+					return areas.getPathProperty(readStringArg(atoms[i-1]),readStringArg(atoms[i]));
+				}
+			}
+		}
+		catch(Exception e)
+		{
+		}
+		
+		// if here, than bad expression
+		return null;
+	}
+
 	// when analysis is done create XML commands
 	public String buildXMLCommands()
 	{	// start buffer for XML commands
@@ -1735,7 +1781,7 @@ public class CmdViewer extends JNCmdTextDocument
 			// done
 			xml.append("  </Mesh>\n\n");
 			
-			// MPM Material Points
+			// MPM Material Points (XMLData was already added, if any)
 			//-----------------------------------------------------------
 			xml.append("  <MaterialPoints>\n"+regions.toXMLString());
 			xml.append("  </MaterialPoints>\n\n");
@@ -1745,31 +1791,31 @@ public class CmdViewer extends JNCmdTextDocument
 			if(more!=null) xml.append(more);
 		}
 		
-		// Materials
+		// Materials (XMLData was already added, if any)
 		//-----------------------------------------------------------
 		xml.append(mats.toXMLString());
 		
 		// GridBCs
 		//-----------------------------------------------------------
+		String gridXml = null;
 		if(isFEA())
-			xml.append("  <GridBCs>\n"+feaBCs.toXMLString());
+			gridXml = feaBCs.toXMLString();
 		else
-			xml.append("  <GridBCs>\n"+mpmGridBCs.toXMLString());
+			gridXml = mpmGridBCs.toXMLString();
 		
-		// done
-		xml.append("  </GridBCs>\n\n");
+		if(gridXml.length()>0)
+			xml.append("  <GridBCs>\n"+gridXml+"  </GridBCs>\n\n");
 		
 		// ParticleBCs
 		//-----------------------------------------------------------
 		if(isMPM())
-		{	xml.append("  <ParticleBCs>\n"+mpmParticleBCs.toXMLString());
-		
-			// xml data
+		{	String partXml = mpmParticleBCs.toXMLString();
 			more = xmldata.get("ParticleBCs");
-			if(more != null) xml.append(more);
-			
-			// done
-			xml.append("  </ParticleBCs>\n\n");
+			if(partXml.length()>0 || more!=null)
+			{	xml.append("  <ParticleBCs>\n"+partXml);
+				if(more != null) xml.append(more);
+				xml.append("  </ParticleBCs>\n\n");
+			}
 		}
 	
 		// FEA: Thermal, MPM: Thermal, Gravity, CustomTasks

@@ -1,65 +1,46 @@
-<?xml version='1.0'?>
-<!DOCTYPE JANFEAInput SYSTEM "/Users/dnairn/Desktop/John/NairnCode/NairnMPM/input/NairnMPM.dtd"
-[
- <!ENTITY fileroot 'Results/template.'>
-]>
-<JANFEAInput version='3'>
+! ********** Introduction **********
 
-<!-- MPM analysis template
--->
+! ********** Preamble Section **********
+Title "MPM Analysis Title"
+Name "MPM Analyst's Name"
 
-  <Header>
-    <Description>
-Title: MPM Analysis
-User Name: User Name
-    </Description>
-    <Analysis>11</Analysis>
-  </Header>
+! Header
+Header
+   MPM Analysis using NairnFEAMPM and NairnMPM
+EndHeader
 
-  <MPMHeader>
-    <ArchiveTime>1e-02</ArchiveTime>
-    <MaxTime>0.6</MaxTime>
-    <ArchiveRoot>&fileroot;</ArchiveRoot>
-    <MPMArchiveOrder>mYYYYYNYYYNNY</MPMArchiveOrder>
-    <CrackArchiveOrder>mYNN</CrackArchiveOrder>
-    <Damping>50</Damping>
-    <GlobalArchiveTime>1e-2</GlobalArchiveTime>
-    <GlobalArchive type='sxx'/>
-    <GlobalArchive type='exx'/>
-    <GIMP/>
-   </MPMHeader>
+Analysis "Plane Stress MPM"
+MPMMethod USAVG,GIMP
+Archive "Results/MPM"
+ArchiveTime 1
+MaximumTime 10
 
-  <Mesh>
-    <Grid xmin="-20" xmax="100" ymin="-5" ymax="25">
-      <Horiz cellsize="5"/>
-      <Vert cellsize="5"/>
-    </Grid>
-  </Mesh>
+! ********** Parameters Section **********
+#cell=5                 ! cell size (square cells)
+#width=100              ! Width of object in mm (mult of cell)
+#height=50              ! Height in mm (mult of cell)
+#thickness=1            ! Thickness in mm
+#border=2				! cells around the edges
 
-  <MaterialPoints>
-    <Body mat="1" angle="0" thick="5" vx="0" vy="0">
-      <Rect xmin="0" xmax="100" ymin="0" ymax="20"/>     
-    </Body>
-  </MaterialPoints>
+! ********** Materials Section **********
+#matname$="polymer"
+Material #matname$,"Polymer","Isotropic"
+  E 2500
+  nu .33
+  a 60
+  rho 1.2
+Done
 
-  <Material Type="1" Name="Isotropic Material">
-    <rho>1.5</rho>
-    <E>1e-02</E>
-    <nu>0.33</nu>
-    <alpha>60</alpha>
-  </Material>
+! ********** Grid and Material Points Section **********
+GridHoriz (#width+2*#border*#cell)/#cell
+GridVert (#height+2*#border*#cell)/#cell
+GridThickness #thickness
+GridRect -#border*#cell,#width+#border*#cell,-#border*#cell,#height+#border*#cell
 
-  <GridBCs>
-    <BCLine x1="max+" y1="min" x2="max+" y2="max" tolerance="*1">
-      <DisBC dir="1" disp="0"/>
-    </BCLine>
-  </GridBCs>
+Region #matname$,0,0,#thickness
+  Rect 0,#width,0,#height
+EndRegion
 
-  <ParticleBCs>                            
-    <BCLine x1="0" x2="0" y1="-5" y2="25" tolerance="*.3">       
-      <LoadBC dir="1" style="2" load="-6.25e-5" ftime="0.0"/> 
-      <LoadBC dir="1" style="2" load="6.25e-5" ftime="100.0"/> 
-    </BCLine>
-  </ParticleBCs> 
+! ********** Optional Calculations Section **********
 
-</JANFEAInput>
+! ********** Boundary Condition Section **********

@@ -10,9 +10,12 @@ import java.awt.geom.*;
 
 public class ParticleBC extends BoundaryCondition
 {
+	private int face;
+	
 	// initialize
-	ParticleBC(int partNum,int bcDof,int theID,double theVal,double theArg)
+	ParticleBC(int partNum,int bcDof,int bcFace,int theID,double theVal,double theArg)
 	{	super(partNum,bcDof,theID,theVal,theArg,0.0);
+		face = bcFace;			// 0 for load or 1-6 for traction
 	}
 
 	// draw the boundary conditino
@@ -40,13 +43,74 @@ public class ParticleBC extends BoundaryCondition
 				else
 					transform.rotate(Math.PI/2.);
 				break;
+			case N_DIRECTION:
+				if(face==1)
+				{	if(value>=0.)
+						transform.rotate(-Math.PI/2.);
+					else
+						transform.rotate(Math.PI/2.);
+				}
+				else if(face==2)
+				{	if(value<0.)
+						transform.rotate(Math.PI);
+				}
+				else if(face==3)
+				{	if(value<0.)
+						transform.rotate(-Math.PI/2.);
+					else
+						transform.rotate(Math.PI/2.);
+				}
+				else if(face==4)
+				{	if(value>=0.)
+						transform.rotate(Math.PI);
+				}
+				break;
+			case T1_DIRECTION:
+				if(face==4)
+				{	if(value>=0.)
+						transform.rotate(-Math.PI/2.);
+					else
+						transform.rotate(Math.PI/2.);
+				}
+				else if(face==1)
+				{	if(value<0.)
+						transform.rotate(Math.PI);
+				}
+				else if(face==2)
+				{	if(value<0.)
+						transform.rotate(-Math.PI/2.);
+					else
+						transform.rotate(Math.PI/2.);
+				}
+				else if(face==3)
+				{	if(value>=0.)
+						transform.rotate(Math.PI);
+				}
+				break;
 			default:
 				break;
 		}
+		
+		// for traction, move to face
+		double dx=0.;
+		double dy=0.;
+		if(face>0)
+		{	Point2D.Double mpcell = pv.getMpSize();
+			if(face==1)
+				dy = -mpcell.getY()/2.;
+			else if(face==2)
+				dx = mpcell.getX()/2.;
+			else if(face==3)
+				dy = mpcell.getY()/2.;
+			else if(face==4)
+				dx = -mpcell.getX()/2.;
+		}
+		
+		// apply transformation
 		arrow.transform(transform);
 		
 		transform=new AffineTransform();
-		transform.translate((float)mpt.x,(float)mpt.y);
+		transform.translate((float)(mpt.x+dx),(float)(mpt.y+dy));
 		arrow.transform(transform);
 		
 		pv.fillShape(arrow);

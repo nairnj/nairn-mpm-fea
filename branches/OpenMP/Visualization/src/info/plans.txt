@@ -2,9 +2,12 @@
 NairnFEAMPMViz Plans
 -------------------------------------------------------------------
 
-¥ MPM Plotting
-	Plot traction BCs
-	Silent BCs
+¥ Commit all and then convert OpenMP branch to the main trunk
+
+¥ Start OSUParticulas repository
+
+* BC plotting (both codes)
+	Silent, heat flux, concentration flux, temperature, concentration
 	
 ¥ FEA Crack Closure Calculations
 
@@ -15,23 +18,13 @@ NairnFEAMPMViz Plans
 ¥ Preferences
 	Subelement density in mesh plots
 	Spectra inversion and brightness
-	See NairnFEAMPM preferences
+	See NairnFEAMPM preferences for more
 
--------------------------------------------------------------------
-Scripting Development
--------------------------------------------------------------------
-
-See if NairnFEAMPM can allow same commands and assignments in materials
-
-Language
-	Subroutines (use in Hypotension)
-	Array variables (allow [] in name, preprocess expressions for []'s, string variables '$'?)
-	Support @ expressions
+¥ Language
 	Maintain library of subroutines to load (both codes)
+	Entity - Look for other commands to support its use (both codes)
+	See if NairnFEAMPM can allow same commands and assignments in materials
 
-Entity
-	Look for other commands to support its use (both codes)
-	
 -------------------------------------------------------------------
 Development Notes
 -------------------------------------------------------------------

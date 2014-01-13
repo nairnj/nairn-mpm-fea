@@ -75,6 +75,7 @@ public class Materials
 		options.put("viscoelastic", new Integer(6));
 		options.put("mooney", new Integer(8));
 		options.put("vonmises", new Integer(9));
+		options.put("isoplasticity", new Integer(9));
 		options.put("bistable", new Integer(10));
 		options.put("rigid", new Integer(11));
 		options.put("triangulartraction", new Integer(12));
@@ -83,13 +84,15 @@ public class Materials
 		options.put("hillplastic", new Integer(15));
 		options.put("johnsoncook", new Integer(16));
 		options.put("mgscglmaterial", new Integer(17));
-		options.put("slmaterial", new Integer(18));
+		options.put("mgeosmaterial", new Integer(17));
 		options.put("trilineartraction", new Integer(20));
 		options.put("heanisotropic", new Integer(21));
 		options.put("idealgas", new Integer(22));
 		options.put("coupledsawtooth", new Integer(23));
 		options.put("heisotropic", new Integer(24));
+		options.put("hemgeosmaterial", new Integer(25));
 		options.put("pressuretraction", new Integer(26));
+		options.put("taitliquid", new Integer(27));
 		matType = doc.readIntOption(args.get(3),options,null);
 		if(matType<0)
 			throw new Exception("'Material' type not yet supported in scripting commands.\nUse XML method instead: "+args);
@@ -341,6 +344,10 @@ public class Materials
 		}
 		else if(prop.toLowerCase().equals("function"))
 		{	xmldata.append("    <function>"+doc.readStringArg(args.get(1))+"</function>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("hardening"))
+		{	xmldata.append("    <Hardening>"+doc.readStringArg(args.get(1))+"</Hardening>\n");
 			return;
 		}
 		

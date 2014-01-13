@@ -29,9 +29,9 @@ public class MeshPlotView extends JPanel
 	static final int MOVE_LABEL=CENTER_LABEL;		// add options that move before drawing
 	static final int KEY_HEIGHT=25;
 	
-	private double xpt,ypt;
-	public Rectangle2D.Double xyBounds;
-	private double scale;
+	private double xpt,ypt;							// current pixel location
+	public Rectangle2D.Double xyBounds;				// bounds in plot units
+	private double scale;							// pixels/length units
 	private boolean showMatPts,showSquarePts,showCrackPlanes,showCrackSurfaces;
 	private boolean showMesh,showMeshBCs,showNodeNums,showElemNums,showMatPtNums;
 	private boolean showNodes,showDisplaced,transformPts,clipToParticles;
@@ -241,7 +241,7 @@ public class MeshPlotView extends JPanel
 							(double)d.width/scale,(double)d.height/scale);
 	}
 	
-	// move to a point
+	// move to a point (x,y) to pixels pt (xpt,ypt)
 	public void moveTo(double x,double y)
 	{	xpt=scale*(x-xyBounds.getX());
 		ypt=scale*(xyBounds.getY()+xyBounds.getHeight()-y);
@@ -260,7 +260,7 @@ public class MeshPlotView extends JPanel
 		ypt-=dy;
 	}
 	
-	// line from previous point to new point
+	// line from previous point to new point (x,y)
 	public void lineTo(double x,double y)
 	{	double xpt2=scale*(x-xyBounds.getX());
 		double ypt2=scale*(xyBounds.getY()+xyBounds.getHeight()-y);
@@ -270,13 +270,13 @@ public class MeshPlotView extends JPanel
 		ypt=ypt2;
 	}
 	
-	// draw circle (because only 1 argument)
+	// draw circle (because only 1 argument) with radius (graph units)
 	public void drawOval(double radius)
 	{	double diam=2.*scale*radius;
 		g2Loc.draw(new Ellipse2D.Double(xpt-diam/2.,ypt-diam/2.,diam,diam));
 	}
 	
-	// draw circle (because only 1 argument)
+	// draw circle (because only 1 argument) with radius (graph units)
 	public void fillOval(double radius)
 	{	double diam=2.*scale*radius;
 		g2Loc.fill(new Ellipse2D.Double(xpt-diam/2.,ypt-diam/2.,diam,diam));
@@ -289,6 +289,13 @@ public class MeshPlotView extends JPanel
 		double radiiy=resDoc.yscale*diam/2.;
 		g2Loc.setColor(theColor);
 		g2Loc.fill(mpart.particleShape(resDoc,xpt,ypt,radiix,radiiy,showSquarePts,transformPts));
+	}
+	
+	// get material point (as draw) dimensions in plot units
+	// (multiply by scale to get in pixels)
+	public Point2D.Double getMpSize()
+	{	double diam=0.01*mpDiam*resDoc.cellMinSide;
+		return new Point2D.Double(resDoc.xscale*diam,resDoc.yscale*diam);
 	}
 	
 	// draw material point and fill with plot color
