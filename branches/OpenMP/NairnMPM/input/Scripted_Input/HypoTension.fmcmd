@@ -1,3 +1,20 @@
+! Subroutines
+! adjust limits (xmin,max,ymin,ymax) to contain the point
+Sub CheckPoint,#xpt,#ypt
+  #xtest=#cs*#xpt-#sn*#ypt
+  if #xtest<#xmin
+    #xmin=#xtest
+  else if #xtest>#xmax
+    #xmax=#xtest
+  endif
+  #ytest=#sn*#xpt+#cs*#ypt
+  if #ytest<#ymin
+    #ymin=#ytest
+  else if #ytest>#ymax
+    #ymax=#ytest
+  endif
+EndSub
+
 ! ********** Preamble Section **********
 Title "Low Strain, Hypoelastic Tensile Loading"
 Name "John Nairn"
@@ -23,7 +40,7 @@ Processors 4
 
 ! material options: isotropic, iptrans, normtrans, ortho, isoplasticity, mgeos
 ! bistable, viscoelastic, hill, wood
-#matID$="isoplasticity"
+#matID$="isotropic"
 
 ! hardening law (if allowed) for current material
 !	options Linear, Nonlinear, Nonlinear2, JohnsonCook
@@ -39,7 +56,7 @@ Processors 4
 #rotate = 0
 
 ! Load by strain (estimated for force and traction loads)
-#loading$ = "rigid"	! Loading = "force", "traction", "rigid", "contact", "thermal"
+#loading$ = "traction"	! Loading = "force", "traction", "rigid", "contact", "thermal"
 #fixsides$ = "no"	! "yes" or "no" for sides fixed in y direction (2D) or y and z (3D)
 #strain = 5	        ! Maximum strain (%) (stress needed is estimated for force and tractions using base modulus) of dT if thermal
 
@@ -98,19 +115,19 @@ if #matID$="isoplasticity"
       yield abs(#Ebase*#yldstrain/100)
       Ep #Ebase/5
       kCond .202
-      CP 1256
+      Cv 1256
     else if #hardID$="Nonlinear"
       yield abs(#Ebase*#yldstrain/100)
       Khard 500
       nhard .24
       kCond .202
-      CP 1256
+      Cv 1256
     else if #hardID$="Nonlinear2"
       yield abs(#Ebase*#yldstrain/100)
       Khard 1
       nhard .5
       kCond .202
-      CP 1256
+      Cv 1256
     else if #hardID$="JohnsonCook"
       ! For Copper use E=120000,rho=8.96,nu=.25,alpha=0
       Ajc 90
@@ -121,7 +138,7 @@ if #matID$="isoplasticity"
       Tmjc 1356
       mjc 1.09
       kCond 0.202
-      Cp 383
+      Cv 383
     endif
   Done
 endif
@@ -475,69 +492,10 @@ if #rotate!=0
   #ymin=0.5*(#gbot+#gtop)
   #ymax=#ymin
 
-  !GoSub CheckPoint #gleft,#gbot
-  #xpt=#gleft
-  #ypt=#gbot
-  #xtest=#cs*#xpt-#sn*#ypt
-  if #xtest<#xmin
-    #xmin=#xtest
-  else if #xtest>#xmax
-    #xmax=#xtest
-  endif
-  #ytest=#sn*#xpt+#cs*#ypt
-  if #ytest<#ymin
-    #ymin=#ytest
-  else if #ytest>#ymax
-    #ymax=#ytest
-  endif
-
-  !GoSub CheckPoint #gright,#gbot
-  #xpt=#gright
-  #ypt=#gbot
-  #xtest=#cs*#xpt-#sn*#ypt
-  if #xtest<#xmin
-    #xmin=#xtest
-  else if #xtest>#xmax
-    #xmax=#xtest
-  endif
-  #ytest=#sn*#xpt+#cs*#ypt
-  if #ytest<#ymin
-    #ymin=#ytest
-  else if #ytest>#ymax
-    #ymax=#ytest
-  endif
-
-  !GoSub CheckPoint #gright,#gtop
-  #xpt=#gright
-  #ypt=#gtop
-  #xtest=#cs*#xpt-#sn*#ypt
-  if #xtest<#xmin
-    #xmin=#xtest
-  else if #xtest>#xmax
-    #xmax=#xtest
-  endif
-  #ytest=#sn*#xpt+#cs*#ypt
-  if #ytest<#ymin
-    #ymin=#ytest
-  else if #ytest>#ymax
-    #ymax=#ytest
-  endif
-
-  !GoSub CheckPoint #gleft,#gtop
-  #xpt=#gleft
-  #ypt=#gtop
-  #xtest=#cs*#xpt-#sn*#ypt
-  if #xtest<#xmin
-    #xmin=#xtest
-  else if #xtest>#xmax
-    #xmax=#xtest
-  endif
-  #ytest=#sn*#xpt+#cs*#ypt
-  if #ytest<#ymin
-    #ymin=#ytest
-  else if #ytest>#ymax
-    #ymax=#ytest
-  endif
+  GoSub CheckPoint,#gleft,#gbot
+  GoSub CheckPoint,#gright,#gbot
+  GoSub CheckPoint,#gright,#gtop
+  GoSub CheckPoint,#gleft,#gtop
 
   #gleft=#cell*int(#xmin/#cell)
   #gright=#cell*int(#xmax/#cell)
@@ -665,7 +623,7 @@ else ifStr #loading$="traction"
   endif
   if #analysis$="3D MPM"
     LoadBox #length-#cell/2,0,0,#length,#width,#thick
-      Traction x,2,function,(#stress/#time)&#tpart$,0,-1
+      Traction x,4,function,(#stress/#time)&#tpart$,0,-1
     EndLoadBox
   else if #rotate!=0
     Stop "Traction loads cannot be used with rotated specimens (yet)"

@@ -19,36 +19,28 @@
 
 <h1>Header</h1>
 
-<p class="osupdocs">Deprecated documentation: the new version is in the OSUPDocs wiki for <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Input_Files#Main_Header">MPM</a> and <a href="http://osupdocs.forestry.oregonstate.edu/index.php/FEA_Input_Files#Header">FEA</a> main headers.</p>
-
-<p>
-This required section defines the type of analysis to be done and allows setting of some optional parameters.
-</p>
+<p>The main header is docummented in the on-line wiki for <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Input_Files#Main_Header">MPM</a> and <a href="http://osupdocs.forestry.oregonstate.edu/index.php/FEA_Input_Files#Header">FEA</a> input files. The main header is defined in the following block at the beginning of the file:</p>
 
 <pre>
 &lt;Header&gt;
-   &lt;<a href="#descrip"><code>Description</code></a>&gt;
-Title: MPM Analysis
-Name: User Name
-    Sample MPM problem
-   &lt;/Description&gt;
-   &lt;<a href="#analysis"><code>Analysis</code></a>&gt;11&lt;/Analysis&gt;
-   &lt;<a href="#output"><code>Output</code></a>&gt;YYYYNY&lt;/Output&gt;
-   &lt;<a href="#select"><code>Select</code></a> node='1'/&gt;
-   &lt;Select node='23'/&gt;
-   &lt;<a href="#dflag"><code>DevelFlag</code></a> Number='0'/&gt;2&lt;/DevelFlag/&gt
+  (main header commands)
 &lt;/Header&gt;
 </pre>
 
-<p>where</p>
+<p>where the header commands are defined as follows</p>
 
-<dl>
-  <dt><a name="descrip"></a>&lt;Description&gt;</dt>
-  <dd>Provides an optional free-format, text description of the problem. The description must begin on the line <i>after</i> the tag. All characters
-  up to the ending tag are part of the description.</dd>
+<ul>
 
-  <dt><a name="analysis"></a>&lt;Analysis&gt;</dt>
-  <dd>Defines type of analysis to perform (required). The data is an integer code with the following options:
+<li><pre class="list">&lt;Description&gt;
+   (free-format text)
+&lt;/Description&gt;
+</pre>
+  Provides an optional free-format, text description of the problem. The description must begin on the line <i>after</i> the tag. All characters
+  up to the ending tag are part of the description.
+</li>
+
+<li><pre class="list">&lt;Analysis&gt;(type)&lt;/Analysis&gt;</pre>
+Defines type of analysis with with the following options:
   <ul class="lev2args">
   <li>0 = Plane strain FEA analysis (NairnFEA only)</li>
   <li>1 = Plane stress FEA analysis (NairnFEA only)</li>
@@ -58,11 +50,10 @@ Name: User Name
   <li>12 = 3D MPM analysis (NairnMPM only)</li>
   <li>13 = Axisymmetric MPM analysis (NairnMPM only)</li>
   </ul>
-  In axisymmetric calculations, the x axis becomes the radial (or R) axis, the y axis becomes the axial (or Z axis), and the z axis is for hoop stress and strain.
-  </dd>
-  
-  <dt><a name="output"></a>&lt;Output&gt;</dt>
-  <dd>This optional tag is for NairnFEA only. It selects the desired output for the finite element results file. It can be used to reduce output file size to desired results only. The text of the tag has 1 to 6 letters, each of which must be 'Y', 'C', or 'N. A 'Y' means that result is fully included in the file. A 'C' means that result is conditionally included only if it is relevant to one of a set of preselected nodes. A 'N' means that result is not included in the file. The six output result options are:
+</li>
+
+<li><pre class="list">&lt;Output&gt;(xxxxxx)&lt;/Output&gt;</pre>
+This optional tag is for <code>NairnFEA</code> only and determines what appears in the output file. The six bytes in the string can be 'Y', 'C', or 'N' and they stdand for:
   <ul class="lev2args">
   <li>Byte 1: Displacement of each node</li>
   <li>Byte 2: Nodal forces within each element</li>
@@ -71,16 +62,15 @@ Name: User Name
   <li>Byte 5: Force reactivities at nodes with fixed displacement</li>
   <li>Byte 6: Strain energy of each element and total strain energy</li>
   </ul>
-  Note that if certain results are omitted, they will be not be available for plotting in analysis software. Bytes 2 and 3 are element results. If these options are 'C' they will output the full results for any element that has one or more preselected nodes. Bytes 5 and 6 provide full output for both option 'Y' and 'C' (<i>i.e.</i>, there are not sensitive to which nodes are selected). Finally, if no <code>Output</code> tag is used, the default settings are 'YYYYNY'.
-</dd>
+A 'Y' means that result is fully included in the file. A 'C' means that result is conditionally included only if it is relevant to one of a set of preselected nodes. A 'N' means that result is not included in the file.</li>
 
-  <dt><a name="select"></a>&lt;Select node='23'&gt;</dt>
-  <dd>These optional tags can be used in conjunction with an <code>Output</code> tag (NairnFEA only) to preselect nodes for any output setting of 'C'.  The <code>node</code> attrribute selects which node should be selected. This method of preselecting nodes is typically only used when doing <a href="definefeamesh.html#sec1">explicit definition</a> of an FEA mesh. When <a href="definefeamesh.html#sec2">generating a mesh</a> with higher level commands, it is preferrable to select nodes for conditional output using <a href="feabc.html#sec2">generated boundary condition</a> commands.</dd>
+<li><pre class="list">&lt;Select node='(num)'/&gt;</pre>
+Select node (by number) for conditional output of result. This command is rarely used because there are better ways to select nodes for conditional output.</li>
 
-  <dt><a name="dflag"></a>&lt;<code>DevelFlag</code> Number='0'/&gt;2&lt;/DevelFlag/&gt</dt>
-  <dd>This tag sets a development flag. You can set up to 5 flags by using <code>Number</code> from 0 to 4. The default for all flags is zero. Any non-zero flags will be listed in the output file after the description. These flags are for use in development. The code can be modified to alter the calculation depending on a certain flag. They should not be relied upon to mean anything permanent.</dd>
+<li><pre class="list">&lt;DevelFlag Number='(num)'/&gt;(value)&lt;/DevelFlag/&gt;</pre>
+Sets a developer flag by <code>(num)</code> (from 0 to 4) to the integer in <code>(value)</code>.</li>
 
-</dl>
+</ul>
 
 <p class="links">
 <a href="../index.html">Home</a> &rarr;

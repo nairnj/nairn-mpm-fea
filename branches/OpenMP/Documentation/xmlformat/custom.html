@@ -17,9 +17,7 @@
 
 <h1>Scheduling Custom Tasks</h1>
 
-<p class="osupdocs">Deprecated documentation: this section, and all hardening law definitions, is in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Input_Files#Custom_Tasks">OSUPDocs Wiki</a>.</p>
-
-<p>NairnMPM supports custom tasks that are performed at the end of each time step. The tasks can range from simple calculations to iterations over all material points and nodes. Some built-in operations (such as <a href="mpmheader.html#propagate">crack propagation</a>, <a href="mpmheader.html#diffusion">diffusion</a>, and <a href="thermal.html">conduction</a>) are handled by custom tasks and are automatically scheduled by other commands. Alternatively custom tasks can be written by users working with NairnMPM source code and then scheduled when needed.</p>
+<p>NairnMPM supports custom tasks that are performed at the end of each time step (for more details see the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Input_Files#Custom_Tasks">OSUPDocs Wiki</a>). The tasks can range from simple calculations to iterations over all material points and nodes. New custom tasks can be written by users working with NairnMPM source code and then scheduled when needed.</p>
 
 <p>The format for scheduling any available custom task is as follows:</p>
 
@@ -28,201 +26,92 @@
   &lt;Schedule name='ReverseLoad'&gt;
     &lt;Parameter name='style'&gt;2&lt;/Parameter&gt;
     &lt;Parameter name='maxLength'&gt;10&lt;/Parameter&gt;
-     .
-     .
+         &#x22ee;
   &lt;/Schedule&gt;
-     .
-     .
-     .
+         &#x22ee;
 &lt;/CustomTasks&gt;
 </pre>
 
-<p>All custom tasks are scheduled within a single <code>&lt;CustomTasks&gt;</code> block. A specific task is scheduled with a  <code>&lt;Schedule&gt;</code> command where the name attribute specifies the task name. Any task may depend on parameters which can be set with a series of <code>&lt;Parameter&gt;</code> commands. The name attribute gives the name of the parameter and the value is the setting for that parameter. If the named parameter does not have a value, the value text can be omitted (<i>e.g.</i>, use just <code>&lt;Parameter name='NoValueNeeded'/&gt;</code>)
+<p>All custom tasks are scheduled within a single <code>&lt;CustomTasks&gt;</code> block. A specific task is scheduled with a  <code>&lt;Schedule&gt;</code> command where the name attribute specifies the task name. Any task may depend on parameters which can be set with a series of <code>&lt;Parameter&gt;</code> commands. The <code>name</code> attribute gives the name of the parameter and the value is the setting for that parameter (although not all parameters required a value).
 </p>
 
-<p>The currently available (and documented) custom tasks are:</p>
+<p>The currently available (and documented) custom tasks are thei parameters are:</p>
+
+<dl>
+
+<dt><a name="VTKArchive"></a>VTKArchive</dt>
+
+<dd>This task allows <code>NairnMPM</code> to export data extrapolated to the grid during the calculation to VTK Legacy files (these files can be visualized by other software such as <a href="http://www.paraview.org" target="new">Paraview</a>). The parameters define what is save in the files:
 
 <ul>
 
-<li><a href="#VTKArchive">VTKArchive Custom Task</a></li>
-
-<li><a href="#HistoryArchive">HistoryArchive Custom Task</a></li>
-
-<li><a href="#ReverseLoad">ReverseLoad Custom Task</a></li>
-
-<li><a href="#AdjustTimeStep">AdjustTimeStep Custom Task</a></li>
-
+<li>mass - nodal mass (in g). This option is useful for creating contours that visualize the boundaries of the object.</li>
+<li>material - the material number to visualize different materials in a composite.</li>
+<li>displacement - the displacement vector (in mm).</li>
+<li>velocity - the velocity vector (in mm/sec).</li>
+<li>stress - the stress tensor (in MPa).</li>
+<li>pressure - the pressure (in MPa).</li>
+<li>equivstress - the equivalent stress (also know as von Mises stress) (in MPa).</li>
+<li>strain - the strain tensor, which is elastic strain for materials that partition elastic and plastic strain, but total strain for all others (absolute).</li>
+<li>deltav - the relative volume change (V-V<sub>0</sub>)/V<sub>0</sub> (absolute).</li>
+<li>equivstrain - the equivalent strain from above strain (absolute).</li>
+<li>plasticstrain - the plastic strain tensor (absolute). Some materials have plastic strain, but hyperelastic materials have left Cauchy Green strain in the particle's plastic strain.</li>
+<li>totalstrain - Archive total strain tensor (absolute, elastic+plastic strain for materials that separate them).</li>
+<li>temperature - the temperature (in K).</li>
+<li>concentration - the concentration (in wt %).</li>
+<li>strainenergy - the strain energy in J.</li>
+<li>heatenergy - the heat energy in J.</li>
+<li>plasticenergy - the plastic energy (in J).</li>
+<li>contactforce - the nodal force on the grid for <code>MultiMaterialMode</code> simulations when they include rigid materials that have <code>SetDirection</code>=8. It is force of the rigid material on the object in Newtons.</li>
+<li>archiveTime (time) - enter the time interval (in ms) between saving of <code>VTK</code> archives. If this parameter is omitted, the VTK archive files are written on the same steps as the particle archives.</li>
+<li>firstArchiveTime (time) - enter the time to save the first results (in ms).</li>
 </ul>
-
-<h2><a name="VTKArchive"></a>VTKArchive</h2>
-
-<p>A <code>VTKArchive</code> custom task allows <code>NairnMPM</code> to export data extrapolated to the grid during the calculation. The normal archiving of <code>NairnMPM</code> is always particle data. This option is most useful for visualization of grid results from 3D calculations. The files can be read by third-party visualization applications. A good option is the free, multi-platform <a href="http://www.paraview.org" target="new">Paraview</a> application. The exported files have been written to work well with <a href="http://www.paraview.org" target="new">Paraview</a>. If you export multiple archives in a single run, Paraview can load them as a block and animate the results. There are books and web sites on the use of <a href="http://www.paraview.org" target="new">Paraview</a>.</p>
-
-<p>The allowed parameters for the <code>VTKArchive</code> custom task are given below. Most parameters simply define a result to archive and thus take no value. They can be entered as an empty <code>XML</code> command such as:
-</p>
-<pre>   &lt;Parameter name='mass'/&gt;
-</pre>
-
-<p>The archiving time parameters, however, require the standard argument. The VTK archiving options are:
-</p>
-
-<dl>
-<dt>mass</dt>
-<dd>Archive nodal mass (in g). This option is useful for creating contours that visualize the boundaries of the object. The surface can then be colored in any other archived result.
 </dd>
 
-<dt>material</dt>
-<dd>The material number to visualize different materials in a composite (it is extrapolated to the grid, which will blur material edges compared to particle plots).
-</dd>
 
-<dt>displacement</dt>
-<dd>Archive displacement vector (in mm).
-</dd>
+<dt><a name="HistoryArchive"></a>HistoryArchive</dt>
 
-<dt>velocity</dt>
-<dd>Archive velocity vector (in mm/sec). For problems with cracks, it is the center of mass velocity.
-</dd>
-
-<dt>stress</dt>
-<dd>Archive stress tensor (in MPa).
-</dd>
-
-<dt>pressure</dt>
-<dd>Archive pressure (in MPa).
-</dd>
-
-<dt>equivstress</dt>
-<dd>Archive equivalent stress (also know as von Mises stress) (in MPa).
-</dd>
-
-<dt>strain</dt>
-<dd>Archive strain tensor, which is elastic strain for materials that partition elastic and plastic strain, but total strain for all others (absolute).
-</dd>
-
-<dt>deltav</dt>
-<dd>Archive relative volume change (V-V<sub>0</sub>)/V<sub>0</sub> (absolute).
-</dd>
-
-<dt>equivstrain</dt>
-<dd>Archive equivalent strain from above strain (absolute).
-</dd>
-
-<dt>plasticstrain</dt>
-<dd>Archive plastic strain tensor (absolute). Some materials have plastic strain, but hyperelastic materials have left Cauchy Green strain in the particle's plastic strain.
-</dd>
-
-<dt>totalstrain</dt>
-<dd>Archive total strain tensor (absolute, elastic+plastic strain for materials that separate them).
-</dd>
-
-<dt>temperature</dt>
-<dd>Archive temperature (in K). Only useful when <a href="thermal.html">conduction calculations</a> are activated.
-</dd>
-
-<dt>concentration</dt>
-<dd>Archive concentration (in wt %). Only useful when <a href="mpmheader.html#diffusion">diffusion calculations</a> are activated.
-</dd>
-
-<dt>strainenergy</dt>
-<dd>Archive strain energy in J.
-</dd>
-
-<dt>heatenergy</dt>
-<dd>Archive heat energy in J.
-</dd>
-
-<dt>plasticenergy</dt>
-<dd>Archive plastic energy (in J).
-</dd>
-
-<dt>contactforce</dt>
-<dd>Nodal force on the grid for <a href="mpmheader.html#mmmode"><code>MultiMaterialMode</code></a> simulations when they include <a href="definematl.html#rigid">rigid materials</a> that have <code>SetDirection</code>=8. It is force of the rigid material on the object in Newtons.</dd>
-
-<dt>archiveTime</dt>
-<dd>Enter the time interval (in ms) between saving of <code>VTK</code> archives. If this parameter is omitted, the VTK archive files are written on the same steps as the particle archives (see <a href="mpmheader.html#atime">ArchiveTime</a> and <a href="mpmheader.html#fatime">FirstArchiveTime</a> commands). The one exception is that no VTK archive is written <i>before</i> the first step.
-</dd>
-
-<dt>firstArchiveTime</dt>
-<dd>Enter the time to save the first results (in ms). After this time is reached, subsequent archives will be spaced by the entered <code>archiveTime</code>. This parameter is ignored unless the <code>archiveTime</code> parameter is set as well. To get a VTK archive <i>after</i> the first step, enter <code>firstArchiveTime</code> of zero.
-</dd>
-
-</dl>
-
-<p>Archived vectors will include all components of the vector and applications like <a href="http://www.paraview.org" target="new">Paraview</a> can use the magnitude or any single component for constructing graphics. Archived tensors will include all components of the tensor. In <a href="http://www.paraview.org" target="new">Paraview</a>, the magnitude and components 0 through 8 or tensors will be listed. The numbers correspond to the following tensor components:</p>
-<pre>   ( xx   xy   xz )   ( 0  1  2 )
-   | yx   yy   yz | = | 3  4  5 |
-   ( zx   zy   zz ) = ( 6  7  8 )
-</pre>
-
-
-<h2><a name="HistoryArchive"></a>HistoryArchive</h2>
-
-<p>The current <a href="mpmheader.html#mpmarchive"><code>MPMArchiveOrder</code> (byte 14)</a> options can only archive a combination of history variables 1 through 4 for each particle. This custom task provides a method to archive more history variables and also provides an alternate format for archiving history variables 1 through 4.</p>
-
-<p>When this task is activated, the history data on each particle will be written to tab-delimited text files in the output results folder. The name of the file will include the <a href="mpmheader.html#aroot">current root name</a> and will be followed by &quot;<code>_History_#.txt</code>&quot;, where &quot;<code>#</code>&quot; is the step number. The file will begin with short header giving step number, step time, and column labels. Each row that follows will have data for one particle. It will include particle number, current particle position (in mm), and each requested history variable.</p>
-
-<p>You select which history variables to archive, and their order, using a series of <code>Parameter</code> commands:
-</p>
+<dd>This custom task provides a method to archive more history variables and also provides an alternate format for archiving history variables 1 through 4. When this task is activated, the history data on each particle will be written to tab-delimited text files in the output results folder. You select which history variables to archive, and their order, using a series of <code>Parameter</code> commands:
 <pre>   &lt;Parameter name='2'/&gt;
 </pre>
-<p>where the name is the history variable number. In addition, you can control the timing for output of particle history data files using the following two timing parameters:</p>
-
-<dl>
-
-<dt>archiveTime</dt>
-<dd>Enter the time interval (in ms) between saving of history archives. If this parameter is omitted, the history archive files are written on the same steps as the particle archives (see <a href="mpmheader.html#atime">ArchiveTime</a> and <a href="mpmheader.html#fatime">FirstArchiveTime</a> commands). The one exception is that no history archive is written <i>before</i> the first step.
+where the name is the history variable number. Two other paremters are:
+<ul>
+<li>archiveTime - enter the time interval (in ms) between saving of history archives. If this parameter is omitted, the history archive files are written on the same steps as the particle archives.</li>
+<li>firstArchiveTime - enter the time to save the first history results (in ms).</li>
+</ul>
 </dd>
 
-<dt>firstArchiveTime</dt>
-<dd>Enter the time to save the first history results (in ms). After this time is reached, subsequent archives will be spaced by the entered <code>archiveTime</code>. This parameter is ignored unless the <code>archiveTime</code> parameter is set as well. To get a history archive <i>after</i> the first step, enter <code>firstArchiveTime</code> of zero.
-</dd>
+<dt><a name="ReverseLoad"></a>ReverseLoad</dt>
 
-</dl>
-
-<h2><a name="ReverseLoad"></a>ReverseLoad</h2>
-
-<p>The <code>ReverseLoad</code> custom task monitors crack lengths. Once any crack or a specified crack reaches a specified crack length, the crack propagation of all cracks stops and various actions can be performed. The default action is to specimen loading (as implied by the name), but other options are available.</p>
-
-<dl>
-
-<dt>style</dt>
-<dd>This parameter determines what happens after the specified crack length is reached and crack propagation is stopped. The default vaule is 0. The options are:
+<dd>This custom task monitors crack lengths. Once any crack or a specified crack reaches a specified crack length, the crack propagation of all cracks stops and various actions can be performed. The parameters are:
+<ul>
+<li>style (mode) - the (mode> options determines what happens after the specified crack length is reached and crack propagation is stopped. The default vaule is 0. The options are:
 <ul class="lev2args">
-<li>0: Reverses all linearly increasing particle loads and particle tractions (see <a href="mpmloads.html#style">see style=2 loads and tractions</a>). This option also reverses direction of all constant-velocity <a href="definematl.html#rigid">rigid particles</a>. This style will unload until the load or traction (on particles) returns to zero and then stop. If no linearly increasing loads or tractions are found, the analysis will stop at twice the current time, which should return constant velocity <a href="definematl.html#rigid">rigid particles</a> to their original positions. Note that loads or tractions set by other styles (<i>e.g.</i>, <a href="mpmloads.html#style">any style other than 2</a>) and rigid particles with velocity controlled by <a href="function.html">functions</a>, will not be changed by this task.
-</li>
-<li>1: Stops all linearly increasing particle loads and tractions at their current value (<a href="mpmloads.html#style">see style=2 loads</a>) and zeros the velocity of all constant-velocity <a href="definematl.html#rigid">rigid particles</a>. The analysis continues. Note that loads or tractions set by other styles (<i>e.g.</i>,<a href="mpmloads.html#style">any style other than 2</a>) and <a href="definematl.html#rigid">rigid particles</a> with velocity controlled by <a href="function.html">functions</a>, will not be changed by this task.
+<li>0: Reverses all linearly increasing particle loads, particle tractions, and constant-velocity rigid particles and stop when they return to zero.</li>
+<li>1: Stops all linearly increasing particle loads and tractions at their current value and zeros the velocity of all constant-velocity rigid particles. The analysis continues.
 </li>
 <li>2: All particle loads and tractions and rigid particles continue unchanged. Only the crack propagation stops.
 </li>
 <li>3: The analysis terminates.
 </li>
+</ul></li>
+
+<li>maxLength (length) - this parameter specifies the maximum crack length (in mm). Once this length is reached, all crack propagation will stop.</li>
+
+<li>crackNumber (num) - this parameter gives the crack number to watch. When that crack reaches the specificed maximum length, the task will take effect. Alternatively, <code>crackNumber</code> can be zero which causes the task to take effect when any crack reaches the specified maximum length. The default value is 0.</li>
 </ul>
 </dd>
 
-<dt>maxLength</dt>
-<dd>This parameter specifies the maximum crack length (in mm). Once this length is reached, all crack propagation will stop.</dd>
+<dt><a name="AdjustTimeStep"></a>AdjustTimeStep</dt>
 
-<dt>crackNumber</dt>
-<dd>This parameter gives the crack number to watch. When that crack reaches the specificed maximum length, the task will take effect. Alternatively, <code>crackNumber</code> can be zero which causes the task to take effect when any crack reaches the specified maximum length. The default value is 0 or to watch all cracks.</dd>
-
-</dl>
-
-<h2><a name="AdjustTimeStep"></a>AdjustTimeStep</h2>
-
-<p>For convergence of explicit, dynamic calculations, like NairnMPM, the time step must be less then the time it takes a stress wave to pass across the smallest element size. For safety, the time step is usually calculated to be some fraction of this time as specified by the input <a href="mpmheader.html#timefactor"><code>TimeFactor</code></a>. But, for some material types, the wave speed might change during the calculations thereby necessitating an adjustment in the time step to retain convergence. This tasks allows you to periodically adjust the time step. Its only parameter is:</p>
-
-<dl>
-
-<dt>adjustTime</dt>
-<dd>Enter the time interval for checking the time step and adjusting it if needed (in ms). This parameter is optional; if it is omitted, the time step adjustment is done each time particle data are archived (see <a href="mpmheader.html#atime">ArchiveTime</a> and <a href="mpmheader.html#fatime">FirstArchiveTime</a> commands).</dd>
-
-<dt>verbose</dt>
-<dd>If its integer value is not zero, it will print the new time step whenever it changes by more than 1%. If it is zero, the new time step is silently changed. The default it 0.</dd>
+<dd>This tasks allows the time step to change if the wave speed in any material changes (and the material class supports calculation of wave speed as a funciton of particle state). Its parameters are:
+<ul>
+<li>adjustTime (time) - enter the time interval for checking the time step and adjusting it if needed (in ms). This parameter is optional; if it is omitted, the time step adjustment is done each time particle data are archived.</li>
+<li>verbose (value) - if its integer value is not zero, it will print the new time step whenever it changes by more than 1%. If it is zero, the new time step is silently changed. The default it 0.</li>
+</ul>
+</dd>
 
 </dl>
-
-<p>This command only has an effect if some particles are using <a href="definematl.html">material classes</a> that respond to <code>CurrentWaveSpeed()</code> and provide a wave speed that changes depending on current particle state. Currently no material supports this option, but it is planned for the future or can be used now by those developing their own materials.</p>
-
 
 
 <p class="links">

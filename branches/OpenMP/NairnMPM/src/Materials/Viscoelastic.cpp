@@ -32,8 +32,7 @@ Viscoelastic::Viscoelastic(char *matName) : MaterialBase(matName)
     G0=0.;
     currentGk=0;
     currentTauk=0;
-    for(i=0;i<VISCO_PROPS;i++)
-        read[i]=0;
+	aI=40.;
 }
 
 #pragma mark Viscoelastic::Initialization
@@ -67,14 +66,10 @@ char *Viscoelastic::InputMat(char *xName,int &input)
         return((char *)&G0);
     
     else if(strcmp(xName,"K")==0)
-    {	read[VK_PROP]=1;
         return((char *)&K);
-    }
     
     else if(strcmp(xName,"alpha")==0)
-    {	read[VA_PROP]=1;
         return((char *)&aI);
-    }
     
     else if(strcmp(xName,"ntaus")==0)
     {	input=INT_NUM;
@@ -118,8 +113,8 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
     if(ntaus<0)
 		return "Number of taus was never entered.";
     
-    if(!read[VK_PROP] && !read[VA_PROP])  // Oleg changed !! to &&
-		return "Required bulk modulus or thermal expansion not given.";
+    if(K<0)
+		return "Required bulk modulus not given.";
     
     int i;
     

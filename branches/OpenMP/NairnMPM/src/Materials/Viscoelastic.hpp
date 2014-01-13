@@ -17,8 +17,6 @@
 
 enum {XX_HISTORY=0,YY_HISTORY,XY_HISTORY,ZZ_HISTORY,XZ_HISTORY,YZ_HISTORY};
 
-enum {VK_PROP=0,VA_PROP,VISCO_PROPS};
-
 class Viscoelastic : public MaterialBase
 {
     public:
@@ -55,7 +53,6 @@ class Viscoelastic : public MaterialBase
     private:
         int currentGk,currentTauk;
 		double Ge,dGe,CTE,CME,Ke,Ka2sp;
-        char read[VISCO_PROPS];
         
 };
 

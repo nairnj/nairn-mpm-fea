@@ -96,10 +96,14 @@ blockquote {
 	margin-left: 18px;
 	font-size: 9pt;
 	font-family: Courier;
-}/* predformatted with smaller top margin
+}pre.list {
+	margin-left: 0px;
+	font-size: 9pt;
+	font-family: Courier;
+  margin-bottom: 3px;}/* predformatted with smaller top margin
    in file format section */pre.near {
 	margin-top: 3px;
-}p.osupdocs {	margin-left: 10px;	margin-right: 10px;	border: solid 1px #A1A5A9; 	color: red;	background-color: #eeeeee;}/* styles */
+}/* styles */
 .warn  {
 	color: red;
 }
