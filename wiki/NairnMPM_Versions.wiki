@@ -38,7 +38,8 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Dec 5: Symmetry plane boundary condtions
     * Dec 9: mirror property for rigid material for better BCs
     * Dec 10: Artifical viscosity uses total volume raters
-    * Dec 19: New energy and heat traction and changes to achieved quantites
+    * Dec 19: New energy and heat traction and changes to achieved quantities. Also tracks entropy and can archive internal energy and Helmholz free energy.
+    * Dec 20: Tait liquid finished and seems fairly sound, although some instabilities.
     * Jan 2: Fixed 3D bug introduced Dec 11, 2013
     * Jan 8: All documentation simplified with the details moved to the OSUPDocs wiki page
 
