@@ -24,7 +24,7 @@ NairnFEA was first imported to `GoogleCode.com` as version 2.7.0. The versions c
     * Aug 28: FEA uses parallel in matrix inversion.
     * Aug 30: Fixed FEA bug when using three stress to apply quadratic variation in stress.
 
-  * Current trunk Version
+  * Previous trunk Version (this  version was deleted on Jan 14, 2014 when the OpenMP branch replaced the main trunk)
     * Working on NairnFEA 3.0.0
 
   * Release-4.0 (9 JAN 2013)
