@@ -4,7 +4,7 @@
 
 <head>
 	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
-	<title>Running OSParticulas/NairnMPM</title>
+	<title>Running NairnMPM</title>
 	<link rel="stylesheet" type="text/css" href="../help.css">
 </head>
 
@@ -39,7 +39,7 @@ The options for running calculations are:
 
 <h1><a name="javaviz"></a>Running Using NairnFEAMPMViz Java Application (any platform)</h1>
 
-<p>You can run and visualize <code>NairnFEA</code> and <code>NairnMPM</code> calculations on any platform using the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a> Java application. Because <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a> is a Java application, you will need Java (at least Java 1.6) installed on your computer. You also need a jar file for the applistion, and that file included in the <code>nairn-mpm-fea</code> package.</p>
+<p>You can run and visualize <code>NairnFEA</code> and <code>NairnMPM</code> calculations on any platform using the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a> Java application. Because <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a> is a Java application, you will need Java (at least Java 1.6) installed on your computer. You also need a jar file for the application, and that file included in the <code>nairn-mpm-fea/Visualization/src/lib</code> folder of the project.</p>
 
 <h1><a name="runFEA"></a>Running NairnFEA on a Command Line</h1>
 
@@ -68,7 +68,7 @@ NairnFEA [options] input > output
 <dd>Read the input file, set up the mesh and all boundary conditions and then abort before any calculations. This option is useful to check that all commands have created the mesh and boundary conditions correctly before actually doing the analysis in a subsequent run.</dd>
 
 <dt>-w</dt>
-<dd>When this option is not used, relative file names for output files and for input of bmp files are resolved as being relatve to the input file. When this option is used, the file names are resolved instead to the current working directory.</dd>
+<dd>When this option is not used, relative file names for output files and for input of bmp files are resolved as being relative to the input file. When this option is used, the file names are resolved instead to the current working directory.</dd>
 
 <dt>-H</dt>
 <dd>Display brief help message and then exit.</dd>
@@ -113,13 +113,13 @@ NairnMPM [options] input > output
 <dd>Set the number of processors to use for parallel execution.</dd>
 
 <dt>-r</dt>
-<dd>Reverse the bytes when writing results to  archive files. This option can be useful when you are running calculations on one computer, but visualizing them on a different computer which uses a different byte order. For example. Macintosh computers and computers with Intel chips use opposite byte orders. This option can be omitted if you analyze on the same computer where you run the calculations or if you have analysis software that works with any byte order (such as all provided <a href="../startup/nairnviz.html">visualization options</a>).</dd>
+<dd>Reverse the bytes when writing results to  archive files. This option can be useful when you are running calculations on one computer, but visualizing them on a different computer which uses a different byte order. For example. Macintosh computers and computers with Intel chips use opposite byte orders. This option can be omitted if you analyze on the same computer where you run the calculations or if you have analysis software that works with any byte order (such as all provided <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page#Visualization">visualization tools</a>).</dd>
 
 <dt>-a</dt>
 <dd>Start the analysis, archive the initial conditions, and then abort the calculations. This option is useful to check that all commands have created the mesh, assigned material points, and created boundary conditions correctly before actually doing the analysis in a subsequent run.</dd>
 
 <dt>-w</dt>
-<dd>When this option is not used, relative file names for output files and for input of bmp files are resolved as being relatve to the input file. When this option is used, the file names are resolved instead to the current working directory.</dd>
+<dd>When this option is not used, relative file names for output files and for input of bmp files are resolved as being relative to the input file. When this option is used, the file names are resolved instead to the current working directory.</dd>
 
 <dt>-H</dt>
 <dd>display brief help message and then exit.</dd>
@@ -134,14 +134,13 @@ Multiple options can use separate options, such as <code>-v -r</code> , or combi
 <dd>The path name of the input <code>XML</code> file. The preferred extension for the input files is &quot;<code>.fmcmd</code>&quot;.</dd>
 
 <dt>output</dt>
-<dd>The name of the output text file. The output of OSParticulas (or NairnMPM) is to standard output and redirection should be used to save the output to a file. The output file should be saved in the current working directory to insure correct relative paths between the output file and the archive files. The preferred extension for the output file is &quot;<code>.mpm</code>&quot;.</dd>
+<dd>The name of the output text file. The output of NairnMPM is to standard output and redirection should be used to save the output to a file. The output file should be saved in the current working directory to insure correct relative paths between the output file and the archive files. The preferred extension for the output file is &quot;<code>.mpm</code>&quot;.</dd>
 
 </dl>
 
 <p class="links">
 <a href="../index.html">Home</a> &rarr;
-<a href="../startup/index.html">Getting Started</a> &rarr;
-Running
+Running Calculations
 </p>
 
 </body>

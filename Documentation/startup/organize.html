@@ -15,7 +15,7 @@ Organization
 
 <h1>The nairn-mpm-fea Project Source Code Organization</h1>
 
-<p>Assuming that chyecked out folder's name is <code>nairn-mpm-fea</code>, the NairnMPM,  NairnFEA, Documentation, and Visualization source code is organized into various directories. The contents of the directories are:
+<p>Assuming that checked out folder's name is <code>nairn-mpm-fea</code>, the NairnMPM,  NairnFEA, Documentation, and Visualization source code is organized into various directories. The contents of the directories are:
 </p>
 
 <dl>
@@ -47,10 +47,20 @@ Organization
 <dd>This folder has the <code>makefile</code> for compiling the code using a <code>make</code> command.</dd>
 
 <dt><code>nairn-mpm-fea/NairnMPM/input</code></dt>
-<dd>This folder has sample input files and the <code>NairnMPM.dtd</code> file. The compiled code gets installed here ready for running with the input files.</dd>
+<dd>This folder has sample input files and the <code>NairnMPM.dtd</code> file. The compiled code gets installed here ready for running with the input files.
+
+<dl>
+<dt><code>nairn-mpm-fea/NairnMPM/input/Scripted_Input</code></dt>
+<dd>This folder has scripted input files that can be run using with <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPM">NairnFEAMPM</a> or <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a> applications.</dd>
+
+<dt><code>nairn-mpm-fea/NairnMPM/input/XML_Input</code></dt>
+<dd>This folder has XML input files that can be run from a command line. It is recommended that you rarely use such files and instead do all calculations using the scripting tools in <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPM">NairnFEAMPM</a> and <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a>.</dd>
+
+</dl>
+</dd>
 
 <dt><code>nairn-mpm-fea/NairnMPM/tools</code></dt>
-<dd>This folder has source code for command line tools that can be used with NairnMPM such as for extracting data for archive files.</dd>
+<dd>This folder has source code for command line tools that can be used with NairnMPM such as for extracting data from archive files.</dd>
 
 </dl>
 
@@ -68,14 +78,24 @@ Organization
 <dd>This folder has the <code>makefile</code> for compiling the code using a <code>make</code> command.</dd>
 
 <dt><code>nairn-mpm-fea/NairnFEA/input</code></dt>
-<dd>This folder has sample input files and the <code>NairnFEA.dtd</code> file. The compiled code gets installed here ready for running with the input files.</dd>
+<dd>This folder has sample input files and the <code>NairnFEA.dtd</code> file. The compiled code gets installed here ready for running with the input files.
+
+<dl>
+<dt><code>nairn-mpm-fea/NairnFEA/input/Scripted_Input</code></dt>
+<dd>This folder has scripted input files that can be run using with <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPM">NairnFEAMPM</a> or <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a> applications.</dd>
+
+<dt><code>nairn-mpm-fea/NairnFEA/input/XML_Input</code></dt>
+<dd>This folder has XML input files that can be run from a command line. It is recommended that you rarely use such files and instead do all calculations using the scripting tools in <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPM">NairnFEAMPM</a> and <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a>.</dd>
+
+</dl>
+</dd>
 
 </dl>
 
 </dd>
 
 <dt><code>nairn-mpm-fea/Visualization</code></dt>
-<dd>This folder is the root folder for the platform-independent, Java-based visualiztion tool.
+<dd>This folder is the root folder for the platform-independent, Java-based visualization tool.
 
 <dl>
 <dt><code>nairn-mpm-fea/Visualization/src</code></dt>
