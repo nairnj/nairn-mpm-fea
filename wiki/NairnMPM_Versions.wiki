@@ -31,6 +31,15 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Aug 23: Added option to track reaction forces at velocity and/or at rigid particle BCs. Also improved tracking of contact forces to use only post-update contact calculations (which agrees much better with expectations).
     * Sept 17: J integral approximately deals with interacting cracks by averaging velocities field of other cracks it encounters along the J contour. This change also fixed a velocity field bug that has long been in J calculations, but probably caused very small errors.
     * Sept 22: New traction law to apply constant normal stress on crack surfaces.
+    * Oct 9: friction heating supported
+    * Oct 25: J  fields averaging to approximately support interacting cracks
+    * Nov 7: crack initialization parallized
+    * Nov 18: allow time step in functions
+    * Dec 5: Symmetry plane boundary condtions
+    * Dec 9: mirror property for rigid material for better BCs
+    * Dec 10: Artifical viscosity uses total volume raters
+    * Dec 19: New energy and heat traction and changes to achieved quantites
+    * Jan 2: Fixed 3D bug introduced Dec 11, 2013
 
   * Prior trunk Version (until 14 JAN 2014 - it was replaced by parallel branch; all additions below are in the new trunk)
     * Working on NairnMPM 9.2.0
