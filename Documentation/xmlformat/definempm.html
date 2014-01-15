@@ -1,0 +1,222 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>Defining the Material Points</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+<h1>Defining the Material Points</h1>
+
+<p>
+The material points in MPM calculations are placed within the <a href="definemesh.html">defined grid</a>. Detailed help on mesh creation is given in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Region_and_Hole_Commands">OSUPDocs wiki</a>. In brief, there are two ways to specify the material points. One way is to explicitly list each material point.
+The other uses one or more "region" commands that generate the material points. Both these methods must by within a single <code>&lt;MaterialPoints&gt;</code> element, but you are free to use both methods in a single input file. The outline is
+</p>
+
+<pre>
+&lt;MaterialPoints&gt;
+   &lt;PointList&gt;
+     (<a href="#mpcmd">one &lt;mp&gt; command for each explicit material point</a>)
+   &lt;/PointList&gt;
+   
+   (<a href="#regions">one or more "Region" command</a>)
+  
+&lt;/MaterialPoints&gt;
+</pre>
+
+<p>The subordinate elements in this structure can explicitly list material points (<code>&lt;PointList&gt;</code>) or can define regions to contain points.
+</p>
+
+<h2><a name="mpcmd"></a>Explicit Material Point Command</h2>
+
+<p>In a &lt;PointList&gt; block, each material point is defined with</p>
+
+<pre>&lt;mp elem='45' mat='1' angle='0' thick='1' conc='0' temp='0'&gt;
+  &lt;pt units='mm' x='1.25' y='-11.25'/&gt;
+  &lt;vel units='mm/sec' x='0' y='0'/&gt;
+  &lt;mass units='g' m='1e-3'/&gt;
+&lt;/mp&gt;
+</pre>
+
+<p>The attributes give the element number that contains that point (<code>elem</code> - this attribute is
+optional; if not provided the element will be looked up), the material number (<code>mat</code> and can be replaced by names using a <code>matname</code> attribute),
+the material angle (<code>angle</code>), the thickness
+(<code>thick</code> in mm, planar 2D only), the initial concentration (<code>conc</code> set as potential
+from 0 to 1 or you use <code>wtconc</code> to enter the actual weight fraction), and the initial temperature (<code>temp</code>).</p>
+
+<p>The elements subordinate to <code>&lt;mp&gt;</code>
+define the material point location (<code>&lt;pt&gt;</code> and its (<code>x</code>,
+<code>y</code>, (<code>z</code> if 3D)) coordinates in attributes in <code>mm</code> (or determined by an
+optional <a href="mpmheader.html#units"><code>units</code> attribute</a>) and the material point's initial velocity (<code>&lt;vel&gt;</code> and the velocity in the
+<code>x</code>, <code>y</code>, and <code>z</code> (if 3D) directions in <code>mm/sec</code>(or determined by an optional <a href="mpmheader.html#units"><code>units</code> attribute</a>).</p>
+
+<p>Normally the particle mass is determined from background grid dimensions. When running a simulation based on material points from a previous
+simulation (as explain on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/ExtractMPM#XML_File_Extraction_To_Extend_Calculations">OSUPDocs wiki</a>), a subordinate <code>&lt;mass&gt;</code> element can be used to set the particle mass
+(in <code>g</code>, or determined by an
+optional <a href="mpmheader.html#units"><code>units</code> attribute</a>).</p>
+
+<h2><a name="regions"></a>"Region" Commands</h2>
+
+<p>The <a href="%3Ca%20href=%22http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Region_and_Hole_Commands%22%3E">region commands</a> define a type of material and the its shape commands define what areas are filled with material points. The options are:</p>
+
+<ul>
+
+<li><pre class="list">&lt;Body mat='1' angle='0' thick='1' vx='1000' vy='0' conc='0' temp='0'&gt;
+  (<a href="#rotatezyx">Rotation comands</a>)
+  (<a href="#2DShapes">2D shape commands</a>)
+  (<a href="#3DShapes">3D shapes commands</a>)
+ &lt;/Body&gt;</pre>
+Defines a block for one material type. All material points in the shapes created by subordinate commands will be assigned this same material
+number (<code>mat</code>, which can be replaced by names using a <code>matname</code> attribute), material angle (<code>angle</code> in degrees), thickness (<code>thick</code> in mm for planar 2D), initial velocities in the <code>x</code>, <code>y</code>, and <code>z</code> (if 3D) directions (<code>vx</code>, <code>vy</code> and <code>vz</code> in <code>mm/sec</code>), the initial concentration (<code>conc</code> set as
+potential from 0 to 1 where 1), and the initial temperature (<code>temp</code>). Any unspecified property will be zero except thickness will match the grid thickness and temperature will match the <a href="mpmheader.html#stressfreetemp">stress-free temperature</a>.</li>
+
+<li><pre class="list">&lt;Hole&gt;
+  (<a href="#2DShapes">2D shape commands</a>)
+  (<a href="#3DShapes">3D shapes commands</a>)
+&lt;/Hole&gt;</pre>
+Defines empty space within a body. A single <code>&lt;Hole&gt;</code> group can contain any
+number of the shape commands to define regions that are holes within bodies. Material point locations in those shapes will be marked as be empty space and will not be filled by any subsequent regions.</li>
+
+<li><a name="BMPShape"></a><pre class="list">&lt;BMP name='GrayScaleFile.bmp' units='mm' width='5.64' height='4.51' angles='GrayAngles.bmp'&gt;
+  &lt;Origin units='mm' x='10' y='20' z='0'/&gt;
+  &lt;Intensity mat='1' imin='0' imax='120'&gt;
+    &lt;vel units='mm/sec' x='100' y='200' z='0'/&gt;
+    &lt;Thickness units='mm'&gt;10&lt;/Thickness&gt;
+    &lt;Angle&gt;0&lt;/Angle&gt;
+    &lt;Temperature&gt;25&lt;/Temperature&gt;
+    &lt;Concentration&gt;0&lt;/Concentration&gt;
+  &lt;/Intensity&gt;
+  &lt;Intensity imin='0' imax='255' minAngle='0' maxAngle='90'/&gt;
+  (<a href="#rotatezyx">Rotation comands</a>)
+&lt;/BMP&gt;</pre>
+This block reads the bit map file (which must be gray
+scale, non-compressed <code>BMP</code> with 2 to 256 gray levels) specified in the name (as full or relative path name) and assigns material points to the grid based on intensities within the bit map (see <a href="http://osupdocs.forestry.oregonstate.edu/index.php/BMPRegion_Command">OSUPDocs wiki</a> for for details). The <code>width</code> and <code>height</code> attributes (in mm, or determined by an optional <a href="mpmheader.html#units"><code>units</code> attribute</a>) define the size of the image. You can specify both one or both dimensions; if only one dimension is given, the other will be calculated based on the image aspect ratio. In addition, if the number is negative it is interpreted as the specified length unit per pixel and the total dimension is calculated from number of pixels in the image.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;The subordinate <code>&lt;Origin&gt;</code> maps the origin of the image (lower-left corner) to the grid. In 3D calculations, images are mapped in the <code>x-y</code> plane. You can combine a stack of images in each at different <code>z</code> locations to build up a 3D image. If you add a <code>flipped</code> attribute equal to &quot;yes&quot; to an <code>&lt;Origin&gt;</code> command, the origin will move to the upper-left corner of the image with <code>y</code> increasing in the downward direction and <code>x</code> increasing to the right. This change will flip the image in the <code>y</code> direction in the MPM analysis compared to the image graphics.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Material points will be assigned to various material types as determined by one or more subodinate <code>&lt;Intensity&gt;</code> blocks. The atttibutes on each <code>&lt;Intensity&gt;</code> block define the material number (<code>mat</code>, which can be replaced by names using a <code>matname</code> attribute) and the minimum and maximum intensity for that material (for 0 to 255).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;The subordinate <code>&lt;Thickness&gt;</code> (planar 2D only), <code>&lt;Angle&gt;</code>, <code>&lt;Temperature&gt;</code>, <code>&lt;vel&gt;</code>, and <code>&lt;Concentration&gt;</code> commands let you set the thickness, angle, temperature, velocity, and concentration potential for the materal points.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;The <code>BMP</code> command can have an optional <code>angles</code>
+attribute that specifies a second gray-scale file in which the shades of gray indicate the
+orientation angle for material points. To map the angles gray scale to angle, there should be
+one <code>&lt;Intensity&gt;</code> command with <code>imin</code>, <code>imax</code>,
+<code>minAngle</code>, and <code>maxAngle</code> attributes. This command defines a linear
+interpolation of gray scale intensity (0 for black to 255 for white) to material point angle through
+the points (<code>imin</code>, <code>minAngle</code>) and (<code>imax</code>,
+<code>maxAngle</code>).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Finally, the <code>BMP</code> block can have optional <a href="#rotatezyx">rotation commands</a> to rotate the material axes for all particles defined by the <code>BMP</code> block</li>
+
+</ul>
+
+<h3><a name="rotatezyx"></a>Rotation Commands</h3>
+
+<p>The rotation commands let you rotate material axes when using anisotropic materials. The commands are:</p>
+
+<ul>
+<li><pre class="list">&lt;RotateZ&gt;20&lt;/RotateZ&gt;,
+&lt;RotateY&gt;y-z&lt;/RotateY&gt;,
+&lt;RotateX&gt;45&lt;/RotateX&gt;</pre>
+These commands are to rotate the material axes in the current <code>&lt;Body&gt;</code> to orient anistropic materials in their initial configuration. You apply rotations in order by using one to three commands (although only a single <code>z</code> axis rotation is allowed in 2D simulations). There are two physical pictures. First, you can imagine sitting on the material coordinate system and defining a series of clockwise rotations about material axes that transform the <code>x-y-z</code> analysis axes into the material axes. Alternatively (and identically) the transformation can be viewed as counter-clockwise rotations about analysis axes that transform the material axes into the analysis axes. The text for each command is either an angle or a <a href="function.html">user-defined function</a> that evaluates to an angle (either are in degrees).</li>
+
+<li><pre class="list">&lt;Unrotate/&gt;</pre>
+This command cancels the rotations in the current <code>&lt;Body&gt;</code> section. Each shape command in the body use the current rotation transformation. Interspersing this command with new rotations allows each shape to have its own transformations.</li>
+</ul>
+
+
+<h3><a name="2DShapes"></a>2D Shapes</h3>
+
+<p>The following commands define 2D shapes (see <a href="http://osupdocs.forestry.oregonstate.edu/index.php/2D_MPM_Shape_Commands">OSUPDocs wik</a>i for more detail):</p>
+
+<ul>
+
+<li><pre class="list">&lt;Oval units='mm' xmin='10' xmax='40' ymin='10' ymax='40'/&gt;</pre>
+An oval bounded by <code>xmin</code>, <code>xmax</code>, 
+<code>ymin</code>, and <code>ymax</code> in mm (or optional <a href="mpmheader.html#units"><code>units</code>
+attribute</a>). The parameters can be entered with numeric values or <a href="dispbc.html#minmax">relative to the mesh edges</a>.</li>
+  
+<li><pre class="list">&lt;Rect xmin='20' xmax='30' ymin='20' ymax='30'/&gt;</pre>
+A rectangle bounded by <code>xmin</code>, <code>xmax</code>, 
+<code>ymin</code>, and <code>ymax</code> in mm (or optional <a href="mpmheader.html#units"><code>units</code>
+attribute</a>). The parameters can be entered with numeric values or <a href="dispbc.html#minmax">relative to the mesh edges</a>.</li>
+  
+<li><pre class="list">&lt;Polygon&gt; 
+  &lt;pt units='mm' x='60' y='10'/&gt;
+       &#x22ee;<br>
+&lt;/Polygon&gt;</pre>
+A polygon drawn by the points specified in subordinate <code>&lt;pt&gt;</code> commands
+  (point coordinates in <code>x</code> and <code>y</code> attributes in mm (or optional <a
+  href="mpmheader.html#units"><code>units</code> attribute</a>). The last
+  point is automatically connected to the first point to make a closed region.</li>
+</ul>
+
+<h3><a name="3DShapes"></a>3D Shapes</h3>
+
+<p>The following commands define 2D shapes (see <a href="http://osupdocs.forestry.oregonstate.edu/index.php/3D_MPM_Shape_Commands">OSUPDocs wiki</a> for more details):</p>
+
+<ul>
+
+<li><pre class="list">&lt;Sphere xmin='(xmin)' xmax='(xmax)' ymin='(ymin)' ymax='(ymax)'
+                      zmin='(zmin)' zmax='(zmax)'/&gt;</pre>
+A spheroid bounded by the parameters <code>xmin</code>, <code>xmax</code>, 
+<code>ymin</code>, <code>ymax</code>, <code>zmin</code>, and <code>zmax</code> in mm
+(or an optional <a href="mpmheader.html#units"><code>units</code> attribute</a>)
+The parameters can also be enetered <a href="dispbc.html#minmax">relative to the mesh edges</a>.</li>
+  
+<li><pre class="list">&lt;Box xmin='(xmin)' xmax='(xmax)' ymin='(ymin)' ymax='(ymax)'
+                   zmin='(zmin)' zmax='(zmax)'/&gt;</pre>
+A box bounded by the parameters <code>xmin</code>, <code>xmax</code>, 
+  <code>ymin</code>, <code>ymax</code>, <code>zmin</code>, and <code>zmax</code> in mm
+(or an optional <a href="mpmheader.html#units"><code>units</code> attribute</a>). TThe parameters can also be enetered <a href="dispbc.html#minmax">relative to the mesh edges</a>.</li>
+  
+<li><pre class="list">Cylinder xmin='(xmin)' xmax='(xmax)' ymin='(ymin)' ymax='(ymax)'
+          zmin='(zmin)' zmax='(zmax)' axis='(axis)' radius='(radius)'/&gt;</pre>
+A cylinder or cone bounded by the parameters <code>xmin</code>, <code>xmax</code>, 
+  <code>ymin</code>, <code>ymax</code>, <code>zmin</code>, and <code>zmax</code> in mm
+(or an optional <a href="mpmheader.html#units"><code>units</code> attribute</a>). The <code>axis</code> attribute specifies the axis of the cylinder in the 1 (for <code>x</code>), 2 (for <code>y</code>) or 3 (for <code>z</code>) direction. The parameters (except <code>axis</code>) can be entered <a href="dispbc.html#minmax">relative to the mesh edges</a>.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;To create a cone, add a <code>radius</code> attribute with a value between -1 and 1. This value gives the relative radius of the cylinder at the top (if &gt; 0) or at the bottom of the cylinder (if &lt; 0) while the opposite end will have relative radius of 1.</li>
+ 
+ <li><pre class="list">&lt;Torus xmin='(xmin)' xmax='(xmax)' ymin='(ymin)' ymax='(ymax)'
+       zmin='(zmin)' zmax='(zmax)' axis='(axis)' radius='(radius)'/&gt;</pre>
+A torus bounded by the parameters <code>xmin</code>, <code>xmax</code>, 
+  <code>ymin</code>, <code>ymax</code>, <code>zmin</code>, and <code>zmax</code> in mm
+(or an optional <a href="mpmheader.html#units"><code>units</code> attribute</a>).
+The <code>axis</code> attribute specifies the normal direction to the plane of the torus as in the 1 (for <code>x</code>), 2 (for <code>y</code>) or 3 (for <code>z</code>) direction (default is 3 if not specified). The bounds for the directions in the plane of the torus (<i>e.g.</i>, x and y bounds when <code>axis</code> is 3) define an ellipsoid (or circle if the bounds have the same separation) that runs through the center of the torodial ring. The bounds in the direction of the axis define top and bottom for the cross-section of the torodial ring. The cross section will be a circle with radius given by half the distance between the top and bottom. To have an eliptical cross section, you can specify a <code>radius</code> attribute to define the radius of the cross section in the plane of the torus (while top and bottom give radius of the cross section in the axis direction).</li>
+
+<li><pre class="list">&lt;Polyhedron&gt;
+   &lt;faces style='(style)'&gt;
+ 1.496206e+002  2.879507e+000  1.775602e+002
+ 5.361129e+001  3.039185e+000  1.498799e+002
+ 1.496158e+002  2.209645e+000  1.775729e+002
+     ...
+   &lt;/faces&gt;
+&lt;Polyhedron&gt;</pre>
+Creates arbitrary 3D shape specified by describing the object as a collection of triangular faces. The faces are specified with one or more <a href="#faces"><code>faces</code></a> commands subordinate to the <code>Polyhedron</code> command. The current <code>(styles)</code> are:
+<ul class="lev2args">
+<li><code>pyramid</code> - define a pyramid shape for which the first point is the apex of the pyramid and the remaining 3 or 4 points define the base. With 3 base points (4 total points), the shape is a tetrahedron; with 4 base points (5 total points), the shape is a pyramid with a quadrilaterial base.</li>
+<li><code>tripts</code> or <code>trivectors</code>: define a triclinic shape, which is an eight-corned box for which opposite faces are parallel, but the corners need not meet at right angles. For this style, you specify 4 points (or 12 coordinates). For <code>tripts</code>, the 4 points are the points labeled in the figure below. For <code>trivectors</code>, the first point is point 1 (the origin) and the remaining three points are the vectors between the shape's origin that point.
+<center><img src="triclinic.jpg" alt="Triclinic Shape" height="150"></center>
+</li>
+<li><code>style='15482637'</code>: define an arbitrarily shaped 8-corner box. The provided numbers map the order of the provided 8 points (or 24 coordinates) to the standard order shown in the figure below.
+<center><img src="arbbox.jpg" alt="8 Corner Box" height="125"></center>
+</li>
+</ul>
+  Between the <code>&lt;faces&gt;</code> and the <code>&lt;/faces&gt;</code> commands, all the data needed for the selected style are entered in a free format (i.e., numbers delimited by white space, commas, colons, and/or semicolons). The number of points entered must match the number needed for the choosen style.
+</li>
+</ul>
+  
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+</body>
+
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>References</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#feacontents">FEA XML File Contents</a> /
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+<h1>References</h1>
+
+<p>The following annotated references (in chronological order) are related to development and use of NairnMPM and NairnFEA. The titles of some are links to download a PDF copy of the paper.
+</p>
+
+<dl>
+
+<dt><a name="Gibbs1976"></a>Gibbs, Poole, and Stockmeyer, 1976</dt>
+<dd>Describes the method used to resequence nodes in FEA Calculations in NairnFEA: N. E. Gibbs, W. G. Poole, and P. K. Stockmeyer, &quot;An Algorithm for Reducing the Bandwidth and Profile of a Sparse Matrix,&quot; <i>SIAM Journal of Numerical Analysis</i>, <b>13</b>, 236-250 (1976).</dd>
+
+<dt><a name="JC1983"></a>Johnson and Cook, 1983</dt>
+<dd>Describes the Johnson-Cook hardening law: G. R. Johnson and W. H. Cook, &quot;A constitutive model and data for metals subjected to large strains, high strain rates ad high temperatures,&quot; <i>Proceedings of the 7th International Symposium on Ballistics</i>, 541-547 (1983).</dd>
+
+<dt><a name="SCG1989"></a>Steinberg, Cochran, and Guinan, 1989</dt>
+<dd>Describes the SCGL hardening law: D. J. Steinberg S. G. Cochran, and M. W. Guinan, &quot;A constitutive model for metals applicable at high strain rates,&quot; <i>J. Appl. Phys.</i>, <b>51</b>, 1498-1504 (1989).</dd>
+
+<dt><a name="SL1989"></a>Steinberg and Lund, 1989</dt>
+<dd>Describes the SL hardening law: D. J. Steinberg and C. M. Lund, &quot;A constitutive model for strain rates from 10<sup>-4</sup> to 10<sup>6</sup>,&quot; <i>J. Appl. Phys.</i>, <b>65</b>, 1528-1533 (1989).</dd>
+
+<dt><a name="Hashin1992"></a>Hashin, 1992</dt>
+<dd>Variational mechanics of composites with an imperfect interface and basis for many imperfect interface methods in NairnFEA and NairMPM: Z. Hashin, &quot;Extremum Principles for Elastic Heterogeneous Media with Imperfect Interaces and Thier Application to Bounding of Effective Moduli,&quot; <i>J. Mech. Phys. Solids</i>, <b>40</b>, 767-781 (1992).</dd>
+
+
+<dt><a name="SCS1994"></a>Sulsky, Chen, and Schreyer, 1994</dt>
+<dd>The first paper on the material point method: D. Sulsky, Z. Chen, and H. L. Schreyer, &quot;A Particle Method for History-Dependent Materials,&wuot; <i>Comput. Methods Appl. Mech. Engrg.</i>, <b>118</b>, 179-186 (1994).
+</dd>
+
+<dt><a name="SZS1995"></a>Sulsky, Zhou, and Schreyer, 1995</dt>
+<dd>This paper describes corrections to early MPM for the method used here called USL. It is less efficient than USF and less accruate han USAVG: D. Sulsky, S. -J. Zhou, and H. L. Schreyer, &quot;Application of a Particle-in-Cell Method to Solid Mechanics,&quot; <i>Comput. Phys. Commun.</i>, <b>87</b>, 236-252 (1995).</dd>
+
+<dt>Zhou, 1998</dt>
+<dd>This PhD thesis on MPM was helpful during the original stages of development of NairnMPM:: S. Zhou, &quot;The Numerical Prediction of Material Failure Based on the Material Point Method,&quot; Ph.D. Thesis, University of Mexico (1998).</dd>
+
+<dt><a name="Wilkens1999"></a>Wilkins, 1999</dt>
+<dd>M. L. Wilkens, &quot;Computer Simululation of Dynamic Phenomena,&quot; Springer, Berlin, 1999.</dd>
+
+<dt><a name="Bardenhagen2001"></a>Bardenhagen, Guilkey, Roessig, Brackbill, Witzel, and Foster, 2001</dt>
+<dd>Derivation of some early contact methods for MPM: S. G. Bardenhagen, J. E. Guilkey, K. M. Roessig, J. U. Brackbill, W. M. Witzel, and J. C. Foster, &quot;An Improved Contact Algorithm for the Material Point Method and Application to Stress Propagation in Granular Material,&quot; <i>Computer Modeling in Engineering &amp; Sciences</i>, <b>2</b>, 509-522 (2001).
+</dd>
+
+<dt><a name="Bardenhagen2002"></a>Bardenhagen, 2002</dt>
+<dd>Analysis of energy dissipation in various implementations of MPM: S. G. Bardenhagen, &quot;Energy Conservation Error in the Material Point Method,&quot; <i>J. Comp. Phys.</i>, <b>180</b>, 383-403 (2002).
+</dd>
+
+<dt><a name="Ayton2002"></a>Ayton, Smondyrev, Bardenhagen, McMurtry, and Voth, 2002</dt>
+<dd>The appendix has a description of a variant of Nose-Hoover feedback implemented here as feedbackdamping: G. Ayton, A. M. Smondyrev, S. G. Bardenhagen, P. McMurtry, and G. A. Voth, &quot;Interfacing Molecular Dynamics and Macro-Scale Simulations for Lipid Bilayer Vesicles,&quot; <i>Biophys J</i>, <b>83</b>, 1026-1038 (2002)
+</dt>
+
+<dt><a name="Nairn2003"></a>Nairn 2003</dt>
+<dd>First paper with definition of the CRAMP algorithm for CRAcks in the Material Point method. The appendix lists MPM step tasks that are similar to the way tasks are implemented in NairnMPM. This paper also discusses method for updating strain: J. A. Nairn, <a href="http://www.cof.orst.edu/cof/wse/faculty/Nairn/papers/MPMCracks.pdf">&quot;Material Point Method Calculations with Explicit Cracks,&quot;</a> <i>Computer Modeling in Engineering &amp; Sciences</i>, <b>4</b>, 649-664 (2003).</dd>
+
+<dt><a name="Bardenhagen2004"></a>Bardenhagen and Kober, 2004</dt>
+<dd>This paper descrivbe GIMP shape functions that improves MPM calculations when particles cross element boundaries: S. G. Bardenhagen and E. M. Kober, &quot;The Generalized Interpolation Material Point Method,&quot; <i>Computer Modeling in Engineering &amp; Sciences</i>, <b>5</b>, 477-496 (2004).
+</dd>
+
+<dt><a name="Shen2005"></a>Shen and Chen, 2005</dt>
+<dd>This paper describes silent boundary conditions for isotropic materials: L. Shen and Z. Chen, &quot;A Silent Boundary Scheme with the Material Point Method for Dynamic Analyses,&quot; <i>Computer Modeling in Engineering &amp; Sciences</i>, <b>7</b>, 305-320 (2005).
+
+<dt><a name="Guo2004"></a>Guo and Nairn, 2004</dt>
+<dd>Use of MPM to find fracture parameters: Y. Guo and J. A. Nairn, <a href="http://www.cof.orst.edu/cof/wse/faculty/Nairn/papers/MPMTwoDJ.pdf">&quot;Calculation of J-Integral and Stress Intensity Factors using the Material Point Method,&quot;</a> <i>Computer Modeling in Engineering &amp; Sciences</i>, <b>6</b>, 295-308 (2004).</dd>
+
+<dt><a name="Nairn2005"></a>Nairn, 2005</dt>
+<dd>Energy balance method to fracture simunlations, which has not been used much since: John A. Nairn, <a href="http://www.cof.orst.edu/cof/wse/faculty/Nairn/papers/Dugdale.pdf">&quot;Simulation of Crack Growth in Ductile Materials,&quot;</a> <i>Engr. Fract. Mech.</i>, <b>72</b>, 961-979 (2005).</dd>
+
+<dt>Nairn, 2006</dt>
+<dd>Application of NairnMPM to densification of wood: J. A. Nairn, <a href="http://www.cof.orst.edu/cof/wse/faculty/Nairn/papers/WoodComp.pdf">&quot;Numerical Modeling of Transverse Compression and Densification in Wood,&quot;</a> <i>Wood and Fiber Science</i>, <b>38</b>, 576-591 (2006).
+</dd>
+
+<dt>Guo and Nairn, 2006</dt>
+<dd>Extension of CRAMP to 3D calculations, although 3D cracks are not implement yet in NairnMPM: Yajun Guo and John A. Nairn, <a href="http://www.cof.orst.edu/cof/wse/faculty/Nairn/papers/guo3D.pdf">&quot;Three-Dimensional Dynamic Fracture Analysis Using the Material Point Method,&quot;</a> <i>Computer Modeling in Eng. &amp; Sci.</i>, <b>16</b>, 141-156 (2006).
+</dd>
+
+<dt><a name="Nairn2007"></a>Nairn, 2007</dt>
+<dd>Fracture simulations in solid wood: John A. Nairn, <a href="http://www.cof.orst.edu/cof/wse/faculty/Nairn/papers/FractureSim.pdf">&quot;Material Point Method Simulations of Transverse Fracture in Wood with Realistic Morphologies,&quot;</a> <i>Holzforschung</i>,  <b>61</b>, 375-381 (2007).
+</dd>
+
+<dt><a name="Nairn2007b"></a>Nairn, 2007b</dt>
+<dd>This paper describes implementation of imperfect interfaces in FEA as elements and in MPM on crack surfaces: John A. Nairn, <a href="http://www.cof.orst.edu/cof/wse/faculty/Nairn/papers/Interface.pdf">&quot;Numerical Implementation of Imperfect Interfaces,&quot;</a> <i>Computational Materials Science</i>, <b>40</b>, 525-536 (2007).
+</dd>
+
+<dt><a name="Nairn2007c"></a>Nairn, 2007c</dt>
+<dd>Use of NairnFEA to model properties of wood as a function of the end-grain orientation: John A. Nairn, <a href="http://www.cof.orst.edu/cof/wse/faculty/Nairn/papers/TransMod.pdf">&quot;A Numerical Study of the Transverse Modulus of Wood as a Function of Grain Orientation and Properties,&quot;</a> <i>Holzforschung</i>, <b>61</b>, 406-413 (2007).
+</dd>
+
+<dt><a name="Nairn2009"></a>Nairn, 2009</dt>
+<dd>This paper describes modeling of crack to find R curves and use of traction laws in NairnMPM crack propagation simulations: John A. Nairn, <a href="http://www.cof.orst.edu/cof/wse/faculty/Nairn/papers/JBridging.pdf">&quot;Analytical and Numerical Modeling of R Curves for Cracks with Bridging Zones,&quot;</a> <i>Int. J. Fracture</i>, <b>155</b>, 167-181 (2009).</dd>
+
+<dt><a name="Nairn2009b"></a>Nairn and Le, 2009</dt>
+<dd>Use of imperferect interfaces in NairnMPM to model wood glue bonds in oriented strand board: J.A. Nairn and Edward Le, <a href="http://www.cof.orst.edu/cof/wse/faculty/Nairn/papers/WoodAd2009.pdf">&quot;Numerical Modeling and Experiments on the Role of Strand-to-Strand Interface Quality on the Properties of Oriented Strand Board,&quot;</a> <i>Proc of 9th Int. Conf. on Wood Adhesives</i>, Lake Tahoe, Neveda, USA, Sept. 28-30, 2009.
+</dd>
+
+<dt><a name="Lemiale2010"></a>Lemiale, Hurmane, and Nairn, 2010</dt>
+<dd>Development of improved contact methods including with rigid materials and use in modeling metal extrusion: V. Lemiale, A. Hurmane, and J. A. Nairn, &quot;Material Point Method Simulation of Equal Channel Angular Pressing Involving Large Plastic Strain and Contact Through Sharp Corners,&quot; <i>Computer Modeling in Eng. &amp; Sci.</i>, <b>70(1)</b>, 41-66, (2010)</dd>
+
+<dt><a name="Bardenhagen2011"></a>Bardenhagen, Nairn, and Lu, 2011</dt>
+<dd>Use in NairnMPM in dynamic fraction using traction laws on the crack surface: S. G. Bardenhagen, J.A. Nairn, and H. Lu, &quot;Simulation of dynamic fracture with the Material Point Method using a mixed J-integral and cohesive law approach,&quot; <i>Int. J. Fracture</i>, <b>170</b>, 49-66 (2011) (DOI 10.1007/s10704-011-9602-1).</dd>
+
+<dt><a name="Nairn2011"></a>Nairn, 2011</dt>
+<dd>General analysis crack closure calculations by post-processing NairnFEA results including crack-surface tractions (which other papers get wrong): John A. Nairn, <a href="http://www.cof.orst.edu/cof/wse/faculty/Nairn/papers/CrackClosure.pdf">&quot;Generalized Crack Closure Analysis for Elements with Arbitrarily-Placed Side Nodes and Consistent Nodal Forces,&quot;</a> <i>Int. J. Fracture</i>, <b>171</b>, 11-22 (2011).</dd>
+
+<dt><a name="Brannon2011"></a>Sadeghirad, Brannon, and Burghardt, 2011</dt>
+<dd>Development of an approximation to GIMP integrals by using shape functions to evaluate integrals on the convected partical domain, which they termed CPDI: A. Sadeghirad, R. M. Brannon, and J. Burghardt, &quot;A convected particle domain interpolation technique to extend applicability of the material point method for problems involving massive deformations,&quot; <i>Int. J. Numer. Meth. Engng</i> (2011).</dd>
+
+<dt><a name="Matsumoto2012"></a>Matsumoto and Nairn, 2012</dt>
+<dd>Use of NairnMPM for crack propagation simulations with fiber bridging: Noah Matsumoto and J.A. Nairn, &quot;Fracture Toughness of Wood and Wood Composites During Crack Propagation,&quot; <i>Wood and Fiber Science</i>, <b>in press</b> (2012)</dd>
+
+<dt><a name="NairnAS2013"></a>Nairn and Guilkey, submitted 2013</dt>
+<dd>This paper explains how to do axisymmetric MPM using both GIMP and the CPDI version of GIMP. It also discusses traction boundary condition: J.A. Nairn and J.E. Guilkey, <a href="http://www.cof.orst.edu/cof/wse/faculty/Nairn/papers/AxisymGIMP.pdf">&quot;Axisymmetric Form of the Generalized Interpolation Material Point Method,&quot;</a> <i>Computer Methods in Applied Mechanics and Engineering</i>, submitted (2013).</dd>
+
+<dt><a name="NairnII2013"></a>Nairn, in preparation 2013</dt>
+<dd>This paper describes implementation of imperfect interfaces by using MPM contact methods: J. A. Nairn, &quot;Modeling Imperfect Interfaces in the Material Point Method using Multimaterial Methods&quot; in preparation (2013).</dd>
+
+
+</dl>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#feacontents">FEA XML File Contents</a> /
+
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+</body>
+
+</html>
