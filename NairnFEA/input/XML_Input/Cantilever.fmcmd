@@ -2,6 +2,11 @@
 <!DOCTYPE JANFEAInput SYSTEM '/Users/nairnj/Programming/Cocoa_Projects/nairn-mpm-fea/NairnFEA/input/NairnFEA.dtd'>
 <JANFEAInput version="3">
 
+<!-- NOTE: It is not recommended that you directly edit XML files to create input
+     commands. You should always use the scripting language available in either
+     NairnFEAMPM (for Mac) or NairnFEAMPMViz (in java). A scripted version of
+     this file is available in the file ../Scripted/Cantilever.fmcmd -->
+
   <Header>
     <Description>
 Title: FEA Analysis of Cantilever Beam

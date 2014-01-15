@@ -1,37 +1,26 @@
 <?xml version='1.0'?>
 <!DOCTYPE JANFEAInput SYSTEM "/Users/nairnj/Programming/Cocoa_Projects/nairn-mpm-fea/NairnMPM/input/NairnMPM.dtd"
 [
- <!ENTITY modulus "1.0">
- <!ENTITY nu "0.33">
- <!ENTITY rho "1.5">
- <!ENTITY vel "2500">
- <!ENTITY maxtime "20">
- <!ENTITY atime ".5">
- <!ENTITY cs "2">
- <!ENTITY hmax "51">
- <!ENTITY vmax "24">
+ <!ENTITY modulus "1.0">  <!-- modulus of the spheres -->
+ <!ENTITY nu "0.33">      <!-- Poisson's ratio of the spheres -->
+ <!ENTITY rho "1.5">      <!-- density of the spheres -->
+ <!ENTITY vel "2500">     <!-- velocity of the approach -->
+ <!ENTITY maxtime "20">   <!-- time to stop calculation (ms) -->
+ <!ENTITY atime ".5">     <!-- archive time (ms) -->
+ <!ENTITY cs "2">         <!-- cell size in grid (disks have diameter 30mm) -->
+ <!ENTITY hmax "52">      <!-- semi grid size x direction -->
+ <!ENTITY vmax "24">      <!-- semi grid size y direction -->
 ]>
 <JANFEAInput version='3'>
 
-<!-- MPM analysis of two disks that impact an bounce off.
-     The entities above can change some parameters:
-    modulus: modulus of the spheres
-         nu: Poisson's ratio of the spheres
-        rho: density of the spheres
-        vel: velocity of the approach
-    maxtime: time to stop calculation (ms)
-      atime: archive time (ms)
-         cs: cell size in grid (disks have diameter 30mm)
-				(30/cs should be an integer)
-       hmax: semi grid size x direction (divisible by cs and > 45mm)
-       vmax: semi grid size y direction (divisible by cs and > 15mm)
--->
+<!-- NOTE: It is not recommended that you directly edit XML files to create input
+     commands. You should always use the scripting language available in either
+     NairnFEAMPM (for Mac) or NairnFEAMPMViz (in Java). A scripted version of
+     this file with more features is available in the file ../Scripted/TwoDisks.fmcmd -->
 
   <Header>
     <Description>
-Title: MPM Analysis
-User Name: John Nairn
-Problem: 2D simulation of two identical disks colliding in a head-on impact
+2D simulation of two identical disks colliding in a head-on impact
     </Description>
     <Analysis>10</Analysis>
   </Header>
@@ -44,14 +33,13 @@ Problem: 2D simulation of two identical disks colliding in a head-on impact
     <GlobalArchiveTime units="ms">&atime;</GlobalArchiveTime>
     <GlobalArchive type="velx" matname="Disk 1"/>
     <GlobalArchive type="Kinetic Energy"/>
-    <GlobalArchive type="Strain Energy"/>
     <GIMP/>
   </MPMHeader>
 
   <Mesh output="file">
     <Grid xmin="-&hmax;" xmax="&hmax;" ymin="-&vmax;" ymax="&vmax;">
-      <Horiz cellsize="&cs;"/>
-      <Vert cellsize="&cs;"/>
+      <Horiz cellsize="&cs;" symmin="-&hmax;" symmax="&hmax;"/>
+      <Vert cellsize="&cs;" symmin="-&vmax;" symmax="&vmax;"/>
     </Grid>
   </Mesh>
 
@@ -77,20 +65,5 @@ Problem: 2D simulation of two identical disks colliding in a head-on impact
     <nu>&nu;</nu>
     <alpha>60</alpha>
   </Material>
-
-  <GridBCs>
-    <BCLine x1="min-1" y1="min-1" x2="max+1" y2="min-1" tolerance="&cs;">
-      <DisBC dir="2" disp="0"/>
-    </BCLine>
-    <BCLine x1="max+1" y1="min-1" x2="max+1" y2="max+1" tolerance="&cs;">
-      <DisBC dir="1" disp="0"/>
-    </BCLine>
-    <BCLine x1="min-1" y1="max+1" x2="max+1" y2="max+1" tolerance="&cs;">
-      <DisBC dir="2" disp="0"/>
-    </BCLine>
-    <BCLine x1="min-1" y1="min-1" x2="min-1" y2="max+1" tolerance="&cs;">
-      <DisBC dir="1" disp="0"/>
-    </BCLine>
-  </GridBCs>
 
 </JANFEAInput>

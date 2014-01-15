@@ -4,7 +4,7 @@
 
 <!ELEMENT	JANFEAInput 
 			( Header, MPMHeader, Mesh, MaterialPoints, CrackList*, Material+, 
-			GridBCs?, ParticleBCs?, Thermal?, Gravity?, CustomTasks?, Periodic?)>
+			GridBCs?, ParticleBCs?, Thermal?, Gravity?, CustomTasks?)>
 <!ATTLIST	JANFEAInput
 			version (1|2|3) "3">			
      
@@ -785,12 +785,4 @@
 			units CDATA #IMPLIED>
 <!ELEMENT	Temperature (#PCDATA)>
 <!ELEMENT	Concentration (#PCDATA)>
-
-<!ELEMENT	Periodic EMPTY>
-<!ATTLIST	Periodic
-			dir CDATA #REQUIRED
-			xMin CDATA #REQUIRED
-			yMin CDATA #REQUIRED
-			xMax CDATA #REQUIRED
-			yMax CDATA #REQUIRED>
 
