@@ -40,6 +40,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Dec 10: Artifical viscosity uses total volume raters
     * Dec 19: New energy and heat traction and changes to achieved quantites
     * Jan 2: Fixed 3D bug introduced Dec 11, 2013
+    * Jan 8: All documentation simplified with the details moved to the OSUPDocs wiki page
 
   * Prior trunk Version (until 14 JAN 2014 - it was replaced by parallel branch; all additions below are in the new trunk)
     * Working on NairnMPM 9.2.0
