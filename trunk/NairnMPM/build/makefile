@@ -155,6 +155,7 @@ CrackVelocityFieldMulti = $(src)/Nodes/CrackVelocityFieldMulti
 CrackVelocityFieldSingle = $(src)/Nodes/CrackVelocityFieldSingle
 CubicTraction = $(src)/Materials/CubicTraction
 CustomTask = $(src)/Custom_Tasks/CustomTask
+DDBHardening = $(src)/Materials/DDBHardening
 DiffusionTask = $(src)/Custom_Tasks/DiffusionTask
 EightNodeIsoparamBrick = $(src)/Elements/EightNodeIsoparamBrick
 Elastic = $(com)/Materials/Elastic
@@ -289,6 +290,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # CrackVelocityFieldMulti.hpp : CrackVelocityField.hpp MatVelocityField.hpp
 # CrackVelocityFieldSingle.hpp : CrackVelocityField.hpp MatVelocityField.hpp
 # CubicTraction.hpp : MaterialBase.hpp TractionLaw.hpp
+# DDDHardening.hpp: HardeningLawBase.hpp, MaterialBase.hpp
 # DiffusionTask.hpp : TransportTask.hpp
 # EightNodeIsoparamBrick.hpp : ElementBase3D.hpp (ElementBase.hpp)
 # Elastic.hpp : MaterialBase.hpp
@@ -384,7 +386,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		InitializationTask.o MassAndMomentumTask.o UpdateStrainsFirstTask.o GridForcesTask.o UpdateMomentaTask.o \
 		UpdateParticlesTask.o UpdateStrainsLastTask.o RunCustomTasksTask.o MoveCracksTask.o ResetElementsTask.o \
 		StartOutput.o MPMReadHandler.o Generators.o BitMapFiles.o BitMapFilesCommon.o BMPLevel.o MpsController.o \
-		CrackController.o MPMWarnings.o BodyForce.o GlobalQuantity.o BoundaryCondition.o \
+		CrackController.o MPMWarnings.o BodyForce.o GlobalQuantity.o BoundaryCondition.o DDBHardening.o \
 		ThermalRamp.o MPMBase.o MatPoint2D.o MatPointAS.o CrackHeader.o CrackSegment.o CrackLeaf.o ContourPoint.o \
 		CrackSurfaceContact.o CrackNode.o MaterialInterfaceNode.o MaterialBaseMPM.o Viscoelastic.o JohnsonCook.o \
 		Mooney.o HEAnisotropic.o HEIsotropic.o BistableIsotropic.o RigidMaterial.o HardeningLawBase.o LinearHardening.o \
@@ -703,15 +705,15 @@ CrackNode.o : $(CrackNode).cpp $(dprefix) $(CrackNode).hpp $(NodalPoint).hpp $(C
 # MPM: Materials
 MaterialBaseMPM.o : $(MaterialBaseMPM).cpp $(dprefix) $(MaterialBase).hpp $(NairnMPM).hpp $(ThermalRamp).hpp \
 			$(CrackHeader).hpp $(CrackSegment).hpp $(DiffusionTask).hpp $(TransportTask).hpp $(CommonException).hpp \
-			$(CrackSurfaceContact).hpp
+			$(CrackSurfaceContact).hpp $(HardeningLawBase).hpp $(LinearHardening).hpp $(DDBHardening).hpp \
+			$(NonlinearHardening).hpp $(JohnsonCook).hpp $(SCGLHardening).hpp $(SLMaterial).hpp $(Nonlinear2Hardening).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialBaseMPM).cpp
 ElasticMPM.o : $(ElasticMPM).cpp $(dprefix) $(Elastic).hpp $(MaterialBase).hpp $(ThermalRamp).hpp $(ConductionTask).hpp \
 			 $(MPMBase).hpp $(DiffusionTask).hpp $(TransportTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ElasticMPM).cpp
 IsoPlasticity.o : $(IsoPlasticity).cpp $(dprefix) $(IsoPlasticity).hpp $(IsotropicMat).hpp $(HardeningLawBase).hpp \
 			$(MaterialBase).hpp $(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp $(LinearHardening).hpp \
-			$(TransportTask).hpp $(Elastic).hpp $(CommonException).hpp $(NonlinearHardening).hpp $(JohnsonCook).hpp \
-			$(SCGLHardening).hpp $(SLMaterial).hpp $(Nonlinear2Hardening).hpp
+			$(TransportTask).hpp $(Elastic).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(IsoPlasticity).cpp
 AnisoPlasticity.o : $(AnisoPlasticity).cpp $(dprefix) $(AnisoPlasticity).hpp $(Orthotropic).hpp $(TransIsotropic).hpp \
 			$(MaterialBase).hpp $(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp \
@@ -727,8 +729,7 @@ Mooney.o : $(Mooney).cpp $(dprefix) $(Mooney).hpp $(MaterialBase).hpp $(HyperEla
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Mooney).cpp
 HEIsotropic.o : $(HEIsotropic).cpp $(dprefix) $(HEIsotropic).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(TransportTask).hpp \
-			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp $(HardeningLawBase).hpp $(LinearHardening).hpp \
-			$(NonlinearHardening).hpp $(JohnsonCook).hpp $(SCGLHardening).hpp $(SLMaterial).hpp $(Nonlinear2Hardening).hpp
+			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp $(HardeningLawBase).hpp $(LinearHardening).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(HEIsotropic).cpp
 HEMGEOSMaterial.o : $(HEMGEOSMaterial).cpp $(dprefix) $(HEMGEOSMaterial).hpp $(HEIsotropic).hpp \
 			$(HyperElastic).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ConductionTask).hpp $(HardeningLawBase).hpp \
@@ -779,6 +780,9 @@ SCGLHardening.o : $(SCGLHardening).cpp $(dprefix) $(SCGLHardening).hpp $(Hardeni
 SLMaterial.o : $(SLMaterial).cpp $(dprefix) $(SLMaterial).hpp $(SCGLHardening).hpp $(HardeningLawBase).hpp \
             $(MaterialBase).hpp $(MPMBase).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(SLMaterial).cpp
+DDBHardening.o : $(DDBHardening).cpp $(dprefix) $(DDBHardening).hpp $(HardeningLawBase).hpp $(MaterialBase).hpp \
+            $(MPMBase).hpp $(ConductionTask).hpp $(CommonException).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(DDBHardening).cpp
 
 # MPM: Traction Laws
 TractionLaw.o : $(TractionLaw).cpp $(dprefix) $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp

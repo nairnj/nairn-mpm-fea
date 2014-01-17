@@ -165,7 +165,9 @@
                 | kCondR | kCondZ | Hardening | C1SL | C2SL | UJOption | ArtificialVisc | avA1 | avA2
 				| yldxx | yldyy | yldzz | yldxy | yldxz | yldyz | Khard | nhard | color | betahard
 				| Bjc | njc | Cjc | ep0jc | C0 | S1 | S2 | S3 | GPpG0 | GTpG0 | gamma0
-				| Uk | YP | Friction | C1 | C2 | Ajc | mjc | Tmjc | tempC1 | tempC2 )* >
+				| Uk | YP | Friction | C1 | C2 | Ajc | mjc | Tmjc | tempC1 | tempC2
+                | tayM | rhoW | rhoC | fo | flim | fsto | sto | m | n | alp | burg | K1 | alpstar
+                | betastar | k0 | Atd | Btd | tempDepend | MMG )* >
 <!ATTLIST	Material
 			Type CDATA #REQUIRED
 			Name CDATA #REQUIRED>
@@ -531,6 +533,25 @@
 <!ELEMENT	C2SL (#PCDATA)>
 <!ELEMENT	tempC1 (#PCDATA)>
 <!ELEMENT	tempC2 (#PCDATA)>
+<!ELEMENT	tayM (#PCDATA)>
+<!ELEMENT	rhoW (#PCDATA)>
+<!ELEMENT	rhoC (#PCDATA)>
+<!ELEMENT	fo (#PCDATA)>
+<!ELEMENT	flim (#PCDATA)>
+<!ELEMENT	fsto (#PCDATA)>
+<!ELEMENT	sto (#PCDATA)>
+<!ELEMENT	m (#PCDATA)>
+<!ELEMENT	n (#PCDATA)>
+<!ELEMENT	alp (#PCDATA)>
+<!ELEMENT	burg (#PCDATA)>
+<!ELEMENT	K1 (#PCDATA)>
+<!ELEMENT	alpstar (#PCDATA)>
+<!ELEMENT	betastar (#PCDATA)>
+<!ELEMENT	k0 (#PCDATA)>
+<!ELEMENT	Atd (#PCDATA)>
+<!ELEMENT	Btd (#PCDATA)>
+<!ELEMENT	tempDepend (#PCDATA)>
+<!ELEMENT	MMG (#PCDATA)>
 
 <!ELEMENT	pt EMPTY>
 <!ATTLIST	pt
