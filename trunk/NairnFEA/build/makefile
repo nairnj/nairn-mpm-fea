@@ -83,6 +83,9 @@ CC= g++
 ifeq ($(SYSTEM),carbon)
     CC= /usr/local/gcc48/bin/g++
 endif
+ifeq ($(SYSTEM),mac)
+    CC= /opt/local/bin/g++-mp-4.8
+endif
 RM= rm
 CP= cp
 

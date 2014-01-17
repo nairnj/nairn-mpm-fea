@@ -77,12 +77,15 @@ ifeq ($(SYSTEM),zia)
 endif
 
 # 3. Define compiler to use and other commands
-#     CC is path to the c++ compiler
+#     CC is path to the c++ compiler, must support OpenMP is used
 #     RM is path/options to the file remove command (used only in make clean)
 #     CP is path/options to copy command (used only in make install
 CC= g++
 ifeq ($(SYSTEM),carbon)
     CC= /usr/local/gcc48/bin/g++
+endif
+ifeq ($(SYSTEM),mac)
+    CC= /opt/local/bin/g++-mp-4.8
 endif
 RM= rm
 CP= cp
