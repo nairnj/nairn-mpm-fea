@@ -284,6 +284,8 @@
 		A77FA047090E76C2007E0B3B /* CSTriangle.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A77FA045090E76C2007E0B3B /* CSTriangle.hpp */; };
 		A7834B5115F000A10043ADB9 /* CoupledSawTooth.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7834B5015F000A10043ADB9 /* CoupledSawTooth.cpp */; };
 		A7834B5315F000C80043ADB9 /* CoupledSawTooth.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7834B5215F000C80043ADB9 /* CoupledSawTooth.hpp */; };
+		A78424141888A3FE00AA284A /* DDBHardening.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A78424121888A3FE00AA284A /* DDBHardening.cpp */; };
+		A78424151888A3FE00AA284A /* DDBHardening.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A78424131888A3FE00AA284A /* DDBHardening.hpp */; };
 		A7845CEC0E01D94F00D2378A /* AnisoPlasticity.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7845CEA0E01D94F00D2378A /* AnisoPlasticity.hpp */; };
 		A7845CED0E01D94F00D2378A /* AnisoPlasticity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7845CEB0E01D94F00D2378A /* AnisoPlasticity.cpp */; };
 		A7845CF00E01DAA300D2378A /* HillPlastic.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7845CEE0E01DAA300D2378A /* HillPlastic.hpp */; };
@@ -602,6 +604,8 @@
 		A77FA045090E76C2007E0B3B /* CSTriangle.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = CSTriangle.hpp; sourceTree = "<group>"; };
 		A7834B5015F000A10043ADB9 /* CoupledSawTooth.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoupledSawTooth.cpp; sourceTree = "<group>"; };
 		A7834B5215F000C80043ADB9 /* CoupledSawTooth.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CoupledSawTooth.hpp; sourceTree = "<group>"; };
+		A78424121888A3FE00AA284A /* DDBHardening.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DDBHardening.cpp; sourceTree = "<group>"; };
+		A78424131888A3FE00AA284A /* DDBHardening.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DDBHardening.hpp; sourceTree = "<group>"; };
 		A7845CEA0E01D94F00D2378A /* AnisoPlasticity.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = AnisoPlasticity.hpp; sourceTree = "<group>"; };
 		A7845CEB0E01D94F00D2378A /* AnisoPlasticity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AnisoPlasticity.cpp; sourceTree = "<group>"; };
 		A7845CEE0E01DAA300D2378A /* HillPlastic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = HillPlastic.hpp; sourceTree = "<group>"; };
@@ -1178,6 +1182,8 @@
 				A778E0D916AA07A1003D27FE /* SCGLHardening.cpp */,
 				A708FDD20F326C1A003FA82B /* SLMaterial.hpp */,
 				A708FDD30F326C1A003FA82B /* SLMaterial.cpp */,
+				A78424121888A3FE00AA284A /* DDBHardening.cpp */,
+				A78424131888A3FE00AA284A /* DDBHardening.hpp */,
 			);
 			name = Hardening_Laws;
 			path = Materials;
@@ -1601,6 +1607,7 @@
 				A7D62D2A175582E0008FA00A /* MatPtHeatFluxBC.hpp in Headers */,
 				6741B24917EDFF1300CFADC7 /* PressureLaw.hpp in Headers */,
 				A75B5902184FBA030011ADAE /* TaitLiquid.hpp in Headers */,
+				A78424151888A3FE00AA284A /* DDBHardening.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1925,6 +1932,7 @@
 				A7D62D2817557EE0008FA00A /* MatPtHeatFluxBC.cpp in Sources */,
 				6741B24817EDFF1300CFADC7 /* PressureLaw.cpp in Sources */,
 				A75B5901184FBA030011ADAE /* TaitLiquid.cpp in Sources */,
+				A78424141888A3FE00AA284A /* DDBHardening.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -21,6 +21,7 @@ class CrackSegment;
 class DiffusionTask;
 class ConductionTask;
 class MPMBase;
+class HardeningLawBase;
 
 typedef struct {
 	double dT;
@@ -89,6 +90,7 @@ class MaterialBase : public LinkedObject
 		virtual char *InitHistoryData(void);
 		virtual void FillTransportProperties(TransportProperties *);
 		virtual void SetHardeningLaw(char *);
+        virtual bool AcceptHardeningLaw(HardeningLawBase *,int );
 		virtual void ValidateForUse(int) const;
 		virtual void PrintTransportProperties(void) const;
         virtual void SetInitialParticleState(MPMBase *,int) const;

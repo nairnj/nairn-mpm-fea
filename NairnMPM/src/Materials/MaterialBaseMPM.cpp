@@ -17,6 +17,13 @@
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
+#include "Materials/LinearHardening.hpp"
+#include "Materials/NonlinearHardening.hpp"
+#include "Materials/JohnsonCook.hpp"
+#include "Materials/SCGLHardening.hpp"
+#include "Materials/SLMaterial.hpp"
+#include "Materials/Nonlinear2Hardening.hpp"
+#include "Materials/DDBHardening.hpp"
 #include <vector>
 
 // global
@@ -187,8 +194,62 @@ char *MaterialBase::InputMat(char *xName,int &input)
     return((char *)NULL);
 }
 
-// materials that allow hardening laws must override
-void MaterialBase::SetHardeningLaw(char *lawName) {}
+// Material that allow hardening laws must accept
+// the final call and use if supported
+// Newly created laws should be added here
+void MaterialBase::SetHardeningLaw(char *lawName)
+{
+    HardeningLawBase *pLaw = NULL;
+    int lawID = 0;
+    
+    // check options
+    if(strcmp(lawName,"Linear")==0 || strcmp(lawName,"1")==0)
+    {   pLaw = new LinearHardening(this);
+        lawID = 1;
+    }
+    
+    else if(strcmp(lawName,"Nonlinear")==0 || strcmp(lawName,"2")==0)
+    {   pLaw = new NonlinearHardening(this);
+        lawID = 2;
+    }
+    
+    else if(strcmp(lawName,"Nonlinear2")==0 || strcmp(lawName,"6")==0)
+    {   pLaw = new Nonlinear2Hardening(this);
+        lawID = 6;
+    }
+    
+    else if(strcmp(lawName,"JohnsonCook")==0 || strcmp(lawName,"3")==0)
+    {   pLaw = new JohnsonCook(this);
+        lawID = 3;
+    }
+    
+    else if(strcmp(lawName,"SCGL")==0 || strcmp(lawName,"4")==0)
+    {   pLaw = new SCGLHardening(this);
+        lawID = 4;
+    }
+
+    else if(strcmp(lawName,"SL")==0 || strcmp(lawName,"5")==0)
+    {   pLaw = new SLMaterial(this);
+        lawID = 5;
+    }
+    
+    else if(strcmp(lawName,"DDB-PPM")==0 || strcmp(lawName,"7")==0)
+    {   pLaw = new DDBHardening(this);
+      lawID = 7;
+    }
+    
+    // was it found
+    if(pLaw==NULL)
+        ThrowSAXException("The hardening law '%s' is not valid",lawName);
+    
+    // pass on to the material
+    if(!AcceptHardeningLaw(pLaw,lawID))
+        ThrowSAXException("The hardening law '%s' is not allows by material",lawName);
+}
+
+// A Material that allows hardening laws should accept this one or it can
+// veto the choice by returning FALSE
+bool MaterialBase::AcceptHardeningLaw(HardeningLawBase *pLaw,int lawID) { return FALSE; }
 
 /*	Verify andcCalculate properties used in analyses. If error, return string with an error message.
  This is called once at start of the calculation just before the material properties

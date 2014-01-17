@@ -14,12 +14,8 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Materials/HardeningLawBase.hpp"
 #include "Materials/LinearHardening.hpp"
-#include "Materials/NonlinearHardening.hpp"
-#include "Materials/Nonlinear2Hardening.hpp"
-#include "Materials/JohnsonCook.hpp"
-#include "Materials/SCGLHardening.hpp"
-#include "Materials/SLMaterial.hpp"
 
 #pragma mark IsoPlasticity::Constructors and Destructors
 
@@ -69,35 +65,11 @@ const char *IsoPlasticity::VerifyAndLoadProperties(int np)
 	return ptr;
 }
 
-// change hardening law
-void IsoPlasticity::SetHardeningLaw(char *lawName)
-{   
-    // delete old one
-    delete plasticLaw;
-    plasticLaw = NULL;
-    
-    // check options
-    if(strcmp(lawName,"Linear")==0 || strcmp(lawName,"1")==0)
-        plasticLaw = new LinearHardening(this);
-    
-    else if(strcmp(lawName,"Nonlinear")==0 || strcmp(lawName,"2")==0)
-        plasticLaw = new NonlinearHardening(this);
-    
-    else if(strcmp(lawName,"Nonlinear2")==0 || strcmp(lawName,"6")==0)
-        plasticLaw = new Nonlinear2Hardening(this);
-    
-    else if(strcmp(lawName,"JohnsonCook")==0 || strcmp(lawName,"3")==0)
-        plasticLaw = new JohnsonCook(this);
-    
-    else if(strcmp(lawName,"SCGL")==0 || strcmp(lawName,"4")==0)
-        plasticLaw = new SCGLHardening(this);
-    
-    else if(strcmp(lawName,"SL")==0 || strcmp(lawName,"5")==0)
-        plasticLaw = new SLMaterial(this);
-    
-    // did it work
-    if(plasticLaw == NULL)
-        ThrowSAXException("The hardening law '%s' is not valid",lawName);
+// Allows any hardening law
+bool IsoPlasticity::AcceptHardeningLaw(HardeningLawBase *pLaw,int lawID)
+{   delete plasticLaw;
+    plasticLaw = pLaw;
+    return TRUE;
 }
 
 // print mechanical properties to the results
