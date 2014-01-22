@@ -31,14 +31,21 @@ CommonException::CommonException(const char *errMsg,const char *inCode)
 
 // display message and step info
 void CommonException::Display(int mstep,double mtime)
-{	cerr << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
+{   // in both results window and in error pipe
+	cout << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
+    if(mstep>0)
+        cout << "Step Number: " << mstep << " Current Time: " << mtime << endl;
+    
+	cerr << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
     if(mstep>0)
         cerr << "Step Number: " << mstep << " Current Time: " << mtime << endl;
 }
 
 // display message only
 void CommonException::Display(void)
-{	cerr << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
+{	// in both results window and in error pipe
+    cout << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
+    cerr << "\n" << msg << "\nIn Subroutine: " << code << "()" << endl;
 }
 
 // get the error code

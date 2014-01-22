@@ -161,7 +161,7 @@ void MassAndMomentumTask::Execute(void)
 			}
 		}
         catch(...)
-        {   cout << "unknown throw found" << endl;
+        {   cout << "Unknown exception in MassAndMomentumTask()" << endl;
         }
 	}
 	
