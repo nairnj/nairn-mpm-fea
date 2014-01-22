@@ -189,6 +189,12 @@ A torus bounded by the parameters <code>xmin</code>, <code>xmax</code>,
 (or an optional <a href="mpmheader.html#units"><code>units</code> attribute</a>).
 The <code>axis</code> attribute specifies the normal direction to the plane of the torus as in the 1 (for <code>x</code>), 2 (for <code>y</code>) or 3 (for <code>z</code>) direction (default is 3 if not specified). The bounds for the directions in the plane of the torus (<i>e.g.</i>, x and y bounds when <code>axis</code> is 3) define an ellipsoid (or circle if the bounds have the same separation) that runs through the center of the torodial ring. The bounds in the direction of the axis define top and bottom for the cross-section of the torodial ring. The cross section will be a circle with radius given by half the distance between the top and bottom. To have an eliptical cross section, you can specify a <code>radius</code> attribute to define the radius of the cross section in the plane of the torus (while top and bottom give radius of the cross section in the axis direction).</li>
 
+ <li><pre class="list">&lt;Shell axis='(axis)' xmin='(xmin)' xmax='(xmax)' ymin='(ymin)' ymax='(ymax)'
+       zmin='(zmin)' zmax='(zmax)' radius='(radius)' thickness='(thickness)'/&gt;</pre>
+A cylindrical shell with variable radius and thickness. The <code>(axis)</code> parameter gives the axial direction of the shell. Using the min and max parameters along that axis direction to give the bounds for the shell. You can optionally use the min values for the other two axes to define the origin for the rotation (the default origin is (0,0)). Finally <code>(radius)</code> and <code>(thickness)</code> are <a href="function.html">user-defined functinos</a> of height ("h") along the axis direction to give shell inner radius and thicknes, respectively. All dimensions (including for "h" in the functions) are in mm
+(or an optional <a href="mpmheader.html#units"><code>units</code> attribute</a>).
+.</li>
+
 <li><pre class="list">&lt;Polyhedron&gt;
    &lt;faces style='(style)'&gt;
  1.496206e+002  2.879507e+000  1.775602e+002

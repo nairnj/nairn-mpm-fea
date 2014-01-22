@@ -61,6 +61,8 @@
 		67C733C116741ED100698D4F /* Matrix3.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67C733BF16741ED100698D4F /* Matrix3.hpp */; };
 		67E191331602CB2700B34CA9 /* MatPtTractionBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */; };
 		67E191351602CB3F00B34CA9 /* MatPtTractionBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67E191341602CB3F00B34CA9 /* MatPtTractionBC.hpp */; };
+		67FB2A0018901EB200417546 /* ShellController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67FB29FE18901EB200417546 /* ShellController.cpp */; };
+		67FB2A0118901EB200417546 /* ShellController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67FB29FF18901EB200417546 /* ShellController.hpp */; };
 		67FFAA0B16D31E95003A7C53 /* HEMGEOSMaterial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67FFAA0916D31E95003A7C53 /* HEMGEOSMaterial.cpp */; };
 		67FFAA0C16D31E95003A7C53 /* HEMGEOSMaterial.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67FFAA0A16D31E95003A7C53 /* HEMGEOSMaterial.hpp */; };
 		A700094B0F86B75E00FD76C7 /* MatVelocityField.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A70009490F86B75E00FD76C7 /* MatVelocityField.hpp */; };
@@ -463,6 +465,8 @@
 		67C733BF16741ED100698D4F /* Matrix3.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Matrix3.hpp; sourceTree = "<group>"; };
 		67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPtTractionBC.cpp; sourceTree = "<group>"; };
 		67E191341602CB3F00B34CA9 /* MatPtTractionBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatPtTractionBC.hpp; sourceTree = "<group>"; };
+		67FB29FE18901EB200417546 /* ShellController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShellController.cpp; sourceTree = "<group>"; };
+		67FB29FF18901EB200417546 /* ShellController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ShellController.hpp; sourceTree = "<group>"; };
 		67FFAA0916D31E95003A7C53 /* HEMGEOSMaterial.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HEMGEOSMaterial.cpp; path = Materials/HEMGEOSMaterial.cpp; sourceTree = "<group>"; };
 		67FFAA0A16D31E95003A7C53 /* HEMGEOSMaterial.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = HEMGEOSMaterial.hpp; path = Materials/HEMGEOSMaterial.hpp; sourceTree = "<group>"; };
 		A70009490F86B75E00FD76C7 /* MatVelocityField.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatVelocityField.hpp; sourceTree = "<group>"; };
@@ -1082,6 +1086,8 @@
 				A767E03C08B14CAA004540AB /* MpsController.cpp */,
 				A767E03508B14CAA004540AB /* CrackController.hpp */,
 				A767E03408B14CAA004540AB /* CrackController.cpp */,
+				67FB29FF18901EB200417546 /* ShellController.hpp */,
+				67FB29FE18901EB200417546 /* ShellController.cpp */,
 				A76FD9320C6CE89300A07DBF /* SphereController.hpp */,
 				A76FD9330C6CE89300A07DBF /* SphereController.cpp */,
 				A79D0A2F1744268600321C74 /* TorusController.hpp */,
@@ -1608,6 +1614,7 @@
 				6741B24917EDFF1300CFADC7 /* PressureLaw.hpp in Headers */,
 				A75B5902184FBA030011ADAE /* TaitLiquid.hpp in Headers */,
 				A78424151888A3FE00AA284A /* DDBHardening.hpp in Headers */,
+				67FB2A0118901EB200417546 /* ShellController.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1933,6 +1940,7 @@
 				6741B24817EDFF1300CFADC7 /* PressureLaw.cpp in Sources */,
 				A75B5901184FBA030011ADAE /* TaitLiquid.cpp in Sources */,
 				A78424141888A3FE00AA284A /* DDBHardening.cpp in Sources */,
+				67FB2A0018901EB200417546 /* ShellController.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

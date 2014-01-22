@@ -53,7 +53,7 @@ bool BoxController::FinishSetup(void)
     ymid = (ymin+ymax)/2.;
     zmid = (zmin+zmax)/2.;
     
-    // radii
+    // radii squared
     a2 = xmax-xmid;
     a2 *= a2;
     b2 = ymax-ymid;
