@@ -88,7 +88,7 @@
 
 <!ELEMENT	Body
 			( RotateX | RotateY | RotateZ | Unrotate
-			| Oval | Rect | Polygon | Sphere | Box | Cylinder | Polyhedron | Torus )*>
+			| Oval | Rect | Polygon | Sphere | Box | Cylinder | Polyhedron | Torus | Shell )*>
 <!ATTLIST	Body
 			mat CDATA #IMPLIED
 			matname CDATA #IMPLIED
@@ -101,7 +101,7 @@
 			wtconc CDATA #IMPLIED
 			temp CDATA #IMPLIED>
 <!ELEMENT	Hole
-			( Oval | Rect | Polygon | Sphere | Box | Cylinder | Torus )*>
+			( Oval | Rect | Polygon | Sphere | Box | Cylinder | Torus | Shell )*>
 
 <!ELEMENT	Polygon
 			( pt+ )>
@@ -656,6 +656,19 @@
 			ymax CDATA #REQUIRED
 			zmin CDATA #REQUIRED
 			zmax CDATA #REQUIRED>
+
+<!ELEMENT	Shell EMPTY>
+<!ATTLIST	Shell
+			units CDATA #IMPLIED
+			xmin CDATA #IMPLIED
+			xmax CDATA #IMPLIED
+			ymin CDATA #IMPLIED
+			ymax CDATA #IMPLIED
+			zmin CDATA #IMPLIED
+			zmax CDATA #IMPLIED
+			axis CDATA #REQUIRED
+            radius CDATA #REQUIRED
+			thickness CDATA #REQUIRED>
 
 <!ELEMENT	Oval EMPTY>
 <!ATTLIST	Oval
