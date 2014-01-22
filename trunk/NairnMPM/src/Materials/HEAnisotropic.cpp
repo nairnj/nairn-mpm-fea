@@ -218,7 +218,12 @@ void HEAnisotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,i
     double CTHETA12=C_LxL(0,1)/(lam1*lam2);
     double THETA12=acos(CTHETA12);
     double THETA12_DEG=THETA12*180./pi;
-        
+    
+    if (THETA12_DEG>90.)
+    {
+        THETA12_DEG=180.-THETA12_DEG;//  0 <= THETA12<= 90 ;
+    }
+    
     mptr->SetHistoryDble(THETA12_HISTORY,THETA12_DEG);
 
     
@@ -261,10 +266,6 @@ void HEAnisotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,i
         
         PK2(2,1)=PK2(1,2);
     
-    if (THETA12_DEG>90.)
-    {
-       THETA12_DEG=180.-THETA12_DEG;//  0 <= THETA12<= 90 ;
-    }
     
     // PK2 in the Global Basis GxG
     Matrix3 PK2_GxG=O*PK2*O.Transpose();

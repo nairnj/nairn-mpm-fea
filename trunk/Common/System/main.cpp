@@ -135,13 +135,23 @@ int main(int argc,const char *argv[])
     }
 	
 	catch(const char *errMsg)
-    {   cout << "Warning: pipe timing may prevent error details form appearing below\n" << endl;
+    {   // send to output results and error pipe
+        cout << "\n" << errMsg << endl;
 		cerr << "\n" << errMsg << endl;
 		return AnalysisErr;
 	}
+    
+    catch(exception &e)
+    {   // send to output results and error pipe
+        cout << "Standard exception: " << e.what() << endl;
+        cerr << "Standard exception: " << e.what() << endl;
+		return AnalysisErr;
+    }
 	
 	catch(...)
-	{	cerr << "\nStartAnalysis() block in main exited with unknown exception" << endl;
+    {   // send to output results and error pipe
+        cout << "\nMain analysis block in main exited with unknown exception" << endl;
+		cerr << "\nMain analysis block in main exited with unknown exception" << endl;
 		return AnalysisErr;
 	}
     
