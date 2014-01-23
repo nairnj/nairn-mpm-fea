@@ -42,7 +42,7 @@ int gelbnd(double **,int,int,double *,double *,int);
 
 int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
 {
-    int i,j,j2,k,imin1,jend,ind;
+    int i,j2,k,imin1,jend,ind;
     int ierr=0;
     double Uii,Uim,Uik,UikOverUii,Lki,yi,sum;
     
@@ -91,7 +91,7 @@ int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
             // Loop over rows that need to be reduced
 			// Changes only row k  and aik, input is aik, Uii
 #pragma omp parallel for private(k,ind,j2,Uim,Uik,UikOverUii)
-            for(j=2; j<=jend; j++)
+            for(int j=2; j<=jend; j++)
 			{	// aik = a[i][k-i+1] = a[i][j]
             	Uik = a[i][j];			// Now Uik since row i has been reduced, but not converted to Lki yet
 				
@@ -118,7 +118,7 @@ int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
 			
             // separate loop to avoid parallel conflicts in above loop
 #pragma omp parallel for
-            for(j=2; j<=jend; j++)
+            for(int j=2; j<=jend; j++)
 			{	// convert element in previous row to Lki
 				a[i][j] /= Uii;		// Now Uik/Uii = Lki
 			}
@@ -138,7 +138,7 @@ int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
 		
 		// Let k = i+j-1, then k from i+1 to end
 #pragma omp parallel for private(Lki)
-        for(j=2; j<=jend; j++)
+        for(int j=2; j<=jend; j++)
         {   Lki = a[i][j];                  // Lki or loop Li+1,i to end
             if(Lki!=0.)
 			{	r[imin1+j] -= Lki*yi;		// changing r[i+1] to r[i-1+jend] in parallel
@@ -163,7 +163,7 @@ int gelbnd(double **a,int n,int nband,double *r,double *work,int iflag)
 		// Let k=i+j-1 and loop k=i+1 to end
         sum = 0.;
 #pragma omp parallel for reduction(+:sum) private(Lki)
-        for(j=2; j<=jend; j++)
+        for(int j=2; j<=jend; j++)
         {   Lki = a[i][j];                  // From decomposition is Lki
             if(Lki!=0.)
                 sum += Lki*r[imin1+j];		// summand Lki*xk now in r[i+1] to r[i-1+jend] in parallel

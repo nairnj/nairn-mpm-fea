@@ -75,7 +75,6 @@ void NairnFEA::FEAAnalysis()
     char nline[200];
     int result;
     int i;
-    double *work;
     NodalDispBC *nextBC;
     double times[5];
 
@@ -100,8 +99,8 @@ void NairnFEA::FEAAnalysis()
 
 #pragma mark --- TASK 1: ALLOCATE R VECTOR
     // Allocate reaction vector and load with nodal loads and edge loads
-    rm=new double[nsize+1];
-    if(rm==NULL) throw CommonException("Out of memory creating reaction vector","NairnFEA::FEAAnalysis");
+    rm=(double *)malloc(sizeof(double)*(nsize+1));
+    if(rm==NULL) throw CommonException("Memory error allocating reaction vector (rm)","NairnFEA::FEAAnalysis");
     for(i=1;i<=nsize;i++) rm[i]=0.;
     
     // add nodal loads to rm[] vector
@@ -127,7 +126,9 @@ void NairnFEA::FEAAnalysis()
 #pragma mark --- TASK 4: INVERT STIFFNESS MATRIX
     // Solve linear system for nodal displacements
     times[2]=CPUTime();
-    work=new double[nsize+1];
+    double *work=(double *)malloc(sizeof(double)*(nsize+1));
+	if(work==NULL) throw CommonException("Memory error allocating work vector for linear solver",
+                                        "NairnFEA::FEAAnalysis");
     result=gelbnd(st,nsize,nband,rm,work,0);
     if(result==1)
     {	throw CommonException("Linear solver error: matrix is singular. Check boundary conditions.\n  (Hint: turn on resequencing to check for mesh connectivity problem)",
@@ -136,9 +137,9 @@ void NairnFEA::FEAAnalysis()
     else if(result==-1)
 	{	cout << "Linear solver warning: solution process was close to singular. Results might be invalid." << endl;
     }
-    delete [] work;
-    delete [] st;
-	delete [] stiffnessMemory;
+    free(work);
+    free(st);
+	free(stiffnessMemory);
     
 #pragma mark --- TASK 5a: UNSKEW ROTATED NODES
 
@@ -253,14 +254,14 @@ void NairnFEA::BuildStiffnessMatrix(void)
     
     // allocate memory for stiffness matrix and zero it
 	
-	// st[] are points to rows of the stiffness matrix
-    st=new double *[nsize+1];
-    if(st==NULL) throw CommonException("Out of memory creating stiffness matrix",
+	// st[] are pointers to rows of the stiffness matrix
+    st = (double **)malloc(sizeof(double *)*(nsize+1));
+    if(st==NULL) throw CommonException("Memory error creating stiffness matrix pointers (st)",
 											"NairnFEA::BuildStiffnessMatrix");
 											
 	// allocate all in one contiguous block for better speed in algorithms
-	stiffnessMemory=new double[nsize*nband];
-    if(stiffnessMemory==NULL) throw CommonException("Out of memory creating stiffness matrix",
+    stiffnessMemory = (double *)malloc(sizeof(double)*(nsize*nband));
+    if(stiffnessMemory==NULL) throw CommonException("Memory error creating stiffness matrix memory block",
 											"NairnFEA::BuildStiffnessMatrix");
 											
 	// allocate each row
