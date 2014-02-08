@@ -2055,11 +2055,12 @@
 					"/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include",
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib";
-				LIBRARY_SEARCH_PATHS = "";
+				LIBRARY_SEARCH_PATHS = /usr/local/bin;
 				MACOSX_DEPLOYMENT_TARGET = "";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = NairnMPM;
+				SDKROOT = "";
 				SECTORDER_FLAGS = "";
 				WARNING_CFLAGS = "";
 			};
@@ -2068,7 +2069,7 @@
 		A7BB15DF09F4555D000A7C91 /* Default */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
 				CODE_SIGN_IDENTITY = "";
 				ENABLE_OPENMP_SUPPORT = YES;
 				FRAMEWORK_SEARCH_PATHS = "";
@@ -2083,16 +2084,13 @@
 					/usr/local/include,
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/lib";
-				LIBRARY_SEARCH_PATHS = "";
-				"Library search paths" = "";
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = "";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
-				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = NairnFEA;
-				REZ_EXECUTABLE = YES;
 				SECTORDER_FLAGS = "";
-				VALID_ARCHS = "ppc7400 ppc64 ppc970 i386 x86_64 ppc";
+				VALID_ARCHS = "i386 x86_64";
 				WARNING_CFLAGS = "";
 			};
 			name = Default;
@@ -2102,9 +2100,11 @@
 			buildSettings = {
 				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
 				CODE_SIGN_IDENTITY = "";
-				ENABLE_OPENMP_SUPPORT = NO;
+				ENABLE_OPENMP_SUPPORT = YES;
 				GCC_VERSION = 4.8;
-				VALID_ARCHS = "ppc7400 ppc64 ppc970 i386 x86_64 ppc";
+				MACOSX_DEPLOYMENT_TARGET = "";
+				SDKROOT = "";
+				VALID_ARCHS = "i386 x86_64";
 			};
 			name = Default;
 		};

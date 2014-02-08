@@ -24,13 +24,14 @@
 #define SQRT_THREE 1.732050808
 
 #define EP_HISTORY 0
-#define YT_HISTORY 1 //5
+#define YLDC_HISTORY 1 //5
 #define EPDOT_HISTORY 2 //1
 #define GRAIN_HISTORY 3 //4
 #define RHOC_HISTORY 4 //2
 #define RHOW_HISTORY 5 //3
 #define RHOCDOT_HISTORY 6
 #define RHOWDOT_HISTORY 7
+#define NUMBER_HISTORY 8
 
 #include "Materials/HardeningLawBase.hpp"
 

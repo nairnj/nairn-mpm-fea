@@ -382,7 +382,7 @@ double DDBHardening::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,
 		
 		// update history variables
 		mptr->SetHistoryDble(EP_HISTORY,a->alpint);
-		mptr->SetHistoryDble(DEPDT_HISTORY,a->dalpha/delTime);
+		mptr->SetHistoryDble(EPDOT_HISTORY,a->dalpha/delTime);
 		mptr->SetHistoryDble(YLDC_HISTORY,prop->yieldC*parent->rho/1.e6);
 		mptr->SetHistoryDble(GRAIN_HISTORY,prop->dSize);
 		mptr->SetHistoryDble(RHOC_HISTORY,prop->rhoCtemp);
@@ -425,7 +425,7 @@ void DDBHardening::InitPlasticHistoryData(double *p) const
 
 void DDBHardening::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime) const
 {	mptr->SetHistoryDble(EP_HISTORY,0.);
-	mptr->SetHistoryDble(DEPDT_HISTORY,0.);
+	mptr->SetHistoryDble(EPDOT_HISTORY,0.);
 	mptr->SetHistoryDble(YLDC_HISTORY,0.);
 	mptr->SetHistoryDble(GRAIN_HISTORY,dSize0);
 	mptr->SetHistoryDble(RHOC_HISTORY,rhoC0);
