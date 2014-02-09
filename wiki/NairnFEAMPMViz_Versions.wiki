@@ -18,14 +18,17 @@ public static final String versionReadable="Version 3.0.0";
 NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The versions currently in this project are as follows:
 Current main trunk - on Jan 14, 2014, the OpenMP branch replaced the main trunk. That branch was started on April 2, 2013 to make parallel code. It has lots of changes needed to be parallel. All MPM materials use buffers for any material class variable that changes with particle state. The entire problem is divided into patches with ghost nodes on boundaries (and some section divide work by patch). The Particles reordered by type, which helps some loops divided by type (e.g., rigid velocities). The crack velocity field calculation is done in the initiation phase. Many other changes have been done along the way, although many of these are just features and not crucial for parallel code:
 
-  * Current Main Trunk - on Jan 14, 2014, the OpenMP branch replaced the main trunk. That branch was to make parallel code and also to convert the Java app to fully support scripting language from the Mac app called NairnFEMPM.
+  * Current main trunk
+    * Working on NairnFEAMPMViz 6.0.0
+
+  * Release-5.0 (9 Feb 2014): On Jan 14, 2014, the OpenMP branch replaced the main trunk of this release. That branch was to make parallel code and also to convert the Java app to fully support scripting language from the Mac app called NairnFEMPM.
     * Working on NairnFEAMPMViz 6.0.
     * Now supports scripting language to set up calculations. The language is almost identical to the language in the NairnFEAMPM app.
     * All documentation was revised to briefly explain the new scripting commands.
     * All material types are documented in a separate help topic
     * Example scripted files are in nairn-fea-mpm code project
 
-  * Previous trunk Version (this version was deleted when it was replaced by the OpenMP branch on Jan 14, 2014).
+  * Previous trunk version of release 5.0 (this version was deleted when it was replaced by the OpenMP branch on Jan 14, 2014).
     * Working on NairnFEAMPMViz 4.0.
 
   * release-4.0 (9 JAN 2013)
