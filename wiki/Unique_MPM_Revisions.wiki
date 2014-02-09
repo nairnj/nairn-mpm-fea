@@ -58,3 +58,5 @@ Revisions before the start of the table or after the end of table have not been 
 || r536 || 7 DEC 2012 || Axisymmetric branch brought into main trunk ||
 || r560 || 19 DEC 2012 || Added energy dissipation calculation to viscoelastic materials ||
 || r579 || 6 JAN 2013 || Added working directory option ||
+
+This list is no longer being maintained, but you can browse through versions in the "Source" tab to get an idea if which revisions had real changes a which had only cosmetic of documentation changes.
