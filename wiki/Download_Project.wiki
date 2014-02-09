@@ -1,4 +1,4 @@
 #summary Downloading the nairn-mpm-fea project
 #labels Featured,Getting_Started
 
-<font color="red">This page has been moved to <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Download_Source_Code">OSUPDocs Wiki</a></font>
+This page has been moved to <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Download_Source_Code">OSUPDocs Wiki</a>
