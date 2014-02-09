@@ -59,4 +59,4 @@ Revisions before the start of the table or after the end of table have not been 
 || r560 || 19 DEC 2012 || Added energy dissipation calculation to viscoelastic materials ||
 || r579 || 6 JAN 2013 || Added working directory option ||
 
-This list is no longer being maintained, but you can browse through versions in the <a href=http://code.google.com/p/nairn-mpm-fea/source/list">source list page</a> to get an idea if which revisions had real changes a which had only cosmetic or documentation changes.
+This list is no longer being maintained, but you can browse through versions in the [http://code.google.com/p/nairn-mpm-fea/source/list source list page] to get an idea if which revisions had real changes a which had only cosmetic or documentation changes.
