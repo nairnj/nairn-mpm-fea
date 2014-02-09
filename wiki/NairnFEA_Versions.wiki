@@ -19,7 +19,10 @@ The version number is coded in the constructor of the `NairnFEA.cpp` class:
 
 NairnFEA was first imported to `GoogleCode.com` as version 2.7.0. The versions currently in this project are as follows:
 
-  * Current main trunk - on Jan 14, 2014, the OpenMP branch replaced the main trunk. That branch was started on April 2, 2013 to make parallel code. The FEA parallelization was done in August.
+  * Current main trunk
+    * Working on NairnFEA 4.0.0
+
+  * Release-5.0 (9 Feb 2014): On Jan 14, 2014, an OpenMP branch replaced the main trunk for this release. That branch was started on April 2, 2013 to make parallel code. The FEA parallelization was done in August.
     * Working on NairnFEA 4.0.0
     * Aug 28: FEA uses parallel in matrix inversion.
     * Aug 30: Fixed FEA bug when using three stress to apply quadratic variation in stress.
