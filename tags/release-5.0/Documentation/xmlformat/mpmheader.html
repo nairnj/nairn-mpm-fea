@@ -1,0 +1,431 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>MPMHeader</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+<h1>MPM Header</h1>
+
+<p>This <code>&lt;MPMHeader&gt;</code> block defines many settings and features for the MPM calculations. The details of all options are explained on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Input_Files#MPM_Header">OSUPDocs wiki</a>. In brief, its format and command categories are:</p>
+
+<pre>&lt;MPMHeader&gt;
+  (<a href="#MPMMethods">MPM Methods and Simulation Timing Commands</a>)
+  (<a href="#archiving">MPM Archiving Options</a>)
+  (<a href="#global">Global Archiving Options</a>)
+  (<a href="#multi">Multimaterial Mode MPM Commands</a>)
+  (<a href="#cracks">Crack Settings</a>)
+  (<a href="#diffusion">Activate Diffusion Calculations</a>)
+  (<a href="#damping">Damping Options</a>)
+  &lt;<a href="#stressfreetemp"><code>StressFreeTemp</code></a>&gt;300&lt;/StressFreeTemp&gt;
+  &lt;<a href="#leave"><code>LeaveLimit</code></a>&gt;10000&lt;/LeaveLimit&gt;
+&lt;/MPMHeader&gt;
+</pre>
+
+<h2><a name="MHMethods"></a>MPM Methods and Simulation Timing Commands</h2>
+
+<p>These commands set details about the MPM method and control the simulation timing.</p>
+
+<pre>&lt;MPMMethod&gt;(strain update number)&lt;/MPMMethod&gt;
+&lt;GIMP type='(MPM method)'/&gt;
+&lt;MatlPtsPerElement&gt;(total number)&lt;/MatlPtsPerElement&gt;
+&lt;TimeStep units='ms'&gt;(time step)&lt;/TimeStep&gt;
+&lt;TimeFactor&gt;(time factor)&lt;/TimeFactor&gt;
+&lt;MaxTime units='ms'&gt;(max time)&lt;/MaxTime&gt;
+&lt;DefGradTerms&gt;(kmax)&lt;/DefGradTerms&gt;
+</pre>
+
+<p>where</p>
+
+<ul>
+
+<li><code>(strain update)</code> - the method used to update stresses and strains on the particles. The options are:
+<ul class="lev2args">
+<li>0 - <code>USF</code> or update first</li>
+<li>2 - <code>USAVG</code> or update first and last. This option is the default option.</li>
+<li>3 - <code>SZS</code> or modified method to update last</li>
+</ul></li>
+
+<li><code>(MPM method)</code> - the MPM method used for finding shape functions. The options are:
+<ul class="lev2args">
+<li><code>Classic</code> (or <code>Dirac</code> or 0) - classic MPM. This method is the default if no option is specified if no <code>&lt;GIMP&gt;</code> command is used.</li>
+<li><code>uGIMP</code> (or <code>GIMP</code> or 1) - undeformed GIMP. If <code>&lt;GIMP&gt;</code> command is used without a <code>type</code> attribute, this option is used.</li>
+<li><code>lCPDI</code> (or <code>CPDI</code> or 2) - CPDI using linear shape functions.</li>
+<li><code>qCPDI</code> (or 3) - CPDI using quadratic shape functions (available in 2D only).</li>
+</ul></li>
+
+<li><code>(total number)</code> - the number of material points in each element of the background grid. The options are:
+<ul class="lev2args">
+<li>1, 4, 9, 16, or 25 for 2D. The default is 4 points per element.</li>
+<li>1, 8 or 27  for 3D. The default is 8 points per element.</li>
+</ul></li>
+
+<li><code>(time step)</code> - the MPM time step in sec (or determined by a <a href="#units"><code>units</code> attribute</a>)</li>
+
+<li><code>(time factor)</code> - the  Courant factor to use when determining the MPM time step. The time step used in the analysis will be the minimum of the one determined using this factor and the one entered in <code>(time step)</code>. The default Courant factor is 0.5.</li>
+
+<li><code>(max time)</code> - the time that the calculations will stop in sec (or determined by a <a href="#units"><code>units</code> attribute</a>).</li>
+
+<li><code>(kmax)</code> - the number of terms to use when evaluating the incremental deformation gradient. The default is 2.</li>
+
+</ul>
+
+<h2><a name="archiving"></a>MPM Archiving Options</h2>
+
+<p>The commands to controlling particle archives are:</p>
+
+<pre>&lt;ArchiveRoot unique='0'&gt;(path)&lt;/ArchiveRoot&gt;
+&lt;ArchiveTime&gt;(time)&lt;/ArchiveTime&gt;
+&lt;FirstArchiveTime&gt;(first time)&lt;/FirstArchiveTime&gt;
+&lt;MPMArchiveOrder&gt;iYYYYNYYYNYYNNNNNY&lt;/MPMArchiveOrder&gt;
+&lt;CrackArchiveOrder&gt;iYYYN&lt;/CrackArchiveOrder&gt;
+</pre>
+
+<p>where</p>
+
+<ul>
+<li><code>(path)</code> is relative path to the inpur file for saving archive files. The optional <code>unique</code> attribute (if = 1) will force the creation of a new folder by inserting a folder '1', '2', <i>etc</i>., as needed to get a new folder, within the last folder specified by the relative path </li>
+<li><code>(time)</code> is the time interval between archiving in sec (or determined by a <a href="#units"><code>units</code> attribute</a>).</li>
+<li><code>(first time)</code> is the first time results are archived in sec (or determined by a <a href="#units"><code>units</code> attribute</a>).</li>
+</ul>
+
+<p>The calculations results included in the archive files are determined by a series of 'Y' and 'N' (or other) flags in the strings in the <code>&lt;MPMArchiveOrder&gt;</code> and <code>&lt;CrackArchiveOrder&gt;</code> commands:</p>
+
+<dl>
+
+<dt>&lt;MPMArchiveOrder&gt;</dt>
+<dd>The bytes in this comand mean:
+  <ul class="lev2args">
+  <li>Byte 1: byte order of archived files ('m' for old Macintosh order or 'i' for Intel chip order). This parameter is ignored on input but must be supplied for alignment.</li>
+  <li>Byte 2: default particle properties (particle mass, position, material information, and thickness). This byte must always by 'Y'.</li>
+  <li>Byte 3: particle velocity</li>
+  <li>Byte 4: particle stress</li>
+  <li>Byte 5: particle strain (which is elastic strain for plasticity materials)</li>
+  <li>Byte 6: particle plastic strain</li>
+  <li>Byte 7: should always be 'N'. Present to support reading old versions of archive files.</li>
+  <li>Byte 8: particle work energy, which is cumulative &sigma;.d&epsilon;</li>
+  <li>Byte 9: particle temperature</li>
+  <li>Byte 10: particle plastic energy</li>
+  <li>Byte 11: should always be 'N'. Present to support reading old versions of archive files.</li>
+  <li>Byte 12: particle total shear strain components (du/dy and dv/dx)</li>
+  <li>Byte 13: particle strain energy, which is cumulative &sigma;.d(&epsilon;-&epsilon;<sub>res</sub>)</li>
+  <li>Byte 14: setting 'Y' or 'N' refers to particle history variable 1, but up to four history variables can be archived by using the following characters in this byte:
+<pre class="list">'1' or 'Y' - history 1
+'2' - history 2
+'3' - history 1 and 2
+'4' - history 3
+'5' - history 1 and 3
+'6' - history 2 and 3
+'7' - history 1, 2, and 3
+'8' - history 4
+'9' - history 1 and 4
+':' - history 2 and 4
+';' - history 1, 2, and 4
+'&lt;' - history 3 and 4
+'=' - history 1, 3, and 4
+'&gt;' - history 2, 3, and 4
+'?' - history 1, 2, 3, and 4
+</pre>
+History variables are only meaningful for some <a href="definematl.html">material types</a>. To archive history data beyond #4 or to archive to a different format, you can use the <a href="custom.html">HistoryArchive Custom Task</a>.</li>
+  <li>Byte 15: particle concentration and concentration gradients - only meaningful when doing diffusion calculations.</li>
+  <li>Byte 16: particle heat energy; the value will only be physically correct if all <a href="definematl.html">materials</a> specify their heat capacity</li>
+  <li>Byte 17: number of times this particle crossed an element boundary since the last archive time.</li>
+  <li>Byte 18: rotational strain; this strain must be archived for visualization tools to be able to plot &quot;transformed&quot; points (<i>i.e.</i>, the stretch and shear plotted points to match the material point deformation state).</li>
+  </ul>
+  
+The Default value is <code>iYNN...</code>  - <i>i.e.</i> one 'Y' and the rest 'N'
+</dd>
+
+<dt>&lt;CrackArchiveOrder&gt;</dt>
+<dd>The bytes in this comand mean:
+  <ul class="lev2args">
+  <li>Byte 1: Byte order of archived files ('m' for Macintosh order or 'i' for Intel chip order). This parameter is ignored on input but must be supplied for alignment.</li>
+  <li>Byte 2: Default crack particle properties (location, surface positions). This byte must always by 'Y'.</li>
+  <li>Byte 3: J Integral at designated crack tips.</li>
+  <li>Byte 4: Stress intensity factors at designated crack tips.</li>
+  <li>Byte 5: Dynamic energy balancing results (in research, not meant for general use).</li>
+  </ul>
+The Default value is <code>iYNNNN</code>.</dd>
+</dl>
+
+<h2><a name="global"></a>Global Archiving Options</h2>
+
+<p>Global archiving is set up with the following commands:</p>
+
+<pre>&lt;GlobalArchive type='(quantity)' mat='(mat)'/&gt;
+&lt;GlobalArchiveTime units='ms'&gt;1&lt;/GlobalArchiveTime&gt;
+</pre>
+
+<p>where</p>
+
+<ul>
+<li><code>(quantity)</code> is the global quantity to be save in the global results file. The case-sensitive options are:
+<ol>
+	<li><code>sxx</code>, <code>syy</code>, <code>szz</code>, <code>sxy</code>, <code>sxz</code>, or <code>syz</code> - average element of the stress tensor in MPa</li>
+	<li><code>sRR</code>, <code>sZZ</code>, <code>sTT</code>, or <code>sRZ</code> - average element of the axisymmetric stress tensor in MPa (synonyms for <code>sxx</code>, <code>syy</code>, <code>szz</code>, and <code>sxy</code>)</li>
+	<li><code>exx</code>, <code>eyy</code>, <code>ezz</code>, <code>exy</code>, <code>exz</code>, or <code>eyz</code> - average element of the total strain tensor in %, which is sum of elastic and plastic strain for plasticity materials</li>
+	<li><code>eRR</code>, <code>eZZ</code>, <code>eTT</code>, or <code>eRZ</code> - average element of the axisymmetric total strain tensor % (synonyms for <code>exx</code>, <code>eyy</code>, <code>ezz</code>, and <code>exy</code>)</li>
+	<li><code>exxe</code>, <code>eyye</code>, <code>ezze</code>, <code>exye</code>, <code>exze</code>, or <code>eyze</code> - average element of the strain tensor in %, which is elastic strain only for plasticity materials</li>
+	<li><code>eRRe</code>, <code>eZZe</code>, <code>eTTe</code>, or <code>eRZe</code> - average element of the axisymmetric elastic strain tensor % (synonyms for <code>exxe</code>, <code>eyye</code>, <code>ezze</code>, and <code>exye</code>)</li>
+	<li><code>exxp</code>, <code>eyyp</code>, <code>ezzp</code>, <code>exyp</code>, <code>exzp</code>, or <code>eyzp</code> - average element of the plastic strain tensor in %</li>
+	<li><code>eRRp</code>, <code>eZZp</code>, <code>eTTp</code>, or <code>eRZp</code> - average element of the axisymmetric plastic strain tensor % (synonyms for <code>exxe</code>, <code>eyye</code>, <code>ezze</code>, and <code>exye</code>)</li>
+	<li><code>velx</code>, <code>vely</code>, or <code>velz</code> - average component of velocity in mm/sec</li>
+	<li><code>velR</code> or <code>velZ</code> - average component of axisymmetric velocity in mm/sec (synonyms for <code>velx</code> or <code>vely</code>)</li>
+	<li><code>dispx</code>, <code>dispy</code>, or <code>dispz</code> - average component of displacement in mm</li>
+	<li><code>dispR</code> or <code>dispZ</code> - average component of axisymmetric displacement in mm (synonyms for <code>dispx</code> or <code>dispy</code>)</li>
+	<li><code>contactx</code>, <code>contacty</code>, or <code>contactz</code> - component of the total contact force on the grid for <a href="#multi">multimaterial mod</a>e simulations when they include <a href="definematl.html#rigid">rigid materials</a> that have <code>SetDirection=8</code>. It is a sum of all contact forces for the rigid material on the object in Newtons.</li>
+	<li><code>contactR</code> or <code>contactZ</code> - component of the total contact force per radian on the axisymmetric grid in N (synonyms for <code>contactx</code> or <code>contacty</code>)</li>
+	<li><code>reactionx</code>, <code>reactiony</code>, or <code>reactionz</code> - component of the reaction force at nodes with velocity boundary conditions in N. If option <code>(material)</code> specifies a material, the force will be for all velocity conditions created by that <a href="definematl.html#rigid">rigid material</a>; if <code>(material)</code> is omitted the force will sum all velocity boundary conditions (specified or created by rigid particles); if <code>(material)</code> &lt; 0, the force will be only for velocity boundary conditions with that boundary condition ID.</li>
+	<li><code>reactionR</code> or <code>reactionZ</code> - component of the reaction force per radian at axisymmetric nodes with velocity boundary conditions in N (synonyms for <code>reactionx</code> or <code>reactiony</code> and see those options for meaning of the <code>(material)</code> option)</li>
+	<li><code>temp</code> - average temperature</li>	
+	<li><code>concentration</code> - weight fraction concentration</li>	
+	<li><code>Work Energy</code> - total work energy in J</li>
+	<li><code>Kinetic Energy</code> - total kinetic energy in J on the particles</li>
+	<li><code>Grid Kinetic Energy</code> - total kinetic energy in J on the grid</li>
+	<li><code>Strain Energy</code> - total external work in J</li>
+	<li><code>Heat Energy</code> - total heat energy in J</li>
+	<li><code>Entropy</code> - total entropy in J</li>
+	<li><code>Internal Energy</code> - sum of work and heat energy (U = w + q) in J</li>
+	<li><code>Helmholz Energy</code> - total Helmholz free energy (A = U - TS) in J</li>
+	<li><code>Interface Energy</code> - total energy associated with cracks having imperfect interfaces in J.</li>
+	<li><code>Plastic Energy</code> - total plastic energy in J</li>
+	<li><code>alpha</code> - the evolving global damping coefficient, &alpha;, when using feedback damping (in 1/sec)</li>
+	<li><code>Step number</code> - the current MPM step number</li>
+	<li><code>Elapsed time</code> - elapsed clock time for the current calculation (in secs)</li>
+	<li><code>CPU time</code> - total CPU time for the current calculation (in secs)</li>
+</ol></li>
+
+<li>The optional <code>(mat)</code> is material number and that quantity will be averaged only for particles of that material type. Omit this parameter (or attribute) to indicate an average over all particles. Grid quantities (<i>e.g.</i>, <code>Grid Kinetic Energy</code> but not <code>reactionx(y,z,R,Z)</code>) will ignore the attribute.</li>
+
+<li>The optional <code>(time)</code> is the time interval for storing global results in sec (or determined by a <a href="#units"><code>units</code> attribute</a>). If the time interval is not specified, it will be set to the <a href="#archiving">archiving interval</a></li>
+
+</ul>
+
+<h2><a name="multi"></a>Multimaterial Mode MPM</h2>
+
+<p>Multimaterial Mode MPM is explain on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Multimaterial_MPM">OSUPDocs Wiki</a>. This mode is activated with the following block:</p>
+
+<pre>&lt;MultiMaterialMode Vmin='(Vmin)' Dcheck='(dispCheck)' Normals='(normals)' RigidBias='(rigidBias)'&gt;
+  &lt;ContactPosition&gt;(cutoff)&lt;/ContactPosition&gt;
+  &lt;Friction Dt='(Dt)' Dn='(Dnt)' Dnc='(Dnc)'&gt;(frict)&lt;/Friction&gt;
+&lt;/MultiMaterialMode&gt;
+</pre>
+
+<p>The settings are:</p>
+
+<ul>
+<li><code>(Vmin)</code> - the minimum volume required for detection of contact relative to background cell volume. The default is 0.0.</li>
+
+<li><code>(dispCheck)</code> - enter 1 to enable displacement criterion for detecting contact. Enter 0 to skip this check. The default is <code>disabled</code> (or 0).</li>
+
+<li><code>(normals)</code> - the method for calculation of normal vectors. The options are as follows:
+<ul class="lev2args">
+<li>0 - the normal is found from the one material at the node that has the largest magnitude of its volume gradient.</li>
+<li>1 - the normal is found from the one material at the node that has the largest magnitude of its volume.</li>
+<li>2 - the normal is found from the volume-weighted mean volume gradient. When contact is all non-rigid materials, it averages the gradient of one material with the net gradient of all other materials. When a rigid material is involved, it averages each material with the one rigid material (this option is the default normals option).</li>
+<li>3 - each material uses its own normal. In contact or interface calculations, the calculations are done separately for the two sides for the surface. It is available for research comparisons but is not recommended.</li>
+</ul></li>
+
+<li><code>(rigidBias)</code> - means to trust normals calculated from rigid materials more than those from non-rigid materials. The entered number means to use the rigid material's volume gradient unless the normal by the current <code>(normals)</code> method is the entered factor larger in magnitude. (Default is 1 or no rigid material preference and only applies when <code>(settings)</code> is 0 or 2).</li>
+
+<li><code>(cuttoff)</code> - this optional parameter sets the displacement cutoff (relative to cell size) used to detect contact.</li>
+
+<li><code>(frict)</code> - sets default friction or imperfect interface properties for multimaterial contact:
+<ul class="lev2args">
+<li><code>(frict)</code>=(zero or positive number) - contact is by friction with the supplied coefficient of friction.</li>
+<li><code>(frict)</code>=(or a number between -1 and -9) - contact by stick conditions.</li>
+<li><code>(frict)</code>=(or a number less than -10) - reverts to a single velocity field.</li>
+<li><code>(frict)</code>=11 = converts multimaterial interactions to be an <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Imperfect_Interfaces">imperfect interface</a> with interface parameters supplied in <code>(Dt)</code>, <code>(Dnt)</code>, and <code>(Dnc)</code> for tangential direction and nomral direction in tension or compression, respectively. If <code>(Dnc)</code> is not give it is set equal to <code>(Dnt)</code>,</li>
+</ul>
+The default is 0</li>
+
+</ul>
+
+<h2><a name="cracks"></a>Crack Settings</h2>
+
+<p>All global crack setting commands (see <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Crack_Settings">OSUPdocs wiki</a> for details) are within a &lt;Cracks&gt; element:</p>
+
+<pre>&lt;Cracks&gt;
+  &lt;Propagate criterion='(critNum)' direction='(dirNum)' traction='(traction)'/&gt;
+  &lt;AltPropagate criterion='(critNum)' direction='(dirNum)' traction='(traction)'/&gt;
+  &lt;PropagateLength&gt;(relLength)&lt;/ProagateLength&gt;
+  &lt;Friction Dt="(Dt)" Dn="(Dntens)" Dnc="(Dncomp)"&gt;(frict)&lt;/Friction&gt;
+  &lt;JContour size="(size)" terms="(terms)"/&gt;
+  &lt;ContactPosition&gt;(cutoff)&lt;/ContactPosition&gt;
+  &lt;MovePlane type='(method)' prevent='(prevent)'/&gt;
+&lt;/Cracks&gt;
+</pre>
+
+<p>where</p>
+
+<ul>
+
+<li>&lt;Propagate&gt; and &lt;AltPropagate&gt; set up one of two <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Crack_Propagation_Commands">crack propagation criteria</a>. The parameters are:
+<ul class="lev2args">
+<li>(critNum) picks the crack propagation criterion:
+<ul class="lev2args">
+
+<li><code>0:&quot;none&quot;</code> for no propagation.</li>
+
+<li><code>1:&quot;max energy release&quot;</code> for crack growth based the mode I critical stress intensity factor (K<sub>Ic</sub>). The default propagation is in the maximum hoop stress direction.</li>
+
+<li><code>2:&quot;steady state&quot;</code> for crack initiation when total energy release rate (J) reaches a critical value (specified by J<sub>Ic</sub>) or when the time reaches a specified time (specified by <code>initTime</code>). The default propagation is self similar.</li>
+
+<li><code>3:&quot;energy balance&quot;</code> for crack growth by a dynamic energy balancing scheme (research option only). The default propagation is self similar.</li>
+
+<li><code>4:&quot;energy density&quot;</code> for crack growth based on mode I critical stress intensity factor (K<sub>Ic</sub>) and the minimum strain energy density. The default propagation is in the maximum strain energy direction.</li>
+
+<li><code>5:&quot;elliptical&quot;</code> for crack growth based on stress intensity factors and two critical stress intensity factors (K<sub>Ic</sub> and K<sub>IIc</sub>). The default propagation is in the maximum hoop stress direction.</li>
+
+<li><code>6:&quot;max ctod&quot;</code> for crack growth if the normal or tangential crack tip opening displacement at the crack tip exceeds &delta;<sub>Ic</sub> or &delta;<sub>IIc</sub>, respectively, if one or both are specified. The default propagation is self similar.</li>
+
+<li><code>7:&quot;critical err&quot;</code> for crack growth when total energy release rate (J) exceeds the critical toughness  J<sub>Ic</sub>. The default propagation is self similar.
+
+</ul>
+
+<li>(dirNum) pick the crack propagation direction:
+<ul class="lev2args">
+
+<li><code>0:&quot;default&quot;</code> to use the default direction for the above criterion.
+
+<li><code>1:&quot;self similar&quot;</code> to grow in the same direction as the crack tip crack segment.
+
+<li><code>2:&quot;cod normal&quot;</code> to grow normal to a crack opening displacement vector between the top and bottom surface at the crack tip.
+
+<li><code>3:&quot;cod hoop&quot;</code> to estimate the direction of maximum mode I based on the normal and shear crack opening displacements. This direction is similar to the maximum hoop stress direction, but can be used with anisotropic materials.
+
+<li><code>4:&quot;initial&quot;</code> to grow in the crack tip direction defined by the initial crack geometry.
+
+</ul>
+
+<li><code>(traction)</code> can specific a traction law material that is left in the wake of crack propagation.</li>
+</ul>
+</li>
+
+<li><code>(relLength)</code> determines how far the crack propagates relative to cell dimensions. The default setting is 0.5, or half an element per propagation increment.</li>
+
+<li><a name="cfriction"></a><code>(frict)</code> - sets default friction or imperfect interface properties for crack contact:
+<ul class="lev2args">
+<li><code>(frict)</code>=(zero or positive number) - crack contact is by friction with the supplied coefficient of friction.</li>
+<li><code>(frict)</code>=(or a number between -1 and -9) - crack contact by stick conditions.</li>
+<li><code>(frict)</code>=(or a number less than -10) - ignores crack surface contact when modeling the cracks.</li>
+<li><code>(frict)</code>=11 = convert cracks to modeling of an <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Imperfect_Interfaces">imperfect interface</a> with interface parameters supplied in <code>(Dt)</code>, <code>(Dnt)</code>, and <code>(Dnc)</code> for tangential direction and nomral direction in tension or compression, respectively. If <code>(Dnc)</code> is not give it is set equal to <code>(Dnt)</code>,</li>
+</ul>
+The default is 0</li>
+
+<li>&lt;JContour&gt; is used to set the size of the path used for <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Crack_Settings#J_Integral_Contour_Settings">evaluating J integral</a> and to control the number of terms used in the process with options
+<ul class="lev2args">
+<li><code>(size)</code> is the semi-length for the sides of the rectangle for the J countour (number of elements). The default value is 2.</li>
+<li><code>(terms)</code> should be set to 1 or 2 to specify if the J Integral should be a simple contour (1) or include an area integral inside the contour (2).</li>
+</ul>
+</li>
+
+<li><code>(cuttoff)</code> - this optional parameter sets the displacement cutoff (relative to cell size) used to detect contact.</li>
+
+<li>&lt;MovePlane&gt; determines how a crack plane moves and whether or not crack surfaces can cross crack planes. The options are:
+<ul class="lev2args">
+<li><code>(method)</code> is 'avg' to move the crack plane to the midpoint of the top and bottom surfaces or 'cm' to move the crack plane in the center of mass velocity field. The default method is 'avg'.</li>
+<li><code>(prevent)</code> is 'yes' or 'no' to prevent or allow crack surfaces to cross the main crack plane. The default setting is 'no'.</li>
+</ul>
+</li>
+
+</ul>
+
+<h2><a name="diffusion"></a>Activating Diffusion Calculations</h2>
+
+<p>Diffusion (see <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Diffusion_Calculations">OSUPDocs wiki</a> for details) is activated with the <code>&lt;Diffusion&gt;</code> command:</p>
+
+<pre>&lt;Diffusion reference = '(refConc)'/&gt;</pre>
+
+<p>where the presence of this command activates diffusion and:</p>
+
+<ul>
+<li><code>(refConc)</code> is used to set a reference concentration potential (between 0 and 1) that corresponds to zero strain. The default <code>(refConc)</code> is 0.</li>
+</ul>
+
+<h2><a name="damping"></a>Damping Options</h2>
+
+<p>The two damping options are explained in the OUSPDocs wiki. Ther are activated with the commands:
+
+<pre>&lt;Damping function='(alphaVsT)'&gt;(alphaNum)&lt;/Damping&gt;
+&lt;FeedbackDamping target='(Tk)' max='(maxAlpha)'&gt;(gain)&lt;/FeedbackDamping&gt;
+</pre>
+
+<p>where</p>
+
+<ul>
+<li><code>(alphaNum)</code> is a constant damping factor. The units are 1/sec and the default value is 0.</li>
+<li><code>(alphaVsT)</code> can alternatively set damping factor with a <a href="function.html">user defined function</a> of time that evaluates to a grid damping constant in units of 1/sec</li>
+<li><code>(gain)</code> is gain for evolution of &alpha; in feedback damping. It has units of 1/mm<sup>2</sup>. The default is 0 or no damping.</li>
+<li><code>(Tk)</code> in an optional <a href="function.html">user defined function</a> of time that evaluates to a target kinetic energy in &mu;J. The default value is 0.</li>
+<li><code>(maxAlpha)</code> can optionally specify a maximum damping coefficient (&alpha;) entered in units of 1/sec. The default is to have no limit to damping.</li>
+</ul>
+
+
+<!-- OLD STUFF -->
+
+<pre>
+&lt;MPMHeader&gt;
+    &lt;<a href="#stressfreetemp"><code>StressFreeTemp</code></a>&gt;25&lt;/StressFreeTemp&gt;
+    &lt;<a href="#leave"><code>LeaveLimit</code></a>&gt;10000&lt;/LeaveLimit&gt;
+&lt;/MPMHeader&gt;
+</pre>
+
+<p>where</p>
+
+<h2><a name="stressfreetemp"></a>Stress Free Temperature Comand</h2>
+
+<p>This command:</p>
+
+<pre>&lt;StressFreeTemp&gt;300&lt;/StressFreeTemp&gt;</pre>
+
+<p>allows you to specify a stress free or reference temperature, which will be the starting temperature for all particles. See the OSUPDOc wiki for details on <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Thermal_Calculations">thermal calculations</a>.</p>
+
+<h2><a name="leave"></a>Setting Leave Limit</h2>
+
+<p>The command</p>
+
+<pre>&lt;LeaveLimit&gt;10000&lt;/LeaveLimit&gt;</pre>
+
+<p>is used to force particles that try to leave the grid back into the grid. The <a href="http://osupdocs.forestry.oregonstate.edu/index.php/LeaveLimit_Command">leave limit</a> is the number of analysis steps that will allow a unique particle to leave the grid. Once the limit is reached the analysis will stop. If command is omitted, the default is 1% of the particles. Set it to 1 to have simulations stop if any particle leaves the grid.</p>
+
+<a name="units"></a><h2>Units Attribute in Some Commands</h2>
+
+<p>Many commands allow an optional <code>units</code> attribute to specify the units of a numeric value. If no units attribute is used, the value will have default units depending on physical quantity associated with the command. The possible units settings and their default values are:
+</p>
+
+<dl>
+<dt>Time</dt>
+<dd>The possible options are 'sec', 'ms', 'msec', or 'microsec'. The default units are seconds.</dd>
+
+<dt>Length</dt>
+<dd>The possible options are 'mm', 'm', 'cm', 'microns', 'in', or 'ft'. The default units are millimeters.</dd>
+
+<dt>Velocity</dt>
+<dd>The possible options are 'mm/sec', 'mm/msec', 'm/sec', 'cm/sec', 'in/sec', or 'ft/sec'. The default units are millimeters per second.</dd>
+
+<dt>Mass</dt>
+
+<dd>The possible options are 'g', 'kg', 'mg', 'lbs',  or 'oz'. The default units are grams.</dd>
+</dl>
+
+<p>The <code>units</code> attribute is only allowed in commands the specify it is allowed.</p>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+</body>
+
+</html>

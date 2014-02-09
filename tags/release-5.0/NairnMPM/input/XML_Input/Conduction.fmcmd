@@ -1,0 +1,102 @@
+<?xml version='1.0'?>
+<!DOCTYPE JANFEAInput SYSTEM "NairnMPM.dtd"
+[
+ <!ENTITY maxtime "1">
+ <!ENTITY archive "0.05">
+ <!ENTITY thick "5">
+ <!ENTITY SFT "310">
+ <!ENTITY StripTemp "310">
+ <!ENTITY damp "20">
+]>
+<JANFEAInput version='3'>
+
+<!-- XML commands to test conduction calculations
+	It is a square block. The left and right are held at zero
+		velocity to keep things stable (may not be needed).
+	The material is isotropic. It has properties of Copper except
+		modulus is made very low to allow long time steps
+-->
+
+  <Header>
+    <Description>
+Title: MPM Analysis
+User Name: User Name
+Simple conduction calculations
+    </Description>
+    <Analysis>11</Analysis>
+  </Header>
+
+  <MPMHeader>
+    <ArchiveTime>&archive;</ArchiveTime>
+    <MaxTime>&maxtime;</MaxTime>
+    <ArchiveRoot>Results/conduct.</ArchiveRoot>
+    <MPMArchiveOrder>mYYYYNNNYNNNYNN</MPMArchiveOrder>
+    <CrackArchiveOrder>mYNN</CrackArchiveOrder>
+    <StressFreeTemp>&SFT;</StressFreeTemp>
+    <Damping>&damp;</Damping>
+    <GIMP/>
+  </MPMHeader>
+
+  <Mesh output="file">
+    <Grid xmin="-45" xmax="45" ymin="-35" ymax="35" thickness='&thick;'>
+      <Horiz nx="54" rx="1.0"/>
+      <Vert ny="42" ry="1.0"/>
+    </Grid>
+  </Mesh>
+
+  <MaterialPoints>
+	<Body mat="1" angle="0" thick="&thick;" vx="0" vy="0" temp="&StripTemp;">
+	  <Rect xmin="-40" xmax="40" ymin="-1" ymax="1"/>     
+	</Body>
+	<Body mat="1" angle="0" thick="&thick;" vx="0" vy="0" temp="&SFT;">
+	  <Rect xmin="-40" xmax="40" ymin="-30" ymax="30"/>     
+    </Body>
+  </MaterialPoints>
+
+  <Material Type="1" Name="Isotropic Material">
+    <rho>8.6</rho>
+    <E>1e-02</E>
+    <nu>0.2</nu>
+    <alpha>20</alpha>
+	<kCond>386</kCond>
+	<Cp>385</Cp>
+  </Material>
+
+  <GridBCs>
+    <BCLine x1="40" y1="-35" x2="40" y2="35">
+      <DisBC dir="1" vel="0"/>
+    </BCLine>
+    <BCLine x1="-40" y1="-35" x2="-40" y2="35">
+      <DisBC dir="1" vel="0"/>
+    </BCLine>
+    
+    <!-- Temperature BC on top -->
+    <!--<BCLine x1="-45" y1="30" x2="45" y2="30">
+      <TempBC value="0" style="1"/>
+    </BCLine>-->
+    
+    <!-- Temperature BC on top -->
+    <!--<BCLine x1="-45" y1="-30" x2="45" y2="-30">
+      <TempBC value="0" style="1"/>
+    </BCLine>-->
+  </GridBCs>
+  
+  <ParticleBCs>
+    <!-- Flux BC on left -->
+	<BCLine x1="-40" y1="-30" x2="-40" y2="30" tolerance="0.83">
+	  <!--<HeatFluxBC dir="1" face='4' style='1' value="-1000000"/>-->
+	  <HeatFluxBC dir="2" face='4' style='6' function="10000*(90-t)"/>
+	</BCLine>
+	
+    <!-- Flux BC on right -->
+	<BCLine x1="40" y1="-30" x2="40" y2="30" tolerance="0.83">
+	  <!--<HeatFluxBC dir="1" face='2' style='1' value="-1000000"/>-->
+	  <HeatFluxBC dir="2" face='2' style='6' function="10000*(90-t)"/>
+	</BCLine>
+  </ParticleBCs>
+  
+  <Thermal>
+    <Conduction/>
+  </Thermal>
+
+</JANFEAInput>

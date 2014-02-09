@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
+	<title>Compiling Nairn_MPM-FEA Code</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+Getting Started
+</p>
+
+<h1><a name="top"></a>Compiling NairnMPM and NairnFEA Source Code</h1>
+
+<p>After checking out the <a href="http://code.google.com/p/nairn-mpm-fea/"><code>nairn-mpm-fea</code> project</a>, the next step is to compile it. Detailed instructions for compiling the code engines is available in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Compile_the_Code_Engines">OSUPDocs wiki</a>. Some brief instructions, which depend on system, are given below (for when on-line access is not available):</p>
+
+<ul>
+<li><a href="#xerces">Installing xerces</a></li>
+<li><a href="#xcode">MacOS XCode Compilation</a></li>
+<li><a href="#windows">Windows using cygwin</a></li>
+<li><a href="#eclipse">Compile using Eclipse IDE</a> - any platform</li>
+</ul>
+
+<a name="xerces"></a><h1>Installing xerces</h1>
+
+<p>Both <code>NairnMPM</code> and <code>NairnFEA</code> rely on the open-source 
+<a href="http://xml.apache.org/xerces-c/index.html"><code>xerces</code></a> library for reading <code>XML</code> input files. The OSUPDocs wiki also has specific instructions for installing <code>xerces</code> in <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Compiling_in_MacOS_X#Compiling_Xerces_on_MacOS_X">MacOS X</a> or in <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Compiling_in_Windows#Installing_xerces">Windows</a>. If internet access is not available and you do not have <code>xerces</code> installed yet, you will need to wait until internet access is available before continuing.
+
+<a name="xcode"></a><h1>MacOS XCode Compilation</h1>
+
+<p>Most development of <code>NairnMPM</code> and <code>NairnFEA</code> is done in MacOS X and thus compiling on MacOS X is easy. The preferred method is to use XCode. A complete XCode project is located at:</p>
+
+<pre>
+nairn-mpm-fea/Common/Projects/NairnMPM.xcodeproj
+</pre>
+
+<p>This project is called <code>NairnMPM</code>, but it includes all MPM and FEA source code in two targets named <code>NairnMPM</code> and <code>NairnFEA</code>. Assuming <a href="#xerces"><code>xerces</code> is installed</a>, open the <code>NairnMPM.xcodeproj</code> to compile the code. The process is:</p>
+
+<ol>
+<li>Select the target to compile - either <code>NairnMPM</code> or <code>NairnFEA</code>.</li>
+<li>Choose build and they will compile and be saved in XCode's <code>~/Library/Developer/XCode/DerivedData</code> folder.</li>
+</ol>
+
+<a name="linux"></a><h1>Unix/Linux System Compilation</h1>
+
+<p>The code can easily be compiled on any Unix or Linux system with a c++ compiler and with <a href="#xerces"><code>xerces</code> already installed</a>. To compile <code>NairnMPM</code> navigate to its build folder and use the <code>make</code> command:</p>
+
+<pre>
+cd nairn-mpm-fea/NairnMPM/build
+make SYSTEM=(system)
+</pre>
+
+<p>or compile <code>NairnFEA</code> navigate to its build folder and use the <code>make</code> command:</p>
+
+<pre>
+cd nairn-mpm-fea/NairnFEA/build
+make SYSTEM=(system)
+</pre>
+
+<p>where <code>(system)</code> is one of the systems supported for easy compilation. To learn about the available system, you can consult comments in the <code>makefile</code> in each project in their build folders. These commands will compile all source code and install the executables in <code>nairn-mpm-fea/NairnMPM/input</code> or <code>nairn-mpm-fea/NairnFEA/input</code>, respectively.
+
+<p>Compiling on any other Linux/Unix system should be straightforward, with the most difficult step usually being <a href=#xerces">installing and linking to the <code>xerces</code> library</a>. The key steps needed for successful compilation:</p>
+
+<ol>
+<li>Use a compatible <code>C++</code> compiler. The code has been tested up to <code>gcc 4.8</code> and a relatively new version is recommended (newer than <code>gcc 4.2</code>) if you are compiling for parallel execution. It is possible other compilers will need minor changes for compilation.</li>
+
+<li>Compiling of <code>NairnMPM</code> or <code>NairnFEA</code> needs access to all the <code>xerces</code> header files. These are provided in the <code>xerces</code> source code download. Even if your system has the xerces binary installed, it may not have the header files. You can get them by  <a href="http://xml.apache.org/dist/xerces-c/stable/">downloading the xerces source code</a>, even though you will not need to build it.</li>
+
+</ol>
+
+<p>Once a suitable compiler, the <code>xerces</code> binary, and <code>xerces</code> header files are installed, compilation may require editing the <code>makefile</code>s in the <code>nairn-mpm-fea</code> folders. Specifically, you will need to edit the <code>makefile</code>s in the <code>build</code> directories (<code>NairnMPM</code> and <code>NairnFEA</code>) and set the following variables:</p>
+
+<ol>
+<li>The variable <code>CC</code>: set it to the desired <code>C++</code> compiler.</li>
+<li>The variable <code>xercesSo</code>: set it to the path name to the <code>xerces</code> library binary file.</li>
+<li>The variable <code>headersPath</code>: set it to the path name to the folder containing the <code>xercesc</code> folder of header files.</li>
+<li>See other possible variables in the comments of the <code>makefile</code> for each project.</li>
+</ol>
+
+<a name="windows"></a><h1>Windows Using cygwin</h1>
+
+<p>To compile and run in Windows, you need some kind of Linux/Unix environment. The recommended option is to use <a href="http://www.cygwin.com"><code>cygwin</code></a>. Documentation of using <code>cygwin</code> for the <code>nairn-fea-mpm</code> project is on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Compiling_in_Windows">OSUPDOcs wiki</a>. Once <code>cygwin</code> is set up the code can be compiled as in other <a href=#linux">Unix or Linux system</a> using <code>SYSTEM=cygwin</code> option on the <code>make</code> command.
+
+<a name="eclipse"></a><h1>Compile using Eclipse IDE</h1>
+
+<p>Working with source code is easier when done using an integrated development environment (IDE) rather than using basic text editing on a collection of source files. Beside using <a href="#xcode">XCode on MacOS X</a>, an option for any other platform (and an alternative option for MacOS X) is to use the cross-platform IDE <a href="http://www.eclipse.org" target="new">Eclipse</a>, which is an open-source and free IDE. The details for compilation using Eclipse are given in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Compiling_Using_Eclipse_IDE">OSUPDocs wiki</a>.
+</p>
+
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+Getting Started
+</p>
+
+</body>
+</html>

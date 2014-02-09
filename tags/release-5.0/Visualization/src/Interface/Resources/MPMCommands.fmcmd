@@ -1,0 +1,46 @@
+! ********** Introduction **********
+
+! ********** Preamble Section **********
+Title "MPM Analysis Title"
+Name "MPM Analyst's Name"
+
+! Header
+Header
+   MPM Analysis using NairnFEAMPM and NairnMPM
+EndHeader
+
+Analysis "Plane Stress MPM"
+MPMMethod USAVG,GIMP
+Archive "Results/MPM"
+ArchiveTime 1
+MaximumTime 10
+
+! ********** Parameters Section **********
+#cell=5                 ! cell size (square cells)
+#width=100              ! Width of object in mm (mult of cell)
+#height=50              ! Height in mm (mult of cell)
+#thickness=1            ! Thickness in mm
+#border=2				! cells around the edges
+
+! ********** Materials Section **********
+#matname$="polymer"
+Material #matname$,"Polymer","Isotropic"
+  E 2500
+  nu .33
+  a 60
+  rho 1.2
+Done
+
+! ********** Grid and Material Points Section **********
+GridHoriz (#width+2*#border*#cell)/#cell
+GridVert (#height+2*#border*#cell)/#cell
+GridThickness #thickness
+GridRect -#border*#cell,#width+#border*#cell,-#border*#cell,#height+#border*#cell
+
+Region #matname$,0,0,#thickness
+  Rect 0,#width,0,#height
+EndRegion
+
+! ********** Optional Calculations Section **********
+
+! ********** Boundary Condition Section **********

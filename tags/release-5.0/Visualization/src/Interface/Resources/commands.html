@@ -1,0 +1,1310 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>NairnFEAMPMViz Help</title>
+<style type="text/css">
+h1 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 16pt;
+	background-color: #CCCCCC;
+	font-weight: bold;
+	padding: 6pt; }
+h2 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 14pt;
+	margin-left: 3pt;
+	background-color: #CCCCCC; }
+h3 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt;
+	margin-left: 3pt;
+	color: #005500;}
+p { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt;
+	margin-top: 0pt;
+	margin-left: 12pt;
+	margin-bottom: 6pt; }
+ul { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt;
+	list-style-image: Bullet.png;
+	margin-top: 0pt;
+	margin-bottom: 6pt;
+	margin-left: 28pt; }
+ul li { margin-top: 0pt;
+	margin-bottom: 3pt; }
+ol { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt;
+	margin-left: 28pt;
+	margin-top: 0px;
+	margin-bottom: 0px; }
+ol li { margin-top: 0px;
+	margin-bottom: 3pt; }
+img { vertical-align: middle; }
+hr { margin-top: 0pt;
+	margin-left: 0pt;
+	margin-right: 6pt;
+	padding: 0pt; }
+code { font-size: 12pt; }
+blockquote { font-size: 12pt;
+       font-family: Courier; }
+pre.list {
+	margin-left: 0px;
+	font-size: 12pt;
+	font-family: Courier;
+  margin-bottom: 3px;}
+dl { margin-left: 12pt; }
+dt {font-family: "Courier";
+	font-size: 12pt; }
+dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt; }
+
+	
+</style>
+</head>
+
+<body>
+
+<div id="pagetitle"><h1>NairnFEAMPMViz Commands Language</h1></div>
+
+<p><b>NairnFEAMPMViz</b> has a built-in <a href="#language">interpretive language</a> for programmatically setting up FEA or MPM calculations. This section has a list of all language commands for FEA and MPM calculations. The commands are grouped by logical section. Within each section, they are listed by typical order of use (when possible). 
+</p>
+
+<p>The scripting <a href="#language">language</a> is based on (and nearly <a href="#compatible">compatible</a> with) the corresponding language in the NairnFEAMPM Mac application. The documentation listed below lists all the commands. This documentation is brief and just defines each command and the meaning of its arguments. The user is expect to be familiar with the scripting commands to set up FEA or MPM calculations, which is more fully documented on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a>. IN other words, this help is meant to serve as a brief reference for when you do not have on-line access.</p>
+
+<h2><a name="cindex"></a>Documentation Outline</h2>
+
+<p>To begin writing scripts, first read the <a href="#language">Language Reference</a> section that defines the format of the scripting language. Next, see the various sections for each type of analysis. For FEA analysis, the groupings are:</p>
+
+<ul>
+<li><a href="#header">Main Analysis Header</a> commands</li>
+<li><a href="#feamesh">Defining the FEA Mesh</a> commands</li>
+<li><a href="#feacracks">Cracks in FEA Mesh</a> command</li>
+<li><a href="#materials">Defining Materials</a> commands</li>
+<li><a href="#feabcs">Boundary Condition</a> commands</li>
+<li><a href="#thermalfea">Thermal Calculation</a> commands</li>
+<li><a href="#xml">XML Insertion</a> commands</li>
+</ul>
+
+<p>For MPM calculations, the groupings are:</p>
+
+<ul>
+<li><a href="#header">Main Analysis Header</a> commands</li>
+<li><a href="#mpmheader">MPM Analysis Header</a> commands</li>
+<li><a href="#grid">Defining the MPM Grid and Material Points</a> commands</li>
+<li><a href="#materials">Defining Materials</a> commands</li>
+<li><a href="#cracks">Explicit Crack</a> commands</li>
+<li><a href="#mmmode">Multimaterial MPM</a> commands</li>
+<li><a href="#thermal">Thermal Calculation</a> commands</li>
+<li><a href="#conc">Diffusion Calculation</a> command</li>
+<li><a href="#bconds">Boundary Condition</a> commands</li>
+<li><a href="#bconds">Gravitational Field</a> commands</li>
+<li><a href="#custom">Custom Task</a> commands</li>
+<li><a href="#xml">XML Insertion</a> commands</li>
+</ul>
+
+<h2><a name="language"></a>Language Reference</h2>
+
+<p>This sections describes the basic syntax of the scripting language:</p>
+
+<ul>
+<li><a href="#linesyntax">Line Syntax</a></li>
+<li><a href="#varexp">Variables and Expressions</a></li>
+<li><a href="#atexp">"At" Expressions</a></li>
+<li><a href="#conditionals">Conditionals</a></li>
+<li><a href="#repeat">Repeat Loops</a></li>
+<li><a href="#subs">Subroutines</a></li>
+<li><a href="#debug">Debugging Commands</a></li>
+<li><a href="#campatible">Comparison to NairnFEAMPM Language</a></li>
+</ul>
+
+
+<h3><a name="linesyntax"></a>Line Syntax</h3>
+
+<p>Each line of scripting commands has the format:</p>
+<blockquote>
+Command #1,#2,#3,#4,...
+</blockquote>
+<p>where <code>Command</code> is the command and #1, #2, <i>etc</i>., are arguments to the command. The command
+must be separated from the arguments by a space. The arguments must be separated by commas.
+Leading and trailing spaces in arguments are ignored. Blank lines are ignored.
+Lines whose first non-blank character is &quot;!&quot; are comments and are also ignored.
+</p>
+
+<p>Any argument to any command can be a number, a string, a numeric expression, or a
+string expression (see next section).</p>
+
+<h3><a name="varexp"></a>Variables and Expressions</h3>
+
+<p>The commands can define numeric and string variables. Numeric variable names must begins
+in a letter or #, contain only letters and numbers or underscores, and have no
+function name as a substring within the name. String variables are the same except they must
+end in $. You create variables using the Set command:</p>
+<blockquote>
+Set var = expression
+</blockquote>
+<p>where <code>var</code> is any valid numeric or string variable and <code>expression</code> is any basic mathematical expression for numeric variables
+or a string expression for string variables. The &quot;Set&quot; command is
+optional and generally not used; <i>i.e.</i>, any line with variable name followed by equals sign is assumed to be a &quot;Set&quot; command:</p>
+<blockquote>
+var = expression
+</blockquote>
+
+<p>Array variables are allowed and initialized using</p>
+<blockquote>
+Set var[indexExpression] = expression
+</blockquote>
+<p>where square brackets index the array index. The <code>indexExpression</code> can be a numeric expression that evaluates
+to an integer. The <code>indexExpression</code>, however, cannot use array variables.</p>
+
+<p>Numeric expressions use standard operators (+, 0, *, /, ^, and %) with standard precedences
+unless grouped by parentheses. The expression can use the math
+functions cos(), sin(), tan(), acos(), asin(), atan(), cosh(), sinh(), tanh(), sqrt(),
+log(), log10(), exp(), abs() int(), sign(), and rand(). The trigonometric functions expect arguments as radians or return radians (as appropriate); sign() is 1 if argument is positive or zero otherwise; rand() is random floating point number between 0 and the argument.</p>
+
+<p>String expressions can
+combine quoted strings and variables with the single operator &amp;. Numeric variables
+can be used and they are converted to strings. You can also embed numeric expressions (including numeric constants)
+within string expressions by enclosing them in parentheses.</p>
+
+<p>As a short cut, the command</p>
+<blockquote>
+var {op}= expression
+</blockquote>
+<p>is equivalent to</p>
+<blockquote>
+var = var{op}(expression)
+</blockquote>
+<p>where <code>{op}</code> is any valid operator (but note that when <code>{op}</code> is &amp;, the expression is not surrounded by parentheses)</p>
+
+<h3><a href="atexp"></a>"At" Expressions</h3>
+
+<p>Any place a variable can be used, it can be replaced by an "at" expression beginning in an '@' sign and containing specific items separated by periods, such as "<code>@key.TopLeft.x</code>" to evaluate to the x value of the keypoint named "TopLeft". These expressions are used to allow a script to read properties of objects created earlier in the script. The currently support "at" expressions are:</p>
+<ul>
+<li><code>@key.ID.prop</code> - read a property of <a href="#keypoint">keypoint</a> with "ID" replaced by ID of the keypoint. The possible properties to replace "prop" are "x" and "y" to give x and y coordinates of the keypoint.</li>
+<li><code>@path.ID.prop</code> - read a property of a <a href="#path">path</a> with "ID" replaced by ID of the path. The possible properties to replace "prop" are "intervals" (number of intervals long the path), "ratio" (the ratio setting for the path), and "first", "middle" or "last" (for ID of the first, middle or last keypoint; if the path has only two keypoints the "middle" will be empty string).</li>
+</ul>
+<p>Any subelement of an "At" expression can be replaced by a string expression (as long as it does not include a period), such as:</p>
+<blockquote>
+#id$ = "BotLeft"<br>
+x = $key.#id$.x
+</blockquote>
+
+
+<h3><a name="conditionals"></a>Conditionals</h3>
+
+<p>Conditional blocks have the format:</p>
+<blockquote>
+if expr1 == expr2<br>
+   &nbsp;&nbsp;...<br>
+else ifStr expr3 &lt; expr4<br>
+   &nbsp;&nbsp;...<br>
+else ifDef var1<br>
+   &nbsp;&nbsp;...<br>
+else ifNDef var2<br>
+   &nbsp;&nbsp;...<br>
+else<br>
+   &nbsp;&nbsp;...<br>
+endif
+</blockquote>
+<p>In the standard if, the expressions are compared by numeric comparison, unless one or
+both are strings, in which case string comparison is used. The ifStr command forces string
+comparison between the expressions. The comparison operaters
+are =, ==, &quot;is&quot;, !=, &gt;, &gt;=, &lt;, and &lt;=. For numbers, =, ==, and &quot;is&quot; are
+the same. For strings, = and &quot;is&quot; are case insensitive comparisons
+and == is case sensitive. An ifDef comparison is true if the variable name
+given has been defined in at least one Set command. The ifNDef comparison is true if the variable
+has not been defined in any Set command.</p>
+
+<h3><a name="repeat"></a>Repeat Loops</h3>
+
+<p>Repeat loops, which can be nested, have the format:</p>
+
+<blockquote>
+Repeat "#x",start,end,&lt;step&gt;<br>
+  &nbsp;&nbsp;(commands in the loop)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;...<br>
+  &nbsp;&nbsp;break<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;...<br>
+  &nbsp;&nbsp;Repeat "#y",start,end,&lt;step&gt;<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;(commands in nested loop)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;continue<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;Repeat<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(commands in nested continuous loop)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;breakAll<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;EndRepeat<br>
+  &nbsp;&nbsp;EndRepeat<br>
+EndRepeat
+</blockquote>
+
+<p>The first parameter is loop variable  (it should be quoted and cannot be an array variable). The range and optional step size are
+in the next three arguments. A <code>Repeat</code> command with no arguments will repeat forever.
+The <code>break</code> command breaks the current loop. The <code>breakAll</code> command breaks out of all nested
+loops. A <code>continue</code> command goes to next item in the current loop.</p>
+
+<h3><a name="subs"></a>Subroutines</h3>
+
+<p>The commands can include subroutines. All subroutines must be defined at the start of the commands (i.e., before any other commands) in the style:</p>
+
+<blockquote>
+Sub subname #arg1,#arg2,...,#argn<br>
+  &nbsp;&nbsp;(subroutine commands)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;...<br>
+  &nbsp;&nbsp;return<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;...<br>
+EndSub
+</blockquote>
+<p>where</p>
+<ul>
+<li><code>subname</code> is the name of the subroutine. The names of all subroutines must be unique.</li>
+<li><code>#arg1,#arg2,...,#argn</code> are any number of subroutine arguments. The name of each argument must be a valid variable name and must not be in quotes.</li>
+<li>The subroutine ends with the <code>EndSub</code> command and execution will return to the line after the <code>GoSub</code> command that called the subroutine.</li>
+<li>The <code>return</code> command can be used to exit a subroutine at any time before the its end.</li>
+</ul>
+
+<p>Once subroutines are defined, then can be called with</p>
+<blockquote>GoSub subname parm1,parm2,...parmn</blockquote>
+<p>where <code>subname</code> is the name of the subroutine and <code>parm1,parm2,...parmn</code> are any expressions. The total number of expressions must exactly match the number of arguments in the subroutine definition. The variables in the subroutine definition will be set equal to the values passed in the <code>GoSub</code> command.</p>
+
+<p>Two notes on subroutines are:</p>
+<ol>
+<li>All variables are global variables. Thus subroutines can use variables set in the main commands and the main commands can access variables defined in the subroutines including subroutine arguments. If a subroutine argument matches a variable from the main commands, calling the subroutine will overwrite that value.</li>
+<li>Subroutines can be nested which means subroutines can call any other subroutines with <code>GoSub</code> commands.</li>
+</ol>
+
+<h3><a name="debug"></a>Debugging Commands</h3>
+
+<p>The following commands are not used to generate input command files, but can be useful in debugging scripts:</p>
+
+<ul>
+<li><code>Write epxr1,expr2,...</code><br>
+Write each argument (string or number or expression) to the output console.
+</li>
+<li><code>Stop expr1,expr2,...</code><br>
+Write each argument (string or number or expression) to
+the output console and then stop the calculations.
+</li>
+<li><code>Clear</code><br>
+Clear all text from the output console.
+</li>
+</ul>
+
+<h3><a name="campatible"></a>Comparison to NairnFEAMPM Language</h3>
+
+<p>The scripting language in NairnFEAMPMViz is based on the corresponding scripting commands in the Mac application NairnFEAMPM. The key difference are:</p>
+<ol>
+<li>String variables are required to end in a $, while in NairnFEAMPM, that is not required, but is allowed.</li>
+<li>The main command on each line must be separated from arguments by a space and arguments must be delimited by commas. In NairnFEAMPM commands and arguments can be delimited by commas, spaces, or tabs.</li>
+<li>Variables can begin in a letter or a #. In NairnFEAMPM, they <i>must</i> all begin in #.</li>
+</ol>
+<p>When writing command files to use in both applications, you should avoid anything not supported in both applications. The main recommendations are to start all variables in #, to end string variables in $, and to delimit commands and arguments as expected for NairnFEAMPMViz.</p>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="header"></a>Main Analysis Header</h2>
+
+<p>These main header commands define the type of analysis (FEA or MPM), enter comments about the calculations, and control FEA output. The commands to pick analysis type are:</p>
+
+<ul>
+<li><code>Analysis (type)</code><br>
+Define type of analysis to be done; <code>(type)</code> can be following strings (or numbers):
+<ul>
+<li>&quot;Plane Strain FEA&quot; (or 0)</li>
+<li>&quot;Plain Stress FEA&quot; (or 1)</li>
+<li>&quot;Axisymmetric FEA&quot; (or 2)</li>
+<li>&quot;Plane Strain MPM&quot; (or 10)</li>
+<li>&quot;Plain Stress FEA&quot; (or 11)</li>
+<li>&quot;Axisymmetric MPM&quot; (or 12)</li>
+<li>&quot;3D MPM&quot;</li>
+</ul>
+</li>
+<li><code>Processors (num)</code><br>
+Select number of processors (1 or more) for running parallel code (requires parallel versions
+of the code engines).</li>
+</ul>
+
+<p>The commands to add annotation to the output files are:</p>
+
+<ul>
+<li><code>Name (name)</code><br>
+Defines name of the person doing the analysis.</li>
+<li><code>Title (title)</code><br>
+Defines a title for the analysis.</li>
+<li><code>Header<br>&nbsp;&nbsp;(lines of text)<br>EndHeader</code><br>
+Enter an analysis description on multiple lines of text.</li>
+<li><code>Comment (expr1),&lt;(expr2)&gt;,&lt;(expr3)&gt;...</code><br>
+Add a comment to the analysis description by evaluating each expression in <code>(expr1)</code>, <i>etc.</i> (and there can be any number of them) and append to a line beginning in &quot;Comment:&quot; to the header description in the output file.</li>
+</ul>
+
+<p>This command, which is for FEA only, controls the results that are output in the results files:</p>
+
+<ul>
+<li><a name="output"></a><code>Output (prop1),(out1),&lt;(prop2),(out2)&gt;,...</code><br>
+Select the desired output results for FEA calculations. The arguments appear in pairs. The first of each pair (<i>e.g.</i>, <code>(prop1)</code>) can be:
+<ul>
+<li>&quot;displacements&quot;</li>
+<li>&quot;forces&quot;</li>
+<li>&quot;elementstresses&quot;</li>
+<li>&quot;nodalstresses&quot;</li>
+<li>&quot;reactivities&quot; at fixed displacement boundary conditions</li>
+<li>&quot;energy&quot; of each element</li>
+</ul>
+to include those results in output FEA results file. The second of each pair (<i>e.g.</i>, <code>(out1)</code>) can be &quot;yes&quot; or &quot;no&quot; to include or omit those results, or it can be &quot;selected&quot; to only include results for selected nodes and elements (see <a href="#select">Select</a>, <a href="#selectline">SelectLine</a>, and <a href="#selectpoint">SelectPoint</a> commands).</li>
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="mpmheader"></a>MPM Analysis Header</h2>
+
+<p>The MPM header commands define many features of MPM calculations. The following groups them by function in the MPM header.</p>
+
+<h3>MPM Method and Simulation Timing</h3>
+
+<ul>
+<li><code>MPMMethod (update),&lt;(method)&gt;</code><br>
+Select MPM methods for the calculations. <code>(update)</code> is the update method and it can be USF (or 0), USAVG (or 2) or SZS (or 3). <code>(method)</code> is the shape functions method and it can be uGIMP (or GIMP), lCPDI (or CPDI), qCPDI, or Classic (or Dirac).</li>
+<li><code>TimeStep (step),&lt;(max)&gt;,&lt;(factor)&gt;</code><br>
+Set MPM time step parameters. <code>(step)</code> is the time step in ms (choose a high number to have the code pick time step based on material properties). Optional <code>(max)</code> is the maximum time to stop the calculations in ms (which can also be set in the <a href="#maximumtime">MaximumTime command</a>). Optional <code>(factor)</code> is the Courant-Levy safety factor for the code to adjust the time step (the default is 0.5; it should be less then 1 and often needs to be less than 0.5).</li>
+<li><a name="maximumtime"></a><code>MaximumTime (max)</code><br>
+Set time the MPM calculations will stop in ms.</li>
+<li><code>PtsPerElement (axis)</code>
+Select number of material points along each axis in the grid (in <code>(axis)</code>). The supported options are 1 to 5 for 2D and 1 to 3 of 3D. The total number of points in the element will be square of the entered value in 2D and the cube in 3D.</li>
+</ul>
+
+<h3>MPM Archiving Options</h3>
+
+<ul>
+<li><code>Archive (path)</code><br>
+Select archiving folder for MPM calculations as relative path from the output file.</li>
+<li><code>ArchiveUnique (path)</code><br>
+Same as Archive command excepts creates unique subfolder (with intervening numbers) to prevent overwriting of previous results.</li>
+<li><a name="atime"></a><code>ArchiveTime (time),&lt;(firstTime)&gt;</code><br>
+Select archiving frequency for MPM calculations. <code>(time)</code> is the archiving time in ms. The optional <code>(firstTime)</code> is the time to start archiving (in ms).</li>
+<li><a name="toarchive"></a><code>ToArchive (quant1),&lt;(quant2)&gt;,...</code><br>
+Specify results to be archived in MPM calculations. The list can be in multiple arguments (<code>(quant1)</code>, <code>(quant2)</code>, etc.)
+and/or in multiple <code>ToArchive</code> commands. The archiving options are:
+<ul>
+<li>velocity - particle velocity</li>
+<li>stress - particle Cauchy stress</li>
+<li>strain - elastic strain to total strain (depending on material type)</li>
+<li>plasticstrain - plastic strain of Left-Cauchy Green strain (depending on material type)</li>
+<li>strainenergy - cumulative &sigma;.d(&epsilon;-&epsilon;<sub>res</sub>)</li>
+<li>workenergy - cumulative &sigma;.d&epsilon;</li>
+<li>heatenergy</li>
+<li>plasticenergy</li>
+<li>temperature</li>
+<li>concentration (which includes concentration gradients)</li>
+<li>shearcomponents - in 2D gives du/dy and dv/dx (not used for much)</li>
+<li>jintegral - at crack tips</li>
+<li>stressintensity - at crack tips</li>
+<li>history1, history2, history3, history4 - up to four material-dependent history variables can be archived.</li>
+<li>energybalance - research topic, not meant for general use</li>
+<li>elementcrossings - number of times the particle as crossed element boundaries</li>
+<li>rotstrain - rotation strain is needed for visualization plots that transform particles</li>
+</ul>
+</li>
+</ul>
+
+<h3>MPM Global Archiving Options</h3>
+
+<ul>
+<li><a name="globalarchive"></a><code>GlobalArchive (quant),&lt;(mat)&gt;</code><br>
+Global results are average values over the particles. Specify global result to be archived in <code>(quant)</code>. If <code>(mat)</code> is provided (as a material ID), the global result will be only for particles of that material. The possible quantities are:
+<ul>
+	<li><code>sxx</code>, <code>syy</code>, <code>szz</code>, <code>sxy</code>, <code>sxz</code>, or <code>syz</code> - average element of the stress tensor in MPa</li>
+	<li><code>sRR</code>, <code>sZZ</code>, <code>sTT</code>, or <code>sRZ</code> - average element of the axisymmetric stress tensor in MPa (synonyms for <code>sxx</code>, <code>syy</code>, <code>szz</code>, and <code>sxy</code>)</li>
+	<li><code>exx</code>, <code>eyy</code>, <code>ezz</code>, <code>exy</code>, <code>exz</code>, or <code>eyz</code> - average element of the total strain tensor in %, which is sum of elastic and plastic strain for plasticity materials</li>
+	<li><code>eRR</code>, <code>eZZ</code>, <code>eTT</code>, or <code>eRZ</code> - average element of the axisymmetric total strain tensor % (synonyms for <code>exx</code>, <code>eyy</code>, <code>ezz</code>, and <code>exy</code>)</li>
+	<li><code>exxe</code>, <code>eyye</code>, <code>ezze</code>, <code>exye</code>, <code>exze</code>, or <code>eyze</code> - average element of the strain tensor in %, which is elastic strain only for plasticity materials</li>
+	<li><code>eRRe</code>, <code>eZZe</code>, <code>eTTe</code>, or <code>eRZe</code> - average element of the axisymmetric elastic strain tensor % (synonyms for <code>exxe</code>, <code>eyye</code>, <code>ezze</code>, and <code>exye</code>)</li>
+	<li><code>exxp</code>, <code>eyyp</code>, <code>ezzp</code>, <code>exyp</code>, <code>exzp</code>, or <code>eyzp</code> - average element of the plastic strain tensor in %</li>
+	<li><code>eRRp</code>, <code>eZZp</code>, <code>eTTp</code>, or <code>eRZp</code> - average element of the axisymmetric plastic strain tensor % (synonyms for <code>exxe</code>, <code>eyye</code>, <code>ezze</code>, and <code>exye</code>)</li>
+	<li><code>velx</code>, <code>vely</code>, or <code>velz</code> - average component of velocity in mm/sec</li>
+	<li><code>velR</code> or <code>velZ</code> - average component of axisymmetric velocity in mm/sec (synonyms for <code>velx</code> or <code>vely</code>)</li>
+	<li><code>dispx</code>, <code>dispy</code>, or <code>dispz</code> - average component of displacement in mm</li>
+	<li><code>dispR</code> or <code>dispZ</code> - average component of axisymmetric displacement in mm (synonyms for <code>dispx</code> or <code>dispy</code>)</li>
+	<li><code>contactx</code>, <code>contacty</code>, or <code>contactz</code> - component of the total contact force on the grid for <a href="#mmmode">multimaterial mode</a> simulations when they include <a href="materials.html#rigid">rigid materials</a> that have <code>direction=8</code>. It is a sum of all contact forces for the rigid material on the object in Newtons.</li>
+	<li><code>contactR</code> or <code>contactZ</code> - component of the total contact force per radian on the axisymmetric grid in N (synonyms for <code>contactx</code> or <code>contacty</code>)</li>
+	<li><code>reactionx</code>, <code>reactiony</code>, or <code>reactionz</code> - component of the reaction force at nodes with velocity boundary conditions in N. If option <code>(material)</code> specifies a material, the force will be for all velocity conditions created by that <a href="materials.html#rigid">rigid material</a>; if <code>(material)</code> is omitted the force will sum all velocity boundary conditions (specified or created by rigid particles); if <code>(material)</code> &lt; 0, the force will be only for <a href="#velbc">velocity boundary conditions</a> with that boundary condition ID.</li>
+	<li><code>reactionR</code> or <code>reactionZ</code> - component of the reaction force per radian at axisymmetric nodes with velocity boundary conditions in N (synonyms for <code>reactionx</code> or <code>reactiony</code> and see those options for meaning of the <code>(material)</code> option)</li>
+	<li><code>temp</code> - average temperature</li>	
+	<li><code>concentration</code> - weight fraction concentration</li>	
+	<li><code>Work Energy</code> - total work energy in J</li>
+	<li><code>Kinetic Energy</code> - total kinetic energy in J on the particles</li>
+	<li><code>Grid Kinetic Energy</code> - total kinetic energy in J on the grid</li>
+	<li><code>Strain Energy</code> - total external work in J</li>
+	<li><code>Heat Energy</code> - total heat energy in J</li>
+	<li><code>Entropy</code> - total entropy in J</li>
+	<li><code>Internal Energy</code> - sum of work and heat energy (U = w + q) in J</li>
+	<li><code>Helmholz Energy</code> - total Helmholz free energy (A = U - TS) in J</li>
+	<li><code>Interface Energy</code> - total energy associated with cracks having imperfect interfaces in J.</li>
+	<li><code>Plastic Energy</code> - total plastic energy in J</li>
+	<li><code>alpha</code> - the evolving global damping coefficient, &alpha;, when using feedback damping (in 1/sec)</li>
+	<li><code>Step number</code> - the current MPM step number</li>
+	<li><code>Elapsed time</code> - elapsed clock time for the current calculation (in secs)</li>
+	<li><code>CPU time</code> - total CPU time for the current calculation (in secs)</li>
+</ul></li>
+<li><code>GlobalArchiveTime (time)</code><br>
+Specify time interval for archiving global results, <code>(time)</code> is the global archiving time in ms. If not specified, global archiving is done at the <a href="#atime">standard archiving time</a>.</li>
+</ul>
+
+<h3>Damping and Other Options</h3>
+
+<ul>
+<li><code>Damping (alpha)</code><br>
+Select factor for damping grid velocities in MPM calculations; <code>(alpha)</code> is factor or is a
+<a href="#function">user-defined function</a>.
+Both in units of 1/sec.</li>
+<li><code>FeedbackDamping (gain),&lt;(Tk)&gt;,&lt;(maxAlpha)&gt;</code><br>
+Select coefficient for alternative viscous damping of MPM particle velocities. <code>(gain)</code> is feedback coefficient in units of 1/mm<sup>2</sup>. Optional <code>(Tk)</code> is target kinetic energy (it can be
+<a href="#function">user-defined function</a>) in micro joules. Optional
+<code>(maxAlpha)</code> is maximum damping factor in units 1/sec (default is to have no maximum).
+</li>
+<li><code>LeaveLimit (allow)</code><br>
+Set number of particles allowed to leave the grid (in <code>(allow)</code>) before an analysis is stopped.
+If command is omitted, the limit is 1% of the particles. Set to 1 to stop when the first particle leaves the grid.</li>
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="materials"></a>Defining Materials</h2>
+
+<p>The one command in this section is used to enter properties for materials used in the calculations.</p>
+
+<ul>
+	<li><a name="material"></a><code>Material (id),(name),(type)<br>
+	&nbsp;&nbsp;(commands to define properties)<br>
+	Done</code><br>
+	Define a material type, a traction law, and imperfect interface. For more details see the <a href="materials.html">materials help topic</a> (or click the "file cabinet" icon in this window's tool bar).</li>
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="grid"></a>Defining the MPM Grid with Material Points</h2>
+
+<h3>Creating MPM Background Grid</h3>
+
+<p>These commands are used to create the MPM background grid:</p>
+
+<ul>
+<li><a name="gridhoriz"></a><code>GridHoriz (num),&lt;sym1&gt;,&lt;sym1dir&gt;,&lt;sym2&gt;</code><br>
+Set horizontal or x-direction MPM grid parameters (r direction is axisymmetric); <code>(num)</code> is the number of cells in that direction. The remaining parameters set optional symmetry planes at the minimum or maximum edge along the x (or r) axis. Symmetry planes automatically create all boundary conditions needed for the plane and provide special "symmetry" conditions with improved accuracy over creating your own boundary conditions. <code>(sym1)</code> is x value for the symmetry plane; <code>(sym1dir)</code> is -1 or 1 for the <code>(sym1)</code> plane to be at the minimum or maximum edge along the x axis; <code>(sym2)</code> creates a symmetry plane on the edge opposite to the <code>(sym1)</code> plane.</li>
+
+<li><a name="gridvert"></a><code>GridVert (num),&lt;sym1&gt;,&lt;sym1dir&gt;,&lt;sym2&gt;</code><br>
+Set vertical or y-direction MPM grid parameters (Z direction is axisymmetric). The parameters are as explained for the <a href="#gridhoriz"><code>GridHoriz</code> command</a> (except for a different axis).</li>
+
+<li><a name="griddepth"></a><code>GridDepth (num),&lt;sym1&gt;,&lt;sym1dir&gt;,&lt;sym2&gt;</code><br>
+Set depth or z-direction MPM grid parameters. The parameters are as explained for the <a href="#gridhoriz"><code>GridHoriz</code> command</a> (except for a different axis).</li>
+
+<li><code>GridThickness (thick)</code><br>
+Set thickness for 2D MPM grid (in mm) to <code>(thick)</code>. It is only needed for some features in 2D planar calculations.</li>
+
+<li><code>GridRect (xmin),(xmax),(ymin),(ymax),&lt;(zmin)&gt;,&lt;(zmax)&gt;</code><br>
+Set rectangle for 2D MPM grid or box for 3D MPM. <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, and <code>(ymax)</code> are the axis ranges for the rectangle (or R and Z ranges if axisymmetric). <code>(zmin)</code> and <code>(zmax)</code> are for z minimum
+and z maximum for 3D calculations. Use <a href="#gridhoriz">GridHoriz</a>,
+<a href="#gridvert">GridVert</a>, and <a href="#griddepth">GridDepth</a> to set number of
+cells in each direction before using this command.</li>
+
+<li><code>Element (type)</code><br>
+Define type of element to use in the MPM background grid. Currently (type) can only be &quot;4 Node Quadrilateral&quot; (or 2) for 2D or axisymmetric MPM and can only be &quot;8 Node Brick&quot; (or 7) for 3D MPM. This command is not needed for MPM calculations.</li>
+
+</ul>
+
+<p>These commands are used to define material points within that grid by using shape commands.</p>
+<h3>Creating Material Points with Shape Commands</h3>
+
+<p>These commands are used to define material points within that grid by using shape commands.</p>
+
+<ul>
+<li><a name="regionmpm"></a><code>Region (mat),(velx),(vely),(velzOrThick),&lt;(prop,value)&gt;<br>
+&nbsp;&nbsp;(series of shape function, see this section below)<br>
+&nbsp;&nbsp;(optional <a href="#rotatempm">Rotate</a> commands)<br>
+EndRegion</code><br>
+Define a region for creating material points. <code>(mat)</code> is material ID. (<code>velx,velz</code>) are velocities in x and y
+direction  (in mm/sec). For 2D, <code>(velzOrThick)</code> is thickness in mm, but for 3D it is velocity in z direction (in mm/sec). The optional
+<code>(prop,value)</code> pairs to set some initial property of the materials. The <code>(prop)</code> options are "angle" (for material rotation about z axis in degrees), "temp" (for temperature in K), and "conc" (for particle concentration potential).</li>
+
+<li><a name="holempm"></a><code>Hole<br>
+&nbsp;&nbsp;(series of shape function, see this section below)<br>
+commands)<br>
+EndHole</code><br>
+Define a region for creating a hole that will not be assigned material points by any
+subsequent shape commands.</li>
+
+<li><a name="rectmpm"></a><code>Rect (xmin),(xmax),(ymin),(ymax)</code><br>
+Define rectangle using <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, and <code>(ymax)</code> for the
+current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
+
+<li><a name="ovalmpm"></a><code>Oval (xmin),(xmax),(ymin),(ymax)</code><br>
+Define oval within the rectangle defined by <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, and <code>(ymax)</code> for the current <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
+
+<li><a name="polyptmpm"></a><code>PolyPt &lt;(xpt)&gt;,&lt;(ypt)&gt;</code><br>
+Define next point on a polygon shape or, if no parameters, close the current polygon shape.
+All polygons are automatically closed from last point to the first point (even if one is open at the end of a <a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block).</li>
+
+<li><code>Box (xmin),(xmax),(ymin),(ymax),(zmin),(zmax)</code><br>
+Define cubical volume using <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, <code>(ymax)</code>, <code>(zmin)</code>, and <code>(zmax)</code> for the current
+<a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
+
+<li><code>Sphere (xmin),(xmax),(ymin),(ymax),(zmin),(zmax)</code><br>
+Define spherical volume within the cubical volume  defined by <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, <code>(ymax)</code>, <code>(zmin)</code>, and <code>(zmax)</code> for the current
+<a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block.</li>
+
+<li><code>Cylinder (xmin),(xmax),(ymin),(ymax),(zmin),(zmax),(axis),&lt;(radius)&gt;</code><br>
+Define cylindrical volume within the cubical volume  defined by <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, <code>(ymax)</code>, <code>(zmin)</code>, and <code>(zmax)</code> along axis <code>(axis)</code> (1, 2, or 3) for the current
+<a href="#regionmpm">region</a> or <a href="#holempm">hole</a> block. Optional <code>(radius)</code> converts to cone with relative radius (-1 to 1) at the top (if >0)
+or at the bottom (if &lt; 0).</li>
+
+<li><a name="rotatempm"></a><code>Rotate (axis),(angle),&lt;(axis),(angle)&gt;,...</code><br>
+To rotate, in order, about each axis <code>(axis)</code> (x,y,z,1,2,or 3) by each angle <code>(angle)</code> (can be function) for materials in the current <a href="#regionmpm">region</a>. The <code>(axis)</code> can alternatively be "reset" to remove all previous rotations in the current
+<a href="#regionmpm">region</a>. Up to three rations in 3D calculations can either be entered in one command or in a series of commands.</li>
+
+</ul>
+
+<h3>Creating Material Points with Images</h3>
+
+<p>These commands are used to define material points using an image (in 2D) or a stack of images (in 3D).</p>
+
+<ul>
+<li><a name="bmpregionmpm"></a><code>BMPRegion (path),(width),&lt;(height)&gt;,&lt;anglesPath&gt;<br>
+&nbsp;&nbsp;(One <a href="#origbmpmpm">Origin</a> command and <a href="#intensitympm">Intensity</a> commands)<br>
+EndRegion</code><br>
+Create material from an image in a BMP file with <code>(path)</code> having the path for image file name. <code>(width)</code> and <code>(height)</code> give width and height of the image (in mm). Either can be negative to enter mm per pixel instead of absolute picture size. If either one is omitted, the other one is calculated by the aspect ratio of the image in the file (to omit <code>(width)</code> or <code>(height)</code> when needed for parameter alignment, the number should be more negative than -1e8). The optional <code>(anglesPath)</code> gives path to a second BMP file (of the same size) whose gray scale values determine the angles for particles covered by the image.</li>
+
+<li><a name="intensitympm"></a><code>Intensity (mat),(imin),(imax),&lt;(prop,value)&gt;,...</code><br>
+Map pixel gray scale values in <a href="#bmpregion">BMPRegion</a> in the range <code>(imin)</code> to <code>(imax)</code>
+to material in <code>(mat)</code>. The optional pairs <code>(prop,value)</code> can set
+initial material point properties with (prop) options of:
+<ul>
+<li>"thick" for particle thickness in mm.</li>
+<li>"angle" for rotation angle of the material about the z axis in degrees.</li>
+<li>"temp" for particle temperature in C (or K).</li>
+<li>"vx" for particle x-direction velocity in mm/sec.</li>
+<li>"vy" for particle y-direction velocity in mm/sec.</li>
+<li>"vz" for particle z-direction velocity in mm/sec (for 3D MPM).</li>
+<li>"conc" for particle concentration potential.</li></ul>
+</li>
+
+<li><code>Intensity "angles",(imin),(imax),(angleMin),(angleMax)</code><br>
+When the first parameter for an Intensity command is "angles", its meaning changes to define a mapping from pixel gray scale values in a <a href="#bmpregion">BMPRegion</a> command's <code>(anglesPath)</code> file to angle by
+linearly interpolating a line through <code>(imin,angleMin)</code> and <code>(imax,angleMax)</code>.</li>
+
+<li><a name="origbmpmpm"></a><code>Origin (xO),(yO),&lt;(zO)&gt;,&lt;(flip)&gt;</code><br>
+Set origin within the mesh for mapping the origin of the image in a <a href="#bmpregionfea">BMPRegion</a> command to
+the grid. The optional <code>(flip)</code> can be "yes" to flip image along its y axis. The optional (z0) is for 3D MPM. Images are always mapped in the x-y plane, but by combining images at different z values, you can create a 3D object from a stack of images, such as X-ray CT data.</li>
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="feamesh"></a>Defining the FEA Mesh</h2>
+
+<p>These commands are used to define the FEA Mesh by creating keypoints, connecting them in paths, and linking paths to mesh areas:</p>
+
+<ul>
+<li><a name="keypoint"></a><code>Keypoint (id),(x),(y),&lt;(type)&gt;</code><br>
+Define a keypoint used in defining <a href="#path">Paths</a>. <code>(id)</code> is keypoint ID, <code>(x)</code> and <code>(y)</code> are x and y
+coordinates (or r and z if axisymmetric). The optional <code>(type)</code> can be &quot;polar&quot; to
+change <code>(x)</code> and <code>(y)</code> to be R and &theta; to define keypoint using polar coordinates relative
+to current <a href="#origin">origin</a>.</li>
+
+<li><code>Keypoints  (id1),(id2),...</code><br>
+Add multiple (and previously) defined keypoints to a <a href="#path">Path</a> by their keypoint ID.</li>
+
+<li><a name="path"></a><code>Path (id),(numints),&lt;(ratio)&gt;<br>
+&nbsp;&nbsp;(list and/or define keypoints along the path)<br>
+EndPath</code><br>
+Define a path used in defining <a href="#area">Areas</a>. <code>(id)</code> is the ID for the path. <code>(numints)</code> is the number of intervals along the path when used in a mesh. The optional <code>(ratio)</code> defines the ratio of the first element size to the last element size (default is 1). Alternatively, <code>(ratio)</code> can be negative to specify the absolute size of the first element (in mm) to be |<code>(ratio)</code>|.The commands within the path block should list and/or define two or three keypoints for the path (two points for a line or three points for a curve).</li>
+
+<li><code>Paths (id1),(id2),...</code><br>
+Add multiple defined paths to an <a href="#area">Area</a> by their path ID</li>
+
+<li><a name="area"></a><code>Area (mat),(thick),&lt;(angle)&gt;<br>
+&nbsp;&nbsp;(list and/or define <a href="#path">paths</a> and <a href="#keypoint">keypoints</a>)<br>
+EndArea</code><br>
+Define an area for mesh generation where <code>(mat)</code> is a defined <a href="#material">material ID</a>,
+<code>(thick)</code> is thickness (in mm) (ignored in axisymmetric FEA, but still required), and
+<code>(angle)</code> is an angle (for anisotropic materials) (it can be a <a href="#function">user-defined function</a>). The commands in the area block should define four paths (to enclose 2D area) or
+two paths (for a 1D interface). Material ID can be &quot;_NONE_&quot; when the
+elements will be filled later by <a href="feashapes">shape and image commands</a>.</li>
+
+<li><code>Element (type)</code><br>
+Define type of element to use in subsequent <a href="#area">Area</a> commands. <code>(type)</code> can be &quot;3 Node Triangle&quot; (or 1), &quot;4 Node Quadrilateral&quot; (or 2), &quot;8 Node Quadrilateral&quot; (or 3), 6 Node Triangle&quot; (or 4), &quot;4 Node Interface&quot; (or 5), 6 Node Interface&quot; (or 6), or &quot;9 Node Lagrange&quot; (or 8). The default (before any Element command) is &quot;8 Node Quadrilateral&quot;.</li>
+
+<li><code>FlipTriangles &lt;(flip)&gt;</code><br>
+Select the direction of triangular elements in meshes that use those elements where <code>(flip)</code> is &quot;Yes&quot; or &quot;No&quot; to flip; the argument can be omitted to toggle current setting</li>
+
+<li><a name="origin"></a><code>Origin (xOorId),&lt;(yO)&gt;</code><br>
+Define coordinate system origin for entry of <a href="#keypoint">Keypoints</a> using polar coordinates.
+If only <code>(xOorId)</code> is given, it is keypoint ID for location of the new origin; if <code>(xOorId)</code> and <code>(yO)</code> are both given they are (x,y) coordinates of the origin. The default origin is (0,0). When origin is (xO,yO), keypoints entered with polar coordinates R and &theta; will be at (x,y) = (xO,yO) + R(cos &theta;,sin &theta;)</li>
+
+<li><code>Resequence (xorId),&lt;(y)&gt;</code><br>
+Turn on the option to resequence the nodes, which will minimize the bandwidth of
+the problem and speed the calculations. If only <code>(xorId)</code> is given, it is a keypoint ID to start resequencing.
+If <code>(xorId)</code> and <code>(y)</code> are both given, the resequencing will start at the node closest to those x and y coordinates.</li>
+
+</ul>
+
+<h3><a href="feashapes"></a>FEA Mesh Using Shapes and Images</h3>
+
+<p>A advanced method for creating FEA meshes is to define them from images and shapes. The process is to first create a mesh using <a href="#area">Area commands</a> but for those sections to be filled by shapes and images, set the material ID to "_NONE_". After that mesh is done, fill the mesh with the following shape and images commands. These commands will assign material types to the element. Any element not assigned to be a material will be removed from the mesh.</p>
+
+<ul>
+
+<li><a name="regionfea"></a><code>Region (mat),(thick),&lt;(angle)&gt;<br>
+&nbsp;&nbsp;(<a href="#rectfea">Rect</a>, <a href="rectfea">Oval</a>, <a href="#polyptfea">PolyPt</a>, or <a href="#bmpregionfea">BMPRegion</a> commands)<br>
+EndRegion</code><br>
+Define a region for assigning material types to elements in the mesh whose
+material ID was set to &quot;_NONE&quot;. <code>(mat)</code> is a defined <a href="#material">material ID</a>,
+<code>(thick)</code> is thickness (in mm) (ignored in axisymmetric FEA, but still required),
+and <code>(angle)</code> is an angle (for anisotropic materials)
+(it can be a <a href="#function">user-defined function</a>).</li>
+
+<li><a name="holefea"></a><code>Hole<br>
+&nbsp;&nbsp;(<a href="#rectfea">Rect</a>, <a href="rectfea">Oval</a>, <a href="#polyptfea">PolyPt</a>, or <a href="#bmpregionfea">BMPRegion</a> commands)<br>
+EndHole</code><br>
+Define a region for creating a hole that removes elements in the mesh whose material
+ID was set to &quot;_NONE_&quot;</li>
+
+<li><a name="rectfea"></a><code>Rect (xmin),(xmax),(ymin),(ymax)</code><br>
+Define rectangle using <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, and <code>(ymax)</code> for the
+current <a href="#regionfea">region</a> or <a href="#holempm">hole</a> block.</li>
+
+<li><a name="ovalfea"></a><code>Oval (xmin),(xmax),(ymin),(ymax)</code><br>
+Define oval within the rectangle defined by <code>(xmin)</code>, <code>(xmax)</code>, <code>(ymin)</code>, and <code>(ymax)</code> for the current <a href="#regionfea">region</a> or <a href="#holefea">hole</a> block.</li>
+
+<li><a name="polyptfea"></a><code>PolyPt &lt;(xpt)&gt;,&lt;(ypt)&gt;</code><br>
+Define next point on a polygon shape or, if no parameters, close the current polygon shape.
+All polygons are automatically closed from last point to the first point (even if one is open at the end of a <a href="#regionfea">region</a> or <a href="#holefea">hole</a> block).</li>
+
+<li><a name="bmpregionfea"></a><code>BMPRegion (path),(width),&lt;(height)&gt;,&lt;anglesPath&gt;<br>
+&nbsp;&nbsp;(One <a href="#origbmpfea">Origin</a> command and <a href="#intensityfea">Intensity</a> commands)<br>
+EndRegion</code><br>
+Create FEA elements from an image in a BMP file with <code>(path)</code> having the path for image file name. <code>(width)</code> and <code>(height)</code> give width and height of the image (in mm). Either can be negative to enter mm per pixel instead of absolute picture size. If either one is omitted, the other one is calculated by the aspect ratio of the image in the file (to omit <code>(width)</code> or <code>(height)</code> when needed for parameter alignment, the number should be more negative than -1e8).
+The optional <code>(anglesPath)</code> gives path to a second BMP file (of the same size) whose gray scale values determine the angles for elements covered by the image.</li>
+
+<li><a name="intensityfea"></a><code>Intensity (mat),(imin),(imax),&lt;(prop,value)&gt;,...</code><br>
+Map pixel gray scale values in <a href="#bmpregionfea">BMPRegion</a> in the range <code>(imin)</code> to <code>(imax)</code>
+to material in <code>(mat)</code>. The optional pairs <code>(prop,value)</code> can set
+initial element properties with <code>(prop)</code> options of:
+<ul>
+<li>"thick" for element thickness in mm.</li>
+<li>"angle" for rotation angle of the material about the z axis in degrees.</li>
+<li>"temp" for element temperature in C (or K).</li>
+</ul>
+</li>
+
+<li><code>Intensity "angles",(imin),(imax),(angleMin),(angleMax)</code><br>
+When the first parameter for an Intensity command is "angles", its meaning changes to define a mapping from pixel gray scale values in a <a href="#bmpregionfea">BMPRegion</a> command's <code>(anglesPath)</code> file to angle by
+linearly interpolating a line through <code>(imin,angleMin)</code> and <code>(imax,angleMax)</code>.</li>
+
+<li><a name="origbmpfea"></a><code>Origin (xO),(yO),&lt;(zO)&gt;,&lt;(flip)&gt;</code><br>
+Set origin within the mesh for mapping the origin of the image in a <a href="#bmpregionfea">BMPRegion</a> command to
+the grid. The optional <code>(flip)</code> can be "yes" to flip image along its y axis. Although <code>(zO)</code> is ignored in FEA, you need to enter a number if you want to use the <code>(flip)</code> parameter.</li>
+
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="cracks"></a>Defining Explicit Cracks in MPM</h2>
+
+<p>Cracks in MPM calculations are implemented using the CRAMP algorithm first described by Nairn (developer of this software) and coworkers.</p>
+
+<h3>Defining Crack Geometry</h3>
+
+<p>These commands define explicit crack paths:</p>
+
+<ul>
+<li><code>NewCrack (x),(y),&lt;(matoption)&gt;,&lt;(frict)&gt;,&lt;(tract)&gt;</code><br>
+Start new crack at <code>(x,y)</code> (in mm). <code>(matoption)</code> can be crack tip material, &quot;fixed&quot; (to be fixed crack),
+&quot;exterior&quot; (for crack
+that extends beyond object), or &quot;free&quot; (no material). <code>(frict)</code> can set friction properties (as explained in the <a href="#frict">Friction command</a>) or can be
+&quot;traction&quot;. If <code>(frict)</code> is &quot;traction&quot;, <code>(tract)</code> must be a traction law material.</li>
+
+<li><code>GrowCrackLine (x),(y),(segs),&lt;(mat)&gt;,&lt;(tract)&gt;</code><br>
+Extend current crack to <code>(x,y)</code> (in mm) using <code>(segs)</code> crack segments. <code>(mat)</code> can be crack tip material, &quot;exterior&quot; (for crack that extends beyond object), or invalid ID (no material). <code>(tract)</code> is a traction law material to use in wake of crack propagation from this crack tip.</li>
+
+<li><code>GrowCrackArc (x1),(y1),(x2),(y2),(segs),(start),(and),&lt;(mat)&gt;,&lt;(tract)&gt;</code><br>
+Grow crack along arc along the elipse bounded by <code>(x1,y1)</code> and <code>(x2,y2)</code> (in mm) from angle <code>(start)</code> to <code>(end)</code> (in degrees) using <code>(segs)</code> segments. The arc is drawn in the counter-clockwise direction and the positive x axis is angle of zero degrees.
+<code>(mat)</code> can be crack tip material, &quot;exterior&quot; (for crack that extends beyond object), or invalid ID (no material). <code>(tract)</code> is a traction law material to use in wake of crack propagation from this crack tip.</li>
+
+<li><code>GrowCrack (x),(y),&lt;(mat)&gt;,&lt;(tract)&gt;</code><br>
+Extend current crack to <code>(x,y)</code> using 1 crack segment. <code>(mat)</code> can be crack tip material, &quot;exterior&quot; (for crack that extends beyond object), or invalid ID (no material). <code>(tract)</code> is a traction law material to use in wake of crack propagation from this crack tip.</li>
+
+<li><code>CrackThickness (thick)</code><br>
+Sets crack thickness to <code>(thick)</code> (in mm); only used or needed when crack has traction laws or crack tips release their energy into heat.</li>
+
+<li><code>CrackInterface (Dt),(Dn),&lt;(Dnc)&gt;</code><br>
+Set current crack to use custom imperfect interface properties. The parameters are the same as in the <a href="#imperfect">ImperfectInterface command</a>.</li>
+
+</ul>
+
+<h3><a name="csettings"></a>Crack Settings</h3>
+
+<p>This commands define default crack modeling settings (although each crack can change them to have cracks with different settings:</p>
+
+<ul>
+<li><a name="frict"></a><code>Friction (frict)</code><br>
+Set default crack contact friction properties with options:
+<ul>
+<li>number - the friction coefficient</li>
+<li>&quot;stick&quot; - to use stick contact</li>
+<li>&quot;single&quot; (or &quot;ignore&quot;) - to revert to single velocity field</li>
+<li>&quot;none&quot; - for frictionless contact (same as 0 and it is the default)</li>
+</ul>
+</li>
+
+<li><a name="imperfect"></a><code>ImperfectInterface (Dt),(Dn),&lt;(Dnc)&gt;</code><br>
+Set default properties for crack surfaces to model an imperfect interface. <code>(Dt)</code> and <code>(Dn)</code> are the D<sub>t</sub> and D<sub>n</sub> interface parameters for tangential and normal traction (in MPa/mm). If (Dnc) is given, it is the normal interface parameter for compression (MPa/mm) and (Dn) is converted to be the normal interface parameter for tension. Any parameter can by -1 to indicate a prefect interface in that direction.</li>
+
+<li><a name="propagate"></a><code>Propagate (criterion),&lt;(direction)&gt;,&lt;(tract)&gt;</code><br>
+Activate and select crack propagation method. The (<code>criterion)</code> selects the crack propagation failure criterion (by name or number):
+<ul>
+<li>"none" (or 0) - no propagation</li>
+<li>"max energy release" (or 1)</li>
+<li>"steady state" (or 2)</li>
+<li>"energy balance" (or 3)</li>
+<li>"energy density" (or 4)</li>
+<li>"elliptical" (or 5)</li>
+<li>"max ctod"</li>
+<li>"critical err"</li>
+</ul>
+The <code>(direction)</code> select the crack growth direction (by name or number)
+<ul>
+<li>"default" (or 0) - use default direction for each criterion</li>
+<li>"self similar" (or 1)</li>
+<li>"cod normal" (or 2)</li>
+<li>"cod hoop" (or 3)</li>
+<li>"initial" (or 4)</li>
+</ul>
+The optional <code>(tract)</code> (for a material ID) is to leave traction law in wake of propagation.</li>
+
+<li><code>AltPropagate (criterion),&lt;(direction)&gt;,&lt;(tract)&gt;</code><br>
+Set a second rule for crack propagation with competing fracture modes. The parameters are the
+save as for the <a href="#propagate">Propagate command</a> below.</li>
+
+<li><code>PropagateLength (length)</code><br>
+Determines the amount of crack growth each time a crack propagates, where <code>(length)</code> is relative to cell dimensions. The default is 0.5.</li>
+
+<li><code>JContour (size),&lt;(terms)&gt;</code><br>
+Used to set size of J integral contour (<code>(size)</code> in cells for semi length of enclosing box) and whether J integral uses one or two terms (<code>(terms)</code> = 1 or 2).</li>
+
+<li><code>MovePlane (how),&lt;(prevent)&gt;</code><br>
+Used to set how crack plane particles move where <code>(how)</code> is "avg" or "cm" to move to average of crack surfaces or to move in the center of mass velocity field, and <code>(prevent)</code> is "yes" or "no" to prevent crack surfaces from crossing the main crack plane.</li>
+
+<li><code>ContactPosition (con)</code><br>
+Determines method for detecting crack contact when using particle displacements and the distance (<code>(con)</code> entered relative to grid element dimensions) required to detect contact based on displacements extrapolated to the grid. It is usually omitted when all cracks start
+out in contact has <code>(con)</code> = 0.8 (default is omitted).</li>
+
+</ul>
+
+<p>When modeling cracks, you can use the <a href="#toarchive">ToArchive command</a> to select various crack parameters for output in the archive files. The archiving options for crack parameters are jintegral, stress, and energybalance.</p>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+
+<h2><a name="feacracks"></a>Cracks in FEA Calculations</h2>
+
+<p>Cracks in FEA calculations are set up by configuring the mesh to include a crack. A crack can be internal to the mesh or, for symmetric loading, can be on an edge of the mesh and defined with the help of boundary conditions. These two crack geometries are illustrated here:</p>
+<center>
+<img src = "ccfull.jpg" width = "190" height = "192" alt = "" align="top">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<img src = "cchalf.jpg" width = "201" height = "228" alt = "" align="top">
+</center>
+<p>The crack plane edges must be collinear and of equal length (&Delta;a). When a calculation with cracks is done, the Crack Closure... command (in NairnFEAMPM) can be used to calculate crack tip energy release rate.</p>
+<p>The one command to alter crack tip geometry is
+</p>
+<ul>
+<li><code>CrackTip (xtip),&lt;(ytip)&gt;</code><br>
+Create quarter-point elements at the crack tip. Is only (xtop) is give, it is a keypoint ID for the keypoint at the crack tip.
+If two arguments the node closet to <code>(xtip,ytip)</code> (in mm) is the crack tip.</li>
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="mmmode"></a>Multimaterial MPM Calculations</h2>
+
+<p>NairnMPM can use multimaterial mode where each material has its own velocity field
+and intersections between materials on nodes are resolved using various contact
+mechanics models. The key commands to use this mode are:</p>
+
+<ul>
+<li><code>MultimaterialMode &lt;(Vmin)&gt;,&lt;(disps)&gt;,&lt;(norm)&gt;,&lt;(rigidBias)&gt;</code><br>
+Sets to use multimaterial modes and sets some options. <code>(Vmin)</code> is minimum relative volume to allow contact (default 0.0).
+<code>(disps)</code> is &quot;enabled&quot; (or &quot;yes&quot; or 1) or &quot;disabled&quot; (or &quot;no&quot; or 0)
+for detection of contact using particle displacements (default &quot;disabled&quot;). <code>(norm)</code> determines the method used to find surface normals during
+contact calculations, with options:
+<ul>
+<li>&quot;maxgrad&quot; (or 0)</li>
+<li>&quot;maxvol&quot; (or 1)</li>
+<li>&quot;avggrad&quot; (or 2) (default)</li>
+<li>&quot;owngrad&quot; (or 3)</li>
+</ul>
+<code>(rigidBias)</code> sets a bias factor to use rigid normal over nonrigid material normal when contact is with rigid materials and when <code>(norm)</code> is "maxgrad" or "avggrad" (default 1).</li>
+
+<li><a name="frictmm"></a><code>FrictionMM (frict)</code><br>
+Set default multimaterial mode friction properties where (first) sets it as explained in the <a href="#frict">Friction command</a>.</li>
+
+<li><code>Friction (frict),#2</code><br>
+When this command is used within a <a href="#material">material</a> definition, it can set custom
+material-material friction properties. <code>(frict)</code> is same as for <a href="#frict">Friction command</a> and <code>(mat)</code> is material ID for the other material. Otherwise materials use the default settings from a <a href="#frictmm">FrictionMM</a> or <a href="#imperfectmm">ImperfectInterfaceMM command</a>.</li>
+
+<li><a name="imperfectmm"></a><code>ImperfectInterfaceMM (Dt),(Dn),&lt;(Dnc)&gt;</code><br>
+Set default properties for material contact to model an imperfect interface. The parameters are entered as explained in the <a href="#imperfect">ImperfectInterface command</a>.</li>
+
+<li><code>Interface (Dt),(Dn),(Dnc),(mat)</code><br>
+When this command is used within a <a href="#material">material</a> definition, it can set custom
+material-material imperfect interface properties. <code>(Dt)</code>, <code>(Dn)</code>, and <code>(Dnc)</code> are same as for <a href="#imperfect">ImperfectInterface command</a> (except that <code>(Dnc)</code> is required). (mat) is material ID for the other material. Otherwise materials use the default settings from a <a href="#frictmm">FrictionMM</a> or <a href="#imperfectmm">ImperfectInterfaceMM command</a>.</li>
+
+<li><code>ContactPosition (con)</code><br>
+Determines method for detecting crack contact when using particle displacements and the distance (<code>(con)</code> entered relative to grid element dimensions) required to detect contact based on displacements extrapolated to the grid. It is best omitted when all materials start
+out in contact has <code>(con)</code> = 0.8 (default is omitted) and the relative motions are small.</li>
+
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+
+<h2><a name="thermal"></a>MPM Thermal Calculations</h2>
+
+<p>These commands are used to do thermal stress and thermal conductivity calculations</p>
+
+<ul>
+<li><code>Conduction (conduct),&lt;(option)&gt;,...</code><br>
+Turn on thermal conductivity calculations and define heat source options with (conduction) of "yes" or "no". The optional parameters active various thermal calculation options:
+<ul>
+<li>&quot;Adiabatic&quot;</li>
+<li>&quot;Isothermal&quot;</li>
+<li>"Crack Tips" - crack growth causes a heat source</li>
+<li>"Friction" - work of material friction converted to heat</li>
+<li>"Crack Friction" - work of crack friction converted to heat</li>
+</ul>
+</li>
+
+<li><code>ThermalRamp (deltaT),&lt;(time)&gt;</code><br>
+Ramp up an isothermal temperature difference of <code>(deltaT)</code> over a specified <code>(time)</code> (in ms).</li>
+
+<li><code>RampStart (begin)</code><br>
+Set the start time to <code>(begin)</code> (in ms) for application of a thermal ramp.</li>
+
+<li><code>StressFreeTemp (temp)</code><br>
+Set the stress free temperature to (temp) (in K).</li>
+
+</ul>
+
+<p>When doing thermal calculations, you must use the <a href="#material">material</a> command methods to define material properties needed for thermal calculations (coefficient of thermal expansion, thermal conductivity, heat capacity). You can apply <a href="#bconds">temperature and heat flux</a> boundary conditions. You can use <a href="#regionmpm">Region</a> or <a href="#bmpregion">BMPRegion</a> commands to set initial particle temperature. You can use the <a href="#toarchive">ToArchive</a> and <a href="#globalarchive">GlobalArchive</a> commands to select various thermal parameters for output in the archive files, such as concentration temperature and heat energy.</p>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="thermalfea"></a>FEA Thermal Calculations</h2>
+
+<p>These commands are used to do thermal stress calculations</p>
+
+<ul>
+<li><code>StressFreeTemp (temp)</code><br>
+Set the stress free temperature to <code>(temp)</code>; the default is zero.</li>
+
+<li><code>Temperature (temp)</code><br>
+Apply temperature <code>(temp)</code> to all nodes. Enter a <a href="function">user defined function</a>
+of nodal position (x and y). It is only the difference between temperature and stress free temperature that matters in FEA calculations.
+</li>
+
+</ul>
+
+<p>In addition, you must use the <a href="#material">material</a> command methods to define material properties
+needed for thermal calculations (coefficient of thermal expansion).</p>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="conc"></a>Diffusion Calculations</h2>
+
+<p>The commands to activate diffusion calculations is (MPM only):</p>
+
+<ul>
+
+<li><code>Diffusion (diff),&lt;(res)&gt;</code><br>
+To turn on diffusion calculations. <code>(diff)</code> is "yes" or "no" to activate diffusion. <code>(res)</code> can specify a reference concentration between 0 and 1 (default is 0).</li>
+
+</ul>
+
+<p>When doing concentration calculations, you must use the <a href="#material">material</a> command methods to define material properties needed for diffusions calculations (coefficient of moisture expansion, diffusion constant, saturation concentration). You can apply <a href="#bconds">concentration an concentration flux</a> boundary conditions. You can use <a href="#regionmpm">Region</a> or <a href="#bmpregion">BMPRegion</a> commands to set initial particle concentration. You can use the <a href="#toarchive">ToArchive</a> and <a href="#globalarchive">GlobalArchive</a> commands to select various concentration parameters for output in the archive files, such as concentration (which includes concentration gradients).</p>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="bconds"></a>Applying MPM Boundary Conditions</h2>
+
+<h3>Grid-Based Boundary Conditions</h3>
+
+<p>Grid based boundary conditions are used to set velocity, temperature, and/or concentration on the grid:</p>
+
+<ul>
+<li><code>MoveLine (x1),(y1),(x2),(y2),&lt;tol&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(grid condition commands)<br>
+EndMoveLine</code><br>
+Apply <a href="#velbc">velocity</a>, <a href="#tempbc">temperature</a>, or <a href="concbc">concentration</a> conditions to nodes along a line from (<code>x1,y1</code>) to
+(<code>x2,y2</code>) with optional tolerance <code>(tol)</code> (all in mm). For 2D MPM only.</li>
+
+<li><code>MoveArc (x1),(y1),(x2),(y2),(start),(end),&lt;(tol)&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(grid condition commands)<br>
+EndMoveArc</code><br>
+Apply <a href="#velbc">velocity</a>, <a href="#tempbc">temperature</a>, or <a href="concbc">concentration</a> conditions to nodes along an arc inside an oval with corners at
+(<code>x1,y1</code>) and (<code>x2,y2</code>) draw between angles <code>(start)</code> and <code>(end)</code> (in degrees) with optional tolerance <code>(tol)</code> (all dimensions in mm). For 2D MPM only.</li>
+
+<li><code>MoveBox (x1),(y1),(z1),(x2),(y2),(z2),&lt;(axis)&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(grid condition commands)<br>
+EndMoveBox</code><br>
+Apply <a href="#velbc">velocity</a>, <a href="#tempbc">temperature</a>, or <a href="concbc">concentration</a> conditions to nodes within a 3D box with corners
+(<code>x1,y1,z1</code>) and (<code>x2,y2,z2</code>). If <code>(axis)</code> is used it must be x, y, or z (or 1, 2, or 3) and will convert the box to a cylinder with axis along the specified direction. For 3D MPM only</li>
+
+<li><a name="velbc"></a><code>Velocity (dir),(style),&lt;(value)&gt;,&lt;(time)&gt;,&lt;(skew)&gt;,&lt;(skew2)&gt;</code><br>
+Apply velocity conditions to currently selected nodes in the (dir) direction (x, t, z, skewxy, skewxz,
+skewyz, skewxyz, or skewrz). <code>(style)</code> is style with <code>(value)</code> (in mm/sec) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition. If <code>(dir)</code> is skewxy, skewxz, skewyz, or skewrz, <code>(skew)</code> is skew angle rotated clockwise from the first axis in the skew pair. If <code>(skew2)</code> is skewxyz, <code>(skew2)</code>is second angle such that <code>(skew)</code> and <code>(skew2)</code> are polar and azimuthal angles for the 3D skew direction.</li>
+
+<li><a name="tempbc"></a><code>Temperature (style),&lt;(value)&gt;,&lt;(time)&gt;</code><br>
+Apply temperature boundary conditions to selected nodes. <code>(style)</code> is style with <code>(value)</code> (in K) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition.
+</li>
+
+<li><a name="concbc"></a><code>Concentration (style),&lt;(value)&gt;,&lt;(time)&gt;</code><br>
+Apply concentration conditions to selected nodes. <code>(style)</code> is style with <code>(value)</code> (in concentration potential) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition.
+</li>
+
+<li><code>BoundaryID &lt;(id)&gt;</code><br>
+Set ID for subsequent velocity boundary condition for use when global archiving reaction forces. The <code>(id)</code> should be negative. If omitted it is set to 0 (which means ID is not set). These IDs are needed when archiving <a href="#globalarchive">reaction forces</a>. If you need to get reaction force on boundary conditions created by <a href="#gridhoriz">symmetry planes</a>, those conditions will automatically have the following boundary IDs:
+<ul>
+<li>-10: plane a minimum x edge</li>
+<li>-11: plane a maximum x edge</li>
+<li>-20: plane a minimum x edge</li>
+<li>-21: plane a maximum x edge</li>
+<li>-30: plane a minimum x edge</li>
+<li>-31: plane a maximum x edge</li>
+</ul>
+</li>
+
+</ul>
+
+<h3>Particle-Based Boundary Conditions</h3>
+
+<p>These commands are used to apply force, traction, heat flux, or concentration flux boundary conditions directly on the particles:</p>
+
+<ul>
+
+<li><code>LoadLine (x1),(y1),(x2),(y2),&lt;tol&gt;<br>
+&nbsp;&nbsp;(particle condition commands)<br>
+EndLoadLine</code><br>
+Apply <a href="#force">force</a>, <a href="#traction">traction</a>, <a href="#hflux">heat</a>, or <a href="#cflux">concentration</a> flux conditions to particles near a line from (<code>x1,y1</code>) to
+(<code>x2,y2</code>) with optional tolerance <code>(tol)</code> (all in mm). For 2D MPM only</li>
+
+<li><code>LoadRect (xmin),(xmax),(ymin),(ymax)<br>
+&nbsp;&nbsp;(particle condition commands)<br>
+EndLoadRect</code><br>
+Apply <a href="#force">force</a>, <a href="#traction">traction</a>, <a href="#hflux">heat</a>, or <a href="#cflux">concentration</a> flux conditions to particles in rectangle with x range (xmin) to (xmax) and y range from (ymin) to (ymax). For 2D MPM only</li>
+
+<li><code>LoadArc (x1),(y1),(x2),(y2),(start),(end),&lt;(tol)&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(particle condition commands)<br>
+EndLoadArc</code><br>
+Apply <a href="#force">force</a>, <a href="#traction">traction</a>, <a href="#hflux">heat</a>, or <a href="#cflux">concentration</a> flux conditions to particles along along an arc inside an oval with corners at
+(<code>x1,y1</code>) and (<code>x2,y2</code>) draw between angles <code>(start)</code> and <code>(end)</code> (in degrees) with optional tolerance <code>(tol)</code> (all dimensions in mm). For 2D MPM only.</li>
+
+<li><code>LoadBox (x1),(y1),(z1),(x2),(y2),(z2),&lt;(axis)&gt;<br>
+&nbsp;&nbsp;(particle condition commands)<br>
+EndLoadBox</code><br>
+Apply <a href="#force">force</a>, <a href="#traction">traction</a>, <a href="#hflux">heat</a>, or <a href="#cflux">concentration</a> flux conditions to particles within a 3D box with corners
+(<code>x1,y1,z1</code>) and (<code>x2,y2,z2</code>). If <code>(axis)</code> is used it must be x, y, or z (or 1, 2, or 3) and will convert the box to a cylinder with axis along the specified direction. For 3D MPM only</li>
+
+<li><a name="force"></a><code>Load (dir),(style),(value),&lt;(time)&gt;</code><br>
+Apply force to selected particles in direction (dir) (x, y, z (or 1, 2, or 3 or R or Z if axisymmetric). <code>(style)</code> is style with <code>(value)</code> (in N, but see <a href="loadtype">LoadType command</a>) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition.</li>
+
+<li><a name="traction"></a><code>Traction (dir),(face),(style),(value),&lt;(time)&gt;</code><br>
+Apply traction to selected particles in direction <code>(dir)</code> (x, y, z (or 1, 2, or 3 or R or Z if axisymmetric) on face <code>(face)</code> (1 to 6). <code>(dir)</code> can additionally be "normal" or "shear" (or 11 or 12); to have stresses normal or shear to the particle domain surface. Normal tractions are positive to apply tensile stress to the domain; shear tractions are positive when they rotate the particle domain in the counter-clockwise direction (shear for 2D only). In 2D, face is 1 to 4 for bottom, right, top, and left faces. In 3D, 1 to 4 are force faces in x-y plane, 5 and 6 are for bottom and top faces in z plane. <code>(style)</code> is style with <code>(value)</code> (in MPa) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition.</li>
+
+<li><a name="loadtype"></a><code>LoadType (type)</code><br>
+Specify loads in current shape command as "net" loads or "perParticle" loads (default is "perParticle"). When set to net, the load specified by the <a href="#force">Load command</a> is spread out over all particles in that shape.</li>
+
+<li><a name="hflux"></a><code>HeatFlux external,(face),(style),(value),&lt;(time)&gt;</code><br>
+Apply heat flux to selected particles on face <code>(face)</code> (see <a href="#traction">Traction command</a> for meaning of (face) parameter). <code>(style)</code> is style with <code>(value)</code> (in K) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition.</li>
+
+<li><a name="cflux"></a><code>ConcentrationFlux external,#1,#2,#3,&lt;#4&gt;</code><br>
+Apply concentration flux to selected particles on face <code>(face)</code> (see <a href="#traction">Traction command</a> for meaning of (face) parameter). <code>(style)</code> is style with <code>(value)</code> (in concentration potential) and <code>(time)</code> as optional arguments to set the <a href="#bcstyle">style</a> for the boundary condition.</li>
+
+</ul>
+
+<h3><a name="bcstyle"></a>MPM Boundary Condition Styles</h3>
+
+<p>The following styles (by name or number) can use used for MPM boundary conditions. The boundary condition command provides <code>(value)</code> and <code>(time)</code> parameters where <code>(value)</code> is in units of the boundary condition (unless changed) and <code>(time)</code> is in ms:</p>
+
+<ul>
+<li>"constant" (or 1) - Set condition to <code>(value)</code> starting at <code>(time)</code> .</li>
+<li>"linear" (or 1) - Set condition to <code>(value)*[t-(time)]</code> where <code>t</code> is current time. The condition starts at <code>(time)</code> and <code>(value)</code> should be condition units per ms.</li>
+<li>"sine" (or 3) - Set condition to <code>(value)*sin[t*(time)]</code> where <code>t</code> is current time and <code>(time)</code> is in 1/ms.</li>
+<li>"cosine" (or 4) - Set condition to <code>(value)*cos[t*(time)]</code> where <code>t</code> is current time and <code>(time)</code> is in 1/ms.</li>
+<li>"silent" (or 5) - Set an absorbing boundary condition. This style can only be used for <a href="#force">load</a>, <a href="#hflux">heat</a>, or <a href="#cflux">concentration</a> flux conditions. For loads, it is meant to absorb stress waves as if simulating a large object; the edge must be normal to x, y, or z direction and the material must be isotropic. For heat and concentration flux conditions, it attempts to apply extrapolated flux, which may simulation flow through and out of a layer of material.</li>
+<li>"function" (or 6) - Set condition to the <a href="function.html">user-defined function</a> given in <code>(value)</code>, which can depend on time (<code>t</code> in ms) and/or nodal coordinates (<code>x</code>, <code>y</code>, <code>z</code>, <code>R</code>, <code>Z</code>, <code>D</code>, and <code>T</code> in mm). If the <code>(time)</code> parameter is used the condition starts at <code>(time)</code> and the function is evaluated at <code>[t-(time)]</code>.</li>
+</ul>
+
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="feabcs"></a>Applying FEA Boundary Conditions</h2>
+
+<p>These commands are used to apply boundary conditions to FEA mesh.</p>
+
+<ul>
+
+<li><a name="fixline"></a><code>FixLine (x1OrID),&lt;(y1)&gt;,&lt;(x2)&gt;,&lt;(y2)&gt;,&lt;(tol)&gt;<br>
+&nbsp;&nbsp;(<a href="#displacement">Displacement</a>, <a href="#load">Load</a>, or <a href="#rotate">Rotate</a> commands)<br>
+&nbsp;&nbsp;(<a href="#stress">Stress</a> commands when fixing a path)<br>
+&nbsp;&nbsp;(optional <a href="#select">Select</a> command)<br>
+EndFixLine</code><br>
+Apply displacement or load conditions to nodes along a line. If only <code>(x1OrID)</code> is given, it must be a <a href="#path">path ID</a>. If more parameters are given, the conditions are applied to all nodes along the line from <code>(x1,y1)</code> and <code>(x2,y2)</code> with optional tolerance <code>(tol)</code> (all in mm).</li>
+
+<li><a name="fixpoint"></a><code>FixPoint (xOrID),&lt;(y)&gt;<br>
+&nbsp;&nbsp;(<a href="#displacement">Displacement</a>, <a href="#load">Load</a>, or <a href="#rotate">Rotate</a> commands)<br>
+&nbsp;&nbsp;(optional <a href="#select">Select</a> command)<br>
+EndFixPoint</code><br>
+Apply displacement or load conditions to a single node. If only <code>(xOrID)</code> is given, it must be a <a href="#keypoint">keypoint ID</a> and boundary conditions are applied to that node. If <code>(y)</code> is provided, <code>(xOrID,y)</code> defines coordinates (in mm) for a point and the boundary conditions will be applied to the one node nearest to that point.</li>
+
+<li><a name="displacement"></a><code>Displacement (dir),&lt;(value)&gt;</code><br>
+Apply displacement conditions to nodes in current shape. <code>(dir)</code> is x or y (or 1 or 2) to
+specify the direction of the applied displacement (they can R or Z for axisymmetric).
+<code>(value)</code> specifies magnitude of the displacement in mm.
+It can be specified by a number or by a <a href="#function">user-defined function</a> of nodal point position, entered as quoted text. If <code>(value)</code> is omitted, the default displacement is 0.</li>
+
+<li><a name="load"></a><code>Load (dir),(value)</code><br>
+Apply forces to nodes in current shape. <code>(dir)</code> is x or y (or 1, or 2, R, or Z if axisymmetric) to specify the direction of the applied force. <code>(value)</code> is the applied force (in N). It can be specified by a number or by a <a href="#function">user-defined function</a> of nodal point position.</li>
+
+<li><a name="stress"></a><code>Stress (dir),(stress1),&lt;stress2&gt;,&lt;(stress3)&gt;</code><br>
+Apply stress boundary conditions to faces of elements in the <a href="#fixline">current line</a>, which must have been selected using a <a href="#path">path ID</a>. <code>(dir)</code> is &quot;n&quot; (or 1) or &quot;t&quot; (or 2) for stress to be normal to the edge or tangential; the later is positive when loading the element face in the counter-clockwise direction. <code>(stress1),&lt;stress2&gt;,&lt;(stress3)&gt;</code> are 1 to 3 stresses. Give one stress for constant stress, two stresses for linear variation in stress along the edge, or three stresses for a quadratic variation in stress.</li>
+
+<li><a name="rotate"></a><code>Rotate (axis),(angle)</code><br>
+Rotate nodes in current shape for the purpose of applying skewed displacement boundary conditions.
+<code>(axis)</code> must be z (or 3). <code>(angle)</code> is the clockwise angle (in degrees).</li>
+
+<li><a name="select"></a><code>Select</code><br>
+Select the nodes and/or elements reference by the current <a href="#fixline">FixLine</a> or <a href="#fixpoint">FixPoint</a> boundary condition for conditional <a href="#output">output</a> of results.</li>
+
+<li><a name="selectline"></a><code>SelectLine (x1OrID),&lt;(y1)&gt;,&lt;(x2)&gt;,&lt;(y2)&gt;,&lt;(tol)&gt;</code><br>
+Select all nodes on a line for conditional <a href="#output">output</a> of results. If only <code>(x1OrID)</code> is given, it must be a <a href="#path">path ID</a>. If more parameters are given,  select all nodes along the line from <code>(x1,y1)</code> and <code>(x2,y2)</code> with optional tolerance <code>(tol)</code> (all in mm).</li>
+
+<li><a name="selectpoint"></a><code>SelectPoint (xOrID),&lt;(y)&gt;</code><br>
+Select one node for conditional <a href="#output">output</a> of results. If only <code>(xOrID)</code> is given, it must be a <a href="#keypoint">keypoint ID</a> and that node is selected. If <code>(y)</code> is provided, <code>(xOrID,y)</code> defines coordinates (in mm) for a point and the one node nearest to that point is selected.</li>
+
+<li><code>Periodic (axis),&lt;(constraint,value)&gt;,...</code><br>
+Set up calculations to be periodic where in the (axis) direction (x, y, or Z (if axisymmetric)). Up to two <code>(constraint)</code> settings can be "Delta" or "Slope" ("Shear" is equivalent to slope). There corresponding values impose that constraint on the periodic analysis. A "Delta" value gives a displacement jump along the periodic axis and defines the average strain in that direction. When only one direction is periodic, a "Slope" value impose rotation of one edge compared to the other. When both directions are periodic, a "Shear" value imposes average shear strain.</li>
+
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="gravity"></a>Gravity in MPM Calculations</h2>
+
+<p>This command can add gravity or other body forces to an MPM simulation:</p>
+
+<ul>
+
+<li><code>Gravity &lt;(ax)&gt;,&lt;(ay)&gt;,&lt;(az)&gt;</code><br>
+Apply body forces to all particles for simulations within a constant gravitational field
+where <code>(ax)</code>, <code>(ay)</code>, and <code>(az)</code> are the accelerations due to gravity (in m/sec<sup>2</sup>) in the x, y, and z
+directions, respectively (<code>(ax)</code> and <code>(ay)</code> are for R and Z directions in axisymmetric calculations). If all parameters
+are omitted, this commands activates gravity with earth's gravitation field in the y direction or (0,-9.8,0). If no Gravity command is used, there is no gravity.</li>
+
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+
+
+<h2><a name="custom"></a>Custom Tasks</h2>
+
+<p>These commands are used to schedule custom tasks that are run at the end of each time step in MPM calculations.</p>
+
+<ul>
+<li><code>CustomTask (name)</code><br>
+Schedule a custom task with name in <code>(name)</code>.
+</li>
+
+<li><code>Parameter (arg),&lt;(value)&gt;</code><br>
+Add parameter with name <code>(arg)</code> to the current custom task with value <code>(value)</code>, which is optional because some
+custom task parameters do not take a value.
+</li>
+
+</ul>
+
+<p>The currently available (and documented) custom tasks are their parameters are:</p>
+
+<dl>
+
+<dt><a name="VTKArchive"></a>VTKArchive</dt>
+
+<dd>This task allows <code>NairnMPM</code> to export data extrapolated to the grid during the calculation to VTK Legacy files (these files can be visualized by other software such as <a href="http://www.paraview.org" target="new">Paraview</a>). The parameters define what is save in the files:
+
+<ul>
+
+<li>mass - nodal mass (in g). This option is useful for creating contours that visualize the boundaries of the object.</li>
+<li>material - the material number to visualize different materials in a composite.</li>
+<li>displacement - the displacement vector (in mm).</li>
+<li>velocity - the velocity vector (in mm/sec).</li>
+<li>stress - the stress tensor (in MPa).</li>
+<li>pressure - the pressure (in MPa).</li>
+<li>equivstress - the equivalent stress (also know as von Mises stress) (in MPa).</li>
+<li>strain - the strain tensor, which is elastic strain for materials that partition elastic and plastic strain, but total strain for all others (absolute).</li>
+<li>deltav - the relative volume change (V-V<sub>0</sub>)/V<sub>0</sub> (absolute).</li>
+<li>equivstrain - the equivalent strain from above strain (absolute).</li>
+<li>plasticstrain - the plastic strain tensor (absolute). Some materials have plastic strain, but hyperelastic materials have left Cauchy Green strain in the particle's plastic strain.</li>
+<li>totalstrain - Archive total strain tensor (absolute, elastic+plastic strain for materials that separate them).</li>
+<li>temperature - the temperature (in K).</li>
+<li>concentration - the concentration (in wt %).</li>
+<li>strainenergy - the strain energy in J.</li>
+<li>heatenergy - the heat energy in J.</li>
+<li>plasticenergy - the plastic energy (in J).</li>
+<li>contactforce - the nodal force on the grid for <code>MultiMaterialMode</code> simulations when they include rigid materials that have <code>SetDirection</code>=8. It is force of the rigid material on the object in Newtons.</li>
+<li>archiveTime (time) - enter the time interval (in ms) between saving of <code>VTK</code> archives. If this parameter is omitted, the VTK archive files are written on the same steps as the particle archives.</li>
+<li>firstArchiveTime (time) - enter the time to save the first results (in ms).</li>
+</ul>
+</dd>
+
+
+<dt><a name="HistoryArchive"></a>HistoryArchive</dt>
+
+<dd>This custom task provides a method to archive more history variables and also provides an alternate format for archiving history variables 1 through 4. When this task is activated, the history data on each particle will be written to tab-delimited text files in the output results folder. You select which history variables to archive, and their order, using a series of <code>Parameter</code> commands:
+<pre>   &lt;Parameter name='2'/&gt;
+</pre>
+where the name is the history variable number. Two other parameters are:
+<ul>
+<li>archiveTime - enter the time interval (in ms) between saving of history archives. If this parameter is omitted, the history archive files are written on the same steps as the particle archives.</li>
+<li>firstArchiveTime - enter the time to save the first history results (in ms).</li>
+</ul>
+</dd>
+
+<dt><a name="ReverseLoad"></a>ReverseLoad</dt>
+
+<dd>This custom task monitors crack lengths. Once any crack or a specified crack reaches a specified crack length, the crack propagation of all cracks stops and various actions can be performed. The parameters are:
+<ul>
+<li>style (mode) - the (mode> options determines what happens after the specified crack length is reached and crack propagation is stopped. The default value is 0. The options are:
+<ul class="lev2args">
+<li>0: Reverses all linearly increasing particle loads, particle tractions, and constant-velocity rigid particles and stop when they return to zero.</li>
+<li>1: Stops all linearly increasing particle loads and tractions at their current value and zeros the velocity of all constant-velocity rigid particles. The analysis continues.
+</li>
+<li>2: All particle loads and tractions and rigid particles continue unchanged. Only the crack propagation stops.
+</li>
+<li>3: The analysis terminates.
+</li>
+</ul></li>
+
+<li>maxLength (length) - this parameter specifies the maximum crack length (in mm). Once this length is reached, all crack propagation will stop.</li>
+
+<li>crackNumber (num) - this parameter gives the crack number to watch. When that crack reaches the specified maximum length, the task will take effect. Alternatively, <code>crackNumber</code> can be zero which causes the task to take effect when any crack reaches the specified maximum length. The default value is 0.</li>
+</ul>
+</dd>
+
+<dt><a name="AdjustTimeStep"></a>AdjustTimeStep</dt>
+
+<dd>This tasks allows the time step to change if the wave speed in any material changes (and the material class supports calculation of wave speed as a function of particle state). Its parameters are:
+<ul>
+<li>adjustTime (time) - enter the time interval for checking the time step and adjusting it if needed (in ms). This parameter is optional; if it is omitted, the time step adjustment is done each time particle data are archived.</li>
+<li>verbose (value) - if its integer value is not zero, it will print the new time step whenever it changes by more than 1%. If it is zero, the new time step is silently changed. The default it 0.</li>
+</ul>
+</dd>
+
+</dl>
+
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="xml"></a>XML Commands</h2>
+
+<p>These commands are used to insert raw <code>XML</code> commands at various locations in the input commands. See Code Engine Commands for the format of all raw <code>XML</code> commands.</p>
+
+<ul>
+
+<li><code>Entity (entity),(def)</code><br>
+Define entity to appear in XML output file. <code>(entity)</code> is the entity name without ampersand and semicolon and <code>(def)</code> is its definition. Some other commands can use entities for their values.</li>
+
+<li><a name="xmldata"></a><code>XMLData &lt;(where)&gt;,&lt;(mat)&gt;<br>
+&nbsp;&nbsp;(lines of verbatim XML content)<br>
+EndXMLData</code><br>
+Insert XML data in the interpretation output. <code>(where)</code> indicates the section where the XML content will be inserted and it will be at the end of that section (unless otherwise noted). The options are:
+<ul>
+<li><code>&quot;Header&quot;</code></li>
+
+<li><code>&quot;MPMHeader&quot;</code> (MPM only)</li>
+
+<li><code>&quot;Mesh&quot;</code></li>
+
+<li><code>&quot;MaterialPoints&quot;</code> to intersperse with other commands in this section (MPM only)</li>
+
+<li><code>&quot;Materials&quot;</code> to intersperse a custom material definition (see below)</li>
+
+<li><code>&quot;GridBCs&quot;</code> to intersperse with other commands in this section</li>
+
+<li><code>&quot;ParticleBCs&quot;</code> (MPM Only)</li>
+
+<li><code>&quot;Thermal&quot;</code></li>
+
+<li><code>&quot;Gravity&quot;</code> (MPM Only)</li>
+
+<li><code>"CustomTasks"</code> (MPM Only)</li>
+
+</ul>
+If <code>(where)</code> is omitted (or is "<code>End</code>"), the XML content is inserted at the end of the XML commands. If <code>(where)</code> is &quot;Material&quot;, the XML content is assumed to completely define a single material. This content is inserted (in definition order) among other materials and <code>(mat)</code> must define the <a href="#material">material ID</a>, which can then be referenced in other commands.</li>
+
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="function"></a>User-Defined Functions</h2>
+
+<p>Some commands let you set properties using a function. When a function option is allowed, enter a valid function of <code>x</code>, <code>y</code>, <code>z</code> (postions in mm), <code>t</code> (time in ms), <code>dt</code> (time step in ms), <code>q</code> (particle rotation in radians about <code>z</code> axis), <code>D</code>, <code>T</code> (polar coordinates in <code>x</code>-<code>y</code> plane in radians and mm), <code>R</code>, or <code>Z</code> (axisymmetric positions in mm). The function will be evaluated at the relevant position, time, <i>etc.</i>, to calculate the value of the property to be assigned. Not all variables can be used for all functions. Refer to the command that allows a function to see what variables are allowed.</p>
+
+<p>Some details on entering functions are:</p>
+<ul>
+<li>Operators: The function uses standard operators + - * / and ^ with standard operator precedence.
+</li>
+
+<li>The function can contain the following defined functions:
+<ul>
+
+<li><code>sin(x)</code>, <code>cos(x)</code>, and <code>tan(x)</code> - trigonometric function of angle in radians.
+</li>
+
+<li><code>asin(x)</code>, <code>acos(x)</code>, and <code>atan(x)</code> - inverse trigonometric function with result in radians.
+</li>
+
+<li><code>sqrt(x)</code> - square root.
+</li>
+
+<li><code>log(x)</code> and <code>ln(x)</code> - log base 10 and natural log, respectively.
+</li>
+
+<li><code>exp(x)</code> - exponential of <code>x</code>.
+</li>
+
+<li><code>abs(x)</code> - absolute value of <code>x</code>.
+</li>
+
+<li><code>int(x)</code> - integer part of <code>x</code> as next lower integer. For negative numbers, it is next lower integer or <code>int(-3.4)=-4</code>.</li>
+
+<li><code>sign(x)</code> - 1 if <code>x</code> is greater than zero or 0 if <code>x</code> is negative or equal to zero.</li>
+
+<li><code>Sinh(x)</code>, <code>Cosh(x)</code>, and <code>Tanh(x)</code> - hyperbolic trigonometric functions. The initial upper case letter is needed to distinguish them from <code>sin(x)</code>, <i>etc.,</i> in the math expression parser.
+</li>
+
+</ul></li>
+
+<li>The function can include <code>pi</code> (or <code>Pi</code> or <code>PI</code>) for the number &pi;.
+</li>
+
+<li>Exponential notation: numbers can have &quot;<code>e</code>&quot; or &quot;<code>E</code>&quot; for powers of ten such as <code>1.4e3</code> for <code>1400</code>.
+</li>
+
+<li>Extra spaces in the function are ignored.
+</li>
+
+</ul>
+
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+
+</body>
+
+</html>
