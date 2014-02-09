@@ -59,7 +59,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Crack tips now track material type to all propagation between materials in a composite.
     * Fixed bug in J calculation
 
-  * release-3.0 (9 JAN 2013)
+  * release-4.0 (9 JAN 2013)
     * Has NairnMPM 9.0.0
     * Addition of axisymmetric option for MPM. It does not yet do J integral and a few materials types do not support it yet (the code will not run if you use an unsupported material). A paper on axisymmetric MPM has been submitted.
     * Multmaterial mode contact can now implement imperfect interface laws in addition to friction laws. It is set up with `Friction` commands in `MultiMaterialMode` command or in material definitions.
