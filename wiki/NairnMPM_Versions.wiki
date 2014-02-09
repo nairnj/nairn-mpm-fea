@@ -23,7 +23,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
   * Current main trunk
     * Working on NairnMPM 10.0.0
 
-  * Release-5.0 (9 Feb 2014): On Jan 14, 2014, the OpenMP branch replaced the main trunk. That branch was started on April 2, 2013 to make parallel code. It has lots of changes needed to be parallel. All MPM materials use buffers for any material class variable that changes with particle state. The entire problem is divided into patches with ghost nodes on boundaries (and some section divide work by patch). The Particles reordered by type, which helps some loops divided by type (e.g., rigid velocities). The crack velocity field calculation is done in the initiation phase. Many other changes have been done along the way, although many of these are just features and not crucial for parallel code:
+  * Release-5.0 (9 Feb 2014): On Jan 14, 2014, the OpenMP branch replaced the main trunk for this release. That branch was started on April 2, 2013 to make parallel code. It has lots of changes needed to be parallel. All MPM materials use buffers for any material class variable that changes with particle state. The entire problem is divided into patches with ghost nodes on boundaries (and some section divide work by patch). The Particles reordered by type, which helps some loops divided by type (e.g., rigid velocities). The crack velocity field calculation is done in the initiation phase. Many other changes have been done along the way, although many of these are just features and not crucial for parallel code:
     * Working on NairnMPM 10.0.0
     * May 16: Torus object for 3D
     * May 22: Changed Johnson-Cook when above TM to be better
@@ -47,7 +47,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Jan 8: All documentation simplified with the details moved to the OSUPDocs wiki page
     * Jan 22: Added Shell shape command for 3D simulations
 
-  * Prior trunk Version (until 14 JAN 2014 - it was replaced by parallel branch; all additions below are in the new trunk)
+  * Prior trunk version of release 5.0 (until 14 JAN 2014 - it was replaced by parallel branch; all additions below are in the new trunk)
     * Working on NairnMPM 9.2.0
     * Prints svn revision number of code used in output files
     * Hardening Laws have been separated from materials to allow one to select them independently - this approach creates a large number of material types. An alternate nonlinear hardening law is among the previously available hardening laws.
