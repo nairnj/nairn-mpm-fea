@@ -20,10 +20,10 @@ Current main trunk - on Jan 14, 2014, the OpenMP branch replaced the main trunk.
 
   * Current Main Trunk - on Jan 14, 2014, the OpenMP branch replaced the main trunk. That branch was to make parallel code and also to convert the Java app to fully support scripting language from the Mac app called NairnFEMPM.
     * Working on NairnFEAMPMViz 6.0.
-    * Now support scripting language to set up calculations. The language is almost identical to the language in the NairnFEAMPM app.
+    * Now supports scripting language to set up calculations. The language is almost identical to the language in the NairnFEAMPM app.
     * All documentation was revised to briefly explain the new scripting commands.
     * All material types are documented in a separate help topic
-    * Example scripted files are the in nairn-fea-mpm code project
+    * Example scripted files are in nairn-fea-mpm code project
 
   * Previous trunk Version (this version was deleted when it was replaced by the OpenMP branch on Jan 14, 2014).
     * Working on NairnFEAMPMViz 4.0.
