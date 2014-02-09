@@ -1,4 +1,4 @@
 #summary Creating a New Material Type for NairnMPM
 #labels NairnMPM
 
-This information as moved to the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Creating_MPM_Materials">OSUPDocs Wiki</a>.
+This page has moved to the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Creating_MPM_Materials">OSUPDocs Wiki</a>.
