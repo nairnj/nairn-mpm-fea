@@ -244,6 +244,7 @@ RigidMaterial = $(src)/Materials/RigidMaterial
 RunCustomTasksTask = $(src)/NairnMPM_Class/RunCustomTasksTask
 SCGLHardening = $(src)/Materials/SCGLHardening
 ShapeController = $(com)/Read_XML/ShapeController
+ShellController = $(src)/Read_MPM/ShellController
 SLMaterial = $(src)/Materials/SLMaterial
 SphereController = $(src)/Read_MPM/SphereController
 StartOutput = $(src)/NairnMPM_Class/StartOutput
@@ -356,6 +357,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # RunCustomTasksTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # RigidMaterial.hpp : MaterialBase.hpp
 # SCGLHardening.hpp : HardeningLawBase.hpp, MaterialBase.hpp
+# ShellController.hpp : ShapeController.hpp
 # SLMaterial.hpp :  SCGLHardening.hpp, HardeningLawBase.hpp, MaterialBase.hpp
 # SphereController.hpp : ShapeController.hpp
 # TaitLiquid.hpp : HyperElastic.hpp (MaterialBase.hpp)
@@ -402,7 +404,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		TractionLaw.o CohesiveZone.o CoupledSawTooth.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o AdjustTimeStepTask.o SLMaterial.o CrackVelocityFieldMulti.o \
 		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o \
-        HEMGEOSMaterial.o GridPatch.o GhostNode.o MatPtHeatFluxBC.o PressureLaw.o
+        HEMGEOSMaterial.o GridPatch.o GhostNode.o MatPtHeatFluxBC.o PressureLaw.o ShellController.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -620,7 +622,7 @@ MPMReadHandler.o : $(MPMReadHandler).cpp $(dprefix) $(NairnMPM).hpp $(ArchiveDat
 			$(BoundaryCondition).hpp $(NodesController).hpp $(ElementsController).hpp $(ParseController).hpp $(MaterialController).hpp \
 			$(MpsController).hpp $(MaterialController).hpp $(CrackController).hpp $(ElementBase).hpp $(MaterialBase).hpp \
 			$(CrackHeader).hpp $(CrackSegment).hpp $(TransportTask).hpp $(MatPoint3D).hpp $(MatPtTractionBC).hpp $(AdjustTimeStepTask).hpp \
-			$(PolygonController).hpp $(ShapeController).hpp  $(SphereController).hpp $(RigidMaterial).hpp \
+			$(PolygonController).hpp $(ShapeController).hpp $(SphereController).hpp $(ShellController).hpp $(RigidMaterial).hpp \
 			$(VTKArchive).hpp $(HistoryArchive).hpp $(CarnotCycle).hpp $(MatPtHeatFluxBC).hpp \
 			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(MeshInfo).hpp $(PropagateTask).hpp $(PolyhedronController).hpp \
             $(MatPointAS).hpp $(PressureLaw).hpp 
@@ -645,6 +647,8 @@ CrackController.o : $(CrackController).cpp $(dprefix) $(CrackController).hpp $(P
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackController).cpp
 SphereController.o : $(SphereController).cpp $(dprefix) $(SphereController).hpp $(ShapeController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(SphereController).cpp
+ShellController.o : $(ShellController).cpp $(dprefix) $(ShellController).hpp $(ShapeController).hpp $(mathexpr).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ShellController).cpp
 TorusController.o : $(TorusController).cpp $(dprefix) $(TorusController).hpp $(ShapeController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TorusController).cpp
 PolyhedronController.o : $(PolyhedronController).cpp $(dprefix) $(PolyhedronController).hpp $(ShapeController).hpp
