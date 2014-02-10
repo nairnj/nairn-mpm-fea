@@ -1,0 +1,207 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>FEA Boundary Conditions</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#feacontents">FEA XML File Contents</a>
+</p>
+
+<h1>FEA Boundary Conditions</h1>
+
+<p>FEA calculations require mesh-based boundary conditions and their details are given on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/FEA_Boundary_Conditions">OSUPDocs wiki</a>. You can use commands to <a href="#sec2">generate</a> the boundary conditions and/or commands that <a href="#sec1">explicitly list</a>. All boundary conditions, along with a few other optoins, must be within the single <code>&lt;GridBCs&gt;</code> block:
+</p>
+
+<pre>
+&lt;GridBCs&gt;
+   (any number of boundary condition commands)
+   &lt;<a href="#Cracktip"><code>Cracktip</code></a> x='0' y='0'/&gt;
+   
+   &lt;<a href="#Periodic"><code>Periodic</code></a> dof='x' delta='1' slope='0'/&gt;
+   &lt;<a href="#Periodic"><code>Periodic</code></a> dof='y' delta='1' shear='0'/&gt;
+
+   &lt;<a href="#Resequence"><code>Resequence</code></a> x='0' y='0'/&gt;
+&lt;/GridBCs&gt;
+</pre>
+
+<a name="sec2"></a><h2>Generated Boundary Condition Definition</h2>
+
+<p>Most oundary conditions can be generated with <code>&lt;BCLine&gt;</code> and <code>&lt;BCPt&gt;</code>:
+</p>
+
+<ul>
+
+<li><pre class="list">&lt;<a href="#BCLine"><code>BCLine</code></a> x1='0' y1='10' x2='0' y2='20' tolerance='.01'&gt;
+  (one of more <a href="#bc_cmds">boundary condition command</a>)
+&lt;/BCLine&gt;</pre>
+Assign boundary condition at nodes along a defined line from (<code>x1,y1</code>) to (<code>x2,y2</code>) or along a previously defined path (in <code>path</code> attribute). The optional <code>tolerance</code> finds all nodes within that distance of the line.</li>
+
+<li><a name="bcpath"></a><pre class="list">&lt;BCLine path='top' select='1'&gt;
+  (one of more <a href="#bc_cmds">boundary condition command</a>)
+&lt;/BCLine&gt;</pre>
+Assign boundary condition at nodes along a previously defined path. An optional <code>select='1'</code> attribute will select all nodes along the line or path for <a href="header.html#output">conditional output</a>.</li>
+
+<li><pre class="list">&lt;<code>BCPt</code> x='0' y='10' select='1'&gt;
+  (one of more <a href="#bc_cmds">boundary condition command</a>)
+&lt;/BCPt&gt;</pre>
+Assign boundary conditions to the node closed to the point (<code>x,y</code>). An optional <code>select='1'</code> attribute can be used to select the node for <a href="header.html#output">conditional output</a>.</li>
+
+<li><pre class="list">&lt;<code>BCPt</code> x='0' y='10' select='1'&gt;
+  (one of more <a href="#bc_cmds">boundary condition command</a>)
+&lt;/BCPt&gt;</pre>
+Assign boundary conditions to the node at a previously defined keypoint. An optional <code>select='1'</code> attribute can be used to select the node for <a href="header.html#output">conditional output</a>.</li>
+
+</ul>
+
+<h3><a name="bc_cmds"></a>Subordinate Boundary Conditions Commands</h3>
+
+<p>Commands subordinate to any of the above shape commands can set specific boundary conditions.
+The possible commands are:
+</p>
+
+<ul>
+
+<li><pre class="list">&lt;DisBC dof='(dirnum)' disp='(disp)'/&gt;
+&lt;DisBC dof='(dirnum)' function='(function)'/&gt;</pre>
+Set fixed displacement in mm to all nodes defined by the shape in direction <code>(dirnum)</code>, which is 1 or 2 for x or y direction. The <code>(disp)</code> options sets a numerical displacement while the <code>(function)</code> sets it with a <a href="function.html">user-defined function</a>.</li>
+
+<li><pre class="list">&lt;LoadBC dof='(dirnum)' load='(load)'/&gt;
+&lt;LoadBC dof='(dirnum)' function='(load)'/&gt;</pre>
+Set fixed load in N to all nodes defined by the shape in direction <code>(dirnum)</code>, which is 1 or 2 for x or y direction. The <code>(load)</code> option sets a numerical load while the <code>(function)</code> sets it with a <a href="function.html">user-defined function</a>.</li>
+
+<li><pre class="list">&lt;StressBC dir='(dirnum)' stress='(stress1),(stress2),(stress3)'/&gt;</pre>
+Apply stress in MPa along the path defined by the shape in direction <code>(dirnum)</code>, which is 1 or normal and 2 for shear. There can be 1 to 3 comma delimited stresses. One gives a constant stress, two gives linear variation in stress between path end points, and three allows a quadratic variation in stress through those three values. This condition is only allowed in <a href="#bcpath">&lt;BCLine&gt; that selects a path</a>.</li>
+
+<li><pre class="list">&lt;rotate axis='(axis)' angle='(ange)'/&gt;</pre>
+Rotates the degrees of freedom at all nodes defined by the shape. The rotation <code>(axis)</code> must be 3 for 2D problems; <code>(angle)</code> is the clockwise rotation in degrees. Once node(s) are rotated, you can specify displacement boundary conditions in the rotated coordinates. Rotation only affects displacement boundary conditions.</li>
+</ul>
+
+<a name="sec1"></a><h2>Explicit Boundary Condition Definition</h2>
+
+<p>Another way to define nodal displacement, nodal load, or element edge stress boundary conditions is to explicit list each one. This method is done by defining three block elements with the <code>&lt;GridBCs&gt;</code> block for displacement conditions (<code>&lt;DisplacementBCs&gt;</code>) for nodal loade (<code>&lt;LoadBCs&gt;</code>), for elemetn edge stresses (<code>&lt;EdgeBCs&gt;</code>). Subordinate to each block are commands to apply a boundary conditions to one node, one node, or one edge:</p>
+
+<pre>
+&lt;DisplacementBCs&gt;
+  (one or more <a href="#exp_cmds">&lt;fix&gt; or &lt;rotate&gt; commands</a>)
+&lt;/DisplacementBCs&gt;
+   
+&lt;LoadBCs&gt;
+  (one or more <a href="#exp_cmds">&lt;load&gt; commands</a>)
+&lt;/LoadBCs&gt;
+   
+&lt;EdgeBCs&gt;
+     &lt;stress elem='3' face='1' dir='1'&gt;0,100&lt;/load&gt;
+&lt;/EdgeBCs&gt;
+</pre>
+
+<p><a name="exp_cmds"></a>The following commands apply a boundary condition to one node or one element edge:</p>
+<ul>
+
+<li><pre class="list">&lt;fix node='24' dof='2'&gt;0&lt;/fix&gt;</pre>
+Set displacement on one node in direction 1 or 2 for x or y direction (using dof attribute). The value of the command is the displacement in mm.</li>
+
+<li><pre class="list">&lt;rotate node='5' axis='3'&gt;45&lt;/rotate&gt;</pre>
+Rotates the degrees of freedom one node. The rotation <code>(axis)</code> must be 3 for 2D problems; the value of the command is the clockwise rotation in degrees. Once a node is rotated, you can specify displacement boundary conditions in the rotated coordinates.</li>
+
+<li><pre class="list">&lt;load node='5' dof='1'&gt;45&lt;/load&gt;</pre>
+This commands specifies a <code>node</code> (by number) and the direction of the load with <code>dof</code> of 1 or 2 for x or y direction. The value of the element is the applied load in N.</li>
+
+<li><pre class="list">&lt;stress elem='3' face='1' dir='1'&gt;0,100&lt;/load&gt;</pre>
+This commad specifies an element (using <code>elem</code>), a <code>face</code> of the element, and a direction (using <code>dir</code> with setting 1 or n for normal stress or 2 or t for tangential or shear stress). The value of the <code>&lt;stress&gt;</code> tag should be 1 to 3 stresses (in MPa), separated by commas. One gives a constant stress, two gives linear variation in stress between path end points, and three allows a quadratic variation in stress through those three values.</li>
+</ul>
+
+<h2><a name="Periodic"></a>Periodic Boundary Conditions</h2>
+
+<p>&lt;Periodic&gt; commands with the &lt;GridBCs&gt; block can be used to runs calculations that are periodic in strain in just the <code>x</code> direction, just the <code>y</code> direction, or in both the <code>x</code> and <code>y</code> directions. Periodic simulations are decribed in detail on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/FEA_Periodic_Boundaries">OSUPDocs wiki</a>. the command is:</p>
+
+<pre>
+&lt;Periodic dof='(dir)' delta='(delta)' slope='(slope)'/&gt;
+</pre>
+
+<p>where</p>
+
+<ul>
+<li><code>(dir)</code> is <code>x</code> (or 1) or <code>y</code> (or 2) or <code>z</code> (or 3) to define the periodic direction. The z option is for axisymmetric calculations and the only one allowed in suchg calculations</li>
+<li>The <code>delta</code>, <code>slope</code> (or <code>shear</code>) attributes let you specify an average displacement jump and rotation (or shear) between the two ends in the periodic direction(s). The results are summarized in the table below.</li>
+</ul>
+
+<p>The following table summarizes the periodic options where &Delta;x, &Delta;y, and &Delta;z are the length of the body in the <code>x</code>, <code>y</code>, and <code>z</code> directions.</p>
+
+<p>
+<table border="1" cellspacing="0" cellpadding="3">
+<tr><th>Periodicity</th>
+<th>x Delta</th>
+<th>x Slope/<br>Shear</th>
+<th>y Delta</th>
+<th>y Slope/<br>Shear</th>
+<th>Global Strains or Rotation</th>
+</tr>
+
+<tr>
+<td>x only</td>
+<td>du</td>
+<td>d(du)/dy</td>
+<td>n.a.</td>
+<td>n.a.</td>
+<td>&lt;&epsilon;<sub>xx</sub>&gt; = du/&Delta;x, d(du)/dy=slope of displacement jump over &Delta;x</td>
+</tr>
+
+<tr>
+<td>y only</td>
+<td>n.a.</td>
+<td>n.a.</td>
+<td>dv</td>
+<td>d(dv)/dx</td>
+<td>&lt;&epsilon;<sub>yy</sub>&gt; = dv/&Delta;y, d(dv)/dx=slope of displacement jump over &Delta;y</td>
+</tr>
+
+<tr>
+<td>x and y</td>
+<td>du</td>
+<td>dudy</td>
+<td>dv</td>
+<td>dvdx</td>
+<td>&lt;&epsilon;<sub>xx</sub>&gt; = du/&Delta;x, 
+&lt;&epsilon;<sub>yy</sub>&gt; = dv/&Delta;y,
+&lt;&gamma;<sub>xy</sub>&gt; = dudy/&Delta;y + dvdx/&Delta;x</td>
+</tr>
+
+<tr>
+<td>z only</td>
+<td>n.a.</td>
+<td>n.a.</td>
+<td>dw</td>
+<td>0</td>
+<td>&lt;&epsilon;<sub>zz</sub>&gt; = dw/&Delta;z, 0=slope of displacement jump over &Delta;z</td>
+</tr>
+
+</table>
+</p>
+
+<h2><a name="Resequence"></a>Resequencing the Nodes</h2>
+
+<p>Finite element analysis is more efficient if the nodes are numbered to minimize bandwidth of the problem. These commands will resequence the nodes for minimum bandwidth:</p>
+
+<pre>&lt;Resequence x='0' y='0'/&gt;
+&lt;Resequence keypt='(id)'/&gt;
+</pre>
+
+<p>The resequencing will start at the node closest to the (x,y) coordinates provided in the x and y attributes or at the key point with specified <code>(id)</code>. It is best to resequence from a node on a corner of the object.
+</p>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#feacontents">FEA XML File Contents</a>
+</p>
+
+</body>
+
+</html>
