@@ -382,7 +382,7 @@ double HyperElastic::GetResidualStretch(MPMBase *mptr,double &dresStretch,Residu
 	dresStretch = CTE1*res->dT;
 	if(DiffusionTask::active)
 	{	double dConc=mptr->pPreviousConcentration-DiffusionTask::reference;
-		resStretch += exp(CME1*dConc);
+		resStretch += CME1*dConc;
 		dresStretch += CTE1*res->dC;
 	}
     dresStretch = exp(dresStretch);
@@ -433,6 +433,36 @@ double HyperElastic::GetVolumetricTerms(double J,double Kred) const
     
     // return result
     return Kterm;
+}
+
+// Return -J^2 P(J) and -d(J^2 P(J))/dJ
+// These terms are used in Newton's method to zero out stress (such and in plane stress for Mooney
+//    or in membranes for compressible materials)
+void HyperElastic::GetNewtonPressureTerms(double J,double Kred,double &mJ2P,double &mdJ2PdJ) const
+{
+    switch(UofJOption)
+    {   case J_MINUS_1_SQUARED:
+            // This is for -J^2 P(J) = K(J^3-J^2)
+            mJ2P = Kred*J*J*(J-1.);
+            // K d(J^3-J^2) = K (3 J^2 - 2 J)
+            mdJ2PdJ = Kred*J*(3.*J-2.);
+            break;
+            
+        case LN_J_SQUARED:
+            // This is for -J^2 P(J) = J K (ln J)
+            mJ2P = Kred*J*log(J);
+            // K d(J ln(J)) = K (ln(J) + 1)
+            mdJ2PdJ = Kred*(log(J)+1.);
+            break;
+            
+        case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
+        default:
+            // This is for -J^2 P(J) = (K/2) (J^3-J)
+            mJ2P = 0.5*Kred*J*(J*J-1.);
+            // (K/2) d(J^3 - J) = (K/2)*(3*J^2-1)
+            mdJ2PdJ = 0.5*Kred*(3.*J*J-1.);
+            break;
+    }
 }
 
 // From thermodyanamics Cp-Cv = 9 K a^2 T/rho

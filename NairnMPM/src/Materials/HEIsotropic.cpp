@@ -38,7 +38,7 @@ char *HEIsotropic::InputMat(char *xName,int &input)
 {
     input=DOUBLE_NUM;
     
-    if(strcmp(xName,"G1")==0)
+    if(strcmp(xName,"G1")==0 || strcmp(xName,"G")==0)
         return((char *)&G1);
     
     // look for different plastic law
@@ -175,36 +175,26 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     
 	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
     // This code handles plane strain, axisymmetric, and 3D - Plane stress is blocked
-	double J2 = detdF * mptr->GetHistoryDble(J_history);
+	double J = detdF * mptr->GetHistoryDble(J_history);
     
     // save new J
-    mptr->SetHistoryDble(J_history,J2);  // Stocking J
+    mptr->SetHistoryDble(J_history,J);  // Stocking J
     
-    // J as determinant of F (or sqrt root of determinant of B) normalized to residual stretch
-	// Must also divide elements of B by resStretch2
+    // J is determinant of F (or sqrt root of determinant of B), Jeff is normalized to residual stretch
 	double dresStretch,resStretch = GetResidualStretch(mptr,dresStretch,res);
     double resStretch2 = resStretch*resStretch;
     double Jres = resStretch2*resStretch;
-    double J = J2/Jres;
-	Tensor B = Btrial;
-	B.xx /= resStretch2;
-	B.yy /= resStretch2;
-	B.zz /= resStretch2;
-	B.xy /= resStretch2;
-	if(np==THREED_MPM)
-	{	B.xz /= resStretch2;
-		B.yz /= resStretch2;
-	}
-	double detdFres = dresStretch*dresStretch*dresStretch;
+    double Jeff = J/Jres;
 	
 	// Get hydrostatic stress component in subroutine
-    UpdatePressure(mptr,J,detdF,np,Jres,delTime,p,res,detdFres);
+	double detdFres = dresStretch*dresStretch*dresStretch;		// increment volumetric stretch
+    UpdatePressure(mptr,J,detdF,np,Jeff,delTime,p,res,detdFres);
     
     // Others constants
-    double J23 = pow(J, 2./3.);
+    double J23 = pow(J, 2./3.)/Jres;
     
     // find Trial Specific Kirchoff stress Tensor (Trial_Tau/rho0)
-    Tensor stk = GetTrialDevStressTensor(&B,J23,np,p->Gred);
+    Tensor stk = GetTrialDevStressTensor(&Btrial,J23,np,p->Gred);
     
     // Checking for plastic loading
     // ============================================
@@ -237,7 +227,7 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
         *pB = Btrial;
         
         // Get specifique stress i.e. (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
-		// JAN: Just store deviatoric stress
+		// The deviatoric stress was calculated as (Kirchoff Stress)/rho0, so just save it now
         *sp = stk;
         
         // work energy per unit mass (U/(rho0 V0)) and we are using
@@ -251,8 +241,12 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
                                        + (st0.xz+sp->xz)*(du(2,0)+du(0,2))));
         }
 		
+		// residual energy or sigma.deres - it is zero here for isotropic material
+		// because deviatoric stress is traceless and deres has zero shear terms
+		// residual energy due to pressure was added in the pressure update
+		
 		// heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here
-        // and Cv(dT-dTq0) was done in Update pressure
+        // and Cv(dT-dTq0) was done in pressure update
         
         return;
     }
@@ -262,16 +256,15 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     // if plastic
     
 	// JAN: Use hardening law method (which can now use other laws too)
-    double Ie1bar = (B.xx+B.yy+B.zz)/(3.*J23);
-    double MUbar = p->Gred*Ie1bar;
+    double Ie1bar = (Btrial.xx+Btrial.yy+Btrial.zz)/(3.*J23);
+    double MUbar = Jres*p->Gred*Ie1bar;
     
     // Find  lambda for this plastic state
 	double dlambda = plasticLaw->SolveForLambdaBracketed(mptr,np,magnitude_strial,&stk,MUbar,1.,1.,delTime,&alpha,p->hardProps);
     
+    // update deviatoric stress
 	Tensor nk = GetNormalTensor(&stk,magnitude_strial,np);
     //cout << "nk.xx  =    " << nk.xx << "nk.xy  =    " << nk.xy << endl;
-    
-    // update deviatoric stress
 	double twoMuLam = 2.*MUbar*dlambda;
     sp->xx = stk.xx - twoMuLam*nk.xx;
     sp->yy = stk.yy - twoMuLam*nk.yy;
@@ -283,16 +276,25 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     }
     
     // save on particle
-    // JAN: reuse stress rather than calculate again
-	double J23term = J23*resStretch2;
-	pB->xx = (sp->xx/p->Gred+Ie1bar)*J23term;
-	pB->yy = (sp->yy/p->Gred+Ie1bar)*J23term;
-	pB->zz = (sp->zz/p->Gred+Ie1bar)*J23term;
-	pB->xy = sp->xy*J23term/p->Gred;
+	double twoThirdsLamI1bar = 2.*dlambda*Ie1bar;
+    pB->xx = Btrial.xx - twoThirdsLamI1bar*nk.xx;
+    pB->yy = Btrial.yy - twoThirdsLamI1bar*nk.yy;
+    pB->zz = Btrial.zz - twoThirdsLamI1bar*nk.zz;
+	pB->xy = Btrial.xy - twoThirdsLamI1bar*nk.xy;
     if(np == THREED_MPM)
-    {   pB->xz = sp->xz*J23term/p->Gred;
-        pB->yz = sp->yz*J23term/p->Gred;
+    {   pB->xz = Btrial.xz - twoThirdsLamI1bar*nk.xz;
+        pB->yz = Btrial.yz - twoThirdsLamI1bar*nk.yz;
     }
+    /* Old method collecting B from stresses
+     pB->xx = (sp->xx/p->Gred+Ie1bar)*J23;
+     pB->yy = (sp->yy/p->Gred+Ie1bar)*J23;
+     pB->zz = (sp->zz/p->Gred+Ie1bar)*J23;
+     pB->xy = sp->xy*J23/p->Gred;
+     if(np == THREED_MPM)
+     {   pB->xz = sp->xz*J23/p->Gred;
+     pB->yz = sp->yz*J23/p->Gred;
+     }
+     */
     
     // strain energy per unit mass (U/(rho0 V0)) and we are using
     double workEnergy = 0.5*((st0.xx+sp->xx)*du(0,0)
@@ -310,6 +312,10 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 	
     // total work
     mptr->AddWorkEnergy(dispEnergy + workEnergy);
+    
+    // residual energy or sigma.deres - it is zero here for isotropic material
+    // because deviatoric stress is traceless and deres has zero shear terms
+    // residual energy due to pressure was added in the pressure update
     
     // disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
 	// Subtract q.dalpha
@@ -331,20 +337,20 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
 #pragma mark HEIsotropic::Custom Methods
 
 // To allow better subclassing it is better to separate out calculations
-//  of dilaiton energy. This version updates pressure (i.e. dilational
+//  of dilation energy. This version updates pressure (i.e. dilational
 //  contribution to normal stress) and adds incremental energy to strain energy
-// Jtot = V(T,c)/V0(Trec,cref), Jres = V0(T,c)/V0(Tref,cref) for free expansion, J = V(T,c)/V0(T,c)
+// J = V(T,c)/V0(T,c), Jeff = V(T,c)/V0(Tref,cref), Jres = V0(T,c)/V0(Tref,cref) = J/Jeff
 // Jn+1 = (detdF/detdFres) Jn, Jresn+1 = detdFres Jresn, Jtot = detdF Jtotn
 // detdFres = (1+dres)^3 (approximately)
 // Here Tref and cref are starting conditions and T and c are current temperature and moisture
-void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,double Jres,
+void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,double Jeff,
 								 double delTime,HEPlasticProperties *p,ResidualStrains *res,double detdFres) const
 {
-	double Kterm = J*GetVolumetricTerms(J,p->Kred);       // times J to get Kirchoff stress
+	double Kterm = J*GetVolumetricTerms(Jeff,p->Kred);       // times J to get Kirchoff stress
     double P0 = mptr->GetPressure();
     
     // artifical viscosity
-	// delV is total incremental volumetric strain = total Delta(V)/V
+	// delV is total incremental volumetric strain = total Delta(V)/V, here it is (Vn+1-Vn)/Vn+1
 	double delV = 1. - 1./detdF;
     double QAVred = 0.,AVEnergy=0.;
     if(delV<0. && artificialViscosity)
@@ -358,10 +364,10 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,doub
     // work energy is dU = -P dV + s.de(total)
 	// Here do hydrostatic term
     // Internal energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+	// Also get residual energy from -P (Vresn+1-Vresn)/Vresn+1 = -P delVres
     double avgP = 0.5*(P0+Pfinal);
 	double delVres = 1. - 1./detdFres;
     mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-avgP*delVres);
-	
 	
     // heat energy is Cv dT  - dPhi
 	// Here do Cv dT term and dPhi is done later
@@ -369,15 +375,16 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,doub
 }
 
 // get trial deviatoric stress tensor based on trial B
+// Note that input J23 is actually J^(2/3)/Jres
 Tensor HEIsotropic::GetTrialDevStressTensor(Tensor *B,double J23,int np,double Gred) const
 {
-    // Trial specific Kirchhoff Stress Tensor
+    // Trial Kirchhoff Stress Tensor / rho0 = J Cauchy/rho0 = Cauchy/rho
     Tensor strial;
 	double J23normal = 3.*J23;
     strial.xx = Gred*(2.*B->xx-B->yy-B->zz)/J23normal;
     strial.yy = Gred*(2.*B->yy-B->xx-B->zz)/J23normal;
     //strial.zz = Gred*(2.*B->zz-B->xx-B->yy)/J23normal;
-	strial.zz = -(strial.xx+strial.yy);
+	strial.zz = -(strial.xx+strial.yy);			// slightly faster and making use of traceless
     strial.xy = Gred*B->xy/J23;
     if(np==THREED_MPM)
     {   strial.xz = Gred*B->xz/J23;

@@ -24,6 +24,7 @@ class Mooney : public HyperElastic
 {
     public:
         double G1,G2;
+		double Etens,nu;
         bool rubber;
 		// double aI,betaI		// isotropic expanion defined in super classes
  
@@ -51,10 +52,12 @@ class Mooney : public HyperElastic
 		virtual int MaterialTag() const;
         virtual double GetHistory(int,char *) const;
         virtual bool SupportsArtificialViscosity(void) const;
+		virtual double GetCurrentRelativeVolume(MPMBase *) const;
 		
     protected:
 		double G1sp, G2sp;
 		double gamma0;
+		int J_History;
 };
 
 #endif
