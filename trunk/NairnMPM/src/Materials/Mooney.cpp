@@ -16,12 +16,16 @@
 Mooney::Mooney()
 {
 }
+
 // Constructors with arguments 
 Mooney::Mooney(char *matName) : HyperElastic(matName)
 {
-	G1 = -1.;			// required
+	G1 = -1.;			// Must enter K and G1 OR Etens and nu
+	Etens = -1.;
+	nu = -2.;
 	G2 = 0.;			// zero is neo-Hookean
     rubber = FALSE;     // not a rubber
+	J_History = 0;
 }
 
 #pragma mark Mooney::Initialization
@@ -31,7 +35,18 @@ void Mooney::PrintMechanicalProperties(void) const
 {
 	PrintProperty("G1",G1,"");
 	PrintProperty("G2",G2,"");
-	PrintProperty("K",Kbulk,"");
+	if(nu<0.5)
+		PrintProperty("K",Kbulk,"");
+	else
+		cout << "K = infinite";
+	cout << endl;
+	
+	PrintProperty("E",Etens,"");
+	PrintProperty("nu",nu,"");
+	if(nu==0.5)
+		cout << "incompressible";
+	else
+		PrintProperty("lam",nu*Etens/(1.+nu)/(1.-2.*nu),"");
 	cout << endl;
 	
 	PrintProperty("a",aI,"");
@@ -67,6 +82,12 @@ char *Mooney::InputMat(char *xName,int &input)
     else if(strcmp(xName,"G2")==0)
         return (char *)&G2;
     
+    else if(strcmp(xName,"E")==0)
+        return (char *)&Etens;
+    
+    else if(strcmp(xName,"nu")==0)
+        return (char *)&nu;
+    
     else if(strcmp(xName,"IdealRubber")==0)
     {   input = NOT_NUM;
         rubber = TRUE;
@@ -79,8 +100,33 @@ char *Mooney::InputMat(char *xName,int &input)
 // verify settings and some initial calculations
 const char *Mooney::VerifyAndLoadProperties(int np)
 {
-    if(G1<0. || Kbulk < 0. || G2<0.)
-		return "Mooney-Rivlin Hyperelastic material needs non-negative G1, G2, and K";
+	// must enter G1 and Kbulk OR Etens and nu
+	if(G1>=0. && Kbulk>=0.)
+	{	if(Etens>=0. || nu>=-1.)
+			return "Mooney-Rivlin Hyperelastic material needs K and G1 OR E and nu";
+		Etens = 9.*Kbulk*G1/(3.*Kbulk+G1);
+		nu = (3.*Kbulk-2.*G1)/(6.*Kbulk+2.*G1);
+	}
+	else if(G1>=0. || Kbulk>=0. || Etens<0. || nu<-1.)
+	{	return "Mooney-Rivlin Hyperelastic material needs K and G1 OR E and nu";
+	}
+	else
+	{	// has Etens and nu
+		if(nu>0.5)
+			return "Mooney-Rivlin Hyperelastic Poisson's ratio must be between -1 and 1/2";
+		
+		// get G1+G2 equal to low strain shear modulus
+		G1 = Etens/(2.*(1.+nu)) - G2;
+		
+		// bulk modulus, but allow membrane to be incompressible
+		if(nu<0.5)
+			Kbulk = Etens/(3.*(1-2.*nu));
+		else 
+			return "Mooney-Rivlin Hyperelastic Poisson's ratio for solid material must be less than 1/2";
+	}
+    
+    if(G2<0.)
+		return "Mooney-Rivlin Hyperelastic material needs non-negative G2";
     
     if(UofJOption<HALF_J_SQUARED_MINUS_1_MINUS_LN_J && UofJOption>LN_J_SQUARED)
 		return "Mooney-Rivlin dilational energy (UJOption) must be 0, 1, or 2";
@@ -98,6 +144,8 @@ const char *Mooney::VerifyAndLoadProperties(int np)
 	return HyperElastic::VerifyAndLoadProperties(np);
 }
 
+#pragma mark Mooney::History Data
+
 // Store J, which is calculated incrementally, and available for archiving
 // initialize to 1
 char *Mooney::InitHistoryData(void)
@@ -105,6 +153,16 @@ char *Mooney::InitHistoryData(void)
 	double *p = CreateAndZeroDoubles(1);
 	*p=1.;
 	return (char *)p;
+}
+
+// archive material data for this material type when requested.
+double Mooney::GetHistory(int num,char *historyPtr) const
+{   double history=0.;
+    if(num==1)
+    {	double *J=(double *)historyPtr;
+        history=*J;
+    }
+    return history;
 }
 
 #pragma mark Mooney::Methods
@@ -130,12 +188,9 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     Tensor *B = mptr->GetElasticLeftCauchyTensor();
 	
     // account for residual stresses
-	// Divide J bt resStretch3 adn elements of B by resStretch2
 	double dresStretch,resStretch = GetResidualStretch(mptr,dresStretch,res);
 	double resStretch2 = resStretch*resStretch;
-	double resStretch3 = resStretch2*resStretch;
-	double G1eff = G1sp/resStretch2;
-	double G2eff = G2sp/(resStretch2*resStretch2);
+	double Jres = resStretch2*resStretch;
 
 	// Deformation gradients and Cauchy tensor differ in plane stress
 	if(np==PLANE_STRESS_MPM)
@@ -150,61 +205,39 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 		// Newton-Rapheson starting at B.zz = 1
 		// In tests finds answer in 3 or less steps
 		Tensor *ep=mptr->GetStrainTensor();
-		double xn16,xn12,xnp1,xn = 1.+ep->zz;
-		double fx,fxp,J13,J0,J2;
+		double xn16,xn12,xnp1,xn = (1.+ep->zz)*(1.+ep->zz);
+		double fx,fxp,J13,J0,J2,Jeff;
 		int iter=1;
+        double mJ2P,mdJ2PdJ;
         
-        // solution for B.zz in xn and J = sqrt(xn*arg)/resStretch3 with dJ/dxn = arg/(2 sqrt(xn*arg) resStretch3)
-        // Solving f=0 where f = 3J^2 Kterm + G1'(2*xn-arg2)J^(1/3) + G2'(xn*arg2 - 2*arg)/J^(1/3)
-		//			where J^(1/3) = (xn*arg)^(1/6)/resStretch, G1' = G1eff, G2' = G2eff
-		// df/dxn = 3 d(J^2 Kterm)/dJ dJ/dxn
-		//				+ G1'(2+(2*xn-arg2)/(3J)*dJ/dxn)J^(1/3)
-		//				+ G2'(arg2-(xn*arg2-2*arg)/(3J)*dJ/dxn)/J^(1/3)
+        // solution for B.zz in xn and J = sqrt(xn*arg) with dJ/dxn = arg/(2 sqrt(xn*arg))
+        // Solving f=0 where f = 3J^2 Kterm + Jres*G1(2*xn-arg2)J^(1/3) + Jres*G2(xn*arg2 - 2*arg)/J^(1/3)
+		//			where J^(1/3) = (xn*arg)^(1/6)
 		// df/dxn = d(3J^2 Kterm)/dJ dJ/dxn
-		//				+ G1'((14*xn-arg2)/(6*xn))J^(1/3)
-		//				+ G2'((5*xn*arg2+2*arg)/(6 xn))/J^(1/3)
-		while(iter<10)
+		//				+ Jres*G1((14*xn-arg2)/(6*xn))J^(1/3)
+		//				+ Jres*G2((5*xn*arg2+2*arg)/(6*xn))/J^(1/3)
+		while(iter<20)
 		{	xn16 = pow(xn,1./6.);
 			xn12 = sqrt(xn);
-			J13 = xn16*arg16/resStretch;
-			J0 = xn12*arg12/resStretch3;
+			J13 = xn16*arg16;
+			J0 = xn12*arg12;
 			J2 = J0*J0;
+            Jeff = J0/Jres;
             
-            switch(UofJOption)
-            {   case J_MINUS_1_SQUARED:
-                    // This is for 3J^2Kterm = 3KJ^2(J-1)
-                    fx = 3.*Ksp*J2*(J0-1.);
-					// d(3K(J^3-J^2))/dJ dJ/dxn = 1.5(3J^2-2J) arg12/(xn12 resStretch3)
-                    fxp = 1.5*Ksp*(3.*J2-2.*J0)*arg12/(xn12*resStretch3);
-                    break;
-                    
-                case LN_J_SQUARED:
-                    // This is for 3J^2Kterm = 3J K(ln J) = 3J(K/2)(ln J^2)
-                    fx = 1.5*Ksp*J0*log(J2);
-					// d(1.5 J K(ln J^2))/dJ dJ/dxn = 0.75K(2 + ln J^2) arg12/(xn12 resStretch3)
-                    fxp = 0.75*Ksp*arg12*(2.+log(J2))/(xn12*resStretch3);
-                    break;
-                    
-                case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
-                default:
-                    // This is for 3J^2 Kterm = 3(K/2)J^2(J-1/J) = 1.5 K J(J^2-1)
-                    fx = 1.5*Ksp*J0*(J2-1.);
-					// d(1.5 K(J^3-J))/dJ dJ/dxn = 0.75 K (3J^2-1) arg12/(xn12 resStretch3)
-                    fxp = 0.75*Ksp*arg12*(3.*J2-1.)/(xn12*resStretch3);
-                    break;
-            }
-            
-            // Now add the shear terms
-            fx += G1eff*(2.*xn-arg2)*J13 + G2eff*(xn*arg2-2.*arg)/J13;
-            fxp += G1eff*J13*(14.*xn-arg2)/(6.*xn) + G2eff*(2.*arg+5.*xn*arg2)/(6.*J13*xn);
+            // get f and df/dxn
+            GetNewtonPressureTerms(Jeff, Ksp, mJ2P, mdJ2PdJ);
+            fx = 3.*Jres*mJ2P + G1sp*(2.*xn-arg2)*J13 + G2sp*(xn*arg2-2.*arg)/J13;
+            fxp = (1.5*J0/xn)*mdJ2PdJ + G1sp*J13*(14.*xn-arg2)/(6.*xn) + G2sp*(2.*arg+5.*xn*arg2)/(6.*J13*xn);
             
             // new prediction for solution
 			xnp1 = xn - fx/fxp;
 			//cout << iter << ": " << xn << "," << xnp1 << "," << fabs(xn-xnp1) << endl;
-			if(fabs(xn-xnp1)<1e-7) break;
+			if(fabs(xn-xnp1)<1e-10) break;
 			xn = xnp1;
 			iter+=1;
 		}
+        
+        if(iter>=20) cout << "# Not enough iterations in plane stress Mooney-Rivlin material" << endl;
         
         // Done and xn = new B->zz = Fzz^2 = dFzz*(old Bzz)*dFzz = dFzz^2*(old Bzz),
 		//    and Fzz = dFzz*(old Fzz) = 1 + ep->zz
@@ -219,15 +252,17 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 	}
     
     // Increment J and save it in history data
-    double Jtot = detDf*mptr->GetHistoryDble();
-    mptr->SetHistoryDble(Jtot);
+    double J = detDf*mptr->GetHistoryDble();
+    mptr->SetHistoryDble(J);
 	
 	// account for residual stresses
-	double J = Jtot/resStretch3;
+	double Jeff = J/Jres;
 	
     // update pressure
 	double p0=mptr->GetPressure();
-	double Kterm = J*GetVolumetricTerms(J,Ksp);       // times J to get Kirchoff stress
+	double Kterm = J*GetVolumetricTerms(Jeff,Ksp);       // times J to get Kirchoff stress
+	
+	//Kterm /= Jres;		// this uses Jeff to get Kirchoff stress
     
     // artifical viscosity
     double delV = 1. - 1./detDf;                        // total volume change
@@ -254,27 +289,30 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     // i.e.. Get (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
 	double J23 = pow(J, 2./3.);
 	double J43 = J23*J23;
-	double JforG1 = J23;				// J^(2/3) = J^(5/3)/J to get Kirchoff stress
-	double JforG2 = J43;                // J^(4/3) = J^(7/3)/J to get Kirchoff stress
+	double JforG1 = J23/Jres;                   // J^(5/3)/(Jres J) = J^(2/3)/Jres to get Kirchoff stress
+	double JforG2 = J43/Jres;                   // J^(7/3)/(Jres J) = J^(4/3)/Jres to get Kirchoff stress
+	
+	//JforG1 *= Jres;			// this uses Jeff to get Kirchoff stress
+	//JforG2 *= Jres;			// this uses Jeff to get Kirchoff stress
     
 	// find deviatoric (Cauchy stress)J/rho0 = deviatoric (Kirchoff stress)/rho0
 	Tensor *sp=mptr->GetStressTensor();
     
-	sp->xx = (2*B->xx-B->yy-B->zz)*G1eff/(3.*JforG1)
-            + (B->xx*(B->yy+B->zz)-2*B->yy*B->zz-B->xy*B->xy)*G2eff/(3.*JforG2);
-	sp->yy = (2*B->yy-B->xx-B->zz)*G1eff/(3.*JforG1)
-            + (B->yy*(B->xx+B->zz)-2*B->xx*B->zz-B->xy*B->xy)*G2eff/(3.*JforG2);
-	sp->zz = (2*B->zz-B->xx-B->yy)*G1eff/(3.*JforG1)
-            + (B->zz*(B->xx+B->yy)-2*B->xx*B->yy+2.*B->xy*B->xy)*G2eff/(3.*JforG2);
-	sp->xy = B->xy*G1eff/JforG1 + (B->zz*B->xy)*G2eff/JforG2;
+	sp->xx = (2*B->xx-B->yy-B->zz)*G1sp/(3.*JforG1)
+            + (B->xx*(B->yy+B->zz)-2*B->yy*B->zz-B->xy*B->xy)*G2sp/(3.*JforG2);
+	sp->yy = (2*B->yy-B->xx-B->zz)*G1sp/(3.*JforG1)
+            + (B->yy*(B->xx+B->zz)-2*B->xx*B->zz-B->xy*B->xy)*G2sp/(3.*JforG2);
+	sp->zz = (2*B->zz-B->xx-B->yy)*G1sp/(3.*JforG1)
+            + (B->zz*(B->xx+B->yy)-2*B->xx*B->yy+2.*B->xy*B->xy)*G2sp/(3.*JforG2);
+	sp->xy = B->xy*G1sp/JforG1 + (B->zz*B->xy)*G2sp/JforG2;
     
     if(np==THREED_MPM)
-    {   sp->xx += (2.*B->yz*B->yz-B->xz*B->xz)*G2eff/(3.*JforG2);
-        sp->yy += (2.*B->xz*B->xz-B->yz*B->yz)*G2eff/(3.*JforG2);
-        sp->zz -= (B->xz*B->xz+B->yz*B->yz)*G2eff/(3.*JforG2);
-        sp->xy -= B->xz*B->yz*G2eff/JforG2;
-	    sp->xz = B->xz*G1eff/JforG1 + (B->yy*B->xz-B->xy*B->yz)*G2eff/JforG2;
-        sp->yz = B->yz*G1eff/JforG1 + (B->xx*B->yz-B->xy*B->xz)*G2eff/JforG2;
+    {   sp->xx += (2.*B->yz*B->yz-B->xz*B->xz)*G2sp/(3.*JforG2);
+        sp->yy += (2.*B->xz*B->xz-B->yz*B->yz)*G2sp/(3.*JforG2);
+        sp->zz -= (B->xz*B->xz+B->yz*B->yz)*G2sp/(3.*JforG2);
+        sp->xy -= B->xz*B->yz*G2sp/JforG2;
+	    sp->xz = B->xz*G1sp/JforG1 + (B->yy*B->xz-B->xy*B->yz)*G2sp/JforG2;
+        sp->yz = B->yz*G1sp/JforG1 + (B->xx*B->yz-B->xy*B->xz)*G2sp/JforG2;
     }
     
 	// incremental work energy = shear energy
@@ -292,19 +330,19 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 	double Kratio;				// = rho_0 K/(rho K_0)
 	switch(UofJOption)
 	{   case J_MINUS_1_SQUARED:
-			Kratio = J;
+			Kratio = Jeff;
 			break;
 			
 		case LN_J_SQUARED:
-			Kratio = (1-log(J))/J;
+			Kratio = (1-log(Jeff))/(Jeff*Jeff);
 			break;
 			
 		case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
 		default:
-			Kratio = J + 1./J;
+			Kratio = 0.5*(Jeff + 1./Jeff);
 			break;
 	}
-    double dTq0 = -Jtot*Kratio*gamma0*mptr->pPreviousTemperature*delV;
+    double dTq0 = -J*Kratio*gamma0*mptr->pPreviousTemperature*delV;
     
     // thermodynamics depends on whether or not this is a rubber
     if(rubber)
@@ -356,18 +394,13 @@ double Mooney::ShearWaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt(1.e
 // return material type
 const char *Mooney::MaterialType(void) const { return "Mooney-Rivlin Hyperelastic"; }
 
-// archive material data for this material type when requested.
-double Mooney::GetHistory(int num,char *historyPtr) const
-{   double history=0.;
-    if(num==1)
-    {	double *J=(double *)historyPtr;
-        history=*J;
-    }
-    return history;
-}
-
 // if a subclass material supports artificial viscosity, override this and return TRUE
 bool Mooney::SupportsArtificialViscosity(void) const { return TRUE; }
 
+// Get current relative volume change = J (which this material tracks)
+// All subclasses must track J in J_History (or override this method)
+double Mooney::GetCurrentRelativeVolume(MPMBase *mptr) const
+{   return mptr->GetHistoryDble(J_History);
+}
 
 

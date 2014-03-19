@@ -45,6 +45,7 @@ class HyperElastic : public MaterialBase
     
         // Accessors
         virtual double GetVolumetricTerms(double,double) const;
+        virtual void GetNewtonPressureTerms(double,double,double &,double &) const;
         virtual double GetCurrentRelativeVolume(MPMBase *) const;
     
     protected:
