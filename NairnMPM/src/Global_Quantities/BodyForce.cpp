@@ -74,10 +74,18 @@ void BodyForce::AddGravity(Vector *theFrc,double mp,double wt)
 // the damping
 double BodyForce::GetDamping(double utime)
 {
-	if(gridfunction==NULL) return damping;
-	
-	varTime=1000.*utime;
-	return gridfunction->Val();
+    double totalDamping = 0.;
+    
+    // simple damping
+	if(gridfunction==NULL)
+        totalDamping = damping;
+    else
+	{   varTime=1000.*utime;
+        totalDamping = gridfunction->Val();
+    }
+    
+    // add feedback damping
+    return totalDamping + GetAlpha();
 }
 
 // display gravity settings

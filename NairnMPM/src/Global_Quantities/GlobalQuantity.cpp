@@ -483,7 +483,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 			break;
 
 		case FEEDBACK_ALPHA:
-			value=bodyFrc.GetAlpha();
+			value=bodyFrc.GetDamping(mtime);
 			break;
 		
 		case HISTORY_VARIABLE:
