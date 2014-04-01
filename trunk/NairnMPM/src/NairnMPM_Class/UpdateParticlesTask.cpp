@@ -93,7 +93,7 @@ void UpdateParticlesTask::Execute(void)
 			
 			// update position in mm and velocity in mm/sec
 			mpmptr->MovePosition(timestep,&delv);
-			mpmptr->MoveVelocity(timestep,bodyFrc.GetAlpha(),&delv);
+			mpmptr->MoveVelocity(timestep,0.,&delv);
 			
 			// update transport values
 			nextTransport=transportTasks;
