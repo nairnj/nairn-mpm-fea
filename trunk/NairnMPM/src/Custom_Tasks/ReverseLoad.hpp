@@ -23,6 +23,8 @@ class ReverseLoad : public CustomTask
         int crackNum,style;
         double finalLength,finalTime;
         bool reversed;
+		int quantity,subcode,whichMat;
+		char quant[64];
         
         // constructors and destructors
         ReverseLoad();

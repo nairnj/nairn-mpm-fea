@@ -852,8 +852,8 @@ PropagateTask.o : $(PropagateTask).cpp $(dprefix) $(PropagateTask).hpp $(CalcJKT
 			$(CrackHeader).hpp $(CrackSegment).hpp $(TransportTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PropagateTask).cpp
 ReverseLoad.o : $(ReverseLoad).cpp $(dprefix) $(ReverseLoad).hpp $(PropagateTask).hpp $(NairnMPM).hpp \
-			$(MatPtLoadBC).hpp $(MaterialBase).hpp $(CustomTask).hpp $(BoundaryCondition).hpp \
-			$(CommonException).hpp $(CrackHeader).hpp $(MatPtLoadBC).hpp $(MPMBase).hpp
+			$(MatPtLoadBC).hpp $(MaterialBase).hpp $(CustomTask).hpp $(BoundaryCondition).hpp $(GlobalQuantity).hpp \
+			$(CommonException).hpp $(CrackHeader).hpp $(MatPtLoadBC).hpp $(MPMBase).hpp $(ArchiveData).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ReverseLoad).cpp
 TransportTask.o : $(TransportTask).cpp $(dprefix) $(TransportTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TransportTask).cpp

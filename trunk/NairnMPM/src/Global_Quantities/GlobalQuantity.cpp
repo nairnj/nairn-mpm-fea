@@ -41,125 +41,7 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 	char nameStr[200];
 	whichMat=whichOne;
 	
-	// set quantity and subcode
-	subcode=0;
-	if(strcmp(quant,"sxx")==0 || strcmp(quant,"sRR")==0)
-		quantity=AVG_SXX;
-	else if(strcmp(quant,"syy")==0 || strcmp(quant,"sZZ")==0)
-		quantity=AVG_SYY;
-	else if(strcmp(quant,"sxy")==0 || strcmp(quant,"sRZ")==0)
-		quantity=AVG_SXY;
-	else if(strcmp(quant,"szz")==0 || strcmp(quant,"sTT")==0)
-		quantity=AVG_SZZ;
-	else if(strcmp(quant,"sxz")==0)
-		quantity=AVG_SXZ;
-	else if(strcmp(quant,"syz")==0)
-		quantity=AVG_SYZ;
-	else if(strcmp(quant,"exx")==0 || strcmp(quant,"eRR")==0)
-		quantity=AVG_EXX;
-	else if(strcmp(quant,"eyy")==0 || strcmp(quant,"eZZ")==0)
-		quantity=AVG_EYY;
-	else if(strcmp(quant,"exy")==0 || strcmp(quant,"eRZ")==0)
-		quantity=AVG_EXY;
-	else if(strcmp(quant,"ezz")==0 || strcmp(quant,"eTT")==0)
-		quantity=AVG_EZZ;
-	else if(strcmp(quant,"exz")==0)
-		quantity=AVG_EXZ;
-	else if(strcmp(quant,"eyz")==0)
-		quantity=AVG_EYZ;
-	else if(strcmp(quant,"exxe")==0 || strcmp(quant,"eRRe")==0)
-		quantity=AVG_EXXE;
-	else if(strcmp(quant,"eyye")==0 || strcmp(quant,"eZZe")==0)
-		quantity=AVG_EYYE;
-	else if(strcmp(quant,"exye")==0 || strcmp(quant,"eRZe")==0)
-		quantity=AVG_EXYE;
-	else if(strcmp(quant,"ezze")==0 || strcmp(quant,"eTTe")==0)
-		quantity=AVG_EZZE;
-	else if(strcmp(quant,"exze")==0)
-		quantity=AVG_EXZE;
-	else if(strcmp(quant,"eyze")==0)
-		quantity=AVG_EYZE;
-	else if(strcmp(quant,"exxp")==0 || strcmp(quant,"eRRp")==0)
-		quantity=AVG_EXXP;
-	else if(strcmp(quant,"eyyp")==0 || strcmp(quant,"eZZp")==0)
-		quantity=AVG_EYYP;
-	else if(strcmp(quant,"exyp")==0 || strcmp(quant,"eRZp")==0)
-		quantity=AVG_EXYP;
-	else if(strcmp(quant,"ezzp")==0 || strcmp(quant,"eTTp")==0)
-		quantity=AVG_EZZP;
-	else if(strcmp(quant,"exzp")==0)
-		quantity=AVG_EXZP;
-	else if(strcmp(quant,"eyzp")==0)
-		quantity=AVG_EYZP;
-	else if(strcmp(quant,"Kinetic Energy")==0)
-		quantity=KINE_ENERGY;
-	else if(strcmp(quant,"Grid Kinetic Energy")==0)
-		quantity=GRID_KINE_ENERGY;
-	else if(strcmp(quant,"Strain Energy")==0)
-		quantity=STRAIN_ENERGY;
-	else if(strcmp(quant,"Heat Energy")==0 || strcmp(quant,"Thermal Energy")==0)
-		quantity=HEAT_ENERGY;
-	else if(strcmp(quant,"Entropy")==0)
-		quantity=ENTROPY_ENERGY;
-	else if(strcmp(quant,"Internal Energy")==0)
-		quantity=INTERNAL_ENERGY;
-	else if(strcmp(quant,"Helmholz Energy")==0)
-		quantity=HELMHOLZ_ENERGY;
-	else if(strcmp(quant,"Interface Energy")==0)
-		quantity=INTERFACE_ENERGY;
-	else if(strcmp(quant,"Work Energy")==0)
-		quantity=WORK_ENERGY;
-	else if(strcmp(quant,"Plastic Energy")==0)
-		quantity=PLAS_ENERGY;
-	else if(strcmp(quant,"velx")==0 || strcmp(quant,"velR")==0)
-		quantity=AVG_VELX;
-	else if(strcmp(quant,"vely")==0 || strcmp(quant,"velZ")==0)
-		quantity=AVG_VELY;
-	else if(strcmp(quant,"velz")==0)
-		quantity=AVG_VELZ;
-	else if(strcmp(quant,"dispx")==0 || strcmp(quant,"dispR")==0)
-		quantity=AVG_DISPX;
-	else if(strcmp(quant,"dispy")==0 || strcmp(quant,"dispZ")==0)
-		quantity=AVG_DISPY;
-	else if(strcmp(quant,"dispz")==0)
-		quantity=AVG_DISPZ;
-	else if(strcmp(quant,"temp")==0)
-		quantity=AVG_TEMP;
-	else if(strcmp(quant,"concentration")==0)
-		quantity=WTFRACT_CONC;
-	else if(strcmp(quant,"Step number")==0)
-		quantity=STEP_NUMBER;
-	else if(strcmp(quant,"CPU time")==0)
-		quantity=CPU_TIME;
-	else if(strcmp(quant,"Elapsed time")==0)
-		quantity=ELAPSED_TIME;
-	else if(strcmp(quant,"alpha")==0)
-		quantity=FEEDBACK_ALPHA;
-	else if(strcmp(quant,"contactx")==0 || strcmp(quant,"contactR")==0)
-		quantity=TOT_FCONX;
-	else if(strcmp(quant,"contacty")==0 || strcmp(quant,"contactZ")==0)
-		quantity=TOT_FCONY;
-	else if(strcmp(quant,"contactz")==0)
-		quantity=TOT_FCONZ;
-	else if(strcmp(quant,"reactionx")==0 || strcmp(quant,"reactionR")==0)
-		quantity=TOT_REACTX;
-	else if(strcmp(quant,"reactiony")==0 || strcmp(quant,"reactionZ")==0)
-		quantity=TOT_REACTY;
-	else if(strcmp(quant,"reactionz")==0)
-		quantity=TOT_REACTZ;
-	else
-	{	quantity=UNKNOWN_QUANTITY;
-	
-		// possible a history variable which must be "history n"
-		if(strlen(quant)>7)
-		{	strcpy(nameStr,quant);
-			nameStr[7]=0;
-			if(strcmp(nameStr,"history")==0)
-			{	sscanf(quant,"%*s %d",&subcode);
-				quantity=HISTORY_VARIABLE;
-			}
-		}
-	}
+	quantity = DecodeGlobalQuantity(quant,&subcode);
 	
 	// set name
 	if(whichMat!=0)
@@ -172,7 +54,7 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 	// set color ID
 	colorID=numGlobal % 10;
 	
-	// this object is current the last one
+	// this object is currently the last one
 	SetNextGlobal(NULL);
 	
 	// adjust previous global quantity or set firstGlobal if this is the first one
@@ -184,6 +66,135 @@ GlobalQuantity::GlobalQuantity(char *quant,int whichOne)
 	
 	// count the number of objects
 	numGlobal++;
+}
+
+// decode quant it to quantity ID and subcode (used for history variables)
+int GlobalQuantity::DecodeGlobalQuantity(char *quant,int *hcode)
+{
+	int theQuant;
+	
+	// set quantity and subcode
+	*hcode = 0;
+	if(strcmp(quant,"sxx")==0 || strcmp(quant,"sRR")==0)
+		theQuant=AVG_SXX;
+	else if(strcmp(quant,"syy")==0 || strcmp(quant,"sZZ")==0)
+		theQuant=AVG_SYY;
+	else if(strcmp(quant,"sxy")==0 || strcmp(quant,"sRZ")==0)
+		theQuant=AVG_SXY;
+	else if(strcmp(quant,"szz")==0 || strcmp(quant,"sTT")==0)
+		theQuant=AVG_SZZ;
+	else if(strcmp(quant,"sxz")==0)
+		theQuant=AVG_SXZ;
+	else if(strcmp(quant,"syz")==0)
+		theQuant=AVG_SYZ;
+	else if(strcmp(quant,"exx")==0 || strcmp(quant,"eRR")==0)
+		theQuant=AVG_EXX;
+	else if(strcmp(quant,"eyy")==0 || strcmp(quant,"eZZ")==0)
+		theQuant=AVG_EYY;
+	else if(strcmp(quant,"exy")==0 || strcmp(quant,"eRZ")==0)
+		theQuant=AVG_EXY;
+	else if(strcmp(quant,"ezz")==0 || strcmp(quant,"eTT")==0)
+		theQuant=AVG_EZZ;
+	else if(strcmp(quant,"exz")==0)
+		theQuant=AVG_EXZ;
+	else if(strcmp(quant,"eyz")==0)
+		theQuant=AVG_EYZ;
+	else if(strcmp(quant,"exxe")==0 || strcmp(quant,"eRRe")==0)
+		theQuant=AVG_EXXE;
+	else if(strcmp(quant,"eyye")==0 || strcmp(quant,"eZZe")==0)
+		theQuant=AVG_EYYE;
+	else if(strcmp(quant,"exye")==0 || strcmp(quant,"eRZe")==0)
+		theQuant=AVG_EXYE;
+	else if(strcmp(quant,"ezze")==0 || strcmp(quant,"eTTe")==0)
+		theQuant=AVG_EZZE;
+	else if(strcmp(quant,"exze")==0)
+		theQuant=AVG_EXZE;
+	else if(strcmp(quant,"eyze")==0)
+		theQuant=AVG_EYZE;
+	else if(strcmp(quant,"exxp")==0 || strcmp(quant,"eRRp")==0)
+		theQuant=AVG_EXXP;
+	else if(strcmp(quant,"eyyp")==0 || strcmp(quant,"eZZp")==0)
+		theQuant=AVG_EYYP;
+	else if(strcmp(quant,"exyp")==0 || strcmp(quant,"eRZp")==0)
+		theQuant=AVG_EXYP;
+	else if(strcmp(quant,"ezzp")==0 || strcmp(quant,"eTTp")==0)
+		theQuant=AVG_EZZP;
+	else if(strcmp(quant,"exzp")==0)
+		theQuant=AVG_EXZP;
+	else if(strcmp(quant,"eyzp")==0)
+		theQuant=AVG_EYZP;
+	else if(strcmp(quant,"Kinetic Energy")==0)
+		theQuant=KINE_ENERGY;
+	else if(strcmp(quant,"Grid Kinetic Energy")==0)
+		theQuant=GRID_KINE_ENERGY;
+	else if(strcmp(quant,"Strain Energy")==0)
+		theQuant=STRAIN_ENERGY;
+	else if(strcmp(quant,"Heat Energy")==0 || strcmp(quant,"Thermal Energy")==0)
+		theQuant=HEAT_ENERGY;
+	else if(strcmp(quant,"Entropy")==0)
+		theQuant=ENTROPY_ENERGY;
+	else if(strcmp(quant,"Internal Energy")==0)
+		theQuant=INTERNAL_ENERGY;
+	else if(strcmp(quant,"Helmholz Energy")==0)
+		theQuant=HELMHOLZ_ENERGY;
+	else if(strcmp(quant,"Interface Energy")==0)
+		theQuant=INTERFACE_ENERGY;
+	else if(strcmp(quant,"Work Energy")==0)
+		theQuant=WORK_ENERGY;
+	else if(strcmp(quant,"Plastic Energy")==0)
+		theQuant=PLAS_ENERGY;
+	else if(strcmp(quant,"velx")==0 || strcmp(quant,"velR")==0)
+		theQuant=AVG_VELX;
+	else if(strcmp(quant,"vely")==0 || strcmp(quant,"velZ")==0)
+		theQuant=AVG_VELY;
+	else if(strcmp(quant,"velz")==0)
+		theQuant=AVG_VELZ;
+	else if(strcmp(quant,"dispx")==0 || strcmp(quant,"dispR")==0)
+		theQuant=AVG_DISPX;
+	else if(strcmp(quant,"dispy")==0 || strcmp(quant,"dispZ")==0)
+		theQuant=AVG_DISPY;
+	else if(strcmp(quant,"dispz")==0)
+		theQuant=AVG_DISPZ;
+	else if(strcmp(quant,"temp")==0)
+		theQuant=AVG_TEMP;
+	else if(strcmp(quant,"concentration")==0)
+		theQuant=WTFRACT_CONC;
+	else if(strcmp(quant,"Step number")==0)
+		theQuant=STEP_NUMBER;
+	else if(strcmp(quant,"CPU time")==0)
+		theQuant=CPU_TIME;
+	else if(strcmp(quant,"Elapsed time")==0)
+		theQuant=ELAPSED_TIME;
+	else if(strcmp(quant,"alpha")==0)
+		theQuant=FEEDBACK_ALPHA;
+	else if(strcmp(quant,"contactx")==0 || strcmp(quant,"contactR")==0)
+		theQuant=TOT_FCONX;
+	else if(strcmp(quant,"contacty")==0 || strcmp(quant,"contactZ")==0)
+		theQuant=TOT_FCONY;
+	else if(strcmp(quant,"contactz")==0)
+		theQuant=TOT_FCONZ;
+	else if(strcmp(quant,"reactionx")==0 || strcmp(quant,"reactionR")==0)
+		theQuant=TOT_REACTX;
+	else if(strcmp(quant,"reactiony")==0 || strcmp(quant,"reactionZ")==0)
+		theQuant=TOT_REACTY;
+	else if(strcmp(quant,"reactionz")==0)
+		theQuant=TOT_REACTZ;
+	else
+	{	theQuant=UNKNOWN_QUANTITY;
+		
+		// possible a history variable which must be "history n"
+		if(strlen(quant)>7)
+		{	char nameStr[200];
+			strcpy(nameStr,quant);
+			nameStr[7]=0;
+			if(strcmp(nameStr,"history")==0)
+			{	sscanf(quant,"%*s %d",hcode);
+				theQuant=HISTORY_VARIABLE;
+			}
+		}
+	}
+	
+	return theQuant;
 }
 
 /*******************************************************************
@@ -204,11 +215,10 @@ GlobalQuantity *GlobalQuantity::AppendName(char *fline)
 }
 
 // append quantity
-GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
+GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 {
 	int p,numAvged=0;
 	double value=0.,rho,rho0;
-	char numStr[100];
 	int matid,qid=0;
     bool threeD;
 	
@@ -575,8 +585,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(char *fline)
 			break;
 	}
 	
-	sprintf(numStr,"\t%e",value);
-	strcat(fline,numStr);
+	toArchive.push_back(value);
 	
 	// return next one
 	return nextGlobal;
@@ -628,6 +637,8 @@ GlobalQuantity *GlobalQuantity::AppendColor(char *fline)
 	return nextGlobal;
 }
 
+#pragma mark GlobalQuantity::ACCESSORS
+
 // decide if archiving this material
 bool GlobalQuantity::IncludeThisMaterial(int matid)
 {
@@ -641,5 +652,12 @@ bool GlobalQuantity::IncludeThisMaterial(int matid)
 }
 
 // set the next Global
+GlobalQuantity *GlobalQuantity::GetNextGlobal(void) { return nextGlobal; }
 void GlobalQuantity::SetNextGlobal(GlobalQuantity *newGlobal) { nextGlobal=newGlobal; }
+
+// compare to settings
+bool GlobalQuantity::IsSameQuantity(int qval,int qcode,int qmat)
+{	if(quantity==qval && subcode==qcode && qmat==whichMat) return true;
+	return false;
+}
 

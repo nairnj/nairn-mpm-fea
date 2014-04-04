@@ -35,12 +35,17 @@ class GlobalQuantity
         // methods
 		GlobalQuantity *AppendName(char *);
 		GlobalQuantity *AppendColor(char *);
-		GlobalQuantity *AppendQuantity(char *);
+		GlobalQuantity *AppendQuantity(vector<double> &);
 	
 		// accessors
 		bool IncludeThisMaterial(int);
+		GlobalQuantity *GetNextGlobal(void);
 		void SetNextGlobal(GlobalQuantity *);
+		bool IsSameQuantity(int,int,int);
 		
+		// class methods
+		static int DecodeGlobalQuantity(char *,int *);
+	
 	private:
 		int whichMat;
 		int quantity;
