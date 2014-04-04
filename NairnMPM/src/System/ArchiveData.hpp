@@ -77,6 +77,7 @@ class ArchiveData : public CommonArchiveData
 		int GetArchiveContactStepInterval(void);
 		Vector GetLastContactForce(void);
 		void SetLastContactForce(Vector);
+		bool PassedLastArchived(int,double);
 	
 	private:
 		double nextArchTime,nextGlobalTime;
@@ -91,6 +92,7 @@ class ArchiveData : public CommonArchiveData
 		bool doingArchiveContact;					// true if VTK archiving is active
 		float *timeStamp;						// pointer to header location for time
 		Vector lastContactForce;				// last contact force archived
+		vector<double> lastArchived;			// store last global quantitites save to global archive
 #ifdef LOG_PROGRESS
 		char *logFile;							// file for tracking progress
 		double logStartTime;

@@ -358,7 +358,7 @@ void ArchiveData::CreateGlobalFile(void)
     // create and open the file
     if((fp=fopen(globalFile,"w"))==NULL) goto abort;
 	
-	// write color
+	// write color and count archives
 	strcpy(fline,"#setColor");
 	nextGlobal=firstGlobal;
 	while(nextGlobal!=NULL)
@@ -944,15 +944,23 @@ void ArchiveData::GlobalArchive(double atime)
     if(atime<nextGlobalTime) return;
     nextGlobalTime+=globalTime;
 	
-	// time in ms
-	char fline[1000];
-	sprintf(fline,"%g",1000.*atime);
+	// clear previous ones
+	lastArchived.clear();
 	
 	// each global quantity
 	GlobalQuantity *nextGlobal=firstGlobal;
 	while(nextGlobal!=NULL)
-	    nextGlobal=nextGlobal->AppendQuantity(fline);
+	    nextGlobal=nextGlobal->AppendQuantity(lastArchived);
     
+	// time in ms
+	char fline[1000],numStr[100];
+	sprintf(fline,"%g",1000.*atime);
+	int i;
+	for(i=0;i<lastArchived.size();i++)
+	{	sprintf(numStr,"\t%e",lastArchived[i]);
+		strcat(fline,numStr);
+	}
+	
 	// append to global results file
 	ofstream global;
 	try
@@ -1330,6 +1338,21 @@ int ArchiveData::GetArchiveContactStepInterval(void)
 // store recent contact force in case needed for global archiving
 Vector ArchiveData::GetLastContactForce(void) { return lastContactForce; }
 void ArchiveData::SetLastContactForce(Vector fcontact) { lastContactForce=fcontact; }
+
+// check if passed last archve
+bool ArchiveData::PassedLastArchived(int qIndex,double criticalValue)
+{
+	// if no archived yet say false or invalid
+	if(qIndex<0 || qIndex>=lastArchived.size()) return false;
+	
+	//cout << qIndex << "," << criticalValue << "," << lastArchived[qIndex] << "," << (lastArchived[qIndex]>=criticalValue) << endl;
+	
+	if(criticalValue>=0.)
+		return lastArchived[qIndex] >= criticalValue;
+	else
+		return lastArchived[qIndex] <= criticalValue;
+	
+}
 
 
 

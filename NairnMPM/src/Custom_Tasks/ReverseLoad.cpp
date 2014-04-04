@@ -9,7 +9,11 @@
 	
 	Parameters
 		crackNum: 0 (default) for any crack on # for crack number (int)
-		maxLength: length to change (default 10) (double)
+		maxLength: length to change (default 10) (double), for global is is value
+		quantity: >=0 to be global quantity instead of crack number
+		subcode: used weh quantity is a history variable
+		whichMat: used when quantity is for one material type
+		maxValue: max value (stored in maxLength)
 		style: What to do when maxLength is reached
 			0: REVERSE (default): Reverse all linear loads and stop for good when
 					loads drop to zero again. Also reverse all rigid particles.
@@ -29,8 +33,12 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/RigidMaterial.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "Global_Quantities/GlobalQuantity.hpp"
+#include "System/ArchiveData.hpp"
 
 #pragma mark INITIALIZE
+
+int ignoreArg;
 
 // Constructors
 ReverseLoad::ReverseLoad()
@@ -39,6 +47,8 @@ ReverseLoad::ReverseLoad()
     finalLength=10.;	// final length in mm
     reversed=FALSE;
     style=REVERSE;
+	quantity = -1;
+	whichMat = 0;
 }
 
 // Return name of this task
@@ -55,7 +65,7 @@ char *ReverseLoad::InputParam(char *pName,int &input)
     }
     
     // crack length in mm
-    else if(strcmp(pName,"maxLength")==0)
+    else if(strcmp(pName,"maxLength")==0 || strcmp(pName,"maxValue")==0)
     {	input=DOUBLE_NUM;
         return (char *)&finalLength;
     }
@@ -66,7 +76,25 @@ char *ReverseLoad::InputParam(char *pName,int &input)
         return (char *)&style;
     }
     
-    return CustomTask::InputParam(pName,input);
+	// convert to reverse on reaching critical value of a quantity
+    else if(strcmp(pName,"mat")==0)
+    {	input=INT_NUM;
+        return (char *)&whichMat;
+    }
+	
+	// look for "global quantity"
+    else if(strlen(pName)>7)
+	{	strcpy(quant,pName);
+		quant[6]=0;
+		if(strcmp(quant,"global")==0)
+		{	strcpy(quant,&pName[7]);
+			quantity = GlobalQuantity::DecodeGlobalQuantity(quant,&subcode);
+			input=INT_NUM;
+			return (char *)&ignoreArg;
+		}
+    }
+	
+	return CustomTask::InputParam(pName,input);
 }
 
 #pragma mark GENERIC TASK METHODS
@@ -74,36 +102,80 @@ char *ReverseLoad::InputParam(char *pName,int &input)
 // at beginning of analysis
 CustomTask *ReverseLoad::Initialize(void)
 {
-    // skipped if no propagation being done
-    if(propagateTask==NULL)
-    {	reversed=TRUE;
-        return nextTask;
-    }
-    
-    switch(style)
-    {	case HOLD:
-            cout << "Crack stopped and load held if ";
-            break;
-        case NOCHANGE:
-            cout << "Crack stopped and load continued if ";
-            break;
-		case ABORT:
-			cout << "Crack and analysis stopped if ";
-            break;
-		default:
-            style=REVERSE;			// make all others equal to REVERSE
-            cout << "Crack stopped and load reversed to zero if ";
-            break;
-    }
-    
-    if(crackNum==0)
-    {	cout << "any crack length reaches " << finalLength
-            << " mm" << endl;
-    }
-    else
-    {	cout << "crack " << crackNum << " reaches "
-            << finalLength << " mm" << endl;
-    }
+	// is it for a global quantity?
+	if(quantity>=0)
+	{	// finish name
+		if(whichMat!=0)
+			sprintf(quant,"%s mat %d",quant,whichMat);
+		
+		// find the global quantity
+		switch(style)
+		{	case HOLD:
+				cout << "Loading held if ";
+				break;
+			case NOCHANGE:
+				throw CommonException("The ReverseLoad cannot continue with no change when based on global archive value","ReverseLoad::Initialize");
+				break;
+			case ABORT:
+				cout << "Analysis stopped if ";
+				break;
+			default:
+				style=REVERSE;			// make all others equal to REVERSE
+				cout << "Loading reversed to zero if ";
+				break;
+		}
+		cout << quant << " passes " << finalLength << endl;
+		
+		// convert to index
+		int qIndex=0;
+		GlobalQuantity *nextGlobal=firstGlobal;
+		while(nextGlobal!=NULL)
+		{	if(nextGlobal->IsSameQuantity(quantity,subcode,whichMat)) break;
+			qIndex++;
+			nextGlobal=nextGlobal->GetNextGlobal();
+		}
+		
+		// error if not found
+		if(nextGlobal==NULL)
+			throw CommonException("The ReverseLoad global quantity is not available in the current global archives","ReverseLoad::Initialize");
+		
+		// store in quantity
+		quantity = qIndex;
+	}
+	
+	else
+    {	// skipped if no propagation being done
+		if(propagateTask==NULL)
+		{	reversed=TRUE;
+			return nextTask;
+		}
+		
+		switch(style)
+		{	case HOLD:
+				cout << "Crack stopped and load held if ";
+				break;
+			case NOCHANGE:
+				cout << "Crack stopped and load continued if ";
+				break;
+			case ABORT:
+				cout << "Crack and analysis stopped if ";
+				break;
+			default:
+				style=REVERSE;			// make all others equal to REVERSE
+				cout << "Crack stopped and load reversed to zero if ";
+				break;
+		}
+		
+		if(crackNum==0)
+		{	cout << "any crack length reaches " << finalLength
+				<< " mm" << endl;
+		}
+		else
+		{	cout << "crack " << crackNum << " reaches "
+				<< finalLength << " mm" << endl;
+		}
+	}
+	
     return nextTask;
 }
 
@@ -123,68 +195,90 @@ CustomTask *ReverseLoad::FinishForStep(void)
 		return nextTask;
 	}
 	
-	// exit if not propagating
-    if(propagateTask->theResult==NOGROWTH) return nextTask;
-    
-    // check desired crack or all cracks
-    cnum=0;
-    nextCrack=firstCrack;
-    while(nextCrack!=NULL)
-    {	cnum++;
-        if(crackNum==0 || crackNum==cnum)
-        {   // check the length
-            if(nextCrack->Length()>finalLength)
-			{	// is ABORT, then exit analysis now
-				if(style==ABORT)
-					throw CommonException("Crack has reached specified length","ReverseLoad::FinishForStep");
-					
-            	// stop propgation
-                propagateTask->ArrestGrowth(TRUE);
-                cout << "# Crack arrested at time t: " << 1000* mtime << endl;
-
-                // REVERSE: reverse linear loads, zero constant loads, reverse or zero constant velocity rigid particles
-				// HOLD: make linear loads constant, stop constant velocity rigid particles
-				// finalTime will be twice current time, or if any reversed linear loads, the time last one gets to zero
-				finalTime = 2.*mtime;
-                if(style!=NOCHANGE)
-                {   reversed=TRUE;
-					
-					// load BCs
-                    nextLoad=firstLoadedPt;
-                    while(nextLoad!=NULL)
-                    {	if(style==REVERSE)
-                            nextLoad=nextLoad->ReverseLinearLoad(mtime,&finalTime);
-                        else
-                            nextLoad=nextLoad->MakeConstantLoad(mtime);
-                    }
-					
-					// traction BCs
-                    nextTraction=firstTractionPt;
-                    while(nextTraction!=NULL)
-                    {	if(style==REVERSE)
-							nextTraction=(MatPtTractionBC *)nextTraction->ReverseLinearLoad(mtime,&finalTime);
-						else
-							nextTraction=(MatPtTractionBC *)nextTraction->MakeConstantLoad(mtime);
-                    }
-					
-					// reverse rigid particles at constant velocity
-					int p;
-					for(p=nmpmsNR;p<nmpms;p++)
-					{	RigidMaterial *mat = (RigidMaterial *)theMaterials[mpm[p]->MatID()];
-                        if(mat->IsConstantVelocity())
-                        {	if(style==REVERSE)
-                                mpm[p]->ReverseParticle();
-                            else
-                                mpm[p]->StopParticle();
-                        }
-					}
-					
-                }
+	// change to true if critical
+	bool status = false;
+	
+	// check global quantity
+	if(quantity>=0)
+	{	// see if has passed desider value
+		status = archiver->PassedLastArchived(quantity,finalLength);
+	}
+	
+	// check cracks
+	else if(propagateTask->theResult!=NOGROWTH)
+	{	// check desired crack or all cracks
+		cnum=0;
+		nextCrack=firstCrack;
+		while(nextCrack!=NULL)
+		{	cnum++;
+			if(crackNum==0 || crackNum==cnum)
+			{   // found crack, check the length
+				if(nextCrack->Length()>finalLength) status = true;
+				
+				// exit if critical or only one crack to check
+				if(status || crackNum==cnum) break;
 			}
+			nextCrack=(CrackHeader *)nextCrack->GetNextObject();
         }
-        nextCrack=(CrackHeader *)nextCrack->GetNextObject();
     }
     
-    return nextTask;
+	// Reverse load if needed
+	if(status)
+	{	// is ABORT, then exit analysis now
+		if(quantity>=0)
+		{	if(style==ABORT)
+				throw CommonException("Global quantity has reached specified value","ReverseLoad::FinishForStep");
+			
+			cout << "# Critical global quantity reached at time t: " << 1000* mtime << endl;
+		}
+		else
+		{	if(style==ABORT)
+				throw CommonException("Crack has reached specified length","ReverseLoad::FinishForStep");
+			
+			// stop propgation
+			propagateTask->ArrestGrowth(TRUE);
+			cout << "# Crack arrested at time t: " << 1000* mtime << endl;
+		}
+		
+		// REVERSE: reverse linear loads, zero constant loads, reverse or zero constant velocity rigid particles
+		// HOLD: make linear loads constant, stop constant velocity rigid particles
+		// finalTime will be twice current time, or if any reversed linear loads, the time last one gets to zero
+		finalTime = 2.*mtime;
+		if(style!=NOCHANGE)
+		{   reversed=TRUE;
+			
+			// load BCs
+			nextLoad=firstLoadedPt;
+			while(nextLoad!=NULL)
+			{	if(style==REVERSE)
+					nextLoad=nextLoad->ReverseLinearLoad(mtime,&finalTime);
+				else
+					nextLoad=nextLoad->MakeConstantLoad(mtime);
+			}
+			
+			// traction BCs
+			nextTraction=firstTractionPt;
+			while(nextTraction!=NULL)
+			{	if(style==REVERSE)
+					nextTraction=(MatPtTractionBC *)nextTraction->ReverseLinearLoad(mtime,&finalTime);
+				else
+					nextTraction=(MatPtTractionBC *)nextTraction->MakeConstantLoad(mtime);
+			}
+			
+			// reverse rigid particles at constant velocity
+			int p;
+			for(p=nmpmsNR;p<nmpms;p++)
+			{	RigidMaterial *mat = (RigidMaterial *)theMaterials[mpm[p]->MatID()];
+				if(mat->IsConstantVelocity())
+				{	if(style==REVERSE)
+						mpm[p]->ReverseParticle();
+					else
+						mpm[p]->StopParticle();
+				}
+			}
+		}
+	}
+	
+	return nextTask;
 }
 
