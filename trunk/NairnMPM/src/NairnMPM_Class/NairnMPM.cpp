@@ -66,7 +66,7 @@ NairnMPM::NairnMPM()
 	buildnumber=0;					// build number
 #else
 	version=10;						// main version
-	subversion=0;					// subversion (must be < 10)
+	subversion=1;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 #endif
 	mpmApproach=USAVG_METHOD;		// mpm method

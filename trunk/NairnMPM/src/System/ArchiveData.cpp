@@ -38,6 +38,7 @@ ArchiveData::ArchiveData()
 	threeD=FALSE;			// three D calculations
     SetMPMOrder("mYYYYYNYYYNNNNNNNN");		// byte order + defaults + 16 items
     SetCrackOrder("mYNNN");					// byte order + defaults + 3 items
+	timeStamp==NULL;
     
     // contact archive to coordinate with global contact archiving
 	lastArchiveContactStep=0;               // last time contact force was archived
@@ -343,12 +344,10 @@ void ArchiveData::CreateGlobalFile(void)
 	char fline[1000];
 	GlobalQuantity *nextGlobal;
 	
-	// skip if none, but error if tried to define global quantities
+	// skip if none, but use archTime if wants global archive
 	if(globalTime<0.)
-	{   globalTime=-1.;
-		if(firstGlobal!=NULL)
-			throw CommonException("<GlobalArchive> was used but never activated with a <GlobalArchiveTime> command.","ArchiveData::CreateGlobalFile");
-		return;
+	{	if(firstGlobal==NULL) return;
+		globalTime = archTime;
 	}
 	
 	// get relative path name to the file
@@ -432,7 +431,7 @@ void ArchiveData::ArchiveResults(double atime)
 	GlobalArchive(atime);
     
     // see if desired
-    if(atime<nextArchTime) return;
+    if(atime<nextArchTime || timeStamp==NULL) return;
     nextArchTime+=archTime;
 	
 	// exit if using delayed archiving
