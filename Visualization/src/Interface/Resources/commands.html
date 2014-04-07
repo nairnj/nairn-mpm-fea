@@ -440,7 +440,7 @@ Global results are average values over the particles. Specify global result to b
 	<li><code>Helmholz Energy</code> - total Helmholz free energy (A = U - TS) in J</li>
 	<li><code>Interface Energy</code> - total energy associated with cracks having imperfect interfaces in J.</li>
 	<li><code>Plastic Energy</code> - total plastic energy in J</li>
-	<li><code>alpha</code> - the evolving global damping coefficient, &alpha;, when using feedback damping (in 1/sec)</li>
+	<li><code>alpha</code> - the total grid damping coefficient, &alpha;, which evolves when using feedback damping (in 1/sec)</li>
 	<li><code>Step number</code> - the current MPM step number</li>
 	<li><code>Elapsed time</code> - elapsed clock time for the current calculation (in secs)</li>
 	<li><code>CPU time</code> - total CPU time for the current calculation (in secs)</li>
@@ -1177,22 +1177,32 @@ where the name is the history variable number. Two other parameters are:
 
 <dt><a name="ReverseLoad"></a>ReverseLoad</dt>
 
-<dd>This custom task monitors crack lengths. Once any crack or a specified crack reaches a specified crack length, the crack propagation of all cracks stops and various actions can be performed. The parameters are:
+<dd>This custom task monitors crack lengths or any currently archived <a href="#globalarchive">global quantity</a>. To monitor crack lengths, enter the following parameters:
 <ul>
-<li>style (mode) - the (mode> options determines what happens after the specified crack length is reached and crack propagation is stopped. The default value is 0. The options are:
+<li>maxLength (length) - this parameter specifies the maximum crack length (in mm). Once this length is reached, the specified task action is triggered.</li>
+
+<li>crackNumber (num) - this parameter gives the crack number to watch. When that crack reaches the specified maximum length, the task action will be triggered. Alternatively, <code>crackNumber</code> can be zero which causes the task action to trigger when any crack reaches the specified maximum length. The default value is 0 (or any crack).</li>
+</ul>
+Alternatively, to trigger task action on a <a href="#globalarchive">global quantity</a>, enter the following parameters:
+<ul>
+<li>quantity (quantity) - specify the <a href="#globalarchive">global archive quantity</a> by name (<i>e.g.</i>, "sxx"). The use of this parameter converts the task to trigger on critical value of a global quantity rather then a crack length.</li>
+
+<li>material (mat) - if the global archive being used as a trigger is for a specific material or a boundary condition ID, enter that material (by material ID) or the boundary condition ID (number less than zero) in this parameter.</li>
+
+<li>maxValue (value) - this parameter specifies the critical value for the global quantity. If the value is positive, the trigger happens when the quantity first exceeds this value; if it is negative, the trigger happens when the quantity becomes more negative than this value.</li>
+</ul>
+When this task is triggered by critical crack length, the crack propagation will stop and then the task action will take affect. When the trigger is a global quantity, reaching the critical value will trigger the action (but crack propagation will be unaffected). The possible task actions after the trigger are set with the following parameter:
+<ul>
+<li>style (mode) - the (mode) option determines what happens after the task is triggered. The default value is 0. The options are:
 <ul class="lev2args">
 <li>0: Reverses all linearly increasing particle loads, particle tractions, and constant-velocity rigid particles and stop when they return to zero.</li>
 <li>1: Stops all linearly increasing particle loads and tractions at their current value and zeros the velocity of all constant-velocity rigid particles. The analysis continues.
 </li>
-<li>2: All particle loads and tractions and rigid particles continue unchanged. Only the crack propagation stops.
+<li>2: All particle loads and tractions and rigid particles continue unchanged. Only the crack propagation stops. This option is meaningless and therefore not allowed when the task is triggered on a global quantity.
 </li>
 <li>3: The analysis terminates.
 </li>
 </ul></li>
-
-<li>maxLength (length) - this parameter specifies the maximum crack length (in mm). Once this length is reached, all crack propagation will stop.</li>
-
-<li>crackNumber (num) - this parameter gives the crack number to watch. When that crack reaches the specified maximum length, the task will take effect. Alternatively, <code>crackNumber</code> can be zero which causes the task to take effect when any crack reaches the specified maximum length. The default value is 0.</li>
 </ul>
 </dd>
 
