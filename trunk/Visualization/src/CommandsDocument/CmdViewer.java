@@ -81,6 +81,7 @@ public class CmdViewer extends JNCmdTextDocument
 	private String ContactPosition;
 	private String FrictionMM;
 	private StringBuffer customTasks;
+	private String currentCustomTask = null;
 	
 	// constants
 	public static final int PLANE_STRAIN=0;
@@ -949,7 +950,7 @@ public class CmdViewer extends JNCmdTextDocument
 	    		crackOrder.append('N');
 	    }
 		
-		// initial history
+		// initial history (integer starting at 0x30 to 0x3F)
 		char historyChar = mpmOrder.charAt(ReadArchive.ARCH_History);
 		int history;
 		if(historyChar=='N')
@@ -1025,12 +1026,8 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		// replace the history character
 		if(history != origHistory)
-		{	char[] hchr = new char[2];
-			hchr[0] = (char)history;
-			hchr[1] = 0;
-			String hstr = history==0x31 ? "Y" : new String(hchr) ;
-			history = ReadArchive.ARCH_History;
-			mpmOrder.replace(history,history+1,hstr);
+		{	char hchr = history==0x31 ? 'Y' : (char)history ;
+			mpmOrder.setCharAt(ReadArchive.ARCH_History,hchr);
 		}
 	}
 
@@ -1545,7 +1542,7 @@ public class CmdViewer extends JNCmdTextDocument
 		// read task name
 		if(args.size()<2)
 			throw new Exception("'"+args.get(0)+"' is missing a custom task name:\n"+args);
-		String taskName = readStringArg(args.get(1));
+		currentCustomTask = readStringArg(args.get(1));
 		
 		// finish last task
 		if(customTasks.length()>0)
@@ -1553,7 +1550,7 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		
 		// start new custom task
-		customTasks.append("    <Schedule name='"+taskName+"'>\n");
+		customTasks.append("    <Schedule name='"+currentCustomTask+"'>\n");
 	}
 	
 	// Parameter #1,<#2>
@@ -1565,10 +1562,32 @@ public class CmdViewer extends JNCmdTextDocument
 		if(customTasks.length()==0)
 			throw new Exception("'"+args.get(0)+"' must can after CustomTask command:\n"+args);
 		
-		// read task name
+		// read parameter name
 		if(args.size()<2)
 			throw new Exception("'"+args.get(0)+"' is missing the parameter name:\n"+args);
 		String paramName = readStringArg(args.get(1));
+		
+		// handle special commands in some tasks
+		if(currentCustomTask.equals("ReverseLoad"))
+		{	// quantity combines into a single command
+			if(paramName.equals("quantity") && args.size()>2)
+			{	String value = readStringArg(args.get(2));
+				customTasks.append("      <Parameter name='global "+value+"'/>\n");
+				return;
+			}
+			else if(paramName.equals("material") && args.size()>2)
+			{	// material looks for material ID
+				int matnum = mats.getMatID(readStringArg(args.get(2)));
+				if(matnum<=0)
+				{	// negative is allowed for reaction forces (but only -10,-11,-20,-21,-30,-31)
+					matnum = readIntArg(args.get(2));
+					if(matnum>=0)
+						throw new Exception("'"+args.get(0)+"' command has unknown material ID or invalid BC ID:\n"+args);
+				}
+				customTasks.append("      <Parameter name='mat'>"+matnum+"</Parameter>\n");
+				return;
+			}
+		}
 		
 		// single parameter
 		if(args.size()==2)
@@ -1608,7 +1627,12 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		// damping factor
 		int pts = readIntArg(args.get(1));
-		ptsPerElement = "    <MatlPtsPerElement>"+pts+"</MatlPtsPerElement>\n";
+		if(pts<0 || pts>5 || (pts>3 && isMPM3D()))
+			throw new Exception("'"+args.get(0)+"' has unsupported number of points per element:\n"+args);
+		
+		int numCell = pts*pts;
+		if(isMPM3D()) numCell *= pts;
+		ptsPerElement = "    <MatlPtsPerElement>"+numCell+"</MatlPtsPerElement>\n";
 	}
 	
 	// convert @ expression to Double
