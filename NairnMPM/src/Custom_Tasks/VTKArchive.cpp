@@ -130,7 +130,7 @@ char *VTKArchive::InputParam(char *pName,int &input)
 		thisBuffer=1;
     }
 	
-    else if(strcmp(pName,"strainenergy")==0 || strcmp(pName,"workenergy"))
+    else if(strcmp(pName,"strainenergy")==0 || strcmp(pName,"workenergy")==0)
     {	q=VTK_WORKENERGY;
 		thisBuffer=1;
     }
@@ -193,7 +193,7 @@ CustomTask *VTKArchive::Initialize(void)
 	{	cout << customArchiveTime << " ms";
 		customArchiveTime/=1000.;				// convert to sec
 		if(nextCustomArchiveTime<0.)
-		{	nextCustomArchiveTime=customArchiveTime;
+		{	nextCustomArchiveTime=0.0;
 			cout << endl;
 		}
 		else
@@ -226,16 +226,20 @@ CustomTask *VTKArchive::Initialize(void)
 // called when MPM step is getting ready to do custom tasks
 CustomTask *VTKArchive::PrepareForStep(bool &needExtraps)
 {
+    // see if need to export on this time step
 	if(customArchiveTime>0.)
 	{	if(mtime+timestep>=nextCustomArchiveTime)
-		{	doVTKExport=TRUE;
-			nextCustomArchiveTime+=customArchiveTime;
-		}
-		else
-			doVTKExport=FALSE;
+        {	doVTKExport=TRUE;
+            nextCustomArchiveTime+=customArchiveTime;
+        }
+        else
+            doVTKExport=FALSE;
 	}
+    else if(mtime<0.5*timestep)
+        doVTKExport=TRUE;
 	else
 		doVTKExport=archiver->WillArchive();
+
 	if(quantity.size()==0) doVTKExport=FALSE;
 	getVTKExtraps = doVTKExport ? (bufferSize>0) : FALSE;
 	if(getVTKExtraps) needExtraps=TRUE;
