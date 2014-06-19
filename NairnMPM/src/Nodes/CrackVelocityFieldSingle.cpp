@@ -51,12 +51,6 @@ void CrackVelocityFieldSingle::AddFextSpreadTask3(Vector *f)
 
 #endif
 
-// Add grid dampiong force at a node in g mm/sec^2
-void CrackVelocityFieldSingle::AddGridDampingTask3(double extDamping)
-{	if(mvf[0]->numberPoints>0)
-		mvf[0]->AddGridDampingTask3(extDamping);
-}
-
 #pragma mark TASK 4 METHODS
 
 // update momenta for this MPM step

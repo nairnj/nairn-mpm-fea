@@ -199,7 +199,8 @@ The Default value is <code>iYNNNN</code>.</dd>
 	<li><code>Helmholz Energy</code> - total Helmholz free energy (A = U - TS) in J</li>
 	<li><code>Interface Energy</code> - total energy associated with cracks having imperfect interfaces in J.</li>
 	<li><code>Plastic Energy</code> - total plastic energy in J</li>
-	<li><code>alpha</code> - the total grid damping coefficient, &alpha;, which evolves when using feedback damping (in 1/sec)</li>
+	<li><code>alpha</code> - the total grid damping coefficient &alpha;, which is sum of damping and feedback grid damping terms (in 1/sec)</li>
+	<li><code>palpha</code> - the total particle damping coefficient &alpha;, which is sum of damping and feedback particle damping terms (in 1/sec)</li>
 	<li><code>Step number</code> - the current MPM step number</li>
 	<li><code>Elapsed time</code> - elapsed clock time for the current calculation (in secs)</li>
 	<li><code>CPU time</code> - total CPU time for the current calculation (in secs)</li>
@@ -355,14 +356,16 @@ The default is 0</li>
 
 <h2><a name="damping"></a>Damping Options</h2>
 
-<p>The two damping options are explained in the OUSPDocs wiki. Ther are activated with the commands:
-
-<pre>&lt;Damping function='(alphaVsT)'&gt;(alphaNum)&lt;/Damping&gt;
+<p>The three damping options are explained in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Damping_Options">OUSPDocs wiki</a>. They are activated with the commands:
+    
+<pre>&lt;Damping function='(alphaVsT)' PIC='(fractionPIC)'&gt;(alphaNum)&lt;/Damping&gt;
 &lt;FeedbackDamping target='(Tk)' max='(maxAlpha)'&gt;(gain)&lt;/FeedbackDamping&gt;
+&lt;PDamping function='(alphaVsT)'&gt;(alphaNum)&lt;/PDamping&gt;
+&lt;PFeedbackDamping target='(Tk)' max='(maxAlpha)'&gt;(gain)&lt;/PFeedbackDamping&gt;
 </pre>
-
-<p>where</p>
-
+    
+<p>where the first two set grid damping terms and the last set particle damping terms. The parameters for each are:</p>
+    
 <ul>
 <li><code>(alphaNum)</code> is a constant damping factor. The units are 1/sec and the default value is 0.</li>
 <li><code>(alphaVsT)</code> can alternatively set damping factor with a <a href="function.html">user defined function</a> of time that evaluates to a grid damping constant in units of 1/sec</li>
@@ -370,7 +373,8 @@ The default is 0</li>
 <li><code>(Tk)</code> in an optional <a href="function.html">user defined function</a> of time that evaluates to a target kinetic energy in &mu;J. The default value is 0.</li>
 <li><code>(maxAlpha)</code> can optionally specify a maximum damping coefficient (&alpha;) entered in units of 1/sec. The default is to have no limit to damping.</li>
 </ul>
-
+    
+<p>The <code>PIC</code> attribute on the <code>Damping</code> command activates PIC via damping. The <code>(fractionPIC)</code> must from 0 to 1.</p>
 
 <!-- OLD STUFF -->
 

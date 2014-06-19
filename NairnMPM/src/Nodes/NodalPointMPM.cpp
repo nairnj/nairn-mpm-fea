@@ -521,15 +521,6 @@ void NodalPoint::AddTractionTask3(MPMBase *mpmptr,int matfld,Vector *f)
     }
 }
 
-// Add grid dampiong force at a node in g mm/sec^2
-void NodalPoint::AddGridDampingTask3(double extDamping)
-{	int i;
-    for(i=0;i<maxCrackFields;i++)
-	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->AddGridDampingTask3(extDamping);
-	}
-}
-
 #pragma mark TASK 4 METHODS
 
 // update momenta for this MPM step

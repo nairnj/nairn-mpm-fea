@@ -18,7 +18,7 @@
 			( Description | Analysis | DevelFlag )+>
 
 <!ELEMENT	MPMHeader
-			( MatlPtsPerElement | Cracks | MPMMethod | TimeStep | TimeFactor
+			( MatlPtsPerElement | Cracks | MPMMethod | TimeStep | TimeFactor | PDamping | PFeedbackDamping
 			| MaxTime | ArchiveTime | ArchiveRoot | MPMArchiveOrder | CrackArchiveOrder
 			| ProgSteps | Damping | FeedbackDamping | GlobalArchiveTime | GlobalArchive | DefGradTerms
 			| Diffusion | StressFreeTemp | FirstArchiveTime | GIMP | LeaveLimit | MultiMaterialMode )*>
@@ -323,9 +323,18 @@
 <!ELEMENT	ProgSteps (#PCDATA)>
 <!ELEMENT	Damping (#PCDATA)>
 <!ATTLIST	Damping
-			function CDATA #IMPLIED>
+			function CDATA #IMPLIED
+            PIC CDATA #IMPLIED>
+<!ELEMENT	PDamping (#PCDATA)>
+<!ATTLIST	PDamping
+			function CDATA #IMPLIED
+            PIC CDATA #IMPLIED>
 <!ELEMENT	FeedbackDamping (#PCDATA)>
 <!ATTLIST	FeedbackDamping
+			target CDATA #IMPLIED
+            max CDATA #IMPLIED>
+<!ELEMENT	PFeedbackDamping (#PCDATA)>
+<!ATTLIST	PFeedbackDamping
 			target CDATA #IMPLIED
             max CDATA #IMPLIED>
 <!ELEMENT	BodyXForce (#PCDATA)>

@@ -166,7 +166,9 @@ int GlobalQuantity::DecodeGlobalQuantity(char *quant,int *hcode)
 	else if(strcmp(quant,"Elapsed time")==0)
 		theQuant=ELAPSED_TIME;
 	else if(strcmp(quant,"alpha")==0)
-		theQuant=FEEDBACK_ALPHA;
+		theQuant=GRID_ALPHA;
+	else if(strcmp(quant,"palpha")==0)
+		theQuant=PARTICLE_ALPHA;
 	else if(strcmp(quant,"contactx")==0 || strcmp(quant,"contactR")==0)
 		theQuant=TOT_FCONX;
 	else if(strcmp(quant,"contacty")==0 || strcmp(quant,"contactZ")==0)
@@ -492,10 +494,14 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			value=fmobj->ElapsedTime();
 			break;
 
-		case FEEDBACK_ALPHA:
-			value=bodyFrc.GetDamping(mtime);
+		case GRID_ALPHA:
+			value=bodyFrc.GetNonPICDamping(mtime);
 			break;
-		
+            
+		case PARTICLE_ALPHA:
+			value=bodyFrc.GetNonPICParticleDamping(mtime);
+			break;
+            
 		case HISTORY_VARIABLE:
 			for(p=0;p<nmpms;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))

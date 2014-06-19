@@ -226,14 +226,6 @@ void CrackVelocityFieldMulti::AddFextSpreadTask3(Vector *f)
 
 #endif
 
-// Add grid dampiong force at a node in g mm/sec^2
-void CrackVelocityFieldMulti::AddGridDampingTask3(double extDamping)
-{	for(int i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-			mvf[i]->AddGridDampingTask3(extDamping);
-	}
-}
-
 // Copy grid forces ghost node to the real node (nonrigid only)
 void CrackVelocityFieldMulti::CopyGridForces(NodalPoint *real,int vfld)
 {	for(int matfld=0;matfld<maxMaterialFields;matfld++)
