@@ -23,11 +23,17 @@ class NodalPoint;
 class BodyForce
 {
     public:
-		double damping;				// external damping
-	bool useDamping;
-		double dampingCoefficient;	// 1/Q in Nose-Hoover feedback damping
-		short useFeedback;
-		bool useGridFeedback;
+        double damping;				// external damping
+        bool useDamping;            // true when used
+        double dampingCoefficient;	// 1/Q in Nose-Hoover feedback damping
+        bool useFeedback;           // true when used
+    
+        double pdamping;                // same for particle damping
+        bool usePDamping;
+        double pdampingCoefficient;
+        bool usePFeedback;
+    
+        bool useGridFeedback;       // use grid kinetic energy to evolve feedback terms
         Vector gforce;              // gravity forces
 		
         // constructors and destructors
@@ -38,18 +44,29 @@ class BodyForce
 		void Activate(void);
 		void AddGravity(Vector *,double,double);
 		double GetDamping(double);
+        double GetParticleDamping(double);
+        double GetNonPICDamping(double);
+        double GetNonPICParticleDamping(double);
 		void Output(void);
-		double GetAlpha(void);
 		void UpdateAlpha(double,double);
-		void SetTargetFunction(char *);
-        void SetMaxAlpha(double);
-		void SetGridDampingFunction(char *);
+		void SetTargetFunction(char *,bool);
+        void SetMaxAlpha(double,bool);
+		void SetGridDampingFunction(char *,bool);
+        void SetFractionPIC(double);
 	
 	private:
+        double alpha,maxAlpha;
         ROperation *function;
         ROperation *gridfunction;
+    
+        double palpha,maxPAlpha;
+        ROperation *pgridfunction;
+        ROperation *pfunction;
+    
+        double fractionPIC;
+        bool usePICDamping;
+    
 		bool gravity;               // true if gravity turned on
-		double alpha,maxAlpha;
 		static double varTime;
 };
 

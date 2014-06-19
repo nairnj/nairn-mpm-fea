@@ -46,7 +46,6 @@ class MatVelocityField
 		void ChangeMatMomentum(Vector *,bool,double);
 		void AddContactForce(Vector *);
 		void CalcVelocityForStrainUpdate(void);
-		void AddGridDampingTask3(double);
         void AddFtot(Vector *);
         void AddFtotScaled(Vector *,double);
         void UpdateMomentum(double);

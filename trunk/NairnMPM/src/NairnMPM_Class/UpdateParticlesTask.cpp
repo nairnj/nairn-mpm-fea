@@ -45,10 +45,15 @@ void UpdateParticlesTask::Execute(void)
 	
 	int numnds,nds[maxShapeNodes];
 	double fn[maxShapeNodes];
-	Vector delv;
+	Vector vgpnp1;
 	
+    // feedback damping to apply to particle update. This approach requires constant that is same for
+    // all particles.
+    double particleAlpha = bodyFrc.GetParticleDamping(mtime);
+	double gridAlpha = bodyFrc.GetDamping(mtime);
+
     // Update particle position, velocity, temp, and conc
-#pragma omp parallel for private(numnds,nds,fn,delv)
+#pragma omp parallel for private(numnds,nds,fn,vgpnp1)
     for(int p=0;p<nmpmsNR;p++)
 	{	MPMBase *mpmptr = mpm[p];
 		
@@ -63,7 +68,7 @@ void UpdateParticlesTask::Execute(void)
 			
 			Vector *acc=mpmptr->GetAcc();
 			ZeroVector(acc);
-			ZeroVector(&delv);
+			ZeroVector(&vgpnp1);
 			double rate[2];         // only two possible transport tasks
 			rate[0] = rate[1] = 0.;
 			int task;
@@ -75,10 +80,10 @@ void UpdateParticlesTask::Execute(void)
 			{	// increment velocity and acceleraton
 				const NodalPoint *ndptr = nd[nds[i]];
                 vfld = (short)mpmptr->vfld[i];
-				ndptr->IncrementDelvaTask5(vfld,matfld,fn[i],&delv,acc);
+				ndptr->IncrementDelvaTask5(vfld,matfld,fn[i],&vgpnp1,acc);
 
 #ifdef CHECK_NAN
-                if(delv.x!=delv.x || delv.y!=delv.y || delv.z!=delv.z)
+                if(vgpnp1.x!=vgpnp1.x || vgpnp1.y!=vgpnp1.y || vgpnp1.z!=vgpnp1.z)
                 {   cout << "\n# UpdateParticlesTask::Execute: bad material velocity field for vfld = " << vfld << endl;
                     ndptr->Describe();
                 }
@@ -91,9 +96,17 @@ void UpdateParticlesTask::Execute(void)
 					nextTransport=nextTransport->IncrementTransportRate(ndptr,fn[i],rate[task++]);
 			}
 			
+			// Find vgpn
+			Vector vgpn = vgpnp1;
+			AddScaledVector(&vgpn,acc,-timestep);
+			
+			// find effective grid acceleration and velocity
+			AddScaledVector(acc,&vgpn,-gridAlpha);
+			AddScaledVector(&vgpnp1,&vgpn,-timestep*gridAlpha);
+            
 			// update position in mm and velocity in mm/sec
-			mpmptr->MovePosition(timestep,&delv);
-			mpmptr->MoveVelocity(timestep,0.,&delv);
+			mpmptr->MovePosition(timestep,&vgpnp1,-0.5*timestep,particleAlpha);
+			mpmptr->MoveVelocity(timestep,&vgpnp1,particleAlpha);
 			
 			// update transport values
 			nextTransport=transportTasks;
@@ -128,6 +141,6 @@ void UpdateParticlesTask::Execute(void)
     
     // rigid materials move at their current velocity
     for(int p=nmpmsNR;p<nmpms;p++)
-    {	mpm[p]->MovePosition(timestep,&mpm[p]->vel);
+    {	mpm[p]->MovePosition(timestep,&mpm[p]->vel,0.,0.);
     }
 }

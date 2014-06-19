@@ -167,41 +167,63 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		new GlobalQuantity(quantityName,setWhichMat);
     }
 	
-    else if(strcmp(xName,"Damping")==0)
+    else if(strcmp(xName,"Damping")==0 || strcmp(xName,"PDamping")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
-        inputPtr=(char *)&bodyFrc.damping;
-		bodyFrc.useDamping=TRUE;
+        bool gridDamp = true;
+        if(strcmp(xName,"Damping")==0)
+        {   inputPtr=(char *)&bodyFrc.damping;
+            bodyFrc.useDamping=TRUE;
+        }
+        else
+        {   inputPtr=(char *)&bodyFrc.pdamping;
+            bodyFrc.usePDamping=TRUE;
+            gridDamp = false;
+        }
 		
         numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"function")==0)
-			{	bodyFrc.SetGridDampingFunction(value);
+			{	bodyFrc.SetGridDampingFunction(value,gridDamp);
 			}
+            else if(strcmp(aName,"PIC")==0)
+            {
+                double fractionPIC;
+                sscanf(value,"%lf",&fractionPIC);
+                bodyFrc.SetFractionPIC(fractionPIC);
+            }
             delete [] aName;
             delete [] value;
         }
     }
     
-    else if(strcmp(xName,"FeedbackDamping")==0)
+    else if(strcmp(xName,"FeedbackDamping")==0 || strcmp(xName,"PFeedbackDamping")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
-		bodyFrc.useFeedback=TRUE;
-        inputPtr=(char *)&bodyFrc.dampingCoefficient;
+        bool gridDamp = true;
+        if(strcmp(xName,"FeedbackDamping")==0)
+		{   bodyFrc.useFeedback=TRUE;
+            inputPtr=(char *)&bodyFrc.dampingCoefficient;
+        }
+        else
+		{   bodyFrc.usePFeedback=TRUE;
+            inputPtr=(char *)&bodyFrc.pdampingCoefficient;
+            gridDamp = false;
+        }
 		
         numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"target")==0)
-			{	bodyFrc.SetTargetFunction(value);
+			{	bodyFrc.SetTargetFunction(value,gridDamp);
 			}
             else if(strcmp(aName,"max")==0)
             {   double maxAlpha;
                 sscanf(value,"%lf",&maxAlpha);
-                bodyFrc.SetMaxAlpha(maxAlpha);
+                bodyFrc.SetMaxAlpha(maxAlpha,gridDamp);
             }
             delete [] aName;
             delete [] value;

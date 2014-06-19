@@ -81,19 +81,23 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
     matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,&res);
  }
 
-// Move position (2D) (in mm)
-// external work units g-mm^2/sec^2 (* 10^-9 to get J)
-void MatPoint2D::MovePosition(double delTime,Vector *dv)
-{	double dx=delTime*dv->x;
-	double dy=delTime*dv->y;
-	pos.x+=dx;
-    pos.y+=dy;
+// Move position (2D) (in mm) possibly with particle damping and accWt = -dt/2
+// vstar is velocity extrapolated from grid to particle and end of time step (v(g->p)(n+1))
+// Must be called BEFORE velocity update, because is needs vp(n) at start of timestep
+void MatPoint2D::MovePosition(double delTime,Vector *vstar,double accWt,double particleAlpha)
+{
+	double dx = delTime*(vstar->x + accWt*(acc.x + particleAlpha*vel.x));
+	double dy = delTime*(vstar->y + accWt*(acc.y + particleAlpha*vel.y));
+	pos.x += dx;
+    pos.y += dy;
 }
 
-// Move velocity (2D) (in mm/sec) possibly with damping
-void MatPoint2D::MoveVelocity(double delTime,double damping,Vector *vstar)
-{	vel.x+=delTime*(acc.x-damping*vstar->x);
-    vel.y+=delTime*(acc.y-damping*vstar->y);
+// Move velocity (2D) (in mm/sec) possibly with particle damping
+// vstar is velocity extrapolated from grid to particle and end of time step (v(g->p)(n+1))
+void MatPoint2D::MoveVelocity(double delTime,Vector *vstar,double particleAlpha)
+{
+	vel.x = vel.x*(1. - particleAlpha*delTime) + delTime*acc.x;
+    vel.y = vel.y*(1. - particleAlpha*delTime) + delTime*acc.y;
 }
 
 // Scale velocity (2D) (in mm/sec) optionally with rigid materials

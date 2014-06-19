@@ -64,7 +64,6 @@ class CrackVelocityField
 #ifdef USE_FEXT
 		virtual void AddFextSpreadTask3(Vector *) = 0;
 #endif
-		virtual void AddGridDampingTask3(double) = 0;
 	
 		virtual void UpdateMomentaOnField(double) = 0;
 	
