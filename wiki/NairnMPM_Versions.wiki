@@ -22,7 +22,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
 
   * Current main trunk
     * Working on NairnMPM 10.1.0
-    * Add two new damping options - particle damping and PIC damping; the later can also run simulations with mixed FLIP/PIC style updates
+    * Added two new damping options - particle damping and PIC damping; the later can also run simulations with mixed FLIP/PIC style updates
     * Mooney can take E and nu OR K and G1. HEIsotropic and HEMGEOSMaterial can take G or G1.
     * Mooney, HEIsotropic, and HEMGEOSMaterial were revised to better handle residual stresses
     * HEMGEOSMaterial in tension was changed for better stability during large temperature changes.
