@@ -179,7 +179,7 @@ public class Materials
 		
 		// these commands require an integer
 		else if(prop.toLowerCase().equals("ujoption"))
-		{	prop = "UJOpion";
+		{	prop = "UJOption";
 			// 0, 1, or 2
 			int value = doc.readIntArg(args.get(1));
 			if(value<0 || value>2)
