@@ -87,7 +87,7 @@ class MPMBase : public LinkedObject
 		int ElemID(void);
 		void ChangeElemID(int);
 		int ArchiveElemID(void);
-		void ReverseParticle(void);
+		void ReverseParticle(bool,bool);
 		void StopParticle(void);
 		int GetElementCrossings(void);
 		void SetElementCrossings(int);
@@ -175,7 +175,7 @@ class MPMBase : public LinkedObject
 		Vector ncpos;				// natural coordinates position
 		CPDIDomain **cpdi;          // Should makle pointer and allocate only what is needed
         Vector *faceArea;           // make pointer then needed
-		Vector acc;					// acceleration
+		Vector acc;					// acceleration (rigid BC particle use to store held velocity)
 		Tensor *velGrad;			// used for J Integral only on non-rigid particles only
 		Tensor sp;					// stress tensor (init 0)
         double pressure;            // for use if materials wants to, otherwise it is zero

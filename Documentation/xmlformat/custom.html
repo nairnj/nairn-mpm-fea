@@ -96,7 +96,7 @@ Alternatively, to trigger task action on a <a href="mpmheader.html#global">globa
 
 <li>maxValue (value) - this parameter specifies the critical value for the global quantity. If the value is positive, the trigger happens when the quantity first exceeds this value; if it is negative, the trigger happens when the quantity becomes more negative than this value.</li>
 </ul>
-When this task is triggered by critical crack length, the crack propagation will stop and then the task action will take affect. When the trigger is a global quantity, reaching the critical value will trigger the action (but crack propagation will be unaffected). The possible task actions after the trigger are set with the following parameter:
+When this task is triggered by critical crack length, the crack propagation will stop and then the task action will take affect. When the trigger is a global quantity, reaching the critical value will trigger the action (but crack propagation will be unaffected). The possible task actions after the trigger are set with the following parameters:
 <ul>
 <li>style (mode) - the (mode) option determines what happens after the task is triggered. The default value is 0. The options are:
 <ul class="lev2args">
@@ -108,6 +108,7 @@ When this task is triggered by critical crack length, the crack propagation will
 <li>3: The analysis terminates.
 </li>
 </ul></li>
+<li>hold (holdTime) - when (holdTime) is positive, the task will hold at current boundary conditions for the specified time (in msec) and then proceed with the style option. A hold phase is only allowed when style is 0 (to reverse) or 3 (to abort).</li>
 </ul>
 </dd>
 

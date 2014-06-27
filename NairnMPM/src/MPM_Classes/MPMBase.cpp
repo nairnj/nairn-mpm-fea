@@ -147,11 +147,23 @@ MPMBase::~MPMBase() { }
 
 #pragma mark MPMBase::Methods
 
-// reverse the direction (should only be done for rigid material particles)
-void MPMBase::ReverseParticle(void)
-{	vel.x=-vel.x;
-    vel.y=-vel.y;
-	vel.z=-vel.z;
+// hold or reverse the direction (should only be done for rigid material particles)
+// holdFirst == true, store velocity in acc and zero the velocity
+// holdFirst == false, if holding, reverse using stored velocity otherwise just reverse
+void MPMBase::ReverseParticle(bool holdFirst,bool holding)
+{   if(holdFirst)
+    {   acc = vel;
+        ZeroVector(&vel);
+    }
+    else if(holding)
+    {   CopyScaleVector(&vel,&acc,-1.);
+        ZeroVector(&acc);
+    }
+    else
+    {	vel.x=-vel.x;
+        vel.y=-vel.y;
+        vel.z=-vel.z;
+    }
 }
 
 // stop the particle (should only be done for rigid material particles)
