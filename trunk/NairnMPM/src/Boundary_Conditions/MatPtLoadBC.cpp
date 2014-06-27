@@ -24,6 +24,7 @@ MatPtLoadBC::MatPtLoadBC(int num,int dof,int sty)
     ptNum=num;
     direction=dof;		// note that 3 or 4 means z here, which may not be Z_DIRECTION (4) bit location
 						// it is assumed z if not x (=1) or y (=2)
+    holding=false;
 }
 
 // When particles reordered, fix point num if needed
@@ -115,18 +116,27 @@ MatPtLoadBC *MatPtLoadBC::AddMPLoad(double bctime)
 // reverse active linear loads. Leave rest alone
 // input is analysis time in seconds
 // if LINEAR_VALUE, set finalTime to time when load returns to zero
-MatPtLoadBC *MatPtLoadBC::ReverseLinearLoad(double bctime,double *finalTime)
+MatPtLoadBC *MatPtLoadBC::ReverseLinearLoad(double bctime,double *finalTime,bool holdFirst)
 {
 	double mstime=1000.*bctime;
 	
     switch(style)
     {	case LINEAR_VALUE:
             if(mstime>=ftime)
-			{   offset=BCValue(mstime);
-                value=-value;
-                ftime=mstime;
-				// new BC is offset+value*(mstime-ftime), which is zero when mstime = ftime-offset/value
-				*finalTime = 0.001*(ftime - offset/value);
+			{   offset = BCValue(mstime);
+                if(holdFirst)
+                {   holdValue = value;
+                    holding = true;
+                    value = 0.;
+                }
+                else
+                {   value = holding ? -holdValue : -value ;
+                    ftime = mstime;
+                    
+                    // new BC is offset+value*(mstime-ftime), which is zero when mstime = ftime-offset/value
+                    *finalTime = 0.001*(ftime - offset/value);
+                }
+                
             }
             break;
         default:
@@ -144,8 +154,8 @@ MatPtLoadBC *MatPtLoadBC::MakeConstantLoad(double bctime)
     switch(style)
     {	case LINEAR_VALUE:
             if(mstime>=ftime)
-            {	style=CONSTANT_VALUE;
-                value=BCValue(mstime);
+            {	value=BCValue(mstime);
+                style=CONSTANT_VALUE;
             }
             break;
         default:

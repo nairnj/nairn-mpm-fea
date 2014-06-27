@@ -16,13 +16,14 @@
 #include "Custom_Tasks/CustomTask.hpp"
 
 enum { REVERSE=0,HOLD,NOCHANGE,ABORT };
+enum { CHECKING_PHASE=0,HOLDING_PHASE,REVERSED_PHASE };
 
 class ReverseLoad : public CustomTask
 {
     public:
         int crackNum,style;
-        double finalLength,finalTime;
-        bool reversed;
+        double finalLength,holdTime;
+        int reversed;
 		int quantity,subcode,whichMat;
 		char quant[64];
         
@@ -37,6 +38,7 @@ class ReverseLoad : public CustomTask
         virtual CustomTask *FinishForStep(void);
 
     private:
+        double finalTime,endHoldTime;
 };
 
 #endif
