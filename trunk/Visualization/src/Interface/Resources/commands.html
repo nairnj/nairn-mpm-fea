@@ -441,6 +441,7 @@ Global results are average values over the particles. Specify global result to b
 	<li><code>Interface Energy</code> - total energy associated with cracks having imperfect interfaces in J.</li>
 	<li><code>Plastic Energy</code> - total plastic energy in J</li>
 	<li><code>alpha</code> - the total grid damping coefficient, &alpha;, which evolves when using feedback damping (in 1/sec)</li>
+	<li><code>palpha</code> - the total particle damping coefficient, &alpha;, which evolves when using particle feedback damping (in 1/sec)</li>
 	<li><code>Step number</code> - the current MPM step number</li>
 	<li><code>Elapsed time</code> - elapsed clock time for the current calculation (in secs)</li>
 	<li><code>CPU time</code> - total CPU time for the current calculation (in secs)</li>
@@ -452,14 +453,15 @@ Specify time interval for archiving global results, <code>(time)</code> is the g
 <h3>Damping and Other Options</h3>
 
 <ul>
-<li><code>Damping (alpha)</code><br>
-Select factor for damping grid velocities in MPM calculations; <code>(alpha)</code> is factor or is a
-<a href="#function">user-defined function</a>.
-Both in units of 1/sec.</li>
-<li><code>FeedbackDamping (gain),&lt;(Tk)&gt;,&lt;(maxAlpha)&gt;</code><br>
-Select coefficient for alternative viscous damping of MPM particle velocities. <code>(gain)</code> is feedback coefficient in units of 1/mm<sup>2</sup>. Optional <code>(Tk)</code> is target kinetic energy (it can be
-<a href="#function">user-defined function</a>) in micro joules. Optional
-<code>(maxAlpha)</code> is maximum damping factor in units 1/sec (default is to have no maximum).
+<li><code>Damping (alphag),&lt;(PIC)&gt;</code><br>
+<code>PDamping (alphap),&lt;(PIC)&gt;</code><br>
+Select factors for damping based on grid velocity (<code>Damping</code>) or on particle velocities (<code>PDamping</code>); <code>(alphag)</code> and <code>(alphap)</code> can be a numeric value or a
+<a href="#function">user-defined function</a> of time (in units of 1/sec). The optional <code>PIC</code> argument sets the fraction PIC for the particle updates (from 0 to 1 with default 0); only one fraction PIC is allowed and it can be set in either damping command.</li>
+<li><code>FeedbackDamping (gaing),&lt;(Tkg)&gt;,&lt;(maxAlphag)&gt;</code><br>
+<code>PFeedbackDamping (gainp),&lt;(Tkp)&gt;,&lt;(maxAlphap)&gt;</code><br>
+Select options for alternative damping of MPM particle velocities. The two commands base the damping on grid velocity (<code>FeedbackDamping</code>) or on particle velocities (<code>PFeedbackDamping</code>). The two commands have independent settings. The  <code>(gaing)</code> (or p) is feedback coefficient in units of 1/mm<sup>2</sup>. The optional <code>(Tkg)</code> (or p) is target kinetic energy (it can be
+<a href="#function">user-defined function</a>) in micro joules. The optional
+<code>(maxAlphag)</code> (or p) is maximum damping factor in units 1/sec (default is to have no maximum).
 </li>
 <li><code>LeaveLimit (allow)</code><br>
 Set number of particles allowed to leave the grid (in <code>(allow)</code>) before an analysis is stopped.
