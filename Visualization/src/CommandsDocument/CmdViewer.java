@@ -59,7 +59,9 @@ public class CmdViewer extends JNCmdTextDocument
 	private String maxTime;
 	private String globalArchive;
 	private String damping;
+	private String pdamping;
 	private String fbDamping;
+	private String pfbDamping;
 	private String leaveLimit;
 	private String ptsPerElement;
 	private String diffusion;
@@ -310,7 +312,9 @@ public class CmdViewer extends JNCmdTextDocument
 		rampTime = -2.;
 		stopCommand = false;
 		damping = null;
+		pdamping = null;
 		fbDamping = null;
+		pfbDamping = null;
 		leaveLimit = null;
 		ptsPerElement = null;
 		diffusion = null;
@@ -635,10 +639,16 @@ public class CmdViewer extends JNCmdTextDocument
 			doRampStart(args);
 		
 		else if(theCmd.equals("damping"))
-			doDamping(args);
+			doDamping(args,"Damping");
+		
+		else if(theCmd.equals("pdamping"))
+			doDamping(args,"PDamping");
 		
 		else if(theCmd.equals("feedbackdamping"))
-			doFBDamping(args);
+			doFBDamping(args,"FeedbackDamping");
+		
+		else if(theCmd.equals("pfeedbackdamping"))
+			doFBDamping(args,"PFeedbackDamping");
 		
 		else if(theCmd.equals("leavelimit"))
 			doLeaveLimit(args);
@@ -1230,20 +1240,36 @@ public class CmdViewer extends JNCmdTextDocument
 		rampStart = readDoubleArg(args.get(1));
 	}
 	
-	// Damping #1 (number of function)
-	public void doDamping(ArrayList<String> args) throws Exception
+	// Damping #1 (number or function),#2 (0 to 1 for PIC)
+	// also does PDamping command
+	public void doDamping(ArrayList<String> args,String dcmd) throws Exception
 	{	// MPM Only
 		requiresMPM(args);
 	
 		// read analysis type
 		if(args.size()<2)
-			throw new Exception("'Damping' has too few parameters:\n"+args);
+			throw new Exception("'"+dcmd+"' has too few parameters:\n"+args);
 		
-		// damping factor
+		// damping factor (required)
 		String damp = readStringArg(args.get(1));
-		damping = "    <Damping>"+damp+"</Damping>\n";
+		
+		// PIC fraction (optional)
+		String dampcmd;
+		if(args.size()>2)
+		{	double pic = readDoubleArg(args.get(2));
+			if(pic<0 || pic>1)
+				throw new Exception("PIC damping in '"+dcmd+"' must be from 0 to 1:\n"+args);
+			dampcmd = "    <"+dcmd+" PIC='"+pic+"'>"+damp+"</"+dcmd+">\n";
+		}
+		else
+			dampcmd = "    <"+dcmd+">"+damp+"</"+dcmd+">\n";
+		
+		if(dcmd.equals("Damping"))
+			damping = dampcmd;
+		else
+			pdamping = dampcmd;
 	}
-	
+
 	// MultimaterialMode Vmin,Dcheck,Normals,RigidBias
 	public void doMultimaterialMode(ArrayList<String> args) throws Exception
 	{	// MPM Only
@@ -1404,16 +1430,19 @@ public class CmdViewer extends JNCmdTextDocument
 	}
 		
 	// FeedbackDamping #1,#2,#3 (number,function,number)
-	public void doFBDamping(ArrayList<String> args) throws Exception
+	// PFeedbackDamping #1,#2,#3 (same for particle damping)
+	public void doFBDamping(ArrayList<String> args,String dfbcmd) throws Exception
 	{	// MPM Only
 		requiresMPM(args);
 	
 		// read analysis type
 		if(args.size()<2)
-			throw new Exception("'FeedbackDamping' has too few parameters:\n"+args);
+			throw new Exception("'"+dfbcmd+"' has too few parameters:\n"+args);
 		
-		// archive time
+		// read gain (required)
 		double damp = readDoubleArg(args.get(1));
+		
+		// optional target and max alpha
 		String target = null;
 		double maxdamp = -1.;
 		if(args.size()>2)
@@ -1421,14 +1450,20 @@ public class CmdViewer extends JNCmdTextDocument
 		if(args.size()>3)
 			maxdamp = readDoubleArg(args.get(3));
 		
+		String fb;
 		if(target==null)
-			fbDamping = "    <FeedbackDamping>"+damp+"</FeedbackDamping>\n";
+			fb = "    <"+dfbcmd+">"+damp+"</"+dfbcmd+">\n";
 		else if(maxdamp<0.)
-			fbDamping = "    <FeedbackDamping target='"+target+"'>"+damp+"</FeedbackDamping>\n";
+			fb = "    <"+dfbcmd+" target='"+target+"'>"+damp+"</"+dfbcmd+">\n";
 		else
-		{	fbDamping = "    <FeedbackDamping target='"+target+"' max='"+maxdamp+
-								"'>"+damp+"</FeedbackDamping>\n";
+		{	fb = "    <"+dfbcmd+" target='"+target+"' max='"+maxdamp+
+								"'>"+damp+"</"+dfbcmd+">\n";
 		}
+		
+		if(dfbcmd.equals("FeedbackDamping"))
+			fbDamping = fb;
+		else
+			pfbDamping = fb;
 	}
 	
 	// LeaveLimit #1 (integer)
@@ -1440,7 +1475,7 @@ public class CmdViewer extends JNCmdTextDocument
 		if(args.size()<2)
 			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
-		// damping factor
+		// leave limit (required)
 		int leave = readIntArg(args.get(1));
 		leaveLimit = "    <LeaveLimit>"+leave+"</LeaveLimit>\n";
 	}
@@ -1454,7 +1489,7 @@ public class CmdViewer extends JNCmdTextDocument
 		if(args.size()<2)
 			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
-		// damping factor
+		// diffusion on or off (required)
 		String option = readStringArg(args.get(1));
 		if(option.toLowerCase().equals("no"))
 		{	diffusion = null;
@@ -1625,7 +1660,7 @@ public class CmdViewer extends JNCmdTextDocument
 		if(args.size()<2)
 			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
-		// damping factor
+		// points per element
 		int pts = readIntArg(args.get(1));
 		if(pts<0 || pts>5 || (pts>3 && isMPM3D()))
 			throw new Exception("'"+args.get(0)+"' has unsupported number of points per element:\n"+args);
@@ -1760,7 +1795,9 @@ public class CmdViewer extends JNCmdTextDocument
 			
 			// damping, leave limit, diffusion
 			if(damping!=null) xml.append(damping);
+			if(pdamping!=null) xml.append(pdamping);
 			if(fbDamping!=null) xml.append(fbDamping);
+			if(pfbDamping!=null) xml.append(pfbDamping);
 			if(leaveLimit!=null) xml.append(leaveLimit);
 			if(diffusion!=null) xml.append(diffusion);
 			
