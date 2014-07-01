@@ -139,6 +139,13 @@ and rubber elastic materials as special cases.</td>
 </tr>
 
 <tr>
+<td><a href="#neoh"><code>Neo-Hookean</code></a></td>
+<td>28</td>
+<td width="50%">Neo-Hookeann, hyperelastic material.</td>
+<td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
+<tr>
 <td><a href="#idealgas"><code>IdealGas</code></a></td>
 <td>22</td>
 <td width="50%">Ideal Gas, as a hyperelastic material</td>
@@ -474,6 +481,37 @@ G<sub>ntaus</sub>exp(-t/tau<sub>n</sub>), where n is the number of relation time
 </ul>
 
 <h3>History Data for Mooney-Rivlin Materials</h3>
+
+<ol>
+<li>The volumetric ratio or J = V/V<sub>0</sub> (<i>i.e.</i>, the determinant of the deformation gradient)</li>
+</ol>
+
+<p>|<a href="#tables">Material Tables</a>|</p>
+
+<!-- New Material Section -->
+	
+<h2><a name="neoh"></a>Neo-Hookean Material</h2>
+	
+<p>The material type is an isotropic, hyperelastic material. The material properties are:</p>
+
+<ul>
+<li><code>K</code> for bulk shear modulus in MPa.</li>
+<li><code>G</code> for shear modulus in MPa.</li>
+<li><code>Lame</code> for Lame modulus in MPa.</li>
+<li><code>E</code> for tensile in MPa.</li>
+<li><code>nu</code> for Poisson's ratio.</li>
+<li><code>UJOption</code> for an integer to select the an energy term U(J) and the possible options are:<br />
+&#160;&#160;&#160;&#160;0: U(J) = (K/2)((1/2)(J<sup>2</sup>-1) - ln J)<br />
+&#160;&#160;&#160;&#160;1: U(J) = (K/2)(J-1)<sup>2</sup><br />
+&#160;&#160;&#160;&#160;2: U(J) = (K/2)(ln J)<sup>2</sup><br />
+where K is the bulk modulus and is entered as a separate property. The default (and recommended) option is 0.</li>
+<li><code>alpha</code> for thermal expansion coefficient in ppm/degree C.</li>
+<li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
+</ul>
+
+<p>From the first five properties, you must enter K and G, Lame and G, OR E and nu.</p>
+
+<h3>History Data for Neo-Hookean Material</h3>
 
 <ol>
 <li>The volumetric ratio or J = V/V<sub>0</sub> (<i>i.e.</i>, the determinant of the deformation gradient)</li>
