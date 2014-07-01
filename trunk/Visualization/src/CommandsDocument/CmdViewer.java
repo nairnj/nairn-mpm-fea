@@ -1251,18 +1251,26 @@ public class CmdViewer extends JNCmdTextDocument
 			throw new Exception("'"+dcmd+"' has too few parameters:\n"+args);
 		
 		// damping factor (required)
-		String damp = readStringArg(args.get(1));
+		double damp=0.;
+		String dampcmd;
+		Object dampArg = readStringOrDoubleArg(args.get(1));
+		if(dampArg.getClass().equals(Double.class))
+		{	damp = ((Double)dampArg).doubleValue();
+			dampcmd = "    <"+dcmd;
+		}
+		else
+		{	dampcmd = "    <"+dcmd+ " function='"+dampArg+"'";
+		}
 		
 		// PIC fraction (optional)
-		String dampcmd;
 		if(args.size()>2)
 		{	double pic = readDoubleArg(args.get(2));
 			if(pic<0 || pic>1)
 				throw new Exception("PIC damping in '"+dcmd+"' must be from 0 to 1:\n"+args);
-			dampcmd = "    <"+dcmd+" PIC='"+pic+"'>"+damp+"</"+dcmd+">\n";
+			dampcmd = dampcmd+" PIC='"+pic+"'>"+damp+"</"+dcmd+">\n";
 		}
 		else
-			dampcmd = "    <"+dcmd+">"+damp+"</"+dcmd+">\n";
+			dampcmd = dampcmd+">"+damp+"</"+dcmd+">\n";
 		
 		if(dcmd.equals("Damping"))
 			damping = dampcmd;
