@@ -1648,7 +1648,7 @@ public class CmdViewer extends JNCmdTextDocument
 		requiresMPM(args);
 	
 		// defaults
-		double gx=0.,gy=-9800.,gz=0.;
+		double gx=0.,gy=-9806.65,gz=0.;
 		
 		if(args.size()>1) gx = 1000.*readDoubleArg(args.get(1));
 		if(args.size()>2) gy = 1000.*readDoubleArg(args.get(2));
