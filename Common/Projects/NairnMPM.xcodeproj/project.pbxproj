@@ -391,6 +391,8 @@
 		A7D1E5830749581A00BC2956 /* RigidMaterial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7D1E5810749581A00BC2956 /* RigidMaterial.cpp */; };
 		A7D62D2817557EE0008FA00A /* MatPtHeatFluxBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7D62D2717557EE0008FA00A /* MatPtHeatFluxBC.cpp */; };
 		A7D62D2A175582E0008FA00A /* MatPtHeatFluxBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7D62D29175582E0008FA00A /* MatPtHeatFluxBC.hpp */; };
+		A7D66176196322E300757628 /* Neohookean.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7D66174196322E300757628 /* Neohookean.cpp */; };
+		A7D66177196322E300757628 /* Neohookean.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7D66175196322E300757628 /* Neohookean.hpp */; };
 		A7DDE95E0BCBFA01005CC32D /* mathexpr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7DDE95C0BCBFA01005CC32D /* mathexpr.cpp */; };
 		A7DDE95F0BCBFA01005CC32D /* mathexpr.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7DDE95D0BCBFA01005CC32D /* mathexpr.hpp */; };
 		A7DDE9600BCBFA01005CC32D /* mathexpr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7DDE95C0BCBFA01005CC32D /* mathexpr.cpp */; };
@@ -707,6 +709,8 @@
 		A7D5DB43041028D50063AF10 /* Mooney.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Mooney.cpp; path = Materials/Mooney.cpp; sourceTree = "<group>"; };
 		A7D62D2717557EE0008FA00A /* MatPtHeatFluxBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPtHeatFluxBC.cpp; sourceTree = "<group>"; };
 		A7D62D29175582E0008FA00A /* MatPtHeatFluxBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatPtHeatFluxBC.hpp; sourceTree = "<group>"; };
+		A7D66174196322E300757628 /* Neohookean.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Neohookean.cpp; path = Materials/Neohookean.cpp; sourceTree = "<group>"; };
+		A7D66175196322E300757628 /* Neohookean.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Neohookean.hpp; path = Materials/Neohookean.hpp; sourceTree = "<group>"; };
 		A7DDE95C0BCBFA01005CC32D /* mathexpr.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = mathexpr.cpp; sourceTree = "<group>"; };
 		A7DDE95D0BCBFA01005CC32D /* mathexpr.hpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.h; path = mathexpr.hpp; sourceTree = "<group>"; };
 		A7DE477A11B97CD400FDEFE6 /* WoodMaterial.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = WoodMaterial.hpp; sourceTree = "<group>"; };
@@ -1220,6 +1224,8 @@
 				A7A355230B681DC100EF7973 /* HyperElastic.cpp */,
 				A7D5DB42041028D50063AF10 /* Mooney.hpp */,
 				A7D5DB43041028D50063AF10 /* Mooney.cpp */,
+				A7D66174196322E300757628 /* Neohookean.cpp */,
+				A7D66175196322E300757628 /* Neohookean.hpp */,
 				A7B6936814325B02006F6A27 /* HEAnisotropic.hpp */,
 				A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */,
 				A77F5ECC15FA6ED8005188E8 /* HEIsotropic.hpp */,
@@ -1615,6 +1621,7 @@
 				A75B5902184FBA030011ADAE /* TaitLiquid.hpp in Headers */,
 				A78424151888A3FE00AA284A /* DDBHardening.hpp in Headers */,
 				67FB2A0118901EB200417546 /* ShellController.hpp in Headers */,
+				A7D66177196322E300757628 /* Neohookean.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1941,6 +1948,7 @@
 				A75B5901184FBA030011ADAE /* TaitLiquid.cpp in Sources */,
 				A78424141888A3FE00AA284A /* DDBHardening.cpp in Sources */,
 				67FB2A0018901EB200417546 /* ShellController.cpp in Sources */,
+				A7D66176196322E300757628 /* Neohookean.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

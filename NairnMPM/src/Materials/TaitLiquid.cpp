@@ -53,7 +53,7 @@ const char *TaitLiquid::VerifyAndLoadProperties(int np)
     
 	// Viscosity in Specific units using initial rho (times 2)
 	// for MPM (units N sec/m^2 cm^3/g) (1 cP = 0.001 N sec/m^2)
-	Etasp = 0.002*viscosity/rho;
+	TwoEtasp = 0.002*viscosity/rho;
     
     // heating gamma0
     double alphaV = 3.e-6*aI;
@@ -72,6 +72,7 @@ void TaitLiquid::PrintMechanicalProperties(void) const
 	PrintProperty("a",aI,"");
     cout << endl;
     PrintProperty("gam0",gamma0,"");
+    cout << endl;
 }
 
 // if analysis not allowed, throw a CommonException
@@ -113,33 +114,31 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 	// Update total deformation gradient, and calculate trial B
 	double detdF = IncrementDeformation(mptr,du,NULL,np);
     
-	// Deformation gradients and Cauchy tensor differ in plane stress and plane strain
-    // This code handles plane strain, axisymmetric, and 3D - Plane stress is blocked
-	double Jtot = detdF * mptr->GetHistoryDble(J_history);
+    // Get new J and save result on the particle
+	double J = detdF * mptr->GetHistoryDble(J_history);
+    mptr->SetHistoryDble(J_history,J);
     
-    // save new J
-    mptr->SetHistoryDble(J_history,Jtot);  // Stocking J
-	
     // account for residual stresses
 	double dresStretch,resStretch = GetResidualStretch(mptr,dresStretch,res);
 	double Jres = resStretch*resStretch*resStretch;
-    double J = Jtot/Jres;
+    double Jeff = J/Jres;
 
-    // new pressure from Tait equation
+    // new Kirchhoff pressure (over rho0) from Tait equation
 	double p0=mptr->GetPressure();
-    double pressure = TAIT_C*Ksp*(exp((1.-J)/TAIT_C)-1.) ;
+    double pressure = J*TAIT_C*Ksp*(exp((1.-Jeff)/TAIT_C)-1.);
     mptr->SetPressure(pressure);
     
-	// incremental energy - dilational part
+	// incremental energy per unit mass - dilational part
     double avgP = 0.5*(p0+pressure);
     double delV = 1. - 1./detdF;
     double workEnergy = -avgP*delV;
     
-	// incremental residual energy
+	// incremental residual energy per unit mass
 	double delVres = 1. - 1./(dresStretch*dresStretch*dresStretch);
 	double resEnergy = -avgP*delVres;
 	
     // viscosity term = 2 eta (0.5(grad v) + 0.5*(grad V)^T - (1/3) tr(grad v) I)
+    // (i.e., divatoric part of the symmetric strain tensor, 2 is for conversion to engineering shear strain)
     Matrix3 shear;
     double c[3][3];
     c[0][0] = (2.*du(0,0)-du(1,1)-du(2,2))/3.;
@@ -156,7 +155,9 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     }
     else
         shear.set(c[0][0],c[0][1],c[1][0],c[1][1],c[2][2]);
-    shear.Scale(Etasp/delTime);
+    
+    // Get Kirchoff shear stress (over rho0)
+    shear.Scale(J*TwoEtasp/delTime);
     
     // update deviatoric stress
 	Tensor *sp=mptr->GetStressTensor();
@@ -169,22 +170,21 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
         sp->yz = shear(1,2);
     }
     
-    // shear work = tau.du = tau.tau*delTime/Etasp
+    // shear work per unit mass = tau.du = tau.tau*delTime/TwoEtasp
     double shearWork = sp->xx*sp->xx + sp->yy*sp->yy + sp->zz*sp->zz + 2.*sp->xy*sp->xy;
     if(np==THREED_MPM) shearWork += 2.*(sp->xz*sp->xz + sp->yz*sp->yz);
-    shearWork *= delTime/Etasp;
+    shearWork *= delTime/TwoEtasp;
     mptr->AddWorkEnergyAndResidualEnergy(workEnergy+shearWork,resEnergy);
     
     // particle isentropic temperature increment dT/T = - J (K/K0) gamma0 Delta(V)/V
     // Delta(V)/V = 1. - 1/detdF (total volume)
-	double Kratio = J*(1.+pressure/(TAIT_C*Ksp));
-	double dTq0 = -Jtot*Kratio*gamma0*mptr->pPreviousTemperature*delV;
+	double Kratio = Jeff*(1.+pressure/(TAIT_C*Ksp));
+	double dTq0 = -J*Kratio*gamma0*mptr->pPreviousTemperature*delV;
     
     // heat energy is Cv (dT - dTq0) -dPhi
 	// Here do Cv (dT - dTq0)
     // dPhi = shearWork is lost due to shear term
     IncrementHeatEnergy(mptr,res->dT,dTq0,shearWork);
-
 }
 
 #pragma mark TaitLiquid::Custom Methods
@@ -226,3 +226,9 @@ Tensor TaitLiquid::GetStress(Tensor *sp,double pressure) const
     stress.zz -= pressure;
     return stress;
 }
+
+// Get current relative volume change = J (which this material tracks)
+double TaitLiquid::GetCurrentRelativeVolume(MPMBase *mptr) const
+{   return mptr->GetHistoryDble(J_history);
+}
+

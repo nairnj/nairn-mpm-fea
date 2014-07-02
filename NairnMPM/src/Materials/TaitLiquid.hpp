@@ -45,10 +45,11 @@ class TaitLiquid : public HyperElastic
         virtual double WaveSpeed(bool,MPMBase *) const;
         virtual double CurrentWaveSpeed(bool,MPMBase *) const;
         virtual Tensor GetStress(Tensor *sp,double pressure) const;
-        
+        virtual double GetCurrentRelativeVolume(MPMBase *) const;
+    
     protected:
         int J_history;
-        double Etasp;
+        double TwoEtasp;
 		double gamma0;
     
 };
