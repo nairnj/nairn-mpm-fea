@@ -157,12 +157,16 @@ to an integer. The <code>indexExpression</code>, however, cannot use array varia
 <p>Numeric expressions use standard operators (+, 0, *, /, ^, and %) with standard precedences
 unless grouped by parentheses. The expression can use the math
 functions cos(), sin(), tan(), acos(), asin(), atan(), cosh(), sinh(), tanh(), sqrt(),
-log(), log10(), exp(), abs() int(), sign(), and rand(). The trigonometric functions expect arguments as radians or return radians (as appropriate); sign() is 1 if argument is positive or zero otherwise; rand() is random floating point number between 0 and the argument.</p>
+log(), log10(), exp(), abs() int(), sign(), and rand(). The trigonometric functions expect arguments
+as radians or return radians (as appropriate); sign() is 1 if argument is positive or zero
+otherwise; rand() is random floating point number between 0 and the argument.
+The numeric variable <code>pi</code> is set the constant pi and can be used in expressions.</p>
 
-<p>String expressions can
-combine quoted strings and variables with the single operator &amp;. Numeric variables
-can be used and they are converted to strings. You can also embed numeric expressions (including numeric constants)
-within string expressions by enclosing them in parentheses.</p>
+<p>String expressions can combine quoted strings and variables with the single operator &amp;. Numeric
+variables can be used and they are converted to strings. You can also embed numeric expressions
+(including numeric constants) within string expressions by enclosing them in parentheses.
+The words <code>return</code> and <code>tab</code> can be used between operators to insert a return
+or tab character into the string.</p>
 
 <p>As a short cut, the command</p>
 <blockquote>
