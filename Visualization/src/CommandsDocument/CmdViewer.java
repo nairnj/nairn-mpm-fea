@@ -524,7 +524,11 @@ public class CmdViewer extends JNCmdTextDocument
 			mpmGridBCs.AddTempConc(args,MPMGridBCs.ADD_CONCENTRATION);
 
 		else if(theCmd.equals("temperature"))
-			mpmGridBCs.AddTempConc(args,MPMGridBCs.ADD_TEMPERATURE);
+		{	if(isFEA())
+				doTemperature(args);
+			else
+				mpmGridBCs.AddTempConc(args,MPMGridBCs.ADD_TEMPERATURE);
+		}
 
 		else if(theCmd.equals("loadline"))
 			mpmGridBCs.StartMoveLine(args,MPMGridBCs.LOADLINE_BC);
@@ -625,9 +629,6 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		else if(theCmd.equals("gridthickness"))
 			gridinfo.doGridThickness(args);
-		
-		else if(theCmd.equals("temperature"))
-			doTemperature(args);
 		
 		else if(theCmd.equals("stressfreetemp"))
 			doStressFreeTemp(args);
@@ -1188,20 +1189,13 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 	}
 
-	// Temperature
+	// Temperature (FEA) only
 	public void doTemperature(ArrayList<String> args) throws Exception
-	{
-		if(isFEA())
-		{	// Temperature #1 which is a function
-			if(args.size()<2)
-				throw new Exception("'Temperature' command with too few arguments:\n"+args);
+	{	// Temperature #1 which is a function
+		if(args.size()<2)
+			throw new Exception("'Temperature' command with too few arguments:\n"+args);
 			
-			feaTemp = readStringArg(args.get(1));
-		}
-		
-		else
-		{	throw new Exception("Temperature command not available for MPM yet: "+args);
-		}
+		feaTemp = readStringArg(args.get(1));
 	}
 
 	// Stress Free Temperature
