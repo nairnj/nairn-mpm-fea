@@ -405,9 +405,9 @@ public class Areas
 	{	ArrayList<Object> keyData = keyIDs.get(anID);
 		if(keyData==null) return null;
 		if(prop.equals("x"))
-			return keyData.get(0).toString();
-		else if(prop.equals("y"))
 			return keyData.get(1).toString();
+		else if(prop.equals("y"))
+			return keyData.get(2).toString();
 		else if(prop.equals("z"))
 			return "0";
 		return null;

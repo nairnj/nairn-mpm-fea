@@ -180,11 +180,16 @@ public class FEABCs
 		int dof = readDirection(args.get(1));
 		bcSettings.append("      <DisBC dof='"+dof+"'");
 		
-		// read value
-		String value="0";
+		// read value (number or user-defined function)
 		if(args.size()>2)
-			value = doc.readStringArg(args.get(2));
-		bcSettings.append(" disp='"+value+"'");
+		{	Object dispArg = doc.readStringOrDoubleArg(args.get(2));
+			if(dispArg.getClass().equals(Double.class))
+				bcSettings.append(" disp='"+dispArg+"'");
+			else
+				bcSettings.append(" function='"+dispArg+"'");
+		}
+		else
+			bcSettings.append(" disp='0'");
 		
 		// end it
 		bcSettings.append("/>\n");
