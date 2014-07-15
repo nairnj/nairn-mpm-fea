@@ -50,6 +50,15 @@ int tempOffset=-1,concOffset=-1,strainEnergyOffset=-1,plasticEnergyOffset=-1;
 int history1Offset=-1,history2Offset=-1,history3Offset=-1,history4Offset=-1;
 int workEnergyOffset=-1,heatEnergyOffset=-1;
 
+// global file variables
+unsigned char *buffer;
+long fileLength,seekOffset,blockSize;
+FILE *fp;
+unsigned char *ap,*apNextBlock;
+
+// 50 MB chunks
+#define MAX_READ_BLOCK 50000000
+
 #pragma mark MAIN AND INPUT PARAMETERS
 
 // main entry point
@@ -100,6 +109,8 @@ int main(int argc, char * const argv[])
                     q=PRESSURE;
                 else if(strcmp(parm,"vonmises")==0)
                     q=EQUIVSTRESS;
+                else if(strcmp(parm,"equivstrain")==0)
+                    q=EQUIVSTRAIN;
 				else if(strcmp(parm,"exx")==0)
 					q=EXX;
 				else if(strcmp(parm,"eyy")==0)
@@ -419,7 +430,6 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	}
 	
 	// open the file
-	FILE *fp;
 	if((fp=fopen(mpmFile,"r"))==NULL)
 	{	cerr << "Input file '" << mpmFile << "' could not be opened" << endl;
 		return FileAccessErr;
@@ -431,25 +441,30 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 		fclose(fp);
 		return FileAccessErr;
 	}
-	long fileLength=ftell(fp);
+	fileLength=ftell(fp);
 	rewind(fp);
 	
-	// read entire file into a buffer
-	unsigned char *buffer=(unsigned char *)malloc(fileLength);
+	// read first  block of file into buffer
+    blockSize = fileLength>MAX_READ_BLOCK ? MAX_READ_BLOCK : fileLength;
+	buffer=(unsigned char *)malloc(blockSize);
 	if(buffer==NULL)
 	{	cerr << "Out of memory creating file reading buffer" << endl;
 		fclose(fp);
 		return MemoryErr;
 	}
-	if(fread(buffer,fileLength,1,fp)!=1)
+    
+    // read first block
+	if(fread(buffer,blockSize,1,fp)!=1)
 	{	cerr << "Input file '" << mpmFile << "' access error (not all read)" << endl;
 		fclose(fp);
 		return FileAccessErr;
 	}
-	fclose(fp);
-	
+    
+    // set up point
+    ap=buffer;
+    seekOffset = 0;
+    
 	// look for file header
-    unsigned char *ap=buffer;
     ap+=3;							// jump to version number
 	int vernum = *ap-'0';
 	if(vernum>=4)
@@ -505,6 +520,9 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	{	cerr << "Input file format too old for this tool (missing current defaults)" << endl;
 		return FileAccessErr;
 	}
+    
+    // adjust block end pointer
+    apNextBlock = fileLength>MAX_READ_BLOCK ? ap+MAX_READ_BLOCK-2*recSize : ap+MAX_READ_BLOCK+1;
 
 	// output file
 	ofstream fout;
@@ -554,12 +572,13 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	// special case for VTK legacy files
 	if(fileFormat=='V')
 	{	if(crackDataOnly)
-		{	cerr << "Exports ot VTK Legacy file format cannot be for crack data" << endl;
+		{	cerr << "Exports to VTK Legacy file format cannot be for crack data" << endl;
 			return FileAccessErr;
 		}
-		VTKLegacy(os,ap,fileLength,mpmFile);
+		int vtkResult = VTKLegacy(os,mpmFile);
+        fclose(fp);
 		free(buffer);
-		return noErr;
+		return vtkResult;
 	}
 	
 	// optional header
@@ -669,7 +688,10 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	short *mptr;
 	BeginMP(os);
 	for(p=0;p<nummpms;p++)
-	{	short matnum=pointMatnum(ap);
+    {   // read next block when needed
+        if(!GetNextFileBlock(mpmFile)) return FileAccessErr;
+        
+		short matnum=pointMatnum(ap);
 		if(matnum<0) break;
 		
 		// skip if crack data export
@@ -745,7 +767,10 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	{	int initCrack=p;
 		int crackNumber=0,tipMatnum;
 		for(p=initCrack;p<nummpms;p++)
-		{	// read tipMatNum
+        {   // read next block when needed
+            if(!GetNextFileBlock(mpmFile)) return FileAccessErr;
+            
+			// read tipMatNum
 			mptr=(short *)(ap+sizeof(int));
 			if(reverseFromInput) Reverse((char *)mptr,sizeof(int));
 			tipMatnum=*(int *)mptr;
@@ -813,11 +838,12 @@ int ExtractMPMData(const char *mpmFile,int fileIndex,int lastIndex)
 	}
 	
 	free(buffer);
+    fclose(fp);
 	return noErr;
 }
 
 // called when start MP output - only needed for XML output
-void VTKLegacy(ostream &os,unsigned char *ap,long fileLength,const char *mpmFile)
+int VTKLegacy(ostream &os,const char *mpmFile)
 {
 	os << "# vtk DataFile Version 4.2" << endl;
 	if(headerName!=NULL)
@@ -835,22 +861,30 @@ void VTKLegacy(ostream &os,unsigned char *ap,long fileLength,const char *mpmFile
 	// count points to extract
 	int nummpms=fileLength/recSize;
 	int p,numExtract=0;
-	short *mptr;
-	unsigned char *origap=ap;
+    long origOffset = (long)(ap-buffer);
 	for(p=0;p<nummpms;p++)
-	{	short matnum=pointMatnum(ap);
+    {   // read next block when needed
+        if(!GetNextFileBlock(mpmFile)) return FileAccessErr;
+        
+		short matnum=pointMatnum(ap);
 		if(matnum<0) break;
 		if(!skipThisPoint(matnum)) numExtract++;
 		ap+=recSize;
 	}
 	
+    // output the number of points
 	os << "POINTS " << numExtract << " double" << endl;
-	if(numExtract==0) return;
+	if(numExtract==0) return noErr;
+    
+    // back to start of the file
+    if(!RestartFileBlocks(origOffset,mpmFile)) return FileAccessErr;
 	
 	// extract the point positions
-	ap=origap;
 	for(p=0;p<nummpms;p++)
-	{	short matnum=pointMatnum(ap);
+    {   // read next block when needed
+        if(!GetNextFileBlock(mpmFile)) return FileAccessErr;
+        
+		short matnum=pointMatnum(ap);
 		if(matnum<0) break;
 		if(!skipThisPoint(matnum))
 		{	OutputDouble((double *)(ap+posOffset),0,0,reverseFromInput,os,XPOS);
@@ -865,17 +899,21 @@ void VTKLegacy(ostream &os,unsigned char *ap,long fileLength,const char *mpmFile
 	}
 	
 	// extract quantities
-	if(quantity.size()==0) return;
+	if(quantity.size()==0) return noErr;
 	os << "POINT_DATA " << numExtract << endl;
 	int i;
-	double matDouble,zeroDouble=0.;
 	for(i=0;i<quantity.size();i++)
-	{	os << "SCALARS " << quantityName[i] << " double 1" << endl;
+    {   // back to start of the file
+        if(!RestartFileBlocks(origOffset,mpmFile)) return FileAccessErr;
+        
+		os << "SCALARS " << quantityName[i] << " double 1" << endl;
 		os << "LOOKUP_TABLE default" << endl;
 		
-		ap=origap;
 		for(p=0;p<nummpms;p++)
-		{	short matnum=pointMatnum(ap);
+        {   // read next block when needed
+            if(!GetNextFileBlock(mpmFile)) return FileAccessErr;
+            
+			short matnum=pointMatnum(ap);
 			if(matnum<0) break;
 			if(!skipThisPoint(matnum))
 			{	OutputQuantity(i,ap,os,matnum,0);
@@ -884,6 +922,58 @@ void VTKLegacy(ostream &os,unsigned char *ap,long fileLength,const char *mpmFile
 			ap+=recSize;
 		}
 	}
+    
+    // done
+    return noErr;
+}
+
+// If needed, read next block of data from the file
+bool GetNextFileBlock(const char *mpmFile)
+{
+    if(ap<=apNextBlock) return true;
+    
+    // set new offset
+    seekOffset += (long)(ap-buffer);
+    if(fseek(fp,seekOffset,SEEK_SET)!=0)
+    {	cerr << "Input file '" << mpmFile << "' access error (not able to reset file position)" << endl;
+        fclose(fp);
+        return false;
+    }
+        
+    // read next block
+    blockSize = seekOffset+MAX_READ_BLOCK > fileLength ? fileLength-seekOffset : MAX_READ_BLOCK;
+    if(fread(buffer,blockSize,1,fp)!=1)
+    {	cerr << "Input file '" << mpmFile << "' access error (next block not read)" << endl;
+        fclose(fp);
+        return false;
+    }
+        
+    // reset pointers
+    ap=buffer;
+    apNextBlock = fileLength>seekOffset+MAX_READ_BLOCK ? ap+MAX_READ_BLOCK-2*recSize : ap+MAX_READ_BLOCK+1;
+    return true;
+}
+
+// When reading VTK file, need several passes through file and restart before each one
+bool RestartFileBlocks(long origOffset,const char *mpmFile)
+{
+    if(fileLength>MAX_READ_BLOCK)
+    {   // go back and read first block
+        rewind(fp);
+        blockSize = MAX_READ_BLOCK;
+        if(fread(buffer,blockSize,1,fp)!=1)
+        {	cerr << "Input file '" << mpmFile << "' access error (not all read)" << endl;
+            fclose(fp);
+            return false;
+        }
+        ap=buffer;
+        apNextBlock = ap+MAX_READ_BLOCK-2*recSize;
+        seekOffset = 0;
+    }
+    
+    // set to point offset
+    ap = buffer+origOffset;
+    return true;
 }
 
 // output one quantity to the selected file type
@@ -936,8 +1026,8 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
                 }
                 double *sxz,*syz;
                 if(threeD)
-                {   double *sxz=(sxx+SXZ-SXX);
-                    double *syz=(sxx+SYZ-SXX);
+                {   sxz=(sxx+SXZ-SXX);
+                    syz=(sxx+SYZ-SXX);
                     if(reverseFromInput)
                     {	Reverse((char *)sxz,sizeof(double));
                         Reverse((char *)syz,sizeof(double));
@@ -953,6 +1043,42 @@ void OutputQuantity(int i,unsigned char *ap,ostream &os,short matnum,char delim)
 				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
 			break;
 
+        case EQUIVSTRAIN:
+            // Equivalent strain = sqrt(2 s.s / 3) where s is  deviatoric strain (absolute)
+            if(strainOffset>0)
+            {   double *exx=(double *)(ap+strainOffset);
+                double *eyy=(exx+EYY-EXX);
+                double *ezz=(exx+EZZ-EXX);
+                double *exy=(exx+EXY-EXX);
+                if(reverseFromInput)
+                {	Reverse((char *)exx,sizeof(double));
+                    Reverse((char *)eyy,sizeof(double));
+                    Reverse((char *)ezz,sizeof(double));
+                    Reverse((char *)exy,sizeof(double));
+                }
+                double dxz=0.,dyz=0.;
+                if(threeD)
+                {   double *exz=(exx+EXZ-EXX);
+                    double *eyz=(exx+EYZ-EXX);
+                    if(reverseFromInput)
+                    {	Reverse((char *)exz,sizeof(double));
+                        Reverse((char *)eyz,sizeof(double));
+                    }
+                    dxz = *exz;
+                    dyz = *eyz;
+                }
+                double tre = (*exx+*eyy+*ezz)/3.;
+                double dxx = *exx - tre;
+                double dyy = *eyy - tre;
+                double dzz = *ezz - tre;
+                double dxy = *exy;
+                double se = dxx*dxx + dyy*dyy + dzz*dzz + 0.5*(dxy*dxy + dxz*dxz + dyz*dyz);
+                se = sqrt(2.*se/3.);
+                OutputDouble(&se,0,delim,false,os,quantity[i]);
+            }
+			else
+				OutputDouble(&zeroDouble,0,delim,false,os,quantity[i]);
+			break;
 		
 		case EXX:
 		case EYY:
