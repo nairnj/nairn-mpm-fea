@@ -23,7 +23,7 @@ enum { SXX=0,SYY,SZZ,SXY,SXZ,SYZ,
 		PEXX,PEYY,PEZZ,PEXY,PEXZ,PEYZ,STRENG,PLENG,TEMP,CONC,
 		DISPX,DISPY,DISPZ,VELX,VELY,VELZ,
 		MAT,J1,J2,KI,KII,MASS,XPOS,YPOS,ZPOS,PRESSURE,EQUIVSTRESS,
-        HIST1,HIST2,HIST3,HIST4,WORKENERGY,HEATENERGY };
+        HIST1,HIST2,HIST3,HIST4,WORKENERGY,HEATENERGY,EQUIVSTRAIN };
 
 // error codes
 enum { noErr=0, NoInputFileErr, BadOptionErr, FileAccessErr, MemoryErr };
@@ -45,7 +45,9 @@ enum { ARCH_JIntegral=2,ARCH_StressIntensity,ARCH_BalanceResults,ARCH_MAXCRACKIT
 char *NextArgument(int,char * const [],int,char);
 void Usage(const char *);
 int ExtractMPMData(const char *,int,int);
-void VTKLegacy(ostream &,unsigned char *,long,const char *);
+int VTKLegacy(ostream &,const char *);
+bool GetNextFileBlock(const char *);
+bool RestartFileBlocks(long,const char *);
 void OutputQuantity(int,unsigned char *,ostream &,short,char);
 short pointMatnum(unsigned char *);
 bool skipThisPoint(short);
