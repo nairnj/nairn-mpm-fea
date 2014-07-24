@@ -24,7 +24,7 @@
 #include "Nodes/MaterialInterfaceNode.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/TransportTask.hpp"
-#include "Materials/RigidMaterial.hpp"
+#include "Materials/MaterialBase.hpp"
 
 // class statics
 double NodalPoint::interfaceEnergy=0.;
