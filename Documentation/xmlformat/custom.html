@@ -62,6 +62,8 @@
 <li>heatenergy - the heat energy in J.</li>
 <li>plasticenergy - the plastic energy (in J).</li>
 <li>contactforce - the nodal force on the grid for <code>MultiMaterialMode</code> simulations when they include rigid materials that have <code>SetDirection</code>=8. It is force of the rigid material on the object in Newtons.</li>
+<li>volumegradient (matnum) - the volume gradient used for contact calculations when running in multimaterial model. The (matnum) argument is the material number whose gradient is archived.</li>
+<li>numpoints - the number of material points interacting with each node in the grid.</li>
 <li>archiveTime (time) - enter the time interval (in ms) between saving of <code>VTK</code> archives. If this parameter is omitted, the VTK archive files are written on the same steps as the particle archives.</li>
 <li>firstArchiveTime (time) - enter the time to save the first results (in ms).</li>
 </ul>
