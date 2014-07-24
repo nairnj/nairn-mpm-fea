@@ -83,6 +83,7 @@ class CrackVelocityField
 	
 		// methods
 		virtual void MaterialContactOnCVF(NodalPoint *,int,double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
+		virtual bool HasVolumeGradient(int) const;
 		virtual void GetVolumeGradient(int,const NodalPoint *,Vector *,double) const;
 		virtual void CalcVelocityForStrainUpdate(void) = 0;
 	

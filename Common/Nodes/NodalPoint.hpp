@@ -132,6 +132,7 @@ class NodalPoint : public LinkedObject
 		void MaterialContactOnNode(double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
         void MaterialInterfaceForce(MaterialInterfaceNode *);
 		void GetVolumeGradient(short,int,Vector *,double) const;
+		void GetMatVolumeGradient(int,Vector *) const;
         void SetMomVel(Vector *);
         void AddMomVel(Vector *,double);
 		void ReflectMomVel(Vector *,NodalPoint *);
