@@ -983,6 +983,14 @@ void CrackVelocityFieldMulti::GetFrictionalDeltaMomentum(Vector *delPi,Vector *n
     }
 }
 
+// retrieve volume gradient for matnum (1 based) in crack field only (or zero if
+// not there or not tracked
+bool CrackVelocityFieldMulti::HasVolumeGradient(int matfld) const
+{	if(mvf[matfld]==NULL) return FALSE;
+	if(mvf[matfld]->volumeGrad==NULL) return FALSE;
+	return TRUE;
+}
+
 // retrieve volume gradient, but set components zero on symmetry planes
 void CrackVelocityFieldMulti::GetVolumeGradient(int matfld,const NodalPoint *ndptr,Vector *grad,double scale) const
 {
@@ -991,11 +999,11 @@ void CrackVelocityFieldMulti::GetVolumeGradient(int matfld,const NodalPoint *ndp
 		//   z component in extr axisymmetric shape function
 		if(ndptr->fixedDirection&XSYMMETRYPLANE_DIRECTION)
 		{	grad->x=0.;
-			grad->y = mvf[matfld]->volumeGrad->y>=0. ? scale : -scale ;
+			grad->y = scale*mvf[matfld]->volumeGrad->y ;
 		}
 		else if(ndptr->fixedDirection&YSYMMETRYPLANE_DIRECTION)
 		{	grad->y = 0.;
-			grad->x = mvf[matfld]->volumeGrad->x>=0. ? scale : -scale ;
+			grad->x = scale*mvf[matfld]->volumeGrad->x ;
 		}
 		else
 		{	grad->x = scale*mvf[matfld]->volumeGrad->x;

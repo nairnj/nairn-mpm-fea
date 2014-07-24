@@ -47,7 +47,10 @@ const char *VTKArchive::TaskName(void) { return "Archive grid results to VTK fil
 // not thread safe due to push_back()
 char *VTKArchive::InputParam(char *pName,int &input)
 {
-	int q=-1,thisBuffer=0;
+	int q=-1,thisBuffer=0,pindex=-1;
+	
+	// default return value
+    char *retPtr = (char *)&dummyArg;
 	
     // check for archiving quantity
     if(strcmp(pName,"mass")==0)
@@ -56,6 +59,11 @@ char *VTKArchive::InputParam(char *pName,int &input)
 		thisBuffer=-1;
     }
     
+    else if(strcmp(pName,"numpoints")==0)
+    {	q=VTK_NUMBERPOINTS;
+		thisBuffer=-1;
+    }
+	
     else if(strcmp(pName,"velocity")==0)
     {	q=VTK_VELOCITY;
 		thisBuffer=3;		// extrapolate for cm velocity
@@ -97,6 +105,19 @@ char *VTKArchive::InputParam(char *pName,int &input)
 		// no buffer since no need to extrapolate
         archiver->SetDoingArchiveContact(TRUE);
 		thisBuffer=-3;
+    }
+	
+    else if(strcmp(pName,"volumegradient")==0)
+    {   q=VTK_VOLUMEGRADIENT;
+        // no buffer since no need to extrapolate
+		if(intIndex>=MAX_INTEGER_ARGUMENTS)
+		{	cout << "Too many parameter arguments in VTKArchive options" << endl;
+			return NULL;
+		}
+        retPtr = (char *)&intArgs[intIndex];
+        pindex = intIndex;
+        intIndex++;
+        thisBuffer=-3;
     }
 	
     else if(strcmp(pName,"reactionforce")==0)
@@ -164,13 +185,14 @@ char *VTKArchive::InputParam(char *pName,int &input)
 	if(q>=0)
 	{	quantity.push_back(q);
 		quantitySize.push_back(thisBuffer);				// <0 is size for non-extrapolated quantities
+        qparam.push_back(pindex);                       // index to argument array while reading (if>=0) (seet to arguments when done)
 		//if(thisBuffer<0) thisBuffer=-thisBuffer;
 		if(thisBuffer>0) bufferSize+=thisBuffer;
 		char *qname=new char[strlen(pName)+1];
 		strcpy(qname,pName);
 		quantityName.push_back(qname);
 		input=INT_NUM;
-        return (char *)&dummyArg;
+        return retPtr;
 	}
 	
 	// check remaining commands
@@ -215,6 +237,20 @@ CustomTask *VTKArchive::Initialize(void)
 			len=3;
 		}
 		cout << name;
+        if(quantity[q]==VTK_VOLUMEGRADIENT)
+        {   if(qparam[q]<0)
+		{   cout << endl;
+			throw CommonException("VTKArchive volumegradient must be set to an available","VTKArchive::Initialize");
+		}
+            int matnum = intArgs[qparam[q]];
+            cout << " (material #" << matnum << ")";
+            len+=14;
+            if(matnum<1 || matnum>nmat)
+            {   cout << endl;
+                throw CommonException("VTKArchive volumegradient must be for an available material","VTKArchive::Initialize");
+            }
+            qparam[q] = matnum;
+        }
 		if(q<quantity.size()-1) cout << ", ";
 		len+=strlen(name)+2;
 	}
@@ -250,7 +286,7 @@ CustomTask *VTKArchive::PrepareForStep(bool &needExtraps)
 CustomTask *VTKArchive::StepCalculation(void)
 {
 	if(doVTKExport)
-		archiver->ArchiveVTKFile(mtime+timestep,quantity,quantitySize,quantityName,vtk);
+		archiver->ArchiveVTKFile(mtime+timestep,quantity,quantitySize,quantityName,qparam,vtk);
     return nextTask;
 }
 

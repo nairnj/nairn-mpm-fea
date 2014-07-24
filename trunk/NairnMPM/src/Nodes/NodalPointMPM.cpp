@@ -24,6 +24,7 @@
 #include "Nodes/MaterialInterfaceNode.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/TransportTask.hpp"
+#include "Materials/RigidMaterial.hpp"
 
 // class statics
 double NodalPoint::interfaceEnergy=0.;
@@ -1448,6 +1449,23 @@ void NodalPoint::MaterialContactOnNode(double deltime,int callType,MaterialInter
 // retrieve -2*scale*(mass gradient) for material matfld in velocity field vfld
 void NodalPoint::GetVolumeGradient(short vfld,int matfld,Vector *grad,double scale) const
 {	cvf[vfld]->GetVolumeGradient(matfld,this,grad,scale);
+}
+
+// retrieve volume gradient for matnum (1 based) in crack field only (or zero if
+// not there or not tracked)
+void NodalPoint::GetMatVolumeGradient(int matnum,Vector *grad) const
+{
+	// Default to zero and exit if not in multimaterial mode
+	ZeroVector(grad);
+	if(!fmobj->multiMaterialMode) return;
+	
+	// Only there if field zero is active
+    if(CrackVelocityField::ActiveField(cvf[0]))
+    {   // convert to field number
+		int matfld = theMaterials[matnum-1]->GetField();
+        if(cvf[0]->HasVolumeGradient(matfld))
+            cvf[0]->GetVolumeGradient(matfld,this,grad,1.);
+    }
 }
 
 // This node is known to have imperfect interface with forces in cvf[vfld] from material mati

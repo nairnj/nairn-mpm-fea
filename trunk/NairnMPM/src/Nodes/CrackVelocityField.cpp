@@ -246,6 +246,10 @@ void CrackVelocityField::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,double 
 { return;
 }
 
+// retrieve volume gradient for matnum (1 based) in crack field only (or zero if
+// not there or not tracked (subclass overrides)
+bool CrackVelocityField::HasVolumeGradient(int matfld) const { return FALSE; }
+
 // retrieve mass gradient (overridden in CrackVelocityFieldMulti where it is needed
 void CrackVelocityField::GetVolumeGradient(int matfld,const NodalPoint *ndptr,Vector *grad,double scale) const { ZeroVector(grad); }
 

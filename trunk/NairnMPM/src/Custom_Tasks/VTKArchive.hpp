@@ -15,6 +15,8 @@
 
 #include "Custom_Tasks/CustomTask.hpp"
 
+#define MAX_INTEGER_ARGUMENTS 10
+
 class VTKArchive : public CustomTask
 {
     public:
@@ -39,6 +41,9 @@ class VTKArchive : public CustomTask
 		vector< int > quantity;
 		vector< int > quantitySize;
 		vector< char * > quantityName;
+		vector< int > qparam;
+		int intIndex;
+		int intArgs[MAX_INTEGER_ARGUMENTS];
 		double customArchiveTime,nextCustomArchiveTime;
 		int bufferSize;				// if task has quantity that must be extrapolated
 		bool getVTKExtraps;			// flag to do extrapolations this step

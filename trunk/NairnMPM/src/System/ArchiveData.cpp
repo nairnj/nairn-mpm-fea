@@ -984,7 +984,7 @@ void ArchiveData::GlobalArchive(double atime)
 
 // Archive the results if it is time
 void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int > quantitySize,
-											vector< char * > quantityName,double **vtk)
+											vector< char * > quantityName,vector< int > qparam,double **vtk)
 {
     char fname[300],fline[300];
 	
@@ -1061,6 +1061,8 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 			case -3:
 				afile << "VECTORS ";
 				afile << quantityName[q];
+                if(quantity[q]==VTK_VOLUMEGRADIENT)
+                    afile << qparam[q];
 				afile << " double" << endl;
 				break;
 			
@@ -1084,6 +1086,11 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					afile << nd[i]->mass << endl;
 					break;
 				
+				case VTK_NUMBERPOINTS:
+                    // number of points (no rigid will show up)
+                    afile << nd[i]->NumberParticles() << endl;
+                    break;
+					
 				case VTK_TEMPERATURE:
 					afile << nd[i]->gTemperature << endl;
 					break;
@@ -1097,6 +1104,13 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					break;
 				}
 				
+                case VTK_VOLUMEGRADIENT:
+                {   Vector grad;
+                    nd[i]->GetMatVolumeGradient(qparam[q],&grad);
+					afile << grad.x << " " << grad.y << " " << grad.z << endl;
+                    break;
+                }
+					
 				case VTK_BCFORCES:
 					if(nd[i]->fixedDirection&XYZ_SKEWED_DIRECTION)
 					{	//Vector fbc = nd[i]->GetCMatFtot();
