@@ -25,6 +25,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * Added two new damping options - particle damping and PIC damping; the later can also run simulations with mixed FLIP/PIC style updates. In making this change, also changed the way grid damping is implemented, but it should not make much of a difference.
     * Mooney can take E and nu OR K and G1. HEIsotropic and HEMGEOSMaterial can take G or G1.
     * Mooney, HEIsotropic, and HEMGEOSMaterial were revised to better handle residual stresses
+    * Neohookean material as alternative to Mooney in its Neohookean mode. These two Neohookean materials used different strain energy functions.
     * HEMGEOSMaterial in tension was changed for better stability during large temperature changes.
     * `ReverseLoad` custom task can be triggered on any global quantity as well as crack length and it can hold for a specified time before reversing (or aborting). Finally, it had a bug using the hold style with load and traction BCs; the bug is fixed.
 
