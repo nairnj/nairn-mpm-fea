@@ -22,11 +22,11 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
 
   * Current main trunk
     * Working on NairnMPM 10.1.0
-    * Added two new damping options - particle damping and PIC damping; the later can also run simulations with mixed FLIP/PIC style updates. In making this change, also change the way grid damping is implemented, but it should not make much of a difference.
+    * Added two new damping options - particle damping and PIC damping; the later can also run simulations with mixed FLIP/PIC style updates. In making this change, also changed the way grid damping is implemented, but it should not make much of a difference.
     * Mooney can take E and nu OR K and G1. HEIsotropic and HEMGEOSMaterial can take G or G1.
     * Mooney, HEIsotropic, and HEMGEOSMaterial were revised to better handle residual stresses
     * HEMGEOSMaterial in tension was changed for better stability during large temperature changes.
-    * `ReverseLoad` custom task can be trigger on any global quantity as well as crack length and it can hold for a specified time before reversing (or aborting). Finally, it had a bug using the hold style with load and traction BCs; the bug is fixed.
+    * `ReverseLoad` custom task can be triggered on any global quantity as well as crack length and it can hold for a specified time before reversing (or aborting). Finally, it had a bug using the hold style with load and traction BCs; the bug is fixed.
 
   * Release-5.0 (9 Feb 2014): On Jan 14, 2014, the OpenMP branch replaced the main trunk for this release. That branch was started on April 2, 2013 to make parallel code. It has lots of changes needed to be parallel. All MPM materials use buffers for any material class variable that changes with particle state. The entire problem is divided into patches with ghost nodes on boundaries (and some section divide work by patch). The Particles reordered by type, which helps some loops divided by type (e.g., rigid velocities). The crack velocity field calculation is done in the initiation phase. Many other changes have been done along the way, although many of these are just features and not crucial for parallel code:
     * Has NairnMPM 10.0.0
