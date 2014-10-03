@@ -22,9 +22,6 @@
 // _OPENMP is defined, even though not being used
 //#define _OMPTEST
 
-// Activate to test traction laws add first before combining with ftot
-//#define USE_FEXT
-
 // Activate debugging messages that look for nan in results that should always be valid numbers
 //#define CHECK_NAN
 

@@ -28,6 +28,15 @@
 //#define _CUBIC_INTERPOLATION_
 //#define _LINEAR_INTERPOLATION_
 
+/* New method for j integral to handle multiple cracks
+   Search for GRID_JTERMS to see changes to allow grid options
+*/
+#define MCJ_INTEGRAL
+
+// Debugging
+//#define CONTOUR_PARTS
+//#define PRINT_CROSS_STATUS
+
 class CrackSegment;
 class ContourPoint;
 class CrackLeaf;
@@ -36,20 +45,6 @@ class NodalPoint;
 #define START_OF_CRACK 0
 #define END_OF_CRACK 1
 #define EXTERIOR_CRACK -2
-
-/* The HIERARCHICAL_CRACKS constants determines the method used to screen
-    cracks for intersections in the CrackCross() method and eliminate those
-    that do not intersect crack extents, which are tracked.
-        If defined, cracks are hierarchical structures with each branch having
-            its own extents
-        If not defined, track one global extent. See EXTENT_NORMALS to pick
-            the shape of the crack bounding region
-*/
-#define HIERARCHICAL_CRACKS
-
-// Determines full crack bounding region. Must be 2, 4, or 6, for box, octagon, dodecahedron
-// Setting is irrelevant when HIERARCHICAL_CRACKS is defined
-#define EXTENT_NORMALS 4
 
 class CrackHeader : public LinkedObject
 {
@@ -75,7 +70,6 @@ class CrackHeader : public LinkedObject
         short MoveCrack(void);
         short MoveCrack(short);
 		void UpdateCrackTractions(void);
-        int Count(void);
         double Length(void);
         int NumberOfSegments(void);
 		void CrackTipHeating(void);
@@ -89,19 +83,17 @@ class CrackHeader : public LinkedObject
 		void Describe(void);
 		bool NodeNearTip(NodalPoint *,double);
 
-#ifdef HIERARCHICAL_CRACKS
-        void CreateHierarchy(void);
+        bool CreateHierarchy(void);
         void MoveHierarchy(void);
         void ExtendHierarchy(CrackSegment *);
         short CrackCrossLeaf(CrackLeaf *,double,double,double,double,Vector *,short);
         short CrackCrossOneSegment(CrackSegment *,double,double,double,double,Vector *,short);
-        short FlatCrackCross(double,double,double,double,Vector *);
+        CrackSegment *ContourCrossCrack(ContourPoint *,Vector *);
+    
+        // These two are not used, but left here for testing of hierarchical cracks
+        short FlatCrackCrossTest(double,double,double,double,Vector *);
         void CFFlatCrossing(double,double,double,double,Vector *,short *,int,int);
-#else
-        void CreateExtents(double,double);
-        void CheckExtents(double,double);
-#endif
-        
+    
 		void SetNumber(int);
 		int GetNumber(void);
 		void SetThickness(double);
@@ -111,6 +103,7 @@ class CrackHeader : public LinkedObject
         // calculate J-integral (YJG)
         bool SegmentsCross(ContourPoint *,Vector &,Vector &,Vector *);
         void JIntegral(void);      	  // J-Integral calculation
+        void PrintContour(ContourPoint *,ContourPoint *,Vector &);
 		CrackSegment *GetCrackTip(int);
 		CrackSegment *GetAdjToCrackTip(int);
 		int GetWhichTip(CrackSegment *);
@@ -139,16 +132,16 @@ class CrackHeader : public LinkedObject
 		Vector initialDirection[2];
 		bool allowAlternate[2];
 		double thickness;						// 2D tractions and crack-tip heating
-
-#ifdef HIERARCHICAL_CRACKS
         CrackLeaf *rootLeaf;
-#else
-        double cnear[EXTENT_NORMALS],cfar[EXTENT_NORMALS];
-#endif
         
 };
 
 extern CrackHeader *firstCrack;
-extern int JGridSize,JContourType,JTerms;
+// GRID_JTERMS
+extern int JGridSize,JContourType,JTerms,JGridEnergy;
+
+extern CrackHeader **crackList;
+extern int numberOfCracks;
+
 
 #endif

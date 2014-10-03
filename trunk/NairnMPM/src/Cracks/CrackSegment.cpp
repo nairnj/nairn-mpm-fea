@@ -30,9 +30,7 @@ CrackSegment::CrackSegment(double xend,double yend,int tip,int matid)
     planeInElem=surfInElem[0]=surfInElem[1]=0;
     nextSeg=NULL;
 	prevSeg=NULL;
-#ifdef HIERARCHICAL_CRACKS
     parent=NULL;
-#endif
 	ZeroVector(&Jint);
 	ZeroVector(&sif);
 	ZeroVector(&tract);
@@ -344,11 +342,7 @@ double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,doub
 		// add if find a field
 		if(vfld>=0)
 		{	
-#ifdef USE_FEXT
-			ndi->AddFextSpreadTask3(vfld,FTract(sign*fn[i]));
-#else
 			ndi->AddFtotSpreadTask3(vfld,FTract(sign*fn[i]));
-#endif
 			fnorm += fn[i];
 		}
 	}
@@ -843,8 +837,6 @@ void CrackSegment::CollapseSurfaces(void)
 
 #pragma mark HIERACHICAL CRACKS
 
-#ifdef HIERARCHICAL_CRACKS
-
 // Create extents when segment is created or changed
 // This is the first segment if isFirstSeg is TRUE and it is the last
 //  if nextSeg->nextSeg is NULL
@@ -914,8 +906,6 @@ void CrackSegment::CreateSegmentExtents(bool isFirstSeg)
         cfar[3] = diff2;         // max
     }
 }
-
-#endif
 
 #pragma mark ACCESSORS
 

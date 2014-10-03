@@ -343,7 +343,7 @@ void NodalPoint::AddMassMomentum(MPMBase *mptr,short vfld,int matfld,double shap
 	}
 }
 
-// copy ghost node mass an momentum to real node
+// copy ghost node mass and momentum to real node
 void NodalPoint::CopyMassAndMomentum(NodalPoint *real)
 {	for(int vfld=0;vfld<maxCrackFields;vfld++)
     {	if(CrackVelocityField::ActiveField(cvf[vfld]))
@@ -431,15 +431,15 @@ void NodalPoint::CopyRigidParticleField(void)
 {
     // if field [0] has no rigid particles, then nothing to copy
     int rigidFieldNum;
-    MatVelocityField *rigidField = ((CrackVelocityFieldMulti *)cvf[0])->GetRigidMaterialField(&rigidFieldNum);
-    if(rigidField==NULL) return;
+    MatVelocityField *theRigidField = ((CrackVelocityFieldMulti *)cvf[0])->GetRigidMaterialField(&rigidFieldNum);
+    if(theRigidField==NULL) return;
     
 	// transfer the rigid field to all other crack fields
     int i;
 	for(i=1;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
 		{	// copy rigid material from field 0 to field i
-			((CrackVelocityFieldMulti *)cvf[i])->CopyRigidFrom(rigidField,rigidFieldNum);
+			((CrackVelocityFieldMulti *)cvf[i])->CopyRigidFrom(theRigidField,rigidFieldNum);
 		}
 	}
 }
@@ -465,12 +465,6 @@ void NodalPoint::CopyGridForces(NodalPoint *real)
 // Add to internal force spread out over materials for same acceleration on each
 // Only called by AddTractionForce() and CrackInterfaceForce()
 void NodalPoint::AddFtotSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFtotSpreadTask3(&f); }
-
-#ifdef USE_FEXT
-
-void NodalPoint::AddFextSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFextSpreadTask3(&f); }
-
-#endif
 
 // Add to traction force (g-mm/sec^2)
 // If cracks, recalculates crossing, but stops at first crack. Tractions near two cracks might have errors
@@ -538,7 +532,7 @@ void NodalPoint::UpdateMomentaOnNode(double timestep)
 
 // Increment velocity and acceleration for this material point using one velocity field
 void NodalPoint::IncrementDelvaTask5(short vfld,int matfld,double fi,Vector *delv,Vector *dela) const
-{	cvf[vfld]->IncrementDelvaTask5(matfld,fi,delv,dela);
+{   cvf[vfld]->IncrementDelvaTask5(matfld,fi,delv,dela);
 }
 
 #pragma mark TASK 6 METHODS
@@ -569,6 +563,61 @@ void NodalPoint::ZeroDisp(void)
 	}
 }
 
+#ifdef MCJ_INTEGRAL
+// Find field [0] from velocity field on same side of cracks as this node
+// But when a contour cross a crack, phantom nodes are inserted on the crack plane
+//    and those nodes use field[0] for contour integration before that node and
+//    field [1] for the segement after that node
+int NodalPoint::GetFieldForCrack(bool phantomNode,bool firstNode,DispField **dfld,int crackNum)
+{
+	// If phantom node and it is at the start of a segment, get field [1]
+	// or get [1] or [2] depending on crackNum (if it is not zero)
+	if(phantomNode && firstNode)
+	{	bool active1 = CrackVelocityField::ActiveNonrigidField(cvf[1]);
+		
+		if(crackNum==0)
+		{	// always get [1] here when do J contour
+			if(!active1)
+			{	*dfld = NULL;
+				return 0;
+			}
+			*dfld = cvf[1]->df;
+			return cvf[1]->GetNumberPoints();
+		}
+		else
+		{	// Find [1] or [2] on opposite side of the crack when doing interpolation
+			
+			// First check [1] if active. If it is correct crack, then use it
+			if(active1)
+			{	if(cvf[1]->crackNumber(FIRST_CRACK)==crackNum)
+                {	*dfld = cvf[1]->df;
+                    return cvf[1]->GetNumberPoints();
+                }
+			}
+			
+			// If [1] fails use [2] instead
+			// This does not check crackNum, but unlikley to have crackNum match neither one
+			bool active2 = CrackVelocityField::ActiveNonrigidField(cvf[2]);
+			if(!active2)
+			{	*dfld = NULL;
+				return 0;
+			}
+			*dfld = cvf[2]->df;
+			return cvf[2]->GetNumberPoints();
+		}
+	}
+	
+	// For real nodes or phantom nodes at the end of a segment, get field [0]
+	bool active0 = CrackVelocityField::ActiveNonrigidField(cvf[0]);
+	if(!active0)
+	{	*dfld = NULL;
+		return 0;
+	}
+	*dfld = cvf[0]->df;
+	return cvf[0]->GetNumberPoints();
+}
+
+#else
 // Find field for side of crack number crackNum.
 // Used in J and K calculations
 // Return field pointed in dfld and number of material points as results
@@ -603,7 +652,7 @@ int NodalPoint::GetFieldForCrack(int crackNum,int side,DispField **dfld,DispFiel
 			count = cvf[0]->GetNumberPoints();
 		}
 		
-		// a third other crack - average [0] and [3], but only [4] is here
+		// a third other crack - average [0] and [3], but only [3] is here
 		else if(!active0)
 		{	*dfld = cvf[3]->df;
 			count = cvf[3]->GetNumberPoints();
@@ -791,6 +840,7 @@ int NodalPoint::GetFieldForCrack(int crackNum,int side,DispField **dfld,DispFiel
 	// return the number
 	return count;
 }
+#endif
 
 // Initialize fields on a ghost node for grid extrapolations for strains, etc.
 void NodalPoint::ZeroDisp(NodalPoint *real)
@@ -830,6 +880,7 @@ void NodalPoint::AddUGradient(short vfld,double wt,double dudx,double dudy,doubl
 	df->du.y += wt*dudy;
 	df->dv.x += wt*dvdx;
 	df->dv.y += wt*dvdy;
+    df->mass += wt;
 	
 	// if more than one material get shape function extrapolation to each node
 	if(numActiveMaterials>1)
@@ -846,10 +897,22 @@ void NodalPoint::AddStress(short vfld,double wt,Tensor *stress)
 	df->stress.xy += wt*stress->xy;
 }
 
+// GRID_JTERMS
+// Add to velocity to get kinetic energy on the grid
+// wt includes sqrt(density (g/cm^3)), if axisymmtric include r for m/radian
+// kinetic energy is twice actual (to save divide by two) and units are
+//		final vx^2 = g/cm^3 mm^2/sec^2 = 1e-3 N/m^2 = 1e-3 J/m^3 = mJ/m^3
+//		to get N/mm^2 and account for 1/2, multiply by 0.5*1e-9
+void NodalPoint::AddGridVelocity(short vfld,double wt,double vx,double vy)
+{	DispField *df = cvf[vfld]->df;
+	df->vx += wt*vx;
+	df->vy += wt*vy;
+}
+
 // Add to kinetic energy and strain energy
 // wt includes density (g/cm^3), if axisymmtric include r for m/radian
-// kinetic energy if twice actual (to save divide by two) and units are
-//		g/cm^3 mm^2/sec^2 = 1e-3 N/m^2 = 1e-3 J/m^3
+// kinetic energy is twice actual (to save divide by two) and units are
+//		g/cm^3 mm^2/sec^2 = 1e-3 N/m^2 = 1e-3 J/m^3 = mJ/m^3
 //		to get N/mm^2 and account for 1/2, multiply by 0.5*1e-9
 // work has units N/m^2 = J/m^3
 void NodalPoint::AddEnergy(short vfld,double wt,double vx,double vy,double work)
@@ -874,6 +937,9 @@ void NodalPoint::CopyUGradientStressEnergy(NodalPoint *real)
 			rdf->stress.xy += gdf->stress.xy;
 			rdf->kinetic += gdf->kinetic;
 			rdf->work += gdf->work;
+            rdf->mass += gdf->mass;
+            rdf->vx += gdf->vx;
+            rdf->vy += gdf->vy;
             
             // if more than one material get shape function extrapolation to each node
             if(numActiveMaterials>1)
@@ -888,7 +954,7 @@ void NodalPoint::CopyUGradientStressEnergy(NodalPoint *real)
 // add material weights to an array
 // called by crack segment when finding crack tip materials
 // Future might want to keep above and below separate to find interface crack
-// Maybe could do with GetFieldForCrack()
+// Maybe could do with old GetFieldForCrack()
 void NodalPoint::AddMatWeights(double wt,double *matWeight)
 {	int i,j;
 	for(i=0;i<maxCrackFields;i++)
@@ -916,20 +982,74 @@ void NodalPoint::CalcStrainField(void)
 		DispField *df=cvf[j]->df;
 		if(df==NULL) continue;
 		
-		mnode=1./cvf[j]->GetTotalMass();
+		//mnode=1./cvf[j]->GetTotalMass();
+		mnode=1./df->mass;
 		df->du.x *= mnode;			// no units
 		df->du.y *= mnode;
 		df->dv.x *= mnode;
 		df->dv.y *= mnode;
-		mnode *= 1.e-6;
-		df->kinetic *= mnode*.5e-3;			// N/mm^2
-		df->work *= mnode;					// N/mm^2
-		df->stress.xx *= mnode;				// N/mm^2
-		df->stress.yy *= mnode;
-		df->stress.xy *= mnode;
-	}
+
+		// GRID_JTERMS
+		if(JGridEnergy)
+        {	df->vx *= mnode;            // sqrt(mJ/m^3)
+			df->vy *= mnode;
+			
+			mnode *= 1.e-6;
+			df->stress.xx *= mnode;				// N/mm^2
+			df->stress.yy *= mnode;
+			df->stress.xy *= mnode;
+			
+			// find grid energy from nodal extrapolations
+			df->kinetic = 0.5e-9*(df->vx*df->vx + df->vy*df->vy);               // N/mm^2
+			df->work = 0.5*(df->stress.xx*df->du.x + df->stress.yy*df->dv.y + df->stress.xy*(df->du.y+df->dv.x));       // N/mm^2
+		}
+		
+		else
+		{	mnode *= 1.e-6;
+			df->stress.xx *= mnode;				// N/mm^2
+			df->stress.yy *= mnode;
+			df->stress.xy *= mnode;
+			
+			// find energy by extrapolating particle energies
+			df->kinetic *= mnode*.5e-3;			// N/mm^2
+			df->work *= mnode;					// N/mm^2
+		}
+    }
 }
 
+#ifdef MCJ_INTEGRAL
+// Interpolate two nodes (near crack plane). This method is only called in J calculation for the
+//		phantom nodes placed on the crack plane of cracks that cross the countour
+// Interpolate [0] from node1 and [1] or [2] that crosses CrackNum from node2 to phantom [0]
+// Interpolate [0] from node2 and [1] or [2] that crosses CrackNum from nod1 to phantom [1]
+// Symbolically gets [0] = (1-fract)*n1[0] + fract*n2[i]
+//                   [1] = (1-fract)*n1[i] + fract*n2[0]
+// where [i] is [1] or [2] for field on opposite side of crack crackNum
+void NodalPoint::Interpolate(NodalPoint *n1,NodalPoint *n2,double fract,int crackNum)
+{
+	// need strain field in first crack velocity field and entire second
+	// crack velocity field for this phantom node (it may be zero)
+	cvf[0]->CreateStrainField();
+	cvf[1]=CrackVelocityField::CreateCrackVelocityField(BELOW_CRACK,crackNum);
+	if(cvf[1]==NULL) throw CommonException("Memory error allocating crack velocity field 1.",
+										   "NodalPoint::Interpolate");
+	cvf[1]->CreateStrainField();
+	
+	// fetch [0] from node 1 and [1] or [2] from node 2
+	DispField *a1fld,*a2fld;
+	int a1 = n1->GetFieldForCrack(false,false,&a1fld,0);				// gets [0]
+	int a2 = n2->GetFieldForCrack(true,true,&a2fld,crackNum);		    // gets [1] or [2]
+	AverageStrain(cvf[0]->df,a1fld,a2fld,fract);
+	cvf[0]->SetNumberPoints(a1+a2);
+
+	// fetch [1] or [2] from node 1 and [0] from node 2
+	a1 = n1->GetFieldForCrack(true,true,&a1fld,crackNum);			// gets [1] or [2]
+	a2 = n2->GetFieldForCrack(false,false,&a2fld,0);		    	// gets [0]
+	AverageStrain(cvf[1]->df,a1fld,a2fld,fract);
+	cvf[1]->SetNumberPoints(a1+a2);
+}
+
+#else
 // interpolate two nodes (near crack plane). This method is only called in J calculation for the
 // phatom node placed at the crack plane.
 // Symbolically gets fract*n2 + (1-fract)*n1
@@ -1003,60 +1123,71 @@ void NodalPoint::Interpolate(NodalPoint *n1,NodalPoint *n2,double fract,bool sta
 	cvf[1]->SetNumberPoints(b1+b2);
 	
 }
+#endif
 
 // interpolate between two fields and store in destination field
+// fract is fracture of distance from first field to the point
+//     thus want (1-fract)*src1 + fract*src2
 void NodalPoint::AverageStrain(DispField *dest,DispField *src1,DispField *src2,double fract)
 {	if(src1!=NULL && src2!=NULL)
-	{	dest->du.x=fract*src2->du.x + (1.-fract)*src1->du.x;
-		dest->du.y=fract*src2->du.y + (1.-fract)*src1->du.y;
-		dest->dv.x=fract*src2->dv.x + (1.-fract)*src1->dv.x;
-		dest->dv.y=fract*src2->dv.y + (1.-fract)*src1->dv.y;
-		dest->kinetic=fract*src2->kinetic + (1.-fract)*src1->kinetic;
-		dest->work=fract*src2->work + (1.-fract)*src1->work;
-		dest->stress.xx=fract*src2->stress.xx + (1.-fract)*src1->stress.xx;
-		dest->stress.yy=fract*src2->stress.yy + (1.-fract)*src1->stress.yy;
-		dest->stress.zz=fract*src2->stress.zz + (1.-fract)*src1->stress.zz;
-		dest->stress.xy=fract*src2->stress.xy + (1.-fract)*src1->stress.xy;
-	}
-	else if(src1!=NULL)
-	{	dest->du.x=(1.-fract)*src1->du.x;
-		dest->du.y=(1.-fract)*src1->du.y;
-		dest->dv.x=(1.-fract)*src1->dv.x;
-		dest->dv.y=(1.-fract)*src1->dv.y;
-		dest->kinetic=(1.-fract)*src1->kinetic;
-		dest->work=(1.-fract)*src1->work;
-		dest->stress.xx=(1.-fract)*src1->stress.xx;
-		dest->stress.yy=(1.-fract)*src1->stress.yy;
-		dest->stress.zz=(1.-fract)*src1->stress.zz;
-		dest->stress.xy=(1.-fract)*src1->stress.xy;
-	}
-	else if(src2!=NULL)
-	{	dest->du.x=fract*src2->du.x;
-		dest->du.y=fract*src2->du.y;
-		dest->dv.x=fract*src2->dv.x;
-		dest->dv.y=fract*src2->dv.y;
-		dest->kinetic=fract*src2->kinetic;
-		dest->work=fract*src2->work;
-		dest->stress.xx=fract*src2->stress.xx;
-		dest->stress.yy=fract*src2->stress.yy;
-		dest->stress.zz=fract*src2->stress.zz;
-		dest->stress.xy=fract*src2->stress.xy;
-	}
-	else
-	{	// outside the grid
-		dest->du.x=0.;
-		dest->du.y=0.;
-		dest->dv.x=0.;
-		dest->dv.y=0.;
-		dest->kinetic=0.;
-		dest->work=0.;
-		dest->stress.xx=0.;
-		dest->stress.yy=0.;
-		dest->stress.zz=0.;
-		dest->stress.xy=0.;
-	}
+    {   // mass and distance weighted average
+        double f1 = (1.-fract);
+        double f2 = fract;
+        dest->du.x =      f1*src1->du.x +      f2*src2->du.x;
+        dest->du.y =      f1*src1->du.y +      f2*src2->du.y;
+        dest->dv.x =      f1*src1->dv.x +      f2*src2->dv.x;
+        dest->dv.y =      f1*src1->dv.y +      f2*src2->dv.y;
+        dest->kinetic =   f1*src1->kinetic +   f2*src2->kinetic;
+        dest->work =      f1*src1->work +      f2*src2->work;
+        dest->stress.xx = f1*src1->stress.xx + f2*src2->stress.xx;
+        dest->stress.yy = f1*src1->stress.yy + f2*src2->stress.yy;
+        dest->stress.zz = f1*src1->stress.zz + f2*src2->stress.zz;
+        dest->stress.xy = f1*src1->stress.xy + f2*src2->stress.xy;
+        dest->mass =      f1*src1->mass +      f2*src2->mass;
+    }
+    else if(src1!=NULL)
+    {   dest->du.x =      (1.-fract)*src1->du.x;
+        dest->du.y =      (1.-fract)*src1->du.y;
+        dest->dv.x =      (1.-fract)*src1->dv.x;
+        dest->dv.y =      (1.-fract)*src1->dv.y;
+        dest->kinetic =   (1.-fract)*src1->kinetic;
+        dest->work =      (1.-fract)*src1->work;
+        dest->stress.xx = (1.-fract)*src1->stress.xx;
+        dest->stress.yy = (1.-fract)*src1->stress.yy;
+        dest->stress.zz = (1.-fract)*src1->stress.zz;
+        dest->stress.xy = (1.-fract)*src1->stress.xy;
+        dest->mass =      (1.-fract)*src1->mass;
+    }
+    else if(src2!=NULL)
+    {   dest->du.x =      fract*src2->du.x;
+        dest->du.y =      fract*src2->du.y;
+        dest->dv.x =      fract*src2->dv.x;
+        dest->dv.y =      fract*src2->dv.y;
+        dest->kinetic =   fract*src2->kinetic;
+        dest->work =      fract*src2->work;
+        dest->stress.xx = fract*src2->stress.xx;
+        dest->stress.yy = fract*src2->stress.yy;
+        dest->stress.zz = fract*src2->stress.zz;
+        dest->stress.xy = fract*src2->stress.xy;
+        dest->mass =      fract*src2->mass;
+    }
+    else
+    {	// outside the grid
+        dest->du.x =      0.;
+        dest->du.y =      0.;
+        dest->dv.x =      0.;
+        dest->dv.y =      0.;
+        dest->kinetic =   0.;
+        dest->work =      0.;
+        dest->stress.xx = 0.;
+        dest->stress.yy = 0.;
+        dest->stress.zz = 0.;
+        dest->stress.xy = 0.;
+        dest->mass =      0.;
+    }
 }
 
+#ifndef MCJ_INTEGRAL
 // Weight average two fields and store in destination field
 // fld1 and fld2 are assumed active with mass
 int NodalPoint::WeightAverageStrain(int fld1,int fld2,DispField *dest)
@@ -1108,6 +1239,7 @@ int NodalPoint::WeightAverageStrain(int fld1,int fld2,int fld3,DispField *dest)
 	
 	return cvf[fld1]->GetNumberPoints() + cvf[fld2]->GetNumberPoints() + cvf[fld3]->GetNumberPoints();
 }
+#endif
 
 #pragma mark TASK 8 METHODS
 
@@ -1593,31 +1725,6 @@ void NodalPoint::CrackContactThree(int single,bool postUpdate,double deltime)
 // fields must be verified as present (1 or more points)
 void NodalPoint::AdjustContact(short a,short b,Vector *norm,int crackNumber,bool postUpdate,double deltime)
 {
-#ifdef _BC_CRACK_SIDE_ONLY_
-	Vector delPa,delPb;
-	if(!contact.GetDeltaMomentum(this,&delPa,&delPb,cvf[a],cvf[b],norm,crackNumber,postUpdate,deltime))
-		return;
-	
-	// on post update contact, do not change nodes with boundary conditions
-	if(postUpdate && (fixedDirection&XYZ_SKEWED_DIRECTION))
-	{	if(fixedDirection&X_DIRECTION)
-		{	delPa.x=0.;
-			delPb.x=0.;
-		}
-		if(fixedDirection&Y_DIRECTION)
-		{	delPa.y=0.;
-			delPb.y=0.;
-		}
-		if(fixedDirection&Z_DIRECTION)
-		{	delPa.z=0.;
-			delPb.z=0.;
-		}
-	}
-	
-    // change momenta
-	cvf[a]->ChangeMomentum(&delPa,postUpdate,deltime);
-    cvf[b]->ChangeMomentum(&delPb,postUpdate,deltime);
-#else
     Vector delP;
 	if(!contact.GetDeltaMomentum(this,&delP,cvf[a],cvf[b],norm,crackNumber,postUpdate,deltime))
 		return;
@@ -1633,7 +1740,6 @@ void NodalPoint::AdjustContact(short a,short b,Vector *norm,int crackNumber,bool
 	cvf[a]->ChangeMomentum(&delP,postUpdate,deltime);
 	Vector delPb;
     cvf[b]->ChangeMomentum(CopyScaleVector(&delPb,&delP,-1.),postUpdate,deltime);
-#endif
 }
 
 // Look for crack contact and adjust accordingly
@@ -1789,46 +1895,31 @@ void NodalPoint::Describe(void) const
 // set one component of velocity and momentum to zero
 void NodalPoint::SetMomVel(Vector *norm)
 {
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just set if on same side of crack
-	cvf[0]->SetMomVel(norm);
-#else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
             cvf[i]->SetMomVel(norm);
 	}
-#endif
 }
 
 // Add one component of velocity and momentum at a node (assumes mass already set)
 void NodalPoint::AddMomVel(Vector *norm,double vel)
 {	
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just set if on same side of crack
-	cvf[0]->AddMomVel(norm,vel);
-#else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
             cvf[i]->AddMomVel(norm,vel);
 	}
-#endif
 }
 
 // Reflect one component of velocity and momentum from a node
 void NodalPoint::ReflectMomVel(Vector *norm,NodalPoint *ndptr)
 {
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just set if on same side of crack
-	not programmed yet
-#else
 	// only field zero, which assumes no cracks near the symmetry plane
 	if(CrackVelocityField::ActiveField(cvf[0]))
 	{	if(CrackVelocityField::ActiveField(ndptr->cvf[0]))
 			cvf[0]->ReflectMomVel(norm,ndptr->cvf[0]);
 	}
-#endif
 }
 
 
@@ -1836,54 +1927,36 @@ void NodalPoint::ReflectMomVel(Vector *norm,NodalPoint *ndptr)
 //    of pk.i + deltime*ftot.i will be zero in that direction
 void NodalPoint::SetFtotDirection(Vector *norm,double deltime,Vector *freaction)
 {	
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just on same side of the crack
-	cvf[0]->SetFtotDirection(norm,deltime,freaction);
-#else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
             cvf[i]->SetFtotDirection(norm,deltime,freaction);
 	}
-#endif
 }
 
 // set one component of force such that updated momentum will be mass*velocity
 void NodalPoint::AddFtotDirection(Vector *norm,double deltime,double vel,Vector *freaction)
 {	
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just on same side of the crack
-	cvf[0]->AddFtotDirection(norm,deltime,vel,freaction);
-#else
 	int i;
 	for(i=0;i<maxCrackFields;i++)
 	{   if(CrackVelocityField::ActiveField(cvf[i]))
             cvf[i]->AddFtotDirection(norm,deltime,vel,freaction);
 	}
-#endif
 }
 
 // set one component of force such that updated momentum will match reflected node
 void NodalPoint::ReflectFtotDirection(Vector *norm,double deltime,NodalPoint *ndptr,Vector *freaction)
 {
-#ifdef _BC_CRACK_SIDE_ONLY_
-	// just on same side of the crack
-	not programmed yet
-#else
 	// only field zero, which assumes no cracks near the symmetry plane
 	if(CrackVelocityField::ActiveField(cvf[0]))
 	{	if(CrackVelocityField::ActiveField(ndptr->cvf[0]))
 			cvf[0]->ReflectFtotDirection(norm,deltime,ndptr->cvf[0],freaction);
 	}
-#endif
 }
 
 // get center of mass momentum for all nonrigid material fields in all crack velocity fields
 Vector NodalPoint::GetCMatMomentum(void)
 {	Vector pk;
-#ifdef _BC_CRACK_SIDE_ONLY_
-    pk = cvf[0]->GetCMatMomentum();
-#else
 	ZeroVector(&pk);
 	int i;
 	for(i=0;i<maxCrackFields;i++)
@@ -1892,7 +1965,6 @@ Vector NodalPoint::GetCMatMomentum(void)
             AddVector(&pk,&cpk);
         }
 	}
-#endif
     return pk;
 }
 

@@ -172,14 +172,6 @@ BoundaryCondition *NodalVelBC::PrintBC(ostream &os)
 NodalVelBC *NodalVelBC::CopyNodalVelocities(NodalPoint *nd)
 {
 	// create vector to hold options
-#ifdef _BC_CRACK_SIDE_ONLY_
-	if(pk==NULL)
-	{	pk=(Vector *)malloc(sizeof(Vector)*maxMaterialFields);
-		if(pk==NULL) throw CommonException("Memory error allocating vectors to copy boundary condition nodal values.",
-										   "NodalVelBC::CopyNodalVelocities");
-	}
-	nd->cvf[0]->CopyFieldMomenta(pk,0);
-#else
 	if(pk==NULL)
 	{	pk=(Vector *)malloc(sizeof(Vector)*maxMaterialFields*maxCrackFields);
 		if(pk==NULL) throw CommonException("Memory error allocating vectors to copy boundary condition nodal values.",
@@ -191,23 +183,18 @@ NodalVelBC *NodalVelBC::CopyNodalVelocities(NodalPoint *nd)
 	{	if(CrackVelocityField::ActiveField(nd->cvf[i]))
 			offset=nd->cvf[i]->CopyFieldMomenta(pk,offset);
 	}
-#endif
     return (NodalVelBC *)GetNextObject();
 }
 
 // paste nodal momentum and velocity (but only once)
 NodalVelBC *NodalVelBC::PasteNodalVelocities(NodalPoint *nd)
 {
-#ifdef _BC_CRACK_SIDE_ONLY_
-	nd->cvf[0]->PasteFieldMomenta(pk,0);
-#else
 	int i;
 	int offset=0;
 	for(i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(nd->cvf[i]))
 			offset=nd->cvf[i]->PasteFieldMomenta(pk,offset);
 	}
-#endif
     return (NodalVelBC *)GetNextObject();
 }
 

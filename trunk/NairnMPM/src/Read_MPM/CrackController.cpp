@@ -32,11 +32,24 @@ int CrackController::AddSegment(CrackSegment *newSegment)
 }
 
 // When done with crack, finish any other needed initializations
-void CrackController::FinishCrack(void)
+bool CrackController::FinishCrack(void)
 {
-#ifdef HIERARCHICAL_CRACKS
-	((CrackHeader *)lastObject)->CreateHierarchy();
-#endif
+	return ((CrackHeader *)lastObject)->CreateHierarchy();
 }
 
-
+// assemble into array used in the code
+int CrackController::SetCracksArray(void)
+{
+	crackList=(CrackHeader **)MakeObjectArray(0);
+	if(crackList==NULL) return FALSE;
+	
+	// fill the array
+	CrackHeader *obj = (CrackHeader *)firstObject;
+	numberOfCracks = 0;
+	while(obj!=NULL)
+	{	crackList[numberOfCracks]=obj;
+		numberOfCracks++;
+		obj=(CrackHeader *)obj->GetNextObject();
+	}
+ 	return TRUE;
+}

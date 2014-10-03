@@ -55,6 +55,11 @@ CustomTask *CalcJKTask::Initialize(void)
 			JTerms=1;
 			break;
 	}
+	// GRID_JTERMS
+	if(JGridEnergy)
+		cout << ", grid-based energies";
+	else
+		cout << ", particle-based energies";
 	cout << endl;
     return nextTask;
 }
@@ -138,17 +143,30 @@ CustomTask *CalcJKTask::StepCalculation(void)
                 // get 2D gradient terms (dimensionless) and track material (if needed)
                 int activeMatField = matref->GetActiveField();
                 ndmi->AddUGradient(vfld,fnmp,mpnt->GetDuDx(),mpnt->GetDuDy(),mpnt->GetDvDx(),mpnt->GetDvDy(),activeMatField,mpnt->mp);
+
+				// GRID_JTERMS
+				if(JGridEnergy)
+				{	// Add velocity (scaled by sqrt(rho) such that v^2 is grid kinetic energy in mJ/m^3)
+					// In axisymmetric, kinetic energy density is 2 pi (0.5 m v^2)/(2 pi rp Ap), but since m = rho rp Ap
+					//		kinetic energy density is still 0.5 rho v^2
+					ndmi->AddGridVelocity(vfld,fnmp*sqrt(matref->rho),mpnt->vel.x,mpnt->vel.y);
+					
+					// scale by rho to get actual stress
+					fnmp *= matref->rho;
+				}
+				else
+				{	// scale by rho to get specific energy and actual stress
+					fnmp *= matref->rho;
+					
+					// get energy and rho*energy has units J/m^3 = N/m^2
+					// In axisymmetric, energy density is 2 pi m U/(2 pi rp Ap), but since m = rho rp Ap
+					//		energy density is still rho*energy
+					ndmi->AddEnergy(vfld,fnmp,mpnt->vel.x,mpnt->vel.y,mpnt->GetWorkEnergy());
+				}
 			
                 // get a nodal stress (rho*stress has units N/m^2)
-                fnmp *= matref->rho;
                 Tensor sp = mpnt->ReadStressTensor();
                 ndmi->AddStress(vfld,fnmp,&sp);
-			
-                // get energy and rho*energy has units J/m^3 = N/m^2
-                // In axisymmetric, energy density is 2 pi m U/(2 pi rp Ap), but since m = rho rp Ap
-                //		energy density it still rho*energy
-                ndmi->AddEnergy(vfld,fnmp,mpnt->vel.x,mpnt->vel.y,mpnt->GetWorkEnergy());
-			
             }
             
             // next non-rigid material point

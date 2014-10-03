@@ -68,6 +68,7 @@ MPMReadHandler::~MPMReadHandler()
 		
 	// locate first crack
 	firstCrack=(CrackHeader *)crackCtrl->firstObject;
+    crackCtrl->SetCracksArray();
 	delete crackCtrl;
 }
 
@@ -534,6 +535,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
                 sscanf(value,"%d",&JGridSize);
             else if(strcmp(aName,"terms")==0)
                 sscanf(value,"%d",&JTerms);
+            else if(strcmp(aName,"gridenergy")==0)
+                sscanf(value,"%d",&JGridEnergy);			// GRID_JTERMS (not documented)
             delete [] aName;
             delete [] value;
         }
@@ -1085,7 +1088,8 @@ void MPMReadHandler::myEndElement(char *xName)
     }
     
     else if(strcmp(xName,"CrackList")==0)
-    {   crackCtrl->FinishCrack();
+    {   if(!crackCtrl->FinishCrack())
+            throw SAXException("All cracks must have at least one segement");
         block = NO_BLOCK;
     }
 	

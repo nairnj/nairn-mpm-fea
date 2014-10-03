@@ -42,15 +42,6 @@ void CrackVelocityFieldSingle::AddFtotSpreadTask3(Vector *f)
 		mvf[0]->AddFtot(f);
 }
 
-#ifdef USE_FEXT
-
-void CrackVelocityFieldSingle::AddFextSpreadTask3(Vector *f)
-{	if(mvf[0]->numberPoints>0)
-		AddVector(&(mvf[0]->fext),f);
-}
-
-#endif
-
 #pragma mark TASK 4 METHODS
 
 // update momenta for this MPM step

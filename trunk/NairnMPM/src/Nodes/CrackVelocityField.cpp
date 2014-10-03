@@ -177,6 +177,9 @@ void CrackVelocityField::CreateStrainField(void)
 	df->stress.yy=0.;
 	df->stress.zz=0.;
 	df->stress.xy=0.;
+    df->mass=0.;
+    df->vx=0.;
+    df->vy=0.;
 	
 	// if more than one material, track material tip to set crack tip material changes
 	if(numActiveMaterials>1)

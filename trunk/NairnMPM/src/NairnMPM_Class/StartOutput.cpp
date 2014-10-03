@@ -146,9 +146,8 @@ void NairnMPM::MyStartResultsOutput(void)
 			}
 		}
 		
-		// default crack contact loaw
-		int numberOfCracks=firstCrack->Count();
-		contact.Output(numberOfCracks);
+		// contact output and allocations
+		contact.Output();
 		
 		// crack details
 		cout << "Number of cracks = " << numberOfCracks << endl;

@@ -22,7 +22,6 @@ CrackLeaf::CrackLeaf()
 // This is only called during initilization or when crack is propagating
 CrackLeaf::CrackLeaf(CrackSegment *scrk1,CrackSegment *scrk2)
 {
-#ifdef HIERARCHICAL_CRACKS
     // next leaf in this level
     nextLeaf = NULL;
 	parent = NULL;
@@ -50,7 +49,6 @@ CrackLeaf::CrackLeaf(CrackSegment *scrk1,CrackSegment *scrk2)
         }
         child2 = NULL;
     }
-#endif
 }
 
 // Create parent Leaf for two existing leaves.
@@ -91,7 +89,6 @@ CrackLeaf::CrackLeaf(CrackLeaf *leaf1,CrackLeaf *leaf2)
 // Recalculate extents when crack moves
 void CrackLeaf::GetLeafExtents(void)
 {
-#ifdef HIERARCHICAL_CRACKS
     int i;
     if(terminalLeaf)
     {   CrackSegment *scrk1 = (CrackSegment *)child1;
@@ -125,7 +122,6 @@ void CrackLeaf::GetLeafExtents(void)
             }
         }
     }
-#endif
 }
 
 // Shift to left to use provided segment and previous child segment
@@ -135,9 +131,7 @@ void CrackLeaf::ShiftLeft(CrackSegment *scrk1)
     // put scrk1 in child1 and move child1 to child2
     child2 = child1;
     child1 = (char *)scrk1;
-#ifdef HIERARCHICAL_CRACKS
     scrk1->parent = this;
-#endif
 }
 
 // Add segment to this leaf. If one cannot be added, create and return a new leaf
@@ -146,9 +140,7 @@ CrackLeaf *CrackLeaf::AddSegment(CrackSegment *scrk2)
 {
     if(child2==NULL)
     {   child2 = (char *)scrk2;
-#ifdef HIERARCHICAL_CRACKS
         scrk2->parent = this;
-#endif
         return NULL;
     }
     else

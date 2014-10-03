@@ -13,16 +13,14 @@
 
 #define _NODALPOINT_
 
-// Define to have BC apply only to velocity field on same side as crack, otherwise apply to
-//	all velocity fields
-//#define _BC_CRACK_SIDE_ONLY_
-
 #ifdef MPM_CODE
 class CrackSegment;
 class MaterialInterfaceNode;
 class CrackNode;
 class TransportTask;
 #include "Nodes/CrackVelocityField.hpp"
+// MCJ_INTEGRAL only needs this
+#include "Cracks/CrackHeader.hpp"
 #endif
 
 class NodalPoint : public LinkedObject
@@ -83,9 +81,6 @@ class NodalPoint : public LinkedObject
 	
 		void AddFtotTask3(short,int,Vector *);
 		void AddFtotSpreadTask3(short,Vector);
-#ifdef USE_FEXT
-		void AddFextSpreadTask3(short,Vector);
-#endif
 		void AddTractionTask3(MPMBase *,int,Vector *);
 		void CopyGridForces(NodalPoint *);
 	
@@ -104,7 +99,11 @@ class NodalPoint : public LinkedObject
 		// specific task methods
 		void PrepareForFields(void);
         void ZeroDisp(void);
-		int GetFieldForCrack(int,int,DispField **,DispField *);
+#ifdef MCJ_INTEGRAL
+        int GetFieldForCrack(bool,bool,DispField **,int);
+#else
+        int GetFieldForCrack(int,int,DispField **,DispField *);
+#endif
         void ZeroDisp(NodalPoint *);
         void CopyUGradientStressEnergy(NodalPoint *);
         void DeleteDisp(void);
@@ -116,6 +115,8 @@ class NodalPoint : public LinkedObject
 		void AddVolume(short,int,double);
         void AddUGradient(short,double,double,double,double,double,int,double);
 		void AddMatWeights(double,double *);
+        // GRID_JTERMS
+        void AddGridVelocity(short,double,double,double);
         void AddEnergy(short,double,double,double,double);
         void AddStress(short,double,Tensor *);
         Vector GetVelocity(short,int);
@@ -124,7 +125,11 @@ class NodalPoint : public LinkedObject
 		void CalcVelocityForStrainUpdate(void);
         short GetCMVelocity(Vector *);
         void CalcStrainField(void);
+#ifdef MCJ_INTEGRAL
+        void Interpolate(NodalPoint *,NodalPoint *,double,int);
+#else
         void Interpolate(NodalPoint *,NodalPoint *,double,bool,int);
+#endif
         void CrackContact(bool,double,CrackNode **,CrackNode **);
 		void CrackContactThree(int,bool,double);
 		void CrackInterfaceForce(void);
@@ -164,8 +169,10 @@ class NodalPoint : public LinkedObject
 #ifdef MPM_CODE
         //methods - MPM only
 		void AverageStrain(DispField *,DispField *,DispField *,double);
-		int WeightAverageStrain(int,int,DispField *);
-    int WeightAverageStrain(int fld1,int fld2,int fld3,DispField *dest);
+#ifndef MCJ_INTEGRAL
+        int WeightAverageStrain(int,int,DispField *);
+        int WeightAverageStrain(int fld1,int fld2,int fld3,DispField *dest);
+#endif
         void AdjustContact(short,short,Vector *,int,bool,double);
 		void AddInterfaceForce(short,short,Vector *,int);
 #endif

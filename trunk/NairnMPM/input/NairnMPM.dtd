@@ -290,6 +290,7 @@
 <!ATTLIST	JContour
 			type CDATA #REQUIRED
 			size CDATA #IMPLIED
+			gridenergy (0|1) #IMPLIED
 			terms (1|2) #IMPLIED>
 <!ELEMENT	MPMMethod (#PCDATA)>
 <!ELEMENT	TimeStep (#PCDATA)>
