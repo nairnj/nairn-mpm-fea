@@ -32,6 +32,7 @@
    Search for GRID_JTERMS to see changes to allow grid options
 */
 #define MCJ_INTEGRAL
+#define MCJ_HIERCONTOURCROSS
 
 // Debugging
 //#define CONTOUR_PARTS
@@ -66,7 +67,6 @@ class CrackHeader : public LinkedObject
         short add(CrackSegment *);
         short add(CrackSegment *, int);
         void Archive(ofstream &);
-        short CrackCross(double,double,double,double,Vector *);
         short MoveCrack(void);
         short MoveCrack(short);
 		void UpdateCrackTractions(void);
@@ -86,9 +86,16 @@ class CrackHeader : public LinkedObject
         bool CreateHierarchy(void);
         void MoveHierarchy(void);
         void ExtendHierarchy(CrackSegment *);
-        short CrackCrossLeaf(CrackLeaf *,double,double,double,double,Vector *,short);
-        short CrackCrossOneSegment(CrackSegment *,double,double,double,double,Vector *,short);
-        CrackSegment *ContourCrossCrack(ContourPoint *,Vector *);
+        short CrackCross(double,double,double,double,Vector *) const;
+        short CrackCrossLeaf(CrackLeaf *,double,double,double,double,Vector *,short) const;
+        short CrackCrossOneSegment(CrackSegment *,double,double,double,double,Vector *,short) const;
+        CrackSegment *ContourCrossCrack(ContourPoint *,Vector *) const;
+#ifdef MCJ_HIERCONTOURCROSS
+        CrackSegment *ContourCrossLeaf(CrackLeaf *,double,double,double,double,Vector *,int) const;
+        bool SegmentsCross(CrackSegment *,double,double,double,double,Vector *,int) const;
+#else
+        bool SegmentsCross(ContourPoint *,Vector &,Vector &,Vector *) const;
+#endif
     
         // These two are not used, but left here for testing of hierarchical cracks
         short FlatCrackCrossTest(double,double,double,double,Vector *);
@@ -101,7 +108,6 @@ class CrackHeader : public LinkedObject
 		double *GetThicknessPtr(void);
     
         // calculate J-integral (YJG)
-        bool SegmentsCross(ContourPoint *,Vector &,Vector &,Vector *);
         void JIntegral(void);      	  // J-Integral calculation
         void PrintContour(ContourPoint *,ContourPoint *,Vector &);
 		CrackSegment *GetCrackTip(int);
@@ -123,6 +129,7 @@ class CrackHeader : public LinkedObject
 		// class methods
 		static void SetCodLocation(double);
         static double Triangle(double,double,double,double,double,double);
+        static bool LineIsInExtents(double,double,double,double,double *,double *);
 
     private:
         int numberSegments;

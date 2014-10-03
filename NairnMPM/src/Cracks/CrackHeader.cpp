@@ -511,7 +511,7 @@ short CrackHeader::MoveCrack(short side)
             //if(scrk==firstSeg && fabs(delv.y)>.01)
             //    cout << "# " << number << "," << side << "," << delv.y << "," << nodeCounter << endl;
 			
-			// move it (if returns true, check location of other side for element move)
+			// move it (if returns true, check location of other side for element move again)
 			if(scrk->MoveSurfacePosition(side,delv.x,delv.y,(nodeCounter>0),surfaceMass))		// in mm
 			{	if(!scrk->FindElement(ABOVE_CRACK)) return FALSE;
 			}
@@ -547,59 +547,6 @@ void CrackHeader::AddTractionForce(void)
 	{	cs->AddTractionForceSeg(this);
 		cs=cs->nextSeg;
 	}
-}
-
-// Determine if two line-segments cross
-bool CrackHeader::SegmentsCross(ContourPoint *thePt,Vector &p3,Vector &p4,Vector *crossPt)
-{
-    double dx,dy;
-    double x1,x2,y1,y2;
-    
-    switch(thePt->orient)
-    {	case HORIZONTAL:
-            x1=thePt->node->x;
-            x2=thePt->nextPoint->node->x;
-            y1=thePt->node->y;
-            
-            // check some extents
-            if(p3.y<y1 && p4.y<y1) return FALSE;
-            if(p3.y>y1 && p4.y>y1) return FALSE;
-            
-            // find intersection
-            dy=p4.y-p3.y;
-            if(DbleEqual(dy,0.)) return (x1==p3.x);		// parallel lines
-            dx=p4.x-p3.x;
-            crossPt->y=thePt->node->y;
-            crossPt->x=(crossPt->y-p3.y)*dx/dy + p3.x;
-            if(x1<x2)
-                return (crossPt->x>x1 && crossPt->x<=x2);
-            else
-                return (crossPt->x>x2 && crossPt->x<=x1);
-        
-        case VERTICAL:
-            y1=thePt->node->y;
-            y2=thePt->nextPoint->node->y;
-            x1=thePt->node->x;
-            
-            // check some extents
-            if(p3.x<x1 && p4.x<x1) return FALSE;
-            if(p3.x>x1 && p4.x>x1) return FALSE;
-            
-            // find intersection
-            dx=p4.x-p3.x;
-            if(DbleEqual(dx,0.)) return (y1==p3.y);		// parallel lines
-            dy=p4.y-p3.y;
-            crossPt->x=thePt->node->x;
-            crossPt->y=(crossPt->x-p3.x)*dy/dx + p3.y;
-            if(y1<y2)
-                return (crossPt->y>y1 && crossPt->y<=y2);
-            else
-                return (crossPt->y>y2 && crossPt->y<=y1);
-        
-        default:
-            break;
-    }
-    return FALSE;
 }
 
 // load vector with initial crack tip direction
@@ -1069,61 +1016,6 @@ void CrackHeader::JIntegral(void)
 				if(nextPt==crackPt) break;
 			}
 			
-			/*
-			int crossCount=0;
-			Vector p3,p4,crossPt,crossPt1;
-			nextPt=crackPt;
-			CrackSegment *startSeg=firstSeg,*endSeg;
-			while(TRUE)
-			{   // error if grid not along x and y axes
-				if(nextPt->orient==ANGLED)
-				{	throw "The J Contour is not along x and y axes.";
-				}
-				
-				//p3,p4--two end points of eack crack segment
-				endSeg=firstSeg;
-				p3.x=endSeg->x;
-				p3.y=endSeg->y;
-				endSeg=endSeg->nextSeg;
-				while(endSeg!=NULL)
-				{	p4.x=endSeg->x;
-					p4.y=endSeg->y;
-					if(SegmentsCross(nextPt,p3,p4,&crossPt1))
-					{	crossCount++;
-						if(crossCount==2)
-                        {   // error unless  new crossPt is the same, which implies endpoints for two adjacent segments
-                            // two identical endpoints are accepted, but otherwise an error
-							if(!(DbleEqual(crossPt.x,crossPt1.x)&&DbleEqual(crossPt.y,crossPt1.y)))
-							{	if(secondTry)
-								{   throw "Two different crossings between J-path and a crack";
-								}
-								else
-									throw "";
-							}
-						}
-						else if(crossCount>2)
-                        {   // only gets here if found endpoints before and now cannot be another matching endpoint
-							throw "More than 2 crossings between J-path and a crack";
-						}
-						else
-                        {   // save crossing point and segment
-						    prevPt=nextPt;
-							crossPt.x=crossPt1.x;
-							crossPt.y=crossPt1.y;
-							startSeg=endSeg->prevSeg;
-						}
-					}
-					p3.x=p4.x;
-					p3.y=p4.y;
-					endSeg=endSeg->nextSeg;
-				}
-                
-                // on the next in contour or exit when done
-				nextPt=nextPt->nextPoint;
-				if(nextPt==crackPt) break;
-			}
-            */
-            
             // Error if never cross the crack
 			if(crossCount<1)
 			{   throw "A crack does not cross its J contour path";
@@ -1230,6 +1122,9 @@ void CrackHeader::JIntegral(void)
                                     crackNum = nextCrack->GetNumber();
                                     crossesOtherCracks = true;
                                     fract=nextPt->Fraction(crossPt1);
+									
+									// TODO: should compile list of those that are crossed
+									// to be used in subsequent propagation calculations
                                 }
 							}
                             nextCrack = (CrackHeader *)nextCrack->GetNextObject();
@@ -1793,48 +1688,20 @@ below:
 
 #pragma mark HIERARCHICAL CRACKS
 
-// Determine if line from particle (1) to node (2) crosses this crack
+// Determine if line from particle (x1,y1) to node (x2,y2) crosses this crack
 // Return ABOVE_CRACK (1), BELOW_CRACK (2), or NO_CRACK (0) and crack normal in norm
 // This method uses hierarchical crack in a binary tree
-short CrackHeader::CrackCross(double x1,double y1,double x2,double y2,Vector *norm)
+short CrackHeader::CrackCross(double x1,double y1,double x2,double y2,Vector *norm) const
 {
     // recursive method to traverse tree hierarchy
     return CrackCrossLeaf(rootLeaf,x1,y1,x2,y2,norm,NO_CRACK);
 }
 
-// Recurusive Method to process each leaf in hierarchical traversal
-short CrackHeader::CrackCrossLeaf(CrackLeaf *leaf,double x1,double y1,double x2,double y2,Vector *norm,short cross)
+// Recursive Method to process each leaf in hierarchical traversal
+short CrackHeader::CrackCrossLeaf(CrackLeaf *leaf,double x1,double y1,double x2,double y2,Vector *norm,short cross) const
 {
     // check extents this leaf, return current cross if not in this leaf's extent
-    // See JANOSU-6-66
-    if(fmax(x1,x2) < leaf->cnear[0]) return cross;        // Pi = (1,0)
-    if(fmin(x1,x2) > leaf->cfar[0]) return cross;
-    if(fmax(y1,y2) < leaf->cnear[1]) return cross;        // Pi = (0,1)
-    if(fmin(y1,y2) > leaf->cfar[1]) return cross;
-    
-    double Pib = x1 + y1;                       // Pi.b
-    double Pia = x2 + y2 - Pib;                 // Pi.a with Pi = (1,1)
-    if(Pia>0.)
-    {   if(leaf->cnear[2]-Pib > Pia) return cross;
-        if(leaf->cfar[2] < Pib) return cross;
-    }
-    else
-    {   // This works for Pia=0 as well
-        if(leaf->cfar[2]-Pib < Pia) return cross;
-        if(leaf->cnear[2] > Pib) return cross;
-    }
-    
-    Pib = x1 - y1;                              // Pi.b
-    Pia = x2 - y2 - Pib;                        // Pi.a with Pi = (1,-1)
-    if(Pia>0.)
-    {   if(leaf->cnear[3]-Pib > Pia) return cross;
-        if(leaf->cfar[3] < Pib) return cross;
-    }
-    else
-    {   // This works for Pia=0 as well
-        if(leaf->cfar[3]-Pib < Pia) return cross;
-        if(leaf->cnear[3] > Pib) return cross;
-    }
+	if(!LineIsInExtents(x1,y1,x2,y2,leaf->cnear,leaf->cfar)) return cross;
     
     // It is in extent of this leaf
     // if not terminal, go on to the child leaves
@@ -1851,167 +1718,18 @@ short CrackHeader::CrackCrossLeaf(CrackLeaf *leaf,double x1,double y1,double x2,
     leaf->GetChildSegments(&scrk1,&scrk2);
     cross = CrackCrossOneSegment(scrk1,x1,y1,x2,y2,norm,cross);
     return CrackCrossOneSegment(scrk2,x1,y1,x2,y2,norm,cross);
-    
-    // Method 2: This code checks both segments for crossing without regard to their known extents
-    // It has reached two segments. Check each one for crossing
-    /*
-    double x3,y3,x4,y4;
-    double area1,area2;
-    CrackSegment *scrk1,*scrk2;
-    leaf->GetChildSegments(&scrk1,&scrk2);
-    
-    // first point
-    CrackSegment *scrk = scrk1;
-    x3=scrk1->x;
-    y3=scrk1->y;
-	if(scrk1==firstSeg && scrk1->tipMatnum==EXTERIOR_CRACK)
-    {   x3-=4.*(scrk2->x-x3);
-		y3-=4.*(scrk2->y-y3);
-	}
-    scrk = scrk2;
-    
-	// checking areas of various triangles
-	// See JAN0048-7 for details
-    while(scrk!=NULL)
-    {	x4=scrk->x;
-        y4=scrk->y;
-		if(scrk==lastSeg)
-		{	if(scrk->tipMatnum==EXTERIOR_CRACK)
-            {	x4-=4.*(x3-x4);
-                y4-=4.*(y3-y4);
-            }
-		}
-        
-        // check for crossing
-        while(TRUE)
-        {   // first two areas (123 and 124)
-            area1=Triangle(x1,y1,x2,y2,x3,y3);
-            area2=Triangle(x1,y1,x2,y2,x4,y4);
-            
-            // first area negative
-            if(area1<0.)
-            {	if(area2>0.)
-                {   if(Triangle(x3,y3,x4,y4,x1,y1)<=0.) break;
-                    
-                    // TRUE mean - + + (- or 0) (0 means node on crack)
-                    if(Triangle(x3,y3,x4,y4,x2,y2)<=0.) goto above;
-                }
-                    
-                else if(area2==0.)
-                {   if(Triangle(x3,y3,x4,y4,x1,y1)<=0.) break;
-                    
-                    // TRUE means - 0 + 0 (node on pt 4) or - 0 + - (pt 4 between mpt and node)
-                    if(Triangle(x3,y3,x4,y4,x2,y2)<=0.) goto above;
-                }
-            }
-            
-            // first area positive
-            else if(area1>0.)
-            {	if(area2<0.)
-                {   if(Triangle(x3,y3,x4,y4,x1,y1)>=0.) break;
-                    
-                    // TRUE means + - - (+ or 0) (0 means node on crack)
-                    if(Triangle(x3,y3,x4,y4,x2,y2)>=0.) goto below;		
-                }
-                    
-                else if(area2==0.)
-                {   if(Triangle(x3,y3,x4,y4,x1,y1)>=0.) break;
-                    
-                    // TRUE means + 0 - 0 (node on pt 4) or + 0 - + (pt 4 between mpt and node)
-                    if(Triangle(x3,y3,x4,y4,x2,y2)>=0.) goto below;
-                }
-            }
-            
-            // first area zero
-            else
-            {	if(area2<0.)
-                {   if(Triangle(x3,y3,x4,y4,x1,y1)>=0.) break;
-                    
-                    // TRUE means 0 - - 0 (node on pt 3) or 0 - - + (pt 3 between mpt and node) 
-                    if(Triangle(x3,y3,x4,y4,x2,y2)>=0.) goto below;		
-                }
-                    
-                else if(area2>0.)
-                {   if(Triangle(x3,y3,x4,y4,x1,y1)<=0.) break;
-                    
-                    // TRUE means 0 + + 0 (node on pt 3) or 0 + + - (pt 3 between mpt and node)
-                    if(Triangle(x3,y3,x4,y4,x2,y2)<=0.) goto above;
-                }
-            }
-            
-            // it does not cross
-            break;
-			
-            // toggle the setting in case there are multiple crossings
-        above:
-            if(cross==NO_CRACK)
-            {	cross=ABOVE_CRACK;
-                norm->y=x3-x4;			// -¶x
-                norm->x=y4-y3;			// ¶y
-            }
-            else
-                cross=NO_CRACK;
-            break;
-        below:
-            if(cross==NO_CRACK)
-            {	cross=BELOW_CRACK;
-                norm->y=x3-x4;			// -¶x
-                norm->x=y4-y3;			// ¶y
-            }
-            else
-                cross=NO_CRACK;
-            break;
-        }
-		
-        // on to next segment
-        if(scrk!=scrk2) break;
-        scrk=scrk->nextSeg;
-        x3=x4;
-        y3=y4;
-    }
-    
-    return cross;
-     */
 }
 
 // Deepest Method to process one line segment in crack from particle scrk1 to scrk1->nextSeg
 // Checks extents of that segment first. If fails, finally do line segment crossing algorithm
-short CrackHeader::CrackCrossOneSegment(CrackSegment *scrk1,double x1,double y1,double x2,double y2,Vector *norm,short cross)
+short CrackHeader::CrackCrossOneSegment(CrackSegment *scrk1,double x1,double y1,double x2,double y2,Vector *norm,short cross) const
 {
     // next segment, exit if none (i.e., terminal particle)
     CrackSegment *scrk2 = scrk1->nextSeg;
     if(scrk2 == NULL) return cross;
     
     // check this segment's extents
-    // See JANOSU-6-66
-    if(fmax(x1,x2) < scrk1->cnear[0]) return cross;        // Pi = (1,0)
-    if(fmin(x1,x2) > scrk1->cfar[0]) return cross;
-    if(fmax(y1,y2) < scrk1->cnear[1]) return cross;        // Pi = (0,1)
-    if(fmin(y1,y2) > scrk1->cfar[1]) return cross;
-    
-    double Pib = x1 + y1;                       // Pi.b
-    double Pia = x2 + y2 - Pib;                 // Pi.a with Pi = (1,1)
-    if(Pia>0.)
-    {   if(scrk1->cnear[2]-Pib > Pia) return cross;
-        if(scrk1->cfar[2] < Pib) return cross;
-    }
-    else
-    {   // This works for Pia=0 as well
-        if(scrk1->cfar[2]-Pib < Pia) return cross;
-        if(scrk1->cnear[2] > Pib) return cross;
-    }
-    
-    Pib = x1 - y1;                              // Pi.b
-    Pia = x2 - y2 - Pib;                        // Pi.a with Pi = (1,-1)
-    if(Pia>0.)
-    {   if(scrk1->cnear[3]-Pib > Pia) return cross;
-        if(scrk1->cfar[3] < Pib) return cross;
-    }
-    else
-    {   // This works for Pia=0 as well
-        if(scrk1->cfar[3]-Pib < Pia) return cross;
-        if(scrk1->cnear[3] > Pib) return cross;
-    }
+	if(!LineIsInExtents(x1,y1,x2,y2,scrk1->cnear,scrk1->cfar)) return cross;
     
     // Now must check for crossing
     double x3,y3,x4,y4;
@@ -2325,11 +2043,104 @@ void CrackHeader::ExtendHierarchy(CrackSegment *cs)
     //rootLeaf->DescribeSegments(0);
 }
 
+#ifdef MCJ_HIERCONTOURCROSS
 // Determine if contour segment after nextPt crosses a segment of this crack
-// Stops when finds first crossing. This would miss unlikely situdation
+// Stops when finds first crossing. This would miss unlikely situation
 //    where crack crosses the same contour segment more than once
-// TODO: This is flat search, better to use hierarchical structure of cracks
-CrackSegment *CrackHeader::ContourCrossCrack(ContourPoint *nextPt,Vector *crossPt)
+CrackSegment *CrackHeader::ContourCrossCrack(ContourPoint *nextPt,Vector *crossPt) const
+{
+	// get line segment in the contour
+    double x1,x2,y1,y2;
+    switch(nextPt->orient)
+    {	case HORIZONTAL:
+            x1=nextPt->node->x;
+            x2=nextPt->nextPoint->node->x;
+            y1=nextPt->node->y;
+            y2=y1;
+			break;
+		case VERTICAL:
+            y1=nextPt->node->y;
+            y2=nextPt->nextPoint->node->y;
+            x1=nextPt->node->x;
+            x2=x1;
+			break;
+		default:
+			// error if grid not along x and y axes
+			throw "The J Contour is not along x and y axes.";
+	}
+    
+    // recursive call through crack hierarchy
+    return ContourCrossLeaf(rootLeaf,x1,y1,x2,y2,crossPt,nextPt->orient);
+}
+
+// Recursive Method to process each leaf in hierarchical traversal
+CrackSegment *CrackHeader::ContourCrossLeaf(CrackLeaf *leaf,double x1,double y1,double x2,double y2,Vector *crossPt,int orient) const
+{
+    // check extents this leaf, return NULL if not
+	if(!LineIsInExtents(x1,y1,x2,y2,leaf->cnear,leaf->cfar)) return NULL;
+    
+    // It is in extent of this leaf
+    
+    // if not terminal leaf, go on to the child leaves
+    CrackSegment *startSeg;
+    if(!leaf->ChildrenAreSegments())
+    {   CrackLeaf *child1,*child2;
+        leaf->GetChildLeaves(&child1,&child2);
+        startSeg = ContourCrossLeaf(child1,x1,y1,x2,y2,crossPt,orient);
+        if(startSeg!=NULL) return startSeg;
+        if(child2!=NULL) return ContourCrossLeaf(child2,x1,y1,x2,y2,crossPt,orient);
+        return NULL;
+    }
+    
+    // This code checks each segment in this terminal leaf
+    CrackSegment *scrk1,*scrk2;
+    leaf->GetChildSegments(&scrk1,&scrk2);
+    if(SegmentsCross(scrk1,x1,y1,x2,y2,crossPt,orient)) return scrk1;
+    if(SegmentsCross(scrk2,x1,y1,x2,y2,crossPt,orient)) return scrk2;
+    return NULL;
+}
+
+// Determine if two line-segments cross
+bool CrackHeader::SegmentsCross(CrackSegment *scrk1,double x1,double y1,double x2,double y2,Vector *crossPt,int orient) const
+{
+    // next segment, exit if none (i.e., terminal particle)
+    CrackSegment *scrk2 = scrk1->nextSeg;
+    if(scrk2 == NULL) return false;
+    
+    // check extents this segment, return NULL if not
+	if(!LineIsInExtents(x1,y1,x2,y2,scrk1->cnear,scrk1->cfar)) return NULL;
+
+    // find intersection and see if in the contour
+    double dx,dy;
+    if(orient==HORIZONTAL)
+    {   dy = scrk2->y-scrk1->y;
+        if(DbleEqual(dy,0.)) return (x1==scrk1->x);		// parallel lines
+        dx = scrk2->x-scrk1->x;
+        crossPt->y = y1;
+        crossPt->x = (crossPt->y-scrk1->y)*dx/dy + scrk1->x;
+        if(x1<x2)
+            return (crossPt->x>x1 && crossPt->x<=x2);
+        else
+            return (crossPt->x>x2 && crossPt->x<=x1);
+    }
+    
+    // rest is VERTICAL
+    dx = scrk2->x-scrk1->x;
+    if(DbleEqual(dx,0.)) return (y1==scrk1->y);         // parallel lines
+    dy = scrk2->y-scrk1->y;
+    crossPt->x = x1;
+    crossPt->y = (crossPt->x-scrk1->x)*dy/dx + scrk1->y;
+    if(y1<y2)
+        return (crossPt->y>y1 && crossPt->y<=y2);
+    else
+        return (crossPt->y>y2 && crossPt->y<=y1);
+}
+
+#else
+// Determine if contour segment after nextPt crosses a segment of this crack
+// Stops when finds first crossing. This would miss unlikely situation
+//    where crack crosses the same contour segment more than once
+CrackSegment *CrackHeader::ContourCrossCrack(ContourPoint *nextPt,Vector *crossPt) const
 {
 	// error if grid not along x and y axes
 	if(nextPt->orient==ANGLED)
@@ -2364,6 +2175,59 @@ CrackSegment *CrackHeader::ContourCrossCrack(ContourPoint *nextPt,Vector *crossP
 	return startSeg;
 }
 
+// Determine if two line-segments cross
+bool CrackHeader::SegmentsCross(ContourPoint *thePt,Vector &p3,Vector &p4,Vector *crossPt) const
+{
+    double dx,dy;
+    double x1,x2,y1,y2;
+    
+    switch(thePt->orient)
+    {	case HORIZONTAL:
+            x1=thePt->node->x;
+            x2=thePt->nextPoint->node->x;
+            y1=thePt->node->y;
+            
+            // check some extents
+            if(p3.y<y1 && p4.y<y1) return FALSE;
+            if(p3.y>y1 && p4.y>y1) return FALSE;
+            
+            // find intersection
+            dy=p4.y-p3.y;
+            if(DbleEqual(dy,0.)) return (x1==p3.x);		// parallel lines
+            dx=p4.x-p3.x;
+            crossPt->y=thePt->node->y;
+            crossPt->x=(crossPt->y-p3.y)*dx/dy + p3.x;
+            if(x1<x2)
+                return (crossPt->x>x1 && crossPt->x<=x2);
+            else
+                return (crossPt->x>x2 && crossPt->x<=x1);
+
+        case VERTICAL:
+            y1=thePt->node->y;
+            y2=thePt->nextPoint->node->y;
+            x1=thePt->node->x;
+            
+            // check some extents
+            if(p3.x<x1 && p4.x<x1) return FALSE;
+            if(p3.x>x1 && p4.x>x1) return FALSE;
+            
+            // find intersection
+            dx=p4.x-p3.x;
+            if(DbleEqual(dx,0.)) return (y1==p3.y);		// parallel lines
+            dy=p4.y-p3.y;
+            crossPt->x=thePt->node->x;
+            crossPt->y=(crossPt->x-p3.x)*dy/dx + p3.y;
+            if(y1<y2)
+                return (crossPt->y>y1 && crossPt->y<=y2);
+            else
+                return (crossPt->y>y2 && crossPt->y<=y1);
+
+        default:
+            break;
+    }
+    return FALSE;
+}
+#endif
 
 #pragma mark ACCESSORS
 
@@ -2520,4 +2384,47 @@ void CrackHeader::SetCodLocation(double t)
 	bezDer[1]=3.*(1.-t)*(1.-t) - 6.*t*(1.-t);
 	bezDer[2]=6.*t*(1-t) - 3.*t*t;
 	bezDer[3]=3.*t*t;
+}
+
+// Check is lines is within extent of leaf or segment
+// return false if line within extents or false otherwise
+// See JANOSU-6-66
+bool CrackHeader::LineIsInExtents(double x1,double y1,double x2,double y2,double *cnear,double *cfar)
+{
+	// Pi = (1,0)
+    if(fmax(x1,x2) < cnear[0]) return false;
+    if(fmin(x1,x2) > cfar[0]) return false;
+
+	// Pi = (0,1)
+    if(fmax(y1,y2) < cnear[1]) return false;
+    if(fmin(y1,y2) > cfar[1]) return false;
+    
+	// Pi = (1,1)
+    double Pib = x1 + y1;                       // Pi.b
+    double Pia = x2 + y2 - Pib;                 // Pi.a with Pi = (1,1)
+    if(Pia>0.)
+    {   if(cnear[2]-Pib > Pia) return false;
+        if(cfar[2] < Pib) return false;
+    }
+    else
+    {   // This works for Pia=0 as well
+        if(cfar[2]-Pib < Pia) return false;
+        if(cnear[2] > Pib) return false;
+    }
+    
+	// Pi = (1,-1)
+    Pib = x1 - y1;                              // Pi.b
+    Pia = x2 - y2 - Pib;                        // Pi.a with Pi = (1,-1)
+    if(Pia>0.)
+    {   if(cnear[3]-Pib > Pia) return false;
+        if(cfar[3] < Pib) return false;
+    }
+    else
+    {   // This works for Pia=0 as well
+        if(cfar[3]-Pib < Pia) return false;
+        if(cnear[3] > Pib) return false;
+    }
+	
+	// passes all tests
+	return true;
 }
