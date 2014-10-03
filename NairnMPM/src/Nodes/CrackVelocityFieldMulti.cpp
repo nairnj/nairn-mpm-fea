@@ -218,14 +218,6 @@ void CrackVelocityFieldMulti::AddFtotSpreadTask3(Vector *f)
 	}
 }
 
-#ifdef USE_FEXT
-
-void CrackVelocityFieldMulti::AddFextSpreadTask3(Vector *f)
-{   throw CommonException("Fext not allowed in multimaterial mode","CrackVelocityFieldMulti::AddFextSpreadTask3");
-}
-
-#endif
-
 // Copy grid forces ghost node to the real node (nonrigid only)
 void CrackVelocityFieldMulti::CopyGridForces(NodalPoint *real,int vfld)
 {	for(int matfld=0;matfld<maxMaterialFields;matfld++)

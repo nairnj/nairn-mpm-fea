@@ -46,9 +46,6 @@ void MatVelocityField::Zero(void)
 	ZeroVector(&pk);
 	if(!rigidField)
 	{	ZeroVector(&ftot);
-#ifdef USE_FEXT
-		ZeroVector(&fext);
-#endif
 	}
 	ZeroVector(&vk);
 	ZeroVector(&disp);

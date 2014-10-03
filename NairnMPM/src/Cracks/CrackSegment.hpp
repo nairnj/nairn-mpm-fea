@@ -37,11 +37,8 @@ class CrackSegment
 		double release,absorb,propagationJ;
 		short heating;
 		double heatRate,heatEndTime;
-
-#ifdef HIERARCHICAL_CRACKS
         double cnear[4],cfar[4];
         CrackLeaf *parent;
-#endif
     
         // constructors
         CrackSegment();
@@ -73,10 +70,7 @@ class CrackSegment
 		Vector FTract(double);
 		void SetHistoryData(char *p);
 		char *GetHistoryData(void);
-
-#ifdef HIERARCHICAL_CRACKS
         void CreateSegmentExtents(bool);
-#endif
 				
 	private:
 		Vector cFtract;				// traction law force

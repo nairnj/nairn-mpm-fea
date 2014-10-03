@@ -26,14 +26,17 @@ class ContourPoint
         int orient;
         Vector norm;
         double ds;
-        
+		bool phantomNode;		// MCJ_INTEGRAL only
+    
         // constructors and destructors
         ContourPoint();
         ContourPoint(NodalPoint *);
-        
+		virtual ~ContourPoint();
+	
         // methods
         int SetNextPoint(ContourPoint *);
         double Fraction(Vector &);
+		void SetPhantomNode(bool);		// MCJ_INTEGRAL only
 
     private:
 };

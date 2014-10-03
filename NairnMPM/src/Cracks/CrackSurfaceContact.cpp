@@ -49,7 +49,7 @@ CrackSurfaceContact::CrackSurfaceContact()
 }
 
 // Print contact law settings for cracks and finalize variables
-void CrackSurfaceContact::Output(int numberOfCracks)
+void CrackSurfaceContact::Output()
 {
 	char hline[200];
 	
@@ -300,11 +300,9 @@ short CrackSurfaceContact::HasContact(int number) { return (short)(CrackContactL
 // return TRUE if imperfect interface
 short CrackSurfaceContact::IsImperfect(int number) { return (short)(CrackContactLaw[number].law==IMPERFECT_INTERFACE); }
 
-#ifndef _BC_CRACK_SIDE_ONLY_
 /*	Calculate change in momentum when there is contact. Return TRUE or FALSE if an
 	adjustment was calculated
 	If BC at the node, the delta momemtum should be zero in fixed direction
-	This called only if _BC_CRACK_SIDE_ONLY_ not defined in NodalPointMPM.cpp
 	Only called if both verified are verified and have 1 or more particles
 */
 short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVelocityField *cva,CrackVelocityField *cvb,
@@ -445,115 +443,6 @@ short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVe
 	return TRUE;
 }
 
-#else
-/*	Calculate change in momentum when there is contact. Return TRUE or FALSE if an
-		adjustment was calculated
-	Calculate above and below crack which are equal and opposite unless there is also
-		a velocity BC on the same node
-	This called only if _BC_CRACK_SIDE_ONLY_ defined in NodalPointMPM.cpp
-	Only called if both verified are verified and have 1 or more particles
-*/
-short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,Vector *delPb,
-		CrackVelocityField *cva,CrackVelocityField *cvb,Vector *norm,int number,bool postUpdate,double deltime)
-{
-	if this options is turned on need to check this code and include check for contact
-	also check all code within _BC_CRACK_SIDE_ONLY_ sections
-	and delete CheckBCCMVelocity() which needs to be replaced by new strategy
-		
-	// find cm velocity and stick changes
-	double massa=cva->GetTotalMass();
-	double massb=cvb->GetTotalMass();
-	Vector pka=cva->GetCMatMomentum();
-	Vector pkb=cvb->GetCMatMomentum();
-	double mnode=1./(massa+massb);
-	Vector vcm;
-	vcm.x=(pka.x+pkb.x)*mnode;
-	vcm.y=(pka.y+pkb.y)*mnode;
-	bool fixedCM=np->CheckBCCMVelocity(&vcm);
-	
-	// stick change above the crack: = - m(a) ( v(a) - v(cm) )
-	delPa->x=massa*vcm.x-pka.x;
-	delPa->y=massa*vcm.y-pka.y;
-	
-	// stick change below the crack: = - m(b) ( v(b) - v(cm) )
-	if(fixedCM)
-	{	delPb->x=massb*vcm.x-pkb.x;
-		delPb->y=massb*vcm.y-pkb.y;
-	}
-	else
-	{	delPb->x=-delPa->x;
-		delPb->y=-delPa->y;
-	}
-	
-    switch(CrackContactLaw[number].law)
-    {	case STICK:
-			if(inContact==SEPARATED) return FALSE;
-            break;
-        
-        case FRICTIONLESS:
-			if(inContact==SEPARATED) return FALSE;
-			TangentialSlipDeltaP(delPa,norm);
-			if(fixedCM)
-				TangentialSlipDeltaP(delPb,norm);
-			else
-			{	delPb->x=-delPa->x;
-				delPb->y=-delPa->y;
-			}
-            break;
-		
-        case FRICTIONAL:
-			if(inContact==SEPARATED) return FALSE;
-			FrictionalDeltaP(delPa,norm,number);
-			if(fixedCM)
-				FrictionalDeltaP(delPb,norm,number);
-			else
-			{	delPb->x=-delPa->x;
-				delPb->y=-delPa->y;
-			}
-            break;
-		
-		case IMPERFECT_INTERFACE:
-			if(CrackContactLaw[number].Dt<0)
-			{	if( (inContact==SEPARATED && CrackContactLaw[number].Dn<0.) ||
-						(inContact==IN_CONTACT && CrackContactLaw[number].Dnc<0.) )
-				{	// both contact laws are perfect - keep as stick
-					break;
-				}
-				else
-				{	// prefect in tangential, but imperfect in normal direction
-					NormalSlipDeltaP(delPa,norm);
-					if(fixedCM)
-						NormalSlipDeltaP(delPb,norm);
-					else
-					{	delPb->x=-delPa->x;
-						delPb->y=-delPa->y;
-					}
-				}
-			}
-			else if( (inContact==SEPARATED && CrackContactLaw[number].Dn<0.) ||
-						(inContact==IN_CONTACT && CrackContactLaw[number].Dnc<0.) )
-			{	// perfect in normal direction, but imperfect in tangential direction
-				TangentialSlipDeltaP(delPa,norm);
-				if(fixedCM)
-					TangentialSlipDeltaP(delPb,norm);
-				else
-				{	delPb->x=-delPa->x;
-					delPb->y=-delPa->y;
-				}
-			}
-			else
-			{	// no change in momentum, just imperfect interface forces later
-				return FALSE;
-			}
-			break;
-			
-		default:
-			break;
-	}
-	
-	return TRUE;
-}
-#endif
 
 // find frictionaless tangnential slip change in momentum where on input
 //   delP is stick change in momentum

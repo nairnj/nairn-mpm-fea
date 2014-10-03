@@ -27,9 +27,6 @@ class MatVelocityField
 		Vector disp;				// displacement for contact calculations
 		Vector *volumeGrad;			// mass gradient allocated in multimaterial mode
 		bool rigidField;			// TRUE or FALSE if for rigid contact particles
-#ifdef USE_FEXT
-		Vector fext;
-#endif
 	
 		// constants (not changed in MPM time step)
 				
