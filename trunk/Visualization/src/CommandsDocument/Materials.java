@@ -312,7 +312,7 @@ public class Materials
 				if(args.size()>4) alpha = doc.readDoubleArg(args.get(4));
 			}
 			xmldata.append("    <color red='"+red+"' green='"+green+
-								"' blue='"+blue+"' alhpa='"+alpha+"'/>\n");
+								"' blue='"+blue+"' alpha='"+alpha+"'/>\n");
 			return;
 		}
 		else if(prop.toLowerCase().equals("artificialvisc"))

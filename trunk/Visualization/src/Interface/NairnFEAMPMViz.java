@@ -62,6 +62,8 @@ public class NairnFEAMPMViz extends JNApplication
 				readData="";
 			}
 		}
+		else if(docType.equals("SCRPCmd"))
+			readData="!********** Control Script **********\nScript\n";
 		else
 			readData="Welcome to "+appNameReadable+", "+versionReadable;
 
@@ -168,8 +170,10 @@ public class NairnFEAMPMViz extends JNApplication
 		JNDocument.setDocumentType("MPMCmd","MPM Commands Document",exts1);
 		String[] exts2={"fmcmd","cmd"};
 		JNDocument.setDocumentType("FEACmd","FEA Commands Document",exts2);
-		String[] exts3={"mpm","fea"};
-		JNDocument.setReadOnlyDocumentType("DocViewer","MPM or FEA Results Document",exts3);
+		String[] exts3={"fmcmd","cmd"};
+		JNDocument.setDocumentType("SCRPCmd","Control Script Document",exts3);
+		String[] exts4={"mpm","fea"};
+		JNDocument.setReadOnlyDocumentType("DocViewer","MPM or FEA Results Document",exts4);
 		
 		// set save workspace
 		NFMVPrefs.setWorkspace(JNDocument.getChooser("MPMCmd"));

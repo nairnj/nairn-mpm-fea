@@ -29,6 +29,7 @@ public class NFMAnalysis  implements Runnable
 	public static final int INTERPRET_ONLY=0;
 	public static final int RUN_CHECK_MESH=1;
 	public static final int FULL_ANALYSIS=2;
+	public static final int SCRIPT_ONLY=3;
 
 	//----------------------------------------------------------------------------
 	// Initialize
@@ -44,7 +45,9 @@ public class NFMAnalysis  implements Runnable
 	//----------------------------------------------------------------------------
 	
 	// Run FEA or MPM analysis
-	public void runNFMAnalysis(boolean doBackground,int runType,String xmlData,ConsolePane sout,int processors)
+	// if useOutput File is not null, write to that folder (this is for calls initiated
+	//    by scripts). If null, use folder that contains the commands file.
+	public void runNFMAnalysis(boolean doBackground,int runType,String xmlData,ConsolePane sout,int processors,File useOutput)
 	{
 		// set the xml data
 		cmds = xmlData;
@@ -87,10 +90,10 @@ public class NFMAnalysis  implements Runnable
 		
 		// get output file
 		if(mpmAnalysis)
-		{	if(!soutConsole.setOutputPath(inFile,"mpm")) return;
+		{	if(!soutConsole.setOutputPath(inFile,"mpm",useOutput)) return;
 		}
 		else
-		{	if(!soutConsole.setOutputPath(inFile,"fea")) return;
+		{	if(!soutConsole.setOutputPath(inFile,"fea",useOutput)) return;
 		}
 		
 		// get current output file from the output console object
@@ -268,7 +271,6 @@ public class NFMAnalysis  implements Runnable
 		File saveFile = null;
 		while(true)
 		{	saveFile = new File(root+"_XML_"+num+ext);
-			System.out.println(saveFile.getPath());
 			if(!saveFile.exists()) break;
 			num++;
 		}
@@ -322,7 +324,7 @@ public class NFMAnalysis  implements Runnable
 					}
 					else if(soutConsole.saveOutput(doc))
 					{	DocViewer newResults = doc.linkToResults();
-						if(newResults!=null && openMesh==RUN_CHECK_MESH)
+						if(newResults!=null && openMesh==RUN_CHECK_MESH && !newResults.resDoc.is3D())
 						{	newResults.checkMeshNow();
 						}
 					}

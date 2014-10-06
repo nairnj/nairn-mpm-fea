@@ -6,6 +6,8 @@
 	Copyright (c) 2004 RSAC Software. All rights reserved.
 *******************************************************************/
 
+import geditcom.JNFramework.JNUtilities;
+
 import java.awt.geom.*;
 import java.io.*;
 import java.nio.*;
@@ -44,6 +46,7 @@ public class ResultsDocument extends AbstractTableModel
 	public ArrayList<MaterialPoint> mpmPoints;
 	public ArrayList<CrackHeader> mpmCracks;
 	public ArrayList<MaterialBase> materials;
+	public ArrayList<Double> pointSizes;
 	public String archFormat,crackFormat;
 	public char[] feaArchFormat = {'N','N','N','N','N','N' };
 	public double xmin,xmax,ymin,ymax,zmin,zmax;			// mesh bounds
@@ -53,6 +56,7 @@ public class ResultsDocument extends AbstractTableModel
 	public int np;
 	public DocViewer docCtrl;
 	public int recSize;
+	public double totalEnergy;
 	
 	// units
 	public double lengthScale=1.0;			// mm
@@ -79,6 +83,7 @@ public class ResultsDocument extends AbstractTableModel
 		archives=new ArrayList<File>(100);
 		archiveTimes=new ArrayList<Double>(100);
 		materials=new ArrayList<MaterialBase>(10);
+		pointSizes=new ArrayList<Double>(100);
 		currentArchive=-1;
 	}
 	
@@ -591,6 +596,7 @@ public class ResultsDocument extends AbstractTableModel
 			else
 				archDir="";
 			setPath(file.getParentFile(),archDir);
+			String ptsPath = line.substring(0, line.length()-1)+"_PtSizes.txt";
 			
 			// archive format and check it
 			sline=new Scanner(s.next()).useDelimiter(": ");
@@ -636,6 +642,35 @@ public class ResultsDocument extends AbstractTableModel
 			// error in no files were found
 			if(archiveTimes.size()<1)
 				throw new Exception("None of the archived results files could be found.");
+			
+			// read point sizes
+			File ptsFile = new File(file.getParentFile(),ptsPath);
+			if(ptsFile.exists())
+			{	// read the file
+				FileReader fr=new FileReader(ptsFile);
+				char [] buffer=new char [(int)ptsFile.length()];
+				fr.read(buffer);
+				String ptsSection=new String(buffer);
+				
+				if(ptsSection.length()>10)
+				{	s=new Scanner(ptsSection ).useDelimiter("\\r\\n|\\n|\\r");
+					s.useLocale(Locale.US);
+					s.next();
+					s.next();
+					s.next();
+					
+					while(s.hasNext())
+					{	Scanner pline=new Scanner(s.next());
+						pline.useLocale(Locale.US);
+						int pnum = pline.nextInt();
+						// store point number, and x-y-z sizes
+						pointSizes.add(new Double((double)pnum+.1));
+						pointSizes.add(new Double(pline.nextDouble()));
+						pointSizes.add(new Double(pline.nextDouble()));
+						pointSizes.add(new Double(pline.nextDouble()));
+					}
+				}
+			}
 		}
 			
 		//---------------------------------------------------------------
@@ -695,12 +730,14 @@ public class ResultsDocument extends AbstractTableModel
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
 				s.useLocale(Locale.US);
 				ElementBase aelem;
+				totalEnergy = 0.;
 				while(s.hasNextInt())
 				{	elemNum=s.nextInt();		// element number
 					if(elemNum>nelems || elemNum<1)
 						throw new Exception("Found element energy with unexpected element number.");
 					aelem=elements.get(elemNum-1);
 					aelem.energy=s.nextDouble();
+					totalEnergy += aelem.energy;
 				}
 				feaArchFormat[ReadArchive.ARCH_FEAElemEnergy]='Y';
 			}
@@ -795,6 +832,20 @@ public class ResultsDocument extends AbstractTableModel
 		// read archive file
 		currentArchive=newArchive;
 		ReadArchive.load(this,archives.get(currentArchive));
+		
+		// add sizes
+		if(pointSizes.size()>3)
+		{	int offset=0;
+			while(offset<pointSizes.size())
+			{	int pnum = pointSizes.get(offset).intValue();
+				double sx = pointSizes.get(offset+1).doubleValue();
+				double sy = pointSizes.get(offset+2).doubleValue();
+				double sz = pointSizes.get(offset+3).doubleValue();
+				if(pnum>0 && pnum<=mpmPoints.size())
+					mpmPoints.get(pnum-1).setDimensionlessSize(sx,sy,sz);
+				offset+=4;
+			}
+		}
 	}
 	
 	// open archive by index and return its byte buffer
@@ -968,7 +1019,7 @@ public class ResultsDocument extends AbstractTableModel
 	// Utilities for decoding text when reading a file
 	//-----------------------------------------------------------------
 	
-	// find index to start of line after line containingg substring
+	// find index to start of line after line containing substring
 	public int findNextLine(String data,String lookStr)
 	{
 		int endIndex=data.indexOf(lookStr);
@@ -1039,6 +1090,14 @@ public class ResultsDocument extends AbstractTableModel
 			return new Rectangle2D.Double(dxmin,dymin,dxmax-dxmin,dymax-dymin);
 		else
 			return new Rectangle2D.Double(xmin,ymin,xmax-xmin,ymax-ymin);
+	}
+	
+	// return energy as string (for scripts)
+	public String getEnergy()
+	{	if(feaArchFormat[ReadArchive.ARCH_FEAElemEnergy]=='Y')
+			return JNUtilities.formatDouble(totalEnergy);
+		else
+			return null;
 	}
 	
 	public boolean isFEAAnalysis() { return np<BEGIN_MPM_TYPES; }

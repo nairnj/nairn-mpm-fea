@@ -64,10 +64,10 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 
 <div id="pagetitle"><h1>NairnFEAMPMViz Commands Language</h1></div>
 
-<p><b>NairnFEAMPMViz</b> has a built-in <a href="#language">interpretive language</a> for programmatically setting up FEA or MPM calculations. This section has a list of all language commands for FEA and MPM calculations. The commands are grouped by logical section. Within each section, they are listed by typical order of use (when possible). 
+<p><b>NairnFEAMPMViz</b> has a built-in <a href="#language">interpretive language</a> for programmatically setting up FEA or MPM calculations (and for running <a href="scripting.html">control scripts</a>). This section has a list of all language commands for FEA and MPM calculations. The commands are grouped by logical section. Within each section, they are listed by typical order of use (when possible). 
 </p>
 
-<p>The scripting <a href="#language">language</a> is based on (and nearly <a href="#compatible">compatible</a> with) the corresponding language in the NairnFEAMPM Mac application. The documentation listed below lists all the commands. This documentation is brief and just defines each command and the meaning of its arguments. The user is expect to be familiar with the scripting commands to set up FEA or MPM calculations, which is more fully documented on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a>. IN other words, this help is meant to serve as a brief reference for when you do not have on-line access.</p>
+<p>The scripting <a href="#language">language</a> is based on (and nearly <a href="#compatible">compatible</a> with) the corresponding language in the NairnFEAMPM Mac application. The documentation listed below lists all the commands. This documentation is brief and just defines each command and the meaning of its arguments. The user is expect to be familiar with the scripting commands to set up FEA or MPM calculations, which is more fully documented on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a>. In other words, this help is meant to serve as a brief reference for when you do not have on-line access.</p>
 
 <h2><a name="cindex"></a>Documentation Outline</h2>
 
@@ -111,7 +111,7 @@ dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regu
 <li><a href="#conditionals">Conditionals</a></li>
 <li><a href="#repeat">Repeat Loops</a></li>
 <li><a href="#subs">Subroutines</a></li>
-<li><a href="#debug">Debugging Commands</a></li>
+<li><a href="#debug">Additional Built-In Commands</a></li>
 <li><a href="#campatible">Comparison to NairnFEAMPM Language</a></li>
 </ul>
 
@@ -129,19 +129,20 @@ Lines whose first non-blank character is &quot;!&quot; are comments and are also
 </p>
 
 <p>Any argument to any command can be a number, a string, a numeric expression, or a
-string expression (see next section).</p>
+string expression. Arguments that expect numeric values can use string expressions provided those expressions evaluate to a string containing only a number. See next section for details on expressions.</p>
 
 <h3><a name="varexp"></a>Variables and Expressions</h3>
 
 <p>The commands can define numeric and string variables. Numeric variable names must begins
-in a letter or #, contain only letters and numbers or underscores, and have no
-function name as a substring within the name. String variables are the same except they must
-end in $. You create variables using the Set command:</p>
+in a letter or #, be followed by only letters, numbers and underscores, and have no
+function name as a substring within the name. String variables are the same except that they must end in $. You create variables using the Set command:</p>
 <blockquote>
 Set var = expression
 </blockquote>
 <p>where <code>var</code> is any valid numeric or string variable and <code>expression</code> is any basic mathematical expression for numeric variables
-or a string expression for string variables. The &quot;Set&quot; command is
+or a string expression for string variables. Note that a numeric variable can be set with a string expression provided that expression evaluates to a string containing a valid number (which is to convert strings to numbers).</p>
+
+<p>The &quot;Set&quot; command is
 optional and generally not used; <i>i.e.</i>, any line with variable name followed by equals sign is assumed to be a &quot;Set&quot; command:</p>
 <blockquote>
 var = expression
@@ -149,10 +150,9 @@ var = expression
 
 <p>Array variables are allowed and initialized using</p>
 <blockquote>
-Set var[indexExpression] = expression
+var[indexExpression] = expression
 </blockquote>
-<p>where square brackets index the array index. The <code>indexExpression</code> can be a numeric expression that evaluates
-to an integer. The <code>indexExpression</code>, however, cannot use array variables.</p>
+<p>where square brackets index the array index. The <code>indexExpression</code> can be an expression that evaluates to an integer. The <code>indexExpression</code>, however, cannot use array variables (<i>e.g.</i>, you cannot use <code>var[2*arg[i]]</code>).</p>
 
 <p>Numeric expressions use standard operators (+, 0, *, /, ^, and %) with standard precedences
 unless grouped by parentheses. The expression can use the math
@@ -160,7 +160,7 @@ functions cos(), sin(), tan(), acos(), asin(), atan(), cosh(), sinh(), tanh(), s
 log(), log10(), exp(), abs() int(), sign(), and rand(). The trigonometric functions expect arguments
 as radians or return radians (as appropriate); sign() is 1 if argument is positive or zero
 otherwise; rand() is random floating point number between 0 and the argument.
-The numeric variable <code>pi</code> is set the constant pi and can be used in expressions.</p>
+The numeric variable <code>pi</code> is set to the constant pi and can be used in expressions.</p>
 
 <p>String expressions can combine quoted strings and variables with the single operator &amp;. Numeric
 variables can be used and they are converted to strings. You can also embed numeric expressions
@@ -178,9 +178,9 @@ var = var{op}(expression)
 </blockquote>
 <p>where <code>{op}</code> is any valid operator (but note that when <code>{op}</code> is &amp;, the expression is not surrounded by parentheses)</p>
 
-<h3><a href="atexp"></a>"At" Expressions</h3>
+<h3><a name="atexp"></a>"At" Expressions</h3>
 
-<p>Any place a variable can be used, it can be replaced by an "at" expression beginning in an '@' sign and containing specific items separated by periods, such as "<code>@key.TopLeft.x</code>" to evaluate to the x value of the keypoint named "TopLeft". These expressions are used to allow a script to read properties of objects created earlier in the script. The currently support "at" expressions are:</p>
+<p>Any place a variable can be used, it can be replaced by an "at" expression beginning in an '@' sign and containing specific items separated by periods, such as "<code>@key.TopLeft.x</code>" to evaluate to the x value of the keypoint named "TopLeft". These expressions are used to allow a script to read properties of objects created earlier in the script. The currently support "at" expressions for FEA and MPM calculations are:</p>
 <ul>
 <li><code>@key.ID.prop</code> - read a property of <a href="#keypoint">keypoint</a> with "ID" replaced by ID of the keypoint. The possible properties to replace "prop" are "x" and "y" to give x and y coordinates of the keypoint.</li>
 <li><code>@path.ID.prop</code> - read a property of a <a href="#path">path</a> with "ID" replaced by ID of the path. The possible properties to replace "prop" are "intervals" (number of intervals long the path), "ratio" (the ratio setting for the path), and "first", "middle" or "last" (for ID of the first, middle or last keypoint; if the path has only two keypoints the "middle" will be empty string).</li>
@@ -190,7 +190,7 @@ var = var{op}(expression)
 #id$ = "BotLeft"<br>
 x = $key.#id$.x
 </blockquote>
-
+<p><a href="scripting.html">Control scripts</a> support some additional "At" expressions.</p>
 
 <h3><a name="conditionals"></a>Conditionals</h3>
 
@@ -277,9 +277,11 @@ EndSub
 <li>Subroutines can be nested which means subroutines can call any other subroutines with <code>GoSub</code> commands.</li>
 </ol>
 
-<h3><a name="debug"></a>Debugging Commands</h3>
+<h3><a name="debug"></a>Additional Built-In Commands</h3>
 
-<p>The following commands are not used to generate input command files, but can be useful in debugging scripts:</p>
+<p>The additional commands in this section are built-in to the interpretive language.
+Their main use in FEA or MPM calculations are for debugging purposes.
+They have some additional uses when writing <a href="scripting.html">control scripts</a>.</p>
 
 <ul>
 <li><code>Write epxr1,expr2,...</code><br>
@@ -292,6 +294,11 @@ the output console and then stop the calculations.
 <li><code>Clear</code><br>
 Clear all text from the output console.
 </li>
+<li><code>Lines varName$,start,end,expr</code><br>
+Split the string in <code>expr</code> into lines. The results are stored in
+<code>varName$[1]</code>... and the number of lines found is stored in <code>varName$[0]</code> (where <code>varName$</code> argument is an unquoted, non-array, valid, string variable name). The command retrieves lines <code>start</code> to <code>end</code> (1 based). Either limit can be &le;0 to indicate that number of lines from the end (where 0 means to the end). For example: (<code>start</code>, <code>end</code>) = (1,0) gets all lines, (0,0) gets the last line only, and (-2,0) gets the last three lines.</li>
+<li><code>Words varName$,start,end,expr</code><br>
+This command is the same as the <code>Lines</code> command except it splits <code>expr</code> into words, where words are character groupings separated by any number of white space characters. The white space characters include line ending characters.</li>
 </ul>
 
 <h3><a name="campatible"></a>Comparison to NairnFEAMPM Language</h3>
@@ -302,7 +309,7 @@ Clear all text from the output console.
 <li>The main command on each line must be separated from arguments by a space and arguments must be delimited by commas. In NairnFEAMPM commands and arguments can be delimited by commas, spaces, or tabs.</li>
 <li>Variables can begin in a letter or a #. In NairnFEAMPM, they <i>must</i> all begin in #.</li>
 </ol>
-<p>When writing command files to use in both applications, you should avoid anything not supported in both applications. The main recommendations are to start all variables in #, to end string variables in $, and to delimit commands and arguments as expected for NairnFEAMPMViz.</p>
+<p>When writing command files to use in both applications, you should avoid anything not supported in both applications. The main recommendations are to start all variables in #, to end string variables in $, to not use variable names including functions as substrings, to have a space between commands and the first argument, and to delimit commands and arguments with commas.</p>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 
@@ -792,8 +799,8 @@ save as for the <a href="#propagate">Propagate command</a> below.</li>
 <li><code>PropagateLength (length)</code><br>
 Determines the amount of crack growth each time a crack propagates, where <code>(length)</code> is relative to cell dimensions. The default is 0.5.</li>
 
-<li><code>JContour (size),&lt;(terms)&gt;</code><br>
-Used to set size of J integral contour (<code>(size)</code> in cells for semi length of enclosing box) and whether J integral uses one or two terms (<code>(terms)</code> = 1 or 2).</li>
+<li><code>JContour (size),&lt;(terms)&gt;,&lt;(usegrid)&gt;</code><br>
+Used to set size of J integral contour (<code>(size)</code> in cells for semi length of enclosing box), whether J integral uses one or two terms (<code>(terms)</code> = 1 or 2), and whether kinetic and work energy are found by extrapolating energies (<code>(usegrid)</code>=0) or by extrapolating velocity, stress, and strain and then calculating energies (if <code>(usegrid)</code>=1).</li>
 
 <li><code>MovePlane (how),&lt;(prevent)&gt;</code><br>
 Used to set how crack plane particles move where <code>(how)</code> is "avg" or "cm" to move to average of crack surfaces or to move in the center of mass velocity field, and <code>(prevent)</code> is "yes" or "no" to prevent crack surfaces from crossing the main crack plane.</li>
@@ -835,7 +842,7 @@ and intersections between materials on nodes are resolved using various contact
 mechanics models. The key commands to use this mode are:</p>
 
 <ul>
-<li><code>MultimaterialMode &lt;(Vmin)&gt;,&lt;(disps)&gt;,&lt;(norm)&gt;,&lt;(rigidBias)&gt;</code><br>
+<li><code>MultimaterialMode &lt;(Vmin)&gt;,&lt;(disps)&gt;,&lt;(norm)&gt;,&lt;(rigidBiasOrAzimuth)&gt;,&lt;(polar)&gt;</code><br>
 Sets to use multimaterial modes and sets some options. <code>(Vmin)</code> is minimum relative volume to allow contact (default 0.0).
 <code>(disps)</code> is &quot;enabled&quot; (or &quot;yes&quot; or 1) or &quot;disabled&quot; (or &quot;no&quot; or 0)
 for detection of contact using particle displacements (default &quot;disabled&quot;). <code>(norm)</code> determines the method used to find surface normals during
@@ -845,8 +852,9 @@ contact calculations, with options:
 <li>&quot;maxvol&quot; (or 1)</li>
 <li>&quot;avggrad&quot; (or 2) (default)</li>
 <li>&quot;owngrad&quot; (or 3)</li>
+<li>&quot;specify&quot; (or 4)</li>
 </ul>
-<code>(rigidBias)</code> sets a bias factor to use rigid normal over nonrigid material normal when contact is with rigid materials and when <code>(norm)</code> is "maxgrad" or "avggrad" (default 1).</li>
+When <code>(norm)</code> is "maxgrad" or "avggrad", the <code>(rigidBiasOrAzimuth)</code> parameter sets a bias factor to use rigid normal over nonrigid material normal (default 1). When <code>(norm)</code> is "specify", the <code>(rigidBiasOrAzimuth)</code> and <code>(polar)</code> parameters set the azimuth (&phi;) and polar (&theta;) angles for the normal vector, which is given by (cos &phi; sin &theta;, sin &phi; sin &theta;, cos &theta;). For 2D calculations, the <code>(polar)</code> setting is ignored (and automatically set to 90 degrees). The normal should point from the lower-numbered material to the higher-numbered material. For contact with rigid materials, the normal should point from the non-rigid material to the rigid material.</li>
 
 <li><a name="frictmm"></a><code>FrictionMM (frict)</code><br>
 Set default multimaterial mode friction properties where (first) sets it as explained in the <a href="#frict">Friction command</a>.</li>
@@ -1141,7 +1149,7 @@ custom task parameters do not take a value.
 
 <dt><a name="VTKArchive"></a>VTKArchive</dt>
 
-<dd>This task allows <code>NairnMPM</code> to export data extrapolated to the grid during the calculation to VTK Legacy files (these files can be visualized by other software such as <a href="http://www.paraview.org" target="new">Paraview</a>). The parameters define what is save in the files:
+<dd>This task allows <code>NairnMPM</code> to export data extrapolated to the grid during the calculation to VTK Legacy files (these files can be visualized by other software such as <a href="http://www.paraview.org" target="new">Paraview</a>). The parameters define what is saved in the files:
 
 <ul>
 
@@ -1164,7 +1172,7 @@ custom task parameters do not take a value.
 <li>plasticenergy - the plastic energy (in J).</li>
 <li>contactforce - the nodal force on the grid for <code>MultiMaterialMode</code> simulations when they include rigid materials that have <code>SetDirection</code>=8. It is force of the rigid material on the object in Newtons.</li>
 <li>archiveTime (time) - enter the time interval (in ms) between saving of <code>VTK</code> archives. If this parameter is omitted, the VTK archive files are written on the same steps as the particle archives.</li>
-<li>firstArchiveTime (time) - enter the time to save the first results (in ms).</li>
+<li>firstArchiveTime (time) - enter the time to save the first results (in ms). This parameter is ignored unless archiveTime has be set as well.</li>
 </ul>
 </dd>
 

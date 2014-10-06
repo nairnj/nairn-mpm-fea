@@ -10,7 +10,6 @@ import java.nio.*;
 import java.awt.*;
 import java.awt.geom.*;
 
-
 public class MaterialPoint
 {
 	//---------------------------------------------------------------------
@@ -35,6 +34,7 @@ public class MaterialPoint
 	public double[] eps;
 	public double[] eplast;
 	public double erot;
+	public double sizeX,sizeY,sizeZ;
 	
 	private double plotValue;
 	public Color plotColor;
@@ -49,6 +49,7 @@ public class MaterialPoint
 		sigma=new double[4];
 		eps=new double[4];
 		eplast=new double[4];
+		sizeX = -1.;
 	}
 	
 	//---------------------------------------------------------------------
@@ -70,51 +71,51 @@ public class MaterialPoint
 	// return shape for the particle at current location
 	// (xpt,ypt) are pixel locations and (radiix,radiiy) are pixel sizes
 	public Shape particleShape(ResultsDocument resDoc,double xpt,double ypt,double radiix,double radiiy,
-								boolean showSquarePts,boolean transformPts)
+								boolean showSquarePts,boolean transformPts,double mpDiam)
 	{	// depends on setting
+		
+		// adjust size
+		if(sizeX>0.)
+		{	radiix = radiix*sizeX/(0.01*mpDiam);
+			radiiy = radiiy*sizeY/(0.01*mpDiam);
+		}
+	    
 		if(showSquarePts)
 		{	if(transformPts)
 			{	double dgrad00,dgrad01,dgrad10,dgrad11;
+				double wrot=Math.PI*(erot-angleZ)/180.;
 				if(resDoc.materials.get(materialIndex()).hasPlasticStrainForGradient())
-				{	dgrad00=0.01*(eps[MaterialPoint.XXID]+eplast[MaterialPoint.XXID]);
-					double wrot=Math.PI*(angleZ-erot)/180.;
-					dgrad01=0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID])+wrot;
-					dgrad10=0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID])-wrot;
-					dgrad11=0.01*(eps[MaterialPoint.YYID]+eplast[MaterialPoint.YYID]);
+				{	dgrad00 = 1.+0.01*(eps[MaterialPoint.XXID]+eplast[MaterialPoint.XXID]);
+					dgrad01 = 0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID]) - wrot;
+					dgrad10 = 0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID]) + wrot;
+					dgrad11 = 1.+0.01*(eps[MaterialPoint.YYID]+eplast[MaterialPoint.YYID]);
 				}
 				else
-				{	dgrad00=0.01*eps[MaterialPoint.XXID];
-					double wrot=Math.PI*(angleZ-erot)/180.;
-					dgrad01=0.005*eps[MaterialPoint.XYID]+wrot;
-					dgrad10=0.005*eps[MaterialPoint.XYID]-wrot;
-					dgrad11=0.01*eps[MaterialPoint.YYID];
+				{	dgrad00 = 1.+0.01*eps[MaterialPoint.XXID];
+					dgrad01 = 0.005*eps[MaterialPoint.XYID] - wrot;
+					dgrad10 = 0.005*eps[MaterialPoint.XYID] + wrot;
+					dgrad11 = 1.+0.01*eps[MaterialPoint.YYID];
 				}
 				
 				// This works in Java 1.5
+				// transformed (radiix,0)
+				double r1x = radiix*dgrad00;
+				double r1y = -radiix*dgrad10;
+				// transformed (0,radiiy)
+				double r2x = radiiy*dgrad01;
+				double r2y = -radiiy*dgrad11;
 				GeneralPath quad=new GeneralPath();
-				Point2D.Float pathPt0=new Point2D.Float((float)(xpt+radiix*(1.+dgrad00)-radiiy*dgrad10),
-											(float)(ypt+radiix*dgrad01-radiiy*(1.+dgrad11)));
+				Point2D.Float pathPt0=new Point2D.Float((float)(xpt+r1x+r2x),(float)(ypt+r1y+r2y));
 				quad.moveTo(pathPt0.x,pathPt0.y);
-				quad.lineTo((float)(xpt+radiix*(1.+dgrad00)+radiiy*dgrad10),
-											(float)(ypt+radiix*dgrad01+radiiy*(1.+dgrad11)));
-				quad.lineTo((float)(xpt-radiix*(1.+dgrad00)+radiiy*dgrad10),
-											(float)(ypt-radiix*dgrad01+radiiy*(1.+dgrad11)));
-				quad.lineTo((float)(xpt-radiix*(1.+dgrad00)-radiiy*dgrad10),
-											(float)(ypt-radiix*dgrad01-radiiy*(1.+dgrad11)));
+				quad.lineTo((float)(xpt-r1x+r2x),(float)(ypt-r1y+r2y));
+				quad.lineTo((float)(xpt-r1x-r2x),(float)(ypt-r1y-r2y));
+				quad.lineTo((float)(xpt+r1x-r2x),(float)(ypt+r1y-r2y));
 				quad.lineTo(pathPt0.x,pathPt0.y);
 				/*
 				// This requires Java 1.6
 				Path2D.Double quad=new Path2D.Double();
-				Point2D.Double pathPt0=new Point2D.Double((double)(xpt+radiix*(1.+dgrad00)-radiiy*dgrad10),
-											(double)(ypt+radiix*dgrad01-radiiy*(1.+dgrad11)));
-				quad.moveTo(pathPt0.x,pathPt0.y);
-				quad.lineTo((double)(xpt+radiix*(1.+dgrad00)+radiiy*dgrad10),
-											(double)(ypt+radiix*dgrad01+radiiy*(1.+dgrad11)));
-				quad.lineTo((double)(xpt-radiix*(1.+dgrad00)+radiiy*dgrad10),
-											(double)(ypt-radiix*dgrad01+radiiy*(1.+dgrad11)));
-				quad.lineTo((double)(xpt-radiix*(1.+dgrad00)-radiiy*dgrad10),
-											(double)(ypt-radiix*dgrad01-radiiy*(1.+dgrad11)));
-				quad.lineTo(pathPt0.x,pathPt0.y);
+				Point2D.Double pathPt0=new Point2D.Double((double)(xpt+r1x+r2x),
+											(double)(ypt+r1y+r2y));
 				*/
 				return quad;
 			}
@@ -330,10 +331,12 @@ public class MaterialPoint
 			elementCrossings=0;
 			
 		// rot strain (in degrees) (not converted for units)
+		// actually initial angle to subtraction of material angle to
+		// get rotational strain
 		if(mpmOrder[ReadArchive.ARCH_RotStrain]=='Y')
 			erot=bb.getDouble();
 		else
-			erot=angleZ;	// cause rotational strain to be zero since not known
+			erot=0.;	// assume initial angles were all zero
 	}
 	
 	//---------------------------------------------------------------------
@@ -728,5 +731,12 @@ public class MaterialPoint
 	
 	// index to material type (zero based)
 	public int materialIndex() { return material-1; }
+	
+	// set dimensionless size for membrane particles
+	public void setDimensionlessSize(double sx,double sy,double sz)
+	{	sizeX = sx;
+		sizeY = sy;
+		sizeZ = sz;
+	}
 
 }

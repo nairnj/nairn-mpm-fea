@@ -5,7 +5,10 @@
  * Created 
  */
 
+import java.awt.Toolkit;
 import java.awt.event.*;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -27,9 +30,11 @@ public class CmdViewer extends JNCmdTextDocument
 	private CheckAnalysisAction checkAnalysisCammand = new CheckAnalysisAction();
 	private InterpretCommandsAction interpretCammand = new InterpretCommandsAction();
 	private ShowPartnerAction showPartnerCommand = new ShowPartnerAction();
+	private ExportXMLAction exportXMLCommand = new ExportXMLAction();
+	private StopCurrentModeAction stopModeCommand = new StopCurrentModeAction();
 	
 	// analysis runner
-	private NFMAnalysis nfmAnalysis = null;
+	public NFMAnalysis nfmAnalysis = null;
 	private int openMesh;
 	private boolean useBackground;
 
@@ -80,11 +85,19 @@ public class CmdViewer extends JNCmdTextDocument
 	private int MMDcheck;
 	private int MMNormals;		// <0 means no multimaterial mode
 	private double MMRigidBias;
+	private double MMAzimuth;
+	private double MMPolar;
 	private String ContactPosition;
 	private String FrictionMM;
 	private StringBuffer customTasks;
 	private String currentCustomTask = null;
 	
+	// scripting
+	private boolean runningScript;
+	private HashMap<String,Object> objs = null;
+	private File scriptOutput;
+	private CmdViewer theScript;
+
 	// constants
 	public static final int PLANE_STRAIN=0;
 	public static final int PLANE_STRESS=1;
@@ -120,8 +133,10 @@ public class CmdViewer extends JNCmdTextDocument
 		addToolBarIcon(goNext,null,"Run FEA or MPM Analysis.",getRunAnalysisAction());
 		ImageIcon goLast=new ImageIcon(baseClass.getResource("Resources/go-last.png"));
 		addToolBarIcon(goLast,null,"Check mesh for FEA or MPM Analysis.",checkAnalysisCammand);
+		ImageIcon scriptIcon=new ImageIcon(baseClass.getResource("Resources/scripticon.png"));
+		addToolBarIcon(scriptIcon,null,"Interpret calculation or control script commands.",interpretCammand);
 		ImageIcon doStop=new ImageIcon(baseClass.getResource("Resources/process-stop.png"));
-		addToolBarIcon(doStop,null,"Stop currently running FEA or MPM Analysis.",getStopAnalysisAction());
+		addToolBarIcon(doStop,null,"Stop currently running FEA or MPM Analysis.",stopModeCommand);
 
 		addToolBarBar();
 		ImageIcon showRes=new ImageIcon(baseClass.getResource("Resources/image-x-generic.png"));
@@ -147,7 +162,9 @@ public class CmdViewer extends JNCmdTextDocument
 		JMenuBar menuBar = new JMenuBar();
 		if(!JNApplication.isMacLNF())
 			menuBar.add(defaultApplicationMenu());		// Application menu
-		menuBar.add(defaultFileMenu(this));				// File menu
+		JMenu fileMenu = defaultFileMenu(this);
+		fileMenu.add(exportXMLCommand);
+		menuBar.add(fileMenu);				// File menu
 		
 		// Edit menu
 		JMenu menu = defaultEditMenu(true);
@@ -163,7 +180,7 @@ public class CmdViewer extends JNCmdTextDocument
 		menu.add(checkAnalysisCammand);
 		menu.add(interpretCammand);
 		menu.addSeparator();
-		menu.add(getStopAnalysisAction());
+		menu.add(stopModeCommand);
 		
 		// Window
 		menu = new JMenu("Window");
@@ -179,7 +196,7 @@ public class CmdViewer extends JNCmdTextDocument
 		setJMenuBar(menuBar);
 	}
 	
-	// default file menu refering to document target
+	// default file menu referring to document target
 	public static JMenu defaultFileMenu(JNDocument target)
 	{	JMenu fileMenu=target.defaultFileMenu();
 		JMenuItem newMPM=fileMenu.getItem(1);
@@ -200,9 +217,9 @@ public class CmdViewer extends JNCmdTextDocument
 		target.addToolBarIcon(null,"openDocument","Open a saved document file.",JNApplication.main);
 		Class<?> baseClass=JNApplication.main.getClass();
 		ImageIcon newMPM=new ImageIcon(baseClass.getResource("Resources/document-new.png"));
-		target.addToolBarIcon(newMPM,"newDocumentMPMCmd","Create a new document.",JNApplication.main);
+		target.addToolBarIcon(newMPM,"newDocumentMPMCmd","Create a new MPM commands document.",JNApplication.main);
 		ImageIcon newFEA=new ImageIcon(baseClass.getResource("Resources/document-newfea.png"));
-		target.addToolBarIcon(newFEA,"newDocumentFEACmd","Create a new document.",JNApplication.main);
+		target.addToolBarIcon(newFEA,"newDocumentFEACmd","Create a new FEA command document.",JNApplication.main);
 	}
 	
 	//----------------------------------------------------------------------------
@@ -210,9 +227,9 @@ public class CmdViewer extends JNCmdTextDocument
 	//----------------------------------------------------------------------------
 	
 	// default command run method passed to custom one
-	public void runAnalysis() { runNFMAnalysis(false,NFMAnalysis.FULL_ANALYSIS); }
+	public void runAnalysis() { runNFMAnalysis(false,NFMAnalysis.FULL_ANALYSIS,null); }
 	
-	public void runNFMAnalysis(boolean doBackground,int runType)
+	public void runNFMAnalysis(boolean doBackground,int runType,CmdViewer scriptDoc)
 	{
 		// only allowed if the commands have been saved
 		if(getFile()==null)
@@ -221,11 +238,17 @@ public class CmdViewer extends JNCmdTextDocument
 			return;
 		}
 		
+		// self call sets scriptDoc to self
+		if(scriptDoc==null)
+			theScript = this;
+		else
+			theScript = scriptDoc;
+		
 		// create once
 		if(nfmAnalysis == null)
 			nfmAnalysis = new NFMAnalysis(this);
 		
-		// what is process is current running?
+		// what if process is current running?
 		if(nfmAnalysis.isRunning())
 		{	JNApplication.appBeep();
 			String message="An FEA or MPM process is currently running.\nDo you want stop it and start a new process?";
@@ -244,9 +267,10 @@ public class CmdViewer extends JNCmdTextDocument
 		{	// interpret commands
 			useBackground = doBackground;
 			openMesh = runType;
+			// call in super class initiates command interpertation
 			super.runAnalysis();
 			
-			// when done, will launch the analysis
+			// when interpretaiont done, will launch the analysis in analysisFinished()
 			return;
 		}
 		else
@@ -260,12 +284,14 @@ public class CmdViewer extends JNCmdTextDocument
 					Scanner getProcs=new Scanner(procs);
 					if(getProcs.hasNextInt()) processors =  getProcs.nextInt();
 					if(processors<1) processors = 1;
+					getProcs.close();
 				}
 			}
 		}
 		
 		// launch analysis with DTD commands in the field
-		nfmAnalysis.runNFMAnalysis(doBackground,runType,cmdField.getCommands(),soutConsole,processors);
+		nfmAnalysis.runNFMAnalysis(doBackground,runType,cmdField.getCommands(),
+					soutConsole,processors,theScript.getOutputFile());
 	}
 	
 	// when analysis is done, proceed with calculations (if OKO)
@@ -273,11 +299,17 @@ public class CmdViewer extends JNCmdTextDocument
 	{	// give up on error
 		if(status==false || stopCommand==true) return;
 		
+		if(runningScript)
+		{	toFront();
+			return;
+		}
+		
 		// launch analysis with DTD commands in the field
-		nfmAnalysis.runNFMAnalysis(useBackground,openMesh,buildXMLCommands(),soutConsole,processors);
+		nfmAnalysis.runNFMAnalysis(useBackground,openMesh,buildXMLCommands(),
+					soutConsole,processors,theScript.getOutputFile());
 	}
 	
-	// initialize variables when intepreting commands
+	// initialize when interpreting commands
 	public void initRunSettings() throws Exception
 	{
 		title = "NairnFEAMPMViz Calculations";
@@ -324,15 +356,40 @@ public class CmdViewer extends JNCmdTextDocument
 		MMDcheck = 0;
 		MMNormals = -1;
 		MMRigidBias = 1.0;
+		MMAzimuth = 0.0;
+		MMPolar = 0.0;
 		ContactPosition = null;
 		FrictionMM = null;
 		customTasks = new StringBuffer("");
+		
+		runningScript = false;
+		objs = new HashMap<String,Object>(10);
+		scriptOutput = null;
+		
+		// is it called from a script?
+		if(theScript!=this)
+		{	variables.put("_ScriptMode_",new Double(1.));
+			variables.putAll(theScript.getVariables());
+			variablesStrs.putAll(theScript.getVariablesStrs());
+		}
 	}
 	
 	// handle commands
 	public void doCommand(String theCmd,ArrayList<String> args) throws Exception
 	{	
-		if(mats.isInMaterial())
+		// if script, switch to script commands
+		if(runningScript)
+		{	doScriptCommand(theCmd,args);
+		}
+		
+		else if(theCmd.equals("script"))
+		{	if(openMesh!=NFMAnalysis.SCRIPT_ONLY && openMesh!=NFMAnalysis.INTERPRET_ONLY)
+				throw new Exception("Scripts can only run by using the 'Interpret Commands...'");
+			runningScript = true;
+			openMesh = NFMAnalysis.SCRIPT_ONLY;
+		}
+		
+		else if(mats.isInMaterial())
 		{	// commands go to material class when material (keep this option first)
 			
 			// but first see if language control command
@@ -734,6 +791,249 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 	}
 	
+	// handle commands
+	public void doScriptCommand(String theCmd,ArrayList<String> args) throws Exception
+	{
+		if(theCmd.equals("open"))
+		{	// Open objName,path (omit path for dialog, can be relative path)
+			if(args.size()<2)
+				throw new Exception("The first argument in an 'Open' command must provide an object variable.\n"+args);
+			String objectVar = args.get(1);
+			if(!validObjectName(objectVar))
+				throw new Exception("The first argument in an 'Open' command must be valid object name.\n"+args);
+			
+			// file by path or null
+			File oneDoc = null;
+			if(args.size()>2)
+			{	oneDoc = scriptPath(readStringArg(args.get(2)),args,false);
+				oneDoc = new File(oneDoc.getCanonicalPath());
+				
+				// see if already open
+				JNDocument currentDoc = NairnFEAMPMViz.main.findDocument(oneDoc);
+				if(currentDoc!=null)
+				{	currentDoc.setVisible(true);
+					currentDoc.toFront();
+					objs.put(objectVar,currentDoc);
+					return;
+				}
+			}
+			
+			// open now (exit if cancelled or error)
+			JNDocument currentDoc = NairnFEAMPMViz.main.frontDocument();
+			NairnFEAMPMViz.main.openDocument(oneDoc);
+			if(currentDoc == NairnFEAMPMViz.main.frontDocument())
+			{	// open failed or was canceled
+				running = false;
+				return;
+			}
+			objs.put(objectVar,NairnFEAMPMViz.main.frontDocument());
+		}
+		
+		else if(theCmd.equals("openfolder"))
+		{	// openFolder - string var name,title
+			if(args.size()<2)
+				throw new Exception("The first argument in an 'OpenFolder' command must be string variable name.\n"+args);
+			
+			String varName = args.get(1);
+			if(!JNEvaluatorStrs.validStrVariableName(varName))
+				throw new Exception("The first argument in an 'OpenFolder' command must be  a valid string variable name.\n"+args);
+			
+			// optional dialog title
+			String fldrTitle = "Select a folder";
+			if(args.size()>2)
+			{	String userTitle = readStringArg(args.get(2));
+				if(userTitle.length()>0) fldrTitle = userTitle;
+			}
+			
+			// if path use it, otherwise dialog box
+			String fldrPath = "";
+			if(args.size()>3)
+			{	File oneFldr = scriptPath(readStringArg(args.get(3)),args,true);
+			
+				// only need to create if does not exist
+				if(!oneFldr.exists())
+				{	if(!oneFldr.mkdirs())
+						throw new Exception("File error creating the folder(s).\n"+args);
+				}
+			
+				// get file path
+				fldrPath = oneFldr.getCanonicalPath();
+			}
+			else
+			{	JFileChooser fldrChooser=new JFileChooser();
+				fldrChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				NFMVPrefs.setWorkspace(fldrChooser);
+				fldrChooser.setDialogTitle(fldrTitle);
+				int result = fldrChooser.showSaveDialog(this);
+				if(result == JFileChooser.APPROVE_OPTION)
+				{	fldrPath = fldrChooser.getSelectedFile().getPath();
+				}
+			}
+			
+			// save in variable with terminal path delimiter
+			if(fldrPath.length()>0)
+			{	if(JNApplication.isWindowsOS())
+					fldrPath += "\\";
+				else
+					fldrPath += "/";
+			}
+			variablesStrs.put(varName,fldrPath);
+		}
+		
+		else
+		{	// look for object command
+			String objCmd = args.get(0);
+			int dot = objCmd.indexOf(".");
+			if(dot>0)
+			{	String objName = objCmd.substring(0,dot);
+				Object obj = objs.get(objName);
+				if(obj!=null)
+				{	doObjectCommand(obj,objCmd.substring(dot+1).toLowerCase(),args);
+					return;
+				}
+			}
+			
+			//System.out.println(args);
+			super.doCommand(theCmd, args);
+		}
+	}
+	
+	// handle commands to an object
+	public void doObjectCommand(Object obj,String theCmd,ArrayList<String> args) throws Exception
+	{
+		if(theCmd.equals("interpret"))
+		{	// interpret the commands (no arguments)
+			
+			if(!obj.getClass().equals(CmdViewer.class))
+				throw new Exception("The 'interpret' command can only by used on commands documents.\n"+args);
+			
+			scriptOutput = null;
+			((CmdViewer)obj).runNFMAnalysis(false,NFMAnalysis.INTERPRET_ONLY,this);
+			
+			// wait for interpret to be done
+			while(true)
+			{	Thread.sleep(100);
+				if(!((CmdViewer)obj).isRunning()) break;
+			}
+		}
+		
+		else if(theCmd.equals("run"))
+		{	// run obj,outpath
+			if(!obj.getClass().equals(CmdViewer.class))
+				throw new Exception("The 'run' command can only by used on command documents.\n"+args);
+						
+			// need to provide path to save the file
+			if(args.size()<3)
+				throw new Exception("'Run' command needs object name and output file path.\n"+args);
+			
+			String objectVar = args.get(1);
+			if(!validObjectName(objectVar))
+				throw new Exception("The first argument in an 'Open' command must be valid object name.\n"+args);
+			
+			// get path
+			File outDoc = scriptPath(readStringArg(args.get(2)),args,false);
+			scriptOutput = new File(outDoc.getCanonicalPath());
+			if(!scriptOutput.getParentFile().exists())
+				throw new Exception("The folder selected for output does not exist.\n"+args);
+
+			// start analysis
+			((CmdViewer)obj).runNFMAnalysis(false,NFMAnalysis.FULL_ANALYSIS,this);
+			
+			// wait for interpret to be done
+			while(true)
+			{	Thread.sleep(1000);
+				if(!((CmdViewer)obj).isRunning()) break;
+			}
+			
+			// set obj to output document
+			objs.put(objectVar,((DocViewer)NairnFEAMPMViz.main.frontDocument()).resDoc);
+		}
+		
+		else if(theCmd.equals("export"))
+		{	// run obj,outpath
+			if(!obj.getClass().equals(CmdViewer.class))
+				throw new Exception("The 'export' command can only by used on commands documents.\n"+args);
+						
+			// file by path or null
+			File oneDoc = null;
+			if(args.size()>1)
+			{	String fPath = readStringArg(args.get(1));
+				if(fPath.length()<2)
+					throw new Exception("'export' command has empty path name.\n"+args);
+				if(fPath.charAt(0)!='/' && fPath.charAt(1)!=':')
+					oneDoc = new File(getFile().getParent(),fPath);
+				else
+					oneDoc = new File(fPath);
+			}
+			
+			if(!((CmdViewer)obj).exportOutput(oneDoc,null))
+				throw new Exception("The 'export' command failed.\n"+args);					
+		}
+
+		else
+			throw new Exception("An unrecognized object command.\n"+args);
+	}
+	
+	// object names begin in letter (not '#')
+	// Rest letters, numbers, and underscore
+	public static boolean validObjectName(String v)
+	{	// need at least letter
+		if(v.length()<1) return false;
+		// other letters letter or number
+		for(int i=0;i<v.length()-1;i++)
+		{	char c = v.charAt(i);
+			if ((c > 'z' || c < 'a')  && (c > 'Z' || c < 'A'))
+			{	// first must be letter
+				if(i==0) return false;
+				// others can be numbers of underscore
+				if((c > '9' || c < '0') && c!='_') return false;
+			}
+		}
+		return true;
+	}
+	
+	// decode argument to path for a script
+	// allows relative or full path and allows Mac/Linux or Windows
+	// if file exists, it must be folder or file is wantFolder is true or false
+	public File scriptPath(String fPath,ArrayList<String> args,boolean wantFolder) throws Exception
+	{	// empty is not allowed
+		if(fPath.length()==0)
+			throw new Exception("'"+args.get(0)+"' command has empty path name.\n"+args);
+		
+		// Mac/Linux full path begins in / at at lease 1 more character
+		File oneDoc = null;
+		if(fPath.charAt(0)=='/')
+		{	// needs at least on more letter
+			if(fPath.length()<2)
+				throw new Exception("'"+args.get(0)+"' command has incomplete full path.\n"+args);
+			oneDoc = new File(fPath);
+		}
+		else if(fPath.length()>3)
+		{	// full Windows full path needs "c:\a" or at least 4 letters with : an \ in 2nd and 3rd
+			if(fPath.charAt(1)==':' && fPath.charAt(2)=='\\')
+				oneDoc = new File(fPath);
+		}
+		
+		// it is a relative path
+		if(oneDoc==null) oneDoc = new File(getFile().getParent(),fPath);
+		
+		// if already exists, it better be a folder
+		if(oneDoc.exists())
+		{	if(wantFolder)
+			{	if(!oneDoc.isDirectory())
+					throw new Exception("A specified folder name already exists but is not a folder.\n"+args);
+			}
+			else
+			{	if(oneDoc.isDirectory())
+					throw new Exception("A specified file name already exists but it is a folder.\n"+args);
+			}
+		}
+		
+		// return it
+		return oneDoc;
+
+	}
+
 	// Analysis (type),(element)
 	public void doAnalysis(ArrayList<String> args) throws Exception
 	{
@@ -1271,7 +1571,7 @@ public class CmdViewer extends JNCmdTextDocument
 		else
 			pdamping = dampcmd;
 	}
-
+	
 	// MultimaterialMode Vmin,Dcheck,Normals,RigidBias
 	public void doMultimaterialMode(ArrayList<String> args) throws Exception
 	{	// MPM Only
@@ -1303,12 +1603,20 @@ public class CmdViewer extends JNCmdTextDocument
 			options.put("maxvol", new Integer(1));
 			options.put("avggrad", new Integer(2));
 			options.put("owngrad", new Integer(3));
+			options.put("specify", new Integer(4));
 			MMNormals = readIntOption(args.get(3),options,"Normals option");
 		}
 		
-		// Rigid Bias
-		if(args.size()>4)
-		{	MMRigidBias = readDoubleArg(args.get(4));
+		if(MMNormals==4)
+		{	// polar angles
+			if(args.size()>4)
+				MMAzimuth = readDoubleArg(args.get(4));
+			if(args.size()>5)
+				MMPolar = readDoubleArg(args.get(5));
+		}
+		else if(args.size()>4)
+		{	//Rigid Bias
+			MMRigidBias = readDoubleArg(args.get(4));
 			if(MMRigidBias<0.) MMRigidBias = 0.;
 		}
 	}
@@ -1477,7 +1785,7 @@ public class CmdViewer extends JNCmdTextDocument
 		if(args.size()<2)
 			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
-		// leave limit (required)
+		// leav limit (required)
 		int leave = readIntArg(args.get(1));
 		leaveLimit = "    <LeaveLimit>"+leave+"</LeaveLimit>\n";
 	}
@@ -1616,7 +1924,7 @@ public class CmdViewer extends JNCmdTextDocument
 			{	// material looks for material ID
 				int matnum = mats.getMatID(readStringArg(args.get(2)));
 				if(matnum<=0)
-				{	// negative is allowed for reaction forces (but only -10,-11,-20,-21,-30,-31)
+				{	// negative is allowed for reaction forces
 					matnum = readIntArg(args.get(2));
 					if(matnum>=0)
 						throw new Exception("'"+args.get(0)+"' command has unknown material ID or invalid BC ID:\n"+args);
@@ -1662,7 +1970,7 @@ public class CmdViewer extends JNCmdTextDocument
 		if(args.size()<2)
 			throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
-		// points per element
+		//  points per element
 		int pts = readIntArg(args.get(1));
 		if(pts<0 || pts>5 || (pts>3 && isMPM3D()))
 			throw new Exception("'"+args.get(0)+"' has unsupported number of points per element:\n"+args);
@@ -1707,6 +2015,45 @@ public class CmdViewer extends JNCmdTextDocument
 				{	// make sure has data
 					i+=2;
 					return areas.getPathProperty(readStringArg(atoms[i-1]),readStringArg(atoms[i]));
+				}
+				
+				else if(runningScript)
+				{	// look for obj.property
+					Object obj = objs.get(nextAtom);
+					if(obj==null || i+1>=atoms.length) return null;
+					i++;
+					nextAtom = atoms[i];
+					
+					// object properties (string properties end in '$')
+					if(nextAtom.equals("energy"))
+					{	if(!obj.getClass().equals(ResultsDocument.class)) return null;
+						return ((ResultsDocument)obj).getEnergy();
+					}
+					
+					else if(nextAtom.equals("get"))
+					{	i++;
+						if(i>=atoms.length) return null;
+						if(!obj.getClass().equals(CmdViewer.class)) return null;
+						if(!obj.getClass().equals(CmdViewer.class)) return null;
+						return ((CmdViewer)obj).getVariable(atoms[i]);
+					}
+					
+					else if(nextAtom.equals("section"))
+					{	i++;
+						if(i>=atoms.length) return null;
+						int alen = atoms[i].length();
+						if(alen<2) return null;
+						if(atoms[i].charAt(0)=='"' && atoms[i].charAt(alen-1)=='"')
+							atoms[i] = atoms[i].substring(1,alen-1);
+						else
+						{	// a string variable is allowed
+							String strAtom = variablesStrs.get(atoms[i]);
+							if(strAtom!=null) atoms[i] = strAtom;
+						}
+						if(!obj.getClass().equals(ResultsDocument.class)) return null;
+						return ((ResultsDocument)obj).section(atoms[i]);
+					}
+					
 				}
 			}
 		}
@@ -1810,8 +2157,14 @@ public class CmdViewer extends JNCmdTextDocument
 			// Multimaterial mode <MultiMaterialMode Vmin='0.0' Dcheck='0' Normals='0' RigidBias='100'>
 			// Subordinate friction and contact position
 			if(MMNormals>=0)
-			{	xml.append("    <MultiMaterialMode Vmin='"+MMVmin+"' Dcheck='"+MMDcheck+
-							"' Normals='"+MMNormals+"' RigidBias='"+MMRigidBias+"'>\n");
+			{	if(MMNormals==4)
+				{	xml.append("    <MultiMaterialMode Vmin='"+MMVmin+"' Dcheck='"+MMDcheck+
+						"' Normals='"+MMNormals+"' Azimuth='"+MMAzimuth+"' Polar='"+MMPolar+"'>\n");
+				}
+				else
+				{	xml.append("    <MultiMaterialMode Vmin='"+MMVmin+"' Dcheck='"+MMDcheck+
+								"' Normals='"+MMNormals+"' RigidBias='"+MMRigidBias+"'>\n");
+				}
 				if(FrictionMM!=null) xml.append(FrictionMM);
 				if(ContactPosition!=null) xml.append(ContactPosition);
 				xml.append("    </MultiMaterialMode>\n");
@@ -2000,7 +2353,7 @@ public class CmdViewer extends JNCmdTextDocument
 		{	linkedResults.windowClosing(null);
 		}
 		NairnFEAMPMViz.main.openDocument(soutConsole.getFile());
-		linkedResults=(DocViewer)NairnFEAMPMViz.main.frontDocument();
+		linkedResults=(DocViewer)NairnFEAMPMViz.main.findDocument(soutConsole.getFile());
 		linkedResults.setCommandsWindow(this);
 		return linkedResults;
 	}
@@ -2050,7 +2403,63 @@ public class CmdViewer extends JNCmdTextDocument
 			throw new Exception("The argument '"+text+"'\nis neither a number nor a valid entity");
 		return "&"+ent+";";
 	}
+	
+	// override to check commands or anlaysis running
+	public boolean isRunning()
+	{	if(super.isRunning()) return true;
+		if(nfmAnalysis==null) return false;
+		if(nfmAnalysis.isRunning()) return true;
+		return false;
+	}
+	
+	// scripts return an output file to use for output
+	// otherwise return null to select default output
+	public File getOutputFile()
+	{	if(!runningScript) return null;
+		return scriptOutput;
+	}
+	
+	// return variable value (or null if none) as string
+	public String getVariable(String varName)
+	{	Double nvar = variables.get(varName);
+		if(nvar!=null)
+			return JNUtilities.formatDouble(nvar.doubleValue());
+		String svar = variablesStrs.get(varName);
+		return svar;
+	}
+	
+	// export the output file
+	// return true is done or false if error or if cancelled
+	public boolean exportOutput(File exportFile,String etitle)
+	{
+		if(etitle==null) etitle = "Export contents of output panel";
+	
+		if(exportFile==null)
+		{	JFileChooser expChooser=new JFileChooser();
+			expChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			NFMVPrefs.setWorkspace(expChooser);
+			expChooser.setDialogTitle(etitle);
+			int result = expChooser.showSaveDialog(this);
+			if(result != JFileChooser.APPROVE_OPTION) return false;
+			exportFile = expChooser.getSelectedFile();
+		}
 		
+		// save output text to exportFile
+		try
+		{	FileWriter theFile=new FileWriter(exportFile);
+			theFile.write(soutConsole.console.getText());
+			theFile.flush();
+			theFile.close();
+		}
+		catch (Exception fe)
+		{	Toolkit.getDefaultToolkit().beep();
+			JOptionPane.showMessageDialog(this,"Error exporting output results: " + fe);
+			return false;
+		}
+				
+		return true;
+	}
+	
 	//----------------------------------------------------------------------------
 	// Actions as inner classes
 	//----------------------------------------------------------------------------
@@ -2063,7 +2472,7 @@ public class CmdViewer extends JNCmdTextDocument
 		{	super("Background FEA/MPM Analysis...",KeyEvent.VK_B);
 		}
  
-		public void actionPerformed(ActionEvent e) { runNFMAnalysis(true,NFMAnalysis.FULL_ANALYSIS); }
+		public void actionPerformed(ActionEvent e) { runNFMAnalysis(true,NFMAnalysis.FULL_ANALYSIS,null); }
 	}
 
 	// action for stop analysis menu command
@@ -2074,7 +2483,7 @@ public class CmdViewer extends JNCmdTextDocument
 		{	super("Test FEA/MPM Mesh...",KeyEvent.VK_T);
 		}
  
-		public void actionPerformed(ActionEvent e) { runNFMAnalysis(false,NFMAnalysis.RUN_CHECK_MESH); }
+		public void actionPerformed(ActionEvent e) { runNFMAnalysis(false,NFMAnalysis.RUN_CHECK_MESH,null); }
 	}
 	
 	// action for stop analysis menu command
@@ -2085,7 +2494,7 @@ public class CmdViewer extends JNCmdTextDocument
 		{	super("Interpret Commands...",KeyEvent.VK_I);
 		}
  
-		public void actionPerformed(ActionEvent e) { runNFMAnalysis(false,NFMAnalysis.INTERPRET_ONLY); }
+		public void actionPerformed(ActionEvent e) { runNFMAnalysis(false,NFMAnalysis.INTERPRET_ONLY,null); }
 	}
 	
 	// action to shaw partner menu command
@@ -2103,4 +2512,36 @@ public class CmdViewer extends JNCmdTextDocument
 				JNApplication.appBeep();
 		}
 	}
+	
+	// action for stop analysis menu command
+	protected class ExportXMLAction extends JNAction
+	{	private static final long serialVersionUID = 1L;
+
+		public ExportXMLAction()
+		{	super("Export Output...",KeyEvent.VK_S,true);
+		}
+ 
+		public void actionPerformed(ActionEvent e) { exportOutput(null,null); }
+	}
+	
+	// action for stop analysis menu command
+	protected class StopCurrentModeAction extends JNAction
+	{	private static final long serialVersionUID = 1L;
+
+		public StopCurrentModeAction()
+		{	super("Stop Analysis",KeyEvent.VK_PERIOD);
+		}
+ 
+		public void actionPerformed(ActionEvent e)
+		{	System.out.println(running+","+nfmAnalysis.isRunning());
+			if(running)
+				running = false;
+			else if(nfmAnalysis!=null)
+			{	if(nfmAnalysis.isRunning())
+					nfmAnalysis.stopRunning();
+			}
+		}
+	}
+
+
 }
