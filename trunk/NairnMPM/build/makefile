@@ -156,6 +156,7 @@ CrackSurfaceContact = $(src)/Cracks/CrackSurfaceContact
 CrackVelocityField = $(src)/Nodes/CrackVelocityField
 CrackVelocityFieldMulti = $(src)/Nodes/CrackVelocityFieldMulti
 CrackVelocityFieldSingle = $(src)/Nodes/CrackVelocityFieldSingle
+CrossedCrack = $(src)/Cracks/CrossedCrack
 CubicTraction = $(src)/Materials/CubicTraction
 CustomTask = $(src)/Custom_Tasks/CustomTask
 DDBHardening = $(src)/Materials/DDBHardening
@@ -377,7 +378,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 
 # Header files with no dependencies
 # BMPLevel.hpp BodyForce.hpp BoundaryCondition.hpp CommonArchiveData.hpp CommonException.hpp
-# CommonReadHandler.hpp ContourPoint.hpp CrackHeader.hpp CrackLeaf.hpp
+# CommonReadHandler.hpp ContourPoint.hpp CrackHeader.hpp CrackLeaf.hpp CrossedCrack.hpp
 # CustomTask.hpp ElementBase.hpp GlobalQuantity.hpp
 # MaterialBase.hpp MPMBase.hpp MPMWarnings.hpp NairnMPM.hpp
 # ParseController.hpp ShapeController.hpp StrX.hpp ThermalRamp.hpp TransportTask.hpp
@@ -393,7 +394,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		InitializationTask.o MassAndMomentumTask.o UpdateStrainsFirstTask.o GridForcesTask.o UpdateMomentaTask.o \
 		UpdateParticlesTask.o UpdateStrainsLastTask.o RunCustomTasksTask.o MoveCracksTask.o ResetElementsTask.o \
 		StartOutput.o MPMReadHandler.o Generators.o BitMapFiles.o BitMapFilesCommon.o BMPLevel.o MpsController.o \
-		CrackController.o MPMWarnings.o BodyForce.o GlobalQuantity.o BoundaryCondition.o DDBHardening.o \
+		CrackController.o MPMWarnings.o BodyForce.o GlobalQuantity.o BoundaryCondition.o DDBHardening.o CrossedCrack.o \
 		ThermalRamp.o MPMBase.o MatPoint2D.o MatPointAS.o CrackHeader.o CrackSegment.o CrackLeaf.o ContourPoint.o \
 		CrackSurfaceContact.o CrackNode.o MaterialInterfaceNode.o MaterialBaseMPM.o Viscoelastic.o JohnsonCook.o \
 		Mooney.o HEAnisotropic.o HEIsotropic.o BistableIsotropic.o RigidMaterial.o HardeningLawBase.o LinearHardening.o \
@@ -598,7 +599,7 @@ UpdateMomentaTask.o : $(UpdateMomentaTask).cpp $(dprefix) $(UpdateMomentaTask).h
 UpdateParticlesTask.o : $(UpdateParticlesTask).cpp $(dprefix) $(UpdateParticlesTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(TransportTask).hpp $(NodalPoint).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ElementBase).hpp \
 			$(BodyForce).hpp $(ThermalRamp).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(ConductionTask).hpp \
-			$(CommonException).hpp
+			$(CommonException).hpp $(BoundaryCondition).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UpdateParticlesTask).cpp
 UpdateStrainsLastTask.o : $(UpdateStrainsLastTask).cpp $(dprefix) $(UpdateStrainsLastTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(CrackHeader).hpp $(TransportTask).hpp \
@@ -694,7 +695,8 @@ MatPoint3D.o : $(MatPoint3D).cpp $(dprefix) $(MatPoint3D).hpp $(MPMBase).hpp $(M
 CrackHeader.o : $(CrackHeader).cpp $(dprefix) $(MaterialBase).hpp $(NairnMPM).hpp $(MeshInfo).hpp \
 			$(ArchiveData).hpp $(CommonException).hpp $(CommonArchiveData).hpp $(CrackHeader).hpp $(CommonException).hpp \
 			$(ElementBase).hpp $(CrackSurfaceContact).hpp $(ContourPoint).hpp $(CrackSegment).hpp $(CrackLeaf).hpp \
-			$(NodalPoint).hpp $(MPMBase).hpp $(CrackNode).hpp $(NodalPoint2D).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
+			$(NodalPoint).hpp $(MPMBase).hpp $(CrackNode).hpp $(NodalPoint2D).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
+			$(CrossedCrack).hpp $(ParseController).hpp $(PropagateTask).hpp $(CustomTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackHeader).cpp
 CrackLeaf.o : $(CrackLeaf).cpp $(dprefix) $(CrackLeaf).hpp $(CrackHeader).hpp $(CrackSegment).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackLeaf).cpp
@@ -710,6 +712,8 @@ CrackSurfaceContact.o : $(CrackSurfaceContact).cpp $(dprefix) $(CrackSurfaceCont
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackSurfaceContact).cpp
 CrackNode.o : $(CrackNode).cpp $(dprefix) $(CrackNode).hpp $(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp 
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackNode).cpp
+CrossedCrack.o : $(CrossedCrack).cpp $(dprefix) $(CrossedCrack).hpp $(CrackHeader).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrossedCrack).cpp
 
 # MPM: Materials
 MaterialBaseMPM.o : $(MaterialBaseMPM).cpp $(dprefix) $(MaterialBase).hpp $(NairnMPM).hpp $(ThermalRamp).hpp \
@@ -754,7 +758,7 @@ IdealGas.o : $(IdealGas).cpp $(dprefix) $(IdealGas).hpp $(MaterialBase).hpp $(Hy
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp $(ThermalRamp).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(IdealGas).cpp
 TaitLiquid.o : $(TaitLiquid).cpp $(dprefix) $(TaitLiquid).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(MPMBase).hpp \
-			$(CommonException).hpp $(DiffusionTask).hpp $(ThermalRamp).hpp
+			$(CommonException).hpp $(DiffusionTask).hpp $(ThermalRamp).hpp $(mathexpr).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TaitLiquid).cpp
 HillPlastic.o : $(HillPlastic).cpp $(dprefix) $(HillPlastic).hpp $(AnisoPlasticity).hpp $(Orthotropic).hpp \
 			$(TransIsotropic).hpp $(MaterialBase).hpp $(Elastic).hpp $(MPMBase).hpp
@@ -825,7 +829,8 @@ MatPtLoadBC.o : $(MatPtLoadBC).cpp $(dprefix) $(MatPtLoadBC).hpp $(BoundaryCondi
 			$(MPMBase).hpp $(MeshInfo).hpp $(ElementBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MatPtLoadBC).cpp
 MatPtTractionBC.o : $(MatPtTractionBC).cpp $(dprefix) $(MatPtTractionBC).hpp $(MatPtLoadBC).hpp $(BoundaryCondition).hpp \
-			$(MaterialBase).hpp $(MPMBase).hpp $(MeshInfo).hpp
+			$(MaterialBase).hpp $(MPMBase).hpp $(MeshInfo).hpp $(ElementBase).hpp $(MaterialBase).hpp \
+			$(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MatPtTractionBC).cpp
 MatPtFluxBC.o : $(MatPtFluxBC).cpp $(dprefix) $(MatPtFluxBC).hpp $(MatPtLoadBC).hpp $(BoundaryCondition).hpp \
 			$(MPMBase).hpp $(MaterialBase).hpp $(MeshInfo).hpp $(mathexpr).hpp $(NairnMPM).hpp $(NodalPoint).hpp \

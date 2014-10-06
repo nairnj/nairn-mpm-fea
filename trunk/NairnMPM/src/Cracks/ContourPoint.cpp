@@ -23,10 +23,9 @@ ContourPoint::ContourPoint(NodalPoint *aNode)
     node=aNode;
     nextPoint=NULL;
     orient=ANGLED;
-	phantomNode = false;		// MCJ_INTEGRAL only
+	phantomNode = false;
 }
 
-// MPM Destructor MCJ_INTEGRAL only
 ContourPoint::~ContourPoint()
 {
 	// delete the node if it was a phantom node
@@ -89,6 +88,5 @@ double ContourPoint::Fraction(Vector &pt)
 }
 
 // mark as a phantom node that was inserted at point where crack crosses the contour
-// MCJ_INTEGRAL only
 void ContourPoint::SetPhantomNode(bool phantom) { phantomNode = phantom; }
 

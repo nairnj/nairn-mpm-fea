@@ -563,7 +563,6 @@ void NodalPoint::ZeroDisp(void)
 	}
 }
 
-#ifdef MCJ_INTEGRAL
 // Find field [0] from velocity field on same side of cracks as this node
 // But when a contour cross a crack, phantom nodes are inserted on the crack plane
 //    and those nodes use field[0] for contour integration before that node and
@@ -616,231 +615,6 @@ int NodalPoint::GetFieldForCrack(bool phantomNode,bool firstNode,DispField **dfl
 	*dfld = cvf[0]->df;
 	return cvf[0]->GetNumberPoints();
 }
-
-#else
-// Find field for side of crack number crackNum.
-// Used in J and K calculations
-// Return field pointed in dfld and number of material points as results
-// If need to average fields, store in workFld and return pointer
-int NodalPoint::GetFieldForCrack(int crackNum,int side,DispField **dfld,DispField *workFld)
-{
-	int count = 0;
-	*dfld = NULL;
-	bool active0 = CrackVelocityField::ActiveNonrigidField(cvf[0]);
-	bool active1 = CrackVelocityField::ActiveNonrigidField(cvf[1]);
-	bool active2 = CrackVelocityField::ActiveNonrigidField(cvf[2]);
-	bool active3 = CrackVelocityField::ActiveNonrigidField(cvf[3]);
-	
-	// 1. Those with unknown crack or just double crack: [0], [3], [0]&[3]
-	//       [0] and [3] possible, but not [2]
-	if(!active1)
-	{	// Must be [0] only so use it for above and below
-		if(!active3)
-		{	*dfld = cvf[0]->df;
-			count = cvf[0]->GetNumberPoints();
-		}
-		
-		// [3] or [0]&[3] but is it for this crack and side. If right side, use it
-		else if(cvf[3]->crackAndLocation(FIRST_CRACK,crackNum,side) || cvf[3]->crackAndLocation(SECOND_CRACK,crackNum,side))
-		{	*dfld = cvf[3]->df;
-			count = cvf[3]->GetNumberPoints();
-		}
-		
-		// if right crack but wrong side, use [0]
-		else if(cvf[3]->crackNumber(FIRST_CRACK)==crackNum || cvf[3]->crackNumber(SECOND_CRACK)==crackNum)
-		{	*dfld = cvf[0]->df;
-			count = cvf[0]->GetNumberPoints();
-		}
-		
-		// a third other crack - average [0] and [3], but only [3] is here
-		else if(!active0)
-		{	*dfld = cvf[3]->df;
-			count = cvf[3]->GetNumberPoints();
-		}
-		
-		// a third other crack - average [0] and [3] of other two cracks
-		else
-		{	*dfld = workFld;
-			count = WeightAverageStrain(0,3,workFld);
-		}
-	}
-	
-	// 2. Those with one known crack in [1] but no [2] or [3]: [1], [0]&[1]
-	//		Has [1] and possibly [0]
-	else if(!active2 && !active3)
-	{	// the right crack is this known crack
-		if(cvf[1]->crackNumber(FIRST_CRACK)==crackNum)
-		{	if(cvf[1]->location(FIRST_CRACK)==side)
-			{	*dfld = cvf[1]->df;
-				count = cvf[1]->GetNumberPoints();
-			}
-			else
-			{	*dfld = cvf[0]->df;
-				count = cvf[0]->GetNumberPoints();
-			}
-		}
-		
-		// must be another crack so average [0] and [1] of the other crack
-		else if(active0)
-		{	*dfld = workFld;
-			count = WeightAverageStrain(0,1,workFld);
-		}
-		
-		// average is only [1]
-		else
-		{	*dfld = cvf[1]->df;
-			count = cvf[1]->GetNumberPoints();
-		}
-
-	}
-		
-
-	// 3. Those with two cracks using [2]: [1]&[2], [0]&[1]&[2], [1]&[2]&[3] and [0]&[1]&[2]&[3]
-	//		Has [1] and [2] and possibly [0] and [3]
-	else if(active2)
-	{	// the right crack is first crack
-		if(cvf[1]->crackNumber(FIRST_CRACK)==crackNum)
-		{	if(cvf[1]->location(FIRST_CRACK)==side)
-			{	// average [1] and [3] for second crack (or just [1] if [3] missing)
-                if(active3)
-                {	*dfld = workFld;
-                    count = WeightAverageStrain(1,3,workFld);
-                }
-                else
-                {	*dfld = cvf[1]->df;
-                    count = cvf[1]->GetNumberPoints();
-                }
-			}
-			else
-			{	// average [0] and [2] for second crack (or just [2] is [0] missing)
-                if(active0)
-                {	*dfld = workFld;
-                    count = WeightAverageStrain(0,2,workFld);
-                }
-                else
-                {	*dfld = cvf[2]->df;
-                    count = cvf[2]->GetNumberPoints();
-                }
-			}
-		}
-		
-		// is it second crack (which only has a FIRST_CRACK too)
-		else if(cvf[2]->crackNumber(FIRST_CRACK)==crackNum)
-		{	if(cvf[2]->location(FIRST_CRACK)==side)
-			{	// average [2] and [3] from second crack, but only [2] if no [4]
-				if(active3)
-				{	*dfld = workFld;
-					count = WeightAverageStrain(2,3,workFld);
-				}
-				else
-				{	*dfld = cvf[2]->df;
-					count = cvf[2]->GetNumberPoints();
-				}
-			}
-			
-			// average [0] and [1] from second crack, but only [1] is no [0]
-			else if(active0)
-			{	*dfld = workFld;
-				count = WeightAverageStrain(0,1,workFld);
-			}
-			else
-			{	*dfld = cvf[1]->df;
-				count = cvf[1]->GetNumberPoints();
-			}
-		}
-		
-		// this field has two cracks and neither match current crack so average [0], [1], [2], and [3]
-        // it always as [1] and [2], but what about [0] and [3]?
-		else if(!active0 && !active3)
-		{	*dfld = workFld;
-			count = WeightAverageStrain(1,2,workFld);
-		}
-		else if(active0 && active3)
-		{	throw "Averaging [0],[1],[2], and [3] for two other cracks not programmed yet";
-		}
-		else if(active0)
-		{	*dfld = workFld;
-			count = WeightAverageStrain(0,1,2,workFld);
-		}
-		else
-		{	*dfld = workFld;
-			count = WeightAverageStrain(1,2,3,workFld);
-		}
-	}
-    
-	// 4. Those left with double crack field with [1] and [3] but no [2]: [1]&[3], [0]&[1]&[3],
-	//		Has [1] and [3] and possibly [0]
-	else
-	{	// check field [1] to see if first cracks
-		if(cvf[1]->crackNumber(FIRST_CRACK)==crackNum)
-		{	if(cvf[1]->location(FIRST_CRACK)==side)
-			{	// average [1] and [3] for second crack
-				*dfld = workFld;
-				count = WeightAverageStrain(1,3,workFld);
-			}
-			else
-			{	// average [0] and [2] for second crack, which is just [0]
-				*dfld = cvf[0]->df;
-				count = cvf[0]->GetNumberPoints();
-			}
-		}
-		
-		// does it match first crack in [3] (as second crack in this node)
-		else if(cvf[3]->crackNumber(FIRST_CRACK)==crackNum)
-		{	if(cvf[3]->location(FIRST_CRACK)==side)
-			{	// average [2] and [3] for first crack, which is just [3]
-				*dfld = cvf[3]->df;
-				count = cvf[3]->GetNumberPoints();
-			}
-			else if(active0)
-			{	// average [0] and [1] for first crack
-				*dfld = workFld;
-				count = WeightAverageStrain(1,3,workFld);
-			}
-			else
-			{	// average [0] and [1] for first crack, which is just [1]
-				*dfld = cvf[1]->df;
-				count = cvf[1]->GetNumberPoints();
-			}
-		}
-		
-		// does it match second crack in [3] (as second crack in this node)
-		else if(cvf[3]->crackNumber(SECOND_CRACK)==crackNum)
-		{	if(cvf[3]->location(SECOND_CRACK)==side)
-			{	// average [2] and [3] for first crack, which is just [3]
-				*dfld = cvf[3]->df;
-				count = cvf[3]->GetNumberPoints();
-			}
-			else if(active0)
-			{	// average [0] and [1] for first crack
-				*dfld = workFld;
-				count = WeightAverageStrain(1,3,workFld);
-			}
-			else
-			{	// average [0] and [1] for first crack, which is just [1]
-				*dfld = cvf[1]->df;
-				count = cvf[1]->GetNumberPoints();
-			}
-		}
-		
-		// this field has two cracks and neither match current crack so average [0], [1], and [3]
-        // always has [1] and [3], but what about [0]
-		else if(!active0)
-		{	*dfld = workFld;
-			count = WeightAverageStrain(1,3,workFld);
-		}
-		else
-		{	*dfld = workFld;
-			count = WeightAverageStrain(0,1,3,workFld);
-		}
-	}
-	
-	// 5. Never occurs: [2], [0]&[2], [2]&[3], [0]&[2]&[3]
-	
-	// return the number
-	return count;
-}
-#endif
 
 // Initialize fields on a ghost node for grid extrapolations for strains, etc.
 void NodalPoint::ZeroDisp(NodalPoint *real)
@@ -1017,7 +791,6 @@ void NodalPoint::CalcStrainField(void)
     }
 }
 
-#ifdef MCJ_INTEGRAL
 // Interpolate two nodes (near crack plane). This method is only called in J calculation for the
 //		phantom nodes placed on the crack plane of cracks that cross the countour
 // Interpolate [0] from node1 and [1] or [2] that crosses CrackNum from node2 to phantom [0]
@@ -1048,82 +821,6 @@ void NodalPoint::Interpolate(NodalPoint *n1,NodalPoint *n2,double fract,int crac
 	AverageStrain(cvf[1]->df,a1fld,a2fld,fract);
 	cvf[1]->SetNumberPoints(a1+a2);
 }
-
-#else
-// interpolate two nodes (near crack plane). This method is only called in J calculation for the
-// phatom node placed at the crack plane.
-// Symbolically gets fract*n2 + (1-fract)*n1
-void NodalPoint::Interpolate(NodalPoint *n1,NodalPoint *n2,double fract,bool startTip,int crackNum)
-{
-	DispField *a1fld;
-	DispField *b1fld;
-	DispField *a2fld;
-	DispField *b2fld;
-	DispField worka1,workb1,worka2,workb2;
-	int a1 = n1->GetFieldForCrack(crackNum,ABOVE_CRACK,&a1fld,&worka1);
-	int b1 = n1->GetFieldForCrack(crackNum,BELOW_CRACK,&b1fld,&workb1);
-	int a2 = n2->GetFieldForCrack(crackNum,ABOVE_CRACK,&a2fld,&worka2);
-	int b2 = n2->GetFieldForCrack(crackNum,BELOW_CRACK,&b2fld,&workb2);
-	
-	// need strain field in first crack velocity field and entire second
-	// crack velocity field for this phatom node (it may be zero)
-	cvf[0]->CreateStrainField();
-	cvf[1]=CrackVelocityField::CreateCrackVelocityField(BELOW_CRACK,crackNum);
-	if(cvf[1]==NULL) throw CommonException("Memory error allocating crack velocity field 1.",
-										   "NodalPoint::Interpolate");
-	cvf[1]->CreateStrainField();
-	
-	// This code may not work (this point only so error small) if above fields
-	// were averaged from more than one crack field
-	
-	// node 2 has only one field
-	if(a2fld==b2fld)
-	{	if(startTip)
-		{	// node 2 field is entirely above the crack (in fld [0]) or no below the crack field
-			b2fld=NULL;
-			b2=0;
-			if(a1fld==b1fld)
-			{	// node 1 field is entirely below the crack (in fld [0]) or no above the crack field
-				a1fld=NULL;
-				a1=0;
-			}
-		}
-		else
-		{	// node 2 field is entirely below the crack (in fld [0]) or no above the crack field
-			a2fld=NULL;
-			a2=0;
-			if(a1fld==b1fld)
-			{	// node 1 field is entirely above the crack (in fld [0]) or no below the crack field
-				b1fld=NULL;
-				b1=0;
-			}
-		}
-	}
-	
-	// node 1 has only one field
-	else if(a1fld==b1fld)
-	{	if(startTip)
-		{	// node 1 field is entirely below the crack (in fld [0]) or no above the crack field
-			a1fld=NULL;
-			a1=0;
-			// node 2 is mixed because was not trapped above
-		}
-		else
-		{	// node 1 field is entirely above the crack (in fld [0]) or no below the crack field
-			b1fld=NULL;
-			b2=0;
-			// node 2 is mixed because was not trapped above
-		}
-	}
-
-	// average final settings
-	AverageStrain(cvf[0]->df,a1fld,a2fld,fract);
-	cvf[0]->SetNumberPoints(a1+a2);
-	AverageStrain(cvf[1]->df,b1fld,b2fld,fract);
-	cvf[1]->SetNumberPoints(b1+b2);
-	
-}
-#endif
 
 // interpolate between two fields and store in destination field
 // fract is fracture of distance from first field to the point
@@ -1187,64 +884,11 @@ void NodalPoint::AverageStrain(DispField *dest,DispField *src1,DispField *src2,d
     }
 }
 
-#ifndef MCJ_INTEGRAL
-// Weight average two fields and store in destination field
-// fld1 and fld2 are assumed active with mass
-int NodalPoint::WeightAverageStrain(int fld1,int fld2,DispField *dest)
-{	//cout << "# avg " << fld1 << "," << fld2 << "," << cvf[fld1] << "," << cvf[fld2] << endl;
-	double wt1 = cvf[fld1]->GetTotalMass();
-	DispField *src1 = cvf[fld1]->df;
-	double wt2 = cvf[fld2]->GetTotalMass();
-	DispField *src2 = cvf[fld2]->df;
-	double fract = wt2/(wt1+wt2);
-	//cout << "# ,,, " << wt1 << "," << src1 << "," << wt2 << "," << src2 << endl;
-	
-	dest->du.x = fract*src2->du.x + (1.-fract)*src1->du.x;
-	dest->du.y = fract*src2->du.y + (1.-fract)*src1->du.y;
-	dest->dv.x = fract*src2->dv.x + (1.-fract)*src1->dv.x;
-	dest->dv.y = fract*src2->dv.y + (1.-fract)*src1->dv.y;
-	dest->kinetic = fract*src2->kinetic + (1.-fract)*src1->kinetic;
-	dest->work = fract*src2->work + (1.-fract)*src1->work;
-	dest->stress.xx = fract*src2->stress.xx + (1.-fract)*src1->stress.xx;
-	dest->stress.yy = fract*src2->stress.yy + (1.-fract)*src1->stress.yy;
-	dest->stress.zz = fract*src2->stress.zz + (1.-fract)*src1->stress.zz;
-	dest->stress.xy = fract*src2->stress.xy + (1.-fract)*src1->stress.xy;
-	
-	return cvf[fld1]->GetNumberPoints() + cvf[fld2]->GetNumberPoints();
-}
-
-// Weight average two fields and store in destination field
-// fld1 and fld2 are assumed active with mass
-int NodalPoint::WeightAverageStrain(int fld1,int fld2,int fld3,DispField *dest)
-{	//cout << "# avg " << fld1 << "," << fld2 << "," << cvf[fld1] << "," << cvf[fld2] << endl;
-	double wt1 = cvf[fld1]->GetTotalMass();
-	DispField *src1 = cvf[fld1]->df;
-	double wt2 = cvf[fld2]->GetTotalMass();
-	DispField *src2 = cvf[fld2]->df;
-	double wt3 = cvf[fld3]->GetTotalMass();
-	DispField *src3 = cvf[fld3]->df;
-    double wttot = wt1+wt2+wt3;
-    double f1 = wt1/wttot, f2 = wt2/wttot, f3 = wt3/wttot;
-	
-	dest->du.x = f2*src2->du.x + f1*src1->du.x + f3*src3->du.x;
-	dest->du.y = f2*src2->du.y + f1*src1->du.y + f3*src3->du.y;
-	dest->dv.x = f2*src2->dv.x + f1*src1->dv.x + f3*src3->dv.x;
-	dest->dv.y = f2*src2->dv.y + f1*src1->dv.y + f3*src3->dv.y;
-	dest->kinetic = f2*src2->kinetic + f1*src1->kinetic + f3*src3->kinetic;
-	dest->work = f2*src2->work + f1*src1->work+ f3*src3->work;
-	dest->stress.xx = f2*src2->stress.xx + f1*src1->stress.xx + f3*src3->stress.xx;
-	dest->stress.yy = f2*src2->stress.yy + f1*src1->stress.yy + f3*src3->stress.yy;
-	dest->stress.zz = f2*src2->stress.zz + f1*src1->stress.zz + f3*src3->stress.zz;
-	dest->stress.xy = f2*src2->stress.xy + f1*src1->stress.xy + f3*src3->stress.xy;
-	
-	return cvf[fld1]->GetNumberPoints() + cvf[fld2]->GetNumberPoints() + cvf[fld3]->GetNumberPoints();
-}
-#endif
 
 #pragma mark TASK 8 METHODS
 
 // Increment velocity for crack surface
-short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Vector *delv,double *surfaceMass,CrackSegment *seg)
+short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Vector *delv,double *surfaceMass,CrackSegment *seg) const
 {
 	short vfld=-1;
 	
@@ -1420,7 +1064,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 
 // Determine if line from crack surface particle (1) to node (2) crosses 
 // one or more cracks
-void NodalPoint::SurfaceCrossesCracks(double x1,double y1,double x2,double y2,CrackField *cfld)
+void NodalPoint::SurfaceCrossesCracks(double x1,double y1,double x2,double y2,CrackField *cfld) const
 {
 	CrackHeader *nextCrack=firstCrack;
 	int cfound=0;
@@ -1444,7 +1088,7 @@ void NodalPoint::SurfaceCrossesCracks(double x1,double y1,double x2,double y2,Cr
 
 // Determine if line from crack surface particle (1) to node (2) crosses specific crack
 // one or more cracks
-int NodalPoint::SurfaceCrossesOneCrack(double x1,double y1,double x2,double y2,int cnum)
+int NodalPoint::SurfaceCrossesOneCrack(double x1,double y1,double x2,double y2,int cnum) const
 {
 	CrackHeader *nextCrack=firstCrack;
 	Vector norm;
@@ -1459,7 +1103,7 @@ int NodalPoint::SurfaceCrossesOneCrack(double x1,double y1,double x2,double y2,i
 
 // Determine if line from crack surface particle (1) to node (2) crosses any crack other than the
 // one provided
-bool NodalPoint::SurfaceCrossesOtherCrack(double x1,double y1,double x2,double y2,int cnum)
+bool NodalPoint::SurfaceCrossesOtherCrack(double x1,double y1,double x2,double y2,int cnum) const
 {
 	CrackHeader *nextCrack=firstCrack;
 	Vector norm;
@@ -1496,7 +1140,7 @@ void NodalPoint::CalcCMVelocityTask8(void)
 //   (assumes recently called CalcCMVelocityTask8() for this node)
 //   (only used when contact.GetMoveOnlySurfaces() is FALSE and crack plane
 //       particles are moving)
-bool NodalPoint::GetCMVelocityTask8(Vector *vk)
+bool NodalPoint::GetCMVelocityTask8(Vector *vk) const
 {	return cvf[0]->GetCMVelocityTask8(vk);
 }
 
@@ -1858,7 +1502,7 @@ int NodalPoint::NumberParticles(void)
 }
 
 // number of particles for this node
-int NodalPoint::NumberNonrigidParticles(void)
+int NodalPoint::NumberNonrigidParticles(void) const
 {	int totalParticles=0;
 	int i;
 	for(i=0;i<maxCrackFields;i++)
@@ -1890,6 +1534,9 @@ void NodalPoint::Describe(void) const
     if(!active) cout << "#  no active crack velocity fields (might be in initialization)" << endl;
 }
 	
+// total nodal mass
+double NodalPoint::GetNodalMass() const { return mass; }
+
 #pragma mark BOUNDARY CONDITION METHODS
 
 // set one component of velocity and momentum to zero
@@ -1955,7 +1602,7 @@ void NodalPoint::ReflectFtotDirection(Vector *norm,double deltime,NodalPoint *nd
 }
 
 // get center of mass momentum for all nonrigid material fields in all crack velocity fields
-Vector NodalPoint::GetCMatMomentum(void)
+Vector NodalPoint::GetCMatMomentum(void) const
 {	Vector pk;
 	ZeroVector(&pk);
 	int i;

@@ -107,6 +107,7 @@ CustomTask *PropagateTask::StepCalculation(void)
     int i,inMat;
     Vector tipDir,growTo,grow;
     int tipElem;
+	char isAlt[10];
     
     // loop over cracks
     nextCrack=firstCrack;
@@ -132,20 +133,16 @@ CustomTask *PropagateTask::StepCalculation(void)
             
                 // see if it grows
 				int shouldGo=theMaterials[inMat-1]->ShouldPropagate(crkTip,tipDir,nextCrack,fmobj->np,0);
+				isAlt[0] = 0;
 				if(shouldGo==GROWNOW)
 				{	nextCrack->SetAllowAlternate(i,FALSE);
-					cout << "# propagation";
 				}
 				else if(nextCrack->GetAllowAlternate(i))
 				{	shouldGo=theMaterials[inMat-1]->ShouldPropagate(crkTip,tipDir,nextCrack,fmobj->np,1);
-					if(shouldGo==GROWNOW)
-						cout << "# propagation (alt)";
+					if(shouldGo==GROWNOW) strcpy(isAlt," (alt)");
 				}
 				if(shouldGo==GROWNOW)
-                {   // crack number and tip
-                    cout << " crack-tip " << nextCrack->GetNumber() << "-" << i;
-                    
-                    theResult=GROWNOW;
+                {   theResult=GROWNOW;
                     tipElem=crkTip->planeInElem-1;
                     if(fabs(tipDir.x)>fabs(tipDir.y))
                         cSize=theElements[tipElem]->xmax-theElements[tipElem]->xmin;
@@ -153,12 +150,20 @@ CustomTask *PropagateTask::StepCalculation(void)
                         cSize=theElements[tipElem]->ymax-theElements[tipElem]->ymin;
                     grow.x=cellsPerPropagationStep*cSize*tipDir.x;
                     grow.y=cellsPerPropagationStep*cSize*tipDir.y;
+					
+					// adjust if crossing another crack
+					double p = nextCrack->AdjustGrowForCrossing(&grow,crkTip);
+					
+					// crack number and tip
+                    cout << "# propagation" << isAlt << " crack-tip " << nextCrack->GetNumber() << "-" << i;
+					
+					// summarize
 					cout << " at t=" << 1000*mtime << " with J=Jtip+Jzone : " << 1000.*crkTip->Jint.z <<
 							" = " << 1000.*crkTip->Jint.x << " + " << 1000.*(crkTip->Jint.z-crkTip->Jint.x) << endl;
                     
                     // if jump is .7 or more cells, make more than 1 segment
                     int iseg,numSegs = 1;
-                    if(cellsPerPropagationStep>.7) numSegs= 2*(cellsPerPropagationStep+.25);
+                    if(p*cellsPerPropagationStep>.7) numSegs= 2*(p*cellsPerPropagationStep+.25);
                     CrackSegment *newCrkTip;
                     for(iseg=1;iseg<=numSegs;iseg++)
                     {   growTo.x=crkTip->x+(double)iseg*grow.x/(double)numSegs;
