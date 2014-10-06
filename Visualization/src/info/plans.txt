@@ -1,30 +1,4 @@
 -------------------------------------------------------------------
-NairnFEAMPMVizOSP changes to be merged in nfm
--------------------------------------------------------------------
-
-¥ Scripting bug fixes (maybe more)
-    Damping and Displacement can take value or function
-    FEA temperature
-    @key expression was not correct
-    OSP - Allow Rect and Oval when in Poly (and terminates the Poly)
-
-¥ Various command language fixes
-    Better with string expressions within an argument
-    added pi, tab, and return
-    Fixed problem with atan, asin, and acos not working
-    String expression can be used for numbers (if they are a number)
-    Repeat loop with no iterations broke out of all, now just that one
-
-¥ Other bugs
-	OSP-Transform particle plots fixed, most noticeable for high shear	
-
-¥ Additions
-	Added PIC option, PDamping, and PFBDamping
-	Added Neohookean
-	OSP - Scripting option
-	OSP - transforms membrane particles for actual size
-    
--------------------------------------------------------------------
 NairnFEAMPMViz Plans
 -------------------------------------------------------------------
 
@@ -43,8 +17,9 @@ NairnFEAMPMViz Plans
 	See NairnFEAMPM preferences for more
 
 ¥ Language
-	Maintain library of subroutines to load (both codes)
-	Entity - Look for other commands to support its use (both codes)
+	Maintain library of subroutines to load
+	Entity - Look for other commands to support its use
+	Maintain library of material definitions
 	See if NairnFEAMPM can allow same commands and assignments in materials
 
 -------------------------------------------------------------------
@@ -59,6 +34,7 @@ New Command Ideas
 ¥ Crack Closure
 ¥ user openFile (is it needed?)
 ¥ user save (is it needed?)
+¥ Get global results
 
 New Properties
 --------------
