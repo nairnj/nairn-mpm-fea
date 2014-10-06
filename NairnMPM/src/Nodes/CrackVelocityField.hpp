@@ -72,7 +72,7 @@ class CrackVelocityField
 		short IncrementDelvTask8(double,Vector *,double *);
 		int CollectMomentaTask8(Vector *);
 		void SetCMVelocityTask8(Vector *,int);
-		bool GetCMVelocityTask8(Vector *);
+		bool GetCMVelocityTask8(Vector *) const;
 	
 		void AddNormals(Vector *,int);
 		void AddDisplacement(int,double,Vector *);
@@ -103,7 +103,7 @@ class CrackVelocityField
 		virtual void AddKineticEnergyAndMass(double &,double &) = 0;
 		virtual double GetVolumeNonrigid(void) = 0;
 		virtual double GetVolumeTotal(NodalPoint *) const = 0;
-		virtual Vector GetCMatMomentum(void) = 0;
+		virtual Vector GetCMatMomentum(void) const = 0;
 		virtual Vector GetCMDisplacement(void) const = 0;
 		virtual Vector GetCMatFtot(void) = 0;
 		virtual void ChangeMomentum(Vector *,bool,double) = 0;

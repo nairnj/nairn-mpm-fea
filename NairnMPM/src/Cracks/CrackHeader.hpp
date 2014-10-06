@@ -28,12 +28,6 @@
 //#define _CUBIC_INTERPOLATION_
 //#define _LINEAR_INTERPOLATION_
 
-/* New method for j integral to handle multiple cracks
-   Search for GRID_JTERMS to see changes to allow grid options
-*/
-#define MCJ_INTEGRAL
-#define MCJ_HIERCONTOURCROSS
-
 // Debugging
 //#define CONTOUR_PARTS
 //#define PRINT_CROSS_STATUS
@@ -42,6 +36,7 @@ class CrackSegment;
 class ContourPoint;
 class CrackLeaf;
 class NodalPoint;
+class ParseController;
 
 #define START_OF_CRACK 0
 #define END_OF_CRACK 1
@@ -90,12 +85,11 @@ class CrackHeader : public LinkedObject
         short CrackCrossLeaf(CrackLeaf *,double,double,double,double,Vector *,short) const;
         short CrackCrossOneSegment(CrackSegment *,double,double,double,double,Vector *,short) const;
         CrackSegment *ContourCrossCrack(ContourPoint *,Vector *) const;
-#ifdef MCJ_HIERCONTOURCROSS
         CrackSegment *ContourCrossLeaf(CrackLeaf *,double,double,double,double,Vector *,int) const;
         bool SegmentsCross(CrackSegment *,double,double,double,double,Vector *,int) const;
-#else
-        bool SegmentsCross(ContourPoint *,Vector &,Vector &,Vector *) const;
-#endif
+		double AdjustGrowForCrossing(Vector *,CrackSegment *);
+		short CrackCrossOnce(double,double,double,double,CrackSegment **) const;
+		short CrackCrossLeafOnce(CrackLeaf *,double,double,double,double,CrackSegment **) const;
     
         // These two are not used, but left here for testing of hierarchical cracks
         short FlatCrackCrossTest(double,double,double,double,Vector *);
@@ -140,7 +134,8 @@ class CrackHeader : public LinkedObject
 		bool allowAlternate[2];
 		double thickness;						// 2D tractions and crack-tip heating
         CrackLeaf *rootLeaf;
-        
+		ParseController *crossedCracks;
+    
 };
 
 extern CrackHeader *firstCrack;

@@ -1083,7 +1083,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 			switch(quantity[q])
 			{	case VTK_MASS:
 					// mass in g
-					afile << nd[i]->mass << endl;
+					afile << nd[i]->GetNodalMass() << endl;
 					break;
 				
 				case VTK_NUMBERPOINTS:

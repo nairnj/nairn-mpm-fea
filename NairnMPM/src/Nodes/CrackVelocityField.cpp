@@ -234,7 +234,7 @@ void CrackVelocityField::SetCMVelocityTask8(Vector *velCM,int totalParticles)
 }
 
 // Return CM velocity for crack updates
-bool CrackVelocityField::GetCMVelocityTask8(Vector *velCM)
+bool CrackVelocityField::GetCMVelocityTask8(Vector *velCM) const
 {	// stored in normal vector and crack number to save memory (they are not needed again in this time step)
 	if(crackNum[0]==0) return FALSE;
 	*velCM=norm[0];

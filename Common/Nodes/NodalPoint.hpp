@@ -19,7 +19,6 @@ class MaterialInterfaceNode;
 class CrackNode;
 class TransportTask;
 #include "Nodes/CrackVelocityField.hpp"
-// MCJ_INTEGRAL only needs this
 #include "Cracks/CrackHeader.hpp"
 #endif
 
@@ -29,7 +28,6 @@ class NodalPoint : public LinkedObject
 		// variables (changed in MPM time step)
 		double gTemperature;		// absolute T in MPM, delta T in FEA
 #ifdef MPM_CODE
-		double mass;				// total mass
 		CrackVelocityField **cvf;	// material velocity fields
 		double gVolume;
 		double gConcentration;
@@ -83,33 +81,27 @@ class NodalPoint : public LinkedObject
 		void AddFtotSpreadTask3(short,Vector);
 		void AddTractionTask3(MPMBase *,int,Vector *);
 		void CopyGridForces(NodalPoint *);
-	
 		void UpdateMomentaOnNode(double);
-	
 		void IncrementDelvaTask5(short,int,double,Vector *,Vector *) const;
 	
-	
-		short IncrementDelvSideTask8(short,int,double,Vector *,double *,CrackSegment *);
-		void SurfaceCrossesCracks(double,double,double,double,CrackField *);
-		int SurfaceCrossesOneCrack(double,double,double,double,int);
-		bool SurfaceCrossesOtherCrack(double,double,double,double,int);
+		short IncrementDelvSideTask8(short,int,double,Vector *,double *,CrackSegment *) const;
+		void SurfaceCrossesCracks(double,double,double,double,CrackField *) const;
+		int SurfaceCrossesOneCrack(double,double,double,double,int) const;
+		bool SurfaceCrossesOtherCrack(double,double,double,double,int) const;
 		void CalcCMVelocityTask8(void);
-		bool GetCMVelocityTask8(Vector *);
+		bool GetCMVelocityTask8(Vector *) const;
 	
 		// specific task methods
 		void PrepareForFields(void);
         void ZeroDisp(void);
-#ifdef MCJ_INTEGRAL
         int GetFieldForCrack(bool,bool,DispField **,int);
-#else
-        int GetFieldForCrack(int,int,DispField **,DispField *);
-#endif
         void ZeroDisp(NodalPoint *);
         void CopyUGradientStressEnergy(NodalPoint *);
         void DeleteDisp(void);
         void DeleteDisp(NodalPoint *);
 		int NumberParticles(void);
-		int NumberNonrigidParticles(void);
+		int NumberNonrigidParticles(void) const;
+		double GetNodalMass() const;
 		void Describe(void) const;
 		void AddDisplacement(short,int,double,Vector *);
 		void AddVolume(short,int,double);
@@ -125,11 +117,7 @@ class NodalPoint : public LinkedObject
 		void CalcVelocityForStrainUpdate(void);
         short GetCMVelocity(Vector *);
         void CalcStrainField(void);
-#ifdef MCJ_INTEGRAL
         void Interpolate(NodalPoint *,NodalPoint *,double,int);
-#else
-        void Interpolate(NodalPoint *,NodalPoint *,double,bool,int);
-#endif
         void CrackContact(bool,double,CrackNode **,CrackNode **);
 		void CrackContactThree(int,bool,double);
 		void CrackInterfaceForce(void);
@@ -144,7 +132,7 @@ class NodalPoint : public LinkedObject
         void SetFtotDirection(Vector *,double,Vector *);
         void AddFtotDirection(Vector *,double,double,Vector *);
 		void ReflectFtotDirection(Vector *,double,NodalPoint *,Vector *);
-        Vector GetCMatMomentum(void);
+        Vector GetCMatMomentum(void) const;
 		void SetFixedDirection(int);
 		void UnsetFixedDirection(int);
 		void CalcTotalMassAndCount(void);
@@ -162,6 +150,9 @@ class NodalPoint : public LinkedObject
 		static void PreliminaryCalcs(void);
 		static void GetGridVelocitiesForStrainUpdate(void);
 		static void GetGridCMVelocitiesTask8(void);
+	
+	protected:
+		double mass;				// total mass
 #endif
     
     private:
@@ -169,10 +160,6 @@ class NodalPoint : public LinkedObject
 #ifdef MPM_CODE
         //methods - MPM only
 		void AverageStrain(DispField *,DispField *,DispField *,double);
-#ifndef MCJ_INTEGRAL
-        int WeightAverageStrain(int,int,DispField *);
-        int WeightAverageStrain(int fld1,int fld2,int fld3,DispField *dest);
-#endif
         void AdjustContact(short,short,Vector *,int,bool,double);
 		void AddInterfaceForce(short,short,Vector *,int);
 #endif

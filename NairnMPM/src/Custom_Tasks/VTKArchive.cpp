@@ -185,7 +185,7 @@ char *VTKArchive::InputParam(char *pName,int &input)
 	if(q>=0)
 	{	quantity.push_back(q);
 		quantitySize.push_back(thisBuffer);				// <0 is size for non-extrapolated quantities
-        qparam.push_back(pindex);                       // index to argument array while reading (if>=0) (seet to arguments when done)
+        qparam.push_back(pindex);                       // index to argument array while reading (if>=0) (set to arguments when done)
 		//if(thisBuffer<0) thisBuffer=-thisBuffer;
 		if(thisBuffer>0) bufferSize+=thisBuffer;
 		char *qname=new char[strlen(pName)+1];
@@ -239,9 +239,9 @@ CustomTask *VTKArchive::Initialize(void)
 		cout << name;
         if(quantity[q]==VTK_VOLUMEGRADIENT)
         {   if(qparam[q]<0)
-		{   cout << endl;
-			throw CommonException("VTKArchive volumegradient must be set to an available","VTKArchive::Initialize");
-		}
+			{   cout << endl;
+				throw CommonException("VTKArchive volumegradient must be set to an available material","VTKArchive::Initialize");
+			}
             int matnum = intArgs[qparam[q]];
             cout << " (material #" << matnum << ")";
             len+=14;
@@ -490,7 +490,7 @@ CustomTask *VTKArchive::EndExtrapolations(void)
 	int i,j;
     for(i=1;i<=nnodes;i++)
 	{	if(nd[i]->NumberNonrigidParticles()==0) continue;
-		double mnode=1./nd[i]->mass;
+		double mnode=1./nd[i]->GetNodalMass();
 		
 		double *vtkquant=vtk[i];
 		for(j=0;j<bufferSize;j++)

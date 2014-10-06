@@ -1332,7 +1332,7 @@ double CrackVelocityFieldMulti::GetVolumeTotal(NodalPoint *ndptr) const
 }
 
 // get center of mass momentum for all nonrigid material fields in this crack velocity field
-Vector CrackVelocityFieldMulti::GetCMatMomentum(void)
+Vector CrackVelocityFieldMulti::GetCMatMomentum(void) const
 {	Vector pk;
 	ZeroVector(&pk);
 	int i;

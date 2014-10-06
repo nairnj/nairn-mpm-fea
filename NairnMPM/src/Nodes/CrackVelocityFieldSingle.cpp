@@ -147,7 +147,7 @@ double CrackVelocityFieldSingle::GetVolumeTotal(NodalPoint *ndptr) const
 }
 
 // get center of mass momentum for all material fields in this crack velocity field
-Vector CrackVelocityFieldSingle::GetCMatMomentum(void) { return mvf[0]->pk; }
+Vector CrackVelocityFieldSingle::GetCMatMomentum(void) const { return mvf[0]->pk; }
 
 // get center of mass displacement (actually sum of displacement*mass so displacement is vector/total mass)
 Vector CrackVelocityFieldSingle::GetCMDisplacement(void) const { return mvf[0]->disp; }

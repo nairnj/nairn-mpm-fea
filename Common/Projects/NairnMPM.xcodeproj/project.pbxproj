@@ -21,6 +21,8 @@
 		671514DB1547035D005F33A9 /* PolygonController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 671514D71547035D005F33A9 /* PolygonController.hpp */; };
 		6715DFD116C567350042F15C /* Nonlinear2Hardening.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6715DFCF16C567350042F15C /* Nonlinear2Hardening.cpp */; };
 		6715DFD216C567350042F15C /* Nonlinear2Hardening.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6715DFD016C567350042F15C /* Nonlinear2Hardening.hpp */; };
+		6727B3D019E19853006D93EC /* CrossedCrack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6727B3CE19E19853006D93EC /* CrossedCrack.cpp */; };
+		6727B3D119E19853006D93EC /* CrossedCrack.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6727B3CF19E19853006D93EC /* CrossedCrack.hpp */; };
 		673EC9B616C9EB71007FFEB5 /* CarnotCycle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 673EC9B416C9EB71007FFEB5 /* CarnotCycle.cpp */; };
 		673EC9B716C9EB71007FFEB5 /* CarnotCycle.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 673EC9B516C9EB71007FFEB5 /* CarnotCycle.hpp */; };
 		6741B24817EDFF1300CFADC7 /* PressureLaw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6741B24617EDFF1300CFADC7 /* PressureLaw.cpp */; };
@@ -429,6 +431,8 @@
 		671514D71547035D005F33A9 /* PolygonController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PolygonController.hpp; sourceTree = "<group>"; };
 		6715DFCF16C567350042F15C /* Nonlinear2Hardening.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Nonlinear2Hardening.cpp; sourceTree = "<group>"; };
 		6715DFD016C567350042F15C /* Nonlinear2Hardening.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Nonlinear2Hardening.hpp; sourceTree = "<group>"; };
+		6727B3CE19E19853006D93EC /* CrossedCrack.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CrossedCrack.cpp; sourceTree = "<group>"; };
+		6727B3CF19E19853006D93EC /* CrossedCrack.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CrossedCrack.hpp; sourceTree = "<group>"; };
 		673B31CF1636F6CC00FB27DA /* MatPointAS.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPointAS.cpp; sourceTree = "<group>"; };
 		673B31D11636F6E400FB27DA /* MatPointAS.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatPointAS.hpp; sourceTree = "<group>"; };
 		673EC9B416C9EB71007FFEB5 /* CarnotCycle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CarnotCycle.cpp; sourceTree = "<group>"; };
@@ -1057,6 +1061,8 @@
 				A7313F9807CF77F90074510B /* CrackNode.cpp */,
 				A7E8CEA215E6E63200910593 /* CrackLeaf.hpp */,
 				A7E8CEA015E6E61800910593 /* CrackLeaf.cpp */,
+				6727B3CF19E19853006D93EC /* CrossedCrack.hpp */,
+				6727B3CE19E19853006D93EC /* CrossedCrack.cpp */,
 			);
 			path = Cracks;
 			sourceTree = "<group>";
@@ -1622,6 +1628,7 @@
 				A78424151888A3FE00AA284A /* DDBHardening.hpp in Headers */,
 				67FB2A0118901EB200417546 /* ShellController.hpp in Headers */,
 				A7D66177196322E300757628 /* Neohookean.hpp in Headers */,
+				6727B3D119E19853006D93EC /* CrossedCrack.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1949,6 +1956,7 @@
 				A78424141888A3FE00AA284A /* DDBHardening.cpp in Sources */,
 				67FB2A0018901EB200417546 /* ShellController.cpp in Sources */,
 				A7D66176196322E300757628 /* Neohookean.cpp in Sources */,
+				6727B3D019E19853006D93EC /* CrossedCrack.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
