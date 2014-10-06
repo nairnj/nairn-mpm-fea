@@ -20,7 +20,7 @@ Current main trunk - on Jan 14, 2014, the OpenMP branch replaced the main trunk.
 
   * Current main trunk
     * Working on NairnFEAMPMViz 6.0.0
-    * Minor fixes to the scripting language
+    * Minor fixes to the scripting command language.
     * A new control language to run multiple simulations - see new help topic on script control.
 
   * Release-5.0 (9 Feb 2014): On Jan 14, 2014, the OpenMP branch replaced the main trunk of this release. That branch was to make parallel code and also to convert the Java app to fully support scripting language from the Mac app called NairnFEMPM.
