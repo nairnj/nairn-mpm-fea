@@ -68,7 +68,7 @@ Done</blockquote>
 	
 <p>where <code>(id)</code> is the ID or Label for the material created by the command,  <code>(name)</code> is the material name entered as a string, and (type) is the material type, which is enter by material name or number in the <a href="#tables">table below.</a></p>
 
-<p>The Material command should be followed by lines that contain the material properties. Each property should be on a separate line and when the last property is specified, enter a line with the single <code>Done</code> Command. To set a property, use the property name (case sensitive) follwed by a space and then its value. For example, to set modulus of an isotropic material, use</p>
+<p>The Material command should be followed by lines that contain the material properties. Each property should be on a separate line and when the last property is specified, enter a line with the single <code>Done</code> Command. To set a property, use the property name (case sensitive) followed by a space and then its value. For example, to set modulus of an isotropic material, use</p>
 
 <blockquote>E 2300</blockquote>
 
@@ -76,7 +76,7 @@ Done</blockquote>
 
 <h2><a name="tables"></a>Table of Materials, Traction Laws, and Hardening Laws</h2>
 
-<p>The following tables list all available materials group by class of material. The columns on the right list the type of analyses that allow that material type (with an "X"). The 2D MPM column has three fsubcolumns or use of that material in plane stress (P&sigma;), plane strain (P&epsilon;), or axisymmetric (AS) calculations.  Clicking any material name will show a list of all properties that can be set by replacing "prop" in an subordinate element with the property name (case sensitive).</p>
+<p>The following tables list all available materials group by class of material. The columns on the right list the type of analyses that allow that material type (with an "X"). The 2D MPM column has three subcolumns or use of that material in plane stress (P&sigma;), plane strain (P&epsilon;), or axisymmetric (AS) calculations.  Clicking any material name will show a list of all properties that can be set by replacing "prop" in an subordinate element with the property name (case sensitive).</p>
 
 <h3>Linear Elastic Small Strain Materials</h3>
 
@@ -466,7 +466,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>n</sub>), where n is the number of relation time
 <p>The material type is a large-deformation, isotropic, hyperelastic material. The material properties are</p>
 
 <ul>
-<li>G1 or G2 - the Mooney-Riviln shear energy depends on two shear moduli (in MPa). Their sum in the low-strain shear modulus. If G2=0 (which is its default), the material is a Neohookean material.</li>
+<li>G1 or G2 - the Mooney-Rivlin shear energy depends on two shear moduli (in MPa). Their sum in the low-strain shear modulus. If G2=0 (which is its default), the material is a Neohookean material.</li>
 <li>K - the K modulus (in MPa), which is equal to the low-strain bulk modulus.</li>
 <li>UJOption - selects the dilational energy term U(J) and the possible integer values mean:
 <ol>
@@ -552,7 +552,7 @@ where K is the bulk modulus and is entered as a separate property. The default (
 <li>transition - set state transition to be by a dilation rule (if 1), a distortion rule (if 2), or Von Mises stress rule (if 3) (the default is dilation).</li>
 <li>critical - critical value for the transition. The value is volumetric or deviatoric strain (in % for dilation or distortion rule) or stress (in MPa for Von Mises stress rule).</li>
 <li>DeltaVOffset - offset volumetric strain in the transformed state. This property only applies for dilation rule (see above); it is ignored for distortion rule.</li>
-<li>reversible - set to "yes" (or 1) to make the transition reversible and "no" (or 0) to make it irrevsible (the default is reversible).</li>
+<li>reversible - set to "yes" (or 1) to make the transition reversible and "no" (or 0) to make it irreversible (the default is reversible).</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
 </ul>
 
@@ -649,7 +649,7 @@ where K is the bulk modulus and is entered as a separate property. The default (
  &rho;<sub>0</sub>C<sub>0</sub><sup>2</sup>.
 </p>
 
-<p>This equation of state automatically handles thermal expansion (assumning a valid Cv was provided) and therefore you do not need to enter a thermal expansion coefficient.</p>
+<p>This equation of state automatically handles thermal expansion (assuming a valid Cv was provided) and therefore you do not need to enter a thermal expansion coefficient.</p>
 
 <h3>History Data for Mie-Gr&#252;neisen Equation of State Material</h3>
 
@@ -685,7 +685,7 @@ where K is the bulk modulus and is entered as a separate property. The default (
 
 <h2><a name="heiso"></a>Isotropic, Hyperelastic-Plastic Material (Type=24)</h2>
 
-<p>The material is a large-deformation, isotropic, hyperelastic-plastic material. The elastic stresses use a Neohooken material maodel. The properties are:</p>
+<p>The material is a large-deformation, isotropic, hyperelastic-plastic material. The elastic stresses use a Neo-Hookean material model. The properties are:</p>
 
 <ul>
 <li>Hardening - this property selects the <a href="#hardening">hardening law</a>. It should be followed by entering all yielding properties required by the hardening law within the material's definition block.</li>

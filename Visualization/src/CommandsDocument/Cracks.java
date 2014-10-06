@@ -71,10 +71,25 @@ public class Cracks
 			if(terms<1 || terms>2)
 				throw new Exception("'JContour' second parameter not valid:\n"+args);
 			
-			settings.append(" terms='"+terms+"'/>\n");
+			settings.append(" terms='"+terms+"'");
 		}
-		else
-			settings.append("/>\n");
+		
+		// use grid for energies
+		int useGrid=1;
+		if(args.size()>3)
+		{	// options
+			HashMap<String,Integer> options = new HashMap<String,Integer>(10);
+			options.put("no", new Integer(0));
+			options.put("yes", new Integer(1));
+			options.put("false", new Integer(0));
+			options.put("true", new Integer(1));
+			useGrid = doc.readIntOption(args.get(3),options,"J grid energy option");
+			
+			settings.append(" gridenergy='"+useGrid+"'");
+		}
+		
+		// finish the command
+		settings.append("/>\n");
 	}
 	
 	// NewCrack x,y,<#3>,<#4>,<#5>

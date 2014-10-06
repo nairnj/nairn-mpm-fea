@@ -108,7 +108,7 @@ public class MPMParticleBCs
 			throw new Exception("'"+args.get(0)+"' command must by in 'LoadLine',\n'LoadArc', 'LoadRect', or 'LoadBox' block:\n"+args);
 		
 		// always needs #1, #2, and #3 (those with face need #4 to)
-		if(args.size()<5 || (theType==ADD_LOAD && args.size()<4))
+		if((theType!=ADD_LOAD && args.size()<5) || (theType==ADD_LOAD && args.size()<3))
 	    	throw new Exception("'"+args.get(0)+"' has too few parameters:\n"+args);
 		
 		// read direction
@@ -145,6 +145,7 @@ public class MPMParticleBCs
 		options.put("linear", new Integer(2));
 		options.put("sine", new Integer(3));
 		options.put("cosine", new Integer(4));
+		if(theType!=ADD_TRACTION) options.put("silent", new Integer(5));
 		options.put("function", new Integer(6));
 		int style = doc.readIntOption(args.get(arg),options,"Load, traction, or flux style");
 		arg++;

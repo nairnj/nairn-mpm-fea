@@ -60,6 +60,7 @@ hr { margin-top: 0pt;
 <li><a href="#opencmds">Opening or Creating a Commands File</a></li>
 <li><a href="#entercmds">Entering Commands</a></li>
 <li><a href="#start">Starting FEA or MPM Analysis</a></li>
+<li><a href="#script">Using Script Control</a></li>
 </ul>
 </li>
 
@@ -243,12 +244,20 @@ visualization</a> and plot the initial mesh. To use this option, select
 the &quot;Test FEA/MPM Mesh...&quot; command (or click the &quot;Check&quot; arrow icon).
 The subsequent steps are identical to
 running a calculation except that once the problem is setup, the calculation will abort,
-the ouput file will be opened for visualization, and the initial mesh will
+the output file will be opened for visualization, and the initial mesh will
 appear in a plot window.</p>
 
 <h3>Interpreting Commands</h3>
 
 <p>Choosing the &quot;Interpret Commands...&quot; menu command will display the XML input file in the bottom half of the commands window, but will not launch the code engines. This command is most useful when using scripting commands and you want to verify they are creating the expected XML input file. You can refer to the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a> for information on the XML command formats.</p>
+
+<p>Another use of this option is to create XML commands to be submitted for analysis on another computer. You can use the &quot;Export Output...&quot; command to save the contents of the output pane (which will have the XML commands) to a plain text file. You should use extension <code>.fmcmd</code> when saving XML commands.</p>
+
+<p>| <a href="#index">index</a> |</p>
+
+<h2><a name="script"></a>Using Script Control<hr></h2>
+
+<p>A powerful feature of <b>NairnFEAMPMViz</b> is that you can run under script control that lets you perform a series of calculations or tasks and summarize the results in a report. The details for using script control are described in a <a href="scripting.html">separate help topic</a>.</p>
 
 <p>| <a href="#index">index</a> |</p>
 
@@ -479,7 +488,7 @@ Capturing the printing to a PDF file will give a high-resolution version of the 
 </li>
 
 <li>The &quot;Add Label&quot; command in the &quot;Edit&quot; menu will add a label to
-the plot. You can drag it to a new location or double click to edit the text and chang
+the plot. You can drag it to a new location or double click to edit the text and change
 the font and color.</li>
 
 <li>You can click on any plot data to select it. Once selected, you can cut, copy,
@@ -538,7 +547,7 @@ change any settings.</li>
 <p>Once all options are selected, click the &quot;Plot&quot; button
 (or use the "Plot Results" menu command or click the &quot;Image&quot;icon)
 and the plot will appear in a new window.
-A key to the plot colors will appear at the bottoom of the plot area. You can resize
+A key to the plot colors will appear at the bottom of the plot area. You can resize
 the window to scale the plot size to the new window size.
 </p>
 
@@ -627,7 +636,7 @@ new options (while the previous plot window is still open) and then clicking the
 <p>You can <a href="#start">run 3D calculations</a> using this tool or run 3D calculations on
 a standard command line and even open the results in this Java application, but the visualization options
 are very limited. You can only look at text output
-and plot reults <i>vs.</i> time. Furthermore, with the exception of plotting global results, the time plots
+and plot results <i>vs.</i> time. Furthermore, with the exception of plotting global results, the time plots
 will be very slow for large calculations.</p>
 
 <p>For other options on visualizing 3D results, you can consult the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page#Visualization">OSUPDOcs wiki</a>. The other options use a Mac or use other software (such as MatLab and ParaView) along with VTK legacy file output.</p>

@@ -45,19 +45,26 @@ public class ConsolePane extends JNConsolePane
 	//-----------------------------------------------------------------
 	
 	// get file name prior to running an analysis
-	public boolean setOutputPath(File inputFile,String extension)
+	// useOutput is provided when initiated by script, otherwise the
+	//    user selects output file to save the results now.
+	public boolean setOutputPath(File inputFile,String extension,File useOutput)
 	{
-		// set to directory
-		if(outputFile==null)
-			chooser.setCurrentDirectory(inputFile);
-		else
-		{	chooser.setSelectedFile(outputFile);
+		// use or choose
+		if(useOutput == null)
+		{	// set to directory
+			if(outputFile==null)
+				chooser.setCurrentDirectory(inputFile);
+			else
+			{	chooser.setSelectedFile(outputFile);
+			}
+		
+			int result = chooser.showSaveDialog(this);
+			if(result != JFileChooser.APPROVE_OPTION) return false;
+		
+			outputFile=chooser.getSelectedFile();
 		}
-		
-		int result = chooser.showSaveDialog(this);
-		if(result != JFileChooser.APPROVE_OPTION) return false;
-		
-		outputFile=chooser.getSelectedFile();
+		else
+			outputFile = useOutput;
 		
 		// add extension if needed
 		if(!outputFile.getName().endsWith(extension))

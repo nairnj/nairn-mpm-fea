@@ -288,7 +288,7 @@ public class MeshPlotView extends JPanel
 		double radiix=resDoc.xscale*diam/2.;
 		double radiiy=resDoc.yscale*diam/2.;
 		g2Loc.setColor(theColor);
-		g2Loc.fill(mpart.particleShape(resDoc,xpt,ypt,radiix,radiiy,showSquarePts,transformPts));
+		g2Loc.fill(mpart.particleShape(resDoc,xpt,ypt,radiix,radiiy,showSquarePts,transformPts,mpDiam));
 	}
 	
 	// get material point (as draw) dimensions in plot units
@@ -303,7 +303,7 @@ public class MeshPlotView extends JPanel
 	{	double diam=0.01*mpDiam*resDoc.cellMinSide*scale;
 		double radiix=resDoc.xscale*diam/2.;
 		double radiiy=resDoc.yscale*diam/2.;
-		theClip.append(mpart.particleShape(resDoc,xpt,ypt,radiix,radiiy,showSquarePts,transformPts),false);
+		theClip.append(mpart.particleShape(resDoc,xpt,ypt,radiix,radiiy,showSquarePts,transformPts,mpDiam),false);
 	}
 	
 	// transform shape to coordinates and fill in current color

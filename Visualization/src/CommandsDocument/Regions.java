@@ -149,11 +149,11 @@ public class Regions
 		    throw new Exception("'BMP' has too few parameters:\n"+args);
 	    
 	    String filePath = doc.readStringArg(args.get(1));
-	    double width = doc.readIntArg(args.get(2));
+	    double width = doc.readDoubleArg(args.get(2));
 	    
 	    // optional height
 	    double height = -1.e8;
-	    if(args.size()>3) height = doc.readIntArg(args.get(3));
+	    if(args.size()>3) height = doc.readDoubleArg(args.get(3));
 	    
 	    // optional angles path
 	    String anglesPath = null;
@@ -171,7 +171,7 @@ public class Regions
 	    xmlRegions.append(indent+"<BMP name='"+filePath+"' width='"+width+"'");
 	    
 	    // optional attrributes
-	    if(height>-1.e8) xmlRegions.append(" height='"+height+"'");
+	    if(height>-0.99e8) xmlRegions.append(" height='"+height+"'");
 	    if(anglesPath!=null)
 	    {	if(anglesPath.length()>0)
 	    		xmlRegions.append(" angles='"+anglesPath+"'");
@@ -243,10 +243,12 @@ public class Regions
 	{	// times not allowed
 		if(inRegion == 0 || inRegion==BMPREGION_BLOCK)
 			throw new Exception("'"+shape+"' command is only allowed within a Region or Hole block:\n"+args);
-		if(inPoly == true)
-			throw new Exception("'"+shape+"' command is not allowed in a polygon block:\n"+args);
 		if(doc.isMPM3D())
 			throw new Exception("'"+shape+"' command is only allowed within 2D MPM:\n"+args);
+		if(inPoly == true)
+		{	xmlRegions.append(indent+"  </Polygon>\n");
+			inPoly = false;
+		}
 		
 		// four numbers
 		if(args.size()<5)
