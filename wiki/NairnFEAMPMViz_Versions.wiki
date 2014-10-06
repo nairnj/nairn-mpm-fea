@@ -19,9 +19,24 @@ NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The vers
 Current main trunk - on Jan 14, 2014, the OpenMP branch replaced the main trunk. That branch was started on April 2, 2013 to make parallel code. It has lots of changes needed to be parallel. All MPM materials use buffers for any material class variable that changes with particle state. The entire problem is divided into patches with ghost nodes on boundaries (and some section divide work by patch). The Particles reordered by type, which helps some loops divided by type (e.g., rigid velocities). The crack velocity field calculation is done in the initiation phase. Many other changes have been done along the way, although many of these are just features and not crucial for parallel code:
 
   * Current main trunk
-    * Working on NairnFEAMPMViz 6.0.0
-    * Minor fixes to the scripting command language.
-    * A new control language to run multiple simulations - see new help topic on script control.
+    * Working on NairnFEAMPMViz 6.1.0
+    * A new scripted control option can control operation of the NairnFEAMPMViz app such as to run multiple simulations and save the results. See new help topic on the scripting language.
+    * Additions to commands language
+      * Added PIC option to `Damping` and added `PDamping` and `PFBDamping`
+      * Added Neo-Hookean material
+    * Bug fixes in commands language
+      * `Damping` and `Displacement` can take value or function
+      * FEA temperature fixed
+      * `@key` expression was not working, but now fixed
+      * Allows `Rect` and `Oval` when in `Poly` (and terminates the `Poly`)
+    * Fixes and improvements to the built-in interpretive language:
+      * Better with string expressions within an argument
+      * added `pi`, `tab`, and `return` as keywords
+      * Fixed problem with `atan`, `asin`, and `acos` not working
+      * String expression can be used for numbers (if they are a number)
+      * Repeat loop with no iterations broke out of all loops, now just that omits the one with no loops
+    * Option to transform particles in MPM plots had sign error on shear and is fixed (was only noticeable when high shear deformation).
+    * Plotting of membrane particles (currently only in OSParticulas) transforms membrane particles for their actual size
 
   * Release-5.0 (9 Feb 2014): On Jan 14, 2014, the OpenMP branch replaced the main trunk of this release. That branch was to make parallel code and also to convert the Java app to fully support scripting language from the Mac app called NairnFEMPM.
     * Working on NairnFEAMPMViz 6.0.
