@@ -863,7 +863,7 @@ void CrackHeader::JIntegral(void)
     int crkTipIdx;
     CrackSegment *tipCrk;
     double Jx,Jy,Jx1,Jy1,Jx2,Jy2,JxAS2;
-	Vector crackDir;
+	Vector crackDir,crossPt;
 	bool secondTry;
 	
     /* Calculate J-integrals for the ith crack tip
@@ -980,7 +980,6 @@ void CrackHeader::JIntegral(void)
 			*/
 			DispField *sfld1,*sfld2;
 			// save point, crack segement, and contour segment where the crack crosses the target crack
-			Vector crossPt;
 			CrackSegment *startSeg = NULL;
 			ContourPoint *crossContourPt = NULL;
 			bool crossesOtherCracks = false;
@@ -999,7 +998,7 @@ void CrackHeader::JIntegral(void)
 				NodalPoint *node2=nextPt->nextPoint->node;
 
 				// does line from node1 to node2 cross this crack&
-				Vector crossPt,crossPt1;
+				Vector crossPt1;
 				int crossCount = 0;
 				int crackNum = 0;
 				double fract;
@@ -1120,7 +1119,7 @@ void CrackHeader::JIntegral(void)
 				double wd2,kd2,sxx2,syy2,sxy2;
 				double dudx2,dudy2,dvdx2,dvdy2;
 				double termForJx1,termForJy1,termForJx2,termForJy2;
-				double fForJx1,fForJy1,fForJx2,fForJy2;
+				double fForJx1,fForJy1,fForJx2,fForJy2,Jxs,Jys;
 
 				// segment dS and normal from ContourPoint object
 				double ds=nextPt->ds;
@@ -1175,10 +1174,11 @@ void CrackHeader::JIntegral(void)
 
 				// add for two endpoints using midpoint rule
 #ifdef BROBERG_AS_METHOD_FOR_JR
-				Jx1 += 0.5*(fForJx1 + fForJx2)*ds;		// N mm/mm^2
+				Jxs = 0.5*(fForJx1 + fForJx2)*ds;		// N mm/mm^2
 #else
-				Jx1 += 0.5*(r1*fForJx1 + r2*fForJx2)*ds;	// N mm/mm^2
+				Jxs = 0.5*(r1*fForJx1 + r2*fForJx2)*ds;	// N mm/mm^2
 #endif
+				Jx1 += Jxs;
 
 				// calculate Jy (or Jz if axisymmetric)
 
@@ -1195,13 +1195,14 @@ void CrackHeader::JIntegral(void)
 				// add for two endpoints using midpoint rule
                 // The r's (=r_i/a) for axisymmetric Jz integral
 #ifdef JZ_PLANAR
-				Jy1+=0.5*(fForJy1 + fForJy2)*ds;
+				Jys = 0.5*(fForJy1 + fForJy2)*ds;
 #else
-				Jy1+=0.5*(r1*fForJy1 + r2*fForJy2)*ds;
+				Jys = 0.5*(r1*fForJy1 + r2*fForJy2)*ds;
 #endif
+				Jy1 += Jys;
 #ifdef CONTOUR_PARTS
-                cout << "(Jxs,Jys)=(" << (0.5*(r1*fForJx1 + r2*fForJx2)*ds) << "," << (0.5*(r1*fForJy1 + r2*fForJy2)*ds) << ")";
-                cout << "(Jx,Jy)=(" << Jx1 << "," << Jy1 << ")" << endl;
+                cout << "(Jxs,Jys)=(" << Jxs << "," << Jys << ")";
+                cout << "(Jx1,Jy1)=(" << Jx1 << "," << Jy1 << ")" << endl;
 #endif
 
 				// on to next segment (switch field at mid point)
@@ -1301,6 +1302,9 @@ void CrackHeader::JIntegral(void)
 				Jx2 = 1.e-3*f2ForJx*carea;				// Jx2 in N mm/mm^2 now
 				Jy2 = 1.e-3*f2ForJy*carea;				// Jy2 in N mm/mm^2 now
 				JxAS2 = f2axisym*carea;					// JxAS2 (for Jr in axisymmetric) in N mm/mm^2
+#ifdef CONTOUR_PARTS
+				cout << "#...(Jx2,Jy2,JxAS2)=(" << Jx2 << "," << Jy2 << "," << JxAS2 << ")" << endl;
+#endif
 			}
 			
 			/* Task 6: Subtract energy due to tractions or for cracks in contact, subtract
@@ -1319,6 +1323,10 @@ void CrackHeader::JIntegral(void)
 			// add the two terms N mm/mm^2
 			Jx = Jx1 + Jx2 - JxAS2;
 			Jy = Jy1 + Jy2;
+#ifdef CONTOUR_PARTS
+			cout << "#...(Jx,Jy,Traction)=(" << Jx << "," << Jy << "," << tractionEnergy << ")";
+			cout << "(cp.x,cp.y)=(" << crossPt.x << "," << crossPt.y << ")" << endl;
+#endif
  
 			/* Jint -- crack-axis components of dynamic J-integral
 				  Jint.x is J1 in archiving and literature and is energy release rate, here
@@ -1336,6 +1344,9 @@ void CrackHeader::JIntegral(void)
 			tipCrk->Jint.y = Jx1*crackDir.x + Jy1*crackDir.y;						// J by one term (temporary)
 #endif
 			tipCrk->Jint.z = tipCrk->Jint.x + bridgingReleased;						// Jrel or energy released in current state
+#ifdef CONTOUR_PARTS
+			cout << "#...J = " << tipCrk->Jint.x << endl;
+#endif
 			
 			// end of try block on J calculation
 			secondTry=FALSE;
