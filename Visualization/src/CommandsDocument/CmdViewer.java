@@ -1175,8 +1175,17 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		// archive time
 		Object aTime = readNumberOrEntityArg(args.get(1),false);
-		archiveTime = "    <ArchiveTime units='ms'>"+aTime+"</ArchiveTime>\n";
 		
+		// optional max props
+		int props = 0;
+		if(args.size()>3) props = readIntArg(args.get(3));
+		
+		// get archiveTime
+		if(props>0)
+			archiveTime = "    <ArchiveTime units='ms' maxProps='"+props+"'>"+aTime+"</ArchiveTime>\n";
+		else
+			archiveTime = "    <ArchiveTime units='ms'>"+aTime+"</ArchiveTime>\n";
+				
 		// optional first archive time
 		if(args.size()>2)
 		{	Object firstArchiveTime = readNumberOrEntityArg(args.get(2),false);
