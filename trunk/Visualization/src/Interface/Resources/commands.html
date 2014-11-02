@@ -390,8 +390,11 @@ Select number of material points along each axis in the grid (in <code>(axis)</c
 Select archiving folder for MPM calculations as relative path from the output file.</li>
 <li><code>ArchiveUnique (path)</code><br>
 Same as Archive command excepts creates unique subfolder (with intervening numbers) to prevent overwriting of previous results.</li>
-<li><a name="atime"></a><code>ArchiveTime (time),&lt;(firstTime)&gt;</code><br>
-Select archiving frequency for MPM calculations. <code>(time)</code> is the archiving time in ms. The optional <code>(firstTime)</code> is the time to start archiving (in ms).</li>
+<li><a name="atime"></a><code>ArchiveTime (time),&lt;(firstTime)&gt;,&lt;(props)&gt;</code><br>
+Select archiving frequency for MPM calculations. <code>(time)</code> is the archiving time in ms.
+The optional <code>(firstTime)</code> is the time to start archiving (in ms, default is 0).
+The optional <code>(props)</code> forces archiving if <code>(props)</code> propagations and/or
+debonds have occurred since the last archive (default is 0, which disables counting of propagations).</li>
 <li><a name="toarchive"></a><code>ToArchive (quant1),&lt;(quant2)&gt;,...</code><br>
 Specify results to be archived in MPM calculations. The list can be in multiple arguments (<code>(quant1)</code>, <code>(quant2)</code>, etc.)
 and/or in multiple <code>ToArchive</code> commands. The archiving options are:
