@@ -23,6 +23,8 @@ NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The vers
     * Additions to commands language
       * Added PIC option to `Damping` and added `PDamping` and `PFBDamping`
       * Added Neo-Hookean material
+      * Added grid energy option to `JContour`
+      * Added maximum propagations to `ArchiveTime`
     * Bug fixes in commands language
       * `Damping` and `Displacement` can take value or function
       * FEA temperature fixed
