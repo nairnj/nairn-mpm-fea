@@ -30,6 +30,7 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
     * `ReverseLoad` custom task can be triggered on any global quantity as well as crack length and it can hold for a specified time before reversing (or aborting). Finally, it had a bug using the hold style with load and traction BCs; the bug is fixed.
     * J integral calculations improved, especially when the contour encounters other cracks. A new `gridenergy` option might stabilize J calculations when crack tip has variations in kinetic or work energy on the particles.
     * Improved updating of crack plane when using the `avg` method, as long as the crack surface updating works well.
+    * Added option to archive if selected number of propagations and/or debonds occur.
 
   * Release-5.0 (9 Feb 2014): On Jan 14, 2014, the OpenMP branch replaced the main trunk for this release. That branch was started on April 2, 2013 to make parallel code. It has lots of changes needed to be parallel. All MPM materials use buffers for any material class variable that changes with particle state. The entire problem is divided into patches with ghost nodes on boundaries (and some section divide work by patch). The Particles reordered by type, which helps some loops divided by type (e.g., rigid velocities). The crack velocity field calculation is done in the initiation phase. Many other changes have been done along the way, although many of these are just features and not crucial for parallel code:
     * Has NairnMPM 10.0.0
