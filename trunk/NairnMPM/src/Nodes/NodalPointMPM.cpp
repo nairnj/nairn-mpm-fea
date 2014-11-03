@@ -52,7 +52,7 @@ void NodalPoint::PrepareForFields()
 	if(cvf==NULL) throw CommonException("Memory error allocating crack velocity field pointers.",
 										"NodalPoint::PrepareForFields");
 
-	// always create first one, set rest (may be none) to NULL
+	// cvf[0] is always created, others created as needed and left in place once needed
 	cvf[0]=CrackVelocityField::CreateCrackVelocityField(0,0);
 	if(cvf[0]==NULL) throw CommonException("Memory error allocating crack velocity field 0.",
 										   "NodalPoint::PrepareForFields");

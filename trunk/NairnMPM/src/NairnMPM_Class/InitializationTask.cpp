@@ -119,10 +119,10 @@ void InitializationTask::Execute(void)
 #endif
                         {	// in CRAMP, find crack crossing and appropriate velocity field
                             CrackField cfld[2];
-                            cfld[0].loc = NO_CRACK;			// NO_CRACK, ABOVE_CRACK, or BELOW_CRACK
+                            cfld[0].loc = NO_CRACK;			// NO_CRACK=0, ABOVE_CRACK=1, or BELOW_CRACK=2
                             cfld[1].loc = NO_CRACK;
                             int cfound=0;
-                            Vector norm;
+                            Vector norm;					// track normal vector for crack plane
                             
                             CrackHeader *nextCrack = firstCrack;
                             while(nextCrack!=NULL)

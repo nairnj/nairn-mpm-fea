@@ -31,6 +31,7 @@ CrackSegment::CrackSegment(double xend,double yend,int tip,int matid)
     nextSeg=NULL;
 	prevSeg=NULL;
     parent=NULL;
+    
 	ZeroVector(&Jint);
 	ZeroVector(&sif);
 	ZeroVector(&tract);
@@ -100,7 +101,7 @@ int CrackSegment::FindElement(short side)
 }
 
 // Reset crack plane position from surfaces (2D) (in mm)
-// only used when contact.GetMoveOnlySurfaces() is TRUE and thus get crack position
+// only used when contact.GetMoveOnlySurfaces() is true and thus get crack position
 //		from previous movement of the surfaces
 // return true or false in bothSurfaces if both surfaces actually moved
 void CrackSegment::MovePosition(void)
@@ -130,14 +131,12 @@ bool CrackSegment::MoveSurfacePosition(short side,double xpt,double ypt,bool has
 		if(hasNodes)
 		{	surfx[j] += xpt;			// move
 			surfy[j] += ypt;
-			dxPlane = xpt;			// save until below is done next
+			dxPlane = xpt;				// save until below is done next
 			dyPlane = ypt;
-			aboveMass = surfaceMass;
 		}
 		else
 		{	dxPlane = 0.;
 			dyPlane = 0.;
-			aboveMass = 0.;
 		}
 		hadAboveNodes = hasNodes;
 	}
@@ -151,20 +150,19 @@ bool CrackSegment::MoveSurfacePosition(short side,double xpt,double ypt,bool has
 			surfy[j] += ypt;
 			
 			if(hadAboveNodes)
-			{	double sumMass = aboveMass+surfaceMass;
-				dxPlane = (aboveMass*dxPlane+surfaceMass*xpt)/sumMass;	// had nodes above and below the crack, find the average
-				dyPlane = (aboveMass*dyPlane+surfaceMass*ypt)/sumMass;
+			{	dxPlane = 0.5*(dxPlane+xpt);
+				dyPlane = 0.5*(dyPlane+ypt);
 			}
 			else
 			{	dxPlane = xpt;					// only had nodes below the crack
 				dyPlane = ypt;
 				surfx[ABOVE_CRACK-1] += xpt;	// move above by (xpt,ypt) too
 				surfy[ABOVE_CRACK-1] += ypt;
-				movedOther = TRUE;				// in case above moved elements now (check on return)
+				movedOther = true;				// in case above moved elements now (this tells  to check on return)
 			}
 		}
 		else if(hadAboveNodes)
-		{	surfx[j] += dxPlane;				// only had nodes above the crack, move both by (dxPlane,dyPlane)
+		{	surfx[j] += dxPlane;				// only had nodes above the crack, move both and th plane by (dxPlane,dyPlane)
 			surfy[j] += dyPlane;
 		}
 	}
@@ -210,7 +208,10 @@ double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,doub
 	
 	// loop over all nodes seen by this crack surface particle
 	for(int i=1;i<=numnds;i++)
-	{	ndi = nd[nds[i]];
+	{	// First see if line from the crack particle to the node crosses and cracks
+		// If it does (vfld>NO_CRACK) then have to decide which velocity field should
+		//   be used to aff the traction forces.
+		ndi = nd[nds[i]];
 		vfld = theCrack->CrackCross(cspos.x,cspos.y,ndi->x,ndi->y,&norm);
 		
 		if(vfld>NO_CRACK)
@@ -218,6 +219,7 @@ double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,doub
 			//  1. Possible: [0], [1], [3], [0]&[3], [1]&[2], [0]&[1], [1]&[3], [0]&[1]&[2],
 			//			[0]&[1]&[3], [1]&[2]&[3], and [0]&[1]&[2]&[3]
 			//  2. Never occurs [2], [0]&[2], [2]&[3], [0]&[2]&[3]
+            //  3. Single crack has only: [0], [1], or [0]&[1] - SCWarning may access others
 			int cnum=theCrack->GetNumber();
 			int otherCrack;
 			int cside=vfld,expectSide,otherSide;
@@ -339,10 +341,9 @@ double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,doub
 			   vfld = -1;
 		}
 		
-		// add if find a field
+		// add if find a field (use to spread this out on Fext, but now just added to Ftot)
 		if(vfld>=0)
-		{	
-			ndi->AddFtotSpreadTask3(vfld,FTract(sign*fn[i]));
+		{	ndi->AddFtotSpreadTask3(vfld,FTract(sign*fn[i]));
 			fnorm += fn[i];
 		}
 	}

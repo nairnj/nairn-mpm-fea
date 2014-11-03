@@ -1,1 +1,1 @@
-const char *svninfo = "URL: https://nairn-mpm-fea.googlecode.com/svn/trunk, Revision: 1049";
+const char *svninfo = "URL: https://johnanairn@nairn-mpm-fea.googlecode.com/svn/trunk, Revision: 1054";

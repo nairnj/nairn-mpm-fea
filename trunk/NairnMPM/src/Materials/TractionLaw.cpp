@@ -8,6 +8,7 @@
 
 #include "Materials/TractionLaw.hpp"
 #include "Cracks/CrackSegment.hpp"
+#include "System/ArchiveData.hpp"
 
 #pragma mark TractionLaw::Constructors and Destructors
 
@@ -46,7 +47,8 @@ const char *TractionLaw::VerifyAndLoadProperties(int np) { return NULL; }
 // dtime in sec, cs if the debonded segment, fractionI is fraction mode I at time of debond
 void TractionLaw::ReportDebond(double dtime,CrackSegment *cs,double fractionI,double Gtotal)
 {
-	cout << "# Debond: t=" << 1000.*dtime << " (x,y) = (" << cs->x << "," <<cs-> y << ")" << 
+	archiver->IncrementPropagationCounter();
+	cout << "# Debond: t=" << 1000.*dtime << " (x,y) = (" << cs->x << "," <<cs-> y << ")" <<
 				" GI(%) = " << 100.*fractionI << " G = " << Gtotal << endl;
 }
 

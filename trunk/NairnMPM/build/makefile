@@ -667,7 +667,7 @@ MPMWarnings.o : $(MPMWarnings).cpp $(dprefix) $(MPMWarnings).hpp $(NairnMPM).hpp
 # MPM: Global Quantities
 GlobalQuantity.o : $(GlobalQuantity).cpp $(dprefix) $(GlobalQuantity).hpp $(NairnMPM).hpp $(MaterialBase).hpp \
 			$(ThermalRamp).hpp $(MPMBase).hpp $(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
-			$(ArchiveData).hpp $(BoundaryCondition).hpp $(NodalVelBC).hpp
+			$(ArchiveData).hpp $(CommonArchiveData).hpp $(BoundaryCondition).hpp $(NodalVelBC).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(GlobalQuantity).cpp
 ThermalRamp.o : $(ThermalRamp).cpp $(dprefix) $(ThermalRamp).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ThermalRamp).cpp
@@ -794,14 +794,15 @@ SCGLHardening.o : $(SCGLHardening).cpp $(dprefix) $(SCGLHardening).hpp $(Hardeni
 			$(MPMBase).hpp $(ThermalRamp).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(SCGLHardening).cpp
 SLMaterial.o : $(SLMaterial).cpp $(dprefix) $(SLMaterial).hpp $(SCGLHardening).hpp $(HardeningLawBase).hpp \
-            $(MaterialBase).hpp $(MPMBase).hpp $(CommonException).hpp
+			$(MaterialBase).hpp $(MPMBase).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(SLMaterial).cpp
 DDBHardening.o : $(DDBHardening).cpp $(dprefix) $(DDBHardening).hpp $(HardeningLawBase).hpp $(MaterialBase).hpp \
-            $(MPMBase).hpp $(ConductionTask).hpp $(CommonException).hpp
+			$(MPMBase).hpp $(ConductionTask).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(DDBHardening).cpp
 
 # MPM: Traction Laws
-TractionLaw.o : $(TractionLaw).cpp $(dprefix) $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp
+TractionLaw.o : $(TractionLaw).cpp $(dprefix) $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp \
+			$(CommonArchiveData).hpp $(ArchiveData).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TractionLaw).cpp
 CohesiveZone.o : $(CohesiveZone).cpp $(dprefix) $(CohesiveZone).hpp $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CohesiveZone).cpp
@@ -809,7 +810,7 @@ PressureLaw.o : $(PressureLaw).cpp $(dprefix) $(PressureLaw).hpp $(TractionLaw).
 			$(CrackHeader).hpp $(mathexpr).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PressureLaw).cpp
 CoupledSawTooth.o : $(CoupledSawTooth).cpp $(dprefix) $(CoupledSawTooth).hpp $(CohesiveZone).hpp $(TractionLaw).hpp $(MaterialBase).hpp \
-            $(CrackSegment).hpp $(CrackHeader).hpp
+			$(CrackSegment).hpp $(CrackHeader).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CoupledSawTooth).cpp
 TrilinearTraction.o : $(TrilinearTraction).cpp $(dprefix) $(TrilinearTraction).hpp $(CohesiveZone).hpp $(TractionLaw).hpp \
             $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp
@@ -857,13 +858,13 @@ CalcJKTask.o : $(CalcJKTask).cpp $(dprefix) $(CalcJKTask).hpp $(MaterialBase).hp
 			$(ArchiveData).cpp $(CommonArchiveData).hpp $(NodalPoint).hpp $(NairnMPM).hpp $(MPMBase).hpp $(ElementBase).hpp \
 			$(CrackHeader).hpp $(CrackSegment).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(MPMTask).hpp $(CommonTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CalcJKTask).cpp
-PropagateTask.o : $(PropagateTask).cpp $(dprefix) $(PropagateTask).hpp $(CalcJKTask).hpp $(NairnMPM).hpp \
-			$(MaterialBase).hpp $(ElementBase).hpp $(CustomTask).hpp $(MPMBase).hpp $(ConductionTask).hpp \
+PropagateTask.o : $(PropagateTask).cpp $(dprefix) $(PropagateTask).hpp $(CalcJKTask).hpp $(NairnMPM).hpp $(ArchiveData).hpp \
+			$(MaterialBase).hpp $(ElementBase).hpp $(CustomTask).hpp $(MPMBase).hpp $(ConductionTask).hpp $(CommonArchiveData).hpp \
 			$(CrackHeader).hpp $(CrackSegment).hpp $(TransportTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PropagateTask).cpp
-ReverseLoad.o : $(ReverseLoad).cpp $(dprefix) $(ReverseLoad).hpp $(PropagateTask).hpp $(NairnMPM).hpp \
+ReverseLoad.o : $(ReverseLoad).cpp $(dprefix) $(ReverseLoad).hpp $(PropagateTask).hpp $(NairnMPM).hpp $(CommonArchiveData).hpp \
 			$(MatPtLoadBC).hpp $(MaterialBase).hpp $(CustomTask).hpp $(BoundaryCondition).hpp $(GlobalQuantity).hpp \
-			$(CommonException).hpp $(CrackHeader).hpp $(MatPtLoadBC).hpp $(MPMBase).hpp $(ArchiveData).hpp
+			$(CommonException).hpp $(CrackHeader).hpp $(MatPtLoadBC).hpp $(MPMBase).hpp $(ArchiveData).hpp $(CommonArchiveData).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ReverseLoad).cpp
 TransportTask.o : $(TransportTask).cpp $(dprefix) $(TransportTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TransportTask).cpp
@@ -884,7 +885,7 @@ HistoryArchive.o : $(HistoryArchive).cpp $(dprefix) $(HistoryArchive).hpp $(Cust
 			$(ArchiveData).hpp $(CommonArchiveData).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(HistoryArchive).cpp
 AdjustTimeStepTask.o : $(AdjustTimeStepTask).cpp $(dprefix) $(AdjustTimeStepTask).hpp $(CustomTask).hpp $(NairnMPM).hpp \
-			$(ArchiveData).hpp $(MeshInfo).hpp $(MaterialBase).hpp $(MPMBase).hpp
+			$(ArchiveData).hpp $(MeshInfo).hpp $(MaterialBase).hpp $(MPMBase).hpp $(CommonArchiveData).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(AdjustTimeStepTask).cpp
 CarnotCycle.o : $(CarnotCycle).cpp $(dprefix) $(CarnotCycle).hpp $(CustomTask).hpp $(NairnMPM).hpp $(ThermalRamp).hpp \
 			$(CommonException).hpp $(MaterialBase).hpp $(MPMBase).hpp $(CustomTask).hpp \

@@ -1855,6 +1855,11 @@ short CrackHeader::CrackCrossLeafOnce(CrackLeaf *leaf,double x1,double y1,double
 //    one leaf.
 // 3. When last level ended with only one parent, then done and that
 //    parent becomes the root leaf in the crack tree
+//
+// Notes:
+// 1. All cracks require 1 segment (or 2 points) to create a hierarchy. The code causes a fatal
+//	  error if try to create crack with on one crack particle. The error occurs because this
+//    method returns false
 bool CrackHeader::CreateHierarchy(void)
 {
     // all cracks have at least 2 points (and 1 segment)

@@ -125,6 +125,18 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     	input=DOUBLE_NUM;
         inputPtr=(char *)&archiver->archTime;
         gScaling=ReadUnits(attrs,TIME_UNITS);
+        numAttr=attrs.getLength();
+        for(i=0;i<numAttr;i++)
+        {   aName=XMLString::transcode(attrs.getLocalName(i));
+            value=XMLString::transcode(attrs.getValue(i));
+            if(strcmp(aName,"maxProps")==0)
+            {	int maxProps;
+				sscanf(value,"%d",&maxProps);
+				archiver->SetMaxiumPropagations(maxProps);
+            }
+            delete [] aName;
+            delete [] value;
+		}
     }
     
     else if(strcmp(xName,"FirstArchiveTime")==0)
