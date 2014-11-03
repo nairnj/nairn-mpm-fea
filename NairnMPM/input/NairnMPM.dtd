@@ -302,7 +302,8 @@
 			units CDATA #IMPLIED>
 <!ELEMENT	ArchiveTime (#PCDATA)>
 <!ATTLIST	ArchiveTime
-			units CDATA #IMPLIED>
+			units CDATA #IMPLIED
+			maxProps CDATA #IMPLIED>
 <!ELEMENT	FirstArchiveTime (#PCDATA)>
 <!ATTLIST	FirstArchiveTime
 			units CDATA #IMPLIED>

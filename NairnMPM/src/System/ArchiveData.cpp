@@ -39,6 +39,8 @@ ArchiveData::ArchiveData()
     SetMPMOrder("mYYYYYNYYYNNNNNNNN");		// byte order + defaults + 16 items
     SetCrackOrder("mYNNN");					// byte order + defaults + 3 items
 	timeStamp==NULL;
+	propgationCounter=0;					// counts crack propagation
+	maximumPropagations=0;					// 0 means propgations never force acrhiving
     
     // contact archive to coordinate with global contact archiving
 	lastArchiveContactStep=0;               // last time contact force was archived
@@ -431,8 +433,15 @@ void ArchiveData::ArchiveResults(double atime)
 	GlobalArchive(atime);
     
     // see if desired
-    if(atime<nextArchTime || timeStamp==NULL) return;
-    nextArchTime+=archTime;
+	if(timeStamp==NULL) return;
+	if(atime<nextArchTime)
+	{	// not ready to archive, unless propagations have happened
+		if(maximumPropagations<=0 || propgationCounter<maximumPropagations) return;
+		propgationCounter=0;
+		nextArchTime = atime+archTime;
+	}
+	else
+		nextArchTime += archTime;
 	
 	// exit if using delayed archiving
 	if(atime>0.9*timestep && atime<firstArchTime) return;
@@ -462,12 +471,17 @@ void ArchiveData::ArchiveResults(double atime)
 	}
 	catch(CommonException err)
 	{   // give up on hopefully temporary file problem
+		cout << "# File error - check disk for amount of free space" << endl;
 		cout << "# " << err.Message() << endl;
-		cout << "# Will try to continue" << endl;
+		cout << "# Will skip this file and try to continue" << endl;
 		if(afile.is_open()) afile.close();
 		return;
 	}
-		
+	catch(...)
+	{	cout << "Unknown exception ArchiveResults() and failed to archive current results" << endl;
+		return;
+	}
+	
 	// allocate space for one material point
 	long blen=recSize;
 	char *aptr=(char *)malloc(blen);
@@ -904,8 +918,9 @@ void ArchiveData::ArchiveResults(double atime)
 		}
 		catch(CommonException err)
 		{   // give up on hopefully temporary file problem
+			cout << "# File error - check disk for amount of free space" << endl;
 			cout << "# " << err.Message() << endl;
-			cout << "# Will try to continue" << endl;
+			cout << "# Will skip this file and try to continue" << endl;
 			afile.close();
 			free(aptr);
 			return;
@@ -931,7 +946,7 @@ void ArchiveData::ArchiveResults(double atime)
 	catch(CommonException err)
 	{   // give up on hopefully temporary file problem
 		cout << "# " << err.Message() << endl;
-		cout << "# Will try to continue" << endl;
+		cout << "# Will leave file open and try to continue" << endl;
 	}
 }
 
@@ -976,6 +991,7 @@ void ArchiveData::GlobalArchive(double atime)
 	
     catch(CommonException err)
 	{   // divert to standard output and try to continue
+		cout << "# File error - check disk for amount of free space" << endl;
 		cout << "# " << err.Message() << endl;
 		cout << "# Data: " << fline << endl;
 		if(global.is_open()) global.close();
@@ -1085,36 +1101,37 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					// mass in g
 					afile << nd[i]->GetNodalMass() << endl;
 					break;
-				
-				case VTK_NUMBERPOINTS:
+                
+                case VTK_NUMBERPOINTS:
                     // number of points (no rigid will show up)
                     afile << nd[i]->NumberParticles() << endl;
                     break;
-					
+				
 				case VTK_TEMPERATURE:
 					afile << nd[i]->gTemperature << endl;
 					break;
 				
 				case VTK_RIGIDCONTACTFORCES:
-                {   Vector fcontact=nd[i]->GetTotalContactForce(TRUE);
-					ScaleVector(&fcontact,-1./(double)archiveStepInterval);		// force of rigid particles on the object
+                {   Vector fcontact = nd[i]->GetTotalContactForce(TRUE);
+					ScaleVector(&fcontact,-1./(double)archiveStepInterval);		// contact force of rigid particles on the object
 					// average over steps since last archive
 					afile << fcontact.x << " " << fcontact.y << " " << fcontact.z << endl;
 					AddVector(&lastContactForce,&fcontact);
 					break;
 				}
-				
+                
                 case VTK_VOLUMEGRADIENT:
                 {   Vector grad;
                     nd[i]->GetMatVolumeGradient(qparam[q],&grad);
 					afile << grad.x << " " << grad.y << " " << grad.z << endl;
                     break;
                 }
-					
+				
 				case VTK_BCFORCES:
 					if(nd[i]->fixedDirection&XYZ_SKEWED_DIRECTION)
 					{	//Vector fbc = nd[i]->GetCMatFtot();
 						//afile << fbc.x << " " << fbc.y << " " << fbc.z << endl;
+                        afile << "0. 0. 0." << endl;
 					}
 					else
 						afile << "0. 0. 0." << endl;
@@ -1367,5 +1384,6 @@ bool ArchiveData::PassedLastArchived(int qIndex,double criticalValue)
 	
 }
 
-
-
+// Propgation Counter
+void ArchiveData::IncrementPropagationCounter(void) { propgationCounter++; }
+void ArchiveData::SetMaxiumPropagations(int maxp) { maximumPropagations = maxp; }

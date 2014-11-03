@@ -78,6 +78,8 @@ class ArchiveData : public CommonArchiveData
 		Vector GetLastContactForce(void);
 		void SetLastContactForce(Vector);
 		bool PassedLastArchived(int,double);
+		void IncrementPropagationCounter(void);
+		void SetMaxiumPropagations(int);
 	
 	private:
 		double nextArchTime,nextGlobalTime;
@@ -97,6 +99,8 @@ class ArchiveData : public CommonArchiveData
 		char *logFile;							// file for tracking progress
 		double logStartTime;
 #endif
+		int propgationCounter;
+		int maximumPropagations;				// will force achive is this number of propagations
 	
 		// methods
 		void CalcArchiveSize(void);

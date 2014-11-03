@@ -74,7 +74,7 @@ class CrackSegment
 				
 	private:
 		Vector cFtract;				// traction law force
-		double dxPlane,dyPlane,aboveMass;
+		double dxPlane,dyPlane;
 		bool hadAboveNodes;
 		bool planeMove;
 		int matnum;						// 1-based material ID for traction law

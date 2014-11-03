@@ -1356,7 +1356,7 @@ Vector CrackVelocityFieldMulti::GetCMDisplacement(void) const
 	return dk;
 }
 
-// get center of mass force for all material fields in this crack velocity field
+// get sum of forces for all material fields in this crack velocity field
 Vector CrackVelocityFieldMulti::GetCMatFtot(void)
 {	Vector fk;
 	ZeroVector(&fk);

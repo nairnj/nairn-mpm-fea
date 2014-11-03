@@ -85,7 +85,7 @@
 <p>The commands to controlling particle archives are:</p>
 
 <pre>&lt;ArchiveRoot unique='0'&gt;(path)&lt;/ArchiveRoot&gt;
-&lt;ArchiveTime&gt;(time)&lt;/ArchiveTime&gt;
+&lt;ArchiveTime maxProps="(props)"&gt;(time)&lt;/ArchiveTime&gt;
 &lt;FirstArchiveTime&gt;(first time)&lt;/FirstArchiveTime&gt;
 &lt;MPMArchiveOrder&gt;iYYYYNYYYNYYNNNNNY&lt;/MPMArchiveOrder&gt;
 &lt;CrackArchiveOrder&gt;iYYYN&lt;/CrackArchiveOrder&gt;
@@ -95,7 +95,7 @@
 
 <ul>
 <li><code>(path)</code> is relative path to the inpur file for saving archive files. The optional <code>unique</code> attribute (if = 1) will force the creation of a new folder by inserting a folder '1', '2', <i>etc</i>., as needed to get a new folder, within the last folder specified by the relative path </li>
-<li><code>(time)</code> is the time interval between archiving in sec (or determined by a <a href="#units"><code>units</code> attribute</a>).</li>
+<li><code>(time)</code> is the time interval between archiving in sec (or determined by a <a href="#units"><code>units</code> attribute</a>). The <code>(props)</code> attribute forces archiving if <code>(props)</code> propagations  and/or debonds have occurred since the last archive (default is 0, which disables counting of propagations).</li> 
 <li><code>(first time)</code> is the first time results are archived in sec (or determined by a <a href="#units"><code>units</code> attribute</a>).</li>
 </ul>
 

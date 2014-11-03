@@ -15,6 +15,7 @@
 #include "Cracks/CrackHeader.hpp"
 #include "Cracks/CrackSegment.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
+#include "System/ArchiveData.hpp"
 
 // globals
 PropagateTask *propagateTask=NULL;
@@ -155,6 +156,7 @@ CustomTask *PropagateTask::StepCalculation(void)
 					double p = nextCrack->AdjustGrowForCrossing(&grow,crkTip);
 					
 					// crack number and tip
+					archiver->IncrementPropagationCounter();
                     cout << "# propagation" << isAlt << " crack-tip " << nextCrack->GetNumber() << "-" << i;
 					
 					// summarize
