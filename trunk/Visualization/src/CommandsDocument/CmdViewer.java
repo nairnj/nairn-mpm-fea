@@ -1943,6 +1943,19 @@ public class CmdViewer extends JNCmdTextDocument
 			}
 		}
 		
+		// volume gradient requires a material ID
+		else if(currentCustomTask.equals("VTKArchive"))
+		{	if(paramName.equals("volumegradient"))
+			{	if(args.size()<3)
+					throw new Exception("'volumegradient' quantity requires a material ID:\n"+args);
+				int matnum = mats.getMatID(readStringArg(args.get(2)));
+				if(matnum<=0)
+					throw new Exception("'volumegradient' quantity requires a valid material ID:\n"+args);
+				customTasks.append("      <Parameter name='volumegradient'>"+matnum+"</Parameter>\n");
+				return;
+			}
+		}
+		
 		// single parameter
 		if(args.size()==2)
 		{	customTasks.append("      <Parameter name='"+paramName+"'/>\n");
