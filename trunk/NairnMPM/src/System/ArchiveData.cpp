@@ -1103,7 +1103,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					break;
                 
                 case VTK_NUMBERPOINTS:
-                    // number of points (no rigid will show up)
+                    // number of points (including rigid contact)
                     afile << nd[i]->NumberParticles() << endl;
                     break;
 				
@@ -1122,7 +1122,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
                 
                 case VTK_VOLUMEGRADIENT:
                 {   Vector grad;
-                    nd[i]->GetMatVolumeGradient(qparam[q],&grad);
+                    nd[i]->GetMatVolumeGradient(qparam[q],&grad);			// qparam[q] is material number
 					afile << grad.x << " " << grad.y << " " << grad.z << endl;
                     break;
                 }

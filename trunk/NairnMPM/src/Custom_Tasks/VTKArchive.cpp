@@ -244,8 +244,8 @@ CustomTask *VTKArchive::Initialize(void)
 			}
             int matnum = intArgs[qparam[q]];
             cout << " (material #" << matnum << ")";
-            len+=14;
-            if(matnum<1 || matnum>nmat)
+            len+=14;		// this is for matnum<10, but exact length does not matter
+			if(matnum<1 || matnum>nmat)
             {   cout << endl;
                 throw CommonException("VTKArchive volumegradient must be for an available material","VTKArchive::Initialize");
             }
