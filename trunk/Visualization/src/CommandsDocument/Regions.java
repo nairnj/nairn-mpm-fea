@@ -145,14 +145,16 @@ public class Regions
 	    inRegion = BMPREGION_BLOCK;
 	    
 	    // read path and width
-	    if(args.size()<3)
+	    if(args.size()<2)
 		    throw new Exception("'BMP' has too few parameters:\n"+args);
 	    
 	    String filePath = doc.readStringArg(args.get(1));
-	    double width = doc.readDoubleArg(args.get(2));
+	    // optional width
+	    double width = -1.e9;
+	    if(args.size()>2) width = doc.readDoubleArg(args.get(2));
 	    
 	    // optional height
-	    double height = -1.e8;
+	    double height = -1.e9;
 	    if(args.size()>3) height = doc.readDoubleArg(args.get(3));
 	    
 	    // optional angles path
@@ -168,10 +170,11 @@ public class Regions
 			throw new Exception("'BMPRegion' command not allowed before analysis type is set:\n"+args);
 
 	    // create the command
-	    xmlRegions.append(indent+"<BMP name='"+filePath+"' width='"+width+"'");
+	    xmlRegions.append(indent+"<BMP name='"+filePath+"'");
 	    
 	    // optional attrributes
-	    if(height>-0.99e8) xmlRegions.append(" height='"+height+"'");
+	    if(width>-1.e8) xmlRegions.append(" width='"+width+"'");
+	    if(height>-1.e8) xmlRegions.append(" height='"+height+"'");
 	    if(anglesPath!=null)
 	    {	if(anglesPath.length()>0)
 	    		xmlRegions.append(" angles='"+anglesPath+"'");
@@ -179,7 +182,6 @@ public class Regions
 	    
 	    // end it
 	    xmlRegions.append(">\n");
-	    
 }
 	
 	// end current region
