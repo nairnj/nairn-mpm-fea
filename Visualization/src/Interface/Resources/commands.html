@@ -877,6 +877,10 @@ material-material imperfect interface properties. <code>(Dt)</code>, <code>(Dn)<
 Determines method for detecting crack contact when using particle displacements and the distance (<code>(con)</code> entered relative to grid element dimensions) required to detect contact based on displacements extrapolated to the grid. It is best omitted when all materials start
 out in contact has <code>(con)</code> = 0.8 (default is omitted) and the relative motions are small.</li>
 
+<li><code>shareMatField (matID)</code><br>
+When this command is used within a <a href="#material">material</a> definition, it allows two or more
+materials to <a href="materials.html#cmn4">share the same velocity field</a>.</li>
+
 </ul>
 
 <p>|<a href="#cindex">Documentation Index</a>|</p>

@@ -184,7 +184,7 @@ public class Materials
 			// 0, 1, or 2
 			int value = doc.readIntArg(args.get(1));
 			if(value<0 || value>2)
-				throw new Exception("'UJOption' must integer 0, 1, or 2:\n"+args);
+				throw new Exception("'UJOption' must be integer 0, 1, or 2:\n"+args);
 			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
 			return;
 		}
@@ -193,7 +193,7 @@ public class Materials
 			// 0 or 1
 			int value = doc.readIntArg(args.get(1));
 			if(value<0 || value>1)
-				throw new Exception("'IdealRubber' property must integer 0 or 1:\n"+args);
+				throw new Exception("'IdealRubber' property must be integer 0 or 1:\n"+args);
 			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
 			return;
 		}
@@ -202,7 +202,7 @@ public class Materials
 			// 1, 2, or 3
 			int value = doc.readIntArg(args.get(1));
 			if(value<1 || value>3)
-				throw new Exception("'transition' property must integer 1, 2, or 3:\n"+args);
+				throw new Exception("'transition' property must be integer 1, 2, or 3:\n"+args);
 			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
 			return;
 		}
@@ -225,7 +225,7 @@ public class Materials
 				// 0 to 8
 				int value = doc.readIntArg(args.get(1));
 				if(value<0 || value>8)
-					throw new Exception("Rigid 'direction' property must integer 0 to 8:\n"+args);
+					throw new Exception("Rigid 'direction' property must be integer 0 to 8:\n"+args);
 				xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
 			}
 			else
@@ -269,7 +269,7 @@ public class Materials
 			// 0 or 1
 			int value = doc.readIntArg(args.get(1));
 			if(value<0 || value>1)
-				throw new Exception("Rigid 'SetTemperature' property must integer 0 or 1:\n"+args);
+				throw new Exception("Rigid 'SetTemperature' property must be integer 0 or 1:\n"+args);
 			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
 			return;
 		}
@@ -278,7 +278,7 @@ public class Materials
 			// 0 or 1
 			int value = doc.readIntArg(args.get(1));
 			if(value<0 || value>1)
-				throw new Exception("Rigid 'SetConcentration' property must integer 0 or 1:\n"+args);
+				throw new Exception("Rigid 'SetConcentration' property must be integer 0 or 1:\n"+args);
 			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
 			return;
 		}
@@ -289,6 +289,23 @@ public class Materials
 			if(value<-1) value = -1;
 			if(value>1) value = 1;
 			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("allowscracks"))
+		{	prop = "allowsCracks";
+			// 0 or 1
+			int value = doc.readIntArg(args.get(1));
+			if(value<0 || value>1)
+				throw new Exception("The 'allowsCracks' property must be integer 0 or 1:\n"+args);
+			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("sharematfield"))
+		{	String smf = doc.readStringArg(args.get(1));
+			int smat = doc.mats.getMatID(smf);
+			if(smat==-1)
+				throw new Exception("'"+args.get(0)+"' material property has unknown material ID:\n"+args);
+			xmldata.append("    <shareMatField>"+smat+"</shareMatField>\n");
 			return;
 		}
 		

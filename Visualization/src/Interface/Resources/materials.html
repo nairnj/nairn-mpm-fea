@@ -1095,12 +1095,24 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <h3><a name="cmn4"></a>Contact Properties</h3>
 
-<p>These commands allow custom contact properties for each material pair in <a href="commands.html#mmmode">multimaterial mode MPM</a>.</p>
+<p>These commands allow custom contact properties for each material pair
+in <a href="commands.html#mmmode">multimaterial mode MPM</a>.</p>
 
 <ul>
-<li>Friction - a Friction command within a material definition can define custom frictional properties for <a href="commands.html#mmmode">multimaterial mode MPM</a> contact between the current material and another material.</li>
+<li><code>Friction</code> - a Friction command within a material definition can define custom frictional properties
+for <a href="commands.html#mmmode">multimaterial mode MPM</a> contact between the current material
+and another material.</li>
 
-<li>Interface< - an Interface command within a material definition can define custom imperfect interface parameters properties for <a href="commands.html#mmmode">multimaterial mode MPM</a> contact between the current material and another material.</li>
+<li><code>Interface</code> - an Interface command within a material definition can define custom imperfect interface
+parameters properties for <a href="commands.html#mmmode">multimaterial mode MPM</a> contact between the
+current material and another material.</li>
+
+<li><code>shareMatField (matID)</code> - set to another material (by material ID) to share material velocity field
+with that material. Two (or more) materials sharing the same velocity field will move with perfect
+contact (<i>i.e.</i>, in a single velocity field) among themselves, but can interact with other
+materials in different velocity fields by contact or interface laws. Materials sharing velocity fields must
+all be rigid or nonrigid.</li>
+
 </ul>
 
 
