@@ -83,6 +83,7 @@ class CrackVelocityField
 		virtual bool HasVolumeGradient(int) const;
 		virtual void GetVolumeGradient(int,const NodalPoint *,Vector *,double) const;
 		virtual void CalcVelocityForStrainUpdate(void) = 0;
+		virtual void AdjustForSymmetry(NodalPoint *,Vector *,bool) const;
 	
 		// boundary conditions
         virtual void SetMomVel(Vector *) = 0;
@@ -104,7 +105,7 @@ class CrackVelocityField
 		virtual double GetVolumeNonrigid(void) = 0;
 		virtual double GetVolumeTotal(NodalPoint *) const = 0;
 		virtual Vector GetCMatMomentum(void) const = 0;
-		virtual Vector GetCMDisplacement(void) const = 0;
+		virtual Vector GetCMDisplacement(NodalPoint *) const = 0;
 		virtual Vector GetCMatFtot(void) = 0;
 		virtual void ChangeMomentum(Vector *,bool,double) = 0;
 		virtual int CopyFieldMomenta(Vector *,int) = 0;

@@ -256,6 +256,27 @@ bool CrackVelocityField::HasVolumeGradient(int matfld) const { return FALSE; }
 // retrieve mass gradient (overridden in CrackVelocityFieldMulti where it is needed
 void CrackVelocityField::GetVolumeGradient(int matfld,const NodalPoint *ndptr,Vector *grad,double scale) const { ZeroVector(grad); }
 
+// Adjust vector for symmetry planes, if keepNormalized, renormalize on any change
+void CrackVelocityField::AdjustForSymmetry(NodalPoint *ndptr,Vector *norm,bool keepNormalized) const
+{
+    // if has any, have to check eachone
+    bool renormalize = false;
+    if(ndptr->fixedDirection&XSYMMETRYPLANE_DIRECTION)
+    {   norm->x = 0.;
+        renormalize = true;
+    }
+    if(ndptr->fixedDirection&YSYMMETRYPLANE_DIRECTION)
+    {   norm->y = 0.;
+        renormalize = true;
+    }
+    if(ndptr->fixedDirection&ZSYMMETRYPLANE_DIRECTION)
+    {   norm->z = 0.;
+        renormalize = true;
+    }
+    if(renormalize && keepNormalized)
+        CopyScaleVector(norm,norm,1./sqrt(DotVectors(norm,norm)));
+}
+
 #pragma mark PROPERTIES FOR CRACK AND MATERIAL CONTACT
 
 // add to normal vector (2D only for crack contact)

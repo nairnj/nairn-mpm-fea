@@ -58,6 +58,7 @@ MaterialBase::MaterialBase(char *matName)
 	matPropagateDirection[0]=matPropagateDirection[1]=UNSPECIFIED;
 	tractionMat[0]=tractionMat[1]=0;
 	field=-1;
+	shareMatField=0;					// share field with another material
 	activeField=-1;
 	kCond=0.;
 	heatCapacity=1.;					// keep one because needed by ideal gas

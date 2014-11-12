@@ -161,6 +161,7 @@ class MaterialBase : public LinkedObject
         virtual bool PartitionsElasticAndPlasticStrain(void);
         virtual double GetArtificalViscosity(double,double) const;
 		virtual bool SupportsArtificialViscosity(void) const;
+		virtual int GetShareMatField(void) const;
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif
@@ -199,6 +200,7 @@ class MaterialBase : public LinkedObject
 #ifdef MPM_CODE
 		double CME1,CME2,CME3;
 		int field,activeField;
+		int shareMatField;
 #endif
 };
 

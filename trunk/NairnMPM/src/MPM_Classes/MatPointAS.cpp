@@ -112,9 +112,9 @@ void MatPointAS::GetFintPlusFext(Vector *theFrc,double fni,double xDeriv,double 
 	theFrc->z = 0.0;
 }
 
-// get dilated current volume using current deformation gradient
-// only used for contact (cracks and multimaterial) and for transport tasks
-// when actual is false, get t*Ap, where Ap is deformed particle area
+// Get dilated current volume using current deformation gradient
+// (only used for crack contact, multimaterial contact, and transport tasks)
+// When volumeType is DEFORMED_AREA, get Area deformed particle area in r-z plane
 double MatPointAS::GetVolume(bool volumeType)
 {	double rho=theMaterials[MatID()]->rho*0.001;			// in g/mm^3
 	if(volumeType==DEFORMED_VOLUME)
