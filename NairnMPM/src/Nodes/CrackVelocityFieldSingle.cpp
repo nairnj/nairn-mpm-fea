@@ -150,7 +150,11 @@ double CrackVelocityFieldSingle::GetVolumeTotal(NodalPoint *ndptr) const
 Vector CrackVelocityFieldSingle::GetCMatMomentum(void) const { return mvf[0]->pk; }
 
 // get center of mass displacement (actually sum of displacement*mass so displacement is vector/total mass)
-Vector CrackVelocityFieldSingle::GetCMDisplacement(void) const { return mvf[0]->disp; }
+Vector CrackVelocityFieldSingle::GetCMDisplacement(NodalPoint *np) const
+{   Vector dk = mvf[0]->disp;
+    AdjustForSymmetry(np,&dk,false);
+    return dk;
+}
 
 // get force for the one material fields in this crack velocity field
 Vector CrackVelocityFieldSingle::GetCMatFtot(void)

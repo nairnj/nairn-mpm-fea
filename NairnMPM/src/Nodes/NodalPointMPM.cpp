@@ -1222,11 +1222,6 @@ void NodalPoint::MaterialContactOnNode(double deltime,int callType,MaterialInter
 	}
 }
 
-// retrieve -2*scale*(mass gradient) for material matfld in velocity field vfld
-void NodalPoint::GetVolumeGradient(short vfld,int matfld,Vector *grad,double scale) const
-{	cvf[vfld]->GetVolumeGradient(matfld,this,grad,scale);
-}
-
 // retrieve volume gradient for matnum (1 based) in crack field only (or zero if
 // not there or not tracked)
 void NodalPoint::GetMatVolumeGradient(int matnum,Vector *grad) const

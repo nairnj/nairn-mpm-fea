@@ -245,8 +245,8 @@ The Default value is <code>iYNNNN</code>.</dd>
 <ul class="lev2args">
 <li><code>(frict)</code>=(zero or positive number) - contact is by friction with the supplied coefficient of friction.</li>
 <li><code>(frict)</code>=(or a number between -1 and -9) - contact by stick conditions.</li>
-<li><code>(frict)</code>=(or a number less than -10) - reverts to a single velocity field.</li>
-<li><code>(frict)</code>=11 = converts multimaterial interactions to be an <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Imperfect_Interfaces">imperfect interface</a> with interface parameters supplied in <code>(Dt)</code>, <code>(Dnt)</code>, and <code>(Dnc)</code> for tangential direction and nomral direction in tension or compression, respectively. If <code>(Dnc)</code> is not give it is set equal to <code>(Dnt)</code>,</li>
+<li><code>(frict)</code>=(or a number less than -10) - reverts to a single velocity field. A better approach to contact with a single velocity field is to have two or more materials <a href="definematl.html#cmn4">share the same velocity field</a>.</li>
+<li><code>(frict)</code>=11 - converts multimaterial interactions to be an <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Imperfect_Interfaces">imperfect interface</a> with interface parameters supplied in <code>(Dt)</code>, <code>(Dnt)</code>, and <code>(Dnc)</code> for tangential direction and nomral direction in tension or compression, respectively. If <code>(Dnc)</code> is not give it is set equal to <code>(Dnt)</code>,</li>
 </ul>
 The default is 0</li>
 

@@ -224,8 +224,9 @@ double MatPoint2D::GetRelativeVolume(void)
 }
 
 // get dilated current volume using current deformation gradient
-// only used for contact (cracks and multimaterial) and for transport tasks
-// when actual is false, get t*Ap, where Ap is deformed particle area
+// (only used for contact (cracks and multimaterial) and for transport tasks)
+// when volumeType is DEFORMED_AREA, get t0*Ap, where
+//    Ap is deformed particle area and t0 in initial thickness
 double MatPoint2D::GetVolume(bool volumeType)
 {	double rho=theMaterials[MatID()]->rho*0.001;		// in g/mm^3
 	if(volumeType==DEFORMED_VOLUME)

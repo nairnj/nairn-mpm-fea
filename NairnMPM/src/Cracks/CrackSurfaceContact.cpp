@@ -275,10 +275,14 @@ void CrackSurfaceContact::MaterialContactPairs(int maxFields)
 	// check all active materials and change laws that were specified
 	for(i=0;i<nmat;i++)
 	{	int mati=theMaterials[i]->GetField();
-		if(mati<0) continue;
+		
+		// skip if not used or is sharing with another material
+		if(mati<0 || theMaterials[i]->GetShareMatField()>=0) continue;
 		for(j=0;j<nmat;j++)
 		{	int matj=theMaterials[j]->GetField();
-			if(matj<0 || i==j) continue;		// skip if no field or same material
+			
+			// skip if no field or same material or sharing with another material
+			if(matj<0 || i==j || theMaterials[j]->GetShareMatField()>=0) continue;
 			
 			// look from custom friction from mat i to mat j
 			ContactDetails *pairContact=theMaterials[i]->GetContactToMaterial(j+1);
@@ -342,10 +346,10 @@ short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVe
 		inContact=SEPARATED;
 	else
 	{	// if approach, check displacements
-		Vector dispa=cva->GetCMDisplacement();
+		Vector dispa=cva->GetCMDisplacement(np);
 		dispa.x/=massa;
 		dispa.y/=massa;
-		Vector dispb=cvb->GetCMDisplacement();
+		Vector dispb=cvb->GetCMDisplacement(np);
 		dispb.x/=massb;
 		dispb.y/=massb;
 		
@@ -512,11 +516,11 @@ short CrackSurfaceContact::GetInterfaceForce(NodalPoint *np,Vector *fImp,CrackVe
 	// displacement or position
 	Vector da,db;
 	double mnode=1./cva->GetTotalMass();
-	Vector dispa=cva->GetCMDisplacement();
+	Vector dispa=cva->GetCMDisplacement(np);
 	da.x=dispa.x*mnode;
 	da.y=dispa.y*mnode;
 	mnode=1./cvb->GetTotalMass();
-	Vector dispb=cvb->GetCMDisplacement();
+	Vector dispb=cvb->GetCMDisplacement(np);
 	db.x=dispb.x*mnode;
 	db.y=dispb.y*mnode;
 	

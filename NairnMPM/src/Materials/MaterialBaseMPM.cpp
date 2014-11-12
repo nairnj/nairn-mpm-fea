@@ -147,6 +147,11 @@ char *MaterialBase::InputMat(char *xName,int &input)
 		return((char *)&constantTip);
 	}
     
+	else if(strcmp(xName,"shareMatField")==0)
+	{	input=INT_NUM;
+		return((char *)&shareMatField);
+	}
+    
 	else if(strcmp(xName,"Cp")==0 || strcmp(xName,"Cv")==0)
     {	input=DOUBLE_NUM;
         return((char *)&heatCapacity);
@@ -566,16 +571,51 @@ int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activ
 	}
 	else
 	{	if(field<0)
-		{	field=fieldNum;
-			fieldNum++;
-			fieldMatIDs.push_back(matid);
+		{	// if sharing a field, look up shared material.
+			if(shareMatField>0)
+			{	if(shareMatField>nmat)
+				{	throw CommonException("Material class trying to share velocity field with an undefined material type",
+										  "MaterialBase::SetField");
+				}
+			
+				// must match for rigid feature
+				MaterialBase *matRef = theMaterials[shareMatField-1];
+				if(matRef->Rigid() != Rigid())
+				{	throw CommonException("Material class trying to share velocity field with an incompatible material type",
+										  "MaterialBase::SetField");
+				}
+			
+				// base material cannot share too
+				if(matRef->GetShareMatField()>=0)
+				{	throw CommonException("Material class trying to share velocity field with a material that share's its field",
+										  "MaterialBase::SetField");
+				}
+			
+				// set field to other material (and set other material if needed
+				field = matRef->GetField();
+				if(field<0)
+				{	fieldNum = matRef->SetField(fieldNum,multiMaterials,shareMatField-1,activeNum);
+					field = fieldNum-1;
+				}
+			}
+			else
+			{	field=fieldNum;
+				fieldNum++;
+			
+				// fieldMatIDs[i] for i=0 to # materials is material index for that material velocity field
+				// when materials share fields, it points to the based shared material
+				fieldMatIDs.push_back(matid);
+			}
+		
+			// for first particle using this material, add to active material IDs and check required
+			// material buffer sizes
 			if(activeNum>=0)
 			{	activeField=activeNum;
 				activeNum++;
 				activeMatIDs.push_back(matid);
-                int altBuffer,matBuffer = SizeOfMechanicalProperties(altBuffer);
-                if(matBuffer > maxPropertyBufferSize) maxPropertyBufferSize = matBuffer;
-                if(altBuffer > maxAltBufferSize) maxAltBufferSize = altBuffer;
+				int altBuffer,matBuffer = SizeOfMechanicalProperties(altBuffer);
+				if(matBuffer > maxPropertyBufferSize) maxPropertyBufferSize = matBuffer;
+				if(altBuffer > maxAltBufferSize) maxAltBufferSize = altBuffer;
 			}
 		}
 	}
@@ -584,6 +624,9 @@ int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activ
 
 // -1 if material not in use, otherwise zero-based field number
 int MaterialBase::GetField(void) const { return field; }
+
+// material ID (zero based) for field to share its velocity field (-1 if not sharing or not in multimaterial mode)
+int MaterialBase::GetShareMatField(void) const { return shareMatField-1; }
 
 // -1 if material not in use, otherwise zero-based field number from 0 to numActiveMaterials
 int MaterialBase::GetActiveField(void) const { return activeField; }

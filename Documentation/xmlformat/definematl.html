@@ -754,7 +754,7 @@ cod = <code>&delta;<sub>eff</sub></code> where  &delta;<sub>eff</sub><sup>2</sup
 <ul>
 <li><code>&lt;Propagate criterion='1' direction='0' traction='1'/&gt;</code> - lets each material have a different primary crack propagation criterion and/or directions than the ones defined in the <a href="mpmheader.html#cracks">MPM Header crack settings</a> (and set as described there).
 </li>
-<li><code>AltPropagate criterion='7' direction='4' traction='1'/&gt;</code>
+<li><code>&lt;AltPropagate criterion='7' direction='4' traction='1'/&gt;</code>
 - same as Propagate command except for the secondary propagation criterion.</li>
 <li>xGrow and yGrow -  specify a unit vector for a constant crack growth direction. They only apply for crack propagation with <a href="mpmheader.html#cracks">criterion 2</a> and then only when that criterion selects the default propagation direction.</li>
 <li>constantTip - set to 0 or 1 where 1 means the crack tip will always uses its initial material even if the crack is in or moves to another material</li>
@@ -763,10 +763,13 @@ cod = <code>&delta;<sub>eff</sub></code> where  &delta;<sub>eff</sub><sup>2</sup
 
 <h3><a name="cmn4"></a>Contact Properties</h3>
 
-<p>This command allows custom contact properties for each material pair in <a href="mpmheader.html#multi">multimaterial mode MPM</a>.</p>
+<p>These commands allow custom contact properties for each material pair in <a href="mpmheader.html#multi">multimaterial mode MPM</a>.</p>
 
 <ul>
 <li><code>&lt;Friction mat='(num)' Dt='(Dt)' Dn='(Dnt)' Dnc='(Dnc)'&gt;(frict)&lt;/Friction&gt;</code> - set custom material-material contact properties between current material and the material in the mat attribute. It is set as described in <a href="mpmheader.html#multi">Multimaterial Mode MPM</a> and overrides that setting with custom settings.</li>
+
+<li>shareMatField - set to another material number (by number only) to share material velocity field with that material. Two (or more) materials sharing the same velocity field will move with perfect contact (<i>i.e.</i>, in a single velocity field) among themselves, but can interact with other materials in different velocity fields by contact or interface laws. Materials sharing velocity fields must be compatible (<i>e.g.</i>, all rigid or all nonrigid) and the material in <code>(matID)</code> must not be sharing it's field.</li>
+
 </ul>
 
 
