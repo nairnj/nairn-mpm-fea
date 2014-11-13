@@ -274,20 +274,19 @@ void CrackSurfaceContact::MaterialContactPairs(int maxFields)
 	
 	// check all active materials and change laws that were specified
 	for(i=0;i<nmat;i++)
-	{	int mati=theMaterials[i]->GetField();
+	{	int mati=theMaterials[i]->GetField();			// may be a shared field
+		if(mati<0) continue;							// skip if not used
 		
-		// skip if not used or is sharing with another material
-		if(mati<0 || theMaterials[i]->GetShareMatField()>=0) continue;
+		// loop over all other materials
 		for(j=0;j<nmat;j++)
-		{	int matj=theMaterials[j]->GetField();
-			
-			// skip if no field or same material or sharing with another material
-			if(matj<0 || i==j || theMaterials[j]->GetShareMatField()>=0) continue;
+		{	int matj=theMaterials[j]->GetField();		// may be a shared field
+			if(matj<0 || i==j) continue;				// skip if no field or same material
 			
 			// look from custom friction from mat i to mat j
 			ContactDetails *pairContact=theMaterials[i]->GetContactToMaterial(j+1);
 			if(pairContact==NULL) continue;
 			
+			// setting more than one shared material overwrite previous ones
 			if(mati<matj)
 				mmContact[mati][matj-mati-1]=*pairContact;
 			else
