@@ -42,6 +42,7 @@ class PressureLaw : public TractionLaw
 		double sc;
 		ROperation *function;
 		static double varTime;
+		double minCOD;
 	
 };
 
