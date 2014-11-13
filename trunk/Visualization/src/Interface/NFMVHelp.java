@@ -20,6 +20,7 @@ public class NFMVHelp extends JNHelpWindow implements ActionListener
 	// constructor
 	public NFMVHelp(URL helpURL,String name)
 	{	super(helpURL,name);
+		setSize(800,800);
 	
 		// tool bar
 		Class<?> baseClass=JNApplication.main.getClass();

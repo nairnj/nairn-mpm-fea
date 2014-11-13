@@ -308,7 +308,7 @@ and rubber elastic materials as special cases.</td>
 </tr>
 
 <tr>
-<td><a href="#plaw"><code>PressureLaw</code></a></td>
+<td><a href="#plaw"><code>PressureTraction</code></a></td>
 <td>26</td>
 <td width="50%">A constant stress traction law for creating pressure loaded-cracks.</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center"></td>
@@ -469,11 +469,9 @@ G<sub>ntaus</sub>exp(-t/tau<sub>n</sub>), where n is the number of relation time
 <li>G1 or G2 - the Mooney-Rivlin shear energy depends on two shear moduli (in MPa). Their sum in the low-strain shear modulus. If G2=0 (which is its default), the material is a Neohookean material.</li>
 <li>K - the K modulus (in MPa), which is equal to the low-strain bulk modulus.</li>
 <li>UJOption - selects the dilational energy term U(J) and the possible integer values mean:
-<ol>
-<li>U(J) = (K/2)((1/2)(J<sup>2</sup>-1) - ln J) (the default)</li>
-<li>U(J) = (K/2)(J-1)<sup>2</sup></li>
-<li>U(J) = (K/2)(ln J)<sup>2</sup></li>
-</ol>
+	&#160;&#160;&#160;&#160;0: U(J) = (K/2)((1/2)(J<sup>2</sup>-1) - ln J) (the default)<br />
+	&#160;&#160;&#160;&#160;1: U(J) = (K/2)(J-1)<sup>2</sup><br />
+	&#160;&#160;&#160;&#160;2: U(J) = (K/2)(ln J)<sup>2</sup><br />
 </li>
 <li>alpha - the thermal expansion coefficient (in ppm/C)</li>
 <li>IdealRubber -  this property should by 0 or 1 where 1 makes the material an ideal rubber elastic material.</li>
@@ -495,16 +493,14 @@ G<sub>ntaus</sub>exp(-t/tau<sub>n</sub>), where n is the number of relation time
 <p>The material type is an isotropic, hyperelastic material. The material properties are:</p>
 
 <ul>
-<li><code>K</code> for bulk shear modulus in MPa.</li>
-<li><code>G</code> for shear modulus in MPa.</li>
-<li><code>Lame</code> for Lame modulus in MPa.</li>
-<li><code>E</code> for tensile in MPa.</li>
-<li><code>nu</code> for Poisson's ratio.</li>
+<li>K, G, Lame, E, and nu - these are the low-strain elastic properties for the material.
+You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
+<li>E an nu - alternative enter E (in MPa) and nu. These are converted to K and G=G1+G2; you can pick G2 (if not zero) to get G1=G-G2</li>
 <li><code>UJOption</code> for an integer to select the an energy term U(J) and the possible options are:<br />
-&#160;&#160;&#160;&#160;0: U(J) = (K/2)((1/2)(J<sup>2</sup>-1) - ln J)<br />
-&#160;&#160;&#160;&#160;1: U(J) = (K/2)(J-1)<sup>2</sup><br />
-&#160;&#160;&#160;&#160;2: U(J) = (K/2)(ln J)<sup>2</sup><br />
-where K is the bulk modulus and is entered as a separate property. The default (and recommended) option is 0.</li>
+&#160;&#160;&#160;&#160;0: U(J) = (Lame/2)((1/2)(J<sup>2</sup>-1) - ln J) (the default)<br />
+&#160;&#160;&#160;&#160;1: U(J) = (Lame/2)(J-1)<sup>2</sup><br />
+&#160;&#160;&#160;&#160;2: U(J) = (Lame/2)(ln J)<sup>2</sup><br />
+</li>
 <li><code>alpha</code> for thermal expansion coefficient in ppm/degree C.</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
 </ul>
@@ -689,7 +685,7 @@ where K is the bulk modulus and is entered as a separate property. The default (
 
 <ul>
 <li>Hardening - this property selects the <a href="#hardening">hardening law</a>. It should be followed by entering all yielding properties required by the hardening law within the material's definition block.</li>
-<li>(other) - see <a href="#mooney">Mooney-Rivlin</a> material for all other properties, expect this material does not support (or allow) the G2 or the<code> &lt;IdealRubber/&gt;</code> properties.</li>
+<li>(other) - see <a href="#mooney">Mooney-Rivlin</a> material for all other properties, except this material does not support (or allow) the G2 or the<code> &lt;IdealRubber/&gt;</code> properties.</li>
 </ul>
 
 
@@ -843,13 +839,16 @@ cod = <code>&delta;<sub>eff</sub></code> where  &delta;<sub>eff</sub><sup>2</sup
 
 <a name="plaw"></a><h2>Pressure Traction Law Material (Type=26)</h2>
 
-<p>This traction law creates a constant stress that is normal to the crack surface. It models a pressure loaded crack. The stress can be entered in one of two ways:
+<p>This traction law creates a constant stress that is normal to the crack surface. It models a pressure loaded crack.
+The stress can be entered in one of two ways:
 </p>
 
 <ul>
 
 <li>stress - enter constant normal stress; use negative stress for a pressure loaded crack (in MPa).</li>
 <li>function - Alternatively, the stress can be entered as a <a href="commands.html#function">user-defined function</a> of time (in MPa).</li>
+<li>minCOD - specify a minimum, normal, crack opening displacement below which no pressure is applied (in mm).
+It is ignored if it is negative (default is -1)</li>
 </ul>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
@@ -1110,7 +1109,8 @@ current material and another material.</li>
 <li><code>shareMatField (matID)</code> - set to another material (by material ID) to share material velocity field
 with that material. Two (or more) materials sharing the same velocity field will move with perfect
 contact (<i>i.e.</i>, in a single velocity field) among themselves, but can interact with other
-materials in different velocity fields by contact or interface laws. Materials sharing velocity fields must be compatible (<i>e.g.</i>, all rigid or all nonrigid) and the material in <code>(matID)</code> must not be sharing it's field.</li>
+materials in different velocity fields by contact or interface laws. Materials sharing velocity fields must be compatible
+(<i>e.g.</i>, all rigid or all nonrigid) and the material in <code>(matID)</code> must not be sharing it's field.</li>
 
 </ul>
 
@@ -1124,10 +1124,11 @@ Q = &Delta;x*|D<sub>kk</sub>|*(A1*C + A2*&Delta;x*|D<sub>kk</sub>|)
 <p>where &Delta;x is the cell size of the mesh, |D<sub>kk</sub>| is the relative volume change rate, C is the bulk wave speed in the material, and A1 and A2 are adjustable constants.</p>
 
 <ul>
-<li>ArtificialVisc - set to "on" or "off" to determine if artificial viscosity is on (for those materials that support it).</li>
+<li>ArtificialVisc - set to "on" or "off" to determine if artificial viscosity is on.</li>
 <li>avA1 - the A1 parameter in artificial viscosity (dimensionless, default 0.2)</li>
 <li>avA2 - the A2 parameter in artificial viscosity (dimensionless, default 2.0)</li>
 </ul>
+<p>These parameters only work in materials that support artifical viscosity; an error will result if used in other materials.</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
