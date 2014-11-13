@@ -22,6 +22,7 @@ PRVar plTimeArray[1] = { NULL };
 PressureLaw::PressureLaw(char *matName) : TractionLaw(matName)
 {
 	function = NULL;
+	minCOD = -1.;
 }
 
 #pragma mark PressureLaw::Initialization
@@ -31,12 +32,17 @@ char *PressureLaw::InputMat(char *xName,int &input)
 {
     if(strcmp(xName,"stress")==0)
 	{	input=DOUBLE_NUM;
-		return((char *)&stress1);
+		return (char *)&stress1;
 	}
 	
 	else if(strcmp(xName,"function")==0)
 	{	input=STRESS_FUNCTION_BLOCK;
-		return((char *)this);
+		return (char *)this;
+	}
+	
+	else if(strcmp(xName,"minCOD")==0)
+	{	input=DOUBLE_NUM;
+		return (char *)&minCOD;
 	}
 	
     return TractionLaw::InputMat(xName,input);
@@ -84,6 +90,10 @@ void PressureLaw::PrintMechanicalProperties(void) const
 	{	char *expr=function->Expr('#');
 		cout << "Stress = " << expr << endl;
 	}
+	if(minCOD>=0.)
+	{	PrintProperty("Min COD",minCOD,"mm");
+		cout << endl;
+	}
 }
 
 #pragma mark PressureLaw::Traction Law
@@ -92,6 +102,13 @@ void PressureLaw::PrintMechanicalProperties(void) const
 void PressureLaw::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,double dx,double dy,double area)
 {
 	double Tn;
+	
+	// no pressure if less then a specific critical COD
+	if(minCOD>=0. && nCod<=minCOD)
+	{	cs->tract.x = 0.;
+		cs->tract.y = 0.;
+		return;
+	}
 	
 	// constant pressure
 	if(function==NULL)
@@ -113,11 +130,12 @@ void PressureLaw::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,doub
 // units of N/mm
 double PressureLaw::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod,bool fullEnergy)
 {
-	// physcial model is not as damage and therefor no unloading energy
-	if(!fullEnergy) return 0.;
+	// physcial model is not as damage and therefore no unloading energy
+	// also zero energy if close (nCod<=0)
+	if(!fullEnergy || nCod<=0.) return 0.;
 	
-	// area at currnt time is stress*normal cod
-	double tEnergy=0.;
+	// no pressure if less then a specific critical COD
+	if(minCOD>=0. && nCod<=minCOD) return 0.;
 	
 	// constant pressure
 	double tstress;
@@ -128,12 +146,7 @@ double PressureLaw::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod
 		tstress = function->Val();
 	}
 	
-	// normal energy only if opened
-	if(nCod>0.)
-	{	tEnergy = tstress*nCod;		// N/mm
-	}
-	
-	return tEnergy;
+	return tstress*nCod;		// N/mm
 }
 
 #pragma mark CubicTraction::Accessors
