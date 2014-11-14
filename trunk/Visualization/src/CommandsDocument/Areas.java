@@ -379,7 +379,6 @@ public class Areas
 	public String getPathProperty(String anID,String prop)
 	{	ArrayList<Object> pathData = pathIDs.get(anID);
 		if(pathData==null) return null;
-	    System.out.println(pathData);
 		if(prop.equals("intervals"))
 			return pathData.get(0).toString();
 		else if(prop.equals("ratio"))

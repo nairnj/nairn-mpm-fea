@@ -803,7 +803,10 @@ save as for the <a href="#propagate">Propagate command</a> below.</li>
 Determines the amount of crack growth each time a crack propagates, where <code>(length)</code> is relative to cell dimensions. The default is 0.5.</li>
 
 <li><code>JContour (size),&lt;(terms)&gt;,&lt;(usegrid)&gt;</code><br>
-Used to set size of J integral contour (<code>(size)</code> in cells for semi length of enclosing box), whether J integral uses one or two terms (<code>(terms)</code> = 1 or 2), and whether kinetic and work energy are found by extrapolating energies (<code>(usegrid)</code>=0) or by extrapolating velocity, stress, and strain and then calculating energies (if <code>(usegrid)</code>=1).</li>
+Used to set size of J integral contour (<code>(size)</code> in cells for semi length of enclosing box),
+whether J integral uses one or two terms (<code>(terms)</code> = 1 or 2), and whether kinetic and work energy
+are found by extrapolating energies (<code>(usegrid)</code>="no") or by extrapolating velocity, stress, and strain
+and then calculating energies (if <code>(usegrid)</code>="yes").</li>
 
 <li><code>MovePlane (how),&lt;(prevent)&gt;</code><br>
 Used to set how crack plane particles move where <code>(how)</code> is "avg" or "cm" to move to average of crack surfaces or to move in the center of mass velocity field, and <code>(prevent)</code> is "yes" or "no" to prevent crack surfaces from crossing the main crack plane.</li>
