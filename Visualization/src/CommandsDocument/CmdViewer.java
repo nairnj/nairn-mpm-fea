@@ -2418,7 +2418,6 @@ public class CmdViewer extends JNCmdTextDocument
 		String ent = (String)arg;
 		if(ent.startsWith("&") && ent.endsWith(";"))
 			ent = ent.substring(1, ent.length()-1);
-		System.out.println(ent);
 		
 		// look for valid entity
 		if(entities.get(ent)==null)
