@@ -312,7 +312,7 @@ public class CmdViewer extends JNCmdTextDocument
 	// initialize when interpreting commands
 	public void initRunSettings() throws Exception
 	{
-		title = "NairnFEAMPMViz Calculations";
+		title = JNApplication.appNameReadable+" Calculations";
 		username = null;
 		header = new StringBuffer("");
 		np = -1;

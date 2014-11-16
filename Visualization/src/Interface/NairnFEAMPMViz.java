@@ -157,7 +157,7 @@ public class NairnFEAMPMViz extends JNApplication
 		
 		// select application options
 		setLookAndFeel(true);
-		JNHelpWindow.setHelpResources("Resources/help.html","NairnFEAMPMViz Help");
+		JNHelpWindow.setHelpResources("Resources/help.html",JNApplication.appNameReadable+" Help");
 		
 		// optional info strings
 		JNApplication.iconResource="Resources/AboutIcon.png";

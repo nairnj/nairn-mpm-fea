@@ -73,7 +73,7 @@ public class NFMVHelp extends JNHelpWindow implements ActionListener
 	{	NFMVHelp currentHelpWindow = (NFMVHelp)getTheHelpWindow();
 		if(currentHelpWindow==null)
 		{	URL helpURL = getHelpResource()!= null ? appCtrl.getClass().getResource(getHelpResource()) : null ;
-			currentHelpWindow = new NFMVHelp(helpURL,"NairnFEAMPMViz Help");
+			currentHelpWindow = new NFMVHelp(helpURL,JNApplication.appNameReadable+" Help");
 		}
 		return currentHelpWindow;
 	}
