@@ -19,7 +19,7 @@ public class NFMVStartUp extends JNStartUpBase
 	
 	// Create the window
 	public NFMVStartUp()
-	{	super("NairnFEAMPMViz");
+	{	super(JNApplication.appNameReadable);
 	
 		// set window size
 		setFramePrefs("NFMVStart Width",375,"NFMVStart Height",330+JNApplication.windowMenuBarHeight());
