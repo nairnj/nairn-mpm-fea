@@ -52,7 +52,7 @@ CrackHeader *firstCrack;		// first crack
 int JGridSize = 2;				// size of J Integral contour
 int JContourType = 1;			// future might try different contours
 int JTerms = -1;				// number of terms in J Integral calculation (default 1 or 2 if axisymmetric)
-int JGridEnergy = 1;			// Calculate work and kinetic energy on the grid GRID_JTERMS
+int JGridEnergy = 0;			// Calculate work and kinetic energy on the grid GRID_JTERMS
 int numberOfCracks = 0;
 CrackHeader **crackList;
 

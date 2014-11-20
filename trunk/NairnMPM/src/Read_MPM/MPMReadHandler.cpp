@@ -548,7 +548,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
             else if(strcmp(aName,"terms")==0)
                 sscanf(value,"%d",&JTerms);
             else if(strcmp(aName,"gridenergy")==0)
-                sscanf(value,"%d",&JGridEnergy);			// GRID_JTERMS (not documented)
+                sscanf(value,"%d",&JGridEnergy);
             delete [] aName;
             delete [] value;
         }

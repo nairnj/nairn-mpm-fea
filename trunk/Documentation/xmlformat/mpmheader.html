@@ -261,7 +261,7 @@ The default is 0</li>
   &lt;AltPropagate criterion='(critNum)' direction='(dirNum)' traction='(traction)'/&gt;
   &lt;PropagateLength&gt;(relLength)&lt;/ProagateLength&gt;
   &lt;Friction Dt="(Dt)" Dn="(Dntens)" Dnc="(Dncomp)"&gt;(frict)&lt;/Friction&gt;
-  &lt;JContour size="(size)" terms="(terms)"/&gt;
+  &lt;JContour size="(size)" terms="(terms)" gridenergy="(usegrid)"/&gt;
   &lt;ContactPosition&gt;(cutoff)&lt;/ContactPosition&gt;
   &lt;MovePlane type='(method)' prevent='(prevent)'/&gt;
 &lt;/Cracks&gt;
@@ -329,7 +329,7 @@ The default is 0</li>
 <li><code>(size)</code> is the semi-length for the sides of the rectangle for the J countour (number of elements). The default value is 2.</li>
 <li><code>(terms)</code> should be set to 1 or 2 to specify if the J Integral should be a simple contour (1) or include an area integral inside the contour (2).</li>
 <li><code>(gridenergy)</code> should be 0 or 1 to get kinetic and work energy from particles (0) or from extrapolated velocity, stress,
-    and strain (1).</li>
+    and strain (1). Default is 0.</li>
 </ul>
 </li>
 
