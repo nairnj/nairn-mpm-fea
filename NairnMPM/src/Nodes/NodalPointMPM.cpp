@@ -1320,44 +1320,44 @@ void NodalPoint::CrackContact(bool postUpdate,double deltime,CrackNode **first,C
 }
 
 // Contact between field [single] and field [3] when both fields are present
-// Possibilities
-//	1. [single] and [3] opposite sides of crack for [single], do contact that crack
-//	2. [single] and [3] same side of crack for single, then do contact across other
-//			crack form [3]
-//	3. Neither crack in [3] is same as crack for [single], then no contact
+// We expect [3] to be on same side as the crack for [single], thus do contact
+//    between [single] and [3] for the crack in [3] that does not match the
+//    crack in [single]. In other words, [single] acts like field [0] relative
+//    to field [3] crossing that other crack
+// SCWarning - uses [3], but should never be called in single crack mode
 void NodalPoint::CrackContactThree(int single,bool postUpdate,double deltime)
 {
+	// get common crack
 	int cnum=cvf[single]->crackNumber(FIRST_CRACK);
-	int cloc=cvf[single]->location(FIRST_CRACK);
 	
-	int matchCrack;
-	if(cnum==cvf[3]->crackNumber(FIRST_CRACK))
-		matchCrack=FIRST_CRACK;
-	else if(cnum==cvf[3]->crackNumber(SECOND_CRACK))
-		matchCrack=SECOND_CRACK;
+	// We expect [3] to be on opposite side of crack that does not match [single]
+	// find the other crack
+	int otherCrack;
+	if(cnum == cvf[3]->crackNumber(FIRST_CRACK))
+		otherCrack = SECOND_CRACK;
+	else if(cnum == cvf[3]->crackNumber(SECOND_CRACK))
+		otherCrack = FIRST_CRACK;
 	else
+	{	// Field [3] for two other cracks, so skip this calculation
 		return;
-
-	int cabove;
-	Vector cnorm;
-	if(cloc!=cvf[3]->location(matchCrack))
-	{	// [single] and [3] are on opposite sides of cnum
-		cabove = (cloc==ABOVE_CRACK) ? single : 3 ;
-		cnorm=cvf[single]->norm[FIRST_CRACK];
-	}
-	else
-	{	// [single] and [3] same side as cnum, do contact across the other crack
-		matchCrack = (matchCrack==FIRST_CRACK) ? SECOND_CRACK : FIRST_CRACK ;
-		cnum=cvf[3]->crackNumber(matchCrack);
-		cabove = (cvf[3]->crackNumber(matchCrack)) ? 3 : single ;
-		ZeroVector(&cnorm);
 	}
 	
-	// do contact if this crack has contact
-	if(contact.HasContact(cnum))
-	{	AddVector(&cnorm,&(cvf[3]->norm[matchCrack]));			// include [3] normal
-		AdjustContact(cabove,single+3-cabove,&cnorm,cnum,postUpdate,deltime);
+	// skip if otherCrack not doing contact
+	if(!contact.HasContact(otherCrack)) return;
+	
+	// get above field
+	int cabove,cbelow;
+	if(cvf[3]->location(otherCrack)==ABOVE_CRACK)
+	{	cabove = 3;
+		cbelow = single;
 	}
+	else
+	{	cabove=single;
+		cbelow=3;
+	}
+	
+	// adjust contact
+	AdjustContact(cabove,cbelow,&(cvf[3]->norm[otherCrack]),otherCrack,postUpdate,deltime);
 }
 
 // Look for crack contact and adjust accordingly - a for field above and b for field below and both
@@ -1425,44 +1425,44 @@ void NodalPoint::CrackInterfaceForce(void)
 }
 
 // Interface force between field [single] and field [3] when both fields are present
-// Possibilities
-//	1. [single] and [3] opposite sides of crack for [single], do force that crack
-//	2. [single] and [3] same side of crack for single, then do force across other
-//			crack from [3]
-//	3. Neither crack in [3] is same as crack for [single], then no force
+// We expect [3] to be on same side as the crack for [single], thus do contact
+//    between [single] and [3] for the crack in [3] that does not match the
+//    crack in [single]. In other words, [single] acts like field [0] relative
+//    to field [3] crossing that other crack
+// SCWarning - uses [3], but should never be called in single crack mode
 void NodalPoint::InterfaceForceThree(int single)
 {
+	// get common crack
 	int cnum=cvf[single]->crackNumber(FIRST_CRACK);
-	int cloc=cvf[single]->location(FIRST_CRACK);
 	
-	int matchCrack;
-	if(cnum==cvf[3]->crackNumber(FIRST_CRACK))
-		matchCrack=FIRST_CRACK;
-	else if(cnum==cvf[3]->crackNumber(SECOND_CRACK))
-		matchCrack=SECOND_CRACK;
+	// We expect [3] to be on opposite side of crack that does not match [single]
+	// find the other crack
+	int otherCrack;
+	if(cnum == cvf[3]->crackNumber(FIRST_CRACK))
+		otherCrack = SECOND_CRACK;
+	else if(cnum == cvf[3]->crackNumber(SECOND_CRACK))
+		otherCrack = FIRST_CRACK;
 	else
+	{	// Field [3] for two other cracks, so skip this calculation
 		return;
+	}
 	
-	int cabove;
-	Vector cnorm;
-	if(cloc!=cvf[3]->location(matchCrack))
-	{	// [single] and [3] are on opposite sides of cnum
-		cabove = (cloc==ABOVE_CRACK) ? single : 3 ;
-		cnorm=cvf[single]->norm[FIRST_CRACK];
+	// skip if otherCrack not an interface
+	if(!contact.IsImperfect(otherCrack)) return;
+	
+	// get above field
+	int cabove,cbelow;
+	if(cvf[3]->location(otherCrack)==ABOVE_CRACK)
+	{	cabove = 3;
+		cbelow = single;
 	}
 	else
-	{	// [single] and [3] same side as cnum, do contact across the other crack
-		matchCrack = (matchCrack==FIRST_CRACK) ? SECOND_CRACK : FIRST_CRACK ;
-		cnum=cvf[3]->crackNumber(matchCrack);
-		cabove = (cvf[3]->crackNumber(matchCrack)) ? 3 : single ;
-		ZeroVector(&cnorm);
+	{	cabove=single;
+		cbelow=3;
 	}
 	
-	// do contact if this crack has contact
-	if(contact.IsImperfect(cnum))
-	{	AddVector(&cnorm,&(cvf[3]->norm[matchCrack]));			// include [3] normal
-		AddInterfaceForce(cabove,single+3-cabove,&cnorm,cnum);
-	}
+	// do interface force
+	AddInterfaceForce(cabove,cbelow,&(cvf[3]->norm[otherCrack]),otherCrack);
 }
 
 // Look for cracks as imperfect interfaces and adjust accordingly - a for field above and b for field below
