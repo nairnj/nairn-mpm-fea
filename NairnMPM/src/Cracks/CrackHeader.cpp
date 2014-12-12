@@ -35,8 +35,6 @@
 // two terms to get that result in J1
 //#define RECORD_ONE_AND_TWO_TERM_RESULTS
 
-//#define JZ_PLANAR
-
 using namespace std; 
 
 // class statics
@@ -1194,7 +1192,7 @@ void CrackHeader::JIntegral(void)
 
 				// add for two endpoints using midpoint rule
                 // The r's (=r_i/a) for axisymmetric Jz integral
-#ifdef JZ_PLANAR
+#ifdef BROBERG_AS_METHOD_FOR_JR
 				Jys = 0.5*(fForJy1 + fForJy2)*ds;
 #else
 				Jys = 0.5*(r1*fForJy1 + r2*fForJy2)*ds;
