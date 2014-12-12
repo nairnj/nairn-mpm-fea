@@ -288,7 +288,7 @@
 <!ELEMENT	PropagateLength (#PCDATA)>
 <!ELEMENT	JContour EMPTY>
 <!ATTLIST	JContour
-			type CDATA #REQUIRED
+			type CDATA (1|2) #IMPLIED
 			size CDATA #IMPLIED
 			gridenergy (0|1) #IMPLIED
 			terms (1|2) #IMPLIED>
