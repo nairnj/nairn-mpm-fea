@@ -24,9 +24,7 @@ Viscoelastic::Viscoelastic()
 // Constructors
 Viscoelastic::Viscoelastic(char *matName) : MaterialBase(matName)
 {
-    int i;
-
-    ntaus=-1;
+	ntaus=-1;
     Gk=NULL;
     tauk=NULL;
     G0=0.;
@@ -116,27 +114,24 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
     if(K<0)
 		return "Required bulk modulus not given.";
     
-    int i;
-    
     // zero time shear modulus
-    Ge=G0;
-    dGe=0.0;
-    for(i=0;i<ntaus;i++)
-    {   Ge+=Gk[i];
-        dGe-=Gk[i]/tauk[i];
+    Gered = G0;
+	TwoGkred = new double[ntaus];
+    for(int k=0;k<ntaus;k++)
+    {   Gered += Gk[k];
+		TwoGkred[k] = 2.e6*Gk[k]/rho;
     }
 	
 	// From MPa to Pa
-	Ge*=1.e6;
-	dGe*=1.e6;
-	Ke=K*1.e6;
+	Gered *= 1.e6/rho;
+	Kered = K*1.e6/rho;
 	
 	// to absolute CTE and CME
-	CTE=1.e-6*aI;
-	CME=betaI*concSaturation;
+	CTE = 1.e-6*aI;
+	CME = betaI*concSaturation;
 
     // for Cp-Cv
-    Ka2sp = 0.001*Ke*CTE1*CTE1/rho;
+    Ka2sp = 0.001*Kered*CTE1*CTE1;
 	
 	// call super class
 	return MaterialBase::VerifyAndLoadProperties(np);
@@ -144,8 +139,8 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
 
 // plane stress not allowed in viscoelasticity
 void Viscoelastic::ValidateForUse(int np) const
-{	if(np==PLANE_STRESS_MPM || np==AXISYMMETRIC_MPM)
-	{	throw CommonException("Viscoelastic materials require 2D plane strain or 3D MPM analysis",
+{	if(np==PLANE_STRESS_MPM)
+	{	throw CommonException("Viscoelastic materials are not allowed in plane stress calculations",
 							  "Viscoelastic::ValidateForUse");
 	}
 	
@@ -160,23 +155,28 @@ char *Viscoelastic::InitHistoryData(void)
     if(ntaus==0) return NULL;
     
     // allocate array of double pointers (3)
-	int blocks = fmobj->IsThreeD() ? 6 : 3 ;
+	int blocks;
+	if(fmobj->IsThreeD())
+		blocks = 6;
+	else
+		blocks = 4;
     char *p = new char[sizeof(double *)*blocks];
 	
     double **h = (double **)p;
     
     // for each allocate ntaus doubles
     //	h[ij_HISTORY][0] to h[ij_HISTORY][ntaus-1] can be read
-    //	in MPMConstLaw() by casting mptr->GetHistoryPtr() pointer as
+    //	in MPMConstitutiveLaw() by casting mptr->GetHistoryPtr() pointer as
     //		double **h=(double **)(mptr->GetHistoryPtr())
     h[XX_HISTORY] = new double[ntaus];
     h[YY_HISTORY] = new double[ntaus];
     h[XY_HISTORY] = new double[ntaus];
+	h[ZZ_HISTORY] = new double[ntaus];
 	if(blocks==6)
-    {	h[ZZ_HISTORY] = new double[ntaus];
-		h[XZ_HISTORY] = new double[ntaus];
+	{	h[XZ_HISTORY] = new double[ntaus];
 		h[YZ_HISTORY] = new double[ntaus];
 	}
+		
     
     // initialize to zero
     int k;
@@ -184,9 +184,9 @@ char *Viscoelastic::InitHistoryData(void)
     {	h[XX_HISTORY][k] = 0.;
         h[YY_HISTORY][k] = 0.;
         h[XY_HISTORY][k] = 0.;
+		h[ZZ_HISTORY][k] = 0.;
 		if(blocks==6)
-		{	h[ZZ_HISTORY][k] = 0.;
-			h[XZ_HISTORY][k] = 0.;
+		{	h[XZ_HISTORY][k] = 0.;
 			h[YZ_HISTORY][k] = 0.;
 		}
     }
@@ -196,218 +196,169 @@ char *Viscoelastic::InitHistoryData(void)
 
 #pragma mark Viscoelastic::Methods
 
-/* For 2D MPM analysis, take increments in strain and calculate new
-    Particle: strains, rotation strain, stresses, history variables,
-		strain energy, angle
-    dvij are (gradient rates X time increment) to give deformation gradient change
-   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
+
+/* Take increments in strain and calculate new Particle: strains, rotation strain, plastic strain,
+		stresses, strain energy, plastic energy, dissipated energy, angle
+	dvij are (gradient rates X time increment) to give deformation gradient change
+	For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMETRIC_MPM, otherwise dvzz=0
+	This material tracks pressure and stores deviatoric stress only in particle stress tensor
 */
-void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double dvzz,double delTime,int np,void *properties,ResidualStrains *res) const
+void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
-    /* ---------------------------------------------------
-        Add to total strain
-        G and K are in MPa and should multiplied by a factor 1.0e6
-        delTime (sec)
-        tau[k] (sec)
-    */
-	Tensor *ep = mptr->GetStrainTensor();
-    ep->xx += dvxx;
-    ep->yy += dvyy;
-    double dgam = dvxy+dvyx;
-    ep->xy += dgam;
-	double dwrotxy = dvyx-dvxy;
-    
-    // save initial stresses
-	Tensor *sp = mptr->GetStressTensor();
-    Tensor st0 = *sp;
-
-    /* ---------------------------------------------------
-        find stress (Units N/m^2  cm^3/g)
-		stress increament due to G(t) and corresponding strains 
-    */
-    
-    // viscous part of stress update
-    double **h =(double **)(mptr->GetHistoryPtr());
-    int k;
-    double dsigmaGxx = 0;
-	double dsigmaGyy = 0;
-	double dsigmaGxy = 0;
-    for (k=0;k<ntaus;k++)
-    {   dsigmaGxx += h[XX_HISTORY][k];
-        dsigmaGyy += h[YY_HISTORY][k];
-        dsigmaGxy += h[XY_HISTORY][k];
-    }
-    dsigmaGxx = 0.5*delTime*dGe*dvxx + dsigmaGxx*delTime;
-    dsigmaGyy = 0.5*delTime*dGe*dvyy + dsigmaGyy*delTime;
-    dsigmaGxy = 0.5*delTime*dGe*dgam + dsigmaGxy*delTime;
-
-	// stress increment (specific stress)
-    double factor23 = 2.0/3.0;
-	double er = CTE*res->dT;
-    if(DiffusionTask::active) er += CME*res->dC;
-	double dilate = Ke*(dvxx+dvyy-3.*er);
+    // Effective strain by deducting thermal strain (no shear thermal strain because isotropic)
+	double eres=CTE*res->dT;
+	if(DiffusionTask::active)
+		eres+=CME*res->dC;
 	
-    // elastic and viscous components of stree update
-	double dsxxv = factor23*(2.*dsigmaGxx-dsigmaGyy)/rho;
-    double dsxxe = (dilate + factor23*Ge*(2.*dvxx-dvyy))/rho;
-	double dsyyv = factor23*(2.*dsigmaGyy-dsigmaGxx)/rho;
-	double dsyye = (dilate + factor23*Ge*(2.*dvyy-dvxx))/rho;
-	double dtxyv = dsigmaGxy/rho;
-    double dtxye = Ge*dgam/rho;
-	double dszzv = -factor23*(dsigmaGyy+dsigmaGxx)/rho;
-	double dszze = (dilate - factor23*Ge*(dvyy+dvzz))/rho;
-	Hypo2DCalculations(mptr,-dwrotxy,dsxxe+dsxxv,dsyye+dsyyv,dtxye+dtxyv);
-    sp->zz += dszze+dszzv;
-
-    // update history variables after stress has been calculated
+	// update pressure
+	double delV = du.trace() - 3.*eres;
+	UpdatePressure(mptr,delV,res,eres);
+	
+	// deviatoric strains increment
+	// Actually find 2*de to avoid many multiples by two
+	Tensor de;
+	double dV = du.trace()/3.;
+	de.xx = 2.*(du(0,0) - dV);
+	de.yy = 2.*(du(1,1) - dV);
+	de.zz = 2.*(du(2,2) - dV);
+	de.xy = du(0,1)+du(1,0);
+	if(np==THREED_MPM)
+	{	de.xz = du(0,2)+du(2,0);
+		de.yz = du(1,2)+du(2,1);
+	}
+	
+	// Find initial 2*e(t) in ed
+	Tensor *ep=mptr->GetStrainTensor();
+	Tensor ed = *ep;
+	double thirdV = (ed.xx+ed.yy+ed.zz)/3.;
+	ed.xx = 2.*(ed.xx-thirdV);
+	ed.yy = 2.*(ed.yy-thirdV);
+	ed.zz = 2.*(ed.zz-thirdV);
+							 
+	// Increment total strains on the particle
+    ep->xx += du(0,0);
+    ep->yy += du(1,1);
+	ep->zz += du(2,2);
+    ep->xy += de.xy;
+	if(np==THREED_MPM)
+	{	ep->xz += de.xz;
+		ep->yz += de.yz;
+	}
+	
+	// get internal variable increments and update them too
+	Tensor dak;
+    double **ak =(double **)(mptr->GetHistoryPtr());
+	int k;
     for(k=0;k<ntaus;k++)
     {   double tmp = exp(-delTime/tauk[k]);
-		double gtk = 1.0e6*Gk[k]/tauk[k];
-		h[XX_HISTORY][k] = tmp*(h[XX_HISTORY][k]-gtk*dvxx);
-		h[YY_HISTORY][k] = tmp*(h[YY_HISTORY][k]-gtk*dvyy);
-		h[XY_HISTORY][k] = tmp*(h[XY_HISTORY][k]-gtk*dgam);
+		double tmpm1 = tmp-1.;
+		double tmpp1 = tmp+1.;
+		double arg = 0.25*delTime/tauk[k];					// 0.25 because e's have factor of 2
+		dak.xx = tmpm1*ak[XX_HISTORY][k] + arg*(tmpp1*ed.xx + de.xx);
+		dak.yy = tmpm1*ak[YY_HISTORY][k] + arg*(tmpp1*ed.yy + de.yy);
+		dak.xy = tmpm1*ak[XY_HISTORY][k] + arg*(tmpp1*ed.xy + de.xy);
+		dak.zz = tmpm1*ak[ZZ_HISTORY][k] + arg*(tmpp1*ed.zz + de.zz);
+		ak[XX_HISTORY][k] += dak.xx;
+		ak[YY_HISTORY][k] += dak.yy;
+		ak[ZZ_HISTORY][k] += dak.zz;
+		ak[XY_HISTORY][k] += dak.xy;
+		
+		if(np==THREED_MPM)
+		{	dak.xz = tmpm1*ak[XZ_HISTORY][k] + arg*(tmpp1*ed.xz + de.xz);
+			dak.yz = tmpm1*ak[YZ_HISTORY][k] + arg*(tmpp1*ed.yz + de.yz);
+			ak[XZ_HISTORY][k] += dak.xz;
+			ak[YZ_HISTORY][k] += dak.yz;
+		}
     }
 	
-	// find work increment
-    // add total energy using total stress increment
-    // Not sure correct, but does have energy + dissipated equal to total energy increment
-	// energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-	double totalEnergy=(st0.xx+0.5*(dsxxe+dsxxv))*dvxx
-							+(st0.yy+0.5*(dsyye+dsyyv))*dvyy
-							+(st0.xy+0.5*(dtxye+dtxyv))*dgam
-							+(st0.xy+0.5*(dszze+dszzv))*dvzz;
-    mptr->AddWorkEnergy(totalEnergy);
+	// increment particle deviatoric stresses
+	double dsig[6];
+	dsig[XX] = Gered*de.xx;
+	dsig[YY] = Gered*de.yy;
+	dsig[ZZ] = Gered*de.zz;
+	dsig[XY] = Gered*de.xy;
+	if(np==THREED_MPM)
+	{	dsig[XZ] = Gered*de.xz;
+		dsig[YZ] = Gered*de.yz;
+	}
+    for(k=0;k<ntaus;k++)
+	{	dsig[XX] -= TwoGkred[k]*dak.xx;
+		dsig[YY] -= TwoGkred[k]*dak.yy;
+		dsig[ZZ] -= TwoGkred[k]*dak.zz;
+		dsig[XY] -= TwoGkred[k]*dak.xy;
+		if(np==THREED_MPM)
+		{	dsig[XZ] -= TwoGkred[k]*dak.xz;
+			dsig[YZ] -= TwoGkred[k]*dak.yz;
+		}
+	}
+	
+	// Hypoelastic increment of particle deviatoric stresses
+	Tensor *sp=mptr->GetStressTensor();
+	Tensor st0 = *sp;
+	double dwrotxy = du(1,0)-du(0,1);
+	if(np==THREED_MPM)
+	{	double dwrotxz = du(2,0)-du(0,2);
+		double dwrotyz = du(2,1)-du(1,2);
+		Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
+	}
+	else
+	{	Hypo2DCalculations(mptr,-dwrotxy,dsig[XX],dsig[YY],dsig[XY]);
+		sp->zz += dsig[ZZ];
+	}
+	
+	// incremental work energy = shear energy (dilation and residual energy done in update pressure)
+    double shearEnergy = 0.5*((sp->xx+st0.xx)*du(0,0) + (sp->yy+st0.yy)*du(1,1) + (sp->zz+st0.zz)*du(2,2)+
+							  (sp->xy+st0.xy)*de.xy);
+    if(np==THREED_MPM)
+    {   shearEnergy += 0.5*((sp->xz+st0.xz)*de.xz + (sp->yz+st0.yz)*de.yz);
+    }
+    mptr->AddWorkEnergyAndResidualEnergy(shearEnergy,0.);
+	
+    // disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
+    double dispEnergy = 0.;
+    for(k=0;k<ntaus;k++)
+	{	dispEnergy += TwoGkred[k]*(dak.xx*(0.5*(ed.xx+0.5*de.xx)-ak[XX_HISTORY][k]+0.5*dak.xx)
+						+ dak.yy*(0.5*(ed.yy+0.5*de.yy)-ak[YY_HISTORY][k]+0.5*dak.yy)
+						+ dak.zz*(0.5*(ed.zz+0.5*de.zz)-ak[ZZ_HISTORY][k]+0.5*dak.zz)
+						+ dak.xy*(0.5*(ed.xy+0.5*de.xy)-ak[XY_HISTORY][k]+0.5*dak.xy));
+		if(np==THREED_MPM)
+		{	dispEnergy += TwoGkred[k]*(dak.xz*(0.5*(ed.xz+0.5*de.xz)-ak[XZ_HISTORY][k]+0.5*dak.xz)
+							+ dak.yz*(0.5*(ed.yz+0.5*de.yz)-ak[YZ_HISTORY][k]+0.5*dak.yz));
+		}
+	}
+    mptr->AddPlastEnergy(dispEnergy);
     
-	// Not sure of dissipated energy here
-    // visous energy is disspated (not sure of thermo here)
-    // dissipated energy using viscous stress increment only (which is negative)
-	double dispEnergy = 0.5*dsxxv*dvxx + 0.5*dsyyv*dvyy
-                    +0.5*dtxyv*dgam + 0.5*dszzv*dvzz;
-    mptr->AddPlastEnergy(-dispEnergy);
-	IncrementHeatEnergy(mptr,res->dT,0.,-dispEnergy);
+    // heat energy is Cv dT - dPhi
+    // The dPhi is subtracted here because it will show up in next
+    //		time step within Cv dT (if adibatic heating occurs)
+    // The Cv dT was done in update pressure
+    IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
 }
 
-/* For 3D MPM analysis, take increments in strain and calculate new
-    Particle: nothing yet
-    dvij are (gradient rates X time increment) to give deformation gradient change
-*/
-void Viscoelastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-        double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np,void *properties,ResidualStrains *res) const
-{
-    /* ---------------------------------------------------
-        Add to total strain
-        G and K are in MPa and should multiplied by a factor 1.0e6
-        delTime (sec)
-        tau[k] (sec)
-    */
-	Tensor *ep=mptr->GetStrainTensor();
-    ep->xx+=dvxx;
-    ep->yy+=dvyy;
-    ep->zz+=dvzz;
-    double dgamxy=dvxy+dvyx;
-    ep->xy+=dgamxy;
-    double dgamxz=dvxz+dvzx;
-    ep->xz+=dgamxz;
-    double dgamyz=dvyz+dvzy;
-    ep->yz+=dgamyz;
-	
-	// rotational strain increments (particle updated by Hypo3D)
-	double dwrotxy=dvyx-dvxy;
-	double dwrotxz=dvzx-dvxz;
-	double dwrotyz=dvzy-dvyz;
-	    
-    // save initial stresses
-	Tensor *sp=mptr->GetStressTensor();
-    Tensor st0=*sp;
-
-    /* ---------------------------------------------------
-        find stress (Units N/m^2  cm^3/g)
-		stress increament due to G(t) and corresponding strains 
-    */
-    double **h =(double **)(mptr->GetHistoryPtr());
-    int k;
-    double dsigmaGxx=0;
-	double dsigmaGyy=0;
-	double dsigmaGzz=0;
-	double dsigmaGxy=0;
-	double dsigmaGxz=0;
-	double dsigmaGyz=0;
-    for (k=0;k<ntaus;k++)
-    {   dsigmaGxx+=h[XX_HISTORY][k];
-        dsigmaGyy+=h[YY_HISTORY][k];
-        dsigmaGzz+=h[ZZ_HISTORY][k];
-        dsigmaGxy+=h[XY_HISTORY][k];
-        dsigmaGxz+=h[XZ_HISTORY][k];
-        dsigmaGyz+=h[YZ_HISTORY][k];
-    }
-	double GeArg=Ge+0.5*delTime*dGe;
-    dsigmaGxx = GeArg*dvxx + dsigmaGxx*delTime;
-    dsigmaGyy = GeArg*dvyy + dsigmaGyy*delTime;
-    dsigmaGzz = GeArg*dvzz + dsigmaGzz*delTime;
-    dsigmaGxy = GeArg*dgamxy + dsigmaGxy*delTime;
-    dsigmaGxz = GeArg*dgamxz + dsigmaGxz*delTime;
-    dsigmaGyz = GeArg*dgamyz + dsigmaGyz*delTime;
-
-	// stress increment (specific stress)
-    double factor23=2./3.;
-	double er=CTE*res->dT+CME*res->dC;
-	double dilate=Ke*(dvxx+dvyy+dvzz-3.*er);
-	
-	double delsp[6];
-	delsp[0] = (dilate+factor23*(2.*dsigmaGxx-dsigmaGyy-dsigmaGzz))/rho;
-	delsp[1] = (dilate+factor23*(2.*dsigmaGyy-dsigmaGxx-dsigmaGzz))/rho;
-	delsp[2] = (dilate+factor23*(2.*dsigmaGzz-dsigmaGxx-dsigmaGyy))/rho;
-	delsp[3] = dsigmaGyz/rho;
-	delsp[4] = dsigmaGxz/rho;
-	delsp[5] = dsigmaGxy/rho;
-	
-	// update stress (need to make hypoelastic)
-	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,delsp);
-
-    // update history variables after stress has been calculated
-    for(k=0;k<ntaus;k++)
-    {   double tmp=exp(-delTime/tauk[k]);
-		double gtk=1.0e6*Gk[k]/tauk[k];
-		h[XX_HISTORY][k]=tmp*(h[XX_HISTORY][k]-gtk*dvxx);
-		h[YY_HISTORY][k]=tmp*(h[YY_HISTORY][k]-gtk*dvyy);
-		h[ZZ_HISTORY][k]=tmp*(h[ZZ_HISTORY][k]-gtk*dvzz);
-		h[XY_HISTORY][k]=tmp*(h[XY_HISTORY][k]-gtk*dgamxy);
-		h[XZ_HISTORY][k]=tmp*(h[XZ_HISTORY][k]-gtk*dgamxz);
-		h[YZ_HISTORY][k]=tmp*(h[YZ_HISTORY][k]-gtk*dgamyz);
-    }
+// This method handles the pressure equation of state. Its tasks are
+// 1. Calculate the new pressure
+// 2. Update particle pressure
+// 3. Increment the particle energy
+void Viscoelastic::UpdatePressure(MPMBase *mptr,double &delV,ResidualStrains *res,double eres) const
+{   // pressure change
+    double dP = -Kered*delV;
+    mptr->IncrementPressure(dP);
     
-    // how much was viscous energy?
-	double delspe[6];
-	delspe[0] = (dilate+factor23*Ge*(2.*dvxx-dvyy-dvzz))/rho;
-	delspe[1] = (dilate+factor23*Ge*(2.*dvyy-dvxx-dvzz))/rho;
-	delspe[2] = (dilate+factor23*Ge*(2.*dvzz-dvxx-dvyy))/rho;
-	delspe[3] = Ge*dgamyz/rho;
-	delspe[4] = Ge*dgamxz/rho;
-	delspe[5] = Ge*dgamxy/rho;
+    // work energy is dU = -P dV + s.de(total)
+	// Here do hydrostatic term
+    // Work energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    double avgP = mptr->GetPressure()-0.5*dP;
+    mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-3.*avgP*eres);
 	
-	// find energy from work increment
-    // add total energy using total stress increment
-    // Not sure correct, but does have energy + dissipated equal to total energy increment
-	// energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
-	double totalEnergy = (st0.xx+0.5*delsp[0])*dvxx + (st0.yy+0.5*delsp[1])*dvyy
-						+ (st0.zz+0.5*delsp[2])*dvzz + (st0.yz+0.5*delsp[3])*dgamyz
-						+ (st0.xz+0.5*delsp[4])*dgamxz + (st0.xy+0.5*delsp[5])*dgamxy;
-    mptr->AddWorkEnergy(totalEnergy);
-    
-    // Not sure of thermo here
-    // dissipated energy using viscous stress increment only (which is negative)
-    for(k=0;k<6;k++) delsp[k] -= delspe[k];
-	double dispEnergy = 0.5*delsp[0]*dvxx + 0.5*delsp[1]*dvyy + 0.5*delsp[2]*dvzz
-                        + 0.5*delsp[3]*dgamyz + 0.5*delsp[4]*dgamxz + 0.5*delsp[5]*dgamxy;
-    mptr->AddPlastEnergy(-dispEnergy);
- 	IncrementHeatEnergy(mptr,res->dT,0.,-dispEnergy);
+    // heat energy is Cv dT  - dPhi
+	// Here do Cv dT term and dPhi is done later
+    IncrementHeatEnergy(mptr,res->dT,0.,0.);
 }
 
 // convert J to K using isotropic method
 Vector Viscoelastic::ConvertJToK(Vector d,Vector C,Vector J0,int np)
-{	double nuLS = (3.*Ke-2.*Ge)/(6.*Ke+2.*Ge);
-	return IsotropicJToK(d,C,J0,np,nuLS,Ge*1.e-6);
+{	double nuLS = (3.*Kered-2.*Gered)/(6.*Kered+2.*Gered);
+	return IsotropicJToK(d,C,J0,np,nuLS,Gered*rho*1.e-6);
 }
 
 // From thermodyanamics Cp-Cv = 9 K a^2 T/rho
@@ -428,8 +379,19 @@ int Viscoelastic::MaterialTag(void) const { return VISCOELASTIC; }
 /* Calculate wave speed in mm/sec (because G in MPa and rho in g/cm^3)
 	Uses sqrt((K +4Ge/3)/rho) which is probably the maximum wave speed possible
 */
-double Viscoelastic::WaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt(1.e3*(Ke + 4.*Ge/3.)/rho); }
+double Viscoelastic::WaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt(1.e3*(Kered + 4.*Gered/3.)); }
 
 // Should support archiving history - if it is useful
 double Viscoelastic::GetHistory(int num,char *historyPtr) const { return (double)0; }
+
+// Copy stress to a read-only tensor variable
+// Subclass material can override, such as to combine pressure and deviatory stress into full stress
+Tensor Viscoelastic::GetStress(Tensor *sp,double pressure) const
+{
+	Tensor stress = *sp;
+    stress.xx -= pressure;
+    stress.yy -= pressure;
+    stress.zz -= pressure;
+    return stress;
+}
 
