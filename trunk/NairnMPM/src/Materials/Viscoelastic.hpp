@@ -39,9 +39,9 @@ class Viscoelastic : public MaterialBase
 		virtual void ValidateForUse(int) const;
     
 		// methods
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
         virtual double GetCpMinusCv(MPMBase *) const;
+		virtual void UpdatePressure(MPMBase *,double &,ResidualStrains *,double) const;
 		
 		// accessors
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
@@ -49,10 +49,12 @@ class Viscoelastic : public MaterialBase
 		virtual const char *MaterialType() const;
 		virtual double GetHistory(int ,char *) const;
 		virtual int MaterialTag() const;
+		virtual Tensor GetStress(Tensor *,double) const;
 		
     private:
         int currentGk,currentTauk;
-		double Ge,dGe,CTE,CME,Ke,Ka2sp;
+		double CTE,CME,Ka2sp;
+		double Kered,Gered,*TwoGkred;
         
 };
 
