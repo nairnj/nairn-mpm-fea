@@ -194,6 +194,13 @@ and rubber elastic materials as special cases.</td>
 <td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
+<tr>
+<td><a href="#DIZ"><code>ClampedNeohookean</code></a></td>
+<td>29</td>
+<td width="50%">Isotropic, hyperelastic-plastic material with elongations limited to maximum strains</td>
+<td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
+</tr>
+
 </table>
 
 <h3>Viscoelastic Materials, Small Strain Materials</h3>
@@ -366,7 +373,7 @@ and rubber elastic materials as special cases.</td>
 <li>ntaus - the number of relaxation times in the shear modulus. This number must exactly match the number of &lt;Gk&gt; and &lt;tauk&gt; settings and come before any of those settings</li>
 <li>Gk - the shear modulus for the next relaxation time (in MPa)</li>
 <li>tauk - the next relaxation time (in sec)</li>
-<li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
+<li>(other) - see the <a href="#common">properties common to all materials</a>.</li>
 </ul>
 
 <p>The relaxation shear modulus is given by G(t) = G<sub>0</sub> + G<sub>1</sub>exp(-t/tau<sub>1</sub>) + G<sub>2</sub>exp(-t/tau<sub>2</sub>) + ... +
@@ -393,7 +400,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 </li>
 <li>alpha - the thermal expansion coefficient (in ppm/C)</li>
 <li>&lt;IdealRubber/&gt; -  this command (with no value) makes the material an ideal rubber elastic material.</li>
-<li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
+<li>(other) - see the <a href="#common">properties common to all materials</a>.</li>
 </ul>
 
 <h3>History Data for Mooney-Rivlin Materials</h3>
@@ -416,7 +423,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 	&#160;&#160;&#160;&#160;2: U(J) = (Lame/2)(ln J)<sup>2</sup><br />
 </li>
 <li><code>alpha</code> for thermal expansion coefficient in ppm/degree C.</li>
-<li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
+<li>(other) - see the <a href="#common">properties common to all materials</a>.</li>
 </ul>
 	
 <h3>History Data for Neo-Hookean Material</h3>
@@ -459,7 +466,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <li>DeltaVOffset - offset volumetric strain in the transformed state. This property only applies for dilation rule (see above); it is ignored for distortion rule.</li>
 <li><code>&lt;reversible/&gt;</code> - this empty tag makes the transition reversible (the default is reversible).</li>
 <li><code>&lt;irreversible/&gt;</code> - this empty element makes the transition irreversible (the default is reversible).</li>
-<li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
+<li>(other) - see the <a href="#common">properties common to all materials</a>.</li>
 </ul>
 
 <h3>History Data for Bistable, Isotropic Elastic Materials</h3>
@@ -573,9 +580,27 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <li>T0 - the reference temperature (in Kelvin)</li>
 <li>rho - the reference density (in g/cm<sup>3</sup>) at reference temperature.</li>
 <li>Cv - if heat capacity is omitted or is less than or equal 1, C<sub>V</sub> is set to (3/2)R for a monotonic gas. If the entered value is greater than 1, C<sub>V</sub> is set to (5/2)R for a diatomic gas.</li>
-<li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
+<li>(other) - see the <a href="#common">properties common to all materials</a>.</li>
 </ul>
 
+<h2><a name="DIZ"></a>Clamped Neo-Hookean Material (Type=29)</h2>
+	
+<p>The material type is a large-deformation, isotropic, hyperelastic material. It yields when the tensile and/or compression elongation reaches critical values of 1+&theta;<sub>s</sub> and/or 1-&theta;<sub>c</sub>. The underlying elastic component of the deformation is a neo-Hookean material. After yielding, the mechanical properties soften in tension or harden in compression according to an entered hardening coefficient. The material properties are</p>
+	
+<ul>
+<li>CritTens and CritComp - enter critical strains &theta;<sub>s</sub> and &theta;<sub>c</sub> for critical strains for tension and compression.</li>
+<li>xihard - hardening parameter &xi;. The neo-Hookean moduli are scaled by exp(&xi;(1-J<sub>P</sub>)) where J<sub>P</sub> is the plastic volume ratio.</li>
+<li>Elastic - enter 0 to use neo-Hookean potential energy defined in paper that proposed this material or enter 1 to use <a href="#neohookean">Neo-Hookean material</a> potential energy. This potential energy applies to elastic component of the deformation.</li>
+<li>(other) - enter properties for the underlying <a href="#neohookean">Neo-Hookean material</a> (note that the UJOption can only be changed when Elastic is 1; UJOption is always 1 when Elastic is 0).</li>
+</ul>
+	
+<h3>History Data for Clamped Neo-Hookean Material</h3>
+	
+<ol>
+	<li>The volumetric ratio or J = V/V<sub>0</sub> (<i>i.e.</i>, the determinant of the deformation gradient)</li>
+	<li>The plastic volumetric ratio or J<sub>P</sub> = J/J<sub>E</sub> where J<sub>E</sub> is determinant of the elastic deformation gradient)</li>
+</ol>
+	
 <!-- Material  Section -->
 
 <h2><a name="heiso"></a>Isotropic, Hyperelastic-Plastic Material (Type=24)</h2>
@@ -602,7 +627,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 <li>K - the zero-pressure, bulk modulus (in MPa)</li>
 <li>viscosity - the liquid viscosity (in cP)</li>
 <li>alpha - the thermal expansion coefficient (in ppm/K)</li>
-<li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
+<li>(other) - see the <a href="#common">properties common to all materials</a>.</li>
 </ul>
 
 <h3>History Variables for Tait Liquid</h3>

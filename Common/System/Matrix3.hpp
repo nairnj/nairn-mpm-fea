@@ -29,14 +29,17 @@ class Matrix3
         // read only methods
         Matrix3 Transpose(void) const;
 		Matrix3 Exponential(int) const;
+		Vector Times(Vector *) const;
 		void Scale(double);
+        void Scale2D(double);
 		Matrix3 Inverse(void) const;
         Vector Eigenvalues(void) const;
-        Matrix3 RightDecompose(Matrix3 *) const;
-    
-        Matrix3 Eigenvectors(const Vector &) const;
-        Matrix3 RightStretch(const Vector &) const;
-        Matrix3 Rotation(const Vector &,const Matrix3 &) const;
+        Matrix3 RightDecompose(Matrix3 *,Vector *) const;
+		Matrix3 Eigenvectors(Vector &) const;
+	
+		// not currently used
+        //Matrix3 RightStretch(const Vector &) const;
+        //Matrix3 Rotation(const Vector &,const Matrix3 &) const;
 	
 		// operators
 		Matrix3 &operator+=(const Matrix3 &);
@@ -67,6 +70,8 @@ class Matrix3
     
         // class methods
         static Matrix3 Identity(void);
+        static Matrix3 CCWZRotation(double);
+		static Matrix3 Rotation3D(double,double,double,bool);
 	
 	private:
 		bool is2D;

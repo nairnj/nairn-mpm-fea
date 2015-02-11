@@ -147,7 +147,11 @@ double CrackVelocityFieldSingle::GetVolumeTotal(NodalPoint *ndptr) const
 }
 
 // get center of mass momentum for all material fields in this crack velocity field
-Vector CrackVelocityFieldSingle::GetCMatMomentum(void) const { return mvf[0]->pk; }
+Vector CrackVelocityFieldSingle::GetCMatMomentum(bool &hasParticles,double *fieldMass) const
+{	hasParticles = mvf[0]->numberPoints>0 ;
+	*fieldMass = mvf[0]->mass;
+	return mvf[0]->pk;
+}
 
 // get center of mass displacement (actually sum of displacement*mass so displacement is vector/total mass)
 Vector CrackVelocityFieldSingle::GetCMDisplacement(NodalPoint *np) const
@@ -174,7 +178,7 @@ Vector CrackVelocityFieldSingle::GetCMatFtot(void)
    Material i velocity becomes vi = pi/mi + dP/M
    Material i momentum change is mi vi = pi + mi dP/M
 */
-void CrackVelocityFieldSingle::ChangeMomentum(Vector *delP,bool postUpdate,double deltime)
+void CrackVelocityFieldSingle::ChangeCrackMomentum(Vector *delP,bool postUpdate,double deltime)
 {	if(mvf[0]->numberPoints>0)
 		mvf[0]->ChangeMatMomentum(delP,postUpdate,deltime);
 }

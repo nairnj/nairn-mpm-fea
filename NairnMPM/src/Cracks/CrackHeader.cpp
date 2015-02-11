@@ -26,12 +26,7 @@
 #include "Read_XML/ParseController.hpp"
 #include "Custom_Tasks/PropagateTask.hpp"
 
-// Include to find axisymmetric Jr using Broberg method
-// Comment out to use Bergkvist and Huang method
-// The Broberg one appears to be much better
-#define BROBERG_AS_METHOD_FOR_JR
-
-// Include to store J using 1 temp in J2. Calculation should use
+// Include to store J using 1 term in J2. Calculation should use
 // two terms to get that result in J1
 //#define RECORD_ONE_AND_TWO_TERM_RESULTS
 
@@ -48,7 +43,7 @@ int CrackHeader::warnThreeCracks;
 // globals
 CrackHeader *firstCrack;		// first crack
 int JGridSize = 2;				// size of J Integral contour
-int JContourType = 1;			// future might try different contours
+int JContourType = AXISYM_BROBERG_J;			// different methods in axisymmetric J integral
 int JTerms = -1;				// number of terms in J Integral calculation (default 1 or 2 if axisymmetric)
 int JGridEnergy = 0;			// Calculate work and kinetic energy on the grid GRID_JTERMS
 int numberOfCracks = 0;
@@ -356,11 +351,11 @@ short CrackHeader::MoveCrack(void)
 				scrk->MovePosition();
 				
 				// did element move
-				if(!scrk->FindElement()) return FALSE;
+				if(!scrk->FindElement()) return false;
 				
 				// make sure surface are on correct side of the crack
 				if(contact.GetPreventPlaneCrosses())
-				{	if(!scrk->CheckSurfaces()) return FALSE;
+				{	if(!scrk->CheckSurfaces()) return false;
 				}
 			}
 
@@ -372,7 +367,7 @@ short CrackHeader::MoveCrack(void)
 	// move crack plane particles by CM velocity
 	else
 	{	int iel;
-		double fn[maxShapeNodes];
+		double fn[maxShapeNodes],shapeNorm;
 		int j,nodeCounter;
 		Vector delv,cpos,vcm;
 		int nds[maxShapeNodes],numnds;
@@ -389,40 +384,33 @@ short CrackHeader::MoveCrack(void)
 				// initialize
 				ZeroVector(&delv);
 				nodeCounter=0;
+				shapeNorm=0.;
 				
-				/*
-				// renormalize shape functions in case missing some nodes
-				double fnorm=0.;
-				int numempty=0;
-				for(j=1;j<=numnds;j++)
-				{	if(nd[nds[j]]->GetCMVelocityTask8(&vcm))
-					{	fnorm+=fn[j];
-						AddScaledVector(&delv,&vcm,fn[j]);
-					}
-					else
-						numempty++;
-				}
-				if(numempty!=0 && numempty!=numnds) ScaleVector(&delv,1./fnorm);
-				*/
-						
 				// extrapolate to particle
 				for(j=1;j<=numnds;j++)
 				{	if(nd[nds[j]]->GetCMVelocityTask8(&vcm))
 					{	AddScaledVector(&delv,&vcm,fn[j]);
 						nodeCounter++;
+						shapeNorm+=fn[j];
 					}
 				}
 				
 				// move it or collapse it
 				if(nodeCounter>0)
-				{	scrk->MovePosition(timestep*delv.x,timestep*delv.y);		// in mm
+				{	// renormalize and multiply by dt to get displacement
+					ScaleVector(&delv,timestep/shapeNorm);
+					scrk->MovePosition(delv.x,delv.y);		// in mm
 					
-					// did element move
-					if(!scrk->FindElement()) return FALSE;
+					// did element move? But, if leaves grid, we assume a round off and try
+					// to revert to moving at the midplane of the two surfaces
+					if(!scrk->FindElement())
+					{	scrk->MovePositionToMidpoint();
+						if(!scrk->FindElement()) return false;
+					}
 					
 					// check surfaces
 					if(contact.GetPreventPlaneCrosses())
-					{	if(!scrk->CheckSurfaces()) return FALSE;
+					{	if(!scrk->CheckSurfaces()) return false;
 					}
 					
 					// development flag to collapse wide open cracks during cutting
@@ -434,7 +422,7 @@ short CrackHeader::MoveCrack(void)
 						if(cod>0.75)
 						{	scrk->x=(scrk->surfx[0]+scrk->surfx[1])/2.;
 							scrk->y=(scrk->surfy[0]+scrk->surfy[1])/2.;
-							if(!scrk->FindElement()) return FALSE;
+							if(!scrk->FindElement()) return false;
 							scrk->CollapseSurfaces();
 						}
 					}
@@ -485,47 +473,35 @@ short CrackHeader::MoveCrack(short side)
 			surfaceMass = 0;
 			nodeCounter = 0;
 			
-			// renormalize shape functions in case missing some nodes
-			/*
-			double fnorm=0.;
-			for(j=1;j<=numnds;j++)
-			{	if(nd[nds[j]]->IncrementDelvSideTask8(side,number,fn[j],&delv,&surfaceMass,scrk))
-					fnorm+=fn[j];
-				else
-					nodeCounter++;
-			}
-			if(nodeCounter!=0 && nodeCounter!=numnds) ScaleVector(&delv,1./fnorm);
-			
-			// move it
-			scrk->MoveSurfacePosition(side,timestep*delv.x,timestep*delv.y,(nodeCounter!=numnds),surfaceMass);		// in mm
-			 */
-			
 			// extrapolate those with velocity to the particle
 			for(j=1;j<=numnds;j++)
 			{	if(nd[nds[j]]->IncrementDelvSideTask8(side,number,fn[j],&delv,&surfaceMass,scrk))
 					nodeCounter++;
 			}
-            
-			// delv is Sum(fi vi) = Sum(fi pi/mi) and surfaceMass = Sum(fi mi)
-            // convert to displacement move
-			ScaleVector(&delv,timestep);
-            
-            //if(scrk==firstSeg && fabs(delv.y)>.01)
-            //    cout << "# " << number << "," << side << "," << delv.y << "," << nodeCounter << endl;
+
+			// if CRACK_SURFACE_BY_MOMENTUM_EXTRAP is defined
+			//     delv is Sum(fi pi) and surfaceMass = Sum(fi mi)
+			// otherwise
+			//     elv is Sum(fi vi) = Sum(fi pi/mi) and surfaceMass = Sum(fi)
+			// Both normalize to get velocity and multiply by dt to get displacement
+			if(nodeCounter>0) ScaleVector(&delv,timestep/surfaceMass);
 			
-			// move it (if returns true, check location of other side for element move again)
-			if(scrk->MoveSurfacePosition(side,delv.x,delv.y,(nodeCounter>0),surfaceMass))		// in mm
-			{	if(!scrk->FindElement(ABOVE_CRACK)) return FALSE;
+			// this method does not normalize shape functions
+			//ScaleVector(&delv,timestep);
+           
+			// move it (if returns true, check location of other side for element move again because it moved too)
+			if(scrk->MoveSurfacePosition(side,delv.x,delv.y,(nodeCounter>0)))		// in mm
+			{	if(!scrk->FindElement(ABOVE_CRACK)) return false;
 			}
 			
 			// did surface move elements
-			if(!scrk->FindElement(side)) return FALSE;
+			if(!scrk->FindElement(side)) return false;
 		}
             
         // on to next segement
         scrk=scrk->nextSeg;
     }
-    return TRUE;
+    return true;
 }
 
 // Update crack tractions on any segments with traction loaws
@@ -973,7 +949,7 @@ void CrackHeader::JIntegral(void)
 			
 			// Task 3 was to find crossing point, now done below
 
-			/* Task 4: Loop over all segments and evaluate J integral (from the primary term)
+ 			/* Task 4: Loop over all segments and evaluate J integral (from the primary term)
 				Transform to crack plane and save results
 			*/
 			DispField *sfld1,*sfld2;
@@ -1038,7 +1014,7 @@ void CrackHeader::JIntegral(void)
 					}
 					
 					// if does not cross the target crack, look for an interating crack
-					// This stops at first intersecting crack ans thus would miss more than
+					// This stops at first intersecting crack and thus would miss more than
 					//   one other crack intersecting the same segment.
 					if(foundSeg == NULL)
 					{	CrackHeader *nextCrack = firstCrack;
@@ -1072,7 +1048,7 @@ void CrackHeader::JIntegral(void)
 						}
 					}
 					
-					// If this contour segment cross a crack then must break into two contour segmnets
+					// If this contour segment crosses a crack then must break into two contour segmnets
 					// othersize use field [0] on both nodes
 					if(crackNum!=0)
 					{	// Create a phantom node at the crossing point
@@ -1100,8 +1076,8 @@ void CrackHeader::JIntegral(void)
                 cout << "#nodes " << node1->num << " to " << node2->num << ": ";
 #endif
 
-				// get r for axisymmetric calcs
-				if(fmobj->IsAxisymmetric())
+				// get r for Bergkvist and Huong axisymmetric calcs (JContourType always AXISYM_BROBERG_J when not axisymmetric)
+				if(JContourType != AXISYM_BROBERG_J)
 				{	r1 = node1->x/crackr;		// divide by a
 					r2 = node2->x/crackr;
 				}
@@ -1170,12 +1146,8 @@ void CrackHeader::JIntegral(void)
 				fForJx1=(wd1+kd1)*segNorm.x-termForJx1;
 				fForJx2=(wd2+kd2)*segNorm.x-termForJx2;
 
-				// add for two endpoints using midpoint rule
-#ifdef BROBERG_AS_METHOD_FOR_JR
-				Jxs = 0.5*(fForJx1 + fForJx2)*ds;		// N mm/mm^2
-#else
+				// add for two endpoints using midpoint rule (r1=r2=1 unless axisymmetry by Bergkvist)
 				Jxs = 0.5*(r1*fForJx1 + r2*fForJx2)*ds;	// N mm/mm^2
-#endif
 				Jx1 += Jxs;
 
 				// calculate Jy (or Jz if axisymmetric)
@@ -1190,13 +1162,8 @@ void CrackHeader::JIntegral(void)
 				fForJy1=(wd1+kd1)*segNorm.y-termForJy1;
 				fForJy2=(wd2+kd2)*segNorm.y-termForJy2;
 
-				// add for two endpoints using midpoint rule
-                // The r's (=r_i/a) for axisymmetric Jz integral
-#ifdef BROBERG_AS_METHOD_FOR_JR
-				Jys = 0.5*(fForJy1 + fForJy2)*ds;
-#else
+				// add for two endpoints using midpoint rule (r1=r2=1 unless axisymmetry by Bergkvist)
 				Jys = 0.5*(r1*fForJy1 + r2*fForJy2)*ds;
-#endif
 				Jy1 += Jys;
 #ifdef CONTOUR_PARTS
                 cout << "(Jxs,Jys)=(" << Jxs << "," << Jys << ")";
@@ -1283,13 +1250,15 @@ void CrackHeader::JIntegral(void)
 							// Since w=0, no change to above terms, but have some static terms for Jx=Jr only
 							// Units N/(m^2 mm) = 1e6 N/mm^3
 							Tensor sp = mpm[p]->ReadStressTensor();
-#ifdef BROBERG_AS_METHOD_FOR_JR
-							// See Broberg, Cracks and Fraction (1999), page 65
-							f2axisym += rho*(sp.xx*duxdx - sp.zz*mpm[p]->GetDwDz() + sp.xy*duydx)/xp;
-#else
-							// Bergkvist and Huong called J3D/(a dphi)
-							f2axisym += rho*(mpm[p]->GetWorkEnergy() - sp.zz*mpm[p]->GetDwDz())/crackr;
-#endif
+							
+							if(JContourType == AXISYM_BROBERG_J)
+							{	// See Broberg, Cracks and Fraction (1999), page 65
+								f2axisym += rho*(sp.xx*duxdx - sp.zz*mpm[p]->GetDwDz() + sp.xy*duydx)/xp;
+							}
+							else
+							{	// Bergkvist and Huong called J3D/(a dphi)
+								f2axisym += rho*(mpm[p]->GetWorkEnergy() - sp.zz*mpm[p]->GetDwDz())/crackr;
+							}
 						}
 					}
 				}
@@ -1309,8 +1278,37 @@ void CrackHeader::JIntegral(void)
 				energy associated with shear stress (later not yet implemented thought)
 			*/
 			if(hasTractionLaws)
-			{	tractionEnergy=startSeg->TractionEnergy(&crossPt,crkTipIdx,true);
-				bridgingReleased=startSeg->TractionEnergy(&crossPt,crkTipIdx,false);
+			{	CrackSegment *tipSegment = startSeg;
+				tractionEnergy=startSeg->TractionEnergy(&crossPt,crkTipIdx,true,&tipSegment);
+				bridgingReleased=startSeg->TractionEnergy(&crossPt,crkTipIdx,false,NULL);
+				
+				// extra traction correction if Bergkvist and Huong axisymmetric J integral
+				if(JContourType != AXISYM_BROBERG_J)
+				{	tractionEnergy *= crossPt.x/crackr;		// scale contour point energy
+					
+					// integrate tractions energy up to the crack tip
+					CrackSegment *closerSeg=tipSegment;
+					Vector previousPt;
+					if(tipSegment==startSeg)
+					{	// start at the contour point
+						previousPt = crossPt;
+					}
+					else
+					{	// zone is within the J contour, so start at root of the zone
+						previousPt.x = tipSegment->x;
+						previousPt.y = tipSegment->y;
+						closerSeg = (crkTipIdx==START_OF_CRACK) ? closerSeg->prevSeg : closerSeg->nextSeg ;
+					}
+					double extra = 0.;
+					while(closerSeg!=NULL)
+					{	double dr = closerSeg->x-previousPt.x;
+						previousPt.x = closerSeg->x;
+						previousPt.y = closerSeg->y;
+						extra += closerSeg->TractionEnergy(&previousPt,crkTipIdx,true,NULL)*dr;
+						closerSeg = (crkTipIdx==START_OF_CRACK) ? closerSeg->prevSeg : closerSeg->nextSeg ;
+					}
+					tractionEnergy += extra/crackr;
+				}
 			}
 			else
 			{	// set traction energy to energy due to shear if in contact (not implemented yet)
@@ -1339,7 +1337,7 @@ void CrackHeader::JIntegral(void)
 			tipCrk->Jint.x = Jx*crackDir.x + Jy*crackDir.y - tractionEnergy;		// Jtip or energy that will be released if crack grows
 			tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;                         // J2(x) - for growth normal to crack plane
 #ifdef RECORD_ONE_AND_TWO_TERM_RESULTS
-			tipCrk->Jint.y = Jx1*crackDir.x + Jy1*crackDir.y;						// J by one term (temporary)
+			tipCrk->Jint.y = Jx1*crackDir.x + Jy1*crackDir.y - tractionEnergy;		// J by one term (temporary)
 #endif
 			tipCrk->Jint.z = tipCrk->Jint.x + bridgingReleased;						// Jrel or energy released in current state
 #ifdef CONTOUR_PARTS
@@ -1353,6 +1351,7 @@ void CrackHeader::JIntegral(void)
 		{	// throwing "" signals to try again with the next nearest node
 			if(strlen(msg)==0)
 			{	secondTry=TRUE;
+                // contour is released below before trying again
 			}
 			else
 			{	cout << "# Crack No. " << number << ": "<< msg << endl;
@@ -1367,15 +1366,15 @@ void CrackHeader::JIntegral(void)
         
         /* Task 7: Release allocated objects
         */
-		if(crackPt!=NULL)
-		{	nextPt=crackPt;
-			while(TRUE)
-			{   prevPt=nextPt;
-				nextPt=prevPt->nextPoint;
-				delete prevPt;
-				if(nextPt==crackPt || nextPt==NULL) break;
-			}
-		}
+        if(crackPt!=NULL)
+        {	nextPt=crackPt;
+            while(TRUE)
+            {   prevPt=nextPt;
+                nextPt=prevPt->nextPoint;
+                delete prevPt;
+                if(nextPt==crackPt || nextPt==NULL) break;
+            }
+        }
 		
 		if(!secondTry) crkTipIdx++;
     } // end loop over crack tips
@@ -1461,7 +1460,7 @@ void CrackHeader::CrackTipHeating(void)
 }
 
 /* see if node is within tolerance (cell dimensions) of the crack tip
-	needs regular grid, otherwise returns FALSE
+	needs regular grid with equal elements (could revise when needed), otherwise returns false
 */
 bool CrackHeader::NodeNearTip(NodalPoint *ndi,double tol)
 {
@@ -1470,13 +1469,13 @@ bool CrackHeader::NodeNearTip(NodalPoint *ndi,double tol)
 	double dx = (ndi->x-scrk->x)/mpmgrid.gridx;
 	double dy = (ndi->y-scrk->y)/mpmgrid.gridy;
 	double dist = sqrt(dx*dx+dy*dy);
-	if(dist<tol) return TRUE;
+	if(dist<tol) return true;
     scrk=lastSeg;
 	dx = (ndi->x-scrk->x)/mpmgrid.gridx;
 	dy = (ndi->y-scrk->y)/mpmgrid.gridy;
 	dist = sqrt(dx*dx+dy*dy);
-	if(dist<tol) return TRUE;
-	return FALSE;
+	if(dist<tol) return true;
+	return false;
 }
 
 #pragma mark GLOBAL EXTENT CRACKS

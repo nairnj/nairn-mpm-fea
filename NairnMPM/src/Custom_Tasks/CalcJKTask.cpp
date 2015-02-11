@@ -60,6 +60,17 @@ CustomTask *CalcJKTask::Initialize(void)
 		cout << ", grid-based energies";
 	else
 		cout << ", particle-based energies";
+	
+	// Axisymmetric type
+	if(fmobj->IsAxisymmetric())
+	{	if(JContourType == AXISYM_BROBERG_J)
+		cout << ", Broberg axisymmetric J";
+	else
+		cout << ", Bergkvist and Huong axisymmetric J";
+	}
+	else
+		JContourType = AXISYM_BROBERG_J;
+	
 	cout << endl;
     return nextTask;
 }

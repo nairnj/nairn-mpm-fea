@@ -27,6 +27,8 @@
 		673EC9B716C9EB71007FFEB5 /* CarnotCycle.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 673EC9B516C9EB71007FFEB5 /* CarnotCycle.hpp */; };
 		6741B24817EDFF1300CFADC7 /* PressureLaw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6741B24617EDFF1300CFADC7 /* PressureLaw.cpp */; };
 		6741B24917EDFF1300CFADC7 /* PressureLaw.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6741B24717EDFF1300CFADC7 /* PressureLaw.hpp */; };
+		6797CABC1A89ABC5009C96FD /* ClampedNeohookean.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6797CABA1A89ABC5009C96FD /* ClampedNeohookean.cpp */; };
+		6797CABD1A89ABC5009C96FD /* ClampedNeohookean.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6797CABB1A89ABC5009C96FD /* ClampedNeohookean.hpp */; };
 		67A90CC1170F75C40028554A /* svninfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A738C0CC170E192800E4D675 /* svninfo.cpp */; };
 		67B213B611F90404007523EE /* CommonTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B213B411F90404007523EE /* CommonTask.hpp */; };
 		67B213B711F90404007523EE /* CommonTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B213B511F90404007523EE /* CommonTask.cpp */; };
@@ -439,6 +441,8 @@
 		673EC9B516C9EB71007FFEB5 /* CarnotCycle.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CarnotCycle.hpp; sourceTree = "<group>"; };
 		6741B24617EDFF1300CFADC7 /* PressureLaw.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PressureLaw.cpp; sourceTree = "<group>"; };
 		6741B24717EDFF1300CFADC7 /* PressureLaw.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PressureLaw.hpp; sourceTree = "<group>"; };
+		6797CABA1A89ABC5009C96FD /* ClampedNeohookean.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ClampedNeohookean.cpp; path = Materials/ClampedNeohookean.cpp; sourceTree = "<group>"; };
+		6797CABB1A89ABC5009C96FD /* ClampedNeohookean.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = ClampedNeohookean.hpp; path = Materials/ClampedNeohookean.hpp; sourceTree = "<group>"; };
 		67B213B411F90404007523EE /* CommonTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CommonTask.hpp; sourceTree = "<group>"; };
 		67B213B511F90404007523EE /* CommonTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CommonTask.cpp; sourceTree = "<group>"; };
 		67B213C611F90F84007523EE /* MPMTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MPMTask.hpp; sourceTree = "<group>"; };
@@ -1232,6 +1236,8 @@
 				A7D5DB43041028D50063AF10 /* Mooney.cpp */,
 				A7D66175196322E300757628 /* Neohookean.hpp */,
 				A7D66174196322E300757628 /* Neohookean.cpp */,
+				6797CABB1A89ABC5009C96FD /* ClampedNeohookean.hpp */,
+				6797CABA1A89ABC5009C96FD /* ClampedNeohookean.cpp */,
 				A7B6936814325B02006F6A27 /* HEAnisotropic.hpp */,
 				A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */,
 				A77F5ECC15FA6ED8005188E8 /* HEIsotropic.hpp */,
@@ -1629,6 +1635,7 @@
 				67FB2A0118901EB200417546 /* ShellController.hpp in Headers */,
 				A7D66177196322E300757628 /* Neohookean.hpp in Headers */,
 				6727B3D119E19853006D93EC /* CrossedCrack.hpp in Headers */,
+				6797CABD1A89ABC5009C96FD /* ClampedNeohookean.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1957,6 +1964,7 @@
 				67FB2A0018901EB200417546 /* ShellController.cpp in Sources */,
 				A7D66176196322E300757628 /* Neohookean.cpp in Sources */,
 				6727B3D019E19853006D93EC /* CrossedCrack.cpp in Sources */,
+				6797CABC1A89ABC5009C96FD /* ClampedNeohookean.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

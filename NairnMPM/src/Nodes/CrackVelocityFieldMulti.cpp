@@ -890,7 +890,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 				Vector fImp;
 				double rawEnergy;
 				
-				// Get raw surface area, it is divided by hperp in GetInterfaceForces()
+				// Get raw surface area, it is divided by hperp in when get interface forces
 				// Scale voltot=voli+rigidVolume to voltot*sqrt(2*vmin/voltot)
 				double rawSurfaceArea = sqrt(2.*fmin(voli,rigidVolume)*(voli+rigidVolume));
 				
@@ -1283,6 +1283,10 @@ void CrackVelocityFieldMulti::ReflectFtotDirection(Vector *norm,double deltime,C
 // total number of non-rigid points
 int CrackVelocityFieldMulti::GetNumberPointsNonrigid(void) { return numberPoints-numberRigidPoints; }
 
+// Look for presence on non rigid points
+// This counts fields that do not see cracks, will need revise to look for nonrigid particles that see cracks
+bool CrackVelocityFieldMulti::HasPointsNonrigid(void) const { return (numberPoints-numberRigidPoints) > 0; }
+
 // total mass all velocity fields (rigid particles mass not counted)
 double CrackVelocityFieldMulti::GetTotalMass(void) const
 {	int i;
@@ -1341,13 +1345,17 @@ double CrackVelocityFieldMulti::GetVolumeTotal(NodalPoint *ndptr) const
 }
 
 // get center of mass momentum for all nonrigid material fields in this crack velocity field
-Vector CrackVelocityFieldMulti::GetCMatMomentum(void) const
+Vector CrackVelocityFieldMulti::GetCMatMomentum(bool &hasParticles,double *foundMass) const
 {	Vector pk;
 	ZeroVector(&pk);
-	int i;
-	for(i=0;i<maxMaterialFields;i++)
+	hasParticles = false;
+	*foundMass = 0;
+	for(int i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-			AddVector(&pk,&mvf[i]->pk);
+		{	AddVector(&pk,&mvf[i]->pk);
+			*foundMass += mvf[i]->mass;
+			hasParticles = true;
+		}
 	}
 	return pk;
 }
@@ -1413,7 +1421,7 @@ MatVelocityField *CrackVelocityFieldMulti::GetRigidMaterialField(int *rigidField
    Material i velocity becomes vi = pi/mi + dP/M
    Material i momentum change is mi vi = pi + mi dP/M
 */
-void CrackVelocityFieldMulti::ChangeMomentum(Vector *delP,bool postUpdate,double deltime)
+void CrackVelocityFieldMulti::ChangeCrackMomentum(Vector *delP,bool postUpdate,double deltime)
 {
 	int i;
 	

@@ -66,23 +66,43 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
     // May need up to 8 (in 3D) for each of the numDnds (2 in 2D or 4 in 3D)
     int nds[8*numDnds+1];
     double fn[8*numDnds+1];
-    int numnds = CompactCornerNodes(numDnds,corners,cElem,ratio,nds,fn);
+    int numCnds = CompactCornerNodes(numDnds,corners,cElem,ratio,nds,fn);
     
     // Particle information about field
-    int i;
-    MaterialBase *matID=theMaterials[mpmptr->MatID()];		// material class object
-    int matfld=matID->GetField();                           // material field
-    Vector theFrc;
-    
+	const MaterialBase *matID = theMaterials[mpmptr->MatID()];		// material object for this particle
+	int matfld = matID->GetField();									// material velocity field
+		
+	// get crack velocity fields, if they are needed
+	int numnds;
+    int snds[maxShapeNodes];
+	if(firstCrack!=NULL)
+	{	const ElementBase *elref = theElements[mpmptr->ElemID()];		// element containing this particle
+		double fn[maxShapeNodes];
+		elref->GetShapeFunctions(&numnds,fn,snds,mpmptr);
+	}
+		
     // add force to each node
-    for(i=1;i<=numnds;i++)
+    Vector theFrc;
+	short vfld = 0;
+    for(int i=1;i<=numCnds;i++)
     {   // skip empty nodes
-        if(nd[nds[i]]->NumberNonrigidParticles())
+        if(nd[nds[i]]->NodeHasNonrigidParticles())
         {   // external force vector - tscaled has direction, surface area, and factor 1/2 (2D) or 1/4 (3D) to average the nodes
             CopyScaleVector(&theFrc,&tscaled,tmag*fn[i]);
 			
-			// This adds to first active field. Better to find right one here or in NodalPoint
-            nd[nds[i]]->AddTractionTask3(mpmptr,matfld,&theFrc);
+			// Find the matching field
+			if(firstCrack!=NULL)
+			{	vfld = -1;
+				for(int ii=1;ii<=numnds;ii++)
+				{	if(nds[i] == snds[ii])
+					{	vfld = mpmptr->vfld[ii];
+						break;
+					}
+				}
+			}
+			
+			// add to velocity field
+            nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc);
         }
     }
    

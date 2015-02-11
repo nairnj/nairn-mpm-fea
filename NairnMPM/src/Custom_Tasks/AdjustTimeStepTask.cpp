@@ -96,10 +96,10 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     
     int p;
     short matid;
-    double area,volume,crot,tst,dcell;
+    double area,volume,crot,tst;
     
     // get grid dimensions
-    double minSize=mpmgrid.GetMinCellDimension()/10.;	// in cm
+    double dcell = mpmgrid.GetMinCellDimension()/10.;	// in cm
     
     if(lastReportedTimeStep<0) lastReportedTimeStep = timestep;
     
@@ -115,12 +115,10 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
 		// element and mp properties
 		if(fmobj->IsThreeD())
 		{	volume=theElements[mpm[p]->ElemID()]->GetVolume()/1000.;	// in cm^3
-			dcell = (minSize>0.) ? minSize : pow(volume,1./3.) ;
 		}
 		else
 		{	area=theElements[mpm[p]->ElemID()]->GetArea()/100.;	// in cm^2
 			volume=mpm[p]->thickness()*area/10.;				// in cm^2
-			dcell = (minSize>0.) ? minSize : sqrt(area) ;
 		}
         
         // check time step using convergence condition
@@ -142,10 +140,12 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     // report if changed by 5% since last reported change
     if(verbose!=0)
     {   double ratio = timestep/lastReportedTimeStep;
-        if(ratio < 0.95)
-            cout << "# time step reduced to " << timestep*1000. << " ms" << endl;
-        else if(ratio > 1.05)
-            cout << "# time step increased to " << timestep*1000. << " ms" << endl;
+        if(ratio < 0.95 || ratio>1.05)
+		{	if(timestep<lastReportedTimeStep)
+				cout << "# time step reduced to " << timestep*1000. << " ms" << endl;
+			else
+				cout << "# time step increased to " << timestep*1000. << " ms" << endl;
+		}
         lastReportedTimeStep = timestep;
     }
 

@@ -70,7 +70,7 @@ class CrackVelocityField
 		void DeleteStrainField(void);
 		
 		short IncrementDelvTask8(double,Vector *,double *);
-		int CollectMomentaTask8(Vector *);
+		int CollectMomentaTask8(Vector *,double *) const;
 		void SetCMVelocityTask8(Vector *,int);
 		bool GetCMVelocityTask8(Vector *) const;
 	
@@ -104,10 +104,10 @@ class CrackVelocityField
 		virtual void AddKineticEnergyAndMass(double &,double &) = 0;
 		virtual double GetVolumeNonrigid(void) = 0;
 		virtual double GetVolumeTotal(NodalPoint *) const = 0;
-		virtual Vector GetCMatMomentum(void) const = 0;
+		virtual Vector GetCMatMomentum(bool &,double *) const = 0;
 		virtual Vector GetCMDisplacement(NodalPoint *) const = 0;
 		virtual Vector GetCMatFtot(void) = 0;
-		virtual void ChangeMomentum(Vector *,bool,double) = 0;
+		virtual void ChangeCrackMomentum(Vector *,bool,double) = 0;
 		virtual int CopyFieldMomenta(Vector *,int) = 0;
 		virtual int PasteFieldMomenta(Vector *,int) = 0;
 		Vector GetVelocity(int);
@@ -115,6 +115,7 @@ class CrackVelocityField
 		virtual int GetNumberPoints(void);
 		virtual void SetNumberPoints(int);
 		virtual int GetNumberPointsNonrigid(void);
+		virtual bool HasPointsNonrigid(void) const;
 		virtual void Describe(void) const;
 		virtual void SumAndClearRigidContactForces(Vector *,bool);
 	
@@ -122,7 +123,8 @@ class CrackVelocityField
 		static bool ActiveField(CrackVelocityField *);
         static bool ActiveCrackField(CrackVelocityField *);
 		static bool ActiveNonrigidField(CrackVelocityField *cvf);
-		static CrackVelocityField *CreateCrackVelocityField(short,int);
+		static bool ActiveNonrigidField(CrackVelocityField *,int);
+		static CrackVelocityField *CreateCrackVelocityField(int,short,int);
 	
 	protected:
 		// variables (changed in MPM time step)

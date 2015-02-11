@@ -126,9 +126,9 @@ const char *Neohookean::VerifyAndLoadProperties(int np)
 	
 	// G1 and G2 in Specific units using initial rho
 	// for MPM (units N/m^2 cm^3/g)
-	Gsp=G*1.0e+06/rho;
-	Lamesp=Lame*1.0e+06/rho;
-    K0sp = Lamesp + 2.*Gsp/3.;
+	pr.Gsp = G*1.0e+06/rho;
+	pr.Lamesp=Lame*1.0e+06/rho;
+    pr.Ksp = pr.Lamesp + 2.*pr.Gsp/3.;
 	
     // heating gamma0
     double alphaV = 3.e-6*aI;
@@ -170,14 +170,10 @@ double Neohookean::GetHistory(int num,char *historyPtr) const
 */
 void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
-	// incremental energy, store initial stress
-	Tensor *sporig=mptr->GetStressTensor();
-	Tensor st0 = *sporig;
-	
 	// Update strains and rotations and Left Cauchy strain
 	double detDf = IncrementDeformation(mptr,du,NULL,np);
 	
-    // get pointer to new left Cauchy strain
+	// get pointer to new left Cauchy strain
     Tensor *B = mptr->GetElasticLeftCauchyTensor();
 	
     // account for residual stresses
@@ -194,9 +190,9 @@ void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 		
 		switch(UofJOption)
 		{   case J_MINUS_1_SQUARED:
-			{	double a = Lamesp*arg + Gsp*pow(Jres,4./3.);
-				double b = Lamesp*sqrt(arg);
-				xn = Jres*(b + sqrt(b*b + 4.*Gsp*a))/(2.*a);
+			{	double a = pr.Lamesp*arg + pr.Gsp*pow(Jres,4./3.);
+				double b = pr.Lamesp*sqrt(arg);
+				xn = Jres*(b + sqrt(b*b + 4.*pr.Gsp*a))/(2.*a);
 				xn *= xn;
 				break;
 			}
@@ -206,8 +202,8 @@ void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 				int iter=1;
 				while(iter<20)
 				{	// get f and df/dxn
-					fx = Gsp*(xn-Jres23) + 0.5*Lamesp*Jres23*log(xn*arg/(Jres*Jres));
-					fxp = Gsp + Lamesp*Jres23/(2*xn);
+					fx = pr.Gsp*(xn-Jres23) + 0.5*pr.Lamesp*Jres23*log(xn*arg/(Jres*Jres));
+					fxp = pr.Gsp + pr.Lamesp*Jres23/(2*xn);
 					
 					// new prediction for solution
 					xnp1 = xn - fx/fxp;
@@ -219,13 +215,13 @@ void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 			}
 			case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
 			default:
-				xn = Jres*Jres*(Lamesp+2.*Gsp)/(Lamesp*arg+2.*Gsp*pow(Jres,4./3.));
+				xn = Jres*Jres*(pr.Lamesp+2.*pr.Gsp)/(pr.Lamesp*arg+2.*pr.Gsp*pow(Jres,4./3.));
 				break;
 		}
 		
         // Done and xn = new B->zz = Fzz^2 = dFzz*(old Bzz)*dFzz = dFzz^2*(old Bzz),
 		//    and Fzz = dFzz*(old Fzz) = 1 + ep->zz
-        //cout << xn << "," << pow(Jres,2./3.)*Lamesp*(xn*arg/(Jres*Jres)-1.) + 2.*Gsp*(xn-pow(Jres,2./3.)) << endl;;
+        //cout << xn << "," << pow(Jres,2./3.)*pr.Lamesp*(xn*arg/(Jres*Jres)-1.) + 2.*pr.Gsp*(xn-pow(Jres,2./3.)) << endl;;
         double dFzz = sqrt(xn/B->zz);
         B->zz = xn;
 		
@@ -240,18 +236,22 @@ void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     double J = detDf*mptr->GetHistoryDble();
     mptr->SetHistoryDble(J);
 	
+	// for incremental energy, store initial stress
+	Tensor *sporig=mptr->GetStressTensor();
+	Tensor st0 = *sporig;
+	
 	// account for residual stresses
 	double Jeff = J/Jres;
 	
     // update pressure
 	double p0=mptr->GetPressure();
-	double Pterm = J*GetVolumetricTerms(Jeff,Lamesp) + Jres*Gsp*((B->xx+B->yy+B->zz)/(3.*Jres23) - 1.);
+	double Pterm = J*GetVolumetricTerms(Jeff,pr.Lamesp) + Jres*pr.Gsp*((B->xx+B->yy+B->zz)/(3.*Jres23) - 1.);
 	
     // artifical viscosity
     double delV = 1. - 1./detDf;                        // total volume change
     double QAVred = 0.,AVEnergy=0.;
     if(delV<0. && artificialViscosity)
-    {   double c = sqrt(Ksp/1000.);           // m/sec
+    {   double c = sqrt(pr.Ksp/1000.);           // m/sec
         QAVred = GetArtificalViscosity(delV/delTime,c);
         if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
     }
@@ -270,7 +270,7 @@ void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 	
     // Account for density change in specific stress
     // i.e.. Get (Kirchoff Stress)/rho0
-	double GJeff = resStretch*Gsp;		// = J*(Jres^(1/3) G/J) to get Kirchoof
+	double GJeff = resStretch*pr.Gsp;		// = J*(Jres^(1/3) G/J) to get Kirchoof
     
 	// find deviatoric (Cauchy stress)J/rho0 = deviatoric (Kirchoff stress)/rho0
 	Tensor *sp=mptr->GetStressTensor();
@@ -299,14 +299,14 @@ void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 	// particle isentropic temperature increment
 	double Kratio;				// = rho_0 K/(rho K_0)
     double Jeff1third = pow(Jeff,1./3.);
-    double Gterm = Gsp*(1. - Jeff1third*Jeff1third + 2./(3.*Jeff1third));
+    double Gterm = pr.Gsp*(1. - Jeff1third*Jeff1third + 2./(3.*Jeff1third));
 	switch(UofJOption)
 	{   case J_MINUS_1_SQUARED:
-			Kratio = Lamesp+Jeff + Gterm;
+			Kratio = pr.Lamesp+Jeff + Gterm;
 			break;
 			
 		case LN_J_SQUARED:
-			Kratio = Lamesp*(1-log(Jeff))/(Jeff*Jeff) + Gterm;
+			Kratio = pr.Lamesp*(1-log(Jeff))/(Jeff*Jeff) + Gterm;
 			break;
 			
 		case HALF_J_SQUARED_MINUS_1_MINUS_LN_J:
@@ -314,7 +314,7 @@ void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 			Kratio = 0.5*(Jeff + 1./Jeff);
 			break;
 	}
-    Kratio /= K0sp;
+    Kratio /= pr.Ksp;
     double dTq0 = -J*Kratio*gamma0*mptr->pPreviousTemperature*delV;
     
     // thermodynamics heat and temperature

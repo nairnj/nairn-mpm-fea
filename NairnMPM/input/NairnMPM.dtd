@@ -151,7 +151,7 @@
 				| GRT | GTR | Gyz | Gzy | GZT | GTZ
 				| nuxy | nuyx | nuRZ | nuZR | nuxz | nuzx | nuRT | nuTR | nuyz | nuzy | nuZT | nuTZ
 				| alphax | alphay | alphaz | alphaR | alphaZ
-				| betax | betay | betaz | betaR | betaZ
+				| betax | betay | betaz | betaR | betaZ | CritComp | CritTens | xihard | Elastic
 				| K | G0 | ntaus | Gk | tauk | xGrow | yGrow | shareMatField
 				| G1 | G2 | speed | gain | p | maxLength | Propagate | AltPropagate | initTime
 				| K0 | Kd | Gd | alpha0 | alphad | transition | critical | DeltaVOffset | stress | function | minCOD
@@ -435,6 +435,10 @@
 <!ELEMENT	betaz (#PCDATA)>
 <!ELEMENT	betaR (#PCDATA)>
 <!ELEMENT	betaZ (#PCDATA)>
+<!ELEMENT	CritComp (#PCDATA)>
+<!ELEMENT	CritTens (#PCDATA)>
+<!ELEMENT	xihard (#PCDATA)>
+<!ELEMENT	Elastic (#PCDATA)>
 <!ELEMENT	KIc (#PCDATA)>
 <!ELEMENT	KIexp (#PCDATA)>
 <!ELEMENT	KIIc (#PCDATA)>

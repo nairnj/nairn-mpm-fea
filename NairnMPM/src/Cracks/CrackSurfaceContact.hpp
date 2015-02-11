@@ -46,15 +46,15 @@ class CrackSurfaceContact
         // methods
 		short HasContact(int);
 		short IsImperfect(int);
-		short GetDeltaMomentum(NodalPoint *np,Vector *,CrackVelocityField *,CrackVelocityField *,Vector *,int,bool,double);
+		bool GetDeltaMomentum(NodalPoint *np,Vector *,CrackVelocityField *,CrackVelocityField *,Vector *,int,bool,double,int *);
 		short MaterialContact(Vector *,Vector *,Vector *,double,bool,double);
-		void Output();
+		void Output(void);
 		void CrackOutput(bool,double,double,double,double,int);
 		void MaterialOutput(void);
-		short GetInterfaceForce(NodalPoint *,Vector *,CrackVelocityField *,CrackVelocityField *,Vector *,int,double *,double);
-		bool GetMoveOnlySurfaces(void);
+		short GetInterfaceForceOnCrack(NodalPoint *,Vector *,CrackVelocityField *,CrackVelocityField *,Vector *,int,double *,double);
+		bool GetMoveOnlySurfaces(void) const;
 		void SetMoveOnlySurfaces(bool);
-		bool GetPreventPlaneCrosses(void);
+		bool GetPreventPlaneCrosses(void) const;
 		void SetPreventPlaneCrosses(bool);
 		int GetMaterialContactLaw(int,int);
 		double GetMaterialFriction(int,int);

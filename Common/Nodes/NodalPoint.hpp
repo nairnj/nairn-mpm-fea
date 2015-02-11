@@ -79,15 +79,16 @@ class NodalPoint : public LinkedObject
 	
 		void AddFtotTask3(short,int,Vector *);
 		void AddFtotSpreadTask3(short,Vector);
-		void AddTractionTask3(MPMBase *,int,Vector *);
+		void AddTractionTask3(MPMBase *,short,int,Vector *);
 		void CopyGridForces(NodalPoint *);
 		void UpdateMomentaOnNode(double);
 		void IncrementDelvaTask5(short,int,double,Vector *,Vector *) const;
 	
 		short IncrementDelvSideTask8(short,int,double,Vector *,double *,CrackSegment *) const;
+		short GetFieldForSurfaceParticle(short,int,CrackSegment *) const;
 		void SurfaceCrossesCracks(double,double,double,double,CrackField *) const;
 		int SurfaceCrossesOneCrack(double,double,double,double,int) const;
-		bool SurfaceCrossesOtherCrack(double,double,double,double,int) const;
+		int SurfaceCrossesOtherCrack(double,double,double,double,int) const;
 		void CalcCMVelocityTask8(void);
 		bool GetCMVelocityTask8(Vector *) const;
 	
@@ -101,6 +102,7 @@ class NodalPoint : public LinkedObject
         void DeleteDisp(NodalPoint *);
 		int NumberParticles(void);
 		int NumberNonrigidParticles(void) const;
+		bool NodeHasNonrigidParticles(void) const;
 		double GetNodalMass() const;
 		void Describe(void) const;
 		void AddDisplacement(short,int,double,Vector *);
@@ -121,7 +123,7 @@ class NodalPoint : public LinkedObject
         void CrackContact(bool,double,CrackNode **,CrackNode **);
 		void CrackContactThree(int,bool,double);
 		void CrackInterfaceForce(void);
-		void InterfaceForceThree(int);
+		void InterfaceForceInteractingCracks(int);
 		void MaterialContactOnNode(double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
         void MaterialInterfaceForce(MaterialInterfaceNode *);
 		void GetMatVolumeGradient(int,Vector *) const;
@@ -131,8 +133,7 @@ class NodalPoint : public LinkedObject
         void SetFtotDirection(Vector *,double,Vector *);
         void AddFtotDirection(Vector *,double,double,Vector *);
 		void ReflectFtotDirection(Vector *,double,NodalPoint *,Vector *);
-        Vector GetCMatMomentum(void) const;
-		void SetFixedDirection(int);
+ 		void SetFixedDirection(int);
 		void UnsetFixedDirection(int);
 		void CalcTotalMassAndCount(void);
 #ifdef COMBINE_RIGID_MATERIALS
@@ -151,7 +152,7 @@ class NodalPoint : public LinkedObject
 		static void GetGridCMVelocitiesTask8(void);
 	
 	protected:
-		double mass;				// total mass
+		double nodalMass;				// total mass
 #endif
     
     private:
@@ -160,7 +161,7 @@ class NodalPoint : public LinkedObject
         //methods - MPM only
 		void AverageStrain(DispField *,DispField *,DispField *,double);
         void AdjustContact(short,short,Vector *,int,bool,double);
-		void AddInterfaceForce(short,short,Vector *,int);
+		void AddInterfaceForceOnCrack(short,short,Vector *,int);
 #endif
 
 };
