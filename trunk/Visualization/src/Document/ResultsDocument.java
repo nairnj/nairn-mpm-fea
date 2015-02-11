@@ -11,6 +11,7 @@ import geditcom.JNFramework.JNUtilities;
 import java.awt.geom.*;
 import java.io.*;
 import java.nio.*;
+
 import javax.swing.table.*;
 import java.util.*;
 
@@ -108,16 +109,19 @@ public class ResultsDocument extends AbstractTableModel
 		int nnodes,nelems;
 		try
 		{	// get nodes and elements
-			s=new Scanner(summary).useDelimiter("\\r\\n|\\n|\\r");
+			s=new Scanner(summary);
+			s.useDelimiter("\\r\\n|\\n|\\r");
 			s.useLocale(Locale.US);
 			s.next();
 			s.next();
+			
 			sline=new Scanner(s.next());
 			sline.useLocale(Locale.US);
 			sline.next();
 			nnodes=sline.nextInt();
 			sline.next();
 			nelems=sline.nextInt();
+			sline.close();
 		
 			// Options are 2D Plane Strain Analysis, 2D Plane Stress Analysis, Axisymmetric Analysis,
 			//	2D Plane Strain MPM Analysis, 2D Plane Stress MPM Analysis, 3D MPM Analysis
@@ -145,6 +149,9 @@ public class ResultsDocument extends AbstractTableModel
 				if(sline.next().equals("MPM"))
 					np = (np==PLANE_STRAIN) ? PLANE_STRAIN_MPM : PLANE_STRESS_MPM;
 			}
+			sline.close();
+			
+			s.close();
 		}
 		catch(NoSuchElementException e)
 		{	throw new Exception("Could not decode analysis type for this file");
@@ -169,7 +176,9 @@ public class ResultsDocument extends AbstractTableModel
 				ypt=s.nextDouble()*lengthScale;
 				zpt=s.nextDouble()*lengthScale;
 				if(nodeNum!=prevNodeNum+1)
+				{	s.close();
 					throw new Exception("Some node numbers are missing");
+				}
 				addNode(nodeNum,xpt,ypt,zpt);
 				prevNodeNum=nodeNum;
 			}
@@ -180,11 +189,14 @@ public class ResultsDocument extends AbstractTableModel
 				xpt=s.nextDouble()*lengthScale;
 				ypt=s.nextDouble()*lengthScale;
 				if(nodeNum!=prevNodeNum+1)
+				{	s.close();
 					throw new Exception("Some node numbers are missing");
+				}
 				addNode(nodeNum,xpt,ypt);
 				prevNodeNum=nodeNum;
 			}
 		}
+		s.close();
 		if(prevNodeNum!=nnodes)
 			throw new Exception("Number of nodes does not match expected number of nodes.");
 		
@@ -209,7 +221,9 @@ public class ResultsDocument extends AbstractTableModel
 		while(s.hasNextInt())
 		{	elemNum=s.nextInt();				// element number
 			if(elemNum!=prevElemNum+1)
+			{	s.close();
 				throw new Exception("Some element numbers are missing");
+			}
 			elemID=s.nextInt();					// element ID
 			
 			// material and thickness
@@ -243,13 +257,15 @@ public class ResultsDocument extends AbstractTableModel
 			addElement(elemNum,elemID,nds,matID,elemAngle,elemThickness*lengthScale);
 			prevElemNum=elemNum;
 		}
+		s.close();
 		if(prevElemNum!=nelems)
 			throw new Exception("Number of elements does not match expected number of elements.");
 		
 		//----------------------------------------------------------
 		// defined materials
 		String matls=section("DEFINED MATERIALS");
-		s=new Scanner(matls).useDelimiter("\\r\\n|\\n|\\r");
+		s=new Scanner(matls);
+		s.useDelimiter("\\r\\n|\\n|\\r");
 		s.useLocale(Locale.US);
 		while(true)
 		{	// scan to start of next material and get its name
@@ -334,6 +350,7 @@ public class ResultsDocument extends AbstractTableModel
 			matl.decodeData(s);
 			materials.add(matl);
 		}
+		s.close();
 
 		//----------------------------------------------------------
 		// mesh boundary conditions
@@ -432,7 +449,8 @@ public class ResultsDocument extends AbstractTableModel
 			}
 			
 			bcs=section("FULL MASS MATRIX");
-			s=new Scanner(bcs).useDelimiter("\\r\\n|\\n|\\r");
+			s=new Scanner(bcs);
+			s.useDelimiter("\\r\\n|\\n|\\r");
 			s.useLocale(Locale.US);
 			// scan to grid info
 			String gridInfo=null;
@@ -447,10 +465,12 @@ public class ResultsDocument extends AbstractTableModel
 					gridInfo=gridLine.substring(beginIndex+1,gridLine.length());
 				}
 			}
+			s.close();
 			if(gridInfo!=null)
 			{	// read grid info and find relative cell sides
 				// mininimum side scale is 1 and other are relative to that side
-				sline=new Scanner(gridInfo).useDelimiter("[ :]");
+				sline=new Scanner(gridInfo);
+				sline.useDelimiter("[ :]");
 				sline.useLocale(Locale.US);
 				if(sline.hasNextDouble())
 					xscale=sline.nextDouble()*lengthScale;
@@ -494,6 +514,8 @@ public class ResultsDocument extends AbstractTableModel
 						xscale=1.;
 					}
 				}
+				
+				sline.close();
 			}
 		}
 		
@@ -510,7 +532,9 @@ public class ResultsDocument extends AbstractTableModel
 				while(s.hasNextInt())
 				{	nodeNum=s.nextInt();		// node number here
 					if(nodeNum>nnodes || nodeNum<1)
+					{	s.close();
 						throw new Exception("Found nodal bondary condition with unexpected node number.");
+					}
 					dof=s.nextInt();
 					bcLoad=s.nextDouble();
 					bcAngle=0.;
@@ -541,7 +565,9 @@ public class ResultsDocument extends AbstractTableModel
 				while(s.hasNextInt())
 				{	elemNum=s.nextInt();		// element number here
 					if(elemNum>nelems || elemNum<1)
+					{	s.close();
 						throw new Exception("Found element boundary condition with unexpected element number.");
+					}
 					face=s.nextInt();			// face number
 					orient=s.next();			// "Normal" or "Shear"
 					str1=s.nextDouble();		// 3stresses
@@ -580,13 +606,15 @@ public class ResultsDocument extends AbstractTableModel
 		// read archive list
 		if(isMPMAnalysis())
 		{	String archives=section("ARCHIVED ANALYSIS RESULTS");
-			s=new Scanner(archives).useDelimiter("\\r\\n|\\n|\\r");
+			s=new Scanner(archives);
+			s.useDelimiter("\\r\\n|\\n|\\r");
 			s.useLocale(Locale.US);
 			s.next();
 			s.next();
 			
 			// root file name
-			sline=new Scanner(s.next()).useDelimiter(": ");
+			sline=new Scanner(s.next());
+			sline.useDelimiter(": ");
 			sline.useLocale(Locale.US);
 			sline.next();
 			line=sline.next();
@@ -597,30 +625,41 @@ public class ResultsDocument extends AbstractTableModel
 				archDir="";
 			setPath(file.getParentFile(),archDir);
 			String ptsPath = line.substring(0, line.length()-1)+"_PtSizes.txt";
+			sline.close();
 			
 			// archive format and check it
-			sline=new Scanner(s.next()).useDelimiter(": ");
+			sline=new Scanner(s.next());
+			sline.useDelimiter(": ");
 			sline.useLocale(Locale.US);
 			sline.next();
 			setArchFormat(sline.next());
 			if(archFormat.length()>ReadArchive.ARCH_MAXMPMITEMS)
 			{	for(int ii=ReadArchive.ARCH_MAXMPMITEMS;ii<archFormat.length();ii++)
 				{	if(archFormat.charAt(ii)=='Y')
+					{	s.close();
+						sline.close();
 						throw new Exception("This archive includes data not supported by this version of NairnFEAMPMViz");
+					}
 				}
 			}
+			sline.close();
 			
 			// crack archive format
-			sline=new Scanner(s.next()).useDelimiter(": ");
+			sline=new Scanner(s.next());
+			sline.useDelimiter(": ");
 			sline.useLocale(Locale.US);
 			sline.next();
 			setCrackFormat(sline.next());
 			if(crackFormat.length()>ReadArchive.ARCH_MAXCRACKITEMS)
 			{	for(int ii=ReadArchive.ARCH_MAXCRACKITEMS;ii<crackFormat.length();ii++)
 				{	if(crackFormat.charAt(ii)=='Y')
+					{	s.close();
+						sline.close();
 						throw new Exception("This archive includes data not supported by this version of NairnFEAMPMViz");
+					}
 				}
 			}
+			sline.close();
 			
 			// archive files
 			s.next();
@@ -638,6 +677,7 @@ public class ResultsDocument extends AbstractTableModel
 				Double atime=new Double(words[1]);
 				addArchiveFile(atime.doubleValue()*timeScale,words[2]);
 			}
+			s.close();
 			
 			// error in no files were found
 			if(archiveTimes.size()<1)
@@ -651,9 +691,11 @@ public class ResultsDocument extends AbstractTableModel
 				char [] buffer=new char [(int)ptsFile.length()];
 				fr.read(buffer);
 				String ptsSection=new String(buffer);
+				fr.close();
 				
 				if(ptsSection.length()>10)
-				{	s=new Scanner(ptsSection ).useDelimiter("\\r\\n|\\n|\\r");
+				{	s=new Scanner(ptsSection );
+					s.useDelimiter("\\r\\n|\\n|\\r");
 					s.useLocale(Locale.US);
 					s.next();
 					s.next();
@@ -668,7 +710,9 @@ public class ResultsDocument extends AbstractTableModel
 						pointSizes.add(new Double(pline.nextDouble()));
 						pointSizes.add(new Double(pline.nextDouble()));
 						pointSizes.add(new Double(pline.nextDouble()));
+						pline.close();
 					}
+					s.close();
 				}
 			}
 		}
@@ -687,7 +731,9 @@ public class ResultsDocument extends AbstractTableModel
 				while(s.hasNextInt())
 				{	numFound=s.nextInt();		// node number
 					if(numFound>nnodes || numFound<1)
+					{	s.close();
 						throw new Exception("Found nodal displacement with unexpected node number.");
+					}
 					anode=nodes.get(numFound-1);
 					anode.dispx=s.nextDouble()*lengthScale;
 					anode.dispy=s.nextDouble()*lengthScale;
@@ -697,6 +743,7 @@ public class ResultsDocument extends AbstractTableModel
 					dymax=Math.max(dymax,anode.y+anode.dispy);
 				}
 				feaArchFormat[ReadArchive.ARCH_FEADisplacements]='Y';
+				s.close();
 			}
 			
 			for(i=0;i<elements.size();i++)
@@ -713,7 +760,9 @@ public class ResultsDocument extends AbstractTableModel
 				while(s.hasNextInt())
 				{	numFound=s.nextInt();		// node number
 					if(numFound>nnodes || numFound<1)
+					{	s.close();
 						throw new Exception("Found nodal displacement with unexpected node number.");
+					}
 					anode=nodes.get(numFound-1);
 					anode.sigxx=s.nextDouble();
 					anode.sigyy=s.nextDouble();
@@ -721,6 +770,7 @@ public class ResultsDocument extends AbstractTableModel
 					anode.sigxy=s.nextDouble();
 				}
 				feaArchFormat[ReadArchive.ARCH_FEAAvgStress]='Y';
+				s.close();
 			}
 			
 			// FEA element energies
@@ -734,12 +784,15 @@ public class ResultsDocument extends AbstractTableModel
 				while(s.hasNextInt())
 				{	elemNum=s.nextInt();		// element number
 					if(elemNum>nelems || elemNum<1)
+					{	s.close();
 						throw new Exception("Found element energy with unexpected element number.");
+					}
 					aelem=elements.get(elemNum-1);
 					aelem.energy=s.nextDouble();
 					totalEnergy += aelem.energy;
 				}
 				feaArchFormat[ReadArchive.ARCH_FEAElemEnergy]='Y';
+				s.close();
 			}
 			
 			// NODAL FORCES AND ELEMENT STRESSES (FEA)
@@ -760,7 +813,9 @@ public class ResultsDocument extends AbstractTableModel
 					}
 					else
 					{	if(aelem==null)
+						{	s.close();
 							throw new Exception("Found element results outside element definition.");
+						}
 					}
 					
 					// skip to first number
@@ -774,7 +829,9 @@ public class ResultsDocument extends AbstractTableModel
 						if(aelem==null)
 						{	elemNum=s.nextInt();
 							if(elemNum<1 || elemNum>nelems)
+							{	s.close();
 								throw new Exception("Found element results with unexpected element number.");
+							}
 							aelem=elements.get(elemNum-1);
 						}
 						
@@ -792,7 +849,9 @@ public class ResultsDocument extends AbstractTableModel
 						if(aelem==null)
 						{	elemNum=s.nextInt();
 							if(elemNum<1 || elemNum>nelems)
+							{	s.close();
 								throw new Exception("Found element results with unexpected element number.");
+							}
 							aelem=elements.get(elemNum-1);
 						}
 						
@@ -813,6 +872,8 @@ public class ResultsDocument extends AbstractTableModel
 				// save what was found (if even on selected ones were found)
 				if(hasForces) feaArchFormat[ReadArchive.ARCH_FEAElemForce]='Y';
 				if(hasStresses) feaArchFormat[ReadArchive.ARCH_FEAElemStress]='Y';
+				
+				s.close();
 			}
 		}
 		
@@ -1110,6 +1171,405 @@ public class ResultsDocument extends AbstractTableModel
 	public void setDocController(DocViewer dc) { docCtrl=dc; }
 	public DocViewer getDocController() { return docCtrl; }
 	
+	// gather time plot data as a scripting object call
+	// Expression starts @obj.timeplot.component.
+	//    for crack plots add crackNum.tipNum, except length and debond length add only crackNum
+	public String collectTimePlotData(String[] atoms,HashMap<String, Double> variables,
+			HashMap<String, String> variablesStrs) throws Exception
+	{
+		// get component
+		if(atoms.length<3) throw new Exception("timeplot property has too few parameters");
+		
+		// get plot component from quote string, string, or string variable
+		atoms[2] = CmdViewer.atomString(atoms[2],variablesStrs);
+		
+		// trap global data plot
+		if(atoms[2].equals("global"))
+		{	if(atoms.length<4) throw new Exception("timeplot property missing global quantity");
+			String quant = CmdViewer.atomString(atoms[3],variablesStrs);
+			int dataLines=0;
+			String setName=null;
+			ArrayList<String> table=new ArrayList<String>(100);
+			try
+			{	FileReader fr=new FileReader(globalArchive);
+				char [] buffer=new char [(int)globalArchive.length()];
+				fr.read(buffer);
+				fr.close();
+				
+				// scanner for lines
+				Scanner s=new Scanner(new String(buffer));
+				s.useDelimiter("[\\n\\r]");
+				while(s.hasNext())
+				{	String line=s.next();
+					if(line.charAt(0)!='#')
+					{	dataLines++;
+						table.add(line);
+					}
+					else if(line.length()>7)
+					{	String tcmd = line.substring(0,8);
+						if(tcmd.equals("#setName")) setName=line;
+					}
+				}
+				s.close();
+			}
+			catch (Exception e)
+			{	throw new Exception("Could not load global results file:\n   " + e.getMessage());
+			}
+			
+			// check table header
+			if(setName==null || dataLines==0)
+				throw new Exception("global file column labels not found or file has no data lines");
+			
+			// find column to read
+			int column=-1,col=0;
+			Scanner s=new Scanner(setName);
+			s.useDelimiter("\t");
+			while(s.hasNext())
+			{	String colVal = s.next();
+				// remove quotes
+				int clen = colVal.length();
+				if(clen>1)
+				{	if(colVal.charAt(0)=='"' && colVal.charAt(clen-1)=='"')
+						colVal = colVal.substring(1,clen-1);
+				}
+				if(quant.equals(colVal))
+				{	column = col;
+					break;
+				}
+				col++;
+			}
+			s.close();
+			if(column<0)
+				throw new Exception("The quantity '"+quant+"' not found in global results");
+			
+			// collect
+			StringBuffer gdata = new StringBuffer();
+			int row;
+			for(row=0;row<table.size();row++)
+			{	String dataRow=table.get(row);
+				Scanner r=new Scanner(dataRow);
+				r.useDelimiter("\t");
+				
+				// get x value
+				if(!r.hasNext())
+				{	r.close();
+					continue;
+				}
+				double xg = r.nextDouble();
+				
+				// skip intervening columns
+				int j=column;
+				while(j>1)
+				{	if(r.hasNext()) r.next();
+					j--;
+				}
+				
+				// get x value
+				if(!r.hasNext())
+				{	r.close();
+					continue;
+				}
+				double yg = r.nextDouble();
+				
+				// append data
+				gdata.append(xg+" "+yg+"\n");
+				
+				r.close();
+				
+			}
+
+			return gdata.toString();
+		}
+		
+		// other plot components
+		int cmpnt = -1;
+		if(atoms[2].equals("J1"))
+			cmpnt = PlotQuantity.MPMJ1;
+		else if(atoms[2].equals("J2"))
+			cmpnt = PlotQuantity.MPMJ2;
+		else if(atoms[2].equals("KI"))
+			cmpnt = PlotQuantity.MPMKI;
+		else if(atoms[2].equals("KII"))
+			cmpnt = PlotQuantity.MPMKII;
+		else if(atoms[2].equals("CrackRelease"))
+			cmpnt = PlotQuantity.MPMCRACKRELEASE;
+		else if(atoms[2].equals("CrackAbsorb"))
+			cmpnt = PlotQuantity.MPMCRACKABSORB;
+		else if(atoms[2].equals("Length"))
+			cmpnt = PlotQuantity.MPMLENGTH;
+		else if(atoms[2].equals("DebondLength"))
+			cmpnt = PlotQuantity.MPMDEBONDLENGTH;
+		else if(atoms[2].equals("TipNCOD"))
+			cmpnt = PlotQuantity.MPMNORMALCTOD;
+		else if(atoms[2].equals("TipSCOD"))
+			cmpnt = PlotQuantity.MPMSHEARCTOD;
+		else if(atoms[2].equals("DebondNCOD"))
+			cmpnt = PlotQuantity.MPMDEBONDNCTOD;
+		else if(atoms[2].equals("DebondSCOD"))
+			cmpnt = PlotQuantity.MPMDEBONDSCTOD;
+		
+		// array for results
+		ArrayList<Double> x=new ArrayList<Double>(archives.size());
+		ArrayList<Double> y=new ArrayList<Double>(archives.size());
+		StringBuffer pdata = new StringBuffer();
+		int i,crackNum,tipNum;
+		switch(cmpnt)
+		{	case PlotQuantity.MPMJ1:
+			case PlotQuantity.MPMJ2:
+			case PlotQuantity.MPMKI:
+			case PlotQuantity.MPMKII:
+			case PlotQuantity.MPMCRACKRELEASE:
+			case PlotQuantity.MPMCRACKABSORB:
+			case PlotQuantity.MPMNORMALCTOD:
+			case PlotQuantity.MPMSHEARCTOD:
+			case PlotQuantity.MPMDEBONDNCTOD:
+			case PlotQuantity.MPMDEBONDSCTOD:
+				// get crack numberand tip number
+				if(atoms.length<5) throw new Exception("timeplot property has too few parameters");
+				crackNum = CmdViewer.atomInt(atoms[3],variables);
+				tipNum = CmdViewer.atomInt(atoms[4],variables);
+				if(tipNum<0 || tipNum>1)
+					throw new Exception("timeplot crack tip number must be 0 (start) or 1 (end)");
+				getTimeCrackData(null,cmpnt,crackNum,tipNum,x,y);
+				for(i=0;i<x.size();i++)
+					pdata.append(x.get(i)+" "+y.get(i)+"\n");
+				break;
+				
+			case PlotQuantity.MPMLENGTH:
+			case PlotQuantity.MPMDEBONDLENGTH:
+				// these crack values don't need tip number
+				if(atoms.length<4) throw new Exception("timeplot property has too few parameters");
+				crackNum = CmdViewer.atomInt(atoms[3],variables);
+				getTimeCrackData(null,cmpnt,crackNum,0,x,y);
+				for(i=0;i<x.size();i++)
+					pdata.append(x.get(i)+" "+y.get(i)+"\n");
+				break;
+			
+			default:
+				throw new Exception(atoms[2]+" is an unsupported timeplot quantity");
+		}
+		
+		return pdata.toString();
+	}
+	
+	// Get crack data for a time plot
+	// ctrls for progress bar (or null to skip), crkCmpnt (crack time plot quantity),
+	// crack and tip number.
+	// Plot returned in x and y
+	public void getTimeCrackData(ControlPanel ctrls,int crkCmpnt,int crackNum,int tipNum,
+				ArrayList<Double> x,ArrayList<Double> y) throws Exception
+	{
+		// settings
+		int i,npts=archives.size();
+		ArrayList<Integer> crackEnds=new ArrayList<Integer>(20);
+
+		// variables while decoding
+		byte[] version=new byte[4];
+		ByteBuffer bb;
+		CrackSegment seg=new CrackSegment();
+		int lastoffset,offset,tipOffset,endOffset;
+		boolean foundTip;
+		short matnum;
+		double yvalue;
+		Point2D.Double pt,lastPt,cod;
+		
+		// format
+		char[] crackOrder=new char[ReadArchive.ARCH_MAXCRACKITEMS];
+		crackFormat.getChars(0,ReadArchive.ARCH_MAXCRACKITEMS,crackOrder,0);
+		
+		// loop over all archives
+		for(i=0;i<npts;i++)
+		{	// adjust progress bar
+			if(ctrls!=null) ctrls.setProgress(i+1);
+		
+			// open file (try to continue on errors
+			try
+			{	bb=openSelectedArchive(i);
+			}
+			catch(Exception bbe)
+			{	continue;
+			}
+			
+			// check version
+			bb.get(version);
+			int headerLength=4;
+			int vernum=version[3]-'0';
+			if(vernum>=4)
+				headerLength=64;
+			else if(vernum!=3)
+				throw new Exception("Archive file is too old for this tool");
+			int nummpms=(int)((bb.remaining()+4-headerLength)/recSize);
+			
+			// find the first crack (matnum>0), remember ends
+			offset=headerLength+(nummpms-1)*recSize+ReadArchive.sizeofInt+ReadArchive.sizeofDouble;
+			lastoffset=offset;
+			crackEnds.clear();
+			crackEnds.add(new Integer(lastoffset));
+			while(offset>0)
+			{	bb.position(offset);
+				matnum=bb.getShort();
+				if(matnum>0) break;
+				offset-=recSize;
+				if(matnum==-1) crackEnds.add(new Integer(offset));
+			}
+			
+			// find start or end of desired crack (if it exists)
+			if(crackNum>crackEnds.size()-1) continue;
+			if(tipNum==CrackSelector.CRACK_START || crkCmpnt==PlotQuantity.MPMLENGTH
+						|| crkCmpnt==PlotQuantity.MPMDEBONDLENGTH)
+			{	Integer offObj=crackEnds.get(crackEnds.size()-crackNum);
+				offset=offObj.intValue()+recSize;
+				offObj=crackEnds.get(crackEnds.size()-crackNum-1);
+				endOffset=offObj.intValue();
+			}
+			else
+			{	Integer offObj=crackEnds.get(crackEnds.size()-crackNum-1);
+				offset=offObj.intValue();
+				offObj=crackEnds.get(crackEnds.size()-crackNum);
+				endOffset=offObj.intValue()+recSize;
+			}
+			offset-=(ReadArchive.sizeofInt+ReadArchive.sizeofDouble);
+			endOffset-=(ReadArchive.sizeofInt+ReadArchive.sizeofDouble);
+			
+			// read segment
+			bb.position(offset);
+			seg.readRecord(bb,crackOrder,lengthScale,timeScale);
+			
+			// crack tip properties
+			switch(crkCmpnt)
+			{   case PlotQuantity.MPMJ1:
+					yvalue=seg.J1;
+					break;
+					
+				case PlotQuantity.MPMJ2:
+					yvalue=seg.J2;
+					break;
+					
+				case PlotQuantity.MPMKI:
+					yvalue=seg.KI;
+					break;
+
+				case PlotQuantity.MPMKII:
+					yvalue=seg.KII;
+					break;
+
+				case PlotQuantity.MPMLENGTH:
+				case PlotQuantity.MPMDEBONDLENGTH:
+					yvalue=0.;
+					double bonded=0.;
+					lastPt=seg.getMedianPosition();
+					while(true)
+					{   offset+=recSize;
+						if(offset>lastoffset) break;
+						bb.position(offset);
+						seg.readRecord(bb,crackOrder,lengthScale,timeScale);
+						if(seg.startFlag==-1) break;
+						pt=seg.getMedianPosition();
+						double segLength=Math.sqrt((pt.x-lastPt.x)*(pt.x-lastPt.x) +
+										(pt.y-lastPt.y)*(pt.y-lastPt.y));
+						yvalue+=segLength;
+						if(seg.tractionMaterial>0) bonded+=segLength;
+						lastPt=pt;
+					}
+					if(crkCmpnt==PlotQuantity.MPMDEBONDLENGTH) yvalue-=bonded;
+					break;
+				
+				case PlotQuantity.MPMCRACKRELEASE:
+					yvalue=seg.release;
+					break;
+				
+				case PlotQuantity.MPMCRACKABSORB:
+					yvalue=seg.absorb;
+					break;
+				
+				case PlotQuantity.MPMDEBONDNCTOD:
+				case PlotQuantity.MPMDEBONDSCTOD:
+					tipOffset=offset;
+					foundTip=true;
+					pt=seg.getPt();
+					int tlCount=0;
+					lastPt=new Point2D.Double(0.,0.);
+					cod=new Point2D.Double(0.,0.);
+					// scan to end of debond zone from this tip
+					while(seg.tractionMaterial>0)
+					{	lastPt=pt;
+						cod=seg.getCOD();
+						pt=seg.getPt();
+						tlCount++;
+						if(tipNum==CrackSelector.CRACK_START)
+						{	tipOffset+=recSize;
+							if(tipOffset>endOffset)
+							{	foundTip=false;
+								break;
+							}
+						}
+						else
+						{	tipOffset-=recSize;
+							if(tipOffset<endOffset)
+							{	foundTip=false;
+								break;
+							}
+						}
+						bb.position(tipOffset);
+						seg.readRecord(bb,crackOrder,lengthScale,timeScale);
+					}
+					
+					// not found in the crack (entire crack is traction law)
+					if(!foundTip)
+					{	yvalue=0.;
+						break;
+					}
+					
+					// if tlCount==0, then no traction at this crack tip, so just fall through and use regular crack tip cod
+					//   otherwise do calculations
+					//	Here pt and cod are at the debond tip. lastPt is at previous traction law or at tip if tlCount==1
+					if(tlCount>0)
+					{	pt=seg.getPt();
+						double dx=lastPt.x-pt.x;
+						double dy=lastPt.y-pt.y;
+						double norm=Math.sqrt(dx*dx+dy*dy);
+					
+						if(crkCmpnt==PlotQuantity.MPMDEBONDNCTOD)
+							yvalue=(-cod.x*dy + cod.y*dx)/norm;
+						else
+							yvalue=(cod.x*dx + cod.y*dy)/norm;
+						break;
+					}
+				
+				case PlotQuantity.MPMNORMALCTOD:
+				case PlotQuantity.MPMSHEARCTOD:
+					cod=seg.getCOD();
+					pt=seg.getMedianPosition();
+
+					// read previous segment
+					offset = tipNum==CrackSelector.CRACK_START ? offset+recSize : offset-recSize;
+					bb.position(offset);
+					seg.readRecord(bb,crackOrder,lengthScale,timeScale);
+					lastPt=seg.getMedianPosition();
+					double dx=pt.x-lastPt.x;
+					double dy=pt.y-lastPt.y;
+					double norm=Math.sqrt(dx*dx+dy*dy);
+					
+					if(crkCmpnt==PlotQuantity.MPMNORMALCTOD || crkCmpnt==PlotQuantity.MPMDEBONDNCTOD)
+						yvalue=(-cod.x*dy + cod.y*dx)/norm;
+					else
+						yvalue=(cod.x*dx + cod.y*dy)/norm;
+					break;
+				
+				default:
+					yvalue=0.;
+					break;
+			}
+			
+			// add crack value to the  plot
+			x.add(new Double(archiveTimes.get(i)));
+			y.add(new Double(yvalue));
+		}
+		
+		if(x.size()==0)
+			throw new Exception("No data found for that plot quantity");
+	}
+
 	//-----------------------------------------------------------------
 	// Standard methods to support JTable to display file sections
 	//-----------------------------------------------------------------

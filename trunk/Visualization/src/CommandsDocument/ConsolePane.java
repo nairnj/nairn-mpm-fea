@@ -22,6 +22,11 @@ public class ConsolePane extends JNConsolePane
 	// file to save the output results and a chooser
 	public File outputFile=null;
 	private JFileChooser chooser=new JFileChooser();
+	public String remoteFilePath = null;
+	public String remoteHomePath = null;
+	public boolean uniqueOutput = false;
+	public int downloadResults = LaunchRemoteCalc.DOWNLOAD_TO_FOLDER;
+	public boolean clearPriorContents = false;
 	
 	//-----------------------------------------------------------------
 	// Initialize - scrolling edit field
@@ -55,12 +60,11 @@ public class ConsolePane extends JNConsolePane
 			if(outputFile==null)
 				chooser.setCurrentDirectory(inputFile);
 			else
-			{	chooser.setSelectedFile(outputFile);
-			}
-		
+				chooser.setSelectedFile(outputFile);
+			
+			// REMOTE_ACCESS - customize to get path on server or a local file
 			int result = chooser.showSaveDialog(this);
 			if(result != JFileChooser.APPROVE_OPTION) return false;
-		
 			outputFile=chooser.getSelectedFile();
 		}
 		else
@@ -70,6 +74,12 @@ public class ConsolePane extends JNConsolePane
 		if(!outputFile.getName().endsWith(extension))
 			outputFile=new File(outputFile.getParent(),outputFile.getName()+"."+extension);
 			
+		return true;
+	}
+	
+	// when run remotely, just set output path when done
+	public boolean setOutputPath(String pathName)
+	{	outputFile=new File(pathName);
 		return true;
 	}
 	
@@ -103,6 +113,20 @@ public class ConsolePane extends JNConsolePane
 		}
 		
 		return true;
+	}
+	
+	// store remote file path
+	public String getRemoteFilePath() { return remoteFilePath; }
+	public void setRemoteFilePath(String path) { remoteFilePath = new String(path); }
+	
+	// store remote home path (when ussed
+	public String getRemoteHomePath() { return remoteHomePath; }
+	public void setRemoteHomePath(String path) { remoteHomePath = new String(path); }
+	
+	// when run remotely, store path to remote file
+	// folder/folder/name
+	public void getRemoteFilePath(String pathName)
+	{	remoteFilePath=new String(pathName);
 	}
 	
 	// last word of text if was a submitted job

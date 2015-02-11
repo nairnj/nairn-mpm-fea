@@ -56,6 +56,26 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	public static String WorkSpaceKey = "Workspace Folder";
 	public static String WorkSpaceDef = "";
 
+	// REMOTE_ACCESS
+	// remote server
+	public static String RemoteServerKey = "Remote Server";
+	public static String RemoteServerDef = "";
+	public static String RemoteUserKey = "Remote Username";
+	public static String RemoteUserDef = "";
+	public static String RemoteUserPassKey = "Remote Password";
+	public static String RemoteUserPassDef = "";
+	// code exec location (local or remote)
+	public static String CodeExecLocationKey = "Code Exec Location";
+	public static String CodeExecLocationDef = "local";
+	public static String RemoteMPMPathKey = "Remote Path to MPM Code";
+	public static String RemoteMPMPathDef = "/usr/local/bin/NairnMPM";
+	public static String RemoteMPMDTDKey = "Remote Path to MPM DTD";
+	public static String RemoteMPMDTDDef = "/usr/local/bin/NairnMPM.dtd";
+	public static String RemoteFEAPathKey = "Remote Path to FEA Code";
+	public static String RemoteFEAPathDef = "/usr/local/bin/NairnFEA";
+	public static String RemoteFEADTDKey = "Remote Path to FEA DTD";
+	public static String RemoteFEADTDDef = "/usr/local/bin/NairnFEA.dtd";
+
 	// plot spectrum
 	public static String SpectrumKey = "PlotSpectrum";
 	public static int SpectrumDef = 1;
@@ -87,6 +107,19 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	private JCheckBox validateMPM = new JCheckBox("Validate",NairnMPMValidateDef);
 	private JCheckBox validateFEA = new JCheckBox("Validate",NairnFEAValidateDef);
 
+	// REMOTE_ACCESS
+	private JTextField remoteServerAddr = new JTextField();
+	private JTextField remoteUsername = new JTextField();
+	private JPasswordField remoteUserpass = new JPasswordField();
+	private JTextField mpmCodePathFld = new JTextField();
+	private JTextField mpmDTDPathFld = new JTextField();
+	private JTextField feaCodePathFld = new JTextField();
+	private JTextField feaDTDPathFld = new JTextField();
+	private JRadioButton rdbtnExecLocal = new JRadioButton("Local");
+	private JRadioButton rdbtnExecRemote = new JRadioButton("Remote");
+	
+	private static boolean currentRemoteMode = false;
+
 	// ----------------------------------------------------------------------------
 	// constructor
 	// ----------------------------------------------------------------------------
@@ -95,9 +128,31 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	{	super("Preferences");
 
 		JTabbedPane tabbedPane = new JTabbedPane();
+		tabbedPane.setFocusable(false);
 
-		// code preferences pane -------------------------------------
-		JPanel panel1 = new JPanel();
+		// Remove panel
+		tabbedPane.addTab("Code", null, codePanel(),"Settings for running calculations");
+
+		// Remote preferences pane
+		tabbedPane.addTab("Remote", null, remotePanel(), "Remote server settings");
+
+		// color preferences pane ----------------------------------------
+		tabbedPane.addTab("Colors", null, colorPanel(), "Select colors used in plots");
+
+		// FEA and MPM preferences pane
+		// -----------------------------------------
+		//JPanel panel4 = new JPanel();
+		//tabbedPane.addTab("FEA and MPM", null, panel4,"FEA and MPM plot settings");
+
+		getContentPane().add(tabbedPane);
+		setSize(600, 480);
+		setLocation(60, 30 + JNApplication.menuBarHeight());
+		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+	}
+	
+	// create code prferences panel
+	public JPanel codePanel()
+	{	JPanel panel1 = new JPanel(new GridLayout(6,1));
 
 		panel1.add(filePathPanel("MPM Code", mpmCodePath, prefs.get(
 				NairnMPMKey, NairnMPMDef), false, null));
@@ -114,13 +169,125 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		panel1.add(filePathPanel("Work Space Directory", workPath, prefs.get(
 				WorkSpaceKey, WorkSpaceDef), false, null));
 
-		tabbedPane.addTab("Code", null, panel1,
-				"Settings for running calculations");
+		return panel1;
+	}
+	
+	// REMOTE_ACCESS
+	// build panel for remote connections
+	public JPanel remotePanel()
+	{	JPanel panel3 = new JPanel();
+		GridBagLayout gridbag = new GridBagLayout();
+		panel3.setLayout(gridbag);
+		
+		GridBagConstraints c = new GridBagConstraints();
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.insets=new Insets(3,6,3,6);
+		c.weighty = 0.;
 
-		// color preferences pane ----------------------------------------
-		JPanel panel2 = new JPanel();
-		tabbedPane
-				.addTab("Colors", null, panel2, "Select colors used in plots");
+		// Remove server line -------------------------------------------
+		String toolTip = "Enter server address (e.g. 'mpm.fsl.orst.edu')";
+		remoteLine(panel3,gridbag,c,"Remote Server:",remoteServerAddr,
+				prefs.get(RemoteServerKey, RemoteServerDef),RemoteServerKey,toolTip);
+		
+		// User name and password line -------------------------
+		c.gridx=0;
+		c.weightx = 0.;
+		c.gridwidth = 1;
+		JLabel label = new JLabel("Username:");
+		label.setHorizontalAlignment(JLabel.RIGHT);
+		gridbag.setConstraints(label,c);
+		panel3.add(label);
+
+		c.gridx=1;
+		c.weightx = 1.5;
+		c.gridwidth = 1;
+		remoteUsername.setText(prefs.get(RemoteUserKey, RemoteUserDef));
+		remoteUsername.setActionCommand("Username:");
+		remoteUsername.addActionListener(this);
+		remoteUsername.addFocusListener(new PrefFocusListener(RemoteUserKey));
+		remoteUsername.setToolTipText("Enter user name for server '"+remoteServerAddr.getText()+"'");
+		gridbag.setConstraints(remoteUsername,c);
+		panel3.add(remoteUsername);
+		
+		c.gridx=2;
+		c.weightx = 0.;
+		c.gridwidth = 1;
+		label = new JLabel("Password:");
+		label.setHorizontalAlignment(JLabel.RIGHT);
+		gridbag.setConstraints(label,c);
+		panel3.add(label);
+		
+		c.gridx=3;
+		c.weightx = 1.5;
+		c.gridwidth = 1;
+		remoteUserpass.setText(prefs.get(RemoteUserPassKey, RemoteUserPassDef));
+		remoteUserpass.setActionCommand("Password:");
+		remoteUserpass.addActionListener(this);
+		remoteUserpass.addFocusListener(new PrefFocusListener(RemoteUserPassKey));
+		remoteUserpass.setToolTipText("Enter password for user '"+remoteUsername.getText()+"' on server '"+remoteServerAddr.getText()+"'");
+		gridbag.setConstraints(remoteUserpass,c);
+		panel3.add(remoteUserpass);
+		
+		// MPM Code -------------------------------------------
+		toolTip = "Enter full path to MPM executeable (can use '~' to indicate home directory)";
+		remoteLine(panel3,gridbag,c,"MPM Code Path:",mpmCodePathFld,
+				prefs.get(RemoteMPMPathKey, RemoteMPMPathDef),RemoteMPMPathKey,toolTip);
+		toolTip = "Enter full path to MPM dtd file (cannot use '~' to indicate home directory)";
+		remoteLine(panel3,gridbag,c,"MPM DTD Path:",mpmDTDPathFld,
+				prefs.get(RemoteMPMDTDKey, RemoteMPMDTDDef),RemoteMPMDTDKey,toolTip);
+		
+		// FEA Code -------------------------------------------
+		toolTip = "Enter full path to FEA executeable (can use '~' to indicate home directory)";
+		remoteLine(panel3,gridbag,c,"FEA Code Path:",feaCodePathFld,
+				prefs.get(RemoteFEAPathKey, RemoteFEAPathDef),RemoteFEAPathKey,toolTip);
+		toolTip = "Enter full path to FEA dtd file (cannot use '~' to indicate home directory)";
+		remoteLine(panel3,gridbag,c,"FEA DTD Path:",feaDTDPathFld,
+				prefs.get(RemoteFEADTDKey, RemoteFEADTDDef),RemoteFEADTDKey,toolTip);
+		
+		// Remove/local buttons
+		ButtonGroup execLocation = new ButtonGroup();
+		rdbtnExecRemote.addActionListener(this);
+		rdbtnExecRemote.setFocusable(false);
+		rdbtnExecLocal.addActionListener(this);
+		rdbtnExecLocal.setFocusable(false);
+		rdbtnExecLocal.setActionCommand("code exec location");
+		execLocation.add(rdbtnExecLocal);
+		GridBagConstraints gbc_rdbtnExecLocal = new GridBagConstraints();
+		gbc_rdbtnExecLocal.fill = GridBagConstraints.BOTH;
+		gbc_rdbtnExecLocal.insets = new Insets(18, 20, 3, 5);
+		gbc_rdbtnExecLocal.gridx = 0;
+		gbc_rdbtnExecLocal.gridy = 8;
+		panel3.add(rdbtnExecLocal, gbc_rdbtnExecLocal);
+		rdbtnExecRemote.setActionCommand("code exec location");
+		execLocation.add(rdbtnExecRemote);
+		GridBagConstraints gbc_rdbtnExecRemote = new GridBagConstraints();
+		gbc_rdbtnExecRemote.insets = new Insets(0, 20, 0, 5);
+		gbc_rdbtnExecRemote.fill = GridBagConstraints.BOTH;
+		gbc_rdbtnExecRemote.gridx = 0;
+		gbc_rdbtnExecRemote.gridy = 9;
+		panel3.add(rdbtnExecRemote, gbc_rdbtnExecRemote);
+		
+		if(restoreRemoteMode())
+			rdbtnExecRemote.setSelected(true);
+		else
+			rdbtnExecLocal.setSelected(true);
+		
+		// empty fill space on the bottom
+		c.gridx=0;
+		c.weightx = 0.;
+		c.gridwidth = 4;
+		c.weighty = 10;
+		c.fill = GridBagConstraints.VERTICAL;
+		label = new JLabel(" ");
+		gridbag.setConstraints(label,c);
+		panel3.add(label);
+
+		return panel3;
+	}
+	
+	// build panel for remote connections
+	public JPanel colorPanel()
+	{	JPanel panel2 = new JPanel();
 
 		GridBagLayout gridbag = new GridBagLayout();
 		GridBagConstraints pc = new GridBagConstraints(); // for the pane
@@ -128,8 +295,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 
 		// spectrum box
 		GridBagLayout spectrumBag = new GridBagLayout();
-		JNBoxPanel spectrumPan = new JNBoxPanel("Color Plot Spectrum",
-				spectrumBag);
+		JNBoxPanel spectrumPan = new JNBoxPanel("Color Plot Spectrum",spectrumBag);
 		GridBagConstraints c = new GridBagConstraints(); // for the box panel
 
 		JLabel section = new JLabel("Type: ");
@@ -149,8 +315,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		spectrumBox.setSelectedIndex(ColorPicker.getSpectrumType());
 		spectrumBox.addActionListener(this);
 		spectrumBox.setFocusable(false);
-		spectrumBox
-				.setToolTipText("Select one of the available spectra for coloring the plots.");
+		spectrumBox.setToolTipText("Select one of the available spectra for coloring the plots.");
 		c.insets = new Insets(6, 3, 1, 6); // tlbr
 		c.gridx = 1;
 		c.weightx = 1.0;
@@ -167,8 +332,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		numContours.setText("" + ColorPicker.getNumberOfContours());
 		numContours.setEditable(true);
 		numContours.setColumns(5);
-		numContours
-				.setToolTipText("Enter 1 for continuous colors or >1 for number of discrete colors and hit return or enter");
+		numContours.setToolTipText("Enter 1 for continuous colors or >1 for number of discrete colors and hit return or enter");
 		numContours.addActionListener(this);
 		numContours.setActionCommand("change contours");
 		c.insets = new Insets(6, 3, 1, 6); // tlbr
@@ -182,10 +346,12 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		c.gridwidth = 1;
 		c.weightx = 1.0;
 
+		// add spectrum box to pan
 		pc.fill = GridBagConstraints.HORIZONTAL;
 		pc.gridx = 0;
 		pc.gridwidth = 1;
 		pc.weightx = 1.0;
+		pc.weighty = 0.;
 		pc.insets = new Insets(1, 6, 1, 6); // tlbr
 		pc.anchor = GridBagConstraints.CENTER;
 		gridbag.setConstraints(spectrumPan, pc);
@@ -195,7 +361,6 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		GridBagLayout wellsBag = new GridBagLayout();
 		JNBoxPanel wellsPan = new JNBoxPanel("Plot Elements", wellsBag);
 		GridBagConstraints ec = new GridBagConstraints(); // for the plot
-		// element box panel
 
 		JLabel elab1 = new JLabel("Background: ");
 		ec.fill = GridBagConstraints.NONE;
@@ -207,8 +372,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		wellsBag.setConstraints(elab1, ec);
 		wellsPan.add(elab1);
 
-		JNColorWell bgWell = new JNColorWell(getPrefColor(backColorKey,
-				backColorDef));
+		JNColorWell bgWell = new JNColorWell(getPrefColor(backColorKey,backColorDef));
 		bgWell.addActionListener(this, "bgColor", "Choose Background Color");
 		ec.anchor = GridBagConstraints.WEST;
 		ec.gridx = 1;
@@ -223,8 +387,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		wellsBag.setConstraints(elab2, ec);
 		wellsPan.add(elab2);
 
-		JNColorWell mlWell = new JNColorWell(getPrefColor(meshLineColorKey,
-				meshLineColorDef));
+		JNColorWell mlWell = new JNColorWell(getPrefColor(meshLineColorKey,meshLineColorDef));
 		mlWell.addActionListener(this, "mlColor", "Choose Mesh Line Color");
 		ec.anchor = GridBagConstraints.WEST;
 		ec.gridx = 3;
@@ -241,10 +404,8 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		wellsBag.setConstraints(elab3, ec);
 		wellsPan.add(elab3);
 
-		JNColorWell labWell = new JNColorWell(getPrefColor(textColorKey,
-				textColorDef));
-		labWell.addActionListener(this, "labColor",
-				"Choose Color for Text Labels");
+		JNColorWell labWell = new JNColorWell(getPrefColor(textColorKey,textColorDef));
+		labWell.addActionListener(this, "labColor","Choose Color for Text Labels");
 		ec.anchor = GridBagConstraints.WEST;
 		ec.gridx = 1;
 		ec.weightx = 1.0;
@@ -258,8 +419,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		wellsBag.setConstraints(elab4, ec);
 		wellsPan.add(elab4);
 
-		JNColorWell npWell = new JNColorWell(getPrefColor(meshNodesColorKey,
-				meshNodesColorDef));
+		JNColorWell npWell = new JNColorWell(getPrefColor(meshNodesColorKey,meshNodesColorDef));
 		npWell.addActionListener(this, "npColor", "Choose Nodal Point Color");
 		ec.anchor = GridBagConstraints.WEST;
 		ec.gridx = 3;
@@ -267,19 +427,42 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		wellsBag.setConstraints(npWell, ec);
 		wellsPan.add(npWell);
 
+		// add plot element color wells box to pane
 		gridbag.setConstraints(wellsPan, pc);
 		panel2.add(wellsPan);
-
-		// FEA and MPM preferences pane
-		// -----------------------------------------
-		JPanel panel3 = new JPanel();
-		tabbedPane.addTab("FEA and MPM", null, panel3,
-				"FEA and MPM plot settings");
-
-		add(tabbedPane);
-		setSize(600, 480);
-		setLocation(60,30+JNApplication.menuBarHeight());
-		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		
+		// empty fill on the bottom
+		pc.fill = GridBagConstraints.VERTICAL;
+		pc.weighty = 10.;
+		JLabel label = new JLabel(" ");
+		gridbag.setConstraints(label,pc);
+		panel2.add(label);
+		
+		return panel2;
+	}
+	
+	// line on remote panel with label and text field
+	public void remoteLine(JPanel panel3,GridBagLayout gridbag,GridBagConstraints c,String tlab,
+			JTextField theFld,String theValue,String aPrefKey,String toolTip)
+	{
+		c.gridx=0;
+		c.weightx = 0.;
+		c.gridwidth = 1;
+		JLabel label = new JLabel(tlab);
+		label.setHorizontalAlignment(JLabel.RIGHT);
+		gridbag.setConstraints(label,c);
+		panel3.add(label);
+		
+		c.gridx=1;
+		c.weightx = 3.0;
+		c.gridwidth = 3;
+		theFld.setText(theValue);
+		theFld.setActionCommand(tlab);
+		theFld.addActionListener(this);
+		theFld.addFocusListener(new PrefFocusListener(aPrefKey));
+		theFld.setToolTipText(toolTip);
+		gridbag.setConstraints(theFld,c);
+		panel3.add(theFld);
 	}
 
 	// Create panel for file path entry
@@ -294,19 +477,18 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		c.gridx = 0;
 		c.gridwidth = 1;
 		c.weightx = 1.0;
-		c.insets = new Insets(1, 6, 1, 0); // tlbr
+		c.insets = new Insets(0, 6, 0, 0); // tlbr
 		JLabel nameLabel = new JLabel(pathName + " Path:");
 		gridbag.setConstraints(nameLabel, c);
 		filePanel.add(nameLabel);
 
 		int rowWidth = 2;
-		if (validate != null) {
-			c.gridx++;
+		if (validate != null)
+		{	c.gridx++;
 			validate.setSelected(validPref);
 			validate.setActionCommand(pathName + " Use");
 			validate.addActionListener(this);
-			validate
-					.setToolTipText("Check to validate input files using the provided DTD file");
+			validate.setToolTipText("Check to validate input files using the provided DTD file");
 			gridbag.setConstraints(validate, c);
 			filePanel.add(validate);
 			rowWidth++;
@@ -315,18 +497,20 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		c.fill = GridBagConstraints.NONE;
 		c.anchor = GridBagConstraints.EAST;
 		c.gridx++;
-		c.insets = new Insets(1, 0, 1, 6); // tlbr
+		c.insets = new Insets(0, 0, 0, 6); // tlbr
 		JButton change = new JButton("Change...");
 		change.setActionCommand(pathName);
 		change.addActionListener(this);
 		change.setToolTipText("Click to change the " + pathName + " path");
+		change.setFocusable(false);
 		gridbag.setConstraints(change, c);
 		filePanel.add(change);
 
 		c.anchor = GridBagConstraints.CENTER;
+		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 0;
 		c.gridwidth = rowWidth;
-		c.insets = new Insets(0, 6, 1, 9); // tlbr
+		c.insets = new Insets(0, 6, 0, 9); // tlbr
 		pathField.setText(pathText);
 		pathField.setEditable(false);
 		pathField.setColumns(45);
@@ -442,19 +626,61 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 			{	Toolkit.getDefaultToolkit().beep();
 			}
 		}
+
+		// REMOTE_ACCESS
+		else if (theCmd.equalsIgnoreCase("Username:"))
+		{	prefs.put(RemoteUserKey, remoteUsername.getText());
+		}
+
+		else if (theCmd.equalsIgnoreCase("Remote Server:"))
+		{	prefs.put(RemoteServerKey, this.remoteServerAddr.getText());
+		}
+
+		else if (theCmd.equalsIgnoreCase("Password:"))
+		{	prefs.put(RemoteUserPassKey, new String(remoteUserpass.getPassword()));
+		}
+
+		else if (theCmd.equalsIgnoreCase("MPM Code Path:"))
+		{	prefs.put(RemoteMPMPathKey, mpmCodePathFld.getText());
+		}
+
+		else if (theCmd.equalsIgnoreCase("MPM DTD Path:"))
+		{	prefs.put(RemoteMPMDTDKey, mpmDTDPathFld.getText());
+		}
+
+		else if (theCmd.equalsIgnoreCase("FEA Code Path:"))
+		{	prefs.put(RemoteFEAPathKey, feaCodePathFld.getText());
+		}
+
+		else if (theCmd.equalsIgnoreCase("FEA DTD Path:"))
+		{	prefs.put(RemoteFEADTDKey, feaDTDPathFld.getText());
+		}
+
+		else if (theCmd.equalsIgnoreCase("code exec location"))
+		{	if (this.rdbtnExecLocal.isSelected())
+			{	prefs.put(CodeExecLocationKey, "local");
+				currentRemoteMode = false;
+			}
+			else if (this.rdbtnExecRemote.isSelected())
+			{	prefs.put(CodeExecLocationKey, "remote");
+				currentRemoteMode = true;
+			}
+		}
 		
 		else
-        {	JComboBox cb = (JComboBox)e.getSource();
-			if(cb==spectrumBox)
-			{	int oldType=ColorPicker.getSpectrumType();
-				int newType=cb.getSelectedIndex();
-				if(newType!=oldType)
-				{	prefs.putInt(SpectrumKey,newType);
+		{	JComboBox cb = (JComboBox) e.getSource();
+			if(cb == spectrumBox)
+			{	int oldType = ColorPicker.getSpectrumType();
+				int newType = cb.getSelectedIndex();
+				if(newType != oldType)
+				{	prefs.putInt(SpectrumKey, newType);
 					ColorPicker.setSpectrumType();
 				}
 			}
+			else
+				System.out.println("Unrecognized preferences commane: "+theCmd);
 		}
-    }
+	}
 
 	// ----------------------------------------------------------------------------
 	// class methods
@@ -463,14 +689,14 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	// create preferences storage object
 	public static void initializePrefs()
 	{	createPrefs("com/geditcom/NairnFEAMPMViz");
+		restoreRemoteMode();
 	
 		// default close action
 		NFMVPrefs.setDefaultQuitCloseLastWindow(false);
-	
+
 		// restore open docs
 		NFMVPrefs.setDefaultRestoreOpenDocs(true);
 	}
-
 
 	// set a chooser to current work space
 	public static void setWorkspace(JFileChooser chooser)
@@ -481,6 +707,41 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 				chooser.setCurrentDirectory(workDirectory);
 			}
 			catch(Exception e) {}
+		}
+	}
+	
+	// return true it set to run remotely
+	// REMOTE_ACCESS
+	public static boolean getRemoteMode() { return currentRemoteMode; }
+	public static void setRemoteMode(boolean tempRemote) { currentRemoteMode = tempRemote; }
+	public static boolean restoreRemoteMode()
+	{	if(prefs!=null)
+			currentRemoteMode = prefs.get(CodeExecLocationKey, CodeExecLocationDef).equalsIgnoreCase("remote");
+		else
+			currentRemoteMode = false;
+		return currentRemoteMode;
+	}
+	
+	// listenere for fields tied to string preferences
+	public class PrefFocusListener implements FocusListener
+	{
+		private String prefKey;
+		
+		public PrefFocusListener(String aKey)
+		{	prefKey = aKey;
+		}
+		
+		public void focusLost(FocusEvent e)
+		{	String newValue;
+			if(prefKey.equals(RemoteUserPassKey))
+				newValue = new String(((JPasswordField)e.getComponent()).getPassword());
+			else
+				newValue = ((JTextField)e.getComponent()).getText();
+			prefs.put(prefKey, newValue);
+		}
+		
+		public void focusGained(FocusEvent e)
+		{
 		}
 	}
 

@@ -95,7 +95,7 @@ public class CmdViewer extends JNCmdTextDocument
 	// scripting
 	private boolean runningScript;
 	private HashMap<String,Object> objs = null;
-	private File scriptOutput;
+	private ArrayList<String> scriptParams;
 	private CmdViewer theScript;
 
 	// constants
@@ -270,7 +270,7 @@ public class CmdViewer extends JNCmdTextDocument
 			// call in super class initiates command interpertation
 			super.runAnalysis();
 			
-			// when interpretaiont done, will launch the analysis in analysisFinished()
+			// when interpretation done, will launch the analysis in analysisFinished()
 			return;
 		}
 		else
@@ -290,11 +290,11 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		
 		// launch analysis with DTD commands in the field
-		nfmAnalysis.runNFMAnalysis(doBackground,runType,cmdField.getCommands(),
-					soutConsole,processors,theScript.getOutputFile());
+		nfmAnalysis.launchNFMAnalysis(doBackground,runType,cmdField.getCommands(),
+					soutConsole,processors,theScript.getScriptParams());
 	}
 	
-	// when analysis is done, proceed with calculations (if OKO)
+	// when analysis is done, proceed with calculations (if OK)
 	public void analysisFinished(boolean status)
 	{	// give up on error
 		if(status==false || stopCommand==true) return;
@@ -305,8 +305,8 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 		
 		// launch analysis with DTD commands in the field
-		nfmAnalysis.runNFMAnalysis(useBackground,openMesh,buildXMLCommands(),
-					soutConsole,processors,theScript.getOutputFile());
+		nfmAnalysis.launchNFMAnalysis(useBackground,openMesh,buildXMLCommands(),
+					soutConsole,processors,theScript.getScriptParams());
 	}
 	
 	// initialize when interpreting commands
@@ -364,7 +364,7 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		runningScript = false;
 		objs = new HashMap<String,Object>(10);
-		scriptOutput = null;
+		scriptParams = null;
 		
 		// is it called from a script?
 		if(theScript!=this)
@@ -907,13 +907,17 @@ public class CmdViewer extends JNCmdTextDocument
 			if(!obj.getClass().equals(CmdViewer.class))
 				throw new Exception("The 'interpret' command can only by used on commands documents.\n"+args);
 			
-			scriptOutput = null;
+			scriptParams = null;
 			((CmdViewer)obj).runNFMAnalysis(false,NFMAnalysis.INTERPRET_ONLY,this);
 			
 			// wait for interpret to be done
-			while(true)
+			while(runningScript)
 			{	Thread.sleep(100);
 				if(!((CmdViewer)obj).isRunning()) break;
+			}
+			if(((CmdViewer)obj).isRunning())
+			{	((CmdViewer)obj).stopRunning();
+				throw new Exception("The script was stopped.\n"+args);
 			}
 		}
 		
@@ -928,27 +932,117 @@ public class CmdViewer extends JNCmdTextDocument
 			
 			String objectVar = args.get(1);
 			if(!validObjectName(objectVar))
-				throw new Exception("The first argument in an 'Open' command must be valid object name.\n"+args);
+				throw new Exception("The first argument in an 'Run' command must be valid object name.\n"+args);
 			
 			// get path
 			File outDoc = scriptPath(readStringArg(args.get(2)),args,false);
-			scriptOutput = new File(outDoc.getCanonicalPath());
+			scriptParams = new ArrayList<String>(1);
+			String scriptPath = outDoc.getCanonicalPath();
+			File scriptOutput = new File(scriptPath);
 			if(!scriptOutput.getParentFile().exists())
 				throw new Exception("The folder selected for output does not exist.\n"+args);
+			scriptParams.add(scriptPath);
 
 			// start analysis
+			NFMVPrefs.setRemoteMode(false);
 			((CmdViewer)obj).runNFMAnalysis(false,NFMAnalysis.FULL_ANALYSIS,this);
 			
-			// wait for interpret to be done
-			while(true)
+			// wait for run to be done
+			while(runningScript)
 			{	Thread.sleep(1000);
 				if(!((CmdViewer)obj).isRunning()) break;
 			}
+			if(((CmdViewer)obj).isRunning())
+			{	((CmdViewer)obj).stopRunning();
+				throw new Exception("The script was stopped.\n"+args);
+			}
+			NFMVPrefs.restoreRemoteMode();;
 			
 			// set obj to output document
 			objs.put(objectVar,((DocViewer)NairnFEAMPMViz.main.frontDocument()).resDoc);
 		}
 		
+		else if(theCmd.equals("runremote"))
+		{	// runRemote obj,outpath,outoption,localpath,localoption
+			if(!obj.getClass().equals(CmdViewer.class))
+				throw new Exception("The 'run' command can only by used on command documents.\n"+args);
+						
+			// need to provide remote path on the server
+			// folder/.../name - requires slashes and at least one parent folder
+			if(args.size()<3)
+				throw new Exception("'RunRemote' command needs object name and remote file path.\n"+args);
+			
+			// get object variable
+			String objectVar = args.get(1);
+			if(!validObjectName(objectVar))
+				throw new Exception("The first argument in an 'RunRemote' command must be valid object name.\n"+args);
+			
+			// get remote path (require internal /, but check for .mpm or .fea when run)
+			String remotePath = readStringArg(args.get(2));
+			int offset = remotePath.lastIndexOf("/");
+			if(offset<1 || offset>=remotePath.length()-1)
+				throw new Exception("The remote folder must have at least a folder and a name (e.g., 'folder/name').\n"+args);
+			
+			// get output option (default is overwrite or unique or clear)
+			String remoteOption="overwrite";
+			if(args.size()>3)
+			{	remoteOption = readStringArg(args.get(3)).toLowerCase();
+				if(!remoteOption.equals("overwrite") && !remoteOption.equals("unique") && !remoteOption.equals("clear"))
+					throw new Exception("Invalid remote output option ("+remoteOption+"?)\n"+args);
+			}
+			
+			// get local save option first
+			String localOption="download";
+			if(args.size()>5)
+			{	localOption = readStringArg(args.get(5)).toLowerCase();
+				if(!localOption.equals("download") && !localOption.equals("nodownload") && !localOption.equals("home"))
+					throw new Exception("Invalid local folder option ("+localOption+"?)\n"+args);
+			}
+			
+			// get local save path
+			String outFolder = "";
+			if(args.size()>4)
+			{	outFolder = readStringArg(args.get(4));
+				if(!localOption.equals("nodownload"))
+				{	File outDoc = scriptPath(outFolder,args,true);
+					if(!outDoc.exists())
+						throw new Exception("The local download folder must already exist\n"+args);
+					outFolder = outDoc.getCanonicalPath();
+				}
+				else
+				{	outFolder = "";
+				}
+			}
+			else
+				localOption="nodownload";
+			
+			// pack script parameters
+			scriptParams = new ArrayList<String>(4);
+			scriptParams.add(remotePath);
+			scriptParams.add(remoteOption);
+			scriptParams.add(outFolder);
+			scriptParams.add(localOption);
+
+			// start analysis
+			NFMVPrefs.setRemoteMode(true);
+			((CmdViewer)obj).runNFMAnalysis(false,NFMAnalysis.FULL_ANALYSIS,this);
+			
+			// wait for run to be done
+			while(runningScript)
+			{	Thread.sleep(1000);
+				if(!((CmdViewer)obj).isRunning()) break;
+			}
+			if(((CmdViewer)obj).isRunning())
+			{	((CmdViewer)obj).stopRunning();
+				throw new Exception("The script was stopped.\n"+args);
+			}
+			NFMVPrefs.restoreRemoteMode();;
+			
+			// set obj to output document
+			if(!localOption.equals("nodownload"))
+				objs.put(objectVar,((DocViewer)NairnFEAMPMViz.main.frontDocument()).resDoc);
+		}
+
 		else if(theCmd.equals("export"))
 		{	// run obj,outpath
 			if(!obj.getClass().equals(CmdViewer.class))
@@ -994,7 +1088,7 @@ public class CmdViewer extends JNCmdTextDocument
 	
 	// decode argument to path for a script
 	// allows relative or full path and allows Mac/Linux or Windows
-	// if file exists, it must be folder or file is wantFolder is true or false
+	// if file exists, it must be folder or file if wantFolder is true or false
 	public File scriptPath(String fPath,ArrayList<String> args,boolean wantFolder) throws Exception
 	{	// empty is not allowed
 		if(fPath.length()==0)
@@ -1185,7 +1279,7 @@ public class CmdViewer extends JNCmdTextDocument
 			archiveTime = "    <ArchiveTime units='ms' maxProps='"+props+"'>"+aTime+"</ArchiveTime>\n";
 		else
 			archiveTime = "    <ArchiveTime units='ms'>"+aTime+"</ArchiveTime>\n";
-				
+		
 		// optional first archive time
 		if(args.size()>2)
 		{	Object firstArchiveTime = readNumberOrEntityArg(args.get(2),false);
@@ -2022,6 +2116,7 @@ public class CmdViewer extends JNCmdTextDocument
 		String[] atoms = s.substring(1).split("[.]");
 		
 		// process them
+		boolean passException = false;
 		try
 		{	int i=0;
 			while(i<atoms.length)
@@ -2041,52 +2136,89 @@ public class CmdViewer extends JNCmdTextDocument
 				
 				else if(runningScript)
 				{	// look for obj.property
+					passException = true;
 					Object obj = objs.get(nextAtom);
-					if(obj==null || i+1>=atoms.length) return null;
+					if(obj==null || i+1>=atoms.length)
+						throw new Exception("Object property is incomplete");
 					i++;
 					nextAtom = atoms[i];
 					
-					// object properties (string properties end in '$')
+					// object properties
 					if(nextAtom.equals("energy"))
-					{	if(!obj.getClass().equals(ResultsDocument.class)) return null;
+					{	if(!obj.getClass().equals(ResultsDocument.class))
+							throw new Exception("energy property can only used for results documents");
 						return ((ResultsDocument)obj).getEnergy();
 					}
 					
 					else if(nextAtom.equals("get"))
 					{	i++;
-						if(i>=atoms.length) return null;
-						if(!obj.getClass().equals(CmdViewer.class)) return null;
-						if(!obj.getClass().equals(CmdViewer.class)) return null;
+						if(i>=atoms.length)
+							throw new Exception("get property missing variable name");
+						if(!obj.getClass().equals(CmdViewer.class))
+							throw new Exception("energy property can only used for commands documents");
 						return ((CmdViewer)obj).getVariable(atoms[i]);
 					}
 					
 					else if(nextAtom.equals("section"))
 					{	i++;
-						if(i>=atoms.length) return null;
-						int alen = atoms[i].length();
-						if(alen<2) return null;
-						if(atoms[i].charAt(0)=='"' && atoms[i].charAt(alen-1)=='"')
-							atoms[i] = atoms[i].substring(1,alen-1);
-						else
-						{	// a string variable is allowed
-							String strAtom = variablesStrs.get(atoms[i]);
-							if(strAtom!=null) atoms[i] = strAtom;
-						}
-						if(!obj.getClass().equals(ResultsDocument.class)) return null;
+						if(i>=atoms.length)
+							throw new Exception("The section name is missing");
+						atoms[i] = atomString(atoms[i],variablesStrs);
+						if(!obj.getClass().equals(ResultsDocument.class))
+							throw new Exception("energy property can only used for results documents");
 						return ((ResultsDocument)obj).section(atoms[i]);
+					}
+					
+					else if(nextAtom.equals("timeplot"))
+					{	if(!obj.getClass().equals(ResultsDocument.class))
+							throw new Exception("timeplot property can only be used for results documents");
+						return ((ResultsDocument)obj).collectTimePlotData(atoms,variables,variablesStrs);
 					}
 					
 				}
 			}
 		}
 		catch(Exception e)
-		{
+		{	if(passException)
+				return "ERROR: "+e.getMessage();
 		}
 		
 		// if here, than bad expression
 		return null;
 	}
 
+	// check atom in a property and return string which can be
+	// In quoted, then unquoted text, if string variable,value of the variable, or the text
+	public static String atomString(String atom,HashMap<String, String> variablesStrsLoc)
+	{	// check for quoted text
+		int clen = atom.length();
+		if(clen>1)
+		{	if(atom.charAt(0)=='"' && atom.charAt(clen-1)=='"')
+				return atom.substring(1,clen-1);
+		}
+		
+		// a string variable is allowed
+		String strAtom = variablesStrsLoc.get(atom);
+		if(strAtom!=null) return strAtom;
+		
+		// return the initial text
+		return atom;
+	}
+	
+	// check atom in a property and return an expected integer
+	public static int atomInt(String atom,HashMap<String, Double> variablesLoc) throws Exception
+	{
+		Double atomDble = variablesLoc.get(atom);
+		if(atomDble!=null) return atomDble.intValue();
+		try
+		{	return Integer.parseInt(atom);
+		}
+		catch(Exception e)
+		{	new Exception("Invalid object property should be an integer ("+atom+")");	
+		}
+		return 0;
+	}
+	
 	// when analysis is done create XML commands
 	public String buildXMLCommands()
 	{	// start buffer for XML commands
@@ -2425,7 +2557,7 @@ public class CmdViewer extends JNCmdTextDocument
 		return "&"+ent+";";
 	}
 	
-	// override to check commands or anlaysis running
+	// override to check commands or analysis running
 	public boolean isRunning()
 	{	if(super.isRunning()) return true;
 		if(nfmAnalysis==null) return false;
@@ -2433,11 +2565,21 @@ public class CmdViewer extends JNCmdTextDocument
 		return false;
 	}
 	
-	// scripts return an output file to use for output
-	// otherwise return null to select default output
-	public File getOutputFile()
-	{	if(!runningScript) return null;
-		return scriptOutput;
+	// stop analysis and command interpretation
+	public void stopRunning()
+	{	if(nfmAnalysis!=null)
+		{	if(nfmAnalysis.isRunning())
+				nfmAnalysis.stopRunning();
+		}
+		if(running) running = false;
+		if(runningScript) runningScript = false;
+	}
+	
+	// Parameters are
+	// 0 = path to output file
+	public ArrayList<String> getScriptParams()
+	{	if(!runningScript || scriptParams==null) return null;
+		return scriptParams;
 	}
 	
 	// return variable value (or null if none) as string
@@ -2554,13 +2696,7 @@ public class CmdViewer extends JNCmdTextDocument
 		}
  
 		public void actionPerformed(ActionEvent e)
-		{	System.out.println(running+","+nfmAnalysis.isRunning());
-			if(running)
-				running = false;
-			else if(nfmAnalysis!=null)
-			{	if(nfmAnalysis.isRunning())
-					nfmAnalysis.stopRunning();
-			}
+		{	stopRunning();
 		}
 	}
 

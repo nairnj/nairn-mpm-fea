@@ -40,6 +40,11 @@ hr { margin-top: 0pt;
 	margin-left: 0pt;
 	margin-right: 6pt;
 	padding: 0pt; }
+dl { margin-left: 12pt; }
+dt {font-family: "Courier";
+	font-size: 12pt; }
+dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt; }
 </style>
 </head>
 
@@ -61,6 +66,13 @@ hr { margin-top: 0pt;
 <li><a href="#entercmds">Entering Commands</a></li>
 <li><a href="#start">Starting FEA or MPM Analysis</a></li>
 <li><a href="#script">Using Script Control</a></li>
+</ul>
+</li>
+
+<li><a href="#remote">Running Remote Calculations</a>
+<ul>
+<li><a href="#setserver">Setup Remove Server</a></li>
+<li><a href="#runserver">Remote Calculations</a></li>
 </ul>
 </li>
 
@@ -249,7 +261,9 @@ appear in a plot window.</p>
 
 <h3>Interpreting Commands</h3>
 
-<p>Choosing the &quot;Interpret Commands...&quot; menu command will display the XML input file in the bottom half of the commands window, but will not launch the code engines. This command is most useful when using scripting commands and you want to verify they are creating the expected XML input file. You can refer to the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a> for information on the XML command formats.</p>
+<p>Choosing the &quot;Interpret Commands...&quot; menu command will display the XML input file
+in the bottom half of the commands window, but will not launch the code engines.
+This command is most useful when using scripting commands and you want to verify they are creating the expected XML input file. You can refer to the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a> for information on the XML command formats.</p>
 
 <p>Another use of this option is to create XML commands to be submitted for analysis on another computer. You can use the &quot;Export Output...&quot; command to save the contents of the output pane (which will have the XML commands) to a plain text file. You should use extension <code>.fmcmd</code> when saving XML commands.</p>
 
@@ -258,6 +272,68 @@ appear in a plot window.</p>
 <h2><a name="script"></a>Using Script Control<hr></h2>
 
 <p>A powerful feature of <b>NairnFEAMPMViz</b> is that you can run under script control that lets you perform a series of calculations or tasks and summarize the results in a report. The details for using script control are described in a <a href="scripting.html">separate help topic</a>.</p>
+
+<p>| <a href="#index">index</a> |</p>
+
+<h1><a name="remote"></a>Running Remote Calculations</h1>
+
+<p>A powerful feature of this application is that it can run calculations remotely. With this feature you can run calculations even if you current computer does not have any of the required binaries for calculations. This section explains the process.</p>
+
+<p>| <a href="#index">index</a> |</p>
+
+<h2><a name="setserver"></a>Setup Remove Server<hr></h2>
+
+<p>To run remote calculations, you need access to an account on a server that has NairnMPM and NairnFEA installed. If that is available, you set up the server as follows:</p>
+
+<ol>
+<li>Choose the &quot;Preferences...&quot; menu command (or click the
+&quot;Prefs&quot; icon).</li>
+
+<li>Select the &quot;Remote&quot; tab</li>
+
+<li>Enter the server name (<i>i.e.</i>, server IP address or name) in the "Remote Server" field.</li>
+
+<li>Enter your user name and password in the two fields. The password will not display, but it will be saved unencrypted in the application preferences. You can omit the password, but will then have to enter a password before each remote calculation.</li>
+
+<li>In the next four fields, enter full paths to MPM and FEA binaries and DTD files on the server. If the files are in your home directory, you can use home directory short cut in the code paths (<i>e.g.</i>, <code>~/bin/NairnMPM</code>), but the DTD files must always use the complete full path to the files.</li>
+
+<li>Finally, use the radio buttons to select "local" (to run with local copies of binaries listed in the "Code" preferences) or "remote" (to run calculations remotely on the specified server and using the binaries on the server).</li>
+
+</ol>
+
+
+<p>| <a href="#index">index</a> |</p>
+
+<h2><a name="runserver"></a>Remote Calculations<hr></h2>
+
+<p>You start remote calculations (assuming you have <a href="#setserver">set up the server</a> and selected the "Remote" option) the same way you <a href="#start">start local calculations</a>. The difference is that instead of choosing an output file, a dialog box appears where you choose remote calculation options. The options are:</p>
+
+<ul>
+<li><code><a name="remoutput"></a>Remote Output</code><br>
+Enter a relative file path from your home directory on the server to the desired output file for the calculations. The relative path must contain at least one parent folder (<i>e.g.</i>, <code>RemoteOut/TwoDisks.mpm</code> where <code>TwoDisks.mpm</code> is the output file and <code>RemoteOut</code> is one parent folder). The path can contain more than one parent folder and the folders need not exist (they will be created if needed). If the file does not have the correct extension (<code>.mpm</code> or <code>.fea</code>), it will be added for you.
+</li>
+<li><code><a name="remoptions"</a>Remote Output Options</code><br>
+The check boxes under the remote output field provide three options for the remote files:
+<ol>
+<li><code>Overwrite</code>: the default (neither box checked) is to overwrite files in the provided destination folder. If you do not want to delete prior calculations, you can  provide non-existing folders in the "Remote Output" path.</li>
+<li><code>Unique</code>: If the "Create Unique Subfolder" box is checked, the output will create a unique subfolder in the parent folder of the "Remote Output" file named "<code>out#</code>" where "<code>#</code>" is a number selected to provide a unique name for a new folder. Running lots of remote calculations in this mode will eventually fill up server disk space.</li>
+<li><code>Clear</code>: If the "Clear Parent Folder First" is checked (and the "Create Unique Subfolder" box is not checked), the entire contents of the parent folder to the "Remote Output" file will be deleted before the calculations begin. This option is useful when running and downloading different types of calculations output to the same folder on the server (see <a href="#dlnotes">below</a>), but be careful not to delete files you need (<i>e.g.</i>, if the parent folder corresponds to an existing folder in your home directory with files you want to keep).</li>
+</ol>
+</li>
+
+<li><code><a name="locoptions"></a>Local Folder</code><br>
+When remote calculations are done, they can be automatically downloaded to one of you local files to allow this application to open and visualize results. This field has the full path of any folder on your local disk or any mounted disk. Click the "Change..." button to select a different folder. The three options for this local folder, which are selected with the menu below the field, are:
+<ol>
+<li><code>Download</code>: When calculations are done, the entire parent folder to the "Remote Output" file is zipped to an archive file, downloaded to the local folder, and unzipped to a folder with the same name as the parent folder (see notes <a href="#dlnotes">below</a> on downloading). If a folder of that name already exists in the local folder, the downloaded files will replace those files with the same name, but leave files with different names in place.</li>
+<li><code>NoDownload</code>: This option will not download the files and therefore the results will not be opened for visualization. The calculations will remain on the server for you to access manually at a later time.</li>
+<li><code>Home</code>: This option specifies that the provided local folder is your home directory on the server running the remote calculations (in other words, you have mounted the server and can access your home folder with the "Change..." button). Because the server is mounted, there is no need to download the calculation results. Instead, this application will just open the file using the "Remote Output" relative path from the provided home directory. This mode is the fastest method if you are able to mount your home directory on the server with high-speed access.
+</ol>
+</li>
+
+</ul>
+
+<p><a name="dlnotes"></a><b>Notes on Downloading</b>: when using the <code>Download</code> option, the download will have the entire contents of the parent folder to the "Remote Output" file, which will include all other files that were in that folder before the remote calculations were run. For example, if you run two different calculations that create different file names to the same remote output folder, the second one will download the results of both calculations. To avoid this download of unnecessary files (which may dramatically slow downloads), you can use either the <code>Unique</code> or <code>Clear</code> options as described <a href="#remoptions">above</a>. The <code>Unique</code> option is best when running a series of calculations and you want to save all results. The <code>Clear</code> is best when running calculations for visualizing a few results and do not need to archive the output files and later analysis (but be careful that use of this option will not delete prior files you want to keep).</p>
+
 
 <p>| <a href="#index">index</a> |</p>
 
@@ -367,8 +443,8 @@ For some results, you can select a component of that quantity
 
 <li>The check boxes select various options for the plot; check the desired options.
 The slider along with the check boxes sets the size of the particles in the plot relative
-to the cell size in the background mesh. The default is 50%. A larger size can fill space better,
-especially when clipping mesh plots to the particles.</li>
+to the cell size in the background mesh. The default is 50%. A larger size can fill space better while
+a smaller size can help to visualize individual material points.</li>
 
 <li><a name="limits"></a>The limits box has three options.
 <ul>
@@ -399,8 +475,14 @@ different times or use the &quot;Play,&quot;
 simulation result or new component of the current simulation result. To change other plot features, go back
 to the &quot;Analysis Results&quot; window, select new options, and plot again.</p>
 
-<p>You can use the &quot;Zoom&quot; menu to zoom in on the plot. The zoom level is relative to the
-current window size and will remain so as the window is resized.
+<p>The particle size slider (labeled "PS") can be used to adjust the particle
+size in the plot as a percent of the cell size.</p>
+
+<p>To zoom in or out on the current plot, choose a scale setting from the &quot;Zoom&quot;
+menu; the window will zoom around its current center location. To zoom in on point, click
+on the location with the Windows (or Mac Command) key down. To zoom out at a point, click
+on the location with the Alt and Windows (or Mac Option and Command) keys down.
+The zoom level is relative to the current window size and will remain so as the window is resized.
 Choose &quot;100%&quot; to see the entire plot.
 </p>
 
@@ -470,12 +552,21 @@ you can change the plot color or style and any curve, change the limits and tick
 on either axis, or change the axis labels (more options will be available in the future).
 </li>
 
-<li>The &quot;Export Graphics...&quot; command in the &quot;File&quot; menu will export a <code>png</code> file of the plot.
+<li>The &quot;Save PDF Graphics...&quot; command in the &quot;File&quot; menu will
+export a <code>pdf</code> file of the plot.
 </li>
 
-<li>The &quot;Export Data...&quot; command in the &quot;File&quot; menu will export a table of
-all results to a text file. Column one will be the time data. Each plot will appear
-in additional labeled columns.
+<li>The &quot;Save JPG, BMP, or PNG Graphics...&quot; command in the &quot;File&quot; menu will
+export a bitmapped graphics file of the plot (the type exported is determined by the extension
+you proved when naming the save file; if no extension is provided, it will exported as a
+<code>png</code> file.
+</li>
+
+<li>The &quot;Export PublishPlotJ or Table...&quot; command in the &quot;File&quot; menu will export either
+a file that can be read by PublishPlotJ (or PublishPlot on Mac) or  a file with a tab-delimited table of
+plot data. The type of expport is determined by the extension on the selected file name; use "ppltj" for a 
+PublishPlotJ file or anything else for a table export. The PublishPlotJ export will include all data
+and all plot annotations; a table export will have all data, but no annotations.
 </li>
 
 <li>The &quot;Import...&quot; command in the &quot;File&quot; menu can import any tab-delimited
@@ -483,19 +574,25 @@ text file and plot the results. The time data must be in column one and any numb
 can be in additional columns. For example, any exported plot can be imported later.
 </li>
 
-<li>The &quot;Print...&quot; command in the &quot;File&quot; menu will print the current plot.
-Capturing the printing to a PDF file will give a high-resolution version of the plot.
+<li>The &quot;Close...&quot; command in the &quot;File&quot; menu will close the current plot.
 </li>
 
-<li>The &quot;Add Label&quot; command in the &quot;Edit&quot; menu will add a label to
-the plot. You can drag it to a new location or double click to edit the text and change
-the font and color.</li>
+<li>The &quot;Print...&quot; command in the &quot;File&quot; menu will print the current plot.
+</li>
+
+<li>The &quot;Annotations&quot; submenu in the &quot;Edit&quot; menu will add various plot
+annotaions to the plot suach as labels, arrows, and shapes. Once added you can move them around
+the plot of click the end points to reorient and resize them. You can double click to open
+the plot inspector to change more properties of the annotations (and to change the text
+of plot labels).</li>
+
+<li>The &quot;Arrange&quot; submenu in the &quot;Edit&quot; menu lets you rearrange the
+order of plots and plot annotations (but note that plot symbols always plot in their own
+layer a top of all other objects.</li>
 
 <li>You can click on any plot data to select it. Once selected, you can cut, copy,
-paste, or delete the plot.
-A copied plot can be pasted into a different time plot window or into any
-text-editing application.
-The pasted text will be a tab-delimited table of the results.
+paste, or delete the plot. A copied plot can be pasted into a different time plot window or into any
+text-editing application. The pasted text will be a tab-delimited table of the results.
 </li>
 
 <li>If you use copy command when no plot is selected, it will copy all data.
@@ -536,7 +633,11 @@ For some results, you can select a component of that quantity
 <li>For MPM results, the slider selects the initial time to plot.
 </li>
 
-<li>The check boxes select various options to the plot. Select the desired options.</li>
+<li>The check boxes select various options to the plot. Select the desired options. The slider along
+with the check boxes sets the size of the particles in the plot relative
+to the cell size in the background mesh, but this setting only matters for MPM plots
+when the plot is clipped to particles. The default is 50%. This size (or larger) fills space better
+when clipping mesh plots to the particles.</li>
 
 <li>The limits box works as described <a href="#limits">above</a>. Since FEA plots
 only have a single frame,
@@ -560,6 +661,9 @@ the movie controls will be inactive (since FEA results are static)</p>
 <p>You can use the quantity and component menus to plot a new
 simulation result or new component of the current simulation result. To change other plot features, go back
 to the &quot;Analysis Results&quot; window, select new options, and plot again.</p>
+
+<p>The particle size slider (labeled "PS", but for MPM calculations only) can be used to adjust the particle
+size in the plot as a percent of the cell size. The setting only matters when the plot is clipping to particles.</p>
 
 <p>You can use the &quot;Zoom&quot; menu to zoom in on the plot. The zoom level is relative to the
 current window size and will remain so as the window is resized.

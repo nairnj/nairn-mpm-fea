@@ -542,7 +542,7 @@ public class MathEvaluator
         {
         	String nbSpaces = "";
             for (int i=0; i<nLevel; i++) nbSpaces += "  ";
-            //System.out.println(nbSpaces + "|" + s);
+            System.out.println(nbSpaces + "|" + s);
         }
     }
 

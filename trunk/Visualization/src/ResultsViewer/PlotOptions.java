@@ -51,7 +51,7 @@ public class PlotOptions extends PlotControl
 	
 	// particle size
 	private JLabel sizeSelected=new JLabel("100",JLabel.LEFT);
-	JSlider mpmParticleSize=new JSlider(JSlider.HORIZONTAL,0,100,5);
+	public JSlider mpmParticleSize=new JSlider(JSlider.HORIZONTAL,0,100,5);
 	int particleSize=50;
 	
 	PlotOptions(DocViewer dc)

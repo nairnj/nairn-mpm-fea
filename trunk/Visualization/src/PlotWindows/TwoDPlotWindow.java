@@ -7,12 +7,19 @@
  */
 
 import java.awt.*;
+
 import javax.swing.*;
 
 import java.awt.event.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 
 import geditcom.JNFramework.*;
 import geditcom.plot2d.*;
+
+import de.erichseifert.vectorgraphics2d.PDFGraphics2D;
 
 public class TwoDPlotWindow extends JNChildWindow
 {
@@ -45,7 +52,14 @@ public class TwoDPlotWindow extends JNChildWindow
 		setJMenuBar(menuBar);
 		
 		// Plot File menu
-		JMenu menu = document.defaultPlotFileMenu(plot2DView);
+		JMenu menu = new JMenu("File");
+		JNDocument.makeMenuItem(menu,"Save PDF Graphics...","ExportPDF",this,KeyEvent.VK_S);
+		JNDocument.makeMenuItem(menu,"Save JPG, BMP, or PNG Graphics...","ExportImage",plot2DView,KeyEvent.VK_S,true);
+		JNDocument.makeMenuItem(menu,"Export PublishPlotJ or Table...","Export",plot2DView,KeyEvent.VK_E,true);
+		JNDocument.makeMenuItem(menu,"Import...","Import",plot2DView,KeyEvent.VK_I,true);
+		menu.addSeparator();
+		JNDocument.makeMenuItem(menu,"Close","closeWindow",this,KeyEvent.VK_W);
+		JNDocument.makeMenuItem(menu,"Print...","Print",plot2DView,KeyEvent.VK_P);
 		menuBar.add(menu);
 		
 		// Edit menu
@@ -73,8 +87,49 @@ public class TwoDPlotWindow extends JNChildWindow
 		{	document.toFront();
 		}
 		
+		if(theCmd.equals("ExportPDF"))
+		{	PDFExport();
+		}
+
 		else
 			super.actionPerformed(e);
 	}
 	
+	public void PDFExport()
+	{
+		JFileChooser chooser=new JFileChooser();
+		//JNFileFilter filter=getFilter(docType);
+		int result = chooser.showSaveDialog(this);
+		if(result != JFileChooser.APPROVE_OPTION) return;
+		
+		// check the extension
+		ArrayList<String> exts = new ArrayList<String>(1);
+		exts.add(".pdf");
+		File tempFile=JNUtilities.CheckFileExtension(this,chooser.getSelectedFile(),
+							exts,"an exported PDF file.");
+		if(tempFile==null) return;
+		
+		// check if overwriting
+		tempFile=JNUtilities.CheckFileStatus(this,tempFile);
+		if(tempFile==null) return;
+		
+		Dimension psize = plot2DView.getSize();
+		PDFGraphics2D g = new PDFGraphics2D(0.0, 0.0, (float)psize.width, (float)psize.height);
+		JNPlotObject oldSelectedObject=plot2DView.getSelectedObject();
+		plot2DView.setSelectedObject(null);
+		plot2DView.paintComponent(g);
+		plot2DView.setSelectedObject(oldSelectedObject);
+		
+		FileOutputStream file = null;
+		try
+		{	file = new FileOutputStream(tempFile);
+			file.write(g.getBytes());
+			file.close();
+		}
+		catch(IOException fe)
+		{	JOptionPane.showMessageDialog(this,"Error writing PDF plot data: " + fe);
+		}
+		
+	}
+
 }

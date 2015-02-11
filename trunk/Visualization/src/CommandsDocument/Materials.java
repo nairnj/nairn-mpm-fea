@@ -94,6 +94,7 @@ public class Materials
 		options.put("pressuretraction", new Integer(26));
 		options.put("taitliquid", new Integer(27));
 		options.put("neohookean", new Integer(28));
+		options.put("clampedneohookean", new Integer(29));
 		matType = doc.readIntOption(args.get(3),options,null);
 		if(matType<0)
 			throw new Exception("'Material' type not yet supported in scripting commands.\nUse XML method instead: "+args);

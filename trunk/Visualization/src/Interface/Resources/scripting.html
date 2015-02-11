@@ -150,7 +150,24 @@ where <code>#fldr$</code> was the <code>(strVar)</code> argument to the <code>Op
 Interpret the commands in the object document (which can only be a commands document). The resulting XML commands will appear in the console pane of that document. This command will wait until the interpretations are done before returning control to the script. One use of this command is to follow it with an <code>object.export</code> command to save the XML commands to a file.</li>
 
 <li><code>object.run (resDoc),(path)</code><br>
-Interpret the commands in the object document (which can only be a commands document), run the calculations, save the result to the results document using the <code>(path)</code> argument, and finally set the object variable in <code>(resDoc)</code> (which must be a valid object variable name and not an expression) to the final results document. This command will wait until the calculations are done before returning control to the script. The <code>(path)</code> can be a full path or a path relative to the script document. The folder to receive the output file must already exist.</li>
+Interpret the commands in the object document (which can only be a commands document), run the calculations (locally), save the result to the results document using the <code>(path)</code> argument, and finally set the object variable in <code>(resDoc)</code> (which must be a valid object variable name and not an expression) to the final results document. This command will wait until the calculations are done before returning control to the script. The <code>(path)</code> can be a full path or a path relative to the script document. The folder to receive the output file must already exist.</li>
+
+<li><code>object.runRemote (resDoc),(remoteFile),(remoteOption),(localFolder),(localOption)</code><br>
+Interpret the commands in the object document (which can only be a commands document), run the calculations remotely using the specified options:
+<ol>
+<li><code>(remoteFile)</code> - relative path to <a href="help.html#remoutput">saved file on the server</a>.</li>
+<li><code>(remoteOption)</code> - output file option <code>Overwrite</code>, <code>Unique</code>, or <code>Clear</code>. See <a href="help.html#remoptions">remote options</a> for details. (Default is <code>Overwrite</code>)</li>
+<li><code>(localFolder)</code> - path to local folder for storage of the simulation results. It can be a full path or a path
+relative to the script document. This folder to receive the output results must already exist.
+(Default is empty)</li>
+<li><code>(localOption)</code> - local folder option <code>Download</code>, <code>NoDownload</code>,
+or <code>Home</code>. See <a href="help.html#locoptions">local folder options</a> for details.
+(Default is <code>Download</code> if <code>(localFolder)</code> is provided or <code>NoDownload</code>
+if it is not provided)</li>
+</ol>
+</li>
+When the calculations are done the object variable in <code>(resDoc)</code> (which must be a valid object variable name and not an expression) will be set to the final results document, but if <code>(localOption)</code> is <code>NoDownload</code>, no results document will be opened and <code>(resDoc)</code> will not be set. This command will wait until the calculations are done before returning control to the script.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Before this command can be used, you must <a href="help.html#setserver">set up the serve</a>r for remote calculations. If you do not specify a password when setting up the server, this command will ask for one; thus to run an unattended script of many calculations, you should enter a password in the server setup.</li>
 
 <li><code>object.export &lt;(path)&gt;</code><br>
 This command will save the contents of the console pane in the object document (which can only be a commands document) to the file specified by <code>(path)</code>. The optional <code>(path)</code> can be a full path or a path relative to the script document. The folder to receive the output file must already exist. If <code>(path)</code> is omitted, the user is given a file-saving dialog box to select file name and save location.</li>
@@ -160,19 +177,37 @@ This command will save the contents of the console pane in the object document (
 
 <h2><a name="properties"></a>Object Properties</h2>
 
-<p>You can read properties of object documents by using <a href="commands.html#atexp">"At" expressions</a>. These property expressions can be used within other expressions. The currently supported properties are given below. In each property, the "object" at the beginning is replaced by the object variable for the desired document.</p>
+<p>You can read properties of object documents by using <a href="commands.html#atexp">"At" expressions</a>. These property expressions can be used within other expressions. The currently supported properties are given below. In each property, the "object" at the beginning is replaced by the object variable for the desired document. The remaining elements (which are separated by periods) are keywords or numbers. Elements that expect text can be replaced by quoted text or string variables; elements that expect numbers can be replaced by numeric variables.</p>
+
+<h3>Properties for Commands Documents</h3>
 
 <ul>
 <li><code>@object.get.varName</code><br>
 FEA and MPM commands documents can read all variables defined in scripts, but any changes made to those variables are not communicated back to the script. Furthermore, the commands documents may define other variables that would be useful to know in a script. Once FEA or MPM commands have be interpreted or run, this "At" expression can read any variable, where <code>varName</code> is the variable to read. It only works for commands documents.</li>
+</ul>
 
+<h3>Properties for Results Documents</h3>
+
+<ul>
 <li><code>@object.section.(sectionName)</code><br>
-Returns the entire text to the section titled <code>(sectionName)</code>, which must be a quoted string
-or a string variable. This expression only works for results documents and the section names
-are the complete, case-sensitive text of the sections listed on the top left index of a results document. Hint: the text read from a section can be parsed using <a href="commands.html#debug"><code>Lines</code> and <code>Words</code> commands</a>.</li>
+Returns the entire text to the section titled <code>(sectionName)</code>, which must be a quoted string or a string variable. The section names are the complete, case-sensitive text of the sections listed on the top left index of a results document. Hint: the text read from a section can be parsed using <a href="commands.html#debug"><code>Lines</code> and <code>Words</code> commands</a>.</li>
 
 <li><code>@object.energy</code><br>
 Returns the total strain energy in an FEA results document (assuming the output file contains the strain energy results). It is a common quantity to read when doing script control of FEA calculations.</li>
+
+<li><code>@object.timeplot (quantity).(arg1).(arg2)...</code><br>
+Returns the selected quantity as a function of time in a single string (for MPM calculations only).
+Each line will have time (ms) and the quantity separated by a space.
+The number of lines will be the number of data points.
+The string can be decoded using <a href="commands.html#debug"><code>Lines</code>
+and <code>Words</code> commands</a>.The currently supported plot quantities (which are case sensitive) are:
+<ul>
+<li>global: plot global quantity specified in (arg1), which must exactly match the global archive quantity name and that quantity must be in the global results.</li>
+<li>J1, J2, KI, KII, TipNCOD, TipSCOD, DebondNCOD, DebondSCOD, CrackRelease, CrackAbsorb: plot crack tip property for crack number (arg1) with (arg2) equal to 0 or 1 for crack tip at start or end of the crack. For COD's, "N" and "S" refer to normal and shear opening.</li>
+<li>Length: plot length of crack number (arg1).</li>
+<li>DebondLength: plot length of crack with no traction laws for crack number (arg1).</li>
+</ul>
+
 
 </ul>
 
