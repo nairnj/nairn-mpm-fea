@@ -79,7 +79,7 @@ public class MeshPlotData  extends PlotControl implements MouseMotionListener
 		}
 		
 		// element number
-		if(plotView.inDisplaced())
+		if(plotView.inDisplaced() & resDoc.isFEAAnalysis())
 		{	if(currentElem>0)
 			{	// check previous one first
 				if(!(resDoc.elements.get(currentElem-1)).PtInDispElement(pt))

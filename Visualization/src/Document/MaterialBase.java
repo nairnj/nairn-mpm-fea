@@ -53,9 +53,13 @@ public class MaterialBase
 		while(s.hasNext())
 		{	Scanner sline=new Scanner(s.next());
 			sline.useLocale(Locale.US);
-			if(!sline.hasNext()) break;
+			if(!sline.hasNext())
+			{	sline.close();
+				break;
+			}
 			if(sline.next().equals("rho="))
 				rho=sline.nextDouble();
+			sline.close();
 		}
 	}
 	

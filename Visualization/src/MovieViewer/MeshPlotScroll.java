@@ -10,6 +10,7 @@
 import java.awt.Dimension;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.Point;
 
 import javax.swing.*;
 
@@ -27,20 +28,30 @@ public class MeshPlotScroll extends JScrollPane implements ComponentListener
 	}
 	
 	// change the scale
-	public void setScale(double newScale)
-	{	// find current center
-		int hvalue=getHorizontalScrollBar().getValue();
+	public void setScale(double newScale,Point click)
+	{	// find current center or use click point
+		int hcenter,vcenter,hvalue,vvalue;
 		int sBarWidth=getHorizontalScrollBar().getHeight();
-		int vvalue=getVerticalScrollBar().getValue();
 		Dimension scrollSize=getSize();
-		int hcenter=(int)((hvalue+(scrollSize.width-sBarWidth)/2.)/scale);
-		int vcenter=(int)((vvalue+(scrollSize.height-sBarWidth)/2.)/scale);
+		if(click==null)
+		{	hvalue=getHorizontalScrollBar().getValue();
+			vvalue=getVerticalScrollBar().getValue();
+			
+			// scroll bar value + half the visible width is the center at 100%
+			hcenter=(int)((hvalue+(scrollSize.width-sBarWidth)/2.)/scale);
+			vcenter=(int)((vvalue+(scrollSize.height-sBarWidth)/2.)/scale);
+		}
+		else
+		{	// convert to 100%
+			hcenter = (int)((double)click.x/scale);
+			vcenter = (int)((double)click.y/scale);
+		}
 		
 		// change scale
 		scale=newScale;
 		componentResized(null);
 		
-		// recenter plot
+		// recenter plot on (hcenter,vcenter)
 		getHorizontalScrollBar().setMaximum(plotView.getWidth());
 		getVerticalScrollBar().setMaximum(plotView.getHeight());
 		hvalue=(int)(hcenter*scale-(scrollSize.width-sBarWidth)/2.);

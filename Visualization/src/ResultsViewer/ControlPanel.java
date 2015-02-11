@@ -301,6 +301,7 @@ public class ControlPanel extends JPanel
 	// get list of options for the plot
 	public boolean [] getOptions() { return options.getOptions(); }
 	public double getParticleSize() { return (double)options.particleSize; }
+	public JSlider getParticleSizeSlider() { return options.mpmParticleSize; }
 	
 	// get currently selected archive
 	public int getArchiveIndex() { return selectTime.getArchiveIndex(); }
@@ -374,7 +375,12 @@ public class ControlPanel extends JPanel
 	public static int readInteger(JTextField theField,String fieldName) throws Exception
 	{
 		Scanner validate=new Scanner(theField.getText());		// will use user's locale
-		if(validate.hasNextInt()) return validate.nextInt();
+		if(validate.hasNextInt())
+		{	int theInt = validate.nextInt();
+			validate.close();
+			return theInt;
+		}
+		validate.close();
 		throw new Exception("The "+fieldName+" must be an integer");
 	}
 	
@@ -382,7 +388,12 @@ public class ControlPanel extends JPanel
 	public static double readDouble(JTextField theField,String fieldName) throws Exception
 	{
 		Scanner validate=new Scanner(theField.getText());		// will use user's locale
-		if(validate.hasNextDouble()) return validate.nextDouble();
+		if(validate.hasNextDouble())
+		{	double theDble = validate.nextDouble();
+			validate.close();
+			return theDble;
+		}
+		validate.close();
 		throw new Exception("The "+fieldName+" must be an floating point number");
 	}
 }

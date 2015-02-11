@@ -11,7 +11,6 @@ import java.util.*;
 import java.io.*;
 import java.nio.*;
 import java.awt.Toolkit;
-import java.awt.geom.*;
 
 public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 {
@@ -48,6 +47,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			{	FileReader fr=new FileReader(resDoc.globalArchive);
 				char [] buffer=new char [(int)resDoc.globalArchive.length()];
 				fr.read(buffer);
+				fr.close();
 				plot2DView.readTable(new String(buffer));
 				plot2DView.setXTitle("Time ("+resDoc.timeU+")");
 				plot2DView.setYTitle("Global Quantity");
@@ -286,221 +286,20 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 	{
 		// settings
 		ResultsDocument resDoc=((DocViewer)document).resDoc;
-		int i,npts=resDoc.archives.size();
+		int npts=resDoc.archives.size();
+		
+		// read crack number and tip
 		int crackNum=controls.getCrackNumber();
 		int tipNum=controls.getCrackTip();
 		
 		// array for results
 		ArrayList<Double> x=new ArrayList<Double>(npts);
 		ArrayList<Double> y=new ArrayList<Double>(npts);
-		ArrayList<Integer> crackEnds=new ArrayList<Integer>(20);
-
-		// variables while decoding
-		byte[] version=new byte[4];
-		ByteBuffer bb;
-		CrackSegment seg=new CrackSegment();
-		int lastoffset,offset,tipOffset,endOffset;
-		boolean foundTip;
-		short matnum;
-		double yvalue;
-		Point2D.Double pt,lastPt,cod;
 		
-		// format
-		char[] crackOrder=new char[ReadArchive.ARCH_MAXCRACKITEMS];
-		resDoc.crackFormat.getChars(0,ReadArchive.ARCH_MAXCRACKITEMS,crackOrder,0);
+		// get data
+		resDoc.getTimeCrackData(controls,component,crackNum,tipNum,x,y);
 		
-		// loop over all archives
-		for(i=0;i<npts;i++)
-		{	// adjust progress bar
-			controls.setProgress(i+1);
-		
-			// open file (try to continue on errors
-			try
-			{	bb=resDoc.openSelectedArchive(i);
-			}
-			catch(Exception bbe)
-			{	continue;
-			}
-			
-			// check version
-			bb.get(version);
-			int headerLength=4;
-			int vernum=version[3]-'0';
-			if(vernum>=4)
-				headerLength=64;
-			else if(vernum!=3)
-				throw new Exception("Archive file is too old for this tool");
-			int nummpms=(int)((bb.remaining()+4-headerLength)/resDoc.recSize);
-			
-			// find the first crack (matnum>0), remember ends
-			offset=headerLength+(nummpms-1)*resDoc.recSize+ReadArchive.sizeofInt+ReadArchive.sizeofDouble;
-			lastoffset=offset;
-			crackEnds.clear();
-			crackEnds.add(new Integer(lastoffset));
-			while(offset>0)
-			{	bb.position(offset);
-				matnum=bb.getShort();
-				if(matnum>0) break;
-				offset-=resDoc.recSize;
-				if(matnum==-1) crackEnds.add(new Integer(offset));
-			}
-			
-			// find start or end of desired crack (if it exists)
-			if(crackNum>crackEnds.size()-1) continue;
-			if(tipNum==CrackSelector.CRACK_START || component==PlotQuantity.MPMLENGTH
-						|| component==PlotQuantity.MPMDEBONDLENGTH)
-			{	Integer offObj=crackEnds.get(crackEnds.size()-crackNum);
-				offset=offObj.intValue()+resDoc.recSize;
-				offObj=crackEnds.get(crackEnds.size()-crackNum-1);
-				endOffset=offObj.intValue();
-			}
-			else
-			{	Integer offObj=crackEnds.get(crackEnds.size()-crackNum-1);
-				offset=offObj.intValue();
-				offObj=crackEnds.get(crackEnds.size()-crackNum);
-				endOffset=offObj.intValue()+resDoc.recSize;
-			}
-			offset-=(ReadArchive.sizeofInt+ReadArchive.sizeofDouble);
-			endOffset-=(ReadArchive.sizeofInt+ReadArchive.sizeofDouble);
-			
-			// read segment
-			bb.position(offset);
-			seg.readRecord(bb,crackOrder,resDoc.lengthScale,resDoc.timeScale);
-			
-			// crack tip properties
-			switch(component)
-			{   case PlotQuantity.MPMJ1:
-					yvalue=seg.J1;
-					break;
-					
-				case PlotQuantity.MPMJ2:
-					yvalue=seg.J2;
-					break;
-					
-				case PlotQuantity.MPMKI:
-					yvalue=seg.KI;
-					break;
-
-				case PlotQuantity.MPMKII:
-					yvalue=seg.KII;
-					break;
-
-				case PlotQuantity.MPMLENGTH:
-				case PlotQuantity.MPMDEBONDLENGTH:
-					yvalue=0.;
-					double bonded=0.;
-					lastPt=seg.getMedianPosition();
-					while(true)
-					{   offset+=resDoc.recSize;
-						if(offset>lastoffset) break;
-						bb.position(offset);
-						seg.readRecord(bb,crackOrder,resDoc.lengthScale,resDoc.timeScale);
-						if(seg.startFlag==-1) break;
-						pt=seg.getMedianPosition();
-						double segLength=Math.sqrt((pt.x-lastPt.x)*(pt.x-lastPt.x) +
-										(pt.y-lastPt.y)*(pt.y-lastPt.y));
-						yvalue+=segLength;
-						if(seg.tractionMaterial>0) bonded+=segLength;
-						lastPt=pt;
-					}
-					if(component==PlotQuantity.MPMDEBONDLENGTH) yvalue-=bonded;
-					break;
-				
-				case PlotQuantity.MPMCRACKRELEASE:
-					yvalue=seg.release;
-					break;
-				
-				case PlotQuantity.MPMCRACKABSORB:
-					yvalue=seg.absorb;
-					break;
-				
-				case PlotQuantity.MPMDEBONDNCTOD:
-				case PlotQuantity.MPMDEBONDSCTOD:
-					tipOffset=offset;
-					foundTip=true;
-					pt=seg.getPt();
-					int tlCount=0;
-					lastPt=new Point2D.Double(0.,0.);
-					cod=new Point2D.Double(0.,0.);
-					// scan to end of debond zone from this tip
-					while(seg.tractionMaterial>0)
-					{	lastPt=pt;
-						cod=seg.getCOD();
-						pt=seg.getPt();
-						tlCount++;
-						if(tipNum==CrackSelector.CRACK_START)
-						{	tipOffset+=resDoc.recSize;
-							if(tipOffset>endOffset)
-							{	foundTip=false;
-								break;
-							}
-						}
-						else
-						{	tipOffset-=resDoc.recSize;
-							if(tipOffset<endOffset)
-							{	foundTip=false;
-								break;
-							}
-						}
-						bb.position(tipOffset);
-						seg.readRecord(bb,crackOrder,resDoc.lengthScale,resDoc.timeScale);
-					}
-					
-					// not found in the crack (entire crack is traction law)
-					if(!foundTip)
-					{	yvalue=0.;
-						break;
-					}
-					
-					// if tlCount==0, then no traction at this crack tip, so just fall through and use regular crack tip cod
-					//   otherwise do calculations
-					//	Here pt and cod are at the debond tip. lastPt is at previous traction law or at tip if tlCount==1
-					if(tlCount>0)
-					{	pt=seg.getPt();
-						double dx=lastPt.x-pt.x;
-						double dy=lastPt.y-pt.y;
-						double norm=Math.sqrt(dx*dx+dy*dy);
-					
-						if(component==PlotQuantity.MPMDEBONDNCTOD)
-							yvalue=(-cod.x*dy + cod.y*dx)/norm;
-						else
-							yvalue=(cod.x*dx + cod.y*dy)/norm;
-						break;
-					}
-				
-				case PlotQuantity.MPMNORMALCTOD:
-				case PlotQuantity.MPMSHEARCTOD:
-					cod=seg.getCOD();
-					pt=seg.getMedianPosition();
-
-					// read previous segment
-					offset = tipNum==CrackSelector.CRACK_START ? offset+resDoc.recSize : offset-resDoc.recSize;
-					bb.position(offset);
-					seg.readRecord(bb,crackOrder,resDoc.lengthScale,resDoc.timeScale);
-					lastPt=seg.getMedianPosition();
-					double dx=pt.x-lastPt.x;
-					double dy=pt.y-lastPt.y;
-					double norm=Math.sqrt(dx*dx+dy*dy);
-					
-					if(component==PlotQuantity.MPMNORMALCTOD || component==PlotQuantity.MPMDEBONDNCTOD)
-						yvalue=(-cod.x*dy + cod.y*dx)/norm;
-					else
-						yvalue=(cod.x*dx + cod.y*dy)/norm;
-					break;
-				
-				default:
-					yvalue=0.;
-					break;
-			}
-			
-			// add crack value to the  plot
-			x.add(new Double(resDoc.archiveTimes.get(i)));
-			y.add(new Double(yvalue));
-		}
-		
-		if(x.size()==0)
-			throw new Exception("No data found for that plot quantity");
-
+		// plot the data
 		Hashtable<String,String> props = new Hashtable<String,String>();
 		props.put("object.color",plot2DView.selectPlotColor());
 		String extra;
@@ -513,4 +312,5 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 		props.put("array.name",PlotQuantity.plotName(component,resDoc)+extra);
 		plot2DView.plotData(x,y,props);
 	}
+	
 }

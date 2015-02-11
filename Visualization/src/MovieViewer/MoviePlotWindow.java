@@ -33,7 +33,9 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 	protected boolean runFlag,imageStillWriting;
 	protected MeshPlotScroll plotScroll;
 	protected String frameFileRoot=null;
+	protected JMenu zoomMenu;
 	protected JCheckBoxMenuItem checkedZoomItem;
+	double currentScale;
 
 	// command file chooser
 	private JFileChooser chooser=new JFileChooser();
@@ -54,7 +56,61 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		// add plot view (entire window for now)
 		Container content=getContentPane();
 		plotView=new MeshPlotView(resDoc);
-		//content.add(plotView,BorderLayout.CENTER);
+		
+		// list to clicks in the plot view
+		plotView.addMouseListener(new MouseAdapter()
+		{	public void mouseClicked(MouseEvent e)
+		    {	if(e.isMetaDown())
+		    	{	int newItem = 0;
+		    		if(e.isAltDown())
+		    		{	// reduce 1, 1.5, 2,3,4,5,7,10
+		    			if(currentScale<1.25)
+		    			{	JNApplication.appBeep();
+		    				return;
+		    			}
+		    			else if(currentScale<2.5)
+		    				currentScale -= 0.5;
+		    			else if(currentScale<6.)
+		    				currentScale -= 1.0;
+		    			else if(currentScale<8.0)
+		    				currentScale = 5.;
+		    			else
+		    				currentScale = 7.;
+		    		}
+		    		else
+		    		{	// zooom 1, 1.5, 2,3,4,5,7,10
+		    			if(currentScale>8.)
+		    			{	JNApplication.appBeep();
+		    				return;
+		    			}
+		    			else if(currentScale>6.)
+		    				currentScale = 10.;
+		    			else if(currentScale>4.5)
+		    				currentScale = 7.;
+		    			else if(currentScale>1.75)
+		    				currentScale += 1.;
+		    			else
+		    				currentScale +=0.5;
+		    		}
+		    	
+		    		// get new checked scale item
+		    		checkedZoomItem.setSelected(false);
+		    		if(currentScale<2.5)
+		    			newItem = (int)(2*currentScale-1.99);
+		    		else if(currentScale<6.)
+		    			newItem = (int)(currentScale+0.1);
+		    		else if(currentScale<8.)
+		    			newItem = 6;
+		    		else
+		    			newItem = 7;
+		    		checkedZoomItem = (JCheckBoxMenuItem)zoomMenu.getMenuComponent(newItem);
+		    		checkedZoomItem.setSelected(true);
+		    	
+		    		// change scale
+		    		plotScroll.setScale(currentScale,e.getPoint());
+		    	}
+		    }
+		});
 		
 		// scroll pane
 		plotScroll=new MeshPlotScroll(plotView);
@@ -69,6 +125,7 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		// notifications
 		JNNotificationCenter.getInstance().addNameAndObjectForTarget("TimeSliderChanged",gDocView,this);
 		JNNotificationCenter.getInstance().addNameAndObjectForTarget("PlotQuantityChanged",gDocView,this);
+		JNNotificationCenter.getInstance().addNameAndObjectForTarget("ParticleSizeChanged",gDocView,this);
 		
 		finishFrameworkWindow(false);
 	}
@@ -87,17 +144,18 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		JNDocument.makeMenuItem(menu,"Close","Close",this,KeyEvent.VK_W);
 		
 		// Zoom menu
-		menu = new JMenu("Zoom");
-		menuBar.add(menu);
-		checkedZoomItem=makeCheckBoxMenuItem(menu,"100%","ZoomPlot",this,KeyEvent.VK_1);
-		makeCheckBoxMenuItem(menu,"150%","ZoomPlot",this,KeyEvent.VK_2);
-		makeCheckBoxMenuItem(menu,"200%","ZoomPlot",this,KeyEvent.VK_3);
-		makeCheckBoxMenuItem(menu,"300%","ZoomPlot",this,KeyEvent.VK_4);
-		makeCheckBoxMenuItem(menu,"400%","ZoomPlot",this,KeyEvent.VK_5);
-		makeCheckBoxMenuItem(menu,"500%","ZoomPlot",this,KeyEvent.VK_6);
-		makeCheckBoxMenuItem(menu,"700%","ZoomPlot",this,KeyEvent.VK_7);
-		makeCheckBoxMenuItem(menu,"1000%","ZoomPlot",this,KeyEvent.VK_8);
+		zoomMenu = new JMenu("Zoom");
+		menuBar.add(zoomMenu);
+		checkedZoomItem=makeCheckBoxMenuItem(zoomMenu,"100%","ZoomPlot",this,KeyEvent.VK_1);
+		makeCheckBoxMenuItem(zoomMenu,"150%","ZoomPlot",this,KeyEvent.VK_2);
+		makeCheckBoxMenuItem(zoomMenu,"200%","ZoomPlot",this,KeyEvent.VK_3);
+		makeCheckBoxMenuItem(zoomMenu,"300%","ZoomPlot",this,KeyEvent.VK_4);
+		makeCheckBoxMenuItem(zoomMenu,"400%","ZoomPlot",this,KeyEvent.VK_5);
+		makeCheckBoxMenuItem(zoomMenu,"500%","ZoomPlot",this,KeyEvent.VK_6);
+		makeCheckBoxMenuItem(zoomMenu,"700%","ZoomPlot",this,KeyEvent.VK_7);
+		makeCheckBoxMenuItem(zoomMenu,"1000%","ZoomPlot",this,KeyEvent.VK_8);
 		checkedZoomItem.setSelected(true);
+		currentScale = 1.0;
 		
 		// Window
 		menu = new JMenu("Window");
@@ -294,22 +352,23 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 			checkedZoomItem=(JCheckBoxMenuItem)(e.getSource());
 			checkedZoomItem.setSelected(true);
 			String theZoomCmd=checkedZoomItem.getText();
-			double scale=1.0;
 			if(theZoomCmd.equals("150%"))
-				scale=1.5;
+				currentScale=1.5;
 			else if(theZoomCmd.equals("200%"))
-				scale=2.0;	
+				currentScale=2.0;	
 			else if(theZoomCmd.equals("300%"))
-				scale=3.0;	
+				currentScale=3.0;	
 			else if(theZoomCmd.equals("400%"))
-				scale=4.0;	
+				currentScale=4.0;	
 			else if(theZoomCmd.equals("500%"))
-				scale=7.0;	
+				currentScale=5.0;	
 			else if(theZoomCmd.equals("700%"))
-				scale=7.0;	
+				currentScale=7.0;	
 			else if(theZoomCmd.equals("1000%"))
-				scale=10.0;
-			plotScroll.setScale(scale);
+				currentScale=10.0;
+			else
+				currentScale = 1.0;
+			plotScroll.setScale(currentScale,null);
 		}
 		
 		else
@@ -333,12 +392,12 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 		}
 	
 		else if(obj.getName().equals("PlotQuantityChanged"))
-		{	JComboBox qmenu=(JComboBox)obj.getUserInfo();
-			int ctrlPlotType=((DocViewer)document).controls.getPlotType();
+		{	int ctrlPlotType=((DocViewer)document).controls.getPlotType();
+			JComboBox qmenu = (JComboBox)obj.getUserInfo();
 			if(qmenu==movieControls.pquant)
 			{	// changed in plot window, synch with results window
 				if(ctrlPlotType==getPlotType())
-				{	int newIndex=qmenu.getSelectedIndex();
+				{	int newIndex=movieControls.pquant.getSelectedIndex();
 					JComboBox plotQuant=((DocViewer)document).controls.getQuantityMenu();
 					if(plotQuant.getSelectedIndex()!=newIndex)
 						plotQuant.setSelectedIndex(newIndex);
@@ -349,7 +408,7 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 			else if(qmenu==movieControls.pcmpnt)
 			{	// changed in plot window, synch with results window
 				if(ctrlPlotType==getPlotType())
-				{	int newIndex=qmenu.getSelectedIndex();
+				{	int newIndex=movieControls.pcmpnt.getSelectedIndex();
 					JComboBox plotCmpnt=((DocViewer)document).controls.getComponentMenu();
 					if(plotCmpnt.getSelectedIndex()!=newIndex)
 						plotCmpnt.setSelectedIndex(newIndex);
@@ -358,10 +417,26 @@ public class MoviePlotWindow extends JNChildWindow implements  Runnable, IIOWrit
 					((DocViewer)document).startNewPlot(getPlotType());
 			}
 			else
-			{	// changed in control panel - synch and replot
+			{	// changed in control panel - synch and replot (might never be used)
 				movieControls.syncPlotQuantityMenus();
 				((DocViewer)document).startNewPlot(getPlotType());
 			}
+		}
+	
+		else if(obj.getName().equals("ParticleSizeChanged"))
+		{	if((JSlider)obj.getUserInfo()==movieControls.mpmParticleSize)
+			{	int newSize = movieControls.mpmParticleSize.getValue();
+				JSlider masterSize = ((DocViewer)document).controls.getParticleSizeSlider();
+				masterSize.setValue(newSize);
+				if(!movieControls.disableStartPlot)
+					((DocViewer)document).startNewPlot(getPlotType());
+			}
+			else
+			{	// changed in control panel - synch and replot (might never be used)
+				movieControls.syncPlotQuantityMenus();
+				((DocViewer)document).startNewPlot(getPlotType());
+			}
+
 		}
 	}
 	// export current frame to saveFile and return true of false if done OK

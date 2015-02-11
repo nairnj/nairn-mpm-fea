@@ -10,6 +10,9 @@ import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
 import java.net.*;
 import geditcom.JNFramework.*;
 
@@ -30,6 +33,11 @@ public class MovieControls extends JPanel
 	public JComboBox pcmpnt=new JComboBox();
 	public boolean disableStartPlot=false;
 	
+	// particle size
+	private JLabel sizeSelected=new JLabel("PS: 100",JLabel.LEFT);
+	public JSlider mpmParticleSize=new JSlider(JSlider.HORIZONTAL,0,100,5);
+	int particleSize=50;
+
 	// axes
 	private String xchar="x";
 	private String ychar="y";
@@ -115,7 +123,6 @@ public class MovieControls extends JPanel
 		pquant.setSize(pquant.getPreferredSize());
 		pquant.setLocation(hpos,(HEIGHT-pquant.getHeight())/2);
 		add(pquant);
-		
 		hpos+=pquant.getWidth()+3;
 		
 		// component menu
@@ -127,6 +134,7 @@ public class MovieControls extends JPanel
 		pcmpnt.setSize(new Dimension(100,pquant.getHeight()));
 		pcmpnt.setLocation(hpos,(HEIGHT-pquant.getHeight())/2);
 		add(pcmpnt);
+		hpos+=pcmpnt.getWidth()+3;
 		
 		// select quantity
 		pquant.setSelectedIndex(quant.getSelectedIndex());
@@ -147,6 +155,35 @@ public class MovieControls extends JPanel
 					JNNotificationCenter.getInstance().postNotification("PlotQuantityChanged",resDoc.docCtrl,pcmpnt);
 			}
 		});
+		
+		// particle size
+		if(gResDoc.isMPMAnalysis())
+		{	mpmParticleSize.setSize(new Dimension(100,15));
+			mpmParticleSize.setLocation(hpos,6);
+			mpmParticleSize.setBackground(Color.lightGray);
+			mpmParticleSize.setFocusable(false);
+			add(mpmParticleSize);
+		
+			sizeSelected.setFont(new Font("sanserif",Font.PLAIN,10));
+			sizeSelected.setSize(sizeSelected.getPreferredSize());
+			sizeSelected.setLocation(hpos+(mpmParticleSize.getWidth()-sizeSelected.getWidth())/2,
+						HEIGHT-sizeSelected.getHeight()-6);
+			add(sizeSelected);
+			hpos+=mpmParticleSize.getWidth()+3;
+		
+			mpmParticleSize.addChangeListener(new ChangeListener()
+			{   public void stateChanged(ChangeEvent e)
+				{	particleSize=mpmParticleSize.getValue();
+					sizeSelected.setText("PS: "+particleSize);
+					if(!mpmParticleSize.getValueIsAdjusting())
+						JNNotificationCenter.getInstance().postNotification("ParticleSizeChanged",resDoc.docCtrl,mpmParticleSize);
+				}
+			});
+			particleSize=(int)gResDoc.docCtrl.controls.getParticleSize();
+			mpmParticleSize.setValue(particleSize);
+			mpmParticleSize.setToolTipText("Scale particle size as percent of cell size (default is 50%)");
+		}
+
 	}
 	
 	//----------------------------------------------------------------------------
@@ -284,6 +321,9 @@ public class MovieControls extends JPanel
 		JComboBox plotCmpnt=resDoc.docCtrl.controls.getComponentMenu();
 		if(plotCmpnt.getSelectedIndex()!=pcmpnt.getSelectedIndex())
 			pcmpnt.setSelectedIndex(plotCmpnt.getSelectedIndex());
+		JSlider partSize=resDoc.docCtrl.controls.getParticleSizeSlider();
+		if(partSize.getValue()!=mpmParticleSize.getValue())
+			mpmParticleSize.setValue(partSize.getValue());
 		disableStartPlot=false;
 	}
 

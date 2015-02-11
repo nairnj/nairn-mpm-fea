@@ -127,7 +127,8 @@ public class TextDisplay extends JSplitPane
 		
 		String section,title;
 		int titleEnd,sectionNum=1,crEnd;
-		Scanner s=new Scanner(mpm).useDelimiter("\\*\\*\\*\\*\\*\\s+\\d+\\.\\s+");
+		Scanner s=new Scanner(mpm);
+		s.useDelimiter("\\*\\*\\*\\*\\*\\s+\\d+\\.\\s+");
 		s.useLocale(Locale.US);
 		if(s.hasNext()) resDoc.add("TITLE",s.next());
 		while(s.hasNext())
@@ -145,6 +146,7 @@ public class TextDisplay extends JSplitPane
 			resDoc.add(title,sectionNum+". "+section);
 			sectionNum++;
 		}
+		s.close();
 		if(sectionNum<=1) return 0;
 		
 		// redisplay the table
@@ -173,6 +175,7 @@ public class TextDisplay extends JSplitPane
 					FileReader fr=new FileReader(subFile);
 					char [] buffer=new char [(int)subFile.length()];
 					fr.read(buffer);
+					fr.close();
 					String newSection=fdata.substring(0,index).concat(head1).concat(head2);
 					resDoc.replace(title,newSection.concat(new String(buffer)));
 				}

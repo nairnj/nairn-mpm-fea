@@ -30,6 +30,7 @@ public class IsotropicMat extends MaterialBase
 		sline.next();			// v
 		sline.next();			// =
 		nu=sline.nextDouble();
+		sline.close();
 		
 		// a
 		sline=new Scanner(s.next());
@@ -37,6 +38,7 @@ public class IsotropicMat extends MaterialBase
 		sline.next();			// a
 		sline.next();			// =
 		a=sline.nextDouble();
+		sline.close();
 		
 		super.decodeData(s);
 	}
