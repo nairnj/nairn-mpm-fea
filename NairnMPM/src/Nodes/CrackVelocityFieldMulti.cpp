@@ -430,39 +430,21 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
                         ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
                         break;
                         
+					case SPECIFIED_NORMAL:
+						// use specified normal for all contact
+						norm = contact.contactNormal;
+						AdjustForSymmetry(ndptr,&norm,true);
+						break;
+                        
 					default:
                         break;
                 }
                 
-                // current options: 3 (give an axis of z rotation angle), 5 (spherical particle, only here in nonrigid)
+                // current options: 5 (spherical particle, only here in nonrigid)
  				if(fmobj->dflag[0]==3)
-				{   // normal along +/-x, +/-y or +/-z from flag[1] = +/-1, +/-2, or +/-3
-                    //    otherwisse rotates cw about z axis by that number of degrees n = (cos(angle),-sin(angle),0)
-					// This should be the normal vector pointing out of lower numbered material
-					int normAxis = fmobj->dflag[1];
-					if(normAxis==1 || normAxis==-1)
-					{   norm.x = (double)normAxis;
-						norm.y = 0.;
-						norm.z = 0.;
-					}
-					else if(normAxis==2 || normAxis==-2)
-					{   norm.x = 0.;
-						norm.y = normAxis>0 ? 1. : -1. ;
-						norm.z = 0.;
-					}
-					else if(normAxis==3 || normAxis==-3)
-					{   norm.x = 0.;
-						norm.y = 0.;
-						norm.z = normAxis>0 ? 1. : -1. ;
-					}
-                    else
-                    {   double radAngle=(double)fmobj->dflag[1]*PI_CONSTANT/180.;
-                        norm.x=cos(radAngle);
-                        norm.y=-sin(radAngle);
-                        norm.z = 0.;
-                    }
-					AdjustForSymmetry(ndptr,&norm,true);
-				}
+                {   throw CommonException("Use 'Specify Normal' method now instead of developer flag [0] = 3.",
+										  "CrackVelocityFieldMulti::MaterialContactOnCVF");
+                }
 				else if(fmobj->dflag[0]==5)
 				{	norm.x = ndptr->x;
 					norm.y = ndptr->y;
@@ -767,39 +749,20 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
                         CopyScaleVector(&norm,&norm,1./sqrt(DotVectors(&norm,&norm)));
                         break;
 
+					case SPECIFIED_NORMAL:
+						// use specified normal for all contact
+						norm = contact.contactNormal;
+						AdjustForSymmetry(ndptr,&norm,true);
+						break;
+                        
                     default:
                         break;
                 }			
-            
-                // current options: 3 (give an axis of z rotation angle)
-                //                  4 (cutting, but only here in rigid contact)
+				
+                // current options: 4 (cutting, but only here in rigid contact)
                 if(fmobj->dflag[0]==3)
-                {   // normal along +/-x, +/-y or +/-z from flag[1] = +/-1, +/-2, or +/-3
-                    //    otherwisse rotates cw about z axis by that number of degrees n = (cos(angle),-sin(angle),0)
-                    // This should be the normal vector pointing out of the non-rigid material
-                    int normAxis = fmobj->dflag[1];
-                    if(normAxis==1 || normAxis==-1)
-                    {   norm.x = (double)normAxis;
-                        norm.y = 0.;
-                        norm.z = 0.;
-                    }
-                    else if(normAxis==2 || normAxis==-2)
-                    {   norm.x = 0.;
-                        norm.y = normAxis>0 ? 1. : -1. ;
-                        norm.z = 0.;
-                    }
-                    else if(normAxis==3 || normAxis==-3)
-                    {   norm.x = 0.;
-                        norm.y = 0.;
-                        norm.z = normAxis>0 ? 1. : -1. ;
-                    }
-                    else
-                    {   double radAngle=(double)fmobj->dflag[1]*PI_CONSTANT/180.;
-                        norm.x=cos(radAngle);
-                        norm.y=-sin(radAngle);
-                        norm.z = 0.;
-                    }
-					AdjustForSymmetry(ndptr,&norm,true);
+                {   throw CommonException("Use 'Specify Normal' method now instead of developer flag [0] = 3.",
+										  "CrackVelocityFieldMulti::RigidMaterialContactOnCVF");
                 }
                 else if(fmobj->dflag[0]==4)
                 {	// use special normals for cutting simulation with rake angle in dflag[1]

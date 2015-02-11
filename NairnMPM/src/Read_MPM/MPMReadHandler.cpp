@@ -301,7 +301,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		fmobj->multiMaterialMode=true;
 		block=MULTIMATERIAL;
         numAttr=attrs.getLength();
-		double scanInput;
+		double scanInput,polarAngle=0.,azimuthAngle=0.;
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             value=XMLString::transcode(attrs.getValue(i));
@@ -326,15 +326,27 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 					contact.materialNormalMethod=AVERAGE_MAT_VOLUME_GRADIENTS;      // 2 - AVGG
 				else if(scanInput<3.5)
 					contact.materialNormalMethod=EACH_MATERIALS_MASS_GRADIENT;		// 3 - OWNG
-                else
+ 				else if(scanInput<4.5)
+					contact.materialNormalMethod=SPECIFIED_NORMAL;					// 4 - SN
+ 				else
                     throw SAXException("Normals attribute on MultiMaterialMode must be 0 to 3.");
 			}
             else if(strcmp(aName,"RigidBias")==0)
 			{	contact.rigidGradientBias=scanInput;
 			}
+            else if(strcmp(aName,"Polar")==0)
+			{	polarAngle=scanInput;
+			}
+            else if(strcmp(aName,"Azimuth")==0)
+			{	azimuthAngle=scanInput;
+			}
 			delete [] aName;
             delete [] value;
         }
+		
+		// set normal if specified
+		if(contact.materialNormalMethod==SPECIFIED_NORMAL)
+			contact.SetContactNormal(polarAngle,azimuthAngle);
     }
 	
     else if(strcmp(xName,"ArchiveRoot")==0)
