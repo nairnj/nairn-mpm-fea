@@ -80,12 +80,8 @@ void CrackSurfaceContact::Output(void)
 	
 	// print results
 	cout << "Default Contact: " << hline << endl;
-#ifdef _VELOCITY_ONLY_
-	cout << "Contact Detection: Normal dv < 0" << endl;
-#else
 	cout << "Contact Detection: Normal cod < 0 AND normal dv < 0" << endl;
     mpmgrid.OutputContactByDisplacements();
-#endif
 	if(GetMoveOnlySurfaces())
 		cout << "Crack Plane Updating: Average of the crack surfaces" << endl;
 	else
@@ -192,9 +188,6 @@ void CrackSurfaceContact::MaterialOutput(void)
 	{	cout << "(Vrel >= " << materialContactVmin << ")";
 		strcpy(join," & ");
 	}
-#ifdef _VELOCITY_ONLY_
-	cout << join << "(Normal dv < 0)" << endl;
-#else
 	cout << join << "(Normal dv < 0)";
 	strcpy(join," & ");
 	if(displacementCheck)
@@ -203,7 +196,6 @@ void CrackSurfaceContact::MaterialOutput(void)
 	}
 	else
 		cout << endl;
-#endif
 	
 	cout << "Normal Calculation: ";
 	switch(materialNormalMethod)
@@ -225,6 +217,10 @@ void CrackSurfaceContact::MaterialOutput(void)
 		case EACH_MATERIALS_MASS_GRADIENT:
 			cout << " each material's own mass gradient";
 			break;
+		case SPECIFIED_NORMAL:
+			cout << " use the specified normal of ";
+			PrintVector("",&contactNormal);
+			cout << endl;
 		default:
 			break;
 	}
@@ -233,22 +229,20 @@ void CrackSurfaceContact::MaterialOutput(void)
     // development flags for multimaterial contact
     if(fmobj->dflag[0] > 0)
     {   cout << "** Development flag for custom contact **" << endl;
-        int normAxis = abs(fmobj->dflag[1]);
         switch(fmobj->dflag[0])
-		{	case 3:
-                if(normAxis==1 || normAxis==2 || normAxis==3)
-                    cout << "   Specified normal along axis " << fmobj->dflag[1] << " with +/- 1,2,3 for +/- x,y,z" << endl;
+		{	case 4:
+                cout << "   Special normals for cutting. Top of tool using ";
+                if(fmobj->dflag[1]>-90.)
+                    cout << "rake angle " << fmobj->dflag[1];
                 else
-                    cout << "   Specified normal = (1,0,0) rotated " << fmobj->dflag[1] << " degrees CW about z axis" << endl;
-                break;
-            case 4:
-                cout << "   Special normals for cutting. Top of tool using rake angle " << fmobj->dflag[1] <<
-                ". Bottom of tool normal = (0,1)." << endl;
+                    cout << "calculated normals";
+                cout << ". Bottom of tool normal = (0,1)." << endl;
                 break;
 			case 5:
 				cout << "   Radial normal for spherical inclusion" <<endl;
 				break;
             default:
+				cout << "   Unknown, or no longer implemented, custom contact option" << endl;
                 break;
         }
     }
@@ -333,17 +327,13 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 	CopyScaleVector(&norm,normin,1./sqrt(DotVectors2D(normin,normin)));
 	double dotn=DotVectors2D(delPa,&norm);
 	
-#ifdef _VELOCITY_ONLY_
-	// old version, which used to check only velocity
-	if(dotn>=0.) *inContact=SEPARATED;
-#else
-	
-	// With the check, any movement apart will be taken as noncontact
+	// With the first check, any movement apart will be taken as noncontact
 	// Also, frictional contact assume dvel<0.
 	if(dotn>=0.)
 		*inContact=SEPARATED;
 	else
-	{	// if approach, check displacements
+	{	// if approaching, check displacements
+        // (Note: to use only velocity, skip the following displacement check)
 		Vector dispa=cva->GetCMDisplacement(np);
 		dispa.x/=massa;
 		dispa.y/=massa;
@@ -362,7 +352,6 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 		// if current displacement positive then no contact
 		if(dnorm >= 0.) *inContact=SEPARATED;
 	}
-#endif
 	
 	// if separated, then no contact unless possibly needed for an imperfect interface
 	if(*inContact==SEPARATED && CrackContactLaw[number].law!=IMPERFECT_INTERFACE) return false;
@@ -649,4 +638,23 @@ void CrackSurfaceContact::GetMaterialInterface(int mati,int matj,double *Dn,doub
     *Dn = mmContact[i][j].Dn;
     *Dnc = mmContact[i][j].Dnc;
     *Dt = mmContact[i][j].Dt;
+}
+
+// set contact normal when normal is specified
+void CrackSurfaceContact::SetContactNormal(double polarAngle,double aximuthAngle)
+{
+	double angle,sinp;
+	
+	if(fmobj->IsThreeD())
+	{	angle = PI_CONSTANT*polarAngle/180.;
+		contactNormal.z = cos(angle);
+		sinp = sin(angle);
+	}
+	else
+	{	contactNormal.z = 0.;
+		sinp = 1.0;
+	}
+	angle = PI_CONSTANT*aximuthAngle/180.;
+	contactNormal.x = cos(angle)*sinp;
+	contactNormal.y = sin(angle)*sinp;
 }
