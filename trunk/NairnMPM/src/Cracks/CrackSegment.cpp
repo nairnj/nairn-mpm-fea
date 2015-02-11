@@ -103,13 +103,19 @@ int CrackSegment::FindElement(short side)
 // Reset crack plane position from surfaces (2D) (in mm)
 // only used when contact.GetMoveOnlySurfaces() is true and thus get crack position
 //		from previous movement of the surfaces
-// return true or false in bothSurfaces if both surfaces actually moved
 void CrackSegment::MovePosition(void)
 {	
 	x += dxPlane;
 	y += dyPlane;
     //x=(surfx[0]+surfx[1])/2.;
     //y=(surfy[0]+surfy[1])/2.;
+}
+
+// Reset crack plane position from surfaces (2D) (in mm)
+void CrackSegment::MovePositionToMidpoint(void)
+{
+    x=(surfx[0]+surfx[1])/2.;
+    y=(surfy[0]+surfy[1])/2.;
 }
 
 // Move crack plane position (2D) (in mm)
@@ -121,7 +127,7 @@ void CrackSegment::MovePosition(double xpt,double ypt)
 }
 
 // Move a surface position (2D) (in mm) - must move ABOVE_CRACK and then BELOW_CRACK
-bool CrackSegment::MoveSurfacePosition(short side,double xpt,double ypt,bool hasNodes,double surfaceMass)
+bool CrackSegment::MoveSurfacePosition(short side,double xpt,double ypt,bool hasNodes)
 {
     short j=side-1;
 	bool movedOther=FALSE;
@@ -158,7 +164,7 @@ bool CrackSegment::MoveSurfacePosition(short side,double xpt,double ypt,bool has
 				dyPlane = ypt;
 				surfx[ABOVE_CRACK-1] += xpt;	// move above by (xpt,ypt) too
 				surfy[ABOVE_CRACK-1] += ypt;
-				movedOther = true;				// in case above moved elements now (this tells  to check on return)
+				movedOther = true;				// in case above moved elements now (this tells to check on return)
 			}
 		}
 		else if(hadAboveNodes)
@@ -175,11 +181,13 @@ void CrackSegment::AddTractionForceSeg(CrackHeader *theCrack)
 {	// exit if no traction law
 	if(MatID()<0) return;
 	
-	// The first call will add force like Sum f_i T = fnorm T of total traction
-	// If all nodes are used, it is done. But if some nodes do not have a velocity field for
-	//    above the crack, the net result is lower traction then expected. The second
-	//    call speads force to the same nodes (1/fnorm -1) Sum f_i T = T - fnorm T.
-	//    The net result will application of T regardless of number of nodes
+	// The first call will add T to each node and find fnorm, which is
+	//    sum of f_i shape functions for all nodes, but to account for partia;
+	//    nodes, it should have added (f_i/fnorm) to each node.
+	// Thus if fnorm is not close to 1 (or 0, which means no nodes gound), call
+	//    again scaling by 1/fnorm - 1. The first term gets the correct f_i/fnorm
+	//    and the -1 subtracts out the first call
+	// The net result will be application of T regardless of number of nodes
 	double fnorm=AddTractionForceSegSide(theCrack,ABOVE_CRACK,(double)1.);
 	if(fnorm>0. && fnorm<0.999)
 		AddTractionForceSegSide(theCrack,ABOVE_CRACK,(1./fnorm-1.));
@@ -194,154 +202,24 @@ void CrackSegment::AddTractionForceSeg(CrackHeader *theCrack)
 // add forces to material velocity fields on one side of the crack
 double CrackSegment::AddTractionForceSegSide(CrackHeader *theCrack,int side,double sign)
 {
-	Vector norm;
 	int numnds,nds[maxShapeNodes];
     double fn[maxShapeNodes];
     short vfld;
-	NodalPoint *ndi;
 	double fnorm = 0.;
-	
-	Vector cspos = SlightlyMovedIfNotMovedYet(side);
-	side--;			// convert to 0 or 1 for above and below
-	const ElementBase *elref = theElements[surfInElem[side]];
+	NodalPoint *ndi;
+	int cnum=theCrack->GetNumber();
+
+	Vector cspos = MakeVector(surfx[side-1], surfy[side-1], 0.);
+	const ElementBase *elref = theElements[surfInElem[side-1]];
 	elref->GetShapeFunctionsForCracks(&numnds,fn,nds,&cspos);
 	
 	// loop over all nodes seen by this crack surface particle
 	for(int i=1;i<=numnds;i++)
-	{	// First see if line from the crack particle to the node crosses and cracks
-		// If it does (vfld>NO_CRACK) then have to decide which velocity field should
-		//   be used to aff the traction forces.
+	{	// Get velocity field to use
 		ndi = nd[nds[i]];
-		vfld = theCrack->CrackCross(cspos.x,cspos.y,ndi->x,ndi->y,&norm);
+		vfld = ndi->GetFieldForSurfaceParticle(side,cnum,this);
 		
-		if(vfld>NO_CRACK)
-		{	// a crossing field - to use it, must find correct field and crack number in a velocity field
-			//  1. Possible: [0], [1], [3], [0]&[3], [1]&[2], [0]&[1], [1]&[3], [0]&[1]&[2],
-			//			[0]&[1]&[3], [1]&[2]&[3], and [0]&[1]&[2]&[3]
-			//  2. Never occurs [2], [0]&[2], [2]&[3], [0]&[2]&[3]
-            //  3. Single crack has only: [0], [1], or [0]&[1] - SCWarning may access others
-			int cnum=theCrack->GetNumber();
-			int otherCrack;
-			int cside=vfld,expectSide,otherSide;
-			vfld=-1;
-			if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[1]))
-			{	// Node with: [1], [1]&[2], [0]&[1], [1]&[3], [0]&[1]&[2], [0]&[1]&[3], [1]&[2]&[3], or [0]&[1]&[2]&[3]
-				if(cnum==ndi->cvf[1]->crackNumber(FIRST_CRACK))
-				{	if(cside==ndi->cvf[1]->location(FIRST_CRACK))
-					{	vfld = 1;
-						// switch to [3] if also matches and line crosses the other crack and side
-						if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[3]))
-						{	// Node with: [1]&[3], or [0]&[1]&[3]
-							otherCrack = ndi->cvf[3]->OppositeCrackTo(cnum,cside,&expectSide);
-							if(otherCrack>0)
-							{	otherSide = ndi->SurfaceCrossesOneCrack(cspos.x,cspos.y,ndi->x,ndi->y,otherCrack);
-								if(otherSide==expectSide)
-									vfld=3;
-							}
-						}
-					}
-					else
-					{	vfld = 0;
-						// switch to [2] if also matches that field
-						if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[2]))
-						{	// check if crosses crack 2 with [2]'s side
-							otherCrack = ndi->cvf[2]->crackNumber(FIRST_CRACK);
-							otherSide = ndi->SurfaceCrossesOneCrack(cspos.x,cspos.y,ndi->x,ndi->y,otherCrack);
-							if(otherSide==ndi->cvf[2]->location(FIRST_CRACK))
-								vfld=2;
-						}
-					}
-				}
-				else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[2]))
-				{	// Node with: [1]&[2], [0]&[1]&[2], [1]&[2]&[3], or [0]&[1]&[2]&[3]
-					if(cnum==ndi->cvf[2]->crackNumber(FIRST_CRACK))
-					{	if(cside==ndi->cvf[2]->location(FIRST_CRACK))
-						{	vfld = 2;
-							// switch to [3] if also matches and line crosses the other crack with its side
-							if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[3]))
-							{	// Node with: [1]&[3], or [0]&[1]&[3]
-								otherCrack = ndi->cvf[3]->OppositeCrackTo(cnum,cside,&expectSide);
-								if(otherCrack>0)
-								{	otherSide = ndi->SurfaceCrossesOneCrack(cspos.x,cspos.y,ndi->x,ndi->y,otherCrack);
-									if(otherSide==expectSide)
-										vfld=3;
-								}
-							}
-						}
-						else
-						{	vfld = 0;
-							// check if crosses crack 1 with [1]'s side
-							otherCrack = ndi->cvf[1]->crackNumber(FIRST_CRACK);
-							otherSide = ndi->SurfaceCrossesOneCrack(cspos.x,cspos.y,ndi->x,ndi->y,otherCrack);
-							if(otherSide==ndi->cvf[1]->location(FIRST_CRACK))
-								vfld=1;
-						}
-					}
-					// here means neither [1] nor [2] has this crack, so [3] can't either,
-					// and can't confirm [0], so it is skipped (vfld stays -1)
-				}
-				else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[3]))
-				{	// Node with: [1]&[3], or [0]&[1]&[3]
-					if(cnum==ndi->cvf[3]->crackNumber(FIRST_CRACK))
-					{	if(cside==ndi->cvf[3]->location(FIRST_CRACK))
-							vfld = 3;
-						else
-							vfld = 0;
-					}
-					else if(cnum==ndi->cvf[3]->crackNumber(SECOND_CRACK))
-					{	if(cside==ndi->cvf[3]->location(SECOND_CRACK))
-							vfld = 3;
-						else
-							vfld = 0;
-					}
-					// if matches neither crack, keep at -1
-					
-					// switch to [1] if appropriate
-					if(vfld==0)
-					{	// check if crosses crack 1 with [1]'s side
-						otherCrack = ndi->cvf[1]->crackNumber(FIRST_CRACK);
-						otherSide = ndi->SurfaceCrossesOneCrack(cspos.x,cspos.y,ndi->x,ndi->y,otherCrack);
-						if(otherSide==ndi->cvf[1]->location(FIRST_CRACK))
-							vfld=1;
-					}
-				}
-			}
-			
-			else if(CrackVelocityField::ActiveNonrigidField(ndi->cvf[3]))
-			{	// Node with: [0], [3], [0]&[3]
-				if(cnum==ndi->cvf[3]->crackNumber(FIRST_CRACK))
-				{	if(cside==ndi->cvf[3]->location(FIRST_CRACK))
-						vfld = 3;
-					else
-						vfld = 0;			// only option since [1]&[2] are inactive
-				}
-				else if(cnum==ndi->cvf[3]->crackNumber(SECOND_CRACK))
-				{	if(cside==ndi->cvf[3]->location(SECOND_CRACK))
-						vfld = 3;
-					else
-						vfld = 0;			// only option since [1]&[2] are inactive
-				}
-				// if matches neither crack, keep at -1
-			}
-			
-			else
-			{	// means only [0] is active. If node is near the crack tip then probably want
-				// to use it for both sides of the crack
-				if(theCrack->NodeNearTip(ndi,0.25))
-				{	vfld = 0;
-				}
-			}
-			
-			// if vfld=-1, then did not find field to use
-			// it might be possible that [0] is OK, but maybe only at the crack tip and hard to know
-			//    otherwise; decision is to add no force (with vfld=-1)
-			
-			// if [0], is it active?
-			if(vfld==0 && !CrackVelocityField::ActiveNonrigidField(ndi->cvf[0]))
-			   vfld = -1;
-		}
-		
-		// add if find a field (use to spread this out on Fext, but now just added to Ftot)
+		// if has particles (and they see cracks), add force and track normalization
 		if(vfld>=0)
 		{	ndi->AddFtotSpreadTask3(vfld,FTract(sign*fn[i]));
 			fnorm += fn[i];
@@ -396,8 +274,8 @@ void CrackSegment::UpdateTractions(CrackHeader *theCrack)
 	// get normal and tangential COD components
 	double codx=surfx[0]-surfx[1];			// above crack - below crack
 	double cody=surfy[0]-surfy[1];
-	double nCod=-t.y*codx+t.x*cody;			// absolute normal cod
-	double tCod=t.x*codx+t.y*cody;			// absolute tangential cod
+	double nCod=-t.y*codx+t.x*cody;			// absolute normal cod (delta.n where n from below to above)
+	double tCod=t.x*codx+t.y*cody;			// absolute tangential cod (delta.t)
 	
 	// will eventually call a traction law material and get total force
 	// or force per radian if axisymmetric
@@ -411,9 +289,12 @@ void CrackSegment::UpdateTractions(CrackHeader *theCrack)
 // fullEnergy true gets total energy at location of this segment or nearest traction law tip
 // full Energy false gets recoverable energy at the traction law tip
 // Only used in J integral calculations for released and bridged energy, so return energy in N/mm
-double CrackSegment::TractionEnergy(Vector *crossPt,int crkTipIdx,bool fullEnergy)
+// If tipSegment is not NULL and this segment is not in the cohesive zone, it is set
+//    to the crack segment and the beginning of the cohesive zone (or to NULL if no cohesive zone),
+//    otherwise it is not changed
+double CrackSegment::TractionEnergy(Vector *crossPt,int crkTipIdx,bool fullEnergy,CrackSegment **tipSegment)
 {
-	// if not traction law, scan toward crack tip looking for one
+	// if no traction law, scan toward crack tip looking for one
 	if(MatID()<0)
 	{	CrackSegment *closerSeg=this;
 		while(TRUE)
@@ -422,10 +303,13 @@ double CrackSegment::TractionEnergy(Vector *crossPt,int crkTipIdx,bool fullEnerg
 			
 			// if find traction law, get crack tip energy (no need to interpolate)
 			if(closerSeg->MatID()>=0)
+			{	if(tipSegment!=NULL) *tipSegment = closerSeg;
 				return closerSeg->SegmentTractionEnergy(fullEnergy);
+			}
 		}
 		
 		// no traction law on this crack; should return energy due to friction if crack surfaces in contact
+		if(tipSegment!=NULL) *tipSegment = NULL;
 		return 0.;
 	}
 	else if(!fullEnergy)

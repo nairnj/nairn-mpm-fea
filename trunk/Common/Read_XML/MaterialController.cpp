@@ -33,6 +33,7 @@
     #include "Materials/TaitLiquid.hpp"
 	#include "Materials/HEMGEOSMaterial.hpp"
     #include "Materials/Neohookean.hpp"
+	#include "Materials/ClampedNeohookean.hpp"
 #else
 	#include "Materials/ImperfectInterface.hpp"
 #endif
@@ -142,6 +143,9 @@ int MaterialController::AddMaterial(int matID,char *matName)
 			break;
         case NEOHOOKEAN:
 			newMaterial=new Neohookean(matName);
+			break;
+		case CLAMPEDNEOHOOKEAN:
+			newMaterial=new ClampedNeohookean(matName);
 			break;
 #else
 		case INTERFACEPARAMS:

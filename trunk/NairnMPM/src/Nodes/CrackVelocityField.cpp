@@ -206,24 +206,36 @@ void CrackVelocityField::DeleteStrainField(void)
 // Increment velocity when moving crack surface. This called after CM and total mass
 // is stored in the first non-empty material field
 short CrackVelocityField::IncrementDelvTask8(double fi,Vector *delV,double *fieldMass)
-{	// skip low mass node (this number might be critical)
-    // 1.e-6 seemed to be too small
-	double totalMass=GetTotalMass();
-	if(totalMass/(*fieldMass)<1.e-5) return FALSE;			// skip low mass
+{	// skip if no mass on this node
+	if(*fieldMass==0.) return false;
+	
+	// get CM momentum
+	double totalMass;
+	bool hasParticles;
+	Vector totalPk = GetCMatMomentum(hasParticles,&totalMass);
+	
+	// skip no particles or low mass
+	if(!hasParticles || totalMass/(*fieldMass)<1.e-5) return false;
     
-    // increment velocity
-	Vector totalPk=GetCMatMomentum();
-	AddScaledVector(delV,&totalPk,fi/totalMass);			// increment
-	*fieldMass=totalMass;
-	return TRUE;
+    // increment velocity extrapolation by Sip vi
+	AddScaledVector(delV,&totalPk,fi/totalMass);
+	
+	// return mass
+	*fieldMass = totalMass;
+	return true;
 }
 
 // Collect momenta and add to vector when finding CM velocity to move crack planes
 // return number of nonrigid points
-int CrackVelocityField::CollectMomentaTask8(Vector *totalPk)
-{	Vector fieldPk=GetCMatMomentum();
-	AddVector(totalPk,&fieldPk);
-	return GetNumberPointsNonrigid();
+int CrackVelocityField::CollectMomentaTask8(Vector *totalPk,double *velocityMass) const
+{	bool hasParticles;
+	double fieldMass;
+	Vector fieldPk = GetCMatMomentum(hasParticles,&fieldMass);
+	if(hasParticles)
+	{	AddVector(totalPk,&fieldPk);
+		*velocityMass += fieldMass;
+	}
+	return hasParticles;
 }
 
 // Collect momenta and add to vector when finding CM velocity to move crack planes
@@ -236,9 +248,9 @@ void CrackVelocityField::SetCMVelocityTask8(Vector *velCM,int totalParticles)
 // Return CM velocity for crack updates
 bool CrackVelocityField::GetCMVelocityTask8(Vector *velCM) const
 {	// stored in normal vector and crack number to save memory (they are not needed again in this time step)
-	if(crackNum[0]==0) return FALSE;
+	if(crackNum[0]==0) return false;
 	*velCM=norm[0];
-	return TRUE;
+	return true;
 }
 
 #pragma mark MATERIAL CONTACT AND INTERFACES IN SUBCLASSES
@@ -352,6 +364,9 @@ void CrackVelocityField::SetNumberPoints(int numpts) { numberPoints = numpts; }
 // total number of non-rigid points (override in CrackVelocityFieldMulti)
 int CrackVelocityField::GetNumberPointsNonrigid(void) { return numberPoints; }
 
+// Look for presence of nonrigid poitns (override in CrackVelocityFieldMulti)
+bool CrackVelocityField::HasPointsNonrigid(void) const { return numberPoints>0; }
+
 // for debugging
 void CrackVelocityField::Describe(void) const
 {
@@ -380,18 +395,29 @@ void CrackVelocityField::SumAndClearRigidContactForces(Vector *fcontact,bool) {}
 
 // return true if referenced field is active in this time step
 bool CrackVelocityField::ActiveField(CrackVelocityField *cvf)
-{ return cvf==NULL ? (bool)FALSE : (cvf->numberPoints>0) ; }
+{ return cvf==NULL ? false : (cvf->numberPoints>0) ; }
 
 // return true if referenced field is active in this time step during velocity field allocation
 bool CrackVelocityField::ActiveCrackField(CrackVelocityField *cvf)
-{ return cvf==NULL ? (bool)FALSE : cvf->hasCrackPoints ; }
+{ return cvf==NULL ? false : cvf->hasCrackPoints ; }
 
 // return true if referenced field is active AND has some non-rigid particles
 bool CrackVelocityField::ActiveNonrigidField(CrackVelocityField *cvf)
-{ return cvf==NULL ? (bool)FALSE : (cvf->GetNumberPointsNonrigid()>0) ; }
+{ return cvf==NULL ? false : cvf->HasPointsNonrigid() ; }
+
+// return true if referenced field is active AND has some non-rigid particles AND first crack matches crack number
+bool CrackVelocityField::ActiveNonrigidField(CrackVelocityField *cvf,int number)
+{	if(cvf==NULL) return false;
+	if(cvf->HasPointsNonrigid())
+	{	if(cvf->crackNum[FIRST_CRACK]==number)
+			return true;
+	}
+	return false;
+}
 
 // create single or multi material crack velocity field as needed
-CrackVelocityField *CrackVelocityField::CreateCrackVelocityField(short theLoc,int cnum)
+// fieldNum is used in OSParticular, but not yet in NairnMPM
+CrackVelocityField *CrackVelocityField::CreateCrackVelocityField(int fieldNum,short theLoc,int cnum)
 {	if(maxMaterialFields==1)
 		return (CrackVelocityField *)(new CrackVelocityFieldSingle(theLoc,cnum));
 	else

@@ -137,6 +137,7 @@ BoundaryCondition = $(src)/Boundary_Conditions/BoundaryCondition
 BoxController = $(com)/Read_XML/BoxController
 CalcJKTask = $(src)/Custom_Tasks/CalcJKTask
 CarnotCycle = $(src)/Custom_Tasks/CarnotCycle
+ClampedNeohookean = $(src)/Materials/ClampedNeohookean
 CohesiveZone = $(src)/Materials/CohesiveZone
 CommonAnalysis = $(com)/System/CommonAnalysis
 CommonArchiveData = $(com)/System/CommonArchiveData
@@ -285,6 +286,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # BoxController.hpp : ShapeController.hpp
 # CalcJKTask.hpp : CustomTask.hpp
 # CarnotCycle.hpp : CustomTask.hpp
+# ClampedNeohookean.hpp : Neohookean.hpp HyperElastic.hpp (MaterialBase.hpp)
 # CohesiveZone.hpp : MaterialBase.hpp TractionLaw.hpp
 # ConductionTask.hpp : TransportTask.hpp
 # CoupledSawTooth.hpp : CohesiveZone.hpp MaterialBase.hpp TractionLaw.hpp
@@ -407,7 +409,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		TractionLaw.o CohesiveZone.o CoupledSawTooth.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o AdjustTimeStepTask.o SLMaterial.o CrackVelocityFieldMulti.o \
 		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o \
-        HEMGEOSMaterial.o GridPatch.o GhostNode.o MatPtHeatFluxBC.o PressureLaw.o ShellController.o Neohookean.o
+        HEMGEOSMaterial.o GridPatch.o GhostNode.o MatPtHeatFluxBC.o PressureLaw.o ShellController.o Neohookean.o ClampedNeohookean.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -477,7 +479,7 @@ MaterialController.o : $(MaterialController).cpp  $(dprefix) $(MaterialControlle
 		$(Elastic).hpp $(HyperElastic).hpp $(NairnMPM).hpp $(TractionLaw).hpp $(CohesiveZone).hpp $(LinearTraction).hpp \
 		$(CubicTraction).hpp $(AnisoPlasticity).hpp $(IsoPlasticity.hpp) $(HillPlastic).hpp $(MGSCGLMaterial).hpp \
 		$(WoodMaterial).hpp $(TrilinearTraction).hpp $(IdealGas).hpp $(CoupledSawTooth).hpp $(TaitLiquid).hpp \
-        $(HEIsotropic).hpp $(HEMGEOSMaterial).hpp $(Neohookean).hpp
+        $(HEIsotropic).hpp $(HEMGEOSMaterial).hpp $(Neohookean).hpp $(ClampedNeohookean).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MaterialController).cpp
 mathexpr.o : $(mathexpr).cpp $(mathexpr).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(mathexpr).cpp
@@ -744,6 +746,9 @@ Mooney.o : $(Mooney).cpp $(dprefix) $(Mooney).hpp $(MaterialBase).hpp $(HyperEla
 Neohookean.o : $(Neohookean).cpp $(dprefix) $(Neohookean).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(TransportTask).hpp \
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Neohookean).cpp
+ClampedNeohookean.o : $(ClampedNeohookean).cpp $(dprefix) $(ClampedNeohookean).hpp $(Neohookean).hpp $(MaterialBase).hpp $(HyperElastic).hpp  \
+			$(NairnMPM).hpp $(MPMBase).hpp $(CommonException).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ClampedNeohookean).cpp
 HEIsotropic.o : $(HEIsotropic).cpp $(dprefix) $(HEIsotropic).hpp $(MaterialBase).hpp $(HyperElastic).hpp $(TransportTask).hpp \
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp $(HardeningLawBase).hpp $(LinearHardening).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(HEIsotropic).cpp

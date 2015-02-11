@@ -49,7 +49,7 @@ CrackSurfaceContact::CrackSurfaceContact()
 }
 
 // Print contact law settings for cracks and finalize variables
-void CrackSurfaceContact::Output()
+void CrackSurfaceContact::Output(void)
 {
 	char hline[200];
 	
@@ -303,27 +303,26 @@ short CrackSurfaceContact::HasContact(int number) { return (short)(CrackContactL
 // return TRUE if imperfect interface
 short CrackSurfaceContact::IsImperfect(int number) { return (short)(CrackContactLaw[number].law==IMPERFECT_INTERFACE); }
 
-/*	Calculate change in momentum when there is contact. Return TRUE or FALSE if an
-	adjustment was calculated
+/*	Calculate change in momentum when there is contact. Return true or false if an adjustment was calculated
 	If BC at the node, the delta momemtum should be zero in fixed direction
 	Only called if both verified are verified and have 1 or more particles
 */
-short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVelocityField *cva,CrackVelocityField *cvb,
-											Vector *normin,int number,bool postUpdate,double deltime)
+bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVelocityField *cva,CrackVelocityField *cvb,
+											Vector *normin,int number,bool postUpdate,double deltime,int *inContact)
 {
 	// first determine if there is contact
-	short inContact=IN_CONTACT;
+	*inContact=IN_CONTACT;
 	
 	// velocities above and below
-	double massa=cva->GetTotalMass();
-	Vector pka=cva->GetCMatMomentum();
-	double massb=cvb->GetTotalMass();
-	Vector pkb=cvb->GetCMatMomentum();
+	bool hasParticles;
+	double massa,massb;
+	Vector pka=cva->GetCMatMomentum(hasParticles,&massa);
+	Vector pkb=cvb->GetCMatMomentum(hasParticles,&massb);
 	double mnode=1./(massa+massb);
 	
 	// screen low masses
 	double aratio=massa*mnode;
-	if(aratio<1.e-6 || aratio>0.999999) return FALSE;
+	if(aratio<1.e-6 || aratio>0.999999) return false;
 	
 	// find Delta p_a (see notes)
 	CopyScaleVector(delPa,&pkb,massa*mnode);
@@ -336,13 +335,13 @@ short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVe
 	
 #ifdef _VELOCITY_ONLY_
 	// old version, which used to check only velocity
-	if(dotn>=0.) inContact=SEPARATED;
+	if(dotn>=0.) *inContact=SEPARATED;
 #else
 	
 	// With the check, any movement apart will be taken as noncontact
 	// Also, frictional contact assume dvel<0.
 	if(dotn>=0.)
-		inContact=SEPARATED;
+		*inContact=SEPARATED;
 	else
 	{	// if approach, check displacements
 		Vector dispa=cva->GetCMDisplacement(np);
@@ -361,12 +360,12 @@ short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVe
 		}
 		
 		// if current displacement positive then no contact
-		if(dnorm >= 0.) inContact=SEPARATED;
+		if(dnorm >= 0.) *inContact=SEPARATED;
 	}
 #endif
 	
 	// if separated, then no contact unless possibly needed for an imperfect interface
-	if(inContact==SEPARATED && CrackContactLaw[number].law!=IMPERFECT_INTERFACE) return FALSE;
+	if(*inContact==SEPARATED && CrackContactLaw[number].law!=IMPERFECT_INTERFACE) return false;
 	
 	// Now need to change momentum. For imperfect interface, may or may not need a change
 	Vector tang;
@@ -396,8 +395,8 @@ short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVe
 				{	AddScaledVector(&norm,&tang,mu);
 					CopyScaleVector(delPa,&norm,dotn);
                     
-                    // get frictional part - this is g mm^2/sec^2 = nJ
-                    // Note: only add frictional heater during momentum update (when friction
+                    // get frictional heating part - this is g mm^2/sec^2 = nJ
+                    // Note: only add frictional heating during momentum update (when frictional
                     //   force is appropriate) and only if conduction is on.
                     if(postUpdate && conduction && ConductionTask::crackContactHeating)
                     {   if(np->NumberNonrigidParticles()>0)
@@ -419,23 +418,23 @@ short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVe
 			// Contact handled here only perfect interface (Dt or Dn < 0)
 			// Imperfect interfaces are handled as forces later
 			if(CrackContactLaw[number].Dt<0)
-			{	if( (inContact==SEPARATED && CrackContactLaw[number].Dn>=0.) ||
-				   (inContact==IN_CONTACT && CrackContactLaw[number].Dnc>=0.) )
+			{	if( (*inContact==SEPARATED && CrackContactLaw[number].Dn>=0.) ||
+				   (*inContact==IN_CONTACT && CrackContactLaw[number].Dnc>=0.) )
 				{	// prefect in tangential, but imperfect in normal direction
 					// make stick in tangential direction only
 					AddScaledVector(delPa,&norm,-dotn);
 				}
 				// else perfect in both so return with the stick conditions already in delPa
 			}
-			else if( (inContact==SEPARATED && CrackContactLaw[number].Dn<0.) ||
-					(inContact==IN_CONTACT && CrackContactLaw[number].Dnc<0.) )
+			else if( (*inContact==SEPARATED && CrackContactLaw[number].Dn<0.) ||
+					(*inContact==IN_CONTACT && CrackContactLaw[number].Dnc<0.) )
 			{	// perfect in normal direction, but imperfect in tangential direction
 				// make stick in normal direction only
 				CopyScaleVector(delPa,&norm,dotn);
 			}
 			else
 			{	// no change in momentum, just imperfect interface forces later and nothing changed here
-				return FALSE;
+				return false;
 			}
 			break;
 			
@@ -443,9 +442,8 @@ short CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVe
             break;
     }
 	
-	return TRUE;
+	return true;
 }
-
 
 // find frictionaless tangnential slip change in momentum where on input
 //   delP is stick change in momentum
@@ -505,7 +503,8 @@ void CrackSurfaceContact::FrictionalDeltaP(Vector *delP,Vector *norm,int number)
 	
 // Calculate forces at imperfect interfaces and both CrackVelocityFields are present and have particles
 // Return TRUE if imperfect interface or FALSE if not
-short CrackSurfaceContact::GetInterfaceForce(NodalPoint *np,Vector *fImp,CrackVelocityField *cva,
+// Only for cracks as imperfect interfaces
+short CrackSurfaceContact::GetInterfaceForceOnCrack(NodalPoint *np,Vector *fImp,CrackVelocityField *cva,
 				CrackVelocityField *cvb,Vector *unnorm,int number,double *rawEnergy,double nodalx)
 {
 	// no forces needed if really perfect, was handled by contact momentum change
@@ -617,11 +616,11 @@ short CrackSurfaceContact::MaterialContact(Vector *dispa,Vector *dispb,Vector *n
 #pragma mark ACCESSORS
 
 // return current setting for moving only surfaces
-bool CrackSurfaceContact::GetMoveOnlySurfaces(void) { return moveOnlySurfaces; }
+bool CrackSurfaceContact::GetMoveOnlySurfaces(void) const { return moveOnlySurfaces; }
 void CrackSurfaceContact::SetMoveOnlySurfaces(bool moveSurfaces) { moveOnlySurfaces=moveSurfaces; }
 
 // return current setting for moving only surfaces
-bool CrackSurfaceContact::GetPreventPlaneCrosses(void) { return preventPlaneCrosses; }
+bool CrackSurfaceContact::GetPreventPlaneCrosses(void) const { return preventPlaneCrosses; }
 void CrackSurfaceContact::SetPreventPlaneCrosses(bool preventCross) { preventPlaneCrosses=preventCross; }
 
 // material contact law for field mati to field matj

@@ -50,6 +50,16 @@
 *************************************************************************************/
 
 #include "Matrix3.hpp"
+#include <float.h>
+
+// eigenanalysis
+inline void dsyev2(double A, double B, double C, double *rt1, double *rt2,
+                   double *cs, double *sn);
+int dsyevv3(double A[][3], double Q[][3], double *w);
+
+// Macros
+#define SQR(x)      ((x)*(x))                        // x^2
+#define M_SQRT3    1.73205080756887729352744634151   // sqrt(3)
 
 #pragma mark Matrix3:Constructors and Destructor
 
@@ -205,6 +215,15 @@ Matrix3 Matrix3::Exponential(int kmax) const
 				   alpha1*m[2][0] + alpha2*m2(2,0), alpha1*m[2][1] + alpha2*m2(2,1), alpha0 + alpha1*m[2][2] + alpha2*m2(2,2));
 }
 
+// matrix times a vector
+Vector Matrix3::Times(Vector *v) const
+{   Vector mv;
+	mv.x = m[0][0]*v->x + m[1][0]*v->y + m[2][0]*v->z;
+    mv.y = m[0][1]*v->x + m[1][1]*v->y + m[2][1]*v->z;
+	mv.z = m[0][2]*v->x + m[1][2]*v->y + m[2][2]*v->z;
+    return mv;
+}
+
 // scale all elements by factor
 void Matrix3::Scale(double factor)
 {
@@ -220,6 +239,16 @@ void Matrix3::Scale(double factor)
 		m[2][1] *= factor;
 	}
 }
+
+// scale x-y elements, but not z direction
+void Matrix3::Scale2D(double factor)
+{
+	m[0][0] *= factor;
+	m[0][1] *= factor;
+	m[1][0] *= factor;
+	m[1][1] *= factor;
+}
+
 
 // Return inverse in a new matrix3
 Matrix3 Matrix3::Inverse(void) const
@@ -238,7 +267,8 @@ Matrix3 Matrix3::Inverse(void) const
 	return inv3;
 }
 
-// Find Eigenvalues of positive definite material return in a diagonal matrix
+// Find Eigenvalues of positive definite matrix return in a vector
+// Assumes all are real and positive (any other will fail)
 Vector Matrix3::Eigenvalues(void) const
 {
     Vector lam;
@@ -247,127 +277,96 @@ Vector Matrix3::Eigenvalues(void) const
     {   // solving x^2 + bx + c = 0 (see Numerical Recipes in C, page 156)
         double b = -(m[0][0]+m[1][1]);
         double c = m[0][0]*m[1][1] - m[1][0]*m[0][1];
-        double arg = sqrt(b*b-4.*c);            // assume positive
-        lam.x = b>0 ? -0.5*(b+arg) : -0.5*(b-arg) ;
+        double arg = b*b-4.*c;
+		if(arg<0.)
+		{	// assuming here all matrices are positive definite, which means
+			// a negative value should be interpreted as zero
+			lam.x = -0.5*b;
+		}
+		else
+		{	arg = sqrt(arg);
+			lam.x = b>0 ? -0.5*(b+arg) : -0.5*(b-arg) ;
+		}
         lam.y = c/lam.x;
         lam.z = m[2][2];
     }
     else
-    {   // See Numerical Recipes in C, page 157 for z^3 + a1 z^2 + a2 z + a3
-        // Solving z^3 + (-determinant()) + second_invariant() z + (-trace()) z^2
-        double a1 = -trace();
-        double a2 = second_invariant();
-        double a3 = -determinant();
-        
-        double Q = (a1*a1-3.*a2)/9.;
-        double R = (a1*(2.*a1*a1-9.*a2)+27.*a3)/54.;
-        double lambda = -a1/3.;
-        
-        // if Q^3-R^2 >=0 has three real roots and that is assumed here
-        if(fabs(Q) < 1.e-14)
-        {   // assume Q is zero and has three identical roots (R must be zero too)
-            lam.x = lam.y = lam.z = lambda;
-        }
-        else
-        {   double theta = acos(R/sqrt(Q*Q*Q))/3.;
-            double arg = -2.*sqrt(Q);
-            double angle = 2.0943951023931953;       // 2 pi/3
-            
-            lam.x = arg*cos(theta) + lambda;
-            theta += angle;
-            lam.y = arg*cos(theta) + lambda;
-            lam.z = arg*cos(theta+angle) + lambda;
-        }
+    {	double mm, c1, c0;
+		
+		// Determine coefficients of characteristic poynomial. We write
+		//       | a   d   f  |
+		//  m =  | d*  b   e  |
+		//       | f*  e*  c  |
+		double de = m[0][1] * m[1][2];                                  // d * e
+		double dd = SQR(m[0][1]);                                       // d^2
+		double ee = SQR(m[1][2]);                                       // e^2
+		double ff = SQR(m[0][2]);                                       // f^2
+		mm  = m[0][0] + m[1][1] + m[2][2];
+		c1 = (m[0][0]*m[1][1] + m[0][0]*m[2][2] + m[1][1]*m[2][2]) 
+				- (dd + ee + ff);										// a*b + a*c + b*c - d^2 - e^2 - f^2
+		c0 = m[2][2]*dd + m[0][0]*ee + m[1][1]*ff - m[0][0]*m[1][1]*m[2][2]
+				- 2.0 * m[0][2]*de;										// c*d^2 + a*e^2 + b*f^2 - a*b*c - 2*f*d*e)
+		
+		double p, sqrt_p, q, c, s, phi;
+		p = SQR(mm) - 3.0*c1;
+		q = mm*(p - (3.0/2.0)*c1) - (27.0/2.0)*c0;
+		sqrt_p = sqrt(fabs(p));
+		
+		phi = 27.0 * ( 0.25*SQR(c1)*(p - c1) + c0*(q + 27.0/4.0*c0));
+		phi = (1.0/3.0) * atan2(sqrt(fabs(phi)), q);
+		
+		c = sqrt_p*cos(phi);
+		s = (1.0/M_SQRT3)*sqrt_p*sin(phi);
+		
+		lam.y  = (1.0/3.0)*(mm - c);
+		lam.z  = lam.y + s;
+		lam.x  = lam.y + c;
+		lam.y -= s;
     }
     
     return lam;
 }
 
-// Find Eigenvectors and return three normalized vectors represented in columns of a matrix
-// Input is Vector with eigenvalues of this matrix on the diagonal
-// Current not used and 2D never tested - check before use
-// Also return vectors are not always normalized
-Matrix3 Matrix3::Eigenvectors(const Vector &Eigenvals) const
+// Warning: This method only works for symmetric, Hermitian matrices
+// Find Eigenvectors and return three orthogonal vectors in columns of the matrix
+// Input is Vector with eigenvalues of this matrix
+// No error checking (that is symmetric and no error in algorithm)
+Matrix3 Matrix3::Eigenvectors(Vector &Eigenvals) const
 {
     Matrix3 Eigenvecs;
-    
+	
     if(is2D)
-    {   if(Eigenvals.x==m[0][0])
-        {   // e1 = (1,0,0)
-            if(Eigenvals.y==m[1][1])
-            {   // e2 = (1,0,0) also
-                Eigenvecs.set(1.,0.,0.,1.,1.);
-                return Eigenvecs;
-            }
-            else
-            {   // e2 = (1,-m10/(m11-lam.y),0)
-                Eigenvecs.set(1.,1.,0.,-m[1][0]/(m[1][1]-Eigenvals.y),1.);
-            }
-        }
-        else if(Eigenvals.y==m[1][1])
-        {   // e2 = (0,1,0)
-            // e1 = (-m01/(m00-lam.x),1,0)
-            Eigenvecs.set(-m[0][1]/(m[0][0]-Eigenvals.x),0.,1.,1.,1.);
-        }
-        else
-        {   // e1 = (-m01/(m00-lam.x),1,0)
-            // e2 = (1,-m10/(m11-lam.y),0)
-            Eigenvecs.set(-m[0][1]/(m[0][0]-Eigenvals.x),1.,1.,-m[1][0]/(m[1][1]-Eigenvals.y),1.);
-        }
+	{	double cs,sn;
+		dsyev2(m[0][0],m[0][1],m[1][1],&(Eigenvals.x),&(Eigenvals.y),&cs,&sn);
+		Eigenvecs.set(cs,-sn,sn,cs,1.);
     }
     
     else
-    {   // ********* Warning - this is 2D only as well **********
-        if(Eigenvals.x==m[0][0])
-        {   // e1 = (1,0,0)
-            if(Eigenvals.y==m[1][1])
-            {   // e2 = (1,0,0) also
-                Eigenvecs.set(1.,0.,0.,0,1.,0.,0.,0.,1.);
-                return Eigenvecs;
-            }
-            
-            else
-            {   // e2 = (1,-m10/(m11-lam.y),0)
-                Eigenvecs.set(1.,1.,0.,0.,-m[1][0]/(m[1][1]-Eigenvals.y),0.,0.,0.,1.);
-            }
-        }
-        
-        if(Eigenvals.y==m[1][1])
-        {   // e2 = (0,1,0)
-            // e1 = (-m01/(m00-lam.x),1,0)
-            Eigenvecs.set(-m[0][1]/(m[0][0]-Eigenvals.x),0.,0.,1.,1.,0.,0.,0.,1.);
-        }
-        else
-        {   // e1 = (-m01/(m00-lam.x),1,0)
-            // e2 = (1,-m10/(m11-lam.y),0)
-            Eigenvecs.set(-m[0][1]/(m[0][0]-Eigenvals.x),1.,0.,1,-m[1][0]/(m[1][1]-Eigenvals.y),0.,0.,0.,1.);
-        }
+	{	// set to 3D matrix
+		double w[3];
+		w[0] = Eigenvals.x;
+		w[1] = Eigenvals.y;
+		w[2] = Eigenvals.z;
+		double Q[3][3];
+		double A[3][3];
+		A[0][0] = m[0][0];
+		A[0][1] = m[0][1];
+		A[0][2] = m[0][2];
+		A[1][1] = m[1][1];
+		A[1][2] = m[1][2];
+		A[2][2] = m[2][2];
+		dsyevv3(A, Q, w);
+		Eigenvecs.set(Q);
     }
-    
-    // Normalisation of the Eigenvectors in the columns
-    double n1=sqrt(Eigenvecs(0,0)*Eigenvecs(0,0)+Eigenvecs(1,0)*Eigenvecs(1,0)+Eigenvecs(2,0)*Eigenvecs(2,0));
-    double n2=sqrt(Eigenvecs(0,1)*Eigenvecs(0,1)+Eigenvecs(1,1)*Eigenvecs(1,1)+Eigenvecs(2,1)*Eigenvecs(2,1));
-    double n3=sqrt(Eigenvecs(0,2)*Eigenvecs(0,2)+Eigenvecs(1,2)*Eigenvecs(1,2)+Eigenvecs(2,2)*Eigenvecs(2,2));
-    
-    Eigenvecs(0,0) /= n1;
-    Eigenvecs(1,0) /= n1;
-    Eigenvecs(2,0) /= n1;
-    
-    Eigenvecs(0,1) /= n2;
-    Eigenvecs(1,1) /= n2;
-    Eigenvecs(2,1) /= n2;
-    
-    Eigenvecs(0,2) /= n3;
-    Eigenvecs(1,2) /= n3;
-    Eigenvecs(2,2) /= n3;
-    
+
     return Eigenvecs;
 }
 
-// Decompose F in into roation and right-stretch matrix F = R*U
+// Decompose F in into rotation and right-stretch matrix F = R*U
 // The target matrix is assumed to be F
-// Function returns R and optionally R (if point is not NULL)
-Matrix3 Matrix3::RightDecompose(Matrix3 *R) const
+// Function returns U and optionally R (if pointer is not NULL)
+// Optionally (lam1,lam2,lam3) in stretches (if not NULL)
+Matrix3 Matrix3::RightDecompose(Matrix3 *R,Vector *stretches) const
 {
     if(is2D)
     {   // 2D has simple formulae
@@ -386,6 +385,11 @@ Matrix3 Matrix3::RightDecompose(Matrix3 *R) const
         {   R->set(Fsum,Fdif,-Fdif,Fsum,1.);
         }
         
+		// Return Eigenvalues of U if asked
+		if(stretches!=NULL)
+		{	*stretches = U.Eigenvalues();
+		}
+		
         return U;
     }
     
@@ -430,13 +434,22 @@ Matrix3 Matrix3::RightDecompose(Matrix3 *R) const
         // R = FU^-1
         *R = (*this)*Uinv;
     }
+	
+	// Return Eigenvalues of U if asked
+	if(stretches!=NULL)
+	{	stretches->x = lam1;
+		stretches->y = lam2;
+		stretches->z = lam3;
+	}
     
     return U;
 }
 
+/*
 // Get right-stretch matrix or U in F = R*U
 // The target matrix is assumed to be C = FT*F
 // Input Eigenvalues are for matrix C
+// Not currently used - verify before use
 Matrix3 Matrix3::RightStretch(const Vector &Eigenvals) const
 {
     // Get C^2
@@ -467,9 +480,12 @@ Matrix3 Matrix3::RightStretch(const Vector &Eigenvals) const
                        c2*C2(2,0)+c1*m[2][0],c2*C2(2,1)+c1*m[2][1],c2*C2(2,2)+c1*m[2][2]+cI);
     }
 }
+*/
 
+/*
 // Get Rotation Matrix using target matrix F
 // Eigenvals are for matrix X and matrix U calculated by RightStretch()
+// Not currently used - verify before use
 Matrix3 Matrix3::Rotation(const Vector &Eigenvals,const Matrix3 &U) const
 {
     // Matrix m = F here;
@@ -502,7 +518,7 @@ Matrix3 Matrix3::Rotation(const Vector &Eigenvals,const Matrix3 &U) const
     cout << Ui*U << endl;
     
     // R = F Uinv
-    Matrix3 Rotation(m[0][0]*U1[0][0]+m[0][1]*U1[1][0]+m[0][2]*U1[2][0],
+    Matrix3 rotate(m[0][0]*U1[0][0]+m[0][1]*U1[1][0]+m[0][2]*U1[2][0],
                      m[0][0]*U1[0][1]+m[0][1]*U1[1][1]+m[0][2]*U1[2][1],
                      m[0][0]*U1[0][2]+m[0][1]*U1[1][2]+m[0][2]*U1[2][2],
                      m[1][0]*U1[0][0]+m[1][1]*U1[1][0]+m[1][2]*U1[2][0],
@@ -512,8 +528,9 @@ Matrix3 Matrix3::Rotation(const Vector &Eigenvals,const Matrix3 &U) const
                      m[2][0]*U1[0][1]+m[2][1]*U1[1][1]+m[2][2]*U1[2][1],
                      m[2][0]*U1[0][2]+m[2][1]*U1[1][2]+m[2][2]*U1[2][2]);
     
-    return Rotation;
+    return rotate;
 }
+*/
 
 #pragma mark Matrix3:operators
 
@@ -658,7 +675,7 @@ void Matrix3::set(double c0,double c1,double c2,double c3,double c4)
     is2D = TRUE;
 }
 
-// set this object to six elements and make it 3D
+// set this object to nine elements and make it 3D
 void Matrix3::set(double c00,double c01,double c02,double c10,double c11,double c12,double c20,double c21,double c22)
 {	m[0][0] = c00;
     m[0][1] = c01;
@@ -719,6 +736,302 @@ Matrix3 Matrix3::Identity(void)
 {	Matrix3 im(1.,0.,0.,1.,1.);
     return im;
 }
+
+// return an rotation matrix for ccw rotation about Z axis for angle (in radians)
+Matrix3 Matrix3::CCWZRotation(double ang)
+{	double cosw = cos(ang);
+	double sinw = sin(ang);
+	Matrix3 rm(cosw,-sinw,sinw,cosw,1.);
+    return rm;
+}
+
+// Return a rotation matrix from Euler angles (in radians or in degrees)
+// Follows method in Arfken, pg 179, which is counter clockwise Z, Y', Z''
+Matrix3 Matrix3::Rotation3D(double alpha,double beta,double gamma,bool indegrees)
+{	if(indegrees)
+	{	double convert = PI_CONSTANT/180.;
+		alpha *= convert;
+		beta *= convert;
+		gamma *= convert;
+	}
+	double ca= cos(alpha),sa=sin(alpha);
+	double cb= cos(beta),sb=sin(beta);
+	double cg= cos(gamma),sg=sin(gamma);
+	Matrix3 rm(  cg*cb*ca-sg*sa,   cg*cb*sa+sg*ca,   -cg*sb,
+			    -sg*cb*ca-cg*sa,  -sg*cb*sa+cg*ca,    sg*sb,
+			          sb*ca,           sb*sa,           cb   );
+    return rm;
+}
+
+
+#pragma mark Eigenanalysis
+
+// ----------------------------------------------------------------------------
+// Numerical diagonalization of 2x2 and 3x3 matrcies
+// Copyright (C) 2006  Joachim Kopp
+// ----------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------
+// Calculates the eigensystem of a real symmetric 2x2 matrix
+//    [ A  B ]
+//    [ B  C ]
+// in the form
+//    [ A  B ]  =  [ cs  -sn ] [ rt1   0  ] [  cs  sn ]
+//    [ B  C ]     [ sn   cs ] [  0   rt2 ] [ -sn  cs ]
+// On call, rt1 and rt2 are the eigen values. They are reordered if needed
+// such that rt1 >= rt2. The orthongal eigenvectors are
+// e1 = (cs, sn), e2 = (-sn, cs)
+// ----------------------------------------------------------------------------
+inline void dsyev2(double A, double B, double C, double *rt1, double *rt2,
+                   double *cs, double *sn)
+{
+	double df = A - C;
+	double rt = sqrt(df*df + 4.0*B*B);
+	double t;
+	
+	// order the eigenvalues
+	if(*rt2 > *rt1)
+	{	double temp = *rt1;
+		*rt1 = *rt2;
+		*rt2 = temp;
+	}
+	
+	// Calculate eigenvectors
+	if (df > 0.0)
+		*cs = df + rt;
+	else
+		*cs = df - rt;
+	
+	if (fabs(*cs) > 2.0*fabs(B))
+	{	t   = -2.0 * B / *cs;
+		*sn = 1.0 / sqrt(1.0 + t*t);
+		*cs = t * (*sn);
+	}
+	else if (fabs(B) == 0.0)
+	{	*cs = 1.0;
+		*sn = 0.0;
+	}
+	else
+	{	t   = -0.5 * (*cs) / B;
+		*cs = 1.0 / sqrt(1.0 + t*t);
+		*sn = t * (*cs);
+	}
+	
+	if (df > 0.0)
+	{	t   = *cs;
+		*cs = -(*sn);
+		*sn = t;
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Calculates the eigenvalues and normalized eigenvectors of a symmetric 3x3
+// matrix A using Cardano's method for the eigenvalues and an analytical
+// method based on vector cross products for the eigenvectors.
+// Only the diagonal and upper triangular parts of A need to contain meaningful
+// values. However, all of A may be used as temporary storage and may hence be
+// destroyed.
+// ----------------------------------------------------------------------------
+// Parameters:
+//   A: The symmetric input matrix
+//   Q: Storage buffer for eigenvectors
+//   w: input vector of eigenvalues
+// ----------------------------------------------------------------------------
+// Return value:
+//   0: Success
+//  -1: Error
+// ----------------------------------------------------------------------------
+// Dependencies:
+//   dsyevc3()
+// ----------------------------------------------------------------------------
+// Version history:
+//   v1.1 (12 Mar 2012): Removed access to lower triangualr part of A
+//     (according to the documentation, only the upper triangular part needs
+//     to be filled)
+//   v1.0: First released version
+// ----------------------------------------------------------------------------
+int dsyevv3(double A[][3], double Q[][3], double *w)
+{
+	double norm;          // Squared norm or inverse norm of current eigenvector
+	double n0, n1;        // Norm of first and second columns of A
+	double n0tmp, n1tmp;  // "Templates" for the calculation of n0/n1 - saves a few FLOPS
+	double thresh;        // Small number used as threshold for floating point comparisons
+	double error;         // Estimated maximum roundoff error in some steps
+	double wmax;          // The eigenvalue of maximum modulus
+	double f, t;          // Intermediate storage
+	int i, j;             // Loop counters
+	
+	double mpmEpsilon = DBL_EPSILON;		// FLT_EPSILON or DBL_EPSILON
+	
+	wmax = fabs(w[0]);
+	if ((t=fabs(w[1])) > wmax)
+		wmax = t;
+	if ((t=fabs(w[2])) > wmax)
+		wmax = t;
+	thresh = SQR(8.0 * mpmEpsilon * wmax);
+	
+	// Prepare calculation of eigenvectors
+	n0tmp   = SQR(A[0][1]) + SQR(A[0][2]);
+	n1tmp   = SQR(A[0][1]) + SQR(A[1][2]);
+	Q[0][1] = A[0][1]*A[1][2] - A[0][2]*A[1][1];
+	Q[1][1] = A[0][2]*A[0][1] - A[1][2]*A[0][0];
+	Q[2][1] = SQR(A[0][1]);
+	
+	// Calculate first eigenvector by the formula
+	//   v[0] = (A - w[0]).e1 x (A - w[0]).e2
+	A[0][0] -= w[0];
+	A[1][1] -= w[0];
+	Q[0][0] = Q[0][1] + A[0][2]*w[0];
+	Q[1][0] = Q[1][1] + A[1][2]*w[0];
+	Q[2][0] = A[0][0]*A[1][1] - Q[2][1];
+	norm    = SQR(Q[0][0]) + SQR(Q[1][0]) + SQR(Q[2][0]);
+	n0      = n0tmp + SQR(A[0][0]);
+	n1      = n1tmp + SQR(A[1][1]);
+	error   = n0 * n1;
+	
+	if (n0 <= thresh)         // If the first column is zero, then (1,0,0) is an eigenvector
+	{
+		Q[0][0] = 1.0;
+		Q[1][0] = 0.0;
+		Q[2][0] = 0.0;
+	}
+	else if (n1 <= thresh)    // If the second column is zero, then (0,1,0) is an eigenvector
+	{
+		Q[0][0] = 0.0;
+		Q[1][0] = 1.0;
+		Q[2][0] = 0.0;
+	}
+	else if (norm < SQR(64.0 * mpmEpsilon) * error)
+	{                         // If angle between A[0] and A[1] is too small, don't use
+		t = SQR(A[0][1]);       // cross product, but calculate v ~ (1, -A0/A1, 0)
+		f = -A[0][0] / A[0][1];
+		if (SQR(A[1][1]) > t)
+		{
+			t = SQR(A[1][1]);
+			f = -A[0][1] / A[1][1];
+		}
+		if (SQR(A[1][2]) > t)
+			f = -A[0][2] / A[1][2];
+		norm    = 1.0/sqrt(1 + SQR(f));
+		Q[0][0] = norm;
+		Q[1][0] = f * norm;
+		Q[2][0] = 0.0;
+	}
+	else                      // This is the standard branch
+	{
+		norm = sqrt(1.0 / norm);
+		for (j=0; j < 3; j++)
+			Q[j][0] = Q[j][0] * norm;
+	}
+	
+	// Prepare calculation of second eigenvector
+	t = w[0] - w[1];
+	if (fabs(t) > 8.0 * mpmEpsilon * wmax)
+	{
+		// For non-degenerate eigenvalue, calculate second eigenvector by the formula
+		//   v[1] = (A - w[1]).e1 x (A - w[1]).e2
+		A[0][0] += t;
+		A[1][1] += t;
+		Q[0][1]  = Q[0][1] + A[0][2]*w[1];
+		Q[1][1]  = Q[1][1] + A[1][2]*w[1];
+		Q[2][1]  = A[0][0]*A[1][1] - Q[2][1];
+		norm     = SQR(Q[0][1]) + SQR(Q[1][1]) + SQR(Q[2][1]);
+		n0       = n0tmp + SQR(A[0][0]);
+		n1       = n1tmp + SQR(A[1][1]);
+		error    = n0 * n1;
+		
+		if (n0 <= thresh)       // If the first column is zero, then (1,0,0) is an eigenvector
+		{
+			Q[0][1] = 1.0;
+			Q[1][1] = 0.0;
+			Q[2][1] = 0.0;
+		}
+		else if (n1 <= thresh)  // If the second column is zero, then (0,1,0) is an eigenvector
+		{
+			Q[0][1] = 0.0;
+			Q[1][1] = 1.0;
+			Q[2][1] = 0.0;
+		}
+		else if (norm < SQR(64.0 * mpmEpsilon) * error)
+		{                       // If angle between A[0] and A[1] is too small, don't use
+			t = SQR(A[0][1]);     // cross product, but calculate v ~ (1, -A0/A1, 0)
+			f = -A[0][0] / A[0][1];
+			if (SQR(A[1][1]) > t)
+			{
+				t = SQR(A[1][1]);
+				f = -A[0][1] / A[1][1];
+			}
+			if (SQR(A[1][2]) > t)
+				f = -A[0][2] / A[1][2];
+			norm    = 1.0/sqrt(1 + SQR(f));
+			Q[0][1] = norm;
+			Q[1][1] = f * norm;
+			Q[2][1] = 0.0;
+		}
+		else
+		{
+			norm = sqrt(1.0 / norm);
+			for (j=0; j < 3; j++)
+				Q[j][1] = Q[j][1] * norm;
+		}
+	}
+	else
+	{
+		// For degenerate eigenvalue, calculate second eigenvector according to
+		//   v[1] = v[0] x (A - w[1]).e[i]
+		//
+		// This would really get to complicated if we could not assume all of A to
+		// contain meaningful values.
+		A[1][0]  = A[0][1];
+		A[2][0]  = A[0][2];
+		A[2][1]  = A[1][2];
+		A[0][0] += w[0];
+		A[1][1] += w[0];
+		for (i=0; i < 3; i++)
+		{
+			A[i][i] -= w[1];
+			n0       = SQR(A[0][i]) + SQR(A[1][i]) + SQR(A[2][i]);
+			if (n0 > thresh)
+			{
+				Q[0][1]  = Q[1][0]*A[2][i] - Q[2][0]*A[1][i];
+				Q[1][1]  = Q[2][0]*A[0][i] - Q[0][0]*A[2][i];
+				Q[2][1]  = Q[0][0]*A[1][i] - Q[1][0]*A[0][i];
+				norm     = SQR(Q[0][1]) + SQR(Q[1][1]) + SQR(Q[2][1]);
+				if (norm > SQR(256.0 * mpmEpsilon) * n0) // Accept cross product only if the angle between
+				{                                         // the two vectors was not too small
+					norm = sqrt(1.0 / norm);
+					for (j=0; j < 3; j++)
+						Q[j][1] = Q[j][1] * norm;
+					break;
+				}
+			}
+		}
+		
+		if (i == 3)    // This means that any vector orthogonal to v[0] is an EV.
+		{
+			for (j=0; j < 3; j++)
+				if (Q[j][0] != 0.0)                                   // Find nonzero element of v[0] ...
+				{                                                     // ... and swap it with the next one
+					norm          = 1.0 / sqrt(SQR(Q[j][0]) + SQR(Q[(j+1)%3][0]));
+					Q[j][1]       = Q[(j+1)%3][0] * norm;
+					Q[(j+1)%3][1] = -Q[j][0] * norm;
+					Q[(j+2)%3][1] = 0.0;
+					break;
+				}
+		}
+	}
+	
+	
+	// Calculate third eigenvector according to
+	//   v[2] = v[0] x v[1]
+	Q[0][2] = Q[1][0]*Q[2][1] - Q[2][0]*Q[1][1];
+	Q[1][2] = Q[2][0]*Q[0][1] - Q[0][0]*Q[2][1];
+	Q[2][2] = Q[0][0]*Q[1][1] - Q[1][0]*Q[0][1];
+	
+	return 0;
+}
+
+
 
 
 

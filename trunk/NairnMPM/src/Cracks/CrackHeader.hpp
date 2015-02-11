@@ -32,6 +32,9 @@
 //#define CONTOUR_PARTS
 //#define PRINT_CROSS_STATUS
 
+// to do axisymmetric J by Broberg method (any other number used Bergkvist and Huong method)
+#define AXISYM_BROBERG_J 1
+
 class CrackSegment;
 class ContourPoint;
 class CrackLeaf;

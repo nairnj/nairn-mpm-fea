@@ -50,7 +50,8 @@ class CrackSegment
         int FindElement(short);
         void MovePosition(double,double);
         void MovePosition(void);
-        bool MoveSurfacePosition(short,double,double,bool,double);
+		void MovePositionToMidpoint(void);
+        bool MoveSurfacePosition(short,double,double,bool);
 		int CheckSurfaces(void);
 		bool MoveToPlane(int,double,double,bool,double);
 		void CollapseSurfaces(void);
@@ -65,7 +66,7 @@ class CrackSegment
 		void FindCrackTipMaterial(int);
 		void UpdateTractions(CrackHeader *);
 		Vector GetTangential(double *);
-		double TractionEnergy(Vector *,int,bool);
+		double TractionEnergy(Vector *,int,bool,CrackSegment **);
 		double SegmentTractionEnergy(bool);
 		Vector FTract(double);
 		void SetHistoryData(char *p);

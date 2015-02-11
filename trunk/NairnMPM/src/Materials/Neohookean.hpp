@@ -18,6 +18,13 @@
 
 #include "Materials/HyperElastic.hpp"
 
+// neohookean properties
+typedef struct {
+	double Gsp;
+	double Lamesp;
+	double Ksp;
+} NeohookeanProperties;
+
 class Neohookean : public HyperElastic
 {
 	public:
@@ -52,8 +59,8 @@ class Neohookean : public HyperElastic
 		virtual bool SupportsArtificialViscosity(void) const;
 		virtual double GetCurrentRelativeVolume(MPMBase *) const;
 	
-protected:
-		double Gsp,Lamesp,K0sp;
+	protected:
+		NeohookeanProperties pr;
 		double gamma0;
 		int J_History;
 };
