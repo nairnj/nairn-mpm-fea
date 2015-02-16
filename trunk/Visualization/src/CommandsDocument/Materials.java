@@ -365,6 +365,10 @@ public class Materials
 		{	xmldata.append("    <function>"+doc.readStringArg(args.get(1))+"</function>\n");
 			return;
 		}
+		else if(prop.toLowerCase().equals("initialpressure"))
+		{	xmldata.append("    <InitialPressure>"+doc.readStringArg(args.get(1))+"</InitialPressure>\n");
+			return;
+		}
 		else if(prop.toLowerCase().equals("hardening"))
 		{	xmldata.append("    <Hardening>"+doc.readStringArg(args.get(1))+"</Hardening>\n");
 			return;
