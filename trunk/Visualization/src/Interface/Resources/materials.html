@@ -733,6 +733,10 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 <li>K - the zero-pressure, bulk modulus (in MPa)</li>
 <li>viscosity - the liquid viscosity (in cP)</li>
 <li>alpha - the thermal expansion coefficient (in ppm/K)</li>
+<li>InitialPressure - set initial pressure to <a href="commands.html#function">user-defined function</a> of
+position that evaluates to a pressure in MPa.
+When liquids are modeled in gravity, the function can set to &rho;gh,
+where h is height of liquid above the position (x, y, z).</li>
 <li>(other) - see the <a href="#common">properties common to all materials</a> (MPM only).</li>
 </ul>
 
