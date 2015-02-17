@@ -42,6 +42,7 @@
 #include "Cracks/CrackSegment.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Materials/RigidMaterial.hpp"
+#include "Materials/TaitLiquid.hpp"
 #include "Materials/PressureLaw.hpp"
 #include "Custom_Tasks/PropagateTask.hpp"
 #include "Read_XML/ShapeController.hpp"
@@ -1238,6 +1239,10 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
 			((RigidMaterial *)inputPtr)->SetSettingFunction(xData,input);
 			break;
 		
+		case PRESSURE_FUNCTION_BLOCK:
+			((TaitLiquid *)inputPtr)->SetPressureFunction(xData);
+			break;
+			
 		case STRESS_FUNCTION_BLOCK:
 			((PressureLaw *)inputPtr)->SetStressFunction(xData);
 			break;

@@ -14,6 +14,8 @@
 #define TAITLIQUID 27
 #define TAIT_C 0.0894
 
+class ROperation;
+
 #include "Materials/HyperElastic.hpp"
 
 class TaitLiquid : public HyperElastic
@@ -31,6 +33,7 @@ class TaitLiquid : public HyperElastic
         virtual const char *VerifyAndLoadProperties(int);
         virtual void PrintMechanicalProperties(void) const;
         virtual void ValidateForUse(int) const;
+        virtual void SetInitialParticleState(MPMBase *,int) const;
     
         // history variables
         char *InitHistoryData(void);
@@ -46,11 +49,14 @@ class TaitLiquid : public HyperElastic
         virtual double CurrentWaveSpeed(bool,MPMBase *) const;
         virtual Tensor GetStress(Tensor *sp,double pressure) const;
         virtual double GetCurrentRelativeVolume(MPMBase *) const;
+		virtual void SetPressureFunction(char *);
     
     protected:
         int J_history;
         double TwoEtasp;
 		double gamma0;
+		ROperation *function;
+		static double xPos,yPos,zPos;
     
 };
 
