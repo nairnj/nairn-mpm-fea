@@ -157,7 +157,7 @@
 				| K0 | Kd | Gd | alpha0 | alphad | transition | critical | DeltaVOffset | stress | function | minCOD
 				| reversible | irreversible | beta0 | betad | sigmaI | sigmaII | kIe | kIIe | nmix
 				| KIc | KIIc | JIc | JIIc | gamma | KIexp | KIIexp | delIc | delIIc | delpkI | delpkII
-				| sigmaI2 | sigmaII2 | delpkI2 | delpkII2 | ValueFunction | viscosity
+				| sigmaI2 | sigmaII2 | delpkI2 | delpkII2 | ValueFunction | viscosity | InitialPressure
 				| D | DA | DT | Dx | Dy | Dz | DR | DZ | D0 | Dd | csat | constantTip
 				| SettingFunction | SettingFunction2 | SettingFunction3 | IdealRubber
 				| kCond | Cp | Cv | SetDirection | SetTemperature | SetConcentration | mirrored
@@ -478,6 +478,7 @@
 <!ELEMENT	SettingFunction2 (#PCDATA)>
 <!ELEMENT	SettingFunction3 (#PCDATA)>
 <!ELEMENT	ValueFunction (#PCDATA)>
+<!ELEMENT	InitialPressure (#PCDATA)>
 <!ELEMENT	kCond (#PCDATA)>
 <!ELEMENT	kCondA (#PCDATA)>
 <!ELEMENT	kCondT (#PCDATA)>
