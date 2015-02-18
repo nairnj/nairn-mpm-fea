@@ -27,7 +27,7 @@ Constraint::Constraint(int baseNode,int dofNum)
 
 #pragma mark Constraint: Methods
 
-// Enter as right side of constrain equation, but add as -factor*node
+// Enter as right side of constraint equation, but add as -factor*node
 // not thread safe due to push_back()
 void Constraint::AddNode(int node,double factor)
 {
@@ -48,8 +48,11 @@ Constraint *Constraint::MapNodes(int *revMap)
 }
 
 // bandwidth calculation - nbase is number of dof not counting constraints
+// Optimal resequencing would have high nodal numbers on the periodic nodes
 int Constraint::GetBandWidth(int nbase,int nfree)
 {
+	// This contraint in row nbase+lambda
+	// The linked displacement is in row nfree*(nodes[0]-1)+dof
 	int cmax=nbase+lambda-nfree*(nodes[0]-1)-dof;
 	
 	unsigned i;

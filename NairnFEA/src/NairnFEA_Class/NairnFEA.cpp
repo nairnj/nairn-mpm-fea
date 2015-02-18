@@ -352,8 +352,9 @@ int NairnFEA::GetBandWidth(void)
 	}
 	
 	// get bandwidth for Lagrange multiplier DOFs
+	// These are tacked on the end from nbase+1 to nbase+numConstraints
 	if(firstConstraint!=NULL)
-	{	int nbase=nsize-numConstraints;
+	{	int nbase=nsize-numConstraints;				// problem size without constraints
 		Constraint *nextConstraint=firstConstraint;
 		while(nextConstraint!=NULL)
 		{	nband=fmax(nband,nextConstraint->GetBandWidth(nbase,nfree));
