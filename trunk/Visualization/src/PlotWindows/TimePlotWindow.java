@@ -247,6 +247,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			
 			// read each point
 			total=0.;
+			int numadded=0;
 			for(p=0;p<nummpms;p++)
 			{	// read record in the file and convert to MaterialPoint class
 				bb.position(headerLength+p*resDoc.recSize);
@@ -261,9 +262,10 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 				
 				// find particle property and add to total
 				total+=mpm.getForPlot(component,angle,resDoc);
+				numadded++;
 			}
 			
-			if(average) total/=(double)nummpms;
+			if(average && numadded>0) total/=(double)numadded;
 			
 			// add total calculation to the  plot
 			x.add(new Double(resDoc.archiveTimes.get(i)));
