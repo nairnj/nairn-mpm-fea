@@ -183,8 +183,8 @@ void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
 		Ucol = Belas.Eigenvectors(lam2Trial);
 		Matrix3 UcolT = Ucol.Transpose();
 		Matrix3 Lam(lam2.x,0.,0.,lam2.y,lam2.z);
-		Matrix3 LamUcol = Lam*Ucol;
-		Belas = UcolT*LamUcol;
+		Matrix3 LamUcolT = Lam*UcolT;
+		Belas = Ucol*LamUcolT;
 		
 		// get Je and Jp
 		Je = sqrt(lam2.x*lam2.y*lam2.z);
