@@ -1315,6 +1315,7 @@ One MPM user suggested loading a single particle in tension to some value and th
 \end{center}
 \end{figure}
 
+
 \section{Hyperelastic 1D Membrane in a 2D Simulation}
 
 A membrane in a 2D simulation is a 1D path through the object (this notes are plane stress and plane strain only and will need to be updated for axisymnetry). Imagine a coordinate system with the fiber direction of the membrane initially along the $x$ axis and the thickness direction along the $y$ axis. In membrane models, it is assumed there is no shear deformation in the plane of the membrane --- it has only stretches in fiber direction and thickness directions. As a result, the general deformation gradient is:
@@ -1532,13 +1533,14 @@ Finally, in {\tt NairnMPM}, the membrane deformation matrix ($[\lambda]$ or $[\l
 
 \section{Isotopic, Hyperelastic Materials}
 
-Isotropic, hyperelastic materials can be derived by define an energy function in terms of invariants of $\F$ or other large-strain tensors. One approach is based on invariants of the left, Cauchy-Green tensor:
+Isotropic, hyperelastic materials can be derived by defining an energy function in terms of invariants of $\F$ or other large-strain tensors. One approach is based on invariants of the left, Cauchy-Green tensor:
 \begin{eqnarray}
-          I_1 & = & {\rm Tr}(\B) = B_{11} + B_{22} + B_{33}  \\
-          I_2 & = & {1\over2}\left(I_1^2 - \B\cdot \B\right) \\
-          I_3 & = & {\rm det}(\B) = J^2
+          I_1 & = & {\rm Tr}(\B) = B_{11} + B_{22} + B_{33} = \lambda_1^2 +  \lambda_2^2 + \lambda_3^2 \\
+          I_2 & = & {1\over2}\left(I_1^2 - \B\cdot \B\right) = \lambda_1^2\lambda_2^2 + \lambda_1^2\lambda_3^2 + \lambda_1^2\lambda_3^2\\
+          I_3 & = & {\rm det}(\B) = J^2 = \lambda_1^2\lambda_2^2\lambda_3^2
 \end{eqnarray}
-Sometimes modified invariants are used instead as $\overline{I_1} = I_1/J^{2/3}$ and $\overline{I_2} = I_2/J^{4/3}$. Next the strain energy is written as a function of these invariants, with the common forms being $W(I_1,I_2,J)$ and $W(\overline{I_1},\overline{I_2},J)$. In these two forms, the Cauchy stress can be found from
+where $\lambda_i$ are the principle stretches of the deformation.
+Sometimes modified invariants are used instead as $\overline{I_1} = I_1/J^{2/3}$ and $\overline{I_2} = I_2/J^{4/3}$. Next the strain energy is written as a function of these invariants, with the common forms being $W(I_1,I_2,J)$, $W(\overline{I_1},\overline{I_2},J)$ and $W( \lambda_1,\lambda_2,\lambda_3)$. In these three forms, the Cauchy stress can be found from
 \begin{eqnarray}
    \tens\sigma & = & {\partial W\over \partial J}\I + {2\over J}\left[ {\partial W\over \partial I_1}\B
                                              + {\partial W\over \partial I_2}\left(I_1\B- \B^2\right)
@@ -1546,32 +1548,34 @@ Sometimes modified invariants are used instead as $\overline{I_1} = I_1/J^{2/3}$
    \tens\sigma & = & {\partial W\over \partial J}\I + 2\left[ {1\over J^{5/3}}
                            {\partial W\over \partial \overline{I_1}}\left(\B -  {I_1\over 3}\I\right)
                            + {1\over J^{7/3}}{\partial W\over \partial \overline{I_2}}\left( I_1 \B- \B^2 - {2I_2\over 3}\I  \right)
-                             \right]
+                             \right] \\
+   \tens\sigma & = & \sum_k {\lambda_k\over J} {\partial W\over\partial \lambda_k} \vec b_k\otimes\vec b_k
 \end{eqnarray}
-Because $\B$ is symmetric (and therefore ${\rm Tr}(\B^2) = \B\cdot\B$), the second version can be written
+where $\vec b_k$ is the eigenvector of $\B$ associated with eigenvalue $\lambda_k^2$.
+Because $\B$ is symmetric (and therefore ${\rm Tr}(\B^2) = \B\cdot\B$ and ${\rm Tr}(I_1\B-\B^2)=I_1^2-\B\cdot\B = 2I_2$), the second version can be written
 \begin{equation}
            \tens\sigma = {\partial W\over \partial J}\I + 2\left[ {1\over J^{5/3}}
                                            {\partial W\over \partial \overline{I_1}}{\rm dev}(\B)
                                         + {1\over J^{7/3}}{\partial W\over \partial \overline{I_2}}{\rm dev}( I_1 \B- \B^2)
                                            \right]
 \end{equation}
-The pressure ($P = -{\rm Tr}(\tens\sigma)/3$) can be found from
+The pressure ($P = -{\rm Tr}(\tens\sigma)/3$) can be found (making use of ${\rm Tr}({\rm dev}(\cdot))=0$) from three results as
 \begin{eqnarray}
-   P & = & -{\partial W\over \partial J} - {2\over 3J}\left[ {\partial W\over \partial I_1}{\rm Tr}(\B)
-                                             + {\partial W\over \partial I_2}{\rm Tr}\left(I_1\B- \B^2\right)
-                                            \right]      \\
-   P & = & - {\partial W\over \partial J}
+   P & = & -{\partial W\over \partial J} - {2\over 3J}\left[ {\partial W\over \partial I_1}I_1  + {\partial W\over \partial I_2}2I_2   \right]      \\
+   P & = & - {\partial W\over \partial J} \\
+   P & = &  -{1\over 3}\sum_k {\lambda_k\over J} {\partial W\over\partial \lambda_k}
 \end{eqnarray}
-Thus the deviatoric Cauchy stresses are:
+with the last one assuming orthonormal eigenvectors.
+Thus the deviatoric Cauchy stresses are ($\dev = \tens\sigma + P\I$):
 \begin{eqnarray}
    \dev & = &  {2\over J}\left[ {\partial W\over \partial I_1}{\rm dev}(\B)
                                              + {\partial W\over \partial I_2}{\rm dev}\left(I_1\B- \B^2\right)
                                             \right]      \\
    \dev & = &  {2\over J}\left[ {1\over J^{2/3}}{\partial W\over \partial \overline{I_1}}{\rm dev}(\B)
                                         + {1\over J^{4/3}}{\partial W\over \partial \overline{I_2}}{\rm dev}( I_1 \B- \B^2)
-                                           \right]
+                                           \right] \\
+   \dev & = &  \sum_k {\lambda_k\over J} {\partial W\over\partial \lambda_k} {\rm dev}(\vec b_k\otimes\vec b_k)
 \end{eqnarray}
-
 
 \section{Mooney-Rivlin Material\label{MRM}}
 
@@ -2396,29 +2400,158 @@ For a van der Waals gas, the heat capacity is same as for ideal gas, $C_V=(3/2)n
 \end{equation}
 This $n$ is needed to find $a'$, $b'$ and $C_V$.
 
-\section{Disney Snow Model}
+\section{Disney Snow Model\label{DSM}}
 
 According to a paper on Disney snow animation, MPM was used to model snow in the movie {\em Frozen}. The constitutive model for snow was based on a hyperelastic-plastic model. The strain energy function is
 \begin{equation}
-   W= \mu(J_P) || \F - \tens R ||^2 + {\lambda(J_p)\over 2}(J-1)^2
+   W=G(J_P) || \F_E - \tens R_E ||_F^2 + {\lambda(J_p)\over 2}(J_E-1)^2
 \end{equation}
-where $\mu(J_P)$ and $\lambda(J_p)$ are called Lam\'e parameters and $J_P$ is the plastic dilation, The Lam\'e parameters undergo hardening according to
+where $G(J_P)$ and $\lambda(J_p)$ are shear and Lam\'e moduli and $J_P$ is the plastic dilation, The mechanical properties undergo hardening according to
 \begin{equation}
-   \mu(J_P) = \mu_0 e^{\xi(1-J_P)} \qquad \rm and \qquad \lambda(J_P) = \lambda_0 e^{\xi(1-J_P)}
+   G(J_P) = G_0 e^{\xi(1-J_P)} \qquad \rm and \qquad \lambda(J_P) = \lambda_0 e^{\xi(1-J_P)}
 \end{equation}
-where $\xi$ is a hardening parameter and $\mu_0$ and $\lambda_0$ are the initial Lam\'e coefficients. The $\F$, $\tens R$, and $J$ in strain energy are for the elastic part of the loading. The first term can be written as
+where $\xi$ is a hardening parameter and $\mu_0$ and $\lambda_0$ are the initial Lam\'e coefficients. Note the plastic stretch ($J_P>1)$ causing softening that leads to contitutitive law-based fracture. The $\F_E$, $\tens R_E$, and $J_E$ in strain energy are for the elastic part of the loading. The first term, which is Frobenius norm squared of a matrix, can be written as
 \begin{eqnarray}
-  || \F - \tens R ||^2 & = & || \tens\Lambda-\I ||^2 = (\lambda_1-1)^2 + (\lambda_2-1)^2 + (\lambda_3-1)^2 \\
-         & = & \lambda_1^2 + \lambda_2^2 + \lambda_3^2 -2(\lambda_1 + \lambda_2 + \lambda_3)+3
-         = I_1 -3 -2(\lambda_1 + \lambda_2 + \lambda_3-3)
+   || \F - \tens R ||_F^2 & = & {\rm Tr}\bigl((\F - \tens R)^T(\F - \tens R)\bigr) = {\rm Tr}\bigl((\tens U - \I)^T R^TR(\tens U - \I)\bigr)
+                      = || \tens U - \I ||_F^2 \\
+         & = & || \tens Q^T(\tens\Lambda - \I)\tens Q ||_F^2 = || \tens\Lambda-\I ||_F^2 = (\lambda_1-1)^2 + (\lambda_2-1)^2 + (\lambda_3-1)^2 
 \end{eqnarray}
-where $\tens\Lambda$ is diagonal matrix with eigenvalues of the stretch ($\lambda_i$) on the diagonal, and $I_1$ is the first invariant of the left Cauchy-Green tensor. Under modest elongation, second term approximates to
+The energy function is more practically written as
 \begin{equation}
-  \lambda_1 + \lambda_2 + \lambda_3-3 \approx J - 1 \approx \ln J
+   W(\lambda_1,\lambda_2,\lambda_3)=G(J_P) \sum_i (\lambda_i-1)^2+ {\lambda(J_p)\over 2}(\lambda_1\lambda_2\lambda_3-1)^2
 \end{equation}
-Using the approximate forms, the elastic part of this material is identical to a \hyperref[NHM]{neo-Hookean} material except the first term's coefficient should be $\mu(J_P)/2$. The three possibilities are a misprint in the paper, a mistake in their constitutive law, or they did not intend $\mu(J_P)$ to mean shear modulus.
+where $\lambda_i$ are the stretches of the elastic part of the deformation. The Cauchy stress and pressure are
+\begin{eqnarray}
+   \tens\sigma & = & \sum_k  \left( {2G(J_P)\over J_E} \lambda_k(\lambda_k-1)+ \lambda(J_p)(J_E-1)\right) \vec b_k\otimes\vec b_k \\
+   P & = & - \lambda(J_p)(J_E-1) - {2G(J_P)\over 3J_E} \bigl( \lambda_1^2+\lambda_2^2+\lambda_3^2-\lambda_1-\lambda_2-\lambda_3\bigr)
+\end{eqnarray}
+To account for residual stress, replace $J_E$ by $J_E/J_{res}$ and $\lambda_k$ by $\lambda_k/\lambda_{res}$.
 
-For this to work, need code for singular decomposition of $\F$.
+This material clamps the elongations to a range of $[1-\theta_c,1+\theta_s]$ where $\theta_c$ and $\theta_s$ are critical strains in compression and tension, respectively. The material is implemented as follows:
+
+\begin{enumerate}
+
+\item Track total $\F$ and elastic $\B$ on the particles and track $J$ and $J_P$ as two history variables. On each time step, update $\F$ and $J$ and find a trial elastic $\B$:
+\begin{equation}
+    \F_{n+1} = d\F\thinspace \F_n , \qquad J_{n+1} = |d\F| J_n  , \qquad {\rm and} \qquad  \B_{n+1}^{trial} =  \dF \B_n\dF^T
+\end{equation}
+
+\item Find eigenvalues and eigenvectors of $\B_{n+1}^{trial}$ as $(\lambda_{1,trial}^2,\lambda_{2,trial}^2,\lambda_{2,trial})$ and the matrix $\tens Q$ with eigenvectors on the columns.
+
+\item If all $\lambda_{i,trial}^2$ are within the range $[(1-\theta_c)^2,(1+\theta_s)^2]$, then $\B_{n+1}=\B_{n+1}^{trial}$, $J_P$ is unchanged, and $J_E=J_{n+1}/J_P$.
+
+\item If any $\lambda_{i,trial}^2$ exceeds the range, clamp them to that range and find $\B_{n+1}=\tens Q^T\tens\Lambda\tens Q$ where $\tens\Lambda$ is diagonal matrix with the clamped values of $\lambda_i$ on the diagonal, $J_E = \lambda_1\lambda_2\lambda_3$, and update $J_P$ to $J_P=J/J_E$.
+
+\item Calculate new mechanical properties $\lambda(J_p)$ and $G(J_p)$.
+
+\item Find the Kirchoff stress from $\tens\tau = J\tens\sigma(\B_{n+1})$. Here $J$ is total $J$ and the stress depends only on elastic $\B_{n+1}$ (and its determinant, eigenvalues, and eigenvectors).
+
+\end{enumerate}
+
+\subsection{Deformation Examples}
+
+This material is not commonly documented in the literature on large deformation materials. Here are some special case deformation examples.For uniform dilation ($\lambda_i=1+\varepsilon$, and eigenvectors = $\hat{\vec x}$, $\hat{\vec y}$, and $\hat{\vec z}$) the pressure is:
+\begin{eqnarray}
+   P  = -\left[ \lambda(J_p)\left(1+\varepsilon+{1\over3}\varepsilon^2\right) - {2G(J_P)\over 3(1+\varepsilon)^2}\right]3 \varepsilon
+\end{eqnarray}
+For small $\varepsilon$, this result reduces to
+\begin{eqnarray}
+   P  = - \left(\lambda(J_p) + {2G(J_P)\over 3} \right) 3\varepsilon = - K {\Delta V\over V}
+\end{eqnarray}
+as expected for small-strain, isotropic materials.
+
+For constrained, uniaxial tension ($\lambda_1=1+\varepsilon$, $\lambda_2=\lambda_3=1$, and eigenvectors = $\hat{\vec x}$, $\hat{\vec y}$, and $\hat{\vec z}$):
+\begin{equation}
+      \sigma_{xx} =  \left(\lambda(J_p) + 2G(J_P) \right)\varepsilon \qquad{\rm and}\qquad \sigma_{yy}=\sigma_{zz}=\lambda(J_p)\varepsilon
+\end{equation}
+This result is the same as for small-strain, isotropic materials (\emph{i.e.}, linear at all deformations and a weakness of this material).
+
+For linear shear ($F_{ii}=1$. $F_{xy}=\gamma$, rest zero, and $J=1$), the eigenvalues and eigenvectors of $\B$ are
+\begin{eqnarray}
+      \lambda_1^2 & = & {1\over2}\left(2+\gamma^2+\gamma\sqrt{4+\gamma^2}\right)  \\
+      \lambda_2^2 & = & {1\over2}\left(2+\gamma^2-\gamma\sqrt{4+\gamma^2}\right)  \\
+      \lambda_3^2 & = & 1  \\
+      \vec b_1 & = &{1\over \sqrt{1+{1\over4}\left(\gamma+\sqrt{4+\gamma^2}\right)^2}} \left({1\over2}\left(\gamma+\sqrt{4+\gamma^2}\right),1,0\right) \\
+      \vec b_2 & = &{1\over \sqrt{1+{1\over4}\left(\gamma+\sqrt{4-\gamma^2}\right)^2}} \left({1\over2}\left(\gamma-\sqrt{4+\gamma^2}\right),1,0\right) \\
+      \vec b_3 & = & \left(0,0,1\right) 
+\end{eqnarray}
+The Cauchy stress reduces to
+\begin{equation}
+   \tens\sigma = 2G(J_P)  \left(  \lambda_1(\lambda_1-1) \vec b_1\otimes\vec b_1 + \lambda_2(\lambda_2-1) \vec b_2\otimes\vec b_2\right) \\
+\end{equation}
+The algebra is messy. With the help of Mathematica, the stress terms reduce too
+\begin{eqnarray}
+    \sigma_{xx} & = & G(J_P)\left(2(1+\gamma^2)+{k_1(\gamma-\sqrt{4+\gamma^2})-k_2(\gamma+\sqrt{4+\gamma^2})\over \sqrt{8+2\gamma^2}}\right) \\
+    \sigma_{yy} & = & G(J_P)\left(2-{k_1(\gamma+\sqrt{4+\gamma^2})-k_2(\gamma-\sqrt{4+\gamma^2})\over \sqrt{8+2\gamma^2}}\right) \\
+    \tau_{xy} & = & 2G(J_P) \left(\gamma+{k_1-k_2\over \sqrt{8+2\gamma^2}}\right) \\
+    \sigma_{zz} & = & 0
+\end{eqnarray}
+where
+\begin{equation}
+    k_1 = \sqrt{2+\gamma^2-\gamma\sqrt{4+\gamma^2}} \qquad {\rm and} \qquad
+    k_2 = \sqrt{2+\gamma^2+\gamma\sqrt{4+\gamma^2}}
+\end{equation}
+Expanding in $\gamma$ and keeping only linear terms reduces to small strain result of $\tau_{xy} =G\gamma$ with all other stresses zero.
+
+
+\section{Tait Liquid}
+
+The Tait liquid uses the Tait equation for the pressure response and assumes the shear term follows Newtonian viscosity. The Tait equation for volume of a liquid at any temperature and pressure is:
+\begin{equation}
+    V(P,T) = V(0,T)\left[1-C\ln\left(1+{P\over B(T)}\right)\right]
+\end{equation}
+where $C=0.894$ is the universal Tait constant. The volume is expressed in terms of the zero pressure volume, which can be fit (for a given liquid) to various equations. Two common approaches are
+\begin{eqnarray}
+      V(0,T) & = & A_0 + A_1T + A_2 T^2 +\cdots \\
+      V(0,T) & = & V(0,T_{0})e^{\beta(T-T_{0})}
+\end{eqnarray}
+The first is simply a polynomial fit to volume data with fitting parameters $A_i$. The second assumes constant volumetric thermal expansion coefficient ($\beta$) around some reference temperature $T_{0}$. {\tt NairnMPM} uses the second fit where $V(0,T_{0})$ is found from input density, $T_{0}$ is from stress free temperature, and $\beta = 3\alpha$. A common fit for $B(T)$ is
+\begin{equation}
+     B(T) = B_0 e^{-B_1T}
+\end{equation}
+Note that bulk modulus from the Tait equation is
+\begin{equation}
+    {1\over K(P,T)} = -{1\over V}\left({dV\over dP}\right)_T = {C\over P+B(T)} {1\over \left[1-C\ln\left(1+{P\over B(T)}\right)\right]} = {C\over P+B(T)} { V(P,T)\over  V(0,T)}
+\end{equation}
+which shows that $B(T)$ is proportional to the temperature dependence of the zero-pressure bulk modulus:
+\begin{equation}
+     B(T) = C K(0,T) 
+\end{equation}
+{\tt NairnMPM} currently assumes temperature independent bulk modulus or assumes $B_1=0$. The pressure dependence to the thermal expansion coefficient is
+\begin{equation}
+   \beta(P,T) =  {1\over V}\left({dV\over dT}\right)_P= \beta(0,T) - {PB_1\over K(P,T)}
+\end{equation}
+When bulk modulus is independent of pressure ($B_1=0$), the thermal expansion coefficient is also independent of pressure.
+
+For implementation as a hyperelastic material, we define
+\begin{equation}
+ J = {V(P,T)\over V(0,T_0)} \qquad {\rm and} \qquad J_{res} = {V(0,T)\over V(0,T_0)} = e^{\beta_0(T-T_0)}
+\end{equation}
+as relative volumes. The constitutive law is rewritten as
+\begin{equation}
+     {J\over J_{res}} = 1-C\ln\left(1+{P\over CK_0}\right)
+\end{equation}
+where $K_0$ is the zero-pressure bulk modulus. This equation can be solved for pressure:
+\begin{equation}
+    P = CK_0\left[\exp\left(1 - J^*\over C\right)-1\right]
+\end{equation}
+where $J^*=J/J_{res}$. This material is equivalent to a hyperelastic material with volumetric strain energy function of
+\begin{equation}
+        U(J^*) = C K_0\left[ C \exp\left({1-J^*\over C}\right) + J^*\right]
+\end{equation}
+This energy function equals the energy per unit initial volume for isothermal compression or expansion of a Tait liquid.
+
+For shear stress calculations, this material is assumed to be a Newtonian fluid, which means that the shear stress is proportional to deviatoric, symmetrized velocity gradient:
+\begin{equation}
+    \tau = \eta \left(\nabla \mathbf{v} + \nabla \mathbf{v}^T - {2\over 3}{\rm Tr}(\nabla \mathbf{v})\mathbf{I}\right)
+\end{equation}
+where $\nabla \mathbf{v}$ is the velocity gradient and $\eta$ is the viscosity. The total stress is given by $ \mathbf{\sigma} = -P \mathbf{I}  + \tau$.
+
+When the low-pressure bulk modulus is independent of temperature, the pressure dependent bulk modulus is
+\begin{equation}
+       K(P,T) = {P+CK_0\over C} {J\over J_{res}}
+\end{equation}
+This results can be used to adjust time step as a function of current pressure.
 
 \chapter{Viscoelastic Materials}
 
@@ -2563,6 +2696,16 @@ Under constrained uniaxial deformation:
 \end{eqnarray}
 This solution can be imposed by applying traction and/or velocity boundary conditions. On the $\pm x$ surface, the traction condition should be $T_x = \pm \sigma_{xx}$. On the $\pm y$ and $\pm z$ surfaces, the conditions should be $T_y = \pm \sigma_{yy}$ and $T_z = \pm \sigma_{yy}$.
 
+\subsection{Disney Snow Model}
+
+For the neo-Hookean material in the elastic part of the \hyperref[NHM]{Disney snow model}, the eigenvalues of $\B$ are $1+(\Lambda-1)t/t_f$, 1, and 1 with eigenvectors $\hat x$, $\hat y$, and $\hat z$. The Cauchy stress is
+\begin{eqnarray}
+   \sigma_{xx} & = & \left( \lambda(J_p)+ 2G(J_P) \right)(\Lambda-1){t\over t_f}  \\
+   \sigma_{yy} & = & \lambda(J_p)(\Lambda-1){t\over t_f} \\
+   \sigma_{zz} & = &  \sigma_{yy}
+\end{eqnarray}
+This result is identical to a low-strain, isotropic material, although these two models are not identical in all deformation states.
+
 \section{Constrained Uniaxial Tension with Thermal Ramp}
 
 In addition to linear variation in elongation, we add linear variation in $\lambda_{res} = 1 + (\Lambda_{res}-1)t/t_f$, which corresponds to a temperature of
@@ -2612,11 +2755,19 @@ If an object is sheared on one direction at a constant rate while being constrai
 \begin{equation}
     \F = \left(\begin{array}{ccc} 1 & \Gamma{t\over t_f} & 0 \\
                0 & 1 & 0 \\
+               0 & 0 & 1 \end{array} \right) \quad {\rm and} \quad
+    \B = \left(\begin{array}{ccc} 1 + \Gamma^2{t^2\over t_f^2} & \Gamma{t\over t_f} & 0 \\
+               \Gamma{t\over t_f} & 1 & 0 \\
                0 & 0 & 1 \end{array} \right)
 \end{equation}
 Here $\tan\Theta = \Gamma$ is the final shear angle of the deformation, which is reached at $t=t_f$. The initial particle velocities are $\vec v = \bigl(\Gamma Y/t_f,0,0\bigr)$. The accelerations are always zero. This deformation can be applied in 2D plane strain or in 3D calculations; it might work in plane stress as well. Because $F$ is independent of position, the stress in the object will be independent of position and determined by the material model being used. As a result, the divergence of the stress is zero and the manufactured solution can be derived with zero body force. The remaining task is finding boundary conditions for various material models.
 
-Traction boundary conditions are found from $\tens\sigma\cdot\hat{\vec n}$. On the $\pm y$ and $\pm z$ surfaces, the normal stays constant during deformation, but on the initially $\pm x$ surface, the normal rotates to be
+Traction boundary conditions are found from $\tens\sigma\cdot\hat{\vec n}$. On the $\pm y$ and $\pm z$ surfaces, the normal stays constant during deformation, leading to:
+\begin{eqnarray}
+    \vec T & = & \left(\tau_{xy}, \sigma_{yy},0\right)  \qquad {\rm on\ }\pm y\\
+    \vec T & = & \left(0,0,\sigma_{zz}\right)  \qquad {\rm on\ }\pm z\\
+\end{eqnarray}
+On the initially $\pm x$ surface, the normal rotates to be
 \begin{equation}
      \hat{\vec n} = \left( {1\over \sqrt{1+\gamma^2}}, {-\gamma\over \sqrt{1+\gamma^2}},0\right)
 \end{equation}
@@ -2656,7 +2807,7 @@ The only non-zero stress is the shear stress:
 
 \subsection{Neo-Hookean, Mooney-Rivlin Material}
 
-For a  \hyperref[MRM]{Mooney-Rivlin material}, the Cauchy stress under sliding shear is found from elements of $\B$ which are $B_{xx}=1+\gamma^2$, $B_{yy}=B_{zz}=1$, and $B_{xy}=\gamma$. In addition $J=1$, which means pressure terms are zero. The final stresses are
+For a  \hyperref[MRM]{Mooney-Rivlin material}, the Cauchy stress under sliding shear is found from elements of $\B$. In addition $J=1$, which means pressure terms are zero. The final stresses are
 \begin{eqnarray}
      \sigma_{xx} & = & {\Jres\gamma^2\over 3} \left( 2G_1 + G_2 \right) \\
      \sigma_{yy} & = & -{\Jres\gamma^2\over 3} \left( G_1 + 2G_2 \right) \\
@@ -2667,11 +2818,11 @@ where $\Jres$ is set to one to generate a solution with no residual stresses.
 
 \subsection{Neo-Hookean Material}
 
-For an alternate \hyperref[NHM]{Neo-Hookean material} with no residual stresses, the Cauchy stress under sliding shear is found from elements of $\B$ which are $B_{xx}=1+\gamma^2$, $B_{yy}=B_{zz}=1$, and $B_{xy}=\gamma$. In addition $J=1$, which means pressure terms are zero. The final stresses are
+For an alternate \hyperref[NHM]{Neo-Hookean material} with no residual stresses, the Cauchy stress under sliding shear is found from elements of $\B$. In addition $J=1$, which means pressure terms are zero. The final stresses are
 \begin{eqnarray}
       \sigma_{xx} & = & G\gamma^2  \\
       \sigma_{yy} = \sigma_{zz} & = & 0  \\
-      \sigma_{xy} & = & G\gamma
+      \tau_{xy} & = & G\gamma
 \end{eqnarray}
 On the $\pm y$ surfaces, the tractions are $T_x = \pm\tau_{xy}$ and $T_y = 0$. On the $\pm z$ surfaces, the traction are $T_z=0$. The $\pm x$ surface have to account for rotations and can be done with normal and tangential tractions:
 \begin{eqnarray}
@@ -2679,6 +2830,15 @@ On the $\pm y$ surfaces, the tractions are $T_x = \pm\tau_{xy}$ and $T_y = 0$. O
      T_t & = & {G\gamma\over 1+ \gamma^2} 
 \end{eqnarray}
 or with tractions along $x$ and $y$. Both work, but $x$ and $y$ tractions are more stable
+
+\subsection{Disney Snow Model}
+
+For the neo-Hookean material in the elastic part of the \hyperref[NHM]{Disney snow model}, the eigenvalues and eigenvectors of $\B$:
+\begin{eqnarray}
+   \lambda_1^2 & = & 1 + {1\over2}\gamma^2 + \gamma\sqrt{1+{1\over4}\gamma^2} \\
+   \lambda_2^2 & = & 1 + {1\over2}\gamma^2 - \gamma\sqrt{1+{1\over4}\gamma^2} \\
+   \lambda_3^2 & = & 1 \\
+\end{eqnarray}
 
 \section{Linear Acceleration}
 
