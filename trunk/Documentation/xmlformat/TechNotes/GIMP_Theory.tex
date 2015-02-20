@@ -1,0 +1,703 @@
+\documentclass[11pt]{article}
+\usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{amssymb,amsmath}
+\usepackage[charter]{mathdesign}
+\usepackage{multirow}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+
+\textwidth6.5in
+\textheight9.0in
+\topmargin-0.5in
+\oddsidemargin0in
+\evensidemargin0in
+
+\title{Generalized Interpolation Material Point (GIMP) Method}
+\author{John Nairn}
+\date{\today} 
+
+\font\tenbsf=cmssbx10 at 11pt
+\font\bfsym=cmmib10 at 11pt
+
+\renewcommand{\vec}[1]{\boldsymbol{#1}}
+\newcommand{\tens}[1]{\boldsymbol{\mathsf{#1}}}
+
+% definitions
+%\def\C{{\fam=9 C}}
+\def\A{\hbox{\tenbsf A}}
+\def\a#1{\alpha_{#1}}  
+\def\B{\hbox{\tenbsf B}}
+\def\b#1{\beta_{#1}}  
+\def\C{\hbox{\tenbsf C}}
+\def\D{\hbox{\tenbsf D}}
+\def\dev{\hbox{\tenbsf s}}
+\def\ndev{\hbox{\tenbsf n}}
+\def\cex{\vec{c}_{excess}}
+\def\code#1{{\small\tt #1}}
+\def\del{d \vec{\varepsilon}_{e}}
+\def\dpl{d \vec{\varepsilon}_{p}}
+\def\deff{d \vec{\varepsilon}_{tot}}
+\def\df{d \vec{f}}
+\def\dfa{d \vec{f}^\alpha}
+\def\dfq{d \vec{f}^q}
+\def\da{d\vec{\alpha}}
+\def\dfW{{\partial f\over \partial W_p}}
+\def\dsig{d \vec{\sigma}}
+\def\DT{\Delta T}
+\def\dq{d\vec q}
+\def\dWp{dW_p}
+\def\e#1{\varepsilon_{#1}}
+\def\ee{\varepsilon}
+\def\er#1{\varepsilon_{#1}^{(res)}}
+\def\err#1{\varepsilon_{#1}^{(res,r)}}
+\def\f{\hbox{\tenbsf f}}
+\def\F{\hbox{\tenbsf F}}
+\def\fvvec#1#2#3#4#5#6{\left(\begin{array}{ccc} #1 \\ #2 \\ #3 \\ #4 \\ #5 \\ #6 \end{array}\right)}
+\def\g#1{\gamma_{#1}}  
+\def\I{\hbox{\tenbsf I}}
+\def\P{\hbox{\tenbsf P}}
+\def\Q{\hbox{\tenbsf Q}}
+\def\R{\hbox{\tenbsf R}}
+\def\s#1{\sigma_{#1}}  
+\def\symmat#1#2#3#4#5#6{\left(\begin{array}{ccc} #1 & #2 & #3 \\ #2 & #4 & #5 \\
+                                                      #3 & #5 & #6 \end{array}\right)}
+\def\t#1{\tau_{#1}}  
+\def\v#1{\nu_{#1}}  
+\def\vvec#1#2#3{\left(\begin{array}{ccc} #1 \\ #2 \\ #3 \end{array}\right)}
+\def\w#1{\omega_{#1}}  
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+These notes provide a detailed derivation of the GIMP method for MPM, which was first described by Bardenhagen and Kober. The notes pay attention to large deformation and give extensions to axisymmetry. Finally, GIMP methods for implementing transport equations are derived.
+
+\section{Virtual Work or Power}
+
+Let $\delta\vec u$ be a virtual displacement. Virtual work (or power) gives the following starting equation:
+
+\begin{equation}
+\int_V \rho \vec b\cdot \delta\vec u\thinspace dV + \int_{S_T}\vec T \cdot \delta\vec u \thinspace dS + \sum_p \vec {F_p} \cdot \delta\vec u
+    = \int_V \rho \vec a\cdot \delta\vec u\thinspace dV + \int_V \tens\sigma \cdot \nabla \delta\vec u\thinspace dV
+\end{equation}
+
+\noindent where $\vec b$ is specific body force ({\em e.g.}, gravity), $\vec T$ is traction applied on the surface $S_T$, $\vec {F_p}$ is a force applied directly to a particle (an extra turn added for MPM modeling), $\vec a$ is acceleration, $\rho$ is density, and $\tens\sigma$ is the Cauchy stress.
+
+\section{Particle Basis Expansion}
+
+First, we expand $\rho\vec b$, $\rho \vec a$, and $\tens\sigma$ in a particle basis, where any function of $\vec x$ is written as:
+
+\begin{equation}
+     f(\vec x) = \sum_p f_p \chi_p(\vec x)
+\end{equation}
+
+\noindent where $f_p$ is the value of the function on particle $p$ and $\chi_p(\vec x)$ is a particle basis function. The most common function is for $\chi_p(\vec x) =1$ inside the particle domain and $0$ outside the domain. The property expansions are:
+
+\begin{eqnarray}
+    \rho\vec b & = & \sum_p \rho_p \vec{b_p} \chi_p(\vec x) = \sum_p {m_p\over V_p} \vec{b_p}\chi_p(\vec x) \\
+    \rho\vec a & = & \sum_p {m_p\over V_p} {d\vec{v_p}\over dt} \chi_p(\vec x) = \sum_p {\vec{\dot p_p}\over V_p} \chi_p(\vec x) \\
+    \tens\sigma & = & \sum_p\tens\sigma_p \chi_p(\vec x)
+\end{eqnarray}
+where $m_p$ is particle mass, $V_p$ is current particle volume, $\vec{v_p}$ is particle velocity, $\vec{p_p}$ is particle momentum, and $\tens\sigma_p$ is particle stress. The particle force term (a useful MPM term), can be expanded as
+
+\begin{equation}
+    \vec F_p = {\vec F_p\over V_p} \int_V \chi_p(\vec x)\thinspace dV
+\end{equation}
+
+\noindent This results is making used of normalized particle shape function such that:
+
+\begin{equation}
+   V_p =  \int_V \chi_p(\vec x)\thinspace dV
+\end{equation}
+
+The new virtual work equation becomes:
+
+\begin{eqnarray}
+&&\sum_p \int_V {m_p\over V_p} \chi_p(\vec x)\vec{b_p}\cdot \delta\vec u\thinspace dV + \int_{S_T}\vec T \cdot \delta\vec u \thinspace dS + \sum_p \vec {\vec F_p\over V_p} \int_V \chi_p(\vec x) \cdot \delta\vec u\thinspace dV \\
+    &&\qquad\qquad
+    = \sum_p\int_V {\vec{\dot p_p}\over V_p} \chi_p(\vec x)\cdot \delta\vec u\thinspace dV +  \sum_p\int_V \tens\sigma_p \chi_p(\vec x) \cdot \nabla \delta\vec u\thinspace dV
+\end{eqnarray}
+
+\section{Grid Expansion\label{gridexpand}}
+
+Next, we expand the virtual displacements in grid-based shape functions using:
+
+\begin{equation}
+     \delta\vec u = \sum_i \delta\vec{u_i} N_i(\vec x)
+\end{equation}
+
+\noindent where the sum is over nodes ($i$), $\delta\vec{u_i}$ is the virtual displacement on node $i$, and $N_i(\vec x)$ are the nodal shape functions (standard finite element shape functions). Each term is revised as follows:
+
+\begin{eqnarray}
+   \sum_i\sum_p \int_V {m_p\over V_p} \chi_p(\vec x)\vec{b_p}\cdot \delta\vec{u_i} N_i(\vec x)\thinspace dV
+    & = & \sum_i\sum_p S_{ip} m_p \vec b_p \cdot \delta\vec{u_i} \\
+    \int_{S_T}\vec T \cdot \delta\vec u & = & \sum_i \delta\vec{u_i}\cdot \int_{S_T}\vec N_i(\vec x) \vec T \thinspace dS \\
+    \sum_i\sum_p \vec {\vec F_p\over V_p} \int_V \chi_p(\vec x) \cdot \delta\vec{u_i} N_i(\vec x)\thinspace dV
+    & = &  \sum_i\sum_p S_{ip} \vec F_p \cdot \delta\vec{u_i} \\
+   \sum_i \sum_p\int_V {\vec{\dot p_p}\over V_p} \chi_p(\vec x)\cdot \delta\vec{u_i} N_i(\vec x)\thinspace dV
+   & = &  \sum_i\sum_p S_{ip} \vec{\dot p_p} \cdot \delta\vec{u_i} \\
+   \sum_i\sum_p\int_V \tens\sigma_p \chi_p(\vec x) \cdot \delta\vec{u_i} \nabla N_i(\vec x)\thinspace dV
+   & = &  \sum_i\sum_p (V_p\tens\sigma_p \vec G_{ip} )\cdot \delta\vec{u_i}
+\end{eqnarray}
+where the GIMP shape functions are:
+\begin{eqnarray}
+     S_{ip} & = & {1\over V_p} \int_V \chi_p(\vec x) N_i(\vec x)\thinspace dV    \label{Sipdef} \\
+     \vec G_{ip} & = & {1\over V_p} \int_V \chi_p(\vec x) \nabla N_i(\vec x)\thinspace dV   \label{Gipdef}
+\end{eqnarray}
+
+The particle stress term can be revised to use particle mass as follows:
+\begin{equation}
+     V_p\tens\sigma_p = m_p {\tens\sigma_p\over\rho_p} = m_p {\tens\sigma_p\over\rho_p} {\rho_0\over\rho_0} = m_p {J\sigma_p\over\rho_0} = m_p{\tau\over\rho_0}
+\end{equation}
+Here $J = V_p/V_0 = \rho_0/\rho_p$ is the relative volume and $\tens\tau$ is the Kirchhoff stress. In this form the stress term depends most naturally on Kirchhoff stresses normalized to initial density (and this approach avoids the need to find current particle density or volume when calculating that term on each time step). For this reason, {\tt NairnMPM} always tracks stress as  $\tens\tau/\rho_0$ (and all material models are expected to calculate this stress). When archiving stress, {\tt NairnMPM} writes Cauchy stress using $\tens\sigma_p = (\rho_0/J)*(\tau/\rho_0)$. Note that when doing energy calculations that $\tens\tau \cdot \tens{du}$, where $\tens{du}$ is incremental deformation gradient, is energy per unit initial volume and therefore the energy calculated in code using  $(\tau/\rho_0) \cdot \tens{du}$ is energy per unit mass or $dU/(\rho_0V_0)$.
+
+\section{MPM Equation}
+
+Making use of the fact that $\delta\vec{u_i}$ is arbitrary, the summand of all terms can be equated to arrive at the controlling MPM equation on the background grid of:
+\begin{equation}
+    \sum_p S_{ip}^{(n)} {d\vec{ p_p^{(n)}}\over dt} = {d\vec p_i^{(n)}\over dt} = \vec f_i^{(n)} + \vec f_{i,T} ^{(n)}            \label{momEq}
+\end{equation}
+where
+\begin{eqnarray}
+	 \vec f_i^{(n)} & = & \sum_p \left(-m_p{\tens\tau_p^{(n)}\cdot \vec G_{ip}^{(n)}\over \rho_0}  + m_p S_{ip}^{(n)}  \vec b_p +  \vec F_p^{(n)}S_{ip}^{(n)}\right) \\
+	 \vec f_{i,T}^{(n)} & = & \int_{S_T}\vec N_i(\vec x) \vec T \thinspace dS
+\end{eqnarray}
+where superscript $(n)$ has been added to mean terms calculated from the state of all particles at the start of time step $n$. Commonly the body force, $\vec b_p$, will be independent of the particle state ({\em e.g.,} gravity, which is a constant, or a general body force that depends only on position and time and not particle state). When that holds, it can be removed from the sum. The total internal force them becomes
+\begin{equation}
+	 \vec f_i^{(n)} = \sum_p \left(-m_p{\tens\tau_p^{(n)}\cdot \vec G_{ip}^{(n)}\over \rho_0}  +  \vec F_p^{(n)}S_{ip}^{(n)}\right)  + m_i^{(n)}\vec b(\vec x_i,t) 
+	 \label{fidef}
+\end{equation}
+where $\vec b(\vec x_i,t)$ is body force at the nodal location and
+\begin{equation}
+	 m_i^{(n)} = \sum_p m_p S_{ip}^{(n)} 
+\end{equation}
+is total nodal mass.
+
+Once the forces are found, the momentum can be updated on the grid using
+\begin{equation}
+           \vec p_i^{(n+1)} = \vec p_i^{(n)} + (\vec f_i^{(n)} + \vec f_{i,T}^{(n)})\Delta t
+\end{equation}
+where $\Delta t$ is the time step and:
+\begin{equation}
+         	 \vec{p}_i^{(n)} = \sum_p \vec{p}_p^{(n)} S_{ip}^{(n)} 
+\end{equation}
+
+\subsection{Velocity Approach to Strain and Particle Updates}
+
+\subsubsection{Incremental Displacement Gradient}
+
+For strain updates, the algorithm needs to evaluate the spatial velocity gradient, $\nabla \vec v(x,t)$, and use that to find the incremental deformation gradient, $\tens{dF}$, defined by
+\begin{equation}
+     \tens{dF}^{(n)} = \exp(\nabla \vec v \Delta t)
+\end{equation}
+which assumes $\nabla \vec v$ is constant over the time step. The gradient is found by extrapolating spatial velocity on the grid:
+\begin{equation}
+    \nabla \vec v = \sum_i \vec G_{ip} \otimes \vec v_i^{(n)}
+\end{equation}
+and the spatial velocity is found from
+\begin{equation}
+      \vec  v_i^{(n)} = {\vec p_i^{(n)}\over m_i^{(n)}} 
+\end{equation}
+
+\subsubsection{Particle Updates with Damping}
+
+In each time step, the Eulerian update on the grid is used to update the Lagrangian velocities and positions on the particles, and it is useful to include damping options in both the grid and particle updates. Two global damping strategies are to add damping terms proportional to either the grid velocity or the particle velocity. In most cases, these two approaches to damping should have similar results. By including them both, however, it is possible to propose several different types of damping schemes. If damping is based on grid velocity, then the nodal momentum update changes to:
+\begin{equation}
+     p_i^{*(n+1)} = p_i^{(n)} +  m_i^{(n)}\vec a_i^{*(n)}\Delta t
+\end{equation}
+where ``*'' indicates a term that is revised to including damping affects in this time step. The effective nodal acceleration is
+\begin{equation}
+    \vec a_i^{*(n)} = {\vec p_i^{*(n+1)}-\vec p_i^{(n)} \over m_i^{(n)}\Delta t}
+         =  { \vec f_{i}^{(n)} + \vec f_{i,T}^{(n)} - \alpha_g(t)\vec p_i^{(n)}  \over m_i^{(n)}}
+          =  { \vec f_{i}^{(n)} + \vec f_{i,T}^{(n)} \over m_i^{(n)}} -  \alpha_g(t)\vec v_i^{(n)}
+\end{equation}
+where $\alpha_g(t)$ is the grid damping constant (with units 1/sec) that applies to all nodes (\emph{i.e.}, independent of $\vec x_i$), but may evolve in time (such as a kinetic energy thermostat). See below for how to deal with position-dependent damping.
+
+We can write two updates  for the particles --- a FLIP update that increments particle velocity using accelerations extrapolated to the grid and a PIC update that extrapolates velocity directly to the particle. After adding a particle damping constant, $\alpha_p(t)$, these two updates become:
+\begin{eqnarray}
+      \vec{v}_{p,FLIP}^{(n+1)}  & = & \vec{v}_p^{(n)} + \bigl(\vec{a}_{g\to p}^{*(n)}  -  \alpha_p(t)\vec{v}_p^{(n)} \bigr)\Delta t   \\
+      \vec{v}_{p,PIC}^{(n+1)}  & = & \vec v_{g\to p}^{*(n+1)} - \alpha_p(t)\vec{v}_p^{(n)}\Delta t
+           = \vec v_{g\to p}^{(n)} + \bigl(\vec{a}_{g\to p}^{*(n)}  -  \alpha_p(t)\vec{p}_p^{(n)}\bigr)\Delta t 
+\end{eqnarray}
+where $\vec{a}_{g\to p}^{*(n)}$ is effective acceleration extrapolated from the grid to the particle:
+\begin{equation}
+    \vec{a}_{g\to p}^{*(n)} = \sum_i  \vec a_i^{*(n)} S_{ip}^{(n)} = \vec{a}_{g\to p}^{(n)} -  \alpha_g(t)\vec v_{g\to p}^{(n)}   
+\end{equation}
+and
+\begin{equation}
+    \vec{a}_{g\to p}^{(n)} = \sum_i { \vec f_{i}^{(n)} + \vec f_{i,T}^{(n)} \over m_i^{(n)}} S_{ip}^{(n)}    
+    \qquad {\rm and}\qquad \vec v_{g\to p}^{(n)} = \sum_i  \vec v_i^{(n)} S_{ip}^{(n)}
+\end{equation}
+The extrapolated velocities are
+\begin{eqnarray}
+      \vec v_{g\to p}^{*(n+1)} & = & \sum_i  {\vec p_i^{*(n+1)} \over m_i^{(n)}}S_{ip}^{(n)}
+       = \vec v_{g\to p}^{(n+1)} - \alpha_g(t)\vec v_{g\to p}^{(n)}\Delta t  = \vec v_{g\to p}^{(n)} + \vec{a}_{g\to p}^{*(n)}\Delta t  \\ 
+       \vec v_{g\to p}^{(n+1)} & = & 
+          \sum_i  \left({\vec p_i^{(n)} \over m_i^{(n)}}+{ \vec f_{i}^{(n)} + \vec f_{i,T}^{(n)} \over m_i^{(n)}}\Delta t\right) S_{ip}^{(n)} 
+          = \vec v_{g\to p}^{(n)} + \vec{a}_{g\to p}^{(n)}\Delta t  \label{vgpJump}
+\end{eqnarray}
+Both damping strategies can be done entirely within the particle update. The two methods can be used individually or combined. Because grid and particle velocities should be similar, the total damping constant is $\alpha(t)=\alpha_g(t)+\alpha_p(t)$.
+
+Next, the MPM position update with damping is found by integrating the extrapolated velocity over the time step, which comes from PIC velocity, by the midpoint rule:
+\begin{eqnarray}
+        \vec{x}_p^{(n+1)} & = & \vec{x}_p^{(n)} + \int_0^{\Delta t} \vec v_{p,PIC}^{(n+1)}(\Delta t=t) \thinspace dt \approx \vec{x}_p^{(n)} 
+         + {1\over 2}\left(\vec v_{g\to p}^{(n)}+\vec v_{p,PIC}^{(n+1)}\right) \Delta t \\
+         & = & \vec{x}_p^{(n)} +\vec v_{g\to p}^{(n)}\Delta t + {1\over 2} \bigl(\vec{a}_{g\to p}^{*(n)}  -  \alpha_p(t)\vec{v}_p^{(n)}\bigr)(\Delta t)^2 
+\end{eqnarray}
+This update along with the FLIP velocity update (which is the one that should be used) can be written as:
+\begin{eqnarray}
+   \vec{x}_{p}^{(n+1)} & = & \vec{x}_p^{(n)} + \vec v_{g\to p}^{*(n+1)}\Delta t - {1 \over 2}\bigl(\vec{a}_{g\to p}^{*(n)} +  \alpha_p(t)\vec v_p^{(n)} \bigr)(\Delta t)^2 \\
+   \vec{v}_{p}^{(n+1)} & = & \vec{v}_p^{(n)} +  \bigl(\vec{a}_{g\to p}^{*(n)} -  \alpha_p(t)\vec v_p^{(n)} \bigr)\Delta t
+\end{eqnarray}
+
+It is interesting to redefine the grid and particle damping terms using:
+\begin{equation}
+     \alpha_g(t) \to -{1-\beta\over\Delta t} + \alpha_g' \qquad{\rm and}\qquad \alpha_p(t) \to {1-\beta\over\Delta t} + \alpha_p'
+     \label{PICDamping}
+\end{equation}
+The time dependence of primed damping terms have been dropped, but they can all still depend on time. 
+By unraveling all effective terms, the net updates become
+\begin{eqnarray}
+   \vec{x}_{p}^{(n+1)} & = & \vec{x}_p^{(n)} +\vec v_{g\to p}^{(n+1)}\Delta t - {1 \over 2}\bigl(\vec{a}_{g\to p}^{(n)} 
+       + \alpha_{PIC}(\beta)\bigl(\vec v_p^{(n)}-\vec v_{g\to p}^{(n)}\bigr) +   \alpha_g'\vec v_{g\to p}^{(n)}+  \alpha_p'\vec v_p^{(n)} \bigr)(\Delta t)^2  \\
+   \vec{v}_{p}^{(n+1)} & = & \vec{v}_p^{(n)} + \bigl(\vec{a}_{g\to p}^{(n)} - \alpha_{PIC}(\beta)\bigl(\vec v_p^{(n)}-\vec v_{g\to p}^{(n)}\bigr)
+         -  \alpha_g'\vec{v}_{g\to p}^{(n)} -  \alpha_p'\vec{v}_p^{(n)} \bigr)\Delta t 
+\end{eqnarray}
+If any damping terms depend on position, however, the updates will need to be modified differently. The ``PIC Damping'' term is
+\begin{equation}
+       \alpha_{PIC}(\beta) = {1-\beta\over \Delta t}
+\end{equation}
+It is called PIC damping, because in the absence of other damping terms ($\alpha_g'=\alpha_p'=0$), the velocity update becomes
+\begin{equation}
+   \vec{v}_{p}^{(n+1)} = \vec{v}_p^{(n)}  - (1-\beta)\bigl(\vec v_p^{(n)}-\vec v_{g\to p}^{(n)}\bigr)
+         + \vec{a}_{g\to p}^{(n)}\Delta t 
+\end{equation}
+If $\beta=1$, the update is an undamped FLIP update. If $\beta=0$, the update is an undamped, PIC update. Thus $\beta$ can be interpreted as the fraction FLIP in the velocity update. But the above analysis was formally all a FLIP analysis. A better interpretation is that $\beta$ adds an new form of artificial damping that is proportional to the inversion error between the particle velocity and the grid velocity extrapolated to the particle ($\vec v_p^{(n)}-\vec v_{g\to p}^{(n)}$). The net damping effect will be to damp out this error.
+
+There are two approaches to coding updates with damping. First, it can be done entirely within the particle update task. The input to this task from  the nodes will be $p_i^{(n+1)}$ (which will have replaced $p_i^{(n)}$ in the momentum update), $ \vec f_{i}^{(n)} + \vec f_{i,T}^{(n)}$, and  $m_i^{(n)}$. We can define two new effective terms
+\begin{eqnarray}
+    \vec{a}_{g\to p}^{(n)'} & = &  \vec{a}_{g\to p}^{(n)} - \alpha_{PIC}(\beta)\bigl(\vec v_p^{(n)}-\vec v_{g\to p}^{(n)}\bigr)
+         -  \alpha_g'\vec{v}_{g\to p}^{(n)} -  \alpha_p'\vec{v}_p^{(n)} \\
+         & = & \vec{a}_{g\to p}^{(n)} -  \alpha_g(t)\vec{v}_{g\to p}^{(n)} -  \alpha_p(t)\vec{v}_p^{(n)}  \\
+    \vec v_{g\to p}^{(n+1)'} & = & \vec v_{g\to p}^{(n+1)} - \biggl(\alpha_{PIC}(\beta)\bigl(\vec v_p^{(n)}-\vec v_{g\to p}^{(n)}\bigr)
+         +  \alpha_g'\vec{v}_{g\to p}^{(n)} + \alpha_p'\vec{v}_p^{(n)}\biggr)\Delta t \\
+         & = & \vec v_{g\to p}^{(n+1)} - \biggl( \alpha_g(t)\vec{v}_{g\to p}^{(n)} + \alpha_p(t)\vec{v}_p^{(n)}\biggr)\Delta t
+\end{eqnarray}
+where $\vec v_{g\to p}^{(n)}$ is found from available input properties using
+\begin{equation}
+ \vec v_{g\to p}^{(n)}  =  \vec v_{g\to p}^{(n+1)}  - \vec{a}_{g\to p}^{(n)}\Delta t
+\end{equation}
+The final updates become
+\begin{eqnarray}
+   \vec{x}_{p}^{(n+1)} & = & \vec{x}_p^{(n)} +\vec v_{g\to p}^{(n+1)'}\Delta t - {1\over 2}\vec{a}_{g\to p}^{(n)'}(\Delta t)^2  \\
+   \vec{v}_{p}^{(n+1)} & = & \vec{v}_p^{(n)} + \vec{a}_{g\to p}^{(n)'}\Delta t 
+\end{eqnarray}
+which are standard position and velocity updates to second order in position. Notice that it was important to keep the second order term on the position update in order to end up with consistent definitions for extrapolated velocity and acceleration. In object oriented code, the grid damping is added in the update particles task, but the particle damping is not added until calling the material point class. Separating them out gives
+\begin{eqnarray}
+   \vec{x}_{p}^{(n+1)} & = & \vec{x}_p^{(n)} +\bigl(\vec v_* - \alpha_p(t)\vec{v}_p^{(n)}\Delta t\bigr)\Delta t - {1\over 2}\bigl(\vec{a}_* -  \alpha_p(t)\vec{v}_p^{(n)} \bigr)(\Delta t)^2  \\
+      & = & \vec{x}_p^{(n)} +\Delta t\left(\vec v_* - {\Delta t\over 2}\bigl(\vec{a}_* +  \alpha_p(t)\vec{v}_p^{(n)} \bigr)\right)  \\
+   \vec{v}_{p}^{(n+1)} & = & \vec{v}_p^{(n)} +\bigl(\vec{a}_* -  \alpha_p(t)\vec{v}_p^{(n)} \bigr)\Delta t 
+           =  \vec{v}_p^{(n)}\bigl(1 -  \alpha_p(t)\Delta t \bigr)  + \vec{a}_* \Delta t
+\end{eqnarray}
+where
+\begin{eqnarray}
+   \vec{v}_*& = & \vec v_{g\to p}^{(n+1)} -  \alpha_g(t)\vec{v}_{g\to p}^{(n)}\Delta t   \\
+   \vec{a}_* & = & \vec{a}_{g\to p}^{(n)} -  \alpha_g(t)\vec{v}_{g\to p}^{(n)} 
+\end{eqnarray}
+The position update must be called first, because it needs $\vec{v}_p^{(n)}$, which is changed in the velocity update.
+
+When all damping is done in the particle updates (as is possible from above equations), it is possible that damping will affect other sections of the code that use nodal momentum or force, such as contact, differently. To avoid these effects (if they matter), a second approach would be to apply the grid damping to the force calculation. But, when PIC damping is used, this could cause very unrealistic forces (because that term can be large when $\Delta t$ is small). A potential solution is to apply only $\alpha_g'$ to force calculations and then apply PIC damping during the particle updates. At the time of the particle update, the nodal input values would be
+\begin{eqnarray}
+    \vec f_i^{**(n)} & = & \vec f_{i}^{(n)} + \vec f_{i,T}^{(n)} - \alpha_g'\vec p_i^{(n)} \\
+    \vec p_i^{**(n+1)} & = &  p_i^{(n)} +  m_i^{(n)}\vec a_i^{**(n)}\Delta t \\
+    \vec a_i^{**(n)} & = & { \vec f_{i}^{(n)} + \vec f_{i,T}^{(n)} \over m_i^{(n)}} -  \alpha_g'\vec v_i^{(n)}
+\end{eqnarray}
+The effective terms become
+\begin{eqnarray}
+    \vec{a}_{g\to p}^{(n)'} & = &  \vec{a}_{g\to p}^{**(n)} - \alpha_{PIC}(\beta)\bigl(\vec v_p^{(n)}-\vec v_{g\to p}^{(n)}\bigr) -   \alpha_p'\vec{v}_p^{(n)} \\
+    \vec v_{g\to p}^{(n+1)'} & = & \vec v_{g\to p}^{**(n+1)} - \biggl(\alpha_{PIC}(\beta)\bigl(\vec v_p^{(n)}-\vec v_{g\to p}^{(n)}\bigr)  + \alpha_p'\vec{v}_p^{(n)}\biggr)\Delta t 
+\end{eqnarray}
+where $\vec v_{g\to p}^{(n)}$ is found from available input properties using
+\begin{equation}
+ \vec v_{g\to p}^{(n)}  =  \vec v_{g\to p}^{**(n+1)}  - \vec{a}_{g\to p}^{**(n)}\Delta t
+\end{equation}
+The final updates are the same as above except when coding
+\begin{eqnarray}
+   \vec{v}_*& = & \vec v_{g\to p}^{**(n+1)} +  \alpha_{PIC}\vec{v}_{g\to p}^{(n)}\Delta t   \\
+   \vec{a}_* & = & \vec{a}_{g\to p}^{**(n)} + \alpha_{PIC}\vec{v}_{g\to p}^{(n)} 
+\end{eqnarray}
+
+\subsection{Momentum Approach to Strain and Particle Updates}
+
+\subsubsection{Incremental Displacement Gradient}
+
+For strain updates, the algorithm needs to evaluate the spatial velocity gradient, $\nabla \vec v(x,t)$, and use that to find the incremental deformation gradient, $\tens{dF}$, defined by
+\begin{equation}
+     \tens{dF}^{(n)} = \exp(\nabla \vec v \Delta t)
+\end{equation}
+which assumes $\nabla \vec v$ is constant over the time step. The gradient is found by extrapolating spatial velocity on the grid:
+\begin{equation}
+    \nabla \vec v = {\sum_i \vec G_{ip} \otimes \vec p_i^{(n)}  \over \sum_i S_{ip} m_i^{(n)} }
+\end{equation}
+
+\subsubsection{Particle Updates with Damping}
+
+In each time step, the Eulerian update on the grid is used to update the Lagrangian momenta and positions on the particles, and it is useful to include damping options in both the grid and particle updates. Two global damping strategies are to add damping terms proportional to either the grid momentum or the particle momentum. In most cases, these two approaches to damping should have similar results. By including them both, however, it is possible to propose several different types of damping schemes. If damping is based on grid momentum, then the nodal momentum update changes to:
+\begin{equation}
+     p_i^{*(n+1)} = p_i^{(n)} +  \vec f_i^{*(n)}\Delta t
+\end{equation}
+where ``*'' indicates a term that is revised to including damping affects in this time step. The effective nodal force is
+\begin{equation}
+    \vec f_i^{*(n)} = {\vec p_i^{*(n+1)}-\vec p_i^{(n)}\over \Delta t}
+         =  \bigl(\vec f_{i}^{(n)} + \vec f_{i,T}^{(n)}\bigr) - \alpha_g(t)\vec p_i^{(n)} 
+\end{equation}
+where $\alpha_g(t)$ is the grid damping constant (with units 1/sec) that applies to all nodes (\emph{i.e.}, independent of $\vec x_i$), but may evolve in time (such as a kinetic energy thermostat). See below for how to deal with position-dependent damping.
+
+We can write two updates for the particles --- a FLIP update that increments particle momentum using forces extrapolated to the grid and a PIC update that extrapolates momentum directly to the particle. After adding a particle damping constant, $\alpha_p(t)$, these two updates become:
+\begin{eqnarray}
+      \vec{p}_{p,FLIP}^{(n+1)}  & = & \vec{p}_p^{(n)} + \bigl(\vec{f}_{g\to p}^{*(n)}  -  \alpha_p(t)\vec{p}_p^{(n)} \bigr)\Delta t   \\
+      \vec{p}_{p,PIC}^{(n+1)}  & = & \vec p_{g\to p}^{*(n+1)} - \alpha_p(t)\vec{p}_p^{(n)}\Delta t
+           = \vec p_{g\to p}^{(n)} + \bigl(\vec{f}_{g\to p}^{*(n)}  -  \alpha_p(t)\vec{p}_p^{(n)}\bigr)\Delta t 
+\end{eqnarray}
+where $\vec{f}_{g\to p}^{*(n)}$ is effective force extrapolated from the grid to the particle:
+\begin{equation}
+    \vec{f}_{g\to p}^{*(n)} = \sum_i  \vec f_i^{*(n)} S_{ip}^{(n)} = \vec{f}_{g\to p}^{(n)} -  \alpha_g(t)\vec p_{g\to p}^{(n)}   
+\end{equation}
+and
+\begin{equation}
+    \vec{f}_{g\to p}^{(n)} = \sum_i \bigl(\vec f_i^{(n)} + \vec f_{i,T}^{(n)}\bigr) S_{ip}^{(n)}    
+    \qquad {\rm and}\qquad \vec p_{g\to p}^{(n)} = \sum_i  \vec p_i^{(n)} S_{ip}^{(n)}
+\end{equation}
+The extrapolated mometa are
+\begin{eqnarray}
+      \vec p_{g\to p}^{*(n+1)} & = & \sum_i  \vec p_i^{*(n+1)} S_{ip}^{(n)}
+       = \vec p_{g\to p}^{(n+1)} - \alpha_g(t)\vec p_{g\to p}^{(n)}\Delta t  = \vec p_{g\to p}^{(n)} + \vec{f}_{g\to p}^{*(n)}\Delta t  \\ 
+       \vec p_{g\to p}^{(n+1)} & = & 
+          \sum_i  \left(\vec p_i^{(n)} +\bigl(\vec f_{i}^{(n)} + \vec f_{i,T}^{(n)}\bigr)\Delta t\right) S_{ip}^{(n)} 
+          = \vec p_{g\to p}^{(n)} + \vec{f}_{g\to p}^{(n)}\Delta t  \label{pvgpJump}
+\end{eqnarray}
+Both damping strategies can be done entirely within the particle update. The two methods can be used individually or combined. Because grid and particle momenta should be similar, the total damping constant is $\alpha(t)=\alpha_g(t)+\alpha_p(t)$.
+
+Next, the MPM position update with damping is found by integrating the extrapolated velocity over the time step, which comes from PIC momentum, by the midpoint rule:
+\begin{eqnarray}
+        \vec{x}_p^{(n+1)} & = & \vec{x}_p^{(n)} + \int_0^{\Delta t} {\vec p_{p,PIC}^{(n+1)}(\Delta t=t)\over m_{g\to p}^{(n)}}
+         \thinspace dt \approx \vec{x}_p^{(n)} 
+         + {1\over 2m_{g\to p}^{(n)}}\left(\vec p_{g\to p}^{(n)}+\vec p_{p,PIC}^{(n+1)}\right) \Delta t \\
+         & = & \vec{x}_p^{(n)} + {\vec p_{g\to p}^{(n)}\over m_{g\to p}^{(n)}}\Delta t 
+            + {1\over 2 m_{g\to p}^{(n)}} \bigl(\vec{f}_{g\to p}^{*(n)}  -  \alpha_p(t)\vec{p}_p^{(n)}\bigr)(\Delta t)^2 
+\end{eqnarray}
+This update along with the FLIP momentum update (which is the one that should be used) can be written as:
+\begin{eqnarray}
+   \vec{x}_{p}^{(n+1)} & = & \vec{x}_p^{(n)} + {\vec p_{g\to p}^{*(n+1)}\over m_{g\to p}^{(n)}}\Delta t 
+       - {1 \over 2m_{g\to p}^{(n)}}\bigl(\vec{f}_{g\to p}^{*(n)} +  \alpha_p(t)\vec p_p^{(n)} \bigr)(\Delta t)^2 \\
+   \vec{p}_{p}^{(n+1)} & = & \vec{p}_p^{(n)} +  \bigl(\vec{f}_{g\to p}^{*(n)} -  \alpha_p(t)\vec p_p^{(n)} \bigr)\Delta t
+\end{eqnarray}
+
+It is interesting to redefine the grid and particle damping terms using:
+\begin{equation}
+     \alpha_g(t) \to -{1-\beta\over\Delta t} + \alpha_g' \qquad{\rm and}\qquad \alpha_p(t) \to {1-\beta\over\Delta t} + \alpha_p'
+     \label{pPICDamping}
+\end{equation}
+The time dependence of primed damping terms have been dropped, but they can all still depend on time. 
+By unraveling all effective terms, the net updates become
+\begin{eqnarray}
+   \vec{x}_{p}^{(n+1)} & = & \vec{x}_p^{(n)} +{\vec p_{g\to p}^{(n+1)}\over m_{g\to p}^{(n)}}\Delta t
+       - {\bigl(\vec{f}_{g\to p}^{(n)} + \alpha_{PIC}(\beta)\bigl(\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}\bigr) +
+        \alpha_g'\vec p_{g\to p}^{(n)}+  \alpha_p'\vec p_p^{(n)} \bigr)(\Delta t)^2\over 2m_{g\to p}^{(n)}}  \\
+   \vec{p}_{p}^{(n+1)} & = & \vec{p}_p^{(n)} + \bigl(\vec{f}_{g\to p}^{(n)} - \alpha_{PIC}(\beta)\bigl(\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}\bigr)
+         -  \alpha_g\vec{p}_{g\to p}^{(n)} -  \alpha_p'\vec{p}_p^{(n)} \bigr)\Delta t 
+\end{eqnarray}
+The ``PIC Damping'' term is
+\begin{equation}
+       \alpha_{PIC}(\beta) = {1-\beta\over \Delta t}
+\end{equation}
+It is called PIC damping, because in the absence of other damping terms ($\alpha_g'=\alpha_p'=0$), the momentum update becomes
+\begin{equation}
+   \vec{p}_{p}^{(n+1)} = \vec{p}_p^{(n)}  - (1-\beta)\bigl(\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}\bigr)
+         + \vec{f}_{g\to p}^{(n)}\Delta t 
+\end{equation}
+If $\beta=1$, the update is an undamped FLIP update. If $\beta=0$, the update is an undamped, PIC update. Thus $\beta$ can be interpreted as the fraction FLIP in the momentum update. But the above analysis was formally all a FLIP analysis. A better interpretation is that $\beta$ adds an new form of artificial damping that is proportional to the inversion error between the particle momentum and the grid momentum extrapolated to the particle ($\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}$). The net damping effect will be to damp out this error.
+
+There are two approaches to coding updates with damping. First, it can be done entirely within the particle update task. The input to this task from  the nodes will be $p_i^{(n+1)}$ (which will have replaced $p_i^{(n)}$ in the momentum update), $ \vec f_{i}^{(n)} + \vec f_{i,T}^{(n)}$, and  $m_i^{(n)}$. We can define two new effective terms
+\begin{eqnarray}
+    \vec{f}_{g\to p}^{(n)'} & = &  \vec{f}_{g\to p}^{(n)} - \alpha_{PIC}(\beta)\bigl(\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}\bigr)
+         -  \alpha_g'\vec{p}_{g\to p}^{(n)} -  \alpha_p'\vec{p}_p^{(n)} \\
+         & = & \vec{f}_{g\to p}^{(n)} -  \alpha_g(t)\vec{p}_{g\to p}^{(n)} -  \alpha_p(t)\vec{p}_p^{(n)}  \\
+    \vec p_{g\to p}^{(n+1)'} & = & \vec p_{g\to p}^{(n+1)} - \biggl(\alpha_{PIC}(\beta)\bigl(\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}\bigr)
+         +  \alpha_g'\vec{p}_{g\to p}^{(n)} + \alpha_p'\vec{p}_p^{(n)}\biggr)\Delta t \\
+         & = & \vec p_{g\to p}^{(n+1)} - \biggl( \alpha_g(t)\vec{p}_{g\to p}^{(n)} + \alpha_p(t)\vec{p}_p^{(n)}\biggr)\Delta t
+\end{eqnarray}
+where $\vec p_{g\to p}^{(n)}$ is found from available input properties using
+\begin{equation}
+ \vec p_{g\to p}^{(n)}  =  \vec p_{g\to p}^{(n+1)}  - \vec{f}_{g\to p}^{(n)}\Delta t
+\end{equation}
+The final updates become
+\begin{eqnarray}
+   \vec{x}_{p}^{(n+1)} & = & \vec{x}_p^{(n)} + {\vec p_{g\to p}^{(n+1)'}\over m_{g\to p}^{(n)}} \Delta t 
+      - {\vec{f}_{g\to p}^{(n)'}\over 2m_{g\to p}^{(n)}}(\Delta t)^2  \\
+   \vec{p}_{p}^{(n+1)} & = & \vec{p}_p^{(n)} + \vec{f}_{g\to p}^{(n)'}\Delta t 
+\end{eqnarray}
+which are standard position and momentum updates to second order in position. Notice that it was important to keep the second order term on the position update in order to end up with consistent definitions for extrapolated momentum and force. In object oriented code, the grid damping is added in the update particles task, but the particle damping is not added until calling the material point class. Separating them out gives
+\begin{eqnarray}
+   \vec{x}_{p}^{(n+1)} & = & \vec{x}_p^{(n)} +{\bigl(\vec p_* - \alpha_p(t)\vec{p}_p^{(n)}\Delta t\bigr)\Delta t \over m_{g\to p}^{(n)}}- {1\over 2}{\bigl(\vec{a}_* -  \alpha_p(t)\vec{v}_p^{(n)} \bigr)(\Delta t)^2 \over m_{g\to p}^{(n)}} \\
+      & = & \vec{x}_p^{(n)} +{\Delta t\over m_{g\to p}^{(n)}}\left(\vec p_* - {\Delta t\over 2}\bigl(\vec{f}_* +  \alpha_p(t)\vec{p}_p^{(n)} \bigr)\right)  \\
+   \vec{p}_{p}^{(n+1)} & = & \vec{p}_p^{(n)} +\bigl(\vec{f}_* -  \alpha_p(t)\vec{p}_p^{(n)} \bigr)\Delta t 
+           =  \vec{p}_p^{(n)}\bigl(1 -  \alpha_p(t)\Delta t \bigr)  + \vec{f}_* \Delta t
+\end{eqnarray}
+where
+\begin{eqnarray}
+   \vec{p}_*& = & \vec p_{g\to p}^{(n+1)} -  \alpha_g(t)\vec{p}_{g\to p}^{(n)}\Delta t   \\
+   \vec{f}_* & = & \vec{f}_{g\to p}^{(n)} -  \alpha_g(t)\vec{p}_{g\to p}^{(n)} 
+\end{eqnarray}
+The position update must be called first, because it needs $\vec{p}_p^{(n)}$, which is changed in the momentum update.
+
+When all damping is done in the particle updates (as is possible from above equations), it is possible that damping will affect other sections of the code that use nodal momentum or force, such as contact, differently. To avoid these effects (if they matter), a second approach would be to apply the grid damping to the force calculation. But, when PIC damping is used, this could cause very unrealistic forces (because that term can be large when $\Delta t$ is small). A potential solution is to apply only $\alpha_g'$ to force calculations and then apply PIC damping during the particle updates. At the time of the particle update, the nodal input values would be
+\begin{eqnarray}
+    \vec f_i^{**(n)} & = & \vec f_{i}^{(n)} + \vec f_{i,T}^{(n)} - \alpha_g'\vec p_i^{(n)} \\
+    \vec p_i^{**(n+1)} & = &  p_i^{(n)} +  \vec f_i^{**(n)}\Delta t 
+\end{eqnarray}
+The effective terms become
+\begin{eqnarray}
+    \vec{f}_{g\to p}^{(n)'} & = &  \vec{f}_{g\to p}^{**(n)} - \alpha_{PIC}(\beta)\bigl(\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}\bigr) -   \alpha_p'\vec{p}_p^{(n)} \\
+    \vec p_{g\to p}^{(n+1)'} & = & \vec p_{g\to p}^{**(n+1)} - \biggl(\alpha_{PIC}(\beta)\bigl(\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}\bigr)  + \alpha_p'\vec{p}_p^{(n)}\biggr)\Delta t 
+\end{eqnarray}
+where $\vec p_{g\to p}^{(n)}$ is found from available input properties using
+\begin{equation}
+ \vec p_{g\to p}^{(n)}  =  \vec p_{g\to p}^{**(n+1)}  - \vec{f}_{g\to p}^{**(n)}\Delta t
+\end{equation}
+The final updates are the same as above except when coding
+\begin{eqnarray}
+   \vec{p}_*& = & \vec p_{g\to p}^{**(n+1)} +  \alpha_{PIC}\vec{p}_{g\to p}^{(n)}\Delta t   \\
+   \vec{f}_* & = & \vec{f}_{g\to p}^{**(n)} + \alpha_{PIC}\vec{p}_{g\to p}^{(n)} 
+\end{eqnarray}
+
+\subsection{Position Dependent Damping Strategies}
+
+Potentially it might be useful to damp certain regions differently than other regions. For example, damping could be used in a crack plane to absorbed released energy. This section considers changes when the damping terms depend on position. For damping based on grid velocity, the nodal momentum update changes to:
+\begin{equation}
+     p_i^{*(n+1)} = p_i^{(n)} + \vec a_i^{*(n)}\Delta t
+\end{equation}
+where ``*'' indicates a term that is revised to including damping affects in this time step. The effective nodal acceleration is
+\begin{equation}
+    \vec a_i^{*(n)} = {\vec p_i^{*(n+1)}-\vec p_i^{(n)} \over m_i^{(n)}\Delta t}
+         =  { \vec f_{i}^{(n)} + \vec f_{i,T}^{(n)} - \alpha_g(t,\vec x_i)\vec p_i^{(n)}  \over m_i^{(n)}}
+          =  { \vec f_{i}^{(n)} + \vec f_{i,T}^{(n)} \over m_i^{(n)}}  -  \alpha_g(t,\vec x_i)\vec v_i^{(n)}  
+\end{equation}
+where $\vec x_i$ is the nodal position. The particle velocity update would be:
+\begin{equation}
+  \vec{v}_{p,FLIP}^{(n+1)} = \vec{v}_p^{(n)} + \bigl(\vec{a}_{g\to p}^{(n)} -\left(\sum_i \alpha_g(t,\vec x_i)\vec v_i^{(n)}S_{ip}\right)  -  \alpha_p(t,\vec x_p)\vec{v}_p^{(n)} \bigr)\Delta t   \\
+\end{equation}
+The summation terms causes some problems. First, it is inefficient because it needs another extrapolation and likely repeated calculation of $\alpha_g(t,\vec x_i)$. Second, it loses connection to simple velocity terms. The situation can be improved by replacing $\alpha_g(t,\vec x_i)$ with $\alpha_g(t,\vec x_p)$, which is constant for the sum and can be removed from the sum to give 
+\begin{equation}
+  \vec{v}_{p,FLIP}^{(n+1)} = \vec{v}_p^{(n)} + \bigl(\vec{a}_{g\to p}^{(n)} - \alpha_g(t,\vec x_p)\vec v_{g\to p}^{(n)} -  \alpha_p(t,\vec x_p)\vec{v}_p^{(n)} \bigr)\Delta t   \\
+\end{equation}
+The remainder of the update analysis can be followed as above. The only difference in code is that $\alpha_g(t,\vec x_p)$ and $\alpha_p(t,\vec x_p)$ need to be calculated for each particle in the update loop while for time dependence only, they only need to be calculated once in the entire particle update task. In this approach, the damping could be implemented as a particle property rather then as a function of Eulerian grid coordinates.
+
+\section{GIMP Derivation Comments}
+
+The nodal force $\vec f_i$ is sometimes interpreted as a sum of internal force, body force, and external force (for the three terms, respectively), but there is no need to separate them during calculations; they all add to the nodal force. The force $\vec f_{i,T}$ is a force due to tractions and needs extra work to integrate the tractions over traction-loaded surfaces in the extent of the grid shape function for node $i$.
+
+Note that Eq.~(\ref{momEq}) is diagonal in the nodal system. Thus unlike other derivations of MPM, which get to here with a non-diagonal mass matrix, there is no need to invoke lumping of that mass matrix to make the problem tractable. The GIMP derivation naturally results in a lumped mass matrix.
+
+Within this generalized framework, the various style of MPM are characterized by how they calculate $S_{ip}$ and $\vec G_{ip}$. Given particle functions, $\chi_p(\vec x)$, the above equations give an ``exact'' result that is sometimes called ``finite GIMP.'' In general, exact integration of arbitrary particle domains is difficult and is therefore not done. Instead various schemes have developed to approximate the integrals. The {\tt NairnMPM} wiki page as one approach to classify the \href{http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Methods_and_Simulation_Timing}{MPM family tree of methods}.
+
+\section{Axisymmetric GIMP}
+
+\def\avgrp{\langle r_p\rangle}
+
+In axisymmetric GIMP, the virtual work integrals are converted to cylindrical integrals:
+
+\begin{equation}
+\int_A \rho \vec b\cdot \delta\vec u \thinspace r dA + \int_{L_T} \vec T \cdot \delta\vec u \thinspace r dL + \sum_p \vec {F_p} \cdot \delta\vec u
+    = \int_A  \rho \vec a\cdot \delta\vec u\thinspace r dA + \int_A  \tens\sigma \cdot \nabla \delta\vec u\thinspace r dA
+\end{equation}
+where $A$ is the area of integration in the $r$-$z$ plane, $dA=dr\thinspace dz$,  $L_T$ is the path for surfaces having traction loads, and  $\vec T$ and $\vec{F_p}$ have been redefined to be traction and force per radian. The result after expansion in the particle basis changes to:
+\begin{eqnarray}
+&&\sum_p \int_A {m_p\over A_p\avgrp} \chi_p(\vec x)\vec{b_p}\cdot \delta\vec u \thinspace r dA + \int_{L_T}\vec T \cdot \delta\vec u \thinspace dL + 
+                 \sum_p  {\vec F_p\over A_p\avgrp}\int_A \chi_p(\vec x) \cdot  \delta\vec u \thinspace r dA \\
+    &&\qquad\qquad
+    = \sum_p\int_A {\vec{\dot p_p}\over A_p\avgrp} \chi_p(\vec x)\cdot \delta\vec u\thinspace r dA +  \sum_p\int_A \tens\sigma_p \chi_p(\vec x) \cdot \nabla \delta\vec u\thinspace r dA
+\end{eqnarray}
+where $A_p$ is the particle area in the $r-z$ plane, $\avgrp$ is the average radial position of the particle, and particle mass has been redefined to be the mass per radian or $m_p = \rho_pA_p\avgrp$. The particle basis functions have the new normalization of
+\begin{equation}
+   A_p\avgrp =  \int_A \chi_p(\vec x)\thinspace r dA  \qquad {\rm where} \qquad \avgrp = {1\over A_p} \int_{A_p}  r \thinspace dA
+\end{equation}
+
+The first four results \hyperref[gridexpand]{above} after expansion in the grid-based shape functions are identical except that definition of $S_{ip}$ changes to
+\begin{equation}
+     S_{ip} = {1\over A_p\avgrp} \int_A \chi_p(\vec x) N_i(\vec x)\thinspace r dA 
+\end{equation}
+The stress term needs some extra work by evaluating $\nabla \delta\vec u$ in cylindrical coordinates, which is:
+\begin{equation}
+    \nabla \delta\vec u =\left( \begin{array}{ccc} {\partial \delta u_r\over \partial r} & {\partial \delta u_r\over \partial z} & 0 \\
+                                {\partial \delta u_z\over \partial r} & {\partial \delta u_z\over \partial z} & 0 \\ 0 & 0 & {\delta u_r\over r} \\
+                                \end{array}\right)
+\end{equation}
+The stress term evaluates to
+\begin{eqnarray}
+   \sum_i\sum_p\int_A \tens\sigma_p \chi_p(\vec x) \cdot \delta\vec{u_i} \nabla N_i(\vec x)\thinspace r dA
+   & = &  \sum_i\sum_p A_p\avgrp\left(\begin{array}{cc} \sigma_{rr} & \sigma_{rz} \\ \sigma_{rz} & \sigma_{zz} \end{array}\right) \vec G_{ip} \cdot \bigl(\delta u_{i,z}, \delta u_{i,z}\bigr)
+   \nonumber\\
+   &&\mbox + \sum_i\sum_p A_p\avgrp\bigl( \sigma_{\theta\theta},0) T_{ip} \cdot \bigl(\delta u_{i,z}, \delta u_{i,z}\bigr)
+ \end{eqnarray}
+where $\vec G_{ip}$ is redefined and $T_{ip}$ is a new shape function:
+\begin{eqnarray}
+     \vec G_{ip} & = & {1\over A_p\avgrp} \int_A \chi_p(\vec x) \nabla N_i(\vec x)\thinspace r dA \\
+     T_{ip} & = & {1\over A_p\avgrp} \int_A \chi_p(\vec x) N_i(\vec x)\thinspace dA \\
+\end{eqnarray}
+For the particle stress term, we can revise to use particle mass as follows:
+\begin{equation}
+     A_p\avgrp\tens\sigma_p = m_p {\tens\sigma_p\over\rho_p} = m_p {\tens\sigma_p\over\rho_p} {\rho_0\over\rho_0} = m_p {J\sigma_p\over\rho_0} = m_p{\tau\over\rho_0}
+\end{equation}
+
+Making use of the fact that $\delta\vec{u_i}$ is arbitrary, the summands of all terms can be equated to arrive at the controlling MPM equation on the background grid in axisymmetric calculations:
+\begin{equation}
+    {d\vec p_i\over dt}= \vec f_i + \vec f_{i,T}
+\end{equation}
+where
+\begin{eqnarray}
+	 \vec f_i & = & \sum_p \left(-{m_p\over \rho_0}\left(\begin{array}{cc} \tau_{rr} & \tau_{rz} \\ \tau_{rz} & \tau_{zz} \end{array}\right)\cdot \vec G_{ip} 
+	       - {m_p\over \rho_0} \bigl( \tau_{\theta\theta},0) T_{ip} + m_p S_{ip}  \vec b_p + S_{ip} \vec F_p\right) \\
+	 \vec f_{i,T} & = & \int_{S_T}\vec N_i(\vec x) \vec T \thinspace dS
+\end{eqnarray}
+This final result is very similar to MPM in Cartesian coordinates except it uses revised shape functions, $m_p$, $\vec F_p$, and $\vec T$ are redefined to be quantities per radian, and there is an extra stress term in $\vec f_i$.
+
+
+\section{GIMP Analysis for Conduction}
+
+The heat conduction equation is
+\begin{equation}
+   \rho C_P {\partial T\over \partial t} + \nabla \cdot \vec q = q_s(\vec x)
+\end{equation}
+where $\rho$ is density, $C_P$ is constant pressure heat capacity (per unit mass), $T$ is temperature, $\vec q$ is heat flux (per unit area), and $q_s(\vec x)$ is heat source (per unit volume). For heat conduction, the heat flux is $\vec q = -\tens k\nabla T$ where $\tens k$ is the thermal conductivity tensor and $T$ is temperature. Solving this equation in the MPM weak form gives
+\begin{equation}
+   \int_V \left(\rho C_P {\partial T\over \partial t} + \nabla \cdot \vec q - q_s(\vec x)\right)w(\vec x)\thinspace dV = 0
+\end{equation}
+where $w(\vec x)$ is an arbitrary weighting function. Using the vector identity:
+\begin{equation}
+     \left(\nabla\cdot\vec q\right)w(\vec x) = \nabla \cdot \left(w(\vec x)\vec q\right) - \left(\nabla w(\vec x)\right)\cdot \vec q 
+\end{equation}
+and the divergence theorem, the weak form equation becomes:
+\begin{equation}
+    \int_V \left(\rho C_Pw(\vec x) {\partial T\over \partial t} -\nabla w(\vec x) \cdot \vec q - q_s(\vec x)w(\vec x)\right)\thinspace dV  + \int_{\delta V} (w(\vec x)\vec q) \cdot \hat n \thinspace dS = 0
+\end{equation}
+where $\delta V$ is the border of $V$ and $\hat n$ is a surface normal vector.
+
+As in GIMP for the momentum equation, we expand the particle quantities in the particle basis to get:
+\begin{eqnarray}
+    \rho C_P {\partial T\over dt} & = & \sum_p \rho_p C_{P,p} {\partial T_p\over dt} \chi_p(\vec x) \\
+    q_s(\vec x) & = & \sum_p q_{s,p} \chi_p(\vec x) \\
+    \vec q & = & \sum_p \vec q_p\chi_p(\vec x)
+\end{eqnarray}
+where subscript $p$ denotes a particle property and $\chi_p(\vec x)$ is the particle basis function for particle $p$ (which is typically 1 within the deformed particle domain and zero elsewhere). Next expand weight function and its gradient in the grid shape functions:
+\begin{equation}
+   w(\vec x)=\sum_i w_i N_i(\vec x) \qquad {\rm and} \qquad \nabla w(\vec x)=\sum_i w_i \nabla N_i(\vec x)
+\end{equation}
+After substituting all expansions, the weak form equation becomes
+\begin{eqnarray}
+&& -\sum_i \int_{\delta V} (w_iN_i(\vec x)\vec q)\cdot \hat n \thinspace dS = 
+\int_{V} \Biggl\{-\sum_i\sum_p\left[\bigl(w_i\nabla N_i(\vec x)\bigr)\cdot \vec q_p\chi_p(\vec x)\right] \\
+&& \qquad\qquad\mbox{} - 
+\sum_i\sum_p q_{s,p}\chi_p(\vec x)w_iN_i(\vec x)
++  \sum_i\sum_p \rho_p C_{P,p}\chi_p(\vec x) w_iN_i(\vec x){\partial T_p\over dt}\Biggr\} dV
+\end{eqnarray}
+Using Eqs.~(\ref{Sipdef}) and (\ref{Gipdef}) for GIMP shape functions and arbitrary nature of $w(\vec x)$, this equation transforms  to an equation for each node:
+\begin{equation}
+    \sum_p  m_p C_{P,p}{\partial T_p\over dt}S_{ip} = \sum_p V_p \vec q_p\cdot \vec G_{ip}  + \sum_p  V_p q_{s,p} S_{ip}  - 
+ \int_{\delta V} (N_i(\vec x)\vec q)\cdot \hat n \thinspace dS
+\end{equation}
+where $m_p = \rho_p V_p = \rho_0 V_0$ is particle mass. This equation works for large deformation provided $V_P$ is the current particle volume and Eqs.~(\ref{Sipdef}) and (\ref{Gipdef}) use finite GIMP methods. If Eqs.~(\ref{Sipdef}) and (\ref{Gipdef}) are replaced by uniform GIMP (or CPDI), it still approximately accounts for large deformation by using current particle volume ($V_p$) in the sums.
+
+\subsection{MPM Equation}
+
+Defining $m_{Tp}^{(n)} = m_p C_{P,p}$ as a thermal mass on the particle in step $n$ (with SI units J/K when $C_{P}$ is heat capacity per unit mass or J/(K-kg)), a thermal momentum on the node can be defined as
+\begin{equation}
+      p_{Ti}^{(n)} = \sum_p  m_{Tp}^{(n)} T_p^{(n)} S^{(n)}_{ip}  
+\end{equation}
+The SI units for thermal momentum are J (Joules) (or N-m). In the momentum analog, temperature is replaced by velocity, thermal mass is replaced by actual mass, and the sum gives momentum with SI units N-sec. A thermal momentum equation, as scalar analog of the momentum equation, can be written as
+\begin{equation}
+     {d p_{Ti}^{(n)}\over dt} = Q_{i}^{(n)} + Q_{i,q}^{(n)}
+\end{equation}
+where
+\begin{eqnarray}
+      Q_{i}^{(n)} & = & \sum_p V_p^{(n)}  \left(\vec q_p^{(n)}\cdot \vec G^{(n)}_{ip}  + q_{s,p}^{(n)} S^{(n)}_{ip} \right) \\
+      Q_{i,q}^{(n)} & = & -  \int_{\delta V} (N_i(\vec x)\vec q^{(n)})\cdot \hat n \thinspace dS 
+\end{eqnarray}
+are total thermal flows (or thermal forces) with SI units J/sec or Watts. The first heat flow is internal heat flow while the second is heat flow at the boundaries due to flux boundary conditions. The $\vec q_p^{(n)}$ term is flux with SI units W/m$^2$. It is analogous to stress term in the momentum equation (using units N/m$^2$), but rather then track and update $\vec q_p^{(n)}$ on the particle (as done for stress), it is calculated on each time step using
+\begin{equation}
+    \vec q_p^{(n)} = -\tens k_p^{(n)}\nabla T_p^{(n)} = - \tens k_p^{(n)}\sum_i \tens  T_i^{(n)} \vec G^{(n)}_{ip}
+\end{equation}
+where nodal temperature is defined by
+\begin{equation}
+       T_i^{(n)} = {p_{Ti}^{(n)} \over m_{Ti}^{(n)}} \qquad {\rm where } \qquad m_{Ti}^{(n)} = \sum_p  m_{Tp}^{(n)} S^{(n)}_{ip}  
+\end{equation}
+Note that conductivity has SI units of W/(m K) and $q_{s,p}^{(n)}$ has SI units W/m$^3$.
+
+\subsection{Momentum and Particle Updates}
+
+The thermal momentum update on the node is
+\begin{equation}
+     p_{Ti}^{(n+1)} = p_{Ti}^{(n)} +  \bigl(Q_{i}^{(n)} + Q_{i,q}^{(n)}\bigr)\Delta t = p_{Ti}^{(n)} +  m_{Ti}^{(n)} a_{Ti}^{(n)}\Delta t
+\end{equation}
+where the nodal thermal acceleration is
+\begin{equation}
+    a_{Ti}^{(n)} = {p_{Ti}^{(n+1)}- p_{Ti}^{(n)} \over m_{Ti}^{(n)}\Delta t}
+         =  { Q_{i}^{(n)} + Q_{i,q}^{(n)}  \over m_{Ti}^{(n)}}
+\end{equation}
+As done for velocity, we can write two updates  for the particles --- a FLIP update that increments particle temperature using thermal accelerations extrapolated to the grid and a PIC update that extrapolates temperature directly to the particle:
+\begin{eqnarray}
+     T_{p,FLIP}^{(n+1)}  & = & T_p^{(n)} + a_{T,g\to p}^{(n)}\Delta t   \\
+     T_{p,PIC}^{(n+1)}  & = & T_{g\to p}^{(n+1)}
+\end{eqnarray}
+where
+\begin{eqnarray}
+   a_{T,g\to p}^{(n)} & = & \sum_i a_{Ti}^{(n)} S_{ip}^{(n)}    \\
+   T_{g\to p}^{(n+1)} & = & 
+          \sum_i  \left(T_i^{(n)}+a_{Ti}^{(n)}\Delta t\right) S_{ip}^{(n)} 
+          = T_{g\to p}^{(n)} + a_{T,g\to p}^{(n)}\Delta t  \\
+    T_{g\to p}^{(n)} & = &  \sum_i T_i^{(n)}S_{ip}^{(n)} 
+\end{eqnarray}
+Unlike like particle velocity and position update, the addition of PIC character to temperature updates leads to thermal conduction, even if the conductivity of the material is set to zero. Thus, the particle temperature update is always done using FLIP. Like particle stresses, particle temperatures can develop variations within a cell. Because of these variations, particle temperature does not give the best measure of the local temperature when implementing features such as particle properties that depend on temperature. To implement temperature-dependent features on time step $n$, it is better to assume the temperature at the particle is equal to $T_{g\to p}^{(n)}$. In other words, the particle temperature evolves as described above, but whenever some other feature of the code needs to know the temperature at the particle, it should use the grid-based temperature and not the evolving particle temperature.
+
+\section{GIMP Analysis for Diffusion}
+
+We can derive GIMP diffusion analysis from the GIMP conduction analysis by replacing temperature with concentration potential $\mu$ (where $\mu$ is a dimensionless potential approximated as $\mu=c/c_{sat}$; {\em i.e.} from 0 to 1), and then by setting $\rho=1$, and $C_P=1$, and $\tens k = \tens D$, where $\tens D$ is the diffusion tensor. Defining $V_{p}^{(n)}$ as a solvent ``mass'' on the particle in step $n$ (with SI units m$^3$), a solvent momentum on the node can be defined as
+\begin{equation}
+      p_{Di}^{(n)} = \sum_p  V_{p}^{(n)} \mu_p^{(n)} S^{(n)}_{ip} 
+\end{equation}
+The SI units for solvent momentum are m$^3$-$\mu$. A solvent momentum equation, as scalar analog of the momentum equation, can be written as
+\begin{equation}
+     {d p_{Di}^{(n)}\over dt} = S_{i}^{(n)} + S_{i,q}^{(n)}
+\end{equation}
+where
+\begin{eqnarray}
+     S_{Di}^{(n)} & = & \sum_p V_p^{(n)}  \left(\vec s_p^{(n)}\cdot \vec G^{(n)}_{ip}  + s_{s,p}^{(n)} S^{(n)}_{ip} \right) \\
+     S_{Di,q}^{(n)} & = & -  \int_{\delta V} (N_i(\vec x)\vec s^{(n)})\cdot \hat n \thinspace dS 
+\end{eqnarray}
+are total solvent flow (or solvent forces) with SI units m$^3$-$\mu$/sec. The first flow is internal flow while the second is flow across the surfaces due to flux boundary conditions. The $\vec s_p^{(n)}$ term is flux with SI units m-$\mu$/sec (or (solvent force)/m$^2$). It is analogous to stress term in the momentum equation (also with units of (force)/m$^2$), but rather then track and update $\vec s_p^{(n)}$ on the particle, it is calculated on each time step using
+\begin{equation}
+    \vec s_p^{(n)} = - \tens D_p^{(n)} \nabla \mu_p^{(n)} = - \tens D_p^{(n)}\sum_i \tens  \mu_i^{(n)} \vec G^{(n)}_{ip}
+\end{equation}
+where nodal concentration potential is defined by
+\begin{equation}
+       \mu_i^{(n)} = {p_{Di}^{(n)} \over V_{i}^{(n)}} \qquad {\rm where } \qquad V_{i}^{(n)} = \sum_p  V_{p}^{(n)} S^{(n)}_{ip}  
+\end{equation}
+Note that diffusion tensor has SI units of m$^2$/sec and $s_{s,p}^{(n)}$ (which is solvent source term) has SI units $\mu$/sec.
+
+The nodal update becomes
+\begin{equation}
+     p_{Di}^{(n+1)} = p_{Di}^{(n)} +  \bigl(S_{i}^{(n)} + S_{i,q}^{(n)}\bigr)\Delta t = p_{Di}^{(n)} +  V_{i}^{(n)} a_{Di}^{(n)}\Delta t
+     \quad{\rm where}\quad
+     a_{Di}^{(n)} =  { S_{i}^{(n)} + S_{i,q}^{(n)}  \over V_{i}^{(n)}}
+\end{equation}
+The FLIP particle update becomes
+\begin{eqnarray}
+     \mu_{p,FLIP}^{(n+1)}  & = & \mu_p^{(n)} + a_{D,g\to p}^{(n)}\Delta t   \\
+      a_{D,g\to p}^{(n)} & = & \sum_i a_{Di}^{(n)} S_{ip}^{(n)}    \\
+\end{eqnarray}
+
+\end{document}   
