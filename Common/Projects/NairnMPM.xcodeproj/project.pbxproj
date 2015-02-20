@@ -330,8 +330,6 @@
 		A7B45CF81715D36E003FDED6 /* GridPatch.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7B45CF71715D36E003FDED6 /* GridPatch.hpp */; };
 		A7B5ECAA072437850027119D /* NodalTempBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7B5ECA8072437850027119D /* NodalTempBC.hpp */; };
 		A7B5ECAB072437850027119D /* NodalTempBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7B5ECA9072437850027119D /* NodalTempBC.cpp */; };
-		A7B6936914325B02006F6A27 /* HEAnisotropic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */; };
-		A7B6936A14325B02006F6A27 /* HEAnisotropic.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7B6936814325B02006F6A27 /* HEAnisotropic.hpp */; };
 		A7BC45AA0C6A514C003FF704 /* ShapeController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7BC45A80C6A514C003FF704 /* ShapeController.hpp */; };
 		A7BC45AB0C6A514C003FF704 /* ShapeController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A7BC45A90C6A514C003FF704 /* ShapeController.cpp */; };
 		A7BC45AC0C6A514C003FF704 /* ShapeController.hpp in Headers */ = {isa = PBXBuildFile; fileRef = A7BC45A80C6A514C003FF704 /* ShapeController.hpp */; };
@@ -663,8 +661,6 @@
 		A7B45CF71715D36E003FDED6 /* GridPatch.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = GridPatch.hpp; path = Patches/GridPatch.hpp; sourceTree = "<group>"; };
 		A7B5ECA8072437850027119D /* NodalTempBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = NodalTempBC.hpp; sourceTree = "<group>"; };
 		A7B5ECA9072437850027119D /* NodalTempBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NodalTempBC.cpp; sourceTree = "<group>"; };
-		A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HEAnisotropic.cpp; path = Materials/HEAnisotropic.cpp; sourceTree = "<group>"; };
-		A7B6936814325B02006F6A27 /* HEAnisotropic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = HEAnisotropic.hpp; path = Materials/HEAnisotropic.hpp; sourceTree = "<group>"; };
 		A7BC45A80C6A514C003FF704 /* ShapeController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ShapeController.hpp; sourceTree = "<group>"; };
 		A7BC45A90C6A514C003FF704 /* ShapeController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShapeController.cpp; sourceTree = "<group>"; };
 		A7BC466D0C6A60F3003FF704 /* PointController.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PointController.hpp; sourceTree = "<group>"; };
@@ -1238,8 +1234,6 @@
 				A7D66174196322E300757628 /* Neohookean.cpp */,
 				6797CABB1A89ABC5009C96FD /* ClampedNeohookean.hpp */,
 				6797CABA1A89ABC5009C96FD /* ClampedNeohookean.cpp */,
-				A7B6936814325B02006F6A27 /* HEAnisotropic.hpp */,
-				A7B6936714325B02006F6A27 /* HEAnisotropic.cpp */,
 				A77F5ECC15FA6ED8005188E8 /* HEIsotropic.hpp */,
 				67B916D316AE15E600632385 /* HEIsotropic.cpp */,
 				67FFAA0A16D31E95003A7C53 /* HEMGEOSMaterial.hpp */,
@@ -1604,7 +1598,6 @@
 				A7E100A512D7D0B50074E568 /* PolyTriangle.hpp in Headers */,
 				A76DC50C1303428B00BFECBD /* Lagrange2D.hpp in Headers */,
 				A76DC512130342EE00BFECBD /* Quad2D.hpp in Headers */,
-				A7B6936A14325B02006F6A27 /* HEAnisotropic.hpp in Headers */,
 				671514D415465EAD005F33A9 /* OvalController.hpp in Headers */,
 				671514DA1547035D005F33A9 /* PolygonController.hpp in Headers */,
 				A772E3EA155349DF0090B050 /* MaterialInterfaceNode.hpp in Headers */,
@@ -1932,7 +1925,6 @@
 				A7E100A612D7D0B50074E568 /* PolyTriangle.cpp in Sources */,
 				A76DC50B1303428B00BFECBD /* Lagrange2D.cpp in Sources */,
 				A76DC511130342EE00BFECBD /* Quad2D.cpp in Sources */,
-				A7B6936914325B02006F6A27 /* HEAnisotropic.cpp in Sources */,
 				671514D115465E8B005F33A9 /* OvalController.cpp in Sources */,
 				671514D81547035D005F33A9 /* PolygonController.cpp in Sources */,
 				A772E3E8155349CA0090B050 /* MaterialInterfaceNode.cpp in Sources */,
