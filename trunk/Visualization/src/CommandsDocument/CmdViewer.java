@@ -1258,7 +1258,7 @@ public class CmdViewer extends JNCmdTextDocument
 			globalArchive = globalArchive + "    <GlobalArchive type='"+type+"'/>\n";
 	}
 
-	// ArchiveTime #1,#2 (archive time and optional first archive time)
+	// ArchiveTime #1,#2,#3 (archive time and optional first archive time and optional max props)
 	public void doArchiveTime(ArrayList<String> args) throws Exception
 	{	// MPM Only
 		requiresMPM(args);
@@ -1276,9 +1276,9 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		// get archiveTime
 		if(props>0)
-			archiveTime = "    <ArchiveTime units='ms' maxProps='"+props+"'>"+aTime+"</ArchiveTime>\n";
+			archiveTime = archiveTime + "    <ArchiveTime units='ms' maxProps='"+props+"'>"+aTime+"</ArchiveTime>\n";
 		else
-			archiveTime = "    <ArchiveTime units='ms'>"+aTime+"</ArchiveTime>\n";
+			archiveTime = archiveTime + "    <ArchiveTime units='ms'>"+aTime+"</ArchiveTime>\n";
 		
 		// optional first archive time
 		if(args.size()>2)
@@ -1287,7 +1287,7 @@ public class CmdViewer extends JNCmdTextDocument
 		}
 	}
 	
-	// ArchiveTime #1,#2 (archive time and optional first archive time)
+	// GlobalArchiveTime #1
 	public void doGlobalArchiveTime(ArrayList<String> args) throws Exception
 	{	// MPM Only
 		requiresMPM(args);
@@ -1300,6 +1300,7 @@ public class CmdViewer extends JNCmdTextDocument
 		Object aTime = readNumberOrEntityArg(args.get(1),false);
 		globalArchive = globalArchive+"    <GlobalArchiveTime units='ms'>"+aTime+"</GlobalArchiveTime>\n";
 	}
+	
 	
 	// TimeStep #1,#2,#3 (time step and optional max time and Courant factor)
 	public void doTimeStep(ArrayList<String> args) throws Exception
