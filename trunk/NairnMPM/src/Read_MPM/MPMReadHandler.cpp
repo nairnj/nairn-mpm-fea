@@ -67,7 +67,7 @@ MPMReadHandler::~MPMReadHandler()
 	while(obj!=NULL)
 		obj=obj->SetFinalPropagate();
 		
-	// locate first crack
+	// locate first crack, count them, and populate an array
 	firstCrack=(CrackHeader *)crackCtrl->firstObject;
     crackCtrl->SetCracksArray();
 	delete crackCtrl;
@@ -83,7 +83,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     char *aName,*value;
     char quantityName[100];
     unsigned int i,numAttr;
-    
+	
     //-------------------------------------------------------
     // <MPMHeader> section
     if(strcmp(xName,"MPMHeader")==0)
@@ -124,7 +124,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     else if(strcmp(xName,"ArchiveTime")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
-        inputPtr=(char *)&archiver->archTime;
+		inputPtr=(char *)archiver->GetArchTimePtr();
         gScaling=ReadUnits(attrs,TIME_UNITS);
         numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
@@ -143,14 +143,14 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     else if(strcmp(xName,"FirstArchiveTime")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
-        inputPtr=(char *)&archiver->firstArchTime;
+        inputPtr=(char *)archiver->GetFirstArchTimePtr();
         gScaling=ReadUnits(attrs,TIME_UNITS);
     }
     
     else if(strcmp(xName,"GlobalArchiveTime")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
-        inputPtr=(char *)&archiver->globalTime;
+        inputPtr=(char *)archiver->GetGlobalTimePtr();
         gScaling=ReadUnits(attrs,TIME_UNITS);
     }
     
@@ -203,8 +203,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			{	bodyFrc.SetGridDampingFunction(value,gridDamp);
 			}
             else if(strcmp(aName,"PIC")==0)
-            {
-                double fractionPIC;
+            {	double fractionPIC;
                 sscanf(value,"%lf",&fractionPIC);
                 bodyFrc.SetFractionPIC(fractionPIC);
             }
@@ -327,10 +326,10 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 					contact.materialNormalMethod=AVERAGE_MAT_VOLUME_GRADIENTS;      // 2 - AVGG
 				else if(scanInput<3.5)
 					contact.materialNormalMethod=EACH_MATERIALS_MASS_GRADIENT;		// 3 - OWNG
- 				else if(scanInput<4.5)
+				else if(scanInput<4.5)
 					contact.materialNormalMethod=SPECIFIED_NORMAL;					// 4 - SN
- 				else
-                    throw SAXException("Normals attribute on MultiMaterialMode must be 0 to 3.");
+                else
+                    throw SAXException("Normals attribute on MultiMaterialMode must be 0 to 4.");
 			}
             else if(strcmp(aName,"RigidBias")==0)
 			{	contact.rigidGradientBias=scanInput;
@@ -349,7 +348,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		if(contact.materialNormalMethod==SPECIFIED_NORMAL)
 			contact.SetContactNormal(polarAngle,azimuthAngle);
     }
-	
+
     else if(strcmp(xName,"ArchiveRoot")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
         input=TEXT_BLOCK;
@@ -964,37 +963,37 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 	// Turn on conduction analysis
     else if(strcmp(xName,"Conduction")==0)
 	{	ValidateCommand(xName,THERMAL,ANY_DIM);
-		ConductionTask::active=TRUE;
+		ConductionTask::active=true;
 	}
 
 	// Turn on crack tip heating
     else if(strcmp(xName,"CrackTipHeating")==0)
 	{	ValidateCommand(xName,THERMAL,MUST_BE_2D);
-		ConductionTask::crackTipHeating=TRUE;
+		ConductionTask::crackTipHeating = true;
 	}
 	
 	// Turn on crack tip heating
     else if(strcmp(xName,"CrackContactHeating")==0)
 	{	ValidateCommand(xName,THERMAL,MUST_BE_2D);
-		ConductionTask::crackContactHeating=TRUE;
+		ConductionTask::crackContactHeating = true;
 	}
 	
 	// Turn on crack tip heating
     else if(strcmp(xName,"ContactHeating")==0)
 	{	ValidateCommand(xName,THERMAL,ANY_DIM);
-		ConductionTask::matContactHeating=TRUE;
+		ConductionTask::matContactHeating=true;
 	}
 	
 	// Turn on adiabatic mode
     else if(strcmp(xName,"EnergyCoupling")==0)
 	{	ValidateCommand(xName,THERMAL,ANY_DIM);
-		ConductionTask::adiabatic=TRUE;
+		ConductionTask::adiabatic = true;
 	}
 	
 	// Turn off artificial viscosity heating (only on when adibatic)
     else if(strcmp(xName,"NoAVHeating")==0)
 	{	ValidateCommand(xName,THERMAL,ANY_DIM);
-		ConductionTask::AVHeating=FALSE;
+		ConductionTask::AVHeating = false;
 	}
     //-------------------------------------------------------
     // <Gravity> section

@@ -6,24 +6,12 @@
 	Copyright (c) 2010 John A. Nairn, All rights reserved.
  
 	A strain update at the end of the MPM step is used in the SZS and
-		the USAVG method. For these to be stable, the new particle momenta
-		have to be re-extrapolated to the grid
+		the USAVG methods.
  
-	Zero nodes and extrpolate particle momenta and and positions
-		to the grid.
+	Before updating strain, adjust new moment for material contact, crack contact, and
+		boundary conditions and update nodal transport properties
  
-	Once done, adject momenta for material contact, crack contact, and
-		boundary conditions
-	
-	Since will reuse initial locations (i.e. shape functions and their gradients
-		on each particle are the same), the mass, volume, and mass gradient
-		would not change, even if re-extrapolated, and thus they do not
-		need to be changed.
- 
-	For rigid particles, only displacement changed and it is found when node
-		rezeroed
- 
-	After new extrapolations, update strains on all particles
+	Update strains on all particles
 ********************************************************************************/
 
 #include "NairnMPM_Class/UpdateStrainsLastTask.hpp"
@@ -41,6 +29,24 @@
 #include "Patches/GridPatch.hpp"
 #include "Exceptions/CommonException.hpp"
 
+/* 	I used to think that for this taek to be stable, the new particle momenta
+ had to be re-extrapolated to the grid, but that was likely based on
+ old version of the code that incorrectly updated strain using shape
+ function for the new particle position. If one is careful to use
+ shape function based on initial particla position in the setp, the second 
+ extrapolation can be skipped. Besides being faster it seems more stable
+ 
+ Since will reuse initial locations (i.e. shape functions and their gradients
+ on each particle are the same), the mass, volume, and mass gradient
+ would not change if re-extrapolated, and thus they do not
+ need to be changed. For rigid particles, only displacement changes
+ and it is found when nodes rezeroed
+ 
+ To revert to this method, uncomment the DO_SECOND_EXTRAPOLATION below
+*/
+
+//#define DO_SECOND_EXTRAPOLATION
+
 #pragma mark CONSTRUCTORS
 
 UpdateStrainsLastTask::UpdateStrainsLastTask(const char *name) : MPMTask(name)
@@ -52,6 +58,7 @@ UpdateStrainsLastTask::UpdateStrainsLastTask(const char *name) : MPMTask(name)
 // Get total grid point forces (except external forces)
 void UpdateStrainsLastTask::Execute(void)
 {
+#ifdef DO_SECOND_EXTRAPOLATION
 	CommonException *uslErr = NULL;
 	
 	int nds[maxShapeNodes];
@@ -65,7 +72,7 @@ void UpdateStrainsLastTask::Execute(void)
 		try
 		{
 #pragma omp for
-			// zero again (which finds new positions for rigid particles)
+			// zero again (which finds new positions for contact rigid particle data on the nodes)
 			for(int i=1;i<=nnodes;i++)
 				nd[i]->RezeroNodeTask6(timestep);
 			
@@ -123,6 +130,7 @@ void UpdateStrainsLastTask::Execute(void)
 	{	for(int pn=0;pn<totalPatches;pn++)
             patches[pn]->MassAndMomentumReductionLast();
 	}
+#endif
 	
     // grid temperature is never updated unless needed here
 	// update nodal values for transport properties (when coupled to strain)

@@ -55,7 +55,7 @@ CustomTask *AdjustTimeStepTask::Initialize(void)
 	
 	// time interval
 	cout << "   Adjust interval: ";
-	if(customAdjustTime>0)
+	if(customAdjustTime>=0.)
 	{	cout << customAdjustTime << " ms" << endl;
 		customAdjustTime/=1000.;				// convert to sec
 		nextCustomAdjustTime=customAdjustTime;
