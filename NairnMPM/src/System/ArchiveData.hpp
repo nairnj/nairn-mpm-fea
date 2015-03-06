@@ -42,7 +42,6 @@ enum { VTK_MASS=0, VTK_VELOCITY, VTK_STRESS, VTK_STRAIN, VTK_DISPLACEMENT, VTK_P
 class ArchiveData : public CommonArchiveData
 {
     public:
-		double archTime,firstArchTime,globalTime;
 		bool threeD;
 		
         //  Constructors and Destructor
@@ -51,7 +50,7 @@ class ArchiveData : public CommonArchiveData
 		// methods
 		void ArchiveVelocityBCs(BoundaryCondition *);
 		bool MakeArchiveFolder(void);
-		void BeginArchives(bool);
+		bool BeginArchives(bool);
 		void ArchiveResults(double);
 		void ArchiveVTKFile(double,vector< int >,vector< int >,vector< char * >,vector< int >,double **);
 		void ArchiveHistoryFile(double,vector< int >);
@@ -80,9 +79,16 @@ class ArchiveData : public CommonArchiveData
 		bool PassedLastArchived(int,double);
 		void IncrementPropagationCounter(void);
 		void SetMaxiumPropagations(int);
+		double *GetArchTimePtr(void);
+		double *GetFirstArchTimePtr(void);
+		double *GetGlobalTimePtr(void);
 	
 	private:
-		double nextArchTime,nextGlobalTime;
+		int archBlock;
+		vector<double> archTimes,firstArchTimes,maxProps;
+		int propgationCounter;
+		double nextArchTime,nextGlobalTime,globalTime;
+	
 		char *globalFile;
 		int recSize;							// archive record size
 		int mpmRecSize;							// particle record size
@@ -99,8 +105,6 @@ class ArchiveData : public CommonArchiveData
 		char *logFile;							// file for tracking progress
 		double logStartTime;
 #endif
-		int propgationCounter;
-		int maximumPropagations;				// will force achive is this number of propagations
 	
 		// methods
 		void CalcArchiveSize(void);

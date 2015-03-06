@@ -362,14 +362,17 @@ Matrix3 Matrix3::Eigenvectors(Vector &Eigenvals) const
     return Eigenvecs;
 }
 
-// Decompose F in into rotation and right-stretch matrix F = R*U
+// Polar decomponsition of F through right stretch matrix
+//      F = RU = (RQ) Lambda QT
 // The target matrix is assumed to be F
-// Function returns U and optionally R (if pointer is not NULL)
-// Optionally (lam1,lam2,lam3) in stretches (if not NULL)
+// Function returns U and optionally R = F U^-1 (if pointer is not NULL)
+//		and optionally (lam1,lam2,lam3) in stretches (if not NULL)
+// It does not get Q, but if needed, they are eigenvectors of the
+//		returned U matrix
 Matrix3 Matrix3::RightDecompose(Matrix3 *R,Vector *stretches) const
 {
     if(is2D)
-    {   // 2D has simple formulae
+    {   // 2D has simple formulae for R = ((Fsum,Fdif),(-Fdif,Fsum))
         double Fsum = m[0][0]+m[1][1];
         double Fdif = m[0][1]-m[1][0];
         double denom = sqrt(Fsum*Fsum+Fdif*Fdif);

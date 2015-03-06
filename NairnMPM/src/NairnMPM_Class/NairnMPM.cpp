@@ -152,7 +152,7 @@ void NairnMPM::MPMAnalysis(bool abort)
 
 	//---------------------------------------------------
 	// Create all the step tasks
-	
+
 	// TASK 0: INITIALIZATION
 	MPMTask *lastMPMTask,*nextMPMTask;
 	lastMPMTask=firstMPMTask=(MPMTask *)new InitializationTask("Initialization");
@@ -193,7 +193,7 @@ void NairnMPM::MPMAnalysis(bool abort)
 	
 	// TASK 7: CUSTOM TASKS
 	if(theTasks!=NULL)
-	{	nextMPMTask=(MPMTask *)new RunCustomTasksTask("Run_custom_tasks");
+    {   nextMPMTask=(MPMTask *)new RunCustomTasksTask("Run_custom_tasks");
 		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 		lastMPMTask=nextMPMTask;
 	}
@@ -213,7 +213,8 @@ void NairnMPM::MPMAnalysis(bool abort)
 	try
 	{	//---------------------------------------------------
 		// Archiving
-		archiver->BeginArchives(IsThreeD());
+		if(!archiver->BeginArchives(IsThreeD()))
+			throw "Archiving times not specified or multiple archive blocks not monotonically increasing";
 		archiver->ArchiveResults(mtime);
 		
 		// optional validation of parameters
@@ -356,12 +357,12 @@ void NairnMPM::PreliminaryCalcs(void)
     
 	// Loop over elements, if needed, to determine type of grid
 	if(mpmgrid.GetCartesian()==UNKNOWN_GRID)
-	{	int userCartesian=FALSE;
+	{	int userCartesian = false;
 		double dx,dy,dz,gridx=0.,gridy=0.,gridz=0.;
 		for(i=0;i<nelems;i++)
 		{	if(!theElements[i]->Orthogonal(&dx,&dy,&dz))
-            {   // exit if find one that is not orthongal
-				userCartesian=FALSE;
+            {   // exit if find one that is not orthogonal
+				userCartesian = false;
 				break;
 			}
 			if(!userCartesian)
@@ -369,7 +370,7 @@ void NairnMPM::PreliminaryCalcs(void)
 				gridx=dx;
 				gridy=dy;
 				gridz=dz;
-				userCartesian=TRUE;
+				userCartesian = true;
 			}
 			else
 			{	// on sebsequent elements, if size does not match current values, than not Cartesian grid so give up
@@ -431,7 +432,7 @@ void NairnMPM::PreliminaryCalcs(void)
 		if(theMaterials[matid]->Rigid())
 		{	hasRigidContactParticles=true;
 			if(firstRigidPt<0) firstRigidPt=p;
-            
+
             // CPDI domain data
             if(!mpm[p]->AllocateCPDIStructures(ElementBase::useGimp,IsThreeD()))
                 throw CommonException("Out of memory allocating CPDI domain structures","NairnMPM::PreliminaryCalcs");
@@ -649,7 +650,7 @@ void NairnMPM::PreliminaryCalcs(void)
 		cout << endl;
 	}
 
-    // Print particle information oand other preliminary calc results
+    // Print particle information and other preliminary calc results
     PrintSection("FULL MASS MATRIX");
     
     sprintf(fline,"Number of Material Points: %d",nmpms);
@@ -823,15 +824,19 @@ void NairnMPM::Usage()
             "directed to standard error. The numerical results are saved\n"
             "to archived files as directed in <InputFile>.\n\n"
             "Options:\n"
-            "    -a          Abort after setting up problem but before\n"
+			"    -a          Abort after setting up problem but before\n"
 			"                   MPM steps begin. Initial conditions will\n"
 			"                   be archived\n"
-            "    -H          Show this help.\n"
-            "    -r          Reverse byte order in archive files\n"
-            "                   (default is to not reverse the bytes)\n"
-            "    -v          Validate input file if DTD is provided in !DOCTYPE\n"
-            "                   (default is to skip validation)\n\n"
-            "See http://oregonstate.edu/nairnj for documentation.\n\n"
+			"    -H          Show this help\n"
+			"    -np #       Set number of processors for parallel code\n"
+			"    -r          Reverse byte order in archive files\n"
+			"                   (default is to not reverse the bytes)\n"
+			"    -v          Validate input file if DTD is provided in !DOCTYPE\n"
+			"                   (default is to skip validation)\n"
+			"    -w          Output results to current working directory\n"
+			"                   (default is output to folder of input file)\n"
+			"    -?          Show this help\n\n"
+			"See http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page for documentation\n\n"
           <<  endl;
 }
 

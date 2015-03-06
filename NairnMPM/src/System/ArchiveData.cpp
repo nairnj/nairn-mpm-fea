@@ -29,18 +29,20 @@ ArchiveData *archiver;
 
 ArchiveData::ArchiveData()
 {
-	archTime=1.;			// time interval between archives (sec)
+	// clear blocks of archive times
+	archTimes.clear();		
+	firstArchTimes.clear();
+	maxProps.clear();
+	
 	globalTime=-1.;			// time interval for archiving global results (sec)
-	firstArchTime=-1.;		// first archive time (sec)
-	nextArchTime=0.;		// next time to archive results (sec)
 	nextGlobalTime=0.;		// next time to archive global results (sec)
+	
 	globalFile=NULL;		// path to global results file
 	threeD=FALSE;			// three D calculations
     SetMPMOrder("mYYYYYNYYYNNNNNNNN");		// byte order + defaults + 16 items
     SetCrackOrder("mYNNN");					// byte order + defaults + 3 items
-	timeStamp==NULL;
+	timeStamp=NULL;			// pointer to header
 	propgationCounter=0;					// counts crack propagation
-	maximumPropagations=0;					// 0 means propgations never force acrhiving
     
     // contact archive to coordinate with global contact archiving
 	lastArchiveContactStep=0;               // last time contact force was archived
@@ -137,8 +139,30 @@ bool ArchiveData::MakeArchiveFolder(void)
 }
 
 // Create global file, get archive size, and print to output file archiving table
-void ArchiveData::BeginArchives(bool isThreeD)
+bool ArchiveData::BeginArchives(bool isThreeD)
 {
+	// set up archive times
+	int blocks = archTimes.size();
+	if(blocks==0) return false;
+
+	// archve the first one always
+	archBlock=0.;
+	nextArchTime=0.;
+	
+	// fill in blank initial phase
+	if(blocks>1 && archTimes[0]<0)
+	{	archTimes[0] = firstArchTimes[1];
+		firstArchTimes[0] = 0.;
+		
+		// but skip is second block starts at zero
+		if(firstArchTimes[1]<=0.) archBlock=1;
+	}
+	
+	// check that blocks are ordered in time
+	for(int i=archBlock;i<blocks-1;i++)
+	{	if(firstArchTimes[i]>=firstArchTimes[i+1]) return false;
+	}
+	
 	// set flag if 3D calculations
 	threeD=isThreeD;
 	
@@ -155,6 +179,8 @@ void ArchiveData::BeginArchives(bool isThreeD)
         << "  Step    Time (msec)    Filename" << endl
         << "----------------------------------------------"
         << endl;
+	
+	return true;
 }
 	
 /**********************************************************
@@ -346,11 +372,8 @@ void ArchiveData::CreateGlobalFile(void)
 	char fline[1000];
 	GlobalQuantity *nextGlobal;
 	
-	// skip if none, but use archTime if wants global archive
-	if(globalTime<0.)
-	{	if(firstGlobal==NULL) return;
-		globalTime = archTime;
-	}
+	// no file if no quantities create
+	if(firstGlobal==NULL) return;
 	
 	// get relative path name to the file
 	globalFile=new char[strlen(outputDir)+strlen(archiveRoot)+8];
@@ -429,22 +452,34 @@ void ArchiveData::ArchiveResults(double atime)
     int i,p;
     CrackHeader *nextCrack;
 	
-	// test global archiving
-	GlobalArchive(atime);
+	// test global archiving based on specified time
+	if(firstGlobal!=NULL && globalTime>=0.)
+    {	if(atime>nextGlobalTime)
+		{	GlobalArchive(atime);
+			nextGlobalTime+=globalTime;
+		}
+	}
     
-    // see if desired
-	if(timeStamp==NULL) return;
+    // If not ready, not archive, unless forces by propagation counts
 	if(atime<nextArchTime)
 	{	// not ready to archive, unless propagations have happened
-		if(maximumPropagations<=0 || propgationCounter<maximumPropagations) return;
+		if(maxProps[archBlock]<=0 || propgationCounter<maxProps[archBlock]) return;
 		propgationCounter=0;
-		nextArchTime = atime+archTime;
+		nextArchTime = atime;
 	}
-	else
-		nextArchTime += archTime;
 	
-	// exit if using delayed archiving
-	if(atime>0.9*timestep && atime<firstArchTime) return;
+	// increment for next archive time
+	nextArchTime += archTimes[archBlock];
+	if(archBlock+1<firstArchTimes.size())
+	{	if(nextArchTime>=firstArchTimes[archBlock+1])
+		{	archBlock++;
+			nextArchTime = firstArchTimes[archBlock];
+		}
+	}
+	
+	// global archive too, if using archive time
+	if(firstGlobal!=NULL && globalTime<0.)
+		GlobalArchive(atime);
     
     // get relative path name to the file
     sprintf(fname,"%s%s.%d",outputDir,archiveRoot,fmobj->mstep);
@@ -953,11 +988,6 @@ void ArchiveData::ArchiveResults(double atime)
 // Archive global results if it is time
 void ArchiveData::GlobalArchive(double atime)
 {
-    // see if desired
-	if(globalTime<0.) return;
-    if(atime<nextGlobalTime) return;
-    nextGlobalTime+=globalTime;
-	
 	// clear previous ones
 	lastArchived.clear();
 	
@@ -1240,8 +1270,8 @@ void ArchiveData::ArchiveHistoryFile(double atime,vector< int > quantity)
 
 // force archive now, but stay on archiving schedule after that
 void ArchiveData::ForceArchiving(void)
-{	nextArchTime-=archTime;
-	if(globalTime>0.) nextGlobalTime-=globalTime;
+{	nextArchTime-=archTimes[archBlock];
+	if(firstGlobal!=NULL && globalTime>=0.) nextGlobalTime-=globalTime;
 }
 
 // report a file error to some file
@@ -1386,4 +1416,42 @@ bool ArchiveData::PassedLastArchived(int qIndex,double criticalValue)
 
 // Propgation Counter
 void ArchiveData::IncrementPropagationCounter(void) { propgationCounter++; }
-void ArchiveData::SetMaxiumPropagations(int maxp) { maximumPropagations = maxp; }
+void ArchiveData::SetMaxiumPropagations(int maxp)
+{	int blocks = maxProps.size();
+	if(blocks>0) maxProps[blocks-1] = maxp;
+}
+
+// archive times
+// allows settings, so increase size by one to save time, start time and max props
+double *ArchiveData::GetArchTimePtr(void)
+{	archTimes.push_back(0.);
+	firstArchTimes.push_back(0.);
+	maxProps.push_back(0);
+	int blocks = archTimes.size();
+	return &archTimes[blocks-1];
+}
+
+// first archive times
+// error if none ready
+// if first block, create new first block
+double *ArchiveData::GetFirstArchTimePtr(void)
+{	int blocks = archTimes.size();
+	if(blocks==0)
+		return NULL;
+	else if(blocks==1)
+	{	// create initial block with time larger then first archive time
+		// but don't know that time yet - it is set at the end as flagged by initial time step < 0
+		archTimes.push_back(archTimes[0]);
+		archTimes[0] = -1.;
+		firstArchTimes.push_back(0.);
+		maxProps.push_back(maxProps[0]);
+		maxProps[0] = 0.;
+		blocks++;
+	}
+	return &firstArchTimes[blocks-1];
+}
+
+// global time pointer
+double *ArchiveData::GetGlobalTimePtr(void) { return &globalTime; }
+
+

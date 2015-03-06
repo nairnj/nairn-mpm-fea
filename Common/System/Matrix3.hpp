@@ -35,6 +35,7 @@ class Matrix3
 		Matrix3 Inverse(void) const;
         Vector Eigenvalues(void) const;
         Matrix3 RightDecompose(Matrix3 *,Vector *) const;
+		Matrix3 LeftDecompose(Matrix3 *,Vector *) const;
 		Matrix3 Eigenvectors(Vector &) const;
 	
 		// not currently used
