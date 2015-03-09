@@ -101,31 +101,85 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         inputPtr=(char *)&fmobj->ptsPerElement;
     }
     
-    else if(strcmp(xName,"TimeFactor")==0)
+	else if(strcmp(xName,"Timing")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+        numAttr=attrs.getLength();
+		gScaling=ReadUnits(attrs,MSEC_UNITS);
+        for(i=0;i<numAttr;i++)
+        {   aName=XMLString::transcode(attrs.getLocalName(i));
+            value=XMLString::transcode(attrs.getValue(i));
+            if(strcmp(aName,"CFL")==0)
+			{	sscanf(value,"%lf",fmobj->GetCFLPtr());
+            }
+            else if(strcmp(aName,"step")==0)
+			{	sscanf(value,"%lf",&timestep);
+				timestep *= gScaling/1000.;					// convert to sec
+            }
+            else if(strcmp(aName,"max")==0)
+			{	sscanf(value,"%lf",&fmobj->maxtime);
+				fmobj->maxtime *= gScaling/1000.;			// convert to sec
+            }
+            delete [] aName;
+            delete [] value;
+		}
+    }
+    
+    else if(strcmp(xName,"TimeFactor")==0)
+	{	// Deprecated - use Timing instead
+		ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
         inputPtr=(char *)fmobj->GetCFLPtr();
     }
     
     else if(strcmp(xName,"MaxTime")==0)
-	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+	{	// Deprecated - use Timing instead
+		ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
         inputPtr=(char *)&fmobj->maxtime;
-        gScaling=ReadUnits(attrs,TIME_UNITS);
+        gScaling=ReadUnits(attrs,SEC_UNITS);
     }
     
     else if(strcmp(xName,"TimeStep")==0)
-	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+	{	// Deprecated - use Timing instead
+		ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
         inputPtr=(char *)&timestep;
-        gScaling=ReadUnits(attrs,TIME_UNITS);
+        gScaling=ReadUnits(attrs,SEC_UNITS);
     }
     
-    else if(strcmp(xName,"ArchiveTime")==0)
+	else if(strcmp(xName,"ArchiveGroup")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+        numAttr=attrs.getLength();
+		gScaling=ReadUnits(attrs,MSEC_UNITS);
+		double *atptr = archiver->GetArchTimePtr();			// creates the next group
+        for(i=0;i<numAttr;i++)
+        {   aName=XMLString::transcode(attrs.getLocalName(i));
+            value=XMLString::transcode(attrs.getValue(i));
+            if(strcmp(aName,"time")==0)
+			{	sscanf(value,"%lf",atptr);
+				*atptr *= gScaling/1000.;					// convert to sec
+            }
+            else if(strcmp(aName,"start")==0)
+			{	double *ftptr = archiver->GetFirstArchTimePtr();
+				sscanf(value,"%lf",ftptr);
+				*ftptr *= gScaling/1000.;					// convert to sec
+            }
+            else if(strcmp(aName,"maxProps")==0)
+            {	int maxProps;
+				sscanf(value,"%d",&maxProps);
+				archiver->SetMaxiumPropagations(maxProps);
+            }
+            delete [] aName;
+            delete [] value;
+		}
+    }
+	
+    else if(strcmp(xName,"ArchiveTime")==0)
+	{	// Deprecated - use ArchiveGroup instead
+		ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
 		inputPtr=(char *)archiver->GetArchTimePtr();
-        gScaling=ReadUnits(attrs,TIME_UNITS);
+        gScaling=ReadUnits(attrs,SEC_UNITS);
         numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
@@ -141,17 +195,23 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     }
     
     else if(strcmp(xName,"FirstArchiveTime")==0)
-	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
+	{	// Deprecated - use ArchiveGroup instead
+		ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
         inputPtr=(char *)archiver->GetFirstArchTimePtr();
-        gScaling=ReadUnits(attrs,TIME_UNITS);
+        gScaling=ReadUnits(attrs,SEC_UNITS);
     }
     
-    else if(strcmp(xName,"GlobalArchiveTime")==0)
+    else if(strcmp(xName,"GlobalArchiveTime")==0 || strcmp(xName,"GlobalArchiveInterval")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
     	input=DOUBLE_NUM;
         inputPtr=(char *)archiver->GetGlobalTimePtr();
-        gScaling=ReadUnits(attrs,TIME_UNITS);
+		if(strcmp(xName,"GlobalArchiveTime")==0)
+		{	// Deprecated - use GlobalArchiveInterval instead
+			gScaling=ReadUnits(attrs,SEC_UNITS);
+		}
+		else
+			gScaling=ReadUnits(attrs,MSEC_UNITS);
     }
     
     else if(strcmp(xName,"GlobalArchive")==0)

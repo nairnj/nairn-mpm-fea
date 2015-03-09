@@ -15,9 +15,6 @@
 
 #define _NAIRNMPM_
 
-// include to use OSPartciculas name instead of NairnMPM
-//#define _OSParticulas_
-
 class MPMBase;
 class BoundaryCondition;
 class MatPtLoadBC;
@@ -51,6 +48,7 @@ class NairnMPM : public CommonAnalysis
 		void MPMAnalysis(bool);
 		void MPMStep(void);
 		void PreliminaryCalcs(void);
+		void CreateTasks(void);
 		void ReorderPtBCs(MatPtLoadBC *,int,int);
 		void SetForceBCs(void);
 		void ValidateOptions(void);

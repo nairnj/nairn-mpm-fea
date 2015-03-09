@@ -71,9 +71,6 @@
 #include "System/ArchiveData.hpp"
 #endif
 
-// to ignore crack interactions (only valid if 1 crack or non-interacting cracks)
-//#define IGNORE_CRACK_INTERACTIONS
-
 #pragma mark CONSTRUCTORS
 
 MassAndMomentumTask::MassAndMomentumTask(const char *name) : MPMTask(name)

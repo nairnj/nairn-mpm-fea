@@ -378,7 +378,7 @@ double CommonReadHandler::ReadUnits(const Attributes& attrs,int type)
         if(strcmp(aName,"units")==0)
         {   value=XMLString::transcode(attrs.getValue(i));
 			switch(type)
-			{	case TIME_UNITS:
+			{	case SEC_UNITS:
 					// convert to seconds
 					if(strcmp(value,"msec")==0)
 						attrScale=1.e-3;
@@ -386,6 +386,18 @@ double CommonReadHandler::ReadUnits(const Attributes& attrs,int type)
 						attrScale=1.e-3;
 					else if(strcmp(value,"microsec")==0)
 						attrScale=1.e-6;
+					else if(strcmp(value,"us")==0)
+						attrScale=1.e-6;
+					break;
+					
+				case MSEC_UNITS:
+					// convert to milliseconds
+					if(strcmp(value,"sec")==0)
+						attrScale=1.e+3;
+					else if(strcmp(value,"microsec")==0)
+						attrScale=1.e-3;
+					else if(strcmp(value,"us")==0)
+						attrScale=1.e-3;
 					break;
 					
 				case LENGTH_UNITS:

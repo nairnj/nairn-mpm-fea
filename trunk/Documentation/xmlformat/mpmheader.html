@@ -32,23 +32,21 @@
 &lt;/MPMHeader&gt;
 </pre>
 
-<h2><a name="MHMethods"></a>MPM Methods and Simulation Timing Commands</h2>
-
+<h2><a name="MPMMethods"></a>MPM Methods and Simulation Timing Commands</h2>
+	
 <p>These commands set details about the MPM method and control the simulation timing.</p>
-
+	
 <pre>&lt;MPMMethod&gt;(strain update number)&lt;/MPMMethod&gt;
 &lt;GIMP type='(MPM method)'/&gt;
+&lt;Timing max='(max time)' step='(time step)' CFL='(time factor)'/&gt;
 &lt;MatlPtsPerElement&gt;(total number)&lt;/MatlPtsPerElement&gt;
-&lt;TimeStep units='ms'&gt;(time step)&lt;/TimeStep&gt;
-&lt;TimeFactor&gt;(time factor)&lt;/TimeFactor&gt;
-&lt;MaxTime units='ms'&gt;(max time)&lt;/MaxTime&gt;
 &lt;DefGradTerms&gt;(kmax)&lt;/DefGradTerms&gt;
 </pre>
-
+	
 <p>where</p>
-
+	
 <ul>
-
+	
 <li><code>(strain update)</code> - the method used to update stresses and strains on the particles. The options are:
 <ul class="lev2args">
 <li>0 - <code>USF</code> or update first</li>
@@ -64,20 +62,22 @@
 <li><code>qCPDI</code> (or 3) - CPDI using quadratic shape functions (available in 2D only).</li>
 </ul></li>
 
+<li><code>(max time)</code> - the time that the calculations will stop in msec (or determined by a <a href="#units"><code>units</code> attribute</a>).
+</li>
+	
+<li><code>(time step)</code> - the MPM time step in msec (or determined by a <a href="#units"><code>units</code> attribute</a>)</li>
+
+<li><code>(time factor)</code> - the Courant-Friedrichs-Levy (or CFL) factor to use when determining the MPM time step. The time step used in the
+	analysis will be the minimum of the one determined using this factor and the one entered in <code>(time step)</code>. The default CFL is 0.5.</li>
+
 <li><code>(total number)</code> - the number of material points in each element of the background grid. The options are:
 <ul class="lev2args">
 <li>1, 4, 9, 16, or 25 for 2D. The default is 4 points per element.</li>
 <li>1, 8 or 27  for 3D. The default is 8 points per element.</li>
 </ul></li>
 
-<li><code>(time step)</code> - the MPM time step in sec (or determined by a <a href="#units"><code>units</code> attribute</a>)</li>
-
-<li><code>(time factor)</code> - the  Courant factor to use when determining the MPM time step. The time step used in the analysis will be the minimum of the one determined using this factor and the one entered in <code>(time step)</code>. The default Courant factor is 0.5.</li>
-
-<li><code>(max time)</code> - the time that the calculations will stop in sec (or determined by a <a href="#units"><code>units</code> attribute</a>).</li>
-
 <li><code>(kmax)</code> - the number of terms to use when evaluating the incremental deformation gradient. The default is 2.</li>
-
+	
 </ul>
 
 <h2><a name="archiving"></a>MPM Archiving Options</h2>
@@ -85,8 +85,7 @@
 <p>The commands to controlling particle archives are:</p>
 
 <pre>&lt;ArchiveRoot unique='0'&gt;(path)&lt;/ArchiveRoot&gt;
-&lt;ArchiveTime maxProps="(props)"&gt;(time)&lt;/ArchiveTime&gt;
-&lt;FirstArchiveTime&gt;(first time)&lt;/FirstArchiveTime&gt;
+&lt;ArchiveGroup time='(time)' start='(first time)' maxProps='(props)'/&gt;'
 &lt;MPMArchiveOrder&gt;iYYYYNYYYNYYNNNNNY&lt;/MPMArchiveOrder&gt;
 &lt;CrackArchiveOrder&gt;iYYYN&lt;/CrackArchiveOrder&gt;
 </pre>
@@ -95,8 +94,9 @@
 
 <ul>
 <li><code>(path)</code> is relative path to the inpur file for saving archive files. The optional <code>unique</code> attribute (if = 1) will force the creation of a new folder by inserting a folder '1', '2', <i>etc</i>., as needed to get a new folder, within the last folder specified by the relative path </li>
-<li><code>(time)</code> is the time interval between archiving in sec (or determined by a <a href="#units"><code>units</code> attribute</a>). The <code>(props)</code> attribute forces archiving if <code>(props)</code> propagations  and/or debonds have occurred since the last archive (default is 0, which disables counting of propagations).</li> 
-<li><code>(first time)</code> is the first time results are archived in sec (or determined by a <a href="#units"><code>units</code> attribute</a>).</li>
+<li><code>(time)</code> is the time interval between archiving in msec (or determined by a <a href="#units"><code>units</code> attribute</a>).</li>
+<li><code>(first time)</code> is the first time results are archived in msec (or determined by a <a href="#units"><code>units</code> attribute</a>).</li>
+<li><code>(props)</code> forces archiving if the entered nuumber of propagations and/or debonds have occurred since the last archive (default is 0, which disables counting of propagations).</li>
 </ul>
 
 <p>The calculations results included in the archive files are determined by a series of 'Y' and 'N' (or other) flags in the strings in the <code>&lt;MPMArchiveOrder&gt;</code> and <code>&lt;CrackArchiveOrder&gt;</code> commands:</p>
@@ -163,7 +163,7 @@ The Default value is <code>iYNNNN</code>.</dd>
 <p>Global archiving is set up with the following commands:</p>
 
 <pre>&lt;GlobalArchive type='(quantity)' mat='(mat)'/&gt;
-&lt;GlobalArchiveTime units='ms'&gt;1&lt;/GlobalArchiveTime&gt;
+&lt;GlobalArchiveInterval&gt;1&lt;/GlobalArchiveInterval&gt;
 </pre>
 
 <p>where</p>
@@ -208,7 +208,7 @@ The Default value is <code>iYNNNN</code>.</dd>
 
 <li>The optional <code>(mat)</code> is material number and that quantity will be averaged only for particles of that material type. Omit this parameter (or attribute) to indicate an average over all particles. Grid quantities (<i>e.g.</i>, <code>Grid Kinetic Energy</code> but not <code>reactionx(y,z,R,Z)</code>) will ignore the attribute.</li>
 
-<li>The optional <code>(time)</code> is the time interval for storing global results in sec (or determined by a <a href="#units"><code>units</code> attribute</a>). If the time interval is not specified, it will be set to the <a href="#archiving">archiving interval</a></li>
+<li>The optional <code>(time)</code> is the time interval for storing global results in msec (or determined by a <a href="#units"><code>units</code> attribute</a>). If the time interval is not specified, it will be set to the <a href="#archiving">archiving interval</a></li>
 
 </ul>
 
