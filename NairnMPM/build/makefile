@@ -182,6 +182,7 @@ HistoryArchive = $(src)/Custom_Tasks/HistoryArchive
 HyperElastic = $(src)/Materials/HyperElastic
 IdealGas = $(src)/Materials/IdealGas
 InitializationTask = $(src)/NairnMPM_Class/InitializationTask
+InitVelocityFieldsTask = $(src)/NairnMPM_Class/InitVelocityFieldsTask
 IsoPlasticity = $(src)/Materials/IsoPlasticity
 IsotropicMat = $(com)/Materials/IsotropicMat
 JohnsonCook = $(src)/Materials/JohnsonCook
@@ -312,6 +313,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # HistoryArchive.hpp : CustomTask.hpp
 # IdealGas.hpp : HyperElastic.hpp (MaterialBase.hpp)
 # InitializationTask : MPMTask.hpp (CommonTask.hpp)
+# InitVelocityFieldsTask : MPMTask.hpp (CommonTask.hpp)
 # IsoPlasticity : IsotropicMat.hpp (Elastic.hpp MaterialBase.hpp)
 # IsotropicMat.hpp : Elastic.hpp (MaterialBase.hpp)
 # JohnsonCook.hpp : HardeningLawBase.hpp, MaterialBase.hpp
@@ -407,7 +409,8 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		TractionLaw.o CohesiveZone.o CoupledSawTooth.o LinearTraction.o CubicTraction.o IsoPlasticity.o AnisoPlasticity.o \
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o AdjustTimeStepTask.o SLMaterial.o CrackVelocityFieldMulti.o \
 		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o \
-        HEMGEOSMaterial.o GridPatch.o GhostNode.o MatPtHeatFluxBC.o PressureLaw.o ShellController.o Neohookean.o ClampedNeohookean.o
+        HEMGEOSMaterial.o GridPatch.o GhostNode.o MatPtHeatFluxBC.o PressureLaw.o ShellController.o Neohookean.o ClampedNeohookean.o \
+        InitVelocityFieldsTask.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -557,7 +560,7 @@ NairnMPM.o : $(NairnMPM).cpp $(dprefix) $(NairnMPM).hpp $(ArchiveData).hpp $(Com
 			$(UpdateStrainsFirstTask).hpp $(MPMWarnings).hpp $(BoundaryCondition).hpp $(MPMBase).hpp $(MatPtLoadBC).hpp \
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(CustomTask).hpp $(MPMWarnings).hpp $(CrackHeader).hpp $(MatPtFluxBC).hpp \
 			$(CrackSurfaceContact).hpp $(MeshInfo).hpp $(TransportTask).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
-			$(MatPtHeatFluxBC).hpp
+			$(MatPtHeatFluxBC).hpp  $(InitVelocityFieldsTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NairnMPM).cpp
 StartOutput.o : $(StartOutput).cpp $(dprefix) $(NairnMPM).hpp $(MaterialBase).hpp $(ThermalRamp).hpp $(ArchiveData).hpp \
 			$(CommonArchiveData).hpp $(BodyForce).hpp $(CrackSurfaceContact).hpp $(CommonException).hpp $(ElementBase).hpp \
@@ -574,8 +577,12 @@ MPMTask.o : $(MPMTask).cpp $(dprefix) $(MPMTask).hpp $(CommonTask).hpp $(Archive
 InitializationTask.o : $(InitializationTask).cpp $(dprefix) $(InitializationTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(NodalPoint).hpp $(MPMWarnings).hpp $(MatPtLoadBC).hpp $(CrackNode).hpp $(ThermalRamp).hpp \
 			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(BoundaryCondition).hpp $(MaterialInterfaceNode).hpp \
-            $(GridPatch).hpp $(MPMBase).hpp $(ElementBase).hpp $(CrackHeader).hpp $(MaterialBase).hpp $(CommonException).hpp
+            $(GridPatch).hpp $(MPMBase).hpp $(ElementBase).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(InitializationTask).cpp
+InitVelocityFieldsTask.o : $(InitVelocityFieldsTask).cpp $(dprefix) $(InitVelocityFieldsTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
+			$(NairnMPM).hpp $(GridPatch).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ElementBase).hpp $(CrackHeader).hpp \
+			$(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp  $(CommonException).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(InitVelocityFieldsTask).cpp
 MassAndMomentumTask.o : $(MassAndMomentumTask).cpp $(dprefix) $(MassAndMomentumTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(NodalPoint).hpp $(MatPtLoadBC).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ElementBase).hpp \
 			$(RigidMaterial).hpp $(CrackHeader).hpp $(CrackSurfaceContact).hpp $(TransportTask).hpp $(BoundaryCondition).hpp \

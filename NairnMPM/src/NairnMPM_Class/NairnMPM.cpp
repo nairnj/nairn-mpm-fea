@@ -24,6 +24,7 @@
 #include "Exceptions/MPMWarnings.hpp"
 #include "NairnMPM_Class/MPMTask.hpp"
 #include "NairnMPM_Class/InitializationTask.hpp"
+#include "NairnMPM_Class/InitVelocityFieldsTask.hpp"
 #include "NairnMPM_Class/MassAndMomentumTask.hpp"
 #include "NairnMPM_Class/UpdateStrainsFirstTask.hpp"
 #include "NairnMPM_Class/GridForcesTask.hpp"
@@ -60,15 +61,10 @@ int maxShapeNodes=10;		// Maximum number of nodes for a particle (plus 1)
 // Constructor
 NairnMPM::NairnMPM()
 {
-#ifdef _OSParticulas_
-	version=1;						// main version
+	version=11;						// main version
 	subversion=0;					// subversion (must be < 10)
 	buildnumber=0;					// build number
-#else
-	version=10;						// main version
-	subversion=1;					// subversion (must be < 10)
-	buildnumber=0;					// build number
-#endif
+
 	mpmApproach=USAVG_METHOD;		// mpm method
 	ptsPerElement=4;				// number of points per element (2D default, 3D changes it to 8)
 	propagate[0]=propagate[1]=NO_PROPAGATION;						// default crack propagation type
@@ -116,105 +112,20 @@ void NairnMPM::StartAnalysis(bool abort)
 void NairnMPM::MPMAnalysis(bool abort)
 {
     char fline[100];
-    CustomTask *nextTask;
     
 	//---------------------------------------------------
 	// Do Preliminary MPM Calculations
 	PreliminaryCalcs();
 
 	//---------------------------------------------------
-	// Create custom tasks
-
-	// if there are cracks, create J/K task and optionally a propagation task
-	//		(it is essential for propagation task to be after the JK task)
-	//		(insert this task before other custom tasks)
-	if(firstCrack!=NULL)
-	{	if(propagate[0] || archiver->WillArchiveJK(FALSE))
-		{   nextTask=new CalcJKTask();
-			if(propagate[0])
-			{   nextTask=new PropagateTask();
-				theJKTask->nextTask=nextTask;
-			}
-			nextTask->nextTask=theTasks;
-			theTasks=theJKTask;
-			ElementBase::AllocateNeighbors();
-		}
-	}
-
-	// see if any need initializing
-	if(theTasks!=NULL)
-	{	PrintSection("SCHEDULED CUSTOM TASKS");
-		nextTask=theTasks;
-		while(nextTask!=NULL)
-			nextTask=nextTask->Initialize();
-		cout << endl;
-	}
-
-	//---------------------------------------------------
-	// Create all the step tasks
-
-	// TASK 0: INITIALIZATION
-	MPMTask *lastMPMTask,*nextMPMTask;
-	lastMPMTask=firstMPMTask=(MPMTask *)new InitializationTask("Initialization");
-	
-	// TASK 1: MASS MATRIX
-	nextMPMTask=(MPMTask *)new MassAndMomentumTask("Mass/momentum_extrapolation");
-	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
-	lastMPMTask=nextMPMTask;
-	
-	// TASK 2: UPDATE STRAINS FIRST AND USAVG
-    if(mpmApproach==USF_METHOD || mpmApproach==USAVG_METHOD)
-	{	nextMPMTask=(MPMTask *)new UpdateStrainsFirstTask("Update_strains_first");
-		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
-		lastMPMTask=nextMPMTask;
-	}
-	
-	// TASK 3: FORCES
-	nextMPMTask=(MPMTask *)new GridForcesTask("Grid_forces");
-	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
-	lastMPMTask=nextMPMTask;
-    
-	// TASK 4: UPDATE MOMENTA
-	nextMPMTask=(MPMTask *)new UpdateMomentaTask("Update_momenta");
-	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
-	lastMPMTask=nextMPMTask;
-    
-	// TASK 5: UPDATE PARTICLES
-	nextMPMTask=(MPMTask *)new UpdateParticlesTask("Update_particles");
-	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
-	lastMPMTask=nextMPMTask;
-	
-	// TASK 6: UPDATE STRAINS LAST AND USAVG
-	if(mpmApproach==SZS_METHOD || mpmApproach==USAVG_METHOD)
-	{	nextMPMTask=(MPMTask *)new UpdateStrainsLastTask("Update_strains_last");
-		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
-		lastMPMTask=nextMPMTask;
-	}
-	
-	// TASK 7: CUSTOM TASKS
-	if(theTasks!=NULL)
-    {   nextMPMTask=(MPMTask *)new RunCustomTasksTask("Run_custom_tasks");
-		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
-		lastMPMTask=nextMPMTask;
-	}
-	
-	// TASK 8a: MOVE CRACKS
-	if(firstCrack!=NULL)
-	{	nextMPMTask=(MPMTask *)new MoveCracksTask("Move_cracks");
-		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
-		lastMPMTask=nextMPMTask;
-	}
-	
-	// TASK 8b: RESET ELEMEMTS
-	nextMPMTask=(MPMTask *)new ResetElementsTask("Reset_elements");
-	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
-	lastMPMTask=nextMPMTask;
+	// Create step tasks
+	CreateTasks();
 	
 	try
 	{	//---------------------------------------------------
 		// Archiving
 		if(!archiver->BeginArchives(IsThreeD()))
-			throw "Archiving times not specified or multiple archive blocks not monotonically increasing";
+			throw "No archiving was specified or multiple archiving blocks not monotonically increasing in start time";
 		archiver->ArchiveResults(mtime);
 		
 		// optional validation of parameters
@@ -281,13 +192,12 @@ void NairnMPM::MPMAnalysis(bool abort)
 		sprintf(fline,"CPU Time per Step: %.3lf ms\n",timePerStep);
 		cout << fline;
 		
-#ifdef _PROFILE_TASKS_
+        // profile task results
 		MPMTask *nextMPMTask=firstMPMTask;
 		while(nextMPMTask!=NULL)
 		{	nextMPMTask->WriteProfileResults(mstep,timePerStep,eTimePerStep);
 			nextMPMTask=(MPMTask *)nextMPMTask->GetNextTask();
 		}
-#endif
 	}
     
     //---------------------------------------------------
@@ -314,14 +224,12 @@ void NairnMPM::MPMStep(void)
 #ifdef LOG_PROGRESS
 		nextMPMTask->WriteLogFile();
 #endif
-#ifdef _PROFILE_TASKS_
 		double beginTime=fmobj->CPUTime();
 		double beginETime=fmobj->ElapsedTime();
-#endif
 		nextMPMTask->Execute();
-#ifdef _PROFILE_TASKS_
 		nextMPMTask->TrackTimes(beginTime,beginETime);
-#endif
+        
+        // on to next task
 		nextMPMTask=(MPMTask *)nextMPMTask->GetNextTask();
 #ifdef LOG_PROGRESS
 		archiver->WriteLogFile("           Done",NULL);
@@ -396,10 +304,12 @@ void NairnMPM::PreliminaryCalcs(void)
     nmpmsNR = 0;
 	int firstRigidPt = -1;
     for(p=0;p<nmpms;p++)
-	{	// verify material is defined and sets if field number (in in multimaterial mode)
+	{	// verify material is defined and set its field number (if in multimaterial mode)
 		matid=mpm[p]->MatID();
 		if(matid>=nmat)
 			throw CommonException("Material point with an undefined material type","NairnMPM::PreliminaryCalcs");
+		
+		// material point can't use traction law
 		if(theMaterials[matid]->isTractionLaw())
 			throw CommonException("Material point with traction-law material","NairnMPM::PreliminaryCalcs");
 		maxMaterialFields=theMaterials[matid]->SetField(maxMaterialFields,multiMaterialMode,matid,numActiveMaterials);
@@ -427,8 +337,7 @@ void NairnMPM::PreliminaryCalcs(void)
         // for axisyymmeric xp = rho*Ap*volume/(# per element)
 		mpm[p]->InitializeMass(rho*volume/((double)ptsPerElement));			// in g
 		
-		// done if rigid contact material in multimaterial mode
-        // mass will be in mm^3 and will be particle volume
+		// done if rigid - mass will be in mm^3 and will be particle volume
 		if(theMaterials[matid]->Rigid())
 		{	hasRigidContactParticles=true;
 			if(firstRigidPt<0) firstRigidPt=p;
@@ -679,8 +588,8 @@ void NairnMPM::PreliminaryCalcs(void)
 		}
 		
 		// warnings
-		CrackHeader::warnNodeOnCrack=warnings.CreateWarning("mesh node on a crack",-1,5);
-		CrackHeader::warnThreeCracks=warnings.CreateWarning("node with three cracks or unexpected velocity fields",-1,0);
+		CrackHeader::warnNodeOnCrack=warnings.CreateWarning("unexpect crack side; possibly caused by node or particle on a crack",-1,5);
+		CrackHeader::warnThreeCracks=warnings.CreateWarning("node with three or more cracks",-1,5);
 	}
 	
 	// create warnings
@@ -698,6 +607,113 @@ void NairnMPM::PreliminaryCalcs(void)
     
     // blank line
     cout << endl;
+}
+
+// create all the tasks needed for current simulation
+void NairnMPM::CreateTasks(void)
+{
+    CustomTask *nextTask;
+	
+	// if there are cracks, create J/K task and optionally a propagation task
+	//		(it is essential for propagation task to be after the JK task)
+	//		(insert these tasks before other custom tasks)
+	if(firstCrack!=NULL)
+	{	if(propagate[0] || archiver->WillArchiveJK(FALSE))
+		{   nextTask=new CalcJKTask();
+			if(propagate[0])
+			{   nextTask=new PropagateTask();
+				theJKTask->nextTask=nextTask;
+			}
+			nextTask->nextTask=theTasks;
+			theTasks=theJKTask;
+			ElementBase::AllocateNeighbors();
+		}
+		else
+		{   // Turn off any J-K settings that can cause problems
+			JTerms = -1;
+		}
+	}
+    else
+    {   // Turn off any crack settings that can cause problems
+        JTerms = -1;
+    }
+	
+	// see if any need initializing
+	if(theTasks!=NULL)
+	{	PrintSection("SCHEDULED CUSTOM TASKS");
+		nextTask=theTasks;
+		while(nextTask!=NULL)
+			nextTask=nextTask->Initialize();
+		
+		cout << endl;
+	}
+	
+	//---------------------------------------------------
+	// Create all the step tasks
+	
+	// INITIALIZATION Tasks
+	MPMTask *lastMPMTask,*nextMPMTask;
+	lastMPMTask=firstMPMTask=(MPMTask *)new InitializationTask("Initialize");
+	
+	if(firstCrack!=NULL || maxMaterialFields>1)
+	{	nextMPMTask=(MPMTask *)new InitVelocityFieldsTask("Decipher Crack and Material Fields");
+		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+		lastMPMTask=nextMPMTask;
+	}
+	
+	// MASS MATRIX AND MOMENTUM EXTRAPOLATION
+	nextMPMTask=(MPMTask *)new MassAndMomentumTask("Extrapolate Mass and Momentum");
+	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+	lastMPMTask=nextMPMTask;
+	
+	// TASK 2: UPDATE STRAINS FIRST AND USAVG
+    if(mpmApproach==USF_METHOD || mpmApproach==USAVG_METHOD)
+	{	nextMPMTask=(MPMTask *)new UpdateStrainsFirstTask("Update Strains First");
+		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+		lastMPMTask=nextMPMTask;
+	}
+	
+	// EXTRAPOLATE FORCES
+	nextMPMTask=(MPMTask *)new GridForcesTask("Extrapolate Grid Forces");
+	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+	lastMPMTask=nextMPMTask;
+    
+	// TASK 4: UPDATE MOMENTA
+	nextMPMTask=(MPMTask *)new UpdateMomentaTask("Update Momenta");
+	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+	lastMPMTask=nextMPMTask;
+    
+	// UPDATE PARTICLES
+	nextMPMTask=(MPMTask *)new UpdateParticlesTask("Update Particles");
+	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+	lastMPMTask=nextMPMTask;
+	
+	// UPDATE STRAINS LAST AND USAVG
+	if(mpmApproach==SZS_METHOD || mpmApproach==USAVG_METHOD)
+	{	nextMPMTask=(MPMTask *)new UpdateStrainsLastTask("Update Strains Last");
+		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+		lastMPMTask=nextMPMTask;
+	}
+	
+	// CUSTOM TASKS (including J Integral and crack propagation)
+	if(theTasks!=NULL)
+    {   nextMPMTask=(MPMTask *)new RunCustomTasksTask("Run Custom Tasks");
+		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+		lastMPMTask=nextMPMTask;
+	}
+	
+	// MOVE CRACKS
+	if(firstCrack!=NULL)
+	{	nextMPMTask=(MPMTask *)new MoveCracksTask("Move Cracks");
+		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+		lastMPMTask=nextMPMTask;
+	}
+	
+	// RESET ELEMEMTS
+	nextMPMTask=(MPMTask *)new ResetElementsTask("Reset Elements");
+	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+	lastMPMTask=nextMPMTask;
+
 }
 
 // When NR particle p2 moves to p1, reset any point-based BCs that use that point
@@ -734,8 +750,8 @@ void NairnMPM::ValidateOptions(void)
 			throw CommonException("Imperfect interfaces require a cartesian mesh","NairnMPM::ValidateOptions");
 	}
 	
-    // 3D requires orthogonal grid and 1 or 8 particles per element
-    // 2D requires 1 or 4 particles per element
+    // 3D requires orthogonal grid and 1,8, or 27 particles per element
+    // 2D requires 1,4, 9, 16, or 25 particles per element
 	if(IsThreeD())
 	{	if(mpmgrid.GetCartesian()!=CUBIC_GRID && mpmgrid.GetCartesian()!=ORTHOGONAL_GRID)
 			throw CommonException("3D calculations require an orthogonal grid","NairnMPM::ValidateOptions");
@@ -752,7 +768,7 @@ void NairnMPM::ValidateOptions(void)
     {   if(ElementBase::useGimp == POINT_GIMP)
         {   // require cartesian grid
             if(mpmgrid.GetCartesian()<=0)
-            {   throw CommonException("Axisymmetric with Classic MPM requires anorthogonal grid","NairnMPM::ValidateOptions");
+            {   throw CommonException("Axisymmetric with Classic MPM needs an orthogonal grid","NairnMPM::ValidateOptions");
             }
         }
         else if(ElementBase::useGimp == UNIFORM_GIMP)
@@ -792,11 +808,7 @@ void NairnMPM::ValidateOptions(void)
 // return name
 const char *NairnMPM::CodeName(void) const
 {
-#ifdef _OSParticulas_
-    return "OSParticulas";
-#else
-	return "NairnMPM";
-#endif
+    return "NairnMPM";
 }
 
 // verify analysis type
@@ -824,19 +836,19 @@ void NairnMPM::Usage()
             "directed to standard error. The numerical results are saved\n"
             "to archived files as directed in <InputFile>.\n\n"
             "Options:\n"
-			"    -a          Abort after setting up problem but before\n"
+            "    -a          Abort after setting up problem but before\n"
 			"                   MPM steps begin. Initial conditions will\n"
 			"                   be archived\n"
-			"    -H          Show this help\n"
-			"    -np #       Set number of processors for parallel code\n"
-			"    -r          Reverse byte order in archive files\n"
-			"                   (default is to not reverse the bytes)\n"
-			"    -v          Validate input file if DTD is provided in !DOCTYPE\n"
-			"                   (default is to skip validation)\n"
-			"    -w          Output results to current working directory\n"
-			"                   (default is output to folder of input file)\n"
-			"    -?          Show this help\n\n"
-			"See http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page for documentation\n\n"
+            "    -H          Show this help\n"
+            "    -np #       Set number of processors for parallel code\n"
+            "    -r          Reverse byte order in archive files\n"
+            "                   (default is to not reverse the bytes)\n"
+            "    -v          Validate input file if DTD is provided in !DOCTYPE\n"
+            "                   (default is to skip validation)\n"
+            "    -w          Output results to current working directory\n"
+            "                   (default is output to folder of input file)\n"
+            "    -?          Show this help\n\n"
+            "See http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page for documentation\n\n"
           <<  endl;
 }
 

@@ -18,10 +18,11 @@
 			( Description | Analysis | DevelFlag )+>
 
 <!ELEMENT	MPMHeader
-			( MatlPtsPerElement | Cracks | MPMMethod | TimeStep | TimeFactor | PDamping | PFeedbackDamping
-			| MaxTime | ArchiveTime | ArchiveRoot | MPMArchiveOrder | CrackArchiveOrder
-			| ProgSteps | Damping | FeedbackDamping | GlobalArchiveTime | GlobalArchive | DefGradTerms
-			| Diffusion | StressFreeTemp | FirstArchiveTime | GIMP | LeaveLimit | MultiMaterialMode )*>
+			( MatlPtsPerElement | Cracks | MPMMethod | Timing | PDamping | PFeedbackDamping
+			| ArchiveGroup | ArchiveRoot | MPMArchiveOrder | CrackArchiveOrder
+			| ProgSteps | Damping | FeedbackDamping | GlobalArchiveInterval | GlobalArchive | DefGradTerms
+			| Diffusion | StressFreeTemp | GIMP | LeaveLimit | MultiMaterialMode
+			| MaxTime | TimeStep | TimeFactor | ArchiveTime | FirstArchiveTime | GlobalArchiveTime )*>
 
 <!ELEMENT	Cracks
 			( Friction | Propagate | AltPropagate | JContour | MovePlane | ContactPosition | PropagateLength )*>
@@ -293,22 +294,20 @@
 			gridenergy (0|1) #IMPLIED
 			terms (1|2) #IMPLIED>
 <!ELEMENT	MPMMethod (#PCDATA)>
-<!ELEMENT	TimeStep (#PCDATA)>
-<!ATTLIST	TimeStep
+<!ELEMENT	Timing EMPTY>
+<!ATTLIST	Timing
+			step CDATA #IMPLIED
+			max CDATA #IMPLIED
+			CFL CDATA #IMPLIED
 			units CDATA #IMPLIED>
-<!ELEMENT	TimeFactor (#PCDATA)>
-<!ELEMENT	MaxTime (#PCDATA)>
-<!ATTLIST	MaxTime
+<!ELEMENT	ArchiveGroup EMPTY>
+<!ATTLIST	ArchiveGroup
+			time CDATA #REQUIRED
+			start CDATA #REQUIRED
+			maxProps CDATA #IMPLIED
 			units CDATA #IMPLIED>
-<!ELEMENT	ArchiveTime (#PCDATA)>
-<!ATTLIST	ArchiveTime
-			units CDATA #IMPLIED
-			maxProps CDATA #IMPLIED>
-<!ELEMENT	FirstArchiveTime (#PCDATA)>
-<!ATTLIST	FirstArchiveTime
-			units CDATA #IMPLIED>
-<!ELEMENT	GlobalArchiveTime (#PCDATA)>
-<!ATTLIST	GlobalArchiveTime
+<!ELEMENT	GlobalArchiveInterval (#PCDATA)>
+<!ATTLIST	GlobalArchiveInterval
 			units CDATA #IMPLIED>
 <!ELEMENT	GlobalArchive EMPTY>
 <!ATTLIST	GlobalArchive
@@ -838,4 +837,27 @@
 			units CDATA #IMPLIED>
 <!ELEMENT	Temperature (#PCDATA)>
 <!ELEMENT	Concentration (#PCDATA)>
+
+<!-- ==============================================
+		DEPRECATED ELEMENTS (with no children)
+================================================-->
+
+<!ELEMENT	TimeStep (#PCDATA)>
+<!ATTLIST	TimeStep
+			units CDATA #IMPLIED>
+<!ELEMENT	TimeFactor (#PCDATA)>
+<!ELEMENT	MaxTime (#PCDATA)>
+<!ATTLIST	MaxTime
+			units CDATA #IMPLIED>
+<!ELEMENT	ArchiveTime (#PCDATA)>
+<!ATTLIST	ArchiveTime
+			units CDATA #IMPLIED
+			maxProps CDATA #IMPLIED>
+<!ELEMENT	FirstArchiveTime (#PCDATA)>
+<!ATTLIST	FirstArchiveTime
+			units CDATA #IMPLIED>
+<!ELEMENT	GlobalArchiveTime (#PCDATA)>
+<!ATTLIST	GlobalArchiveTime
+			units CDATA #IMPLIED>
+
 
