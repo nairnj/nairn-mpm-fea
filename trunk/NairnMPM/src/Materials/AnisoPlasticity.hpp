@@ -35,7 +35,7 @@ class AnisoPlasticity : public Orthotropic
 		AnisoPlasticity(char *matName);
 		
         // initialize
-        virtual char *InputMat(char *,int &);
+        virtual char *InputMaterialProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void ValidateForUse(int) const;
 		virtual void PrintMechanicalProperties(void) const;

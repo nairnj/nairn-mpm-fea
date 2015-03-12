@@ -41,7 +41,7 @@ void ImperfectInterface::PrintMechanicalProperties(void) const
 }
 
 // Read material properties
-char *ImperfectInterface::InputMat(char *xName,int &input)
+char *ImperfectInterface::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
     
@@ -51,7 +51,7 @@ char *ImperfectInterface::InputMat(char *xName,int &input)
     else if(strcmp(xName,"Dt")==0)
         return((char *)&Dt);
     
-    return MaterialBase::InputMat(xName,input);
+    return MaterialBase::InputMaterialProperty(xName,input,gScaling);
 }
 
 #pragma mark ImperfectInterface::Accessors

@@ -25,7 +25,7 @@ TractionLaw::TractionLaw(char *matName) : MaterialBase(matName)
 void TractionLaw::PrintTransportProperties(void) const {}
 
 // read peak stress in all traction laws
-char *TractionLaw::InputMat(char *xName,int &input)
+char *TractionLaw::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"sigmaI")==0)
 	{	input=DOUBLE_NUM;
@@ -37,7 +37,7 @@ char *TractionLaw::InputMat(char *xName,int &input)
 		return((char *)&stress2);
 	}
 	
-    return MaterialBase::InputMat(xName,input);
+    return MaterialBase::InputMaterialProperty(xName,input,gScaling);
 }
 
 // do not need to call base material class methods

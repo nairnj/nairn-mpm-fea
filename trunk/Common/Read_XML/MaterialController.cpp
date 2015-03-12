@@ -216,8 +216,8 @@ const char *MaterialController::SetMaterialArray(void)
 }
 
 // pointer to read a material property
-char *MaterialController::InputPointer(char *property,int &input)
-{   return ((MaterialBase *)lastObject)->InputMat(property,input);
+char *MaterialController::InputPointer(char *property,int &input,double &gScaling)
+{   return ((MaterialBase *)lastObject)->InputMaterialProperty(property,input,gScaling);
 }
 
 // set material color (optional)

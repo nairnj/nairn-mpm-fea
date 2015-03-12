@@ -28,7 +28,7 @@ IdealGas::IdealGas(char *matName) : HyperElastic(matName)
 #pragma mark IdealGas::Initialization
 
 // Read material properties
-char *IdealGas::InputMat(char *xName,int &input)
+char *IdealGas::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
     
@@ -38,7 +38,7 @@ char *IdealGas::InputMat(char *xName,int &input)
     else if(strcmp(xName,"T0")==0)
         return((char *)&T0);
 	
-    return(HyperElastic::InputMat(xName,input));
+    return(HyperElastic::InputMaterialProperty(xName,input,gScaling));
 }
 
 // verify settings and some initial calculations

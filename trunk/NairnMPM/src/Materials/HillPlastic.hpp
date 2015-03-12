@@ -26,7 +26,7 @@ class HillPlastic : public AnisoPlasticity
 		HillPlastic(char *matName);
 		
         // methods
-		char *InputMat(char *,int &);
+		virtual char *InputMaterialProperty(char *,int &,double &);
 		char *InitHistoryData(void);
 		
 		// const methods

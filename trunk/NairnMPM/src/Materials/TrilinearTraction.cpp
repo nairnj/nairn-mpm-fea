@@ -48,7 +48,7 @@ TrilinearTraction::TrilinearTraction(char *matName) : CohesiveZone(matName)
 #pragma mark TrilinearTraction::Initialization
 
 // no properties to read
-char *TrilinearTraction::InputMat(char *xName,int &input)
+char *TrilinearTraction::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
 	if(strcmp(xName,"sigmaI2")==0)
 	{	input=DOUBLE_NUM;
@@ -70,7 +70,7 @@ char *TrilinearTraction::InputMat(char *xName,int &input)
 		return((char *)&uII2);
 	}
 	
-    return CohesiveZone::InputMat(xName,input);
+    return CohesiveZone::InputMaterialProperty(xName,input,gScaling);
 }
 
 // Calculate properties used in analyses - here trilinear law

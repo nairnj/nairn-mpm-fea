@@ -18,12 +18,11 @@
 			( Description | Analysis | DevelFlag )+>
 
 <!ELEMENT	MPMHeader
-			( MatlPtsPerElement | Cracks | MPMMethod | Timing | PDamping | PFeedbackDamping
-			| ArchiveGroup | ArchiveRoot | MPMArchiveOrder | CrackArchiveOrder
-			| ProgSteps | Damping | FeedbackDamping | GlobalArchiveInterval | GlobalArchive | DefGradTerms
-			| Diffusion | StressFreeTemp | GIMP | LeaveLimit | MultiMaterialMode
+			( MatlPtsPerElement | Cracks | MPMMethod | Timing | PDamping | PFeedbackDamping | ArchiveGroup | ArchiveRoot 
+			| CrackArchiveOrder | MPMArchiveOrder | ProgSteps | Damping | FeedbackDamping | GlobalArchiveInterval
+			| GlobalArchive | DefGradTerms | Diffusion | StressFreeTemp | GIMP | LeaveLimit | MultiMaterialMode
 			| MaxTime | TimeStep | TimeFactor | ArchiveTime | FirstArchiveTime | GlobalArchiveTime )*>
-
+			
 <!ELEMENT	Cracks
 			( Friction | Propagate | AltPropagate | JContour | MovePlane | ContactPosition | PropagateLength )*>
 			
@@ -146,7 +145,7 @@
 <!-- Define material properties -->
 
 <!ELEMENT	Material
-			( rho | E | nu | G | alpha | yield | beta | yieldMax | Lame
+			( rho | rho0 | E | nu | G | alpha | yield | beta | yieldMax | Lame
 				| EA | ET | GA | nuA | nuT | alphaA | alphaT | betaA | betaT | Ep
 				| Ex | ER | Ey | EZ | Ez | Gxy | Gyx | GRZ | GZR | Gxz | Gzx 
 				| GRT | GTR | Gyz | Gzy | GZT | GTZ
@@ -289,7 +288,7 @@
 <!ELEMENT	PropagateLength (#PCDATA)>
 <!ELEMENT	JContour EMPTY>
 <!ATTLIST	JContour
-			type CDATA (1|2) #IMPLIED
+			type (1|2) #IMPLIED
 			size CDATA #IMPLIED
 			gridenergy (0|1) #IMPLIED
 			terms (1|2) #IMPLIED>
@@ -361,6 +360,7 @@
 <!ELEMENT	NoAVHeating EMPTY>
 
 <!ELEMENT	rho (#PCDATA)>
+<!ELEMENT	rho0 (#PCDATA)>
 <!ELEMENT	E (#PCDATA)>
 <!ELEMENT	nu (#PCDATA)>
 <!ELEMENT	G (#PCDATA)>

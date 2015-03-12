@@ -32,7 +32,7 @@ class HyperElastic : public MaterialBase
         HyperElastic(char *);
     
         // initialize
-        virtual char *InputMat(char *,int &);
+        virtual char *InputMaterialProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
         virtual void SetInitialParticleState(MPMBase *,int) const;
     

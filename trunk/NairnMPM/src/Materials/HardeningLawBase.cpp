@@ -29,7 +29,7 @@ HardeningLawBase::~HardeningLawBase() {}
 #pragma mark LinearHardening::Initialize
 
 // Read hardening law properties
-char *HardeningLawBase::InputMat(char *xName,int &input)
+char *HardeningLawBase::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     // base yield stress
     if(strcmp(xName,"yield")==0)

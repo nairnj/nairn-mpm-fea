@@ -30,7 +30,7 @@ class IdealGas : public HyperElastic
         IdealGas(char *);
         
         // initialize
-        virtual char *InputMat(char *,int &);
+        virtual char *InputMaterialProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 	
 		// const methods

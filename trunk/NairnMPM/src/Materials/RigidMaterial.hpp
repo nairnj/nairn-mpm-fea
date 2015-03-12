@@ -39,7 +39,7 @@ class RigidMaterial : public MaterialBase
         RigidMaterial(char *);
         
         // initialize
-        virtual char *InputMat(char *,int &);
+        virtual char *InputMaterialProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
         virtual void PrintMechanicalProperties(void) const;
 		virtual int SetField(int,bool,int,int &);

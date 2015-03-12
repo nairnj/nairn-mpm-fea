@@ -45,7 +45,7 @@ AnisoPlasticity::AnisoPlasticity(char *matName) : Orthotropic(matName)
 #pragma mark AnisoPlasticity::Initialization
 
 // Read material properties
-char *AnisoPlasticity::InputMat(char *xName,int &input)
+char *AnisoPlasticity::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"yldxx")==0)
     {	input=DOUBLE_NUM;
@@ -77,7 +77,7 @@ char *AnisoPlasticity::InputMat(char *xName,int &input)
         return((char *)&tyyz);
     }
 	
-	return Orthotropic::InputMat(xName,input);
+	return Orthotropic::InputMaterialProperty(xName,input,gScaling);
 }
 
 // verify settings and some initial calculations

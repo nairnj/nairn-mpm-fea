@@ -72,7 +72,7 @@ void Mooney::PrintMechanicalProperties(void) const
 }
 	
 // Read material properties
-char *Mooney::InputMat(char *xName,int &input)
+char *Mooney::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
     
@@ -94,7 +94,7 @@ char *Mooney::InputMat(char *xName,int &input)
         return (char *)&rubber;
     }
     
-    return(HyperElastic::InputMat(xName,input));
+    return(HyperElastic::InputMaterialProperty(xName,input,gScaling));
 }
 
 // verify settings and some initial calculations

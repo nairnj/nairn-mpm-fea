@@ -26,7 +26,7 @@ class HEMGEOSMaterial : public HEIsotropic
 		HEMGEOSMaterial(char *matName);
 		
 		// initialize
-		virtual char *InputMat(char *,int &);
+		virtual char *InputMaterialProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 	
 		// const methods

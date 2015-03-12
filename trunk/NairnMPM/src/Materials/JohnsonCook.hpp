@@ -29,7 +29,7 @@ class JohnsonCook : public HardeningLawBase
         JohnsonCook(MaterialBase *);
         
         // initialize
-        virtual char *InputMat(char *,int &);
+        virtual char *InputMaterialProperty(char *,int &,double &);
         virtual void PrintYieldProperties(void) const;
 		virtual const char *VerifyAndLoadProperties(int);
 	

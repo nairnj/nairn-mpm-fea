@@ -26,7 +26,7 @@ NonlinearHardening::NonlinearHardening(MaterialBase *pair) : HardeningLawBase(pa
 #pragma mark LinearHardening::Initialize
 
 // Read hardening law properties
-char *NonlinearHardening::InputMat(char *xName,int &input)
+char *NonlinearHardening::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     // Khard: coefficient of plastic strains for non-linear hardening (beta)
     if(strcmp(xName,"Khard")==0)
@@ -40,7 +40,7 @@ char *NonlinearHardening::InputMat(char *xName,int &input)
         return((char *)&npow);
     }
     
-    return HardeningLawBase::InputMat(xName,input);
+    return HardeningLawBase::InputMaterialProperty(xName,input,gScaling);
 }
 
 // print just yield properties to output window

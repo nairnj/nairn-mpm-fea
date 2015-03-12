@@ -42,7 +42,7 @@ CohesiveZone::CohesiveZone(char *matName) : TractionLaw(matName)
 #pragma mark CohesiveZone::Initialization
 
 // no properties to read
-char *CohesiveZone::InputMat(char *xName,int &input)
+char *CohesiveZone::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {   
     if(strcmp(xName,"kIe")==0)
 	{	input=DOUBLE_NUM;
@@ -64,7 +64,7 @@ char *CohesiveZone::InputMat(char *xName,int &input)
 		return((char *)&umidII);
 	}
 	
-    return TractionLaw::InputMat(xName,input);
+    return TractionLaw::InputMaterialProperty(xName,input,gScaling);
 }
 
 /* calculate properties used in analyses - here triangular law

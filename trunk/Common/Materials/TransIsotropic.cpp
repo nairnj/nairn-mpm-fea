@@ -90,7 +90,7 @@ void TransIsotropic::PrintTransportProperties(void) const
 #endif
 
 // Read material properties
-char *TransIsotropic::InputMat(char *xName,int &input)
+char *TransIsotropic::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
     
@@ -148,7 +148,7 @@ char *TransIsotropic::InputMat(char *xName,int &input)
         return((char *)&kcondT);
 #endif
     
-    return MaterialBase::InputMat(xName,input);
+    return MaterialBase::InputMaterialProperty(xName,input,gScaling);
 }
 
 // calculate properties used in analyses

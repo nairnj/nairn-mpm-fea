@@ -190,7 +190,7 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 	else if(!myStartElement(xName,attrs))
 	{	// look for material property
 		if(block==MATERIAL)
-		{	inputPtr=matCtrl->InputPointer(xName,input);
+		{	inputPtr=matCtrl->InputPointer(xName,input,gScaling);
 			if(inputPtr==NULL)
 				ThrowCatErrorMessage("Unrecognized material property was found",xName);
 		}

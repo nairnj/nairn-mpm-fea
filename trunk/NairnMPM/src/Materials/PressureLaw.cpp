@@ -28,7 +28,7 @@ PressureLaw::PressureLaw(char *matName) : TractionLaw(matName)
 #pragma mark PressureLaw::Initialization
 
 // no properties to read
-char *PressureLaw::InputMat(char *xName,int &input)
+char *PressureLaw::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"stress")==0)
 	{	input=DOUBLE_NUM;
@@ -45,7 +45,7 @@ char *PressureLaw::InputMat(char *xName,int &input)
 		return (char *)&minCOD;
 	}
 	
-    return TractionLaw::InputMat(xName,input);
+    return TractionLaw::InputMaterialProperty(xName,input,gScaling);
 }
 
 // setting function if needed

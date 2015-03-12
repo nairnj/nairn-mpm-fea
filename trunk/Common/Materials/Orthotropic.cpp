@@ -78,7 +78,7 @@ void Orthotropic::PrintTransportProperties(void) const
 #endif
 
 // Read material properties
-char *Orthotropic::InputMat(char *xName,int &input)
+char *Orthotropic::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
     
@@ -186,7 +186,7 @@ char *Orthotropic::InputMat(char *xName,int &input)
         return((char *)&kcondz);
 #endif
 		
-	return(MaterialBase::InputMat(xName,input));
+	return(MaterialBase::InputMaterialProperty(xName,input,gScaling));
 }
 
 // calculate properties used in analyses
