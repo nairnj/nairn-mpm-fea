@@ -32,7 +32,7 @@ SLMaterial::SLMaterial(MaterialBase *pair) : SCGLHardening(pair)
 #pragma mark SLMaterial::Initialization
 
 // Read material properties
-char *SLMaterial::InputMat(char *xName,int &input)
+char *SLMaterial::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
 	// unique properties here
 	
@@ -57,7 +57,7 @@ char *SLMaterial::InputMat(char *xName,int &input)
         return((char *)&C2);
     }
 	
-	return(SCGLHardening::InputMat(xName,input));
+	return(SCGLHardening::InputMaterialProperty(xName,input,gScaling));
 }
 
 // verify settings and some initial calculations

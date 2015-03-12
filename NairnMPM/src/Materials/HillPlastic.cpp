@@ -30,7 +30,7 @@ HillPlastic::HillPlastic(char *matName) : AnisoPlasticity(matName)
 #pragma mark HillPlastic::Initialize
 
 // Read material properties
-char *HillPlastic::InputMat(char *xName,int &input)
+char *HillPlastic::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     // Khard: hardening parameter
     if(strcmp(xName,"Khard")==0)
@@ -44,7 +44,7 @@ char *HillPlastic::InputMat(char *xName,int &input)
         return((char *)&nhard);
     }
 	
-    return(AnisoPlasticity::InputMat(xName,input));
+    return(AnisoPlasticity::InputMaterialProperty(xName,input,gScaling));
 }
 
 // print to output window

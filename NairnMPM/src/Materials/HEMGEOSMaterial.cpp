@@ -33,7 +33,7 @@ HEMGEOSMaterial::HEMGEOSMaterial(char *matName) : HEIsotropic(matName)
 #pragma mark HEMGEOSMaterial::Initialization
 
 // Read material properties
-char *HEMGEOSMaterial::InputMat(char *xName,int &input)
+char *HEMGEOSMaterial::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
 	//	G found in IsotropicMat
 	//	rho, Cv found in material base class
@@ -64,7 +64,7 @@ char *HEMGEOSMaterial::InputMat(char *xName,int &input)
         return((char *)&S3);
     }
 	
-   return(HEIsotropic::InputMat(xName,input));
+   return(HEIsotropic::InputMaterialProperty(xName,input,gScaling));
 }
 
 // verify settings and some initial calculations

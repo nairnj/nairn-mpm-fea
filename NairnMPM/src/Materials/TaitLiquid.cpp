@@ -45,7 +45,7 @@ TaitLiquid::TaitLiquid(char *matName) : HyperElastic(matName)
 // Read material properties by name (in xName). Set input to variable type
 // (DOUBLE_NUM or INT_NUM) and return pointer to the class variable
 // (cast as a char *)
-char *TaitLiquid::InputMat(char *xName,int &input)
+char *TaitLiquid::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
 	// read properties for this material
     if(strcmp(xName,"viscosity")==0)
@@ -58,7 +58,7 @@ char *TaitLiquid::InputMat(char *xName,int &input)
 		return((char *)this);
 	}
 	
-    return HyperElastic::InputMat(xName,input);
+    return HyperElastic::InputMaterialProperty(xName,input,gScaling);
 }
 
 // Verify input properties do calculations; if problem return string with an error message

@@ -38,7 +38,7 @@ class Neohookean : public HyperElastic
 		Neohookean(char *);
 	
 		// initialize
-		virtual char *InputMat(char *,int &);
+		virtual char *InputMaterialProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual char *InitHistoryData(void);
 		

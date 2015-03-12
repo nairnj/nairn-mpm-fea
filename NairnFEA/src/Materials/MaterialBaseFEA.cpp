@@ -11,7 +11,7 @@
 #pragma mark MaterialBase::Initialization
 
 // Read material properties common to all FEA materials
-char *MaterialBase::InputMat(char *xName,int &input)
+char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
 	// but used, but allow it in case copied from MPM calculations
     if(strcmp(xName,"rho")==0)

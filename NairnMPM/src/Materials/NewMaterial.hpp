@@ -26,7 +26,7 @@ class NewMaterial : public MaterialBase
 		NewMaterial(char *matName);
 		
 		// initialize
-        virtual char *InputMat(char *,int &);
+        virtual char *InputMaterialProperty(char *,int &,double &);
         virtual const char *VerifyAndLoadProperties(int);
 		//virtual void FillTransportProperties(TransportProperties *);
 		virtual void PrintMechanicalProperties(void) const;

@@ -42,7 +42,7 @@ BistableIsotropic::BistableIsotropic(char *matName) : IsotropicMat(matName)
 #pragma mark BistableIsotropic::Initialization
 
 // Read material properties
-char *BistableIsotropic::InputMat(char *xName,int &input)
+char *BistableIsotropic::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
 	
@@ -131,7 +131,7 @@ char *BistableIsotropic::InputMat(char *xName,int &input)
         return((char *)&reversible);
     }
 	
-    return MaterialBase::InputMat(xName,input);
+    return MaterialBase::InputMaterialProperty(xName,input,gScaling);
 }
 
 // Verify properties and initial calculations

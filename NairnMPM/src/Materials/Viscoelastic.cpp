@@ -56,7 +56,7 @@ void Viscoelastic::PrintMechanicalProperties(void) const
 }
     
 // Read material properties
-char *Viscoelastic::InputMat(char *xName,int &input)
+char *Viscoelastic::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
     
@@ -98,7 +98,7 @@ char *Viscoelastic::InputMat(char *xName,int &input)
         return((char *)&tauk[currentTauk-1]);
     }
     
-    return(MaterialBase::InputMat(xName,input));
+    return(MaterialBase::InputMaterialProperty(xName,input,gScaling));
 }
 
 // verify settings and some initial calculations

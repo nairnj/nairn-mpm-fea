@@ -25,7 +25,7 @@ HyperElastic::HyperElastic(char *matName) : MaterialBase(matName)
 }
 
 // Read material properties
-char *HyperElastic::InputMat(char *xName,int &input)
+char *HyperElastic::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
     
@@ -40,7 +40,7 @@ char *HyperElastic::InputMat(char *xName,int &input)
         return((char *)&UofJOption);
     }
     
-    return(MaterialBase::InputMat(xName,input));
+    return(MaterialBase::InputMaterialProperty(xName,input,gScaling));
 }
 
 #pragma mark HyperElastic::Initialize

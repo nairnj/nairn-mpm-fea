@@ -25,7 +25,7 @@ WoodMaterial::WoodMaterial(char *matName) : HillPlastic(matName)
 #pragma mark WoodMaterial::Initialization
 
 // Read material properties
-char *WoodMaterial::InputMat(char *xName,int &input)
+char *WoodMaterial::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"tempC1")==0)
     {	input=DOUBLE_NUM;
@@ -36,7 +36,7 @@ char *WoodMaterial::InputMat(char *xName,int &input)
         return((char *)&tempC2);
     }
 	
-	return(HillPlastic::InputMat(xName,input));
+	return(HillPlastic::InputMaterialProperty(xName,input,gScaling));
 }
 
 // verify settings and maybe some initial calculations

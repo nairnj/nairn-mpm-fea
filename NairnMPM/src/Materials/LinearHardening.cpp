@@ -32,7 +32,7 @@ LinearHardening::LinearHardening(MaterialBase *pair) : HardeningLawBase(pair)
 #pragma mark LinearHardening::Initialize
 
 // Read hardening law properties
-char *LinearHardening::InputMat(char *xName,int &input)
+char *LinearHardening::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     // dimensionless coefficient for hardening
     if(strcmp(xName,"Khard")==0)
@@ -45,7 +45,7 @@ char *LinearHardening::InputMat(char *xName,int &input)
         return((char *)&Ep);
     }
     
-    return HardeningLawBase::InputMat(xName,input);
+    return HardeningLawBase::InputMaterialProperty(xName,input,gScaling);
 }
 
 // get reduced stress than done

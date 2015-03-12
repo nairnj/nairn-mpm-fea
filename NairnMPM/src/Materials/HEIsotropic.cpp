@@ -34,7 +34,7 @@ HEIsotropic::HEIsotropic(char *matName) : HyperElastic(matName)
 #pragma mark HEIsotropic::Initialization
 
 // Read material properties
-char *HEIsotropic::InputMat(char *xName,int &input)
+char *HEIsotropic::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
     
@@ -49,10 +49,10 @@ char *HEIsotropic::InputMat(char *xName,int &input)
     
     // JAN: Move yielding properties to the hardening law (yield, Ep, Khard)
 	// check plastic law
-    char *ptr = plasticLaw->InputMat(xName,input);
+    char *ptr = plasticLaw->InputMaterialProperty(xName,input,gScaling);
     if(ptr != NULL) return ptr;
     
-    return(HyperElastic::InputMat(xName,input));
+    return(HyperElastic::InputMaterialProperty(xName,input,gScaling));
 }
 
 // Allows any hardening law
@@ -98,7 +98,10 @@ void HEIsotropic::PrintMechanicalProperties(void) const
     PrintProperty("G1",G1,"");
     PrintProperty("K",Kbulk,"");
     cout << endl;
-        
+    PrintProperty("E",9.*Kbulk*G1/(3.*Kbulk+G1),"");
+    PrintProperty("nu",(3.*Kbulk-2.*G1)/(6.*Kbulk+2.*G1),"");
+    cout << endl;
+    
     PrintProperty("a",aI,"");
     switch(UofJOption)
     {   case J_MINUS_1_SQUARED:
@@ -146,9 +149,12 @@ void *HEIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer
 	HEPlasticProperties *p = (HEPlasticProperties *)matBuffer;
  	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np,altBuffer);
 	double Gratio = plasticLaw->GetShearRatio(mptr,mptr->GetPressure(),1.,p->hardProps);
+	
+	// Find current p->Gred and p->Kred (reduced moduli)
 	p->Gred = G1sp*Gratio;
 	p->Kred = Ksp;
-	return p;
+    
+    return p;
 }
 
 /* Take increments in strain and calculate new Particle: strains, rotation strain,
@@ -193,8 +199,9 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     // Others constants
     double J23 = pow(J, 2./3.)/Jres;
     
-    // find Trial Specific Kirchoff stress Tensor (Trial_Tau/rho0)
-    Tensor stk = GetTrialDevStressTensor(&Btrial,J23,np,p->Gred);
+    // find Trial (Cauchy stress)/rho0
+	// (Trial_s/rho0 = Trial_s*rho/(rho*rho0) = (Trial_tau*rho/rho0^2) = (1/J)*(Trial_tau/rho0)
+    Tensor stk = GetTrialDevStressTensor(&Btrial,J*J23,np,p->Gred);
     
     // Checking for plastic loading
     // ============================================
@@ -213,7 +220,7 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     //cout << "  #magnitude_strial =   "<< magnitude_strial<< "  GetYield =   "<< gyld<< "  ftrial =   "<< ftrial<< endl;
     //cout << "  #yldred =   "<< yldred << "  Epred =   "<< Epred << "  gyld =   "<< gyld <<"  alpint =   "<< alpint<< "  ftrial =   "<< ftrial<< endl;
     
-    // these will be needed for elastic or plasti
+    // these will be needed for elastic or plastic
     Tensor *pB = mptr->GetElasticLeftCauchyTensor();
     
     //============================
@@ -227,9 +234,12 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
         *pB = Btrial;
         
         // Get specifique stress i.e. (Cauchy Stress)/rho = J*(Cauchy Stress)/rho0 = (Kirchoff Stress)/rho0
-		// The deviatoric stress was calculated as (Kirchoff Stress)/rho0, so just save it now
-        *sp = stk;
-        
+		// The deviatoric stress was calculated as (Cauchy Stress)/rho, so need to scale by J to get correct stress
+        sp->xx = J*stk.xx;
+		sp->yy = J*stk.yy;
+        sp->xy = J*stk.xy;
+        sp->zz = J*stk.zz;
+       
         // work energy per unit mass (U/(rho0 V0)) and we are using
         // W(F) as the energy density per reference volume V0 (U/V0) and not current volume V
         mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*du(0,0)
@@ -237,7 +247,9 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
                                    + (st0.zz+sp->zz)*du(2,2)
                                    + (st0.xy+sp->xy)*(du(1,0)+du(0,1))));
         if(np==THREED_MPM)
-        {   mptr->AddWorkEnergy(0.5*((st0.yz+sp->yz)*(du(2,1)+du(1,2))
+		{	sp->xz = J*stk.xz;
+			sp->yz = J*stk.yz;
+			mptr->AddWorkEnergy(0.5*((st0.yz+sp->yz)*(du(2,1)+du(1,2))
                                        + (st0.xz+sp->xz)*(du(2,0)+du(0,2))));
         }
 		
@@ -262,17 +274,17 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     // Find  lambda for this plastic state
 	double dlambda = plasticLaw->SolveForLambdaBracketed(mptr,np,magnitude_strial,&stk,MUbar,1.,1.,delTime,&alpha,p->hardProps);
     
-    // update deviatoric stress
+    // update deviatoric stress (need to scale by J to get to Kirchoff stress/rho
 	Tensor nk = GetNormalTensor(&stk,magnitude_strial,np);
     //cout << "nk.xx  =    " << nk.xx << "nk.xy  =    " << nk.xy << endl;
 	double twoMuLam = 2.*MUbar*dlambda;
-    sp->xx = stk.xx - twoMuLam*nk.xx;
-    sp->yy = stk.yy - twoMuLam*nk.yy;
-    sp->zz = stk.zz - twoMuLam*nk.zz;
-    sp->xy = stk.xy - twoMuLam*nk.xy;
+    sp->xx = J*(stk.xx - twoMuLam*nk.xx);
+    sp->yy = J*(stk.yy - twoMuLam*nk.yy);
+    sp->zz = J*(stk.zz - twoMuLam*nk.zz);
+    sp->xy = J*(stk.xy - twoMuLam*nk.xy);
     if(np == THREED_MPM)
-    {   sp->xz = stk.xz - twoMuLam*nk.xz;
-        sp->yz = stk.yz - twoMuLam*nk.yz;
+    {   sp->xz = J*(stk.xz - twoMuLam*nk.xz);
+        sp->yz = J*(stk.yz - twoMuLam*nk.yz);
     }
     
     // save on particle
@@ -286,15 +298,15 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
         pB->yz = Btrial.yz - twoThirdsLamI1bar*nk.yz;
     }
     /* Old method collecting B from stresses
-     pB->xx = (sp->xx/p->Gred+Ie1bar)*J23;
-     pB->yy = (sp->yy/p->Gred+Ie1bar)*J23;
-     pB->zz = (sp->zz/p->Gred+Ie1bar)*J23;
-     pB->xy = sp->xy*J23/p->Gred;
-     if(np == THREED_MPM)
-     {   pB->xz = sp->xz*J23/p->Gred;
-     pB->yz = sp->yz*J23/p->Gred;
-     }
-     */
+	pB->xx = (sp->xx/p->Gred+Ie1bar)*J23;
+	pB->yy = (sp->yy/p->Gred+Ie1bar)*J23;
+	pB->zz = (sp->zz/p->Gred+Ie1bar)*J23;
+	pB->xy = sp->xy*J23/p->Gred;
+    if(np == THREED_MPM)
+    {   pB->xz = sp->xz*J23/p->Gred;
+        pB->yz = sp->yz*J23/p->Gred;
+    }
+    */
     
     // strain energy per unit mass (U/(rho0 V0)) and we are using
     double workEnergy = 0.5*((st0.xx+sp->xx)*du(0,0)
@@ -306,19 +318,18 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
                                    + (st0.xz+sp->xz)*(du(2,0)+du(0,2)));
     }
     
-    // Plastic work increment per unit mass (dw/(rho0 V0)) (uJ/g)
-    double dispEnergy = dlambda*(sp->xx*nk.xx + sp->yy*nk.yy + sp->zz*nk.zz + 2.*sp->xy*nk.xy);
-    if(np==THREED_MPM)  dispEnergy += 2.*dlambda*(sp->xz*nk.xz + sp->yz*nk.yz);
-	
     // total work
-    mptr->AddWorkEnergy(dispEnergy + workEnergy);
+    mptr->AddWorkEnergy(workEnergy);
     
     // residual energy or sigma.deres - it is zero here for isotropic material
     // because deviatoric stress is traceless and deres has zero shear terms
     // residual energy due to pressure was added in the pressure update
     
-    // disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
-	// Subtract q.dalpha
+    // Plastic work increment per unit mass (dw/(rho0 V0)) (uJ/g)
+    double dispEnergy = dlambda*(sp->xx*nk.xx + sp->yy*nk.yy + sp->zz*nk.zz + 2.*sp->xy*nk.xy);
+    if(np==THREED_MPM)  dispEnergy += 2.*dlambda*(sp->xz*nk.xz + sp->yz*nk.yz);
+	
+    // Subtract q.dalpha to get final disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
     dispEnergy -= dlambda*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime,&alpha,p->hardProps);
     
     // heat energy is Cv(dT-dTq0) - dPhi

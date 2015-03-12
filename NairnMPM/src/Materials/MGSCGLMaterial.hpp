@@ -26,7 +26,7 @@ class MGSCGLMaterial : public IsoPlasticity
 		MGSCGLMaterial(char *matName);
 		
 		// initialize
-        virtual char *InputMat(char *,int &);
+        virtual char *InputMaterialProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintMechanicalProperties(void) const;
 		virtual void PrintTransportProperties(void) const;

@@ -25,7 +25,7 @@ class PressureLaw : public TractionLaw
 		PressureLaw(char *);
 	
 		// methods
-		virtual char *InputMat(char *,int &);
+		virtual char *InputMaterialProperty(char *,int &,double &);
 		void SetStressFunction(char *);
 		const char *VerifyAndLoadProperties(int);
 		virtual void PrintMechanicalProperties(void) const;

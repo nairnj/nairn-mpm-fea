@@ -39,7 +39,7 @@ class IsoPlasticity : public IsotropicMat
 		IsoPlasticity(char *matName);
 		
 		// initialize
-        virtual char *InputMat(char *,int &);
+        virtual char *InputMaterialProperty(char *,int &,double &);
         virtual const char *VerifyAndLoadProperties(int);
         virtual bool AcceptHardeningLaw(HardeningLawBase *,int );
 		virtual char *InitHistoryData(void);
@@ -65,7 +65,7 @@ class IsoPlasticity : public IsotropicMat
 		// accessors
         virtual Tensor GetStress(Tensor *,double) const;
 		virtual double GetHistory(int,char *) const;
-        virtual bool PartitionsElasticAndPlasticStrain(void);
+        virtual bool PartitionsElasticAndPlasticStrain(void) const;
         int MaterialTag(void) const;
         const char *MaterialType(void) const;
 		

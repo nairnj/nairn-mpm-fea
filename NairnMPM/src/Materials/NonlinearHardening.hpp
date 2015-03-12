@@ -21,7 +21,7 @@ class NonlinearHardening : public HardeningLawBase
         NonlinearHardening();
         NonlinearHardening(MaterialBase *);
     
-        virtual char *InputMat(char *,int &);
+        virtual char *InputMaterialProperty(char *,int &,double &);
         virtual void PrintYieldProperties(void) const;
     
         // hardening law core methods

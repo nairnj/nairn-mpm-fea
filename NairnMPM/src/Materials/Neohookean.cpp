@@ -69,7 +69,7 @@ void Neohookean::PrintMechanicalProperties(void) const
 }
 
 // Read material properties
-char *Neohookean::InputMat(char *xName,int &input)
+char *Neohookean::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
     
@@ -85,7 +85,7 @@ char *Neohookean::InputMat(char *xName,int &input)
     else if(strcmp(xName,"nu")==0)
         return (char *)&nu;
     
-    return(HyperElastic::InputMat(xName,input));
+    return(HyperElastic::InputMaterialProperty(xName,input,gScaling));
 }
 
 // verify settings and some initial calculations

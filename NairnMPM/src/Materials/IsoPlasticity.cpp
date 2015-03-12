@@ -31,7 +31,7 @@ IsoPlasticity::IsoPlasticity(char *matName) : IsotropicMat(matName)
 #pragma mark IsoPlasticity::Initialization
 
 // Read material properties
-char *IsoPlasticity::InputMat(char *xName,int &input)
+char *IsoPlasticity::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     // look for different plastic law
     if(strcmp(xName,"Hardening")==0)
@@ -40,11 +40,11 @@ char *IsoPlasticity::InputMat(char *xName,int &input)
     }
    
     // check plastic law
-    char *ptr = plasticLaw->InputMat(xName,input);
+    char *ptr = plasticLaw->InputMaterialProperty(xName,input,gScaling);
     if(ptr != NULL) return ptr;
     
     // otherwise get material properties
-    return(IsotropicMat::InputMat(xName,input));
+    return(IsotropicMat::InputMaterialProperty(xName,input,gScaling));
 }
 
 // verify settings and some initial calculations
@@ -298,8 +298,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     // Elastic strain increments on particle
     ep->xx += (dvxx-dexxp);
     ep->yy += (dvyy-deyyp);
-    dgxy -= dgxyp;
-    ep->xy += dgxy;
+    ep->xy += (dgxy-dgxyp);
 	if(np==PLANE_STRESS_MPM)
 		ep->zz += eres - p->psLr2G*(dexxr+deyyr+dezzp);
 	else
@@ -310,12 +309,6 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 		dezzr -= dezzp; 
 	}
 	
-    // Elastic strain increment minus the residual terms by now subtracting plastic parts
-    dexxr -= dexxp;
-    deyyr -= deyyp;
-	//dgxy -= dgxyp;			// done above
-	//dezzr -= dezzp;			// plane strain and axisymmetry done above, plain stress not needed
-
 	// increment particle deviatoric stresses (plane stress increments found above)
 	if(np!=PLANE_STRESS_MPM)
 	{	dels.xx -= 2.*p->Gred*dexxp;
@@ -337,13 +330,13 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     {	workEnergy += 0.5*(st0.zz+sp->zz)*dvzz;
 	}
     
+    // total work
+    mptr->AddWorkEnergy(workEnergy);
+    
     // plastic strain work
     double plastEnergy = lambdak*(sp->xx*dfds.xx + sp->yy*dfds.yy + sp->zz*dfds.zz + 2.*sp->xy*dfds.xy);
     
-    // total work
-    mptr->AddWorkEnergy(plastEnergy + workEnergy);
-    
-    // disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
+    // dand subtract q dalpha to get isispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime,&alpha,p->hardProps);
     double dispEnergy = plastEnergy - qdalphaTerm;
     
@@ -429,7 +422,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 								+ (st0.xz+sp->xz)*dgxz
 								+ (st0.xy+sp->xy)*dgxy));
 								
-        // heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here
+        // heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here (dTq0=0 in this material)
         // and Cv(dT-dTq0) was done in Update Pressure
         
 		// give material chance to update history variables that change in elastic updates
@@ -465,19 +458,10 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     ep->xx += (dvxx-dexxp);
     ep->yy += (dvyy-deyyp);
     ep->zz += (dvzz-dezzp);
-    dgxy -= dgxyp;
-    ep->xy += dgxy;
-    dgxz -= dgxzp;
-    ep->xz += dgxz;
-    dgyz -= dgyzp;
-	ep->yz += dgyz;
+    ep->xy += (dgxy-dgxyp);
+    ep->xz += (dgxz-dgxzp);
+	ep->yz += (dgyz-dgyzp);
 	
-    // Elastic strain increment minus the residual terms by now subtracting plastic parts
-    dexxr -= dexxp;
-    deyyr -= deyyp;
-	dezzr -= dezzp;				// plain strain only
-	//dgxy, dgxz, dgyz done above
-
 	// increment particle deviatoric stresses
 	dsig[XX] -= 2.*p->Gred*dexxp;
 	dsig[YY] -= 2.*p->Gred*deyyp;
@@ -492,14 +476,14 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
                                + (st0.zz+sp->zz)*dvzz + (st0.yz+sp->yz)*dgyz
                                + (st0.xz+sp->xz)*dgxz + (st0.xy+sp->xy)*dgxy);
     
+    // total work
+    mptr->AddWorkEnergy(workEnergy);
+    
     // plastic strain work
     double plastEnergy = lambdak*(sp->xx*dfds.xx + sp->yy*dfds.yy + sp->zz*dfds.zz
                                   + 2.*sp->xy*dfds.xy + 2.*sp->xz*dfds.xz + 2.*sp->yz*dfds.yz);
     
-    // total work
-    mptr->AddWorkEnergy(plastEnergy + workEnergy);
-    
-    // disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
+    // and subtrace q dalpa disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime,&alpha,p->hardProps);
     double dispEnergy = plastEnergy - qdalphaTerm;
     
@@ -608,7 +592,7 @@ double IsoPlasticity::GetHistory(int num,char *historyPtr) const
 }
 
 // plastic strain needed to get deformation gradient for this material class
-bool IsoPlasticity::PartitionsElasticAndPlasticStrain(void) { return TRUE; }
+bool IsoPlasticity::PartitionsElasticAndPlasticStrain(void) const { return TRUE; }
 
 // Return the material tag
 int IsoPlasticity::MaterialTag(void) const { return ISOPLASTICITY; }

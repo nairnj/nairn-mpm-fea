@@ -60,7 +60,7 @@ DDBHardening::DDBHardening(MaterialBase *pair) : HardeningLawBase(pair)
 // Read material properties by name (in xName). Set input to variable type
 // (DOUBLE_NUM or INT_NUM) and return pointer to the class variable
 // (cast as a char *)
-char *DDBHardening::InputMat(char *xName,int &input)
+char *DDBHardening::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
 	// tayM: Taylor Factor
     if(strcmp(xName,"tayM")==0)
@@ -176,7 +176,7 @@ char *DDBHardening::InputMat(char *xName,int &input)
         return((char *)&MMG);
     }
 	
-    return HardeningLawBase::InputMat(xName,input);
+    return HardeningLawBase::InputMaterialProperty(xName,input,gScaling);
 }
 
 // Verify input properties do calculations; if problem return string with an error message

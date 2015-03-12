@@ -36,7 +36,7 @@ SCGLHardening::SCGLHardening(MaterialBase *pair) : HardeningLawBase(pair)
 #pragma mark LinearHardening::Initialize
 
 // Read hardening law properties
-char *SCGLHardening::InputMat(char *xName,int &input)
+char *SCGLHardening::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"GPpG0")==0)
     {	input=DOUBLE_NUM;
@@ -63,7 +63,7 @@ char *SCGLHardening::InputMat(char *xName,int &input)
         return((char *)&yieldMax);
     }
 	
-    return HardeningLawBase::InputMat(xName,input);
+    return HardeningLawBase::InputMaterialProperty(xName,input,gScaling);
 }
 
 // verify settings and some initial calculations

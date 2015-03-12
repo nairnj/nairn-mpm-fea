@@ -246,7 +246,7 @@ void RigidMaterial::PrintMechanicalProperties(void) const
 }
 
 // properties to read
-char *RigidMaterial::InputMat(char *xName,int &input)
+char *RigidMaterial::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"SetDirection")==0)
     {	input=INT_NUM;

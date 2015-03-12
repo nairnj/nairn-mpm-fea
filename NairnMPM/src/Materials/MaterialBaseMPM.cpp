@@ -40,10 +40,16 @@ int MaterialBase::maxAltBufferSize = 0.;                // maximum optional buff
 #pragma mark MaterialBase::Initialization
 
 // Read material properties common to all MPM materials
-char *MaterialBase::InputMat(char *xName,int &input)
+char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"rho")==0)
     {	input=DOUBLE_NUM;
+        return((char *)&rho);
+    }
+    
+    else if(strcmp(xName,"rho0")==0)
+    {	input=DOUBLE_NUM;
+		gScaling=1000.;					// converts g/mm^3 to g/cm^3
         return((char *)&rho);
     }
     

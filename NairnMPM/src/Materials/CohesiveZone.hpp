@@ -23,7 +23,7 @@ class CohesiveZone : public TractionLaw
         CohesiveZone(char *);
 		
 		// methods
-		virtual char *InputMat(char *,int &);
+		virtual char *InputMaterialProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual char *InitHistoryData(void);
 	

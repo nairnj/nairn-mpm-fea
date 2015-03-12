@@ -30,7 +30,7 @@ ClampedNeohookean::ClampedNeohookean(char *matName) : Neohookean(matName)
 #pragma mark ClampedNeohookean::Initialization
 
 // Read material properties
-char *ClampedNeohookean::InputMat(char *xName,int &input)
+char *ClampedNeohookean::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
     
@@ -48,7 +48,7 @@ char *ClampedNeohookean::InputMat(char *xName,int &input)
         return (char *)&elasticModel;
 	}
     
-    return(Neohookean::InputMat(xName,input));
+    return(Neohookean::InputMaterialProperty(xName,input,gScaling));
 }
 
 // print mechanical properties output window

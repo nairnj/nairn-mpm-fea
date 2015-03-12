@@ -28,7 +28,7 @@ class SCGLHardening : public HardeningLawBase
         SCGLHardening(MaterialBase *);
         
         // initialize
-        virtual char *InputMat(char *,int &);
+        virtual char *InputMaterialProperty(char *,int &,double &);
         virtual const char *VerifyAndLoadProperties(int);
         virtual void PrintYieldProperties(void) const;
     

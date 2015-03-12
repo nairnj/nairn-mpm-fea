@@ -83,7 +83,7 @@ class MaterialBase : public LinkedObject
 		virtual ~MaterialBase();
 		
 		// initialization and verification
-        virtual char *InputMat(char *,int &);
+        virtual char *InputMaterialProperty(char *,int &,double &);
         virtual const char *VerifyAndLoadProperties(int);
 		virtual void PrintMechanicalProperties(void) const;
 #ifdef MPM_CODE

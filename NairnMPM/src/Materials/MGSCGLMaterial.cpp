@@ -35,7 +35,7 @@ MGSCGLMaterial::MGSCGLMaterial(char *matName) : IsoPlasticity(matName)
 #pragma mark MGSCGLMaterial::Initialization
 
 // Read material properties
-char *MGSCGLMaterial::InputMat(char *xName,int &input)
+char *MGSCGLMaterial::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
 	//	G found in IsotropicMat
 	//	rho, Cv found in material base class
@@ -66,7 +66,7 @@ char *MGSCGLMaterial::InputMat(char *xName,int &input)
         return((char *)&S3);
     }
 	
-    return(IsoPlasticity::InputMat(xName,input));
+    return(IsoPlasticity::InputMaterialProperty(xName,input,gScaling));
 }
 
 // verify settings and some initial calculations

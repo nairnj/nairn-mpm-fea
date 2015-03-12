@@ -30,7 +30,7 @@ IsotropicMat::IsotropicMat(char *matName) : Elastic(matName)
 #pragma mark IsotropicMat::Initialization
 
 // Read material properties
-char *IsotropicMat::InputMat(char *xName,int &input)
+char *IsotropicMat::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
     
@@ -52,7 +52,7 @@ char *IsotropicMat::InputMat(char *xName,int &input)
     else if(strcmp(xName,"alpha")==0)
         return((char *)&aI);
 
-    return MaterialBase::InputMat(xName,input);
+    return MaterialBase::InputMaterialProperty(xName,input,gScaling);
 }
 
 // print to output window

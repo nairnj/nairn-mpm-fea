@@ -32,7 +32,7 @@ JohnsonCook::JohnsonCook(MaterialBase *pair) : HardeningLawBase(pair)
 #pragma mark JohnsonCook::Initialization
 
 // Read material properties
-char *JohnsonCook::InputMat(char *xName,int &input)
+char *JohnsonCook::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     if(strcmp(xName,"Bjc")==0)
     {	input=DOUBLE_NUM;
@@ -63,7 +63,7 @@ char *JohnsonCook::InputMat(char *xName,int &input)
         return((char *)&mjc);
     }
     
-    return HardeningLawBase::InputMat(xName,input);
+    return HardeningLawBase::InputMaterialProperty(xName,input,gScaling);
 }
 
 // print just yield properties to output window
