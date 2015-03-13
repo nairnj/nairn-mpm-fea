@@ -605,9 +605,9 @@ void ArchiveData::ArchiveResults(double atime)
 			}
         }
 
-        // stress - internally it is N/m^2 cm^3/g, output in N/m^2 or Pa
-        //          internal SI units are kPa/(kg/m^3)
-		// For large deformation, need to convert Kirchoff Stress/rho0 to Cauchy stress
+        // stress - internally it is N/m^2 cm^3/g
+		// Tracked stress is (Kirchoff Stress)/rho0 to (Cauchy stress)/rho
+		// Outputs Cauchy stress in Pa
         int matid = mpm[p]->MatID();
         rho0=theMaterials[matid]->rho;
         rho = rho0/theMaterials[matid]->GetCurrentRelativeVolume(mpm[p]);
