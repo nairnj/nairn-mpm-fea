@@ -62,10 +62,10 @@
 <li><code>qCPDI</code> (or 3) - CPDI using quadratic shape functions (available in 2D only).</li>
 </ul></li>
 
-<li><code>(max time)</code> - the time that the calculations will stop in msec (or determined by a <a href="#units"><code>units</code> attribute</a>).
+<li><code>(max time)</code> - the time that the calculations will stop in sec (or determined by a <a href="#units"><code>units</code> attribute</a>).
 </li>
 	
-<li><code>(time step)</code> - the MPM time step in msec (or determined by a <a href="#units"><code>units</code> attribute</a>)</li>
+<li><code>(time step)</code> - the MPM time step in sec (or determined by a <a href="#units"><code>units</code> attribute</a>)</li>
 
 <li><code>(time factor)</code> - the Courant-Friedrichs-Levy (or CFL) factor to use when determining the MPM time step. The time step used in the
 	analysis will be the minimum of the one determined using this factor and the one entered in <code>(time step)</code>. The default CFL is 0.5.</li>
@@ -94,8 +94,8 @@
 
 <ul>
 <li><code>(path)</code> is relative path to the inpur file for saving archive files. The optional <code>unique</code> attribute (if = 1) will force the creation of a new folder by inserting a folder '1', '2', <i>etc</i>., as needed to get a new folder, within the last folder specified by the relative path </li>
-<li><code>(time)</code> is the time interval between archiving in msec (or determined by a <a href="#units"><code>units</code> attribute</a>).</li>
-<li><code>(first time)</code> is the first time results are archived in msec (or determined by a <a href="#units"><code>units</code> attribute</a>).</li>
+<li><code>(time)</code> is the time interval between archiving in sec (or determined by a <a href="#units"><code>units</code> attribute</a>).</li>
+<li><code>(first time)</code> is the first time results are archived in sec (or determined by a <a href="#units"><code>units</code> attribute</a>).</li>
 <li><code>(props)</code> forces archiving if the entered nuumber of propagations and/or debonds have occurred since the last archive (default is 0, which disables counting of propagations).</li>
 </ul>
 
@@ -163,7 +163,7 @@ The Default value is <code>iYNNNN</code>.</dd>
 <p>Global archiving is set up with the following commands:</p>
 
 <pre>&lt;GlobalArchive type='(quantity)' mat='(mat)'/&gt;
-&lt;GlobalArchiveInterval&gt;(time)&lt;/GlobalArchiveInterval&gt;
+&lt;GlobalArchiveTime&gt;(time)&lt;/GlobalArchiveTime&gt;
 </pre>
 
 <p>where</p>
@@ -208,7 +208,7 @@ The Default value is <code>iYNNNN</code>.</dd>
 
 <li>The optional <code>(mat)</code> is material number and that quantity will be averaged only for particles of that material type. Omit this parameter (or attribute) to indicate an average over all particles. Grid quantities (<i>e.g.</i>, <code>Grid Kinetic Energy</code> but not <code>reactionx(y,z,R,Z)</code>) will ignore the attribute.</li>
 
-<li>The optional <code>(time)</code> is the time interval for storing global results in msec (or determined by a <a href="#units"><code>units</code> attribute</a>). If the time interval is not specified, it will be set to the <a href="#archiving">archiving interval</a></li>
+<li>The optional <code>(time)</code> is the time interval for storing global results in sec (or determined by a <a href="#units"><code>units</code> attribute</a>). If the time interval is not specified, it will be set to the <a href="#archiving">archiving interval</a></li>
 
 </ul>
 

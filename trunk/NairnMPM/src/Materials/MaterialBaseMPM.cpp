@@ -47,12 +47,6 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
         return((char *)&rho);
     }
     
-    else if(strcmp(xName,"rho0")==0)
-    {	input=DOUBLE_NUM;
-		gScaling=1000.;					// converts g/mm^3 to g/cm^3
-        return((char *)&rho);
-    }
-    
     else if(strcmp(xName,"KIc")==0)
     {	input=DOUBLE_NUM;
         return((char *)&KIc);

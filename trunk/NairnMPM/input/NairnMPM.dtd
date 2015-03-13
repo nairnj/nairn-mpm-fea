@@ -19,7 +19,7 @@
 
 <!ELEMENT	MPMHeader
 			( MatlPtsPerElement | Cracks | MPMMethod | Timing | PDamping | PFeedbackDamping | ArchiveGroup | ArchiveRoot 
-			| CrackArchiveOrder | MPMArchiveOrder | ProgSteps | Damping | FeedbackDamping | GlobalArchiveInterval
+			| CrackArchiveOrder | MPMArchiveOrder | ProgSteps | Damping | FeedbackDamping
 			| GlobalArchive | DefGradTerms | Diffusion | StressFreeTemp | GIMP | LeaveLimit | MultiMaterialMode
 			| MaxTime | TimeStep | TimeFactor | ArchiveTime | FirstArchiveTime | GlobalArchiveTime )*>
 			
@@ -145,7 +145,7 @@
 <!-- Define material properties -->
 
 <!ELEMENT	Material
-			( rho | rho0 | E | nu | G | alpha | yield | beta | yieldMax | Lame
+			( rho | E | nu | G | alpha | yield | beta | yieldMax | Lame
 				| EA | ET | GA | nuA | nuT | alphaA | alphaT | betaA | betaT | Ep
 				| Ex | ER | Ey | EZ | Ez | Gxy | Gyx | GRZ | GZR | Gxz | Gzx 
 				| GRT | GTR | Gyz | Gzy | GZT | GTZ
@@ -302,11 +302,8 @@
 <!ELEMENT	ArchiveGroup EMPTY>
 <!ATTLIST	ArchiveGroup
 			time CDATA #REQUIRED
-			start CDATA #REQUIRED
+			start CDATA #IMPLIED
 			maxProps CDATA #IMPLIED
-			units CDATA #IMPLIED>
-<!ELEMENT	GlobalArchiveInterval (#PCDATA)>
-<!ATTLIST	GlobalArchiveInterval
 			units CDATA #IMPLIED>
 <!ELEMENT	GlobalArchive EMPTY>
 <!ATTLIST	GlobalArchive
@@ -360,7 +357,6 @@
 <!ELEMENT	NoAVHeating EMPTY>
 
 <!ELEMENT	rho (#PCDATA)>
-<!ELEMENT	rho0 (#PCDATA)>
 <!ELEMENT	E (#PCDATA)>
 <!ELEMENT	nu (#PCDATA)>
 <!ELEMENT	G (#PCDATA)>
