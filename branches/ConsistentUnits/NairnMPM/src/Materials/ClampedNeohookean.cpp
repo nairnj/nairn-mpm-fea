@@ -325,5 +325,5 @@ double ClampedNeohookean::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
 {
 	double Jp = mptr->GetHistoryDble(JP_HISTORY);
 	double arg = exp(hardening*(1.-Jp));
-    return sqrt(1.e9*arg*(Kbulk+4.*G/3.)/rho);
+    return 1000.*sqrt(arg*(Kbulk+4.*G/3.)/rho);
 }

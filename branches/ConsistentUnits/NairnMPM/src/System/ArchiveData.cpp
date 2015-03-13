@@ -605,7 +605,7 @@ void ArchiveData::ArchiveResults(double atime)
 			}
         }
 
-        // stress - internally it is N/m^2 cm^3/g
+        // stress - internally it is N/m^2 mm^3/g
 		// Tracked stress is (Kirchoff Stress)/rho0 to (Cauchy stress)/rho
 		// Outputs Cauchy stress in Pa
         int matid = mpm[p]->MatID();
@@ -714,11 +714,8 @@ void ArchiveData::ArchiveResults(double atime)
             app+=sizeof(double);
         }
 
-        // total strain energy (Volume*energy) in J
-        // energies in material point based on energy per unit mass
-        // here need mass * U/(rho0 V0)
-        // internal units are same as stress: N/m^2 cm^3/g = microJ/g = mJ/kg
-		// note that rho*energy has units J/m^3 = N/m^2 (if rho in g/cm^3)
+        // total energy - internally it is N/m^2 mm^3/g = nJ/g
+		// Output total energy in J
         if(mpmOrder[ARCH_StrainEnergy]=='Y')
         {   *(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetStrainEnergy();
             app+=sizeof(double);

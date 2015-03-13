@@ -74,7 +74,7 @@ const char *HEIsotropic::VerifyAndLoadProperties(int np)
 		return "HEIsotropic Material needs non-negative G1 and K";
     
 	// MU in specific units using initial rho
-	// for MPM (units N/m^2 cm^3/g)
+	// for MPM (N/m^2 mm^3/g = (g-mm^2/sec^2)/g when props in MPa and rho in g/mm^3)
 	G1sp = G1*1.0e+06/rho;
 	
 	// must call super class
@@ -474,10 +474,9 @@ int HEIsotropic::MaterialTag(void) const { return HEISOTROPIC; }
 // return unique, short name for this material
 const char *HEIsotropic::MaterialType(void) const { return "Hyperelastic Isotropic"; }
 
-// calculate wave speed in mm/sec
+// calculate wave speed in mm/sec (props in MPa and rho in g/mm^3)
 double HEIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
-{
-    return sqrt(1.e9*(Kbulk+4.*G1/3.)/rho);
+{	return 1000.*sqrt((Kbulk+4.*G1/3.)/rho);
 }
 
 // this material has two history variables

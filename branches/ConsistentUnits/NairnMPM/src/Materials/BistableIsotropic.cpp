@@ -157,8 +157,8 @@ const char *BistableIsotropic::VerifyAndLoadProperties(int np)
     // no change in heat capacity
     
     // make conductivty specific (N mm^3/(sec-K-g))
-    kCond0 *= (1000./rho);
-    kCondd *= (1000./rho);
+    kCond0 /= rho;
+    kCondd /= rho;
     
     // test validity of each state
     const char *err=CurrentProperties(DEFORMED_STATE,np);
@@ -232,7 +232,7 @@ void BistableIsotropic::PrintTransportProperties(void) const
 	// Conductivity constants (Cp is also mJ/(g-K))
 	if(ConductionTask::active)
 	{   sprintf(mline,"k0 =%12.3g W/(m-K)  kd =%12.3g W/(m-K)  C   =%12.3g J/(kg-K)",
-                            rho*kCond0/1000.,rho*kCondd/1000.,heatCapacity);
+                            rho*kCond0,rho*kCondd,heatCapacity);
 		cout << mline << endl;
 	}
 }
@@ -421,11 +421,11 @@ void BistableIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double
 // Return the material tag
 int BistableIsotropic::MaterialTag(void) const { return BISTABLEISO; }
 
-/*	calculate wave speed in mm/sec (because K,G in MPa and rho in g/cm^3)
-	Uses max sqrt((K +4G/3)/rho) which is dilational wave speed
-*/
+/*	calculate wave speed in mm/sec (because K,G in MPa=g/(mm-msec^2) and rho in g/mm^3)
+ Uses max sqrt((K +4G/3)/rho) which is dilational wave speed
+ */
 double BistableIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
-{ return fmax(sqrt(1.e9*(K0+4.*G0/3.)/rho),sqrt(1.e9*(Kd+4.*Gd/3.)/rho));
+{ return 1000.*fmax(sqrt((K0+4.*G0/3.)/rho),sqrt((Kd+4.*Gd/3.)/rho));
 }
 
 // maximum diffusion coefficient in cm^2/sec (diff in mm^2/sec)

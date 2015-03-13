@@ -78,13 +78,13 @@ const char *HEMGEOSMaterial::VerifyAndLoadProperties(int np)
 	if(G1<0) return "The shear modulus, G1, is missing";
 	
 	// MU in specific units using initial rho
-	// for MPM (units N/m^2 cm^3/g)
+    // for MPM (N/m^2 mm^3/g = (g-mm^2/sec^2)/g when props in MPa and rho in g/mm^3)
 	G1sp = G1*1.0e+06/rho;
 	
-    // Use in place of C0^2. Units are Pa cm^3/g such that get Pa when multiplied
-    //      by a density in g/cm^3
+    // Use in place of C0^2. Units are Pa mm^3/g such that get Pa when multiplied
+    //      by a density in g/mm^3
 	// Equal to reduced bulk modulus
-    Ksp = C0squared = 1000.*C0*C0;
+    Ksp = C0squared = 1.e6*C0*C0;
 	
     // Shear modulus with pressure dependence
 	Kbulk = 1e-6*rho*C0squared;			// initial bulk modulus in MPa to print
@@ -98,8 +98,8 @@ const char *HEMGEOSMaterial::VerifyAndLoadProperties(int np)
 	betaI = 0.;
 	CME1 = 0.;;
     
-    // for Cp-Cv
-    Ka2sp = 0.001*Ksp*CTE1*CTE1;
+    // for Cp-Cv (units J/(kg-K^2)
+    Ka2sp = 1.e-6*Ksp*CTE1*CTE1;
 	
 	// skip Hyperelstic methods
 	return MaterialBase::VerifyAndLoadProperties(np);
@@ -269,10 +269,8 @@ int HEMGEOSMaterial::MaterialTag(void) const { return HEMGEOSMATERIAL; }
 // return unique, short name for this material
 const char *HEMGEOSMaterial::MaterialType(void) const { return "Hyperelastic MGEOS Material"; }
 
-/*	calculate current wave speed in mm/sec. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
- but K and G are current values of rho0*Keffred and rho0*Gred/J (in Pa) so were want
- 1000 sqrt(rho0(Keffred+4Gred/(3J))/(1000 rho0/J))
- */
+// Calculate current wave speed in mm/sec. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
+// but K/rho = Kred*J and G/rho = Gred*J (in mm^2/sec^2)
 double HEMGEOSMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
 {
     // compressive volumetric strain x = 1-J
@@ -280,7 +278,7 @@ double HEMGEOSMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
     double x = 1. - J;
     
     // get K/rho0, but this ignores slope of energy term
-    double KcurrRed;
+    double KcurrRed,pressure;
     if(x>0.)
     {   // compression law
         // denominator = 1 - S1*x - S2*x^2 - S3*x^3
@@ -288,21 +286,24 @@ double HEMGEOSMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
         
         // current effective and reduced (by rho0) bulk modulus
         KcurrRed = C0squared*(1.-0.5*gamma0*x)*denom*denom;
+		
+		// get pressure
+		double e = mptr->GetInternalEnergy();
+		pressure = J*(KcurrRed*x + gamma0*e);
     }
     else
-    {   // In tension use low-strain bulk modulus
+    {   // In tension hyperelastic law P = - K0(J-1)
+		// does not account for Jeff and residual stresses
         KcurrRed = C0squared;
+		pressure = -J*KcurrRed*(J-1.);
     }
     KcurrRed *= J;          // convert to K/rho
     
     // get G/rho at current pressure
-    double e = mptr->GetInternalEnergy();
-    double pressure = J*(KcurrRed*x + gamma0*e);
-	// MUST FIX
-    double GcurrRed = G1sp * plasticLaw->GetShearRatio(mptr,pressure,J,NULL);
+    double GcurrRed = J*(G1sp * plasticLaw->GetShearRatio(mptr,pressure,J,NULL));
     
     // return current save speed
-    return 1000.*sqrt((KcurrRed + 4.*GcurrRed/3.)/1000.);
+    return sqrt((KcurrRed + 4.*GcurrRed/3.));
 }
 
 

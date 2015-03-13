@@ -130,8 +130,8 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
 	CTE = 1.e-6*aI;
 	CME = betaI*concSaturation;
 
-    // for Cp-Cv
-    Ka2sp = 0.001*Kered*CTE1*CTE1;
+    // for Cp-Cv (units J/(kg-K^2)
+    Ka2sp = 1.e-6*Kered*CTE1*CTE1;
 	
 	// call super class
 	return MaterialBase::VerifyAndLoadProperties(np);

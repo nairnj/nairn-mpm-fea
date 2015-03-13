@@ -714,10 +714,10 @@ void NodalPoint::AddStress(short vfld,double wt,Tensor *stress)
 
 // GRID_JTERMS
 // Add to velocity to get kinetic energy on the grid
-// wt includes sqrt(density (g/cm^3)), if axisymmtric include r for m/radian
+// wt includes sqrt(density (g/mm^3)), if axisymmtric include r for mm/radian
 // kinetic energy is twice actual (to save divide by two) and units are
-//		final vx^2 = g/cm^3 mm^2/sec^2 = 1e-3 N/m^2 = 1e-3 J/m^3 = mJ/m^3
-//		to get N/mm^2 and account for 1/2, multiply by 0.5*1e-9
+//		final vx^2 = g/mm^3 mm^2/sec^2 = N/m^2 = J/m^3
+//		to get N/mm^2 and account for 1/2, multiply by 0.5*1e-6
 void NodalPoint::AddGridVelocity(short vfld,double wt,double vx,double vy)
 {	DispField *df = cvf[vfld]->df;
 	df->vx += wt*vx;
@@ -725,10 +725,10 @@ void NodalPoint::AddGridVelocity(short vfld,double wt,double vx,double vy)
 }
 
 // Add to kinetic energy and strain energy
-// wt includes density (g/cm^3), if axisymmtric include r for m/radian
+// wt includes density (g/mm^3), if axisymmtric include r for mm/radian
 // kinetic energy is twice actual (to save divide by two) and units are
-//		g/cm^3 mm^2/sec^2 = 1e-3 N/m^2 = 1e-3 J/m^3 = mJ/m^3
-//		to get N/mm^2 and account for 1/2, multiply by 0.5*1e-9
+//		g/mm^3 mm^2/sec^2 = N/m^2 = J/m^3
+//		to get N/mm^2 and account for 1/2, multiply by 0.5*1e-6
 // work has units N/m^2 = J/m^3
 void NodalPoint::AddEnergy(short vfld,double wt,double vx,double vy,double work)
 {	DispField *df = cvf[vfld]->df;
@@ -802,10 +802,10 @@ void NodalPoint::CalcStrainField(void)
 		df->du.y *= mnode;
 		df->dv.x *= mnode;
 		df->dv.y *= mnode;
-
+		
 		// GRID_JTERMS
 		if(JGridEnergy)
-        {	df->vx *= mnode;            // sqrt(mJ/m^3)
+        {	df->vx *= mnode;            // sqrt(J/m^3) = sqrt(N/m^2)
 			df->vy *= mnode;
 			
 			mnode *= 1.e-6;
@@ -814,7 +814,7 @@ void NodalPoint::CalcStrainField(void)
 			df->stress.xy *= mnode;
 			
 			// find grid energy from nodal extrapolations
-			df->kinetic = 0.5e-9*(df->vx*df->vx + df->vy*df->vy);               // N/mm^2
+			df->kinetic = 0.5e-6*(df->vx*df->vx + df->vy*df->vy);               // N/mm^2
 			df->work = 0.5*(df->stress.xx*df->du.x + df->stress.yy*df->dv.y + df->stress.xy*(df->du.y+df->dv.x));       // N/mm^2
 		}
 		
@@ -825,7 +825,7 @@ void NodalPoint::CalcStrainField(void)
 			df->stress.xy *= mnode;
 			
 			// find energy by extrapolating particle energies
-			df->kinetic *= mnode*.5e-3;			// N/mm^2
+			df->kinetic *= mnode*.5;			// N/mm^2
 			df->work *= mnode;					// N/mm^2
 		}
     }

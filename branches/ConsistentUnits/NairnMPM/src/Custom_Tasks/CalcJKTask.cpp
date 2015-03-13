@@ -157,7 +157,7 @@ CustomTask *CalcJKTask::StepCalculation(void)
 
 				// GRID_JTERMS
 				if(JGridEnergy)
-				{	// Add velocity (scaled by sqrt(rho) such that v^2 is grid kinetic energy in mJ/m^3)
+				{	// Add velocity (scaled by sqrt(rho) such that v^2 is 2 X grid kinetic energy in nJ/mm^3 = J/m^3)
 					// In axisymmetric, kinetic energy density is 2 pi (0.5 m v^2)/(2 pi rp Ap), but since m = rho rp Ap
 					//		kinetic energy density is still 0.5 rho v^2
 					ndmi->AddGridVelocity(vfld,fnmp*sqrt(matref->rho),mpnt->vel.x,mpnt->vel.y);
@@ -169,7 +169,7 @@ CustomTask *CalcJKTask::StepCalculation(void)
 				{	// scale by rho to get specific energy and actual stress
 					fnmp *= matref->rho;
 					
-					// get energy and rho*energy has units J/m^3 = N/m^2
+					// get energy and rho*energy has units nJ/mm^3 = J/m^3 = N/m^2
 					// In axisymmetric, energy density is 2 pi m U/(2 pi rp Ap), but since m = rho rp Ap
 					//		energy density is still rho*energy
 					ndmi->AddEnergy(vfld,fnmp,mpnt->vel.x,mpnt->vel.y,mpnt->GetWorkEnergy());

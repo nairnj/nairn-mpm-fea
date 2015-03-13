@@ -1216,7 +1216,7 @@ void CrackHeader::JIntegral(void)
 					{   // (xp,yp) in the contour
 						count++;
 						
-						// Mass density g/cm^3
+						// Mass density g/mm^3
 						rho=theMaterials[mpm[p]->MatID()]->rho;
 						
 						// Accelerations mm/sec^2
@@ -1241,14 +1241,14 @@ void CrackHeader::JIntegral(void)
 						dvxdy=velGrad->xy;
 						dvydx=velGrad->zz;			// yx stored in zz
 						
-						// increment the integrands (g/cm^3)(mm/sec^2) = N/m^3 = 1e9 N/mm^3
-						f2ForJx += rho*((ax*duxdx+ay*duydx)-(vx*dvxdx+vy*dvydx)); 
+						// increment the integrands (g/mm^3)(mm/sec^2) = microN/mm^3 = kN/m^3 = N/mm/m^3
+						f2ForJx += rho*((ax*duxdx+ay*duydx)-(vx*dvxdx+vy*dvydx));
 						f2ForJy += rho*((ax*duxdy+ay*duydy)-(vx*dvxdy+vy*dvydy));
 						
 						if(fmobj->IsAxisymmetric())
 						{	// in axisymmetrix z is theta direction, etheta = u/r. but w=0, az=vz=0
 							// Since w=0, no change to above terms, but have some static terms for Jx=Jr only
-							// Units N/(m^2 mm) = 1e6 N/mm^3
+							// Units N/(m^2 mm)
 							Tensor sp = mpm[p]->ReadStressTensor();
 							
 							if(JContourType == AXISYM_BROBERG_J)
@@ -1265,10 +1265,10 @@ void CrackHeader::JIntegral(void)
 				
 				if(count==0)
 					throw "J Integral contour contains no particles";
-				carea=1.e-6*(cxmax-cxmin)*(cymax-cymin)/count;	// area per particle in m
-				Jx2 = 1.e-3*f2ForJx*carea;				// Jx2 in N mm/mm^2 now
-				Jy2 = 1.e-3*f2ForJy*carea;				// Jy2 in N mm/mm^2 now
-				JxAS2 = f2axisym*carea;					// JxAS2 (for Jr in axisymmetric) in N mm/mm^2
+				carea = 1.e-6*(cxmax-cxmin)*(cymax-cymin)/count;	// area per particle in m
+				Jx2 = f2ForJx*carea;							// Jx2 in N mm/mm^2 now
+				Jy2 = f2ForJy*carea;							// Jy2 in N mm/mm^2 now
+				JxAS2 = f2axisym*carea;								// JxAS2 (for Jr in axisymmetric) in N mm/mm^2
 #ifdef CONTOUR_PARTS
 				cout << "#...(Jx2,Jy2,JxAS2)=(" << Jx2 << "," << Jy2 << "," << JxAS2 << ")" << endl;
 #endif
