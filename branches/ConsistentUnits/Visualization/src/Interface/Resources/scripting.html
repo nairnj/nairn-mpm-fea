@@ -1,0 +1,219 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>NairnFEAMPMViz Help</title>
+<style type="text/css">
+h1 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 16pt;
+	background-color: #CCCCCC;
+	font-weight: bold;
+	padding: 6pt; }
+h2 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 14pt;
+	margin-left: 3pt;
+	background-color: #CCCCCC; }
+h3 { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt;
+	margin-left: 3pt;
+	color: #005500;}
+p { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt;
+	margin-top: 0pt;
+	margin-left: 12pt;
+	margin-bottom: 6pt; }
+ul { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt;
+	list-style-image: Bullet.png;
+	margin-top: 0pt;
+	margin-bottom: 6pt;
+	margin-left: 28pt; }
+ul li { margin-top: 0pt;
+	margin-bottom: 3pt; }
+ol { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt;
+	margin-left: 28pt;
+	margin-top: 0px;
+	margin-bottom: 0px; }
+ol li { margin-top: 0px;
+	margin-bottom: 3pt; }
+img { vertical-align: middle; }
+hr { margin-top: 0pt;
+	margin-left: 0pt;
+	margin-right: 6pt;
+	padding: 0pt; }
+code { font-size: 12pt; }
+blockquote { font-size: 12pt;
+       font-family: Courier; }
+pre.list {
+	margin-left: 0px;
+	font-size: 12pt;
+	font-family: Courier;
+  margin-bottom: 3px;}
+dl { margin-left: 12pt; }
+dt {font-family: "Courier";
+	font-size: 12pt; }
+dd { font-family: Arial, "Lucida Grande", Helvetica, Swiss, Geneva, SunSans-Regular;
+	font-size: 12pt; }
+
+	
+</style>
+</head>
+
+<body>
+
+<div id="pagetitle"><h1>NairnFEAMPMViz Scripting Language</h1></div>
+
+<p>The same <a href="commands.html#language">interpretive language</a> used by <b>NairnFEAMPMViz</b> to set up FEA and MPM calculations can also be used to provide scripted control of those calculations. This section explains how to create and run scripts and documents all scripting commands. 
+</p>
+
+<h2><a name="cindex"></a>Documentation Outline</h2>
+
+<p>To begin script control of <b>NairnFEAMPMViz</b> calculations, first read the <a href="commands.html#language">Language Reference</a> section that defines the format of the scripting language. Next, see the following sections for help on scripting:</p>
+
+<ul>
+<li><a href="#create">Creating and Running a Script</a></li>
+<li><a href="#vars">Script Variables</a></li>
+<li><a href="#basic">Basic Scripting Commands</a></li>
+<li><a href="#objects">Scripting Commands for Objects</a></li>
+<li><a href="#properties">Object Properties</a></li>
+</ul>
+
+<h2><a name="create"></a>Creating a Script</h2>
+
+<p>To create a script to control <b>NairnFEAMPMViz</b>, you can use the menu command "New Control Script Document." Script documents are plain text documents with <a href="commands.html#language">interpretive language</a> commands and the script must begin with a <a href="#basic"><code>Script</code> command</a>, which is how <b>NairnFEAMPMViz</b> distinguishes script control commands from input commands used to set up FEA and MPM calculations.</p>
+
+<p>Before a script can be run, the new document must be saved. You should save it with extension <code>.fmcmd</code> or <code>.cmd</code>. Several scripting commands deal with files and it is usually best to specify those files using a relative path from the saved script control document. It is therefore best to save scripts in the same folder (or near the folder) as files that the script commands will access.</p>
+
+<p>To run a script, use the "Interpret Commands..." menu command (in the "Analyze" menu) or click the "script" icon in the tool bar. The script will run. The script may write results to it's console as calculations proceed. When the script is done, the script window will return to the front and any written results wil be visible.</p>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="vars"></a>Script Variables</h2>
+
+<p>Scripts allow standard numeric and string variables supported by the <a href="commands.html#language">interpretive language</a>. In addition, scripts define a new type of variable to represent "objects," which for <b>NairnFEAMPMViz</b> scripts are either commands documents of results documents. Commands documents are documents with commands to run FEA or MPM calculations and results documents are documents with the output results of calculations. Object variables must begin in a letter and can contain only letters, numbers, and the underscore character.</p>
+
+<p>When a script tells a commands document to interpret its commands or to interpret and run calculations, all variables defined in the script are transferred to the document. The typical script will define variables to control a calculation and then run one or more calculations.</p>
+
+<p>Now, most FEA and MPM commands documents are stand-alone documents, which means they define all their own variables. To allow such documents to use script-defined variables when run from a script but their own variables when run on their own, a running script will also define a read only variable named <code>_ScriptMode_</code>. Thus, an FEA or MPM commands document can contain a section like:</p>
+
+<blockquote>ifNDef _ScriptMode_<br>
+  &nbsp;&nbsp;&nbsp;#myVar = 23<br>
+  &nbsp;&nbsp;&nbsp;(define all other variables)<br>
+  &nbsp;&nbsp;&nbsp;...<br>
+endif</blockquote>
+
+<p>When this FEA or MPM commands document is run in script control, the script will be expected to define all the variables defined in the above block and the commands document will use the script-defined variables instead of it's local variables. When that document is run by itself, it will execute the above section and define all needed variables.</p>
+
+<h2><a name="basic"></a>Basic Scripting Commands</h2>
+
+<p>These are basic scripting commands.</p>
+
+<ul>
+<li><code>Script</code><br>
+This command must be the first command in a script. Its presence is how <b>NairnFEAMPMViz</b> knows to interpret the commands as a script rather than as commands to setup FEA or MPM calculations.</li>
+
+<li><code>Open (doc),&lt;(path)&gt;</code><br>
+Open a document and set the object variable in <code>(doc)</code> (which must be a valid object variable name and not an expression) to the opened document. The optional <code>(path)</code> argument is full or relative path to the document to be opened. Relative paths are given from the saved script document. If this variable is omitted, the user is presented a standard file-opening dialog box and asked to select the file to be opened. If the requested file is already opened, its window will be brought to the front.</li>
+
+<li><code>OpenFolder (strVar),&lt;(title)&gt;,&lt;(path)&gt;</code><br>
+This command will select a folder and create it if needed. If the optional <code>(path)</code> variable is omitted,
+this command presents the user with a file opening dialog that can select only folders
+(and can create new folders if desired). If provided, the title of the folder selection window will
+be <code>(title)</code>. 
+If optional <code>(path)</code> is provided, that folder will be created (along with all intervening folders).
+The <code>(path)</code> can be a full path or relative to the script file (note: when providing <code>(path)</code>,
+you must also provide <code>(title)</code>, but it can be an empty string ("")).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;When done, the <code>(strVar)</code>
+(which must contain an unquoted and valid string variable name and cannot be an expression) will be set to the full path
+to the selected or created folder. If a selection process is cancelled, the string variable will be
+set to an empty string. The returned path will be terminated by the system-dependent path separator.
+For example, the folder path might be:
+<blockquote>C:\Users\MyName\Documents\MyFolder\</blockquote>
+when running in Windows or
+<blockquote>/Users/MyName/Documents/MyFolder/</blockquote>
+when running in Mac or Linux. You can provide a system-independent path to files in the folder by using
+<blockquote>#fldr$&amp;"NewFile.mpm"</blockquote>
+where <code>#fldr$</code> was the <code>(strVar)</code> argument to the <code>OpenFolder</code> command.
+</li>
+
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="objects"></a>Scripting Commands for Objects</h2>
+
+<p>The commands in this section only make sense when sent to an object (<i>i.e.</i>, to a commands document or a results document). They are used by starting the command with the object variable for that document (in place of <code>object</code> used in each command name below), followed by a period, and then followed by the command and it's arguments. The object commands are:</p>
+
+<ul>
+<li><code>object.interpret</code><br>
+Interpret the commands in the object document (which can only be a commands document). The resulting XML commands will appear in the console pane of that document. This command will wait until the interpretations are done before returning control to the script. One use of this command is to follow it with an <code>object.export</code> command to save the XML commands to a file.</li>
+
+<li><code>object.run (resDoc),(path)</code><br>
+Interpret the commands in the object document (which can only be a commands document), run the calculations (locally), save the result to the results document using the <code>(path)</code> argument, and finally set the object variable in <code>(resDoc)</code> (which must be a valid object variable name and not an expression) to the final results document. This command will wait until the calculations are done before returning control to the script. The <code>(path)</code> can be a full path or a path relative to the script document. The folder to receive the output file must already exist.</li>
+
+<li><code>object.runRemote (resDoc),(remoteFile),(remoteOption),(localFolder),(localOption)</code><br>
+Interpret the commands in the object document (which can only be a commands document), run the calculations remotely using the specified options:
+<ol>
+<li><code>(remoteFile)</code> - relative path to <a href="help.html#remoutput">saved file on the server</a>.</li>
+<li><code>(remoteOption)</code> - output file option <code>Overwrite</code>, <code>Unique</code>, or <code>Clear</code>. See <a href="help.html#remoptions">remote options</a> for details. (Default is <code>Overwrite</code>)</li>
+<li><code>(localFolder)</code> - path to local folder for storage of the simulation results. It can be a full path or a path
+relative to the script document. This folder to receive the output results must already exist.
+(Default is empty)</li>
+<li><code>(localOption)</code> - local folder option <code>Download</code>, <code>NoDownload</code>,
+or <code>Home</code>. See <a href="help.html#locoptions">local folder options</a> for details.
+(Default is <code>Download</code> if <code>(localFolder)</code> is provided or <code>NoDownload</code>
+if it is not provided)</li>
+</ol>
+</li>
+When the calculations are done the object variable in <code>(resDoc)</code> (which must be a valid object variable name and not an expression) will be set to the final results document, but if <code>(localOption)</code> is <code>NoDownload</code>, no results document will be opened and <code>(resDoc)</code> will not be set. This command will wait until the calculations are done before returning control to the script.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Before this command can be used, you must <a href="help.html#setserver">set up the serve</a>r for remote calculations. If you do not specify a password when setting up the server, this command will ask for one; thus to run an unattended script of many calculations, you should enter a password in the server setup.</li>
+
+<li><code>object.export &lt;(path)&gt;</code><br>
+This command will save the contents of the console pane in the object document (which can only be a commands document) to the file specified by <code>(path)</code>. The optional <code>(path)</code> can be a full path or a path relative to the script document. The folder to receive the output file must already exist. If <code>(path)</code> is omitted, the user is given a file-saving dialog box to select file name and save location.</li>
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+<h2><a name="properties"></a>Object Properties</h2>
+
+<p>You can read properties of object documents by using <a href="commands.html#atexp">"At" expressions</a>. These property expressions can be used within other expressions. The currently supported properties are given below. In each property, the "object" at the beginning is replaced by the object variable for the desired document. The remaining elements (which are separated by periods) are keywords or numbers. Elements that expect text can be replaced by quoted text or string variables; elements that expect numbers can be replaced by numeric variables.</p>
+
+<h3>Properties for Commands Documents</h3>
+
+<ul>
+<li><code>@object.get.varName</code><br>
+FEA and MPM commands documents can read all variables defined in scripts, but any changes made to those variables are not communicated back to the script. Furthermore, the commands documents may define other variables that would be useful to know in a script. Once FEA or MPM commands have be interpreted or run, this "At" expression can read any variable, where <code>varName</code> is the variable to read. It only works for commands documents.</li>
+</ul>
+
+<h3>Properties for Results Documents</h3>
+
+<ul>
+<li><code>@object.section.(sectionName)</code><br>
+Returns the entire text to the section titled <code>(sectionName)</code>, which must be a quoted string or a string variable. The section names are the complete, case-sensitive text of the sections listed on the top left index of a results document. Hint: the text read from a section can be parsed using <a href="commands.html#debug"><code>Lines</code> and <code>Words</code> commands</a>.</li>
+
+<li><code>@object.energy</code><br>
+Returns the total strain energy in an FEA results document (assuming the output file contains the strain energy results). It is a common quantity to read when doing script control of FEA calculations.</li>
+
+<li><code>@object.timeplot (quantity).(arg1).(arg2)...</code><br>
+Returns the selected quantity as a function of time in a single string (for MPM calculations only).
+Each line will have time (ms) and the quantity separated by a space.
+The number of lines will be the number of data points.
+The string can be decoded using <a href="commands.html#debug"><code>Lines</code>
+and <code>Words</code> commands</a>.The currently supported plot quantities (which are case sensitive) are:
+<ul>
+<li>global: plot global quantity specified in (arg1), which must exactly match the global archive quantity name and that quantity must be in the global results.</li>
+<li>J1, J2, KI, KII, TipNCOD, TipSCOD, DebondNCOD, DebondSCOD, CrackRelease, CrackAbsorb: plot crack tip property for crack number (arg1) with (arg2) equal to 0 or 1 for crack tip at start or end of the crack. For COD's, "N" and "S" refer to normal and shear opening.</li>
+<li>Length: plot length of crack number (arg1).</li>
+<li>DebondLength: plot length of crack with no traction laws for crack number (arg1).</li>
+</ul>
+
+
+</ul>
+
+<p>|<a href="#cindex">Documentation Index</a>|</p>
+
+
+</body>
+
+</html>
