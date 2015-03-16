@@ -441,20 +441,20 @@ void CrackSegment::FillArchive(char *app,int segNum)
     
     // J integral (*1000 for units units J/m^2)
     if(archiver->CrackArchive(ARCH_JIntegral))
-    {	*(double *)app=Jint.x*1000.;	// current crack tip J1
+    {	*(double *)app=Jint.x/1000.;	// current crack tip J1
         app+=sizeof(double);
 		if(fmobj->propagate[0])
-			*(double *)app=propagationJ*1000.;		// actual energy released last time the crack grew
+			*(double *)app=propagationJ/1000.;		// actual energy released last time the crack grew
 		else
-			*(double *)app=Jint.y*1000.;		// current crack tip J2
+			*(double *)app=Jint.y/1000.;		// current crack tip J2
         app+=sizeof(double);
     }
     
-    // Stress Intensity Factors (/sqrt(1000) for  units MPa sqrt(m))
+    // Stress Intensity Factors (/sqrt(1000) for  units Pa sqrt(m))
     if(archiver->CrackArchive(ARCH_StressIntensity))
-    {	*(double *)app=sif.x*0.0316227766016838;
+    {	*(double *)app=sif.x*0.0316227766016838e-6;
         app+=sizeof(double);
-        *(double *)app=sif.y*0.0316227766016838;
+        *(double *)app=sif.y*0.0316227766016838e-6;
         app+=sizeof(double);
     }
 	
@@ -505,21 +505,24 @@ void CrackSegment::FillArchive(char *app,int segNum)
 }
 
 // Tell crack tip to heat itself when it propagates
-void CrackSegment::StartCrackTipHeating(double growth,double tp)
+void CrackSegment::StartCrackTipHeating(double growth,double thickness)
 {
 	MaterialBase *tipMat=theMaterials[tipMatnum-1];
-	double rhoH=1.0;											// should come from a material property
-	double adot=tipMat->WaveSpeed(FALSE,NULL);					// in mm/sec in 2D
+	double rhoH = tipMat->rho;											// mm^3/g
+	double adot = tipMat->WaveSpeed(FALSE,NULL);						// in mm/sec
 	
 	// set up rate and times (making sure proper number of steps)
-	int nsteps=(int)(growth/(adot*timestep));
+	int nsteps = (int)(growth/(adot*timestep));
 	if(nsteps<1) nsteps=1;
-	// same as heatRate=rhoH*Jint.x*tp*adot;
-	heatRate=rhoH*Jint.x*tp*growth/(timestep*(double)nsteps);	// heating rate (mm/cm)^3 W
+	
+	// heat rate in nW/g and same as heatRate=rhoH*Jint.x*thickness*adot;
+	heatRate = Jint.x*thickness*growth/(rhoH*timestep*(double)nsteps);
+	
+	// stop heating at this time
 	// discrete version of heatEndTime=mtime + growth/adot;
-	heatEndTime=mtime + ((double)nsteps+.2)*timestep;			// stop heating at this time
-
-	heating=TRUE;
+	heatEndTime = mtime + ((double)nsteps+.2)*timestep;
+	
+	heating = true;
 }
 
 // return heating rate if any
@@ -528,7 +531,7 @@ double CrackSegment::HeatRate(void)
 	// return zero if off or if done
 	if(!heating) return (double)0.;
 	if(mtime>heatEndTime)
-	{	heating=FALSE;
+	{	heating = false;
 		return (double)0.;
 	}
 	
@@ -536,7 +539,7 @@ double CrackSegment::HeatRate(void)
 	return heatRate;
 }
 
-// return external force (times a shape function)
+// return traction force (times a shape function) in uN
 Vector CrackSegment::FTract(double fni)
 {	Vector fout;
 	fout.x=fni*tract.x;

@@ -43,7 +43,7 @@ class MatPoint2D : public MPMBase
         virtual Matrix3 GetElasticLeftCauchyMatrix(void);
         virtual void GetDeformationGradient(double F[][3]);
         virtual double GetRelativeVolume(void);
-		virtual double GetVolume(bool);
+		virtual double GetVolume(int);
 		virtual void GetCPDINodesAndWeights(int);
 		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *);
     

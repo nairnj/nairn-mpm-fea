@@ -343,10 +343,10 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
                 {   switch(quantity)
                     {   case KINE_ENERGY:
-							value += 0.5e-3*mpm[p]->mp*(mpm[p]->vel.x*mpm[p]->vel.x
+							value += 0.5*mpm[p]->mp*(mpm[p]->vel.x*mpm[p]->vel.x
 																+ mpm[p]->vel.y*mpm[p]->vel.y);
 							if(threeD)
-								value += 0.5e-3*mpm[p]->mp*(mpm[p]->vel.z*mpm[p]->vel.z);
+								value += 0.5*mpm[p]->mp*(mpm[p]->vel.z*mpm[p]->vel.z);
                             break;
 						case WORK_ENERGY:
 							value += mpm[p]->mp*mpm[p]->GetWorkEnergy();
@@ -372,7 +372,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 					}
 				}
 			}
-			value*=1.e-6;
+			value*=1.e-9;
 			break;
 		
 		// interface energy in J
@@ -388,7 +388,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
                 {   value+=mpm[p]->mp*mpm[p]->GetPlastEnergy();
                 }
 			}
-			value*=1.e-6;
+			value*=1.e-9;
 			break;
 		
 		// velocity x in mm/sec

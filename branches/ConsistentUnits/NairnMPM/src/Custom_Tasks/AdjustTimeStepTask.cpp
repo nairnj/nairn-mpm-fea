@@ -99,7 +99,7 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     double area,volume,crot,tst;
     
     // get grid dimensions
-    double dcell = mpmgrid.GetMinCellDimension()/10.;	// in cm
+    double dcell = mpmgrid.GetMinCellDimension();		// in mm
     
     if(lastReportedTimeStep<0) lastReportedTimeStep = timestep;
     
@@ -114,15 +114,15 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
         
 		// element and mp properties
 		if(fmobj->IsThreeD())
-		{	volume=theElements[mpm[p]->ElemID()]->GetVolume()/1000.;	// in cm^3
+		{	volume=theElements[mpm[p]->ElemID()]->GetVolume();	// in mm^3
 		}
 		else
-		{	area=theElements[mpm[p]->ElemID()]->GetArea()/100.;	// in cm^2
-			volume=mpm[p]->thickness()*area/10.;				// in cm^2
+		{	area=theElements[mpm[p]->ElemID()]->GetArea();		// in mm^2
+			volume=mpm[p]->thickness()*area;					// in mm^2
 		}
         
         // check time step using convergence condition
-        crot=theMaterials[matid]->CurrentWaveSpeed(fmobj->IsThreeD(),mpm[p])/10.;           // in cm/sec
+        crot=theMaterials[matid]->CurrentWaveSpeed(fmobj->IsThreeD(),mpm[p]);				// in mm/sec
 		tst=fmobj->GetCFLCondition()*dcell/crot;                                            // in sec
         if(tst<timestep) timestep=tst;
         

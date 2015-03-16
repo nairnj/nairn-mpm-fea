@@ -454,15 +454,6 @@ double DDBHardening::GetHistory(int num,char *historyPtr) const
 
 #pragma mark DDBHardening:Step Methods
 
-// Calculate transport properties that depend on the state of the particle
-//void DDBHardening::LoadTransportProps(MPMBase *mptr,int np,TransportProperties *t) const {}
-//{
-//}
-
-// Implemented in case heat capacity (Cp/heat capacity for conduction) changes with particle state
-// Called by conduction code
-//double DDBHardening::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity; }
-
 #pragma mark DDBHardening::Custom Methods
 
 #pragma mark DDBHardening::Accessors

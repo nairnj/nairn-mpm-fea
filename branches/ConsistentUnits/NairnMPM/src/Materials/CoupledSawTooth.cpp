@@ -65,9 +65,6 @@ const char *CoupledSawTooth::VerifyAndLoadProperties(int np)
     if(stress2>0. || kII1>0. || delIIc>0. || JIIc>0. || umidII>0.)
         return "Mode II properties not allowed in Coupled Triangular Traction law.";
     
-	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
-	sIc=stress1*1.e6;
-	
     // do not need to call base material class methods
 	return NULL;
 }
@@ -75,8 +72,8 @@ const char *CoupledSawTooth::VerifyAndLoadProperties(int np)
 // print to output window
 void CoupledSawTooth::PrintMechanicalProperties(void) const
 {
-	PrintProperty("Gc",JIc,"J/m^2");
-	PrintProperty("sig",stress1,"");
+	PrintProperty("Gc",JIc/1000.,"J/m^2");
+	PrintProperty("sig",stress1*1.e-6,"");
 	PrintProperty("uc",delIc,"mm");
 	if(kI1>0.) PrintProperty("k",1.0e-6*kI1,"MPa/mm");
 	PrintProperty("upk",umidI,"mm");
@@ -120,7 +117,7 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
     if(deff > 0.)
     {   // stiffness same for both modes keff = (1-D)k = sc(df-dmax)/(dmax*(df-d0)) = k d0*(df-dmax)/(dmax*(df-d0))
         // Note: prior to deff reaching d0, all dmax=upeak[0]=umidI=d0 are equal and keff = sc/d0 = k
-        double keff=sIc*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
+        double keff=stress1*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
         
         // normal force (only if open, closed handled by crack contact)
         if(nCod>0.) Tn = keff*nCod;
@@ -166,7 +163,7 @@ double CoupledSawTooth::CrackTractionEnergy(CrackSegment *cs,double nCod,double 
         tEnergy=0.5e-6*T*deff;					// now in units of N/mm
     }
     else
-    {   // G = sIc*(deff*deff - 2.*deff*delIc + umidI*delIc)/(2.*(umidI - delIc));
+    {   // G = stress1*(deff*deff - 2.*deff*delIc + umidI*delIc)/(2.*(umidI - delIc));
     	double s2=(delIc-deff)*stress1/(delIc-umidI);                   // stress in N/mm^2
         tEnergy=0.5*(umidI*stress1 + (deff-umidI)*(stress1+s2));		// now in units of N/mm
     }
@@ -174,7 +171,7 @@ double CoupledSawTooth::CrackTractionEnergy(CrackSegment *cs,double nCod,double 
 	// subtract recoverable energy when want released energy
 	if(!fullEnergy && deff>0.)
 	{	double *upeak =(double *)cs->GetHistoryData();
-		double keff = sIc*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
+		double keff = stress1*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
         double T=keff*deff;
         tEnergy-=0.5e-6*T*deff;                                // now in units of N/mm
     }

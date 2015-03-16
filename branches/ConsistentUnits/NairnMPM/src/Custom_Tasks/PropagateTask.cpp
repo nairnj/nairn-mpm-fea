@@ -86,15 +86,15 @@ CustomTask *PropagateTask::StepCalculation(void)
         {   MPMBase *mpnt = mpm[p];
             
             // track total energies in J = N-m
-            //	mp is g, stored energy is N/m^2 cm^3/g, vel is mm/sec
-            // workEnergy in J =  1.0e-6*mp*mpm[p]->GetWorkEnergy()
-            // plastic 1.0e-6*mp*mpm[p]->GetPlastEnergy()
+            //	mp is g, stored energy is N/m^2 mm^3/g, vel is mm/sec
+            // workEnergy in J =  1.0e-9*mp*mpm[p]->GetWorkEnergy()
+            // plastic 1.0e-9*mp*mpm[p]->GetPlastEnergy()
             // external work 1.e-9*mpm[p]->GetExtWork()
             // kinetic energy 0.5e-9*mp*(vel.x*vel.x+vel.y*vel.y)
             
             // plastic energy per unit thickness (units of N) (only needed energy balance crack growth)
             double mp = mpnt->mp;
-            totalPlastic += 1.0e-3*mp*mpnt->GetPlastEnergy()/mpnt->thickness();
+            totalPlastic += 1.0e-6*mp*mpnt->GetPlastEnergy()/mpnt->thickness();
             //totalPotential += 1.0e-3*(mp*mpnt->GetStrainEnergy()
             //                        + 0.5e-3*mp*(mpnt->vel.x*mpnt->vel.x+mpnt->vel.y*mpnt->vel.y)
             //                        - 1.e-3*mpnt->GetExtWork())/mpnt->thickness();
@@ -160,8 +160,8 @@ CustomTask *PropagateTask::StepCalculation(void)
                     cout << "# propagation" << isAlt << " crack-tip " << nextCrack->GetNumber() << "-" << i;
 					
 					// summarize
-					cout << " at t=" << 1000*mtime << " with J=Jtip+Jzone : " << 1000.*crkTip->Jint.z <<
-							" = " << 1000.*crkTip->Jint.x << " + " << 1000.*(crkTip->Jint.z-crkTip->Jint.x) << endl;
+					cout << " at t=" << 1000*mtime << " with J=Jtip+Jzone : " << crkTip->Jint.z/1000. <<
+							" = " << crkTip->Jint.x/1000. << " + " << (crkTip->Jint.z-crkTip->Jint.x)/1000. << endl;
                     
                     // if jump is .7 or more cells, make more than 1 segment
                     int iseg,numSegs = 1;

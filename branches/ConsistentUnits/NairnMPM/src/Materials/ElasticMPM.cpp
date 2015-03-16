@@ -17,7 +17,7 @@
 // From thermodyanamics Cp-Cv = C [a].[a] T/rho (and rotation independent)
 // If orthotropic = (C11*a11+C12*a22+C13*a33, C21*a11+C22*a22+C23*a33, C31*a11+C32*a22+C33*a33).(a11,a22,a33)T/rho
 //                = (C11*a11^2+(C12+C21)*a22*a11+(C13_C31)*a33*a11+C22*a22^2+(C23+C32)*a33*a22+C33*a33^2)T/rho
-// Cadota in J/(kg-K^2) so output in J/(kg-K)
+// Cadota in nJ/(g-K^2) so output in nJ/(g-K)
 double Elastic::GetCpMinusCv(MPMBase *mptr) const
 {   return mptr!=NULL ? Cadota*mptr->pPreviousTemperature : Cadota*thermal.reference;
 }
@@ -66,7 +66,7 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 	Tensor *sp=mptr->GetStressTensor();
     Tensor st0=*sp;
 	
-	// find stress (Units N/m^2  cm^3/g)
+	// find stress (Units N/m^2  mm^3/g)
 	// this does xx, yy, ans xy only. zz do later if needed
 	double c1,c2,c3;
 	if(np==AXISYMMETRIC_MPM)
@@ -94,7 +94,7 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 		sp->zz += p->C[4][1]*(dvxx+p->alpha[5]*erzz)+p->C[4][2]*(dvyy+p->alpha[6]*erzz)
 					+p->C[4][3]*(dgam+p->alpha[7]*erzz)-p->C[4][4]*erzz;
 		
-		// extra residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
+		// extra residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
 		resEnergy += 0.5*(st0.zz+sp->zz)*erzz;
 	}
 	else if(np==PLANE_STRESS_MPM)
@@ -104,7 +104,7 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 	{	// axisymmetric hoop stress
 		sp->zz += p->C[4][1]*dvxx + p->C[4][2]*dvyy + p->C[4][4]*dvzz + p->C[4][3]*dgam;
 		
-		// extra work and residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
+		// extra work and residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
 		workEnergy += 0.5*(st0.zz+sp->zz)*dvzz;
 		resEnergy += 0.5*(st0.zz+sp->zz)*erzz;
 	}

@@ -71,12 +71,12 @@ const char *TaitLiquid::VerifyAndLoadProperties(int np)
 		return "TaitLiquid material model needs positive K and zero or positive viscosity";
     
 	// Viscosity in Specific units using initial rho (times 2)
-	// for MPM (units N sec/m^2 cm^3/g) (1 cP = 0.001 N sec/m^2)
+	// for MPM (units N sec/m^2 mm^3/g) (1 cP = 0.001 N sec/m^2)
 	TwoEtasp = 0.002*viscosity/rho;
     
     // heating gamma0
     double alphaV = 3.e-6*aI;
-    gamma0 = 1000.*Kbulk*alphaV/(rho*heatCapacity);
+    gamma0 = Kbulk*alphaV/(rho*heatCapacity);
 	   
 	// must call super class
 	return HyperElastic::VerifyAndLoadProperties(np);
@@ -120,7 +120,7 @@ void TaitLiquid::SetInitialParticleState(MPMBase *mptr,int np) const
         yPos=mptr->pos.y;
         zPos=mptr->pos.z;
 		
-		// convert to internal specific pressure units of N/m^2 cm^3/g
+		// convert to internal specific pressure units of N/m^2 mm^3/g
 		// Divide by rho0, which cancels with rho0 in Ksp when getting Jinit
 		double Psp = 1.e6*function->Val()/rho;
 		
@@ -275,8 +275,7 @@ int TaitLiquid::MaterialTag(void) const { return TAITLIQUID; }
 
 // Calculate wave speed for material in mm/sec.
 double TaitLiquid::WaveSpeed(bool threeD,MPMBase *mptr) const
-{
-    return sqrt(1.e9*(Kbulk)/rho);
+{	return 1000.*sqrt(Kbulk/rho);
 }
 
 // Calculate current wave speed in mm/sec for a deformed particle
@@ -291,7 +290,7 @@ double TaitLiquid::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
 	}
 	double Jres = exp(3.*resStretch);
     double Kratio = (J/Jres)*(1.+mptr->GetPressure()/(TAIT_C*Ksp));
-    return sqrt(1.e9*(Kbulk*Kratio)/rho);
+    return 1000.*sqrt((Kbulk*Kratio)/rho);
 }
 
 // Copy stress to a read-only tensor variable after combininng deviatoric and pressure

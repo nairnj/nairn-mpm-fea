@@ -21,7 +21,7 @@ IdealGas::IdealGas() {}
 IdealGas::IdealGas(char *matName) : HyperElastic(matName)
 {
 	P0   = -1.;			// required initial pressure in MPa
-	rho  = -1.;			// required density (override default of 1) in g/cm^3
+	rho  = -1.;			// required density (override default of 1)
 	T0   = -1.;			// required initial temperature in Kelvin
 }
 
@@ -48,16 +48,17 @@ const char *IdealGas::VerifyAndLoadProperties(int np)
     if(P0 <= 0. || rho <= 0.0 || T0 <= 0.0 )
 		return "Ideal gas material model needs positive parameters P0, rho, and T0";
 	
-	// Find ideal gas has Cv heat capacity in J/(kg-K) = mJ/(g-K)
+	// Find ideal gas has Cv heat capacity in nJ/(g-K)
 	// For monotonic Ideal Gas, Cv = 1.5R for diatomic gas is 2.5R
 	// If set to >1 is diatomic, otherwise monotonic (which is for not set too)
 	if(heatCapacity>1.)
-		heatCapacity = 2500.*P0/(T0*rho);
+		heatCapacity = 2.5e6*P0/(T0*rho);
 	else
-		heatCapacity = 1500.*P0/(T0*rho);
-	CpMinusCv= 1000.*P0/(T0*rho);
+		heatCapacity = 1.5e6*P0/(T0*rho);
+	CpMinusCv= 1.e6*P0/(T0*rho);
 	
-	// P0 in specific units for MPM of N/m^2 cm^3/g
+	// P0 in specific units
+	// for MPM (N/m^2 mm^3/g = (g-mm^2/sec^2)/g when props in MPa and rho in g/mm^3)
 	P0sp=P0*1.0e+06/rho;
 	
     // call super class
@@ -111,7 +112,7 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np) const
 
 #pragma mark IdealGas::Methods
 
-// To get per unit mass = nR/(rho0 V0)
+// In unites nJ/(g-K)
 double IdealGas::GetCpMinusCv(MPMBase *) const { return CpMinusCv; }
 
 /* Take increments in strain and calculate new
@@ -140,7 +141,7 @@ void IdealGas::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np
 	sp->yy = mPsp;
 	sp->zz = mPsp;
 	
-	// find the -P dV energy per unit mass dW/(rho0 V0) (uJ/g) as follows
+	// find the -P dV energy per unit mass dW/(rho0 V0) (nJ/g) as follows
     // dW/(rho0 V0) = - 0.5 * (pn+p(n+1))/rho0 * (V(n+1)-Vn)/V0, which simplifies to
     double dW = 0.5*(mPnsp*detf + mPsp)*(1.-1./detf);
     
@@ -163,15 +164,15 @@ int IdealGas::MaterialTag(void) const { return IDEALGASMATERIAL; }
 
 // Calculate wave speed in mm/sec.
 double IdealGas::WaveSpeed(bool threeD,MPMBase *mptr) const
-{   return 1000.*sqrt(1.6667e9*(P0*rho)*(mptr->pTemperature/T0));
+{   return 1000.*sqrt(1.6667*(P0/rho)*(mptr->pTemperature/T0));
 }
 
 // calculate current wave speed in mm/sec. 
-// Only change vs initial wave speed is due to J
+// Only change is to use current particle temperature
 double IdealGas::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
 {   // J = V/V0 = rho0/rho
     double J = mptr->GetRelativeVolume();
-    return 1000.*sqrt(1.6667e9*(P0*rho/J)*(mptr->pPreviousTemperature/T0));
+    return 1000.*sqrt(1.6667*(P0/rho)*(mptr->pPreviousTemperature/T0));
 }
 
 

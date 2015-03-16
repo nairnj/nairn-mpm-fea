@@ -337,19 +337,19 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 					+ r.C[4][3]*(dgxy+r.alpha[7]*erzz) + r.C[4][4]*dezz;
 	}
 
-	// Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+	// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
 	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx
 							   + (st0.yy+sp->yy)*dvyy
 							   + (st0.xy+sp->xy)*dgam
 							   + (st0.zz+sp->zz)*dvzz);
 
-    // Plastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    // Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
 	double dispEnergy = 0.5*((st0.xx+sp->xx)*dexxp
                         + (st0.yy+sp->yy)*deyyp
                         + (st0.xy+sp->xy)*dgxyp
 						+ (st0.zz+sp->zz)*dezzp);
 
-	// Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+	// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
 	double resEnergy = 0.5*((st0.xx+sp->xx)*erxx
 							+ (st0.yy+sp->yy)*eryy
 							+ (st0.xy+sp->xy)*erxy
@@ -554,7 +554,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
     dsig[XY] = r.C[5][0]*dexx+r.C[5][1]*deyy+r.C[5][2]*dezz+r.C[5][3]*dgyz+r.C[5][4]*dgxz+r.C[5][5]*dgxy;
 	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 
-    // Elastic work increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    // Elastic work increment per unit mass (dU/(rho0 V0)) (nJ/g)
 	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx
 							   + (st0.yy+sp->yy)*dvyy
 							   + (st0.zz+sp->zz)*dvzz
@@ -562,7 +562,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 							   + (st0.xz+sp->xz)*dgamxz
 							   + (st0.xy+sp->xy)*dgamxy);
 	
-    // Plastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    // Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
 	double dispEnergy=0.5*(0.5*((st0.xx+sp->xx)*dexxp
 								+ (st0.yy+sp->yy)*deyyp
 								+ (st0.zz+sp->zz)*dezzp
@@ -570,7 +570,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 								+ (st0.xz+sp->xz)*dgxzp
 								+ (st0.xy+sp->xy)*dgxyp));
 	
-	// Elastic energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+	// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
 	double resEnergy = 0.5*((st0.xx+sp->xx)*erxx
 							+ (st0.yy+sp->yy)*eryy
 							+ (st0.zz+sp->zz)*erzz

@@ -39,7 +39,6 @@ class TrilinearTraction : public CohesiveZone
 	protected:
 		double sI2,uI2;
 		double sII2,uII2;
-		double sIc2,sIIc2;
 		bool break1is2I,break1is2II;
 	
 };

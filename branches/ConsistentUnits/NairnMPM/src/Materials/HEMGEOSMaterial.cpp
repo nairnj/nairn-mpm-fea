@@ -91,15 +91,15 @@ const char *HEMGEOSMaterial::VerifyAndLoadProperties(int np)
 	
 	// expansion coefficients - affect on pressure is handled by eos, but
 	// needed for shear parts (which in large deformation have Jres component)
-	double effAlpha = (1.e9*heatCapacity*gamma0)/C0squared;
+	double effAlpha = (1.e6*heatCapacity*gamma0)/C0squared;
 	CTE1 = 1.e-6*effAlpha/3.;
 	
 	// this material not coupled to moisture expansion
 	betaI = 0.;
 	CME1 = 0.;;
     
-    // for Cp-Cv (units J/(kg-K^2)
-    Ka2sp = 1.e-6*Ksp*CTE1*CTE1;
+    // for Cp-Cv (units nJ/(g-K^2))
+    Ka2sp = Ksp*CTE1*CTE1;
 	
 	// skip Hyperelstic methods
 	return MaterialBase::VerifyAndLoadProperties(np);
@@ -121,7 +121,7 @@ void HEMGEOSMaterial::PrintMechanicalProperties(void) const
 	cout << endl;
 	
 	// effective volumetric CTE (in ppm/K) alpha = rho0 gamma0 Cv / K
-	double effAlpha = (1.e9*heatCapacity*gamma0)/C0squared;
+	double effAlpha = (1.e6*heatCapacity*gamma0)/C0squared;
 	PrintProperty("a",effAlpha/3.,"");
 	PrintProperty("T0",thermal.reference,"K");
 	cout <<  endl;
@@ -140,7 +140,7 @@ void HEMGEOSMaterial::PrintTransportProperties(void) const
 	{	MaterialBase::PrintTransportProperties();
 	}
 	else if(!ConductionTask::adiabatic)
-	{	PrintProperty("Cv",heatCapacity,"J/(kg-K)");
+	{	PrintProperty("Cv",heatCapacity*1.e-6,"J/(kg-K)");
 		cout << endl;
 	}
 }
@@ -237,8 +237,7 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,
 	// delV is total incremental volumetric strain = total Delta(V)/V
     double QAVred = 0.,AVEnergy=0.;
     if(delV<0. && artificialViscosity)
-    {   double c = sqrt(p->Kred*J/1000.);        // m/sec
-        QAVred = GetArtificalViscosity(delV/delTime,c);
+	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(p->Kred*J));
         if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
     }
     

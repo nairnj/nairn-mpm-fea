@@ -103,30 +103,28 @@ void MatPointAS::SetOrigin(Vector *pt)
 // Find internal force as -mp sigma.deriv * 1000. which converts to g mm/sec^2 or micro N
 // add external force (times a shape function)
 // Store in buffer
-// (note: stress is specific stress in units N/m^2 cm^3/g, Multiply by 1000 to make it mm/sec^2)
+// (note: stress is specific stress in units N/m^2 mm^3/g which is (g-mm^2/sec^2)/g
 void MatPointAS::GetFintPlusFext(Vector *theFrc,double fni,double xDeriv,double yDeriv,double zDeriv)
 {
-	double mpug = mp*1000.;
-	theFrc->x = -mpug*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+(sp.zz-pressure)*zDeriv) + fni*pFext.x;
-	theFrc->y = -mpug*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv) + fni*pFext.y;
+	theFrc->x = -mp*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+(sp.zz-pressure)*zDeriv) + fni*pFext.x;
+	theFrc->y = -mp*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv) + fni*pFext.y;
 	theFrc->z = 0.0;
 }
 
 // Get dilated current volume using current deformation gradient
 // (only used for crack contact, multimaterial contact, and transport tasks)
-// When volumeType is DEFORMED_AREA, get Area deformed particle area in r-z plane
-double MatPointAS::GetVolume(bool volumeType)
-{	double rho=theMaterials[MatID()]->rho*0.001;			// in g/mm^3
+// When volumeType is DEFORMED_AREA or DEFORMED_AREA_FOR_GRADIENT, get Area deformed particle area in r-z plane
+double MatPointAS::GetVolume(int volumeType)
+{	double rho=theMaterials[MatID()]->rho;					// in g/mm^3
 	if(volumeType==DEFORMED_VOLUME)
 		return GetRelativeVolume()*mp/rho;					// in mm^3
 	
-	// get deformed area per unit radial position or per radian
+	// get deformed area in the r-z plane
+	// note that mp/rho = rho Ap0 rp0 / rho = Ap0 rp0
 	double pF[3][3];
 	GetDeformationGradient(pF);
-	
-	// note that mp/rho = rho Ap rp0 / rho = Ap rp0
 	double areaPerRadian = (pF[0][0]*pF[1][1]-pF[1][0]*pF[0][1])*mp/rho;
-	return volumeType==DEFORMED_AREA ? areaPerRadian/origpos.x : areaPerRadian ;
+	return areaPerRadian/origpos.x;
 }
 
 // get unscaled volume for use only in contact and imperfect interface calculations
@@ -134,10 +132,9 @@ double MatPointAS::GetVolume(bool volumeType)
 // Calculations will need to multiply by radial position to get local volume
 // Here thickness is the original radial position of the particle
 double MatPointAS::GetUnscaledVolume(void)
-{	double rho=theMaterials[MatID()]->rho*0.001;			// in g/mm^3
+{	double rho=theMaterials[MatID()]->rho;					// in g/mm^3
 	return mp/(rho*thickness());                            // in mm^3 per unit radial position
 }
-
 
 // To support CPDI find nodes in the particle domain, find their elements,
 // their natural coordinates, and weighting values for gradient calculations

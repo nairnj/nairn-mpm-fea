@@ -38,14 +38,14 @@ const char *CubicTraction::VerifyAndLoadProperties(int np)
 // print to output window
 void CubicTraction::PrintMechanicalProperties(void) const
 {
-	PrintProperty("GcI",JIc,"J/m^2");
-	PrintProperty("sigI",stress1,"");
+	PrintProperty("GcI",JIc/1000.,"J/m^2");
+	PrintProperty("sigI",stress1*1.e-6,"");
 	PrintProperty("uI",delIc,"mm");
 	PrintProperty("kI0",1.e-6*kI1*delIc*delIc,"MPa/mm");
     cout <<  endl;
 	
-	PrintProperty("GcII",JIIc,"J/m^2");
-	PrintProperty("sigII",stress2,"");
+	PrintProperty("GcII",JIIc/1000.,"J/m^2");
+	PrintProperty("sigII",stress2*1.e-6,"");
 	PrintProperty("uII",delIIc,"mm");
 	PrintProperty("kII0",1.e-6*kII1*delIIc*delIIc,"MPa/mm");
     cout <<  endl;

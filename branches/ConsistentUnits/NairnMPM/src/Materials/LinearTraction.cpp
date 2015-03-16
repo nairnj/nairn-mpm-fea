@@ -31,10 +31,6 @@ const char *LinearTraction::VerifyAndLoadProperties(int np)
 	if(kI1<0. || kII1<0.)
 		return "Linear traction law requires non-negative kIe and kIIe";
 		
-	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
-	kI1*=1.0e6;
-	kII1*=1.0e6;
-	
 	return TractionLaw::VerifyAndLoadProperties(np);
 }
 

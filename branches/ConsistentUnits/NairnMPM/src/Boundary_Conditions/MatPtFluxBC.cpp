@@ -79,8 +79,8 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 	else if(direction==EXTERNAL_FLUX)
 	{	double mstime=1000.*bctime;
 		// csatrho = rho V csat/V0 = solvent mass per reference volume
-		// units are kg cm^3/(m^2-g-sec) = mm/sec
-		csatrho = matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
+		// units are 1000 kg mm^3/(m^2-g-sec) = mm/sec
+		csatrho = 1000.*matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
 		fluxMag.x = BCValue(mstime)/csatrho;
 	}
 	else
@@ -91,8 +91,8 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 		double currentValue = fabs(function->Val());
 		if(varTime>0.) currentValue=-currentValue;
 		// csatrho = rho V csat/V0 = solvent mass per reference volume
-		// units are kg cm^3/(m^2-g-sec) = mm/sec
- 		csatrho = matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
+		// units are 1000 kg mm^3/(m^2-g-sec) = mm/sec
+ 		csatrho = 1000.*matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
 		fluxMag.x = currentValue/csatrho;
 	}
 	

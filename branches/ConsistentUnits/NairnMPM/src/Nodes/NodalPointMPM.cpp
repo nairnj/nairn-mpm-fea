@@ -790,7 +790,7 @@ void NodalPoint::CalcStrainField(void)
 {
 	int j;
 	double mnode;
-
+	
 	// do all strain fields
 	for(j=0;j<maxCrackFields;j++)
 	{	if(!CrackVelocityField::ActiveNonrigidField(cvf[j])) continue;
@@ -798,35 +798,34 @@ void NodalPoint::CalcStrainField(void)
 		if(df==NULL) continue;
 		
 		mnode=1./df->mass;
-		df->du.x *= mnode;			// no units
+		df->du.x *= mnode;				// no units
 		df->du.y *= mnode;
 		df->dv.x *= mnode;
 		df->dv.y *= mnode;
 		
 		// GRID_JTERMS
 		if(JGridEnergy)
-        {	df->vx *= mnode;            // sqrt(J/m^3) = sqrt(N/m^2)
+        {	df->vx *= mnode;            // sqrt(nJ/mm^3) = sqrt(uN/mm^2)
 			df->vy *= mnode;
 			
-			mnode *= 1.e-6;
-			df->stress.xx *= mnode;				// N/mm^2
+			df->stress.xx *= mnode;				// uN/mm^2
 			df->stress.yy *= mnode;
 			df->stress.xy *= mnode;
 			
 			// find grid energy from nodal extrapolations
-			df->kinetic = 0.5e-6*(df->vx*df->vx + df->vy*df->vy);               // N/mm^2
-			df->work = 0.5*(df->stress.xx*df->du.x + df->stress.yy*df->dv.y + df->stress.xy*(df->du.y+df->dv.x));       // N/mm^2
+			df->kinetic = 0.5*(df->vx*df->vx + df->vy*df->vy);					// uN/mm^2
+			df->work = 0.5*(df->stress.xx*df->du.x + df->stress.yy*df->dv.y
+							+ df->stress.xy*(df->du.y+df->dv.x));				// uN/mm^2
 		}
 		
 		else
-		{	mnode *= 1.e-6;
-			df->stress.xx *= mnode;				// N/mm^2
+		{	df->stress.xx *= mnode;						// uN/mm^2
 			df->stress.yy *= mnode;
 			df->stress.xy *= mnode;
 			
 			// find energy by extrapolating particle energies
-			df->kinetic *= mnode*.5;			// N/mm^2
-			df->work *= mnode;					// N/mm^2
+			df->kinetic *= mnode*.5;					// uN/mm^2
+			df->work *= mnode;							// uN/mm^2
 		}
     }
 }

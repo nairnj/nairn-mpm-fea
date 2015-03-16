@@ -52,11 +52,13 @@ char *TrilinearTraction::InputMaterialProperty(char *xName,int &input,double &gS
 {
 	if(strcmp(xName,"sigmaI2")==0)
 	{	input=DOUBLE_NUM;
+		gScaling = 1.e6;						// Convert MPa to Pa
 		return((char *)&sI2);
 	}
 	
 	else if(strcmp(xName,"sigmaII2")==0)
 	{	input=DOUBLE_NUM;
+		gScaling = 1.e6;						// Convert MPa to Pa
 		return((char *)&sII2);
 	}
 	
@@ -85,10 +87,6 @@ const char *TrilinearTraction::VerifyAndLoadProperties(int np)
 	const char *err = TractionLaw::VerifyAndLoadProperties(np);
 	
 	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
-	sIc=stress1*1.e6;
-	sIIc=stress2*1.e6;
-	sIc2=sI2*1.e6;
-	sIIc2=sII2*1.e6;
 	break1is2I = DbleEqual(umidI,uI2);
 	break1is2II = DbleEqual(umidII,uII2);
 	
@@ -98,22 +96,22 @@ const char *TrilinearTraction::VerifyAndLoadProperties(int np)
 // print to output window
 void TrilinearTraction::PrintMechanicalProperties(void) const
 {
-	PrintProperty("GcI",JIc,"J/m^2");
-	PrintProperty("sigI1",stress1,"");
+	PrintProperty("GcI",JIc/1000.,"J/m^2");
+	PrintProperty("sigI1",stress1*1.e-6,"");
 	if(kI1>0.) PrintProperty("kI",1.0e-6*kI1,"MPa/mm");
 	PrintProperty("upkI1",umidI,"mm");
     cout <<  endl;
-	PrintProperty("sigI2",sI2,"");
+	PrintProperty("sigI2",sI2*1.e-6,"");
 	PrintProperty("upkI2",uI2,"mm");
 	PrintProperty("uIc",delIc,"mm");
     cout <<  endl;
 	
-	PrintProperty("GcII",JIIc,"J/m^2");
-	PrintProperty("sigII1",stress2,"");
+	PrintProperty("GcII",JIIc/1000.,"J/m^2");
+	PrintProperty("sigII1",stress2*1.e-6,"");
 	if(kII1>0.) PrintProperty("kII",1.0e-6*kII1,"MPa/mm");
 	PrintProperty("upkII1",umidII,"mm");
     cout <<  endl;
-	PrintProperty("sigII2",sII2,"");
+	PrintProperty("sigII2",sII2*1.e-6,"");
 	PrintProperty("upkII2",uII2,"mm");
 	PrintProperty("uIIc",delIIc,"mm");
     cout <<  endl;
@@ -142,12 +140,12 @@ void TrilinearTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCo
 			double keff;
 			if(upeak[0]<=uI2)
 			{	if(break1is2I)
-					keff = sIc/upeak[0];
+					keff = stress1/upeak[0];
 				else
-					keff = (sIc2*(upeak[0]-umidI)+sIc*(uI2-upeak[0]))/((uI2-umidI)*upeak[0]);
+					keff = (sI2*(upeak[0]-umidI)+stress1*(uI2-upeak[0]))/((uI2-umidI)*upeak[0]);
 			}
 			else
-				keff=sIc2*(delIc-upeak[0])/((delIc-uI2)*upeak[0]);
+				keff = sI2*(delIc-upeak[0])/((delIc-uI2)*upeak[0]);
 			Tn=keff*nCod;
 			
 			// get GI for failure law
@@ -182,12 +180,12 @@ void TrilinearTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCo
         double keff;
         if(upeak[1]<=uII2)
         {	if(break1is2II)
-                keff = sIIc/upeak[1];
+                keff = stress2/upeak[1];
             else
-                keff = (sIIc2*(upeak[1]-umidII)+sIIc*(uII2-upeak[1]))/((uII2-umidII)*upeak[1]);
+                keff = (sII2*(upeak[1]-umidII)+stress2*(uII2-upeak[1]))/((uII2-umidII)*upeak[1]);
         }
         else
-            keff=sIIc2*(delIIc-upeak[1])/((delIIc-uII2)*upeak[1]);
+            keff = sII2*(delIIc-upeak[1])/((delIIc-uII2)*upeak[1]);
         Tt=keff*tCod;
         
         // get GII for failure law
@@ -290,12 +288,12 @@ double TrilinearTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,doubl
 		if(nCod>0.)
 		{	if(upeak[0]<=uI2)
 			{	if(break1is2I)
-					keff = sIc/upeak[0];
+					keff = stress1/upeak[0];
 				else
-					keff = (sIc2*(upeak[0]-umidI)+sIc*(uI2-upeak[0]))/((uI2-umidI)*upeak[0]);
+					keff = (sI2*(upeak[0]-umidI)+stress1*(uI2-upeak[0]))/((uI2-umidI)*upeak[0]);
 			}
 			else
-				keff=sIc2*(delIc-upeak[0])/((delIc-uI2)*upeak[0]);
+				keff = sI2*(delIc-upeak[0])/((delIc-uI2)*upeak[0]);
 			double Tn=keff*nCod;
 			tEnergy-=0.5e-6*Tn*nCod;                                // now in units of N/mm
 		}
@@ -303,12 +301,12 @@ double TrilinearTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,doubl
 		// shear energy always
 		if(upeak[1]<=uII2)
 		{	if(break1is2II)
-				keff = sIIc/upeak[1];
+				keff = stress2/upeak[1];
 			else
-				keff = (sIIc2*(upeak[1]-umidII)+sIIc*(uII2-upeak[1]))/((uII2-umidII)*upeak[1]);
+				keff = (sII2*(upeak[1]-umidII)+stress2*(uII2-upeak[1]))/((uII2-umidII)*upeak[1]);
 		}
 		else
-			keff=sIIc2*(delIIc-upeak[1])/((delIIc-uII2)*upeak[1]);
+			keff = sII2*(delIIc-upeak[1])/((delIIc-uII2)*upeak[1]);
 		double Tt=keff*tCod;
 		tEnergy-=0.5e-6*Tt*tCod;									// N/mm
 	}

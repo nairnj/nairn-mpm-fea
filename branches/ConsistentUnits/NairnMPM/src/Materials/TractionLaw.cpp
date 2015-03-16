@@ -9,6 +9,7 @@
 #include "Materials/TractionLaw.hpp"
 #include "Cracks/CrackSegment.hpp"
 #include "System/ArchiveData.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark TractionLaw::Constructors and Destructors
 
@@ -29,11 +30,13 @@ char *TractionLaw::InputMaterialProperty(char *xName,int &input,double &gScaling
 {
     if(strcmp(xName,"sigmaI")==0)
 	{	input=DOUBLE_NUM;
+		gScaling = 1.e6;					// Convert MPa to Pa
         return((char *)&stress1);
     }
 
 	else if(strcmp(xName,"sigmaII")==0)
 	{	input=DOUBLE_NUM;
+		gScaling = 1.e6	;					// Convert MPa to Pa
 		return((char *)&stress2);
 	}
 	
@@ -48,8 +51,9 @@ const char *TractionLaw::VerifyAndLoadProperties(int np) { return NULL; }
 void TractionLaw::ReportDebond(double dtime,CrackSegment *cs,double fractionI,double Gtotal)
 {
 	archiver->IncrementPropagationCounter();
-	cout << "# Debond: t=" << 1000.*dtime << " (x,y) = (" << cs->x << "," <<cs-> y << ")" <<
-				" GI(%) = " << 100.*fractionI << " G = " << Gtotal << endl;
+	cout << "# Debond: t=" << 1000.*dtime << " (x,y) = (" << cs->x << "," <<cs-> y << ")"
+			<< " GI(%) = " << 100.*fractionI
+			<< " G = " << Gtotal*UnitsController::Scaling(0.001) << endl;
 }
 
 #pragma mark TractionLaw::Traction Law

@@ -73,7 +73,7 @@ class MPMBase : public LinkedObject
         virtual Matrix3 GetElasticLeftCauchyMatrix(void) = 0;
         virtual void GetDeformationGradient(double F[][3]) = 0;
         virtual double GetRelativeVolume(void) = 0;
-		virtual double GetVolume(bool) = 0;
+		virtual double GetVolume(int) = 0;
 		virtual void GetCPDINodesAndWeights(int) = 0;
 		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *) = 0;
 

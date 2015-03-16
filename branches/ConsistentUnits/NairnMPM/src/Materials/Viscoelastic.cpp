@@ -130,8 +130,8 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
 	CTE = 1.e-6*aI;
 	CME = betaI*concSaturation;
 
-    // for Cp-Cv (units J/(kg-K^2)
-    Ka2sp = 1.e-6*Kered*CTE1*CTE1;
+    // for Cp-Cv (units nJ/(g-K^2))
+    Ka2sp = Kered*CTE1*CTE1;
 	
 	// call super class
 	return MaterialBase::VerifyAndLoadProperties(np);
@@ -314,7 +314,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
     }
     mptr->AddWorkEnergyAndResidualEnergy(shearEnergy,0.);
 	
-    // disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
+    // disispated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
     double dispEnergy = 0.;
     for(k=0;k<ntaus;k++)
 	{	dispEnergy += TwoGkred[k]*(dak.xx*(0.5*(ed.xx+0.5*de.xx)-ak[XX_HISTORY][k]+0.5*dak.xx)
@@ -346,7 +346,7 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double &delV,ResidualStrains *re
     
     // work energy is dU = -P dV + s.de(total)
 	// Here do hydrostatic term
-    // Work energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    // Work energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
     double avgP = mptr->GetPressure()-0.5*dP;
     mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-3.*avgP*eres);
 	
@@ -358,11 +358,11 @@ void Viscoelastic::UpdatePressure(MPMBase *mptr,double &delV,ResidualStrains *re
 // convert J to K using isotropic method
 Vector Viscoelastic::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 {	double nuLS = (3.*Kered-2.*Gered)/(6.*Kered+2.*Gered);
-	return IsotropicJToK(d,C,J0,np,nuLS,Gered*rho*1.e-6);
+	return IsotropicJToK(d,C,J0,np,nuLS,Gered*rho);
 }
 
 // From thermodyanamics Cp-Cv = 9 K a^2 T/rho
-// Units mJ/(g-K) = J/(kg-m)
+// Ka2sp in nJ/(g-K^2) so output in nJ/(g-K)
 // Here using K0 and rho0 - could modify if needed
 double Viscoelastic::GetCpMinusCv(MPMBase *mptr) const
 {   return mptr!=NULL ? Ka2sp*mptr->pPreviousTemperature : Ka2sp*thermal.reference;
@@ -376,10 +376,9 @@ const char *Viscoelastic::MaterialType(void) const { return "Viscoelastic"; }
 // Return the material tag
 int Viscoelastic::MaterialTag(void) const { return VISCOELASTIC; }
 
-/* Calculate wave speed in mm/sec (because G in MPa and rho in g/cm^3)
-	Uses sqrt((K +4Ge/3)/rho) which is probably the maximum wave speed possible
-*/
-double Viscoelastic::WaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt(1.e3*(Kered + 4.*Gered/3.)); }
+// Calculate wave speed in mm/sec
+// Uses sqrt((K +4Ge/3)/rho) which is probably the maximum wave speed possible
+double Viscoelastic::WaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt((Kered + 4.*Gered/3.)); }
 
 // Should support archiving history - if it is useful
 double Viscoelastic::GetHistory(int num,char *historyPtr) const { return (double)0; }

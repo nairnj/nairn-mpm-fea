@@ -58,6 +58,7 @@ void CommonAnalysis::StartResultsOutput(void)
 	cout << "Written by: Nairn Research Group, Oregon State University\n"
         << "Date: " << __DATE__ << "\n"
         << "Source: " << svninfo << "\n"
+		<< "Units: Legacy\n"
 #ifdef _OPENMP
         << "Processors: " << numProcs << "\n"
 #endif

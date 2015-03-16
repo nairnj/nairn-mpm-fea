@@ -66,7 +66,7 @@ char *VTKArchive::InputParam(char *pName,int &input)
 	
     else if(strcmp(pName,"velocity")==0)
     {	q=VTK_VELOCITY;
-		thisBuffer=3;		// extrapolate for cm velocity
+		thisBuffer=3;		// extrapolate for ctr mass velocity
     }
 	
     else if(strcmp(pName,"stress")==0)
@@ -458,12 +458,12 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 				break;
 				
 			case VTK_WORKENERGY:
-				*vtkquant+=wt*1.0e-6*mpnt->mp*mpnt->GetWorkEnergy();
+				*vtkquant+=wt*1.0e-9*mpnt->mp*mpnt->GetWorkEnergy();
 				vtkquant++;
 				break;
 				
 			case VTK_PLASTICENERGY:
-				*vtkquant+=wt*1.0e-6*mpnt->mp*mpnt->GetPlastEnergy();
+				*vtkquant+=wt*1.0e-9*mpnt->mp*mpnt->GetPlastEnergy();
 				vtkquant++;
 				break;
 				

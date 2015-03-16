@@ -89,7 +89,7 @@ const char *JohnsonCook::VerifyAndLoadProperties(int np)
     if(Tmjc <= thermal.reference)
         return "The melting temperature must be >= the reference temperature";
     
-	// reduced prooperties (Units Pa - cm^3/g)
+	// reduced prooperties (Units N/m^2 mm^3/g = (g-mm^2/sec^2)/g when props in MPa and rho in g/mm^3)
     Bred = Bjc*1.e6/parent->rho;
 	
     // reduced yield stress or Ajc

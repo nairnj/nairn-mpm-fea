@@ -687,7 +687,7 @@ void ArchiveData::ArchiveResults(double atime)
         
         // external work (cumulative) in J
         if(mpmOrder[ARCH_WorkEnergy]=='Y')
-		{	*(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetWorkEnergy();
+		{	*(double *)app=1.0e-9*mpm[p]->mp*mpm[p]->GetWorkEnergy();
             app+=sizeof(double);
         }
                 
@@ -701,7 +701,7 @@ void ArchiveData::ArchiveResults(double atime)
         // energies in material point based on energy per unit mass
         // here need mass * U/(rho0 V0)
         if(mpmOrder[ARCH_PlasticEnergy]=='Y')
-        {   *(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetPlastEnergy();
+        {   *(double *)app=1.0e-9*mpm[p]->mp*mpm[p]->GetPlastEnergy();
             app+=sizeof(double);
         }
                 
@@ -717,7 +717,7 @@ void ArchiveData::ArchiveResults(double atime)
         // total energy - internally it is N/m^2 mm^3/g = nJ/g
 		// Output total energy in J
         if(mpmOrder[ARCH_StrainEnergy]=='Y')
-        {   *(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetStrainEnergy();
+        {   *(double *)app=1.0e-9*mpm[p]->mp*mpm[p]->GetStrainEnergy();
             app+=sizeof(double);
         }
         
@@ -778,13 +778,10 @@ void ArchiveData::ArchiveResults(double atime)
 			}
        }
 		
-        // total heat energy (Volume*energy) in J
-        // energies in material point based on energy per unit mass
-        // here need mass * U/(rho0 V0)
-        // internal units are same as stress: N/m^2 cm^3/g = microJ/g = mJ/kg
-		// note that rho*energy has units J/m^3 = N/m^2 (if rho in g/cm^3)
+        // total heat energy - internally it is N/m^2 mm^3/g = nJ/g
+		// Output total energy in J
         if(mpmOrder[ARCH_HeatEnergy]=='Y')
-        {   *(double *)app=1.0e-6*mpm[p]->mp*mpm[p]->GetHeatEnergy();
+        {   *(double *)app=1.0e-9*mpm[p]->mp*mpm[p]->GetHeatEnergy();
             app+=sizeof(double);
         }
 		
@@ -1177,7 +1174,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					afile << vtkquant[offset] << endl;
 					break;
 				
-				case VTK_VELOCITY:				// extraplated to always get cm velocity
+				case VTK_VELOCITY:				// extraplated to always get ctr mass velocity
 				case VTK_DISPLACEMENT:
 					// Displacement in mm
 					if(vtk==NULL) break;

@@ -260,6 +260,7 @@ TractionLaw = $(src)/Materials/TractionLaw
 TransIsotropic = $(com)/Materials/TransIsotropic
 TransportTask = $(src)/Custom_Tasks/TransportTask
 TrilinearTraction = $(src)/Materials/TrilinearTraction
+UnitsController = $(com)/System/UnitsController
 UpdateMomentaTask = $(src)/NairnMPM_Class/UpdateMomentaTask
 UpdateParticlesTask = $(src)/NairnMPM_Class/UpdateParticlesTask
 UpdateStrainsFirstTask = $(src)/NairnMPM_Class/UpdateStrainsFirstTask
@@ -379,12 +380,30 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # VTKArchive.hpp : CustomTask.hpp
 
 # Header files with no dependencies
-# BMPLevel.hpp BodyForce.hpp BoundaryCondition.hpp CommonArchiveData.hpp CommonException.hpp
-# CommonReadHandler.hpp ContourPoint.hpp CrackHeader.hpp CrackLeaf.hpp CrossedCrack.hpp
-# CustomTask.hpp ElementBase.hpp GlobalQuantity.hpp
-# MaterialBase.hpp MPMBase.hpp MPMWarnings.hpp NairnMPM.hpp
-# ParseController.hpp ShapeController.hpp StrX.hpp ThermalRamp.hpp TransportTask.hpp
+# BMPLevel.hpp
+# BodyForce.hpp
+# BoundaryCondition.hpp
+# CommonArchiveData.hpp
+# CommonException.hpp
+# CommonReadHandler.hpp
+# ContourPoint.hpp
+# CrackHeader.hpp
+# CrackLeaf.hpp
+# CrossedCrack.hpp
+# CustomTask.hpp
+# ElementBase.hpp
+# GlobalQuantity.hpp
+# MaterialBase.hpp
+# MPMBase.hpp
+# MPMWarnings.hpp
+# NairnMPM.hpp
+# ParseController.hpp
+# ShapeController.hpp
+# StrX.hpp
+# ThermalRamp.hpp
+# TransportTask.hpp
 # PolyTriangle.hpp
+# UnitsController.hpp
 
 # -------------------------------------------------------------------------
 # all compiled objects
@@ -410,7 +429,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o AdjustTimeStepTask.o SLMaterial.o CrackVelocityFieldMulti.o \
 		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o \
         HEMGEOSMaterial.o GridPatch.o GhostNode.o MatPtHeatFluxBC.o PressureLaw.o ShellController.o Neohookean.o ClampedNeohookean.o \
-        InitVelocityFieldsTask.o
+        InitVelocityFieldsTask.o UnitsController.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -438,7 +457,8 @@ Matrix3.o : $(Matrix3).cpp $(dprefix)
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(Matrix3).cpp
 svninfo.o : $(svninfo).cpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(svninfo).cpp
-
+UnitsController.o : $(UnitsController).cpp $(UnitsController).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UnitsController).cpp
 
 # Common: Read_XML
 CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).hpp $(NairnMPM).hpp $(MaterialController).hpp \
@@ -809,24 +829,24 @@ DDBHardening.o : $(DDBHardening).cpp $(dprefix) $(DDBHardening).hpp $(HardeningL
 
 # MPM: Traction Laws
 TractionLaw.o : $(TractionLaw).cpp $(dprefix) $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp \
-			$(CommonArchiveData).hpp $(ArchiveData).hpp
+			$(CommonArchiveData).hpp $(ArchiveData).hpp $(UnitsController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TractionLaw).cpp
 CohesiveZone.o : $(CohesiveZone).cpp $(dprefix) $(CohesiveZone).hpp $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp
-	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CohesiveZone).cpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CohesiveZone).cpp  $(UnitsController).hpp
 PressureLaw.o : $(PressureLaw).cpp $(dprefix) $(PressureLaw).hpp $(TractionLaw).hpp $(MaterialBase).hpp $(CrackSegment).hpp \
-			$(CrackHeader).hpp $(mathexpr).hpp
+			$(CrackHeader).hpp $(mathexpr).hpp  $(UnitsController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PressureLaw).cpp
 CoupledSawTooth.o : $(CoupledSawTooth).cpp $(dprefix) $(CoupledSawTooth).hpp $(CohesiveZone).hpp $(TractionLaw).hpp $(MaterialBase).hpp \
-			$(CrackSegment).hpp $(CrackHeader).hpp
+			$(CrackSegment).hpp $(CrackHeader).hpp  $(UnitsController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CoupledSawTooth).cpp
 TrilinearTraction.o : $(TrilinearTraction).cpp $(dprefix) $(TrilinearTraction).hpp $(CohesiveZone).hpp $(TractionLaw).hpp \
-            $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp
+            $(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp  $(UnitsController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(TrilinearTraction).cpp
 LinearTraction.o : $(LinearTraction).cpp $(dprefix) $(LinearTraction).hpp $(CohesiveZone).hpp $(TractionLaw).hpp \
-			$(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp
+			$(MaterialBase).hpp $(CrackSegment).hpp $(CrackHeader).hpp  $(UnitsController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(LinearTraction).cpp
 CubicTraction.o : $(CubicTraction).cpp $(dprefix) $(CubicTraction).hpp $(TractionLaw).hpp $(MaterialBase).hpp \
-			$(CrackSegment).hpp $(CrackHeader).hpp
+			$(CrackSegment).hpp $(CrackHeader).hpp  $(UnitsController).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CubicTraction).cpp
 
 # MPM: Boundary_Conditions

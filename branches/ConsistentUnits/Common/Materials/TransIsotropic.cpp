@@ -81,9 +81,9 @@ void TransIsotropic::PrintTransportProperties(void) const
 	}
 	// Conductivity constants
 	if(ConductionTask::active)
-	{	PrintProperty("ka",rho*kcondA/1000.,"W/(m-K)");
-		PrintProperty("kt",rho*kcondT/1000.,"W/(m-K)");
-		PrintProperty("C",heatCapacity,"J/(kg-K)");
+	{	PrintProperty("ka",rho*kcondA*1.e-6,"W/(m-K)");
+		PrintProperty("kt",rho*kcondT*1.e-6,"W/(m-K)");
+		PrintProperty("C",heatCapacity*1.e-6,"J/(kg-K)");
 		cout << endl;
 	}
 }
@@ -142,10 +142,14 @@ char *TransIsotropic::InputMaterialProperty(char *xName,int &input,double &gScal
         return((char *)&diffT);
 		
     else if(strcmp(xName,"kCondA")==0)
+	{	gScaling = 1.e6;			// Convert W/(m-K) to nJ/(mm-K)
         return((char *)&kcondA);
+	}
     
     else if(strcmp(xName,"kCondT")==0)
+	{	gScaling = 1.e6;			// Convert W/(m-K) to nJ/(mm-K)
         return((char *)&kcondT);
+	}
 #endif
     
     return MaterialBase::InputMaterialProperty(xName,input,gScaling);
@@ -190,9 +194,9 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
 	if(err!=NULL) return err;
 
 #ifdef MPM_CODE
-    // make conductivity (input as (N/(sec-K)) specific (N mm^3/(sec-K-g))
-    kcondA *= (1000./rho);
-    kcondT *= (1000./rho);
+    // make conductivity (input as (N/(sec-K)) specific (nJ mm^2/(sec-K-g))
+    kcondA /= rho;
+    kcondT /= rho;
 #endif
 	
 	// load elastic properties with constant values when istropic in x-y plane
@@ -517,7 +521,7 @@ void TransIsotropic::FillElasticProperties2D(ElasticProperties *p,int makeSpecif
     }
 
 #ifdef MPM_CODE
-    // for MPM (units N/m^2 cm^3/g)
+    // for MPM (units N/m^2 mm^3/g)
     if(makeSpecific)
     {	double rrho=1./rho;
     	p->C[1][1]*=rrho;
@@ -680,7 +684,7 @@ const char *TransIsotropic::MaterialType(void) const
 
 #ifdef MPM_CODE
 
-/* Calculate maximum wave speed in mm/sec (moduli in MPa, rho in g/cm^3)
+/* Calculate maximum wave speed in mm/sec (moduli in MPa, rho in g/mm^3)
 	TRANSISO1
 		wave speeds are GT/rho and (KT+GT)/rho - return larger one
 	TRANSISO2
@@ -690,17 +694,17 @@ const char *TransIsotropic::MaterialType(void) const
 double TransIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
 {
     if(MaterialTag()==TRANSISO1 && !threeD)
-        return sqrt(1.e9*(KT+GT)/rho);
+        return 1000.*sqrt((KT+GT)/rho);
     else
-        return sqrt(1.e9*fmax(GA,fmax(KT+GT,EA+4.*KT*nuA*nuA))/rho);
+        return 1000.*sqrt(fmax(GA,fmax(KT+GT,EA+4.*KT*nuA*nuA))/rho);
 }
 
-// maximum diffusion coefficient in cm^2/sec (diff in mm^2/sec)
-double TransIsotropic::MaximumDiffusion(void) const { return max(diffA,diffT)/100.; }
+// maximum diffusion coefficient in mm^2/sec (diff in mm^2/sec)
+double TransIsotropic::MaximumDiffusion(void) const { return max(diffA,diffT); }
 
-// maximum diffusivity in cm^2/sec
-// specific k is mJ mm^2/(sec-K-g) and Cp is mJ/(g-K) so k/Cp = mm^2 /sec * 1e-2 = cm^2/sec
-double TransIsotropic::MaximumDiffusivity(void) const { return 0.01*max(kcondA,kcondT)/heatCapacity; }
+// maximum diffusivity in mm^2/sec
+// specific k is nJ mm^2/(sec-K-g) and Cp is nJ/(g-K) so k/Cp = mm^2 /sec
+double TransIsotropic::MaximumDiffusivity(void) const { return max(kcondA,kcondT)/heatCapacity; }
 
 // diffusion and conductivity in the z direction
 double TransIsotropic::GetDiffZ(void) const { return MaterialTag()==TRANSISO1 ? diffA : diffT; }

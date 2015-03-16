@@ -1136,34 +1136,34 @@ void CrackHeader::JIntegral(void)
 				// calculate Jx (note that dy=segNorm.x and dx=-segNorm.y
 				// or Jr is axisymmetric
 
-				// term (ti*ui,x) (N/mm^2)
+				// term (ti*ui,x) (uN/mm^2)
 				termForJx1=(sxx1*segNorm.x+sxy1*segNorm.y)*dudx1
 						  +(sxy1*segNorm.x+syy1*segNorm.y)*dvdx1;
 				termForJx2=(sxx2*segNorm.x+sxy2*segNorm.y)*dudx2
 						  +(sxy2*segNorm.x+syy2*segNorm.y)*dvdx2;
 						  
-				// [(W+K)nx-ti*ui,x] (N/mm^2)
+				// [(W+K)nx-ti*ui,x] (uN/mm^2)
 				fForJx1=(wd1+kd1)*segNorm.x-termForJx1;
 				fForJx2=(wd2+kd2)*segNorm.x-termForJx2;
 
 				// add for two endpoints using midpoint rule (r1=r2=1 unless axisymmetry by Bergkvist)
-				Jxs = 0.5*(r1*fForJx1 + r2*fForJx2)*ds;	// N mm/mm^2
+				Jxs = 0.5*(r1*fForJx1 + r2*fForJx2)*ds;	// uN mm/mm^2
 				Jx1 += Jxs;
 
 				// calculate Jy (or Jz if axisymmetric)
 
-				// term ti*ui,y
+				// term ti*ui,y (uN/mm^2)
 				termForJy1 = (sxx1*segNorm.x+sxy1*segNorm.y)*dudy1
                             +(sxy1*segNorm.x+syy1*segNorm.y)*dvdy1;
 				termForJy2 = (sxx2*segNorm.x+sxy2*segNorm.y)*dudy2
                             +(sxy2*segNorm.x+syy2*segNorm.y)*dvdy2;
 						  
-				// [(W+K)ny-ti*ui,y]
+				// [(W+K)ny-ti*ui,y] (uN/mm^2)
 				fForJy1=(wd1+kd1)*segNorm.y-termForJy1;
 				fForJy2=(wd2+kd2)*segNorm.y-termForJy2;
 
 				// add for two endpoints using midpoint rule (r1=r2=1 unless axisymmetry by Bergkvist)
-				Jys = 0.5*(r1*fForJy1 + r2*fForJy2)*ds;
+				Jys = 0.5*(r1*fForJy1 + r2*fForJy2)*ds;	// uN mm/mm^2
 				Jy1 += Jys;
 #ifdef CONTOUR_PARTS
                 cout << "(Jxs,Jys)=(" << Jxs << "," << Jys << ")";
@@ -1241,16 +1241,17 @@ void CrackHeader::JIntegral(void)
 						dvxdy=velGrad->xy;
 						dvydx=velGrad->zz;			// yx stored in zz
 						
-						// increment the integrands (g/mm^3)(mm/sec^2) = microN/mm^3 = kN/m^3 = N/mm/m^3
+						// increment the integrands (g/mm^3)(mm/sec^2) = uN/mm^3 
 						f2ForJx += rho*((ax*duxdx+ay*duydx)-(vx*dvxdx+vy*dvydx));
 						f2ForJy += rho*((ax*duxdy+ay*duydy)-(vx*dvxdy+vy*dvydy));
 						
 						if(fmobj->IsAxisymmetric())
 						{	// in axisymmetrix z is theta direction, etheta = u/r. but w=0, az=vz=0
 							// Since w=0, no change to above terms, but have some static terms for Jx=Jr only
-							// Units N/(m^2 mm)
+							// Stress Units uN/mm^2 (mm^3/g)
 							Tensor sp = mpm[p]->ReadStressTensor();
 							
+							// Units uN/mm^3
 							if(JContourType == AXISYM_BROBERG_J)
 							{	// See Broberg, Cracks and Fraction (1999), page 65
 								f2axisym += rho*(sp.xx*duxdx - sp.zz*mpm[p]->GetDwDz() + sp.xy*duydx)/xp;
@@ -1265,10 +1266,10 @@ void CrackHeader::JIntegral(void)
 				
 				if(count==0)
 					throw "J Integral contour contains no particles";
-				carea = 1.e-6*(cxmax-cxmin)*(cymax-cymin)/count;	// area per particle in m
-				Jx2 = f2ForJx*carea;							// Jx2 in N mm/mm^2 now
-				Jy2 = f2ForJy*carea;							// Jy2 in N mm/mm^2 now
-				JxAS2 = f2axisym*carea;								// JxAS2 (for Jr in axisymmetric) in N mm/mm^2
+				carea = (cxmax-cxmin)*(cymax-cymin)/count;		// area per particle in mm
+				Jx2 = f2ForJx*carea;							// Jx2 in uN mm/mm^2 now
+				Jy2 = f2ForJy*carea;							// Jy2 in uN mm/mm^2 now
+				JxAS2 = f2axisym*carea;							// JxAS2 (for Jr in axisymmetric) in uN mm/mm^2
 #ifdef CONTOUR_PARTS
 				cout << "#...(Jx2,Jy2,JxAS2)=(" << Jx2 << "," << Jy2 << "," << JxAS2 << ")" << endl;
 #endif
@@ -1332,7 +1333,7 @@ void CrackHeader::JIntegral(void)
 				  Jint.z is actual energy released when the crack and traction zone propagate together
 							(archived as J2 when propagation is on)
 			   crackDir -- crack propagating direction cosines from above
-			   Units N/mm, multiply by 1000 to get N/m = J/m^2
+			   Units uN/mm, multiply by 1e-3 to get N/m = J/m^2
 			*/
 			tipCrk->Jint.x = Jx*crackDir.x + Jy*crackDir.y - tractionEnergy;		// Jtip or energy that will be released if crack grows
 			tipCrk->Jint.y =-Jx*crackDir.y + Jy*crackDir.x;                         // J2(x) - for growth normal to crack plane
@@ -1429,8 +1430,7 @@ CrackSegment *CrackHeader::Propagate(Vector &grow,int whichTip,int tractionMat)
     return propSeg;
 }
 
-/* Add crack tip heating for all points in this crack
-*/
+// Add crack tip heating for all points in this crack
 void CrackHeader::CrackTipHeating(void)
 {
     CrackSegment *scrk=firstSeg;

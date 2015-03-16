@@ -44,14 +44,22 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
 {
     if(strcmp(xName,"rho")==0)
     {	input=DOUBLE_NUM;
+		gScaling = 0.001;
         return((char *)&rho);
     }
     
     else if(strcmp(xName,"KIc")==0)
     {	input=DOUBLE_NUM;
+		gScaling = 31.62277660168379e6;		// Convert MPa sqrt(m) to Pa sqrt(m)
         return((char *)&KIc);
     }
     
+    else if(strcmp(xName,"KIIc")==0)
+    {	input=DOUBLE_NUM;
+		gScaling = 31.62277660168379e6;		// Convert MPa sqrt(m) to Pa sqrt(m)
+        return((char *)&KIIc);
+    }
+	
 	// crit 3 only
     else if(strcmp(xName,"p")==0)
     {	input=DOUBLE_NUM;
@@ -64,11 +72,6 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
         return((char *)&maxLength);
     }
     
-    else if(strcmp(xName,"KIIc")==0)
-    {	input=DOUBLE_NUM;
-        return((char *)&KIIc);
-    }
-
 	// gain in crit 3
     else if(strcmp(xName,"gain")==0)
     {	input=DOUBLE_NUM;
@@ -93,11 +96,13 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
     
     else if(strcmp(xName,"JIc")==0)
     {	input=DOUBLE_NUM;
+		gScaling = 1000.;		// J/m^2 to nJ/mm^2
         return((char *)&JIc);
     }
     
     else if(strcmp(xName,"JIIc")==0)
     {	input=DOUBLE_NUM;
+		gScaling = 1000.;		// J/m^2 to nJ/mm^2
         return((char *)&JIIc);
     }
 	
@@ -154,6 +159,7 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
     
 	else if(strcmp(xName,"Cp")==0 || strcmp(xName,"Cv")==0)
     {	input=DOUBLE_NUM;
+		gScaling = 1.e6;				// Convert J/(kg-K) to nJ/(g-K)
         return((char *)&heatCapacity);
     }
 
@@ -174,13 +180,14 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
 	
 	else if(strcmp(xName,"kCond")==0)
     {	input=DOUBLE_NUM;
+		gScaling = 1.e6;				// Convert W/(m-K) to nW/(mm-K)
         return((char *)&kCond);
 	}
     
 	// check properties only for some materials
 	if(SupportsArtificialViscosity())
 	{	if(strcmp(xName,"ArtificialVisc")==0)
-		{	artificialViscosity=TRUE;
+		{	artificialViscosity = true;
 			input=NOT_NUM;
 			return((char *)&artificialViscosity);
 		}
@@ -265,24 +272,19 @@ bool MaterialBase::AcceptHardeningLaw(HardeningLawBase *pLaw,int lawID) { return
  */
 const char *MaterialBase::VerifyAndLoadProperties(int np)
 {
-    // make conductivity specific (N mm^3/(sec-K-g) = mJ mm^2/(sec-K-g))
-    kCond *= (1000./rho);
+    // make conductivity specific (nJ mm^2/(sec-K-g))
+    kCond /= rho;
 	
 	// in case only need to load some things once, load those mechanical properties now
 	FillTransportProperties(&tr);
 	
-	// convert MPa sqrt(m) to MPa sqrt(mm)
-	KIc*=31.62277660168379;
-	KIIc*=31.62277660168379;
-	
 	// convert other crack growth properties
-	JIc*=1.e-3;				// convert J/m^2 to N/mm
-	initTime*=1e-3;			// convert to sec
+	initTime*=1e-3;				// convert to sec
 	if(criterion[0]==TOTALENERGYBALANCE)
-		initSpeed*=0.01;	// convert % of WaveSpeed() to fraction of WaveSpeed()
+		initSpeed*=0.01;		// convert % of WaveSpeed() to fraction of WaveSpeed()
 	else
-		initSpeed*=1.e3;	// convert m/sec to mm/sec
-	gamma*=1.e-3;			// convert J/m^2 to N/mm
+		initSpeed*=1.e3;		// convert m/sec to mm/sec
+	gamma*=1000.;				// convert J/m^2to nJ/mm^2
 	if(gamma<0. || JIc<2.*gamma) gamma=JIc/2.;
 	// pCrit3 - dimensionless
 	// gain - no units change
@@ -306,7 +308,7 @@ void MaterialBase::PrintCommonProperties(void) const
 	if(Rigid() || isTractionLaw()) return;
 	
 	// print density
-	PrintProperty("rho",rho,"");
+	PrintProperty("rho",1000.*rho,"");
 	cout << endl;
 	
 	// print growth criterion and relevant material properties for crack growth
@@ -358,21 +360,20 @@ void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection) const
 			
 		case MAXHOOPSTRESS:
 			cout << "Maximum hoop stess" << PreferredDirection(thisDirection) << endl;
-			PrintProperty("KIc",KIc/31.62277660168379,"MPa-sqrt(m)");
-			PrintProperty("KIIc",KIIc/31.62277660168379,"MPa-sqrt(m)");
+			PrintProperty("KIc",KIc/31.62277660168379e6,"MPa-sqrt(m)");
 			cout << endl;
 			break;
 			
 		case CRITICALERR:
 			cout << "Critical Energy Release Rate" << PreferredDirection(thisDirection) << endl;
-			PrintProperty("Jc",1000.*JIc,"J/m^2");
+			PrintProperty("Jc",JIc/1000.,"J/m^2");
 			cout << endl;
 			break;
 			
 		case STEADYSTATEGROWTH:
 			cout << "Constant crack speed" << PreferredDirection(thisDirection) << endl;
 			if(initTime<0.)
-			{	PrintProperty("Jc",JIc,"J/m^2");
+			{	PrintProperty("Jc",JIc/1000.,"J/m^2");
 				PrintProperty("initSpeed",1.e-3*initSpeed,"m/s");
 			}
 			else
@@ -392,22 +393,22 @@ void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection) const
 			
 		case TOTALENERGYBALANCE:
 			cout << "Total energy balance" << PreferredDirection(thisDirection) << endl;
-			sprintf(mline,"Jc =%12.3f J/m^2  vel=%12.3f%c wave speed",JIc,100.*initSpeed,'%');
+			sprintf(mline,"Jc =%12.3f J/m^2  vel=%12.3f%c wave speed",JIc/1000.,1000.*initSpeed,'%');
 			cout << mline << endl;
-			sprintf(mline,"gam=%12.3f J/m^2  p  =%12.3f        gain=%12.3g",1000.*gamma,pCrit3,gain);
+			sprintf(mline,"gam=%12.3f J/m^2  p  =%12.3f        gain=%12.3g",gamma/1000.,pCrit3,gain);
 			cout << mline << endl;
 			break;
 			
 		case STRAINENERGYDENSITY:
 			cout << "Minmum strain energy density" << PreferredDirection(thisDirection) << endl;  
-			sprintf(mline,"KIc=%12.3f MPa-sqrt(m)  KIIc=%12.3f MPa-sqrt(m)",KIc,KIIc);
-			cout << mline << endl;
+			PrintProperty("KIc",KIc/31.62277660168379e6,"MPa-sqrt(m)");
+			cout << endl;
 			break;
 			
 		case EMPIRICALCRITERION:
 			cout << "Empirical criterion" << PreferredDirection(thisDirection) << endl;  
 			sprintf(mline,"KIc=%12.3f MPa-sqrt(m)  KIIc=%12.3f MPa-sqrt(m) KIexp=%12.3f KIIexp=%12.3f",
-					KIc,KIIc,KIexp,KIIexp);
+					KIc/31.62277660168379e6,KIIc/31.62277660168379e6,KIexp,KIIexp);
 			cout << mline << endl;
 			break;
 			
@@ -438,13 +439,13 @@ void MaterialBase::PrintTransportProperties(void) const
 	}
 	// Conductivity constants
 	if(ConductionTask::active)
-	{	PrintProperty("k",rho*kCond/1000.,"W/(m-K)");
-		PrintProperty("Cv",heatCapacity,"J/(kg-K)");        // aka mJ/(g-K)
-		PrintProperty("Cp",heatCapacity+GetCpMinusCv(NULL),"J/(kg-K)");        // aka mJ/(g-K)
+	{	PrintProperty("k",rho*kCond*1.e-6,"W/(m-K)");
+		PrintProperty("Cv",heatCapacity*1.e-6,"J/(kg-K)");        // aka mJ/(g-K)
+		PrintProperty("Cp",(heatCapacity+GetCpMinusCv(NULL))*1.e-6,"J/(kg-K)");        // aka mJ/(g-K)
 		cout << endl;
 	}
 	else if(ConductionTask::adiabatic)
-	{	PrintProperty("Cv",heatCapacity,"J/(kg-K)");        // aka mJ/(g-K)
+	{	PrintProperty("Cv",heatCapacity*1.e-6,"J/(kg-K)");        // aka mJ/(g-K)
         // Cp only used in conduction so not printed here when conduction is off
 		cout << endl;
 	}
@@ -548,7 +549,7 @@ void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np) const
 	if(isolatedSystemAndParticles)
     {   // need to add initial heat energy, because special cases in this mode
         // will ignore the Cv dT term
-		double Cv = 1000.*GetHeatCapacity(mptr);
+		double Cv = GetHeatCapacity(mptr);
 		mptr->AddHeatEnergy(Cv*(mptr->pTemperature-thermal.reference));
         // initial entropy kept to zero, could add something here if ever needed
 	}
@@ -631,12 +632,12 @@ int MaterialBase::GetShareMatField(void) const { return shareMatField-1; }
 // -1 if material not in use, otherwise zero-based field number from 0 to numActiveMaterials
 int MaterialBase::GetActiveField(void) const { return activeField; }
 
-// maximum diffusion coefficient in cm^2/sec (anisotropic must override) (diff in mm^2/sec)
-double MaterialBase::MaximumDiffusion(void) const { return diffusionCon/100.; }
+// maximum diffusion coefficient in mm^2/sec (anisotropic must override) (diff in mm^2/sec)
+double MaterialBase::MaximumDiffusion(void) const { return diffusionCon; }
 
-// maximum diffusivity in cm^2/sec  (anisotropic must override)
-// specific ks is mJ mm^2/(sec-K-g) and Cp is mJ/(g-K) so ks/Cp = mm^2 / sec * 1e-2 = cm^2/sec
-double MaterialBase::MaximumDiffusivity(void) const { return 0.01*kCond/heatCapacity; }
+// maximum diffusivity in mm^2/sec  (anisotropic must override)
+// specific ks is nJ mm^2/(sec-K-g) and Cp is nJ/(g-K) so ks/Cp = mm^2 / sec
+double MaterialBase::MaximumDiffusivity(void) const { return kCond/heatCapacity; }
 
 // material-to-material contact
 void MaterialBase::SetFriction(double friction,int matID,double Dn,double Dnc,double Dt)
@@ -779,13 +780,13 @@ void MaterialBase::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t
 
 // Get Cv heat capacity
 // Implemented in case heat capacity changes with particle state
-// Units mJ/(g-K) = J/(kg-m)
+// Units nJ/(g-K)
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity; }
 
 // For Cp heat capacity
 double MaterialBase::GetCpHeatCapacity(MPMBase *mptr) const { return GetHeatCapacity(mptr)+GetCpMinusCv(mptr); }
 
-// A material can override to set Cp-Cv in mJ/(g-K) = J/(kg-m)
+// A material can override to set Cp-Cv in nJ/(g-K)
 // From thermodyanamics Cp-Cv = (3K CTE ^2T/rho) where CTE is linear CTE
 // (if mptr==NULL, can use stress free temperature instead)
 double MaterialBase::GetCpMinusCv(MPMBase *mptr) const { return 0; }
@@ -796,7 +797,7 @@ double MaterialBase::GetCpMinusCv(MPMBase *mptr) const { return 0; }
 // dPhi is dissipated energy that is converted to temperature rise
 void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,double dPhi) const
 {
-	double Cv = 1000.*GetHeatCapacity(mptr);
+	double Cv = GetHeatCapacity(mptr);						// nJ/(g-K)
 	double dispEnergy = Cv*dTq0 + dPhi;                     // = Cv dTad
 	
 	// Isolated means no conduction and no thermal ramp (and in future if have other ways
@@ -922,11 +923,11 @@ Vector MaterialBase::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 }
 
 // Convert J to K assuming an isotropic material
-// d -- crack opening displacement near crack tip, d.y--opening, d.x--shear
-// C -- crack propagating velocity
-// J0 -- J integral components in J0.x and J0.y
-// np -- PLANE_STRESS_MPM or PLANE_STRAIN_MPM (asysymtry not certain, current reverts to plane strain)
-// nuLS and GLS -- low strain Poisson's ratio and shear modulus (in MPa)
+// d -- crack opening displacement near crack tip in mm, d.y--opening, d.x--shear
+// C -- crack propagating velocity in mm/sec
+// J0 -- J integral components in J0.x and J0.y in uN/mm
+// np -- PLANE_STRESS_MPM or PLANE_STRAIN_MPM (axisymmetry not certain, current reverts to plane strain)
+// nuLS and GLS -- low strain Poisson's ratio and shear modulus (in Pa = uN/mm^2)
 Vector MaterialBase::IsotropicJToK(Vector d,Vector C,Vector J0,int np,double nuLS,double GLS)
 {
     double Cs2,Cd2,C2;
@@ -937,7 +938,6 @@ Vector MaterialBase::IsotropicJToK(Vector d,Vector C,Vector J0,int np,double nuL
     double dx = d.x;
     double dy = d.y;
     double J0x = fabs(J0.x);                        // J0.x should be always positive
-    double J0y = J0.y;
 	
 	double kf=0.;
     if(np==PLANE_STRESS_MPM)
@@ -947,8 +947,8 @@ Vector MaterialBase::IsotropicJToK(Vector d,Vector C,Vector J0,int np,double nuL
 	
     C2 = C.x*C.x+C.y*C.y;				// square of crack velocity
 	// dynamic or stationary crack
-    if(!DbleEqual(sqrt(C2),0.0)) 
-	{	Cs2=1.e+3*GLS/rho;				// now in m^2/sec^2
+    if(!DbleEqual(sqrt(C2),0.0))
+	{	Cs2=GLS/rho;
         Cd2=Cs2*(kf+1.)/(kf-1.);
         B1=sqrt(1.-C2/Cd2);
         B2=sqrt(1.-C2/Cs2);
@@ -965,14 +965,16 @@ Vector MaterialBase::IsotropicJToK(Vector d,Vector C,Vector J0,int np,double nuL
         A1=A2=A4=(kf+1.)/4.;
     }
 	
-    term2=dy*dy*B2+dx*dx*B1;
+    term2=dy*dy*B2+dx*dx*B1;			// mm^2
+	
 	// special case for zero COD
     if(DbleEqual(term2,0.0))
 	{	SIF.x = 0.0;
 		SIF.y = 0.0;
     }
     else
-	{	SIF.x = dy*sqrt(2*GLS*J0x*B2/A1/term2);
+	{	// Units mm sqrt(uN/mm^2 uN/mm 1/mm^2) = uN/mm^2 sqrt(mm)
+		SIF.x = dy*sqrt(2*GLS*J0x*B2/A1/term2);
 		SIF.y = dx*sqrt(2*GLS*J0x*B1/A2/term2);
     }
     
@@ -1563,7 +1565,7 @@ double MaterialBase::GetArtificalViscosity(double Dkk,double c) const
     if(Dkk<0 && artificialViscosity)
     {   double divuij = fabs(Dkk);                                  // sec^-1
         double dcell = mpmgrid.GetAverageCellSize();                // mm
-        avred = dcell*divuij*(avA1*c + 1.e-3*avA2*dcell*divuij);    // Pa cm^3/g
+        avred = dcell*divuij*(avA1*c + avA2*dcell*divuij);			// Pa mm^3/g = mm^2/sec^2
     }
     return avred;
 }
@@ -1575,7 +1577,7 @@ double MaterialBase::GetArtificalViscosity(double Dkk,double c) const
 bool MaterialBase::PartitionsElasticAndPlasticStrain(void) { return FALSE; }
 
 // if a subclass material supports artificial viscosity, override this and return TRUE
-bool MaterialBase::SupportsArtificialViscosity(void) const { return FALSE; }
+bool MaterialBase::SupportsArtificialViscosity(void) const { return false; }
 
 
 

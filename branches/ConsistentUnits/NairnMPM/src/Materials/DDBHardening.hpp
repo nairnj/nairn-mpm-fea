@@ -99,7 +99,6 @@ class DDBHardening : public HardeningLawBase
 		
 		
 		// accessors
-		//virtual double GetHeatCapacity(MPMBase *) const;
 		virtual const char *GetHardeningLawName(void) const;
 
 

@@ -296,7 +296,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	
     // future - make PropFractCellTime a user parameter, which not changed here if user picked it
     if(PropFractCellTime<0.) PropFractCellTime=FractCellTime;
-	double minSize=mpmgrid.GetMinCellDimension()/10.;                   // in cm
+	double minSize=mpmgrid.GetMinCellDimension();                   // in mm
     
     // loop over material points
 	maxMaterialFields = 0;
@@ -322,16 +322,16 @@ void NairnMPM::PreliminaryCalcs(void)
 	
 		// element and mp properties
 		if(IsThreeD())
-		{	volume=theElements[mpm[p]->ElemID()]->GetVolume()/1000.;	// in cm^3
+		{	volume=theElements[mpm[p]->ElemID()]->GetVolume();		// in mm^3
 			dcell = (minSize>0.) ? minSize : pow(volume,1./3.) ;
 		}
 		else
 		{	// when axisymmetric, thickness is particle radial position, which gives mp = rho*Ap*Rp
-			area=theElements[mpm[p]->ElemID()]->GetArea()/100.;	// in cm^2
-			volume=mpm[p]->thickness()*area/10.;				// in cm^2
+			area=theElements[mpm[p]->ElemID()]->GetArea();			// in mm^2
+			volume=mpm[p]->thickness()*area;						// in mm^2
 			dcell = (minSize>0.) ? minSize : sqrt(area) ;
 		}
-		rho=theMaterials[matid]->rho;					// in g/cm^3
+		rho=theMaterials[matid]->rho;								// in g/mm^3
         
         // assumes same number of points for all elements
         // for axisyymmeric xp = rho*Ap*volume/(# per element)
@@ -352,7 +352,7 @@ void NairnMPM::PreliminaryCalcs(void)
         nmpmsNR = p+1;
         
         // check time step
-        crot=theMaterials[matid]->WaveSpeed(IsThreeD(),mpm[p])/10.;		// in cm/sec
+        crot=theMaterials[matid]->WaveSpeed(IsThreeD(),mpm[p]);			// in mm/sec
 		tst=FractCellTime*dcell/crot;                                   // in sec
         if(tst<tmin) tmin=tst;
         

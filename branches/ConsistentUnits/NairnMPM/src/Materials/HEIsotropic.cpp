@@ -325,11 +325,11 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     // because deviatoric stress is traceless and deres has zero shear terms
     // residual energy due to pressure was added in the pressure update
     
-    // Plastic work increment per unit mass (dw/(rho0 V0)) (uJ/g)
+    // Plastic work increment per unit mass (dw/(rho0 V0)) (nJ/g)
     double dispEnergy = dlambda*(sp->xx*nk.xx + sp->yy*nk.yy + sp->zz*nk.zz + 2.*sp->xy*nk.xy);
     if(np==THREED_MPM)  dispEnergy += 2.*dlambda*(sp->xz*nk.xz + sp->yz*nk.yz);
 	
-    // Subtract q.dalpha to get final disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
+    // Subtract q.dalpha to get final disispated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
     dispEnergy -= dlambda*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime,&alpha,p->hardProps);
     
     // heat energy is Cv(dT-dTq0) - dPhi
@@ -365,8 +365,7 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,doub
 	double delV = 1. - 1./detdF;
     double QAVred = 0.,AVEnergy=0.;
     if(delV<0. && artificialViscosity)
-	{	double c = sqrt(p->Kred/1000.);           // m/sec
-        QAVred = GetArtificalViscosity(delV/delTime,c);
+	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(p->Kred*J));
         if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
     }
     double Pfinal = -Kterm + QAVred;
@@ -374,7 +373,7 @@ void HEIsotropic::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,doub
     
     // work energy is dU = -P dV + s.de(total)
 	// Here do hydrostatic term
-    // Internal energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    // Internal energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
 	// Also get residual energy from -P (Vresn+1-Vresn)/Vresn+1 = -P delVres
     double avgP = 0.5*(P0+Pfinal);
 	double delVres = 1. - 1./detdFres;
@@ -455,7 +454,7 @@ Tensor HEIsotropic::GetNormalTensor(Tensor *strial,double magnitude_strial,int n
 // convert J to K using isotropic method
 Vector HEIsotropic::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 {	double nuLS = (3.*Kbulk-2.*G1)/(6.*Kbulk+2.*G1);
-	return IsotropicJToK(d,C,J0,np,nuLS,G1);
+	return IsotropicJToK(d,C,J0,np,nuLS,G1*1.e6);
 }
 
 // Copy stress to a read-only tensor variable
@@ -491,5 +490,5 @@ double HEIsotropic::GetHistory(int num,char *historyPtr) const
 }
 
 // if a subclass material supports artificial viscosity, override this and return TRUE
-bool HEIsotropic::SupportsArtificialViscosity(void) const { return TRUE; }
+bool HEIsotropic::SupportsArtificialViscosity(void) const { return true; }
 

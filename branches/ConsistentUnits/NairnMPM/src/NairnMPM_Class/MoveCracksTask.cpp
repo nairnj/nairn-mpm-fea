@@ -56,7 +56,7 @@ void MoveCracksTask::Execute(void)
 		nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 	}
 	
-	// if moving crack plane in cm velocity field, get those velocities now
+	// if moving crack plane in ctr mass velocity field, get those velocities now
 	if(!contact.GetMoveOnlySurfaces()) NodalPoint::GetGridCMVelocitiesTask8();
 	
 	// Move crack plane by one of two methods. When moving only surface, the plane will move to average

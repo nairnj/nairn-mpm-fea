@@ -137,12 +137,11 @@ double MatPoint2D::thickness() { return thick; }
 // Find internal force as -mp sigma.deriv * 1000. which converts to g mm/sec^2 or micro N
 // add external force (times a shape function)
 // Store in buffer
-// (note: stress is specific stress in units N/m^2 cm^3/g, Multiply by 1000 to make it mm/sec^2)
+// (note: stress is specific stress in units N/m^2 mm^3/g which is (g-mm^2/sec^2)/g
 void MatPoint2D::GetFintPlusFext(Vector *theFrc,double fni,double xDeriv,double yDeriv,double zDeriv)
 {	
-	double mpug = mp*1000.;
-	theFrc->x = -mpug*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv) + fni*pFext.x;
-	theFrc->y = -mpug*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv) + fni*pFext.y;
+	theFrc->x = -mp*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv) + fni*pFext.x;
+	theFrc->y = -mp*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv) + fni*pFext.y;
 	theFrc->z = 0.0;
 }
 
@@ -152,8 +151,8 @@ void MatPoint2D::AddTemperatureGradient(Vector *grad)
     pTemp->DT.y+=grad->y;
 }
 
-// return conduction force = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units N-mm/sec)
-// and k/rho0 is stored in k in units (N mm^3/(sec-K-g))
+// return conduction force = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units nJ/sec)
+// and k/rho0 is stored in k in units (nJ mm^2/(sec-K-g))
 //  (non-rigid particles only)
 double MatPoint2D::FCond(double dshdx,double dshdy,double dshdz,TransportProperties *t)
 {
@@ -223,16 +222,17 @@ double MatPoint2D::GetRelativeVolume(void)
     return pF[2][2]*(pF[0][0]*pF[1][1]-pF[1][0]*pF[0][1]);
 }
 
-// get dilated current volume using current deformation gradient
-// (only used for contact (cracks and multimaterial) and for transport tasks)
-// when volumeType is DEFORMED_AREA, get t0*Ap, where
+// Get dilated current volume using current deformation gradient
+// (only used for crack contact, multimaterial contact, and transport tasks)
+// when volumeType is DEFORMED_AREA or DEFORMED_AREA_FOR_GRADIENT, get t0*Ap, where
 //    Ap is deformed particle area and t0 in initial thickness
-double MatPoint2D::GetVolume(bool volumeType)
-{	double rho=theMaterials[MatID()]->rho*0.001;		// in g/mm^3
+double MatPoint2D::GetVolume(int volumeType)
+{	double rho=theMaterials[MatID()]->rho;				// in g/mm^3
 	if(volumeType==DEFORMED_VOLUME)
-		return GetRelativeVolume()*mp/rho;						// in mm^3
+		return GetRelativeVolume()*mp/rho;				// in mm^3
 	
-	// get thickness times area (for contact and for gradient)
+	// get thickness times initial area (for contact and for gradient)
+	// Note that mp/rho = rho Ap0 t0/rho = Ap0 * t0
 	double pF[3][3];
 	GetDeformationGradient(pF);
 	return (pF[0][0]*pF[1][1]-pF[1][0]*pF[0][1])*mp/rho;

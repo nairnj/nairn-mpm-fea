@@ -99,10 +99,12 @@ char *BistableIsotropic::InputMaterialProperty(char *xName,int &input,double &gS
     // conductivity
     else if(strcmp(xName,"kCond0")==0)
     {	readbs[KCOND0_PROP]=1;
+		gScaling = 1e6;					// convert W/(m-K) to nW/(mm-K)
         return((char *)&kCond0);
     }
     else if(strcmp(xName,"kCondd")==0)
     {	readbs[KCONDD_PROP]=1;
+ 		gScaling = 1e6;					// convert W/(m-K) to nW/(mm-K)
         return((char *)&kCondd);
     }
 	
@@ -156,7 +158,7 @@ const char *BistableIsotropic::VerifyAndLoadProperties(int np)
     
     // no change in heat capacity
     
-    // make conductivty specific (N mm^3/(sec-K-g))
+    // make conductivty specific (nJ mm^2/(sec-K-g))
     kCond0 /= rho;
     kCondd /= rho;
     
@@ -232,7 +234,7 @@ void BistableIsotropic::PrintTransportProperties(void) const
 	// Conductivity constants (Cp is also mJ/(g-K))
 	if(ConductionTask::active)
 	{   sprintf(mline,"k0 =%12.3g W/(m-K)  kd =%12.3g W/(m-K)  C   =%12.3g J/(kg-K)",
-                            rho*kCond0,rho*kCondd,heatCapacity);
+                            rho*kCond0*1.e-6,rho*kCondd*1.e-6,heatCapacity*1.e-6);
 		cout << mline << endl;
 	}
 }
@@ -428,12 +430,12 @@ double BistableIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
 { return 1000.*fmax(sqrt((K0+4.*G0/3.)/rho),sqrt((Kd+4.*Gd/3.)/rho));
 }
 
-// maximum diffusion coefficient in cm^2/sec (diff in mm^2/sec)
-double BistableIsotropic::MaximumDiffusion(void) const { return max(diffd,diff0)/100.; }
+// maximum diffusion coefficient in mm^2/sec (diff in mm^2/sec)
+double BistableIsotropic::MaximumDiffusion(void) const { return max(diffd,diff0); }
 
-// maximum diffusivity in cm^2/sec
-// specific k is mJ mm^2/(sec-K-g) and Cp is mJ/(g-K) so k/C = mm^2/sec * 1e-2 = cm^2/sec
-double BistableIsotropic::MaximumDiffusivity(void) const { return 0.01*max(kCondd,kCond0)/heatCapacity; }
+// maximum diffusivity in mm^2/sec
+// specific k is nJ mm^2/(sec-K-g) and Cp is nJ/(g-K) so k/C = mm^2/sec
+double BistableIsotropic::MaximumDiffusivity(void) const { return max(kCondd,kCond0)/heatCapacity; }
 
 // return material type
 const char *BistableIsotropic::MaterialType(void) const { return "Bistable Isotropic"; }

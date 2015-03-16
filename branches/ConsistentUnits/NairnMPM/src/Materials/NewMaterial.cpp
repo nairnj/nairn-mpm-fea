@@ -108,12 +108,12 @@ void NewMaterial::PrintMechanicalProperties(void) const
 //}
 
 // Implemented in case heat capacity (Cp/heat capacity for conduction) changes with particle state
-// Called by conduction code
+// Called by conduction code in units nJ/(g-K)
 //double NewMaterial::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity; }
 
-// A material can override to set Cp-Cv in mJ/(g-K) = J/(kg-m)
+// A material can override to set Cp-Cv in nJ/(g-K)
 // mptr will be NULL when printing material properties
-//double NewMaterial::GetCpMinusCv(MPMBase *mptr) const { return 1; }
+//double NewMaterial::GetCpMinusCv(MPMBase *mptr) const { return 0; }
 
 // Apply Constitutive law, check np to know what type
 void NewMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
@@ -142,10 +142,10 @@ double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; 
 // Used only by silent boundary conditions, which are only for isotropic materials
 //double NewMaterial::ShearWaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; }
 
-// Maximum diffusion coefficient in cm^2/sec
+// Maximum diffusion coefficient in mm^2/sec
 //double NewMaterial::MaximumDiffusion(void) const { return 0.; }
 
-// Maximum diffusivity in cm^2/sec
+// Maximum diffusivity in mm^2/sec
 //double NewMaterial::MaximumDiffusivity(void) const { return 0.; }
 
 // When code needs the stress, it calls this method on the material where sp is point

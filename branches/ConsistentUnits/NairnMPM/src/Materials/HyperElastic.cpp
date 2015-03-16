@@ -61,15 +61,15 @@ void HyperElastic::SetInitialParticleState(MPMBase *mptr,int np) const
 const char *HyperElastic::VerifyAndLoadProperties(int np)
 {
 	// Kbulk in Specific units using initial rho
-	// for MPM (units N/m^2 cm^3/g)
+	// for MPM (units N/m^2 mm^3/g)
 	Ksp = Kbulk*1.0e+06/rho;
 	
 	// expansion coefficients
 	CTE1 = 1.e-6*aI;
 	CME1 = betaI*concSaturation;
     
-    // for Cp-Cv (units J/(kg-K^2)
-    Ka2sp = 1.e-6*Ksp*CTE1*CTE1;
+    // for Cp-Cv (units nJ/(g-K^2))
+    Ka2sp = Ksp*CTE1*CTE1;
 	
     // call superclass
     return MaterialBase::VerifyAndLoadProperties(np);
@@ -466,7 +466,7 @@ void HyperElastic::GetNewtonPressureTerms(double J,double Kred,double &mJ2P,doub
 }
 
 // From thermodyanamics Cp-Cv = 9 K a^2 T/rho
-// Units mJ/(g-K) = J/(kg-m)
+// Ka2sp in nJ/(g-K^2) so output in nJ/(g-K)
 // Here using K0 and rho0 - could modify if needed
 double HyperElastic::GetCpMinusCv(MPMBase *mptr) const
 {   return mptr!=NULL ? Ka2sp*mptr->pPreviousTemperature : Ka2sp*thermal.reference;

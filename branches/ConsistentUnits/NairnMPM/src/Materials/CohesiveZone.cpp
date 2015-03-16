@@ -20,6 +20,7 @@
 
 #include "Materials/CohesiveZone.hpp"
 #include "Cracks/CrackSegment.hpp"
+#include "System/UnitsController.hpp"
 
 extern double mtime;
 
@@ -30,13 +31,13 @@ CohesiveZone::CohesiveZone(char *matName) : TractionLaw(matName)
 {
 	// mode I cohesive law (all others set to -1 in superclasses)
 	// others are: stress1,delIc,JIc
-	kI1=-1.;			// kIe (keep <0 for linear softening)
-	umidI=-1.;
+	kI1=-1.;			// initial elastic slope mode I (keep <0 for linear softening)
+	umidI=-1.;			// peak mode II
 	
 	// mode II cohesive law (all others set to -1 in superclasses)
 	// others are: stress2,delIIc,JIIc
-	kII1=-1;			// kIIe (keep <0 for linear softening)
-	umidII=-1.;
+	kII1=-1;			// initial elastic slope mode II (keep <0 for linear softening)
+	umidII=-1.;			// peak mode II
 }
 
 #pragma mark CohesiveZone::Initialization
@@ -46,12 +47,12 @@ char *CohesiveZone::InputMaterialProperty(char *xName,int &input,double &gScalin
 {   
     if(strcmp(xName,"kIe")==0)
 	{	input=DOUBLE_NUM;
-		return((char *)&kI1);
+		return UnitsController::ScaledPtr((char *)&kI1,gScaling,1.e6);
 	}
 	
 	else if(strcmp(xName,"kIIe")==0)
 	{	input=DOUBLE_NUM;
-		return((char *)&kII1);
+		return UnitsController::ScaledPtr((char *)&kII1,gScaling,1.e6);
 	}
 	
 	else if(strcmp(xName,"delpkI")==0)
@@ -81,10 +82,6 @@ const char *CohesiveZone::VerifyAndLoadProperties(int np)
 	msg=SetTractionLaw(stress2,kII1,delIIc,JIIc,umidII);
 	if(msg!=NULL) return msg;
 	
-	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
-	sIc=stress1*1.e6;
-	sIIc=stress2*1.e6;
-	
 	// go to parent
 	return TractionLaw::VerifyAndLoadProperties(np);
 }
@@ -92,15 +89,15 @@ const char *CohesiveZone::VerifyAndLoadProperties(int np)
 // print to output window
 void CohesiveZone::PrintMechanicalProperties(void) const
 {
-	PrintProperty("GcI",JIc,"J/m^2");
-	PrintProperty("sigI",stress1,"");
+	PrintProperty("GcI",JIc/1000.,"J/m^2");
+	PrintProperty("sigI",stress1*1.e-6,"");
 	PrintProperty("uIc",delIc,"mm");
 	if(kI1>0.) PrintProperty("kI",1.0e-6*kI1,"MPa/mm");
 	PrintProperty("upkI",umidI,"mm");
     cout <<  endl;
 
-	PrintProperty("GcII",JIIc,"J/m^2");
-	PrintProperty("sigII",stress2,"");
+	PrintProperty("GcII",JIIc/1000.,"J/m^2");
+	PrintProperty("sigII",stress2*1.e-6,"");
 	PrintProperty("uIIc",delIIc,"mm");
 	if(kII1>0.) PrintProperty("kII",1.0e-6*kII1,"MPa/mm");
 	PrintProperty("upkII",umidII,"mm");
@@ -138,7 +135,7 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
 		}
 		else
 		{	if(nCod>upeak[0]) upeak[0]=nCod;                        // new peak reached
-			double keff=sIc*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
+			double keff=stress1*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
 			Tn=keff*nCod;
 			
 			// get GI for failure law
@@ -162,7 +159,7 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
     }
     else if(absTCod>0.)
     {	if(absTCod>upeak[1]) upeak[1]=absTCod;          // new peak reached either direction
-        double keff=sIIc*(delIIc-upeak[1])/((delIIc-umidII)*upeak[1]);
+        double keff=stress2*(delIIc-upeak[1])/((delIIc-umidII)*upeak[1]);
         Tt=keff*tCod;
         
         // shear energy always
@@ -237,13 +234,13 @@ double CohesiveZone::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCo
 	{	double *upeak=(double *)cs->GetHistoryData();
 		double keff;
 		if(nCod>0.)
-		{	keff=sIc*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
+		{	keff=stress1*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
 			double Tn=keff*nCod;
 			tEnergy-=0.5e-6*Tn*nCod;                                // now in units of N/mm
 		}
 		
 		// shear energy always
-		keff=sIIc*(delIIc-upeak[1])/((delIIc-umidII)*upeak[1]);
+		keff=stress2*(delIIc-upeak[1])/((delIIc-umidII)*upeak[1]);
 		double Tt=keff*tCod;
 		tEnergy-=0.5e-6*Tt*tCod;									// N/mm
 	}

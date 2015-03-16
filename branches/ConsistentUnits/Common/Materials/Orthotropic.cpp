@@ -71,7 +71,7 @@ void Orthotropic::PrintTransportProperties(void) const
 	// Conductivity constants
 	if(ConductionTask::active)
 	{   sprintf(mline,"k1 =%12.3g   k2 =%12.3g   k3 =%12.3g W/(m-K)\nC   =%12.3g J/(kg-K)",
-                    rho*kcondT/1000.,rho*kcondA/1000.,rho*kcondz/1000.,heatCapacity);
+                    rho*kcondT*1.e-6,rho*kcondA*1.e-6,rho*kcondz*1.e-6,heatCapacity*1.e-6);
 		cout << mline << endl;
 	}
 }
@@ -177,13 +177,19 @@ char *Orthotropic::InputMaterialProperty(char *xName,int &input,double &gScaling
         return((char *)&Dz);
 		
     else if(strcmp(xName,"kCondx")==0 || strcmp(xName,"kCondR")==0)
+	{	gScaling = 1.e6;			// convert W/(m-K) to nW/(mm-K)
         return((char *)&kcondT);
-		
+	}
+	
     else if(strcmp(xName,"kCondy")==0 || strcmp(xName,"kCondZ")==0)
+	{	gScaling = 1.e6;			// convert W/(m-K) to nW/(mm-K)
         return((char *)&kcondA);
-		
+	}
+	
     else if(strcmp(xName,"kCondz")==0 || strcmp(xName,"kCondT")==0)
+	{	gScaling = 1.e6;			// convert W/(m-K) to nW/(mm-K)
         return((char *)&kcondz);
+	}
 #endif
 		
 	return(MaterialBase::InputMaterialProperty(xName,input,gScaling));
@@ -233,8 +239,8 @@ const char *Orthotropic::VerifyAndLoadProperties(int np)
     }
 
 #ifdef MPM_CODE
-    // make conductivty specific (N mm^3/(sec-K-g))
-    kcondz *= (1000./rho);
+    // make conductivty specific (nJ mm^2/(sec-K-g))
+    kcondz /= rho;;
 #endif
 
     // set properties
@@ -256,7 +262,7 @@ const char *Orthotropic::MaterialType(void) const { return "Orthotropic (3 axis 
 
 #ifdef MPM_CODE
 
-// calculate maximum wave speed in mm/sec (moduli in MPa, rho in g/cm^3)
+// calculate maximum wave speed in mm/sec (moduli in MPa, rho in g/mm^3)
 double Orthotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
 {
     double xx,cnorm,cshear;
@@ -265,7 +271,7 @@ double Orthotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
     cnorm=fmax(Ex*(1.-nuyz*nuzy),Ey*(1.-nuxz*nuzx))/xx;
 	if(threeD) cnorm=fmax(cnorm,Ez*(1-nuxy*nuyx)/xx);
 	cshear = threeD ? fmax(Gxy,fmax(Gxz,Gyz)) : Gxy;
-    return sqrt(1.e9*fmax(cnorm,cshear)/rho);
+    return 1000.*sqrt(fmax(cnorm,cshear)/rho);
 }
 
 // diffusion and conductivity in the z direction

@@ -251,7 +251,7 @@ void MPMBase::SetHasLeftTheGridBefore(bool setting) { elementCrossings = setting
 // get unscaled volume for use only in contact and imperfect interface calculations
 // return result in mm^3
 double MPMBase::GetUnscaledVolume(void)
-{	double rho=theMaterials[MatID()]->rho*0.001;			// in g/mm^3
+{	double rho=theMaterials[MatID()]->rho;					// in g/mm^3
 	return mp/rho;                                          // in mm^3
 }
 

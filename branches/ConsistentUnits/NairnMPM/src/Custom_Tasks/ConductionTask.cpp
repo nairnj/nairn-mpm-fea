@@ -137,17 +137,17 @@ TransportTask *ConductionTask::TransportTimeStep(int matid,double dcell,double *
 
 // Task 1 Extrapolation of temperature to the grid
 TransportTask *ConductionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape)
-{	double Cp = theMaterials[mptr->MatID()]->GetCpHeatCapacity(mptr);   // mJ/(g-K)
-	double arg = mptr->mp*Cp*shape;                                   // mJ/K
-	ndpt->gTemperature += mptr->pTemperature*arg;                     // mJ
-	ndpt->gMpCp += arg;                                               // mJ/K
+{	double Cp = theMaterials[mptr->MatID()]->GetCpHeatCapacity(mptr);   // nJ/(g-K)
+	double arg = mptr->mp*Cp*shape;                                   // nJ/K
+	ndpt->gTemperature += mptr->pTemperature*arg;                     // nJ
+	ndpt->gMpCp += arg;                                               // nJ/K
 	return nextTask;
 }
 
 // Task 1 reduction of ghost node to real node for temperature on the grid
 TransportTask *ConductionTask::Task1Reduction(NodalPoint *ndpt,NodalPoint *ghostNdpt)
-{	ndpt->gTemperature += ghostNdpt->gTemperature;                    // mJ
-	ndpt->gMpCp += ghostNdpt->gMpCp;                                  // mJ/K
+{	ndpt->gTemperature += ghostNdpt->gTemperature;                    // nJ
+	ndpt->gMpCp += ghostNdpt->gMpCp;                                  // nJ/K
 	return nextTask;
 }
 
@@ -239,14 +239,16 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double 
 	ndptr->fcond += mptr->FCond(dshdx,dshdy,dshdz,t);
 	
 	// add source terms
+	double heatSource = 0.;
 	
 	// if coupled to material dissipated energy, add and then zero dissipated energy
 	if(adiabatic)
-	{	// V * q heat energy is mp (g) * specific energy (uJ/g) = uJ
-		// To get mJ/sec, divide timestep (sec) and times 1e-3
-		ndptr->fcond += sh*1.0e-3*mptr->mp*mptr->GetDispEnergy()/timestep;
+	{	// mp (g) * specific energy (nJ/g) = nJ
+		// To get nW, divide timestep (sec)
+		heatSource += sh*mptr->mp*mptr->GetDispEnergy()/timestep;
+		ndptr->fcond += heatSource;
 	}
-	
+		
 	// next task
 	return nextTask;
 }

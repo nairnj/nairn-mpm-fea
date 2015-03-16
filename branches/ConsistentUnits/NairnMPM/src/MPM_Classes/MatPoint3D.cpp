@@ -132,13 +132,12 @@ double MatPoint3D::thickness() { return -1.; }
 // calculate internal force as -mp sigma.deriv * 1000.
 // add external force (times a shape function)
 // store in buffer
-// (note: stress is specific stress in units N/m^2 cm^3/g, Multiply by 1000 to make it mm/sec^2)
+// (note: stress is specific stress in units N/m^2 mm^3/g which is (g-mm^2/sec^2)/g
 void MatPoint3D::GetFintPlusFext(Vector *theFrc,double fni,double xDeriv,double yDeriv,double zDeriv)
 {	
-	double mpug = mp*1000.;
-	theFrc->x = -mpug*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+sp.xz*zDeriv) + fni*pFext.x;
-	theFrc->y = -mpug*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv+sp.yz*zDeriv) + fni*pFext.y;
-	theFrc->z = -mpug*(sp.xz*xDeriv+sp.yz*yDeriv+(sp.zz-pressure)*zDeriv) + fni*pFext.z;
+	theFrc->x = -mp*((sp.xx-pressure)*xDeriv+sp.xy*yDeriv+sp.xz*zDeriv) + fni*pFext.x;
+	theFrc->y = -mp*(sp.xy*xDeriv+(sp.yy-pressure)*yDeriv+sp.yz*zDeriv) + fni*pFext.y;
+	theFrc->z = -mp*(sp.xz*xDeriv+sp.yz*yDeriv+(sp.zz-pressure)*zDeriv) + fni*pFext.z;
 }
 
 // add to the concentration gradient (non-rigid particles only)
@@ -148,8 +147,8 @@ void MatPoint3D::AddTemperatureGradient(Vector *grad)
     pTemp->DT.z+=grad->z;
 }
 
-// return conduction force = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units N-mm/sec)
-// and k/rho0 is stored in k in units (N mm^3/(sec-K-g))
+// return conduction force = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units nJ/sec)
+// and k/rho0 is stored in k in units (nJ mm^2/(sec-K-g))
 //  (non-rigid particles only)
 double MatPoint3D::FCond(double dshdx,double dshdy,double dshdz,TransportProperties *t)
 {
@@ -235,9 +234,9 @@ double MatPoint3D::GetRelativeVolume(void)
 }
 
 // get dilated current volume using current deformation gradient
-// only used for contact (cracks and multimaterial) and for transport tasks
-double MatPoint3D::GetVolume(bool volumeType)
-{	double rho=theMaterials[MatID()]->rho*0.001;				// in g/mm^3
+// only used for crack contact, multimaterial contact, and transport tasks
+double MatPoint3D::GetVolume(int volumeType)
+{	double rho=theMaterials[MatID()]->rho;						// in g/mm^3
 	return GetRelativeVolume()*mp/rho;							// in mm^3
 }
 

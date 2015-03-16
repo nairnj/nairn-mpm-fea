@@ -95,11 +95,11 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
         C33=e3*(1.-v21*v12)/xx;
 		
 #ifdef MPM_CODE
-		// Cadota in J/(kg-K^2)
+		// Cadota in nJ/(g-K^2)
         double C113D = e1*(1.-v23*v32)/xx;
         double C123D = e2*(v12+v13*v32)/xx;
         double C223D = e2*(1.-v13*v31)/xx;
-		Cadota = 1.e-6*(C113D*a1*a1+C223D*a2*a2+C33*a3*a3 + 2.*(C123D*a2*a1-C33*(C13*a3*a1+C23*a3*a2)))/rho;
+		Cadota = (C113D*a1*a1+C223D*a2*a2+C33*a3*a3 + 2.*(C123D*a2*a1-C33*(C13*a3*a1+C23*a3*a2)))/rho;
 #endif
     }
 	
@@ -135,8 +135,8 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
         C33=e3*(1.-v21*v12)/xx;
 		
 #ifdef MPM_CODE
-		// Cadota in J/(kg-K^2)
-		Cadota = 1.e-6*(C11*a1*a1+C22*a2*a2+C33*a3*a3+2.*(C12*a2*a1+C13*a3*a1+C23*a3*a2))/rho;
+		// Cadota in nJ/(g-K^2)
+		Cadota = (C11*a1*a1+C22*a2*a2+C33*a3*a3+2.*(C12*a2*a1+C13*a3*a1+C23*a3*a2))/rho;
 #endif
     }
     
@@ -160,8 +160,8 @@ const char *Elastic::SetAnalysisProps(int np,double e1,double e2,double e3,doubl
         CME1=beta1;
         CME2=beta2;
         CME3=beta3;
-		// Cadota in J/(kg-K^2)
-		Cadota = 1.e-6*(C11*a1*a1+C22*a2*a2+C33*a3*a3+2.*(C12*a2*a1+C13*a3*a1+C23*a3*a2)/rho);
+		// Cadota in nJ/(g-K^2)
+		Cadota = (C11*a1*a1+C22*a2*a2+C33*a3*a3+2.*(C12*a2*a1+C13*a3*a1+C23*a3*a2)/rho);
 #endif
     }
     

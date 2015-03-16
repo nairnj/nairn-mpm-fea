@@ -125,14 +125,14 @@ const char *Neohookean::VerifyAndLoadProperties(int np)
 		return "Neohookean dilational energy (UJOption) must be 0, 1, or 2";
 	
 	// G1 and G2 in Specific units using initial rho
-	// for MPM (units N/m^2 cm^3/g)
+    // for MPM (N/m^2 mm^3/g = (g-mm^2/sec^2)/g when props in MPa and rho in g/mm^3)
 	pr.Gsp = G*1.0e+06/rho;
 	pr.Lamesp=Lame*1.0e+06/rho;
     pr.Ksp = pr.Lamesp + 2.*pr.Gsp/3.;
 	
     // heating gamma0
     double alphaV = 3.e-6*aI;
-    gamma0 = 1000.*Kbulk*alphaV/(rho*heatCapacity);
+    gamma0 = Kbulk*alphaV/(rho*heatCapacity);
 	
 	// call super class
 	return HyperElastic::VerifyAndLoadProperties(np);
@@ -251,8 +251,7 @@ void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
     double delV = 1. - 1./detDf;                        // total volume change
     double QAVred = 0.,AVEnergy=0.;
     if(delV<0. && artificialViscosity)
-    {   double c = sqrt(pr.Ksp/1000.);           // m/sec
-        QAVred = GetArtificalViscosity(delV/delTime,c);
+	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(pr.Ksp)*J);
         if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
     }
     double Pfinal = -Pterm + QAVred;
@@ -325,7 +324,7 @@ void Neohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 
 // convert J to K using isotropic method
 Vector Neohookean::ConvertJToK(Vector d,Vector C,Vector J0,int np)
-{	double GLS = G;
+{	double GLS = 1.e6*G;
 	double nuLS = (3.*Kbulk-2.*GLS)/(6.*Kbulk+2.*GLS);
 	return IsotropicJToK(d,C,J0,np,nuLS,GLS);
 }
@@ -343,25 +342,20 @@ Tensor Neohookean::GetStress(Tensor *sp,double pressure) const
 // Return the material tag
 int Neohookean::MaterialTag(void) const { return NEOHOOKEAN; }
 
-/* Calculate wave speed in mm/sec (because G in MPa and rho in g/cm^3)
-	Uses sqrt((K +4G/3)/rho) which is dilational wave speed
-	at low strain G = G1+G2
-*/
+// Calculate wave speed in mm/sec (because G in MPa and rho in g/mm^3)
+// Uses sqrt((K +4G/3)/rho) which is dilational wave speed at low strain
 double Neohookean::WaveSpeed(bool threeD,MPMBase *mptr) const
-{
-    return sqrt(1.e9*(Kbulk+4.*G/3.)/rho);
+{	return 1000.*sqrt((Kbulk+4.*G/3.)/rho);
 }
 
-/* Calculate shear wave speed in mm/sec (because G1 and G2 in MPa and rho in g/cm^3)
- at low strain G = G1+G2
- */
-double Neohookean::ShearWaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt(1.e9*G/rho); }
+// Calculate shear wave speed in mm/sec (because G1 and G2 in MPa and rho in g/mm^3)
+double Neohookean::ShearWaveSpeed(bool threeD,MPMBase *mptr) const { return 1000.*sqrt(G/rho); }
 
 // return material type
 const char *Neohookean::MaterialType(void) const { return "Neohookean Hyperelastic"; }
 
 // if a subclass material supports artificial viscosity, override this and return TRUE
-bool Neohookean::SupportsArtificialViscosity(void) const { return TRUE; }
+bool Neohookean::SupportsArtificialViscosity(void) const { return true; }
 
 // Get current relative volume change = J (which this material tracks)
 // All subclasses must track J in J_History (or override this method)

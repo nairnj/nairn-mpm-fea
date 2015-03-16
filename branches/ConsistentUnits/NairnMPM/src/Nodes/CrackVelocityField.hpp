@@ -30,8 +30,8 @@ class CrackVelocityField
 	public:
 		// variables (changed in MPM time step)
 		short loc[2];				// crack location's
-		int crackNum[2];			// crack number's/crackNum[0] used for total particles when moving crack planes by cm
-		Vector norm[2];				// crack normal's/norm[0] used for velocity when moving crack planes by cm
+		int crackNum[2];			// crack number's/crackNum[0] used for total particles when moving crack planes by ctr mass
+		Vector norm[2];				// crack normal's/norm[0] used for velocity when moving crack planes by ctr mass
 		DispField *df;				// For J and K calculations
 		
 		// constants (not changed in MPM time step)

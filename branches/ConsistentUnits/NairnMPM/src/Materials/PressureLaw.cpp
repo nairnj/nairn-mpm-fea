@@ -32,6 +32,7 @@ char *PressureLaw::InputMaterialProperty(char *xName,int &input,double &gScaling
 {
     if(strcmp(xName,"stress")==0)
 	{	input=DOUBLE_NUM;
+		gScaling = 1.e6;			// Convert MPa to Pa
 		return (char *)&stress1;
 	}
 	
@@ -72,9 +73,6 @@ void PressureLaw::SetStressFunction(char *bcFunction)
 // calculate properties used in analyses - here constant pressure law
 const char *PressureLaw::VerifyAndLoadProperties(int np)
 {
-	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
-	sc = stress1*1.e6;
-	
 	// go to parent
 	return TractionLaw::VerifyAndLoadProperties(np);
 }
@@ -83,7 +81,7 @@ const char *PressureLaw::VerifyAndLoadProperties(int np)
 void PressureLaw::PrintMechanicalProperties(void) const
 {
 	if(function==NULL)
-	{	PrintProperty("Stress",stress1,"MPa");
+	{	PrintProperty("Stress",stress1*1.e-6,"MPa");
 		cout <<  endl;
 	}
 	else

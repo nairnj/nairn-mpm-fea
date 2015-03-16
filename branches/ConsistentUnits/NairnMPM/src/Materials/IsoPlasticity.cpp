@@ -203,11 +203,11 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 		ep->yy += dvyy;
 		ep->xy += dgxy;
 				
-		// increment deviatoric stress (Units N/m^2  cm^3/g) (pressure not needed here)
+		// increment deviatoric stress (Units N/m^2  mm^3/g) (pressure not needed here)
 		Hypo2DCalculations(mptr,-dwrotxy,dels.xx,dels.yy,dels.xy);
 		
-		// work energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (uJ/g)
-        // energy units are also Pa cm^3/g, i.e., same as stress units
+		// work energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
+        // energy units are also Pa mm^3/g, i.e., same as stress units
         sp->zz = stk.zz;
         if(np==AXISYMMETRIC_MPM)
 		{	ep->zz += dvzz;
@@ -322,7 +322,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
         
 	Hypo2DCalculations(mptr,-dwrotxy,dels.xx,dels.yy,dels.xy);
 	
-    // Elastic work increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    // Elastic work increment per unit mass (dU/(rho0 V0)) (nJ/g)
     double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx
                                + (st0.yy+sp->yy)*dvyy
                                + (st0.xy+sp->xy)*dgxy);
@@ -336,7 +336,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     // plastic strain work
     double plastEnergy = lambdak*(sp->xx*dfds.xx + sp->yy*dfds.yy + sp->zz*dfds.zz + 2.*sp->xy*dfds.xy);
     
-    // dand subtract q dalpha to get isispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
+    // dand subtract q dalpha to get isispated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime,&alpha,p->hardProps);
     double dispEnergy = plastEnergy - qdalphaTerm;
     
@@ -414,7 +414,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 		// update stress (need to make hypoelastic)
 		Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 		
-		// work energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+		// work energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
 		mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx
 								+ (st0.yy+sp->yy)*dvyy
 								+ (st0.zz+sp->zz)*dvzz
@@ -471,7 +471,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	dsig[XY] -= p->Gred*dgxyp;
 	Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 	
-    // work energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    // work energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
 	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvzz
                                + (st0.zz+sp->zz)*dvzz + (st0.yz+sp->yz)*dgyz
                                + (st0.xz+sp->xz)*dgxz + (st0.xy+sp->xy)*dgxy);
@@ -483,7 +483,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     double plastEnergy = lambdak*(sp->xx*dfds.xx + sp->yy*dfds.yy + sp->zz*dfds.zz
                                   + 2.*sp->xy*dfds.xy + 2.*sp->xz*dfds.xz + 2.*sp->yz*dfds.yz);
     
-    // and subtrace q dalpa disispated energy per unit mass (dPhi/(rho0 V0)) (uJ/g)
+    // and subtrace q dalpa disispated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
     double qdalphaTerm = lambdak*SQRT_TWOTHIRDS*plasticLaw->GetYieldIncrement(mptr,np,delTime,&alpha,p->hardProps);
     double dispEnergy = plastEnergy - qdalphaTerm;
     
@@ -519,7 +519,7 @@ void IsoPlasticity::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,Pl
     
     // work energy is dU = -P dV + s.de(total)
 	// Here do hydrostatic term
-    // Work energy increment per unit mass (dU/(rho0 V0)) (uJ/g)
+    // Work energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
     double avgP = mptr->GetPressure()-0.5*dP;
     mptr->AddWorkEnergyAndResidualEnergy(-avgP*delV,-3.*avgP*eres);
 

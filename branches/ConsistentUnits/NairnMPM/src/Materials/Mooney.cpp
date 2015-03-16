@@ -132,13 +132,13 @@ const char *Mooney::VerifyAndLoadProperties(int np)
 		return "Mooney-Rivlin dilational energy (UJOption) must be 0, 1, or 2";
 
 	// G1 and G2 in Specific units using initial rho
-	// for MPM (units N/m^2 cm^3/g)
+	// for MPM (N/m^2 mm^3/g = (g-mm^2/sec^2)/g when props in MPa and rho in g/mm^3)
 	G1sp=G1*1.0e+06/rho;
 	G2sp=G2*1.0e+06/rho;
 	
     // heating gamma0
     double alphaV = 3.e-6*aI;
-    gamma0 = 1000.*Kbulk*alphaV/(rho*heatCapacity);
+    gamma0 = Kbulk*alphaV/(rho*heatCapacity);
 	
 	// call super class
 	return HyperElastic::VerifyAndLoadProperties(np);
@@ -268,8 +268,7 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
     double delV = 1. - 1./detDf;                        // total volume change
     double QAVred = 0.,AVEnergy=0.;
     if(delV<0. && artificialViscosity)
-    {   double c = sqrt(Ksp/1000.);           // m/sec
-        QAVred = GetArtificalViscosity(delV/delTime,c);
+	{	QAVred = GetArtificalViscosity(delV/delTime,sqrt(Ksp*J));
         if(ConductionTask::AVHeating) AVEnergy = fabs(QAVred*delV);
     }
     double Pfinal = -Kterm + QAVred;
@@ -359,7 +358,7 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 
 // convert J to K using isotropic method
 Vector Mooney::ConvertJToK(Vector d,Vector C,Vector J0,int np)
-{	double GLS = G1+G2;
+{	double GLS = 1.e6*(G1+G2);
 	double nuLS = (3.*Kbulk-2.*GLS)/(6.*Kbulk+2.*GLS);
 	return IsotropicJToK(d,C,J0,np,nuLS,GLS);
 }
@@ -377,25 +376,21 @@ Tensor Mooney::GetStress(Tensor *sp,double pressure) const
 // Return the material tag
 int Mooney::MaterialTag(void) const { return MOONEYRIVLIN; }
 
-/* Calculate wave speed in mm/sec (because G in MPa and rho in g/cm^3)
-	Uses sqrt((K +4G/3)/rho) which is dilational wave speed
-	at low strain G = G1+G2
-*/
+// Calculate wave speed in mm/sec (because G in MPa and rho in g/mm^3)
+// Uses sqrt((K +4G/3)/rho) which is dilational wave speed at low strain G = G1+G2
 double Mooney::WaveSpeed(bool threeD,MPMBase *mptr) const
-{
-    return sqrt(1.e9*(Kbulk+4.*(G1+G2)/3.)/rho);
+{	return 1000.*sqrt((Kbulk+4.*(G1+G2)/3.)/rho);
 }
 
-/* Calculate shear wave speed in mm/sec (because G1 and G2 in MPa and rho in g/cm^3)
-	at low strain G = G1+G2
-*/
-double Mooney::ShearWaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt(1.e9*(G1+G2)/rho); }
+// Calculate shear wave speed in mm/sec (because G1 and G2 in MPa and rho in g/mm^3)
+// at low strain G = G1+G2
+double Mooney::ShearWaveSpeed(bool threeD,MPMBase *mptr) const { return 1000.*sqrt((G1+G2)/rho); }
 
 // return material type
 const char *Mooney::MaterialType(void) const { return "Mooney-Rivlin Hyperelastic"; }
 
 // if a subclass material supports artificial viscosity, override this and return TRUE
-bool Mooney::SupportsArtificialViscosity(void) const { return TRUE; }
+bool Mooney::SupportsArtificialViscosity(void) const { return true; }
 
 // Get current relative volume change = J (which this material tracks)
 // All subclasses must track J in J_History (or override this method)

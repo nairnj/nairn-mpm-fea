@@ -440,7 +440,7 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 void CrackSurfaceContact::TangentialSlipDeltaP(Vector *delP,Vector *norm)
 {
 	// Find mass times changes in normal direction velocity
-	// mdelvn = - m ( v - v(cm) ) . n = delP . n (now normalized)
+	// mdelvn = - m ( v - v(ctr mass) ) . n = delP . n (now normalized)
     double mdelvn=(delP->x*norm->x + delP->y*norm->y)/(norm->x*norm->x + norm->y*norm->y);
 	delP->x=mdelvn*norm->x;
 	delP->y=mdelvn*norm->y;
@@ -451,7 +451,7 @@ void CrackSurfaceContact::TangentialSlipDeltaP(Vector *delP,Vector *norm)
 void CrackSurfaceContact::NormalSlipDeltaP(Vector *delP,Vector *norm)
 {
 	// Find mass times changes in normal direction velocity
-	// mdelvt = - m ( v - v(cm) ) . t = delP . t (now normalized)
+	// mdelvt = - m ( v - v(ctr mass) ) . t = delP . t (now normalized)
     double mdelvt=(delP->x*norm->y - delP->y*norm->x)/(norm->x*norm->x + norm->y*norm->y);
 	delP->x=mdelvt*norm->y;
 	delP->y=-mdelvt*norm->x;
@@ -462,10 +462,10 @@ void CrackSurfaceContact::NormalSlipDeltaP(Vector *delP,Vector *norm)
 //   norm is unnormalized normal into material (but sign is irrelevant)
 void CrackSurfaceContact::FrictionalDeltaP(Vector *delP,Vector *norm,int number)
 {
-	// mdelvn = - m ( v - v(cm) ) . n = delP . n (unnormalized)
+	// mdelvn = - m ( v - v(ctr mass) ) . n = delP . n (unnormalized)
 	double mdelvn=delP->x*norm->x + delP->y*norm->y;
 	
-	// mdelvt = - m ( v - v(cm) ) . t = delP . t (unnormalized)
+	// mdelvt = - m ( v - v(ctr mass) ) . t = delP . t (unnormalized)
     double mdelvt=delP->x*norm->y - delP->y*norm->x;
 	
 	// relative tangentical to normal stick forces is the ratio

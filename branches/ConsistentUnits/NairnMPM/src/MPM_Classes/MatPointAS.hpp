@@ -29,7 +29,7 @@ class MatPointAS : public MatPoint2D
         virtual void UpdateStrain(double,int,int,void *,int);
         virtual void GetFintPlusFext(Vector *,double,double,double,double);
         virtual void SetOrigin(Vector *);
-		virtual double GetVolume(bool);
+		virtual double GetVolume(int);
         virtual double GetUnscaledVolume(void);
         virtual void GetCPDINodesAndWeights(int);
 		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *);

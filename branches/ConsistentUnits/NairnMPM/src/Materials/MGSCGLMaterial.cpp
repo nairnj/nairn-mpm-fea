@@ -82,9 +82,10 @@ const char *MGSCGLMaterial::VerifyAndLoadProperties(int np)
     const char *ptr = plasticLaw->VerifyAndLoadProperties(np);
     if(ptr != NULL) return ptr;
 	
-    // Use in place of C0^2. Units are Pa cm^3/g such that get Pa when multiplied
-    //      by a density in g/cm^3
-    C0squared = 1000.*C0*C0;
+    // Use in place of C0^2. Units are Pa mm^3/g such that get Pa when multiplied
+    //      by a density in g/mm^3
+	// Equal to reduced bulk modulus
+    C0squared = 1.e6*C0*C0;
 	
     // Shear modulus with pressure dependence
 	G0red = G*1.e6/rho;				// G0red = G/rho0
@@ -132,7 +133,7 @@ void MGSCGLMaterial::PrintTransportProperties(void) const
 	{	MaterialBase::PrintTransportProperties();
 	}
 	else if(!ConductionTask::adiabatic)
-	{	PrintProperty("C",heatCapacity,"J/(kg-K)");
+	{	PrintProperty("C",heatCapacity*1.e-6,"J/(kg-K)");
 		cout << endl;
 	}
 }
@@ -212,9 +213,7 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     // artifical viscosity
     p->QAVred = 0.;
     if(delVtot<0. && artificialViscosity)
-    {   double c = sqrt(p->Kred*Jnew*JresStretch/1000.);        // m/sec
-        //double Dkk = (du(0,0)+du(1,1)+du(2,2))/delTime;
-        p->QAVred = GetArtificalViscosity(delVtot/delTime,c);
+	{	p->QAVred = GetArtificalViscosity(delVtot/delTime,sqrt(p->Kred*Jnew*JresStretch));
     }
     
     if(np!=THREED_MPM)
@@ -314,9 +313,9 @@ double MGSCGLMaterial::GetCurrentRelativeVolume(MPMBase *mptr) const
 
 // convert J to K using isotropic method
 Vector MGSCGLMaterial::ConvertJToK(Vector d,Vector C,Vector J0,int np)
-{	double KLS = rho*pr.Kred*1e-6;			// MPa
+{	double KLS = rho*pr.Kred;
 	double nuLS = (3.*KLS-2.*G)/(6.*KLS+2.*G);
-	return IsotropicJToK(d,C,J0,np,nuLS,G);
+	return IsotropicJToK(d,C,J0,np,nuLS,G*1.e6);
 }
 
 // Return the material tag
@@ -325,15 +324,12 @@ int MGSCGLMaterial::MaterialTag(void) const { return MGEOSMATERIAL; }
 // return unique, short name for this material
 const char *MGSCGLMaterial::MaterialType(void) const { return "MGEOS Material"; }
 
-/*	calculate wave speed in mm/sec. Uses initial sqrt((K+4G/3)/rho) which is dilational wave speed
-    K in Pa is 1000*rho*C0^2, G is in MPa, rho is in g/cm^3
-*/
-double MGSCGLMaterial::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1000.*sqrt(C0*C0+4000.*G/(3.*rho)); }
+// calculate wave speed in mm/sec. Uses initial sqrt((K+4G/3)/rho) which is dilational wave speed
+// K in MPa is rho*C0^2, G is in MPa, rho is in g/mm^3
+double MGSCGLMaterial::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1000.*sqrt(C0*C0+4.*G/(3.*rho)); }
 
-/*	calculate current wave speed in mm/sec. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
-    but K and G are current values of rho0*KcurrRed and rho0*Gred/J (in Pa) so were want
-    1000 sqrt(rho0(KcurrRed+4Gred/(3J))/(1000 rho0/J))
- */
+// Calculate current wave speed in mm/sec. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
+// but K/rho = Kred*J and G/rho = Gred*J (in mm^2/sec^2)
 double MGSCGLMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
 {
     // compressive volumetric strain x = 1-J
@@ -341,7 +337,7 @@ double MGSCGLMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
     double x = 1. - J;
     
     // get K/rho0, but this ignores slope of energy term
-    double KcurrRed;
+    double KcurrRed,pressure;
     if(x>0.)
     {   // compression law
         // denominator = 1 - S1*x - S2*x^2 - S3*x^3
@@ -349,22 +345,23 @@ double MGSCGLMaterial::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
         
         // current effective and reduced (by rho0) bulk modulus
         KcurrRed = C0squared*(1.-0.5*gamma0*x)*denom*denom;
+		double e = mptr->GetInternalEnergy();
+		pressure = J*(KcurrRed*x + gamma0*e);
     }
     else
     {   // In tension use low-strain bulk modulus
         KcurrRed = C0squared;
+		pressure = -J*KcurrRed*(J-1.);
     }
     KcurrRed *= J;          // convert to K/rho
     
     // get G/rho at current pressure
-    double e = mptr->GetInternalEnergy();
-    double pressure = J*(KcurrRed*x + gamma0*e);
-    double GcurrRed = G0red * plasticLaw->GetShearRatio(mptr,pressure,J,NULL);
+    double GcurrRed = J*(G0red * plasticLaw->GetShearRatio(mptr,pressure,J,NULL));
     
     // return current save speed
-    return 1000.*sqrt((KcurrRed + 4.*GcurrRed/3.)/1000.);
+    return sqrt((KcurrRed + 4.*GcurrRed/3.));
 }
 
 // if a subclass material supports artificial viscosity, override this and return TRUE
-bool MGSCGLMaterial::SupportsArtificialViscosity(void) const { return TRUE; }
+bool MGSCGLMaterial::SupportsArtificialViscosity(void) const { return true; }
 
