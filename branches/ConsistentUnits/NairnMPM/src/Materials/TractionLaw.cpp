@@ -30,14 +30,12 @@ char *TractionLaw::InputMaterialProperty(char *xName,int &input,double &gScaling
 {
     if(strcmp(xName,"sigmaI")==0)
 	{	input=DOUBLE_NUM;
-		gScaling = 1.e6;					// Convert MPa to Pa
-        return((char *)&stress1);
+		return UnitsController::ScaledPtr((char *)&stress1,gScaling,1.e6);
     }
 
 	else if(strcmp(xName,"sigmaII")==0)
 	{	input=DOUBLE_NUM;
-		gScaling = 1.e6	;					// Convert MPa to Pa
-		return((char *)&stress2);
+		return UnitsController::ScaledPtr((char *)&stress2,gScaling,1.e6);
 	}
 	
     return MaterialBase::InputMaterialProperty(xName,input,gScaling);
@@ -51,21 +49,21 @@ const char *TractionLaw::VerifyAndLoadProperties(int np) { return NULL; }
 void TractionLaw::ReportDebond(double dtime,CrackSegment *cs,double fractionI,double Gtotal)
 {
 	archiver->IncrementPropagationCounter();
-	cout << "# Debond: t=" << 1000.*dtime << " (x,y) = (" << cs->x << "," <<cs-> y << ")"
-			<< " GI(%) = " << 100.*fractionI
-			<< " G = " << Gtotal*UnitsController::Scaling(0.001) << endl;
+	cout << "# Debond: t=" << 1000.*dtime << " (x,y) = (" << cs->x << "," << cs->y << ")" 
+			<< " GI(%) = " << 100.*fractionI << " G = "
+			<< Gtotal*UnitsController::Scaling(0.001) << endl;
 }
 
 #pragma mark TractionLaw::Traction Law
 
-// Traction law - subclass must override
+// Traction law - find traction force as traction pressure*area
 void TractionLaw::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,double dx,double dy,double area)
 {	cs->tract.x=0.;
 	cs->tract.y=0.;
 }
 
-// return recoverable energy (I think this is correct) in the traction law
-// units of N/mm. Subclass must override
+// Find recoverable energy in the traction law (Subclass must override)
+// Units are work/area or force/length
 double TractionLaw::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod,bool fullEnergy)
 {	return 0.;
 }
@@ -78,6 +76,6 @@ double TractionLaw::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; 
 // return material type
 const char *TractionLaw::MaterialType(void) const { return "Crack Traction Law"; }
 
-// check if traciton law material
+// check if traction law material
 bool TractionLaw::isTractionLaw(void) const { return TRUE; }
 

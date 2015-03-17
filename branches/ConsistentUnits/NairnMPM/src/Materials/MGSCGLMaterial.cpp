@@ -16,6 +16,7 @@
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Materials/HardeningLawBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark MGSCGLMaterial::Constructors and Destructors
 
@@ -84,11 +85,11 @@ const char *MGSCGLMaterial::VerifyAndLoadProperties(int np)
 	
     // Use in place of C0^2. Units are Pa mm^3/g such that get Pa when multiplied
     //      by a density in g/mm^3
-	// Equal to reduced bulk modulus
+	// Equal to reduced bulk modulus in Pa mm^3/g = mm^2/sec^2
     C0squared = 1.e6*C0*C0;
 	
     // Shear modulus with pressure dependence
-	G0red = G*1.e6/rho;				// G0red = G/rho0
+	G0red = G/rho;					// G0red = G/rho0
 	pr.Gred = G0red;				// Gred = G/rho = G rho0/(rho rho0) = J G0red
 	pr.Kred = C0squared;
 	
@@ -107,8 +108,8 @@ void MGSCGLMaterial::PrintMechanicalProperties(void) const
 	// core properties
 	PrintProperty("C0",C0,"m/s");
 	PrintProperty("gam0",gamma0,"");
-	PrintProperty("K",rho*pr.Kred*1e-6,"");
-    PrintProperty("G0",G,"");
+	PrintProperty("K",rho*pr.Kred*UnitsController::Scaling(1.e-6),"");
+    PrintProperty("G0",G*UnitsController::Scaling(1.e-6),"");
 	cout << endl;
     
 	PrintProperty("S1",S1,"");
@@ -117,7 +118,7 @@ void MGSCGLMaterial::PrintMechanicalProperties(void) const
 	cout << endl;
 	
 	// effective volumetric CTE (in ppm/K) alpha = rho0 gamma0 Cv / K
-	double effAlpha = (1.e9*heatCapacity*gamma0)/C0squared;
+	double effAlpha = (1.e6*heatCapacity*gamma0)/C0squared;
 	PrintProperty("a",effAlpha/3.,"");
 	PrintProperty("T0",thermal.reference,"K");
 	cout <<  endl;
@@ -263,7 +264,7 @@ void MGSCGLMaterial::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,P
         p->Kred = C0squared*(1.-0.5*gamma0*x)*denom*denom;
     }
     else
-    {   // In tension use low-strain bulk modulus
+    {   // In tension use P = -K(J-1)
         p->Kred = C0squared;
     }
 	
@@ -315,7 +316,7 @@ double MGSCGLMaterial::GetCurrentRelativeVolume(MPMBase *mptr) const
 Vector MGSCGLMaterial::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 {	double KLS = rho*pr.Kred;
 	double nuLS = (3.*KLS-2.*G)/(6.*KLS+2.*G);
-	return IsotropicJToK(d,C,J0,np,nuLS,G*1.e6);
+	return IsotropicJToK(d,C,J0,np,nuLS,G);
 }
 
 // Return the material tag
@@ -325,8 +326,8 @@ int MGSCGLMaterial::MaterialTag(void) const { return MGEOSMATERIAL; }
 const char *MGSCGLMaterial::MaterialType(void) const { return "MGEOS Material"; }
 
 // calculate wave speed in mm/sec. Uses initial sqrt((K+4G/3)/rho) which is dilational wave speed
-// K in MPa is rho*C0^2, G is in MPa, rho is in g/mm^3
-double MGSCGLMaterial::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1000.*sqrt(C0*C0+4.*G/(3.*rho)); }
+// K/rho is C0squared in mm^2/sec^2, G is in Pa, rho is in g/mm^3
+double MGSCGLMaterial::WaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt(C0squared+4.*G/(3.*rho)); }
 
 // Calculate current wave speed in mm/sec. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
 // but K/rho = Kred*J and G/rho = Gred*J (in mm^2/sec^2)

@@ -7,6 +7,7 @@
 ********************************************************************************/
 
 #include "Materials/IsotropicMat.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark IsotropicMat::Constructors and Destructors
 
@@ -36,12 +37,12 @@ char *IsotropicMat::InputMaterialProperty(char *xName,int &input,double &gScalin
     
     if(strcmp(xName,"E")==0)
     {	read[E_PROP]=1;
-        return((char *)&E);
+		return UnitsController::ScaledPtr((char *)&E,gScaling,1.e6);
     }
     
     else if(strcmp(xName,"G")==0)
     {	read[G_PROP]=1;
-        return((char *)&G);
+		return UnitsController::ScaledPtr((char *)&G,gScaling,1.e6);
     }
     
     else if(strcmp(xName,"nu")==0)
@@ -58,9 +59,9 @@ char *IsotropicMat::InputMaterialProperty(char *xName,int &input,double &gScalin
 // print to output window
 void IsotropicMat::PrintMechanicalProperties(void) const
 {	
-	PrintProperty("E",E,"");
+	PrintProperty("E",E*UnitsController::Scaling(1.e-6),"");
 	PrintProperty("v",nu,"");
-	PrintProperty("G",G,"");
+	PrintProperty("G",G*UnitsController::Scaling(1.e-6),"");
 	cout << endl;
 	
 	PrintProperty("a",aI,"");
@@ -72,28 +73,27 @@ const char *IsotropicMat::VerifyAndLoadProperties(int np)
 {
     // finish input and verify all there
     if(!read[G_PROP])
-    {	G=E/(2.*(1.+nu));
+    {	G = E/(2.*(1.+nu));
         read[G_PROP]=1;
     }
     else if(!read[E_PROP])
-    {	E=2.*G*(1.+nu);
+    {	E = 2.*G*(1.+nu);
         read[E_PROP]=1;
     }
     else if(!read[NU_PROP])
-    {	nu=E/(2.*G)-1.;
+    {	nu = E/(2.*G)-1.;
         read[NU_PROP]=1;
     }
     else
 		return "E, nu, and G all specified. Only two allowed";
 		
-    int i;
-    for(i=0;i<ISO_PROPS;i++)
+    for(int i=0;i<ISO_PROPS;i++)
     {	if(!read[i])
 			return "A required material property is missing";
     }
     
     // analysis properties
-    const char *err=SetAnalysisProps(np,1.e6*E,1.e6*E,1.e6*E,nu,nu,nu,1.e6*G,1.e6*G,1.e6*G,
+    const char *err=SetAnalysisProps(np,E,E,E,nu,nu,nu,G,G,G,
 			1.e-6*aI,1.e-6*aI,1.e-6*aI,betaI*concSaturation,betaI*concSaturation,betaI*concSaturation);
 	if(err!=NULL) return err;
 	
@@ -229,7 +229,7 @@ void *IsotropicMat::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffe
 
 // convert J to K using isotropic method
 Vector IsotropicMat::ConvertJToK(Vector d,Vector C,Vector J0,int np)
-{	return IsotropicJToK(d,C,J0,np,nu,G*1.e6);
+{	return IsotropicJToK(d,C,J0,np,nu,G);
 }
 
 #endif
@@ -244,17 +244,16 @@ const char *IsotropicMat::MaterialType(void) const { return "Isotropic"; }
 
 #ifdef MPM_CODE
 
-/*	calculate wave speed in mm/sec (because G in MPa and rho in g/mm^3)
-	Uses sqrt((K +4G/3)/rho) which is dilational wave speed
-	Identity also: K + 4G/3 = Lambda + 2G = 2G(1-nu)/(1-2 nu)
-	Another form: E(1-nu)/((1+nu)(1-2*nu)rho)
-*/
+// Calculate wave speed in L/sec
+// Because G in F/L^2 = mass/(L sec^2) and rho in mass/L^3, G/rho in L^2/sec^2
+// Uses sqrt((K +4G/3)/rho) which is dilational wave speed
+// Identity also: K + 4G/3 = Lambda + 2G = 2G(1-nu)/(1-2 nu)
 double IsotropicMat::WaveSpeed(bool threeD,MPMBase *mptr) const
-{	return 1000.*sqrt(2.*G*(1.-nu)/(rho*(1.-2.*nu)));
+{	return sqrt(2.*G*(1.-nu)/(rho*(1.-2.*nu)));
 }
 
-//	calculate shear wave speed in mm/sec (because G in MPa and rho in g/mm^3)
-double IsotropicMat::ShearWaveSpeed(bool threeD,MPMBase *mptr) const { return 1000.*sqrt(G/rho); }
+// Calculate shear wave speed in L/sec
+double IsotropicMat::ShearWaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt(G/rho); }
 
 #endif
 

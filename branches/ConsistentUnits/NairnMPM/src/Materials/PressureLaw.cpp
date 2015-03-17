@@ -9,6 +9,7 @@
 #include "Materials/PressureLaw.hpp"
 #include "Cracks/CrackSegment.hpp"
 #include "Read_XML/mathexpr.hpp"
+#include "System/UnitsController.hpp"
 
 extern double mtime;
 
@@ -32,8 +33,7 @@ char *PressureLaw::InputMaterialProperty(char *xName,int &input,double &gScaling
 {
     if(strcmp(xName,"stress")==0)
 	{	input=DOUBLE_NUM;
-		gScaling = 1.e6;			// Convert MPa to Pa
-		return (char *)&stress1;
+		return UnitsController::ScaledPtr((char *)&stress1,gScaling,1.e6);
 	}
 	
 	else if(strcmp(xName,"function")==0)
@@ -70,18 +70,11 @@ void PressureLaw::SetStressFunction(char *bcFunction)
 		ThrowSAXException("Stress setting function is not valid");
 }
 
-// calculate properties used in analyses - here constant pressure law
-const char *PressureLaw::VerifyAndLoadProperties(int np)
-{
-	// go to parent
-	return TractionLaw::VerifyAndLoadProperties(np);
-}
-
 // print to output window
 void PressureLaw::PrintMechanicalProperties(void) const
 {
 	if(function==NULL)
-	{	PrintProperty("Stress",stress1*1.e-6,"MPa");
+	{	PrintProperty("Stress",stress1*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
 		cout <<  endl;
 	}
 	else
@@ -89,7 +82,7 @@ void PressureLaw::PrintMechanicalProperties(void) const
 		cout << "Stress = " << expr << endl;
 	}
 	if(minCOD>=0.)
-	{	PrintProperty("Min COD",minCOD,"mm");
+	{	PrintProperty("Min COD",minCOD,UnitsController::Label(LENGTH_UNITS));
 		cout << endl;
 	}
 }
@@ -112,8 +105,11 @@ void PressureLaw::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,doub
 	if(function==NULL)
 		Tn = sc;
 	else
-	{	varTime = 1000.*mtime;
-		Tn = function->Val()*1.e6;
+	{	// in Legacy units, convert to ms, in consistent units just use the time
+		varTime = mtime*UnitsController::Scaling(1000.);
+		
+		// in Legacy, convert MPa to Pa, in consisten units use the function
+		Tn = function->Val()*UnitsController::Scaling(1.e6);
 	}
 	
 	// force is traction times area projected onto x-y plane
@@ -129,7 +125,7 @@ void PressureLaw::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,doub
 double PressureLaw::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod,bool fullEnergy)
 {
 	// physcial model is not as damage and therefore no unloading energy
-	// also zero energy if close (nCod<=0)
+	// also zero energy if closed (nCod<=0)
 	if(!fullEnergy || nCod<=0.) return 0.;
 	
 	// no pressure if less then a specific critical COD
@@ -140,11 +136,14 @@ double PressureLaw::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod
 	if(function==NULL)
 		tstress = stress1;
 	else
-	{	varTime = 1000.*mtime;
-		tstress = function->Val();
+	{	// in Legacy units, convert to ms, in consistent units just use the time
+		varTime = mtime*UnitsController::Scaling(1000.);
+		
+		// in Legacy, convert MPa to Pa, in consisten units use the function
+		tstress = function->Val()*UnitsController::Scaling(1.e6);
 	}
 	
-	return tstress*nCod;		// N/mm
+	return tstress*nCod;
 }
 
 #pragma mark CubicTraction::Accessors

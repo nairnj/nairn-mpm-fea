@@ -31,18 +31,18 @@ CohesiveZone::CohesiveZone(char *matName) : TractionLaw(matName)
 {
 	// mode I cohesive law (all others set to -1 in superclasses)
 	// others are: stress1,delIc,JIc
-	kI1=-1.;			// initial elastic slope mode I (keep <0 for linear softening)
-	umidI=-1.;			// peak mode II
+	kI1=-1.;			// initial elastic slope (keep <0 for linear softening)
+	umidI=-1.;			// peak
 	
 	// mode II cohesive law (all others set to -1 in superclasses)
 	// others are: stress2,delIIc,JIIc
-	kII1=-1;			// initial elastic slope mode II (keep <0 for linear softening)
-	umidII=-1.;			// peak mode II
+	kII1=-1;			// initial elastic slope (keep <0 for linear softening)
+	umidII=-1.;			// peak
 }
 
 #pragma mark CohesiveZone::Initialization
 
-// no properties to read
+// Read properteis (read read in super classes)
 char *CohesiveZone::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {   
     if(strcmp(xName,"kIe")==0)
@@ -68,12 +68,8 @@ char *CohesiveZone::InputMaterialProperty(char *xName,int &input,double &gScalin
     return TractionLaw::InputMaterialProperty(xName,input,gScaling);
 }
 
-/* calculate properties used in analyses - here triangular law
-	In terms of J (J/m^2) and stress (MPa)
-	    umax = J/(500*stress), k = 1000 stress^2/J
-	In terms of k and umax
-	    J = 250 k umax^2,   stress = k umax/2
-*/
+// Calculate properties used in analyses - here triangular law
+// Do mode I and mode II separately
 const char *CohesiveZone::VerifyAndLoadProperties(int np)
 {
 	const char *msg=SetTractionLaw(stress1,kI1,delIc,JIc,umidI);
@@ -89,18 +85,20 @@ const char *CohesiveZone::VerifyAndLoadProperties(int np)
 // print to output window
 void CohesiveZone::PrintMechanicalProperties(void) const
 {
-	PrintProperty("GcI",JIc/1000.,"J/m^2");
-	PrintProperty("sigI",stress1*1.e-6,"");
-	PrintProperty("uIc",delIc,"mm");
-	if(kI1>0.) PrintProperty("kI",1.0e-6*kI1,"MPa/mm");
-	PrintProperty("upkI",umidI,"mm");
+	PrintProperty("GIc",JIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
+	PrintProperty("sigI",stress1*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
+	PrintProperty("uIc",delIc,UnitsController::Label(LENGTH_UNITS));
+	if(kI1>0.)
+		PrintProperty("kI",kI1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
+	PrintProperty("upkI",umidI,UnitsController::Label(LENGTH_UNITS));
     cout <<  endl;
 
-	PrintProperty("GcII",JIIc/1000.,"J/m^2");
-	PrintProperty("sigII",stress2*1.e-6,"");
-	PrintProperty("uIIc",delIIc,"mm");
-	if(kII1>0.) PrintProperty("kII",1.0e-6*kII1,"MPa/mm");
-	PrintProperty("upkII",umidII,"mm");
+	PrintProperty("GIIc",JIIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
+	PrintProperty("sigII",stress2*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
+	PrintProperty("uIIc",delIIc,UnitsController::Label(LENGTH_UNITS));
+	if(kII1>0.)
+		PrintProperty("kII",kII1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
+	PrintProperty("upkII",umidII,UnitsController::Label(LENGTH_UNITS));
     cout <<  endl;
 	
 	PrintProperty("n",nmix,"");
@@ -124,7 +122,7 @@ char *CohesiveZone::InitHistoryData(void)
 void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,double dx,double dy,double area)
 {
 	double Tn=0.,Tt=0.,GI=0.,GII=0.;
-	double *upeak =(double *)cs->GetHistoryData();
+	double *upeak = (double *)cs->GetHistoryData();
 	
 	// normal force and GI (only if open)
 	if(nCod>0.)
@@ -135,41 +133,49 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
 		}
 		else
 		{	if(nCod>upeak[0]) upeak[0]=nCod;                        // new peak reached
-			double keff=stress1*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
-			Tn=keff*nCod;
+            double keff;
+            if(upeak[0]==umidI)
+                keff = stress1/upeak[0];
+            else
+                keff = stress1*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
+			Tn = keff*nCod;
 			
-			// get GI for failure law
-			if(nCod<umidI)
+			// get GI for failure law (F/L)
+			if(nCod<=umidI)
             {   // note that linear softening never because umidI=0
-				GI=0.0005*kI1*nCod*nCod;                             // now in units of N/m
+				GI = 0.5*kI1*nCod*nCod;
             }
 			else
-			{	double s2=(delIc-nCod)*stress1/(delIc-umidI);
-				GI=500.*(umidI*stress1 + (nCod-umidI)*(stress1+s2));        // now in units of N/m
+			{	double s2 = (delIc-nCod)*stress1/(delIc-umidI);
+				GI = 0.5*(umidI*stress1 + (nCod-umidI)*(stress1+s2));
 			}
 		}
 	}
 	
 	// shear force and GII always
     // is it failed?
-    double absTCod=fabs(tCod);
+    double absTCod = fabs(tCod);
     if(absTCod>delIIc)
     {	cs->SetMatID(0);                                // then debonded
         GII = JIIc;
     }
     else if(absTCod>0.)
-    {	if(absTCod>upeak[1]) upeak[1]=absTCod;          // new peak reached either direction
-        double keff=stress2*(delIIc-upeak[1])/((delIIc-umidII)*upeak[1]);
+    {	if(absTCod>upeak[1]) upeak[1] = absTCod;          // new peak reached either direction
+        double keff;
+        if(upeak[1]==umidII)
+            keff = stress2/upeak[1];
+        else
+            keff = stress2*(delIIc-upeak[1])/((delIIc-umidII)*upeak[1]);
         Tt=keff*tCod;
         
-        // shear energy always
-        if(absTCod<umidII)
+        // get GII for failure law (F/L)
+        if(absTCod<=umidII)
         {   // note that linear softening never because umidII=0
-            GII=0.0005*kII1*tCod*tCod;                  // now in units of N/m
+            GII = 0.5*kII1*tCod*tCod;
         }
         else
-        {	double s2=(delIIc-absTCod)*stress2/(delIIc-umidII);
-            GII=500.*(umidII*stress2 + (absTCod-umidII)*(stress2+s2));      // now in units of N/m
+        {	double s2 = (delIIc-absTCod)*stress2/(delIIc-umidII);
+            GII = 0.5*(umidII*stress2 + (absTCod-umidII)*(stress2+s2));
         }
     }
 	
@@ -184,21 +190,21 @@ void CohesiveZone::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,dou
 		if(pow(GI/JIc,nmix)+pow(GII/JIIc,nmix) > 1)
 		{	cs->SetMatID(0);				// now debonded
 			ReportDebond(mtime,cs,GI/(GI+GII),GI+GII);
-			Tn=0.;                                       // turn off in tractions, if calculated
-			Tt=0.;
+			Tn = 0.;                                       // turn off in tractions, if calculated
+			Tt = 0.;
 		}
 	}
 	
-	// force is traction times area projected onto x-y plane
-	cs->tract.x=area*(Tn*dy - Tt*dx);
-	cs->tract.y=area*(-Tn*dx - Tt*dy);
+	// force is traction times area projected onto x-y plane (units F)
+	cs->tract.x = area*(Tn*dy - Tt*dx);
+	cs->tract.y = area*(-Tn*dx - Tt*dy);
 }
 
 // return total energy (which is needed for path independent J) under traction law curve
 //		when fullEnergy is true
 // return released energy = total energy - recoverable energy (due to elastic unloading)
 //		when fullEnergy is false
-// units of N/mm
+// units of F/L
 double CohesiveZone::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCod,bool fullEnergy)
 {
 	double tEnergy=0.;
@@ -207,42 +213,48 @@ double CohesiveZone::CrackTractionEnergy(CrackSegment *cs,double nCod,double tCo
 	
 	// normal energy only if opened
 	if(nCod>0.)
-	{	if(nCod<umidI)
+	{	if(nCod<umidI || delIc==umidI)
         {   // note that linear softening never because umidI=0
-			double Tn=kI1*nCod;
-			tEnergy=0.5e-6*Tn*nCod;					// now in units of N/mm
+			double Tn = kI1*nCod;
+			tEnergy = 0.5*Tn*nCod;
 		}
-		else
-		{	double s2=(delIc-nCod)*stress1/(delIc-umidI);                   // stress in N/mm^2
-			tEnergy=0.5*(umidI*stress1 + (nCod-umidI)*(stress1+s2));		// now in units of N/mm
+        else
+		{	double s2 = (delIc-nCod)*stress1/(delIc-umidI);
+			tEnergy = 0.5*(umidI*stress1 + (nCod-umidI)*(stress1+s2));
 		}
 	}
 	
 	// shear energy always
-	if(fabs(tCod)<umidII)
-    {   // note that linear softening never because umidI=0
-		double Tt=kII1*tCod;
-		tEnergy+=0.5e-6*Tt*tCod;                         // now in units of N/mm
+	if(fabs(tCod)<umidII || delIIc==umidII)
+    {   // note that linear softening never because umidII=0
+		double Tt = kII1*tCod;
+		tEnergy += 0.5*Tt*tCod; 
 	}
 	else
-	{	double s2=(delIIc-fabs(tCod))*stress2/(delIIc-umidII);                           // stress in N/mm^2
-		tEnergy+=0.5*(umidII*stress2 + (fabs(tCod)-umidII)*(stress2+s2));               // now in units of N/mm
+	{	double s2 = (delIIc-fabs(tCod))*stress2/(delIIc-umidII); 
+		tEnergy += 0.5*(umidII*stress2 + (fabs(tCod)-umidII)*(stress2+s2));
 	}
 	
 	// subtract recoverable energy when want released energy
 	if(!fullEnergy)
-	{	double *upeak=(double *)cs->GetHistoryData();
+	{	double *upeak = (double *)cs->GetHistoryData();
 		double keff;
 		if(nCod>0.)
-		{	keff=stress1*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
-			double Tn=keff*nCod;
-			tEnergy-=0.5e-6*Tn*nCod;                                // now in units of N/mm
+        {   if(upeak[0]==umidI)
+                keff = stress1/upeak[0];
+            else
+		        keff = stress1*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
+			double Tn = keff*nCod;
+			tEnergy -= 0.5*Tn*nCod;
 		}
 		
 		// shear energy always
-		keff=stress2*(delIIc-upeak[1])/((delIIc-umidII)*upeak[1]);
-		double Tt=keff*tCod;
-		tEnergy-=0.5e-6*Tt*tCod;									// N/mm
+		if(upeak[1]==umidII)
+            keff = stress2/upeak[1];
+        else
+            keff = stress2*(delIIc-upeak[1])/((delIIc-umidII)*upeak[1]);
+		double Tt = keff*tCod;
+		tEnergy -= 0.5*Tt*tCod;
 	}
 	
 	return tEnergy;
@@ -256,32 +268,31 @@ const char *CohesiveZone::MaterialType(void) const { return "Triangular Cohesive
 // Return the material tag
 int CohesiveZone::MaterialTag(void) const { return COHESIVEZONEMATERIAL; }
 
-/* calculate properties used in analyses - here triangular law
-	k1 is slope up (MPa/mm)
-	u2 is final displacement (mm)
-	s1 is peak stress (MPa) = k1 u1
-	G is toughness (J/m^2) = 500 s1 u2 = 500 k1 u1 u2
-	u1 is displacement at peak stress (as fraction of u2)
-*/
+//	Calculate properties used in analyses - here triangular law
+//		k1 is slope up (F/L^3)
+//		u2 is final displacement (L)
+//		u1 is displacement at peak stress (as fraction of u2)
+//		s1 is peak stress (F/L^2) = k1 u1
+//		G is toughness (F/L) = (1/2) s1 u2 = (1/2) k1 u1 u2
 const char *CohesiveZone::SetTractionLaw(double &s1,double &k1,double &u2,double &G,double &u1)
 {
 	// specify s1 and G, but not u2
 	if(u2<0.)
 	{	if(s1<0. || G<0.)
 			return "Must supply exactly two of delIc, sigmaI, JIc and exactly two of delIIc, sigmaII, JIIc.";
-		u2=G/(500.*s1);
+		u2 = 2.*G/s1;
 	}
 	
 	// specify u2 and G, but not s1
 	else if(s1<0.)
 	{	if(G<0.)
 			return "Must supply exactly two of delIc, sigmaI, JIc and exactly two of delIIc, sigmaII, JIIc.";
-		s1=G/(500.*u2);
+		s1 = 2.*G/u2;
 	}
 	
 	// specify u2 and s1, but not G
 	else if(G<0.)
-	{	G=500.*s1*u2;
+	{	G = 0.5*s1*u2;
 	}
 	
 	// specified them all, which is an error
@@ -291,26 +302,26 @@ const char *CohesiveZone::SetTractionLaw(double &s1,double &k1,double &u2,double
 	
 	// If neither k1 nor u1 provided, set peak to u1/u2=.225926299 to best match Needelman Cubic law energy
 	if(k1<0. && u1<0.)
-	{	u1=0.225926299*u2;
-		k1=s1/u1;
+	{	u1 = 0.225926299*u2;
+		k1 = s1/u1;
 	}
 	
 	// if only u1 is provided (and it is assumed to be relative to u1)
 	else if(k1<0.)
 	{	if(u1>0.)
-		{	u1*=u2;
-			k1=s1/u1;
+		{	u1 *= u2;
+			k1 = s1/u1;
 		}
 		else
 		{	// linear softening
-			u1=0.;
-			k1=-1.;
+			u1 = 0.;
+			k1 = -1.;
 		}
 	}
 	
-	// if k1 is provided or (both are provided)
+	// if k1 is provided alone
 	else if(u1<0.)
-	{	u1=s1/k1;
+	{	u1 = s1/k1;
 	}
 	
 	// specified both, which is an error
@@ -322,9 +333,6 @@ const char *CohesiveZone::SetTractionLaw(double &s1,double &k1,double &u2,double
 	if(u2<u1)
 		return "The critical displacement is less than peak displacement. Increase JIc, JIIc, delIc, and/or delIIc.";
 		
-	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
-	k1*=1.0e6;
-	
 	return NULL;
 }
 

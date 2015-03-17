@@ -8,6 +8,7 @@
 
 #include "Materials/LinearTraction.hpp"
 #include "Cracks/CrackSegment.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark LinearTraction::Constructors and Destructors
 
@@ -19,15 +20,10 @@ LinearTraction::LinearTraction(char *matName) : CohesiveZone(matName)
 
 #pragma mark LinearTraction::Initialization
 
-/* calculate properties used in analyses - here triangular law
-	In terms of J (J/m^2) and stress (MPa)
-	    umax = J/(500*stress), k = 1000 stress^2/J
-	In terms of k and umax
-	    J = 250 k umax^2,   stress = k umax/2
-*/
+// Check for required  slopes
 const char *LinearTraction::VerifyAndLoadProperties(int np)
 {
-	// must always provide k1
+	// must always non-negative k1
 	if(kI1<0. || kII1<0.)
 		return "Linear traction law requires non-negative kIe and kIIe";
 		
@@ -37,8 +33,8 @@ const char *LinearTraction::VerifyAndLoadProperties(int np)
 // print to output window
 void LinearTraction::PrintMechanicalProperties(void) const
 {
-	PrintProperty("kI",1.0e-6*kI1,"MPa/mm");
-	PrintProperty("kII",1.0e-6*kII1,"MPa/mm");
+	PrintProperty("kI",kI1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
+	PrintProperty("kII",kII1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
     cout << endl;
 }
 
@@ -51,14 +47,14 @@ void LinearTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,d
 	
 	// normal force (only if open)
 	if(nCod>0.)
-		Tn=kI1*nCod;
+		Tn = kI1*nCod;
 	
 	// shear (always)
-	Tt=kII1*tCod;
+	Tt = kII1*tCod;
 	
 	// force is traction time area projected onto x-y plane
-	cs->tract.x=area*(Tn*dy - Tt*dx);
-	cs->tract.y=area*(-Tn*dx - Tt*dy);
+	cs->tract.x = area*(Tn*dy - Tt*dx);
+	cs->tract.y = area*(-Tn*dx - Tt*dy);
 }
 
 // return total energy (which is needed for path independent J) under traction law curve
@@ -71,18 +67,18 @@ double LinearTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,double t
 	// all the energy is recoverable since it is elastic
 	if(!fullEnergy) return 0.;
 	
-	double tEnergy=0.;
+	double tEnergy = 0.;
 	
 	// get entire area under the curve
 	
 	// normal energy only if opened
 	if(nCod>0.)
-	{	double Tn=kI1*nCod*1.e-6;				// now in units of N/mm^2
-		tEnergy=0.5*Tn*nCod;					// N/mm
+	{	double Tn = kI1*nCod;
+		tEnergy = 0.5*Tn*nCod;
 	}
 	
-	double Tt=kII1*tCod*1.e-6;					// now in units of N/mm^2
-	tEnergy+=0.5*Tt*tCod;						// N/mm
+	double Tt = kII1*tCod;
+	tEnergy += 0.5*Tt*tCod;
 	
 	return tEnergy;
 }

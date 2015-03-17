@@ -104,7 +104,7 @@ char *BistableIsotropic::InputMaterialProperty(char *xName,int &input,double &gS
     }
     else if(strcmp(xName,"kCondd")==0)
     {	readbs[KCONDD_PROP]=1;
- 		gScaling = 1e6;					// convert W/(m-K) to nW/(mm-K)
+		gScaling = 1e6;					// convert W/(m-K) to nW/(mm-K)
         return((char *)&kCondd);
     }
 	
@@ -424,13 +424,13 @@ void BistableIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double
 int BistableIsotropic::MaterialTag(void) const { return BISTABLEISO; }
 
 /*	calculate wave speed in mm/sec (because K,G in MPa=g/(mm-msec^2) and rho in g/mm^3)
- Uses max sqrt((K +4G/3)/rho) which is dilational wave speed
- */
+	Uses max sqrt((K +4G/3)/rho) which is dilational wave speed
+*/
 double BistableIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
 { return 1000.*fmax(sqrt((K0+4.*G0/3.)/rho),sqrt((Kd+4.*Gd/3.)/rho));
 }
 
-// maximum diffusion coefficient in mm^2/sec (diff in mm^2/sec)
+// maximum diffusion coefficient in mm^2/sec
 double BistableIsotropic::MaximumDiffusion(void) const { return max(diffd,diff0); }
 
 // maximum diffusivity in mm^2/sec

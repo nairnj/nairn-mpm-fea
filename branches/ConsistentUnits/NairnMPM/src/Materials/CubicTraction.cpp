@@ -1,6 +1,16 @@
 /********************************************************************************
     CubicTraction.cpp
     nairn-mpm-fea
+ 
+	The Cubic law is
+		
+		sigma = (27 smax/(4 umax^3)) u (umax-u)^2 = k u (umax-u)^2
+ 
+		k = (27 smax/(4 umax^3))
+ 
+	The toughness is
+ 
+		G = (9/16) umax smax
     
     Created by John Nairn on 4/6/08.
     Copyright (c) 2008 John A. Nairn, All rights reserved.
@@ -8,6 +18,7 @@
 
 #include "Materials/CubicTraction.hpp"
 #include "Cracks/CrackSegment.hpp"
+#include "System/UnitsController.hpp"
 
 extern double mtime;
 
@@ -20,10 +31,7 @@ CubicTraction::CubicTraction(char *matName) : TractionLaw(matName)
 
 #pragma mark CubicTraction::Initialization
 
-/* calculate properties used in analyses - here cubic traction law
-	The law is sigma = (27 smax/(4 umax^3)) u (umax-u)^2 = k u (umax-u)^2
-	The toughness is Jc = (9000/16) umax smax
-*/
+// Set each mode in the law
 const char *CubicTraction::VerifyAndLoadProperties(int np)
 {
 	const char *msg=SetTractionLaw(stress1,delIc,JIc,kI1);
@@ -38,16 +46,16 @@ const char *CubicTraction::VerifyAndLoadProperties(int np)
 // print to output window
 void CubicTraction::PrintMechanicalProperties(void) const
 {
-	PrintProperty("GcI",JIc/1000.,"J/m^2");
-	PrintProperty("sigI",stress1*1.e-6,"");
-	PrintProperty("uI",delIc,"mm");
-	PrintProperty("kI0",1.e-6*kI1*delIc*delIc,"MPa/mm");
+	PrintProperty("GcI",JIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
+	PrintProperty("sigI",stress1*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
+	PrintProperty("uI",delIc,UnitsController::Label(LENGTH_UNITS));
+	PrintProperty("kI0",kI1*delIc*delIc*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
     cout <<  endl;
 	
-	PrintProperty("GcII",JIIc/1000.,"J/m^2");
-	PrintProperty("sigII",stress2*1.e-6,"");
-	PrintProperty("uII",delIIc,"mm");
-	PrintProperty("kII0",1.e-6*kII1*delIIc*delIIc,"MPa/mm");
+	PrintProperty("GcII",JIIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
+	PrintProperty("sigII",stress2*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
+	PrintProperty("uII",delIIc,UnitsController::Label(LENGTH_UNITS));
+	PrintProperty("kII0",kII1*delIIc*delIIc*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
     cout <<  endl;
 	
 	PrintProperty("n",nmix,"");
@@ -177,25 +185,29 @@ int CubicTraction::MaterialTag(void) const { return CUBICTRACTIONMATERIAL; }
 const char *CubicTraction::MaterialType(void) const { return "Cubic Traction Law"; }
 
 // set traction law on initialization
+//		smax is peak stess (F/L^2)
+//		umax is failure displacement (mm)
+//		k1 is slope (an output, not an input) (F/L^5)
+//		G is toughness (F/L) = (9/16) umax smax
 const char *CubicTraction::SetTractionLaw(double &smax,double &umax,double &G,double &k1)
 {
 	// specify smax and G
 	if(umax<0.)
 	{	if(smax<0. || G<0.)
 			return "Too few cubic traction law properties were supplied.";
-		umax=16.*G/(9000.*smax);
+		umax = 16.*G/(9.*smax);
 	}
 	
 	// specify umax and G
 	else if(smax<0.)
 	{	if(G<0.)
 			return "Too few cubic traction law properties were supplied.";
-		smax=16.*G/(9000.*umax);
+		smax = 16.*G/(9.*umax);
 	}
 	
 	// specify umax and smax
 	else if(G<0.)
-	{	G=9000.*umax*smax/16.;
+	{	G = 9.*umax*smax/16.;
 	}
 	
 	// specified them all, which is an error
@@ -203,9 +215,8 @@ const char *CubicTraction::SetTractionLaw(double &smax,double &umax,double &G,do
 	{	return "Must supply exactly two of delIc, sigmaI, JIc and exactly two of delIIc, sigmaII, JIIc.";
 	}
 	
-	// stress prefactors to get force
-	// Multiply by 1e6 to get N/mm^3/mm^2 (kg-m/sec^2/mm/mm^4) to g-mm/sec^2 / mm^3 / mm^2
-	k1=27.*smax*1.e6/(4.*umax*umax*umax);
+	// stress prefactor to get force
+	k1 = 27.*smax/(4.*umax*umax*umax);
 	
 	return NULL;
 }

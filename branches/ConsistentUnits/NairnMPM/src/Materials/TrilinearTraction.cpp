@@ -26,6 +26,7 @@
 
 #include "Materials/TrilinearTraction.hpp"
 #include "Cracks/CrackSegment.hpp"
+#include "System/UnitsController.hpp"
 
 extern double mtime;
 
@@ -52,14 +53,12 @@ char *TrilinearTraction::InputMaterialProperty(char *xName,int &input,double &gS
 {
 	if(strcmp(xName,"sigmaI2")==0)
 	{	input=DOUBLE_NUM;
-		gScaling = 1.e6;						// Convert MPa to Pa
-		return((char *)&sI2);
+		return UnitsController::ScaledPtr((char *)&sI2,gScaling,1.e6);
 	}
 	
 	else if(strcmp(xName,"sigmaII2")==0)
 	{	input=DOUBLE_NUM;
-		gScaling = 1.e6;						// Convert MPa to Pa
-		return((char *)&sII2);
+		return UnitsController::ScaledPtr((char *)&sII2,gScaling,1.e6);
 	}
 	
 	else if(strcmp(xName,"delpkI2")==0)
@@ -86,7 +85,7 @@ const char *TrilinearTraction::VerifyAndLoadProperties(int np)
 	
 	const char *err = TractionLaw::VerifyAndLoadProperties(np);
 	
-	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
+	// See if break points are the same
 	break1is2I = DbleEqual(umidI,uI2);
 	break1is2II = DbleEqual(umidII,uII2);
 	
@@ -96,24 +95,26 @@ const char *TrilinearTraction::VerifyAndLoadProperties(int np)
 // print to output window
 void TrilinearTraction::PrintMechanicalProperties(void) const
 {
-	PrintProperty("GcI",JIc/1000.,"J/m^2");
-	PrintProperty("sigI1",stress1*1.e-6,"");
-	if(kI1>0.) PrintProperty("kI",1.0e-6*kI1,"MPa/mm");
-	PrintProperty("upkI1",umidI,"mm");
+	PrintProperty("GcI",JIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
+	PrintProperty("sigI1",stress1*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
+	if(kI1>0.)
+		PrintProperty("kI",kI1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
+	PrintProperty("upkI1",umidI,UnitsController::Label(LENGTH_UNITS));
     cout <<  endl;
-	PrintProperty("sigI2",sI2*1.e-6,"");
-	PrintProperty("upkI2",uI2,"mm");
-	PrintProperty("uIc",delIc,"mm");
+	PrintProperty("sigI2",sI2*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
+	PrintProperty("upkI2",uI2,UnitsController::Label(LENGTH_UNITS));
+	PrintProperty("uIc",delIc,UnitsController::Label(LENGTH_UNITS));
     cout <<  endl;
 	
-	PrintProperty("GcII",JIIc/1000.,"J/m^2");
-	PrintProperty("sigII1",stress2*1.e-6,"");
-	if(kII1>0.) PrintProperty("kII",1.0e-6*kII1,"MPa/mm");
-	PrintProperty("upkII1",umidII,"mm");
+	PrintProperty("GcII",JIIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
+	PrintProperty("sigII1",stress2*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
+	if(kII1>0.)
+		PrintProperty("kII",kII1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
+	PrintProperty("upkII1",umidII,UnitsController::Label(LENGTH_UNITS));
     cout <<  endl;
-	PrintProperty("sigII2",sII2*1.e-6,"");
-	PrintProperty("upkII2",uII2,"mm");
-	PrintProperty("uIIc",delIIc,"mm");
+	PrintProperty("sigII2",sII2*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
+	PrintProperty("upkII2",uII2,UnitsController::Label(LENGTH_UNITS));
+	PrintProperty("uIIc",delIIc,UnitsController::Label(LENGTH_UNITS));
     cout <<  endl;
 	
 	PrintProperty("n",nmix,"");
@@ -146,24 +147,24 @@ void TrilinearTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCo
 			}
 			else
 				keff = sI2*(delIc-upeak[0])/((delIc-uI2)*upeak[0]);
-			Tn=keff*nCod;
+			Tn = keff*nCod;
 			
 			// get GI for failure law
 			if(nCod<umidI)
             {   // note that initial linear softening never because umidI=0
-				GI=0.0005*kI1*nCod*nCod;                             // now in units of N/m
+				GI = 0.5*kI1*nCod*nCod;
             }
 			else if(nCod<=uI2)
 			{	if(break1is2I)
-					GI=500.*stress1*umidI;
+					GI = 0.5*stress1*umidI;
 				else
-				{	double s2=(sI2*(nCod-umidI)+stress1*(uI2-nCod))/(uI2-umidI);
-					GI=500.*(nCod*stress1 + s2*(nCod - umidI));
+				{	double s2 = (sI2*(nCod-umidI)+stress1*(uI2-nCod))/(uI2-umidI);
+					GI = 0.5*(nCod*stress1 + s2*(nCod - umidI));
 				}
 			}
 			else
-			{	double s2=(delIc-nCod)*sI2/(delIc-uI2);
-				GI=500.*(stress1*uI2 + sI2*(nCod-umidI) + s2*(nCod-uI2));        // now in units of N/m
+			{	double s2 = (delIc-nCod)*sI2/(delIc-uI2);
+				GI = 0.5*(stress1*uI2 + sI2*(nCod-umidI) + s2*(nCod-uI2));
 			}
 		}
 	}
@@ -186,24 +187,24 @@ void TrilinearTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCo
         }
         else
             keff = sII2*(delIIc-upeak[1])/((delIIc-uII2)*upeak[1]);
-        Tt=keff*tCod;
+        Tt = keff*tCod;
         
         // get GII for failure law
         if(absTCod<umidII)
         {   // note that initial linear softening never because umidI=0
-            GII=0.0005*kII1*tCod*tCod;                             // now in units of N/m
+            GII = 0.5*kII1*tCod*tCod;
         }
         else if(absTCod<=uII2)
         {	if(break1is2II)
-                GII=500.*stress2*umidII;
+                GII = 0.5*stress2*umidII;
             else
-            {	double s2=(sII2*(absTCod-umidII)+stress2*(uII2-absTCod))/(uII2-umidII);
-                GII=500.*(absTCod*stress2 + s2*(absTCod - umidII));
+            {	double s2 = (sII2*(absTCod-umidII)+stress2*(uII2-absTCod))/(uII2-umidII);
+                GII = 0.5*(absTCod*stress2 + s2*(absTCod - umidII));
             }
         }
         else
-        {	double s2=(delIIc-absTCod)*sII2/(delIIc-uII2);
-            GII=500.*(stress2*uII2 + sII2*(absTCod-umidII) + s2*(absTCod-uII2));        // now in units of N/m
+        {	double s2 = (delIIc-absTCod)*sII2/(delIIc-uII2);
+            GII = 0.5*(stress2*uII2 + sII2*(absTCod-umidII) + s2*(absTCod-uII2));
         }
     }
 	
@@ -219,14 +220,14 @@ void TrilinearTraction::CrackTractionLaw(CrackSegment *cs,double nCod,double tCo
 		if(pow(GI/JIc,nmix)+pow(GII/JIIc,nmix) > 1)
 		{	cs->SetMatID(0);				// now debonded
 			ReportDebond(mtime,cs,GI/(GI+GII),GI+GII);
-			Tn=0.;                                       // turn off in tractions, if calculated
-			Tt=0.;
+			Tn = 0.;                                       // turn off in tractions, if calculated
+			Tt = 0.;
 		}
 	}
 	
 	// force is traction times area projected onto x-y plane
-	cs->tract.x=area*(Tn*dy - Tt*dx);
-	cs->tract.y=area*(-Tn*dx - Tt*dy);
+	cs->tract.x = area*(Tn*dy - Tt*dx);
+	cs->tract.y = area*(-Tn*dx - Tt*dy);
 }
 
 // return total energy (which is needed for path independent J) under traction law curve
@@ -245,19 +246,19 @@ double TrilinearTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,doubl
 	{	if(nCod<umidI)
         {   // note that initial linear softening never because umidI=0
 			double Tn=kI1*nCod;
-			tEnergy=0.5e-6*Tn*nCod;					// now in units of N/mm
+			tEnergy = 0.5*Tn*nCod;					// now in units of N/mm
 		}
 		else if(nCod<=uI2)
 		{	if(break1is2II)
-				tEnergy=0.5*stress1*umidII;
+				tEnergy = 0.5*stress1*umidII;
 			else
-			{	double s2=(sI2*(nCod-umidI)+stress1*(uI2-nCod))/(uI2-umidI);                // stress in N/mm^2
-				tEnergy=0.5*(nCod*stress1 + s2*(nCod - umidI));									// now in units of N/mm
+			{	double s2 = (sI2*(nCod-umidI)+stress1*(uI2-nCod))/(uI2-umidI);
+				tEnergy = 0.5*(nCod*stress1 + s2*(nCod - umidI));
 			}
 		}
 		else
-		{	double s2=(delIc-nCod)*sI2/(delIc-uI2);
-			tEnergy=0.5*(stress1*uI2 + sI2*(nCod-umidI) + s2*(nCod-uI2));        // now in units of N/m,
+		{	double s2 = (delIc-nCod)*sI2/(delIc-uI2);
+			tEnergy = 0.5*(stress1*uI2 + sI2*(nCod-umidI) + s2*(nCod-uI2));
 		}
 	}
 	
@@ -265,20 +266,20 @@ double TrilinearTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,doubl
 	double absTCod=fabs(tCod);
 	if(absTCod<umidII)
     {   // note that initial linear softening never because umidI=0
-		double Tt=kII1*tCod;
-		tEnergy+=0.5e-6*Tt*tCod;                         // now in units of N/mm
+		double Tt = kII1*tCod;
+		tEnergy += 0.5*Tt*tCod;
 	}
 	else if(absTCod<=uII2)
 	{	if(break1is2II)
-			tEnergy+=0.5*stress2*umidII;
+			tEnergy += 0.5*stress2*umidII;
 		else
-		{	double s2=(sII2*(absTCod-umidII)+stress2*(uII2-absTCod))/(uII2-umidII);
-			tEnergy+=0.5*(absTCod*stress2 + s2*(absTCod - umidII));						 // now in units of N/mm
+		{	double s2 = (sII2*(absTCod-umidII)+stress2*(uII2-absTCod))/(uII2-umidII);
+			tEnergy += 0.5*(absTCod*stress2 + s2*(absTCod - umidII));
 		}
 	}
 	else
-	{	double s2=(delIIc-absTCod)*sII2/(delIIc-uII2);
-		tEnergy+=0.5*(stress2*uII2 + sII2*(absTCod-umidII) + s2*(absTCod-uII2));        // now in units of N/mm
+	{	double s2 = (delIIc-absTCod)*sII2/(delIIc-uII2);
+		tEnergy += 0.5*(stress2*uII2 + sII2*(absTCod-umidII) + s2*(absTCod-uII2));
 	}
 	
 	// subtract recoverable energy when want released energy
@@ -294,8 +295,8 @@ double TrilinearTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,doubl
 			}
 			else
 				keff = sI2*(delIc-upeak[0])/((delIc-uI2)*upeak[0]);
-			double Tn=keff*nCod;
-			tEnergy-=0.5e-6*Tn*nCod;                                // now in units of N/mm
+			double Tn = keff*nCod;
+			tEnergy -= 0.5*Tn*nCod;
 		}
 		
 		// shear energy always
@@ -307,8 +308,8 @@ double TrilinearTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,doubl
 		}
 		else
 			keff = sII2*(delIIc-upeak[1])/((delIIc-uII2)*upeak[1]);
-		double Tt=keff*tCod;
-		tEnergy-=0.5e-6*Tt*tCod;									// N/mm
+		double Tt = keff*tCod;
+		tEnergy -= 0.5*Tt*tCod;
 	}
 	
 	return tEnergy;
@@ -322,15 +323,14 @@ const char *TrilinearTraction::MaterialType(void) const { return "Trilinear Cohe
 // Return the material tag
 int TrilinearTraction::MaterialTag(void) const { return TRILINEARTRACTIONMATERIAL; }
 
-/* Calculate properties used in analyses - here triangular law
-	k1 is slope up s1 (MPa/mm)
-	s1 is peak stress (MPa) = k1 u1
-	u1 is displacement at s1 peak stress (relative to u3 or 0 to 1)
-	s2 is second break point stress (MPa)
-	u2 is displacement at s2 stress (relative to u3 or 0 to 1)
-	u3 is final displacement (mm)
-	G is toughness (J/m^2) = 500 (s1 u2 _ s2 u3 - s2 u1)
-*/
+//	Calculate properties used in analyses - here triangular law
+//		k1 is slope up (F/L^3)
+//		u1 is displacement at s1 peak stress (relative to u3 or 0 to 1)
+//		u2 is displacement at s2 stress (relative to u3 or 0 to 1)
+//		u3 is final displacement (L)
+//		s1 is first peak stress (F/L^2) = k1 u1
+//		s2 is second break point stress (F/L^2)
+//		G is toughness (F/L) = (1/2) u3*(s1 u2 + s2(1 - u1))
 const char *TrilinearTraction::SetTLTractionLaw(double &s1,double &k1,double &u1,double &s2,double &u2,double &u3,double &G)
 {
 	// see if initial stiffness was used and convert to possible s1 and u1
@@ -365,11 +365,11 @@ const char *TrilinearTraction::SetTLTractionLaw(double &s1,double &k1,double &u1
 	// only one is unknown, find the other as needed, check each one
 	
 	if(G<0.)
-		G = 500.*u3*(s1*u2 + s2*(1.-u1));
+		G = 0.5*u3*(s1*u2 + s2*(1.-u1));
 	
 	else if(s1<0.)
 	{	if(u2>0.)
-			s1 = (0.002*G/u3 - s2*(1.-u1))/u2;
+			s1 = (2.*G/u3 - s2*(1.-u1))/u2;
 		else
 			s1 = s2;		// linear softening from s2 at u=0 down to 0 at u3
 	}
@@ -377,20 +377,20 @@ const char *TrilinearTraction::SetTLTractionLaw(double &s1,double &k1,double &u1
 	else if(u2<0.)
 	{	if(s1<=0.)
 			return "When sigmaI or sigmaII is zero, you must specify delpkI2 or delpkII2, respectively";
-		u2 = (0.002*G/u3 - s2*(1.-u1))/s1;
+		u2 = (2.*G/u3 - s2*(1.-u1))/s1;
 	}
 	
 	else if(s2<0.)
 	{	if(u1>=1.)
 			s2=s1;			// linear to s1 than drops to zero
 		else
-			s2 = (0.002*G/u3 - s1*u2)/(1.-u1);
+			s2 = (2.*G/u3 - s1*u2)/(1.-u1);
 	}
 	
 	else if(u1<0.)
 	{	if(s2<=0.)
 			return "When sigmaI2 or sigmaII2 is zero, you must specify delpkI or delpkII, respectively";
-		u1 = -(0.002*G/u3 - s1*u2 - s2)/s2;
+		u1 = -(2.*G/u3 - s1*u2 - s2)/s2;
 		if(u1<0. || u1>u2)
 			return "Calculated delpkI(II) is not between 0 and delpkI(II)2";
 	}
@@ -398,12 +398,12 @@ const char *TrilinearTraction::SetTLTractionLaw(double &s1,double &k1,double &u1
 	else if(u3<0.)
 	{	if(s1*u2 + s2*(1.-u1)<=0.)
 			return "Unable to calculate delIc or delIIc because input parameters define traction law with zero or negative area.";
-		u3 = 0.002*G/(s1*u2 + s2*(1.-u1));
+		u3 = 2.*G/(s1*u2 + s2*(1.-u1));
 	}
 	
 	// convert u1 and u2 to mm
-	u1*=u3;
-	u2*=u3;
+	u1 *= u3;
+	u2 *= u3;
 	
 	// check valid displacement values
 	if(u3<u2 || u3<u1 || u2<u1)
@@ -414,12 +414,10 @@ const char *TrilinearTraction::SetTLTractionLaw(double &s1,double &k1,double &u1
 	}
 	
 	// Get initial stiffness (if appropriate)
-	// Multiply by 1e6 to get N/mm/mm^2 (kg-m/sec^2/mm/mm^2) to g-mm/sec^2 / mm / mm^2
 	if(u1>0.)
 		k1 = s1/u1;
 	else
-		k1=-1.;
-	k1*=1.0e6;
+		k1 = -1.;
 	
 	return NULL;
 }

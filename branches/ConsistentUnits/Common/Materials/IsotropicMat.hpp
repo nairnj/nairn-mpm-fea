@@ -20,7 +20,6 @@ enum {E_PROP=0,G_PROP,NU_PROP,ISO_PROPS};
 class IsotropicMat : public Elastic
 {
     public:
-        double E,nu,G,aI;
         
         // constructors and destructors
         IsotropicMat();
@@ -46,6 +45,7 @@ class IsotropicMat : public Elastic
 #endif
 
     protected:
+		double E,nu,G,aI;
         char read[ISO_PROPS];
 };
 

@@ -36,6 +36,7 @@
 
 #include "Materials/CoupledSawTooth.hpp"
 #include "Cracks/CrackSegment.hpp"
+#include "System/UnitsController.hpp"
 
 extern double mtime;
 
@@ -49,12 +50,7 @@ CoupledSawTooth::CoupledSawTooth(char *matName) : CohesiveZone(matName)
 
 #pragma mark CoupledSawTooth::Initialization
 
-/* calculate properties used in analyses - here triangular law
-    In terms of J (J/m^2) and stress (MPa)
-    umax = J/(500*stress), k = 1000 stress^2/J
-    In terms of k and umax
-    J = 250 k umax^2,   stress = k umax/2
-*/
+// Calculate properties used in analyses - here only use mode I settings
 const char *CoupledSawTooth::VerifyAndLoadProperties(int np)
 {
     // set off mode I settings
@@ -72,11 +68,12 @@ const char *CoupledSawTooth::VerifyAndLoadProperties(int np)
 // print to output window
 void CoupledSawTooth::PrintMechanicalProperties(void) const
 {
-	PrintProperty("Gc",JIc/1000.,"J/m^2");
-	PrintProperty("sig",stress1*1.e-6,"");
-	PrintProperty("uc",delIc,"mm");
-	if(kI1>0.) PrintProperty("k",1.0e-6*kI1,"MPa/mm");
-	PrintProperty("upk",umidI,"mm");
+	PrintProperty("Gc",JIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
+	PrintProperty("sig",stress1*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
+	PrintProperty("uc",delIc,UnitsController::Label(LENGTH_UNITS));
+	if(kI1>0.)
+		PrintProperty("k",kI1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
+	PrintProperty("upk",umidI,UnitsController::Label(LENGTH_UNITS));
     cout <<  endl;
 }
 
@@ -103,7 +100,7 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
     {   cs->SetMatID(0);                        // now debonded
 		
 		// calculate mode mixity
-        ReportDebond(mtime,cs,upeak[3]/(upeak[3]+upeak[4]),1.e-3*(upeak[3]+upeak[4]));
+        ReportDebond(mtime,cs,upeak[3]/(upeak[3]+upeak[4]),upeak[3]+upeak[4]);
         cs->tract.x = 0.;
         cs->tract.y = 0.;
         return;
@@ -117,7 +114,11 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
     if(deff > 0.)
     {   // stiffness same for both modes keff = (1-D)k = sc(df-dmax)/(dmax*(df-d0)) = k d0*(df-dmax)/(dmax*(df-d0))
         // Note: prior to deff reaching d0, all dmax=upeak[0]=umidI=d0 are equal and keff = sc/d0 = k
-        double keff=stress1*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
+        double keff;
+        if(upeak[0]==umidI)
+            keff = stress1/upeak[0];
+        else
+            keff = stress1*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
         
         // normal force (only if open, closed handled by crack contact)
         if(nCod>0.) Tn = keff*nCod;
@@ -125,9 +126,7 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
         Tt = keff*tCod;
     }
 	
-	// track mode mixity
-	// Units tracked GI (in [3]) and GII (in [4]) are microN/mm
-	// Multiply by 1e-3 to get J/m^2
+	// track mode mixity tracking GI (in [3]) and GII (in [4])
 	if(nCod>upeak[1])
 	{	upeak[3] += Tn*(nCod-upeak[1]);
 		upeak[1] = nCod;
@@ -140,8 +139,8 @@ void CoupledSawTooth::CrackTractionLaw(CrackSegment *cs,double nCod,double tCod,
 	}
 	
 	// force is traction times area projected onto x-y plane
-	cs->tract.x=area*(Tn*dy - Tt*dx);
-	cs->tract.y=area*(-Tn*dx - Tt*dy);
+	cs->tract.x = area*(Tn*dy - Tt*dx);
+	cs->tract.y = area*(-Tn*dx - Tt*dy);
 	
 }
 
@@ -157,23 +156,27 @@ double CoupledSawTooth::CrackTractionEnergy(CrackSegment *cs,double nCod,double 
     
     double deff = sqrt(nCod*nCod + tCod*tCod);
     
-    if(deff < umidI)
+    if(deff<umidI || delIc==umidI)
     {   // note that linear softening never here because umidI=0
-    	double T=kI1*deff;
-        tEnergy=0.5e-6*T*deff;					// now in units of N/mm
+    	double T = kI1*deff;
+        tEnergy = 0.5*T*deff;
     }
     else
     {   // G = stress1*(deff*deff - 2.*deff*delIc + umidI*delIc)/(2.*(umidI - delIc));
-    	double s2=(delIc-deff)*stress1/(delIc-umidI);                   // stress in N/mm^2
-        tEnergy=0.5*(umidI*stress1 + (deff-umidI)*(stress1+s2));		// now in units of N/mm
+    	double s2 = (delIc-deff)*stress1/(delIc-umidI);
+        tEnergy = 0.5*(umidI*stress1 + (deff-umidI)*(stress1+s2));
     }
    
 	// subtract recoverable energy when want released energy
 	if(!fullEnergy && deff>0.)
 	{	double *upeak =(double *)cs->GetHistoryData();
-		double keff = stress1*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
-        double T=keff*deff;
-        tEnergy-=0.5e-6*T*deff;                                // now in units of N/mm
+        double keff;
+        if(upeak[0]==umidI)
+            keff = stress1/upeak[0];
+        else
+            keff = stress1*(delIc-upeak[0])/((delIc-umidI)*upeak[0]);
+        double T = keff*deff;
+        tEnergy -= 0.5*T*deff;
     }
     
 	return tEnergy;
