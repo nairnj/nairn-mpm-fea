@@ -52,19 +52,19 @@ MaterialBase::MaterialBase(char *matName)
     // Set the default values to 2 for elliptical fracture locus.
     KIexp=KIIexp=2.;
     criterion[0]=criterion[1]=UNSPECIFIED;
-	constantDirection=FALSE;
-	constantTip=FALSE;
+	constantDirection = false;
+	constantTip = false;
 	growDir.x=0.;
 	growDir.y=0.;
 	matPropagateDirection[0]=matPropagateDirection[1]=UNSPECIFIED;
 	tractionMat[0]=tractionMat[1]=0;
-	field=-1;
+	field=-1;							// material velocity field
 	shareMatField=0;					// share field with another material
 	activeField=-1;
 	kCond=0.;
 	heatCapacity=UnitsController::Scaling(1.e6);		// keep one because needed by ideal gas
 	lastFriction=NULL;
-    artificialViscosity=FALSE;
+    artificialViscosity = false;
     avA1 = 0.2;
     avA2 = 2.0;
 #endif

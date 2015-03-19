@@ -21,8 +21,6 @@ class ROperation;
 class TaitLiquid : public HyperElastic
 {
     public:
-        // unique properties
-        double viscosity;
     
         // constructors and destructors
         TaitLiquid();
@@ -52,6 +50,9 @@ class TaitLiquid : public HyperElastic
 		virtual void SetPressureFunction(char *);
     
     protected:
+		// unique properties
+		double viscosity;
+	
         int J_history;
         double TwoEtasp;
 		double gamma0;

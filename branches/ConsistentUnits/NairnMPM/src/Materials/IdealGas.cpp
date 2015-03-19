@@ -11,7 +11,8 @@
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Exceptions/CommonException.hpp"
- 
+#include "System/UnitsController.hpp"
+
 #pragma mark IdealGas::Constructors and Destructors
 
 // Constructors
@@ -20,7 +21,7 @@ IdealGas::IdealGas() {}
 // Constructors with arguments 
 IdealGas::IdealGas(char *matName) : HyperElastic(matName)
 {
-	P0   = -1.;			// required initial pressure in MPa
+	P0   = -1.;			// required initial pressure
 	rho  = -1.;			// required density (override default of 1)
 	T0   = -1.;			// required initial temperature in Kelvin
 }
@@ -33,7 +34,7 @@ char *IdealGas::InputMaterialProperty(char *xName,int &input,double &gScaling)
     input=DOUBLE_NUM;
     
     if(strcmp(xName,"P0")==0)
-        return((char *)&P0);
+        return UnitsController::ScaledPtr((char *)&P0,gScaling,1.e6);
     
     else if(strcmp(xName,"T0")==0)
         return((char *)&T0);
@@ -48,18 +49,21 @@ const char *IdealGas::VerifyAndLoadProperties(int np)
     if(P0 <= 0. || rho <= 0.0 || T0 <= 0.0 )
 		return "Ideal gas material model needs positive parameters P0, rho, and T0";
 	
-	// Find ideal gas has Cv heat capacity in nJ/(g-K)
+	// Find ideal gas has Cv heat capacity in F-L/(mass-K)
 	// For monotonic Ideal Gas, Cv = 1.5R for diatomic gas is 2.5R
 	// If set to >1 is diatomic, otherwise monotonic (which is for not set too)
-	if(heatCapacity>1.)
-		heatCapacity = 2.5e6*P0/(T0*rho);
+	if(heatCapacity>UnitsController::Scaling(1.e6))
+	{	heatCapacity = 2.5*P0/(T0*rho);
+		gammaAdiabatic = 7./5.;
+	}
 	else
-		heatCapacity = 1.5e6*P0/(T0*rho);
-	CpMinusCv= 1.e6*P0/(T0*rho);
+	{	heatCapacity = 1.5*P0/(T0*rho);
+		gammaAdiabatic = 5./3.;
+	}
+	CpMinusCv= P0/(T0*rho);
 	
-	// P0 in specific units
-	// for MPM (N/m^2 mm^3/g = (g-mm^2/sec^2)/g when props in MPa and rho in g/mm^3)
-	P0sp=P0*1.0e+06/rho;
+	// P0 in specific units (F/L^2 L^3/mass)
+	P0sp=P0/rho;
 	
     // call super class
     return HyperElastic::VerifyAndLoadProperties(np);
@@ -84,8 +88,8 @@ void IdealGas::ValidateForUse(int np) const
 // print mechanical properties output window
 void IdealGas::PrintMechanicalProperties(void) const
 {
-	PrintProperty("P0", P0, "");
-	PrintProperty("T0", T0, "");
+	PrintProperty("P0",P0*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("T0",T0,"");
 	cout << endl;
 }
 
@@ -106,13 +110,12 @@ void IdealGas::SetInitialParticleState(MPMBase *mptr,int np) const
     // Initial particle strains are zero (because J=1)
     
     // call super class for Cauchy Green strain
-    return HyperElastic::SetInitialParticleState(mptr,np);
+    HyperElastic::SetInitialParticleState(mptr,np);
 }
-
 
 #pragma mark IdealGas::Methods
 
-// In unites nJ/(g-K)
+// In unit nJ/(g-K)
 double IdealGas::GetCpMinusCv(MPMBase *) const { return CpMinusCv; }
 
 /* Take increments in strain and calculate new
@@ -162,20 +165,17 @@ const char *IdealGas::MaterialType(void) const { return "Ideal Gas (Hyperelastic
 // Return the material tag
 int IdealGas::MaterialTag(void) const { return IDEALGASMATERIAL; }
 
-// Calculate wave speed in mm/sec.
+// Calculate current wave speed in L/sec.
 double IdealGas::WaveSpeed(bool threeD,MPMBase *mptr) const
-{   return 1000.*sqrt(1.6667*(P0/rho)*(mptr->pTemperature/T0));
+{	double Pspcurr;
+	if(mptr!=NULL)
+	{	Tensor *sp=mptr->GetStressTensor();
+		Pspcurr = fmax(-sp->xx,0.);
+	}
+	else
+		Pspcurr = P0sp;
+	return sqrt(gammaAdiabatic*Pspcurr);
 }
-
-// calculate current wave speed in mm/sec. 
-// Only change is to use current particle temperature
-double IdealGas::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
-{   // J = V/V0 = rho0/rho
-    double J = mptr->GetRelativeVolume();
-    return 1000.*sqrt(1.6667*(P0/rho)*(mptr->pPreviousTemperature/T0));
-}
-
-
 
 
 

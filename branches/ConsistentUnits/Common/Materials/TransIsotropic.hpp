@@ -25,11 +25,6 @@ enum {EX_PROP=0,EY_PROP,EZ_PROP,NUXY_PROP,NUYX_PROP,NUXZ_PROP,
 class TransIsotropic : public Elastic
 {
     public:
-        double EA,ET,nuA,nuT,GA,aA,aT,GT,KT,betaA,betaT;
-        char read[ORTHO_PROPS];
-#ifdef MPM_CODE
-		double diffA,diffT,kCondA,kCondT;
-#endif
         
         // constructors and destructors
         TransIsotropic();
@@ -67,6 +62,11 @@ class TransIsotropic : public Elastic
 #endif
 		
 	protected:
+		double EA,ET,nuA,nuT,GA,aA,aT,GT,KT,betaA,betaT;
+		char read[ORTHO_PROPS];
+#ifdef MPM_CODE
+		double diffA,diffT,kCondA,kCondT;
+#endif
 #ifdef FEA_CODE
 		double lastMatAngle;
 		int hasMatProps;

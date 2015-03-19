@@ -96,6 +96,11 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY};
 		Tensor kCondTensor;
 	} TransportProperties;
 
+	typedef struct {
+		double dT;
+		double dC;
+	} ResidualStrains;
+
 #else
 	// tensor (2D and axisymmetric and plane strain)
 	typedef struct {

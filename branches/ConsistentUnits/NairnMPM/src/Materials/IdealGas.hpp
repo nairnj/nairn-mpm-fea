@@ -22,8 +22,6 @@ enum {P0_PROP=0,RHO0_PROP,T0_PROP,CTE_PROPS,GAS_PROPS};
 class IdealGas : public HyperElastic
 {
     public:
- 	    double P0;    // initial pressure
-	    double T0;    // initial temperature in Kelvin
 	
         // constructors and destructors
         IdealGas();
@@ -46,11 +44,14 @@ class IdealGas : public HyperElastic
 		virtual double WaveSpeed(bool,MPMBase *) const;
 		virtual const char *MaterialType(void) const;
 		virtual int MaterialTag() const;
-        virtual double CurrentWaveSpeed(bool,MPMBase *) const;
-		
+ 		
     private:
+		double P0;    // initial pressure
+		double T0;    // initial temperature in Kelvin
+	
 	    double P0sp;  // mass specific initial pressure
 		double CpMinusCv;
+		double gammaAdiabatic;
 };
 
 #endif

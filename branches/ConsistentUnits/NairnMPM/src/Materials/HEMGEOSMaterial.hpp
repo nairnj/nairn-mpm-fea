@@ -18,8 +18,6 @@
 class HEMGEOSMaterial : public HEIsotropic
 {
 	public:
-		// unique properties
-		double gamma0,C0,S1,S2,S3;
 		
 		// constructors and destructors
 		HEMGEOSMaterial();
@@ -44,6 +42,8 @@ class HEMGEOSMaterial : public HEIsotropic
 		virtual double CurrentWaveSpeed(bool,MPMBase *) const;
 		
 	protected:
+		// unique properties
+		double gamma0,C0,S1,S2,S3;
 		double C0squared;
 	
 };

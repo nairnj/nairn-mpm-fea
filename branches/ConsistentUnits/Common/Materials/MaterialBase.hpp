@@ -23,11 +23,6 @@ class ConductionTask;
 class MPMBase;
 class HardeningLawBase;
 
-typedef struct {
-	double dT;
-	double dC;
-} ResidualStrains;
-
 #else
 
 // C is stiffness matrix and some other things

@@ -20,8 +20,6 @@
 class Orthotropic : public TransIsotropic
 {
     public:
-        double Ex,Ey,Ez,Gxy,Gyz,Gxz,ax,ay,az,betax,betay,betaz;
-        double nuxy,nuyx,nuxz,nuzx,nuzy,nuyz;
         
         // constructors and destructors
         Orthotropic();
@@ -45,6 +43,9 @@ class Orthotropic : public TransIsotropic
 #endif
 
 	protected:
+		double Ex,Ey,Ez,Gxy,Gyz,Gxz,ax,ay,az,betax,betay,betaz;
+		double nuxy,nuyx,nuxz,nuzx,nuzy,nuyz;
+	
 #ifdef MPM_CODE
 		double Dz,kCondz;
 #endif

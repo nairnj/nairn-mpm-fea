@@ -12,6 +12,7 @@
 	#include "Custom_Tasks/DiffusionTask.hpp"
 #endif
 #include "System/UnitsController.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark Orthotropic::Constructors and Destructors
 
@@ -35,19 +36,19 @@ Orthotropic::Orthotropic(char *matName) : TransIsotropic(matName,ORTHO)
 // print mechanical properties to output window
 void Orthotropic::PrintMechanicalProperties(void) const
 {	
-    PrintProperty("E1",Ex,"");
-	PrintProperty("E2",Ey,"");
-	PrintProperty("E3",Ez,"");
+    PrintProperty("E1",Ex*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("E2",Ey*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("E3",Ez*UnitsController::Scaling(1.e-6),"");
 	PrintProperty("v12",nuxy,"");
     cout << endl;
     
 	PrintProperty("v13",nuxz,"");
 	PrintProperty("v23",nuyz,"");
-    PrintProperty("G12",Gxy,"");
-	PrintProperty("G13",Gxz,"");
+    PrintProperty("G12",Gxy*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("G13",Gxz*UnitsController::Scaling(1.e-6),"");
     cout << endl;
     
-	PrintProperty("G23",Gyz,"");
+	PrintProperty("G23",Gyz*UnitsController::Scaling(1.e-6),"");
     cout << endl;
 	
     PrintProperty("a1",ax,"");
@@ -72,10 +73,10 @@ void Orthotropic::PrintTransportProperties(void) const
 	// Conductivity constants
 	if(ConductionTask::active)
 	{   sprintf(mline,"k1 =%12.3g   k2 =%12.3g   k3 =%12.3g %s\nC   =%12.3g %s",
-				rho*kCondT*UnitsController::Scaling(1.e-6),
-				rho*kCondA*UnitsController::Scaling(1.e-6),
-				rho*kCondz*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS),
-				heatCapacity*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
+                    rho*kCondT*UnitsController::Scaling(1.e-6),
+					rho*kCondA*UnitsController::Scaling(1.e-6),
+					rho*kCondz*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS),
+					heatCapacity*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
 		cout << mline << endl;
 	}
 }
@@ -88,32 +89,32 @@ char *Orthotropic::InputMaterialProperty(char *xName,int &input,double &gScaling
     
     if(strcmp(xName,"Ex")==0 || strcmp(xName,"ER")==0)
     {	read[EX_PROP]=1;
-        return((char *)&Ex);
+        return UnitsController::ScaledPtr((char *)&Ex,gScaling,1.e6);
     }
     
     else if(strcmp(xName,"Ey")==0 || strcmp(xName,"EZ")==0)
     {	read[EY_PROP]=1;
-        return((char *)&Ey);
+        return UnitsController::ScaledPtr((char *)&Ey,gScaling,1.e6);
     }
     
     else if(strcmp(xName,"Ez")==0 || strcmp(xName,"ET")==0)
     {	read[EZ_PROP]=1;
-        return((char *)&Ez);
+        return UnitsController::ScaledPtr((char *)&Ez,gScaling,1.e6);
     }
     
     else if(strcmp(xName,"Gxy")==0 || strcmp(xName,"Gyx")==0 || strcmp(xName,"GRZ")==0 || strcmp(xName,"GZR")==0)
     {	read[GXY_PROP]=1;
-        return((char *)&Gxy);
+        return UnitsController::ScaledPtr((char *)&Gxy,gScaling,1.e6);
     }
     
     else if(strcmp(xName,"Gxz")==0 || strcmp(xName,"Gzx")==0 || strcmp(xName,"GRT")==0 || strcmp(xName,"GTR")==0)
     {	read[GXZ_PROP]=1;
-        return((char *)&Gxz);
+        return UnitsController::ScaledPtr((char *)&Gxz,gScaling,1.e6);
     }
     
     else if(strcmp(xName,"Gyz")==0 || strcmp(xName,"Gzy")==0 || strcmp(xName,"GZT")==0 || strcmp(xName,"GTZ")==0)
     {	read[GYZ_PROP]=1;
-        return((char *)&Gyz);
+        return UnitsController::ScaledPtr((char *)&Gyz,gScaling,1.e6);
     }
     
     else if(strcmp(xName,"nuyx")==0 || strcmp(xName,"nuZR")==0)
@@ -182,10 +183,10 @@ char *Orthotropic::InputMaterialProperty(char *xName,int &input,double &gScaling
 		
     else if(strcmp(xName,"kCondx")==0 || strcmp(xName,"kCondR")==0)
 		return UnitsController::ScaledPtr((char *)&kCondT,gScaling,1.e6);
-	
+		
     else if(strcmp(xName,"kCondy")==0 || strcmp(xName,"kCondZ")==0)
 		return UnitsController::ScaledPtr((char *)&kCondA,gScaling,1.e6);
-	
+		
     else if(strcmp(xName,"kCondz")==0 || strcmp(xName,"kCondT")==0)
 		return UnitsController::ScaledPtr((char *)&kCondz,gScaling,1.e6);
 #endif
@@ -237,13 +238,13 @@ const char *Orthotropic::VerifyAndLoadProperties(int np)
     }
 
 #ifdef MPM_CODE
-    // make conductivty specific (nJ mm^2/(sec-K-g))
-    kCondz /= rho;;
+    // make conductivty specific (N mm^3/(sec-K-g))
+    kCondz /= rho;
 #endif
 
     // set properties
-    const char *err=SetAnalysisProps(np,1.e6*Ex,1.e6*Ey,1.e6*Ez,nuxy,nuxz,nuyz,
-                1.e6*Gxy,1.e6*Gxz,1.e6*Gyz,1.e-6*ax,1.e-6*ay,1.e-6*az,betax*concSaturation,betay*concSaturation,betaz*concSaturation);
+    const char *err=SetAnalysisProps(np,Ex,Ey,Ez,nuxy,nuxz,nuyz,
+                Gxy,Gxz,Gyz,1.e-6*ax,1.e-6*ay,1.e-6*az,betax*concSaturation,betay*concSaturation,betaz*concSaturation);
 	if(err!=NULL) return err;
 	
 	// superclass call
@@ -269,7 +270,7 @@ double Orthotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
     cnorm=fmax(Ex*(1.-nuyz*nuzy),Ey*(1.-nuxz*nuzx))/xx;
 	if(threeD) cnorm=fmax(cnorm,Ez*(1-nuxy*nuyx)/xx);
 	cshear = threeD ? fmax(Gxy,fmax(Gxz,Gyz)) : Gxy;
-    return 1000.*sqrt(fmax(cnorm,cshear)/rho);
+    return sqrt(fmax(cnorm,cshear)/rho);
 }
 
 // diffusion and conductivity in the z direction

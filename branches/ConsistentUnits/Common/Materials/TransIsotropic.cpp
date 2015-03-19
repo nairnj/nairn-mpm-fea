@@ -49,15 +49,15 @@ TransIsotropic::TransIsotropic(char *matName,int matID) : Elastic(matName)
 
 // print mechanical properties to output window
 void TransIsotropic::PrintMechanicalProperties(void) const
-{	
-	PrintProperty("Ea",EA,"");
-	PrintProperty("Et",ET,"");
+{
+	PrintProperty("Ea",EA*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("Et",ET*UnitsController::Scaling(1.e-6),"");
 	PrintProperty("va",nuA,"");
 	PrintProperty("vt",nuT,"");
 	cout << endl;
 	
-	PrintProperty("Gt",GT,"");
-	PrintProperty("Ga",GA,"");
+	PrintProperty("Gt",GT*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("Ga",GA*UnitsController::Scaling(1.e-6),"");
 	cout << endl;
 	
 	PrintProperty("aa",aA,"");
@@ -97,22 +97,22 @@ char *TransIsotropic::InputMaterialProperty(char *xName,int &input,double &gScal
     
     if(strcmp(xName,"EA")==0)
     {	read[EA_PROP]=1;
-        return((char *)&EA);
+        return UnitsController::ScaledPtr((char *)&EA,gScaling,1.e6);
     }
     
     else if(strcmp(xName,"ET")==0)
     {	read[ET_PROP]=1;
-        return((char *)&ET);
+        return UnitsController::ScaledPtr((char *)&ET,gScaling,1.e6);
     }
     
     else if(strcmp(xName,"GA")==0)
     {	read[GA_PROP]=1;
-        return((char *)&GA);
+        return UnitsController::ScaledPtr((char *)&GA,gScaling,1.e6);
     }
     
     else if(strcmp(xName,"GT")==0)
     {	read[GT_PROP]=1;
-        return((char *)&GT);
+        return UnitsController::ScaledPtr((char *)&GT,gScaling,1.e6);
     }
     
     else if(strcmp(xName,"nuT")==0)
@@ -181,17 +181,17 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
     // set properties
 	const char *err;
     if(MaterialTag()==TRANSISO1)
-    {	err=SetAnalysisProps(np,1.e6*ET,1.e6*ET,1.e6*EA,nuT,ET*nuA/EA,ET*nuA/EA,
-                1.e6*GT,1.e6*GA,1.e6*GA,1.e-6*aT,1.e-6*aT,1.e-6*aA,betaT*concSaturation,betaT*concSaturation,betaA*concSaturation);
+    {	err=SetAnalysisProps(np,ET,ET,EA,nuT,ET*nuA/EA,ET*nuA/EA,
+                GT,GA,GA,1.e-6*aT,1.e-6*aT,1.e-6*aA,betaT*concSaturation,betaT*concSaturation,betaA*concSaturation);
     }
     else
-    {	err=SetAnalysisProps(np,1.e6*ET,1.e6*EA,1.e6*ET,ET*nuA/EA,nuT,nuA,
-                1.e6*GA,1.e6*GA,1.e6*GT,1.e-6*aT,1.e-6*aA,1.e-6*aT,betaT*concSaturation,betaA*concSaturation,betaT*concSaturation);
+    {	err=SetAnalysisProps(np,ET,EA,ET,ET*nuA/EA,nuT,nuA,
+                GA,GA,GT,1.e-6*aT,1.e-6*aA,1.e-6*aT,betaT*concSaturation,betaA*concSaturation,betaT*concSaturation);
     }
 	if(err!=NULL) return err;
 
 #ifdef MPM_CODE
-    // make conductivity (input as (N/(sec-K)) specific (nJ mm^2/(sec-K-g))
+    // make conductivity (input as (N/(sec-K)) specific (N mm^3/(sec-K-g))
     kCondA /= rho;
     kCondT /= rho;
 #endif
@@ -691,9 +691,9 @@ const char *TransIsotropic::MaterialType(void) const
 double TransIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
 {
     if(MaterialTag()==TRANSISO1 && !threeD)
-        return 1000.*sqrt((KT+GT)/rho);
+        return sqrt((KT+GT)/rho);
     else
-        return 1000.*sqrt(fmax(GA,fmax(KT+GT,EA+4.*KT*nuA*nuA))/rho);
+        return sqrt(fmax(GA,fmax(KT+GT,EA+4.*KT*nuA*nuA))/rho);
 }
 
 // maximum diffusion coefficient in mm^2/sec (diff in mm^2/sec)

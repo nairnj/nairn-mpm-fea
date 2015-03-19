@@ -13,6 +13,7 @@
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Materials/HardeningLawBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark HEMGEOSMaterial::Constructors and Destructors
 
@@ -23,7 +24,7 @@ HEMGEOSMaterial::HEMGEOSMaterial() {}
 HEMGEOSMaterial::HEMGEOSMaterial(char *matName) : HEIsotropic(matName)
 {
 	gamma0=1.64;		// dimensionless
-	C0=4004;			// m/sec
+	C0=4004000.;		// mm/sec
 	S1=1.35;			// dimsionless
 	S2=0.;				// dimsionless
 	S3=0.;				// dimsionless
@@ -46,7 +47,7 @@ char *HEMGEOSMaterial::InputMaterialProperty(char *xName,int &input,double &gSca
     
     else if(strcmp(xName,"C0")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&C0);
+        return UnitsController::ScaledPtr((char *)&C0,gScaling,1.e3);
     }
     
     else if(strcmp(xName,"S1")==0)
@@ -77,26 +78,24 @@ const char *HEMGEOSMaterial::VerifyAndLoadProperties(int np)
 	// check properties (need here because IsotropicMat is skipped
 	if(G1<0) return "The shear modulus, G1, is missing";
 	
-	// MU in specific units using initial rho
-    // for MPM (N/m^2 mm^3/g = (g-mm^2/sec^2)/g when props in MPa and rho in g/mm^3)
-	G1sp = G1*1.0e+06/rho;
+	// G in specific units using initial rho (F/L^2 L^3/mass)
+	G1sp = G1/rho;
 	
-    // Use in place of C0^2. Units are Pa mm^3/g such that get Pa when multiplied
-    //      by a density in g/mm^3
+    // Use in place of C0^2. Units are L^2/sec^2 = F/L^2 L^3/mass
 	// Equal to reduced bulk modulus
-    Ksp = C0squared = 1.e6*C0*C0;
+    Ksp = C0squared = C0*C0;
 	
-    // Shear modulus with pressure dependence
-	Kbulk = 1e-6*rho*C0squared;			// initial bulk modulus in MPa to print
+    // Initial bulk modulus
+	Kbulk = rho*C0squared;
 	
 	// expansion coefficients - affect on pressure is handled by eos, but
 	// needed for shear parts (which in large deformation have Jres component)
-	double effAlpha = (1.e6*heatCapacity*gamma0)/C0squared;
-	CTE1 = 1.e-6*effAlpha/3.;
+	double effAlpha = (heatCapacity*gamma0)/C0squared;
+	CTE1 = effAlpha/3.;
 	
 	// this material not coupled to moisture expansion
 	betaI = 0.;
-	CME1 = 0.;;
+	CME1 = 0.;
     
     // for Cp-Cv (units nJ/(g-K^2))
     Ka2sp = Ksp*CTE1*CTE1;
@@ -109,10 +108,10 @@ const char *HEMGEOSMaterial::VerifyAndLoadProperties(int np)
 void HEMGEOSMaterial::PrintMechanicalProperties(void) const
 {
 	// core properties
-	PrintProperty("C0",C0,"m/s");
+	PrintProperty("C0",C0*UnitsController::Scaling(1.e-3),"m/s");
 	PrintProperty("gam0",gamma0,"");
-	PrintProperty("K",Kbulk,"");
-    PrintProperty("G1",G1,"");
+	PrintProperty("K",Kbulk*UnitsController::Scaling(1.e-6),"");
+    PrintProperty("G1",G1*UnitsController::Scaling(1.e-6),"");
 	cout << endl;
     
 	PrintProperty("S1",S1,"");
@@ -120,9 +119,12 @@ void HEMGEOSMaterial::PrintMechanicalProperties(void) const
 	PrintProperty("S3",S3,"");
 	cout << endl;
 	
+	PrintProperty("E",9.*Kbulk*G1/(3.*Kbulk+G1)*UnitsController::Scaling(1.e-6),"");
+    PrintProperty("nu",(3.*Kbulk-2.*G1)/(6.*Kbulk+2.*G1),"");
+	cout << endl;
+    
 	// effective volumetric CTE (in ppm/K) alpha = rho0 gamma0 Cv / K
-	double effAlpha = (1.e6*heatCapacity*gamma0)/C0squared;
-	PrintProperty("a",effAlpha/3.,"");
+	PrintProperty("a",1.e6*CTE1,"");
 	PrintProperty("T0",thermal.reference,"K");
 	cout <<  endl;
     
@@ -140,7 +142,7 @@ void HEMGEOSMaterial::PrintTransportProperties(void) const
 	{	MaterialBase::PrintTransportProperties();
 	}
 	else if(!ConductionTask::adiabatic)
-	{	PrintProperty("Cv",heatCapacity*1.e-6,"J/(kg-K)");
+	{	PrintProperty("Cv",heatCapacity*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
 		cout << endl;
 	}
 }

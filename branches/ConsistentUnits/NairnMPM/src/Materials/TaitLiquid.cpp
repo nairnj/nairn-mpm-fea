@@ -14,6 +14,7 @@
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Read_XML/mathexpr.hpp"
+#include "System/UnitsController.hpp"
 
 // This model tracks on volume check. It does prevent particles degenerating into
 // needles, but it is probably not correct thing to do for correct shape functions.
@@ -50,7 +51,7 @@ char *TaitLiquid::InputMaterialProperty(char *xName,int &input,double &gScaling)
 	// read properties for this material
     if(strcmp(xName,"viscosity")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&viscosity);
+		return UnitsController::ScaledPtr((char *)&viscosity,gScaling,1.e-3);
     }
 	
 	else if(strcmp(xName,"InitialPressure")==0)
@@ -71,8 +72,8 @@ const char *TaitLiquid::VerifyAndLoadProperties(int np)
 		return "TaitLiquid material model needs positive K and zero or positive viscosity";
     
 	// Viscosity in Specific units using initial rho (times 2)
-	// for MPM (units N sec/m^2 mm^3/g) (1 cP = 0.001 N sec/m^2)
-	TwoEtasp = 0.002*viscosity/rho;
+	// Units mass/(L sec) L^3/mass = L^2/sec
+	TwoEtasp = 2.*viscosity/rho;
     
     // heating gamma0
     double alphaV = 3.e-6*aI;
@@ -86,15 +87,15 @@ const char *TaitLiquid::VerifyAndLoadProperties(int np)
 void TaitLiquid::PrintMechanicalProperties(void) const
 {
 	// print properties
-	PrintProperty("K",Kbulk,"");
-	PrintProperty("eta",viscosity,"cP");
+	PrintProperty("K",Kbulk*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("eta",viscosity*UnitsController::Scaling(1.e3),UnitsController::Label(VISCOSITY_UNITS));
 	PrintProperty("a",aI,"");
     cout << endl;
     PrintProperty("gam0",gamma0,"");
     cout << endl;
     if(function!=NULL)
     {   char *expr=function->Expr('#');
-        cout << "Initial Pressure  = " << expr << " Pa (";
+        cout << "Initial Pressure  = " << expr << " " << UnitsController::Label(PRESSURE_UNITS) << " (";
         delete [] expr;
 		cout << "mass adjusted to match)" << endl;
     }
@@ -122,7 +123,7 @@ void TaitLiquid::SetInitialParticleState(MPMBase *mptr,int np) const
 		
 		// convert to internal specific pressure units of N/m^2 mm^3/g
 		// Divide by rho0, which cancels with rho0 in Ksp when getting Jinit
-		double Psp = 1.e6*function->Val()/rho;
+		double Psp = UnitsController::Scaling(1.e6)*function->Val()/rho;
 		
 		// Find initial Jinit
 		// Note that an initial temperature will cause change in pressure
@@ -273,12 +274,12 @@ const char *TaitLiquid::MaterialType(void) const { return "Tait Liquid"; }
 // Return the material tag
 int TaitLiquid::MaterialTag(void) const { return TAITLIQUID; }
 
-// Calculate wave speed for material in mm/sec.
+// Calculate wave speed for material in L/sec.
 double TaitLiquid::WaveSpeed(bool threeD,MPMBase *mptr) const
-{	return 1000.*sqrt(Kbulk/rho);
+{	return sqrt(Kbulk/rho);
 }
 
-// Calculate current wave speed in mm/sec for a deformed particle
+// Calculate current wave speed in L/sec for a deformed particle
 double TaitLiquid::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
 {
     double J = mptr->GetRelativeVolume();
@@ -290,7 +291,7 @@ double TaitLiquid::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
 	}
 	double Jres = exp(3.*resStretch);
     double Kratio = (J/Jres)*(1.+mptr->GetPressure()/(TAIT_C*Ksp));
-    return 1000.*sqrt((Kbulk*Kratio)/rho);
+    return sqrt((Kbulk*Kratio)/rho);
 }
 
 // Copy stress to a read-only tensor variable after combininng deviatoric and pressure
@@ -308,7 +309,7 @@ double TaitLiquid::GetCurrentRelativeVolume(MPMBase *mptr) const
 }
 
 // setting initial pressure function if needed
-// Fuunction should evaulate to pression in Pa
+// Fuunction should evaulate to pressure
 // For gravity, P0 = rho*g*depth
 void TaitLiquid::SetPressureFunction(char *pFunction)
 {
