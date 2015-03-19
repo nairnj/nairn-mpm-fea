@@ -13,6 +13,7 @@
 ****************************************************************************************************************************/
 
 #include "Materials/MaterialBase.hpp"
+#include "System/UnitsController.hpp"
 
 // Constants for output fields for material properties
 #define PROP_LABEL_LENGTH 4
@@ -61,7 +62,7 @@ MaterialBase::MaterialBase(char *matName)
 	shareMatField=0;					// share field with another material
 	activeField=-1;
 	kCond=0.;
-	heatCapacity=1.;					// keep one because needed by ideal gas
+	heatCapacity=UnitsController::Scaling(1.e6);		// keep one because needed by ideal gas
 	lastFriction=NULL;
     artificialViscosity=FALSE;
     avA1 = 0.2;

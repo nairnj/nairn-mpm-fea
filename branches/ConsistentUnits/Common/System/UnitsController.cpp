@@ -36,17 +36,27 @@ const char *UnitsController::Label(int type)
 	switch(unitsType)
 	{	case LEGACY_UNITS:
 			switch(type)
-			{	case ERR_UNITS:
-					return "J/m^2";
-				case LENGTH_UNITS:
-					return "mm";
-				case TRACTIONSLOPE_UNITS:
-					return "MPa/mm";
-				case PRESSURE_UNITS:
-					return "MPa";
-				default:
-					break;
-			}
+		{	case ERR_UNITS:
+				return "J/m^2";
+			case OUTLENGTH_UNITS:
+				return "mm";
+			case TRACTIONSLOPE_UNITS:
+				return "MPa/mm";
+			case PRESSURE_UNITS:
+				return "MPa";
+			case HEATCAPACITY_UNITS:
+				return "J/(kg-K)";
+			case C0_UNITS:
+				return "m/sec";
+			case VISCOSITY_UNITS:
+				return "cP";
+			case CONDUCTIVITY_UNITS:
+				return "W/(m-K)";
+			case DENSITY_UNITS:
+				return "g/cm^3";
+			default:
+				break;
+		}
 			break;
 			
 		default:
@@ -55,7 +65,7 @@ const char *UnitsController::Label(int type)
 	
 	// no label gound
 	return "????";
-			
+	
 }
 
 

@@ -18,6 +18,7 @@
 #include "Materials/MaterialBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Elements/ElementBase.hpp"
+#include "System/UnitsController.hpp"
 
 // reeading globals
 static bool doSchema=TRUE;
@@ -170,10 +171,13 @@ void CommonAnalysis::StartResultsOutput(void)
     // Defined Materials
 	const char *err;
 #ifdef MPM_CODE
-    PrintSection("DEFINED MATERIALS\n       (Note: moduli and stresses in MPa, thermal exp. coeffs in ppm/C)\n       (      density in g/cm^3)");
+	sprintf(hline,"DEFINED MATERIALS\n       (Note: moduli and stresses in %s, thermal exp. coeffs in ppm/K)\n       (      density in %s)",
+			UnitsController::Label(PRESSURE_UNITS),UnitsController::Label(DENSITY_UNITS));
 #else
-    PrintSection("DEFINED MATERIALS\n       (Note: moduli in MPa, thermal exp. coeffs in ppm/C)");
+	sprintf(hline,"DEFINED MATERIALS\n       (Note: moduli in %s, thermal exp. coeffs in ppm/K)",
+			UnitsController::Label(PRESSURE_UNITS));
 #endif
+    PrintSection(hline);
     if(theMaterials==NULL)
         throw CommonException("No materials were defined.","CommonAnalysis::StartResultsOutput");
     for(i=0;i<nmat;i++)

@@ -28,7 +28,7 @@ class TransIsotropic : public Elastic
         double EA,ET,nuA,nuT,GA,aA,aT,GT,KT,betaA,betaT;
         char read[ORTHO_PROPS];
 #ifdef MPM_CODE
-		double diffA,diffT,kcondA,kcondT;
+		double diffA,diffT,kCondA,kCondT;
 #endif
         
         // constructors and destructors

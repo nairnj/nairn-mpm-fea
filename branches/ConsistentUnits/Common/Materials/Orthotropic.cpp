@@ -11,6 +11,7 @@
 	#include "Custom_Tasks/ConductionTask.hpp"
 	#include "Custom_Tasks/DiffusionTask.hpp"
 #endif
+#include "System/UnitsController.hpp"
 
 #pragma mark Orthotropic::Constructors and Destructors
 
@@ -22,7 +23,7 @@ Orthotropic::Orthotropic(char *matName) : TransIsotropic(matName,ORTHO)
 {
 #ifdef MPM_CODE
 	Dz=0.;
-	kcondz=0.;
+	kCondz=0.;
 #endif
 	betax=0.;
 	betay=0.;
@@ -70,8 +71,11 @@ void Orthotropic::PrintTransportProperties(void) const
 	}
 	// Conductivity constants
 	if(ConductionTask::active)
-	{   sprintf(mline,"k1 =%12.3g   k2 =%12.3g   k3 =%12.3g W/(m-K)\nC   =%12.3g J/(kg-K)",
-                    rho*kcondT*1.e-6,rho*kcondA*1.e-6,rho*kcondz*1.e-6,heatCapacity*1.e-6);
+	{   sprintf(mline,"k1 =%12.3g   k2 =%12.3g   k3 =%12.3g %s\nC   =%12.3g %s",
+				rho*kCondT*UnitsController::Scaling(1.e-6),
+				rho*kCondA*UnitsController::Scaling(1.e-6),
+				rho*kCondz*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS),
+				heatCapacity*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
 		cout << mline << endl;
 	}
 }
@@ -177,19 +181,13 @@ char *Orthotropic::InputMaterialProperty(char *xName,int &input,double &gScaling
         return((char *)&Dz);
 		
     else if(strcmp(xName,"kCondx")==0 || strcmp(xName,"kCondR")==0)
-	{	gScaling = 1.e6;			// convert W/(m-K) to nW/(mm-K)
-        return((char *)&kcondT);
-	}
+		return UnitsController::ScaledPtr((char *)&kCondT,gScaling,1.e6);
 	
     else if(strcmp(xName,"kCondy")==0 || strcmp(xName,"kCondZ")==0)
-	{	gScaling = 1.e6;			// convert W/(m-K) to nW/(mm-K)
-        return((char *)&kcondA);
-	}
+		return UnitsController::ScaledPtr((char *)&kCondA,gScaling,1.e6);
 	
     else if(strcmp(xName,"kCondz")==0 || strcmp(xName,"kCondT")==0)
-	{	gScaling = 1.e6;			// convert W/(m-K) to nW/(mm-K)
-        return((char *)&kcondz);
-	}
+		return UnitsController::ScaledPtr((char *)&kCondz,gScaling,1.e6);
 #endif
 		
 	return(MaterialBase::InputMaterialProperty(xName,input,gScaling));
@@ -240,7 +238,7 @@ const char *Orthotropic::VerifyAndLoadProperties(int np)
 
 #ifdef MPM_CODE
     // make conductivty specific (nJ mm^2/(sec-K-g))
-    kcondz /= rho;;
+    kCondz /= rho;;
 #endif
 
     // set properties
@@ -276,7 +274,7 @@ double Orthotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
 
 // diffusion and conductivity in the z direction
 double Orthotropic::GetDiffZ(void) const { return Dz; }
-double Orthotropic::GetKcondZ(void) const { return kcondz; }
+double Orthotropic::GetKcondZ(void) const { return kCondz; }
 
 #endif
 

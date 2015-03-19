@@ -448,42 +448,91 @@ Matrix3 Matrix3::RightDecompose(Matrix3 *R,Vector *stretches) const
     return U;
 }
 
-/*
-// Get right-stretch matrix or U in F = R*U
-// The target matrix is assumed to be C = FT*F
-// Input Eigenvalues are for matrix C
-// Not currently used - verify before use
-Matrix3 Matrix3::RightStretch(const Vector &Eigenvals) const
+// Polar decomponsition of F through left stretch matrix
+//      F = VR = Q Lambda (QTR)
+// The target matrix is assumed to be F
+// Function returns V and optionally R = V^-1 F (if pointer is not NULL)
+//		and optionally (lam1,lam2,lam3) in stretches (if not NULL)
+// It does not get Q, but if needed, they are eigenvectors of the
+//		returned V matrix
+Matrix3 Matrix3::LeftDecompose(Matrix3 *R,Vector *stretches) const
 {
-    // Get C^2
-    Matrix3 C2 = *this;
-    C2 *= *this;
+    if(is2D)
+    {   // 2D has simple formulae for R = ((Fsum,Fdif),(-Fdif,Fsum))
+        double Fsum = m[0][0]+m[1][1];
+        double Fdif = m[0][1]-m[1][0];
+        double denom = sqrt(Fsum*Fsum+Fdif*Fdif);
+        Fsum /= denom;
+        Fdif /= denom;
+        
+        // V is F* R*T
+        Matrix3 V(m[0][0]*Fsum+m[0][1]*Fdif,-m[0][0]*Fdif+m[0][1]*Fsum,
+				  m[1][0]*Fsum+m[1][1]*Fdif,-m[1][0]*Fdif+m[1][1]*Fsum,m[2][2]);
+        
+        // if R pointer not NULL, return it too
+        if(R!=NULL)
+        {   R->set(Fsum,Fdif,-Fdif,Fsum,1.);
+        }
+        
+		// Return Eigenvalues of V if asked
+		if(stretches!=NULL)
+		{	*stretches = V.Eigenvalues();
+		}
+		
+        return V;
+    }
     
+    // rest is for 3D matrix
+    
+    // Get B and B^2
+    Matrix3 B = (*this)*Transpose();
+    Matrix3 B2 = B*B;
+    
+    // Eigenvalues of B are lamda^2
+    Vector Eigenvals = B.Eigenvalues();
     double lam1 = sqrt(Eigenvals.x);
     double lam2 = sqrt(Eigenvals.y);
     double lam3 = sqrt(Eigenvals.z);
     
+    // invariants of V
     double i1 = lam1+lam2+lam3;
     double i2 = lam1*lam2+lam1*lam3+lam2*lam3;
     double i3 = lam1*lam2*lam3;
-    double d1 = i1*i2-i3;
-    double c2 = -1/d1;
-    double c1 = (i1*i1-i2)/d1;
-    double cI = i1*i3/d1;
     
-    // Return U = (1/d1)*(-C^2 + (i1*i1-i2)*C + i1*i3*I)
-    if(is2D)
-    {   return Matrix3(c2*C2(0,0)+c1*m[0][0]+cI,c2*C2(0,1)+c1*m[0][1],
-                       c2*C2(1,0)+c1*m[1][0],c2*C2(1,1)+c1*m[1][1]+cI,
-                       c2*C2(2,2)+c1*m[2][2]+cI);
+    // set coefficients
+    double d1 = 1./(i1*i2-i3);
+    double c2 = -d1;                    // coefficient of B2
+    double c1 = (i1*i1-i2)*d1;          // coefficient of B
+    double cI = i1*i3*d1;               // coefficient of I
+    
+    // Get V = (1/d1)*(-B^2 + (i1*i1-i2)*B + i1*i3*I)
+    Matrix3 V(c2*B2(0,0)+c1*B(0,0)+cI, c2*B2(0,1)+c1*B(0,1),    c2*B2(0,2)+c1*B(0,2),
+			  c2*B2(1,0)+c1*B(1,0),    c2*B2(1,1)+c1*B(1,1)+cI, c2*B2(1,2)+c1*B(1,2),
+			  c2*B2(2,0)+c1*B(2,0),    c2*B2(2,1)+c1*B(2,1),    c2*B2(2,2)+c1*B(2,2)+cI);
+    
+    // if R pointer not NULL, find R too
+    if(R!=NULL)
+    {   c1 = 1/i3;                      // coefficient of B
+        double cV = -i1*c1;             // coefficient of V
+        cI = i2*c1;                     // coefficient of I
+        // Get Vinv = (1/i3)*(B - i1*V + i2*I)
+        Matrix3 Vinv(c1*B(0,0)+cV*V(0,0)+cI, c1*B(0,1)+cV*V(0,1),     c1*B(0,2)+cV*V(0,2),
+                     c1*B(1,0)+cV*V(1,0),    c1*B(1,1)+cV*V(1,1)+cI,  c1*B(1,2)+cV*V(1,2),
+                     c1*B(2,0)+cV*V(2,0),    c1*B(2,1)+cV*V(2,1),     c1*B(2,2)+cV*V(2,2)+cI);
+        
+        // R = V^-1 F
+        *R = Vinv*(*this);
     }
-    else
-    {   return Matrix3(c2*C2(0,0)+c1*m[0][0]+cI,c2*C2(0,1)+c1*m[0][1],c2*C2(0,2)+c1*m[0][2],
-                       c2*C2(1,0)+c1*m[1][0],c2*C2(1,1)+c1*m[1][1]+cI,c2*C2(1,2)+c1*m[1][2],
-                       c2*C2(2,0)+c1*m[2][0],c2*C2(2,1)+c1*m[2][1],c2*C2(2,2)+c1*m[2][2]+cI);
-    }
+	
+	// Return Eigenvalues of U if asked
+	if(stretches!=NULL)
+	{	stretches->x = lam1;
+		stretches->y = lam2;
+		stretches->z = lam3;
+	}
+    
+    return V;
 }
-*/
 
 /*
 // Get Rotation Matrix using target matrix F

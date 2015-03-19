@@ -103,7 +103,7 @@ class NodalPoint : public LinkedObject
 		int NumberParticles(void);
 		int NumberNonrigidParticles(void) const;
 		bool NodeHasNonrigidParticles(void) const;
-		double GetNodalMass() const;
+		double GetNodalMass(bool) const;
 		void Describe(void) const;
 		void AddDisplacement(short,int,double,Vector *);
 		void AddVolume(short,int,double);

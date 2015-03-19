@@ -46,7 +46,7 @@ class Orthotropic : public TransIsotropic
 
 	protected:
 #ifdef MPM_CODE
-		double Dz,kcondz;
+		double Dz,kCondz;
 #endif
 	
 };
