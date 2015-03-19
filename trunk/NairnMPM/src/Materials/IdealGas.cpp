@@ -52,9 +52,13 @@ const char *IdealGas::VerifyAndLoadProperties(int np)
 	// For monotonic Ideal Gas, Cv = 1.5R for diatomic gas is 2.5R
 	// If set to >1 is diatomic, otherwise monotonic (which is for not set too)
 	if(heatCapacity>1.)
-		heatCapacity = 2500.*P0/(T0*rho);
+	{	heatCapacity = 2500.*P0/(T0*rho);
+		gammaAdiabatic = 7./5.;
+	}
 	else
-		heatCapacity = 1500.*P0/(T0*rho);
+	{	heatCapacity = 1500.*P0/(T0*rho);
+		gammaAdiabatic = 5./3.;
+	}
 	CpMinusCv= 1000.*P0/(T0*rho);
 	
 	// P0 in specific units for MPM of N/m^2 cm^3/g
@@ -161,19 +165,17 @@ const char *IdealGas::MaterialType(void) const { return "Ideal Gas (Hyperelastic
 // Return the material tag
 int IdealGas::MaterialTag(void) const { return IDEALGASMATERIAL; }
 
-// Calculate wave speed in mm/sec.
+// Calculate current wave speed in mm/sec.
 double IdealGas::WaveSpeed(bool threeD,MPMBase *mptr) const
-{   return 1000.*sqrt(1.6667e9*(P0*rho)*(mptr->pTemperature/T0));
+{	double Pspcurr;
+	if(mptr!=NULL)
+	{	Tensor *sp=mptr->GetStressTensor();
+		Pspcurr = fmax(-sp->xx,0.);
+	}
+	else
+		Pspcurr = P0sp;
+	return sqrt(1000.*gammaAdiabatic*Pspcurr);
 }
-
-// calculate current wave speed in mm/sec. 
-// Only change vs initial wave speed is due to J
-double IdealGas::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
-{   // J = V/V0 = rho0/rho
-    double J = mptr->GetRelativeVolume();
-    return 1000.*sqrt(1.6667e9*(P0*rho/J)*(mptr->pPreviousTemperature/T0));
-}
-
 
 
 

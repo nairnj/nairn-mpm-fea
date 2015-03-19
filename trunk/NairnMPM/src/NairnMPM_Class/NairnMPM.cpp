@@ -61,7 +61,7 @@ int maxShapeNodes=10;		// Maximum number of nodes for a particle (plus 1)
 // Constructor
 NairnMPM::NairnMPM()
 {
-	version=11;						// main version
+	version=10;						// main version
 	subversion=0;					// subversion (must be < 10)
 	buildnumber=0;					// build number
 
@@ -351,15 +351,6 @@ void NairnMPM::PreliminaryCalcs(void)
         // now a nonrigid particle
         nmpmsNR = p+1;
         
-        // check time step
-        crot=theMaterials[matid]->WaveSpeed(IsThreeD(),mpm[p])/10.;		// in cm/sec
-		tst=FractCellTime*dcell/crot;                                   // in sec
-        if(tst<tmin) tmin=tst;
-        
-        // propagation time (in sec)
-        tst=PropFractCellTime*dcell/crot;
-        if(tst<propTime) propTime=tst;
-        
         // zero external forces on this particle
 		ZeroVector(mpm[p]->GetPFext());
         
@@ -378,6 +369,15 @@ void NairnMPM::PreliminaryCalcs(void)
         // material dependent initialization
         theMaterials[matid]->SetInitialParticleState(mpm[p],np);
 		
+        // check time step
+        crot=theMaterials[matid]->WaveSpeed(IsThreeD(),mpm[p])/10.;		// in cm/sec
+		tst=FractCellTime*dcell/crot;                                   // in sec
+        if(tst<tmin) tmin=tst;
+        
+        // propagation time (in sec)
+        tst=PropFractCellTime*dcell/crot;
+        if(tst<propTime) propTime=tst;
+        
 		// Transport property time steps
 		int numTransport = 0;
 		TransportTask *nextTransport=transportTasks;
