@@ -26,8 +26,6 @@
 class ClampedNeohookean : public Neohookean
 {
 	public:
-		double critComp,critTens,hardening;
-	int elasticModel;
 	
 		// constructors and destructors
 		ClampedNeohookean();
@@ -51,6 +49,9 @@ class ClampedNeohookean : public Neohookean
 		virtual double CurrentWaveSpeed(bool,MPMBase *) const;
 	
 	protected:
+		double critComp,critTens,hardening;
+		int elasticModel;
+	
 		double lamMin2,lamMax2;
 	
 };

@@ -12,6 +12,7 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark BistableIsotropic::Constructors and Destructors
 
@@ -99,13 +100,11 @@ char *BistableIsotropic::InputMaterialProperty(char *xName,int &input,double &gS
     // conductivity
     else if(strcmp(xName,"kCond0")==0)
     {	readbs[KCOND0_PROP]=1;
-		gScaling = 1e6;					// convert W/(m-K) to nW/(mm-K)
-        return((char *)&kCond0);
+		return UnitsController::ScaledPtr((char *)&kCond0,gScaling,1.e6);
     }
     else if(strcmp(xName,"kCondd")==0)
     {	readbs[KCONDD_PROP]=1;
-		gScaling = 1e6;					// convert W/(m-K) to nW/(mm-K)
-        return((char *)&kCondd);
+		return UnitsController::ScaledPtr((char *)&kCondd,gScaling,1.e6);
     }
 	
     // transitions and offsets
@@ -233,8 +232,10 @@ void BistableIsotropic::PrintTransportProperties(void) const
 	}
 	// Conductivity constants (Cp is also mJ/(g-K))
 	if(ConductionTask::active)
-	{   sprintf(mline,"k0 =%12.3g W/(m-K)  kd =%12.3g W/(m-K)  C   =%12.3g J/(kg-K)",
-                            rho*kCond0*1.e-6,rho*kCondd*1.e-6,heatCapacity*1.e-6);
+	{   sprintf(mline,"k0 =%12.3g %s  kd =%12.3g %s  C   =%12.3g %s",
+				rho*kCond0*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS),
+				rho*kCondd*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS),
+				heatCapacity*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
 		cout << mline << endl;
 	}
 }

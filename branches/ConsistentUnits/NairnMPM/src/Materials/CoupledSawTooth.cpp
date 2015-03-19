@@ -70,10 +70,10 @@ void CoupledSawTooth::PrintMechanicalProperties(void) const
 {
 	PrintProperty("Gc",JIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
 	PrintProperty("sig",stress1*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
-	PrintProperty("uc",delIc,UnitsController::Label(LENGTH_UNITS));
+	PrintProperty("uc",delIc,UnitsController::Label(OUTLENGTH_UNITS));
 	if(kI1>0.)
 		PrintProperty("k",kI1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
-	PrintProperty("upk",umidI,UnitsController::Label(LENGTH_UNITS));
+	PrintProperty("upk",umidI,UnitsController::Label(OUTLENGTH_UNITS));
     cout <<  endl;
 }
 

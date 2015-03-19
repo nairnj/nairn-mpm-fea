@@ -72,7 +72,7 @@ void ClampedNeohookean::PrintMechanicalProperties(void) const
 // verify settings and some initial calculations
 const char *ClampedNeohookean::VerifyAndLoadProperties(int np)
 {
-	// must enter G1 and Kbulk OR Etens and nu
+	// must enter critical value
 	if(critComp<0. || critTens<0.)
 	{	return "Clamped Neohookean material requires both CritComp and CritTens to be non-negative";
 	}
@@ -320,10 +320,9 @@ const char *ClampedNeohookean::MaterialType(void) const { return "Clamped Neohoo
 // if a subclass material supports artificial viscosity, override this and return TRUE
 bool ClampedNeohookean::SupportsArtificialViscosity(void) const { return false; }
 
-//	calculate current wave speed in mm/sec. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
+//	calculate current wave speed in L/sec. Uses sqrt((K+4G/3)/rho) which is dilational wave speed
 double ClampedNeohookean::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const
-{
-	double Jp = mptr->GetHistoryDble(JP_HISTORY);
+{	double Jp = mptr->GetHistoryDble(JP_HISTORY);
 	double arg = exp(hardening*(1.-Jp));
-    return 1000.*sqrt(arg*(Kbulk+4.*G/3.)/rho);
+    return sqrt(arg*(Kbulk+4.*G/3.)/rho);
 }

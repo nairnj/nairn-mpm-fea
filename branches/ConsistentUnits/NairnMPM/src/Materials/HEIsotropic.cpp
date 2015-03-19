@@ -15,6 +15,7 @@
 #include "Materials/HardeningLawBase.hpp"
 #include "Materials/LinearHardening.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark HEIsotropic::Constructors and Destructors
 
@@ -39,7 +40,7 @@ char *HEIsotropic::InputMaterialProperty(char *xName,int &input,double &gScaling
     input=DOUBLE_NUM;
     
     if(strcmp(xName,"G1")==0 || strcmp(xName,"G")==0)
-        return((char *)&G1);
+        return UnitsController::ScaledPtr((char *)&G1,gScaling,1.e6);
     
     // look for different plastic law
     if(strcmp(xName,"Hardening")==0)
@@ -73,9 +74,8 @@ const char *HEIsotropic::VerifyAndLoadProperties(int np)
     if(G1<0. || Kbulk < 0. )
 		return "HEIsotropic Material needs non-negative G1 and K";
     
-	// MU in specific units using initial rho
-	// for MPM (N/m^2 mm^3/g = (g-mm^2/sec^2)/g when props in MPa and rho in g/mm^3)
-	G1sp = G1*1.0e+06/rho;
+	// G in specific units using initial rho (F/L^2 L^3/mass)
+ 	G1sp = G1/rho;
 	
 	// must call super class
 	return HyperElastic::VerifyAndLoadProperties(np);
@@ -95,8 +95,8 @@ void HEIsotropic::ValidateForUse(int np) const
 // print mechanical properties to the results
 void HEIsotropic::PrintMechanicalProperties(void) const
 {	
-    PrintProperty("G1",G1,"");
-    PrintProperty("K",Kbulk,"");
+    PrintProperty("G1",G1*UnitsController::Scaling(1.e-6),"");
+    PrintProperty("K",Kbulk*UnitsController::Scaling(1.e-6),"");
     cout << endl;
     PrintProperty("E",9.*Kbulk*G1/(3.*Kbulk+G1),"");
     PrintProperty("nu",(3.*Kbulk-2.*G1)/(6.*Kbulk+2.*G1),"");
@@ -454,7 +454,7 @@ Tensor HEIsotropic::GetNormalTensor(Tensor *strial,double magnitude_strial,int n
 // convert J to K using isotropic method
 Vector HEIsotropic::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 {	double nuLS = (3.*Kbulk-2.*G1)/(6.*Kbulk+2.*G1);
-	return IsotropicJToK(d,C,J0,np,nuLS,G1*1.e6);
+	return IsotropicJToK(d,C,J0,np,nuLS,G1);
 }
 
 // Copy stress to a read-only tensor variable
@@ -473,9 +473,9 @@ int HEIsotropic::MaterialTag(void) const { return HEISOTROPIC; }
 // return unique, short name for this material
 const char *HEIsotropic::MaterialType(void) const { return "Hyperelastic Isotropic"; }
 
-// calculate wave speed in mm/sec (props in MPa and rho in g/mm^3)
+// calculate wave speed in mm/sec (props in mass/(L sec^2) and rho in mass/L^3)
 double HEIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
-{	return 1000.*sqrt((Kbulk+4.*G1/3.)/rho);
+{	return sqrt((Kbulk+4.*G1/3.)/rho);
 }
 
 // this material has two history variables

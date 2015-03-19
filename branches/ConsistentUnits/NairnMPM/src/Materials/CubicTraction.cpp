@@ -48,13 +48,13 @@ void CubicTraction::PrintMechanicalProperties(void) const
 {
 	PrintProperty("GcI",JIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
 	PrintProperty("sigI",stress1*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
-	PrintProperty("uI",delIc,UnitsController::Label(LENGTH_UNITS));
+	PrintProperty("uI",delIc,UnitsController::Label(OUTLENGTH_UNITS));
 	PrintProperty("kI0",kI1*delIc*delIc*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
     cout <<  endl;
 	
 	PrintProperty("GcII",JIIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
 	PrintProperty("sigII",stress2*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
-	PrintProperty("uII",delIIc,UnitsController::Label(LENGTH_UNITS));
+	PrintProperty("uII",delIIc,UnitsController::Label(OUTLENGTH_UNITS));
 	PrintProperty("kII0",kII1*delIIc*delIIc*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
     cout <<  endl;
 	

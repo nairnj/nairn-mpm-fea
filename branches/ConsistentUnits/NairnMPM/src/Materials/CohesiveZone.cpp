@@ -87,18 +87,18 @@ void CohesiveZone::PrintMechanicalProperties(void) const
 {
 	PrintProperty("GIc",JIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
 	PrintProperty("sigI",stress1*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
-	PrintProperty("uIc",delIc,UnitsController::Label(LENGTH_UNITS));
+	PrintProperty("uIc",delIc,UnitsController::Label(OUTLENGTH_UNITS));
 	if(kI1>0.)
 		PrintProperty("kI",kI1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
-	PrintProperty("upkI",umidI,UnitsController::Label(LENGTH_UNITS));
+	PrintProperty("upkI",umidI,UnitsController::Label(OUTLENGTH_UNITS));
     cout <<  endl;
 
 	PrintProperty("GIIc",JIIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
 	PrintProperty("sigII",stress2*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
-	PrintProperty("uIIc",delIIc,UnitsController::Label(LENGTH_UNITS));
+	PrintProperty("uIIc",delIIc,UnitsController::Label(OUTLENGTH_UNITS));
 	if(kII1>0.)
 		PrintProperty("kII",kII1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
-	PrintProperty("upkII",umidII,UnitsController::Label(LENGTH_UNITS));
+	PrintProperty("upkII",umidII,UnitsController::Label(OUTLENGTH_UNITS));
     cout <<  endl;
 	
 	PrintProperty("n",nmix,"");

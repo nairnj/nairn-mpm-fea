@@ -24,6 +24,7 @@
 #include "Materials/SLMaterial.hpp"
 #include "Materials/Nonlinear2Hardening.hpp"
 #include "Materials/DDBHardening.hpp"
+#include "System/UnitsController.hpp"
 #include <vector>
 
 // global
@@ -44,20 +45,17 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
 {
     if(strcmp(xName,"rho")==0)
     {	input=DOUBLE_NUM;
-		gScaling = 0.001;
-        return((char *)&rho);
+		return UnitsController::ScaledPtr((char *)&rho,gScaling,0.001);
     }
     
     else if(strcmp(xName,"KIc")==0)
     {	input=DOUBLE_NUM;
-		gScaling = 31.62277660168379e6;		// Convert MPa sqrt(m) to Pa sqrt(m)
-        return((char *)&KIc);
+		return UnitsController::ScaledPtr((char *)&KIc,gScaling,31.62277660168379e6);
     }
     
     else if(strcmp(xName,"KIIc")==0)
     {	input=DOUBLE_NUM;
-		gScaling = 31.62277660168379e6;		// Convert MPa sqrt(m) to Pa sqrt(m)
-        return((char *)&KIIc);
+		return UnitsController::ScaledPtr((char *)&KIIc,gScaling,31.62277660168379e6);
     }
 	
 	// crit 3 only
@@ -96,14 +94,12 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
     
     else if(strcmp(xName,"JIc")==0)
     {	input=DOUBLE_NUM;
-		gScaling = 1000.;		// J/m^2 to nJ/mm^2
-        return((char *)&JIc);
+		return UnitsController::ScaledPtr((char *)&JIc,gScaling,1000.);
     }
     
     else if(strcmp(xName,"JIIc")==0)
     {	input=DOUBLE_NUM;
-		gScaling = 1000.;		// J/m^2 to nJ/mm^2
-        return((char *)&JIIc);
+		return UnitsController::ScaledPtr((char *)&JIIc,gScaling,1000.);
     }
 	
     else if(strcmp(xName,"nmix")==0)
@@ -159,8 +155,7 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
     
 	else if(strcmp(xName,"Cp")==0 || strcmp(xName,"Cv")==0)
     {	input=DOUBLE_NUM;
-		gScaling = 1.e6;				// Convert J/(kg-K) to nJ/(g-K)
-        return((char *)&heatCapacity);
+		return UnitsController::ScaledPtr((char *)&heatCapacity,gScaling,1.e6);
     }
 
 	else if(strcmp(xName,"csat")==0)
@@ -180,8 +175,7 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
 	
 	else if(strcmp(xName,"kCond")==0)
     {	input=DOUBLE_NUM;
-		gScaling = 1.e6;				// Convert W/(m-K) to nW/(mm-K)
-        return((char *)&kCond);
+		return UnitsController::ScaledPtr((char *)&kCond,gScaling,1.e6);
 	}
     
 	// check properties only for some materials
@@ -439,13 +433,13 @@ void MaterialBase::PrintTransportProperties(void) const
 	}
 	// Conductivity constants
 	if(ConductionTask::active)
-	{	PrintProperty("k",rho*kCond*1.e-6,"W/(m-K)");
-		PrintProperty("Cv",heatCapacity*1.e-6,"J/(kg-K)");        // aka mJ/(g-K)
-		PrintProperty("Cp",(heatCapacity+GetCpMinusCv(NULL))*1.e-6,"J/(kg-K)");        // aka mJ/(g-K)
+	{	PrintProperty("k",rho*kCond*UnitsController::Scaling(1.e-6),UnitsController::Label(CONDUCTIVITY_UNITS));
+		PrintProperty("Cv",heatCapacity*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
+		PrintProperty("Cp",(heatCapacity+GetCpMinusCv(NULL))*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
 		cout << endl;
 	}
 	else if(ConductionTask::adiabatic)
-	{	PrintProperty("Cv",heatCapacity*1.e-6,"J/(kg-K)");        // aka mJ/(g-K)
+	{	PrintProperty("Cv",heatCapacity*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
         // Cp only used in conduction so not printed here when conduction is off
 		cout << endl;
 	}

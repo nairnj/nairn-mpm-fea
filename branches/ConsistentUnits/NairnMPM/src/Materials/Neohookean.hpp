@@ -28,10 +28,6 @@ typedef struct {
 class Neohookean : public HyperElastic
 {
 	public:
-		double G;
-		double Etens,nu;
-		double Lame;
-		// double aI,betaI		// isotropic expanion defined in super classes
 	
 		// constructors and destructors
 		Neohookean();
@@ -60,6 +56,11 @@ class Neohookean : public HyperElastic
 		virtual double GetCurrentRelativeVolume(MPMBase *) const;
 	
 	protected:
+		double G;
+		double Etens,nu;
+		double Lame;
+		// double aI,betaI		// isotropic expanion defined in super classes
+	
 		NeohookeanProperties pr;
 		double gamma0;
 		int J_History;

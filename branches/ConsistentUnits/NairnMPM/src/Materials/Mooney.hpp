@@ -23,10 +23,6 @@ enum {G1_PROP=0,G2_PROP,KBULK_PROP,CTE_PROP,MOONEY_PROPS};
 class Mooney : public HyperElastic
 {
     public:
-        double G1,G2;
-		double Etens,nu;
-        bool rubber;
-		// double aI,betaI		// isotropic expanion defined in super classes
  
         // constructors and destructors
         Mooney();
@@ -55,6 +51,11 @@ class Mooney : public HyperElastic
 		virtual double GetCurrentRelativeVolume(MPMBase *) const;
 		
     protected:
+		double G1,G2;
+		double Etens,nu;
+		bool rubber;
+		// double aI,betaI		// isotropic expanion defined in super classes
+	
 		double G1sp, G2sp;
 		double gamma0;
 		int J_History;

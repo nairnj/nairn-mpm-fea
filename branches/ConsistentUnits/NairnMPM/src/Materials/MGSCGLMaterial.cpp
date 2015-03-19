@@ -118,7 +118,7 @@ void MGSCGLMaterial::PrintMechanicalProperties(void) const
 	cout << endl;
 	
 	// effective volumetric CTE (in ppm/K) alpha = rho0 gamma0 Cv / K
-	double effAlpha = (1.e6*heatCapacity*gamma0)/C0squared;
+	double effAlpha = 1.e6*(heatCapacity*gamma0/C0squared);
 	PrintProperty("a",effAlpha/3.,"");
 	PrintProperty("T0",thermal.reference,"K");
 	cout <<  endl;
@@ -134,7 +134,7 @@ void MGSCGLMaterial::PrintTransportProperties(void) const
 	{	MaterialBase::PrintTransportProperties();
 	}
 	else if(!ConductionTask::adiabatic)
-	{	PrintProperty("C",heatCapacity*1.e-6,"J/(kg-K)");
+	{	PrintProperty("C",heatCapacity*UnitsController::Scaling(1.e-6),UnitsController::Label(HEATCAPACITY_UNITS));
 		cout << endl;
 	}
 }

@@ -29,9 +29,6 @@ class HardeningLawBase;
 class HEIsotropic : public HyperElastic
 {
     public:
-        double G1;
-		// double aI,betaI		// isotropic expansion defined in super classes
-
         // constructors and destructors
 		HEIsotropic();
 		HEIsotropic(char *matName);
@@ -67,7 +64,10 @@ class HEIsotropic : public HyperElastic
         virtual bool SupportsArtificialViscosity(void) const;
     
     protected:
-        double G1sp;
+		double G1;
+		// double aI,betaI		// isotropic expansion defined in super classes
+	
+       double G1sp;
 		HardeningLawBase *plasticLaw;
 		int J_history;						// History variable may move depending on plastic law
 };

@@ -23,10 +23,7 @@ enum { HALF_J_SQUARED_MINUS_1_MINUS_LN_J=0,J_MINUS_1_SQUARED,LN_J_SQUARED };
 class HyperElastic : public MaterialBase
 {
     public:
-        double Kbulk;               // bulk modulus
-		double aI;                  // thermal expansion isotropic
-		// double betaI;			// moisture expansion isotopic (in base material)
-        
+	
         // constructors and destructors
         HyperElastic();
         HyperElastic(char *);
@@ -37,8 +34,6 @@ class HyperElastic : public MaterialBase
         virtual void SetInitialParticleState(MPMBase *,int) const;
     
 		// Methods (make virtual if any subclass needs them)
-        double IncrementDeformation(MPMBase *,double,double,double,double,double,Tensor *) const;
-        double IncrementDeformation(MPMBase *,double,double,double,double,double,double,double,double,double,Tensor *) const;
         double IncrementDeformation(MPMBase *,Matrix3,Tensor *,int) const;
 		double GetResidualStretch(MPMBase *,double &,ResidualStrains *) const;
         virtual double GetCpMinusCv(MPMBase *) const;
@@ -49,6 +44,10 @@ class HyperElastic : public MaterialBase
         virtual double GetCurrentRelativeVolume(MPMBase *) const;
     
     protected:
+		double Kbulk;               // bulk modulus
+		double aI;                  // thermal expansion isotropic
+		// double betaI;			// moisture expansion isotopic (in base material)
+	
         int UofJOption;             // pick U(J) function
         double Ksp;                 // specific bulk modulus
         double Ka2sp;               // For Cp-Cv

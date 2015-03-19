@@ -9,7 +9,8 @@
 #include "Materials/Mooney.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
- 
+#include "System/UnitsController.hpp"
+
 #pragma mark Mooney::Constructors and Destructors
 
 // Constructors
@@ -33,20 +34,20 @@ Mooney::Mooney(char *matName) : HyperElastic(matName)
 // print mechanical properties output window
 void Mooney::PrintMechanicalProperties(void) const
 {
-	PrintProperty("G1",G1,"");
-	PrintProperty("G2",G2,"");
+	PrintProperty("G1",G1*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("G2",G2*UnitsController::Scaling(1.e-6),"");
 	if(nu<0.5)
-		PrintProperty("K",Kbulk,"");
+		PrintProperty("K",Kbulk*UnitsController::Scaling(1.e-6),"");
 	else
 		cout << "K = infinite";
 	cout << endl;
 	
-	PrintProperty("E",Etens,"");
+	PrintProperty("E",Etens*UnitsController::Scaling(1.e-6),"");
 	PrintProperty("nu",nu,"");
 	if(nu==0.5)
 		cout << "incompressible";
 	else
-		PrintProperty("lam",nu*Etens/(1.+nu)/(1.-2.*nu),"");
+		PrintProperty("lam",nu*Etens*UnitsController::Scaling(1.e-6)/(1.+nu)/(1.-2.*nu),"");
 	cout << endl;
 	
 	PrintProperty("a",aI,"");
@@ -77,13 +78,13 @@ char *Mooney::InputMaterialProperty(char *xName,int &input,double &gScaling)
     input=DOUBLE_NUM;
     
     if(strcmp(xName,"G1")==0)
-        return (char *)&G1;
+        return UnitsController::ScaledPtr((char *)&G1,gScaling,1.e6);
     
     else if(strcmp(xName,"G2")==0)
-        return (char *)&G2;
+        return UnitsController::ScaledPtr((char *)&G2,gScaling,1.e6);
     
     else if(strcmp(xName,"E")==0)
-        return (char *)&Etens;
+        return UnitsController::ScaledPtr((char *)&Etens,gScaling,1.e6);
     
     else if(strcmp(xName,"nu")==0)
         return (char *)&nu;
@@ -124,19 +125,18 @@ const char *Mooney::VerifyAndLoadProperties(int np)
 		else 
 			return "Mooney-Rivlin Hyperelastic Poisson's ratio for solid material must be less than 1/2";
 	}
-    
+		
     if(G2<0.)
 		return "Mooney-Rivlin Hyperelastic material needs non-negative G2";
     
     if(UofJOption<HALF_J_SQUARED_MINUS_1_MINUS_LN_J && UofJOption>LN_J_SQUARED)
 		return "Mooney-Rivlin dilational energy (UJOption) must be 0, 1, or 2";
 
-	// G1 and G2 in Specific units using initial rho
-	// for MPM (N/m^2 mm^3/g = (g-mm^2/sec^2)/g when props in MPa and rho in g/mm^3)
-	G1sp=G1*1.0e+06/rho;
-	G2sp=G2*1.0e+06/rho;
+	// G1 and G2 in Specific units using initial rho (F/L^2 L^3/mass)
+	G1sp=G1/rho;
+	G2sp=G2/rho;
 	
-    // heating gamma0
+    // heating gamma0 (dimensionless)
     double alphaV = 3.e-6*aI;
     gamma0 = Kbulk*alphaV/(rho*heatCapacity);
 	
@@ -358,7 +358,7 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 
 // convert J to K using isotropic method
 Vector Mooney::ConvertJToK(Vector d,Vector C,Vector J0,int np)
-{	double GLS = 1.e6*(G1+G2);
+{	double GLS = G1+G2;
 	double nuLS = (3.*Kbulk-2.*GLS)/(6.*Kbulk+2.*GLS);
 	return IsotropicJToK(d,C,J0,np,nuLS,GLS);
 }
@@ -376,15 +376,14 @@ Tensor Mooney::GetStress(Tensor *sp,double pressure) const
 // Return the material tag
 int Mooney::MaterialTag(void) const { return MOONEYRIVLIN; }
 
-// Calculate wave speed in mm/sec (because G in MPa and rho in g/mm^3)
+// Calculate wave speed in L/sec (because K and G in mass/(L sec^2) and rho in mass/L^3)
 // Uses sqrt((K +4G/3)/rho) which is dilational wave speed at low strain G = G1+G2
 double Mooney::WaveSpeed(bool threeD,MPMBase *mptr) const
-{	return 1000.*sqrt((Kbulk+4.*(G1+G2)/3.)/rho);
+{	return sqrt((Kbulk+4.*(G1+G2)/3.)/rho);
 }
 
-// Calculate shear wave speed in mm/sec (because G1 and G2 in MPa and rho in g/mm^3)
-// at low strain G = G1+G2
-double Mooney::ShearWaveSpeed(bool threeD,MPMBase *mptr) const { return 1000.*sqrt((G1+G2)/rho); }
+// Calculate shear wave speed in mm/sec (because G1 and G2 in mass/(L sec^2) and rho in mass/L^3)
+double Mooney::ShearWaveSpeed(bool threeD,MPMBase *mptr) const { return sqrt((G1+G2)/rho); }
 
 // return material type
 const char *Mooney::MaterialType(void) const { return "Mooney-Rivlin Hyperelastic"; }

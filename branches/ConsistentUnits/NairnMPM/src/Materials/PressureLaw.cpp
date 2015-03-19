@@ -82,7 +82,7 @@ void PressureLaw::PrintMechanicalProperties(void) const
 		cout << "Stress = " << expr << endl;
 	}
 	if(minCOD>=0.)
-	{	PrintProperty("Min COD",minCOD,UnitsController::Label(LENGTH_UNITS));
+	{	PrintProperty("Min COD",minCOD,UnitsController::Label(OUTLENGTH_UNITS));
 		cout << endl;
 	}
 }
