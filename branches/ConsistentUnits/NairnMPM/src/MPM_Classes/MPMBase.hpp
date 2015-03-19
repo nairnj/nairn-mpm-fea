@@ -70,6 +70,7 @@ class MPMBase : public LinkedObject
 		virtual double FDiff(double,double,double,TransportProperties *) = 0;
 		virtual double KineticEnergy(void) = 0;
 		virtual Matrix3 GetDeformationGradientMatrix(void) = 0;
+		virtual void SetDeformationGradientMatrix(Matrix3) = 0;
         virtual Matrix3 GetElasticLeftCauchyMatrix(void) = 0;
         virtual void GetDeformationGradient(double F[][3]) = 0;
         virtual double GetRelativeVolume(void) = 0;

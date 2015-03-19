@@ -189,6 +189,21 @@ Matrix3 MatPoint2D::GetDeformationGradientMatrix(void)
 	return Fm;
 }
 
+// get deformation gradient, which is stored in strain and rotation tensors
+void MatPoint2D::SetDeformationGradientMatrix(Matrix3 F)
+{
+	// Normal strains
+	ep.xx = F(0,0) - 1.;
+	ep.yy = F(1,1) - 1.;
+	ep.zz = F(2,2) - 1.;
+	
+	// Shear Strain
+	ep.xy = F(1,0) + F(0,1);
+	
+	// Rotation Strain
+	wrot.xy = F(1,0) - F(0,1);
+}
+
 // get the symmetric elastic Left-Cauchy tensor in a Matrix3
 Matrix3 MatPoint2D::GetElasticLeftCauchyMatrix(void)
 {   return Matrix3(eplast.xx,eplast.xy,eplast.xy,eplast.yy,eplast.zz);

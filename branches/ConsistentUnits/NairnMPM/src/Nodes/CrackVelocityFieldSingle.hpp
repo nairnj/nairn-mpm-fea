@@ -42,7 +42,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		virtual void ReflectFtotDirection(Vector *,double,CrackVelocityField *,Vector *);
 	
 		// accessors
-		virtual double GetTotalMass(void) const;
+		virtual double GetTotalMass(bool) const;
 		virtual void AddKineticEnergyAndMass(double &,double &);
 		virtual double GetVolumeNonrigid(void);
 		virtual double GetVolumeTotal(NodalPoint *) const;

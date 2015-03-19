@@ -370,7 +370,7 @@ bool CrackVelocityField::HasPointsNonrigid(void) const { return numberPoints>0; 
 // for debugging
 void CrackVelocityField::Describe(void) const
 {
-	cout << "# Crack Field: npts="<<  numberPoints << " mass=" << GetTotalMass()
+	cout << "# Crack Field: npts="<<  numberPoints << " mass=" << GetTotalMass(true)
 		<< " vol=" << GetVolumeTotal(NULL) << endl;
 	if(crackNum[0]>0)
 	{	cout << "#     crack 1=#" << crackNum[0] << ", loc=";

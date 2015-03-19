@@ -502,11 +502,11 @@ short CrackSurfaceContact::GetInterfaceForceOnCrack(NodalPoint *np,Vector *fImp,
 	
 	// displacement or position
 	Vector da,db;
-	double mnode=1./cva->GetTotalMass();
+	double mnode=1./cva->GetTotalMass(true);
 	Vector dispa=cva->GetCMDisplacement(np);
 	da.x=dispa.x*mnode;
 	da.y=dispa.y*mnode;
-	mnode=1./cvb->GetTotalMass();
+	mnode=1./cvb->GetTotalMass(true);
 	Vector dispb=cvb->GetCMDisplacement(np);
 	db.x=dispb.x*mnode;
 	db.y=dispb.y*mnode;

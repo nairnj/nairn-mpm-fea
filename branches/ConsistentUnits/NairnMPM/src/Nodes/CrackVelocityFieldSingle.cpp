@@ -122,7 +122,8 @@ void CrackVelocityFieldSingle::ReflectFtotDirection(Vector *norm,double deltime,
 #pragma mark ACCESSORS
 
 // total mass all velocity fields
-double CrackVelocityFieldSingle::GetTotalMass(void) const
+// argument not used here, but it is used by OSParticulas
+double CrackVelocityFieldSingle::GetTotalMass(bool requireCracks) const
 {	return mvf[0]->numberPoints>0 ? mvf[0]->mass : 0. ;
 }
 

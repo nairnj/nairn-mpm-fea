@@ -40,6 +40,7 @@ class MatPoint2D : public MPMBase
 		virtual double FDiff(double,double,double,TransportProperties *);
 		virtual double KineticEnergy(void);
 		virtual Matrix3 GetDeformationGradientMatrix(void);
+		virtual void SetDeformationGradientMatrix(Matrix3);
         virtual Matrix3 GetElasticLeftCauchyMatrix(void);
         virtual void GetDeformationGradient(double F[][3]);
         virtual double GetRelativeVolume(void);

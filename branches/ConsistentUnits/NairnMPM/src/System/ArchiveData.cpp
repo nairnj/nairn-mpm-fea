@@ -21,6 +21,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Boundary_Conditions/BoundaryCondition.hpp"
+#include "System/UnitsController.hpp"
 
 // archiver global
 ArchiveData *archiver;
@@ -154,7 +155,7 @@ bool ArchiveData::BeginArchives(bool isThreeD)
 	{	archTimes[0] = firstArchTimes[1];
 		firstArchTimes[0] = 0.;
 		
-		// but skip is second block starts at zero
+		// but skip if second block starts at zero
 		if(firstArchTimes[1]<=0.) archBlock=1;
 	}
 	
@@ -372,7 +373,7 @@ void ArchiveData::CreateGlobalFile(void)
 	char fline[1000];
 	GlobalQuantity *nextGlobal;
 	
-	// no file if no quantities create
+	// no file if no quantities created
 	if(firstGlobal==NULL) return;
 	
 	// get relative path name to the file
@@ -530,15 +531,15 @@ void ArchiveData::ArchiveResults(double atime)
 		
 		// must have these defaults
 	   
-		// element ID
+		// ------- element ID
         *(int *)app=mpm[p]->ArchiveElemID();
         app+=sizeof(int);
         
-		// mass (g)
+		// ------- mass (Legacy units g)
         *(double *)app=mpm[p]->mp;
         app+=sizeof(double);
         
-		// material ID
+		// ------- material ID
         *(short *)app=mpm[p]->ArchiveMatID();
         app+=sizeof(short);
 		// fill in two zeros for byte alignment
@@ -547,7 +548,7 @@ void ArchiveData::ArchiveResults(double atime)
 		*app=0;
 		app+=1;
         
-		// 3D has three angles, 2D has one angle and thickness
+		// ------- 3D has three angles, 2D has one angle and thickness
 		if(threeD)
 		{	// 3 material rotation angles in degrees
 			*(double *)app=mpm[p]->GetRotationZInDegrees();
@@ -567,7 +568,7 @@ void ArchiveData::ArchiveResults(double atime)
 			app+=sizeof(double);
 		}
         
-		// (x,y,z) position (mm)
+		// ------- (x,y,z) position (Legacy units mm)
         *(double *)app=mpm[p]->pos.x;
         app+=sizeof(double);
         
@@ -579,7 +580,7 @@ void ArchiveData::ArchiveResults(double atime)
 			app+=sizeof(double);
 		}
 
-		// original (x,y,z) position (mm)
+		// ------- original (x,y,z) position (Legacy units mm)
         *(double *)app=mpm[p]->origpos.x;
         app+=sizeof(double);
                 
@@ -591,7 +592,7 @@ void ArchiveData::ArchiveResults(double atime)
 			app+=sizeof(double);
 		}
 
-        // velocity (mm/sec)
+        // ------- velocity (Legacy units mm/sec)
         if(mpmOrder[ARCH_Velocity]=='Y')
         {   *(double *)app=mpm[p]->vel.x;
             app+=sizeof(double);
@@ -605,9 +606,9 @@ void ArchiveData::ArchiveResults(double atime)
 			}
         }
 
-        // stress - internally it is N/m^2 mm^3/g
-		// Tracked stress is (Kirchoff Stress)/rho0 to (Cauchy stress)/rho
-		// Outputs Cauchy stress in Pa
+        // ------- stress
+		// Tracked stress is (Kirchoff Stress)/rho0 = (Cauchy stress)/rho
+		// Convert to actual stress (Legacy units Pa)
         int matid = mpm[p]->MatID();
         rho0=theMaterials[matid]->rho;
         rho = rho0/theMaterials[matid]->GetCurrentRelativeVolume(mpm[p]);
@@ -637,7 +638,7 @@ void ArchiveData::ArchiveResults(double atime)
 			}
         }
 
-        // elastic strain (absolute)
+        // ------- elastic strain (absolute)
         if(mpmOrder[ARCH_Strain]=='Y')
 		{	Tensor *ep=mpm[p]->GetStrainTensor();
 			*(double *)app=ep->xx;
@@ -661,7 +662,7 @@ void ArchiveData::ArchiveResults(double atime)
 			}
         }
         
-        // plastic strain (absolute)
+        // ------- plastic strain (absolute)
         if(mpmOrder[ARCH_PlasticStrain]=='Y')
 		{	Tensor *eplast=mpm[p]->GetPlasticStrainTensor();
             *(double *)app=eplast->xx;
@@ -685,27 +686,26 @@ void ArchiveData::ArchiveResults(double atime)
 			}
         }
         
-        // external work (cumulative) in J
+        // ------- external work (cumulative) (Legacy units J)
         if(mpmOrder[ARCH_WorkEnergy]=='Y')
-		{	*(double *)app=1.0e-9*mpm[p]->mp*mpm[p]->GetWorkEnergy();
+		{	*(double *)app = UnitsController::Scaling(1.e-9)*mpm[p]->mp*mpm[p]->GetWorkEnergy();
             app+=sizeof(double);
         }
                 
-        // temperature
+        // ------- temperature (K)
         if(mpmOrder[ARCH_DeltaTemp]=='Y')
         {   *(double *)app=mpm[p]->pTemperature;
             app+=sizeof(double);
         }
         
-        // total plastic energy (Volume*energy) in J
+        // ------- total plastic energy (Volume*energy) (Legacy units J)
         // energies in material point based on energy per unit mass
-        // here need mass * U/(rho0 V0)
-        if(mpmOrder[ARCH_PlasticEnergy]=='Y')
-        {   *(double *)app=1.0e-9*mpm[p]->mp*mpm[p]->GetPlastEnergy();
+         if(mpmOrder[ARCH_PlasticEnergy]=='Y')
+        {   *(double *)app = UnitsController::Scaling(1.e-9)*mpm[p]->mp*mpm[p]->GetPlastEnergy();
             app+=sizeof(double);
         }
                 
-        // shear components (absolute)
+        // ------- shear components (absolute)
         if(mpmOrder[ARCH_ShearComponents]=='Y')
         {   *(double *)app=mpm[p]->GetDuDy();
             app+=sizeof(double);
@@ -714,14 +714,14 @@ void ArchiveData::ArchiveResults(double atime)
             app+=sizeof(double);
         }
 
-        // total energy - internally it is N/m^2 mm^3/g = nJ/g
-		// Output total energy in J
+        // ------- total energy (Volume*energy) (Legacy units J)
+        // energies in material point based on energy per unit mass
         if(mpmOrder[ARCH_StrainEnergy]=='Y')
-        {   *(double *)app=1.0e-9*mpm[p]->mp*mpm[p]->GetStrainEnergy();
+        {   *(double *)app = UnitsController::Scaling(1.e-9)*mpm[p]->mp*mpm[p]->GetStrainEnergy();
             app+=sizeof(double);
         }
         
-        // material history data on particle (whatever units the material chooses)
+        // ------- material history data on particle (whatever units the material chooses)
         if(mpmOrder[ARCH_History]=='Y')
         {   *(double *)app=theMaterials[mpm[p]->MatID()]->GetHistory(1,mpm[p]->GetHistoryPtr());
             app+=sizeof(double);
@@ -745,7 +745,7 @@ void ArchiveData::ArchiveResults(double atime)
 			}
 		}
 		
-		// concentration and gradients convert to wt fraction units using csat for this material
+		// ------- concentration and gradients convert to wt fraction units using csat for this material
         if(mpmOrder[ARCH_Concentration]=='Y')
 		{	double csat=theMaterials[mpm[p]->MatID()]->concSaturation;
 		
@@ -778,19 +778,20 @@ void ArchiveData::ArchiveResults(double atime)
 			}
        }
 		
-        // total heat energy - internally it is N/m^2 mm^3/g = nJ/g
-		// Output total energy in J
+        // ------- total heat energy (Legacy units J)
+        // energies in material point based on energy per unit mass
         if(mpmOrder[ARCH_HeatEnergy]=='Y')
-        {   *(double *)app=1.0e-9*mpm[p]->mp*mpm[p]->GetHeatEnergy();
+        {   *(double *)app = UnitsController::Scaling(1.e-9)*mpm[p]->mp*mpm[p]->GetHeatEnergy();
             app+=sizeof(double);
         }
 		
-		// element crossings since last archive - now cumulative
+		// ------- element crossings since last archive - now cumulative
         if(mpmOrder[ARCH_ElementCrossings]=='Y')
         {	*(int *)app=mpm[p]->GetElementCrossings();
 			app+=sizeof(int);
 		}
 		
+		// ------- initial rotation angle
 		// here=initial angle z (degrees) while angle(above)=here-0.5*180*wxy/PI (degrees)
 		//		Thus 0.5*180*wxy/PI = here-angle(above) or wxy = (PI/90)*(here-angle(above))
 		// here=initial angle y (degrees) while angle(above)=here+0.5*180*wrot.xz/PI_CONSTANT (degrees)
@@ -990,9 +991,9 @@ void ArchiveData::GlobalArchive(double atime)
 	while(nextGlobal!=NULL)
 	    nextGlobal=nextGlobal->AppendQuantity(lastArchived);
     
-	// time in ms
+	// time (Legacy units ms)
 	char fline[1000],numStr[100];
-	sprintf(fline,"%g",1000.*atime);
+	sprintf(fline,"%g",UnitsController::Scaling(1000.)*atime);
 	int i;
 	for(i=0;i<lastArchived.size();i++)
 	{	sprintf(numStr,"\t%e",lastArchived[i]);
@@ -1040,8 +1041,8 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
     // required header line
 	afile << "# vtk DataFile Version 4.2" << endl;
 	
-	// title
-	sprintf(fline,"step:%d time:%15.7e ms",fmobj->mstep,1000.*atime);
+	// title (Legacy time units ms)
+	sprintf(fline,"step:%d time:%15.7e ms",fmobj->mstep,UnitsController::Scaling(1000.)*atime);
     afile << fline << endl;
 	
 	// header
@@ -1123,7 +1124,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 			switch(quantity[q])
 			{	case VTK_MASS:
 					// mass in g
-					afile << nd[i]->GetNodalMass() << endl;
+					afile << nd[i]->GetNodalMass(false) << endl;
 					break;
                 
                 case VTK_NUMBERPOINTS:
@@ -1146,16 +1147,17 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
                 
                 case VTK_VOLUMEGRADIENT:
                 {   Vector grad;
-                    nd[i]->GetMatVolumeGradient(qparam[q],&grad);			// qparam[q] is material number
+                    nd[i]->GetMatVolumeGradient(qparam[q],&grad);			//  qparam[q] is material number
 					afile << grad.x << " " << grad.y << " " << grad.z << endl;
                     break;
                 }
 				
 				case VTK_BCFORCES:
+					// currently not implement (or documented)
 					if(nd[i]->fixedDirection&XYZ_SKEWED_DIRECTION)
 					{	//Vector fbc = nd[i]->GetCMatFtot();
 						//afile << fbc.x << " " << fbc.y << " " << fbc.z << endl;
-                        afile << "0. 0. 0." << endl;
+						afile << "0. 0. 0." << endl;
 					}
 					else
 						afile << "0. 0. 0." << endl;
@@ -1174,9 +1176,9 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					afile << vtkquant[offset] << endl;
 					break;
 				
-				case VTK_VELOCITY:				// extraplated to always get ctr mass velocity
+				case VTK_VELOCITY:				// extraplated to always get enter of mass velocity
 				case VTK_DISPLACEMENT:
-					// Displacement in mm
+					// Displacement (Legacy units mm)
 					if(vtk==NULL) break;
 					afile << vtkquant[offset] << " " << vtkquant[offset+1] << " " << vtkquant[offset+2] << endl;
 					break;
@@ -1184,11 +1186,11 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 				case VTK_PLASTICSTRAIN:
 					scale=1.;
 				case VTK_STRESS:
-					if(quantity[q]==VTK_STRESS) scale=1.e-6;
+					if(quantity[q]==VTK_STRESS) scale = UnitsController::Scaling(1.e-6);
 				case VTK_STRAIN:
 				case VTK_TOTALSTRAIN:
 					if(quantity[q]==VTK_STRAIN || quantity[q]==VTK_TOTALSTRAIN) scale=1.;
-					// stress in MPa, Strains absolute
+					// stress Legacy units MPa, strains are absolute
 					if(vtk==NULL) break;
 					afile << scale*vtkquant[offset] << " " << scale*vtkquant[offset+3] << " " << scale*vtkquant[offset+4] << endl;
 					afile << scale*vtkquant[offset+3] << " " << scale*vtkquant[offset+1] << " " << scale*vtkquant[offset+5] << endl;

@@ -207,7 +207,7 @@ void CrackVelocityFieldMulti::AddFtotSpreadTask3(Vector *f)
 	
 	// more than one material, add to nonrigid materials only
 	else
-	{	double totMass=GetTotalMass();
+	{	double totMass=GetTotalMass(true);
 		for(i=0;i<maxMaterialFields;i++)
 		{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 				mvf[i]->AddFtotScaled(f,mvf[i]->mass/totMass);
@@ -1251,7 +1251,8 @@ int CrackVelocityFieldMulti::GetNumberPointsNonrigid(void) { return numberPoints
 bool CrackVelocityFieldMulti::HasPointsNonrigid(void) const { return (numberPoints-numberRigidPoints) > 0; }
 
 // total mass all velocity fields (rigid particles mass not counted)
-double CrackVelocityFieldMulti::GetTotalMass(void) const
+// argumnent is not used here, but it is used by OSParticulas
+double CrackVelocityFieldMulti::GetTotalMass(bool requireCracks) const
 {	int i;
 	double mass=0;
 	for(i=0;i<maxMaterialFields;i++)
@@ -1401,7 +1402,7 @@ void CrackVelocityFieldMulti::ChangeCrackMomentum(Vector *delP,bool postUpdate,d
 	// more than one material
 	else
 	{	Vector partialDelP;
-		double totMass=GetTotalMass();
+		double totMass=GetTotalMass(true);
 		for(i=0;i<maxMaterialFields;i++)
 		{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 				mvf[i]->ChangeMatMomentum(CopyScaleVector(&partialDelP, delP, mvf[i]->mass/totMass),postUpdate,deltime);

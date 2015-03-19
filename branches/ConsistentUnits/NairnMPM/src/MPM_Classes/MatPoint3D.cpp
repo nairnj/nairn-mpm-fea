@@ -193,6 +193,25 @@ Matrix3 MatPoint3D::GetElasticLeftCauchyMatrix(void)
                     eplast.xz,eplast.yz,eplast.zz);
 }
 
+//sset deformation gradient, which is stored in strain and rotation tensors
+void MatPoint3D::SetDeformationGradientMatrix(Matrix3 F)
+{
+	// Normal strains
+	ep.xx = F(0,0) - 1.;
+	ep.yy = F(1,1) - 1.;
+	ep.zz = F(2,2) - 1.;
+	
+	// Shear Strains
+	ep.xy = F(1,0) + F(0,1);
+	ep.xz = F(2,0) + F(0,2);
+	ep.yz = F(2,1) + F(1,2);
+	
+	// Rotation Strains
+	wrot.xy = F(1,0) - F(0,1);
+	wrot.xz = F(2,0) - F(0,2);
+	wrot.yz = F(2,1) - F(1,2);
+}
+
 // get deformation gradient, which is stored in strain and rotation tensors
 void MatPoint3D::GetDeformationGradient(double F[][3])
 {

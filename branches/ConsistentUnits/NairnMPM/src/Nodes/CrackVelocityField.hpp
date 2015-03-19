@@ -100,7 +100,7 @@ class CrackVelocityField
 		int OppositeCrackTo(int,int,int *);
 		void SetLocationAndCrack(short,int,int);
 		MatVelocityField **GetMaterialVelocityFields(void);
-		virtual double GetTotalMass(void) const = 0;
+		virtual double GetTotalMass(bool) const = 0;
 		virtual void AddKineticEnergyAndMass(double &,double &) = 0;
 		virtual double GetVolumeNonrigid(void) = 0;
 		virtual double GetVolumeTotal(NodalPoint *) const = 0;

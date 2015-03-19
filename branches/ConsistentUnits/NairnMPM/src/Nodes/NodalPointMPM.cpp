@@ -25,6 +25,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Custom_Tasks/TransportTask.hpp"
 #include "Materials/MaterialBase.hpp"
+#include "System/UnitsController.hpp"
 
 // class statics
 double NodalPoint::interfaceEnergy=0.;
@@ -937,7 +938,7 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	if(!CrackVelocityField::ActiveNonrigidField(cvf[vfld])) return false;
 
 	// increment the velocity if enough mass
-	double fieldMass = GetNodalMass();
+	double fieldMass = GetNodalMass(true);
 	if(cvf[vfld]->IncrementDelvTask8(fi,delv,&fieldMass))
 	{	*surfaceMass+=fi;
 		return true;
@@ -1224,7 +1225,7 @@ Vector NodalPoint::GetTotalContactForce(bool clearForces)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
 			cvf[i]->SumAndClearRigidContactForces(&fcontact,clearForces);
 	}
-	double scale = -1.e-6/timestep;
+	double scale = -UnitsController::Scaling(1.e-6)/timestep;
 	fcontact.x*=scale;
 	fcontact.y*=scale;
 	fcontact.z*=scale;
@@ -1574,7 +1575,8 @@ void NodalPoint::Describe(void) const
 }
 	
 // total nodal mass
-double NodalPoint::GetNodalMass() const { return nodalMass; }
+// argument not used here, but is in OSParticulas
+double NodalPoint::GetNodalMass(bool requireCracks) const { return nodalMass; }
 
 #pragma mark BOUNDARY CONDITION METHODS
 
