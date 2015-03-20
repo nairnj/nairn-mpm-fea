@@ -26,7 +26,8 @@ typedef struct {
 class HardeningLawBase
 {
     public:
-        HardeningLawBase();
+    
+		HardeningLawBase();
         HardeningLawBase(MaterialBase *);
         virtual ~HardeningLawBase();
     

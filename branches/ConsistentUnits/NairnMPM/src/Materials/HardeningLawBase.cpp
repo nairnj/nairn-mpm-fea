@@ -11,6 +11,7 @@
 #include "Materials/HardeningLawBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark HardeningLawBase::Constructors and Destructors
 
@@ -34,7 +35,7 @@ char *HardeningLawBase::InputMaterialProperty(char *xName,int &input,double &gSc
     // base yield stress
     if(strcmp(xName,"yield")==0)
     {   input=DOUBLE_NUM;
-        return((char *)&yield);
+		return UnitsController::ScaledPtr((char *)&yield,gScaling,1.e6);
     }
     
     // is not a hardening law property
@@ -45,7 +46,7 @@ char *HardeningLawBase::InputMaterialProperty(char *xName,int &input,double &gSc
 const char *HardeningLawBase::VerifyAndLoadProperties(int np)
 {
 	// reduced yield stress
-    yldred = yield*1.e6/parent->rho;
+    yldred = yield/parent->rho;
 	
 	return NULL;
 }

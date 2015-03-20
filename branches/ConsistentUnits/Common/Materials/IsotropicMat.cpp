@@ -34,7 +34,8 @@ IsotropicMat::IsotropicMat(char *matName) : Elastic(matName)
 char *IsotropicMat::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
-    
+
+#ifdef MPM_CODE
     if(strcmp(xName,"E")==0)
     {	read[E_PROP]=1;
 		return UnitsController::ScaledPtr((char *)&E,gScaling,1.e6);
@@ -44,7 +45,17 @@ char *IsotropicMat::InputMaterialProperty(char *xName,int &input,double &gScalin
     {	read[G_PROP]=1;
 		return UnitsController::ScaledPtr((char *)&G,gScaling,1.e6);
     }
+#else
+    if(strcmp(xName,"E")==0)
+    {	read[E_PROP]=1;
+		return (char *)&E;
+    }
     
+    else if(strcmp(xName,"G")==0)
+    {	read[G_PROP]=1;
+		return (char *)&G;
+    }
+#endif
     else if(strcmp(xName,"nu")==0)
     {	read[NU_PROP]=1;
         return((char *)&nu);
@@ -58,10 +69,16 @@ char *IsotropicMat::InputMaterialProperty(char *xName,int &input,double &gScalin
 
 // print to output window
 void IsotropicMat::PrintMechanicalProperties(void) const
-{	
+{
+#ifdef MPM_CODE
 	PrintProperty("E",E*UnitsController::Scaling(1.e-6),"");
 	PrintProperty("v",nu,"");
 	PrintProperty("G",G*UnitsController::Scaling(1.e-6),"");
+#else
+	PrintProperty("E",E,"");
+	PrintProperty("v",nu,"");
+	PrintProperty("G",G,"");
+#endif
 	cout << endl;
 	
 	PrintProperty("a",aI,"");
@@ -93,16 +110,9 @@ const char *IsotropicMat::VerifyAndLoadProperties(int np)
     }
     
     // analysis properties
-#ifdef MPM_CODE
     const char *err=SetAnalysisProps(np,E,E,E,nu,nu,nu,G,G,G,
 							1.e-6*aI,1.e-6*aI,1.e-6*aI,
 							betaI*concSaturation,betaI*concSaturation,betaI*concSaturation);
-#else
-	double rescale = UnitsController::Scaling(1.e-6);
-    const char *err=SetAnalysisProps(np,rescale*E,rescale*E,rescale*E,nu,nu,nu,rescale*G,rescale*G,rescale*G,
-							1.e-6*aI,1.e-6*aI,1.e-6*aI,
-							betaI*concSaturation,betaI*concSaturation,betaI*concSaturation);
-#endif
 	if(err!=NULL) return err;
 	
 	// load elastic properties with constant values

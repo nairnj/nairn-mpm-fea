@@ -16,6 +16,7 @@
 ********************************************************************************/
 
 #include "Materials/LinearHardening.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark LinearHardening::Constructors and Destructors
 
@@ -37,12 +38,12 @@ char *LinearHardening::InputMaterialProperty(char *xName,int &input,double &gSca
     // dimensionless coefficient for hardening
     if(strcmp(xName,"Khard")==0)
     {   input=DOUBLE_NUM;
-        return((char *)&beta);
+        return (char *)&beta;
     }
 
     else if(strcmp(xName,"Ep")==0)
     {   input=DOUBLE_NUM;
-        return((char *)&Ep);
+		return UnitsController::ScaledPtr((char *)&Ep,gScaling,1.e6);
     }
     
     return HardeningLawBase::InputMaterialProperty(xName,input,gScaling);
@@ -71,9 +72,9 @@ const char *LinearHardening::VerifyAndLoadProperties(int np)
 void LinearHardening::PrintYieldProperties(void) const
 {
     cout << GetHardeningLawName() << endl;
-    MaterialBase::PrintProperty("yld",yield,"");
+    MaterialBase::PrintProperty("yld",yield*UnitsController::Scaling(1.e-6),"");
     MaterialBase::PrintProperty("K",beta,"");
-    MaterialBase::PrintProperty("Ep",Ep,"");
+    MaterialBase::PrintProperty("Ep",Ep*UnitsController::Scaling(1.e-6),"");
     cout << endl;
 }
 

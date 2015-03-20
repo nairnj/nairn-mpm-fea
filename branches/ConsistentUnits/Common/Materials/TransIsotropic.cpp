@@ -47,6 +47,7 @@ TransIsotropic::TransIsotropic(char *matName,int matID) : Elastic(matName)
 
 #pragma mark TransIsotropic::Initialization
 
+#ifdef MPM_CODE
 // print mechanical properties to output window
 void TransIsotropic::PrintMechanicalProperties(void) const
 {
@@ -65,7 +66,6 @@ void TransIsotropic::PrintMechanicalProperties(void) const
 	cout << endl;
 }
 
-#ifdef MPM_CODE
 // print transport properties to output window
 void TransIsotropic::PrintTransportProperties(void) const
 {
@@ -88,13 +88,34 @@ void TransIsotropic::PrintTransportProperties(void) const
 		cout << endl;
 	}
 }
+#else
+
+// print mechanical properties to output window
+void TransIsotropic::PrintMechanicalProperties(void) const
+{
+	PrintProperty("Ea",EA,"");
+	PrintProperty("Et",ET,"");
+	PrintProperty("va",nuA,"");
+	PrintProperty("vt",nuT,"");
+	cout << endl;
+	
+	PrintProperty("Gt",GT,"");
+	PrintProperty("Ga",GA,"");
+	cout << endl;
+	
+	PrintProperty("aa",aA,"");
+	PrintProperty("at",aT,"");
+	cout << endl;
+}
+
 #endif
 
 // Read material properties
 char *TransIsotropic::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
-    
+
+#ifdef MPM_CODE
     if(strcmp(xName,"EA")==0)
     {	read[EA_PROP]=1;
         return UnitsController::ScaledPtr((char *)&EA,gScaling,1.e6);
@@ -114,6 +135,27 @@ char *TransIsotropic::InputMaterialProperty(char *xName,int &input,double &gScal
     {	read[GT_PROP]=1;
         return UnitsController::ScaledPtr((char *)&GT,gScaling,1.e6);
     }
+#else
+    if(strcmp(xName,"EA")==0)
+    {	read[EA_PROP]=1;
+		return (char *)&EA;
+    }
+    
+    else if(strcmp(xName,"ET")==0)
+    {	read[ET_PROP]=1;
+		return (char *)&ET;
+    }
+    
+    else if(strcmp(xName,"GA")==0)
+    {	read[GA_PROP]=1;
+		return (char *)&GA;
+    }
+    
+    else if(strcmp(xName,"GT")==0)
+    {	read[GT_PROP]=1;
+		return (char *)&GT;
+    }
+#endif
     
     else if(strcmp(xName,"nuT")==0)
     {	read[NUT_PROP]=1;
@@ -180,30 +222,16 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
 
     // set properties
 	const char *err;
-#ifdef MPM_CODE
     if(MaterialTag()==TRANSISO1)
     {	err=SetAnalysisProps(np,ET,ET,EA,nuT,ET*nuA/EA,ET*nuA/EA,
-							 GT,GA,GA,1.e-6*aT,1.e-6*aT,1.e-6*aA,
-							 betaT*concSaturation,betaT*concSaturation,betaA*concSaturation);
+					GT,GA,GA,1.e-6*aT,1.e-6*aT,1.e-6*aA,
+					betaT*concSaturation,betaT*concSaturation,betaA*concSaturation);
     }
     else
     {	err=SetAnalysisProps(np,ET,EA,ET,ET*nuA/EA,nuT,nuA,
-							 GA,GA,GT,1.e-6*aT,1.e-6*aA,1.e-6*aT,
-							 betaT*concSaturation,betaA*concSaturation,betaT*concSaturation);
+					GA,GA,GT,1.e-6*aT,1.e-6*aA,1.e-6*aT,
+					betaT*concSaturation,betaA*concSaturation,betaT*concSaturation);
     }
-#else
-	double rescale = UnitsController::Scaling(1.e-6);
-    if(MaterialTag()==TRANSISO1)
-    {	err=SetAnalysisProps(np,rescale*ET,rescale*ET,rescale*EA,nuT,ET*nuA/EA,ET*nuA/EA,
-							 rescale*GT,rescale*GA,rescale*GA,1.e-6*aT,1.e-6*aT,1.e-6*aA,
-							 betaT*concSaturation,betaT*concSaturation,betaA*concSaturation);
-    }
-    else
-    {	err=SetAnalysisProps(np,rescale*ET,rescale*EA,rescale*ET,ET*nuA/EA,nuT,nuA,
-							 rescale*GA,rescale*GA,rescale*GT,1.e-6*aT,1.e-6*aA,1.e-6*aT,
-							 betaT*concSaturation,betaA*concSaturation,betaT*concSaturation);
-    }
-#endif
 	if(err!=NULL) return err;
 
 #ifdef MPM_CODE

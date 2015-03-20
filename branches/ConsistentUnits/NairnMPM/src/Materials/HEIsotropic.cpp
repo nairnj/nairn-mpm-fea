@@ -98,7 +98,8 @@ void HEIsotropic::PrintMechanicalProperties(void) const
     PrintProperty("G1",G1*UnitsController::Scaling(1.e-6),"");
     PrintProperty("K",Kbulk*UnitsController::Scaling(1.e-6),"");
     cout << endl;
-    PrintProperty("E",9.*Kbulk*G1/(3.*Kbulk+G1),"");
+	double calcE = 9.*Kbulk*G1/(3.*Kbulk+G1);
+    PrintProperty("E",calcE*UnitsController::Scaling(1.e-6),"");
     PrintProperty("nu",(3.*Kbulk-2.*G1)/(6.*Kbulk+2.*G1),"");
     cout << endl;
     

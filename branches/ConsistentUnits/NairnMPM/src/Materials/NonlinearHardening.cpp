@@ -10,6 +10,7 @@
 ********************************************************************************/
 
 #include "Materials/NonlinearHardening.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark NonlinearHardening::Constructors and Destructors
 
@@ -47,7 +48,7 @@ char *NonlinearHardening::InputMaterialProperty(char *xName,int &input,double &g
 void NonlinearHardening::PrintYieldProperties(void) const
 {
     cout << GetHardeningLawName() << endl;
-    MaterialBase::PrintProperty("yld",yield,"");
+    MaterialBase::PrintProperty("yld",yield*UnitsController::Scaling(1.e-6),"");
     MaterialBase::PrintProperty("beta",beta,"");
     MaterialBase::PrintProperty("n",npow,"");
     cout << endl;

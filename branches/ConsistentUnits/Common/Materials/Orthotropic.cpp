@@ -33,6 +33,7 @@ Orthotropic::Orthotropic(char *matName) : TransIsotropic(matName,ORTHO)
 
 #pragma mark Orthotropic::Initialization
 
+#ifdef MPM_CODE
 // print mechanical properties to output window
 void Orthotropic::PrintMechanicalProperties(void) const
 {	
@@ -57,7 +58,6 @@ void Orthotropic::PrintMechanicalProperties(void) const
     cout << endl;
 }
     
-#ifdef MPM_CODE
 // print transport properties to output window
 void Orthotropic::PrintTransportProperties(void) const
 {
@@ -80,13 +80,40 @@ void Orthotropic::PrintTransportProperties(void) const
 		cout << mline << endl;
 	}
 }
+#else
+
+// print mechanical properties to output window
+void Orthotropic::PrintMechanicalProperties(void) const
+{
+    PrintProperty("E1",Ex,"");
+	PrintProperty("E2",Ey,"");
+	PrintProperty("E3",Ez,"");
+	PrintProperty("v12",nuxy,"");
+    cout << endl;
+    
+	PrintProperty("v13",nuxz,"");
+	PrintProperty("v23",nuyz,"");
+    PrintProperty("G12",Gxy,"");
+	PrintProperty("G13",Gxz,"");
+    cout << endl;
+    
+	PrintProperty("G23",Gyz,"");
+    cout << endl;
+	
+    PrintProperty("a1",ax,"");
+	PrintProperty("a2",ay,"");
+	PrintProperty("a3",az,"");
+    cout << endl;
+}
+
 #endif
 
 // Read material properties
 char *Orthotropic::InputMaterialProperty(char *xName,int &input,double &gScaling)
 {
     input=DOUBLE_NUM;
-    
+
+#ifdef MPM_CODE
     if(strcmp(xName,"Ex")==0 || strcmp(xName,"ER")==0)
     {	read[EX_PROP]=1;
         return UnitsController::ScaledPtr((char *)&Ex,gScaling,1.e6);
@@ -116,6 +143,37 @@ char *Orthotropic::InputMaterialProperty(char *xName,int &input,double &gScaling
     {	read[GYZ_PROP]=1;
         return UnitsController::ScaledPtr((char *)&Gyz,gScaling,1.e6);
     }
+#else
+	if(strcmp(xName,"Ex")==0 || strcmp(xName,"ER")==0)
+    {	read[EX_PROP]=1;
+		return (char *)&Ex;
+    }
+    
+    else if(strcmp(xName,"Ey")==0 || strcmp(xName,"EZ")==0)
+    {	read[EY_PROP]=1;
+		return (char *)&Ey;
+    }
+    
+    else if(strcmp(xName,"Ez")==0 || strcmp(xName,"ET")==0)
+    {	read[EZ_PROP]=1;
+		return (char *)&Ez;
+    }
+    
+    else if(strcmp(xName,"Gxy")==0 || strcmp(xName,"Gyx")==0 || strcmp(xName,"GRZ")==0 || strcmp(xName,"GZR")==0)
+    {	read[GXY_PROP]=1;
+		return (char *)&Gxy;
+    }
+    
+    else if(strcmp(xName,"Gxz")==0 || strcmp(xName,"Gzx")==0 || strcmp(xName,"GRT")==0 || strcmp(xName,"GTR")==0)
+    {	read[GXZ_PROP]=1;
+		return (char *)&Gxz;
+    }
+    
+    else if(strcmp(xName,"Gyz")==0 || strcmp(xName,"Gzy")==0 || strcmp(xName,"GZT")==0 || strcmp(xName,"GTZ")==0)
+    {	read[GYZ_PROP]=1;
+		return (char *)&Gyz;
+    }
+#endif
     
     else if(strcmp(xName,"nuyx")==0 || strcmp(xName,"nuZR")==0)
     {	read[NUYX_PROP]=1;
@@ -240,17 +298,12 @@ const char *Orthotropic::VerifyAndLoadProperties(int np)
 #ifdef MPM_CODE
     // make conductivty specific (N mm^3/(sec-K-g))
     kCondz /= rho;
-
+#endif
+	
     // set properties
     const char *err=SetAnalysisProps(np,Ex,Ey,Ez,nuxy,nuxz,nuyz,
-						Gxy,Gxz,Gyz,1.e-6*ax,1.e-6*ay,1.e-6*az,
-						betax*concSaturation,betay*concSaturation,betaz*concSaturation);
-#else
-	double rescale = UnitsController::Scaling(1.e-6);
-    const char *err=SetAnalysisProps(np,rescale*Ex,rescale*Ey,rescale*Ez,nuxy,nuxz,nuyz,
-						rescale*Gxy,rescale*Gxz,rescale*Gyz,1.e-6*ax,1.e-6*ay,1.e-6*az,
-						betax*concSaturation,betay*concSaturation,betaz*concSaturation);
-#endif
+							Gxy,Gxz,Gyz,1.e-6*ax,1.e-6*ay,1.e-6*az,
+							betax*concSaturation,betay*concSaturation,betaz*concSaturation);
 	if(err!=NULL) return err;
 	
 	// superclass call
