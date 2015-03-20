@@ -54,6 +54,10 @@ int main(int argc,const char *argv[])
 			{	fmobj->Usage();
 				return(noErr);
 			}
+			else if(argv[parmInd][optInd]=='?')
+			{	fmobj->Usage();
+				return(noErr);
+			}
 
 #ifdef MPM_CODE
 			else if(argv[parmInd][optInd]=='r')
@@ -110,6 +114,9 @@ int main(int argc,const char *argv[])
     numProcs = 0;
 #endif
     fmobj->SetNumberOfProcessors(numProcs);
+	
+	// seed random number generator
+	srand(time(NULL));
     
 	//-------------------------------------------------------------
     // 3. Read the input file, exceptions handled in ReadFile()

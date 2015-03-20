@@ -138,7 +138,7 @@ void CrackVelocityFieldSingle::AddKineticEnergyAndMass(double &kineticEnergy,dou
 }
 
 // get volume when only a single material (overridden when might be more)
-double CrackVelocityFieldSingle::GetVolumeNonrigid(void)
+double CrackVelocityFieldSingle::GetVolumeNonrigid(bool requireCracks)
 {	return mvf[0]->numberPoints>0 ? mvf[0]->GetContactVolume() : 0. ;
 }
 
@@ -155,7 +155,8 @@ Vector CrackVelocityFieldSingle::GetCMatMomentum(bool &hasParticles,double *fiel
 }
 
 // get center of mass displacement (actually sum of displacement*mass so displacement is vector/total mass)
-Vector CrackVelocityFieldSingle::GetCMDisplacement(NodalPoint *np) const
+// requireCracks not used, but is used in OSParticulas
+Vector CrackVelocityFieldSingle::GetCMDisplacement(NodalPoint *np,bool requireCracks) const
 {   Vector dk = mvf[0]->disp;
     AdjustForSymmetry(np,&dk,false);
     return dk;

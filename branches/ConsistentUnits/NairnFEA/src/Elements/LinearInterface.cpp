@@ -75,7 +75,7 @@ void Interface2D::Stiffness(int np)
 		
 		// total weight
 		if(np!=AXI_SYM)
-			temp=gwt[i]*GetThickness()/1000.;
+			temp=gwt[i]*GetThickness();
 		else
 			temp=gwt[i]*asr;		// stiffness matrix is force per radian, hence no 2 pi
 				

@@ -111,7 +111,7 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 	int i;
     for(i=1;i<=numnds;i++)
     {   // skip empty nodes
-        if(nd[nds[i]]->NumberNonrigidParticles())
+        if(nd[nds[i]]->NodeHasNonrigidParticles())
 		{	nd[nds[i]]->fdiff += DotVectors(&fluxMag,&tscaled)*fn[i];
         }
     }

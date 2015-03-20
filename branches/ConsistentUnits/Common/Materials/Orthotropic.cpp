@@ -240,11 +240,17 @@ const char *Orthotropic::VerifyAndLoadProperties(int np)
 #ifdef MPM_CODE
     // make conductivty specific (N mm^3/(sec-K-g))
     kCondz /= rho;
-#endif
 
     // set properties
     const char *err=SetAnalysisProps(np,Ex,Ey,Ez,nuxy,nuxz,nuyz,
-                Gxy,Gxz,Gyz,1.e-6*ax,1.e-6*ay,1.e-6*az,betax*concSaturation,betay*concSaturation,betaz*concSaturation);
+						Gxy,Gxz,Gyz,1.e-6*ax,1.e-6*ay,1.e-6*az,
+						betax*concSaturation,betay*concSaturation,betaz*concSaturation);
+#else
+	double rescale = UnitsController::Scaling(1.e-6);
+    const char *err=SetAnalysisProps(np,rescale*Ex,rescale*Ey,rescale*Ez,nuxy,nuxz,nuyz,
+						rescale*Gxy,rescale*Gxz,rescale*Gyz,1.e-6*ax,1.e-6*ay,1.e-6*az,
+						betax*concSaturation,betay*concSaturation,betaz*concSaturation);
+#endif
 	if(err!=NULL) return err;
 	
 	// superclass call

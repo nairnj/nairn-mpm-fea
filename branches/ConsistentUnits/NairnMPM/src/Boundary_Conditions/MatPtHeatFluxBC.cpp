@@ -112,7 +112,7 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
 	int i;
     for(i=1;i<=numnds;i++)
     {   // skip empty nodes
-        if(nd[nds[i]]->NumberNonrigidParticles())
+        if(nd[nds[i]]->NodeHasNonrigidParticles())
 		{	nd[nds[i]]->fcond += DotVectors(&fluxMag,&tscaled)*fn[i];
         }
     }

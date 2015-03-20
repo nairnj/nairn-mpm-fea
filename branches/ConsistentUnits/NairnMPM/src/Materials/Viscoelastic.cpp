@@ -13,6 +13,7 @@
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark Viscoelastic::Constructors and Destructors
 
@@ -38,16 +39,16 @@ Viscoelastic::Viscoelastic(char *matName) : MaterialBase(matName)
 // print mechanical properties to output window
 void Viscoelastic::PrintMechanicalProperties(void) const
 {
-    PrintProperty("K",K,"");
-	PrintProperty("G0",G0,"");
+    PrintProperty("K",K*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("G0",G0*UnitsController::Scaling(1.e-6),"");
 	PrintProperty("ntaus",(double)ntaus,"");
     cout <<  endl;
 	
 	int i;
     for(i=0;i<ntaus;i++)
 	{	PrintProperty("i",(double)i,"");
-		PrintProperty("Gk",Gk[i],"");
-		PrintProperty("tauk",1000.*tauk[i],"ms");
+		PrintProperty("Gk",Gk[i]*UnitsController::Scaling(1.e-6),"");
+		PrintProperty("tauk",tauk[i],"s");
         cout << endl;
     }
 	
@@ -61,10 +62,10 @@ char *Viscoelastic::InputMaterialProperty(char *xName,int &input,double &gScalin
     input=DOUBLE_NUM;
     
     if(strcmp(xName,"G0")==0)
-        return((char *)&G0);
+		return UnitsController::ScaledPtr((char *)&G0,gScaling,1.e6);
     
     else if(strcmp(xName,"K")==0)
-        return((char *)&K);
+		return UnitsController::ScaledPtr((char *)&K,gScaling,1.e6);
     
     else if(strcmp(xName,"alpha")==0)
         return((char *)&aI);
@@ -83,7 +84,7 @@ char *Viscoelastic::InputMaterialProperty(char *xName,int &input,double &gScalin
         currentGk++;
         if(currentGk>ntaus)
 			ThrowSAXException("Too many Gk's given.");
-        return((char *)&Gk[currentGk-1]);
+		return UnitsController::ScaledPtr((char *)&Gk[currentGk-1],gScaling,1.e6);
     }
     
     else if(strcmp(xName,"tauk")==0)
@@ -119,12 +120,12 @@ const char *Viscoelastic::VerifyAndLoadProperties(int np)
 	TwoGkred = new double[ntaus];
     for(int k=0;k<ntaus;k++)
     {   Gered += Gk[k];
-		TwoGkred[k] = 2.e6*Gk[k]/rho;
+		TwoGkred[k] = 2.*Gk[k]/rho;
     }
 	
-	// From MPa to Pa
-	Gered *= 1.e6/rho;
-	Kered = K*1.e6/rho;
+	// Convert to specific moduli
+	Gered /= rho;
+	Kered /= rho;
 	
 	// to absolute CTE and CME
 	CTE = 1.e-6*aI;

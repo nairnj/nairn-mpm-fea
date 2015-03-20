@@ -108,7 +108,7 @@ void NewMaterial::PrintMechanicalProperties(void) const
 //}
 
 // Implemented in case heat capacity (Cp/heat capacity for conduction) changes with particle state
-// Called by conduction code in units nJ/(g-K)
+// Called by conduction code and return nJ/(g-K)
 //double NewMaterial::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity; }
 
 // A material can override to set Cp-Cv in nJ/(g-K)
@@ -161,7 +161,7 @@ double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; 
 // gradient. If FALSE, code will assume total strain is in elastic strain and therefore
 // the subclass can use plastic strain for other uses (e.g. hyperelastic materials
 // usual use it for the Left-Cauchy Green strain.
-//bool NewMaterial::PartitionsElasticAndPlasticStrain(void) { return TRUE; }
+//bool NewMaterial::PartitionsElasticAndPlasticStrain(void) const { return TRUE; }
 
 // if a subclass material supports artificial viscosity, include this method return TRUE
 // The consititutive law also needs to calculate the artificial viscosity and add

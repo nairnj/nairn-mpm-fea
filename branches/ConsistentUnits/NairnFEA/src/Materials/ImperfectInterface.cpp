@@ -7,13 +7,14 @@
 ********************************************************************************/
 
 #include "Materials/ImperfectInterface.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark ImperfectInterface::Constructors and Destructors
 
 // Constructors
 ImperfectInterface::ImperfectInterface(char *matName) : MaterialBase(matName)
 {
-	Dn=Dt=1.e10;
+	Dn=Dt=1.e15;
 }
 
 #pragma mark ImperfectInterface::Initialization
@@ -21,10 +22,6 @@ ImperfectInterface::ImperfectInterface(char *matName) : MaterialBase(matName)
 // Set propertties
 const char *ImperfectInterface::VerifyAndLoadProperties(int np)
 {
-	// convert to N/m^3
-	Dn*=1.e9;
-	Dt*=1.e9;
-	
     // Stiffness matrix
     pr.C[1][1]=Dn;
     pr.C[1][2]=Dt;
@@ -35,8 +32,8 @@ const char *ImperfectInterface::VerifyAndLoadProperties(int np)
 // print mechanical properties to output window
 void ImperfectInterface::PrintMechanicalProperties(void) const
 {	
-	PrintProperty("Dn",Dn/1.e9,"");
-	PrintProperty("Dt",Dt/1.e9,"");
+	PrintProperty("Dn",Dn,UnitsController::Label(INTERFACEPARAM_UNITS));
+	PrintProperty("Dt",Dt,UnitsController::Label(INTERFACEPARAM_UNITS));
     cout << endl;
 }
 
@@ -60,4 +57,4 @@ char *ImperfectInterface::InputMaterialProperty(char *xName,int &input,double &g
 int ImperfectInterface::MaterialTag(void) const { return INTERFACEPARAMS; }
 
 // return material type
-const char *ImperfectInterface::MaterialType(void) const { return "Interface parameters (in MPa/mm)"; }
+const char *ImperfectInterface::MaterialType(void) const { return "Interface parameters"; }

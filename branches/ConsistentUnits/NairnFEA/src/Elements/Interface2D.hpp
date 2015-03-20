@@ -30,6 +30,7 @@ class Interface2D : public ElementBase
 		virtual void Stiffness(int);
 		virtual void IncrementStiffnessElements(double,double *,double,double,double,double,double);
 		virtual void ForceStress(double *,int,int);
+        virtual void FindExtent(void);
 	
 		// const methods
 		virtual double GetThickness(void) const;

@@ -180,14 +180,30 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
 
     // set properties
 	const char *err;
+#ifdef MPM_CODE
     if(MaterialTag()==TRANSISO1)
     {	err=SetAnalysisProps(np,ET,ET,EA,nuT,ET*nuA/EA,ET*nuA/EA,
-                GT,GA,GA,1.e-6*aT,1.e-6*aT,1.e-6*aA,betaT*concSaturation,betaT*concSaturation,betaA*concSaturation);
+							 GT,GA,GA,1.e-6*aT,1.e-6*aT,1.e-6*aA,
+							 betaT*concSaturation,betaT*concSaturation,betaA*concSaturation);
     }
     else
     {	err=SetAnalysisProps(np,ET,EA,ET,ET*nuA/EA,nuT,nuA,
-                GA,GA,GT,1.e-6*aT,1.e-6*aA,1.e-6*aT,betaT*concSaturation,betaA*concSaturation,betaT*concSaturation);
+							 GA,GA,GT,1.e-6*aT,1.e-6*aA,1.e-6*aT,
+							 betaT*concSaturation,betaA*concSaturation,betaT*concSaturation);
     }
+#else
+	double rescale = UnitsController::Scaling(1.e-6);
+    if(MaterialTag()==TRANSISO1)
+    {	err=SetAnalysisProps(np,rescale*ET,rescale*ET,rescale*EA,nuT,ET*nuA/EA,ET*nuA/EA,
+							 rescale*GT,rescale*GA,rescale*GA,1.e-6*aT,1.e-6*aT,1.e-6*aA,
+							 betaT*concSaturation,betaT*concSaturation,betaA*concSaturation);
+    }
+    else
+    {	err=SetAnalysisProps(np,rescale*ET,rescale*EA,rescale*ET,ET*nuA/EA,nuT,nuA,
+							 rescale*GA,rescale*GA,rescale*GT,1.e-6*aT,1.e-6*aA,1.e-6*aT,
+							 betaT*concSaturation,betaA*concSaturation,betaT*concSaturation);
+    }
+#endif
 	if(err!=NULL) return err;
 
 #ifdef MPM_CODE

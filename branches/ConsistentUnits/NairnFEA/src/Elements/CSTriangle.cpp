@@ -100,7 +100,7 @@ void CSTriangle::Stiffness(int np)
 	double detjac,asr,dv;
 	double xiDeriv[MaxElNd],etaDeriv[MaxElNd],asbe[MaxElNd],sfxn[MaxElNd];
 	double bte[MxFree*MaxElNd][5],temp;
-	double thck=thickness/1000.,deltaT;
+	double thck=thickness,deltaT;
 	int numnds=NumberNodes();
 	int ind1,ind2,i,j,irow,jcol,nst=2*numnds;
 	MaterialBase *matl=theMaterials[material-1];
@@ -211,7 +211,7 @@ void CSTriangle::ForceStress(double *rm,int np,int nfree)
 	double temp,dv;
 	double xiDeriv[MaxElNd],etaDeriv[MaxElNd],asbe[MaxElNd],sfxn[MaxElNd];
 	double detjac,asr;
-	double thck=thickness/1000.,deltaT;
+	double thck=thickness,deltaT;
 	int numnds=3,nst=2*numnds;
 	int i,j,ind1,ind2,ind,indg;
     MaterialBase *matl=theMaterials[material-1];

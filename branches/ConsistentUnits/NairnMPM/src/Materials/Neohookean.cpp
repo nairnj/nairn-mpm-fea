@@ -118,8 +118,12 @@ const char *Neohookean::VerifyAndLoadProperties(int np)
 		{	Kbulk = Etens/(3.*(1-2.*nu));
 			Lame = nu*Etens/(1.+nu)/(1.-2.*nu);
 		}
-		else
+		else if(!isMembrane())
 			return "Neohookean Hyperelastic Poisson's ratio for solid material must be less than 1/2";
+		else
+		{	Kbulk = 0.;			// whcih causes Cp-Cv=0 as well
+			Lame = 0.;
+		}
 	}
 	
     if(UofJOption<HALF_J_SQUARED_MINUS_1_MINUS_LN_J && UofJOption>LN_J_SQUARED)

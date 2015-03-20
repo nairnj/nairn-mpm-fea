@@ -181,6 +181,14 @@ void Interface2D::IncrementStiffnessElements(double dStiff,double *fn,
 	}
 }
 
+//	Find extent of this element - but do not contribute to gridTolerance
+void Interface2D::FindExtent(void)
+{
+    double saveGridTolerance = gridTolerance;
+	ElementBase::FindExtent();
+    gridTolerance = saveGridTolerance;
+}
+
 #pragma mark Interface2D: accessors
 
 // number of sides in this element

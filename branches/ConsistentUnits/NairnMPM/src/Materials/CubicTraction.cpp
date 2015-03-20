@@ -148,12 +148,12 @@ double CubicTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,double tC
 	// normal energy only if opened
 	if(nCod>0.)
 	{	double d=nCod/delIc;
-		tEnergy=JIc*d*d*(6.-8.*d+3.*d*d)/1000.;		// N/mm
+		tEnergy=JIc*d*d*(6.-8.*d+3.*d*d);
 	}
 	
 	// shear energy always
 	double d=tCod/delIIc;
-	tEnergy+=JIIc*d*d*(6.-8.*d+3.*d*d)/1000.;		// N/mm
+	tEnergy+=JIIc*d*d*(6.-8.*d+3.*d*d);
 	
 	// subtract recoverable energy when want released energy
 	if(!fullEnergy)
@@ -162,15 +162,15 @@ double CubicTraction::CrackTractionEnergy(CrackSegment *cs,double nCod,double tC
 		if(nCod>0.)
 		{	double Tn=0.;
 			keff=kI1*(delIc-upeak[0])*(delIc-upeak[0]);
-			Tn=keff*nCod*1.e-6;
-			tEnergy-=0.5*Tn*nCod;					// N/mm
+			Tn=keff*nCod;
+			tEnergy-=0.5*Tn*nCod;
 		}
 		
 		// shear energy always
 		double Tt=0.;
 		keff=kII1*(delIIc-upeak[1])*(delIIc-upeak[1]);
-		Tt=keff*tCod*1.e-6;
-		tEnergy-=0.5*Tt*tCod;						// N/mm
+		Tt=keff*tCod;
+		tEnergy-=0.5*Tt*tCod;
 	}
 
 	return tEnergy;

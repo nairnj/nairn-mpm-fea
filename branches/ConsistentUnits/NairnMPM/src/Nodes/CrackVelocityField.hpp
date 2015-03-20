@@ -102,10 +102,10 @@ class CrackVelocityField
 		MatVelocityField **GetMaterialVelocityFields(void);
 		virtual double GetTotalMass(bool) const = 0;
 		virtual void AddKineticEnergyAndMass(double &,double &) = 0;
-		virtual double GetVolumeNonrigid(void) = 0;
+		virtual double GetVolumeNonrigid(bool) = 0;
 		virtual double GetVolumeTotal(NodalPoint *) const = 0;
 		virtual Vector GetCMatMomentum(bool &,double *) const = 0;
-		virtual Vector GetCMDisplacement(NodalPoint *) const = 0;
+		virtual Vector GetCMDisplacement(NodalPoint *,bool) const = 0;
 		virtual Vector GetCMatFtot(void) = 0;
 		virtual void ChangeCrackMomentum(Vector *,bool,double) = 0;
 		virtual int CopyFieldMomenta(Vector *,int) = 0;

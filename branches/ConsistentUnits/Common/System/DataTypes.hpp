@@ -96,6 +96,7 @@ enum { XX=0,YY,ZZ,YZ,XZ,XY};
 		Tensor kCondTensor;
 	} TransportProperties;
 
+	// For residual strains in constitutive laws
 	typedef struct {
 		double dT;
 		double dC;

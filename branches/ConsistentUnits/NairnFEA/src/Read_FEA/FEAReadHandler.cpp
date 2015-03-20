@@ -1271,7 +1271,7 @@ void FEAReadHandler::FindPeriodicNodes(void)
 				newConstraint=new Constraint(xPeriodicNodes[i],1);
 				newConstraint->AddNode(xPeriodicNodes[i-1],(double)1.);
 				double q=fmobj->periodic.du + fmobj->periodic.dudy*(nd[xPeriodicNodes[i]]->y-ybar);
-				newConstraint->AddConstant(q/1000.);
+				newConstraint->AddConstant(q);
 				constraintCtrl->AddObject(newConstraint);
 			}
 		}
@@ -1287,7 +1287,7 @@ void FEAReadHandler::FindPeriodicNodes(void)
 				newConstraint->AddNode(xPeriodicNodes[i-1],(double)1.);
 				newConstraint->AddNode(xPeriodicNodes[1],(1.-gi));
 				newConstraint->AddNode(xPeriodicNodes[0],-(1.-gi));
-				newConstraint->AddConstant(gi*fmobj->periodic.du/1000.);
+				newConstraint->AddConstant(gi*fmobj->periodic.du);
 				constraintCtrl->AddObject(newConstraint);
 			}
 		}
@@ -1302,7 +1302,7 @@ void FEAReadHandler::FindPeriodicNodes(void)
 				newConstraint->AddNode(xPeriodicNodes[1],(double)1.);
 				newConstraint->AddNode(xPeriodicNodes[0],(double)-1.);
 				double q=fmobj->periodic.dudy*(nd[xPeriodicNodes[i]]->y-yR1);
-				newConstraint->AddConstant(q/1000.);
+				newConstraint->AddConstant(q);
 				constraintCtrl->AddObject(newConstraint);
 			}
 		}
@@ -1354,7 +1354,7 @@ void FEAReadHandler::FindPeriodicNodes(void)
 				newConstraint=new Constraint(yPeriodicNodes[i],2);
 				newConstraint->AddNode(yPeriodicNodes[i-1],(double)1.);
 				double q=fmobj->periodic.dv + fmobj->periodic.dvdx*(nd[yPeriodicNodes[i]]->x-xbar);
-				newConstraint->AddConstant(q/1000.);
+				newConstraint->AddConstant(q);
 				constraintCtrl->AddObject(newConstraint);
 			}
 		}
@@ -1370,7 +1370,7 @@ void FEAReadHandler::FindPeriodicNodes(void)
 				newConstraint->AddNode(yPeriodicNodes[i-1],(double)1.);
 				newConstraint->AddNode(yPeriodicNodes[1],(1.-gi));
 				newConstraint->AddNode(yPeriodicNodes[0],-(1.-gi));
-				newConstraint->AddConstant(gi*fmobj->periodic.dv/1000.);
+				newConstraint->AddConstant(gi*fmobj->periodic.dv);
 				constraintCtrl->AddObject(newConstraint);
 			}
 		}
@@ -1385,7 +1385,7 @@ void FEAReadHandler::FindPeriodicNodes(void)
 				newConstraint->AddNode(yPeriodicNodes[1],(double)1.);
 				newConstraint->AddNode(yPeriodicNodes[0],(double)-1.);
 				double q=fmobj->periodic.dvdx*(nd[yPeriodicNodes[i]]->x-xT1);
-				newConstraint->AddConstant(q/1000.);
+				newConstraint->AddConstant(q);
 				constraintCtrl->AddObject(newConstraint);
 			}
 		}
@@ -1417,7 +1417,7 @@ void FEAReadHandler::FindPeriodicNodes(void)
 		{	newConstraint=new Constraint(xPeriodicNodes[i],1);
 			newConstraint->AddNode(xPeriodicNodes[i-1],(double)1.);
 			if(fmobj->periodic.fixDu)
-				newConstraint->AddConstant(fmobj->periodic.du/1000.);
+				newConstraint->AddConstant(fmobj->periodic.du);
 			else
 			{	newConstraint->AddNode(xPeriodicNodes[1],(double)1.);
 				newConstraint->AddNode(xPeriodicNodes[0],(double)-1.);
@@ -1432,7 +1432,7 @@ void FEAReadHandler::FindPeriodicNodes(void)
 		{	newConstraint=new Constraint(xPeriodicNodes[i],2);
 			newConstraint->AddNode(xPeriodicNodes[i-1],(double)1.);
 			if(fmobj->periodic.fixDvdx)
-				newConstraint->AddConstant(fmobj->periodic.dvdx/1000.);
+				newConstraint->AddConstant(fmobj->periodic.dvdx);
 			else
 			{	newConstraint->AddNode(xPeriodicNodes[1],(double)1.);
 				newConstraint->AddNode(xPeriodicNodes[0],(double)-1.);
@@ -1447,7 +1447,7 @@ void FEAReadHandler::FindPeriodicNodes(void)
 		{	newConstraint=new Constraint(yPeriodicNodes[i],1);
 			newConstraint->AddNode(yPeriodicNodes[i-1],(double)1.);
 			if(fmobj->periodic.fixDudy)
-				newConstraint->AddConstant(fmobj->periodic.dudy/1000.);
+				newConstraint->AddConstant(fmobj->periodic.dudy);
 			else
 			{	newConstraint->AddNode(yPeriodicNodes[1],(double)1.);
 				newConstraint->AddNode(yPeriodicNodes[0],(double)-1.);
@@ -1462,7 +1462,7 @@ void FEAReadHandler::FindPeriodicNodes(void)
 		{	newConstraint=new Constraint(yPeriodicNodes[i],2);
 			newConstraint->AddNode(yPeriodicNodes[i-1],(double)1.);
 			if(fmobj->periodic.fixDv)
-				newConstraint->AddConstant(fmobj->periodic.dv/1000.);
+				newConstraint->AddConstant(fmobj->periodic.dv);
 			else
 			{	newConstraint->AddNode(yPeriodicNodes[1],(double)1.);
 				newConstraint->AddNode(yPeriodicNodes[0],(double)-1.);

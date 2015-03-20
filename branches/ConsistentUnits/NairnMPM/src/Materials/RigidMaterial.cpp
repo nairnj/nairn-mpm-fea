@@ -20,10 +20,11 @@
 #include "Read_XML/mathexpr.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
+#include "MPM_Classes/MPMBase.hpp"
 
 extern double timestep;
 
-bool RigidMaterial::someSetTemperature = FALSE;
+bool RigidMaterial::someSetTemperature = false;
 
 #pragma mark RigidMaterial::Constructors and Destructors
 
@@ -44,13 +45,13 @@ RigidMaterial::RigidMaterial()
 RigidMaterial::RigidMaterial(char *matName) : MaterialBase(matName)
 {
 	setDirection=0;
-	setConcentration=FALSE;
-	setTemperature=FALSE;
+	setConcentration=false;
+	setTemperature=false;
 	function=NULL;
 	function2=NULL;
 	function3=NULL;
     Vfunction=NULL;
-	rho=1;
+	rho=1.;
 	mirrored=0;
 }
 
@@ -296,7 +297,9 @@ char *RigidMaterial::InputMaterialProperty(char *xName,int &input,double &gScali
 // Rigid material uses field only set to be contact material and in multimaterial mode
 int RigidMaterial::SetField(int fieldNum,bool multiMaterials,int matid,int &activeNum)
 {	// not used if rigid bpundary condition
-	if(setDirection!=RIGID_MULTIMATERIAL_MODE) return fieldNum;
+	if(setDirection!=RIGID_MULTIMATERIAL_MODE)
+	{	return fieldNum;
+	}
 	
 	// not allowed unless in multimaterial mode
 	if(!multiMaterials)
@@ -330,12 +333,13 @@ short RigidMaterial::RigidBC(void) const { return setDirection!=RIGID_MULTIMATER
 short RigidMaterial::RigidContact(void) const { return setDirection==RIGID_MULTIMATERIAL_MODE; }
 
 // check if should set this direction
-bool RigidMaterial::RigidDirection(int aDir) { return (setDirection&aDir)==aDir; }
-bool RigidMaterial::RigidTemperature(void) { return setTemperature; }
-bool RigidMaterial::RigidConcentration(void) { return setConcentration; }
+bool RigidMaterial::RigidDirection(int aDir) const { return (setDirection&aDir)==aDir; }
+bool RigidMaterial::RigidTemperature(void) const { return setTemperature; }
+bool RigidMaterial::RigidConcentration(void) const { return setConcentration; }
+int RigidMaterial::SetDirection(void) const { return setDirection; }
 
 // get value function (temperature and concentration use only)
-bool RigidMaterial::GetValueSetting(double *setting,double theTime,Vector *pos)
+bool RigidMaterial::GetValueSetting(double *setting,double theTime,Vector *pos) const
 {	if(Vfunction==NULL) return false;
 	varTime=1000.*theTime;
 	xPos=pos->x;

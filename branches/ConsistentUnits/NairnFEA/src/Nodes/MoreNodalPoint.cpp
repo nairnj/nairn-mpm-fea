@@ -30,7 +30,7 @@ void NodalPoint::InitForceField(void)
 void NodalPoint::PrintAvgStress(void)
 {
     char fline[200];
-    double factor=1.e-6/(double)fs->numElems;
+    double factor=1./(double)fs->numElems;
     
     sprintf(fline,"%5d  %15.7e  %15.7e  %15.7e  %15.7e",num,
             fs->stress.xx*factor,fs->stress.yy*factor,

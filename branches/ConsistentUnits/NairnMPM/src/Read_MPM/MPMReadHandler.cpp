@@ -46,6 +46,7 @@
 #include "Materials/PressureLaw.hpp"
 #include "Custom_Tasks/PropagateTask.hpp"
 #include "Read_XML/ShapeController.hpp"
+#include "System/UnitsController.hpp"
 
 // Element types
 #include "Elements/FourNodeIsoparam.hpp"
@@ -489,12 +490,15 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			value=XMLString::transcode(attrs.getValue(i));
             if(strcmp(aName,"Dn")==0 || strcmp(aName,"Dnt")==0)
 			{	sscanf(value,"%lf",theDn);
+				*theDn *= UnitsController::Scaling(1.e6);
 			}
             else if(strcmp(aName,"Dnc")==0)
 			{	sscanf(value,"%lf",theDnc);
+				*theDnc *= UnitsController::Scaling(1.e6);
 			}
 			else if(strcmp(aName,"Dt")==0)
 			{	sscanf(value,"%lf",theDt);
+				*theDt *= UnitsController::Scaling(1.e6);
 			}
 			else if(strcmp(aName,"mat")==0)
             {   // only relevant in material definition
@@ -840,14 +844,17 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			}
             else if(strcmp(aName,"Dn")==0 || strcmp(aName,"Dnt")==0)
             {	sscanf(value,"%lf",&dval);
+				dval *= UnitsController::Scaling(1.e6);
 				newCrack->SetDn(dval);
 			}
             else if(strcmp(aName,"Dnc")==0)
             {	sscanf(value,"%lf",&dval);
+				dval *= UnitsController::Scaling(1.e6);
 				newCrack->SetDnc(dval);
 			}
             else if(strcmp(aName,"Dt")==0)
             {	sscanf(value,"%lf",&dval);
+				dval *= UnitsController::Scaling(1.e6);
 				newCrack->SetDt(dval);
 			}
             delete [] aName;

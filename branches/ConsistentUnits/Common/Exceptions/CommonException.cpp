@@ -15,6 +15,9 @@ CommonException::CommonException()
 {
 }
 
+// Copy Constructor
+// new CommonException(CommonException err) is implied by compiler
+
 // Constructors - inCode without the  "()" because it is added in Display
 CommonException::CommonException(const char *errMsg,const char *inCode)
 {

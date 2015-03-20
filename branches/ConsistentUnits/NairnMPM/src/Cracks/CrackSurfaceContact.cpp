@@ -6,11 +6,6 @@
     Copyright (c) 2004 John A. Nairn, All rights reserved.    
 ********************************************************************************/
 
-// 1. uncomment _VELOCITY_ONLY_ to use origin contact checked based only on velocity (crack contact only)
-//		(don't need for multimaterial contact, instead set Vmin to 0 and Dcheck to 0)
-// 2. commment out _VELOCITY_ONLY_ to check based velocity as possibly other criteria
-//#define _VELOCITY_ONLY_
-
 #include "Cracks/CrackSurfaceContact.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "MPM_Classes/MPMBase.hpp"
@@ -19,6 +14,7 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
+#include "System/UnitsController.hpp"
 
 // Single global contact law object
 CrackSurfaceContact contact;
@@ -69,8 +65,11 @@ void CrackSurfaceContact::Output(void)
 	else if(friction>10.)
 	{   ContactLaw=IMPERFECT_INTERFACE;
 		if(Dnc<-100.) Dnc=Dn;
-		sprintf(hline,"imperfect interface\n     Dnt = %g MPa/mm, Dnc = %g MPa/mm, Dt = %g MPa/mm",
-				Dn,Dnc,Dt);
+		const char *label = UnitsController::Label(INTERFACEPARAM_UNITS);
+		sprintf(hline,"imperfect interface\n     Dnt = %g %s, Dnc = %g %s, Dt = %g %s",
+				Dn*UnitsController::Scaling(1.e-6),label,
+				Dnc*UnitsController::Scaling(1.e-6),label,
+				Dt*UnitsController::Scaling(1.e-6),label);
 		hasImperfectInterface=TRUE;
 	}
 	else
@@ -134,8 +133,11 @@ void CrackSurfaceContact::CrackOutput(bool custom,double customFriction,double c
 	else if(customFriction>10.)
 	{   CrackContactLaw[number].law=IMPERFECT_INTERFACE;
 		if(customDnc<-100.) customDnc=customDn;
+		const char *label = UnitsController::Label(INTERFACEPARAM_UNITS);
 		sprintf(hline,"imperfect interface: Dn = %g MPa/mm, Dnc = %g MPa/mm, Dt = %g MPa/mm",
-				customDn,customDnc,customDt);
+				customDn*UnitsController::Scaling(1.e-6),label,
+				customDnc*UnitsController::Scaling(1.e-6),label,
+				customDt*UnitsController::Scaling(1.e-6),label);
 		hasImperfectInterface=TRUE;
 	}
 	else if(customFriction>0.)
@@ -171,8 +173,11 @@ void CrackSurfaceContact::MaterialOutput(void)
 	else if(materialFriction>10.)
 	{   materialContactLaw=IMPERFECT_INTERFACE;
 		if(materialDnc<-100.) materialDnc=materialDn;
-		sprintf(hline,"imperfect interface\n     Dnt = %g MPa/mm, Dnc = %g MPa/mm, Dt = %g MPa/mm",
-				materialDn,materialDnc,materialDt);
+		const char *label = UnitsController::Label(INTERFACEPARAM_UNITS);
+		sprintf(hline,"imperfect interface\n     Dnt = %g %s, Dnc = %g %s, Dt = %g %s",
+				materialDn*UnitsController::Scaling(1.e-6),label,
+				materialDnc*UnitsController::Scaling(1.e-6),
+				materialDt*UnitsController::Scaling(1.e-6));
 	}
 	else
 	{   materialContactLaw=FRICTIONAL;
@@ -317,6 +322,7 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 	// screen low masses
 	double aratio=massa*mnode;
 	if(aratio<1.e-6 || aratio>0.999999) return false;
+	//if(aratio<1.e-3 || aratio>0.999) return FALSE;
 	
 	// find Delta p_a (see notes)
 	CopyScaleVector(delPa,&pkb,massa*mnode);
@@ -334,10 +340,10 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
 	else
 	{	// if approaching, check displacements
         // (Note: to use only velocity, skip the following displacement check)
-		Vector dispa=cva->GetCMDisplacement(np);
+		Vector dispa=cva->GetCMDisplacement(np,true);
 		dispa.x/=massa;
 		dispa.y/=massa;
-		Vector dispb=cvb->GetCMDisplacement(np);
+		Vector dispb=cvb->GetCMDisplacement(np,true);
 		dispb.x/=massb;
 		dispb.y/=massb;
 		
@@ -388,15 +394,14 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
                     // Note: only add frictional heating during momentum update (when frictional
                     //   force is appropriate) and only if conduction is on.
                     if(postUpdate && conduction && ConductionTask::crackContactHeating)
-                    {   if(np->NumberNonrigidParticles()>0)
+                    {   if(np->NodeHasNonrigidParticles())
                         {   Vector Ftdt;
                             CopyScaleVector(&Ftdt,&tang,mu*dotn);
                             double qrate = (massa+massb)*DotVectors2D(&Ftdt,delPa)/(massa*massb);
                             
-                            // As heat source need mJ/sec or multiply by 1e-6/timestep
-                            // Because this is after transport rates are calculated, need
-                            //      to divide by gMpCp as well
-                            np->fcond += fabs(1.e-6*qrate/deltime)/np->gMpCp;
+                            // As heat source need nJ/sec or multiply by 1/timestep
+                            // Note that this is after transport rates are calculated (by true in last parameter)
+                            np->fcond += fabs(qrate/deltime)/np->gMpCp;
                         }
                     }
 				}
@@ -503,11 +508,11 @@ short CrackSurfaceContact::GetInterfaceForceOnCrack(NodalPoint *np,Vector *fImp,
 	// displacement or position
 	Vector da,db;
 	double mnode=1./cva->GetTotalMass(true);
-	Vector dispa=cva->GetCMDisplacement(np);
+	Vector dispa=cva->GetCMDisplacement(np,true);
 	da.x=dispa.x*mnode;
 	da.y=dispa.y*mnode;
 	mnode=1./cvb->GetTotalMass(true);
-	Vector dispb=cvb->GetCMDisplacement(np);
+	Vector dispb=cvb->GetCMDisplacement(np,true);
 	db.x=dispb.x*mnode;
 	db.y=dispb.y*mnode;
 	
@@ -519,7 +524,7 @@ short CrackSurfaceContact::GetInterfaceForceOnCrack(NodalPoint *np,Vector *fImp,
 	double dist = mpmgrid.GetPerpendicularDistance(&norm, NULL, 0.);
     
 	// Area correction method (new): sqrt(2*vmin/vtot)*vtot/dist = sqrt(2*vmin*vtot)/dist
-	double vola = cva->GetVolumeNonrigid(),volb = cvb->GetVolumeNonrigid(),voltot=vola+volb;
+	double vola = cva->GetVolumeNonrigid(true),volb = cvb->GetVolumeNonrigid(true),voltot=vola+volb;
 	double surfaceArea = sqrt(2.0*fmin(vola,volb)*voltot)/dist;
 	
     // If axisymmetric, multiply by radial position (vola, volb above were areas)
@@ -539,7 +544,7 @@ short CrackSurfaceContact::GetInterfaceForceOnCrack(NodalPoint *np,Vector *fImp,
 		if(dn>0.)
 		{	// normal direction in tension
 			if(CrackContactLaw[number].Dn>=0.)
-				trn = 1.e6*CrackContactLaw[number].Dn*dn*surfaceArea;
+				trn = CrackContactLaw[number].Dn*dn*surfaceArea;
 			else
 			{	// interface perfect in tension, if also perfect in shear can exit
 				if(CrackContactLaw[number].Dt<0.) return FALSE;
@@ -549,7 +554,7 @@ short CrackSurfaceContact::GetInterfaceForceOnCrack(NodalPoint *np,Vector *fImp,
 		else
 		{	// normal direction in compression
 			if(CrackContactLaw[number].Dnc>=0.)
-				trn = 1.e6*CrackContactLaw[number].Dnc*dn*surfaceArea;
+				trn = CrackContactLaw[number].Dnc*dn*surfaceArea;
 			else
 			{	// interface perfect in compression, if also perfect in shear can exit
 				if(CrackContactLaw[number].Dt<0.) return FALSE;
@@ -567,7 +572,7 @@ short CrackSurfaceContact::GetInterfaceForceOnCrack(NodalPoint *np,Vector *fImp,
 		dt = (db.x-da.x)*norm.y - (db.y-da.y)*norm.x;
 		
 		// transverse traction in g/(mm sec^2)
-		trt = 1.e6*CrackContactLaw[number].Dt*dt*surfaceArea;
+		trt = CrackContactLaw[number].Dt*dt*surfaceArea;
 	}
 	else
 	{	// perfect in normal direction

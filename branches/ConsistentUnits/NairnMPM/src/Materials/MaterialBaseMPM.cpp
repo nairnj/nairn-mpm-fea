@@ -25,18 +25,19 @@
 #include "Materials/Nonlinear2Hardening.hpp"
 #include "Materials/DDBHardening.hpp"
 #include "System/UnitsController.hpp"
+#include "System/UnitsController.hpp"
+#include "System/UnitsController.hpp"
 #include <vector>
 
 // global
 bool MaterialBase::isolatedSystemAndParticles = FALSE;
 
 // class statics for MPM - zero based material IDs when in multimaterial mode
-vector<int> MaterialBase::fieldMatIDs;
-vector<int> MaterialBase::activeMatIDs;
+vector<int> MaterialBase::fieldMatIDs;					// material ID in velocity field [i]
+vector<int> MaterialBase::activeMatIDs;					// list of active material velocity fields
 int MaterialBase::incrementalDefGradTerms = 2;			// terms in exponential of deformation gradient
 int MaterialBase::maxPropertyBufferSize = 0.;           // maximum buffer size needed among active materials to get copy of mechanical properties
 int MaterialBase::maxAltBufferSize = 0.;                // maximum optional buffer size needed for more properties (e.g., hardenling law)
-
 
 #pragma mark MaterialBase::Initialization
 
@@ -273,12 +274,12 @@ const char *MaterialBase::VerifyAndLoadProperties(int np)
 	FillTransportProperties(&tr);
 	
 	// convert other crack growth properties
-	initTime*=1e-3;				// convert to sec
+	initTime*=1e-3;			// convert to sec
 	if(criterion[0]==TOTALENERGYBALANCE)
-		initSpeed*=0.01;		// convert % of WaveSpeed() to fraction of WaveSpeed()
+		initSpeed*=0.01;	// convert % of WaveSpeed() to fraction of WaveSpeed()
 	else
-		initSpeed*=1.e3;		// convert m/sec to mm/sec
-	gamma*=1000.;				// convert J/m^2to nJ/mm^2
+		initSpeed*=1.e3;	// convert m/sec to mm/sec
+	gamma*=1000.;			// convert J/m^2 to nJ/mm^2
 	if(gamma<0. || JIc<2.*gamma) gamma=JIc/2.;
 	// pCrit3 - dimensionless
 	// gain - no units change
@@ -302,7 +303,7 @@ void MaterialBase::PrintCommonProperties(void) const
 	if(Rigid() || isTractionLaw()) return;
 	
 	// print density
-	PrintProperty("rho",1000.*rho,"");
+	PrintProperty("rho",rho*UnitsController::Scaling(1000.),"");
 	cout << endl;
 	
 	// print growth criterion and relevant material properties for crack growth
@@ -354,20 +355,20 @@ void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection) const
 			
 		case MAXHOOPSTRESS:
 			cout << "Maximum hoop stess" << PreferredDirection(thisDirection) << endl;
-			PrintProperty("KIc",KIc/31.62277660168379e6,"MPa-sqrt(m)");
+			PrintProperty("KIc",KIc*UnitsController::Scaling(31.62277660168379e-9),UnitsController::Label(STRESSINTENSITY_UNITS));
 			cout << endl;
 			break;
 			
 		case CRITICALERR:
 			cout << "Critical Energy Release Rate" << PreferredDirection(thisDirection) << endl;
-			PrintProperty("Jc",JIc/1000.,"J/m^2");
+			PrintProperty("Jc",JIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
 			cout << endl;
 			break;
 			
 		case STEADYSTATEGROWTH:
 			cout << "Constant crack speed" << PreferredDirection(thisDirection) << endl;
 			if(initTime<0.)
-			{	PrintProperty("Jc",JIc/1000.,"J/m^2");
+			{	PrintProperty("Jc",JIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
 				PrintProperty("initSpeed",1.e-3*initSpeed,"m/s");
 			}
 			else
@@ -387,7 +388,8 @@ void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection) const
 			
 		case TOTALENERGYBALANCE:
 			cout << "Total energy balance" << PreferredDirection(thisDirection) << endl;
-			sprintf(mline,"Jc =%12.3f J/m^2  vel=%12.3f%c wave speed",JIc/1000.,1000.*initSpeed,'%');
+			sprintf(mline,"Jc =%12.3f %s  vel=%12.3f%c wave speed",JIc*UnitsController::Scaling(0.001),
+							UnitsController::Label(ERR_UNITS),1000.*initSpeed,'%');
 			cout << mline << endl;
 			sprintf(mline,"gam=%12.3f J/m^2  p  =%12.3f        gain=%12.3g",gamma/1000.,pCrit3,gain);
 			cout << mline << endl;
@@ -395,14 +397,16 @@ void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection) const
 			
 		case STRAINENERGYDENSITY:
 			cout << "Minmum strain energy density" << PreferredDirection(thisDirection) << endl;  
-			PrintProperty("KIc",KIc/31.62277660168379e6,"MPa-sqrt(m)");
+			PrintProperty("KIc",KIc*UnitsController::Scaling(31.62277660168379e-9),UnitsController::Label(STRESSINTENSITY_UNITS));
 			cout << endl;
 			break;
 			
 		case EMPIRICALCRITERION:
 			cout << "Empirical criterion" << PreferredDirection(thisDirection) << endl;  
-			sprintf(mline,"KIc=%12.3f MPa-sqrt(m)  KIIc=%12.3f MPa-sqrt(m) KIexp=%12.3f KIIexp=%12.3f",
-					KIc/31.62277660168379e6,KIIc/31.62277660168379e6,KIexp,KIIexp);
+			sprintf(mline,"KIc=%12.3f %s  KIIc=%12.3f %s KIexp=%12.3f KIIexp=%12.3f",
+					KIc*UnitsController::Scaling(31.62277660168379e-9),UnitsController::Label(STRESSINTENSITY_UNITS),
+					KIIc*UnitsController::Scaling(31.62277660168379e-9),UnitsController::Label(STRESSINTENSITY_UNITS),
+					KIexp,KIIexp);
 			cout << mline << endl;
 			break;
 			
@@ -543,7 +547,7 @@ void MaterialBase::SetInitialParticleState(MPMBase *mptr,int np) const
 	if(isolatedSystemAndParticles)
     {   // need to add initial heat energy, because special cases in this mode
         // will ignore the Cv dT term
-		double Cv = GetHeatCapacity(mptr);
+		double Cv = GetHeatCapacity(mptr);            // in nJ/(g-K)
 		mptr->AddHeatEnergy(Cv*(mptr->pTemperature-thermal.reference));
         // initial entropy kept to zero, could add something here if ever needed
 	}
@@ -585,7 +589,7 @@ int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activ
 				{	throw CommonException("Material class trying to share velocity field with a material that share's its field",
 										  "MaterialBase::SetField");
 				}
-			
+
 				// set field to other material (and set other material if needed
 				field = matRef->GetField();
 				if(field<0)
@@ -596,21 +600,21 @@ int MaterialBase::SetField(int fieldNum,bool multiMaterials,int matid,int &activ
 			else
 			{	field=fieldNum;
 				fieldNum++;
-			
+				
 				// fieldMatIDs[i] for i=0 to # materials is material index for that material velocity field
 				// when materials share fields, it points to the based shared material
 				fieldMatIDs.push_back(matid);
 			}
-		
+			
 			// for first particle using this material, add to active material IDs and check required
 			// material buffer sizes
 			if(activeNum>=0)
 			{	activeField=activeNum;
 				activeNum++;
 				activeMatIDs.push_back(matid);
-				int altBuffer,matBuffer = SizeOfMechanicalProperties(altBuffer);
-				if(matBuffer > maxPropertyBufferSize) maxPropertyBufferSize = matBuffer;
-				if(altBuffer > maxAltBufferSize) maxAltBufferSize = altBuffer;
+                int altBuffer,matBuffer = SizeOfMechanicalProperties(altBuffer);
+                if(matBuffer > maxPropertyBufferSize) maxPropertyBufferSize = matBuffer;
+                if(altBuffer > maxAltBufferSize) maxAltBufferSize = altBuffer;
 			}
 		}
 	}
@@ -630,7 +634,7 @@ int MaterialBase::GetActiveField(void) const { return activeField; }
 double MaterialBase::MaximumDiffusion(void) const { return diffusionCon; }
 
 // maximum diffusivity in mm^2/sec  (anisotropic must override)
-// specific ks is nJ mm^2/(sec-K-g) and Cp is nJ/(g-K) so ks/Cp = mm^2 / sec
+// specific ks is nJ mm^2/(sec-K-g) and Cp is nJ/(g-K) so ks/Cp = mm^2 / sec 
 double MaterialBase::MaximumDiffusivity(void) const { return kCond/heatCapacity; }
 
 // material-to-material contact
@@ -703,8 +707,11 @@ void MaterialBase::ContactOutput(int thisMatID)
 		else if(currentFriction->friction>10.)
 		{   currentFriction->law=IMPERFECT_INTERFACE;
 			if(currentFriction->Dnc<-100.) currentFriction->Dnc=currentFriction->Dn;
-			sprintf(hline,"imperfect interface\n         Dn = %g MPa/mm, Dnc = %g MPa/mm, Dt = %g MPa/mm",
-					currentFriction->Dn,currentFriction->Dnc,currentFriction->Dt);
+			const char *label = UnitsController::Label(INTERFACEPARAM_UNITS);
+			sprintf(hline,"imperfect interface\n         Dn = %g %s, Dnc = %g %s, Dt = %g %s",
+					currentFriction->Dn*UnitsController::Scaling(1.e-6),label,
+					currentFriction->Dnc*UnitsController::Scaling(1.e-6),label,
+					currentFriction->Dt*UnitsController::Scaling(1.e-6),label);
 		}
 		else
 		{   currentFriction->law=FRICTIONAL;
@@ -777,7 +784,7 @@ void MaterialBase::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t
 // Units nJ/(g-K)
 double MaterialBase::GetHeatCapacity(MPMBase *mptr) const { return heatCapacity; }
 
-// For Cp heat capacity
+// For Cp heat capacity in nJ/(g-K)
 double MaterialBase::GetCpHeatCapacity(MPMBase *mptr) const { return GetHeatCapacity(mptr)+GetCpMinusCv(mptr); }
 
 // A material can override to set Cp-Cv in nJ/(g-K)
@@ -791,7 +798,7 @@ double MaterialBase::GetCpMinusCv(MPMBase *mptr) const { return 0; }
 // dPhi is dissipated energy that is converted to temperature rise
 void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,double dPhi) const
 {
-	double Cv = GetHeatCapacity(mptr);						// nJ/(g-K)
+	double Cv = GetHeatCapacity(mptr);					// in nJ/(g-K)
 	double dispEnergy = Cv*dTq0 + dPhi;                     // = Cv dTad
 	
 	// Isolated means no conduction and no thermal ramp (and in future if have other ways
@@ -941,7 +948,7 @@ Vector MaterialBase::IsotropicJToK(Vector d,Vector C,Vector J0,int np,double nuL
 	
     C2 = C.x*C.x+C.y*C.y;				// square of crack velocity
 	// dynamic or stationary crack
-    if(!DbleEqual(sqrt(C2),0.0))
+    if(!DbleEqual(sqrt(C2),0.0)) 
 	{	Cs2=GLS/rho;
         Cd2=Cs2*(kf+1.)/(kf-1.);
         B1=sqrt(1.-C2/Cd2);
@@ -1515,23 +1522,26 @@ double MaterialBase::CurrentWaveSpeed(bool threeD,MPMBase *mptr) const { return 
 double MaterialBase::GetHistory(int num,char *historyPtr) const { return (double)0.; }
 
 // return TRUE if rigid particle (for contact or for BC)
-bool MaterialBase::Rigid(void) const { return FALSE; }
+bool MaterialBase::Rigid(void) const { return false; }
 
 // return TRUE is rigid BC particle (not rigid for contact)
-short MaterialBase::RigidBC(void) const { return FALSE; }
+short MaterialBase::RigidBC(void) const { return false; }
 
 // return TRUE is rigid BC particle (not rigid for contact)
-short MaterialBase::RigidContact(void) const { return FALSE; }
+short MaterialBase::RigidContact(void) const { return false; }
 
-// check if traciton law material
-bool MaterialBase::isTractionLaw(void) const { return FALSE; }
+// check if traction law material
+bool MaterialBase::isTractionLaw(void) const { return false; }
+
+// check if membrane material
+bool MaterialBase::isMembrane(void) const { return false; }
 
 // check if keeps crack tip
 int MaterialBase::KeepsCrackTip(void) const { return constantTip; }
 
 // see if material for a material velocity field is rigid (only rigid contact materials can be in a velocity field)
 short MaterialBase::GetMVFIsRigid(int matfld)
-{	return matfld<(int)fieldMatIDs.size() ? theMaterials[fieldMatIDs[matfld]]->Rigid() : FALSE ;
+{	return matfld<(int)fieldMatIDs.size() ? theMaterials[fieldMatIDs[matfld]]->Rigid() : false ;
 }
 
 // convert field number (zero based) to material ID for that field (zero based)
@@ -1552,7 +1562,7 @@ Tensor MaterialBase::GetStress(Tensor *sp,double pressure) const
 }
 
 // Calculate artficial damping where Dkk is the relative volume change rate = (V(k+1)-V(k))/(V(k+1)dt)
-// and c is the current wave speed in m/sec
+// and c is the current wave speed in mm/sec
 double MaterialBase::GetArtificalViscosity(double Dkk,double c) const
 {
     double avred = 0.;
@@ -1568,10 +1578,11 @@ double MaterialBase::GetArtificalViscosity(double Dkk,double c) const
 // should override this method and return TRUE. It is only used when material point is asked for
 // its GetDeformationGradient(). When this is TRUE, gradient uses total strain, otherwise it
 // uses only the terms in ep and wrot.
-bool MaterialBase::PartitionsElasticAndPlasticStrain(void) { return FALSE; }
+bool MaterialBase::PartitionsElasticAndPlasticStrain(void) const { return false; }
 
 // if a subclass material supports artificial viscosity, override this and return TRUE
 bool MaterialBase::SupportsArtificialViscosity(void) const { return false; }
+
 
 
 

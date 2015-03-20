@@ -93,8 +93,16 @@ const char *IsotropicMat::VerifyAndLoadProperties(int np)
     }
     
     // analysis properties
+#ifdef MPM_CODE
     const char *err=SetAnalysisProps(np,E,E,E,nu,nu,nu,G,G,G,
-			1.e-6*aI,1.e-6*aI,1.e-6*aI,betaI*concSaturation,betaI*concSaturation,betaI*concSaturation);
+							1.e-6*aI,1.e-6*aI,1.e-6*aI,
+							betaI*concSaturation,betaI*concSaturation,betaI*concSaturation);
+#else
+	double rescale = UnitsController::Scaling(1.e-6);
+    const char *err=SetAnalysisProps(np,rescale*E,rescale*E,rescale*E,nu,nu,nu,rescale*G,rescale*G,rescale*G,
+							1.e-6*aI,1.e-6*aI,1.e-6*aI,
+							betaI*concSaturation,betaI*concSaturation,betaI*concSaturation);
+#endif
 	if(err!=NULL) return err;
 	
 	// load elastic properties with constant values

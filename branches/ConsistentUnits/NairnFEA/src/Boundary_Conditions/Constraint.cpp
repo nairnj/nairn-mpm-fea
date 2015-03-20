@@ -48,7 +48,6 @@ Constraint *Constraint::MapNodes(int *revMap)
 }
 
 // bandwidth calculation - nbase is number of dof not counting constraints
-// Optimal resequencing would have high nodal numbers on the periodic nodes
 int Constraint::GetBandWidth(int nbase,int nfree)
 {
 	// This contraint in row nbase+lambda

@@ -122,8 +122,11 @@ const char *Mooney::VerifyAndLoadProperties(int np)
 		// bulk modulus, but allow membrane to be incompressible
 		if(nu<0.5)
 			Kbulk = Etens/(3.*(1-2.*nu));
-		else 
+		else if(!isMembrane())
 			return "Mooney-Rivlin Hyperelastic Poisson's ratio for solid material must be less than 1/2";
+		else
+		{	Kbulk = 0.;	// which causes CP-Cv=0 as well
+		}
 	}
 		
     if(G2<0.)

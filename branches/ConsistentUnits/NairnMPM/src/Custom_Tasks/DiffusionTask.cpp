@@ -86,7 +86,7 @@ TransportTask *DiffusionTask::Task1Reduction(NodalPoint *ndpt,NodalPoint *ghostN
 
 // Get grid concentrations and impose grid-based concentration BCs
 TransportTask *DiffusionTask::GetNodalValue(NodalPoint *ndptr)
-{	if(ndptr->NumberNonrigidParticles()>0)
+{	if(ndptr->NodeHasNonrigidParticles())
 		ndptr->gConcentration /= ndptr->gVolume;
 	return nextTask;
 }
@@ -237,7 +237,7 @@ TransportTask *DiffusionTask::SetTransportForceBCs(double deltime)
 // to 0 to 1 or limited to 0 < gConcentration + fdiff*deltime < 1
 TransportTask *DiffusionTask::TransportRates(NodalPoint *ndptr,double deltime)
 {
-	if(ndptr->NumberNonrigidParticles()>0)
+	if(ndptr->NodeHasNonrigidParticles())
 	{	ndptr->fdiff /= ndptr->gVolume;
 		/*
 		double concTest = ndptr->gConcentration + ndptr->fdiff*deltime;
@@ -272,7 +272,7 @@ TransportTask *DiffusionTask::UpdateNodalValues(double concTime)
 	// add for each node
 	int i;
     for(i=1;i<=nnodes;i++)
-	{   if(nd[i]->NumberNonrigidParticles()>0)
+	{   if(nd[i]->NodeHasNonrigidParticles())
 			nd[i]->gConcentration += nd[i]->fdiff*concTime;
 	}
 	return nextTask;

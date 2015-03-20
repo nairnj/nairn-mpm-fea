@@ -153,7 +153,7 @@ TransportTask *ConductionTask::Task1Reduction(NodalPoint *ndpt,NodalPoint *ghost
 
 // Task 1b - get grid temperature on one node
 TransportTask *ConductionTask::GetNodalValue(NodalPoint *ndptr)
-{   if(ndptr->NumberNonrigidParticles()>0)
+{   if(ndptr->NodeHasNonrigidParticles())
 		ndptr->gTemperature /= ndptr->gMpCp;
 	return nextTask;
 }
@@ -302,7 +302,7 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
 // get temperature rates node
 TransportTask *ConductionTask::TransportRates(NodalPoint *ndptr,double deltime)
 {
-	if(ndptr->NumberNonrigidParticles()>0)
+	if(ndptr->NodeHasNonrigidParticles())
 		ndptr->fcond /= ndptr->gMpCp;
 	return nextTask;
 }
@@ -343,7 +343,7 @@ TransportTask *ConductionTask::UpdateNodalValues(double tempTime)
 	// add for each node
 	int i;
     for(i=1;i<=nnodes;i++)
-	{   if(nd[i]->NumberNonrigidParticles()>0)
+	{   if(nd[i]->NodeHasNonrigidParticles())
 			nd[i]->gTemperature += nd[i]->fcond*tempTime;
 	}
 	return nextTask;

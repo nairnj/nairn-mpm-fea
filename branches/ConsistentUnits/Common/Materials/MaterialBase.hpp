@@ -149,11 +149,12 @@ class MaterialBase : public LinkedObject
 		virtual short RigidBC(void) const;
 		virtual short RigidContact(void) const;
 		virtual bool isTractionLaw(void) const;
+		virtual bool isMembrane(void) const;
 		virtual int KeepsCrackTip(void) const;
 		virtual void SetFriction(double,int,double,double,double);
 		virtual ContactDetails *GetContactToMaterial(int);
 		virtual void ContactOutput(int);
-        virtual bool PartitionsElasticAndPlasticStrain(void);
+        virtual bool PartitionsElasticAndPlasticStrain(void) const;
         virtual double GetArtificalViscosity(double,double) const;
 		virtual bool SupportsArtificialViscosity(void) const;
 		virtual int GetShareMatField(void) const;

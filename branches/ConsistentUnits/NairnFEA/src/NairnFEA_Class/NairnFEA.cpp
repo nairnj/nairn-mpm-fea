@@ -15,6 +15,7 @@
 #include "Boundary_Conditions/EdgeBC.hpp"
 #include "Boundary_Conditions/Constraint.hpp"
 #include "System/FEAArchiveData.hpp"
+#include "System/UnitsController.hpp"
 #include <time.h>
 
 // global analysis object
@@ -352,9 +353,8 @@ int NairnFEA::GetBandWidth(void)
 	}
 	
 	// get bandwidth for Lagrange multiplier DOFs
-	// These are tacked on the end from nbase+1 to nbase+numConstraints
 	if(firstConstraint!=NULL)
-	{	int nbase=nsize-numConstraints;				// problem size without constraints
+	{	int nbase=nsize-numConstraints;
 		Constraint *nextConstraint=firstConstraint;
 		while(nextConstraint!=NULL)
 		{	nband=fmax(nband,nextConstraint->GetBandWidth(nbase,nfree));
@@ -377,7 +377,8 @@ void NairnFEA::DisplacementResults(void)
     if(outFlags[DISPLACEMENT_OUT]=='N') return;
     
     // heading
-    PrintSection("NODAL DISPLACEMENTS (in mm)");
+	sprintf(fline,"NODAL DISPLACEMENTS (in %s)",UnitsController::Label(OUTLENGTH_UNITS));
+    PrintSection(fline);
     if(np==AXI_SYM)
 	cout << " Node        u               w               v" << endl;
     else
@@ -396,13 +397,11 @@ void NairnFEA::DisplacementResults(void)
     
     	// 2D output
         if(nfree==2)
-            sprintf(fline,"%5d %15.7e %15.7e",i,1000.*rm[ind-1],1000.*rm[ind]);
+            sprintf(fline,"%5d %15.7e %15.7e",i,rm[ind-1],rm[ind]);
         
         // 3D output
         else if(nfree==3)
-        {   sprintf(fline,"%5d %15.7e %15.7e %15.7e",i,1000.*rm[ind-2],
-                                            1000.*rm[ind-1],1000.*rm[ind]);
-        }
+           sprintf(fline,"%5d %15.7e %15.7e %15.7e",i,rm[ind-2],rm[ind-1],rm[ind]);
         
         cout << fline << endl;
     }
@@ -421,7 +420,10 @@ void NairnFEA::ForceStressEnergyResults(void)
     char gline[16],fline[200];
 	
     if(outFlags[FORCE_OUT]!='N' || outFlags[ELEMSTRESS_OUT]!='N')
-        PrintSection("NODAL FORCES (in N) AND STRESSES (in MPa) IN EACH ELEMENT");
+	{	sprintf(fline,"NODAL FORCES (in %s) AND STRESSES (in %s) IN EACH ELEMENT",
+						UnitsController::Label(FORCE_UNITS),UnitsController::Label(PRESSURE_UNITS));
+        PrintSection(fline);
+	}
    
     /* The nodal stresses will store nodal point objects
             fs.stress.sig[], fs.force, fs.numElems
@@ -489,7 +491,7 @@ void NairnFEA::ForceStressEnergyResults(void)
         
             if(kstemp==1)
             {   sprintf(fline,"%5s   %5d     %15.7e     %15.7e     %15.7e",
-                            gline,nodeNum,1.e-6*se[j][1],1.e-6*se[j][2],1.e-6*se[j][3]);
+                            gline,nodeNum,se[j][1],se[j][2],se[j][3]);
                 cout << fline << endl;
                 strcpy(gline,"     ");
             }
@@ -516,7 +518,7 @@ void NairnFEA::ForceStressEnergyResults(void)
             {   nodeNum=theElements[iel]->nodes[j-1];
                 if(kstemp==1)
                 {	sprintf(fline,"%5s   %5d     %15.7e     %15.7e     %15.7e",
-                                    gline,nodeNum,1.e-6*se[j][4],(double)0.0,(double)0.0);
+                                    gline,nodeNum,se[j][4],(double)0.0,(double)0.0);
                     cout << fline << endl;
                 }
 
@@ -544,7 +546,9 @@ void NairnFEA::AvgNodalStresses(void)
     if(outFlags[AVGSTRESS_OUT]=='N') return;
     
     // heading
-    PrintSection("AVERAGE NODAL STRESSES (in MPa)");
+	char fline[200];
+	sprintf(fline,"AVERAGE NODAL STRESSES (in %s)",UnitsController::Label(PRESSURE_UNITS));
+	PrintSection(fline);
     cout << " Node       sig(" << xax << ")           sig(" << yax << ")           sig(" 
             << zax << ")          sig(" << xax << yax << ")" << endl;
     cout << "--------------------------------------------------------------------------" << endl;
@@ -568,7 +572,9 @@ void NairnFEA::ReactionResults(void)
     
     if(outFlags[REACT_OUT]=='N') return;
     
-    PrintSection("REACTIVITIES AT FIXED NODES (in N)");
+	char fline[200];
+	sprintf(fline,"REACTIVITIES AT FIXED NODES (in %s)",UnitsController::Label(FORCE_UNITS));
+	PrintSection(fline);
     cout << " Node           F" << xax << "                  F" << yax
             << "                  F" << zax << endl;
     cout << "------------------------------------------------------------------" << endl;
@@ -594,7 +600,8 @@ void NairnFEA::EnergyResults(void)
     if(outFlags[ENERGY_OUT]=='N') return;
     
     // heading
-    PrintSection("STRAIN ENERGIES IN ELEMENTS (in J)");
+	sprintf(fline,"STRAIN ENERGIES IN ELEMENTS (in %s)",UnitsController::Label(WORK_UNITS));
+	PrintSection(fline);
     cout << " Elem      Strain Energy                 Elem      Strain Energy" << endl;
     cout << "------------------------------------------------------------------" << endl;
 		
@@ -603,20 +610,21 @@ void NairnFEA::EnergyResults(void)
         incolm=nelems/2;
     else
         incolm=(nelems+1)/2;
+	double escale = UnitsController::Scaling(1.e-3);
     for(i=1;i<=incolm;i++)
     {	ind=i+incolm;
         if(ind<=nelems)
         {   sprintf(fline,"%5d     %15.7e               %5d     %15.7e",
-                    i,theElements[i-1]->strainEnergy,ind,theElements[ind-1]->strainEnergy);
+                    i,escale*theElements[i-1]->strainEnergy,ind,escale*theElements[ind-1]->strainEnergy);
             temp+=theElements[ind-1]->strainEnergy;
         }
         else
-            sprintf(fline,"%5d     %15.7e",i,theElements[i-1]->strainEnergy);
+            sprintf(fline,"%5d     %15.7e",i,escale*theElements[i-1]->strainEnergy);
         temp+=theElements[i-1]->strainEnergy;
         cout << fline << endl;
     }
     cout << "------------------------------------------------------------------" << endl;
-    sprintf(fline,"Total     %15.7e",temp);
+    sprintf(fline,"Total     %15.7e",escale*temp);
     cout << fline << endl << endl;
 }
 
@@ -641,11 +649,15 @@ void NairnFEA::Usage()
             "The results summary is directed to standard output.\n\n"
             "Options:\n"
             "    -a          Abort after setting up problem but before\n"
-			"                   FEA Analysis.\n"
-            "    -H          Show this help.\n"
+			"                   FEA Analysis\n"
+            "    -H          Show this help\n"
+            "    -np #       Set number of processors for parallel code\n"
             "    -v          Validate input file if DTD is provided in !DOCTYPE\n"
-            "                   (default is to skip validation)\n\n"
-            "See http://oregonstate.edu/nairnj for full documentation.\n\n"
+            "                   (default is to skip validation)\n"
+            "    -w          Out results to current working directory\n"
+            "                   (default isoutput to folder of input file)\n"
+            "    -?          Show this help\n\n"
+            "See http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page for full documentation\n\n"
           <<  endl;
 }
 

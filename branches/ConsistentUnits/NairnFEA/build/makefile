@@ -193,6 +193,7 @@ SixNodeTriangle = $(src)/Elements/SixNodeTriangle
 StrX = $(com)/Exceptions/StrX
 svninfo = $(com)/System/svninfo
 TransIsotropic = $(com)/Materials/TransIsotropic
+UnitsController = $(com)/System/UnitsController
 Utilities = $(src)/System/Utilities
 
 # path from 'makefile' to prefix header file
@@ -200,7 +201,7 @@ prefix = $(src)/System/FEAPrefix.hpp
 
 # path from 'makefile' to default headers (this included by $(prefix)
 dprefix = $(src)/System/FEAPrefix.hpp $(com)/System/DataTypes.hpp \
-		$(com)/System/CommonAnalysis.hpp $(com)/System/LinkedObject.hpp
+		$(com)/System/CommonAnalysis.hpp $(com)/System/LinkedObject.hpp $(com)/System/UnitsController.hpp
 
 # header files that include other header files (other than $(dprefix) files)
 # ArcController.hpp : LineController.hpp ShapeController.hpp
@@ -263,7 +264,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		mathexpr.o FEABoundaryCondition.o ShapeController.o PointController.o PathBCController.o \
 		RectController.o ArcController.o NodalPoint2D.o NodalPoint3D.o BitMapFilesCommon.o \
 		OvalController.o BMPLevel.o BitMapFilesFEA.o Lagrange2D.o MatRegionFEA.o \
-		PolygonController.o
+		PolygonController.o UnitsController.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -288,6 +289,8 @@ CommonUtilities.o : $(CommonUtilities).cpp $(dprefix)
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonUtilities).cpp
 svninfo.o : $(svninfo).cpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(svninfo).cpp
+UnitsController.o : $(UnitsController).cpp $(UnitsController).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UnitsController).cpp
 
 # Common: Read_XML
 CommonReadHandler.o : $(CommonReadHandler).cpp $(dprefix) $(CommonReadHandler).hpp $(NairnFEA).hpp \

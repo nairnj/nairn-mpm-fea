@@ -55,7 +55,7 @@ class NewMaterial : public MaterialBase
 		//virtual double MaximumDiffusion(void) const;
         //virtual double MaximumDiffusivity(void) const;
         //virtual Tensor GetStress(Tensor *sp,double pressure) const;
-        //virtual bool PartitionsElasticAndPlasticStrain(void);
+        //virtual bool PartitionsElasticAndPlasticStrain(void) const;
         //virtual bool SupportsArtificialViscosity(void) const;
 		
     protected:

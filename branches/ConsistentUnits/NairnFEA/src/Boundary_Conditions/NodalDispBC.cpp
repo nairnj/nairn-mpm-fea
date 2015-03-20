@@ -53,7 +53,6 @@ NodalDispBC *NodalDispBC::PrintBC(ostream &os)
         sprintf(nline,"%5d                          %2d  %15.7e",
                         nodeNum,axis,angle);
     os << nline << endl;
-	bcValue/=1000.;		// to m
 	
 	return (NodalDispBC *)nextObject;
 }

@@ -1533,15 +1533,14 @@ int NodalPoint::NumberParticles(void)
 	return totalParticles;
 }
 
-// number of particles for this node
-int NodalPoint::NumberNonrigidParticles(void) const
-{	int totalParticles=0;
-	int i;
-	for(i=0;i<maxCrackFields;i++)
-	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			totalParticles+=cvf[i]->GetNumberPointsNonrigid();
+// number of crack fields with non rigid particles
+int NodalPoint::NumberNonrigidCracks(void)
+{	int totalCracks=0;
+	for(int i=0;i<maxCrackFields;i++)
+	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
+		totalCracks++;
 	}
-	return totalParticles;
+	return totalCracks;
 }
 
 // Look for presence of non rigid point on this node

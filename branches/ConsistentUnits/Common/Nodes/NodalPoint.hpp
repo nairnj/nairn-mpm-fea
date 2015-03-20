@@ -101,7 +101,7 @@ class NodalPoint : public LinkedObject
         void DeleteDisp(void);
         void DeleteDisp(NodalPoint *);
 		int NumberParticles(void);
-		int NumberNonrigidParticles(void) const;
+		int NumberNonrigidCracks(void);
 		bool NodeHasNonrigidParticles(void) const;
 		double GetNodalMass(bool) const;
 		void Describe(void) const;

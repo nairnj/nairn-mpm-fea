@@ -20,11 +20,7 @@ enum {XX_HISTORY=0,YY_HISTORY,XY_HISTORY,ZZ_HISTORY,XZ_HISTORY,YZ_HISTORY};
 class Viscoelastic : public MaterialBase
 {
     public:
-        double G0,K,aI;
-        // double betaI;        // defined in superclass
-        int ntaus;
-        double *Gk,*tauk;
-        
+	
         // constructors and destructors
         Viscoelastic();
         Viscoelastic(char *);
@@ -52,6 +48,11 @@ class Viscoelastic : public MaterialBase
 		virtual Tensor GetStress(Tensor *,double) const;
 		
     private:
+		double G0,K,aI;
+		// double betaI;        // defined in superclass
+		int ntaus;
+		double *Gk,*tauk;
+	
         int currentGk,currentTauk;
 		double CTE,CME,Ka2sp;
 		double Kered,Gered,*TwoGkred;

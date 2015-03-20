@@ -78,9 +78,9 @@ int ElementsController::CreateElement(char *xData,int elemMat,double elemAngle,d
 	vector<double> pts;
 	
 	// read the data into a vector of doubles
-	if(!CommonReadHandler::GetFreeFormatNumbers(xData,pts,1.0)) return FALSE;
+	if(!CommonReadHandler::GetFreeFormatNumbers(xData,pts,1.0)) return false;
 	int numnds = pts.size();
-	if(numnds<=0 || numnds>MaxElNd) return FALSE;
+	if(numnds<=0 || numnds>MaxElNd) return false;
 	
 	// convert to integers
 	int i,eNode[MaxElNd];
@@ -145,9 +145,9 @@ int ElementsController::CreateElement(char *xData,int elemMat,double elemAngle,d
 	}
 	
 	// add element and return the result
-	if(newElem==NULL) return FALSE;
+	if(newElem==NULL) return false;
 	AddElement(newElem);
-	return TRUE;
+	return true;
 }
 
 #ifdef MPM_CODE

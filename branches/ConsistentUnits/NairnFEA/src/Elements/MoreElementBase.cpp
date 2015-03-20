@@ -117,7 +117,7 @@ void ElementBase::IsoparametricStiffness(int np)
 
         /* Evaluate volume element */
         if(np!=AXI_SYM)
-            dv=weight[gaussSet][nx]*GetThickness()*detjac/1000.;
+            dv=weight[gaussSet][nx]*GetThickness()*detjac;
         else
             dv=weight[gaussSet][nx]*asr*detjac;		// force per radian, hence no 2 pi
 
@@ -232,7 +232,7 @@ void ElementBase::IsoparametricForceStress(double *rm,int np,int nfree)
     double xiDeriv[MaxElNd],etaDeriv[MaxElNd],asbe[MaxElNd],fn[MaxElNd];
     double detjac,asr,temp,dv,deltaT;
 	
-    double thck=GetThickness()/1000.;
+    double thck=GetThickness();
     MaterialBase *matl=theMaterials[material-1];
 	Vector place;
 	
@@ -407,8 +407,8 @@ void ElementBase::LinearEdgeLoad(int nd1,int nd2,int ndir,double *fload,double *
     // Load nodal coordinates (in m)
     for(ind2=1;ind2<=NumberNodes();ind2++)
     {   ind1=nodes[ind2-1];
-        ce[ind2].x=nd[ind1]->x/1000.;
-        ce[ind2].y=nd[ind1]->y/1000.;
+        ce[ind2].x=nd[ind1]->x;
+        ce[ind2].y=nd[ind1]->y;
     }
 	
 	// zero re[] vector
@@ -416,14 +416,14 @@ void ElementBase::LinearEdgeLoad(int nd1,int nd2,int ndir,double *fload,double *
 	for(ind1=1;ind1<=nst;ind1++) re[ind1]=0.;
 	
 	// thickness (in m)
-	double thck=GetThickness()/1000.;
+	double thck=GetThickness();
 	
 	// Handle planar elements
 	if(np!=AXI_SYM)
 	{	delx=(ce[nd2].x-ce[nd1].x)*thck/2.;		// i.e., delx t/2
 		dely=(ce[nd2].y-ce[nd1].y)*thck/2.;     // i.e., dely t/2
-		arg1=(2.*fload[0]+fload[1])/3.e-6;
-		arg2=(fload[0]+2.*fload[1])/3.e-6;
+		arg1=(2.*fload[0]+fload[1])/3.;
+		arg2=(fload[0]+2.*fload[1])/3.;
 	}
 
 	// Handle axisymmetric elements
@@ -432,10 +432,10 @@ void ElementBase::LinearEdgeLoad(int nd1,int nd2,int ndir,double *fload,double *
 		r2=ce[nd2].x;
 		delx=(ce[nd2].x-ce[nd1].x)/2.;		// i.e., delr/2
 		dely=(ce[nd2].y-ce[nd1].y)/2.;		// i.e., delz/2
-		arg1=r1*fload[0]/3.e-6;
-		arg1+=(r1+r2)*(fload[0]+fload[1])/6.e-6;
-		arg2=r2*fload[1]/3.e-6;
-		arg2+=(r1+r2)*(fload[0]+fload[1])/6.e-6;
+		arg1=r1*fload[0]/3.;
+		arg1+=(r1+r2)*(fload[0]+fload[1])/6.;
+		arg2=r2*fload[1]/3.;
+		arg2+=(r1+r2)*(fload[0]+fload[1])/6.;
 	}
 
 	// DOF index into output array
@@ -475,8 +475,8 @@ void ElementBase::QuadEdgeLoad(int nd1,int nd2,int nd3,int ndir,double *fload,do
     // Load nodal coordinates (in m) in 1-based in cd[]
     for(i=1;i<=NumberNodes();i++)
     {   j=nodes[i-1];
-        ce[i].x=nd[j]->x/1000.;
-        ce[i].y=nd[j]->y/1000.;
+        ce[i].x=nd[j]->x;
+        ce[i].y=nd[j]->y;
     }
 	
 	// zero re[] vector
@@ -484,7 +484,7 @@ void ElementBase::QuadEdgeLoad(int nd1,int nd2,int nd3,int ndir,double *fload,do
 	for(i=1;i<=nst;i++) re[i]=0.;
 	
 	// thickness (in m)
-	double thck=GetThickness()/1000.;
+	double thck=GetThickness();
 	
 	// deltas
 	if(ndir==1)
@@ -582,7 +582,7 @@ void ElementBase::QuadEdgeLoad(int nd1,int nd2,int nd3,int ndir,double *fload,do
 	ind[6]=ind[5]+1;
 	for(i=1;i<=6;i++)
 	{	for(j=1;j<=3;j++)
-		{	re[ind[i]]+=stof[i][j]*fload[j-1]*1.e6;
+		{	re[ind[i]]+=stof[i][j]*fload[j-1];
 		}
 	}
 }
@@ -623,8 +623,8 @@ void ElementBase::GetProperties(int np)
     // Load nodal coordinates (in m)
     for(i=1;i<=NumberNodes();i++)
     {   ind=nodes[i-1];
-        ce[i].x = nd[ind]->x/1000.;
-        ce[i].y = nd[ind]->y/1000.;
+        ce[i].x = nd[ind]->x;
+        ce[i].y = nd[ind]->y;
 		te[i] = nd[ind]->gTemperature;
     }
     

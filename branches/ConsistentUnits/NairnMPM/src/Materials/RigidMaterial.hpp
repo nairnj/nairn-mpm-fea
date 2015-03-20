@@ -17,6 +17,10 @@
 #define CONTROL_X_DIRECTION 1
 #define CONTROL_Y_DIRECTION 2
 #define CONTROL_Z_DIRECTION 4
+#define CONTROL_ANY_DIRECTION 7
+
+#define CONTROL_TEMPERATURE 16
+#define CONTROL_CONCENTRATION 32
 
 // means an actual material, but only possible in multimaterial mode
 #define RIGID_MULTIMATERIAL_MODE 8
@@ -33,7 +37,7 @@ class RigidMaterial : public MaterialBase
 		bool setConcentration;
 		static bool someSetTemperature;
 		int mirrored;
-		
+	
         // constructors and destructors
         RigidMaterial();
         RigidMaterial(char *);
@@ -45,10 +49,11 @@ class RigidMaterial : public MaterialBase
 		virtual int SetField(int,bool,int,int &);
 		
 		// RigidMaterial only methods
-		bool RigidDirection(int);
-		bool RigidTemperature(void);
-		bool RigidConcentration(void);
-		bool GetValueSetting(double *,double,Vector *);
+		bool RigidDirection(int) const;
+		bool RigidTemperature(void) const;
+		bool RigidConcentration(void) const;
+		int SetDirection(void) const;
+		bool GetValueSetting(double *,double,Vector *) const;
 		bool GetVectorSetting(Vector *,bool *,double,Vector *) const;
 		void SetSettingFunction(char *,int);
 		bool IsConstantVelocity(void);
