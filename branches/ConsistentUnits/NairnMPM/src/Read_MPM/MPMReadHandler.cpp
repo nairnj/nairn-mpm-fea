@@ -926,7 +926,8 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		
 		if(style!=FUNCTION_VALUE)
 		{	input=DOUBLE_NUM;
-			inputPtr=(char *)&newVelBC->value;
+			if(style==LINEAR_VALUE) gScaling = UnitsController::Scaling(1.e3);		// convert Legacy 1/ms to 1/s
+			inputPtr=(char *)newVelBC->GetBCValuePtr();
 		}
 		else
 		{	input=FUNCTION_BLOCK;
@@ -1074,18 +1075,39 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         inputPtr=(char *)&bodyFrc.gforce.x;
     }
     
+	// Grid Body Force in X direction
+    else if(strcmp(xName,"GridBodyXForce")==0)
+	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
+    	input=GRID_X_BODY_FORCE_FUNCTION_BLOCK;
+        inputPtr=(char *)&bodyFrc;		// although not needed
+    }
+    
 	// Gravity in Y direction
     else if(strcmp(xName,"BodyYForce")==0)
 	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
     	input=DOUBLE_NUM;
         inputPtr=(char *)&bodyFrc.gforce.y;
     }
-
+	
+	// Grid Body Force in Y direction
+    else if(strcmp(xName,"GridBodyYForce")==0)
+	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
+    	input=GRID_Y_BODY_FORCE_FUNCTION_BLOCK;
+        inputPtr=(char *)&bodyFrc;		// although not needed
+    }
+    
 	// Gravity in Y direction
     else if(strcmp(xName,"BodyZForce")==0)
 	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
     	input=DOUBLE_NUM;
         inputPtr=(char *)&bodyFrc.gforce.z;
+    }
+	
+	// Grid Body Force in Z direction
+    else if(strcmp(xName,"GridBodyZForce")==0)
+	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
+    	input=GRID_Z_BODY_FORCE_FUNCTION_BLOCK;
+        inputPtr=(char *)&bodyFrc;		// although not needed
     }
 
     //-------------------------------------------------------
@@ -1148,7 +1170,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         {   aName=XMLString::transcode(attrs.getLocalName(i));
             if(strcmp(aName,"name")==0)
             {   value=XMLString::transcode(attrs.getValue(i));
-                inputPtr=((CustomTask *)currentTask)->InputParam(value,input);
+                inputPtr=((CustomTask *)currentTask)->InputParam(value,input,gScaling);
                 delete [] value;
             }
             delete [] aName;
@@ -1286,7 +1308,10 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
         
         case BC_BLOCK:
 			newBC=(MatPtLoadBC *)mpLoadCtrl->lastObject;
-            sscanf(xData,"%lf,%lf",&newBC->value,&newBC->ftime);
+			double bcvalue,bcftime;
+            sscanf(xData,"%lf,%lf",&bcvalue,&bcftime);
+			newBC->SetBCValue(bcvalue);
+			newBC->SetBCFirstTime(bcftime);
             break;
 		
 		case FUNCTION_BLOCK:
@@ -1302,6 +1327,12 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
 		
 		case PRESSURE_FUNCTION_BLOCK:
 			((TaitLiquid *)inputPtr)->SetPressureFunction(xData);
+			break;
+			
+		case GRID_X_BODY_FORCE_FUNCTION_BLOCK:
+		case GRID_Y_BODY_FORCE_FUNCTION_BLOCK:
+		case GRID_Z_BODY_FORCE_FUNCTION_BLOCK:
+			bodyFrc.SetGridBodyForceFunction(xData,input);
 			break;
 			
 		case STRESS_FUNCTION_BLOCK:

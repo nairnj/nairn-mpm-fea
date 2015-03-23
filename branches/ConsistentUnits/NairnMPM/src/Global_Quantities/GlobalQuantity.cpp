@@ -497,7 +497,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		case GRID_ALPHA:
 			value=bodyFrc.GetNonPICDamping(mtime);
 			break;
-            
+		
 		case PARTICLE_ALPHA:
 			value=bodyFrc.GetNonPICParticleDamping(mtime);
 			break;
@@ -522,32 +522,34 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
             // When 1 and 2, all contact stuff here, which means must
             //     a. update lastArchiveContactStep, which is done in GetArchiveContactStepInterval
             //     b. clear force after reading
-            //     c. totalSteps will never be zero, so no need to track last contact force
+            //     c. Store last contact force in case another component is called next
+            //     d. totalSteps will never be zero, so no need to track last contact force
             // When 3
             //     a. VTK archiving tracks lastArchiveContactStep
-            //     b. Do clear force (it is cleared on each VTK archive)
+            //     b. Do not clear force (it is cleared on each VTK archive)
             //     c. VTK archiving will also set lastContactForce in case get here just after VTK archiving
             //          (since global archiving done after step is done
-			int totalSteps=archiver->GetArchiveContactStepInterval();
-			bool clearForces=!archiver->GetDoingArchiveContact();
+			int totalSteps = archiver->GetArchiveContactStepInterval();
+			bool clearForces = !archiver->GetDoingArchiveContact();
 			Vector ftotal;
 			ZeroVector(&ftotal);
 			
 			if(totalSteps>0)
 			{	// non-zero steps, may or may not be doing VTKArchive
 				for(p=1;p<=nnodes;p++)
-				{	Vector fcontact=nd[p]->GetTotalContactForce(clearForces);
+				{	Vector fcontact = nd[p]->GetTotalContactForce(clearForces);
 					AddVector(&ftotal,&fcontact);
 				}
-				ScaleVector(&ftotal,-1./(double)totalSteps);           // force of rigid particles on the object (per step)
+ 				ScaleVector(&ftotal,-1./(double)totalSteps);           // force of rigid particles on the object (per step)
+                archiver->SetLastContactForce(ftotal);
 			}
 			else
-			{	// VTK task just found contact force, so use it here
+			{	// Global Quantity or VTK task just found contact force, so use it here
 				ftotal=archiver->GetLastContactForce();
 			}
 			// if totalSteps==0 and clearForces, then must be zero, as initialized above
 				
-			// pick the component
+ 			// pick the component
 			if(quantity==TOT_FCONX)
 				value=ftotal.x;
 			else if(quantity==TOT_FCONY)

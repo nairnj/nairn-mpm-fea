@@ -42,6 +42,12 @@ void CrackVelocityFieldSingle::AddFtotSpreadTask3(Vector *f)
 		mvf[0]->AddFtot(f);
 }
 
+// Add gravity and body force at a node in g mm/sec^2
+void CrackVelocityFieldSingle::AddGravityAndBodyForceTask3(Vector *gridBodyForce)
+{	if(mvf[0]->numberPoints>0)
+		mvf[0]->AddGravityAndBodyForceTask3(gridBodyForce);
+}
+
 #pragma mark TASK 4 METHODS
 
 // update momenta for this MPM step

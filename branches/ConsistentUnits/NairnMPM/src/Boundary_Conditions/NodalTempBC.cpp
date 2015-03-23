@@ -48,7 +48,7 @@ BoundaryCondition *NodalTempBC::UnsetDirection(void)
 BoundaryCondition *NodalTempBC::PrintBC(ostream &os)
 {
     char nline[200];
-	sprintf(nline,"%7d %2d %15.7e %15.7e",nodeNum,style,value,ftime);
+	sprintf(nline,"%7d %2d %15.7e %15.7e",nodeNum,style,GetBCValueOut(),GetBCFirstTimeOut());
     os << nline;
 	PrintFunction(os);
 	return (BoundaryCondition *)GetNextObject();

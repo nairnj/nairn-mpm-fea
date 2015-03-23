@@ -40,6 +40,7 @@
 #include "Patches/GridPatch.hpp"
 #include "Boundary_Conditions/NodalConcBC.hpp"
 #include "Boundary_Conditions/NodalTempBC.hpp"
+#include "System/UnitsController.hpp"
 #include <time.h>
 
 // global analysis object
@@ -495,7 +496,8 @@ void NairnMPM::PreliminaryCalcs(void)
     // Loaded Material Points
     if(firstLoadedPt!=NULL)
     {   PrintSection("MATERIAL POINTS WITH EXTERNAL FORCES");
-        cout << "Point   DOF ID     Load (N)     Arg (ms/ms^-1)  Function\n"
+        cout << "Point   DOF ID     Load (" << UnitsController::Label(FEAFORCE_UNITS) << ")     Arg ("
+			<< UnitsController::Label(BCARG_UNITS) << ")  Function\n"
         << "----------------------------------------------------------\n";
         nextBC=(BoundaryCondition *)firstLoadedPt;
         while(nextBC!=NULL)
@@ -507,7 +509,8 @@ void NairnMPM::PreliminaryCalcs(void)
     // Traction Loaded Material Points
     if(firstTractionPt!=NULL)
     {   PrintSection("MATERIAL POINTS WITH TRACTIONS");
-        cout << "Point   DOF Face ID   Stress (MPa)    Arg (ms/ms^-1)  Function\n"
+        cout << "Point   DOF Face ID   Stress (" << UnitsController::Label(PRESSURE_UNITS) << ")    Arg ("
+			<< UnitsController::Label(BCTIME_UNITS) << ")  Function\n"
         << "----------------------------------------------------------------\n";
         nextBC=(BoundaryCondition *)firstTractionPt;
         while(nextBC!=NULL)
@@ -519,7 +522,7 @@ void NairnMPM::PreliminaryCalcs(void)
     // Diffusion boundary conditions
 	if(DiffusionTask::active)
 	{   PrintSection("NODAL POINTS WITH FIXED CONCENTRATIONS");
-		cout << "  Node  ID    Conc (/csat)   Arg (ms/ms^-1)  Function\n"
+		cout << "  Node  ID    Conc (/csat)   Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Function\n"
 		<< "------------------------------------------------------\n";
 		nextBC=firstConcBC;
 		while(nextBC!=NULL)
@@ -529,7 +532,7 @@ void NairnMPM::PreliminaryCalcs(void)
 		//---------------------------------------------------
 		// Concentration Flux Material Points
 		PrintSection("MATERIAL POINTS WITH CONCENTRATION FLUX");
-		cout << " Point  DOF Face ID   Flux (mm/sec)   Arg (ms/ms^-1)  Function\n"
+		cout << " Point  DOF Face ID   Flux (mm/sec)   Arg ("<< UnitsController::Label(BCARG_UNITS) << ")  Function\n"
 		<< "---------------------------------------------------------------\n";
 		nextBC=(BoundaryCondition *)firstFluxPt;
 		while(nextBC!=NULL)
@@ -541,7 +544,7 @@ void NairnMPM::PreliminaryCalcs(void)
     // Conduction boundary conditions
 	if(ConductionTask::active)
 	{   PrintSection("NODAL POINTS WITH FIXED TEMPERATURES");
-		cout << " Node   ID   Temp (-----)   Arg (ms/ms^-1)  Function\n"
+		cout << " Node   ID   Temp (-----)   Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Function\n"
 		<< "------------------------------------------------------\n";
 		nextBC=firstTempBC;
 		while(nextBC!=NULL)
@@ -551,7 +554,7 @@ void NairnMPM::PreliminaryCalcs(void)
 		//---------------------------------------------------
 		// Heat Flux Material Points
 		PrintSection("MATERIAL POINTS WITH HEAT FLUX");
-		cout << " Point  DOF Face ID   Flux (W/m^2)    Arg (ms/ms^-1)  Function\n"
+		cout << " Point  DOF Face ID   Flux (W/m^2)    Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Function\n"
 		<< "---------------------------------------------------------------\n";
 		nextBC=(BoundaryCondition *)firstHeatFluxPt;
 		while(nextBC!=NULL)
@@ -568,13 +571,13 @@ void NairnMPM::PreliminaryCalcs(void)
 	// background grid info
 	mpmgrid.Output(ptsPerElement,IsAxisymmetric());
     
-    sprintf(fline,"Adjusted time step (ms): %.7e",1000.*timestep);
+    sprintf(fline,"Adjusted time step (%s): %.7e",UnitsController::Label(BCTIME_UNITS),timestep*UnitsController::Scaling(1.e3));
     cout << fline << endl;
     
     // prpagation time step and other settings when has cracks
     if(firstCrack!=NULL)
 	{	if(propagate[0])
-		{   sprintf(fline,"Propagation time step (ms): %.7e",1000.*propTime);
+		{   sprintf(fline,"Propagation time step (%s): %.7e",UnitsController::Label(BCTIME_UNITS),propTime*UnitsController::Scaling(1.e3));
 			cout << fline << endl;
 		}
 		

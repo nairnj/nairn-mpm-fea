@@ -43,7 +43,8 @@ class MatVelocityField
 		void ChangeMatMomentum(Vector *,bool,double);
 		void AddContactForce(Vector *);
 		void CalcVelocityForStrainUpdate(void);
-        void AddFtot(Vector *);
+		void AddGravityAndBodyForceTask3(Vector *);
+		void AddFtot(Vector *);
         void AddFtotScaled(Vector *,double);
         void UpdateMomentum(double);
         void IncrementNodalVelAcc(double,Vector *,Vector *) const;

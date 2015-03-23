@@ -753,12 +753,12 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			double normalize=theShape->particleCount();
 			while((i=theShape->nextParticle())>=0)
 			{   newLoadBC=new MatPtLoadBC(i+1,dof,style);
-				newLoadBC->ftime=ftime;
+				newLoadBC->SetBCFirstTime(ftime);
 				newLoadBC->SetFunction(function);
 				if(function==NULL)
-					newLoadBC->value=load/normalize;
+					newLoadBC->SetBCValue(load/normalize);
 				else
-					newLoadBC->value=1./normalize;
+					newLoadBC->SetBCValue(1./normalize);
 				mpLoadCtrl->AddObject(newLoadBC);
 			}
 		}
@@ -771,9 +771,9 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			theShape->resetParticleEnumerator();
 			while((i=theShape->nextParticle())>=0)
 			{   newTractionBC=new MatPtTractionBC(i+1,dof,face,style);
-				newTractionBC->ftime=ftime;
+				newTractionBC->SetBCFirstTime(ftime);
 				newTractionBC->SetFunction(function);
-				newTractionBC->value=load;
+				newTractionBC->SetBCValue(load);
 				mpTractionCtrl->AddObject(newTractionBC);
 			}
 		}
@@ -786,8 +786,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			theShape->resetParticleEnumerator();
 			while((i=theShape->nextParticle())>=0)
 			{   newFluxBC=new MatPtFluxBC(i+1,dof,style,face);
-				newFluxBC->value=load;
-				newFluxBC->ftime=ftime;
+				newFluxBC->SetBCValue(load);
+				newFluxBC->SetBCFirstTime(ftime);
 				newFluxBC->SetFunction(function);
 				mpConcFluxCtrl->AddObject(newFluxBC);
 			}
@@ -801,8 +801,8 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 			theShape->resetParticleEnumerator();
 			while((i=theShape->nextParticle())>=0)
 			{   newFluxBC=new MatPtHeatFluxBC(i+1,dof,style,face);
-				newFluxBC->value=load;
-				newFluxBC->ftime=ftime;
+				newFluxBC->SetBCValue(load);
+				newFluxBC->SetBCFirstTime(ftime);
 				newFluxBC->SetFunction(function);
 				mpHeatFluxCtrl->AddObject(newFluxBC);
 			}

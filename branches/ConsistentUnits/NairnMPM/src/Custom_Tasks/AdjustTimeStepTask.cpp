@@ -30,7 +30,7 @@ const char *AdjustTimeStepTask::TaskName(void) { return "Periodically adjust MPM
 
 // Read task parameter - if pName is valid, set input for type
 //    and return pointer to the class variable
-char *AdjustTimeStepTask::InputParam(char *pName,int &input)
+char *AdjustTimeStepTask::InputParam(char *pName,int &input,double &gScaling)
 {
     if(strcmp(pName,"adjustTime")==0)
     {	input=DOUBLE_NUM;
@@ -43,7 +43,7 @@ char *AdjustTimeStepTask::InputParam(char *pName,int &input)
     }
 	
 	// check remaining commands
-    return CustomTask::InputParam(pName,input);
+    return CustomTask::InputParam(pName,input,gScaling);
 }
 
 #pragma mark GENERIC TASK METHODS

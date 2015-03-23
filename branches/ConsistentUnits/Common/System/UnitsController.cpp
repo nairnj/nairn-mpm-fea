@@ -38,8 +38,14 @@ const char *UnitsController::Label(int type)
 			switch(type)
 			{	case ERR_UNITS:
 					return "J/m^2";
-				case OUTLENGTH_UNITS:
+				case CULENGTH_UNITS:
 					return "mm";
+				case CUMASS_UNITS:
+					return "g";
+				case TIME_UNITS:
+					return "sec";
+				case CUVELOCITY_UNITS:
+					return "mm/sec";
 				case TRACTIONSLOPE_UNITS:
 					return "MPa/mm";
 				case PRESSURE_UNITS:
@@ -56,14 +62,21 @@ const char *UnitsController::Label(int type)
 					return "g/cm^3";
 				case STRESSINTENSITY_UNITS:
 					return "MPa-sqrt(m)";
-				case FORCE_UNITS:
+				case FEAFORCE_UNITS:
 					// for FEA output
 					return "N";
-				case WORK_UNITS:
+				case FEAWORK_UNITS:
 					// for FEA output
 					return "J";
 				case INTERFACEPARAM_UNITS:
 					return "MPa/mm";
+				case TARGETKE_UNITS:
+					// special case for feedback damping - other units same as work
+					return "micro J";
+				case BCARG_UNITS:
+					return "ms/ms^-1";
+				case BCTIME_UNITS:
+					return "ms";
 				default:
 					break;
 			}

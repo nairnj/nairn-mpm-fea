@@ -347,10 +347,9 @@ void MassAndMomentumTask::Execute(void)
 	// locate BCs with reflected nodes
     if(firstRigidVelocityBC!=NULL)
     {   NodalVelBC *nextBC=firstRigidVelocityBC;
-        double mstime=1000.*mtime;
         //cout << "# Find Reflected Nodes" << endl;
         while(nextBC!=NULL)
-            nextBC = nextBC->SetMirroredVelBC(mstime);
+            nextBC = nextBC->SetMirroredVelBC(mtime);
     }
 	
 	// used to call class methods for material contact and crack contact here

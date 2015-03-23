@@ -23,18 +23,20 @@ class NodalPoint;
 class BodyForce
 {
     public:
-        double damping;				// external damping
-        bool useDamping;            // true when used
-        double dampingCoefficient;	// 1/Q in Nose-Hoover feedback damping
-        bool useFeedback;           // true when used
+		double damping;				// external damping
+		bool useDamping;            // true when constant grid or grid feedback damping is on
+		double dampingCoefficient;	// 1/Q in Nose-Hoover feedback damping
+		bool useFeedback;           // true when grid feedback damping is on (useDamping true too)
     
-        double pdamping;                // same for particle damping
-        bool usePDamping;
-        double pdampingCoefficient;
-        bool usePFeedback;
+        double pdamping;            // same for particle damping
+        bool usePDamping;           // true when constant particle or particle feedback damping is on
+        double pdampingCoefficient; // 1/Q in Nose-Hoover feedback damping
+        bool usePFeedback;          // true when particle feedback damping is on (usePDamping true too)
     
-        bool useGridFeedback;       // use grid kinetic energy to evolve feedback terms
+		bool useGridFeedback;       // use grid kinetic energy to evolve feedback terms
         Vector gforce;              // gravity forces
+		bool gravity;               // true if gravity turned on
+		bool hasGridBodyForce;		// true if has any grid body force functions
 		
         // constructors and destructors
         BodyForce();
@@ -42,7 +44,7 @@ class BodyForce
     
         // methods
 		void Activate(void);
-		void AddGravity(Vector *,double,double);
+		void GetGridBodyForce(Vector *,NodalPoint *,double);
 		double GetDamping(double);
         double GetParticleDamping(double);
         double GetNonPICDamping(double);
@@ -52,7 +54,8 @@ class BodyForce
 		void SetTargetFunction(char *,bool);
         void SetMaxAlpha(double,bool);
 		void SetGridDampingFunction(char *,bool);
-        void SetFractionPIC(double);
+		void SetGridBodyForceFunction(char *,int);
+		void SetFractionPIC(double);
 	
 	private:
         double alpha,maxAlpha;
@@ -62,12 +65,13 @@ class BodyForce
         double palpha,maxPAlpha;
         ROperation *pgridfunction;
         ROperation *pfunction;
+
+		double fractionPIC;         // (1-beta) in my notes or alpha(PIC) = fractionPIC/dt
+		bool usePICDamping;         // true when PIC damping activated (damping and pdamping need not be true)
     
-        double fractionPIC;
-        bool usePICDamping;
-    
-		bool gravity;               // true if gravity turned on
+		ROperation *gridBodyForceFunction[3];
 		static double varTime;
+		static double varXValue,varYValue,varZValue;
 };
 
 extern BodyForce bodyFrc;

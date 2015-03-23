@@ -12,6 +12,7 @@
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark NonlinearHardening::Constructors and Destructors
 
@@ -22,16 +23,14 @@ SCGLHardening::SCGLHardening() {}
 SCGLHardening::SCGLHardening(MaterialBase *pair) : HardeningLawBase(pair)
 {
 	// defaults are some Tungsten properties
-	yield=2200.;		// MPa
-	yieldMax=0.;		// MPa
-	beta=0.0;			// dimensionless
-	nhard=1.0;			// dimensionless
+	yield=2200.*UnitsController::Scaling(1.e6);
+	yieldMax=0.;
+	beta=0.0;
+	nhard=1.0;
 	
-	GPp=0.01e-3;		// MPa^-1
-	GTp=-2.2e-4;		// K^-1
+	GPp=0.01e-3*UnitsController::Scaling(1.e-6);
+	GTp=-2.2e-4;
 }
-
-//if(yieldMax<yield) return "The maximum yield stress is less than the initial yield stress";
 
 #pragma mark LinearHardening::Initialize
 
@@ -40,7 +39,7 @@ char *SCGLHardening::InputMaterialProperty(char *xName,int &input,double &gScali
 {
     if(strcmp(xName,"GPpG0")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&GPp);
+		return UnitsController::ScaledPtr((char *)&GPp,gScaling,1.e-6);
     }
 	
     else if(strcmp(xName,"GTpG0")==0)
@@ -60,7 +59,7 @@ char *SCGLHardening::InputMaterialProperty(char *xName,int &input,double &gScali
 	
     else if(strcmp(xName,"yieldMax")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&yieldMax);
+		return UnitsController::ScaledPtr((char *)&yieldMax,gScaling,1.e6);
     }
 	
     return HardeningLawBase::InputMaterialProperty(xName,input,gScaling);
@@ -78,10 +77,10 @@ const char *SCGLHardening::VerifyAndLoadProperties(int np)
 	HardeningLawBase::VerifyAndLoadProperties(np);
     
 	// reduced maximum yield stress
-	yldMaxred = yieldMax*1.e6/parent->rho;
+	yldMaxred = yieldMax/parent->rho;
     
-    // reduce shear modulus pressure dependence
-    GPpred = GPp*parent->rho*1.e-6;
+    // reduced shear modulus pressure dependence
+    GPpred = GPp*parent->rho;
 	
 	// base class never has an error
     return NULL;
@@ -93,14 +92,17 @@ void SCGLHardening::PrintYieldProperties(void) const
     cout << GetHardeningLawName() << endl;
     
     // yield
-    MaterialBase::PrintProperty("yld",yield,"");
+    MaterialBase::PrintProperty("yld",yield*UnitsController::Scaling(1.e-6),"");
     MaterialBase::PrintProperty("beta",beta,"");
     MaterialBase::PrintProperty("nhard",nhard,"");
-    MaterialBase::PrintProperty("yMax",yieldMax,"");
+    MaterialBase::PrintProperty("yMax",yieldMax*UnitsController::Scaling(1.e-6),"");
     cout << endl;
 
 	// shear temperature and pressure dependence
-	MaterialBase::PrintProperty("Gp'/G0",GPp,"MPa^-1");
+	char glabel[20];
+	strcpy(glabel,UnitsController::Label(PRESSURE_UNITS));
+	strcat(glabel,"^-1");
+	MaterialBase::PrintProperty("Gp'/G0",GPp*UnitsController::Scaling(1.e6),glabel);
 	MaterialBase::PrintProperty("GT'/G0",GTp,"K^-1");
 	cout << endl;
 }

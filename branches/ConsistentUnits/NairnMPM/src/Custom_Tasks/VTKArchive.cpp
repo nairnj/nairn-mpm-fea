@@ -45,7 +45,7 @@ const char *VTKArchive::TaskName(void) { return "Archive grid results to VTK fil
 // Read task parameter - if pName is valid, set input for type
 //    and return pointer to the class variable
 // not thread safe due to push_back()
-char *VTKArchive::InputParam(char *pName,int &input)
+char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
 {
 	int q=-1,thisBuffer=0,pindex=-1;
 	
@@ -196,7 +196,7 @@ char *VTKArchive::InputParam(char *pName,int &input)
 	}
 	
 	// check remaining commands
-    return CustomTask::InputParam(pName,input);
+    return CustomTask::InputParam(pName,input,gScaling);
 }
 
 #pragma mark GENERIC TASK METHODS

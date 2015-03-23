@@ -50,21 +50,21 @@ char *BistableIsotropic::InputMaterialProperty(char *xName,int &input,double &gS
     // bulk
     if(strcmp(xName,"K0")==0)
     {	readbs[K0_PROP]=1;
-        return((char *)&K0);
+		return UnitsController::ScaledPtr((char *)&K0,gScaling,1.e6);
     }
     else if(strcmp(xName,"Kd")==0)
     {	readbs[KD_PROP]=1;
-        return((char *)&Kd);
+		return UnitsController::ScaledPtr((char *)&Kd,gScaling,1.e6);
     }
 	
     // shear
     else if(strcmp(xName,"G0")==0)
     {	readbs[G0_PROP]=1;
-        return((char *)&G0);
+		return UnitsController::ScaledPtr((char *)&G0,gScaling,1.e6);
     }
     else if(strcmp(xName,"Gd")==0)
     {	readbs[GD_PROP]=1;
-        return((char *)&Gd);
+		return UnitsController::ScaledPtr((char *)&Gd,gScaling,1.e6);
     }
     
     // cte
@@ -174,9 +174,9 @@ const char *BistableIsotropic::VerifyAndLoadProperties(int np)
 	
     // convert strain rules in percent to absolute strains
     if(rule==VONMISES_RULE)
-		dVcrit*=1.e6/rho;			// convert MPa to specific stress
+		dVcrit *= UnitsController::Scaling(1.e6)/rho;			// convert to specific stress
 	else
-		dVcrit/=100.;
+		dVcrit /= 100.;											// % to absolute strain
     dVii/=100.;
 	
 	// call super-super class (skip IsotropicMat due to conflicts and Elastic because has none)
@@ -187,13 +187,13 @@ const char *BistableIsotropic::VerifyAndLoadProperties(int np)
 void BistableIsotropic::PrintMechanicalProperties(void) const
 {
 	PrintProperty("Initial:",false);
-	PrintProperty("K",K0,"");
-	PrintProperty("G",G0,"");
+	PrintProperty("K",K0*UnitsController::Scaling(1.e-6),"");
+	PrintProperty("G",G0*UnitsController::Scaling(1.e-6),"");
 	PrintProperty("a",a0,"");
 	cout << endl;
 	
  	PrintProperty("Transformed:",false);
-	PrintProperty("K",Kd,"");
+	PrintProperty("K",Kd*UnitsController::Scaling(1.e-6),"");
 	PrintProperty("G",Gd,"");
 	PrintProperty("a",ad,"");
 	cout << endl;
@@ -206,7 +206,7 @@ void BistableIsotropic::PrintMechanicalProperties(void) const
     {   sprintf(mline,"Distortion transition at sqrt(0.5*e'ij e'ij) = %g%c",100.*dVcrit,'%');
 	}
 	else if(rule==VONMISES_RULE)
-    {   sprintf(mline,"Distortion transition at sqrt(0.5*s'ij s'ij) = %g MPa",1.e-6*rho*dVcrit);
+    {   sprintf(mline,"Distortion transition at sqrt(0.5*s'ij s'ij) = %g MPa",rho*dVcrit*UnitsController::Scaling(1.e-6));
 	}
 
 	cout << mline << endl;
@@ -276,11 +276,11 @@ const char *BistableIsotropic::CurrentProperties(short newState,int np)
     }
     
     // analysis properties this state
-    E=9.e6*K*G/(G + 3.*K);
+    E=9.*K*G/(G + 3.*K);
     nu=(3.*K-2.*G)/(6.*K+2.*G);
 	if(DbleEqual(E,0.0))
 		return "State with zero modulus is not supported.";
-    err=SetAnalysisProps(np,E,E,E,nu,nu,nu,1.e6*G,1.e6*G,1.e6*G,
+    err=SetAnalysisProps(np,E,E,E,nu,nu,nu,G,G,G,
 			1.e-6*aI,1.e-6*aI,1.e-6*aI,betaI*concSaturation,betaI*concSaturation,betaI*concSaturation);
 	
 	return err;
@@ -428,7 +428,7 @@ int BistableIsotropic::MaterialTag(void) const { return BISTABLEISO; }
 	Uses max sqrt((K +4G/3)/rho) which is dilational wave speed
 */
 double BistableIsotropic::WaveSpeed(bool threeD,MPMBase *mptr) const
-{ return 1000.*fmax(sqrt((K0+4.*G0/3.)/rho),sqrt((Kd+4.*Gd/3.)/rho));
+{ return fmax(sqrt((K0+4.*G0/3.)/rho),sqrt((Kd+4.*Gd/3.)/rho));
 }
 
 // maximum diffusion coefficient in mm^2/sec

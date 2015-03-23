@@ -48,7 +48,7 @@ void Viscoelastic::PrintMechanicalProperties(void) const
     for(i=0;i<ntaus;i++)
 	{	PrintProperty("i",(double)i,"");
 		PrintProperty("Gk",Gk[i]*UnitsController::Scaling(1.e-6),"");
-		PrintProperty("tauk",tauk[i],"s");
+		PrintProperty("tauk",tauk[i],UnitsController::Label(TIME_UNITS));
         cout << endl;
     }
 	

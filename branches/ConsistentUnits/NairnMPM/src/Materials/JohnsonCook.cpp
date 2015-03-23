@@ -13,6 +13,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Global_Quantities/ThermalRamp.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark JohnsonCook::Constructors and Destructors
 
@@ -21,10 +22,10 @@ JohnsonCook::JohnsonCook() {}
 JohnsonCook::JohnsonCook(MaterialBase *pair) : HardeningLawBase(pair)
 {
     // Ajc is in the yield stress in HardenLawBase class
-	Bjc = 0.;             // in MPa
+	Bjc = 0.;             // pressure
 	njc = 1.;             // dimensionless
 	Cjc = 0.;             // dimensionless
-	ep0jc = 1.;           // sec^-1
+	ep0jc = 1.;           // time^-1
 	Tmjc = 1000.;         // Melting point in K relative to thermal.reference
     mjc = 1.;             // dimensionless
 }
@@ -36,12 +37,12 @@ char *JohnsonCook::InputMaterialProperty(char *xName,int &input,double &gScaling
 {
     if(strcmp(xName,"Bjc")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&Bjc);
+		return UnitsController::ScaledPtr((char *)&Bjc,gScaling,1.e6);
     }
     else if(strcmp(xName,"Ajc")==0)
     {	input=DOUBLE_NUM;
-       return((char *)&yield);
-    }
+		return UnitsController::ScaledPtr((char *)&yield,gScaling,1.e6);
+	}
     else if(strcmp(xName,"njc")==0)
     {	input=DOUBLE_NUM;
         return((char *)&njc);
@@ -70,12 +71,15 @@ char *JohnsonCook::InputMaterialProperty(char *xName,int &input,double &gScaling
 void JohnsonCook::PrintYieldProperties(void) const
 {
     cout << GetHardeningLawName() << endl;
-    MaterialBase::PrintProperty("A",yield,"");
-	MaterialBase::PrintProperty("B",Bjc,"");
+    MaterialBase::PrintProperty("A",yield*UnitsController::Scaling(1.e-6),"");
+	MaterialBase::PrintProperty("B",Bjc*UnitsController::Scaling(1.e-6),"");
 	MaterialBase::PrintProperty("n",njc,"");
     cout << endl;
 	MaterialBase::PrintProperty("C",Cjc,"");
-	MaterialBase::PrintProperty("ep0",ep0jc,"s^-1");
+	char glabel[20];
+	strcpy(glabel,UnitsController::Label(TIME_UNITS));
+	strcat(glabel,"^-1");
+	MaterialBase::PrintProperty("ep0",ep0jc,glabel);
     cout << endl;
 	MaterialBase::PrintProperty("Tm",Tmjc,"K");
     MaterialBase::PrintProperty("T0",thermal.reference,"K");
@@ -89,8 +93,8 @@ const char *JohnsonCook::VerifyAndLoadProperties(int np)
     if(Tmjc <= thermal.reference)
         return "The melting temperature must be >= the reference temperature";
     
-	// reduced prooperties (Units N/m^2 mm^3/g = (g-mm^2/sec^2)/g when props in MPa and rho in g/mm^3)
-    Bred = Bjc*1.e6/parent->rho;
+	// reduced prooperties
+    Bred = Bjc/parent->rho;
 	
     // reduced yield stress or Ajc
 	HardeningLawBase::VerifyAndLoadProperties(np);

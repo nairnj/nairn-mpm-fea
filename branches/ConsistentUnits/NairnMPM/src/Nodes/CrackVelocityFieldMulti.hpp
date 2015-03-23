@@ -39,6 +39,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 	
 		virtual void AddFtotSpreadTask3(Vector *);
 		virtual void CopyGridForces(NodalPoint *,int);
+		virtual void AddGravityAndBodyForceTask3(Vector *);
 	
 		virtual void UpdateMomentaOnField(double);
 	

@@ -99,22 +99,22 @@ void TrilinearTraction::PrintMechanicalProperties(void) const
 	PrintProperty("sigI1",stress1*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
 	if(kI1>0.)
 		PrintProperty("kI",kI1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
-	PrintProperty("upkI1",umidI,UnitsController::Label(OUTLENGTH_UNITS));
+	PrintProperty("upkI1",umidI,UnitsController::Label(CULENGTH_UNITS));
     cout <<  endl;
 	PrintProperty("sigI2",sI2*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
-	PrintProperty("upkI2",uI2,UnitsController::Label(OUTLENGTH_UNITS));
-	PrintProperty("uIc",delIc,UnitsController::Label(OUTLENGTH_UNITS));
+	PrintProperty("upkI2",uI2,UnitsController::Label(CULENGTH_UNITS));
+	PrintProperty("uIc",delIc,UnitsController::Label(CULENGTH_UNITS));
     cout <<  endl;
 	
 	PrintProperty("GcII",JIIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
 	PrintProperty("sigII1",stress2*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
 	if(kII1>0.)
 		PrintProperty("kII",kII1*UnitsController::Scaling(1.e-6),UnitsController::Label(TRACTIONSLOPE_UNITS));
-	PrintProperty("upkII1",umidII,UnitsController::Label(OUTLENGTH_UNITS));
+	PrintProperty("upkII1",umidII,UnitsController::Label(CULENGTH_UNITS));
     cout <<  endl;
 	PrintProperty("sigII2",sII2*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
-	PrintProperty("upkII2",uII2,UnitsController::Label(OUTLENGTH_UNITS));
-	PrintProperty("uIIc",delIIc,UnitsController::Label(OUTLENGTH_UNITS));
+	PrintProperty("upkII2",uII2,UnitsController::Label(CULENGTH_UNITS));
+	PrintProperty("uIIc",delIIc,UnitsController::Label(CULENGTH_UNITS));
     cout <<  endl;
 	
 	PrintProperty("n",nmix,"");

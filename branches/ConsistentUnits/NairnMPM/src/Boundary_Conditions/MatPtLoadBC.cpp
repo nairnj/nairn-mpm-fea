@@ -11,6 +11,7 @@
 #include "Materials/MaterialBase.hpp"
 #include "NairnMPM_Class/MeshInfo.hpp"
 #include "Elements/ElementBase.hpp"
+#include "System/UnitsController.hpp"
 
 // global
 MatPtLoadBC *firstLoadedPt=NULL;
@@ -45,19 +46,17 @@ BoundaryCondition *MatPtLoadBC::PrintBC(ostream &os)
 {
     char nline[200];
     
-    sprintf(nline,"%7d %2d %2d %15.7e %15.7e",ptNum,direction,style,value,ftime);
+    sprintf(nline,"%7d %2d %2d %15.7e %15.7e",ptNum,direction,style,
+			UnitsController::Scaling(1.e-6)*GetBCValueOut(),GetBCFirstTimeOut());
     os << nline;
 	PrintFunction(os);
     
     // initial value is F in N or N/numParticles if net, but if function
     //      initial value is 1 or 1/numParticles if net
 	
-	// rescale
-	value*=1.e6;		// Multiply by 1e6 to get N (kg-m/sec^2) to g-mm/sec^2
+	// rescale ... for fuction value is 1 or 1/numParticles if net force
 	if(style==FUNCTION_VALUE)
-		scale=value;		// ... value is now 1.e6 or 1.e6/numParticles if net force
-	else
-		scale*=1.e6;		// ... same in case using a function
+		scale = GetBCValue();
 	
     return (BoundaryCondition *)GetNextObject();
 }
@@ -74,15 +73,14 @@ MatPtLoadBC *MatPtLoadBC::ZeroMPLoad(void)
 MatPtLoadBC *MatPtLoadBC::AddMPLoad(double bctime)
 {
 	if(style!=SILENT)
-	{	double mstime=1000.*bctime;
-		Vector *pFext=mpm[ptNum-1]->GetPFext();
+	{	Vector *pFext=mpm[ptNum-1]->GetPFext();
 		
 		if(direction==X_DIRECTION)
-			 pFext->x+=BCValue(mstime);
+			 pFext->x+=BCValue(bctime);
 		else if(direction==Y_DIRECTION)
-			 pFext->y+=BCValue(mstime);
+			 pFext->y+=BCValue(bctime);
 		else
-			 pFext->z+=BCValue(mstime);
+			 pFext->z+=BCValue(bctime);
 	}
 	else
 	{	double mp=mpm[ptNum-1]->mp;												// in g
@@ -118,23 +116,27 @@ MatPtLoadBC *MatPtLoadBC::AddMPLoad(double bctime)
 // if LINEAR_VALUE, set finalTime to time when load returns to zero
 MatPtLoadBC *MatPtLoadBC::ReverseLinearLoad(double bctime,double *finalTime,bool holdFirst)
 {
-	double mstime=1000.*bctime;
-	
     switch(style)
     {	case LINEAR_VALUE:
-            if(mstime>=ftime)
-			{   offset = BCValue(mstime);
+            if(bctime>=GetBCFirstTime())
+			{   SetBCOffset(BCValue(bctime));
                 if(holdFirst)
-                {   holdValue = value;
+				{	// change to offset (set above) with zero slope to get a constant load
+                    holdValue = GetBCValue();
                     holding = true;
-                    value = 0.;
+                    SetBCValue(0.);
                 }
                 else
-                {   value = holding ? -holdValue : -value ;
-                    ftime = mstime;
+				{	// get unloading slope (units/time)
+					double bcvalue = holding ? -holdValue : -GetBCValue() ;
+					
+					// change to offset+(slope)*(time-ftime) by setting offset (above), new slope, and new first time 
+					SetBCValueCU(bcvalue);
+                    SetBCFirstTimeCU(bctime);
                     
+					// find time when BC returns to zero
                     // new BC is offset+value*(mstime-ftime), which is zero when mstime = ftime-offset/value
-                    *finalTime = 0.001*(ftime - offset/value);
+                    *finalTime = GetBCFirstTime() - GetBCOffset()/GetBCValue();
                 }
                 
             }
@@ -149,13 +151,11 @@ MatPtLoadBC *MatPtLoadBC::ReverseLinearLoad(double bctime,double *finalTime,bool
 // input is analysis time in seconds
 MatPtLoadBC *MatPtLoadBC::MakeConstantLoad(double bctime)
 {
-	double mstime=1000.*bctime;
-	
     switch(style)
     {	case LINEAR_VALUE:
-            if(mstime>=ftime)
-            {	value=BCValue(mstime);
-                style=CONSTANT_VALUE;
+            if(bctime>=GetBCFirstTime())
+            {	style=CONSTANT_VALUE;
+				SetBCValueCU(BCValue(bctime));
             }
             break;
         default:
@@ -243,6 +243,11 @@ void MatPtLoadBC::GetPosition(double *xpos,double *ypos,double *zpos,double *rot
 	*rot=mpm[ptNum-1]->GetParticleRotationZ();
 }
 
+// set value (and scale legacy N to uN, and MPa to Pa)
+void MatPtLoadBC::SetBCValue(double bcvalue)
+{	BoundaryCondition::SetBCValue(UnitsController::Scaling(1.e6)*bcvalue);
+}
+
 #pragma mark MatPtLoadBC: Class Methods
 
 // Calculate forces applied to particles at time stepTime in g-mm/sec^2
@@ -255,5 +260,4 @@ void MatPtLoadBC::SetParticleFext(double stepTime)
     while(nextLoad!=NULL)
     	nextLoad=nextLoad->AddMPLoad(stepTime);
 }
-
 

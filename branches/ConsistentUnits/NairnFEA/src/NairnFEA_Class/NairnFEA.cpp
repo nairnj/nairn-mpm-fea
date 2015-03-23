@@ -377,7 +377,7 @@ void NairnFEA::DisplacementResults(void)
     if(outFlags[DISPLACEMENT_OUT]=='N') return;
     
     // heading
-	sprintf(fline,"NODAL DISPLACEMENTS (in %s)",UnitsController::Label(OUTLENGTH_UNITS));
+	sprintf(fline,"NODAL DISPLACEMENTS (in %s)",UnitsController::Label(CULENGTH_UNITS));
     PrintSection(fline);
     if(np==AXI_SYM)
 	cout << " Node        u               w               v" << endl;
@@ -421,7 +421,7 @@ void NairnFEA::ForceStressEnergyResults(void)
 	
     if(outFlags[FORCE_OUT]!='N' || outFlags[ELEMSTRESS_OUT]!='N')
 	{	sprintf(fline,"NODAL FORCES (in %s) AND STRESSES (in %s) IN EACH ELEMENT",
-						UnitsController::Label(FORCE_UNITS),UnitsController::Label(PRESSURE_UNITS));
+						UnitsController::Label(FEAFORCE_UNITS),UnitsController::Label(PRESSURE_UNITS));
         PrintSection(fline);
 	}
    
@@ -573,7 +573,7 @@ void NairnFEA::ReactionResults(void)
     if(outFlags[REACT_OUT]=='N') return;
     
 	char fline[200];
-	sprintf(fline,"REACTIVITIES AT FIXED NODES (in %s)",UnitsController::Label(FORCE_UNITS));
+	sprintf(fline,"REACTIVITIES AT FIXED NODES (in %s)",UnitsController::Label(FEAFORCE_UNITS));
 	PrintSection(fline);
     cout << " Node           F" << xax << "                  F" << yax
             << "                  F" << zax << endl;
@@ -600,7 +600,7 @@ void NairnFEA::EnergyResults(void)
     if(outFlags[ENERGY_OUT]=='N') return;
     
     // heading
-	sprintf(fline,"STRAIN ENERGIES IN ELEMENTS (in %s)",UnitsController::Label(WORK_UNITS));
+	sprintf(fline,"STRAIN ENERGIES IN ELEMENTS (in %s)",UnitsController::Label(FEAWORK_UNITS));
 	PrintSection(fline);
     cout << " Elem      Strain Energy                 Elem      Strain Energy" << endl;
     cout << "------------------------------------------------------------------" << endl;

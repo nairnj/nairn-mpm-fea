@@ -66,7 +66,7 @@ void NairnFEA::MyStartResultsOutput(void)
     // Fixed Displacements
 	if(firstDispBC!=NULL)
 	{	PrintSection("NODAL POINTS WITH FIXED DISPLACEMENTS");
-		cout << " Node  DOF  Displacement (" << UnitsController::Label(OUTLENGTH_UNITS) << ")  Axis        Angle\n"
+		cout << " Node  DOF  Displacement (" << UnitsController::Label(CULENGTH_UNITS) << ")  Axis        Angle\n"
 		<< "----------------------------------------------------\n";
 		NodalDispBC *nextBC=firstDispBC;
 		while(nextBC!=NULL)
@@ -78,7 +78,7 @@ void NairnFEA::MyStartResultsOutput(void)
     // Loaded Nodes
 	if(firstLoadBC!=NULL)
 	{	PrintSection("NODAL POINTS WITH APPLIED LOADS");
-		cout << " Node  DOF       Load (" << UnitsController::Label(FORCE_UNITS) << ")\n"
+		cout << " Node  DOF       Load (" << UnitsController::Label(FEAFORCE_UNITS) << ")\n"
 			<< "------------------------------\n";
 		NodalLoad *nextLoad=firstLoadBC;
 		while(nextLoad!=NULL)
@@ -105,11 +105,11 @@ void NairnFEA::MyStartResultsOutput(void)
     {	PrintSection("PERIODIC DIRECTIONS");
 		// x periodic, but y not (not allowed for axisymmetric)
 		if(fmobj->periodic.dof==1)
-		{	sprintf(hline,"x direction from %g to %g %s",periodic.xmin,periodic.xmax,UnitsController::Label(OUTLENGTH_UNITS));
+		{	sprintf(hline,"x direction from %g to %g %s",periodic.xmin,periodic.xmax,UnitsController::Label(CULENGTH_UNITS));
 			cout << hline << endl;
 			if(periodic.fixDu)
 			{	sprintf(hline,"   Displacement jump fixed at %g %s for exx = %g",periodic.du,
-						UnitsController::Label(OUTLENGTH_UNITS),periodic.du/(periodic.xmax-periodic.xmin));
+						UnitsController::Label(CULENGTH_UNITS),periodic.du/(periodic.xmax-periodic.xmin));
 				cout << hline << endl;
 			}
 			if(periodic.fixDudy)
@@ -121,11 +121,11 @@ void NairnFEA::MyStartResultsOutput(void)
 		// y periodic, but x not (only option for axisymmetrix - z periodic, but r not)
 		else if(fmobj->periodic.dof==2)
 		{	char pax = fmobj->IsAxisymmetric() ? 'z' : 'y' ;
-			sprintf(hline,"%c direction from %g to %g %s",pax,periodic.ymin,periodic.ymax,UnitsController::Label(OUTLENGTH_UNITS));
+			sprintf(hline,"%c direction from %g to %g %s",pax,periodic.ymin,periodic.ymax,UnitsController::Label(CULENGTH_UNITS));
 			cout << hline << endl;
 			if(periodic.fixDv)
 			{	sprintf(hline,"   Displacement jump fixed at %g %s for e%c%c = %g",periodic.dv,
-						UnitsController::Label(OUTLENGTH_UNITS),pax,pax,periodic.dv/(periodic.ymax-periodic.ymin));
+						UnitsController::Label(CULENGTH_UNITS),pax,pax,periodic.dv/(periodic.ymax-periodic.ymin));
 				cout << hline << endl;
 			}
 			if(periodic.fixDvdx)
@@ -136,22 +136,22 @@ void NairnFEA::MyStartResultsOutput(void)
 		
 		// x and y both periodic (not allowed for axisymmetric)
 		else
-		{	sprintf(hline,"x direction from %g to %g %s",periodic.xmin,periodic.xmax,UnitsController::Label(OUTLENGTH_UNITS));
+		{	sprintf(hline,"x direction from %g to %g %s",periodic.xmin,periodic.xmax,UnitsController::Label(CULENGTH_UNITS));
 			cout << hline << endl;
 			if(periodic.fixDu)
 			{	sprintf(hline,"   Displacement jump fixed at %g %s for exx = %g",periodic.du,
-						UnitsController::Label(OUTLENGTH_UNITS),periodic.du/(periodic.xmax-periodic.xmin));
+						UnitsController::Label(CULENGTH_UNITS),periodic.du/(periodic.xmax-periodic.xmin));
 				cout << hline << endl;
 			}
 			if(periodic.fixDvdx)
 			{	sprintf(hline,"   Displacement jump dv fixed at %g",periodic.dvdx);
 				cout << hline << endl;
 			}
-			sprintf(hline,"y direction from %g to %g %s",periodic.ymin,periodic.ymax,UnitsController::Label(OUTLENGTH_UNITS));
+			sprintf(hline,"y direction from %g to %g %s",periodic.ymin,periodic.ymax,UnitsController::Label(CULENGTH_UNITS));
 			cout << hline << endl;
 			if(periodic.fixDv)
 			{	sprintf(hline,"   Displacement jump fixed at %g %s for eyy = %g",periodic.dv,
-						UnitsController::Label(OUTLENGTH_UNITS),periodic.dv/(periodic.ymax-periodic.ymin));
+						UnitsController::Label(CULENGTH_UNITS),periodic.dv/(periodic.ymax-periodic.ymin));
 				cout << hline << endl;
 			}
 			if(periodic.fixDudy)

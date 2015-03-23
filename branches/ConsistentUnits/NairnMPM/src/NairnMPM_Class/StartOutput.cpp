@@ -25,6 +25,7 @@
 //#include "Boundary_Conditions/MatPtFluxBC.hpp"
 //#include "Boundary_Conditions/MatPtHeatFluxBC.hpp"
 #include "Cracks/CrackHeader.hpp"
+#include "System/UnitsController.hpp"
 
 /*********************************************************************
     Print setup information
@@ -75,16 +76,14 @@ void NairnMPM::PrintAnalysisType(void)
 	cout << endl;
     
 	// time step and max time
-    cout << "Time step: min(" << 1000.*timestep << " ms, "
+    cout << "Time step: min(" << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS) << ", "
         << fmobj->GetCFLCondition() << " time for wave to cross one cell)\n";
-    cout << "Maximum time: " << 1000.*maxtime << " ms\n\n";
+    cout << "Maximum time: " << maxtime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS) << "\n\n";
 }
 
 // rest of MPM information
 void NairnMPM::MyStartResultsOutput(void)
 {
-	BoundaryCondition *nextBC;
-    
     //---------------------------------------------------
     // Gravity and Damping and Thermal Ramp
     PrintSection("GRAVITY, DAMPING, TRANSPORT, AND THERMAL");

@@ -38,8 +38,6 @@ typedef struct {
 class SLMaterial : public SCGLHardening
 {
     public:
-		// unique properties
-		double Uk,YP,C1,C2;
         
         // constructors and destructors
 		SLMaterial();
@@ -74,6 +72,9 @@ class SLMaterial : public SCGLHardening
         virtual const char *GetHardeningLawName(void) const;
  		
     protected:
+		// unique properties
+		double UkOverk,YP,C1,C2;
+	
 		// independent of particle state
 		double YPred,C2red,YTmin,YTprecision;
 	

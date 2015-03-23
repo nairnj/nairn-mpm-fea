@@ -32,7 +32,7 @@ BoundaryCondition *MatPtHeatFluxBC::PrintBC(ostream &os)
 {
     char nline[200];
     
-    sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,value,ftime);
+    sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,GetBCValueOut(),GetBCFirstTimeOut());
     os << nline;
 	PrintFunction(os);
 	
@@ -81,10 +81,8 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
         bcDir = N_DIRECTION;
 	}
 	else if(direction==EXTERNAL_FLUX)
-	{	double mstime=1000.*bctime;
-		
-		// user should provide in W/m^2 = N/(m-sec), divide by 1000 to get N/(mm-sec)
-		fluxMag.x = 0.001*BCValue(mstime);
+	{	// user should provide in W/m^2 = N/(m-sec), divide by 1000 to get N/(mm-sec)
+		fluxMag.x = 0.001*BCValue(bctime);
 	}
 	else
     {   // coupled surface flux

@@ -162,7 +162,8 @@ int NodalVelBC::ConvertToInputDof(void)
 BoundaryCondition *NodalVelBC::PrintBC(ostream &os)
 {
     char nline[200];
-	sprintf(nline,"%7d %3d %2d %15.7e %15.7e %7.2lf %7.2lf",nodeNum,ConvertToInputDof(),style,value,ftime,angle1,angle2);
+	sprintf(nline,"%7d %3d %2d %15.7e %15.7e %7.2lf %7.2lf",nodeNum,ConvertToInputDof(),style,
+							GetBCValueOut(),GetBCFirstTimeOut(),angle1,angle2);
     os << nline;
 	PrintFunction(os);
 	return (BoundaryCondition *)GetNextObject();
@@ -180,9 +181,10 @@ NodalVelBC *NodalVelBC::CopyNodalVelocities(NodalPoint *nd)
 	int i;
 	int offset=0;
 	for(i=0;i<maxCrackFields;i++)
-	{	if(CrackVelocityField::ActiveField(nd->cvf[i]))
+	{	if(CrackVelocityField::ActiveNonrigidField(nd->cvf[i]))
 			offset=nd->cvf[i]->CopyFieldMomenta(pk,offset);
 	}
+    
     return (NodalVelBC *)GetNextObject();
 }
 
@@ -192,26 +194,26 @@ NodalVelBC *NodalVelBC::PasteNodalVelocities(NodalPoint *nd)
 	int i;
 	int offset=0;
 	for(i=0;i<maxCrackFields;i++)
-	{	if(CrackVelocityField::ActiveField(nd->cvf[i]))
+	{	if(CrackVelocityField::ActiveNonrigidField(nd->cvf[i]))
 			offset=nd->cvf[i]->PasteFieldMomenta(pk,offset);
 	}
     return (NodalVelBC *)GetNextObject();
 }
 
 // set to zero in x, y, or z velocity
-NodalVelBC *NodalVelBC::ZeroVelBC(double mstime)
+NodalVelBC *NodalVelBC::ZeroVelBC(double bctime)
 {	// set if has been activated
-	int i = GetNodeNum(mstime);
+	int i = GetNodeNum(bctime);
 	if(i>0) nd[i]->SetMomVel(&norm);
     return (NodalVelBC *)GetNextObject();
 }
 
 // superpose x, y, or z velocity
-NodalVelBC *NodalVelBC::AddVelBC(double mstime)
+NodalVelBC *NodalVelBC::AddVelBC(double bctime)
 {	// set if has been activated
-	int i = GetNodeNum(mstime);
+	int i = GetNodeNum(bctime);
 	if(i>0)
-    {   currentValue = BCValue(mstime);
+    {   currentValue = BCValue(bctime);
 		if(reflectedNode<0)
 		{	// scalar value in norm direction
 			nd[i]->AddMomVel(&norm,currentValue);
@@ -226,24 +228,24 @@ NodalVelBC *NodalVelBC::AddVelBC(double mstime)
 }
 
 // For rigid BC, see if it has a refleceted node
-NodalVelBC *NodalVelBC::SetMirroredVelBC(double mstime)
+NodalVelBC *NodalVelBC::SetMirroredVelBC(double bctime)
 {
     // exit if not doing mirroring
     if(mirrorSpacing==0) return (NodalVelBC *)GetNextObject();
     
     // set if has been activated
-	int i = GetNodeNum(mstime);
+	int i = GetNodeNum(bctime);
     if(i>0)
     {   // look at neighbor in mirror direction if node i has particles and neighbor is in the grid
         int neighbor = i+mirrorSpacing;
-        if(nd[i]->NumberParticles() && neighbor>0 && neighbor<=nnodes)
+        if(nd[i]->NodeHasNonrigidParticles() && neighbor>0 && neighbor<=nnodes)
         {	// see if neighbor fixes same dof
             if(nd[neighbor]->fixedDirection&dir)
             {	// the next node in mirror direction if in the grid
                 int mirror = neighbor+mirrorSpacing;
                 if(mirror>0 && mirror<=nnodes)
                 {   // it should not fix the direection and should have particles
-                    if((nd[mirror]->fixedDirection&dir)==0 && nd[mirror]->NumberParticles()>0)
+                    if((nd[mirror]->fixedDirection&dir)==0 && nd[mirror]->NodeHasNonrigidParticles()>0)
                     {   // maybe should verify neighbor is for same rigid material, but needs to check all BCs for their ID
                         
                         // found node to reflect
@@ -261,9 +263,9 @@ NodalVelBC *NodalVelBC::SetMirroredVelBC(double mstime)
 // freaction will be sum over all material velocity fields for this BC only
 // freaction will be zero for second BC on same node with same norm
 // total reaction on node us sum of freaction over all BCs
-NodalVelBC *NodalVelBC::InitFtotDirection(double mstime)
+NodalVelBC *NodalVelBC::InitFtotDirection(double bctime)
 {	// set if has been activated
-	int i = GetNodeNum(mstime);
+	int i = GetNodeNum(bctime);
     ZeroVector(&freaction);
 	if(i>0) nd[i]->SetFtotDirection(&norm,timestep,&freaction);
 	return (NodalVelBC *)GetNextObject();
@@ -271,9 +273,10 @@ NodalVelBC *NodalVelBC::InitFtotDirection(double mstime)
 
 // superpose force in direction normal
 // add force for this BC to freaction
-NodalVelBC *NodalVelBC::SuperposeFtotDirection(double mstime)
+NodalVelBC *NodalVelBC::SuperposeFtotDirection(double bctime)
 {	// set if has been activated
-	int i = GetNodeNum(mstime);
+	int i = GetNodeNum(bctime);
+	if(i>0)
 	{	if(reflectedNode<0)
 		{	// use currentValue set earlier in this step
 			nd[i]->AddFtotDirection(&norm,timestep,currentValue,&freaction);
@@ -299,6 +302,7 @@ NodalVelBC *NodalVelBC::AddReactionForce(Vector *totalReaction,int matchID)
 void NodalVelBC::SetReflectedNode(int mirrored) { reflectedNode = mirrored; }
 
 // On rigid particle set spacing to mirrored node
+// Needs structured grid, but does not appear to need equal element sizes
 void NodalVelBC::SetMirrorSpacing(int mirrored)
 {
 	mirrorSpacing = 0;
@@ -352,32 +356,28 @@ void NodalVelBC::GridMomentumConditions(int makeCopy)
 {
     int i;
     NodalVelBC *nextBC;
-	double mstime;
     
 	// convert time to ms, use time at beginning or end of time step
     // On first pass (when true), copy nodal momenta before anything changed
     //	(may make multiple copies, but that is OK)
 	if(makeCopy)
-	{	mstime=1000.*mtime;
-    	nextBC=firstVelocityBC;
+	{	nextBC=firstVelocityBC;
         while(nextBC!=NULL)
-		{	i=nextBC->GetNodeNum();
-			nextBC=nextBC->CopyNodalVelocities(nd[i]);
+		{	i=nextBC->GetNodeNum(mtime);
+			if(i>0) nextBC->CopyNodalVelocities(nd[i]);
+			nextBC = (NodalVelBC *)nextBC->GetNextObject();
         }
     }
-	else
-		mstime=1000.*(mtime+timestep);
-		
+	
     // Now zero nodes with velocity set by BC
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-		nextBC = nextBC->ZeroVelBC(mstime);
+		nextBC = nextBC->ZeroVelBC(mtime);
     
     // Now add all velocities to nodes with velocity BCs
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-		nextBC = nextBC->AddVelBC(mstime);
-	
+		nextBC = nextBC->AddVelBC(mtime);
 }
 
 /**********************************************************
@@ -390,24 +390,23 @@ void NodalVelBC::ConsistentGridForces(void)
     int i;
     NodalVelBC *nextBC = firstVelocityBC;
     
-	// advanced time in msec
-	double mstime = 1000.*(mtime+timestep);
-	
     // First restore initial nodal values
     while(nextBC!=NULL)
-	{	i = nextBC->GetNodeNum();
-		nextBC = nextBC->PasteNodalVelocities(nd[i]);
+	{	i = nextBC->GetNodeNum(mtime);
+		if(i>0) nextBC->PasteNodalVelocities(nd[i]);
+		nextBC = (NodalVelBC *)nextBC->GetNextObject();
     }
 	
     // Second set force to -p(interpolated)/timestep
     nextBC = firstVelocityBC;
     while(nextBC!=NULL)
-		nextBC = nextBC->InitFtotDirection(mstime);
+		nextBC = nextBC->InitFtotDirection(mtime);
     
-    // Now add each superposed velocity BC at incremented time
+	// Now add each superposed velocity BC at incremented time
     nextBC=firstVelocityBC;
     while(nextBC!=NULL)
-		nextBC = nextBC->SuperposeFtotDirection(mstime);
+		nextBC = nextBC->SuperposeFtotDirection(mtime);
+	
 }
 
 /**********************************************************

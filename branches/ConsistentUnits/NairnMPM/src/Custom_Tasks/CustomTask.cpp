@@ -24,7 +24,7 @@ const char *CustomTask::TaskName(void) { return "Unnamed Custom Task"; }
 
 // Read task parameter - if pName is valid, set input for type
 //    and return pointer to the class variable
-char *CustomTask::InputParam(char *pName,int &input) { return NULL; }
+char *CustomTask::InputParam(char *pName,int &input,double &gScaling) { return NULL; }
 
 #pragma mark GENERIC TASK METHODS
 

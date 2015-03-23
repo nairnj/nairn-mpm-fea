@@ -32,7 +32,7 @@ BoundaryCondition *MatPtFluxBC::PrintBC(ostream &os)
 {
     char nline[200];
     
-    sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,value,ftime);
+    sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,GetBCValueOut(),GetBCFirstTimeOut());
     os << nline;
 	PrintFunction(os);
 	
@@ -77,16 +77,15 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
         bcDir = N_DIRECTION;
 	}
 	else if(direction==EXTERNAL_FLUX)
-	{	double mstime=1000.*bctime;
-		// csatrho = rho V csat/V0 = solvent mass per reference volume
+	{	// csatrho = rho V csat/V0 = solvent mass per reference volume
 		// units are 1000 kg mm^3/(m^2-g-sec) = mm/sec
 		csatrho = 1000.*matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
-		fluxMag.x = BCValue(mstime)/csatrho;
+		fluxMag.x = BCValue(bctime)/csatrho;
 	}
 	else
     {   // coupled surface flux and ftime is bath concentration
 		// time variable (t) is replaced by c-cbath, where c is the particle potention and cbath and bath potential
-		varTime = mpmptr->pPreviousConcentration-ftime;
+		varTime = mpmptr->pPreviousConcentration-GetBCFirstTime();
 		GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
 		double currentValue = fabs(function->Val());
 		if(varTime>0.) currentValue=-currentValue;

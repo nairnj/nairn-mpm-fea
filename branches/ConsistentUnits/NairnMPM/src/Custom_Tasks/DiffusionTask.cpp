@@ -102,10 +102,9 @@ void DiffusionTask::ImposeValueBCs(double stepTime)
 		nextBC=nextBC->CopyNodalConcentration(nd[nextBC->GetNodeNum()]);
 	
     // Set active ones to zero
-	double mstime=1000.*stepTime;
     nextBC=firstConcBC;
     while(nextBC!=NULL)
-	{   i=nextBC->GetNodeNum(mstime);
+	{   i=nextBC->GetNodeNum(stepTime);
 	    if(i!=0) nd[i]->gConcentration = 0.;
         nextBC=(NodalConcBC *)nextBC->GetNextObject();
     }
@@ -113,15 +112,15 @@ void DiffusionTask::ImposeValueBCs(double stepTime)
     // Now add all concentrations to nodes with active concentration BCs
     nextBC=firstConcBC;
     while(nextBC!=NULL)
-	{   i=nextBC->GetNodeNum(mstime);
-	    if(i!=0) nd[i]->gConcentration += nextBC->BCValue(mstime);
+	{   i=nextBC->GetNodeNum(stepTime);
+	    if(i!=0) nd[i]->gConcentration += nextBC->BCValue(stepTime);
         nextBC=(NodalConcBC *)nextBC->GetNextObject();
     }
 	
 	// verify all set BCs are between 0 and 1
     nextBC=firstConcBC;
     while(nextBC!=NULL)
-	{   i=nextBC->GetNodeNum(mstime);
+	{   i=nextBC->GetNodeNum(stepTime);
 		if(i!=0)
 		{	if(nd[i]->gConcentration<0)
 				nd[i]->gConcentration = 0.;
@@ -208,10 +207,9 @@ TransportTask *DiffusionTask::SetTransportForceBCs(double deltime)
         nextBC = nextBC->PasteNodalConcentration(nd[nextBC->GetNodeNum()]);
     
     // Set force to - VC(no BC)/timestep
-	double mstime=1000.*(mtime+deltime);
     nextBC=firstConcBC;
     while(nextBC!=NULL)
-    {	i = nextBC->GetNodeNum(mstime);
+    {	i = nextBC->GetNodeNum(mtime);
 		if(i!=0) nd[i]->fdiff = -nd[i]->gVolume*nd[i]->gConcentration/deltime;
 		nextBC = (NodalConcBC *)nextBC->GetNextObject();
     }
@@ -219,8 +217,8 @@ TransportTask *DiffusionTask::SetTransportForceBCs(double deltime)
     // Now add each superposed concentration (* volume) BC at incremented time
     nextBC=firstConcBC;
     while(nextBC!=NULL)
-    {	i = nextBC->GetNodeNum(mstime);
-		if(i!=0) nd[i]->fdiff += nd[i]->gVolume*nextBC->BCValue(mstime)/deltime;
+    {	i = nextBC->GetNodeNum(mtime);
+		if(i!=0) nd[i]->fdiff += nd[i]->gVolume*nextBC->BCValue(mtime)/deltime;
         nextBC = (NodalConcBC *)nextBC->GetNextObject();
     }
 	

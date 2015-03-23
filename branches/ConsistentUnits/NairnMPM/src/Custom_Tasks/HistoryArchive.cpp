@@ -27,7 +27,7 @@ const char *HistoryArchive::TaskName(void) { return "Archive particle history da
 // Read task parameter - if pName is valid, set input for type
 //    and return pointer to the class variable
 // not thread safe due to push_back()
-char *HistoryArchive::InputParam(char *pName,int &input)
+char *HistoryArchive::InputParam(char *pName,int &input,double &gScaling)
 {
     if(strcmp(pName,"archiveTime")==0)
     {	input=DOUBLE_NUM;
@@ -51,7 +51,7 @@ char *HistoryArchive::InputParam(char *pName,int &input)
 	}
 	
 	// check remaining commands
-    return CustomTask::InputParam(pName,input);
+    return CustomTask::InputParam(pName,input,gScaling);
 }
 
 #pragma mark GENERIC TASK METHODS

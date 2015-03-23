@@ -80,6 +80,7 @@ class NodalPoint : public LinkedObject
 		void AddFtotTask3(short,int,Vector *);
 		void AddFtotSpreadTask3(short,Vector);
 		void AddTractionTask3(MPMBase *,short,int,Vector *);
+		void AddGravityAndBodyForceTask3(Vector *);
 		void CopyGridForces(NodalPoint *);
 		void UpdateMomentaOnNode(double);
 		void IncrementDelvaTask5(short,int,double,Vector *,Vector *) const;

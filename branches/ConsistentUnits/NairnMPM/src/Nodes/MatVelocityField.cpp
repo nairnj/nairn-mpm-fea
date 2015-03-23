@@ -159,6 +159,13 @@ void MatVelocityField::CalcVelocityForStrainUpdate(void)
 	CopyScaleVector(&vk,&pk,1./mass);
 }
 
+// Add grid damping force at a node in g mm/sec^2
+void MatVelocityField::AddGravityAndBodyForceTask3(Vector *gridBodyForce)
+{	ftot.x += mass*gridBodyForce->x;
+	ftot.y += mass*gridBodyForce->y;
+	ftot.z += mass*gridBodyForce->z;
+}
+
 // internal force - add or scale and add
 void MatVelocityField::AddFtot(Vector *f)
 {	ftot.x += f->x;

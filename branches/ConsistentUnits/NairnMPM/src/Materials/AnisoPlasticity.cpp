@@ -22,6 +22,7 @@
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "System/UnitsController.hpp"
 
 #include "NairnMPM_Class/NairnMPM.hpp"
 
@@ -49,32 +50,32 @@ char *AnisoPlasticity::InputMaterialProperty(char *xName,int &input,double &gSca
 {
     if(strcmp(xName,"yldxx")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&syxx);
+		return UnitsController::ScaledPtr((char *)&syxx,gScaling,1.e6);
     }
     
     else if(strcmp(xName,"yldyy")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&syyy);
+		return UnitsController::ScaledPtr((char *)&syyy,gScaling,1.e6);
     }
 	
     else if(strcmp(xName,"yldzz")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&syzz);
+		return UnitsController::ScaledPtr((char *)&syzz,gScaling,1.e6);
     }
 
     else if(strcmp(xName,"yldxy")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&tyxy);
+		return UnitsController::ScaledPtr((char *)&tyxy,gScaling,1.e6);
     }
 	
     else if(strcmp(xName,"yldxz")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&tyxz);
+		return UnitsController::ScaledPtr((char *)&tyxz,gScaling,1.e6);
     }
 	
     else if(strcmp(xName,"yldyz")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&tyyz);
+		return UnitsController::ScaledPtr((char *)&tyyz,gScaling,1.e6);
     }
 	
 	return Orthotropic::InputMaterialProperty(xName,input,gScaling);
@@ -102,37 +103,37 @@ const char *AnisoPlasticity::VerifyAndLoadProperties(int np)
 	
 	// reciprocals of reduced yield stresses
 	if(syxx>=0.)
-    {	syxxred2=rho/(syxx*1.e6);
+    {	syxxred2=rho/syxx;
 		syxxred2*=syxxred2;
 	}
 	else
 		syxxred2=0.;		// 1/inf^2
 	if(syyy>=0.)
-    {	syyyred2=rho/(syyy*1.e6);
+    {	syyyred2=rho/syyy;
 		syyyred2*=syyyred2;
 	}
 	else
 		syyyred2=0.;		// 1/inf^2
 	if(syzz>=0.)
-	{	syzzred2=rho/(syzz*1.e6);
+	{	syzzred2=rho/syzz;
 		syzzred2*=syzzred2;
 	}
 	else
 		syzzred2=0.;		// 1/inf^2
 	if(tyxy)
-	{	tyxyred2=rho/(tyxy*1.e6);
+	{	tyxyred2=rho/tyxy;
 		tyxyred2*=tyxyred2;
 	}
 	else
 		tyxyred2=0.;		// 1/inf^2
 	if(tyxz)
-	{	tyxzred2=rho/(tyxz*1.e6);
+	{	tyxzred2=rho/tyxz;
 		tyxzred2*=tyxzred2;
 	}
 	else
 		tyxzred2=0.;		// 1/inf^2
 	if(tyyz)
-	{	tyyzred2=rho/(tyyz*1.e6);
+	{	tyyzred2=rho/tyyz;
 		tyyzred2*=tyyzred2;
 	}
 	else
@@ -169,34 +170,34 @@ void AnisoPlasticity::PrintMechanicalProperties(void) const
 void AnisoPlasticity::PrintYieldProperties(void) const
 {
 	if(syxx>=0.)
-		PrintProperty("yld1",syxx,"");
+		PrintProperty("yld1",syxx*UnitsController::Scaling(1.e-6),"");
 	else
 		PrintProperty("yld1= inf",false);
 		
 	if(syyy>=0.)
-		PrintProperty("yld2",syyy,"");
+		PrintProperty("yld2",syyy*UnitsController::Scaling(1.e-6),"");
 	else
 		PrintProperty("yld2= inf",false);
 		
 	if(syzz>=0.)
-		PrintProperty("yld3",syzz,"");
+		PrintProperty("yld3",syzz*UnitsController::Scaling(1.e-6),"");
 	else
 		PrintProperty("yld3= inf",false);
 		
     cout << endl;
 
 	if(tyyz>=0.)
-		PrintProperty("yld23",tyyz,"");
+		PrintProperty("yld23",tyyz*UnitsController::Scaling(1.e-6),"");
 	else
 		PrintProperty("yld23= inf",false);
 
 	if(tyxz>=0.)
-		PrintProperty("yld13",tyxz,"");
+		PrintProperty("yld13",tyxz*UnitsController::Scaling(1.e-6),"");
 	else
 		PrintProperty("yld13= inf",false);
 	
 	if(tyxy>=0.)
-		PrintProperty("yld12",tyxy,"");
+		PrintProperty("yld12",tyxy*UnitsController::Scaling(1.e-6),"");
 	else
 		PrintProperty("yld12= inf",false);
 	

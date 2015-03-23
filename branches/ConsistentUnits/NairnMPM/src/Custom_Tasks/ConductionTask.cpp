@@ -170,10 +170,9 @@ void ConductionTask::ImposeValueBCs(double stepTime)
 		nextBC=nextBC->CopyNodalTemperature(nd[nextBC->GetNodeNum()]);
 	
     // Zero them all
-	double mstime=1000.*stepTime;
     nextBC=firstTempBC;
     while(nextBC!=NULL)
-	{   i=nextBC->GetNodeNum(mstime);
+	{   i=nextBC->GetNodeNum(stepTime);
 		if(i!=0) nd[i]->gTemperature = 0.;
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
     }
@@ -181,8 +180,8 @@ void ConductionTask::ImposeValueBCs(double stepTime)
     // Now add all temperature to nodes with temperature BCs
     nextBC=firstTempBC;
     while(nextBC!=NULL)
-	{   i = nextBC->GetNodeNum(mstime);
-		if(i!=0) nd[i]->gTemperature += nextBC->BCValue(mstime);
+	{   i = nextBC->GetNodeNum(stepTime);
+		if(i!=0) nd[i]->gTemperature += nextBC->BCValue(stepTime);
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
     }
 }
@@ -272,10 +271,9 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
         nextBC=nextBC->PasteNodalTemperature(nd[nextBC->GetNodeNum()]);
     
     // Set force to - mp Cp T(no BC)/timestep
-	double mstime=1000.*(mtime+deltime);
     nextBC=firstTempBC;
     while(nextBC!=NULL)
-	{   i=nextBC->GetNodeNum(mstime);
+	{   i=nextBC->GetNodeNum(mtime);
 		if(i!=0) nd[i]->fcond = -nd[i]->gMpCp*nd[i]->gTemperature/deltime;
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
 	}
@@ -283,8 +281,8 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
     // Now add each superposed concentration (* mp Cp) BC at incremented time
     nextBC=firstTempBC;
     while(nextBC!=NULL)
-    {	i=nextBC->GetNodeNum(mstime);
-		if(i!=0) nd[i]->fcond += nd[i]->gMpCp*nextBC->BCValue(mstime)/deltime;
+    {	i=nextBC->GetNodeNum(mtime);
+		if(i!=0) nd[i]->fcond += nd[i]->gMpCp*nextBC->BCValue(mtime)/deltime;
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
     }
 	

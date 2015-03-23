@@ -10,6 +10,7 @@
 #include "Read_XML/mathexpr.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "System/UnitsController.hpp"
 
 extern double timestep;
 
@@ -19,8 +20,12 @@ BodyForce bodyFrc;
 
 // global expression variables
 double BodyForce::varTime=0.;
+double BodyForce::varXValue=0.;
+double BodyForce::varYValue=0.;
+double BodyForce::varZValue=0.;
 PRVar keTimeArray[1] = { NULL };
 PRVar gTimeArray[1] = { NULL };
+PRVar bodyArray[4] = { NULL, NULL, NULL, NULL };
 
 #pragma mark BodyForce:Initialize
 
@@ -28,18 +33,19 @@ PRVar gTimeArray[1] = { NULL };
 BodyForce::BodyForce()
 {
 	gravity=FALSE;
+	hasGridBodyForce=FALSE;
 	
 	damping=0.;                 // constant damping
-	useDamping=FALSE;
+	useDamping = false;
 	dampingCoefficient=0.;		// 1/Q in Nose-Hoover feedback
 	useFeedback=FALSE;
 	alpha=0.;					// evolving damping coefficient
     maxAlpha=-1.;               // max evolving alpha
 	function=NULL;              // target kinetic energy function
-	gridfunction=NULL;          // for constant damping that depends on time
+	gridfunction = NULL;          // for constant damping that depends on time
     
 	pdamping=0.;                // same for particle damping
-	usePDamping=FALSE;
+	usePDamping = false;
 	pdampingCoefficient=0.;
 	usePFeedback=FALSE;
     palpha=0.;                  // evoloving particle damping coefficient
@@ -47,11 +53,14 @@ BodyForce::BodyForce()
 	pgridfunction=NULL;
     
 	useGridFeedback=TRUE;		// base feedback on grid kinetic energy
-                                // provide option to change to allow particle kintic energy instead
+								// provide option to change to allow particle kintic energy instead
 	
 	fractionPIC = 0.;			// fraction PIC implemeted by damping
 	usePICDamping = false;		// off by default
     
+	gridBodyForceFunction[0]=NULL;
+	gridBodyForceFunction[1]=NULL;
+	gridBodyForceFunction[2]=NULL;
 }
 
 // Destructor (and it is virtual)
@@ -60,6 +69,9 @@ BodyForce::~BodyForce()
     if(pfunction!=NULL) delete pfunction;
 	if(gridfunction!=NULL) delete gridfunction;
     if(pgridfunction!=NULL) delete pgridfunction;
+	if(gridBodyForceFunction[0]!=NULL) delete gridBodyForceFunction[0];
+	if(gridBodyForceFunction[1]!=NULL) delete gridBodyForceFunction[1];
+	if(gridBodyForceFunction[2]!=NULL) delete gridBodyForceFunction[2];
 }
 
 #pragma mark BodyForce:Gravity and Body Force Functions
@@ -72,15 +84,78 @@ void BodyForce::Activate(void)
 	gravity=TRUE;
 }
 
-// If gravity add to material point force buffer
-void BodyForce::AddGravity(Vector *theFrc,double mp,double wt)
+// Get gravity (constant body force) and grid based functions (in mm/sec^2)
+// Multiplied by mass when added to the material velocity field
+void BodyForce::GetGridBodyForce(Vector *theFrc,NodalPoint *ndptr,double utime)
 {
-	if(!gravity) return;
+	// constant body force
+	if(gravity)
+	{	theFrc->x = gforce.x;
+		theFrc->y = gforce.y;
+		theFrc->z = gforce.z;
+	}
+	else
+		theFrc->x = theFrc->y = theFrc->z = 0.;
 	
-	double gscale = mp*wt;
-	theFrc->x += gscale*gforce.x;
-	theFrc->y += gscale*gforce.y;
-	theFrc->z += gscale*gforce.z;
+	// exit if no grid functions
+	if(!hasGridBodyForce) return;
+	
+	// values
+	varTime = utime*UnitsController::Scaling(1000.);
+	varXValue = ndptr->x;
+	varYValue = ndptr->y;
+	varZValue = ndptr->z;
+	
+	// body force functions
+	if(gridBodyForceFunction[0]!=NULL)
+		theFrc->x += gridBodyForceFunction[0]->Val();
+	if(gridBodyForceFunction[1]!=NULL)
+		theFrc->y += gridBodyForceFunction[1]->Val();
+	if(gridBodyForceFunction[2]!=NULL)
+		theFrc->z += gridBodyForceFunction[2]->Val();
+}
+
+
+// set function for grid body force
+void BodyForce::SetGridBodyForceFunction(char *bcFunction,int input)
+{
+	if(bcFunction==NULL)
+		ThrowSAXException("Grid body force function is missing");
+	if(strlen(bcFunction)==0)
+		ThrowSAXException("Grid body force function is missing");
+	
+	// turn it on
+	hasGridBodyForce = TRUE;
+	
+	// create variable
+	if(bodyArray[0]==NULL)
+	{	bodyArray[0]=new RVar("t",&varTime);
+		bodyArray[1]=new RVar("x",&varXValue);
+		bodyArray[2]=new RVar("y",&varYValue);
+		bodyArray[3]=new RVar("z",&varZValue);
+	}
+    
+	// create function
+	ROperation *newFunction = new ROperation(bcFunction,4,bodyArray);
+	if(newFunction->HasError())
+		ThrowSAXException("Grid body force function is not valid");
+	
+	// assign to direction
+	if(input==GRID_X_BODY_FORCE_FUNCTION_BLOCK)
+	{	if(gridBodyForceFunction[0]!=NULL)
+        ThrowSAXException("Duplicate grid body x force function");
+		gridBodyForceFunction[0] = newFunction;
+	}
+	else if(input==GRID_Y_BODY_FORCE_FUNCTION_BLOCK)
+	{	if(gridBodyForceFunction[1]!=NULL)
+        ThrowSAXException("Duplicate grid body y force function");
+		gridBodyForceFunction[1] = newFunction;
+	}
+	else if(input==GRID_Z_BODY_FORCE_FUNCTION_BLOCK)
+	{	if(gridBodyForceFunction[2]!=NULL)
+        ThrowSAXException("Duplicate grid body z force function");
+		gridBodyForceFunction[2] = newFunction;
+	}
 }
 
 #pragma mark BodyForce:Grid and Particle Damping
@@ -94,14 +169,14 @@ double BodyForce::GetDamping(double utime)
 	if(gridfunction==NULL)
         totalDamping = damping;
     else
-	{   varTime=1000.*utime;
+	{   varTime = utime*UnitsController::Scaling(1000.);
         totalDamping = gridfunction->Val();
     }
     
     // add feedback damping
     if(useFeedback) totalDamping += alpha;
 	
-    // PIC damping
+    // PIC Damping
 	if(usePICDamping) totalDamping -= fractionPIC/timestep;
     
     return totalDamping;
@@ -116,7 +191,7 @@ double BodyForce::GetParticleDamping(double utime)
 	if(pgridfunction==NULL)
         totalDamping = pdamping;
     else
-	{   varTime=1000.*utime;
+	{   varTime = utime*UnitsController::Scaling(1000.);
         totalDamping = pgridfunction->Val();
     }
     
@@ -156,32 +231,59 @@ void BodyForce::Output(void)
 	
     // Gravity
 	if(gravity)
-	{	sprintf(hline,"Body force per g: (%g,%g,%g) mm/sec^2",gforce.x,gforce.y,gforce.z);
+	{	sprintf(hline,"Body force per %s: (%g,%g,%g) %s/%s^2",UnitsController::Label(CUMASS_UNITS),
+				gforce.x,gforce.y,gforce.z,UnitsController::Label(CULENGTH_UNITS),UnitsController::Label(TIME_UNITS));
 		cout << hline << endl;
+	}
+	
+    // Body force functions
+	if(gridBodyForceFunction[0]!=NULL)
+	{	char *expr=gridBodyForceFunction[0]->Expr('#');
+		cout << "Grid body x force per " << UnitsController::Label(CUMASS_UNITS) << ": " << expr
+					<< " " << UnitsController::Label(CULENGTH_UNITS) << "/" << UnitsController::Label(TIME_UNITS) << "^2" << endl;
+		delete [] expr;
+	}
+	if(gridBodyForceFunction[1]!=NULL)
+	{	char *expr=gridBodyForceFunction[1]->Expr('#');
+		cout << "Grid body y force per " << UnitsController::Label(CUMASS_UNITS) << ": " << expr
+					<< " " << UnitsController::Label(CULENGTH_UNITS) << "/" << UnitsController::Label(TIME_UNITS) << "^2" << endl;
+		delete [] expr;
+	}
+	if(gridBodyForceFunction[2]!=NULL)
+	{	char *expr=gridBodyForceFunction[2]->Expr('#');
+		cout << "Grid body z force per " << UnitsController::Label(CUMASS_UNITS) << ": " << expr
+					<< " " << UnitsController::Label(CULENGTH_UNITS) << "/" << UnitsController::Label(TIME_UNITS) << "^2" << endl;
+		delete [] expr;
 	}
 	
     // Grid damping
 	if(gridfunction!=NULL)
-	{	char *expr=gridfunction->Expr('#');
-		cout << "Grid damping = " << expr << " /sec" << endl;
+	{	char *expr = gridfunction->Expr('#');
+		cout << "Grid damping = " << expr << " /" << UnitsController::Label(TIME_UNITS) << endl;
 		delete [] expr;
 	}
-	else
-	{	sprintf(hline,"Grid damping: %g /sec",damping);
+	else if(damping!=0.)
+	{	sprintf(hline,"Grid damping: %g /%s",damping,UnitsController::Label(TIME_UNITS));
 		cout << hline << endl;
 	}
+    else if(!useFeedback)
+    {   // turn off if nothing above and no feedback too
+        useDamping = false;
+    }
+    
+    // Grid feedback damping
 	if(useFeedback)
-	{	sprintf(hline,"Grid feedback damping with coefficient: %g /mm^2",dampingCoefficient);
+	{	sprintf(hline,"Grid feedback damping with coefficient: %g /%s^2",dampingCoefficient,UnitsController::Label(CULENGTH_UNITS));
 		cout << hline << endl;
 		if(function!=NULL)
 		{	char *expr=function->Expr('#');
-			cout << "   Target kinetic energy = " << expr << " micro J" << endl;
+			cout << "   Target kinetic energy = " << expr << " " << UnitsController::Label(TARGETKE_UNITS) << endl;
 			delete [] expr;
 		}
         else
             cout << "   Target kinetic energy = 0" << endl;
         if(maxAlpha>0.)
-        {	sprintf(hline,"   Maximum grid damping alpha: %g /sec",maxAlpha);
+        {	sprintf(hline,"   Maximum grid damping alpha: %g /%s",maxAlpha,UnitsController::Label(TIME_UNITS));
             cout << hline << endl;
         }
 	}
@@ -189,32 +291,40 @@ void BodyForce::Output(void)
     // Particle damping
 	if(pgridfunction!=NULL)
 	{	char *expr=pgridfunction->Expr('#');
-		cout << "Particle damping = " << expr << " /sec" << endl;
+		cout << "Particle damping = " << expr << " /" << UnitsController::Label(TIME_UNITS) << endl;
 		delete [] expr;
 	}
-	else
-	{	sprintf(hline,"Particle damping: %g /sec",pdamping);
+	else if(pdamping!=0.)
+	{	sprintf(hline,"Particle damping: %g /%s",pdamping,UnitsController::Label(TIME_UNITS));
 		cout << hline << endl;
 	}
+    else if(!usePFeedback)
+    {   // turn off if nothing above and no feedback too
+        usePDamping = false;
+    }
+    
+    // Particle feedback damping
 	if(usePFeedback)
-	{	sprintf(hline,"Particle feedback damping with coefficient: %g /mm^2",pdampingCoefficient);
+	{	sprintf(hline,"Particle feedback damping with coefficient: %g /%s^2",pdampingCoefficient,UnitsController::Label(CULENGTH_UNITS));
 		cout << hline << endl;
 		if(pfunction!=NULL)
 		{	char *expr=pfunction->Expr('#');
-			cout << "   Target kinetic energy = " << expr << " micro J" << endl;
+			cout << "   Target kinetic energy = " << expr << " " << UnitsController::Label(TARGETKE_UNITS) << endl;
 			delete [] expr;
 		}
         else
             cout << "   Target kinetic energy = 0" << endl;
         if(maxPAlpha>0.)
-        {	sprintf(hline,"   Maximum particle damping alpha: %g /sec",maxPAlpha);
+        {	sprintf(hline,"   Maximum particle damping alpha: %g /%s",maxPAlpha,UnitsController::Label(TIME_UNITS));
             cout << hline << endl;
         }
 	}
 
+    // PIC damping
 	if(usePICDamping)
 	{	cout << "PIC damping fraction: " << fractionPIC << endl;
 	}
+
 }
 
 // update alpha normalized to number of particles
@@ -242,20 +352,18 @@ void BodyForce::UpdateAlpha(double delTime,double utime)
 	
     // Grid damping
     if(useFeedback)
-    {   // target kinetic energy in micro J
+    {   // target kinetic energy (Legacy use time in ms and targetEnergy converted to nJ)
         double targetEnergy;
         if(function!=NULL)
-        {	varTime=1000.*utime;
-            targetEnergy=function->Val();
+        {	varTime = utime*UnitsController::Scaling(1000.);
+            targetEnergy = function->Val()*UnitsController::Scaling(1000.);
         }
         else
-            targetEnergy=0.;
+            targetEnergy = 0.;
 
-        // actual kinetic energy in micro J is kineticEnergy*1.0e-3
-        // for target energy in g mm^2/sec^2 is 1000*targetEnergy
-        // this damping factor has units of 1/mm^2 and extra factor of 2.e3 to make same
-        //    magnitude as previous damping method
-        alpha += 2.*dampingCoefficient*(kineticEnergy-1000.*targetEnergy)*delTime/totalMass;
+        // compare target to kinetic energy
+        // factor 2 is for historic reasons to match old damping factor
+        alpha += 2.*dampingCoefficient*(kineticEnergy-targetEnergy)*delTime/totalMass;
         if(alpha<0.)
             alpha=0.;
         else if(maxAlpha>0)
@@ -266,20 +374,18 @@ void BodyForce::UpdateAlpha(double delTime,double utime)
 
     // Particle damping
     if(usePFeedback)
-    {   // target kinetic energy in micro J
+    {   // target kinetic energy (Legacy use time in ms and targetEnergy converted to nJ)
         double targetEnergy;
         if(pfunction!=NULL)
-        {	varTime=1000.*utime;
-            targetEnergy=pfunction->Val();
+        {	varTime = utime*UnitsController::Scaling(1000.);
+            targetEnergy = pfunction->Val()*UnitsController::Scaling(1000.);
         }
         else
             targetEnergy=0.;
         
-        // actual kinetic energy in micro J is kineticEnergy*1.0e-3
-        // for target energy in g mm^2/sec^2 is 1000*targetEnergy
-        // this damping factor has units of 1/mm^2 and extra factor of 2.e3 to make same
-        //    magnitude as previous damping method
-        palpha += 2.*pdampingCoefficient*(kineticEnergy-1000.*targetEnergy)*delTime/totalMass;
+        // compare target to kinetic energy
+        // factor 2 is for historic reasons to match old damping factor
+        palpha += 2.*pdampingCoefficient*(kineticEnergy-targetEnergy)*delTime/totalMass;
         if(palpha<0.)
             palpha=0.;
         else if(maxPAlpha>0)
@@ -320,7 +426,7 @@ void BodyForce::SetTargetFunction(char *bcFunction,bool gridDamp)
 // set maximum alpha (units 1/sec)
 void BodyForce::SetMaxAlpha(double theMax,bool gridDamp)
 {   if(theMax<=0.)
-        ThrowSAXException("Maximum feedback damping alpha must be positive");
+		ThrowSAXException("Maximum feedback damping alpha must be positive");
     if(gridDamp)
         maxAlpha = theMax;
     else

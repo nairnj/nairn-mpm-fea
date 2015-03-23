@@ -30,6 +30,7 @@ class ROperation;
 #define XSYMMETRYPLANE_DIRECTION 32
 #define YSYMMETRYPLANE_DIRECTION 64
 #define ZSYMMETRYPLANE_DIRECTION 128
+#define ANYSYMMETRYPLANE_DIRECTION 224
 
 // non-bit based
 
@@ -56,10 +57,7 @@ enum {	CONSTANT_VALUE=1,LINEAR_VALUE,SINE_VALUE,COSINE_VALUE,SILENT,FUNCTION_VAL
 class BoundaryCondition : public LinkedObject
 {
     public:
-        int nodeNum;
-        int style;
-        double value,ftime,offset;
-		
+ 		
 		// constructors
 		BoundaryCondition(int,double,double);
 		virtual ~BoundaryCondition();
@@ -79,12 +77,29 @@ class BoundaryCondition : public LinkedObject
 		virtual void GetPosition(double *,double *,double *,double *);
 		int GetID(void);
 		void SetID(int);
+		double *GetBCValuePtr(void);
+		virtual void SetBCValue(double);
+		void SetBCValueCU(double);
+		double GetBCValueOut(void);
+		void SetBCFirstTime(double);
+		void SetBCFirstTimeCU(double);
+		double GetBCValue(void);
+		double GetBCFirstTime(void);
+		double GetBCFirstTimeOut(void);
+		void SetBCOffset(double);
+		double GetBCOffset(void);
+		int GetBCStyle();
 	
 	protected:
 		ROperation *function;
 		static double varTime,varXValue,varYValue,varZValue,varRotValue;
 		double scale;
+		int nodeNum;
 		int bcID;
+		int style;
+	
+	private:
+		double value,ftime,offset;
 };
 
 #endif

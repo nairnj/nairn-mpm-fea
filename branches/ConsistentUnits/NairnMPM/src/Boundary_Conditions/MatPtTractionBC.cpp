@@ -14,6 +14,7 @@
 #ifdef LOG_PROGRESS
 #include "System/ArchiveData.hpp"
 #endif
+#include "System/UnitsController.hpp"
 
 // global
 MatPtTractionBC *firstTractionPt=NULL;
@@ -35,15 +36,15 @@ BoundaryCondition *MatPtTractionBC::PrintBC(ostream &os)
 {
     char nline[200];
     
-    sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,value,ftime);
+    sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,
+			UnitsController::Scaling(1.e-6)*GetBCValueOut(),GetBCFirstTimeOut());
     os << nline;
 	PrintFunction(os);
 	
-	// rescale
-	value*=1.e6;		// Multiply by 1e6 to get N/mm^2 (kg-m/sec^2/mm^2) to g-mm/sec^2/mm^2
-    scale*=1.e6;		// ... same in case using a function
+ 	// scale function output
+	if(style==FUNCTION_VALUE) scale = UnitsController::Scaling(1.e6);
 	
-    return (BoundaryCondition *)GetNextObject();
+	return (BoundaryCondition *)GetNextObject();
 }
 
 // increment external load on a particle
@@ -51,9 +52,8 @@ BoundaryCondition *MatPtTractionBC::PrintBC(ostream &os)
 MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
 {
     // condition value
-	double mstime=1000.*bctime;
 	MPMBase *mpmptr = mpm[ptNum-1];
-	double tmag = BCValue(mstime);
+	double tmag = BCValue(bctime);
 	
 	// get corners and direction from material point
 	// note 3D has four corners on face and 2D has 2

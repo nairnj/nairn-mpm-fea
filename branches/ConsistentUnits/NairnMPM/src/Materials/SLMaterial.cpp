@@ -13,6 +13,7 @@
 #include "Materials/SLMaterial.hpp"
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark SLMaterial::Constructors and Destructors
 
@@ -23,10 +24,10 @@ SLMaterial::SLMaterial() {}
 SLMaterial::SLMaterial(MaterialBase *pair) : SCGLHardening(pair)
 {
 	// defaults are from Steinberg and Lund
-	Uk=0.31;			// eV
-	YP=1000.;			// MPa
-	C1=0.71e6;			// 1/s
-	C2=0.012;			// MPa s
+	UkOverk = 0.31/8.617332478e-5;						// eV/k in K
+	YP = 1000.*UnitsController::Scaling(1.e6);
+	C1 = 0.71e6;
+	C2 = 0.012*UnitsController::Scaling(1.e6);
 }
 
 #pragma mark SLMaterial::Initialization
@@ -38,23 +39,31 @@ char *SLMaterial::InputMaterialProperty(char *xName,int &input,double &gScaling)
 	
 	// here are the rest
     if(strcmp(xName,"Uk")==0)
+    {	// Legacy units in eV and scaling converts to K
+		// but need UkOverk when using consisten units
+		input=DOUBLE_NUM;
+		gScaling = UnitsController::Scaling(1./8.617332478e-5);
+        return	gScaling>2. ? (char *)&UkOverk : NULL ;
+    }
+    
+    else if(strcmp(xName,"UkOverk")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&Uk);
+        return (char *)&UkOverk;
     }
     
     else if(strcmp(xName,"YP")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&YP);
+		return UnitsController::ScaledPtr((char *)&YP,gScaling,1.e6);
     }
     
     else if(strcmp(xName,"C1SL")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&C1);
+        return (char *)&C1;
     }
 	
     else if(strcmp(xName,"C2SL")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&C2);
+		return UnitsController::ScaledPtr((char *)&YP,gScaling,1.e6);
     }
 	
 	return(SCGLHardening::InputMaterialProperty(xName,input,gScaling));
@@ -66,8 +75,8 @@ const char *SLMaterial::VerifyAndLoadProperties(int np)
 	// check properties
 	if(np==PLANE_STRESS_MPM) return "The Steinberg-Lund hardening does not support plane stress calculations yet.";
     
-	YPred = YP*1.e6/parent->rho;					// reduced stress units
-	C2red = C2*1.e6/parent->rho;					// reduced stress units
+	YPred = YP/parent->rho;							// reduced stress units
+	C2red = C2/parent->rho;					// reduced stress units
 	YTmin = YPred/PRECISION_FACTOR;					// below this, strain dependent yield stress is zero
 	YTprecision = YPred/PRECISION_FACTOR;			// precision as ratio to YPred
 	
@@ -81,22 +90,30 @@ void SLMaterial::PrintYieldProperties(void) const
     cout << GetHardeningLawName() << endl;
     
     // yield
-    MaterialBase::PrintProperty("yld",yield,"");
+    MaterialBase::PrintProperty("yld",yield*UnitsController::Scaling(1.e-6),"");
     MaterialBase::PrintProperty("beta",beta,"");
     MaterialBase::PrintProperty("nhard",nhard,"");
-    MaterialBase::PrintProperty("yMax",yieldMax,"");
+    MaterialBase::PrintProperty("yMax",yieldMax*UnitsController::Scaling(1.e-6),"");
     cout << endl;
     
 	// shear temperature and pressure dependence
-	MaterialBase::PrintProperty("Gp'/G0",GPp,"MPa^-1");
+	char glabel[20];
+	strcpy(glabel,UnitsController::Label(PRESSURE_UNITS));
+	strcat(glabel,"^-1");
+	MaterialBase::PrintProperty("Gp'/G0",GPp*UnitsController::Scaling(1.e6),glabel);
 	MaterialBase::PrintProperty("GT'/G0",GTp,"K^-1");
 	cout << endl;
     
     // Steinberg-Lund additinos
-	MaterialBase::PrintProperty("Uk",Uk,"eV");
-	MaterialBase::PrintProperty("YP",YP,"");
-	MaterialBase::PrintProperty("C1",C1,"s^-1");
-	MaterialBase::PrintProperty("C2",C2,"MPa-s");
+	MaterialBase::PrintProperty("Uk/k",UkOverk,"K");
+	MaterialBase::PrintProperty("YP",YP*UnitsController::Scaling(1.e-6),"");
+	strcpy(glabel,UnitsController::Label(TIME_UNITS));
+	strcat(glabel,"^-1");
+	MaterialBase::PrintProperty("C1",C1,glabel);
+	strcpy(glabel,UnitsController::Label(PRESSURE_UNITS));
+	strcat(glabel,"-");
+	strcat(glabel,UnitsController::Label(TIME_UNITS));
+	MaterialBase::PrintProperty("C2",C2*UnitsController::Scaling(1.e6),glabel);
 	cout << endl;
 }
 
@@ -137,7 +154,7 @@ double SLMaterial::GetShearRatio(MPMBase *mptr,double pressure,double J,void *pr
 	// thermal term in yield stress
 	SLProperties *p = (SLProperties *)properties;
 	p->Gratio = Gratio;
-	p->TwoUkkT = 2.*Uk/(8.61734e-5*mptr->pPreviousTemperature);			// 2Uk/kT (add 3 digit at end)
+	p->TwoUkkT = 2.*UkOverk/mptr->pPreviousTemperature;						// 2Uk/kT
 	double YTlast=mptr->GetHistoryDble(YT_HISTORY)*1.e6/parent->rho;
 	p->currentYTred=fmax(YTmin,YTlast);
 	p->epdotmin=GetEpdot(YTmin,p->TwoUkkT);								// rate at small fraction of YP

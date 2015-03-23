@@ -90,8 +90,7 @@ void GridForcesTask::Execute(void)
 					Vector theFrc;
 					mpmptr->GetFintPlusFext(&theFrc,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
 					
-					// add body forces
-					bodyFrc.AddGravity(&theFrc,mpmptr->mp,fn[i]);
+					// add body forces (now done outside this loop)
 					
 					// add the total force to nodal point
                     ndptr = GetNodePointer(pn,nds[i]);
@@ -155,6 +154,19 @@ void GridForcesTask::Execute(void)
     CrackNode::InterfaceOnKnownNodes();
     MaterialInterfaceNode::InterfaceOnKnownNodes();
     
+	// Add gravity and body forces (if any are present)
+	// Note: If ever need to implement body force that depend on particle state (stress, strain, etc.)
+	//			then move the body force addition into GridForcesTask loop where gravity is commented out
+    // When used to keep Fext, this section would all add fint and fext to get ftot (and it was always needed)
+	Vector gridBodyForce;
+	if(bodyFrc.gravity || bodyFrc.hasGridBodyForce)
+	{   for(int i=1;i<=nnodes;i++)
+		{	NodalPoint *ndptr = nd[i];
+			bodyFrc.GetGridBodyForce(&gridBodyForce,ndptr,mtime);
+			ndptr->AddGravityAndBodyForceTask3(&gridBodyForce);
+		}
+	}
+	
     // Imposed BCs on ftot to get correct grid BCs for velocity
     NodalVelBC::ConsistentGridForces();
 	

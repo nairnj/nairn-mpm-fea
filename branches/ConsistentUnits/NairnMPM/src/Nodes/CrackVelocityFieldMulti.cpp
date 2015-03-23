@@ -215,6 +215,15 @@ void CrackVelocityFieldMulti::AddFtotSpreadTask3(Vector *f)
 	}
 }
 
+// Add gravity and body force at a node in g mm/sec^2 (non rigid only)
+// For materials that ignore cracks, only add to source MVF in field [0]
+void CrackVelocityFieldMulti::AddGravityAndBodyForceTask3(Vector *gridBodyForce)
+{	for(int i=0;i<maxMaterialFields;i++)
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+			mvf[i]->AddGravityAndBodyForceTask3(gridBodyForce);
+	}
+}
+
 // Copy grid forces ghost node to the real node (nonrigid only)
 void CrackVelocityFieldMulti::CopyGridForces(NodalPoint *real,int vfld)
 {	for(int matfld=0;matfld<maxMaterialFields;matfld++)

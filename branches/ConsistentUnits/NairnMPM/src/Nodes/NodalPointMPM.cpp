@@ -554,6 +554,15 @@ void NodalPoint::AddTractionTask3(MPMBase *mpmptr,short vfld,int matfld,Vector *
 	}
 }
 
+// Add gravity and body forces on node in g mm/sec^2
+void NodalPoint::AddGravityAndBodyForceTask3(Vector *gridBodyForce)
+{	int i;
+    for(i=0;i<maxCrackFields;i++)
+	{	if(CrackVelocityField::ActiveField(cvf[i]))
+		cvf[i]->AddGravityAndBodyForceTask3(gridBodyForce);
+	}
+}
+
 #pragma mark TASK 4 METHODS
 
 // update momenta for this MPM step

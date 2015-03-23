@@ -39,7 +39,7 @@ const char *CarnotCycle::TaskName(void) { return "Carnot Cycle Simulation"; }
 
 // Read task parameter - if pName is valid, set input for type
 //    and return pointer to the class variable
-char *CarnotCycle::InputParam(char *pName,int &input)
+char *CarnotCycle::InputParam(char *pName,int &input,double &gScaling)
 {
     if(strcmp(pName,"V1rel")==0)
     {	input=DOUBLE_NUM;
@@ -57,7 +57,7 @@ char *CarnotCycle::InputParam(char *pName,int &input)
     }
 	
 	// check remaining commands
-    return CustomTask::InputParam(pName,input);
+    return CustomTask::InputParam(pName,input,gScaling);
 }
 
 #pragma mark GENERIC TASK METHODS
