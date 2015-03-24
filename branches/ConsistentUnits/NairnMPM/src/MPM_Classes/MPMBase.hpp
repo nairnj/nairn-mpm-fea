@@ -16,17 +16,12 @@
 #define DEFORMED_VOLUME 0
 #define DEFORMED_AREA 1
 
+#define GRAD_GLOBAL 0
+#define GRAD_SECOND 3
+#define GRAD_THIRD 6
+enum { gGRADx=0,gGRADy,gGRADz };
+
 class MaterialBase;
-
-// variables for conduction calculations
-typedef struct {
-	Vector DT;			// conc potential gradient (archived * concSaturation)
-} TemperatureField;
-
-// variables for diffusion calculations
-typedef struct {
-	Vector Dc;			// conc potential gradient (archived * concSaturation)
-} DiffusionField;
 
 class MPMBase : public LinkedObject
 {
@@ -36,8 +31,8 @@ class MPMBase : public LinkedObject
 		double pTemperature,pPreviousTemperature;
 		double pConcentration,pPreviousConcentration;	// conc potential (0 to 1) (archived * concSaturation)
 		char *vfld;
-		TemperatureField *pTemp;
-		DiffusionField *pDiffusion;
+		double *pTemp;
+		double *pDiffusion;
 	
 		// constants (not changed in MPM time step)
         double mp;
@@ -47,7 +42,7 @@ class MPMBase : public LinkedObject
         MPMBase();
         MPMBase(int,int,double);
 		virtual ~MPMBase();
-		void AllocateDiffusion(void);
+		void AllocateDiffusion(bool);
 		void AllocateTemperature(void);
 		void AllocateJStructures(void);
         bool AllocateCPDIStructures(int,bool);
@@ -62,9 +57,9 @@ class MPMBase : public LinkedObject
         virtual void MovePosition(double,Vector *,double,double) = 0;
         virtual void MoveVelocity(double,Vector *,double) = 0;
 		virtual void SetVelocitySpeed(double) = 0;
-		virtual void AddTemperatureGradient(void);
-		virtual void AddTemperatureGradient(Vector *) = 0;
-		virtual double FCond(double,double,double,TransportProperties *) = 0;
+		virtual void AddTemperatureGradient(int);
+		virtual void AddTemperatureGradient(int,Vector *) = 0;
+		virtual double FCond(int,double,double,double,TransportProperties *) = 0;
 		virtual void AddConcentrationGradient(void);
 		virtual void AddConcentrationGradient(Vector *) = 0;
 		virtual double FDiff(double,double,double,TransportProperties *) = 0;

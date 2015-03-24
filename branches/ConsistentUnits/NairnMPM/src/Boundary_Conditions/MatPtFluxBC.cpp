@@ -14,6 +14,7 @@
 #include "Read_XML/mathexpr.hpp"
 #include "Nodes/NodalPoint.hpp"
 #include "Custom_Tasks/DiffusionTask.hpp"
+#include "System/UnitsController.hpp"
 
 // global
 MatPtFluxBC *firstFluxPt=NULL;
@@ -33,9 +34,14 @@ BoundaryCondition *MatPtFluxBC::PrintBC(ostream &os)
 {
     char nline[200];
     
-    sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,GetBCValueOut(),GetBCFirstTimeOut());
+    sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,
+			UnitsController::Scaling(1.e3)*GetBCValueOut(),GetBCFirstTimeOut());
     os << nline;
 	PrintFunction(os);
+	
+	// for function input scale for Legacy units
+	if(style==FUNCTION_VALUE)
+		scale = UnitsController::Scaling(1.e-3);
 	
     return (BoundaryCondition *)GetNextObject();
 }
@@ -45,11 +51,10 @@ BoundaryCondition *MatPtFluxBC::PrintBC(ostream &os)
 // (only called when diffusion is active)
 MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 {
-    // condition value
-	// flux BC in kg/(m^2-sec) - find Flux/rho in units of mm/sec
+    // condition value is g/(mm^2-sec), Divide by rho*csat to get potential flux in mm/sec
+	// find this flux and then add (times area) to get mm^3-potential/sec
 	MPMBase *mpmptr = mpm[ptNum-1];
     MaterialBase *matptr = theMaterials[mpmptr->MatID()];
-	double csatrho;
 	
 	// Flux is a scalar and we need int_(face) F Ni(x) dA
 	// Since F is constant, only need integral which is done by CPDI methods
@@ -67,32 +72,31 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
         
         // D in mm^2/sec, Dc in 1/mm
 		if(fmobj->IsThreeD())
-		{	fluxMag.x = D->xx*mpmptr->pDiffusion->Dc.x + D->xy*mpmptr->pDiffusion->Dc.y + D->xz*mpmptr->pDiffusion->Dc.z;
-			fluxMag.y = D->xy*mpmptr->pDiffusion->Dc.x + D->yy*mpmptr->pDiffusion->Dc.y + D->yz*mpmptr->pDiffusion->Dc.z;
-			fluxMag.x = D->xz*mpmptr->pDiffusion->Dc.x + D->yz*mpmptr->pDiffusion->Dc.y + D->zz*mpmptr->pDiffusion->Dc.z;
+		{	fluxMag.x = D->xx*mpmptr->pDiffusion[gGRADx] + D->xy*mpmptr->pDiffusion[gGRADy] + D->xz*mpmptr->pDiffusion[gGRADz];
+			fluxMag.y = D->xy*mpmptr->pDiffusion[gGRADx] + D->yy*mpmptr->pDiffusion[gGRADy] + D->yz*mpmptr->pDiffusion[gGRADz];
+			fluxMag.x = D->xz*mpmptr->pDiffusion[gGRADx] + D->yz*mpmptr->pDiffusion[gGRADy] + D->zz*mpmptr->pDiffusion[gGRADz];
 		}
 		else
-		{	fluxMag.x = D->xx*mpmptr->pDiffusion->Dc.x + D->xy*mpmptr->pDiffusion->Dc.y;
-			fluxMag.x = D->xy*mpmptr->pDiffusion->Dc.x + D->yy*mpmptr->pDiffusion->Dc.y;
+		{	fluxMag.x = D->xx*mpmptr->pDiffusion[gGRADx] + D->xy*mpmptr->pDiffusion[gGRADy];
+			fluxMag.x = D->xy*mpmptr->pDiffusion[gGRADx] + D->yy*mpmptr->pDiffusion[gGRADy];
 		}
         bcDir = N_DIRECTION;
 	}
 	else if(direction==EXTERNAL_FLUX)
-	{	// csatrho = rho V csat/V0 = solvent mass per reference volume
-		// units are 1000 kg mm^3/(m^2-g-sec) = mm/sec
-		csatrho = 1000.*matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
+	{	// csatrho = rho0 V0 csat/V (units g/mm^3)
+		double csatrho = matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
 		fluxMag.x = BCValue(bctime)/csatrho;
 	}
 	else
     {   // coupled surface flux and ftime is bath concentration
-		// time variable (t) is replaced by c-cbath, where c is the particle potention and cbath and bath potential
+		// time variable (t) is replaced by c-cbath, where c is the particle potential and cbath is bath potential
 		varTime = mpmptr->pPreviousConcentration-GetBCFirstTime();
 		GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
-		double currentValue = fabs(function->Val());
+		double currentValue = fabs(scale*function->Val());
 		if(varTime>0.) currentValue=-currentValue;
-		// csatrho = rho V csat/V0 = solvent mass per reference volume
-		// units are 1000 kg mm^3/(m^2-g-sec) = mm/sec
- 		csatrho = 1000.*matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
+		
+		// csatrho = rho0 V0 csat/V (units g/mm^3)
+		double csatrho = matptr->rho*matptr->concSaturation/mpmptr->GetRelativeVolume();
 		fluxMag.x = currentValue/csatrho;
 	}
 	
@@ -110,10 +114,32 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
     // add force to each node
 	int i;
     for(i=1;i<=numnds;i++)
-    {   // skip empty nodes
-        if(nd[nds[i]]->NodeHasNonrigidParticles())
-			diffusion->AddFluxCondition(nd[nds[i]],DotVectors(&fluxMag,&tscaled)*fn[i],false);
-    }
+		diffusion->AddFluxCondition(nd[nds[i]],DotVectors(&fluxMag,&tscaled)*fn[i],false);
 	
     return (MatPtFluxBC *)GetNextObject();
 }
+
+#pragma mark MatPtFluxBC:Accessors
+
+// set value (and scale legacy kg/(m^2-sec) to g/(mm^2-sec))
+void MatPtFluxBC::SetBCValue(double bcvalue)
+{	BoundaryCondition::SetBCValue(UnitsController::Scaling(1.e-3)*bcvalue);
+}
+
+// check coupled flux which uses first time as unscaled concentration potential
+void MatPtFluxBC::SetBCFirstTime(double bcftime)
+{	if(direction==COUPLED_FLUX)
+		BoundaryCondition::SetBCFirstTimeCU(bcftime);
+	else
+		BoundaryCondition::SetBCFirstTime(bcftime);
+}
+
+// check coupled flux which uses first time as unscaled concentration potential
+double MatPtFluxBC::GetBCFirstTimeOut(void)
+{	if(direction==COUPLED_FLUX)
+		return BoundaryCondition::GetBCFirstTime();
+	else
+		return BoundaryCondition::GetBCFirstTimeOut();
+}
+
+

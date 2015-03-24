@@ -207,10 +207,10 @@ TransportTask *ConductionTask::GetGradients(double stepTime)
             elref->GetShapeGradients(&numnds,fn,nds,xDeriv,yDeriv,zDeriv,mptr);
             
             // Find gradients from current temperatures
-            mptr->AddTemperatureGradient();			// zero gradient on the particle
+            mptr->AddTemperatureGradient(GRAD_GLOBAL);			// zero gradient on the particle
             for(i=1;i<=numnds;i++)
             {	Vector deriv = MakeVector(xDeriv[i],yDeriv[i],zDeriv[i]);
-                mptr->AddTemperatureGradient(ScaleVector(&deriv,nd[nds[i]]->gTemperature));
+                mptr->AddTemperatureGradient(GRAD_GLOBAL,ScaleVector(&deriv,nd[nds[i]]->gTemperature));
             }
         }
         catch(CommonException err)
@@ -235,7 +235,7 @@ TransportTask *ConductionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double 
 										 double dshdy,double dshdz,TransportProperties *t)
 {
 	// internal force based on conduction tensor
-	ndptr->fcond += mptr->FCond(dshdx,dshdy,dshdz,t);
+	ndptr->fcond += mptr->FCond(GRAD_GLOBAL,dshdx,dshdy,dshdz,t);
 	
 	// add source terms
 	double heatSource = 0.;
@@ -274,7 +274,10 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
     nextBC=firstTempBC;
     while(nextBC!=NULL)
 	{   i=nextBC->GetNodeNum(mtime);
-		if(i!=0) nd[i]->fcond = -nd[i]->gMpCp*nd[i]->gTemperature/deltime;
+		if(i!=0)
+		{	nd[i]->fcond = -nd[i]->gMpCp*nd[i]->gTemperature/deltime;
+			nextBC->InitQReaction();				// for global archive of boundary flow
+		}
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
 	}
     
@@ -282,7 +285,11 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
     nextBC=firstTempBC;
     while(nextBC!=NULL)
     {	i=nextBC->GetNodeNum(mtime);
-		if(i!=0) nd[i]->fcond += nd[i]->gMpCp*nextBC->BCValue(mtime)/deltime;
+		if(i!=0)
+		{	double qflow = nd[i]->gMpCp*nextBC->BCValue(mtime)/deltime;
+			nd[i]->fcond += qflow;
+			nextBC->SuperposeQReaction(qflow);		// for global archive of boundary flow
+		}
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
     }
 	

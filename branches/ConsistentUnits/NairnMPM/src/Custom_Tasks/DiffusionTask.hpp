@@ -24,11 +24,8 @@ class DiffusionTask : public TransportTask
 		static bool active;
 		static double reference;
 		
-        // constructors and destructors
-		DiffusionTask();
-        
         // standard methods
-		virtual TransportTask *TransportOutput(void);
+		virtual TransportTask *Initialize(void);
 		virtual const char *TaskName(void);
 		virtual TransportTask *TransportTimeStep(int,double,double *);
 		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double);

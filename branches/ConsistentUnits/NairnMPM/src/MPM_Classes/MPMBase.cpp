@@ -84,14 +84,16 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 
 // allocation diffusion data if need in this calculations
 void MPMBase::AllocateTemperature(void)
-{	pTemp=new TemperatureField;
-	ZeroVector(&pTemp->DT);
+{	int size = 3;
+	pTemp = new double[size];
+	for(int i=0;i<size;i++) pTemp[i] = 0.;
 }
 
 // allocation diffusion data if need in this calculations
-void MPMBase::AllocateDiffusion(void)
-{	pDiffusion=new DiffusionField;
-	ZeroVector(&pDiffusion->Dc);
+void MPMBase::AllocateDiffusion(bool contactSolventFlow)
+{	int size = 3;
+	pDiffusion = new double[size];
+	for(int i=0;i<size;i++) pDiffusion[i] = 0.;
 }
 
 // allocation velGrad tensor data if need in this calculations (non rigid only)
@@ -213,17 +215,17 @@ void MPMBase::SetTemperature(double pTempSet,double pRefTemp)
 }
 
 // zero the temperature gradient (non-rigid particles only)
-void MPMBase::AddTemperatureGradient(void)
-{   pTemp->DT.x=0.;
-    pTemp->DT.y=0.;
-	pTemp->DT.z=0.;
+void MPMBase::AddTemperatureGradient(int offset)
+{   pTemp[offset]=0.;
+    pTemp[offset+1]=0.;
+	pTemp[offset+2]=0.;
 }
 
 // zero the concentration gradient
 void MPMBase::AddConcentrationGradient(void)
-{	pDiffusion->Dc.x=0.;
-    pDiffusion->Dc.y=0.;
-    pDiffusion->Dc.z=0.;
+{	pDiffusion[gGRADx]=0.;
+    pDiffusion[gGRADy]=0.;
+    pDiffusion[gGRADz]=0.;
 }
 
 // material ID (convert to zero based)

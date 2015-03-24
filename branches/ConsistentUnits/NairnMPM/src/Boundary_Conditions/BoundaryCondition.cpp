@@ -25,16 +25,11 @@ BoundaryCondition::BoundaryCondition(int bcStyle,double bcValue,double bcTime)
 {
     style = bcStyle;
     SetBCValue(bcValue);
-	
-	// all Legacy inputs use ms, but sine and conside are 1/ms
-	if(style==SINE_VALUE || style==COSINE_VALUE)
-		ftime = UnitsController::Scaling(1.e3)*bcTime;
-	else
-		ftime = UnitsController::Scaling(1.e-3)*bcTime;
+	SetBCFirstTime(bcTime);
 	
 	offset = 0.;
 	function = NULL;
-	scale = 1.;				// scale function calculation only
+	scale = 1.;				// scale function calculation only if needed
 	bcID = 0;
 }
 

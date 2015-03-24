@@ -9,6 +9,7 @@
    -------------------------
     See comments in ConductionTask.cpp but:
     Change gTemperature to gConcentration, gMpCp to gVolume, and fcond to fdiff
+			(m... and c... if needed)
     Update Particles Task
         cut off particle potential to range 0 to 1
     Chemical potential (or concentration potential 0 to 1)
@@ -33,27 +34,24 @@ bool DiffusionTask::active=FALSE;
 double DiffusionTask::reference = 0.;				// zero-strain concentration
 DiffusionTask *diffusion=NULL;
 
-#pragma mark INITIALIZE
-
-// Constructors
-DiffusionTask::DiffusionTask()
-{	// allocate diffusion data on each particle
-    // done before know number of nonrigid, so do on all
-	for(int p=0;p<nmpms;p++)
-		mpm[p]->AllocateDiffusion();
-}
-
-// Return name of this task
-const char *DiffusionTask::TaskName(void) { return "diffusion analysis"; }
-
 #pragma mark STANDARD METHODS
 
-// diffsion analysis settings
-TransportTask *DiffusionTask::TransportOutput(void)
-{	char mline[200];
-	TransportTask::TransportOutput();
+// Return name of this task
+const char *DiffusionTask::TaskName(void) { return "diffusion calculations"; }
+
+// called once at start of MPM analysis and after preliminary calcse are eon
+TransportTask *DiffusionTask::Initialize(void)
+{
+	// allocate diffusion data on each particle
+    // done before know number of nonrigid, so do on all
+	for(int p=0;p<nmpms;p++)
+		mpm[p]->AllocateDiffusion(false);
+	
+	cout << "Coupled " << TaskName() << endl;
+	char mline[100];
 	sprintf(mline,"   Reference concentration =%8.4lf",reference);
 	cout << mline << endl;
+	
 	return nextTask;
 }
 
@@ -65,11 +63,12 @@ TransportTask *DiffusionTask::TransportTimeStep(int matid,double dcell,double *t
 	return nextTask;
 }
 
-#pragma mark TASK EXTRAPOLATION METHODS
+#pragma mark MASS AND MOMENTUM EXTRAPOLATIONS
 
-// Task 1 Extrapolation of concentration to the grid. Concentration is acutally a chemical
+// Task 1 Extrapolation of concentration to the grid. Concentration is actually a chemical
 // potential from 0 to 1 where 1 means concentration is equal to that materials saturation
 // concentration. (units are mm^3)
+// Only called for non-rigid materials
 TransportTask *DiffusionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,double shape)
 {   double Vp = mptr->GetVolume(DEFORMED_VOLUME);
 	ndpt->gConcentration += mptr->pConcentration*Vp*shape;
@@ -99,7 +98,10 @@ void DiffusionTask::ImposeValueBCs(double stepTime)
 	// Copy no-BC concentration
     NodalConcBC *nextBC=firstConcBC;
     while(nextBC!=NULL)
-		nextBC=nextBC->CopyNodalConcentration(nd[nextBC->GetNodeNum()]);
+	{   i=nextBC->GetNodeNum(stepTime);
+		if(i!=0) nextBC->CopyNodalConcentration(nd[i]);
+        nextBC=(NodalConcBC *)nextBC->GetNextObject();
+    }
 	
     // Set active ones to zero
     nextBC=firstConcBC;
@@ -173,6 +175,8 @@ TransportTask *DiffusionTask::GetGradients(double stepTime)
 	return nextTask;
 }
 
+#pragma mark GRID FORCES EXTRAPOLATIONS
+
 // find forces for diffusion calculation (mm^3/sec) (non-rigid particles only)
 TransportTask *DiffusionTask::AddForces(NodalPoint *ndptr,MPMBase *mptr,double sh,double dshdx,
 										double dshdy,double dshdz,TransportProperties *t)
@@ -204,7 +208,10 @@ TransportTask *DiffusionTask::SetTransportForceBCs(double deltime)
 	
     // Paste back noBC concentration
     while(nextBC!=NULL)
-        nextBC = nextBC->PasteNodalConcentration(nd[nextBC->GetNodeNum()]);
+    {	i = nextBC->GetNodeNum(mtime);
+		if(i!=0) nextBC->PasteNodalConcentration(nd[i]);
+		nextBC = (NodalConcBC *)nextBC->GetNextObject();
+    }
     
     // Set force to - VC(no BC)/timestep
     nextBC=firstConcBC;
@@ -223,7 +230,6 @@ TransportTask *DiffusionTask::SetTransportForceBCs(double deltime)
     }
 	
 	// --------- concentration flux BCs -------------
-	
 	MatPtFluxBC *nextFlux=firstFluxPt;
     while(nextFlux!=NULL)
     	nextFlux = nextFlux->AddMPFlux(mtime);
@@ -257,6 +263,8 @@ TransportTask *DiffusionTask::TransportRates(NodalPoint *ndptr,double deltime)
 	return nextTask;
 }
 		
+#pragma mark UPDATE PARTICLES TASK
+
 // increment concentration rate on the particle
 TransportTask *DiffusionTask::IncrementTransportRate(const NodalPoint *ndpt,double shape,double &rate) const
 {	rate += ndpt->fdiff*shape;			// fdiff are concentration rates from TransportRates()
@@ -273,6 +281,8 @@ TransportTask *DiffusionTask::MoveTransportValue(MPMBase *mptr,double deltime,do
 	return nextTask;
 }
 
+#pragma mark UPDATE STRAIN LAST TASK
+
 // if needed for SZS or USAVG, update concentration on the grid (concTime is always timestep)
 TransportTask *DiffusionTask::UpdateNodalValues(double concTime)
 {
@@ -284,6 +294,8 @@ TransportTask *DiffusionTask::UpdateNodalValues(double concTime)
 	}
 	return nextTask;
 }
+
+#pragma mark UPDATE PARTICLE STRAIN TASK
 
 // increment transport rate
 double DiffusionTask::IncrementValueExtrap(NodalPoint *ndpt,double shape) const

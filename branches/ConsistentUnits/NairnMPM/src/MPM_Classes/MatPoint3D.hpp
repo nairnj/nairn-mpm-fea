@@ -34,8 +34,8 @@ class MatPoint3D : public MPMBase
 		virtual void MovePosition(double,Vector *,double,double);
 		virtual void MoveVelocity(double,Vector *,double);
 		virtual void SetVelocitySpeed(double);
-		virtual void AddTemperatureGradient(Vector *);
-		virtual double FCond(double,double,double,TransportProperties *);
+		virtual void AddTemperatureGradient(int,Vector *);
+		virtual double FCond(int,double,double,double,TransportProperties *);
 		virtual void AddConcentrationGradient(Vector *);
 		virtual double FDiff(double,double,double,TransportProperties *);
 		virtual double KineticEnergy(void);

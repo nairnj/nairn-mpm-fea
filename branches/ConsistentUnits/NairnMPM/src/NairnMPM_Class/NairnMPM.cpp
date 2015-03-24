@@ -498,7 +498,7 @@ void NairnMPM::PreliminaryCalcs(void)
     {   PrintSection("MATERIAL POINTS WITH EXTERNAL FORCES");
         cout << "Point   DOF ID     Load (" << UnitsController::Label(FEAFORCE_UNITS) << ")     Arg ("
 			<< UnitsController::Label(BCARG_UNITS) << ")  Function\n"
-        << "----------------------------------------------------------\n";
+			<< "----------------------------------------------------------\n";
         nextBC=(BoundaryCondition *)firstLoadedPt;
         while(nextBC!=NULL)
             nextBC=nextBC->PrintBC(cout);
@@ -510,8 +510,8 @@ void NairnMPM::PreliminaryCalcs(void)
     if(firstTractionPt!=NULL)
     {   PrintSection("MATERIAL POINTS WITH TRACTIONS");
         cout << "Point   DOF Face ID   Stress (" << UnitsController::Label(PRESSURE_UNITS) << ")    Arg ("
-			<< UnitsController::Label(BCTIME_UNITS) << ")  Function\n"
-        << "----------------------------------------------------------------\n";
+			<< UnitsController::Label(BCARG_UNITS) << ")  Function\n"
+			<< "----------------------------------------------------------------\n";
         nextBC=(BoundaryCondition *)firstTractionPt;
         while(nextBC!=NULL)
             nextBC=nextBC->PrintBC(cout);
@@ -520,19 +520,22 @@ void NairnMPM::PreliminaryCalcs(void)
 	
 	//---------------------------------------------------
     // Diffusion boundary conditions
-	if(DiffusionTask::active)
+	if(DiffusionTask::active && firstConcBC!=NULL)
 	{   PrintSection("NODAL POINTS WITH FIXED CONCENTRATIONS");
 		cout << "  Node  ID    Conc (/csat)   Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Function\n"
-		<< "------------------------------------------------------\n";
+			<< "------------------------------------------------------\n";
 		nextBC=firstConcBC;
 		while(nextBC!=NULL)
 			nextBC=nextBC->PrintBC(cout);
 		cout << endl;
-		
-		//---------------------------------------------------
-		// Concentration Flux Material Points
-		PrintSection("MATERIAL POINTS WITH CONCENTRATION FLUX");
-		cout << " Point  DOF Face ID   Flux (mm/sec)   Arg ("<< UnitsController::Label(BCARG_UNITS) << ")  Function\n"
+	}
+	
+	//---------------------------------------------------
+	// Concentration Flux Material Points
+	if(DiffusionTask::active && firstFluxPt!=NULL)
+	{	PrintSection("MATERIAL POINTS WITH CONCENTRATION FLUX");
+		cout << " Point  DOF Face ID Flux (" << UnitsController::Label(BCCONCFLUX_UNITS) << ") Arg ("
+			<< UnitsController::Label(BCARG_UNITS) << ")  Function\n"
 		<< "---------------------------------------------------------------\n";
 		nextBC=(BoundaryCondition *)firstFluxPt;
 		while(nextBC!=NULL)
@@ -542,21 +545,23 @@ void NairnMPM::PreliminaryCalcs(void)
 	
 	//---------------------------------------------------
     // Conduction boundary conditions
-	if(ConductionTask::active)
+	if(ConductionTask::active && firstTempBC!=NULL)
 	{   PrintSection("NODAL POINTS WITH FIXED TEMPERATURES");
 		cout << " Node   ID   Temp (-----)   Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Function\n"
-		<< "------------------------------------------------------\n";
+			<< "------------------------------------------------------\n";
 		nextBC=firstTempBC;
 		while(nextBC!=NULL)
 			nextBC=nextBC->PrintBC(cout);
-		cout << endl;
-		
-		//---------------------------------------------------
-		// Heat Flux Material Points
-		PrintSection("MATERIAL POINTS WITH HEAT FLUX");
+		cout << endl;\
+	}
+	
+	//---------------------------------------------------
+	// Heat Flux Material Points
+	if(ConductionTask::active && firstHeatFluxPt!=NULL)
+	{	PrintSection("MATERIAL POINTS WITH HEAT FLUX");
 		cout << " Point  DOF Face ID   Flux (" << UnitsController::Label(BCHEATFLUX_UNITS) << ")    Arg ("
 			<< UnitsController::Label(BCARG_UNITS) << ")  Function\n"
-		<< "---------------------------------------------------------------\n";
+			<< "---------------------------------------------------------------\n";
 		nextBC=(BoundaryCondition *)firstHeatFluxPt;
 		while(nextBC!=NULL)
 			nextBC=nextBC->PrintBC(cout);

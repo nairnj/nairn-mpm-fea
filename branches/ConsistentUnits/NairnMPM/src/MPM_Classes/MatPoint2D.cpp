@@ -146,25 +146,25 @@ void MatPoint2D::GetFintPlusFext(Vector *theFrc,double fni,double xDeriv,double 
 }
 
 // add to the temperature gradient (non-rigid particles only)
-void MatPoint2D::AddTemperatureGradient(Vector *grad)
-{	pTemp->DT.x+=grad->x;
-    pTemp->DT.y+=grad->y;
+void MatPoint2D::AddTemperatureGradient(int offset,Vector *grad)
+{	pTemp[offset]+=grad->x;
+    pTemp[offset+1]+=grad->y;
 }
 
 // return conduction force = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units nJ/sec)
 // and k/rho0 is stored in k in units (nJ mm^2/(sec-K-g))
 //  (non-rigid particles only)
-double MatPoint2D::FCond(double dshdx,double dshdy,double dshdz,TransportProperties *t)
+double MatPoint2D::FCond(int offset,double dshdx,double dshdy,double dshdz,TransportProperties *t)
 {
 	Tensor *kten = &(t->kCondTensor);
-	return -mp*GetRelativeVolume()*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y)*dshdx
-						+ (kten->xy*pTemp->DT.x + kten->yy*pTemp->DT.y)*dshdy);
+	return -mp*GetRelativeVolume()*((kten->xx*pTemp[offset] + kten->xy*pTemp[offset+1])*dshdx
+						+ (kten->xy*pTemp[offset] + kten->yy*pTemp[offset+1])*dshdy);
 }
 
 // add to the concentration gradient (1/mm) (non-rigid particles only)
 void MatPoint2D::AddConcentrationGradient(Vector *grad)
-{	pDiffusion->Dc.x+=grad->x;
-    pDiffusion->Dc.y+=grad->y;
+{	pDiffusion[gGRADx]+=grad->x;
+    pDiffusion[gGRADy]+=grad->y;
 }
 
 // return diffusion force = - V [D] Grad C . Grad S in (mm^3) (mm^2/sec) (1/mm) (1/mm) = mm^3/sec
@@ -172,8 +172,8 @@ void MatPoint2D::AddConcentrationGradient(Vector *grad)
 double MatPoint2D::FDiff(double dshdx,double dshdy,double dshdz,TransportProperties *t)
 {
 	Tensor *Dten = &(t->diffusionTensor);
-	return -GetVolume(DEFORMED_VOLUME)*((Dten->xx*pDiffusion->Dc.x + Dten->xy*pDiffusion->Dc.y)*dshdx
-						+ (Dten->xy*pDiffusion->Dc.x + Dten->yy*pDiffusion->Dc.y)*dshdy);
+	return -GetVolume(DEFORMED_VOLUME)*((Dten->xx*pDiffusion[gGRADx] + Dten->xy*pDiffusion[gGRADy])*dshdx
+						+ (Dten->xy*pDiffusion[gGRADx] + Dten->yy*pDiffusion[gGRADy])*dshdy);
 }
 
 // return kinetic energy (g mm^2/sec^2) = nanoJ

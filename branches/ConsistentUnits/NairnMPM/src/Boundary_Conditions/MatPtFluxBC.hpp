@@ -9,7 +9,7 @@
 		MatPtLoadBC.hpp (BoundaryCondition.hpp)
 ********************************************************************************/
 
-#ifndef _MATPTFLUXDBC_
+#ifndef _MATPTFLUXBC_
 
 #define _MATPTFLUXBC_
 
@@ -26,6 +26,9 @@ class MatPtFluxBC : public MatPtLoadBC
 		// methods
 		BoundaryCondition *PrintBC(ostream &);
         MatPtFluxBC *AddMPFlux(double);
+		virtual void SetBCValue(double);
+		virtual void SetBCFirstTime(double);
+		virtual double GetBCFirstTimeOut(void);
 };
 
 extern MatPtFluxBC *firstFluxPt;

@@ -98,11 +98,11 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 		resEnergy += 0.5*(st0.zz+sp->zz)*erzz;
 	}
 	else if(np==PLANE_STRESS_MPM)
-	{	ep->zz += p->C[4][1]*dvxx+p->C[4][2]*dvyy+p->C[4][3]*dgam+erzz;
+	{	ep->zz += p->C[4][1]*dvxxeff+p->C[4][2]*dvyyeff+p->C[4][3]*dgameff+erzz;
 	}
 	else
 	{	// axisymmetric hoop stress
-		sp->zz += p->C[4][1]*dvxx + p->C[4][2]*dvyy + p->C[4][4]*dvzz + p->C[4][3]*dgam;
+		sp->zz += p->C[4][1]*dvxxeff + p->C[4][2]*dvyyeff + p->C[4][4]*(dvzz - erzz) + p->C[4][3]*dgameff;
 		
 		// extra work and residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
 		workEnergy += 0.5*(st0.zz+sp->zz)*dvzz;

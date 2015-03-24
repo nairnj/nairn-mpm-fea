@@ -15,9 +15,7 @@ NodalConcBC *lastConcBC=NULL;
 NodalConcBC *firstRigidConcBC=NULL;
 NodalConcBC *reuseRigidConcBC=NULL;
 
-/*******************************************************************
-	NodalConcBC: Constructors and Destructors
-*******************************************************************/
+#pragma mark NodalConcBC: Constructors and Destructors
 
 NodalConcBC::NodalConcBC(int num,int setStyle,double concentration,double argTime)
 		: BoundaryCondition(setStyle,concentration,argTime)
@@ -40,9 +38,7 @@ BoundaryCondition *NodalConcBC::UnsetDirection(void)
 	return (BoundaryCondition *)GetNextObject();
 }
 
-/*******************************************************************
-	NodalConcBC: Methods
-*******************************************************************/
+#pragma mark NodalConcBC: Methods
 
 // print it
 BoundaryCondition *NodalConcBC::PrintBC(ostream &os)

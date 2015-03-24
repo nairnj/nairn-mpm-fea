@@ -754,14 +754,14 @@ void ArchiveData::ArchiveResults(double atime)
             app+=sizeof(double);
 			
 			if(mpm[p]->pDiffusion!=NULL)
-			{	*(double *)app=mpm[p]->pDiffusion->Dc.x*csat;
+			{	*(double *)app=mpm[p]->pDiffusion[gGRADx]*csat;
 				app+=sizeof(double);
 				
-				*(double *)app=mpm[p]->pDiffusion->Dc.y*csat;
+				*(double *)app=mpm[p]->pDiffusion[gGRADy]*csat;
 				app+=sizeof(double);
 				
 				if(threeD)
-				{	*(double *)app=mpm[p]->pDiffusion->Dc.z*csat;
+				{	*(double *)app=mpm[p]->pDiffusion[gGRADz]*csat;
 					app+=sizeof(double);
 				}
 			}

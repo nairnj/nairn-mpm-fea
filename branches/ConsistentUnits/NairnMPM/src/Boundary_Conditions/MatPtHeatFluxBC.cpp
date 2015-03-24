@@ -39,6 +39,10 @@ BoundaryCondition *MatPtHeatFluxBC::PrintBC(ostream &os)
     os << nline;
 	PrintFunction(os);
 	
+	// for function input scale for Legacy units
+	if(style==FUNCTION_VALUE)
+		scale = UnitsController::Scaling(1.e3);
+	
     return (BoundaryCondition *)GetNextObject();
 }
 
@@ -48,7 +52,7 @@ BoundaryCondition *MatPtHeatFluxBC::PrintBC(ostream &os)
 MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
 {	
     // condition value
-	// flux BC in W/m^2 = N/(m-sec), but need mJ/(mm^2-sec) = N/(mm-sec) = (1/1000) N/(m-sec)
+	// flux BC in nW/mm^2
 	MPMBase *mpmptr = mpm[ptNum-1];
     MaterialBase *matptr = theMaterials[mpmptr->MatID()];
 	
@@ -68,16 +72,16 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
         
         // k is k/rho0 (nJ mm^2/(sec-K-g)), Dt in K/mm, k Dt (nJ mm/(sec-g))
 		if(fmobj->IsThreeD())
-		{	fluxMag.x = k->xx*mpmptr->pTemp->DT.x + k->xy*mpmptr->pTemp->DT.y + k->xz*mpmptr->pTemp->DT.z;
-			fluxMag.y = k->xy*mpmptr->pTemp->DT.x + k->yy*mpmptr->pTemp->DT.y + k->yz*mpmptr->pTemp->DT.z;
-			fluxMag.x = k->xz*mpmptr->pTemp->DT.x + k->yz*mpmptr->pTemp->DT.y + k->zz*mpmptr->pTemp->DT.z;
+		{	fluxMag.x = k->xx*mpmptr->pTemp[gGRADx] + k->xy*mpmptr->pTemp[gGRADy] + k->xz*mpmptr->pTemp[gGRADz];
+			fluxMag.y = k->xy*mpmptr->pTemp[gGRADx] + k->yy*mpmptr->pTemp[gGRADy] + k->yz*mpmptr->pTemp[gGRADz];
+			fluxMag.x = k->xz*mpmptr->pTemp[gGRADx] + k->yz*mpmptr->pTemp[gGRADy] + k->zz*mpmptr->pTemp[gGRADz];
 		}
 		else
-		{	fluxMag.x = k->xx*mpmptr->pTemp->DT.x + k->xy*mpmptr->pTemp->DT.y;
-			fluxMag.y = k->xy*mpmptr->pTemp->DT.x + k->yy*mpmptr->pTemp->DT.y;
+		{	fluxMag.x = k->xx*mpmptr->pTemp[gGRADx] + k->xy*mpmptr->pTemp[gGRADy];
+			fluxMag.y = k->xy*mpmptr->pTemp[gGRADx] + k->yy*mpmptr->pTemp[gGRADy];
 		}
 		
-		// remove 1/rho0 scaling on k to get N/(mm-sec)
+		// remove 1/rho0 scaling on k to get nW/m^2
 		ScaleVector(&fluxMag,matptr->rho);
 		
 		// need to get normal vector from cpdi functions below
@@ -94,7 +98,7 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
 		GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
 		
 		// Legacy scaling of W/m^2 to nW/mm^2
-		fluxMag.x = UnitsController::Scaling(1.e3)*function->Val();
+		fluxMag.x = scale*function->Val();
 	}
 	
 	// get corners and direction from material point
@@ -112,10 +116,7 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
 	// tscaled has units mm^s for final flux is (N-mm)/sec
 	int i;
     for(i=1;i<=numnds;i++)
-    {   // skip empty nodes
-        if(nd[nds[i]]->NodeHasNonrigidParticles())
-			conduction->AddFluxCondition(nd[nds[i]],DotVectors(&fluxMag,&tscaled)*fn[i],false);
-    }
+		conduction->AddFluxCondition(nd[nds[i]],DotVectors(&fluxMag,&tscaled)*fn[i],false);
 	
     return (MatPtHeatFluxBC *)GetNextObject();
 }

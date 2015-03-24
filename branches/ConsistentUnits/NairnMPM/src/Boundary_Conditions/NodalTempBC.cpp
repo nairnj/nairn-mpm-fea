@@ -15,9 +15,7 @@ NodalTempBC *lastTempBC=NULL;
 NodalTempBC *firstRigidTempBC=NULL;
 NodalTempBC *reuseRigidTempBC=NULL;
 
-/*******************************************************************
-	NodalTempBC: Constructors and Destructors
-*******************************************************************/
+#pragma mark NodalTempBC: Constructors and Destructors
 
 NodalTempBC::NodalTempBC(int num,int setStyle,double temperature,double argTime)
 		: BoundaryCondition(setStyle,temperature,argTime)
@@ -40,9 +38,7 @@ BoundaryCondition *NodalTempBC::UnsetDirection(void)
 	return (BoundaryCondition *)GetNextObject();
 }
 
-/*******************************************************************
-	NodalTempBC: Methods
-*******************************************************************/
+#pragma mark NodalTempBC: Methods
 
 // print it
 BoundaryCondition *NodalTempBC::PrintBC(ostream &os)
@@ -67,3 +63,10 @@ NodalTempBC *NodalTempBC::PasteNodalTemperature(NodalPoint *nd)
 	nd->gTemperature = temperatureNoBC;
 	return (NodalTempBC *)GetNextObject();
 }
+
+// initialize reaction flow at constant temperature boundary conditions
+void NodalTempBC::InitQReaction(void) { qreaction = 0.; }
+
+// add flow required to bring global nodal temperature to the BC temperature
+void NodalTempBC::SuperposeQReaction(double qflow) { qreaction += qflow; }
+

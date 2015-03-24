@@ -31,6 +31,11 @@ class NodalTempBC: public BoundaryCondition
         BoundaryCondition *PrintBC(ostream &);
 		NodalTempBC *CopyNodalTemperature(NodalPoint *);
 		NodalTempBC *PasteNodalTemperature(NodalPoint *);
+		void InitQReaction(void);
+		void SuperposeQReaction(double);
+	
+	protected:
+		double qreaction;
 
 };
 

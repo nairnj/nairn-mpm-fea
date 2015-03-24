@@ -141,37 +141,37 @@ void MatPoint3D::GetFintPlusFext(Vector *theFrc,double fni,double xDeriv,double 
 }
 
 // add to the concentration gradient (non-rigid particles only)
-void MatPoint3D::AddTemperatureGradient(Vector *grad)
-{	pTemp->DT.x+=grad->x;
-    pTemp->DT.y+=grad->y;
-    pTemp->DT.z+=grad->z;
+void MatPoint3D::AddTemperatureGradient(int offset,Vector *grad)
+{	pTemp[offset]+=grad->x;
+    pTemp[offset+1]+=grad->y;
+    pTemp[offset+2]+=grad->z;
 }
 
 // return conduction force = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units nJ/sec)
 // and k/rho0 is stored in k in units (nJ mm^2/(sec-K-g))
 //  (non-rigid particles only)
-double MatPoint3D::FCond(double dshdx,double dshdy,double dshdz,TransportProperties *t)
+double MatPoint3D::FCond(int offset,double dshdx,double dshdy,double dshdz,TransportProperties *t)
 {
 	Tensor *kten = &(t->kCondTensor);
-	return -mp*GetRelativeVolume()*((kten->xx*pTemp->DT.x + kten->xy*pTemp->DT.y + kten->xz*pTemp->DT.z)*dshdx
-						+ (kten->xy*pTemp->DT.x + kten->yy*pTemp->DT.y + kten->yz*pTemp->DT.z)*dshdy
-						+ (kten->xz*pTemp->DT.x + kten->yz*pTemp->DT.y + kten->zz*pTemp->DT.z)*dshdz);
+	return -mp*GetRelativeVolume()*((kten->xx*pTemp[offset] + kten->xy*pTemp[offset+1] + kten->xz*pTemp[offset+2])*dshdx
+						+ (kten->xy*pTemp[offset] + kten->yy*pTemp[offset+1] + kten->yz*pTemp[offset+2])*dshdy
+						+ (kten->xz*pTemp[offset] + kten->yz*pTemp[offset+1] + kten->zz*pTemp[offset+2])*dshdz);
 }
 
 // add to the concentration gradient
 void MatPoint3D::AddConcentrationGradient(Vector *grad)
-{	pDiffusion->Dc.x+=grad->x;
-    pDiffusion->Dc.y+=grad->y;
-    pDiffusion->Dc.z+=grad->z;
+{	pDiffusion[gGRADx]+=grad->x;
+    pDiffusion[gGRADy]+=grad->y;
+    pDiffusion[gGRADz]+=grad->z;
 }
 
 // return diffusion force = - V [D] Grad C . Grad S
 double MatPoint3D::FDiff(double dshdx,double dshdy,double dshdz,TransportProperties *t)
 {
 	Tensor *Dten = &(t->diffusionTensor);
-	return -GetVolume(DEFORMED_VOLUME)*((Dten->xx*pDiffusion->Dc.x + Dten->xy*pDiffusion->Dc.y + Dten->xz*pDiffusion->Dc.z)*dshdx
-						+ (Dten->xy*pDiffusion->Dc.x + Dten->yy*pDiffusion->Dc.y + Dten->yz*pDiffusion->Dc.z)*dshdy
-						+ (Dten->xz*pDiffusion->Dc.x + Dten->yz*pDiffusion->Dc.y + Dten->zz*pDiffusion->Dc.z)*dshdz);
+	return -GetVolume(DEFORMED_VOLUME)*((Dten->xx*pDiffusion[gGRADx] + Dten->xy*pDiffusion[gGRADy] + Dten->xz*pDiffusion[gGRADz])*dshdx
+						+ (Dten->xy*pDiffusion[gGRADx] + Dten->yy*pDiffusion[gGRADy] + Dten->yz*pDiffusion[gGRADz])*dshdy
+						+ (Dten->xz*pDiffusion[gGRADx] + Dten->yz*pDiffusion[gGRADy] + Dten->zz*pDiffusion[gGRADz])*dshdz);
 }
 
 // return kinetic energy (g mm^2/sec^2) = nanoJ

@@ -81,11 +81,11 @@ class BoundaryCondition : public LinkedObject
 		virtual void SetBCValue(double);
 		void SetBCValueCU(double);
 		double GetBCValueOut(void);
-		void SetBCFirstTime(double);
+		virtual void SetBCFirstTime(double);
 		void SetBCFirstTimeCU(double);
 		double GetBCValue(void);
 		double GetBCFirstTime(void);
-		double GetBCFirstTimeOut(void);
+		virtual double GetBCFirstTimeOut(void);
 		void SetBCOffset(double);
 		double GetBCOffset(void);
 		int GetBCStyle();

@@ -289,7 +289,7 @@ CommonUtilities.o : $(CommonUtilities).cpp $(dprefix)
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CommonUtilities).cpp
 svninfo.o : $(svninfo).cpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(svninfo).cpp
-UnitsController.o : $(UnitsController).cpp $(UnitsController).hpp
+UnitsController.o : $(UnitsController).cpp $(UnitsController).hpp $(CommonReadHandler).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UnitsController).cpp
 
 # Common: Read_XML

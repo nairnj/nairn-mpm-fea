@@ -233,7 +233,7 @@ int MatPtLoadBC::CompactCornerNodes(int numDnds,Vector *corners,int *cElem,doubl
     return count;
 }
 
-#pragma mark MatPtLoadBC: Accessors
+#pragma mark MatPtLoadBC:Accessors
 
 // get current position of particle
 void MatPtLoadBC::GetPosition(double *xpos,double *ypos,double *zpos,double *rot)

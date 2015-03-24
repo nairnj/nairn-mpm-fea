@@ -7,6 +7,7 @@
 ********************************************************************************/
 
 #include "System/UnitsController.hpp"
+#include "Read_XML/CommonReadHandler.hpp"
 
 // class variables
 int UnitsController::unitsType = LEGACY_UNITS;
@@ -79,6 +80,8 @@ const char *UnitsController::Label(int type)
 					return "ms";
 				case BCHEATFLUX_UNITS:
 					return "W/m^2";
+				case BCCONCFLUX_UNITS:
+					return "kg/(m^2-s)";
 				default:
 					break;
 			}
@@ -93,4 +96,69 @@ const char *UnitsController::Label(int type)
 			
 }
 
+// When reading a file and find 'units' attribute, convert current
+// units into those units (if possible)
+double UnitsController::UnitsAttribute(char *value,int type)
+{
+	double attrScale = 1.;
+	
+	switch(type)
+	{	case SEC_UNITS:
+			// convert to seconds
+			if(strcmp(value,"msec")==0)
+				attrScale=1.e-3;
+			else if(strcmp(value,"ms")==0)
+				attrScale=1.e-3;
+			else if(strcmp(value,"microsec")==0)
+				attrScale=1.e-6;
+			else if(strcmp(value,"us")==0)
+				attrScale=1.e-6;
+			break;
+			
+		case LENGTH_UNITS:
+			// convert to mm
+			if(strcmp(value,"m")==0)
+				attrScale=1.e3;
+			else if(strcmp(value,"cm")==0)
+				attrScale=10.;
+			else if(strcmp(value,"microns")==0)
+				attrScale=1.e-3;
+			else if(strcmp(value,"in")==0)
+				attrScale=25.4;
+			else if(strcmp(value,"ft")==0)
+				attrScale=12.*25.4;
+			break;
+			
+		case VELOCITY_UNITS:
+			// convert to mm/sec
+			if(strcmp(value,"m/sec")==0)
+				attrScale=1.e3;
+			else if(strcmp(value,"mm/msec")==0)
+				attrScale=1.e3;
+			else if(strcmp(value,"cm/sec")==0)
+				attrScale=10.;
+			else if(strcmp(value,"in/sec")==0)
+				attrScale=25.4;
+			else if(strcmp(value,"ft/sec")==0)
+				attrScale=12.*25.4;
+			break;
+			
+		case MASS_UNITS:
+			// convert to g
+			if(strcmp(value,"kg")==0)
+				attrScale=1.e3;
+			else if(strcmp(value,"mg")==0)
+				attrScale=1.e-3;
+			else if(strcmp(value,"lbs")==0)
+				attrScale=453.594;
+			else if(strcmp(value,"oz")==0)
+				attrScale=28.3495;
+			break;
+			
+		default:
+			break;
+	}
+	
+	return attrScale;
+}
 
