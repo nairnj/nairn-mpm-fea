@@ -54,6 +54,12 @@ void UpdateMomentaTask::Execute(void)
 	{	NodalPoint *ndptr = nd[i];
 		ndptr->UpdateMomentaOnNode(timestep);
 		
+		// get grid transport rates (update transport properties when particle state updated)
+		// do first so both material and crack contact will have actual rates
+		TransportTask *nextTransport=transportTasks;
+		while(nextTransport!=NULL)
+			nextTransport=nextTransport->TransportRates(ndptr,timestep);
+		
 		if(fmobj->multiMaterialMode)
 		{	try
 			{	ndptr->MaterialContactOnNode(timestep,UPDATE_MOMENTUM_CALL,NULL,NULL);
@@ -67,10 +73,6 @@ void UpdateMomentaTask::Execute(void)
 			}
 		}
 		
-		// get grid transport rates (update transport properties when particle state updated)
-		TransportTask *nextTransport=transportTasks;
-		while(nextTransport!=NULL)
-			nextTransport=nextTransport->TransportRates(ndptr,timestep);
 	}
 	
 	// throw error now

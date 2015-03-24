@@ -55,6 +55,7 @@ class TransportTask
 
 		// adjust forces at grid points with transport BCs
 		virtual TransportTask *SetTransportForceBCs(double) = 0;
+		virtual void AddFluxCondition(NodalPoint *,double,bool) = 0;
 		
 		// find transport rates on the nodes
 		virtual TransportTask *TransportRates(NodalPoint *,double) = 0;

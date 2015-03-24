@@ -40,6 +40,7 @@ class ConductionTask : public TransportTask
 		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *);
 		virtual TransportTask *CopyForces(NodalPoint *,NodalPoint *);
 		virtual TransportTask *SetTransportForceBCs(double);
+		virtual void AddFluxCondition(NodalPoint *,double,bool);
 		virtual TransportTask *TransportRates(NodalPoint *,double);
 		virtual TransportTask *IncrementTransportRate(const NodalPoint *,double,double &) const;
 		virtual TransportTask *MoveTransportValue(MPMBase *,double,double) const;

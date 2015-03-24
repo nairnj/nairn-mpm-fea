@@ -554,7 +554,8 @@ void NairnMPM::PreliminaryCalcs(void)
 		//---------------------------------------------------
 		// Heat Flux Material Points
 		PrintSection("MATERIAL POINTS WITH HEAT FLUX");
-		cout << " Point  DOF Face ID   Flux (W/m^2)    Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Function\n"
+		cout << " Point  DOF Face ID   Flux (" << UnitsController::Label(BCHEATFLUX_UNITS) << ")    Arg ("
+			<< UnitsController::Label(BCARG_UNITS) << ")  Function\n"
 		<< "---------------------------------------------------------------\n";
 		nextBC=(BoundaryCondition *)firstHeatFluxPt;
 		while(nextBC!=NULL)

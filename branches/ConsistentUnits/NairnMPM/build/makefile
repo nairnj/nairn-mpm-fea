@@ -722,7 +722,7 @@ CrackHeader.o : $(CrackHeader).cpp $(dprefix) $(MaterialBase).hpp $(NairnMPM).hp
 			$(ArchiveData).hpp $(CommonException).hpp $(CommonArchiveData).hpp $(CrackHeader).hpp $(CommonException).hpp \
 			$(ElementBase).hpp $(CrackSurfaceContact).hpp $(ContourPoint).hpp $(CrackSegment).hpp $(CrackLeaf).hpp \
 			$(NodalPoint).hpp $(MPMBase).hpp $(CrackNode).hpp $(NodalPoint2D).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
-			$(CrossedCrack).hpp $(ParseController).hpp $(PropagateTask).hpp $(CustomTask).hpp
+			$(CrossedCrack).hpp $(ParseController).hpp $(PropagateTask).hpp $(CustomTask).hpp $(ConductionTask).hpp $(TransportTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackHeader).cpp
 CrackLeaf.o : $(CrackLeaf).cpp $(dprefix) $(CrackLeaf).hpp $(CrackHeader).hpp $(CrackSegment).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(CrackLeaf).cpp
@@ -861,11 +861,11 @@ MatPtTractionBC.o : $(MatPtTractionBC).cpp $(dprefix) $(MatPtTractionBC).hpp $(M
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MatPtTractionBC).cpp
 MatPtFluxBC.o : $(MatPtFluxBC).cpp $(dprefix) $(MatPtFluxBC).hpp $(MatPtLoadBC).hpp $(BoundaryCondition).hpp \
 			$(MPMBase).hpp $(MaterialBase).hpp $(MeshInfo).hpp $(mathexpr).hpp $(NairnMPM).hpp $(NodalPoint).hpp \
-            $(CrackVelocityField).hpp $(MatVelocityField).hpp
+            $(CrackVelocityField).hpp $(MatVelocityField).hpp $(TransportTask).hpp $(DiffusionTask).cpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MatPtFluxBC).cpp
 MatPtHeatFluxBC.o : $(MatPtHeatFluxBC).cpp $(dprefix) $(MatPtHeatFluxBC).hpp $(MatPtLoadBC).hpp $(BoundaryCondition).hpp \
 			$(MPMBase).hpp $(MaterialBase).hpp $(MeshInfo).hpp $(mathexpr).hpp $(NairnMPM).hpp $(NodalPoint).hpp \
-            $(CrackVelocityField).hpp $(MatVelocityField).hpp
+            $(CrackVelocityField).hpp $(MatVelocityField).hpp $(TransportTask).hpp $(ConductionTask).cpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MatPtHeatFluxBC).cpp
 NodalVelBC.o : $(NodalVelBC).cpp $(dprefix) $(NodalVelBC).hpp $(BoundaryCondition).hpp $(NodalPoint).hpp $(MeshInfo).hpp \
 			$(NairnMPM).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(CommonException).hpp

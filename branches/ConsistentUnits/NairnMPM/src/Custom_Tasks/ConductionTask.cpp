@@ -295,6 +295,15 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
 	return nextTask;
 }
 
+// add flux to tranport flow force to active nodes only
+// postRateCalc means fcond has been divided by its mass
+void ConductionTask::AddFluxCondition(NodalPoint *ndptr,double extraFlux,bool postRateCalc)
+{	if(ndptr->NodeHasNonrigidParticles())
+	{	if(postRateCalc) extraFlux /= ndptr->gMpCp;
+		ndptr->fcond += extraFlux;
+	}
+}
+
 #pragma mark UPDATE MOMENTA TASK
 
 // get temperature rates node

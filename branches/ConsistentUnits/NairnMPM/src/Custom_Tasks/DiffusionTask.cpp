@@ -231,6 +231,15 @@ TransportTask *DiffusionTask::SetTransportForceBCs(double deltime)
 	return nextTask;
 }
 
+// add flux to tranport flow force
+// postRateCalc means fcond has been divided by its mass
+void DiffusionTask::AddFluxCondition(NodalPoint *ndptr,double extraFlux,bool postRateCalc)
+{	if(ndptr->NodeHasNonrigidParticles())
+	{	if(postRateCalc) extraFlux /= ndptr->gVolume;
+		ndptr->fdiff += extraFlux;
+	}
+}
+
 // find concentration rates on the nodes, but since these are potentials they are limited
 // to 0 to 1 or limited to 0 < gConcentration + fdiff*deltime < 1
 TransportTask *DiffusionTask::TransportRates(NodalPoint *ndptr,double deltime)

@@ -13,6 +13,7 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Read_XML/mathexpr.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "Custom_Tasks/DiffusionTask.hpp"
 
 // global
 MatPtFluxBC *firstFluxPt=NULL;
@@ -111,8 +112,7 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
     for(i=1;i<=numnds;i++)
     {   // skip empty nodes
         if(nd[nds[i]]->NodeHasNonrigidParticles())
-		{	nd[nds[i]]->fdiff += DotVectors(&fluxMag,&tscaled)*fn[i];
-        }
+			diffusion->AddFluxCondition(nd[nds[i]],DotVectors(&fluxMag,&tscaled)*fn[i],false);
     }
 	
     return (MatPtFluxBC *)GetNextObject();

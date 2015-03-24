@@ -26,6 +26,10 @@ class MatPtHeatFluxBC : public MatPtLoadBC
         // methods
         BoundaryCondition *PrintBC(ostream &);
         MatPtHeatFluxBC *AddMPHeatFlux(double);
+	
+		// accessors
+		virtual void SetBCValue(double);
+
 };
 
 extern MatPtHeatFluxBC *firstHeatFluxPt;

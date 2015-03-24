@@ -25,6 +25,7 @@
 #include "Cracks/CrossedCrack.hpp"
 #include "Read_XML/ParseController.hpp"
 #include "Custom_Tasks/PropagateTask.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
 
 // Include to store J using 1 term in J2. Calculation should use
 // two terms to get that result in J1
@@ -1451,7 +1452,7 @@ void CrackHeader::CrackTipHeating(void)
 	
         // Add crack particle heating to each node in the element
         for(i=1;i<=numnds;i++)
-		{	nd[nds[i]]->fcond+=scrk->HeatRate()*fn[i];
+		{	conduction->AddFluxCondition(nd[nds[i]],scrk->HeatRate()*fn[i],false);
 		}
 		
 		// next segment

@@ -401,7 +401,7 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
                             
                             // As heat source need nJ/sec or multiply by 1/timestep
                             // Note that this is after transport rates are calculated (by true in last parameter)
-                            np->fcond += fabs(qrate/deltime)/np->gMpCp;
+                            conduction->AddFluxCondition(np,fabs(qrate/deltime),true);
                         }
                     }
 				}

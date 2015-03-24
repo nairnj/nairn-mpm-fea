@@ -13,6 +13,8 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Read_XML/mathexpr.hpp"
 #include "Nodes/NodalPoint.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
+#include "System/UnitsController.hpp"
 
 // global
 MatPtHeatFluxBC *firstHeatFluxPt=NULL;
@@ -32,7 +34,8 @@ BoundaryCondition *MatPtHeatFluxBC::PrintBC(ostream &os)
 {
     char nline[200];
     
-    sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,GetBCValueOut(),GetBCFirstTimeOut());
+    sprintf(nline,"%7d %2d   %2d  %2d %15.7e %15.7e",ptNum,direction,face,style,
+			UnitsController::Scaling(1.e-3)*GetBCValueOut(),GetBCFirstTimeOut());
     os << nline;
 	PrintFunction(os);
 	
@@ -81,18 +84,17 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
         bcDir = N_DIRECTION;
 	}
 	else if(direction==EXTERNAL_FLUX)
-	{	// user should provide in W/m^2 = N/(m-sec), divide by 1000 to get N/(mm-sec)
-		fluxMag.x = 0.001*BCValue(bctime);
+	{	// user-supplied constant
+		fluxMag.x = BCValue(bctime);
 	}
 	else
     {   // coupled surface flux
 		// time variable (t) is replaced by particle temperature
 		varTime = mpmptr->pPreviousTemperature;
 		GetPosition(&varXValue,&varYValue,&varZValue,&varRotValue);
-		double currentValue = function->Val();
 		
-		// user should provide in W/m^2 = N/(m-sec), divide by 1000 to get N/(mm-sec)
-		fluxMag.x = 0.001*currentValue;
+		// Legacy scaling of W/m^2 to nW/mm^2
+		fluxMag.x = UnitsController::Scaling(1.e3)*function->Val();
 	}
 	
 	// get corners and direction from material point
@@ -107,13 +109,23 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
     int numnds = CompactCornerNodes(numDnds,corners,cElem,ratio,nds,fn);
 	
     // add force to each node
+	// tscaled has units mm^s for final flux is (N-mm)/sec
 	int i;
     for(i=1;i<=numnds;i++)
     {   // skip empty nodes
         if(nd[nds[i]]->NodeHasNonrigidParticles())
-		{	nd[nds[i]]->fcond += DotVectors(&fluxMag,&tscaled)*fn[i];
-        }
+			conduction->AddFluxCondition(nd[nds[i]],DotVectors(&fluxMag,&tscaled)*fn[i],false);
     }
 	
     return (MatPtHeatFluxBC *)GetNextObject();
 }
+
+#pragma mark MatPtHeatFluxBC:Accessors
+
+// set value (and scale legacy W/m^2 to nW/mm^2)
+void MatPtHeatFluxBC::SetBCValue(double bcvalue)
+{	BoundaryCondition::SetBCValue(UnitsController::Scaling(1.e3)*bcvalue);
+}
+
+
+

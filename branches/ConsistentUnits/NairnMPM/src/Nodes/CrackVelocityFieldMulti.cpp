@@ -623,7 +623,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
     
     // total friction, scale and absolute value
     if(callType==UPDATE_MOMENTUM_CALL && conduction && qrate!=0.)
-    {   ndptr->fcond += fabs(qrate/deltime);
+    {	conduction->AddFluxCondition(ndptr,fabs(qrate/deltime),true);
     }
 }
 
@@ -911,7 +911,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
                 CopyScaleVector(&delPi,&mvf[i]->pk,-1/massi);   // -vr
                 AddVector(&delPi,&rvel);                        // +vr
                 double qrate = DotVectors(&Ftdt,&delPi);        // (vr-vi).Ftdt
-                ndptr->fcond += fabs(qrate/deltime);      // scale and absolute value
+				conduction->AddFluxCondition(ndptr,fabs(qrate/deltime),true);		// scale and absolute value
             }
         }
 	}

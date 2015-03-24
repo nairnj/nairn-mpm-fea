@@ -77,6 +77,8 @@ const char *UnitsController::Label(int type)
 					return "ms/ms^-1";
 				case BCTIME_UNITS:
 					return "ms";
+				case BCHEATFLUX_UNITS:
+					return "W/m^2";
 				default:
 					break;
 			}
