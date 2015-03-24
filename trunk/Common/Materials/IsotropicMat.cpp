@@ -185,7 +185,7 @@ void IsotropicMat::FillElasticProperties(ElasticProperties *p,int np)
         p->C[1][2]*=rrho;
         p->C[2][2]*=rrho;
         p->C[3][3]*=rrho;
-		if(np==PLANE_STRAIN_MPM || AXISYMMETRIC_MPM)
+		if(np==PLANE_STRAIN_MPM || np==AXISYMMETRIC_MPM)
 		{	p->C[4][1]*=rrho;
 			p->C[4][2]*=rrho;
 			p->C[4][3]*=rrho;
