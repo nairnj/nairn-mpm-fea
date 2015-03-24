@@ -517,7 +517,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	
 	//---------------------------------------------------
     // Diffusion boundary conditions
-	if(DiffusionTask::active)
+	if(DiffusionTask::active && firstConcBC!=NULL)
 	{   PrintSection("NODAL POINTS WITH FIXED CONCENTRATIONS");
 		cout << "  Node  ID    Conc (/csat)   Arg (ms/ms^-1)  Function\n"
 		<< "------------------------------------------------------\n";
@@ -525,11 +525,13 @@ void NairnMPM::PreliminaryCalcs(void)
 		while(nextBC!=NULL)
 			nextBC=nextBC->PrintBC(cout);
 		cout << endl;
-		
-		//---------------------------------------------------
-		// Concentration Flux Material Points
-		PrintSection("MATERIAL POINTS WITH CONCENTRATION FLUX");
-		cout << " Point  DOF Face ID   Flux (mm/sec)   Arg (ms/ms^-1)  Function\n"
+	}
+	
+	//---------------------------------------------------
+	// Concentration Flux Material Points
+	if(DiffusionTask::active && firstFluxPt!=NULL)
+	{	PrintSection("MATERIAL POINTS WITH CONCENTRATION FLUX");
+		cout << " Point  DOF Face ID Flux (kg/(m^2-s)) Arg (ms/ms^-1)  Function\n"
 		<< "---------------------------------------------------------------\n";
 		nextBC=(BoundaryCondition *)firstFluxPt;
 		while(nextBC!=NULL)
@@ -539,7 +541,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	
 	//---------------------------------------------------
     // Conduction boundary conditions
-	if(ConductionTask::active)
+	if(ConductionTask::active && firstTempBC!=NULL)
 	{   PrintSection("NODAL POINTS WITH FIXED TEMPERATURES");
 		cout << " Node   ID   Temp (-----)   Arg (ms/ms^-1)  Function\n"
 		<< "------------------------------------------------------\n";
@@ -547,10 +549,12 @@ void NairnMPM::PreliminaryCalcs(void)
 		while(nextBC!=NULL)
 			nextBC=nextBC->PrintBC(cout);
 		cout << endl;
-		
-		//---------------------------------------------------
-		// Heat Flux Material Points
-		PrintSection("MATERIAL POINTS WITH HEAT FLUX");
+	}
+	
+	//---------------------------------------------------
+	// Heat Flux Material Points
+	if(ConductionTask::active && firstHeatFluxPt!=NULL)
+	{	PrintSection("MATERIAL POINTS WITH HEAT FLUX");
 		cout << " Point  DOF Face ID   Flux (W/m^2)    Arg (ms/ms^-1)  Function\n"
 		<< "---------------------------------------------------------------\n";
 		nextBC=(BoundaryCondition *)firstHeatFluxPt;
