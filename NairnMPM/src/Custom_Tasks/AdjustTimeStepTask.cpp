@@ -74,7 +74,7 @@ CustomTask *AdjustTimeStepTask::Initialize(void)
 // never uses extrapolations so no need to set needExtraps
 CustomTask *AdjustTimeStepTask::PrepareForStep(bool &needExtraps)
 {
-	if(customAdjustTime>0.)
+	if(customAdjustTime>=0.)
 	{	if(mtime+timestep>=nextCustomAdjustTime)
         {	doAdjust=TRUE;
             nextCustomAdjustTime+=customAdjustTime;
