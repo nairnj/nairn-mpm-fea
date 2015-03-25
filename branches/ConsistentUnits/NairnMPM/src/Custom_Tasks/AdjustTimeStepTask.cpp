@@ -13,6 +13,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "Elements/ElementBase.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark Constructors and Destructors
 
@@ -34,7 +35,7 @@ char *AdjustTimeStepTask::InputParam(char *pName,int &input,double &gScaling)
 {
     if(strcmp(pName,"adjustTime")==0)
     {	input=DOUBLE_NUM;
-        return (char *)&customAdjustTime;				// assumes in ms
+		return UnitsController::ScaledPtr((char *)&customAdjustTime,gScaling,1.e-3);
     }
 		
     else if(strcmp(pName,"verbose")==0)
@@ -56,9 +57,8 @@ CustomTask *AdjustTimeStepTask::Initialize(void)
 	// time interval
 	cout << "   Adjust interval: ";
 	if(customAdjustTime>=0.)
-	{	cout << customAdjustTime << " ms" << endl;
-		customAdjustTime/=1000.;				// convert to sec
-		nextCustomAdjustTime=customAdjustTime;
+	{	cout << customAdjustTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS) << endl;
+		nextCustomAdjustTime = customAdjustTime;
 	}
 	else
 		cout << "same as particle archives" << endl;
@@ -74,16 +74,16 @@ CustomTask *AdjustTimeStepTask::Initialize(void)
 // never uses extrapolations so no need to set needExtraps
 CustomTask *AdjustTimeStepTask::PrepareForStep(bool &needExtraps)
 {
-	if(customAdjustTime>0.)
+	if(customAdjustTime>=0.)
 	{	if(mtime+timestep>=nextCustomAdjustTime)
-        {	doAdjust=TRUE;
-            nextCustomAdjustTime+=customAdjustTime;
+        {	doAdjust = true;
+            nextCustomAdjustTime += customAdjustTime;
         }
         else
-            doAdjust=FALSE;
+            doAdjust = false;
 	}
 	else
-		doAdjust=archiver->WillArchive();
+		doAdjust = archiver->WillArchive();
     
     return nextTask;
 }
@@ -96,55 +96,46 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     
     int p;
     short matid;
-    double area,volume,crot,tst;
+    double crot,tst;
     
     // get grid dimensions
-    double dcell = mpmgrid.GetMinCellDimension();		// in mm
+    double dcell = mpmgrid.GetMinCellDimension();
     
     if(lastReportedTimeStep<0) lastReportedTimeStep = timestep;
     
     // reset globals
-    timestep=1.e15;
-    propTime=1.e15;
+    timestep = 1.e15;
+    propTime = 1.e15;
     
     // loop over nonrigid material points
     for(p=0;p<nmpmsNR;p++)
 	{	// material id
 		matid=mpm[p]->MatID();
         
-		// element and mp properties
-		if(fmobj->IsThreeD())
-		{	volume=theElements[mpm[p]->ElemID()]->GetVolume();	// in mm^3
-		}
-		else
-		{	area=theElements[mpm[p]->ElemID()]->GetArea();		// in mm^2
-			volume=mpm[p]->thickness()*area;					// in mm^2
-		}
-        
         // check time step using convergence condition
-        crot=theMaterials[matid]->CurrentWaveSpeed(fmobj->IsThreeD(),mpm[p]);				// in mm/sec
-		tst=fmobj->GetCFLCondition()*dcell/crot;                                            // in sec
-        if(tst<timestep) timestep=tst;
+        crot = theMaterials[matid]->CurrentWaveSpeed(fmobj->IsThreeD(),mpm[p]);
+		tst = fmobj->GetCFLCondition()*dcell/crot; 
+        if(tst<timestep) timestep = tst;
         
         // propagation time (in sec)
-        tst=fmobj->GetPropagationCFLCondition()*dcell/crot;                                        // in sec
-        if(tst<propTime) propTime=tst;
+        tst = fmobj->GetPropagationCFLCondition()*dcell/crot;
+        if(tst<propTime) propTime = tst;
 	}
 	
     // verify time step and make smaller if needed
 	strainTimestep = (fmobj->mpmApproach==USAVG_METHOD) ? timestep/2. : timestep ;
     
 	// propagation time step (no less than timestep)
-    if(propTime<timestep) propTime=timestep;
+    if(propTime<timestep) propTime = timestep;
     
     // report if changed by 5% since last reported change
     if(verbose!=0)
     {   double ratio = timestep/lastReportedTimeStep;
         if(ratio < 0.95 || ratio>1.05)
 		{	if(timestep<lastReportedTimeStep)
-				cout << "# time step reduced to " << timestep*1000. << " ms" << endl;
+				cout << "# time step reduced to " << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS) << endl;
 			else
-				cout << "# time step increased to " << timestep*1000. << " ms" << endl;
+				cout << "# time step increased to " << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS) << endl;
 		}
         lastReportedTimeStep = timestep;
     }

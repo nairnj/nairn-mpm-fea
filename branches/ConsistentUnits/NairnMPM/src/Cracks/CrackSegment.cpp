@@ -13,6 +13,7 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "System/ArchiveData.hpp"
 #include "Cracks/CrackHeader.hpp"
+#include "System/UnitsController.hpp"
 
 extern char *app;
 
@@ -439,22 +440,22 @@ void CrackSegment::FillArchive(char *app,int segNum)
     *(double *)app=surfy[1];
     app+=sizeof(double);
     
-    // J integral (*1000 for units units J/m^2)
+    // J integral
     if(archiver->CrackArchive(ARCH_JIntegral))
-    {	*(double *)app=Jint.x/1000.;	// current crack tip J1
+    {	*(double *)app=Jint.x*UnitsController::Scaling(1.e-3);		// current crack tip J1
         app+=sizeof(double);
 		if(fmobj->propagate[0])
-			*(double *)app=propagationJ/1000.;		// actual energy released last time the crack grew
+			*(double *)app=propagationJ*UnitsController::Scaling(1.e-3);		// actual energy released last time the crack grew
 		else
-			*(double *)app=Jint.y/1000.;		// current crack tip J2
+			*(double *)app=Jint.y*UnitsController::Scaling(1.e-3);		// current crack tip J2
         app+=sizeof(double);
     }
     
     // Stress Intensity Factors (/sqrt(1000) for  units Pa sqrt(m))
     if(archiver->CrackArchive(ARCH_StressIntensity))
-    {	*(double *)app=sif.x*0.0316227766016838e-6;
+    {	*(double *)app=sif.x*UnitsController::Scaling(0.0316227766016838e-6);
         app+=sizeof(double);
-        *(double *)app=sif.y*0.0316227766016838e-6;
+        *(double *)app=sif.y*UnitsController::Scaling(0.0316227766016838e-6);
         app+=sizeof(double);
     }
 	
@@ -525,7 +526,7 @@ void CrackSegment::StartCrackTipHeating(double growth,double thickness)
 	heating = true;
 }
 
-// return heating rate if any
+// return heating rate if any in nW/g
 double CrackSegment::HeatRate(void)
 {
 	// return zero if off or if done

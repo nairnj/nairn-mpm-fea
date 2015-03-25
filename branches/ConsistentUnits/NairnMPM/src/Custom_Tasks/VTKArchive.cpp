@@ -25,6 +25,7 @@
 #include "Nodes/NodalPoint.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"
+#include "System/UnitsController.hpp"
 
 int dummyArg;
 
@@ -33,8 +34,8 @@ int dummyArg;
 // Constructors
 VTKArchive::VTKArchive()
 {
-	customArchiveTime=-1.;          // input in ms, stored in sec
-	nextCustomArchiveTime=-1.;      // input in ms, stored in sec
+	customArchiveTime = -1.;          // input in ms, stored in sec
+	nextCustomArchiveTime = -1.;      // input in ms, stored in sec
 	bufferSize=0;
 	vtk=NULL;
 }
@@ -173,12 +174,12 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
 	
     else if(strcmp(pName,"archiveTime")==0)
     {	input=DOUBLE_NUM;
-        return (char *)&customArchiveTime;				// assumes in ms
+		return UnitsController::ScaledPtr((char *)&customArchiveTime, gScaling,1.e-3);
     }
 	
     else if(strcmp(pName,"firstArchiveTime")==0)
     {	input=DOUBLE_NUM;
-        return (char *)&nextCustomArchiveTime;			// assumes in ms
+		return UnitsController::ScaledPtr((char *)&nextCustomArchiveTime, gScaling,1.e-3);
     }
 	
 	// if found one, add to arrays
@@ -211,16 +212,14 @@ CustomTask *VTKArchive::Initialize(void)
 	
 	// time interval
 	cout << "   Archive time: ";
-	if(customArchiveTime>0)
-	{	cout << customArchiveTime << " ms";
-		customArchiveTime/=1000.;				// convert to sec
+	if(customArchiveTime>=0.)
+	{	cout << customArchiveTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS);
 		if(nextCustomArchiveTime<0.)
-		{	nextCustomArchiveTime=0.0;
+		{	nextCustomArchiveTime = 0.0;
 			cout << endl;
 		}
 		else
-		{	cout << ", starting at " << nextCustomArchiveTime << " ms" << endl;
-			nextCustomArchiveTime/=1000.;				// convert to sec
+		{	cout << ", starting at " << nextCustomArchiveTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS) << endl;
 		}
 	}
 	else
@@ -263,22 +262,22 @@ CustomTask *VTKArchive::Initialize(void)
 CustomTask *VTKArchive::PrepareForStep(bool &needExtraps)
 {
     // see if need to export on this time step
-	if(customArchiveTime>0.)
+	if(customArchiveTime>=0.)
 	{	if(mtime+timestep>=nextCustomArchiveTime)
-        {	doVTKExport=TRUE;
-            nextCustomArchiveTime+=customArchiveTime;
+        {	doVTKExport = true;
+            nextCustomArchiveTime += customArchiveTime;
         }
         else
-            doVTKExport=FALSE;
+            doVTKExport = false;
 	}
     else if(mtime<0.5*timestep)
-        doVTKExport=TRUE;
+        doVTKExport = true;
 	else
 		doVTKExport=archiver->WillArchive();
 
-	if(quantity.size()==0) doVTKExport=FALSE;
-	getVTKExtraps = doVTKExport ? (bufferSize>0) : FALSE;
-	if(getVTKExtraps) needExtraps=TRUE;
+	if(quantity.size()==0) doVTKExport = false;
+	getVTKExtraps = doVTKExport ? (bufferSize>0) : false;
+	if(getVTKExtraps) needExtraps = true;
     return nextTask;
 }
 
@@ -352,7 +351,7 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 				theWt=wt*rho;
                 sp = mpnt->ReadStressTensor();
                 if(quantity[q]!=VTK_STRESS)
-                {   theWt *= 1.e-6;         // convert Pa to MPa
+                {   theWt *= UnitsController::Scaling(1.e-6);	// Legacy to MPa
                     switch(quantity[q])
                     {	case VTK_PRESSURE:
                             // pressure
@@ -458,12 +457,12 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 				break;
 				
 			case VTK_WORKENERGY:
-				*vtkquant+=wt*1.0e-9*mpnt->mp*mpnt->GetWorkEnergy();
+				*vtkquant+=wt*mpnt->mp*mpnt->GetWorkEnergy()*UnitsController::Scaling(1.e-9);
 				vtkquant++;
 				break;
 				
 			case VTK_PLASTICENERGY:
-				*vtkquant+=wt*1.0e-9*mpnt->mp*mpnt->GetPlastEnergy();
+				*vtkquant+=wt*mpnt->mp*mpnt->GetPlastEnergy()*UnitsController::Scaling(1.e-9);
 				vtkquant++;
 				break;
 				

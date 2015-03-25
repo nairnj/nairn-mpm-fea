@@ -490,7 +490,7 @@ void ArchiveData::ArchiveResults(double atime)
     for(i=strlen(fname);i>=0;i--)
     {	if(fname[i]=='/') break;
     }
-    sprintf(fline,"%7d %15.7e  %s",fmobj->mstep,1000.*atime,&fname[i+1]);
+    sprintf(fline,"%7d %15.7e  %s",fmobj->mstep,atime*UnitsController::Scaling(1.e3),&fname[i+1]);
     cout << fline << endl;
 
     // open the file
@@ -501,7 +501,7 @@ void ArchiveData::ArchiveResults(double atime)
 			FileError("Cannot open an archive file",fname,"ArchiveData::ArchiveResults");
 		
 		// write header created in SetArchiveHeader
-		*timeStamp=1000.*atime;
+		*timeStamp=atime*UnitsController::Scaling(1.e3);
 		afile.write(archHeader,HEADER_LENGTH);
 		if(afile.bad())
 			FileError("File error writing archive file header",fname,"ArchiveData::ArchiveResults");

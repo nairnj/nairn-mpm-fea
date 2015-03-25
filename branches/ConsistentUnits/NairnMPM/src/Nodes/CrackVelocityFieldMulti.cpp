@@ -948,8 +948,8 @@ void CrackVelocityFieldMulti::GetFrictionalDeltaMomentum(Vector *delPi,Vector *n
             CopyScaleVector(delPi,norm,dotn);
             
             // get frictional part - this is g mm^2/sec^2 = nJ
-            // As heat source need mJ/sec of multiply by 1e-6/timestep
-            // Note: only add frictional heater during momentum update (when friction
+            // As heat source need nJ/sec of divide by timestep
+            // Note: only add frictional heating during momentum update (when friction
             //   force is appropriate) and only if conduction is on.
             if(callType==UPDATE_MOMENTUM_CALL && conduction && ConductionTask::matContactHeating)
             {   CopyScaleVector(Ftdt,&tang,-frictionCoeff*dotn);

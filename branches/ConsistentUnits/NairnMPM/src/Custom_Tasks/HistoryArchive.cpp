@@ -9,6 +9,7 @@
 #include "Custom_Tasks/HistoryArchive.hpp"
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "System/ArchiveData.hpp"
+#include "System/UnitsController.hpp"
 
 static int historyArg;
 
@@ -17,8 +18,8 @@ static int historyArg;
 // Constructors
 HistoryArchive::HistoryArchive()
 {
-	customArchiveTime=-1.;
-	nextCustomArchiveTime=-1.;
+	customArchiveTime = -1.;
+	nextCustomArchiveTime = -1.;
 }
 
 // Return name of this task
@@ -31,12 +32,12 @@ char *HistoryArchive::InputParam(char *pName,int &input,double &gScaling)
 {
     if(strcmp(pName,"archiveTime")==0)
     {	input=DOUBLE_NUM;
-        return (char *)&customArchiveTime;				// assumes in ms
+		return UnitsController::ScaledPtr((char *)&customArchiveTime,gScaling,1.e-3);
     }
 	
     else if(strcmp(pName,"firstArchiveTime")==0)
     {	input=DOUBLE_NUM;
-        return (char *)&nextCustomArchiveTime;			// assumes in ms
+		return UnitsController::ScaledPtr((char *)&nextCustomArchiveTime,gScaling,1.e-3);
     }
 	
 	else
@@ -63,16 +64,14 @@ CustomTask *HistoryArchive::Initialize(void)
 	
 	// time interval
 	cout << "   Archive time: ";
-	if(customArchiveTime>0)
-	{	cout << customArchiveTime << " ms";
-		customArchiveTime/=1000.;				// convert to sec
+	if(customArchiveTime>=0.)
+	{	cout << customArchiveTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS);
 		if(nextCustomArchiveTime<0.)
-		{	nextCustomArchiveTime=customArchiveTime;
+		{	nextCustomArchiveTime = customArchiveTime;
 			cout << endl;
 		}
 		else
-		{	cout << ", starting at " << nextCustomArchiveTime << " ms" << endl;
-			nextCustomArchiveTime/=1000.;				// convert to sec
+		{	cout << ", starting at " << nextCustomArchiveTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS) << endl;
 		}
 	}
 	else
@@ -100,17 +99,17 @@ CustomTask *HistoryArchive::Initialize(void)
 // does not use exrapolations so no need to set
 CustomTask *HistoryArchive::PrepareForStep(bool &needExtraps)
 {
-	if(customArchiveTime > 0.)
+	if(customArchiveTime >= 0.)
 	{	if(mtime+timestep >= nextCustomArchiveTime)
-		{	doHistoryExport=TRUE;
+		{	doHistoryExport = true;
 			nextCustomArchiveTime += customArchiveTime;
 		}
 		else
-			doHistoryExport=FALSE;
+			doHistoryExport = false;
 	}
 	else
-		doHistoryExport=archiver->WillArchive();
-	if(quantity.size()==0) doHistoryExport=FALSE;
+		doHistoryExport = archiver->WillArchive();
+	if(quantity.size()==0) doHistoryExport = false;
     return nextTask;
 }
 

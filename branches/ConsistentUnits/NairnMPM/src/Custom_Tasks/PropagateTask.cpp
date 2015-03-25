@@ -16,6 +16,7 @@
 #include "Cracks/CrackSegment.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
 #include "System/ArchiveData.hpp"
+#include "System/UnitsController.hpp"
 
 // globals
 PropagateTask *propagateTask=NULL;
@@ -26,8 +27,8 @@ double PropagateTask::cellsPerPropagationStep=0.5;
 // Constructors
 PropagateTask::PropagateTask()
 {
-    propagateTask=this;
-    arrested=FALSE;
+    propagateTask = this;
+    arrested = false;
     totalPlastic = 0.;
     totalPotential = 0.;
 }
@@ -54,9 +55,9 @@ CustomTask *PropagateTask::PrepareForStep(bool &needExtraps)
     
     if(mtime+timestep>=nextPropTime && !arrested)
     {	// ready to do crack propagation
-    	doPropCalcs = TRUE;
+    	doPropCalcs = true;
         nextPropTime += propTime;
-        doEnergyBalanceCalcs = FALSE;
+        doEnergyBalanceCalcs = false;
         
         // Make sure J and K are available if needed for current criterion
         // also see if need totalPlastic and totalPotential
@@ -67,7 +68,7 @@ CustomTask *PropagateTask::PrepareForStep(bool &needExtraps)
 		}
     }
     else
-        doPropCalcs=FALSE;
+        doPropCalcs = false;
         
     return nextTask;
 }
@@ -136,7 +137,7 @@ CustomTask *PropagateTask::StepCalculation(void)
 				int shouldGo=theMaterials[inMat-1]->ShouldPropagate(crkTip,tipDir,nextCrack,fmobj->np,0);
 				isAlt[0] = 0;
 				if(shouldGo==GROWNOW)
-				{	nextCrack->SetAllowAlternate(i,FALSE);
+				{	nextCrack->SetAllowAlternate(i,false);
 				}
 				else if(nextCrack->GetAllowAlternate(i))
 				{	shouldGo=theMaterials[inMat-1]->ShouldPropagate(crkTip,tipDir,nextCrack,fmobj->np,1);
@@ -160,8 +161,10 @@ CustomTask *PropagateTask::StepCalculation(void)
                     cout << "# propagation" << isAlt << " crack-tip " << nextCrack->GetNumber() << "-" << i;
 					
 					// summarize
-					cout << " at t=" << 1000*mtime << " with J=Jtip+Jzone : " << crkTip->Jint.z/1000. <<
-							" = " << crkTip->Jint.x/1000. << " + " << (crkTip->Jint.z-crkTip->Jint.x)/1000. << endl;
+					cout << " at t=" << mtime*UnitsController::Scaling(1.e3)
+						<< " with J=Jtip+Jzone : " << crkTip->Jint.z*UnitsController::Scaling(1.e-3)
+						<< " = " << crkTip->Jint.x*UnitsController::Scaling(1.e-3)
+						<< " + " << (crkTip->Jint.z-crkTip->Jint.x)*UnitsController::Scaling(1.e-3) << endl;
                     
                     // if jump is .7 or more cells, make more than 1 segment
                     int iseg,numSegs = 1;
@@ -170,7 +173,6 @@ CustomTask *PropagateTask::StepCalculation(void)
                     for(iseg=1;iseg<=numSegs;iseg++)
                     {   growTo.x=crkTip->x+(double)iseg*grow.x/(double)numSegs;
                         growTo.y=crkTip->y+(double)iseg*grow.y/(double)numSegs;
-                        if(fmobj->dflag[0]==4) growTo.y=0.;			// force cutting simulation to stay in cut plane at 0
                         newCrkTip=nextCrack->Propagate(growTo,(int)i,theMaterials[inMat-1]->tractionMat[0]);
                     }
                     crkTip = newCrkTip;

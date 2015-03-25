@@ -81,7 +81,7 @@ CustomTask *CarnotCycle::Initialize(void)
 	if(T2>thermal.reference || T2<0)
 		throw CommonException("The second temperature, T2, must be less than the reference temperature.","CarnotCycle::Initialize()");
 	if(V3rel>0. and V3rel<1.)
-		throw CommonException("The thirds expansion volume (V3rel) must be greater than 1","CarnotCycle::Initialize()");
+		throw CommonException("The third expansion volume (V3rel) must be greater than 1","CarnotCycle::Initialize()");
 	
 	// initial settings
 	carnotStep = 0;
@@ -152,7 +152,7 @@ CustomTask *CarnotCycle::StepCalculation(void)
 				if(V3rel<1.)
 					V3rel = V2rel/V1rel;
 				
-				cout << "# Step 2: isothermal compression to " << V3rel << "*V0" << endl;
+				cout << "# Step 3: isothermal compression to " << V3rel << "*V0" << endl;
 			}
 			break;
 		
