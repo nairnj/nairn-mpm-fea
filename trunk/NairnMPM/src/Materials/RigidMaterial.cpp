@@ -416,6 +416,7 @@ bool RigidMaterial::GetVectorSetting(Vector *vel,bool *hasDir,double theTime,Vec
     xPos=pos->x;
     yPos=pos->y;
     zPos=pos->z;
+	delTime=1000.*timestep;
     
     // BC rigid materials
 	if(setDirection&CONTROL_X_DIRECTION)
@@ -480,7 +481,12 @@ void RigidMaterial::SetSettingFunction(char *bcFunction,int functionNum)
 	{	case SETTING_FUNCTION_BLOCK:
 			if(function!=NULL)
 				ThrowSAXException("Duplicate setting function #1");
-			function=new ROperation(bcFunction,numVars,rmTimeArray);
+			try
+			{	function=new ROperation(bcFunction,numVars,rmTimeArray);
+			}
+			catch(...)
+			{	ThrowSAXException("Setting function #1 is not valid");
+			}
 			if(function->HasError())
 				ThrowSAXException("Setting function #1 is not valid");
 			break;
@@ -489,7 +495,12 @@ void RigidMaterial::SetSettingFunction(char *bcFunction,int functionNum)
 				ThrowSAXException("Cannot set function #2 before function #1 unless rigid contact material");
 			if(function2!=NULL)
 				ThrowSAXException("Duplicate setting function #2");
-			function2=new ROperation(bcFunction,numVars,rmTimeArray);
+			try
+			{	function2=new ROperation(bcFunction,numVars,rmTimeArray);
+			}
+			catch(...)
+			{	ThrowSAXException("Setting function #2 is not valid");
+			}
 			if(function2->HasError())
 				ThrowSAXException("Setting function #2 is not valid");
 			break;
@@ -498,14 +509,24 @@ void RigidMaterial::SetSettingFunction(char *bcFunction,int functionNum)
 				ThrowSAXException("Cannot set function #3 before functions #1 and #2 unless rigid contact material");
 			if(function3!=NULL)
 				ThrowSAXException("Duplicate setting function #3");
-			function3=new ROperation(bcFunction,numVars,rmTimeArray);
+			try
+			{	function3=new ROperation(bcFunction,numVars,rmTimeArray);
+			}
+			catch(...)
+			{	ThrowSAXException("Setting function #3 is not valid");
+			}
 			if(function3->HasError())
 				ThrowSAXException("Setting function #3 is not valid");
 			break;
         case VALUE_FUNCTION_BLOCK:
             if(Vfunction!=NULL)
 				ThrowSAXException("Duplicate value setting function");
-			Vfunction=new ROperation(bcFunction,numVars,rmTimeArray);
+			try
+			{	Vfunction=new ROperation(bcFunction,numVars,rmTimeArray);
+			}
+			catch(...)
+			{	ThrowSAXException("Value setting function is not valid");
+			}
 			if(Vfunction->HasError())
 				ThrowSAXException("Value setting function is not valid");
 			break;
