@@ -120,9 +120,6 @@ void NairnMPM::MyStartResultsOutput(void)
 				case CRITICALERR:
 					cout << "Critical energy release rate" << MaterialBase::PreferredDirection(propagateDirection[i]) << endl;
 					break;
-				case TOTALENERGYBALANCE:
-					cout << "Total energy balance" << MaterialBase::PreferredDirection(propagateDirection[i]) << endl;
-					break;
 				case STRAINENERGYDENSITY:
 					cout << "Minimum strain energy density" << MaterialBase::PreferredDirection(propagateDirection[i]) << endl;
 					break;

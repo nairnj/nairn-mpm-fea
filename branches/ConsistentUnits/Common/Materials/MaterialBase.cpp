@@ -38,12 +38,10 @@ MaterialBase::MaterialBase(char *matName)
 	red=-1.;
 #ifdef MPM_CODE
     rho=1.;
-    KIc=KIIc=JIc=JIIc=gamma=-1.;		// traction laws assumes -1
+    KIc=KIIc=JIc=JIIc=-1.;				// traction laws assumes -1
 	delIc=delIIc=-1.;					// traction laws assumes -1
 	nmix=1.;							// mixed mode exponent (if used)
-	pCrit3=1.;
 	maxLength=-1.;
-	gain=1.e5;
 	initTime=-1.;
 	initSpeed=1.;
 	diffusionCon=0.;

@@ -37,8 +37,7 @@ CrackSegment::CrackSegment(double xend,double yend,int tip,int matid)
 	ZeroVector(&sif);
 	ZeroVector(&tract);
     tipMatnum=tip;
-	crackIncrements=0;
-	release=absorb=propagationJ=0.;
+	propagationJ=0.;
     steadyState=STATIONARY;
 	heating=FALSE;
 	SetMatID(matid);
@@ -459,13 +458,13 @@ void CrackSegment::FillArchive(char *app,int segNum)
         app+=sizeof(double);
     }
 	
-	// Energy Balance Results
+	// Energy Balance Results (no longer used)
 	if(archiver->CrackArchive(ARCH_BalanceResults))
-	{   *(int *)app=crackIncrements;
+	{   *(int *)app=0;
 		app+=sizeof(double);
-        *(double *)app=release*1000.;
+        *(double *)app=0.;
         app+=sizeof(double);
-        *(double *)app=absorb*1000.;
+        *(double *)app=0.;
         app+=sizeof(double);
 	}
     

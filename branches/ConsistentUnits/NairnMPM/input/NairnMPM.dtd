@@ -153,10 +153,10 @@
 				| alphax | alphay | alphaz | alphaR | alphaZ
 				| betax | betay | betaz | betaR | betaZ | CritComp | CritTens | xihard | Elastic
 				| K | G0 | ntaus | Gk | tauk | xGrow | yGrow | shareMatField
-				| G1 | G2 | speed | gain | p | maxLength | Propagate | AltPropagate | initTime
+				| G1 | G2 | speed | maxLength | Propagate | AltPropagate | initTime
 				| K0 | Kd | Gd | alpha0 | alphad | transition | critical | DeltaVOffset | stress | function | minCOD
 				| reversible | irreversible | beta0 | betad | sigmaI | sigmaII | kIe | kIIe | nmix
-				| KIc | KIIc | JIc | JIIc | gamma | KIexp | KIIexp | delIc | delIIc | delpkI | delpkII
+				| KIc | KIIc | JIc | JIIc | KIexp | KIIexp | delIc | delIIc | delpkI | delpkII
 				| sigmaI2 | sigmaII2 | delpkI2 | delpkII2 | ValueFunction | viscosity | InitialPressure
 				| D | DA | DT | Dx | Dy | Dz | DR | DZ | D0 | Dd | csat | constantTip
 				| SettingFunction | SettingFunction2 | SettingFunction3 | IdealRubber
@@ -272,12 +272,12 @@
 			matname CDATA #IMPLIED>
 <!ELEMENT	Propagate EMPTY>
 <!ATTLIST	Propagate
-			criterion (0|1|2|3|4|5|6|7) #IMPLIED
+			criterion (0|1|2|4|5|6|7) #IMPLIED
 			direction (0|1|2|3|4) #IMPLIED
 			traction CDATA #IMPLIED>
 <!ELEMENT	AltPropagate EMPTY>
 <!ATTLIST	AltPropagate
-			criterion (0|1|2|3|4|5|6|7) #IMPLIED
+			criterion (0|1|2|4|5|6|7) #IMPLIED
 			direction (0|1|2|3|4) #IMPLIED
 			traction CDATA #IMPLIED>
 <!ELEMENT	MovePlane EMPTY>
@@ -454,7 +454,6 @@
 <!ELEMENT	delpkI2 (#PCDATA)>
 <!ELEMENT	delpkII (#PCDATA)>
 <!ELEMENT	delpkII2 (#PCDATA)>
-<!ELEMENT	gamma (#PCDATA)>
 <!ELEMENT	delIc (#PCDATA)>
 <!ELEMENT	delIIc (#PCDATA)>
 <!ELEMENT	constantTip (#PCDATA)>
@@ -492,10 +491,8 @@
 <!ELEMENT	speed (#PCDATA)>
 <!ELEMENT	xGrow (#PCDATA)>
 <!ELEMENT	yGrow (#PCDATA)>
-<!ELEMENT	gain (#PCDATA)>
 <!ELEMENT	initTime (#PCDATA)>
 <!ELEMENT	maxLength (#PCDATA)>
-<!ELEMENT	p (#PCDATA)>
 <!ELEMENT	K (#PCDATA)>
 <!ELEMENT	G0 (#PCDATA)>
 <!ELEMENT	ntaus (#PCDATA)>

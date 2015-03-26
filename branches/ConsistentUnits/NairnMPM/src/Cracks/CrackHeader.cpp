@@ -178,7 +178,6 @@ short CrackHeader::add(CrackSegment *cs,int whichTip)
 {
     CrackSegment *prevSeg;
     double dx,dy;
-    int i;
     
     if(cs==NULL) return FALSE;		// not created
 	
@@ -219,14 +218,6 @@ short CrackHeader::add(CrackSegment *cs,int whichTip)
     cs->propagationJ=cs->Jint.z;					// store the actual energy released
     cs->steadyState=prevSeg->steadyState;
     cs->speed=prevSeg->speed;
-    for(i=0;i<3;i++)
-    {   cs->potential[i]=prevSeg->potential[i];
-        cs->plastic[i]=prevSeg->plastic[i];
-        cs->clength[i]=prevSeg->clength[i];
-    }
-    cs->release=prevSeg->release;
-    cs->absorb=prevSeg->absorb;
-    cs->crackIncrements=prevSeg->crackIncrements;
     
     // calculate growth that formed this segment
     dx=cs->x-prevSeg->x;
@@ -2266,7 +2257,7 @@ bool CrackHeader::GetHasTractionLaws(void) { return hasTractionLaws; }
 
 // Deterimine what needs this crack tip has to do propagation calculation
 // Return 0 (no need), NEED_JANDK, or NEED_J
-int CrackHeader::CriterionNeeds(bool &totalEnergyNeeded)
+int CrackHeader::CriterionNeeds(void)
 {
 	int thisCrackNeeds=0;
 	int crkTipIdx;
@@ -2281,9 +2272,9 @@ int CrackHeader::CriterionNeeds(bool &totalEnergyNeeded)
 		if(tipCrk->tipMatnum<0) continue;
 		
 		// check crack tip material criterion (and alternate criterion if there)
-		thisCrackNeeds|=theMaterials[tipCrk->tipMatnum-1]->CriterionNeeds(0,totalEnergyNeeded);
+		thisCrackNeeds|=theMaterials[tipCrk->tipMatnum-1]->CriterionNeeds(0);
 		if(GetAllowAlternate(crkTipIdx))
-			thisCrackNeeds|=theMaterials[tipCrk->tipMatnum-1]->CriterionNeeds(1,totalEnergyNeeded);
+			thisCrackNeeds|=theMaterials[tipCrk->tipMatnum-1]->CriterionNeeds(1);
 	}
 	
 	// return the result

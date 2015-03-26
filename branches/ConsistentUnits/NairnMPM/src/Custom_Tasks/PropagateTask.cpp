@@ -29,8 +29,6 @@ PropagateTask::PropagateTask()
 {
     propagateTask = this;
     arrested = false;
-    totalPlastic = 0.;
-    totalPotential = 0.;
 }
 
 // Return name of this task
@@ -57,13 +55,11 @@ CustomTask *PropagateTask::PrepareForStep(bool &needExtraps)
     {	// ready to do crack propagation
     	doPropCalcs = true;
         nextPropTime += propTime;
-        doEnergyBalanceCalcs = false;
         
         // Make sure J and K are available if needed for current criterion
-        // also see if need totalPlastic and totalPotential
 		CrackHeader *nextCrack=firstCrack;
 		while(nextCrack!=NULL)
-		{	if(theJKTask!=NULL) theJKTask->ScheduleJK(nextCrack->CriterionNeeds(doEnergyBalanceCalcs));
+		{	if(theJKTask!=NULL) theJKTask->ScheduleJK(nextCrack->CriterionNeeds());
 			nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 		}
     }
@@ -79,30 +75,6 @@ CustomTask *PropagateTask::StepCalculation(void)
     // if not needed, just exit
     if(!doPropCalcs) return nextTask;
 	
-	// particle extrapolation if needed
-    if(doEnergyBalanceCalcs)
-    {   totalPlastic = 0.;
-        totalPotential = 0.;
-        for(int p=0;p<nmpmsNR;p++)
-        {   MPMBase *mpnt = mpm[p];
-            
-            // track total energies in J = N-m
-            //	mp is g, stored energy is N/m^2 mm^3/g, vel is mm/sec
-            // workEnergy in J =  1.0e-9*mp*mpm[p]->GetWorkEnergy()
-            // plastic 1.0e-9*mp*mpm[p]->GetPlastEnergy()
-            // external work 1.e-9*mpm[p]->GetExtWork()
-            // kinetic energy 0.5e-9*mp*(vel.x*vel.x+vel.y*vel.y)
-            
-            // plastic energy per unit thickness (units of N) (only needed energy balance crack growth)
-            double mp = mpnt->mp;
-            totalPlastic += 1.0e-6*mp*mpnt->GetPlastEnergy()/mpnt->thickness();
-            //totalPotential += 1.0e-3*(mp*mpnt->GetStrainEnergy()
-            //                        + 0.5e-3*mp*(mpnt->vel.x*mpnt->vel.x+mpnt->vel.y*mpnt->vel.y)
-            //                        - 1.e-3*mpnt->GetExtWork())/mpnt->thickness();
-			throw "external work is no longer available";
-        }
-    }
-    
     CrackHeader *nextCrack;
     CrackSegment *crkTip;
     double cSize;
@@ -122,18 +94,7 @@ CustomTask *PropagateTask::StepCalculation(void)
             // crack propagation
             inMat=crkTip->tipMatnum;
             if(inMat>0)
-            {	// crack tip terms last two times propagated
-                crkTip->potential[2]=crkTip->potential[1];
-                crkTip->potential[1]=crkTip->potential[0];
-                crkTip->potential[0]=totalPotential;
-                crkTip->plastic[2]=crkTip->plastic[1];
-                crkTip->plastic[1]=crkTip->plastic[0];
-                crkTip->plastic[0]=totalPlastic;
-                crkTip->clength[2]=crkTip->clength[1];
-                crkTip->clength[1]=crkTip->clength[0];
-                crkTip->clength[0]=nextCrack->Length();
-            
-                // see if it grows
+            {	// see if it grows
 				int shouldGo=theMaterials[inMat-1]->ShouldPropagate(crkTip,tipDir,nextCrack,fmobj->np,0);
 				isAlt[0] = 0;
 				if(shouldGo==GROWNOW)
@@ -186,15 +147,6 @@ CustomTask *PropagateTask::StepCalculation(void)
 						if(ConductionTask::active)
 							conduction->StartCrackTipHeating(crkTip,grow,nextCrack->GetThickness());
 					}
-                }
-                else
-                {   // when no growth, restore previous growth results
-                    crkTip->potential[0]=crkTip->potential[1];
-                    crkTip->potential[1]=crkTip->potential[2];
-                    crkTip->plastic[0]=crkTip->plastic[1];
-                    crkTip->plastic[1]=crkTip->plastic[2];
-                    crkTip->clength[0]=crkTip->clength[1];
-                    crkTip->clength[1]=crkTip->clength[2];
                 }
             }
         }

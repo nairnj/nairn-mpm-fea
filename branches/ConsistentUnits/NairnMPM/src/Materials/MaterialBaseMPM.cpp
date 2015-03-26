@@ -59,28 +59,15 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
 		return UnitsController::ScaledPtr((char *)&KIIc,gScaling,31.62277660168379e6);
     }
 	
-	// crit 3 only
-    else if(strcmp(xName,"p")==0)
-    {	input=DOUBLE_NUM;
-        return((char *)&pCrit3);
-    }
-    
 	// crit 2 only
     else if(strcmp(xName,"maxLength")==0)
     {	input=DOUBLE_NUM;
         return((char *)&maxLength);
     }
     
-	// gain in crit 3
-    else if(strcmp(xName,"gain")==0)
-    {	input=DOUBLE_NUM;
-        return((char *)&gain);
-    }
-
-	// initTime in crit 2
     else if(strcmp(xName,"initTime")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&initTime);
+        return UnitsController::ScaledPtr((char *)&initTime,gScaling,1.e-3);
     }
 
     else if(strcmp(xName,"KIexp")==0)
@@ -108,10 +95,10 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
         return((char *)&nmix);
     }
 	
-	// speed in crit 2 and 3
+	// speed in crit 2 (scale Legacy m/sec to mm/sec)
     else if(strcmp(xName,"speed")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&initSpeed);
+		return UnitsController::ScaledPtr((char *)&initSpeed,gScaling,1.e3);
     }
 	
 	// growth direction in crit 2
@@ -128,11 +115,6 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
         return((char *)&growDir.y);
     }
 	
-	else if(strcmp(xName,"gamma")==0)
-    {	input=DOUBLE_NUM;
-        return((char *)&gamma);
-    }
-    
 	// criterion 6 only
     else if(strcmp(xName,"delIc")==0)
     {	input=DOUBLE_NUM;
@@ -273,17 +255,6 @@ const char *MaterialBase::VerifyAndLoadProperties(int np)
 	// in case only need to load some things once, load those mechanical properties now
 	FillTransportProperties(&tr);
 	
-	// convert other crack growth properties
-	initTime*=1e-3;			// convert to sec
-	if(criterion[0]==TOTALENERGYBALANCE)
-		initSpeed*=0.01;	// convert % of WaveSpeed() to fraction of WaveSpeed()
-	else
-		initSpeed*=1.e3;	// convert m/sec to mm/sec
-	gamma*=1000.;			// convert J/m^2 to nJ/mm^2
-	if(gamma<0. || JIc<2.*gamma) gamma=JIc/2.;
-	// pCrit3 - dimensionless
-	// gain - no units change
-	
 	double norm=sqrt(growDir.x*growDir.x + growDir.y*growDir.y);
 	growDir.x/=norm;
 	growDir.y/=norm;
@@ -369,11 +340,11 @@ void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection) const
 			cout << "Constant crack speed" << PreferredDirection(thisDirection) << endl;
 			if(initTime<0.)
 			{	PrintProperty("Jc",JIc*UnitsController::Scaling(0.001),UnitsController::Label(ERR_UNITS));
-				PrintProperty("initSpeed",1.e-3*initSpeed,"m/s");
+				PrintProperty("initSpeed",initSpeed*UnitsController::Scaling(0.001),"m/s");
 			}
 			else
-			{	PrintProperty("ti",1000.*initTime,"ms");
-				PrintProperty("initSpeed",1.e-3*initSpeed,"m/s");
+			{	PrintProperty("ti",initTime*UnitsController::Scaling(1.e3),"ms");
+				PrintProperty("initSpeed",initSpeed*UnitsController::Scaling(0.001),"m/s");
 			}
 			cout << endl;
 			if(maxLength>0.)
@@ -384,15 +355,6 @@ void MaterialBase::PrintCriterion(int thisCriterion,int thisDirection) const
 			{	sprintf(mline,"direction = (%9.5f,%9.5f)",growDir.x,growDir.y);
 				cout << mline << endl;
 			}
-			break;
-			
-		case TOTALENERGYBALANCE:
-			cout << "Total energy balance" << PreferredDirection(thisDirection) << endl;
-			sprintf(mline,"Jc =%12.3f %s  vel=%12.3f%c wave speed",JIc*UnitsController::Scaling(0.001),
-							UnitsController::Label(ERR_UNITS),1000.*initSpeed,'%');
-			cout << mline << endl;
-			sprintf(mline,"gam=%12.3f J/m^2  p  =%12.3f        gain=%12.3g",gamma/1000.,pCrit3,gain);
-			cout << mline << endl;
 			break;
 			
 		case STRAINENERGYDENSITY:
@@ -513,10 +475,6 @@ void MaterialBase::ValidateForUse(int np) const
 	}
 	
 	// check for unsupported alternate propagation criterion
-	if(criterion[1]==TOTALENERGYBALANCE)
-	{	throw CommonException("The alternate propagation criterion cannot be energy balance method.",
-							  "MaterialBase::ValidateForUse");
-	}
 	if(criterion[1]==STEADYSTATEGROWTH)
 	{	throw CommonException("The alternate propagation criterion cannot be steady state crack growth.",
 							  "MaterialBase::ValidateForUse");
@@ -984,7 +942,7 @@ Vector MaterialBase::IsotropicJToK(Vector d,Vector C,Vector J0,int np,double nuL
 
 // Determine what calculations are needed for the propagation criterion
 // in this material - must match needs in ShouldPropagate() routine
-int MaterialBase::CriterionNeeds(int critIndex,bool &usesEnergyBalance)
+int MaterialBase::CriterionNeeds(int critIndex)
 {
 	switch(criterion[critIndex])
 	{	case MAXHOOPSTRESS:
@@ -994,18 +952,16 @@ int MaterialBase::CriterionNeeds(int critIndex,bool &usesEnergyBalance)
 		
 		case STEADYSTATEGROWTH:
 			if(initTime<0.) return NEED_J;
-			return FALSE;
+			return false;
 		
-		case TOTALENERGYBALANCE:
-            usesEnergyBalance = TRUE;
 		case CRITICALERR:
 			return NEED_J;
 			
 		case MAXCTODCRITERION:
-			return FALSE;
+			return false;
 		
 		case NO_PROPAGATION:
-			return FALSE;
+			return false;
 		
 		default:
 			return NEED_JANDK;		// just to be sure
@@ -1023,9 +979,7 @@ int MaterialBase::CriterionNeeds(int critIndex,bool &usesEnergyBalance)
 //  If need J or K, must say so in CriterionNeeds() routine
 int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHeader *theCrack,int np,int critIndex)
 {	
-    double KI,KII,fCriterion,cosTheta0,sinTheta0;
-    double deltaPotential,deltaPlastic,deltaLength,p;
-    double balance,adjustSpeed,cosTheta2;
+    double KI,KII,fCriterion,cosTheta0,sinTheta0,cosTheta2;
 	Vector hoopDir;
     //double deltaHPlastic,deltaTime,dUirrda,dUirrdtCona,dUirrdaCont,avgSpeed;
 
@@ -1084,13 +1038,6 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
                             return NOGROWTH;
                         }
                     }
-					if(fmobj->dflag[0]==4)
-					{	// stop in cutting simulation when reach edge of the sample
-						if(crkTip->x<1.)
-                        {   crkTip->steadyState=ARRESTING;
-                            return NOGROWTH;
-                        }
-					}
                     break;
                 
                 case ARRESTING:
@@ -1110,95 +1057,7 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
             return GROWNOW;
             break;
         
-		// Criterion 3
-        case TOTALENERGYBALANCE:
-            switch(crkTip->steadyState)
-            {	case STATIONARY:
-                    // decide if it should now start
-                    if(crkTip->Jint.x>=JIc)
-                    {	// next check will just by to save plastic energy
-						// (Note that JIc may differ from 2*gamma if desired
-						// but must have JIc >= 2*gamma)
-                    	crkTip->steadyState=BEGINPROPAGATING;
-                        crkTip->speed=initSpeed*WaveSpeed(FALSE,NULL);		// fraction of wave speed in 2D
-                        cout << "# Initiate t:" << 1000.*mtime <<
-                                " s:" << crkTip->speed << endl;
-						SelectDirection(crkTip,crackDir,theCrack,critIndex);
-                        return GROWNOW;
-                    }
-                    break;
-                
-                case BEGINPROPAGATING:
-                    cout << "# First Propagation t:" << 1000.*mtime << endl;
-                    crkTip->steadyState=PROPAGATING;
-					SelectDirection(crkTip,crackDir,theCrack,critIndex);
-                    return GROWNOW;
-                    break;
-                
-                case PROPAGATING:
-                case SLOWLYPROPAGATING:
-                    /* decide if crack speed should change
-                        a. Find J-p*(dUplast/da)-Jc (in N/mm)
-                        b. Change speed by gain*balance (within limits)
-                    */
-                    deltaPotential=crkTip->potential[0]-crkTip->potential[2];
-                    deltaPlastic=crkTip->plastic[0]-crkTip->plastic[2];
-                    deltaLength=crkTip->clength[0]-crkTip->clength[2];
-                    p=pCrit3;
-                    
-                    // The energy change derviative is -balance
-                    balance=-(deltaPotential+(1.+p)*deltaPlastic)/deltaLength - 2.*gamma;
-                    //balance=crkTip->Jint.x - p*deltaPlastic/deltaLength - 2.*gamma;
-                    adjustSpeed=gain*balance;
-                    
-                    // balance<0 means energy is increasing, this crack should not be growing
-                    //    so here we slow it down
-                    if(balance<0.)
-                    {	if(crkTip->steadyState==SLOWLYPROPAGATING)
-                        {   cout << "# No Growth t:" << 1000.*mtime <<
-                            " J:" << crkTip->Jint.x <<
-                            " J-DU:" << -(deltaPotential+deltaPlastic)/deltaLength <<
-                            " DUirr:" <<  p*deltaPlastic/deltaLength <<
-                            " -DU:" <<  balance  << endl;
-                            return NOGROWTH;
-                        }
-                        adjustSpeed=-fmin(-adjustSpeed,0.5*crkTip->speed);
-                    }
-                    
-                    // balance>0 means energy is decreasing. Here we speed up the
-                    //    crack to try and use it up, but not above wave speed
-                    else
-                    {	adjustSpeed=fmin(adjustSpeed,WaveSpeed(FALSE,NULL)-crkTip->speed);
-                        crkTip->steadyState=PROPAGATING;
-                    }
-                    
-                    // adjust speed, but never below minimum
-                    crkTip->speed+=adjustSpeed;
-                    if(crkTip->speed<=0.5*initSpeed*WaveSpeed(FALSE,NULL))
-                    {	crkTip->speed=0.5*initSpeed*WaveSpeed(FALSE,NULL);
-                        crkTip->steadyState=SLOWLYPROPAGATING;
-                    }
-					
-					// archive energy flow (in N/mm)
-					crkTip->release=-(deltaPotential+deltaPlastic)/deltaLength;
-					crkTip->absorb=p*deltaPlastic/deltaLength + 2*gamma;
-					crkTip->crackIncrements++;
-                    
-                    cout << "# Growing t:" << 1000.*mtime << 
-                            " J:" << crkTip->Jint.x <<
-                            " J-DU:" << -(deltaPotential+deltaPlastic)/deltaLength <<
-                            " DUirr:" << p*deltaPlastic/deltaLength <<
-                            " -DU:" << balance <<
-                            " Ds:" << adjustSpeed <<
-                            " s:" << crkTip->speed << endl;
-					SelectDirection(crkTip,crackDir,theCrack,critIndex);
-                    return GROWNOW;
-                
-                default:
-                    break;
-            }
-            break;
-		
+		// Criterion 3 no longer used
 		// Criterion 4
         case STRAINENERGYDENSITY:
             // Minimum strain energy density criterion only applies to 
@@ -1470,22 +1329,15 @@ bool MaterialBase::ControlCrackSpeed(CrackSegment *crkTip,double &waitTime)
     {   case STEADYSTATEGROWTH:
             if(crkTip->steadyState==PROPAGATING)
             {	waitTime=crkTip->theGrowth/crkTip->speed;
-                return TRUE;
+                return true;
             }
             break;
         
-        case TOTALENERGYBALANCE:
-            if(crkTip->steadyState==PROPAGATING)
-            {	waitTime=crkTip->theGrowth/crkTip->speed;
-                return TRUE;
-            }
-            break;
-            
         default:
             break;
     }
     
-    return FALSE;
+    return false;
 }
 
 #pragma mark MaterialBase::Accessors

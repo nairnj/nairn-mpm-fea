@@ -20,8 +20,6 @@ class PropagateTask : public CustomTask
     public:
         double nextPropTime;
         int doPropCalcs,theResult;
-        double totalPlastic,totalPotential;
-        bool doEnergyBalanceCalcs;
         
 		// static variables
 		static double cellsPerPropagationStep;

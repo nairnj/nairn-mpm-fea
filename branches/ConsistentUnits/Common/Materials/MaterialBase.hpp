@@ -35,7 +35,7 @@ typedef struct {
 #endif
 
 #define UNSPECIFIED -1
-enum { NO_PROPAGATION=0,MAXHOOPSTRESS,STEADYSTATEGROWTH,TOTALENERGYBALANCE,
+enum { NO_PROPAGATION=0,MAXHOOPSTRESS,STEADYSTATEGROWTH,DELETED_TOTALENERGYBALANCE_USECUSTOMTASKIFNEEDED,
        STRAINENERGYDENSITY,EMPIRICALCRITERION,MAXCTODCRITERION,CRITICALERR };
 enum { DEFAULT_DIRECTION=0,SELF_SIMILAR,NORMAL_TO_COD,HOOP_FROM_COD,INITIAL_DIRECTION };
 
@@ -52,8 +52,8 @@ class MaterialBase : public LinkedObject
 		ElasticProperties pr;
 #else
 		int criterion[2];
-        double KIc,KIIc,KIexp,KIIexp,JIc,JIIc,gamma,delIc,delIIc,nmix;
-		double pCrit3,gain,initSpeed;
+        double KIc,KIIc,KIexp,KIIexp,JIc,JIIc,delIc,delIIc,nmix;
+		double initSpeed;
 		double initTime,maxLength;
 		bool constantDirection;
 		int constantTip;
@@ -126,7 +126,7 @@ class MaterialBase : public LinkedObject
 		virtual MaterialBase *SetFinalPropagate(void);
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);
 		virtual Vector IsotropicJToK(Vector,Vector,Vector,int,double,double);
-		virtual int CriterionNeeds(int,bool &);
+		virtual int CriterionNeeds(int);
         virtual int ShouldPropagate(CrackSegment *,Vector &,CrackHeader *,int,int);
         virtual bool ControlCrackSpeed(CrackSegment *,double &);
 		virtual bool SelectDirection(CrackSegment *,Vector &,CrackHeader *,int);

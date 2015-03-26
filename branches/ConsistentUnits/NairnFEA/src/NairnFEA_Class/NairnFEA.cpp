@@ -30,7 +30,7 @@ int gelbnd(double **,int,int,double *,double *,int);
 
 NairnFEA::NairnFEA()
 {
-	version=4;					// NairnFEA version number
+	version=5;					// NairnFEA version number
 	subversion=0;				// subversion number
 	buildnumber=0;				// build number
 	xax='x';					// default axis names

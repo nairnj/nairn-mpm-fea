@@ -17,8 +17,7 @@
 
 class CrackLeaf;
 
-enum { STATIONARY=0, PROPAGATING, ARRESTING, ARRESTED, SLOWLYPROPAGATING,
-        BEGINPROPAGATING};
+enum { STATIONARY=0, PROPAGATING, ARRESTING, ARRESTED };
 
 // Crack Segment Class
 class CrackSegment
@@ -30,11 +29,9 @@ class CrackSegment
         CrackSegment *nextSeg,*prevSeg;
         Vector Jint,sif,tract;
         int tipMatnum;					// crack tip material (not a traction law)
-        double potential[3],plastic[3],clength[3];
         int steadyState;
         double speed,theGrowth;
-		int crackIncrements;
-		double release,absorb,propagationJ;
+		double propagationJ;
 		short heating;
 		double heatRate,heatEndTime;
         double cnear[4],cfar[4];

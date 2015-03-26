@@ -20,11 +20,11 @@ XML Input Files
 <p>
 Finite element calculations using <code>NairnFEA</code> or Material point method simulations using <code>NairnMPM</code> are controlled by input from an <code>XML</code> input file. This input file can be created manually by using any text or XML editing software or created automatically by interpreting scripting commands in <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPM">NairnFEAMPM</a> (Mac only) or in <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a> (a multi-platform Java application).</p>
 
-<p>The main documentation for learning how to create the input files is in the on-line <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a>. This section provides a brief reference to all commands that are allowed in input files for <a href="#feacontents"><code>NairnFEA</code></a> or <a href="#contents"><code>NairnMPM</code></a> calculations. This brief reference is not meant for learning the codes (that is best done on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a>). But, if you have become familiar with the codes, the reference should provide enoguh information to run calculations when you done have on-line access to the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a>.</p>
+<p>The main documentation for learning how to create the input files is in the on-line <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a>. This section provides a brief reference to all commands that are allowed in input files for <a href="#feacontents"><code>NairnFEA</code></a> or <a href="#contents"><code>NairnMPM</code></a> calculations. This brief reference is not meant for learning the codes (that is best done on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a>). But, if you are familiar with the codes, theis reference should provide enoguh information to run calculations when you do not have on-line access to the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Main_Page">OSUPDocs wiki</a>.</p>
 
 <a name="feacontents"></a><h1>Sections of NairnFEA XML Input Files</h1>
 
-<p>The detailed help for running <code>NairnFEA</code> is <a href="http://osupdocs.forestry.oregonstate.edu/index.php/FEA_Input_Files">available here</a>; you should refer to this documentation when you have on-line access. If you current do not have on-line access, the following topics provide brief reference for all the possible sections allowed in input <code>XML</code> files for running <code>NairnFEA</code>:</p>
+<p>The following topics provide brief reference for all the possible sections allowed in input <code>XML</code> files for running <code>NairnFEA</code>. When input files are validated using the <code>DTD</code> file (as recommended), the above sections must appear in the above specified order. Optional sections that are not needed may be omitted.</p>
 
 <ol class="index">
 <li><a href="filestart.html">File Start</a></li>
@@ -45,11 +45,11 @@ Finite element calculations using <code>NairnFEA</code> or Material point method
 
 </ol>
 
-<p>When input files are validated using the <code>DTD</code> file (as recommended), the above sections must appear in the above specified order. Optional sections that are not needed may be omitted.  A <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Sample_FEA_Input_Command_File">sample <code>NairnFEA</code> input file (on line)</a> shows a sample calculation of a cantilever beam.</p>
+<p>When input files are validated using the <code>DTD</code> file (as recommended), the above sections must appear in the above specified order. Optional sections that are not needed may be omitted.</p>
 
 <a name="contents"></a><h1>Sections of NairnMPM XML Input Files</h1>
 
-<p>The following are all the possible sections for input <code>XML</code> files for running <code>NairnMPM</code>. When input files are validated using the <code>DTD</code> file (as recommended), the sections must appear in the specified order. Optional sections that are not needed may be omitted. A <a href="sample.html">sample <code>NairnMPM</code> input file</a> shows a sample calculation of two colliding disks.  
+<p>The following are all the possible sections for input <code>XML</code> files for running <code>NairnMPM</code>. When input files are validated using the <code>DTD</code> file (as recommended), the sections must appear in the specified order. Optional sections that are not needed may be omitted.  
 </p>
 
 <ol class="index">
@@ -84,7 +84,7 @@ Finite element calculations using <code>NairnFEA</code> or Material point method
 <li><a href="endoffile.html">End the File</a></li>
 
 <li><a href="deprecated.html">Deprecated Commands</a></li>
-	
+
 </ol>
 
 		
