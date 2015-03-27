@@ -29,9 +29,9 @@ For 2D analyses, the following commands generate a square mesh as a grid:
 
 <pre>
 &lt;Mesh output='file'&gt;
-  &lt;Grid units='mm' xmin='0' xmax='100' ymin='0' ymax='50' thickness='1.0'&gt;
-    &lt;Horiz nx='40' rx='1.0'/&gt;
-    &lt;Vert ny='20' ry='1.0'/&gt;
+  &lt;Grid xmin='0' xmax='100' ymin='0' ymax='50' thickness='1.0'&gt;
+    &lt;Horiz nx='40'/&gt;
+    &lt;Vert ny='20'/&gt;
   &lt;/Grid&gt;
 &lt;/Mesh&gt;
 </pre>
@@ -41,10 +41,10 @@ For 2D analyses, the following commands generate a square mesh as a grid:
 
 <pre>
 &lt;Mesh output='file'&gt;
-  &lt;Grid units='mm' xmin='0' xmax='100' ymin='0' ymax='50' zmin='0' zmax='50'&gt;
-    &lt;Horiz nx='40' rx='1.0'/&gt;
-    &lt;Vert ny='20' ry='1.0'/&gt;
-    &lt;Depth nz='20' rz='1.0'/&gt;
+  &lt;Grid xmin='0' xmax='100' ymin='0' ymax='50' zmin='0' zmax='50'&gt;
+    &lt;Horiz nx='40'/&gt;
+    &lt;Vert ny='20'/&gt;
+    &lt;Depth nz='20'/&gt;
   &lt;/Grid&gt;
 &lt;/Mesh&gt;
 </pre>
@@ -52,10 +52,9 @@ For 2D analyses, the following commands generate a square mesh as a grid:
 
 <p>
 where the first four to six attributes (<code>xmin</code>, <code>xmax</code>,
-<code>ymin</code>, <code>ymax</code>, <code>zmin</code>, <code>zmax</code>, code>Rmin</code>, <code>Rmax</code>, <code>Zmin</code>, <code>Zmax</code>) denote
+<code>ymin</code>, <code>ymax</code>, <code>zmin</code>, <code>zmax</code>, <code>Rmin</code>, <code>Rmax</code>, <code>Zmin</code>, <code>Zmax</code>) denote
 the extent of the grid in the <code>x</code>, <code>y</code>, <code>z</code>, <code>R</code>, and <code>Z</code> 
-directions, respectively. An optional <a href="mpmheader.html#units"><code>units</code>
-attribute</a> can specify the length units attribute. The <code>thickness</code> in planar 2D calculations defines the thickness of the grid (and it is required for some calculations, see <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Grid_Generation">OSUPDocs wiki</a> for details).</p>
+directions, respectively. The <code>thickness</code> in planar 2D calculations defines the thickness of the grid (and it is required for some calculations, see <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Grid_Generation">OSUPDocs wiki</a> for details) (in <a href="units.html">length units</a> or in the units specified by an optional <a href="mpmheader.html#units"><code>units</code> attribute</a>).</p>
 
 <p>The subordinate tags define the number of elements in each direction:
 </p>
@@ -65,8 +64,8 @@ attribute</a> can specify the length units attribute. The <code>thickness</code>
 <li><pre class="list">&lt;Horiz nx='40' symmin='0' symmax='100'/&gt;
 &lt;Horiz cellsize='2' symmin='0' symmax='50'/&gt;</pre>
 This tag defines the mesh in the <code>x</code> direction where
-<code>nx</code> is the number of cells. Alternatively, you can set the <code>cellsize</code> (in mm).
-The <code>symmin</code> and <code>symmax</code> attributes let you create one or two symmetry plance along the <code>x</code> axis at the minimum and/or maximum edge of the axis limits. See <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Grid_Generation#Symmetry_Planes">OSUPDOcs wiki</a> for details on symetry planes.
+<code>nx</code> is the number of cells. Alternatively, you can set the <code>cellsize</code> (in <a href="units.html">length units</a>).
+The <code>symmin</code> and <code>symmax</code> attributes let you create one or two symmetry plannes along the <code>x</code> axis at the minimum and/or maximum edge of the axis limits (in <a href="units.html">length units</a>). See <a href="http://osupdocs.forestry.oregonstate.edu/index.php/MPM_Grid_Generation#Symmetry_Planes">OSUPDOcs wiki</a> for details on symetry planes.
 </li>
 
 <li><pre class="list">&lt;Vert ny="20" symmin='0' symmax='100'&gt;
@@ -92,7 +91,7 @@ This tag similarly defines the mesh in the <code>z</code> direction for 3D analy
 <pre>
 &lt;Mesh output='file'&gt;
   &lt;NodeList&gt;
-    &lt;pt units='mm' x='0' y='-18'/&gt;
+    &lt;pt x='0' y='-18'/&gt;
     &lt;pt x='110' y='-18'/&gt;
          &#x22ee;
   &lt;/NodeList&gt;
@@ -110,7 +109,7 @@ This tag similarly defines the mesh in the <code>z</code> direction for 3D analy
 
 
 <p>The <code>&lt;NodeList&gt;</code> must have one <code>&lt;pt&gt;</code> tag for each nodal point.
-The <code>x</code> and <code>y</code> attributes give the coordinates of each point in mm (by default) or in the units specified by the optional <a href="mpmheader.html#units"><code>units</code> attribute</a>. For axisymmetric calculations use <code>x</code> and <code>y</code> for <code>R</code> and <code>Z</code>. For 3D analyses, add a <code>z</code> attribute for the third coordinate.
+The <code>x</code> and <code>y</code> attributes give the coordinates of each point (in <a href="units.html">length units</a> or in the units specified by an optional <a href="mpmheader.html#units"><code>units</code> attribute</a>). For axisymmetric calculations use <code>x</code> and <code>y</code> for <code>R</code> and <code>Z</code>. For 3D analyses, add a <code>z</code> attribute for the third coordinate.
 </p>
 
 <p>These nodes are connected into elements in the <code>&lt;ElementList&gt;</code>.

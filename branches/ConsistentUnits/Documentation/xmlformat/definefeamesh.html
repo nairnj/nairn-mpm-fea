@@ -48,7 +48,7 @@
 
 <p>The <code>&lt;Keypoints&gt;</code> section must come first. It defines any number of key points using subordinate <code>&lt;pt&gt;</code> commands:</p>
 <pre>&lt;pt x='(x)' y='(y)' id='(id)'/&gt;</pre>
-<p>where <code>(x)</code> and <code>(y)</code> give the coordinates <code>(id)</code>is a unique id for the keypoint. 
+<p>where <code>(x)</code> and <code>(y)</code> give the coordinates (in <a href="units.html">length units</a>) and <code>(id)</code> is a unique id for the keypoint. 
 </pt>
 
 <h3><a name="Paths"></a>Paths</h3>
@@ -58,23 +58,23 @@
 <ul>
 <li><code>id</code>: An <code>id</code> for the path. The <code>id</code>'s can be text or numbers and must be unique among all paths.</li>
 <li><code>intervals</code>: Number of elements along this path when it is meshed into an area.</li>
-<li><code>ratio</code>: Ratio of the size of the first element along the path to the last one. If <code>ratio<0</code>, then the absolute size of the first element on the path with be <code>|ratio|</code>. The default is 1.0 which gives equally sized elements.</li>
+<li><code>ratio</code>: Ratio of the size of the first element along the path to the last one. If <code>ratio<0</code>, then the absolute size of the first element on the path will be <code>|ratio|</code> (in <a href="units.html">length units</a>). The default is 1.0 which gives equally sized elements.</li>
 </ul>
 
-<p>Subordinate to each <code>&lt;Path&gt;</code> command are two (for a line) or three (for an arc)<code>&lt;keypt&gt;</code> commands that list the keypoints (by id) along the path:</p>
+<p>Subordinate to each <code>&lt;Path&gt;</code> command are two (for a line) or three (for an arc) <code>&lt;keypt&gt;</code> commands that list the keypoints (by id) along the path:</p>
 <pre>&lt;keypt id='(id)'/&gt;</pre>
  
 
 
 <h3><a name="Areas"></a>Areas</h3>
 
-<p>Finally, the FEA mesh is created by a series of <code>&lt;Area&gt;</code> commands. An <code>&lt;Area&gt;</code> command links a series of paths into a region to be meshed. he attributes for a <code>&lt;Area&gt;</code> command are:
+<p>Finally, the FEA mesh is created by a series of <code>&lt;Area&gt;</code> commands. An <code>&lt;Area&gt;</code> command links a series of paths into a region to be meshed. The attributes for a <code>&lt;Area&gt;</code> command are:
 </p>
 <ul>
 <li><code>mat</code>: Material number in the list of defined materials.</li>
 <li><code>matname</code>: Alternatively, materials can be specied by name.</li>
 <li><code>angle</code>: Optional material angle relevant to <a href="definematl.html">anisotropic materials</a>. It can be entered as a number or as a <a href="function.html">user-defined function</a>.</li>
-<li><code>thick</code>: Thickness in mm for plane stress or plain strain analysis; not needed for axisymmetric analysis.</li>
+<li><code>thick</code>: Thickness for plane stress or plain strain analysis (in <a href="units.html">length units</a>); not needed for axisymmetric analysis.</li>
 <li><a name="elemtype"></a><code>type</code>: The type of element to create. The options are:
 <ul class="lev2args">
 <li><code>1</code>: 3-node constant-stain triangular elements (linear)</li>
@@ -113,7 +113,7 @@ A typ<code></code>e attribute is needed in the first <code>&lt;Area&gt;</code> c
 </pre>
 
 <p>The <code>&lt;NodeList&gt;</code> must have one <code>&lt;pt&gt;</code> tag for each nodal point.
-The <code>x</code> and <code>y</code> attributes give the coordinates of each point in mm. An optional <code>temp</code> can be set the temperature of the node.
+The <code>x</code> and <code>y</code> attributes give the coordinates of each point (in <a href="units.html">length units</a>). An optional <code>temp</code> can be set the temperature of the node.
 </p>
 
 <p>The <code>&lt;ElementList&gt;</code> must have one <code>&lt;elem&gt;</code> tag for each element in the mesh. The <code>&lt;elem&gt;</code> lists the nodes (in counter-clockwise direction; for elements with mid-side nodes, the corner nodes are first followed by the mid-side nodes.). The attributes are:</p>
@@ -122,7 +122,7 @@ The <code>x</code> and <code>y</code> attributes give the coordinates of each po
 <li><code>type</code> for the <a href="#elemtype">type of element</a> (by number).</li>
 <li><code>mat</code> (or <code>matl</code> for backward compatibility): Material number in the list of defined materials.</li>
 <li><code>angle</code>: Optional material angle relevant to <a href="definematl.html">anisotropic materials</a></li>
-<li><code>thick</code>: Thickness in mm (for plane stress or plane strain 2D calculations)</li>
+<li><code>thick</code>: Thickness for2D  plane stress or plane strain calculations (in <a href="units.html">length units</a>).</li>
 </ul>
 
 <h2><a name="bmpcmd"></a>BMP, Region, and Hole Commands</h2>
@@ -133,7 +133,7 @@ The <code>x</code> and <code>y</code> attributes give the coordinates of each po
 
 <li>Create a standard mesh as described above. For sections of the mesh that will be set from a <code>BMP</code> file or from shapes, set the material argument to 0.</li>
 
-<li>One the <code>&lt;Mesh&gt;</code> section is done, use one or more intersperses <code>&lt;BMP&gt;</code>, <code>&lt;Region&gt;</code>, or <code>&lt;Hole&gt;</code> commands:
+<li>One the <code>&lt;Mesh&gt;</code> section is done, use one or more interspersed <code>&lt;BMP&gt;</code>, <code>&lt;Region&gt;</code>, or <code>&lt;Hole&gt;</code> commands:
 <pre>&lt;<a href="#bmpcmd"><code>BMP</code></a> name="MatImage.bmp" width="50" angles="MatAngles.bmp"&gt;
   &lt;Origin x="0" y="0"/&gt;
   &lt;Intensity mat="2" imin="76" imax="255"&gt;
@@ -143,8 +143,8 @@ The <code>x</code> and <code>y</code> attributes give the coordinates of each po
 &lt;/BMP&gt;
 
 &lt;<a href="#bmpcmd"><code>Body</code></a> mat='1' angle='0' thick='1'&gt;
-   &lt;Oval units='mm' xmin='10' xmax='40' ymin='10' ymax='40'/&gt;
-   &lt;Rect units='mm' xmin='10' xmax='40' ymin='10' ymax='40'/&gt;     
+   &lt;Oval xmin='10' xmax='40' ymin='10' ymax='40'/&gt;
+   &lt;Rect xmin='10' xmax='40' ymin='10' ymax='40'/&gt;     
 &lt;/Body&gt;
 
 &lt;<a href="#bmpcmd"><code>Hole</code></a>&gt;
@@ -170,7 +170,7 @@ number (<code>mat</code>, see <a href="definematl.html">Defining Materials</a>;
 numbers can be replaced by names using a <code>matname</code> attribute
 as explained <a href="definematl.html#usemats">here</a>), material angle
 (<code>angle</code> in degrees which is used for some <a href="definematl.html">anisotropic
-materials</a>; t can be entered as a number or as a <a href="function.html">user-defined function</a>), and thickness (<code>thick</code> in mm)
+materials</a>; t can be entered as a number or as a <a href="function.html">user-defined function</a>), and thickness (<code>thick</code> in <a href="units.html">length units</a>)
 Each <code>&lt;Body&gt;</code> element contains any number of the <a href="definempm.html#2DShapes">2D shape commands</a> to defined the filled areas.</dd>
 
 <dt><code>&lt;Hole&gt;</code></dt>

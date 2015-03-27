@@ -52,30 +52,30 @@ lines.
 <ul>
 
 <li><pre class="list">&lt;pt units='mm' x='50.5' y='0' tip='1'/&gt;</pre>
-Defines a point at (x,y) in mm (or determined by a <a href="mpmheader.html#units"><code>units</code> attribute</a>). A <code>tip</code> attribute sets material number in case the point is the crack tip.</li>
+Defines a point at (x,y) (in <a href="units.html">length units</a> or determined by a <a href="mpmheader.html#units"><code>units</code> attribute</a>). A <code>tip</code> attribute sets material number in case the point is the crack tip.</li>
 
 <li><pre class="list">&lt;Line xmin="102" ymin="0" xmax="130" ymax="10" resolution="5"
            start_tip="1" end_tip="1"/&gt;</pre>
-Define a straight line from <code>(xmin, ymin)</code> to <code>(xmax, ymax)</code> in mm (or determined by
+Define a straight line from <code>(xmin, ymin)</code> to <code>(xmax, ymax)</code> (in <a href="units.html">length units</a> or determined by
 <a href="mpmheader.html#units"><code>units</code> attribute</a>). The line will be divided into the number of segments defined by the <code>resolution</code> attribute. The <code>start_tip</code> and <code>end_tip</code> attributes set the material number for the start and/or end of the line.</li>
 
 <li><pre class="list">&lt;Circle xmin="102" ymin="0" xmax="130" ymax="10" resolution="10"
            start_tip="1" end_tip="1" start_angle="0" end_angle="90"/&gt;</pre>
 Defines an arc based on the oval extending from <code>(xmin, ymin)</code>
-to <code>(xmax, ymax)</code> in mm (or determined by
+to <code>(xmax, ymax)</code> (in <a href="units.html">length units</a> or determined by
 <a href="mpmheader.html#units"><code>units</code> attribute</a>). The arc will be divided into the number of segments defined by the
 <code>resolution</code> attribute. The arc will be drawn in the counter-clockwise direction from <code>start_angle</code> to
 <code>end_angle</code> (entered in degrees with defaults of 0 and 360 and 0 along positive <code>x</code> axis). The <code>start_tip</code> and <code>end_tip</code> attributes set the material number for the start and/or end of the line.</li>
 
 <li><pre class="list">&lt;Thickness&gt;1.0&lt;/Thickness&gt;</pre>
-Sets thickness of the crack in mm (or determined by
+Sets thickness of the crack (in <a href="units.html">length units</a> or determined by
 <a href="mpmheader.html#units"><code>units</code> attribute</a>).</li>
 
 </ul>
 
 <p>The assignment of materials to the first or last point in the crack is required for simulations of crack propagation or calculation of J Integral. For cracks that extend outside the object, the recommended approach is to stop the cracking slightly before the edge (<i>e.g.</i>, 1/4 to 1/2 a cell from the edge) and define that tip as an "exterior" crack tip be setting its <code>tip</code> property to <code>-2</code>.</p>
 
-<p>Any part of a crack may be assigned a traction law material by adding a <code>mat='n'</code> attribute to the <code>&lt;pt&gt;</code>, <code>&lt;Line&gt;</code>, or <code>&lt;Circle&gt;</code> command. Alternatively, you can use a <code>matnam = 'law name'</code> to pick traction law by name. Note that use of traction laws requires specification of crack thickness.</p>
+<p>Any part of a crack may be assigned a traction law material by adding a <code>mat='n'</code> attribute to the <code>&lt;pt&gt;</code>, <code>&lt;Line&gt;</code>, or <code>&lt;Circle&gt;</code> command. Alternatively, you can use a <code>matname = 'law name'</code> to pick traction law by name. Note that use of traction laws requires specification of crack thickness.</p>
 
 <p class="links">
 <a href="../index.html">Home</a> &rarr;

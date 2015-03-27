@@ -85,8 +85,8 @@
 
 <ul>
 
-<li>yield  the initial yield stress (in MPa).</li>
-<li>Ep - the plastic modulus (in MPa). The default is 0.0 which results in an elastic-perfectly plastic material.</li>
+<li>yield  the initial yield stress (in <a href="units.html">pressure units</a>).</li>
+<li>Ep - the plastic modulus (in <a href="units.html">pressure units</a>). The default is 0.0 which results in an elastic-perfectly plastic material.</li>
 <li>Khard - alternatively, you can enter this dimensionless parameter for hardening. It is only used if Ep is not entered.</li>
 </ul>
 
@@ -107,7 +107,7 @@
 <p>where <code>K</code> and <code>n</code> are dimensionless hardening parameters. The input properties are:</p>
 
 <ul>
-<li>yield - the initial yield stress (in MPa).</li>
+<li>yield - the initial yield stress (in <a href="units.html">pressure units</a>).</li>
 <li>Khard - coefficient for nonlinear hardening (dimensionless).</li>
 <li>nhard - exponent parameter in the nonlinear hardening (dimensionless).</li>
 </ul>
@@ -141,12 +141,12 @@
 <p> and T<sub>0</sub> is the current <a href="mpmheader.html#stressfreetemp">stress free temperature</a>. The law properties are:</p>
 
 <ul>
-<li>Ajc - the initial yield stress at reference rate and temperature (in MPa).</li>
-<li>Bjc - hardening term in the yield stress (in MPa).</li>
+<li>Ajc - the initial yield stress at reference rate and temperature (in <a href="units.html">pressure units</a>).</li>
+<li>Bjc - hardening term in the yield stress (in <a href="units.html">pressure units</a>).</li>
 <li>njc - exponent for power-law hardening term (dimensionless).</li>
 <li>Cjc - coefficient for rate-dependent term (dimensionless).</li>
-<li>ep0jc - reference strain rate for reference yield stress in <code>Ajc</code> (in sec<sup>-1</sup>).</li>
-<li>Tmjc - the material's melting point (in degrees K).</li>
+<li>ep0jc - reference strain rate for reference yield stress in <code>Ajc</code> (in <a href="units.html">1/time units</a>).</li>
+<li>Tmjc - the material's melting point (in K).</li>
 <li>mjc - exponent in the thermal term (dimensionless).</li>
 </ul>
 
@@ -173,12 +173,12 @@ This yield stress is given by:
 The properties for this law are:</p>
 
 <ul>
-<li>yield - the initial yield stress (&sigma;<sub>0</sub>) at zero pressure and the reference temperature (in MPa).</li>
-<li>yieldMax - maximum yield stress (in MPa).</li>
+<li>yield - the initial yield stress (&sigma;<sub>0</sub>) at zero pressure and the reference temperature (in <a href="units.html">pressure units</a>).</li>
+<li>yieldMax - maximum yield stress (in <a href="units.html">pressure units</a>).</li>
 <li>betahard - yield stress hardening term (dimensionless).</li>
 <li>nhard - exponent on cumulative plastic strain in hardening term (dimensionless).</li>
-<li>GPpG0 - G<sub>p</sub>'/G<sub>0</sub> term for pressure dependence of shear modulus (in units MPa<sup>-1</sup> or 0 to omit pressure dependence in shear modulus).</li>
-<li>GTpG0 - G<sub>T</sub>'/G<sub>0</sub> term for temperature dependence of shear modulus (in units K<sup>-1</sup> or 0 to omit temperature dependence in shear modulus).</li>
+<li>GPpG0 - G<sub>p</sub>'/G<sub>0</sub> term for pressure dependence of shear modulus (in <a href="units.html">1/pressure units</a> or 0 to omit pressure dependence in shear modulus).</li>
+<li>GTpG0 - G<sub>T</sub>'/G<sub>0</sub> term for temperature dependence of shear modulus (in 1/K or 0 to omit temperature dependence in shear modulus).</li>
 </ul>
 
 <h3>History Data for SCGL Hardening Law</h3>
@@ -202,10 +202,11 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 </p>
 
 <ul>
-<li>C1SL - hardening law constant (C<sub>1</sub>) (in sec<sup>-1</sup>).</li>
-<li>C2SL - hardening law constant (C<sub>2</sub>) (in MPa sec).</li>
-<li>YP - the Peierls stress and also the maximum rate-dependent yield stress (in MPa).</li>
-<li>Uk - an energy associated with forming kinks (in eV).</li>
+<li>C1SL - hardening law constant (C<sub>1</sub>) (in <a href="units.html">1/time units</a>).</li>
+<li>C2SL - hardening law constant (C<sub>2</sub>) (in <a href="units.html">pressure-time units</a>).</li>
+<li>YP - the Peierls stress and also the maximum rate-dependent yield stress (in <a href="units.html">pressure units</a>).</li>
+<li>Uk - an energy associated with forming kinks in eV, but this parameter is only allowed when using <a href="units.html">legacy units</a>; use UkOverk when in consistent units.</li>
+<li>UkOverk - an energy associated with forming kinks divided by Boltzman's constant (Uk/k in K).</li>
 <li><a href="#SCGL">(other)</a> - enter all other properties required for a <a href="#SCGL">SCGL Hardening Law</a></li>
 </ul>
 
@@ -214,8 +215,8 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 
 <ol>
 <li>The cumulative equivalent plastic strain, <code>&alpha;</code>, defined as the sum of <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>.</li>
-<li>The current rate- and temperature-dependent yield stress (Y<sub>T</sub>) in MPa.</li>
-<li>The current equivalent plastic strain rate (d&epsilon;<sub>p</sub>/dt in 1/sec).</li>
+<li>The current rate- and temperature-dependent yield stress (Y<sub>T</sub>) (in <a href="units.html">pressure units</a>).</li>
+<li>The current equivalent plastic strain rate (d&epsilon;<sub>p</sub>/dt in in <a href="units.html">1/time units</a>).</li>
 </ol>
 
 </body>

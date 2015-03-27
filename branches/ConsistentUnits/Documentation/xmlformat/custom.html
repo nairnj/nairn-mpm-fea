@@ -44,13 +44,13 @@
 
 <ul>
 
-<li>mass - nodal mass (in g). This option is useful for creating contours that visualize the boundaries of the object.</li>
+<li>mass - nodal mass (in <a href="units.html">mass units</a>)</li>
 <li>material - the material number to visualize different materials in a composite.</li>
-<li>displacement - the displacement vector (in mm).</li>
-<li>velocity - the velocity vector (in mm/sec).</li>
-<li>stress - the stress tensor (in MPa).</li>
-<li>pressure - the pressure (in MPa).</li>
-<li>equivstress - the equivalent stress (also know as von Mises stress) (in MPa).</li>
+<li>displacement - the displacement vector (in <a href="units.html">length units</a>).</li>
+<li>velocity - the velocity vector (in <a href="units.html">velocity units</a>).</li>
+<li>stress - the stress tensor (in <a href="units.html">pressure units</a>).</li>
+<li>pressure - the pressure (in <a href="units.html">pressure units</a>).</li>
+<li>equivstress - the equivalent stress or von Mises stress (in <a href="units.html">pressure units</a>).</li>
 <li>strain - the strain tensor, which is elastic strain for materials that partition elastic and plastic strain, but total strain for all others (absolute).</li>
 <li>deltav - the relative volume change (V-V<sub>0</sub>)/V<sub>0</sub> (absolute).</li>
 <li>equivstrain - the equivalent strain from above strain (absolute).</li>
@@ -58,14 +58,14 @@
 <li>totalstrain - Archive total strain tensor (absolute, elastic+plastic strain for materials that separate them).</li>
 <li>temperature - the temperature (in K).</li>
 <li>concentration - the concentration (in wt %).</li>
-<li>strainenergy - the strain energy in J.</li>
-<li>heatenergy - the heat energy in J.</li>
-<li>plasticenergy - the plastic energy (in J).</li>
-<li>contactforce - the nodal force on the grid for <code>MultiMaterialMode</code> simulations when they include rigid materials that have <code>SetDirection</code>=8. It is force of the rigid material on the object in Newtons.</li>
+<li>strainenergy - the strain energy in (in <a href="units.html">energy units</a>).</li>
+<li>heatenergy - the heat energy (in <a href="units.html">energy units</a>).</li>
+<li>plasticenergy - the plastic energy (in <a href="units.html">energy units</a>).</li>
+<li>contactforce - the nodal force on the grid for <code>MultiMaterialMode</code> simulations when they include rigid materials that have <code>SetDirection</code>=8. It is force of the rigid material on the object in (in <a href="units.html">force units</a>).</li>
 <li>volumegradient (matnum) - the volume gradient used for contact calculations when running in multimaterial model. The (matnum) argument is the material number whose gradient is archived.</li>
 <li>numpoints - the number of material points interacting with each node in the grid.</li>
-<li>archiveTime (time) - enter the time interval (in ms) between saving of <code>VTK</code> archives. If this parameter is omitted, the VTK archive files are written on the same steps as the particle archives.</li>
-<li>firstArchiveTime (time) - enter the time to save the first results (in ms).</li>
+<li>archiveTime (time) - enter the time interval (in <a href="units.html">alt time units</a>) between saving of <code>VTK</code> archives. If this parameter is omitted, the VTK archive files are written on the same steps as the particle archives.</li>
+<li>firstArchiveTime (time) - enter the time to save the first results (in <a href="units.html">alt time units</a>).</li>
 </ul>
 </dd>
 
@@ -77,8 +77,8 @@
 </pre>
 where <code>(num)</code> is the history variable number to be saved. Two other parameters are:
 <ul>
-<li>archiveTime - enter the time interval (in ms) between saving of history archives. If this parameter is omitted, the history archive files are written on the same steps as the particle archives.</li>
-<li>firstArchiveTime - enter the time to save the first history results (in ms).</li>
+<li>archiveTime - enter the time interval (in <a href="units.html">alt time units</a>) between saving of history archives. If this parameter is omitted, the history archive files are written on the same steps as the particle archives.</li>
+<li>firstArchiveTime - enter the time to save the first history results (in <a href="units.html">alt time units</a>).</li>
 </ul>
 </dd>
 
@@ -86,7 +86,7 @@ where <code>(num)</code> is the history variable number to be saved. Two other p
 
 <dd>This custom task monitors crack lengths or any currently archived <a href="mpmheader.html#global">global quantity</a>. To monitor crack lengths, enter the following parameters:
 <ul>
-<li>maxLength (length) - this parameter specifies the maximum crack length (in mm). Once this length is reached, the specified task action is triggered.</li>
+<li>maxLength (length) - this parameter specifies the maximum crack length (in <a href="units.html">length units</a>). Once this length is reached, the specified task action is triggered.</li>
 
 <li>crackNumber (num) - this parameter gives the crack number to watch. When that crack reaches the specified maximum length, the task action will be triggered. Alternatively, <code>crackNumber</code> can be zero which causes the task action to trigger when any crack reaches the specified maximum length. The default value is 0 (or any crack).</li>
 </ul>
@@ -110,7 +110,7 @@ When this task is triggered by critical crack length, the crack propagation will
 <li>3: The analysis terminates.
 </li>
 </ul></li>
-<li>hold (holdTime) - when (holdTime) is positive, the task will hold at current boundary conditions for the specified time (in msec) and then proceed with the style option. A hold phase is only allowed when style is 0 (to reverse) or 3 (to abort).</li>
+<li>hold (holdTime) - when (holdTime) is positive, the task will hold at current boundary conditions for the specified time (in <a href="units.html">alt time units</a>) and then proceed with the style option. A hold phase is only allowed when style is 0 (to reverse) or 3 (to abort).</li>
 </ul>
 </dd>
 
@@ -118,7 +118,7 @@ When this task is triggered by critical crack length, the crack propagation will
 
 <dd>This tasks allows the time step to change if the wave speed in any material changes (and the material class supports calculation of wave speed as a function of particle state). Its parameters are:
 <ul>
-<li>adjustTime (time) - enter the time interval for checking the time step and adjusting it if needed (in ms). This parameter is optional; if it is omitted, the time step adjustment is done each time particle data are archived.</li>
+<li>adjustTime (time) - enter the time interval for checking the time step and adjusting it if needed (in <a href="units.html">alt time units</a>). This parameter is optional; if it is omitted, the time step adjustment is done each time particle data are archived.</li>
 <li>verbose (value) - if its integer value is not zero, it will print the new time step whenever it changes by more than 1%. If it is zero, the new time step is silently changed. The default it 0.</li>
 </ul>
 </dd>
