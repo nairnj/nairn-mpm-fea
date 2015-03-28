@@ -467,6 +467,11 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 				vtkquant++;
 				break;
 				
+            case VTK_HEATENERGY:
+                *vtkquant+=wt*1.0e-6*mpnt->mp*mpnt->GetHeatEnergy();
+                vtkquant++;
+                break;
+                
 			case VTK_MATERIAL:
 				*vtkquant+=wt*((double)mpnt->MatID()+1.);
 				vtkquant++;
