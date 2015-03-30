@@ -76,9 +76,9 @@ void NairnMPM::PrintAnalysisType(void)
 	cout << endl;
     
 	// time step and max time
-    cout << "Time step: min(" << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS) << ", "
+    cout << "Time step: min(" << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << ", "
         << fmobj->GetCFLCondition() << " time for wave to cross one cell)\n";
-    cout << "Maximum time: " << maxtime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS) << "\n\n";
+    cout << "Maximum time: " << maxtime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << "\n\n";
 }
 
 // rest of MPM information

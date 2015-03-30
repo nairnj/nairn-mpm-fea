@@ -129,7 +129,7 @@ CustomTask *ReverseLoad::Initialize(void)
 			case ABORT:
                 if(holdTime>0.)
 				{	cout << "Analysis held " << holdTime*UnitsController::Scaling(1.e3)
-						<< " " << UnitsController::Label(BCTIME_UNITS) << " and then stopped if ";
+						<< " " << UnitsController::Label(ALTTIME_UNITS) << " and then stopped if ";
 				}
                 else
                     cout << "Analysis stopped if ";
@@ -138,7 +138,7 @@ CustomTask *ReverseLoad::Initialize(void)
 				style=REVERSE;			// make all others equal to REVERSE
                 if(holdTime>0.)
 				{	cout << "Analysis held " << holdTime*UnitsController::Scaling(1.e3)
-						<< " " << UnitsController::Label(BCTIME_UNITS) << " and then loading reversed to zero if ";
+						<< " " << UnitsController::Label(ALTTIME_UNITS) << " and then loading reversed to zero if ";
 				}
                 else
                     cout << "Loading reversed to zero if ";
@@ -182,7 +182,7 @@ CustomTask *ReverseLoad::Initialize(void)
 			case ABORT:
                 if(holdTime>0.)
 				{	cout << "Cracks stopped and analysis stopped after hold of " << holdTime*UnitsController::Scaling(1.e3)
-						<< " " << UnitsController::Label(BCTIME_UNITS) << " if ";
+						<< " " << UnitsController::Label(ALTTIME_UNITS) << " if ";
 				}
                 else
                     cout << "Cracks and analysis stopped if ";
@@ -191,7 +191,7 @@ CustomTask *ReverseLoad::Initialize(void)
 				style=REVERSE;			// make all others equal to REVERSE
                 if(holdTime>0.)
 				{	cout << "Cracks stopped and loads reversed to zero after hold of " << holdTime*UnitsController::Scaling(1.e3)
-						<< " " << UnitsController::Label(BCTIME_UNITS) << " if ";
+						<< " " << UnitsController::Label(ALTTIME_UNITS) << " if ";
 				}
                 else
                     cout << "Cracks stopped and loads reversed to zero if ";
@@ -270,7 +270,7 @@ CustomTask *ReverseLoad::FinishForStep(void)
                 throw CommonException("Global quantity has reached specified value","ReverseLoad::FinishForStep");
             
             cout << "# Critical global quantity reached at time t: " << mtime*UnitsController::Scaling(1.e3)
-				<< " " << UnitsController::Label(BCTIME_UNITS) << endl;
+				<< " " << UnitsController::Label(ALTTIME_UNITS) << endl;
         }
         else
         {	if(style==ABORT && holdTime<0.)
@@ -279,7 +279,7 @@ CustomTask *ReverseLoad::FinishForStep(void)
             // stop propgation
             propagateTask->ArrestGrowth(TRUE);
             cout << "# Crack growth arrested at time t: " << mtime*UnitsController::Scaling(1.e3)
-				<< " " << UnitsController::Label(BCTIME_UNITS) << endl;
+				<< " " << UnitsController::Label(ALTTIME_UNITS) << endl;
         }
         
         // final time if reversing
@@ -303,7 +303,7 @@ CustomTask *ReverseLoad::FinishForStep(void)
         
         // message that hold time is over
         cout << "# ReverseLoad task hold time ended at t:" << mtime*UnitsController::Scaling(1.e3)
-			<< " " << UnitsController::Label(BCTIME_UNITS) << endl;
+			<< " " << UnitsController::Label(ALTTIME_UNITS) << endl;
         reversed = REVERSED_PHASE;
     }
     

@@ -28,6 +28,7 @@ class PolygonController : public ShapeController
         virtual void SetParameter(const char *,const char *);
         virtual bool FinishParameter(void);
         virtual bool HasAllParameters(void);
+		void AddPoint(double,double);
     
 		// methods
 		virtual bool ContainsPoint(Vector &);

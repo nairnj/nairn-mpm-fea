@@ -13,7 +13,7 @@
 
 #define _COMMONANALYSIS_
 
-#define NUMBER_DEVELOPMENT_FLAGS 5
+#define NUMBER_DEVELOPMENT_FLAGS 10
 
 class CommonAnalysis
 {

@@ -108,7 +108,7 @@ const char *HEMGEOSMaterial::VerifyAndLoadProperties(int np)
 void HEMGEOSMaterial::PrintMechanicalProperties(void) const
 {
 	// core properties
-	PrintProperty("C0",C0*UnitsController::Scaling(1.e-3),"m/s");
+	PrintProperty("C0",C0*UnitsController::Scaling(1.e-3),UnitsController::Label(ALTVELOCITY_UNITS));
 	PrintProperty("gam0",gamma0,"");
 	PrintProperty("K",Kbulk*UnitsController::Scaling(1.e-6),"");
     PrintProperty("G1",G1*UnitsController::Scaling(1.e-6),"");

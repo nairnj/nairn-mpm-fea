@@ -27,7 +27,7 @@ MGSCGLMaterial::MGSCGLMaterial() {}
 MGSCGLMaterial::MGSCGLMaterial(char *matName) : IsoPlasticity(matName)
 {
 	gamma0=1.64;		// dimensionless
-	C0=4004;			// m/sec
+	C0=4004000.;		// mm/sec
 	S1=1.35;			// dimsionless
 	S2=0.;				// dimsionless
 	S3=0.;				// dimsionless
@@ -49,7 +49,7 @@ char *MGSCGLMaterial::InputMaterialProperty(char *xName,int &input,double &gScal
     
     else if(strcmp(xName,"C0")==0)
     {	input=DOUBLE_NUM;
-        return((char *)&C0);
+        return UnitsController::ScaledPtr((char *)&C0,gScaling,1.e3);
     }
     
     else if(strcmp(xName,"S1")==0)
@@ -83,11 +83,10 @@ const char *MGSCGLMaterial::VerifyAndLoadProperties(int np)
     const char *ptr = plasticLaw->VerifyAndLoadProperties(np);
     if(ptr != NULL) return ptr;
 	
-    // Use in place of C0^2. Units are Pa mm^3/g such that get Pa when multiplied
-    //      by a density in g/mm^3
-	// Equal to reduced bulk modulus in Pa mm^3/g = mm^2/sec^2
-    C0squared = 1.e6*C0*C0;
-	
+    // Use in place of C0^2. Units are L^2/sec^2 = F/L^2 L^3/mass
+	// Equal to reduced bulk modulus
+    C0squared = C0*C0;
+ 	
     // Shear modulus with pressure dependence
 	G0red = G/rho;					// G0red = G/rho0
 	pr.Gred = G0red;				// Gred = G/rho = G rho0/(rho rho0) = J G0red
@@ -106,7 +105,7 @@ const char *MGSCGLMaterial::VerifyAndLoadProperties(int np)
 void MGSCGLMaterial::PrintMechanicalProperties(void) const
 {
 	// core properties
-	PrintProperty("C0",C0,"m/s");
+	PrintProperty("C0",C0*UnitsController::Scaling(1.e-3),UnitsController::Label(ALTVELOCITY_UNITS));
 	PrintProperty("gam0",gamma0,"");
 	PrintProperty("K",rho*pr.Kred*UnitsController::Scaling(1.e-6),"");
     PrintProperty("G0",G*UnitsController::Scaling(1.e-6),"");

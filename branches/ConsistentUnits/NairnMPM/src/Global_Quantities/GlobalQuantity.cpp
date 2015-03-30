@@ -20,6 +20,7 @@
 #include "Nodes/NodalPoint.hpp"
 #include "System/ArchiveData.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
+#include "System/UnitsController.hpp"
 
 // Single global contact law object
 GlobalQuantity *firstGlobal=NULL;
@@ -225,7 +226,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
     bool threeD;
 	
 	switch(quantity)
-	{   // stresses in MPa
+	{   // stresses (MPa in Legacy)
 		case AVG_SZZ:
 			qid=ZZ;
 		case AVG_SXZ:
@@ -250,10 +251,10 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 				}
 			}
 			if(numAvged>0) value/=(double)numAvged;
-			value*=1.e-6;
+			value *= UnitsController::Scaling(1.e-6);
 			break;
 		
-		// elastic strain in %
+		// elastic strain (% in Legacy)
 		case AVG_EZZE:
 			qid=ZZ;
 	    case AVG_EXZE:
@@ -274,10 +275,10 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 				}
 			}
 			if(numAvged>0) value/=(double)numAvged;
-			value*=100.;
+			value *= UnitsController::Scaling(100.);
 			break;
 
-		// plastic strain in %
+		// plastic strain (% in Legacy)
 		case AVG_EZZP:
 			qid=ZZ;
 		case AVG_EXZP:
@@ -298,10 +299,10 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 				}
 			}
 			if(numAvged>0) value/=(double)numAvged;
-			value*=100.;
+			value *= UnitsController::Scaling(100.);
 			break;
 
-		// total strain
+		// total strain (% in Legacy)
 		case AVG_EZZ:
 			qid=ZZ;
 		case AVG_EXZ:
@@ -327,10 +328,10 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 				}
 			}
 			if(numAvged>0) value/=(double)numAvged;
-			value*=100.;
+			value *= UnitsController::Scaling(100.);
 			break;
 		
-		// energies (Volume*energy) in J
+		// energies (Volume*energy) (J in Legacy)
 		case KINE_ENERGY:
 		case WORK_ENERGY:
 		case STRAIN_ENERGY:
@@ -372,15 +373,15 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 					}
 				}
 			}
-			value*=1.e-9;
+			value *= UnitsController::Scaling(1.e-9);
 			break;
 		
-		// interface energy in J
+		// interface energy (J i Legacy)
 		case INTERFACE_ENERGY:
-			value=1.e-9*NodalPoint::interfaceEnergy;
+			value = NodalPoint::interfaceEnergy*UnitsController::Scaling(1.e-9);;
 			break;
 			
-		// energies (Volume*energy) in J
+		// energies (Volume*energy) (J in Legacy)
 		case PLAS_ENERGY:
             threeD = fmobj->IsThreeD();
 			for(p=0;p<nmpms;p++)
@@ -388,10 +389,10 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
                 {   value+=mpm[p]->mp*mpm[p]->GetPlastEnergy();
                 }
 			}
-			value*=1.e-9;
+			value *= UnitsController::Scaling(1.e-9);
 			break;
 		
-		// velocity x in mm/sec
+		// velocity x
 		case AVG_VELX:
 			for(p=0;p<nmpms;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
@@ -402,7 +403,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			if(numAvged>0) value/=(double)numAvged;
 			break;
 			
-		// velocity y in mm/sec
+		// velocity y
 		case AVG_VELY:
 			for(p=0;p<nmpms;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
@@ -413,7 +414,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			if(numAvged>0) value/=(double)numAvged;
 			break;
 			
-		// velocity z in mm/sec
+		// velocity z
 		case AVG_VELZ:
 			for(p=0;p<nmpms;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
@@ -485,11 +486,13 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		case STEP_NUMBER:
 			value=(double)fmobj->mstep;
 			break;
-			
+		
+		// always in seconts
 		case CPU_TIME:
 			value=fmobj->CPUTime();
 			break;
 
+		// always in seconds
 		case ELAPSED_TIME:
 			value=fmobj->ElapsedTime();
 			break;
@@ -562,25 +565,26 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		case TOT_REACTX:
 		case TOT_REACTY:
 		case TOT_REACTZ:
-		{	// find force for BCs with provided ID
+		{	// find force for BCs with provided ID (N in Legacy)
 			Vector freaction = NodalVelBC::TotalReactionForce(whichMat);
 			
 			// pick the component
 			if(quantity==TOT_REACTX)
-				value = 1.e-6*freaction.x;
+				value = freaction.x;
 			else if(quantity==TOT_REACTY)
-				value = 1.e-6*freaction.y;
+				value = freaction.y;
 			else
-				value = 1.e-6*freaction.z;
+				value = freaction.z;
+			value *= UnitsController::Scaling(1.e-6);
 			break;
 		}
 		
-		// grid kinetic energy (J)
+		// grid kinetic energy (J in Legacy)
 		case GRID_KINE_ENERGY:
 		{	double totalMass;
 			for(p=1;p<=nnodes;p++)
 				nd[p]->AddKineticEnergyAndMass(value,totalMass);
-			value *= 1.e-9;
+			value *= UnitsController::Scaling(1.e-9);
 			break;
 		}
 

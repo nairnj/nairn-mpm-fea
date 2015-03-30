@@ -44,6 +44,12 @@ bool PolygonController::FinishParameter(void)
 	return TRUE;
 }
 
+// add point using numbers
+void PolygonController::AddPoint(double xp,double yp)
+{	xpt.push_back(xp);
+	ypt.push_back(yp);
+}
+
 // called after initialization is done, need to wait for pt parameters
 bool PolygonController::FinishSetup(void) {	return FALSE; }
 
@@ -60,7 +66,7 @@ bool PolygonController::HasAllParameters(void)
 #pragma mark PolygonController: methods
 
 // return true if point is in this body
-bool PolygonController::ContainsPoint(Vector& pt)
+bool PolygonController::ContainsPoint(Vector &pt)
 {
 	unsigned i,crossings=0;
 	double x1,x2,y1,y2,d;
@@ -90,5 +96,8 @@ bool PolygonController::ContainsPoint(Vector& pt)
 
 // type of object
 const char *PolygonController::GetShapeName(void) { return "Polygon"; }
+
+
+
 
 

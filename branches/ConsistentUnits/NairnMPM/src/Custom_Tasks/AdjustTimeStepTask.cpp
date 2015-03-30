@@ -57,7 +57,7 @@ CustomTask *AdjustTimeStepTask::Initialize(void)
 	// time interval
 	cout << "   Adjust interval: ";
 	if(customAdjustTime>=0.)
-	{	cout << customAdjustTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS) << endl;
+	{	cout << customAdjustTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
 		nextCustomAdjustTime = customAdjustTime;
 	}
 	else
@@ -133,9 +133,9 @@ CustomTask *AdjustTimeStepTask::StepCalculation(void)
     {   double ratio = timestep/lastReportedTimeStep;
         if(ratio < 0.95 || ratio>1.05)
 		{	if(timestep<lastReportedTimeStep)
-				cout << "# time step reduced to " << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS) << endl;
+				cout << "# time step reduced to " << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
 			else
-				cout << "# time step increased to " << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS) << endl;
+				cout << "# time step increased to " << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
 		}
         lastReportedTimeStep = timestep;
     }

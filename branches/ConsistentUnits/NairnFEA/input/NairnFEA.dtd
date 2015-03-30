@@ -14,7 +14,7 @@
 <!-- Headers -->
 
 <!ELEMENT	Header
-			( Description | Analysis | Output | Select | DevelFlag )+>
+			( Description | Analysis | Output | Select | DevelFlag | ConsistentUnits )+>
 
 <!-- Define the mesh -->
 
@@ -180,7 +180,12 @@
 			node CDATA #REQUIRED>
 <!ELEMENT	DevelFlag (#PCDATA)>
 <!ATTLIST	DevelFlag
-			Number (0|1|2|3|4) #IMPLIED>
+			Number (0|1|2|3|4|5|6|7|8|9) #IMPLIED>
+<!ELEMENT	ConsistentUnits EMPTY>
+<!ATTLIST	ConsistentUnits
+			length (km|m|dm|cm|mm|um|microns|nm|L) #IMPLIED
+			mass (kg|g|mg|ug|M) #IMPLIED
+			time (s|sec|ms|msec|us|T) #IMPLIED>
 <!ELEMENT	Temperature (#PCDATA)>
 <!ELEMENT	StressFreeTemp (#PCDATA)>
 

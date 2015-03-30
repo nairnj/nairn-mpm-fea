@@ -379,13 +379,13 @@ void BistableIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double
 		if(*state==INITIAL_STATE)
 		{	normOffset = 0.;
 			alphazz = 1.e-6*a0;
-			betazz = 1.e-6*beta0;
+			betazz = beta0;
 			p = &pr;
 		}
 		else
 		{	normOffset = dVii/3.;
 			alphazz = 1.e-6*ad;
-			betazz = 1.e-6*betad;
+			betazz = betad;
 			p = &pr2;
 		}
 

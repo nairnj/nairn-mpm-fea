@@ -177,7 +177,7 @@ bool ArchiveData::BeginArchives(bool isThreeD)
     cout << "Root file name: " << archiveRoot << "." << endl
         << "Archive format: " << mpmOrder << endl
         << "Crack archive format: " << crackOrder << endl << endl
-        << "  Step    Time (msec)    Filename" << endl
+		<< "  Step     Time (" << UnitsController::Label(ALTTIME_UNITS) << ")     Filename" << endl
         << "----------------------------------------------"
         << endl;
 	

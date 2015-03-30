@@ -44,8 +44,8 @@ int DbleEqual(double db1,double db2)
     else
         change=fabs(db1-db2)/ab2;
             
-    // Equal if different by less than 100 ppm
-    if(change<1.e-4)
+    // Equal if different by less than 1 ppm (used to be 100 ppm)
+    if(change<1.e-6)
         return TRUE;
     else
     {	if(ab1<1e-12 && ab2<1e-12)

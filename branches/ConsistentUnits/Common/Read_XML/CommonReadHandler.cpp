@@ -80,11 +80,40 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 			throw SAXException("<DevelFlag> must be within the <Header> element.");
 		double flagNumDble=ReadNumericAttribute("Number",attrs,(double)0.0);
     	int flagNum=(int)(flagNumDble+0.5);
-		if(!flagNum<0 || flagNum>=NUMBER_DEVELOPMENT_FLAGS)
-			throw SAXException("The <DevelFlag> 'Number' must be from 0 to 4");
+		if(flagNum<0 || flagNum>=NUMBER_DEVELOPMENT_FLAGS)
+			throw SAXException("The <DevelFlag> 'Number' must be from 0 to 9");
 		input=INT_NUM;
 		inputPtr=(char *)&fmobj->dflag[flagNum];
     }
+	
+	else if(strcmp(xName,"ConsistentUnits")==0)
+	{   if(block!=HEADER)
+			throw SAXException("<ConsistentUnits> must be within the <Header> element.");
+		char length[10],mass[10],timeu[10];
+		strcpy(length,"L");
+		strcpy(mass,"M");
+		strcpy(timeu,"T");
+		char *aName,*value;
+    	int i,numAttr=attrs.getLength();
+        for(i=0;i<numAttr;i++)
+        {   aName=XMLString::transcode(attrs.getLocalName(i));
+            value=XMLString::transcode(attrs.getValue(i));
+			if(strlen(value)>9)
+				throw SAXException("<ConsistentUnits> length, mass, or time attribute is invalid.");
+            if(strcmp(aName,"length")==0)
+                strcpy(length,value);
+            else if(strcmp(aName,"mass")==0)
+                strcpy(mass,value);
+            else if(strcmp(aName,"time")==0)
+                strcpy(timeu,value);
+            delete [] aName;
+            delete [] value;
+        }
+		if(!UnitsController::SetConsistentUnits(length, mass, timeu))
+			throw SAXException("Duplicated <ConsistentUnits> command or one of the units is invalid.");
+    }
+
+	
     //-------------------------------------------------------
     // <Mesh> block
 	
@@ -193,11 +222,16 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 		if(block==MATERIAL)
 		{	inputPtr=matCtrl->InputPointer(xName,input,gScaling);
 			if(inputPtr==NULL)
-				ThrowCatErrorMessage("Unrecognized material property was found",xName);
+			{	char msg[255];
+				strcpy(msg,"Unrecognized ");
+				strcat(msg,matCtrl->MaterialType());
+				strcat(msg," material property was found");
+				ThrowCatErrorMessage(msg,xName);
+			}
 		}
 		
-		// or an invlid tag
-		else if(!strcmp(xName,"JANFEAInput")==0)
+		// or an invalid tag
+		else if(!(strcmp(xName,"JANFEAInput")==0))
 			ThrowCatErrorMessage("Unrecognized input element found",xName);
 	}
 	
@@ -556,7 +590,7 @@ double CommonReadHandler::ReadGridPoint(char *value,double distScaling,double ax
 // to the input vector (which is cleared first). Any other characters trigger an error
 // not thread safe due to push_back()
 bool CommonReadHandler::GetFreeFormatNumbers(char *nData,vector<double> &values,double scaling)
-{
+{	
 	int offset=0,numOffset=0;
 	double dval;
 	char numstr[200];
@@ -581,7 +615,9 @@ bool CommonReadHandler::GetFreeFormatNumbers(char *nData,vector<double> &values,
 		
 		// valid number characters - exit on error
 		if((nc<'0' || nc>'9') && nc!='+' && nc!='-' && nc!='e' && nc!='E' && nc!='.')
-			return FALSE;
+		{	cout << " *** Bad character '" << nc << "' (integer code " << (int)nc << ") within free format numbers" << endl;
+			return false;
+		}
 		
 		// add to number string
 		numstr[numOffset++] = nc;
@@ -597,6 +633,6 @@ bool CommonReadHandler::GetFreeFormatNumbers(char *nData,vector<double> &values,
 		values.push_back(dval);
 	}
 	
-	return TRUE;
+	return true;
 }
 		

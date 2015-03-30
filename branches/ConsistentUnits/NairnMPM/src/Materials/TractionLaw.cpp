@@ -49,7 +49,7 @@ const char *TractionLaw::VerifyAndLoadProperties(int np) { return NULL; }
 void TractionLaw::ReportDebond(double dtime,CrackSegment *cs,double fractionI,double Gtotal)
 {
 	archiver->IncrementPropagationCounter();
-	cout << "# Debond: t=" << 1000.*dtime << " (x,y) = (" << cs->x << "," << cs->y << ")" 
+	cout << "# Debond: t=" << dtime*UnitsController::Scaling(1000.) << " (x,y) = (" << cs->x << "," << cs->y << ")"
 			<< " GI(%) = " << 100.*fractionI << " G = "
 			<< Gtotal*UnitsController::Scaling(0.001) << endl;
 }

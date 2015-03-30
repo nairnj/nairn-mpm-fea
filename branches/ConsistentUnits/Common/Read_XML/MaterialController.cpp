@@ -220,6 +220,11 @@ char *MaterialController::InputPointer(char *property,int &input,double &gScalin
 {   return ((MaterialBase *)lastObject)->InputMaterialProperty(property,input,gScaling);
 }
 
+// materal name
+const char *MaterialController::MaterialType(void)
+{   return ((MaterialBase *)lastObject)->MaterialType();
+}
+
 // set material color (optional)
 void MaterialController::SetMatColor(float red,float green,float blue,float alpha)
 {	((MaterialBase *)lastObject)->red=red;

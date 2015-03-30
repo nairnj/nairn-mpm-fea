@@ -38,7 +38,6 @@ CommonAnalysis::CommonAnalysis()
 	nfree=2;					// 2D analysis
 	
 	// If non-zero, this flags can change the calculation
-	// dflag[0] - affects normal output in CommandAnalysis.hpp for current uses
 	int i;
 	for(i=0;i<NUMBER_DEVELOPMENT_FLAGS;i++) dflag[i]=0;
 }
@@ -59,7 +58,9 @@ void CommonAnalysis::StartResultsOutput(void)
 	cout << "Written by: Nairn Research Group, Oregon State University\n"
         << "Date: " << __DATE__ << "\n"
         << "Source: " << svninfo << "\n"
-		<< "Units: Legacy\n"
+		<< "Units: ";
+		UnitsController::OutputUnits();
+		cout << "\n"
 #ifdef _OPENMP
         << "Processors: " << numProcs << "\n"
 #endif
@@ -74,19 +75,15 @@ void CommonAnalysis::StartResultsOutput(void)
 	/* development flags
 	 *
 	 *	Current Flags in Use in MPM Code
-	 *   [0]==1 - use MPM standard contact where each material finds normal from its own gradient
-	 *   [0]==2 - find normal by averaging the volume gradient of the two contacting materials
-	 *   [0]==3 - normal along x, y or z and set by [1] == +/- 1, 2, 3 if (1,0,0) rotated [1] about z axis
-	 *   [0]==4 - cutting simulations - find normal from tool angle where the angle in [1] (interger only)
-	 *   [0]==5 - for radial normal vector
+	 *	 dflag[0]==3 - used to be specified normal, now prints error message
+	 *   dflag[0]==4 - cutting simulations - find normal from tool angle where the angle in [1] (interger only)
+	 *									also some other minor tweaks for cutting
+	 *   dflag[0]==5 - for radial normal vector
 	 *
-	 *   [1]==parameter for [0]==3 or 4
-	 *
-	 *   [2]==1 - Rigid contact force from mass and momentum extrapolation only
-	 *   [2]==2 - Rigid contact force from mass and momentum and update momentum tasks
-	 *   [2]==3 - Rigid contact force from mass and momentum and update strain last tasks
+	 *   dflag[1]==parameter when dflag[1]==4
      *
-     *   [3]==xxyyzz - custom patch method for parrallel (ignored if xx*yy*zz != numProcs)
+     *   dflag[3]==xxyyzz - custom patch method for parallel (ignored if xx*yy*zz != numProcs)
+	 *
 	 */
 	int i;
 	bool hasFlags=FALSE;
@@ -159,7 +156,8 @@ void CommonAnalysis::StartResultsOutput(void)
 	
     //---------------------------------------------------
     // Nodes
-    PrintSection("NODAL POINT COORDINATES (in mm)");
+	sprintf(hline,"NODAL POINT COORDINATES (in %s)",UnitsController::Label(CULENGTH_UNITS));
+    PrintSection(hline);
 	archiver->ArchiveNodalPoints(np);
 
     //---------------------------------------------------

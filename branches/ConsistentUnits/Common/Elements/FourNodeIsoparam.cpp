@@ -499,18 +499,6 @@ void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int ge
 void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
 										 double *xDeriv,double *yDeriv,double *zDeriv) const
 {
-#ifdef NONRADIAL_GIMP_AS
-	GimpShapeFunction(xi,numnds,ndIDs,getDeriv,sfxn,xDeriv,yDeriv,zDeriv);
-	
-	if(getDeriv)
-	{	double dx = GetDeltaX();
-		double midx = GetCenterX();
-		double rp = midx+0.5*xi->x*dx;
-		int i;
-		for(i=0;i<numnds;i++)
-			zDeriv[i] = sfxn[i]/rp;
-	}
-#else
 	int i,n;
 	double xp,yp,ri,nr,Svpx,Svpy,dSvpx,dSvpy,pTr,ysign,argx=0.,argy=0.;
 	
@@ -531,16 +519,12 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 		// find nodal position based on node numbers and nodal column number
 		ri = midx+0.5*gxii[ndIDs[i]]*dx;
 		nr=ri/dx;
-#ifdef TRUNCATE
 		if(fabs(nr)<0.01)
 			n=0;
 		else if(fabs(nr-1.)<0.01)
 			n=1;
 		else
 			n=2;
-#else
-		n=-1;			// to skip all special cases
-#endif
 
 		// Note: when n=0, xp>0 and when n=1, xp>-2 (no need to check)
 		if(xp<-q3 || nr<-0.01)
@@ -672,7 +656,6 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 
 		}
 	}
-#endif
 }
 
 #endif

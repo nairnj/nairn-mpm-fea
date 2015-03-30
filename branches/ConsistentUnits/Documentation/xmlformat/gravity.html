@@ -17,7 +17,7 @@
 
 <h1>Gravity</h1>
 
-<p>MPM simulations can include gravity or any other body force (for more details see <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Gravitational_Field">OSUPDocs wiki</a>). Use the following structure to specify a vector in the direction of gravity or the body force:
+<p>MPM simulations can include gravity or any other body force (for more details see <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Gravitational_Field">OSUPDocs wiki</a>). Use the following structure to specify a vector in the direction of gravity and/or a body force:
 </p>
 
 <pre>
@@ -25,10 +25,13 @@
   &lt;BodyXForce&gt;0&lt;/BodyXForce&gt;
   &lt;BodyYForce&gt;-9800&lt;/BodyYForce&gt;
   &lt;BodyZForce&gt;0&lt;/BodyZForce&gt;
+  &lt;GridBodyXForce&gt;3*x&lt;/GridBodyXForce&gt;
+  &lt;GridBodyYForce&gt;8*t-100*t&lt;/GridBodyYForce&gt;
+  &lt;GridBodyZForce&gt;12*z&lt;/GridBodyZForce&gt;
 &lt;/Gravity&gt;
 </pre>
 
-<p>The body forces are in <a href="units.html">acceleration units</a> (the force is mass times this acceleration). Any omitted forces are set to zero.
+<p>The <code>Body(XYZ)Force</code> values must be numeric constants. The <code>GridBody(XYZ)Force</code> commands can be <a href="function.html" target="_blank">user-defined functions</a> of position and time. All body forces are in <a href="units.html">acceleration units</a>. Any omitted forces are set to zero. If two forces along the same axis are given (a constant and a function), the two values are summed to get total body force.
 </p>
 
 <p class="links">

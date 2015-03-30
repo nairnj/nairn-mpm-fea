@@ -65,13 +65,13 @@ CustomTask *HistoryArchive::Initialize(void)
 	// time interval
 	cout << "   Archive time: ";
 	if(customArchiveTime>=0.)
-	{	cout << customArchiveTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS);
+	{	cout << customArchiveTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS);
 		if(nextCustomArchiveTime<0.)
 		{	nextCustomArchiveTime = customArchiveTime;
 			cout << endl;
 		}
 		else
-		{	cout << ", starting at " << nextCustomArchiveTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS) << endl;
+		{	cout << ", starting at " << nextCustomArchiveTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
 		}
 	}
 	else

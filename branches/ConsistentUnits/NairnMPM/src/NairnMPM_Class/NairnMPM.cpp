@@ -577,13 +577,13 @@ void NairnMPM::PreliminaryCalcs(void)
 	// background grid info
 	mpmgrid.Output(ptsPerElement,IsAxisymmetric());
     
-    sprintf(fline,"Adjusted time step (%s): %.7e",UnitsController::Label(BCTIME_UNITS),timestep*UnitsController::Scaling(1.e3));
+    sprintf(fline,"Adjusted time step (%s): %.7e",UnitsController::Label(ALTTIME_UNITS),timestep*UnitsController::Scaling(1.e3));
     cout << fline << endl;
     
     // prpagation time step and other settings when has cracks
     if(firstCrack!=NULL)
 	{	if(propagate[0])
-		{   sprintf(fline,"Propagation time step (%s): %.7e",UnitsController::Label(BCTIME_UNITS),propTime*UnitsController::Scaling(1.e3));
+		{   sprintf(fline,"Propagation time step (%s): %.7e",UnitsController::Label(ALTTIME_UNITS),propTime*UnitsController::Scaling(1.e3));
 			cout << fline << endl;
 		}
 		

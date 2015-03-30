@@ -24,13 +24,14 @@ class MaterialController : public ParseController
 #endif
 		ParseController *nameCtrl;
 	
-	MaterialController(void);
+		MaterialController(void);
 		~MaterialController(void);
 	
 		// methods
 		int AddMaterial(int,char *);
 		const char *SetMaterialArray(void);
 		char *InputPointer(char *,int &,double &);
+		const char *MaterialType(void);
 		void SetMatColor(float,float,float,float);
 #ifdef MPM_CODE
 		void SetCriterion(int,int);

@@ -7,6 +7,7 @@
 ********************************************************************************/
 
 #include "Global_Quantities/ThermalRamp.hpp"
+#include "System/UnitsController.hpp"
 
 // Single thermal ramp global object
 ThermalRamp thermal;
@@ -80,25 +81,24 @@ void ThermalRamp::Output(void)
 	char hline[200];
 	
 	// always print reference temperature
-	sprintf(hline,"Reference Temperature: %g C",reference);
+	sprintf(hline,"Reference Temperature: %g K",reference);
 	cout << hline << endl;
-
+	
 	if(!isoRamp) return;
 	
 	sprintf(hline,"Initial isothermal temperature difference: %g C",isoDeltaT);
 	cout << hline << endl;
 	if(isoRampTime>0.)
-	{   sprintf(hline,"Ramped between %g and %g msec",rampStart,rampStart+isoRampTime);
-		isoRampTime/=1000.;			// convert to seconds
+	{   sprintf(hline,"Ramped between %g and %g %s",rampStart*UnitsController::Scaling(1.e3),
+				(rampStart+isoRampTime)*UnitsController::Scaling(1.e3),UnitsController::Label(ALTTIME_UNITS));
 		cout << hline << endl;
 	}
 	else if(rampStart>0.)
-	{   sprintf(hline,"Applied in one step at %g msec",rampStart);
+	{   sprintf(hline,"Applied in one step at %g %s",rampStart*UnitsController::Scaling(1.e3),UnitsController::Label(ALTTIME_UNITS));
 		cout << hline << endl;
 	}
 	else
 		cout << "Applied in first time step" << endl;
-	rampStart/=1000.;			// convert to seconds
 }
 
 

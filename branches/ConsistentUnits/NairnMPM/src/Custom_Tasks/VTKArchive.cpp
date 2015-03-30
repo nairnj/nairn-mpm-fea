@@ -213,13 +213,13 @@ CustomTask *VTKArchive::Initialize(void)
 	// time interval
 	cout << "   Archive time: ";
 	if(customArchiveTime>=0.)
-	{	cout << customArchiveTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS);
+	{	cout << customArchiveTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS);
 		if(nextCustomArchiveTime<0.)
 		{	nextCustomArchiveTime = 0.0;
 			cout << endl;
 		}
 		else
-		{	cout << ", starting at " << nextCustomArchiveTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(BCTIME_UNITS) << endl;
+		{	cout << ", starting at " << nextCustomArchiveTime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << endl;
 		}
 	}
 	else
@@ -466,6 +466,11 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 				vtkquant++;
 				break;
 				
+            case VTK_HEATENERGY:
+                *vtkquant+=wt*mpnt->mp*mpnt->GetHeatEnergy()*UnitsController::Scaling(1.e-9);
+                vtkquant++;
+                break;
+                
 			case VTK_MATERIAL:
 				*vtkquant+=wt*((double)mpnt->MatID()+1.);
 				vtkquant++;

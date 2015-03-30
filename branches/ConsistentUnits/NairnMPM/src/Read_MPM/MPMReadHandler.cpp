@@ -1015,9 +1015,13 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		{	aName=XMLString::transcode(attrs.getLocalName(i));
 			value=XMLString::transcode(attrs.getValue(i));
 			if(strcmp(aName,"time")==0)
-				sscanf(value,"%lf",&thermal.isoRampTime);
+			{	sscanf(value,"%lf",&thermal.isoRampTime);
+				thermal.isoRampTime *= UnitsController::Scaling(1.e-3);			// Legacy to seconds
+			}
 			else if(strcmp(aName,"start")==0)
-				sscanf(value,"%lf",&thermal.rampStart);
+			{	sscanf(value,"%lf",&thermal.rampStart);
+				thermal.rampStart *= UnitsController::Scaling(1.e-3);			// Legacy to seconds
+			}
 			delete [] aName;
 			delete [] value;
 		}
