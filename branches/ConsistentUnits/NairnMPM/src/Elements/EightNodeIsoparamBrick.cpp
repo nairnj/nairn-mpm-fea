@@ -171,7 +171,7 @@ void EightNodeIsoparamBrick::GetXiPos(Vector *pos,Vector *xipos) const
 void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos) const
 {
 	// quadrant barriers assuming 8 particles
-	double lp = mpmgrid.lp;
+	double lp = mpmgrid.GetParticleSemiLength();
 	double q1 = -1.+lp, q2 = 1.-lp;
 	
 	// nodes directly associated with the element
@@ -906,7 +906,7 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,
 	// L is the cell spacing, 2*lp is the current particle size.
 	// assuming the particle size is the same in x, y and z direction in element coordinate
 	// the deformation of the particle is not considered yet.
-	double lp = mpmgrid.lp;
+	double lp = mpmgrid.GetParticleSemiLength();
 	double q1 = lp,q2 = 2.-lp, q3 = 2.+lp;
 
 	for(i=0;i<numnds;i++)

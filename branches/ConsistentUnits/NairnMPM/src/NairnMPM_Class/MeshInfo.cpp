@@ -852,6 +852,8 @@ double MeshInfo::GetPerpendicularDistance(Vector *norm,Vector *tang,double delt)
 bool MeshInfo::GetContactByDisplacements(void) { return contactByDisplacements; }
 void MeshInfo::SetContactByDisplacements(bool newContact) { contactByDisplacements=newContact; }
 
+// particle semi length in natural coordinates
+double MeshInfo::GetParticleSemiLength(void) { return lp; }
 
 	
 

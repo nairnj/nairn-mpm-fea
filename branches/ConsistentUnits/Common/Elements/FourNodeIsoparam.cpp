@@ -311,8 +311,10 @@ int FourNodeIsoparam::Orthogonal(double *dx,double *dy,double *dz)
 void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos) const
 {
 	// quadrant barriers assuming 4 particles
-	double lp = mpmgrid.lp;
-	double q1 = -1.+lp, q2 = 1.-lp;
+	Vector lp;
+	lp.x = mpmgrid.GetParticleSemiLength();
+	lp.y = lp.x;
+	double q1x = -1.+lp.x, q2x = 1.-lp.x;
 	
 	// nodes directly associated with the element
 	nds[1]=nodes[0];
@@ -325,8 +327,8 @@ void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipo
 	ndIDs[3]=3;
 	
 	// lower y quadrant
-	if(xipos->y<q1)
-	{	if(xipos->x<q1)
+	if(xipos->y<-1.+lp.y)
+	{	if(xipos->x<q1x)
 		{	nds[5]=nodes[0]-mpmgrid.xplane-mpmgrid.yplane;
 			nds[6]=nds[5]+mpmgrid.xplane;
 			nds[7]=nds[6]+mpmgrid.xplane;
@@ -339,7 +341,7 @@ void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipo
 			ndIDs[8]=15;
 			*numnds=9;
 		}
-		else if(xipos->x<=q2)
+		else if(xipos->x<=q2x)
 		{	nds[5]=nodes[0]-mpmgrid.yplane;
 			nds[6]=nds[5]+mpmgrid.xplane;
 			ndIDs[4]=5;
@@ -362,15 +364,15 @@ void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipo
 	}
 	
 	// middle two y quadrants
-	else if(xipos->y<=q2)
-	{	if(xipos->x<q1)
+	else if(xipos->y<=1.-lp.y)
+	{	if(xipos->x<q1x)
 		{	nds[5]=nodes[3]-mpmgrid.xplane;
 			nds[6]=nodes[0]-mpmgrid.xplane;
 			ndIDs[4]=14;
 			ndIDs[5]=15;
 			*numnds=6;
 		}
-		else if(xipos->x<=q2)
+		else if(xipos->x<=q2x)
 		{	*numnds=4;
 		}
 		else
@@ -384,7 +386,7 @@ void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipo
 	
 	// upper y quadrant
 	else
-	{	if(xipos->x<q1)
+	{	if(xipos->x<q1x)
 		{	nds[5]=nodes[2]+mpmgrid.yplane;
 			nds[6]=nds[5]-mpmgrid.xplane;
 			nds[7]=nds[6]-mpmgrid.xplane;
@@ -397,7 +399,7 @@ void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipo
 			ndIDs[8]=15;
 			*numnds=9;
 		}
-		else if(xipos->x<=q2)
+		else if(xipos->x<=q2x)
 		{	nds[5]=nodes[2]+mpmgrid.yplane;
 			nds[6]=nds[5]-mpmgrid.xplane;
 			ndIDs[4]=11;
@@ -429,35 +431,38 @@ void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int ge
 	int i;
 	double xp,yp,Svpx,Svpy,dSvpx,dSvpy,xsign,ysign,argx=0.,argy=0.;
 	
-	// L is the cell spacing, 2*lp is the current particle size.
-	// assuming the particle size is the same in x and y direction in element coordinate
-	// the deformation of the particle is not considered yet.
-	// assumes 4 particles per element
-	double lp = mpmgrid.lp;
-	double q1 = lp, q2 = 2.-lp, q3 = 2.+lp;
+	// future pass data to support unequal element sizes
+	Vector lp;
+	lp.x = mpmgrid.GetParticleSemiLength();
+	lp.y = lp.x;
+	
+	// L is the cell spacing, 2*lpi is the current particle size (dimensionless range -1 to 1).
+	// The deformation of the particle is not considered yet.
+    double q1x = 2.-lp.x, q2x = 2.+lp.x;
+    double q1y = 2.-lp.y, q2y = 2.+lp.y;
 	
 	for(i=0;i<numnds;i++)
-	{	xp = fabs(xi->x - gxii[ndIDs[i]]);			// first qudrant (xp, yp)>=0
+	{	xp = fabs(xi->x - gxii[ndIDs[i]]);			// first quadrant (xp, yp)>=0
 		yp = fabs(xi->y - geti[ndIDs[i]]);
 		
-		if(xp<=q1)
-			Svpx = ((4.-lp)*lp-xp*xp)/(4.*lp);	// if lp=0.5: -(4.*xp*xp-7.)/8.;
-		else if(xp<=q2)
+		if(xp<=lp.x)
+			Svpx = ((4.-lp.x)*lp.x-xp*xp)/(4.*lp.x);	// if lp=0.5: -(4.*xp*xp-7.)/8.;
+		else if(xp<=q1x)
 			Svpx = (2.-xp)/2.;
-		else if(xp<=q3)
-		{	argx = (2.+lp-xp)/(4.*lp);			// if lp=0.5: (5.-2.*xp)/4
-			Svpx = 2.*lp*argx*argx;				// if lp=0.5: argx*argx
+		else if(xp<=q2x)
+		{	argx = (q2x-xp)/(4.*lp.x);               // if lp=0.5: (5.-2.*xp)/4
+			Svpx = 2.*lp.x*argx*argx;				// if lp=0.5: argx*argx
 		}
 		else
 			Svpx=0.;
 		
-		if(yp<=q1)
-			Svpy = ((4.-lp)*lp-yp*yp)/(4.*lp);	// if lp=0.5: -(4.*yp*yp-7.)/8.;
-		else if(yp<=q2)
+		if(yp<=lp.y)
+			Svpy = ((4.-lp.y)*lp.y-yp*yp)/(4.*lp.y);	// if lp=0.5: -(4.*yp*yp-7.)/8.;
+		else if(yp<=q1y)
 			Svpy = (2.-yp)/2.;
-		else if(yp<=q3)
-		{	argy = (2.+lp-yp)/(4.*lp);			// if lp=0.5: (5.-2.*yp)/4
-			Svpy = 2.*lp*argy*argy;				// if lp=0.5: (5.-2.*yp)^2/16
+		else if(yp<=q2y)
+		{	argy = (q2y-yp)/(4.*lp.y);               // if lp=0.5: (5.-2.*yp)/4
+			Svpy = 2.*lp.y*argy*argy;				// if lp=0.5: (5.-2.*yp)^2/16
 		}
 		else
 			Svpy=0.;
@@ -469,20 +474,20 @@ void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int ge
 		{	xsign = xi->x>gxii[ndIDs[i]] ? 1. : -1.;
 			ysign = xi->y>geti[ndIDs[i]] ? 1. : -1.;
 
- 			if(xp<=q1)
-				dSvpx = -xp/(2.*lp);			// if lp=0.5: -xp
-			else if(xp<=q2)
+ 			if(xp<=lp.x)
+				dSvpx = -xp/(2.*lp.x);			// if lp=0.5: -xp
+			else if(xp<=q1x)
 				dSvpx = -0.5;
-			else if(xp<=q3)
+			else if(xp<=q2x)
 				dSvpx = -argx;
 			else
 				dSvpx = 0.;
  			
- 			if(yp<=q1)
-				dSvpy = -yp/(2.*lp);			// if lp=0.5: -xp
-			else if(yp<=q2)
+ 			if(yp<=lp.y)
+				dSvpy = -yp/(2.*lp.y);			// if lp=0.5: -xp
+			else if(yp<=q1y)
 				dSvpy = -0.5;
-			else if(yp<=q3)
+			else if(yp<=q2y)
 				dSvpy = -argy;
 			else
 				dSvpy = 0.;
@@ -502,12 +507,17 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 	int i,n;
 	double xp,yp,ri,nr,Svpx,Svpy,dSvpx,dSvpy,pTr,ysign,argx=0.,argy=0.;
 	
+	// future pass data to support unequal element sizes
+	Vector lp;
+	lp.x = mpmgrid.GetParticleSemiLength();
+	lp.y = lp.x;
+	
 	// L is the cell spacing, 2*lp is the current particle size.
 	// assuming the particle size is the same in x and y direction in element coordinates
 	// the deformation of the particle is not considered here.
 	// assumes 4 particles per element
-	double lp = mpmgrid.lp;
-	double q1 = lp,q2 = 2.-lp, q3 = 2.+lp;
+	double q2x = 2.-lp.x, q3x = 2.+lp.x;
+	double q2y = 2.-lp.y, q3y = 2.+lp.y;
 	double dx = GetDeltaX();
 	double midx = GetCenterX();
 	double dy = GetDeltaY();
@@ -519,6 +529,8 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 		// find nodal position based on node numbers and nodal column number
 		ri = midx+0.5*gxii[ndIDs[i]]*dx;
 		nr=ri/dx;
+        
+        // truncate near r=0
 		if(fabs(nr)<0.01)
 			n=0;
 		else if(fabs(nr-1.)<0.01)
@@ -526,48 +538,50 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 		else
 			n=2;
 
-		// Note: when n=0, xp>0 and when n=1, xp>-2 (no need to check)
-		if(xp<-q3 || nr<-0.01)
+		// X direction with truncation
+        // When n==0, xp>0 and when n==1, xp>-2
+		if(xp<-q3x || nr<-0.01)
 			Svpx = 0.;
-		else if(xp<-q2)
+		else if(xp<-q2x)
 		{	if(n==1)
-				Svpx = (2.+lp+xp)/3.;				// if lp=0.5: (5.+2.*xp)/6.;
+                Svpx = (q3x+xp)/3.;				// if lp=0.5: (5.+2.*xp)/6.; note that xp>-2 always (no need to check)
 			else
-			{	argx = (2+lp+xp)/(4.*lp);
-				Svpx = 2.*lp*argx*argx*(1.-(2.*(1.-lp)+xp)/(3.*(2.*nr+xp)));
+			{	argx = (q3x+xp)/(4.*lp.x);
+				Svpx = 2.*lp.x*argx*argx*(1.-(2.*(1.-lp.x)+xp)/(3.*(2.*nr+xp)));
 				// if lp=0.5: argx = (5.+2.*xp)/4.;
 				//Svpx = argx*argx*(-1.+6.*nr+2.*xp)/(3.*(2.*nr+xp));
 			}
 		}
-		else if(xp<-q1)
-			Svpx = (2.+xp)/2. + lp*lp/(6.*(2.*nr+xp));		// if lp=0.5: (2.+xp)/2 + 1./(24.*(2.*nr+xp));
-		else if(xp<q1)
+		else if(xp<-lp.x)
+			Svpx = (2.+xp)/2. + lp.x*lp.x/(6.*(2.*nr+xp));		// if lp=0.5: (2.+xp)/2 + 1./(24.*(2.*nr+xp));
+		else if(xp<lp.x)
 		{	if(n==0)
-				Svpx = (3.-lp-xp)/3.;						// if lp=0.5: (5.-2.*xp)/6.;
+				Svpx = (3.-lp.x-xp)/3.;						// if lp=0.5: (5.-2.*xp)/6.; note that xp>0 always (no need to check)
 			else
-			{	Svpx = ((4.-lp)*lp-xp*xp)/(4.*lp) + xp*(xp*xp-3.*lp*lp)/(12.*lp*(2.*nr+xp));
-				// iflp=0.5:
+			{	Svpx = ((4.-lp.x)*lp.x-xp*xp)/(4.*lp.x) + xp*(xp*xp-3.*lp.x*lp.x)/(12.*lp.x*(2.*nr+xp));
+				// if lp=0.5:
 				// Svpx = -(-9.*xp+4.*xp*xp*xp+3.*nr*(-7.+4.*xp*xp))/(12.*(2.*nr+xp));
 			}
 		}
-		else if(xp<q2)
-			Svpx = (2.-xp)/2. - lp*lp/(6.*(2.*nr+xp));		// if lp=0.5: (2.-xp)/2. - 1./(24.*(2.*nr+xp));
-		else if(xp<q3)
-		{	argx = (2+lp-xp)/(4.*lp);
-			Svpx = 2.*lp*argx*argx*(1.+(2.*(1.-lp)-xp)/(3.*(2.*nr+xp)));
+		else if(xp<q2x)
+			Svpx = (2.-xp)/2. - lp.x*lp.x/(6.*(2.*nr+xp));		// if lp=0.5: (2.-xp)/2. - 1./(24.*(2.*nr+xp));
+		else if(xp<q3x)
+		{	argx = (q3x-xp)/(4.*lp.x);
+			Svpx = 2.*lp.x*argx*argx*(1.+(2.*(1.-lp.x)-xp)/(3.*(2.*nr+xp)));
 			// if lp=0.5: argx = argx = (5.-2.*xp);
 			//Svpx = argx*argx*(1.+6.*nr+2.*xp)/(3.*(2.*nr+xp));
 		}
 		else
 			Svpx = 0.;
-			
-		if(yp<=q1)
-			Svpy = ((4.-lp)*lp-yp*yp)/(4.*lp);		// if lp=0.5: (7-4.*yp*yp)/8.;
-		else if(yp<=q2)
+        
+        // Y direction like planar GIMP
+		if(yp<=lp.y)
+			Svpy = ((4.-lp.y)*lp.y-yp*yp)/(4.*lp.y);		// if lp=0.5: (7-4.*yp*yp)/8.;
+		else if(yp<=q2y)
 			Svpy = (2.-yp)/2.;
-		else if(yp<=q3)
-		{	argy = (2.+lp-yp)/(4.*lp);				// if lp=0.5: (5.-2.*yp)/4
-			Svpy = 2.*lp*argy*argy;					// if lp=0.5: (5.-2.*yp)^2/16
+		else if(yp<=q3y)
+		{	argy = (q3y-yp)/(4.*lp.y);                   // if lp=0.5: (5.-2.*yp)/4
+			Svpy = 2.*lp.y*argy*argy;					// if lp=0.5: (5.-2.*yp)^2/16
 		}
 		else
 			Svpy=0.;
@@ -578,41 +592,44 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 		if(getDeriv)
 		{	ysign = xi->y>geti[ndIDs[i]] ? 1. : -1.;
 			
-			// Note: when n=0, xp>0 and when n=1, xp>-2 (no need to check)
-			if(xp<-q3 || nr<-0.01)
+			// Y part with truncation optinos
+            // When n==0, xp>0 and when n==1, xp>-2
+			if(xp<-q3x || nr<-0.01)
 				dSvpx = 0.;
-			else if(xp<-q2)
+			else if(xp<-q2x)
 			{	if(n==1)
-					dSvpx = 0.5;
+					dSvpx = 0.5;                    // note that xp>-2 always (no need to check)
 				else
-				{	dSvpx = (2.+lp+xp)*(1 - (2.-lp+xp)/(2.*(2.*nr+xp)))/(4*lp);
+				{	dSvpx = (q3x+xp)*(1 - (q2x+xp)/(2.*(2.*nr+xp)))/(4*lp.x);
 					// if lp=0.5: (5.+2.*xp)*(1 - (3.+2.*xp)/(4.*(2.*nr+xp)))/4;
 					//			or (5.+2.*xp)*(-3.+8.*nr+2.*xp)/(16.*(2.*nr+xp));
 				}
 			}
-			else if(xp<-q1)
+			else if(xp<-lp.x)
 				dSvpx = 0.5;
-			else if(xp<q1)
+			else if(xp<lp.x)
 			{	if(n==0)
 					dSvpx = -0.5;
 				else
-					dSvpx = -xp/(2.*lp) - (lp*lp-xp*xp)/(4.*lp*(2.*nr+xp));  // if lp=0.5: -xp - (1.-4.*xp*xp)/(8.*(2.*nr+xp));
+                {   dSvpx = -xp/(2.*lp.x) - (lp.x*lp.x-xp*xp)/(4.*lp.x*(2.*nr+xp));
+                    // if lp=0.5: -xp - (1.-4.*xp*xp)/(8.*(2.*nr+xp));
+                }
 			}
-			else if(xp<q2)
-				dSvpx = -0.5;
-			else if(xp<q3)
-			{	dSvpx = -(2.+lp-xp)*(1. + (2.-lp-xp)/(2.*(2.*nr+xp)))/(4*lp);
+			else if(xp<q2x)
+				dSvpx = -0.5;                       // note that xp>0 always (no need to check)
+			else if(xp<q3x)
+			{	dSvpx = -(q3x-xp)*(1. + (q2x-xp)/(2.*(2.*nr+xp)))/(4*lp.x);
 				// if lp=0.5: -(5.-2.*xp)*(1 + (3-2.*xp)/(4.*(2.*nr+xp)))/4;
 				//			or -(5.-2.*xp)*(3.+8.*nr+2.*xp)/(16.*(2.*nr+xp));
 			}
 			else
 				dSvpx=0.;
 
-			if(yp<=q1)
-				dSvpy = -yp/(2.*lp);			// if lp=0.5: -yp
-			else if(yp<=q2)
+			if(yp<=lp.y)
+				dSvpy = -yp/(2.*lp.y);			// if lp=0.5: -yp
+			else if(yp<=q2y)
 				dSvpy = -0.5;
-			else if(yp<=q3)
+			else if(yp<=q3y)
 				dSvpy = -argy;
 			else
 				dSvpy = 0.;
@@ -621,33 +638,29 @@ void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int 
 			yDeriv[i] = ysign*Svpx*dSvpy*2.0/dy;
 
 			// Note: when n=0, xp>0 and when n=1, xp>-2 (no need to check)
-			if(xp<-q3 || nr<-0.01)
+			if(xp<-q3x || nr<-0.01)
 				pTr = 0.;
-			else if(xp<-q2)
+			else if(xp<-q2x)
 			{	if(n==1)
 					pTr = 0.5;
 				else
-				{	argx = (2.+lp+xp)/(4.*lp);				// if lp=0.5: (5.+2.*xp)/4
-					pTr = 2.*lp*argx*argx/(2.*nr+xp);		// if lp=0.5: (5.+2.*xp)^2/(16.*(2.*nr+xp))
+				{	argx = (q3x+xp)/(4.*lp.x);				// if lp=0.5: (5.+2.*xp)/4
+					pTr = 2.*lp.x*argx*argx/(2.*nr+xp);		// if lp=0.5: (5.+2.*xp)^2/(16.*(2.*nr+xp))
 				}
 			}
-			else if(xp<-q1)
-			{	if(n==1)
-					pTr = 0.5;
-				else
-					pTr = (2.+xp)/(2.*(2.*nr+xp));
-			}
-			else if(xp<q1)
+			else if(xp<-lp.x)
+                pTr = (2.+xp)/(2.*(2.*nr+xp));              // which is 0.5 for n==1
+			else if(xp<lp.x)
 			{	if(n==0)
-					pTr = 2./(xp+lp) - 0.5;					// if lp=0.5: (7.-2.*xp)/(2.+4.*xp);
+					pTr = 2./(xp+lp.x) - 0.5;					// if lp=0.5: (7.-2.*xp)/(2.+4.*xp);
 				else
-					pTr = ((4.-lp)*lp-xp*xp)/(4.*lp*(2.*nr+xp));	// if lp=0.5: (7-4.*yp*yp)/(8.*(2.*nr+xp));
+					pTr = ((4.-lp.x)*lp.x-xp*xp)/(4.*lp.x*(2.*nr+xp));	// if lp=0.5: (7-4.*yp*yp)/(8.*(2.*nr+xp));
 			}
-			else if(xp<q2)
+			else if(xp<q2x)
 				pTr = (2.-xp)/(2.*(2.*nr+xp));
-			else if(xp<q3)
-			{	argx = (2.+lp-xp)/(4.*lp);						// if lp=0.5: (5.-2.*yp)/4
-				pTr = 2.*lp*argx*argx/(2.*nr+xp);				// if lp=0.5: (5.-2.*yp)^2/(16.*(2.*nr+xp))
+			else if(xp<q3x)
+			{	argx = (q3x-xp)/(4.*lp.x);						// if lp=0.5: (5.-2.*yp)/4
+				pTr = 2.*lp.x*argx*argx/(2.*nr+xp);				// if lp=0.5: (5.-2.*yp)^2/(16.*(2.*nr+xp))
 			}
 			else
 				pTr = 0.;

@@ -24,7 +24,7 @@ class MeshInfo
     public:
 		// properties of a regular grid
 		double gridx,gridy,gridz;		// cell size
-		double partx,party,partz,lp;	// semilength of particle (lp in natural coordinates)
+		double partx,party,partz;		// semilength of particle (lp in natural coordinates)
 		double diagx,diagy,diagz;		// cell diagonal
 		int xplane,yplane,zplane;		// node spacings in each plane
 		double xmin,ymin,zmin;			// minimums (if from a grid)
@@ -65,6 +65,7 @@ class MeshInfo
         double GetPerpendicularDistance(Vector *,Vector *,double);
         bool GetContactByDisplacements(void);
         void SetContactByDisplacements(bool);
+		double GetParticleSemiLength(void);
 		
 	private:
 		int cartesian;					// non-zero (NOT_CARTESIAN) is a regular grid
@@ -75,6 +76,8 @@ class MeshInfo
         bool contactByDisplacements;    // TRUE is using displacements, false if need to adjust normal COD
 		int xpnum,ypnum,zpnum;			// patch grid size
 		int xPatchSize,yPatchSize,zPatchSize;		// patch sizes in elements (last may differ)
+	
+		double lp;
 
 };
 
