@@ -71,6 +71,9 @@ typedef struct
 	int xresolution,yresolution;	// Pixels per meter
 	unsigned int ncolors;			// Number of colors
 	unsigned int importantcolors;	// Important colors
+	bool knowsCellSize;				// true if file gives xcell, ycell, and zlevel
+	double xcell,ycell;				// x and y pixels size (in in the file, not in bmp files)
+	double zlevel;					// z value (if in the file)
 } BMPInfoHeader;
 
 class CommonReadHandler : public DefaultHandler

@@ -1440,10 +1440,17 @@ void CrackHeader::CrackTipHeating(void)
 		cpos.x=scrk->x;
 		cpos.y=scrk->y;
 		theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cpos);
-	
+		
+		// normalize shape functions
+		double fnorm = 0.;
+		for(i=1;i<=numnds;i++)
+		{	if(nd[nds[i]]->NodeHasNonrigidParticles())
+				fnorm += fn[i];
+		}
+		
         // Add crack particle heating to each node in the element
         for(i=1;i<=numnds;i++)
-		{	conduction->AddFluxCondition(nd[nds[i]],scrk->HeatRate()*fn[i],false);
+		{	conduction->AddFluxCondition(nd[nds[i]],scrk->HeatRate()*fn[i]/fnorm,false);
 		}
 		
 		// next segment

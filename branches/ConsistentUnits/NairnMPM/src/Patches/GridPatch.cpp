@@ -137,7 +137,7 @@ void GridPatch::InitializationReduction(void)
 		ghosts[i]->InitializationReduction();
 }
 
-// When Grid Forces task is done transfer ghost node force to real nodes
+// When Mass and momentum task is done transfer ghost node values to real nodes
 void GridPatch::MassAndMomentumReduction(void)
 {	for(int i=0;i<numGhosts;i++)
 		ghosts[i]->MassAndMomentumReduction();

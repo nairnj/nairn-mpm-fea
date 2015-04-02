@@ -82,13 +82,14 @@ Changes by John Nairn, April 2007
 
 #pragma mark USAGE UTILITILES
 
-#define MAX_FUNCTIONS 3
+// if change this number, change number of NULLs in open[] to 1 less
+#define MAX_FUNCTIONS 9
 
 double xvalue,yvalue,zvalue,dvalue,thetavalue;
 int numVars = 8;
 PRVar vararray[8];
 PROperation op=NULL;
-PROperation opex[2]={NULL,NULL};
+PROperation opex[8]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 
 // create function of x,y,z (or R=x and Z=y in axisymmetric) or D and T for polar coordinates from x and y
 // and dt (used in rigid velocities)
@@ -157,11 +158,20 @@ void DeleteFunction(void)
 	op=NULL;
 }
 
-// delete extra function
+// delete extra function, but if i<0 delete all extra functions
 void DeleteFunction(int i)
-{	// delete base or extra one
+{	// if < 0 delete all
+	if(i<0)
+	{	for(int j=1;j<=MAX_FUNCTIONS;j++)
+			DeleteFunction(j);
+		return;
+	}
+	
+	// if 1 delete root one with variables
 	if(i==1)
 		DeleteFunction();
+	
+	// delete extra ones
 	else if(i>=2 && i<=MAX_FUNCTIONS && opex[i-2]!=NULL)
 	{	delete opex[i-2];
 		opex[i-2]=NULL;

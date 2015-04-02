@@ -151,7 +151,7 @@ void GridForcesTask::Execute(void)
 	
 	// Add interface forces to velocity fields and track total interface energy
     NodalPoint::interfaceEnergy=0.;
-    CrackNode::InterfaceOnKnownNodes();
+    CrackNode::CrackInterfaceOnKnownNodes();
     MaterialInterfaceNode::InterfaceOnKnownNodes();
     
 	// Add gravity and body forces (if any are present)

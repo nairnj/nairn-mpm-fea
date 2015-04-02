@@ -121,7 +121,7 @@ void GhostNode::InitializationReduction(void)
 		real->CopyFieldInitialization(ghost);
 }
 
-// When Grid Forces task is done transfer ghost node force to real nodes
+// When mass and momentum task is done transfer ghost node values to real nodes
 void GhostNode::MassAndMomentumReduction(void)
 {	if(ghost!=NULL)
 	{	ghost->CopyMassAndMomentum(real);

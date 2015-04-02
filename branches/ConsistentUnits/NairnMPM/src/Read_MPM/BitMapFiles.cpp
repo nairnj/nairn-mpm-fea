@@ -83,15 +83,29 @@ void MPMReadHandler::TranslateBMPFiles(void)
 		}
 	}
 	
-	// provided mm per pixel
+	// bheight and bwidth provided in bmp file
+	// <-1.e8 means not provided
+	// negative means provided mm per pixel
+	// positive is a specified size
 	double xpw=-1.,ypw=-1.;
-	if(bheight<0. && bheight>-1.e8)
-	{	ypw = -bheight;
-		bheight = ypw*(double)info.height;
+	if(bwidth<-1.e8 && bheight<-1.e8)
+	{	if(!info.knowsCellSize)
+			throw SAXException(BMPError("<BMP> must specify width and/or height as size or pixels per mm.",bmpFileName));
+		bwidth = info.width*info.xcell;
+		bheight = info.height*info.ycell;
+		xpw = info.xcell;
+		ypw = info.ycell;
 	}
-	if(bwidth<0. && bwidth>-1.e8)
-	{	xpw = -bwidth;
-		bwidth = xpw*(double)info.width;
+	else
+	{	// provided mm per pixel
+		if(bheight<0. && bheight>-1.e8)
+		{	ypw = -bheight;
+			bheight = ypw*(double)info.height;
+		}
+		if(bwidth<0. && bwidth>-1.e8)
+		{	xpw = -bwidth;
+			bwidth = xpw*(double)info.width;
+		}
 	}
 	
 	// total dimensions (if only one is known, find the other, never have both unknown)
@@ -309,8 +323,8 @@ void MPMReadHandler::TranslateBMPFiles(void)
 	// angles if allocated
 	for(ii=0;ii<numRotations;ii++)
 	{	delete [] angleExpr[ii];
-		DeleteFunction(ii+1);
 	}
+	DeleteFunction(-1);
 		
 }
 

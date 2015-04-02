@@ -118,7 +118,7 @@ void PolyhedronController::SetProperty(char *bData,CommonReadHandler *reader)
 		case PYRAMID:
 			// 12 is tetrahdron, 15 is square-bottom pyramid
 			if(pts.size()!=12 && pts.size()!=15)
-                throw SAXException("Invalid data block passed to a <Polyhedron> object -wrong number of points");
+                throw SAXException("Invalid data block passed to a <Polyhedron> object - wrong number of points");
 			
 			// get corner vectors
 			// 0 is apex, rest are ccw around the base (not sure if ccw or cw matters)

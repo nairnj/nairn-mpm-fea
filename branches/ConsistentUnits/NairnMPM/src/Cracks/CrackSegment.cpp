@@ -504,19 +504,19 @@ void CrackSegment::FillArchive(char *app,int segNum)
     }
 }
 
-// Tell crack tip to heat itself when it propagates
+// Tell new crack tip to heat itself after the recent propagation
 void CrackSegment::StartCrackTipHeating(double growth,double thickness)
 {
 	MaterialBase *tipMat=theMaterials[tipMatnum-1];
-	double rhoH = tipMat->rho;											// mm^3/g
-	double adot = tipMat->WaveSpeed(FALSE,NULL);						// in mm/sec
+	double fractH = 1.0;								// fraction to heat (should be material property)
+	double adot = tipMat->WaveSpeed(FALSE,NULL);		// in mm/sec
 	
 	// set up rate and times (making sure proper number of steps)
 	int nsteps = (int)(growth/(adot*timestep));
 	if(nsteps<1) nsteps=1;
 	
-	// heat rate in nW/g and same as heatRate=rhoH*Jint.x*thickness*adot;
-	heatRate = Jint.x*thickness*growth/(rhoH*timestep*(double)nsteps);
+	// get heat rate E divided up among nsteps t get Pwr = E/T
+	heatRate = fractH*Jint.x*thickness*growth/(timestep*(double)nsteps);
 	
 	// stop heating at this time
 	// discrete version of heatEndTime=mtime + growth/adot;
@@ -529,10 +529,10 @@ void CrackSegment::StartCrackTipHeating(double growth,double thickness)
 double CrackSegment::HeatRate(void)
 {
 	// return zero if off or if done
-	if(!heating) return (double)0.;
+	if(!heating) return 0.;
 	if(mtime>heatEndTime)
 	{	heating = false;
-		return (double)0.;
+		heatRate = 0.;
 	}
 	
 	// return the heat rate

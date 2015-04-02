@@ -834,7 +834,6 @@ short MPMReadHandler::EndGenerator(char *xName)
 		int i;
 		for(i=0;i<numRotations;i++)
 		{	delete [] angleExpr[i];
-			DeleteFunction(i+1);
 		}
     	block=POINTSBLOCK;
 	}
@@ -929,6 +928,9 @@ void MPMReadHandler::MPMPts(void)
     catch(const char *msg)
     {   throw SAXException(msg);
     }
+	
+	// remove created functions (angleExpr deleted later)
+	DeleteFunction(-1);
 }
 
 //------------------------------------------------------------------

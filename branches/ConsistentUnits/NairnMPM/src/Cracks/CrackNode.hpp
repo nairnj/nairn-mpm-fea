@@ -25,17 +25,17 @@ class CrackNode
         CrackNode(NodalPoint *,CrackNode *);
 		
 		// methods
-		CrackNode *NodalContact(void);
-		CrackNode *NodalContactAndForces(double);
+		CrackNode *NodalCrackContact(void);
+		CrackNode *NodalCrackContactAndForces(double);
 		void SetPrevBC(CrackNode *);
 		CrackNode *GetPrevBC(void);
-		CrackNode *InterfaceForce(void);
+		CrackNode *InterfaceForceOnCrack(void);
         
 		// class methods
 		static void RemoveCrackNodes(void);
 		static void CrackContactTask4(double);
 		static void ContactOnKnownNodes(void);
-		static void InterfaceOnKnownNodes(void);
+		static void CrackInterfaceOnKnownNodes(void);
 		
 	private:
 		// variables (changed in MPM time step)

@@ -32,21 +32,21 @@ CrackNode::CrackNode(NodalPoint *nd,CrackNode *prev)
 #pragma mark CrackNode: Methods
 
 // Add internal force to all nodes with imperfect interfaces 
-CrackNode *CrackNode::InterfaceForce(void)
+CrackNode *CrackNode::InterfaceForceOnCrack(void)
 {
 	theNode->CrackInterfaceForce();
 	return prevBC;
 }
 
-// check contact on this node
-CrackNode *CrackNode::NodalContactAndForces(double deltime)
+// check contact on this node during update momentum taks
+CrackNode *CrackNode::NodalCrackContactAndForces(double deltime)
 {
 	theNode->CrackContact(TRUE,deltime,NULL,NULL);
 	return prevBC;
 }
 
-// check contact on this node
-CrackNode *CrackNode::NodalContact(void)
+// check contact on this node during update strains last
+CrackNode *CrackNode::NodalCrackContact(void)
 {
 	theNode->CrackContact(FALSE,0.,NULL,NULL);
 	return prevBC;
@@ -77,7 +77,7 @@ void CrackNode::CrackContactTask4(double deltime)
 {
 	CrackNode *prevBC = currentCNode;
 	while(prevBC!=NULL)
-		prevBC = prevBC->NodalContactAndForces(deltime);
+		prevBC = prevBC->NodalCrackContactAndForces(deltime);
 }
 
 // On last pass (for USAVG or SZS), will already know which
@@ -86,15 +86,15 @@ void CrackNode::ContactOnKnownNodes(void)
 {
 	CrackNode *prevBC = currentCNode;
 	while(prevBC!=NULL)
-		prevBC = prevBC->NodalContact();
+		prevBC = prevBC->NodalCrackContact();
 }
 	
 // When there are imperfect interfaces, add to nodal internal force
-void CrackNode::InterfaceOnKnownNodes(void)
+void CrackNode::CrackInterfaceOnKnownNodes(void)
 {
 	CrackNode *prevBC = currentCNode;
 	while(prevBC!=NULL)
-		prevBC = prevBC->InterfaceForce();
+		prevBC = prevBC->InterfaceForceOnCrack();
 }
 
 	
