@@ -133,6 +133,68 @@ Matrix3 Matrix3::Transpose(void) const
     return mT;
 }
 
+// Form the triple product R.M.R^T in one step (R need not be a rotation matrix)
+Matrix3 Matrix3::RMRT(Matrix3 &R) const
+{	if(is2D && R.getIs2D())
+	{	Matrix3 mT(R(0,0)*R(0,0)*m[0][0] + R(0,1)*R(0,0)*m[1][0] + R(0,0)*R(0,1)*m[0][1] + R(0,1)*R(0,1)*m[1][1],
+				   R(0,0)*R(1,0)*m[0][0] + R(0,1)*R(1,0)*m[1][0] + R(0,0)*R(1,1)*m[0][1] + R(0,1)*R(1,1)*m[1][1],
+				   R(1,0)*R(0,0)*m[0][0] + R(1,1)*R(0,0)*m[1][0] + R(1,0)*R(0,1)*m[0][1] + R(1,1)*R(0,1)*m[1][1],
+				   R(1,0)*R(1,0)*m[0][0] + R(1,1)*R(1,0)*m[1][0] + R(1,0)*R(1,1)*m[0][1] + R(1,1)*R(1,1)*m[1][1],
+				   R(2,2)*R(2,2)*m[2][2]);
+		return mT;
+	}
+	else
+	{	Matrix3 mT;
+		int i,j;
+		for(i=0;i<3;i++)
+		{	for(j=0;j<3;j++)
+			{	double mij = m[i][j];
+				mT(0,0) += R(0,i)*R(0,j)*mij;
+				mT(0,1) += R(0,i)*R(1,j)*mij;
+				mT(0,2) += R(0,i)*R(2,j)*mij;
+				mT(1,0) += R(1,i)*R(0,j)*mij;
+				mT(1,1) += R(1,i)*R(1,j)*mij;
+				mT(1,2) += R(1,i)*R(2,j)*mij;
+				mT(2,0) += R(2,i)*R(0,j)*mij;
+				mT(2,1) += R(2,i)*R(1,j)*mij;
+				mT(2,2) += R(2,i)*R(2,j)*mij;
+			}
+		}
+		return mT;
+	}
+}
+
+// Form the triple product R.M.R^T in one step (R need not be a rotation matrix)
+Matrix3 Matrix3::RTMR(Matrix3 &R) const
+{	if(is2D && R.getIs2D())
+	{	Matrix3 mT(R(0,0)*R(0,0)*m[0][0] + R(1,0)*R(0,0)*m[1][0] + R(0,0)*R(1,0)*m[0][1] + R(1,0)*R(1,0)*m[1][1],
+				   R(0,0)*R(0,1)*m[0][0] + R(1,0)*R(0,1)*m[1][0] + R(0,0)*R(1,1)*m[0][1] + R(1,0)*R(1,1)*m[1][1],
+				   R(0,1)*R(0,0)*m[0][0] + R(1,1)*R(0,0)*m[1][0] + R(0,1)*R(1,0)*m[0][1] + R(1,1)*R(1,0)*m[1][1],
+				   R(0,1)*R(0,1)*m[0][0] + R(1,1)*R(0,1)*m[1][0] + R(0,1)*R(1,1)*m[0][1] + R(1,1)*R(1,1)*m[1][1],
+				   R(2,2)*R(2,2)*m[2][2]);
+		return mT;
+	}
+	else
+	{	Matrix3 mT;
+		int i,j;
+		for(i=0;i<3;i++)
+		{	for(j=0;j<3;j++)
+			{	double mij = m[i][j];
+				mT(0,0) += R(i,0)*R(j,0)*mij;
+				mT(0,1) += R(i,0)*R(j,1)*mij;
+				mT(0,2) += R(i,0)*R(j,2)*mij;
+				mT(1,0) += R(i,1)*R(j,0)*mij;
+				mT(1,1) += R(i,1)*R(j,1)*mij;
+				mT(1,2) += R(i,1)*R(j,2)*mij;
+				mT(2,0) += R(i,2)*R(j,0)*mij;
+				mT(2,1) += R(i,2)*R(j,1)*mij;
+				mT(2,2) += R(i,2)*R(j,2)*mij;
+			}
+		}
+		return mT;
+	}
+}
+
 // exponential of matrix to kmax terms
 Matrix3 Matrix3::Exponential(int kmax) const
 {	

@@ -164,12 +164,12 @@ const char *BistableIsotropic::VerifyAndLoadProperties(int np)
     // test validity of each state
     const char *err=CurrentProperties(DEFORMED_STATE,np);
     if(err!=NULL) return err;
-	FillElasticProperties(&pr2,np);
+	FillUnrotatedElasticProperties(&pr2,np);
 	FillTransportProperties(&tr2);
 	
     err=CurrentProperties(INITIAL_STATE,np);
     if(err!=NULL) return err;
-	FillElasticProperties(&pr,np);
+	FillUnrotatedElasticProperties(&pr,np);
 	// transport gets done in material base
 	
     // convert strain rules in percent to absolute strains

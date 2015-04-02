@@ -86,7 +86,7 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,doub
 	}
 	Hypo2DCalculations(mptr,-dwrotxy,c1,c2,c3);
     
-	// work and resdiaul strain energu increments
+	// work and resdiaul strain energy increments
 	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy + (st0.xy+sp->xy)*dgam);
 	double resEnergy = 0.5*((st0.xx+sp->xx)*erxx + (st0.yy+sp->yy)*eryy + (st0.xy+sp->xy)*erxy);
 	if(np==PLANE_STRAIN_MPM)

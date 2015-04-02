@@ -37,6 +37,7 @@ class Elastic : public MaterialBase
 		// initialize
         
 		// methods
+		void FillUnrotatedElasticProperties(ElasticProperties *,int);
 #ifdef MPM_CODE
         virtual double GetCpMinusCv(MPMBase *) const;
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;

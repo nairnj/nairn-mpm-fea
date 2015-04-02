@@ -240,9 +240,8 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
     kCondT /= rho;
 #endif
 	
-	// load elastic properties with constant values when istropic in x-y plane
-	if(MaterialTag()==TRANSISO1 && np!=THREED_MPM)
-		FillElasticProperties2D(&pr,np>BEGIN_MPM_TYPES,0.,np);
+	// load elastic properties with constant values
+	FillUnrotatedElasticProperties(&pr,np);
 	
 	// superclass call
 	return MaterialBase::VerifyAndLoadProperties(np);

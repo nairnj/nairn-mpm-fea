@@ -211,6 +211,7 @@ MatVelocityField = $(src)/Nodes/MatVelocityField
 MeshInfo = $(src)/NairnMPM_Class/MeshInfo
 MGSCGLMaterial = $(src)/Materials/MGSCGLMaterial
 Mooney = $(src)/Materials/Mooney
+MoreIstropicMat = $(src)/Materials/MoreIsotropicMat
 MoreMPMElementBase = $(src)/Elements/MoreMPMElementBase
 MoveCracksTask = $(src)/NairnMPM_Class/MoveCracksTask
 MPMBase = $(src)/MPM_Classes/MPMBase
@@ -428,7 +429,7 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o AdjustTimeStepTask.o SLMaterial.o CrackVelocityFieldMulti.o \
 		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o \
         HEMGEOSMaterial.o GridPatch.o GhostNode.o MatPtHeatFluxBC.o PressureLaw.o ShellController.o Neohookean.o ClampedNeohookean.o \
-        InitVelocityFieldsTask.o UnitsController.o
+        InitVelocityFieldsTask.o UnitsController.o MoreIsotropicMat.o
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -750,6 +751,9 @@ MaterialBaseMPM.o : $(MaterialBaseMPM).cpp $(dprefix) $(MaterialBase).hpp $(Nair
 ElasticMPM.o : $(ElasticMPM).cpp $(dprefix) $(Elastic).hpp $(MaterialBase).hpp $(ThermalRamp).hpp $(ConductionTask).hpp \
 			 $(MPMBase).hpp $(DiffusionTask).hpp $(TransportTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ElasticMPM).cpp
+MoreIsotropicMat.o : $(MoreIsotropicMat).cpp $(dprefix) $(Elastic).hpp $(MaterialBase).hpp $(MoreIsotropicMat).hpp $(ConductionTask).hpp \
+			 $(MPMBase).hpp $(DiffusionTask).hpp $(TransportTask).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MoreIsotropicMat).cpp
 IsoPlasticity.o : $(IsoPlasticity).cpp $(dprefix) $(IsoPlasticity).hpp $(IsotropicMat).hpp $(HardeningLawBase).hpp \
 			$(MaterialBase).hpp $(DiffusionTask).hpp $(ConductionTask).hpp $(MPMBase).hpp $(LinearHardening).hpp \
 			$(TransportTask).hpp $(Elastic).hpp $(CommonException).hpp

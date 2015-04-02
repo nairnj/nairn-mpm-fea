@@ -31,6 +31,7 @@
 		673EC9B716C9EB71007FFEB5 /* CarnotCycle.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 673EC9B516C9EB71007FFEB5 /* CarnotCycle.hpp */; };
 		6741B24817EDFF1300CFADC7 /* PressureLaw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6741B24617EDFF1300CFADC7 /* PressureLaw.cpp */; };
 		6741B24917EDFF1300CFADC7 /* PressureLaw.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6741B24717EDFF1300CFADC7 /* PressureLaw.hpp */; };
+		67582CCF1ACCD5880087EA12 /* MoreIsotropicMat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67582CCD1ACCD5880087EA12 /* MoreIsotropicMat.cpp */; };
 		676D76AC1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 676D76AA1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp */; };
 		676D76AD1AADFC8800A9AB57 /* InitVelocityFieldsTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 676D76AB1AADFC8800A9AB57 /* InitVelocityFieldsTask.hpp */; };
 		6797CABC1A89ABC5009C96FD /* ClampedNeohookean.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6797CABA1A89ABC5009C96FD /* ClampedNeohookean.cpp */; };
@@ -447,6 +448,7 @@
 		673EC9B516C9EB71007FFEB5 /* CarnotCycle.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CarnotCycle.hpp; sourceTree = "<group>"; };
 		6741B24617EDFF1300CFADC7 /* PressureLaw.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PressureLaw.cpp; sourceTree = "<group>"; };
 		6741B24717EDFF1300CFADC7 /* PressureLaw.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PressureLaw.hpp; sourceTree = "<group>"; };
+		67582CCD1ACCD5880087EA12 /* MoreIsotropicMat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MoreIsotropicMat.cpp; sourceTree = "<group>"; };
 		676D76AA1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InitVelocityFieldsTask.cpp; sourceTree = "<group>"; };
 		676D76AB1AADFC8800A9AB57 /* InitVelocityFieldsTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InitVelocityFieldsTask.hpp; sourceTree = "<group>"; };
 		6797CABA1A89ABC5009C96FD /* ClampedNeohookean.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ClampedNeohookean.cpp; path = Materials/ClampedNeohookean.cpp; sourceTree = "<group>"; };
@@ -1475,6 +1477,7 @@
 			children = (
 				A70A7B11042A50950063AF10 /* MaterialBaseMPM.cpp */,
 				A7A355CE0B6822E300EF7973 /* ElasticMPM.cpp */,
+				67582CCD1ACCD5880087EA12 /* MoreIsotropicMat.cpp */,
 				A7C954F7044717540063AF10 /* BistableIsotropic.hpp */,
 				A7C954F8044717540063AF10 /* BistableIsotropic.cpp */,
 				A7CA395703F16F3A0063AF10 /* Viscoelastic.hpp */,
@@ -1976,6 +1979,7 @@
 				6797CABC1A89ABC5009C96FD /* ClampedNeohookean.cpp in Sources */,
 				676D76AC1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp in Sources */,
 				6736CBF11AB74C5B0009A663 /* UnitsController.cpp in Sources */,
+				67582CCF1ACCD5880087EA12 /* MoreIsotropicMat.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
