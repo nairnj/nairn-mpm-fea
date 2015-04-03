@@ -68,11 +68,11 @@ MatPtFluxBC *MatPtFluxBC::AddMPFlux(double bctime)
 		if(fmobj->IsThreeD())
 		{	fluxMag.x = D->xx*mpmptr->pDiffusion->Dc.x + D->xy*mpmptr->pDiffusion->Dc.y + D->xz*mpmptr->pDiffusion->Dc.z;
 			fluxMag.y = D->xy*mpmptr->pDiffusion->Dc.x + D->yy*mpmptr->pDiffusion->Dc.y + D->yz*mpmptr->pDiffusion->Dc.z;
-			fluxMag.x = D->xz*mpmptr->pDiffusion->Dc.x + D->yz*mpmptr->pDiffusion->Dc.y + D->zz*mpmptr->pDiffusion->Dc.z;
+			fluxMag.z = D->xz*mpmptr->pDiffusion->Dc.x + D->yz*mpmptr->pDiffusion->Dc.y + D->zz*mpmptr->pDiffusion->Dc.z;
 		}
 		else
 		{	fluxMag.x = D->xx*mpmptr->pDiffusion->Dc.x + D->xy*mpmptr->pDiffusion->Dc.y;
-			fluxMag.x = D->xy*mpmptr->pDiffusion->Dc.x + D->yy*mpmptr->pDiffusion->Dc.y;
+			fluxMag.y = D->xy*mpmptr->pDiffusion->Dc.x + D->yy*mpmptr->pDiffusion->Dc.y;
 		}
         bcDir = N_DIRECTION;
 	}
