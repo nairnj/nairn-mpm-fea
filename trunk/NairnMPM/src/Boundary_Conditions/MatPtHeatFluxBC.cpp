@@ -67,7 +67,7 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
 		if(fmobj->IsThreeD())
 		{	fluxMag.x = k->xx*mpmptr->pTemp->DT.x + k->xy*mpmptr->pTemp->DT.y + k->xz*mpmptr->pTemp->DT.z;
 			fluxMag.y = k->xy*mpmptr->pTemp->DT.x + k->yy*mpmptr->pTemp->DT.y + k->yz*mpmptr->pTemp->DT.z;
-			fluxMag.x = k->xz*mpmptr->pTemp->DT.x + k->yz*mpmptr->pTemp->DT.y + k->zz*mpmptr->pTemp->DT.z;
+			fluxMag.z = k->xz*mpmptr->pTemp->DT.x + k->yz*mpmptr->pTemp->DT.y + k->zz*mpmptr->pTemp->DT.z;
 		}
 		else
 		{	fluxMag.x = k->xx*mpmptr->pTemp->DT.x + k->xy*mpmptr->pTemp->DT.y;
