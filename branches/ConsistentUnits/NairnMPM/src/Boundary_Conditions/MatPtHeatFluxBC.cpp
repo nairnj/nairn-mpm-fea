@@ -74,14 +74,14 @@ MatPtHeatFluxBC *MatPtHeatFluxBC::AddMPHeatFlux(double bctime)
 		if(fmobj->IsThreeD())
 		{	fluxMag.x = k->xx*mpmptr->pTemp[gGRADx] + k->xy*mpmptr->pTemp[gGRADy] + k->xz*mpmptr->pTemp[gGRADz];
 			fluxMag.y = k->xy*mpmptr->pTemp[gGRADx] + k->yy*mpmptr->pTemp[gGRADy] + k->yz*mpmptr->pTemp[gGRADz];
-			fluxMag.x = k->xz*mpmptr->pTemp[gGRADx] + k->yz*mpmptr->pTemp[gGRADy] + k->zz*mpmptr->pTemp[gGRADz];
+			fluxMag.z = k->xz*mpmptr->pTemp[gGRADx] + k->yz*mpmptr->pTemp[gGRADy] + k->zz*mpmptr->pTemp[gGRADz];
 		}
 		else
 		{	fluxMag.x = k->xx*mpmptr->pTemp[gGRADx] + k->xy*mpmptr->pTemp[gGRADy];
 			fluxMag.y = k->xy*mpmptr->pTemp[gGRADx] + k->yy*mpmptr->pTemp[gGRADy];
 		}
 		
-		// remove 1/rho0 scaling on k to get nW/m^2
+		// remove 1/rho0 scaling on k to get nW/mm^2
 		ScaleVector(&fluxMag,matptr->rho);
 		
 		// need to get normal vector from cpdi functions below
