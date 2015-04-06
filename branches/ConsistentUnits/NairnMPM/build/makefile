@@ -211,7 +211,7 @@ MatVelocityField = $(src)/Nodes/MatVelocityField
 MeshInfo = $(src)/NairnMPM_Class/MeshInfo
 MGSCGLMaterial = $(src)/Materials/MGSCGLMaterial
 Mooney = $(src)/Materials/Mooney
-MoreIstropicMat = $(src)/Materials/MoreIsotropicMat
+MoreIsotropicMat = $(src)/Materials/MoreIsotropicMat
 MoreMPMElementBase = $(src)/Elements/MoreMPMElementBase
 MoveCracksTask = $(src)/NairnMPM_Class/MoveCracksTask
 MPMBase = $(src)/MPM_Classes/MPMBase
@@ -751,7 +751,7 @@ MaterialBaseMPM.o : $(MaterialBaseMPM).cpp $(dprefix) $(MaterialBase).hpp $(Nair
 ElasticMPM.o : $(ElasticMPM).cpp $(dprefix) $(Elastic).hpp $(MaterialBase).hpp $(ThermalRamp).hpp $(ConductionTask).hpp \
 			 $(MPMBase).hpp $(DiffusionTask).hpp $(TransportTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ElasticMPM).cpp
-MoreIsotropicMat.o : $(MoreIsotropicMat).cpp $(dprefix) $(Elastic).hpp $(MaterialBase).hpp $(MoreIsotropicMat).hpp $(ConductionTask).hpp \
+MoreIsotropicMat.o : $(MoreIsotropicMat).cpp $(dprefix) $(Elastic).hpp $(MaterialBase).hpp $(ConductionTask).hpp \
 			 $(MPMBase).hpp $(DiffusionTask).hpp $(TransportTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MoreIsotropicMat).cpp
 IsoPlasticity.o : $(IsoPlasticity).cpp $(dprefix) $(IsoPlasticity).hpp $(IsotropicMat).hpp $(HardeningLawBase).hpp \
