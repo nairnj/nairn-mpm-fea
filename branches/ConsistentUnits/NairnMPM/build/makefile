@@ -629,8 +629,8 @@ UpdateParticlesTask.o : $(UpdateParticlesTask).cpp $(dprefix) $(UpdateParticlesT
 			$(CommonException).hpp $(BoundaryCondition).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UpdateParticlesTask).cpp
 UpdateStrainsLastTask.o : $(UpdateStrainsLastTask).cpp $(dprefix) $(UpdateStrainsLastTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
-			$(NairnMPM).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(CrackHeader).hpp $(TransportTask).hpp \
-			$(NodalPoint).hpp $(CrackSurfaceContact).hpp $(NodalVelBC).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
+			$(NairnMPM).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(TransportTask).hpp \
+			$(NodalPoint).hpp $(NodalVelBC).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
 			$(BoundaryCondition).hpp $(UpdateStrainsFirstTask).cpp $(CrackNode).hpp $(GridPatch).hpp $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UpdateStrainsLastTask).cpp
 RunCustomTasksTask.o : $(RunCustomTasksTask).cpp $(dprefix) $(RunCustomTasksTask).hpp $(MPMTask).hpp $(CommonTask).hpp \

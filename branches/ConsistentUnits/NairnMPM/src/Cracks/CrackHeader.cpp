@@ -471,11 +471,8 @@ short CrackHeader::MoveCrack(short side)
 					nodeCounter++;
 			}
 
-			// if CRACK_SURFACE_BY_MOMENTUM_EXTRAP is defined
-			//     delv is Sum(fi pi) and surfaceMass = Sum(fi mi)
-			// otherwise
-			//     elv is Sum(fi vi) = Sum(fi pi/mi) and surfaceMass = Sum(fi)
-			// Both normalize to get velocity and multiply by dt to get displacement
+			// delv is Sum(fi vi) = Sum(fi pi/mi) and surfaceMass = Sum(fi)
+			// Normalize to get velocity and multiply by dt to get displacement
 			if(nodeCounter>0) ScaleVector(&delv,timestep/surfaceMass);
 			
 			// this method does not normalize shape functions
