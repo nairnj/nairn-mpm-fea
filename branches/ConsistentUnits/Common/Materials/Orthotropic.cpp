@@ -306,6 +306,9 @@ const char *Orthotropic::VerifyAndLoadProperties(int np)
 							betax*concSaturation,betay*concSaturation,betaz*concSaturation);
 	if(err!=NULL) return err;
 	
+	// load elastic properties with constant values
+	FillUnrotatedElasticProperties(&pr,np);
+	
 	// superclass call
 	return MaterialBase::VerifyAndLoadProperties(np);
 }

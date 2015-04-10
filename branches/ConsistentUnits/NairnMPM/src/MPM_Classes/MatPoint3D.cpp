@@ -582,3 +582,22 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 	return 1.;
 }
 
+// Get Rotation matrix for initial material orientation (anistropic only)
+Matrix3 MatPoint3D::GetInitialRotation(void)
+{	double z = GetAnglez0InRadians();
+	double y = GetAngley0InRadians();
+	double x = GetAnglex0InRadians();
+	double cx = cos(x);
+	double sx = sin(x);
+	double cy = cos(y);
+	double sy = sin(y);
+	double cz = cos(z);
+	double sz = sin(z);
+	return Matrix3( cy*cz,  cz*sx*sy+cx*sz,  -cx*cz*sy+sx*sz,
+				   -cy*sz,  cx*cz-sx*sy*sz,   cz*sx+cx*sy*sz,
+				   sy,     -cy*sz,            cx*cy );
+	//return Matrix3( cy*cz,         -cy*sz,           sy,
+	//			    cz*sx*sy+cx*sz, cx*cz-sx*sy*sz, -cy*sz,
+	//			   -cx*cz*sy+sx*sz, cz*sx+cx*sy*sz,  cx*cy );
+}
+

@@ -561,3 +561,10 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 	return 1.;
 }
 	
+// Get Rotation matrix for initial material orientation (anistropic only)
+Matrix3 MatPoint2D::GetInitialRotation(void)
+{	double theta = GetAnglez0InRadians();
+	double cs = cos(theta);
+	double sn = sin(theta);
+	return Matrix3(cs,sn,-sn,cs,1.);
+}

@@ -336,6 +336,11 @@ void MPMBase::IncrementRotationStrain(double rotXY,double rotXZ,double rotYZ)
 }
 TensorAntisym *MPMBase::GetRotationStrainTensor(void) { return & wrot; }
 
+// 2D and 3D material points override to get initial rotation matrix
+Matrix3 MPMBase::GetInitialRotation(void)
+{	return Matrix3(1.,0.,0.,1.,1.);
+}
+
 // energies
 double MPMBase::GetPlastEnergy(void) { return plastEnergy; }
 void MPMBase::AddPlastEnergy(double energyInc) { plastEnergy+=energyInc; }

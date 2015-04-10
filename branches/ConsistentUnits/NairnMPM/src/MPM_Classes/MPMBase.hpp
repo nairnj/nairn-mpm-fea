@@ -117,6 +117,7 @@ class MPMBase : public LinkedObject
         double GetAnglez0InRadians(void);
         double GetAngley0InRadians(void);
         double GetAnglex0InRadians(void);
+		virtual Matrix3 GetInitialRotation(void);
 		void IncrementRotationStrain(double);
 		void IncrementRotationStrain(double,double,double);
 		void InitializeMass(double);
