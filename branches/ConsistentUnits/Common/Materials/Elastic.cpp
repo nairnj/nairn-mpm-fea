@@ -34,28 +34,37 @@ void Elastic::FillUnrotatedElasticProperties(ElasticProperties *p,int np)
 		p->C[0][1]=C12*rrho;
 		p->C[0][2]=C13*rrho;
 		p->C[0][3]=p->C[0][4]=p->C[0][5]=0.;
+		
 		p->C[1][0]=p->C[0][1];
 		p->C[1][1]=C22*rrho;
 		p->C[1][2]=C23*rrho;
 		p->C[1][3]=p->C[1][4]=p->C[1][5]=0.;
+		
 		p->C[2][0]=p->C[0][2];
 		p->C[2][1]=p->C[1][2];
 		p->C[2][2]=C33*rrho;
 		p->C[2][3]=p->C[2][4]=p->C[2][5]=0.;
+		
 		p->C[3][0]=p->C[3][1]=p->C[3][2]=0.;
 		p->C[3][3]=C44*rrho;
 		p->C[3][4]=p->C[3][5]=0.;
+		
 		p->C[4][0]=p->C[4][1]=p->C[4][2]=p->C[4][3]=0.;
 		p->C[4][4]=C55*rrho;
 		p->C[4][5]=0.;
+		
 		p->C[5][0]=p->C[5][1]=p->C[5][2]=p->C[5][3]=p->C[5][4]=0.;
 		p->C[5][5]=C66*rrho;
 		
 		// need p->alpha[] and p->beta[] for thermal and moisture expansion
-		p->alpha[0]=p->alpha[1]=p->alpha[2]=CTE1;
+		p->alpha[0]=CTE1;
+		p->alpha[1]=CTE2;
+		p->alpha[2]=CTE3;
 		p->alpha[3]=p->alpha[4]=p->alpha[5]=0.;
 		
-		p->beta[0]=p->beta[1]=p->beta[2]=CME1;
+		p->beta[0]=CME1;
+		p->beta[1]=CME2;
+		p->beta[2]=CME3;
 		p->beta[3]=p->beta[4]=p->beta[5]=0.;
 		
 		return;
@@ -66,8 +75,10 @@ void Elastic::FillUnrotatedElasticProperties(ElasticProperties *p,int np)
     p->C[1][1]=C11;
     p->C[1][2]=C12;
     p->C[1][3]=0.;
+	
     p->C[2][2]=C22;
     p->C[2][3]=0.;
+	
 	p->C[3][3]=C66;
 	
 #ifdef MPM_CODE
