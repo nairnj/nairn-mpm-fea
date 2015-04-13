@@ -208,6 +208,9 @@ void ArchiveData::CalcArchiveSize(void)
 	mpmOrder[ARCH_OldOrigPosition]='N';		// now requried to be 'N'
 	mpmOrder[ARCH_ver2Empty]='N';			// now required to be 'N'
 	
+	// now forces ARCH_RotStrain if has strain and disable if does not have strain
+	mpmOrder[ARCH_RotStrain] = mpmOrder[ARCH_Strain];
+	
     if(strlen(crackOrder)<2) strcpy(crackOrder,"mY");
     if(strlen(crackOrder)<ARCH_MAXCRACKITEMS)
     {	for(i=strlen(crackOrder);i<ARCH_MAXCRACKITEMS;i++)

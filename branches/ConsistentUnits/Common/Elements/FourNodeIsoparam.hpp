@@ -34,15 +34,15 @@ class FourNodeIsoparam : public Linear2D
 		virtual void ExtrapolateGaussStressToNodes(double [][5]);
 #endif
 #ifdef MPM_CODE
-		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *) const;
         virtual void FindExtent(void);
 		virtual int Orthogonal(double *,double *,double *);
-		virtual void GimpShapeFunctionAS(Vector *,int,int *,int,double *,double *,double *,double *) const;
 		virtual void GetPosition(Vector *xipos,Vector *);
 	
 		// const methods
-		virtual void GetGimpNodes(int *,int *,int *,Vector *) const;
-		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *) const;
+        virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *) const;
+		virtual void GetGimpNodes(int *,int *,int *,Vector *,Vector &) const;
+		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *,Vector &) const;
+        virtual void GimpShapeFunctionAS(Vector *,int,int *,int,double *,double *,double *,double *,Vector &) const;
 		virtual void GetXiPos(Vector *,Vector *) const;
 #endif
 

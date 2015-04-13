@@ -34,6 +34,8 @@ typedef struct {
 
 #endif
 
+#define USE_PSEUDOHYPERELASTIC
+
 #define UNSPECIFIED -1
 enum { NO_PROPAGATION=0,MAXHOOPSTRESS,STEADYSTATEGROWTH,DELETED_TOTALENERGYBALANCE_USECUSTOMTASKIFNEEDED,
        STRAINENERGYDENSITY,EMPIRICALCRITERION,MAXCTODCRITERION,CRITICALERR };
@@ -109,8 +111,10 @@ class MaterialBase : public LinkedObject
 		virtual double GetCpMinusCv(MPMBase *) const;
         virtual void IncrementHeatEnergy(MPMBase *,double,double,double) const;
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+#ifndef USE_PSEUDOHYPERELASTIC
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+#endif
 #else
 		virtual void LoadMechanicalPropertiesFEA(int,double,int);
 #endif

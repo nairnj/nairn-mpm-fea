@@ -212,6 +212,17 @@ int AnisoPlasticity::SizeOfMechanicalProperties(int &altBufferSize) const
     return sizeof(AnisoPlasticProperties);
 }
 
+#ifdef USE_PSEUDOHYPERELASTIC
+
+// Get current anisotropic properties (NULL on memry error)
+void *AnisoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
+{	// fill plastic properties
+	AnisoPlasticProperties *p = (AnisoPlasticProperties *)matBuffer;
+	p->ep = (ElasticProperties *)&pr;
+}
+
+#else
+
 // Get current anisotropic properties (NULL on memry error)
 void *AnisoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
 {
@@ -225,6 +236,175 @@ void *AnisoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBu
 	
 	return p;
 }
+
+#endif
+
+#ifdef USE_PSEUDOHYPERELASTIC
+
+// return pointer to elastic properties
+ElasticProperties *AnisoPlasticity::GetElasticPropertiesPointer(void *properties) const
+{	AnisoPlasticProperties *p = (AnisoPlasticProperties *)properties;
+	return p->ep;
+}
+
+// Once stress deformation has been decomposed, finish calculations in the material axis system
+// When stress are found, they are rotated back to the global axes (using Rtot and dR)
+// Similar, strain increments are rotated back to find work energy (done in global system)
+void AnisoPlasticity::ElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 er,Matrix3 Rtot,Matrix3 dR,int np,void *properties,ResidualStrains *res) const
+{
+	AnisoPlasticProperties *p = (AnisoPlasticProperties *)properties;
+	ElasticProperties *r = p->ep;
+	
+	// get stress increment in material axes by first rotating current stress
+	// to material and then add elastic increment
+	Tensor *sp = mptr->GetStressTensor();
+	Tensor st0 = *sp;
+	Matrix3 Rnm1tot = dR.Transpose()*Rtot;
+	
+	Matrix3 strial;
+	Matrix3 deeff = de-er;
+	Tensor *eplast=mptr->GetPlasticStrainTensor();
+	Matrix3 etn;
+	if(np==THREED_MPM)
+	{	Matrix3 stnm1(sp->xx,sp->xy,sp->xz,sp->xy,sp->yy,sp->yz,sp->xz,sp->yz,sp->zz);
+		strial = stnm1.RTMR(Rnm1tot);
+		strial(0,0) += r->C[0][0]*deeff(0,0) + r->C[0][1]*deeff(1,1) + r->C[0][2]*deeff(2,2);
+		strial(1,1) += r->C[1][0]*deeff(0,0) + r->C[1][1]*deeff(1,1) + r->C[1][2]*deeff(2,2);
+		strial(2,2) += r->C[2][0]*deeff(0,0) + r->C[2][1]*deeff(1,1) + r->C[2][2]*deeff(2,2);
+		strial(1,2) += 2.*r->C[3][3]*deeff(1,2);
+		strial(2,1) = strial(1,2);
+		strial(0,2) += 2.*r->C[4][4]*deeff(0,2);
+		strial(2,0) = strial(0,2);
+		strial(0,1) += 2.*r->C[5][5]*deeff(0,1);
+		strial(1,0) = strial(0,1);
+		
+		etn = Matrix3(eplast->xx,0.5*eplast->xy,0.5*eplast->xz,0.5*eplast->xy,eplast->yy,0.5*eplast->yz,
+					0.5*eplast->xz,0.5*eplast->yz,eplast->zz);
+ 	}
+	else
+	{	Matrix3 stnm1(sp->xx,sp->xy,sp->xy,sp->yy,sp->zz);
+		strial = stnm1.RTMR(Rnm1tot);
+		strial(0,0) += r->C[1][1]*deeff(0,0) + r->C[1][2]*deeff(1,1);
+		strial(1,1) += r->C[1][2]*deeff(0,0) + r->C[2][2]*deeff(1,1);
+		strial(0,1) += 2.*r->C[3][3]*deeff(0,1);
+		strial(1,0) = strial(0,1);
+		strial(2,2) += r->C[4][1]*deeff(0,0) + r->C[4][2]*deeff(1,1) + r->C[4][4]*deeff(2,2);
+		if(np==PLANE_STRAIN_MPM)
+		{	strial(2,2) += r->C[4][1]*r->alpha[5]*er(2,2) + r->C[4][2]*r->alpha[6]*er(2,2);
+		}
+		
+		etn = Matrix3(eplast->xx,0.5*eplast->xy,0.5*eplast->xy,eplast->yy,eplast->zz);
+	}
+	
+	// initial plastic strain in new global coordinates
+	Matrix3 etr = etn.RMRT(dR);
+	
+    // Calculate plastic potential f
+	UpdateTrialAlpha(mptr,np,p);
+	double sAstrial = GetMagnitudeHill(strial,np);
+	double ftrial = sAstrial - GetYield(p);
+	if(ftrial<0.)
+	{	// elastic, update stress and strain energy as usual
+		Elastic::ElasticConstitutiveLaw(mptr,de,er,Rtot,dR,np,properties,res);
+		
+		// rotate plastic strain
+		eplast->xx = etr(0,0);
+		eplast->yy = etr(1,1);
+		eplast->zz = etr(2,2);
+		eplast->xy = 2.*etr(0,1);
+		if(np==THREED_MPM)
+		{	eplast->xz = 2.*etr(0,2);
+			eplast->yz = 2.*etr(1,2);
+		}
+		
+		return;
+    }
+    
+	// Find  lambda for this plastic state
+	Matrix3 stk;
+	double lambda = SolveForLambdaAP(mptr,np,ftrial,strial,stk,p);
+	
+    // Plastic strain increments on particle
+	Matrix3 dep;
+	double dexyp=0.5*lambda*p->dfds.xy;
+	if(np==THREED_MPM)
+	{	double deyzp=0.5*lambda*p->dfds.yz;
+		double dexzp=0.5*lambda*p->dfds.xz;
+		dep = Matrix3(lambda*p->dfds.xx,dexyp,dexzp,dexyp,lambda*p->dfds.yy,deyzp,
+					  dexzp,deyzp,lambda*p->dfds.zz);
+	}
+	else
+	{	dep = Matrix3(lambda*p->dfds.xx,dexyp,dexyp,lambda*p->dfds.yy,lambda*p->dfds.zz);
+	}
+	dep = dep.RMRT(Rtot);
+	eplast->xx = etr(0,0) + dep(0,0);
+	eplast->yy = etr(1,1) + dep(1,1);
+	eplast->zz = etr(2,2) + dep(2,2);
+	eplast->xy = 2.*(etr(0,1) + dep(0,1));
+	if(np==THREED_MPM)
+	{	eplast->xz = 2.*(etr(0,2) + dep(0,2));
+		eplast->yz = 2.*(etr(1,2) + dep(1,2));
+	}
+	
+	// update particle stress by rotating to global axes
+	Matrix3 sfinal = stk.RMRT(Rtot);
+	sp->xx = sfinal(0,0);
+	sp->yy = sfinal(1,1);
+	sp->xy = sfinal(0,1);
+	sp->zz = sfinal(2,2);
+	if(np==THREED_MPM)
+	{	sp->yz = sfinal(1,2);
+		sp->xz = sfinal(0,2);
+	}
+	
+	// rotate strain into global axes
+	de = de.RMRT(Rtot);
+	er = er.RMRT(Rtot);
+	double workEnergy,dispEnergy,resEnergy;
+
+	if(np==THREED_MPM)
+	{	// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
+		workEnergy = 0.5*((st0.xx+sp->xx)*de(0,0) + (st0.yy+sp->yy)*de(1,1) + (st0.zz+sp->zz)*de(1,1))
+								+ (st0.xy+sp->xy)*de(0,1) + (st0.xz+sp->xz)*de(0,2) + (st0.yz+sp->yz)*de(1,2);
+		
+		// Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
+		dispEnergy = 0.5*((st0.xx+sp->xx)*dep(0,0) + (st0.yy+sp->yy)*dep(1,1) + (st0.zz+sp->zz)*dep(2,2))
+								+ (st0.xy+sp->xy)*dep(0,1) + (st0.xz+sp->xz)*dep(0,2) + (st0.yz+sp->yz)*dep(1,2);
+		
+		// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
+		resEnergy = 0.5*((st0.xx+sp->xx)*er(0,0) + (st0.yy+sp->yy)*er(1,1) + (st0.zz+sp->zz)*er(2,2))
+								+ (st0.xy+sp->xy)*er(0,1) + (st0.xz+sp->xz)*er(0,2) + (st0.yz+sp->yz)*er(1,2);
+	}
+	else
+	{	// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
+		workEnergy = 0.5*((st0.xx+sp->xx)*de(0,0) + (st0.yy+sp->yy)*de(1,1) + (st0.zz+sp->zz)*de(1,1))
+									+ (st0.xy+sp->xy)*de(0,1);
+		
+		// Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
+		dispEnergy = 0.5*((st0.xx+sp->xx)*dep(0,0) + (st0.yy+sp->yy)*dep(1,1) + (st0.zz+sp->zz)*dep(2,2))
+								 + (st0.xy+sp->xy)*dep(0,1);
+		
+		// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
+		resEnergy = 0.5*((st0.xx+sp->xx)*er(0,0) + (st0.yy+sp->yy)*er(1,1) + (st0.zz+sp->zz)*er(2,2))
+								+ (st0.xy+sp->xy)*er(1,1);
+	}
+	
+	// add now
+	mptr->AddWorkEnergyAndResidualEnergy(workEnergy + dispEnergy,resEnergy);
+	
+	// add dissipated energy to plastic energy to the particle
+    mptr->AddPlastEnergy(dispEnergy);
+	
+    // heat energy is Cv(dT-dTq0) - dPhi
+    // The dPhi is subtracted here because it will show up in next
+    //		time step within Cv dT (if adiabatic heating occurs)
+    IncrementHeatEnergy(mptr,res->dT,0.,dispEnergy);
+	
+	// update internal variables
+	UpdatePlasticInternal(mptr,np,p);
+}
+
+#else
 
 /* For 2D MPM analysis, take increments in strain and calculate new
     Particle: strains, rotation strain, plastic strain, stresses, strain energy, 
@@ -594,12 +774,246 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 	UpdatePlasticInternal(mptr,np,p);
 }
 
+#endif
+
 #pragma mark AnisoPlasticity::Hill Terms
+
+#ifdef USE_PSEUDOHYPERELASTIC
+
+// Get sqrt(s As) where s is stress in material axis system
+double AnisoPlasticity::GetMagnitudeHill(Matrix3 &srot,int np) const
+{
+	double sAs=0.;
+	if(np==THREED_MPM) sAs = srot(0,2)*srot(0,2)*tyxzred2 + srot(0,2)*srot(0,2)*tyyzred2;
+	
+	// return sqrt(sAs);
+	// check on negative sAs can happen due to round-off error when stresses near zero
+	double dyz = srot(1,1)-srot(2,2);
+	double dxz = srot(0,0)-srot(2,2);
+	double dxy = srot(0,0)-srot(1,1);
+	sAs += fTerm*dyz*dyz + gTerm*dxz*dxz + hTerm*dxy*dxy + srot(0,1)*srot(0,1)*tyxyred2;
+	return sAs>0. ? sqrt(sAs) : 0 ;
+}
+
+// Find C.df and df.C.df at given stress - store results in plastic property variables active only during the loop
+// and only for current material point
+void AnisoPlasticity::GetDfCdf(Matrix3 &stk,int np,AnisoPlasticProperties *p) const
+{
+	// get C df and df C df, which need df/dsig (Function of yield criteria, and normally only current stress in stk)
+	GetDfDsigma(stk,np,p);
+	ElasticProperties *r = p->ep;
+	if(np==THREED_MPM)
+	{	p->Cdf.xx = r->C[0][0]*p->dfds.xx + r->C[0][1]*p->dfds.yy + r->C[0][2]*p->dfds.zz;
+		p->Cdf.yy = r->C[1][0]*p->dfds.xx + r->C[1][1]*p->dfds.yy + r->C[1][2]*p->dfds.zz;
+		p->Cdf.zz = r->C[2][0]*p->dfds.xx + r->C[2][1]*p->dfds.yy + r->C[2][2]*p->dfds.zz;
+		p->Cdf.yz = r->C[3][3]*p->dfds.yz;
+		p->Cdf.xz = r->C[4][4]*p->dfds.xz;
+		p->Cdf.xy = r->C[5][0]*p->dfds.xx;
+		p->dfCdf = p->dfds.xx*p->Cdf.xx + p->dfds.yy*p->Cdf.yy + p->dfds.zz*p->Cdf.zz
+				+ p->dfds.yz*p->Cdf.yz + p->dfds.xz*p->Cdf.xz + p->dfds.xy*p->Cdf.xy;
+	}
+	else
+	{	p->Cdf.xx = r->C[1][1]*p->dfds.xx + r->C[1][2]*p->dfds.yy;
+		p->Cdf.yy = r->C[1][2]*p->dfds.xx + r->C[2][2]*p->dfds.yy ;
+		p->Cdf.xy = r->C[3][3]*p->dfds.xy;
+		p->Cdf.zz = r->C[4][1]*p->dfds.xx + r->C[4][2]*p->dfds.yy + r->C[4][4]*p->dfds.zz;
+		p->dfCdf = p->dfds.xx*p->Cdf.xx + p->dfds.yy*p->Cdf.yy + p->dfds.xy*p->Cdf.xy + p->dfds.zz*p->Cdf.zz;;
+	}
+}
+
+// Find A srot/sqrt(s As) in rotated coordinates (in dfdsijrot) and then rotate the result to
+//   get df term such that dep = lamda df in the analysis coordinates. Rotated term
+//	 is stored in dfds tensor in plastic properties
+// As find R df = -h and store in minush hardning property
+void AnisoPlasticity::GetDfDsigma(Matrix3 &st0,int np,AnisoPlasticProperties *p) const
+{
+	// clockwise rotation from analysis to material axes
+	double rootSAS = GetMagnitudeHill(st0,np);
+	
+	// df = A.sigma/rootSAS
+	if(rootSAS>0.)
+	{	p->dfds.xx = (syxxred2*st0(0,0) - hTerm*st0(1,1) - gTerm*st0(2,2)) / rootSAS;
+		p->dfds.yy = (-hTerm*st0(0,0) + syyyred2*st0(1,1) - fTerm*st0(2,2)) / rootSAS;
+		p->dfds.zz = (-gTerm*st0(0,0) - fTerm*st0(1,1) + syzzred2*st0(2,2)) / rootSAS;
+		p->dfds.xy = tyxyred2*st0(0,1) / rootSAS;
+		if(np==THREED_MPM)
+		{	p->dfds.yz = tyyzred2*st0(1,2) / rootSAS;
+			p->dfds.xz = tyxzred2*st0(0,2) / rootSAS;
+			
+			// for use in alpha upate
+			p->minush = p->dfds.xx*p->dfds.xx + p->dfds.yy*p->dfds.yy + p->dfds.zz*p->dfds.zz
+							+ 0.5*(p->dfds.yz*p->dfds.yz + p->dfds.xz*p->dfds.xz + p->dfds.xy*p->dfds.xy);
+			p->minush = sqrt(p->minush/1.5);
+		}
+		else
+		{	// for use in alpha upate
+			p->minush = p->dfds.xx*p->dfds.xx + p->dfds.yy*p->dfds.yy + p->dfds.zz*p->dfds.zz + 0.5*p->dfds.xy*p->dfds.xy;
+			p->minush = sqrt(p->minush/1.5);
+		}
+	}
+	
+	else
+	{	// negative root implies zero stress with roundoff error
+		p->dfds.xx = p->dfds.yy = p->dfds.zz = p->dfds.yz = p->dfds.xz = p->dfds.xy = 0.;
+		p->minush=0.;
+	}
+}
+
+// Solve numerically for lambda
+// Ouptut is lambdak, final df, final alpha
+double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Matrix3 &strial,Matrix3 &stk,AnisoPlasticProperties *p) const
+{
+	// step 0 = stress is strial, alpha is previous alpha
+	GetDfCdf(strial,np,p);								// find df/dsigma
+	double lambda2 = ftrial/(p->dfCdf + GetDfAlphaDotH(mptr,np,p));
+	double lambdaInitial=lambda2;
+	
+	// find df/dsigma and -h at this initial guessed stress rather than at strial as above
+	UpdateStress(strial,stk,lambda2,np,p);
+	GetDfCdf(stk,np,p);
+	UpdateStress(strial,stk,lambda2,np,p);			// second pass might help
+	GetDfCdf(stk,np,p);
+	
+	// Find f using new slopes at lambda1
+	UpdateTrialAlpha(mptr,np,lambda2,p);
+	double f2 = GetMagnitudeHill(stk,np) - GetYield(p);
+	
+	// pick second lambda that is lower
+	double lambda1 = 0.5*lambda2;
+	double f1 = GetFkFromLambdak(mptr,strial,stk,lambda1,np,p);
+	
+	// bracket the solution
+	int step=1;
+	while(true)
+	{	if(f1*f2<0.) break;
+		if(fabs(f1)<fabs(f2))
+		{	lambda1+=1.6*(lambda1-lambda2);
+			if(lambda1>0.)
+				f1=GetFkFromLambdak(mptr,strial,stk,lambda1,np,p);
+			else
+			{	f1=ftrial;
+				lambda1=0.;
+			}
+		}
+		else
+		{	lambda2+=1.6*(lambda2-lambda1);
+			f2=GetFkFromLambdak(mptr,strial,stk,lambda2,np,p);
+		}
+		
+		// if fails to bracket in 50 tries, return with single step solution
+		step++;
+		if(step>50)
+		{
+			GetDfCdf(strial,np,p);
+			UpdateStress(strial,stk,lambdaInitial,np,p);
+			GetDfCdf(stk,np,p);
+			UpdateTrialAlpha(mptr,np,lambdaInitial,p);
+			return lambdaInitial;
+		}
+	}
+	
+	// order solutions so f1<0
+	if(f1>0.)
+	{	double ftemp=f1;
+		double lambdatemp=lambda1;
+		f1=f2;
+		lambda1=lambda2;
+		f2=ftemp;
+		lambda2=lambdatemp;
+	}
+	
+	// set up
+	double lambdak=0.5*(lambda1+lambda2);				// initial guess
+	double dxold=fabs(lambda2-lambda1);					// the step size before last
+	double dx=dxold;									// the last step sie
+	
+	// initial guess
+	double fk=GetFkFromLambdak(mptr,strial,stk,lambdak,np,p);
+	double dfkdlam=-(p->dfCdf + GetDfAlphaDotH(mptr,np,p));
+	
+	// Loop
+	step=1;
+	while(true)
+	{	// if out of range, or not decreasing fast enough, use bisection method
+		if((((lambdak-lambda2)*dfkdlam-fk)*((lambdak-lambda1)*dfkdlam-fk) >= 0.0)
+		   || (fabs(2.0*fk) > fabs(dxold*dfkdlam)))
+		{	dxold=dx;
+			dx=0.5*(lambda2-lambda1);
+			lambdak=lambda1+dx;
+		}
+		else
+		{	dxold=dx;
+			dx=fk/dfkdlam;
+			lambdak-=dx;
+		}
+		
+		// convergence check
+		if(step++>20 || fabs(dx/lambdak)<0.001) break;
+		
+		// next value
+		fk=GetFkFromLambdak(mptr,strial,stk,lambdak,np,p);
+		dfkdlam=-(p->dfCdf + GetDfAlphaDotH(mptr,np,p));
+		
+		// maintain the bracket
+		if(fk<0.0)
+		{	lambda1=lambdak;
+			f1=fk;
+		}
+		else
+		{	lambda2=lambdak;
+			f2=fk;
+		}
+		
+	}
+	
+	// output df (from initial setting of GetDfCdf()), alpha (here with latest lambda), and lamda (the return value)
+	UpdateTrialAlpha(mptr,np,lambdak,p);
+	
+	return lambdak;
+}
+
+
+// Update stress (assumes Cdfij calculated before)
+void AnisoPlasticity::UpdateStress(Matrix3 &strial,Matrix3 &stk,double lambda,int np,AnisoPlasticProperties *p) const
+{
+	stk(0,0) = strial(0,0) - lambda*p->Cdf.xx;
+	stk(1,1) = strial(1,1) - lambda*p->Cdf.yy;
+	stk(0,1) = strial(0,1) - lambda*p->Cdf.xy;
+	stk(1,0) = stk(0,1);
+	stk(2,2) = strial(2,2) - lambda*p->Cdf.zz;
+	if(np==THREED_MPM)
+	{	stk(1,2) = strial(1,2) - lambda*p->Cdf.yz;
+		stk(2,1) = stk(1,2);
+		stk(0,2) = strial(0,2) - lambda*p->Cdf.xz;
+		stk(2,0) = stk(0,2);
+	}
+}
+
+// Given stress and lambda, find f (also find the stress and return dfCdf)
+double AnisoPlasticity::GetFkFromLambdak(MPMBase *mptr,Matrix3 &strial,Matrix3 &stk,
+										 double lambda,int np,AnisoPlasticProperties *p) const
+{
+	// Change stress to new value based on strial, lambda, and previous slope
+	UpdateStress(strial,stk,lambda,np,p);
+	
+	// update alpha using new lambda and -h from most recent GetDfDsigma()
+	UpdateTrialAlpha(mptr,np,lambda,p);
+	
+	// update fk using new stress and alpha
+	return GetMagnitudeHill(stk,np) - GetYield(p);
+}
+
+// plastic strain needed to get deformation gradient for this material class
+bool AnisoPlasticity::PartitionsElasticAndPlasticStrain(void) const { return false; }
+
+#else
+
+#pragma mark AnisoPlasticity::Old Hill Terms
 
 // Get sqrt(s As) and also return rotated stresses in case caller needs them
 double AnisoPlasticity::GetMagnitudeRotatedHill(Tensor *st0,Tensor *srot,int np,AnisoPlasticProperties *p) const
 {
-	double sAs=0.;;
+	double sAs=0.;
 	
 	if(np==THREED_MPM)
 	{	// rotation from analysis to material axes
@@ -669,6 +1083,7 @@ void AnisoPlasticity::GetDfCdf(Tensor *stk,int np,AnisoPlasticProperties *p) con
 	}
 }
 
+
 // Find A srot/sqrt(s As) in rotated coordinates (in dfdsijrot) and then rotate the result to
 //   get df term such that dep = lamda df in the analysis coordinates. Rotated term
 //	 is stored in dfds tensor in plastic properties
@@ -730,15 +1145,13 @@ void AnisoPlasticity::GetDfDsigma(Tensor *st0,int np,AnisoPlasticProperties *p) 
 	}
 }
 
-#pragma mark AnisoPlasticity::Custom Methods
-
 // Solve numerically for lambda
 // Ouptut is lambdak, final df, final alpha
 double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tensor *strial,AnisoPlasticProperties *p) const
 {
 	// step 0 = stress is strial, alpha is previous alpha
 	GetDfCdf(strial,np,p);								// find df/dsigma
-	double lambda2 = ftrial/(p->dfCdf + GetDfAlphaDotH(mptr,np,strial,p));
+	double lambda2 = ftrial/(p->dfCdf + GetDfAlphaDotH(mptr,np,p));
 	double lambdaInitial=lambda2;
 	
 	// find df/dsigma and -h at this initial guessed stress rather than at strial as above
@@ -804,7 +1217,7 @@ double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tens
 	
 	// initial guess
 	double fk=GetFkFromLambdak(mptr,strial,&stk,lambdak,np,p);
-	double dfkdlam=-(p->dfCdf + GetDfAlphaDotH(mptr,np,&stk,p));
+	double dfkdlam=-(p->dfCdf + GetDfAlphaDotH(mptr,np,p));
 	
 	// Loop
 	step=1;
@@ -827,7 +1240,7 @@ double AnisoPlasticity::SolveForLambdaAP(MPMBase *mptr,int np,double ftrial,Tens
 		
 		// next value
 		fk=GetFkFromLambdak(mptr,strial,&stk,lambdak,np,p);
-		dfkdlam=-(p->dfCdf + GetDfAlphaDotH(mptr,np,&stk,p));
+		dfkdlam=-(p->dfCdf + GetDfAlphaDotH(mptr,np,p));
 		
 		// maintain the bracket
 		if(fk<0.0)
@@ -877,4 +1290,6 @@ double AnisoPlasticity::GetFkFromLambdak(MPMBase *mptr,Tensor *strial,Tensor *st
 
 // plastic strain needed to get deformation gradient for this material class
 bool AnisoPlasticity::PartitionsElasticAndPlasticStrain(void) const { return true; }
+
+#endif
 

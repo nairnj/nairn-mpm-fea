@@ -169,6 +169,79 @@ void *MGSCGLMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuf
 	return p;
 }
 
+#ifdef USE_PSEUDOHYPERELASTIC
+
+/* To better handle large deformation in the M-G EOS, this method is overridden
+	to calculate incremental deformation using large-deformation theory (i.e. from
+	exponent of du), find delV, find Jnew, and then call back to Isoplasticity to
+	finish shear parts using hypoelasticity
+*/
+void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+{
+    // Correct for swelling by finding total residual stretch (not incremental)
+	double eresTot=0.,JresStretch=1.,eres=0.,detdFres=1.;
+	if(DiffusionTask::active)
+    {   eresTot += CME3*(mptr->pPreviousConcentration-DiffusionTask::reference);
+        eres += CME3*res->dC;
+        JresStretch = (1.+eresTot)*(1.+eresTot)*(1.+eresTot);
+		detdFres = (1.+eres)*(1.+eres)*(1.+eres);
+    }
+	
+	// current previous deformation gradient and stretch
+	Matrix3 pFnm1 = mptr->GetDeformationGradientMatrix();
+	
+    // get incremental deformation gradient and decompose it
+	const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
+	
+	// New deformation
+    const Matrix3 F = dF * pFnm1;
+	
+	// Get previous stretch, incremental stretch, and incremental rotation
+	Matrix3 Vnm1 = pFnm1.LeftDecompose(NULL,NULL);
+    Matrix3 dR;
+    Matrix3 dV = dF.LeftDecompose(&dR,NULL);
+	
+	// get strain increments de = (dV-I) dR Vnma dRT
+	dV(0,0) -= 1.;
+	dV(1,1) -= 1.;
+	dV(2,2) -= 1.;
+	Matrix3 de = dV*Vnm1.RMRT(dR);
+	
+	// Update total deformation gradient
+	mptr->SetDeformationGradientMatrix(F);
+    
+    double detdF = dF.determinant();                    // = V(k+1)/V(k)
+    double delVtot = 1. - 1./detdF;                     // = (V(k+1)-V(k))/V(k+1)
+    double delV = 1. - detdFres/detdF;                  // = (V(k+1)/Vsf(k+1) - V(k)/Vsf(k))/(V(k+1)/Vsf(k+1))
+    double Jnew = F.determinant()/JresStretch;          // = V(k+1)/Vsf(k+1)
+	PlasticProperties *p = (PlasticProperties *)properties;
+    p->delVLowStrain = de.trace() -  3.*eres;
+	
+	// SCGL and SL chnage shear modulus, here Gratio =  J G/G0
+    // Note: J in Gred and Gratio is so that where they are used, they give
+    //          specific Cauchy stress
+	double Gratio = plasticLaw->GetShearRatio(mptr,mptr->GetPressure(),Jnew,p->hardProps);
+	p->Gred = G0red*Gratio;
+    
+    // artifical viscosity
+    p->QAVred = 0.;
+    if(delVtot<0. && artificialViscosity)
+	{	p->QAVred = GetArtificalViscosity(delVtot/delTime,sqrt(p->Kred*Jnew*JresStretch));
+    }
+    
+    if(np!=THREED_MPM)
+    {   // Finish of shear parts and yield in the base IsoPlasticity class
+        PlasticityConstLaw(mptr,de(0,0),de(1,1),2.*de(0,1),0.,de(2,2),delTime,np,delV,Jnew,eres,p,res,&dR);
+    }
+    else
+    {   // Finish of shear parts and yield in the base IsoPlasticity class
+        PlasticityConstLaw(mptr,de(0,0),de(1,1),de(2,2),2.*de(0,1),0.,2.*de(0,2),0.,
+                           2.*de(1,2),0.,delTime,np,delV,Jnew,eres,p,res,&dR);
+    }
+}
+
+#else
+
 /* To better handle large deformation in the M-G EOS, this method is overridden
     to calculate incremental deformation using large-deformation theory (i.e. from
     exponent of du), find delV, find Jnew, and then call back to Isoplasticity to
@@ -185,17 +258,17 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
 		detdFres = (1.+eres)*(1.+eres)*(1.+eres);
     }
 	
-	// Get incremental deformation
+	// current previous deformation gradient and stretch
+	Matrix3 pFnm1 = mptr->GetDeformationGradientMatrix();
+	
+    // get incremental deformation gradient and decompose it
 	const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
-    
-    // get previous deformation
-    const Matrix3 pF = mptr->GetDeformationGradientMatrix();
-
-    // Trial deformation Gradient F = dF.pF
-    const Matrix3 F = dF * pF;
-    
-    // reassign incremental strains
-    du = F - pF;
+	
+	// New deformation
+    const Matrix3 F = dF * pFnm1;
+	
+	// reassign incremental strains
+    du = F - pFnm1;
     
     double detdF = dF.determinant();                    // = V(k+1)/V(k)
     double delVtot = 1. - 1./detdF;                     // = (V(k+1)-V(k))/V(k+1)
@@ -218,14 +291,17 @@ void MGSCGLMaterial::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,
     
     if(np!=THREED_MPM)
     {   // Finish of shear parts and yield in the base IsoPlasticity class
-        PlasticityConstLaw(mptr,du(0,0),du(1,1),du(0,1),du(1,0),du(2,2),delTime,np,delV,Jnew,eres,p,res);
+        PlasticityConstLaw(mptr,du(0,0),du(1,1),du(0,1)+du(1,0),du(1,0)-du(0,1),du(2,2),delTime,np,delV,Jnew,eres,p,res,NULL);
     }
     else
     {   // Finish of shear parts and yield in the base IsoPlasticity class
-        PlasticityConstLaw(mptr,du(0,0),du(1,1),du(2,2),du(0,1),du(1,0),du(0,2),du(2,0),
-                           du(1,2),du(2,1),delTime,np,delV,Jnew,eres,p,res);
+        PlasticityConstLaw(mptr,du(0,0),du(1,1),du(2,2),du(0,1)+du(1,0),du(1,0)-du(0,1),
+						   du(0,2)+du(2,0),du(2,0)-du(0,2),du(1,2)+du(2,1),du(2,1)-du(1,2),
+						   delTime,np,delV,Jnew,eres,p,res,NULL);
     }
 }
+
+#endif
 
 // This method handles the pressure equation of state. Its tasks are
 // 1. Calculate the new pressure

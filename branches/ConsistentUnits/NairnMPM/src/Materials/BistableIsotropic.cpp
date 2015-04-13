@@ -194,7 +194,7 @@ void BistableIsotropic::PrintMechanicalProperties(void) const
 	
  	PrintProperty("Transformed:",false);
 	PrintProperty("K",Kd*UnitsController::Scaling(1.e-6),"");
-	PrintProperty("G",Gd,"");
+	PrintProperty("G",Gd*UnitsController::Scaling(1.e-6),"");
 	PrintProperty("a",ad,"");
 	cout << endl;
     
@@ -307,6 +307,120 @@ void BistableIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperti
 	*t = *state==INITIAL_STATE ? tr : tr2;
 }
 
+#ifdef USE_PSEUDOHYPERELASTIC
+
+/* Take increments in strain and calculate new Particle: strains, rotation strain,
+		stresses, strain energy,
+	dvij are (gradient rates X time increment) to give deformation gradient change
+	For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMETRIC_MPM, otherwise dvzz=0
+*/
+void BistableIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+{
+    // update in current state
+    short *state=(short *)(mptr->GetHistoryPtr()),transition=FALSE;
+	const ElasticProperties *p = *state==INITIAL_STATE ? &pr : &pr2;
+	IsotropicMat::MPMConstitutiveLaw(mptr,du,delTime,np,(void *)p,res);
+	
+    // Calculate critical value for transition
+    double dmechV,dTrace,ds1,ds2,ds3;
+	Tensor *sp=mptr->GetStressTensor();
+	Tensor *ep=mptr->GetStrainTensor();
+	
+	switch(rule)
+	{	case DILATION_RULE:
+			dmechV=ep->xx+ep->yy+ep->zz;
+			break;
+			
+		case DISTORTION_RULE:
+			// find deviatoric strain inner product
+			dmechV=ep->xx+ep->yy+ep->zz;
+			dTrace=dmechV/3.;
+			dmechV=(ep->xx-dTrace)*(ep->xx-dTrace);
+			dmechV+=(ep->yy-dTrace)*(ep->yy-dTrace);
+			dmechV+=(ep->zz-dTrace)*(ep->zz-dTrace);
+			// 2 * (0.5 gamma) * (0.5 gamma) to true shear strain terms
+			dmechV+=0.5*ep->xy*ep->xy;
+			dmechV=sqrt(0.5*dmechV);
+			break;
+			
+		case VONMISES_RULE:
+			// sqrt(((#sxx-#syy)^2+(#syy-#szz)^2+(#szz-#sxx)^2+6*#sxy^2)/2)
+			ds1=sp->xx - sp->yy;
+			ds2=sp->xx - sp->zz;
+			ds3=sp->zz - sp->yy;
+			dmechV=sqrt(0.5*(ds1*ds1+ds2*ds2+ds3*ds3+6*sp->xy*sp->xy));
+			break;
+			
+		default:
+			dmechV=0.;
+			break;
+	}
+	
+	// is there a transition
+    if(dmechV>=dVcrit)
+    {	if(*state!=DEFORMED_STATE)
+		{   // Transition to dilated state
+			*state=DEFORMED_STATE;
+			transition=TRUE;
+		}
+    }
+    else if(*state==DEFORMED_STATE)
+    {	if(reversible)
+		{   // Transition back to undilated state (if reversible)
+			*state=INITIAL_STATE;
+			transition=TRUE;
+		}
+    }
+    
+    // instantaneous change in stress at constant strain (DILATION_RULE only)
+    if(transition && rule==DILATION_RULE)
+    {	// find changed stress by current constitutive law
+		double normOffset,alphazz,betazz;
+		if(*state==INITIAL_STATE)
+		{	normOffset = 0.;
+			alphazz = 1.e-6*a0;
+			betazz = beta0;
+			p = &pr;
+		}
+		else
+		{	normOffset = dVii/3.;
+			alphazz = 1.e-6*ad;
+			betazz = betad;
+			p = &pr2;
+		}
+		
+        //LoadMechanicalProps(mptr,np);
+		double er = p->alpha[1]*(mptr->pPreviousTemperature-thermal.reference)
+		+ p->beta[1]*(mptr->pPreviousConcentration-DiffusionTask::reference);
+		double erzz = alphazz*(mptr->pPreviousTemperature-thermal.reference)
+		+ betazz*(mptr->pPreviousConcentration-DiffusionTask::reference);
+		double exx,eyy;
+		
+		if(np==PLANE_STRAIN_MPM)
+		{	// need effective offset here for (see JAN048-63)
+			exx=ep->xx-normOffset*(1+nu)-er;
+			eyy=ep->yy-normOffset*(1+nu)-er;
+		}
+		else
+        {	exx=ep->xx-normOffset-er;
+			eyy=ep->yy-normOffset-er;
+		}
+        sp->xx=p->C[1][1]*exx + p->C[1][2]*eyy;
+        sp->yy=p->C[1][2]*exx + p->C[2][2]*eyy;
+        sp->xy=p->C[3][3]*ep->xy;
+		if(np==PLANE_STRAIN_MPM)
+        {	double ezz=normOffset+erzz;			// because ezz=0 and now do not want effective properties
+        	exx=ep->xx-ezz;
+			eyy=ep->yy-ezz;
+			sp->zz=p->C[4][1]*(exx + eyy) - p->C[4][4]*ezz;
+		}
+		else
+			ep->zz=p->C[4][1]*(exx + eyy)+normOffset+erzz;
+    }
+}
+
+#else
+
 /* For 2D MPM analysis, take increments in strain and calculate new
     Particle: strains, rotation strain, stresses, strain energy, angle,
 		current state
@@ -418,6 +532,8 @@ void BistableIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double
 			ep->zz=p->C[4][1]*(exx + eyy)+normOffset+erzz;
     }
 }
+
+#endif
 
 #pragma mark BistableIsotropic::Accessors
 

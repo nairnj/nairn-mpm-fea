@@ -78,12 +78,12 @@ TransportTask *DiffusionTask::Task1Extrapolation(NodalPoint *ndpt,MPMBase *mptr,
 
 // Task 1 reduction of ghost node to real node for concentration on the grid
 TransportTask *DiffusionTask::Task1Reduction(NodalPoint *ndpt,NodalPoint *ghostNdpt)
-{	ndpt->gConcentration += ghostNdpt->gConcentration;                    // mJ
-	ndpt->gVolume += ghostNdpt->gVolume;                                  // mJ/K
+{	ndpt->gConcentration += ghostNdpt->gConcentration;
+	ndpt->gVolume += ghostNdpt->gVolume;
 	return nextTask;
 }
 
-// Get grid concentrations and impose grid-based concentration BCs
+// Get grid concentrations and impose grid-based concentration BCs (concentration potential is dimensionless)
 TransportTask *DiffusionTask::GetNodalValue(NodalPoint *ndptr)
 {	if(ndptr->NodeHasNonrigidParticles())
 		ndptr->gConcentration /= ndptr->gVolume;

@@ -64,10 +64,10 @@ class MPMBase : public LinkedObject
 		virtual void AddConcentrationGradient(Vector *) = 0;
 		virtual double FDiff(double,double,double,TransportProperties *) = 0;
 		virtual double KineticEnergy(void) = 0;
-		virtual Matrix3 GetDeformationGradientMatrix(void) = 0;
+		virtual Matrix3 GetDeformationGradientMatrix(void) const = 0;
 		virtual void SetDeformationGradientMatrix(Matrix3) = 0;
         virtual Matrix3 GetElasticLeftCauchyMatrix(void) = 0;
-        virtual void GetDeformationGradient(double F[][3]) = 0;
+        virtual void GetDeformationGradient(double F[][3]) const = 0;
         virtual double GetRelativeVolume(void) = 0;
 		virtual double GetVolume(int) = 0;
 		virtual void GetCPDINodesAndWeights(int) = 0;
@@ -78,8 +78,8 @@ class MPMBase : public LinkedObject
         double GetMassForGradient(void);
 
 		// base only methods (make virtual if need to override)
-		int MatID(void);
-		int ArchiveMatID(void);
+		int MatID(void) const;
+		int ArchiveMatID(void) const;
 		int ElemID(void);
 		void ChangeElemID(int);
 		int ArchiveElemID(void);
@@ -90,7 +90,7 @@ class MPMBase : public LinkedObject
 		void IncrementElementCrossings(void);
 		bool HasLeftTheGridBefore(void);
 		void SetHasLeftTheGridBefore(bool);
-        bool PartitionsElasticAndPlasticStrain(void);
+        bool PartitionsElasticAndPlasticStrain(void) const;
 		double GetDuDx(void);					// du/dr in axisym
 		double GetDuDy(void);					// du/dz in axisym
 		double GetDvDx(void);					// dw/dr in axisym
@@ -117,6 +117,7 @@ class MPMBase : public LinkedObject
         double GetAnglez0InRadians(void);
         double GetAngley0InRadians(void);
         double GetAnglex0InRadians(void);
+		Matrix3 GetBiotStrain(void) const;
 		virtual Matrix3 GetInitialRotation(void);
 		void IncrementRotationStrain(double);
 		void IncrementRotationStrain(double,double,double);

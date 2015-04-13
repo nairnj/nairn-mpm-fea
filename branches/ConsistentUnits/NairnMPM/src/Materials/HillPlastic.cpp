@@ -83,7 +83,7 @@ double HillPlastic::GetYield(AnisoPlasticProperties *p) const
 
 // Hardening term : find df^(alpha) . h and it assumes g(alpha) = 1 + Khard alpha^nhard
 //    and therefore df^(alpha) = nhard Khard alpha^(nhard-1) or just Khard is nhard=1
-double HillPlastic::GetDfAlphaDotH(MPMBase *mptr,int np,Tensor *st0,AnisoPlasticProperties *p) const
+double HillPlastic::GetDfAlphaDotH(MPMBase *mptr,int np,AnisoPlasticProperties *p) const
 {	return DbleEqual(nhard,1.) ? Khard*p->minush :
 	Khard*nhard*pow(p->aint,nhard-1)*p->minush ;
 }

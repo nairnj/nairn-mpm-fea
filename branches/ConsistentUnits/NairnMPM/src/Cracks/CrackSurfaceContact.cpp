@@ -29,14 +29,14 @@ CrackSurfaceContact::CrackSurfaceContact()
 	ContactLaw=FRICTIONLESS;	// the law
 	friction=0.;				// crack contact friction
 	Dn=-1.;						// prefect in tension by default
-	Dnc=-101.;					// <-100 means not set and should be set same as Dn
+	Dnc=-101.e6;					// <-100e6 means not set and should be set same as Dn
 	Dt=-1.;						// perfect in shear by default
 	hasImperfectInterface=FALSE;	// flag for any imperfect interfaces
 	moveOnlySurfaces=TRUE;			// move surfaces, plane moves at midpoint of surfaces
 	preventPlaneCrosses=FALSE;		// if true, move surfaces that cross the crack plane back to the crack plane
 	materialFriction=0.;				// material contact friction
 	materialDn=-1.;						// prefect in tension by default
-	materialDnc=-101.;					// <-100 means not set and should be set same as Dn
+	materialDnc=-101.e6;					// <-100e6 means not set and should be set same as Dn
 	materialDt=-1.;						// perfect in shear by default
 	materialContactVmin=0.0;			// cutoff to kick in other contact checks
 	displacementCheck=TRUE;			// if implementing check on displacement or position (last thing)
@@ -64,7 +64,7 @@ void CrackSurfaceContact::Output(void)
 	}
 	else if(friction>10.)
 	{   ContactLaw=IMPERFECT_INTERFACE;
-		if(Dnc<-100.) Dnc=Dn;
+		if(Dnc<-100.e6) Dnc=Dn;
 		const char *label = UnitsController::Label(INTERFACEPARAM_UNITS);
 		sprintf(hline,"imperfect interface\n     Dnt = %g %s, Dnc = %g %s, Dt = %g %s",
 				Dn*UnitsController::Scaling(1.e-6),label,
@@ -132,9 +132,9 @@ void CrackSurfaceContact::CrackOutput(bool custom,double customFriction,double c
 	}
 	else if(customFriction>10.)
 	{   CrackContactLaw[number].law=IMPERFECT_INTERFACE;
-		if(customDnc<-100.) customDnc=customDn;
+		if(customDnc<-100.e6) customDnc=customDn;
 		const char *label = UnitsController::Label(INTERFACEPARAM_UNITS);
-		sprintf(hline,"imperfect interface: Dn = %g MPa/mm, Dnc = %g MPa/mm, Dt = %g MPa/mm",
+		sprintf(hline,"imperfect interface: Dn = %g %s, Dnc = %g %s, Dt = %g %s",
 				customDn*UnitsController::Scaling(1.e-6),label,
 				customDnc*UnitsController::Scaling(1.e-6),label,
 				customDt*UnitsController::Scaling(1.e-6),label);
@@ -172,12 +172,12 @@ void CrackSurfaceContact::MaterialOutput(void)
 	}
 	else if(materialFriction>10.)
 	{   materialContactLaw=IMPERFECT_INTERFACE;
-		if(materialDnc<-100.) materialDnc=materialDn;
+		if(materialDnc<-100.e6) materialDnc=materialDn;
 		const char *label = UnitsController::Label(INTERFACEPARAM_UNITS);
 		sprintf(hline,"imperfect interface\n     Dnt = %g %s, Dnc = %g %s, Dt = %g %s",
 				materialDn*UnitsController::Scaling(1.e-6),label,
-				materialDnc*UnitsController::Scaling(1.e-6),
-				materialDt*UnitsController::Scaling(1.e-6));
+				materialDnc*UnitsController::Scaling(1.e-6),label,
+				materialDt*UnitsController::Scaling(1.e-6),label);
 	}
 	else
 	{   materialContactLaw=FRICTIONAL;

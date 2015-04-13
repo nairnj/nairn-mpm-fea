@@ -40,8 +40,14 @@ class Elastic : public MaterialBase
 		void FillUnrotatedElasticProperties(ElasticProperties *,int);
 #ifdef MPM_CODE
         virtual double GetCpMinusCv(MPMBase *) const;
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+#ifdef USE_PSEUDOHYPERELASTIC
+		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+		virtual ElasticProperties *GetElasticPropertiesPointer(void *) const;
+		virtual void ElasticConstitutiveLaw(MPMBase *,Matrix3,Matrix3,Matrix3,Matrix3,int,void *,ResidualStrains *) const;
+#else
+		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+#endif
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif

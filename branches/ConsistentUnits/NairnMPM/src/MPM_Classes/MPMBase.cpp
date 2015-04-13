@@ -229,8 +229,8 @@ void MPMBase::AddConcentrationGradient(void)
 }
 
 // material ID (convert to zero based)
-int MPMBase::MatID(void) { return matnum-1; }			// zero based material array in data storage
-int MPMBase::ArchiveMatID(void) { return matnum; }		// one based for archiving
+int MPMBase::MatID(void) const { return matnum-1; }			// zero based material array in data storage
+int MPMBase::ArchiveMatID(void) const { return matnum; }		// one based for archiving
 
 // element ID (convert to zero based)
 int MPMBase::ElemID(void) { return inElem-1; }					// zero based element array in data storage
@@ -263,7 +263,7 @@ double MPMBase::GetMassForGradient(void) { return mp; }
 
 // return if mterial for this particle includes plastic strainin gradient or if
 // entire deformation is in the elastic strain
-bool MPMBase::PartitionsElasticAndPlasticStrain(void)
+bool MPMBase::PartitionsElasticAndPlasticStrain(void) const
 {   return theMaterials[MatID()]->PartitionsElasticAndPlasticStrain();
 }
 
@@ -335,6 +335,16 @@ void MPMBase::IncrementRotationStrain(double rotXY,double rotXZ,double rotYZ)
 	wrot.yz+=rotYZ;
 }
 TensorAntisym *MPMBase::GetRotationStrainTensor(void) { return & wrot; }
+
+// Get V-I which is Biot strain rotated into current particle orientation
+Matrix3 MPMBase::GetBiotStrain(void) const
+{	Matrix3 F = GetDeformationGradientMatrix();
+	Matrix3 V = F.LeftDecompose(NULL,NULL);
+	V(0,0) -= 1.;
+	V(1,1) -= 1.;
+	V(2,2) -= 1.;
+	return V;
+}
 
 // 2D and 3D material points override to get initial rotation matrix
 Matrix3 MPMBase::GetInitialRotation(void)

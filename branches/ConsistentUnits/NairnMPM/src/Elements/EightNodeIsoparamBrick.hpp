@@ -32,8 +32,8 @@ class EightNodeIsoparamBrick : public ElementBase3D
 		virtual double GetVolume(void) const;
 		virtual double GetThickness(void) const;
 	
-		virtual void GetGimpNodes(int *,int *,int *,Vector *) const;
-		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *) const;
+		virtual void GetGimpNodes(int *,int *,int *,Vector *,Vector &) const;
+		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *,Vector &) const;
 		virtual void GetXiPos(Vector *,Vector *) const;
 		virtual void ShapeFunction(Vector *,int,double *,double *,double *,
 										Vector *,double *,double *,double *) const;

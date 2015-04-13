@@ -23,6 +23,173 @@ double Elastic::GetCpMinusCv(MPMBase *mptr) const
 }
 
 
+#ifdef USE_PSEUDOHYPERELASTIC
+
+/* Take increments in strain and calculate new Particle: strains, rotation strain,
+		stresses, strain energy,
+	dvij are (gradient rates X time increment) to give deformation gradient change
+	For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMETRIC_MPM, otherwise dvzz=0
+*/
+void Elastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+{
+	// get previous deformation gradient, rotation, and stretch
+	Matrix3 pFnm1 = mptr->GetDeformationGradientMatrix();
+    Matrix3 Rnm1;
+	Matrix3 Unm1 = pFnm1.RightDecompose(&Rnm1,NULL);
+	
+    // get incremental deformation gradient and decompose it
+	const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
+    Matrix3 dR;
+    Matrix3 dU = dF.RightDecompose(&dR,NULL);
+	
+	// get strain increments de = R0T.[(Rnm1T.dU.Rnm1 - I).Unm1].R0
+	Matrix3 dUrot = dU.RTMR(Rnm1);
+	dUrot(0,0) -= 1.;
+	dUrot(1,1) -= 1.;
+	dUrot(2,2) -= 1.;
+	dUrot *= Unm1;
+	
+	// apply initial rotation to get strain increment in the material coordinates
+	Matrix3 R0 = mptr->GetInitialRotation();
+	Matrix3 de = dUrot.RTMR(R0);
+	Matrix3 Rtot = (dR*Rnm1)*R0;
+	
+	// Update total deformation gradient
+	Matrix3 pF = dF*pFnm1;
+	mptr->SetDeformationGradientMatrix(pF);
+	
+	// cast pointer to material-specific data
+	ElasticProperties *p = GetElasticPropertiesPointer(properties);
+	
+    // residual strains (thermal and moisture) in material axes
+	double exxr = p->alpha[0]*res->dT;
+	double eyyr = p->alpha[1]*res->dT;
+	double ezzr = p->alpha[2]*res->dT;
+	if(DiffusionTask::active)
+	{	exxr += p->beta[0]*res->dC;
+		eyyr += p->beta[1]*res->dC;
+		ezzr += p->beta[2]*res->dC;
+	}
+	Matrix3 er = Matrix3(exxr,0.,0.,eyyr,ezzr);
+	
+	// finish up
+	ElasticConstitutiveLaw(mptr,de,er,Rtot,dR,np,properties,res);
+}
+
+// return pointer to elastic properties (subclass might store them different in properties
+ElasticProperties *Elastic::GetElasticPropertiesPointer(void *properties) const { return (ElasticProperties *)properties; }
+
+// Once stress deformation has been decomposed, finish calculations in the material axis system
+// When stress are found, they are rotated back to the global axes (using Rtot and dR)
+// Similar, strain increments are rotated back to find work energy (done in global system)
+void Elastic::ElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 er,Matrix3 Rtot,Matrix3 dR,int np,void *properties,ResidualStrains *res) const
+{
+	// effective strains
+	double dvxxeff = de(0,0)-er(0,0);
+	double dvyyeff = de(1,1)-er(1,1);
+	double dvzzeff = de(2,2)-er(2,2);
+	double dgamxy = 2.*de(0,1);
+	
+    // save initial stresses
+	Tensor *sp=mptr->GetStressTensor();
+    Tensor st0=*sp;
+	
+	// stress increments
+	// cast pointer to material-specific data
+	ElasticProperties *p = GetElasticPropertiesPointer(properties);
+	if(np==THREED_MPM)
+	{	double dgamyz = 2.*de(1,2);
+		double dgamxz = 2.*de(0,2);
+		
+		// update sigma = dR signm1 dRT + Rtot dsigma RtotT
+		double dsigyz = p->C[3][3]*dgamyz;
+		double dsigxz = p->C[4][4]*dgamxz;
+		double dsigxy = p->C[5][5]*dgamxy;
+		Matrix3 dsig(p->C[0][0]*dvxxeff + p->C[0][1]*dvyyeff + p->C[0][2]*dvzzeff, dsigxy, dsigxz,
+					 dsigxy, p->C[1][0]*dvxxeff + p->C[1][1]*dvyyeff + p->C[1][2]*dvzzeff, dsigyz,
+					 dsigxz, dsigyz, p->C[2][0]*dvxxeff + p->C[2][1]*dvyyeff + p->C[2][2]*dvzzeff);
+		Matrix3 dsigrot = dsig.RMRT(Rtot);
+		Matrix3 stn(sp->xx,sp->xy,sp->xz,sp->xy,sp->yy,sp->yz,sp->xz,sp->yz,sp->zz);
+		Matrix3 str = stn.RMRT(dR);
+		sp->xx = str(0,0) + dsigrot(0,0);
+		sp->yy = str(1,1) + dsigrot(1,1);
+		sp->zz = str(2,2) + dsigrot(2,2);
+		sp->xy = str(0,1) + dsigrot(0,1);
+		sp->xz = str(0,2) + dsigrot(0,2);
+		sp->yz = str(1,2) + dsigrot(1,2);
+		
+		// stresses are in global coordinate so need to rootate strain and residual
+		// strain to get work energy increment per unit mass (dU/(rho0 V0))
+		Matrix3 derot = de.RMRT(Rtot);
+		Matrix3 errot = er.RMRT(Rtot);
+		mptr->AddWorkEnergyAndResidualEnergy(0.5*((st0.xx+sp->xx)*derot(0,0) + (st0.yy+sp->yy)*derot(1,1)
+												  + (st0.zz+sp->zz)*derot(2,2)) + (st0.yz+sp->yz)*derot(1,2)
+												  + (st0.xz+sp->xz)*derot(0,2) + (st0.xy+sp->xy)*derot(0,1),
+											 0.5*((st0.xx+sp->xx)*errot(0,0) + (st0.yy+sp->yy)*errot(1,1)
+												  + (st0.zz+sp->zz)*errot(2,2)) + (st0.yz+sp->yz)*errot(1,2)
+												  + (st0.xz+sp->xz)*errot(0,2) + (st0.xy+sp->xy)*errot(0,1));
+	}
+	else
+	{	// find stress increment
+		// this does xx, yy, and xy only. zz done later if needed
+		double dsxx,dsyy;
+		if(np==AXISYMMETRIC_MPM)
+		{	dsxx = p->C[1][1]*dvxxeff + p->C[1][2]*dvyyeff + p->C[4][1]*dvzzeff ;
+			dsyy = p->C[1][2]*dvxxeff + p->C[2][2]*dvyyeff + p->C[4][2]*dvzzeff;
+		}
+		else
+		{	dsxx = p->C[1][1]*dvxxeff + p->C[1][2]*dvyyeff;
+			dsyy = p->C[1][2]*dvxxeff + p->C[2][2]*dvyyeff;
+		}
+		double dsxy = p->C[3][3]*dgamxy;
+		
+		// update sigma = dR signm1 dRT + Rtot dsigma RtotT
+		Matrix3 dsig(dsxx,dsxy,dsxy,dsyy,0.);
+		Matrix3 dsigrot = dsig.RMRT(Rtot);
+		Matrix3 stn(sp->xx,sp->xy,sp->xy,sp->yy,sp->zz);
+		Matrix3 str = stn.RMRT(dR);
+		sp->xx = str(0,0) + dsigrot(0,0);
+		sp->yy = str(1,1) + dsigrot(1,1);
+		sp->xy = str(0,1) + dsigrot(0,1);
+		
+		// stresses are in global coordinate so need to rotate strain and residual
+		// strain to get work energy increment per unit mass (dU/(rho0 V0))
+		double ezzr = er(2,2);
+		Matrix3 derot = de.RMRT(Rtot);
+		Matrix3 errot = er.RMRT(Rtot);
+		
+		// work and resdiaul strain energy increments and sigma or ep in z direction
+		double workEnergy = 0.5*((st0.xx+sp->xx)*derot(0,0) + (st0.yy+sp->yy)*derot(1,1)) + (st0.xy+sp->xy)*derot(0,1);
+		double resEnergy = 0.5*((st0.xx+sp->xx)*errot(0,0) + (st0.yy+sp->yy)*errot(1,1)) + (st0.xy+sp->xy)*errot(0,1);
+		if(np==PLANE_STRAIN_MPM)
+		{	// need to add back terms to get from reduced cte to actual cte
+			sp->zz += p->C[4][1]*(de(0,0)+p->alpha[5]*ezzr) + p->C[4][2]*(de(1,1)+p->alpha[6]*ezzr) - p->C[4][4]*ezzr;
+			
+			// extra residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
+			resEnergy += 0.5*(st0.zz+sp->zz)*ezzr;
+		}
+		else if(np==PLANE_STRESS_MPM)
+		{	Tensor *ep = mptr->GetStrainTensor();
+			ep->zz += p->C[4][1]*dvxxeff + p->C[4][2]*dvyyeff + ezzr;
+		}
+		else
+		{	// axisymmetric hoop stress
+			sp->zz += p->C[4][1]*dvxxeff + p->C[4][2]*dvyyeff + p->C[4][4]*dvzzeff;
+			
+			// extra work and residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
+			workEnergy += 0.5*(st0.zz+sp->zz)*de(2,2);
+			resEnergy += 0.5*(st0.zz+sp->zz)*ezzr;
+		}
+		mptr->AddWorkEnergyAndResidualEnergy(workEnergy, resEnergy);
+		
+	}
+    
+    // track heat energy
+    IncrementHeatEnergy(mptr,res->dT,0.,0.);
+}
+
+#else
+
 /* For 2D MPM analysis, take increments in strain and calculate new
 	Particle: strains, rotation strain, stresses, strain energy, angle
 	dvij are (gradient rates X time increment) to give deformation gradient change
@@ -194,3 +361,5 @@ void Elastic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,doub
     IncrementHeatEnergy(mptr,res->dT,0.,0.);
 
 }
+
+#endif

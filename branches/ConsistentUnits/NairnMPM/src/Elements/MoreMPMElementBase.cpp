@@ -72,7 +72,7 @@ void ElementBase::GetShapeFunctionData(MPMBase *mpmptr) const
 */
 void ElementBase::GetShapeFunctionsForCracks(int *numnds,double *fn,int *nds,Vector *pos) const
 {
-	Vector xipos;
+	Vector xipos,lp;
 	int ndIDs[maxShapeNodes];
 	
     switch(useGimp)
@@ -88,8 +88,11 @@ void ElementBase::GetShapeFunctionsForCracks(int *numnds,double *fn,int *nds,Vec
 			// since no material point, CPDI uses GIMP method
         case UNIFORM_GIMP:
             GetXiPos(pos,&xipos);
-            GetGimpNodes(numnds,nds,ndIDs,&xipos);
-            GimpShapeFunction(&xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
+            lp.x = mpmgrid.GetParticleSemiLength();
+            lp.y = lp.x;
+            lp.z = lp.x;
+            GetGimpNodes(numnds,nds,ndIDs,&xipos,lp);
+            GimpShapeFunction(&xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
             GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
             break;
             
@@ -97,8 +100,11 @@ void ElementBase::GetShapeFunctionsForCracks(int *numnds,double *fn,int *nds,Vec
 			// since no material point, CPDI uses GIMP method
         case UNIFORM_GIMP_AS:
             GetXiPos(pos,&xipos);
-            GetGimpNodes(numnds,nds,ndIDs,&xipos);
-            GimpShapeFunctionAS(&xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
+            lp.x = mpmgrid.GetParticleSemiLength();
+            lp.y = lp.x;
+            lp.z = lp.x;
+            GetGimpNodes(numnds,nds,ndIDs,&xipos,lp);
+            GimpShapeFunctionAS(&xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
             GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
             break;
      }
@@ -116,6 +122,8 @@ void ElementBase::GetShapeFunctionsForCracks(int *numnds,double *fn,int *nds,Vec
 */
 void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,MPMBase *mpmptr) const
 {
+    Vector lp;
+    
     switch(useGimp)
     {   case POINT_GIMP:
         	// load coordinates if not already done
@@ -127,8 +135,11 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,MPMBase *mpm
         {	// GIMP analysis
             int ndIDs[maxShapeNodes];
             Vector *xipos = mpmptr->GetNcpos();
-            GetGimpNodes(numnds,nds,ndIDs,xipos);
-            GimpShapeFunction(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
+			lp.x = mpmgrid.GetParticleSemiLength();
+            lp.y = lp.x;
+            lp.z = lp.x;
+            GetGimpNodes(numnds,nds,ndIDs,xipos,lp);
+            GimpShapeFunction(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
             GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
             break;
         }
@@ -137,8 +148,11 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,MPMBase *mpm
         {	// GIMP analysis
             int ndIDs[maxShapeNodes];
             Vector *xipos = mpmptr->GetNcpos();
-            GetGimpNodes(numnds,nds,ndIDs,xipos);
-            GimpShapeFunctionAS(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
+            lp.x = mpmgrid.GetParticleSemiLength();
+            lp.y = lp.x;
+            lp.z = lp.x;
+            GetGimpNodes(numnds,nds,ndIDs,xipos,lp);
+            GimpShapeFunctionAS(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
             GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
             break;
         }
@@ -150,11 +164,14 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,MPMBase *mpm
             {	// GIMP analysis
                 int ndIDs[maxShapeNodes];
                 Vector *xipos = mpmptr->GetNcpos();
-                GetGimpNodes(numnds,nds,ndIDs,xipos);
+				lp.x = mpmgrid.GetParticleSemiLength();
+				lp.y = lp.x;
+				lp.z = lp.x;
+                GetGimpNodes(numnds,nds,ndIDs,xipos,lp);
                 if(fmobj->IsAxisymmetric())
-                    GimpShapeFunctionAS(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
+                    GimpShapeFunctionAS(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
                 else
-                    GimpShapeFunction(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL);
+                    GimpShapeFunction(xipos,*numnds,ndIDs,FALSE,&fn[1],NULL,NULL,NULL,lp);
                 GimpCompact(numnds,nds,fn,NULL,NULL,NULL);
             }
             else
@@ -181,6 +198,8 @@ void ElementBase::GetShapeFunctions(int *numnds,double *fn,int *nds,MPMBase *mpm
 void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,
                                     double *xDeriv,double *yDeriv,double *zDeriv,MPMBase *mpmptr) const
 {
+    Vector lp;
+    
     switch(useGimp)
     {   case POINT_GIMP:
         	// load nodal numbers
@@ -204,8 +223,11 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,
         {	// uGIMP analysis
             int ndIDs[maxShapeNodes];
             Vector *xipos = mpmptr->GetNcpos();
-            GetGimpNodes(numnds,nds,ndIDs,xipos);
-            GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+            lp.x = mpmgrid.GetParticleSemiLength();
+            lp.y = lp.x;
+            lp.z = lp.x;
+            GetGimpNodes(numnds,nds,ndIDs,xipos,lp);
+            GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
             GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
             break;
         }
@@ -214,8 +236,11 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,
         {	// uGIMP analysis
             int ndIDs[maxShapeNodes];
             Vector *xipos = mpmptr->GetNcpos();
-            GetGimpNodes(numnds,nds,ndIDs,xipos);
-            GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+            lp.x = mpmgrid.GetParticleSemiLength();
+            lp.y = lp.x;
+            lp.z = lp.x;
+            GetGimpNodes(numnds,nds,ndIDs,xipos,lp);
+            GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
             GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
             break;
         }
@@ -226,11 +251,14 @@ void ElementBase::GetShapeGradients(int *numnds,double *fn,int *nds,
         {   if(theMaterials[mpmptr->MatID()]->Rigid())
 			{	int ndIDs[maxShapeNodes];
                 Vector *xipos = mpmptr->GetNcpos();
-                GetGimpNodes(numnds,nds,ndIDs,xipos);
+				lp.x = mpmgrid.GetParticleSemiLength();
+				lp.y = lp.x;
+				lp.z = lp.x;
+                GetGimpNodes(numnds,nds,ndIDs,xipos,lp);
                 if(fmobj->IsAxisymmetric())
-                    GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+                    GimpShapeFunctionAS(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
                 else
-					GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1]);
+					GimpShapeFunction(xipos,*numnds,ndIDs,TRUE,&fn[1],&xDeriv[1],&yDeriv[1],&zDeriv[1],lp);
 				GimpCompact(numnds,nds,fn,xDeriv,yDeriv,zDeriv);
             }
             else
@@ -456,7 +484,7 @@ void ElementBase::MPMPoints(short numPerElement,Vector *mpos) const
 // assumed to be properly numbered regular array
 // load nodes into nds[1]... and node IDs (0-15) into ndIDs[0]...
 // Elements that support GIMP must override
-void ElementBase::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos) const
+void ElementBase::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos,Vector &lp) const
 {
 }
 
@@ -465,7 +493,7 @@ void ElementBase::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos) co
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
 // Elements that support GIMP must override
 void ElementBase::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
-										 double *xDeriv,double *yDeriv,double *zDeriv) const
+										 double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
 {
 }
 
@@ -474,7 +502,7 @@ void ElementBase::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeri
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
 // Only that elements that support axisymmetric GIMP must override
 void ElementBase::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
-									double *xDeriv,double *yDeriv,double *zDeriv) const
+									double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
 {
 }
 

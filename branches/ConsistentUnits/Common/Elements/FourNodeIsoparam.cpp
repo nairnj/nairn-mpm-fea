@@ -308,12 +308,9 @@ int FourNodeIsoparam::Orthogonal(double *dx,double *dy,double *dz)
 // Get GIMP nodes around an element #num, but only where shape functions is non zero
 // assumed to be properly numbered regular array
 // load nodes into nds[1]... and node IDs (0-15) into ndIDs[0]...
-void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos) const
+void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos,Vector &lp) const
 {
 	// quadrant barriers assuming 4 particles
-	Vector lp;
-	lp.x = mpmgrid.GetParticleSemiLength();
-	lp.y = lp.x;
 	double q1x = -1.+lp.x, q2x = 1.-lp.x;
 	
 	// nodes directly associated with the element
@@ -426,15 +423,10 @@ void FourNodeIsoparam::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipo
 // assumed to be properly numbered regular array
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
 void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
-					double *xDeriv,double *yDeriv,double *zDeriv) const
+                                         double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
 {
 	int i;
 	double xp,yp,Svpx,Svpy,dSvpx,dSvpy,xsign,ysign,argx=0.,argy=0.;
-	
-	// future pass data to support unequal element sizes
-	Vector lp;
-	lp.x = mpmgrid.GetParticleSemiLength();
-	lp.y = lp.x;
 	
 	// L is the cell spacing, 2*lpi is the current particle size (dimensionless range -1 to 1).
 	// The deformation of the particle is not considered yet.
@@ -502,15 +494,10 @@ void FourNodeIsoparam::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int ge
 // assumed to be properly numbered regular array
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-15)
 void FourNodeIsoparam::GimpShapeFunctionAS(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
-										 double *xDeriv,double *yDeriv,double *zDeriv) const
+										 double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
 {
 	int i,n;
 	double xp,yp,ri,nr,Svpx,Svpy,dSvpx,dSvpy,pTr,ysign,argx=0.,argy=0.;
-	
-	// future pass data to support unequal element sizes
-	Vector lp;
-	lp.x = mpmgrid.GetParticleSemiLength();
-	lp.y = lp.x;
 	
 	// L is the cell spacing, 2*lp is the current particle size.
 	// assuming the particle size is the same in x and y direction in element coordinates

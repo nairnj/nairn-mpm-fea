@@ -168,11 +168,11 @@ void EightNodeIsoparamBrick::GetXiPos(Vector *pos,Vector *xipos) const
 // Get GIMP nodes around an element #num, but only where shape functions are nonzero
 // assumed to be properly numbered regular 3D array
 // load nodes into nds[1]... and node ID (0-63) into ndIDs[0]...
-void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos) const
+void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector *xipos,Vector &lp) const
 {
 	// quadrant barriers assuming 8 particles
-	double lp = mpmgrid.GetParticleSemiLength();
-	double q1 = -1.+lp, q2 = 1.-lp;
+	double q1x = -1.+lp.x, q2x = 1.-lp.x;
+	double q1z = -1.+lp.z, q2z = 1.-lp.z;
 	
 	// nodes directly associated with the element
 	nds[1]=nodes[0];
@@ -193,9 +193,9 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 	ndIDs[7]=7;
 
 	// lower y quadrant
-	if(xipos->y<q1)
-	{	if(xipos->x<q1)
-		{	if(xipos->z<q1)
+	if(xipos->y<-1.+lp.y)
+	{	if(xipos->x<q1x)
+		{	if(xipos->z<q1z)
 			{	nds[9]=nodes[0]-mpmgrid.zplane;			// before element z direction
 				nds[10]=nodes[1]-mpmgrid.zplane;
 				nds[11]=nodes[2]-mpmgrid.zplane;
@@ -236,7 +236,7 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 				ndIDs[26]=36;
 				*numnds=27;
 			}
-			else if(xipos->z<=q2)
+			else if(xipos->z<=q2z)
 			{	nds[9]=nodes[0]-mpmgrid.xplane;
 				nds[10]=nodes[3]-mpmgrid.xplane;
 				nds[11]=nodes[4]-mpmgrid.xplane;
@@ -301,8 +301,8 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 				*numnds=27;
 			}
 		}
-		else if(xipos->x<=q2)
-		{	if(xipos->z<q1)
+		else if(xipos->x<=q2x)
+		{	if(xipos->z<q1z)
 			{	nds[9]=nodes[0]-mpmgrid.zplane;
 				nds[10]=nodes[1]-mpmgrid.zplane;
 				nds[11]=nodes[2]-mpmgrid.zplane;
@@ -325,7 +325,7 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 				ndIDs[17]=38;
 				*numnds=18;
 			}
-			else if(xipos->z<=q2)
+			else if(xipos->z<=q2z)
 			{	nds[9]=nodes[0]-mpmgrid.yplane;
 				nds[10]=nodes[1]-mpmgrid.yplane;
 				nds[11]=nodes[4]-mpmgrid.yplane;
@@ -361,7 +361,7 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 			}
 		}
 		else
-		{	if(xipos->z<q1)
+		{	if(xipos->z<q1z)
 			{	nds[9]=nodes[0]-mpmgrid.zplane;
 				nds[10]=nodes[1]-mpmgrid.zplane;
 				nds[11]=nodes[2]-mpmgrid.zplane;
@@ -402,7 +402,7 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 				ndIDs[26]=39;
 				*numnds=27;
 			}
-			else if(xipos->z<=q2)
+			else if(xipos->z<=q2z)
 			{	nds[9]=nodes[1]+mpmgrid.xplane;
 				nds[10]=nodes[2]+mpmgrid.xplane;
 				nds[11]=nodes[5]+mpmgrid.xplane;
@@ -469,9 +469,9 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 		}
 	}
 
-	else if(xipos->y<=q2)
-	{	if(xipos->x<q1)
-		{	if(xipos->z<q1)
+	else if(xipos->y<=1.-lp.y)
+	{	if(xipos->x<q1x)
+		{	if(xipos->z<q1z)
 			{	nds[9]=nodes[0]-mpmgrid.zplane;
 				nds[10]=nodes[1]-mpmgrid.zplane;
 				nds[11]=nodes[2]-mpmgrid.zplane;
@@ -494,7 +494,7 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 				ndIDs[17]=46;
 				*numnds=18;
 			}
-			else if(xipos->z<=q2)
+			else if(xipos->z<=q2z)
 			{	nds[9]=nodes[0]-mpmgrid.xplane;
 				nds[10]=nodes[3]-mpmgrid.xplane;
 				nds[11]=nodes[4]-mpmgrid.xplane;
@@ -529,8 +529,8 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 				*numnds=18;
 			}
 		}
-		else if(xipos->x<=q2)
-		{	if(xipos->z<q1)
+		else if(xipos->x<=q2x)
+		{	if(xipos->z<q1z)
 			{	nds[9]=nodes[0]-mpmgrid.zplane;
 				nds[10]=nodes[1]-mpmgrid.zplane;
 				nds[11]=nodes[2]-mpmgrid.zplane;
@@ -541,7 +541,7 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 				ndIDs[11]=35;
 				*numnds=12;
 			}
-			else if(xipos->z<=q2)
+			else if(xipos->z<=q2z)
 			{	*numnds=8;
 			}
 			else
@@ -557,7 +557,7 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 			}
 		}
 		else
-		{	if(xipos->z<q1)
+		{	if(xipos->z<q1z)
 			{	nds[9]=nodes[0]-mpmgrid.zplane;
 				nds[10]=nodes[1]-mpmgrid.zplane;
 				nds[11]=nodes[2]-mpmgrid.zplane;
@@ -580,7 +580,7 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 				ndIDs[17]=41;
 				*numnds=18;
 			}
-			else if(xipos->z<=q2)
+			else if(xipos->z<=q2z)
 			{	nds[9]=nodes[1]+mpmgrid.xplane;
 				nds[10]=nodes[2]+mpmgrid.xplane;
 				nds[11]=nodes[5]+mpmgrid.xplane;
@@ -618,8 +618,8 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 	}
 
 	else 
-	{	if(xipos->x<q1)
-		{	if(xipos->z<q1)
+	{	if(xipos->x<q1x)
+		{	if(xipos->z<q1z)
 			{	nds[9]=nodes[0]-mpmgrid.zplane;
 				nds[10]=nodes[1]-mpmgrid.zplane;
 				nds[11]=nodes[2]-mpmgrid.zplane;
@@ -660,7 +660,7 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 				ndIDs[26]=45;
 				*numnds=27;
 			}
-			else if(xipos->z<=q2)
+			else if(xipos->z<=q2z)
 			{	nds[9]=nodes[0]-mpmgrid.xplane;
 				nds[10]=nodes[3]-mpmgrid.xplane;
 				nds[11]=nodes[4]-mpmgrid.xplane;
@@ -725,8 +725,8 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 				*numnds=27;
 			}
 		}
-		else if(xipos->x<=q2)
-		{	if(xipos->z<q1)
+		else if(xipos->x<=q2x)
+		{	if(xipos->z<q1z)
 			{	nds[9]=nodes[0]-mpmgrid.zplane;
 				nds[10]=nodes[1]-mpmgrid.zplane;
 				nds[11]=nodes[2]-mpmgrid.zplane;
@@ -749,7 +749,7 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 				ndIDs[17]=43;
 				*numnds=18;
 			}
-			else if(xipos->z<=q2)
+			else if(xipos->z<=q2z)
 			{	nds[9]=nodes[3]+mpmgrid.yplane;
 				nds[10]=nodes[2]+mpmgrid.yplane;
 				nds[11]=nodes[7]+mpmgrid.yplane;
@@ -785,7 +785,7 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 			}
 		}
 		else
-		{	if(xipos->z<q1)
+		{	if(xipos->z<q1z)
 			{	nds[9]=nodes[0]-mpmgrid.zplane;
 				nds[10]=nodes[1]-mpmgrid.zplane;
 				nds[11]=nodes[2]-mpmgrid.zplane;
@@ -826,7 +826,7 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 				ndIDs[26]=42;
 				*numnds=27;
 			}
-			else if(xipos->z<=q2)
+			else if(xipos->z<=q2z)
 			{	nds[9]=nodes[1]+mpmgrid.xplane;
 				nds[10]=nodes[2]+mpmgrid.xplane;
 				nds[11]=nodes[5]+mpmgrid.xplane;
@@ -898,51 +898,51 @@ void EightNodeIsoparamBrick::GetGimpNodes(int *numnds,int *nds,int *ndIDs,Vector
 // assumed to be properly numbered regular 3D array
 // input *xi position in element coordinate and ndIDs[0]... is which nodes (0-63)
 void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,int getDeriv,double *sfxn,
-						double *xDeriv,double *yDeriv,double *zDeriv) const
+						double *xDeriv,double *yDeriv,double *zDeriv,Vector &lp) const
 {
 	int i;
 	double xp,yp,zp,Svpx,Svpy,Svpz,dSvpx,dSvpy,dSvpz,xsign,ysign,zsign,argx=0.,argy=0.,argz=0.;
 	
-	// L is the cell spacing, 2*lp is the current particle size.
-	// assuming the particle size is the same in x, y and z direction in element coordinate
-	// the deformation of the particle is not considered yet.
-	double lp = mpmgrid.GetParticleSemiLength();
-	double q1 = lp,q2 = 2.-lp, q3 = 2.+lp;
+	// L is the cell spacing, 2*lpi is the current particle size (dimensionless for range -1 to 1).
+	// The deformation of the particle is not considered yet.
+    double q1x = 2.-lp.x, q2x = 2.+lp.x;
+    double q1y = 2.-lp.y, q2y = 2.+lp.y;
+    double q1z = 2.-lp.z, q2z = 2.+lp.z;
 
 	for(i=0;i<numnds;i++)
 	{	xp=fabs(xi->x-gxii[ndIDs[i]]);			// first quadrant (xp, yp)>=0
 		yp=fabs(xi->y-geti[ndIDs[i]]);
 		zp=fabs(xi->z-gzti[ndIDs[i]]);
 		
-		if(xp<=q1)
-			Svpx = ((4.-lp)*lp-xp*xp)/(4.*lp);	// if lp=0.5: -(4.*xp*xp-7.)/8.;
-		else if(xp<=q2)
+		if(xp<=lp.x)
+			Svpx = ((4.-lp.x)*lp.x-xp*xp)/(4.*lp.x);	// if lp=0.5: -(4.*xp*xp-7.)/8.;
+		else if(xp<=q1x)
 			Svpx = (2.-xp)/2.;
-		else if(xp<=q3)
-		{	argx = (2.+lp-xp)/(4.*lp);			// if lp=0.5: (5.-2.*xp)/4
-			Svpx = 2.*lp*argx*argx;				// if lp=0.5: (5.-2.*xp)^2/16
+		else if(xp<=q2x)
+		{	argx = (q2x-xp)/(4.*lp.x);			// if lp=0.5: (5.-2.*xp)/4
+			Svpx = 2.*lp.x*argx*argx;				// if lp=0.5: (5.-2.*xp)^2/16
 		}
 		else
 			Svpx=0.;
 			
-		if(yp<=q1)
-			Svpy = ((4.-lp)*lp-yp*yp)/(4.*lp);	// if lp=0.5: -(4.*yp*yp-7.)/8.;
-		else if(yp<=q2)
+		if(yp<=lp.y)
+			Svpy = ((4.-lp.y)*lp.y-yp*yp)/(4.*lp.y);	// if lp=0.5: -(4.*yp*yp-7.)/8.;
+		else if(yp<=q1y)
 			Svpy = (2.-yp)/2.;
-		else if(yp<=q3)
-		{	argy = (2.+lp-yp)/(4.*lp);			// if lp=0.5: (5.-2.*yp)/4
-			Svpy = 2.*lp*argy*argy;				// if lp=0.5: (5.-2.*yp)^2/16
+		else if(yp<=q2y)
+		{	argy = (q2y-yp)/(4.*lp.y);			// if lp=0.5: (5.-2.*yp)/4
+			Svpy = 2.*lp.y*argy*argy;				// if lp=0.5: (5.-2.*yp)^2/16
 		}
 		else
 			Svpy=0.;
 
-		if(zp<=q1)
-			Svpz = ((4.-lp)*lp-zp*zp)/(4.*lp);	// if lp=0.5: -(4.*zp*zp-7.)/8.;
-		else if(zp<=q2)
+		if(zp<=lp.z)
+			Svpz = ((4.-lp.z)*lp.z-zp*zp)/(4.*lp.z);	// if lp=0.5: -(4.*zp*zp-7.)/8.;
+		else if(zp<=q1z)
 			Svpz = (2.-zp)/2.;
-		else if(zp<=q3)
-		{	argz = (2.+lp-zp)/(4.*lp);			// if lp=0.5: (5.-2.*zp)/4
-			Svpz = 2.*lp*argz*argz;				// if lp=0.5: (5.-2.*zp)^2/16
+		else if(zp<=q2z)
+		{	argz = (q2z-zp)/(4.*lp.z);			// if lp=0.5: (5.-2.*zp)/4
+			Svpz = 2.*lp.z*argz*argz;				// if lp=0.5: (5.-2.*zp)^2/16
 		}
 		else
 			Svpz=0.;
@@ -955,29 +955,29 @@ void EightNodeIsoparamBrick::GimpShapeFunction(Vector *xi,int numnds,int *ndIDs,
 			ysign = xi->y>geti[ndIDs[i]] ? 1. : -1.;
 			zsign = xi->z>gzti[ndIDs[i]] ? 1. : -1.;
 
-			if(xp<=q1)
-				dSvpx = -xp/(2.*lp);			// if lp=0.5: -xp
-			else if(xp<=q2)
+			if(xp<=lp.x)
+				dSvpx = -xp/(2.*lp.x);			// if lp=0.5: -xp
+			else if(xp<=q1x)
 				dSvpx = -0.5;
-			else if(xp<=q3)
+			else if(xp<=q2x)
 				dSvpx = -argx;
 			else
 				dSvpx = 0.;
 				
-			if(yp<=q1)
-				dSvpy = -yp/(2.*lp);			// if lp=0.5: -yp
-			else if(yp<=q2)
+			if(yp<=lp.y)
+				dSvpy = -yp/(2.*lp.y);			// if lp=0.5: -yp
+			else if(yp<=q1y)
 				dSvpy = -0.5;
-			else if(yp<=q3)
+			else if(yp<=q2y)
 				dSvpy = -argy;
 			else
 				dSvpy = 0.;
 
-			if(zp<=q1)
-				dSvpz = -zp/(2.*lp);			// if lp=0.5: -zp;
-			else if(zp<=q2)
+			if(zp<=lp.z)
+				dSvpz = -zp/(2.*lp.z);			// if lp=0.5: -zp;
+			else if(zp<=q1z)
 				dSvpz = -0.5;
-			else if(zp<=q3)
+			else if(zp<=q2z)
 				dSvpz = -argz;
 			else
 				dSvpz = 0.;

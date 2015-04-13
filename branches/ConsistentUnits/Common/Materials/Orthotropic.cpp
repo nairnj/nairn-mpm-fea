@@ -309,7 +309,7 @@ const char *Orthotropic::VerifyAndLoadProperties(int np)
 	// load elastic properties with constant values
 	FillUnrotatedElasticProperties(&pr,np);
 	
-	// superclass call
+	// superclass call (but skip over TransIsotropic)
 	return MaterialBase::VerifyAndLoadProperties(np);
 }
 

@@ -180,7 +180,7 @@ double MatPoint3D::KineticEnergy(void)
 }
 
 // get deformation gradient, which is stored in strain and rotation tensors
-Matrix3 MatPoint3D::GetDeformationGradientMatrix(void)
+Matrix3 MatPoint3D::GetDeformationGradientMatrix(void) const
 {	double F[3][3];
 	GetDeformationGradient(F);
 	Matrix3 Fm(F[0][0],F[0][1],F[0][2],F[1][0],F[1][1],F[1][2],F[2][0],F[2][1],F[2][2]);
@@ -213,7 +213,7 @@ void MatPoint3D::SetDeformationGradientMatrix(Matrix3 F)
 }
 
 // get deformation gradient, which is stored in strain and rotation tensors
-void MatPoint3D::GetDeformationGradient(double F[][3])
+void MatPoint3D::GetDeformationGradient(double F[][3]) const
 {
 	// current deformation gradient in 3D
     if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())

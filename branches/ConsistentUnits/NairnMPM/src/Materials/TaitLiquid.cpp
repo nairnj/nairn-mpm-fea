@@ -178,7 +178,7 @@ void TaitLiquid::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int 
 	
 	// current deformation gradient
     double detdF = dF.determinant();
-	const Matrix3 pF = mptr->GetDeformationGradientMatrix();
+	Matrix3 pF = mptr->GetDeformationGradientMatrix();
     Matrix3 F = dR*pF;
     if(np==THREED_MPM)
         F.Scale(pow(detdF,1./3.));

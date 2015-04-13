@@ -86,9 +86,9 @@ class ElementBase : public LinkedObject
 #ifdef MPM_CODE
 		virtual void ShapeFunction(Vector *,int,double *,double *,double *,double *) const = 0;
 	
-		virtual void GetGimpNodes(int *,int *,int *,Vector *) const;
-		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *) const;
-		virtual void GimpShapeFunctionAS(Vector *,int,int *,int,double *,double *,double *,double *) const;
+		virtual void GetGimpNodes(int *,int *,int *,Vector *,Vector &) const;
+		virtual void GimpShapeFunction(Vector *,int,int *,int,double *,double *,double *,double *,Vector &) const;
+		virtual void GimpShapeFunctionAS(Vector *,int,int *,int,double *,double *,double *,double *,Vector &) const;
 #endif
 									
         // prototypes of methods defined in ElementBase class (but may override)

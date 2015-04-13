@@ -25,8 +25,6 @@
 #include "Materials/Nonlinear2Hardening.hpp"
 #include "Materials/DDBHardening.hpp"
 #include "System/UnitsController.hpp"
-#include "System/UnitsController.hpp"
-#include "System/UnitsController.hpp"
 #include <vector>
 
 // global
@@ -65,9 +63,10 @@ char *MaterialBase::InputMaterialProperty(char *xName,int &input,double &gScalin
         return((char *)&maxLength);
     }
     
+	// initTime in crit 2
     else if(strcmp(xName,"initTime")==0)
     {	input=DOUBLE_NUM;
-        return UnitsController::ScaledPtr((char *)&initTime,gScaling,1.e-3);
+		return UnitsController::ScaledPtr((char *)&initTime,gScaling,1.e-3);
     }
 
     else if(strcmp(xName,"KIexp")==0)
@@ -664,7 +663,7 @@ void MaterialBase::ContactOutput(int thisMatID)
 		}
 		else if(currentFriction->friction>10.)
 		{   currentFriction->law=IMPERFECT_INTERFACE;
-			if(currentFriction->Dnc<-100.) currentFriction->Dnc=currentFriction->Dn;
+			if(currentFriction->Dnc<-100.e6) currentFriction->Dnc=currentFriction->Dn;
 			const char *label = UnitsController::Label(INTERFACEPARAM_UNITS);
 			sprintf(hline,"imperfect interface\n         Dn = %g %s, Dnc = %g %s, Dt = %g %s",
 					currentFriction->Dn*UnitsController::Scaling(1.e-6),label,
@@ -700,6 +699,15 @@ double *MaterialBase::CreateAndZeroDoubles(int numDoubles) const
 
 #pragma mark MaterialBase::Methods
 
+#ifdef USE_PSEUDOHYPERELASTIC
+
+// All maternal classes must override to handle their constitutive law
+void MaterialBase::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,ResidualStrains *res) const
+{
+}
+
+#else
+
 // To handle elimination of old MPMConstLaw, this passes on to old one
 // unless subclass overrides to use it directly
 void MaterialBase::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,ResidualStrains *res) const
@@ -722,6 +730,8 @@ void MaterialBase::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz
                                 double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np,void *properties,ResidualStrains *res) const
 {
 }
+
+#endif
 
 // buffer size for mechanical properties
 int MaterialBase::SizeOfMechanicalProperties(int &altBufferSize) const
@@ -981,7 +991,6 @@ int MaterialBase::ShouldPropagate(CrackSegment *crkTip,Vector &crackDir,CrackHea
 {	
     double KI,KII,fCriterion,cosTheta0,sinTheta0,cosTheta2;
 	Vector hoopDir;
-    //double deltaHPlastic,deltaTime,dUirrda,dUirrdtCona,dUirrdaCont,avgSpeed;
 
     // retrieve fracture parameters
     switch(criterion[critIndex])

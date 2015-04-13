@@ -765,6 +765,30 @@ void Matrix3::get(double c[][3]) const
 // get one element (0 based indices)
 void Matrix3::get(int row,int col,double *value) const { *value = m[row][col]; }
 
+// get one element using contraction notation of 0 to 5 for xx,yy,zz,yz,xz,yx
+// applying scalling if an off-axis value (e.g., 2 to get engineering strain)
+// uses top half of the matrix
+double Matrix3::get(int tid,double scale) const
+{
+	switch(tid)
+	{	case 0:
+			return m[0][0];
+		case 1:
+			return m[1][1];
+		case 2:
+			return m[2][2];
+		case 3:
+			return scale*m[1][2];
+		case 4:
+			return scale*m[0][2];
+		case 5:
+			return scale*m[0][1];
+		default:
+			break;
+	}
+	return 0.;
+}
+
 // set this object to contents of an array and makes it 3D
 void Matrix3::set(double c[][3])
 {	int i,j;

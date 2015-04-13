@@ -478,7 +478,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 			inputPtr=(char *)&(matCtrl->friction);
 			matCtrl->Dn=-1.;
 			theDn=&(matCtrl->Dn);
-			matCtrl->Dnc=-101.;
+			matCtrl->Dnc=-101.e6;
 			theDnc=&(matCtrl->Dnc);
 			matCtrl->Dt=-1.;
 			theDt=&(matCtrl->Dt);

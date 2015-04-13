@@ -57,7 +57,11 @@ class BistableIsotropic : public IsotropicMat
 		virtual void PrintTransportProperties(void) const;
         
         // override methods
+#ifdef USE_PSEUDOHYPERELASTIC
+		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+#else
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+#endif
         virtual void GetTransportProps(MPMBase *,int,TransportProperties *) const;
 		
 		// accessors

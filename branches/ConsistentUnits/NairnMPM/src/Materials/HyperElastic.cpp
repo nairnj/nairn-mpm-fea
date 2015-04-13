@@ -90,7 +90,7 @@ double HyperElastic::IncrementDeformation(MPMBase *mptr,Matrix3 du,Tensor *Btria
 	const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
 	
 	// current deformation gradient
-	const Matrix3 pF = mptr->GetDeformationGradientMatrix();
+	Matrix3 pF = mptr->GetDeformationGradientMatrix();
 	
 	// new deformation matrix
 	const Matrix3 F = dF*pF;
@@ -149,7 +149,7 @@ double HyperElastic::GetCurrentRelativeVolume(MPMBase *mptr) const
 
 // Return normal stress term (due to bulk modulus) and the pressure term (i.e. U(J)) for strain energy.
 // Each block of lines is for a different U(J).
-// Any change here must also be made in 2D MPMConstLaw for the numerical solution to find B.zz in plane stress
+// Any change here must also be made in 2D MPMConstitutiveLaw for the numerical solution to find B.zz in plane stress
 // Kse is strain energy, but no longer used
 double HyperElastic::GetVolumetricTerms(double J,double Kred) const
 {

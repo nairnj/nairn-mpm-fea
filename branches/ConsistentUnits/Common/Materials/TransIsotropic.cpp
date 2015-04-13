@@ -251,6 +251,15 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
 
 #ifdef MPM_CODE
 
+#ifdef USE_PSEUDOHYPERELASTIC
+
+// Material can use read-only initial properties
+void *TransIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
+{	return (void *)&pr;
+}
+
+#else
+
 // buffer size for mechanical properties
 int TransIsotropic::SizeOfMechanicalProperties(int &altBufferSize) const
 {   altBufferSize = 0;
@@ -456,6 +465,8 @@ void TransIsotropic::FillElasticProperties3D(MPMBase *mptr,ElasticProperties *p,
 	p->beta[5] =-(CME1*cy2*s2z)/2. + CME3*((s2z*sx2)/2. - c2z*cx*sx*sy - (cx2*s2z*sy2)/2.) + CME2*((cx2*s2z)/2. + c2z*cx*sx*sy - (s2z*sx2*sy2)/2.);
 
 }
+
+#endif
 
 #else
 

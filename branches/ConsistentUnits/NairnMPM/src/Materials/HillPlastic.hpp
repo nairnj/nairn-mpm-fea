@@ -33,7 +33,7 @@ class HillPlastic : public AnisoPlasticity
 		virtual void PrintYieldProperties(void) const;
 	
 		// hardening law terms
-		virtual double GetDfAlphaDotH(MPMBase *,int,Tensor *,AnisoPlasticProperties *p) const;
+		virtual double GetDfAlphaDotH(MPMBase *,int,AnisoPlasticProperties *p) const;
 		virtual void UpdatePlasticInternal(MPMBase *,int,AnisoPlasticProperties *p) const;
 		virtual void UpdateTrialAlpha(MPMBase *,int,AnisoPlasticProperties *) const;
 		virtual void UpdateTrialAlpha(MPMBase *,int,double,AnisoPlasticProperties *) const;

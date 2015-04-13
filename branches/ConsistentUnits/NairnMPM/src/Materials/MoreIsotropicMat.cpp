@@ -24,6 +24,8 @@ Vector IsotropicMat::ConvertJToK(Vector d,Vector C,Vector J0,int np)
 {	return IsotropicJToK(d,C,J0,np,nu,G);
 }
 
+#ifndef USE_PSEUDOHYPERELASTIC
+
 /* For 2D MPM analysis, take increments in strain and calculate new
 	Particle: strains, rotation strain, stresses, strain energy, angle
 	dvij are (gradient rates X time increment) to give deformation gradient change
@@ -45,10 +47,10 @@ void IsotropicMat::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy
     ep->xy+=dgam;
 	double dwrotxy=dvyx-dvxy;
 	
-    // residual strains (isotropic thermal and moisture)
-	double eres = CTE1*res->dT;
+    // residual strains (thermal and moisture)
+	double eres = CTE3*res->dT;
 	if(DiffusionTask::active)
-		eres += CME1*res->dC;
+		eres += CME3*res->dC;
 	
     // moisture and thermal strain and temperature change
 	//   (when diffusion, conduction, OR thermal ramp active)
@@ -81,7 +83,7 @@ void IsotropicMat::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy
     
 	// work and resdiaul strain energy increments
 	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy + (st0.xy+sp->xy)*dgam);
-	double resEnergy = 0.5*(st0.xx+sp->xx + st0.yy+sp->yy)*eres;
+	double resEnergy = 0.5*((st0.xx+sp->xx)*eres + (st0.yy+sp->yy)*eres + (st0.xy+sp->xy)*eres);
 	if(np==PLANE_STRAIN_MPM)
 	{	// need to add back terms to get from reduced cte to actual cte
 		sp->zz += p->C[4][1]*(dvxx+p->alpha[5]*eres)+p->C[4][2]*(dvyy+p->alpha[6]*eres)-p->C[4][4]*eres;
@@ -90,7 +92,7 @@ void IsotropicMat::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy
 		resEnergy += 0.5*(st0.zz+sp->zz)*eres;
 	}
 	else if(np==PLANE_STRESS_MPM)
-	{	ep->zz += p->C[4][1]*dvxxeff+p->C[4][2]*dvyyeff;
+	{	ep->zz += p->C[4][1]*dvxxeff+p->C[4][2]*dvyyeff+eres;
 	}
 	else
 	{	// axisymmetric hoop stress
@@ -135,9 +137,9 @@ void IsotropicMat::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz
 	double dwrotyz = dvzy-dvyz;
 	
     // residual strains (thermal and moisture) (isotropic only)
-	double eres = CTE1*res->dT;
+	double eres = CTE3*res->dT;
 	if(DiffusionTask::active)
-		eres += CME1*res->dC;
+		eres += CME3*res->dC;
 	
 	// effective strains
 	double dvxxeff = dvxx-eres;
@@ -171,7 +173,8 @@ void IsotropicMat::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz
 	
 }
 
-#ifdef USE_PSEUDOHYPERELASTIC
+#else
+
 /* Take increments in strain and calculate new Particle: strains, rotation strain,
 		stresses, strain energy,
 	dvij are (gradient rates X time increment) to give deformation gradient change
@@ -180,7 +183,7 @@ void IsotropicMat::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz
 void IsotropicMat::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
 	// current previous deformation gradient and stretch
-	const Matrix3 pFnm1 = mptr->GetDeformationGradientMatrix();
+	Matrix3 pFnm1 = mptr->GetDeformationGradientMatrix();
 	Matrix3 Vnm1 = pFnm1.LeftDecompose(NULL,NULL);
 	
     // get incremental deformation gradient and decompose it
@@ -205,21 +208,23 @@ void IsotropicMat::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	Tensor *sp = mptr->GetStressTensor();
 	Tensor st0 = *sp;
 	
+	// residual strains (thermal and moisture)
+	double eres = CTE3*res->dT;
+	if(DiffusionTask::active)
+		eres += CME3*res->dC;
+		
+	// effective strains
+	double dvxxeff = de(0,0)-eres;
+	double dvyyeff = de(1,1)-eres;
+	double dgamxy = de(0,1)+de(1,0);
+	
 	// stress increments
 	double delsp[6];
 	if(np==THREED_MPM)
-	{	// residual strains (thermal and moisture)
-		double eres = CTE1*res->dT;
-		if(DiffusionTask::active)
-			eres += CME1*res->dC;
-		
-		// effective strains
-		double dvxxeff = de(0,0)-eres;
-		double dvyyeff = de(1,1)-eres;
+	{	// more effective strains
 		double dvzzeff = de(2,2)-eres;
 		double dgamyz = de(1,2)+de(2,1);
 		double dgamxz = de(0,2)+de(2,0);
-		double dgamxy = de(0,1)+de(1,0);
 		
 		for(int i=0;i<3;i++)
 		{   delsp[i] = p->C[i][0]*dvxxeff + p->C[i][1]*dvyyeff + p->C[i][2]*dvzzeff;
@@ -247,17 +252,7 @@ void IsotropicMat::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	}
 	
 	else
-	{	// residual strains (thermal and moisture)
-		double eres = CTE1*res->dT;
-		if(DiffusionTask::active)
-			eres += CME1*res->dC;
-		
-		// effective strains
-		double dvxxeff = de(0,0)-eres;
-		double dvyyeff = de(1,1)-eres;
-		double dgamxy = de(0,1)+de(1,0);
-		
-		if(np==AXISYMMETRIC_MPM)
+	{	if(np==AXISYMMETRIC_MPM)
 		{	// hoop stress affect on RR, ZZ, and RZ stresses
 			double dvzzeff = de(2,2) - eres;
 			delsp[0] = p->C[1][1]*dvxxeff + p->C[1][2]*dvyyeff + p->C[4][1]*dvzzeff;
@@ -284,14 +279,14 @@ void IsotropicMat::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 		double resEnergy = 0.5*(st0.xx+sp->xx + st0.yy+sp->yy)*eres;
 		if(np==PLANE_STRAIN_MPM)
 		{	// need to add back terms to get from reduced cte to actual cte
-			sp->zz += p->C[4][1]*(de(0,0)+p->alpha[5]*eres)+p->C[4][2]*(de(1,1)+p->alpha[6]*eres)-p->C[4][4]*eres;
+			sp->zz += p->C[4][1]*(de(0,0)+p->alpha[5]*eres) + p->C[4][2]*(de(1,1)+p->alpha[6]*eres) - p->C[4][4]*eres;
 			
 			// extra residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
 			resEnergy += 0.5*(st0.zz+sp->zz)*eres;
 		}
 		else if(np==PLANE_STRESS_MPM)
 		{	Tensor *ep=mptr->GetStrainTensor();
-			ep->zz += p->C[4][1]*dvxxeff+p->C[4][2]*dvyyeff+eres;
+			ep->zz += p->C[4][1]*dvxxeff + p->C[4][2]*dvyyeff + eres;
 		}
 		else
 		{	// axisymmetric hoop stress

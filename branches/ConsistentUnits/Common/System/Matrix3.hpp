@@ -65,6 +65,7 @@ class Matrix3
         // read only accessors
         void get(double c[][3]) const;
         void get(int,int,double *) const;
+		double get(int,double) const;
         bool getIs2D(void) const;
         double determinant(void) const;
         double second_invariant(void) const;
