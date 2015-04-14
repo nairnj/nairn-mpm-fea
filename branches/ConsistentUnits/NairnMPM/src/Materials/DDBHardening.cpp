@@ -20,6 +20,7 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "Exceptions/CommonException.hpp"
 #include "Custom_Tasks/ConductionTask.hpp"
+#include "System/UnitsController.hpp"
 
 #pragma mark DDBHardening::Constructors and Destructors
 
@@ -33,24 +34,24 @@ DDBHardening::DDBHardening(MaterialBase *pair) : HardeningLawBase(pair)
 	// defaults are for copper under high strain rate. see "Grain refinement under 
 	// high strain rate impact: A numerical approach" - V. Lemiale (2010)
 
-	rhoW0=1e13;			// m^-2
-	rhoC0=1e14;			// m^-2
+	rhoW0=1e13;			// 1/L^2
+	rhoC0=1e14;			// 1/L^2
 	fLim=0.06;			// fraction (unitless)
 	fo=0.25;			// fraction (unitless)
 	fsto=3.2;			// fraction (unitless)
-	sto=1e6;			// s^-1
+	sto=1e6;			// 1/T
 	alp=0.25;			// (unitless)
-	burg=2.56e-10;		// m
+	burg=2.56e-10;		// L
 	K1=10;				// (unitless)
 	esal=0.120;			// (unitless)
 	esbe=0.006;			// (unitless)
 	disk1=5.8;			// (unitless)
 	tayM=3.06;			// (unitless)
-	MMG=47.4e3;			// MPa (converted to Pa in verify&loadprops)
-	Atd=30000;			// K^-1
-	Btd=14900;			// K^-1
-	SHM0=50;
-	N0=10;
+	MMG=47.4e3;			// F/L^2
+	Atd=30000;			// 1/K
+	Btd=14900;			// 1/K
+	SHM0=50;			// (unitless)
+	N0=10;				// (unitless)
 	tempDepend = 0;		// option for fixed m and n or temperature dependence
 
 }
@@ -68,16 +69,16 @@ char *DDBHardening::InputMaterialProperty(char *xName,int &input,double &gScalin
         return((char *)&tayM);
     }
 
-	// rhoW: Initial dislocation density in cell wall
+	// rhoW: Initial dislocation density in cell wall (Legacy 1/m^2 to 1/mm^2)
     else if(strcmp(xName,"rhoW")==0)
     {   input=DOUBLE_NUM;
-        return((char *)&rhoW0);
+		return UnitsController::ScaledPtr((char *)&rhoW0,gScaling,1.e-6);
     }
 
-	// rhoC: Initial dislocation density in cell
+	// rhoC: Initial dislocation density in cell (Legacy 1/m^2 to 1/mm^2)
     else if(strcmp(xName,"rhoC")==0)
     {   input=DOUBLE_NUM;
-        return((char *)&rhoC0);
+ 		return UnitsController::ScaledPtr((char *)&rhoC0,gScaling,1.e-6);
     }
 
 	// fo: Initial volume fraction
@@ -122,10 +123,10 @@ char *DDBHardening::InputMaterialProperty(char *xName,int &input,double &gScalin
         return((char *)&alp);
     }
 
-	// burg: burgers vector
+	// burg: burgers vector (Legacy m to mm)
     else if(strcmp(xName,"burg")==0)
     {   input=DOUBLE_NUM;
-        return((char *)&burg);
+ 		return UnitsController::ScaledPtr((char *)&burg,gScaling,1.e3);
     }
 
 	// K1: K in average cell size
@@ -170,10 +171,10 @@ char *DDBHardening::InputMaterialProperty(char *xName,int &input,double &gScalin
         return((char *)&tempDepend);
     }
 	
-	// MMG: Shear Modulus (Pa)
+	// MMG: Shear Modulus (Legacy MPa to Pa)
     else if(strcmp(xName,"MMG")==0)
     {   input=DOUBLE_NUM;
-        return((char *)&MMG);
+ 		return UnitsController::ScaledPtr((char *)&MMG,gScaling,1.e6);
     }
 	
     return HardeningLawBase::InputMaterialProperty(xName,input,gScaling);
@@ -189,19 +190,14 @@ const char *DDBHardening::VerifyAndLoadProperties(int np)
 	// check not plane stress
 	if(np==PLANE_STRESS_MPM) return "The dislocation-density based hardening does not support plane stress calculations yet.";
     
-	
 	// check properties
 	
 	// reduced yield stress in base class
 	HardeningLawBase::VerifyAndLoadProperties(np);
 	
-	// shear modulus (Pa) required for GetYield()
-	MMG = MMG*1.e6;
-
 	// initial grain size for material
-	rhoT0 = fo *rhoW0 +(1.-fo)*rhoC0;
-	dSize0 = K1/sqrt(rhoT0);
-
+	rhoT0 = fo *rhoW0 +(1.-fo)*rhoC0;			// 1/L^2
+	dSize0 = K1/sqrt(rhoT0);					// L
 	
 	// base class never has an error
     return NULL;
@@ -213,8 +209,10 @@ void DDBHardening::PrintYieldProperties(void) const
     cout << GetHardeningLawName() << endl;
     
     // yield
-    MaterialBase::PrintProperty("Initial cell dislocation density, pc",rhoC0,"m^-2");
-    MaterialBase::PrintProperty("Initial cell wall dislocation density, pw",rhoW0,"m^-2");
+	char ulab[50];
+	sprintf(ulab,"1/%s^2",UnitsController::Label(CULENGTH_UNITS));
+    MaterialBase::PrintProperty("Initial cell dislocation density, pc",rhoC0,ulab);
+	MaterialBase::PrintProperty("Initial cell wall dislocation density, pw",rhoW0,ulab);
 	MaterialBase::PrintProperty("Taylor Factor",tayM,"");
     MaterialBase::PrintProperty("fo",fo,"");
     MaterialBase::PrintProperty("flim",fLim,"");
@@ -223,13 +221,14 @@ void DDBHardening::PrintYieldProperties(void) const
 	MaterialBase::PrintProperty("M",SHM0,"");
 	MaterialBase::PrintProperty("N",N0,"");
 	MaterialBase::PrintProperty("Alpha",alp,"");
-	MaterialBase::PrintProperty("Burgers Vector",burg,"m");
+	MaterialBase::PrintProperty("Burgers Vector",burg,UnitsController::Label(CULENGTH_UNITS));
 	MaterialBase::PrintProperty("K",K1,"");
 	MaterialBase::PrintProperty("Alpha*",esal,"");
 	MaterialBase::PrintProperty("Beta*",esbe,"");
 	MaterialBase::PrintProperty("ko",disk1,"");
 	MaterialBase::PrintProperty("A",Atd,"K^-1");
 	MaterialBase::PrintProperty("B",Btd,"K^-1");
+	MaterialBase::PrintProperty("G",MMG*UnitsController::Scaling(1.e-6),UnitsController::Label(PRESSURE_UNITS));
 	
     cout << endl;
 }
@@ -289,54 +288,54 @@ double DDBHardening::GetYield(MPMBase *mptr,int np,double delTime,HardeningAlpha
 {
 	DDBHProperties *p = (DDBHProperties *)properties;
 
-	p->rhoCtemp = p->rhoC;
-	p->rhoWtemp = p->rhoW;
+	p->rhoCtemp = p->rhoC;				// 1/L^2
+	p->rhoWtemp = p->rhoW;				// 1/L^2
 
 	// update rhoc/w from previous increment
-	p->rhoWtemp += p->rhoWDot*delTime;
-	p->rhoCtemp += p->rhoCDot*delTime;
+	p->rhoWtemp += p->rhoWDot*delTime;			// 1/(L^2-T)
+	p->rhoCtemp += p->rhoCDot*delTime;			// 1/(L^2-T)
 		
 	// update values for strain and strain rate
-	double eqss = SQRT_THREE*a->alpint;
-	double rss = tayM*eqss;
-	double eqssra = SQRT_THREE*(a->dalpha/delTime);
-	double rssra = tayM*eqssra;
+	double eqss = SQRT_THREE*a->alpint;			// unitless
+	double rss = tayM*eqss;						// unitless
+	double eqssra = SQRT_THREE*(a->dalpha/delTime);		// 1/T
+	double rssra = tayM*eqssra;							// 1/T
 
 	// update value of volume fraction
-	p->fr = fLim + (fo-fLim)*exp(-1.*rss/fsto);
+	p->fr = fLim + (fo-fLim)*exp(-1.*rss/fsto);			// unitless
 		
-	p->rhoT = p->fr*p->rhoWtemp+(1.-p->fr)*p->rhoCtemp;
-	p->dSize = K1/sqrt(p->rhoT);
+	p->rhoT = p->fr*p->rhoWtemp+(1.-p->fr)*p->rhoCtemp;		// 1/L^2
+	p->dSize = K1/sqrt(p->rhoT);							// L
 		
-		// update dislocation density evolution rate in cell wall and cell interior
-		if(!DbleEqual(rssra,0.))
-		{	double wAdd = (6.*esbe*rssra*pow(1-p->fr,TWOTHIRDS))/(burg*p->dSize*p->fr);
-			double wRem = (SQRT_THREE*esbe*rssra*(1.-p->fr)*sqrt(p->rhoWtemp))/(p->fr*burg);
-			double wDis = -disk1*pow(rssra/sto,-1./p->N)*rssra*p->rhoWtemp;
-			p->rhoWDotTemp = wAdd+wRem+wDis;
-			
-			double cAdd = esal*SQRT_ONETHIRD*(sqrt(p->rhoWtemp)/burg)*rssra;
-			double cRem = -esbe*((6.*rssra)/(burg*p->dSize*pow(1.-p->fr,ONETHIRD)));
-			double cDis = -disk1*pow(rssra/sto,-1./p->N)*rssra*p->rhoCtemp;
-			p->rhoCDotTemp = cAdd+cRem+cDis;
-		}
+	// update dislocation density evolution rate in cell wall and cell interior
+	if(!DbleEqual(rssra,0.))
+	{	double wAdd = (6.*esbe*rssra*pow(1-p->fr,TWOTHIRDS))/(burg*p->dSize*p->fr);				// 1/(L^2-T)
+		double wRem = (SQRT_THREE*esbe*rssra*(1.-p->fr)*sqrt(p->rhoWtemp))/(p->fr*burg);		// 1/(L^2-T)
+		double wDis = -disk1*pow(rssra/sto,-1./p->N)*rssra*p->rhoWtemp;							// 1/(L^2-T)
+		p->rhoWDotTemp = wAdd+wRem+wDis;														// 1/(L^2-T)
+		
+		double cAdd = esal*SQRT_ONETHIRD*(sqrt(p->rhoWtemp)/burg)*rssra;						// 1/(L^2-T)
+		double cRem = -esbe*((6.*rssra)/(burg*p->dSize*pow(1.-p->fr,ONETHIRD)));				// 1/(L^2-T)
+		double cDis = -disk1*pow(rssra/sto,-1./p->N)*rssra*p->rhoCtemp;							// 1/(L^2-T)
+		p->rhoCDotTemp = cAdd+cRem+cDis;														// 1/(L^2-T)
+	}
 		
 	// update 
-	double sigoc=alp*MMG*burg*sqrt(p->rhoCtemp);
-	double rstc=sigoc*pow(rssra/sto,1./p->SHM);
+	double sigoc=alp*MMG*burg*sqrt(p->rhoCtemp);			// F/L^2
+	double rstc=sigoc*pow(rssra/sto,1./p->SHM);				// F/L^2
 	
 	// update 
-	double sigow=alp*MMG*burg*sqrt(p->rhoWtemp);
-	double rstw=sigow*pow(rssra/sto,1./p->SHM);
+	double sigow=alp*MMG*burg*sqrt(p->rhoWtemp);			// F/L^2
+	double rstw=sigow*pow(rssra/sto,1./p->SHM);				// F/L^2
 	
 	// update stress
-	double rst=p->fr*rstw+(1.-p->fr)*rstc;
-	p->yieldP = p->yieldC;       
-	p->yieldInc = tayM*rst*(SQRT_THREE/parent->rho);
-	p->yieldC = p->yieldInc + yldred;
+	double rst=p->fr*rstw+(1.-p->fr)*rstc;					// F/L^2
+	p->yieldP = p->yieldC;									// F/L^2
+	p->yieldInc = tayM*rst*(SQRT_THREE/parent->rho);		// F/L^2
+	p->yieldC = p->yieldInc + yldred;						// F/L^2
 	
 	// return new stress value
-	return p->yieldC;
+	return p->yieldC;										// F/L^2
 		
 }
 
@@ -380,15 +379,15 @@ double DDBHardening::SolveForLambdaBracketed(MPMBase *mptr,int np,double strial,
 	// update internal variables from temporary values
 	DDBHProperties *prop = (DDBHProperties *)p;
 		
-		// update history variables
-		mptr->SetHistoryDble(EP_HISTORY,a->alpint);
-		mptr->SetHistoryDble(EPDOT_HISTORY,a->dalpha/delTime);
-		mptr->SetHistoryDble(YLDC_HISTORY,prop->yieldC*parent->rho/1.e6);
-		mptr->SetHistoryDble(GRAIN_HISTORY,prop->dSize);
-		mptr->SetHistoryDble(RHOC_HISTORY,prop->rhoCtemp);
-		mptr->SetHistoryDble(RHOW_HISTORY,prop->rhoWtemp);
-		mptr->SetHistoryDble(RHOCDOT_HISTORY,prop->rhoCDotTemp);
-		mptr->SetHistoryDble(RHOWDOT_HISTORY,prop->rhoWDotTemp);
+	// update history variables
+	mptr->SetHistoryDble(EP_HISTORY,a->alpint);
+	mptr->SetHistoryDble(EPDOT_HISTORY,a->dalpha/delTime);
+	mptr->SetHistoryDble(YLDC_HISTORY,prop->yieldC*parent->rho/1.e6);
+	mptr->SetHistoryDble(GRAIN_HISTORY,prop->dSize);
+	mptr->SetHistoryDble(RHOC_HISTORY,prop->rhoCtemp);
+	mptr->SetHistoryDble(RHOW_HISTORY,prop->rhoWtemp);
+	mptr->SetHistoryDble(RHOCDOT_HISTORY,prop->rhoCDotTemp);
+	mptr->SetHistoryDble(RHOWDOT_HISTORY,prop->rhoWDotTemp);
 
     // return final answer
 	return lambdak;
