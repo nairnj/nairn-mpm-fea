@@ -212,6 +212,24 @@ void MatPoint3D::SetDeformationGradientMatrix(Matrix3 F)
 	wrot.yz = F(2,1) - F(1,2);
 }
 
+// get displacement gradient from grad u = ln F = ln V + ln R
+Matrix3 MatPoint3D::GetDisplacementGradientMatrix(void) const
+{	// 3D not written yet
+	// This method currently only used in 2D J integral calc and
+	// when archiving shear components (only makes sense in 2D)
+	// Substitute uses small strain approximation
+	
+	double F[3][3];
+	GetDeformationGradient(F);
+	Matrix3 Fm(F[0][0],F[0][1],F[0][2],F[1][0],F[1][1],F[1][2],F[2][0],F[2][1],F[2][2]);
+	
+	Fm(0,0) -= 1.;
+	Fm(1,1) -= 1.;
+	Fm(2,2) -= 1.;
+	
+	return Fm;
+}
+
 // get deformation gradient, which is stored in strain and rotation tensors
 void MatPoint3D::GetDeformationGradient(double F[][3]) const
 {

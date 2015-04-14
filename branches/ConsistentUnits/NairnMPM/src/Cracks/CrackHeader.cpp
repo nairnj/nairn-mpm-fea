@@ -1214,10 +1214,11 @@ void CrackHeader::JIntegral(void)
 						ay=acc->y;
 						
 						// Displacement gradients (dimensionless)
-						duxdx = mpm[p]->GetDuDx();
-						duydy = mpm[p]->GetDvDy();
-						duxdy = mpm[p]->GetDuDy();
-						duydx = mpm[p]->GetDvDx();
+						Matrix3 gradU = mpm[p]->GetDisplacementGradientMatrix();
+						duxdx = gradU(0,0);
+						duydy = gradU(1,1);
+						duxdy = gradU(0,1);
+						duydx = gradU(1,0);
 						
 						// Velocities (mm/sec)
 						vx=mpm[p]->vel.x;
@@ -1243,11 +1244,11 @@ void CrackHeader::JIntegral(void)
 							// Units uN/mm^3
 							if(JContourType == AXISYM_BROBERG_J)
 							{	// See Broberg, Cracks and Fraction (1999), page 65
-								f2axisym += rho*(sp.xx*duxdx - sp.zz*mpm[p]->GetDwDz() + sp.xy*duydx)/xp;
+								f2axisym += rho*(sp.xx*duxdx - sp.zz*gradU(2,2) + sp.xy*duydx)/xp;
 							}
 							else
 							{	// Bergkvist and Huong called J3D/(a dphi)
-								f2axisym += rho*(mpm[p]->GetWorkEnergy() - sp.zz*mpm[p]->GetDwDz())/crackr;
+								f2axisym += rho*(mpm[p]->GetWorkEnergy() - sp.zz*gradU(2,2))/crackr;
 							}
 						}
 					}

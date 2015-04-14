@@ -267,39 +267,6 @@ bool MPMBase::PartitionsElasticAndPlasticStrain(void) const
 {   return theMaterials[MatID()]->PartitionsElasticAndPlasticStrain();
 }
 
-// get deformation gradient terms from full strains
-// used when archiving and by 2D J Integral calculations
-double MPMBase::GetDuDx(void)
-{   if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())
-		return ep.xx+eplast.xx;
-	else
-		return ep.xx;
-}
-double MPMBase::GetDuDy(void)
-{   if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())
-        return (ep.xy+eplast.xy-wrot.xy)/2.;
-    else
-        return (ep.xy-wrot.xy)/2.;
-}
-double MPMBase::GetDvDx(void)
-{   if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())
-        return (ep.xy+eplast.xy+wrot.xy)/2.;
-    else
-        return (ep.xy+wrot.xy)/2.;
-}
-double MPMBase::GetDvDy(void)
-{   if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())
-		return ep.yy+eplast.yy;
-	else
-		return ep.yy;
-}
-double MPMBase::GetDwDz(void)
-{   if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())
-		return ep.zz+eplast.zz;
-	else
-		return ep.zz;
-}
-
 // anglez0 is initial z cw orientation angle (2D and 3D z,y,x scheme)
 double MPMBase::GetRotationZ(void) { return anglez0-0.5*wrot.xy; }
 double MPMBase::GetParticleRotationZ(void) { return -0.5*wrot.xy; }		// rotation in simulation, ignoring initial angle

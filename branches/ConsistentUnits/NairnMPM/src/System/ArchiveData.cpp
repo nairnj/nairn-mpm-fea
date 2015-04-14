@@ -711,10 +711,11 @@ void ArchiveData::ArchiveResults(double atime)
                 
         // ------- shear components (absolute)
         if(mpmOrder[ARCH_ShearComponents]=='Y')
-        {   *(double *)app=mpm[p]->GetDuDy();
+		{	Matrix3 gradU = mpm[p]->GetDisplacementGradientMatrix();
+            *(double *)app=gradU(0,1);
             app+=sizeof(double);
-                
-            *(double *)app=mpm[p]->GetDvDx();
+			
+            *(double *)app=gradU(1,0);
             app+=sizeof(double);
         }
 

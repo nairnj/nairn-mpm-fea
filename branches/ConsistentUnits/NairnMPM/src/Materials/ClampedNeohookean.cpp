@@ -179,7 +179,7 @@ void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
 	double Je,Jp;
 	Matrix3 Ucol;
 	if(clamped)
-	{	// Find Belas = UT.LAM.U
+	{	// Find Belas = U.LAM.UT
 		Ucol = Belas.Eigenvectors(lam2Trial);
 		Matrix3 UcolT = Ucol.Transpose();
 		Matrix3 Lam(lam2.x,0.,0.,lam2.y,lam2.z);

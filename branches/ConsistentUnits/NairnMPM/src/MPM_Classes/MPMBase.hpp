@@ -66,6 +66,7 @@ class MPMBase : public LinkedObject
 		virtual double KineticEnergy(void) = 0;
 		virtual Matrix3 GetDeformationGradientMatrix(void) const = 0;
 		virtual void SetDeformationGradientMatrix(Matrix3) = 0;
+		virtual Matrix3 GetDisplacementGradientMatrix(void) const = 0;
         virtual Matrix3 GetElasticLeftCauchyMatrix(void) = 0;
         virtual void GetDeformationGradient(double F[][3]) const = 0;
         virtual double GetRelativeVolume(void) = 0;
@@ -91,11 +92,6 @@ class MPMBase : public LinkedObject
 		bool HasLeftTheGridBefore(void);
 		void SetHasLeftTheGridBefore(bool);
         bool PartitionsElasticAndPlasticStrain(void) const;
-		double GetDuDx(void);					// du/dr in axisym
-		double GetDuDy(void);					// du/dz in axisym
-		double GetDvDx(void);					// dw/dr in axisym
-		double GetDvDy(void);					// dw/dz in axisym
-		double GetDwDz(void);					// v/r = etheta in axisym
 		double GetRotationZ(void);
 		double GetRotationY(void);
 		double GetRotationX(void);

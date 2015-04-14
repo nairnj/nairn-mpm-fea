@@ -153,7 +153,8 @@ CustomTask *CalcJKTask::StepCalculation(void)
 			
                 // get 2D gradient terms (dimensionless) and track material (if needed)
                 int activeMatField = matref->GetActiveField();
-                ndmi->AddUGradient(vfld,fnmp,mpnt->GetDuDx(),mpnt->GetDuDy(),mpnt->GetDvDx(),mpnt->GetDvDy(),activeMatField,mpnt->mp);
+ 				Matrix3 gradU = mpnt->GetDisplacementGradientMatrix();
+                ndmi->AddUGradient(vfld,fnmp,gradU(0,0),gradU(0,1),gradU(1,0),gradU(1,1),activeMatField,mpnt->mp);
 
 				// GRID_JTERMS
 				if(JGridEnergy)

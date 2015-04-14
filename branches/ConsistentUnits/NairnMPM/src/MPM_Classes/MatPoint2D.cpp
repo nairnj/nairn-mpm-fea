@@ -204,6 +204,45 @@ void MatPoint2D::SetDeformationGradientMatrix(Matrix3 F)
 	wrot.xy = F(1,0) - F(0,1);
 }
 
+// get displacement gradient from grad u = ln F = ln V + ln R
+Matrix3 MatPoint2D::GetDisplacementGradientMatrix(void) const
+{	double F[3][3];
+	GetDeformationGradient(F);
+	Matrix3 Fm(F[0][0],F[0][1],F[1][0],F[1][1],F[2][2]);
+	
+#ifdef USE_PSEUDOHYPERELASTIC
+	// Decompose into F = VR and get eigenvalues of V
+	Matrix3 R;
+	Vector lam;
+	Matrix3 V = Fm.LeftDecompose(&R, &lam);
+	
+	// Find V = U.LAM.UT
+	Matrix3 Ucol = V.Eigenvectors(lam);
+	
+	// for ln R, need angle
+	double theta = acos(R(0,0));
+	if(R(0,1)>0) theta = -theta;
+	
+	// ln V = U.ln(LAM).UT (ignores z for 2D)
+	Matrix3 UcolT = Ucol.Transpose();
+	Matrix3 LamDiag(log(lam.x),0.,0.,log(lam.y),log(lam.z));
+	Matrix3 gradU = Ucol*(LamDiag*UcolT);
+	
+	// add ln R
+	gradU(0,1) -= theta;
+	gradU(1,0) += theta;
+	
+	return gradU;
+	
+#else
+	Fm(0,0) -= 1.;
+	Fm(1,1) -= 1.;
+	Fm(2,2) -= 1.;
+	
+	return Fm;
+#endif
+}
+
 // get the symmetric elastic Left-Cauchy tensor in a Matrix3
 Matrix3 MatPoint2D::GetElasticLeftCauchyMatrix(void)
 {   return Matrix3(eplast.xx,eplast.xy,eplast.xy,eplast.yy,eplast.zz);
