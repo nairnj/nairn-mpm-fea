@@ -254,7 +254,9 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			value *= UnitsController::Scaling(1.e-6);
 			break;
 		
-		// elastic strain (% in Legacy)
+		// Elastic strain (% in Legacy)
+		// New method small strain = Biot strain - archived plastic strain
+		// New method hyperelastic = Biot strain from elastic B in plastic strain
 		case AVG_EZZE:
 			qid=ZZ;
 	    case AVG_EXZE:
@@ -269,8 +271,15 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			if(quantity==AVG_EXYE) qid=XY;
 			for(p=0;p<nmpms;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
-				{	Tensor *ep=mpm[p]->GetStrainTensor();
+				{
+#ifdef USE_PSEUDOHYPERELASTIC
+					Tensor *eplast=mpm[p]->GetPlasticStrainTensor();
+					Matrix3 biot = mpm[p]->GetBiotStrain();
+					value += (biot.get(qid,2.) - Tensor_i(eplast,qid));
+#else
+					Tensor *ep=mpm[p]->GetStrainTensor();
 				    value+=Tensor_i(ep,qid);
+#endif
 					numAvged++;
 				}
 			}
@@ -279,6 +288,8 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			break;
 
 		// plastic strain (% in Legacy)
+		// New method small strain = archived plastic strain
+		// New method hyperelastic = Biot strain from F - Biot strain from elastic B in plastic strain
 		case AVG_EZZP:
 			qid=ZZ;
 		case AVG_EXZP:
@@ -293,8 +304,14 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			if(quantity==AVG_EXYP) qid=XY;
 			for(p=0;p<nmpms;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
-				{	Tensor *eplast=mpm[p]->GetPlasticStrainTensor();
+				{
+#ifdef USE_PSEUDOHYPERELASTIC
+					Tensor *eplast=mpm[p]->GetPlasticStrainTensor();
 					value+=Tensor_i(eplast,qid);
+#else
+					Tensor *eplast=mpm[p]->GetPlasticStrainTensor();
+					value+=Tensor_i(eplast,qid);
+#endif
 					numAvged++;
 				}
 			}
@@ -303,6 +320,8 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			break;
 
 		// total strain (% in Legacy)
+		// New method small strain = Biot strain from F
+		// New method hyperelastic = Biot strain from F
 		case AVG_EZZ:
 			qid=ZZ;
 		case AVG_EXZ:
@@ -317,13 +336,19 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			if(quantity==AVG_EXY) qid=XY;
 			for(p=0;p<nmpms;p++)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
-				{	Tensor *ep=mpm[p]->GetStrainTensor();
+				{
+#ifdef USE_PSEUDOHYPERELASTIC
+					Matrix3 biot = mpm[p]->GetBiotStrain();
+					value += biot.get(qid,2.);
+#else
+					Tensor *ep=mpm[p]->GetStrainTensor();
                     if(theMaterials[mpm[p]->MatID()]->PartitionsElasticAndPlasticStrain())
 					{   Tensor *eplast=mpm[p]->GetPlasticStrainTensor();
                         value += Tensor_i(ep,qid)+Tensor_i(eplast,qid);
                     }
                     else
                         value += Tensor_i(ep,qid);
+#endif
 					numAvged++;
 				}
 			}
