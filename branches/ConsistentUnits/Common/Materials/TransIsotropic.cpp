@@ -631,7 +631,7 @@ void TransIsotropic::FillTransportProperties(TransportProperties *t)
 		t->kCondTensor.xx = kCondT;
 		t->kCondTensor.yy = kCondA;
 	}
-	t->diffusionTensor.xx = GetDiffZ();
+	t->diffusionTensor.zz = GetDiffZ();
 	t->kCondTensor.zz = GetKcondZ();
 	t->diffusionTensor.xy = 0.;
 	t->diffusionTensor.xz = 0.;
@@ -645,6 +645,15 @@ void TransIsotropic::FillTransportProperties(TransportProperties *t)
 // Used by TranIsoptropic 1 and 2 and by Orthotropic
 void TransIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t) const
 {	
+	// Decompose to get rotation
+	Matrix3 pF = mptr->GetDeformationGradientMatrix();
+    Matrix3 R;
+	Matrix3 U = pF.RightDecompose(&R,NULL);
+	
+	// apply initial rotation to get strain increment in the material coordinates
+	Matrix3 R0 = mptr->GetInitialRotation();
+	Matrix3 Rtot = R*R0;
+	
 	if(np!=THREED_MPM)
 	{	// if isotropic in 2D plane, use initial properties
 		if(MaterialTag()==TRANSISO1)
@@ -652,69 +661,45 @@ void TransIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties 
 			return;
 		}
 
-		// analysis axes are ccw from material axes (note the -sin(ang))
-		double angle=mptr->GetRotationZ();
-		double cs=cos(angle);
+		// analysis axes are ccw from material axes
+		double cs=Rtot(0,0);
 		double c2=cs*cs;
-		double sn=-sin(angle);
+		double sn=Rtot(1,0);
 		double s2=sn*sn;
 		double cssn=cs*sn;
-
-		// diffusion and conductivity tensors
-		t->diffusionTensor.xx=diffA*s2 + diffT*c2;
-		t->diffusionTensor.yy=diffA*c2 + diffT*s2;
-		t->diffusionTensor.xy=(diffT-diffA)*cssn;
+		
+		// diffusion and conductivity tensors = R.Tens.RT
+		t->diffusionTensor.xx = diffA*s2 + diffT*c2;
+		t->diffusionTensor.yy = diffA*c2 + diffT*s2;
+		t->diffusionTensor.xy = (diffT-diffA)*cssn;
 		t->kCondTensor.xx = kCondA*s2 + kCondT*c2;
 		t->kCondTensor.yy = kCondA*c2 + kCondT*s2;
 		t->kCondTensor.xy = (kCondT-kCondA)*cssn;
 	}
 	
 	else
-	{	/* Rotation of the transport tensor requires Rz(-z).Ry(-y).Rx(-z).T.Rx^T(-x).Ry^T(-y).Rz^T(-z)
-			To improve performance, the transformation was expanded in Mathematica and each term
-			of the matrix convert to an expression (using CForm) to paste.
-			Also trigonometric terms are evaluated once first.
-		*/
-		
-		double z=mptr->GetRotationZ();
-		double cz=cos(z);
-		double sz=sin(z);
-		double cz2=cz*cz;
-		double sz2=sz*sz;
-		
-		double y=mptr->GetRotationY();
-		double cy=cos(y);
-		double sy=sin(y);
-		double cy2=cy*cy;
-		double sy2=sy*sy;
-		
-		double x=mptr->GetRotationX();
-		double cx=cos(x);
-		double sx=sin(x);
-		double sx2=sx*sx;
-		double cx2=cx*cx;
-		
+	{	// Find R.D.RT and R.k.RT
 		double diffz = GetDiffZ();
+		Matrix3 DRT = Matrix3(diffT*Rtot(0,0),diffT*Rtot(1,0),diffT*Rtot(2,0),
+							  diffA*Rtot(0,1),diffA*Rtot(1,1),diffA*Rtot(2,1),
+							  diffz*Rtot(0,2),diffz*Rtot(1,2),diffz*Rtot(2,2));
+		t->diffusionTensor.xx = Rtot(0,0)*DRT(0,0) + Rtot(0,1)*DRT(1,0) + Rtot(0,2)*DRT(2,0);
+		t->diffusionTensor.xy = Rtot(0,0)*DRT(0,1) + Rtot(0,1)*DRT(1,1) + Rtot(0,2)*DRT(2,1);
+		t->diffusionTensor.xz = Rtot(0,0)*DRT(0,2) + Rtot(0,1)*DRT(1,2) + Rtot(0,2)*DRT(2,2);
+		t->diffusionTensor.yy = Rtot(1,0)*DRT(0,1) + Rtot(1,1)*DRT(1,1) + Rtot(1,2)*DRT(2,1);
+		t->diffusionTensor.yz = Rtot(1,0)*DRT(0,2) + Rtot(1,1)*DRT(1,2) + Rtot(1,2)*DRT(2,2);
+		t->diffusionTensor.zz = Rtot(2,0)*DRT(0,2) + Rtot(2,1)*DRT(1,2) + Rtot(2,2)*DRT(2,2);
 		
-		t->diffusionTensor.xx=cy2*cz2*diffT + diffA*(-(cz2*sx2*sy2) + cx2*sz2) + diffz*(cx2*cz2*sy2 - sx2*sz2);
-		t->diffusionTensor.xy=-(cy2*cz*diffT*sz) + diffz*(cx*sx*sy - cz*sx2*sz - cx2*cz*sy2*sz) + diffA*(cx*sx*sy + cx2*cz*sz + cz*sx2*sy2*sz);
-		t->diffusionTensor.xz=cy*cz*diffT*sy + cy*diffz*(-(cx2*cz*sy) + cx*sx*sz) + cy*diffA*(cz*sx2*sy + cx*sx*sz);
-		
-		t->diffusionTensor.yy=cy2*diffT*sz2 + diffz*(-(cz2*sx2) + cx2*sy2*sz2) + diffA*(cx2*cz2 - sx2*sy2*sz2);
-		t->diffusionTensor.yz=-(cy*diffT*sy*sz) + cy*diffz*(cx*cz*sx + cx2*sy*sz) + cy*diffA*(cx*cz*sx - sx2*sy*sz);
-		
-		t->diffusionTensor.zz=cx2*cy2*diffz - cy2*diffA*sx2 + diffT*sy2;
-		
-		double kz=GetKcondZ();
-		
-		t->kCondTensor.xx=cy2*cz2*kCondT + kCondA*(-(cz2*sx2*sy2) + cx2*sz2) + kz*(cx2*cz2*sy2 - sx2*sz2);
-		t->kCondTensor.xy=-(cy2*cz*kCondT*sz) + kz*(cx*sx*sy - cz*sx2*sz - cx2*cz*sy2*sz) + kCondA*(cx*sx*sy + cx2*cz*sz + cz*sx2*sy2*sz);
-		t->kCondTensor.xz=cy*cz*kCondT*sy + cy*kz*(-(cx2*cz*sy) + cx*sx*sz) + cy*kCondA*(cz*sx2*sy + cx*sx*sz);
-		
-		t->kCondTensor.yy=cy2*kCondT*sz2 + kz*(-(cz2*sx2) + cx2*sy2*sz2) + kCondA*(cx2*cz2 - sx2*sy2*sz2);
-		t->kCondTensor.yz=-(cy*kCondT*sy*sz) + cy*kz*(cx*cz*sx + cx2*sy*sz) + cy*kCondA*(cx*cz*sx - sx2*sy*sz);
-		
-		t->kCondTensor.zz=cx2*cy2*kz - cy2*kCondA*sx2 + kCondT*sy2;
+		double kz = GetKcondZ();
+		Matrix3 kRT = Matrix3(kCondT*Rtot(0,0),kCondT*Rtot(1,0),kCondT*Rtot(2,0),
+							  kCondA*Rtot(0,1),kCondA*Rtot(1,1),kCondA*Rtot(2,1),
+							  kz*Rtot(0,2),kz*Rtot(1,2),kz*Rtot(2,2));
+		t->kCondTensor.xx = Rtot(0,0)*kRT(0,0) + Rtot(0,1)*kRT(1,0) + Rtot(0,2)*kRT(2,0);
+		t->kCondTensor.xy = Rtot(0,0)*kRT(0,1) + Rtot(0,1)*kRT(1,1) + Rtot(0,2)*kRT(2,1);
+		t->kCondTensor.xz = Rtot(0,0)*kRT(0,2) + Rtot(0,1)*kRT(1,2) + Rtot(0,2)*kRT(2,2);
+		t->kCondTensor.yy = Rtot(1,0)*kRT(0,1) + Rtot(1,1)*kRT(1,1) + Rtot(1,2)*kRT(2,1);
+		t->kCondTensor.yz = Rtot(1,0)*kRT(0,2) + Rtot(1,1)*kRT(1,2) + Rtot(1,2)*kRT(2,2);
+		t->kCondTensor.zz = Rtot(2,0)*kRT(0,2) + Rtot(2,1)*kRT(1,2) + Rtot(2,2)*kRT(2,2);
 	}
 }
 #endif

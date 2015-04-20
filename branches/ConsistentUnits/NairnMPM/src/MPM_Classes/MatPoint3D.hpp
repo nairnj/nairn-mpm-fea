@@ -49,6 +49,7 @@ class MatPoint3D : public MPMBase
 		virtual void GetCPDINodesAndWeights(int);
 		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *);
 		virtual Matrix3 GetInitialRotation(void);
+		virtual Matrix3 GetElasticBiotStrain(void);
 };
 
 #endif

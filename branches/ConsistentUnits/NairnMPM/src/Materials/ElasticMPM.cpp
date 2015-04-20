@@ -62,13 +62,26 @@ void Elastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,
 	ElasticProperties *p = GetElasticPropertiesPointer(properties);
 	
     // residual strains (thermal and moisture) in material axes
-	double exxr = p->alpha[0]*res->dT;
-	double eyyr = p->alpha[1]*res->dT;
-	double ezzr = p->alpha[2]*res->dT;
-	if(DiffusionTask::active)
-	{	exxr += p->beta[0]*res->dC;
-		eyyr += p->beta[1]*res->dC;
-		ezzr += p->beta[2]*res->dC;
+	double exxr,eyyr,ezzr;
+	if(np==THREED_MPM)
+	{	exxr = p->alpha[0]*res->dT;
+		eyyr = p->alpha[1]*res->dT;
+		ezzr = p->alpha[2]*res->dT;
+		if(DiffusionTask::active)
+		{	exxr += p->beta[0]*res->dC;
+			eyyr += p->beta[1]*res->dC;
+			ezzr += p->beta[2]*res->dC;
+		}
+	}
+	else
+	{	exxr = p->alpha[1]*res->dT;
+		eyyr = p->alpha[2]*res->dT;
+		ezzr = p->alpha[4]*res->dT;
+		if(DiffusionTask::active)
+		{	exxr += p->beta[1]*res->dC;
+			eyyr += p->beta[2]*res->dC;
+			ezzr += p->beta[4]*res->dC;
+		}
 	}
 	Matrix3 er = Matrix3(exxr,0.,0.,eyyr,ezzr);
 	

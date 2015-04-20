@@ -200,7 +200,7 @@ void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
 	
 	// store B elastic
 	Tensor *sp=mptr->GetStressTensor();
-    Tensor *B = mptr->GetElasticLeftCauchyTensor();
+    Tensor *B = mptr->GetAltStrainTensor();
 	B->xx = Belas(0,0);
 	B->yy = Belas(1,1);
 	B->zz = Belas(2,2);

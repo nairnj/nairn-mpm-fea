@@ -80,6 +80,11 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
 		thisBuffer=6;
     }
 	
+    else if(strcmp(pName,"defgrad")==0)
+    {	q=VTK_DEFGRAD;
+		thisBuffer=9;
+    }
+	
     else if(strcmp(pName,"totalstrain")==0)
     {	q=VTK_TOTALSTRAIN;
 		thisBuffer=6;
@@ -110,7 +115,7 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
 	
     else if(strcmp(pName,"volumegradient")==0)
     {   q=VTK_VOLUMEGRADIENT;
-        // no buffer since no need to extrapolate
+        // no buffer since no need to extrapolate, but need to read argument as material number
 		if(intIndex>=MAX_INTEGER_ARGUMENTS)
 		{	cout << "Too many parameter arguments in VTKArchive options" << endl;
 			return NULL;
@@ -124,6 +129,7 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
     else if(strcmp(pName,"reactionforce")==0)
     {	q=VTK_BCFORCES;
 		// no buffer since no need to extrapolate
+        // currently not implement (or documented) and gets all zeros
 		thisBuffer=-3;
     }
 	
@@ -238,13 +244,13 @@ CustomTask *VTKArchive::Initialize(void)
 		cout << name;
         if(quantity[q]==VTK_VOLUMEGRADIENT)
         {   if(qparam[q]<0)
-			{   cout << endl;
-				throw CommonException("VTKArchive volumegradient must be set to an available material","VTKArchive::Initialize");
-			}
+            {   cout << endl;
+                throw CommonException("VTKArchive volumegradient must be set to an available material","VTKArchive::Initialize");
+            }
             int matnum = intArgs[qparam[q]];
             cout << " (material #" << matnum << ")";
             len+=14;		// this is for matnum<10, but exact length does not matter
-			if(matnum<1 || matnum>nmat)
+            if(matnum<1 || matnum>nmat)
             {   cout << endl;
                 throw CommonException("VTKArchive volumegradient must be for an available material","VTKArchive::Initialize");
             }
@@ -340,58 +346,131 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 	double *vtkquant=vtk[ndmi->num];
 	double theWt=1.,rho,rho0,se;
 	Tensor *ten=NULL,sp;
-	
-	for(q=0;q<quantity.size();q++)
-	{	switch(quantity[q])
-		{	case VTK_STRESS:
+    
+    // this loop for non-rigid particles
+    for(q=0;q<quantity.size();q++)
+    {	switch(quantity[q])
+        {	case VTK_STRESS:
             case VTK_PRESSURE:
             case VTK_EQUIVSTRESS:
                 rho0=theMaterials[mpnt->MatID()]->rho;
                 rho = rho0/theMaterials[mpnt->MatID()]->GetCurrentRelativeVolume(mpnt);
-				theWt=wt*rho;
+                theWt = wt*rho*UnitsController::Scaling(1.e-6);			// Legacy convert to MPa
                 sp = mpnt->ReadStressTensor();
-                if(quantity[q]!=VTK_STRESS)
-                {   theWt *= UnitsController::Scaling(1.e-6);	// Legacy to MPa
-                    switch(quantity[q])
-                    {	case VTK_PRESSURE:
-                            // pressure
-                            *vtkquant += -theWt*(sp.xx+sp.yy+sp.zz)/3.;
-                            break;
-                        case VTK_EQUIVSTRESS:
-                            // equivalent or vonmises stress = sqrt(3 J2)
-                            se = pow(sp.xx-sp.yy,2.) + pow(sp.yy-sp.zz,2.) + pow(sp.xx-sp.zz,2.);
-                            se += 6.*sp.xy*sp.xy;
-                            if(fmobj->IsThreeD()) se += 6.*(sp.xz*sp.xz + sp.yz*sp.yz);
-                            *vtkquant += theWt*sqrt(0.5*se);
-                            break;
-                        default:
-                            break;
-                    }
-                    vtkquant++;
-                    break;
-                }
-                ten = &sp;
-			case VTK_STRAIN:
-				if(quantity[q]==VTK_STRAIN)
-				{	theWt=wt;
-					ten=mpnt->GetStrainTensor();
+				switch(quantity[q])
+				{	case VTK_PRESSURE:
+						// pressure
+						*vtkquant += -theWt*(sp.xx+sp.yy+sp.zz)/3.;
+						vtkquant++;
+						break;
+					case VTK_EQUIVSTRESS:
+						// equivalent or vonmises stress = sqrt(3 J2)
+						se = pow(sp.xx-sp.yy,2.) + pow(sp.yy-sp.zz,2.) + pow(sp.xx-sp.zz,2.);
+						se += 6.*sp.xy*sp.xy;
+						if(fmobj->IsThreeD()) se += 6.*(sp.xz*sp.xz + sp.yz*sp.yz);
+						*vtkquant += theWt*sqrt(0.5*se);
+						vtkquant++;
+						break;
+					case VTK_STRESS:
+						vtkquant[0]+=theWt*sp.xx;
+						vtkquant[1]+=theWt*sp.yy;
+						vtkquant[2]+=theWt*sp.zz;
+						vtkquant[3]+=theWt*sp.xy;
+						if(fmobj->IsThreeD())
+						{	vtkquant[4]+=theWt*sp.xz;
+							vtkquant[5]+=theWt*sp.yz;
+						}
+						vtkquant+=6;
+						break;
 				}
-			case VTK_PLASTICSTRAIN:
-				if(quantity[q]==VTK_PLASTICSTRAIN)
-				{	theWt=wt;
-					ten=mpnt->GetPlasticStrainTensor();
+                break;
+				
+			// plastic strain (absolute in Legacy)
+			// New method small strain = archived plastic strain
+			// New method hyperelastic = Biot strain from F - Biot strain from elastic B in plastic strain
+			// Membrane = 0
+            case VTK_PLASTICSTRAIN:
+#ifdef USE_PSEUDOHYPERELASTIC
+				if(theMaterials[mpnt->MatID()]->AltStrainContains()==ENG_BIOT_PLASTIC_STRAIN)
+				{	ten = mpnt->GetAltStrainTensor();
+					vtkquant[0] += wt*ten->xx;
+					vtkquant[1] += wt*ten->yy;
+					vtkquant[2] += wt*ten->zz;
+					vtkquant[3] += 0.5*wt*ten->xy;
+					if(fmobj->IsThreeD())
+					{	vtkquant[4] += 0.5*wt*ten->xz;
+						vtkquant[5] += 0.5*wt*ten->yz;
+					}
 				}
-				vtkquant[0]+=theWt*ten->xx;
-				vtkquant[1]+=theWt*ten->yy;
-				vtkquant[2]+=theWt*ten->zz;
-				vtkquant[3]+=theWt*ten->xy;
+				else if(theMaterials[mpnt->MatID()]->AltStrainContains()==LEFT_CAUCHY_ELASTIC_B_STRAIN)
+				{	Matrix3 biotTot = mpnt->GetBiotStrain();
+					Matrix3 biotElastic = mpnt->GetElasticBiotStrain();
+					vtkquant[0] += wt*(biotTot(0,0)-biotElastic(0,0));
+					vtkquant[1] += wt*(biotTot(1,1)-biotElastic(1,1));
+					vtkquant[2] += wt*(biotTot(2,2)-biotElastic(2,2));
+					vtkquant[3] += wt*(biotTot(0,1)-biotElastic(0,1));
+					if(fmobj->IsThreeD())
+					{	vtkquant[4] += wt*(biotTot(0,2)-biotElastic(0,2));
+						vtkquant[5] += wt*(biotTot(1,2)-biotElastic(1,2));
+					}
+				}
+#else
+				ten=mpnt->GetAltStrainTensor();
+				vtkquant[0] += wt*ten->xx;
+				vtkquant[1] += wt*ten->yy;
+				vtkquant[2] += wt*ten->zz;
+				vtkquant[3] += 0.5*wt*ten->xy;
 				if(fmobj->IsThreeD())
-				{	vtkquant[4]+=theWt*ten->xz;
-					vtkquant[5]+=theWt*ten->yz;
+				{	vtkquant[4] += 0.5*wt*ten->xz;
+					vtkquant[5] += 0.5*wt*ten->yz;
 				}
-				vtkquant+=6;
-				break;
+#endif
+                vtkquant+=6;
+                break;
             
+			// Elastic strain (absolute in Legacy)
+			// New method small strain = Biot strain - archived plastic strain
+			// New method hyperelastic = Biot strain from elastic B in plastic strain
+			// Membranes = 0
+            case VTK_STRAIN:
+#ifdef USE_PSEUDOHYPERELASTIC
+				if(theMaterials[mpnt->MatID()]->AltStrainContains()==ENG_BIOT_PLASTIC_STRAIN)
+				{	Matrix3 biot = mpnt->GetBiotStrain();
+					ten = mpnt->GetAltStrainTensor();
+					vtkquant[0] += wt*(biot(0,0)-ten->xx);
+					vtkquant[1] += wt*(biot(1,1)-ten->yy);
+					vtkquant[2] += wt*(biot(2,2)-ten->zz);
+					vtkquant[3] += wt*(biot(0,1)-0.5*ten->xy);
+					if(fmobj->IsThreeD())
+					{	vtkquant[4] += wt*(biot(0,2)-0.5*ten->xz);
+						vtkquant[5] += wt*(biot(1,2)-0.5*ten->yz);
+					}
+				}
+				else if(theMaterials[mpnt->MatID()]->AltStrainContains()==LEFT_CAUCHY_ELASTIC_B_STRAIN)
+				{	Matrix3 biot = mpnt->GetElasticBiotStrain();
+					vtkquant[0] += wt*biot(0,0);
+					vtkquant[1] += wt*biot(1,1);
+					vtkquant[2] += wt*biot(2,2);
+					vtkquant[3] += wt*biot(0,1);
+					if(fmobj->IsThreeD())
+					{	vtkquant[4] += wt*biot(0,2);
+						vtkquant[5] += wt*biot(1,2);
+					}
+				}
+#else
+				ten=mpnt->GetStrainTensor();
+				vtkquant[0] += wt*ten->xx;
+				vtkquant[1] += wt*ten->yy;
+				vtkquant[2] += wt*ten->zz;
+				vtkquant[3] += 0.5*wt*ten->xy;
+				if(fmobj->IsThreeD())
+				{	vtkquant[4] += 0.5*wt*ten->xz;
+					vtkquant[5] += 0.5*wt*ten->yz;
+				}
+#endif
+                vtkquant+=6;
+                break;
+				
             case VTK_RELDELTAV:
                 // Delta V/V0 - small or large strain
                 se = mpnt->GetRelativeVolume();
@@ -400,6 +479,19 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
                 break;
             
             case VTK_EQUIVSTRAIN:
+#ifdef USE_PSEUDOHYPERELASTIC
+			{	Matrix3 biot = mpnt->GetBiotStrain();
+				double tre = (biot(0,0)+biot(1,1)+biot(2,2))/3.;
+                double exx = biot(0,0) - tre;
+                double eyy = biot(1,1) - tre;
+                double ezz = biot(2,2) - tre;
+                se = exx*exx + eyy*eyy * ezz*ezz + 2.0*biot(0,1)*biot(0,1);
+                if(fmobj->IsThreeD()) se += 2.0*(biot(0,2)*biot(0,2) + biot(1,2)*biot(1,2));
+                *vtkquant += wt*sqrt(2.*se/3.);
+                vtkquant++;
+                break;
+            }
+#else
             {   ten=mpnt->GetStrainTensor();
                 double tre = (ten->xx+ten->yy+ten->zz)/3.;
                 double exx = ten->xx - tre;
@@ -411,17 +503,32 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
                 vtkquant++;
                 break;
             }
+#endif
                 
-			case VTK_TOTALSTRAIN:
-				ten=mpnt->GetStrainTensor();
-				vtkquant[0] += wt*ten->xx;
-				vtkquant[1] += wt*ten->yy;
-				vtkquant[2] += wt*ten->zz;
-				vtkquant[3] += wt*ten->xy;
+			// total strain (absolute in Legacy)
+			// New method, small strain and hyperelastic = Biot strain from F
+            case VTK_TOTALSTRAIN:
+			{
+#ifdef USE_PSEUDOHYPERELASTIC
+				Matrix3 biot = mpnt->GetBiotStrain();
+				vtkquant[0] += wt*biot(0,0);
+				vtkquant[1] += wt*biot(1,1);
+				vtkquant[2] += wt*biot(2,2);
+				vtkquant[3] += wt*biot(0,1);
 				if(fmobj->IsThreeD())
-				{	vtkquant[4] += wt*ten->xz;
-					vtkquant[5] += wt*ten->yz;
+				{	vtkquant[4] += wt*biot(0,2);
+					vtkquant[5] += wt*biot(1,2);
 				}
+#else
+                ten=mpnt->GetStrainTensor();
+                vtkquant[0] += wt*ten->xx;
+                vtkquant[1] += wt*ten->yy;
+                vtkquant[2] += wt*ten->zz;
+                vtkquant[3] += wt*ten->xy;
+                if(fmobj->IsThreeD())
+                {	vtkquant[4] += wt*ten->xz;
+                    vtkquant[5] += wt*ten->yz;
+                }
                 if(mpnt->PartitionsElasticAndPlasticStrain())
                 {   ten=mpnt->GetStrainTensor();
                     vtkquant[0] += wt*ten->xx;
@@ -433,54 +540,71 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
                         vtkquant[5] += wt*ten->yz;
                     }
                 }
-				vtkquant+=6;
-				break;
+#endif
+                vtkquant+=6;
+                break;
+			}
+				
+			case VTK_DEFGRAD:
+			{	Matrix3 F = mpnt->GetDeformationGradientMatrix();
+				vtkquant[0] += wt*F(0,0);
+                vtkquant[1] += wt*F(0,1);
+                vtkquant[2] += wt*F(0,2);
+				vtkquant[3] += wt*F(1,0);
+                vtkquant[4] += wt*F(1,1);
+                vtkquant[5] += wt*F(1,2);
+ 				vtkquant[6] += wt*F(2,0);
+                vtkquant[7] += wt*F(2,1);
+                vtkquant[8] += wt*F(2,2);
+                vtkquant+=9;
+                break;
+			}
 
-			case VTK_DISPLACEMENT:
-				vtkquant[0]+=wt*(mpnt->pos.x-mpnt->origpos.x);
-				vtkquant[1]+=wt*(mpnt->pos.y-mpnt->origpos.y);
-				vtkquant[2]+=wt*(mpnt->pos.z-mpnt->origpos.z);
-				vtkquant+=3;
-				break;
-			
-			case VTK_VELOCITY:
-				vtkquant[0]+=wt*mpnt->vel.x;
-				vtkquant[1]+=wt*mpnt->vel.y;
-				vtkquant[2]+=wt*mpnt->vel.z;
-				vtkquant+=3;
-				break;
-				
-			case VTK_CONCENTRATION:
-				theWt=wt*theMaterials[mpnt->MatID()]->concSaturation;
-				*vtkquant+=theWt*mpnt->pConcentration;
-				vtkquant++;
-				break;
-				
-			case VTK_WORKENERGY:
-				*vtkquant+=wt*mpnt->mp*mpnt->GetWorkEnergy()*UnitsController::Scaling(1.e-9);
-				vtkquant++;
-				break;
-				
-			case VTK_PLASTICENERGY:
-				*vtkquant+=wt*mpnt->mp*mpnt->GetPlastEnergy()*UnitsController::Scaling(1.e-9);
-				vtkquant++;
-				break;
-				
+            case VTK_DISPLACEMENT:
+                vtkquant[0]+=wt*(mpnt->pos.x-mpnt->origpos.x);
+                vtkquant[1]+=wt*(mpnt->pos.y-mpnt->origpos.y);
+                vtkquant[2]+=wt*(mpnt->pos.z-mpnt->origpos.z);
+                vtkquant+=3;
+                break;
+            
+            case VTK_VELOCITY:
+                vtkquant[0]+=wt*mpnt->vel.x;
+                vtkquant[1]+=wt*mpnt->vel.y;
+                vtkquant[2]+=wt*mpnt->vel.z;
+                vtkquant+=3;
+                break;
+                
+            case VTK_CONCENTRATION:
+                theWt=wt*theMaterials[mpnt->MatID()]->concSaturation;
+                *vtkquant+=theWt*mpnt->pConcentration;
+                vtkquant++;
+                break;
+                
+            case VTK_WORKENERGY:
+                *vtkquant+=wt*mpnt->mp*mpnt->GetWorkEnergy()*UnitsController::Scaling(1.e-9);
+                vtkquant++;
+                break;
+                
+            case VTK_PLASTICENERGY:
+                *vtkquant+=wt*mpnt->mp*mpnt->GetPlastEnergy()*UnitsController::Scaling(1.e-9);
+                vtkquant++;
+                break;
+                
             case VTK_HEATENERGY:
                 *vtkquant+=wt*mpnt->mp*mpnt->GetHeatEnergy()*UnitsController::Scaling(1.e-9);
                 vtkquant++;
                 break;
                 
-			case VTK_MATERIAL:
-				*vtkquant+=wt*((double)mpnt->MatID()+1.);
-				vtkquant++;
-				break;
-				
-			default:
-				// skip those not extrapolated
-				break;
-		}
-	}
+            case VTK_MATERIAL:
+                *vtkquant+=wt*((double)mpnt->MatID()+1.);
+                vtkquant++;
+                break;
+            
+            default:
+                // skip those not extrapolated
+                break;
+        }
+    }
 	
     return nextTask;
 }

@@ -263,7 +263,7 @@ void AnisoPlasticity::ElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 er
 	
 	Matrix3 strial;
 	Matrix3 deeff = de-er;
-	Tensor *eplast=mptr->GetPlasticStrainTensor();
+	Tensor *eplast=mptr->GetAltStrainTensor();
 	Matrix3 etn;
 	if(np==THREED_MPM)
 	{	Matrix3 stnm1(sp->xx,sp->xy,sp->xz,sp->xy,sp->yy,sp->yz,sp->xz,sp->yz,sp->zz);
@@ -482,7 +482,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
     double deyyp = lambda*p->dfds.yy;
     double dgxyp = lambda*p->dfds.xy;
 	double dezzp = lambda*p->dfds.zz;
-	Tensor *eplast = mptr->GetPlasticStrainTensor();
+	Tensor *eplast = mptr->GetAltStrainTensor();
     eplast->xx += dexxp;
     eplast->yy += deyyp;
     eplast->xy += dgxyp;
@@ -694,7 +694,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
     double dgyzp=lambda*p->dfds.yz;
     double dgxzp=lambda*p->dfds.xz;
     double dgxyp=lambda*p->dfds.xy;
-	Tensor *eplast=mptr->GetPlasticStrainTensor();
+	Tensor *eplast=mptr->GetAltStrainTensor();
     eplast->xx+=dexxp;
     eplast->yy+=deyyp;
 	eplast->zz+=dezzp;
@@ -1003,9 +1003,6 @@ double AnisoPlasticity::GetFkFromLambdak(MPMBase *mptr,Matrix3 &strial,Matrix3 &
 	return GetMagnitudeHill(stk,np) - GetYield(p);
 }
 
-// plastic strain needed to get deformation gradient for this material class
-bool AnisoPlasticity::PartitionsElasticAndPlasticStrain(void) const { return false; }
-
 #else
 
 #pragma mark AnisoPlasticity::Old Hill Terms
@@ -1292,4 +1289,8 @@ double AnisoPlasticity::GetFkFromLambdak(MPMBase *mptr,Tensor *strial,Tensor *st
 bool AnisoPlasticity::PartitionsElasticAndPlasticStrain(void) const { return true; }
 
 #endif
+
+// store plastic strain in alt strain
+int AnisoPlasticity::AltStrainContains(void) const { return ENG_BIOT_PLASTIC_STRAIN; }
+
 

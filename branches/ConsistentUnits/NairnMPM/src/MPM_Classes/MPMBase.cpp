@@ -261,11 +261,13 @@ double MPMBase::GetUnscaledVolume(void)
 // Axisymmetric particles override to return mass/rp to get uniform particle mass
 double MPMBase::GetMassForGradient(void) { return mp; }
 
+#ifndef USE_PSEUDOHYPERELASTIC
 // return if mterial for this particle includes plastic strainin gradient or if
 // entire deformation is in the elastic strain
 bool MPMBase::PartitionsElasticAndPlasticStrain(void) const
 {   return theMaterials[MatID()]->PartitionsElasticAndPlasticStrain();
 }
+#endif
 
 // anglez0 is initial z cw orientation angle (2D and 3D z,y,x scheme)
 double MPMBase::GetRotationZ(void) { return anglez0-0.5*wrot.xy; }
@@ -372,8 +374,7 @@ double MPMBase::GetPressure(void) { return pressure; }
 // These methods return pointer to the same symmetric tensor. A material class must
 // decide how it will use the eplast tensor variable and use only that one purpose.
 // The only reason for two names is to make the code more readable
-Tensor *MPMBase::GetPlasticStrainTensor(void) { return &eplast; }
-Tensor *MPMBase::GetElasticLeftCauchyTensor(void) { return &eplast; }
+Tensor *MPMBase::GetAltStrainTensor(void) { return &eplast; }
 
 // history data
 char *MPMBase::GetHistoryPtr(void) { return matData; }

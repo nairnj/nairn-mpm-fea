@@ -88,6 +88,7 @@ int GlobalQuantity::DecodeGlobalQuantity(char *quant,int *hcode)
 		theQuant=AVG_SXZ;
 	else if(strcmp(quant,"syz")==0)
 		theQuant=AVG_SYZ;
+	
 	else if(strcmp(quant,"exx")==0 || strcmp(quant,"eRR")==0)
 		theQuant=AVG_EXX;
 	else if(strcmp(quant,"eyy")==0 || strcmp(quant,"eZZ")==0)
@@ -100,6 +101,26 @@ int GlobalQuantity::DecodeGlobalQuantity(char *quant,int *hcode)
 		theQuant=AVG_EXZ;
 	else if(strcmp(quant,"eyz")==0)
 		theQuant=AVG_EYZ;
+	
+	else if(strcmp(quant,"Fxx")==0 || strcmp(quant,"FRR")==0)
+		theQuant=AVG_FXX;
+	else if(strcmp(quant,"Fxy")==0 || strcmp(quant,"FRZ")==0)
+		theQuant=AVG_FXY;
+	else if(strcmp(quant,"Fxz")==0)
+		theQuant=AVG_FXZ;
+	else if(strcmp(quant,"Fyx")==0 || strcmp(quant,"FZR")==0)
+		theQuant=AVG_FYX;
+	else if(strcmp(quant,"Fyy")==0 || strcmp(quant,"FZZ")==0)
+		theQuant=AVG_FYY;
+	else if(strcmp(quant,"Fyz")==0)
+		theQuant=AVG_FYZ;
+	else if(strcmp(quant,"Fzx")==0)
+		theQuant=AVG_FZX;
+	else if(strcmp(quant,"Fzy")==0)
+		theQuant=AVG_FZY;
+	else if(strcmp(quant,"Fzz")==0 || strcmp(quant,"FTT")==0)
+		theQuant=AVG_FZZ;
+	
 	else if(strcmp(quant,"exxe")==0 || strcmp(quant,"eRRe")==0)
 		theQuant=AVG_EXXE;
 	else if(strcmp(quant,"eyye")==0 || strcmp(quant,"eZZe")==0)
@@ -112,6 +133,7 @@ int GlobalQuantity::DecodeGlobalQuantity(char *quant,int *hcode)
 		theQuant=AVG_EXZE;
 	else if(strcmp(quant,"eyze")==0)
 		theQuant=AVG_EYZE;
+	
 	else if(strcmp(quant,"exxp")==0 || strcmp(quant,"eRRp")==0)
 		theQuant=AVG_EXXP;
 	else if(strcmp(quant,"eyyp")==0 || strcmp(quant,"eZZp")==0)
@@ -124,6 +146,7 @@ int GlobalQuantity::DecodeGlobalQuantity(char *quant,int *hcode)
 		theQuant=AVG_EXZP;
 	else if(strcmp(quant,"eyzp")==0)
 		theQuant=AVG_EYZP;
+	
 	else if(strcmp(quant,"Kinetic Energy")==0)
 		theQuant=KINE_ENERGY;
 	else if(strcmp(quant,"Grid Kinetic Energy")==0)
@@ -144,18 +167,21 @@ int GlobalQuantity::DecodeGlobalQuantity(char *quant,int *hcode)
 		theQuant=WORK_ENERGY;
 	else if(strcmp(quant,"Plastic Energy")==0)
 		theQuant=PLAS_ENERGY;
+	
 	else if(strcmp(quant,"velx")==0 || strcmp(quant,"velR")==0)
 		theQuant=AVG_VELX;
 	else if(strcmp(quant,"vely")==0 || strcmp(quant,"velZ")==0)
 		theQuant=AVG_VELY;
 	else if(strcmp(quant,"velz")==0)
 		theQuant=AVG_VELZ;
+	
 	else if(strcmp(quant,"dispx")==0 || strcmp(quant,"dispR")==0)
 		theQuant=AVG_DISPX;
 	else if(strcmp(quant,"dispy")==0 || strcmp(quant,"dispZ")==0)
 		theQuant=AVG_DISPY;
 	else if(strcmp(quant,"dispz")==0)
 		theQuant=AVG_DISPZ;
+	
 	else if(strcmp(quant,"temp")==0)
 		theQuant=AVG_TEMP;
 	else if(strcmp(quant,"concentration")==0)
@@ -170,12 +196,14 @@ int GlobalQuantity::DecodeGlobalQuantity(char *quant,int *hcode)
 		theQuant=GRID_ALPHA;
 	else if(strcmp(quant,"palpha")==0)
 		theQuant=PARTICLE_ALPHA;
+	
 	else if(strcmp(quant,"contactx")==0 || strcmp(quant,"contactR")==0)
 		theQuant=TOT_FCONX;
 	else if(strcmp(quant,"contacty")==0 || strcmp(quant,"contactZ")==0)
 		theQuant=TOT_FCONY;
 	else if(strcmp(quant,"contactz")==0)
 		theQuant=TOT_FCONZ;
+	
 	else if(strcmp(quant,"reactionx")==0 || strcmp(quant,"reactionR")==0)
 		theQuant=TOT_REACTX;
 	else if(strcmp(quant,"reactiony")==0 || strcmp(quant,"reactionZ")==0)
@@ -257,6 +285,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		// Elastic strain (% in Legacy)
 		// New method small strain = Biot strain - archived plastic strain
 		// New method hyperelastic = Biot strain from elastic B in plastic strain
+		// Membranes = 0
 		case AVG_EZZE:
 			qid=ZZ;
 	    case AVG_EXZE:
@@ -273,9 +302,15 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{
 #ifdef USE_PSEUDOHYPERELASTIC
-					Tensor *eplast=mpm[p]->GetPlasticStrainTensor();
-					Matrix3 biot = mpm[p]->GetBiotStrain();
-					value += (biot.get(qid,2.) - Tensor_i(eplast,qid));
+					if(theMaterials[mpm[p]->MatID()]->AltStrainContains()==ENG_BIOT_PLASTIC_STRAIN)
+					{	Matrix3 biot = mpm[p]->GetBiotStrain();
+						Tensor *eplast=mpm[p]->GetAltStrainTensor();
+						value += (biot.get(qid,2.) - Tensor_i(eplast,qid));
+					}
+					else if(theMaterials[mpm[p]->MatID()]->AltStrainContains()==LEFT_CAUCHY_ELASTIC_B_STRAIN)
+					{	Matrix3 biot = mpm[p]->GetElasticBiotStrain();
+						value += biot.get(qid,2.);
+					}
 #else
 					Tensor *ep=mpm[p]->GetStrainTensor();
 				    value+=Tensor_i(ep,qid);
@@ -290,6 +325,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 		// plastic strain (% in Legacy)
 		// New method small strain = archived plastic strain
 		// New method hyperelastic = Biot strain from F - Biot strain from elastic B in plastic strain
+		// Membrane = 0
 		case AVG_EZZP:
 			qid=ZZ;
 		case AVG_EXZP:
@@ -306,10 +342,17 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			{	if(IncludeThisMaterial(mpm[p]->MatID()))
 				{
 #ifdef USE_PSEUDOHYPERELASTIC
-					Tensor *eplast=mpm[p]->GetPlasticStrainTensor();
-					value+=Tensor_i(eplast,qid);
+					if(theMaterials[mpm[p]->MatID()]->AltStrainContains()==ENG_BIOT_PLASTIC_STRAIN)
+					{	Tensor *eplast=mpm[p]->GetAltStrainTensor();
+						value+=Tensor_i(eplast,qid);
+					}
+					else if(theMaterials[mpm[p]->MatID()]->AltStrainContains()==LEFT_CAUCHY_ELASTIC_B_STRAIN)
+					{	Matrix3 biotTot = mpm[p]->GetBiotStrain();
+						Matrix3 biotElastic = mpm[p]->GetElasticBiotStrain();
+						value += (biotTot.get(qid,2.) - biotElastic.get(qid,2.)) ;
+					}
 #else
-					Tensor *eplast=mpm[p]->GetPlasticStrainTensor();
+					Tensor *eplast=mpm[p]->GetAltStrainTensor();
 					value+=Tensor_i(eplast,qid);
 #endif
 					numAvged++;
@@ -343,7 +386,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 #else
 					Tensor *ep=mpm[p]->GetStrainTensor();
                     if(theMaterials[mpm[p]->MatID()]->PartitionsElasticAndPlasticStrain())
-					{   Tensor *eplast=mpm[p]->GetPlasticStrainTensor();
+					{   Tensor *eplast=mpm[p]->GetAltStrainTensor();
                         value += Tensor_i(ep,qid)+Tensor_i(eplast,qid);
                     }
                     else
@@ -356,6 +399,37 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			value *= UnitsController::Scaling(100.);
 			break;
 		
+			// total strain (% in Legacy)
+			// New method small strain = Biot strain from F
+			// New method hyperelastic = Biot strain from F
+		case AVG_FZZ:
+			qid=ZZ;
+		case AVG_FXZ:
+			if(quantity==AVG_FXZ) qid=XZ;
+		case AVG_FYZ:
+			if(quantity==AVG_FYZ) qid=YZ;
+		case AVG_FXX:
+			if(quantity==AVG_FXX) qid=XX;
+		case AVG_FYY:
+			if(quantity==AVG_FYY) qid=YY;
+		case AVG_FXY:
+			if(quantity==AVG_FXY) qid=XY;
+		case AVG_FYX:
+			if(quantity==AVG_FYX) qid=YX;
+		case AVG_FZY:
+			if(quantity==AVG_FZY) qid=ZY;
+		case AVG_FZX:
+			if(quantity==AVG_FZX) qid=ZX;
+			for(p=0;p<nmpms;p++)
+			{	if(IncludeThisMaterial(mpm[p]->MatID()))
+				{	Matrix3 F = mpm[p]->GetDeformationGradientMatrix();
+					value += F.get(qid,1.);
+					numAvged++;
+				}
+			}
+			if(numAvged>0) value/=(double)numAvged;
+			value *= UnitsController::Scaling(100.);
+			break;
 		// energies (Volume*energy) (J in Legacy)
 		case KINE_ENERGY:
 		case WORK_ENERGY:

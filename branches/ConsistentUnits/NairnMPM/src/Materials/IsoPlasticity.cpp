@@ -203,7 +203,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	dels.xy = p->Gred*dgxy;
 	
 	// incremental rotate of prior strain and stress
-	Tensor *eplast=mptr->GetPlasticStrainTensor();
+	Tensor *eplast=mptr->GetAltStrainTensor();
 	Matrix3 etn(eplast->xx,0.5*eplast->xy,0.5*eplast->xy,eplast->yy,eplast->zz);
 	Matrix3 etr = etn.RMRT(*dR);
 	Matrix3 stn(sp->xx,sp->xy,sp->xy,sp->yy,sp->zz);
@@ -397,7 +397,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	dsig[XY] = p->Gred*dgxy;
 	
 	// incremental rotate of prior strain
-	Tensor *eplast=mptr->GetPlasticStrainTensor();
+	Tensor *eplast=mptr->GetAltStrainTensor();
 	Matrix3 etn(eplast->xx,0.5*eplast->xy,0.5*eplast->xz,0.5*eplast->xy,eplast->yy,0.5*eplast->yz,
 				0.5*eplast->xz,0.5*eplast->yz,eplast->zz);
 	Matrix3 etr = etn.RMRT(*dR);
@@ -685,7 +685,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     double deyyp = lambdak*dfds.yy;
 	double dezzp = lambdak*dfds.zz;
     double dgxyp = 2.*lambdak*dfds.xy;     // 2 for engineering plastic shear strain
-	Tensor *eplast=mptr->GetPlasticStrainTensor();
+	Tensor *eplast=mptr->GetAltStrainTensor();
 	
 	// add to particle plastic strain
     eplast->xx += dexxp;
@@ -838,7 +838,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     double dgxyp = 2.*lambdak*dfds.xy;     // 2 for engineering plastic shear strain
     double dgxzp = 2.*lambdak*dfds.xz;     // 2 for engineering plastic shear strain
     double dgyzp = 2.*lambdak*dfds.yz;     // 2 for engineering plastic shear strain
-	Tensor *eplast=mptr->GetPlasticStrainTensor();
+	Tensor *eplast=mptr->GetAltStrainTensor();
 	
 	// add to particle plastic strain
 	eplast->xx += dexxp;
@@ -987,19 +987,17 @@ double IsoPlasticity::GetHistory(int num,char *historyPtr) const
 {	return plasticLaw->GetHistory(num,historyPtr);
 }
 
+#ifndef USE_PSEUDOHYPERELASTIC
 // plastic strain needed to get deformation gradient for this material class
-bool IsoPlasticity::PartitionsElasticAndPlasticStrain(void) const
-{
-#ifdef USE_PSEUDOHYPERELASTIC
-	return false;
-#else
-	return true;
+bool IsoPlasticity::PartitionsElasticAndPlasticStrain(void) const { return true; }
 #endif
-}
 
 // Return the material tag
 int IsoPlasticity::MaterialTag(void) const { return ISOPLASTICITY; }
 
 // return unique, short name for this material
 const char *IsoPlasticity::MaterialType(void) const { return "Isotropic Elastic-Plastic"; }
+
+// store plastic strain in alt strain
+int IsoPlasticity::AltStrainContains(void) const { return ENG_BIOT_PLASTIC_STRAIN; }
 

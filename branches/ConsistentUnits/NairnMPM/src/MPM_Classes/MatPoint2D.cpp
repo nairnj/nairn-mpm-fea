@@ -258,6 +258,17 @@ Matrix3 MatPoint2D::GetElasticLeftCauchyMatrix(void)
 {   return Matrix3(eplast.xx,eplast.xy,eplast.xy,eplast.yy,eplast.zz);
 }
 
+#ifdef USE_PSEUDOHYPERELASTIC
+// get deformation gradient, which is stored in strain and rotation tensors
+void MatPoint2D::GetDeformationGradient(double F[][3]) const
+{
+	F[0][0] = 1. + ep.xx;
+	F[0][1] = 0.5*(ep.xy - wrot.xy);
+	F[1][0] = 0.5*(ep.xy + wrot.xy);
+	F[1][1] = 1. + ep.yy;
+	F[2][2] = 1. + ep.zz;
+}
+#else
 // get deformation gradient, which is stored in strain and rotation tensors
 void MatPoint2D::GetDeformationGradient(double F[][3]) const
 {
@@ -277,6 +288,31 @@ void MatPoint2D::GetDeformationGradient(double F[][3]) const
         F[1][1] = 1. + ep.yy;
         F[2][2] = 1. + ep.zz;
     }
+}
+#endif
+
+// Get R.sqrt(B).RT-I = V-I for elastic biot strain rotated into current particle orientation
+// Assume that elastic B matrix is in the alt strain tensor
+Matrix3 MatPoint2D::GetElasticBiotStrain(void)
+{	// Get Sqrt(B)
+	Tensor *B = GetAltStrainTensor();
+	Matrix3 Be = Matrix3(B->xx,B->xy,B->xy,B->yy,B->zz);
+	Vector lam = Be.Eigenvalues();
+	Matrix3 Q = Be.Eigenvectors(lam);
+	Matrix3 LamI = Matrix3(sqrt(lam.x),0.,0.,sqrt(lam.y),sqrt(lam.z));
+	Matrix3 U = LamI.RMRT(Q);
+	
+	// Get rotation matrix
+	Matrix3 F = GetDeformationGradientMatrix();
+	Matrix3 R;
+	Matrix3 Utot = F.RightDecompose(&R,NULL);
+	
+	// Rotate U to V, subtract I and return the result
+	Matrix3 V = U.RMRT(R);
+	V(0,0) -= 1.;
+	V(1,1) -= 1.;
+	V(2,2) -= 1.;
+	return V;
 }
 
 // get relative volume from det J for large deformation material laws

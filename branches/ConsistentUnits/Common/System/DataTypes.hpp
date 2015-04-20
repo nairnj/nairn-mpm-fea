@@ -22,7 +22,7 @@ typedef struct {
 } Vector;
 
 // index to the sig components
-enum { XX=0,YY,ZZ,YZ,XZ,XY};
+enum { XX=0,YY,ZZ,YZ,XZ,XY,ZY,ZX,YX};
 
 #ifdef MPM_CODE
 	// symmetric tensor in contracted notation (3D)

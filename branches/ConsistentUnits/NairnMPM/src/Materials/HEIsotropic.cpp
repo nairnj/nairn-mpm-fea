@@ -222,7 +222,7 @@ void HEIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int
     //cout << "  #yldred =   "<< yldred << "  Epred =   "<< Epred << "  gyld =   "<< gyld <<"  alpint =   "<< alpint<< "  ftrial =   "<< ftrial<< endl;
     
     // these will be needed for elastic or plastic
-    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
+    Tensor *pB = mptr->GetAltStrainTensor();
     
     //============================
     //  TEST

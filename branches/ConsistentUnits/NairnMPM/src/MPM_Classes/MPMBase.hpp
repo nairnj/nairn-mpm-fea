@@ -65,6 +65,7 @@ class MPMBase : public LinkedObject
 		virtual double FDiff(double,double,double,TransportProperties *) = 0;
 		virtual double KineticEnergy(void) = 0;
 		virtual Matrix3 GetDeformationGradientMatrix(void) const = 0;
+		virtual Matrix3 GetElasticBiotStrain(void) = 0;
 		virtual void SetDeformationGradientMatrix(Matrix3) = 0;
 		virtual Matrix3 GetDisplacementGradientMatrix(void) const = 0;
         virtual Matrix3 GetElasticLeftCauchyMatrix(void) = 0;
@@ -91,7 +92,9 @@ class MPMBase : public LinkedObject
 		void IncrementElementCrossings(void);
 		bool HasLeftTheGridBefore(void);
 		void SetHasLeftTheGridBefore(bool);
+#ifndef USE_PSEUDOHYPERELASTIC
         bool PartitionsElasticAndPlasticStrain(void) const;
+#endif
 		double GetRotationZ(void);
 		double GetRotationY(void);
 		double GetRotationX(void);
@@ -152,8 +155,7 @@ class MPMBase : public LinkedObject
 		Tensor ReadStressTensor(void);
 		Tensor *GetStressTensor(void);
 		Tensor *GetStrainTensor(void);
- 		Tensor *GetPlasticStrainTensor(void);
-        Tensor *GetElasticLeftCauchyTensor(void);
+ 		Tensor *GetAltStrainTensor(void);
 		TensorAntisym *GetRotationStrainTensor(void);
 		char *GetHistoryPtr(void);
 		void SetHistoryPtr(char *);

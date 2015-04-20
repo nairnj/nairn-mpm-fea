@@ -440,8 +440,8 @@ void ArchiveData::ArchiveVelocityBCs(BoundaryCondition *firstBC)
 	
 	// list in output file (by request or if file error)
     cout << " Node    DOF ID  Vel (" << UnitsController::Label(CUVELOCITY_UNITS) << ")"
-		 << "   Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Angle1  Angle2  Function\n"
-		 << "--------------------------------------------------------------------------\n";
+	<< "   Arg (" << UnitsController::Label(BCARG_UNITS) << ")  Angle1  Angle2  Function\n"
+   	     << "--------------------------------------------------------------------------\n";
     nextBC=(BoundaryCondition *)firstBC;
     while(nextBC!=NULL)
 		nextBC=nextBC->PrintBC(cout);
@@ -668,7 +668,7 @@ void ArchiveData::ArchiveResults(double atime)
         
         // ------- plastic strain (absolute)
         if(mpmOrder[ARCH_PlasticStrain]=='Y')
-		{	Tensor *eplast=mpm[p]->GetPlasticStrainTensor();
+		{	Tensor *eplast=mpm[p]->GetAltStrainTensor();
             *(double *)app=eplast->xx;
             app+=sizeof(double);
                 
@@ -714,7 +714,7 @@ void ArchiveData::ArchiveResults(double atime)
 		{	Matrix3 gradU = mpm[p]->GetDisplacementGradientMatrix();
             *(double *)app=gradU(0,1);
             app+=sizeof(double);
-			
+                
             *(double *)app=gradU(1,0);
             app+=sizeof(double);
         }
@@ -1128,7 +1128,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 		{	if(vtk!=NULL) vtkquant=vtk[i];
 			switch(quantity[q])
 			{	case VTK_MASS:
-					// mass in g
+					// mass (Legacy units g(
 					afile << nd[i]->GetNodalMass(false) << endl;
 					break;
                 
@@ -1142,7 +1142,8 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					break;
 				
 				case VTK_RIGIDCONTACTFORCES:
-                {   Vector fcontact = nd[i]->GetTotalContactForce(TRUE);
+				{	// contact force (Legacy units N)
+					Vector fcontact = nd[i]->GetTotalContactForce(TRUE);
 					ScaleVector(&fcontact,-1./(double)archiveStepInterval);		// contact force of rigid particles on the object
 					// average over steps since last archive
 					afile << fcontact.x << " " << fcontact.y << " " << fcontact.z << endl;
@@ -1202,6 +1203,13 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					afile << scale*vtkquant[offset+4] << " " << scale*vtkquant[offset+5] << " " << scale*vtkquant[offset+2] << endl;
 					break;
 				
+				case VTK_DEFGRAD:
+					if(vtk==NULL) break;
+					afile << vtkquant[offset] << " " << vtkquant[offset+1] << " " << vtkquant[offset+2] << endl;
+					afile << vtkquant[offset+3] << " " << vtkquant[offset+4] << " " << vtkquant[offset+5] << endl;
+					afile << vtkquant[offset+6] << " " << vtkquant[offset+7] << " " << vtkquant[offset+8] << endl;
+					break;
+				
 				default:
 					break;
 			}
@@ -1235,7 +1243,7 @@ void ArchiveData::ArchiveHistoryFile(double atime,vector< int > quantity)
 	afile << "Particle History Data File" << endl;
 	
 	// title
-	sprintf(fline,"step:%d time:%15.7e ms",fmobj->mstep,1000.*atime);
+	sprintf(fline,"step:%d time:%15.7e %s",fmobj->mstep,atime*UnitsController::Scaling(1.e3),UnitsController::Label(ALTTIME_UNITS));
     afile << fline << endl;
 	
 	strcpy(fline,"#\tx\ty");

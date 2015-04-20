@@ -40,6 +40,7 @@ typedef struct {
 enum { NO_PROPAGATION=0,MAXHOOPSTRESS,STEADYSTATEGROWTH,DELETED_TOTALENERGYBALANCE_USECUSTOMTASKIFNEEDED,
        STRAINENERGYDENSITY,EMPIRICALCRITERION,MAXCTODCRITERION,CRITICALERR };
 enum { DEFAULT_DIRECTION=0,SELF_SIMILAR,NORMAL_TO_COD,HOOP_FROM_COD,INITIAL_DIRECTION };
+enum { NOTHING,ENG_BIOT_PLASTIC_STRAIN,LEFT_CAUCHY_ELASTIC_B_STRAIN };
 
 class MaterialBase : public LinkedObject
 {
@@ -158,10 +159,13 @@ class MaterialBase : public LinkedObject
 		virtual void SetFriction(double,int,double,double,double);
 		virtual ContactDetails *GetContactToMaterial(int);
 		virtual void ContactOutput(int);
+#ifndef USE_PSEUDOHYPERELASTIC
         virtual bool PartitionsElasticAndPlasticStrain(void) const;
+#endif
         virtual double GetArtificalViscosity(double,double) const;
 		virtual bool SupportsArtificialViscosity(void) const;
 		virtual int GetShareMatField(void) const;
+		virtual int AltStrainContains(void) const;
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif

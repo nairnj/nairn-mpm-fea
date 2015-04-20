@@ -155,14 +155,6 @@ double NewMaterial::WaveSpeed(bool threeD,MPMBase *mptr) const { return 1.e-12; 
 // they want to store stress as long as this method returns the true stress
 //Tensor NewMaterial::GetStress(Tensor *sp,double pressure) const { Tensor stress = *sp; return stress; }
 
-// If new material separately track elastic and plastic strain in the particle elastic
-// and plastic strain tensors, include this method and return TRUE. When true,
-// code will sum the strains to get total strains, such as when finding deformation
-// gradient. If FALSE, code will assume total strain is in elastic strain and therefore
-// the subclass can use plastic strain for other uses (e.g. hyperelastic materials
-// usual use it for the Left-Cauchy Green strain.
-//bool NewMaterial::PartitionsElasticAndPlasticStrain(void) const { return TRUE; }
-
 // if a subclass material supports artificial viscosity, include this method return TRUE
 // The consititutive law also needs to calculate the artificial viscosity and add
 // it to pressure. A base material class method, GetArtificialViscocity(), does

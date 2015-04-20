@@ -188,7 +188,7 @@ void Mooney::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 	double detDf = IncrementDeformation(mptr,du,NULL,np);
     
     // get pointer to new left Cauchy strain
-    Tensor *B = mptr->GetElasticLeftCauchyTensor();
+    Tensor *B = mptr->GetAltStrainTensor();
 	
     // account for residual stresses
 	double dresStretch,resStretch = GetResidualStretch(mptr,dresStretch,res);

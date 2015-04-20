@@ -65,9 +65,12 @@ class IsoPlasticity : public IsotropicMat
 		// accessors
         virtual Tensor GetStress(Tensor *,double) const;
 		virtual double GetHistory(int,char *) const;
+#ifndef USE_PSEUDOHYPERELASTIC
         virtual bool PartitionsElasticAndPlasticStrain(void) const;
+#endif
         int MaterialTag(void) const;
         const char *MaterialType(void) const;
+		virtual int AltStrainContains(void) const;
 		
     protected:
 		PlasticProperties pr;

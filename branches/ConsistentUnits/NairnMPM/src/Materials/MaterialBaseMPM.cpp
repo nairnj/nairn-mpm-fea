@@ -1435,15 +1435,20 @@ double MaterialBase::GetArtificalViscosity(double Dkk,double c) const
     return avred;
 }
 
+#ifndef USE_PSEUDOHYPERELASTIC
 // If material partitions total strain into elastic and plastic strain saved in ep and eplast, it'
 // should override this method and return TRUE. It is only used when material point is asked for
 // its GetDeformationGradient(). When this is TRUE, gradient uses total strain, otherwise it
 // uses only the terms in ep and wrot.
 bool MaterialBase::PartitionsElasticAndPlasticStrain(void) const { return false; }
+#endif
 
 // if a subclass material supports artificial viscosity, override this and return TRUE
 bool MaterialBase::SupportsArtificialViscosity(void) const { return false; }
 
+// return code indicated what is store in the "plastic strain" on the material, which can
+// only be a symmetrix tensor
+int MaterialBase::AltStrainContains(void) const { return NOTHING; }
 
 
 

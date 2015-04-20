@@ -50,7 +50,7 @@ char *HyperElastic::InputMaterialProperty(char *xName,int &input,double &gScalin
 void HyperElastic::SetInitialParticleState(MPMBase *mptr,int np) const
 {
     // get previous particle B
-    Tensor *pB = mptr->GetElasticLeftCauchyTensor();
+    Tensor *pB = mptr->GetAltStrainTensor();
     
     ZeroTensor(pB);
     pB->xx = pB->yy = pB->zz = 1.;
@@ -79,7 +79,7 @@ const char *HyperElastic::VerifyAndLoadProperties(int np)
 
 /*  Given matrix of incremental deformation dF = exp(dt*grad v), increment particle strain,
         rotation, and LeftCauchy Green strain (latter is assumed to be stored in the particle's
-        plastic strain tensor (which is accessed also with GetElasticLeftCauchyTensor().
+        plastic strain tensor (which is accessed also with GetAltStrainTensor().
     New new F is dF.F, which is used to find new strain
     New B = dF.(Old B).dF^T
     Returns |dF|
@@ -104,7 +104,7 @@ double HyperElastic::IncrementDeformation(MPMBase *mptr,Matrix3 du,Tensor *Btria
     Matrix3 dFoldB = dF*pBold;
     
     // return trial B (if provided) or store new B on the particle
-    Tensor *pB = Btrial!=NULL ? Btrial : mptr->GetElasticLeftCauchyTensor() ;
+    Tensor *pB = Btrial!=NULL ? Btrial : mptr->GetAltStrainTensor() ;
     pB->xx = dFoldB(0,0)*dF(0,0) + dFoldB(0,1)*dF(0,1) + dFoldB(0,2)*dF(0,2);
     pB->xy = dFoldB(0,0)*dF(1,0) + dFoldB(0,1)*dF(1,1) + dFoldB(0,2)*dF(1,2);
     
@@ -223,4 +223,7 @@ void HyperElastic::GetNewtonPressureTerms(double J,double Kred,double &mJ2P,doub
 double HyperElastic::GetCpMinusCv(MPMBase *mptr) const
 {   return mptr!=NULL ? Ka2sp*mptr->pPreviousTemperature : Ka2sp*thermal.reference;
 }
+
+// store elastic B in alt strain
+int HyperElastic::AltStrainContains(void) const { return LEFT_CAUCHY_ELASTIC_B_STRAIN; }
 
