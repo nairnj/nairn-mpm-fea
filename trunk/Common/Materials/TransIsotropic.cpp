@@ -576,7 +576,7 @@ void TransIsotropic::FillTransportProperties(TransportProperties *t)
 		t->kCondTensor.xx = kcondT;
 		t->kCondTensor.yy = kcondA;
 	}
-	t->diffusionTensor.xx = GetDiffZ();
+	t->diffusionTensor.zz = GetDiffZ();
 	t->kCondTensor.zz = GetKcondZ();
 	t->diffusionTensor.xy = 0.;
 	t->diffusionTensor.xz = 0.;
