@@ -171,12 +171,14 @@ The Default value is <code>iYNNNN</code>.</dd>
 <ol>
 	<li><code>sxx</code>, <code>syy</code>, <code>szz</code>, <code>sxy</code>, <code>sxz</code>, or <code>syz</code> - average element of the stress tensor (in <a href="units.html">pressure units</a>)</li>
 	<li><code>sRR</code>, <code>sZZ</code>, <code>sTT</code>, or <code>sRZ</code> - average element of the axisymmetric stress tensor (in <a href="units.html">pressure units</a>) (synonyms for <code>sxx</code>, <code>syy</code>, <code>szz</code>, and <code>sxy</code>)</li>
-	<li><code>exx</code>, <code>eyy</code>, <code>ezz</code>, <code>exy</code>, <code>exz</code>, or <code>eyz</code> - average element of the total strain tensor (in <a href="units.html">alt strain units</a>), which is sum of elastic and plastic strain for plasticity materials</li>
-	<li><code>eRR</code>, <code>eZZ</code>, <code>eTT</code>, or <code>eRZ</code> - average element of the axisymmetric total strain tensor (in <a href="units.html">alt strain units</a>) (synonyms for <code>exx</code>, <code>eyy</code>, <code>ezz</code>, and <code>exy</code>)</li>
-	<li><code>exxe</code>, <code>eyye</code>, <code>ezze</code>, <code>exye</code>, <code>exze</code>, or <code>eyze</code> - average element of the strain tensor (in <a href="units.html">alt strain units</a>), which is elastic strain only for plasticity materials</li>
-	<li><code>eRRe</code>, <code>eZZe</code>, <code>eTTe</code>, or <code>eRZe</code> - average element of the axisymmetric elastic strain tensor (in <a href="units.html">alt strain units</a>) (synonyms for <code>exxe</code>, <code>eyye</code>, <code>ezze</code>, and <code>exye</code>)</li>
-	<li><code>exxp</code>, <code>eyyp</code>, <code>ezzp</code>, <code>exyp</code>, <code>exzp</code>, or <code>eyzp</code> - average element of the plastic strain tensor (in <a href="units.html">alt strain units</a>)</li>
-	<li><code>eRRp</code>, <code>eZZp</code>, <code>eTTp</code>, or <code>eRZp</code> - average element of the axisymmetric plastic strain tensor (in <a href="units.html">alt strain units</a>) (synonyms for <code>exxe</code>, <code>eyye</code>, <code>ezze</code>, and <code>exye</code>)</li>
+	<li><code>Fxx</code>, <code>Fxy</code>, <code>Fxz</code>, <code>Fyx</code>, <code>Fyy</code>, <code>Fyz</code>, <code>Fzx</code>, <code>Fzy</code>, or <code>Fzz</code> - average element of the deformation gradient (dimensionless)</li>
+	<li><code>FRR</code>, <code>FRZ</code>, <code>FZR</code>, <code>FZZ</code>, or <code>FTT</code> - average element of the axisymmetric deformation gradient (dimensionless) (synonyms for <code>Fxx</code>, <code>Fxy</code>, <code>Fyx</code>, <code>Fyy</code>, and <code>Fzz</code>)</li>
+	<li><code>exx</code>, <code>eyy</code>, <code>ezz</code>, <code>exy</code>, <code>exz</code>, or <code>eyz</code> - average element of the total <a href="#biot">Biot</a> strain tensor (in <a href="units.html">alt strain units</a>)</li>
+	<li><code>eRR</code>, <code>eZZ</code>, <code>eTT</code>, or <code>eRZ</code> - average element of the axisymmetric total <a href="#biot">Biot</a> strain tensor (in <a href="units.html">alt strain units</a>) (synonyms for <code>exx</code>, <code>eyy</code>, <code>ezz</code>, and <code>exy</code>)</li>
+	<li><code>exxe</code>, <code>eyye</code>, <code>ezze</code>, <code>exye</code>, <code>exze</code>, or <code>eyze</code> - average element of the elastic <a href="#biot">Biot</a> strain tensor (in <a href="units.html">alt strain units</a>), which is subtracts the plastic strain for plasticity materials</li>
+	<li><code>eRRe</code>, <code>eZZe</code>, <code>eTTe</code>, or <code>eRZe</code> - average element of the axisymmetric elastic <a href="#biot">Biot</a> strain tensor (in <a href="units.html">alt strain units</a>) (synonyms for <code>exxe</code>, <code>eyye</code>, <code>ezze</code>, and <code>exye</code>)</li>
+	<li><code>exxp</code>, <code>eyyp</code>, <code>ezzp</code>, <code>exyp</code>, <code>exzp</code>, or <code>eyzp</code> - average element of the plastic <a href="#biot">Biot</a> strain tensor (in <a href="units.html">alt strain units</a>)</li>
+	<li><code>eRRp</code>, <code>eZZp</code>, <code>eTTp</code>, or <code>eRZp</code> - average element of the axisymmetric plastic <a href="#biot">Biot</a> strain tensor (in <a href="units.html">alt strain units</a>) (synonyms for <code>exxe</code>, <code>eyye</code>, <code>ezze</code>, and <code>exye</code>)</li>
 	<li><code>velx</code>, <code>vely</code>, or <code>velz</code> - average component of velocity (in <a href="units.html">velocity units</a>)</li>
 	<li><code>velR</code> or <code>velZ</code> - average component of axisymmetric velocity (in <a href="units.html">velocity units</a>) (synonyms for <code>velx</code> or <code>vely</code>)</li>
 	<li><code>dispx</code>, <code>dispy</code>, or <code>dispz</code> - average component of displacement (in <a href="units.html">length units</a>)</li>
@@ -209,6 +211,8 @@ The Default value is <code>iYNNNN</code>.</dd>
 <li>The optional <code>(time)</code> is the time interval for storing global results. If the time interval is not specified, it will be set to the <a href="#archiving">archiving interval</a> (in <a href="units.html">time units</a> or set by an optional <a href="#units"><code>units</code> attribute</a>).</li>
 
 </ul>
+
+<p><a name="biot">Note:</a> when global archiving of strains, they are calculated as a Biot strain in the current configuration. The Biot strain is defined is <B>V-I</B> where <B>V</B> is the left-stretch tension. This strain is also the Seth-Hill strains with m=1/2 in current configuration. For small strain problems it is equivalent to the small strain tensor.</p>
 
 <h2><a name="multi"></a>Multimaterial Mode MPM</h2>
 
