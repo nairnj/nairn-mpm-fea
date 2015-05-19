@@ -1362,6 +1362,11 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
             ((MaterialBase *)inputPtr)->SetHardeningLaw(xData);
             break;
             
+		case TEXT_PARAMETER:
+			// must be in active custom tasks
+			((CustomTask *)currentTask)->SetTextParameter(xData);
+			break;
+            
         default:
             break;
     }

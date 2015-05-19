@@ -26,6 +26,15 @@ const char *CustomTask::TaskName(void) { return "Unnamed Custom Task"; }
 //    and return pointer to the class variable
 char *CustomTask::InputParam(char *pName,int &input,double &gScaling) { return NULL; }
 
+// If pointer in InputParam is set to TEXT_PARAMETER, this method is called
+//      immediately after with the text of the parameter
+// If value not accepted, pass on to parent CustomTask (which throws an exception)
+//      or throw custom exception
+void CustomTask::SetTextParameter(char *value)
+{
+	ThrowSAXException("The text parameter with value '%s' is not valid for current custom task",value);
+}
+
 #pragma mark GENERIC TASK METHODS
 
 // called once at start of MPM analysis - initialize and print info
