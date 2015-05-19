@@ -65,7 +65,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 		// accessors
 		virtual int GetNumberPointsNonrigid(void);
 		virtual bool HasPointsNonrigid(void) const;
-		virtual void SumAndClearRigidContactForces(Vector *,bool);
+		virtual void SumAndClearRigidContactForces(Vector *,bool,double,Vector *);
 		virtual double GetTotalMass(bool) const;
 		virtual void AddKineticEnergyAndMass(double &,double &);
 		virtual double GetVolumeNonrigid(bool);

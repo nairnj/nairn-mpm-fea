@@ -51,7 +51,7 @@ class ArchiveData : public CommonArchiveData
 		// methods
 		void ArchiveVelocityBCs(BoundaryCondition *);
 		bool MakeArchiveFolder(void);
-		bool BeginArchives(bool);
+		bool BeginArchives(bool,int);
 		void ArchiveResults(double);
 		void ArchiveVTKFile(double,vector< int >,vector< int >,vector< char * >,vector< int >,double **);
 		void ArchiveHistoryFile(double,vector< int >);
@@ -75,14 +75,13 @@ class ArchiveData : public CommonArchiveData
 		void SetDoingArchiveContact(bool);
 		bool GetDoingArchiveContact(void);
 		int GetArchiveContactStepInterval(void);
-		Vector GetLastContactForce(void);
-		void SetLastContactForce(Vector);
 		bool PassedLastArchived(int,double);
 		void IncrementPropagationCounter(void);
 		void SetMaxiumPropagations(int);
 		double *GetArchTimePtr(void);
 		double *GetFirstArchTimePtr(void);
 		double *GetGlobalTimePtr(void);
+		Vector *GetLastContactForcePtr(void);
 	
 	private:
 		int archBlock;
@@ -100,7 +99,7 @@ class ArchiveData : public CommonArchiveData
 		int lastArchiveContactStep;					// last time VTK archive was written
 		bool doingArchiveContact;					// true if VTK archiving is active
 		float *timeStamp;						// pointer to header location for time
-		Vector lastContactForce;				// last contact force archived
+		Vector *contactForce;					// array of contact forces with rigid materials
 		vector<double> lastArchived;			// store last global quantitites save to global archive
 #ifdef LOG_PROGRESS
 		char *logFile;							// file for tracking progress

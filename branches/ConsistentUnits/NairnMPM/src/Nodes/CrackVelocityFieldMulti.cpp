@@ -1362,14 +1362,22 @@ Vector CrackVelocityFieldMulti::GetCMatFtot(void)
 }
 
 // add contact force on rigid material to the input vector
-void CrackVelocityFieldMulti::SumAndClearRigidContactForces(Vector *fcontact,bool clearForces)
-{	int rigidFieldNum;
-	MatVelocityField *rigidField=GetRigidMaterialField(&rigidFieldNum);
-	if(rigidField!=NULL)
-	{	AddVector(fcontact,rigidField->GetFtotPtr());
-		if(clearForces) ZeroVector(rigidField->GetFtotPtr());
+void CrackVelocityFieldMulti::SumAndClearRigidContactForces(Vector *fcontact,bool clearForces,double scale,Vector *ftotal)
+{
+	// if none, nothing to do
+	if(numberRigidPoints==0) return;
+	
+	// check for rigid materials, but add only nonmirrored fields
+	int i;
+	for(i=0;i<maxMaterialFields;i++)
+	{	if(MatVelocityField::ActiveRigidField(mvf[i]))
+		{	AddScaledVector(&fcontact[i],mvf[i]->GetFtotPtr(),scale);
+			if(ftotal!=NULL) AddScaledVector(ftotal,mvf[i]->GetFtotPtr(),scale);
+			if(clearForces) ZeroVector(mvf[i]->GetFtotPtr());
+		}
 	}
 }
+
 
 // get first active rigid field or return NULL. Also return number in rigidFieldNum
 MatVelocityField *CrackVelocityFieldMulti::GetRigidMaterialField(int *rigidFieldNum)

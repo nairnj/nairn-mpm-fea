@@ -48,8 +48,8 @@ ArchiveData::ArchiveData()
     // contact archive to coordinate with global contact archiving
 	lastArchiveContactStep=0;               // last time contact force was archived
 	doingArchiveContact=FALSE;
-    ZeroVector(&lastContactForce);
-}
+ 	contactForce = NULL;
+ }
 
 // create archive folder
 bool ArchiveData::MakeArchiveFolder(void)
@@ -140,7 +140,7 @@ bool ArchiveData::MakeArchiveFolder(void)
 }
 
 // Create global file, get archive size, and print to output file archiving table
-bool ArchiveData::BeginArchives(bool isThreeD)
+bool ArchiveData::BeginArchives(bool isThreeD,int maxMats)
 {
 	// set up archive times
 	int blocks = archTimes.size();
@@ -166,6 +166,10 @@ bool ArchiveData::BeginArchives(bool isThreeD)
 	
 	// set flag if 3D calculations
 	threeD=isThreeD;
+	
+	// prepare for rigid material contact if multimaterial mode
+	if(maxMats>0)
+		contactForce = new Vector[maxMats];
 	
 	// global archiving
 	CreateGlobalFile();
@@ -1087,7 +1091,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
     if(GetDoingArchiveContact())
     {   archiveStepInterval=fmobj->mstep-lastArchiveContactStep;
         lastArchiveContactStep=fmobj->mstep;
-        ZeroVector(&lastContactForce);
+		for(int im=0;im<maxMaterialFields;im++) ZeroVector(&contactForce[im]);
     }
 	
 	for(q=0;q<quantity.size();q++)
@@ -1143,11 +1147,11 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 				
 				case VTK_RIGIDCONTACTFORCES:
 				{	// contact force (Legacy units N)
-					Vector fcontact = nd[i]->GetTotalContactForce(TRUE);
-					ScaleVector(&fcontact,-1./(double)archiveStepInterval);		// contact force of rigid particles on the object
 					// average over steps since last archive
+					double scale = -1./(double)archiveStepInterval;
+					Vector fcontact;
+					nd[i]->AddGetContactForce(true,contactForce,scale,&fcontact);
 					afile << fcontact.x << " " << fcontact.y << " " << fcontact.z << endl;
-					AddVector(&lastContactForce,&fcontact);
 					break;
 				}
                 
@@ -1404,10 +1408,6 @@ int ArchiveData::GetArchiveContactStepInterval(void)
 	return archiveStepInterval;
 }
 
-// store recent contact force in case needed for global archiving
-Vector ArchiveData::GetLastContactForce(void) { return lastContactForce; }
-void ArchiveData::SetLastContactForce(Vector fcontact) { lastContactForce=fcontact; }
-
 // check if passed last archve
 bool ArchiveData::PassedLastArchived(int qIndex,double criticalValue)
 {
@@ -1462,5 +1462,8 @@ double *ArchiveData::GetFirstArchTimePtr(void)
 
 // global time pointer
 double *ArchiveData::GetGlobalTimePtr(void) { return &globalTime; }
+
+// for contact forces
+Vector *ArchiveData::GetLastContactForcePtr(void) { return contactForce; }
 
 

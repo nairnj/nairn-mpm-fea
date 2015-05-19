@@ -125,7 +125,7 @@ void NairnMPM::MPMAnalysis(bool abort)
 	try
 	{	//---------------------------------------------------
 		// Archiving
-		if(!archiver->BeginArchives(IsThreeD()))
+		if(!archiver->BeginArchives(IsThreeD(),maxMaterialFields))
 			throw "No archiving was specified or multiple archiving blocks not monotonically increasing in start time";
 		archiver->ArchiveResults(mtime);
 		

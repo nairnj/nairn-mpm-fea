@@ -118,7 +118,7 @@ class CrackVelocityField
 		virtual int GetNumberPointsNonrigid(void);
 		virtual bool HasPointsNonrigid(void) const;
 		virtual void Describe(void) const;
-		virtual void SumAndClearRigidContactForces(Vector *,bool);
+		virtual void SumAndClearRigidContactForces(Vector *,bool,double,Vector *);
 	
 		// class methods
 		static bool ActiveField(CrackVelocityField *);

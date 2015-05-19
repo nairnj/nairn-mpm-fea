@@ -389,7 +389,7 @@ void CrackVelocityField::Describe(void) const
 }
 
 // add contact force on rigid material to the input vector
-void CrackVelocityField::SumAndClearRigidContactForces(Vector *fcontact,bool) {}
+void CrackVelocityField::SumAndClearRigidContactForces(Vector *fcontact,bool clearForces,double scale,Vector *ftotal) {}
 
 #pragma mark CLASS METHODS
 

@@ -140,7 +140,7 @@ class NodalPoint : public LinkedObject
 #ifdef COMBINE_RIGID_MATERIALS
 		void CopyRigidParticleField(void);
 #endif
-		Vector GetTotalContactForce(bool);
+		void AddGetContactForce(bool,Vector *,double,Vector *);
 #else
         void InitForceField(void);
         void PrintAvgStress(void);

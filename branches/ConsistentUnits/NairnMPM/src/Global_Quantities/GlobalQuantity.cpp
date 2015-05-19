@@ -629,27 +629,42 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
             // When 3
             //     a. VTK archiving tracks lastArchiveContactStep
             //     b. Do not clear force (it is cleared on each VTK archive)
-            //     c. VTK archiving will also set lastContactForce in case get here just after VTK archiving
+            //     c. VTK archiving will also save contact forces in case get here just after VTK archiving
             //          (since global archiving done after step is done
+			
+			// time steps since last cleared
 			int totalSteps = archiver->GetArchiveContactStepInterval();
+			
+			// true if VTK archve inactive or it is not archiving contact on the grid
 			bool clearForces = !archiver->GetDoingArchiveContact();
+			
+			// get array of vectors to store contact force for each material
+			Vector *forces = archiver->GetLastContactForcePtr();
+			
+			// this vector will be filled
 			Vector ftotal;
 			ZeroVector(&ftotal);
 			
+			// if needed sum forces on all nodes
 			if(totalSteps>0)
 			{	// non-zero steps, may or may not be doing VTKArchive
+				for(int im=0;im<maxMaterialFields;im++) ZeroVector(&forces[im]);
+				double scale = -1./(double)totalSteps;
 				for(p=1;p<=nnodes;p++)
-				{	Vector fcontact = nd[p]->GetTotalContactForce(clearForces);
-					AddVector(&ftotal,&fcontact);
+				{	nd[p]->AddGetContactForce(clearForces,forces,scale,NULL);
 				}
- 				ScaleVector(&ftotal,-1./(double)totalSteps);           // force of rigid particles on the object (per step)
-                archiver->SetLastContactForce(ftotal);
 			}
-			else
-			{	// Global Quantity or VTK task just found contact force, so use it here
-				ftotal=archiver->GetLastContactForce();
+			
+			// extract proper force (sum or one value
+			for(int im=0;im<maxMaterialFields;im++)
+			{	if(whichMat==0)
+				{	AddVector(&ftotal,&forces[im]);
+				}
+				else if(whichMat==MaterialBase::GetFieldMatID(im)+1)
+				{	AddVector(&ftotal,&forces[im]);
+					break;
+			   }
 			}
-			// if totalSteps==0 and clearForces, then must be zero, as initialized above
 				
  			// pick the component
 			if(quantity==TOT_FCONX)

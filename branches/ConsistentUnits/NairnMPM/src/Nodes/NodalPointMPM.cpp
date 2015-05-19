@@ -1226,19 +1226,21 @@ Vector NodalPoint::GetContactForce(short vfld,int matfld)
 {	return cvf[vfld]->GetContactForce(matfld);
 }
 
-// Some all forces from rigid material velocity fields
-Vector NodalPoint::GetTotalContactForce(bool clearForces)
-{	Vector fcontact;
-	ZeroVector(&fcontact);
-    for(int i=0;i<maxCrackFields;i++)
+// Add forces from rigid material velocity fields to array of forces
+// Must zero array before start using
+void NodalPoint::AddGetContactForce(bool clearForces,Vector *forces,double stepScale,Vector *fcontact)
+{
+	// scale by time step (for convert momentum for force) and input scale factor (1/steps)
+	double scale = -UnitsController::Scaling(1.e-6)*stepScale/timestep;
+	
+	// if desired summ force on thisnode
+	if(fcontact!=NULL) ZeroVector(fcontact);
+	
+	// check each crack velocity fiels
+	for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->SumAndClearRigidContactForces(&fcontact,clearForces);
+			cvf[i]->SumAndClearRigidContactForces(forces,clearForces,scale,fcontact);
 	}
-	double scale = -UnitsController::Scaling(1.e-6)/timestep;
-	fcontact.x*=scale;
-	fcontact.y*=scale;
-	fcontact.z*=scale;
-	return fcontact;
 }
 
 #pragma mark MATERIAL CONTACT
