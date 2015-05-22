@@ -33,7 +33,7 @@ MatPoint2D::MatPoint2D(int inElemNum,int theMatl,double angin,double thickin) : 
 // matRef is the material and properties have been loaded, matFld is the material field
 void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *props,int matFld)
 {
-	int i,numnds,nds[maxShapeNodes];
+ 	int i,numnds,nds[maxShapeNodes];
     double fn[maxShapeNodes],xDeriv[maxShapeNodes],yDeriv[maxShapeNodes],zDeriv[maxShapeNodes];
 	Vector vel;
     Matrix3 dv;
@@ -76,25 +76,42 @@ void MatPoint2D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 		res.dC = diffusion->GetDeltaValue(this,res.dC);
 	}
 	
-    // update particle strain and stress using its constituitive law
-	const MaterialBase *matRef = theMaterials[MatID()];
-    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,&res);
- }
+	// pass on to material class to handle
+	PerformConstitutiveLaw(dv,strainTime,np,props,&res);
+}
 
-// Move position (2D) (in mm) possibly with particle damping and accWt = -dt/2
-// vstar is velocity extrapolated from grid to particle and end of time step (v(g->p)(n+1))
+// Pass on to material class
+void MatPoint2D::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void *props,ResidualStrains *res)
+{
+    // update particle strain and stress using its constitutive law
+	const MaterialBase *matRef = theMaterials[MatID()];
+    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res);
+}
+
+// Move position (2D) (in mm) possibly with particle damping and accWt = dt/2
+// vstar is velocity extrapolated from grid to particle and end of time step with grid damping
+//        vstar = v(g->p)(n+1) - alpha_g(t)*v(g->p)(n)*dt
+// acc is acceleration with grid damping
+//        acc = a(g->p)(n) - alpha_g(t)*v(g->p)(n)
+// Update with addition of particle damping is
+//        dx = (vstar - alpha_g(t)*vp(n)*dt)*dt - (1/2)(acc-alpha_g(t)*vp(n))*dt^2
+//           = (vstar - (dt/2)*(acc+alpha_g(t)*vp(n)))*dt
 // Must be called BEFORE velocity update, because is needs vp(n) at start of timestep
 void MatPoint2D::MovePosition(double delTime,Vector *vstar,double accWt,double particleAlpha)
 {
-	double dx = delTime*(vstar->x + accWt*(acc.x + particleAlpha*vel.x));
-	double dy = delTime*(vstar->y + accWt*(acc.y + particleAlpha*vel.y));
+	double dx = delTime*(vstar->x - accWt*(acc.x + particleAlpha*vel.x));
+	double dy = delTime*(vstar->y - accWt*(acc.y + particleAlpha*vel.y));
 	pos.x += dx;
     pos.y += dy;
 }
 
 // Move velocity (2D) (in mm/sec) possibly with particle damping
-// vstar is velocity extrapolated from grid to particle and end of time step (v(g->p)(n+1))
-void MatPoint2D::MoveVelocity(double delTime,Vector *vstar,double particleAlpha)
+// acc is acceleration with grid damping
+//        acc = a(g->p)(n) - alpha_g(t)*v(g->p)(n)
+// Update with addition of particle damping is
+//        v = vp + (acc-alpha_g(t)*vp(n))*dt
+//          = vp*(1-alpha_g(t)*dt) + acc*dt
+void MatPoint2D::MoveVelocity(double delTime,double particleAlpha)
 {
 	vel.x = vel.x*(1. - particleAlpha*delTime) + delTime*acc.x;
     vel.y = vel.y*(1. - particleAlpha*delTime) + delTime*acc.y;
@@ -134,7 +151,7 @@ void MatPoint2D::SetVelocity(Vector *pt)
 // thickness (in mm)
 double MatPoint2D::thickness() { return thick; }
 
-// Find internal force as -mp sigma.deriv * 1000. which converts to g mm/sec^2 or micro N
+// Find internal force as -mp sigma.deriv in g mm/sec^2 or micro N
 // add external force (times a shape function)
 // Store in buffer
 // (note: stress is specific stress in units N/m^2 mm^3/g which is (g-mm^2/sec^2)/g
@@ -151,7 +168,7 @@ void MatPoint2D::AddTemperatureGradient(int offset,Vector *grad)
     pTemp[offset+1]+=grad->y;
 }
 
-// return conduction force = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units nJ/sec)
+// return conduction force = -Vp Grad T . Grad S = - mp (Vp/V0) [k/rho0] Grad T . Grad S (units nJ/sec)
 // and k/rho0 is stored in k in units (nJ mm^2/(sec-K-g))
 //  (non-rigid particles only)
 double MatPoint2D::FCond(int offset,double dshdx,double dshdy,double dshdz,TransportProperties *t)
@@ -191,7 +208,7 @@ Matrix3 MatPoint2D::GetDeformationGradientMatrix(void) const
 
 // get deformation gradient, which is stored in strain and rotation tensors
 void MatPoint2D::SetDeformationGradientMatrix(Matrix3 F)
-{
+{	
 	// Normal strains
 	ep.xx = F(0,0) - 1.;
 	ep.yy = F(1,1) - 1.;
@@ -209,7 +226,7 @@ Matrix3 MatPoint2D::GetDisplacementGradientMatrix(void) const
 {	double F[3][3];
 	GetDeformationGradient(F);
 	Matrix3 Fm(F[0][0],F[0][1],F[1][0],F[1][1],F[2][2]);
-	
+
 	Fm(0,0) -= 1.;
 	Fm(1,1) -= 1.;
 	Fm(2,2) -= 1.;
@@ -224,19 +241,19 @@ Matrix3 MatPoint2D::GetDisplacementGradientMatrix(void) const
 	Matrix3 R;
 	Vector lam;
 	Matrix3 V = Fm.LeftDecompose(&R, &lam);
-
+	
 	// Find V = U.LAM.UT
 	Matrix3 Ucol = V.Eigenvectors(lam);
-
+	
 	// for ln R, need angle
 	double theta = acos(R(0,0));
 	if(R(0,1)>0) theta = -theta;
-
+	
 	// ln V = U.ln(LAM).UT (ignores z for 2D)
 	Matrix3 UcolT = Ucol.Transpose();
 	Matrix3 LamDiag(log(lam.x),0.,0.,log(lam.y),log(lam.z));
 	Matrix3 gradU = Ucol*(LamDiag*UcolT);
-
+	
 	// add ln R
 	gradU(0,1) -= theta;
 	gradU(1,0) += theta;
@@ -247,7 +264,7 @@ Matrix3 MatPoint2D::GetDisplacementGradientMatrix(void) const
 	Fm(0,0) -= 1.;
 	Fm(1,1) -= 1.;
 	Fm(2,2) -= 1.;
-
+	
 	return Fm;
 #endif
 */
@@ -262,7 +279,7 @@ Matrix3 MatPoint2D::GetElasticLeftCauchyMatrix(void)
 // get deformation gradient, which is stored in strain and rotation tensors
 void MatPoint2D::GetDeformationGradient(double F[][3]) const
 {
-	F[0][0] = 1. + ep.xx;
+    F[0][0] = 1. + ep.xx;
 	F[0][1] = 0.5*(ep.xy - wrot.xy);
 	F[1][0] = 0.5*(ep.xy + wrot.xy);
 	F[1][1] = 1. + ep.yy;
@@ -488,7 +505,7 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 // To support traction boundary conditions, find the deformed edge, natural coordinates of
 // the corners along the edge, elements for those edges, and a normal vector in direction
 // of the traction
-// throws CommonException() in edge has left the grid
+// throws CommonException() if edge has left the grid
 double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,Vector *tscaled,int *numDnds)
 {
     *numDnds = 2;
@@ -645,7 +662,7 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
 	// always 1 in 2D planar (used in AS)
 	return 1.;
 }
-	
+
 // Get Rotation matrix for initial material orientation (anistropic only)
 Matrix3 MatPoint2D::GetInitialRotation(void)
 {	double theta = GetAnglez0InRadians();
@@ -653,3 +670,4 @@ Matrix3 MatPoint2D::GetInitialRotation(void)
 	double sn = sin(theta);
 	return Matrix3(cs,sn,-sn,cs,1.);
 }
+	

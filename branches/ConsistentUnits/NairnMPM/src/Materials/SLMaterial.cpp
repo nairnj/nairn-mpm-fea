@@ -113,7 +113,7 @@ void SLMaterial::PrintYieldProperties(void) const
 	strcpy(glabel,UnitsController::Label(PRESSURE_UNITS));
 	strcat(glabel,"-");
 	strcat(glabel,UnitsController::Label(TIME_UNITS));
-	MaterialBase::PrintProperty("C2",C2*UnitsController::Scaling(1.e6),glabel);
+	MaterialBase::PrintProperty("C2",C2*UnitsController::Scaling(1.e-6),glabel);
 	cout << endl;
 }
 

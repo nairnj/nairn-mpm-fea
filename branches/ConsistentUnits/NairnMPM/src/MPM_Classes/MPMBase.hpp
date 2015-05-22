@@ -55,7 +55,7 @@ class MPMBase : public LinkedObject
 		virtual void UpdateStrain(double,int,int,void *,int) = 0;
 		virtual void GetFintPlusFext(Vector *,double,double,double,double) = 0;
         virtual void MovePosition(double,Vector *,double,double) = 0;
-        virtual void MoveVelocity(double,Vector *,double) = 0;
+        virtual void MoveVelocity(double,double) = 0;
 		virtual void SetVelocitySpeed(double) = 0;
 		virtual void AddTemperatureGradient(int);
 		virtual void AddTemperatureGradient(int,Vector *) = 0;

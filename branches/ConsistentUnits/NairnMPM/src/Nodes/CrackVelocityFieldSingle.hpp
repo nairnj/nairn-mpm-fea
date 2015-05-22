@@ -20,7 +20,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 	public:
 		
         // constructors and destructors
-		CrackVelocityFieldSingle(short,int);
+		CrackVelocityFieldSingle(int,short,int);
 		virtual void ZeroMatFields(void);
 	
 		// specific task methods

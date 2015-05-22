@@ -10,6 +10,7 @@
 #include "Cracks/CrackHeader.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Materials/MaterialBase.hpp"
+#include "System/UnitsController.hpp"
 
 // globals
 MPMBase **mpm;		// list of material points
@@ -303,7 +304,7 @@ void MPMBase::IncrementRotationStrain(double rotXY,double rotXZ,double rotYZ)
 	wrot.xz+=rotXZ;
 	wrot.yz+=rotYZ;
 }
-TensorAntisym *MPMBase::GetRotationStrainTensor(void) { return & wrot; }
+TensorAntisym *MPMBase::GetRotationStrainTensor(void) { return &wrot; }
 
 // Get V-I which is Biot strain rotated into current particle orientation
 Matrix3 MPMBase::GetBiotStrain(void) const
@@ -407,14 +408,15 @@ void MPMBase::SetHistoryDble(int index,double history)
 void MPMBase::Describe(void)
 {	cout << "# pt: pos=(" << pos.x << "," << pos.y << "," << pos.z << ") mass=" << mp << 
                 " matl=" << matnum << " elem=" << inElem << endl;
-    cout << "#     vel=(" << vel.x*1e-3 << "," << vel.y*1e-3 << "," << vel.z*1e-3 << ") m/sec" << endl;
+    cout << "#     vel=(" << vel.x << "," << vel.y << "," << vel.z << ") " << UnitsController::Label(CUVELOCITY_UNITS) << endl;
     Matrix3 pF = GetDeformationGradientMatrix();
     cout << "#       F=" << pF << ", |F|=" << pF.determinant() << endl;
     double rho0=theMaterials[MatID()]->rho;
     double rho = rho0/theMaterials[MatID()]->GetCurrentRelativeVolume(this);
-    cout << "#       P= " << pressure*rho*1e-6 << " MPa" << endl;
-    cout << "# sigmaii=(" << sp.xx*rho*1e-6 << "," << sp.yy*rho*1e-6 << "," << sp.zz*rho*1e-6 << ") MPa" << endl;
-    cout << "#   tauij=(" << sp.xy*rho*1e-6 << "," << sp.xz*rho*1e-6 << "," << sp.yz*rho*1e-6 << ") MPa" << endl;
+    cout << "#       P= " << pressure*rho << " " << UnitsController::Label(PRESSURE_UNITS) << endl;
+    cout << "# sigmaii=(" << sp.xx*rho << "," << sp.yy*rho << "," << sp.zz << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;
+    cout << "#   tauij=(" << sp.xy*rho << "," << sp.xz*rho << "," << sp.yz << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;
+	cout << "#       T= " << pTemperature << " prev T=" << pPreviousTemperature << endl;
 }
 
 

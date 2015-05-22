@@ -17,7 +17,7 @@
 #pragma mark INITIALIZATION
 
 // constructor
-CrackVelocityFieldSingle::CrackVelocityFieldSingle(short theLoc,int cnum) : CrackVelocityField(theLoc,cnum)
+CrackVelocityFieldSingle::CrackVelocityFieldSingle(int num,short theLoc,int cnum) : CrackVelocityField(num,theLoc,cnum)
 {
 }
 

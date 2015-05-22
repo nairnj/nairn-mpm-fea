@@ -105,8 +105,8 @@ void UpdateParticlesTask::Execute(void)
 			AddScaledVector(&vgpnp1,&vgpn,-timestep*gridAlpha);
             
 			// update position in mm and velocity in mm/sec
-			mpmptr->MovePosition(timestep,&vgpnp1,-0.5*timestep,particleAlpha);
-			mpmptr->MoveVelocity(timestep,&vgpnp1,particleAlpha);
+			mpmptr->MovePosition(timestep,&vgpnp1,0.5*timestep,particleAlpha);
+			mpmptr->MoveVelocity(timestep,particleAlpha);
 			
 			// update transport values
 			nextTransport=transportTasks;

@@ -170,7 +170,7 @@ short NodalPoint::AddCrackVelocityField(int matfld,CrackField *cfld)
 			{	// Now that the two cracks match the two cracks in [3], check their sides
 				if(cfld[c1].loc==cvf[3]->location(FIRST_CRACK))
 				{	// first crack is correct orientation
-					if(cfld[c2].loc=cvf[3]->location(SECOND_CRACK))
+					if(cfld[c2].loc==cvf[3]->location(SECOND_CRACK))
 					{	// they both match so add the normals (and done)
 						vfld = 3;
 						cvf[3]->AddNormals(&cfld[c1].norm,FIRST_CRACK);
@@ -429,7 +429,7 @@ void NodalPoint::AddMassMomentum(MPMBase *mptr,short vfld,int matfld,double shap
 void NodalPoint::CopyMassAndMomentum(NodalPoint *real)
 {	for(int vfld=0;vfld<maxCrackFields;vfld++)
     {	if(CrackVelocityField::ActiveField(cvf[vfld]))
-            cvf[vfld]->CopyMassAndMomentum(real,vfld);
+            cvf[vfld]->CopyMassAndMomentum(real);
     }
 }
 
@@ -471,7 +471,7 @@ void NodalPoint::AddMassMomentumLast(MPMBase *mptr,short vfld,int matfld,double 
 void NodalPoint::CopyMassAndMomentumLast(NodalPoint *real)
 {	for(int vfld=0;vfld<maxCrackFields;vfld++)
     {	if(CrackVelocityField::ActiveField(cvf[vfld]))
-            cvf[vfld]->CopyMassAndMomentumLast(real,vfld);
+            cvf[vfld]->CopyMassAndMomentumLast(real);
     }
 }
 
@@ -539,7 +539,7 @@ void NodalPoint::AddFtotTask3(short vfld,int matfld,Vector *f)
 void NodalPoint::CopyGridForces(NodalPoint *real)
 {	for(int vfld=0;vfld<maxCrackFields;vfld++)
 	{	if(CrackVelocityField::ActiveNonrigidField(cvf[vfld]))
-			cvf[vfld]->CopyGridForces(real,vfld);
+			cvf[vfld]->CopyGridForces(real);
 	}
 }
 
@@ -1236,7 +1236,7 @@ void NodalPoint::AddGetContactForce(bool clearForces,Vector *forces,double stepS
 	// if desired summ force on thisnode
 	if(fcontact!=NULL) ZeroVector(fcontact);
 	
-	// check each crack velocity fiels
+	// check each crack velocity field
 	for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
 			cvf[i]->SumAndClearRigidContactForces(forces,clearForces,scale,fcontact);

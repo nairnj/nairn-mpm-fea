@@ -79,27 +79,44 @@ void MatPoint3D::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 		res.dC = diffusion->GetDeltaValue(this,res.dC);
 	}
 
-    // update particle strain and stress using its constituitive law
-    const MaterialBase *matRef = theMaterials[MatID()];
-    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,&res);
+	// pass on to material class to handle
+	PerformConstitutiveLaw(dv,strainTime,np,props,&res);
 }
 
-// Move position (2D) (in mm) possibly with particle damping and accWt = -dt/2
-// vstar is velocity extrapolated from grid to particle and end of time step (v(g->p)(n+1))
+// Pass on to material class
+void MatPoint3D::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void *props,ResidualStrains *res)
+{
+    // update particle strain and stress using its constitutive law
+	const MaterialBase *matRef = theMaterials[MatID()];
+    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res);
+}
+
+// Move position (2D) (in mm) possibly with particle damping and accWt = dt/2
+// vstar is velocity extrapolated from grid to particle and end of time step with grid damping
+//        vstar = v(g->p)(n+1) - alpha_g(t)*v(g->p)(n)*dt
+// acc is acceleration with grid damping
+//        acc = a(g->p)(n) - alpha_g(t)*v(g->p)(n)
+// Update with addition of particle damping is
+//        dx = (vstar - alpha_g(t)*vp(n)*dt)*dt - (1/2)(acc-alpha_g(t)*vp(n))*dt^2
+//           = (vstar - (dt/2)*(acc+alpha_g(t)*vp(n)))*dt
 // Must be called BEFORE velocity update, because is needs vp(n) at start of timestep
 void MatPoint3D::MovePosition(double delTime,Vector *vstar,double accWt,double particleAlpha)
-{
-	double dx = delTime*(vstar->x + accWt*(acc.x + particleAlpha*vel.x));
-	double dy = delTime*(vstar->y + accWt*(acc.y + particleAlpha*vel.y));
-	double dz = delTime*(vstar->z + accWt*(acc.z + particleAlpha*vel.z));
+{	
+	double dx = delTime*(vstar->x - accWt*(acc.x + particleAlpha*vel.x));
+	double dy = delTime*(vstar->y - accWt*(acc.y + particleAlpha*vel.y));
+	double dz = delTime*(vstar->z - accWt*(acc.z + particleAlpha*vel.z));
 	pos.x += dx;
     pos.y += dy;
     pos.z += dz;
 }
 
-// Move velocity (3D) (in mm/sec) possible with damping
-// vstar is velocity extrapolated from grid to particle and end of time step (v(g->p)(n+1))
-void MatPoint3D::MoveVelocity(double delTime,Vector *vstar,double particleAlpha)
+// Move velocity (2D) (in mm/sec) possibly with particle damping
+// acc is acceleration with grid damping
+//        acc = a(g->p)(n) - alpha_g(t)*v(g->p)(n)
+// Update with addition of particle damping is
+//        v = vp + (acc-alpha_g(t)*vp(n))*dt
+//          = vp*(1-alpha_g(t)*dt) + acc*dt
+void MatPoint3D::MoveVelocity(double delTime,double particleAlpha)
 {
 	vel.x = vel.x*(1. - particleAlpha*delTime) + delTime*acc.x;
     vel.y = vel.y*(1. - particleAlpha*delTime) + delTime*acc.y;
@@ -129,7 +146,7 @@ void MatPoint3D::SetVelocity(Vector *v) { vel=*v; }
 // no thickness
 double MatPoint3D::thickness() { return -1.; }
 
-// calculate internal force as -mp sigma.deriv * 1000.
+// calculate internal force as -mp sigma.deriv
 // add external force (times a shape function)
 // store in buffer
 // (note: stress is specific stress in units N/m^2 mm^3/g which is (g-mm^2/sec^2)/g
@@ -187,15 +204,9 @@ Matrix3 MatPoint3D::GetDeformationGradientMatrix(void) const
 	return Fm;
 }
 
-// get the symmetric elastic Left-Cauchy tensor in a Matrix3
-Matrix3 MatPoint3D::GetElasticLeftCauchyMatrix(void)
-{   return Matrix3(eplast.xx,eplast.xy,eplast.xz,eplast.xy,eplast.yy,eplast.yz,
-                    eplast.xz,eplast.yz,eplast.zz);
-}
-
 //sset deformation gradient, which is stored in strain and rotation tensors
 void MatPoint3D::SetDeformationGradientMatrix(Matrix3 F)
-{
+{	
 	// Normal strains
 	ep.xx = F(0,0) - 1.;
 	ep.yy = F(1,1) - 1.;
@@ -225,11 +236,17 @@ Matrix3 MatPoint3D::GetDisplacementGradientMatrix(void) const
 	return Fm;
 }
 
+// get the symmetric elastic Left-Cauchy tensor in a Matrix3
+Matrix3 MatPoint3D::GetElasticLeftCauchyMatrix(void)
+{   return Matrix3(eplast.xx,eplast.xy,eplast.xz,eplast.xy,eplast.yy,eplast.yz,
+                    eplast.xz,eplast.yz,eplast.zz);
+}
+
 #ifdef USE_PSEUDOHYPERELASTIC
 // get deformation gradient, which is stored in strain and rotation tensors
 void MatPoint3D::GetDeformationGradient(double F[][3]) const
 {
-    F[0][0] = 1. + ep.xx;
+	F[0][0] = 1. + ep.xx;
 	F[1][1] = 1. + ep.yy;
 	F[2][2] = 1. + ep.zz;
 	F[0][1] = 0.5*(ep.xy - wrot.xy);

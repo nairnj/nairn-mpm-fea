@@ -66,7 +66,6 @@ class AnisoPlasticity : public Orthotropic
 #else
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
 		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
-		virtual bool PartitionsElasticAndPlasticStrain(void) const;
 #endif
 	
 		// Hill methods
@@ -84,6 +83,7 @@ class AnisoPlasticity : public Orthotropic
 		virtual void GetDfDsigma(Tensor *,int,AnisoPlasticProperties *p) const;
 		virtual void UpdateStress(Tensor *,Tensor *,double,int,AnisoPlasticProperties *p) const;
 		virtual double GetFkFromLambdak(MPMBase *,Tensor *,Tensor *,double,int,AnisoPlasticProperties *) const;
+		virtual bool PartitionsElasticAndPlasticStrain(void) const;
 #endif
 		virtual int AltStrainContains(void) const;
  		
@@ -93,7 +93,7 @@ class AnisoPlasticity : public Orthotropic
 		virtual double GetYield(AnisoPlasticProperties *p) const = 0;
 		virtual double GetDfAlphaDotH(MPMBase *,int,AnisoPlasticProperties *p) const = 0;
 		virtual void UpdatePlasticInternal(MPMBase *,int,AnisoPlasticProperties *p) const = 0;
-    
+		
    protected:
 		double syxx,syyy,syzz,tyyz,tyxz,tyxy;
 		double syxxred2,syyyred2,syzzred2,tyyzred2,tyxzred2,tyxyred2;		// equal to 1/yield^2 and reduced

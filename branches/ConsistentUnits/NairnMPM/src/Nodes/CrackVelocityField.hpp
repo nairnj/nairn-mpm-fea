@@ -37,7 +37,7 @@ class CrackVelocityField
 		// constants (not changed in MPM time step)
 	
 		// constructors and destructors
-        CrackVelocityField(short,int);
+        CrackVelocityField(int,short,int);
         virtual ~CrackVelocityField();
 		virtual void Zero(short,int,bool);
 		virtual void ZeroMatFields() = 0;
@@ -53,13 +53,13 @@ class CrackVelocityField
 		virtual double GetTotalMassAndCount(void) = 0;
 		virtual void AddVolumeGradient(int,MPMBase *,double,double,double);
 		virtual void CopyVolumeGradient(int,Vector *);
-		virtual void CopyMassAndMomentum(NodalPoint *,int);
-        virtual void CopyMassAndMomentumLast(NodalPoint *,int);
+		virtual void CopyMassAndMomentum(NodalPoint *);
+        virtual void CopyMassAndMomentumLast(NodalPoint *);
         virtual void RezeroNodeTask6(double) = 0;
         void AddMomentumTask6(int,double,Vector *);
 	
 		void AddFtotTask3(int,Vector *);
-		virtual void CopyGridForces(NodalPoint *,int);
+		virtual void CopyGridForces(NodalPoint *);
 		virtual void AddFtotSpreadTask3(Vector *) = 0;
 		virtual void AddGravityAndBodyForceTask3(Vector *) = 0;
 	
@@ -119,6 +119,7 @@ class CrackVelocityField
 		virtual bool HasPointsNonrigid(void) const;
 		virtual void Describe(void) const;
 		virtual void SumAndClearRigidContactForces(Vector *,bool,double,Vector *);
+		virtual int GetFieldNum(void) const;
 	
 		// class methods
 		static bool ActiveField(CrackVelocityField *);
@@ -129,6 +130,7 @@ class CrackVelocityField
 	
 	protected:
 		// variables (changed in MPM time step)
+		int fieldNum;				// field number [0] to [3]
 		int numberPoints;			// total number of materials points in this field/field [0] changed to sum of all in task 8
 		MatVelocityField **mvf;		// material velocity fields
         bool hasCrackPoints;        // shows a particle sees this field during initialization

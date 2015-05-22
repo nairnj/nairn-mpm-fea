@@ -49,7 +49,7 @@ class CrackSurfaceContact
 		short HasContact(int);
 		short IsImperfect(int);
 		bool GetDeltaMomentum(NodalPoint *np,Vector *,CrackVelocityField *,CrackVelocityField *,Vector *,int,bool,double,int *);
-		short MaterialContact(Vector *,Vector *,Vector *,double,bool,double);
+		short MaterialContact(Vector *,Vector *,double,bool,double);
 		void Output(void);
 		void CrackOutput(bool,double,double,double,double,int);
 		void MaterialOutput(void);

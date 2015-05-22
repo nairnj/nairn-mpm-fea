@@ -19,8 +19,11 @@
 #pragma mark INITIALIZATION
 
 // Constructors - vfld is field ID and cnum is crack number
-CrackVelocityField::CrackVelocityField(short theLoc,int cnum)
+CrackVelocityField::CrackVelocityField(int num,short theLoc,int cnum)
 {
+	// field number [0] to [3]
+	fieldNum = num;
+	
 	// pointers for material velocity fields (1 if single material modes, or number of materials in use)
 	mvf=(MatVelocityField **)malloc(sizeof(MatVelocityField *)*maxMaterialFields);
 	if(mvf==NULL) throw CommonException("Memory error allocating material velocity field pointers.",
@@ -122,8 +125,8 @@ void CrackVelocityField::AddVolumeGradient(int matfld,MPMBase *mptr,double dNdx,
 void CrackVelocityField::CopyVolumeGradient(int matfld,Vector *grad) {}
 
 // Copy mass and momentum from ghost to real node
-void CrackVelocityField::CopyMassAndMomentum(NodalPoint *real,int vfld)
-{	if(mvf[0]!=NULL) mvf[0]->CopyMassAndMomentum(real,vfld,0);
+void CrackVelocityField::CopyMassAndMomentum(NodalPoint *real)
+{	if(mvf[0]!=NULL) mvf[0]->CopyMassAndMomentum(real,fieldNum,0);
 }
 
 // Add to momentum vector (second pass after fields so not need to count points)
@@ -137,8 +140,8 @@ void CrackVelocityField::AddMomentumTask6(int matfld,double wt,Vector *vel)
 }
 
 // Copy mass and momentum from ghost to real node
-void CrackVelocityField::CopyMassAndMomentumLast(NodalPoint *real,int vfld)
-{	if(mvf[0]!=NULL) mvf[0]->CopyMassAndMomentumLast(real,vfld,0);
+void CrackVelocityField::CopyMassAndMomentumLast(NodalPoint *real)
+{	if(mvf[0]!=NULL) mvf[0]->CopyMassAndMomentumLast(real,fieldNum,0);
 }
 
 #pragma mark TASK 3 METHODS
@@ -147,8 +150,8 @@ void CrackVelocityField::CopyMassAndMomentumLast(NodalPoint *real,int vfld)
 void CrackVelocityField::AddFtotTask3(int matfld,Vector *f) { mvf[matfld]->AddFtot(f); }
 
 // Copy grid forces from ghost node to real node (nonrigid only)
-void CrackVelocityField::CopyGridForces(NodalPoint *real,int vfld)
-{	if(mvf[0]!=NULL) mvf[0]->CopyGridForces(real,vfld,0);
+void CrackVelocityField::CopyGridForces(NodalPoint *real)
+{	if(mvf[0]!=NULL) mvf[0]->CopyGridForces(real,fieldNum,0);
 }
 
 #pragma mark TASK 5 METHODS
@@ -391,6 +394,9 @@ void CrackVelocityField::Describe(void) const
 // add contact force on rigid material to the input vector
 void CrackVelocityField::SumAndClearRigidContactForces(Vector *fcontact,bool clearForces,double scale,Vector *ftotal) {}
 
+// return field number [0] to [3]
+int CrackVelocityField::GetFieldNum(void) const { return fieldNum; }
+
 #pragma mark CLASS METHODS
 
 // return true if referenced field is active in this time step
@@ -416,12 +422,11 @@ bool CrackVelocityField::ActiveNonrigidField(CrackVelocityField *cvf,int number)
 }
 
 // create single or multi material crack velocity field as needed
-// fieldNum is used in OSParticular, but not yet in NairnMPM
 CrackVelocityField *CrackVelocityField::CreateCrackVelocityField(int fieldNum,short theLoc,int cnum)
 {	if(maxMaterialFields==1)
-		return (CrackVelocityField *)(new CrackVelocityFieldSingle(theLoc,cnum));
+		return (CrackVelocityField *)(new CrackVelocityFieldSingle(fieldNum,theLoc,cnum));
 	else
-		return (CrackVelocityField *)(new CrackVelocityFieldMulti(theLoc,cnum));
+		return (CrackVelocityField *)(new CrackVelocityFieldMulti(fieldNum,theLoc,cnum));
 }
 
 

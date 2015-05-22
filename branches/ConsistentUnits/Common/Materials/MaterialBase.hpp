@@ -115,6 +115,7 @@ class MaterialBase : public LinkedObject
 #ifndef USE_PSEUDOHYPERELASTIC
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
         virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
+		virtual bool PartitionsElasticAndPlasticStrain(void) const;
 #endif
 #else
 		virtual void LoadMechanicalPropertiesFEA(int,double,int);
@@ -159,9 +160,6 @@ class MaterialBase : public LinkedObject
 		virtual void SetFriction(double,int,double,double,double);
 		virtual ContactDetails *GetContactToMaterial(int);
 		virtual void ContactOutput(int);
-#ifndef USE_PSEUDOHYPERELASTIC
-        virtual bool PartitionsElasticAndPlasticStrain(void) const;
-#endif
         virtual double GetArtificalViscosity(double,double) const;
 		virtual bool SupportsArtificialViscosity(void) const;
 		virtual int GetShareMatField(void) const;
@@ -184,9 +182,9 @@ class MaterialBase : public LinkedObject
 		static void PrintProperty(const char *,bool);
 #ifdef MPM_CODE
 		static const char *PreferredDirection(int);
-		static short GetMVFIsRigid(int matfld);
-		static int GetFieldMatID(int matfld);
-		static int GetActiveMatID(int matfld);
+		static short GetMVFIsRigid(int);
+		static int GetFieldMatID(int);
+		static int GetActiveMatID(int);
 #endif
 		
 	protected:

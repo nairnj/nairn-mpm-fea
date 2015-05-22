@@ -85,9 +85,16 @@ void MatPointAS::UpdateStrain(double strainTime,int secondPass,int np,void *prop
 		res.dC = diffusion->GetDeltaValue(this,res.dC);
 	}
 	
-    // update particle strain and stress using its constituitive law
-    const MaterialBase *matRef = theMaterials[MatID()];
-    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,&res);
+	// pass on to material class to handle
+	PerformConstitutiveLaw(dv,strainTime,np,props,&res);
+}
+
+// Pass on to material class
+void MatPointAS::PerformConstitutiveLaw(Matrix3 dv,double strainTime,int np,void *props,ResidualStrains *res)
+{
+    // update particle strain and stress using its constitutive law
+	const MaterialBase *matRef = theMaterials[MatID()];
+    matRef->MPMConstitutiveLaw(this,dv,strainTime,np,props,res);
 }
 
 #pragma mark MatPoint2D::Accessors
@@ -100,7 +107,7 @@ void MatPointAS::SetOrigin(Vector *pt)
 	thick = pt->x;
 }
 
-// Find internal force as -mp sigma.deriv * 1000. which converts to g mm/sec^2 or micro N
+// Find internal force as -mp sigma.deriv in g mm/sec^2 or micro N
 // add external force (times a shape function)
 // Store in buffer
 // (note: stress is specific stress in units N/m^2 mm^3/g which is (g-mm^2/sec^2)/g
@@ -166,7 +173,7 @@ void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
 		r2.x *= shrink;
 		r2.y *= shrink;
 	}
-    
+	
     // Particle domain area is area of the full parallelogram
     // Assume positive due to orientation of initial vectors, and sign probably does not matter
     double Ap = 4.*(r1.x*r2.y - r1.y*r2.x);
@@ -280,7 +287,6 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
         r2.x = pF[0][1]*mpmgrid.party;
         r2.y = pF[1][1]*mpmgrid.party;
         
-#ifdef TRUNCATE
         // shrink domain if any have x < 0, but keep particle in the middle
         if(pos.x-fabs(r1.x+r2.x)<0.)
         {	// make pos.x-shrink*fabs(r1.x+r2.x) very small and positive
@@ -290,7 +296,6 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
             r2.x *= shrink;
             r2.y *= shrink;
         }
-#endif
         
         // get magnitudes
         r1mag = sqrt(r1.x*r1.x + r1.y*r1.y);

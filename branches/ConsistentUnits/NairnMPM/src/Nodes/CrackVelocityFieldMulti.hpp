@@ -20,7 +20,7 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 	public:
 		
         // constructors and destructors
-		CrackVelocityFieldMulti(short,int);
+		CrackVelocityFieldMulti(int,short,int);
 		virtual void ZeroMatFields(void);
 		virtual void AddMatVelocityField(int);
         virtual bool NeedsMatVelocityField(int) const;
@@ -34,11 +34,11 @@ class CrackVelocityFieldMulti : public CrackVelocityField
 #ifdef COMBINE_RIGID_MATERIALS
 		virtual void CopyRigidFrom(MatVelocityField *,int);
 #endif
-		virtual void CopyMassAndMomentum(NodalPoint *,int);
-        virtual void CopyMassAndMomentumLast(NodalPoint *,int);
+		virtual void CopyMassAndMomentum(NodalPoint *);
+        virtual void CopyMassAndMomentumLast(NodalPoint *);
 	
 		virtual void AddFtotSpreadTask3(Vector *);
-		virtual void CopyGridForces(NodalPoint *,int);
+		virtual void CopyGridForces(NodalPoint *);
 		virtual void AddGravityAndBodyForceTask3(Vector *);
 	
 		virtual void UpdateMomentaOnField(double);

@@ -592,13 +592,13 @@ short CrackSurfaceContact::GetInterfaceForceOnCrack(NodalPoint *np,Vector *fImp,
 }
 
 // return SEPARATED if not in contact or IN_CONTACT if now in contact
-// displacement is from a to b (i.e. db-da)
+// displacement is from a to b (i.e. dispbma = db-da)
 // norm assummed to be normalized, dvel assumed found using normalized norm too
-short CrackSurfaceContact::MaterialContact(Vector *dispa,Vector *dispb,Vector *norm,double dvel,bool postUpdate,double deltime)
+short CrackSurfaceContact::MaterialContact(Vector *dispbma,Vector *norm,double dvel,bool postUpdate,double deltime)
 {
 	// normal cod
-	double dnorm=((dispb->x-dispa->x)*norm->x + (dispb->y-dispa->y)*norm->y + (dispb->z-dispa->z)*norm->z)
-                    - mpmgrid.GetNormalCODAdjust(norm,NULL,0);
+	double dnorm=(dispbma->x*norm->x + dispbma->y*norm->y + dispbma->z*norm->z)
+                   - mpmgrid.GetNormalCODAdjust(norm,NULL,0);
 	
 	// on post update, adjust by normal velocity difference
 	if(postUpdate) dnorm+=dvel*deltime;

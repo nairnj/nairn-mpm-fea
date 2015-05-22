@@ -22,7 +22,7 @@
 #pragma mark INITIALIZATION
 
 // constructor
-CrackVelocityFieldMulti::CrackVelocityFieldMulti(short theLoc,int cnum) : CrackVelocityField(theLoc,cnum)
+CrackVelocityFieldMulti::CrackVelocityFieldMulti(int num,short theLoc,int cnum) : CrackVelocityField(num,theLoc,cnum)
 {	numberMaterials=0;
 	numberRigidPoints=0;
 }
@@ -150,10 +150,10 @@ void CrackVelocityFieldMulti::CopyRigidFrom(MatVelocityField *rmvf,int rigidFiel
 #endif
 	
 // Copy mass and momentum from ghost node to real node
-void CrackVelocityFieldMulti::CopyMassAndMomentum(NodalPoint *real,int vfld)
+void CrackVelocityFieldMulti::CopyMassAndMomentum(NodalPoint *real)
 {	for(int matfld=0;matfld<maxMaterialFields;matfld++)
 	{	if(mvf[matfld]!=NULL)
-			mvf[matfld]->CopyMassAndMomentum(real,vfld,matfld);
+			mvf[matfld]->CopyMassAndMomentum(real,fieldNum,matfld);
 	}
 }
 
@@ -181,10 +181,10 @@ void CrackVelocityFieldMulti::RezeroNodeTask6(double deltaTime)
 }
 
 // Copy mass and momentum from ghost node to real node
-void CrackVelocityFieldMulti::CopyMassAndMomentumLast(NodalPoint *real,int vfld)
+void CrackVelocityFieldMulti::CopyMassAndMomentumLast(NodalPoint *real)
 {	for(int matfld=0;matfld<maxMaterialFields;matfld++)
     {	if(mvf[matfld]!=NULL)
-            mvf[matfld]->CopyMassAndMomentumLast(real,vfld,matfld);
+            mvf[matfld]->CopyMassAndMomentumLast(real,fieldNum,matfld);
     }
 }
 
@@ -225,10 +225,10 @@ void CrackVelocityFieldMulti::AddGravityAndBodyForceTask3(Vector *gridBodyForce)
 }
 
 // Copy grid forces ghost node to the real node (nonrigid only)
-void CrackVelocityFieldMulti::CopyGridForces(NodalPoint *real,int vfld)
+void CrackVelocityFieldMulti::CopyGridForces(NodalPoint *real)
 {	for(int matfld=0;matfld<maxMaterialFields;matfld++)
 	{	if(mvf[matfld]!=NULL)
-			mvf[matfld]->CopyGridForces(real,vfld,matfld);
+			mvf[matfld]->CopyGridForces(real,fieldNum,matfld);
 	}
 }
 
@@ -284,7 +284,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 			else if(rigidMat>0)
 			{	// rigid material, but not allowed if already had another rigid material
 				throw CommonException("Two different rigid materials in contact on the same node",
-												"CrackVelocityFieldMulti::MaterialContact");
+												"CrackVelocityFieldMulti::MaterialContactOnCVF");
 			}
 			else
 			{	// first rigid material at this node
@@ -487,12 +487,16 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
                     CopyScaleVector(&dispi,&mvf[i]->disp,1./mred);
 					AdjustForSymmetry(ndptr,&dispi,false);
                     hasDisplacements = TRUE;
+					Vector delta;
+					delta.x = dispcScaled.x-dispi.x;
+					delta.y = dispcScaled.y-dispi.y;
+					delta.z = 0.;
                     
                     // to get normal velocity delta v = (Mc/(Mc-mi)) (delta p/mi)
                     double dvel = dotn/mred;
                     
                     // 5. check for contact
-                    if(contact.MaterialContact(&dispi,&dispcScaled,&norm,dvel,postUpdate,deltime)==SEPARATED) break;
+                    if(contact.MaterialContact(&delta,&norm,dvel,postUpdate,deltime)==SEPARATED) break;
                 }
                 
                 // passed all tests
@@ -578,7 +582,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 					*last = new MaterialInterfaceNode(ndptr,vfld,i,iother,&fImp,rawEnergy,*last);
 					if(*last == NULL)
 					{	throw CommonException("Memory error allocating storage for a material interface node.",
-													"CrackVelocityFieldMulti::MaterialContact");
+													"CrackVelocityFieldMulti::MaterialContactOnCVF");
 					}
 					if(*first==NULL) *first=*last;
 					
@@ -809,12 +813,16 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
                     CopyScaleVector(&dispi,&mvf[i]->disp,1./massi);
 					AdjustForSymmetry(ndptr,&dispi,false);
                     hasDisplacements = TRUE;
-                
+ 					Vector delta;
+					delta.x = rigidDisp.x-dispi.x;
+					delta.y = rigidDisp.y-dispi.y;
+					delta.z = 0.;
+					
                     // convert dotn to velocity of approach
                     double dvel = dotn/massi;
                 
                     // check for contact
-                    if(contact.MaterialContact(&dispi,&rigidDisp,&norm,dvel,postUpdate,deltime)==SEPARATED) break;
+                    if(contact.MaterialContact(&delta,&norm,dvel,postUpdate,deltime)==SEPARATED) break;
                 }
                 
                 // passed all tests
@@ -877,7 +885,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 					*last = new MaterialInterfaceNode(ndptr,vfld,i,-1,&fImp,rawEnergy,*last);
 					if(*last==NULL)
 					{	throw CommonException("Memory error allocating storage for a material interface node.",
-																"CrackVelocityFieldMulti::MaterialContact");
+																"CrackVelocityFieldMulti::RigidMaterialContactOnCVF");
 					}
 					if(*first==NULL) *first = *last;
 				}
@@ -1371,8 +1379,16 @@ void CrackVelocityFieldMulti::SumAndClearRigidContactForces(Vector *fcontact,boo
 	int i;
 	for(i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveRigidField(mvf[i]))
-		{	AddScaledVector(&fcontact[i],mvf[i]->GetFtotPtr(),scale);
+		{
+#ifdef COMBINE_RIGID_MATERIALS
+			if(fieldNum==0)
+			{	AddScaledVector(&fcontact[i],mvf[i]->GetFtotPtr(),scale);
+				if(ftotal!=NULL) AddScaledVector(ftotal,mvf[i]->GetFtotPtr(),scale);
+			}
+#else
+			AddScaledVector(&fcontact[i],mvf[i]->GetFtotPtr(),scale);
 			if(ftotal!=NULL) AddScaledVector(ftotal,mvf[i]->GetFtotPtr(),scale);
+#endif
 			if(clearForces) ZeroVector(mvf[i]->GetFtotPtr());
 		}
 	}
