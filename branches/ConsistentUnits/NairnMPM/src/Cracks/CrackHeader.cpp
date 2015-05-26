@@ -471,8 +471,11 @@ short CrackHeader::MoveCrack(short side)
 					nodeCounter++;
 			}
 
-			// delv is Sum(fi vi) = Sum(fi pi/mi) and surfaceMass = Sum(fi)
-			// Normalize to get velocity and multiply by dt to get displacement
+			// if CRACK_SURFACE_BY_MOMENTUM_EXTRAP is defined
+			//     delv is Sum(fi pi) and surfaceMass = Sum(fi mi)
+			// otherwise
+			//     delv is Sum(fi vi) = Sum(fi pi/mi) and surfaceMass = Sum(fi)
+			// Both normalize to get velocity and multiply by dt to get displacement
 			if(nodeCounter>0) ScaleVector(&delv,timestep/surfaceMass);
 			
 			// this method does not normalize shape functions
@@ -1438,7 +1441,7 @@ void CrackHeader::CrackTipHeating(void)
 		cpos.x=scrk->x;
 		cpos.y=scrk->y;
 		theElements[iel]->GetShapeFunctionsForCracks(&numnds,fn,nds,&cpos);
-		
+	
 		// normalize shape functions
 		double fnorm = 0.;
 		for(i=1;i<=numnds;i++)
@@ -1461,15 +1464,16 @@ void CrackHeader::CrackTipHeating(void)
 */
 bool CrackHeader::NodeNearTip(NodalPoint *ndi,double tol)
 {
-	if(!mpmgrid.IsStructuredGrid()) return FALSE;
+	if(!mpmgrid.IsStructuredEqualElementsGrid()) return false;
+    Vector csz = mpmgrid.GetCellSize();
     CrackSegment *scrk=firstSeg;
-	double dx = (ndi->x-scrk->x)/mpmgrid.gridx;
-	double dy = (ndi->y-scrk->y)/mpmgrid.gridy;
+	double dx = (ndi->x-scrk->x)/csz.x;
+	double dy = (ndi->y-scrk->y)/csz.y;
 	double dist = sqrt(dx*dx+dy*dy);
 	if(dist<tol) return true;
     scrk=lastSeg;
-	dx = (ndi->x-scrk->x)/mpmgrid.gridx;
-	dy = (ndi->y-scrk->y)/mpmgrid.gridy;
+	dx = (ndi->x-scrk->x)/csz.x;
+	dy = (ndi->y-scrk->y)/csz.y;
 	dist = sqrt(dx*dx+dy*dy);
 	if(dist<tol) return true;
 	return false;

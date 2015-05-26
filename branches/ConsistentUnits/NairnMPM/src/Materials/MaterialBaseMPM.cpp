@@ -1400,9 +1400,16 @@ bool MaterialBase::isMembrane(void) const { return false; }
 // check if keeps crack tip
 int MaterialBase::KeepsCrackTip(void) const { return constantTip; }
 
-// see if material for a material velocity field is rigid (only rigid contact materials can be in a velocity field)
-short MaterialBase::GetMVFIsRigid(int matfld)
-{	return matfld<(int)fieldMatIDs.size() ? theMaterials[fieldMatIDs[matfld]]->Rigid() : false ;
+// Set flags for this material being rigid and for if it ignores cracks
+// Not that ignoring cracks only works for multimaterial mode. Rigid contact
+//    materials default to ignoring cracks while non rigid default to see them
+int MaterialBase::GetMVFFlags(int matfld)
+{	// check number errors
+	if(matfld>=(int)fieldMatIDs.size()) return 0;
+	
+	MaterialBase *matID = theMaterials[fieldMatIDs[matfld]];
+	int flags = matID->Rigid() ? RIGID_FIELD_BIT : 0 ;
+	return flags;
 }
 
 // convert field number (zero based) to material ID for that field (zero based)

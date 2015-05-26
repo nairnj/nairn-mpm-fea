@@ -52,5 +52,8 @@ class VTKArchive : public CustomTask
 		
 };
 
+// globals
+extern VTKArchive *vtkArchiveTask;
+
 #endif
 

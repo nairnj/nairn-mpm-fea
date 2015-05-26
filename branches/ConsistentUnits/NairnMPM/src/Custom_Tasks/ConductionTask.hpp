@@ -23,14 +23,11 @@ class ConductionTask : public TransportTask
 {
     public:
 		static bool active,crackTipHeating,adiabatic,AVHeating;
-        static bool crackContactHeating,matContactHeating;
+		static bool crackContactHeating,matContactHeating;
 		
-        // constructors and destructors
-		ConductionTask();
-        
         // standard methods
 		virtual const char *TaskName(void);
-		virtual TransportTask *TransportOutput(void);
+		virtual TransportTask *Initialize(void);
 		virtual TransportTask *TransportTimeStep(int,double,double *);
 		virtual TransportTask *Task1Extrapolation(NodalPoint *,MPMBase *,double);
 		virtual TransportTask *Task1Reduction(NodalPoint *,NodalPoint *);
@@ -55,8 +52,6 @@ class ConductionTask : public TransportTask
         // class methods
         static void ThermodynamicsOutput(void);
         static bool IsSystemIsolated(void);
-		
-    private:
 };
 
 // globals

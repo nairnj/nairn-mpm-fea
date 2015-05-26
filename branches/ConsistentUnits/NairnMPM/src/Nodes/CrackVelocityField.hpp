@@ -13,6 +13,10 @@
 
 #define _CRACKVELOCITYFIELD_
 
+// when activated, extrapolated momenta in symmetry directions are set to zero
+// A development topic - difference seems small with slight preference to activate this option
+#define ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY
+
 #define FIRST_CRACK 0
 #define SECOND_CRACK 1
 
@@ -71,7 +75,7 @@ class CrackVelocityField
 		void DeleteStrainField(void);
 		
 		short IncrementDelvTask8(double,Vector *,double *);
-		int CollectMomentaTask8(Vector *,double *) const;
+        bool CollectMomentaTask8(Vector *,double *) const;
 		void SetCMVelocityTask8(Vector *,int);
 		bool GetCMVelocityTask8(Vector *) const;
 	
@@ -80,11 +84,11 @@ class CrackVelocityField
 		void AddVolume(int,double);
 	
 		// methods
-		virtual void MaterialContactOnCVF(NodalPoint *,int,double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
+		virtual void MaterialContactOnCVF(NodalPoint *,double,int,MaterialInterfaceNode **,MaterialInterfaceNode **);
 		virtual bool HasVolumeGradient(int) const;
 		virtual void GetVolumeGradient(int,const NodalPoint *,Vector *,double) const;
 		virtual void CalcVelocityForStrainUpdate(void) = 0;
-		virtual void AdjustForSymmetry(NodalPoint *,Vector *,bool) const;
+        virtual void AdjustForSymmetry(NodalPoint *,Vector *,bool) const;
 	
 		// boundary conditions
         virtual void SetMomVel(Vector *) = 0;
@@ -101,6 +105,7 @@ class CrackVelocityField
 		int OppositeCrackTo(int,int,int *);
 		void SetLocationAndCrack(short,int,int);
 		MatVelocityField **GetMaterialVelocityFields(void);
+		MatVelocityField *GetMaterialVelocityField(int);
 		virtual double GetTotalMass(bool) const = 0;
 		virtual void AddKineticEnergyAndMass(double &,double &) = 0;
 		virtual double GetVolumeNonrigid(bool) = 0;
@@ -110,12 +115,13 @@ class CrackVelocityField
 		virtual Vector GetCMatFtot(void) = 0;
 		virtual void ChangeCrackMomentum(Vector *,bool,double) = 0;
 		virtual int CopyFieldMomenta(Vector *,int) = 0;
+#ifdef ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY
+		virtual void AdjustForSymmetryBC(NodalPoint *) = 0;
+#endif
 		virtual int PasteFieldMomenta(Vector *,int) = 0;
 		Vector GetVelocity(int);
-		Vector GetContactForce(int);
 		virtual int GetNumberPoints(void);
 		virtual void SetNumberPoints(int);
-		virtual int GetNumberPointsNonrigid(void);
 		virtual bool HasPointsNonrigid(void) const;
 		virtual void Describe(void) const;
 		virtual void SumAndClearRigidContactForces(Vector *,bool,double,Vector *);
@@ -124,7 +130,7 @@ class CrackVelocityField
 		// class methods
 		static bool ActiveField(CrackVelocityField *);
         static bool ActiveCrackField(CrackVelocityField *);
-		static bool ActiveNonrigidField(CrackVelocityField *cvf);
+		static bool ActiveNonrigidField(CrackVelocityField *);
 		static bool ActiveNonrigidField(CrackVelocityField *,int);
 		static CrackVelocityField *CreateCrackVelocityField(int,short,int);
 	

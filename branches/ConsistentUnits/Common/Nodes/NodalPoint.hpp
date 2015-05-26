@@ -20,6 +20,11 @@ class CrackNode;
 class TransportTask;
 #include "Nodes/CrackVelocityField.hpp"
 #include "Cracks/CrackHeader.hpp"
+
+// include to extrapolate crack surface velocities using Sum Ni pi / Sum Ni mi
+// rather than Sum Ni (pi/mi) = Sum Ni vi
+//#define CRACK_SURFACE_BY_MOMENTUM_EXTRAP
+
 #endif
 
 class NodalPoint : public LinkedObject
@@ -85,7 +90,7 @@ class NodalPoint : public LinkedObject
 		void UpdateMomentaOnNode(double);
 		void IncrementDelvaTask5(short,int,double,Vector *,Vector *) const;
 	
-		short IncrementDelvSideTask8(short,int,double,Vector *,double *,CrackSegment *) const;
+		bool IncrementDelvSideTask8(short,int,double,Vector *,double *,CrackSegment *) const;
 		short GetFieldForSurfaceParticle(short,int,CrackSegment *) const;
 		void SurfaceCrossesCracks(double,double,double,double,CrackField *) const;
 		int SurfaceCrossesOneCrack(double,double,double,double,int) const;
@@ -116,7 +121,6 @@ class NodalPoint : public LinkedObject
         void AddStress(short,double,Tensor *);
         Vector GetVelocity(short,int);
 		void AddKineticEnergyAndMass(double &,double &);
-		Vector GetContactForce(short,int);
 		void CalcVelocityForStrainUpdate(void);
         short GetCMVelocity(Vector *);
         void CalcStrainField(void);

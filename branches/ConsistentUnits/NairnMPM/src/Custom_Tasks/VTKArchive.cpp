@@ -27,6 +27,8 @@
 #include "MPM_Classes/MPMBase.hpp"
 #include "System/UnitsController.hpp"
 
+// globals
+VTKArchive *vtkArchiveTask=NULL;
 int dummyArg;
 
 #pragma mark Constructors and Destructors
@@ -213,8 +215,10 @@ CustomTask *VTKArchive::Initialize(void)
 {
     cout << "Archive grid results to VTK files." << endl;
 	
-	if(!mpmgrid.IsStructuredGrid())
-		throw CommonException("VTKArchive task requires use of a generated grid","VTKArchive::Initialize");
+    // Probably a VTK option to deal with structured but variable element sizes
+    // Add when needed
+	if(!mpmgrid.IsStructuredEqualElementsGrid())
+		throw CommonException("VTKArchive task requires use of a generated grid with equal element sizes","VTKArchive::Initialize");
 	
 	// time interval
 	cout << "   Archive time: ";

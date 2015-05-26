@@ -27,6 +27,18 @@ CrackVelocityFieldMulti::CrackVelocityFieldMulti(int num,short theLoc,int cnum) 
 	numberRigidPoints=0;
 }
 
+// Destructor
+CrackVelocityFieldMulti::~CrackVelocityFieldMulti()
+{	// delete any allocated material velocity fields
+	// go backwards so unmirror fields before source gets deleted
+	for(int i=maxMaterialFields-1;i>=0;i--)
+    {   if(mvf[i]!=NULL)
+		{
+			delete mvf[i];
+		}
+	}
+}
+
 // zero all active material velocity fiels
 void CrackVelocityFieldMulti::ZeroMatFields(void)
 {	int i;
@@ -45,7 +57,7 @@ void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **rmvf)
 	{	if(rmvf[i]==NULL) continue;
         
 		if(mvf[i]==NULL)
-		{	mvf[i]=new MatVelocityField(rmvf[i]->rigidField);
+		{	mvf[i]=new MatVelocityField(rmvf[i]->GetFlags());
 			if(mvf[i]==NULL) throw CommonException("Memory error allocating material velocity field.",
 											   "CrackVelocityFieldMulti::MatchMatVelocityFields");
 		}
@@ -62,7 +74,7 @@ void CrackVelocityFieldMulti::MatchMatVelocityFields(MatVelocityField **rmvf)
 // throws CommonException() on memory error
 void CrackVelocityFieldMulti::AddMatVelocityField(int matfld)
 {	if(mvf[matfld]==NULL)
-	{   mvf[matfld]=new MatVelocityField(MaterialBase::GetMVFIsRigid(matfld));
+	{   mvf[matfld]=new MatVelocityField(MaterialBase::GetMVFFlags(matfld));
         if(mvf[matfld]==NULL)
         {   throw CommonException("Memory error allocating material velocity field.",
 												"CrackVelocityFieldMulti::AddMatVelocityField");
@@ -81,10 +93,10 @@ void CrackVelocityFieldMulti::AddMassTask1(int matfld,double mnode,int numPts)
 
 // Add to mass gradient
 // This gradient is only used in multimaterial contact calculations
-// It may be wrong for axisymmetric, but that is fixed in GetVolumeGradient(). It is
+// Corrections for symmetry planes and axisymmetry are done in GetVolumeGradient(). It is
 //		faster there because that is called less while this is called for every node-particle pair
 void CrackVelocityFieldMulti::AddVolumeGradient(int matfld,MPMBase *mptr,double dNdx,double dNdy,double dNdz)
-{	double Vp = mptr->GetVolume(DEFORMED_AREA);
+{	double Vp = mptr->GetVolume(DEFORMED_AREA_FOR_GRADIENT);
 	mvf[matfld]->volumeGrad->x += Vp*dNdx;
 	mvf[matfld]->volumeGrad->y += Vp*dNdy;
 	mvf[matfld]->volumeGrad->z += Vp*dNdz;
@@ -97,32 +109,16 @@ void CrackVelocityFieldMulti::CopyVolumeGradient(int matfld,Vector *grad)
 	mvf[matfld]->volumeGrad->z += grad->z;
 }
 
-// Count number of materials in each crack velocity field on this node
-// Sum mass (only of non-rigid materials) and return the result
-double CrackVelocityFieldMulti::GetTotalMassAndCount(void)
-{	int i;
-	double mass=0.;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveField(mvf[i]))
-		{	numberMaterials++;
-			if(!mvf[i]->rigidField)
-				mass += mvf[i]->mass;
-		}
-	}
-	return mass;
-}
-
 #ifdef COMBINE_RIGID_MATERIALS
 
 // Copy rigid material from field [0] to this field (creating if needed)
-// This is only called when rigid material extrapolate to all crack fields, and this is only possible
-//      when has cracks, is multimaterial mode, AND has rigid particles
+// (note: can search "combining_rigid" to see all places in code affected by combining rigid particles)
 // throws CommonException on material velocity allocation memory error
 void CrackVelocityFieldMulti::CopyRigidFrom(MatVelocityField *rmvf,int rigidFieldNum)
 {	
 	// create material field in this crack velocity field if needed, otherwise, just be sure it is zeroed.
 	if(mvf[rigidFieldNum]==NULL)
-	{	mvf[rigidFieldNum] = new MatVelocityField(TRUE);
+	{	mvf[rigidFieldNum] = new MatVelocityField(RIGID_FIELD_BIT);
 		if(mvf[rigidFieldNum]==NULL) throw CommonException("Memory error allocating material velocity field.",
 													"CrackVelocityFieldMulti::CopyRigidFrom");
 	}
@@ -135,8 +131,10 @@ void CrackVelocityFieldMulti::CopyRigidFrom(MatVelocityField *rmvf,int rigidFiel
 	
 	// copy all extrapolated items
     
-    // momentum, number of points, and velocity (if needed)
-    mvf[rigidFieldNum]->AddMomentumTask1(&rmvf->pk,rmvf->GetVelocityPtr(),rmvf->numberPoints);
+    // momentum, number of points, and velocity
+	Vector rvel = rmvf->GetVelocity();
+    mvf[rigidFieldNum]->AddMomentumTask1(&rmvf->pk,&rvel,rmvf->numberPoints);
+	mvf[rigidFieldNum]->SetVelocity(&rvel);
     
     // mass and volume
 	mvf[rigidFieldNum]->mass = rmvf->mass;
@@ -163,7 +161,7 @@ void CrackVelocityFieldMulti::RezeroNodeTask6(double deltaTime)
 {	int i;
     for(i=0;i<maxMaterialFields;i++)
     {	if(MatVelocityField::ActiveField(mvf[i]))
-        {	if(!mvf[i]->rigidField)
+        {	if(!mvf[i]->IsRigidField())
             {	ZeroVector(&mvf[i]->pk);
                 ZeroVector(&mvf[i]->disp);
                 if(mvf[i]->volumeGrad!=NULL) ZeroVector(mvf[i]->volumeGrad);
@@ -191,7 +189,7 @@ void CrackVelocityFieldMulti::CopyMassAndMomentumLast(NodalPoint *real)
 #pragma mark TASK 3 METHODS
 
 // Add to force spread out over the materials so each has same extra accerations = f/M
-// Only called by AddTractionForce() and CrackInterfaceForce()
+// Only called by AddTractionForce() and CrackInterfaceForce() when cracks are an imperfect interface
 void CrackVelocityFieldMulti::AddFtotSpreadTask3(Vector *f)
 {	int i;
 	
@@ -228,7 +226,7 @@ void CrackVelocityFieldMulti::AddGravityAndBodyForceTask3(Vector *gridBodyForce)
 void CrackVelocityFieldMulti::CopyGridForces(NodalPoint *real)
 {	for(int matfld=0;matfld<maxMaterialFields;matfld++)
 	{	if(mvf[matfld]!=NULL)
-			mvf[matfld]->CopyGridForces(real,fieldNum,matfld);
+            mvf[matfld]->CopyGridForces(real,fieldNum,matfld);
 	}
 }
 
@@ -237,11 +235,9 @@ void CrackVelocityFieldMulti::CopyGridForces(NodalPoint *real)
 // update momenta for this MPM step
 //  pk(i+1) = pk(i) + ftot * dt
 void CrackVelocityFieldMulti::UpdateMomentaOnField(double timestep)
-{	// update momenta
-	int i;
-    for(i=0;i<maxMaterialFields;i++)
+{	for(int i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-            mvf[i]->UpdateMomentum(timestep);
+			mvf[i]->UpdateMomentum(timestep);
     }
 }
 
@@ -258,12 +254,10 @@ void CrackVelocityFieldMulti::UpdateMomentaOnField(double timestep)
 	ndptr is parent node to this crack velocity field
 	On first call in time step, first and last on pointers to MaterialInterfaceNode * because those
 		objects are created for later interface calculations
-	postUpdate is TRUE when called between momentum update and particle update and otherwise is FALSE
- throws CommonException() if
-	a. more than one rigid material
-	b. memory error making interface node
+	postUpdate is TRUE when called between momentum update and particle update and otherwise is false
+	throws CommonException() if memory error making interface node
 */
-void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,double deltime,int callType,
+void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,double deltime,int callType,
 												   MaterialInterfaceNode **first,MaterialInterfaceNode **last)
 {
 	// exit if no contact
@@ -271,20 +265,20 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 	
 	// get center of mass results and look out for rigid materials
 	int i,j,rigidMat=-1;
+    bool multiRigid = false;
 	Vector Pc,dispc;
 	ZeroVector(&Pc);
 	double Mc=0.;
 	for(i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveField(mvf[i]))
-		{	if(!mvf[i]->rigidField)
+		{	if(!mvf[i]->IsRigidField())
 			{	// real material
 				AddVector(&Pc,&mvf[i]->pk);
 				Mc += mvf[i]->mass;
 			}
-			else if(rigidMat>0)
+			else if(rigidMat>=0)
 			{	// rigid material, but not allowed if already had another rigid material
-				throw CommonException("Two different rigid materials in contact on the same node",
-												"CrackVelocityFieldMulti::MaterialContactOnCVF");
+                multiRigid = true;
 			}
 			else
 			{	// first rigid material at this node
@@ -296,28 +290,31 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 	// if exactly one rigid material, then special case for contact laws and then done
 	if(rigidMat>=0)
     {   //if(callType!=UPDATE_MOMENTUM_CALL) return;
-		RigidMaterialContactOnCVF(rigidMat,ndptr,vfld,deltime,callType,first,last);
+		RigidMaterialContactOnCVF(rigidMat,multiRigid,ndptr,deltime,callType,first,last);
 		return;
 	}
 	
 	// from here on all materials in contact are non-rigid
 	AdjustForSymmetry(ndptr,&Pc,false);
-	if(contact.displacementCheck)
-	{	dispc = GetCMDisplacement(ndptr,false);
-		ScaleVector(&dispc,1./Mc);
-	}
 	
+	// will probably need center of mass if doing displacement check, if imperfect interface,
+	// or if transport tasks are doing contact. Because this is amost always, it is always
+	// found
+	dispc = GetCMDisplacement(ndptr,false);
+	ScaleVector(&dispc,1./Mc);
+    
 	// loop over each material
     Vector Ftdt;
-	bool hasInterfaceEnergy = FALSE;
+	bool hasInterfaceEnergy = false;
     double qrate = 0.;
 	bool postUpdate = callType != MASS_MOMENTUM_CALL;
 	for(i=0;i<maxMaterialFields;i++)
-    {	if(!MatVelocityField::ActiveField(mvf[i])) continue;
+	{	// continue if not an active field
+		if(!MatVelocityField::ActiveField(mvf[i])) continue;
 		
 		// some variables
-		Vector norm,delPi,dispcScaled,dispi;
-        bool hasDisplacements = FALSE;
+		Vector norm,delPi,delta;
+		bool hasDisplacements = false;
 		double dotn,massi=mvf[i]->mass,massRatio=massi/Mc,mred;
         double voli=mvf[i]->GetContactVolume();
 		
@@ -337,7 +334,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 		// problem if ipaired not found, but it will always be found
 		int maxContactLaw = contact.GetMaterialContactLaw(i,ipaired);
 		double maxFriction = 0.,Dn,Dnc,Dt;
-        bool inContact = FALSE;
+        bool inContact = false;
         
         // get contact parameters - an interface or friction
         if(maxContactLaw == IMPERFECT_INTERFACE)
@@ -353,26 +350,27 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
             CopyScaleVector(&delPi,&mvf[i]->pk,-1.);
 			AdjustForSymmetry(ndptr, &delPi, false);
             AddScaledVector(&delPi,&Pc,massRatio);
-            inContact = TRUE;
+            inContact = true;
         }
         
         else
-        {   // first look for conditions to ignore contact and interface at this node
+		{	// first look for conditions to ignore contact and interface at this node
+			// not sure if these should be ignored for transport contact?
             
-            // 1. check nodal volume (this is turned off by setting the materialContactVmin to zero)
-            //    (warning: 2D must set grid thickness if it is not 1)
-            if(GetVolumeTotal(ndptr)/mpmgrid.GetCellVolume()<contact.materialContactVmin) continue;
-            
-            // 2. ignore very small mass nodes - may not be needed
-            if(massRatio<1.e-6 || massRatio>0.999999) continue;
-            
-            // 3. go through contact conditions; break if not in contact or
-            //    set inContact to true and break if is in contact. Note that
-            //    imperfect interfaces will always proceed to calculations, but it
-            //    needs normal vector and needs to know if in contact (to know
-            //    whether to use Dnc or Dnt for normal stiffness)
-            while(TRUE)
-            {   // find -mi(vi-vc) = (ma/mc)pc-pi or momentum change to match ctr of mass momentum
+			// 1. check nodal volume (this is turned off by setting the materialContactVmin to zero)
+			//    (warning: 2D must set grid thickness if it is not 1)
+			if(GetVolumeTotal(ndptr)/mpmgrid.GetCellVolume()<contact.materialContactVmin) break;
+		
+			// 2. ignore very small mass nodes - may not be needed
+			if(massRatio<1.e-6 || massRatio>0.999999) continue;
+		
+			// 3. go through contact conditions; break if not in contact or
+			//    set inContact to true and break if is in contact. Note that
+			//    imperfect interfaces will always proceed to calculations, but it
+			//    needs normal vector and needs to know if in contact (to know
+			//    whether to use Dnc or Dnt for normal stiffness)
+			while(true)
+			{	// find -mi(vi-vc) = (ma/mc)pc-pi or momentum change to match ctr of mass momentum
                 CopyScaleVector(&delPi,&mvf[i]->pk,-1.);
 				AdjustForSymmetry(ndptr, &delPi, false);
                 AddScaledVector(&delPi,&Pc,massRatio);
@@ -438,7 +436,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
                         GetVolumeGradient(i,ndptr,&norm,1.);
                         ScaleVector(&norm,1./sqrt(DotVectors(&norm,&norm)));
                         break;
-                        
+					
 					case SPECIFIED_NORMAL:
 						// use specified normal for all contact
 						norm = contact.contactNormal;
@@ -472,50 +470,38 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
                 // Also, frictional contact assumes dotn<0
                 if(dotn>=0.) break;
                 
-                // 3b. Displacement check
+                // 3b. Displacement check: Get COD info or delta = dispcScaled - dispi
                 if(contact.displacementCheck)
-                {	// 4. get other mass and ignore if very small mass in other materials
+				{	// 4. get other mass and ignore if very small mass in other materials
                     mred=(Mc-massi)/Mc;
                     if(mred<1.e-6) break;
                     
-                    // scale displacements to get delta = (Mc/(Mc-mi))*disp - (Mc/(Mc-mi))*(mvf[i]->disp/mi)
-                    // dispi is displacement (or position) for material i and dispcScaled is displacement
-                    //    (or position) for the virtual paired material (combination of other materials)
-                    // the separation vector is their difference
-                    CopyScaleVector(&dispcScaled,&dispc,1./mred);
-                    mred*=massi;                // now (ma mother)/(ma+mother)
-                    CopyScaleVector(&dispi,&mvf[i]->disp,1./mred);
-					AdjustForSymmetry(ndptr,&dispi,false);
-                    hasDisplacements = TRUE;
-					Vector delta;
-					delta.x = dispcScaled.x-dispi.x;
-					delta.y = dispcScaled.y-dispi.y;
-					delta.z = 0.;
+					// get COD
+					mred = GetContactCOD(ndptr,&delta,&dispc,&mvf[i]->disp,massi,mred,&hasDisplacements);
+				
+					// to get normal velocity delta v = (Mc/(Mc-mi)) (delta p/mi)
+					double dvel = dotn/mred;
                     
-                    // to get normal velocity delta v = (Mc/(Mc-mi)) (delta p/mi)
-                    double dvel = dotn/mred;
-                    
-                    // 5. check for contact
-                    if(contact.MaterialContact(&delta,&norm,dvel,postUpdate,deltime)==SEPARATED) break;
+					// 5. check for contact
+					if(contact.MaterialContact(&delta,&norm,dvel,postUpdate,deltime)==SEPARATED) break;
                 }
                 
                 // passed all tests
-                inContact = TRUE;
+                inContact = true;
                 break;
             }
-            
-            // continue if not in contact, unless it is an imperfect interface law
-            if(!inContact && (maxContactLaw!=IMPERFECT_INTERFACE))
-			{	// special case two materials for efficiency (and if both will find normal the same way)
-				// can break out of contact because now known to be no contact, otherwise continue to next material
-				if(numberMaterials==2 && contact.materialNormalMethod!=EACH_MATERIALS_MASS_GRADIENT)
-					break;
+			
+			// if not in contact, and not imperfect interface (which needs to contine), then
+			// done if only two materials (and the two use same normal) or continue to next materiasl
+			if(!inContact && (maxContactLaw!=IMPERFECT_INTERFACE))
+			{	if(numberMaterials==2 && contact.materialNormalMethod!=EACH_MATERIALS_MASS_GRADIENT) break;
 				continue;
 			}
 		}
 		
+		// Here inContact is true, but in law is IMPERFECT_INTERFACE, may be true or false
         // adjust momentum change as needed
-        bool hasFriction = FALSE;
+        bool hasFriction = false;
 		switch(maxContactLaw)
 		{	case STICK:
 			case NOCONTACT:
@@ -533,25 +519,11 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 				break;
             
             case IMPERFECT_INTERFACE:
-			{	// get displacement of material i and the virtual opposite material
+			{	// may not have found displacement above yet
 				if(!hasDisplacements)
-				{   if(!contact.displacementCheck)
-					{	dispc=GetCMDisplacement(ndptr,false);
-						ScaleVector(&dispc,1./Mc);
-					}
-					
-					// scale displacements to get delta = (Mc/(Mc-mi))*dispc - (Mc/(Mc-mi))*(mvf[i]->disp/mi)
-					//    of delta = disp(virtual) - dist(mat i) = dispcScaled - dispi
-					mred = (Mc-massi)/Mc;
-					CopyScaleVector(&dispcScaled,&dispc,1./mred);
-					mred *= massi;                  // now (ma mother)/(ma+mother)
-					CopyScaleVector(&dispi,&mvf[i]->disp,1./mred);
-					AdjustForSymmetry(ndptr,&dispi,false);
+				{	mred = (Mc-massi)/Mc;
+					mred = GetContactCOD(ndptr,&delta,&dispc,&mvf[i]->disp,massi,mred,&hasDisplacements);
 				}
-				
-				// find displacement difference vector
-				Vector delta=dispcScaled;
-				SubVector(&delta,&dispi);
 				
 				// get interface forces for future use and get non-uniform grid correction
 				Vector fImp;
@@ -579,7 +551,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 					if(iother==-1 && hasInterfaceEnergy) rawEnergy = 0.;
 					
 					// create node to add internal force later, if needed set first one
-					*last = new MaterialInterfaceNode(ndptr,vfld,i,iother,&fImp,rawEnergy,*last);
+					*last = new MaterialInterfaceNode(ndptr,fieldNum,i,iother,&fImp,rawEnergy,*last);
 					if(*last == NULL)
 					{	throw CommonException("Memory error allocating storage for a material interface node.",
 													"CrackVelocityFieldMulti::MaterialContactOnCVF");
@@ -587,7 +559,7 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 					if(*first==NULL) *first=*last;
 					
 					// has energy at least once
-					hasInterfaceEnergy = TRUE;
+					hasInterfaceEnergy = true;
 				}
                 break;
 			}
@@ -626,8 +598,8 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 	}
     
     // total friction, scale and absolute value
-    if(callType==UPDATE_MOMENTUM_CALL && conduction && qrate!=0.)
-    {	conduction->AddFluxCondition(ndptr,fabs(qrate/deltime),true);
+    if(callType==UPDATE_MOMENTUM_CALL && ConductionTask::matContactHeating && qrate!=0.)
+    {   conduction->AddFluxCondition(ndptr,fabs(qrate/deltime),true);
     }
 }
 
@@ -635,15 +607,39 @@ void CrackVelocityFieldMulti::MaterialContactOnCVF(NodalPoint *ndptr,int vfld,do
 // means exactly one is a rigid material
 //	(no rigid materials handled in MaterialContactOnCVF(), two rigid materials is an error)
 // throws CommonException() if memory error making interface node
-void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint *ndptr,int vfld,double deltime,int callType,
+void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,bool multiRigid,NodalPoint *ndptr,double deltime,int callType,
 												   MaterialInterfaceNode **first,MaterialInterfaceNode **last)
 {
-	// get rigid material volume for contact and actual volume
+    // multiRigid means more than one rigid material
+	int i;
+    double rigidVolume = mvf[rigidFld]->GetContactVolume();
+    if(multiRigid)
+    {   // this aborts the calculation
+        //throw CommonException("Two different rigid materials in contact on the same node",
+        //						"CrackVelocityFieldMulti::RigidMaterialContactOnCVF");
+        
+        // scheme 1, find node with the most contact volume
+        for(i=rigidFld+1;i<maxMaterialFields;i++)
+        {   if(MatVelocityField::ActiveField(mvf[i]))
+            {	if(mvf[i]->IsRigidField())
+                {   double testVolume = mvf[i]->GetContactVolume();
+                    if(testVolume > rigidVolume)
+                    {   rigidVolume = testVolume;
+                        rigidFld = i;
+                    }
+                }
+            }
+        }
+        
+        // alternate scheme might combine the rigid particles in some way, but a problem
+        // with two rigid particles approaching each other could end up with zero average
+        // normal vector and therefore poor results.
+    }
+            
+	// get rigid material volume for contact and actual volume (rigidVolume is above)
 	// these are the same except in axisymmtric where first is area and second is volume per radian
-	double rigidVolume = mvf[rigidFld]->GetContactVolume();
 	double actualRigidVolume = mvf[rigidFld]->mass;
 	
-	// get rigid volume
 	// rigid material with position-dependent velocities may have mixed velocities
 	Vector rvel;
 	if(mvf[rigidFld]->numberPoints==1)
@@ -654,19 +650,18 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 	
 	// loop over each material (skipping the one rigid material)
     Vector Ftdt;
-	int i;
 	bool postUpdate = callType != MASS_MOMENTUM_CALL;
 	for(i=0;i<maxMaterialFields;i++)
-    {	if(!MatVelocityField::ActiveField(mvf[i]) || i==rigidFld) continue;
-		
+    {	if(!MatVelocityField::ActiveField(mvf[i]) || mvf[i]->IsRigidField()) continue;
+        
 		// First determine contact law with rigid material
 		int maxContactLaw=contact.GetMaterialContactLaw(i,rigidFld);
         
         // get contact parameters
-        Vector rigidDisp,dispi;
+        Vector delta;
         double maxFriction,Dn,Dnc,Dt;
-        bool inContact = FALSE;
-        bool hasDisplacements = FALSE;
+        bool inContact = false;
+        bool hasDisplacements = false;
         if(maxContactLaw == IMPERFECT_INTERFACE)
         {   // fetch interface properties
             contact.GetMaterialInterface(i,rigidFld,&Dn,&Dnc,&Dt);
@@ -686,7 +681,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
         // if needed, determine if the surfaces are in contact
         if(maxContactLaw==NOCONTACT)
         {   // will use -mi(vi-vr) = - pi + mi*vr to match rigid particle velocity
-            inContact=TRUE;
+            inContact = true;
         }
         
         else
@@ -706,7 +701,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
             //    imperfect interfaces will always proceed to calculations, but it
             //    needs normal vector and needs to know if in contact (to know
             //    whether to use Dnc or Dnt for normal stiffness)
-            while(TRUE)
+            while(true)
 			{	// Get normal vector by various options
                 switch(contact.materialNormalMethod)
                 {	case MAXIMUM_VOLUME_GRADIENT:
@@ -770,8 +765,8 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
                         
                     default:
                         break;
-                }			
-				
+                }
+
                 // current options: 4 (cutting, but only here in rigid contact)
                 if(fmobj->dflag[0]==3)
                 {   throw CommonException("Use 'Specify Normal' method now instead of developer flag [0] = 3.",
@@ -780,8 +775,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
                 else if(fmobj->dflag[0]==4)
                 {	// use special normals for cutting simulation with rake angle in dflag[1]
                     // and the material below the crack as the first defined material
-                    // Assumes material 1 = material to cut (need not be used), 2 is tool, and 3 is roller bar
-                    //	(note: theID is one less than the number)
+                    // Assumes material 1 (ID=0) = material to cut (need not be used), 2 (ID=1) is tool, and 3 (ID=2) is roller bar
                     Vector nrpos;
                     CopyScaleVector(&nrpos,&mvf[i]->disp,1./massi);
                     //if(MaterialBase::GetFieldMatID(i)==0)
@@ -789,8 +783,9 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
                     {	norm.x=0.;
                         norm.y=1.;
                     }
-                    else if(MaterialBase::GetFieldMatID(rigidFld)!=2)
-                    {	double radAngle=(double)fmobj->dflag[1]*PI_CONSTANT/180.;
+                    else if(MaterialBase::GetFieldMatID(rigidFld)!=2 && fmobj->dflag[1]>-90.)
+                    {   // use rake angle unless it is <-90, then keep calculated normal
+                    	double radAngle=(double)fmobj->dflag[1]*PI_CONSTANT/180.;
                         norm.x=cos(radAngle);
                         norm.y=-sin(radAngle);
                     }
@@ -808,16 +803,14 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
                 // 3b. Displacement check
                 if(contact.displacementCheck)
                 {	// rigid material displacement was scaled by volume, while non-rigid was weighted by mass
-					CopyScaleVector(&rigidDisp,&mvf[rigidFld]->disp,1./actualRigidVolume);
-					AdjustForSymmetry(ndptr,&rigidDisp,false);
+					Vector dispi;
+					CopyScaleVector(&delta,&mvf[rigidFld]->disp,1./actualRigidVolume);
+					AdjustForSymmetry(ndptr,&delta,false);
                     CopyScaleVector(&dispi,&mvf[i]->disp,1./massi);
 					AdjustForSymmetry(ndptr,&dispi,false);
-                    hasDisplacements = TRUE;
- 					Vector delta;
-					delta.x = rigidDisp.x-dispi.x;
-					delta.y = rigidDisp.y-dispi.y;
-					delta.z = 0.;
-					
+					SubVector(&delta,&dispi);
+					hasDisplacements = true;
+                
                     // convert dotn to velocity of approach
                     double dvel = dotn/massi;
                 
@@ -826,7 +819,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
                 }
                 
                 // passed all tests
-                inContact = TRUE;
+                inContact = true;
                 break;
             }
             
@@ -834,7 +827,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
             if(!inContact && (maxContactLaw!=IMPERFECT_INTERFACE)) continue;
         }
 		
-        bool hasFriction = FALSE;
+        bool hasFriction = false;
 		switch(maxContactLaw)
 		{	case STICK:
 			case NOCONTACT:
@@ -856,21 +849,20 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 			{	// get displacement of material i and the rigid material
 				if(!hasDisplacements)
 				{   // rigid material displacement was scaled by volume, while non-rigid was weighted by mass
-					CopyScaleVector(&rigidDisp,&mvf[rigidFld]->disp,1./actualRigidVolume);
-					AdjustForSymmetry(ndptr,&rigidDisp,false);
+					Vector dispi;
+					CopyScaleVector(&delta,&mvf[rigidFld]->disp,1./actualRigidVolume);
+					AdjustForSymmetry(ndptr,&delta,false);
 					CopyScaleVector(&dispi,&mvf[i]->disp,1./massi);
 					AdjustForSymmetry(ndptr,&dispi,false);
+					SubVector(&delta,&dispi);
+					hasDisplacements = true;
 				}
-				
-				// find displacement difference vector
-				Vector delta=rigidDisp;
-				SubVector(&delta,&dispi);
 				
 				// get interface forces for future use and nonuniform grid correction
 				Vector fImp;
 				double rawEnergy;
 				
-				// Get raw surface area, it is divided by hperp in when get interface forces
+				// Get raw surface area, it is divided by hperp in GetInterfaceForcesForNode()
 				// Scale voltot=voli+rigidVolume to voltot*sqrt(2*vmin/voltot)
 				double rawSurfaceArea = sqrt(2.*fmin(voli,rigidVolume)*(voli+rigidVolume));
 				
@@ -882,7 +874,7 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 				
 				if(createNode && first!=NULL)
 				{	// create node to add internal force later, if needed set first one
-					*last = new MaterialInterfaceNode(ndptr,vfld,i,-1,&fImp,rawEnergy,*last);
+					*last = new MaterialInterfaceNode(ndptr,fieldNum,i,-1,&fImp,rawEnergy,*last);
 					if(*last==NULL)
 					{	throw CommonException("Memory error allocating storage for a material interface node.",
 																"CrackVelocityFieldMulti::RigidMaterialContactOnCVF");
@@ -913,9 +905,9 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
         if(callType==UPDATE_MOMENTUM_CALL)
 		{	mvf[rigidFld]->AddContactForce(&delPi);
            
-            // if conduction on add frictional heating
+            // if conduction on (and here means in momentum update) add frictional heating
             if(hasFriction)
-            {   // find |(vr-vi).Ftdt| *1e-6/deltime
+            {   // find |(vr-vi).Ftdt|/deltime
                 CopyScaleVector(&delPi,&mvf[i]->pk,-1/massi);   // -vr
                 AddVector(&delPi,&rvel);                        // +vr
                 double qrate = DotVectors(&Ftdt,&delPi);        // (vr-vi).Ftdt
@@ -925,10 +917,29 @@ void CrackVelocityFieldMulti::RigidMaterialContactOnCVF(int rigidFld,NodalPoint 
 	}
 }
 
+// scale displacements to get delta = (Mc/(Mc-mi))*dispc - (Mc/(Mc-mi))*(mvf[i]->disp/mi)
+// dispi is displacement (or position) for material i and (Mc/(Mc-mi))*dispc is displacement
+//    (or position) for the virtual paired material (combination of other materials)
+// the separation vector is their difference
+// return reduced mass = (mi*(Mc-mi))/Mc while on call mred = (Mc-mi)/Mc
+double CrackVelocityFieldMulti::GetContactCOD(NodalPoint *ndptr,Vector *delta,Vector *dispc,Vector *mvfdisp,
+											double mi,double mred,bool *hasDisplacements)
+{
+	Vector dispi;
+	CopyScaleVector(delta,dispc,1./mred);
+	mred *= mi;                // now mred = (mi*(Mc-mi))/Mc
+	CopyScaleVector(&dispi,mvfdisp,1./mred);
+	AdjustForSymmetry(ndptr,&dispi,false);
+	SubVector(delta,&dispi);
+	*hasDisplacements=true;
+	return mred;
+}
+
 // Adjust change in momentum for frictional contact in tangential direction
 // If has component of tangential motion, calculate force depending on whether it is sticking or sliding
 // When frictional sliding, find tangential force (times dt) and set flag, if not set flag false
-// hasFriction must be initialized to FALSE on all calls (because not set here)
+// When friction heating is on, set Ftdt term and set hasFriction to true
+//     (hasFriction (meaning has frictional heating value) must be initialized to false when called)
 void CrackVelocityFieldMulti::GetFrictionalDeltaMomentum(Vector *delPi,Vector *norm,double dotn,double frictionCoeff,
                                                             Vector *Ftdt,bool *hasFriction,int callType)
 {
@@ -951,17 +962,27 @@ void CrackVelocityFieldMulti::GetFrictionalDeltaMomentum(Vector *delPi,Vector *n
         
         // if this is true, it is sliding and convert to frictional force
         // if not, leave delPi alone in its stick condition
-        if(dott > -frictionCoeff*dotn)
+		
+		// this code adds an adhesion term where Fcontact is adhesion term force
+		// it should be Ga*contact area
+		/*
+		double Fcontact=1.e-6;
+        if(dott > -frictionCoeff*dotn + Fcontact*timestep)
         {	AddScaledVector(norm,&tang,-frictionCoeff);
             CopyScaleVector(delPi,norm,dotn);
+			AddScaledVector(delPi,tang,Fcontact*timestep)
+		*/
+		if(dott > -frictionCoeff*dotn)
+		{	AddScaledVector(norm,&tang,-frictionCoeff);
+			CopyScaleVector(delPi,norm,dotn);
             
-            // get frictional part - this is g mm^2/sec^2 = nJ
-            // As heat source need nJ/sec of divide by timestep
+            // get frictional heating term - this is g mm^2/sec^2 = nJ
+            // As heat source need nJ/sec or divide by timestep
             // Note: only add frictional heating during momentum update (when friction
-            //   force is appropriate) and only if conduction is on.
-            if(callType==UPDATE_MOMENTUM_CALL && conduction && ConductionTask::matContactHeating)
+            //   force is appropriate) and only if frictional contact heat is enabled.
+            if(callType==UPDATE_MOMENTUM_CALL && ConductionTask::matContactHeating)
             {   CopyScaleVector(Ftdt,&tang,-frictionCoeff*dotn);
-                *hasFriction = TRUE;
+                *hasFriction = true;
             }
         }
     }
@@ -970,17 +991,18 @@ void CrackVelocityFieldMulti::GetFrictionalDeltaMomentum(Vector *delPi,Vector *n
 // retrieve volume gradient for matnum (1 based) in crack field only (or zero if
 // not there or not tracked
 bool CrackVelocityFieldMulti::HasVolumeGradient(int matfld) const
-{	if(mvf[matfld]==NULL) return FALSE;
-	if(mvf[matfld]->volumeGrad==NULL) return FALSE;
-	return TRUE;
+{	if(mvf[matfld]==NULL) return false;
+	if(mvf[matfld]->volumeGrad==NULL) return false;
+	return true;
 }
 
-// retrieve volume gradient, but set components zero on symmetry planes
+// retrieve -2*scale*(mass gradient) for material matfld
+// and but set components zero on symmetry planes
 void CrackVelocityFieldMulti::GetVolumeGradient(int matfld,const NodalPoint *ndptr,Vector *grad,double scale) const
 {
 	if(fmobj->IsAxisymmetric())
-	{	// Need special case here to insure grad->z is zero (it is non-zero in volumeGrad to to use of
-		//   z component in extr axisymmetric shape function
+	{	// Need special case here to insure grad->z is zero (it is non-zero in volumeGrad due to use of
+		//   z component in extra axisymmetric shape function
 		if(ndptr->fixedDirection&XSYMMETRYPLANE_DIRECTION)
 		{	grad->x=0.;
 			grad->y = scale*mvf[matfld]->volumeGrad->y ;
@@ -1003,23 +1025,22 @@ void CrackVelocityFieldMulti::GetVolumeGradient(int matfld,const NodalPoint *ndp
 	}
 }
 
-
-// Handle interface forces or not (if they are perfect interfces
-// Contact handled here only for perfect interface parts (Dt or Dn < 0), if done return FALSE
+// Handle interface forces or not (if they are perfect interfces)
+// Contact handled here only for perfect interface parts (Dt or Dn < 0), if done return false
 // Imperfect interfaces are handled next
-// Use LIMIT_FORCES to decide if force is too high as determined by whether or not
-//      the materials position is forced to pass the center of mass position by
-//      the calculated formce
-#define LIMIT_FORCES
+// The bottom section decides if force is too high as determined by whether or not
+//      the material's position is forced to pass the center of mass position by
+//      the calculated force
 bool CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *norm,double Dn,double Dnc,
                     double Dt,Vector *fImp,double *rawEnergy,double rawSurfaceArea,
 					Vector *delPi,double dotn,bool inContact,bool postUpdate,double mred)
 {
+	/*
     // perpendicular distance to correct contact area and contact by positions
     double dist;
     
     // normal displacement (norm is normalized) = delta . norm, subtract adjustment when using position
-	// which hae been precalculated
+	// which have been precalculated
     double deln = DotVectors(delta,norm);
     if(!mpmgrid.GetContactByDisplacements())
 	{	// Cannot use tang here, which means 3D non regular will be less accurate
@@ -1040,14 +1061,18 @@ bool CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *no
 	// if using displacements (i.e., dist not found above), find dist now with tang
 	if(mpmgrid.GetContactByDisplacements())
 		dist = mpmgrid.GetPerpendicularDistance(norm, &tang, delt);
-    
-	// initialize interfacial forces
-    double trn=0.,trt=0.;
 	
-#ifdef LIMIT_FORCES
+	double surfaceArea = rawSurfaceArea/dist;
+	*/
+    
 	// scale by minimum volume in perpendicular distance
     // Now forces are g-mm/sec^2
-	double surfaceArea = rawSurfaceArea/dist;
+	Vector tang;
+	double deln,delt;
+	double surfaceArea = mpmgrid.InterfaceContactArea(delta,norm,rawSurfaceArea,&tang,&deln,&delt);
+	
+	// initialize interfacial forces
+    double trn=0.,trt=0.;
 	
     // Convert delPi to shear momentum only (delPi - dotn (n) = dott (t)), then
 	//   if shear force limited leave alone, otherwise set to zero
@@ -1114,77 +1139,15 @@ bool CrackVelocityFieldMulti::GetInterfaceForcesForNode(Vector *delta,Vector *no
     
 	// linear elastic energy
     *rawEnergy = 0.5*(trn*deln + trt*delt);
-
-#else
 	
-    if(Dt<0)
-    {	if( (!inContact && Dn>=0.) || (inContact && Dnc>=0.) )
-        {	// prefect in tangential, but imperfect in normal direction
-            // make stick in tangential direction only by subtracting dotn.norm
-            AddScaledVector(delPi,norm,-dotn);
-        }
-        else
-        {   // else perfect in both so return with the stick conditions already in delPi
-            // interface calculations will be skipped
-            return FALSE;
-        }
-    }
-	else
-	{   // transverse traction in g/(mm sec^2)
-        trt = Dt*delt;
-        
-		if( (!inContact && Dn<0.) || (inContact && Dnc<0.) )
-		{   // perfect in normal direction, but imperfect in tangential direction
-			// make stick in normal direction only
-			CopyScaleVector(delPi,norm,dotn);
-		}
-		else
-		{   // imperfect both directions, just imperfect interface forces below and nothing changed here
-			// no change in momentum, just imperfect interface forces later and nothing changed here
-			ZeroVector(delPi);
-		}
-	}
-    
-    if(postUpdate) return FALSE;
-    
-	// get normal traction in g/(mm sec^2) - but different separated or in contact
-	if(deln>0.)
-	{	if(Dn>=0.)
-        {   // normal direction in tension is imperfect
-            trn=Dn*deln;
-        }
-	}
-	else if(Dnc>=0.)
-	{	// normal direction in compression
-		trn=Dnc*deln;
-	}
-    
-	// scale by minimum volume in perpendicular distance
-    // Now forces are g-mm/sec^2
-	double surfaceArea = rawSurfaceArea/dist;
-	trn *= surfaceArea;
-	trt *= surfaceArea;
-    
-    // find (trn n + trt t)*Ai for force in cartesian coordinates
-    CopyScaleVector(fImp, norm, trn);
-    AddScaledVector(fImp, &tang, trt);
-    
-    // total energy (not increment) is (1/2)(trn dn + trt dt)*Ai in g-mm^2/sec^2
-    // units will be g-mm^2/sec^2
-    *rawEnergy = 0.5*(trn*deln + trt*delt);
-    
-#endif
-	
-	return TRUE;
-    
+	return true;
 }
 
 #pragma mark VELOCITY METHODS
 
 // Calculate velocity at a node from current momentum and mass matrix in all velocity fields
 void CrackVelocityFieldMulti::CalcVelocityForStrainUpdate(void)
-{	int i;
-	for(i=0;i<maxMaterialFields;i++)
+{	for(int i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveField(mvf[i]))
 			mvf[i]->CalcVelocityForStrainUpdate();
 	}
@@ -1260,21 +1223,35 @@ void CrackVelocityFieldMulti::ReflectFtotDirection(Vector *norm,double deltime,C
 
 #pragma mark ACCESSORS
 
-// total number of non-rigid points
-int CrackVelocityFieldMulti::GetNumberPointsNonrigid(void) { return numberPoints-numberRigidPoints; }
-
 // Look for presence on non rigid points
 // This counts fields that do not see cracks, will need revise to look for nonrigid particles that see cracks
 bool CrackVelocityFieldMulti::HasPointsNonrigid(void) const { return (numberPoints-numberRigidPoints) > 0; }
 
-// total mass all velocity fields (rigid particles mass not counted)
-// argumnent is not used here, but it is used by OSParticulas
+// Sum mass (only of non-rigid materials) and return the result
+// If requireCracks is true then count only those that see cracks, otherwise
+//		get entire mass
 double CrackVelocityFieldMulti::GetTotalMass(bool requireCracks) const
-{	int i;
-	double mass=0;
-	for(i=0;i<maxMaterialFields;i++)
+{	double mass = 0;
+	for(int i=0;i<maxMaterialFields;i++)
 	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
-			mass+=mvf[i]->mass;
+			mass += mvf[i]->mass;
+	}
+	return mass;
+}
+
+// Count number of materials in each crack velocity field on this node
+// Sum mass (only of non-rigid materials) and return the result
+// Note: for mass, this does not count materials that ignore cracks unless field [0].
+// Uses: Only called once per times step in post extrapolation phase of mass an momentum task
+double CrackVelocityFieldMulti::GetTotalMassAndCount(void)
+{	
+	double mass = 0.;
+	for(int i=0;i<maxMaterialFields;i++)
+	{	if(MatVelocityField::ActiveField(mvf[i]))
+		{	numberMaterials++;
+			if(!mvf[i]->IsRigidField())
+				mass += mvf[i]->mass;
+		}
 	}
 	return mass;
 }
@@ -1294,20 +1271,20 @@ void CrackVelocityFieldMulti::AddKineticEnergyAndMass(double &kineticEnergy,doub
 	}
 }
 
-// get volume for all nonrigid materials
-// requireCracks not used, but is used in OSParticulas
+// get total contact volume for all nonrigid materials
+// if requireCracks is true than only count materials that see cracks, otherwise use all fields
 double CrackVelocityFieldMulti::GetVolumeNonrigid(bool requireCracks)
-{	int i;
-	double volume = 0.;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+{	double volume = 0.;
+	for(int i=0;i<maxMaterialFields;i++)
+	{	if(MatVelocityField:: ActiveNonrigidField(mvf[i]))
 			volume += mvf[i]->GetContactVolume();
 	}
 	return volume;
 }
 
-// get total volume for all materials
-// WARNING: this doubles the volume for axisymmetric nodes at r=0
+// get total contact volume for all materials (including those that ignore cracks)
+//     contact volume is actual volume except it is area in axisymmetry
+// WARNING: this doubles the volume for symmetry planes (e.g. r=0 in axisymmetry
 //   to enable volume screening to work
 double CrackVelocityFieldMulti::GetVolumeTotal(NodalPoint *ndptr) const
 {
@@ -1327,6 +1304,7 @@ double CrackVelocityFieldMulti::GetVolumeTotal(NodalPoint *ndptr) const
 }
 
 // get center of mass momentum for all nonrigid material fields in this crack velocity field
+// Only counts materials that account for cracks
 Vector CrackVelocityFieldMulti::GetCMatMomentum(bool &hasParticles,double *foundMass) const
 {	Vector pk;
 	ZeroVector(&pk);
@@ -1344,13 +1322,13 @@ Vector CrackVelocityFieldMulti::GetCMatMomentum(bool &hasParticles,double *found
 
 // get center of mass displacement (actually sum of displacement*mass so displacement is vector/total mass)
 // Includes only non-rigid materials
-// requireCracks not used, but is used in OSParticulas
+// if requireCracks is true than only count materials that see cracks, otherwise use all fields
+// If on symmetry plane, that component will be zeroed out
 Vector CrackVelocityFieldMulti::GetCMDisplacement(NodalPoint *np,bool requireCracks) const
 {	Vector dk;
 	ZeroVector(&dk);
-	int i;
-	for(i=0;i<maxMaterialFields;i++)
-	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+	for(int i=0;i<maxMaterialFields;i++)
+	{	if(MatVelocityField:: ActiveNonrigidField(mvf[i]))
 			AddVector(&dk,&mvf[i]->disp);
 	}
 	AdjustForSymmetry(np,&dk,false);
@@ -1394,7 +1372,6 @@ void CrackVelocityFieldMulti::SumAndClearRigidContactForces(Vector *fcontact,boo
 	}
 }
 
-
 // get first active rigid field or return NULL. Also return number in rigidFieldNum
 MatVelocityField *CrackVelocityFieldMulti::GetRigidMaterialField(int *rigidFieldNum)
 {
@@ -1437,7 +1414,7 @@ void CrackVelocityFieldMulti::ChangeCrackMomentum(Vector *delP,bool postUpdate,d
 	// more than one material
 	else
 	{	Vector partialDelP;
-		double totMass=GetTotalMass(true);
+		double totMass = GetTotalMass(true);
 		for(i=0;i<maxMaterialFields;i++)
 		{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
 				mvf[i]->ChangeMatMomentum(CopyScaleVector(&partialDelP, delP, mvf[i]->mass/totMass),postUpdate,deltime);
@@ -1456,6 +1433,17 @@ int CrackVelocityFieldMulti::CopyFieldMomenta(Vector *holdPk,int offset)
 	}
 	return offset;
 }
+
+#ifdef ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY
+// set symmetry plane momenta to zero
+void CrackVelocityFieldMulti::AdjustForSymmetryBC(NodalPoint *ndptr)
+{	int i;
+	for(i=0;i<maxMaterialFields;i++)
+	{	if(MatVelocityField::ActiveNonrigidField(mvf[i]))
+			mvf[i]->AdjustForSymmetryBC(ndptr->fixedDirection);
+	}
+}
+#endif
 
 // paste all material velocity fields back for boundary conditions methods, returning new offset into the saved array
 int CrackVelocityFieldMulti::PasteFieldMomenta(Vector *holdPk,int offset)

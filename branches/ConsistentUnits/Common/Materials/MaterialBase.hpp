@@ -182,7 +182,7 @@ class MaterialBase : public LinkedObject
 		static void PrintProperty(const char *,bool);
 #ifdef MPM_CODE
 		static const char *PreferredDirection(int);
-		static short GetMVFIsRigid(int);
+		static int GetMVFFlags(int);
 		static int GetFieldMatID(int);
 		static int GetActiveMatID(int);
 #endif

@@ -149,25 +149,16 @@ double MatPointAS::GetUnscaledVolume(void)
 // and linear CPDI
 // throws CommonException() if particle corner has left the grid
 void MatPointAS::GetCPDINodesAndWeights(int cpdiType)
-{
-	// get particle 2D deformation gradient
-	double pF[3][3];
-	GetDeformationGradient(pF);
-	
-	// always LINEAR_CPDI_AS
-	
+{	
 	// get polygon vectors - these are from particle to edge
     //      and generalize semi width lp in 1D GIMP
 	Vector r1,r2,c;
-	r1.x = pF[0][0]*mpmgrid.partx;
-	r1.y = pF[1][0]*mpmgrid.partx;
-	r2.x = pF[0][1]*mpmgrid.party;
-	r2.y = pF[1][1]*mpmgrid.party;
+    GetSemiSideVectors(&r1,&r2,NULL);
 
-	// shrink domain if any have x < 0, but keep particle in the middle
+	// truncate domain by shrinking if any have x < 0, but keep particle in the middle
 	if(pos.x-fabs(r1.x+r2.x)<0.)
 	{	// make pos.x-shrink*fabs(r1.x+r2.x) very small and positive
-		double shrink = (pos.x-mpmgrid.gridx*1.e-10)/fabs(r1.x+r2.x);
+		double shrink = (pos.x-mpmgrid.GetCellXSize()*1.e-10)/fabs(r1.x+r2.x);
 		r1.x *= shrink;
 		r1.y *= shrink;
 		r2.x *= shrink;
@@ -254,13 +245,15 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
     *numDnds = 2;
     double faceWt,ratio=1.,r1mag,r2mag;
     double rp=pos.x;
-    Vector r1,r2;;
+    Vector r1,r2;
     
     if(ElementBase::useGimp==UNIFORM_GIMP_AS)
-    {   r1.x = mpmgrid.partx;
+    {   double r1x,r2y;
+        GetUndeformedSemiSides(&r1x,&r2y,NULL);
+        r1.x = r1x;
         r1.y = 0.;
         r2.x = 0.;
-        r2.y = mpmgrid.party;
+        r2.y = r2y;
 
         // truncate if extends into r<0
         if(pos.x-r1.x<0.)
@@ -276,21 +269,14 @@ double MatPointAS::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
     else
     {   // always LINEAR_CPDI_AS
 	
-        // get particle 2D deformation gradient
-        double pF[3][3];
-        GetDeformationGradient(pF);
-	
         // get polygon vectors - these are from particle to edge
         //      and generalize semi width lp in 1D GIMP
-        r1.x = pF[0][0]*mpmgrid.partx;
-        r1.y = pF[1][0]*mpmgrid.partx;
-        r2.x = pF[0][1]*mpmgrid.party;
-        r2.y = pF[1][1]*mpmgrid.party;
+        GetSemiSideVectors(&r1,&r2,NULL);
         
-        // shrink domain if any have x < 0, but keep particle in the middle
+        // truncate by shrinking domain if any have x < 0, but keep particle in the middle
         if(pos.x-fabs(r1.x+r2.x)<0.)
         {	// make pos.x-shrink*fabs(r1.x+r2.x) very small and positive
-            double shrink = (pos.x-mpmgrid.gridx*1.e-10)/fabs(r1.x+r2.x);
+            double shrink = (pos.x-mpmgrid.GetCellXSize()*1.e-10)/fabs(r1.x+r2.x);
             r1.x *= shrink;
             r1.y *= shrink;
             r2.x *= shrink;

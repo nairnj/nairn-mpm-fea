@@ -70,6 +70,14 @@
 		67C3E42F16482C7D00AD5339 /* MatPointAS.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 673B31D11636F6E400FB27DA /* MatPointAS.hpp */; };
 		67C733C016741ED100698D4F /* Matrix3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67C733BE16741ED100698D4F /* Matrix3.cpp */; };
 		67C733C116741ED100698D4F /* Matrix3.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67C733BF16741ED100698D4F /* Matrix3.hpp */; };
+		67D1983F1B0ED97D00FD5726 /* ProjectRigidBCsTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67D1983D1B0ED97D00FD5726 /* ProjectRigidBCsTask.cpp */; };
+		67D198401B0ED97D00FD5726 /* ProjectRigidBCsTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67D1983E1B0ED97D00FD5726 /* ProjectRigidBCsTask.hpp */; };
+		67D198431B0EDA9100FD5726 /* PostExtrapolationTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67D198411B0EDA9100FD5726 /* PostExtrapolationTask.cpp */; };
+		67D198441B0EDA9100FD5726 /* PostExtrapolationTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67D198421B0EDA9100FD5726 /* PostExtrapolationTask.hpp */; };
+		67D198471B0EE17700FD5726 /* PostForcesTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67D198451B0EE17600FD5726 /* PostForcesTask.cpp */; };
+		67D198481B0EE17700FD5726 /* PostForcesTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67D198461B0EE17700FD5726 /* PostForcesTask.hpp */; };
+		67D1984B1B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67D198491B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.cpp */; };
+		67D1984C1B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67D1984A1B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.hpp */; };
 		67E191331602CB2700B34CA9 /* MatPtTractionBC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */; };
 		67E191351602CB3F00B34CA9 /* MatPtTractionBC.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67E191341602CB3F00B34CA9 /* MatPtTractionBC.hpp */; };
 		67FB2A0018901EB200417546 /* ShellController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67FB29FE18901EB200417546 /* ShellController.cpp */; };
@@ -483,6 +491,14 @@
 		67C733BD167412DC00698D4F /* Documentation */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Documentation; path = ../../Documentation; sourceTree = "<group>"; };
 		67C733BE16741ED100698D4F /* Matrix3.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Matrix3.cpp; sourceTree = "<group>"; };
 		67C733BF16741ED100698D4F /* Matrix3.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Matrix3.hpp; sourceTree = "<group>"; };
+		67D1983D1B0ED97D00FD5726 /* ProjectRigidBCsTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ProjectRigidBCsTask.cpp; sourceTree = "<group>"; };
+		67D1983E1B0ED97D00FD5726 /* ProjectRigidBCsTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ProjectRigidBCsTask.hpp; sourceTree = "<group>"; };
+		67D198411B0EDA9100FD5726 /* PostExtrapolationTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PostExtrapolationTask.cpp; sourceTree = "<group>"; };
+		67D198421B0EDA9100FD5726 /* PostExtrapolationTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PostExtrapolationTask.hpp; sourceTree = "<group>"; };
+		67D198451B0EE17600FD5726 /* PostForcesTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PostForcesTask.cpp; sourceTree = "<group>"; };
+		67D198461B0EE17700FD5726 /* PostForcesTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PostForcesTask.hpp; sourceTree = "<group>"; };
+		67D198491B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UpdateStrainsLastContactTask.cpp; sourceTree = "<group>"; };
+		67D1984A1B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = UpdateStrainsLastContactTask.hpp; sourceTree = "<group>"; };
 		67E191321602CB2700B34CA9 /* MatPtTractionBC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MatPtTractionBC.cpp; sourceTree = "<group>"; };
 		67E191341602CB3F00B34CA9 /* MatPtTractionBC.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MatPtTractionBC.hpp; sourceTree = "<group>"; };
 		67FB29FE18901EB200417546 /* ShellController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShellController.cpp; sourceTree = "<group>"; };
@@ -1411,16 +1427,24 @@
 				676D76AA1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp */,
 				67B213EE11F9149C007523EE /* MassAndMomentumTask.hpp */,
 				67B213EF11F9149C007523EE /* MassAndMomentumTask.cpp */,
+				67D1983E1B0ED97D00FD5726 /* ProjectRigidBCsTask.hpp */,
+				67D1983D1B0ED97D00FD5726 /* ProjectRigidBCsTask.cpp */,
+				67D198421B0EDA9100FD5726 /* PostExtrapolationTask.hpp */,
+				67D198411B0EDA9100FD5726 /* PostExtrapolationTask.cpp */,
 				67B2156211F95DB6007523EE /* UpdateStrainsFirstTask.hpp */,
 				67B2156311F95DB6007523EE /* UpdateStrainsFirstTask.cpp */,
 				67B2148811F93240007523EE /* GridForcesTask.hpp */,
 				67B2148911F93240007523EE /* GridForcesTask.cpp */,
+				67D198461B0EE17700FD5726 /* PostForcesTask.hpp */,
+				67D198451B0EE17600FD5726 /* PostForcesTask.cpp */,
 				67B2158311F960FB007523EE /* UpdateMomentaTask.hpp */,
 				67B2158411F960FB007523EE /* UpdateMomentaTask.cpp */,
 				67B214F111F94CC5007523EE /* UpdateParticlesTask.hpp */,
 				67B214F211F94CC5007523EE /* UpdateParticlesTask.cpp */,
 				67B2152611F950C5007523EE /* UpdateStrainsLastTask.hpp */,
 				67B2152711F950C5007523EE /* UpdateStrainsLastTask.cpp */,
+				67D198491B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.cpp */,
+				67D1984A1B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.hpp */,
 				67B215AF11F96867007523EE /* RunCustomTasksTask.hpp */,
 				67B215B011F96867007523EE /* RunCustomTasksTask.cpp */,
 				67B215D211F96C0C007523EE /* MoveCracksTask.hpp */,
@@ -1648,6 +1672,10 @@
 				6797CABD1A89ABC5009C96FD /* ClampedNeohookean.hpp in Headers */,
 				676D76AD1AADFC8800A9AB57 /* InitVelocityFieldsTask.hpp in Headers */,
 				6736CBF31AB74C5B0009A663 /* UnitsController.hpp in Headers */,
+				67D198401B0ED97D00FD5726 /* ProjectRigidBCsTask.hpp in Headers */,
+				67D198441B0EDA9100FD5726 /* PostExtrapolationTask.hpp in Headers */,
+				67D198481B0EE17700FD5726 /* PostForcesTask.hpp in Headers */,
+				67D1984C1B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1980,6 +2008,10 @@
 				676D76AC1AADFC8800A9AB57 /* InitVelocityFieldsTask.cpp in Sources */,
 				6736CBF11AB74C5B0009A663 /* UnitsController.cpp in Sources */,
 				67582CCF1ACCD5880087EA12 /* MoreIsotropicMat.cpp in Sources */,
+				67D1983F1B0ED97D00FD5726 /* ProjectRigidBCsTask.cpp in Sources */,
+				67D198431B0EDA9100FD5726 /* PostExtrapolationTask.cpp in Sources */,
+				67D198471B0EE17700FD5726 /* PostForcesTask.cpp in Sources */,
+				67D1984B1B0EE5AF00FD5726 /* UpdateStrainsLastContactTask.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

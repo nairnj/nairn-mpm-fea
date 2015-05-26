@@ -64,9 +64,9 @@ CustomTask *CalcJKTask::Initialize(void)
 	// Axisymmetric type
 	if(fmobj->IsAxisymmetric())
 	{	if(JContourType == AXISYM_BROBERG_J)
-		cout << ", Broberg axisymmetric J";
-	else
-		cout << ", Bergkvist and Huong axisymmetric J";
+			cout << ", Broberg axisymmetric J";
+		else
+			cout << ", Bergkvist and Huong axisymmetric J";
 	}
 	else
 		JContourType = AXISYM_BROBERG_J;
@@ -127,7 +127,7 @@ CustomTask *CalcJKTask::StepCalculation(void)
         int pn = MPMTask::GetPatchNumber();
         patches[pn]->ZeroDisp();
         
-        // loop over only non-rigid particles in patch
+        // loop over only non-rigid particles in patch that do not ignore cracks
         MPMBase *mpnt = patches[pn]->GetFirstBlockPointer(FIRST_NONRIGID);
         while(mpnt!=NULL)
         {   // material reference
@@ -153,12 +153,12 @@ CustomTask *CalcJKTask::StepCalculation(void)
 			
                 // get 2D gradient terms (dimensionless) and track material (if needed)
                 int activeMatField = matref->GetActiveField();
- 				Matrix3 gradU = mpnt->GetDisplacementGradientMatrix();
+				Matrix3 gradU = mpnt->GetDisplacementGradientMatrix();
                 ndmi->AddUGradient(vfld,fnmp,gradU(0,0),gradU(0,1),gradU(1,0),gradU(1,1),activeMatField,mpnt->mp);
 
 				// GRID_JTERMS
 				if(JGridEnergy)
-				{	// Add velocity (scaled by sqrt(rho) such that v^2 is 2 X grid kinetic energy in nJ/mm^3 = J/m^3)
+				{	// Add velocity (scaled by sqrt(rho) such that v^2 is 2 X grid kinetic energy in nJ/mm^3)
 					// In axisymmetric, kinetic energy density is 2 pi (0.5 m v^2)/(2 pi rp Ap), but since m = rho rp Ap
 					//		kinetic energy density is still 0.5 rho v^2
 					ndmi->AddGridVelocity(vfld,fnmp*sqrt(matref->rho),mpnt->vel.x,mpnt->vel.y);
@@ -170,13 +170,13 @@ CustomTask *CalcJKTask::StepCalculation(void)
 				{	// scale by rho to get specific energy and actual stress
 					fnmp *= matref->rho;
 					
-					// get energy and rho*energy has units nJ/mm^3 = J/m^3 = N/m^2
+					// get energy and rho*energy has units nJ/mm^3
 					// In axisymmetric, energy density is 2 pi m U/(2 pi rp Ap), but since m = rho rp Ap
 					//		energy density is still rho*energy
 					ndmi->AddEnergy(vfld,fnmp,mpnt->vel.x,mpnt->vel.y,mpnt->GetWorkEnergy());
 				}
 			
-                // get a nodal stress (rho*stress has units N/m^2)
+                // get a nodal stress (rho*stress has units N/m^2 = uN/mm^2)
                 Tensor sp = mpnt->ReadStressTensor();
                 ndmi->AddStress(vfld,fnmp,&sp);
             }

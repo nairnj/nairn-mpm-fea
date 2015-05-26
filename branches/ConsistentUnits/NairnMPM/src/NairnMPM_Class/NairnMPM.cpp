@@ -25,11 +25,15 @@
 #include "NairnMPM_Class/MPMTask.hpp"
 #include "NairnMPM_Class/InitializationTask.hpp"
 #include "NairnMPM_Class/InitVelocityFieldsTask.hpp"
+#include "NairnMPM_Class/ProjectRigidBCsTask.hpp"
+#include "NairnMPM_Class/PostExtrapolationTask.hpp"
 #include "NairnMPM_Class/MassAndMomentumTask.hpp"
 #include "NairnMPM_Class/UpdateStrainsFirstTask.hpp"
 #include "NairnMPM_Class/GridForcesTask.hpp"
+#include "NairnMPM_Class/PostForcesTask.hpp"
 #include "NairnMPM_Class/UpdateParticlesTask.hpp"
 #include "NairnMPM_Class/UpdateStrainsLastTask.hpp"
+#include "NairnMPM_Class/UpdateStrainsLastContactTask.hpp"
 #include "NairnMPM_Class/UpdateMomentaTask.hpp"
 #include "NairnMPM_Class/RunCustomTasksTask.hpp"
 #include "NairnMPM_Class/MoveCracksTask.hpp"
@@ -100,6 +104,12 @@ void NairnMPM::StartAnalysis(bool abort)
 			transportTasks->nextTask=conduction;
 		else
 			transportTasks=conduction;
+	}
+	else
+	{	// these can only be on when conduction is active
+		ConductionTask::crackContactHeating = false;
+		ConductionTask::matContactHeating = false;
+		ConductionTask::crackTipHeating = false;
 	}
 	
 	// start results file
@@ -256,7 +266,6 @@ void NairnMPM::PreliminaryCalcs(void)
     int p,i;
     short matid;
     double area,volume,rho,crot,tst,tmin=1e15;
-    double dcell;
     char fline[200];
     
     // are both the system and the particles isolated?
@@ -266,12 +275,12 @@ void NairnMPM::PreliminaryCalcs(void)
     
 	// Loop over elements, if needed, to determine type of grid
 	if(mpmgrid.GetCartesian()==UNKNOWN_GRID)
-	{	int userCartesian = false;
+	{	int userCartesian = NOT_CARTESIAN;
 		double dx,dy,dz,gridx=0.,gridy=0.,gridz=0.;
 		for(i=0;i<nelems;i++)
 		{	if(!theElements[i]->Orthogonal(&dx,&dy,&dz))
             {   // exit if find one that is not orthogonal
-				userCartesian = false;
+				userCartesian = NOT_CARTESIAN;
 				break;
 			}
 			if(!userCartesian)
@@ -279,14 +288,19 @@ void NairnMPM::PreliminaryCalcs(void)
 				gridx=dx;
 				gridy=dy;
 				gridz=dz;
-				userCartesian = true;
+				userCartesian = SQUARE_GRID;
 			}
-			else
-			{	// on sebsequent elements, if size does not match current values, than not Cartesian grid so give up
+			else if(userCartesian==SQUARE_GRID)
+			{	// on sebsequent elements, if size does not match current values, than elements differ
+                // in size. Set to variable grid and keep going. OK if all are still orthogonal
 				if(!DbleEqual(gridx,dx) || !DbleEqual(gridy,dy) || !DbleEqual(gridz,dz))
-				{	userCartesian=FALSE;
-					break;
-				}
+				{	if(IsThreeD())
+					{   gridz = 1.;
+						userCartesian = VARIABLE_ORTHOGONAL_GRID;
+					}
+					else
+						userCartesian = VARIABLE_RECTANGULAR_GRID;
+                }
 			}
 		}
 		mpmgrid.SetCartesian(userCartesian,gridx,gridy,gridz);
@@ -297,7 +311,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	
     // future - make PropFractCellTime a user parameter, which not changed here if user picked it
     if(PropFractCellTime<0.) PropFractCellTime=FractCellTime;
-	double minSize=mpmgrid.GetMinCellDimension();                   // in mm
+	double dcell = mpmgrid.GetMinCellDimension();                   // in mm
     
     // loop over material points
 	maxMaterialFields = 0;
@@ -323,20 +337,18 @@ void NairnMPM::PreliminaryCalcs(void)
 	
 		// element and mp properties
 		if(IsThreeD())
-		{	volume=theElements[mpm[p]->ElemID()]->GetVolume();		// in mm^3
-			dcell = (minSize>0.) ? minSize : pow(volume,1./3.) ;
+		{	volume=theElements[mpm[p]->ElemID()]->GetVolume();	// in mm^3
 		}
 		else
 		{	// when axisymmetric, thickness is particle radial position, which gives mp = rho*Ap*Rp
-			area=theElements[mpm[p]->ElemID()]->GetArea();			// in mm^2
-			volume=mpm[p]->thickness()*area;						// in mm^2
-			dcell = (minSize>0.) ? minSize : sqrt(area) ;
+			area=theElements[mpm[p]->ElemID()]->GetArea();		// in mm^2
+			volume=mpm[p]->thickness()*area;					// in mm^2
 		}
-		rho=theMaterials[matid]->rho;								// in g/mm^3
+		rho=theMaterials[matid]->rho;							// in g/mm^3
         
-        // assumes same number of points for all elements
-        // for axisyymmeric xp = rho*Ap*volume/(# per element)
-		mpm[p]->InitializeMass(rho*volume/((double)ptsPerElement));			// in g
+        // assumes same number of points for all elements (but subclass can override)
+        // for axisymmetri xp = rho*Ap*volume/(# per element)
+		mpm[p]->InitializeMass(rho,volume/((double)ptsPerElement));			// in g
 		
 		// done if rigid - mass will be in mm^3 and will be particle volume
 		if(theMaterials[matid]->Rigid())
@@ -351,15 +363,6 @@ void NairnMPM::PreliminaryCalcs(void)
         
         // now a nonrigid particle
         nmpmsNR = p+1;
-        
-        // check time step
-        crot=theMaterials[matid]->WaveSpeed(IsThreeD(),mpm[p]);			// in mm/sec
-		tst=FractCellTime*dcell/crot;                                   // in sec
-        if(tst<tmin) tmin=tst;
-        
-        // propagation time (in sec)
-        tst=PropFractCellTime*dcell/crot;
-        if(tst<propTime) propTime=tst;
         
         // zero external forces on this particle
 		ZeroVector(mpm[p]->GetPFext());
@@ -379,6 +382,15 @@ void NairnMPM::PreliminaryCalcs(void)
         // material dependent initialization
         theMaterials[matid]->SetInitialParticleState(mpm[p],np);
 		
+        // check time step
+        crot=theMaterials[matid]->WaveSpeed(IsThreeD(),mpm[p]);			// in mm/sec
+		tst=FractCellTime*dcell/crot;                                   // in sec
+        if(tst<tmin) tmin=tst;
+        
+        // propagation time (in sec)
+        tst=PropFractCellTime*dcell/crot;
+        if(tst<propTime) propTime=tst;
+        
 		// Transport property time steps
 		int numTransport = 0;
 		TransportTask *nextTransport=transportTasks;
@@ -471,7 +483,12 @@ void NairnMPM::PreliminaryCalcs(void)
 		contact.MaterialContactPairs(maxMaterialFields);
 	
     // ghost particles will need to now this setting when creating patches
-    if(firstCrack!=NULL) maxCrackFields=MAX_FIELDS_FOR_CRACKS;
+    if(firstCrack!=NULL)
+    {   if(firstCrack->GetNextObject()!=NULL)
+            maxCrackFields=MAX_FIELDS_FOR_CRACKS;
+        else
+            maxCrackFields=MAX_FIELDS_FOR_ONE_CRACK;
+    }
     
     // verify time step and make smaller if needed
     if(tmin<timestep) timestep=tmin;
@@ -536,7 +553,7 @@ void NairnMPM::PreliminaryCalcs(void)
 	{	PrintSection("MATERIAL POINTS WITH CONCENTRATION FLUX");
 		cout << " Point  DOF Face ID Flux (" << UnitsController::Label(BCCONCFLUX_UNITS) << ") Arg ("
 			<< UnitsController::Label(BCARG_UNITS) << ")  Function\n"
-		<< "---------------------------------------------------------------\n";
+			<< "---------------------------------------------------------------\n";
 		nextBC=(BoundaryCondition *)firstFluxPt;
 		while(nextBC!=NULL)
 			nextBC=nextBC->PrintBC(cout);
@@ -552,9 +569,9 @@ void NairnMPM::PreliminaryCalcs(void)
 		nextBC=firstTempBC;
 		while(nextBC!=NULL)
 			nextBC=nextBC->PrintBC(cout);
-		cout << endl;\
+		cout << endl;
 	}
-	
+		
 	//---------------------------------------------------
 	// Heat Flux Material Points
 	if(ConductionTask::active && firstHeatFluxPt!=NULL)
@@ -647,9 +664,16 @@ void NairnMPM::CreateTasks(void)
         JTerms = -1;
     }
 	
-	// see if any need initializing
-	if(theTasks!=NULL)
+	// see if any custom or transport tasks need initializing
+	if(theTasks!=NULL || transportTasks!=NULL)
 	{	PrintSection("SCHEDULED CUSTOM TASKS");
+		
+		// transport tasks
+		TransportTask *nextTransport = transportTasks;
+		while(nextTransport!=NULL)
+			nextTransport = nextTransport->Initialize();
+		
+		// custom tasks
 		nextTask=theTasks;
 		while(nextTask!=NULL)
 			nextTask=nextTask->Initialize();
@@ -675,7 +699,17 @@ void NairnMPM::CreateTasks(void)
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
 	
-	// TASK 2: UPDATE STRAINS FIRST AND USAVG
+	if(nmpms>nmpmsRC)
+	{	nextMPMTask=(MPMTask *)new ProjectRigidBCsTask("Rigid BCs by Projection");
+		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+		lastMPMTask=nextMPMTask;
+	}
+	
+	nextMPMTask=(MPMTask *)new PostExtrapolationTask("Post Extrapolation Tasks");
+	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+	lastMPMTask=nextMPMTask;
+	
+	// UPDATE STRAINS FIRST AND USAVG
     if(mpmApproach==USF_METHOD || mpmApproach==USAVG_METHOD)
 	{	nextMPMTask=(MPMTask *)new UpdateStrainsFirstTask("Update Strains First");
 		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
@@ -687,7 +721,11 @@ void NairnMPM::CreateTasks(void)
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
     
-	// TASK 4: UPDATE MOMENTA
+	nextMPMTask=(MPMTask *)new PostForcesTask("Post Force Extrapolation Tasks");
+	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+	lastMPMTask=nextMPMTask;
+    
+	// UPDATE MOMENTA
 	nextMPMTask=(MPMTask *)new UpdateMomentaTask("Update Momenta");
 	lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
 	lastMPMTask=nextMPMTask;
@@ -699,9 +737,16 @@ void NairnMPM::CreateTasks(void)
 	
 	// UPDATE STRAINS LAST AND USAVG
 	if(mpmApproach==SZS_METHOD || mpmApproach==USAVG_METHOD)
-	{	nextMPMTask=(MPMTask *)new UpdateStrainsLastTask("Update Strains Last");
-		lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
-		lastMPMTask=nextMPMTask;
+	{	if(firstCrack!=NULL || fmobj->multiMaterialMode)
+		{	nextMPMTask=(MPMTask *)new UpdateStrainsLastContactTask("Update Strains Last with Contact");
+			lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+			lastMPMTask=nextMPMTask;
+		}
+		else
+		{	nextMPMTask=(MPMTask *)new UpdateStrainsLastTask("Update Strains Last");
+			lastMPMTask->SetNextTask((CommonTask *)nextMPMTask);
+			lastMPMTask=nextMPMTask;
+		}
 	}
 	
 	// CUSTOM TASKS (including J Integral and crack propagation)
@@ -740,8 +785,10 @@ void NairnMPM::ValidateOptions(void)
     //  and qCPDI not allowed in 3D
 	if(ElementBase::useGimp != POINT_GIMP)
     {   // using a GIMP method
-		if(!mpmgrid.CanDoGIMP())
-			throw CommonException("GIMP not allowed unless using a generated regular mesh","NairnMPM::ValidateOptions");
+		if(!mpmgrid.IsStructuredEqualElementsGrid())
+		{	throw CommonException("GIMP needs a generated structured grid with equally sized elements",
+								  "NairnMPM::ValidateOptions");
+		}
         if(ElementBase::useGimp == QUADRATIC_CPDI)
         {   if(IsThreeD())
                 throw CommonException("3D does not allow qCPDI shape functions; use lCPDI instead","NairnMPM::ValidateOptions");
@@ -755,14 +802,16 @@ void NairnMPM::ValidateOptions(void)
     
     // Imperfect interface requires cartensian grid
 	if(contact.hasImperfectInterface)
-	{	if(mpmgrid.GetCartesian()<=0)
-			throw CommonException("Imperfect interfaces require a cartesian mesh","NairnMPM::ValidateOptions");
+	{	if(!mpmgrid.IsStructuredEqualElementsGrid())
+		{	throw CommonException("Imperfect interfaces need a generated structured grid with equally sized elements",
+								  "NairnMPM::ValidateOptions");
+		}
 	}
 	
     // 3D requires orthogonal grid and 1,8, or 27 particles per element
     // 2D requires 1,4, 9, 16, or 25 particles per element
 	if(IsThreeD())
-	{	if(mpmgrid.GetCartesian()!=CUBIC_GRID && mpmgrid.GetCartesian()!=ORTHOGONAL_GRID)
+	{	if(mpmgrid.GetCartesian()!=CUBIC_GRID && mpmgrid.GetCartesian()!=ORTHOGONAL_GRID && mpmgrid.GetCartesian()!=VARIABLE_ORTHOGONAL_GRID)
 			throw CommonException("3D calculations require an orthogonal grid","NairnMPM::ValidateOptions");
 		if(ptsPerElement!=1 && ptsPerElement!=8 && ptsPerElement!=27)
 			throw CommonException("3D analysis requires 1 or 8 or 27 particles per cell","NairnMPM::ValidateOptions");
@@ -795,13 +844,23 @@ void NairnMPM::ValidateOptions(void)
 	
     // Multimaterial mode requires a regular grid
 	if(multiMaterialMode)
-	{	if(!mpmgrid.CanDoGIMP())
-			throw CommonException("Multimaterial mode is not allowed unless using a generated regular mesh","NairnMPM::ValidateOptions");
+	{	if(!mpmgrid.IsStructuredEqualElementsGrid())
+		{	// equally size elements needed for contact
+			throw CommonException("Multimaterial mode needs a generated structured grid with equally sized elements","NairnMPM::ValidateOptions");
+		}
 	}
-
+	
+	// crack contact needs regular grid
+	if(firstCrack!=NULL)
+	{	if(!mpmgrid.IsStructuredEqualElementsGrid())
+		{	// equally size elements needed for contact
+			throw CommonException("Cracks need a generated structured grid with equally sized elements for contact calculations","NairnMPM::ValidateOptions");
+		}
+	}
+	
 #ifdef _OPENMP
-	if(!mpmgrid.CanDoGIMP())
-		throw CommonException("Multicore parallel code requires a generated regular mesh","NairnMPM::ValidateOptions");
+	if(!mpmgrid.IsStructuredGrid())
+		throw CommonException("Multicore parallel code needs a generated structured grid","NairnMPM::ValidateOptions");
 #endif
 	
 	// check each material type (but only if it is used it at least one material point)

@@ -26,12 +26,14 @@ class TransportTask
         virtual ~TransportTask();
         
         // overridable methods
-		virtual TransportTask *TransportOutput(void);
+		virtual const char *TaskName(void);
 		
-		// pure virtual required methods
+		// pure virtual required methods (must override)
 		
+		// called before first time step, but after preliminary calcs
+		virtual TransportTask *Initialize(void) = 0;
+	
 		// Return name of this task
-		virtual const char *TaskName(void) = 0;
 		
 		// adjust time for given cell size if needed
 		virtual TransportTask *TransportTimeStep(int,double,double *) = 0;
@@ -53,7 +55,7 @@ class TransportTask
 		virtual TransportTask *AddForces(NodalPoint *,MPMBase *,double,double,double,double,TransportProperties *) = 0;
         virtual TransportTask *CopyForces(NodalPoint *,NodalPoint *) = 0;
 
-		// adjust forces at grid points with transport BCs
+		// adjust forces at grid points with transport BCs and add flux BCs
 		virtual TransportTask *SetTransportForceBCs(double) = 0;
 		virtual void AddFluxCondition(NodalPoint *,double,bool) = 0;
 		

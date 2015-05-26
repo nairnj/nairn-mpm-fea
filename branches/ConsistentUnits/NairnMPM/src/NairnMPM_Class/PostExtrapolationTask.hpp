@@ -1,28 +1,26 @@
 /********************************************************************************
-	MassAndMomentumTask.hpp
+	PostExtrapolationTask.hpp
 	nairn-mpm-fea
 
-	Created by John Nairn on July 22, 2010
-	Copyright (c) 2010 John A. Nairn, All rights reserved.
+	Created by John Nairn on March 6, 2015
+	Copyright (c) 2015 John A. Nairn, All rights reserved.
 
 	Dependencies
 		MPMTask, CommonTask
 ********************************************************************************/
 
-#ifndef _MASSANDMOMENTUMTASK_
+#ifndef _POSTEXTRAPOLATIONTASK_
 
-#define _MASSANDMOMENTUMTASK_
-
-class BoundaryCondition;
+#define _POSTEXTRAPOLATIONTASK_
 
 #include "NairnMPM_Class/MPMTask.hpp"
 
-class MassAndMomentumTask : public MPMTask
+class PostExtrapolationTask : public MPMTask
 {
 	public:
 	
 		// constructor
-		MassAndMomentumTask(const char *);
+		PostExtrapolationTask(const char *);
 	
 		// required methods
 		virtual void Execute(void);

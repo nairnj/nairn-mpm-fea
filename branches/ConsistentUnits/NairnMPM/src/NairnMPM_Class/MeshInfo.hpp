@@ -14,21 +14,22 @@
 #define _MESHINFO_
 
 class GridPatch;
+class NodalPoint;
 
 // grid type - all 3D ones above the marker
-enum {	UNKNOWN_GRID=-1,NOT_CARTESIAN=0,SQUARE_GRID,RECTANGULAR_GRID,
-			BEGIN_3D_GRIDS,CUBIC_GRID,ORTHOGONAL_GRID };
+// Square, Rect, Cubic, and orthogonal all have equal element sizes
+// Variable means rectangular (2D) or orthogonal (3D), but variable element sizes
+enum {	UNKNOWN_GRID=-1,NOT_CARTESIAN=0,SQUARE_GRID,RECTANGULAR_GRID,VARIABLE_RECTANGULAR_GRID,
+			BEGIN_3D_GRIDS,CUBIC_GRID,ORTHOGONAL_GRID,VARIABLE_ORTHOGONAL_GRID };
 
 class MeshInfo
 {
     public:
 		// properties of a regular grid
-		double gridx,gridy,gridz;		// cell size
-		double partx,party,partz;		// semilength of particle (lp in natural coordinates)
-		double diagx,diagy,diagz;		// cell diagonal
-		int xplane,yplane,zplane;		// node spacings in each plane
-		double xmin,ymin,zmin;			// minimums (if from a grid)
+        double xmin,ymin,zmin;			// minimums (if from a grid)
+		double xmax,ymax,zmax;			// maximums (if from a grid)
         double positionCutoff;          // cut off for normal contact when using positiong instead of displacements
+		int xplane,yplane,zplane;		// node spacings in each plane
 		
 		// constructors
 		MeshInfo(void);
@@ -41,31 +42,40 @@ class MeshInfo
 		bool EdgeNode(int,char);
 		void ListOfNeighbors2D(int,int *);
 		void ListOfNeighbors3D(int,int *);
-        int FindElementFromPoint(Vector *);
 		GridPatch **CreatePatches(int,int);
 		GridPatch **CreateOnePatch(int);
 	
 		// Accessors
-		double GetParametersForBCs(int axis,double *,double *);
 		int GetPatchForElement(int);
 		void SetCartesian(int,double,double,double);
-		void SetElements(int,int,int,double,double,double);
-		void SetParticleLength(int);
+		void SetElements(int,int,int,double,double,double,double,double,double);
 		int GetCartesian(void);
-		double GetMinCellDimension(void);
-		int CanDoGIMP(void);
 		bool IsStructuredGrid(void);
+        bool IsStructuredEqualElementsGrid(void);
         bool Is3DGrid(void);
 		void GetGridPoints(int *,int *,int *);
-		double GetCellVolume(void);
-        double GetAverageCellSize(void);
-		double GetThickness(void);
 		double GetDefaultThickness();
-        double GetNormalCODAdjust(Vector *,Vector *,double);
-        double GetPerpendicularDistance(Vector *,Vector *,double);
         bool GetContactByDisplacements(void);
         void SetContactByDisplacements(bool);
-		double GetParticleSemiLength(void);
+		double GetMinCellDimension(void);
+		double GetThickness(void);                          // 2D only
+    
+        // use of these implies equal element sizes
+		int FindElementFromPoint(Vector *);
+        double GetAverageCellSize(void);
+        void SetParticleLength(int);
+        double GetParametersForBCs(int axis,double *,double *);
+        double GetCellVolume(void);
+		double InterfaceContactArea(Vector *,Vector *,double,Vector *,double *,double *);
+        double GetPerpendicularDistance(Vector *,Vector *,double);
+		double GetNormalCODAdjust(Vector *,Vector *,double);
+        Vector GetCellSize(void);
+        double GetCellXSize(void);
+        Vector GetParticleSize(void);
+        double GetParticleXSize(void);
+        double GetParticleYSize(void);
+        double GetParticleZSize(void);
+        double GetParticleSemiLength(void);
 		
 	private:
 		int cartesian;					// non-zero (NOT_CARTESIAN) is a regular grid
@@ -73,12 +83,15 @@ class MeshInfo
 		int horiz,vert,depth;			// number of elements in that direction (if from a grid)
 		double cellVolume;				// cell volume
         double avgCellSize;             // average cell size
+		double cellMinSize;				// minimum cell length
         bool contactByDisplacements;    // TRUE is using displacements, false if need to adjust normal COD
 		int xpnum,ypnum,zpnum;			// patch grid size
 		int xPatchSize,yPatchSize,zPatchSize;		// patch sizes in elements (last may differ)
-	
-		double lp;
 
+        double lp;                      // semilength of particle (lp in natural coordinates)
+        Vector grid;                    // cell size when equal element sizes
+        Vector part;                    // particle size in x, y, and z direction when equal element sizes
+        Vector diag;                    // cell diagonal
 };
 
 extern MeshInfo mpmgrid;

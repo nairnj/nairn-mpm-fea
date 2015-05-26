@@ -68,7 +68,7 @@ typedef struct
 	unsigned short int bits;		// Bits per pixel
 	unsigned int compression;		// Compression type
 	unsigned int imagesize;			// Image size in bytes
-	int xresolution,yresolution;	// Pixels per meter
+	int xresolution,yresolution;	// Pixels per meter 
 	unsigned int ncolors;			// Number of colors
 	unsigned int importantcolors;	// Important colors
 	bool knowsCellSize;				// true if file gives xcell, ycell, and zlevel

@@ -21,6 +21,12 @@ CrackVelocityFieldSingle::CrackVelocityFieldSingle(int num,short theLoc,int cnum
 {
 }
 
+// Destructor
+CrackVelocityFieldSingle::~CrackVelocityFieldSingle()
+{	// delete velocity field if present
+	if(mvf[0]!=NULL) delete mvf[0];
+}
+
 // zero the one material if it was active
 void CrackVelocityFieldSingle::ZeroMatFields(void)
 {	mvf[0]->Zero();
@@ -29,6 +35,7 @@ void CrackVelocityFieldSingle::ZeroMatFields(void)
 #pragma mark TASK 1 METHODS
 
 // Delete empty velocity fields, count number of materials, and return total mass
+// Note: never have materials that ignore cracks when this class is active
 double CrackVelocityFieldSingle::GetTotalMassAndCount(void)
 {	return mvf[0]->numberPoints>0 ? mvf[0]->mass : 0. ;
 }
@@ -37,6 +44,7 @@ double CrackVelocityFieldSingle::GetTotalMassAndCount(void)
 
 // Add to force spread out over the materials so each has same extra accelerations = f/M_i
 // Only called by AddTractionForce() and CrackInterfaceForce()
+// Only addes force to fields that see cracks (not relevant in single material mode)
 void CrackVelocityFieldSingle::AddFtotSpreadTask3(Vector *f)
 {	if(mvf[0]->numberPoints>0)
 		mvf[0]->AddFtot(f);
@@ -127,8 +135,9 @@ void CrackVelocityFieldSingle::ReflectFtotDirection(Vector *norm,double deltime,
 
 #pragma mark ACCESSORS
 
-// total mass all velocity fields
-// argument not used here, but it is used by OSParticulas
+// total mass all velocity fields, but only one in single material mode
+// Note: this class is not active when any materials might ignore cracks
+// Note: in single material mode, following two are identical
 double CrackVelocityFieldSingle::GetTotalMass(bool requireCracks) const
 {	return mvf[0]->numberPoints>0 ? mvf[0]->mass : 0. ;
 }
@@ -136,7 +145,7 @@ double CrackVelocityFieldSingle::GetTotalMass(bool requireCracks) const
 // total mass and kinetric energy all velocity fields (rigid particles not counted)
 // in g-mm2/sec^2 = nanoJ
 void CrackVelocityFieldSingle::AddKineticEnergyAndMass(double &kineticEnergy,double &totalMass)
-{	if(mvf[0]->numberPoints>0 && !mvf[0]->rigidField)
+{	if(mvf[0]->numberPoints>0 && !mvf[0]->IsRigidField())
 	{	totalMass += mvf[0]->mass;
 		double magp = DotVectors(&mvf[0]->pk,&mvf[0]->pk);
 		kineticEnergy += 0.5*magp/mvf[0]->mass;
@@ -161,7 +170,8 @@ Vector CrackVelocityFieldSingle::GetCMatMomentum(bool &hasParticles,double *fiel
 }
 
 // get center of mass displacement (actually sum of displacement*mass so displacement is vector/total mass)
-// requireCracks not used, but is used in OSParticulas
+// If on symmetry plane, that component will be zeroed out
+// Note: in single material mode, following two are identical
 Vector CrackVelocityFieldSingle::GetCMDisplacement(NodalPoint *np,bool requireCracks) const
 {   Vector dk = mvf[0]->disp;
     AdjustForSymmetry(np,&dk,false);
@@ -199,6 +209,15 @@ int CrackVelocityFieldSingle::CopyFieldMomenta(Vector *holdPk,int offset)
 	}
 	return offset;
 }
+
+#ifdef ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY
+// set symmetry plane momenta to zero
+void CrackVelocityFieldSingle::AdjustForSymmetryBC(NodalPoint *ndptr)
+{	if(mvf[0]->numberPoints>0)
+    {	mvf[0]->AdjustForSymmetryBC(ndptr->fixedDirection);
+	}
+}
+#endif
 
 // paste all material velocity fields back for boundary conditions methods, returning new offset into the saved array
 int CrackVelocityFieldSingle::PasteFieldMomenta(Vector *holdPk,int offset)

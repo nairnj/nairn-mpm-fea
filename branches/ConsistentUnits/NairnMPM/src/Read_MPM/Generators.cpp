@@ -44,7 +44,6 @@
 #include "Read_XML/ElementsController.hpp"
 #include "Read_XML/MaterialController.hpp"
 
-
 // Global variables for Generator.cpp (first letter all capitalized)
 double Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,Rhoriz=1.,Rvert=1.,Rdepth=1.,Z2DThickness;
 double Xsym,Ysym,Zsym,Xsymmax,Ysymmax,Zsymmax;
@@ -356,7 +355,7 @@ short MPMReadHandler::GenerateInput(char *xName,const Attributes& attrs)
 		if(theShape->FinishSetup())
 		{	MPMPts();
 			delete theShape;
-			theShape=NULL;
+			theShape = NULL;
 		}
 		else
 			block=BODY_SHAPE;
@@ -881,14 +880,16 @@ short MPMReadHandler::EndGenerator(char *xName)
 
 //-----------------------------------------------------------
 // Subroutine for creating mpm object (mpm)
+// Uses current theShape and various globals
 //-----------------------------------------------------------
 void MPMReadHandler::MPMPts(void)
 {
 	Vector ppos[MaxElParticles];
     MPMBase *newMpt;
-    int i,k,ptFlag;
+    int i,k,ptFlag=0;
 	int numRotations=strlen(rotationAxes);
 	
+	// rotation functions
 	if(numRotations>0)
 	{	Angle=0.;			// rotations override angle settings
 		for(i=0;i<numRotations;i++)
@@ -900,14 +901,19 @@ void MPMReadHandler::MPMPts(void)
 		}
 	}
 
-    try 
+    try
     {   for(i=1;i<=nelems;i++)
-        {	theElements[i-1]->MPMPoints(fmobj->ptsPerElement,ppos);
+		{	theElements[i-1]->MPMPoints(fmobj->ptsPerElement,ppos);
             for(k=0;k<fmobj->ptsPerElement;k++)
-            {	ptFlag=1<<k;
+            {   // if particle size is already used, then go to next location
+            	ptFlag=1<<k;
                 if(theElements[i-1]->filled&ptFlag) continue;
+                
+                // check if particle is in the shape
                 if(theShape->ContainsPoint(ppos[k]))
-                {	if(MatID>0)
+                {   // for Region (MatID>0) create the particle
+                    // for Hole (MatID<=0), just set the point flag
+                	if(MatID>0)
                     {	if(fmobj->IsThreeD())
                             newMpt=new MatPoint3D(i,MatID,Angle);
                         else if(fmobj->IsAxisymmetric())
@@ -920,6 +926,8 @@ void MPMReadHandler::MPMPts(void)
                         SetMptAnglesFromFunctions(numRotations,&ppos[k],newMpt);
                         mpCtrl->AddMaterialPoint(newMpt,pConc,pTempSet);
                     }
+                    
+                    // mark as filled
                     theElements[i-1]->filled|=ptFlag;
                 }
             }
@@ -931,6 +939,7 @@ void MPMReadHandler::MPMPts(void)
 	
 	// remove created functions (angleExpr deleted later)
 	DeleteFunction(-1);
+	
 }
 
 //------------------------------------------------------------------
@@ -959,20 +968,20 @@ void MPMReadHandler::MPMCracks(int crackShape,int resolution,double start_angle,
 	int tipMatnum;
 	double x, y, dx, dy, a, b, x0, y0, startSita, deltaSita;
 	
-	if(crackShape==LINE_SHAPE){
-		dx=(Xmax-Xmin)/(double)resolution;
-		dy=(Ymax-Ymin)/(double)resolution;
-		tipMatnum=startTip;
-		for(int i=0;i<=resolution;i++){
-			x=Xmin+dx*i;
-			y=Ymin+dy*i;
+	if(crackShape==LINE_SHAPE)
+    {   dx = (Xmax-Xmin)/(double)resolution;
+		dy = (Ymax-Ymin)/(double)resolution;
+		tipMatnum = startTip;
+		for(int i=0;i<=resolution;i++)
+        {   x = Xmin+dx*i;
+			y = Ymin+dy*i;
 			if(!crackCtrl->AddSegment(new CrackSegment(x,y,tipMatnum,MatID)))
 				throw SAXException("Crack not in the mesh or out of memory adding a crack segment.");
 			tipMatnum = i!=resolution-1 ? -1 : endTip;
 		}
 	}
-	else if(crackShape==CIRCLE_SHAPE){
-		x0=(Xmin+Xmax)/2.0;
+	else if(crackShape==CIRCLE_SHAPE)
+    {   x0=(Xmin+Xmax)/2.0;
 		y0=(Ymin+Ymax)/2.0;
 		a=Xmax-x0;
 		b=Ymax-y0;
@@ -1039,7 +1048,7 @@ void MPMReadHandler::grid()
     	}
     }
 
-	// check has grid settingsd
+	// check has grid settings
     if(Nhoriz<1 || Nvert<1 || (Ndepth<1 && fmobj->IsThreeD()))
         throw SAXException("Number of grid elements in all direction must be >= 1.");
 	
@@ -1069,8 +1078,9 @@ void MPMReadHandler::grid()
 		}
 	}
     
+	double zparam,gridz = 0.;
 	if(DbleEqual(Rhoriz,1.) && DbleEqual(Rvert,1.) && (!fmobj->IsThreeD() || DbleEqual(Rdepth,1.)))
-	{	double zparam,gridz = 0.;
+    {   // Orthogonal, and all elements are the same size
 		if(fmobj->IsThreeD())
 		{	zparam = Zmin;
 			gridz = (Zmax-Zmin)/(double)Ndepth;
@@ -1079,11 +1089,25 @@ void MPMReadHandler::grid()
 			zparam = 1.0;
 		else
 			zparam = Z2DThickness;
-		mpmgrid.SetCartesian(TRUE,(Xmax-Xmin)/(double)Nhoriz,(Ymax-Ymin)/(double)Nvert,gridz);
-		mpmgrid.SetElements(Nhoriz,Nvert,Ndepth,Xmin,Ymin,zparam);
+        // actual type determined in the methof
+		mpmgrid.SetCartesian(SQUARE_GRID,(Xmax-Xmin)/(double)Nhoriz,(Ymax-Ymin)/(double)Nvert,gridz);
+		mpmgrid.SetElements(Nhoriz,Nvert,Ndepth,Xmin,Ymin,zparam,Xmax,Ymax,Zmax);
 	}
 	else
-		mpmgrid.SetCartesian(FALSE,0.,0.,0.);
+    {   // Orthogonal, but elements do not have equal sides in all dimensions
+		int gridType = VARIABLE_RECTANGULAR_GRID;
+		if(fmobj->IsThreeD())
+		{	zparam = Zmin;
+			gridz = 1.0;
+			gridType = VARIABLE_ORTHOGONAL_GRID;
+		}
+		else if(fmobj->IsAxisymmetric())
+			zparam = 1.0;
+		else
+			zparam = Z2DThickness;
+		mpmgrid.SetCartesian(gridType,0.,0.,gridz);
+		mpmgrid.SetElements(Nhoriz,Nvert,Ndepth,Xmin,Ymin,zparam,Xmax,Ymax,Zmax);
+    }
 	
     // number of nodes and elements
 	if(fmobj->IsThreeD())
@@ -1211,22 +1235,23 @@ void MPMReadHandler::grid()
 // Make sure axisymmetric has r=0 BCs
 //-----------------------------------------------------------
 void MPMReadHandler::CreateSymmetryBCs()
-{	// exit it not axisymmetric and no symmetry planes
+{   // symmetry conditions require a structured grid
+    // maybe could revise if add option of variable element sizes
+    if(!mpmgrid.IsStructuredEqualElementsGrid()) return;
+
+	// If axisymmetric, automatrically put symmetry plane at r=0 with direction -1
 	if(fmobj->IsAxisymmetric())
 	{	Xsym = 0.;				// only r=0 is allowed
-		xsymdir = -1;			// to left, by extra BCs not created
+		xsymdir = -1;			// to left, but extra BCs not created
 		
 		// verify grid passes through 0 or delta r if within 1.25 nodes of origin
-		double nmin = mpmgrid.xmin/mpmgrid.gridx;
+		double nmin = mpmgrid.xmin/mpmgrid.GetCellXSize();
 		if(nmin<=1.25)
-		{	double ntest = int(fabs(nmin)+.1);			// int part ad double (small number fo round off error)
+		{	double ntest = int(fabs(nmin)+.1);			// int part as double (small number fo round off error)
 			if(!DbleEqual(ntest,fabs(nmin)))
 				throw SAXException("Axisymetric grid that includes r<1.25dr must have nodes at multiple of dr.");
 		}
 	}
-	
-	// synmetry conditions require a structured grid
-	if(!mpmgrid.IsStructuredGrid()) return;
 	
 	// allow one plane in each direction
 	if(xsymdir)

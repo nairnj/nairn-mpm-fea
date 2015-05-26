@@ -10,6 +10,7 @@
 #include "Cracks/CrackHeader.hpp"
 #include "Boundary_Conditions/MatPtTractionBC.hpp"
 #include "Materials/MaterialBase.hpp"
+#include "NairnMPM_Class/MeshInfo.hpp"
 #include "System/UnitsController.hpp"
 
 // globals
@@ -48,6 +49,7 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	ZeroTensor(&ep);
 	ZeroTensor(&eplast);
 	ZeroTensorAntisym(&wrot);
+	ZeroVector(&acc);
     
     // zero energies
     plastEnergy=0.;
@@ -179,8 +181,8 @@ void MPMBase::StopParticle(void)
 #pragma mark MPMBase::Accessors
 
 // set mass in PreliminaryCalcs, but only if input file did not set it first
-void MPMBase::InitializeMass(double mass)
-{	if(mp<0.) mp=mass;
+void MPMBase::InitializeMass(double rho,double volPerParticle)
+{	if(mp<0.) mp = rho*volPerParticle;
 }
 
 // set or average velocity gradient (2D) (only needed for second J Term)
@@ -258,9 +260,13 @@ double MPMBase::GetUnscaledVolume(void)
 	return mp/rho;                                          // in mm^3
 }
 
-// get mass when finding mass gradient for contact calculations
-// Axisymmetric particles override to return mass/rp to get uniform particle mass
-double MPMBase::GetMassForGradient(void) { return mp; }
+// Get particle size as fraction of cell size in each direction
+// Called by GIMP shape function code
+void MPMBase::GetDimensionlessSize(Vector &lp) const
+{	lp.x = mpmgrid.GetParticleSemiLength();
+    lp.y = lp.x;
+    lp.z = lp.x;
+}
 
 #ifndef USE_PSEUDOHYPERELASTIC
 // return if mterial for this particle includes plastic strainin gradient or if

@@ -47,6 +47,8 @@ class MatPoint3D : public MPMBase
         virtual void GetDeformationGradient(double F[][3]) const;
         virtual double GetRelativeVolume(void);
 		virtual double GetVolume(int);
+		virtual void GetSemiSideVectors(Vector *,Vector *,Vector *) const;
+		virtual void GetUndeformedSemiSides(double *,double *,double *) const;
 		virtual void GetCPDINodesAndWeights(int);
 		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *);
 		virtual Matrix3 GetInitialRotation(void);

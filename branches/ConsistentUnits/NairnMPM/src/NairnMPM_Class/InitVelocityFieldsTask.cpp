@@ -136,6 +136,7 @@ void InitVelocityFieldsTask::Execute(void)
 					// make sure material velocity field is created too
 					// (Note: when maxMaterialFields==1 (Singe Mat Mode), mvf[0] is always there
 					//        so no need to create it here)
+					// When some materials ignore cracks, those materials always use [0]
 					if(maxMaterialFields>1 && ndptr->NeedsMatVelocityField(vfld,matfld))
 					{   // If parallel, this is critical code
 #pragma omp critical

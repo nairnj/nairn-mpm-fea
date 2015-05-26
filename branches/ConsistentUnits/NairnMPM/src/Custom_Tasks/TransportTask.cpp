@@ -22,8 +22,5 @@ TransportTask::~TransportTask() { }
 
 #pragma mark STANDARD METHODS
 
-// transport analysis settings
-TransportTask *TransportTask::TransportOutput(void)
-{	cout << "Coupled " << TaskName() << endl;
-	return nextTask;
-}
+// Return name of this task
+const char *TransportTask::TaskName(void) { return "transport calculations"; }

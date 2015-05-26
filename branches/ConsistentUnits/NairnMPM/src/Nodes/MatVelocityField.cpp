@@ -24,14 +24,14 @@
 #pragma mark INITIALIZATION
 
 // Constructors
-MatVelocityField::MatVelocityField(short forRigid)
+MatVelocityField::MatVelocityField(int setFlags)
 {	if(fmobj->multiMaterialMode)
 		volumeGrad=new Vector;
 	else
 		volumeGrad=NULL;
-	rigidField=FALSE;
+	SetRigidField(false);
 	Zero();
-	rigidField=forRigid;
+	flags = setFlags;
 }
 
 // Destructor
@@ -44,8 +44,10 @@ MatVelocityField::~MatVelocityField()
 void MatVelocityField::Zero(void)
 {	mass=0.;
 	ZeroVector(&pk);
-	if(!rigidField)
-	{	ZeroVector(&ftot);
+	if(!IsRigidField())
+    {   // rigid fields are tracking contact force on ftot
+        // it is cummulative and therefore not zeroed here
+		ZeroVector(&ftot);
 	}
 	ZeroVector(&vk);
 	ZeroVector(&disp);
@@ -88,7 +90,7 @@ void MatVelocityField::CopyMassAndMomentum(NodalPoint *real,int vfld,int matfld)
 	}
 	
 	// if rigid particle in multimaterial mode
-	if(!rigidField)
+	if(!IsRigidField())
 	{	// mass
 		real->AddMass((short)vfld,matfld,mass);
 	}
@@ -102,7 +104,7 @@ void MatVelocityField::CopyMassAndMomentum(NodalPoint *real,int vfld,int matfld)
 void MatVelocityField::CopyMassAndMomentumLast(NodalPoint *real,int vfld,int matfld)
 {
 	// skip if none or rigid
-	if(numberPoints==0 || rigidField) return;
+	if(numberPoints==0 || IsRigidField()) return;
 	
 	// momentum
 	if(numberPoints==1)
@@ -125,7 +127,7 @@ void MatVelocityField::CopyMassAndMomentumLast(NodalPoint *real,int vfld,int mat
 void MatVelocityField::CopyGridForces(NodalPoint *real,int vfld,int matfld)
 {	
 	// skip if none
-	if(numberPoints==0) return;
+	if(numberPoints==0 || IsRigidField()) return;
 	
 	// Ftot
 	real->AddFtotTask3(vfld,matfld,&ftot);
@@ -153,9 +155,10 @@ void MatVelocityField::AddContactForce(Vector *delP)
 
 // Calculate velocity at a node from current momentum and mass matrix in all velocity fields
 // Velocity is mm/sec
+// Note: do not call for rigid fields in multimaterial mode
 void MatVelocityField::CalcVelocityForStrainUpdate(void)
 {	// only 1 point or rigid contact material is stored already, 0 will have zero velocity
-	if(numberPoints<=1 || rigidField || mass==0.) return;
+	if(numberPoints<=1 || mass==0.) return;
 	CopyScaleVector(&vk,&pk,1./mass);
 }
 
@@ -215,11 +218,10 @@ double MatVelocityField::GetContactVolume(void) const { return volume; }
 // velocity
 void MatVelocityField::SetVelocity(Vector *vel) { vk = *vel; }
 Vector MatVelocityField::GetVelocity(void) { return vk; }
-Vector *MatVelocityField::GetVelocityPtr(void) { return &vk; }
 
 // moment and velocity zero for direction of velocity
 // Let pk = (pk.norm) norm + (pk.tang) tang (or same for vk)
-// Here we want to remove pn.norm using p - (pn.norm) norm
+// Here we want to subtract component in norm direction using pk - (pk.norm) norm
 void MatVelocityField::SetMomentVelocityDirection(Vector *norm)
 {	double dotn = DotVectors(&pk, norm);
 	AddScaledVector(&pk, norm, -dotn);
@@ -231,6 +233,23 @@ void MatVelocityField::SetMomentVelocityDirection(Vector *norm)
 void MatVelocityField::AddMomentVelocityDirection(Vector *norm,double vel)
 {	AddScaledVector(&pk, norm, mass*vel);
 	AddScaledVector(&vk, norm, vel);
+}
+
+// set symmetry plane momenta to zero
+// only called when ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY is defined
+void MatVelocityField::AdjustForSymmetryBC(int fixedDirection)
+{   if(fixedDirection&XSYMMETRYPLANE_DIRECTION)
+    {   pk.x = 0.;
+        vk.x = 0.;
+    }
+    if(fixedDirection&YSYMMETRYPLANE_DIRECTION)
+    {   pk.y = 0.;
+        vk.y = 0.;
+    }
+    if(fixedDirection&ZSYMMETRYPLANE_DIRECTION)
+    {   pk.z = 0.;
+        vk.z = 0.;
+    }
 }
 
 // Set component of Ftot to -p/dt in velocity BC direction (used by boundary conditions)
@@ -263,20 +282,33 @@ void MatVelocityField::AddFtotDirection(Vector *norm,double deltime,double vel,V
 }
 
 // total force
-Vector MatVelocityField::GetFtot(void) { return ftot; }
+Vector MatVelocityField::GetFtot(void) const { return ftot; }
 Vector *MatVelocityField::GetFtotPtr(void) { return &ftot; }
+
+// rigid field
+bool MatVelocityField::IsRigidField(void) const { return (bool)(flags&RIGID_FIELD_BIT); }
+void MatVelocityField::SetRigidField(bool setting)
+{	if(setting)
+		flags |= RIGID_FIELD_BIT;
+	else if(flags&RIGID_FIELD_BIT)
+		flags -= RIGID_FIELD_BIT;
+}
+
+// all flags
+int MatVelocityField::GetFlags() const { return flags; }
 
 #pragma mark CLASS METHODS
 
 // return true if references field is active in this time step
 bool MatVelocityField::ActiveField(MatVelocityField *mvf)
-{ return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0) ; }
-
-// return true if references field that is active and is not for rigid materials
-bool MatVelocityField::ActiveNonrigidField(MatVelocityField *mvf)
-{ return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0 && !mvf->rigidField) ; }
+{ return mvf==NULL ? false : (mvf->numberPoints>0) ; }
 
 // return true if references field that is active and is not for rigid materials
 bool MatVelocityField::ActiveRigidField(MatVelocityField *mvf)
-{ return mvf==NULL ? (bool)FALSE : (mvf->numberPoints>0 && mvf->rigidField) ; }
+{ return mvf==NULL ? false : (mvf->numberPoints>0 && mvf->IsRigidField()) ; }
 
+/* -------- Following look for non rigid fields of various types ----------- */
+
+// return true if references field that is active and is not for rigid materials
+bool MatVelocityField::ActiveNonrigidField(MatVelocityField *mvf)
+{ return mvf==NULL ? false : (mvf->numberPoints>0 && !mvf->IsRigidField()) ; }

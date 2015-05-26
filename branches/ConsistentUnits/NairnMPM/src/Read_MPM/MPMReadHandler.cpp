@@ -101,7 +101,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     	input=INT_NUM;
         inputPtr=(char *)&fmobj->ptsPerElement;
     }
-    
+	
 	else if(strcmp(xName,"Timing")==0)
 	{	ValidateCommand(xName,MPMHEADER,ANY_DIM);
         numAttr=attrs.getLength();
@@ -275,11 +275,13 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
         if(strcmp(xName,"FeedbackDamping")==0)
 		{   bodyFrc.useFeedback=TRUE;
             inputPtr=(char *)&bodyFrc.dampingCoefficient;
+            bodyFrc.useDamping = true;
         }
         else
 		{   bodyFrc.usePFeedback=TRUE;
             inputPtr=(char *)&bodyFrc.pdampingCoefficient;
             gridDamp = false;
+            bodyFrc.usePDamping = true;
         }
 		
         numAttr=attrs.getLength();
@@ -342,7 +344,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
                 else if(strcmp(value,"qCPDI")==0 || strcmp(value,"3")==0)
                 {   ElementBase::useGimp = QUADRATIC_CPDI;
                     ElementBase::analysisGimp = QUADRATIC_CPDI;
-					maxShapeNodes = fmobj->np==THREED_MPM ? 40 : 17 ;		// 3D not allowed for qCPDI
+					maxShapeNodes = fmobj->np==THREED_MPM ? 40 : 36 ;		// 3D not allowed for qCPDI
                 }
                 else
                     throw SAXException("GIMP type must be Classic, uGIMP, lCPDI, or qCPDI.");
@@ -927,7 +929,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
 		if(style!=FUNCTION_VALUE)
 		{	input=DOUBLE_NUM;
 			if(style==LINEAR_VALUE) gScaling = UnitsController::Scaling(1.e3);		// convert Legacy 1/ms to 1/s
-			inputPtr=(char *)newVelBC->GetBCValuePtr();
+			inputPtr = (char *)newVelBC->GetBCValuePtr();
 		}
 		else
 		{	input=FUNCTION_BLOCK;
@@ -1092,7 +1094,7 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     	input=DOUBLE_NUM;
         inputPtr=(char *)&bodyFrc.gforce.y;
     }
-	
+
 	// Grid Body Force in Y direction
     else if(strcmp(xName,"GridBodyYForce")==0)
 	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
@@ -1106,14 +1108,14 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
     	input=DOUBLE_NUM;
         inputPtr=(char *)&bodyFrc.gforce.z;
     }
-	
+
 	// Grid Body Force in Z direction
     else if(strcmp(xName,"GridBodyZForce")==0)
 	{	ValidateCommand(xName,GRAVITY,ANY_DIM);
     	input=GRID_Z_BODY_FORCE_FUNCTION_BLOCK;
         inputPtr=(char *)&bodyFrc;		// although not needed
     }
-
+    
     //-------------------------------------------------------
     // <CustomTasks> section
 	
@@ -1134,7 +1136,9 @@ bool MPMReadHandler::myStartElement(char *xName,const Attributes& attrs)
                     if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
                 }
 				else if(strcmp(value,"VTKArchive")==0)
-                {   nextTask=(CustomTask *)(new VTKArchive());
+                {   if(vtkArchiveTask!=NULL) throw SAXException("Only one VTKArchive custom task is allowed.");
+                    vtkArchiveTask = new VTKArchive();
+                    nextTask=(CustomTask *)vtkArchiveTask;
                     if(nextTask==NULL) throw SAXException("Out of memory creating a custom task.");
                 }
 				else if(strcmp(value,"HistoryArchive")==0)
@@ -1332,13 +1336,13 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
 		case PRESSURE_FUNCTION_BLOCK:
 			((TaitLiquid *)inputPtr)->SetPressureFunction(xData);
 			break;
-			
+		
 		case GRID_X_BODY_FORCE_FUNCTION_BLOCK:
 		case GRID_Y_BODY_FORCE_FUNCTION_BLOCK:
 		case GRID_Z_BODY_FORCE_FUNCTION_BLOCK:
 			bodyFrc.SetGridBodyForceFunction(xData,input);
 			break;
-			
+		
 		case STRESS_FUNCTION_BLOCK:
 			((PressureLaw *)inputPtr)->SetStressFunction(xData);
 			break;
@@ -1361,7 +1365,7 @@ void MPMReadHandler::myCharacters(char *xData,const unsigned int length)
         case HARDENING_LAW_SELECTION:
             ((MaterialBase *)inputPtr)->SetHardeningLaw(xData);
             break;
-            
+		
 		case TEXT_PARAMETER:
 			// must be in active custom tasks
 			((CustomTask *)currentTask)->SetTextParameter(xData);

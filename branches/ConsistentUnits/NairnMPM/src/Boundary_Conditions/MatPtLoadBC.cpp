@@ -92,19 +92,19 @@ MatPtLoadBC *MatPtLoadBC::AddMPLoad(double bctime)
 		
 		// get forces in g-mm/sec^2
 		if(direction==X_DIRECTION)
-		{	pFext->x-=mp*cd*pVel.x/(2.*mpmgrid.partx);
-			pFext->y-=mp*cs*pVel.y/(2.*mpmgrid.partx);
-			pFext->z-=mp*cs*pVel.z/(2.*mpmgrid.partx);
+		{	pFext->x-=mp*cd*pVel.x/(2.*mpmgrid.GetParticleXSize());
+			pFext->y-=mp*cs*pVel.y/(2.*mpmgrid.GetParticleXSize());
+			pFext->z-=mp*cs*pVel.z/(2.*mpmgrid.GetParticleXSize());
 		}
 		else if(direction==Y_DIRECTION)
-		{	pFext->x-=mp*cs*pVel.x/(2.*mpmgrid.party);
-			pFext->y-=mp*cd*pVel.y/(2.*mpmgrid.party);
-			pFext->z-=mp*cs*pVel.z/(2.*mpmgrid.party);
+		{	pFext->x-=mp*cs*pVel.x/(2.*mpmgrid.GetParticleYSize());
+			pFext->y-=mp*cd*pVel.y/(2.*mpmgrid.GetParticleYSize());
+			pFext->z-=mp*cs*pVel.z/(2.*mpmgrid.GetParticleYSize());
 		}
 		else
-		{	pFext->x-=mp*cs*pVel.x/(2.*mpmgrid.partz);
-			pFext->y-=mp*cs*pVel.y/(2.*mpmgrid.partz);
-			pFext->z-=mp*cd*pVel.z/(2.*mpmgrid.partz);
+		{	pFext->x-=mp*cs*pVel.x/(2.*mpmgrid.GetParticleZSize());
+			pFext->y-=mp*cs*pVel.y/(2.*mpmgrid.GetParticleZSize());
+			pFext->z-=mp*cd*pVel.z/(2.*mpmgrid.GetParticleZSize());
 		}
 	}
 		

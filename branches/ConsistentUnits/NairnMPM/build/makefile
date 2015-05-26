@@ -238,7 +238,10 @@ PointController = $(com)/Read_XML/PointController
 PolygonController = $(com)/Read_XML/PolygonController
 PolyhedronController = $(src)/Read_MPM/PolyhedronController
 PolyTriangle = $(src)/Read_MPM/PolyTriangle
+PostExtrapolationTask = $(src)/NairnMPM_Class/PostExtrapolationTask
+PostForcesTask = $(src)/NairnMPM_Class/PostForcesTask
 PressureLaw = $(src)/Materials/PressureLaw
+ProjectRigidBCsTask = $(src)/NairnMPM_Class/ProjectRigidBCsTask
 PropagateTask = $(src)/Custom_Tasks/PropagateTask
 Quad2D = $(com)/Elements/Quad2D
 RectController = $(com)/Read_XML/RectController
@@ -266,6 +269,7 @@ UpdateMomentaTask = $(src)/NairnMPM_Class/UpdateMomentaTask
 UpdateParticlesTask = $(src)/NairnMPM_Class/UpdateParticlesTask
 UpdateStrainsFirstTask = $(src)/NairnMPM_Class/UpdateStrainsFirstTask
 UpdateStrainsLastTask = $(src)/NairnMPM_Class/UpdateStrainsLastTask
+UpdateStrainsLastContactTask = $(src)/NairnMPM_Class/UpdateStrainsLastContactTask
 Viscoelastic = $(src)/Materials/Viscoelastic
 VTKArchive = $(src)/Custom_Tasks/VTKArchive
 WoodMaterial = $(src)/Materials/WoodMaterial
@@ -354,7 +358,10 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # OvalController.hpp : ShapeController.hpp
 # PointController.hpp : ShapeController.hpp
 # PolygonController.hpp : ShapeController.hpp
+# PostExtrapolationTask.hpp : MPMTask.hpp (CommonTask.hpp)
+# PostForcesTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # PresureLaw.hpp : MaterialBase.hpp TractionLaw.hpp
+# ProjectRigidBCsTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # PropagateTask.hpp : CustomTask.hpp
 # Quad2D.hpp : ElementBase.hpp
 # RectController.hpp : ShapeController.hpp
@@ -376,6 +383,7 @@ dprefix = $(src)/System/MPMPrefix.hpp $(com)/System/DataTypes.hpp $(com)/System/
 # UpdateParticlesTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # UpdateStrainsFirstTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # UpdateStrainsLastTask.hpp : MPMTask.hpp (CommonTask.hpp)
+# UpdateStrainsLastContactTask.hpp : MPMTask.hpp (CommonTask.hpp)
 # Viscoelastic.hpp : MaterialBase.hpp
 # WoodMaterial : HillPlastic.hpp (AnisoPlasticity.hpp, Orthotropic.hpp TranIsotropic.hpp Elastic.hpp MaterialBase.hpp)
 # VTKArchive.hpp : CustomTask.hpp
@@ -429,7 +437,8 @@ objects = main.o CommonAnalysis.o CommonArchiveData.o LinkedObject.o CommonUtili
 		HillPlastic.o MGSCGLMaterial.o VTKArchive.o AdjustTimeStepTask.o SLMaterial.o CrackVelocityFieldMulti.o \
 		CrackVelocityFieldSingle.o WoodMaterial.o TrilinearTraction.o PolyhedronController.o PolyTriangle.o Quad2D.o Lagrange2D.o \
         HEMGEOSMaterial.o GridPatch.o GhostNode.o MatPtHeatFluxBC.o PressureLaw.o ShellController.o Neohookean.o ClampedNeohookean.o \
-        InitVelocityFieldsTask.o UnitsController.o MoreIsotropicMat.o
+        InitVelocityFieldsTask.o UnitsController.o MoreIsotropicMat.o ProjectRigidBCsTask.o PostExtrapolationTask.o \
+		PostForcesTask.o UpdateStrainsLastContactTask.o 
 
 # -------------------------------------------------------------------------
 # Link all objects
@@ -580,7 +589,8 @@ NairnMPM.o : $(NairnMPM).cpp $(dprefix) $(NairnMPM).hpp $(ArchiveData).hpp $(Com
 			$(UpdateStrainsFirstTask).hpp $(MPMWarnings).hpp $(BoundaryCondition).hpp $(MPMBase).hpp $(MatPtLoadBC).hpp \
 			$(DiffusionTask).hpp $(ConductionTask).hpp $(CustomTask).hpp $(MPMWarnings).hpp $(CrackHeader).hpp $(MatPtFluxBC).hpp \
 			$(CrackSurfaceContact).hpp $(MeshInfo).hpp $(TransportTask).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
-			$(MatPtHeatFluxBC).hpp  $(InitVelocityFieldsTask).hpp
+			$(MatPtHeatFluxBC).hpp  $(InitVelocityFieldsTask).hpp $(ProjectRigidBCsTask).hpp $(PostExtrapolationTask).hpp \
+			$(PostForcesTask).hpp $(UpdateStrainsLastContactTask).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(NairnMPM).cpp
 StartOutput.o : $(StartOutput).cpp $(dprefix) $(NairnMPM).hpp $(MaterialBase).hpp $(ThermalRamp).hpp $(ArchiveData).hpp \
 			$(CommonArchiveData).hpp $(BodyForce).hpp $(CrackSurfaceContact).hpp $(CommonException).hpp $(ElementBase).hpp \
@@ -604,21 +614,31 @@ InitVelocityFieldsTask.o : $(InitVelocityFieldsTask).cpp $(dprefix) $(InitVeloci
 			$(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp  $(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(InitVelocityFieldsTask).cpp
 MassAndMomentumTask.o : $(MassAndMomentumTask).cpp $(dprefix) $(MassAndMomentumTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
-			$(NairnMPM).hpp $(NodalPoint).hpp $(MatPtLoadBC).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ElementBase).hpp \
-			$(RigidMaterial).hpp $(CrackHeader).hpp $(CrackSurfaceContact).hpp $(TransportTask).hpp $(BoundaryCondition).hpp \
-			$(NodalVelBC).hpp $(CommonException).hpp $(NodalTempBC).hpp $(NodalConcBC).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
-            $(CrackNode).hpp $(MaterialInterfaceNode).hpp $(GridPatch).hpp
+			$(NairnMPM).hpp $(NodalPoint).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ElementBase).hpp $(RigidMaterial).hpp \
+			$(CommonException).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(GridPatch).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MassAndMomentumTask).cpp
+ProjectRigidBCsTask.o : $(ProjectRigidBCsTask).cpp $(dprefix) $(ProjectRigidBCsTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
+			$(NairnMPM).hpp $(RigidMaterial).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ElementBase).hpp $(CommonException).hpp \
+			$(BoundaryCondition).hpp $(NodalVelBC).hpp $(NodalTempBC).hpp $(NodalConcBC).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ProjectRigidBCsTask).cpp
+PostExtrapolationTask.o : $(PostExtrapolationTask).cpp $(dprefix) $(PostExtrapolationTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
+			$(NairnMPM).hpp $(CommonException).hpp $(CrackHeader).hpp $(CrackSurfaceContact).hpp $(TransportTask).hpp \
+			$(CrackNode).hpp $(MaterialInterfaceNode).hpp $(NodalVelBC).hpp $(BoundaryCondition).hpp \
+			$(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PostExtrapolationTask).cpp
 UpdateStrainsFirstTask.o : $(UpdateStrainsFirstTask).cpp $(dprefix) $(UpdateStrainsFirstTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(MPMBase).hpp $(NodalPoint).hpp $(MaterialBase).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
 			$(CommonException).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UpdateStrainsFirstTask).cpp
 GridForcesTask.o : $(GridForcesTask).cpp $(dprefix) $(GridForcesTask).hpp $(MPMTask).hpp $(CommonTask).hpp $(GridPatch).hpp \
-			$(NairnMPM).hpp $(NodalPoint).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ElementBase).hpp $(CrackHeader).hpp \
-			$(TransportTask).hpp $(NodalVelBC).hpp $(ConductionTask).hpp $(BodyForce).hpp $(CrackNode).hpp $(CommonException).hpp \
-			$(CrackVelocityField).hpp $(MatVelocityField).hpp $(BoundaryCondition).hpp $(MaterialInterfaceNode).hpp \
-			$(MatPtTractionBC).hpp $(MatPtLoadBC).hpp
+			$(NairnMPM).hpp $(NodalPoint).hpp $(MaterialBase).hpp $(MPMBase).hpp $(ElementBase).hpp $(TransportTask).hpp $(ConductionTask).hpp \
+			$(CommonException).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(BoundaryCondition).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(GridForcesTask).cpp
+PostForcesTask.o : $(PostForcesTask).cpp $(dprefix) $(PostForcesTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
+			$(NairnMPM).hpp $(CrackHeader).hpp $(ConductionTask).hpp $(TransportTask).hpp $(BodyForce).hpp \
+			$(CrackNode).hpp $(MaterialInterfaceNode).hpp $(NodalVelBC).hpp $(MatPtTractionBC).hpp $(BoundaryCondition).hpp \
+			$(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(PostForcesTask).cpp
 UpdateMomentaTask.o : $(UpdateMomentaTask).cpp $(dprefix) $(UpdateMomentaTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(TransportTask).hpp $(NodalPoint).hpp $(CrackNode).hpp $(CrackVelocityField).hpp \
 			$(MatVelocityField).hpp $(CommonException).hpp
@@ -629,10 +649,13 @@ UpdateParticlesTask.o : $(UpdateParticlesTask).cpp $(dprefix) $(UpdateParticlesT
 			$(CommonException).hpp $(BoundaryCondition).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UpdateParticlesTask).cpp
 UpdateStrainsLastTask.o : $(UpdateStrainsLastTask).cpp $(dprefix) $(UpdateStrainsLastTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
-			$(NairnMPM).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(TransportTask).hpp \
-			$(NodalPoint).hpp $(NodalVelBC).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
-			$(BoundaryCondition).hpp $(UpdateStrainsFirstTask).cpp $(CrackNode).hpp $(GridPatch).hpp $(CommonException).hpp
+			$(NairnMPM).hpp $(TransportTask).hpp $(UpdateStrainsFirstTask).cpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UpdateStrainsLastTask).cpp
+UpdateStrainsLastContactTask.o : $(UpdateStrainsLastContactTask).cpp $(dprefix) $(UpdateStrainsLastContactTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
+			$(NairnMPM).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(TransportTask).hpp \
+			$(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp $(NodalVelBC).hpp $(BoundaryCondition).hpp \
+			$(UpdateStrainsFirstTask).cpp $(CrackNode).hpp $(GridPatch).hpp $(CommonException).hpp
+	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(UpdateStrainsLastContactTask).cpp
 RunCustomTasksTask.o : $(RunCustomTasksTask).cpp $(dprefix) $(RunCustomTasksTask).hpp $(MPMTask).hpp $(CommonTask).hpp \
 			$(NairnMPM).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(NodalPoint).hpp $(CustomTask).hpp \
 			$(CrackVelocityField).hpp $(MatVelocityField).hpp
@@ -703,7 +726,7 @@ BodyForce.o : $(BodyForce).cpp $(dprefix) $(BodyForce).hpp $(mathexpr).hpp $(MPM
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(BodyForce).cpp
 
 # MPM: MPM_Classes
-MPMBase.o : $(MPMBase).cpp $(dprefix) $(MPMBase).hpp $(CrackHeader).hpp $(MaterialBase).hpp \
+MPMBase.o : $(MPMBase).cpp $(dprefix) $(MPMBase).hpp $(CrackHeader).hpp $(MaterialBase).hpp $(MeshInfo).hpp \
             $(MatPtTractionBC).hpp $(MatPtLoadBC).hpp $(BoundaryCondition).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(MPMBase).cpp
 MatPoint2D.o : $(MatPoint2D).cpp $(dprefix) $(MatPoint2D).hpp $(MPMBase).hpp $(MaterialBase).hpp $(ElementBase).hpp $(MeshInfo).hpp \

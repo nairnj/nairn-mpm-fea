@@ -29,7 +29,7 @@ CrackSurfaceContact::CrackSurfaceContact()
 	ContactLaw=FRICTIONLESS;	// the law
 	friction=0.;				// crack contact friction
 	Dn=-1.;						// prefect in tension by default
-	Dnc=-101.e6;					// <-100e6 means not set and should be set same as Dn
+	Dnc=-101.e6;				// <-100e6 means not set and should be set same as Dn
 	Dt=-1.;						// perfect in shear by default
 	hasImperfectInterface=FALSE;	// flag for any imperfect interfaces
 	moveOnlySurfaces=TRUE;			// move surfaces, plane moves at midpoint of surfaces
@@ -305,6 +305,7 @@ short CrackSurfaceContact::IsImperfect(int number) { return (short)(CrackContact
 /*	Calculate change in momentum when there is contact. Return true or false if an adjustment was calculated
 	If BC at the node, the delta momemtum should be zero in fixed direction
 	Only called if both verified are verified and have 1 or more particles
+	This method should ignore material that are ignoring cracks
 */
 bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVelocityField *cva,CrackVelocityField *cvb,
 											Vector *normin,int number,bool postUpdate,double deltime,int *inContact)
@@ -393,7 +394,7 @@ bool CrackSurfaceContact::GetDeltaMomentum(NodalPoint *np,Vector *delPa,CrackVel
                     // get frictional heating part - this is g mm^2/sec^2 = nJ
                     // Note: only add frictional heating during momentum update (when frictional
                     //   force is appropriate) and only if conduction is on.
-                    if(postUpdate && conduction && ConductionTask::crackContactHeating)
+                    if(postUpdate && ConductionTask::crackContactHeating)
                     {   if(np->NodeHasNonrigidParticles())
                         {   Vector Ftdt;
                             CopyScaleVector(&Ftdt,&tang,mu*dotn);
@@ -598,7 +599,7 @@ short CrackSurfaceContact::MaterialContact(Vector *dispbma,Vector *norm,double d
 {
 	// normal cod
 	double dnorm=(dispbma->x*norm->x + dispbma->y*norm->y + dispbma->z*norm->z)
-                   - mpmgrid.GetNormalCODAdjust(norm,NULL,0);
+                    - mpmgrid.GetNormalCODAdjust(norm,NULL,0);
 	
 	// on post update, adjust by normal velocity difference
 	if(postUpdate) dnorm+=dvel*deltime;

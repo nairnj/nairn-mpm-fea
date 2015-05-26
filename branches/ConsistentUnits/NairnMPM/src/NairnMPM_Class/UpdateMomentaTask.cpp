@@ -18,15 +18,6 @@
  
 	Finally, update analog of momenta (genearalized forces) in all
 	transport tasks
- 
-	Input Variables
-		mvf[]->pk, ftot, mass, disp, volume, volumeGrad
-		cvf[]->norm
-		nd[]->fcond, gRhoVp, fdiff, gVolume
- 
-	Output Variables
-		mvf[]->pk
-		nd[]->fcond, fdiff
 ********************************************************************************/
 
 #include "NairnMPM_Class/UpdateMomentaTask.hpp"
@@ -59,7 +50,8 @@ void UpdateMomentaTask::Execute(void)
 		TransportTask *nextTransport=transportTasks;
 		while(nextTransport!=NULL)
 			nextTransport=nextTransport->TransportRates(ndptr,timestep);
-		
+
+		// material contact
 		if(fmobj->multiMaterialMode)
 		{	try
 			{	ndptr->MaterialContactOnNode(timestep,UPDATE_MOMENTUM_CALL,NULL,NULL);

@@ -15,9 +15,6 @@
 
 class NodalPoint;
 
-// activate to track time in each task and print results at the end
-#define _PROFILE_TASKS_
-
 #include "System/CommonTask.hpp"
 
 class MPMTask : public CommonTask
@@ -32,10 +29,8 @@ class MPMTask : public CommonTask
 		void WriteLogFile(void);
 #endif
 	
-#ifdef _PROFILE_TASKS_
 		void WriteProfileResults(int,double,double);
 		void TrackTimes(double,double);
-#endif
 	
         // class methods
         static int GetPatchNumber();

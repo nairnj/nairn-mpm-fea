@@ -77,7 +77,7 @@ void NairnMPM::PrintAnalysisType(void)
     
 	// time step and max time
     cout << "Time step: min(" << timestep*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << ", "
-        << fmobj->GetCFLCondition() << " time for wave to cross one cell)\n";
+		<< fmobj->GetCFLCondition() << " time for wave to cross one cell)\n";
     cout << "Maximum time: " << maxtime*UnitsController::Scaling(1.e3) << " " << UnitsController::Label(ALTTIME_UNITS) << "\n\n";
 }
 
@@ -86,12 +86,9 @@ void NairnMPM::MyStartResultsOutput(void)
 {
     //---------------------------------------------------
     // Gravity and Damping and Thermal Ramp
-    PrintSection("GRAVITY, DAMPING, TRANSPORT, AND THERMAL");
+    PrintSection("GRAVITY, DAMPING, AND THERMAL");
 	bodyFrc.Output();
 	thermal.Output();
-	TransportTask *nextTransport=transportTasks;
-	while(nextTransport!=NULL)
-		nextTransport=nextTransport->TransportOutput();
     ConductionTask::ThermodynamicsOutput();
     cout << endl;
 
@@ -153,6 +150,7 @@ void NairnMPM::MyStartResultsOutput(void)
 			nextCrack=(CrackHeader *)nextCrack->GetNextObject();
 		}
 		cout << endl;
+        
     }
     
     //---------------------------------------------------

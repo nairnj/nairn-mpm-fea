@@ -1072,11 +1072,12 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 	else
 		afile << " 0" << endl;
 	
-	afile << "SPACING "  << mpmgrid.gridx << " " << mpmgrid.gridy;
+    Vector csz = mpmgrid.GetCellSize();
+	afile << "SPACING "  << csz.x << " " << csz.y;
 	if(fmobj->IsThreeD())
-		afile << " " << mpmgrid.gridz << endl;
+		afile << " " << csz.z << endl;
 	else
-		afile << " " << mpmgrid.gridx << endl;
+		afile << " " << csz.x << endl;
 	
 	afile << "POINT_DATA " << nnodes << endl;
 	
@@ -1137,7 +1138,7 @@ void ArchiveData::ArchiveVTKFile(double atime,vector< int > quantity,vector< int
 					break;
                 
                 case VTK_NUMBERPOINTS:
-                    // number of points (including rigid contact)
+                    // number of points (including rigid contact and mirrored fields)
                     afile << nd[i]->NumberParticles() << endl;
                     break;
 				

@@ -338,7 +338,9 @@ void NodalPoint::CopyFieldInitialization(NodalPoint *ghost)
 {	ghost->UseTheseFields(cvf);
 }
 
-// Create fields on this this node that match the supplied fields
+// Create fields on this node that match the supplied fields
+// When some materials ignore cracks, they will only be in field [0]. The material fields for
+//    them in other crack fields will not be on the ghost nodes
 void NodalPoint::UseTheseFields(CrackVelocityField **rcvf)
 {	
 	for(int i=0;i<maxCrackFields;i++)
@@ -493,8 +495,10 @@ void NodalPoint::CopyVolumeGradient(short vfld,int matfld,Vector *grad)
 }
 
 // Calculate total mass and count number of materials on this node
-// Changes only this->numberMaterials and then only if in multimaterial mode
-// Calculations might need to exclude nodes whose mass is too small in crack calculations
+// The nodal mass counts only source materials (i.e., does not count mass in mirrored
+//    mvf that ignore cracks, but deos get that material in field [0]).
+// This is called after mirror fields so the mass will double count non-rigid materials
+//    that ignore cracks. Rigid materials are never added to mass
 void NodalPoint::CalcTotalMassAndCount(void)
 {	int i;
 	nodalMass = 0.;
@@ -551,7 +555,7 @@ void NodalPoint::AddFtotSpreadTask3(short vfld,Vector f) { cvf[vfld]->AddFtotSpr
 void NodalPoint::AddTractionTask3(MPMBase *mpmptr,short vfld,int matfld,Vector *f)
 {	if(CrackVelocityField::ActiveField(cvf[vfld]))
 	{	cvf[vfld]->AddFtotTask3(matfld,f);
-	}
+    }
 }
 
 // Add gravity and body forces on node in g mm/sec^2
@@ -559,7 +563,7 @@ void NodalPoint::AddGravityAndBodyForceTask3(Vector *gridBodyForce)
 {	int i;
     for(i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-		cvf[i]->AddGravityAndBodyForceTask3(gridBodyForce);
+			cvf[i]->AddGravityAndBodyForceTask3(gridBodyForce);
 	}
 }
 
@@ -800,7 +804,7 @@ void NodalPoint::CalcStrainField(void)
 {
 	int j;
 	double mnode;
-	
+
 	// do all strain fields
 	for(j=0;j<maxCrackFields;j++)
 	{	if(!CrackVelocityField::ActiveNonrigidField(cvf[j])) continue;
@@ -812,7 +816,7 @@ void NodalPoint::CalcStrainField(void)
 		df->du.y *= mnode;
 		df->dv.x *= mnode;
 		df->dv.y *= mnode;
-		
+
 		// GRID_JTERMS
 		if(JGridEnergy)
         {	df->vx *= mnode;            // sqrt(nJ/mm^3) = sqrt(uN/mm^2)
@@ -936,8 +940,10 @@ void NodalPoint::AverageStrain(DispField *dest,DispField *src1,DispField *src2,d
 
 #pragma mark TASK 8 METHODS
 
-// Increment velocity for crack surface
-short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Vector *delv,double *surfaceMass,CrackSegment *seg) const
+// Increment velocity and mass for crack surface
+// OR Increment momentum and mass for crack surface (if CRACK_SURFACE_BY_MOMENTUM_EXTRAP is defined)
+// return true or false if found non-empty velocity field to use
+bool NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Vector *delv,double *surfaceMass,CrackSegment *seg) const
 {
 	// get velocity field to use for surface particle to node pair
 	short vfld = GetFieldForSurfaceParticle(side,crackNumber,seg);
@@ -945,13 +951,22 @@ short NodalPoint::IncrementDelvSideTask8(short side,int crackNumber,double fi,Ve
 	// Exit if no field
 	if(vfld<0) return false;
 	if(!CrackVelocityField::ActiveNonrigidField(cvf[vfld])) return false;
-
-	// increment the velocity if enough mass
-	double fieldMass = GetNodalMass(true);
+	
+#ifdef CRACK_SURFACE_BY_MOMENTUM_EXTRAP
+	// increment the momentum and mass (if has particles)
+	double fieldMass;
 	if(cvf[vfld]->IncrementDelvTask8(fi,delv,&fieldMass))
-	{	*surfaceMass+=fi;
+	{	*surfaceMass += fi*fieldMass;
 		return true;
 	}
+#else
+	// increment the velocity and mass (if enough mass)
+	double fieldMass = GetNodalMass(true);
+	if(cvf[vfld]->IncrementDelvTask8(fi,delv,&fieldMass))
+	{	*surfaceMass += fi;
+		return true;
+	}
+#endif
 	return false;
 }
 
@@ -1220,12 +1235,6 @@ void NodalPoint::AddKineticEnergyAndMass(double &kineticEnergy,double &totalMass
 	}
 }
 
-
-// Get contact force for selected field
-Vector NodalPoint::GetContactForce(short vfld,int matfld)
-{	return cvf[vfld]->GetContactForce(matfld);
-}
-
 // Add forces from rigid material velocity fields to array of forces
 // Must zero array before start using
 void NodalPoint::AddGetContactForce(bool clearForces,Vector *forces,double stepScale,Vector *fcontact)
@@ -1255,7 +1264,7 @@ void NodalPoint::MaterialContactOnNode(double deltime,int callType,MaterialInter
 	// check each crack velocity field on this node
 	for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveField(cvf[i]))
-			cvf[i]->MaterialContactOnCVF(this,i,deltime,callType,first,last);
+			cvf[i]->MaterialContactOnCVF(this,deltime,callType,first,last);
 	}
 }
 
@@ -1534,7 +1543,8 @@ void NodalPoint::AddInterfaceForceOnCrack(short a,short b,Vector *norm,int crack
 
 #pragma mark ACCESSORS
 
-// number of particles for this node
+// number of particles for this node, and it includes those in mirrored fields
+// only used by VTKArchive
 int NodalPoint::NumberParticles(void)
 {	int totalParticles=0;
 	for(int i=0;i<maxCrackFields;i++)
@@ -1549,7 +1559,7 @@ int NodalPoint::NumberNonrigidCracks(void)
 {	int totalCracks=0;
 	for(int i=0;i<maxCrackFields;i++)
 	{	if(CrackVelocityField::ActiveNonrigidField(cvf[i]))
-		totalCracks++;
+			totalCracks++;
 	}
 	return totalCracks;
 }
@@ -1583,9 +1593,11 @@ void NodalPoint::Describe(void) const
 	}
     if(!active) cout << "#  no active crack velocity fields (might be in initialization)" << endl;
 }
-	
-// total nodal mass
-// argument not used here, but is in OSParticulas
+
+// Total nodal mass. If requireCracks is false, then gets mass of all nonrigid materials, otherwise,
+//   it gets mas of materials that see cracks (as calculated in CalcTotalMassAndCount())
+// true uses: IncrementDelvSideTask8() (if CRACK_SURFACE_BY_MOMENTUM_EXTRAP is not defined)
+// false uses: ArchiveVTKFile() and VTKArchive::EndExtrapolations()
 double NodalPoint::GetNodalMass(bool requireCracks) const { return nodalMass; }
 
 #pragma mark BOUNDARY CONDITION METHODS

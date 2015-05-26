@@ -22,16 +22,10 @@
 #include "NairnMPM_Class/NairnMPM.hpp"
 #include "Materials/MaterialBase.hpp"
 #include "MPM_Classes/MPMBase.hpp"
-#include "Custom_Tasks/TransportTask.hpp"
-#include "Custom_Tasks/ConductionTask.hpp"
 #include "Elements/ElementBase.hpp"
 #include "Nodes/NodalPoint.hpp"
-#include "Nodes/MaterialInterfaceNode.hpp"
-#include "Global_Quantities/BodyForce.hpp"
-#include "Cracks/CrackHeader.hpp"
-#include "Cracks/CrackNode.hpp"
-#include "Boundary_Conditions/NodalVelBC.hpp"
-#include "Boundary_Conditions/MatPtTractionBC.hpp"
+#include "Custom_Tasks/TransportTask.hpp"
+#include "Custom_Tasks/ConductionTask.hpp"
 #include "Patches/GridPatch.hpp"
 #include "Exceptions/CommonException.hpp"
 #ifdef LOG_PROGRESS
@@ -90,7 +84,7 @@ void GridForcesTask::Execute(void)
 					Vector theFrc;
 					mpmptr->GetFintPlusFext(&theFrc,fn[i],xDeriv[i],yDeriv[i],zDeriv[i]);
 					
-					// add body forces (now done outside this loop)
+					// add body forces (do in outside loop now)
 					
 					// add the total force to nodal point
                     ndptr = GetNodePointer(pn,nds[i]);
@@ -134,45 +128,4 @@ void GridForcesTask::Execute(void)
 			patches[pn]->GridForcesReduction();
 	}
 	
-	// Add traction BCs on particles
-	MatPtTractionBC::SetParticleSurfaceTractions(mtime);
-	
-	// Add traction law forces to velocity fields
-	if(fmobj->hasTractionCracks)
-	{	CrackHeader *nextCrack=firstCrack;
-		while(nextCrack!=NULL)
-		{	nextCrack->AddTractionForce();
-			nextCrack=(CrackHeader *)nextCrack->GetNextObject();
-		}
-	}
-	
-	// Add crack tip heating adds to fcond or conduction force
-	if(conduction) conduction->AddCrackTipHeating();
-	
-	// Add interface forces to velocity fields and track total interface energy
-    NodalPoint::interfaceEnergy=0.;
-    CrackNode::CrackInterfaceOnKnownNodes();
-    MaterialInterfaceNode::InterfaceOnKnownNodes();
-    
-	// Add gravity and body forces (if any are present)
-	// Note: If ever need to implement body force that depend on particle state (stress, strain, etc.)
-	//			then move the body force addition into GridForcesTask loop where gravity is commented out
-    // When used to keep Fext, this section would all add fint and fext to get ftot (and it was always needed)
-	Vector gridBodyForce;
-	if(bodyFrc.gravity || bodyFrc.hasGridBodyForce)
-	{   for(int i=1;i<=nnodes;i++)
-		{	NodalPoint *ndptr = nd[i];
-			bodyFrc.GetGridBodyForce(&gridBodyForce,ndptr,mtime);
-			ndptr->AddGravityAndBodyForceTask3(&gridBodyForce);
-		}
-	}
-	
-    // Imposed BCs on ftot to get correct grid BCs for velocity
-    NodalVelBC::ConsistentGridForces();
-	
-	// Do similar to transport property BCs (not parallel because small and possilbe use of function/global variables)
-	TransportTask *nextTransport=transportTasks;
-	while(nextTransport!=NULL)
-		nextTransport=nextTransport->SetTransportForceBCs(timestep);
-    
 }

@@ -307,7 +307,7 @@ void NodalVelBC::SetMirrorSpacing(int mirrored)
 {
 	mirrorSpacing = 0;
 	if(mirrored==0) return;
-	if(!mpmgrid.IsStructuredGrid()) return;
+	if(!mpmgrid.IsStructuredEqualElementsGrid()) return;
 	
 	switch(dir)
     {   case X_DIRECTION:
@@ -357,6 +357,22 @@ void NodalVelBC::GridMomentumConditions(int makeCopy)
     int i;
     NodalVelBC *nextBC;
     
+#ifdef ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY
+	// adjust for symmetry plane option
+	nextBC=firstVelocityBC;
+	while(nextBC!=NULL)
+	{	i=nextBC->GetNodeNum();
+		if(nd[i]->fixedDirection&ANYSYMMETRYPLANE_DIRECTION)
+		{	int j;
+			for(j=0;j<maxCrackFields;j++)
+			{	if(CrackVelocityField::ActiveField(nd[i]->cvf[j]))
+					nd[i]->cvf[j]->AdjustForSymmetryBC(nd[i]);
+			}
+		}
+		nextBC = (NodalVelBC *)nextBC->GetNextObject();
+	}
+#endif
+	
 	// convert time to ms, use time at beginning or end of time step
     // On first pass (when true), copy nodal momenta before anything changed
     //	(may make multiple copies, but that is OK)

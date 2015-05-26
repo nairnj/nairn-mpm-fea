@@ -1,33 +1,30 @@
 /********************************************************************************
-	MassAndMomentumTask.hpp
+	UpdateStrainsLastContactTask.hpp
 	nairn-mpm-fea
 
-	Created by John Nairn on July 22, 2010
-	Copyright (c) 2010 John A. Nairn, All rights reserved.
+	Created by John Nairn on 4/7/15
+	Copyright (c) 2015 John A. Nairn, All rights reserved.
 
 	Dependencies
 		MPMTask, CommonTask
 ********************************************************************************/
 
-#ifndef _MASSANDMOMENTUMTASK_
+#ifndef _UPDATESTRAINSLASTCONTACTTASK_
 
-#define _MASSANDMOMENTUMTASK_
-
-class BoundaryCondition;
+#define _UPDATESTRAINSLASTCONTACTTASK_
 
 #include "NairnMPM_Class/MPMTask.hpp"
 
-class MassAndMomentumTask : public MPMTask
+class UpdateStrainsLastContactTask : public MPMTask
 {
 	public:
 	
 		// constructor
-		MassAndMomentumTask(const char *);
+		UpdateStrainsLastContactTask(const char *);
 	
 		// required methods
 		virtual void Execute(void);
 	
-	protected:
 };
 
 #endif

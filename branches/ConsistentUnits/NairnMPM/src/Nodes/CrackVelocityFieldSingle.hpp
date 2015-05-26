@@ -21,6 +21,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		
         // constructors and destructors
 		CrackVelocityFieldSingle(int,short,int);
+        virtual ~CrackVelocityFieldSingle();
 		virtual void ZeroMatFields(void);
 	
 		// specific task methods
@@ -28,6 +29,7 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 	
 		virtual void AddFtotSpreadTask3(Vector *);
 		virtual void AddGravityAndBodyForceTask3(Vector *);
+	
 		virtual void UpdateMomentaOnField(double);
 	
 		virtual void RezeroNodeTask6(double);
@@ -52,6 +54,9 @@ class CrackVelocityFieldSingle : public CrackVelocityField
 		virtual Vector GetCMatFtot(void);
 		virtual void ChangeCrackMomentum(Vector *,bool,double);
 		virtual int CopyFieldMomenta(Vector *,int);
+#ifdef ADJUST_EXTRAPOLATED_PK_FOR_SYMMETRY
+		virtual void AdjustForSymmetryBC(NodalPoint *);
+#endif
 		virtual int PasteFieldMomenta(Vector *,int);
 		virtual void Describe(void) const;
 	

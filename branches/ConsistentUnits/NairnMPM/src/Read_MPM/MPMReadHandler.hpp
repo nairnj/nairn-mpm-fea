@@ -36,7 +36,7 @@ class MPMReadHandler : public CommonReadHandler
         short EndGenerator(char *xName);
 		short BMPFileInput(char *,const Attributes&);
  		void SetLevelVelocity(double,double,double);
-        void MPMPts();							// Generate mpms
+        void MPMPts(void);						// Generate material points
 		void SetGIMPBorderAsHoles(void);		// implicit block edge GIMP elements from getting particles
 		void MPMCracks(int,int,double,double,int,int);			// Generate cracks segments, Liping Xue
         void DisplacementBCs(void);				// Generate Displacement BCs

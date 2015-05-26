@@ -355,11 +355,11 @@ double MatPoint2D::GetVolume(int volumeType)
 	return (pF[0][0]*pF[1][1]-pF[1][0]*pF[0][1])*mp/rho;
 }
 
-// To support CPDI find nodes in the particle domain, find their element,
-// their natural coordinates, and weighting values for gradient calculations
-// Should be done only once per time step
-// throws CommonException() if particle corner has left the grid
-void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
+// Get vectors from particle to edge
+// r1 = F.(psz.x,0) and r2 = F.(0,psz.y)
+// where psz is semiparticle size
+// This uses mpmgrid so membrane particles must override
+void MatPoint2D::GetSemiSideVectors(Vector *r1,Vector *r2,Vector *r3) const
 {
 	// get particle 2D deformation gradient
 	double pF[3][3];
@@ -367,11 +367,32 @@ void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
 	
 	// get polygon vectors - these are from particle to edge
     //      and generalize semi width lp in 1D GIMP
+    Vector psz = mpmgrid.GetParticleSize();
+	r1->x = pF[0][0]*psz.x;
+	r1->y = pF[1][0]*psz.x;
+    
+	r2->x = pF[0][1]*psz.y;
+	r2->y = pF[1][1]*psz.y;
+}
+
+// Get undeformed size (only called by GIMP traction)
+// This uses mpmgrid so membrane particles must override
+void MatPoint2D::GetUndeformedSemiSides(double *r1x,double *r2y,double *r3z) const
+{   Vector psz = mpmgrid.GetParticleSize();
+    *r1x = psz.x;
+    *r2y = psz.y;
+}
+
+// To support CPDI find nodes in the particle domain, find their element,
+// their natural coordinates, and weighting values for gradient calculations
+// Should be done only once per time step
+// throws CommonException() if particle corner has left the grid
+void MatPoint2D::GetCPDINodesAndWeights(int cpdiType)
+{
+	// get polygon vectors - these are from particle to edge
+    //      and generalize semi width lp in 1D GIMP
 	Vector r1,r2,c;
-	r1.x = pF[0][0]*mpmgrid.partx;
-	r1.y = pF[1][0]*mpmgrid.partx;
-	r2.x = pF[0][1]*mpmgrid.party;
-	r2.y = pF[1][1]*mpmgrid.party;
+    GetSemiSideVectors(&r1,&r2,NULL);
 	
     // Particle domain area is area of the full parallelogram
     // Assume positive due to orientation of initial vectors, and sign probably does not matter
@@ -517,8 +538,8 @@ double MatPoint2D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
     // which GIMP method (cannot be used in POINT_GIMP)
     if(ElementBase::useGimp==UNIFORM_GIMP)
     {   // initial vectors only
-        double r1x = mpmgrid.partx;
-        double r2y = mpmgrid.party;
+        double r1x,r2y;
+        GetUndeformedSemiSides(&r1x,&r2y,NULL);
 
         switch(face)
         {	case 1:

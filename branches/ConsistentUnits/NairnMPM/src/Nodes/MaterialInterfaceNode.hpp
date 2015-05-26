@@ -25,7 +25,7 @@ class MaterialInterfaceNode
         MaterialInterfaceNode(NodalPoint *,int,int,int,Vector *,double,MaterialInterfaceNode *);
     
         // methods
-        MaterialInterfaceNode *InterfaceForce(void);
+        MaterialInterfaceNode *InterfaceForceBetweenMaterials(void);
         void SetPrevBC(MaterialInterfaceNode *);
         MaterialInterfaceNode *GetPrevBC(void);
         double GetInterfaceTraction(Vector *);
@@ -33,7 +33,7 @@ class MaterialInterfaceNode
     
         // class methods
         static void RemoveInterfaceNodes(void);
-        static void InterfaceOnKnownNodes(void);
+        static void MaterialInterfaceOnKnownNodes(void);
     
     private:
         NodalPoint *theNode;

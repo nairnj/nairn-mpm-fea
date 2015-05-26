@@ -33,7 +33,7 @@ MaterialInterfaceNode::MaterialInterfaceNode(NodalPoint *nd,int vf,int i,int j,
 #pragma mark MaterialInterfaceNode: Methods
 
 // Add internal force to all nodes with imperfect interfaces 
-MaterialInterfaceNode *MaterialInterfaceNode::InterfaceForce(void)
+MaterialInterfaceNode *MaterialInterfaceNode::InterfaceForceBetweenMaterials(void)
 {
 	theNode->MaterialInterfaceForce(this);
 	return prevBC;
@@ -74,11 +74,11 @@ void MaterialInterfaceNode::RemoveInterfaceNodes(void)
 
 // When there are imperfect interfaces between materials, add to nodal internal force
 // and track interface energy
-void MaterialInterfaceNode::InterfaceOnKnownNodes(void)
+void MaterialInterfaceNode::MaterialInterfaceOnKnownNodes(void)
 {
 	MaterialInterfaceNode *prevBC = currentIntNode;
 	while(prevBC!=NULL)
-		prevBC = prevBC->InterfaceForce();
+		prevBC = prevBC->InterfaceForceBetweenMaterials();
 }
 
 

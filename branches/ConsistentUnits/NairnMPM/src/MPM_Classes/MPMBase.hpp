@@ -15,6 +15,7 @@
 
 #define DEFORMED_VOLUME 0
 #define DEFORMED_AREA 1
+#define DEFORMED_AREA_FOR_GRADIENT 2
 
 #define GRAD_GLOBAL 0
 #define GRAD_SECOND 3
@@ -72,12 +73,14 @@ class MPMBase : public LinkedObject
         virtual void GetDeformationGradient(double F[][3]) const = 0;
         virtual double GetRelativeVolume(void) = 0;
 		virtual double GetVolume(int) = 0;
+        virtual void GetSemiSideVectors(Vector *,Vector *,Vector *) const = 0;
+		virtual void GetUndeformedSemiSides(double *,double *,double *) const = 0;
 		virtual void GetCPDINodesAndWeights(int) = 0;
 		virtual double GetTractionInfo(int,int,int *,Vector *,Vector *,int *) = 0;
+        virtual void GetDimensionlessSize(Vector &) const;
 
         // defined virtual methods
-        virtual double GetUnscaledVolume(void);
-        double GetMassForGradient(void);
+		virtual double GetUnscaledVolume(void);
 
 		// base only methods (make virtual if need to override)
 		int MatID(void) const;
@@ -120,7 +123,7 @@ class MPMBase : public LinkedObject
 		virtual Matrix3 GetInitialRotation(void);
 		void IncrementRotationStrain(double);
 		void IncrementRotationStrain(double,double,double);
-		void InitializeMass(double);
+		virtual void InitializeMass(double,double);
 		void SetConcentration(double,double);
 		void SetTemperature(double,double);
         void SetVelocityGradient(double,double,double,double,int);
@@ -171,7 +174,7 @@ class MPMBase : public LinkedObject
 		Vector ncpos;				// natural coordinates position
 		CPDIDomain **cpdi;          // Should makle pointer and allocate only what is needed
         Vector *faceArea;           // make pointer then needed
-		Vector acc;					// acceleration (rigid BC particle use to store held velocity)
+		Vector acc;					// acceleration (hold velocity of rigid particle in hold phase)
 		Tensor *velGrad;			// used for J Integral only on non-rigid particles only
 		Tensor sp;					// stress tensor (init 0)
         double pressure;            // for use if materials wants to, otherwise it is zero

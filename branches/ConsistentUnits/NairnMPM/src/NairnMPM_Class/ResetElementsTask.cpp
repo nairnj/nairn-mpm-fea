@@ -122,35 +122,8 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
 		return SAME_ELEMENT;
 	}
     
-/*
-	// check neighbors if possible
-	int i=0,j,elemNeighbors[27];
-	theElements[mpt->ElemID()]->GetListOfNeighbors(elemNeighbors);
-	while(elemNeighbors[i]!=0)
-	{	j=elemNeighbors[i]-1;
-    	if(theElements[j]->PtInElement(mpt->pos))
-		{	if(theElements[j]->OnTheEdge()) return LEFT_GRID;
-			if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
-			mpt->ChangeElemID(j);
-			return NEW_ELEMENT;
-		}
-		i++;
-    }
-    
-    // if still not found, check all elements
-    for(i=0;i<nelems;i++)
-    {	if(theElements[i]->PtInElement(mpt->pos))
-		{	if(theElements[i]->OnTheEdge()) return LEFT_GRID;
-			if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
-			mpt->ChangeElemID(i);
-			return NEW_ELEMENT;
-		}
-    }
- 
-    return LEFT_GRID;
-*/
-	
-    if(mpmgrid.IsStructuredGrid())
+    // calculate is all elements are the same size
+    if(mpmgrid.IsStructuredEqualElementsGrid())
     {   try
         {   // calculate from coordinates
             int j = mpmgrid.FindElementFromPoint(&mpt->pos)-1;
@@ -161,6 +134,22 @@ int ResetElementsTask::ResetElement(MPMBase *mpt)
         }
         catch(...)
         {   return LEFT_GRID;
+        }
+    }
+    
+    // if allow structured, but variable elements, then search neighbors next
+    else if(mpmgrid.IsStructuredGrid())
+    {   int i=0,j,elemNeighbors[27];
+        theElements[mpt->ElemID()]->GetListOfNeighbors(elemNeighbors);
+        while(elemNeighbors[i]!=0)
+        {	j=elemNeighbors[i]-1;
+            if(theElements[j]->PtInElement(mpt->pos))
+            {	if(theElements[j]->OnTheEdge()) return LEFT_GRID;
+                if(fmobj->IsAxisymmetric() && mpt->pos.x<0.) return LEFT_GRID;
+                mpt->ChangeElemID(j);
+                return NEW_ELEMENT;
+            }
+            i++;
         }
     }
 	

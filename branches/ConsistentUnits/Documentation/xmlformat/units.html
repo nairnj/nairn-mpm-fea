@@ -24,10 +24,11 @@ sup { font-size: 7pt;}
 <a href="header.html">Header</a>
 </p>
 
-<h1>Header</h1>
-<p><code>NairnFEA</code> and <code>NairnMPM</code> were initially developed using a specific set of unts. The internal calculations were (for the most part) based on mm-g-seconds units (although there were come exceptions). The units for input of properties and output of results also usually followed this syetm, but not always. With the addition of the <a href="header.html"><code>ConsistenUnits</code></a> command (in <code>NairnFEA</code> version 5, <code>NairnMPM</code> version 11, and <code>OSParticulas</code> version 2) all code can now be run in a new mode were input and output use consistent units and the user can specify any metric system of units.</p>
+<h1>Legacy and Consistent Units</h1>
 
-<p>The original system of units is called "Legacy Units" while the new method is called "Consistent Units." The Legacy units can still be used (to allow backward compatibility of old input files) and it corresonds to any input file that omits the <a href="header.html"><code>ConsistenUnits</code> in the file header</a>. The units required in these systems (and some common consistent systems) are in the following table.</p>
+<p><code>NairnFEA</code> and <code>NairnMPM</code> were initially developed using a specific set of units. The internal calculations were (for the most part) based on mm-g-seconds units (although there were some exceptions). The units for input of properties and output of results also usually followed this system, but not always. With the addition of the <a href="header.html"><code>ConsistentUnits</code></a> command (available since <code>NairnFEA</code> version 5, <code>NairnMPM</code> version 11, and <code>OSParticulas</code> version 2) all code can now be run in a new mode were input and output use consistent units and the user can specify any metric system of units.</p>
+
+<p>The original system of units is called "Legacy Units" while the new method is called "Consistent Units." The Legacy units can still be used (to allow backward compatibility of old input files) and it corresponds to any input file that omits the <a href="header.html"><code>ConsistentUnits</code> in the main header</a>. The units required when using "Legacy Units" and in and some common "Consistent Units" systems are in the following table (note that you can use an metric consistent units are are not limited to those listed in the table):</p>
 
 <!--<table border="1" cellpadding="2" cellspacing="0" width="90%" align="center">-->
 <table align="center">

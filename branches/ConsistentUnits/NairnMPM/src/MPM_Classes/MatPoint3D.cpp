@@ -329,27 +329,50 @@ double MatPoint3D::GetVolume(int volumeType)
 	return GetRelativeVolume()*mp/rho;							// in mm^3
 }
 
-// to support CPDI return nodes for corners (or for 9 nodes) and weights for shape functions
-//	and shape function gradients
-// throws CommonException() if particle corner has left the grid
-void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
-{   
+// Get vectors from particle to edge
+// r1 = F.(psz.x,0,0), r2 = F.(0,psz.y,0), and r3 = F.(0,0,psz.z)
+// where psz is particle size
+void MatPoint3D::GetSemiSideVectors(Vector *r1,Vector *r2,Vector *r3) const
+{
 	// get particle 2D deformation gradient
 	double pF[3][3];
 	GetDeformationGradient(pF);
 	
 	// get polygon vectors - these are from particle to edge
     //      and generalize semi width lp in 1D GIMP
+    Vector psz = mpmgrid.GetParticleSize();
+	r1->x = pF[0][0]*psz.x;
+	r1->y = pF[1][0]*psz.x;
+	r1->z = pF[2][0]*psz.x;
+    
+	r2->x = pF[0][1]*psz.y;
+	r2->y = pF[1][1]*psz.y;
+	r2->z = pF[2][1]*psz.y;
+    
+	r3->x = pF[0][2]*psz.z;
+	r3->y = pF[1][2]*psz.z;
+	r3->z = pF[2][2]*psz.z;
+    
+}
+
+// Get undeformed size (only called by GIMP traction)
+// This uses mpmgrid so membrane particles must override
+void MatPoint3D::GetUndeformedSemiSides(double *r1x,double *r2y,double *r3z) const
+{   Vector psz = mpmgrid.GetParticleSize();
+    *r1x = psz.x;
+    *r2y = psz.y;
+    *r3z = psz.z;
+}
+
+// to support CPDI return nodes for corners (or for 9 nodes) and weights for shape functions
+//	and shape function gradients
+// throws CommonException() if particle corner has left the grid
+void MatPoint3D::GetCPDINodesAndWeights(int cpdiType)
+{   
+	// get polygon vectors - these are from particle to edge
+    //      and generalize semi width lp in 1D GIMP
 	Vector r1,r2,r3,c;
-	r1.x = pF[0][0]*mpmgrid.partx;
-	r1.y = pF[1][0]*mpmgrid.partx;
-	r1.z = pF[2][0]*mpmgrid.partx;
-	r2.x = pF[0][1]*mpmgrid.party;
-	r2.y = pF[1][1]*mpmgrid.party;
-	r2.z = pF[2][1]*mpmgrid.party;
-	r3.x = pF[0][2]*mpmgrid.partz;
-	r3.y = pF[1][2]*mpmgrid.partz;
-	r3.z = pF[2][2]*mpmgrid.partz;
+    GetSemiSideVectors(&r1,&r2,&r3);
 	
     // Particle domain volume is 8 * volume of the parallelepiped defined by r1, r2, and r3
 	// V = 8 * (r1 . (r2 X r3))
@@ -438,9 +461,8 @@ double MatPoint3D::GetTractionInfo(int face,int dof,int *cElem,Vector *corners,V
     // which GIMP method (cannot be used in POINT_GIMP)
     if(ElementBase::useGimp==UNIFORM_GIMP)
     {   // initial vectors only
-        double r1x = mpmgrid.partx;
-        double r2y = mpmgrid.party;
-		double r3z = mpmgrid.partz;
+        double r1x,r2y,r3z;
+        GetUndeformedSemiSides(&r1x,&r2y,&r3z);
         
 		// edges are c1 to c2 to c4 to c3
         Vector c1,c2,c3,c4;
@@ -665,9 +687,9 @@ Matrix3 MatPoint3D::GetInitialRotation(void)
 	double sz = sin(z);
 	return Matrix3( cy*cz,  cz*sx*sy+cx*sz,  -cx*cz*sy+sx*sz,
 				   -cy*sz,  cx*cz-sx*sy*sz,   cz*sx+cx*sy*sz,
-				   sy,     -cy*sz,            cx*cy );
+				   sy,     -cy*sx,            cx*cy );
 	//return Matrix3( cy*cz,         -cy*sz,           sy,
-	//			    cz*sx*sy+cx*sz, cx*cz-sx*sy*sz, -cy*sz,
+	//			    cz*sx*sy+cx*sz, cx*cz-sx*sy*sz, -cy*sx,
 	//			   -cx*cz*sy+sx*sz, cz*sx+cx*sy*sz,  cx*cy );
 }
 

@@ -7,15 +7,6 @@
  
 	Using new grid results to update particle velocity, position, temperature
 		and concentration. For rigid particles, however, just update postion
- 
-	Input Variables
-		mvf[]->pk, ftot, mass
-		nd[]->fdiff, fcond
-		bdyFrc.alpha
- 
-	Output Variabels
-		mpm[]->pos, vel, acc, pConcentration, pTemperature
-		bdyFrc.alpha, kineticEnergy, totalMass
 ********************************************************************************/
 
 #include "NairnMPM_Class/UpdateParticlesTask.hpp"
@@ -46,11 +37,16 @@ void UpdateParticlesTask::Execute(void)
 	int numnds,nds[maxShapeNodes];
 	double fn[maxShapeNodes];
 	Vector vgpnp1;
-	
-    // feedback damping to apply to particle update. This approach requires constant that is same for
-    // all particles.
+    
+    // Damping terms on the grid or on the particles
+    //      particleAlpha   =  alpha(PIC)/dt + pdamping(t)
+    //      gridAlpha       = -alpha(PIC)/dt + damping(t)
     double particleAlpha = bodyFrc.GetParticleDamping(mtime);
 	double gridAlpha = bodyFrc.GetDamping(mtime);
+
+	// copy to local values (OSParticulas uses to implement material damping)
+	double localParticleAlpha = particleAlpha;
+	double localGridAlpha = gridAlpha;
 
     // Update particle position, velocity, temp, and conc
 #pragma omp parallel for private(numnds,nds,fn,vgpnp1)
@@ -99,14 +95,17 @@ void UpdateParticlesTask::Execute(void)
 			// Find vgpn
 			Vector vgpn = vgpnp1;
 			AddScaledVector(&vgpn,acc,-timestep);
-			
-			// find effective grid acceleration and velocity
-			AddScaledVector(acc,&vgpn,-gridAlpha);
-			AddScaledVector(&vgpnp1,&vgpn,-timestep*gridAlpha);
             
-			// update position in mm and velocity in mm/sec
-			mpmptr->MovePosition(timestep,&vgpnp1,0.5*timestep,particleAlpha);
-			mpmptr->MoveVelocity(timestep,particleAlpha);
+			// find effective grid acceleration and velocity
+			AddScaledVector(acc,&vgpn,-localGridAlpha);
+			AddScaledVector(&vgpnp1,&vgpn,-timestep*localGridAlpha);
+			
+			// update position, and must be before velocity update because updates need initial velocity
+            // This section does second order update
+			mpmptr->MovePosition(timestep,&vgpnp1,0.5*timestep,localParticleAlpha);
+
+			// update velocity in mm/sec
+			mpmptr->MoveVelocity(timestep,localParticleAlpha);
 			
 			// update transport values
 			nextTransport=transportTasks;

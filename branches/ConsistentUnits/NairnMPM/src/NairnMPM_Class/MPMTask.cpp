@@ -31,8 +31,6 @@ void MPMTask::WriteLogFile(void)
 
 #endif
 
-#ifdef _PROFILE_TASKS_
-
 // track times
 void MPMTask::TrackTimes(double beginTime,double beginETime)
 {	totalTaskTime += fmobj->CPUTime()-beginTime;
@@ -56,8 +54,6 @@ void MPMTask::WriteProfileResults(int nsteps,double timePerStep,double eTimePerS
 	
 	cout << endl;
 }
-
-#endif
 
 #pragma mark MPMTASK::Static Parallel Methods
 
