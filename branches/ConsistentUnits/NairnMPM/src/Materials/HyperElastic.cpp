@@ -225,5 +225,5 @@ double HyperElastic::GetCpMinusCv(MPMBase *mptr) const
 }
 
 // store elastic B in alt strain
-int HyperElastic::AltStrainContains(void) const { return LEFT_CAUCHY_ELASTIC_B_STRAIN; }
+int HyperElastic::AltStrainContains(void) const { return LEFT_CAUCHY_TOTAL_B_STRAIN; }
 

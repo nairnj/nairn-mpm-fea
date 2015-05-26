@@ -303,12 +303,19 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 				{
 #ifdef USE_PSEUDOHYPERELASTIC
 					if(theMaterials[mpm[p]->MatID()]->AltStrainContains()==ENG_BIOT_PLASTIC_STRAIN)
-					{	Matrix3 biot = mpm[p]->GetBiotStrain();
+					{	// elastic strain = total strain minus plastic strain
+						Matrix3 biot = mpm[p]->GetBiotStrain();
 						Tensor *eplast=mpm[p]->GetAltStrainTensor();
 						value += (biot.get(qid,2.) - Tensor_i(eplast,qid));
 					}
 					else if(theMaterials[mpm[p]->MatID()]->AltStrainContains()==LEFT_CAUCHY_ELASTIC_B_STRAIN)
-					{	Matrix3 biot = mpm[p]->GetElasticBiotStrain();
+					{	// get elastic strain from elastic B
+						Matrix3 biot = mpm[p]->GetElasticBiotStrain();
+						value += biot.get(qid,2.);
+					}
+					else
+					{	// elastic strain = total strain
+						Matrix3 biot = mpm[p]->GetBiotStrain();
 						value += biot.get(qid,2.);
 					}
 #else
@@ -343,14 +350,17 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 				{
 #ifdef USE_PSEUDOHYPERELASTIC
 					if(theMaterials[mpm[p]->MatID()]->AltStrainContains()==ENG_BIOT_PLASTIC_STRAIN)
-					{	Tensor *eplast=mpm[p]->GetAltStrainTensor();
+					{	// plastic strain all ready
+						Tensor *eplast=mpm[p]->GetAltStrainTensor();
 						value+=Tensor_i(eplast,qid);
 					}
 					else if(theMaterials[mpm[p]->MatID()]->AltStrainContains()==LEFT_CAUCHY_ELASTIC_B_STRAIN)
-					{	Matrix3 biotTot = mpm[p]->GetBiotStrain();
+					{	// plastic strain = total strain minus elastic strain (from B)
+						Matrix3 biotTot = mpm[p]->GetBiotStrain();
 						Matrix3 biotElastic = mpm[p]->GetElasticBiotStrain();
 						value += (biotTot.get(qid,2.) - biotElastic.get(qid,2.)) ;
 					}
+					// others have zero plastic strain
 #else
 					Tensor *eplast=mpm[p]->GetAltStrainTensor();
 					value+=Tensor_i(eplast,qid);
@@ -399,9 +409,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			value *= UnitsController::Scaling(100.);
 			break;
 		
-			// total strain (% in Legacy)
-			// New method small strain = Biot strain from F
-			// New method hyperelastic = Biot strain from F
+		// Deformation gradient
 		case AVG_FZZ:
 			qid=ZZ;
 		case AVG_FXZ:
@@ -430,6 +438,7 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			if(numAvged>0) value/=(double)numAvged;
 			value *= UnitsController::Scaling(100.);
 			break;
+			
 		// energies (Volume*energy) (J in Legacy)
 		case KINE_ENERGY:
 		case WORK_ENERGY:

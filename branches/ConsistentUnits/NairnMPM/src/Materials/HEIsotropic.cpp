@@ -493,3 +493,6 @@ double HEIsotropic::GetHistory(int num,char *historyPtr) const
 // if a subclass material supports artificial viscosity, override this and return TRUE
 bool HEIsotropic::SupportsArtificialViscosity(void) const { return true; }
 
+// store elastic B in alt strain while F has elastic + plastic deformation
+int HEIsotropic::AltStrainContains(void) const { return LEFT_CAUCHY_ELASTIC_B_STRAIN; }
+

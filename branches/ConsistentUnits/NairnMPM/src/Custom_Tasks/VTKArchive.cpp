@@ -396,7 +396,8 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
             case VTK_PLASTICSTRAIN:
 #ifdef USE_PSEUDOHYPERELASTIC
 				if(theMaterials[mpnt->MatID()]->AltStrainContains()==ENG_BIOT_PLASTIC_STRAIN)
-				{	ten = mpnt->GetAltStrainTensor();
+				{	// plastic strain is in the tensor already
+					ten = mpnt->GetAltStrainTensor();
 					vtkquant[0] += wt*ten->xx;
 					vtkquant[1] += wt*ten->yy;
 					vtkquant[2] += wt*ten->zz;
@@ -407,7 +408,8 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 					}
 				}
 				else if(theMaterials[mpnt->MatID()]->AltStrainContains()==LEFT_CAUCHY_ELASTIC_B_STRAIN)
-				{	Matrix3 biotTot = mpnt->GetBiotStrain();
+				{	// plastic strain = total strain minus elastic strain (from B)
+					Matrix3 biotTot = mpnt->GetBiotStrain();
 					Matrix3 biotElastic = mpnt->GetElasticBiotStrain();
 					vtkquant[0] += wt*(biotTot(0,0)-biotElastic(0,0));
 					vtkquant[1] += wt*(biotTot(1,1)-biotElastic(1,1));
@@ -418,6 +420,7 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 						vtkquant[5] += wt*(biotTot(1,2)-biotElastic(1,2));
 					}
 				}
+				// others have zero plastic strain
 #else
 				ten=mpnt->GetAltStrainTensor();
 				vtkquant[0] += wt*ten->xx;
@@ -439,7 +442,8 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
             case VTK_STRAIN:
 #ifdef USE_PSEUDOHYPERELASTIC
 				if(theMaterials[mpnt->MatID()]->AltStrainContains()==ENG_BIOT_PLASTIC_STRAIN)
-				{	Matrix3 biot = mpnt->GetBiotStrain();
+				{	// elastic strain = total strain minus plastic strain
+					Matrix3 biot = mpnt->GetBiotStrain();
 					ten = mpnt->GetAltStrainTensor();
 					vtkquant[0] += wt*(biot(0,0)-ten->xx);
 					vtkquant[1] += wt*(biot(1,1)-ten->yy);
@@ -450,8 +454,21 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 						vtkquant[5] += wt*(biot(1,2)-0.5*ten->yz);
 					}
 				}
+				else if(theMaterials[mpnt->MatID()]->AltStrainContains()==LEFT_CAUCHY_TOTAL_B_STRAIN)
+				{	// elastic strain = total strain
+					Matrix3 biot = mpnt->GetBiotStrain();
+					vtkquant[0] += wt*biot(0,0);
+					vtkquant[1] += wt*biot(1,1);
+					vtkquant[2] += wt*biot(2,2);
+					vtkquant[3] += wt*biot(0,1);
+					if(fmobj->IsThreeD())
+					{	vtkquant[4] += wt*biot(0,2);
+						vtkquant[5] += wt*biot(1,2);
+					}
+				}
 				else if(theMaterials[mpnt->MatID()]->AltStrainContains()==LEFT_CAUCHY_ELASTIC_B_STRAIN)
-				{	Matrix3 biot = mpnt->GetElasticBiotStrain();
+				{	// get elastic strain from elastic B
+					Matrix3 biot = mpnt->GetElasticBiotStrain();
 					vtkquant[0] += wt*biot(0,0);
 					vtkquant[1] += wt*biot(1,1);
 					vtkquant[2] += wt*biot(2,2);

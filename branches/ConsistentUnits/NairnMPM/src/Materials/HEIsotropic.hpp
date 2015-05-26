@@ -62,7 +62,8 @@ class HEIsotropic : public HyperElastic
 		virtual double WaveSpeed(bool,MPMBase *) const;
         virtual double GetHistory(int,char *) const;
         virtual bool SupportsArtificialViscosity(void) const;
-    
+		virtual int AltStrainContains(void) const;
+	
     protected:
 		double G1;
 		// double aI,betaI		// isotropic expansion defined in super classes
