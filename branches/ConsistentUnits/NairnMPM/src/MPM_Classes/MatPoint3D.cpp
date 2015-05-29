@@ -295,7 +295,7 @@ Matrix3 MatPoint3D::GetElasticBiotStrain(void)
 {	// Get Sqrt(B)
 	Tensor *B = GetAltStrainTensor();
 	Matrix3 Be = Matrix3(B->xx,B->xy,B->xz,B->xy,B->yy,B->yz,B->xy,B->xz,B->zz);
-	Vector lam = Be.Eigenvalues();
+	Vector lam;
 	Matrix3 Q = Be.Eigenvectors(lam);
 	Matrix3 LamI = Matrix3(sqrt(lam.x),0.,0.,sqrt(lam.y),sqrt(lam.z));
 	Matrix3 U = LamI.RMRT(Q);
