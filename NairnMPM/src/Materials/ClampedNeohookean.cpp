@@ -145,42 +145,32 @@ void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
 	if(np!=THREED_MPM) Belas.setIs2D(true);
 		
 	// get Eigenvalues and Eigenvectors
-	Vector lam2Trial = Belas.Eigenvalues();
+	Vector lam2 = Belas.Eigenvalues();
 	
 	// clamp eigenvalues if needed
-	Vector lam2 = lam2Trial;
 	bool clamped = false;
-	if(lam2.x<lamMin2)
-	{	lam2.x = lamMin2;
+	if(lam2.x<lamMin2 || lam2.x>lamMax2 || lam2.y<lamMin2 || lam2.y>lamMax2 || lam2.z<lamMin2 || lam2.z>lamMax2)
 		clamped = true;
-	}
-	else if(lam2.x>lamMax2)
-	{	lam2.x = lamMax2;
-		clamped = true;
-	}
-	if(lam2.y<lamMin2)
-	{	lam2.y = lamMin2;
-		clamped = true;
-	}
-	else if(lam2.y>lamMax2)
-	{	lam2.y = lamMax2;
-		clamped = true;
-	}
-	if(lam2.z<lamMin2)
-	{	lam2.z = lamMin2;
-		clamped = true;
-	}
-	else if(lam2.z>lamMax2)
-	{	lam2.z = lamMax2;
-		clamped = true;
-	}
 	
 	// Get Je and Jp, adjusting if clamped
 	double Je,Jp;
 	Matrix3 Ucol;
 	if(clamped)
-	{	// Find Belas = UT.LAM.U
-		Ucol = Belas.Eigenvectors(lam2Trial);
+	{	// Find Belas = U.LAM.UT
+		Ucol = Belas.Eigenvectors(lam2);
+		// clamp values now
+		if(lam2.x<lamMin2)
+			lam2.x = lamMin2;
+		else if(lam2.x>lamMax2)
+			lam2.x = lamMax2;
+		if(lam2.y<lamMin2)
+			lam2.y = lamMin2;
+		else if(lam2.y>lamMax2)
+			lam2.y = lamMax2;
+		if(lam2.z<lamMin2)
+			lam2.z = lamMin2;
+		else if(lam2.z>lamMax2)
+			lam2.z = lamMax2;
 		Matrix3 UcolT = Ucol.Transpose();
 		Matrix3 Lam(lam2.x,0.,0.,lam2.y,lam2.z);
 		Matrix3 LamUcolT = Lam*UcolT;
@@ -195,7 +185,7 @@ void ClampedNeohookean::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
 	{	Jp = mptr->GetHistoryDble(JP_HISTORY);
 		Je = J/Jp;
 		if(elasticModel==ELASTIC_DISNEY)
-			Ucol = Belas.Eigenvectors(lam2Trial);
+			Ucol = Belas.Eigenvectors(lam2);
 	}
 	
 	// store B elastic
