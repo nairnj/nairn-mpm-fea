@@ -108,14 +108,14 @@
   <li>Byte 2: default particle properties (particle mass, position, material information, and thickness). This byte must always by 'Y'.</li>
   <li>Byte 3: particle velocity</li>
   <li>Byte 4: particle stress</li>
-  <li>Byte 5: particle strain (which is elastic strain for plasticity materials)</li>
-  <li>Byte 6: particle plastic strain</li>
+  <li>Byte 5: particle total strain, which in combination with byte 18 gives full deformation gradient.</li>
+  <li>Byte 6: an alternate particle strain (some materials provide plastic strains; others provide other data)</li>
   <li>Byte 7: should always be 'N'. Present to support reading old versions of archive files.</li>
   <li>Byte 8: particle work energy, which is cumulative &sigma;.d&epsilon;</li>
   <li>Byte 9: particle temperature</li>
   <li>Byte 10: particle plastic energy</li>
   <li>Byte 11: should always be 'N'. Present to support reading old versions of archive files.</li>
-  <li>Byte 12: particle total shear strain components (du/dy and dv/dx)</li>
+  <li>Byte 12: particle total shear strain components (du/dy and dv/dx, but no longer available in visualization)</li>
   <li>Byte 13: particle strain energy, which is cumulative &sigma;.d(&epsilon;-&epsilon;<sub>res</sub>)</li>
   <li>Byte 14: setting 'Y' or 'N' refers to particle history variable 1, but up to four history variables can be archived by using the following characters in this byte:
 <pre class="list">'1' or 'Y' - history 1
@@ -138,7 +138,7 @@ History variables are only meaningful for some <a href="definematl.html">materia
   <li>Byte 15: particle concentration and concentration gradients - only meaningful when doing diffusion calculations.</li>
   <li>Byte 16: particle heat energy; the value will only be physically correct if all <a href="definematl.html">materials</a> specify their heat capacity</li>
   <li>Byte 17: number of times this particle crossed an element boundary since the last archive time.</li>
-  <li>Byte 18: rotational strain; this strain must be archived for visualization tools to be able to plot &quot;transformed&quot; points (<i>i.e.</i>, the stretch and shear plotted points to match the material point deformation state).</li>
+  <li>Byte 18: rotational strain; this strain must be archived for visualization tools to be able to plot &quot;transformed&quot; points (<i>i.e.</i>, to stretch and shear plotted points to match the material point deformation state). It is now automatically archived whenever byte 5 is 'Y' (which means full deformation gradient is archived)</li>
   </ul>
   
 The Default value is <code>iYNN...</code>  - <i>i.e.</i> one 'Y' and the rest 'N'
@@ -212,7 +212,7 @@ The Default value is <code>iYNNNN</code>.</dd>
 
 </ul>
 
-<p><a name="biot">Note:</a> when global archiving of strains, they are calculated as a Biot strain in the current configuration. The Biot strain is defined is <B>V-I</B> where <B>V</B> is the left-stretch tension. This strain is also the Seth-Hill strains with m=1/2 in current configuration. For small strain problems it is equivalent to the small strain tensor.</p>
+<p><a name="biot">Note:</a> when global archiving of strains, they are calculated as a Biot strain in the current configuration. The Biot strain is defined is <B>V-I</B> where <B>V</B> is the left-stretch tensor. This strain is also the Seth-Hill strain with m=1/2 in current configuration. For small strain problems it is equivalent to the small strain tensor.</p>
 
 <h2><a name="multi"></a>Multimaterial Mode MPM</h2>
 

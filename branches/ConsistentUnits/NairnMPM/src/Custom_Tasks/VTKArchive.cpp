@@ -77,7 +77,7 @@ char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
 		thisBuffer=6;
     }
 	
-    else if(strcmp(pName,"strain")==0)
+    else if(strcmp(pName,"strain")==0 || strcmp(pName,"elasticstrain")==0)
     {	q=VTK_STRAIN;
 		thisBuffer=6;
     }
