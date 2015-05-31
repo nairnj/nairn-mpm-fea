@@ -161,6 +161,7 @@ public class DocViewer extends JNDocument
 					if(newType==controls.getPlotType())
 						movieFrame.movieControls.syncPlotQuantityMenus();
 				}
+				JNNotificationCenter.getInstance().postNotification("PlotUnitsChanged",this,null);
 				break;
 			
 			case LoadArchive.TIME_PLOT:
@@ -226,15 +227,11 @@ public class DocViewer extends JNDocument
 		if(sr.getClickedButton()==JNDialog.CANCEL_BUTTON) return;
 		
 		boolean changeUnits=false;
-		if(!sr.getLengthUnits().equals(resDoc.distU))
+		if(resDoc.units.setLengthScaleIndex(sr.getLengthIndex()))
 		{	changeUnits=true;
-			resDoc.distU=sr.getLengthUnits();
-			resDoc.lengthScale=sr.getLengthScale();
 		}
-		if(!sr.getTimeUnits().equals(resDoc.timeU))
+		if(resDoc.units.setTimeScaleIndex(sr.getTimeIndex()))
 		{	changeUnits=true;
-			resDoc.timeU=sr.getTimeUnits();
-			resDoc.timeScale=sr.getTimeScale();
 		}
 		
 		// change of if new units were selected

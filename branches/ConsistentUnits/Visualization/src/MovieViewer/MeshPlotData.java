@@ -9,10 +9,11 @@
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+
 import java.awt.geom.*;
 import geditcom.JNFramework.*;
 
-public class MeshPlotData  extends PlotControl implements MouseMotionListener
+public class MeshPlotData  extends PlotControl implements MouseMotionListener, JNNotificationListener
 {
 	static final long serialVersionUID=8L;
 	
@@ -22,6 +23,7 @@ public class MeshPlotData  extends PlotControl implements MouseMotionListener
 	public JLabel nodelabel=new JLabel("nd:");
 	public JLabel elemlabel=new JLabel("el:");
 	public JLabel mplabel=new JLabel("mp:");
+	public String zunits="";
 	
 	private MeshPlotView plotView;
 	private ResultsDocument resDoc;
@@ -53,6 +55,9 @@ public class MeshPlotData  extends PlotControl implements MouseMotionListener
 		plotView.addMouseMotionListener(this);
 		
 		resDoc=gResDoc;
+		
+		// notifications
+		JNNotificationCenter.getInstance().addNameAndObjectForTarget("PlotUnitsChanged",gResDoc.docCtrl,this);
 	}
 	
 	// mouse motion events
@@ -66,8 +71,8 @@ public class MeshPlotData  extends PlotControl implements MouseMotionListener
 		Point2D.Double pt=plotView.getCoords(e.getPoint());
 		
 		// coordinates
-		xlabel.setText("x: "+JNUtilities.formatDouble(pt.x)+" "+resDoc.distU);
-		ylabel.setText("y: "+JNUtilities.formatDouble(pt.y)+" "+resDoc.distU);
+		xlabel.setText("x: "+JNUtilities.formatDouble(pt.x)+" "+resDoc.units.lengthUnits());
+		ylabel.setText("y: "+JNUtilities.formatDouble(pt.y)+" "+resDoc.units.lengthUnits());
 		
 		// can't check while movie is running
 		if(resDoc.docCtrl.getMovieFrame().isMovieRunning())
@@ -132,12 +137,12 @@ public class MeshPlotData  extends PlotControl implements MouseMotionListener
 				}
 				
 				mplabel.setText("mp: "+nearmp.num);
-				zlabel.setText("z: "+JNUtilities.formatDouble(nearmp.getPlotValue()));
+				zlabel.setText("z: "+JNUtilities.formatDouble(nearmp.getPlotValue())+zunits);
 			}
 			else if(plotView.getPlotComponent()!=PlotQuantity.MESHONLY)
 			{	mplabel.setText("mp: ---");
 				ElementBase cElem=resDoc.elements.get(currentElem-1);
-				zlabel.setText("z: "+JNUtilities.formatDouble(cElem.getValueAt(pt)));
+				zlabel.setText("z: "+JNUtilities.formatDouble(cElem.getValueAt(pt))+zunits);
 			}
 			else
 			{   zlabel.setText("z: ---");
@@ -153,4 +158,17 @@ public class MeshPlotData  extends PlotControl implements MouseMotionListener
 			
 	}
 
+	public void receiveNotification(JNNotificationObject obj)
+	{	if(obj.getName().equals("PlotUnitsChanged"))
+		{	setZunits();
+		}
+	}
+	
+	public void setZunits()
+	{	String newUnits = PlotQuantity.plotUnits(resDoc.docCtrl.controls.getPlotComponent(),resDoc.units);
+		if(newUnits.length()>0)
+			zunits = new String(" "+newUnits);
+		else
+			zunits = "";
+	}
 }

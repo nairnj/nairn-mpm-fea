@@ -92,7 +92,7 @@ public class TextDisplay extends JSplitPane
 			throw new Exception("The file does not appear to be output from NairnFEA or NairnMPM.\n   (Note: you should not open MPM binary archive files directly)");
 		
 		// if nodes and elements, etc. in files, load them now
-		loadSubFile(file,"NODAL POINT COORDINATES (in mm)",
+		loadSubFile(file,"NODAL POINT COORDINATES",
 					" Node         x               y               z\n",
 					"--------------------------------------------------------\n");
 					
@@ -163,7 +163,16 @@ public class TextDisplay extends JSplitPane
 		String fdata=resDoc.section(title);
 		int index=fdata.indexOf("File:");
 		if(index>0)
-		{	try
+		{	// get full title
+			Scanner s=new Scanner(fdata);
+			s.useDelimiter("\\r\\n|\\n|\\r");
+			title = s.next();
+			// remove the number Assum #. or ##.
+			if(title.charAt(1)=='.')
+				title = title.substring(3);
+			else
+				title = title.substring(4);
+			try
 			{	int endFile=fdata.indexOf("\n",index);
 				int crEnd=fdata.indexOf("\r",index);
 				if(endFile<0)

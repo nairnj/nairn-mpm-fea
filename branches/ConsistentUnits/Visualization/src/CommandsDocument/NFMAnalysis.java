@@ -67,12 +67,15 @@ public class NFMAnalysis  implements Runnable
 		// read command file name
 		File inFile=doc.getFile();
 		
-		// prepare output path and check on DTD validation
+		// prepare output path and check on DTD validation by finding
+		// 		myCmd = path to executable
+		//		myDTD - path to DTD file
+		//		doValidate = if should validate input file
 		boolean mpmAnalysis=isMPMAnalysis();
 		boolean doValidate;
 		String myCmd,myDTD;
 		if(!NFMVPrefs.getRemoteMode())
-		{	// running localling
+		{	// LOCAL_EXECUTION ----------------------
 			if(mpmAnalysis)
 			{	// get path to NairnFEA and NairnMPM
 				myCmd=NFMVPrefs.prefs.get(NFMVPrefs.NairnMPMKey,NFMVPrefs.NairnMPMDef);
@@ -87,7 +90,8 @@ public class NFMAnalysis  implements Runnable
 			}
 		}
 		else
-		{	// REMOTE_ACCESS - running remotely
+		{	// REMOTE_ACCESS ---------------------
+			// find variables and also check for entered user name and password
 			if(mpmAnalysis) 
 			{	myCmd = NFMVPrefs.prefs.get(NFMVPrefs.RemoteMPMPathKey,NFMVPrefs.RemoteMPMPathDef);
 				myDTD = NFMVPrefs.prefs.get(NFMVPrefs.RemoteMPMDTDKey,NFMVPrefs.RemoteMPMDTDDef);
@@ -118,16 +122,17 @@ public class NFMAnalysis  implements Runnable
 			}
 		}
 		
-		// just append XML commands
+		// just append XML commands and exit
 		if(runType==INTERPRET_ONLY)
 		{	soutConsole.appendText(cmds);
 			return;
 		}
 		
-		// get output file or remote settings
+		// get output file or remote settings for output files
 		File outFile = null;
 		if(!NFMVPrefs.getRemoteMode())
-		{	File useOutput = scriptInfo!=null ? new File(scriptInfo.get(0)) : null ;
+		{	// LOCAL_EXECUTION ----------------------
+			File useOutput = scriptInfo!=null ? new File(scriptInfo.get(0)) : null ;
 			if(mpmAnalysis)
 			{	if(!soutConsole.setOutputPath(inFile,"mpm",useOutput)) return;
 			}
@@ -142,7 +147,7 @@ public class NFMAnalysis  implements Runnable
 			tmpFile = saveCopyOfCommands(new File(outFile.getParent()+"/"+inFile.getName()));
 		}
 		else if(scriptInfo!=null)
-		{	// REMOTE_ACCESS script mode
+		{	// REMOTE_ACCESS script mode -----------------
 			
 			// remote name (script code already checked to "/" so must be there
 			String path = scriptInfo.get(0);
@@ -182,13 +187,17 @@ public class NFMAnalysis  implements Runnable
 			tmpFile = saveCopyOfCommands(new File(inFile.getPath()));
 		}
 		else
-		{	// REMOTE_ACCESS
+		{	// REMOTE_ACCESS --------------------------------
+			
+			// read current settings, then change in dialog
 			outFile = soutConsole.getFile();
 			
 			// get remote file name
 			String remotePath = soutConsole.getRemoteFilePath();
 			if(remotePath==null)
 			{	String outname = doc.getFile().getName();
+			
+				// remove extension and append one needed now (may be the same)
 				int eoff = outname.lastIndexOf(".");
 				if(eoff>1) outname = outname.substring(0,eoff);
 				if(mpmAnalysis)
@@ -198,15 +207,15 @@ public class NFMAnalysis  implements Runnable
 				remotePath="RemoteOuput/"+outname;
 			}
 			
-			// change extension id needed
-			
 			// get output folder from previous output or working directory
 			if(outFile!=null)
 			{	if(soutConsole.downloadResults == LaunchRemoteCalc.OPEN_ON_SERVER)
-				{	outputFolder = soutConsole.getRemoteHomePath();
+				{	// if opened on server, look for save path to home directory on the server
+					outputFolder = soutConsole.getRemoteHomePath();
 				}
 				else
-				{	try
+				{	// back up one folder and one zipped folder to original parent folder
+					try
 					{	outputFolder = outFile.getParentFile().getParentFile().getPath();
 					}
 					catch(Exception e) {}
@@ -215,29 +224,36 @@ public class NFMAnalysis  implements Runnable
 			if(outputFolder == null)
 				outputFolder = NFMVPrefs.prefs.get(NFMVPrefs.WorkSpaceKey,NFMVPrefs.WorkSpaceKey);
 			
-			// dialog to get these
+			// Run dialog to get items listed after the dialo
 			LaunchRemoteCalc lrc = new LaunchRemoteCalc(doc,remotePath,soutConsole.uniqueOutput,
 										outputFolder,soutConsole.downloadResults,soutConsole.clearPriorContents);
 			if(lrc.getClickedButton()==JNDialog.CANCEL_BUTTON) return;
 			
-			// remote name
+			// --------- Remote folder and name. These were separated in the dialog.
+			// remoteFolder is folder (relative to home directory) and name and the file name,
+			// which is last component of the enerter remote path
 			remoteFolder = lrc.getRemoteFolder();
 			remoteName = lrc.getRemoteFileName();
+			
+			// make sure extension is correct
 			if(mpmAnalysis)
 			{	if(!remoteName.endsWith(".mpm")) remoteName += ".mpm";
 			}
 			else
 			{	if(!remoteName.endsWith(".fea")) remoteName += ".fea";
 			}
+			
+			// save full path to remote file relative to home directory
 			sout.setRemoteFilePath(remoteFolder+"/"+remoteName);
 			
-			// is it unique?
+			// -------Is it unique? (i.e. Create Unique Subfolder box checked)
 			soutConsole.uniqueOutput = lrc.getMakeUnique();
 			
-			// is it to be deleted first
+			// ------- Is it to be deleted first? (i.e. Clear Parent Folder First checked)
 			soutConsole.clearPriorContents = lrc.getClearContents();
 			
-			// save folder
+			// -------- Where to save the results (i.e., download zip, do not download, open on server)
+			// If download save local folder in outputFolder or if open on server store home folder in outputFolder
 			soutConsole.downloadResults = lrc.getDoDownload();
 			if(soutConsole.downloadResults != LaunchRemoteCalc.NO_DOWNLOAD)
 				outputFolder = lrc.getLocalFolder();
@@ -262,9 +278,9 @@ public class NFMAnalysis  implements Runnable
 		// build shell command
 		StringBuffer shell=new StringBuffer();
 		
-		// REMOTE_ACCESS - this used when not remote
+		// Get command to do to the parent folder director
 		if(!NFMVPrefs.getRemoteMode())
-		{	// running locally
+		{	// LOCAL_EXECUTION
 			// cd to local file directory
 			shell.append("cd ");
 			String shellCD = outFile.getParent();
@@ -295,25 +311,27 @@ public class NFMAnalysis  implements Runnable
 		// processors
 		if(processors>1)
 			shell.append(" -np "+processors); 
-			
+		
+		// inpiut file name
 		String inName = tmpFile.getName();
 		if(inName.indexOf(' ')>=0)
 			shell.append(" '"+inName+"'");
 		else
 			shell.append(" "+inName);
 		
-		// start remote to local runnings
+		// Finish building commands then launch thread (see run() method)
 		openMesh=runType;
 		
 		if(NFMVPrefs.getRemoteMode())
-		{	// REMOTE_ACCESS
+		{	// REMOTE_ACCESS ---------------------
 			
-			// add the shell command
+			// add output file name
 			if(remoteName.indexOf(' ')>=0)
 				shell.append(" > '"+remoteName+"'");
 			else
 				shell.append(" > "+remoteName);
 			
+			// convert to string of commands
 			shellRemote = shell.toString();
 
 			// start thread
@@ -324,20 +342,22 @@ public class NFMAnalysis  implements Runnable
 		}
 		
 		else
-		{	// running locally
+		{	// LOCAL_EXECUTION
 			if(doBackground)
 			{	shell.append(" >& ");
 				
-				// output file
+				// append output file
 				String outFileName=outFile.getName();
 				if(outFileName.indexOf(' ')>=0)
 					shell.append("'"+outFileName+"'");
 				else
 					shell.append(outFileName);
-					
+				
+				// append background command
 				shell.append(" &");
 			}
 			
+			// print commands to console and add to commands
 			System.out.println(shell);
 			cmds.add(shell.toString());
 			
@@ -476,7 +496,7 @@ public class NFMAnalysis  implements Runnable
 	public void run()
 	{	
 		if(builder!=null)
-		{	// local execution
+		{	// LOCAL_EXECUTION ---------------
 			try
 			{	Process process = builder.start();
 				InputStream is = process.getInputStream();
@@ -524,7 +544,9 @@ public class NFMAnalysis  implements Runnable
 		}
 		
 		else
-		{	// Run remotely
+		{	// REMOVE_ACCESS ----------------------
+			
+			// connect to server
 			RemoteConnection remoteConn = null;
 			try
 			{
@@ -568,13 +590,16 @@ public class NFMAnalysis  implements Runnable
 				// exit if asked
 				if(!running) throw new Exception("exit");
 
-				// upload XML file
+				// upload XML commands file
 				String lastFolder=null,path = null;
 				try
 				{	soutConsole.appendLine("Uploading "+tmpFile.getName());
+				
+					// upload, return lastFolder is the folder that was used
 					lastFolder = remoteConn.uploadFile(tmpFile.getPath(), remoteFolder,
 															soutConsole.uniqueOutput,soutConsole.clearPriorContents);
 					
+					// get path to output folder (needs to update if making unique)
 					if(soutConsole.uniqueOutput)
 					{	if(remoteFolder.charAt(remoteFolder.length()-1)!='/')
 							path = remoteFolder+"/"+lastFolder;
@@ -591,7 +616,7 @@ public class NFMAnalysis  implements Runnable
 				// exit if asked
 				if(!running) throw new Exception("exit");
 
-				// run the calculations remotely
+				// build command to run the calculations remotely
 				String command = "cd ";
 				if(path.indexOf(" ")>0)
 					command += "'"+path+"';";
@@ -600,6 +625,7 @@ public class NFMAnalysis  implements Runnable
 				command += shellRemote;
 				soutConsole.appendLine("Running: "+command);
 				
+				// execute the command
 				int exitStatus = 0;
 				try
 				{	exitStatus = remoteConn.execCommands(command, false);
@@ -614,20 +640,24 @@ public class NFMAnalysis  implements Runnable
 				// exit if asked
 				if(!running) throw new Exception("exit");
 
-				// create zipped file (if requested)
+				// decide what to do with final output
 				String saveOutput = null;
 				if(soutConsole.downloadResults==LaunchRemoteCalc.DOWNLOAD_TO_FOLDER && exitStatus==0)
-				{	command = "cd ";
+				{	// zip the folder of results (cd to path and zip the folder) and then download it
+					command = "cd ";
 					if(path.indexOf(" ")>0)
 						command += "'"+path+"';";
 					else
 						command += path+";";
+					
+					// remove previous zip and then create new one
 					if(lastFolder.indexOf(" ")>0)
 						command += "cd ..;rm -f '"+lastFolder+".zip';zip -r '"+lastFolder+".zip' '" +lastFolder+"'";
 					else
 						command += "cd ..;rm -f "+lastFolder+".zip;zip -r "+lastFolder+".zip " +lastFolder;
 					soutConsole.appendLine("Zipping: "+command);
 					
+					// execute the zip commands
 					try
 					{	exitStatus = remoteConn.execCommands(command, false);
 						soutConsole.appendLine("         Zip done: exit status = "+exitStatus);
@@ -654,7 +684,9 @@ public class NFMAnalysis  implements Runnable
 					}
 				}
 				else if(soutConsole.downloadResults==LaunchRemoteCalc.OPEN_ON_SERVER)
-				{	// windows may need to parse path for file separators
+				{	// open on server by assuming outputFolder is path to mounted home directory on server
+					// save in the console pane class
+					// windows may need to parse path for file separators
 					saveOutput = outputFolder+File.separator + path + File.separator + remoteName;
 					soutConsole.setRemoteHomePath(outputFolder);
 				}
@@ -669,12 +701,17 @@ public class NFMAnalysis  implements Runnable
 					throw new Exception("Failed to disconnect: "+e.getLocalizedMessage());
 				}
 				
+				// all done
 				soutConsole.appendLine("Remote execution done");
 				
-				// if saved to mounted disk, open it now
+				// if saved to mounted disk (saveOutput is not null), open it now
 				if(saveOutput!=null)
-				{	soutConsole.setOutputPath(saveOutput);
+				{	// save path to console and tell doc to open it
+					soutConsole.setOutputPath(saveOutput);
+					soutConsole.appendLine("Open results at "+saveOutput);
 					DocViewer newResults = doc.linkToResults();
+					
+					// if check mesh, show mesh
 					if(newResults!=null && openMesh==RUN_CHECK_MESH && !newResults.resDoc.is3D())
 					{	newResults.checkMeshNow();
 					}			

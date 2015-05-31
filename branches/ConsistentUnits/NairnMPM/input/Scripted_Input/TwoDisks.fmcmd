@@ -9,12 +9,12 @@ The contact is handle my multimaterial MPM methgods
 EndHeader
 
 ! Analysis can be "Plane Stress MPM", "Plane Strain MPM", or "3D MPM"
-#analysis$="3D MPM"
+#analysis$="Plane Strain MPM"
 
 ! Strain update method "USAVG" or "USF"
 #update$="USAVG"
 
-! Shape functions "uGIMP" or "lCDPI"
+! Shape functions "uGIMP" or "lCPDI"
 #method$="uGIMP"
 
 ! "yes" or "no" to use contact in multimaterial mode

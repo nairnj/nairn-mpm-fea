@@ -11,8 +11,8 @@ Header
 EndHeader
 
 Analysis "Axisymmetric MPM"
-#method="ugimp"
-MPMMethod USF,#method
+#method$="uGIMP"
+MPMMethod USF,#method$
 Processors 4
 
 ! ********** Parameters Section **********
@@ -25,8 +25,8 @@ Processors 4
 !      and Pi on inside (if not zero and inner>0)
 ! "rigid" to compression outside to dR = #length*#errmax and
 !      nothing on inside
-#style="rigid"				
-#Po=-1
+#style$="rigid"				
+#Po=-8000
 #Pi=0
 #errmax=0.6
 
@@ -35,16 +35,18 @@ Processors 4
 #abase=60
 #nubase=.33
 
-! "isoptropic" or "neohookean"
-#matID="neohookean"
+! "isoptropic" or "neomooney"
+#matID$="neomooney"
 
-#mult=250					! transit times for complete analysis
+#mult=100					! transit times for complete analysis
+#cflFactor=0.4
 #rampfraction=1.0			! fraction to full pressure
 
 #cell=2.5
 #border=2
 
-#zconfine="both"			! confine z bottom, top, or both
+#zconfine$="both"			! confine z bottom, top, or both
+#initVelocity$="no"			! yes or no to set particles to initial velocity in r direction
 
 ! Calculate maximum and ramp times
 #speed=sqrt(1000*#Ebase/#rhobase)		! in mm/msec
@@ -52,12 +54,13 @@ Processors 4
 #maxtime=#mult*#transit
 #ramp=#maxtime*#rampfraction
 
-Archive "Results/Disk_"&#method&"_"&#style&"/ASMPM"
+Archive "Results/Disk_"&#method$&"_"&#style$&"/ASMPM"
 ArchiveTime #maxtime/25
-MaximumTime #maxtime
+TimeStep 1,#maxtime,#cflFactor
 PtsPerElement 2
+LeaveLimit 100
 !FeedbackDamping .2
-!Damping 1500
+Damping 0,0
 
 GlobalArchive sxx
 GlobalArchive exxe
@@ -74,20 +77,20 @@ ToArchive plasticstrain,history1
 
 ! ********** Materials Section **********
 
-if #matID="isotropic"
-  Material #matID,"Polymer","Isotropic"
+if #matID$="isotropic"
+  Material #matID$,"Polymer","Isotropic"
     E #Ebase
     nu #nubase
     a #abase
     rho #rhobase
   Done
 
-else if #matID="neohookean"
+else if #matID$="neomooney"
   #G1=#Ebase/(2*(1+#nubase))
   #G2=0
   #G0=#G1+#G2
   #Kbulk=#Ebase/(3*(1-2*#nubase))
-  Material #matID,"Neohookean Material","Mooney"
+  Material #matID$,"Neohookean Mooney Material","Mooney"
     G1 #G1
     G2 #G2
     K #Kbulk
@@ -97,26 +100,47 @@ else if #matID="neohookean"
   
 endif
 
-if #style="rigid"
+if #style$="rigid"
   #maxDisp = #length*#errmax
   #rate = #maxDisp/#ramp
-  #rfxn = (-1000*#rate)&"*(1-sign(t-"&#ramp&"))"
+  #rfxn$ = (-1000*#rate)&"*(1-sign(t-"&#ramp&"))"
   Material "rigid","Rigid Piston","Rigid"
     direction 1
-    SettingFunction #rfxn
+    SettingFunction #rfxn$
+    mirrored 1
   Done
 endif
 
 ! ********** Grid and Material Points Section **********
 
-GridHoriz (#length-#inner+2*#border*#cell)/#cell
-GridVert (#depth+2*#border*#cell)/#cell
+GridHoriz (#length+2*#border*#cell)/#cell
+if #zconfine$="bottom"
+  GridVert (#depth+2*#border*#cell)/#cell,0,-1
+else if #zconfine$="top"
+  GridVert (#depth+2*#border*#cell)/#cell,#depth,1
+else if #zconfine$="both"
+  GridVert (#depth+2*#border*#cell)/#cell,#depth,1,0
+endif
 GridThickness #thick
-GridRect #inner-#border*#cell,#length+#border*#cell,-#border*#cell,#depth+#border*#cell
+GridRect -#border*#cell,#length+#border*#cell,-#border*#cell,#depth+#border*#cell
 
-Region #matID,0,0,#thick
-  Rect #inner,#length,0,#depth
-EndRegion
+if #initVelocity$="yes"
+  Entity "thick",#thick
+  Entity "vx",(-1000*#rate/#length)&"*x"
+  Entity "xmin",#inner
+  Entity "xmax",#length
+  Entity "ymax",#depth
+  XMLData "MaterialPoints"
+    <Body mat="1" thick="&thick;" vx="0" vy="0">
+      <vel0X>&vx;</vel0X>
+      <Rect xmin="&xmin;" xmax="&xmax;" ymin="0" ymax="&ymax;"/>
+    </Body>
+  EndXMLData
+else
+  Region #matID$,0,0,#thick
+    Rect #inner,#length,0,#depth
+  EndRegion
+endif
 
 ! ********** Boundary Conditions Section **********
 
@@ -125,10 +149,10 @@ if #inner<=0
   MoveLine #inner-#cell/2,-#border*#cell,#inner-#cell/2,#depth+#border*#cell,0.55*#cell
     Velocity x,constant,0
   EndMoveLine
-else #style!="rigid"
+else if #style$!="rigid"
   if #Pi!=0
     LoadLine #inner,0,#inner,#depth,#cell/2
-      if #style="force"
+      if #style$="force"
         LoadType net
         Load x,linear,-#Pi*#depth*#length/#ramp
         Load x,linear,#Pi*#depth*#length/#ramp,#ramp
@@ -141,14 +165,14 @@ else #style!="rigid"
 endif
 
 ! Outside pressure
-if #style="rigid"
+if #style$="rigid"
   Region "rigid",0,0,#thick
-    Rect #length,#length+2*#cell,0,#depth
+    Rect #length,#length+2*#cell,-2*#cell,#depth+2*#cell
   EndRegion
 else
   if #Po!=0
     LoadLine #length,0,#length,#depth,#cell/2
-      if #style="force"
+      if #style$="force"
         LoadType net
         Load x,linear,#Po*#depth*#length/#ramp
         Load x,linear,-#Po*#depth*#length/#ramp,#ramp
@@ -160,20 +184,3 @@ else
   endif
 endif
 
-! z direction contraints
-if #zconfine="bottom"
-  MoveLine #inner-#cell,-#cell/2,#length+#cell,-#cell/2,0.55*#cell
-    Velocity y,constant,0
-  EndMoveLine
-else if #zconfine="top"
-  MoveLine #inner-#cell,#depth+#cell/2,#length+#cell,#depth+#cell/2,0.55*#cell
-    Velocity y,constant,0
-  EndMoveLine
-else if #zconfine="both"
-  MoveLine #inner-#cell,-#cell/2,#length+#cell,-#cell/2,0.55*#cell
-    Velocity y,constant,0
-  EndMoveLine
-  MoveLine #inner-#cell,#depth+#cell/2,#length+#cell,#depth+#cell/2,0.55*#cell
-    Velocity y,constant,0
-  EndMoveLine
-endif

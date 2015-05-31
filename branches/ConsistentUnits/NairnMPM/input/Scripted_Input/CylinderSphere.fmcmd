@@ -20,7 +20,7 @@ EndHeader
 ! ********** Parameters Section **********
 
 ! pick analysis type - "Plane Strain MPM" for cylinder or "Axisymmetric MPM" for sphere
-#type="Plane Strain MPM"
+#type$="Axisymmetric MPM"
 
 #cell=2                	! cell size (square cells)
 #outerradius=20         ! outer radius mm (mult of cell)
@@ -32,19 +32,19 @@ EndHeader
 #cwAngle=0				! angle in cw direction (max 90 if axisymmetric or 180 if not)
 
 ! Pick material: "isotropic","neohookean"
-#matname="neohookean"
+#matname$="neohookean"
 
 ! mass stress (negative of max pressure)
 #pmax=500
 
 ! load by "force" or "traction"
-#load="traction"
+#load$="traction"
 
-Analysis #type
+Analysis #type$
 MPMMethod USF,CPDI
 LeaveLimit 1
 
-if #type="Place Strain MPM"
+if #type$="Place Strain MPM"
   Archive "Results/Cyinder/cylinder"
   #maxAngle=90
 else
@@ -60,8 +60,8 @@ endif
 #degtorad=3.14159265359/180
 
 ! ********** Materials Section **********
-if #matname="isotropic"
-  Material #matname,"Polymer","Isotropic"
+if #matname$="isotropic"
+  Material #matname$,"Polymer","Isotropic"
     E 2500
     nu .33
     a 60
@@ -69,10 +69,10 @@ if #matname="isotropic"
   Done
 endif
 
-if #matname="neohookean"
+if #matname$="neohookean"
   #G1=2500/(2*(1+.33))
   #Kbulk=2500/(3*(1-2*.33))
-  Material #matname,"Neohookean Material","Mooney"
+  Material #matname$,"Neohookean Material","Mooney"
     G1 #G1
     G2 0
     K #Kbulk
@@ -82,7 +82,7 @@ if #matname="neohookean"
 endif
 
 ! output stress solution
-if #type="Plane Strain MPM"
+if #type$="Plane Strain MPM"
   Comment "srr = "&(#pmax/(1-#innerradius^2/#outerradius^2))&"*(1-"&(#innerradius^2)&"/r^2)"
 else
   Comment "srr = "&(#pmax/(1-#innerradius^3/#outerradius^3))&"*(1-"&(#innerradius^3)&"/r^3)"
@@ -137,7 +137,7 @@ endif
 #ymin=#cell*int(#ymin/#cell+.5)
 GridVert (#ymax-#ymin)/#cell
 
-if #type="Plane Strain MPM"
+if #type$="Plane Strain MPM"
   GridThickness #thickness
 endif
 
@@ -154,14 +154,14 @@ Hole
   if #innerradius>0
     Oval -#innerradius,#innerradius,-#innerradius,#innerradius
   endif
-EndRegion
-Region #matname,0,0,#thickness
+EndHole
+Region #matname$,0,0,#thickness
   Oval -#outerradius,#outerradius,-#outerradius,#outerradius
 EndRegion
 
 ! ********** Optional Calculations Section **********
-if #load="force"
-  if #type="Axisymmetric MPM"
+if #load$="force"
+  if #type$="Axisymmetric MPM"
     #pp=(#prate*#cell/2)&"*D"
   else
     #pp=#prate*#cell*#thickness/2
@@ -171,7 +171,7 @@ if #load="force"
     Load y,function,#pp&"*t*y/sqrt(x^2+y^2)"
   EndLoadArc
 
-else if #load="traction"
+else if #load$="traction"
   if #cell!=2
     Stop "tractions can only be used for 2 mm cells"
   endif

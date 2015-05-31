@@ -364,6 +364,86 @@ Select the desired output results for FEA calculations. The arguments appear in 
 to include those results in output FEA results file. The second of each pair (<i>e.g.</i>, <code>(out1)</code>) can be &quot;yes&quot; or &quot;no&quot; to include or omit those results, or it can be &quot;selected&quot; to only include results for selected nodes and elements (see <a href="#select">Select</a>, <a href="#selectline">SelectLine</a>, and <a href="#selectpoint">SelectPoint</a> commands).</li>
 </ul>
 
+<p><code>XML</code> input files can have a <code>&lt;ConsistentUnits&gt;</code> command in the main header to set any desired units system, but you should not use this command in scripted files (such as by inserting it with an <a href="#xml">XMLData command</a>). The current scripting system assumes certain units that could conflict with any <code>&lt;ConsistentUnits&gt;</code> settings. A future version of the scripting system will provide scriped access to units control. Until then, omit the command and use the units specified in this documentation.</p>
+
+<!--
+<p>This command determines in the input and output units. If it is omitted, the input and output will use "Legacy Units".</p>
+
+<ul>
+<li><pre class="list">&lt;ConsistentUnits length='(scale)' mass='(scale)' time='(scale)/ConsistentUnits&gt;</pre>
+The scale setting gives power of 10 scaling from SI units for length or m, mass or kg, and time (of sec). For example, enter '-3' for length to use mm instead of m. The default (if this command is not used) is to use "Legacy Units." If this command is used but not all attributes are provided, the default is -3, -3, and 1 to convert to mmgs system (for mm, g, and seconds).</li>
+</ul>
+
+<p>The units required when using "Legacy Units" and when using some common "Consistent Units" systems are in the following table (note: you can pick an consistent units and are not limited to the optsoin in the table.</p>
+
+<table border="1" cellpadding="2" cellspacing="0" width="90%" align="center">
+
+<tr><th>Unit</th><th>Legacy</th><th>Consistent</th><th>SI</th><th>mmgs</th><th>cgs</th>
+</tr>
+
+<tr><td>Length</td><td>mm</td><td>L</td><td>m</td><td>mm</td><td>cm</td>
+</tr>
+
+<tr><td>Mass</td><td>g</td><td>M</td><td>kg</td><td>g</td><td>g</td>
+</tr>
+
+<tr><td>Density</td><td>g/cm<sup>3</sup></td><td>M/L<sup>3</sup></td><td>kg/m<sup>3</sup></td><td>g/mm<sup>3</sup></td><td>g/cm<sup>3</sup></td>
+</tr>
+
+<tr><td>Time</td><td>s</td><td>T</td><td>s</td><td>s</td><td>s</td>
+</tr>
+
+<tr><td>Alt Time</td><td>ms</td><td>T</td><td>s</td><td>s</td><td>s</td>
+</tr>
+
+<tr><td>Velocity</td><td>mm/s</td><td>L/T</td><td>m/s</td><td>mm/s</td><td>cm/s</td>
+</tr>
+
+<tr><td>Alt Velocity</td><td>m/s</td><td>L/T</td><td>m/s</td><td>mm/s</td><td>cm/s</td>
+</tr>
+
+<tr><td>Acceleration</td><td>mm/s<sup>2</sup></td><td>L/T<sup>2</sup></td><td>m/s<sup>2</sup></td><td>mm/s<sup>2</sup></td><td>cm/s<sup>2</sup></td>
+</tr>
+
+<tr><td>Force</td><td>N</td><td>F = M-L/T<sup>2</sup></td><td>N</td><td>&mu;N</td><td>dyne</td>
+</tr>
+
+<tr><td>Pressure</td><td>MPa</td><td>P = F/L<sup>2</sup></td><td>Pa</td><td>Pa</td><td>Ba</td>
+</tr>
+
+<tr><td>Alt Strain</td><td>%</td><td>none</td><td>none</td><td>none</td><td>none</td>
+</tr>
+
+<tr><td>Energy</td><td>J</td><td>E = F-L</td><td>J</td><td>nJ</td><td>erg</td>
+</tr>
+
+<tr><td>Energy Release</td><td>J/m<sup>2</sup></td><td>E/L<sup>2</sup> </td><td>J/m<sup>2</sup></td><td>nJ/mm<sup>2</sup></td><td>erg/cm<sup>2</sup></td>
+</tr>
+
+<tr><td>Stress Intensity</td><td>MPa-m<sup>0.5</sup></td><td>P-L<sup>0.5</sup> </td><td>Pa-m<sup>0.5</sup></td><td>Pa-mm<sup>0.5</sup></td><td>Ba-cm<sup>0.5</sup></td>
+</tr>
+
+<tr><td>Viscosity</td><td>cPoise</td><td>P-T</td><td>Pa-s</td><td>Pa-s</td><td>Poise</td>
+</tr>
+
+<tr><td>Diffusion</td><td>mm<sup>2</sup>/s</td><td>L<sup>2</sup>/T</td><td>m<sup>2</sup>/s</td><td>mm<sup>2</sup>/s</td><td>cm<sup>2</sup>/s</td>
+</tr>
+
+<tr><td>Solvent Flux</td><td>kg/(m<sup>2</sup>-s)</td><td>M/(L<sup>2</sup>-T)</td><td>kg/(m<sup>2</sup>-s)</td><td>g/(mm<sup>2</sup>s)</td><td>g/(cm<sup>2</sup>-s)</td>
+</tr>
+
+<tr><td>Conductivity</td><td>W/(m-K)</td><td>E/(L-K-s)</td><td>W/(mm-K)</td><td>nW/(mm-K)</td><td>erg/(cm-K-s)</td>
+</tr>
+
+<tr><td>Heat Capacity</td><td>J/(kg-K)</td><td>E/(M-K)</td><td>J/(kg-K)</td><td>nJ/(g-K)</td><td>erg/(g-K)</td>
+</tr>
+
+<tr><td>Heat Flux</td><td>W/m<sup>2</sup></td><td>E/L<sup>2</sup></td><td>W/m<sup>2</sup></td><td>nW/mm<sup>2</sup></td><td>erg/cm<sup>2</sup></td>
+</tr>
+
+</table><br>
+-->
+
 <p>|<a href="#cindex">Documentation Index</a>|</p>
 
 <h2><a name="mpmheader"></a>MPM Analysis Header</h2>
@@ -402,21 +482,21 @@ Specify results to be archived in MPM calculations. The list can be in multiple 
 <ul>
 <li>velocity - particle velocity</li>
 <li>stress - particle Cauchy stress</li>
-<li>strain - elastic strain to total strain (depending on material type)</li>
-<li>plasticstrain - plastic strain of Left-Cauchy Green strain (depending on material type)</li>
+<li>strain - particle total strain, which in combination with <code>rotstrain</code> gives full deformation gradient.</li>
+<li>plasticstrain - an alternate particle strain (some materials provide plastic strains; others provide other data)</li>
+<li>rotstrain - rotation strain is needed for visualization plots that transform particles. It is now automatically archived
+whenever strain is archived (which means full deformation gradient is archived)</li>
 <li>strainenergy - cumulative &sigma;.d(&epsilon;-&epsilon;<sub>res</sub>)</li>
 <li>workenergy - cumulative &sigma;.d&epsilon;</li>
 <li>heatenergy</li>
 <li>plasticenergy</li>
 <li>temperature</li>
 <li>concentration (which includes concentration gradients)</li>
-<li>shearcomponents - in 2D gives du/dy and dv/dx (not used for much)</li>
 <li>jintegral - at crack tips</li>
 <li>stressintensity - at crack tips</li>
 <li>history1, history2, history3, history4 - up to four material-dependent history variables can be archived.</li>
 <li>energybalance - research topic, not meant for general use</li>
 <li>elementcrossings - number of times the particle as crossed element boundaries</li>
-<li>rotstrain - rotation strain is needed for visualization plots that transform particles</li>
 </ul>
 </li>
 </ul>
@@ -427,14 +507,25 @@ Specify results to be archived in MPM calculations. The list can be in multiple 
 <li><a name="globalarchive"></a><code>GlobalArchive (quant),&lt;(mat)&gt;</code><br>
 Global results are average values over the particles. Specify global result to be archived in <code>(quant)</code>. If <code>(mat)</code> is provided (as a material ID), the global result will be only for particles of that material. The possible quantities are:
 <ul>
-	<li><code>sxx</code>, <code>syy</code>, <code>szz</code>, <code>sxy</code>, <code>sxz</code>, or <code>syz</code> - average element of the stress tensor in MPa</li>
+	<li><code>sxx</code>, <code>syy</code>, <code>szz</code>, <code>sxy</code>, <code>sxz</code>, or <code>syz</code>
+	 - average element of the stress tensor in MPa</li>
 	<li><code>sRR</code>, <code>sZZ</code>, <code>sTT</code>, or <code>sRZ</code> - average element of the axisymmetric stress tensor in MPa (synonyms for <code>sxx</code>, <code>syy</code>, <code>szz</code>, and <code>sxy</code>)</li>
-	<li><code>exx</code>, <code>eyy</code>, <code>ezz</code>, <code>exy</code>, <code>exz</code>, or <code>eyz</code> - average element of the total strain tensor in %, which is sum of elastic and plastic strain for plasticity materials</li>
-	<li><code>eRR</code>, <code>eZZ</code>, <code>eTT</code>, or <code>eRZ</code> - average element of the axisymmetric total strain tensor % (synonyms for <code>exx</code>, <code>eyy</code>, <code>ezz</code>, and <code>exy</code>)</li>
-	<li><code>exxe</code>, <code>eyye</code>, <code>ezze</code>, <code>exye</code>, <code>exze</code>, or <code>eyze</code> - average element of the strain tensor in %, which is elastic strain only for plasticity materials</li>
-	<li><code>eRRe</code>, <code>eZZe</code>, <code>eTTe</code>, or <code>eRZe</code> - average element of the axisymmetric elastic strain tensor % (synonyms for <code>exxe</code>, <code>eyye</code>, <code>ezze</code>, and <code>exye</code>)</li>
-	<li><code>exxp</code>, <code>eyyp</code>, <code>ezzp</code>, <code>exyp</code>, <code>exzp</code>, or <code>eyzp</code> - average element of the plastic strain tensor in %</li>
-	<li><code>eRRp</code>, <code>eZZp</code>, <code>eTTp</code>, or <code>eRZp</code> - average element of the axisymmetric plastic strain tensor % (synonyms for <code>exxe</code>, <code>eyye</code>, <code>ezze</code>, and <code>exye</code>)</li>
+	<li><code>exx</code>, <code>eyy</code>, <code>ezz</code>, <code>exy</code>, <code>exz</code>, or <code>eyz</code>
+	 - average element of the total <a href="#gbiot">Biot</a> strain tensor in %</li>
+	<li><code>eRR</code>, <code>eZZ</code>, <code>eTT</code>, or <code>eRZ</code>
+	 - average element of the axisymmetric total <a href="#gbiot">Biot</a> strain tensor %
+	 (synonyms for <code>exx</code>, <code>eyy</code>, <code>ezz</code>, and <code>exy</code>)</li>
+	<li><code>exxe</code>, <code>eyye</code>, <code>ezze</code>, <code>exye</code>, <code>exze</code>, or <code>eyze</code>
+	 - average element of the elastic <a href="#gbiot">Biot</a> strain tensor in %, which is total
+	 <a href="#gbiot">Biot</a> strain minus plastic <a href="#gbiot">Biot</a> strain for plasticity materials</li>
+	<li><code>eRRe</code>, <code>eZZe</code>, <code>eTTe</code>, or <code>eRZe</code>
+	 - average element of the axisymmetric elastic <a href="#gbiot">Biot</a> strain tensor in %
+	 (synonyms for <code>exxe</code>, <code>eyye</code>, <code>ezze</code>, and <code>exye</code>)</li>
+	<li><code>exxp</code>, <code>eyyp</code>, <code>ezzp</code>, <code>exyp</code>, <code>exzp</code>, or <code>eyzp</code>
+	 - average element of the plastic <a href="#gbiot">Biot</a> strain tensor in %</li>
+	<li><code>eRRp</code>, <code>eZZp</code>, <code>eTTp</code>, or <code>eRZp</code>
+	 - average element of the axisymmetric plastic <a href="#gbiot">Biot</a> strain tensor %
+	 (synonyms for <code>exxp</code>, <code>eyyp</code>, <code>ezzp</code>, and <code>exyp</code>)</li>
 	<li><code>velx</code>, <code>vely</code>, or <code>velz</code> - average component of velocity in mm/sec</li>
 	<li><code>velR</code> or <code>velZ</code> - average component of axisymmetric velocity in mm/sec (synonyms for <code>velx</code> or <code>vely</code>)</li>
 	<li><code>dispx</code>, <code>dispy</code>, or <code>dispz</code> - average component of displacement in mm</li>
@@ -460,7 +551,12 @@ Global results are average values over the particles. Specify global result to b
 	<li><code>Step number</code> - the current MPM step number</li>
 	<li><code>Elapsed time</code> - elapsed clock time for the current calculation (in secs)</li>
 	<li><code>CPU time</code> - total CPU time for the current calculation (in secs)</li>
-</ul></li>
+</ul>
+<a name="gbiot">Note:</a> when global archiving of strains, they are calculated as a Biot strain in the current configuration.
+The Biot strain is defined is <B>V-I</B> where <B>V</B> is the left-stretch tensor.
+This strain is also the Seth-Hill strain with m=1/2 in current configuration. For small strain problems it is
+equivalent to the small strain tensor.
+</li>
 <li><code>GlobalArchiveTime (time)</code><br>
 Specify time interval for archiving global results, <code>(time)</code> is the global archiving time in ms. If not specified, global archiving is done at the <a href="#atime">standard archiving time</a>.</li>
 </ul>
@@ -1116,7 +1212,10 @@ Select all nodes on a line for conditional <a href="#output">output</a> of resul
 Select one node for conditional <a href="#output">output</a> of results. If only <code>(xOrID)</code> is given, it must be a <a href="#keypoint">keypoint ID</a> and that node is selected. If <code>(y)</code> is provided, <code>(xOrID,y)</code> defines coordinates (in mm) for a point and the one node nearest to that point is selected.</li>
 
 <li><code>Periodic (axis),&lt;(constraint,value)&gt;,...</code><br>
-Set up calculations to be periodic where in the (axis) direction (x, y, or Z (if axisymmetric)). Up to two <code>(constraint)</code> settings can be "Delta" or "Slope" ("Shear" is equivalent to slope). There corresponding values impose that constraint on the periodic analysis. A "Delta" value gives a displacement jump along the periodic axis and defines the average strain in that direction. When only one direction is periodic, a "Slope" value impose rotation of one edge compared to the other. When both directions are periodic, a "Shear" value imposes average shear strain.</li>
+Set up calculations to be periodic in the (axis) direction (x, y, or Z (if axisymmetric)). Up to two <code>(constraint)</code> settings can be "Delta" or "Slope" ("Shear" is equivalent to slope).
+There corresponding values impose that constraint on the periodic analysis. A "Delta" value gives a displacement jump along the
+periodic axis and defines the average strain in that direction. When only one direction is periodic, a "Slope" value impose rotation of one edge compared to the other.
+When both directions are periodic, a "Shear" value imposes average shear strain.</li>
 
 </ul>
 
@@ -1142,7 +1241,8 @@ are omitted, this commands activates gravity with earth's gravitation field in t
 
 <h2><a name="custom"></a>Custom Tasks</h2>
 
-<p>These commands are used to schedule custom tasks that are run at the end of each time step in MPM calculations.</p>
+<p>These commands are used to schedule custom tasks that are run at the end of each time step
+in MPM calculations.</p>
 
 <ul>
 <li><code>CustomTask (name)</code><br>
@@ -1150,13 +1250,15 @@ Schedule a custom task with name in <code>(name)</code>.
 </li>
 
 <li><code>Parameter (arg),&lt;(value)&gt;</code><br>
-Add parameter with name <code>(arg)</code> to the current custom task with value <code>(value)</code>, which is optional because some
+Add parameter with name <code>(arg)</code> to the current custom task with value <code>(value)</code>, which
+is optional because some
 custom task parameters do not take a value.
 </li>
 
 </ul>
 
-<p>The currently available (and documented) custom tasks are their parameters are:</p>
+<p>The currently available (and documented) custom tasks and their parameters are given below (see last one
+for handling unknown tasks):</p>
 
 <dl>
 
@@ -1173,23 +1275,29 @@ custom task parameters do not take a value.
 <li>stress - the stress tensor (in MPa).</li>
 <li>pressure - the pressure (in MPa).</li>
 <li>equivstress - the equivalent stress (also know as von Mises stress) (in MPa).</li>
-<li>strain - the strain tensor, which is elastic strain for materials that partition elastic and plastic strain, but total strain for all others (absolute).</li>
+<li>defgrad - the deformation gradienet (absolute).</li>
+<li>totalstrain - the total <a href="#biot">Biot</a> strain tensor (absolute).</li>
+<li>elasticstrain - the elastic <a href="#biot">Biot</a> strain tensor (absolute, call use "strain" as well).</li>
+<li>plasticstrain - the plastic <a href="#biot">Biot</a> strain tensor (absolute).</li>
 <li>deltav - the relative volume change (V-V<sub>0</sub>)/V<sub>0</sub> (absolute).</li>
-<li>equivstrain - the equivalent strain from above strain (absolute).</li>
-<li>plasticstrain - the plastic strain tensor (absolute). Some materials have plastic strain, but hyperelastic materials have left Cauchy Green strain in the particle's plastic strain.</li>
-<li>totalstrain - Archive total strain tensor (absolute, elastic+plastic strain for materials that separate them).</li>
+<li>equivstrain - the equivalent strain from above total <a href="#biot">Biot</a> strain (absolute).</li>
 <li>temperature - the temperature (in K).</li>
 <li>concentration - the concentration (in wt %).</li>
-<li>strainenergy - the strain energy in J.</li>
-<li>heatenergy - the heat energy in J.</li>
+<li>strainenergy - the strain energy (in J, can be "workenergy" as well).</li>
+<li>heatenergy - the heat energy (in J).</li>
 <li>plasticenergy - the plastic energy (in J).</li>
-<li>contactforce - the nodal force on the grid for <code>MultiMaterialMode</code> simulations when they include rigid materials that have <code>SetDirection</code>=8. It is force of the rigid material on the object in Newtons.</li>
+<li>contactforce - the nodal force on the grid for <code>MultiMaterialMode</code> simulations
+when they include rigid materials that have <code>SetDirection</code>=8. It is force of the rigid material on the object in Newtons.</li>
 <li>volumegradient (mat) - the volume gradient used for contact calculations when running in multimaterial model.
 The (mat) argument is the material ID whose gradient is archived.</li>
 <li>numpoints - the number of material points interacting with each node in the grid.</li>
 <li>archiveTime (time) - enter the time interval (in ms) between saving of <code>VTK</code> archives. If this parameter is omitted, the VTK archive files are written on the same steps as the particle archives.</li>
 <li>firstArchiveTime (time) - enter the time to save the first results (in ms). This parameter is ignored unless archiveTime has be set as well.</li>
 </ul>
+<a name="biot">Note:</a> when archiving strains, they are calculated as a Biot strain in the current configuration.
+The Biot strain is defined is <B>V-I</B> where <B>V</B> is the left-stretch tensor.
+This strain is also the Seth-Hill strain with m=1/2 in current configuration.
+For small strain problems it is equivalent to the small strain tensor.
 </dd>
 
 
@@ -1245,6 +1353,13 @@ When this task is triggered by critical crack length, the crack propagation will
 <li>verbose (value) - if its integer value is not zero, it will print the new time step whenever it changes by more than 1%. If it is zero, the new time step is silently changed. The default it 0.</li>
 </ul>
 </dd>
+
+<dt>Unknown Custom Tasks</dt>
+<dd>Sometimes custom tasks may be written for NairnMPM (or OSParticulas) but not known to this application.
+You can still use those tasks. Enter the name of the task (exactly as needed by NairnMPM and case sensitive) in the
+<code>CustomTask</code> command and then follow that with any number of <code>Parameter</code> commands. The
+parameter names and their values are passed exactly as provided (case sensitive) to the input file (including text
+values) and should match the requirements of the unknown task.</dd>
 
 </dl>
 

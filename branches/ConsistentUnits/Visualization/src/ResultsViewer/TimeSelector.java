@@ -57,12 +57,12 @@ public class TimeSelector extends PlotControl
 			setBackground(Color.lightGray);
 			select.setBackground(Color.lightGray);
 			timeSelected.setFont(new Font("sanserif",Font.PLAIN,10));
-			timeSelected.setText(dc.resDoc.archiveTimes.get(0) + " "+dc.resDoc.timeU);
+			timeSelected.setText(dc.resDoc.archiveTimes.get(0) + " "+dc.resDoc.units.timeUnits());
 			prefix="";
 		}
 		else
 		{	setEnabled(LoadArchive.NO_PLOT);
-			timeSelected.setText("Time: 0.0 "+dc.resDoc.timeU);
+			timeSelected.setText("Time: 0.0 "+dc.resDoc.units.timeUnits());
 			prefix="Time: ";
 		}
 		select.setFocusable(false);
@@ -72,7 +72,7 @@ public class TimeSelector extends PlotControl
 		{   public void stateChanged(ChangeEvent e)
 			{	ResultsDocument resDoc=TimeSelector.this.docCtrl.resDoc;
 				String theTime=JNUtilities.formatDouble(resDoc.archiveTimes.get(select.getValue()).doubleValue());
-				timeSelected.setText(prefix + theTime + " "+resDoc.timeU); 
+				timeSelected.setText(prefix + theTime + " "+resDoc.units.timeUnits()); 
 				if(!select.getValueIsAdjusting())
 				{	if(value!=select.getValue())
 					{	value=select.getValue();
@@ -91,7 +91,7 @@ public class TimeSelector extends PlotControl
 	public void updateLabel()
 	{	ResultsDocument resDoc=TimeSelector.this.docCtrl.resDoc;
 		String theTime=JNUtilities.formatDouble(resDoc.archiveTimes.get(select.getValue()).doubleValue());
-		timeSelected.setText(prefix + theTime + " "+resDoc.timeU);
+		timeSelected.setText(prefix + theTime + " "+resDoc.units.timeUnits());
 	}
 	
 	// called when new file loaded

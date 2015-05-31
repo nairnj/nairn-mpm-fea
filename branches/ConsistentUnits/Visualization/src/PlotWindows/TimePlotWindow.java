@@ -49,7 +49,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 				fr.read(buffer);
 				fr.close();
 				plot2DView.readTable(new String(buffer));
-				plot2DView.setXTitle("Time ("+resDoc.timeU+")");
+				plot2DView.setXTitle("Time ("+resDoc.units.timeUnits()+")");
 				plot2DView.setYTitle("Global Quantity");
 				setVisible(true);
 				toFront();
@@ -117,8 +117,8 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 		// axis labels
 		if(plot2DView.getNumberOfPlots()<2)
 		{	ResultsDocument resDoc=((DocViewer)document).resDoc;
-			plot2DView.setXTitle("Time ("+resDoc.timeU+")");
-			plot2DView.setYTitle(PlotQuantity.plotLabel(component,resDoc.distU,resDoc.timeU));
+			plot2DView.setXTitle("Time ("+resDoc.units.timeUnits()+")");
+			plot2DView.setYTitle(PlotQuantity.plotLabel(component,resDoc.units));
 		}
 		controls.disableProgress();
 		setVisible(true);
@@ -183,7 +183,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			
 			// read record in the file and convert to MaterialPoint class
 			bb.position(headerLength+(ptNum-1)*resDoc.recSize);
-			mpm.readRecord(bb,mpmOrder,resDoc.lengthScale,resDoc.timeScale,resDoc.is3D());
+			mpm.readRecord(bb,mpmOrder,resDoc.units,resDoc.is3D());
 			
 			// find particle property and add to plot
 			x.add(new Double(resDoc.archiveTimes.get(i)));
@@ -251,7 +251,7 @@ public class TimePlotWindow extends TwoDPlotWindow implements Runnable
 			for(p=0;p<nummpms;p++)
 			{	// read record in the file and convert to MaterialPoint class
 				bb.position(headerLength+p*resDoc.recSize);
-				mpm.readRecord(bb,mpmOrder,resDoc.lengthScale,resDoc.timeScale,resDoc.is3D());
+				mpm.readRecord(bb,mpmOrder,resDoc.units,resDoc.is3D());
 			
 				// exit if crack or continue if do not want this material
 				if(mpm.material<0) break;

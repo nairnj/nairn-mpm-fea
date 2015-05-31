@@ -335,7 +335,7 @@ public class CmdViewer extends JNCmdTextDocument
 		shapeMethod = "uGIMP";
 		archiveRoot = "    <ArchiveRoot>Results/data.</ArchiveRoot>\n";
 		archiveTime = "";
-		timeStep = "    <TimeStep units='ms'>1e15</TimeStep>\n";
+		timeStep = "    <TimeStep>1e15</TimeStep>\n";
 		maxTime = "";
 		globalArchive="";
 		feaTemp = null;
@@ -1268,7 +1268,7 @@ public class CmdViewer extends JNCmdTextDocument
 			throw new Exception("'ArchiveTime' has too few parameters:\n"+args);
 		
 		// archive time
-		Object aTime = readNumberOrEntityArg(args.get(1),false);
+		Object aTime = readNumberOrEntityArg(args.get(1),false,1.e-3);
 		
 		// optional max props
 		int props = 0;
@@ -1276,14 +1276,14 @@ public class CmdViewer extends JNCmdTextDocument
 		
 		// get archiveTime
 		if(props>0)
-			archiveTime = archiveTime + "    <ArchiveTime units='ms' maxProps='"+props+"'>"+aTime+"</ArchiveTime>\n";
+			archiveTime = archiveTime + "    <ArchiveTime maxProps='"+props+"'>"+aTime+"</ArchiveTime>\n";
 		else
-			archiveTime = archiveTime + "    <ArchiveTime units='ms'>"+aTime+"</ArchiveTime>\n";
+			archiveTime = archiveTime + "    <ArchiveTime>"+aTime+"</ArchiveTime>\n";
 		
 		// optional first archive time
 		if(args.size()>2)
-		{	Object firstArchiveTime = readNumberOrEntityArg(args.get(2),false);
-			archiveTime = archiveTime + "    <FirstArchiveTime units='ms'>"+firstArchiveTime+"</FirstArchiveTime>\n";
+		{	Object firstArchiveTime = readNumberOrEntityArg(args.get(2),false,1.e-3);
+			archiveTime = archiveTime + "    <FirstArchiveTime>"+firstArchiveTime+"</FirstArchiveTime>\n";
 		}
 	}
 	
@@ -1297,10 +1297,9 @@ public class CmdViewer extends JNCmdTextDocument
 			throw new Exception("'GlobalArchiveTime' has too few parameters:\n"+args);
 		
 		// archive time
-		Object aTime = readNumberOrEntityArg(args.get(1),false);
-		globalArchive = globalArchive+"    <GlobalArchiveTime units='ms'>"+aTime+"</GlobalArchiveTime>\n";
+		Object aTime = readNumberOrEntityArg(args.get(1),false,1.e-3);
+		globalArchive = globalArchive+"    <GlobalArchiveTime>"+aTime+"</GlobalArchiveTime>\n";
 	}
-	
 	
 	// TimeStep #1,#2,#3 (time step and optional max time and Courant factor)
 	public void doTimeStep(ArrayList<String> args) throws Exception
@@ -1311,14 +1310,14 @@ public class CmdViewer extends JNCmdTextDocument
 		if(args.size()<2)
 			throw new Exception("'TimeStep' has too few parameters:\n"+args);
 		
-		// archive time
-		double aTime = readDoubleArg(args.get(1));
-		timeStep = "    <TimeStep units='ms'>"+aTime+"</TimeStep>\n";
+		// archive time (in sec)
+		double aTime = readDoubleArg(args.get(1))*1.e-3;
+		timeStep = "    <TimeStep>"+aTime+"</TimeStep>\n";
 		
-		// max time
+		// max time (in sec)
 		if(args.size()>2)
-		{	aTime = readDoubleArg(args.get(2));
-			maxTime = "    <MaxTime units='ms'>"+aTime+"</MaxTime>\n";
+		{	aTime = readDoubleArg(args.get(2))*1.e-3;
+			maxTime = "    <MaxTime>"+aTime+"</MaxTime>\n";
 		}
 		
 		// Courant time
@@ -1338,8 +1337,8 @@ public class CmdViewer extends JNCmdTextDocument
 			throw new Exception("'MaximumTime' has too few parameters:\n"+args);
 		
 		// archive time
-		Object aTime = readNumberOrEntityArg(args.get(1),false);
-		maxTime = "    <MaxTime units='ms'>"+aTime+"</MaxTime>\n";
+		Object aTime = readNumberOrEntityArg(args.get(1),false,1.e-3);
+		maxTime = "    <MaxTime>"+aTime+"</MaxTime>\n";
 	}
 	
 	// ToArchive #1,...
@@ -2537,12 +2536,16 @@ public class CmdViewer extends JNCmdTextDocument
 	}
 	
 	// return Double object or look for entity
-	public Object readNumberOrEntityArg(String text,boolean isInt) throws Exception
+	public Object readNumberOrEntityArg(String text,boolean isInt,double scaleNum) throws Exception
 	{	Object arg = readStringOrDoubleArg(text);
 		if(arg.getClass().equals(Double.class))
 		{	if(isInt)
-			{	Integer intarg = new Integer(((Double)arg).intValue());
+			{	Integer intarg = new Integer(((Double)arg).intValue()*((int)scaleNum));
 				return intarg;
+			}
+			else if(scaleNum!=1.)
+			{	Double newarg = new Double(((Double)arg).doubleValue()*scaleNum);
+				return newarg;
 			}
 			return arg;
 		}

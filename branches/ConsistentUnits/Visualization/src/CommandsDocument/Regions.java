@@ -181,7 +181,7 @@ public class Regions
 	    }
 	    
 	    // end it
-	    xmlRegions.append(">\n");
+	    xmlRegions.append(">\n");	    
 }
 	
 	// end current region
@@ -261,7 +261,7 @@ public class Regions
 		double ymax = doc.readDoubleArg(args.get(4));
 		
 		// add it
-		xmlRegions.append(indent+"  <"+shape+" units='mm' xmin='"+xmin+"' xmax='"+xmax+"'");
+		xmlRegions.append(indent+"  <"+shape+" xmin='"+xmin+"' xmax='"+xmax+"'");
 		xmlRegions.append(" ymin='"+ymin+"' ymax='"+ymax+"'/>\n");
 	}
 
@@ -295,7 +295,7 @@ public class Regions
 		double y = doc.readDoubleArg(args.get(2));
 		
 		// add it
-		xmlRegions.append(indent+"    <pt units='mm' x='"+x+"' y='"+y+"'/>\n");
+		xmlRegions.append(indent+"    <pt x='"+x+"' y='"+y+"'/>\n");
 	}
 	
 	// Origin #1,#2,<#3>,<#4>
@@ -315,7 +315,7 @@ public class Regions
 	    if(args.size()>4) flip = doc.readStringArg(args.get(4)).toLowerCase();
 	    
 	    // add the command
-	    xmlRegions.append(indent+"  <Origin units='mm' x='"+xo+"' y='"+yo+"'");
+	    xmlRegions.append(indent+"  <Origin x='"+xo+"' y='"+yo+"'");
 	    if(doc.isMPM3D()) xmlRegions.append(" z='"+zo+"'");
 	    if(flip!=null) xmlRegions.append(" flipped='"+flip+"'");
 	    xmlRegions.append("/>\n");
@@ -484,7 +484,7 @@ public class Regions
 		double zmax = doc.readDoubleArg(args.get(6));
 		
 		// add it
-		xmlRegions.append(indent+"  <"+shape+" units='mm' xmin='"+xmin+"' xmax='"+xmax+"'");
+		xmlRegions.append(indent+"  <"+shape+" xmin='"+xmin+"' xmax='"+xmax+"'");
 		xmlRegions.append(" ymin='"+ymin+"' ymax='"+ymax+"'");
 		xmlRegions.append(" zmin='"+zmin+"' zmax='"+zmax+"'");
 		if(shape.equals("Cylinder"))

@@ -3,7 +3,7 @@
 ! The main use is to test materials for axisymmetric constitutitive law support.
 ! The loading is in the z direction and can be tension or compression (using +/- #maxstrain variable).
 ! The cylinder can be hollow or solid. The core (r=0) is always fixed, the outer radius
-!    can optionally be confined using #rconfine
+!    can optionally be confined using #rconfine$
 ! Boundary conditions can be force, traction, or rigid particles
 
 ! ********** Preamble Section **********
@@ -22,9 +22,9 @@ EndHeader
 
 ! "force" or "traction" or "rigid" or "contact"
 ! Tries to load to approximate #maxStrain (%)
-#style="traction"
+#style$="contact"
 ! may need small #factor and faster loading to get high tension
-#maxstrain=50				
+#maxstrain=-10				
 
 ! Base properties should be used
 ! Needed for time calculations
@@ -34,10 +34,10 @@ EndHeader
 #nubase=0.33
 
 ! "Isotropic" or "neohookean"
-#matID="neohookean"
+#matID$="neohookean"
 
 ! Simulations, timing, and damping
-#method="lCPDI"				! lCPDI, uGIMP, or Classic
+#method$="lCPDI"			! lCPDI, uGIMP, or Classic
 #mult=40					! transit times for complete analysis
 #factor=.1				    ! convergence factor (needs to be small for large strains)
 #rampfraction=1.0			! fraction to full pressure or strain, then hold
@@ -47,22 +47,18 @@ EndHeader
 ! mesh details
 #cell=2
 #border=3
-#rconfine="no"				! yes to fix outer radius
+#rconfine$="no"				! yes to fix outer radius
 
 ! ********** Calculations Section **********
 
 ! Start analysis
 Analysis "Axisymmetric MPM"
-MPMMethod USF,#method
+MPMMethod USAVG,#method$
 
 ! convert to contact
-if #style="contact"
-  MultimaterialMode 0.8,enabled,maxgrad,100
+if #style$="contact"
+  MultimaterialMode 0.8,enabled,specify,90,0
   !ImperfectInterfaceMM 0,1000
-  XMLData,"Header"
-    <DevelFlag Number='0'>3</DevelFlag>
-    <DevelFlag Number='1'>2</DevelFlag>
-  EndXMLData
 endif
 
 ! Calculate maximum and ramp times
@@ -71,19 +67,19 @@ endif
 #maxtime=#mult*#transit				! in msec
 #ramp=#maxtime*#rampfraction		! time to #maxstrain
 
-Archive "Results/Cyinder_"&#method&"_"&#style&"/ASMPM"
+Archive "Results/Cyinder_"&#method$&"_"&#style$&"/ASMPM"
 ArchiveTime #maxtime/25
 TimeStep 1,#maxtime,#factor
 
-GlobalArchive sxx
-GlobalArchive exxe
-GlobalArchive syy
-GlobalArchive eyye
-GlobalArchive szz
-GlobalArchive ezze
-if #style="contact"
-  GlobalArchive "contactx"
-  GlobalArchive "contacty"
+GlobalArchive sRR
+GlobalArchive eRRe
+GlobalArchive sZZ
+GlobalArchive eZZe
+GlobalArchive sTT
+GlobalArchive eTTe
+if #style$="contact"
+  GlobalArchive "contactR"
+  GlobalArchive "contactZ"
 endif
 
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
@@ -97,7 +93,7 @@ ToArchive plasticstrain,history1
 #maxDisp=#length*#maxstrain/100
 #stress=#Ebase*#maxstrain/100
 
-! extra cells for tennsion
+! extra cells for tension
 if #maxDisp>0
   #extra=int(#maxDisp/#cell)+1+#border
 else
@@ -105,21 +101,21 @@ else
   #border+=2
 endif
 
-if #matID="isotropic"
-  Material #matID,"Isotropic Material","Isotropic"
+if #matID$="isotropic"
+  Material #matID$,"Isotropic Material","Isotropic"
     E #Ebase
     nu #nubase
     a #abase
     rho #rho
   Done
 
-else if #matID="neohookean"
+else if #matID$="neohookean"
   #G1=#Ebase/(2*(1+#nubase))
   #G2=0
   #G0=#G1+#G2
   #Kbulk=#Ebase/(3*(1-2*#nubase))
   #extra=int(1.5*#extra)
-  Material #matID,"Neohookean Material","Mooney"
+  Material #matID$,"Neohookean Material","Mooney"
     G1 #G1
     G2 #G2
     K #Kbulk
@@ -131,16 +127,17 @@ endif
 
 ! Get displacement function if rigid
 #rate = #maxDisp/#ramp
-#rfxn = (1000*#rate)&"*(1-sign(t-"&#ramp&"))"
-if #style="rigid"
+#rfxn$ = (1000*#rate)&"*(1-sign(t-"&#ramp&"))"
+if #style$="rigid"
   Material "rigid","Rigid Piston","Rigid"
     direction 2
-    SettingFunction #rfxn
+    SettingFunction #rfxn$
+    mirrored 1
   Done
-else if #style="contact"
-  Material "rigid","Loading Clamp","Rigid"
+else if #style$="contact"
+  Material "rigid","Rigid Contact","Rigid"
     direction 8
-    SettingFunction2 #rfxn
+    SettingFunction2 #rfxn$
   Done
 endif
 
@@ -161,33 +158,28 @@ endif
 
 ! ********** Grid and Material Points Section **********
 
-GridHoriz (#Ro+2*#border*#cell)/#cell
-GridVert (#length+#border*#cell+#extra*#cell)/#cell
-GridRect -#border*#cell,#Ro+#border*#cell,-#border*#cell,#length+#extra*#cell
+GridHoriz (#Ro+#border*#cell+#cell)/#cell
+GridVert (#length+#border*#cell+#extra*#cell)/#cell,0,-1
+GridRect -#cell,#Ro+#border*#cell,-#border*#cell,#length+#extra*#cell
 
-Region #matID,0,0,1
+Region #matID$,0,0,1
   Rect #Ri,#Ro,0,#length
 EndRegion
 
 ! ********** Boundary Conditions Section **********
 
-! zero displacement at r=0
-MoveLine -#cell/2,-(#border+1)*#cell,-#cell/2,#length+(#extra+1)*#cell,0.55*#cell
-  Velocity x,constant,0
-EndMoveLine
-
 ! To loading
-if #style="rigid"
+if #style$="rigid"
   Region "rigid",0,0,1
     Rect 0,#Ro+#border*#cell,#length,#length+#cell
   EndRegion
-else if #style="contact"
+else if #style$="contact"
   Region "rigid",0,0,1
     Rect 0,#Ro+#border*#cell,#length,#length+2*#cell
   EndRegion
 else
   LoadLine 0,#length,#Ro,#length,#cell/2
-    if #style="force"
+    if #style$="force"
       ! #stress*pi*(#cell/2)*2*rp/(2*pi) = #stress*#cell*rp/2
       #pfrc = (#stress*#cell/(2*#ramp))&"*x*(t-(t-"&#ramp&")*sign(t-"&#ramp&"))"
       Load y,function,#pfrc
@@ -198,14 +190,17 @@ else
   EndLoadLine
 endif
 
-! Bottom BC
-MoveLine -#cell,-#cell/2,#Ro+#border*#cell,-#cell/2,0.55*#cell
-  Velocity y,constant,0
-EndMoveLine
-
-if #rconfine="yes"
+if #rconfine$="yes"
   MoveLine #Ro+#cell/2,-(#border+1)*#cell,#Ro+#cell/2,#length+(#extra+1)*#cell,0.55*#cell
     Velocity x,constant,0
   EndMoveLine
+endif
+
+! archive grid contact forces
+if #style$="contact"
+  CustomTask VTKArchive
+  Parameter "contactforce"
+  Parameter "stress"
+  Parameter "strain"
 endif
 

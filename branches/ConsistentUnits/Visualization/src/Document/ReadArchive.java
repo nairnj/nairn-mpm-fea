@@ -125,7 +125,7 @@ public class ReadArchive
 			{	// create material point
 				int pos=bb.position();
 				MaterialPoint mpm=new MaterialPoint(p+1);
-				mpm.readRecord(bb,mpmOrder,doc.lengthScale,doc.timeScale,doc.is3D());
+				mpm.readRecord(bb,mpmOrder,doc.units,doc.is3D());
 				
 				// A negative material number means start of crack particles
 				if(mpm.material<0)
@@ -164,7 +164,7 @@ public class ReadArchive
 
 					// add the segment
 					CrackSegment cs=new CrackSegment();
-					cs.readRecord(bb,crackOrder,doc.lengthScale,doc.timeScale);
+					cs.readRecord(bb,crackOrder,doc.units);
 					ch.add(cs);
 					
 					// next record
@@ -193,21 +193,33 @@ public class ReadArchive
 		int mpmRecSize=0;
 		int crackRecSize=0;
 		
+		int vectorSize,tensorSize;
+		if(doc.is3D())
+		{	vectorSize=3*sizeofDouble;
+			tensorSize=6*sizeofDouble;
+		}
+		else
+		{	vectorSize=2*sizeofDouble;
+			tensorSize=4*sizeofDouble;
+		}
 		// check what will be there for material points
 		if(mpmOrder[ARCH_Defaults]=='Y')
-			mpmRecSize+=sizeofInt+7*sizeofDouble+sizeofShort+2;
+		{	mpmRecSize+=sizeofInt+3*sizeofDouble+2*vectorSize+sizeofShort+2;
+			if(doc.is3D()) mpmRecSize+=sizeofDouble;		// extra double for 3rd angle
+		}
 		else
 			mpmRecSize+=sizeofInt+5*sizeofDouble+sizeofShort+2;
+		
 		if(mpmOrder[ARCH_Velocity]=='Y')
-			mpmRecSize+=2*sizeofDouble;
+			mpmRecSize+=vectorSize;
 		if(mpmOrder[ARCH_Stress]=='Y')
-			mpmRecSize+=4*sizeofDouble;
+			mpmRecSize+=tensorSize;
 		if(mpmOrder[ARCH_Strain]=='Y')
-			mpmRecSize+=4*sizeofDouble;
+			mpmRecSize+=tensorSize;
 		if(mpmOrder[ARCH_PlasticStrain]=='Y')
-			mpmRecSize+=4*sizeofDouble;
+			mpmRecSize+=tensorSize;
 		if(mpmOrder[ARCH_OldOrigPosition]=='Y')
-			mpmRecSize+=2*sizeofDouble;
+			mpmRecSize+=vectorSize;
 		if(mpmOrder[ARCH_WorkEnergy]=='Y')
 			mpmRecSize+=sizeofDouble;
 		if(mpmOrder[ARCH_DeltaTemp]=='Y')
@@ -230,13 +242,15 @@ public class ReadArchive
 			if((history & 0x08) !=0) mpmRecSize+=sizeofDouble;
 		}
 		if(mpmOrder[ARCH_Concentration]=='Y')
-			mpmRecSize+=3*sizeofDouble;
+			mpmRecSize+=vectorSize+sizeofDouble;
 		if(mpmOrder[ARCH_HeatEnergy]=='Y')
 			mpmRecSize+=sizeofDouble;
 		if(mpmOrder[ARCH_ElementCrossings]=='Y')
 			mpmRecSize+=sizeofInt;
 		if(mpmOrder[ARCH_RotStrain]=='Y')
-			mpmRecSize+=sizeofDouble;
+		{	mpmRecSize+=sizeofDouble;
+			if(doc.is3D()) mpmRecSize+=2*sizeofDouble;
+		}
 			   
 		// check what will be there for crack segments
 		crackRecSize+=sizeofInt+sizeofDouble+sizeofShort+2;

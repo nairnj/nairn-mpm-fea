@@ -254,16 +254,6 @@ public class MovieControls extends JPanel
 				pcmpnt.setEnabled(true);
 				break;
 				
-			case PlotQuantity.MPMDVDX:
-			case PlotQuantity.MESHDVDX:
-				if(!pcmpnt.getItemAt(0).equals("dv/d"+xchar))
-				{	pcmpnt.removeAllItems();
-					pcmpnt.addItem("dv/d"+xchar);
-					pcmpnt.addItem("du/d"+ychar);
-				}
-				pcmpnt.setEnabled(true);
-				break;
-			
 			case PlotQuantity.INTERFACETRACTION_N:
 				if(!pcmpnt.getItemAt(0).equals("normal"))
 				{	pcmpnt.removeAllItems();
@@ -295,7 +285,6 @@ public class MovieControls extends JPanel
 			case PlotQuantity.MPMVELX:
 			case PlotQuantity.MPMDCDX:
 			case PlotQuantity.MPMDISPX:
-			case PlotQuantity.MPMDVDX:
 			case PlotQuantity.MESHSIGMAX:
 			case PlotQuantity.MESHDISPX:
 			case PlotQuantity.MESHSTRAINX:

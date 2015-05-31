@@ -494,7 +494,7 @@ public class ElementBase
 				break;
 				
 			case PlotQuantity.MESHSTRAINENERGY:
-				return 1.e9*energy/(getArea(doc.nodes)*thickness);
+				return energy;
 			
 			// --------------------------------------------
 			//  Nodal Properties

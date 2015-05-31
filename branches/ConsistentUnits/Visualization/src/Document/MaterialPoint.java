@@ -9,6 +9,7 @@
 import java.nio.*;
 import java.awt.*;
 import java.awt.geom.*;
+import javax.vecmath.Vector3d;
 
 public class MaterialPoint
 {
@@ -20,20 +21,22 @@ public class MaterialPoint
 	public static final int YYID=1;
 	public static final int ZZID=2;
 	public static final int XYID=3;
+	public static final int XZID=3;
+	public static final int YZID=3;
 	
 	public int num;
 	public int inElem;			// zero based element number
-	public double mass,angleZ,thickness;
+	public double mass,angleZ,thickness,angleY,angleX;
 	public int material;
-	public double x,y,origx,origy,velx,vely;
-	public double deltaTemp,plastEnergy,dudy,dvdx,strainEnergy;
-	public double history1,history2,history3,history4,concentration,dcdx,dcdy;
+	public double x,y,z,origx,origy,origz,velx,vely,velz;
+	public double deltaTemp,plastEnergy,strainEnergy;
+	public double history1,history2,history3,history4,concentration,dcdx,dcdy,dcdz;
 	public double workEnergy,heatEnergy;
 	public int elementCrossings;
 	public double[] sigma;
 	public double[] eps;
 	public double[] eplast;
-	public double erot;
+	public double[] erot;
 	public double sizeX,sizeY,sizeZ;
 	
 	private double plotValue;
@@ -46,9 +49,10 @@ public class MaterialPoint
 	MaterialPoint(int ptNum)
 	{	num=ptNum;
 		plotValue=0.;
-		sigma=new double[4];
-		eps=new double[4];
-		eplast=new double[4];
+		sigma=new double[6];
+		eps=new double[6];
+		eplast=new double[6];
+		erot=new double[3];
 		sizeX = -1.;
 	}
 	
@@ -82,28 +86,14 @@ public class MaterialPoint
 	    
 		if(showSquarePts)
 		{	if(transformPts)
-			{	double dgrad00,dgrad01,dgrad10,dgrad11;
-				double wrot=Math.PI*(erot-angleZ)/180.;
-				if(resDoc.materials.get(materialIndex()).hasPlasticStrainForGradient())
-				{	dgrad00 = 1.+0.01*(eps[MaterialPoint.XXID]+eplast[MaterialPoint.XXID]);
-					dgrad01 = 0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID]) - wrot;
-					dgrad10 = 0.005*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID]) + wrot;
-					dgrad11 = 1.+0.01*(eps[MaterialPoint.YYID]+eplast[MaterialPoint.YYID]);
-				}
-				else
-				{	dgrad00 = 1.+0.01*eps[MaterialPoint.XXID];
-					dgrad01 = 0.005*eps[MaterialPoint.XYID] - wrot;
-					dgrad10 = 0.005*eps[MaterialPoint.XYID] + wrot;
-					dgrad11 = 1.+0.01*eps[MaterialPoint.YYID];
-				}
-				
-				// This works in Java 1.5
+			{	// This works in Java 1.5
 				// transformed (radiix,0)
-				double r1x = radiix*dgrad00;
-				double r1y = -radiix*dgrad10;
+				Matrix3 F = getDeformationGradient(resDoc);
+				double r1x = radiix*F.get(0,0);
+				double r1y = -radiix*F.get(1,0);
 				// transformed (0,radiiy)
-				double r2x = radiiy*dgrad01;
-				double r2y = -radiiy*dgrad11;
+				double r2x = radiiy*F.get(0,1);
+				double r2y = -radiiy*F.get(1,1);
 				GeneralPath quad=new GeneralPath();
 				Point2D.Float pathPt0=new Point2D.Float((float)(xpt+r1x+r2x),(float)(ypt+r1y+r2y));
 				quad.moveTo(pathPt0.x,pathPt0.y);
@@ -139,63 +129,62 @@ public class MaterialPoint
 	// read record from and archive file into this material point
 	//---------------------------------------------------------------------
 	
-	public void readRecord(ByteBuffer bb,char[] mpmOrder,double lengthScale,double timeScale,boolean has3D)
+	public void readRecord(ByteBuffer bb,char[] mpmOrder,JNUnits units,boolean has3D)
 	{	// required elements
 		inElem=bb.getInt()-1;					// in element number (zero based)
-		mass=bb.getDouble();					// mass in g
+		mass=bb.getDouble()*units.massScale();	// mass in g
 		material=bb.getShort();					// material number
 		bb.getShort();							// skip 2 bytes
 		
 		// 3D will have 3 angles, but not read in this app yet
 		if(has3D)
 		{	angleZ=bb.getDouble();					// angle in degrees about Z axis
-			bb.getDouble();
-			bb.getDouble();
+			angleY=bb.getDouble();
+			angleX=bb.getDouble();
 			thickness=1.;
 		}
 		else
 		{	angleZ=bb.getDouble();					// angle in degrees about Z axis
-			thickness=bb.getDouble()*lengthScale;	// thickness in length units
+			thickness=bb.getDouble()*units.lengthScale();	// thickness in length units
 		}
 		
-		x=bb.getDouble()*lengthScale;			// x position
-		y=bb.getDouble()*lengthScale;			// y position
-		// 3D will have third position\
-		if(has3D) bb.getDouble();
+		x=bb.getDouble()*units.lengthScale();			// x position
+		y=bb.getDouble()*units.lengthScale();			// y position
+		// 3D will have third position
+		if(has3D) z=bb.getDouble()*units.lengthScale();
 		
 		// new default puts original position (in length units) here
 		if(mpmOrder[ReadArchive.ARCH_Defaults]=='Y')
-		{	origx=bb.getDouble()*lengthScale;
-			origy=bb.getDouble()*lengthScale;
+		{	origx=bb.getDouble()*units.lengthScale();
+			origy=bb.getDouble()*units.lengthScale();
 			// 3D will have third position
-			if(has3D) bb.getDouble();
+			if(has3D) origz=bb.getDouble()*units.lengthScale();
 		}
 
 		// velocity (length units/time units), but archive has mm/sec so need to
 		// divide by 1000 to get default units here which are ms
 		if(mpmOrder[ReadArchive.ARCH_Velocity]=='Y')
-		{	double rescale=lengthScale/(1000.*timeScale);
-			velx=bb.getDouble()*rescale;
-			vely=bb.getDouble()*rescale;
+		{	velx=bb.getDouble()*units.velocityScale();
+			vely=bb.getDouble()*units.velocityScale();
 			// 3D will have third velocity
-			if(has3D) bb.getDouble();
+			if(has3D) velz=bb.getDouble()*units.velocityScale();
 		}
 		else
 		{	velx=0.;
 			vely=0.;
-			// 3D will have third velocity
+			velz=0.;
 		}
 
-		// stress (in MPa) (not converted for units)
+		// stress
 		if(mpmOrder[ReadArchive.ARCH_Stress]=='Y')
-		{	sigma[XXID]=1.e-6*bb.getDouble();
-			sigma[YYID]=1.e-6*bb.getDouble();
-			sigma[ZZID]=1.e-6*bb.getDouble();
-			sigma[XYID]=1.e-6*bb.getDouble();
+		{	sigma[XXID]=bb.getDouble()*units.mpmStressScale();
+			sigma[YYID]=bb.getDouble()*units.mpmStressScale();
+			sigma[ZZID]=bb.getDouble()*units.mpmStressScale();
+			sigma[XYID]=bb.getDouble()*units.mpmStressScale();
 			// 3D will have two more components
 			if(has3D)
-			{	bb.getDouble();
-				bb.getDouble();
+			{	sigma[XZID]=bb.getDouble()*units.mpmStressScale();
+				sigma[YZID]=bb.getDouble()*units.mpmStressScale();
 			}
 		}
 		else
@@ -203,19 +192,20 @@ public class MaterialPoint
 			sigma[YYID]=0.;
 			sigma[ZZID]=0.;
 			sigma[XYID]=0.;
-			// 3D will have two more components
+			sigma[XZID]=0.;
+			sigma[YZID]=0.;
 		}
 		
-		// strain (in %)  (not converted for units)
+		// strain (in %)
 		if(mpmOrder[ReadArchive.ARCH_Strain]=='Y')
-		{	eps[XXID]=100.*bb.getDouble();
-			eps[YYID]=100.*bb.getDouble();
-			eps[ZZID]=100.*bb.getDouble();
-			eps[XYID]=100.*bb.getDouble();
+		{	eps[XXID]=bb.getDouble()*units.strainScale();
+			eps[YYID]=bb.getDouble()*units.strainScale();
+			eps[ZZID]=bb.getDouble()*units.strainScale();
+			eps[XYID]=bb.getDouble()*units.strainScale();
 			// 3D will have two more components
 			if(has3D)
-			{	bb.getDouble();
-				bb.getDouble();
+			{	eps[XZID]=bb.getDouble()*units.strainScale();
+				eps[YZID]=bb.getDouble()*units.strainScale();
 			}
 		}
 		else
@@ -223,19 +213,20 @@ public class MaterialPoint
 			eps[YYID]=0.;
 			eps[ZZID]=0.;
 			eps[XYID]=0.;
-			// 3D will have two more components
+			eps[XZID]=0.;
+			eps[YZID]=0.;
 		}
 		
 		// plastic strain (in %) (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_PlasticStrain]=='Y')
-		{	eplast[XXID]=100.*bb.getDouble();
-			eplast[YYID]=100.*bb.getDouble();
-			eplast[ZZID]=100.*bb.getDouble();
-			eplast[XYID]=100.*bb.getDouble();
+		{	eplast[XXID]=bb.getDouble()*units.strainScale();
+			eplast[YYID]=bb.getDouble()*units.strainScale();
+			eplast[ZZID]=bb.getDouble()*units.strainScale();
+			eplast[XYID]=bb.getDouble()*units.strainScale();
 			// 3D will have two more components
 			if(has3D)
-			{	bb.getDouble();
-				bb.getDouble();
+			{	eplast[XZID]=bb.getDouble()*units.strainScale();
+				eplast[YZID]=bb.getDouble()*units.strainScale();
 			}
 		}
 		else
@@ -243,20 +234,21 @@ public class MaterialPoint
 			eplast[YYID]=0.;
 			eplast[ZZID]=0.;
 			eplast[XYID]=0.;
-			// 3D will have two more components
+			eplast[XZID]=0.;
+			eplast[YZID]=0.;
 		}
 				
 		// old method for original positions (in length units)
 		if(mpmOrder[ReadArchive.ARCH_OldOrigPosition]=='Y')
-		{	origx=bb.getDouble()*lengthScale;
-			origy=bb.getDouble()*lengthScale;
+		{	origx=bb.getDouble()*units.lengthScale();
+			origy=bb.getDouble()*units.lengthScale();
 			// 3D will have one more position
-			if(has3D) bb.getDouble();
+			if(has3D) origz=bb.getDouble()*units.lengthScale();
 		}
 		
 		// external work (cumulative) in J (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_WorkEnergy]=='Y')
-			workEnergy=bb.getDouble();
+			workEnergy=bb.getDouble()*units.energyScale();
 		else
 			workEnergy=0.;
 		
@@ -268,23 +260,19 @@ public class MaterialPoint
 				
 		// total plastic energy (Volume*energy) in J (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_PlasticEnergy]=='Y')
-			plastEnergy=bb.getDouble();
+			plastEnergy=bb.getDouble()*units.energyScale();
 		else
 			plastEnergy=0.;
 		
-		// shear components (dimensionless) (not converted for units)
+		// shear components (dimensionless) no ignores
 		if(mpmOrder[ReadArchive.ARCH_ShearComponents]=='Y')
-		{	dudy=bb.getDouble();
-			dvdx=bb.getDouble();
-		}
-		else
-		{	dudy=0.;
-			dvdx=0.;
+		{	bb.getDouble();
+			bb.getDouble();
 		}
 			
 		// total strain energy (Volume*energy) in J (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_StrainEnergy]=='Y')
-			strainEnergy=bb.getDouble();
+			strainEnergy=bb.getDouble()*units.energyScale();
 		else
 			strainEnergy=0.;
 			
@@ -306,21 +294,21 @@ public class MaterialPoint
 		// concentration and gradients
 		if(mpmOrder[ReadArchive.ARCH_Concentration]=='Y')
 		{	concentration=bb.getDouble();
-			dcdx=bb.getDouble()/lengthScale;
-			dcdy=bb.getDouble()/lengthScale;
+			dcdx=bb.getDouble()/units.lengthScale();
+			dcdy=bb.getDouble()/units.lengthScale();
 			// 3D will have one more
-			if(has3D) bb.getDouble();
+			if(has3D) dcdz=bb.getDouble()/units.lengthScale();
 		}
 		else
 		{	concentration=0.;
 			dcdx=0.;
 			dcdy=0.;
-			// 3D will have one more
+			dcdz=0.;
 		}
 		
 		// thermal energy (not converted for units)
 		if(mpmOrder[ReadArchive.ARCH_HeatEnergy]=='Y')
-			heatEnergy=bb.getDouble();
+			heatEnergy=bb.getDouble()*units.energyScale();
 		else
 			heatEnergy=0.;
 			
@@ -334,9 +322,17 @@ public class MaterialPoint
 		// actually initial angle to subtraction of material angle to
 		// get rotational strain
 		if(mpmOrder[ReadArchive.ARCH_RotStrain]=='Y')
-			erot=bb.getDouble();
+		{	erot[0]=bb.getDouble();
+			if(has3D)
+			{	erot[1]=bb.getDouble();
+				erot[2]=bb.getDouble();
+			}
+		}
 		else
-			erot=0.;	// assume initial angles were all zero
+		{	erot[0]=0.;		// assume initial angles were all zero
+			erot[1]=0.;
+			erot[2]=0.;
+		}
 	}
 	
 	//---------------------------------------------------------------------
@@ -400,20 +396,29 @@ public class MaterialPoint
 				theValue=sigma[ZZID];
 				break;
 		
+			case PlotQuantity.MPMSIGMAXZ:
+				theValue=sigma[XZID];
+				break;
+		
+			case PlotQuantity.MPMSIGMAYZ:
+				theValue=sigma[YZID];
+				break;
+		
 			// Strains
 			case PlotQuantity.MPMEPSX:
 			case PlotQuantity.MPMEPSY:
 			case PlotQuantity.MPMEPSXY:
+			{	Matrix3 biot = getElasticStrain(doc);
 				if(angle==0.)
 				{   switch(component)
 					{   case PlotQuantity.MPMEPSX:
-							theValue=eps[XXID];
+							theValue=biot.get(0,0);
 							break;
 						case PlotQuantity.MPMEPSY:
-							theValue=eps[YYID];
+							theValue=biot.get(1,1);
 							break;
 						case PlotQuantity.MPMEPSXY:
-							theValue=eps[XYID];
+							theValue=2.*biot.get(0,1);
 							break;
 						default:
 							break;
@@ -423,9 +428,9 @@ public class MaterialPoint
 				{   radAngle=Math.PI*angle/180.;
 					c=Math.cos(radAngle);
 					s=Math.sin(radAngle);
-					sigx=eps[XXID];
-					sigy=eps[YYID];
-					sigxy=eps[XYID];
+					sigx=biot.get(0,0);
+					sigy=biot.get(1,1);
+					sigxy=2.*biot.get(0,1);
 					switch(component)
 					{   case PlotQuantity.MPMEPSX:
 							theValue=c*c*sigx + s*s*sigy - c*s*sigxy;
@@ -438,26 +443,43 @@ public class MaterialPoint
 							break;
 					}
 				}
+				theValue *= doc.units.strainScale();
 				break;
+			}
 				
 			case PlotQuantity.MPMEPSZ:
-				theValue=eps[ZZID];
+			{	Matrix3 biot = getElasticStrain(doc);
+				theValue=biot.get(1,1)*doc.units.strainScale();
 				break;
+			}
+		
+			case PlotQuantity.MPMEPSXZ:
+			{	Matrix3 biot = getElasticStrain(doc);
+				theValue=2.*biot.get(0,2)*doc.units.strainScale();
+				break;
+			}
+		
+			case PlotQuantity.MPMEPSYZ:
+			{	Matrix3 biot = getElasticStrain(doc);
+				theValue=2.*biot.get(1,2)*doc.units.strainScale();
+				break;
+			}
 		
 			// Plastic Strains
 			case PlotQuantity.MPMPLEPSX:
 			case PlotQuantity.MPMPLEPSY:
 			case PlotQuantity.MPMPLEPSXY:
+			{	Matrix3 biot = getPlasticStrain(doc);
 				if(angle==0.)
 				{   switch(component)
 					{   case PlotQuantity.MPMPLEPSX:
-							theValue=eplast[XXID];
+							theValue=biot.get(0,0);
 							break;
 						case PlotQuantity.MPMPLEPSY:
-							theValue=eplast[YYID];
+							theValue=biot.get(1,1);
 							break;
 						case PlotQuantity.MPMPLEPSXY:
-							theValue=eplast[XYID];
+							theValue=2.*biot.get(0,1);
 							break;
 						default:
 							break;
@@ -467,9 +489,9 @@ public class MaterialPoint
 				{   radAngle=Math.PI*angle/180.;
 					c=Math.cos(radAngle);
 					s=Math.sin(radAngle);
-					sigx=eplast[XXID];
-					sigy=eplast[YYID];
-					sigxy=eplast[XYID];
+					sigx=biot.get(0,0);
+					sigy=biot.get(1,1);
+					sigxy=2.*biot.get(0,1);
 					switch(component)
 					{   case PlotQuantity.MPMPLEPSX:
 							theValue=c*c*sigx + s*s*sigy - c*s*sigxy;
@@ -482,26 +504,43 @@ public class MaterialPoint
 							break;
 					}
 				}
+				theValue *= doc.units.strainScale();
 				break;
+			}
 				
 			case PlotQuantity.MPMPLEPSZ:
-				theValue=eplast[ZZID];
+			{	Matrix3 biot = getPlasticStrain(doc);
+				theValue=biot.get(1,1)*doc.units.strainScale();
 				break;
+			}
 			
-				// Strains
+			case PlotQuantity.MPMPLEPSXZ:
+			{	Matrix3 biot = getPlasticStrain(doc);
+				theValue=2.*biot.get(0,2)*doc.units.strainScale();
+				break;
+			}
+			
+			case PlotQuantity.MPMPLEPSYZ:
+			{	Matrix3 biot = getPlasticStrain(doc);
+				theValue=2.*biot.get(1,2)*doc.units.strainScale();
+				break;
+			}
+			
+			// Strains
 			case PlotQuantity.MPMEPSTOTX:
 			case PlotQuantity.MPMEPSTOTY:
 			case PlotQuantity.MPMEPSTOTXY:
+			{	Matrix3 biot = getBiotStrain(doc);
 				if(angle==0.)
 				{   switch(component)
 					{   case PlotQuantity.MPMEPSTOTX:
-							theValue=eps[XXID]+eplast[XXID];
+							theValue=biot.get(0,0);
 							break;
 						case PlotQuantity.MPMEPSTOTY:
-							theValue=eps[YYID]+eplast[YYID];
+							theValue=biot.get(1,1);
 							break;
 						case PlotQuantity.MPMEPSTOTXY:
-							theValue=eps[XYID]+eplast[XYID];
+							theValue=2.*biot.get(0,1);
 							break;
 						default:
 							break;
@@ -511,9 +550,9 @@ public class MaterialPoint
 				{   radAngle=Math.PI*angle/180.;
 					c=Math.cos(radAngle);
 					s=Math.sin(radAngle);
-					sigx=eps[XXID]+eplast[XXID];
-					sigy=eps[YYID]+eplast[YYID];
-					sigxy=eps[XYID]+eplast[XYID];
+					sigx=biot.get(0,0);
+					sigy=biot.get(1,1);
+					sigxy=2.*biot.get(0,1);
 					switch(component)
 					{   case PlotQuantity.MPMEPSTOTX:
 							theValue=c*c*sigx + s*s*sigy - c*s*sigxy;
@@ -526,12 +565,36 @@ public class MaterialPoint
 							break;
 					}
 				}
+				theValue *= doc.units.strainScale();
 				break;
+			}
 				
 			case PlotQuantity.MPMEPSTOTZ:
-				theValue=eps[ZZID]+eplast[ZZID];
+				if(doc.is3D())
+				{	Matrix3 biot = getBiotStrain(doc);
+					theValue = biot.get(0,0)*doc.units.strainScale();
+				}
+				else
+				{	// 2D only
+					if(doc.materials.get(materialIndex()).hasPlasticStrainForGradient(doc))
+						theValue=eps[ZZID]+eplast[ZZID];
+					else
+						theValue=eps[ZZID];
+				}
 				break;
 		
+			case PlotQuantity.MPMEPSTOTXZ:
+			{	Matrix3 biot = getBiotStrain(doc);
+				theValue = 2.*biot.get(0,2)*doc.units.strainScale();
+				break;
+			}
+				
+			case PlotQuantity.MPMEPSTOTYZ:
+			{	Matrix3 biot = getBiotStrain(doc);
+				theValue = 2.*biot.get(1,2)*doc.units.strainScale();
+				break;
+			}
+				
 			// Energy (totals are getting this point only)
 			case PlotQuantity.MPMTOTENERGY:
 			case PlotQuantity.MPMENERGY:
@@ -543,8 +606,7 @@ public class MaterialPoint
 			case PlotQuantity.MPMTOTKINENERGY:
 			case PlotQuantity.MPMKINENERGY:
 				if(component==PlotQuantity.MPMKINENERGY || component==PlotQuantity.MPMTOTKINENERGY) theValue=0.;
-				// mass in g, vel in mm/msec (once converted by current scales) -> Joules
-				theValue+=0.5e-3*mass*(velx*velx+vely*vely)*doc.timeScale/doc.lengthScale;
+				theValue+=0.5*mass*(velx*velx+vely*vely)*doc.units.calcVelocityScale();
 				break;
 			
 			case PlotQuantity.MPMTOTWORKENERGY:
@@ -573,6 +635,9 @@ public class MaterialPoint
 			case PlotQuantity.MPMVELY:
 				theValue=vely;
 				break;
+			case PlotQuantity.MPMVELZ:
+				theValue=velz;
+				break;
 			
 			// Displacements
 			case PlotQuantity.MPMDISPX:
@@ -580,6 +645,9 @@ public class MaterialPoint
 				break;
 			case PlotQuantity.MPMDISPY:
 				theValue=y-origy;
+				break;
+			case PlotQuantity.MPMDISPZ:
+				theValue=y-origz;
 				break;
 			
 			// Position and angle
@@ -590,6 +658,12 @@ public class MaterialPoint
 			case PlotQuantity.MPMANGLEZ:
 				theValue=angleZ;
 				break;
+			case PlotQuantity.MPMANGLEY:
+				theValue=angleY;
+				break;
+			case PlotQuantity.MPMANGLEX:
+				theValue=angleX;
+				break;
 			
 			case PlotQuantity.MPMPOSX:
 				theValue=x;
@@ -599,12 +673,8 @@ public class MaterialPoint
 				theValue=y;
 				break;
 			
-			// shear components
-			case PlotQuantity.MPMDUDY:
-				theValue=dudy;
-				break;
-			case PlotQuantity.MPMDVDX:
-				theValue=dvdx;
+			case PlotQuantity.MPMPOSZ:
+				theValue=z;
 				break;
 			
 			// concentration
@@ -616,6 +686,9 @@ public class MaterialPoint
 				break;
 			case PlotQuantity.MPMDCDX:
 				theValue=dcdx;
+				break;
+			case PlotQuantity.MPMDCDZ:
+				theValue=dcdz;
 				break;
 			
 			// histrory variables
@@ -738,5 +811,176 @@ public class MaterialPoint
 		sizeY = sy;
 		sizeZ = sz;
 	}
+	
+	// get biot strain from total strain in biot matrix
+	public Matrix3 getBiotStrain(ResultsDocument doc)
+	{	Matrix3 F = getDeformationGradient(doc);
+		Matrix3 biot = F.LeftDecompose(null);
+		biot.set(0,0,biot.get(0,0)-1.);
+		biot.set(1,1,biot.get(1,1)-1.);
+		biot.set(2,2,biot.get(2,2)-1.);
+		return biot;
+	}
+	
+	// get biot elastic strain tensor from total strain and maybe needs plastic strain too
+	public Matrix3 getElasticStrain(ResultsDocument doc)
+	{	Matrix3 biot;
+		if(doc.materials.get(materialIndex()).AltStrainContains()==MaterialBase.ENG_BIOT_PLASTIC_STRAIN)
+		{	// elastic strain = total strain minus plastic strain
+			biot = getBiotStrain(doc);
+			double scale = 1./doc.units.strainScale();
+			biot.set(0,0,biot.get(0,0)-scale*eplast[XXID]);
+			biot.set(1,1,biot.get(1,1)-scale*eplast[YYID]);
+			biot.set(2,2,biot.get(2,2)-scale*eplast[ZZID]);
+			biot.set(0,1,biot.get(0,1)-0.5*scale*eplast[XYID]);
+			biot.set(1,0,biot.get(0,1));
+			if(doc.is3D())
+			{	biot.set(0,2,biot.get(0,2)-0.5*scale*eplast[XZID]);
+				biot.set(2,0,biot.get(0,2));
+				biot.set(1,2,biot.get(1,2)-0.5*scale*eplast[YZID]);
+				biot.set(2,1,biot.get(1,2));
+			}
+		}
+		else if(doc.materials.get(materialIndex()).AltStrainContains()==MaterialBase.LEFT_CAUCHY_ELASTIC_B_STRAIN)
+		{	// get elastic strain from elastic B
+			biot = getElasticStrainFromB(doc);
+		}
+		else
+		{	// elastic strain = total strain
+			biot = getBiotStrain(doc);
+		}
+		return biot;
+	}
+	
+	// get biot plastic strain tensor from plastic strain or from elastic and plastis
+	// zero if not archived or not plastic strain
+	public Matrix3 getPlasticStrain(ResultsDocument doc)
+	{	Matrix3 biot;
+		if(doc.materials.get(materialIndex()).AltStrainContains()==MaterialBase.ENG_BIOT_PLASTIC_STRAIN)
+		{	// plastic strain all ready
+			double scale = 1./doc.units.strainScale();
+			biot = new Matrix3();
+			biot.set(0,0,scale*eplast[XXID]);
+			biot.set(1,1,scale*eplast[YYID]);
+			biot.set(0,0,scale*eplast[XYID]);
+			biot.set(0,1,0.5*scale*eplast[XYID]);
+			biot.set(1,0,biot.get(0,1));
+			if(doc.is3D())
+			{	biot.set(0,2,0.5*scale*eplast[XZID]);
+				biot.set(2,0,biot.get(0,2));
+				biot.set(1,2,0.5*scale*eplast[YZID]);
+				biot.set(2,1,biot.get(1,2));
+			}
+		}
+		else if(doc.materials.get(materialIndex()).AltStrainContains()==MaterialBase.LEFT_CAUCHY_ELASTIC_B_STRAIN)
+		{	// plastic strain = total strain minus elastic strain (from B) (needs both)
+			biot = getBiotStrain(doc);
+			Matrix3 biotElast = getElasticStrainFromB(doc);
+			biot.subtract(biotElast);
+		}
+		else
+		{	// others have zero plastic strain
+			biot = new Matrix3();
+		}
+		return biot;
+	}
+	
+	// get elastic biot strain tensor from elastic B tensor
+	public Matrix3 getElasticStrainFromB(ResultsDocument doc)
+	{
+		// Get sqrt(B)
+		double scale = 1./doc.units.strainScale();
+		Matrix3 B = null;
+		Vector3d lam = null;
+		if(doc.is3D())
+		{	B = new Matrix3(scale*eplast[XXID],scale*eplast[XYID],scale*eplast[XZID],
+				scale*eplast[XYID],scale*eplast[YYID],scale*eplast[XZID],
+				scale*eplast[XZID],scale*eplast[XZID],scale*eplast[ZZID]);
+			lam = new Vector3d();		// 3D does not need precaculated eigenvalues
+		}
+		else
+		{	B = new Matrix3(scale*eplast[XXID],scale*eplast[XYID],scale*eplast[XYID],
+					scale*eplast[YYID],scale*eplast[ZZID]);
+			lam = B.Eigenvalues();		// 2D needs eigenvalue inputs
+		}
+		Matrix3 Q = B.Eigenvectors(lam);
+		
+		// put U = sqrt(B) in output matrix
+		Matrix3 biot = new Matrix3(Math.sqrt(lam.x),0.,0.,Math.sqrt(lam.y),Math.sqrt(lam.z));
+		biot.RMRT(Q);
+		
+		// Get rotation matrix
+		Matrix3 F = getDeformationGradient(doc);
+		Matrix3 R = new Matrix3();
+		F.LeftDecompose(R);
+		
+		// Rotate U to V and subtract I
+		biot.RMRT(R);
+		biot.set(0,0,biot.get(0,0)-1.);
+		biot.set(1,1,biot.get(1,1)-1.);
+		biot.set(2,2,biot.get(2,2)-1.);
+		
+		// release and done
+		return biot;
+	}
+
+	
+	// get deformation gradient
+	public Matrix3 getDeformationGradient(ResultsDocument resDoc)
+	{	Matrix3 F = new Matrix3();
+		double scale = 1./resDoc.units.strainScale();
+		
+		if(resDoc.is3D())
+		{	// tensorial rotational strain archives are found from rotation (zero if not archived)
+			double wxy,wxz,wyz;
+			wxy = Math.PI*(erot[0]-angleZ)/180.;			// 0.5(dv/dx-du/dy)
+			wxz = -Math.PI*(erot[1]-angleY)/180.;		// 0.5(dw/dx-du/dz)
+			wyz = Math.PI*(erot[2]-angleX)/180.;			// 0.5(dw/dy-dv/dz)
+			
+			if(resDoc.materials.get(materialIndex()).hasPlasticStrainForGradient(resDoc))
+			{	F.set(0,0,1.+scale*(eps[XXID]+eplast[XXID]));
+				F.set(0,1,0.5*scale*(eps[XYID]+eplast[XYID])-wxy);
+				F.set(0,2,0.5*scale*(eps[XZID]+eplast[XZID])-wxz);
+				F.set(1,0,0.5*scale*(eps[XYID]+eplast[XYID])+wxy);
+				F.set(1,1,1.+scale*(eps[YYID]+eplast[YYID]));
+				F.set(1,2,0.5*scale*(eps[YZID]+eplast[YZID])-wyz);
+				F.set(2,0,0.5*scale*(eps[XZID]+eplast[XZID])+wxz);
+				F.set(2,1,0.5*scale*(eps[YZID]+eplast[YZID])+wyz);
+				F.set(2,2,1.+scale*(eps[ZZID]+eplast[ZZID]));
+			}
+			else
+			{	F.set(0,0,1.+scale*eps[XXID]);
+				F.set(0,1,0.5*scale*eps[XYID]-wxy);
+				F.set(0,2,0.5*scale*eps[XZID]-wxz);
+				F.set(1,0,0.5*scale*eps[XYID]+wxy);
+				F.set(1,1,1.+scale*eps[YYID]);
+				F.set(1,2,0.5*scale*eps[YZID]-wyz);
+				F.set(2,0,0.5*scale*eps[XZID]+wxz);
+				F.set(2,1,0.5*scale*eps[YZID]+wyz);
+				F.set(2,2,1.+scale*eps[ZZID]);
+			}
+			F.setIs2D(false);
+
+		}
+		else
+		{	double wrot=Math.PI*(erot[0]-angleZ)/180.;
+			if(resDoc.materials.get(materialIndex()).hasPlasticStrainForGradient(resDoc))
+			{	F.set(0,0,1.+scale*(eps[MaterialPoint.XXID]+eplast[MaterialPoint.XXID]));
+				F.set(0,1,0.5*scale*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID]) - wrot);
+				F.set(1,0,0.5*scale*(eps[MaterialPoint.XYID]+eplast[MaterialPoint.XYID]) + wrot);
+				F.set(1,1,1.+scale*(eps[MaterialPoint.YYID]+eplast[MaterialPoint.YYID]));
+				F.set(2,2,1.+scale*(eps[MaterialPoint.ZZID]+eplast[MaterialPoint.ZZID]));
+			}
+			else
+			{	F.set(0,0,1.+scale*eps[MaterialPoint.XXID]);
+				F.set(0,1,0.5*scale*eps[MaterialPoint.XYID] - wrot);
+				F.set(1,0,0.5*scale*eps[MaterialPoint.XYID] + wrot);
+				F.set(1,1,1.+scale*eps[MaterialPoint.YYID]);
+				F.set(2,2,1.+scale*eps[MaterialPoint.ZZID]);
+			}
+		}
+		return F;
+	}
+
 
 }

@@ -60,10 +60,7 @@ public class ResultsDocument extends AbstractTableModel
 	public double totalEnergy;
 	
 	// units
-	public double lengthScale=1.0;			// mm
-	public String distU="mm";
-	public double timeScale=1.0;			// ms
-	public String timeU="ms";
+	public JNUnits units = new JNUnits();
 	
 	private int currentArchive;
 	
@@ -102,10 +99,28 @@ public class ResultsDocument extends AbstractTableModel
 		Scanner s,sline;
 		
 		//----------------------------------------------------------
+		// Header
+		String header=section("TITLE");
+		String fileUnits = "_none_";
+		try
+		{	s=new Scanner(header);
+			s.useDelimiter("\\r\\n|\\n|\\r");
+			while(s.hasNext())
+			{	line = s.next();
+				if(line.startsWith("Units:"))
+				{	fileUnits = line.substring(7);
+					break;
+				}
+			}
+		}
+		catch(NoSuchElementException e)
+		{	throw new Exception("Could not read the header for this file");
+		}
+		units.setOutputUnits(fileUnits);
+		
+		//----------------------------------------------------------
 		// Expected number of nodes and elements
-		String summary=section("NODES AND ELEMENTS (Background Grid)");
-		if(summary.length()==0)
-			summary=section("NODES AND ELEMENTS");
+		String summary=section("NODES AND ELEMENTS");
 		int nnodes,nelems;
 		try
 		{	// get nodes and elements
@@ -161,10 +176,10 @@ public class ResultsDocument extends AbstractTableModel
 		
 		//----------------------------------------------------------
 		// Nodal Point Coordinates
-		String ndst=section("NODAL POINT COORDINATES (in mm)");
+		String ndst=section("NODAL POINT COORDINATES");
 		lineStart=findNextLine(ndst,"-----");
 		if(lineStart<0)
-			throw new Exception("Error decoding nodal point coordinates");
+			throw new Exception("Error: missing nodal point coordinates section");
 		s=new Scanner(ndst.substring(lineStart,ndst.length()-1));
 		s.useLocale(Locale.US);
 		int prevNodeNum=0,nodeNum;
@@ -172,9 +187,9 @@ public class ResultsDocument extends AbstractTableModel
 		if(is3D())
 		{	while(s.hasNextInt())
 			{	nodeNum=s.nextInt();
-				xpt=s.nextDouble()*lengthScale;
-				ypt=s.nextDouble()*lengthScale;
-				zpt=s.nextDouble()*lengthScale;
+				xpt=s.nextDouble()*units.lengthScale();
+				ypt=s.nextDouble()*units.lengthScale();
+				zpt=s.nextDouble()*units.lengthScale();
 				if(nodeNum!=prevNodeNum+1)
 				{	s.close();
 					throw new Exception("Some node numbers are missing");
@@ -186,8 +201,8 @@ public class ResultsDocument extends AbstractTableModel
 		else
 		{	while(s.hasNextInt())
 			{	nodeNum=s.nextInt();
-				xpt=s.nextDouble()*lengthScale;
-				ypt=s.nextDouble()*lengthScale;
+				xpt=s.nextDouble()*units.lengthScale();
+				ypt=s.nextDouble()*units.lengthScale();
 				if(nodeNum!=prevNodeNum+1)
 				{	s.close();
 					throw new Exception("Some node numbers are missing");
@@ -254,7 +269,7 @@ public class ResultsDocument extends AbstractTableModel
 					throw new Exception("Element type found ("+elemID+") that is not yet supported in this tool.");
 			}
 			
-			addElement(elemNum,elemID,nds,matID,elemAngle,elemThickness*lengthScale);
+			addElement(elemNum,elemID,nds,matID,elemAngle,elemThickness*units.lengthScale());
 			prevElemNum=elemNum;
 		}
 		s.close();
@@ -384,7 +399,7 @@ public class ResultsDocument extends AbstractTableModel
 					if(bcID==BoundaryCondition.FUNCTION_VALUE && !s.hasNextInt())
 						s.next();
 					
-					addGridBC(nodeNum,dof,bcID,bcVal*lengthScale,bcArg*timeScale,bcAngle,bcAngle2);
+					addGridBC(nodeNum,dof,bcID,bcVal*units.lengthScale(),bcArg*units.altTimeScale(),bcAngle,bcAngle2);
 				}
 				else
 				{	bcVal=s.nextDouble();
@@ -401,7 +416,7 @@ public class ResultsDocument extends AbstractTableModel
 								bcAngle+=obj.getValue();
 						}
 					}
-					addGridBC(nodeNum,dof,bcID,bcVal*lengthScale,bcArg*timeScale,bcAngle,bcAngle2);
+					addGridBC(nodeNum,dof,bcID,bcVal*units.lengthScale(),bcArg*units.altTimeScale(),bcAngle,bcAngle2);
 				}
 			}
 		}
@@ -424,7 +439,9 @@ public class ResultsDocument extends AbstractTableModel
 					bcArg=s.nextDouble();
 					if(bcID==BoundaryCondition.FUNCTION_VALUE)
 						s.next();
-					addParticleBC(nodeNum,dof,0,bcID,bcLoad,bcArg);
+					
+					// value not scaled, but current not visualizes
+					addParticleBC(nodeNum,dof,0,bcID,bcLoad,bcArg*units.altTimeScale());
 				}
 			}
 			
@@ -444,7 +461,7 @@ public class ResultsDocument extends AbstractTableModel
 					bcArg=s.nextDouble();
 					if(bcID==BoundaryCondition.FUNCTION_VALUE)
 						s.next();
-					addParticleBC(nodeNum,dof,bcFace,bcID,bcLoad,bcArg);
+					addParticleBC(nodeNum,dof,bcFace,bcID,bcLoad,bcArg*units.altTimeScale());
 				}
 			}
 			
@@ -473,19 +490,19 @@ public class ResultsDocument extends AbstractTableModel
 				sline.useDelimiter("[ :]");
 				sline.useLocale(Locale.US);
 				if(sline.hasNextDouble())
-					xscale=sline.nextDouble()*lengthScale;
+					xscale=sline.nextDouble()*units.lengthScale();
 				else
 					xscale=1.;
 				if(sline.hasNext()) sline.next();
 				if(sline.hasNext()) sline.next();
 				if(sline.hasNextDouble())
-					yscale=sline.nextDouble()*lengthScale;
+					yscale=sline.nextDouble()*units.lengthScale();
 				else
 					yscale=xscale;
 				if(is3D())
 				{	if(sline.hasNext()) sline.next();
 					if(sline.hasNextDouble())
-						zscale=sline.nextDouble()*lengthScale;
+						zscale=sline.nextDouble()*units.lengthScale();
 					else
 						zscale=xscale;
 					if(zscale<xscale && zscale<yscale)
@@ -546,6 +563,7 @@ public class ResultsDocument extends AbstractTableModel
 					//		bcAngle+=obj.getValue();
 					//}
 					
+					// value not scaled, but not currently visualized
 					addNodalLoadBC(nodeNum,dof,bcLoad,bcAngle);
 				}
 			}
@@ -554,7 +572,7 @@ public class ResultsDocument extends AbstractTableModel
 		//---------------------------------------------------------------
 		// element face stresses (FEA)
 		if(isFEAAnalysis())
-		{	bcs=section("FACES WITH APPLIED STRESS (MPa)");
+		{	bcs=section("FACES WITH APPLIED STRESS");
 			lineStart=findNextLine(bcs,"-----");
 			if(lineStart>0 && lineStart<bcs.length())
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
@@ -576,6 +594,8 @@ public class ResultsDocument extends AbstractTableModel
 						str3=s.nextDouble();
 					else
 						str3=0.;
+					
+					// stress not scaled, but currently not visualized
 					addElementBC(elemNum,face,orient,str1,str2,str3);
 				}
 			}
@@ -675,7 +695,7 @@ public class ResultsDocument extends AbstractTableModel
 				words=line.trim().split(" +");
 				if(words.length<3) continue;
 				Double atime=new Double(words[1]);
-				addArchiveFile(atime.doubleValue()*timeScale,words[2]);
+				addArchiveFile(atime.doubleValue()*units.altTimeScale(),words[2]);
 			}
 			s.close();
 			
@@ -721,7 +741,7 @@ public class ResultsDocument extends AbstractTableModel
 		// FEA specific reslts
 		if(isFEAAnalysis())
 		{	// FEA nodal displacements
-			bcs=section("NODAL DISPLACEMENTS (in mm)");
+			bcs=section("NODAL DISPLACEMENTS");
 			lineStart=findNextLine(bcs,"-----");
 			if(lineStart>0 && lineStart<bcs.length())
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
@@ -735,8 +755,8 @@ public class ResultsDocument extends AbstractTableModel
 						throw new Exception("Found nodal displacement with unexpected node number.");
 					}
 					anode=nodes.get(numFound-1);
-					anode.dispx=s.nextDouble()*lengthScale;
-					anode.dispy=s.nextDouble()*lengthScale;
+					anode.dispx=s.nextDouble()*units.lengthScale();
+					anode.dispy=s.nextDouble()*units.lengthScale();
 					dxmin=Math.min(dxmin,anode.x+anode.dispx);
 					dxmax=Math.max(dxmax,anode.x+anode.dispx);
 					dymin=Math.min(dymin,anode.y+anode.dispy);
@@ -750,7 +770,7 @@ public class ResultsDocument extends AbstractTableModel
 				elements.get(i).setElemPath(this,true);
 				
 			// FEA nodal stresses
-			bcs=section("AVERAGE NODAL STRESSES (in MPa)");
+			bcs=section("AVERAGE NODAL STRESSES");
 			lineStart=findNextLine(bcs,"-----");
 			if(lineStart>0 && lineStart<bcs.length())
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
@@ -764,17 +784,17 @@ public class ResultsDocument extends AbstractTableModel
 						throw new Exception("Found nodal displacement with unexpected node number.");
 					}
 					anode=nodes.get(numFound-1);
-					anode.sigxx=s.nextDouble();
-					anode.sigyy=s.nextDouble();
-					anode.sigzz=s.nextDouble();
-					anode.sigxy=s.nextDouble();
+					anode.sigxx=s.nextDouble()*units.feaStressScale();
+					anode.sigyy=s.nextDouble()*units.feaStressScale();
+					anode.sigzz=s.nextDouble()*units.feaStressScale();
+					anode.sigxy=s.nextDouble()*units.feaStressScale();
 				}
 				feaArchFormat[ReadArchive.ARCH_FEAAvgStress]='Y';
 				s.close();
 			}
 			
 			// FEA element energies
-			bcs=section("STRAIN ENERGIES IN ELEMENTS (in J)");
+			bcs=section("STRAIN ENERGIES IN ELEMENTS");
 			lineStart=findNextLine(bcs,"-----");
 			if(lineStart>0 && lineStart<bcs.length())
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
@@ -788,7 +808,7 @@ public class ResultsDocument extends AbstractTableModel
 						throw new Exception("Found element energy with unexpected element number.");
 					}
 					aelem=elements.get(elemNum-1);
-					aelem.energy=s.nextDouble();
+					aelem.energy=s.nextDouble()*units.energyScale();
 					totalEnergy += aelem.energy;
 				}
 				feaArchFormat[ReadArchive.ARCH_FEAElemEnergy]='Y';
@@ -796,7 +816,7 @@ public class ResultsDocument extends AbstractTableModel
 			}
 			
 			// NODAL FORCES AND ELEMENT STRESSES (FEA)
-			bcs=section("NODAL FORCES (in N) AND STRESSES (in MPa) IN EACH ELEMENT");
+			bcs=section("NODAL FORCES");
 			lineStart=findNextLine(bcs,"-----");
 			if(lineStart>0 && lineStart<bcs.length())
 			{	s=new Scanner(bcs.substring(lineStart,bcs.length()-1));
@@ -838,7 +858,8 @@ public class ResultsDocument extends AbstractTableModel
 						// read nodal forces
 						for(i=0;i<aelem.getNumberNodes();i++)
 						{	s.nextInt();			// skip node number
-							aelem.setForces(s.nextDouble(),s.nextDouble(),i);
+							aelem.setForces(s.nextDouble()*units.forceScale(),
+									s.nextDouble()*units.forceScale(),i);
 						}
 					}
 					
@@ -855,13 +876,19 @@ public class ResultsDocument extends AbstractTableModel
 							aelem=elements.get(elemNum-1);
 						}
 						
-						// read nodal forces
+						// read nodal stresses
 						for(i=0;i<aelem.getNumberNodes();i++)
 						{	s.nextInt();			// skip node number
 							if(word1.charAt(3)=='x' || word1.charAt(3)=='r')
-								aelem.setXYStresses(s.nextDouble(),s.nextDouble(),s.nextDouble(),i);
+							{	aelem.setXYStresses(s.nextDouble()*units.feaStressScale(),
+										s.nextDouble()*units.feaStressScale(),
+										s.nextDouble()*units.feaStressScale(),i);
+							}
 							else
-								aelem.set3DStresses(s.nextDouble(),s.nextDouble(),s.nextDouble(),i);
+							{	aelem.set3DStresses(s.nextDouble()*units.feaStressScale(),
+									s.nextDouble()*units.feaStressScale(),
+									s.nextDouble()*units.feaStressScale(),i);
+							}
 						}
 					}
 					
@@ -1113,15 +1140,17 @@ public class ResultsDocument extends AbstractTableModel
 		return sectionText.get(index);
 	}
 	
-	// return string of section by name of the section
+	// return string of section whose fill name starts with variable name
 	public String section(String name)
 	{   int index;
 		for(index=0;index<sectionTitle.size();index++)
-		{	if(name.equals(sectionTitle.get(index)))
+		{	if(sectionTitle.get(index).startsWith(name))
 				return section(index);
 		}
 		return "";
 	}
+	
+	// return full name of a section
 	
 	// set name of the mpm file
 	public void setName(File mpmFile)
@@ -1433,7 +1462,7 @@ public class ResultsDocument extends AbstractTableModel
 			
 			// read segment
 			bb.position(offset);
-			seg.readRecord(bb,crackOrder,lengthScale,timeScale);
+			seg.readRecord(bb,crackOrder,units);
 			
 			// crack tip properties
 			switch(crkCmpnt)
@@ -1462,7 +1491,7 @@ public class ResultsDocument extends AbstractTableModel
 					{   offset+=recSize;
 						if(offset>lastoffset) break;
 						bb.position(offset);
-						seg.readRecord(bb,crackOrder,lengthScale,timeScale);
+						seg.readRecord(bb,crackOrder,units);
 						if(seg.startFlag==-1) break;
 						pt=seg.getMedianPosition();
 						double segLength=Math.sqrt((pt.x-lastPt.x)*(pt.x-lastPt.x) +
@@ -1511,7 +1540,7 @@ public class ResultsDocument extends AbstractTableModel
 							}
 						}
 						bb.position(tipOffset);
-						seg.readRecord(bb,crackOrder,lengthScale,timeScale);
+						seg.readRecord(bb,crackOrder,units);
 					}
 					
 					// not found in the crack (entire crack is traction law)
@@ -1544,7 +1573,7 @@ public class ResultsDocument extends AbstractTableModel
 					// read previous segment
 					offset = tipNum==CrackSelector.CRACK_START ? offset+recSize : offset-recSize;
 					bb.position(offset);
-					seg.readRecord(bb,crackOrder,lengthScale,timeScale);
+					seg.readRecord(bb,crackOrder,units);
 					lastPt=seg.getMedianPosition();
 					double dx=pt.x-lastPt.x;
 					double dy=pt.y-lastPt.y;

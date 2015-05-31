@@ -38,7 +38,7 @@ public class CrackSegment
 	// read record from and archive file into this material point
 	//---------------------------------------------------------------------
 	
-	public void readRecord(ByteBuffer bb,char[] crackOrder,double lengthScale,double timeScale)
+	public void readRecord(ByteBuffer bb,char[] crackOrder,JNUnits units)
 	{	// required elements
 		inElem[PLANE_POS]=bb.getInt()-1;			// in element number (zero based)
 		bb.position(bb.position()+8);				// skip empty double
@@ -46,22 +46,22 @@ public class CrackSegment
 		tractionMaterial=bb.getShort();				// >0 if traction law
 		
 		// position in length units
-		xpos[PLANE_POS]=bb.getDouble()*lengthScale;
-		ypos[PLANE_POS]=bb.getDouble()*lengthScale;
+		xpos[PLANE_POS]=bb.getDouble()*units.lengthScale();
+		ypos[PLANE_POS]=bb.getDouble()*units.lengthScale();
 		
 		// original position
-		xpos[ORIG_POS]=bb.getDouble()*lengthScale;
-		ypos[ORIG_POS]=bb.getDouble()*lengthScale;
+		xpos[ORIG_POS]=bb.getDouble()*units.lengthScale();
+		ypos[ORIG_POS]=bb.getDouble()*units.lengthScale();
 		
 		// above the crack
 		inElem[ABOVE_POS]=bb.getInt();
-		xpos[ABOVE_POS]=bb.getDouble()*lengthScale;
-		ypos[ABOVE_POS]=bb.getDouble()*lengthScale;
+		xpos[ABOVE_POS]=bb.getDouble()*units.lengthScale();
+		ypos[ABOVE_POS]=bb.getDouble()*units.lengthScale();
 		
 		// above the crack
 		inElem[BELOW_POS]=bb.getInt();
-		xpos[BELOW_POS]=bb.getDouble()*lengthScale;
-		ypos[BELOW_POS]=bb.getDouble()*lengthScale;
+		xpos[BELOW_POS]=bb.getDouble()*units.lengthScale();
+		ypos[BELOW_POS]=bb.getDouble()*units.lengthScale();
 		
 		// J1 and J2 in J/m^2
 		if(crackOrder[ReadArchive.ARCH_JIntegral]=='Y')

@@ -304,8 +304,8 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 				
 			// axis labels
 			if(plot2DView.getNumberOfPlots()<2)
-			{	plot2DView.setXTitle("Position ("+resDoc.distU+")");
-				plot2DView.setYTitle(PlotQuantity.plotLabel(component,resDoc.distU,resDoc.timeU));
+			{	plot2DView.setXTitle("Position ("+resDoc.units.lengthUnits()+")");
+				plot2DView.setYTitle(PlotQuantity.plotLabel(component,resDoc.units));
 			}
 		}
 	}
@@ -346,8 +346,8 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 			plot2DView.plotData(xb,yb,props);
 			
 			if(plot2DView.getNumberOfPlots()<3)
-			{	plot2DView.setXTitle("Position ("+resDoc.distU+")");
-				plot2DView.setYTitle("Position ("+resDoc.distU+")");
+			{	plot2DView.setXTitle("Position ("+resDoc.units.lengthUnits()+")");
+				plot2DView.setYTitle("Position ("+resDoc.units.lengthUnits()+")");
 			}
 		}
 		
@@ -445,9 +445,9 @@ public class XYPlotWindow extends TwoDPlotWindow implements Runnable
 			plot2DView.plotData(x,y,props);
 			
 			if(plot2DView.getNumberOfPlots()<2)
-			{	plot2DView.setXTitle("Distance ("+resDoc.distU+")");
+			{	plot2DView.setXTitle("Distance ("+resDoc.units.lengthUnits()+")");
 				if(component==PlotQuantity.MPMNORMALCTOD || component==PlotQuantity.MPMSHEARCTOD)
-					plot2DView.setYTitle("Crack Opening ("+resDoc.distU+")");
+					plot2DView.setYTitle("Crack Opening ("+resDoc.units.lengthUnits()+")");
 				else
 					plot2DView.setYTitle("Mode Fraction");
 			}

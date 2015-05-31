@@ -90,34 +90,33 @@ Let $\delta\vec u$ be a virtual displacement. Virtual work (or power) gives the 
 \section{Particle Basis Expansion}
 
 First, we expand $\rho\vec b$, $\rho \vec a$, and $\tens\sigma$ in a particle basis, where any function of $\vec x$ is written as:
-
 \begin{equation}
      f(\vec x) = \sum_p f_p \chi_p(\vec x)
 \end{equation}
-
-\noindent where $f_p$ is the value of the function on particle $p$ and $\chi_p(\vec x)$ is a particle basis function. The most common function is for $\chi_p(\vec x) =1$ inside the particle domain and $0$ outside the domain. The property expansions are:
+\noindent where $f_p$ is the value of the function on particle $p$ and $\chi_p(\vec x)$ is a particle basis function. The function integrates to
+total particle volume:
+\begin{equation}
+   V_p =  \int_V \chi_p(\vec x)\thinspace dV
+\end{equation}
+\noindent The most common function is for $\chi_p(\vec x) =1$ inside the particle domain and $0$ outside the domain, but any other function could be used (hence the using of the term ``Generalized''). The main particle property expansions are:
 
 \begin{eqnarray}
     \rho\vec b & = & \sum_p \rho_p \vec{b_p} \chi_p(\vec x) = \sum_p {m_p\over V_p} \vec{b_p}\chi_p(\vec x) \\
     \rho\vec a & = & \sum_p {m_p\over V_p} {d\vec{v_p}\over dt} \chi_p(\vec x) = \sum_p {\vec{\dot p_p}\over V_p} \chi_p(\vec x) \\
     \tens\sigma & = & \sum_p\tens\sigma_p \chi_p(\vec x)
 \end{eqnarray}
-where $m_p$ is particle mass, $V_p$ is current particle volume, $\vec{v_p}$ is particle velocity, $\vec{p_p}$ is particle momentum, and $\tens\sigma_p$ is particle stress. The particle force term (a useful MPM term), can be expanded as
+where $m_p$ is particle mass, $V_p$ is current particle volume, $\vec{v_p}$ is particle velocity, $\vec{p_p}$ is particle momentum, and $\tens\sigma_p$ is particle stress.
 
+To fit better in the analysis the external work caused by particle forces, can be expanded as work per unit volume spread out over the particle using
 \begin{equation}
-    \vec F_p = {\vec F_p\over V_p} \int_V \chi_p(\vec x)\thinspace dV
+    \vec {F_p} \cdot \delta\vec u =  \int_V {\vec {F_p} \cdot \delta\vec u\over V_p}\chi_F(\vec x)\thinspace dV
 \end{equation}
-
-\noindent This results is making used of normalized particle shape function such that:
-
-\begin{equation}
-   V_p =  \int_V \chi_p(\vec x)\thinspace dV
-\end{equation}
+where $\chi_F(\vec x)$ is another particle function. It need not be the same as $\chi_p(\vec x)$, but must also integrate to particle volume, $V_p$
 
 The new virtual work equation becomes:
 
 \begin{eqnarray}
-&&\sum_p \int_V {m_p\over V_p} \chi_p(\vec x)\vec{b_p}\cdot \delta\vec u\thinspace dV + \int_{S_T}\vec T \cdot \delta\vec u \thinspace dS + \sum_p \vec {\vec F_p\over V_p} \int_V \chi_p(\vec x) \cdot \delta\vec u\thinspace dV \\
+&&\sum_p \int_V {m_p\over V_p} \chi_p(\vec x)\vec{b_p}\cdot \delta\vec u\thinspace dV + \int_{S_T}\vec T \cdot \delta\vec u \thinspace dS + \sum_p \vec {\vec F_p\over V_p} \int_V \chi_F(\vec x) \cdot \delta\vec u\thinspace dV \\
     &&\qquad\qquad
     = \sum_p\int_V {\vec{\dot p_p}\over V_p} \chi_p(\vec x)\cdot \delta\vec u\thinspace dV +  \sum_p\int_V \tens\sigma_p \chi_p(\vec x) \cdot \nabla \delta\vec u\thinspace dV
 \end{eqnarray}
@@ -136,8 +135,8 @@ Next, we expand the virtual displacements in grid-based shape functions using:
    \sum_i\sum_p \int_V {m_p\over V_p} \chi_p(\vec x)\vec{b_p}\cdot \delta\vec{u_i} N_i(\vec x)\thinspace dV
     & = & \sum_i\sum_p S_{ip} m_p \vec b_p \cdot \delta\vec{u_i} \\
     \int_{S_T}\vec T \cdot \delta\vec u & = & \sum_i \delta\vec{u_i}\cdot \int_{S_T}\vec N_i(\vec x) \vec T \thinspace dS \\
-    \sum_i\sum_p \vec {\vec F_p\over V_p} \int_V \chi_p(\vec x) \cdot \delta\vec{u_i} N_i(\vec x)\thinspace dV
-    & = &  \sum_i\sum_p S_{ip} \vec F_p \cdot \delta\vec{u_i} \\
+    \sum_i\sum_p \vec {\vec F_p\over V_p} \int_V \chi_F(\vec x) \cdot \delta\vec{u_i} N_i(\vec x)\thinspace dV
+    & = &  \sum_i\sum_p F_{ip} \vec F_p \cdot \delta\vec{u_i} \\
    \sum_i \sum_p\int_V {\vec{\dot p_p}\over V_p} \chi_p(\vec x)\cdot \delta\vec{u_i} N_i(\vec x)\thinspace dV
    & = &  \sum_i\sum_p S_{ip} \vec{\dot p_p} \cdot \delta\vec{u_i} \\
    \sum_i\sum_p\int_V \tens\sigma_p \chi_p(\vec x) \cdot \delta\vec{u_i} \nabla N_i(\vec x)\thinspace dV
@@ -146,8 +145,10 @@ Next, we expand the virtual displacements in grid-based shape functions using:
 where the GIMP shape functions are:
 \begin{eqnarray}
      S_{ip} & = & {1\over V_p} \int_V \chi_p(\vec x) N_i(\vec x)\thinspace dV    \label{Sipdef} \\
+     F_{ip} & = & {1\over V_p} \int_V \chi_F(\vec x) N_i(\vec x)\thinspace dV  \\
      \vec G_{ip} & = & {1\over V_p} \int_V \chi_p(\vec x) \nabla N_i(\vec x)\thinspace dV   \label{Gipdef}
 \end{eqnarray}
+Two logical choices for $\chi_F(\vec x)$ are $\chi_F(\vec x) = \chi_p(\vec x)$, which leads to $F_{ip} = S_{ip}$ (and is the choice used below), or  $\chi_F(\vec x) = V_p\delta(\vec x-\vec x_p)$, which leads to $F_{ip} = N_i(\vec x_p)$
 
 The particle stress term can be revised to use particle mass as follows:
 \begin{equation}
@@ -166,7 +167,7 @@ where
 	 \vec f_i^{(n)} & = & \sum_p \left(-m_p{\tens\tau_p^{(n)}\cdot \vec G_{ip}^{(n)}\over \rho_0}  + m_p S_{ip}^{(n)}  \vec b_p +  \vec F_p^{(n)}S_{ip}^{(n)}\right) \\
 	 \vec f_{i,T}^{(n)} & = & \int_{S_T}\vec N_i(\vec x) \vec T \thinspace dS
 \end{eqnarray}
-where superscript $(n)$ has been added to mean terms calculated from the state of all particles at the start of time step $n$. Commonly the body force, $\vec b_p$, will be independent of the particle state ({\em e.g.,} gravity, which is a constant, or a general body force that depends only on position and time and not particle state). When that holds, it can be removed from the sum. The total internal force them becomes
+where superscript $(n)$ has been added to mean terms calculated from the state of all particles at the start of time step $n$. Commonly the body force, $\vec b_p$, will be independent of the particle state ({\em e.g.,} gravity, which is a constant, or a general body force that depends only nodal position and time and not on particle state). When that holds, it can be removed from the sum. The total internal force them becomes
 \begin{equation}
 	 \vec f_i^{(n)} = \sum_p \left(-m_p{\tens\tau_p^{(n)}\cdot \vec G_{ip}^{(n)}\over \rho_0}  +  \vec F_p^{(n)}S_{ip}^{(n)}\right)  + m_i^{(n)}\vec b(\vec x_i,t) 
 	 \label{fidef}
@@ -331,150 +332,6 @@ The final updates are the same as above except when coding
    \vec{a}_* & = & \vec{a}_{g\to p}^{**(n)} + \alpha_{PIC}\vec{v}_{g\to p}^{(n)} 
 \end{eqnarray}
 
-\subsection{Momentum Approach to Strain and Particle Updates}
-
-\subsubsection{Incremental Displacement Gradient}
-
-For strain updates, the algorithm needs to evaluate the spatial velocity gradient, $\nabla \vec v(x,t)$, and use that to find the incremental deformation gradient, $\tens{dF}$, defined by
-\begin{equation}
-     \tens{dF}^{(n)} = \exp(\nabla \vec v \Delta t)
-\end{equation}
-which assumes $\nabla \vec v$ is constant over the time step. The gradient is found by extrapolating spatial velocity on the grid:
-\begin{equation}
-    \nabla \vec v = {\sum_i \vec G_{ip} \otimes \vec p_i^{(n)}  \over \sum_i S_{ip} m_i^{(n)} }
-\end{equation}
-
-\subsubsection{Particle Updates with Damping}
-
-In each time step, the Eulerian update on the grid is used to update the Lagrangian momenta and positions on the particles, and it is useful to include damping options in both the grid and particle updates. Two global damping strategies are to add damping terms proportional to either the grid momentum or the particle momentum. In most cases, these two approaches to damping should have similar results. By including them both, however, it is possible to propose several different types of damping schemes. If damping is based on grid momentum, then the nodal momentum update changes to:
-\begin{equation}
-     p_i^{*(n+1)} = p_i^{(n)} +  \vec f_i^{*(n)}\Delta t
-\end{equation}
-where ``*'' indicates a term that is revised to including damping affects in this time step. The effective nodal force is
-\begin{equation}
-    \vec f_i^{*(n)} = {\vec p_i^{*(n+1)}-\vec p_i^{(n)}\over \Delta t}
-         =  \bigl(\vec f_{i}^{(n)} + \vec f_{i,T}^{(n)}\bigr) - \alpha_g(t)\vec p_i^{(n)} 
-\end{equation}
-where $\alpha_g(t)$ is the grid damping constant (with units 1/sec) that applies to all nodes (\emph{i.e.}, independent of $\vec x_i$), but may evolve in time (such as a kinetic energy thermostat). See below for how to deal with position-dependent damping.
-
-We can write two updates for the particles --- a FLIP update that increments particle momentum using forces extrapolated to the grid and a PIC update that extrapolates momentum directly to the particle. After adding a particle damping constant, $\alpha_p(t)$, these two updates become:
-\begin{eqnarray}
-      \vec{p}_{p,FLIP}^{(n+1)}  & = & \vec{p}_p^{(n)} + \bigl(\vec{f}_{g\to p}^{*(n)}  -  \alpha_p(t)\vec{p}_p^{(n)} \bigr)\Delta t   \\
-      \vec{p}_{p,PIC}^{(n+1)}  & = & \vec p_{g\to p}^{*(n+1)} - \alpha_p(t)\vec{p}_p^{(n)}\Delta t
-           = \vec p_{g\to p}^{(n)} + \bigl(\vec{f}_{g\to p}^{*(n)}  -  \alpha_p(t)\vec{p}_p^{(n)}\bigr)\Delta t 
-\end{eqnarray}
-where $\vec{f}_{g\to p}^{*(n)}$ is effective force extrapolated from the grid to the particle:
-\begin{equation}
-    \vec{f}_{g\to p}^{*(n)} = \sum_i  \vec f_i^{*(n)} S_{ip}^{(n)} = \vec{f}_{g\to p}^{(n)} -  \alpha_g(t)\vec p_{g\to p}^{(n)}   
-\end{equation}
-and
-\begin{equation}
-    \vec{f}_{g\to p}^{(n)} = \sum_i \bigl(\vec f_i^{(n)} + \vec f_{i,T}^{(n)}\bigr) S_{ip}^{(n)}    
-    \qquad {\rm and}\qquad \vec p_{g\to p}^{(n)} = \sum_i  \vec p_i^{(n)} S_{ip}^{(n)}
-\end{equation}
-The extrapolated mometa are
-\begin{eqnarray}
-      \vec p_{g\to p}^{*(n+1)} & = & \sum_i  \vec p_i^{*(n+1)} S_{ip}^{(n)}
-       = \vec p_{g\to p}^{(n+1)} - \alpha_g(t)\vec p_{g\to p}^{(n)}\Delta t  = \vec p_{g\to p}^{(n)} + \vec{f}_{g\to p}^{*(n)}\Delta t  \\ 
-       \vec p_{g\to p}^{(n+1)} & = & 
-          \sum_i  \left(\vec p_i^{(n)} +\bigl(\vec f_{i}^{(n)} + \vec f_{i,T}^{(n)}\bigr)\Delta t\right) S_{ip}^{(n)} 
-          = \vec p_{g\to p}^{(n)} + \vec{f}_{g\to p}^{(n)}\Delta t  \label{pvgpJump}
-\end{eqnarray}
-Both damping strategies can be done entirely within the particle update. The two methods can be used individually or combined. Because grid and particle momenta should be similar, the total damping constant is $\alpha(t)=\alpha_g(t)+\alpha_p(t)$.
-
-Next, the MPM position update with damping is found by integrating the extrapolated velocity over the time step, which comes from PIC momentum, by the midpoint rule:
-\begin{eqnarray}
-        \vec{x}_p^{(n+1)} & = & \vec{x}_p^{(n)} + \int_0^{\Delta t} {\vec p_{p,PIC}^{(n+1)}(\Delta t=t)\over m_{g\to p}^{(n)}}
-         \thinspace dt \approx \vec{x}_p^{(n)} 
-         + {1\over 2m_{g\to p}^{(n)}}\left(\vec p_{g\to p}^{(n)}+\vec p_{p,PIC}^{(n+1)}\right) \Delta t \\
-         & = & \vec{x}_p^{(n)} + {\vec p_{g\to p}^{(n)}\over m_{g\to p}^{(n)}}\Delta t 
-            + {1\over 2 m_{g\to p}^{(n)}} \bigl(\vec{f}_{g\to p}^{*(n)}  -  \alpha_p(t)\vec{p}_p^{(n)}\bigr)(\Delta t)^2 
-\end{eqnarray}
-This update along with the FLIP momentum update (which is the one that should be used) can be written as:
-\begin{eqnarray}
-   \vec{x}_{p}^{(n+1)} & = & \vec{x}_p^{(n)} + {\vec p_{g\to p}^{*(n+1)}\over m_{g\to p}^{(n)}}\Delta t 
-       - {1 \over 2m_{g\to p}^{(n)}}\bigl(\vec{f}_{g\to p}^{*(n)} +  \alpha_p(t)\vec p_p^{(n)} \bigr)(\Delta t)^2 \\
-   \vec{p}_{p}^{(n+1)} & = & \vec{p}_p^{(n)} +  \bigl(\vec{f}_{g\to p}^{*(n)} -  \alpha_p(t)\vec p_p^{(n)} \bigr)\Delta t
-\end{eqnarray}
-
-It is interesting to redefine the grid and particle damping terms using:
-\begin{equation}
-     \alpha_g(t) \to -{1-\beta\over\Delta t} + \alpha_g' \qquad{\rm and}\qquad \alpha_p(t) \to {1-\beta\over\Delta t} + \alpha_p'
-     \label{pPICDamping}
-\end{equation}
-The time dependence of primed damping terms have been dropped, but they can all still depend on time. 
-By unraveling all effective terms, the net updates become
-\begin{eqnarray}
-   \vec{x}_{p}^{(n+1)} & = & \vec{x}_p^{(n)} +{\vec p_{g\to p}^{(n+1)}\over m_{g\to p}^{(n)}}\Delta t
-       - {\bigl(\vec{f}_{g\to p}^{(n)} + \alpha_{PIC}(\beta)\bigl(\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}\bigr) +
-        \alpha_g'\vec p_{g\to p}^{(n)}+  \alpha_p'\vec p_p^{(n)} \bigr)(\Delta t)^2\over 2m_{g\to p}^{(n)}}  \\
-   \vec{p}_{p}^{(n+1)} & = & \vec{p}_p^{(n)} + \bigl(\vec{f}_{g\to p}^{(n)} - \alpha_{PIC}(\beta)\bigl(\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}\bigr)
-         -  \alpha_g\vec{p}_{g\to p}^{(n)} -  \alpha_p'\vec{p}_p^{(n)} \bigr)\Delta t 
-\end{eqnarray}
-The ``PIC Damping'' term is
-\begin{equation}
-       \alpha_{PIC}(\beta) = {1-\beta\over \Delta t}
-\end{equation}
-It is called PIC damping, because in the absence of other damping terms ($\alpha_g'=\alpha_p'=0$), the momentum update becomes
-\begin{equation}
-   \vec{p}_{p}^{(n+1)} = \vec{p}_p^{(n)}  - (1-\beta)\bigl(\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}\bigr)
-         + \vec{f}_{g\to p}^{(n)}\Delta t 
-\end{equation}
-If $\beta=1$, the update is an undamped FLIP update. If $\beta=0$, the update is an undamped, PIC update. Thus $\beta$ can be interpreted as the fraction FLIP in the momentum update. But the above analysis was formally all a FLIP analysis. A better interpretation is that $\beta$ adds an new form of artificial damping that is proportional to the inversion error between the particle momentum and the grid momentum extrapolated to the particle ($\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}$). The net damping effect will be to damp out this error.
-
-There are two approaches to coding updates with damping. First, it can be done entirely within the particle update task. The input to this task from  the nodes will be $p_i^{(n+1)}$ (which will have replaced $p_i^{(n)}$ in the momentum update), $ \vec f_{i}^{(n)} + \vec f_{i,T}^{(n)}$, and  $m_i^{(n)}$. We can define two new effective terms
-\begin{eqnarray}
-    \vec{f}_{g\to p}^{(n)'} & = &  \vec{f}_{g\to p}^{(n)} - \alpha_{PIC}(\beta)\bigl(\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}\bigr)
-         -  \alpha_g'\vec{p}_{g\to p}^{(n)} -  \alpha_p'\vec{p}_p^{(n)} \\
-         & = & \vec{f}_{g\to p}^{(n)} -  \alpha_g(t)\vec{p}_{g\to p}^{(n)} -  \alpha_p(t)\vec{p}_p^{(n)}  \\
-    \vec p_{g\to p}^{(n+1)'} & = & \vec p_{g\to p}^{(n+1)} - \biggl(\alpha_{PIC}(\beta)\bigl(\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}\bigr)
-         +  \alpha_g'\vec{p}_{g\to p}^{(n)} + \alpha_p'\vec{p}_p^{(n)}\biggr)\Delta t \\
-         & = & \vec p_{g\to p}^{(n+1)} - \biggl( \alpha_g(t)\vec{p}_{g\to p}^{(n)} + \alpha_p(t)\vec{p}_p^{(n)}\biggr)\Delta t
-\end{eqnarray}
-where $\vec p_{g\to p}^{(n)}$ is found from available input properties using
-\begin{equation}
- \vec p_{g\to p}^{(n)}  =  \vec p_{g\to p}^{(n+1)}  - \vec{f}_{g\to p}^{(n)}\Delta t
-\end{equation}
-The final updates become
-\begin{eqnarray}
-   \vec{x}_{p}^{(n+1)} & = & \vec{x}_p^{(n)} + {\vec p_{g\to p}^{(n+1)'}\over m_{g\to p}^{(n)}} \Delta t 
-      - {\vec{f}_{g\to p}^{(n)'}\over 2m_{g\to p}^{(n)}}(\Delta t)^2  \\
-   \vec{p}_{p}^{(n+1)} & = & \vec{p}_p^{(n)} + \vec{f}_{g\to p}^{(n)'}\Delta t 
-\end{eqnarray}
-which are standard position and momentum updates to second order in position. Notice that it was important to keep the second order term on the position update in order to end up with consistent definitions for extrapolated momentum and force. In object oriented code, the grid damping is added in the update particles task, but the particle damping is not added until calling the material point class. Separating them out gives
-\begin{eqnarray}
-   \vec{x}_{p}^{(n+1)} & = & \vec{x}_p^{(n)} +{\bigl(\vec p_* - \alpha_p(t)\vec{p}_p^{(n)}\Delta t\bigr)\Delta t \over m_{g\to p}^{(n)}}- {1\over 2}{\bigl(\vec{a}_* -  \alpha_p(t)\vec{v}_p^{(n)} \bigr)(\Delta t)^2 \over m_{g\to p}^{(n)}} \\
-      & = & \vec{x}_p^{(n)} +{\Delta t\over m_{g\to p}^{(n)}}\left(\vec p_* - {\Delta t\over 2}\bigl(\vec{f}_* +  \alpha_p(t)\vec{p}_p^{(n)} \bigr)\right)  \\
-   \vec{p}_{p}^{(n+1)} & = & \vec{p}_p^{(n)} +\bigl(\vec{f}_* -  \alpha_p(t)\vec{p}_p^{(n)} \bigr)\Delta t 
-           =  \vec{p}_p^{(n)}\bigl(1 -  \alpha_p(t)\Delta t \bigr)  + \vec{f}_* \Delta t
-\end{eqnarray}
-where
-\begin{eqnarray}
-   \vec{p}_*& = & \vec p_{g\to p}^{(n+1)} -  \alpha_g(t)\vec{p}_{g\to p}^{(n)}\Delta t   \\
-   \vec{f}_* & = & \vec{f}_{g\to p}^{(n)} -  \alpha_g(t)\vec{p}_{g\to p}^{(n)} 
-\end{eqnarray}
-The position update must be called first, because it needs $\vec{p}_p^{(n)}$, which is changed in the momentum update.
-
-When all damping is done in the particle updates (as is possible from above equations), it is possible that damping will affect other sections of the code that use nodal momentum or force, such as contact, differently. To avoid these effects (if they matter), a second approach would be to apply the grid damping to the force calculation. But, when PIC damping is used, this could cause very unrealistic forces (because that term can be large when $\Delta t$ is small). A potential solution is to apply only $\alpha_g'$ to force calculations and then apply PIC damping during the particle updates. At the time of the particle update, the nodal input values would be
-\begin{eqnarray}
-    \vec f_i^{**(n)} & = & \vec f_{i}^{(n)} + \vec f_{i,T}^{(n)} - \alpha_g'\vec p_i^{(n)} \\
-    \vec p_i^{**(n+1)} & = &  p_i^{(n)} +  \vec f_i^{**(n)}\Delta t 
-\end{eqnarray}
-The effective terms become
-\begin{eqnarray}
-    \vec{f}_{g\to p}^{(n)'} & = &  \vec{f}_{g\to p}^{**(n)} - \alpha_{PIC}(\beta)\bigl(\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}\bigr) -   \alpha_p'\vec{p}_p^{(n)} \\
-    \vec p_{g\to p}^{(n+1)'} & = & \vec p_{g\to p}^{**(n+1)} - \biggl(\alpha_{PIC}(\beta)\bigl(\vec p_p^{(n)}-\vec p_{g\to p}^{(n)}\bigr)  + \alpha_p'\vec{p}_p^{(n)}\biggr)\Delta t 
-\end{eqnarray}
-where $\vec p_{g\to p}^{(n)}$ is found from available input properties using
-\begin{equation}
- \vec p_{g\to p}^{(n)}  =  \vec p_{g\to p}^{**(n+1)}  - \vec{f}_{g\to p}^{**(n)}\Delta t
-\end{equation}
-The final updates are the same as above except when coding
-\begin{eqnarray}
-   \vec{p}_*& = & \vec p_{g\to p}^{**(n+1)} +  \alpha_{PIC}\vec{p}_{g\to p}^{(n)}\Delta t   \\
-   \vec{f}_* & = & \vec{f}_{g\to p}^{**(n)} + \alpha_{PIC}\vec{p}_{g\to p}^{(n)} 
-\end{eqnarray}
-
 \subsection{Position Dependent Damping Strategies}
 
 Potentially it might be useful to damp certain regions differently than other regions. For example, damping could be used in a crack plane to absorbed released energy. This section considers changes when the damping terms depend on position. For damping based on grid velocity, the nodal momentum update changes to:
@@ -614,28 +471,36 @@ where $m_p = \rho_p V_p = \rho_0 V_0$ is particle mass. This equation works for 
 
 \subsection{MPM Equation}
 
-Defining $m_{Tp}^{(n)} = m_p C_{P,p}$ as a thermal mass on the particle in step $n$ (with SI units J/K when $C_{P}$ is heat capacity per unit mass or J/(K-kg)), a thermal momentum on the node can be defined as
+Defining $m_{Tp}^{(n)} = m_p C_{P,p}$ as a thermal mass on the particle in step $n$ (with units E/K, where E is energy, which is nJ/K in mmgs units when $C_{P}$ is heat capacity per unit mass --- E/(K-M) or nJ/(K-g)), a thermal momentum on the node can be defined as
 \begin{equation}
       p_{Ti}^{(n)} = \sum_p  m_{Tp}^{(n)} T_p^{(n)} S^{(n)}_{ip}  
 \end{equation}
-The SI units for thermal momentum are J (Joules) (or N-m). In the momentum analog, temperature is replaced by velocity, thermal mass is replaced by actual mass, and the sum gives momentum with SI units N-sec. A thermal momentum equation, as scalar analog of the momentum equation, can be written as
+The units for thermal momentum are E or F-L (which are nJ (Joules) or $\mu$N-mm in mmgs units). In the momentum analog, temperature is replaced by velocity, thermal mass is replaced by actual mass, and the sum gives momentum with units F-T (or $\mu$N-sec in mmgs units). A thermal momentum equation, as scalar analog of the momentum equation, can be written as
 \begin{equation}
-     {d p_{Ti}^{(n)}\over dt} = Q_{i}^{(n)} + Q_{i,q}^{(n)}
+     {d p_{Ti}^{(n)}\over dt} = Q_{i}^{(n)} + Q_{i,q}^{(n)} + Q_{i,c}^{(n)}
 \end{equation}
 where
 \begin{eqnarray}
-      Q_{i}^{(n)} & = & \sum_p V_p^{(n)}  \left(\vec q_p^{(n)}\cdot \vec G^{(n)}_{ip}  + q_{s,p}^{(n)} S^{(n)}_{ip} \right) \\
+      Q_{i}^{(n)} & = & \sum_p V_p^{(n)}  \left(\vec q_p^{(n)}\cdot \vec G^{(n)}_{ip}  + q_{s,p}^{(n)} S^{(n)}_{ip} \right) 
+      =  \sum_p m_p\left( { J \vec q_p^{(n)}\over \rho_0}\cdot \vec G^{(n)}_{ip}  + \bar q_{s,p}^{(n)} S^{(n)}_{ip}\right) \\
       Q_{i,q}^{(n)} & = & -  \int_{\delta V} (N_i(\vec x)\vec q^{(n)})\cdot \hat n \thinspace dS 
 \end{eqnarray}
-are total thermal flows (or thermal forces) with SI units J/sec or Watts. The first heat flow is internal heat flow while the second is heat flow at the boundaries due to flux boundary conditions. The $\vec q_p^{(n)}$ term is flux with SI units W/m$^2$. It is analogous to stress term in the momentum equation (using units N/m$^2$), but rather then track and update $\vec q_p^{(n)}$ on the particle (as done for stress), it is calculated on each time step using
+are total thermal flows (or thermal forces) with units of E/T or Pwr (for power) and nJ/sec or nWatts in mmgs units. The first heat flow is internal heat flow while the second is heat flow at the boundaries due to flux boundary conditions. The $\vec q_p^{(n)}$ term is flux with units Pwr/L$^2$ (or nW/mm$^2$ in mmgs units) and $\bar q_{s,p}^{(n)}$ is particle heat source per unit mass with units Pwr/M (or nW/g in mmgs units). The particle heat flux is analogous to particle stress in the momentum equation (using units F/L$^2$), but rather then track and update $\vec q_p^{(n)}$ on the particle (as done for stress), it is calculated on each time step using
 \begin{equation}
-    \vec q_p^{(n)} = -\tens k_p^{(n)}\nabla T_p^{(n)} = - \tens k_p^{(n)}\sum_i \tens  T_i^{(n)} \vec G^{(n)}_{ip}
+    {\vec q_p^{(n)}\over \rho_0} = -{\tens k_p^{(n)}\over \rho_0}\nabla T_p^{(n)} 
+                                 = - {\tens k_p^{(n)}\over \rho_0}\sum_i \tens  T_i^{(n)} \vec G^{(n)}_{ip}
 \end{equation}
 where nodal temperature is defined by
 \begin{equation}
        T_i^{(n)} = {p_{Ti}^{(n)} \over m_{Ti}^{(n)}} \qquad {\rm where } \qquad m_{Ti}^{(n)} = \sum_p  m_{Tp}^{(n)} S^{(n)}_{ip}  
 \end{equation}
-Note that conductivity has SI units of W/(m K) and $q_{s,p}^{(n)}$ has SI units W/m$^3$.
+Note that conductivity has units Pwr/(L-K) (or nW/(mm-K) in mmgs units) and $q_{s,p}^{(n)}$ has units Pwr/L$^3$ (or nW/mm$^3$ in mmgs units).
+
+The last term the thermal momentum equation is for crack tip heating. Because that heating is implemented on massless crack particles, an alternative extrapolation is needed:
+\begin{equation}
+     Q_{i,c}^{(n)} =  \sum_c V_c^{(n)}  q_{s,c}^{(n)} S^{(n)*}_{ic}  = \sum_c f_H G_c t_c{ \Delta a \over n\Delta t }S^{(n)*}_{ic}
+\end{equation}
+where $c$ means crack particle, $G_c$ is the total energy release per unit area, and $t_c\Delta a$ is the total area (with $t_c$ being crack thickness). This energy is released over $n$ steps or total time $n\Delta t$ giving the total heating rate of $V_c^{(n)}  q_{s,c}^{(n)}  = f_HG_c t_p \Delta a / (n\Delta t )$. The shape function spreads this heat over nearby nodes with partition of unity, but because crack particles may interact with inactive nodes, the shape functions are renormalized to be partition of unity by dividing by their sum over active nodes only (as indicated by the * on the shape function). The parameter $f_H$ is an option to allow only a fraction of the energy to be converted into heat.
 
 \subsection{Momentum and Particle Updates}
 
@@ -669,7 +534,7 @@ We can derive GIMP diffusion analysis from the GIMP conduction analysis by repla
 \begin{equation}
       p_{Di}^{(n)} = \sum_p  V_{p}^{(n)} \mu_p^{(n)} S^{(n)}_{ip} 
 \end{equation}
-The SI units for solvent momentum are m$^3$-$\mu$. A solvent momentum equation, as scalar analog of the momentum equation, can be written as
+The mgs units for solvent momentum are mm$^3$-$\mu$. A solvent momentum equation, as scalar analog of the momentum equation, can be written as
 \begin{equation}
      {d p_{Di}^{(n)}\over dt} = S_{i}^{(n)} + S_{i,q}^{(n)}
 \end{equation}
@@ -678,7 +543,7 @@ where
      S_{Di}^{(n)} & = & \sum_p V_p^{(n)}  \left(\vec s_p^{(n)}\cdot \vec G^{(n)}_{ip}  + s_{s,p}^{(n)} S^{(n)}_{ip} \right) \\
      S_{Di,q}^{(n)} & = & -  \int_{\delta V} (N_i(\vec x)\vec s^{(n)})\cdot \hat n \thinspace dS 
 \end{eqnarray}
-are total solvent flow (or solvent forces) with SI units m$^3$-$\mu$/sec. The first flow is internal flow while the second is flow across the surfaces due to flux boundary conditions. The $\vec s_p^{(n)}$ term is flux with SI units m-$\mu$/sec (or (solvent force)/m$^2$). It is analogous to stress term in the momentum equation (also with units of (force)/m$^2$), but rather then track and update $\vec s_p^{(n)}$ on the particle, it is calculated on each time step using
+are total solvent flow (or solvent forces) with mgs units mm$^3$-$\mu$/sec. The first flow is internal flow while the second is flow across the surfaces due to flux boundary conditions. The $\vec s_p^{(n)}$ term is flux with mgs units mm-$\mu$/sec (or (solvent force)/mm$^2$). It is analogous to stress term in the momentum equation (also with units of (force)/mm$^2$), but rather then track and update $\vec s_p^{(n)}$ on the particle, it is calculated on each time step using
 \begin{equation}
     \vec s_p^{(n)} = - \tens D_p^{(n)} \nabla \mu_p^{(n)} = - \tens D_p^{(n)}\sum_i \tens  \mu_i^{(n)} \vec G^{(n)}_{ip}
 \end{equation}
@@ -686,7 +551,7 @@ where nodal concentration potential is defined by
 \begin{equation}
        \mu_i^{(n)} = {p_{Di}^{(n)} \over V_{i}^{(n)}} \qquad {\rm where } \qquad V_{i}^{(n)} = \sum_p  V_{p}^{(n)} S^{(n)}_{ip}  
 \end{equation}
-Note that diffusion tensor has SI units of m$^2$/sec and $s_{s,p}^{(n)}$ (which is solvent source term) has SI units $\mu$/sec.
+Note that diffusion tensor has mgs units of mm$^2$/sec and $s_{s,p}^{(n)}$ (which is solvent source term) has mgs units $\mu$/sec.
 
 The nodal update becomes
 \begin{equation}
@@ -699,5 +564,81 @@ The FLIP particle update becomes
      \mu_{p,FLIP}^{(n+1)}  & = & \mu_p^{(n)} + a_{D,g\to p}^{(n)}\Delta t   \\
       a_{D,g\to p}^{(n)} & = & \sum_i a_{Di}^{(n)} S_{ip}^{(n)}    \\
 \end{eqnarray}
+
+\section{Consistent Units}
+
+internally, both {\tt NairnMPM} and {\tt OSParticulas} use mm-g-sec units system. Despite this internal use, the input of properties are not always based on these units. A new feature in development, however, will allow consistent units.
+
+\begin{table}
+\caption{Consistent units for the momentum equation}
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{||c||c||c||c|c||}
+\hline
+Quantity & Legacy & SI (m-kg-sec) & mm-g-sec & $\times\cdot=$SI \\
+\hline
+Length & mm & m & mm & $10^{-3}$ \\
+Mass & g & kg & g & $10^{-3}$ \\
+Time & *sec & sec & sec & 1 \\
+Density & *$\rm g\over cm^3$ & $\rm kg\over m^3$ & $\rm g\over mm^3$ & $10^{6}$ \\
+Velocity & $\rm mm\over sec$& $\rm m\over sec$ & $\rm mm\over sec$ & $10^{-3}$ \\
+Force & *N & N = $\rm kg\cdot m\over sec^2$  & $\mu$N = $\rm g \cdot mm\over sec^2$  & $10^{-6}$ \\
+Pressure & *MPa & Pa = $\rm N\over m^2$ & Pa = $\mu \rm N\over mm^2$ & 1 \\
+Work & *J & J = $\rm N\cdot m$  & nJ = $\mu \rm N \cdot mm$ & $10^{-9}$ \\
+Sp. Pressure & *$\rm \mu J \over g$ & $\rm {N\cdot m\over kg} = {J \over kg}$ & $\rm{\mu N\cdot mm\over g} = {nJ \over g}$  & $10^{-9}$\\
+ & &  = $\rm m^2\over sec^2$ & = $\rm mm^2 \over sec^2$ & \\
+ERR & *$\rm J \over m^2$ & $\rm J \over m^2$ & $\rm nJ\over mm^2$ & $10^{-3}$ \\
+Stress Int. & *MPa$\sqrt{\rm m}$ & Pa$\sqrt{\rm m}$ & Pa$\sqrt{\rm mm}$ & $\sqrt{10^{-3}}$ \\
+Viscosity & *cP & $\rm kg\over m\cdot sec$ & $\rm g\over mm\cdot sec$ & 1 \\
+\hline
+\end{tabular}
+\end{center}
+\label{units}
+\end{table}
+
+\begin{table}
+\caption{Consistent units for the conduction equation}
+\begin{center}
+\begin{tabular}{||c||c||c|c||}
+\hline
+Quantity & SI (m-kg-sec) & mm-g-sec & $\times\cdot=$SI \\
+\hline
+Heat Capacity & J/(kg-K) & nJ/(g-K) & $10^{-6}$ \\
+Power & J/sec = W & nJ/sec = nW  & $10^{-9}$ \\
+Conductivity & W/(m-K) & nW/(mm-K) & $10^{-6}$ \\
+Sp. Conductivity & W-m$^2$/(kg-K) & nW-mm$^2$/(g-K) & $10^{-12}$ \\
+Heat Flux & W/m$^2$ & nW/mm$^2$ & $10^{-3}$\\
+Heat Source & W/m$^3$ & nW/mm$^3$  & $1$ \\
+Sp. Heat Source & W/kg & nW/g  & $10^{-6}$ \\
+\hline
+\end{tabular}
+\end{center}
+\label{units}
+\end{table}
+
+\section{Consistent Units in Static FEA}
+
+In static FEA, the only units needed are for length and force. The legacy units for {\tt NairnFEA} are close to consistent using length in mm and force in N, which leas to stress and moduli in MPa = N/m$^2$ and interface parameters in MPa/mm. Boundary conditions are set using mm, N, and MPa for displacements, loads, and tractions, respectively. The only inconsistency is that the output energies re in J while the energy consistent with mm and N should be mJ = N-mm. The consistent units options are in the table.
+
+\begin{table}
+\caption{Consistent units for FEA}
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+Units & Length & Force & Stress & Energy \\
+\hline
+Legacy & mm & N & MPa & J \\
+SI & m & N & Pa & J \\
+mm-g-sec & mm & $\mu$N & Pa & nJ \\
+cm-g-sec & cm & 10$^{-5}$N = dyne & 10$^{-1}$Pa = Ba & 10$^{-7}$J = erg \\
+mm-g-msec & mm & N & MPa & mJ \\
+in-lb-sec & in & lbs & psi & in-lbs \\
+ft-lb-sec & ft & lbs & lbs/ft$^2$ & ft-lbs \\
+\hline
+\end{tabular}
+\end{center}
+\label{units}
+\end{table}
+
 
 \end{document}   

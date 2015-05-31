@@ -219,6 +219,7 @@ void *AnisoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBu
 {	// fill plastic properties
 	AnisoPlasticProperties *p = (AnisoPlasticProperties *)matBuffer;
 	p->ep = (ElasticProperties *)&pr;
+	return p;
 }
 
 #else

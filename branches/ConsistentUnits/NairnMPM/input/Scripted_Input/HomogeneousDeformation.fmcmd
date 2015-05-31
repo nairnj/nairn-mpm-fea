@@ -1,9 +1,8 @@
 ! ********** Introduction **********
 ! This command  file applies a homogeneous deformation field by applying
-!    position dependent velocities to all nodes. It is done in two steps.
-!    First stretch (by specific strains) and then rotate
-! This test can test constitutive laws and check for objectivity by
-!    consistent results during rotation phase
+!    position dependent velocities to all nodes.
+! This file can test constitutive laws and check for objectivity by
+!    consistent results during rotation phases
 
 Title "Homogeneous Deformation Test"
 Name "John A. Nairn"
@@ -14,7 +13,7 @@ Header
 EndHeader
 
 ! Analysis type: "Plane Strain MPM" or "Plane Stress MPM" or "Axisymmetric MPM" or "3D MPM"
-#analysis="Plane Strain MPM"
+#analysis$="Plane Strain MPM"
 
 ! Points per element
 #ppe=1
@@ -23,13 +22,13 @@ XMLData MPMHeader
 EndXMLData
 
 ! pick a method usually "lCPDI" or "uGIMP"
-#method="uGIMP"
+#method$="uGIMP"
 
 ! pick strain update method usually "USF" or "USAVG"
-#update="USF"
+#update$="USF"
 
-! Supported materials: "neohookean" (G2=0)
-#matname="neohookean"
+! Supported materials: "neomooney" (G2=0)
+#matname$="neomooney"
 
 ! Basic properties
 #Ebase=2300
@@ -49,8 +48,8 @@ EndXMLData
 #cycles=0				 ! rotation cycles after reach load
 
 ! start analysis and calculate time
-Analysis #analysis
-MPMMethod #update,#method
+Analysis #analysis$
+MPMMethod #update$,#method$
 PtsPerElement #ppe
 
 #G1=#Ebase/(2*(1+#nuBase))
@@ -76,7 +75,7 @@ PtsPerElement #ppe
 ! Examples: (in all these, tr = t/#time)
 ! 1. Pure Rotation: F(2D) = (cos(w t/#time),(a/w)sin(w tr)),(-(w/a)sin(w tr),cos(w tr)) : J = 1
 !                   #vxx=#vyy=0, #vxy=w, #vyx=-w
-! 2. Pull Shear: F(2D) = (cos(w tr),sin(w tr)),(sin(w tr),cos(w tr)) : J = cos(2w tr)
+! 2. Pure Shear: F(2D) = (cos(w tr),sin(w tr)),(sin(w tr),cos(w tr)) : J = cos(2w tr)
 !		#vxx = #vyy = -w tan(2 w tr)
 !       #vxy = #vyx = w sec(2 w tr)
 !		(To keep J>0, need -#PI/4 < #w < #PI/4, see #5 also)
@@ -86,7 +85,7 @@ PtsPerElement #ppe
 ! 4. Constant shear strain rate: F(2D) = (1,gxy tr),(gxy tr,1) : J = 1 - gxy^2 tr^2
 !       #vxx = #vyy = gxy^2 tr/(gxy^2 tr^2 - 1)
 !       #vxy = #vyx = -gxy/(gxy^2 tr^2 - 1)
-! 5. Pull shear on 45, which looks like tension/compression in x-y plane
+! 5. Pure shear on 45, which looks like tension/compression in x-y plane
 !       F(2D) = (cos(w tr)-sin(w tr),0),(0,sin(w tr)+cos(w tr)) : J = cos(2w tr)
 !       #vxx = -w (cos(w tr)+sin(w tr))/(cos(w tr)-sin(w tr))   #vxy=0
 !       #vyy = w (cos(w tr)-sin(w tr))/(cos(w tr)+sin(w tr))   #vyx=0
@@ -98,52 +97,52 @@ PtsPerElement #ppe
 !		#vxy=a, #vyx=b, #vxx=#vyy=0, and a*b>0 and w = sqrt(a*b)
 !   c. Pure rotation (see type=1)
 
-#type=5
+#type=4
 
 if #type=1
   #w=2*3.14159
-  #vxx=0
-  #vyy=0
-  #vxy=#w
-  #vyx=-#w
+  #vxx$=0
+  #vyy$=0
+  #vxy$=#w
+  #vyx$=-#w
 
 else if #type=2
   #w=.5
-  #vxx=(-#w)&"*tan("&(2*#w/#time)&"*t)"
-  #vxy=#w&"/cos("&(2*#w/#time)&"*t)"
-  #vyx=#vxy
-  #vyy=#vxx
+  #vxx$=(-#w)&"*tan("&(2*#w/#time)&"*t)"
+  #vxy$=#w&"/cos("&(2*#w/#time)&"*t)"
+  #vyx$=#vxy$
+  #vyy$=#vxx$
 
 else if #type=3
   #exx=.5
   #eyy=-.5
-  #vxx = #exx&"/(1+("&(#exx/#time)&")*t)"
-  #vyy = #eyy&"/(1+("&(#eyy/#time)&")*t)"
-  #vxy=0
-  #vyx=0
+  #vxx$ = #exx&"/(1+("&(#exx/#time)&")*t)"
+  #vyy$ = #eyy&"/(1+("&(#eyy/#time)&")*t)"
+  #vxy$=0
+  #vyx$=0
 
 else if #type=4
   #gxy=.5
-  #vxx=(#gxy*#gxy/#time)&"*t/("&(#gxy*#gxy/#time/#time)&"*t^2-1)"
-  #vxy=(-#gxy)&"/("&(#gxy*#gxy/#time/#time)&"*t^2-1)"
-  #vyy=#vxx
-  #vyx=#vxy
+  #vxx$=(#gxy*#gxy/#time)&"*t/("&(#gxy*#gxy/#time/#time)&"*t^2-1)"
+  #vxy$=(-#gxy)&"/("&(#gxy*#gxy/#time/#time)&"*t^2-1)"
+  #vyy$=#vxx$
+  #vyx$=#vxy$
 
 else if #type=5
   #w=.4
-  #cps="(cos("&(#w/#time)&"*t)+sin("&(#w/#time)&"*t))"
-  #cms="(cos("&(#w/#time)&"*t)-sin("&(#w/#time)&"*t))"
-  #vxx=(-#w)&"*"&#cps&"/"&#cms
-  #vyy=#w&"*"&#cms&"/"&#cps
-  #vxy=0
-  #vyx=0
+  #cps$="(cos("&(#w/#time)&"*t)+sin("&(#w/#time)&"*t))"
+  #cms$="(cos("&(#w/#time)&"*t)-sin("&(#w/#time)&"*t))"
+  #vxx$=(-#w)&"*"&#cps$&"/"&#cms$
+  #vyy$=#w&"*"&#cms$&"/"&#cps$
+  #vxy$=0
+  #vyx$=0
 
 else
   ! all others just pick constant value for each
-  #vxx=1
-  #vyy=1
-  #vxy=0
-  #vyx=0
+  #vxx$=1
+  #vyy$=1
+  #vxy$=0
+  #vyx$=0
 
 endif
 
@@ -154,7 +153,7 @@ endif
 TimeStep 1000,(1+#cycles)*#time,#factor
 MaximumTime (1+#cycles)*#time
 ArchiveTime (1+#cycles)*#time/100
-Archive "Results/Homogeneous/"&#method&"-"&#ppe&"/"&#matname
+Archive "Results/Homogeneous/"&#method$&"-"&#ppe&"/"&#matname$
 ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
 ! plastic strain is Left Cauchy Green Strain, history 1 is J or volumetric strain
 ToArchive plasticstrain,history1
@@ -167,8 +166,8 @@ GlobalArchive "syy"
 GlobalArchive "szz"
 GlobalArchive "exxe"
 
-if #matname ="neohookean"
-  Material #matname,"Neohookean Material","Mooney"
+if #matname$ ="neomooney"
+  Material #matname$,"Neohookean Mooney Material","Mooney"
     G1 #G1
     G2 #G2
     K #Kbulk
@@ -186,7 +185,7 @@ else
   #border=2
 endif
 
-if #analysis="Axisymmetric MPM"
+if #analysis$="Axisymmetric MPM"
   #gleft=-#cell
   #gright=#width+2*#border*#cell
 else
@@ -201,7 +200,7 @@ endif
 ! Grid centered on (0,0)
 GridHoriz (#gright-#gleft)/#cell
 GridVert (#gtop-#gbot)/#cell
-if #analysis="3D MPM"
+if #analysis$="3D MPM"
   GridDepth (#gzmax-#gzmin)/#cell
   GridRect #gleft,#gright,#gbot,#gtop,#gzmin,#gzmax
 else
@@ -209,16 +208,16 @@ else
   GridRect #gleft,#gright,#gbot,#gtop
 endif
 
-if #analysis="Axisymmetric MPM"
-  Region #matname,0,0,#thickness
+if #analysis$="Axisymmetric MPM"
+  Region #matname$,0,0,#thickness
     Rect 0,#width,-#height/2,#height/2
   EndRegion
-else if #analysis="3D MPM"
-  Region #matname,0,0,0
+else if #analysis$="3D MPM"
+  Region #matname$,0,0,0
     Box -#width/2,#width/2,-#height/2,#height/2,-#thickness/2,#thickness/2
   EndRegion
 else
-  Region #matname,0,0,#thickness
+  Region #matname$,0,0,#thickness
     Rect -#width/2,#width/2,-#height/2,#height/2
   EndRegion
 endif
@@ -226,16 +225,16 @@ endif
 ! ********** Boundary Condition Section **********
 
 ! load and constant velocity for #time, then stop
-#dpart="*(1-sign(t-"&#time&"))*"&(1000/#time)
+#dpart$="*(1-sign(t-"&#time&"))*"&(1000/#time)
 
 ! rotation speed in radians/sec after reaches load
 #speed=2*3.14159*1000/#time		
 
 ! homogeneous deformation field
-if #analysis="3D MPM"
+if #analysis$="3D MPM"
   MoveBox #gleft-#cell,#gbot-#cell,#gzmin-#cell,#gright+#cell,#gtop+#cell,#gzmax+#cell
-    Velocity x,function,"("&#vxx&"*x+"&#vxy&"*y)"&#dpart
-    Velocity y,function,"("&#vyx&"*x+"&#vyy&"*y)"&#dpart
+    Velocity x,function,"("&#vxx$&"*x+"&#vxy$&"*y)"&#dpart$
+    Velocity y,function,"("&#vyx$&"*x+"&#vyy$&"*y)"&#dpart$
     Velocity z,constant
     if #cycles>0
       Velocity x,function,(#speed)&"*y",#time
@@ -244,8 +243,8 @@ if #analysis="3D MPM"
   EndMoveBox
 else
   MoveLine #gleft-#cell,0,#gright+#cell,0,#gtop+#cell
-    Velocity x,function,"(x*("&#vxx&")+y*("&#vxy&"))"&#dpart
-    Velocity y,function,"(x*("&#vyx&")+y*("&#vyy&"))"&#dpart
+    Velocity x,function,"(x*("&#vxx$&")+y*("&#vxy$&"))"&#dpart$
+    Velocity y,function,"(x*("&#vyx$&")+y*("&#vyy$&"))"&#dpart$
     if #cycles>0
       Velocity x,function,(#speed)&"*y",#time
       Velocity y,function,(-#speed)&"*x",#time

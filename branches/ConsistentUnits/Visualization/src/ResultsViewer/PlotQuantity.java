@@ -19,73 +19,94 @@ public class PlotQuantity extends PlotControl
 	static final int MPMSIGMAY=2;
 	static final int MPMSIGMAXY=3;
 	static final int MPMSIGMAZ=4;
-	static final int MPMEPSX=5;
-	static final int MPMEPSY=6;
-	static final int MPMEPSXY=7;
-	static final int MPMEPSZ=8;
-	static final int MPMPLEPSX=9;
-	static final int MPMPLEPSY=10;
-	static final int MPMPLEPSXY=11;
-	static final int MPMPLEPSZ=12;
-	static final int MPMVELX=13;
-	static final int MPMVELY=14;
-	static final int MPMVELVEC=15;
-	static final int MPMSTRENERGY=16;
-	static final int MPMKINENERGY=17;
-	static final int MPMENERGY=18;
-	static final int MPMTOTSTRENERGY=19;
-	static final int MPMTOTKINENERGY=20;
-	static final int MPMTOTENERGY=21;
-	static final int MPMPOS=22;
-	static final int MPMDISPX=23;
-	static final int MPMDISPY=24;
-	static final int MPMPOSX=25;
-	static final int MPMPOSY=26;
-	static final int MPMEXPRESSION=27;
-	static final int MPMWORKENERGY=28;
-	static final int MPMPLASTICENERGY=29;
-	static final int MPMTEMPERATURE=30;
-	static final int MPMDVDX=31;
-	static final int MPMDUDY=32;
-	static final int MPMHISTORYOLD=33;
-	static final int MPMTOTWORKENERGY=34;
-	static final int MPMTOTPOTENERGY=35;				// no longer used
-	static final int MPMTOTPLASTICENERGY=36;
-    static final int MPMJ1=37;
-	static final int MPMJ2=38;
-	static final int MPMKI=39;
-	static final int MPMKII=40;
-	static final int MPMLENGTH=41;
-	static final int MPMMASS=42;
-	static final int MPMARCHIVETIME=43;
-	static final int MPMGLOBALRESULTS=44;
-	static final int MPMCONCENTRATION=45;
-	static final int MPMDCDX=46;
-	static final int MPMDCDY=47;
-	static final int MPMCRACKRELEASE=48;
-	static final int MPMCRACKABSORB=49;
-	static final int MPMNORMALCTOD=50;
-	static final int MPMSHEARCTOD=51;
-	static final int MPMHEATENERGY=52;
-	static final int MPMTOTHEATENERGY=53;
-	static final int MPMCRACKPROFILE=54;
-	static final int MPMOPENINGFRACTION=55;
-	static final int MPMSHEARFRACTION=56;
-	static final int MPMANGLEZ=57;
-	static final int MPMELEMENTCROSSINGS=58;
-	static final int MPMTOTELEMENTCROSSINGS=59;
-	static final int MPMDEBONDLENGTH=60;
-	static final int MPMDEBONDNCTOD=61;
-	static final int MPMDEBONDSCTOD=62;
-	static final int MPMHISTORY1=63;
-	static final int MPMHISTORY2=64;
-	static final int MPMHISTORY3=65;
-	static final int MPMHISTORY4=66;
+	static final int MPMSIGMAXZ=5;
+	static final int MPMSIGMAYZ=6;
+	
+	static final int MPMEPSX=7;
+	static final int MPMEPSY=8;
+	static final int MPMEPSXY=9;
+	static final int MPMEPSZ=10;
+	static final int MPMEPSXZ=11;
+	static final int MPMEPSYZ=12;
+	
+	static final int MPMPLEPSX=13;
+	static final int MPMPLEPSY=14;
+	static final int MPMPLEPSXY=15;
+	static final int MPMPLEPSZ=16;
+	static final int MPMPLEPSXZ=17;
+	static final int MPMPLEPSYZ=18;
+	
+	static final int MPMVELX=19;
+	static final int MPMVELY=20;
+	static final int MPMVELZ=21;
+	
+	static final int MPMVELVEC=22;
+	static final int MPMSTRENERGY=23;
+	static final int MPMKINENERGY=24;
+	static final int MPMENERGY=25;
+	static final int MPMTOTSTRENERGY=26;
+	static final int MPMTOTKINENERGY=27;
+	static final int MPMTOTENERGY=28;
+	static final int MPMPOS=29;
+	
+	static final int MPMDISPX=30;
+	static final int MPMDISPY=31;
+	static final int MPMDISPZ=32;
+	
+	static final int MPMPOSX=33;
+	static final int MPMPOSY=34;
+	static final int MPMPOSZ=35;
+	
+	static final int MPMEXPRESSION=36;
+	static final int MPMWORKENERGY=37;
+	static final int MPMPLASTICENERGY=38;
+	static final int MPMTEMPERATURE=39;
+	static final int MPMDVDX=40;
+	static final int MPMDUDY=41;
+	static final int MPMHISTORYOLD=42;
+	static final int MPMTOTWORKENERGY=43;
+	static final int MPMTOTPOTENERGY=44;				// no longer used
+	static final int MPMTOTPLASTICENERGY=45;
+    static final int MPMJ1=46;
+	static final int MPMJ2=47;
+	static final int MPMKI=48;
+	static final int MPMKII=49;
+	static final int MPMLENGTH=50;
+	static final int MPMMASS=51;
+	static final int MPMARCHIVETIME=52;
+	static final int MPMGLOBALRESULTS=53;
+	static final int MPMCONCENTRATION=54;
+	static final int MPMDCDX=55;
+	static final int MPMDCDY=56;
+	static final int MPMDCDZ=57;
+	static final int MPMCRACKRELEASE=58;
+	static final int MPMCRACKABSORB=59;
+	static final int MPMNORMALCTOD=60;
+	static final int MPMSHEARCTOD=61;
+	static final int MPMHEATENERGY=62;
+	static final int MPMTOTHEATENERGY=63;
+	static final int MPMCRACKPROFILE=64;
+	static final int MPMOPENINGFRACTION=65;
+	static final int MPMSHEARFRACTION=66;
+	static final int MPMANGLEZ=67;
+	static final int MPMANGLEY=68;
+	static final int MPMANGLEX=69;
+	static final int MPMELEMENTCROSSINGS=70;
+	static final int MPMTOTELEMENTCROSSINGS=71;
+	static final int MPMDEBONDLENGTH=72;
+	static final int MPMDEBONDNCTOD=73;
+	static final int MPMDEBONDSCTOD=74;
+	static final int MPMHISTORY1=75;
+	static final int MPMHISTORY2=76;
+	static final int MPMHISTORY3=77;
+	static final int MPMHISTORY4=78;
 	
 	static final int MPMEPSTOTX=90;
 	static final int MPMEPSTOTY=91;
 	static final int MPMEPSTOTXY=92;
 	static final int MPMEPSTOTZ=93;
+	static final int MPMEPSTOTXZ=94;
+	static final int MPMEPSTOTYZ=95;
 	
 	static final int MESHONLY=1001;
 	static final int MESHSIGMAX=1002;
@@ -198,11 +219,16 @@ public class PlotQuantity extends PlotControl
 				if(arch[ReadArchive.ARCH_Stress]=='Y')
 					quant.addItem(new PlotMenuItem("Stress",MPMSIGMAX));
 				if(arch[ReadArchive.ARCH_Strain]=='Y')
-					quant.addItem(new PlotMenuItem("Strain",MPMEPSX));
-				if(arch[ReadArchive.ARCH_PlasticStrain]=='Y')
-				{	quant.addItem(new PlotMenuItem("Plastic/L. Cauchy Strain",MPMPLEPSX));
-					if(arch[ReadArchive.ARCH_Strain]=='Y')
+				{	if(arch[ReadArchive.ARCH_PlasticStrain]=='Y')
+					{	// need both to support all materials
 						quant.addItem(new PlotMenuItem("Total Strain",MPMEPSTOTX));
+						quant.addItem(new PlotMenuItem("Elastic Strain",MPMEPSX));
+						quant.addItem(new PlotMenuItem("Plastic Strain",MPMPLEPSX));
+					}
+					else if(docCtrl.resDoc.units.getNewUnitsVersion())
+					{	// new verson only needs strain to get total strain
+						quant.addItem(new PlotMenuItem("Total Strain",MPMEPSTOTX));
+					}
 				}
 					
 				if(arch[ReadArchive.ARCH_StrainEnergy]=='Y')
@@ -251,9 +277,6 @@ public class PlotQuantity extends PlotControl
 						quant.addItem(new PlotMenuItem("History 4",MPMHISTORY4));
 				}
 				
-				if(arch[ReadArchive.ARCH_ShearComponents]=='Y')
-					quant.addItem(new PlotMenuItem("Shear Component",MPMDVDX));
-					
 				if(arch[ReadArchive.ARCH_ElementCrossings]=='Y')
 					quant.addItem(new PlotMenuItem("Element Crossings",MPMELEMENTCROSSINGS));
 				
@@ -343,42 +366,59 @@ public class PlotQuantity extends PlotControl
 			case MPMEPSX:
 			case MPMPLEPSX:
 			case MPMEPSTOTX:
+				cmpnt.removeAllItems();
+				cmpnt.addItem(xchar+xchar);
+				cmpnt.addItem(ychar+ychar);
+				cmpnt.addItem(xchar+ychar);
+				cmpnt.addItem(zchar+zchar);
+				if(docCtrl.resDoc.is3D())
+				{	cmpnt.addItem(xchar+zchar);
+					cmpnt.addItem(ychar+zchar);
+				}
+				cmpnt.setEnabled(true);
+				break;
+				
 			case MESHSIGMAX:
 			case MESHSTRAINX:
 			case MESHELEMSIGMAX:
-				if(!cmpnt.getItemAt(0).equals(xchar+xchar))
-				{	cmpnt.removeAllItems();
-					cmpnt.addItem(xchar+xchar);
-					cmpnt.addItem(ychar+ychar);
-					cmpnt.addItem(xchar+ychar);
-					cmpnt.addItem(zchar+zchar);
-				}
+				cmpnt.removeAllItems();
+				cmpnt.addItem(xchar+xchar);
+				cmpnt.addItem(ychar+ychar);
+				cmpnt.addItem(xchar+ychar);
+				cmpnt.addItem(zchar+zchar);
 				cmpnt.setEnabled(true);
 				break;
 			
 			case MPMVELX:
 			case MPMDISPX:
+				cmpnt.removeAllItems();
+				cmpnt.addItem(xchar);
+				cmpnt.addItem(ychar);
+				if(docCtrl.resDoc.is3D())
+				{	cmpnt.addItem(zchar);
+				}
+				cmpnt.setEnabled(true);
+				break;
+				
 			case MESHDISPX:
 			case MESHFORCEX:
-				if(!cmpnt.getItemAt(0).equals(xchar))
-				{	cmpnt.removeAllItems();
-					cmpnt.addItem(xchar);
-					cmpnt.addItem(ychar);
-				}
+				cmpnt.removeAllItems();
+				cmpnt.addItem(xchar);
+				cmpnt.addItem(ychar);
 				cmpnt.setEnabled(true);
 				break;
 			
 				
 			case MPMDCDX:
-				if(!cmpnt.getItemAt(0).equals("dc/d"+xchar))
-				{	cmpnt.removeAllItems();
-					cmpnt.addItem("dc/d"+xchar);
-					cmpnt.addItem("dc/d"+ychar);
+				cmpnt.removeAllItems();
+				cmpnt.addItem("dc/d"+xchar);
+				cmpnt.addItem("dc/d"+ychar);
+				if(docCtrl.resDoc.is3D())
+				{	cmpnt.addItem("dc/d"+zchar);
 				}
 				cmpnt.setEnabled(true);
 				break;
 				
-			case MPMDVDX:
 			case MESHDVDX:
 				if(!cmpnt.getItemAt(0).equals("dv/d"+xchar))
 				{	cmpnt.removeAllItems();
@@ -419,7 +459,6 @@ public class PlotQuantity extends PlotControl
 			case MPMVELX:
 			case MPMDCDX:
 			case MPMDISPX:
-			case MPMDVDX:
 			case MESHSIGMAX:
 			case MESHDISPX:
 			case MESHSTRAINX:
@@ -437,7 +476,7 @@ public class PlotQuantity extends PlotControl
 	}
 	
 	// Label for plot axes (i.e., just generic name and plot units)
-	public static String plotLabel(int component,String distU,String timeU)
+	public static String plotLabel(int component,JNUnits units)
 	{
 		switch(component)
 		{	// Stresses
@@ -445,6 +484,8 @@ public class PlotQuantity extends PlotControl
 			case MPMSIGMAY:
 			case MPMSIGMAXY:
 			case MPMSIGMAZ:
+			case MPMSIGMAXZ:
+			case MPMSIGMAYZ:
 			case MESHSIGMAX:
 			case MESHSIGMAY:
 			case MESHSIGMAXY:
@@ -453,26 +494,32 @@ public class PlotQuantity extends PlotControl
 			case MESHELEMSIGMAY:
 			case MESHELEMSIGMAXY:
 			case MESHELEMSIGMAZ:
-				return "Stress (MPa)";
+				return "Stress ("+units.stressUnits()+")";
 		
 			// Strains
 			case MPMEPSX:
 			case MPMEPSY:
 			case MPMEPSXY:
 			case MPMEPSZ:
+			case MPMEPSXZ:
+			case MPMEPSYZ:
 			case MPMPLEPSX:
 			case MPMPLEPSY:
 			case MPMPLEPSXY:
 			case MPMPLEPSZ:
+			case MPMPLEPSXZ:
+			case MPMPLEPSYZ:
 			case MPMEPSTOTX:
 			case MPMEPSTOTY:
 			case MPMEPSTOTXY:
 			case MPMEPSTOTZ:
+			case MPMEPSTOTXZ:
+			case MPMEPSTOTYZ:
 			case MESHSTRAINX:
 			case MESHSTRAINY:
 			case MESHSTRAINXY:
 			case MESHSTRAINZ:
-				return "Strain (%)";
+				return "Strain ("+units.strainUnits()+")";
 			
 			// Energy
 			case MPMENERGY:
@@ -488,7 +535,7 @@ public class PlotQuantity extends PlotControl
 			case MPMTOTPLASTICENERGY:
 			case MPMTOTHEATENERGY:
 			case MESHSTRAINENERGY:
-				return "Energy (J)";
+				return "Energy ("+units.energyUnits()+")";
 			
 			case MPMTEMPERATURE:
 				return "Temperature (K)";
@@ -497,22 +544,26 @@ public class PlotQuantity extends PlotControl
 			case MPMVELVEC:
 			case MPMVELX:
 			case MPMVELY:
-				return "Velocity ("+distU+"/"+timeU+")";
+			case MPMVELZ:
+				return "Velocity ("+units.velocityUnits()+")";
 			
 			// Displacements
 			case MPMDISPX:
 			case MPMDISPY:
+			case MPMDISPZ:
 			case MPMNORMALCTOD:
 			case MPMSHEARCTOD:
 			case MPMDEBONDNCTOD:
 			case MPMDEBONDSCTOD:
 			case MESHDISPX:
 			case MESHDISPY:
-				return "Displacement ("+distU+")";
+				return "Displacement ("+units.lengthUnits()+")";
 			
 			// Position or material
 			case MESHANGLE:
 			case MPMANGLEZ:
+			case MPMANGLEY:
+			case MPMANGLEX:
 				return "Material Angle";
 				
 			// Position or material
@@ -521,11 +572,9 @@ public class PlotQuantity extends PlotControl
 				return "Material";
 					 
 			// shear components
-			case MPMDUDY:
-			case MPMDVDX:
 			case MESHDVDX:
 			case MESHDUDY:
-				return "Shear Component (%)";
+				return "Shear Component ("+units.strainUnits()+")";
 			
 			// histrory variables
 			case MPMHISTORY1:
@@ -541,7 +590,8 @@ public class PlotQuantity extends PlotControl
 			// concentration gradient
 			case MPMDCDX:
 			case MPMDCDY:
-				return "Displacement (1/"+distU+")";
+			case MPMDCDZ:
+				return "Gradient (1/"+units.lengthUnits()+")";
 			
 			// an Expression
 			case MPMEXPRESSION:
@@ -558,7 +608,7 @@ public class PlotQuantity extends PlotControl
 			
 			case MPMLENGTH:
 			case MPMDEBONDLENGTH:
-				return "Length ("+distU+")";
+				return "Length ("+units.lengthUnits()+")";
 			
 			case MPMCRACKRELEASE:
 			case MPMCRACKABSORB:
@@ -566,26 +616,27 @@ public class PlotQuantity extends PlotControl
 			
 			case MESHFORCEX:
 			case MESHFORCEY:
-				return "Force (N)";
+				return "Force ("+units.forceUnits()+")";
 			
 			case INTERFACETRACTION_N:
 			case INTERFACETRACTION_T:
-				return "Interface Traction (MPa)";
+				return "Interface Traction ("+units.stressUnits()+")";
 				
 			case MPMPOSY:
 			case MPMPOSX:
+			case MPMPOSZ:
 			case MPMCRACKPROFILE:
-				return "Position ("+distU+")";
+				return "Position ("+units.lengthUnits()+")";
 			
 			case MPMOPENINGFRACTION:
 			case MPMSHEARFRACTION:
 				return "Fraction";
 			
 			case MPMMASS:
-				return "Mass (g)";
+				return "Mass ("+units.massUnits()+")";
 			
 			case MPMARCHIVETIME:
-				return "Time ("+timeU+")";
+				return "Time ("+units.timeUnits()+")";
 			
 			case MPMGLOBALRESULTS:
 				return "Global Results";
@@ -601,6 +652,135 @@ public class PlotQuantity extends PlotControl
 		
 		return "Y Axis";
 	}
+	
+	// Units for plot quantity
+	public static String plotUnits(int component,JNUnits units)
+	{
+		switch(component)
+		{	// Stresses
+			case MPMSIGMAX:
+			case MPMSIGMAY:
+			case MPMSIGMAXY:
+			case MPMSIGMAZ:
+			case MPMSIGMAXZ:
+			case MPMSIGMAYZ:
+			case MESHSIGMAX:
+			case MESHSIGMAY:
+			case MESHSIGMAXY:
+			case MESHSIGMAZ:
+			case MESHELEMSIGMAX:
+			case MESHELEMSIGMAY:
+			case MESHELEMSIGMAXY:
+			case MESHELEMSIGMAZ:
+			case INTERFACETRACTION_N:
+			case INTERFACETRACTION_T:
+				return units.stressUnits();
+		
+			// Strains
+			case MPMEPSX:
+			case MPMEPSY:
+			case MPMEPSXY:
+			case MPMEPSZ:
+			case MPMEPSXZ:
+			case MPMEPSYZ:
+			case MPMPLEPSX:
+			case MPMPLEPSY:
+			case MPMPLEPSXY:
+			case MPMPLEPSZ:
+			case MPMPLEPSXZ:
+			case MPMPLEPSYZ:
+			case MPMEPSTOTX:
+			case MPMEPSTOTY:
+			case MPMEPSTOTXY:
+			case MPMEPSTOTZ:
+			case MPMEPSTOTXZ:
+			case MPMEPSTOTYZ:
+			case MESHSTRAINX:
+			case MESHSTRAINY:
+			case MESHSTRAINXY:
+			case MESHSTRAINZ:
+			case MESHDVDX:
+			case MESHDUDY:
+				return units.strainUnits();
+			
+			// Energy
+			case MPMENERGY:
+			case MPMSTRENERGY:
+			case MPMKINENERGY:
+			case MPMWORKENERGY:
+			case MPMPLASTICENERGY:
+			case MPMHEATENERGY:
+			case MPMTOTSTRENERGY:
+			case MPMTOTKINENERGY:
+			case MPMTOTENERGY:
+			case MPMTOTWORKENERGY:
+			case MPMTOTPLASTICENERGY:
+			case MPMTOTHEATENERGY:
+			case MESHSTRAINENERGY:
+				return units.energyUnits();
+			
+			case MPMTEMPERATURE:
+				return "K";
+			
+			// Velocity
+			case MPMVELVEC:
+			case MPMVELX:
+			case MPMVELY:
+			case MPMVELZ:
+				return units.velocityUnits();
+			
+			// Displacements
+			case MPMDISPX:
+			case MPMDISPY:
+			case MPMDISPZ:
+			case MPMNORMALCTOD:
+			case MPMSHEARCTOD:
+			case MPMDEBONDNCTOD:
+			case MPMDEBONDSCTOD:
+			case MESHDISPX:
+			case MESHDISPY:
+			case MPMLENGTH:
+			case MPMDEBONDLENGTH:
+			case MPMPOSY:
+			case MPMPOSX:
+			case MPMPOSZ:
+			case MPMCRACKPROFILE:
+				return units.lengthUnits();
+			
+			case MPMJ1:
+			case MPMJ2:
+			case MPMCRACKRELEASE:
+			case MPMCRACKABSORB:
+				return "J/m^2";
+			
+			case MPMKI:
+			case MPMKII:
+				return "MPa m^0.5";
+			
+			// concentration gradient
+			case MPMDCDX:
+			case MPMDCDY:
+			case MPMDCDZ:
+				return "1/"+units.lengthUnits();
+				
+			case MESHFORCEX:
+			case MESHFORCEY:
+				return units.forceUnits();
+			
+			case MPMMASS:
+				return units.massUnits();
+			
+			case MPMARCHIVETIME:
+				return units.timeUnits();
+			
+			// rest of no (or unknown) units
+			default:
+				break;
+		}
+		
+		return "";
+	}
+
 	
 	// select item for checking the mesh
 	public void setCheckMeshItem() { quant.setSelectedIndex(checkMeshItem); }
@@ -637,6 +817,12 @@ public class PlotQuantity extends PlotControl
 			case MESHELEMSIGMAZ:
 				return "Stress "+zc+zc;
 				
+			case MPMSIGMAXZ:
+				return "Stress "+xc+zc;
+				
+			case MPMSIGMAYZ:
+				return "Stress "+yc+zc;
+				
 			case MPMEPSX:
 			case MPMEPSTOTX:
 			case MESHSTRAINX:
@@ -657,17 +843,31 @@ public class PlotQuantity extends PlotControl
 			case MESHSTRAINZ:
 				return "Strain "+zc+zc;
 				
+			case MPMEPSXZ:
+			case MPMEPSTOTXZ:
+				return "Strain "+xc+zc;
+
+			case MPMEPSYZ:
+			case MPMEPSTOTYZ:
+				return "Strain "+yc+zc;
+
 			case MPMPLEPSX:
-				return "Plastic/L. Cauchy Strain "+xc+xc;
+				return "Plastic Strain "+xc+xc;
 				
 			case MPMPLEPSY:
-				return "Plastic/L. Cauchy Strain "+yc+yc;
+				return "Plastic Strain "+yc+yc;
 				
 			case MPMPLEPSXY:
-				return "Plastic/L. Cauchy Strain "+xc+yc;
+				return "Plastic Strain "+xc+yc;
 				
 			case MPMPLEPSZ:
-				return "Plastic/L. Cauchy Strain "+zc+zc;
+				return "Plastic Strain "+zc+zc;
+
+			case MPMPLEPSXZ:
+				return "Plastic Strain "+xc+zc;
+
+			case MPMPLEPSYZ:
+				return "Plastic Strain "+yc+zc;
 
 			case MPMENERGY:
 				return "Energy";
@@ -715,6 +915,9 @@ public class PlotQuantity extends PlotControl
 			case MPMVELY:
 				return "Velocity "+yc;
 			
+			case MPMVELZ:
+				return "Velocity "+zc;
+			
 			case MPMVELVEC:
 				return "Velocity";
 			
@@ -726,6 +929,9 @@ public class PlotQuantity extends PlotControl
 			case MESHDISPY:
 				return "Displacment "+yc;
 			
+			case MPMDISPZ:
+				return "Displacment "+zc;
+			
 			case MPMPOS:
 				return "Position";
 			
@@ -735,11 +941,12 @@ public class PlotQuantity extends PlotControl
 			case MPMPOSY:
 				return "Position "+yc;
 			
-			case MPMDUDY:
+			case MPMPOSZ:
+				return "Position "+zc;
+			
 			case MESHDUDY:
 				return "Strain du/d"+yc;
 			
-			case MPMDVDX:
 			case MESHDVDX:
 				return "Strain dv/d"+xc;
 			
@@ -754,6 +961,9 @@ public class PlotQuantity extends PlotControl
 			
 			case MPMDCDX:
 				return "Conc Gradient dc/d"+xc;
+			
+			case MPMDCDZ:
+				return "Conc Gradient dc/d"+zc;
 			
 			case MPMCONCENTRATION:
 				return "Concentration";
@@ -803,6 +1013,8 @@ public class PlotQuantity extends PlotControl
 			
 			case MESHANGLE:
 			case MPMANGLEZ:
+			case MPMANGLEY:
+			case MPMANGLEX:
 				return "Material Angle";
 			
 			case MESHFORCEX:

@@ -98,7 +98,7 @@ public class NFMVStartUp extends JNStartUpBase
 		finishFrameworkWindow(true,new Point(40,10+JNApplication.menuBarHeight()));
 		
 		// fixed size
-		setSize(new Dimension(385,325+JNApplication.windowMenuBarHeight()));
+		setSize(new Dimension(435,325+JNApplication.windowMenuBarHeight()));
 	}
 	
 }

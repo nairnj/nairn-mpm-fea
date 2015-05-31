@@ -175,10 +175,12 @@ The Default value is <code>iYNNNN</code>.</dd>
 	<li><code>FRR</code>, <code>FRZ</code>, <code>FZR</code>, <code>FZZ</code>, or <code>FTT</code> - average element of the axisymmetric deformation gradient (dimensionless) (synonyms for <code>Fxx</code>, <code>Fxy</code>, <code>Fyx</code>, <code>Fyy</code>, and <code>Fzz</code>)</li>
 	<li><code>exx</code>, <code>eyy</code>, <code>ezz</code>, <code>exy</code>, <code>exz</code>, or <code>eyz</code> - average element of the total <a href="#biot">Biot</a> strain tensor (in <a href="units.html">alt strain units</a>)</li>
 	<li><code>eRR</code>, <code>eZZ</code>, <code>eTT</code>, or <code>eRZ</code> - average element of the axisymmetric total <a href="#biot">Biot</a> strain tensor (in <a href="units.html">alt strain units</a>) (synonyms for <code>exx</code>, <code>eyy</code>, <code>ezz</code>, and <code>exy</code>)</li>
-	<li><code>exxe</code>, <code>eyye</code>, <code>ezze</code>, <code>exye</code>, <code>exze</code>, or <code>eyze</code> - average element of the elastic <a href="#biot">Biot</a> strain tensor (in <a href="units.html">alt strain units</a>), which is subtracts the plastic strain for plasticity materials</li>
+	<li><code>exxe</code>, <code>eyye</code>, <code>ezze</code>, <code>exye</code>, <code>exze</code>, or <code>eyze</code> - average element of the elastic <a href="#biot">Biot</a> strain tensor (in <a href="units.html">alt strain units</a>), which is total strain minus plastic strain for plasticity materials</li>
 	<li><code>eRRe</code>, <code>eZZe</code>, <code>eTTe</code>, or <code>eRZe</code> - average element of the axisymmetric elastic <a href="#biot">Biot</a> strain tensor (in <a href="units.html">alt strain units</a>) (synonyms for <code>exxe</code>, <code>eyye</code>, <code>ezze</code>, and <code>exye</code>)</li>
 	<li><code>exxp</code>, <code>eyyp</code>, <code>ezzp</code>, <code>exyp</code>, <code>exzp</code>, or <code>eyzp</code> - average element of the plastic <a href="#biot">Biot</a> strain tensor (in <a href="units.html">alt strain units</a>)</li>
 	<li><code>eRRp</code>, <code>eZZp</code>, <code>eTTp</code>, or <code>eRZp</code> - average element of the axisymmetric plastic <a href="#biot">Biot</a> strain tensor (in <a href="units.html">alt strain units</a>) (synonyms for <code>exxe</code>, <code>eyye</code>, <code>ezze</code>, and <code>exye</code>)</li>
+	<li><code>Fij</code> (where <code>i</code> and <code>j</code> are <code>x</code>, <code>y</code>, or <code>z</code>) - any component of the total deformation gradient (absolute)</li>
+	<li><code>Fij</code> (where <code>i</code> and <code>j</code> are <code>R</code> or <code>Z</code>) - any component of the total axisymmetric deformation gradient (absolute, synonyms for the <code>x</code> or <code>y</code>) versions.</li>
 	<li><code>velx</code>, <code>vely</code>, or <code>velz</code> - average component of velocity (in <a href="units.html">velocity units</a>)</li>
 	<li><code>velR</code> or <code>velZ</code> - average component of axisymmetric velocity (in <a href="units.html">velocity units</a>) (synonyms for <code>velx</code> or <code>vely</code>)</li>
 	<li><code>dispx</code>, <code>dispy</code>, or <code>dispz</code> - average component of displacement (in <a href="units.html">length units</a>)</li>
@@ -206,7 +208,7 @@ The Default value is <code>iYNNNN</code>.</dd>
 	<li><code>CPU time</code> - total CPU time for the current calculation (in secs, regardless of <a href="units.html">units</a> settings)</li>
 </ol></li>
 
-<li>The optional <code>(mat)</code> is material number and that quantity will be averaged only for particles of that material type. Omit this parameter (or attribute) to indicate an average over all particles. Grid quantities (<i>e.g.</i>, <code>Grid Kinetic Energy</code> but not <code>reactionx(y,z,R,Z)</code>) will ignore the attribute.</li>
+<li>The optional <code>(mat)</code> is material number and that quantity will be averaged only for particles of that material type. Omit this parameter (or attribute) to indicate an average over all particles. Most grid quantities (<i>e.g.</i>, <code>Grid Kinetic Energy</code> but not <code>reactionx(y,z,R,Z)</code> or <code>contactx(y,z,R,Z)</code>) will ignore the attribute.</li>
 
 <li>The optional <code>(time)</code> is the time interval for storing global results. If the time interval is not specified, it will be set to the <a href="#archiving">archiving interval</a> (in <a href="units.html">time units</a> or set by an optional <a href="#units"><code>units</code> attribute</a>).</li>
 
