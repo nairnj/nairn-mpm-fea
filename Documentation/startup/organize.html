@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
+	<title>Nairn-MPM-FEA Project Organization</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+Organization
+</p>
+
+<h1>The nairn-mpm-fea Project Source Code Organization</h1>
+
+<p>Assuming that checked out folder's name is <code>nairn-mpm-fea</code>, the NairnMPM,  NairnFEA, Documentation, and Visualization source code is organized into various directories. The contents of the directories are:
+</p>
+
+<dl>
+
+<dt><code>nairn-mpm-fea/Common</code></dt>
+<dd>This folder has items common to both MPM and FEA code
+
+<dl>
+<dt><code>nairn-mpm-fea/Projects</code></dt>
+<dd>This folder has project files for editing and compiling the code.</dd>
+
+
+<dt><code>nairn-mpm-fea/(others)</code></dt>
+<dd>All other folders in <code>Common</code> have various common sections of code.</dd>
+</dl>
+
+</dd>
+
+
+<dt><code>nairn-mpm-fea/NairnMPM</code></dt>
+<dd>This folder is the root folder for the NairnMPM source code
+
+<dl>
+<dt><code>nairn-mpm-fea/NairnMPM/src</code></dt>
+<dd>This folder has all MPM-specific source code in various subfolders</dd>
+
+
+<dt><code>nairn-mpm-fea/NairnMPM/build</code></dt>
+<dd>This folder has the <code>makefile</code> for compiling the code using a <code>make</code> command.</dd>
+
+<dt><code>nairn-mpm-fea/NairnMPM/input</code></dt>
+<dd>This folder has sample input files and the <code>NairnMPM.dtd</code> file. The compiled code gets installed here ready for running with the input files.
+
+<dl>
+<dt><code>nairn-mpm-fea/NairnMPM/input/Scripted_Input</code></dt>
+<dd>This folder has scripted input files that can be run using with <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPM">NairnFEAMPM</a> or <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a> applications.</dd>
+
+<dt><code>nairn-mpm-fea/NairnMPM/input/XML_Input</code></dt>
+<dd>This folder has XML input files that can be run from a command line. It is recommended that you rarely use such files and instead do all calculations using the scripting tools in <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPM">NairnFEAMPM</a> and <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a>.</dd>
+
+</dl>
+</dd>
+
+<dt><code>nairn-mpm-fea/NairnMPM/tools</code></dt>
+<dd>This folder has source code for command line tools that can be used with NairnMPM such as for extracting data from archive files.</dd>
+
+</dl>
+
+</dd>
+
+<dt><code>nairn-mpm-fea/NairnFEA</code></dt>
+<dd>This folder is the root folder for the NairnFEA source code
+
+<dl>
+<dt><code>nairn-mpm-fea/NairnFEA/src</code></dt>
+<dd>This folder has all FEA-specific source code in various subfolders</dd>
+
+
+<dt><code>nairn-mpm-fea/NairnFEA/build</code></dt>
+<dd>This folder has the <code>makefile</code> for compiling the code using a <code>make</code> command.</dd>
+
+<dt><code>nairn-mpm-fea/NairnFEA/input</code></dt>
+<dd>This folder has sample input files and the <code>NairnFEA.dtd</code> file. The compiled code gets installed here ready for running with the input files.
+
+<dl>
+<dt><code>nairn-mpm-fea/NairnFEA/input/Scripted_Input</code></dt>
+<dd>This folder has scripted input files that can be run using with <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPM">NairnFEAMPM</a> or <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a> applications.</dd>
+
+<dt><code>nairn-mpm-fea/NairnFEA/input/XML_Input</code></dt>
+<dd>This folder has XML input files that can be run from a command line. It is recommended that you rarely use such files and instead do all calculations using the scripting tools in <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPM">NairnFEAMPM</a> and <a href="http://osupdocs.forestry.oregonstate.edu/index.php/NairnFEAMPMViz">NairnFEAMPMViz</a>.</dd>
+
+</dl>
+</dd>
+
+</dl>
+
+</dd>
+
+<dt><code>nairn-mpm-fea/Visualization</code></dt>
+<dd>This folder is the root folder for the platform-independent, Java-based visualization tool.
+
+<dl>
+<dt><code>nairn-mpm-fea/Visualization/src</code></dt>
+<dd>This folder has the Java source code for the visualization tool called NairnFEAMPMViz.</dd>
+
+
+<dt><code>nairn-mpm-fea/Visualization/build</code></dt>
+<dd>This folder has a <code>makejar</code> script that can compile the Java source code into a jar file. It also has files for creating a Windows shortcut with a provided icon.</dd>
+
+</dl>
+
+</dd>
+
+<dt><code>nairn-mpm-fea/Documentation</code></dt>
+<dd>This folder has all documentation of the current version. Open the <code>index.html</code> file to view the documentation in any browser.</dd>
+
+</dl>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+Organization
+</p>
+
+</body>
+</html>

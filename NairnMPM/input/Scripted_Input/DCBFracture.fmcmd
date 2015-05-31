@@ -1,0 +1,226 @@
+! ********** Introduction **********
+! DCB specimen - fill specimen of half the specimen
+
+! ********** Preamble Section **********
+Title "DCB Specimen"
+Name "John Nairn"
+
+! Header
+Header
+Mode I DCB specimen with crack growth
+Options to load by force, velocity, or wedge opening
+Option for two beams with different properties
+EndHeader
+
+#analysis$="Plane Strain MPM"
+Analysis #analysis$
+MPMMethod USAVG,"uGIMP"
+Processors 2
+XMLData "MPMHeader"
+    <FractionFLIP>0.0</FractionFLIP>
+EndXMLData
+
+! ********** Parameters Section **********
+#cwidth=.5				! cell width
+#cheight=.5				! cell height
+#length=150				! Length in mm (mult of cwidth)
+#depth=3				! Depth in mm (mult of cheight)
+#width=1				! Width in mm (i.e. thickness)
+#tip=100					! crack tip location
+#lmat=0					! left side material length (or <=0 to omit)
+#shift=#cheight/2		! shift specimen to move crack the element center
+
+#damp=0					! damping (<0 for feedback, >0 for global)
+#target$=".1*sign(t-20)"				! kinetic energy (microJ) determined by simulation prior to crack
+
+#endld$="rigid"	    	! "load", "rigid"
+#rvel=10				! Single arm end velocity (mm/sec)
+
+! isotropic material
+#Ebase=10
+#nubase=.33
+#vibs=1					! beam vibrations times until initiation
+#rho=1
+
+! Full opening Delta = 2 delta = 2Pa^3/(3EI)
+! Compliance C = Delta/P = 2a^3/(3EI)
+! Energy Releae Rate G = P^2/2B (dC/da) = P^2a^2/(BEI)
+if #analysis$="Plane Strain MPM"
+  #Estar = #Ebase/(1-#nubase*#nubase)
+else
+  #Estar = #Ebase
+endif
+#Ibeam=#width*#depth^3/12
+#a=#length-#tip
+
+! End loading rate #loadRate = #rvel*(3EI)/(1000a^3)
+#rel=(3*#Estar*#Ibeam)/(1000*#a*#a*#a)
+#loadRate=#rel*#rvel			! N/ms when end loading
+Comment "Arm displacement rate = "&#rvel&" mm/sec"
+Comment "Arm loading rate = "&#loadRate&" N/ms"
+
+! beam vibrations
+#tvib = 1787.*sqrt(#rho*#width*#depth/(10^9*#Estar*#Ibeam))*(#a*#a)
+Comment "Arm vibration time = "&#tvib&" ms"
+#tinit = #vibs*#tvib
+
+! displacement at initiation (by beam theory)
+#dinit=#tinit*#rvel/1000
+Comment "Arm displacement at "&#vibs&" vibration times = "&#dinit
+
+! Load at initiation (by beam theory)
+#Pinit=#tinit*#loadRate
+Comment "Initiation Load = "&#Pinit&" N"
+
+! Toughness to be G at initiation load
+#JIc=1000*#Pinit*#Pinit*#a*#a/(#width*#Estar*#Ibeam)
+Comment "Toughness = "&#JIc&" J/m^2"
+
+! Rate of G loading
+#Grate = 1000*#a^2/(#width*#Estar*#Ibeam)
+Comment "Initial G = "&#Grate&"*P^2 J/m^2"
+Comment "Initial G = "&(#Grate*#loadRate*#loadRate)&"*t^2 J/m^2/ms^2"
+
+! Load 5 times initiation time
+#maxTime=5*#tinit
+
+! ********** MPM Header **********
+Archive "Results/FullDCB/beam"
+ArchiveTime #maxTime/200ToArchive velocity,stress,strain,rotstrain
+ToArchive strainenergy,stressintensity,jintegralTimeStep 1000,#maxTime
+
+! optional damping
+if #damp>0
+  Damping #damp
+else if #damp<0
+  FeedbackDamping -#damp,#target$
+endif
+
+! crac propagation
+Propagate "critical err"
+Friction "none"
+MovePlane avg
+! ********** MATERIALS SECTION **********
+Material "beamtop","Polymer","Isotropic"  E #Ebase  nu #nubase  a 60  rho #rho
+  JIc #JIc
+  constantTip 1
+Done
+
+Material "beambot","Polymer","Isotropic"
+  E #Ebase
+  nu #nubase
+  a 60
+  rho #rho
+  JIc #JIc
+  constantTip 1
+Done
+
+if #lmat>0
+  Material "beam2","Polymer","Isotropic"
+    E #Ebase
+    nu #nubase
+    a 60
+    rho #rho
+    JIc 5*#JIc
+  Done
+endif
+
+if #endld$="wedge"
+  MultimaterialMode 0,"enabled","avggrad",100
+  Material "wedge","Wedge","Rigid"
+    direction 8
+  Done
+
+else if #endld$="rigid"
+  Material "rigidtop","Rigid Grip Top","Rigid"
+    direction 2
+  Done
+  Material "rigidbot","Rigid Grip Bottom","Rigid"
+    direction 2
+  Done
+  
+  GlobalArchive "reactiony","rigidtop"
+  GlobalArchive "reactiony","rigidbot"
+endif
+
+! Global Archiving
+GlobalArchive "syy","beamtop"
+GlobalArchive "Grid Kinetic Energy"
+GlobalArchive "Strain Energy"
+if #damp<0
+  GlobalArchive "alpha"
+endif
+
+! ********** GRID SECTION ***********
+#ledge=#cwidth			 					! left edge extra space (mult of cwidth)
+#redge=3*#cwidth						 	! right edge extra space (mult of cwidth)
+#top=int(10*#dinit/#cheight+3*#cheight)*#cheight      ! top (and bottom for full) extra space (mult of cheight)
+
+! horizontal and verticle number of cells
+#horiz=(#length+#ledge+#redge)/#cwidth
+#vert=(#depth+#top)/#cheight
+
+GridThickness #width
+GridHoriz #horiz
+GridVert 2*#vert
+GridRect -#ledge,#length+#redge,-#depth-#top,#depth+#top! ********* MATERIAL POINT SECTION *****
+
+! the sedge
+if #endld$="wedge"
+  #wlen = 10*#cwidth
+  #vel = 10*(#length-#wlen)/#maxTime
+  Region "wedge",-#vel,0,#width
+    PolyPt #length-#wlen,#shift
+    PolyPt #length+#cwidth,1*#cheight+#shift
+    PolyPt #length+#cwidth,-1*#cheight+#shift
+  EndRegion
+endif
+
+! left material
+if #lmat>0
+  Region #beam2Mat$,0,0,#width
+    Rect 0,#lmat,-#depth+#shift,#depth+#shift
+  EndRegion
+endif
+
+! Beam
+Region "beamtop",0,0,#width
+  Rect 0,#length,#shift,#depth+#shiftEndRegion
+Region "beambot",0,0,#width
+  Rect 0,#length,-#depth+#shift,#shift
+EndRegion
+
+! ********* CRACKS SECTION *****
+#res=2*int((#length-#tip)/#cwidth)+1
+NewCrack #tip+(#cwidth/10),-0.000001+#shift,"beamtop"
+GrowCrackLine #length-#cwidth/4,-0.000001+#shift,#res,"exterior"
+
+! ***** BOUNDARY CONDITION SECTION *****
+MoveLine -#cwidth,0,0,0
+  Velocity y,constant
+EndMoveLine
+! end loads on beam armsif #endld$="load"
+  LoadRect #length-(#cwidth/2),#length,#shift,#depth+#shift
+    LoadType "net"
+    Load y,linear,#loadRate
+    !Load y,linear,-#loadRate,#tinit
+  EndLoadRect  LoadRect #length-(#cwidth/2),#length,-#depth+#shift,#shift
+    LoadType "net"
+    Load y,linear,-#loadRate
+    !Load y,linear,#loadRate,#tinit
+  EndLoadRect
+else if #endld$="traction"
+  Stop "Use traction command instead"
+else if #endld$="rigid"
+  Region "rigidtop",0,#rvel,#width
+    Rect #length,#length+#cwidth,#depth-3*#cheight+#shift,#depth+#cheight+#shift
+  EndRegion
+  Region "rigidbot",0,-#rvel,#width
+    Rect #length,#length+#cwidth,-#depth-#cheight+#shift,-#depth+3*#cwidth+#shift
+  EndRegion
+EndIf
+
+! Stop when crack gets to 100mm
+CustomTask ReverseLoad
+Parameter style,"abort"
+Parameter maxLength,100

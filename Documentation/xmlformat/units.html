@@ -1,0 +1,112 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>Defining Cracks</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+<style type='text/css'>
+td {
+font-size: 10pt;
+text-align: center;}
+sup { font-size: 7pt;}
+</style>
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#feacontents">FEA XML File Contents</a> /
+
+<a href="index.html#contents">MPM XML File Contents</a> &rarr;
+<a href="header.html">Header</a>
+</p>
+
+<h1>Legacy and Consistent Units</h1>
+
+<p><code>NairnFEA</code> and <code>NairnMPM</code> were initially developed using a specific set of units. The internal calculations were (for the most part) based on mm-g-seconds units (although there were some exceptions). The units for input of properties and output of results also usually followed this system, but not always. With the addition of the <a href="header.html"><code>ConsistentUnits</code></a> command (available since <code>NairnFEA</code> version 5, <code>NairnMPM</code> version 11, and <code>OSParticulas</code> version 2) all code can now be run in a new mode were input and output use consistent units and the user can specify any metric system of units.</p>
+
+<p>The original system of units is called "Legacy Units" while the new method is called "Consistent Units." The Legacy units can still be used (to allow backward compatibility of old input files) and it corresponds to any input file that omits the <a href="header.html"><code>ConsistentUnits</code> in the main header</a>. The units required when using "Legacy Units" and in and some common "Consistent Units" systems are in the following table (note that you can use an metric consistent units are are not limited to those listed in the table):</p>
+
+<!--<table border="1" cellpadding="2" cellspacing="0" width="90%" align="center">-->
+<table align="center">
+
+<tr><th>Unit</th><th>Legacy</th><th>Consistent</th><th>SI</th><th>mmgs</th><th>cgs</th>
+</tr>
+
+<tr><td>Length</td><td>mm</td><td>L</td><td>m</td><td>mm</td><td>cm</td>
+</tr>
+
+<tr><td>Mass</td><td>g</td><td>M</td><td>kg</td><td>g</td><td>g</td>
+</tr>
+
+<tr><td>Density</td><td>g/cm<sup>3</sup></td><td>M/L<sup>3</sup></td><td>kg/m<sup>3</sup></td><td>g/mm<sup>3</sup></td><td>g/cm<sup>3</sup></td>
+</tr>
+
+<tr><td>Time</td><td>s</td><td>T</td><td>s</td><td>s</td><td>s</td>
+</tr>
+
+<tr><td>Alt Time</td><td>ms</td><td>T</td><td>s</td><td>s</td><td>s</td>
+</tr>
+
+<tr><td>Velocity</td><td>mm/s</td><td>L/T</td><td>m/s</td><td>mm/s</td><td>cm/s</td>
+</tr>
+
+<tr><td>Alt Velocity</td><td>m/s</td><td>L/T</td><td>m/s</td><td>mm/s</td><td>cm/s</td>
+</tr>
+
+<tr><td>Acceleration</td><td>mm/s<sup>2</sup></td><td>L/T<sup>2</sup></td><td>m/s<sup>2</sup></td><td>mm/s<sup>2</sup></td><td>cm/s<sup>2</sup></td>
+</tr>
+
+<tr><td>Force</td><td>N</td><td>F = M-L/T<sup>2</sup></td><td>N</td><td>&mu;N</td><td>dyne</td>
+</tr>
+
+<tr><td>Pressure</td><td>MPa</td><td>P = F/L<sup>2</sup></td><td>Pa</td><td>Pa</td><td>Ba</td>
+</tr>
+
+<tr><td>Alt Strain</td><td>%</td><td>none</td><td>none</td><td>none</td><td>none</td>
+</tr>
+
+<tr><td>Energy</td><td>J</td><td>E = F-L</td><td>J</td><td>nJ</td><td>erg</td>
+</tr>
+
+<tr><td>Energy Release</td><td>J/m<sup>2</sup></td><td>E/L<sup>2</sup> </td><td>J/m<sup>2</sup></td><td>nJ/mm<sup>2</sup></td><td>erg/cm<sup>2</sup></td>
+</tr>
+
+<tr><td>Stress Intensity</td><td>MPa-m<sup>0.5</sup></td><td>P-L<sup>0.5</sup> </td><td>Pa-m<sup>0.5</sup></td><td>Pa-mm<sup>0.5</sup></td><td>Ba-cm<sup>0.5</sup></td>
+</tr>
+
+<tr><td>Viscosity</td><td>cPoise</td><td>P-T</td><td>Pa-s</td><td>Pa-s</td><td>Poise</td>
+</tr>
+
+<tr><td>Diffusion</td><td>mm<sup>2</sup>/s</td><td>L<sup>2</sup>/T</td><td>m<sup>2</sup>/s</td><td>mm<sup>2</sup>/s</td><td>cm<sup>2</sup>/s</td>
+</tr>
+
+<tr><td>Solvent Flux</td><td>kg/(m<sup>2</sup>-s)</td><td>M/(L<sup>2</sup>-T)</td><td>kg/(m<sup>2</sup>-s)</td><td>g/(mm<sup>2</sup>s)</td><td>g/(cm<sup>2</sup>-s)</td>
+</tr>
+
+<tr><td>Conductivity</td><td>W/(m-K)</td><td>E/(L-K-s)</td><td>W/(mm-K)</td><td>nW/(mm-K)</td><td>erg/(cm-K-s)</td>
+</tr>
+
+<tr><td>Heat Capacity</td><td>J/(kg-K)</td><td>E/(M-K)</td><td>J/(kg-K)</td><td>nJ/(g-K)</td><td>erg/(g-K)</td>
+</tr>
+
+<tr><td>Heat Flux</td><td>W/m<sup>2</sup></td><td>E/L<sup>2</sup></td><td>W/m<sup>2</sup></td><td>nW/mm<sup>2</sup></td><td>erg/cm<sup>2</sup></td>
+</tr>
+
+</table>
+
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#feacontents">FEA XML File Contents</a> /
+
+<a href="index.html#contents">MPM XML File Contents</a> &rarr;
+<a href="header.html">Header</a>
+</p>
+
+</body>
+
+</html>

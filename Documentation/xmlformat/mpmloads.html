@@ -1,0 +1,294 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>Particle Boundary Conditions</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+<h1>Particle Boundary Conditions</h1>
+
+<p>Particle-based boundary conditions are used to set force, traction, and heat flux, and concentration flux conditions. The details are documented in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Particle-Based_Boundary_Conditions">OSUPDocs wiki</a>. This pages outlines their use.</p>
+
+<p>All particle-based boundary conditions must be set up within a single <code>&lt;ParticleBCs&gt;</code> element.
+The format is</p>
+
+<pre>
+&lt;ParticleBCs&gt;
+   (one ot more <a href="#sec2">particle BC shape commands</a>)
+   
+   &lt;LoadBCs&gt;
+      &#x22ee;
+   &lt;/LoadBCs&gt;
+&lt;/ParticleBCs&gt;
+</pre>
+
+<p>There are two ways to specify particle boundary conditions. The most common approach is
+to <a href="#sec2">generate</a> conditions using one or more shape commands
+(like <code>&lt;LdRect&gt;</code> above) to select particles and apply
+specified <a href="#load">load, traction</a>, <a href="#hflux">heat flux</a>, and/or <a href="#flux">concentration flux</a> boundary conditions
+to all selected particles. The other way is to <a href="#sec1">explicitly</a> list each particle.
+This method is shown in the <code>&lt;LoadBCs&gt;</code> section above, is limited to load conditions.
+</p>
+
+<a name="sec2"></a><h2>Particle BC Shape Commands</h2>
+
+<p>These commands define shapes. All particles contained within the shape will be assigned boundary conditions for <a href="#load">load, traction</a>, <a href="#hflux">heat flux</a>, and/or <a href="#flux">concentration flux</a> that are specified by elements subordinate to the shape command:</p>
+
+<ul>
+
+<li><pre class="list">&lt;BCLine x1='0' y1="0" x2='100' y2='0' tolerance='0.1'&gt;
+    &#x22ee;
+&lt;/BCLine&gt;</pre>
+Deine a 2D line from (<code>x1,y1</code>) to (<code>x2,y2</code>) assign boundary conditions to all particles within optional tolerance of the line (in <a href="units.html">length units</a> or set by an optional <a href="mpmheader.html#units">units attribute</a>). The coordinates can alternatively be specified <a href="#minmax">relative to the mesh edges</a>.</li>
+
+<li><pre class="list">&lt;BCArc x1='0' y1='0' x2='100' y2='0' start='0' end='90' tolerance='0.1'&gt;
+    &#x22ee;
+&lt;/BCArc&gt;</pre>
+Deine a 2D arc along an elipse inside the rectangle with corners (<code>x1,y1</code>) to (<code>x2,y2</code>) and assign boundary conditions to all particles within optional tolerance of the arc (in <a href="units.html">length units</a> or set by an optional <a href="mpmheader.html#units">units attribute</a>). The arc will trace the oval defined by the points over angles from <code>start</code> to <code>end</code> in the counter-clockwise direction
+where <code>start=0</code> is along the <code>x</code> axis. The coordinates can alternatively be specified <a href="#minmax">relative to the mesh edges</a>.</li>
+
+<li><pre class="list">&lt;LdRect xmin='18.5' xmax='20' ymin='-12' ymax='12'&gt;
+    &#x22ee;
+&lt;/LdRect&gt;</pre>
+Deine a 2D rectangle with ranges xmin to xmax and ymin to ymax and assign boundary conditions to all particles within that rectangle (in <a href="units.html">length units</a> or set by an optional <a href="mpmheader.html#units">units attribute</a>). The coordinates can alternatively be specified <a href="#minmax">relative to the mesh edges</a>.</li>
+
+<li><pre class="list">&lt;BCBox xmin='18.5' xmax='20' ymin='-12' ymax='12' zmin='0' zmax='10' axis='0'&gt;
+    &#x22ee;
+&lt;/BCBox&gt;</pre>
+Deine a 3D box with corners (<code>xmin,ymin,zmin</code>) and (<code>xmax,ymax,zmax</code>) and assign boundary conditions to all particles within that box (in <a href="units.html">length units</a> or set by an optional <a href="mpmheader.html#units">units attribute</a>). The optional <code>axis</code> attribute can convert the shape to the cylinder enclosed within the box with axis along the specified direction (as x, 1, y, 2, z, or 3). The coordinates can alternatively be specified <a href="#minmax">relative to the mesh edges</a>.</li>
+
+</ul>
+
+<a name="load"></a><h2>Generated Particle Load or Traction Conditions</h2>
+
+<p>Particle load or traction conditions subordinate to shape elements are created using:
+</p>
+
+<pre>
+   &lt;LoadBC dir='1' style='1' load='400' time='0.0' function='x*t'/&gt; 
+</pre>
+
+<pre>
+   &lt;TractionBC dir='1' style='1' face='1' stress='400' time='0.0' function='x*t'/&gt; 
+</pre>
+
+<p>where</p>
+
+<ul>
+
+<li><code>dir</code> - defines the loading direction (<code>1</code> for <code>x</code> axis, <code>2</code> for <code>y</code> axis,
+<code>3</code> for <code>z</code> axis (if 3D), <code>1</code> for <code>R</code> axis (if axisymemtric), or <code>2</code> for <code>Z</code> axis (if axisymemtric)). For <code>TractionBC</code>, <code>dir</code> can be 11 or 12 to mean normal or shear traction relative the the selected <code>face</code>, respectively. A normal traction is positive if pointing out of the particle domain and a shear traction is positive when oriented in the counter-clockwise direction. Shear tractions are not allowed in 3D calculations.</li>
+
+<li><code>style</code> - defines the type of loading (<a href="#style">see below</a>).</li>
+
+<li><code>face</code> (for <code>TractionBC</code>) - the face of the original particle domain that is loaded by traction. In 2D, the faces are the edges numbered 1 through 4 in the counter-clockwise direction with the bottom edge being number 1. In 3D, 1 to 4 are the same faces (<i>i.e.</i>, faces with normals (0,-1,0), (1,0,0), (0,1,0), and (-1,0,0) on the original particle domain, respectively), 5 is the bottom (with normal (0,0,-1)), and 6 is the top (with normal (0,0,1)).</li>
+
+<li><code>load</code> and <code>time</code> (for <code>LoadBC</code>) - defines the two parameters (<code>value</code> and <code>time</code>) for the specified style
+(<a href="#style">see below</a>). The load parameter is in <a href="units.html">force units</a> or <a href="units.html">force/alt time units</a>.</li>
+
+<li><code>stress</code> and <code>time</code> (for <code>TractionBC</code>) - defines the two parameters (<code>value</code> and <code>time</code>) for the specified style
+(<a href="#style">see below</a>). The stress parameter is in <a href="units.html">pressure units</a> or <a href="units.html">pressure/alt time units</a>. To calculate  traction stresses, the simulation needs to know the <a href="definemesh.html">grid thickness</a> and it should match the particle thickness.</dd>
+
+<li><code>function</code> - when using <a href="#function"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined
+function</a> of time (<code>t</code> in <a href="units.html">alt time units</a>), of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code>).
+in <a href="units.html">length units</a>), and/or of current clockwise particle rotation angle (<code>q</code> in radians).
+The function should evaluate to load in <a href="units.html">force units</a> (for <code>LoadBC</code>) or stress in <a href="units.html">pressure units</a> (for <code>TractionBC</code>).</li>
+
+</ul>
+
+
+<h3>LoadBC options</h3>
+
+<ul>
+<li><pre class="list">&lt;net/&gt;
+&lt;perParticle/&gt;</pre>
+By default, the <code>load</code> argument or the load returned by a function
+give the load on each particle with that boundary condition. Alternatively, a load or function
+can evaluate to the total force applied to all particles in the <a href="#sec2">current shape</a>.
+To enter total load, include a <code>&lt;net/&gt;</code> command within the <a href="#sec2">shape command</a> containing the <code>LoadBC</code> command before the <code>LoadBC</code> command. To specify load per particle, include <code>&lt;perParticle/&gt;</code> (or have no command since per particle is the default setting). These commands only apply to <code>LoadBC</code> commands.</li>
+</ul>
+
+<a name="style"></a><h2>Boundary Condition Styles</h2>
+
+<p>The <code>value</code>, <code>style</code>, and <code>time</code> attributes for particle-based boundary conditions are used to set the time-dependence of the boundary conditions. The <code>style</code> options are listed below and any number of options can be combined on a single particle. When a single particle has multiple conditions, the resulting condition will be a superposition of the imposed conditions.</p>
+
+<dl>
+  <dt>Style=1 (constant)</dt>
+  <dd>Set condition to <code>(value)</code> starting at time in <code>(time)</code> attribute where <code>(time)</code> is in <a href="units.html">alt time units</a></dd>
+  
+  <dt>Style=2 (linearly increasing condition)</dt>
+  <dd>Set condition to <code>(value)*[t-(time)]</code> where <code>t</code>, which is the current time, and <code>(time)</code> are in <a href="units.html">alt time units</a>. The condition starts at time in the <code>(time)</code> attribute.</dd>
+
+  <dt>Style=3 (sine variation)</dt>
+  <dd>Set condition to <code>(value)*sin[t*(time)]</code> where <code>t</code> is current time (in ms) and <code>(time)</code> has units 1/ms.</dd>
+  
+  <dt>Style=4 (cosine variation)</dt>
+  <dd>Set condition to <code>(value)*cos[t*(time)]</code> where <code>t</code> is current time (in <a href="units.html">alt time units</a>) and <code>(time)</code> has units <a href="units.html">1/(alt time) units</a>.</dd>
+  
+  <dt>Style=5 (silent boundary)</dt>
+  <dd>Set the boundary to absorbing boundary conditions. The intent of a silent boundary is to eliminate reflected waves at a free edge and mimic a sample in a semi-infinite domain. The silent boundary must have normal vector in <code>x</code> or <code>y</code> direction . The <code>dir</code> attribute specifies the direction of the normal vector. There is no need to specify a <code>load</code> or <code>time</code> argument. This boundary condition currently only works for linear elastic, isotropic materials and it requires a regular grid. Silent boundary conditions are only allowed for particle load and flux conditions.
+  </dd>
+  
+  <dt>Style=6 (user-defined function)</dt>
+  <dd>Set condition to the evaluated value of a <a href="function.html">user-defined function</a> of time (<code>t</code> in <a href="units.html">alt time units</a>) and/or nodal coordinates (<code>x</code>, <code>y</code>, <code>z</code>, <code>R</code>, <code>Z</code>, <code>D</code>, and <code>T</code> in <a href="units.html">length units</a>). If the <code>time</code> attribute is used the condition starts at time in the <code>(time)</code> attribute and the function is evaluated at <code>[t-(time)]</code> (in <a href="units.html">alt time units</a>). A function of rotational angle is sometimes needed for large displacement calculations.</dd>
+
+</dl>
+
+<a name="hflux"></a><h2>Generated Heat Flux Conditions</h2>
+
+<p>There are two options for setting non-zero heat flux conditions, which are determined by the <code>dir</code> attribute (note: the use of heat flux conditions requires that you set the <a href="definemesh.html">grid thickness</a> to match the boundary particle's thickness):
+</p>
+
+<h3>Externally Applied Flux</h3>
+
+<p>To apply an external flux, use:
+</p>
+
+<pre>
+    &lt;HeatFluxBC dir='1' face='1' style='1' value='0' time='0.0' function='sinh(t)'/&gt;
+</pre>
+
+
+<p>where</p>
+
+<ul>
+
+<li><code>dir</code> - must be 1 to indicate an external flux.</li>
+
+<li><a name="hfluxface"></a><code>face</code> - the face of the original particle domain that in on the boundary and has the concentration flux. In 2D, the faces are the edges numbered 1 through 4 in the counter-clockwise direction with the bottom edge being number 1. In 3D, 1 to 4 are the same faces (<i>i.e.</i>, faces with normals (0,-1,0), (1,0,0), (0,1,0), and (-1,0,0) on the original particle domain, respectively), 5 is the bottom (with normal (0,0,-1)), and 6 is the top (with normal (0,0,1))</li>
+
+<li><code>style</code> - defines the type of flux using <a href="#style">standard styles</a>.  The <code>silent</code> option has a special meaning and is used to set natural flux determined by <code>(k grad T).n</code> on particles on the edge with the boundary condition. It should enable simulation of heat flow through materials.</li>
+
+<li><code>value</code> and <code>time</code> - these arguments are used with the chosen <a href="#style">style</a>. The <code>value</code> should be in <a href="units.html">heat flux units</a> or in <a href="units.html">heat flux/alt time units</a>. Positive flux is into the object and negative is out of the object.</li>
+
+<li><code>function</code> - when using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of time (<code>t</code> in <a href="units.html">alt time units</a>), of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in <a href="units.html">length units</a>), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in <a href="units.html">heat flux units</a>.
+</li>
+</ul>
+
+<h3>Coupled Surface Heat Flux</h3>
+
+<p>This option sets the surface heat flux to some function of the current particle temperature:
+</p>
+
+<pre>
+    &lt;HeatFluxBC dir='2' face='3' style='6' function='254*(300^4-t^4)'/&gt;
+</pre>
+
+
+<p>where</p>
+
+<ul>
+
+<li><code>dir</code> - must be 2 to indicate a coupled surface flux.</dd>
+
+<li><code>face</code> - the face with the flux is as defined <a href="#hfluxface">above</a>.</dd>
+
+<li><code>style</code> - must be 6 meaning the condition is specified in a function (see below)</dd>
+
+<li><code>function</code> - enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code>, where <code>t</code> stands for the current particle temperature (in K), of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in <a href="units.html">length units</a>), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in <a href="units.html">heat flux units</a>. Positive flux is into the object and negative is out of the object.
+</li>
+
+</ul>
+
+
+<a name="flux"></a><h2>Generated Concentration Flux Conditions</h2>
+	
+<p>There are two options for setting non-zero flux conditions, which are determined by the <code>dir</code> attribute (note: the use of concentration flux conditions requires that you set the <a href="definemesh.html">grid thickness</a> to match the boundary particle's thickness):
+</p>
+	
+<h3>Externally Applied Flux</h3>
+	
+<p>To apply an external flux, use:</p>
+	
+<pre>
+    &lt;ConcFluxBC dir='1' face='1' style='1' value='0' time='0.0' function='sinh(t)'/&gt;
+</pre>
+	
+<p>where</p>
+
+<ul>
+		
+<li><code>dir</code> - must be 1 to indicate an external flux.</li>
+		
+<li><a name="fluxface"></a><code>face</code> - the face of the original particle domain that in on the boundary and has the concentration flux. In 2D, the faces are the edges numbered 1 through 4 in the counter-clockwise direction with the bottom edge being number 1. In 3D, 1 to 4 are the same faces (<i>i.e.</i>, faces with normals (0,-1,0), (1,0,0), (0,1,0), and (-1,0,0) on the original particle domain, respectively), 5 is the bottom (with normal (0,0,-1)), and 6 is the top (with normal (0,0,1)).</li>
+		
+<li><code>style</code> - defines the type of flux using <a href="#style">standard styles</a>. The <code>silent</code> option has a special meaning and is used to set natural flux determined by <code>(D grad c).n</code> on particles on the edge with the boundary condition. It should enable simulation of solvent flow through materials.</li>
+		
+<li><code>value</code> and <code>time</code> - these arguments are used with the chosen <a href="#style">style</a>. The <code>value</code> should be in <a href="units.html">solvent flux units</a> or in <a href="units.html">solvent flux/alt time units</a>. Positive flux is to into the object and negative is out of the object.</li>
+		
+<li><code>function</code> - when using <a href="#style"><code>style=6</code></a>, enter an arbitrary <a href="function.html">user-defined function</a> of time (<code>t</code> in <a href="units.html">alt time units</a>), of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in <a href="units.html">length units</a>), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in <a href="units.html">solvent flux units</a>. When using a function, the <code>value</code> attribute is ignored, but <code>time</code> can be used to determine <a href="#function">when the function is evaluated</a>.
+</li>
+		
+</ul>
+	
+	
+<h3>Coupled Surface Flux</h3>
+	
+<p>This option sets the surface flux to some function of the difference between the particle concentration potential and the concentration potential of a surrounding reservoir:
+</p>
+	
+<pre>
+    &lt;ConcFluxBC dir='2' face='3' style='6' function='t^2'  bath='1'/&gt;
+</pre>
+	
+<p>where</p>
+	
+<ul>
+		
+<li><code>dir</code> - must be 2 to indicate a coupled surface flux.</li>
+		
+<li><code>face</code> - the face with the flux is as defined <a href="#fluxface">above</a>.</li>
+		
+<li><code>style</code> - must be 6 meaning the condition is specified in a function (see below)</li>
+		
+<li>function - enter an arbitrary <a href="function.html">user-defined function</a> of <code>t</code>, where <code>t</code> now gives the difference between the particle concentration potential and the reservoir concentration potential, of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in <a href="units.html">length units</a>), and/or of current clockwise particle rotation angle (<code>q</code> in radians). The function should evaluate to the flux in <a href="units.html">solvent flux units</a>. The sign is irrelevant. The applied flux will be positive if the particle concentration is less than the bath or negative if it is greater than the bath. The magnitude of the function gives the magnitude of the flux.
+</li>
+		
+<li>bath - the concentration potential (0 to 1) of the surrounding reservoir bath. Note that the bath is specified as a concentration potential (c/csat) and not actual weight fraction concentation.</li>
+		
+</ul>
+
+<a name="sec1"></a><h2>Explicit Particle Loading</h2>
+
+<p>Explicit load boundary condition are defined with <code>&lt;load&gt;</code> elements within a single  <code>&lt;LoadBCs&gt;</code> element:
+</p>
+</p>
+
+<pre>
+   &lt;load pt='398' dof='2' style='1'&gt;(data)&lt;/load&gt;
+</pre>
+
+<p>where</p>
+
+<ul>
+<li><code>pt</code> - the material point number to be loaded.</li>
+
+<li><code>(data)</code> - the data in the element has two
+numbers whose meanings are the <code>value</code> and <code>time</code> arguments for the boundary condition <a href="#style">styles</a>. The <code>value</code> is in <a href="units.html">force units</a> or <a href="units.html">force/alt time units</a> and the time is in <a href="units.html">alt time units</a> or <a href="units.html">1/alt time units</a>. When using an arbitrary function (see <code>Style=6</code> below) the <code>(data)</code> in the element should be the a <a href="function.html">user-defined function</a> of <code>t</code> (in <a href="units.html">alt time units</a>), of current particle position (<code>x</code>, <code>y</code>, <code>z</code>, <code>D</code>, <code>T</code>, <code>R</code>, and <code>Z</code> in <a href="units.html">length units</a>), and/or of current clockwise particle rotation angle (<code>q</code> in radians), that evaluates to load in <a href="units.html">force units</a>.</li>
+
+<li><code>dof</code> - determines if applied load is in the <code>x</code> direction (<code>dof=1</code>), the <code>y</code> direction (<code>dof=2</code>), <code>z</code> direction (<code>dof=3</code>, 3D only), <code>R</code> direction (<code>dof=1</code>, if axisymnmetric), or <code>Z</code> direction (<code>dof=2</code>, if axisymmetric).</li>
+
+<li><code>style</code> - determines the time dependence of the boundary condition. The possible styles are defined <a href="#style">above</a>.</li>
+
+</ul>
+
+
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+</body>
+
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>Defining Cracks</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+<h1>Defining Cracks</h1>
+
+<p>MPM simulations can have cracks and can have multiple cracks, but cracks are currently only allowed in 2D or axisymmetric analyses. The details on defining cracks is given on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Defining_Cracks">OSUPdocs wiki</a>. In brief, each crack is defined by a <code>&lt;CrackList&gt;</code> structure with subordinate commands to define its path with a series of line segments. The format is:</p>
+
+<pre>
+&lt;CrackList friction='0.1' Dn='200' Dnc='-1' Dnt='200' Dt='5'&gt;
+  (<a href="#cgeom">define crack in crack geometry commands</a>)
+&lt;/CrackList&gt;
+
+</pre>
+
+<p>The <a href="mpmheader.html#cracks">crack settings</a> in the header define many default properties for modeling of cracks. The attributes on the <code>&lt;CrackList&gt;</code> command allow each crack to have custom properties:
+</p>
+
+<ul>
+
+<li><code>friction</code> sets custom frictional properties and it is set with same numeric values used in the <a href="mpmheader.html#cfriction">crack settings friction command</a>.</li>
+
+<li><code>Dn</code>, <code>Dnc</code>, <code>Dnt</code>, <code>Dt</code> - These optional interfacial stiffness attributes let you
+specify an <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Imperfect_Interfaces">imperfect interface</a> for this crack that is different than the default contact law entered in the <a href="mpmheader.html#cfriction">crack settings friction command</a>.</li>
+</ul>
+
+<p>Any crack can be specified as fixed (<i>i.e.</i>, they will not translate with the analysis and will not track positions of the crack tip surfaces). by adding a <code>type='fixed'</code> attribute to the <code>&lt;CrackList&gt;</code> command. Fixed cracks are only used for modeling certain special effects.
+</p>
+
+
+<h3><a name="cgeom"></a>Crack Geometry Commands</h3>
+
+<p>The crack geometry is specified by a series of
+<code>&lt;pt&gt;</code>, <code>&lt;Line&gt;</code>, and <code>&lt;Circle&gt;</code> commands. The
+crack is defined by drawing each shape and then connecting consecutive shapes with straight
+lines.
+</p>
+
+<ul>
+
+<li><pre class="list">&lt;pt units='mm' x='50.5' y='0' tip='1'/&gt;</pre>
+Defines a point at (x,y) (in <a href="units.html">length units</a> or determined by a <a href="mpmheader.html#units"><code>units</code> attribute</a>). A <code>tip</code> attribute sets material number in case the point is the crack tip.</li>
+
+<li><pre class="list">&lt;Line xmin="102" ymin="0" xmax="130" ymax="10" resolution="5"
+           start_tip="1" end_tip="1"/&gt;</pre>
+Define a straight line from <code>(xmin, ymin)</code> to <code>(xmax, ymax)</code> (in <a href="units.html">length units</a> or determined by
+<a href="mpmheader.html#units"><code>units</code> attribute</a>). The line will be divided into the number of segments defined by the <code>resolution</code> attribute. The <code>start_tip</code> and <code>end_tip</code> attributes set the material number for the start and/or end of the line.</li>
+
+<li><pre class="list">&lt;Circle xmin="102" ymin="0" xmax="130" ymax="10" resolution="10"
+           start_tip="1" end_tip="1" start_angle="0" end_angle="90"/&gt;</pre>
+Defines an arc based on the oval extending from <code>(xmin, ymin)</code>
+to <code>(xmax, ymax)</code> (in <a href="units.html">length units</a> or determined by
+<a href="mpmheader.html#units"><code>units</code> attribute</a>). The arc will be divided into the number of segments defined by the
+<code>resolution</code> attribute. The arc will be drawn in the counter-clockwise direction from <code>start_angle</code> to
+<code>end_angle</code> (entered in degrees with defaults of 0 and 360 and 0 along positive <code>x</code> axis). The <code>start_tip</code> and <code>end_tip</code> attributes set the material number for the start and/or end of the line.</li>
+
+<li><pre class="list">&lt;Thickness&gt;1.0&lt;/Thickness&gt;</pre>
+Sets thickness of the crack (in <a href="units.html">length units</a> or determined by
+<a href="mpmheader.html#units"><code>units</code> attribute</a>).</li>
+
+</ul>
+
+<p>The assignment of materials to the first or last point in the crack is required for simulations of crack propagation or calculation of J Integral. For cracks that extend outside the object, the recommended approach is to stop the cracking slightly before the edge (<i>e.g.</i>, 1/4 to 1/2 a cell from the edge) and define that tip as an "exterior" crack tip be setting its <code>tip</code> property to <code>-2</code>.</p>
+
+<p>Any part of a crack may be assigned a traction law material by adding a <code>mat='n'</code> attribute to the <code>&lt;pt&gt;</code>, <code>&lt;Line&gt;</code>, or <code>&lt;Circle&gt;</code> command. Alternatively, you can use a <code>matname = 'law name'</code> to pick traction law by name. Note that use of traction laws requires specification of crack thickness.</p>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+</body>
+
+</html>
