@@ -1,0 +1,206 @@
+! ********** Introduction **********
+! This command file does uniaxial loading of cylinder in an axisymmetric analysis.
+! The main use is to test materials for axisymmetric constitutitive law support.
+! The loading is in the z direction and can be tension or compression (using +/- #maxstrain variable).
+! The cylinder can be hollow or solid. The core (r=0) is always fixed, the outer radius
+!    can optionally be confined using #rconfine$
+! Boundary conditions can be force, traction, or rigid particles
+
+! ********** Preamble Section **********
+Title "MPM Analysis of Axially Loaded Cylinder"
+Name "John A. Nairn"
+
+! Header
+Header
+Axisymmetric analysis of an axially loaded cylinder.
+EndHeader
+
+! ********** Parameters Section **********
+#length=20                  ! Length in mm
+#Ri=0                   	! Internal radius (0 for solid)
+#Ro=20                   	! Outer radius in mm
+
+! "force" or "traction" or "rigid" or "contact"
+! Tries to load to approximate #maxStrain (%)
+#style$="contact"
+! may need small #factor and faster loading to get high tension
+#maxstrain=-10				
+
+! Base properties should be used
+! Needed for time calculations
+#Ebase=2300
+#rho=1.2
+#abase=60
+#nubase=0.33
+
+! "Isotropic" or "neohookean"
+#matID$="neohookean"
+
+! Simulations, timing, and damping
+#method$="lCPDI"			! lCPDI, uGIMP, or Classic
+#mult=40					! transit times for complete analysis
+#factor=.1				    ! convergence factor (needs to be small for large strains)
+#rampfraction=1.0			! fraction to full pressure or strain, then hold
+#damp=0						! grid damping
+#fbdamp=0					! feedback damping
+
+! mesh details
+#cell=2
+#border=3
+#rconfine$="no"				! yes to fix outer radius
+
+! ********** Calculations Section **********
+
+! Start analysis
+Analysis "Axisymmetric MPM"
+MPMMethod USAVG,#method$
+
+! convert to contact
+if #style$="contact"
+  MultimaterialMode 0.8,enabled,specify,90,0
+  !ImperfectInterfaceMM 0,1000
+endif
+
+! Calculate maximum and ramp times
+#speed=sqrt(1000*#Ebase/#rho)		! in mm/msec
+#transit=#length/#speed				! in msec
+#maxtime=#mult*#transit				! in msec
+#ramp=#maxtime*#rampfraction		! time to #maxstrain
+
+Archive "Results/Cyinder_"&#method$&"_"&#style$&"/ASMPM"
+ArchiveTime #maxtime/25
+TimeStep 1,#maxtime,#factor
+
+GlobalArchive sRR
+GlobalArchive eRRe
+GlobalArchive sZZ
+GlobalArchive eZZe
+GlobalArchive sTT
+GlobalArchive eTTe
+if #style$="contact"
+  GlobalArchive "contactR"
+  GlobalArchive "contactZ"
+endif
+
+ToArchive velocity,stress,strain,strainenergy,elementcrossings,rotStrain
+! plastic strain is Left Cauchy Green Strain, history 1 is J or volumetric strain
+ToArchive plasticstrain,history1
+
+! ********** Materials Section **********
+
+! estimate stress neede to reach #maxstrain
+! only needed when using force or traction conditions
+#maxDisp=#length*#maxstrain/100
+#stress=#Ebase*#maxstrain/100
+
+! extra cells for tension
+if #maxDisp>0
+  #extra=int(#maxDisp/#cell)+1+#border
+else
+  #extra=2
+  #border+=2
+endif
+
+if #matID$="isotropic"
+  Material #matID$,"Isotropic Material","Isotropic"
+    E #Ebase
+    nu #nubase
+    a #abase
+    rho #rho
+  Done
+
+else if #matID$="neohookean"
+  #G1=#Ebase/(2*(1+#nubase))
+  #G2=0
+  #G0=#G1+#G2
+  #Kbulk=#Ebase/(3*(1-2*#nubase))
+  #extra=int(1.5*#extra)
+  Material #matID$,"Neohookean Material","Mooney"
+    G1 #G1
+    G2 #G2
+    K #Kbulk
+    a #abase
+    rho #rho
+  Done
+  
+endif
+
+! Get displacement function if rigid
+#rate = #maxDisp/#ramp
+#rfxn$ = (1000*#rate)&"*(1-sign(t-"&#ramp&"))"
+if #style$="rigid"
+  Material "rigid","Rigid Piston","Rigid"
+    direction 2
+    SettingFunction #rfxn$
+    mirrored 1
+  Done
+else if #style$="contact"
+  Material "rigid","Rigid Contact","Rigid"
+    direction 8
+    SettingFunction2 #rfxn$
+  Done
+endif
+
+! guess kinetic energy and add damping options
+#disprate=1000*#maxDisp/#ramp			! mm/sec
+Comment "Displacement rate = "&(#disprate/1000)&" m/sec"
+! velocity is linear form 0 to disprate in x
+#area=(#Ro*#Ro-#Ri*#Ri)/2		! area per radian
+#ke = (1/6)*#rho*#disprate*#disprate*#length*#area/10^6
+Comment "Base kinetic energy = "&(#ke/10^6)&" J (per radian)"
+if #fbdamp>0
+  FeedbackDamping #fbdamp,#ke
+  GlobalArchive alpha
+endif
+if #damp>0
+  Damping #damp
+endif
+
+! ********** Grid and Material Points Section **********
+
+GridHoriz (#Ro+#border*#cell+#cell)/#cell
+GridVert (#length+#border*#cell+#extra*#cell)/#cell,0,-1
+GridRect -#cell,#Ro+#border*#cell,-#border*#cell,#length+#extra*#cell
+
+Region #matID$,0,0,1
+  Rect #Ri,#Ro,0,#length
+EndRegion
+
+! ********** Boundary Conditions Section **********
+
+! To loading
+if #style$="rigid"
+  Region "rigid",0,0,1
+    Rect 0,#Ro+#border*#cell,#length,#length+#cell
+  EndRegion
+else if #style$="contact"
+  Region "rigid",0,0,1
+    Rect 0,#Ro+#border*#cell,#length,#length+2*#cell
+  EndRegion
+else
+  LoadLine 0,#length,#Ro,#length,#cell/2
+    if #style$="force"
+      ! #stress*pi*(#cell/2)*2*rp/(2*pi) = #stress*#cell*rp/2
+      #pfrc = (#stress*#cell/(2*#ramp))&"*x*(t-(t-"&#ramp&")*sign(t-"&#ramp&"))"
+      Load y,function,#pfrc
+    else
+      Traction y,3,linear,#stress/#ramp
+      Traction y,3,linear,-#stress/#ramp,#ramp
+    endif
+  EndLoadLine
+endif
+
+if #rconfine$="yes"
+  MoveLine #Ro+#cell/2,-(#border+1)*#cell,#Ro+#cell/2,#length+(#extra+1)*#cell,0.55*#cell
+    Velocity x,constant,0
+  EndMoveLine
+endif
+
+! archive grid contact forces
+if #style$="contact"
+  CustomTask VTKArchive
+  Parameter "contactforce"
+  Parameter "stress"
+  Parameter "strain"
+endif
+

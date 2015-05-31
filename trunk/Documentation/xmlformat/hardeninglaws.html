@@ -1,0 +1,223 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>Using Hardening Laws</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+<h1>Using Hardening Laws</h1>
+
+<p>Some materials allow the use of hardening laws. The possible laws are described fully on the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Hardening_Laws">OSUPDocs Wiki</a>. This section brierly lists the properties. Hardening law properties are assigned with a material definition that uses the law:</p>
+
+<pre>
+&lt;Material Type='9' Name='Isotropic Plastic'&gt;
+         &#x22ee;
+     &lt;plasticLaw&gt;(Law_Name or number)&lt;/plasticLaw&gt;
+     (Law properties)
+&lt;/Material&gt;
+</pre>
+
+<p>where the <code>plasticLaw</code> command selects the law (using the law name or number from the table below). The law selection is followed by commands to set any properties specific to that law. Several <a href="definematl.html">materials</a> can use hardening laws.</p>
+
+<p>The following table lists the available hardening laws. Click any one to see the law and the properties needed for that law.</p>
+
+<table border="1" cellpadding="2" cellspacing="0" width="90%" align="center">
+<tr><th>Name</th><th>Number</th><th>Description</th>
+</tr>
+
+<tr>
+<td><a href="#linear"><code>Linear</code></a></td>
+<td>1</td>
+<td>Linear hardening</td>
+</tr>
+
+<tr>
+<td><a href="#nonlinear"><code>Nonlinear</code></a></td>
+<td>2</td>
+<td>Nonlinear hardening</td>
+</tr>
+
+<tr>
+<td><a href="#nonlinear2"><code>Nonlinear2</code></a></td>
+<td>6</td>
+<td>Alternate Nonlinear hardening</td>
+</tr>
+
+<tr>
+<td><a href="#johnsoncook"><code>JohnsonCook</code></a></td>
+<td>3</td>
+<td>Johnson Cook hardening law</td>
+</tr>
+
+<tr>
+<td><a href="#scgl"><code>SCGL</code></a></td>
+<td>4</td>
+<td>Stenberg-Cochran-Guinan hardening</td>
+</tr>
+
+<tr>
+<td><a href="#sl"><code>SL</code></a></td>
+<td>5</td>
+<td>Steinberg-Lund hardening</td>
+</tr>
+</table>
+
+<h2><a name="linear"></a>Linear Hardening (number=1)</h2>
+
+<p>In linear hardening the yield stress is given by
+</p>
+
+<blockquote>&sigma;<sub>Y</sub> = &sigma;<sub>Y0</sub> + E<sub>p</sub>&alpha; 
+   = &sigma;<sub>Y0</sub>(1 + K&alpha;)
+</blockquote>
+
+<p>where <code>&sigma;<sub>Y0</sub></code> is the initial yield stress, <code>Ep</code> is the plastic modulus, <code>K</code> is hardening coefficient, and <code>&alpha;</code> is cumulative, equivalent plastic strain. The input properties are:</p>
+
+<ul>
+
+<li>yield  the initial yield stress (in <a href="units.html">pressure units</a>).</li>
+<li>Ep - the plastic modulus (in <a href="units.html">pressure units</a>). The default is 0.0 which results in an elastic-perfectly plastic material.</li>
+<li>Khard - alternatively, you can enter this dimensionless parameter for hardening. It is only used if Ep is not entered.</li>
+</ul>
+
+<h3>History Data for Linear Hardening</h3>
+
+<ol>
+<li>The cumulative equivalent plastic strain, <code>&alpha;</code>, defined as the sum of <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>.</li>
+</ol>
+
+    
+<h2><a name="nonlinear"></a>Nonlinear Hardening (number=2)</h2>
+
+<p>In nonlinear hardening the yield stress is given by</p>
+
+<blockquote>&sigma;<sub>Y</sub> = &sigma;<sub>Y0</sub>(1 + K&alpha;)<sup>n</sup>
+</blockquote>
+
+<p>where <code>K</code> and <code>n</code> are dimensionless hardening parameters. The input properties are:</p>
+
+<ul>
+<li>yield - the initial yield stress (in <a href="units.html">pressure units</a>).</li>
+<li>Khard - coefficient for nonlinear hardening (dimensionless).</li>
+<li>nhard - exponent parameter in the nonlinear hardening (dimensionless).</li>
+</ul>
+
+<h3>History Data for Nonlinear Hardening</h3>
+
+<ol>
+<li>The cumulative equivalent plastic strain, <code>&alpha;</code>, defined as the sum of <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>.</li>
+</ol>
+
+<h2><a name="nonlinear2"></a>Alternate Nonlinear Hardening (number=6)</h2>
+
+<p>In this alternate nonlinear hardening the yield stress is given by</p>
+
+<blockquote>&sigma;<sub>Y</sub> = &sigma;<sub>Y0</sub>(1 + K&alpha;<sup>n</sup>)
+</blockquote>
+
+<p>where <code>K</code> and <code>n</code> are dimensionless hardening parameters. The input properties and history data are the same as for the <a href="#nonlinear">other nonlinear hardening law</a>.</p>
+
+<h2><a name="johnsoncook"></a>Johnson-Cook Hardening (number=3)</h2>
+
+<p>The Johnson-Cook hardening law is:
+</p>
+<blockquote>
+     &sigma;<sub>y</sub> = (Ajc + Bjc &epsilon;<sub>p</sub><sup>njc</sup>) [1 + Cjc ln(d&epsilon;<sub>p</sub>/ep0jc) ] (1 - Tr<sup>mjc</sup>)
+</blockquote>
+<p>where &epsilon;<sub>p</sub> is equivalent plastic strain, d&epsilon;<sub>p</sub> is plastic strain rate, and the reduced temperature (Tr) is given by</p>
+<blockquote>
+     Tr = (T - T<sub>0</sub>) / (Tmjc - T<sub>0</sub>)
+</blockquote>
+<p> and T<sub>0</sub> is the current <a href="mpmheader.html#stressfreetemp">stress free temperature</a>. The law properties are:</p>
+
+<ul>
+<li>Ajc - the initial yield stress at reference rate and temperature (in <a href="units.html">pressure units</a>).</li>
+<li>Bjc - hardening term in the yield stress (in <a href="units.html">pressure units</a>).</li>
+<li>njc - exponent for power-law hardening term (dimensionless).</li>
+<li>Cjc - coefficient for rate-dependent term (dimensionless).</li>
+<li>ep0jc - reference strain rate for reference yield stress in <code>Ajc</code> (in <a href="units.html">1/time units</a>).</li>
+<li>Tmjc - the material's melting point (in K).</li>
+<li>mjc - exponent in the thermal term (dimensionless).</li>
+</ul>
+
+<h3>History Data for Johnson-Cook Material</h3>
+
+<ol>
+<li>The cumulative equivalent plastic strain, <code>&alpha;</code>, defined as the sum of <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>.</li>
+</ol>
+
+<h2><a name="scgl"></a>Steinberg-Cochran-Lund Hardening (number=4)</h2>
+
+<p>In this hardening law, both the shear modulus and the yield stress change. The shear modulus  is given by
+</p>
+<blockquote>
+     G = G<sub>0</sub> [ 1 + (G<sub>p</sub>'/G<sub>0</sub>)(P/&eta;<sup>1/3</sup>) + (G<sub>T</sub>'/G<sub>0</sub>)(T-T<sub>0</sub>) ]
+</blockquote>
+<p> where &eta; = 1/(1-x) and x = -&Delta;V/V<sub>0</sub>. Here T<sub>0</sub> is the reference temperature for the material that is set using the <a href="mpmheader.html#stressfreetemp"><code>StressFreeTemp</code></a> command.
+This yield stress is given by:
+</p>
+<blockquote>
+     &sigma;<sub>y</sub> = &sigma;<sub>0</sub> (1 + &beta; &epsilon;<sub>p</sub><sup>n</sup>) G
+</blockquote>
+<p>where &epsilon;<sub>p</sub> is the equivalent plastic strain and G is current shear modulus from above. The yield stress is limited to a maximum yield stress.
+The properties for this law are:</p>
+
+<ul>
+<li>yield - the initial yield stress (&sigma;<sub>0</sub>) at zero pressure and the reference temperature (in <a href="units.html">pressure units</a>).</li>
+<li>yieldMax - maximum yield stress (in <a href="units.html">pressure units</a>).</li>
+<li>betahard - yield stress hardening term (dimensionless).</li>
+<li>nhard - exponent on cumulative plastic strain in hardening term (dimensionless).</li>
+<li>GPpG0 - G<sub>p</sub>'/G<sub>0</sub> term for pressure dependence of shear modulus (in <a href="units.html">1/pressure units</a> or 0 to omit pressure dependence in shear modulus).</li>
+<li>GTpG0 - G<sub>T</sub>'/G<sub>0</sub> term for temperature dependence of shear modulus (in 1/K or 0 to omit temperature dependence in shear modulus).</li>
+</ul>
+
+<h3>History Data for SCGL Hardening Law</h3>
+
+<ol>
+<li>The cumulative equivalent plastic strain, <code>&alpha;</code>, defined as the sum of <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>.</li>
+</ol>
+
+<h2><a name="SL"></a>Steinberg-Lund Hardening Law (number=5)</h2>
+
+<p>This hardening law has a rate- and temperature-dependent yield stress given by:
+</p>
+<blockquote>
+     &sigma;<sub>y</sub> = {Y<sub>T</sub>(d&epsilon;<sub>p</sub>/dt,T) + &sigma;<sub>0</sub>(1 + &beta; &epsilon;<sub>p</sub><sup>n</sup>)} G
+</blockquote>
+<p>This law is identical to the <a href="#SCGL">SCGL law</a> except for the new rate- and temperature-dependent term Y<sub>T</sub>(d&epsilon;<sub>p</sub>/dt,T), which is only defined in inverse form:</p>
+<blockquote>
+d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (1/C<sub>1</sub>)exp[(2U<sub>k</sub>/(kT))(1-(Y<sub>T</sub>/Y<sub>P</sub>))<sup>2</sup>] }<sup>-1</sup>
+</blockquote>
+<p>where &epsilon;<sub>p</sub> is the equivalent plastic strain and Y<sub>T</sub> is limited to &le; Y<sub>P</sub>. The properties for this law are:
+</p>
+
+<ul>
+<li>C1SL - hardening law constant (C<sub>1</sub>) (in <a href="units.html">1/time units</a>).</li>
+<li>C2SL - hardening law constant (C<sub>2</sub>) (in <a href="units.html">pressure-time units</a>).</li>
+<li>YP - the Peierls stress and also the maximum rate-dependent yield stress (in <a href="units.html">pressure units</a>).</li>
+<li>Uk - an energy associated with forming kinks in eV, but this parameter is only allowed when using <a href="units.html">legacy units</a>; use UkOverk when in consistent units.</li>
+<li>UkOverk - an energy associated with forming kinks divided by Boltzman's constant (Uk/k in K).</li>
+<li><a href="#SCGL">(other)</a> - enter all other properties required for a <a href="#SCGL">SCGL Hardening Law</a></li>
+</ul>
+
+
+<h3>History Data for Steinberg-Lund Hardening Law</h3>
+
+<ol>
+<li>The cumulative equivalent plastic strain, <code>&alpha;</code>, defined as the sum of <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>.</li>
+<li>The current rate- and temperature-dependent yield stress (Y<sub>T</sub>) (in <a href="units.html">pressure units</a>).</li>
+<li>The current equivalent plastic strain rate (d&epsilon;<sub>p</sub>/dt in in <a href="units.html">1/time units</a>).</li>
+</ol>
+
+</body>
+</html>

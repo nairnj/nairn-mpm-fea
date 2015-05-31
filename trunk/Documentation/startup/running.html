@@ -1,0 +1,139 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>Running NairnMPM</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+Running Calculations
+</p>
+
+<h1>Running NairnFEA and NairnMPM</h1>
+
+<p>Details on the running the code can be found in the <a href="http://osupdocs.forestry.oregonstate.edu/index.php/Options_for_Running_Calculations">OSUPDocs wiki</a>. This section briefly mentions running using on a command line.
+</p>
+
+<ul>
+<li><a href="#runFEA">Running <code>NairnFEA</code> on a Command Line</a></li>
+<li><a href="#runMPM">Running <code>NairnMPM</code> on a Command Line</a></li>
+
+</ul>
+
+<h1><a name="runFEA"></a>Running NairnFEA on a Command Line</h1>
+
+<p>
+You can run <code>NairnFEA</code> from a Unix or Linux command line using:
+</p>
+
+<pre>
+NairnFEA [options] input > output
+</pre>
+
+<p>where</p>
+
+<dl>
+<dt>[options]</dt>
+<dd>The options may be one or more of the following:
+
+<dl>
+
+<dt>-a</dt>
+<dd>Read the input file, set up the mesh and all boundary conditions and then abort before any calculations.</dd>
+
+<dt>-H</dt>
+<dd>Display help message.</dd>
+
+<dt>-np 4</dt>
+<dd>Set the number of processors to use for parallel execution.</dd>
+
+<dt>-v</dt>
+<dd>Validate the input <code>XML</code> using the <code>DTD</code> file specified in the <code>!DOCTYPE</code> line in the preamble of the input file.</dd>
+
+<dt>-w</dt>
+<dd>Set current working directory for resolving relatice path names (default is to use the input file).</dd>
+
+<dt>-?</dt>
+<dd>Display help message.</dd>
+
+</dl>
+
+</dd>
+
+ 
+<dt>input</dt>
+<dd>The path name of the input <code>XML</code> file.</dd>
+
+<dt>output</dt>
+<dd>The name of the output text file.</dd>
+
+</dl>
+
+
+<h1><a name="runMPM"></a>Running NairnMPM on a Command Line</h1>
+
+<p>
+You can run NairnMPM from a Unix or Linux command line using:
+</p>
+
+<pre>
+NairnMPM [options] input > output
+</pre>
+
+<p>where</p>
+
+<dl>
+<dt>[options]</dt>
+<dd>The options may be one or more of the following:
+
+<dl>
+
+<dt>-a</dt>
+<dd>Start the analysis, archive the initial conditions, and then abort the calculations. </dd>
+
+<dt>-H</dt>
+<dd>Display help message.</dd>
+
+<dt>-np 4</dt>
+<dd>Set the number of processors to use for parallel execution.</dd>
+
+<dt>-r</dt>
+<dd>Reverse the bytes when writing results to  archive files. This option can be useful when you are running calculations on one computer, but visualizing them on a different computer which uses a different byte order.</dd>
+
+<dt>-v</dt>
+<dd>Validate the input <code>XML</code> using the <code>DTD</code> file specified in the <code>!DOCTYPE</code> line in the preamble of the input file.</dd>
+
+<dt>-w</dt>
+<dd>Set current working directory for resolving relatice path names (default is to use the input file).</dd>
+
+<dt>-?</dt>
+<dd>Display help message.</dd>
+
+</dl>
+
+</dd>
+
+ 
+<dt>input</dt>
+<dd>The path name of the input <code>XML</code> file.</dd>
+
+<dt>output</dt>
+<dd>The name of the output text file.</dd>
+
+
+</dl>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+Running Calculations
+</p>
+
+</body>
+
+</html>
