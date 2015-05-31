@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<title>Deprecated Commands</title>
+	<link rel="stylesheet" type="text/css" href="../help.css">
+</head>
+
+<body>
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+<h1>Deprecated Commands</h1>
+
+<p>The following commands have been deprecated. The most common reasons are to change the default units for the command or to change the style of the input. These commands all still work.</p>
+
+<dl>
+
+<dt>&lt;TimeStep&gt;(time step)/&gt;</dt>
+<dd>Replaced by <a href="mpmheader.html#MPMMethods"><code>&lt;Timing&gt;</code></a>. Enter <code>(time step)</code> for the MPM time step in sec (or determined by a <a href="#units"><code>units</code> attribute</a>). Deprecated in 11.0.0.</dd>
+
+<dt>&lt;MaxTime&gt;(max time)/&gt;</dt>
+<dd>Replaced by <a href="mpmheader.html#MPMMethods"><code>&lt;Timing&gt;</code></a>. Enter <code>(max time)</code> for the time that the calculations will stop in sec (or determined by a <a href="#units"><code>units</code> attribute</a>). Deprecated in 11.0.0.</dd>
+
+<dt>&lt;TimeFactor&gt;(time factor)/&gt;</dt>
+<dd>Replaced by <a href="mpmheader.html#MPMMethods"><code>&lt;Timing&gt;</code></a>. Enter <code>(time factor)</code> for the Courant-Friedrichs-Levy (or CFL) factor to use when determining the MPM time step. The time step used in the analysis will be the minimum of the one determined using this factor and the one entered in <code>(time step)</code>. The default CFL is 0.5. Deprecated in 11.0.0.</dd>
+
+<dt>&lt;ArchiveTime maxProps="(props)"&gt;(time)&lt;/ArchiveTime&gt;</dt>
+<dd>Replaced by <a href="mpmheader.html#archiving"><code>&lt;ArchiveGroup&gt;</code></a>. Enter <code>(time)</code> for the time interval between archiving in sec (or determined by a <a href="#units"><code>units</code> attribute</a>). The <code>(props)</code> attribute forces archiving if <code>(props)</code> propagations and/or debonds have occurred since the last archive (default is 0, which disables counting of propagations). Deprecated in 11.0.0.</dd>
+
+<dt>&lt;FirstArchiveTime&gt;(first time)&lt;/FirstArchiveTime&gt;</dt>
+<dd>Replaced by <a href="mpmheader.html#archiving"><code>&lt;ArchiveGroup&gt;</code></a>. Enter <code>(first time)</code> for the first time results are archived in sec (or determined by a <a href="#units"><code>units</code> attribute</a>). Deprecated in 11.0.0.</dd>
+
+</dl>
+
+
+<p class="links">
+<a href="../index.html">Home</a> &rarr;
+<a href="index.html#contents">MPM XML File Contents</a>
+</p>
+
+</body>
+
+</html>
