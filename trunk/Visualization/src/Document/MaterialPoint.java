@@ -9,7 +9,6 @@
 import java.nio.*;
 import java.awt.*;
 import java.awt.geom.*;
-import javax.vecmath.Vector3d;
 
 public class MaterialPoint
 {
@@ -891,12 +890,12 @@ public class MaterialPoint
 		// Get sqrt(B)
 		double scale = 1./doc.units.strainScale();
 		Matrix3 B = null;
-		Vector3d lam = null;
+		double[] lam = null;
 		if(doc.is3D())
 		{	B = new Matrix3(scale*eplast[XXID],scale*eplast[XYID],scale*eplast[XZID],
 				scale*eplast[XYID],scale*eplast[YYID],scale*eplast[XZID],
 				scale*eplast[XZID],scale*eplast[XZID],scale*eplast[ZZID]);
-			lam = new Vector3d();		// 3D does not need precaculated eigenvalues
+			lam = new double[3];		// 3D does not need precaculated eigenvalues
 		}
 		else
 		{	B = new Matrix3(scale*eplast[XXID],scale*eplast[XYID],scale*eplast[XYID],
@@ -906,7 +905,7 @@ public class MaterialPoint
 		Matrix3 Q = B.Eigenvectors(lam);
 		
 		// put U = sqrt(B) in output matrix
-		Matrix3 biot = new Matrix3(Math.sqrt(lam.x),0.,0.,Math.sqrt(lam.y),Math.sqrt(lam.z));
+		Matrix3 biot = new Matrix3(Math.sqrt(lam[0]),0.,0.,Math.sqrt(lam[1]),Math.sqrt(lam[2]));
 		biot.RMRT(Q);
 		
 		// Get rotation matrix
