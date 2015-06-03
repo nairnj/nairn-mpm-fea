@@ -21,7 +21,14 @@ The version number is coded in the constructor of the `NairnMPM.cpp` class:
 NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions currently in this project are as follows:
 
   * Current main trunk
-    * Working on NairnMPM 10.1.0
+    * Working on NairnMPM 11.0
+    * Major changes to version 10 to allow new `ConsistUnits` mode
+    * All low strain material were converted to work better for large rotation problems. The main improvements are better reporting of strains and ability to get elastic and plastic strain from more materials.
+    * Global archive of contact force can get force on one material
+    * Global and VTK archiving for deformation gradietn
+
+  * Version_10 (31 May 2015)
+    * Has NairnMPM 10.x
     * Added two new damping options - particle damping and PIC damping; the later can also run simulations with mixed FLIP/PIC style updates. In making this change, also changed the way grid damping is implemented, but it should not make much of a difference.
     * Mooney can take E and nu OR K and G1. HEIsotropic and HEMGEOSMaterial can take G or G1.
     * Mooney, HEIsotropic, and HEMGEOSMaterial were revised to better handle residual stresses
