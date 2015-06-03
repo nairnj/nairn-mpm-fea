@@ -19,6 +19,10 @@ NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The vers
 
   * Current main trunk
     * Working on NairnFEAMPMViz 6.1.0
+    * Update to read results run using any `ConsistentUnits` settings
+
+  * Version_10 (31 May 2015_
+    * Has NairnFEAMPMViz 6.1.0
     * A new scripted control option can control operation of the NairnFEAMPMViz app such as to run multiple simulations and save the results. See new help topic on the scripting language.
     * Additions to commands language
       * Added PIC option to `Damping` and added `PDamping` and `PFBDamping`
