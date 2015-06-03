@@ -189,7 +189,9 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 	else if(strcmp(len,"nm")==0)
 		lengthExp = -9;
 	else if(strcmp(len,"L")==0)
+	{	lengthExp = 0;
 		unitsType = USER_UNITS;
+	}
 	else
 		return false;
 	strcpy(length,len);
@@ -204,7 +206,9 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 	else if(strcmp(ms,"ug")==0)
 		massExp = -9;
 	else if(strcmp(ms,"M")==0)
+	{	massExp = 0;
 		unitsType = USER_UNITS;
+	}
 	else
 		return false;
 	strcpy(mass,ms);
@@ -225,7 +229,9 @@ bool UnitsController::SetConsistentUnits(char *len,char *ms,char *tm)
 	else if(strcmp(tm,"us")==0)
 		timeExp = -6;
 	else if(strcmp(ms,"T")==0)
+	{	timeExp = 0;
 		unitsType = USER_UNITS;
+	}
 	else
 		return false;
 	strcpy(timeu,tm);
