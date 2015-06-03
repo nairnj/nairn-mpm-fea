@@ -20,8 +20,8 @@ public class NairnFEAMPMViz extends JNApplication
 	//----------------------------------------------------------------------------
 	
 	public NairnFEAMPMViz()
-	{	super("NairnFEAMPMVizOSP","Version 6.1.0",
-				"Java application for running and visualizing OSParticulas and NairnFEA calculations.");
+	{	super("NairnFEAMPMViz","Version 6.2.0",
+				"Java application for running and visualizing NairnMPM and NairnFEA calculations.");
 		NFMVPrefs.setWorkspace(chooser);
 		if(!finishLaunching(false))
 			new NFMVStartUp();
@@ -161,7 +161,7 @@ public class NairnFEAMPMViz extends JNApplication
 		
 		// optional info strings
 		JNApplication.iconResource="Resources/AboutIcon.png";
-		JNApplication.copyright="Copyright 2004-2014, John A. Nairn, All Rights Reserved";
+		JNApplication.copyright="Copyright 2004-2015, John A. Nairn, All Rights Reserved";
 		JNApplication.author="Written and documented by John A. Nairn";
 		JNApplication.webSite="http://www.cof.orst.edu/cof/wse/faculty/Nairn/";
 		
