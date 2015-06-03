@@ -90,9 +90,9 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
 	{   if(block!=HEADER)
 			throw SAXException("<ConsistentUnits> must be within the <Header> element.");
 		char length[10],mass[10],timeu[10];
-		strcpy(length,"L");
-		strcpy(mass,"M");
-		strcpy(timeu,"T");
+		strcpy(length,"");
+		strcpy(mass,"");
+		strcpy(timeu,"");
 		char *aName,*value;
     	int i,numAttr=attrs.getLength();
         for(i=0;i<numAttr;i++)
@@ -109,6 +109,11 @@ void CommonReadHandler::startElement(const XMLCh* const uri,const XMLCh* const l
             delete [] aName;
             delete [] value;
         }
+		if(strlen(length)==0 && strlen(mass)==0 && strlen(timeu)==0)
+		{	strcpy(length,"L");
+			strcpy(mass,"M");
+			strcpy(timeu,"T");
+		}
 		if(!UnitsController::SetConsistentUnits(length, mass, timeu))
 			throw SAXException("Duplicated <ConsistentUnits> command or one of the units is invalid.");
     }

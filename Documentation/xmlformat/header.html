@@ -52,8 +52,8 @@ Defines type of analysis with with the following options:
   </ul>
 </li>
 
-<li><pre class="list">&lt;ConsistentUnits length='(scale)' mass='(scale)' time='(scale)/ConsistentUnits&gt;</pre>
-The scale setting gives power of 10 scaling from SI units for length or m, mass or kg, and time (or sec). For example, enter '-3' for length to use mm instead of m. The default (if this command is not used) is to use "Legacy Units." If this command is used but not all attributes are provided, the defaults are -3, -3, and 1 to convert to mmgs system (for mm, g, and seconds). More details on unit specificatiions are provided <a href="units.html">here</a>.</li>
+<li><pre class="list">&lt;ConsistentUnits length='(units)' mass='(units)' time='(units)/ConsistentUnits&gt;</pre>
+The (units) settings determine metric units for length (which can be km, m, dm cm, mm um (or microns), or nm), mass (which can be kg, g, mg, or ug), and time (which can be s (or sec), ms (or msec), or us). Alternatively, if none of the length, mass, and time attributes are provided, the code will run with generic units for length (L), mass (M), and time (T). The default (if this command is not used) is to use "Legacy Units." If this command is used, you must specify all three attributes or specify none (to use generic units). More details on unit specificatiions are provided <a href="units.html">here</a>.</li>
 
 <li><pre class="list">&lt;Output&gt;(xxxxxx)&lt;/Output&gt;</pre>
 This optional tag is for <code>NairnFEA</code> only and determines what appears in the output file. The six bytes in the string can be 'Y', 'C', or 'N' and they stdand for:
