@@ -120,19 +120,19 @@ const char *AnisoPlasticity::VerifyAndLoadProperties(int np)
 	}
 	else
 		syzzred2=0.;		// 1/inf^2
-	if(tyxy)
+	if(tyxy>=0.)
 	{	tyxyred2=rho/tyxy;
 		tyxyred2*=tyxyred2;
 	}
 	else
 		tyxyred2=0.;		// 1/inf^2
-	if(tyxz)
+	if(tyxz>=0.)
 	{	tyxzred2=rho/tyxz;
 		tyxzred2*=tyxzred2;
 	}
 	else
 		tyxzred2=0.;		// 1/inf^2
-	if(tyyz)
+	if(tyyz>=0.)
 	{	tyyzred2=rho/tyyz;
 		tyyzred2*=tyyzred2;
 	}
@@ -785,7 +785,7 @@ void AnisoPlasticity::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double d
 double AnisoPlasticity::GetMagnitudeHill(Matrix3 &srot,int np) const
 {
 	double sAs=0.;
-	if(np==THREED_MPM) sAs = srot(0,2)*srot(0,2)*tyxzred2 + srot(0,2)*srot(0,2)*tyyzred2;
+	if(np==THREED_MPM) sAs = srot(0,2)*srot(0,2)*tyxzred2 + srot(1,2)*srot(1,2)*tyyzred2;
 	
 	// return sqrt(sAs);
 	// check on negative sAs can happen due to round-off error when stresses near zero
@@ -809,7 +809,7 @@ void AnisoPlasticity::GetDfCdf(Matrix3 &stk,int np,AnisoPlasticProperties *p) co
 		p->Cdf.zz = r->C[2][0]*p->dfds.xx + r->C[2][1]*p->dfds.yy + r->C[2][2]*p->dfds.zz;
 		p->Cdf.yz = r->C[3][3]*p->dfds.yz;
 		p->Cdf.xz = r->C[4][4]*p->dfds.xz;
-		p->Cdf.xy = r->C[5][0]*p->dfds.xx;
+		p->Cdf.xy = r->C[5][5]*p->dfds.xx;
 		p->dfCdf = p->dfds.xx*p->Cdf.xx + p->dfds.yy*p->Cdf.yy + p->dfds.zz*p->Cdf.zz
 				+ p->dfds.yz*p->Cdf.yz + p->dfds.xz*p->Cdf.xz + p->dfds.xy*p->Cdf.xy;
 	}
