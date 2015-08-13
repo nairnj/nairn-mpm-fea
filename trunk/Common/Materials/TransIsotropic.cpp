@@ -191,7 +191,7 @@ char *TransIsotropic::InputMaterialProperty(char *xName,int &input,double &gScal
 		return UnitsController::ScaledPtr((char *)&kCondT,gScaling,1.e6);
 #endif
     
-    return MaterialBase::InputMaterialProperty(xName,input,gScaling);
+    return Elastic::InputMaterialProperty(xName,input,gScaling);
 }
 
 // calculate properties used in analyses
@@ -247,200 +247,101 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
 	return MaterialBase::VerifyAndLoadProperties(np);
 }
 
+// If needed, a material can initialize particle state
+// For subclasses of TransIsotropic, rotation matrix is tracked in large rotation mode
+//		and in small rotation is 3D
+void TransIsotropic::SetInitialParticleState(MPMBase *mptr,int np) const
+{
+#ifdef TRACK_RTOT
+	// store initial rotation if large rotation or if 3D
+	if(useLargeRotation || np==THREED_MPM)
+		mptr->InitRtot(mptr->GetInitialRotation());
+#else
+	// store initial rotation if small rotation and 3D
+	if(!useLargeRotation && np==THREED_MPM)
+		mptr->InitRtot(mptr->GetInitialRotation());
+#endif
+	
+	// call super class
+    Elastic::SetInitialParticleState(mptr,np);
+}
+
 #pragma mark TransIsotropic::Methods
 
 #ifdef MPM_CODE
 
-#ifdef USE_PSEUDOHYPERELASTIC
-
-// Material can use read-only initial properties
-void *TransIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
-{	return (void *)&pr;
-}
-
-#else
-
 // buffer size for mechanical properties
 int TransIsotropic::SizeOfMechanicalProperties(int &altBufferSize) const
 {   altBufferSize = 0;
-    return sizeof(ElasticProperties);
+ 	if(useLargeRotation)
+		return 0;
+	else
+		return sizeof(ElasticProperties);
 }
 
 // Isotropic material can use read-only initial properties
 void *TransIsotropic::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
 {
-	// if isotropic in 2D plane, use initial properties
-	if(MaterialTag()==TRANSISO1 && np!=THREED_MPM)
+	// if large rotation mode (in material axes) or if isotropic in 2D plane, use initial properties
+	if(useLargeRotation || (MaterialTag()==TRANSISO1 && np!=THREED_MPM))
 		return (void *)&pr;
 	
 	// create new elastic properties
 	ElasticProperties *p = (ElasticProperties *)matBuffer;
 	if(np!=THREED_MPM)
-		FillElasticProperties2D(p,TRUE,mptr->GetRotationZ(),np);
+	{	double s,c;
+		mptr->Get2DSinCos(&s,&c);
+		FillElasticProperties2D(p,TRUE,s,c,np);
+	}
 	else
 		FillElasticProperties3D(mptr,p,np);
 	return p;
 }
 
+#pragma mark TransIsotropic::Methods (Small Rotation)
+
 // Fill ElasticProperties variable with current particle state
 void TransIsotropic::FillElasticProperties3D(MPMBase *mptr,ElasticProperties *p,int np) const
 {
-	/* Rotation of the stiffness matrix requires Rz(-z).Ry(-y).Rx(-z).C.Rx^T(-x).Ry^T(-y).Rz^T(-z)
-		Doing matrix math here would be 7*6*6 = 252 multiplications.
-	 
-		To improve performance, the transformation was expanded in Mathematica and each term
-		of the matrix convert to an expression (using CForm) to paste. The 252 multiplications
-		are reduced to 21 complex expression. Also trigonometric terms are evaluated once first.
-	*/
+	// Full rotation using rotation matrix (save after calculationg for later use
+	//    by aniostropic plastic or by transport properties)
+	Matrix3 Rtot = mptr->GetRtot();
+	mptr->SetRtot(Rtot);
 	
-	double z=mptr->GetRotationZ();
-	double cz=cos(z);
-	double sz=sin(z);
-	double cz2=cz*cz;
-	double sz2=sz*sz;
-	double cz3=cz2*cz;
-	double sz3=sz2*sz;
-	double cz4=cz2*cz2;
-	double sz4=sz2*sz2;
-	double c2z=cos(2.*z);
-	double s2z=sin(2.*z);
-	double c2z2=c2z*c2z;
-	double s2z2=s2z*s2z;
+	// Get 6X6 rotation matrix
+	double R[6][6];
+	Rtot.GetRStress(R);
 	
-	double y=mptr->GetRotationY();
-	double cy=cos(y);
-	double sy=sin(y);
-	double cy2=cy*cy;
-	double sy2=sy*sy;
-	double cy3=cy2*cy;
-	double sy3=sy2*sy;
-	double sy4=sy2*sy2;
-	double cy4=cy2*cy2;
-	double c2y=cos(2.*y);
-	double s2y=sin(2.*y);
-	double s4y=sin(4.*y);
-	double c2y2=c2y*c2y;
-	double s2y2=s2y*s2y;
+	double C[6][6];
+	C[0][0] = C11;
+	C[0][1] = C12;
+	C[0][2] = C13;
+	C[1][0] = C12;
+	C[1][1] = C22;
+	C[1][2] = C23;
+	C[2][0] = C13;
+	C[2][1] = C23;
+	C[2][2] = C33;
+	C[3][3] = C44;
+	C[4][4] = C55;
+	C[5][5] = C66;
 	
-	double x=mptr->GetRotationX();
-	double cx=cos(x);
-	double sx=sin(x);
-	double cx2=cx*cx;
-	double sx2=sx*sx;
-	double cx4=cx2*cx2;
-	double sx4=sx2*sx2;
-	double c2x=cos(2.*x);
-	double s2x=sin(2.*x);
-	double s4x=sin(4.*x);
-	double c2x2=c2x*c2x;
-	double s2x2=s2x*s2x;
+	int i,j,k,k3,l;
+	for(i=0;i<6;i++)
+	{	for(j=i;j<6;j++)
+		{	double cterm = 0.;
+			for(k=0;k<3;k++)
+			{	k3 = k+3;
+				cterm += R[i][k3]*R[j][k3]*C[k3][k3];
+				for(l=0;l<3;l++)
+					cterm += R[i][k]*R[j][l]*C[k][l];
+			}
+			p->C[i][j] = cterm;
+		}
+	}
 	
-	p->C[0][0] = (2*cz2*s2x*s2z*sy*(2*(C12 - C13 - 2*C55 + 2*C66)*cy2 - (C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44))*sy2) +
-				 s2z2*(4*C66*cx2*cy2 + 4*C55*cy2*sx2 + (4*c2x2*C44 + (C22 - 2*C23 + C33)*s2x2)*sy2) + 
-				 4*cz4*(C11*cy4 + C55*cx2*s2y2 + C66*s2y2*sx2 + (C12 + C13 - C12*c2x + C13*c2x)*cy2*sy2 + (C33*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C22*sx4)*sy4) + 
-				 2*((-2*C23*c2x + C22*(1 + c2x) + (-1 + c2x)*C33 - 4*c2x*C44)*s2x*s2z*sy + 
-					4*cz2*(C12*cx2*cy2 + C13*cy2*sx2 + (-(C44*s2x2) + (C22 + C33)*cx2*sx2 + C23*(cx4 + sx4))*sy2))*sz2 + 4*(C22*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C33*sx4)*sz4)/4.;
-	p->C[0][1] = cz2*(((C22 - C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*s2x*s2z*sy)/4. + cz2*(C12*cx2*cy2 + C13*cy2*sx2 + (-(C44*s2x2) + (C22 + C33)*cx2*sx2 + C23*(cx4 + sx4))*sy2) +
-					 (C22*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C33*sx4)*sz2) - s2z*(-(cz2*s2x*sy*
-					(2*(-C12 + C13 + 2*C55 - 2*C66)*cy2 + (-C22 + C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*sy2))/4. + 
-					s2z*(cy2*(C66*cx2 + C55*sx2) + ((4*c2x2*C44 + (C22 - 2*C23 + C33)*s2x2)*sy2)/4.) + ((C22 - C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*s2x*sy*sz2)/4.) + 
-					sz2*(-(s2x*s2z*sy*(2*(-C12 + C13 + 2*C55 - 2*C66)*cy2 + (-C22 + C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*sy2))/4. + 
-						cz2*(C11*cy4 + C55*cx2*s2y2 + C66*s2y2*sx2 + (C12 + C13 - C12*c2x + C13*c2x)*cy2*sy2 + (C33*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C22*sx4)*sy4) + 
-						 (C12*cx2*cy2 + C13*cy2*sx2 + (-(C44*s2x2) + (C22 + C33)*cx2*sx2 + C23*(cx4 + sx4))*sy2)*sz2);
-	p->C[0][2] = s2z*(-((C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44) - 4*C55 + 4*C66)*cy2*s2x*sy)/4. + (C12 - C13)*cx*sx*sy3) +
-				cz2*(-(C55*cx2*s2y2) - C66*s2y2*sx2 + cy2*(C11 + C33*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C22*sx4)*sy2 + C13*cx2*(cy4 + sy4) + C12*sx2*(cy4 + sy4)) + 
-				(-(C44*cy2*s2x2) + (C22 + C33)*cx2*cy2*sx2 + C23*cy2*(cx4 + sx4) + (C12*cx2 + C13*sx2)*sy2)*sz2;
-	p->C[0][3] = (cy*cz*(s2z*(-4*c2x2*C44 + 4*C66*cx2 - (C22 - 2*C23 + C33)*s2x2 + 4*C55*sx2)*sy +
-				cz2*s2x*(-2*C12*cy2 + 2*C13*cy2 + (C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44) - 4*C55 + 4*C66)*sy2) - 
-				(C22 - C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*s2x*sz2) - 2*sz*
-				 (2*s2z*(c2y*(C55 - C66)*cx*cy*sx + ((-C22 + C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*s2x*s2y*sy)/8. + (C12 - C13)*cx*cy*sx*sy2) + 
-				  cz2*s2y*(C11*cy2 - 2*c2y*(C55*cx2 + C66*sx2) - (C33*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C22*sx4)*sy2 + C13*cx2*(-cy2 + sy2) + C12*sx2*(-cy2 + sy2)) + 
-				  s2y*(C12*cx2 + C44*s2x2 + (C13 - (C22 + C33)*cx2)*sx2 - C23*(cx4 + sx4))*sz2))/4.;
-	p->C[0][4] = (cy*sz*(s2z*(-4*c2x2*C44 + 4*C66*cx2 - (C22 - 2*C23 + C33)*s2x2 + 4*C55*sx2)*sy +
-				cz2*s2x*(-2*C12*cy2 + 2*C13*cy2 + (C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44) - 4*C55 + 4*C66)*sy2) - 
-				(C22 - C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*s2x*sz2) + 2*cz*
-				 (2*s2z*(c2y*(C55 - C66)*cx*cy*sx + ((-C22 + C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*s2x*s2y*sy)/8. + (C12 - C13)*cx*cy*sx*sy2) + 
-				  cz2*s2y*(C11*cy2 - 2*c2y*(C55*cx2 + C66*sx2) - (C33*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C22*sx4)*sy2 + C13*cx2*(-cy2 + sy2) + C12*sx2*(-cy2 + sy2)) + 
-				  s2y*(C12*cx2 + C44*s2x2 + (C13 - (C22 + C33)*cx2)*sx2 - C23*(cx4 + sx4))*sz2))/4.;
-	p->C[0][5] = (s2z*(((C22 - C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*s2x*s2z*sy)/4. + cz2*(C12*cx2*cy2 + C13*cy2*sx2 + (-(C44*s2x2) + (C22 + C33)*cx2*sx2 + C23*(cx4 + sx4))*sy2) +
-					(C22*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C33*sx4)*sz2))/2. + c2z*
-					(-(cz2*s2x*sy*(2*(-C12 + C13 + 2*C55 - 2*C66)*cy2 + (-C22 + C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*sy2))/4. + 
-					 s2z*(cy2*(C66*cx2 + C55*sx2) + ((4*c2x2*C44 + (C22 - 2*C23 + C33)*s2x2)*sy2)/4.) + ((C22 - C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*s2x*sy*sz2)/4.) - 
-					(s2z*(-(s2x*s2z*sy*(2*(-C12 + C13 + 2*C55 - 2*C66)*cy2 + (-C22 + C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*sy2))/4. + 
-					cz2*(C11*cy4 + C55*cx2*s2y2 + C66*s2y2*sx2 + (C12 + C13 - C12*c2x + C13*c2x)*cy2*sy2 + (C33*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C22*sx4)*sy4) + 
-					(C12*cx2*cy2 + C13*cy2*sx2 + (-(C44*s2x2) + (C22 + C33)*cx2*sx2 + C23*(cx4 + sx4))*sy2)*sz2))/2.;
-	
-	p->C[1][1] = cx4*(C22*cz4 + 2*C23*cz2*sy2*sz2 + C33*sy4*sz4) + (4*cz4*(C44*s2x2 + C33*sx4) + 4*c2x2*C44*s2z2*sy2 + C22*s2x2*s2z2*sy2 - 2*C23*s2x2*s2z2*sy2 + C33*s2x2*s2z2*sy2 -
-					4*(C22 - C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*cz3*s2x*sy*sz + 8*cz2*(C13*cy2*sx2 - C44*s2x2*sy2 + C23*sx4*sy2)*sz2 + 
-					4*cz*s2x*sy*(2*(-C12 + C13 + 2*C55 - 2*C66)*cy2 + (-C22 + C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*sy2)*sz3 + 4*C11*cy4*sz4 + 4*C66*s2y2*sx2*sz4 + 
-					4*C44*s2x2*sy4*sz4 + 4*C22*sx4*sy4*sz4 + 4*cy2*(C55*s2z2*sx2 + (C12 + C13 - C12*c2x + C13*c2x)*sy2*sz4))/4. + 
-					cx2*(C66*cy2*s2z2 + 2*cz2*(C12*cy2 + (C22 + C33)*sx2*sy2)*sz2 + C55*s2y2*sz4 + 2*C23*sx2*(cz4 + sy4*sz4));
-	p->C[1][2] = cz2*(-(C44*cy2*s2x2) + (C22 + C33)*cx2*cy2*sx2 + C23*cy2*(cx4 + sx4) + (C12*cx2 + C13*sx2)*sy2) +
-					((C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44) - 4*C55 + 4*C66)*cy2*s2x*s2z*sy + 4*(-C12 + C13)*cx*s2z*sx*sy3)/4. + 
-					(-(C55*cx2*s2y2) - C66*s2y2*sx2 + cy2*(C11 + C33*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C22*sx4)*sy2 + C13*cx2*(cy4 + sy4) + C12*sx2*(cy4 + sy4))*sz2;
-	p->C[1][3] = (cy*cz*(-((C22 - C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*cz2*s2x) + s2z*(4*c2x2*C44 - 4*C66*cx2 + (C22 - 2*C23 + C33)*s2x2 - 4*C55*sx2)*sy +
-				s2x*(-2*C12*cy2 + 2*C13*cy2 + (C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44) - 4*C55 + 4*C66)*sy2)*sz2) - 
-				 2*sz*(cz2*s2y*(C12*cx2 + C44*s2x2 + (C13 - (C22 + C33)*cx2)*sx2 - C23*(cx4 + sx4)) - 
-				2*s2z*(c2y*(C55 - C66)*cx*cy*sx + ((-C22 + C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*s2x*s2y*sy)/8. + (C12 - C13)*cx*cy*sx*sy2) + 
-				s2y*(C11*cy2 - 2*c2y*(C55*cx2 + C66*sx2) - (C33*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C22*sx4)*sy2 + C13*cx2*(-cy2 + sy2) + C12*sx2*(-cy2 + sy2))*sz2))/4.;
-	p->C[1][4] = (cy*sz*(-((C22 - C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*cz2*s2x) + s2z*(4*c2x2*C44 - 4*C66*cx2 + (C22 - 2*C23 + C33)*s2x2 - 4*C55*sx2)*sy +
-				s2x*(-2*C12*cy2 + 2*C13*cy2 + (C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44) - 4*C55 + 4*C66)*sy2)*sz2) + 
-				 2*cz*(cz2*s2y*(C12*cx2 + C44*s2x2 + (C13 - (C22 + C33)*cx2)*sx2 - C23*(cx4 + sx4)) - 
-				2*s2z*(c2y*(C55 - C66)*cx*cy*sx + ((-C22 + C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*s2x*s2y*sy)/8. + (C12 - C13)*cx*cy*sx*sy2) + 
-				s2y*(C11*cy2 - 2*c2y*(C55*cx2 + C66*sx2) - (C33*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C22*sx4)*sy2 + C13*cx2*(-cy2 + sy2) + C12*sx2*(-cy2 + sy2))*sz2))/4.;
-	p->C[1][5] = (c2z*((C22 - C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*cz2*s2x*sy - s2z*(4*C66*cx2*cy2 + 4*C55*cy2*sx2 + (4*c2x2*C44 + (C22 - 2*C23 + C33)*s2x2)*sy2) -
-				s2x*sy*(2*(-C12 + C13 + 2*C55 - 2*C66)*cy2 + (-C22 + C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*sy2)*sz2) + 
-				 2*s2z*(cz2*(C22*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C33*sx4) - ((C22 - C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*s2x*s2z*sy)/4. + 
-				(C12*cx2*cy2 + C13*cy2*sx2 + (-(C44*s2x2) + (C22 + C33)*cx2*sx2 + C23*(cx4 + sx4))*sy2)*sz2) - 
-				 2*s2z*((s2x*s2z*sy*(2*(-C12 + C13 + 2*C55 - 2*C66)*cy2 + (-C22 + C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*sy2))/4. + 
-				cz2*(C12*cx2*cy2 + C13*cy2*sx2 + (-(C44*s2x2) + (C22 + C33)*cx2*sx2 + C23*(cx4 + sx4))*sy2) + 
-				(C11*cy4 + C55*cx2*s2y2 + C66*s2y2*sx2 + (C12 + C13 - C12*c2x + C13*c2x)*cy2*sy2 + (C33*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C22*sx4)*sy4)*sz2))/4.;
-	
-	p->C[2][2] = C33*cx4*cy4 + C44*cy4*s2x2 + C55*cx2*s2y2 + 2*C23*cx2*cy4*sx2 + C66*s2y2*sx2 + C22*cy4*sx4 + 2*cy2*(C13*cx2 + C12*sx2)*sy2 + C11*sy4;
-	p->C[2][3] = (cy*cz*s2x*((C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44))*cy2 + 2*(-C12 + C13 + 2*C55 - 2*C66)*sy2) +
-				 2*s2y*(-2*c2y*(C55*cx2 + C66*sx2) + cy2*(C33*cx4 + C44*s2x2 - C12*sx2 + 2*C23*cx2*sx2 + C22*sx4) - C11*sy2 + C12*sx2*sy2 + C13*cx2*(-cy2 + sy2))*sz)/4.;
-	p->C[2][4] = (2*cz*s2y*(2*c2y*(C55*cx2 + C66*sx2) - cy2*(C33*cx4 + C44*s2x2 - C12*sx2 + 2*C23*cx2*sx2 + C22*sx4) + C13*cx2*(cy2 - sy2) + C11*sy2 - C12*sx2*sy2) +
-				 cy*s2x*((-C22 + C33 + c2x*(C22 - 2*C23 + C33 - 4*C44))*cy2 + 2*(-C12 + C13 + 2*C55 - 2*C66)*sy2)*sz)/4.;
-	p->C[2][5] = (c2z*s2x*sy*(-((-C22 + C33 + c2x*(C22 - 2*C23 + C33 - 4*C44) - 4*C55 + 4*C66)*cy2) + 2*(C12 - C13)*sy2) +
-				 2*s2z*(-(C44*cy2*s2x2) + (C22 + C33)*cx2*cy2*sx2 + C23*cy2*(cx4 + sx4) + (C12*cx2 + C13*sx2)*sy2) - 
-				 2*s2z*(-(C55*cx2*s2y2) - C66*s2y2*sx2 + cy2*(C11 + C33*cx4 + C44*s2x2 + 2*C23*cx2*sx2 + C22*sx4)*sy2 + C13*cx2*(cy4 + sy4) + C12*sx2*(cy4 + sy4)))/4.;
-	
-	p->C[3][3] = (2*cz2*(4*c2x2*C44*cy2 + (C22 - 2*C23 + C33)*cy2*s2x2 + 4*(C66*cx2 + C55*sx2)*sy2) +
-				 cz*(2*C12*(1 + c2y + 2*cy2)*s2x - 2*C13*(1 + c2y + 2*cy2)*s2x - C22*(1 + c2y - 2*(-1 + c2x)*cy2)*s2x + C22*cy2*s4x + 
-				C33*((1 + c2y + 2*(1 + c2x)*cy2)*s2x + cy2*s4x) - 2*((C23 + 2*C44)*cy2*(2*c2x*s2x + s4x) + 2*c2y*(C55 - C66)*(s2x + 2*cx*sx)))*sy*sz + 
-				 2*(4*c2y2*(C55*cx2 + C66*sx2) + s2y2*(C11 - 2*C13*cx2 + C33*cx4 + C44*s2x2 - 2*C12*sx2 + 2*C23*cx2*sx2 + C22*sx4))*sz2)/8.;
-	p->C[3][4] = -(cz*(cz*((2*C12*(1 + c2y) - 2*C13*(1 + c2y) - C22*(1 + c2y) + C33 + c2y*(C33 - 4*C55 + 4*C66))*s2x + (C22 - 2*C23 + C33 - 4*C44)*cy2*s4x)*sy +
-				2*(4*c2y2*(C55*cx2 + C66*sx2) + s2y2*(C11 - 2*C13*cx2 + C33*cx4 + C44*s2x2 - 2*C12*sx2 + 2*C23*cx2*sx2 + C22*sx4))*sz))/8. + 
-				(sz*(4*c2x2*C44*cy2*cz + (C22 - 2*C23 + C33)*cy2*cz*s2x2 + 4*cz*(C66*cx2 + C55*sx2)*sy2 + 
-				((2*C12 - 2*C13 + C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44))*cy2*s2x + 4*c2y*(-C55 + C66)*cx*sx)*sy*sz))/4.;
-	p->C[3][5] = (-((-2*C23*c2x + C22*(1 + c2x) + (-1 + c2x)*C33 - 4*c2x*C44)*cy*cz*s2x*s2z) + 2*s2y*s2z*(-(C12*cx2) - C44*s2x2 + (-C13 + (C22 + C33)*cx2)*sx2 + C23*(cx4 + sx4))*sz +
-				 2*c2z*cy*(-(cz*(4*c2x2*C44 - 4*C66*cx2 + (C22 - 2*C23 + C33)*s2x2 - 4*C55*sx2)*sy) - 
-				(4*c2y*(C55 - C66)*cx*sx + (2*C12 - 2*C13 + C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44))*s2x*sy2)*sz) + 
-				 s2z*(-((C55 + c2x*C55 + C66 - c2x*C66)*s4y*sz) + 2*cy3*((C12 - C13)*cz*s2x + (2*C11 + C12*(-1 + c2x) - C13*(1 + c2x))*sy*sz) - 
-				(cy*sy2*(2*(-C22 + C33 + c2x*(C22 - 2*C23 + C33 - 4*C44) - 4*C55 + 4*C66)*cz*s2x + 
-				8*(-(C13*cx2) + C33*cx4 + C44*s2x2 - C12*sx2 + 2*C23*cx2*sx2 + C22*sx4)*sy*sz))/2.))/8.;
-	
-	p->C[4][4] = (2*cz2*(4*c2y2*(C55*cx2 + C66*sx2) + s2y2*(C11 - 2*C13*cx2 + C33*cx4 + C44*s2x2 - 2*C12*sx2 + 2*C23*cx2*sx2 + C22*sx4)) -
-				 cz*((C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44))*cy*s2x*s2y + 
-				2*((2*C12 - 2*C13 + C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44))*cy2*s2x + 4*cx*(2*c2y*(-C55 + C66) + (C12 - C13)*cy2)*sx)*sy)*sz + 
-				 2*(4*c2x2*C44*cy2 + (C22 - 2*C23 + C33)*cy2*s2x2 + 4*(C66*cx2 + C55*sx2)*sy2)*sz2)/8.;
-	p->C[4][5] = (2*cz*s2y*s2z*(C12*cx2 + C44*s2x2 + (C13 - (C22 + C33)*cx2)*sx2 - C23*(cx4 + sx4)) +
-				 2*cz*s2z*(C55*cx2*s4y + C66*s4y*sx2 + (-2*C11 + C12 + C13 - C12*c2x + C13*c2x)*cy3*sy + 
-				2*cy*(-(C13*cx2) + C33*cx4 + C44*s2x2 - C12*sx2 + 2*C23*cx2*sx2 + C22*sx4)*sy3) - (-2*C23*c2x + C22*(1 + c2x) + (-1 + c2x)*C33 - 4*c2x*C44)*cy*s2x*s2z*sz + 
-				 cy*s2x*s2z*(2*C12*cy2 - 2*C13*cy2 - (C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44) - 4*C55 + 4*C66)*sy2)*sz + 
-				 2*c2z*cy*(4*c2y*(C55 - C66)*cx*cz*sx + (2*C12 - 2*C13 + C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44))*cz*s2x*sy2 - 
-				(4*c2x2*C44 - 4*C66*cx2 + (C22 - 2*C23 + C33)*s2x2 - 4*C55*sx2)*sy*sz))/8.;
-	
-	p->C[5][5] = (2*c2z2*(4*C66*cx2*cy2 + 4*C55*cy2*sx2 + (4*c2x2*C44 + (C22 - 2*C23 + C33)*s2x2)*sy2) +
-				 c2z*s2x*s2z*(sy*(-2*(C33 + 2*(C12 - C13 - 2*C55 + 2*C66)*cy2) + C33*sy2 - 2*C23*c2x*(2 + sy2) + c2x*(C33 - 4*C44)*(2 + sy2) + C22*(2 - sy2 + c2x*(2 + sy2))) + 
-				(C22*(-1 + c2x) + C33 + c2x*(-2*C23 + C33 - 4*C44))*sy3) + 2*s2z2*
-				 (-2*C12*cx2*cy2 + C11*cy4 + C44*s2x2 + C55*cx2*s2y2 + 2*C23*cx2*sx2 - 2*C13*cy2*sx2 + C66*s2y2*sx2 + C33*sx4 + 
-				  sy2*((C12 + C13 - C12*c2x + C13*c2x)*cy2 - 2*C33*cx2*sx2 - C23*(2*cx4 + (-1 + c2y)*cx2*sx2 + 2*sx4) + C44*s2x2*(2 + sy2)) + C33*cx4*sy4 + 
-				  C22*(cx4 - 2*cx2*sx2*sy2 + sx4*sy4)))/8.;
-
 	// make specific and symmetric
 	double rrho=1./rho;
-	int i,j;
 	for(i=0;i<6;i++)
 	{	p->C[i][i]*=rrho;
 		for(j=i+1;j<6;j++)
@@ -448,8 +349,36 @@ void TransIsotropic::FillElasticProperties3D(MPMBase *mptr,ElasticProperties *p,
 			p->C[j][i]=p->C[i][j];
 		}
 	}
+	
+	// thermal and moisture expansion
+	
+	// only these are needed and different from Rstress
+	//Rtot.GetRStrain(R);
+	R[3][0] = 2.*Rtot(1,0)*Rtot(2,0);
+	R[4][0] = 2.*Rtot(0,0)*Rtot(2,0);
+	R[5][0] = 2.*Rtot(0,0)*Rtot(1,0);
+	R[3][1] = 2.*Rtot(1,1)*Rtot(2,1);
+	R[4][1] = 2.*Rtot(0,1)*Rtot(2,1);
+	R[5][1] = 2.*Rtot(1,1)*Rtot(0,1);
+	R[3][2] = 2.*Rtot(2,2)*Rtot(1,2);
+	R[4][2] = 2.*Rtot(2,2)*Rtot(0,2);
+	R[5][2] = 2.*Rtot(0,2)*Rtot(1,2);
+	
+	p->alpha[0] = R[0][0]*CTE1 + R[0][1]*CTE2 + R[0][2]*CTE3;
+	p->alpha[1] = R[1][0]*CTE1 + R[1][1]*CTE2 + R[1][2]*CTE3;
+	p->alpha[2] = R[2][0]*CTE1 + R[2][1]*CTE2 + R[2][2]*CTE3;
+	p->alpha[3] = R[3][0]*CTE1 + R[3][1]*CTE2 + R[3][2]*CTE3;
+	p->alpha[4] = R[4][0]*CTE1 + R[4][1]*CTE2 + R[4][2]*CTE3;
+	p->alpha[5] = R[5][0]*CTE1 + R[5][1]*CTE2 + R[5][2]*CTE3;
+	
+	p->beta[0] = R[0][0]*CME1 + R[0][1]*CME2 + R[0][2]*CME3;
+	p->beta[1] = R[1][0]*CME1 + R[1][1]*CME2 + R[1][2]*CME3;
+	p->beta[2] = R[2][0]*CME1 + R[2][1]*CME2 + R[2][2]*CME3;
+	p->beta[3] = R[3][0]*CME1 + R[3][1]*CME2 + R[3][2]*CME3;
+	p->beta[4] = R[4][0]*CME1 + R[4][1]*CME2 + R[4][2]*CME3;
+	p->beta[5] = R[5][0]*CME1 + R[5][1]*CME2 + R[5][2]*CME3;
 
-	// need p->alpha[] and p->beta[] too for thermal and moisture expansion
+	/*
 	p->alpha[0] = CTE1*cy2*cz2 + CTE2*(cx*s2z*sx*sy + cz2*sx2*sy2 + cx2*sz2) + CTE3*(-(cx*s2z*sx*sy) + cx2*cz2*sy2 + sx2*sz2);
 	p->alpha[1] = CTE1*cy2*sz2 + CTE3*(cz2*sx2 + cx*s2z*sx*sy + cx2*sy2*sz2) + CTE2*(cx2*cz2 - cx*s2z*sx*sy + sx2*sy2*sz2);
 	p->alpha[2] = CTE3*cx2*cy2 + CTE2*cy2*sx2 + CTE1*sy2;
@@ -463,10 +392,8 @@ void TransIsotropic::FillElasticProperties3D(MPMBase *mptr,ElasticProperties *p,
 	p->beta[3] = -(CME1*s2y*sz)/2. + CME3*(cx*cy*cz*sx + (cx2*s2y*sz)/2.) + CME2*(-(cx*cy*cz*sx) + (s2y*sx2*sz)/2.);
 	p->beta[4] = (CME1*cz*s2y)/2. + CME2*(-(cz*s2y*sx2)/2. - cx*cy*sx*sz) + CME3*(-(cx2*cz*s2y)/2. + cx*cy*sx*sz);
 	p->beta[5] =-(CME1*cy2*s2z)/2. + CME3*((s2z*sx2)/2. - c2z*cx*sx*sy - (cx2*s2z*sy2)/2.) + CME2*((cx2*s2z)/2. + c2z*cx*sx*sy - (s2z*sx2*sy2)/2.);
-
+	*/
 }
-
-#endif
 
 #else
 
@@ -476,7 +403,7 @@ void TransIsotropic::LoadMechanicalPropertiesFEA(int makeSpecific,double angle,i
 	if(hasMatProps && DbleEqual(angle,lastMatAngle)) return;
 	lastMatAngle=angle;
 	hasMatProps=TRUE;
-	FillElasticProperties2D(&pr,FALSE,angle,np);
+	FillElasticProperties2D(&pr,FALSE,sin(angle),cos(angle),np);
 }
 
 #endif
@@ -484,17 +411,16 @@ void TransIsotropic::LoadMechanicalPropertiesFEA(int makeSpecific,double angle,i
 // fill in stiffness matrix if necessary
 // makeSpecific divides by density, but only used in MPM code
 // Used by TranIsoptropic 2 and by Orthotropic
-// angle is in radians
-void TransIsotropic::FillElasticProperties2D(ElasticProperties *p,int makeSpecific,double angle,int np) const
+// sn = sin(angle) and cn = cos(angle) where angle is cw angle from current axes to the
+//     material axes or ccw angle from material axes to the current axes
+void TransIsotropic::FillElasticProperties2D(ElasticProperties *p,int makeSpecific,double sn,double cs,int np) const
 {
     // If angle not zero do rotation
-    if(!DbleEqual(angle,0.))
+    if(!DbleEqual(sn,0.))
 	{	// analysis axes are ccw from material axes (note the -sin(ang))
-        double cs=cos(angle);
         double c2=cs*cs;
         double c3=c2*cs;
         double c4=c2*c2;
-        double sn=-sin(angle);
         double s2=sn*sn;
         double s3=s2*sn;
         double s4=s2*s2;
@@ -645,26 +571,19 @@ void TransIsotropic::FillTransportProperties(TransportProperties *t)
 // Used by TranIsoptropic 1 and 2 and by Orthotropic
 void TransIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties *t) const
 {	
-	// Decompose to get rotation
-	Matrix3 pF = mptr->GetDeformationGradientMatrix();
-    Matrix3 R;
-	Matrix3 U = pF.RightDecompose(&R,NULL);
-	
-	// apply initial rotation to get strain increment in the material coordinates
-	Matrix3 R0 = mptr->GetInitialRotation();
-	Matrix3 Rtot = R*R0;
-	
 	if(np!=THREED_MPM)
 	{	// if isotropic in 2D plane, use initial properties
 		if(MaterialTag()==TRANSISO1)
 		{	*t = tr;
 			return;
 		}
+		
+		// get rotation matrix info
+		double cs,sn;
+		mptr->Get2DSinCos(&sn,&cs);
 
 		// analysis axes are ccw from material axes
-		double cs=Rtot(0,0);
 		double c2=cs*cs;
-		double sn=Rtot(1,0);
 		double s2=sn*sn;
 		double cssn=cs*sn;
 		
@@ -678,32 +597,30 @@ void TransIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperties 
 	}
 	
 	else
-	{	// Find R.D.RT and R.k.RT
+	{
+		double R[6][6];
+		Matrix3 *Rtot = mptr->GetRtotPtr();
+		Rtot->GetRStress(R);
+		
 		double diffz = GetDiffZ();
-		Matrix3 DRT = Matrix3(diffT*Rtot(0,0),diffT*Rtot(1,0),diffT*Rtot(2,0),
-							  diffA*Rtot(0,1),diffA*Rtot(1,1),diffA*Rtot(2,1),
-							  diffz*Rtot(0,2),diffz*Rtot(1,2),diffz*Rtot(2,2));
-		t->diffusionTensor.xx = Rtot(0,0)*DRT(0,0) + Rtot(0,1)*DRT(1,0) + Rtot(0,2)*DRT(2,0);
-		t->diffusionTensor.xy = Rtot(0,0)*DRT(0,1) + Rtot(0,1)*DRT(1,1) + Rtot(0,2)*DRT(2,1);
-		t->diffusionTensor.xz = Rtot(0,0)*DRT(0,2) + Rtot(0,1)*DRT(1,2) + Rtot(0,2)*DRT(2,2);
-		t->diffusionTensor.yy = Rtot(1,0)*DRT(0,1) + Rtot(1,1)*DRT(1,1) + Rtot(1,2)*DRT(2,1);
-		t->diffusionTensor.yz = Rtot(1,0)*DRT(0,2) + Rtot(1,1)*DRT(1,2) + Rtot(1,2)*DRT(2,2);
-		t->diffusionTensor.zz = Rtot(2,0)*DRT(0,2) + Rtot(2,1)*DRT(1,2) + Rtot(2,2)*DRT(2,2);
+		t->diffusionTensor.xx = R[0][0]*diffT + R[0][1]*diffA + R[0][2]*diffz;
+		t->diffusionTensor.yy = R[1][0]*diffT + R[1][1]*diffA + R[1][2]*diffz;
+		t->diffusionTensor.zz = R[2][0]*diffT + R[2][1]*diffA + R[2][2]*diffz;
+		t->diffusionTensor.yz = R[3][0]*diffT + R[3][1]*diffA + R[3][2]*diffz;
+		t->diffusionTensor.xz = R[4][0]*diffT + R[4][1]*diffA + R[4][2]*diffz;
+		t->diffusionTensor.xy = R[5][0]*diffT + R[5][1]*diffA + R[5][2]*diffz;
 		
 		double kz = GetKcondZ();
-		Matrix3 kRT = Matrix3(kCondT*Rtot(0,0),kCondT*Rtot(1,0),kCondT*Rtot(2,0),
-							  kCondA*Rtot(0,1),kCondA*Rtot(1,1),kCondA*Rtot(2,1),
-							  kz*Rtot(0,2),kz*Rtot(1,2),kz*Rtot(2,2));
-		t->kCondTensor.xx = Rtot(0,0)*kRT(0,0) + Rtot(0,1)*kRT(1,0) + Rtot(0,2)*kRT(2,0);
-		t->kCondTensor.xy = Rtot(0,0)*kRT(0,1) + Rtot(0,1)*kRT(1,1) + Rtot(0,2)*kRT(2,1);
-		t->kCondTensor.xz = Rtot(0,0)*kRT(0,2) + Rtot(0,1)*kRT(1,2) + Rtot(0,2)*kRT(2,2);
-		t->kCondTensor.yy = Rtot(1,0)*kRT(0,1) + Rtot(1,1)*kRT(1,1) + Rtot(1,2)*kRT(2,1);
-		t->kCondTensor.yz = Rtot(1,0)*kRT(0,2) + Rtot(1,1)*kRT(1,2) + Rtot(1,2)*kRT(2,2);
-		t->kCondTensor.zz = Rtot(2,0)*kRT(0,2) + Rtot(2,1)*kRT(1,2) + Rtot(2,2)*kRT(2,2);
+		t->kCondTensor.xx = R[0][0]*kCondT + R[0][1]*kCondA + R[0][2]*kz;
+		t->kCondTensor.yy = R[1][0]*kCondT + R[1][1]*kCondA + R[1][2]*kz;
+		t->kCondTensor.zz = R[2][0]*kCondT + R[2][1]*kCondA + R[2][2]*kz;
+		t->kCondTensor.yz = R[3][0]*kCondT + R[3][1]*kCondA + R[3][2]*kz;
+		t->kCondTensor.xz = R[4][0]*kCondT + R[4][1]*kCondA + R[4][2]*kz;
+		t->kCondTensor.xy = R[5][0]*kCondT + R[5][1]*kCondA + R[5][2]*kz;
 	}
 }
-#endif
 
+#endif
 
 #pragma mark TransIsotropic::Accessors
 

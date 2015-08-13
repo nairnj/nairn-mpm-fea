@@ -699,39 +699,10 @@ double *MaterialBase::CreateAndZeroDoubles(int numDoubles) const
 
 #pragma mark MaterialBase::Methods
 
-#ifdef USE_PSEUDOHYPERELASTIC
-
 // All maternal classes must override to handle their constitutive law
 void MaterialBase::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,ResidualStrains *res) const
 {
 }
-
-#else
-
-// To handle elimination of old MPMConstLaw, this passes on to old one
-// unless subclass overrides to use it directly
-void MaterialBase::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,ResidualStrains *res) const
-{   if(np==THREED_MPM)
-    {   MPMConstLaw(mptr,dv(0,0),dv(1,1),dv(2,2),dv(0,1),dv(1,0),
-                            dv(0,2),dv(2,0),dv(1,2),dv(2,1),delTime,np,properties,res);
-    }
-    else
-    {   MPMConstLaw(mptr,dv(0,0),dv(1,1),dv(0,1),dv(1,0),dv(2,2),delTime,np,properties,res);
-    }
-}
-
-// These methods are now deprecated. All new material should use the single matrix call (and check
-//   np to see if 2D or 3D)
-void MaterialBase::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-                                double dvzz,double delTime,int np,void *properties,ResidualStrains *res) const
-{
-}
-void MaterialBase::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dvxy,double dvyx,
-                                double dvxz,double dvzx,double dvyz,double dvzy,double delTime,int np,void *properties,ResidualStrains *res) const
-{
-}
-
-#endif
 
 // buffer size for mechanical properties
 int MaterialBase::SizeOfMechanicalProperties(int &altBufferSize) const
@@ -805,68 +776,70 @@ void MaterialBase::IncrementHeatEnergy(MPMBase *mptr,double dT,double dTq0,doubl
 }
 
 // Correct stress update for rotations using hypoelasticity approach
-// rotD is -wxy of rotation tensor (or minus twice tensorial rotation, i.e. dvxy-dvyx = -(dvyx-dvxy))
+// dwrotxy of rotation tensor (or twice tensorial rotation, i.e. dvyx-dvxy)
 // dsxx, dsyy, and dtxy are unrotated updates to sxx, syy, and txy
-// This methods increments particle angle, rotational strain, and in-plane stresses
-// This update by a midpoint rule update is documented in Mathematica notes (HypoUpdate.nb)
-void MaterialBase::Hypo2DCalculations(MPMBase *mptr,double rotD,double dsxx,double dsyy,double dtxy) const
+// This methods increments in-plane stresses
+void MaterialBase::Hypo2DCalculations(MPMBase *mptr,double dwrotxy,double dexxPlusdeyy,double dsxx,double dsyy,double dtxy) const
 {
-	mptr->IncrementRotationStrain(-rotD);
-	
 	Tensor *sp=mptr->GetStressTensor();
-    dsxx+=sp->xy*rotD;
-	dsyy-=sp->xy*rotD;
-    dtxy-=0.5*(sp->xx-sp->yy)*rotD;
-					
-    rotD*=0.5;					// comment out for midpoint rule to have rotD=D (endpoint rule) or D/2 (midpoint rule)
-	double rotD2=rotD*rotD;		// D^2 (endpoint rule) or D^2/4 (midpoint rule)
-    double det=1.+rotD2;		// 1+D^2 (endpoint rule) or 1+D^2/4 (midpoint rule)
-    sp->xx+=((1.+0.5*rotD2)*dsxx + 0.5*rotD2*dsyy + rotD*dtxy)/det;
-    sp->yy+=(0.5*rotD2*dsxx + (1.+0.5*rotD2)*dsyy - rotD*dtxy)/det;
-	sp->xy+=(0.5*rotD*(dsyy-dsxx) + dtxy)/det;
+	double dwxy2 = dwrotxy*dwrotxy/4.;					// dwxy^2/4
+	double shearD = dwrotxy*(1.-0.5*dexxPlusdeyy);		// dwxy*(1-(dexx+deyy)/2)
+	double diff = sp->xx-sp->yy;
+	double dnorm = shearD*sp->xy + dwxy2*diff;
+	sp->xx += dsxx - dnorm;
+	sp->yy += dsyy + dnorm;
+	double dshear =  0.5*shearD*diff - 2.*dwxy2*sp->xy;
+	sp->xy += dtxy + dshear;
+	
+	/* (old method)
+	 double rotD = -dwrotxy
+	 dsxx+=sp->xy*rotD;
+	 dsyy-=sp->xy*rotD;
+	 dtxy-=0.5*(sp->xx-sp->yy)*rotD;
+	 
+	 rotD*=0.5;					// comment out for midpoint rule to have rotD=D (endpoint rule) or D/2 (midpoint rule)
+	 double rotD2=rotD*rotD;		// D^2 (endpoint rule) or D^2/4 (midpoint rule)
+	 double det=1.+rotD2;		// 1+D^2 (endpoint rule) or 1+D^2/4 (midpoint rule)
+	 sp->xx+=((1.+0.5*rotD2)*dsxx + 0.5*rotD2*dsyy + rotD*dtxy)/det;
+	 sp->yy+=(0.5*rotD2*dsxx + (1.+0.5*rotD2)*dsyy - rotD*dtxy)/det;
+	 sp->xy+=(0.5*rotD*(dsyy-dsxx) + dtxy)/det;
+	 */
 }
 
 // Correct stress update for rotations using hypoelasticity approach
-// dwxy, dwxz, and dwyz are the engineering rotational strains
+// dwxy, dwxz, and dwyz are the engineering rotational strains (lower diagonal of tensor)
 // dsig[6] on initial stress updates in order (xx,yy,zz,yz,xz,xy)
-// This methods increments particle angles (will), rotational strains, and stresses
-// This linear approximation to a midpoint rule update is documented in Mathematica notes (HypoUpdate.nb)
+// This methods increments stresses
 void MaterialBase::Hypo3DCalculations(MPMBase *mptr,double dwxy,double dwxz,double dwyz,double *dsig) const
 {
-	// rotational strains
-	mptr->IncrementRotationStrain(dwxy,dwxz,dwyz);
-	
 	// get stress tensor
 	Tensor *sp=mptr->GetStressTensor();
-	/*
-	// nonhypo test
-	sp->xx+=dsig[XX];
-	sp->yy+=dsig[YY];
-	sp->zz+=dsig[ZZ];
-	sp->yz+=dsig[YZ];
-	sp->xz+=dsig[XZ];
-	sp->xy+=dsig[XY];
-	return;
-	*/
 	
-	// angles (for anisotropic materials)
-	
-	// stresss - first those involving current stress
+	// stress increments involving current stress
 	Tensor st;
-	st.xx= -dwxy*sp->xy - dwxz*sp->xz;
-	st.yy=  dwxy*sp->xy               - dwyz*sp->yz;
-	st.zz=                dwxz*sp->xz + dwyz*sp->yz;
-	st.yz= 0.5*( +dwxy*sp->xz          + dwxz*sp->xy          + dwyz*(sp->yy-sp->zz)  );
-	st.xz= 0.5*( -dwxy*sp->yz          + dwxz*(sp->xx-sp->zz) + dwyz*sp->xy  );
-	st.xy= 0.5*( +dwxy*(sp->xx-sp->yy) - dwxz*sp->yz          - dwyz*sp->xz );
+	st.xx =      -dwxy*sp->xy - dwxz*sp->xz;
+	st.yy =       dwxy*sp->xy               - dwyz*sp->yz;
+	st.zz =                     dwxz*sp->xz + dwyz*sp->yz;
+	st.yz = 0.5*(  dwxy*sp->xz              + dwxz*sp->xy          + dwyz*(sp->yy-sp->zz)  );
+	st.xz = 0.5*( -dwxy*sp->yz              + dwxz*(sp->xx-sp->zz) + dwyz*sp->xy  );
+	st.xy = 0.5*(  dwxy*(sp->xx-sp->yy)     - dwxz*sp->yz          - dwyz*sp->xz );
 	
 	// now add all
+	sp->xx += dsig[XX] + st.xx;
+	sp->yy += dsig[YY] + st.yy;
+	sp->zz += dsig[ZZ] + st.zz;
+	sp->yz += dsig[YZ] + st.yz;
+	sp->xz += dsig[XZ] + st.xz;
+	sp->xy += dsig[XY] + st.xy;
+	
+	/* old method
 	sp->xx+=dsig[XX] + st.xx - 0.5*dsig[XY]*dwxy - 0.5*dsig[XZ]*dwxz;
 	sp->yy+=dsig[YY] + st.yy + 0.5*dsig[XY]*dwxy - 0.5*dsig[YZ]*dwyz;
 	sp->zz+=dsig[ZZ] + st.zz + 0.5*dsig[XZ]*dwxz + 0.5*dsig[YZ]*dwyz;
 	sp->yz+=dsig[YZ] + st.yz + 0.25*( +dsig[XZ]*dwxy + dsig[XY]*dwxz + (dsig[YY]-dsig[ZZ])*dwyz );
 	sp->xz+=dsig[XZ] + st.xz + 0.25*( -dsig[YZ]*dwxy + (dsig[XX]-dsig[ZZ])*dwxz + dsig[XY]*dwyz  );
 	sp->xy+=dsig[XY] + st.xy + 0.25*( +(dsig[XX]-dsig[YY])*dwxy - dsig[YZ]*dwxz - dsig[XZ]*dwyz  );
+	*/
 }
 
 #pragma mark MaterialBase::Fracture Calculations
@@ -1442,22 +1415,9 @@ double MaterialBase::GetArtificalViscosity(double Dkk,double c) const
     return avred;
 }
 
-#ifndef USE_PSEUDOHYPERELASTIC
-// If material partitions total strain into elastic and plastic strain saved in ep and eplast, it'
-// should override this method and return TRUE. It is only used when material point is asked for
-// its GetDeformationGradient(). When this is TRUE, gradient uses total strain, otherwise it
-// uses only the terms in ep and wrot.
-bool MaterialBase::PartitionsElasticAndPlasticStrain(void) const { return false; }
-#endif
-
 // if a subclass material supports artificial viscosity, override this and return TRUE
 bool MaterialBase::SupportsArtificialViscosity(void) const { return false; }
 
 // return code indicated what is store in the "plastic strain" on the material, which can
 // only be a symmetrix tensor
 int MaterialBase::AltStrainContains(void) const { return NOTHING; }
-
-
-
-
-

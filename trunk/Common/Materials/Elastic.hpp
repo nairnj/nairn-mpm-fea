@@ -35,19 +35,22 @@ class Elastic : public MaterialBase
         Elastic(char *);
 		
 		// initialize
-        
+		char *InputMaterialProperty(char *,int &,double &);
+#ifdef MPM_CODE
+		virtual void PrintCommonProperties(void) const;
+#endif
+    
 		// methods
 		void FillUnrotatedElasticProperties(ElasticProperties *,int);
 #ifdef MPM_CODE
+		virtual void HypoIncrementDeformation(MPMBase *,Matrix3) const;
         virtual double GetCpMinusCv(MPMBase *) const;
-#ifdef USE_PSEUDOHYPERELASTIC
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+		virtual void LRConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+		virtual void LRElasticConstitutiveLaw(MPMBase *,Matrix3,Matrix3,Matrix3,Matrix3,Matrix3 *,int,void *,ResidualStrains *) const;
+		virtual void SRConstitutiveLaw2D(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+		virtual void SRConstitutiveLaw3D(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 		virtual ElasticProperties *GetElasticPropertiesPointer(void *) const;
-		virtual void ElasticConstitutiveLaw(MPMBase *,Matrix3,Matrix3,Matrix3,Matrix3,int,void *,ResidualStrains *) const;
-#else
-		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
-		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
-#endif
 #else
         virtual double GetStressStrainZZ(double,double,double,double,double,int);
 #endif
@@ -57,6 +60,7 @@ class Elastic : public MaterialBase
 #ifdef MPM_CODE
 		ElasticProperties pr;
 		double Cadota;
+		int useLargeRotation;				// Hypoelastic material with large rotation methods
 #else
         double prop3;
 #endif

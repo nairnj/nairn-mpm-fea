@@ -197,7 +197,7 @@ For strain updates, the algorithm needs to evaluate the spatial velocity gradien
 \end{equation}
 which assumes $\nabla \vec v$ is constant over the time step. The gradient is found by extrapolating spatial velocity on the grid:
 \begin{equation}
-    \nabla \vec v = \sum_i \vec G_{ip} \otimes \vec v_i^{(n)}
+    \nabla \vec v = \sum_i \vec v_i^{(n)} \otimes \vec G_{ip}
 \end{equation}
 and the spatial velocity is found from
 \begin{equation}

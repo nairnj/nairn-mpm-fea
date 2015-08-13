@@ -312,6 +312,16 @@ void Matrix3::Scale2D(double factor)
 	m[1][1] *= factor;
 }
 
+// inner product term by term of this matrix
+double Matrix3::DotProduct(void)
+{	double dot = m[0][0]*m[0][0] + m[1][1]*m[1][1] + m[2][2]*m[2][2]
+					+ m[0][1]*m[0][1] + m[1][0]*m[1][0];
+	if(!is2D)
+	{	dot += m[0][2]*m[0][2] + m[2][0]*m[2][0]
+					+ m[1][2]*m[1][2] + m[2][1]*m[2][1];
+	}
+	return dot;
+}
 
 // Return inverse in a new matrix3
 Matrix3 Matrix3::Inverse(void) const
@@ -461,7 +471,7 @@ Matrix3 Matrix3::RightDecompose(Matrix3 *R,Vector *stretches) const
     
     // rest is for 3D matrix
     
-    // Get C and C^2
+    // Get C=F^TF and C^2
     Matrix3 C = Transpose()*(*this);
     Matrix3 C2 = C*C;
     
@@ -482,20 +492,26 @@ Matrix3 Matrix3::RightDecompose(Matrix3 *R,Vector *stretches) const
     double c1 = (i1*i1-i2)*d1;          // coefficient of C
     double cI = i1*i3*d1;               // coefficient of I
     
-    // Get U = (1/d1)*(-C^2 + (i1*i1-i2)*C + i1*i3*I)
-    Matrix3 U(c2*C2(0,0)+c1*C(0,0)+cI,c2*C2(0,1)+c1*C(0,1),c2*C2(0,2)+c1*C(0,2),
-                   c2*C2(1,0)+c1*C(1,0),c2*C2(1,1)+c1*C(1,1)+cI,c2*C2(1,2)+c1*C(1,2),
-                   c2*C2(2,0)+c1*C(2,0),c2*C2(2,1)+c1*C(2,1),c2*C2(2,2)+c1*C(2,2)+cI);
+    // Get U = d1*(-C^2 + (i1*i1-i2)*C + i1*i3*I) (symmetric)
+	double U01 = c2*C2(0,1)+c1*C(0,1);
+	double U02 = c2*C2(0,2)+c1*C(0,2);
+	double U12 = c2*C2(1,2)+c1*C(1,2);
+    Matrix3 U(c2*C2(0,0)+c1*C(0,0)+cI, U01,                     U02,
+			  U01,                     c2*C2(1,1)+c1*C(1,1)+cI, U12,
+			  U02,                     U12,                     c2*C2(2,2)+c1*C(2,2)+cI);
     
     // if R pointer not NULL, find R too
     if(R!=NULL)
     {   c1 = 1/i3;                      // coefficient of C
         double cU = -i1*c1;             // coefficient of U
         cI = i2*c1;                     // coefficient of I
-        // Get Uinv = (1/i3)*(C - i1*U + i2*I)
-        Matrix3 Uinv(c1*C(0,0)+cU*U(0,0)+cI,c1*C(0,1)+cU*U(0,1),c1*C(0,2)+cU*U(0,2),
-                     c1*C(1,0)+cU*U(1,0),c1*C(1,1)+cU*U(1,1)+cI,c1*C(1,2)+cU*U(1,2),
-                     c1*C(2,0)+cU*U(2,0),c1*C(2,1)+cU*U(2,1),c1*C(2,2)+cU*U(2,2)+cI);
+        // Get Uinv = (1/i3)*(C - i1*U + i2*I) (symmetric)
+		U01 = c1*C(0,1)+cU*U(0,1);
+		U02 = c1*C(0,2)+cU*U(0,2);
+		U12 = c1*C(1,2)+cU*U(1,2);
+        Matrix3 Uinv(c1*C(0,0)+cU*U(0,0)+cI, U01,                    U02,
+                     U01,                    c1*C(1,1)+cU*U(1,1)+cI, U12,
+                     U02,                    U12,                    c1*C(2,2)+cU*U(2,2)+cI);
         
         // R = FU^-1
         *R = (*this)*Uinv;
@@ -547,7 +563,7 @@ Matrix3 Matrix3::LeftDecompose(Matrix3 *R,Vector *stretches) const
     
     // rest is for 3D matrix
     
-    // Get B and B^2
+    // Get B=FF^T and B^2
     Matrix3 B = (*this)*Transpose();
     Matrix3 B2 = B*B;
     
@@ -646,6 +662,102 @@ Matrix3 Matrix3::Rotation(const Vector &Eigenvals,const Matrix3 &U) const
     return rotate;
 }
 */
+
+// Get 6X6 rotation matrix for rotation of stress tensor (called R_{\sigma} in my notes)
+// To get inverse, call this method for transpose (and not just transpose the 6X6)
+void Matrix3::GetRStress(double r[][6]) const
+{
+	r[0][0] = m[0][0]*m[0][0];
+	r[0][1] = m[0][1]*m[0][1];
+	r[0][2] = m[0][2]*m[0][2];
+	r[0][3] = 2.*m[0][1]*m[0][2];
+	r[0][4] = 2.*m[0][0]*m[0][2];
+	r[0][5] = 2.*m[0][0]*m[0][1];
+	
+	r[1][0] = m[1][0]*m[1][0];
+	r[1][1] = m[1][1]*m[1][1];
+	r[1][2] = m[1][2]*m[1][2];
+	r[1][3] = 2.*m[1][1]*m[1][2];
+	r[1][4] = 2.*m[1][0]*m[1][2];
+	r[1][5] = 2.*m[1][1]*m[1][0];
+
+	r[2][0] = m[2][0]*m[2][0];
+	r[2][1] = m[2][1]*m[2][1];
+	r[2][2] = m[2][2]*m[2][2];
+	r[2][3] = 2.*m[2][2]*m[2][1];
+	r[2][4] = 2.*m[2][2]*m[2][0];
+	r[2][5] = 2.*m[2][0]*m[2][1];
+	
+	r[3][0] = m[1][0]*m[2][0];
+	r[3][1] = m[1][1]*m[2][1];
+	r[3][2] = m[2][2]*m[1][2];
+	r[3][3] = m[1][2]*m[2][1] + m[1][1]*m[2][2];
+	r[3][4] = m[1][2]*m[2][0] + m[1][0]*m[2][2];
+	r[3][5] = m[1][1]*m[2][0] + m[1][0]*m[2][1];
+
+	r[4][0] = m[0][0]*m[2][0];
+	r[4][1] = m[0][1]*m[2][1];
+	r[4][2] = m[2][2]*m[0][2];
+	r[4][3] = m[0][2]*m[2][1] + m[0][1]*m[2][2];
+	r[4][4] = m[0][2]*m[2][0] + m[0][0]*m[2][2];
+	r[4][5] = m[0][1]*m[2][0] + m[0][0]*m[2][1];
+	
+	r[5][0] = m[0][0]*m[1][0];
+	r[5][1] = m[1][1]*m[0][1];
+	r[5][2] = m[0][2]*m[1][2];
+	r[5][3] = m[0][2]*m[1][1] + m[0][1]*m[1][2];
+	r[5][4] = m[0][2]*m[1][0] + m[0][0]*m[1][2];
+	r[5][5] = m[0][1]*m[1][0] + m[0][0]*m[1][1];
+}
+
+// Get 6X6 rotation matrix for rotation of strain tensor (called R_{\varepsilon} in my notes)
+// To get inverse, call this method for transpose (and not just transpose the 6X6)
+// Note since Rstrain = (Rstress^-1)^T, take RStress terms, interchange order of all m terms
+//    to get Rstress^-1 then interchange r terms to get the transpose
+void Matrix3::GetRStrain(double r[][6]) const
+{
+	r[0][0] = m[0][0]*m[0][0];
+	r[1][0] = m[1][0]*m[1][0];
+	r[2][0] = m[2][0]*m[2][0];
+	r[3][0] = 2.*m[1][0]*m[2][0];
+	r[4][0] = 2.*m[0][0]*m[2][0];
+	r[5][0] = 2.*m[0][0]*m[1][0];
+	
+	r[0][1] = m[0][1]*m[0][1];
+	r[1][1] = m[1][1]*m[1][1];
+	r[2][1] = m[2][1]*m[2][1];
+	r[3][1] = 2.*m[1][1]*m[2][1];
+	r[4][1] = 2.*m[0][1]*m[2][1];
+	r[5][1] = 2.*m[1][1]*m[0][1];
+	
+	r[0][2] = m[0][2]*m[0][2];
+	r[1][2] = m[1][2]*m[1][2];
+	r[2][2] = m[2][2]*m[2][2];
+	r[3][2] = 2.*m[2][2]*m[1][2];
+	r[4][2] = 2.*m[2][2]*m[0][2];
+	r[5][2] = 2.*m[0][2]*m[1][2];
+	
+	r[0][3] = m[0][1]*m[0][2];
+	r[1][3] = m[1][1]*m[1][2];
+	r[2][3] = m[2][2]*m[2][1];
+	r[3][3] = m[1][2]*m[2][1] + m[1][1]*m[2][2];
+	r[4][3] = m[2][1]*m[0][2] + m[0][1]*m[2][2];
+	r[5][3] = m[1][1]*m[0][2] + m[0][1]*m[1][2];
+	
+	r[0][4] = m[0][0]*m[0][2];
+	r[1][4] = m[1][0]*m[1][2];
+	r[2][4] = m[2][2]*m[2][0];
+	r[3][4] = m[2][0]*m[1][2] + m[1][0]*m[2][2];
+	r[4][4] = m[0][2]*m[2][0] + m[0][0]*m[2][2];
+	r[5][4] = m[1][0]*m[0][2] + m[0][0]*m[1][2];
+	
+	r[0][5] = m[0][0]*m[0][1];
+	r[1][5] = m[1][1]*m[1][0];
+	r[2][5] = m[2][0]*m[2][1];
+	r[3][5] = m[2][0]*m[1][1] + m[1][0]*m[2][1];
+	r[4][5] = m[2][0]*m[0][1] + m[0][0]*m[2][1];
+	r[5][5] = m[0][1]*m[1][0] + m[0][0]*m[1][1];
+}
 
 #pragma mark Matrix3:operators
 
@@ -846,6 +958,32 @@ void Matrix3::setIs2D(bool new2D)
     }
 }
 
+// set to other matrix
+void Matrix3::set(Matrix3 mat)
+{
+	m[0][0] = mat(0,0);
+	m[0][1] = mat(0,1);
+	m[1][0] = mat(1,0);
+	m[1][1] = mat(1,1);
+	m[2][2] = mat(2,2);
+	if(mat.getIs2D())
+	{	if(!is2D)
+		{	is2D = true;
+			m[0][2] = 0.;
+			m[1][2] = 0.;
+			m[2][0] = 0.;
+			m[2][1] = 0.;
+		}
+	}
+	else
+	{	is2D = false;
+		m[0][2] = mat(0,2);
+		m[1][2] = mat(1,2);
+		m[2][0] = mat(2,0);
+		m[2][1] = mat(2,1);
+	}
+}
+
 // trace
 double Matrix3::trace(void) const { return m[0][0] + m[1][1] + m[2][2]; }
 
@@ -968,6 +1106,7 @@ inline void dsyev2(double A, double B, double C, double *rt1, double *rt2,
 		*sn = t;
 	}
 }
+
 
 int dsyevq3(double A[3][3], double Q[3][3], double *w)
 // ----------------------------------------------------------------------------

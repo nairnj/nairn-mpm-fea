@@ -82,7 +82,9 @@ MPMBase::MPMBase(int elem,int theMatl,double angin)
 	
 	// counts crossing and sign is whether or not left the grid
 	elementCrossings=0;
-    
+	
+	// rotation matrix (when tracked)
+	Rtot = NULL;
 }
 
 // allocation diffusion data if need in this calculations
@@ -268,15 +270,58 @@ void MPMBase::GetDimensionlessSize(Vector &lp) const
     lp.z = lp.x;
 }
 
-#ifndef USE_PSEUDOHYPERELASTIC
-// return if mterial for this particle includes plastic strainin gradient or if
-// entire deformation is in the elastic strain
-bool MPMBase::PartitionsElasticAndPlasticStrain(void) const
-{   return theMaterials[MatID()]->PartitionsElasticAndPlasticStrain();
+// get rotation angle for 2D calculations
+// Use polar decomposition to get sin(theta) and cos(theta) for ccw rotation
+//		from initial material position to current position
+double MPMBase::Get2DSinCos(double *sintheta,double *costheta)
+{	// particle rotation
+	double F11plusF22 = 2. + ep.xx + ep.yy;
+	double denom = 1./sqrt(F11plusF22*F11plusF22+wrot.xy*wrot.xy);
+	double sinthetap = wrot.xy*denom;
+	double costhetap = F11plusF22*denom;
+	
+	// total rotation
+	// sin(anglez0-thetap) = cos(anglez0)*sin(thetap) - sin(anglez0)*cos(thetap)
+	// cos(anglez0-thetap) = cos(anglez0)*cos(thetap) + sin(snglez0)*sin(thetap)
+	double c0 = cos(anglez0);
+	double s0 = sin(anglez0);
+	*sintheta = c0*sinthetap - s0*costhetap;
+	*costheta = c0*costhetap + s0*sinthetap;
 }
-#endif
 
-// anglez0 is initial z cw orientation angle (2D and 3D z,y,x scheme)
+// Rotation matrix (for materials that track it)
+// All hypoelastic materials when in large rotation mode and tracking is activated
+// 3D, small rotation, and anisotropic tracks rotation always. It is calculated will fill elasti
+//    properties and then stored for later use by anisotropic plasti or transport properties
+Matrix3 *MPMBase::GetRtotPtr(void) { return Rtot; }
+void MPMBase::SetRtot(Matrix3 newR) { Rtot->set(newR); }
+void MPMBase::InitRtot(Matrix3 newR)
+{	if(Rtot==NULL) Rtot = new Matrix3();
+	Rtot->set(newR);
+}
+
+// decompose current F to get rotation
+// apply initial rotation to account for aniostropy
+Matrix3 MPMBase::GetRtot(void)
+{	
+	// get deformation gradient
+	Matrix3 pF = GetDeformationGradientMatrix();
+	
+	// Decompose for R
+    Matrix3 R;
+	Matrix3 U = pF.RightDecompose(&R,NULL);
+	
+	// apply initial rotation total rotation from initial material axes
+	Matrix3 R0 = GetInitialRotation();
+	Matrix3 Rtot = R*R0;
+	
+	// return it
+	return Rtot;
+}
+
+// anglez0 is initial z cw orientation angle from global to material (2D and 3D z,y,x scheme)
+// In 2D and small rotation, 0.5*wrot.xy is ccw from initial to current axes, thus
+//		anglez0-0.5*wrot.xy is cw from current to material or ccw from material to current
 double MPMBase::GetRotationZ(void) { return anglez0-0.5*wrot.xy; }
 double MPMBase::GetParticleRotationZ(void) { return -0.5*wrot.xy; }		// rotation in simulation, ignoring initial angle
 double MPMBase::GetRotationZInDegrees(void) { return 180.*(anglez0-0.5*wrot.xy)/PI_CONSTANT; }
@@ -312,9 +357,18 @@ void MPMBase::IncrementRotationStrain(double rotXY,double rotXZ,double rotYZ)
 }
 TensorAntisym *MPMBase::GetRotationStrainTensor(void) { return &wrot; }
 
+// For 2D or axisymmetric, iuncrement Fzz to Fzz(n) = (1+dezz)*Fzz(n-1)
+// In the strain tensor, we store Fzz(n)-1 and Fzz(n-1) = 1 + ep.zz
+//		Fzz(n)-1 = (1+dezz)*(1 + ep.zz) = ep.zz + dezz*(1+ep.zz)
+void MPMBase::IncrementDeformationGradientZZ(double dezz)
+{	ep.zz += dezz*(1.+ep.zz);
+}
+
 // Get V-I which is Biot strain rotated into current particle orientation
+// It is based on total strain
 Matrix3 MPMBase::GetBiotStrain(void) const
-{	Matrix3 F = GetDeformationGradientMatrix();
+{
+	Matrix3 F = GetDeformationGradientMatrix();
 	Matrix3 V = F.LeftDecompose(NULL,NULL);
 	V(0,0) -= 1.;
 	V(1,1) -= 1.;
@@ -418,7 +472,7 @@ void MPMBase::Describe(void)
     Matrix3 pF = GetDeformationGradientMatrix();
     cout << "#       F=" << pF << ", |F|=" << pF.determinant() << endl;
     double rho0=theMaterials[MatID()]->rho;
-    double rho = rho0/theMaterials[MatID()]->GetCurrentRelativeVolume(this);
+    double rho = rho0*UnitsController::Scaling(1.e-6)/theMaterials[MatID()]->GetCurrentRelativeVolume(this);
     cout << "#       P= " << pressure*rho << " " << UnitsController::Label(PRESSURE_UNITS) << endl;
     cout << "# sigmaii=(" << sp.xx*rho << "," << sp.yy*rho << "," << sp.zz << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;
     cout << "#   tauij=(" << sp.xy*rho << "," << sp.xz*rho << "," << sp.yz << ") " << UnitsController::Label(PRESSURE_UNITS) << endl;

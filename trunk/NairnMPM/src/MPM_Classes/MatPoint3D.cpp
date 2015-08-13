@@ -242,10 +242,10 @@ Matrix3 MatPoint3D::GetElasticLeftCauchyMatrix(void)
                     eplast.xz,eplast.yz,eplast.zz);
 }
 
-#ifdef USE_PSEUDOHYPERELASTIC
 // get deformation gradient, which is stored in strain and rotation tensors
 void MatPoint3D::GetDeformationGradient(double F[][3]) const
 {
+	// current deformation gradient in 3D
 	F[0][0] = 1. + ep.xx;
 	F[1][1] = 1. + ep.yy;
 	F[2][2] = 1. + ep.zz;
@@ -256,38 +256,6 @@ void MatPoint3D::GetDeformationGradient(double F[][3]) const
 	F[1][2] = 0.5*(ep.yz - wrot.yz);
 	F[2][1] = 0.5*(ep.yz + wrot.yz);
 }
-#else
-// get deformation gradient, which is stored in strain and rotation tensors
-void MatPoint3D::GetDeformationGradient(double F[][3]) const
-{
-	// current deformation gradient in 3D
-    if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())
-    {   F[0][0] = 1. + ep.xx + eplast.xx;
-        F[1][1] = 1. + ep.yy + eplast.yy;
-        F[2][2] = 1. + ep.zz + eplast.zz;
-        double exy = ep.xy + eplast.xy;
-        F[0][1] = 0.5*(exy - wrot.xy);
-        F[1][0] = 0.5*(exy + wrot.xy);
-        double exz = ep.xz + eplast.xz;
-        F[0][2] = 0.5*(exz - wrot.xz);
-        F[2][0] = 0.5*(exz + wrot.xz);
-        double eyz = ep.yz + eplast.yz;
-        F[1][2] = 0.5*(eyz - wrot.yz);
-        F[2][1] = 0.5*(eyz + wrot.yz);
-    }
-    else
-    {   F[0][0] = 1. + ep.xx;
-        F[1][1] = 1. + ep.yy;
-        F[2][2] = 1. + ep.zz;
-        F[0][1] = 0.5*(ep.xy - wrot.xy);
-        F[1][0] = 0.5*(ep.xy + wrot.xy);
-        F[0][2] = 0.5*(ep.xz - wrot.xz);
-        F[2][0] = 0.5*(ep.xz + wrot.xz);
-        F[1][2] = 0.5*(ep.yz - wrot.yz);
-        F[2][1] = 0.5*(ep.yz + wrot.yz);
-    }
-}
-#endif
 
 // Get R.sqrt(B).RT-I = V-I for elastic biot strain rotated into current particle orientation
 // Assume that elastic B matrix is in the alt strain tensor

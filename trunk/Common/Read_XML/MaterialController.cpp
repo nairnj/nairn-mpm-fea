@@ -17,7 +17,7 @@
 	#include "Materials/Viscoelastic.hpp"
 	#include "Materials/HillPlastic.hpp"
 	#include "Materials/WoodMaterial.hpp"
-	#include "Materials/MGSCGLMaterial.hpp"
+	#include "Materials/IsoPlasticity.hpp"
 	#include "Materials/Mooney.hpp"
     #include "Materials/HEIsotropic.hpp"
 	#include "Materials/BistableIsotropic.hpp"
@@ -122,9 +122,6 @@ int MaterialController::AddMaterial(int matID,char *matName)
 		case WOODMATERIAL:
 			newMaterial=new WoodMaterial(matName);
 			break;
-		case MGEOSMATERIAL:
-			newMaterial=new MGSCGLMaterial(matName);
-			break;
 		case TRILINEARTRACTIONMATERIAL:
 			newMaterial=new TrilinearTraction(matName);
 			break;
@@ -134,6 +131,7 @@ int MaterialController::AddMaterial(int matID,char *matName)
 		case TAITLIQUID:
 			newMaterial=new TaitLiquid(matName);
 			break;
+		case MGEOSMATERIAL:
 		case HEMGEOSMATERIAL:
 			newMaterial=new HEMGEOSMaterial(matName);
 			break;

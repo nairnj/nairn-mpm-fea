@@ -335,6 +335,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		numContours.setToolTipText("Enter 1 for continuous colors or >1 for number of discrete colors and hit return or enter");
 		numContours.addActionListener(this);
 		numContours.setActionCommand("change contours");
+		remoteUsername.addFocusListener(new PrefFocusListener(NumContoursKey));
 		c.insets = new Insets(6, 3, 1, 6); // tlbr
 		c.gridx = 1;
 		c.weightx = 1.0;
@@ -529,7 +530,7 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 	public void actionPerformed(ActionEvent e)
 	{   String theCmd=e.getActionCommand();
 
-		if(theCmd.equals("MPM Code"))
+	if(theCmd.equals("MPM Code"))
 		{	int result=chooser.showOpenDialog(this);
 			if(result==JFileChooser.CANCEL_OPTION) return;
 			String newPath=chooser.getSelectedFile().getPath();
@@ -733,11 +734,27 @@ public class NFMVPrefs extends JNPreferences implements ActionListener
 		
 		public void focusLost(FocusEvent e)
 		{	String newValue;
-			if(prefKey.equals(RemoteUserPassKey))
-				newValue = new String(((JPasswordField)e.getComponent()).getPassword());
+			if(prefKey.equals(NumContoursKey))
+			{	try
+				{	int newContours=Integer.valueOf(numContours.getText());
+					if(newContours<1) newContours=1;
+					int oldNum=ColorPicker.getNumberOfContours();
+					if(newContours!=oldNum)
+					{	prefs.putInt(NumContoursKey,newContours);
+						ColorPicker.setNumberOfContours();
+					}
+				}
+				catch(Exception ie)
+				{	Toolkit.getDefaultToolkit().beep();
+				}
+			}
 			else
-				newValue = ((JTextField)e.getComponent()).getText();
-			prefs.put(prefKey, newValue);
+			{	if(prefKey.equals(RemoteUserPassKey))
+					newValue = new String(((JPasswordField)e.getComponent()).getPassword());
+				else
+					newValue = ((JTextField)e.getComponent()).getText();
+				prefs.put(prefKey, newValue);
+			}
 		}
 		
 		public void focusGained(FocusEvent e)

@@ -88,37 +88,10 @@ char *IsoPlasticity::InitHistoryData(void)
     return (char *)p;
 }
 
-#pragma mark IsoPlasticity:Methods
-
-// buffer size for mechanical properties
-int IsoPlasticity::SizeOfMechanicalProperties(int &altBufferSize) const
-{   altBufferSize = plasticLaw->SizeOfHardeningProps();
-    return sizeof(PlasticProperties);
-}
-
-// Isotropic material can use read-only initial properties
-void *IsoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
-{
-	PlasticProperties *p = (PlasticProperties *)matBuffer;
-	*p = pr;
- 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np,altBuffer);
-	double Gratio = plasticLaw->GetShearRatio(mptr,mptr->GetPressure(),1.,p->hardProps);
-	p->Gred = G0red*Gratio;
-	
-	if(np==PLANE_STRESS_MPM)
-	{	// these are terms for plane stress calculations only
-		p->psRed = 1./(p->Kred/(2.*p->Gred) + 2./3.);					// (1-2nu)/(1-nu) for plane stress
-		p->psLr2G = (p->Kred/(2.*p->Gred) - 1./3.)*p->psRed;			// nu/(1-nu) to find ezz
-		p->psKred = p->Kred*p->psRed;									// E/(3(1-v)) to find lambda
-	}
-
-	return p;
-}
-
-#ifdef USE_PSEUDOHYPERELASTIC
+#pragma mark IsoPlasticity::Methods
 
 /* Take increments in strain and calculate new Particle: strains, rotation strain, plastic strain,
-        stresses, strain energy, plastic energy, dissipated energy, angle
+		stresses, strain energy, plastic energy, dissipated energy, angle
 	dvij are (gradient rates X time increment) to give deformation gradient change
 	For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
 	This is general analysis for isotropic plastic material. Subclass must define
@@ -129,21 +102,46 @@ void *IsoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuff
 		tensor
 */
 void IsoPlasticity::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+{	if(useLargeRotation)
+		LRConstitutiveLaw(mptr,du,delTime,np,properties,res);
+	else
+		SRConstitutiveLaw(mptr,du,delTime,np,properties,res);
+}
+
+#pragma mark IsoPlasticity::Methods (Large Rotation)
+
+// Entry point for large rotation
+void IsoPlasticity::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
 	// current previous deformation gradient and stretch
 	Matrix3 pFnm1 = mptr->GetDeformationGradientMatrix();
-	Matrix3 Vnm1 = pFnm1.LeftDecompose(NULL,NULL);
 	
     // get incremental deformation gradient and decompose it
 	const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
     Matrix3 dR;
     Matrix3 dV = dF.LeftDecompose(&dR,NULL);
 	
-	// get strain increments de = (dV-I) dR Vnma dRT
+#ifdef TRACK_RTOT
+	// Read and then update rotation matrix
+	Matrix3 *Rnm1 = mptr->GetRtotPtr();
+	Matrix3 Rtot = dR*(*Rnm1);
+	mptr->SetRtot(Rtot);
+	
+	// get strain increments de = (dV-I) dR Fnm1 Rtot^T
+	dV(0,0) -= 1.;
+	dV(1,1) -= 1.;
+	dV(2,2) -= 1.;
+	Matrix3 de = (dV*dR)*(pFnm1*Rtot.Transpose());
+#else
+	// decompose to get previous stretch
+	Matrix3 Vnm1 = pFnm1.LeftDecompose(NULL,NULL);
+	
+	// get strain increments de = (dV-I) dR Vnm1 dRT
 	dV(0,0) -= 1.;
 	dV(1,1) -= 1.;
 	dV(2,2) -= 1.;
 	Matrix3 de = dV*Vnm1.RMRT(dR);
+#endif
 	
 	// Update total deformation gradient
 	Matrix3 pF = dF*pFnm1;
@@ -162,32 +160,32 @@ void IsoPlasticity::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,i
 	PlasticProperties *p = (PlasticProperties *)properties;
     if(np==THREED_MPM)
     {   delV = de.trace() - 3.*eres;
-        PlasticityConstLaw(mptr,de(0,0),de(1,1),de(2,2),2*de(0,1),0.,2.*de(0,2),0.,2.*de(1,2),0.,
-                           delTime,np,delV,1.,eres,p,res,&dR);
+        LRPlasticityConstLaw(mptr,de(0,0),de(1,1),de(2,2),2*de(0,1),2.*de(0,2),2.*de(1,2),
+                           delTime,np,delV,eres,p,res,&dR);
         return;
     }
 	else if(np==PLANE_STRESS_MPM)
 		delV = p->psRed*(de(0,0)+de(1,1)-2.*eres);
 	else
 		delV = de.trace() - 3.*eres;
-    PlasticityConstLaw(mptr,de(0,0),de(1,1),2.*de(0,1),0.,de(2,2),delTime,np,delV,1.,eres,p,res,&dR);	
+    LRPlasticityConstLaw(mptr,de(0,0),de(1,1),2.*de(0,1),de(2,2),delTime,np,delV,eres,p,res,&dR);
 }
 
 // To allow some subclasses to support large deformations, the initial calculation for incremental
-// deformation gradient (the dvij), volume change (delV) and relative volume (Jnew) can be
-// handled first by the subclass. This mtehod then finishes the constitutive law
-void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dgxy,double dwrotxy,
-									   double dvzz,double delTime,int np,double delV,double Jnew,double eres,
+// deformation gradient (the dvij), volume change (delV)
+// handled first by the subclass. This method then finishes the constitutive law
+void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,double dgxy,
+									   double dezz,double delTime,int np,double delV,double eres,
 									   PlasticProperties *p,ResidualStrains *res,Matrix3 *dR) const
 {
-	// here dvij is total strain increment, dexxr is relative strain by subtracting off eres
-    double dexxr = dvxx-eres;			// trial dexx=dvxx
-    double deyyr = dvyy-eres;			// trial deyy=dvyy
-	double dezzr = dvzz-eres;			// In plane strain trial dezz=0, dvzz=0 except in axisymmetric
+	// here deij is total strain increment, dexxr is relative strain by subtracting off eres
+    double dexxr = dexx-eres;
+    double deyyr = deyy-eres;
+	double dezzr = dezz-eres;			// In plane strain trial dezz=0, but not in axisymmetric
 	
 	// allow arbitrary equation of state for pressure
     double P0 = mptr->GetPressure();
-	UpdatePressure(mptr,delV,Jnew,np,p,res,eres);
+	UpdatePressure(mptr,delV,np,p,res,eres);
     double Pfinal = mptr->GetPressure();
 	
     // Deviatoric stress increment
@@ -202,10 +200,15 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 		dels.zz = 2.*p->Gred*(dezzr-thirdDelV);
 	dels.xy = p->Gred*dgxy;
 	
-	// incremental rotate of prior strain and stress
+	// incremental rotate of plastic strain
 	Tensor *eplast=mptr->GetAltStrainTensor();
 	Matrix3 etn(eplast->xx,0.5*eplast->xy,0.5*eplast->xy,eplast->yy,eplast->zz);
 	Matrix3 etr = etn.RMRT(*dR);
+	eplast->xx = etr(0,0);
+	eplast->yy = etr(1,1);
+	eplast->xy = 2.*etr(0,1);
+	
+	// incremental rotation of stress
 	Matrix3 stn(sp->xx,sp->xy,sp->xy,sp->yy,sp->zz);
 	Matrix3 str = stn.RMRT(*dR);
 	
@@ -229,20 +232,20 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 		sp->yy = stk.yy;
         sp->zz = stk.zz;
 		
-		// rotate unchanged plastic strains
-		eplast->xx = etr(0,0);
-		eplast->yy = etr(1,1);
-		eplast->zz = etr(2,2);
-		eplast->xy = 2.*etr(0,1);
-		
 		// work energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
         // energy units are also Pa mm^3/g, i.e., same as stress units
         if(np==AXISYMMETRIC_MPM)
-		{	mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
-									 + (st0.xy+sp->xy)*dgxy + (st0.zz+sp->zz)*dvzz));
+		{	mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*deyy
+									 + (st0.xy+sp->xy)*dgxy + (st0.zz+sp->zz)*dezz));
+		}
+		else if(np==PLANE_STRESS_MPM)
+		{	// zz deformation
+			mptr->IncrementDeformationGradientZZ(-p->psLr2G*(dexxr+deyyr) + eres);
+			mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*deyy
+									 + (st0.xy+sp->xy)*dgxy));
 		}
 		else
-        {   mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
+        {   mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*deyy
 									 + (st0.xy+sp->xy)*dgxy));
 		}
 		
@@ -282,6 +285,9 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
         dfds.zz = -(dfds.xx+dfds.yy);
         dfds.xy = txy;				// tensorial shear strain
 		
+		// zz deformation
+		mptr->IncrementDeformationGradientZZ(-p->psLr2G*(dexxr+deyyr - lambdak*(dfds.xx+dfds.yy)) + eres + lambdak*dfds.zz);
+		
 		// If fully plastic, the increment in deviatoric stress should be zero
 		// sxx = sigmaxx+Pfinal = st0.xx, syy = sigmayy+Pfinal = st0.yy, szz = Pfinal
 		// But first two must be wrong because trace is no longer zero?
@@ -303,7 +309,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 		//          lam = (deyyr-dexxr)/(st0.yy-st0.xx)
 		// Then n2 = (st0.yy-st0.xx + 2*Gred*(deyyr-dexxr))/(1+2*Gred*(deyyr-dexxr)/(st0.yy-st0.xx)) = st0.yy-st0.xx
 		//
-		// But these to lam's seem to differ?
+		// But these two lam's seem to differ?
 		// We can write
 	}
     else
@@ -317,10 +323,10 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	double dezzp = lambdak*dfds.zz;
     double dgxyp = 2.*lambdak*dfds.xy;     // 2 for engineering plastic shear strain
 	
-	eplast->xx = etr(0,0) + dexxp;
-    eplast->yy = etr(1,1) + deyyp;
-	eplast->zz = etr(2,2) + dezzp;
-    eplast->xy = 2.*etr(0,1) + dgxyp;
+	eplast->xx += dexxp;
+    eplast->yy += deyyp;
+	eplast->zz += dezzp;
+    eplast->xy += dgxyp;
 	
 	// increment particle deviatoric stresses (plane stress increments found above)
 	if(np!=PLANE_STRESS_MPM)
@@ -339,11 +345,11 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	sp->xy = str(0,1) + dels.xy;
 	
     // Elastic work increment per unit mass (dU/(rho0 V0)) (nJ/g)
-    double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx
-							 + (st0.yy+sp->yy)*dvyy
+    double workEnergy = 0.5*((st0.xx+sp->xx)*dexx
+							 + (st0.yy+sp->yy)*deyy
 							 + (st0.xy+sp->xy)*dgxy);
 	if(np==AXISYMMETRIC_MPM)
-    {	workEnergy += 0.5*(st0.zz+sp->zz)*dvzz;
+    {	workEnergy += 0.5*(st0.zz+sp->zz)*dezz;
 	}
     
     // total work
@@ -370,19 +376,19 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 }
 
 // To allow some subclasses to support large deformations, the initial calculation for incremental
-// deformation gradient (the dvij), volume change (delV) and relative volume (Jnew) can be
+// deformation gradient (the dvij), volume change (delV) can be
 // handled first by the subclass. This mtehod then finishes the constitutive law
-void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dgxy,double dwrotxy,
-									   double dgxz,double dwrotxz,double dgyz,double dwrotyz,double delTime,int np,double delV,double Jnew,double eres,
+void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,double dezz,double dgxy,
+									   double dgxz,double dgyz,double delTime,int np,double delV,double eres,
 									   PlasticProperties *p,ResidualStrains *res,Matrix3 *dR) const
 {
 	// here dvij is total strain increment, dexxr is relative strain by subtracting off eres
-    double dexxr=dvxx-eres;
-    double deyyr=dvyy-eres;
-	double dezzr=dvzz-eres;				// use in plane strain only
+    double dexxr=dexx-eres;
+    double deyyr=deyy-eres;
+	double dezzr=dezz-eres;
 	
 	// allow arbitrary equation of state for pressure
-	UpdatePressure(mptr,delV,Jnew,np,p,res,eres);
+	UpdatePressure(mptr,delV,np,p,res,eres);
 	
     // Elastic deviatoric stress increment
 	Tensor *sp=mptr->GetStressTensor();
@@ -432,9 +438,9 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 		eplast->yz = 2.*etr(1,2);
 		
 		// work energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-		mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx
-								 + (st0.yy+sp->yy)*dvyy
-								 + (st0.zz+sp->zz)*dvzz
+		mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dexx
+								 + (st0.yy+sp->yy)*deyy
+								 + (st0.zz+sp->zz)*dezz
 								 + (st0.yz+sp->yz)*dgyz
 								 + (st0.xz+sp->xz)*dgxz
 								 + (st0.xy+sp->xy)*dgxy));
@@ -481,8 +487,8 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	sp->xy = stk.xy - p->Gred*dgxyp;
 	
     // work energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvzz
-							 + (st0.zz+sp->zz)*dvzz + (st0.yz+sp->yz)*dgyz
+	double workEnergy = 0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*dezz
+							 + (st0.zz+sp->zz)*dezz + (st0.yz+sp->yz)*dgyz
 							 + (st0.xz+sp->xz)*dgxz + (st0.xy+sp->xy)*dgxy);
     
     // total work
@@ -510,65 +516,71 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	plasticLaw->UpdatePlasticInternal(mptr,np,&alpha);
 }
 
-#else
+#pragma mark IsoPlasticity::Methods (Small Rotation)
 
-/* Take increments in strain and calculate new Particle: strains, rotation strain, plastic strain,
-		stresses, strain energy, plastic energy, dissipated energy, angle
-	dvij are (gradient rates X time increment) to give deformation gradient change
-	For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
-	This is general analysis for isotropic plastic material. Subclass must define
-		GetYield() and GetKPrime() and optionally can override more. Those methods
-		require history dependent variables and rates (e.g. cum. plastic strain (alpint) and
-		plastic strain rate (dalpha/delTime) to be set before they are called.
-	This material tracks pressure and stores deviatoric stress only in particle stress
-		tensor
-*/
-void IsoPlasticity::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+// Entry point for small rotation
+void IsoPlasticity::SRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
+	// increment deformation gradient
+	HypoIncrementDeformation(mptr,du);
+	
     // Effective strain by deducting thermal strain (no shear thermal strain because isotropic)
 	//  (note: using unreduced terms in CTE3 and CME3)
 	double eres=CTE3*res->dT;
 	if(DiffusionTask::active)
 		eres+=CME3*res->dC;
 	
-	// Trial update assuming elastic response
-	double delV;
-    
     // 3D or 2D
+	double delV;
 	PlasticProperties *p = (PlasticProperties *)properties;
     if(np==THREED_MPM)
     {   delV = du.trace() - 3.*eres;
-        PlasticityConstLaw(mptr,du(0,0),du(1,1),du(2,2),du(0,1)+du(1,0),du(1,0)-du(0,1),
-						   du(0,2)+du(2,0),du(2,0)-du(0,2),du(1,2)+du(2,1),du(2,1)-du(1,2),
-                           delTime,np,delV,1.,eres,p,res,NULL);
+        SRPlasticityConstLaw3D(mptr,du,delTime,np,delV,eres,p,res,NULL);
         return;
     }
 	else if(np==PLANE_STRESS_MPM)
 		delV = p->psRed*(du(0,0)+du(1,1)-2.*eres);
 	else
 		delV = du.trace() - 3.*eres;
-    PlasticityConstLaw(mptr,du(0,0),du(1,1),du(0,1)+du(1,0),du(1,0)-du(0,1),du(2,2),delTime,np,delV,1.,eres,p,res,NULL);
+    SRPlasticityConstLaw2D(mptr,du,delTime,np,delV,eres,p,res,NULL);
 }
 
 // To allow some subclasses to support large deformations, the initial calculation for incremental
-// deformation gradient (the dvij), volume change (delV) and relative volume (Jnew) can be
+// deformation gradient (the dvij), volume change (delV) can be
 // handled first by the subclass. This mtehod then finishes the constitutive law
-void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dgxy,double dwrotxy,
-                                double dvzz,double delTime,int np,double delV,double Jnew,double eres,
+void IsoPlasticity::SRPlasticityConstLaw2D(MPMBase *mptr,Matrix3 du,double delTime,int np,double delV,double eres,
 									   PlasticProperties *p,ResidualStrains *res,Matrix3 *dR) const
 {
+	// Strain increment to local variables
+    double dvxx = du(0,0);
+	double dvyy = du(1,1);
+	double dvzz = du(2,2);
+    double dgxy = du(0,1)+du(1,0);
+	double dwrotxy = du(1,0)-du(0,1);
+	
 	// here dvij is total strain increment, dexxr is relative strain by subtracting off eres
     double dexxr = dvxx-eres;			// trial dexx=dvxx
     double deyyr = dvyy-eres;			// trial deyy=dvyy
 	double dezzr = dvzz-eres;			// In plane strain trial dezz=0, dvzz=0 except in axisymmetric
+	
+	// rotate plastic strain
+	// done if elastic, or add new plastic strain if plastic
+	Tensor *eplast=mptr->GetAltStrainTensor();
+	double dwxy2 = dwrotxy*dwrotxy/4.;						// dwxy^2/4
+	double shearD = 0.5*dwrotxy*(1.-0.5*(dvxx+dvyy));		// (1/2)*dwxy*(1-(dexx+deyy)/2)
+	double diff = eplast->xx-eplast->yy;
+	double dnorm = shearD*eplast->xy + dwxy2*diff;
+	eplast->xx -= dnorm ;
+	eplast->yy += dnorm ;
+	double dshear = 2.*(shearD*diff - dwxy2*eplast->xy);
+	eplast->xy += dshear ;
 
 	// allow arbitrary equation of state for pressure
     double P0 = mptr->GetPressure();
-	UpdatePressure(mptr,delV,Jnew,np,p,res,eres);
+	UpdatePressure(mptr,delV,np,p,res,eres);
     double Pfinal = mptr->GetPressure();
 	
     // Deviatoric stress increment
-	Tensor *ep=mptr->GetStrainTensor();
 	Tensor *sp=mptr->GetStressTensor();
     Tensor dels,stk,st0=*sp;
     double thirdDelV = delV/3.;
@@ -592,23 +604,23 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	double strial = GetMagnitudeSFromDev(&stk,np);
     double ftrial = strial - SQRT_TWOTHIRDS*plasticLaw->GetYield(mptr,np,delTime,&alpha,p->hardProps);
 	if(ftrial<0.)
-	{	// elastic, update stress and strain energy as usual
+	{	// elastic, update stress and energies as usual
 
-		// Add input strain increment to elastic strain on particle
-		ep->xx += dvxx;
-		ep->yy += dvyy;
-		ep->xy += dgxy;
-				
 		// increment deviatoric stress (Units N/m^2  mm^3/g) (pressure not needed here)
-		Hypo2DCalculations(mptr,-dwrotxy,dels.xx,dels.yy,dels.xy);
+		Hypo2DCalculations(mptr,dwrotxy,dvxx+dvyy,dels.xx,dels.yy,dels.xy);
         sp->zz = stk.zz;
 		
 		// work energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
         // energy units are also Pa mm^3/g, i.e., same as stress units
         if(np==AXISYMMETRIC_MPM)
-		{	ep->zz += dvzz;
-			mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
+		{	mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
 									   + (st0.xy+sp->xy)*dgxy + (st0.zz+sp->zz)*dvzz));
+		}
+		else if(np==PLANE_STRESS_MPM)
+		{	// zz deformation
+			mptr->IncrementDeformationGradientZZ(-p->psLr2G*(dexxr+deyyr) + eres);
+			mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
+									 + (st0.xy+sp->xy)*dgxy));
 		}
 		else
         {   mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
@@ -651,6 +663,9 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
         dfds.zz = -(dfds.xx+dfds.yy);
         dfds.xy = txy;				// tensorial shear strain
 		
+		// zz deformation
+		mptr->IncrementDeformationGradientZZ(-p->psLr2G*(dexxr+deyyr - lambdak*(dfds.xx+dfds.yy)) + eres + lambdak*dfds.zz);
+		
 		// If fully plastic, the increment in deviatoric stress should be zero
 		// sxx = sigmaxx+Pfinal = st0.xx, syy = sigmayy+Pfinal = st0.yy, szz = Pfinal
 		// But first two must be wrong because trace is no longer zero?
@@ -685,7 +700,6 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     double deyyp = lambdak*dfds.yy;
 	double dezzp = lambdak*dfds.zz;
     double dgxyp = 2.*lambdak*dfds.xy;     // 2 for engineering plastic shear strain
-	Tensor *eplast=mptr->GetAltStrainTensor();
 	
 	// add to particle plastic strain
     eplast->xx += dexxp;
@@ -693,20 +707,6 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
     eplast->xy += dgxyp;
 	eplast->zz += dezzp;
 
-    // Elastic strain increments on particle
-    ep->xx += (dvxx-dexxp);
-    ep->yy += (dvyy-deyyp);
-    ep->xy += (dgxy-dgxyp);
-	if(np==PLANE_STRESS_MPM)
-		ep->zz += eres - p->psLr2G*(dexxr+deyyr+dezzp);
-	else
-	{	// plain strain and axisymmetric when plastic increments is dezzp
-		// In plain strain, dvzz=0 elastic increment is -dezzp to zz strain total is zero
-		// Axisymmetry can have non-zero hoop strain
-		ep->zz += (dvzz-dezzp);
-		dezzr -= dezzp;
-	}
-	
 	// increment particle deviatoric stresses (plane stress increments found above)
 	if(np!=PLANE_STRESS_MPM)
 	{	dels.xx -= 2.*p->Gred*dexxp;
@@ -717,8 +717,9 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	}
     else
         sp->zz = Pfinal;          // now equal to Pfinal
-        
-	Hypo2DCalculations(mptr,-dwrotxy,dels.xx,dels.yy,dels.xy);
+	
+	// stress incement
+	Hypo2DCalculations(mptr,dwrotxy,dvxx+dvyy,dels.xx,dels.yy,dels.xy);
 	
     // Elastic work increment per unit mass (dU/(rho0 V0)) (nJ/g)
     double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx
@@ -752,22 +753,35 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 }
 
 // To allow some subclasses to support large deformations, the initial calculation for incremental
-// deformation gradient (the dvij), volume change (delV) and relative volume (Jnew) can be
+// deformation gradient (the dvij), volume change (delV) can be
 // handled first by the subclass. This mtehod then finishes the constitutive law
-void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvzz,double dgxy,double dwrotxy,
-        double dgxz,double dwrotxz,double dgyz,double dwrotyz,double delTime,int np,double delV,double Jnew,double eres,
-									   PlasticProperties *p,ResidualStrains *res,Matrix3 *dR) const
+void IsoPlasticity::SRPlasticityConstLaw3D(MPMBase *mptr,Matrix3 du,double delTime,int np,double delV,double eres,
+										   PlasticProperties *p,ResidualStrains *res,Matrix3 *dR) const
 {
+	// strain increments
+	double dvxx = du(0,0);
+	double dvyy = du(1,1);
+	double dvzz = du(2,2);
+	
+	// engineering shear strain icrements
+    double dgxy = du(0,1)+du(1,0);
+    double dgxz = du(0,2)+du(2,0);
+    double dgyz = du(1,2)+du(2,1);
+	
+	// rotational strain increments
+	double dwrotxy = du(1,0)-du(0,1);
+	double dwrotxz = du(2,0)-du(0,2);
+	double dwrotyz = du(2,1)-du(1,2);
+	
 	// here dvij is total strain increment, dexxr is relative strain by subtracting off eres
     double dexxr=dvxx-eres;  
     double deyyr=dvyy-eres;
 	double dezzr=dvzz-eres;				// use in plane strain only
 	
 	// allow arbitrary equation of state for pressure
-	UpdatePressure(mptr,delV,Jnew,np,p,res,eres);
+	UpdatePressure(mptr,delV,np,p,res,eres);
 	
     // Elastic deviatoric stress increment
-	Tensor *ep=mptr->GetStrainTensor();
 	Tensor *sp=mptr->GetStressTensor();
     Tensor stk,st0=*sp;
 	double dsig[6];
@@ -795,14 +809,6 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	if(ftrial<0.)
 	{	// elastic, update stress and strain energy as usual
 	
-		// Add to total strain
-		ep->xx+=dvxx;
-		ep->yy+=dvyy;
-		ep->zz+=dvzz;
-		ep->xy+=dgxy;
-		ep->xz+=dgxz;
-		ep->yz+=dgyz;
-		
 		// update stress (need to make hypoelastic)
 		Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
 		
@@ -848,14 +854,6 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	eplast->xz += dgxzp;
     eplast->yz += dgyzp;
 	
-    // Elastic strain increments on particle
-    ep->xx += (dvxx-dexxp);
-    ep->yy += (dvyy-deyyp);
-    ep->zz += (dvzz-dezzp);
-    ep->xy += (dgxy-dgxyp);
-    ep->xz += (dgxz-dgxzp);
-	ep->yz += (dgyz-dgyzp);
-	
 	// increment particle deviatoric stresses
 	dsig[XX] -= 2.*p->Gred*dexxp;
 	dsig[YY] -= 2.*p->Gred*deyyp;
@@ -895,8 +893,6 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 	plasticLaw->UpdatePlasticInternal(mptr,np,&alpha);
 }
 
-#endif
-
 #pragma mark IsoPlasticity::Custom Methods
 
 // This method handles the pressure equation of state. Its tasks are
@@ -907,8 +903,7 @@ void IsoPlasticity::PlasticityConstLaw(MPMBase *mptr,double dvxx,double dvyy,dou
 // 5. Optionally change delV (which is passed by reference)
 // Notes:
 //  delV is incremental volume change on this step.
-//  J is total volume change at end of step (but it is 1 for low-strain materials)
-void IsoPlasticity::UpdatePressure(MPMBase *mptr,double &delV,double J,int np,PlasticProperties *p,ResidualStrains *res,double eres) const
+void IsoPlasticity::UpdatePressure(MPMBase *mptr,double delV,int np,PlasticProperties *p,ResidualStrains *res,double eres) const
 {   // pressure change
     double dP = -p->Kred*delV;
     mptr->IncrementPressure(dP);
@@ -972,6 +967,36 @@ void IsoPlasticity::ElasticUpdateFinished(MPMBase *mptr,int np,double delTime) c
 
 #pragma mark IsoPlasticity::Accessors
 
+// store plastic strain in alt strain
+int IsoPlasticity::AltStrainContains(void) const
+{	return ENG_BIOT_PLASTIC_STRAIN;
+}
+
+// buffer size for mechanical properties
+int IsoPlasticity::SizeOfMechanicalProperties(int &altBufferSize) const
+{   altBufferSize = plasticLaw->SizeOfHardeningProps();
+    return sizeof(PlasticProperties);
+}
+
+// Isotropic material can use read-only initial properties
+void *IsoPlasticity::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
+{
+	PlasticProperties *p = (PlasticProperties *)matBuffer;
+	*p = pr;
+ 	p->hardProps = plasticLaw->GetCopyOfHardeningProps(mptr,np,altBuffer);
+	double Gratio = plasticLaw->GetShearRatio(mptr,mptr->GetPressure(),1.,p->hardProps);
+	p->Gred = G0red*Gratio;
+	
+	if(np==PLANE_STRESS_MPM)
+	{	// these are terms for plane stress calculations only
+		p->psRed = 1./(p->Kred/(2.*p->Gred) + 2./3.);					// (1-2nu)/(1-nu) for plane stress
+		p->psLr2G = (p->Kred/(2.*p->Gred) - 1./3.)*p->psRed;			// nu/(1-nu) to find ezz
+		p->psKred = p->Kred*p->psRed;									// E/(3(1-v)) to find lambda
+	}
+	
+	return p;
+}
+
 // Copy stress to a read-only tensor variable
 // Subclass material can override, such as to combine pressure and deviatory stress into full stress
 Tensor IsoPlasticity::GetStress(Tensor *sp,double pressure) const
@@ -987,17 +1012,11 @@ double IsoPlasticity::GetHistory(int num,char *historyPtr) const
 {	return plasticLaw->GetHistory(num,historyPtr);
 }
 
-#ifndef USE_PSEUDOHYPERELASTIC
-// plastic strain needed to get deformation gradient for this material class
-bool IsoPlasticity::PartitionsElasticAndPlasticStrain(void) const { return true; }
-#endif
-
 // Return the material tag
 int IsoPlasticity::MaterialTag(void) const { return ISOPLASTICITY; }
 
 // return unique, short name for this material
 const char *IsoPlasticity::MaterialType(void) const { return "Isotropic Elastic-Plastic"; }
 
-// store plastic strain in alt strain
-int IsoPlasticity::AltStrainContains(void) const { return ENG_BIOT_PLASTIC_STRAIN; }
+
 

@@ -15,37 +15,39 @@
 
 #include "Materials/Orthotropic.hpp"
 
-#ifdef USE_PSEUDOHYPERELASTIC
+typedef struct {
+	double aint;
+	double minush;
+} AnisoHardProperties;
 
 // plastic law properties
 typedef struct {
+	AnisoHardProperties hp;
+	Tensor dfds;
+	double dfCdf;
+	Tensor Cdf;
+	Tensor Cdf0;
+	double snorm;
 	ElasticProperties *ep;
-	double aint;
-	double minush;
-	Tensor dfds;
-	double dfCdf;
-	Tensor Cdf;
-} AnisoPlasticProperties;
-
-#else
+} LRAnisoPlasticProperties;
 
 // plastic law properties
 typedef struct {
-	ElasticProperties ep;
-	double aint;
-	double minush;
+	AnisoHardProperties hp;
 	Tensor dfds;
 	double dfCdf;
 	Tensor Cdf;
+	Tensor Cdf0;
+	double snorm;
+	ElasticProperties ep;
 	double rzyx[6][6];			// 3D rotation matrix calcualted once per step
 } AnisoPlasticProperties;
-
-#endif
 
 class AnisoPlasticity : public Orthotropic
 {
     public:
-        
+		static int warnNonconvergence;
+    
         // constructors and destructors
 		AnisoPlasticity();
 		AnisoPlasticity(char *matName);
@@ -60,39 +62,36 @@ class AnisoPlasticity : public Orthotropic
 		// methods
         virtual int SizeOfMechanicalProperties(int &) const;
 		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *) const;
-#ifdef USE_PSEUDOHYPERELASTIC
+		virtual int AltStrainContains(void) const;
 		virtual ElasticProperties *GetElasticPropertiesPointer(void *) const;
-		virtual void ElasticConstitutiveLaw(MPMBase *,Matrix3,Matrix3,Matrix3,Matrix3,int,void *,ResidualStrains *) const;
-#else
-		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
-		virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
-#endif
 	
-		// Hill methods
-#ifdef USE_PSEUDOHYPERELASTIC
+		// Lare Rotation Methods
+		virtual void LRElasticConstitutiveLaw(MPMBase *,Matrix3,Matrix3,Matrix3,Matrix3,Matrix3 *,int,void *,ResidualStrains *) const;
 		virtual double GetMagnitudeHill(Matrix3 &,int) const;
-		virtual double SolveForLambdaAP(MPMBase *mptr,int,double,Matrix3 &,Matrix3 &,AnisoPlasticProperties *p) const;
-		virtual void GetDfCdf(Matrix3 &,int,AnisoPlasticProperties *p) const;
-		virtual void GetDfDsigma(Matrix3 &,int,AnisoPlasticProperties *p) const;
-		virtual void UpdateStress(Matrix3 &,Matrix3 &,double,int,AnisoPlasticProperties *p) const;
-		virtual double GetFkFromLambdak(MPMBase *,Matrix3 &,Matrix3 &,double,int,AnisoPlasticProperties *) const;
-#else
+		virtual double LRSolveForLambdaAP(MPMBase *mptr,int,double,Matrix3 &,Matrix3 &,LRAnisoPlasticProperties *p) const;
+		virtual void LRGetDfCdf(Matrix3 &,int,LRAnisoPlasticProperties *p) const;
+		virtual void LRGetDfDsigma(Matrix3 &,int,LRAnisoPlasticProperties *p) const;
+		virtual void LRUpdateStress(Matrix3 &,Matrix3 &,double,int,LRAnisoPlasticProperties *p) const;
+		virtual double LRGetFkFromLambdak(MPMBase *,Matrix3 &,Matrix3 &,double,int,LRAnisoPlasticProperties *) const;
+		virtual double LRPrintFk(MPMBase *,Matrix3 &,Matrix3 &,double,int,LRAnisoPlasticProperties *,double,double) const;
+
+		// small rotation methods
+		virtual void SRConstitutiveLaw2D(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+		virtual void SRConstitutiveLaw3D(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
 		virtual double GetMagnitudeRotatedHill(Tensor *,Tensor *,int,AnisoPlasticProperties *) const;
 		virtual double SolveForLambdaAP(MPMBase *mptr,int,double,Tensor *,AnisoPlasticProperties *p) const;
 		virtual void GetDfCdf(Tensor *,int,AnisoPlasticProperties *p) const;
 		virtual void GetDfDsigma(Tensor *,int,AnisoPlasticProperties *p) const;
 		virtual void UpdateStress(Tensor *,Tensor *,double,int,AnisoPlasticProperties *p) const;
 		virtual double GetFkFromLambdak(MPMBase *,Tensor *,Tensor *,double,int,AnisoPlasticProperties *) const;
-		virtual bool PartitionsElasticAndPlasticStrain(void) const;
-#endif
-		virtual int AltStrainContains(void) const;
+		virtual double SRPrintFk(MPMBase *,Tensor *,Tensor *,double,int,AnisoPlasticProperties *,double,double) const;
  		
 		// hardening term methods (move to hardening law class when want more hardening options)
-		virtual void UpdateTrialAlpha(MPMBase *,int,AnisoPlasticProperties *) const = 0;
-		virtual void UpdateTrialAlpha(MPMBase *,int,double,AnisoPlasticProperties *p) const = 0;
-		virtual double GetYield(AnisoPlasticProperties *p) const = 0;
-		virtual double GetDfAlphaDotH(MPMBase *,int,AnisoPlasticProperties *p) const = 0;
-		virtual void UpdatePlasticInternal(MPMBase *,int,AnisoPlasticProperties *p) const = 0;
+		virtual void UpdateTrialAlpha(MPMBase *,int,AnisoHardProperties *) const = 0;
+		virtual void UpdateTrialAlpha(MPMBase *,int,double,AnisoHardProperties *p) const = 0;
+		virtual double GetYield(AnisoHardProperties *p) const = 0;
+		virtual double GetDfAlphaDotH(MPMBase *,int,AnisoHardProperties *p) const = 0;
+		virtual void UpdatePlasticInternal(MPMBase *,int,AnisoHardProperties *p) const = 0;
 		
    protected:
 		double syxx,syyy,syzz,tyyz,tyxz,tyxy;

@@ -1,5 +1,5 @@
 /********************************************************************************
-	MGSCGLMaterial.cpp
+	HEMGEOSMaterial
 	nairn-mpm-fea
 
 	Created by John Nairn, Feb 18, 2013.
@@ -152,12 +152,12 @@ void HEMGEOSMaterial::ValidateForUse(int np) const
 {
 	if(thermal.reference<=0)
 	{	throw CommonException("MGEOSMaterial material requires the simulation to set the stress free temperature in degrees K",
-							  "MGSCGLMaterial::ValidateForUse");
+							  "HEMGEOSMaterial::ValidateForUse");
 	}
     
     if(np==PLANE_STRESS_MPM)
     {	throw CommonException("MGEOSMaterial material has not yet been updated to do plane stress calculations",
-                              "MGSCGLMaterial::ValidateForUse");
+                              "HEMGEOSMaterial::ValidateForUse");
     }
 	
 	// call super class
@@ -165,7 +165,7 @@ void HEMGEOSMaterial::ValidateForUse(int np) const
 }
 
 
-#pragma mark MGSCGLMaterial::Custom Methods
+#pragma mark HEMGEOSMaterial::Custom Methods
 
 // Get plastic properties or NULL on memory error
 void *HEMGEOSMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
@@ -262,7 +262,7 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,
     p->Gred = G1sp * plasticLaw->GetShearRatio(mptr,avgP,Jeff,p->hardProps);
 }
 
-#pragma mark MGSCGLMaterial::Accessors
+#pragma mark HEMGEOSMaterial::Accessors
 
 // Return the material tag
 int HEMGEOSMaterial::MaterialTag(void) const { return HEMGEOSMATERIAL; }

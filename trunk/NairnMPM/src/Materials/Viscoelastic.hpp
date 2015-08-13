@@ -29,6 +29,9 @@ class Viscoelastic : public MaterialBase
         virtual char *InputMaterialProperty(char *,int &,double &);
 		virtual const char *VerifyAndLoadProperties(int);
 		virtual char *InitHistoryData(void);
+#ifdef TRACK_RTOT
+		virtual void SetInitialParticleState(MPMBase *,int) const;
+#endif
 	
 		// const methods
 		virtual void PrintMechanicalProperties(void) const;
@@ -37,7 +40,7 @@ class Viscoelastic : public MaterialBase
 		// methods
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
         virtual double GetCpMinusCv(MPMBase *) const;
-		virtual void UpdatePressure(MPMBase *,double &,ResidualStrains *,double) const;
+		virtual void UpdatePressure(MPMBase *,double,ResidualStrains *,double) const;
 		
 		// accessors
         virtual Vector ConvertJToK(Vector,Vector,Vector,int);

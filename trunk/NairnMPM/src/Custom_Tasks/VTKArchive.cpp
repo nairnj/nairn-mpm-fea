@@ -31,7 +31,7 @@
 VTKArchive *vtkArchiveTask=NULL;
 int dummyArg;
 
-#pragma mark Constructors and Destructors
+#pragma mark CREATION OF THE TASK
 
 // Constructors
 VTKArchive::VTKArchive()
@@ -51,8 +51,8 @@ const char *VTKArchive::TaskName(void) { return "Archive grid results to VTK fil
 char *VTKArchive::InputParam(char *pName,int &input,double &gScaling)
 {
 	int q=-1,thisBuffer=0,pindex=-1;
-	
-	// default return value
+    
+    // default return value
     char *retPtr = (char *)&dummyArg;
 	
     // check for archiving quantity
@@ -325,16 +325,21 @@ CustomTask *VTKArchive::BeginExtrapolations(void)
 		getVTKExtraps=FALSE;
 		return nextTask;
 	}
+	
+	// create buffer for each node, on error print message and turn of extrapolations
 	int i,j;
 	for(i=1;i<=nnodes;i++)
 	{	vtk[i]=(double *)malloc(bufferSize*sizeof(double));
 		if(vtk[i]==NULL)
-		{	for(j=1;j<i;j++) free(vtk[j]);
+		{	// free previous buffers and main list
+			for(j=1;j<i;j++) free(vtk[j]);
 			free(vtk);
 			cout << "# memory error preparing data for vtk export" << endl;
 			getVTKExtraps=FALSE;
 			return nextTask;
 		}
+		
+		// initialize all values to zero
 		for(j=0;j<bufferSize;j++) vtk[i][j]=0.;
 	}
 	
@@ -389,12 +394,56 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 				}
                 break;
 				
-			// plastic strain (absolute in Legacy)
-			// New method small strain = archived plastic strain
-			// New method hyperelastic = Biot strain from F - Biot strain from elastic B in plastic strain
-			// Membrane = 0
+			// Elastic strain (absolute in Legacy)
+			// New method small strain = Biot strain - archived plastic strain
+			// New method hyperelastic = Biot strain from elastic B in plastic strain
+			// Membranes = 0
+            case VTK_STRAIN:
+				if(theMaterials[mpnt->MatID()]->AltStrainContains()==ENG_BIOT_PLASTIC_STRAIN)
+				{	// elastic strain = total strain minus plastic strain
+					Matrix3 biot = mpnt->GetBiotStrain();
+					ten = mpnt->GetAltStrainTensor();
+					vtkquant[0] += wt*(biot(0,0)-ten->xx);
+					vtkquant[1] += wt*(biot(1,1)-ten->yy);
+					vtkquant[2] += wt*(biot(2,2)-ten->zz);
+					vtkquant[3] += wt*(biot(0,1)-0.5*ten->xy);
+					if(fmobj->IsThreeD())
+					{	vtkquant[4] += wt*(biot(0,2)-0.5*ten->xz);
+						vtkquant[5] += wt*(biot(1,2)-0.5*ten->yz);
+					}
+				}
+				else if(theMaterials[mpnt->MatID()]->AltStrainContains()==LEFT_CAUCHY_ELASTIC_B_STRAIN)
+				{	// get elastic strain from elastic B
+					Matrix3 biot = mpnt->GetElasticBiotStrain();
+					vtkquant[0] += wt*biot(0,0);
+					vtkquant[1] += wt*biot(1,1);
+					vtkquant[2] += wt*biot(2,2);
+					vtkquant[3] += wt*biot(0,1);
+					if(fmobj->IsThreeD())
+					{	vtkquant[4] += wt*biot(0,2);
+						vtkquant[5] += wt*biot(1,2);
+					}
+				}
+				else
+				{	// elastic strain = total strain for these materials
+					Matrix3 biot = mpnt->GetBiotStrain();
+					vtkquant[0] += wt*biot(0,0);
+					vtkquant[1] += wt*biot(1,1);
+					vtkquant[2] += wt*biot(2,2);
+					vtkquant[3] += wt*biot(0,1);
+					if(fmobj->IsThreeD())
+					{	vtkquant[4] += wt*biot(0,2);
+						vtkquant[5] += wt*biot(1,2);
+					}
+				}
+                vtkquant+=6;
+                break;
+				
+				// plastic strain (absolute in Legacy)
+				// New method small strain = archived plastic strain
+				// New method hyperelastic = Biot strain from F - Biot strain from elastic B in plastic strain
+				// Membrane = 0
             case VTK_PLASTICSTRAIN:
-#ifdef USE_PSEUDOHYPERELASTIC
 				if(theMaterials[mpnt->MatID()]->AltStrainContains()==ENG_BIOT_PLASTIC_STRAIN)
 				{	// plastic strain is in the tensor already
 					ten = mpnt->GetAltStrainTensor();
@@ -421,74 +470,6 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 					}
 				}
 				// others have zero plastic strain
-#else
-				ten=mpnt->GetAltStrainTensor();
-				vtkquant[0] += wt*ten->xx;
-				vtkquant[1] += wt*ten->yy;
-				vtkquant[2] += wt*ten->zz;
-				vtkquant[3] += 0.5*wt*ten->xy;
-				if(fmobj->IsThreeD())
-				{	vtkquant[4] += 0.5*wt*ten->xz;
-					vtkquant[5] += 0.5*wt*ten->yz;
-				}
-#endif
-                vtkquant+=6;
-                break;
-            
-			// Elastic strain (absolute in Legacy)
-			// New method small strain = Biot strain - archived plastic strain
-			// New method hyperelastic = Biot strain from elastic B in plastic strain
-			// Membranes = 0
-            case VTK_STRAIN:
-#ifdef USE_PSEUDOHYPERELASTIC
-				if(theMaterials[mpnt->MatID()]->AltStrainContains()==ENG_BIOT_PLASTIC_STRAIN)
-				{	// elastic strain = total strain minus plastic strain
-					Matrix3 biot = mpnt->GetBiotStrain();
-					ten = mpnt->GetAltStrainTensor();
-					vtkquant[0] += wt*(biot(0,0)-ten->xx);
-					vtkquant[1] += wt*(biot(1,1)-ten->yy);
-					vtkquant[2] += wt*(biot(2,2)-ten->zz);
-					vtkquant[3] += wt*(biot(0,1)-0.5*ten->xy);
-					if(fmobj->IsThreeD())
-					{	vtkquant[4] += wt*(biot(0,2)-0.5*ten->xz);
-						vtkquant[5] += wt*(biot(1,2)-0.5*ten->yz);
-					}
-				}
-				else if(theMaterials[mpnt->MatID()]->AltStrainContains()==LEFT_CAUCHY_TOTAL_B_STRAIN)
-				{	// elastic strain = total strain
-					Matrix3 biot = mpnt->GetBiotStrain();
-					vtkquant[0] += wt*biot(0,0);
-					vtkquant[1] += wt*biot(1,1);
-					vtkquant[2] += wt*biot(2,2);
-					vtkquant[3] += wt*biot(0,1);
-					if(fmobj->IsThreeD())
-					{	vtkquant[4] += wt*biot(0,2);
-						vtkquant[5] += wt*biot(1,2);
-					}
-				}
-				else if(theMaterials[mpnt->MatID()]->AltStrainContains()==LEFT_CAUCHY_ELASTIC_B_STRAIN)
-				{	// get elastic strain from elastic B
-					Matrix3 biot = mpnt->GetElasticBiotStrain();
-					vtkquant[0] += wt*biot(0,0);
-					vtkquant[1] += wt*biot(1,1);
-					vtkquant[2] += wt*biot(2,2);
-					vtkquant[3] += wt*biot(0,1);
-					if(fmobj->IsThreeD())
-					{	vtkquant[4] += wt*biot(0,2);
-						vtkquant[5] += wt*biot(1,2);
-					}
-				}
-#else
-				ten=mpnt->GetStrainTensor();
-				vtkquant[0] += wt*ten->xx;
-				vtkquant[1] += wt*ten->yy;
-				vtkquant[2] += wt*ten->zz;
-				vtkquant[3] += 0.5*wt*ten->xy;
-				if(fmobj->IsThreeD())
-				{	vtkquant[4] += 0.5*wt*ten->xz;
-					vtkquant[5] += 0.5*wt*ten->yz;
-				}
-#endif
                 vtkquant+=6;
                 break;
 				
@@ -500,7 +481,6 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
                 break;
             
             case VTK_EQUIVSTRAIN:
-#ifdef USE_PSEUDOHYPERELASTIC
 			{	Matrix3 biot = mpnt->GetBiotStrain();
 				double tre = (biot(0,0)+biot(1,1)+biot(2,2))/3.;
                 double exx = biot(0,0) - tre;
@@ -512,26 +492,11 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
                 vtkquant++;
                 break;
             }
-#else
-            {   ten=mpnt->GetStrainTensor();
-                double tre = (ten->xx+ten->yy+ten->zz)/3.;
-                double exx = ten->xx - tre;
-                double eyy = ten->yy - tre;
-                double ezz = ten->zz - tre;
-                se = exx*exx + eyy*eyy * ezz*ezz + 0.5*ten->xy*ten->xy;
-                if(fmobj->IsThreeD()) se += 0.5*(ten->xz*ten->xz + ten->yz*ten->yz);
-                *vtkquant += wt*sqrt(2.*se/3.);
-                vtkquant++;
-                break;
-            }
-#endif
                 
 			// total strain (absolute in Legacy)
 			// New method, small strain and hyperelastic = Biot strain from F
             case VTK_TOTALSTRAIN:
-			{
-#ifdef USE_PSEUDOHYPERELASTIC
-				Matrix3 biot = mpnt->GetBiotStrain();
+			{	Matrix3 biot = mpnt->GetBiotStrain();
 				vtkquant[0] += wt*biot(0,0);
 				vtkquant[1] += wt*biot(1,1);
 				vtkquant[2] += wt*biot(2,2);
@@ -540,28 +505,6 @@ CustomTask *VTKArchive::NodalExtrapolation(NodalPoint *ndmi,MPMBase *mpnt,short 
 				{	vtkquant[4] += wt*biot(0,2);
 					vtkquant[5] += wt*biot(1,2);
 				}
-#else
-                ten=mpnt->GetStrainTensor();
-                vtkquant[0] += wt*ten->xx;
-                vtkquant[1] += wt*ten->yy;
-                vtkquant[2] += wt*ten->zz;
-                vtkquant[3] += wt*ten->xy;
-                if(fmobj->IsThreeD())
-                {	vtkquant[4] += wt*ten->xz;
-                    vtkquant[5] += wt*ten->yz;
-                }
-                if(mpnt->PartitionsElasticAndPlasticStrain())
-                {   ten=mpnt->GetStrainTensor();
-                    vtkquant[0] += wt*ten->xx;
-                    vtkquant[1] += wt*ten->yy;
-                    vtkquant[2] += wt*ten->zz;
-                    vtkquant[3] += wt*ten->xy;
-                    if(fmobj->IsThreeD())
-                    {	vtkquant[4] += wt*ten->xz;
-                        vtkquant[5] += wt*ten->yz;
-                    }
-                }
-#endif
                 vtkquant+=6;
                 break;
 			}
@@ -650,4 +593,5 @@ CustomTask *VTKArchive::EndExtrapolations(void)
 
     return nextTask;
 }
-        
+
+

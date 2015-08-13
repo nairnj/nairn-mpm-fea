@@ -5,7 +5,7 @@
     Created by John Nairn, 11/12/2008.
     Copyright (c) 2008 John A. Nairn, All rights reserved.
 	
-	Add rate dependence to yield stress of the MGSCGLMaterial
+	Add rate dependence to yield stress
 	See D. J. Steinberg and C. M. Lund, J. Appl. Phys., v64, 1528-1533 (1989)
 	"A constitutive model for strain rates from 10^-4 to 10^6 s^-1
 

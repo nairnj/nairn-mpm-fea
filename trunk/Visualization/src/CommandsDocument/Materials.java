@@ -13,8 +13,10 @@ public class Materials
 	private HashMap<String,Integer> matIDs;
 	private int numMats;
 	private StringBuffer xmldata;
+	private StringBuffer taukGk;
 	private boolean inMaterial;
 	private int matType;
+	private int ntaus,nGs;
 	private CmdViewer doc;
 	private int criterion,direction,traction;
 	private int altCriterion,altDirection,altTraction;
@@ -33,6 +35,7 @@ public class Materials
 		matIDs = new HashMap<String,Integer>(10);
 		numMats = 0;
 		xmldata = new StringBuffer("");
+		taukGk = null;
 		inMaterial = false;
 		criterion = -1;
 		direction = -1;
@@ -72,7 +75,7 @@ public class Materials
 		options.put("transverse 2", new Integer(3));
 		options.put("orthotropic", new Integer(4));
 		options.put("interface", new Integer(5));
-		options.put("viscoelastic", new Integer(6));
+		options.put("viscoelastic", new Integer(7));
 		options.put("mooney", new Integer(8));
 		options.put("vonmises", new Integer(9));
 		options.put("isoplasticity", new Integer(9));
@@ -102,6 +105,15 @@ public class Materials
 		// start the command
 		xmldata.append("  <Material Type='"+matType+"' Name='"+matName+"'>\n");
 		inMaterial = true;
+		
+		// start viscoelastic
+		if(matType==7)
+		{	taukGk = new StringBuffer("");
+			ntaus = 0;
+			nGs = 0;
+		}
+		else
+			taukGk = null;
 	}
 	
 	// material defined using XML commands
@@ -136,6 +148,14 @@ public class Materials
 				if(altDirection>=0) xmldata.append(" direction='"+altDirection+"'");
 				if(altTraction>=0) xmldata.append(" traction='"+altTraction+"'");
 				xmldata.append("/>\n");
+			}
+			
+			// viscoelastic
+			if(taukGk!= null)
+			{	if(ntaus!=nGs)
+					throw new Exception("A viscoelastic material property does not have same number of tauks and Gks");
+				xmldata.append("    <ntaus>"+ntaus+"</ntaus>\n");
+				xmldata.append(taukGk);
 			}
 			xmldata.append("  </Material>\n\n");
 			inMaterial = false;
@@ -200,10 +220,12 @@ public class Materials
 		}
 		else if(prop.toLowerCase().equals("transition"))
 		{	prop = "transition";
-			// 1, 2, or 3
-			int value = doc.readIntArg(args.get(1));
-			if(value<1 || value>3)
-				throw new Exception("'transition' property must be integer 1, 2, or 3:\n"+args);
+			// 1, 2, or 3 (or dilation, distortion, or vonmises)
+			HashMap<String,Integer> options = new HashMap<String,Integer>(2);
+			options.put("dilation", new Integer(1));
+			options.put("distortion", new Integer(2));
+			options.put("vonmises", new Integer(3));
+			int value = doc.readIntOption(args.get(1),options,"transition property");
 			xmldata.append("    <"+prop+">"+value+"</"+prop+">\n");
 			return;
 		}
@@ -371,6 +393,16 @@ public class Materials
 		}
 		else if(prop.toLowerCase().equals("hardening"))
 		{	xmldata.append("    <Hardening>"+doc.readStringArg(args.get(1))+"</Hardening>\n");
+			return;
+		}
+		else if(prop.toLowerCase().equals("tauk"))
+		{	taukGk.append("    <tauk>"+doc.readDoubleArg(args.get(1))+"</tauk>\n");
+			ntaus++;
+			return;
+		}
+		else if(prop.toLowerCase().equals("gk"))
+		{	taukGk.append("    <Gk>"+doc.readDoubleArg(args.get(1))+"</Gk>\n");
+			nGs++;
 			return;
 		}
 		

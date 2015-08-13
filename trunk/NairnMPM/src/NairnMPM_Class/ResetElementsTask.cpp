@@ -99,6 +99,13 @@ void ResetElementsTask::Execute(void)
 					}
 				}
 				
+				else if(status==LEFT_GRID_NAN)
+				{	cout << "# Particle has left the grid and position is nan" << endl;
+					mptr->Describe();
+					resetErr = new CommonException("Particle has left the grid and position is nan","ResetElementsTask::Execute");
+					throw *resetErr;
+				}
+				
 				// next material point and update previous particle
 				prevMptr = mptr;
 				mptr = (MPMBase *)mptr->GetNextObject();
@@ -116,13 +123,18 @@ void ResetElementsTask::Execute(void)
 // Also used during initialization to set particle's initial element
 int ResetElementsTask::ResetElement(MPMBase *mpt)
 {
+	// check NAN
+	if(mpt->pos.x!=mpt->pos.x || mpt->pos.y!=mpt->pos.y || mpt->pos.z!=mpt->pos.z)
+	{	return LEFT_GRID_NAN;
+	}
+	
     // check current element
     if(theElements[mpt->ElemID()]->PtInElement(mpt->pos))
 	{	// it has not changed elements
 		return SAME_ELEMENT;
 	}
     
-    // calculate is all elements are the same size
+    // calculate if all elements are the same size
     if(mpmgrid.IsStructuredEqualElementsGrid())
     {   try
         {   // calculate from coordinates

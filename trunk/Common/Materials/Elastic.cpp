@@ -18,6 +18,24 @@ Elastic::Elastic() {}
 
 Elastic::Elastic(char *matName) : MaterialBase(matName)
 {
+#ifdef MPM_CODE
+	useLargeRotation=0;
+#endif
+}
+
+#pragma mark Elastic::Initialization
+
+// Read material properties
+char *Elastic::InputMaterialProperty(char *xName,int &input,double &gScaling)
+{
+#ifdef MPM_CODE
+	if(strcmp(xName,"largeRotation")==0)
+	{	input=INT_NUM;
+		return((char *)&useLargeRotation);
+	}
+#endif
+	
+    return MaterialBase::InputMaterialProperty(xName,input,gScaling);
 }
 
 #pragma mark Elastic::Methods
@@ -141,7 +159,7 @@ void Elastic::FillUnrotatedElasticProperties(ElasticProperties *p,int np)
         p->C[4][4]=C33;
 		
         p->C[1][4]=p->C[4][1];
-        pr.C[2][4]=p->C[4][2];
+        p->C[2][4]=p->C[4][2];
         p->C[3][4]=p->C[4][3];
     }
 #endif

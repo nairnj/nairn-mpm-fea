@@ -15,7 +15,7 @@
 
 #include "NairnMPM_Class/MPMTask.hpp"
 
-enum { SAME_ELEMENT,NEW_ELEMENT,LEFT_GRID };
+enum { SAME_ELEMENT,NEW_ELEMENT,LEFT_GRID,LEFT_GRID_NAN };
 
 class MPMBase;
 
