@@ -19,7 +19,8 @@ NairnFEAMPMViz was first imported to `GoogleCode.com` as version 3.0.0. The vers
 
   * Current main trunk
     * Working on NairnFEAMPMViz 6.1.0
-    * Update to read results run using any `ConsistentUnits` settings
+    * Updated to read results run using any `ConsistentUnits` settings
+    * Update to plot strains better and can plot elastic and plastic strains for more materials
 
   * Version_10 (31 May 2015)
     * Has NairnFEAMPMViz 6.1.0
