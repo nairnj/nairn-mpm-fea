@@ -249,7 +249,7 @@ char *Orthotropic::InputMaterialProperty(char *xName,int &input,double &gScaling
 		return UnitsController::ScaledPtr((char *)&kCondz,gScaling,1.e6);
 #endif
 		
-	return(MaterialBase::InputMaterialProperty(xName,input,gScaling));
+	return(Elastic::InputMaterialProperty(xName,input,gScaling));
 }
 
 // calculate properties used in analyses

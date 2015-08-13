@@ -61,8 +61,6 @@
 		67B215D511F96C0C007523EE /* MoveCracksTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B215D311F96C0C007523EE /* MoveCracksTask.cpp */; };
 		67B215F011F96EC7007523EE /* ResetElementsTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B215EE11F96EC7007523EE /* ResetElementsTask.hpp */; };
 		67B215F111F96EC7007523EE /* ResetElementsTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B215EF11F96EC7007523EE /* ResetElementsTask.cpp */; };
-		67B916D116AE15BE00632385 /* MGSCGLMaterial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B916CF16AE15BE00632385 /* MGSCGLMaterial.cpp */; };
-		67B916D216AE15BE00632385 /* MGSCGLMaterial.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67B916D016AE15BE00632385 /* MGSCGLMaterial.hpp */; };
 		67B916D416AE15E600632385 /* HEIsotropic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67B916D316AE15E600632385 /* HEIsotropic.cpp */; };
 		67BFA35511FB81B70083F95B /* InitializationTask.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67BFA35311FB81B70083F95B /* InitializationTask.hpp */; };
 		67BFA35611FB81B70083F95B /* InitializationTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67BFA35411FB81B70083F95B /* InitializationTask.cpp */; };
@@ -483,8 +481,6 @@
 		67B215D311F96C0C007523EE /* MoveCracksTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MoveCracksTask.cpp; sourceTree = "<group>"; };
 		67B215EE11F96EC7007523EE /* ResetElementsTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ResetElementsTask.hpp; sourceTree = "<group>"; };
 		67B215EF11F96EC7007523EE /* ResetElementsTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ResetElementsTask.cpp; sourceTree = "<group>"; };
-		67B916CF16AE15BE00632385 /* MGSCGLMaterial.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MGSCGLMaterial.cpp; sourceTree = "<group>"; };
-		67B916D016AE15BE00632385 /* MGSCGLMaterial.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MGSCGLMaterial.hpp; sourceTree = "<group>"; };
 		67B916D316AE15E600632385 /* HEIsotropic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HEIsotropic.cpp; path = Materials/HEIsotropic.cpp; sourceTree = "<group>"; };
 		67BFA35311FB81B70083F95B /* InitializationTask.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = InitializationTask.hpp; sourceTree = "<group>"; };
 		67BFA35411FB81B70083F95B /* InitializationTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InitializationTask.cpp; sourceTree = "<group>"; };
@@ -1240,8 +1236,6 @@
 			children = (
 				A7CD01500E070CBD003470EE /* IsoPlasticity.hpp */,
 				A7CD01510E070CBD003470EE /* IsoPlasticity.cpp */,
-				67B916D016AE15BE00632385 /* MGSCGLMaterial.hpp */,
-				67B916CF16AE15BE00632385 /* MGSCGLMaterial.cpp */,
 				A7845CEA0E01D94F00D2378A /* AnisoPlasticity.hpp */,
 				A7845CEB0E01D94F00D2378A /* AnisoPlasticity.cpp */,
 				A7845CEE0E01DAA300D2378A /* HillPlastic.hpp */,
@@ -1655,7 +1649,6 @@
 				A778E0CA16A8D4F1003D27FE /* NonlinearHardening.hpp in Headers */,
 				A778E0CE16A8D7C0003D27FE /* LinearHardening.hpp in Headers */,
 				A778E0D816AA078B003D27FE /* SCGLHardening.hpp in Headers */,
-				67B916D216AE15BE00632385 /* MGSCGLMaterial.hpp in Headers */,
 				6715DFD216C567350042F15C /* Nonlinear2Hardening.hpp in Headers */,
 				673EC9B716C9EB71007FFEB5 /* CarnotCycle.hpp in Headers */,
 				67FFAA0C16D31E95003A7C53 /* HEMGEOSMaterial.hpp in Headers */,
@@ -1988,7 +1981,6 @@
 				A778E0CC16A8D514003D27FE /* NonlinearHardening.cpp in Sources */,
 				A778E0D016A8D7D9003D27FE /* LinearHardening.cpp in Sources */,
 				A778E0DA16AA07A2003D27FE /* SCGLHardening.cpp in Sources */,
-				67B916D116AE15BE00632385 /* MGSCGLMaterial.cpp in Sources */,
 				67B916D416AE15E600632385 /* HEIsotropic.cpp in Sources */,
 				6715DFD116C567350042F15C /* Nonlinear2Hardening.cpp in Sources */,
 				673EC9B616C9EB71007FFEB5 /* CarnotCycle.cpp in Sources */,

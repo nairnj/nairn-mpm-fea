@@ -183,14 +183,7 @@ and rubber elastic materials as special cases.</td>
 <td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
 </tr>
 
-<tr>
-<td><a href="#MGEOS"><code>MGEOSMaterial</code></a></td>
-<td>17</td>
-<td width="50%">Elastic-plastic, isotropic material using the Mie-Gr&#252;neisen equation of state and a hardening law.</td>
-<td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
-</tr>
-
-<tr>
+<<tr>
 <td><a href="#hill"><code>HillPlastic</code></a></td>
 <td>15</td>
 <td width="50%">Elastic-plastic, orthotropic material with a Hill yield criterion and hardening</td>
@@ -493,6 +486,8 @@ If G2=0 (which is its default), the material is a Neohookean material.</li>
 <li>The volumetric ratio or J = V/V<sub>0</sub> (<i>i.e.</i>, the determinant of the deformation gradient)</li>
 </ol>
 
+<p>The plastic strain stores the left Cauchy Green tensor.</p>
+
 <p>|<a href="#tables">Material Tables</a>|</p>
 
 <!-- New Material Section -->
@@ -521,6 +516,8 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 <li>The volumetric ratio or J = V/V<sub>0</sub> (<i>i.e.</i>, the determinant of the deformation gradient)</li>
 </ol>
 
+<p>The plastic strain stores the left Cauchy Green tensor.</p>
+
 <p>|<a href="#tables">Material Tables</a>|</p>
 
 <h2><a name="DIZ"></a>Clamped Neo-Hookean Material (Type=29)</h2>
@@ -540,7 +537,9 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 	<li>The volumetric ratio or J = V/V<sub>0</sub> (<i>i.e.</i>, the determinant of the deformation gradient)</li>
 	<li>The plastic volumetric ratio or J<sub>P</sub> = J/J<sub>E</sub> where J<sub>E</sub> is determinant of the elastic deformation gradient)</li>
 </ol>
-	
+
+<p>The plastic strain stores the left Cauchy Green tensor. You have to archive both strain and plastic strain for the visualization to be able to plot elastic and plastic strains.</p>
+
 <!-- Material  Section -->
 
 <p>|<a href="#tables">Material Tables</a>|</p>
@@ -557,7 +556,9 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 <h3>History Data for Isotropic, Elastic-Plastic Material</h3>
 
 <p>The material has no history variables, but all <a href="#hardening">hardening law</a> will have one or more history variables.</p>
-    
+
+<p>The plastic strain will have the Biot plastic strain. You have to archive both strain and plastic strain for the visualization to be able to plot elastic and plastic strains.</p>
+
 <p>|<a href="#tables">Material Tables</a>|</p>
 
 <!-- Material  Section -->
@@ -637,13 +638,15 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 <code>sqrt(2/3)||d&epsilon;<sup>p</sup>||</code>.</li>
 </ol>
 
+<p>The plastic strain will have the plastic strain. You have to archive both strain and plastic strain for the visualization to be able to plot elastic and plastic strains.</p>
+
 <p>|<a href="#tables">Material Tables</a>|</p>
     
 <!-- Material  Section -->
 
-<h2><a name="MGEOS"></a>Mie-Gr&#252;neisen Equation of State Materials (Type=17 and Type=25)</h2>
+<h2><a name="MGEOS"></a>Mie-Gr&#252;neisen Equation of State Materials (Type=25 or Type=17)</h2>
 
-<p>These two materials are isotropic materials with plasticity and find pressure using the Mie-Gr&#252;neisen equation of state by large deformation methods. The <code>Type=17</code> material uses low-strain, hypoelastic-plastic methods for shear and yielding. The <code>Type=25</code> material uses large-deformation, hyperelastic-plastic methods for shear and yielding. Both materials can use any <a href="#hardening">hardening law</a> for plasticity. The material properties for both these materials are:
+<p>This material is isotropic with plasticity and find pressure using the Mie-Gr&#252;neisen equation of state by large deformation methods. It is a large-deformation, hyperelastic-plastic methods for shear and yielding can use any <a href="#hardening">hardening law</a> for plasticity. Note: the Type=17 material used to be a small-strain material, but is now deleted and both types now use large deformation methods. The material properties are:
 </p>
 
 <ul>
@@ -677,7 +680,9 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 
 <h3>History Data for Mie-Gr&#252;neisen Equation of State Material</h3>
 
-<p>All <a href="#hardening">hardening law</a> will have one or more history variables. After that, the <code>Type=17</code> material has no additional history variables, but the <code>Type=25</code> material tracks relative volume (J = V/V<sub>0</sub>) in the first history variable after hardening law history variables.</p>
+<p>All <a href="#hardening">hardening law</a> will have one or more history variables. This material then tracks relative volume (J = V/V<sub>0</sub>) in the first history variable after hardening law history variables.</p>
+
+<p>The plastic strain stores the elastic, left Cauchy Green tensor. You have to archive both strain and plastic strain for the visualization to be able to plot elastic and plastic strains.</p>
     
 <p>|<a href="#tables">Material Tables</a>|</p>
 
@@ -720,6 +725,8 @@ You must enter K and G, E and nu, or Lame and G  (moduli in MPa).</li>
 <h3>History Data for Isotropic Hyperelastic-Plastic Materials</h3>
 
 <p>The first history variables are determined by the <a href="#hardening">hardening law</a>. After those variables, the next  history variable stores the volumetric strain J = V/V<sub>0</sub> (<i>i.e.</i>, the determinant of the deformation gradient).</p>
+
+<p>The plastic strain stores the elastic, left Cauchy Green tensor. You have to archive both strain and plastic strain for the visualization to be able to plot elastic and plastic strains.</p>
 
 <p>|<a href="#tables">Material Tables</a>|</p>
 
@@ -1039,7 +1046,7 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 <li>C1SL - hardening law constant (C<sub>1</sub>) (in sec<sup>-1</sup>).</li>
 <li>C2SL - hardening law constant (C<sub>2</sub>) (in MPa sec).</li>
 <li>YP - the Peierls stress and also the maximum rate-dependent yield stress (in MPa).</li>
-<li>Uk - an energy associated with forming kinks (in eV).</li>
+<li>UkOverk - an energy associated with forming kinks (enter Uk/k in degrees K).</li>
 <li><a href="#SCGL">(other)</a> - enter all other properties required for a <a href="#SCGL">SCGL Hardening Law</a></li>
 </ul>
 
@@ -1080,6 +1087,7 @@ d&epsilon;<sub>p</sub>(Y<sub>T</sub>,T)/dt = { (C<sub>2</sub>/Y<sub>T</sub>) + (
 <li>csat - the saturation concentration entered as a weight fraction</li>
 <li>beta - the concentration expansion coefficient for isotropic materials (in strain/(wt fraction))</li>
 <li>D - the diffusion constant for isotropic materials (in mm<sup>2</sup>/sec)</li>
+<li>largeRotation - to use (1) or not use (0, the default) polar decomposition when evaluating rotations. This option is only allowed for linear elastic and elastic-plastic small strain materials. Option 1 uses polar decomposition to evaluate incremental rotation and uses that rotation to update strains and stresses. Option 0 use approximations of polar decomposition to rotate strain and stress updates (standard hypoelasticity). Both methods work for large rotations (provided the rotations are incrementally small). Option 1 may be more accurate while options 0 is more efficient.</li>
 <li>color (red),(green),(blue),(alpha) - sets the color of the material with the four arguments being RGB and alpha values between 0.0 and 1.0. A single argument can be used instead to set gray level between 0.0 and 1.0 (with alpha=1.0). Three arguments set red, green, and blue with alpha=1.0. If no color is provided, a color will be picked from the current spectrum using the material number.</li>
 </ul>
 

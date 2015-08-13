@@ -232,42 +232,6 @@ Matrix3 MatPoint2D::GetDisplacementGradientMatrix(void) const
 	Fm(2,2) -= 1.;
 	
 	return Fm;
-	
-	// An alternative is  grad u ln F = ln V + ln R
-	// but it does not seem better and is slower in J calculations
-/*
-#ifdef USE_PSEUDOHYPERELASTIC
-	// Decompose into F = VR and get eigenvalues of V
-	Matrix3 R;
-	Vector lam;
-	Matrix3 V = Fm.LeftDecompose(&R, &lam);
-	
-	// Find V = U.LAM.UT
-	Matrix3 Ucol = V.Eigenvectors(lam);
-	
-	// for ln R, need angle
-	double theta = acos(R(0,0));
-	if(R(0,1)>0) theta = -theta;
-	
-	// ln V = U.ln(LAM).UT (ignores z for 2D)
-	Matrix3 UcolT = Ucol.Transpose();
-	Matrix3 LamDiag(log(lam.x),0.,0.,log(lam.y),log(lam.z));
-	Matrix3 gradU = Ucol*(LamDiag*UcolT);
-	
-	// add ln R
-	gradU(0,1) -= theta;
-	gradU(1,0) += theta;
-
-	return gradU;
-
-#else
-	Fm(0,0) -= 1.;
-	Fm(1,1) -= 1.;
-	Fm(2,2) -= 1.;
-	
-	return Fm;
-#endif
-*/
 }
 
 // get the symmetric elastic Left-Cauchy tensor in a Matrix3
@@ -275,38 +239,16 @@ Matrix3 MatPoint2D::GetElasticLeftCauchyMatrix(void)
 {   return Matrix3(eplast.xx,eplast.xy,eplast.xy,eplast.yy,eplast.zz);
 }
 
-#ifdef USE_PSEUDOHYPERELASTIC
 // get deformation gradient, which is stored in strain and rotation tensors
 void MatPoint2D::GetDeformationGradient(double F[][3]) const
 {
-    F[0][0] = 1. + ep.xx;
+	// current deformation gradient in 2D
+	F[0][0] = 1. + ep.xx;
 	F[0][1] = 0.5*(ep.xy - wrot.xy);
 	F[1][0] = 0.5*(ep.xy + wrot.xy);
 	F[1][1] = 1. + ep.yy;
 	F[2][2] = 1. + ep.zz;
 }
-#else
-// get deformation gradient, which is stored in strain and rotation tensors
-void MatPoint2D::GetDeformationGradient(double F[][3]) const
-{
-	// current deformation gradient in 2D
-    if(theMaterials[MatID()]->PartitionsElasticAndPlasticStrain())
-    {   F[0][0] = 1. + ep.xx + eplast.xx;
-        double exy = ep.xy + eplast.xy;
-        F[0][1] = 0.5*(exy - wrot.xy);
-        F[1][0] = 0.5*(exy + wrot.xy);
-        F[1][1] = 1. + ep.yy + eplast.yy;
-        F[2][2] = 1. + ep.zz + eplast.zz;
-    }
-    else
-    {   F[0][0] = 1. + ep.xx;
-        F[0][1] = 0.5*(ep.xy - wrot.xy);
-        F[1][0] = 0.5*(ep.xy + wrot.xy);
-        F[1][1] = 1. + ep.yy;
-        F[2][2] = 1. + ep.zz;
-    }
-}
-#endif
 
 // Get R.sqrt(B).RT-I = V-I for elastic biot strain rotated into current particle orientation
 // Assume that elastic B matrix is in the alt strain tensor

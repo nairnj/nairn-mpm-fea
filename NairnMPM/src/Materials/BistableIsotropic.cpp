@@ -132,7 +132,7 @@ char *BistableIsotropic::InputMaterialProperty(char *xName,int &input,double &gS
         return((char *)&reversible);
     }
 	
-    return MaterialBase::InputMaterialProperty(xName,input,gScaling);
+    return Elastic::InputMaterialProperty(xName,input,gScaling);
 }
 
 // Verify properties and initial calculations
@@ -307,19 +307,27 @@ void BistableIsotropic::GetTransportProps(MPMBase *mptr,int np,TransportProperti
 	*t = *state==INITIAL_STATE ? tr : tr2;
 }
 
-#ifdef USE_PSEUDOHYPERELASTIC
-
 /* Take increments in strain and calculate new Particle: strains, rotation strain,
-		stresses, strain energy,
-	dvij are (gradient rates X time increment) to give deformation gradient change
+	stresses, strain energy,
+	du are (gradient rates X time increment) to give deformation gradient change
 	For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMETRIC_MPM, otherwise dvzz=0
-*/
+ */
 void BistableIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
+{	if(useLargeRotation)
+		LRConstitutiveLaw(mptr,du,delTime,np,properties,res);
+	else
+		SRConstitutiveLaw(mptr,du,delTime,np,properties,res);
+}
+
+#pragma mark BistableIsotropic::Methods (Large Rotation)
+
+// Large rotation entry point
+void BistableIsotropic::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
     // update in current state
     short *state=(short *)(mptr->GetHistoryPtr()),transition=FALSE;
 	const ElasticProperties *p = *state==INITIAL_STATE ? &pr : &pr2;
-	IsotropicMat::MPMConstitutiveLaw(mptr,du,delTime,np,(void *)p,res);
+	IsotropicMat::LRConstitutiveLaw(mptr,du,delTime,np,(void *)p,res);
 	
     // Calculate critical value for transition
     double dmechV,dTrace,ds1,ds2,ds3;
@@ -419,21 +427,15 @@ void BistableIsotropic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTi
     }
 }
 
-#else
+#pragma mark BistableIsotropic::Methods (Small Rotation)
 
-/* For 2D MPM analysis, take increments in strain and calculate new
-    Particle: strains, rotation strain, stresses, strain energy, angle,
-		current state
-    dvij are (gradient rates X time increment) to give deformation gradient change
-   For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMEtRIC_MPM, otherwise dvzz=0
-*/
-void BistableIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double dvxy,double dvyx,
-        double dvzz,double delTime,int np,void *properties,ResidualStrains *res) const
+// Small rotation entry point (only 2D)
+void BistableIsotropic::SRConstitutiveLaw(MPMBase *mptr,Matrix3 dv,double delTime,int np,void *properties,ResidualStrains *res) const
 {
     // update in current state
     short *state=(short *)(mptr->GetHistoryPtr()),transition=FALSE;
 	const ElasticProperties *p = *state==INITIAL_STATE ? &pr : &pr2;
-    Elastic::MPMConstLaw(mptr,dvxx,dvyy,dvxy,dvyx,dvzz,delTime,np,(void *)p,res);
+    IsotropicMat::SRConstitutiveLaw2D(mptr,dv,delTime,np,(void *)p,res);
 	
     // Calculate critical value for transition
     double dmechV,dTrace,ds1,ds2,ds3;
@@ -532,8 +534,6 @@ void BistableIsotropic::MPMConstLaw(MPMBase *mptr,double dvxx,double dvyy,double
 			ep->zz=p->C[4][1]*(exx + eyy)+normOffset+erzz;
     }
 }
-
-#endif
 
 #pragma mark BistableIsotropic::Accessors
 

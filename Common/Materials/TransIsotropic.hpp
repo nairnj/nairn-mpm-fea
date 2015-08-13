@@ -37,15 +37,14 @@ class TransIsotropic : public Elastic
 #ifdef MPM_CODE
         virtual void FillTransportProperties(TransportProperties *);
 		virtual void PrintTransportProperties(void) const;
+		virtual void SetInitialParticleState(MPMBase *,int) const;
 #endif
 		
 		// methods
-		void FillElasticProperties2D(ElasticProperties *,int,double,int) const;
+		void FillElasticProperties2D(ElasticProperties *,int,double,double,int) const;
 #ifdef MPM_CODE
-#ifndef USE_PSEUDOHYPERELASTIC
 		virtual int SizeOfMechanicalProperties(int &) const;
 		void FillElasticProperties3D(MPMBase *,ElasticProperties *,int) const;
-#endif
 		virtual void *GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *,void *) const;
 		virtual void GetTransportProps(MPMBase *,int,TransportProperties *) const;
 #else

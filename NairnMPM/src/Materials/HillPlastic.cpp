@@ -66,30 +66,31 @@ char *HillPlastic::InitHistoryData(void)
 #pragma mark HillPlastic:Hardening Terms
 
 // Load current internal variables into local alpha variables
-void HillPlastic::UpdateTrialAlpha(MPMBase *mptr,int np,AnisoPlasticProperties *p) const
+void HillPlastic::UpdateTrialAlpha(MPMBase *mptr,int np,AnisoHardProperties *p) const
 {	p->aint = mptr->GetHistoryDble();
 }
 
-// Update alpha: Here dalpha = lamda R df = lambda dfrot
-void HillPlastic::UpdateTrialAlpha(MPMBase *mptr,int np,double lambdak,AnisoPlasticProperties *p) const
+// Update alpha: Here dalpha = alpha0 - lambdak h = alpha0 + lambdak*(-h)
+void HillPlastic::UpdateTrialAlpha(MPMBase *mptr,int np,double lambdak,AnisoHardProperties *p) const
 {	p->aint = mptr->GetHistoryDble() + lambdak*p->minush;
 }
 
-// Return yield stress for current conditions (alpint for cum. plastic strain and dalpha/delTime for plastic strain rate)
-double HillPlastic::GetYield(AnisoPlasticProperties *p) const
+// Return yield stress for current conditions (p->aint for cum. plastic strain and dalpha/delTime for plastic strain rate)
+double HillPlastic::GetYield(AnisoHardProperties *p) const
 {
 	return 1. + Khard*pow(p->aint,nhard);
 }
 
-// Hardening term : find df^(alpha) . h and it assumes g(alpha) = 1 + Khard alpha^nhard
-//    and therefore df^(alpha) = nhard Khard alpha^(nhard-1) or just Khard is nhard=1
-double HillPlastic::GetDfAlphaDotH(MPMBase *mptr,int np,AnisoPlasticProperties *p) const
+// Hardening term : find df^(alpha) . h = (-g'(alpha))*(-h)
+// Here g(alpha) = 1 + Khard alpha^nhard
+//    and therefore g'(alpha) = nhard Khard alpha^(nhard-1) or just Khard if nhard=1
+double HillPlastic::GetDfAlphaDotH(MPMBase *mptr,int np,AnisoHardProperties *p) const
 {	return DbleEqual(nhard,1.) ? Khard*p->minush :
 	Khard*nhard*pow(p->aint,nhard-1)*p->minush ;
 }
 
 // transfer final alpha variables to the material point
-void HillPlastic::UpdatePlasticInternal(MPMBase *mptr,int np,AnisoPlasticProperties *p) const
+void HillPlastic::UpdatePlasticInternal(MPMBase *mptr,int np,AnisoHardProperties *p) const
 {	mptr->SetHistoryDble(p->aint);
 }
 

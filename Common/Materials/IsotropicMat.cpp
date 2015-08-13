@@ -64,7 +64,7 @@ char *IsotropicMat::InputMaterialProperty(char *xName,int &input,double &gScalin
     else if(strcmp(xName,"alpha")==0)
         return((char *)&aI);
 
-    return MaterialBase::InputMaterialProperty(xName,input,gScaling);
+    return Elastic::InputMaterialProperty(xName,input,gScaling);
 }
 
 // print to output window

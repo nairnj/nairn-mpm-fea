@@ -150,13 +150,6 @@ and rubber elastic materials as special cases.</td>
 </tr>
 
 <tr>
-<td><a href="#MGEOS"><code>MGEOSMaterial</code></a></td>
-<td>17</td>
-<td width="50%">Elastic-plastic, isotropic material using the Mie-Gr&#252;neisen equation of state and a hardening law.</td>
-<td align="center"></td><td align="center"></td><td align="center">X</td><td align="center">X</td><td align="center">X</td>
-</tr>
-
-<tr>
 <td><a href="#hill"><code>HillPlastic</code></a></td>
 <td>15</td>
 <td width="50%">Elastic-plastic, orthotropic material with a Hill yield criterion and hardening</td>
@@ -517,9 +510,9 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <!-- Material  Section -->
 
-<h2><a name="MGEOS"></a>Mie-Gr&#252;neisen Equation of State Materials (Type=17 and Type=25)</h2>
+<h2><a name="MGEOS"></a>Mie-Gr&#252;neisen Equation of State Materials (Type=25 or Type=17)</h2>
 
-<p>These two materials are isotropic materials with plasticity and find pressure using the Mie-Gr&#252;neisen equation of state by large deformation methods. The <code>Type=17</code> material uses low-strain, hypoelastic-plastic methods for shear and yielding. The <code>Type=25</code> material uses large-deformation, hyperelastic-plastic methods for shear and yielding. Both materials can use any <a href="hardeninglaws.html">hardening law</a> for plasticity. The material properties for both these materials are:
+<p>This material is an isotropic material with plasticity and it finds pressure using the Mie-Gr&#252;neisen equation of state by large deformation methods. The <code>Type=25</code> material is large-deformation, hyperelastic-plastic methods for shear and yielding (the <code>Type=17</code> material used to be for a hypoelastic version option, but that option is removed and is now automatically converted to <code>Type=25</code>). This material can use any <a href="hardeninglaws.html">hardening law</a> for plasticity. The material properties are:
 </p>
 
 <ul>
@@ -553,7 +546,7 @@ G<sub>ntaus</sub>exp(-t/tau<sub>ntaus</sub>).</p>
 
 <h3>History Data for Mie-Gr&#252;neisen Equation of State Material</h3>
 
-<p>All <a href="hardeninglaws.html">hardening law</a> will have one or more history variables. After that, the <code>Type=17</code> material has no additional history variables, but the <code>Type=25</code> material tracks relative volume (J = V/V<sub>0</sub>) in the first history variable after hardening law history variables.</p>
+<p>All <a href="hardeninglaws.html">hardening laws</a> will have one or more history variables. After that, this material tracks relative volume (J = V/V<sub>0</sub>) in the first history variable after hardening law history variables.</p>
     
 <h2><a name="DIZ"></a>Clamped Neo-Hookean Material (Type=29)</h2>
 	
@@ -769,6 +762,7 @@ cod = <code>&delta;<sub>eff</sub></code> where  &delta;<sub>eff</sub><sup>2</sup
 <li>csat - the saturation concentration (weight fraction)</li>
 <li>beta - the concentration expansion coefficient for isotropic materials (in strain/(wt fraction))</li>
 <li>D - the diffusion constant for isotropic materials (in <a href="units.html">diffusion units</a>)</li>
+<li>largeRotation - to use (1) or not use (0) polar decomposition when evaluating rotations. This option is only allowed for linear elastic and elastic-plastic small strain materials and the default is 0. Option 1 uses polar decomposition to evaluate incremental rotation and uses that rotation to update strains and stresses. Option 0 use approximations of polar decomposition to rotate strain and stress updates (standard hypoelasticity). In addition, option 1 finds incremental deformation gradient using the selected number of <a href="mpmheader.html#MPMMethods"><code>&lt;DefGradTerms&gt;</code></a> while option 0 always uses one term.</li> 
 <li><code>&lt;color red='0.1' green='0.5' blue='0.3' alpha='1.0/&gt;</code>
  - sets the color of the material with red, green, blue, and alpha values between 0.0 and 1.0.</li>
 </ul>

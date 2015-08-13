@@ -12,14 +12,14 @@ Header
 EndHeader
 
 ! options are "Plane Stress", "Plane Strain", or "Axisymmetric"
-#mode$="Plane Stress"
+#mode$="Plane Strain"
 
 ! Element type
-#elem$="8 Node Quadrilateral"
+#elem$="9 Node Lagrange"
 
-! Material types I"sotropic", "Trans Iso IP", "Trans Iso N","Ortho"
-#matID$="Isotropic"
-#angle=0
+! Material types "Isotropic", "Ortho"
+#matID$="Ortho"
+#angle=-45
 
 ! Specimen
 #length=100
@@ -31,9 +31,9 @@ EndHeader
 #axial=10
 #trans=4
 
-! Loads "displacement" (by #stress MPa),"force" (by #force N, total),
+! Loads "stress" (by #stress MPa),"force" (by #force N, total),
 !             or "displacement" (by #disp mm)
-#loading$="force"
+#loading$="displacement"
 #stress=100
 #force=100*#width*#thick
 #disp=0.01*#length
@@ -42,14 +42,26 @@ Analysis #mode$
 Element #elem$
 
 ! ********** Parameters Section **********
-#matname="polymer"
 
 ! ********** Materials Section **********
 if #matID$="Isotropic"
-  Material #matID$,"Polymer","Isotropic"
+  Material #matID$,#matID$,"Isotropic"
     E 2300
     nu .33
     a 60
+  Done
+
+else if #matID$="Ortho"
+  Material #matID$,#matID$,"Orthotropic"
+    Ex 46000
+    Ey 4000
+    Ez 14600
+    Gxy 1500
+    Gxz 6000
+    Gyz 1500
+    nuxy 0.4
+    nuxz 0.3
+    nuyz 0.05
   Done
 endif
 
@@ -117,7 +129,7 @@ else if #loading$="displacement"
     Rotate "z",#rotate
     Displacement "x",#disp
   EndFixLine
- 
+  
 else
   Stop "The #loading$ parameter is not recognized"
   

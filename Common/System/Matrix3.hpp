@@ -34,11 +34,14 @@ class Matrix3
 		Vector Times(Vector *) const;
 		void Scale(double);
         void Scale2D(double);
+		double DotProduct(void);
 		Matrix3 Inverse(void) const;
         Vector Eigenvalues(void) const;
         Matrix3 RightDecompose(Matrix3 *,Vector *) const;
 		Matrix3 LeftDecompose(Matrix3 *,Vector *) const;
 		Matrix3 Eigenvectors(Vector &) const;
+		void GetRStress(double r[][6]) const;
+		void GetRStrain(double r[][6]) const;
 	
 		// not currently used
         //Matrix3 RightStretch(const Vector &) const;
@@ -60,6 +63,7 @@ class Matrix3
 		void set(double c[][3]);
         void set(double,double,double,double,double);
         void set(double,double,double,double,double,double,double,double,double);
+		void set(Matrix3);
         void setIs2D(bool);
     
         // read only accessors

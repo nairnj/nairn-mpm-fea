@@ -81,6 +81,7 @@ class MPMBase : public LinkedObject
 
         // defined virtual methods
 		virtual double GetUnscaledVolume(void);
+		virtual void IncrementDeformationGradientZZ(double dezz);
 
 		// base only methods (make virtual if need to override)
 		int MatID(void) const;
@@ -95,9 +96,11 @@ class MPMBase : public LinkedObject
 		void IncrementElementCrossings(void);
 		bool HasLeftTheGridBefore(void);
 		void SetHasLeftTheGridBefore(bool);
-#ifndef USE_PSEUDOHYPERELASTIC
-        bool PartitionsElasticAndPlasticStrain(void) const;
-#endif
+		double Get2DSinCos(double *,double *);
+		Matrix3 *GetRtotPtr(void);
+		void SetRtot(Matrix3);
+		void InitRtot(Matrix3);
+		Matrix3 GetRtot(void);
 		double GetRotationZ(void);
 		double GetRotationY(void);
 		double GetRotationX(void);
@@ -188,6 +191,7 @@ class MPMBase : public LinkedObject
         double entropy;             // total entropy on the particle
 		double resEnergy;			// total residual energy sigma.dres
 		char *matData;				// material history if needed (init NULL)
+		Matrix3 *Rtot;				// only track for large rotation hypo and 3D aniso small rotation
 	
 		// constants (not changed in MPM time step)
  		double anglez0;				// initial cw x rotation angle (2D or 3D) (stored in radians)

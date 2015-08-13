@@ -51,13 +51,19 @@ class IsoPlasticity : public IsotropicMat
         virtual int SizeOfMechanicalProperties(int &) const;
 		virtual void *GetCopyOfMechanicalProps(MPMBase *,int,void *,void *) const;
 		virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
-        virtual void PlasticityConstLaw(MPMBase *,double,double,double,double,double,double,int,
-                                        double,double,double,PlasticProperties *,ResidualStrains *,Matrix3 *) const;
-        virtual void PlasticityConstLaw(MPMBase *,double,double,double,double,double,double,double,double,
-                                        double,double,int,double,double,double,PlasticProperties *,ResidualStrains *,Matrix3 *) const;
+		virtual void LRConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+        virtual void LRPlasticityConstLaw(MPMBase *,double,double,double,double,double,int,
+                                        double,double,PlasticProperties *,ResidualStrains *,Matrix3 *) const;
+        virtual void LRPlasticityConstLaw(MPMBase *,double,double,double,double,double,
+                                        double,double,int,double,double,PlasticProperties *,ResidualStrains *,Matrix3 *) const;
+		virtual void SRConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
+		virtual void SRPlasticityConstLaw2D(MPMBase *,Matrix3,double,int,
+										double,double,PlasticProperties *,ResidualStrains *,Matrix3 *) const;
+		virtual void SRPlasticityConstLaw3D(MPMBase *,Matrix3,double,int,
+										double,double,PlasticProperties *,ResidualStrains *,Matrix3 *) const;
 		
 		// custom methods: Find yield function and solve for lambda
-		virtual void UpdatePressure(MPMBase *,double &,double,int,PlasticProperties *,ResidualStrains *,double) const;
+		virtual void UpdatePressure(MPMBase *,double,int,PlasticProperties *,ResidualStrains *,double) const;
         virtual double GetMagnitudeSFromDev(Tensor *,int) const;
 		virtual void GetDfDsigma(double,Tensor *,int,Tensor *) const;
 		virtual void ElasticUpdateFinished(MPMBase *,int,double) const;
@@ -65,9 +71,6 @@ class IsoPlasticity : public IsotropicMat
 		// accessors
         virtual Tensor GetStress(Tensor *,double) const;
 		virtual double GetHistory(int,char *) const;
-#ifndef USE_PSEUDOHYPERELASTIC
-        virtual bool PartitionsElasticAndPlasticStrain(void) const;
-#endif
         int MaterialTag(void) const;
         const char *MaterialType(void) const;
 		virtual int AltStrainContains(void) const;

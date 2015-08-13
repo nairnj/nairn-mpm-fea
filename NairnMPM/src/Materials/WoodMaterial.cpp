@@ -42,9 +42,9 @@ char *WoodMaterial::InputMaterialProperty(char *xName,int &input,double &gScalin
 // verify settings and maybe some initial calculations
 const char *WoodMaterial::VerifyAndLoadProperties(int np)
 {
-#ifdef USE_PSEUDOHYPERELASTIC
-	return "The wood material is temporarily unavailable";
-#endif
+	if(useLargeRotation)
+		return "The wood material does not yet support the large rotation options";
+	
 	// check at least some yielding
 	if(tempC1<0.)
 		return "tempC1 must be positive";
@@ -68,17 +68,6 @@ void WoodMaterial::PrintMechanicalProperties(void) const
 
 #pragma mark WoodMaterial:Methods
 
-#ifdef USE_PSEUDOHYPERELASTIC
-
-// Isotropic material can use read-only initial properties
-void *WoodMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
-{
-	// will need to fill with unrotated properties (maybe an alternate buffer)
-	// and scale to temperature
-}
-
-#else
-
 // Isotropic material can use read-only initial properties
 void *WoodMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffer,void *altBuffer) const
 {
@@ -93,8 +82,6 @@ void *WoodMaterial::GetCopyOfMechanicalProps(MPMBase *mptr,int np,void *matBuffe
 	
 	return p;
 }
-
-#endif
 
 #pragma mark WoodMaterial::Custom Methods
 

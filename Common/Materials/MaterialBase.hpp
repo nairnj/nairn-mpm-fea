@@ -23,6 +23,10 @@ class ConductionTask;
 class MPMBase;
 class HardeningLawBase;
 
+// When on, the large rotation materials track rotation matrix. Tests seem to show that round off
+// error cause tracking rotation to be less accurate, even though it is more efficient
+//#define TRACK_RTOT
+
 #else
 
 // C is stiffness matrix and some other things
@@ -34,16 +38,19 @@ typedef struct {
 
 #endif
 
-#define USE_PSEUDOHYPERELASTIC
-
 #define UNSPECIFIED -1
 enum { NO_PROPAGATION=0,MAXHOOPSTRESS,STEADYSTATEGROWTH,DELETED_TOTALENERGYBALANCE_USECUSTOMTASKIFNEEDED,
        STRAINENERGYDENSITY,EMPIRICALCRITERION,MAXCTODCRITERION,CRITICALERR };
 enum { DEFAULT_DIRECTION=0,SELF_SIMILAR,NORMAL_TO_COD,HOOP_FROM_COD,INITIAL_DIRECTION };
 
-// elastic B means material has no plastic strain (i.e. B = FF^T), while total means
-// F has elastic and plastic while B is for elastic part only
-enum { NOTHING,ENG_BIOT_PLASTIC_STRAIN,LEFT_CAUCHY_ELASTIC_B_STRAIN,LEFT_CAUCHY_TOTAL_B_STRAIN,MEMBRANE_DEFORMATION };
+// NOTHING:							alt strain is not used
+// ENG_BIOT_PLASTIC_STRAIN:			small strain plasticity it biot plastic strain in alt strain to total strain
+//									in strain
+// LEFT_CAUCHY_ELASTIC_B_STRAIN:	hyperelastic plastic, Alt strain has elastic B. Need to calculate
+//									plastic strain
+// LEFT_CAUCHY_TOTAL_B_STRAIN:		hyperelastic with B = FF^T (and no plastic strain
+// MEMBRANE_DEFORMATION:			membrane deformation
+enum { NOTHING,ENG_BIOT_PLASTIC_STRAIN,LEFT_CAUCHY_ELASTIC_B_STRAIN,LEFT_CAUCHY_TOTAL_B_STRAIN,MEMBRANE_DEFORMATION};
 
 class MaterialBase : public LinkedObject
 {
@@ -100,7 +107,7 @@ class MaterialBase : public LinkedObject
 
 		// initialization (base class only)
 		void PrintMaterial(int) const;
-		void PrintCommonProperties(void) const;
+		virtual void PrintCommonProperties(void) const;
 #ifdef MPM_CODE
 		void PrintCriterion(int,int) const;
 #endif
@@ -115,18 +122,13 @@ class MaterialBase : public LinkedObject
 		virtual double GetCpMinusCv(MPMBase *) const;
         virtual void IncrementHeatEnergy(MPMBase *,double,double,double) const;
         virtual void MPMConstitutiveLaw(MPMBase *,Matrix3,double,int,void *,ResidualStrains *) const;
-#ifndef USE_PSEUDOHYPERELASTIC
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
-        virtual void MPMConstLaw(MPMBase *,double,double,double,double,double,double,double,double,double,double,int,void *,ResidualStrains *) const;
-		virtual bool PartitionsElasticAndPlasticStrain(void) const;
-#endif
 #else
 		virtual void LoadMechanicalPropertiesFEA(int,double,int);
 #endif
 
 		// Methods (base class only)
 #ifdef MPM_CODE
-		void Hypo2DCalculations(MPMBase *,double,double,double,double) const;
+		void Hypo2DCalculations(MPMBase *,double,double,double,double,double) const;
 		void Hypo3DCalculations(MPMBase *,double,double,double,double *) const;
 #endif
 

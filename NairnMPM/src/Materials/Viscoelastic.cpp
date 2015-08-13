@@ -195,32 +195,60 @@ char *Viscoelastic::InitHistoryData(void)
     return p;
 }
 
+#ifdef TRACK_RTOT
+
+// If needed, a material can initialize particle state
+// For subclasses of TransIsotropic, rotation matrix is tracked in large rotation mode
+//		and in small rotation is 3D
+void Viscoelastic::SetInitialParticleState(MPMBase *mptr,int np) const
+{	// store initial rotation because alwaysin large rotation mode
+	mptr->InitRtot(Matrix3::Identity());
+	
+	// call super class
+    MaterialBase::SetInitialParticleState(mptr,np);
+}
+
+#endif
+
 #pragma mark Viscoelastic::Methods
 
-#ifdef USE_PSEUDOHYPERELASTIC
-
-/* Take increments in strain and calculate new Particle: strains, rotation strain, plastic strain,
- stresses, strain energy, plastic energy, dissipated energy, angle
- dvij are (gradient rates X time increment) to give deformation gradient change
- For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMETRIC_MPM, otherwise dvzz=0
- This material tracks pressure and stores deviatoric stress only in particle stress tensor
+/* Take increments in strain and calculate new Particle: strains, rotation strain,
+	stresses, strain energy,
+	du are (gradient rates X time increment) to give deformation gradient change
+	For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMETRIC_MPM, otherwise dvzz=0
+	This material tracks pressure and stores deviatoric stress only in particle stress tensor
  */
 void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
 {
 	// current previous deformation gradient and stretch
 	Matrix3 pFnm1 = mptr->GetDeformationGradientMatrix();
-	Matrix3 Vnm1 = pFnm1.LeftDecompose(NULL,NULL);
 	
     // get incremental deformation gradient and decompose it
 	const Matrix3 dF = du.Exponential(incrementalDefGradTerms);
     Matrix3 dR;
     Matrix3 dVstretch = dF.LeftDecompose(&dR,NULL);
 	
+#ifdef TRACK_RTOT
+	// get tracked rotation matrix and update it
+	Matrix3 *Rnm1 = mptr->GetRtotPtr();
+	Matrix3 Rtot = dR*(*Rnm1);
+	mptr->SetRtot(Rtot);
+	
+	// get strain increments de = (dV-I) dR Fnm1 Rtot^T
+	dVstretch(0,0) -= 1.;
+	dVstretch(1,1) -= 1.;
+	dVstretch(2,2) -= 1.;
+	Matrix3 Vrot = dR*(pFnm1*Rtot.Transpose());
+#else
+	// decompose to get previous stretch
+	Matrix3 Vnm1 = pFnm1.LeftDecompose(NULL,NULL);
+	
 	// get strain increments de = (dV-I) dR Vnma dRT
 	dVstretch(0,0) -= 1.;
 	dVstretch(1,1) -= 1.;
 	dVstretch(2,2) -= 1.;
 	Matrix3 Vrot = Vnm1.RMRT(dR);
+#endif
 	Matrix3 detot = dVstretch*Vrot;
 	
 	// Update total deformation gradient
@@ -364,158 +392,11 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
     IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
 }
 
-#else
-
-/* Take increments in strain and calculate new Particle: strains, rotation strain, plastic strain,
-		stresses, strain energy, plastic energy, dissipated energy, angle
-	dvij are (gradient rates X time increment) to give deformation gradient change
-	For Axisymmetry: x->R, y->Z, z->theta, np==AXISYMMETRIC_MPM, otherwise dvzz=0
-	This material tracks pressure and stores deviatoric stress only in particle stress tensor
-*/
-void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,void *properties,ResidualStrains *res) const
-{
-    // Effective strain by deducting thermal strain (no shear thermal strain because isotropic)
-	double eres=CTE*res->dT;
-	if(DiffusionTask::active)
-		eres+=CME*res->dC;
-	
-	// update pressure
-	double traceDu = du.trace();
-	double delV = traceDu - 3.*eres;
-	UpdatePressure(mptr,delV,res,eres);
-	
-	// deviatoric strains increment in de
-	// Actually de is finding 2*(dev e) to avoid many multiples by two
-	Tensor de;
-	double dV = traceDu/3.;
-	de.xx = 2.*(du(0,0) - dV);
-	de.yy = 2.*(du(1,1) - dV);
-	de.zz = 2.*(du(2,2) - dV);
-	
-	// for shear, gamma is 2*(dev e)
-	de.xy = du(0,1) + du(1,0);
-	if(np==THREED_MPM)
-	{	de.xz = du(0,2) + du(2,0);
-		de.yz = du(1,2) + du(2,1);
-	}
-	
-	// Find initial 2*e(t) (deviatoric strain) in ed
-	Tensor ed;
-	Tensor *ep=mptr->GetStrainTensor();
-	ed = *ep;
-	double thirdV = (ed.xx+ed.yy+ed.zz)/3.;
-	ed.xx = 2.*(ed.xx-thirdV);
-	ed.yy = 2.*(ed.yy-thirdV);
-	ed.zz = 2.*(ed.zz-thirdV);
-	// ed.xy, ed.xz, and ed.yz do not change to be deviatoric
-	
-	// Increment total strains on the particle
-    ep->xx += du(0,0);
-    ep->yy += du(1,1);
-	ep->zz += du(2,2);
-    ep->xy += de.xy;
-	if(np==THREED_MPM)
-	{	ep->xz += de.xz;
-		ep->yz += de.yz;
-	}
-	
-	// get internal variable increments and update them too
-	Tensor dak;
-    double **ak =(double **)(mptr->GetHistoryPtr());
-	int k;
-    for(k=0;k<ntaus;k++)
-    {   double tmp = exp(-delTime/tauk[k]);
-		double tmpm1 = tmp-1.;
-		double tmpp1 = tmp+1.;
-		double arg = 0.25*delTime/tauk[k];					// 0.25 because e's have factor of 2
-		dak.xx = tmpm1*ak[XX_HISTORY][k] + arg*(tmpp1*ed.xx + de.xx);
-		dak.yy = tmpm1*ak[YY_HISTORY][k] + arg*(tmpp1*ed.yy + de.yy);
-		dak.xy = tmpm1*ak[XY_HISTORY][k] + arg*(tmpp1*ed.xy + de.xy);
-		dak.zz = tmpm1*ak[ZZ_HISTORY][k] + arg*(tmpp1*ed.zz + de.zz);
-		ak[XX_HISTORY][k] += dak.xx;
-		ak[YY_HISTORY][k] += dak.yy;
-		ak[ZZ_HISTORY][k] += dak.zz;
-		ak[XY_HISTORY][k] += dak.xy;
-		
-		if(np==THREED_MPM)
-		{	dak.xz = tmpm1*ak[XZ_HISTORY][k] + arg*(tmpp1*ed.xz + de.xz);
-			dak.yz = tmpm1*ak[YZ_HISTORY][k] + arg*(tmpp1*ed.yz + de.yz);
-			ak[XZ_HISTORY][k] += dak.xz;
-			ak[YZ_HISTORY][k] += dak.yz;
-		}
-    }
-	
-	// increment particle deviatoric stresses
-	double dsig[6];
-	dsig[XX] = Gered*de.xx;
-	dsig[YY] = Gered*de.yy;
-	dsig[ZZ] = Gered*de.zz;
-	dsig[XY] = Gered*de.xy;
-	if(np==THREED_MPM)
-	{	dsig[XZ] = Gered*de.xz;
-		dsig[YZ] = Gered*de.yz;
-	}
-    for(k=0;k<ntaus;k++)
-	{	dsig[XX] -= TwoGkred[k]*dak.xx;
-		dsig[YY] -= TwoGkred[k]*dak.yy;
-		dsig[ZZ] -= TwoGkred[k]*dak.zz;
-		dsig[XY] -= TwoGkred[k]*dak.xy;
-		if(np==THREED_MPM)
-		{	dsig[XZ] -= TwoGkred[k]*dak.xz;
-			dsig[YZ] -= TwoGkred[k]*dak.yz;
-		}
-	}
-	
-	// Increment of particle deviatoric stresses
-	Tensor *sp=mptr->GetStressTensor();
-	Tensor st0 = *sp;
-	double dwrotxy = du(1,0)-du(0,1);
-	if(np==THREED_MPM)
-	{	double dwrotxz = du(2,0)-du(0,2);
-		double dwrotyz = du(2,1)-du(1,2);
-		Hypo3DCalculations(mptr,dwrotxy,dwrotxz,dwrotyz,dsig);
-	}
-	else
-	{	Hypo2DCalculations(mptr,-dwrotxy,dsig[XX],dsig[YY],dsig[XY]);
-		sp->zz += dsig[ZZ];
-	}
-	
-	// incremental work energy = shear energy (dilation and residual energy done in update pressure)
-    double shearEnergy = 0.5*((sp->xx+st0.xx)*du(0,0) + (sp->yy+st0.yy)*du(1,1) + (sp->zz+st0.zz)*du(2,2)+
-							  (sp->xy+st0.xy)*de.xy);
-    if(np==THREED_MPM)
-    {   shearEnergy += 0.5*((sp->xz+st0.xz)*de.xz + (sp->yz+st0.yz)*de.yz);
-    }
-    mptr->AddWorkEnergyAndResidualEnergy(shearEnergy,0.);
-	
-    // disispated energy per unit mass (dPhi/(rho0 V0)) (nJ/g)
-    double dispEnergy = 0.;
-    for(k=0;k<ntaus;k++)
-	{	dispEnergy += TwoGkred[k]*(dak.xx*(0.5*(ed.xx+0.5*de.xx)-ak[XX_HISTORY][k]+0.5*dak.xx)
-						+ dak.yy*(0.5*(ed.yy+0.5*de.yy)-ak[YY_HISTORY][k]+0.5*dak.yy)
-						+ dak.zz*(0.5*(ed.zz+0.5*de.zz)-ak[ZZ_HISTORY][k]+0.5*dak.zz)
-						+ dak.xy*(0.5*(ed.xy+0.5*de.xy)-ak[XY_HISTORY][k]+0.5*dak.xy));
-		if(np==THREED_MPM)
-		{	dispEnergy += TwoGkred[k]*(dak.xz*(0.5*(ed.xz+0.5*de.xz)-ak[XZ_HISTORY][k]+0.5*dak.xz)
-							+ dak.yz*(0.5*(ed.yz+0.5*de.yz)-ak[YZ_HISTORY][k]+0.5*dak.yz));
-		}
-	}
-    mptr->AddPlastEnergy(dispEnergy);
-    
-    // heat energy is Cv dT - dPhi
-    // The dPhi is subtracted here because it will show up in next
-    //		time step within Cv dT (if adibatic heating occurs)
-    // The Cv dT was done in update pressure
-    IncrementHeatEnergy(mptr,0.,0.,dispEnergy);
-}
-
-#endif
-
 // This method handles the pressure equation of state. Its tasks are
 // 1. Calculate the new pressure
 // 2. Update particle pressure
 // 3. Increment the particle energy
-void Viscoelastic::UpdatePressure(MPMBase *mptr,double &delV,ResidualStrains *res,double eres) const
+void Viscoelastic::UpdatePressure(MPMBase *mptr,double delV,ResidualStrains *res,double eres) const
 {   // pressure change
     double dP = -Kered*delV;
     mptr->IncrementPressure(dP);

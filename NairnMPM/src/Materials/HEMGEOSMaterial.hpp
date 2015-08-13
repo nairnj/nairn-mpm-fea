@@ -1,5 +1,5 @@
 /********************************************************************************
-	MGSCGLMaterial.hpp
+	HEMGEOSMaterial.hpp
 	nairn-mpm-fea
 
 	Created by John Nairn, 11/12/2008.
@@ -12,6 +12,9 @@
 #ifndef HEMGEOSMATERIAL
 
 #define HEMGEOSMATERIAL 25
+
+// old code reverts to new hyperelastic material
+#define MGEOSMATERIAL 17
 
 #include "Materials/HEIsotropic.hpp"
 

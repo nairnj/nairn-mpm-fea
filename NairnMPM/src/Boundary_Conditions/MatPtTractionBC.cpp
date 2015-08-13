@@ -83,7 +83,6 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
 		
     // add force to each node
     Vector theFrc;
-	short vfld = 0;
     for(int i=1;i<=numCnds;i++)
     {   // skip empty nodes
         if(nd[nds[i]]->NodeHasNonrigidParticles())
@@ -92,17 +91,18 @@ MatPtTractionBC *MatPtTractionBC::AddMPTraction(double bctime)
 			
 			// Find the matching field
 			if(firstCrack!=NULL)
-			{	vfld = -1;
-				for(int ii=1;ii<=numnds;ii++)
+			{	for(int ii=1;ii<=numnds;ii++)
 				{	if(nds[i] == snds[ii])
-					{	vfld = mpmptr->vfld[ii];
+					{	short vfld = mpmptr->vfld[ii];
+						nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc);
 						break;
 					}
 				}
 			}
-			
-			// add to velocity field
-            nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc);
+			else
+			{	short vfld = 0;
+				nd[nds[i]]->AddTractionTask3(mpmptr,vfld,matfld,&theFrc);
+			}
         }
     }
    
