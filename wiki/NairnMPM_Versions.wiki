@@ -23,9 +23,9 @@ NairnMPM was first imported to `GoogleCode.com` as version 7.2.0. The versions c
   * Current main trunk
     * Working on NairnMPM 11.0
     * Major changes to version 10 to allow new `ConsistUnits` mode
-    * All low strain material were converted to work better for large rotation problems. The main improvements are better reporting of strains and ability to get elastic and plastic strain from more materials.
-    * Global archive of contact force can get force on one material
-    * Global and VTK archiving for deformation gradietn
+    * All low strain material were converted to work better for large rotation problems and have two options for rotation calculations (see `largeRotation` material property). The main improvements are better reporting of strains and more accurate treatment of anisotropic materials. Note however, this this feature was not fully working until revision 1174.
+    * Global archiving of contact force can get force on one material
+    * Global and VTK archiving for deformation gradient
 
   * Version_10 (31 May 2015)
     * Has NairnMPM 10.x
