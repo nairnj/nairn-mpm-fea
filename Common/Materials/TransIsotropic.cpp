@@ -247,6 +247,7 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
 	return MaterialBase::VerifyAndLoadProperties(np);
 }
 
+#ifdef MPM_CODE
 // If needed, a material can initialize particle state
 // For subclasses of TransIsotropic, rotation matrix is tracked in large rotation mode
 //		and in small rotation is 3D
@@ -265,6 +266,7 @@ void TransIsotropic::SetInitialParticleState(MPMBase *mptr,int np) const
 	// call super class
     Elastic::SetInitialParticleState(mptr,np);
 }
+#endif
 
 #pragma mark TransIsotropic::Methods
 
