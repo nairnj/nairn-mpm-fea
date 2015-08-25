@@ -338,7 +338,13 @@ short CrackHeader::MoveCrack(void)
 	// move only surfaces
 	if(contact.GetMoveOnlySurfaces())
 	{	while(scrk != NULL)
-		{	if(!fixedCrack)
+		{	// cutting to skip collapsed crack
+			if(fmobj->dflag[0]==4 && scrk->MatID()==-2)
+			{	scrk = scrk->nextSeg;
+				continue;
+			}
+			
+			if(!fixedCrack)
 			{	// move to midpoint between upper and lower surface
 				scrk->MovePosition();
 				
@@ -348,6 +354,11 @@ short CrackHeader::MoveCrack(void)
 				// make sure surface are on correct side of the crack
 				if(contact.GetPreventPlaneCrosses())
 				{	if(!scrk->CheckSurfaces()) return false;
+				}
+				
+				// development flag to collapse wide open cracks during cutting
+				if(fmobj->dflag[0]==4)
+				{	if(!scrk->CollapseSurfaces()) return false;
 				}
 			}
 
@@ -366,7 +377,13 @@ short CrackHeader::MoveCrack(void)
 		
 		// loop over crack points
 		while(scrk != NULL)
-		{	if(!fixedCrack)
+		{	// cutting to skip collapsed crack
+			if(fmobj->dflag[0]==4 && scrk->MatID()==-2)
+			{	scrk = scrk->nextSeg;
+				continue;
+			}
+			
+			if(!fixedCrack)
 			{	// get element and shape functinos
 				iel=scrk->planeInElem-1;			// now zero based
 				cpos.x=scrk->x;
@@ -406,23 +423,11 @@ short CrackHeader::MoveCrack(void)
 					}
 					
 					// development flag to collapse wide open cracks during cutting
-					if(fmobj->dflag[0]==4 && scrk->MatID())
-					{	// find COD
-						double codx=scrk->surfx[0]-scrk->surfx[1];
-						double cody=scrk->surfy[0]-scrk->surfy[1];
-						double cod=sqrt(codx*codx+cody*cody);
-						if(cod>0.75)
-						{	scrk->x=(scrk->surfx[0]+scrk->surfx[1])/2.;
-							scrk->y=(scrk->surfy[0]+scrk->surfy[1])/2.;
-							if(!scrk->FindElement()) return false;
-							scrk->CollapseSurfaces();
-						}
+					if(fmobj->dflag[0]==4)
+					{	if(!scrk->CollapseSurfaces()) return false;
 					}
 				}
-				//else if(scrk->MatID()<0)
-				//{	// crack surface is in free space and does not have traction law
-				//	scrk->CollapseSurfaces();
-				//}
+				
 				else if(contact.GetPreventPlaneCrosses())
 				{	// crack in free space, but check if surfaces have moved
 					if(!scrk->CheckSurfaces()) return FALSE;
@@ -453,7 +458,13 @@ short CrackHeader::MoveCrack(short side)
     
     // loop over crack points
     while(scrk!=NULL)
-	{	if(!fixedCrack)
+	{	// cutting to skip collapsed crack
+		if(fmobj->dflag[0]==4 && scrk->MatID()==-2)
+		{	scrk = scrk->nextSeg;
+			continue;
+		}
+
+		if(!fixedCrack)
 		{	// get element
 			iel = scrk->surfInElem[js]-1;			// now zero based
 			cpos.x = scrk->surfx[js];

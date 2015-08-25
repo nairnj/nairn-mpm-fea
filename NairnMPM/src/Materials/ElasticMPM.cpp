@@ -22,7 +22,7 @@ void Elastic::PrintCommonProperties(void) const
 	
 	MaterialBase::PrintCommonProperties();
 }
-
+	
 #pragma mark Elastic::Methods
 
 /* Take increments in strain and calculate new Particle: strains, rotation strain,
@@ -100,6 +100,7 @@ void Elastic::LRConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,int np,v
 	
 	// get total rotation
 	Matrix3 Rtot = dR*Rtotnm1M3;
+	if(np==THREED_MPM) mptr->SetRtot(Rtot);
 #endif
 	
 	// Update total deformation gradient
@@ -151,7 +152,7 @@ void Elastic::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 er,Matri
 	
     // save initial stresses
 	Tensor *sp=mptr->GetStressTensor();
-    Tensor st0=*sp;
+    //Tensor st0=*sp;
 	
 	// stress increments
 	// cast pointer to material-specific data
@@ -181,12 +182,16 @@ void Elastic::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 er,Matri
 		// strain to get work energy increment per unit mass (dU/(rho0 V0))
 		Matrix3 derot = de.RMRT(Rtot);
 		Matrix3 errot = er.RMRT(Rtot);
-		mptr->AddWorkEnergyAndResidualEnergy(0.5*((st0.xx+sp->xx)*derot(0,0) + (st0.yy+sp->yy)*derot(1,1)
-												  + (st0.zz+sp->zz)*derot(2,2)) + (st0.yz+sp->yz)*derot(1,2)
-												  + (st0.xz+sp->xz)*derot(0,2) + (st0.xy+sp->xy)*derot(0,1),
-											 0.5*((st0.xx+sp->xx)*errot(0,0) + (st0.yy+sp->yy)*errot(1,1)
-												  + (st0.zz+sp->zz)*errot(2,2)) + (st0.yz+sp->yz)*errot(1,2)
-												  + (st0.xz+sp->xz)*errot(0,2) + (st0.xy+sp->xy)*errot(0,1));
+		mptr->AddWorkEnergyAndResidualEnergy(sp->xx*derot(0,0) + sp->yy*derot(1,1) + sp->zz*derot(2,2)
+											  + 2.*(sp->yz*derot(1,2) + sp->xz*derot(0,2) + sp->xy*derot(0,1)),
+											 sp->xx*errot(0,0) + sp->yy*errot(1,1) + sp->zz*errot(2,2)
+											  + 2.*(sp->yz*errot(1,2) + sp->xz*errot(0,2) + sp->xy*errot(0,1)) );
+		//mptr->AddWorkEnergyAndResidualEnergy(0.5*((st0.xx+sp->xx)*derot(0,0) + (st0.yy+sp->yy)*derot(1,1)
+		//										  + (st0.zz+sp->zz)*derot(2,2)) + (st0.yz+sp->yz)*derot(1,2)
+		//										  + (st0.xz+sp->xz)*derot(0,2) + (st0.xy+sp->xy)*derot(0,1),
+		//									 0.5*((st0.xx+sp->xx)*errot(0,0) + (st0.yy+sp->yy)*errot(1,1)
+		//										  + (st0.zz+sp->zz)*errot(2,2)) + (st0.yz+sp->yz)*errot(1,2)
+		//										  + (st0.xz+sp->xz)*errot(0,2) + (st0.xy+sp->xy)*errot(0,1));
 	}
 	else
 	{	// find stress increment
@@ -218,14 +223,17 @@ void Elastic::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 er,Matri
 		Matrix3 errot = er.RMRT(Rtot);
 		
 		// work and residual strain energy increments and sigma or F in z direction
-		double workEnergy = 0.5*((st0.xx+sp->xx)*derot(0,0) + (st0.yy+sp->yy)*derot(1,1)) + (st0.xy+sp->xy)*derot(0,1);
-		double resEnergy = 0.5*((st0.xx+sp->xx)*errot(0,0) + (st0.yy+sp->yy)*errot(1,1)) + (st0.xy+sp->xy)*errot(0,1);
+		double workEnergy = sp->xx*derot(0,0) + sp->yy*derot(1,1) + 2.0*sp->xy*derot(0,1);
+		double resEnergy = sp->xx*errot(0,0) + sp->yy*errot(1,1) + 2.*sp->xy*errot(0,1);
+		//double workEnergy = 0.5*((st0.xx+sp->xx)*derot(0,0) + (st0.yy+sp->yy)*derot(1,1)) + (st0.xy+sp->xy)*derot(0,1);
+		//double resEnergy = 0.5*((st0.xx+sp->xx)*errot(0,0) + (st0.yy+sp->yy)*errot(1,1)) + (st0.xy+sp->xy)*errot(0,1);
 		if(np==PLANE_STRAIN_MPM)
 		{	// need to add back terms to get from reduced cte to actual cte
-			sp->zz += p->C[4][1]*(de(0,0)+p->alpha[5]*ezzr) + p->C[4][2]*(de(1,1)+p->alpha[6]*ezzr) - p->C[4][4]*ezzr;
+			sp->zz += p->C[4][1]*(dvxxeff+p->alpha[5]*ezzr) + p->C[4][2]*(dvyyeff+p->alpha[6]*ezzr) - p->C[4][4]*ezzr;
 			
 			// extra residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
-			resEnergy += 0.5*(st0.zz+sp->zz)*ezzr;
+			resEnergy += sp->zz*ezzr;
+			//resEnergy += 0.5*(st0.zz+sp->zz)*ezzr;
 		}
 		else if(np==PLANE_STRESS_MPM)
 		{	// zz deformation
@@ -236,8 +244,10 @@ void Elastic::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 er,Matri
 			sp->zz += p->C[4][1]*dvxxeff + p->C[4][2]*dvyyeff + p->C[4][4]*dvzzeff;
 			
 			// extra work and residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
-			workEnergy += 0.5*(st0.zz+sp->zz)*de(2,2);
-			resEnergy += 0.5*(st0.zz+sp->zz)*ezzr;
+			workEnergy += sp->zz*de(2,2);
+			resEnergy += sp->zz*ezzr;
+			//workEnergy += 0.5*(st0.zz+sp->zz)*de(2,2);
+			//resEnergy += 0.5*(st0.zz+sp->zz)*ezzr;
 		}
 		mptr->AddWorkEnergyAndResidualEnergy(workEnergy, resEnergy);
 		
@@ -311,8 +321,8 @@ void Elastic::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTime,int np
 	double resEnergy = 0.5*((st0.xx+sp->xx)*erxx + (st0.yy+sp->yy)*eryy + (st0.xy+sp->xy)*erxy);
 	if(np==PLANE_STRAIN_MPM)
 	{	// need to add back terms to get from reduced cte to actual cte
-		sp->zz += p->C[4][1]*(dvxx+p->alpha[5]*erzz)+p->C[4][2]*(dvyy+p->alpha[6]*erzz)
-					+p->C[4][3]*(dgam+p->alpha[7]*erzz)-p->C[4][4]*erzz;
+		sp->zz += p->C[4][1]*(dvxxeff+p->alpha[5]*erzz)+p->C[4][2]*(dvyyeff+p->alpha[6]*erzz)
+					+p->C[4][3]*(dgameff+p->alpha[7]*erzz)-p->C[4][4]*erzz;
 		
 		// extra residual energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
 		resEnergy += 0.5*(st0.zz+sp->zz)*erzz;

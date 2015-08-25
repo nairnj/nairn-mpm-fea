@@ -26,6 +26,8 @@
 #include "Exceptions/MPMWarnings.hpp"
 
 #define ITERATIVE_STRESS_UPDATE
+int iterSteps = 10;
+double squaredTolerance = 1.e-20;
 
 // class statics
 int AnisoPlasticity::warnNonconvergence;
@@ -392,34 +394,27 @@ void AnisoPlasticity::LRElasticConstitutiveLaw(MPMBase *mptr,Matrix3 de,Matrix3 
 	// rotate strains into global axes
 	de = de.RMRT(Rtot);
 	er = er.RMRT(Rtot);
-	Matrix3 st0 = stnm1.RMRT(dR);
 	double workEnergy,dispEnergy,resEnergy;
 
 	if(np==THREED_MPM)
 	{	// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-		workEnergy = 0.5*((st0(0,0)+sp->xx)*de(0,0) + (st0(1,1)+sp->yy)*de(1,1) + (st0(2,2)+sp->zz)*de(1,1))
-								+ (st0(0,1)+sp->xy)*de(0,1) + (st0(0,2)+sp->xz)*de(0,2) + (st0(1,2)+sp->yz)*de(1,2);
+		workEnergy = sp->xx*de(0,0) + sp->yy*de(1,1) + sp->zz*de(1,1) + 2.*(sp->xy*de(0,1) + sp->xz*de(0,2) + sp->yz*de(1,2));
 		
 		// Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-		dispEnergy = 0.5*((st0(0,0)+sp->xx)*dep(0,0) + (st0(1,1)+sp->yy)*dep(1,1) + (st0(2,2)+sp->zz)*dep(2,2))
-								+ (st0(0,1)+sp->xy)*dep(0,1) + (st0(0,2)+sp->xz)*dep(0,2) + (st0(1,2)+sp->yz)*dep(1,2);
+		dispEnergy = sp->xx*dep(0,0) + sp->yy*dep(1,1) + sp->zz*dep(2,2) + 2.*(sp->xy*dep(0,1) + sp->xz*dep(0,2) + sp->yz*dep(1,2));
 		
 		// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-		resEnergy = 0.5*((st0(0,0)+sp->xx)*er(0,0) + (st0(1,1)+sp->yy)*er(1,1) + (st0(2,2)+sp->zz)*er(2,2))
-								+ (st0(0,1)+sp->xy)*er(0,1) + (st0(0,2)+sp->xz)*er(0,2) + (st0(1,2)+sp->yz)*er(1,2);
+		resEnergy = sp->xx*er(0,0) + sp->yy*er(1,1) + sp->zz*er(2,2) + 2.*(sp->xy*er(0,1) + sp->xz*er(0,2) + sp->yz*er(1,2));
 	}
 	else
 	{	// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-		workEnergy = 0.5*((st0(0,0)+sp->xx)*de(0,0) + (st0(1,1)+sp->yy)*de(1,1) + (st0(2,2)+sp->zz)*de(1,1))
-									+ (st0(0,1)+sp->xy)*de(0,1);
+		workEnergy = sp->xx*de(0,0) + sp->yy*de(1,1) + sp->zz*de(1,1) + 2.*sp->xy*de(0,1);
 		
 		// Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-		dispEnergy = 0.5*((st0(0,0)+sp->xx)*dep(0,0) + (st0(1,1)+sp->yy)*dep(1,1) + (st0(2,2)+sp->zz)*dep(2,2))
-								 + (st0(0,1)+sp->xy)*dep(0,1);
+		dispEnergy = sp->xx*dep(0,0) + sp->yy*dep(1,1) + sp->zz*dep(2,2) + 2.*sp->xy*dep(0,1);
 		
 		// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-		resEnergy = 0.5*((st0(0,0)+sp->xx)*er(0,0) + (st0(1,1)+sp->yy)*er(1,1) + (st0(2,2)+sp->zz)*er(2,2))
-								+ (st0(0,1)+sp->xy)*er(1,1);
+		resEnergy = sp->xx*er(0,0) + sp->yy*er(1,1) + sp->zz*er(2,2) + 2.*sp->xy*er(0,1);
 	}
 	
 	// add now
@@ -793,7 +788,7 @@ void AnisoPlasticity::LRUpdateStress(Matrix3 &strial,Matrix3 &stk,double lambda,
 	// iterate until close or 10 steps
 	int nstep = 1;
 	double diffnorm;
-	while(nstep<10)
+	while(nstep<iterSteps)
 	{	// save last
 		stkprev = stk;
 		
@@ -817,8 +812,8 @@ void AnisoPlasticity::LRUpdateStress(Matrix3 &strial,Matrix3 &stk,double lambda,
 		Matrix3 diff = stk-stkprev;
 		diffnorm = diff.DotProduct()/p->snorm;
 		
-		// if sqrt(diff)<1e-12 then return with current stk and slopes in plastic properties
-		if(diffnorm < 1.e-24) return;
+		// if sqrt(diff)<tolerance then return with current stk and slopes in plastic properties
+		if(diffnorm < squaredTolerance) return;
 		
 		// do another step
 		nstep++;
@@ -826,7 +821,7 @@ void AnisoPlasticity::LRUpdateStress(Matrix3 &strial,Matrix3 &stk,double lambda,
 	
 	// if use all steps print warning
 	if(warnings.Issue(warnNonconvergence,3)==GAVE_WARNING)
-	{	cout << "# Failed to update stress in 10 steps with final Delta = " << sqrt(diffnorm) << endl;
+	{	cout << "# Failed to update stress in " << iterSteps << " steps with final Delta = " << sqrt(diffnorm) << endl;
 	}
 #else
 	// Now get stress using current slopes
@@ -1004,22 +999,16 @@ void AnisoPlasticity::SRConstitutiveLaw2D(MPMBase *mptr,Matrix3 du,double delTim
 
 	// Step 10: increment energies
 	// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx
-							   + (st0.yy+sp->yy)*dvyy
-							   + (st0.xy+sp->xy)*dgam
-							   + (st0.zz+sp->zz)*dvzz);
+	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy
+							   + (st0.xy+sp->xy)*dgam + (st0.zz+sp->zz)*dvzz);
 
     // Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-	double dispEnergy = 0.5*((st0.xx+sp->xx)*dexxp
-                        + (st0.yy+sp->yy)*deyyp
-                        + (st0.xy+sp->xy)*dgxyp
-						+ (st0.zz+sp->zz)*dezzp);
+	double dispEnergy = 0.5*((st0.xx+sp->xx)*dexxp + (st0.yy+sp->yy)*deyyp
+                        + (st0.xy+sp->xy)*dgxyp + (st0.zz+sp->zz)*dezzp);
 
 	// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-	double resEnergy = 0.5*((st0.xx+sp->xx)*erxx
-							+ (st0.yy+sp->yy)*eryy
-							+ (st0.xy+sp->xy)*erxy
-							+ (st0.zz+sp->zz)*erzz);
+	double resEnergy = 0.5*((st0.xx+sp->xx)*erxx + (st0.yy+sp->yy)*eryy
+							+ (st0.xy+sp->xy)*erxy + (st0.zz+sp->zz)*erzz);
 	
 	// add now
 	mptr->AddWorkEnergyAndResidualEnergy(workEnergy + dispEnergy,resEnergy);
@@ -1168,28 +1157,16 @@ void AnisoPlasticity::SRConstitutiveLaw3D(MPMBase *mptr,Matrix3 du,double delTim
 
 	// Step 10: Increment energies
     // Elastic work increment per unit mass (dU/(rho0 V0)) (nJ/g)
-	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx
-							   + (st0.yy+sp->yy)*dvyy
-							   + (st0.zz+sp->zz)*dvzz
-							   + (st0.yz+sp->yz)*dgamyz
-							   + (st0.xz+sp->xz)*dgamxz
-							   + (st0.xy+sp->xy)*dgamxy);
+	double workEnergy = 0.5*((st0.xx+sp->xx)*dvxx + (st0.yy+sp->yy)*dvyy + (st0.zz+sp->zz)*dvzz
+							   + (st0.yz+sp->yz)*dgamyz + (st0.xz+sp->xz)*dgamxz + (st0.xy+sp->xy)*dgamxy);
 	
     // Plastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-	double dispEnergy=0.5*(0.5*((st0.xx+sp->xx)*dexxp
-								+ (st0.yy+sp->yy)*deyyp
-								+ (st0.zz+sp->zz)*dezzp
-								+ (st0.yz+sp->yz)*dgyzp
-								+ (st0.xz+sp->xz)*dgxzp
-								+ (st0.xy+sp->xy)*dgxyp));
+	double dispEnergy=0.5*(0.5*((st0.xx+sp->xx)*dexxp + (st0.yy+sp->yy)*deyyp + (st0.zz+sp->zz)*dezzp
+								+ (st0.yz+sp->yz)*dgyzp + (st0.xz+sp->xz)*dgxzp + (st0.xy+sp->xy)*dgxyp));
 	
 	// Elastic energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-	double resEnergy = 0.5*((st0.xx+sp->xx)*erxx
-							+ (st0.yy+sp->yy)*eryy
-							+ (st0.zz+sp->zz)*erzz
-							+ (st0.yz+sp->yz)*eryz
-							+ (st0.xz+sp->xz)*erxz
-							+ (st0.xy+sp->xy)*erxy);
+	double resEnergy = 0.5*((st0.xx+sp->xx)*erxx + (st0.yy+sp->yy)*eryy + (st0.zz+sp->zz)*erzz
+							+ (st0.yz+sp->yz)*eryz + (st0.xz+sp->xz)*erxz + (st0.xy+sp->xy)*erxy);
 	
 	// add now
 	mptr->AddWorkEnergyAndResidualEnergy(workEnergy + dispEnergy,resEnergy);
@@ -1630,7 +1607,7 @@ void AnisoPlasticity::UpdateStress(Tensor *strial,Tensor *stk,double lambda,int 
 	// iterate until close or 10 steps
 	int nstep = 1;
 	double diffnorm;
-	while(nstep<10)
+	while(nstep<iterSteps)
 	{	// save last
 		stkprev = *stk;
 		
@@ -1654,8 +1631,8 @@ void AnisoPlasticity::UpdateStress(Tensor *strial,Tensor *stk,double lambda,int 
 		{	diffnorm += 2.*((stk->xz-stkprev.xz)*(stk->xz-stkprev.xz)+(stk->yz-stkprev.yz)*(stk->yz-stkprev.yz));
 		}
 		
-		// if sqrt(diff)<1e-12 then return wuth current stk and slopes in plastic properties
-		if(diffnorm/p->snorm < 1.e-24) return;
+		// if sqrt(diff)<tolerance then return wuth current stk and slopes in plastic properties
+		if(diffnorm/p->snorm < squaredTolerance) return;
 		
 		// do another step
 		nstep++;
@@ -1663,7 +1640,7 @@ void AnisoPlasticity::UpdateStress(Tensor *strial,Tensor *stk,double lambda,int 
 	
 	// if use all steps print warning
 	if(warnings.Issue(warnNonconvergence,3)==GAVE_WARNING)
-	{	cout << "# Failed to update stress in 10 steps with final Delta = " << sqrt(diffnorm/p->snorm) << endl;
+	{	cout << "# Failed to update stress in " << iterSteps << " steps with final Delta = " << sqrt(diffnorm/p->snorm) << endl;
 	}
 #else
 	// Now get stress using updated slopes

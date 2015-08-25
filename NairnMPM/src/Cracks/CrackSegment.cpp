@@ -269,7 +269,14 @@ void CrackSegment::UpdateTractions(CrackHeader *theCrack)
 	
 	// get tangential unit vector and length
 	double dl;
-	Vector t=GetTangential(&dl);
+	Vector t = GetTangential(&dl);
+	
+	// cutting assume vector along x axis, use length from above
+	if(fmobj->dflag[0]==4)
+	{	t.x=-1.;
+		t.y=0.;
+		t.z=0.;
+	}
 	
 	// get normal and tangential COD components
 	double codx=surfx[0]-surfx[1];			// above crack - below crack
@@ -714,13 +721,35 @@ bool CrackSegment::MoveToPlane(int side,double dxp,double dyp,bool thereIsAnothe
 	return true;
 }
 
-// if decide no longer need to track surfaces, can call this method to collapse surface
-// to the crack plane
-void CrackSegment::CollapseSurfaces(void)
+// For cutting, collapse the crack if opened enough
+// cods are hard coded and should be greater than traction law max cod
+// Also won't collapse if this segment or a neighbor has traction law
+// return tru unless collapsed position is out of the grid
+bool CrackSegment::CollapseSurfaces(void)
 {
-	surfx[0]=surfx[1]=x;
-	surfy[0]=surfy[1]=y;
-	surfInElem[0]=surfInElem[1]=planeInElem;
+	// make sure no traction on this segment or its neighbors
+	if(MatID()>=0) return true;
+	if(nextSeg!=NULL)
+	{	if(nextSeg->MatID()>=0) return true;
+	}
+	if(prevSeg!=NULL)
+	{	if(prevSeg->MatID()>=0) return true;
+	}
+	
+	// check x and y opening
+	double codx=fabs(surfx[0]-surfx[1]);
+	double cody=fabs(surfy[0]-surfy[1]);
+	if(codx>1.02 || cody>1.02)
+	{	// OK to collapse
+		x=(surfx[0]+surfx[1])/2.;
+		y=(surfy[0]+surfy[1])/2.;
+		if(!FindElement()) return false;
+		surfx[0]=surfx[1]=x;
+		surfy[0]=surfy[1]=y;
+		surfInElem[0]=surfInElem[1]=planeInElem;
+		SetMatID(-1);								// marks as collapsed
+	}
+	return true;
 }
 
 #pragma mark HIERACHICAL CRACKS

@@ -190,7 +190,8 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
 	
     // Deviatoric stress increment
 	Tensor *sp=mptr->GetStressTensor();
-    Tensor dels,stk,st0=*sp;
+    Tensor dels,stk;
+	//Tensor st0=*sp;
     double thirdDelV = delV/3.;
 	dels.xx = 2.*p->Gred*(dexxr-thirdDelV);
 	dels.yy = 2.*p->Gred*(deyyr-thirdDelV);
@@ -235,18 +236,18 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
 		// work energy increment per unit mass (dU/(rho0 V0)) (by midpoint rule) (nJ/g)
         // energy units are also Pa mm^3/g, i.e., same as stress units
         if(np==AXISYMMETRIC_MPM)
-		{	mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*deyy
-									 + (st0.xy+sp->xy)*dgxy + (st0.zz+sp->zz)*dezz));
+		{	mptr->AddWorkEnergy(sp->xx*dexx + sp->yy*deyy + sp->xy*dgxy + sp->zz*dezz);
+			//mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*deyy + (st0.xy+sp->xy)*dgxy + (st0.zz+sp->zz)*dezz));
 		}
 		else if(np==PLANE_STRESS_MPM)
 		{	// zz deformation
 			mptr->IncrementDeformationGradientZZ(-p->psLr2G*(dexxr+deyyr) + eres);
-			mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*deyy
-									 + (st0.xy+sp->xy)*dgxy));
+			mptr->AddWorkEnergy(sp->xx*dexx + sp->yy*deyy + sp->xy*dgxy);
+			//mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*deyy + (st0.xy+sp->xy)*dgxy));
 		}
 		else
-        {   mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*deyy
-									 + (st0.xy+sp->xy)*dgxy));
+        {   mptr->AddWorkEnergy(sp->xx*dexx + sp->yy*deyy + sp->xy*dgxy);
+			//mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*deyy + (st0.xy+sp->xy)*dgxy));
 		}
 		
         // heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here
@@ -275,9 +276,9 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
 		double txy = stk.xy/d2;
         
         // find increment in deviatoric stress
-		dels.xx = sxx+Pfinal-st0.xx;
-		dels.yy = syy+Pfinal-st0.yy;
-		dels.xy = txy-st0.xy;
+		dels.xx = sxx+Pfinal-sp->xx;
+		dels.yy = syy+Pfinal-sp->yy;
+		dels.xy = txy-sp->xy;
         
         // get final direction
         dfds.xx = (2.*sxx-syy)/3.;
@@ -345,11 +346,11 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
 	sp->xy = str(0,1) + dels.xy;
 	
     // Elastic work increment per unit mass (dU/(rho0 V0)) (nJ/g)
-    double workEnergy = 0.5*((st0.xx+sp->xx)*dexx
-							 + (st0.yy+sp->yy)*deyy
-							 + (st0.xy+sp->xy)*dgxy);
+	double workEnergy = sp->xx*dexx + sp->yy*deyy + sp->xy*dgxy;
+	//double workEnergy = 0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*deyy + (st0.xy+sp->xy)*dgxy);
 	if(np==AXISYMMETRIC_MPM)
-    {	workEnergy += 0.5*(st0.zz+sp->zz)*dezz;
+    {	workEnergy += sp->zz*dezz;
+		//workEnergy += 0.5*(st0.zz+sp->zz)*dezz;
 	}
     
     // total work
@@ -392,7 +393,8 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
 	
     // Elastic deviatoric stress increment
 	Tensor *sp=mptr->GetStressTensor();
-    Tensor stk,st0=*sp;
+    Tensor stk;
+	//Tensor st0=*sp;
 	double dsig[6];
     double thirdDelV = delV/3.;
 	dsig[XX] = 2.*p->Gred*(dexxr-thirdDelV);
@@ -438,12 +440,10 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
 		eplast->yz = 2.*etr(1,2);
 		
 		// work energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-		mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dexx
-								 + (st0.yy+sp->yy)*deyy
-								 + (st0.zz+sp->zz)*dezz
-								 + (st0.yz+sp->yz)*dgyz
-								 + (st0.xz+sp->xz)*dgxz
-								 + (st0.xy+sp->xy)*dgxy));
+		mptr->AddWorkEnergy(sp->xx*dexx + sp->yy*deyy + sp->zz*dezz
+								 + sp->yz*dgyz + sp->xz*dgxz + sp->xy*dgxy);
+		//mptr->AddWorkEnergy(0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*deyy + (st0.zz+sp->zz)*dezz
+		//						 + (st0.yz+sp->yz)*dgyz + (st0.xz+sp->xz)*dgxz + (st0.xy+sp->xy)*dgxy));
 		
         // heat energy is Cv(dT-dTq0) - dPhi, but dPhi is zero here (dTq0=0 in this material)
         // and Cv(dT-dTq0) was done in Update Pressure
@@ -487,10 +487,10 @@ void IsoPlasticity::LRPlasticityConstLaw(MPMBase *mptr,double dexx,double deyy,d
 	sp->xy = stk.xy - p->Gred*dgxyp;
 	
     // work energy increment per unit mass (dU/(rho0 V0)) (nJ/g)
-	double workEnergy = 0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*dezz
-							 + (st0.zz+sp->zz)*dezz + (st0.yz+sp->yz)*dgyz
-							 + (st0.xz+sp->xz)*dgxz + (st0.xy+sp->xy)*dgxy);
-    
+	double workEnergy = sp->xx*dexx + sp->yy*dezz + sp->zz*dezz + sp->yz*dgyz + sp->xz*dgxz + sp->xy*dgxy;
+ 	//double workEnergy = 0.5*((st0.xx+sp->xx)*dexx + (st0.yy+sp->yy)*dezz + (st0.zz+sp->zz)*dezz
+	//						 + (st0.yz+sp->yz)*dgyz + (st0.xz+sp->xz)*dgxz + (st0.xy+sp->xy)*dgxy);
+   
     // total work
     mptr->AddWorkEnergy(workEnergy);
     

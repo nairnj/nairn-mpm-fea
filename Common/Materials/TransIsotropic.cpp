@@ -253,15 +253,9 @@ const char *TransIsotropic::VerifyAndLoadProperties(int np)
 //		and in small rotation is 3D
 void TransIsotropic::SetInitialParticleState(MPMBase *mptr,int np) const
 {
-#ifdef TRACK_RTOT
-	// store initial rotation if large rotation or if 3D
-	if(useLargeRotation || np==THREED_MPM)
+	// always track in 3D so transport properties does not need second decomposition
+	if(np==THREED_MPM)
 		mptr->InitRtot(mptr->GetInitialRotation());
-#else
-	// store initial rotation if small rotation and 3D
-	if(!useLargeRotation && np==THREED_MPM)
-		mptr->InitRtot(mptr->GetInitialRotation());
-#endif
 	
 	// call super class
     Elastic::SetInitialParticleState(mptr,np);

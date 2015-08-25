@@ -339,7 +339,7 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	
 	// Increment of particle deviatoric stresses
 	Tensor *sp=mptr->GetStressTensor();
-	Tensor st0 = *sp;
+	//Tensor st0 = *sp;
 	if(np==THREED_MPM)
 	{	// incremental rotate of prior stress
 		Matrix3 stn(sp->xx,sp->xy,sp->xz,sp->xy,sp->yy,sp->yz,sp->xz,sp->yz,sp->zz);
@@ -364,10 +364,11 @@ void Viscoelastic::MPMConstitutiveLaw(MPMBase *mptr,Matrix3 du,double delTime,in
 	}
 	
 	// incremental work energy = shear energy (dilation and residual energy done in update pressure)
-    double shearEnergy = 0.5*((sp->xx+st0.xx)*detot(0,0) + (sp->yy+st0.yy)*detot(1,1) + (sp->zz+st0.zz)*detot(2,2)+
-							  (sp->xy+st0.xy)*de.xy);
+    double shearEnergy = sp->xx*detot(0,0) + sp->yy*detot(1,1) + sp->zz*detot(2,2) + sp->xy*de.xy;
+    //double shearEnergy = 0.5*((sp->xx+st0.xx)*detot(0,0) + (sp->yy+st0.yy)*detot(1,1) + (sp->zz+st0.zz)*detot(2,2) + (sp->xy+st0.xy)*de.xy);
     if(np==THREED_MPM)
-    {   shearEnergy += 0.5*((sp->xz+st0.xz)*de.xz + (sp->yz+st0.yz)*de.yz);
+    {   shearEnergy += sp->xz*de.xz + sp->yz*de.yz;
+		//shearEnergy += 0.5*((sp->xz+st0.xz)*de.xz + (sp->yz+st0.yz)*de.yz);
     }
     mptr->AddWorkEnergyAndResidualEnergy(shearEnergy,0.);
 	

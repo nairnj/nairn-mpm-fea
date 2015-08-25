@@ -161,6 +161,7 @@ Matrix3 Matrix3::RMRT(Matrix3 &R) const
 				mT(2,2) += R(2,i)*R(2,j)*mij;
 			}
 		}
+		mT.setIs2D(false);
 		return mT;
 	}
 }
@@ -192,6 +193,7 @@ Matrix3 Matrix3::RTMR(Matrix3 &R) const
 				mT(2,2) += R(i,2)*R(j,2)*mij;
 			}
 		}
+		mT.setIs2D(false);
 		return mT;
 	}
 }
@@ -360,7 +362,7 @@ Vector Matrix3::Eigenvalues(void) const
 		{	arg = sqrt(arg);
 			lam.x = b>0 ? -0.5*(b+arg) : -0.5*(b-arg) ;
 		}
-        lam.y = c/lam.x;
+        lam.y = lam.x==0. ? 0. : c/lam.x;
         lam.z = m[2][2];
     }
     else
@@ -944,6 +946,21 @@ void Matrix3::set(double c00,double c01,double c02,double c10,double c11,double 
     m[2][1] = c21;
     m[2][2] = c22;
     is2D = FALSE;
+}
+
+// swap two columns
+void Matrix3::SwapColumns(int i,int j)
+{
+	double temp = m[0][i];
+	m[0][i] = m[0][j];
+	m[0][j] = temp;
+	temp = m[1][i];
+	m[1][i] = m[1][j];
+	m[1][j] = temp;
+	temp = m[2][i];
+	m[2][i] = m[2][j];
+	m[2][j] = temp;
+	if(i==2 || j==2) is2D = false;
 }
 
 // is this a 2D matrix?

@@ -64,6 +64,7 @@ class Matrix3
         void set(double,double,double,double,double);
         void set(double,double,double,double,double,double,double,double,double);
 		void set(Matrix3);
+		void SwapColumns(int,int);
         void setIs2D(bool);
     
         // read only accessors
