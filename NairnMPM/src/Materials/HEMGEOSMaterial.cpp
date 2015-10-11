@@ -200,7 +200,7 @@ void HEMGEOSMaterial::UpdatePressure(MPMBase *mptr,double J,double detdF,int np,
     
     // M-G EOS
     // Want specific pressure or pressure over current density (using J = rho0/rho)
-    if(J>1.)
+    if(J<1.)
 	{	// new compression J(k+1) = 1-x(k+1)
 		double x = 1.-J;
 		
