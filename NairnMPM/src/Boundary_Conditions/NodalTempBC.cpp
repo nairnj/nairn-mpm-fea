@@ -70,3 +70,30 @@ void NodalTempBC::InitQReaction(void) { qreaction = 0.; }
 // add flow required to bring global nodal temperature to the BC temperature
 void NodalTempBC::SuperposeQReaction(double qflow) { qreaction += qflow; }
 
+// when getting total heat reaction, add qreaction to input double
+// if matchID==0 include it, otherwise include only if matchID equals bcID
+NodalTempBC *NodalTempBC::AddHeatReaction(double *totalReaction,int matchID)
+{	if(bcID==matchID || matchID==0)
+	*totalReaction += qreaction;
+	return (NodalTempBC *)GetNextObject();
+}
+
+/**********************************************************
+ Sum all reaction heat forces for all temperature BCs
+ If ID is not zero, only includes those with matching ID
+ Result is in nJ when in Legacy units
+ */
+double NodalTempBC::TotalHeatReaction(int matchID)
+{
+	double reactionTotal = 0.;
+    NodalTempBC *nextBC=firstTempBC;
+    
+    // Add each value
+    while(nextBC!=NULL)
+		nextBC=nextBC->AddHeatReaction(&reactionTotal,matchID);
+	
+	return reactionTotal;
+}
+
+
+

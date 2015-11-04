@@ -20,6 +20,7 @@
 #include "Nodes/NodalPoint.hpp"
 #include "System/ArchiveData.hpp"
 #include "Boundary_Conditions/NodalVelBC.hpp"
+#include "Boundary_Conditions/NodalTempBC.hpp"
 #include "System/UnitsController.hpp"
 
 // Single global contact law object
@@ -210,6 +211,10 @@ int GlobalQuantity::DecodeGlobalQuantity(char *quant,int *hcode)
 		theQuant=TOT_REACTY;
 	else if(strcmp(quant,"reactionz")==0)
 		theQuant=TOT_REACTZ;
+	
+	else if(strcmp(quant,"heatWatts")==0)
+		theQuant=TOT_REACTQ;
+	
 	else
 	{	theQuant=UNKNOWN_QUANTITY;
 		
@@ -679,6 +684,13 @@ GlobalQuantity *GlobalQuantity::AppendQuantity(vector<double> &toArchive)
 			break;
 		}
 		
+		case TOT_REACTQ:
+		{	// find heat flow for BCs with provided ID (J in Legacy)
+			double qreaction = NodalTempBC::TotalHeatReaction(whichMat);
+			value = qreaction*UnitsController::Scaling(1.e-9);
+			break;
+		}
+			
 		// grid kinetic energy (J in Legacy)
 		case GRID_KINE_ENERGY:
 		{	double totalMass;

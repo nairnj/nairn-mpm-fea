@@ -715,7 +715,7 @@ MPMWarnings.o : $(MPMWarnings).cpp $(dprefix) $(MPMWarnings).hpp $(NairnMPM).hpp
 # MPM: Global Quantities
 GlobalQuantity.o : $(GlobalQuantity).cpp $(dprefix) $(GlobalQuantity).hpp $(NairnMPM).hpp $(MaterialBase).hpp \
 			$(ThermalRamp).hpp $(MPMBase).hpp $(NodalPoint).hpp $(CrackVelocityField).hpp $(MatVelocityField).hpp \
-			$(ArchiveData).hpp $(CommonArchiveData).hpp $(BoundaryCondition).hpp $(NodalVelBC).hpp
+			$(ArchiveData).hpp $(CommonArchiveData).hpp $(BoundaryCondition).hpp $(NodalVelBC).hpp $(NodalTempBC).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(GlobalQuantity).cpp
 ThermalRamp.o : $(ThermalRamp).cpp $(dprefix) $(ThermalRamp).hpp
 	$(CC) $(CFLAGS) $(headers) -include $(prefix) $(ThermalRamp).cpp

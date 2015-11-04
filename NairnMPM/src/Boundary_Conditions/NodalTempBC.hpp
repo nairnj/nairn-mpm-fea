@@ -33,6 +33,10 @@ class NodalTempBC: public BoundaryCondition
 		NodalTempBC *PasteNodalTemperature(NodalPoint *);
 		void InitQReaction(void);
 		void SuperposeQReaction(double);
+		NodalTempBC *AddHeatReaction(double *,int);
+	
+		// class methods
+		static double TotalHeatReaction(int);
 	
 	protected:
 		double qreaction;

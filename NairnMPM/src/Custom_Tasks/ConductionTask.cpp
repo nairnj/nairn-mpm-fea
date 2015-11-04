@@ -239,17 +239,24 @@ TransportTask *ConductionTask::SetTransportForceBCs(double deltime)
     NodalTempBC *nextBC=firstTempBC;
     while(nextBC!=NULL)
     {   i=nextBC->GetNodeNum(mtime);
-		if(i!=0) nextBC->PasteNodalTemperature(nd[i]);
+		if(i!=0)
+		{	nextBC->PasteNodalTemperature(nd[i]);
+			nd[i]->fcond = 0.;
+			nextBC->InitQReaction();
+		}
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
 	}
     
-    // Set force to - mp Cp T(no BC)/timestep
+    // Set force to - mp Cp T(no BC)/timestep (once per node)
     nextBC=firstTempBC;
     while(nextBC!=NULL)
 	{   i=nextBC->GetNodeNum(mtime);
 		if(i!=0)
-		{	nd[i]->fcond = -nd[i]->gMpCp*nd[i]->gTemperature/deltime;
-			nextBC->InitQReaction();				// for global archive of boundary flow
+		{	if(nd[i]->fcond==0.)
+			{	double qflow = -nd[i]->gMpCp*nd[i]->gTemperature/deltime;
+				nd[i]->fcond = qflow;
+				nextBC->SuperposeQReaction(qflow);		// for global archive of boundary flow
+			}
 		}
         nextBC=(NodalTempBC *)nextBC->GetNextObject();
 	}
